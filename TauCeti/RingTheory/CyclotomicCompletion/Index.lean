@@ -115,7 +115,7 @@ theorem cycloIndex_insert_zero (R : Type*) [CommRing R] (S : Set ℕ) :
 
 /-- Removing order `0` does not change `cycloIndex R S`, since `cyclotomic 0 R = 1`. -/
 @[simp]
-theorem cycloIndex_diff_zero (R : Type*) [CommRing R] (S : Set ℕ) :
+theorem cycloIndex_sdiff_singleton_zero (R : Type*) [CommRing R] (S : Set ℕ) :
     cycloIndex R (S \ {0}) = cycloIndex R S := by
   refine le_antisymm (cycloIndex_mono Set.sdiff_subset) (Submonoid.closure_le.mpr ?_)
   rintro _ ⟨n, hn, rfl⟩
@@ -126,7 +126,7 @@ theorem cycloIndex_diff_zero (R : Type*) [CommRing R] (S : Set ℕ) :
 /-- If `S` contains no positive orders, `cycloIndex R S` is trivial. -/
 theorem cycloIndex_eq_bot_of_forall_eq_zero {S : Set ℕ} (hS : ∀ n ∈ S, n = 0) :
     cycloIndex R S = ⊥ := by
-  rw [← cycloIndex_diff_zero]
+  rw [← cycloIndex_sdiff_singleton_zero]
   convert cycloIndex_empty R
   ext n
   simpa using hS n
@@ -160,22 +160,9 @@ theorem cycloIndex_singleton_one_eq_singleton_two (R : Type*) [CommRing R] [Char
   simp only [cycloIndex_def, Set.image_singleton, cyclotomic_one, cyclotomic_two,
     CharTwo.sub_eq_add]
 
-/-- Mapping polynomials along a ring homomorphism `φ : R →+* R'` carries `cycloIndex R S` into
-`cycloIndex R' S`. -/
-theorem map_mem_cycloIndex (φ : R →+* R') {S : Set ℕ} {f : R[X]} (hf : f ∈ cycloIndex R S) :
-    f.map φ ∈ cycloIndex R' S := by
-  induction hf using Submonoid.closure_induction with
-  | mem _ h =>
-    rcases h with ⟨n, hn, rfl⟩
-    simpa [Polynomial.map_cyclotomic] using cyclotomic_mem_cycloIndex hn
-  | one => simp
-  | mul _ _ _ _ hf₁ hf₂ =>
-    rw [Polynomial.map_mul]
-    exact mul_mem hf₁ hf₂
-
 /-- Base change along `φ : R →+* R'` maps `cycloIndex R S` onto `cycloIndex R' S`. -/
 @[simp]
-theorem cycloIndex_map (φ : R →+* R') (S : Set ℕ) :
+theorem map_cycloIndex (φ : R →+* R') (S : Set ℕ) :
     (cycloIndex R S).map (Polynomial.mapRingHom φ) = cycloIndex R' S := by
   rw [← Submonoid.map_coe_toMonoidHom, ← RingHom.toMonoidHom_eq_coe, cycloIndex_def,
     cycloIndex_def, MonoidHom.map_mclosure]
@@ -183,10 +170,16 @@ theorem cycloIndex_map (φ : R →+* R') (S : Set ℕ) :
   ext p
   simp [Polynomial.map_cyclotomic]
 
+/-- Mapping polynomials along a ring homomorphism `φ : R →+* R'` carries `cycloIndex R S` into
+`cycloIndex R' S`. -/
+theorem map_mem_cycloIndex (φ : R →+* R') {S : Set ℕ} {f : R[X]} (hf : f ∈ cycloIndex R S) :
+    f.map φ ∈ cycloIndex R' S :=
+  map_cycloIndex φ S ▸ Submonoid.mem_map_of_mem (Polynomial.mapRingHom φ) hf
+
 /-- Every index in `cycloIndex R' S` is the base change of an index in `cycloIndex R S`. -/
 theorem exists_map_eq_of_mem_cycloIndex (φ : R →+* R') {S : Set ℕ} {f' : R'[X]}
     (hf' : f' ∈ cycloIndex R' S) : ∃ f : cycloIndex R S, (f : R[X]).map φ = f' := by
-  rw [← cycloIndex_map φ S, Submonoid.mem_map] at hf'
+  rw [← map_cycloIndex φ S, Submonoid.mem_map] at hf'
   rcases hf' with ⟨f, hf, rfl⟩
   exact ⟨⟨f, hf⟩, rfl⟩
 
@@ -208,10 +201,15 @@ open Classical in
 noncomputable def cycloChain (R : Type*) [CommRing R] (S : Set ℕ) (N : ℕ) : R[X] :=
   ∏ n ∈ (Finset.Icc 1 N).filter (· ∈ S), cyclotomic n R ^ N
 
+open Classical in
+theorem cycloChain_def (R : Type*) [CommRing R] (S : Set ℕ) (N : ℕ) :
+    cycloChain R S N = ∏ n ∈ (Finset.Icc 1 N).filter (· ∈ S), cyclotomic n R ^ N :=
+  (rfl)
+
 @[simp]
 theorem cycloChain_zero (R : Type*) [CommRing R] (S : Set ℕ) : cycloChain R S 0 = 1 := by
   classical
-  simp [cycloChain]
+  simp [cycloChain_def]
 
 /-- Each term of `cycloChain R S` belongs to `cycloIndex R S`. -/
 theorem cycloChain_mem_cycloIndex (R : Type*) [CommRing R] (S : Set ℕ) (N : ℕ) :
@@ -229,12 +227,25 @@ theorem coe_cycloChainIndex (R : Type*) [CommRing R] (S : Set ℕ) (N : ℕ) :
     (cycloChainIndex R S N : R[X]) = cycloChain R S N :=
   (rfl)
 
+@[simp]
+theorem cycloChainIndex_zero (R : Type*) [CommRing R] (S : Set ℕ) :
+    cycloChainIndex R S 0 = 1 :=
+  Subtype.ext (cycloChain_zero R S)
+
 /-- `cycloChain` commutes with coefficient ring homomorphisms. -/
 @[simp]
 theorem map_cycloChain (φ : R →+* R') (S : Set ℕ) (N : ℕ) :
     (cycloChain R S N).map φ = cycloChain R' S N := by
   classical
-  simp [cycloChain, Polynomial.map_prod, Polynomial.map_cyclotomic]
+  simp [cycloChain_def, Polynomial.map_prod, Polynomial.map_cyclotomic]
+
+/-- Enlarging the order set `S` produces a multiple in `cycloChain` at every level `N`. -/
+theorem cycloChain_dvd_of_subset {S T : Set ℕ} (hTS : T ⊆ S) (N : ℕ) :
+    cycloChain R T N ∣ cycloChain R S N := by
+  classical
+  refine Finset.prod_dvd_prod_of_subset _ _ _ fun n hn ↦ ?_
+  rw [Finset.mem_filter] at hn ⊢
+  exact ⟨hn.1, hTS hn.2⟩
 
 /-- `cycloChain R S` is a divisibility chain: `cycloChain R S M ∣ cycloChain R S N` for `M ≤ N`. -/
 theorem cycloChain_dvd_of_le {S : Set ℕ} {M N : ℕ} (hMN : M ≤ N) :
@@ -293,6 +304,31 @@ theorem exists_dvd_cycloChain {S : Set ℕ} {f : R[X]} (hf : f ∈ cycloIndex R 
 noncomputable def cycloProd (R : Type*) [CommRing R] {S : Set ℕ} (hS : S.Finite) : R[X] :=
   ∏ n ∈ hS.toFinset, cyclotomic n R
 
+theorem cycloProd_def (R : Type*) [CommRing R] {S : Set ℕ} (hS : S.Finite) :
+    cycloProd R hS = ∏ n ∈ hS.toFinset, cyclotomic n R :=
+  (rfl)
+
+@[simp]
+theorem cycloProd_empty (R : Type*) [CommRing R] (hS : (∅ : Set ℕ).Finite) :
+    cycloProd R hS = 1 := by
+  simp [cycloProd_def]
+
+@[simp]
+theorem cycloProd_singleton (R : Type*) [CommRing R] {n : ℕ} (hS : ({n} : Set ℕ).Finite) :
+    cycloProd R hS = cyclotomic n R := by
+  simp [cycloProd_def]
+
+/-- `cycloProd` commutes with coefficient ring homomorphisms. -/
+@[simp]
+theorem map_cycloProd (φ : R →+* R') {S : Set ℕ} (hS : S.Finite) :
+    (cycloProd R hS).map φ = cycloProd R' hS := by
+  simp [cycloProd_def, Polynomial.map_prod, Polynomial.map_cyclotomic]
+
+/-- Every generator `cyclotomic n R` with `n ∈ S` divides `cycloProd R hS`. -/
+theorem cyclotomic_dvd_cycloProd {S : Set ℕ} (hS : S.Finite) {n : ℕ} (hn : n ∈ S) :
+    cyclotomic n R ∣ cycloProd R hS :=
+  Finset.dvd_prod_of_mem _ (hS.mem_toFinset.mpr hn)
+
 /-- `cycloProd R hS` belongs to `cycloIndex R S`. -/
 theorem cycloProd_mem_cycloIndex (R : Type*) [CommRing R] {S : Set ℕ} (hS : S.Finite) :
     cycloProd R hS ∈ cycloIndex R S :=
@@ -304,7 +340,7 @@ theorem exists_dvd_cycloProd_pow {S : Set ℕ} (hS : S.Finite) {f : R[X]}
   induction hf using Submonoid.closure_induction with
   | mem _ h =>
     rcases h with ⟨n, hn, rfl⟩
-    exact ⟨1, by simpa [pow_one, cycloProd] using Finset.dvd_prod_of_mem _ (hS.mem_toFinset.mpr hn)⟩
+    exact ⟨1, by simpa only [pow_one] using cyclotomic_dvd_cycloProd hS hn⟩
   | one => exact ⟨0, by simp⟩
   | mul _ _ _ _ hf₁ hf₂ =>
     rcases hf₁ with ⟨k₁, hk₁⟩
