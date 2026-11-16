@@ -164,7 +164,6 @@ variable {G' M' E' H' : Type*} [Group G'] [MulAction G' M'] [TopologicalSpace M'
   [T2Space M'] [LocallyCompactSpace M'] [IsManifold I' n M'] [ContMDiffConstSMul I' n G' M']
   {σ : G' → G}
 
-omit [∀ x, IsTopologicalAddGroup (V x)] [∀ x, ContinuousSMul 𝕜 (V x)] in
 /-- Pulling back a `G`-invariant `C^m` linear bundle-map family along a `C^m` equivariant map
 `ψ : M' →ₑ[σ] M` (`m ≤ n`) yields a `G'`-invariant family whose descent induces a `C^m` map of
 pulled-back total spaces over `M' ⧸ G'`. -/
@@ -211,12 +210,6 @@ theorem exists_bundleDiffeomorph_pullbackOrbitSection_orbitRelQuotientRec {ψ : 
           (ψ.pullbackOrbitSection (V := fun q ↦ V q →L[𝕜] W q) φ)
           (ψ.pullbackOrbitSection_smul_heq (V := fun q ↦ V q →L[𝕜] W q) hφ) p.proj p.2) := by
   intro f
-  let _ : ∀ q', IsTopologicalAddGroup ((⇑f *ᵖ V) q') :=
-    fun q' ↦ ‹∀ q, IsTopologicalAddGroup (V q)› (f q')
-  let _ : ∀ q', ContinuousSMul 𝕜 ((⇑f *ᵖ V) q') := fun q' ↦ ‹∀ q, ContinuousSMul 𝕜 (V q)› (f q')
-  let _ : ∀ q', IsTopologicalAddGroup ((⇑f *ᵖ W) q') :=
-    fun q' ↦ ‹∀ q, IsTopologicalAddGroup (W q)› (f q')
-  let _ : ∀ q', ContinuousSMul 𝕜 ((⇑f *ᵖ W) q') := fun q' ↦ ‹∀ q, ContinuousSMul 𝕜 (W q)› (f q')
   rw [exists_bundleDiffeomorph_iff (IB := I') (fun q' ↦ MulAction.orbitRelQuotientRec
     (V := fun q' ↦ (⇑f *ᵖ V) q' →L[𝕜] (⇑f *ᵖ W) q')
     (ψ.pullbackOrbitSection (V := fun q ↦ V q →L[𝕜] W q) φ)

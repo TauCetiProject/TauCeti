@@ -11,6 +11,7 @@ public import TauCeti.Geometry.Manifold.VectorBundle.Hom
 public import TauCeti.Topology.Algebra.Module.Alternating.TopDegree
 public import TauCeti.Topology.VectorBundle.ContinuousAlternatingMap
 import TauCeti.Analysis.Calculus.FDeriv.Det.Basic
+import TauCeti.Topology.VectorBundle.Trivialization
 
 /-!
 # Smooth determinants of bundle endomorphisms and pullback of alternating forms
@@ -57,9 +58,14 @@ variable {𝕜 : Type*} [NontriviallyNormedField 𝕜] [CompleteSpace 𝕜]
   [TopologicalSpace M] [ChartedSpace HM M]
   {F : Type*} [NormedAddCommGroup F] [NormedSpace 𝕜 F]
   {V : B → Type*} [∀ x, AddCommGroup (V x)] [∀ x, Module 𝕜 (V x)]
-  [∀ x, TopologicalSpace (V x)] [∀ x, IsTopologicalAddGroup (V x)] [∀ x, ContinuousSMul 𝕜 (V x)]
+  [∀ x, TopologicalSpace (V x)]
   [TopologicalSpace (TotalSpace F V)] [FiberBundle F V] [VectorBundle 𝕜 F V]
-  {b : M → B} {φ : ∀ y, V (b y) →L[𝕜] V (b y)} {s : Set M} {x : M} {n : ℕ∞ω}
+  {n : ℕ∞ω}
+
+section
+
+variable [∀ x, IsTopologicalAddGroup (V x)] [∀ x, ContinuousSMul 𝕜 (V x)]
+  {b : M → B} {φ : ∀ y, V (b y) →L[𝕜] V (b y)} {s : Set M} {x : M}
 
 /-- The fibrewise determinant of an endomorphism-bundle section `C^n` within `s` at `x` is a `C^n`
 scalar function within `s` at `x`. Over infinite-dimensional fibres, `ContinuousLinearMap.det` is
@@ -103,6 +109,8 @@ theorem ContMDiff.clm_bundle_det
     ContMDiff IM 𝓘(𝕜) n (fun y ↦ (φ y).det) :=
   fun y ↦ (hφ y).clm_bundle_det
 
+end
+
 namespace TauCeti
 
 variable [FiniteDimensional 𝕜 F]
@@ -112,8 +120,10 @@ has `C^n` scalar determinant. -/
 theorem contMDiff_det_of_totalSpaceMap (ψ : ∀ x, V x →L[𝕜] V x)
     (hψ : ContMDiff (IB.prod 𝓘(𝕜, F)) (IB.prod 𝓘(𝕜, F)) n
       (fun p : TotalSpace F V ↦ TotalSpace.mk' F p.proj (ψ p.proj p.2))) :
-    ContMDiff IB 𝓘(𝕜) n (fun x ↦ (ψ x).det) :=
-  ((contMDiff_hom_bundle_iff (IB := IB) ψ).2 hψ).clm_bundle_det
+    ContMDiff IB 𝓘(𝕜) n (fun x ↦ (ψ x).det) := by
+  have : ∀ x, IsTopologicalAddGroup (V x) := VectorBundle.isTopologicalAddGroup 𝕜 F V
+  have : ∀ x, ContinuousSMul 𝕜 (V x) := VectorBundle.continuousSMul 𝕜 F V
+  exact ((contMDiff_hom_bundle_iff (IB := IB) ψ).2 hψ).clm_bundle_det
 
 /-- For a finite-rank vector bundle, a family of fibrewise endomorphisms is realized by a `C^n`
 automorphism of `TotalSpace F V` covering the identity if and only if its total-space map is `C^n`

@@ -341,10 +341,6 @@ theorem exists_bundleDiffeomorph_bundleTensorMap_orbitRelQuotientRec
         (MulAction.orbitRelQuotientRec
           (V := fun q ↦ V₁ q ⊗[𝕜] V₂ q →L[𝕜] V₁' q ⊗[𝕜] V₂' q)
           (bundleTensorMap φ₁ φ₂) (bundleTensorMap_smul_heq hφ₁ hφ₂) p.proj p.2) := by
-  let _ : ∀ q, IsTopologicalAddGroup (V₁ q ⊗[𝕜] V₂ q) := fun _ ↦ inferInstance
-  let _ : ∀ q, ContinuousSMul 𝕜 (V₁ q ⊗[𝕜] V₂ q) := fun _ ↦ inferInstance
-  let _ : ∀ q, IsTopologicalAddGroup (V₁' q ⊗[𝕜] V₂' q) := fun _ ↦ inferInstance
-  let _ : ∀ q, ContinuousSMul 𝕜 (V₁' q ⊗[𝕜] V₂' q) := fun _ ↦ inferInstance
   rw [exists_bundleDiffeomorph_iff]
   refine ⟨ContMDiff.totalSpaceMap_bundleTensorMap_orbitRelQuotientRec
     hφ₁ hφ₂ hm hφ₁_smooth hφ₂_smooth, fun q ↦ ?_⟩

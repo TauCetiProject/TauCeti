@@ -411,9 +411,7 @@ theorem bijective_precomp_dual_iff {x : B} (A : V₁ x →L[𝕜] V₂ x) :
 /-- In finite dimensions over a complete field, the fibrewise dual of `ψ : ∀ x, V₁ x →L[𝕜] V₂ x`
 underlies a `C^n` diffeomorphism of dual total spaces if and only if `ψ` underlies a `C^n`
 diffeomorphism of the original total spaces. -/
-theorem exists_bundleDiffeomorph_dualMap_iff
-    [∀ x, IsTopologicalAddGroup (V₁ x)] [∀ x, ContinuousSMul 𝕜 (V₁ x)]
-    (ψ : ∀ x, V₁ x →L[𝕜] V₂ x) :
+theorem exists_bundleDiffeomorph_dualMap_iff (ψ : ∀ x, V₁ x →L[𝕜] V₂ x) :
     (∃ Φ : TotalSpace (StrongDual 𝕜 F₂) (fun x ↦ StrongDual 𝕜 (V₂ x)) ≃ₘ^n⟮
         IB.prod 𝓘(𝕜, StrongDual 𝕜 F₂), IB.prod 𝓘(𝕜, StrongDual 𝕜 F₁)⟯
         TotalSpace (StrongDual 𝕜 F₁) (fun x ↦ StrongDual 𝕜 (V₁ x)),
@@ -421,8 +419,6 @@ theorem exists_bundleDiffeomorph_dualMap_iff
           p.proj (ContinuousLinearMap.precomp 𝕜 (ψ p.proj) p.2)) ↔
       ∃ Ψ : TotalSpace F₁ V₁ ≃ₘ^n⟮IB.prod 𝓘(𝕜, F₁), IB.prod 𝓘(𝕜, F₂)⟯ TotalSpace F₂ V₂,
         ⇑Ψ = fun p ↦ TotalSpace.mk' F₂ p.proj (ψ p.proj p.2) := by
-  let _ : ∀ x, IsTopologicalAddGroup (StrongDual 𝕜 (V₂ x)) := fun _ ↦ inferInstance
-  let _ : ∀ x, ContinuousSMul 𝕜 (StrongDual 𝕜 (V₂ x)) := fun _ ↦ inferInstance
   rw [exists_bundleDiffeomorph_iff (fun x ↦ (ContinuousLinearMap.precomp 𝕜 (ψ x) :
       StrongDual 𝕜 (V₂ x) →L[𝕜] StrongDual 𝕜 (V₁ x))),
     exists_bundleDiffeomorph_iff ψ, contMDiff_totalSpaceMap_dualMap_iff]

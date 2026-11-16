@@ -205,8 +205,7 @@ theorem contMDiff_totalSpaceMap_dualMap_orbitRelQuotientRec_iff (hm : m ≤ n) :
 /-- In finite dimensions over a complete field, the descended dual linear family underlies a `C^m`
 diffeomorphism of dual total spaces (`m ≤ n`) if and only if the primal family `φ` is a `C^m`
 section of the pulled-back Hom bundle and every upstairs fibre map `φ x` is bijective. -/
-theorem exists_bundleDiffeomorph_dualMap_orbitRelQuotientRec_iff
-    [∀ q, IsTopologicalAddGroup (V₁ q)] [∀ q, ContinuousSMul 𝕜 (V₁ q)] (hm : m ≤ n) :
+theorem exists_bundleDiffeomorph_dualMap_orbitRelQuotientRec_iff (hm : m ≤ n) :
     (∃ Φ : TotalSpace (StrongDual 𝕜 F₂) (fun q ↦ StrongDual 𝕜 (V₂ q)) ≃ₘ^m⟮
         I.prod 𝓘(𝕜, StrongDual 𝕜 F₂), I.prod 𝓘(𝕜, StrongDual 𝕜 F₁)⟯
         TotalSpace (StrongDual 𝕜 F₁) (fun q ↦ StrongDual 𝕜 (V₁ q)),
