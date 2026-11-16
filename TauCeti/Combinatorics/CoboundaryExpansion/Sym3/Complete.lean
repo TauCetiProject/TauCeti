@@ -34,7 +34,8 @@ with `3 N ≤ k D` and `0 < D`, and `h1_le_div` applies.
 ## References
 
 * Jeromie Beasley, *The Permutation Coboundary Constant of the Complete Complex Is k/3 for Every
-  k≥4*, Zenodo, doi:10.5281/zenodo.22090958, Corollary 7 and Theorem 8.
+  k≥4*, version 7, Zenodo, doi:10.5281/zenodo.23245792,
+  Proposition 5, Corollary 7 and Theorem 8.
 * D. N. Kozlov, *The first Cheeger constant of a simplex*, arXiv:1610.07136,
   Definition 3.2 (staircase graphs), Lemma 3.8 and Corollary 3.13 (cut-minimality).
 * Jeromie Beasley, `coboundary-k3-lean` (MIT), https://github.com/dicipler-pixel/coboundary-k3-lean,
@@ -50,8 +51,9 @@ namespace TauCeti
 
 namespace Sym3
 
-/-- The `k = 4` seed: `t12`, `t01`, `t02` on the edges `{1, 2}`, `{1, 3}`, `{2, 3}` and `1` on the
-other edges. -/
+/-- The `k = 4` seed of Proposition 5: `t12`, `t01`, `t02` on the ordered pairs `(1, 2)`,
+`(1, 3)`, `(2, 3)` and `1` on all other ordered pairs; it is read on `u < v` (via `Sym3.val` and
+`Cochain.ofLt`). -/
 private def w4 (u v : Fin 4) : S3 :=
   if u = 1 ∧ v = 2 then t12 else if u = 1 ∧ v = 3 then t01 else if u = 2 ∧ v = 3 then t02 else 1
 

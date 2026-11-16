@@ -28,8 +28,8 @@ cost of a `Sym(3)`-valued 1-cochain on the complete complex on `Fin k`, given by
 
 `Sym3.defect_ofLt` and `Sym3.cost_ofLt` identify them with `Cochain.defect` and `Cochain.cost` of
 the cochain `Cochain.ofLt (complete (Fin k)) α` under `movedNorm (Fin 3)`, so that bounds proved by
-finite computation or by counting transfer to the gauge distance and the Cheeger constant of
-`TauCeti.Cochain`.
+finite computation or by counting transfer to the gauge distance `Cochain.gaugeDist` and the
+Cheeger constant `TauCeti.h1`.
 
 `Sym3.cost_rep_ge` and `Sym3.defect_rep` are the two counts of balanced replication that the upper
 bound `h1 (complete V) (movedNorm (Fin 3)) ≤ card V / 3` needs.
@@ -37,7 +37,7 @@ bound `h1 (complete V) (movedNorm (Fin 3)) ≤ card V / 3` needs.
 ## References
 
 * Jeromie Beasley, *The Permutation Coboundary Constant of the Complete Complex Is k/3 for Every
-  k≥4*, Zenodo, doi:10.5281/zenodo.22090958, Lemma 6 and Corollary 7.
+  k≥4*, version 7, Zenodo, doi:10.5281/zenodo.23245792, Lemma 6 and Corollary 7.
 * Jeromie Beasley, `coboundary-k3-lean` (MIT), https://github.com/dicipler-pixel/coboundary-k3-lean,
   commit `7f5f2c6`: this file adapts the list-based counts of `CoboundaryK3/Basic.lean` and the
   balanced replication of `CoboundaryK3/Replication.lean`.
@@ -84,7 +84,7 @@ def triangles (k : ℕ) : List (Fin k × Fin k × Fin k) :=
   (List.finRange k).flatMap fun u => (List.finRange k).flatMap fun v =>
     ((List.finRange k).filter fun w => u < v ∧ v < w).map fun w => (u, v, w)
 
-/-- The value on an oriented pair, read on `u < v` and inverted on `u > v`. -/
+/-- The value on an oriented pair: `α u v` for `u < v` and `(α v u)⁻¹` for `v ≤ u`. -/
 def val (α : Fin k → Fin k → S3) (u v : Fin k) : S3 := if u < v then α u v else (α v u)⁻¹
 
 /-- The triangle defect: moved points of the holonomy, summed over triangles `u < v < w`. -/
