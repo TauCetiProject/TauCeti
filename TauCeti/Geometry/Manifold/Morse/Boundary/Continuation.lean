@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.Manifold.Morse.ConstantContinuation
-import TauCeti.Analysis.Calculus.Deriv.LevelCrossing
 import TauCeti.Geometry.Manifold.IntegralCurve.Prod
 
 /-!
@@ -54,9 +53,6 @@ is the identity**
 
 * `TauCeti.morseContinuationSlice`: the points on the level `t = 1 / 2` of the trajectories from
   `(p, 0)` to `(q, 1)`.
-* `IsMIntegralCurve.existsUnique_snd_eq`: such a trajectory crosses a level `t = c` with
-  `0 < c < 1`, such as `t = 1 / 2`, exactly once when the time component of the field is positive
-  there.
 * `TauCeti.morseContinuationCoeff`: the coefficient of `q` in the continuation of `p`.
 * `TauCeti.morseContinuationMap`: the mod-two continuation map.
 
@@ -108,36 +104,6 @@ theorem mem_morseContinuationSlice {p q x : M} :
       ∃ γ : ℝ → M × ℝ, IsMIntegralCurve γ V ∧ γ 0 = (x, 1 / 2) ∧
         Tendsto γ atBot (𝓝 (p, 0)) ∧ Tendsto γ atTop (𝓝 (q, 1)) :=
   Iff.rfl
-
-/-- **A continuation trajectory crosses a level exactly once.** If the time component of the
-vector field `V` on `M × ℝ` is positive on the level `t = c`, then an integral curve of `V` whose
-time component tends to `a < c` at `-∞` and to `b > c` at `+∞` meets this level at exactly one
-time. For `c = 1 / 2` between `0` and `1`, translating time, each trajectory from `(p, 0)` to
-`(q, 1)` passes through the middle level at time `0` in exactly one way, which is how
-`TauCeti.morseContinuationSlice` records it. -/
-theorem _root_.IsMIntegralCurve.existsUnique_snd_eq {γ : ℝ → M × ℝ} (hγ : IsMIntegralCurve γ V)
-    {a b c : ℝ} (hac : a < c) (hcb : c < b) (hV : ∀ x, 0 < (V (x, c) : E × ℝ).2)
-    (h₀ : Tendsto (fun s ↦ (γ s).2) atBot (𝓝 a)) (h₁ : Tendsto (fun s ↦ (γ s).2) atTop (𝓝 b)) :
-    ∃! s, (γ s).2 = c := by
-  have hd := hγ.hasDerivAt_snd
-  have hcont : Continuous fun s ↦ (γ s).2 :=
-    continuous_iff_continuousAt.2 fun s ↦ (hd s).continuousAt
-  -- On the level, the time component of `V`, the derivative of that of `γ`, is positive.
-  have hpos : ∀ z : M × ℝ, z.2 = c → 0 < (V z : E × ℝ).2 := by
-    rintro ⟨x, t⟩ (rfl : t = c)
-    exact hV x
-  obtain ⟨s₀, hs₀⟩ := (h₀.eventually (gt_mem_nhds hac)).exists
-  obtain ⟨s₁, hs₁⟩ := (h₁.eventually (lt_mem_nhds hcb)).exists
-  obtain ⟨s, hs⟩ := intermediate_value_univ s₀ s₁ hcont ⟨hs₀.le, hs₁.le⟩
-  refine ⟨s, hs, fun s' hs' ↦ ?_⟩
-  -- Two crossings would give a crossing downwards between them.
-  have hcross : ∀ {s₁ s₂ : ℝ}, s₁ < s₂ → (γ s₁).2 = c → (γ s₂).2 ≠ c :=
-    fun {s₁ s₂} h12 h₁ ↦ (lt_image_of_deriv_pos_boundary hcont.continuousOn
-      (fun t _ ht ↦ ⟨hd t, hpos (γ t) ht⟩) h₁.ge ⟨h12, le_rfl⟩).ne'
-  rcases lt_trichotomy s' s with h | h | h
-  · exact absurd hs (hcross h hs')
-  · exact h
-  · exact absurd hs' (hcross h hs)
 
 variable (f₀ f₁ V) in
 /-- The coefficient of the critical point `q` of `f₁` in the continuation of the critical point
