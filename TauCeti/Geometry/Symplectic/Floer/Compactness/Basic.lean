@@ -13,6 +13,7 @@ import Mathlib.Analysis.InnerProductSpace.EuclideanDist
 import Mathlib.MeasureTheory.Measure.Lebesgue.Complex
 import TauCeti.Analysis.Calculus.FDeriv.WithLp
 import TauCeti.Geometry.Symplectic.Floer.Graph
+import TauCeti.Geometry.Symplectic.Floer.Parameter
 import TauCeti.MeasureTheory.Integral.EnergyConcentration
 import TauCeti.MeasureTheory.Integral.WithLp
 import TauCeti.MeasureTheory.Measure.Lebesgue.VolumeOfBalls
@@ -288,82 +289,12 @@ second component of the map `z ↦ ((p, 0), u z)` into `(P × P) × V`, and this
 equation for the structure `(a, b) ↦ (-b, a)` on the parameter block, the structure `J_p` on `V`,
 and the one-form `X_p` with values in `V`. The parameter block has zero derivative, so the energy
 density is unchanged. The parameter block is doubled only so that it carries a linear complex
-structure. -/
+structure. The data adjoining the parameter are `TauCeti.Floer.parameterJ` and
+`TauCeti.Floer.parameterX`. -/
 
 open Function
 
 variable {P : Type*} [NormedAddCommGroup P] [InnerProductSpace ℝ P]
-
-/-- The standard complex structure `(a, b) ↦ (-b, a)` on `P × P`
-(`TauCeti.AlmostComplexStructure.product`), as a continuous linear map of the Euclidean product. -/
-private noncomputable def parameterStructure : WithLp 2 (P × P) →L[ℝ] WithLp 2 (P × P) :=
-  (WithLp.prodContinuousLinearEquiv 2 ℝ P P).symm.toContinuousLinearMap ∘L
-    ⟨(AlmostComplexStructure.product P).toLinearMap, continuous_snd.neg.prodMk continuous_fst⟩ ∘L
-    (WithLp.prodContinuousLinearEquiv 2 ℝ P P).toContinuousLinearMap
-
-private theorem parameterStructure_apply (ζ : WithLp 2 (P × P)) :
-    parameterStructure ζ = WithLp.toLp 2 (AlmostComplexStructure.product P ζ.ofLp) :=
-  (rfl)
-
-private theorem parameterStructure_parameterStructure (ζ : WithLp 2 (P × P)) :
-    parameterStructure (parameterStructure ζ) = -ζ := by
-  rw [parameterStructure_apply, parameterStructure_apply, WithLp.ofLp_toLp,
-    AlmostComplexStructure.apply_apply, WithLp.toLp_neg, WithLp.toLp_ofLp]
-
-/-- The point of `P × (ℂ × V)` read off from a point of `ℂ × ((P × P) × V)`: the first parameter
-coordinate, the domain point and the target point. -/
-private noncomputable def parameterPoint :
-    ℂ × WithLp 2 (WithLp 2 (P × P) × V) →L[ℝ] P × (ℂ × V) :=
-  (WithLp.fstL 2 ℝ P P ∘L WithLp.fstL 2 ℝ (WithLp 2 (P × P)) V ∘L snd ℝ ℂ _).prod
-    ((fst ℝ ℂ _).prod (WithLp.sndL 2 ℝ (WithLp 2 (P × P)) V ∘L snd ℝ ℂ _))
-
-@[simp]
-private theorem parameterPoint_apply (z : ℂ) (p q : P) (x : V) :
-    parameterPoint (z, WithLp.toLp 2 (WithLp.toLp 2 (p, q), x)) = (p, (z, x)) := by
-  simp [parameterPoint]
-
-/-- The almost complex structure on `(P × P) × V` adjoining the parameter. -/
-private noncomputable def parameterJ (J : P → ℂ × V → V →L[ℝ] V)
-    (q : ℂ × WithLp 2 (WithLp 2 (P × P) × V)) :
-    WithLp 2 (WithLp 2 (P × P) × V) →L[ℝ] WithLp 2 (WithLp 2 (P × P) × V) :=
-  (WithLp.prodContinuousLinearEquiv 2 ℝ (WithLp 2 (P × P)) V).symm.toContinuousLinearMap ∘L
-    (inl ℝ (WithLp 2 (P × P)) V ∘L parameterStructure ∘L fst ℝ _ V +
-      inr ℝ (WithLp 2 (P × P)) V ∘L uncurry J (parameterPoint q) ∘L snd ℝ _ V) ∘L
-    (WithLp.prodContinuousLinearEquiv 2 ℝ (WithLp 2 (P × P)) V).toContinuousLinearMap
-
-@[simp]
-private theorem parameterJ_apply (J : P → ℂ × V → V →L[ℝ] V)
-    (q : ℂ × WithLp 2 (WithLp 2 (P × P) × V)) (ζ : WithLp 2 (WithLp 2 (P × P) × V)) :
-    parameterJ J q ζ = WithLp.toLp 2 (parameterStructure ζ.fst,
-      uncurry J (parameterPoint q) ζ.snd) := by
-  simp [parameterJ, WithLp.ext_iff]
-
-/-- The Hamiltonian one-form on `(P × P) × V` adjoining the parameter. -/
-private noncomputable def parameterX (X : P → ℂ × V → ℂ →L[ℝ] V)
-    (q : ℂ × WithLp 2 (WithLp 2 (P × P) × V)) : ℂ →L[ℝ] WithLp 2 (WithLp 2 (P × P) × V) :=
-  (WithLp.prodContinuousLinearEquiv 2 ℝ (WithLp 2 (P × P)) V).symm.toContinuousLinearMap ∘L
-    inr ℝ (WithLp 2 (P × P)) V ∘L uncurry X (parameterPoint q)
-
-@[simp]
-private theorem parameterX_apply (X : P → ℂ × V → ℂ →L[ℝ] V)
-    (q : ℂ × WithLp 2 (WithLp 2 (P × P) × V)) (ξ : ℂ) :
-    parameterX X q ξ = WithLp.toLp 2 (0, uncurry X (parameterPoint q) ξ) := by
-  simp [parameterX]
-
-private theorem contDiffOn_parameterJ {J : P → ℂ × V → V →L[ℝ] V} {W : Set (P × (ℂ × V))}
-    (hJ : ContDiffOn ℝ 2 (uncurry J) W) : ContDiffOn ℝ 2 (parameterJ J) (parameterPoint ⁻¹' W) := by
-  have hJ' : ContDiffOn ℝ 2 (fun q ↦ uncurry J (parameterPoint q)) (parameterPoint ⁻¹' W) :=
-    hJ.comp (parameterPoint (P := P) (V := V)).contDiff.contDiffOn (mapsTo_preimage _ _)
-  unfold parameterJ
-  exact contDiffOn_const.clm_comp ((contDiffOn_const.add (contDiffOn_const.clm_comp
-    (hJ'.clm_comp contDiffOn_const))).clm_comp contDiffOn_const)
-
-private theorem contDiffOn_parameterX {X : P → ℂ × V → ℂ →L[ℝ] V} {W : Set (P × (ℂ × V))}
-    (hX : ContDiffOn ℝ 2 (uncurry X) W) : ContDiffOn ℝ 2 (parameterX X) (parameterPoint ⁻¹' W) := by
-  have hX' : ContDiffOn ℝ 2 (fun q ↦ uncurry X (parameterPoint q)) (parameterPoint ⁻¹' W) :=
-    hX.comp (parameterPoint (P := P) (V := V)).contDiff.contDiffOn (mapsTo_preimage _ _)
-  unfold parameterX
-  exact contDiffOn_const.clm_comp (contDiffOn_const.clm_comp hX')
 
 /-- The point `((p, 0), x)` of `(P × P) × V` adjoining the parameter `p` to the target point
 `x`. -/
@@ -849,7 +780,9 @@ end TauCeti.Floer
 
 namespace TauCeti.SymplecticForm
 
-variable {V : Type*} [NormedAddCommGroup V] [InnerProductSpace ℝ V] [FiniteDimensional ℝ V]
+section NormedSpace
+
+variable {V : Type*} [NormedAddCommGroup V] [NormedSpace ℝ V] [FiniteDimensional ℝ V]
   {Ks Kt : ℝ × ℝ → V → ℝ} {J : ℝ × ℝ → V → AlmostComplexStructure V}
 
 /-- In the complex coordinate `equivRealProdCLM`, the Floer equation `(du - X_K)^{0,1} = 0` at
@@ -872,6 +805,11 @@ theorem fderiv_comp_equivRealProdCLM_I_sub (ω : SymplecticForm V) {u : ℝ × �
   simpa only [fderiv_comp_equivRealProdCLM_one, fderiv_comp_equivRealProdCLM_I,
     ContinuousLinearMap.comp_apply, ContinuousLinearEquiv.coe_coe, equivRealProdCLM_one,
     equivRealProdCLM_I] using h'
+
+end NormedSpace
+
+variable {V : Type*} [NormedAddCommGroup V] [InnerProductSpace ℝ V] [FiniteDimensional ℝ V]
+  {Ks Kt : ℝ × ℝ → V → ℝ} {J : ℝ × ℝ → V → AlmostComplexStructure V}
 
 /-- **The energy density bounds the derivative uniformly over a compact parameter window.** Let
 `J_p(z, x)` be continuous and tamed by `ω`, and `X_{K_{s,p}}(z, x)` continuous, for `(p, z, x)` in

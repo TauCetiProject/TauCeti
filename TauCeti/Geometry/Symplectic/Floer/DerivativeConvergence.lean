@@ -7,8 +7,11 @@ module
 
 public import TauCeti.Analysis.Calculus.Equicontinuity
 public import TauCeti.Analysis.Complex.Wirtinger.SecondDerivative
+import Mathlib.Analysis.Calculus.ContDiff.WithLp
 import TauCeti.Analysis.Calculus.FDeriv.Prod
+import TauCeti.Analysis.Calculus.FDeriv.WithLp
 import TauCeti.Geometry.Symplectic.Complex.Module.Conjugacy
+import TauCeti.Geometry.Symplectic.Floer.Parameter
 import TauCeti.Topology.UniformSpace.Equicontinuity
 
 /-!
@@ -312,57 +315,16 @@ theorem tendstoLocallyUniformlyOn_fderiv_of_floer {J : ℂ × V → V →L[ℝ] 
 /-! ### Converging parameters
 
 Let the data `J_p` and `X_p` depend on a parameter `p`. Adjoin the parameter to the target as a
-constant coordinate: a solution `u` for the parameter `p` is the solution `z ↦ ((p, 0), u z)` of the
-equation on `(P × P) × V` for the structure `(a, b) ↦ (-b, a)` on the parameter block, the structure
-`J_p` on `V`, and the one-form `X_p` with values in `V`. The parameter block has zero derivative and
-solves its equation trivially; it is doubled only so that it carries a linear complex structure.
-The theorem for a single datum then applies on `(P × P) × V`. -/
+constant coordinate: a solution `u` for the parameter `p` is the second component of the solution
+`z ↦ ((p, 0), u z)` of the equation on `(P × P) × V` for the data `TauCeti.Floer.parameterJ` and
+`TauCeti.Floer.parameterX`. The parameter block has zero derivative and solves its equation
+trivially. The theorem for a single datum then applies on `(P × P) × V`. -/
 
 section Parameter
 
 open Function
 
-variable {P : Type*} [NormedAddCommGroup P] [NormedSpace ℝ P]
-
-/-- The complex structure `(a, b) ↦ (-b, a)` on `P × P`. -/
-private noncomputable def parameterStructure : P × P →L[ℝ] P × P :=
-  (-ContinuousLinearMap.snd ℝ P P).prod (ContinuousLinearMap.fst ℝ P P)
-
-/-- The point of `P × (ℂ × V)` read off from a point of `ℂ × ((P × P) × V)`. -/
-private noncomputable def parameterPoint : ℂ × ((P × P) × V) →L[ℝ] P × (ℂ × V) :=
-  ((ContinuousLinearMap.fst ℝ P P).comp ((ContinuousLinearMap.fst ℝ (P × P) V).comp
-    (ContinuousLinearMap.snd ℝ ℂ _))).prod
-    ((ContinuousLinearMap.fst ℝ ℂ _).prod ((ContinuousLinearMap.snd ℝ (P × P) V).comp
-      (ContinuousLinearMap.snd ℝ ℂ _)))
-
-omit [FiniteDimensional ℝ V] in
-private theorem parameterPoint_apply (q : ℂ × ((P × P) × V)) :
-    parameterPoint q = (q.2.1.1, (q.1, q.2.2)) := rfl
-
-/-- The almost complex structure on `(P × P) × V` adjoining the parameter. -/
-private noncomputable def parameterJ (J : P → ℂ × V → V →L[ℝ] V) (q : ℂ × ((P × P) × V)) :
-    (P × P) × V →L[ℝ] (P × P) × V :=
-  (parameterStructure (P := P)).prodMap (uncurry J (parameterPoint q))
-
-/-- The Hamiltonian one-form on `(P × P) × V` adjoining the parameter. -/
-private noncomputable def parameterX (X : P → ℂ × V → ℂ →L[ℝ] V) (q : ℂ × ((P × P) × V)) :
-    ℂ →L[ℝ] (P × P) × V :=
-  ContinuousLinearMap.inr ℝ (P × P) V ∘L uncurry X (parameterPoint q)
-
-omit [FiniteDimensional ℝ V] in
-private theorem contDiffOn_parameterJ {J : P → ℂ × V → V →L[ℝ] V} {W : Set (P × (ℂ × V))}
-    (hJ : ContDiffOn ℝ 1 (uncurry J) W) : ContDiffOn ℝ 1 (parameterJ J) (parameterPoint ⁻¹' W) :=
-  (ContinuousLinearMap.prodMapL ℝ (P × P) (P × P) V V).contDiff.comp_contDiffOn
-    (contDiffOn_const.prodMk (hJ.comp (parameterPoint (P := P) (V := V)).contDiff.contDiffOn
-      (mapsTo_preimage _ _)))
-
-omit [FiniteDimensional ℝ V] in
-private theorem contDiffOn_parameterX {X : P → ℂ × V → ℂ →L[ℝ] V} {W : Set (P × (ℂ × V))}
-    (hX : ContDiffOn ℝ 1 (uncurry X) W) : ContDiffOn ℝ 1 (parameterX X) (parameterPoint ⁻¹' W) :=
-  contDiffOn_const.clm_comp
-    (hX.comp (parameterPoint (P := P) (V := V)).contDiff.contDiffOn (mapsTo_preimage _ _))
-
-variable [FiniteDimensional ℝ P]
+variable {P : Type*} [NormedAddCommGroup P] [NormedSpace ℝ P] [FiniteDimensional ℝ P]
 
 /-- **The derivatives of Floer solutions with converging parameters converge.** Let `J_p` and
 `X_p` depend on a parameter `p` in a finite-dimensional real normed space `P`, jointly `C¹` on an
@@ -386,46 +348,40 @@ theorem tendstoLocallyUniformlyOn_fderiv_of_floer_of_tendsto {J : P → ℂ × V
       ∀ y ∈ Ω, fderiv ℝ v y I - X p₀ (y, v y) I =
         J p₀ (y, v y) (fderiv ℝ v y 1 - X p₀ (y, v y) 1) := by
   -- Adjoin the parameter to the target as the constant coordinate `(p n, 0)`.
-  set u' : ℕ → ℂ → (P × P) × V := fun n y ↦ ((p n, 0), u n y)
-  set v' : ℂ → (P × P) × V := fun y ↦ ((p₀, 0), v y)
-  have hd (n : ℕ) {y : ℂ} (hy : y ∈ Ω) :
-      fderiv ℝ (u' n) y = ContinuousLinearMap.inr ℝ (P × P) V ∘L fderiv ℝ (u n) y := by
-    have hdu : DifferentiableAt ℝ (u n) y :=
-      ((hu n).differentiableOn (by simp) y hy).differentiableAt (hΩ.mem_nhds hy)
-    rw [DifferentiableAt.fderiv_prodMk (differentiableAt_const _) hdu, fderiv_const_apply]
-    ext <;> simp
-  have hsq (ζ : P × P) : parameterStructure (parameterStructure ζ) = -ζ := by
-    simp [parameterStructure, Prod.ext_iff]
+  set u' : ℕ → ℂ → WithLp 2 (WithLp 2 (P × P) × V) :=
+    fun n y ↦ WithLp.toLp 2 (WithLp.toLp 2 (p n, 0), u n y)
+  set v' : ℂ → WithLp 2 (WithLp 2 (P × P) × V) :=
+    fun y ↦ WithLp.toLp 2 (WithLp.toLp 2 (p₀, 0), v y)
+  have hcont := WithLp.prod_continuous_toLp 2 (WithLp 2 (P × P)) V
   obtain ⟨hv', hconv', heq'⟩ := tendstoLocallyUniformlyOn_fderiv_of_floer
     (J := parameterJ J) (X := parameterX X) (W := parameterPoint ⁻¹' W)
-    (hW.preimage parameterPoint.continuous) (contDiffOn_parameterJ hJ) (contDiffOn_parameterX hX)
-    hΩ (u := u') (v := v') (fun y hy ↦ hvW y hy)
-    (fun n ↦ contDiffOn_const.prodMk (hu n))
+    (hW.preimage (parameterPoint (P := P) (V := V)).continuous) (contDiffOn_parameterJ hJ)
+    (contDiffOn_parameterX hX) hΩ (u := u') (v := v') (fun y hy ↦ by simpa [v'] using hvW y hy)
+    (fun n ↦ WithLp.contDiff_toLp.comp_contDiffOn (contDiffOn_const.prodMk (hu n)))
     (fun n y hy w ↦ by
-      simp [parameterJ, parameterPoint_apply, hsq, u', hJsq n y hy, Prod.ext_iff])
-    (fun n y hy ↦ by
-      simp [hd n hy, parameterJ, parameterX, parameterPoint_apply, u', hCR n y hy])
+      simp [u', WithLp.ext_iff, Prod.ext_iff, parameterStructure_parameterStructure, hJsq n y hy])
+    (fun n y hy ↦ by simp [u', WithLp.ext_iff, hCR n y hy])
     (fun C hC hCΩ ↦ by
       obtain ⟨M, hM⟩ := hbd C hC hCΩ
-      refine ⟨‖ContinuousLinearMap.inr ℝ (P × P) V‖ * M, fun n y hy ↦ ?_⟩
-      rw [hd n (hCΩ hy)]
-      exact (ContinuousLinearMap.opNorm_comp_le _ _).trans
-        (mul_le_mul_of_nonneg_left (hM n y hy) (norm_nonneg _)))
-    (fun y hy ↦ (hp.prodMk_nhds tendsto_const_nhds).prodMk_nhds (hlim y hy))
+      refine ⟨M, fun n y hy ↦
+        (ContinuousLinearMap.opNorm_le_bound _ (norm_nonneg _) fun w ↦ ?_).trans (hM n y hy)⟩
+      simpa [u', WithLp.norm_toLp_snd] using (fderiv ℝ (u n) y).le_opNorm w)
+    (fun y hy ↦ (hcont.tendsto _).comp ((((WithLp.prod_continuous_toLp 2 P P).tendsto _).comp
+      (hp.prodMk_nhds tendsto_const_nhds)).prodMk_nhds (hlim y hy)))
   -- Read the conclusions off the second component.
-  set S := ContinuousLinearMap.snd ℝ (P × P) V
+  set S := WithLp.sndL 2 ℝ (WithLp 2 (P × P)) V
   have hdv (y : ℂ) (hy : y ∈ Ω) : fderiv ℝ v y = S ∘L fderiv ℝ v' y :=
-    (((hv'.differentiableOn one_ne_zero y hy).differentiableAt
-      (hΩ.mem_nhds hy)).hasFDerivAt.snd).fderiv
-  have hdu (n : ℕ) (y : ℂ) (hy : y ∈ Ω) : fderiv ℝ (u n) y = S ∘L fderiv ℝ (u' n) y := by
-    rw [hd n hy]
-    ext; simp [S]
-  refine ⟨contDiff_snd.comp_contDiffOn hv', ?_, fun y hy ↦ ?_⟩
-  · exact (((ContinuousLinearMap.compL ℝ ℂ ((P × P) × V) V S).uniformContinuous
-      |>.comp_tendstoLocallyUniformlyOn hconv').congr fun n y hy ↦
-        (hdu n y hy).symm).congr_right fun y hy ↦ (hdv y hy).symm
+    (S.hasFDerivAt.comp y ((hv'.differentiableOn one_ne_zero y hy).differentiableAt
+      (hΩ.mem_nhds hy)).hasFDerivAt).fderiv
+  have hdu (n : ℕ) (y : ℂ) : fderiv ℝ (u n) y = S ∘L fderiv ℝ (u' n) y := by
+    ext w
+    simp [S, u']
+  refine ⟨S.contDiff.comp_contDiffOn hv', ?_, fun y hy ↦ ?_⟩
+  · exact (((ContinuousLinearMap.compL ℝ ℂ _ V S).uniformContinuous
+      |>.comp_tendstoLocallyUniformlyOn hconv').congr fun n y _ ↦
+        (hdu n y).symm).congr_right fun y hy ↦ (hdv y hy).symm
   · have h := congrArg S (heq' y hy)
-    simpa [hdv y hy, parameterJ, parameterX, parameterPoint_apply, v', S] using h
+    simpa [v', S] using h
 
 end Parameter
 

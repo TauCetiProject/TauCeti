@@ -14,10 +14,10 @@ import TauCeti.Topology.ContinuousMap.Ascoli
 /-!
 # The bubble at a point where Floer solutions blow up
 
-Let `(V, ω)` be a finite-dimensional symplectic vector space with an inner product, and let `uᵢ`
-be smooth solutions of the Floer equation `(du - X_K)^{0,1} = 0` on an open set `U ⊆ ℝ × ℝ`, for a
-`C²` perturbation `K = K_s ds + K_t dt` and a `C¹` family `J(z, x)` of almost complex structures,
-with values in a compact set `K ⊆ V`. Suppose that their derivatives blow up along points
+Let `(V, ω)` be a finite-dimensional symplectic vector space, and let `uᵢ` be smooth solutions of
+the Floer equation `(du - X_H)^{0,1} = 0` on an open set `U ⊆ ℝ × ℝ`, for a `C²` perturbation
+`H = K_s ds + K_t dt` and a `C¹` family `J(z, x)` of almost complex structures, with values in a
+compact set `K ⊆ V`. Suppose that their derivatives blow up along points
 `zᵢ → z₀ ∈ U`. Hofer's lemma
 (`TauCeti.SymplecticForm.exists_rescale_isComplexLinearMap_perturbedFDeriv`) gives centres
 `cᵢ → z₀`, scales `εᵢ → 0` and radii `Rᵢ → ∞` such that the rescaled maps
@@ -37,11 +37,10 @@ The convergence comes in two steps.
 
 * **Values.** The rescaled maps are `2`-Lipschitz on the squares `‖w‖ ≤ Rᵢ` and take values in the
   compact set `K`, so the Arzelà–Ascoli theorem gives a subsequence converging locally uniformly on
-  the plane (`TauCeti.exists_subseq_tendstoLocallyUniformly_of_lipschitzOnWith`, applied after
-  clamping the second coordinate).
+  the plane (`TauCeti.exists_subseq_tendstoLocallyUniformly_of_lipschitzOnWith_closedBall`).
 * **Derivatives.** In the complex coordinate `Complex.equivRealProdCLM` the rescaled maps solve the
   coordinate Floer equation for data depending on the parameter `(εᵢ, cᵢ)`: the structure
-  `J(c + ε w, x)` and the Hamiltonian one-form of `ε K(c + ε w)`. These data are jointly `C¹` in the
+  `J(c + ε w, x)` and the Hamiltonian one-form of `ε H(c + ε w)`. These data are jointly `C¹` in the
   parameter, the domain point and the target point, and the parameters converge to `(0, z₀)`. So
   the derivatives converge on every disc
   (`TauCeti.Floer.tendstoLocallyUniformlyOn_fderiv_of_floer_of_tendsto`), and hence locally
@@ -70,7 +69,7 @@ namespace TauCeti.SymplecticForm
 
 open Floer
 
-variable {V : Type*} [NormedAddCommGroup V] [InnerProductSpace ℝ V] [FiniteDimensional ℝ V]
+variable {V : Type*} [NormedAddCommGroup V] [NormedSpace ℝ V] [FiniteDimensional ℝ V]
   {Ks Kt : ℝ × ℝ → V → ℝ} {J : ℝ × ℝ → V → AlmostComplexStructure V} {U : Set (ℝ × ℝ)}
   {K : Set V} {z₀ : ℝ × ℝ} {u : ℕ → ℝ × ℝ → V} {c : ℕ → ℝ × ℝ} {ε R : ℕ → ℝ}
 
@@ -96,34 +95,9 @@ private theorem exists_strictMono_tendstoLocallyUniformly_rescale (hU : IsOpen U
           (mem_closedBall_zero_iff.1 hw)).1)).comp w (by fun_prop)) fun w hw ↦ by
         rw [← NNReal.coe_le_coe, coe_nnNorm, NNReal.coe_ofNat]
         exact (hRw i w (mem_closedBall_zero_iff.1 hw)).2
-  -- Clamping the second coordinate to `[-R i, R i]` maps the band `|s| ≤ R i` into the square,
-  -- and fixes the points of the square.
-  set cl : ℕ → ℝ × ℝ → ℝ × ℝ := fun i y ↦ (y.1, max (-R i) (min y.2 (R i))) with hcl_def
-  have hcl (i : ℕ) : LipschitzWith 1 (cl i) := by
-    simpa using LipschitzWith.prod_fst.prodMk
-      ((LipschitzWith.prod_snd.min_const (R i)).const_max (-R i))
-  have hclmaps (i : ℕ) : MapsTo (cl i) (Icc (-R i) (R i) ×ˢ univ) (closedBall 0 (R i)) := by
-    rintro y ⟨hy, -⟩
-    rw [mem_closedBall_zero_iff, Prod.norm_def, Real.norm_eq_abs, Real.norm_eq_abs]
-    exact max_le (abs_le.2 hy) (abs_le.2 ⟨le_max_left _ _,
-      max_le (by linarith [hR0 i]) (min_le_right _ _)⟩)
-  have hcl_eq {i : ℕ} {y : ℝ × ℝ} (hy : ‖y‖ ≤ R i) : cl i y = y := by
-    have h2 : |y.2| ≤ R i := (Real.norm_eq_abs _ ▸ norm_snd_le y).trans hy
-    simp only [hcl_def]
-    rw [min_eq_left (abs_le.1 h2).2, max_eq_right (abs_le.1 h2).1]
-  obtain ⟨φ, hφ, g, hg⟩ := exists_subseq_tendstoLocallyUniformly_of_lipschitzOnWith hK
-    (w := fun i ↦ v i ∘ cl i) (L := 2) hR0 hR
-    (fun i ↦ by simpa using (hlip i).comp (hcl i).lipschitzOnWith (hclmaps i))
-    (fun i y hy ↦ huK i (hRw i _ (mem_closedBall_zero_iff.1 (hclmaps i hy))).1)
-  refine ⟨φ, hφ, g, ?_⟩
-  -- On every compact set the clamping is eventually the identity.
-  rw [tendstoLocallyUniformly_iff_forall_isCompact]
-  intro C hC
-  obtain ⟨ρ, hρ⟩ := hC.isBounded.subset_closedBall 0
-  refine ((tendstoLocallyUniformly_iff_forall_isCompact.1 hg) C hC).congr ?_
-  filter_upwards [(hR.comp hφ.tendsto_atTop).eventually_ge_atTop ρ] with n hn y hy
-  simp only [comp_apply]
-  rw [hcl_eq ((mem_closedBall_zero_iff.1 (hρ hy)).trans hn)]
+  obtain ⟨φ, hφ, g, hg⟩ := exists_subseq_tendstoLocallyUniformly_of_lipschitzOnWith_closedBall hK
+    hR0 hR hlip fun i w hw ↦ huK i (hRw i w (mem_closedBall_zero_iff.1 hw)).1
+  exact ⟨φ, hφ, g, hg⟩
 
 /-- In the complex coordinate the rescaled maps solve, on a disc of radius `ρ`, the coordinate
 Floer equation for data depending jointly `C¹` on the parameter `(εᵢ, cᵢ) → (0, z₀)`. So if they
@@ -253,8 +227,9 @@ private theorem contDiff_and_tendstoLocallyUniformly_fderiv_rescale (ω : Symple
   simpa only [comp_def] using h
 
 /-- **The bubble at a point where Floer solutions blow up.** Let `uᵢ` be smooth solutions of the
-Floer equation `(du - X_K)^{0,1} = 0` on an open set `U ⊆ ℝ × ℝ`, for a `C²` perturbation `K` and
-a `C¹` family `J(z, x)` of almost complex structures, with values in a compact set `K`, and let
+Floer equation `(du - X_H)^{0,1} = 0` on an open set `U ⊆ ℝ × ℝ`, for a `C²` perturbation
+`H = K_s ds + K_t dt` and a `C¹` family `J(z, x)` of almost complex structures, with values in a
+compact set `K`, and let
 their derivatives blow up along points `zᵢ → z₀ ∈ U`. There are a subsequence `φ`, centres
 `cₙ → z₀` and positive scales `εₙ → 0`, and a `C¹` map `v` from the plane to `K`, such that:
 
