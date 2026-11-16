@@ -9,6 +9,9 @@ public import TauCeti.Analysis.Normed.Operator.ExteriorPowerCoords
 public import TauCeti.Topology.VectorBundle.FiniteRank.CoordinateFunctor
 public import TauCeti.Topology.VectorBundle.FiniteRank.Monoidal
 
+import TauCeti.CategoryTheory.EqToHom
+import TauCeti.CategoryTheory.Monoidal.EqToHom
+
 /-!
 # Exterior powers of finite-rank bundle cores
 
@@ -588,14 +591,16 @@ theorem detWhitneySumIso_hom (A D : FiniteRankBundleCore 𝕜 B) :
       eqToHom (det_whitneySum A D) ≫
         exteriorPowerWhitneyProj A D A.rank D.rank (A.rank + D.rank) ≫
         (eqToHom (det_def A).symm ⊗ₘ eqToHom (det_def D).symm) := by
-  simp [detWhitneySumIso]
+  simp only [detWhitneySumIso, Iso.trans_hom, eqToIso.hom, exteriorPowerTopWhitneySumIso_hom,
+    tensorIso_hom]
 
 theorem detWhitneySumIso_inv (A D : FiniteRankBundleCore 𝕜 B) :
     (detWhitneySumIso A D).inv =
       (eqToHom (det_def A) ⊗ₘ eqToHom (det_def D)) ≫
         exteriorPowerWhitneyIncl A D A.rank D.rank (A.rank + D.rank) rfl ≫
         eqToHom (det_whitneySum A D).symm := by
-  simp [detWhitneySumIso]
+  simp only [detWhitneySumIso, Iso.trans_inv, tensorIso_inv, eqToIso.inv,
+    exteriorPowerTopWhitneySumIso_inv, Category.assoc]
 
 /-! ### Degree two and the line-bundle cross term -/
 
@@ -1021,20 +1026,6 @@ private theorem fiberMap_exteriorPowerTwoWhitneySumIso_hom
               (fiberMap_exteriorPowerLeftZeroTensorIso_hom A _ x)
               (fiberMap_exteriorPowerWhitneyProj A D 0 2 2 x)))
 
-private theorem tensorIso_eqToIso {C : Type*} [Category* C] [MonoidalCategory C]
-    {X₁ X₂ Y₁ Y₂ : C} (hX : X₁ = X₂) (hY : Y₁ = Y₂) :
-    eqToIso hX ⊗ᵢ eqToIso hY = eqToIso congr($hX ⊗ $hY) := by
-  subst hX hY
-  ext
-  simp
-
-private theorem eqToIso_conj_trans {C : Type*} [Category* C] {W X Y Z V U : C}
-    (h₁ : W = X) (h₂ : X = Y) (e : Y ≅ Z) (h₃ : Z = V) (h₄ : V = U) :
-    eqToIso (h₁.trans h₂) ≪≫ e ≪≫ eqToIso (h₃.trans h₄) =
-      eqToIso h₁ ≪≫ (eqToIso h₂ ≪≫ e ≪≫ eqToIso h₃) ≪≫ eqToIso h₄ := by
-  subst h₁ h₂ h₃ h₄
-  simp
-
 /-- Pulling back `detWhitneySumIso` identifies with `detWhitneySumIso` of the pullbacks across
 `pullback_det`. -/
 theorem pullbackFunctor_mapIso_detWhitneySumIso
@@ -1042,23 +1033,10 @@ theorem pullbackFunctor_mapIso_detWhitneySumIso
     (pullbackFunctor φ).mapIso (detWhitneySumIso A D) =
       eqToIso (pullback_det (whitneySum A D) φ) ≪≫
         detWhitneySumIso (A.pullback φ) (D.pullback φ) ≪≫
-        (eqToIso (pullback_det A φ).symm ⊗ᵢ eqToIso (pullback_det D φ).symm) :=
-  ((Functor.mapIso_trans (pullbackFunctor φ) (eqToIso (det_whitneySum A D)) _).trans
-    (congrArg₂ Iso.trans (eqToIso_map (pullbackFunctor φ) (det_whitneySum A D))
-      ((Functor.mapIso_trans (pullbackFunctor φ) (exteriorPowerTopWhitneySumIso A D) _).trans
-        (congrArg₂ Iso.trans (pullbackFunctor_mapIso_exteriorPowerTopWhitneySumIso A D φ)
-          ((congrArg (pullbackFunctor φ).mapIso
-              (tensorIso_eqToIso (det_def A).symm (det_def D).symm)).trans
-            (eqToIso_map (pullbackFunctor φ) _)))))).trans <|
-    (eqToIso_conj_trans (pullback_det (whitneySum A D) φ)
-      (det_whitneySum (A.pullback φ) (D.pullback φ))
-      (exteriorPowerTopWhitneySumIso (A.pullback φ) (D.pullback φ))
-      congr($((det_def (A.pullback φ)).symm) ⊗ $((det_def (D.pullback φ)).symm))
-      congr($((pullback_det A φ).symm) ⊗ $((pullback_det D φ).symm))).trans <|
-      congrArg (_ ≪≫ ·) <| congrArg₂ Iso.trans
-        (congrArg (_ ≪≫ ·) <| congrArg (_ ≪≫ ·)
-          (tensorIso_eqToIso (det_def (A.pullback φ)).symm (det_def (D.pullback φ)).symm).symm)
-        (tensorIso_eqToIso (pullback_det A φ).symm (pullback_det D φ).symm).symm
+        (eqToIso (pullback_det A φ).symm ⊗ᵢ eqToIso (pullback_det D φ).symm) := by
+  simp only [detWhitneySumIso, eqToIso_tensorIso_eqToIso, Functor.mapIso_trans, eqToIso_map,
+    pullbackFunctor_mapIso_exteriorPowerTopWhitneySumIso]
+  exact eqToIso_conjugate_trans _ _ _ _ _
 
 /-- Pulling back commutes strictly with `exteriorPowerTwoWhitneySumIso`. -/
 @[simp]
