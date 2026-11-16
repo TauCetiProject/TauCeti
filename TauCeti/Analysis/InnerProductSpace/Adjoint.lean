@@ -57,6 +57,9 @@ Compression is its inverse on this corner, and extension preserves composition a
 * `ContinuousLinearMap.adjointCompL`, `ContinuousLinearMap.compAdjointL`: the real-bilinear
   continuous maps `(S, T) ↦ S† ∘ T` and `(T, S) ↦ S ∘ T†`.
 
+On such Hilbert spaces the adjoint commutes with real scalars as well
+(`ContinuousLinearMap.starModule_real`).
+
 ## Further results
 
 Two families of adjoints of linear maps between finite-dimensional inner product spaces:
@@ -200,6 +203,12 @@ theorem adjointRealCLM_apply (T : V →L[𝕜] W) : adjointRealCLM T = adjoint T
   rw [adjointRealCLM, ContinuousLinearEquiv.coe_coe,
     LinearIsometryEquiv.coe_toContinuousLinearEquiv,
     IsometryEquiv.coe_toRealLinearIsometryEquivOfMapZero, LinearIsometryEquiv.coe_toIsometryEquiv]
+
+/-- Real scalars act on operators through `𝕜`, so they commute with adjoints. Mathlib records
+only `StarModule 𝕜` here. -/
+instance starModule_real : StarModule ℝ (V →L[𝕜] V) := ⟨fun r a ↦ by
+  simp only [RCLike.real_smul_eq_coe_smul (K := 𝕜), star_smul, RCLike.star_def,
+    RCLike.conj_ofReal, star_trivial]⟩
 
 end RealAdjoint
 

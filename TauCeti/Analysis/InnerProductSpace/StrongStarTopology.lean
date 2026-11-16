@@ -33,7 +33,8 @@ topology. On normal operators the comparison with the strong operator topology i
 converge strongly to a normal operator `A`, then `Aᵢ† → A†` strongly as well
 (`ContinuousLinearMap.tendsto_adjoint_apply_of_isStarNormal`). In particular strong and
 strong-star convergence agree for nets of self-adjoint or of unitary operators with a limit of
-the same kind.
+the same kind, and a set of normal operators whose strong operator closure consists of normal
+operators has the same strong-star closure (`closure_image_ofCLM_eq_of_isStarNormal`).
 
 ## Implementation notes
 
@@ -474,6 +475,27 @@ theorem mem_closure_iff_of_isStarNormal {s : Set (ContinuousLinearMapStrongStar 
     Set.inter_eq_left.2 (Set.subset_insert A s),
     Set.domRestrict_apply] at h
   exact Iff.of_eq h
+
+/-- **Agreement of closures on normal operators.** If the strong operator closure of a set `s` of
+normal operators is a set `t` of normal operators, then `t` is also the strong-star closure
+of `s`. -/
+theorem closure_image_ofCLM_eq_of_isStarNormal {s t : Set (E →L[𝕜] E)}
+    (hs : ∀ x ∈ s, IsStarNormal x) (ht : ∀ x ∈ t, IsStarNormal x)
+    (h : closure (ContinuousLinearMap.toPointwiseConvergenceCLM 𝕜 (RingHom.id 𝕜) E E '' s) =
+      ContinuousLinearMap.toPointwiseConvergenceCLM 𝕜 (RingHom.id 𝕜) E E '' t) :
+    closure (ofCLM '' s) = ofCLM '' t := by
+  have hs' : ∀ B ∈ ofCLM '' s, IsStarNormal B.toCLM := by
+    rintro _ ⟨b, hb, rfl⟩
+    exact hs b hb
+  ext A
+  obtain ⟨x, rfl⟩ : ∃ x, ofCLM x = A := ⟨A.toCLM, ofCLM_toCLM A⟩
+  rw [ofCLM_injective.mem_set_image]
+  refine ⟨fun hx ↦ ?_, fun hx ↦ ?_⟩
+  · have := mem_closure_image continuous_toPointwiseConvergenceCLM.continuousAt hx
+    rw [Set.image_image, h] at this
+    exact ContinuousLinearMap.toPointwiseConvergenceCLM_injective.mem_set_image.mp this
+  · rw [mem_closure_iff_of_isStarNormal hs' (ht x hx), Set.image_image, h]
+    exact ⟨x, hx, rfl⟩
 
 end Normal
 
