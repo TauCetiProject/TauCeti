@@ -43,6 +43,8 @@ every `v : E` has the complex coordinates `⟪b j, v⟫`:
   empty type is trivial.
 * `OrthonormalBasis.repr_apply_of_eigenbasis`: in an orthonormal eigenbasis of a linear map `S`,
   the coordinates of `S x` are those of `x` scaled by the eigenvalues.
+* `OrthonormalBasis.toBasis_equiv_refl`: for two finite orthonormal bases over the same index type,
+  `Basis.equiv` along `Equiv.refl` agrees with `d₀.repr.trans c.repr.symm`.
 * `TauCeti.exists_linearIsometryEquiv_inner_eq_norm_mul_eval`: for a vector `v` and a prescribed
   coordinate `i`, there is a linear isometry equivalence `f` with
   `⟪v, x⟫ = ‖v‖ * f x i` for all `x`.
@@ -109,6 +111,16 @@ theorem repr_apply_of_eigenbasis (b : OrthonormalBasis ι 𝕜 E) (S : E →ₗ[
   classical
   conv_lhs => rw [← b.sum_repr x]
   simp [map_sum, hb, smul_smul, mul_comm, Pi.single_apply]
+
+/-- For two orthonormal bases indexed by the same finite type, the algebraic `Basis.equiv` along
+`Equiv.refl ι` coincides with `d₀.repr.trans c.repr.symm`. -/
+theorem toBasis_equiv_refl {F : Type*} [NormedAddCommGroup F] [InnerProductSpace 𝕜 F]
+    (d₀ : OrthonormalBasis ι 𝕜 E) (c : OrthonormalBasis ι 𝕜 F) :
+    d₀.toBasis.equiv c.toBasis (Equiv.refl ι) = (d₀.repr.trans c.repr.symm).toLinearEquiv := by
+  classical
+  refine LinearEquiv.toLinearMap_injective (d₀.toBasis.ext fun i ↦ ?_)
+  rw [LinearEquiv.coe_coe, Module.Basis.equiv_apply]
+  simp
 
 end OrthonormalBasis
 

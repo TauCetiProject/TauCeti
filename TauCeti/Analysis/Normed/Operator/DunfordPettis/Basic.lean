@@ -115,6 +115,7 @@ theorem isDunfordPettis_iff_seqContinuous {T : E →L[𝕜] F} :
   · simpa [Function.comp_def] using hT hx
 
 /-- The zero operator is Dunford–Pettis. -/
+@[simp]
 theorem isDunfordPettis_zero : (0 : E →L[𝕜] F).IsDunfordPettis := fun _ _ _ ↦ by
   simpa using tendsto_const_nhds
 

@@ -123,6 +123,10 @@ spanning the matched subalgebra are generators.
   `a(ρ, h)` is the matched subalgebra.
 * `TauCeti.StrandsAlgebra.differential_mem_matchedAlgebra`: the algebra of a matching is closed
   under the differential.
+* `TauCeti.StrandsAlgebra.repr_matchedIdem_apply_idOn`: the coefficient of `I(s)` at the identity
+  diagram of a set of points over `s` is `1`.
+* `TauCeti.StrandsAlgebra.repr_apply_idOn_eq`: an element of the matched subalgebra takes the same
+  value at the identity diagrams of any two sets of points over the same pairs.
 
 ## References
 
@@ -1268,6 +1272,32 @@ theorem differential_mem_matchedAlgebra {x : StrandsAlgebra R α} (hx : x ∈ ma
   exact differential_mem_matchedSubalgebra hx
 
 end Span
+
+/-! ### The idempotents `I(s)` and the identity diagrams -/
+
+section IdemIdOn
+
+variable [DecidableEq β] {M : α → β} {s : Finset β}
+
+/-- The coefficient of `I(s)` at the identity diagram of a set `S` of points over `s` is `1`. -/
+@[simp]
+theorem repr_matchedIdem_apply_idOn {S : Finset α} (hS : S ∈ matchedChoices M s) :
+    (basis R α).repr (matchedIdem R M s) (idOn S) = 1 := by
+  rw [mem_matchedChoices] at hS
+  have hcard : #S = #s := by rw [← hS.1, card_image_of_injOn hS.2]
+  simp [repr_matchedIdem_apply, hS.1, hcard]
+
+/-- An element of the matched subalgebra takes the same value at the identity diagrams of any two
+sets of points over the same pairs: they differ by moving horizontal strands within matched
+pairs. -/
+theorem repr_apply_idOn_eq {x : StrandsAlgebra R α} (hx : x ∈ matchedSubalgebra R M)
+    {S T : Finset α} (hS : S ∈ matchedChoices M s) (hT : T ∈ matchedChoices M s) :
+    (basis R α).repr x (idOn S) = (basis R α).repr x (idOn T) := by
+  refine repr_eq_of_matchedSetoid hx ?_
+  simpa [idOn_addHorizontal] using
+    (isMatchedGenerator_idOn_empty M s).matchedSetoid_addHorizontal hS hT
+
+end IdemIdOn
 
 /-! ### The unit of the matched subalgebra -/
 

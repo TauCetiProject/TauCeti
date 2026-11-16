@@ -7,8 +7,6 @@ module
 
 public import TauCeti.Analysis.BoundedVariation.Translation
 public import Mathlib.MeasureTheory.Integral.Average
-public import Mathlib.MeasureTheory.Measure.Lebesgue.EqHaar
-import Mathlib.MeasureTheory.Group.LIntegral
 import TauCeti.Analysis.BoundedVariation.Convolution
 import TauCeti.Analysis.Convex.Exhaustion
 import TauCeti.Analysis.Sobolev.Poincare.Wirtinger.Basic
