@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Geometry.Manifold.Diffeomorph.Basic
 public import TauCeti.Geometry.Manifold.Riemannian.VolumeForm.Integral
+public import TauCeti.Geometry.Manifold.Riemannian.VolumeForm.Measure
 public import TauCeti.Geometry.Manifold.Riemannian.WithMetric.Basic
 import TauCeti.Geometry.Manifold.DifferentialForm.Integration.ChangeOfVariables
 import TauCeti.Geometry.Manifold.Orientation.Pullback
@@ -22,7 +23,8 @@ pulled-back metric `f^* g`. On a compact source `N`, it equals the total Riemann
 `0` by `TauCeti.integralTopForm`'s compact-support convention
 (`TauCeti.immersionVolume_eq_zero_of_not_compactSpace`), even when `f^* g` has finite Riemannian
 volume. In all cases it is independent of the choice of orientation on `N`
-(`TauCeti.immersionVolume_congr_orientation`).
+(`TauCeti.immersionVolume_congr_orientation`) and of the smoothness and injectivity witnesses of
+equal maps (`TauCeti.immersionVolume_congr`).
 
 ## Main definitions
 
@@ -34,8 +36,9 @@ volume. In all cases it is independent of the choice of orientation on `N`
 * `TauCeti.immersionVolume_eq_riemannianTotalVolume` and
   `TauCeti.immersionVolume_eq_zero_of_not_compactSpace`: identification with
   `riemannianTotalVolume` on compact `N` and `0` fallback on noncompact `N`.
-* `TauCeti.immersionVolume_congr_orientation`, `TauCeti.immersionVolume_neg`,
-  `TauCeti.immersionVolume_nonneg`, and `TauCeti.immersionVolume_pos`: orientation independence,
+* `TauCeti.immersionVolume_congr_orientation`, `TauCeti.immersionVolume_congr`,
+  `TauCeti.immersionVolume_neg`, `TauCeti.immersionVolume_nonneg`, and
+  `TauCeti.immersionVolume_pos`: orientation independence, congruence under map equality,
   nonnegativity, and positivity on nonempty compact sources.
 * `TauCeti.immersionVolume_comp_diffeomorph`: invariance of `immersionVolume` under arbitrary
   diffeomorphisms of the source.
@@ -75,7 +78,7 @@ def immersionVolume {k : ℕ}
     (f : N → M) (hf : ContMDiff I' I ∞ f) (hinj : ∀ x, Function.Injective (mfderiv I' I f x))
     (o : Manifold.Orientation I' N (Fin k)) : ℝ :=
   letI : RiemannianBundle (fun x : N ↦ TangentSpace I' x) :=
-    ⟨(g.pullback f (by simpa using hf) hinj).toRiemannianMetric⟩
+    ⟨(g.pullback f hf hinj).toRiemannianMetric⟩
   integralTopForm o (riemannianVolumeForm o)
 
 /-- Unfolding lemma for `immersionVolume`. -/
@@ -85,7 +88,7 @@ theorem immersionVolume_def {k : ℕ}
     (o : Manifold.Orientation I' N (Fin k)) :
     immersionVolume g f hf hinj o =
       letI : RiemannianBundle (fun x : N ↦ TangentSpace I' x) :=
-        ⟨(g.pullback f (by simpa using hf) hinj).toRiemannianMetric⟩
+        ⟨(g.pullback f hf hinj).toRiemannianMetric⟩
       integralTopForm o (riemannianVolumeForm o) :=
   (rfl)
 
@@ -97,19 +100,20 @@ theorem immersionVolume_eq_zero_of_not_compactSpace {k : ℕ} (hnc : ¬CompactSp
     (o : Manifold.Orientation I' N (Fin k)) :
     immersionVolume g f hf hinj o = 0 := by
   let : RiemannianBundle (fun x : N ↦ TangentSpace I' x) :=
-    ⟨(g.pullback f (by simpa using hf) hinj).toRiemannianMetric⟩
+    ⟨(g.pullback f hf hinj).toRiemannianMetric⟩
   rw [immersionVolume_def]
   exact integralTopForm_riemannianVolumeForm_eq_zero_of_not_compactSpace o hnc
 
 /-- On a compact source `N`, `immersionVolume` equals the total Riemannian volume of `N` equipped
-with the pulled-back metric `f^* g` (`WithMetric (g.pullback f ...)`), in every degree `k : ℕ`. -/
+with the pulled-back metric `f^* g` (`WithMetric (g.pullback f hf hinj)`), in every degree
+`k : ℕ`. -/
 theorem immersionVolume_eq_riemannianTotalVolume [CompactSpace N] {k : ℕ}
     (g : ContMDiffRiemannianMetric I ∞ E (fun x : M ↦ TangentSpace I x))
     (f : N → M) (hf : ContMDiff I' I ∞ f) (hinj : ∀ x, Function.Injective (mfderiv I' I f x))
     (o : Manifold.Orientation I' N (Fin k)) :
     immersionVolume g f hf hinj o =
-      riemannianTotalVolume I' (WithMetric (g.pullback f (by simpa using hf) hinj)) := by
-  set g' := g.pullback f (by simpa using hf) hinj
+      riemannianTotalVolume I' (WithMetric (g.pullback f hf hinj)) := by
+  set g' := g.pullback f hf hinj
   let : RiemannianBundle (fun x : N ↦ TangentSpace I' x) := ⟨g'.toRiemannianMetric⟩
   let Φ : WithMetric g' ≃ₘ^∞⟮I', I'⟯ N := WithMetric.diffeomorph g' ∞
   let oW : Manifold.Orientation I' (WithMetric g') (Fin k) :=
@@ -121,10 +125,12 @@ theorem immersionVolume_eq_riemannianTotalVolume [CompactSpace N] {k : ℕ}
     mpullback_riemannianVolumeForm_of_isOrientationPreservingAt ho fun x v w ↦ by
       rw [WithMetric.coe_diffeomorph, g'.inner_riemannianBundle]
       exact (WithMetric.inner_def x v w).symm
+  let : MeasurableSpace (WithMetric g') := borel (WithMetric g')
+  have : BorelSpace (WithMetric g') := ⟨rfl⟩
   rw [immersionVolume_def,
     ← Φ.toHomeomorph.isOpenEmbedding.integralTopForm_mpullback_of_isOrientationPreservingAt ho
       (by simp),
-    Φ.coe_toHomeomorph, hvol, integralTopForm_riemannianVolumeForm_eq_riemannianTotalVolume oW]
+    Φ.coe_toHomeomorph, hvol, integralTopForm_riemannianVolumeForm oW]
 
 /-- `immersionVolume` is independent of the orientation chosen on `N` (even across disconnected
 components). -/
@@ -134,11 +140,23 @@ theorem immersionVolume_congr_orientation {k : ℕ}
     (o₁ o₂ : Manifold.Orientation I' N (Fin k)) :
     immersionVolume g f hf hinj o₁ = immersionVolume g f hf hinj o₂ := by
   let : RiemannianBundle (fun x : N ↦ TangentSpace I' x) :=
-    ⟨(g.pullback f (by simpa using hf) hinj).toRiemannianMetric⟩
+    ⟨(g.pullback f hf hinj).toRiemannianMetric⟩
   have : IsContinuousRiemannianBundle E' (fun x : N ↦ TangentSpace I' x) :=
     IsContMDiffRiemannianBundle.toIsContinuousRiemannianBundle (IB := I') (n := ∞)
   rw [immersionVolume_def, immersionVolume_def]
   exact integralTopForm_riemannianVolumeForm_congr o₁ o₂
+
+/-- Equal immersions have the same `immersionVolume`, regardless of the smoothness proofs,
+injectivity proofs, or source orientations supplied. -/
+theorem immersionVolume_congr {k : ℕ}
+    {g : ContMDiffRiemannianMetric I ∞ E (fun x : M ↦ TangentSpace I x)}
+    {f₁ f₂ : N → M} (h : f₁ = f₂)
+    {hf₁ : ContMDiff I' I ∞ f₁} {hinj₁ : ∀ x, Function.Injective (mfderiv I' I f₁ x)}
+    {hf₂ : ContMDiff I' I ∞ f₂} {hinj₂ : ∀ x, Function.Injective (mfderiv I' I f₂ x)}
+    {o₁ o₂ : Manifold.Orientation I' N (Fin k)} :
+    immersionVolume g f₁ hf₁ hinj₁ o₁ = immersionVolume g f₂ hf₂ hinj₂ o₂ := by
+  subst h
+  exact immersionVolume_congr_orientation g f₁ hf₁ hinj₁ o₁ o₂
 
 /-- Reversing the orientation of the source does not change `immersionVolume`. -/
 @[simp]
@@ -156,7 +174,7 @@ theorem immersionVolume_nonneg {k : ℕ}
     (o : Manifold.Orientation I' N (Fin k)) :
     0 ≤ immersionVolume g f hf hinj o := by
   let : RiemannianBundle (fun x : N ↦ TangentSpace I' x) :=
-    ⟨(g.pullback f (by simpa using hf) hinj).toRiemannianMetric⟩
+    ⟨(g.pullback f hf hinj).toRiemannianMetric⟩
   rw [immersionVolume_def]
   exact integralTopForm_riemannianVolumeForm_nonneg o
 
@@ -167,7 +185,7 @@ theorem immersionVolume_pos [CompactSpace N] [Nonempty N] {k : ℕ}
     (o : Manifold.Orientation I' N (Fin k)) :
     0 < immersionVolume g f hf hinj o := by
   let : RiemannianBundle (fun x : N ↦ TangentSpace I' x) :=
-    ⟨(g.pullback f (by simpa using hf) hinj).toRiemannianMetric⟩
+    ⟨(g.pullback f hf hinj).toRiemannianMetric⟩
   have : IsContinuousRiemannianBundle E' (fun x : N ↦ TangentSpace I' x) :=
     IsContMDiffRiemannianBundle.toIsContinuousRiemannianBundle (IB := I') (n := ∞)
   rw [immersionVolume_def]
@@ -195,8 +213,8 @@ theorem immersionVolume_comp_diffeomorph {k : ℕ}
     o.isOrientationPreservingAt_pullback (Φ.contMDiff.of_le (by simp))
       (fun x ↦ Φ.isInvertible_mfderiv (by simp)) o'.card_eq
   rw [immersionVolume_congr_orientation g (f ∘ Φ) _ _ o' oΦ]
-  set gN := g.pullback f (by simpa using hf) hinj
-  set gN' := g.pullback (f ∘ Φ) (by simpa using hf.comp Φ.contMDiff)
+  set gN := g.pullback f hf hinj
+  set gN' := g.pullback (f ∘ Φ) (hf.comp Φ.contMDiff)
     (fun x ↦ (Φ.mfderiv_comp_diffeomorph_injective_iff (by simp)).2 (hinj (Φ x)))
   let : RiemannianBundle (fun x : N ↦ TangentSpace I' x) := ⟨gN.toRiemannianMetric⟩
   let : RiemannianBundle (fun x : N' ↦ TangentSpace I'' x) := ⟨gN'.toRiemannianMetric⟩

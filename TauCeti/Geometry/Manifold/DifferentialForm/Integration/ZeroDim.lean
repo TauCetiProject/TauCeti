@@ -29,11 +29,12 @@ variable {E H M : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [Subsingleto
   [TopologicalSpace H] {I : ModelWithCorners ℝ E H}
   [TopologicalSpace M] [ChartedSpace H M] [IsManifold I 1 M]
 
-/-- Every `0`-form on a compact zero-dimensional manifold is integrable. -/
-theorem integrableTopForm_of_compactSpace_zeroDim [CompactSpace M] (φ : RoughForm I M ℝ 0) :
-    IntegrableTopForm φ :=
-  (isSmoothForm_zeroDim (n := 0) φ).integrableTopForm (_root_.isClosed_tsupport _).isCompact
-    (Module.finBasisOfFinrankEq ℝ E (Module.finrank_zero_iff.mpr inferInstance))
+/-- A `0`-form on a zero-dimensional manifold is integrable if and only if its topological support
+is compact. -/
+theorem integrableTopForm_iff_isCompact_tsupport_zeroDim (φ : RoughForm I M ℝ 0) :
+    IntegrableTopForm φ ↔ IsCompact (_root_.tsupport (α := E [⋀^Fin 0]→L[ℝ] ℝ) φ) :=
+  ⟨IntegrableTopForm.isCompact, fun hc ↦ (isSmoothForm_zeroDim (n := 0) φ).integrableTopForm hc
+    (Module.finBasisOfFinrankEq ℝ E (Module.finrank_zero_iff.mpr inferInstance))⟩
 
 /-- A function supported in a singleton integrates to its value at that point multiplied by
 the tangent orientation sign. Singleton support also supplies compactness. -/
@@ -49,7 +50,7 @@ theorem integralTopForm_ofFunction_zeroDim (o : Manifold.Orientation I M (Fin 0)
   have hc : IsCompact (_root_.tsupport (α := E [⋀^Fin _]→L[ℝ] ℝ)
       (RoughForm.ofFunction I g)) :=
     isCompact_singleton.of_isClosed_subset (_root_.isClosed_tsupport _) hs
-  have hi := (isSmoothForm_zeroDim (n := 0) (RoughForm.ofFunction I g)).integrableTopForm hc b
+  have hi := (integrableTopForm_iff_isCompact_tsupport_zeroDim _).2 hc
   rw [integralTopForm_eq_chartIntegral l _ hi x
     (by simpa only [extChartAt_source_zeroDim] using hs), l.chartIntegral_eq_integral _ b x]
   -- the chart integral is the evaluation at `0`, which is the chart image of `x`
@@ -87,7 +88,7 @@ theorem integralTopForm_ofFunction_finite_zeroDim [Fintype M]
     isCompact_singleton.of_isClosed_subset
     (_root_.isClosed_tsupport (α := E [⋀^Fin _]→L[ℝ] ℝ) _) (hs x)
   have hi (x : M) : IntegrableTopForm (δ x) :=
-    (isSmoothForm_zeroDim (n := 0) _).integrableTopForm (hc x) b
+    (integrableTopForm_iff_isCompact_tsupport_zeroDim _).2 (hc x)
   have he : RoughForm.ofFunction I g = ∑ x : M, δ x := by
     ext y v
     simp [δ, RoughForm.ofFunction_apply, Finset.sum_apply,

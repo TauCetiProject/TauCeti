@@ -289,11 +289,7 @@ theorem isCalibration_mpullback_riemannianIsometry_iff [IsManifold I 2 M] [IsMan
   let : RiemannianBundle (fun x : M ↦ TangentSpace I x) := ⟨g.toRiemannianMetric⟩
   let : RiemannianBundle (fun x : N ↦ TangentSpace I' x) := ⟨g'.toRiemannianMetric⟩
   have hsymm := h.mpullback_riemannianIsometry g Φ.symm
-  have hcomp : mpullback I I' Φ.symm (mpullback I' I Φ φ) = φ := by
-    rw [← mpullback_comp Φ.symm.mdifferentiable Φ.mdifferentiable,
-      show (Φ : N → M) ∘ (Φ.symm : M → N) = id from funext Φ.apply_symm_apply,
-      mpullback_id]
-  rwa [hcomp] at hsymm
+  rwa [Φ.coe_symm, ← Φ.coe_toDiffeomorph, mpullback_symm_mpullback (by simp)] at hsymm
 
 end Functoriality
 
