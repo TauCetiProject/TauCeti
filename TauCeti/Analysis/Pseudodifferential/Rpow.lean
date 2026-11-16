@@ -40,7 +40,8 @@ hold at the level of symbols:
 Every power of a strictly positive symbol is again strictly positive
 (`HomogeneousSymbol.isStrictlyPositive_rpow`), hence elliptic, and pointwise self-adjoint. The
 modulus of an elliptic symbol is strictly positive
-(`HomogeneousSymbol.IsElliptic.isStrictlyPositive_modulus`).
+(`HomogeneousSymbol.IsElliptic.isStrictlyPositive_modulus`, in
+`TauCeti.Analysis.Pseudodifferential.PolarDecomposition`), so it has real powers as well.
 
 ## References
 
@@ -180,12 +181,6 @@ theorem normRpow_rpow (m z : ℝ) :
       ← Real.rpow_mul (norm_nonneg ξ)]
 
 end NormRpow
-
-/-- The modulus `|a|` of an elliptic symbol is strictly positive. -/
-theorem IsElliptic.isStrictlyPositive_modulus [FiniteDimensional ℂ V] {W : Type*}
-    [NormedAddCommGroup W] [InnerProductSpace ℂ W] [CompleteSpace W]
-    {a : HomogeneousSymbol X E V W m} (ha : a.IsElliptic) : (a.modulus ha).IsStrictlyPositive :=
-  isStrictlyPositive_iff.mpr fun _ _ hξ ↦ a.isStrictlyPositive_coefficient_modulus ha hξ
 
 /-- The modulus `|a| = √(a† a)` of an elliptic symbol is the power `(a† a) ^ (1 / 2)` of its Gram
 symbol. -/
