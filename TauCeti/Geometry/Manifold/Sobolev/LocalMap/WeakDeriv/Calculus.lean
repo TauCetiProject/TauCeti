@@ -8,30 +8,40 @@ module
 public import Mathlib.Geometry.Manifold.Diffeomorph
 public import TauCeti.Geometry.Manifold.Sobolev.LocalMap.WeakDeriv.Basic
 import Mathlib.Geometry.Manifold.ContMDiff.Atlas
-import Mathlib.Geometry.Manifold.MFDeriv.Atlas
 import TauCeti.Analysis.Sobolev.W1p.ChangeOfVariables
 import TauCeti.Analysis.Sobolev.WeakDeriv.ChainRule
 import TauCeti.Analysis.Sobolev.WeakDeriv.Local
-import TauCeti.Geometry.Manifold.Boundary.Basic
 import TauCeti.Geometry.Manifold.ChartedSpace
 import TauCeti.Geometry.Manifold.Complex.Analytic
 import TauCeti.Geometry.Manifold.ContMDiff.RestrictScalars
 import TauCeti.Geometry.Manifold.Diffeomorph.Basic
+import TauCeti.Geometry.Manifold.IsManifold.Basic
 import TauCeti.Geometry.Manifold.LocalDiffeomorph.Constructions
 import TauCeti.Geometry.Manifold.Sobolev.LocalMap.Atlas
 
 /-!
 # Chart independence, chain rules, and existence of the weak differential
 
-Building on `TauCeti.Geometry.Manifold.Sobolev.LocalMap.WeakDeriv.Basic`, this file proves chart
-independence (`TauCeti.hasWeakMFDerivOnGroupoid_iff_of_subset_maximalAtlas`, `_iff_atlas`,
-`_iff_chartAt`), weak chain rules under `C¹` postcomposition and source diffeomorphisms
-(`TauCeti.HasWeakMFDerivOnGroupoid.contMDiffOn_comp`,
-`Diffeomorph.hasWeakMFDerivOnGroupoid_diffeomorph_comp_iff`,
-`Diffeomorph.hasWeakMFDerivOnGroupoid_comp_diffeomorph_iff`), and global existence / `W^{1,p}_loc`
-characterizations (`TauCeti.MemWkpLocMapOnGroupoid.exists_hasWeakMFDerivOnGroupoid`,
-`TauCeti.memWkpLocMapOnGroupoid_one_iff_exists_hasWeakMFDerivOnGroupoid`) on Lindelöf surfaces with
-or without boundary (McDuff–Salamon, *J-holomorphic Curves and Symplectic Topology*, App. B.1).
+Chart independence, weak chain rules, diffeomorphism invariance, and global existence of weak
+differentials for local Sobolev maps `u : X → M` from a Riemann surface (with or without boundary).
+
+## Main declarations
+
+* `TauCeti.hasWeakMFDerivOnGroupoid_iff_of_subset_maximalAtlas`,
+  `TauCeti.hasWeakMFDerivOnGroupoid_iff_atlas`, `TauCeti.hasWeakMFDerivOnGroupoid_iff_chartAt`:
+  chart independence for covering subfamilies, atlases, and preferred charts.
+* `TauCeti.HasWeakMFDerivOnGroupoid.contMDiffOn_comp`,
+  `Diffeomorph.hasWeakMFDerivOnGroupoid_diffeomorph_comp_iff`,
+  `Diffeomorph.hasWeakMFDerivOnGroupoid_comp_diffeomorph_iff`: chain rule and diffeomorphism
+  invariance.
+* `TauCeti.MemWkpLocMapOnGroupoid.exists_hasWeakMFDerivOnGroupoid`,
+  `TauCeti.memWkpLocMapOnGroupoid_one_iff_exists_hasWeakMFDerivOnGroupoid`,
+  `TauCeti.memWkpLocMapOn_one_iff_exists_hasWeakMFDerivOn`: existence and `W^{1,p}_loc`
+  characterizations on Lindelöf surfaces.
+
+## References
+
+* D. McDuff and D. Salamon, *J-holomorphic Curves and Symplectic Topology*, 2nd ed., App. B.1, §3.1.
 -/
 
 public section
@@ -54,12 +64,6 @@ variable {H' : Type*} [TopologicalSpace H'] {X : Type*} [TopologicalSpace X] [Ch
   {H'' : Type*} [TopologicalSpace H''] {I' : ModelWithCorners ℝ F' H''}
   {N : Type*} [TopologicalSpace N] [ChartedSpace H'' N]
   {p : ENNReal} {u : X → M} {du : ∀ x : X, TangentSpace J x →L[ℝ] TangentSpace I (u x)} {s : Set X}
-
-omit [ChartedSpace H' X] [ChartedSpace H M] in
-private theorem isOpen_inter_inter_preimage {U : Set X} {V : Set M}
-    (hc : ContinuousOn u s) (hs : IsOpen s) (hU : IsOpen U) (hV : IsOpen V) :
-    IsOpen (s ∩ (U ∩ u ⁻¹' V)) := by
-  convert (hs.inter hU).inter (hc.isOpen_inter_preimage hs hV) using 1; ext; simp; tauto
 
 private theorem hasWeakFDerivOn_comp_chart_transition
     {φ φ' : OpenPartialHomeomorph X H'} (hφ : φ ∈ IsManifold.maximalAtlas J 1 X)
@@ -129,21 +133,21 @@ private theorem hasWeakFDerivOn_extend_comp [I.Boundaryless] [CompleteSpace F']
     StructureGroupoid.maximalAtlas_mono (contDiffGroupoid_le (by simp)) hψ
   have hψ'1 : ψ' ∈ IsManifold.maximalAtlas I' 1 N :=
     StructureGroupoid.maximalAtlas_mono (contDiffGroupoid_le (by simp)) hψ'
-  obtain ⟨hO, hg⟩ := ψ.isOpen_and_contDiffOn_extend_comp hψ1 hψ'1 hf ht
-  refine ((hW.contDiffOn_comp huc hO hg fun w hw ↦
+  refine ((hW.contDiffOn_comp huc
+    (ψ.isOpen_extend_target_inter_preimage
+      (hf.continuousOn.isOpen_inter_preimage ht ψ'.open_source))
+    (ψ.contDiffOn_extend_comp hψ1 hψ'1 hf) fun w hw ↦
     ⟨(ψ.extend I).map_source ((ψ.extend_source (I := I)).symm ▸ (hmaps hw).1),
       by rw [mem_preimage, Function.comp_apply, ψ.extend_left_inv (I := I) (hmaps hw).1]
          exact (hmaps hw).2⟩).congr_ae ?_).congr_ae_deriv ?_
   · filter_upwards [ae_restrict_mem W.isOpen.measurableSet] with w hw
-    have hws : u ((φ.extend J).symm w) ∈ ψ.source := (hmaps hw).1
-    simp only [Function.comp_apply, ψ.extend_left_inv (I := I) hws]
+    exact congrArg (ψ'.extend I' ∘ f) (ψ.extend_left_inv (I := I) (hmaps hw).1)
   · filter_upwards [ae_restrict_mem W.isOpen.measurableSet] with w hw
     exact fderiv_extend_comp_chartTangentHom hψ1 hψ'1 hf ht du (hmaps hw)
 
 /-! ### Chart independence and the weak chain rule at groupoid generality -/
 
-/-- **Chart independence of the weak differential** for covering subfamilies `A` and `B` when `M`
-is boundaryless (`X` may have boundary). -/
+/-- **Chart independence** for covering subfamilies `A`, `B` when `M` is boundaryless. -/
 theorem hasWeakMFDerivOnGroupoid_iff_of_subset_maximalAtlas [I.Boundaryless] [CompleteSpace F]
     (hG : G.maximalAtlas X ⊆ IsManifold.maximalAtlas J 1 X) (hs : IsOpen s)
     {A : Set (OpenPartialHomeomorph X H')} (hA : A ⊆ G.maximalAtlas X)
@@ -187,17 +191,18 @@ theorem hasWeakMFDerivGroupoid_iff_of_subset_maximalAtlas [I.Boundaryless] [Comp
       HasWeakFDerivOn volume
         (Opens.interior ((φ.extend J).target ∩ (φ.extend J).symm ⁻¹' (u ⁻¹' ψ.source)))
         (ψ.extend I ∘ u ∘ (φ.extend J).symm) (chartTangentHom J I φ ψ u du) := by
-  rw [← hasWeakMFDerivOnGroupoid_univ, hasWeakMFDerivOnGroupoid_iff_of_subset_maximalAtlas hG
-    isOpen_univ hA (fun x _ ↦ hAs x) hB (fun x _ ↦ hBs x)]
-  simp only [continuousOn_univ, univ_inter]
+  simpa only [← hasWeakMFDerivOnGroupoid_univ, continuousOn_univ, univ_inter] using
+    hasWeakMFDerivOnGroupoid_iff_of_subset_maximalAtlas (u := u) (du := du) hG isOpen_univ hA
+      (fun x _ ↦ hAs x) hB (fun x _ ↦ hBs x)
 
 section AtlasChartAt
 
 variable [HasGroupoid X G] [IsManifold I ∞ M] [I.Boundaryless]
+  (hG : G.maximalAtlas X ⊆ IsManifold.maximalAtlas J 1 X)
+include hG
 
 /-- Chart independence at groupoid generality: testing `atlas H' X` and `atlas H M` suffices. -/
-theorem hasWeakMFDerivOnGroupoid_iff_atlas (hG : G.maximalAtlas X ⊆ IsManifold.maximalAtlas J 1 X)
-    (hs : IsOpen s) :
+theorem hasWeakMFDerivOnGroupoid_iff_atlas (hs : IsOpen s) :
     HasWeakMFDerivOnGroupoid G J I u du s ↔ ContinuousOn u s ∧ ∀ φ ∈ atlas H' X, ∀ ψ ∈ atlas H M,
       HasWeakFDerivOn volume
         (Opens.interior ((φ.extend J).target ∩ (φ.extend J).symm ⁻¹' (s ∩ u ⁻¹' ψ.source)))
@@ -214,17 +219,16 @@ theorem hasWeakMFDerivOnGroupoid_iff_atlas (hG : G.maximalAtlas X ⊆ IsManifold
       ⟨hc, h⟩).hasWeakFDerivOn_chart hφ' hψ'
 
 /-- Global chart independence at groupoid generality via `atlas H' X` and `atlas H M`. -/
-theorem hasWeakMFDerivGroupoid_iff_atlas (hG : G.maximalAtlas X ⊆ IsManifold.maximalAtlas J 1 X) :
+theorem hasWeakMFDerivGroupoid_iff_atlas :
     HasWeakMFDerivGroupoid G J I u du ↔ Continuous u ∧ ∀ φ ∈ atlas H' X, ∀ ψ ∈ atlas H M,
       HasWeakFDerivOn volume
         (Opens.interior ((φ.extend J).target ∩ (φ.extend J).symm ⁻¹' (u ⁻¹' ψ.source)))
         (ψ.extend I ∘ u ∘ (φ.extend J).symm) (chartTangentHom J I φ ψ u du) := by
-  rw [← hasWeakMFDerivOnGroupoid_univ, hasWeakMFDerivOnGroupoid_iff_atlas hG isOpen_univ]
-  simp only [continuousOn_univ, univ_inter]
+  simpa only [← hasWeakMFDerivOnGroupoid_univ, continuousOn_univ, univ_inter] using
+    hasWeakMFDerivOnGroupoid_iff_atlas (u := u) (du := du) hG isOpen_univ
 
 /-- Chart independence at groupoid generality: testing `chartAt H' x` and `chartAt H y` suffices. -/
-theorem hasWeakMFDerivOnGroupoid_iff_chartAt (hG : G.maximalAtlas X ⊆ IsManifold.maximalAtlas J 1 X)
-    (hs : IsOpen s) :
+theorem hasWeakMFDerivOnGroupoid_iff_chartAt (hs : IsOpen s) :
     HasWeakMFDerivOnGroupoid G J I u du s ↔ ContinuousOn u s ∧ ∀ x : X, ∀ y : M,
       HasWeakFDerivOn volume
         (Opens.interior ((extChartAt J x).target ∩
@@ -243,20 +247,19 @@ theorem hasWeakMFDerivOnGroupoid_iff_chartAt (hG : G.maximalAtlas X ⊆ IsManifo
       ⟨hc, by rintro _ ⟨x, rfl⟩ _ ⟨y, rfl⟩; exact h x y⟩).hasWeakFDerivOn_chart hφ' hψ'
 
 /-- Global chart independence at groupoid generality via `chartAt H' x` and `chartAt H y`. -/
-theorem hasWeakMFDerivGroupoid_iff_chartAt (hG : G.maximalAtlas X ⊆ IsManifold.maximalAtlas J 1 X) :
+theorem hasWeakMFDerivGroupoid_iff_chartAt :
     HasWeakMFDerivGroupoid G J I u du ↔ Continuous u ∧ ∀ x : X, ∀ y : M,
       HasWeakFDerivOn volume (Opens.interior ((extChartAt J x).target ∩
           (extChartAt J x).symm ⁻¹' (u ⁻¹' (chartAt H y).source)))
         (extChartAt I y ∘ u ∘ (extChartAt J x).symm)
         (chartTangentHom J I (chartAt H' x) (chartAt H y) u du) := by
-  rw [← hasWeakMFDerivOnGroupoid_univ, hasWeakMFDerivOnGroupoid_iff_chartAt hG isOpen_univ]
-  simp only [continuousOn_univ, univ_inter]
+  simpa only [← hasWeakMFDerivOnGroupoid_univ, continuousOn_univ, univ_inter] using
+    hasWeakMFDerivOnGroupoid_iff_chartAt (u := u) (du := du) hG isOpen_univ
 
 end AtlasChartAt
 
-/-- **The weak chain rule for maps into manifolds.** When `M` is boundaryless and smooth,
-postcomposing `u` on open `s` with `C^n` (`1 ≤ n`) `f : M → N` on open `t` gives weak differential
-`x ↦ (mfderiv I I' f (u x)).comp (du x)`. Neither `X` nor `N` need be boundaryless. -/
+/-- **The weak chain rule**: postcomposing `u` with `C^n` (`1 ≤ n`) `f : M → N` for boundaryless
+smooth `M` (`X` and `N` may have corners). -/
 theorem HasWeakMFDerivOnGroupoid.contMDiffOn_comp [IsManifold I ∞ M] [I.Boundaryless]
     [CompleteSpace F'] {n : ℕ∞ω} {f : M → N} {t : Set M}
     (hu : HasWeakMFDerivOnGroupoid G J I u du s) (hf : ContMDiffOn I I' n f t) (hn : 1 ≤ n)
@@ -265,6 +268,7 @@ theorem HasWeakMFDerivOnGroupoid.contMDiffOn_comp [IsManifold I ∞ M] [I.Bounda
   have hc : ContinuousOn (f ∘ u) s := hf.continuousOn.comp hu.continuousOn hst
   refine hasWeakMFDerivOnGroupoid_iff.2
     ⟨hc, fun φ hφ ψ' hψ' ↦ hasWeakFDerivOn_iff_locally.2 fun z hz ↦ ?_⟩
+  -- Localize around `z` using the preferred chart of `M` at `y₀ := u ((φ.extend J).symm z)`.
   let y₀ := u ((φ.extend J).symm z)
   set W := Opens.interior ((φ.extend J).target ∩
     (φ.extend J).symm ⁻¹' (s ∩ (u ⁻¹' (chartAt H y₀).source ∩ (f ∘ u) ⁻¹' ψ'.source)))
@@ -292,8 +296,7 @@ theorem _root_.ContMDiff.comp_hasWeakMFDerivGroupoid [IsManifold I ∞ M] [I.Bou
   hasWeakMFDerivOnGroupoid_univ.1 ((hasWeakMFDerivOnGroupoid_univ.2 hu).contMDiffOn_comp
     hf.contMDiffOn hn isOpen_univ isOpen_univ (mapsTo_univ _ _))
 
-/-- Postcomposing `u : X → M` with a `C^n` (`1 ≤ n`) diffeomorphism `e : M ≃ₘ^n⟮I, I'⟯ N` of
-boundaryless smooth targets transforms weak differentials on `s` by `mfderiv I I' e`. -/
+/-- Target-diffeomorphism equivalence for `HasWeakMFDerivOnGroupoid` (`1 ≤ n`). -/
 theorem _root_.Diffeomorph.hasWeakMFDerivOnGroupoid_diffeomorph_comp_iff
     [IsManifold I ∞ M] [I.Boundaryless] [CompleteSpace F]
     [IsManifold I' ∞ N] [I'.Boundaryless] [CompleteSpace F']
@@ -307,8 +310,10 @@ theorem _root_.Diffeomorph.hasWeakMFDerivOnGroupoid_diffeomorph_comp_iff
   simp only [Function.comp_apply]
   rw [← ContinuousLinearMap.comp_assoc (mfderiv I' I e.symm _),
     ← e.symm.mfderiv_diffeomorph_comp (zero_lt_one.trans_le hn).ne' e (u x)]
+  -- Eliminating `g = id` unifies the fibers so `mfderiv_id` and `heq_tangentSpaceCast` apply.
   have hid : ∀ g : M → M, g = id → (tangentSpaceCast I (g (u x)) (u x)).toContinuousLinearMap.comp
-      ((mfderiv I I g (u x)).comp (du x)) = du x := by rintro _ rfl; rw [mfderiv_id]; rfl
+      ((mfderiv I I g (u x)).comp (du x)) = du x := by
+    rintro _ rfl; ext v; simpa [mfderiv_id] using eq_of_heq (heq_tangentSpaceCast rfl (du x v))
   exact hid ((e.symm : N → M) ∘ e) (funext e.symm_apply_apply)
 
 /-- Global target-diffeomorphism equivalence for `HasWeakMFDerivGroupoid`. -/
@@ -318,15 +323,15 @@ theorem _root_.Diffeomorph.hasWeakMFDerivGroupoid_diffeomorph_comp_iff
     {n : ℕ∞ω} (e : M ≃ₘ^n⟮I, I'⟯ N) (hn : 1 ≤ n) :
     HasWeakMFDerivGroupoid G J I' (e ∘ u) (fun x ↦ (mfderiv I I' e (u x)).comp (du x)) ↔
       HasWeakMFDerivGroupoid G J I u du := by
-  rw [← hasWeakMFDerivOnGroupoid_univ, ← hasWeakMFDerivOnGroupoid_univ]
-  exact e.hasWeakMFDerivOnGroupoid_diffeomorph_comp_iff hn isOpen_univ
+  simpa only [← hasWeakMFDerivOnGroupoid_univ] using
+    e.hasWeakMFDerivOnGroupoid_diffeomorph_comp_iff (G := G) (J := J) (u := u) (du := du) hn
+      isOpen_univ
 
 section SourceDiffeomorph
 
 variable {Y : Type*} [TopologicalSpace Y] [ChartedSpace H' Y] {G' : StructureGroupoid H'} {n : ℕ∞ω}
 
-/-- Precomposing `u : X → M` with a `C^n` (`1 ≤ n`) diffeomorphism `e : Y ≃ₘ^n⟮J, J⟯ X` whose
-inverse transports `G'`-charts into `G`-charts pulls `du` back along `e`. -/
+/-- Precomposing `u : X → M` with `e : Y ≃ₘ^n⟮J, J⟯ X` (`1 ≤ n`) pulls `du` back along `e`. -/
 theorem _root_.Diffeomorph.hasWeakMFDerivOnGroupoid_comp_diffeomorph
     (hG' : G'.maximalAtlas Y ⊆ IsManifold.maximalAtlas J 1 Y) (e : Y ≃ₘ^n⟮J, J⟯ X) (hn : 1 ≤ n)
     (he : ∀ φ ∈ G'.maximalAtlas Y,
@@ -336,6 +341,7 @@ theorem _root_.Diffeomorph.hasWeakMFDerivOnGroupoid_comp_diffeomorph
       (fun y ↦ (du (e y)).comp (mfderiv J J e y)) (e ⁻¹' s) := by
   refine hasWeakMFDerivOnGroupoid_iff.2
     ⟨hu.continuousOn.comp e.continuous.continuousOn (mapsTo_preimage e s), fun φ hφ ψ hψ ↦ ?_⟩
+  -- Transport `φ` to `X` along `e.symm` and apply the chain rule to `e ∘ (φ.extend J).symm`.
   set φ' : OpenPartialHomeomorph X H' := e.symm.toHomeomorph.toOpenPartialHomeomorph.trans φ
   have hchart := hu.hasWeakFDerivOn_chart (φ := φ') (he φ hφ) hψ
   have htgt : (φ'.extend J).target = (φ.extend J).target := by ext; simp [φ', mfld_simps]
@@ -349,29 +355,32 @@ theorem _root_.Diffeomorph.hasWeakMFDerivOnGroupoid_comp_diffeomorph
   · filter_upwards with z; simp only [Function.comp_apply, hs']
   · filter_upwards [ae_restrict_mem isOpen_interior.measurableSet] with z hz
     have hzint : z ∈ interior (φ.extend J).target := interior_mono inter_subset_left hz
-    have hzR := mem_of_superset (mem_interior_iff_mem_nhds.1 hzint) φ.extend_target_subset_range
-    obtain ⟨hdφ, -⟩ := φ.mdifferentiableAt_extend_symm_of_mem_interior (hG' hφ) hzint
+    have hdφ := φ.mdifferentiableAt_extend_symm_of_mem_interior (hG' hφ) hzint
+    -- Eliminating `g = e ∘ (φ.extend J).symm` aligns the dependent `TangentSpace` fibers.
     have hgen : ∀ g : ℂ → X, g = e ∘ ⇑(φ.extend J).symm →
         mvfderiv I (ψ.extend I) (u (g z)) ∘L du (g z) ∘L
           (mfderiv 𝓘(ℝ, ℂ) J g z ∘L
             (NormedSpace.fromTangentSpace (𝕜 := ℝ) z).symm.toContinuousLinearMap) =
         chartTangentHom J I φ ψ (u ∘ e) (fun y ↦ (du (e y)).comp (mfderiv J J e y)) z := by
       rintro _ rfl
-      simp only [chartTangentHom_apply, mfderivWithin_of_mem_nhds hzR, Function.comp_apply,
-        mfderiv_comp z (e.mdifferentiable (zero_lt_one.trans_le hn).ne' _) hdφ,
+      simp only [chartTangentHom_apply, φ.mfderivWithin_extend_symm_of_mem_interior hzint,
+        Function.comp_apply, mfderiv_comp z (e.mdifferentiable (zero_lt_one.trans_le hn).ne' _) hdφ,
         ContinuousLinearMap.comp_assoc]
-    rw [chartTangentHom_apply, mfderivWithin_of_mem_nhds hzR]
+    rw [chartTangentHom_apply, φ'.mfderivWithin_extend_symm_of_mem_interior (htgt ▸ hzint)]
     exact hgen _ hs'
 
-/-- Equivalence of weak differentials under precomposition with a `C^n` (`1 ≤ n`) diffeomorphism
-`e : Y ≃ₘ^n⟮J, J⟯ X` preserving the maximal atlases of `G` and `G'`. -/
-theorem _root_.Diffeomorph.hasWeakMFDerivOnGroupoid_comp_diffeomorph_iff
-    (hG : G.maximalAtlas X ⊆ IsManifold.maximalAtlas J 1 X)
-    (hG' : G'.maximalAtlas Y ⊆ IsManifold.maximalAtlas J 1 Y) (e : Y ≃ₘ^n⟮J, J⟯ X) (hn : 1 ≤ n)
-    (he : ∀ φ ∈ G'.maximalAtlas Y,
-      e.symm.toHomeomorph.toOpenPartialHomeomorph.trans φ ∈ G.maximalAtlas X)
-    (hesymm : ∀ φ ∈ G.maximalAtlas X,
-      e.toHomeomorph.toOpenPartialHomeomorph.trans φ ∈ G'.maximalAtlas Y) :
+section SourceDiffeomorphIff
+
+variable (hG : G.maximalAtlas X ⊆ IsManifold.maximalAtlas J 1 X)
+  (hG' : G'.maximalAtlas Y ⊆ IsManifold.maximalAtlas J 1 Y) (e : Y ≃ₘ^n⟮J, J⟯ X) (hn : 1 ≤ n)
+  (he : ∀ φ ∈ G'.maximalAtlas Y,
+    e.symm.toHomeomorph.toOpenPartialHomeomorph.trans φ ∈ G.maximalAtlas X)
+  (hesymm : ∀ φ ∈ G.maximalAtlas X,
+    e.toHomeomorph.toOpenPartialHomeomorph.trans φ ∈ G'.maximalAtlas Y)
+include hG hG' hn he hesymm
+
+/-- Source-diffeomorphism equivalence for `HasWeakMFDerivOnGroupoid` (`1 ≤ n`). -/
+theorem _root_.Diffeomorph.hasWeakMFDerivOnGroupoid_comp_diffeomorph_iff :
     HasWeakMFDerivOnGroupoid G' J I (u ∘ e)
         (fun y ↦ (du (e y)).comp (mfderiv J J e y)) (e ⁻¹' s) ↔
       HasWeakMFDerivOnGroupoid G J I u du s := by
@@ -381,23 +390,21 @@ theorem _root_.Diffeomorph.hasWeakMFDerivOnGroupoid_comp_diffeomorph_iff
   refine hback.congr (fun x _ ↦ congrArg u (e.apply_symm_apply x)) fun x _ ↦ ?_
   rw [ContinuousLinearMap.comp_assoc (du _),
     ← e.mfderiv_diffeomorph_comp (zero_lt_one.trans_le hn).ne' e.symm x]
+  -- Eliminating `g = id` unifies the fibers so `mfderiv_id` and `heq_tangentSpaceCast` apply.
   have hid : ∀ g : X → X, g = id → (tangentSpaceCast I (u (g x)) (u x)).toContinuousLinearMap.comp
       ((du (g x)).comp (mfderiv J J g x)) = du x := by
-    rintro _ rfl; rw [mfderiv_id]; rfl
+    rintro _ rfl; ext v; simpa [mfderiv_id] using eq_of_heq (heq_tangentSpaceCast rfl (du x v))
   exact hid ((e : Y → X) ∘ e.symm) (funext e.apply_symm_apply)
 
 /-- Global source-diffeomorphism equivalence for `HasWeakMFDerivGroupoid`. -/
-theorem _root_.Diffeomorph.hasWeakMFDerivGroupoid_comp_diffeomorph_iff
-    (hG : G.maximalAtlas X ⊆ IsManifold.maximalAtlas J 1 X)
-    (hG' : G'.maximalAtlas Y ⊆ IsManifold.maximalAtlas J 1 Y) (e : Y ≃ₘ^n⟮J, J⟯ X) (hn : 1 ≤ n)
-    (he : ∀ φ ∈ G'.maximalAtlas Y,
-      e.symm.toHomeomorph.toOpenPartialHomeomorph.trans φ ∈ G.maximalAtlas X)
-    (hesymm : ∀ φ ∈ G.maximalAtlas X,
-      e.toHomeomorph.toOpenPartialHomeomorph.trans φ ∈ G'.maximalAtlas Y) :
+theorem _root_.Diffeomorph.hasWeakMFDerivGroupoid_comp_diffeomorph_iff :
     HasWeakMFDerivGroupoid G' J I (u ∘ e) (fun y ↦ (du (e y)).comp (mfderiv J J e y)) ↔
       HasWeakMFDerivGroupoid G J I u du := by
-  rw [← hasWeakMFDerivOnGroupoid_univ, ← hasWeakMFDerivOnGroupoid_univ, ← preimage_univ (f := e)]
-  exact e.hasWeakMFDerivOnGroupoid_comp_diffeomorph_iff hG hG' hn he hesymm
+  simpa only [← hasWeakMFDerivOnGroupoid_univ, ← preimage_univ (f := e)] using
+    e.hasWeakMFDerivOnGroupoid_comp_diffeomorph_iff (u := u) (du := du) (s := univ) hG hG' hn
+      he hesymm
+
+end SourceDiffeomorphIff
 
 end SourceDiffeomorph
 
@@ -417,59 +424,43 @@ private theorem chartTangentHom_pullbackChartDeriv [IsManifold J 1 X] [IsManifol
   rw [chartTangentHom_chartAt_eq_inCoordinates _ hx hy]; ext v
   simp only [ContinuousLinearMap.inCoordinates, pullbackChartDeriv, ContinuousLinearMap.comp_apply,
     (trivializationAt ℂ (TangentSpace J) x₀).continuousLinearMapAt_symmL (R := ℝ)
-      (by simpa only [TangentBundle.trivializationAt_baseSet] using hx),
+      (by rwa [TangentBundle.trivializationAt_baseSet]),
     (trivializationAt F (TangentSpace I) y₀).continuousLinearMapAt_symmL (R := ℝ)
-      (by simpa only [TangentBundle.trivializationAt_baseSet] using hy)]
+      (by rwa [TangentBundle.trivializationAt_baseSet])]
 
 private theorem exists_local_hasWeakMFDerivOnGroupoid
     [IsManifold J 1 X] [HasGroupoid X G] [IsManifold I ∞ M] [I.Boundaryless]
     (hG : G.maximalAtlas X ⊆ IsManifold.maximalAtlas J 1 X)
     (hu : MemWkpLocMapOnGroupoid G J I p 1 u s) (hs : IsOpen s) (x₀ : X) :
-    ∃ d : ∀ x : X, TangentSpace J x →L[ℝ] TangentSpace I (u x), HasWeakMFDerivOnGroupoid G J I u d
-      (s ∩ ((chartAt H' x₀).source ∩ u ⁻¹' (chartAt H (u x₀)).source)) := by
+    ∃ d, HasWeakMFDerivOnGroupoid G J I u d
+      ((chartAt H' x₀).source ∩ (s ∩ u ⁻¹' (chartAt H (u x₀)).source)) := by
   have : IsManifold I 1 M := IsManifold.of_le (n := ∞) (by simp)
   obtain ⟨D, hD, -⟩ := (hu.memWkpLoc_chart (StructureGroupoid.chart_mem_maximalAtlas G x₀)
     (IsManifold.chart_mem_maximalAtlas (u x₀))).exists_weakFDeriv
   have := hD.completeSpace
   refine ⟨pullbackChartDeriv u x₀ (u x₀) D,
     (hasWeakMFDerivOnGroupoid_iff_of_subset_maximalAtlas hG
-      (isOpen_inter_inter_preimage hu.continuousOn hs (chartAt H' x₀).open_source
-        (chartAt H (u x₀)).open_source)
+      ((chartAt H' x₀).open_source.inter
+        (hu.continuousOn.isOpen_inter_preimage hs (chartAt H (u x₀)).open_source))
       (singleton_subset_iff.2 (StructureGroupoid.chart_mem_maximalAtlas G x₀))
-      (fun _ hx ↦ ⟨_, rfl, hx.2.1⟩)
+      (fun _ hx ↦ ⟨_, rfl, hx.1⟩)
       (singleton_subset_iff.2 (IsManifold.chart_mem_maximalAtlas (u x₀)))
-      (fun _ hx ↦ ⟨_, rfl, hx.2.2⟩)).2 ⟨hu.continuousOn.mono inter_subset_left, ?_⟩⟩
+      (fun _ hx ↦ ⟨_, rfl, hx.2.2⟩)).2
+      ⟨hu.continuousOn.mono fun _ hx ↦ hx.2.1, ?_⟩⟩
   rintro _ rfl _ rfl
-  have hsub : s ∩ ((chartAt H' x₀).source ∩ u ⁻¹' (chartAt H (u x₀)).source) ∩
-      u ⁻¹' (chartAt H (u x₀)).source ⊆ s ∩ u ⁻¹' (chartAt H (u x₀)).source :=
-    fun _ hx ↦ ⟨hx.1.1, hx.2⟩
-  refine (hD.mono (interior_mono (inter_subset_inter_right _ (preimage_mono hsub)))).congr_ae_deriv
-    ?_
+  refine (hD.mono (interior_mono (inter_subset_inter_right _
+    (preimage_mono (inter_subset_left.trans inter_subset_right))))).congr_ae_deriv ?_
   filter_upwards [ae_restrict_mem isOpen_interior.measurableSet] with z hz
   have heq := chartTangentHom_pullbackChartDeriv (u := u) (J := J) (I := I) D
-    (interior_subset hz).2.1.2.1 (interior_subset hz).2.2
+    (interior_subset hz).2.1.1 (interior_subset hz).2.2
   rwa [extChartAt, ((chartAt H' x₀).extend J).right_inv (interior_subset hz).1, eq_comm] at heq
-
-omit [ChartedSpace H' X] in
-private theorem exists_nat_subcover [SecondCountableTopology X] (hne : s.Nonempty) {U : X → Set X}
-    (hUo : ∀ x₀, IsOpen (U x₀)) (hUmem : ∀ x ∈ s, x ∈ U x) (hUsub : ∀ x₀, U x₀ ⊆ s) :
-    ∃ c : ℕ → X, s = ⋃ n : ℕ, U (c n) := by
-  obtain ⟨T, hTcnt, hTcov⟩ := isOpen_iUnion_countable (fun i : s ↦ U i.1) (fun i ↦ hUo i.1)
-  have hTs : s = ⋃ i ∈ T, U i.1 := Subset.antisymm
-    (fun x hxs ↦ by rw [hTcov]; exact mem_iUnion.2 ⟨⟨x, hxs⟩, hUmem x hxs⟩)
-    (iUnion₂_subset fun _ _ ↦ hUsub _)
-  obtain ⟨x₁, hx₁s⟩ := hne
-  rcases mem_iUnion₂.1 (hTs ▸ hx₁s) with ⟨i₀, hi₀T, -⟩
-  obtain ⟨q, rfl⟩ := hTcnt.exists_eq_range ⟨i₀, hi₀T⟩
-  exact ⟨fun n ↦ (q n).1, by simpa only [biUnion_range] using hTs⟩
 
 private theorem exists_hasWeakMFDerivOnGroupoid_iUnion_nat
     [IsManifold J 1 X] [HasGroupoid X G] [IsManifold I ∞ M] [CompleteSpace F]
     (hG : G.maximalAtlas X ⊆ IsManifold.maximalAtlas J 1 X) {V : ℕ → Set X}
     (hVo : ∀ n, IsOpen (V n)) (hV : ∀ n, ∃ d, HasWeakMFDerivOnGroupoid G J I u d (V n)) :
     ∃ du, HasWeakMFDerivOnGroupoid G J I u du (⋃ n : ℕ, V n) := by
-  choose d hd using hV
-  classical
+  choose d hd using hV; classical
   let du : ∀ x : X, TangentSpace J x →L[ℝ] TangentSpace I (u x) := fun x ↦
     if h : ∃ n : ℕ, x ∈ V n then d (Nat.find h) x else 0
   refine ⟨du, (hasWeakMFDerivOnGroupoid_iUnion_iff hVo).2 fun n ↦
@@ -483,42 +474,44 @@ private theorem exists_hasWeakMFDerivOnGroupoid_iUnion_nat
 section Existence
 
 variable [LindelofSpace X] [IsManifold J 1 X] [HasGroupoid X G] [IsManifold I ∞ M] [I.Boundaryless]
+  (hG : G.maximalAtlas X ⊆ IsManifold.maximalAtlas J 1 X)
+include hG
 
-/-- **Existence of a global weak differential** on an open subset `s` of a Lindelöf surface `X`
-(with or without boundary) for maps of order `1` into a boundaryless smooth manifold `M`. -/
+/-- **Existence of a global weak differential** on open `s ⊆ X` for Lindelöf `X`. -/
 theorem MemWkpLocMapOnGroupoid.exists_hasWeakMFDerivOnGroupoid
-    (hG : G.maximalAtlas X ⊆ IsManifold.maximalAtlas J 1 X)
     (hu : MemWkpLocMapOnGroupoid G J I p 1 u s) (hs : IsOpen s) :
-    ∃ du : ∀ x : X, TangentSpace J x →L[ℝ] TangentSpace I (u x),
-      HasWeakMFDerivOnGroupoid G J I u du s := by
+    ∃ du, HasWeakMFDerivOnGroupoid G J I u du s := by
   rcases isEmpty_or_nonempty X with _ | ⟨⟨x₀⟩⟩
   · exact ⟨fun _ ↦ 0, hasWeakMFDerivOnGroupoid_iff.2
       ⟨fun x _ ↦ isEmptyElim x, fun φ _ _ _ ↦ isEmptyElim (φ.symm (J.symm 0))⟩⟩
   have := (hu.memWkpLoc_chart (StructureGroupoid.chart_mem_maximalAtlas G x₀)
     (IsManifold.chart_mem_maximalAtlas (u x₀))).completeSpace
-  rcases s.eq_empty_or_nonempty with rfl | hne
+  rcases s.eq_empty_or_nonempty with rfl | ⟨x₁, hx₁s⟩
   · exact ⟨fun _ ↦ 0, hasWeakMFDerivOnGroupoid_empty⟩
+  -- Enumerate a countable chart-pair subcover of `s` and glue local differentials via `Nat.find`.
   have := J.secondCountableTopology; have := ChartedSpace.secondCountable_of_lindelof H' X
-  let U : X → Set X := fun x₁ ↦ s ∩ ((chartAt H' x₁).source ∩ u ⁻¹' (chartAt H (u x₁)).source)
-  have hUo : ∀ x₁, IsOpen (U x₁) := fun x₁ ↦ isOpen_inter_inter_preimage hu.continuousOn hs
-    (chartAt H' x₁).open_source (chartAt H (u x₁)).open_source
-  obtain ⟨c, hcov⟩ := exists_nat_subcover hne hUo
-    (fun x hxs ↦ ⟨hxs, mem_chart_source H' x, mem_chart_source H (u x)⟩) (fun _ ↦ inter_subset_left)
-  exact hcov ▸ exists_hasWeakMFDerivOnGroupoid_iUnion_nat hG (fun n ↦ hUo (c n))
-    fun n ↦ exists_local_hasWeakMFDerivOnGroupoid hG hu hs (c n)
+  let U : X → Set X := fun x ↦ (chartAt H' x).source ∩ (s ∩ u ⁻¹' (chartAt H (u x)).source)
+  have hUo (x : X) : IsOpen (U x) := (chartAt H' x).open_source.inter
+    (hu.continuousOn.isOpen_inter_preimage hs (chartAt H (u x)).open_source)
+  obtain ⟨T, hTcnt, hTcov⟩ := isOpen_iUnion_countable (fun i : s ↦ U i.1) fun i ↦ hUo i.1
+  have hTs : s = ⋃ i ∈ T, U i.1 := Subset.antisymm
+    (fun x hxs ↦ hTcov ▸ mem_iUnion.2 ⟨⟨x, hxs⟩, mem_chart_source H' x, hxs,
+      mem_chart_source H (u x)⟩) (iUnion₂_subset fun _ _ _ hx ↦ hx.2.1)
+  rcases mem_iUnion₂.1 (hTs ▸ hx₁s) with ⟨i₀, hi₀T, -⟩
+  obtain ⟨q, rfl⟩ := hTcnt.exists_eq_range ⟨i₀, hi₀T⟩
+  rw [hTs, biUnion_range]
+  exact exists_hasWeakMFDerivOnGroupoid_iUnion_nat hG (fun n ↦ hUo (q n).1)
+    fun n ↦ exists_local_hasWeakMFDerivOnGroupoid hG hu hs (q n).1
 
 /-- Global existence of a weak differential for a structure groupoid `G`. -/
 theorem MemWkpLocMapGroupoid.exists_hasWeakMFDerivGroupoid
-    (hG : G.maximalAtlas X ⊆ IsManifold.maximalAtlas J 1 X)
     (hu : MemWkpLocMapGroupoid G J I p 1 u) :
-    ∃ du : ∀ x : X, TangentSpace J x →L[ℝ] TangentSpace I (u x),
-      HasWeakMFDerivGroupoid G J I u du :=
+    ∃ du, HasWeakMFDerivGroupoid G J I u du :=
   let ⟨du, hdu⟩ := (memWkpLocMapOnGroupoid_univ.2 hu).exists_hasWeakMFDerivOnGroupoid hG isOpen_univ
   ⟨du, hasWeakMFDerivOnGroupoid_univ.1 hdu⟩
 
 /-- **First-order Sobolev characterization at groupoid generality** on open `s ⊆ X`. -/
-theorem memWkpLocMapOnGroupoid_one_iff_exists_hasWeakMFDerivOnGroupoid
-    (hG : G.maximalAtlas X ⊆ IsManifold.maximalAtlas J 1 X) (hs : IsOpen s) :
+theorem memWkpLocMapOnGroupoid_one_iff_exists_hasWeakMFDerivOnGroupoid (hs : IsOpen s) :
     MemWkpLocMapOnGroupoid G J I p 1 u s ↔ ∃ du, HasWeakMFDerivOnGroupoid G J I u du s ∧
       ∀ φ ∈ G.maximalAtlas X, ∀ ψ ∈ IsManifold.maximalAtlas I ∞ M,
         MemLpLoc p ((φ.extend J).target ∩ (φ.extend J).symm ⁻¹' (s ∩ u ⁻¹' ψ.source))
@@ -528,15 +521,13 @@ theorem memWkpLocMapOnGroupoid_one_iff_exists_hasWeakMFDerivOnGroupoid
    fun ⟨_, hdu, hLp⟩ ↦ (hdu.memWkpLocMapOnGroupoid_one_iff hs).2 hLp⟩
 
 /-- Global first-order Sobolev characterization at groupoid generality. -/
-theorem memWkpLocMapGroupoid_one_iff_exists_hasWeakMFDerivGroupoid
-    (hG : G.maximalAtlas X ⊆ IsManifold.maximalAtlas J 1 X) :
+theorem memWkpLocMapGroupoid_one_iff_exists_hasWeakMFDerivGroupoid :
     MemWkpLocMapGroupoid G J I p 1 u ↔ ∃ du, HasWeakMFDerivGroupoid G J I u du ∧
       ∀ φ ∈ G.maximalAtlas X, ∀ ψ ∈ IsManifold.maximalAtlas I ∞ M,
         MemLpLoc p ((φ.extend J).target ∩ (φ.extend J).symm ⁻¹' (u ⁻¹' ψ.source))
           (chartTangentHom J I φ ψ u du) := by
-  rw [← memWkpLocMapOnGroupoid_univ,
-    memWkpLocMapOnGroupoid_one_iff_exists_hasWeakMFDerivOnGroupoid hG isOpen_univ]
-  simp only [hasWeakMFDerivOnGroupoid_univ, univ_inter]
+  simpa only [← memWkpLocMapOnGroupoid_univ, hasWeakMFDerivOnGroupoid_univ, univ_inter] using
+    memWkpLocMapOnGroupoid_one_iff_exists_hasWeakMFDerivOnGroupoid (p := p) (u := u) hG isOpen_univ
 
 end Existence
 
@@ -552,6 +543,10 @@ variable {X : Type*} [TopologicalSpace X] [ChartedSpace ℂ X]
   {M : Type*} [TopologicalSpace M] [ChartedSpace H M] {p : ENNReal} {u : X → M}
   {du : ∀ x : X, TangentSpace 𝓘(ℝ, ℂ) x →L[ℝ] TangentSpace I (u x)} {s : Set X}
 
+private theorem maximalAtlas_subset_real {Z : Type*} [TopologicalSpace Z] [ChartedSpace ℂ Z] :
+    IsManifold.maximalAtlas 𝓘(ℂ) 1 Z ⊆ IsManifold.maximalAtlas 𝓘(ℝ, ℂ) 1 Z :=
+  IsManifold.maximalAtlas_subset_restrictScalars_of_ne_zero 1 one_ne_zero
+
 /-- **Chart independence** on a Riemann surface without boundary: covering subfamilies suffice. -/
 theorem hasWeakMFDerivOn_iff_of_subset_maximalAtlas [I.Boundaryless] [CompleteSpace F]
     (hs : IsOpen s) {A : Set (OpenPartialHomeomorph X ℂ)}
@@ -561,8 +556,8 @@ theorem hasWeakMFDerivOn_iff_of_subset_maximalAtlas [I.Boundaryless] [CompleteSp
     HasWeakMFDerivOn I u du s ↔ ContinuousOn u s ∧ ∀ φ ∈ A, ∀ ψ ∈ B,
       HasWeakFDerivOn volume (Opens.interior (φ.target ∩ φ.symm ⁻¹' (s ∩ u ⁻¹' ψ.source)))
         (ψ.extend I ∘ u ∘ φ.symm) (chartTangentHom 𝓘(ℝ, ℂ) I φ ψ u du) := by
-  rw [HasWeakMFDerivOn, hasWeakMFDerivOnGroupoid_iff_of_subset_maximalAtlas
-    (IsManifold.maximalAtlas_subset_restrictScalars_of_ne_zero 1 one_ne_zero) hs hA hAs hB hBs]
+  rw [HasWeakMFDerivOn,
+    hasWeakMFDerivOnGroupoid_iff_of_subset_maximalAtlas maximalAtlas_subset_real hs hA hAs hB hBs]
   simp only [OpenPartialHomeomorph.extend_modelWithCornersSelf,
     OpenPartialHomeomorph.coe_toPartialEquiv_symm]
 
@@ -574,10 +569,9 @@ theorem hasWeakMFDeriv_iff_of_subset_maximalAtlas [I.Boundaryless] [CompleteSpac
     HasWeakMFDeriv I u du ↔ Continuous u ∧ ∀ φ ∈ A, ∀ ψ ∈ B,
       HasWeakFDerivOn volume (Opens.interior (φ.target ∩ φ.symm ⁻¹' (u ⁻¹' ψ.source)))
         (ψ.extend I ∘ u ∘ φ.symm) (chartTangentHom 𝓘(ℝ, ℂ) I φ ψ u du) := by
-  refine hasWeakMFDerivOnGroupoid_univ.symm.trans
-    ((hasWeakMFDerivOn_iff_of_subset_maximalAtlas isOpen_univ hA (fun x _ ↦ hAs x) hB
-      (fun x _ ↦ hBs x)).trans ?_)
-  simp only [continuousOn_univ, univ_inter]
+  simpa only [← hasWeakMFDerivOnGroupoid_univ, continuousOn_univ, univ_inter] using
+    hasWeakMFDerivOn_iff_of_subset_maximalAtlas (u := u) (du := du) isOpen_univ hA
+      (fun x _ ↦ hAs x) hB (fun x _ ↦ hBs x)
 
 section SurfaceAtlas
 
@@ -588,8 +582,7 @@ theorem hasWeakMFDerivOn_iff_atlas (hs : IsOpen s) :
     HasWeakMFDerivOn I u du s ↔ ContinuousOn u s ∧ ∀ φ ∈ atlas ℂ X, ∀ ψ ∈ atlas H M,
       HasWeakFDerivOn volume (Opens.interior (φ.target ∩ φ.symm ⁻¹' (s ∩ u ⁻¹' ψ.source)))
         (ψ.extend I ∘ u ∘ φ.symm) (chartTangentHom 𝓘(ℝ, ℂ) I φ ψ u du) := by
-  rw [HasWeakMFDerivOn, hasWeakMFDerivOnGroupoid_iff_atlas
-    (IsManifold.maximalAtlas_subset_restrictScalars_of_ne_zero 1 one_ne_zero) hs]
+  rw [HasWeakMFDerivOn, hasWeakMFDerivOnGroupoid_iff_atlas maximalAtlas_subset_real hs]
   simp only [OpenPartialHomeomorph.extend_modelWithCornersSelf,
     OpenPartialHomeomorph.coe_toPartialEquiv_symm]
 
@@ -598,9 +591,8 @@ theorem hasWeakMFDeriv_iff_atlas :
     HasWeakMFDeriv I u du ↔ Continuous u ∧ ∀ φ ∈ atlas ℂ X, ∀ ψ ∈ atlas H M,
       HasWeakFDerivOn volume (Opens.interior (φ.target ∩ φ.symm ⁻¹' (u ⁻¹' ψ.source)))
         (ψ.extend I ∘ u ∘ φ.symm) (chartTangentHom 𝓘(ℝ, ℂ) I φ ψ u du) := by
-  refine hasWeakMFDerivOnGroupoid_univ.symm.trans
-    ((hasWeakMFDerivOn_iff_atlas isOpen_univ).trans ?_)
-  simp only [continuousOn_univ, univ_inter]
+  simpa only [← hasWeakMFDerivOnGroupoid_univ, continuousOn_univ, univ_inter] using
+    hasWeakMFDerivOn_iff_atlas (I := I) (u := u) (du := du) isOpen_univ
 
 /-- Chart independence: testing `chartAt ℂ x` and `chartAt H y` suffices. -/
 theorem hasWeakMFDerivOn_iff_chartAt (hs : IsOpen s) :
@@ -609,8 +601,7 @@ theorem hasWeakMFDerivOn_iff_chartAt (hs : IsOpen s) :
         ((chartAt ℂ x).target ∩ (chartAt ℂ x).symm ⁻¹' (s ∩ u ⁻¹' (chartAt H y).source)))
       (extChartAt I y ∘ u ∘ (chartAt ℂ x).symm)
       (chartTangentHom 𝓘(ℝ, ℂ) I (chartAt ℂ x) (chartAt H y) u du) := by
-  rw [HasWeakMFDerivOn, hasWeakMFDerivOnGroupoid_iff_chartAt
-    (IsManifold.maximalAtlas_subset_restrictScalars_of_ne_zero 1 one_ne_zero) hs]
+  rw [HasWeakMFDerivOn, hasWeakMFDerivOnGroupoid_iff_chartAt maximalAtlas_subset_real hs]
   simp only [extChartAt, OpenPartialHomeomorph.extend_modelWithCornersSelf,
     OpenPartialHomeomorph.coe_toPartialEquiv_symm]
 
@@ -620,9 +611,8 @@ theorem hasWeakMFDeriv_iff_chartAt :
       (Opens.interior ((chartAt ℂ x).target ∩ (chartAt ℂ x).symm ⁻¹' (u ⁻¹' (chartAt H y).source)))
       (extChartAt I y ∘ u ∘ (chartAt ℂ x).symm)
       (chartTangentHom 𝓘(ℝ, ℂ) I (chartAt ℂ x) (chartAt H y) u du) := by
-  refine hasWeakMFDerivOnGroupoid_univ.symm.trans
-    ((hasWeakMFDerivOn_iff_chartAt isOpen_univ).trans ?_)
-  simp only [continuousOn_univ, univ_inter]
+  simpa only [← hasWeakMFDerivOnGroupoid_univ, continuousOn_univ, univ_inter] using
+    hasWeakMFDerivOn_iff_chartAt (I := I) (u := u) (du := du) isOpen_univ
 
 end SurfaceAtlas
 
@@ -635,13 +625,11 @@ theorem hasWeakMFDerivOn_model_iff {u : ℂ → F}
   have hdom (x : ℂ) (y : F) : Opens.interior ((chartAt ℂ x).target ∩
       (chartAt ℂ x).symm ⁻¹' ((Ω : Set ℂ) ∩ u ⁻¹' (chartAt F y).source)) = Ω :=
     Opens.ext (by simp [chartAt_self_eq])
-  have hextF (x : ℂ) (y : F) : extChartAt 𝓘(ℝ, F) y ∘ u ∘ (chartAt ℂ x).symm = u := by
+  have hmap (x : ℂ) (y : F) : extChartAt 𝓘(ℝ, F) y ∘ u ∘ (chartAt ℂ x).symm = u := by
     ext; simp [chartAt_self_eq]
-  have hch (x : ℂ) (y : F) : chartTangentHom 𝓘(ℝ, ℂ) 𝓘(ℝ, F) (chartAt ℂ x) (chartAt F y) u du =
-      fun z ↦ (NormedSpace.fromTangentSpace (𝕜 := ℝ) (u z)).toContinuousLinearMap ∘L
-        du z ∘L (NormedSpace.fromTangentSpace (𝕜 := ℝ) z).symm.toContinuousLinearMap := by
-    rw [chartAt_self_eq, chartAt_self_eq]; exact funext (chartTangentHom_refl du)
-  rw [hasWeakMFDerivOn_iff_chartAt Ω.isOpen]; simp only [hdom, hextF, hch]
+  rw [hasWeakMFDerivOn_iff_chartAt Ω.isOpen]
+  simp only [hdom, hmap]
+  simp only [chartAt_self_eq, funext (chartTangentHom_refl du)]
   exact and_congr_right fun _ ↦ ⟨fun h ↦ h 0 (u 0), fun h _ _ ↦ h⟩
 
 section Biholomorph
@@ -655,57 +643,51 @@ private def toRealDiffeomorph (e : Y ≃ₘ^n⟮𝓘(ℂ), 𝓘(ℂ)⟯ X) (hn :
     by simpa [modelWithCornersSelf_restrictScalars] using
       (e.symm.contMDiff.of_le hn).restrictScalars ℝ⟩
 
-private theorem mem_maximalAtlas_of_biholomorph {Z W : Type*} [TopologicalSpace Z]
+private theorem trans_mem_maximalAtlas_of_toEquiv_eq {Z W : Type*} [TopologicalSpace Z]
     [ChartedSpace ℂ Z] [TopologicalSpace W] [ChartedSpace ℂ W] [IsManifold 𝓘(ℂ) 1 W]
-    {e' : W ≃ₘ^1⟮𝓘(ℝ, ℂ), 𝓘(ℝ, ℂ)⟯ Z} (e : W ≃ₘ^n⟮𝓘(ℂ), 𝓘(ℂ)⟯ Z) (hn : 1 ≤ n)
-    (he' : e'.toPartialEquiv = e.toPartialEquiv) {φ : OpenPartialHomeomorph Z ℂ}
+    {g : W ≃ₘ^1⟮𝓘(ℝ, ℂ), 𝓘(ℝ, ℂ)⟯ Z} (f : W ≃ₘ^n⟮𝓘(ℂ), 𝓘(ℂ)⟯ Z) (hn : 1 ≤ n)
+    (hg : g.toEquiv = f.toEquiv) {φ : OpenPartialHomeomorph Z ℂ}
     (hφ : φ ∈ IsManifold.maximalAtlas 𝓘(ℂ) 1 Z) :
-    e'.toHomeomorph.toOpenPartialHomeomorph.trans φ ∈ IsManifold.maximalAtlas 𝓘(ℂ) 1 W := by
-  have h : e'.toHomeomorph.toOpenPartialHomeomorph =
-      (e.toPartialDiffeomorph.ofLE hn).toOpenPartialHomeomorph :=
-    OpenPartialHomeomorph.toPartialEquiv_injective
-      (he'.trans ((e.toPartialDiffeomorph.ofLE_toPartialEquiv hn).trans
-        e.toPartialDiffeomorph_toPartialEquiv).symm)
-  exact h ▸ (e.toPartialDiffeomorph.ofLE hn).trans_mem_maximalAtlas hφ
+    g.toHomeomorph.toOpenPartialHomeomorph.trans φ ∈ IsManifold.maximalAtlas 𝓘(ℂ) 1 W := by
+  have heq : g.toHomeomorph.toOpenPartialHomeomorph.toPartialEquiv =
+      (f.toPartialDiffeomorph.ofLE (m := 1) hn).toOpenPartialHomeomorph.toPartialEquiv :=
+    (congrArg Equiv.toPartialEquiv hg).trans
+      ((f.toPartialDiffeomorph.ofLE_toPartialEquiv hn).trans
+        f.toPartialDiffeomorph_toPartialEquiv).symm
+  rw [OpenPartialHomeomorph.toPartialEquiv_injective heq]
+  exact (f.toPartialDiffeomorph.ofLE (m := 1) hn).trans_mem_maximalAtlas hφ
 
-variable [IsManifold 𝓘(ℂ) 1 X]
+variable [IsManifold 𝓘(ℂ) 1 X] (e : Y ≃ₘ^n⟮𝓘(ℂ), 𝓘(ℂ)⟯ X) (hn : 1 ≤ n)
+include hn
 
-/-- Precomposing `u : X → M` with a biholomorphism `e : Y ≃ₘ^n⟮𝓘(ℂ), 𝓘(ℂ)⟯ X` (`1 ≤ n`) pulls `du`
-on `s` back to `y ↦ (du (e y)).comp (mfderiv 𝓘(ℝ, ℂ) 𝓘(ℝ, ℂ) e y)` on `e ⁻¹' s`. -/
-theorem _root_.Diffeomorph.hasWeakMFDerivOn_comp_diffeomorph
-    (e : Y ≃ₘ^n⟮𝓘(ℂ), 𝓘(ℂ)⟯ X) (hn : 1 ≤ n) (hu : HasWeakMFDerivOn I u du s) :
+/-- Precomposing `u : X → M` with a biholomorphism `e : Y ≃ₘ^n⟮𝓘(ℂ), 𝓘(ℂ)⟯ X` (`1 ≤ n`). -/
+theorem _root_.Diffeomorph.hasWeakMFDerivOn_comp_diffeomorph (hu : HasWeakMFDerivOn I u du s) :
     HasWeakMFDerivOn I (u ∘ e) (fun y ↦ (du (e y)).comp (mfderiv 𝓘(ℝ, ℂ) 𝓘(ℝ, ℂ) e y)) (e ⁻¹' s) :=
-  (toRealDiffeomorph e hn).hasWeakMFDerivOnGroupoid_comp_diffeomorph
-    (IsManifold.maximalAtlas_subset_restrictScalars_of_ne_zero 1 one_ne_zero) le_rfl
-    (fun _ hφ ↦ mem_maximalAtlas_of_biholomorph e.symm hn rfl hφ) hu
+  (toRealDiffeomorph e hn).hasWeakMFDerivOnGroupoid_comp_diffeomorph maximalAtlas_subset_real le_rfl
+    (fun _ ↦ trans_mem_maximalAtlas_of_toEquiv_eq e.symm hn rfl) hu
 
-/-- Global precomposition of a weak differential with a biholomorphism. -/
-theorem _root_.Diffeomorph.hasWeakMFDeriv_comp_diffeomorph
-    (e : Y ≃ₘ^n⟮𝓘(ℂ), 𝓘(ℂ)⟯ X) (hn : 1 ≤ n) (hu : HasWeakMFDeriv I u du) :
+/-- Global precomposition with a biholomorphism (`1 ≤ n`). -/
+theorem _root_.Diffeomorph.hasWeakMFDeriv_comp_diffeomorph (hu : HasWeakMFDeriv I u du) :
     HasWeakMFDeriv I (u ∘ e) (fun y ↦ (du (e y)).comp (mfderiv 𝓘(ℝ, ℂ) 𝓘(ℝ, ℂ) e y)) :=
   hasWeakMFDerivOnGroupoid_univ.1 (by simpa only [preimage_univ] using
     e.hasWeakMFDerivOn_comp_diffeomorph hn (hasWeakMFDerivOnGroupoid_univ.2 hu))
 
-/-- Equivalence of weak differentials under precomposition with a biholomorphism (`1 ≤ n`). -/
-theorem _root_.Diffeomorph.hasWeakMFDerivOn_comp_diffeomorph_iff [IsManifold 𝓘(ℂ) 1 Y]
-    (e : Y ≃ₘ^n⟮𝓘(ℂ), 𝓘(ℂ)⟯ X) (hn : 1 ≤ n) :
+/-- Biholomorphism precomposition equivalence for `HasWeakMFDerivOn` (`1 ≤ n`). -/
+theorem _root_.Diffeomorph.hasWeakMFDerivOn_comp_diffeomorph_iff [IsManifold 𝓘(ℂ) 1 Y] :
     HasWeakMFDerivOn I (u ∘ e)
         (fun y ↦ (du (e y)).comp (mfderiv 𝓘(ℝ, ℂ) 𝓘(ℝ, ℂ) e y)) (e ⁻¹' s) ↔
       HasWeakMFDerivOn I u du s :=
   (toRealDiffeomorph e hn).hasWeakMFDerivOnGroupoid_comp_diffeomorph_iff
-    (IsManifold.maximalAtlas_subset_restrictScalars_of_ne_zero 1 one_ne_zero)
-    (IsManifold.maximalAtlas_subset_restrictScalars_of_ne_zero 1 one_ne_zero) le_rfl
-    (fun _ hφ ↦ mem_maximalAtlas_of_biholomorph e.symm hn rfl hφ)
-    (fun _ hφ ↦ mem_maximalAtlas_of_biholomorph e hn rfl hφ)
+    maximalAtlas_subset_real maximalAtlas_subset_real le_rfl
+    (fun _ ↦ trans_mem_maximalAtlas_of_toEquiv_eq e.symm hn rfl)
+    (fun _ ↦ trans_mem_maximalAtlas_of_toEquiv_eq e hn rfl)
 
-/-- Global equivalence of weak differentials under precomposition with a biholomorphism. -/
-theorem _root_.Diffeomorph.hasWeakMFDeriv_comp_diffeomorph_iff [IsManifold 𝓘(ℂ) 1 Y]
-    (e : Y ≃ₘ^n⟮𝓘(ℂ), 𝓘(ℂ)⟯ X) (hn : 1 ≤ n) :
+/-- Global biholomorphism precomposition equivalence for `HasWeakMFDeriv` (`1 ≤ n`). -/
+theorem _root_.Diffeomorph.hasWeakMFDeriv_comp_diffeomorph_iff [IsManifold 𝓘(ℂ) 1 Y] :
     HasWeakMFDeriv I (u ∘ e) (fun y ↦ (du (e y)).comp (mfderiv 𝓘(ℝ, ℂ) 𝓘(ℝ, ℂ) e y)) ↔
       HasWeakMFDeriv I u du := by
-  rw [HasWeakMFDeriv, HasWeakMFDeriv, ← hasWeakMFDerivOnGroupoid_univ,
-    ← hasWeakMFDerivOnGroupoid_univ, ← preimage_univ (f := e)]
-  exact e.hasWeakMFDerivOn_comp_diffeomorph_iff hn
+  simpa only [HasWeakMFDeriv, ← hasWeakMFDerivOnGroupoid_univ, ← preimage_univ (f := e)] using
+    e.hasWeakMFDerivOn_comp_diffeomorph_iff (I := I) (u := u) (du := du) (s := univ) hn
 
 end Biholomorph
 
@@ -713,55 +695,48 @@ section SurfaceExistence
 
 variable [LindelofSpace X] [IsManifold 𝓘(ℂ) 1 X] [IsManifold I ∞ M] [I.Boundaryless]
 
-/-- **Existence of a weak differential on a Riemann surface without boundary.** -/
+/-- **Existence of a weak differential** on open `s` of a Riemann surface without boundary. -/
 theorem MemWkpLocMapOn.exists_hasWeakMFDerivOn (hu : MemWkpLocMapOn I p 1 u s) (hs : IsOpen s) :
-    ∃ du : ∀ x : X, TangentSpace 𝓘(ℝ, ℂ) x →L[ℝ] TangentSpace I (u x), HasWeakMFDerivOn I u du s :=
+    ∃ du, HasWeakMFDerivOn I u du s :=
   letI : IsManifold 𝓘(ℝ, ℂ) 1 X := IsManifold.restrictScalars_of_ne_zero 1 one_ne_zero inferInstance
-  MemWkpLocMapOnGroupoid.exists_hasWeakMFDerivOnGroupoid
-    (IsManifold.maximalAtlas_subset_restrictScalars_of_ne_zero 1 one_ne_zero) hu hs
+  MemWkpLocMapOnGroupoid.exists_hasWeakMFDerivOnGroupoid maximalAtlas_subset_real hu hs
 
-/-- **Global existence of a weak differential on a Riemann surface without boundary.** -/
+/-- **Global existence of a weak differential** on a Riemann surface without boundary. -/
 theorem MemWkpLocMap.exists_hasWeakMFDeriv (hu : MemWkpLocMap I p 1 u) :
-    ∃ du : ∀ x : X, TangentSpace 𝓘(ℝ, ℂ) x →L[ℝ] TangentSpace I (u x), HasWeakMFDeriv I u du :=
-  letI : IsManifold 𝓘(ℝ, ℂ) 1 X := IsManifold.restrictScalars_of_ne_zero 1 one_ne_zero inferInstance
-  MemWkpLocMapGroupoid.exists_hasWeakMFDerivGroupoid
-    (IsManifold.maximalAtlas_subset_restrictScalars_of_ne_zero 1 one_ne_zero) hu
+    ∃ du, HasWeakMFDeriv I u du :=
+  let ⟨du, hdu⟩ := MemWkpLocMapOn.exists_hasWeakMFDerivOn (memWkpLocMapOnGroupoid_univ.2 hu)
+    isOpen_univ
+  ⟨du, hasWeakMFDerivOnGroupoid_univ.1 hdu⟩
 
-/-- **First-order Sobolev characterization via preferred charts** on a Lindelöf Riemann surface. -/
+/-- **First-order Sobolev characterization** via preferred charts on a Lindelöf Riemann surface. -/
 theorem memWkpLocMapOn_one_iff_exists_hasWeakMFDerivOn (hs : IsOpen s) :
-    MemWkpLocMapOn I p 1 u s ↔ ∃ du : ∀ x : X, TangentSpace 𝓘(ℝ, ℂ) x →L[ℝ] TangentSpace I (u x),
-      HasWeakMFDerivOn I u du s ∧ ∀ x : X, ∀ y : M, MemLpLoc p
+    MemWkpLocMapOn I p 1 u s ↔ ∃ du, HasWeakMFDerivOn I u du s ∧ ∀ x : X, ∀ y : M, MemLpLoc p
         ((chartAt ℂ x).target ∩ (chartAt ℂ x).symm ⁻¹' (s ∩ u ⁻¹' (chartAt H y).source))
         (chartTangentHom 𝓘(ℝ, ℂ) I (chartAt ℂ x) (chartAt H y) u du) := by
-  refine ⟨fun hu ↦ ?_, fun ⟨du, hdu, hLp⟩ ↦ ?_⟩
-  · obtain ⟨du, hdu⟩ := MemWkpLocMapOn.exists_hasWeakMFDerivOn hu hs
-    exact ⟨du, hdu, fun x y ↦ by
+  refine ⟨fun hu ↦ let ⟨du, hdu⟩ := MemWkpLocMapOn.exists_hasWeakMFDerivOn hu hs
+    ⟨du, hdu, fun x y ↦ by
       simpa only [OpenPartialHomeomorph.extend_modelWithCornersSelf,
-        OpenPartialHomeomorph.coe_toPartialEquiv_symm] using
-          hdu.memLpLoc_chartTangentHom hu hs (IsManifold.chart_mem_maximalAtlas x)
-            (IsManifold.chart_mem_maximalAtlas y)⟩
-  · rcases isEmpty_or_nonempty X with _ | ⟨⟨x₀⟩⟩
-    · exact memWkpLocMapOn_iff.2 ⟨fun x _ ↦ isEmptyElim x, fun φ _ _ _ ↦ isEmptyElim (φ.symm 0)⟩
-    have := (hdu.hasWeakFDerivOn_chart (IsManifold.chart_mem_maximalAtlas x₀)
-      (IsManifold.chart_mem_maximalAtlas (u x₀))).completeSpace
-    refine (memWkpLocMapOn_iff_chartAt le_rfl hs).2 ⟨hdu.continuousOn, fun x y ↦ ?_⟩
-    have hweak := hdu.hasWeakFDerivOn_chart (IsManifold.chart_mem_maximalAtlas x)
-      (IsManifold.chart_mem_maximalAtlas y)
-    simp only [OpenPartialHomeomorph.extend_modelWithCornersSelf,
-      OpenPartialHomeomorph.coe_toPartialEquiv_symm] at hweak
-    exact memWkpLoc_succ_iff.2 ⟨((chartAt ℂ x).continuousOn_comp_comp_symm
+        OpenPartialHomeomorph.coe_toPartialEquiv_symm] using hdu.memLpLoc_chartTangentHom hu hs
+          (IsManifold.chart_mem_maximalAtlas x) (IsManifold.chart_mem_maximalAtlas y)⟩,
+    fun ⟨du, hdu, hLp⟩ ↦ ?_⟩
+  -- Recover `CompleteSpace F` from a preferred chart pair and apply `memWkpLocMapOn_iff_chartAt`.
+  rcases isEmpty_or_nonempty X with _ | ⟨⟨x₀⟩⟩
+  · exact memWkpLocMapOn_iff.2 ⟨fun x _ ↦ isEmptyElim x, fun φ _ _ _ ↦ isEmptyElim (φ.symm 0)⟩
+  have := (hdu.hasWeakFDerivOn_chart (IsManifold.chart_mem_maximalAtlas x₀)
+    (IsManifold.chart_mem_maximalAtlas (u x₀))).completeSpace
+  exact (memWkpLocMapOn_iff_chartAt le_rfl hs).2 ⟨hdu.continuousOn, fun x y ↦ memWkpLoc_succ_iff.2
+    ⟨((chartAt ℂ x).continuousOn_comp_comp_symm
       (((chartAt H y).continuousOn_extend (I := I)).mono (chartAt H y).extend_source.ge)
-      hdu.continuousOn).memLpLoc, _, hweak, memWkpLoc_zero_iff.2 (hLp x y)⟩
+      hdu.continuousOn).memLpLoc, _, ((hasWeakMFDerivOn_iff_chartAt hs).1 hdu).2 x y,
+      memWkpLoc_zero_iff.2 (hLp x y)⟩⟩
 
 /-- Global first-order Sobolev characterization via preferred charts on a Riemann surface. -/
 theorem memWkpLocMap_one_iff_exists_hasWeakMFDeriv :
-    MemWkpLocMap I p 1 u ↔ ∃ du : ∀ x : X, TangentSpace 𝓘(ℝ, ℂ) x →L[ℝ] TangentSpace I (u x),
-      HasWeakMFDeriv I u du ∧ ∀ x : X, ∀ y : M, MemLpLoc p
+    MemWkpLocMap I p 1 u ↔ ∃ du, HasWeakMFDeriv I u du ∧ ∀ x : X, ∀ y : M, MemLpLoc p
         ((chartAt ℂ x).target ∩ (chartAt ℂ x).symm ⁻¹' (u ⁻¹' (chartAt H y).source))
         (chartTangentHom 𝓘(ℝ, ℂ) I (chartAt ℂ x) (chartAt H y) u du) := by
-  refine memWkpLocMapOnGroupoid_univ.symm.trans
-    ((memWkpLocMapOn_one_iff_exists_hasWeakMFDerivOn isOpen_univ).trans ?_)
-  simp only [hasWeakMFDerivOnGroupoid_univ, univ_inter]
+  simpa only [← memWkpLocMapOnGroupoid_univ, hasWeakMFDerivOnGroupoid_univ, univ_inter] using
+    memWkpLocMapOn_one_iff_exists_hasWeakMFDerivOn (I := I) (p := p) (u := u) isOpen_univ
 
 end SurfaceExistence
 
@@ -776,7 +751,6 @@ variable {X : Type*} [TopologicalSpace X] [ChartedSpace ClosedUpperHalfPlane X]
   {H : Type*} [TopologicalSpace H] {I : ModelWithCorners ℝ F H}
   {M : Type*} [TopologicalSpace M] [ChartedSpace H M] {p : ENNReal} {u : X → M}
   {du : ∀ x : X, TangentSpace closedUpperHalfPlaneModel x →L[ℝ] TangentSpace I (u x)} {s : Set X}
-  {Y : Type*} [TopologicalSpace Y] [ChartedSpace ClosedUpperHalfPlane Y] {n : ℕ∞ω}
 
 /-- Chart independence of `HasWeakMFDerivOnBordered` for covering subfamilies. -/
 theorem hasWeakMFDerivOnBordered_iff_of_subset_maximalAtlas [I.Boundaryless] [CompleteSpace F]
@@ -792,29 +766,20 @@ theorem hasWeakMFDerivOnBordered_iff_of_subset_maximalAtlas [I.Boundaryless] [Co
   hasWeakMFDerivOnGroupoid_iff_of_subset_maximalAtlas
     borderedHolomorphicGroupoid_maximalAtlas_subset hs hA hAs hB hBs
 
-/-- Global chart independence of `HasWeakMFDerivBordered` for covering subfamilies. -/
-theorem hasWeakMFDerivBordered_iff_of_subset_maximalAtlas [I.Boundaryless] [CompleteSpace F]
-    {A : Set (OpenPartialHomeomorph X ClosedUpperHalfPlane)}
-    (hA : A ⊆ borderedHolomorphicGroupoid.maximalAtlas X) (hAs : ∀ x : X, ∃ φ ∈ A, x ∈ φ.source)
-    {B : Set (OpenPartialHomeomorph M H)} (hB : B ⊆ IsManifold.maximalAtlas I ∞ M)
-    (hBs : ∀ x : X, ∃ ψ ∈ B, u x ∈ ψ.source) :
-    HasWeakMFDerivBordered I u du ↔ Continuous u ∧ ∀ φ ∈ A, ∀ ψ ∈ B, HasWeakFDerivOn volume
-      (Opens.interior ((φ.extend closedUpperHalfPlaneModel).target ∩
-        (φ.extend closedUpperHalfPlaneModel).symm ⁻¹' (u ⁻¹' ψ.source)))
-      (ψ.extend I ∘ u ∘ (φ.extend closedUpperHalfPlaneModel).symm)
-      (chartTangentHom closedUpperHalfPlaneModel I φ ψ u du) :=
-  hasWeakMFDerivGroupoid_iff_of_subset_maximalAtlas
-    borderedHolomorphicGroupoid_maximalAtlas_subset hA hAs hB hBs
+section BorderedDiffeomorph
 
-/-- Equivalence of weak differentials under precomposition with a bordered biholomorphism on `s`. -/
-theorem _root_.Diffeomorph.hasWeakMFDerivOnBordered_comp_diffeomorph_iff
-    (e : Y ≃ₘ^n⟮closedUpperHalfPlaneModel, closedUpperHalfPlaneModel⟯ X) (hn : 1 ≤ n)
-    (he : ∀ φ ∈ borderedHolomorphicGroupoid.maximalAtlas Y,
-      e.symm.toHomeomorph.toOpenPartialHomeomorph.trans φ ∈
-        borderedHolomorphicGroupoid.maximalAtlas X)
-    (hesymm : ∀ φ ∈ borderedHolomorphicGroupoid.maximalAtlas X,
-      e.toHomeomorph.toOpenPartialHomeomorph.trans φ ∈
-        borderedHolomorphicGroupoid.maximalAtlas Y) :
+variable {Y : Type*} [TopologicalSpace Y] [ChartedSpace ClosedUpperHalfPlane Y] {n : ℕ∞ω}
+  (e : Y ≃ₘ^n⟮closedUpperHalfPlaneModel, closedUpperHalfPlaneModel⟯ X) (hn : 1 ≤ n)
+  (he : ∀ φ ∈ borderedHolomorphicGroupoid.maximalAtlas Y,
+    e.symm.toHomeomorph.toOpenPartialHomeomorph.trans φ ∈
+      borderedHolomorphicGroupoid.maximalAtlas X)
+  (hesymm : ∀ φ ∈ borderedHolomorphicGroupoid.maximalAtlas X,
+    e.toHomeomorph.toOpenPartialHomeomorph.trans φ ∈
+      borderedHolomorphicGroupoid.maximalAtlas Y)
+include hn he hesymm
+
+/-- Bordered-holomorphic diffeomorphism invariance for `HasWeakMFDerivOnBordered`. -/
+theorem _root_.Diffeomorph.hasWeakMFDerivOnBordered_comp_diffeomorph_iff :
     HasWeakMFDerivOnBordered I (u ∘ e)
         (fun y ↦ (du (e y)).comp
           (mfderiv closedUpperHalfPlaneModel closedUpperHalfPlaneModel e y)) (e ⁻¹' s) ↔
@@ -822,27 +787,21 @@ theorem _root_.Diffeomorph.hasWeakMFDerivOnBordered_comp_diffeomorph_iff
   e.hasWeakMFDerivOnGroupoid_comp_diffeomorph_iff borderedHolomorphicGroupoid_maximalAtlas_subset
     borderedHolomorphicGroupoid_maximalAtlas_subset hn he hesymm
 
-/-- Global equivalence of weak differentials under precomposition with a bordered biholomorphism. -/
-theorem _root_.Diffeomorph.hasWeakMFDerivBordered_comp_diffeomorph_iff
-    (e : Y ≃ₘ^n⟮closedUpperHalfPlaneModel, closedUpperHalfPlaneModel⟯ X) (hn : 1 ≤ n)
-    (he : ∀ φ ∈ borderedHolomorphicGroupoid.maximalAtlas Y,
-      e.symm.toHomeomorph.toOpenPartialHomeomorph.trans φ ∈
-        borderedHolomorphicGroupoid.maximalAtlas X)
-    (hesymm : ∀ φ ∈ borderedHolomorphicGroupoid.maximalAtlas X,
-      e.toHomeomorph.toOpenPartialHomeomorph.trans φ ∈
-        borderedHolomorphicGroupoid.maximalAtlas Y) :
-    HasWeakMFDerivBordered I (u ∘ e)
-        (fun y ↦ (du (e y)).comp
-          (mfderiv closedUpperHalfPlaneModel closedUpperHalfPlaneModel e y)) ↔
+/-- Global bordered-holomorphic diffeomorphism invariance for `HasWeakMFDerivBordered`. -/
+theorem _root_.Diffeomorph.hasWeakMFDerivBordered_comp_diffeomorph_iff :
+    HasWeakMFDerivBordered I (u ∘ e) (fun y ↦ (du (e y)).comp
+        (mfderiv closedUpperHalfPlaneModel closedUpperHalfPlaneModel e y)) ↔
       HasWeakMFDerivBordered I u du :=
   e.hasWeakMFDerivGroupoid_comp_diffeomorph_iff borderedHolomorphicGroupoid_maximalAtlas_subset
     borderedHolomorphicGroupoid_maximalAtlas_subset hn he hesymm
+
+end BorderedDiffeomorph
 
 section BorderedManifold
 
 variable [HasGroupoid X borderedHolomorphicGroupoid] [IsManifold I ∞ M] [I.Boundaryless]
 
-/-- Chart independence of `HasWeakMFDerivOnBordered` via `atlas` on `X` and `M`. -/
+/-- Chart independence of `HasWeakMFDerivOnBordered` via `atlas`. -/
 theorem hasWeakMFDerivOnBordered_iff_atlas (hs : IsOpen s) :
     HasWeakMFDerivOnBordered I u du s ↔ ContinuousOn u s ∧
       ∀ φ ∈ atlas ClosedUpperHalfPlane X, ∀ ψ ∈ atlas H M, HasWeakFDerivOn volume
@@ -852,17 +811,7 @@ theorem hasWeakMFDerivOnBordered_iff_atlas (hs : IsOpen s) :
         (chartTangentHom closedUpperHalfPlaneModel I φ ψ u du) :=
   hasWeakMFDerivOnGroupoid_iff_atlas borderedHolomorphicGroupoid_maximalAtlas_subset hs
 
-/-- Global chart independence of `HasWeakMFDerivBordered` via `atlas` on `X` and `M`. -/
-theorem hasWeakMFDerivBordered_iff_atlas :
-    HasWeakMFDerivBordered I u du ↔ Continuous u ∧
-      ∀ φ ∈ atlas ClosedUpperHalfPlane X, ∀ ψ ∈ atlas H M, HasWeakFDerivOn volume
-        (Opens.interior ((φ.extend closedUpperHalfPlaneModel).target ∩
-          (φ.extend closedUpperHalfPlaneModel).symm ⁻¹' (u ⁻¹' ψ.source)))
-        (ψ.extend I ∘ u ∘ (φ.extend closedUpperHalfPlaneModel).symm)
-        (chartTangentHom closedUpperHalfPlaneModel I φ ψ u du) :=
-  hasWeakMFDerivGroupoid_iff_atlas borderedHolomorphicGroupoid_maximalAtlas_subset
-
-/-- Chart independence of `HasWeakMFDerivOnBordered`: testing preferred charts suffices. -/
+/-- Chart independence of `HasWeakMFDerivOnBordered` via preferred charts. -/
 theorem hasWeakMFDerivOnBordered_iff_chartAt (hs : IsOpen s) :
     HasWeakMFDerivOnBordered I u du s ↔ ContinuousOn u s ∧ ∀ x : X, ∀ y : M, HasWeakFDerivOn volume
       (Opens.interior ((extChartAt closedUpperHalfPlaneModel x).target ∩
@@ -872,30 +821,20 @@ theorem hasWeakMFDerivOnBordered_iff_chartAt (hs : IsOpen s) :
         (chartAt ClosedUpperHalfPlane x) (chartAt H y) u du) :=
   hasWeakMFDerivOnGroupoid_iff_chartAt borderedHolomorphicGroupoid_maximalAtlas_subset hs
 
-/-- Global chart independence of `HasWeakMFDerivBordered`: testing preferred charts suffices. -/
-theorem hasWeakMFDerivBordered_iff_chartAt :
-    HasWeakMFDerivBordered I u du ↔ Continuous u ∧ ∀ x : X, ∀ y : M, HasWeakFDerivOn volume
-      (Opens.interior ((extChartAt closedUpperHalfPlaneModel x).target ∩
-        (extChartAt closedUpperHalfPlaneModel x).symm ⁻¹' (u ⁻¹' (chartAt H y).source)))
-      (extChartAt I y ∘ u ∘ (extChartAt closedUpperHalfPlaneModel x).symm)
-      (chartTangentHom closedUpperHalfPlaneModel I
-        (chartAt ClosedUpperHalfPlane x) (chartAt H y) u du) :=
-  hasWeakMFDerivGroupoid_iff_chartAt borderedHolomorphicGroupoid_maximalAtlas_subset
-
-/-- **Existence of a weak differential on a Riemann surface with boundary.** -/
+/-- Existence of a weak differential on a bordered Riemann surface. -/
 theorem MemWkpLocMapOnBordered.exists_hasWeakMFDerivOnBordered [LindelofSpace X]
     (hu : MemWkpLocMapOnBordered I p 1 u s) (hs : IsOpen s) :
     ∃ du, HasWeakMFDerivOnBordered I u du s :=
   MemWkpLocMapOnGroupoid.exists_hasWeakMFDerivOnGroupoid
     borderedHolomorphicGroupoid_maximalAtlas_subset hu hs
 
-/-- **Global existence of a weak differential on a Riemann surface with boundary.** -/
+/-- Global existence of a weak differential on a bordered Riemann surface. -/
 theorem MemWkpLocMapBordered.exists_hasWeakMFDerivBordered [LindelofSpace X]
     (hu : MemWkpLocMapBordered I p 1 u) : ∃ du, HasWeakMFDerivBordered I u du :=
   MemWkpLocMapGroupoid.exists_hasWeakMFDerivGroupoid
     borderedHolomorphicGroupoid_maximalAtlas_subset hu
 
-/-- First-order Sobolev characterization on an open subset of a Lindelöf bordered surface. -/
+/-- First-order Sobolev characterization on open `s` of a Lindelöf bordered surface. -/
 theorem memWkpLocMapOnBordered_one_iff_exists_hasWeakMFDerivOnBordered [LindelofSpace X]
     (hs : IsOpen s) : MemWkpLocMapOnBordered I p 1 u s ↔ ∃ du, HasWeakMFDerivOnBordered I u du s ∧
       ∀ φ ∈ borderedHolomorphicGroupoid.maximalAtlas X, ∀ ψ ∈ IsManifold.maximalAtlas I ∞ M,
@@ -905,7 +844,7 @@ theorem memWkpLocMapOnBordered_one_iff_exists_hasWeakMFDerivOnBordered [Lindelof
   memWkpLocMapOnGroupoid_one_iff_exists_hasWeakMFDerivOnGroupoid
     borderedHolomorphicGroupoid_maximalAtlas_subset hs
 
-/-- Global first-order Sobolev characterization on a Lindelöf bordered Riemann surface. -/
+/-- Global first-order Sobolev characterization on a Lindelöf bordered surface. -/
 theorem memWkpLocMapBordered_one_iff_exists_hasWeakMFDerivBordered [LindelofSpace X] :
     MemWkpLocMapBordered I p 1 u ↔ ∃ du, HasWeakMFDerivBordered I u du ∧
       ∀ φ ∈ borderedHolomorphicGroupoid.maximalAtlas X, ∀ ψ ∈ IsManifold.maximalAtlas I ∞ M,

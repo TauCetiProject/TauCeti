@@ -9,20 +9,27 @@ public import Mathlib.Geometry.Manifold.MFDeriv.NormedSpace
 public import Mathlib.Geometry.Manifold.MFDeriv.Tangent
 public import Mathlib.Topology.Algebra.Module.Determinant
 import Mathlib.Geometry.Manifold.ContMDiff.Atlas
-import Mathlib.Geometry.Manifold.MFDeriv.Atlas
 import TauCeti.Geometry.Manifold.Boundary.Basic
+import TauCeti.Geometry.Manifold.IsManifold.Basic
 import TauCeti.Topology.OpenPartialHomeomorph.Continuity
 
 /-!
 # Coordinate expressions of tangent-space homomorphisms along a map
 
 For manifolds `X` and `M` modelled on `J : ModelWithCorners 𝕜 E H'` and
-`I : ModelWithCorners 𝕜 F H` (possibly with corners), `TauCeti.chartTangentHom J I φ ψ u du` reads
+`I : ModelWithCorners 𝕜 F H`, `TauCeti.chartTangentHom J I φ ψ u du` reads a section
 `du : ∀ x, TangentSpace J x →L[𝕜] TangentSpace I (u x)` along `u : X → M` in charts `φ` and `ψ` as
-a map `E → E →L[𝕜] F`, agreeing in preferred charts with `ContinuousLinearMap.inCoordinates`
-(`TauCeti.chartTangentHom_chartAt_eq_inCoordinates`) and transforming functorially under chart
-transitions (`TauCeti.chartTangentHom_comp_fderiv_transition`,
-`TauCeti.fderiv_extend_comp_chartTangentHom`).
+`E → E →L[𝕜] F`.
+
+## Main declarations
+
+* `ModelWithCorners.det_fderiv_extendCoordChange_ne_zero`: nonvanishing Jacobian determinant of an
+  extended chart transition on the interior of its overlap domain.
+* `TauCeti.chartTangentHom`: coordinate expression of `du` in charts `φ` and `ψ`, agreeing in
+  preferred charts with `ContinuousLinearMap.inCoordinates`
+  (`TauCeti.chartTangentHom_chartAt_eq_inCoordinates`).
+* `TauCeti.chartTangentHom_comp_fderiv_transition`, `TauCeti.fderiv_extend_comp_chartTangentHom`:
+  source and target chart-transition laws for `chartTangentHom`.
 -/
 
 public section
@@ -47,8 +54,7 @@ variable {𝕜 : Type*} [NontriviallyNormedField 𝕜]
   {H'' : Type*} [TopologicalSpace H''] {I' : ModelWithCorners 𝕜 F' H''}
   {N : Type*} [TopologicalSpace N] [ChartedSpace H'' N]
 
-/-- At an interior point of `(φ'.extend J).target ∩ (φ'.extend J).symm ⁻¹' φ.source`, the Fréchet
-derivative of `φ.extend J ∘ (φ'.extend J).symm` between `C^n` (`n ≠ 0`) charts has nonzero `det`. -/
+/-- Nonvanishing Jacobian `det` of `φ.extend J ∘ (φ'.extend J).symm` on the overlap interior. -/
 theorem _root_.ModelWithCorners.det_fderiv_extendCoordChange_ne_zero (J : ModelWithCorners 𝕜 E H')
     {n : ℕ∞ω} (hn : n ≠ 0) {φ' φ : OpenPartialHomeomorph X H'}
     (hφ' : φ' ∈ IsManifold.maximalAtlas J n X) (hφ : φ ∈ IsManifold.maximalAtlas J n X)
@@ -66,8 +72,7 @@ theorem _root_.ModelWithCorners.det_fderiv_extendCoordChange_ne_zero (J : ModelW
   exact L.toLinearEquiv.isUnit_det'.ne_zero
 
 omit [ChartedSpace H' X] in
-/-- Neighborhood membership of `(φ.extend J).target` at `z` and `U` at `(φ.extend J).symm z` places
-`z` in `interior ((φ.extend J).target ∩ (φ.extend J).symm ⁻¹' U)`. -/
+/-- Criterion for `z ∈ interior ((φ.extend J).target ∩ (φ.extend J).symm ⁻¹' U)` via `𝓝`. -/
 theorem _root_.OpenPartialHomeomorph.mem_interior_extend_target_inter_preimage
     (φ : OpenPartialHomeomorph X H') {U : Set X} {z : E}
     (hzt : (φ.extend J).target ∈ 𝓝 z) (hU : U ∈ 𝓝 ((φ.extend J).symm z)) :
@@ -76,23 +81,26 @@ theorem _root_.OpenPartialHomeomorph.mem_interior_extend_target_inter_preimage
     (inter_mem hzt (((φ.continuousOn_extend_symm (I := J)).continuousAt hzt).preimage_mem_nhds hU))
 
 omit [ChartedSpace H' X] in
-/-- Extending an open partial homeomorphism into `E` by `𝓘(𝕜, E)` gives `φ.toPartialEquiv`. -/
+/-- Extending `φ : OpenPartialHomeomorph X E` by `𝓘(𝕜, E)` gives `φ.toPartialEquiv`. -/
 theorem _root_.OpenPartialHomeomorph.extend_modelWithCornersSelf (φ : OpenPartialHomeomorph X E) :
     φ.extend 𝓘(𝕜, E) = φ.toPartialEquiv := by
   rw [OpenPartialHomeomorph.extend, modelWithCornersSelf_partialEquiv, PartialEquiv.trans_refl]
 
-/-- At any `z ∈ interior (φ.extend J).target` for `φ ∈ maximalAtlas J 1 X`, `(φ.extend J).symm` is
-differentiable and its `mfderivWithin` on `range J` equals `mfderiv`. -/
+/-- Differentiability of `(φ.extend J).symm` on `interior (φ.extend J).target` for `C¹` `φ`. -/
 theorem _root_.OpenPartialHomeomorph.mdifferentiableAt_extend_symm_of_mem_interior
     {φ : OpenPartialHomeomorph X H'} (hφ : φ ∈ IsManifold.maximalAtlas J 1 X) {z : E}
     (hz : z ∈ interior (φ.extend J).target) :
-    MDifferentiableAt 𝓘(𝕜, E) J (φ.extend J).symm z ∧
-      mfderivWithin 𝓘(𝕜, E) J (φ.extend J).symm (range J) z =
-        mfderiv 𝓘(𝕜, E) J (φ.extend J).symm z :=
-  have hznhds := mem_interior_iff_mem_nhds.1 hz
-  ⟨(((φ.extend_target' (I := J) ▸ contMDiffOn_extend_symm hφ) z (interior_subset hz)).contMDiffAt
-      hznhds).mdifferentiableAt one_ne_zero,
-    mfderivWithin_of_mem_nhds (mem_of_superset hznhds φ.extend_target_subset_range)⟩
+    MDifferentiableAt 𝓘(𝕜, E) J (φ.extend J).symm z :=
+  (((φ.extend_target' (I := J) ▸ contMDiffOn_extend_symm hφ) z (interior_subset hz)).contMDiffAt
+    (mem_interior_iff_mem_nhds.1 hz)).mdifferentiableAt one_ne_zero
+
+/-- On `interior (φ.extend J).target`, `mfderivWithin` of `(φ.extend J).symm` equals `mfderiv`. -/
+theorem _root_.OpenPartialHomeomorph.mfderivWithin_extend_symm_of_mem_interior
+    (φ : OpenPartialHomeomorph X H') {z : E} (hz : z ∈ interior (φ.extend J).target) :
+    mfderivWithin 𝓘(𝕜, E) J (φ.extend J).symm (range J) z =
+      mfderiv 𝓘(𝕜, E) J (φ.extend J).symm z :=
+  mfderivWithin_of_mem_nhds
+    (mem_of_superset (mem_interior_iff_mem_nhds.1 hz) φ.extend_target_subset_range)
 
 omit [ChartedSpace H' X] [ChartedSpace H M] in
 /-- Continuity of `ψ.extend I ∘ u ∘ (φ.extend J).symm` on subsets of the chart overlap domain. -/
@@ -103,23 +111,25 @@ theorem _root_.OpenPartialHomeomorph.continuousOn_extend_comp_symm
     ContinuousOn (ψ.extend I ∘ u ∘ (φ.extend J).symm) W :=
   ((ψ.continuousOn_extend (I := I)).mono ψ.extend_source.ge).comp
     (hc.comp ((φ.continuousOn_extend_symm (I := J)).mono (hW.trans inter_subset_left))
-      fun _ hw ↦ (hW hw).2.1)
-    fun _ hw ↦ (hW hw).2.2
+      fun _ hw ↦ (hW hw).2.1) fun _ hw ↦ (hW hw).2.2
 
-/-- When `I` is boundaryless and `f : M → N` is `C¹` on open `t`, the coordinate domain is open in
-`F` and `ψ'.extend I' ∘ f ∘ (ψ.extend I).symm` is `C¹` there. -/
-theorem _root_.OpenPartialHomeomorph.isOpen_and_contDiffOn_extend_comp [I.Boundaryless]
-    {ψ : OpenPartialHomeomorph M H} (hψ : ψ ∈ IsManifold.maximalAtlas I 1 M)
-    {ψ' : OpenPartialHomeomorph N H''} (hψ' : ψ' ∈ IsManifold.maximalAtlas I' 1 N)
-    {f : M → N} {t : Set M} (hf : ContMDiffOn I I' 1 f t) (ht : IsOpen t) :
-    IsOpen ((ψ.extend I).target ∩ (ψ.extend I).symm ⁻¹' (t ∩ f ⁻¹' ψ'.source)) ∧
-      ContDiffOn 𝕜 1 (ψ'.extend I' ∘ f ∘ (ψ.extend I).symm)
-        ((ψ.extend I).target ∩ (ψ.extend I).symm ⁻¹' (t ∩ f ⁻¹' ψ'.source)) :=
-  ⟨(ψ.continuousOn_extend_symm (I := I)).isOpen_inter_preimage (ψ.isOpen_extend_target (I := I))
-      (hf.continuousOn.isOpen_inter_preimage ht ψ'.open_source),
-    contMDiffOn_iff_contDiffOn.1 ((ψ'.contMDiffOn_extend hψ').comp
-      (hf.comp ((ψ.extend_target' (I := I) ▸ contMDiffOn_extend_symm hψ).mono inter_subset_left)
-        fun _ hw ↦ hw.2.1) fun _ hw ↦ hw.2.2)⟩
+omit [ChartedSpace H M] in
+/-- Openness of `(ψ.extend I).target ∩ (ψ.extend I).symm ⁻¹' U` for boundaryless `I`, open `U`. -/
+theorem _root_.OpenPartialHomeomorph.isOpen_extend_target_inter_preimage [I.Boundaryless]
+    (ψ : OpenPartialHomeomorph M H) {U : Set M} (hU : IsOpen U) :
+    IsOpen ((ψ.extend I).target ∩ (ψ.extend I).symm ⁻¹' U) :=
+  (ψ.continuousOn_extend_symm (I := I)).isOpen_inter_preimage (ψ.isOpen_extend_target (I := I)) hU
+
+/-- `C^n` regularity of `ψ'.extend I' ∘ f ∘ (ψ.extend I).symm` on the chart overlap domain. -/
+theorem _root_.OpenPartialHomeomorph.contDiffOn_extend_comp {n : ℕ∞ω}
+    {ψ : OpenPartialHomeomorph M H} (hψ : ψ ∈ IsManifold.maximalAtlas I n M)
+    {ψ' : OpenPartialHomeomorph N H''} (hψ' : ψ' ∈ IsManifold.maximalAtlas I' n N)
+    {f : M → N} {t : Set M} (hf : ContMDiffOn I I' n f t) :
+    ContDiffOn 𝕜 n (ψ'.extend I' ∘ f ∘ (ψ.extend I).symm)
+      ((ψ.extend I).target ∩ (ψ.extend I).symm ⁻¹' (t ∩ f ⁻¹' ψ'.source)) :=
+  contMDiffOn_iff_contDiffOn.1 ((ψ'.contMDiffOn_extend hψ').comp
+    (hf.comp ((ψ.extend_target' (I := I) ▸ contMDiffOn_extend_symm hψ).mono inter_subset_left)
+      fun _ hw ↦ hw.2.1) fun _ hw ↦ hw.2.2)
 
 section Linear
 
@@ -127,10 +137,8 @@ variable (φ : OpenPartialHomeomorph X H') (ψ : OpenPartialHomeomorph M H) (u :
   (du du₁ du₂ : ∀ x : X, TangentSpace J x →L[𝕜] TangentSpace I (u x)) (z : E)
 
 variable (J I) in
-/-- Coordinate expression of `du : ∀ x, TangentSpace J x →L[𝕜] TangentSpace I (u x)` in charts `φ`
-of `X` (through `J`) and `ψ` of `M` (through `I`). -/
-def chartTangentHom (du : ∀ x : X, TangentSpace J x →L[𝕜] TangentSpace I (u x)) (z : E) :
-    E →L[𝕜] F :=
+/-- Coordinate expression of `du` along `u : X → M` in charts `φ` (via `J`) and `ψ` (via `I`). -/
+def chartTangentHom : E →L[𝕜] F :=
   mvfderiv I (ψ.extend I) (u ((φ.extend J).symm z)) ∘L du ((φ.extend J).symm z) ∘L
     (mfderivWithin 𝓘(𝕜, E) J (φ.extend J).symm (range J) z ∘L
       (NormedSpace.fromTangentSpace (𝕜 := 𝕜) z).symm.toContinuousLinearMap)
@@ -161,60 +169,56 @@ theorem chartTangentHom_apply : chartTangentHom J I φ ψ u du z =
   simp only [chartTangentHom, ContinuousLinearMap.sub_comp, ContinuousLinearMap.comp_sub]
 
 /-- `chartTangentHom` commutes with `𝕜`-scalar multiplication in `du`. -/
-@[simp] theorem chartTangentHom_smul (c : 𝕜)
-    (du : ∀ x : X, TangentSpace J x →L[𝕜] TangentSpace I (u x)) (z : E) :
+@[simp] theorem chartTangentHom_smul (c : 𝕜) :
     chartTangentHom J I φ ψ u (fun x ↦ c • du x) z = c • chartTangentHom J I φ ψ u du z := by
   simp only [chartTangentHom, ContinuousLinearMap.smul_comp, ContinuousLinearMap.comp_smul]
 
 end Linear
 
+private theorem apply_eq_of_tangentSpaceCast {β : Type*} (P : ∀ y : M, TangentSpace I y → β)
+    {y₁ y₂ : M} (hy : y₁ = y₂) {v₁ : TangentSpace I y₁} {v₂ : TangentSpace I y₂}
+    (hv : tangentSpaceCast I y₁ y₂ v₁ = v₂) : P y₁ v₁ = P y₂ v₂ := by
+  subst hy; exact congrArg (P y₁) ((eq_of_heq (heq_tangentSpaceCast rfl v₁)).symm.trans hv)
+
+variable {φ φ' : OpenPartialHomeomorph X H'} {ψ : OpenPartialHomeomorph M H} {u : X → M}
+
 /-- `chartTangentHom` depends at `z` only on `du ((φ.extend J).symm z)`. -/
-theorem chartTangentHom_congr {φ : OpenPartialHomeomorph X H'} {ψ : OpenPartialHomeomorph M H}
-    {u : X → M} {du du' : ∀ x : X, TangentSpace J x →L[𝕜] TangentSpace I (u x)} {z : E}
-    (h : du ((φ.extend J).symm z) = du' ((φ.extend J).symm z)) :
+theorem chartTangentHom_congr {du du' : ∀ x : X, TangentSpace J x →L[𝕜] TangentSpace I (u x)}
+    {z : E} (h : du ((φ.extend J).symm z) = du' ((φ.extend J).symm z)) :
     chartTangentHom J I φ ψ u du z = chartTangentHom J I φ ψ u du' z := by
   simp only [chartTangentHom, h]
 
 /-- Pointwise congruence of `chartTangentHom` across maps agreeing up to `tangentSpaceCast`. -/
-theorem chartTangentHom_congr_map {φ : OpenPartialHomeomorph X H'} {ψ : OpenPartialHomeomorph M H}
-    {u u' : X → M} {du : ∀ x : X, TangentSpace J x →L[𝕜] TangentSpace I (u x)}
+theorem chartTangentHom_congr_map {u' : X → M}
+    {du : ∀ x : X, TangentSpace J x →L[𝕜] TangentSpace I (u x)}
     {du' : ∀ x : X, TangentSpace J x →L[𝕜] TangentSpace I (u' x)} {z : E}
     (hu : u ((φ.extend J).symm z) = u' ((φ.extend J).symm z))
     (hdu : (tangentSpaceCast I (u ((φ.extend J).symm z))
         (u' ((φ.extend J).symm z))).toContinuousLinearMap.comp (du ((φ.extend J).symm z)) =
       du' ((φ.extend J).symm z)) :
     chartTangentHom J I φ ψ u du z = chartTangentHom J I φ ψ u' du' z := by
-  have hcast : ∀ (y₁ y₂ : M) (_ : y₁ = y₂)
-      (L₁ : TangentSpace J ((φ.extend J).symm z) →L[𝕜] TangentSpace I y₁)
-      (L₂ : TangentSpace J ((φ.extend J).symm z) →L[𝕜] TangentSpace I y₂),
-      (tangentSpaceCast I y₁ y₂).toContinuousLinearMap.comp L₁ = L₂ →
-      (mvfderiv I (ψ.extend I) y₁).comp L₁ = (mvfderiv I (ψ.extend I) y₂).comp L₂ := by
-    rintro y _ rfl L₁ _ rfl; rfl
-  simp only [chartTangentHom, ← ContinuousLinearMap.comp_assoc, hcast _ _ hu _ _ hdu]
+  ext v; exact apply_eq_of_tangentSpaceCast (fun y ↦ mvfderiv I (ψ.extend I) y) hu
+    (DFunLike.congr_fun hdu _)
 
-/-- At `z ∈ interior (φ.extend J).target` mapped into `ψ.source`, `chartTangentHom` of
-`mfderiv J I u` equals `fderiv 𝕜 (ψ.extend I ∘ u ∘ (φ.extend J).symm) z`. -/
-theorem chartTangentHom_mfderiv {φ : OpenPartialHomeomorph X H'}
-    (hφ : φ ∈ IsManifold.maximalAtlas J 1 X) {ψ : OpenPartialHomeomorph M H}
-    (hψ : ψ ∈ IsManifold.maximalAtlas I 1 M) {u : X → M} {z : E}
-    (hz : z ∈ interior (φ.extend J).target) (hy : u ((φ.extend J).symm z) ∈ ψ.source)
+/-- `chartTangentHom` of `mfderiv J I u` equals `fderiv 𝕜 (ψ.extend I ∘ u ∘ (φ.extend J).symm)`. -/
+theorem chartTangentHom_mfderiv (hφ : φ ∈ IsManifold.maximalAtlas J 1 X)
+    (hψ : ψ ∈ IsManifold.maximalAtlas I 1 M) {z : E} (hz : z ∈ interior (φ.extend J).target)
+    (hy : u ((φ.extend J).symm z) ∈ ψ.source)
     (hdu : MDifferentiableAt J I u ((φ.extend J).symm z)) :
     chartTangentHom J I φ ψ u (fun x ↦ mfderiv J I u x) z =
       fderiv 𝕜 (ψ.extend I ∘ u ∘ (φ.extend J).symm) z := by
-  obtain ⟨hdφ, hmfw⟩ := φ.mdifferentiableAt_extend_symm_of_mem_interior hφ hz
+  have hdφ := φ.mdifferentiableAt_extend_symm_of_mem_interior hφ hz
   have hmv := mvfderiv_comp z ((ψ.contMDiffAt_extend hψ hy).mdifferentiableAt one_ne_zero)
     (hdu.comp z hdφ)
   rw [mfderiv_comp z hdu hdφ, mvfderiv_eq_fderiv] at hmv
-  rw [chartTangentHom, hmfw]; ext v
+  rw [chartTangentHom, φ.mfderivWithin_extend_symm_of_mem_interior hz]; ext v
   simpa only [Function.comp_apply, ContinuousLinearMap.comp_apply, ContinuousLinearEquiv.coe_coe,
     ContinuousLinearEquiv.apply_symm_apply] using
       (DFunLike.congr_fun hmv ((NormedSpace.fromTangentSpace (𝕜 := 𝕜) z).symm v)).symm
 
-/-- For `C¹` charts `φ` and `ψ`, `chartTangentHom` at `z ∈ (φ.extend J).target` with
-`u ((φ.extend J).symm z) ∈ ψ.source` determines `du ((φ.extend J).symm z)`. -/
-theorem chartTangentHom_eq_iff {φ : OpenPartialHomeomorph X H'}
-    (hφ : φ ∈ IsManifold.maximalAtlas J 1 X) {ψ : OpenPartialHomeomorph M H}
-    (hψ : ψ ∈ IsManifold.maximalAtlas I 1 M) {u : X → M}
+/-- Pointwise injectivity equivalence of `chartTangentHom` in `C¹` charts `φ` and `ψ`. -/
+theorem chartTangentHom_eq_iff (hφ : φ ∈ IsManifold.maximalAtlas J 1 X)
+    (hψ : ψ ∈ IsManifold.maximalAtlas I 1 M)
     {du₁ du₂ : ∀ x : X, TangentSpace J x →L[𝕜] TangentSpace I (u x)} {z : E}
     (hz : z ∈ (φ.extend J).target) (hy : u ((φ.extend J).symm z) ∈ ψ.source) :
     chartTangentHom J I φ ψ u du₁ z = chartTangentHom J I φ ψ u du₂ z ↔
@@ -230,11 +234,10 @@ theorem chartTangentHom_eq_iff {φ : OpenPartialHomeomorph X H'}
     ContinuousLinearEquiv.symm_apply_apply, ContinuousLinearEquiv.apply_symm_apply] using
       DFunLike.congr_fun h ((NormedSpace.fromTangentSpace (𝕜 := 𝕜) z) (L₁.symm ξ))
 
-/-- In preferred charts at `x₀` and `y₀`, `chartTangentHom` agrees with
-`ContinuousLinearMap.inCoordinates`. -/
+/-- In preferred charts, `chartTangentHom` agrees with `ContinuousLinearMap.inCoordinates`. -/
 theorem chartTangentHom_chartAt_eq_inCoordinates [IsManifold J 1 X] [IsManifold I 1 M]
-    {u : X → M} (du : ∀ x : X, TangentSpace J x →L[𝕜] TangentSpace I (u x))
-    {x₀ x : X} {y₀ : M} (hx : x ∈ (chartAt H' x₀).source) (hy : u x ∈ (chartAt H y₀).source) :
+    (du : ∀ x : X, TangentSpace J x →L[𝕜] TangentSpace I (u x)) {x₀ x : X} {y₀ : M}
+    (hx : x ∈ (chartAt H' x₀).source) (hy : u x ∈ (chartAt H y₀).source) :
     chartTangentHom J I (chartAt H' x₀) (chartAt H y₀) u du (extChartAt J x₀ x) =
       ContinuousLinearMap.inCoordinates E (TangentSpace J) F (TangentSpace I)
         x₀ x y₀ (u x) (du x) := by
@@ -246,6 +249,7 @@ theorem chartTangentHom_chartAt_eq_inCoordinates [IsManifold J 1 X] [IsManifold 
   have hcoord := inTangentCoordinates_eq_mfderiv_comp (I := J) (I' := I)
     (f := f) (g := g) (ϕ := ϕ) (x₀ := false) (x := true) hx hy
   dsimp only [inTangentCoordinates, f, g, ϕ, Bool.cond_true, Bool.cond_false] at hcoord
+  -- Transport `du x'` along `((chartAt H' x₀).extend J).symm (extChartAt J x₀ x) = x`.
   have hchart : ∀ x' : X, x' = x →
       mvfderiv I ((chartAt H y₀).extend I) (u x') ∘L du x' ∘L
         (mfderivWithin 𝓘(𝕜, E) J ((chartAt H' x₀).extend J).symm (range J) (extChartAt J x₀ x) ∘L
@@ -256,8 +260,8 @@ theorem chartTangentHom_chartAt_eq_inCoordinates [IsManifold J 1 X] [IsManifold 
 
 /-- Pointwise injectivity equivalence of `chartTangentHom` in preferred charts at `x₀` and `y₀`. -/
 theorem chartTangentHom_chartAt_eq_iff [IsManifold J 1 X] [IsManifold I 1 M]
-    {u : X → M} {du₁ du₂ : ∀ x : X, TangentSpace J x →L[𝕜] TangentSpace I (u x)}
-    {x₀ x : X} {y₀ : M} (hx : x ∈ (chartAt H' x₀).source) (hy : u x ∈ (chartAt H y₀).source) :
+    {du₁ du₂ : ∀ x : X, TangentSpace J x →L[𝕜] TangentSpace I (u x)} {x₀ x : X} {y₀ : M}
+    (hx : x ∈ (chartAt H' x₀).source) (hy : u x ∈ (chartAt H y₀).source) :
     chartTangentHom J I (chartAt H' x₀) (chartAt H y₀) u du₁ (extChartAt J x₀ x) =
         chartTangentHom J I (chartAt H' x₀) (chartAt H y₀) u du₂ (extChartAt J x₀ x) ↔
       du₁ x = du₂ x := by
@@ -281,12 +285,29 @@ theorem chartTangentHom_chartAt_eq_iff [IsManifold J 1 X] [IsManifold I 1 M]
     mfderivWithin_univ, mfderiv_id, ContinuousLinearMap.id_comp, mvfderiv_eq_fderiv, fderiv_fun_id]
   ext v; simp
 
-/-- On the interior of a source-chart overlap, `chartTangentHom` transforms by precomposition with
-`fderiv 𝕜 (φ.extend J ∘ (φ'.extend J).symm)` (neither `J` nor `I` need be boundaryless). -/
-theorem chartTangentHom_comp_fderiv_transition
-    {φ φ' : OpenPartialHomeomorph X H'} (hφ : φ ∈ IsManifold.maximalAtlas J 1 X)
+/-- Scaling `z` by `algebraMap 𝕜 D c` in `D` scales `chartTangentHom` by `c⁻¹`. -/
+theorem chartTangentHom_mulLeft₀ {D : Type*} [NontriviallyNormedField D] [NormedAlgebra 𝕜 D]
+    (ψ : OpenPartialHomeomorph M H) (u : D → M)
+    (du : ∀ z : D, TangentSpace 𝓘(𝕜, D) z →L[𝕜] TangentSpace I (u z))
+    {c : 𝕜} (hc : algebraMap 𝕜 D c ≠ 0) (w : D) :
+    chartTangentHom 𝓘(𝕜, D) I
+        (Homeomorph.mulLeft₀ (algebraMap 𝕜 D c) hc).toOpenPartialHomeomorph ψ u du w =
+      c⁻¹ • chartTangentHom 𝓘(𝕜, D) I (OpenPartialHomeomorph.refl D) ψ u du
+        ((algebraMap 𝕜 D c)⁻¹ * w) := by
+  have hsymm : ⇑((Homeomorph.mulLeft₀ (algebraMap 𝕜 D c) hc).toOpenPartialHomeomorph.extend
+      𝓘(𝕜, D)).symm = c⁻¹ • (id : D → D) := by
+    ext; simp [mfld_simps, Homeomorph.mulLeft₀_symm_apply, Algebra.smul_def]
+  have hrefl : ⇑((OpenPartialHomeomorph.refl D).extend 𝓘(𝕜, D)).symm = id := by ext; simp
+  have hcw : (algebraMap 𝕜 D c)⁻¹ * w = c⁻¹ • w := by rw [← map_inv₀, ← Algebra.smul_def]
+  rw [hcw, chartTangentHom_apply, chartTangentHom_apply, hsymm, hrefl,
+    ModelWithCorners.Boundaryless.range_eq_univ, mfderivWithin_univ, mfderivWithin_univ,
+    mfderiv_eq_fderiv, ((hasFDerivAt_id w).const_smul c⁻¹).fderiv, mfderiv_id]
+  ext v; simp
+
+/-- Source-chart transition law for `chartTangentHom` on an overlap interior. -/
+theorem chartTangentHom_comp_fderiv_transition (hφ : φ ∈ IsManifold.maximalAtlas J 1 X)
     (hφ' : φ' ∈ IsManifold.maximalAtlas J 1 X) (ψ : OpenPartialHomeomorph M H)
-    {u : X → M} (du : ∀ x : X, TangentSpace J x →L[𝕜] TangentSpace I (u x))
+    (du : ∀ x : X, TangentSpace J x →L[𝕜] TangentSpace I (u x))
     {w : E} (hw : w ∈ interior ((φ'.extend J).target ∩ (φ'.extend J).symm ⁻¹' φ.source)) :
     (chartTangentHom J I φ ψ u du (φ.extend J ((φ'.extend J).symm w))).comp
         (fderiv 𝕜 (φ.extend J ∘ (φ'.extend J).symm) w) =
@@ -298,37 +319,32 @@ theorem chartTangentHom_comp_fderiv_transition
   have hxφ' : (φ'.extend J).symm w ∈ φ'.source :=
     φ'.extend_source (I := J) ▸ (φ'.extend J).map_target hwt
   have hxφ : (φ'.extend J).symm w ∈ φ.source := (interior_subset hw).2
-  obtain ⟨hdφ', hmfw⟩ := φ'.mdifferentiableAt_extend_symm_of_mem_interior hφ' hwint
+  have hdφ' := φ'.mdifferentiableAt_extend_symm_of_mem_interior hφ' hwint
   have hΦint : Φ w ∈ interior (φ.extend J).target :=
     ModelWithCorners.mem_interior_extend_target_of_mem_maximalAtlas one_ne_zero hφ' hφ hxφ' hxφ
       (by rwa [(φ'.extend J).right_inv hwt])
-  obtain ⟨hdφ, hmfΦ⟩ := φ.mdifferentiableAt_extend_symm_of_mem_interior hφ hΦint
   have hev : (φ'.extend J).symm =ᶠ[𝓝 w] (φ.extend J).symm ∘ Φ := by
     filter_upwards [isOpen_interior.mem_nhds hw] with z hz
     simp only [Φ, Function.comp_apply, φ.extend_left_inv (interior_subset hz).2]
   have hmf := hev.mfderiv_eq (I := 𝓘(𝕜, E)) (I' := J)
-  rw [mfderiv_comp w hdφ (((φ.contMDiffAt_extend hφ hxφ).mdifferentiableAt one_ne_zero).comp w
-    hdφ')] at hmf
-  have hcast : ∀ (x₁ x₂ : X), x₁ = x₂ → ∀ (ξ₁ : TangentSpace J x₁) (ξ₂ : TangentSpace J x₂),
-      tangentSpaceCast J x₁ x₂ ξ₁ = ξ₂ →
-      mvfderiv I (ψ.extend I) (u x₁) (du x₁ ξ₁) = mvfderiv I (ψ.extend I) (u x₂) (du x₂ ξ₂) := by
-    rintro x _ rfl ξ₁ _ rfl; rfl
-  ext v; rw [ContinuousLinearMap.comp_apply, chartTangentHom_apply, chartTangentHom_apply, hmfΦ,
-    hmfw]
+  rw [mfderiv_comp w (φ.mdifferentiableAt_extend_symm_of_mem_interior hφ hΦint)
+    (((φ.contMDiffAt_extend hφ hxφ).mdifferentiableAt one_ne_zero).comp w hdφ')] at hmf
+  ext v
+  rw [ContinuousLinearMap.comp_apply, chartTangentHom_apply, chartTangentHom_apply,
+    φ.mfderivWithin_extend_symm_of_mem_interior hΦint,
+    φ'.mfderivWithin_extend_symm_of_mem_interior hwint]
   have hfd : (NormedSpace.fromTangentSpace (𝕜 := 𝕜) (Φ w)).symm (fderiv 𝕜 Φ w v) =
       mfderiv 𝓘(𝕜, E) 𝓘(𝕜, E) Φ w ((NormedSpace.fromTangentSpace (𝕜 := 𝕜) w).symm v) := by
     simp [mfderiv_eq_fderiv]
   simp only [ContinuousLinearMap.comp_apply, ContinuousLinearEquiv.coe_coe, hfd]
-  exact hcast _ _ (φ.extend_left_inv hxφ) _ _ (DFunLike.congr_fun hmf.symm _)
+  exact apply_eq_of_tangentSpaceCast (I := J) (fun x ξ ↦ mvfderiv I (ψ.extend I) (u x) (du x ξ))
+    (φ.extend_left_inv hxφ) (DFunLike.congr_fun hmf.symm _)
 
-/-- When `M` is boundaryless, postcomposing `chartTangentHom` in chart `ψ` with
-`fderiv 𝕜 (ψ'.extend I' ∘ f ∘ (ψ.extend I).symm)` yields `chartTangentHom` of `(mfderiv f).comp du`
-in chart `ψ'` (`N` may have corners). -/
+/-- Target transition / postcomposition law for `chartTangentHom` when `M` is boundaryless. -/
 theorem fderiv_extend_comp_chartTangentHom [I.Boundaryless]
-    {φ : OpenPartialHomeomorph X H'} {ψ : OpenPartialHomeomorph M H}
     (hψ : ψ ∈ IsManifold.maximalAtlas I 1 M) {ψ' : OpenPartialHomeomorph N H''}
     (hψ' : ψ' ∈ IsManifold.maximalAtlas I' 1 N) {f : M → N} {t : Set M}
-    (hf : ContMDiffOn I I' 1 f t) (ht : IsOpen t) {u : X → M}
+    (hf : ContMDiffOn I I' 1 f t) (ht : IsOpen t)
     (du : ∀ x : X, TangentSpace J x →L[𝕜] TangentSpace I (u x)) {z : E}
     (hy : u ((φ.extend J).symm z) ∈ ψ.source ∩ (t ∩ f ⁻¹' ψ'.source)) :
     (fderiv 𝕜 (ψ'.extend I' ∘ f ∘ (ψ.extend I).symm)
@@ -336,12 +352,14 @@ theorem fderiv_extend_comp_chartTangentHom [I.Boundaryless]
       chartTangentHom J I' φ ψ' (f ∘ u) (fun x ↦ (mfderiv I I' f (u x)).comp (du x)) z := by
   set y := u ((φ.extend J).symm z)
   set g := ψ'.extend I' ∘ f ∘ (ψ.extend I).symm
-  obtain ⟨hO, hg⟩ := ψ.isOpen_and_contDiffOn_extend_comp hψ hψ' hf ht
+  have hO := ψ.isOpen_extend_target_inter_preimage (I := I)
+    (hf.continuousOn.isOpen_inter_preimage ht ψ'.open_source)
   have hyO : ψ.extend I y ∈ (ψ.extend I).target ∩ (ψ.extend I).symm ⁻¹' (t ∩ f ⁻¹' ψ'.source) :=
     ⟨(ψ.extend I).map_source (by rw [ψ.extend_source]; exact hy.1),
       by rw [mem_preimage, ψ.extend_left_inv hy.1]; exact hy.2⟩
   have hgd : DifferentiableAt 𝕜 g (ψ.extend I y) :=
-    ((hg _ hyO).differentiableWithinAt one_ne_zero).differentiableAt (hO.mem_nhds hyO)
+    (((ψ.contDiffOn_extend_comp hψ hψ' hf) _ hyO).differentiableWithinAt
+      one_ne_zero).differentiableAt (hO.mem_nhds hyO)
   have hev : ψ'.extend I' ∘ f =ᶠ[𝓝 y] g ∘ ψ.extend I := by
     filter_upwards [ψ.open_source.mem_nhds hy.1] with y' hy'
     simp only [g, Function.comp_apply, ψ.extend_left_inv hy']
@@ -350,16 +368,12 @@ theorem fderiv_extend_comp_chartTangentHom [I.Boundaryless]
     have h1 := mvfderiv_comp y hgd.mdifferentiableAt
       ((ψ.contMDiffAt_extend hψ hy.1).mdifferentiableAt one_ne_zero)
     rw [mvfderiv_eq_fderiv] at h1
-    have hcast : ∀ (w₁ w₂ : F') (_ : w₁ = w₂)
-        (L₁ : TangentSpace I y →L[𝕜] TangentSpace 𝓘(𝕜, F') w₁)
-        (L₂ : TangentSpace I y →L[𝕜] TangentSpace 𝓘(𝕜, F') w₂),
-        L₁ = (tangentSpaceCast 𝓘(𝕜, F') w₂ w₁).toContinuousLinearMap.comp L₂ →
-        (NormedSpace.fromTangentSpace (𝕜 := 𝕜) w₁).toContinuousLinearMap.comp L₁ =
-          (NormedSpace.fromTangentSpace (𝕜 := 𝕜) w₂).toContinuousLinearMap.comp L₂ := by
-      rintro w _ rfl _ L₂ rfl; rfl
-    exact h1.symm.trans ((hcast _ _ hev.symm.eq_of_nhds _ _ hev.symm.mfderiv_eq).trans
-      (mvfderiv_comp y ((ψ'.contMDiffAt_extend hψ' hy.2.2).mdifferentiableAt one_ne_zero)
-        (((hf y hy.2.1).contMDiffAt (ht.mem_nhds hy.2.1)).mdifferentiableAt one_ne_zero)))
+    have h2 := mvfderiv_comp y ((ψ'.contMDiffAt_extend hψ' hy.2.2).mdifferentiableAt one_ne_zero)
+      (((hf y hy.2.1).contMDiffAt (ht.mem_nhds hy.2.1)).mdifferentiableAt one_ne_zero)
+    ext w
+    exact (DFunLike.congr_fun h1 w).symm.trans ((apply_eq_of_tangentSpaceCast (I := 𝓘(𝕜, F'))
+      (fun p ↦ NormedSpace.fromTangentSpace (𝕜 := 𝕜) p) hev.eq_of_nhds
+      (DFunLike.congr_fun hev.symm.mfderiv_eq w).symm).symm.trans (DFunLike.congr_fun h2 w))
   simp only [chartTangentHom_apply, y, Function.comp_apply, ← ContinuousLinearMap.comp_assoc, hmv]
 
 end ChartTangentHom
