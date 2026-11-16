@@ -103,13 +103,4 @@ theorem star_dotProduct_toEuclideanCLM_symm_starProjection_orthogonal
     ← Matrix.toEuclideanCLM_toLp, StarAlgEquiv.apply_symm_apply]
   exact U.inner_starProjection_orthogonal_eq_infDist_sq _
 
-/-- The real part of the Euclidean quadratic form of the orthogonal-complement projection is
-squared distance to the subspace. -/
-theorem re_star_dotProduct_toEuclideanCLM_symm_starProjection_orthogonal
-    [Fintype ι] [DecidableEq ι] (U : Submodule 𝕜 (EuclideanSpace 𝕜 ι)) (x : ι → 𝕜) :
-    RCLike.re (star x ⬝ᵥ (Matrix.toEuclideanCLM (n := ι) (𝕜 := 𝕜)).symm
-      Uᗮ.starProjection *ᵥ x) = Metric.infDist (WithLp.toLp 2 x) (U : Set _) ^ 2 := by
-  simpa using congrArg RCLike.re
-    (U.star_dotProduct_toEuclideanCLM_symm_starProjection_orthogonal x)
-
 end Submodule

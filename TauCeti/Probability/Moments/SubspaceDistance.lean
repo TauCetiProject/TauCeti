@@ -8,6 +8,7 @@ module
 public import TauCeti.Analysis.InnerProductSpace.Projection.Trace
 public import TauCeti.Probability.Moments.HansonWright
 import TauCeti.Analysis.Real.Sqrt
+import TauCeti.Probability.Independence.Integration
 import Mathlib.Analysis.InnerProductSpace.Positive
 
 /-!
@@ -60,34 +61,16 @@ theorem integral_infDist_sq_eq_finrank_orthogonal {𝕜 : Type*} [RCLike 𝕜]
   classical
   let A := (Matrix.toEuclideanCLM (n := ι) (𝕜 := 𝕜)).symm Uᗮ.starProjection
   have hquad (ω : Ω) : RCLike.re (star (fun i ↦ X i ω) ⬝ᵥ A *ᵥ (fun i ↦ X i ω)) =
-      Metric.infDist (WithLp.toLp 2 (fun i ↦ X i ω)) (U : Set _) ^ 2 :=
-    U.re_star_dotProduct_toEuclideanCLM_symm_starProjection_orthogonal _
-  have hexpand (ω : Ω) : star (fun i ↦ X i ω) ⬝ᵥ A *ᵥ (fun i ↦ X i ω) =
-      ∑ i, ∑ j, A i j * (star (X i ω) * X j ω) := by
-    simp only [dotProduct, Matrix.mulVec, Pi.star_apply, Finset.mul_sum]
-    exact Finset.sum_congr rfl fun _ _ ↦ Finset.sum_congr rfl fun _ _ ↦ by ring
-  have hint (i j : ι) : Integrable (fun ω ↦ A i j * (star (X i ω) * X j ω)) P :=
-    ((hX i).star.integrable_mul (hX j)).const_mul _
-  have hmoment (i : ι) : ∫ ω, star (X i ω) * X i ω ∂P = (1 : 𝕜) := by
-    simp_rw [RCLike.star_def, RCLike.conj_mul, ← RCLike.ofReal_pow]
-    rw [← RCLike.ofRealCLM_apply, (RCLike.ofRealCLM (K := 𝕜)).integral_comp_comm
-      (hX i).norm.integrable_sq, hvar]
-    simp
-  have hmean : ∫ ω, star (fun i ↦ X i ω) ⬝ᵥ A *ᵥ (fun i ↦ X i ω) ∂P = A.trace := by
-    simp_rw [hexpand]
-    rw [integral_finsetSum _ fun i _ ↦ integrable_finsetSum _ fun j _ ↦ hint i j]
-    simp_rw [integral_finsetSum _ fun j _ ↦ hint _ j, integral_const_mul]
-    have hterms (i j : ι) : A i j * (∫ ω, star (X i ω) * X j ω ∂P) =
-        if i = j then A i i else 0 := by
-      split_ifs with hij
-      · subst j; rw [hmoment, mul_one]
-      · rw [horth hij, mul_zero]
-    simp_rw [hterms]
-    simp [Matrix.trace, Matrix.diag]
-  rw [← integral_congr_ae (.of_forall hquad), integral_re, hmean,
+      Metric.infDist (WithLp.toLp 2 (fun i ↦ X i ω)) (U : Set _) ^ 2 := by
+    simp [A, U.star_dotProduct_toEuclideanCLM_symm_starProjection_orthogonal]
+  obtain ⟨hint, hmean⟩ :=
+    TauCeti.integral_star_dotProduct_mulVec_eq_sum_diag_of_pairwise_integral_eq_zero
+      (fun i ↦ (hX i).norm.integrable_sq)
+      (fun i j _ ↦ (hX i).star.integrable_mul (hX j)) horth A
+  have htrace : ∫ ω, star (fun i ↦ X i ω) ⬝ᵥ A *ᵥ (fun i ↦ X i ω) ∂P = A.trace := by
+    simpa only [hvar, RCLike.ofReal_one, mul_one, Matrix.trace, Matrix.diag] using hmean
+  rw [← integral_congr_ae (.of_forall hquad), integral_re hint, htrace,
     Uᗮ.trace_toEuclideanCLM_symm_starProjection, RCLike.natCast_re]
-  exact (integrable_finsetSum _ fun i _ ↦ integrable_finsetSum _ fun j _ ↦ hint i j).congr
-    (.of_forall fun ω ↦ (hexpand ω).symm)
 
 end Submodule
 
@@ -126,8 +109,8 @@ theorem measureReal_abs_infDist_sq_sub_finrank_orthogonal_gt_le_of_indepFun
     (U ω)ᗮ.l2_opNorm_toEuclideanCLM_symm_starProjection_le
   have hquad (ω : Ω) : (fun i ↦ X i ω) ⬝ᵥ A ω *ᵥ (fun i ↦ X i ω) =
       Metric.infDist (WithLp.toLp 2 (fun i ↦ X i ω)) (U ω : Set _) ^ 2 := by
-    simpa only [RCLike.re_to_real, star_trivial] using
-      (U ω).re_star_dotProduct_toEuclideanCLM_symm_starProjection_orthogonal (fun i ↦ X i ω)
+    simpa only [star_trivial, RCLike.ofReal_real_eq_id, id_eq] using
+      (U ω).star_dotProduct_toEuclideanCLM_symm_starProjection_orthogonal (fun i ↦ X i ω)
   have htr (ω : Ω) : ∑ i, A ω i i * ∫ ω', X i ω' ^ 2 ∂P =
       (Module.finrank ℝ (U ω)ᗮ : ℝ) := by
     simpa only [hvar, mul_one, Matrix.trace, Matrix.diag] using
@@ -168,8 +151,8 @@ private lemma distance_deviation_subset [DecidableEq ι]
   intro ω hω
   have hquad : (fun i ↦ X i ω) ⬝ᵥ A ω *ᵥ (fun i ↦ X i ω) =
       Metric.infDist (WithLp.toLp 2 (fun i ↦ X i ω)) (U ω : Set _) ^ 2 := by
-    simpa only [RCLike.re_to_real, star_trivial] using
-      (U ω).re_star_dotProduct_toEuclideanCLM_symm_starProjection_orthogonal (fun i ↦ X i ω)
+    simpa only [star_trivial, RCLike.ofReal_real_eq_id, id_eq] using
+      (U ω).star_dotProduct_toEuclideanCLM_symm_starProjection_orthogonal (fun i ↦ X i ω)
   have hdiag : ∑ i, A ω i i = (A ω).trace := by simp only [Matrix.trace, Matrix.diag]
   simp only [Set.mem_ofPred_eq, B, Matrix.smul_mulVec, dotProduct_smul,
     Matrix.smul_apply, smul_eq_mul, hvar, mul_one, ← Finset.mul_sum, hdiag,
@@ -299,8 +282,8 @@ private lemma additive_lower_tail_subset [DecidableEq ι]
     Finset.sum_le_sum fun i _ ↦ le_mul_of_one_le_right (hdiag i) (hvar i)
   have hquad : (fun i ↦ X i ω) ⬝ᵥ A ω *ᵥ (fun i ↦ X i ω) =
       Metric.infDist (WithLp.toLp 2 (fun i ↦ X i ω)) (U ω : Set _) ^ 2 := by
-    simpa only [RCLike.re_to_real, star_trivial] using
-      (U ω).re_star_dotProduct_toEuclideanCLM_symm_starProjection_orthogonal (fun i ↦ X i ω)
+    simpa only [star_trivial, RCLike.ofReal_real_eq_id, id_eq] using
+      (U ω).star_dotProduct_toEuclideanCLM_symm_starProjection_orthogonal (fun i ↦ X i ω)
   have hdev : t < |Metric.infDist (WithLp.toLp 2 (fun i ↦ X i ω)) (U ω : Set _) -
       √(A ω).trace| := by
     rw [htr, abs_of_neg (by linarith)]
@@ -348,6 +331,19 @@ theorem measureReal_infDist_lt_sqrt_finrank_orthogonal_sub_le_of_indepFun
     exact not_lt.mpr ((neg_nonpos.mpr ht.le).trans Metric.infDist_nonneg)
   rw [hempty, measureReal_empty]
   positivity
+
+/-- The distance to a fixed subspace has a sub-Gaussian additive lower tail around the
+square root of its codimension. Coordinate second moments may exceed one. -/
+theorem measureReal_infDist_lt_sqrt_finrank_orthogonal_sub_le
+    (hindep : iIndepFun X P) {K : ℝ≥0} (hX : ∀ i, HasSubgaussianMGF (X i) K P)
+    (hvar : ∀ i, 1 ≤ ∫ ω, X i ω ^ 2 ∂P)
+    (U : Submodule ℝ (EuclideanSpace ℝ ι)) {t : ℝ} (ht : 0 ≤ t) :
+    P.real {ω | Metric.infDist (WithLp.toLp 2 (fun i ↦ X i ω)) (U : Set _) <
+        √(Module.finrank ℝ Uᗮ : ℝ) - t} ≤
+      2 * exp (-t ^ 2 / (3200 * (K : ℝ) ^ 2)) := by
+  have : IsProbabilityMeasure P := hindep.isProbabilityMeasure
+  exact hindep.measureReal_infDist_lt_sqrt_finrank_orthogonal_sub_le_of_indepFun
+    hX hvar (fun _ ↦ U) aemeasurable_const (indepFun_const_left _ _) ht
 
 /-- The lower tail is exponentially small in any lower bound `d` on the codimension.
 Coordinate second moments may exceed one, and the independent subspace may have varying rank. -/

@@ -8,7 +8,7 @@ module
 public import Mathlib.Probability.Moments.SubGaussian
 import Mathlib.Probability.Moments.MGFAnalytic
 import Mathlib.Analysis.Calculus.LocalExtr.Basic
-import Mathlib.Analysis.SpecialFunctions.Trigonometric.Series
+import TauCeti.Analysis.Calculus.DerivativeTest
 
 /-!
 # Basic properties of sub-Gaussian moment-generating functions
@@ -61,49 +61,32 @@ theorem integral_sq_le {Ω : Type*} [MeasurableSpace Ω]
     ∫ ω, X ω ^ 2 ∂μ ≤ c := by
   rcases eq_zero_or_isProbabilityMeasure μ with rfl | hprob
   · simp
-  have hcosh (y : ℝ) : 1 + y ^ 2 / 2 ≤ (exp y + exp (-y)) / 2 := by
-    have h := (Real.hasSum_cosh y).summable.sum_le_tsum (Finset.range 2)
-      (fun n _ ↦ div_nonneg (by rw [pow_mul]; positivity) (by positivity))
-    simpa [Finset.sum_range_succ, Real.cosh_eq, (Real.hasSum_cosh y).tsum_eq] using h
-  have hmgf (s : ℝ) (hs : 0 ≤ s) : 1 + s * (∫ ω, X ω ^ 2 ∂μ) ≤ exp (c * s) := by
-    let t := √(2 * s)
-    have ht : t ^ 2 = 2 * s := sq_sqrt (by positivity)
-    have hsq := (hX.memLp 2).integrable_sq
-    have hint := integral_mono ((integrable_const (1 : ℝ)).add (hsq.const_mul (t ^ 2 / 2)))
-      (((hX.integrable_exp_mul t).add (hX.integrable_exp_mul (-t))).div_const 2)
-      (fun ω ↦ by
-        simpa only [Pi.add_apply, mul_pow, div_mul_eq_mul_div, neg_mul]
-          using hcosh (t * X ω))
-    dsimp only [Pi.add_apply] at hint
-    rw [integral_add (integrable_const _) (hsq.const_mul _), integral_const,
-      probReal_univ, one_smul, integral_const_mul, integral_div,
-      integral_add (hX.integrable_exp_mul t) (hX.integrable_exp_mul (-t))] at hint
-    have hpos := hX.mgf_le t
-    have hneg := hX.mgf_le (-t)
-    dsimp only [mgf] at hpos hneg
-    simp only [neg_mul, neg_sq] at hneg
-    rw [ht] at hint hpos hneg
-    have heq : (c : ℝ) * (2 * s) / 2 = c * s := by ring
-    rw [heq] at hpos hneg
-    simp only [neg_mul] at hint
-    linarith
-  by_contra! hlt
-  let g : ℝ → ℝ := fun s ↦ exp (c * s) - (1 + s * (∫ ω, X ω ^ 2 ∂μ))
+  have hm (t : ℝ) : t ∈ interior (integrableExpSet X μ) := by
+    simp [hX.integrableExpSet_eq_univ]
+  let g : ℝ → ℝ := (fun t ↦ Real.exp ((c : ℝ) * t ^ 2 / 2)) - mgf X μ
   have hmin : IsLocalMin g 0 := by
     apply Filter.Eventually.of_forall
-    intro s
-    have hle : 1 + s * (∫ ω, X ω ^ 2 ∂μ) ≤ exp (c * s) := by
-      rcases le_total 0 s with hs | hs
-      · exact hmgf s hs
-      · have h := add_one_le_exp ((c : ℝ) * s)
-        nlinarith [mul_nonpos_of_nonneg_of_nonpos (sub_nonneg.mpr hlt.le) hs]
-    simpa [g] using sub_nonneg.mpr hle
-  have hd : HasDerivAt g ((c : ℝ) - ∫ ω, X ω ^ 2 ∂μ) 0 := by
-    convert (((hasDerivAt_id (0 : ℝ)).const_mul (c : ℝ)).exp).sub
-      ((hasDerivAt_const (0 : ℝ) (1 : ℝ)).add
-        ((hasDerivAt_id (0 : ℝ)).mul_const (∫ ω, X ω ^ 2 ∂μ))) using 1 <;>
-      simp [g, Pi.sub_def, Pi.add_def]
-  have hz := hmin.hasDerivAt_eq_zero hd
+    intro t
+    simpa [g, Pi.sub_apply] using sub_nonneg.mpr (hX.mgf_le t)
+  have he (t : ℝ) : HasDerivAt (fun t : ℝ ↦ Real.exp ((c : ℝ) * t ^ 2 / 2))
+      (Real.exp ((c : ℝ) * t ^ 2 / 2) * ((c : ℝ) * t)) t := by
+    convert! (((hasDerivAt_id t).pow 2).const_mul (c : ℝ)).div_const 2 |>.exp using 1
+    simp only [Pi.pow_apply, id_eq]
+    ring
+  have hderiv : deriv g = fun t ↦ Real.exp ((c : ℝ) * t ^ 2 / 2) * ((c : ℝ) * t) -
+      deriv (mgf X μ) t := by
+    funext t
+    exact ((he t).sub (differentiableAt_mgf (hm t)).hasDerivAt).deriv
+  have hx : HasDerivAt (deriv (mgf X μ)) (∫ ω, X ω ^ 2 ∂μ) 0 := by
+    simpa only [iteratedDeriv_one, Nat.reduceAdd, zero_mul, exp_zero, mul_one] using
+      hasDerivAt_iteratedDeriv_mgf (hm 0) 1
+  have hsecond : HasDerivAt (deriv g) ((c : ℝ) - ∫ ω, X ω ^ 2 ∂μ) 0 := by
+    rw [hderiv]
+    convert! ((he 0).mul ((hasDerivAt_id (0 : ℝ)).const_mul (c : ℝ))).sub hx using 1
+    simp
+  have hnonneg := TauCeti.deriv_deriv_nonneg_of_isLocalMin
+    ((he 0).continuousAt.sub (differentiableAt_mgf (hm 0)).continuousAt) hmin
+  rw [hsecond.deriv] at hnonneg
   linarith
 
 end ProbabilityTheory.HasSubgaussianMGF

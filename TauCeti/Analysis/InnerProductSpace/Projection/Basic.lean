@@ -124,12 +124,6 @@ theorem inner_starProjection_orthogonal_eq_infDist_sq (x : E) :
     _ = (Metric.infDist x (U : Set E) : 𝕜) ^ 2 := by
       rw [inner_self_eq_norm_sq_to_K, Uᗮ.norm_starProjection_eq_infDist, orthogonal_orthogonal]
 
-/-- Squared distance is the real part of the quadratic form of the orthogonal-complement
-projection. -/
-theorem re_inner_starProjection_orthogonal_eq_infDist_sq (x : E) :
-    RCLike.re (inner 𝕜 x (Uᗮ.starProjection x)) = Metric.infDist x (U : Set E) ^ 2 := by
-  simpa using congrArg RCLike.re (U.inner_starProjection_orthogonal_eq_infDist_sq x)
-
 /-- One half of `norm_starProjection_comp_starProjection_comm`. -/
 private theorem norm_starProjection_comp_starProjection_le :
     ‖U.starProjection ∘L V.starProjection‖ ≤ ‖V.starProjection ∘L U.starProjection‖ := by
