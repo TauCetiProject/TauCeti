@@ -351,8 +351,9 @@ theorem mkUnitalStarAlgHom_surjective : Function.Surjective (mkUnitalStarAlgHom 
   mk_surjective I
 
 @[simp]
-theorem ker_mkUnitalStarAlgHom : TwoSidedIdeal.ker (mkUnitalStarAlgHom I) = I :=
-  ker_mk I
+theorem ker_mkUnitalStarAlgHom : TwoSidedIdeal.ker (mkUnitalStarAlgHom I) = I := by
+  ext a
+  simp [TwoSidedIdeal.mem_ker, eq_zero_iff_mem]
 
 /-- Descend a unital `⋆`-algebra homomorphism `f : A →⋆ₐ[ℂ] B` vanishing on `I` to
 `A ⧸ I →⋆ₐ[ℂ] B`. -/
