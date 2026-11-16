@@ -11,6 +11,9 @@ public import TauCeti.Geometry.Manifold.MFDeriv.FixedPoint
 public import TauCeti.Geometry.Manifold.Topology
 public import TauCeti.Topology.Homotopy.AddCircle
 public import Mathlib.Algebra.Ring.Periodic
+import TauCeti.Geometry.Manifold.Immersion.Curve
+import TauCeti.Geometry.Manifold.MFDeriv.NormedSpace
+import TauCeti.Topology.Compactness.Compact
 
 /-!
 # Periodic solutions of time-periodic vector fields on manifolds
@@ -33,6 +36,12 @@ of the **return map** `timeDependentFlowOf X s (s + T)` in its domain
 (`TauCeti.periodicSolutionsEquivFixedPoints`). In particular a periodic solution whose initial
 point is isolated among the fixed points of the return map is isolated among the periodic
 solutions (`TauCeti.eventually_forall_mem_periodicSolutions_eq_of_eventually_not_isFixedPt`).
+
+Periodic solutions can be read through a map `e : M → F` into a finite-dimensional normed space
+which is injective on a compact set `K`, with injective differential at the points of `K`: every
+periodic solution in `e(K)` of a field on `F` agreeing on `e(K)` with the pushforward `d e (X_t)`
+is `e ∘ x` for a periodic solution `x` of `X` in `K`
+(`TauCeti.exists_mem_periodicSolutions_comp_eq`).
 
 On a compact boundaryless manifold modelled on a finite-dimensional space the return map is defined
 and `C¹` everywhere. If every periodic solution is nondegenerate, meaning that its initial point is
@@ -65,6 +74,8 @@ isolated, fixed points is finite.
 
 * `TauCeti.mem_periodicSolutions_const_iff`: the periodic solutions of an autonomous field are its
   periodic integral curves.
+* `TauCeti.exists_mem_periodicSolutions_comp_eq`: periodic solutions in `e(K)` of a field agreeing
+  there with the pushforward `d e (X_t)` are read through `e` from periodic solutions in `K`.
 * `TauCeti.timeDependentFlowOf_add_period_of_mem`: translating both times by a period of the field
   preserves the domain and the flow.
 * `TauCeti.mem_timeDependentFlowDomain_of_isFixedPt`: for `T ≠ 0`, the trajectory of a fixed point
@@ -125,6 +136,34 @@ theorem mem_periodicSolutions_const_iff {Y : (x : M) → TangentSpace I x} {γ :
 theorem continuous_of_mem_periodicSolutions {γ : ℝ → M} (hγ : γ ∈ periodicSolutions X T) :
     Continuous γ :=
   continuous_iff_continuousAt.2 fun t ↦ (hγ.1 t).continuousAt
+
+/-- **Periodic solutions read through `e`.** Let `K` be a compact subset of `M` and `e : M → F` a
+map into a finite-dimensional normed space, injective on `K`, with injective differential at the
+points of `K`. Let `Y` be a time-dependent field on `F` agreeing on `e(K)` with the pushforward
+`d e (X_t)`. Then every `T`-periodic solution `y` of `y' = Y(t, y)` with values in `e(K)` is
+`e ∘ x` for a `T`-periodic solution `x` of `X` with values in `K`. -/
+theorem exists_mem_periodicSolutions_comp_eq {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F]
+    [FiniteDimensional ℝ F] {e : M → F} {K : Set M} (hK : IsCompact K) (he_inj : InjOn e K)
+    (hde : ∀ p ∈ K, Injective (mvfderiv I e p))
+    {Y : ℝ → F → F} (hY : ∀ t, ∀ p ∈ K, Y t (e p) = mvfderiv I e p (X t p)) {y : ℝ → F}
+    (hyper : Periodic y T) (hy : ∀ t, HasDerivAt y (Y t (y t)) t) (hyK : ∀ t, y t ∈ e '' K) :
+    ∃ x ∈ periodicSolutions X T, (∀ t, x t ∈ K) ∧ e ∘ x = y := by
+  -- A map with injective differential at a point is differentiable, hence continuous, there.
+  have he : ContinuousOn e K := fun p hp ↦ (mdifferentiableAt_of_mfderiv_injective
+    (injective_mvfderiv_iff.1 (hde p hp))).continuousAt.continuousWithinAt
+  choose x hxK hx using hyK
+  have hex : e ∘ x = y := funext hx
+  -- Inside `K`, continuity is read through `e`.
+  have hxc : Continuous x := continuous_iff_continuousAt.2 fun t ↦
+    hK.tendsto_nhds_of_tendsto_comp he he_inj (Eventually.of_forall hxK) (hxK t) <| by
+      rw [hex, hx]
+      exact (hy t).continuousAt
+  refine ⟨x, mem_periodicSolutions.2 ⟨fun t ↦ ?_, fun t ↦ he_inj (hxK _) (hxK _)
+    (by rw [hx, hx, hyper t])⟩, hxK, hex⟩
+  -- Since `d e` is injective, the velocity of `x` is read off from that of `e ∘ x`.
+  refine hxc.continuousAt.hasMFDerivAt_of_hasDerivAt_comp (hde _ (hxK t)) ?_
+  rw [hex, ← hY t _ (hxK t), hx]
+  exact hy t
 
 /-- The **contractible** `T`-periodic solutions of `X`: the `T`-periodic solutions `γ` whose loop
 `ℝ ⧸ Tℤ → M`, `t ↦ γ t`, is null-homotopic. -/
