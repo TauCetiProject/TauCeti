@@ -41,6 +41,8 @@ noncomputable section
 
 open Filter Set Topology
 
+open scoped commutatorElement
+
 namespace TauCeti
 
 variable {X : Type*} [TopologicalSpace X] {u : ℂ → X}
@@ -97,36 +99,45 @@ private theorem apply_eq_add_linear_one_mul_sub_of_forall_apply_eq {y : X}
     {f g : ℂ ≃ᵃ[ℂ] ℂ} (hf : ∀ z, u (f z) = u z) (hg : ∀ z, u (g z) = u z)
     (hf1 : f.linear 1 ≠ 1) (z : ℂ) :
     g z = f 0 / (1 - f.linear 1) + g.linear 1 * (z - f 0 / (1 - f.linear 1)) := by
-  set a := f.linear 1
-  set b := f 0
-  set c := g.linear 1
-  set d := g 0
-  have hfz : ∀ z, f z = a * z + b := f.apply_eq_linear_one_mul_add
-  have hgz : ∀ z, g z = c * z + d := g.apply_eq_linear_one_mul_add
-  have ha0 : a ≠ 0 := f.linear_one_ne_zero
-  have hc0 : c ≠ 0 := g.linear_one_ne_zero
-  have ha1 : 1 - a ≠ 0 := sub_ne_zero.2 (Ne.symm hf1)
-  -- The commutator of `f` and `g` is the translation by `t`; it lies in the isotropy.
-  set t := a * d + b - c * b - d
-  have ht : t = 0 := by
-    by_contra ht
-    refine hrot 0 <| forall_apply_rotation_eq_of_forall_eq
-      (apply_eq_of_periodic ht (fun w ↦ ?_) (by rwa [Metric.cobounded_eq_cocompact])) 0
-    obtain ⟨x, hx⟩ : ∃ x, a * c * x = w - c * b - d :=
-      ⟨(w - c * b - d) / (a * c), by field_simp⟩
-    have hfg : f (g x) = w + t := by
-      rw [hgz, hfz]
-      linear_combination hx
-    have hgf : g (f x) = w := by
-      rw [hfz, hgz]
-      linear_combination hx
-    rw [← hfg, hf, hg, ← hf x, ← hg (f x), hgf]
-  have hd : d = b * (1 - c) / (1 - a) := by
-    rw [eq_div_iff ha1]
-    linear_combination -ht
-  rw [hgz, hd]
-  field_simp
-  ring
+  -- A nonzero translation in the isotropy would make `u` constant.
+  have htrans : ∀ t : ℂ, (∀ w, u (t + w) = u w) → t = 0 := fun t ht ↦ by_contra fun ht0 ↦
+    hrot 0 <| forall_apply_rotation_eq_of_forall_eq (apply_eq_of_periodic ht0
+      (fun w ↦ by rw [add_comm, ht]) (by rwa [Metric.cobounded_eq_cocompact])) 0
+  by_cases hg1 : g.linear 1 = 1
+  · have hg0 : g 0 = 0 := htrans _ fun w ↦ by
+      have := hg w
+      rwa [g.apply_eq_linear_one_mul_add w, hg1, one_mul, add_comm] at this
+    rw [g.apply_eq_linear_one_mul_add, hg1, hg0]
+    ring
+  -- An affine equivalence with linear coefficient `a ≠ 1` is the homothety with ratio `a` about
+  -- its fixed point.
+  have hhom : ∀ h : ℂ ≃ᵃ[ℂ] ℂ, h.linear 1 ≠ 1 → h = AffineEquiv.homothetyUnitsMulHom
+      (h 0 / (1 - h.linear 1)) (Units.mk0 _ h.linear_one_ne_zero) := fun h h1 ↦ by
+    have := sub_ne_zero.2 (Ne.symm h1)
+    ext w
+    rw [h.apply_eq_linear_one_mul_add w]
+    simp only [AffineEquiv.coe_homothetyUnitsMulHom_apply,
+      AffineMap.homothety_apply, Units.val_mk0, vsub_eq_sub, vadd_eq_add, smul_eq_mul]
+    field_simp
+    ring
+  have hinv : ∀ h : ℂ ≃ᵃ[ℂ] ℂ, (∀ w, u (h w) = u w) → ∀ w, u (h⁻¹ w) = u w :=
+    fun h hh w ↦ by rw [← hh, AffineEquiv.inv_def, AffineEquiv.apply_symm_apply]
+  -- The commutator of the homotheties `f` and `g` is a translation in the isotropy, so it is
+  -- trivial and they have the same centre.
+  have hcomm : ∀ w, u (⁅f, g⁆ w) = u w := fun w ↦ by
+    simp only [commutatorElement_def, AffineEquiv.coe_mul, Function.comp_apply, hf, hg,
+      hinv f hf, hinv g hg]
+  rw [hhom f hf1, hhom g hg1, TauCeti.AffineEquiv.commutatorElement_homothetyUnitsMulHom] at hcomm
+  have hpq := htrans _ fun w ↦ by simpa using hcomm w
+  simp only [mul_eq_zero, sub_eq_zero] at hpq
+  have hgz := congrArg (fun h : ℂ ≃ᵃ[ℂ] ℂ ↦ h z) (hhom g hg1)
+  simp only [AffineEquiv.coe_homothetyUnitsMulHom_apply, AffineMap.homothety_apply,
+    Units.val_mk0, vsub_eq_sub, vadd_eq_add, smul_eq_mul] at hgz
+  rcases hpq with (hpq | hpq) | hpq
+  · exact (hf1 hpq).elim
+  · exact (hg1 hpq.symm).elim
+  · rw [hgz, hpq]
+    ring
 
 omit [TopologicalSpace X] [T2Space X] in
 /-- The rotations about a centre of invariance form an infinite family in the isotropy. -/
