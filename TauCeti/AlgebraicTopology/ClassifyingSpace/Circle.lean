@@ -13,10 +13,7 @@ public import TauCeti.AlgebraicTopology.EilenbergMacLane.WeakHomotopyEquivalence
 public import TauCeti.AlgebraicTopology.Homotopy.Whitehead
 public import TauCeti.AlgebraicTopology.UniversalCover.Circle.FundamentalGroup
 public import TauCeti.AlgebraicTopology.UniversalCover.Circle.HigherHomotopy
-public import TauCeti.AlgebraicTopology.Singular.Sphere
-public import TauCeti.Analysis.Complex.Circle
 public import TauCeti.Topology.CWComplex.Classical.Circle
-import Mathlib.LinearAlgebra.Complex.FiniteDimensional
 import TauCeti.AlgebraicTopology.Singular.Homotopy.Invariance
 
 /-!
@@ -37,12 +34,12 @@ both are CW complexes, so Whitehead's theorem makes it a homotopy equivalence.
 
 The equivalence identifies the singular homology of the circle with coefficients in a commutative
 ring `k` with the group homology of `ℤ` with trivial coefficients `k`, in every degree
-(`TauCeti.circleSingularHomologyIsoGroupHomology`). In degree one it sends the Hurewicz class of a
-loop of degree `d` to the class of the `1`-cycle at `ofAdd d`; in particular the counterclockwise
-loop goes to the class of the generator `ofAdd 1`
+(`TauCeti.circleSingularHomologyIsoGroupHomology`). On integral first homology, the map induced
+by `circleToClassifyingSpace`, read through
+`TauCeti.classifyingSpaceFirstHomologyAddEquivGroupHomology`, sends the Hurewicz class of a loop of
+degree `d` to the class of the `1`-cycle at `ofAdd d`; in particular the counterclockwise loop goes
+to the class of the generator `ofAdd 1`
 (`TauCeti.classifyingSpaceFirstHomologyAddEquivGroupHomology_map_circleToClassifyingSpace_expLoop`).
-The circle is the unit sphere of `ℂ`, whose homology vanishes in degrees at least `2`, so the group
-homology of `ℤ` vanishes there too (`TauCeti.isZero_groupHomology_multiplicative_int`).
 
 ## Main definitions
 
@@ -64,13 +61,10 @@ homology of `ℤ` vanishes there too (`TauCeti.isZero_groupHomology_multiplicati
   `H₁(ℤ, ℤ)`.
 * `TauCeti.classifyingSpaceFirstHomologyAddEquivGroupHomology_map_circleToClassifyingSpace_expLoop`:
   the counterclockwise loop goes to the class of the generator in `H₁(ℤ, ℤ)`.
-* `TauCeti.isZero_groupHomology_multiplicative_int`: the group homology of `ℤ` with trivial
-  coefficients vanishes in degrees at least `2`.
 
 ## References
 
-* A. Hatcher, *Algebraic Topology*, Cambridge University Press, 2002, Section 1.B, Theorem 1B.8,
-  and Section 2.1, the homology of spheres.
+* A. Hatcher, *Algebraic Topology*, Cambridge University Press, 2002, Section 1.B, Theorem 1B.8.
 * K. S. Brown, *Cohomology of Groups*, GTM 87, Springer, 1982, Section II.4.
 * J. Milnor, *Construction of universal bundles, II*, Ann. of Math. 63 (1956), 430--436.
 -/
@@ -82,7 +76,7 @@ noncomputable section
 namespace TauCeti
 
 open scoped Topology Topology.Homotopy
-open CategoryTheory Limits TauCeti.HurewiczOne
+open CategoryTheory TauCeti.HurewiczOne
 
 /-- The based map from the circle to the classifying space of `ℤ` that goes once around a loop at
 the base point representing the generator `ofAdd 1` of `ℤ`. The point `exp (2πit)` goes to the
@@ -158,18 +152,6 @@ theorem circleSingularHomologyIsoGroupHomology_hom (k : Type) [CommRing k] (n : 
   -- definitional equality of `singularHomologyFunctor` with the homology of `singularChains`.
   exact congrArg (· ≫ (classifyingSpaceSingularHomologyIsoGroupHomology k (Multiplicative ℤ) n).hom)
     (circleHomotopyEquivClassifyingSpace.singularHomologyIso_hom (ModuleCat.of k k) n)
-
-/-- **The group homology of `ℤ` vanishes in degrees at least `2`**, with trivial coefficients in
-any commutative ring `k`: it is the homology of the circle, the unit sphere of `ℂ`, whose reduced
-homology vanishes outside degree `1`. -/
-theorem isZero_groupHomology_multiplicative_int (k : Type) [CommRing k] {n : ℕ} (hn : 2 ≤ n) :
-    IsZero (groupHomology (Rep.trivial k (Multiplicative ℤ) k) n) := by
-  obtain ⟨q, rfl⟩ : ∃ q, n = q + 1 := ⟨n - 1, by lia⟩
-  have hS := (isZero_reducedSingularHomologyFunctor_sphere_of_ne (ModuleCat.of k k)
-    (E := ℂ) (n := 1) Complex.finrank_real_complex (k := q + 1) (by lia)).of_iso
-      ((reducedSingularHomologySuccIso (ModuleCat.of k k) q).app _).symm
-  exact (hS.of_iso (Circle.homeomorphSphere.toHomotopyEquiv.singularHomologyIso _ _)).of_iso
-    (circleSingularHomologyIsoGroupHomology k (q + 1)).symm
 
 /-- On integral first homology, `TauCeti.circleToClassifyingSpace` sends the Hurewicz class of a
 loop at `1` to the class in `ℤᵃᵇ` of its degree, read through `Circle.fundamentalGroupMulEquiv`. -/
