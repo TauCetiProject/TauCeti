@@ -282,7 +282,6 @@ theorem sub_eq_integral_inv_sqrt_of_isMIntegralCurveOn_sphericalPendulum {t₁ t
       (γ t : EuclideanSpace ℝ (Fin 3) × EuclideanSpace ℝ (Fin 3)).1 2 ∈ Ioo z₁ z₂) :
     t₂ - t₁ = ∫ z in z₁..z₂, (√(2 * (h - z) * (1 - z ^ 2) - j ^ 2))⁻¹ := by
   set z : ℝ → ℝ := fun t ↦ (γ t : EuclideanSpace ℝ (Fin 3) × EuclideanSpace ℝ (Fin 3)).1 2
-    with hz
   have hIoo : Ioo t₁ t₂ ⊆ Icc t₁ t₂ := Ioo_subset_Icc_self
   have hzd (t : ℝ) (ht : t ∈ Icc t₁ t₂) :=
     hasDerivWithinAt_fst_apply_two_of_isMIntegralCurveOn_sphericalPendulum hγ ht
@@ -299,20 +298,9 @@ theorem sub_eq_integral_inv_sqrt_of_isMIntegralCurveOn_sphericalPendulum {t₁ t
     rw [← hsq] at hR
     refine ⟨?_, fun h0 ↦ by simp [h0] at hR⟩
     rw [← hsq, Real.sqrt_sq_eq_abs]
-  have hzc : ContinuousOn z (Icc t₁ t₂) := fun t ht ↦ (hzd t ht).continuousWithinAt
-  have himage : z '' Ioo t₁ t₂ = Ioo z₁ z₂ := by
-    refine (MapsTo.image_subset (hmem : MapsTo z _ _)).antisymm ?_
-    rcases hends with ⟨h₁, h₂⟩ | ⟨h₁, h₂⟩
-    · simpa only [hz, h₁, h₂] using intermediate_value_Ioo ht hzc
-    · simpa only [hz, h₁, h₂] using intermediate_value_Ioo' ht hzc
-  have h₁₂ : z₁ ≤ z₂ := by
-    rcases ht.eq_or_lt with rfl | ht'
-    · rcases hends with ⟨h₁, h₂⟩ | ⟨h₁, h₂⟩ <;> linarith
-    · obtain ⟨h₁, h₂⟩ := hmem _ ⟨left_lt_add_div_two.2 ht', add_div_two_lt_right.2 ht'⟩
-      exact (h₁.trans h₂).le
-  rw [intervalIntegral.integral_of_le h₁₂, integral_Ioc_eq_integral_Ioo, ← himage,
-    integral_image_eq_integral_abs_deriv_smul_of_ne_zero (convex_Ioo t₁ t₂)
-      (fun t ht ↦ (hzd t (hIoo ht)).mono hIoo) (fun t ht ↦ (hp t ht).2),
+  rw [intervalIntegral.integral_eq_integral_Ioo_abs_deriv_smul_of_ne_zero ht
+      (fun t ht ↦ (hzd t ht).continuousWithinAt) (fun t ht ↦ (hzd t (hIoo ht)).mono hIoo)
+      (fun t ht ↦ (hp t ht).2) hends hmem,
     setIntegral_congr_fun measurableSet_Ioo (g := fun _ ↦ (1 : ℝ)) fun t ht ↦ ?_,
     setIntegral_const, smul_eq_mul, mul_one, Real.volume_real_Ioo_of_le ht]
   rw [smul_eq_mul, (hp t ht).1]
