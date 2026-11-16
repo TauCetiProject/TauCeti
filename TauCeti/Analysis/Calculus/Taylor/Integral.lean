@@ -7,6 +7,8 @@ module
 
 public import Mathlib.Analysis.Calculus.IteratedDeriv.Defs
 public import Mathlib.Analysis.Calculus.TaylorIntegral
+public import TauCeti.Analysis.Calculus.Deriv.Second
+public import Mathlib.Analysis.InnerProductSpace.Calculus
 import Mathlib.Analysis.Asymptotics.Lemmas
 import Mathlib.Analysis.Normed.Module.HahnBanach
 import TauCeti.Analysis.Calculus.IteratedFDeriv.Basic
@@ -201,3 +203,26 @@ theorem ContDiffAt.isBigO_sub_taylor_three {f : E → F} {x : E} (hf : ContDiffA
   module
 
 end RemainderBound
+
+namespace TauCeti
+
+variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E]
+
+/-- Along `s ↦ x + s • v`, subtracting `K * ‖·‖² / 2` lowers the second derivative
+by `K * ‖v‖²`. -/
+theorem deriv_deriv_comp_add_smul_sub_norm_sq {f : E → ℝ} (x v : E) {t : ℝ}
+    (hf : ContDiffAt ℝ 2 f (x + t • v)) (K : ℝ) :
+    deriv (deriv (fun s : ℝ ↦ f (x + s • v) - K * ‖x + s • v‖ ^ 2 / 2)) t =
+      fderiv ℝ (fderiv ℝ f) (x + t • v) v v - K * ‖v‖ ^ 2 := by
+  have hnorm (s : ℝ) : K * ‖x + s • v‖ ^ 2 / 2 =
+      K * ‖x‖ ^ 2 / 2 + (K * inner ℝ x v) * s + (K * ‖v‖ ^ 2 / 2) * s ^ 2 := by
+    rw [norm_add_sq_real, real_inner_smul_right, norm_smul, Real.norm_eq_abs,
+      mul_pow, sq_abs]
+    ring
+  simp_rw [hnorm]
+  have hline : ContDiffAt ℝ 2 (fun s : ℝ ↦ f (x + s • v)) t :=
+    hf.comp t (by fun_prop)
+  rw [hline.deriv_deriv_sub_quadratic, hf.deriv_deriv_comp_add_smul]
+  ring
+
+end TauCeti
