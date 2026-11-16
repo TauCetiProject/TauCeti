@@ -8,6 +8,7 @@ module
 public import Mathlib.Geometry.Manifold.Instances.Icc
 public import TauCeti.Geometry.Diffeomorphism.Group
 public import TauCeti.Topology.Homotopy.Isotopy.Basic
+import TauCeti.Geometry.Manifold.MFDeriv.Prod
 
 /-!
 # Smooth ambient isotopies
@@ -332,12 +333,11 @@ theorem mfderiv_cylinderMap_prodMk_snd (hn : 1 ≤ n) (p : M × I)
     mfderiv (J.prod (𝓡∂ 1)) (J.prod (𝓡∂ 1)) (fun q ↦ (Φ.cylinderMap q, q.2)) p w =
       (mfderiv (J.prod (𝓡∂ 1)) J Φ.cylinderMap p w, w.2) := by
   rw [mfderiv_prodMk (Φ.contMDiff_cylinderMap.mdifferentiableAt
-      (zero_lt_one.trans_le (by exact_mod_cast hn)).ne') mdifferentiableAt_snd,
-    mfderiv_snd]
-  -- `ContinuousLinearMap.prod_apply` does not rewrite here: `mfderiv_snd` produces the projection
-  -- on `TangentSpace J p.1 × TangentSpace (𝓡∂ 1) p.2`, which is the tangent space of the product
-  -- only up to unfolding `TangentSpace`. Both sides agree by unfolding `prod` and `snd`.
-  rfl
+      (zero_lt_one.trans_le (by exact_mod_cast hn)).ne') mdifferentiableAt_snd]
+  -- `mfderiv_prodMk` returns a map into `TangentSpace J _ × TangentSpace (𝓡∂ 1) _`, the tangent
+  -- space of the product only up to unfolding `TangentSpace`, so `ContinuousLinearMap.prod_apply`
+  -- is applied by `exact` rather than rewritten.
+  exact (ContinuousLinearMap.prod_apply _ _ w).trans (congrArg (Prod.mk _) (mfderiv_snd_apply p w))
 
 /-- The time slice of a composite diffeotopy is the composite of its time slices. -/
 @[simp]
