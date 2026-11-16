@@ -99,6 +99,9 @@ applied to an integrable function that is almost everywhere at least `a`.
   finite measure, a function with zero mean oscillation is a.e. equal to its average there.
 * `TauCeti.norm_setAverage_sub_le_of_subset`: the average over a subset `s ⊆ t`
   differs from a constant `c` by at most `μ t / μ s` times the average of `‖f - c‖` over `t`.
+* `TauCeti.norm_sub_le_setAverage_add_div_mul_setAverage_of_subset`: two constants `c` and `d`
+  approximating `g` on `s ⊆ t` and on `t` satisfy
+  `‖c - d‖ ≤ ⨍_s ‖g - c‖ + (μ t / μ s) ⨍_t ‖g - d‖`.
 * `TauCeti.setLAverage_le_div_mul_setLAverage_of_subset`: the average of a nonnegative function
   over a subset `s ⊆ t` is at most `μ t / μ s` times its average over `t`.
 * `TauCeti.enorm_setAverage_sub_le_of_subset`: the extended-norm form of

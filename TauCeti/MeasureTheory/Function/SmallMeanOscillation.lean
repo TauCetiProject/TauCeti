@@ -5,9 +5,10 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Analysis.InnerProductSpace.Basic
 public import Mathlib.MeasureTheory.Function.LocallyIntegrable
+public import Mathlib.MeasureTheory.Group.Measure
 public import Mathlib.MeasureTheory.Integral.Average
-public import Mathlib.MeasureTheory.Measure.Haar.InnerProductSpace
 import TauCeti.Analysis.Calculus.BumpFunction.LipschitzCutoff
 import TauCeti.MeasureTheory.Integral.Average
 import TauCeti.MeasureTheory.Measure.Haar.NormedSpace
@@ -16,16 +17,18 @@ import TauCeti.MeasureTheory.Measure.OpenPos
 /-!
 # Small mean oscillation below a radius extends to every scale near a ball
 
-Let `β : ℝ^{n+1} → F` be a locally integrable field with values in a real normed space, and
-suppose that on every ball `B(c, r)` of radius at most `r₀` some constant `P`, satisfying a
-property `Q c r`, approximates `β` with mean deviation `⨍_{B(c, r)} ‖β - P‖ ≤ δ`. For a ball
+Let `E` be a real finite-dimensional normed space of dimension `d`, with an additive Haar measure
+`μ`, and let `β : E → F` be a locally integrable field with values in a real normed space.
+Suppose that on every ball `B(c, r)` of radius at most `r₀` some constant `P`, satisfying a
+property `Q c r`, approximates `β` with mean deviation `⨍_{B(c, r)} ‖β - P‖ dμ ≤ δ`. For a ball
 `B(x₀, R)` with `4R ≤ r₀`, this file produces a continuous cutoff `ψ ∈ [0, 1]` equal to one on
 `B(x₀, R)` and a constant `P₀` satisfying `Q x₀ (4R)` such that the field `ψ β + (1 - ψ) P₀`,
-which agrees with `β` on `B(x₀, R)`, has mean deviation at most `4 · 8^(n + 1) δ` on every ball,
+which agrees with `β` on `B(x₀, R)`, has mean deviation at most `4 · 8^d δ` on every ball,
 of any radius, from a convex combination of `P₀` and a constant satisfying `Q`
-(`TauCeti.exists_forall_setAverage_norm_cutoff_sub_le`). This is how fields of vanishing mean
-oscillation, which are close to constants only on small balls, meet estimates that ask for small
-mean oscillation at every scale.
+(`TauCeti.exists_forall_setAverage_norm_cutoff_sub_le`, which asks `E` to be a nontrivial inner
+product space for the cutoff). This is how fields of vanishing mean oscillation, which are close
+to constants only on small balls, meet estimates that ask for small mean oscillation at every
+scale.
 
 The key step bounds the drift of the approximating constants along the dyadic balls
 `B(c, 2ᵏ r)`: consecutive constants differ by `O(δ)`
@@ -37,7 +40,7 @@ The proof takes `ψ` vanishing outside `B(x₀, 2R)` and `2 / R`-Lipschitz, and 
 `B(x₀, 4R)`.
 
 * On a ball `B` of radius `r ≥ R`, the field stays close to `P₀`: the deviation `ψ ‖β - P₀‖`
-  lives on `B(x₀, 2R)`, and its integral is at most `δ |B(x₀, 4R)| ≤ 4^(n + 1) δ |B|`.
+  lives on `B(x₀, 2R)`, and its integral is at most `δ |B(x₀, 4R)| ≤ 4^d δ |B|`.
 * On a ball `B = B(c, r)` with `r < R` far from `x₀`, the field is `P₀`.
 * On a ball `B = B(c, r)` with `r < R` near `x₀`, compare the field with
   `ψ(c) P + (1 - ψ(c)) P₀`, where `P` is a constant of `B`. The error is at most
@@ -60,28 +63,35 @@ The proof takes `ψ` vanishing outside `B(x₀, 2R)` and `2 / R`-Lipschitz, and 
 
 public section
 
-open MeasureTheory Metric Set
+open MeasureTheory Metric Module Set
 open scoped NNReal
 
 namespace TauCeti
 
-variable {n : ℕ} {F : Type*} [NormedAddCommGroup F]
+variable {E F : Type*} [NormedAddCommGroup E] [MeasurableSpace E] [BorelSpace E]
+  [NormedAddCommGroup F]
 
+section NormedSpace
+
+variable [NormedSpace ℝ E] [FiniteDimensional ℝ E] {μ : Measure E} [μ.IsAddHaarMeasure]
+
+omit [BorelSpace E] in
 /-- A locally integrable field `β` stays within integrable distance of any constant on every
 ball. -/
-private theorem integrableOn_norm_sub {β : EuclideanSpace ℝ (Fin (n + 1)) → F}
-    (hβ : LocallyIntegrable β volume) (P : F) (c : EuclideanSpace ℝ (Fin (n + 1))) (r : ℝ) :
-    IntegrableOn (fun x => ‖β x - P‖) (ball c r) :=
+private theorem integrableOn_norm_sub {β : E → F}
+    (hβ : LocallyIntegrable β μ) (P : F) (c : E) (r : ℝ) :
+    IntegrableOn (fun x => ‖β x - P‖) (ball c r) μ :=
   (((hβ.integrableOn_isCompact (isCompact_closedBall c r)).mono_set ball_subset_closedBall).sub
     (integrableOn_const measure_ball_lt_top.ne)).norm
 
+omit [BorelSpace E] in
 /-- A locally integrable field `β`, multiplied by a measurable weight `w` bounded by one, stays
 within integrable distance of any constant on every ball. -/
-private theorem integrableOn_mul_norm_sub {β : EuclideanSpace ℝ (Fin (n + 1)) → F}
-    (hβ : LocallyIntegrable β volume)
-    {w : EuclideanSpace ℝ (Fin (n + 1)) → ℝ} (hw : AEStronglyMeasurable w volume)
-    (hw1 : ∀ x, |w x| ≤ 1) (P : F) (c : EuclideanSpace ℝ (Fin (n + 1))) (r : ℝ) :
-    IntegrableOn (fun x => w x * ‖β x - P‖) (ball c r) :=
+private theorem integrableOn_mul_norm_sub {β : E → F}
+    (hβ : LocallyIntegrable β μ)
+    {w : E → ℝ} (hw : AEStronglyMeasurable w μ)
+    (hw1 : ∀ x, |w x| ≤ 1) (P : F) (c : E) (r : ℝ) :
+    IntegrableOn (fun x => w x * ‖β x - P‖) (ball c r) μ :=
   (integrableOn_norm_sub hβ P c r).mono'
     (hw.mul (hβ.aestronglyMeasurable.sub aestronglyMeasurable_const).norm).restrict
     (.of_forall fun x => by
@@ -90,12 +100,12 @@ private theorem integrableOn_mul_norm_sub {β : EuclideanSpace ℝ (Fin (n + 1))
 
 /-- **Drift of approximating constants along concentric balls.** If on each ball `B(c, 2ᵏ r)`,
 `k ≤ m`, the constant `P k` approximates `β` with mean deviation at most `δ`, then `P 0` and `P m`
-differ by at most `m (1 + 2^(n + 1)) δ`. -/
-theorem norm_sub_le_of_forall_setAverage_le {β : EuclideanSpace ℝ (Fin (n + 1)) → F}
-    (hβ : LocallyIntegrable β volume)
-    {c : EuclideanSpace ℝ (Fin (n + 1))} {r δ : ℝ} (hr : 0 < r) {P : ℕ → F} :
-    ∀ m : ℕ, (∀ k ≤ m, ⨍ x in ball c (2 ^ k * r), ‖β x - P k‖ ≤ δ) →
-      ‖P 0 - P m‖ ≤ m * ((1 + 2 ^ (n + 1)) * δ)
+differ by at most `m (1 + 2^d) δ`, where `d` is the dimension of `E`. -/
+theorem norm_sub_le_of_forall_setAverage_le {β : E → F}
+    (hβ : LocallyIntegrable β μ)
+    {c : E} {r δ : ℝ} (hr : 0 < r) {P : ℕ → F} :
+    ∀ m : ℕ, (∀ k ≤ m, ⨍ x in ball c (2 ^ k * r), ‖β x - P k‖ ∂μ ≤ δ) →
+      ‖P 0 - P m‖ ≤ m * ((1 + 2 ^ finrank ℝ E) * δ)
   | 0, _ => by simp
   | m + 1, hP => by
     have ih := norm_sub_le_of_forall_setAverage_le hβ hr m
@@ -103,31 +113,30 @@ theorem norm_sub_le_of_forall_setAverage_le {β : EuclideanSpace ℝ (Fin (n + 1
     have hrm : 0 < 2 ^ m * r := by positivity
     have hstep := norm_sub_le_setAverage_add_div_mul_setAverage_of_subset
       (s := ball c (2 ^ m * r)) (t := ball c (2 ^ (m + 1) * r))
-      (ball_subset_ball (by rw [pow_succ]; nlinarith)) (measure_ball_pos _ _ hrm).ne'
+      (ball_subset_ball (by rw [pow_succ]; nlinarith)) (measure_ball_pos μ _ hrm).ne'
       measure_ball_lt_top.ne (integrableOn_norm_sub hβ (P m) c _)
       (integrableOn_norm_sub hβ (P (m + 1)) c _)
     rw [Measure.addHaar_real_ball_div_addHaar_real_ball _ _ _ hrm (by positivity),
-      finrank_euclideanSpace_fin,
       show 2 ^ (m + 1) * r / (2 ^ m * r) = 2 by field_simp; ring] at hstep
     calc ‖P 0 - P (m + 1)‖ ≤ ‖P 0 - P m‖ + ‖P m - P (m + 1)‖ :=
           norm_sub_le_norm_sub_add_norm_sub _ _ _
-      _ ≤ m * ((1 + 2 ^ (n + 1)) * δ) + (δ + 2 ^ (n + 1) * δ) := by
+      _ ≤ m * ((1 + 2 ^ finrank ℝ E) * δ) + (δ + 2 ^ finrank ℝ E * δ) := by
           gcongr
           exact hstep.trans (add_le_add (hP m m.le_succ)
             (mul_le_mul_of_nonneg_left (hP (m + 1) le_rfl) (by positivity)))
-      _ = ((m + 1 : ℕ) : ℝ) * ((1 + 2 ^ (n + 1)) * δ) := by push_cast; ring
+      _ = ((m + 1 : ℕ) : ℝ) * ((1 + 2 ^ finrank ℝ E) * δ) := by push_cast; ring
 
 /-- **The cutoff field on a large ball.** Let `ψ ∈ [0, 1]` vanish outside `B(x₀, 2R)`, and let the
 constant `P₀` approximate `β` on `B(x₀, 4R)` with mean deviation at most `δ`. On every ball of
 radius `r ≥ R`, the field `ψ β + (1 - ψ) P₀` then deviates from `P₀` on average by at most
-`4^(n + 1) δ`. -/
+`4^d δ`. -/
 private theorem setAverage_norm_cutoff_sub_le_of_le [NormedSpace ℝ F]
-    {β : EuclideanSpace ℝ (Fin (n + 1)) → F} (hβ : LocallyIntegrable β volume)
-    {ψ : EuclideanSpace ℝ (Fin (n + 1)) → ℝ} (hψm : Continuous ψ) (hψ : ∀ x, ψ x ∈ Icc 0 1)
-    {x₀ c : EuclideanSpace ℝ (Fin (n + 1))} {R r δ : ℝ}
+    {β : E → F} (hβ : LocallyIntegrable β μ)
+    {ψ : E → ℝ} (hψm : Continuous ψ) (hψ : ∀ x, ψ x ∈ Icc 0 1)
+    {x₀ c : E} {R r δ : ℝ}
     (hψ0 : ∀ x, 2 * R ≤ dist x x₀ → ψ x = 0) (hR : 0 < R) (hRr : R ≤ r) {P₀ : F}
-    (hδ : ⨍ x in ball x₀ (4 * R), ‖β x - P₀‖ ≤ δ) :
-    ⨍ x in ball c r, ‖ψ x • β x + (1 - ψ x) • P₀ - P₀‖ ≤ 4 ^ (n + 1) * δ := by
+    (hδ : ⨍ x in ball x₀ (4 * R), ‖β x - P₀‖ ∂μ ≤ δ) :
+    ⨍ x in ball c r, ‖ψ x • β x + (1 - ψ x) • P₀ - P₀‖ ∂μ ≤ 4 ^ finrank ℝ E * δ := by
   have hr : 0 < r := hR.trans_le hRr
   have hψ1 : ∀ x, |ψ x| ≤ 1 := fun x => abs_le.2 ⟨by linarith [(hψ x).1], (hψ x).2⟩
   have hpt : ∀ x, ‖ψ x • β x + (1 - ψ x) • P₀ - P₀‖ = ψ x * ‖β x - P₀‖ := fun x => by
@@ -136,37 +145,36 @@ private theorem setAverage_norm_cutoff_sub_le_of_le [NormedSpace ℝ F]
   have hint := integrableOn_mul_norm_sub hβ hψm.aestronglyMeasurable hψ1 P₀ x₀ (4 * R)
   -- The integrand vanishes off `B(x₀, 2R)`, so its integral over `B(c, r)` is at most its
   -- integral over `B(x₀, 4R)`.
-  have hI : ∫ x in ball c r, ψ x * ‖β x - P₀‖ ≤ ∫ x in ball x₀ (4 * R), ‖β x - P₀‖ := by
-    calc ∫ x in ball c r, ψ x * ‖β x - P₀‖
-        = ∫ x in ball c r, (ball x₀ (4 * R)).indicator (fun x => ψ x * ‖β x - P₀‖) x := by
+  have hI : ∫ x in ball c r, ψ x * ‖β x - P₀‖ ∂μ ≤ ∫ x in ball x₀ (4 * R), ‖β x - P₀‖ ∂μ := by
+    calc ∫ x in ball c r, ψ x * ‖β x - P₀‖ ∂μ
+        = ∫ x in ball c r, (ball x₀ (4 * R)).indicator (fun x => ψ x * ‖β x - P₀‖) x ∂μ := by
           refine integral_congr_ae (.of_forall fun x => ?_)
           dsimp only
           by_cases hx : x ∈ ball x₀ (4 * R)
           · rw [indicator_of_mem hx]
           · rw [indicator_of_notMem hx, hψ0 x (by rw [mem_ball, not_lt] at hx; linarith),
               zero_mul]
-      _ = ∫ x in ball c r ∩ ball x₀ (4 * R), ψ x * ‖β x - P₀‖ := setIntegral_indicator
+      _ = ∫ x in ball c r ∩ ball x₀ (4 * R), ψ x * ‖β x - P₀‖ ∂μ := setIntegral_indicator
           measurableSet_ball
-      _ ≤ ∫ x in ball x₀ (4 * R), ψ x * ‖β x - P₀‖ :=
+      _ ≤ ∫ x in ball x₀ (4 * R), ψ x * ‖β x - P₀‖ ∂μ :=
           setIntegral_mono_set hint (.of_forall fun x => mul_nonneg (hψ x).1 (norm_nonneg _))
             (.of_forall inter_subset_right)
       _ ≤ _ := setIntegral_mono_on hint (integrableOn_norm_sub hβ P₀ x₀ _) measurableSet_ball
           fun x _ => mul_le_of_le_one_left (norm_nonneg _) (hψ x).2
-  have hvol := Measure.addHaar_real_ball_div_addHaar_real_ball volume c x₀ hr
+  have hvol := Measure.addHaar_real_ball_div_addHaar_real_ball μ c x₀ hr
     (by positivity : 0 < 4 * R)
-  rw [finrank_euclideanSpace_fin] at hvol
-  have hvol0 : 0 < volume.real (ball c r) := Metric.measureReal_ball_pos volume _ hr
+  have hvol0 : 0 < μ.real (ball c r) := Metric.measureReal_ball_pos μ _ hr
   simp_rw [hpt]
   simp only [setAverage_eq, smul_eq_mul] at hδ ⊢
-  calc (volume.real (ball c r))⁻¹ * ∫ x in ball c r, ψ x * ‖β x - P₀‖
-      ≤ (volume.real (ball c r))⁻¹ * ∫ x in ball x₀ (4 * R), ‖β x - P₀‖ := by gcongr
-    _ = (4 * R / r) ^ (n + 1) * ((volume.real (ball x₀ (4 * R)))⁻¹ *
-          ∫ x in ball x₀ (4 * R), ‖β x - P₀‖) := by
-        have : volume.real (ball x₀ (4 * R)) ≠ 0 :=
-          (Metric.measureReal_ball_pos volume _ (by positivity)).ne'
+  calc (μ.real (ball c r))⁻¹ * ∫ x in ball c r, ψ x * ‖β x - P₀‖ ∂μ
+      ≤ (μ.real (ball c r))⁻¹ * ∫ x in ball x₀ (4 * R), ‖β x - P₀‖ ∂μ := by gcongr
+    _ = (4 * R / r) ^ finrank ℝ E * ((μ.real (ball x₀ (4 * R)))⁻¹ *
+          ∫ x in ball x₀ (4 * R), ‖β x - P₀‖ ∂μ) := by
+        have : μ.real (ball x₀ (4 * R)) ≠ 0 :=
+          (Metric.measureReal_ball_pos μ _ (by positivity)).ne'
         rw [← hvol]
         field_simp
-    _ ≤ 4 ^ (n + 1) * δ := by
+    _ ≤ 4 ^ finrank ℝ E * δ := by
         gcongr
         rw [div_le_iff₀ hr]
         linarith
@@ -176,13 +184,13 @@ private theorem setAverage_norm_cutoff_sub_le_of_le [NormedSpace ℝ F]
 `ψ β + (1 - ψ) P₀` deviates on average from the constant `ψ(c) P + (1 - ψ(c)) P₀` by at most
 `δ + K r ‖P - P₀‖`. -/
 private theorem setAverage_norm_cutoff_sub_le [NormedSpace ℝ F]
-    {β : EuclideanSpace ℝ (Fin (n + 1)) → F} (hβ : LocallyIntegrable β volume)
-    {ψ : EuclideanSpace ℝ (Fin (n + 1)) → ℝ} (hψ : ∀ x, ψ x ∈ Icc 0 1)
-    {K : ℝ≥0} (hψlip : LipschitzWith K ψ) {c : EuclideanSpace ℝ (Fin (n + 1))}
-    {r δ : ℝ} (hr : 0 < r) {P₀ P : F} (hδ : ⨍ x in ball c r, ‖β x - P‖ ≤ δ) :
-    ⨍ x in ball c r, ‖ψ x • β x + (1 - ψ x) • P₀ - (ψ c • P + (1 - ψ c) • P₀)‖ ≤
+    {β : E → F} (hβ : LocallyIntegrable β μ)
+    {ψ : E → ℝ} (hψ : ∀ x, ψ x ∈ Icc 0 1)
+    {K : ℝ≥0} (hψlip : LipschitzWith K ψ) {c : E}
+    {r δ : ℝ} (hr : 0 < r) {P₀ P : F} (hδ : ⨍ x in ball c r, ‖β x - P‖ ∂μ ≤ δ) :
+    ⨍ x in ball c r, ‖ψ x • β x + (1 - ψ x) • P₀ - (ψ c • P + (1 - ψ c) • P₀)‖ ∂μ ≤
       δ + K * r * ‖P - P₀‖ := by
-  have hvol0 : 0 < volume.real (ball c r) := Metric.measureReal_ball_pos volume _ hr
+  have hvol0 : 0 < μ.real (ball c r) := Metric.measureReal_ball_pos μ _ hr
   have hint := integrableOn_norm_sub hβ P c r
   have hpt : ∀ x ∈ ball c r, ‖ψ x • β x + (1 - ψ x) • P₀ - (ψ c • P + (1 - ψ c) • P₀)‖ ≤
       ‖β x - P‖ + K * r * ‖P - P₀‖ := fun x hx => by
@@ -196,32 +204,33 @@ private theorem setAverage_norm_cutoff_sub_le [NormedSpace ℝ F]
       exact (hψlip.dist_le_mul x c).trans
         (mul_le_mul_of_nonneg_left (mem_ball.1 hx).le K.coe_nonneg)
   have hmeas : AEStronglyMeasurable
-      (fun x => ‖ψ x • β x + (1 - ψ x) • P₀ - (ψ c • P + (1 - ψ c) • P₀)‖) volume :=
+      (fun x => ‖ψ x • β x + (1 - ψ x) • P₀ - (ψ c • P + (1 - ψ c) • P₀)‖) μ :=
     (((hψlip.continuous.aestronglyMeasurable.smul hβ.aestronglyMeasurable).add
       ((continuous_const.sub hψlip.continuous).aestronglyMeasurable.smul_const P₀)).sub
         aestronglyMeasurable_const).norm
-  have hsum : IntegrableOn (fun x => ‖β x - P‖ + K * r * ‖P - P₀‖) (ball c r) :=
+  have hsum : IntegrableOn (fun x => ‖β x - P‖ + K * r * ‖P - P₀‖) (ball c r) μ :=
     hint.add (integrableOn_const measure_ball_lt_top.ne)
   have hint' : IntegrableOn
-      (fun x => ‖ψ x • β x + (1 - ψ x) • P₀ - (ψ c • P + (1 - ψ c) • P₀)‖) (ball c r) :=
+      (fun x => ‖ψ x • β x + (1 - ψ x) • P₀ - (ψ c • P + (1 - ψ c) • P₀)‖) (ball c r) μ :=
     hsum.mono' hmeas.restrict
       ((ae_restrict_iff' measurableSet_ball).2 (.of_forall fun x hx => by
         rw [Real.norm_of_nonneg (norm_nonneg _)]; exact hpt x hx))
   simp only [setAverage_eq, smul_eq_mul] at hδ ⊢
-  calc _ ≤ (volume.real (ball c r))⁻¹ * ∫ x in ball c r, (‖β x - P‖ + K * r * ‖P - P₀‖) :=
+  calc _ ≤ (μ.real (ball c r))⁻¹ * ∫ x in ball c r, (‖β x - P‖ + K * r * ‖P - P₀‖) ∂μ :=
         mul_le_mul_of_nonneg_left (setIntegral_mono_on hint' hsum measurableSet_ball hpt)
           (inv_nonneg.2 hvol0.le)
-    _ = (volume.real (ball c r))⁻¹ * (∫ x in ball c r, ‖β x - P‖) + K * r * ‖P - P₀‖ := by
+    _ = (μ.real (ball c r))⁻¹ * (∫ x in ball c r, ‖β x - P‖ ∂μ) + K * r * ‖P - P₀‖ := by
         rw [integral_add hint (integrableOn_const measure_ball_lt_top.ne), setIntegral_const,
           smul_eq_mul]
         field_simp
     _ ≤ _ := by gcongr
 
+omit [NormedSpace ℝ E] [FiniteDimensional ℝ E] [μ.IsAddHaarMeasure] in
 /-- **The cutoff field on a ball where the cutoff vanishes** is the constant `P₀`. -/
 private theorem setAverage_norm_cutoff_sub_eq_zero [NormedSpace ℝ F]
-    {β : EuclideanSpace ℝ (Fin (n + 1)) → F} {ψ : EuclideanSpace ℝ (Fin (n + 1)) → ℝ}
-    {c : EuclideanSpace ℝ (Fin (n + 1))} {r : ℝ} (hψ0 : ∀ x ∈ ball c r, ψ x = 0) (P₀ : F) :
-    ⨍ x in ball c r, ‖ψ x • β x + (1 - ψ x) • P₀ - P₀‖ = 0 := by
+    {β : E → F} {ψ : E → ℝ}
+    {c : E} {r : ℝ} (hψ0 : ∀ x ∈ ball c r, ψ x = 0) (P₀ : F) :
+    ⨍ x in ball c r, ‖ψ x • β x + (1 - ψ x) • P₀ - P₀‖ ∂μ = 0 := by
   rw [setAverage_eq, setIntegral_congr_fun measurableSet_ball (g := fun _ => (0 : ℝ))
     fun x hx => by simp [hψ0 x hx]]
   simp
@@ -230,18 +239,18 @@ private theorem setAverage_norm_cutoff_sub_eq_zero [NormedSpace ℝ F]
 property `Q c r` approximate `β` on every ball `B(c, r)` of radius at most `r₀` with mean deviation
 at most `δ`, and let `P₀` approximate `β` on `B(x₀, 4R)`, `R ≤ r₀`. Then every ball `B(c, r)` with
 `r ≤ R` and `c ∈ B(x₀, 3R)` has such a constant `P` with
-`‖P - P₀‖ ≤ (R / r) (2 + 2^(n + 1) + 8^(n + 1)) δ`: the approximating constants drift at most
+`‖P - P₀‖ ≤ (R / r) (2 + 2^d + 8^d) δ`: the approximating constants drift at most
 logarithmically in `R / r` along the dyadic balls `B(c, 2ᵏ r)`. -/
 theorem exists_setAverage_le_and_div_mul_norm_sub_le
-    {β : EuclideanSpace ℝ (Fin (n + 1)) → F} (hβ : LocallyIntegrable β volume)
-    {Q : EuclideanSpace ℝ (Fin (n + 1)) → ℝ → F → Prop} {δ r₀ : ℝ}
-    (hosc : ∀ (c : EuclideanSpace ℝ (Fin (n + 1))) (r : ℝ), 0 < r → r ≤ r₀ →
-      ∃ P, Q c r P ∧ ⨍ x in ball c r, ‖β x - P‖ ≤ δ)
-    {x₀ c : EuclideanSpace ℝ (Fin (n + 1))} {R r : ℝ} {P₀ : F}
-    (hδ₀ : ⨍ x in ball x₀ (4 * R), ‖β x - P₀‖ ≤ δ) (hRr₀ : R ≤ r₀) (hr : 0 < r) (hrR : r ≤ R)
+    {β : E → F} (hβ : LocallyIntegrable β μ)
+    {Q : E → ℝ → F → Prop} {δ r₀ : ℝ}
+    (hosc : ∀ (c : E) (r : ℝ), 0 < r → r ≤ r₀ →
+      ∃ P, Q c r P ∧ ⨍ x in ball c r, ‖β x - P‖ ∂μ ≤ δ)
+    {x₀ c : E} {R r : ℝ} {P₀ : F}
+    (hδ₀ : ⨍ x in ball x₀ (4 * R), ‖β x - P₀‖ ∂μ ≤ δ) (hRr₀ : R ≤ r₀) (hr : 0 < r) (hrR : r ≤ R)
     (hc : dist c x₀ < 3 * R) :
-    ∃ P, Q c r P ∧ ⨍ x in ball c r, ‖β x - P‖ ≤ δ ∧
-      r / R * ‖P - P₀‖ ≤ (2 + 2 ^ (n + 1) + 8 ^ (n + 1)) * δ := by
+    ∃ P, Q c r P ∧ ⨍ x in ball c r, ‖β x - P‖ ∂μ ≤ δ ∧
+      r / R * ‖P - P₀‖ ≤ (2 + 2 ^ finrank ℝ E + 8 ^ finrank ℝ E) * δ := by
   have hR : 0 < R := hr.trans_le hrR
   have hδ : 0 ≤ δ := (average_nonneg fun _ => norm_nonneg _).trans hδ₀
   -- `2ᵐ r ≤ R < 2ᵐ⁺¹ r`.
@@ -249,7 +258,7 @@ theorem exists_setAverage_le_and_div_mul_norm_sub_le
   rw [le_div_iff₀ hr] at hm
   rw [div_lt_iff₀ hr] at hm'
   have hfam : ∀ k : ℕ, ∃ P, k ≤ m →
-      Q c (2 ^ k * r) P ∧ ⨍ x in ball c (2 ^ k * r), ‖β x - P‖ ≤ δ := by
+      Q c (2 ^ k * r) P ∧ ⨍ x in ball c (2 ^ k * r), ‖β x - P‖ ∂μ ≤ δ := by
     intro k
     by_cases hk : k ≤ m
     · obtain ⟨P, hP⟩ := hosc c (2 ^ k * r) (by positivity)
@@ -258,19 +267,18 @@ theorem exists_setAverage_le_and_div_mul_norm_sub_le
     · exact ⟨0, fun h => absurd h hk⟩
   choose P hP using hfam
   have hchain := norm_sub_le_of_forall_setAverage_le hβ hr m fun k hk => (hP k hk).2
-  -- The last dyadic ball `B(c, 2ᵐ r)` lies in `B(x₀, 4R)`, with volume ratio below `8^(n + 1)`.
+  -- The last dyadic ball `B(c, 2ᵐ r)` lies in `B(x₀, 4R)`, with volume ratio below `8^d`.
   have hmr : 0 < 2 ^ m * r := by positivity
   have hlast := norm_sub_le_setAverage_add_div_mul_setAverage_of_subset
     (s := ball c (2 ^ m * r)) (t := ball x₀ (4 * R))
-    (ball_subset_ball' (by linarith)) (measure_ball_pos _ _ hmr).ne' measure_ball_lt_top.ne
+    (ball_subset_ball' (by linarith)) (measure_ball_pos μ _ hmr).ne' measure_ball_lt_top.ne
     (integrableOn_norm_sub hβ (P m) c _) (integrableOn_norm_sub hβ P₀ x₀ _)
-  rw [Measure.addHaar_real_ball_div_addHaar_real_ball _ _ _ hmr (by positivity),
-    finrank_euclideanSpace_fin] at hlast
-  have hratio : (4 * R / (2 ^ m * r)) ^ (n + 1) ≤ 8 ^ (n + 1) := by
+  rw [Measure.addHaar_real_ball_div_addHaar_real_ball _ _ _ hmr (by positivity)] at hlast
+  have hratio : (4 * R / (2 ^ m * r)) ^ finrank ℝ E ≤ 8 ^ finrank ℝ E := by
     gcongr
     rw [div_le_iff₀ hmr]
     linarith [show (2 : ℝ) ^ (m + 1) * r = 2 * (2 ^ m * r) by ring]
-  have hlast' : ‖P m - P₀‖ ≤ (1 + 8 ^ (n + 1)) * δ :=
+  have hlast' : ‖P m - P₀‖ ≤ (1 + 8 ^ finrank ℝ E) * δ :=
     hlast.trans ((add_le_add (hP m le_rfl).2 (mul_le_mul hratio hδ₀
       (average_nonneg fun _ => norm_nonneg _) (by positivity))).trans_eq (by ring))
   -- `(r / R) m ≤ m / 2ᵐ ≤ 1` and `r / R ≤ 1`.
@@ -284,28 +292,28 @@ theorem exists_setAverage_le_and_div_mul_norm_sub_le
   calc r / R * ‖P 0 - P₀‖ ≤ r / R * (‖P 0 - P m‖ + ‖P m - P₀‖) := by
         gcongr
         exact norm_sub_le_norm_sub_add_norm_sub _ _ _
-    _ ≤ r / R * (m * ((1 + 2 ^ (n + 1)) * δ) + (1 + 8 ^ (n + 1)) * δ) := by gcongr
-    _ = r / R * m * ((1 + 2 ^ (n + 1)) * δ) + r / R * ((1 + 8 ^ (n + 1)) * δ) := by ring
-    _ ≤ 1 * ((1 + 2 ^ (n + 1)) * δ) + 1 * ((1 + 8 ^ (n + 1)) * δ) := by gcongr
-    _ = (2 + 2 ^ (n + 1) + 8 ^ (n + 1)) * δ := by ring
+    _ ≤ r / R * (m * ((1 + 2 ^ finrank ℝ E) * δ) + (1 + 8 ^ finrank ℝ E) * δ) := by gcongr
+    _ = r / R * m * ((1 + 2 ^ finrank ℝ E) * δ) + r / R * ((1 + 8 ^ finrank ℝ E) * δ) := by ring
+    _ ≤ 1 * ((1 + 2 ^ finrank ℝ E) * δ) + 1 * ((1 + 8 ^ finrank ℝ E) * δ) := by gcongr
+    _ = (2 + 2 ^ finrank ℝ E + 8 ^ finrank ℝ E) * δ := by ring
 
 /-- **The cutoff field on a small ball near the centre.** Under the hypotheses of
 `exists_setAverage_le_and_div_mul_norm_sub_le`, for a `K`-Lipschitz cutoff `ψ ∈ [0, 1]` with
-`K R ≤ 2` the field `ψ β + (1 - ψ) P₀` has mean deviation at most `4 · 8^(n + 1) δ` on `B(c, r)`
+`K R ≤ 2` the field `ψ β + (1 - ψ) P₀` has mean deviation at most `4 · 8^d δ` on `B(c, r)`
 from the constant `ψ(c) P + (1 - ψ(c)) P₀`, for some `P` satisfying `Q c r`. -/
-private theorem exists_setAverage_norm_cutoff_sub_le [NormedSpace ℝ F]
-    {β : EuclideanSpace ℝ (Fin (n + 1)) → F} (hβ : LocallyIntegrable β volume)
-    {Q : EuclideanSpace ℝ (Fin (n + 1)) → ℝ → F → Prop} {δ r₀ : ℝ}
-    (hosc : ∀ (c : EuclideanSpace ℝ (Fin (n + 1))) (r : ℝ), 0 < r → r ≤ r₀ →
-      ∃ P, Q c r P ∧ ⨍ x in ball c r, ‖β x - P‖ ≤ δ)
-    {ψ : EuclideanSpace ℝ (Fin (n + 1)) → ℝ} (hψ : ∀ x, ψ x ∈ Icc 0 1)
-    {x₀ c : EuclideanSpace ℝ (Fin (n + 1))} {R r : ℝ} {K : ℝ≥0} (hψlip : LipschitzWith K ψ)
+private theorem exists_setAverage_norm_cutoff_sub_le [Nontrivial E] [NormedSpace ℝ F]
+    {β : E → F} (hβ : LocallyIntegrable β μ)
+    {Q : E → ℝ → F → Prop} {δ r₀ : ℝ}
+    (hosc : ∀ (c : E) (r : ℝ), 0 < r → r ≤ r₀ →
+      ∃ P, Q c r P ∧ ⨍ x in ball c r, ‖β x - P‖ ∂μ ≤ δ)
+    {ψ : E → ℝ} (hψ : ∀ x, ψ x ∈ Icc 0 1)
+    {x₀ c : E} {R r : ℝ} {K : ℝ≥0} (hψlip : LipschitzWith K ψ)
     (hKR : K * R ≤ 2) {P₀ : F}
-    (hδ₀ : ⨍ x in ball x₀ (4 * R), ‖β x - P₀‖ ≤ δ) (hRr₀ : R ≤ r₀) (hr : 0 < r) (hrR : r ≤ R)
+    (hδ₀ : ⨍ x in ball x₀ (4 * R), ‖β x - P₀‖ ∂μ ≤ δ) (hRr₀ : R ≤ r₀) (hr : 0 < r) (hrR : r ≤ R)
     (hc : dist c x₀ < 3 * R) :
     ∃ P, Q c r P ∧
-      ⨍ x in ball c r, ‖ψ x • β x + (1 - ψ x) • P₀ - (ψ c • P + (1 - ψ c) • P₀)‖ ≤
-        4 * 8 ^ (n + 1) * δ := by
+      ⨍ x in ball c r, ‖ψ x • β x + (1 - ψ x) • P₀ - (ψ c • P + (1 - ψ c) • P₀)‖ ∂μ ≤
+        4 * 8 ^ finrank ℝ E * δ := by
   have hδ : 0 ≤ δ := (average_nonneg fun _ => norm_nonneg _).trans hδ₀
   obtain ⟨P, hQ, hPδ, hdrift⟩ :=
     exists_setAverage_le_and_div_mul_norm_sub_le hβ hosc hδ₀ hRr₀ hr hrR hc
@@ -314,31 +322,41 @@ private theorem exists_setAverage_norm_cutoff_sub_le [NormedSpace ℝ F]
   have hKr : K * r * ‖P - P₀‖ ≤ 2 * (r / R * ‖P - P₀‖) := by
     rw [show (K : ℝ) * r * ‖P - P₀‖ = K * R * (r / R * ‖P - P₀‖) by field_simp]
     exact mul_le_mul_of_nonneg_right hKR (by positivity)
-  have h2 : (2 : ℝ) ≤ 2 ^ (n + 1) := le_self_pow₀ (by norm_num) n.succ_ne_zero
-  have h4 : (4 : ℝ) ≤ 4 ^ (n + 1) := le_self_pow₀ (by norm_num) n.succ_ne_zero
-  have h8 : (8 : ℝ) ^ (n + 1) = 2 ^ (n + 1) * 4 ^ (n + 1) := by rw [← mul_pow]; norm_num
-  have hK : (5 + 2 * 2 ^ (n + 1) + 2 * 8 ^ (n + 1) : ℝ) ≤ 4 * 8 ^ (n + 1) := by nlinarith
+  have h2 : (2 : ℝ) ≤ 2 ^ finrank ℝ E := le_self_pow₀ (by norm_num) finrank_pos.ne'
+  have h4 : (4 : ℝ) ≤ 4 ^ finrank ℝ E := le_self_pow₀ (by norm_num) finrank_pos.ne'
+  have h8 : (8 : ℝ) ^ finrank ℝ E = 2 ^ finrank ℝ E * 4 ^ finrank ℝ E := by
+    rw [← mul_pow]; norm_num
+  have hK : (5 + 2 * 2 ^ finrank ℝ E + 2 * 8 ^ finrank ℝ E : ℝ) ≤ 4 * 8 ^ finrank ℝ E := by
+    nlinarith
   nlinarith [mul_le_mul_of_nonneg_right hK hδ]
 
+end NormedSpace
+
+section InnerProductSpace
+
+variable [InnerProductSpace ℝ E] [FiniteDimensional ℝ E] {μ : Measure E} [μ.IsAddHaarMeasure]
+
 /-- **Small mean oscillation below a radius extends to every scale near a ball.** Let `β` be a
-locally integrable field on `ℝ^{n+1}` such that on every ball `B(c, r)` of radius at most `r₀` some
-constant satisfying a property `Q c r` has mean deviation at most `δ` from `β`. Then for every ball
-`B(x₀, R)` with `4R ≤ r₀` there are a continuous cutoff `ψ ∈ [0, 1]` equal to one on `B(x₀, R)` and
-a constant `P₀` satisfying `Q x₀ (4R)` such that on every ball `B(c, r)`, of any radius, the field
-`ψ β + (1 - ψ) P₀` has mean deviation at most `4 · 8^(n + 1) δ` from a convex combination
-`t P + (1 - t) P₀`, where `P` is `P₀` or satisfies `Q c r`. -/
-theorem exists_forall_setAverage_norm_cutoff_sub_le [NormedSpace ℝ F]
-    {β : EuclideanSpace ℝ (Fin (n + 1)) → F} (hβ : LocallyIntegrable β volume)
-    {Q : EuclideanSpace ℝ (Fin (n + 1)) → ℝ → F → Prop} {δ r₀ R : ℝ}
-    (hosc : ∀ (c : EuclideanSpace ℝ (Fin (n + 1))) (r : ℝ), 0 < r → r ≤ r₀ →
-      ∃ P, Q c r P ∧ ⨍ x in ball c r, ‖β x - P‖ ≤ δ)
-    (x₀ : EuclideanSpace ℝ (Fin (n + 1))) (hR : 0 < R) (hRr₀ : 4 * R ≤ r₀) :
-    ∃ ψ : EuclideanSpace ℝ (Fin (n + 1)) → ℝ, Continuous ψ ∧ (∀ x, ψ x ∈ Icc 0 1) ∧
+locally integrable field on a nontrivial finite-dimensional real inner product space `E` of
+dimension `d`, with an additive Haar measure `μ`, such that on every ball `B(c, r)` of radius at
+most `r₀` some constant satisfying a property `Q c r` has mean deviation at most `δ` from `β`
+with respect to `μ`. Then for every ball `B(x₀, R)` with `4R ≤ r₀` there are a continuous cutoff
+`ψ ∈ [0, 1]` equal to one on `B(x₀, R)` and a constant `P₀` satisfying `Q x₀ (4R)` such that on
+every ball `B(c, r)`, of any radius, the field `ψ β + (1 - ψ) P₀` has mean deviation at most
+`4 · 8^d δ` from a convex combination `t P + (1 - t) P₀`, where `P` is `P₀` or satisfies
+`Q c r`. -/
+theorem exists_forall_setAverage_norm_cutoff_sub_le [Nontrivial E] [NormedSpace ℝ F]
+    {β : E → F} (hβ : LocallyIntegrable β μ)
+    {Q : E → ℝ → F → Prop} {δ r₀ R : ℝ}
+    (hosc : ∀ (c : E) (r : ℝ), 0 < r → r ≤ r₀ →
+      ∃ P, Q c r P ∧ ⨍ x in ball c r, ‖β x - P‖ ∂μ ≤ δ)
+    (x₀ : E) (hR : 0 < R) (hRr₀ : 4 * R ≤ r₀) :
+    ∃ ψ : E → ℝ, Continuous ψ ∧ (∀ x, ψ x ∈ Icc 0 1) ∧
       EqOn ψ 1 (ball x₀ R) ∧ ∃ P₀, Q x₀ (4 * R) P₀ ∧
-        ∀ (c : EuclideanSpace ℝ (Fin (n + 1))) (r : ℝ), 0 < r →
+        ∀ (c : E) (r : ℝ), 0 < r →
           ∃ P, (P = P₀ ∨ Q c r P) ∧ ∃ t ∈ Icc (0 : ℝ) 1,
-            ⨍ x in ball c r, ‖ψ x • β x + (1 - ψ x) • P₀ - (t • P + (1 - t) • P₀)‖ ≤
-              4 * 8 ^ (n + 1) * δ := by
+            ⨍ x in ball c r, ‖ψ x • β x + (1 - ψ x) • P₀ - (t • P + (1 - t) • P₀)‖ ∂μ ≤
+              4 * 8 ^ finrank ℝ E * δ := by
   obtain ⟨P₀, hQ₀, hδ₀⟩ := hosc x₀ (4 * R) (by positivity) hRr₀
   have hδ : 0 ≤ δ := (average_nonneg fun _ => norm_nonneg _).trans hδ₀
   obtain ⟨ψ, hψs, hψr, hψ1, hψsupp, hψlip⟩ :=
@@ -355,8 +373,8 @@ theorem exists_forall_setAverage_norm_cutoff_sub_le [NormedSpace ℝ F]
     simp only [zero_smul, sub_zero, one_smul, zero_add]
     refine (setAverage_norm_cutoff_sub_le_of_le hβ hψs.continuous hψ hψ0 hR hRr hδ₀).trans
       (mul_le_mul_of_nonneg_right ?_ hδ)
-    have h48 : (4 : ℝ) ^ (n + 1) ≤ 8 ^ (n + 1) := by gcongr; norm_num
-    linarith [pow_pos (by norm_num : (0 : ℝ) < 8) (n + 1)]
+    have h48 : (4 : ℝ) ^ finrank ℝ E ≤ 8 ^ finrank ℝ E := by gcongr; norm_num
+    linarith [pow_pos (by norm_num : (0 : ℝ) < 8) (finrank ℝ E)]
   rcases le_or_gt (3 * R) (dist c x₀) with hfar | hnear
   · -- A small ball far from `x₀`, where the field is `P₀`.
     refine ⟨P₀, .inl rfl, 0, ⟨le_rfl, zero_le_one⟩, ?_⟩
@@ -368,5 +386,7 @@ theorem exists_forall_setAverage_norm_cutoff_sub_le [NormedSpace ℝ F]
     obtain ⟨P, hQ, hP⟩ := exists_setAverage_norm_cutoff_sub_le hβ hosc hψ hψlip hKR hδ₀
       (by linarith) hr hrR.le hnear
     exact ⟨P, .inr hQ, ψ c, hψ c, hP⟩
+
+end InnerProductSpace
 
 end TauCeti

@@ -613,7 +613,8 @@ theorem exists_eqOn_ball_and_forall_setAverage_le {lam Lam δ r₀ R : ℝ}
   refine ⟨t • A + (1 - t) • A₀, (UniformlyEllipticOn.smul_add_one_sub_smul
     (hA.const_of_mem (mem_ball_self hr) _) (hA₀' _) (fun _ => ht)
       fun x hx => absurd (mem_univ x) hx).mono_set (subset_univ _), ?_⟩
-  simpa only [matrixBilinearForm_add, matrixBilinearForm_smul] using havg
+  simpa only [matrixBilinearForm_add, matrixBilinearForm_smul, finrank_euclideanSpace_fin]
+    using havg
 
 /-- **The `W^{1,p}` estimate for coefficients of small mean oscillation below a radius.** Let
 `2 < p < ∞` and `0 < λ ≤ Λ`. There are constants `C` and `δ > 0`, depending only on `n`, `p`, `λ`
