@@ -8,9 +8,9 @@ module
 public import Mathlib.Algebra.DirectSum.Module
 public import Mathlib.Algebra.Lie.OfAssociative
 public import Mathlib.LinearAlgebra.Eigenspace.Basic
-public import TauCeti.Algebra.DirectSum.Internal
 public import TauCeti.Algebra.Lie.Basic
 public import TauCeti.Algebra.Lie.Weights.Eigenvector
+public import TauCeti.LinearAlgebra.LinearMap.EqOn
 
 /-!
 # The grading automorphisms attached to an integral semisimple element
