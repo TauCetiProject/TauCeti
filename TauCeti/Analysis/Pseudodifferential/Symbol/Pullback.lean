@@ -8,7 +8,7 @@ module
 public import Mathlib.Geometry.Manifold.Diffeomorph
 public import TauCeti.Analysis.Pseudodifferential.Symbol.Classical
 public import TauCeti.Analysis.Pseudodifferential.Symbol.Frequency
-import TauCeti.Analysis.Calculus.ContDiff.Adjoint
+import Mathlib.Analysis.Calculus.ContDiff.WithLp
 import TauCeti.Analysis.Normed.Operator.CompactFamily
 import TauCeti.Analysis.SpecialFunctions.JapaneseBracket.Peetre
 import TauCeti.Geometry.Manifold.Diffeomorph.InnerProductSpace
@@ -134,19 +134,10 @@ private theorem exists_norm_mixedDeriv_le_of_deriv_eq
 
 /-! ### Two auxiliary operations -/
 
-/-- A coordinate vector is the sum of its coordinates times the standard basis vectors. -/
-private theorem eq_sum_single (v : CoordinateSpace n) :
-    v = ∑ l, v l • EuclideanSpace.single l (1 : ℝ) := by
-  simpa [EuclideanSpace.basisFun_apply] using ((EuclideanSpace.basisFun (Fin n) ℝ).sum_repr v).symm
-
-private theorem contDiff_coord {g : CoordinateSpace n → CoordinateSpace n}
-    (hg : ContDiff ℝ ∞ g) (k : Fin n) : ContDiff ℝ ∞ fun y ↦ g y k :=
-  (EuclideanSpace.proj k : CoordinateSpace n →L[ℝ] ℝ).contDiff.comp hg
-
 private theorem contDiff_apply_apply
     {f : CoordinateSpace n → CoordinateSpace n →L[ℝ] CoordinateSpace n} (hf : ContDiff ℝ ∞ f)
     (v : CoordinateSpace n) (k : Fin n) : ContDiff ℝ ∞ fun y ↦ f y v k :=
-  contDiff_coord (hf.clm_apply contDiff_const) k
+  (contDiff_piLp 2).1 (hf.clm_apply contDiff_const) k
 
 /-- Multiplication `f(x) a(x, ξ)` of a symbol by a smooth real function of the position. -/
 private def smulSpatial (f : CoordinateSpace n → ℝ) (hf : ContDiff ℝ ∞ f) (a : Symbol n V W m) :
@@ -176,8 +167,8 @@ private theorem coefficient_eulerTerm
     coefficient_inclusion, coefficient_comp, coefficient_ofInner, EuclideanSpace.inner_single_right]
   refine Finset.sum_congr rfl fun k _ ↦ ?_
   have h : N x ξ k = ∑ l, ξ l * N x (EuclideanSpace.single l 1) k := by
-    conv_lhs => rw [eq_sum_single ξ]
-    simp [map_sum]
+    rw [(N x).apply_eq_sum_single ξ]
+    simp
   simp [h, Finset.sum_smul, smul_smul, Complex.coe_smul, mul_comm]
 
 /-! ### Composition with a position-dependent change of frequency -/
@@ -210,7 +201,7 @@ private theorem contDiff_fderiv_symm_apply (v : CoordinateSpace n) :
 private def coreSpatial (hL : ContDiff ℝ ∞ L) (hLinv : ContDiff ℝ ∞ Linv) (j : Fin n)
     (a : Symbol n V W m) : Symbol n V W m :=
   (∑ i, smulSpatial (fun y ↦ fderiv ℝ κ (κ.symm y) (EuclideanSpace.single j 1) i)
-      (contDiff_coord (contDiff_fderiv_symm_apply κ _) i) (spatialDeriv i a)) +
+      ((contDiff_piLp 2).1 (contDiff_fderiv_symm_apply κ _) i) (spatialDeriv i a)) +
     eulerTerm (fun y ↦ (fderiv ℝ L y (fderiv ℝ κ (κ.symm y) (EuclideanSpace.single j 1))).comp
       (Linv y)) (((hL.fderiv_right (m := ∞) le_rfl).clm_apply
         (contDiff_fderiv_symm_apply κ _)).clm_comp hLinv) a
@@ -223,12 +214,6 @@ private def coreFrequency (hL : ContDiff ℝ ∞ L) (j : Fin n) (a : Symbol n V 
     (frequencyDeriv k a)
 
 variable {κ}
-
-/-- The pointwise form of the left-inverse hypothesis `Linv y ∘ L y = id`. -/
-private theorem apply_apply_eq_self_of_comp_eq_id
-    (hLL : ∀ y, (Linv y).comp (L y) = ContinuousLinearMap.id ℝ _) (y ξ : CoordinateSpace n) :
-    Linv y (L y ξ) = ξ := by
-  rw [← ContinuousLinearMap.comp_apply, hLL, ContinuousLinearMap.id_apply]
 
 private theorem coordinateDeriv_coreCoeff_fst (hL : ContDiff ℝ ∞ L) (hLinv : ContDiff ℝ ∞ Linv)
     (hLL : ∀ y, (Linv y).comp (L y) = ContinuousLinearMap.id ℝ _) (a : Symbol n V W m)
@@ -246,7 +231,7 @@ private theorem coordinateDeriv_coreCoeff_fst (hL : ContDiff ℝ ∞ L) (hLinv :
     ha.hasFDerivAt.comp x (hκ.prodMk hη)
   simp only [coordinateDeriv_cons, coordinateDeriv_nil, coreCoeff]
   rw [h.fderiv, ContinuousLinearMap.comp_apply, fderiv_apply_eq_sum_coordinateDeriv ha]
-  have hξ : Linv (κ x) (L (κ x) ξ) = ξ := apply_apply_eq_self_of_comp_eq_id hLL _ _
+  have hξ : Linv (κ x) (L (κ x) ξ) = ξ := DFunLike.congr_fun (hLL _) _
   simp only [coreSpatial, coefficient_add, Pi.add_apply, coefficient_sum, Finset.sum_apply]
   rw [coefficient_eulerTerm]
   simp [coefficient_smulSpatial, coefficient_spatialDeriv, coefficient_frequencyDeriv, hξ]
