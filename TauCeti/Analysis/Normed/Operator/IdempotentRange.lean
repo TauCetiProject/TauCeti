@@ -46,25 +46,26 @@ namespace TauCeti
 variable {𝕜 : Type*} [NontriviallyNormedField 𝕜] {B : Type*} [TopologicalSpace B]
   {F : Type*} [NormedAddCommGroup F] [NormedSpace 𝕜 F] {p : B → F →L[𝕜] F}
 
-/-- The intertwining operator `p x * p x₀ + (1 - p x) * (1 - p x₀)` of a continuous family of
-operators depends continuously on `x`. -/
+/-- The intertwining operator `TauCeti.projectionIntertwiner (p x₀) (p x)` of a continuous family
+of operators depends continuously on `x`. -/
 theorem continuous_intertwiner (hp : Continuous p) (x₀ : B) :
-    Continuous fun x ↦ p x * p x₀ + (1 - p x) * (1 - p x₀) :=
-  (hp.mul continuous_const).add ((continuous_const.sub hp).mul continuous_const)
+    Continuous fun x ↦ projectionIntertwiner (p x₀) (p x) := by
+  simp only [projectionIntertwiner_def]
+  exact (hp.mul continuous_const).add ((continuous_const.sub hp).mul continuous_const)
 
 variable [CompleteSpace F]
 
-/-- The points at which the intertwining operator `p x * p x₀ + (1 - p x) * (1 - p x₀)` of a
+/-- The points at which the intertwining operator `TauCeti.projectionIntertwiner (p x₀) (p x)` of a
 continuous family of operators is invertible form an open set. -/
 theorem isOpen_setOf_isUnit_intertwiner (hp : Continuous p) (x₀ : B) :
-    IsOpen {x | IsUnit (p x * p x₀ + (1 - p x) * (1 - p x₀))} :=
+    IsOpen {x | IsUnit (projectionIntertwiner (p x₀) (p x))} :=
   Units.isOpen.preimage (continuous_intertwiner hp x₀)
 
-/-- The inverse of the intertwining operator `p x * p x₀ + (1 - p x) * (1 - p x₀)` of a
+/-- The inverse of the intertwining operator `TauCeti.projectionIntertwiner (p x₀) (p x)` of a
 continuous family of operators depends continuously on `x` where that operator is invertible. -/
 theorem continuousOn_inverse_intertwiner (hp : Continuous p) (x₀ : B) :
-    ContinuousOn (fun x ↦ (p x * p x₀ + (1 - p x) * (1 - p x₀))⁻¹ʳ)
-      {x | IsUnit (p x * p x₀ + (1 - p x) * (1 - p x₀))} :=
+    ContinuousOn (fun x ↦ (projectionIntertwiner (p x₀) (p x))⁻¹ʳ)
+      {x | IsUnit (projectionIntertwiner (p x₀) (p x))} :=
   fun _ hx ↦ ((NormedRing.inverse_continuousAt hx.unit).comp_of_eq
     (continuous_intertwiner hp x₀).continuousAt hx.unit_spec.symm).continuousWithinAt
 
@@ -73,8 +74,8 @@ theorem eventually_nonempty_continuousLinearEquiv_range (hp : Continuous p)
     (hidem : ∀ x, IsIdempotentElem (p x)) (x₀ : B) :
     ∀ᶠ x in 𝓝 x₀, Nonempty ((p x₀).range ≃L[𝕜] (p x).range) := by
   filter_upwards [(isOpen_setOf_isUnit_intertwiner hp x₀).mem_nhds
-    (ContinuousLinearMap.IsIdempotentElem.isUnit_mul_self_add_one_sub_mul_one_sub (hidem x₀))]
-    with x (hx : IsUnit (p x * p x₀ + (1 - p x) * (1 - p x₀)))
+    (by simp [(hidem x₀).projectionIntertwiner_self])]
+    with x (hx : IsUnit (projectionIntertwiner (p x₀) (p x)))
   exact ⟨ContinuousLinearMap.IsIdempotentElem.rangeEquiv (hidem x₀) (hidem x) hx⟩
 
 /-- **The rank of a continuous family of projections is locally constant.** -/

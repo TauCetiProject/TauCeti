@@ -6,13 +6,15 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Topology.Algebra.NonUnitalStarAlgebra
+public import TauCeti.Algebra.Star.Subalgebra
 
 /-!
-# Carrier of the topological closure of a nonunital star subalgebra
+# Topological closure and closed corner subalgebras of nonunital star subalgebras
 
-This file provides the `@[simp]` lemma `NonUnitalStarSubalgebra.topologicalClosure_coe`
-identifying the underlying set of `s.topologicalClosure` with `closure (s : Set A)`, matching
-`StarSubalgebra.topologicalClosure_coe`.
+This file provides `NonUnitalStarSubalgebra.topologicalClosure_coe` identifying the underlying set
+of `s.topologicalClosure` with `closure (s : Set A)`, matching
+`StarSubalgebra.topologicalClosure_coe`, as well as `IsClosed` instances for the fixed corner
+`s.corner hp` and orthogonal corner `s.orthoCorner hp` of a closed nonunital star subalgebra.
 -/
 
 public section
@@ -30,4 +32,18 @@ theorem topologicalClosure_coe (s : NonUnitalStarSubalgebra R A) :
     (s.topologicalClosure : Set A) = _root_.closure (s : Set A) :=
   (rfl)
 
+section Corner
+variable {R A : Type*} [CommSemiring R] [NonUnitalSemiring A] [StarRing A] [Module R A]
+  [IsScalarTower R A A] [SMulCommClass R A A] [TopologicalSpace A] [T2Space A] [ContinuousMul A]
+/-- The fixed corner `s.corner hp` of a closed nonunital `⋆`-subalgebra is closed. -/
+instance isClosed_corner (s : NonUnitalStarSubalgebra R A) [hs : IsClosed (s : Set A)]
+    {p : A} (hp : IsSelfAdjoint p) : IsClosed (s.corner hp : Set A) :=
+  coe_corner s hp ▸ hs.and ((isClosed_eq (continuous_const.mul continuous_id) continuous_id).and
+    (isClosed_eq (continuous_id.mul continuous_const) continuous_id))
+/-- The orthogonal corner `s.orthoCorner hp` of a closed nonunital `⋆`-subalgebra is closed. -/
+instance isClosed_orthoCorner (s : NonUnitalStarSubalgebra R A) [hs : IsClosed (s : Set A)]
+    {p : A} (hp : IsSelfAdjoint p) : IsClosed (s.orthoCorner hp : Set A) :=
+  coe_orthoCorner s hp ▸ hs.and ((isClosed_eq (continuous_const.mul continuous_id)
+    continuous_const).and (isClosed_eq (continuous_id.mul continuous_const) continuous_const))
+end Corner
 end NonUnitalStarSubalgebra

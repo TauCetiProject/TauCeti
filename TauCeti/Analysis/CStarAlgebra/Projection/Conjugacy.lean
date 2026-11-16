@@ -16,20 +16,21 @@ To show that homotopy, Murray–von Neumann, and unitary equivalence coincide on
 and `K₀` classes are locally constant along inductive limits, Kato's `projectionIntertwiner p q`
 polar-normalizes to `u = hp.projectionConjugacyUnitary hq h` for `‖p - q‖ < 1`, with
 `(u : A) * p * star (u : A) = q`, `Joined 1 u`, `‖(u : A) - 1‖ ≤ √2 * ‖p - q‖`, closed unital
-`𝕜'`-`⋆`-subalgebra preservation, and `(u : Unitization ℂ A).fst = 1`.
+`𝕜'`-`⋆`-subalgebra preservation, and scalar part `1` in `Unitization ℂ A`.
 
 ## Main results
 
 * `IsIdempotentElem.isUnit_projectionIntertwiner`, `IsStarProjection.projectionConjugacyUnitary`,
+  `IsStarProjection.star_projectionConjugacyUnitary`,
   `IsStarProjection.exists_unitary_conjugate_mem_of_norm_sub_lt_one`,
   `IsStarProjection.exists_unitary_conjugate_of_norm_sub_lt_one`,
   `IsStarProjection.exists_unitization_unitary_conjugate_of_norm_sub_lt_one`.
 
 ## References
 
-* T. Kato, *Perturbation Theory for Linear Operators*, Springer (1966), Chapter I, §4.6.
-* B. Blackadar, *Operator Algebras*, Springer (2006), Section II.3.3.
-* B. Blackadar, *K-Theory for Operator Algebras*, 2nd ed., Cambridge Univ. Press (1998), 4.6.6.
+* T. Kato, *Perturbation Theory for Linear Operators*, Springer (1966), Ch. I, §4.6.
+* B. Blackadar, *Operator Algebras*, Springer (2006), §II.3.3; *K-Theory for Operator Algebras*,
+  2nd ed., Cambridge Univ. Press (1998), 4.6.6.
 -/
 
 public section
@@ -37,23 +38,20 @@ public section
 open TauCeti
 open scoped ContinuousFunctionalCalculus Real
 
-/-- In a complete normed ring, Kato's intertwiner `projectionIntertwiner p q` between idempotents
-`p, q` with `‖p - q‖ < 1` is invertible. -/
-theorem IsIdempotentElem.isUnit_projectionIntertwiner {R : Type*} [NormedRing R] [CompleteSpace R]
-    {p q : R} (hp : IsIdempotentElem p) (hq : IsIdempotentElem q) (h : ‖p - q‖ < 1) :
-    IsUnit (projectionIntertwiner p q) := by
-  obtain ⟨u, hu⟩ := isUnit_one_sub_of_norm_lt_one (show ‖(p - q) ^ 2‖ < 1 by
-    rw [sq]; exact (norm_mul_le _ _).trans_lt (by nlinarith [norm_nonneg (p - q)]))
-  have hr : projectionIntertwiner p q * (projectionIntertwiner q p * ↑u⁻¹) = 1 := by
-    rw [← mul_assoc, hp.projectionIntertwiner_mul_swap hq, ← hu, Units.mul_inv]
-  have hl : (↑u⁻¹ * projectionIntertwiner q p) * projectionIntertwiner p q = 1 := by
-    rw [mul_assoc, hp.projectionIntertwiner_swap_mul_self hq, ← hu, Units.inv_mul]
-  exact isUnit_iff_exists.mpr ⟨_, hr, left_inv_eq_right_inv hl hr ▸ hl⟩
+/-- In a normed ring with summable geometric series, `projectionIntertwiner p q` is invertible
+for idempotents `p, q` with `‖p - q‖ < 1`. -/
+theorem IsIdempotentElem.isUnit_projectionIntertwiner {R : Type*} [NormedRing R]
+    [HasSummableGeomSeries R] {p q : R} (hp : IsIdempotentElem p) (hq : IsIdempotentElem q)
+    (h : ‖p - q‖ < 1) : IsUnit (projectionIntertwiner p q) := by
+  have hcomm : Commute (projectionIntertwiner p q) (projectionIntertwiner q p) :=
+    (hp.projectionIntertwiner_mul_swap hq).trans (hp.projectionIntertwiner_swap_mul_self hq).symm
+  exact (hcomm.isUnit_mul_iff.mp <| hp.projectionIntertwiner_mul_swap hq ▸
+    isUnit_one_sub_of_norm_lt_one (show ‖(p - q) ^ 2‖ < 1 by
+      rw [sq]; exact (norm_mul_le _ _).trans_lt (by nlinarith [norm_nonneg (p - q)]))).1
 
 namespace IsStarProjection
 section
 variable {A : Type*} [CStarAlgebra A] {p q : A}
-
 private theorem spectrum_one_sub_sub_sq_bounds (hp : IsStarProjection p) (hq : IsStarProjection q)
     (h : ‖p - q‖ < 1) {x : ℝ} (hx : x ∈ spectrum ℝ (1 - (p - q) ^ 2)) :
     0 < x ∧ x ≤ 1 ∧ 1 - x ≤ ‖p - q‖ ^ 2 := by
@@ -66,14 +64,12 @@ private theorem spectrum_one_sub_sub_sq_bounds (hp : IsStarProjection p) (hq : I
   have htsq : t ^ 2 ≤ ‖p - q‖ ^ 2 := (sq_abs t).symm ▸ pow_le_pow_left₀ (abs_nonneg t)
     (by simpa [Real.norm_eq_abs] using spectrum.norm_le_norm_of_mem ht) 2
   exact ⟨by nlinarith [norm_nonneg (p - q)], by nlinarith [sq_nonneg t], by linarith⟩
-
 /-- **Kato–Sz.-Nagy conjugating unitary** for star projections `p, q` with `‖p - q‖ < 1`, defined
 as the polar unitary of `projectionIntertwiner p q`. -/
 noncomputable def projectionConjugacyUnitary (hp : IsStarProjection p) (hq : IsStarProjection q)
     (h : ‖p - q‖ < 1) : unitary A :=
   let _ := CStarAlgebra.spectralOrder A; let _ := CStarAlgebra.spectralOrderedRing A
   (hp.isIdempotentElem.isUnit_projectionIntertwiner hq.isIdempotentElem h).unit.polarUnitary
-
 /-- Functional-calculus formula for `IsStarProjection.projectionConjugacyUnitary`. -/
 theorem coe_projectionConjugacyUnitary (hp : IsStarProjection p) (hq : IsStarProjection q)
     (h : ‖p - q‖ < 1) : (hp.projectionConjugacyUnitary hq h : A) =
@@ -81,7 +77,6 @@ theorem coe_projectionConjugacyUnitary (hp : IsStarProjection p) (hq : IsStarPro
   let _ := CStarAlgebra.spectralOrder A; let _ := CStarAlgebra.spectralOrderedRing A
   rw [projectionConjugacyUnitary, Units.coe_polarUnitary_eq_mul_cfc_inv_sqrt, IsUnit.unit_spec,
     hp.star_projectionIntertwiner_mul_self hq]
-
 /-- The Kato–Sz.-Nagy unitary of a projection `p` with itself is `1`. -/
 @[simp] theorem projectionConjugacyUnitary_self (hp : IsStarProjection p) (h : ‖p - p‖ < 1) :
     hp.projectionConjugacyUnitary hp h = 1 := by
@@ -89,9 +84,16 @@ theorem coe_projectionConjugacyUnitary (hp : IsStarProjection p) (hq : IsStarPro
   rw [projectionConjugacyUnitary, show (hp.isIdempotentElem.isUnit_projectionIntertwiner
       hp.isIdempotentElem h).unit = 1 from Units.ext <| by
     simp [hp.isIdempotentElem.projectionIntertwiner_self], Units.polarUnitary_one]
-
+/-- Swapping `p` and `q` takes `IsStarProjection.projectionConjugacyUnitary` to its adjoint. -/
+@[simp] theorem star_projectionConjugacyUnitary (hp : IsStarProjection p)
+    (hq : IsStarProjection q) (h : ‖p - q‖ < 1) :
+    star (hp.projectionConjugacyUnitary hq h) =
+      hq.projectionConjugacyUnitary hp (norm_sub_rev p q ▸ h) := by
+  let _ := CStarAlgebra.spectralOrder A; let _ := CStarAlgebra.spectralOrderedRing A
+  rw [projectionConjugacyUnitary, projectionConjugacyUnitary, ← Units.polarUnitary_star]
+  congr 1; ext; simp [hp.isSelfAdjoint.star_eq, hq.isSelfAdjoint.star_eq]
 /-- `hp.projectionConjugacyUnitary hq h` belongs to every closed unital `𝕜'`-`⋆`-subalgebra
-(for any scalar action `𝕜'` over `ℝ`, including `ℝ` and `ℂ`) containing `p` and `q`. -/
+(for any scalar monoid `𝕜'` over `ℝ`) containing `p` and `q`. -/
 theorem projectionConjugacyUnitary_mem {𝕜' S : Type*} [Monoid 𝕜'] [MulAction 𝕜' A] [SetLike S A]
     [SubringClass S A] [SMul ℝ 𝕜'] [IsScalarTower ℝ 𝕜' A] [SMulMemClass S 𝕜' A] [StarMemClass S A]
     {s : S} [IsClosed (s : Set A)] (hp : IsStarProjection p) (hq : IsStarProjection q)
@@ -100,7 +102,6 @@ theorem projectionConjugacyUnitary_mem {𝕜' S : Type*} [Monoid 𝕜'] [MulActi
   let _ := CStarAlgebra.spectralOrder A; let _ := CStarAlgebra.spectralOrderedRing A
   rw [projectionConjugacyUnitary]; exact Units.polarUnitary_mem (𝕜' := 𝕜') _ <| by
     rw [IsUnit.unit_spec]; exact projectionIntertwiner_mem hp_mem hq_mem
-
 /-- Unital `⋆`-ring homomorphisms preserve `IsStarProjection.projectionConjugacyUnitary`. -/
 theorem map_projectionConjugacyUnitary {B F : Type*} [CStarAlgebra B] [FunLike F A B]
     [RingHomClass F A B] [StarHomClass F A B] (hp : IsStarProjection p) (hq : IsStarProjection q)
@@ -114,7 +115,6 @@ theorem map_projectionConjugacyUnitary {B F : Type*} [CStarAlgebra B] [FunLike F
       (hq.map φ).isIdempotentElem hφ).unit = Units.map (φ : A →* B) u := Units.ext <| by
     simp only [u, Units.coe_map, MonoidHom.coe_ofClass, IsUnit.unit_spec, map_projectionIntertwiner]
   rw [projectionConjugacyUnitary, projectionConjugacyUnitary, hu']; exact u.map_polarUnitary φ
-
 /-- Intertwining identity `q * u = u * p` for `IsStarProjection.projectionConjugacyUnitary`. -/
 theorem mul_projectionConjugacyUnitary_eq_projectionConjugacyUnitary_mul
     (hp : IsStarProjection p) (hq : IsStarProjection q) (h : ‖p - q‖ < 1) :
@@ -126,7 +126,6 @@ theorem mul_projectionConjugacyUnitary_eq_projectionConjugacyUnitary_mul
     (by simpa using hp'.mul_projectionIntertwiner_eq_projectionIntertwiner_mul hq')
     (by simpa [star_projectionIntertwiner, hp.isSelfAdjoint.star_eq, hq.isSelfAdjoint.star_eq]
           using (hq'.mul_projectionIntertwiner_eq_projectionIntertwiner_mul hp').symm)
-
 /-- Conjugating `p` by `hp.projectionConjugacyUnitary hq h` yields `q`. -/
 @[simp] theorem conjugate_projectionConjugacyUnitary (hp : IsStarProjection p)
     (hq : IsStarProjection q) (h : ‖p - q‖ < 1) :
@@ -134,7 +133,6 @@ theorem mul_projectionConjugacyUnitary_eq_projectionConjugacyUnitary_mul
       q := by
   rw [← hp.mul_projectionConjugacyUnitary_eq_projectionConjugacyUnitary_mul hq h, mul_assoc,
     Unitary.mul_star_self_of_mem (hp.projectionConjugacyUnitary hq h).2, mul_one]
-
 /-- Distance bound `‖(u : A) - 1‖ ≤ √2 * ‖p - q‖` for `u = hp.projectionConjugacyUnitary hq h`. -/
 theorem norm_projectionConjugacyUnitary_sub_one_le (hp : IsStarProjection p)
     (hq : IsStarProjection q) (h : ‖p - q‖ < 1) :
@@ -153,8 +151,7 @@ theorem norm_projectionConjugacyUnitary_sub_one_le (hp : IsStarProjection p)
     rw [← cfc_mul (fun x : ℝ ↦ x) (fun x : ℝ ↦ (√x)⁻¹) a (continuousOn_id' _)
       (Real.continuous_sqrt.continuousOn.inv₀
         fun _ hx ↦ (Real.sqrt_pos.mpr (hp.spectrum_one_sub_sub_sq_bounds hq h hx).1).ne')]
-    refine cfc_congr fun x hx ↦ ?_
-    have hx_pos := (hp.spectrum_one_sub_sub_sq_bounds hq h hx).1
+    refine cfc_congr fun x hx ↦ ?_; have hx_pos := (hp.spectrum_one_sub_sub_sq_bounds hq h hx).1
     field_simp [(Real.sqrt_pos.mpr hx_pos).ne']; exact (Real.sq_sqrt hx_pos.le).symm
   have hu_add : (u : A) + star (u : A) = cfc (fun x : ℝ ↦ 2 * √x) a := by
     rw [hp.coe_projectionConjugacyUnitary hq h, star_mul, hw_sa.star_eq, ← hstar_z_comm_w,
@@ -173,13 +170,11 @@ theorem norm_projectionConjugacyUnitary_sub_one_le (hp : IsStarProjection p)
   rw [Real.norm_of_nonneg (mul_nonneg (by positivity)
     (sub_nonneg.mpr (Real.sqrt_le_one.mpr hx_le_one)))]
   nlinarith [Real.mul_self_sqrt hx_pos.le, Real.sqrt_nonneg x]
-
 /-- `hp.projectionConjugacyUnitary hq h` lies in the path component of `1` in `unitary A`. -/
 theorem joined_one_projectionConjugacyUnitary (hp : IsStarProjection p) (hq : IsStarProjection q)
     (h : ‖p - q‖ < 1) : Joined 1 (hp.projectionConjugacyUnitary hq h) :=
   Unitary.joined 1 _ ((hp.norm_projectionConjugacyUnitary_sub_one_le hq h).trans_lt <| by
     nlinarith [Real.sq_sqrt (by norm_num : (0 : ℝ) ≤ 2), Real.sqrt_nonneg 2])
-
 /-- **Unitary conjugacy in a closed unital `⋆`-subalgebra**: `p, q ∈ s` with `‖p - q‖ < 1` are
 conjugate by `u : unitary A` in `s` with `Joined 1 u` and `‖(u : A) - 1‖ ≤ √2 * ‖p - q‖`. -/
 theorem exists_unitary_conjugate_mem_of_norm_sub_lt_one {𝕜' S : Type*} [Monoid 𝕜'] [MulAction 𝕜' A]
@@ -191,7 +186,6 @@ theorem exists_unitary_conjugate_mem_of_norm_sub_lt_one {𝕜' S : Type*} [Monoi
   ⟨_, hp.projectionConjugacyUnitary_mem (𝕜' := 𝕜') hq h hp_mem hq_mem,
     hp.joined_one_projectionConjugacyUnitary hq h, hp.conjugate_projectionConjugacyUnitary hq h,
     hp.norm_projectionConjugacyUnitary_sub_one_le hq h⟩
-
 /-- **Unitary conjugacy of nearby projections**: star projections `p, q` with `‖p - q‖ < 1` are
 conjugate by `u : unitary A` with `Joined 1 u` and `‖(u : A) - 1‖ ≤ √2 * ‖p - q‖`. -/
 theorem exists_unitary_conjugate_of_norm_sub_lt_one (hp : IsStarProjection p)
@@ -201,34 +195,30 @@ theorem exists_unitary_conjugate_of_norm_sub_lt_one (hp : IsStarProjection p)
   ⟨_, hp.joined_one_projectionConjugacyUnitary hq h, hp.conjugate_projectionConjugacyUnitary hq h,
     hp.norm_projectionConjugacyUnitary_sub_one_le hq h⟩
 end
-
 /-- If star projections `p, q : Unitization ℂ A` with `‖p - q‖ < 1` satisfy `p.fst = q.fst`, then
 `(hp.projectionConjugacyUnitary hq h : Unitization ℂ A).fst = 1`. -/
-theorem fst_projectionConjugacyUnitary {A : Type*} [NonUnitalCStarAlgebra A]
+theorem fst_projectionConjugacyUnitary_eq_one {A : Type*} [NonUnitalCStarAlgebra A]
     {p q : Unitization ℂ A} (hp : IsStarProjection p) (hq : IsStarProjection q)
     (h : ‖p - q‖ < 1) (hfst : p.fst = q.fst) :
     (hp.projectionConjugacyUnitary hq h : Unitization ℂ A).fst = 1 := by
   let _ := CStarAlgebra.spectralOrder (Unitization ℂ A)
   let _ := CStarAlgebra.spectralOrderedRing (Unitization ℂ A)
-  rw [projectionConjugacyUnitary]; refine Units.fst_polarUnitary ?_
+  rw [projectionConjugacyUnitary]; refine Units.fst_polarUnitary_eq_one ?_
   rw [IsUnit.unit_spec, ← Unitization.fstHom_apply ℂ A, map_projectionIntertwiner,
     Unitization.fstHom_apply, Unitization.fstHom_apply, ← hfst]
   exact (hp.isIdempotentElem.map (Unitization.fstHom ℂ A)).projectionIntertwiner_self
-
-/-- **Unitary conjugacy of nearby projections (non-unital)**: `p, q` with `‖p - q‖ < 1` are
-conjugate in `Unitization ℂ A` by `u : unitary (Unitization ℂ A)` with
-`(u : Unitization ℂ A).fst = 1`, `Joined 1 u`, and `‖(u : Unitization ℂ A) - 1‖ ≤ √2 * ‖p - q‖`. -/
+/-- **Unitary conjugacy of nearby projections (non-unital)**: `p, q` (`‖p - q‖ < 1`) are conjugate
+in `Unitization ℂ A` by `u` with `fst = 1`, `Joined 1 u`, and `‖(u : _) - 1‖ ≤ √2 * ‖p - q‖`. -/
 theorem exists_unitization_unitary_conjugate_of_norm_sub_lt_one {A : Type*}
     [NonUnitalCStarAlgebra A] {p q : A} (hp : IsStarProjection p) (hq : IsStarProjection q)
     (h : ‖p - q‖ < 1) :
     ∃ u : unitary (Unitization ℂ A), (u : Unitization ℂ A).fst = 1 ∧ Joined 1 u ∧
       (u : Unitization ℂ A) * (p : Unitization ℂ A) * star (u : Unitization ℂ A) =
         (q : Unitization ℂ A) ∧ ‖(u : Unitization ℂ A) - 1‖ ≤ √2 * ‖p - q‖ := by
-  have hp' := hp.map (Unitization.inrNonUnitalStarAlgHom ℂ A)
-  have hq' := hq.map (Unitization.inrNonUnitalStarAlgHom ℂ A)
+  let ι := Unitization.inrNonUnitalStarAlgHom ℂ A; have hp' := hp.map ι; have hq' := hq.map ι
   have hnorm : ‖(p : Unitization ℂ A) - (q : Unitization ℂ A)‖ = ‖p - q‖ := by
     rw [← Unitization.inr_sub, Unitization.norm_inr]
-  exact ⟨_, hp'.fst_projectionConjugacyUnitary hq' (hnorm.symm ▸ h) (by simp),
+  exact ⟨_, hp'.fst_projectionConjugacyUnitary_eq_one hq' (hnorm.symm ▸ h) (by simp [ι]),
     hp'.joined_one_projectionConjugacyUnitary hq' (hnorm.symm ▸ h),
     hp'.conjugate_projectionConjugacyUnitary hq' (hnorm.symm ▸ h),
     (hp'.norm_projectionConjugacyUnitary_sub_one_le hq' (hnorm.symm ▸ h)).trans_eq
