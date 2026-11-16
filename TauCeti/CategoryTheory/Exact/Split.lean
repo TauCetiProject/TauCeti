@@ -45,6 +45,9 @@ structure.
 * `TauCeti.ExactStructure.conflation_zero_id` and
   `TauCeti.ExactStructure.conflation_id_zero`: the two trivial conflations, split by the identity,
   are conflations of every exact structure.
+* `TauCeti.ExactStructure.isInflation_of_isZero_src` and
+  `TauCeti.ExactStructure.isDeflation_of_isZero_tgt`: every morphism out of a zero object is an
+  inflation and every morphism into a zero object is a deflation in every exact structure.
 * `TauCeti.ExactStructure.split_isInflation_iff` and
   `TauCeti.ExactStructure.split_isDeflation_iff`: the characteristic API of
   `TauCeti.ExactStructure.split`.
@@ -473,6 +476,20 @@ theorem conflation_zero_id (E : ExactStructure C) (X : C) :
 theorem conflation_id_zero (E : ExactStructure C) (X : C) :
     E.Conflation (ShortComplex.mk (𝟙 X) (0 : X ⟶ (0 : C)) (by simp)) :=
   E.conflation_of_splitting { r := 𝟙 X, s := 0 }
+
+/-- Every morphism out of a zero object is an inflation in every exact structure. -/
+theorem isInflation_of_isZero_src (E : ExactStructure C) {Z X : C} (hZ : IsZero Z) (f : Z ⟶ X) :
+    E.IsInflation f :=
+  E.isInflation_f (E.conflation_of_splitting
+    (ShortComplex.Splitting.ofIsZeroOfIsIso
+      (ShortComplex.mk f (𝟙 X) (hZ.eq_of_src _ _)) hZ inferInstance))
+
+/-- Every morphism into a zero object is a deflation in every exact structure. -/
+theorem isDeflation_of_isZero_tgt (E : ExactStructure C) {X Z : C} (hZ : IsZero Z) (f : X ⟶ Z) :
+    E.IsDeflation f :=
+  E.isDeflation_g (E.conflation_of_splitting
+    (ShortComplex.Splitting.ofIsIsoOfIsZero
+      (ShortComplex.mk (𝟙 X) f (hZ.eq_of_tgt _ _)) inferInstance hZ))
 
 /-- A conflation of the split exact structure is a conflation of every exact structure. -/
 theorem conflation_of_split_conflation (E : ExactStructure C) {S : ShortComplex C}

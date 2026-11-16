@@ -41,12 +41,18 @@ extension-closed subcategories inherit axiom E1.
   inflations, and the kernel of a composite of deflations, computed as a pushout resp. pullback.
 * `TauCeti.ExactStructure.exists_conflation_comp`: the Noether package for a composite of two
   inflations.
+* `TauCeti.ExactStructure.isInflation_of_isPullback_of_isDeflation` and
+  `TauCeti.ExactStructure.isDeflation_of_isPushout_of_isInflation`: pullbacks of inflations along
+  deflations remain inflations, and dually pushouts of deflations along inflations remain
+  deflations (giving the `IsStableUnderBaseChangeAgainst` and `IsStableUnderCobaseChangeAgainst`
+  instances).
 
 ## References
 
 * Theo Bühler, *Exact categories*, Expositiones Mathematicae **28** (2010), 1--69,
   <https://arxiv.org/abs/0811.1480>. Proposition 2.12 identifies the cokernel along a cobase
-  change and Lemma 3.5 is the Noether isomorphism proved here.
+  change, Proposition 2.15 gives the base-change stability of inflations along deflations, and
+  Lemma 3.5 is the Noether isomorphism proved here.
 -/
 
 public section
@@ -271,6 +277,38 @@ theorem exists_conflation_comp' {X Y Z W V : C} {i : X ⟶ Y} {p : Y ⟶ Z} {hip
     baseChangeι_snd (ShortComplex.mk v q hvq) sq,
     E.conflation_comp_of_isPullback h₁ h₂ sq, E.conflation_baseChange h₂ sq, sq.w,
     baseChangeι_fst (ShortComplex.mk v q hvq) sq⟩
+
+/-- **Base change of an inflation along a deflation is an inflation.** If a pullback square has a
+deflation `q` on the right and an inflation `i` on the bottom, then its top projection `c` is an
+inflation (Bühler, Proposition 2.15). -/
+theorem isInflation_of_isPullback_of_isDeflation {Q W X Y : C}
+    {c : Q ⟶ W} {α : Q ⟶ X} {q : W ⟶ Y} {i : X ⟶ Y}
+    (hq : E.IsDeflation q) (hi : E.IsInflation i) (sq : IsPullback c α q i) :
+    E.IsInflation c := by
+  obtain ⟨Z, p, hip, h₁⟩ := (E.toConflationClass.isInflation_iff i).mp hi
+  obtain ⟨V, v, hvq, h₂⟩ := (E.toConflationClass.isDeflation_iff q).mp hq
+  exact E.isInflation_f (E.conflation_comp_of_isPullback h₁ h₂ sq)
+
+/-- **Cobase change of a deflation along an inflation is a deflation.** If a pushout square has an
+inflation `j` on the top and a deflation `p` on the left, then its right map `c` is a deflation
+(dual of Bühler, Proposition 2.15). -/
+theorem isDeflation_of_isPushout_of_isInflation {Y W Z Q : C}
+    {j : Y ⟶ W} {p : Y ⟶ Z} {c : W ⟶ Q} {α : Z ⟶ Q}
+    (hj : E.IsInflation j) (hp : E.IsDeflation p) (sq : IsPushout j p c α) :
+    E.IsDeflation c := by
+  obtain ⟨X, i, hip, h₁⟩ := (E.toConflationClass.isDeflation_iff p).mp hp
+  obtain ⟨V, v, hjv, h₂⟩ := (E.toConflationClass.isInflation_iff j).mp hj
+  exact E.isDeflation_g (E.conflation_comp_of_isPushout h₁ h₂ sq)
+
+/-- Inflations are stable under base change against deflations. -/
+instance : E.inflations.IsStableUnderBaseChangeAgainst E.deflations where
+  isStableUnderBaseChangeAlong _ _ _ hf :=
+    ⟨fun pb hg ↦ E.isInflation_of_isPullback_of_isDeflation hf hg pb.flip⟩
+
+/-- Deflations are stable under cobase change against inflations. -/
+instance : E.deflations.IsStableUnderCobaseChangeAgainst E.inflations where
+  isStableUnderCobaseChangeAlong _ _ _ hf :=
+    ⟨fun po hg ↦ E.isDeflation_of_isPushout_of_isInflation hf hg po⟩
 
 end ExactStructure
 
