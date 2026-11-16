@@ -28,7 +28,7 @@ of parameter spaces, induces a map of base changes (`CategoryTheory.CommSq.pullb
 which is the map of fibres on these fibre inclusions
 (`CategoryTheory.CommSq.pullbackFiberι_comp_pullbackMapOfCompEq`); for the identity of the
 parameter space and of the base it is `TopCat.pullbackMapOfCompEq`
-(`CategoryTheory.CommSq.pullbackMapOfCompEq_id`).
+(`CategoryTheory.CommSq.pullbackMapOfCompEq_id_eq_topCatPullbackMapOfCompEq`).
 -/
 
 public section
@@ -257,8 +257,8 @@ lemma pullbackMapOfCompEq_comp_pullbackSnd (sq : CommSq f p p' g) {h : K ⟶ B} 
 /-- For a map `f` over `B` and the identity of the parameter space, the map of base changes is
 `TopCat.pullbackMapOfCompEq`. -/
 @[simp]
-lemma pullbackMapOfCompEq_id {p' : E' ⟶ B} (sq : CommSq f p p' (𝟙 B)) (h : K ⟶ B)
-    (hφ : 𝟙 K ≫ h = h ≫ 𝟙 B) :
+lemma pullbackMapOfCompEq_id_eq_topCatPullbackMapOfCompEq {p' : E' ⟶ B}
+    (sq : CommSq f p p' (𝟙 B)) (h : K ⟶ B) (hφ : 𝟙 K ≫ h = h ≫ 𝟙 B) :
     sq.pullbackMapOfCompEq (𝟙 K) hφ =
       TopCat.pullbackMapOfCompEq h (sq.w.trans (Category.comp_id p)) :=
   (rfl)
