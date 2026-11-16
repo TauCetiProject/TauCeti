@@ -634,19 +634,6 @@ private theorem coe_orbitTwist {u : T.quotient.V → G}
       u (T.quotient.src y) * D₁.edgeTwist (T.quotient.rev y) *
         (v (T.quotient.toGeomEdge y))⁻¹ * (D₂.edgeTwist (T.quotient.rev y))⁻¹ := rfl
 
-private theorem coe_vertexGroup_stabilizerEquivStabilizer {b : T.quotient.V} {u : G}
-    (hu : D₂.vertex b = u • D₁.vertex b) (a : D₁.graphOfGroups.vertexGroup b) :
-    D₂.vertexGroupSubtype b ((stabilizerEquivStabilizer hu).toMonoidHom a) =
-      MulAut.conj u (a : G) :=
-  stabilizerEquivStabilizer_apply hu a
-
-private theorem coe_edgeGroup_stabilizerEquivStabilizer {z : T.quotient.GeomEdge} {v : G}
-    (hv : D₂.dart (GeomEdge.out T.quotient z) = v • D₁.dart (GeomEdge.out T.quotient z))
-    (c : D₁.graphOfGroups.edgeGroup z) :
-    D₂.edgeGroupSubtype z ((stabilizerEquivStabilizer hv).toMonoidHom c) =
-      MulAut.conj v (c : G) :=
-  stabilizerEquivStabilizer_apply hv c
-
 private theorem orbitEdgeHom_rev {v : T.quotient.GeomEdge → G}
     (hv : ∀ z, D₂.dart (GeomEdge.out T.quotient z) = v z • D₁.dart (GeomEdge.out T.quotient z))
     (y : T.quotient.E)
@@ -680,7 +667,7 @@ private theorem orbitVertexHom_α {u : T.quotient.V → G}
         ((stabilizerEquivStabilizer (hu (T.quotient.src y))).toMonoidHom (D₁.graphOfGroups.α y c))
         = MulAut.conj (u (T.quotient.src y))
             (MulAut.conj (D₁.edgeTwist (T.quotient.rev y)) (c : G)) :=
-      (coe_vertexGroup_stabilizerEquivStabilizer D₁ D₂ (hu (T.quotient.src y)) _).trans
+      (stabilizerEquivStabilizer_apply (hu (T.quotient.src y)) _).trans
         (congrArg _ (coe_α_eq_conj_edgeTwist_rev D₁ y c))
     _ = (orbitTwist D₁ D₂ hu hv y : G) *
           MulAut.conj (D₂.edgeTwist (T.quotient.rev y))
@@ -694,7 +681,7 @@ private theorem orbitVertexHom_α {u : T.quotient.V → G}
       congrArg (fun g : G => (orbitTwist D₁ D₂ hu hv y : G) * g * (orbitTwist D₁ D₂ hu hv y : G)⁻¹)
         (((coe_vertexGroup_cast D₂ rfl (D₂.graphOfGroups.α y c')).trans
           (coe_α_eq_conj_edgeTwist_rev D₂ y c')).trans
-            (congrArg _ (coe_edgeGroup_stabilizerEquivStabilizer D₁ D₂
+            (congrArg _ (stabilizerEquivStabilizer_apply
               (hv (T.quotient.toGeomEdge y)) c))).symm
     _ = _ := by simp only [c', map_mul, map_inv]
 
@@ -724,7 +711,7 @@ noncomputable def homOfOrbits {u : T.quotient.V → G}
     (hv : ∀ z, D₂.dart (GeomEdge.out T.quotient z) = v z • D₁.dart (GeomEdge.out T.quotient z))
     (b : T.quotient.V) (a : D₁.graphOfGroups.vertexGroup b) :
     ((homOfOrbits D₁ D₂ hu hv).vertexHom b a : G) = MulAut.conj (u b) (a : G) :=
-  coe_vertexGroup_stabilizerEquivStabilizer D₁ D₂ (hu b) a
+  stabilizerEquivStabilizer_apply (hu b) a
 
 @[simp] theorem coe_homOfOrbits_edgeHom {u : T.quotient.V → G}
     (hu : ∀ b, D₂.vertex b = u b • D₁.vertex b) {v : T.quotient.GeomEdge → G}
@@ -732,7 +719,7 @@ noncomputable def homOfOrbits {u : T.quotient.V → G}
     (y : T.quotient.E) (c : D₁.graphOfGroups.edgeGroup (T.quotient.toGeomEdge y)) :
     ((homOfOrbits D₁ D₂ hu hv).edgeHom y c : G) =
       MulAut.conj (v (T.quotient.toGeomEdge y)) (c : G) :=
-  coe_edgeGroup_stabilizerEquivStabilizer D₁ D₂ (hv (T.quotient.toGeomEdge y)) c
+  stabilizerEquivStabilizer_apply (hv (T.quotient.toGeomEdge y)) c
 
 private theorem coe_homOfOrbits_twist {u : T.quotient.V → G}
     (hu : ∀ b, D₂.vertex b = u b • D₁.vertex b) {v : T.quotient.GeomEdge → G}
