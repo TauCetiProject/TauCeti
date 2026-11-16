@@ -38,8 +38,7 @@ def empiricalLogPotential [Nonempty (Fin n)] (A : Matrix (Fin n) (Fin n) ℂ)
   ∫ w, Real.log ‖z - w‖ ∂(A.eigenvalueMeasure : Measure ℂ)
 
 /-- The norm of the determinant is the product of the singular values. -/
-theorem norm_det_eq_prod_singularValues [Nonempty (Fin n)]
-    (A : Matrix (Fin n) (Fin n) ℂ) :
+theorem norm_det_eq_prod_singularValues (A : Matrix (Fin n) (Fin n) ℂ) :
     ‖A.det‖ = ∏ i : Fin n, (toEuclideanLin A).singularValues i := by
   have hdet : (toEuclideanLin A).det = A.det := by
     rw [toEuclideanLin_eq_toLin_orthonormal]
