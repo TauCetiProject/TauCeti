@@ -13,10 +13,12 @@ public import TauCeti.MeasureTheory.Group.Convolution.Translation
 public import Mathlib.MeasureTheory.Measure.CharacteristicFunction.Basic
 public import Mathlib.MeasureTheory.Measure.ProbabilityMeasure
 public import Mathlib.Probability.CDF
+public import Mathlib.Probability.ConditionalProbability
 public import Mathlib.Probability.Moments.Basic
 public import Mathlib.Probability.Moments.IntegrableExpMul
 public import Mathlib.Probability.Moments.Variance
 import TauCeti.MeasureTheory.Measure.Measurability
+import TauCeti.Probability.ConditionalProbability
 import TauCeti.Probability.Distributions.Dirac
 import TauCeti.Probability.Independence.ConvolutionPower
 
@@ -55,6 +57,8 @@ Mathlib's `ProbabilityTheory.variance_id_map`, `ProbabilityTheory.variance_const
   topological support;
 * `TauCeti.Probability.measurable_map_affine` — affine pushforward is jointly measurable in the
   probability law, intercept, and slope;
+* `TauCeti.Probability.map_affine_cond` — a nonconstant affine pushforward commutes with
+  conditioning when the conditioning event is transported by the affine map;
 * `TauCeti.Probability.affineDensity`,
   `TauCeti.Probability.map_affine_withDensity_volume` — the transformed density and the
   measure-level change of variables;
@@ -135,6 +139,18 @@ theorem measurable_map_affine :
   exact measurable_subtype_coe.comp
     (TauCeti.MeasureTheory.measurable_probabilityMeasure_map_of_measurable_uncurry
       (f := fun p : ℝ × ℝ => fun x => p.1 + p.2 * x) (by fun_prop))
+
+/-- **Affine transport of a conditional law.** A nonconstant affine pushforward commutes with
+conditioning when the conditioning event is carried to its affine image. This includes null
+events, for which both conditional measures are zero. -/
+theorem map_affine_cond (a : ℝ) {b : ℝ} (hb : b ≠ 0) {s : Set ℝ} :
+    (cond μ s).map (fun x ↦ a + b * x) =
+      cond (μ.map fun x ↦ a + b * x) ((fun x ↦ a + b * x) '' s) := by
+  have hf : MeasurableEmbedding (fun x : ℝ ↦ a + b * x) := by
+    convert (affineHomeomorph b a hb).measurableEmbedding using 1
+    ext x
+    simp [affineHomeomorph, add_comm]
+  exact hf.map_cond s
 
 /-! ### Densities -/
 
