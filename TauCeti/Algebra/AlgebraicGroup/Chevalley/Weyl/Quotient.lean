@@ -9,6 +9,7 @@ public import TauCeti.Algebra.AlgebraicGroup.Chevalley.Borel
 public import TauCeti.Algebra.AlgebraicGroup.Chevalley.Torus.Weyl
 import TauCeti.Algebra.AlgebraicGroup.Chevalley.BigCell.Triangular
 import TauCeti.Algebra.AlgebraicGroup.Chevalley.Braid.Coxeter
+import TauCeti.Algebra.AlgebraicGroup.Chevalley.Positive.Blocks
 import TauCeti.Algebra.AlgebraicGroup.Chevalley.RankOne
 import TauCeti.GroupTheory.Coxeter.Basic
 import TauCeti.LinearAlgebra.RootSystem.SimplyConnectedRootDatum.Coxeter

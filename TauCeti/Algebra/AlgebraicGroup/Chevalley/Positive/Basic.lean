@@ -6,9 +6,9 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.AlgebraicGroup.Chevalley.Root.Subgroup
-public import TauCeti.Algebra.Lie.UniversalEnveloping.Kostant.Weight.Blocks
-public import TauCeti.LinearAlgebra.RootSystem.SimplyConnectedRootDatum.WeightDegree
 import TauCeti.Algebra.Lie.UniversalEnveloping.Kostant.RootSubgroup.PositiveSubsystem
+import TauCeti.Algebra.Lie.UniversalEnveloping.Kostant.Weight.Order
+import TauCeti.LinearAlgebra.RootSystem.SimplyConnectedRootDatum.WeightDegree
 
 /-!
 # The positive-root subgroup of a Chevalley datum
@@ -22,8 +22,7 @@ The proof uses the height degree on integral weights and the generic ordered-wei
 construction. Every positive root has strictly positive degree, so the whole subgroup embeds
 in an upper-unitriangular group. This supplies the nilpotent positive part used in constructing
 Borel subgroups. `positivePoints` realizes the same subgroup inside the datum's points; it has
-the all-positive-root generation API, is preserved by ring maps, and acts by weight-block upper
-unitriangular matrices (`blockUnitriangular_of_mem_positivePoints`). Neither a unique
+the all-positive-root generation API and is preserved by ring maps. Neither a unique
 ordered-product expression nor a scheme-theoretic unipotent radical is asserted here.
 
 The ordered-basis argument specializes the generic Kostant subsystem theory, as does the
@@ -68,6 +67,16 @@ theorem positiveSubgroup_eq_closure (A : CommAlgCat.{v} ℤ) :
         ∃ u, chevalleyRootSubgroup D.representation D.lattice D.representation_mem_lattice
           D.isNilpotent_representation_rootGenerator γ A u = g} := by
   simp only [positiveSubgroup, kostantSubsystemSubgroup_eq_closure,
+    kostantRootSubgroupParam_chevalleySystem D.representation D.lattice
+      D.representation_mem_lattice D.isNilpotent_representation_rootGenerator]
+
+/-- The positive lattice subgroup is the join of the positive root subgroup ranges. -/
+theorem positiveSubgroup_eq_iSup (A : CommAlgCat.{v} ℤ) :
+    D.positiveSubgroup A =
+      ⨆ γ ∈ posRoots (t.rationalRootSystem ht) (t.rationalBase ht),
+        (chevalleyRootSubgroup D.representation D.lattice D.representation_mem_lattice
+          D.isNilpotent_representation_rootGenerator γ A).range := by
+  simp only [positiveSubgroup, kostantSubsystemSubgroup_eq_iSup,
     kostantRootSubgroupParam_chevalleySystem D.representation D.lattice
       D.representation_mem_lattice D.isNilpotent_representation_rootGenerator]
 
@@ -221,6 +230,19 @@ theorem rootSubgroupPoints_mem_positivePoints (A : Type v) [CommRing A] {γ : Fi
     (u : Multiplicative A) : D.rootSubgroupPoints γ A u ∈ D.positivePoints A :=
   (D.positivePoints_le_iff.mp le_rfl) γ hγ u
 
+/-- The positive point subgroup is the join of the positive root subgroup ranges. -/
+theorem positivePoints_eq_iSup (A : Type v) [CommRing A] :
+    D.positivePoints A =
+      ⨆ γ ∈ posRoots (t.rationalRootSystem ht) (t.rationalBase ht),
+        (D.rootSubgroupPoints γ A).range := by
+  apply le_antisymm
+  · apply D.positivePoints_le_iff.mpr
+    intro γ hγ u
+    exact le_iSup₂ (f := fun γ _ => (D.rootSubgroupPoints γ A).range) γ hγ ⟨u, rfl⟩
+  · refine iSup_le fun γ => iSup_le fun hγ => ?_
+    rintro _ ⟨u, rfl⟩
+    exact D.rootSubgroupPoints_mem_positivePoints A hγ u
+
 /-- The positive point subgroup is nilpotent over every commutative ring. -/
 theorem isNilpotent_positivePoints (A : Type v) [CommRing A] :
     Group.IsNilpotent (D.positivePoints A) := by
@@ -240,33 +262,5 @@ theorem map_positivePoints_le {A : Type v} {B : Type v'} [CommRing A] [CommRing 
   intro γ hγ u
   simpa only [Subgroup.mem_comap, D.map_rootSubgroupPoints] using
     D.rootSubgroupPoints_mem_positivePoints B hγ (Multiplicative.ofAdd (f u.toAdd))
-
-/-- Ranking the basis indices of `D` by decreasing height of their distinct weights makes every
-point of `D.positivePoints A` weight-block upper unitriangular over every commutative ring `A`. -/
-theorem blockUnitriangular_of_mem_positivePoints (A : Type v) [CommRing A]
-    {u : D.points A} (hu : u ∈ D.positivePoints A) :
-    (((u : Matrix.GeneralLinearGroup (Fin D.dim) A) : Matrix (Fin D.dim) (Fin D.dim) A)
-      ).BlockUnitriangular (orderedWeightBlock (t.weightDegree ht) D.weight) := by
-  rw [D.positivePoints_eq_closure] at hu
-  induction hu using Subgroup.closure_induction with
-  | mem g hg =>
-    obtain ⟨γ, hγ, a, rfl⟩ := hg
-    rw [D.coe_rootSubgroupPoints, ← kostantRootSubgroupParam_chevalleySystem,
-      basisMatrix_kostantRootSubgroupParam]
-    exact blockUnitriangular_kostantRootSubgroupMatrix
-      (t.chevalleySystem ht) (t.lieBasis ht).h D.representation D.lattice
-      (kostantForm_chevalleySystem_smul_mem D.representation D.lattice
-        D.representation_mem_lattice D.isNilpotent_representation_rootGenerator)
-      D.basis D.weight (t.weightDegree ht) γ
-      (isNilpotent_apply_ι_chevalleySystem D.representation
-        D.isNilpotent_representation_rootGenerator γ)
-      D.isCartanWeightVector_basis (t.lie_lieBasis_h_chevalleySystem ht γ)
-      (t.weightDegree_root_pos ht hγ)
-      ((AdditiveGroup.gaPointsMulEquiv (R := ℤ) (A := A)).symm a)
-  | one => exact Matrix.blockUnitriangular_one
-  | mul x y _ _ hx hy => exact hx.mul hy
-  | inv x _ hx =>
-    rw [Subgroup.coe_inv, Matrix.coe_units_inv]
-    exact hx.inv
 
 end TauCeti.DynkinType.ChevalleyDatum
