@@ -79,6 +79,11 @@ smooth; such charts are recorded by `OpenPartialHomeomorph.IsExtendTransChart`.
 * `TauCeti.measurableSet_image_extChartAt_iff`: for Borel measurable spaces on the manifold and
   the model space, a subset of a chart source is measurable exactly when its image in the model
   space is.
+* `OpenPartialHomeomorph.measurableSet_extend_target`,
+  `OpenPartialHomeomorph.measurableEmbedding_extend_restrict`,
+  `OpenPartialHomeomorph.measurableSet_image_extend`,
+  `OpenPartialHomeomorph.measurableSet_preimage_extend_inter`: the corresponding measurability and
+  measurable-embedding lemmas for an arbitrary extended chart `e.extend I`.
 * `TauCeti.locallyCompactSpace_extChartAt_target`: over a locally compact model, every extended
   chart target is locally compact.
 * `TauCeti.exists_countable_chartExhaustion`: a sigma-compact manifold with locally compact model
@@ -1087,5 +1092,70 @@ theorem IsExtendTransChart.contDiffOn_comp_symm {e₁ e₂ : OpenPartialHomeomor
   exact contDiffOn_extendTrans_comp_symm I hc₁ hc₂ hΨ₁ hΨ₂
 
 end IsExtendTransChart
+
+section ExtendMeasurability
+
+variable {𝕜 E H M : Type*} [NontriviallyNormedField 𝕜] [NormedAddCommGroup E] [NormedSpace 𝕜 E]
+  [TopologicalSpace H] [TopologicalSpace M]
+
+/-- The target of an extended chart `e.extend I` is measurable in any measurable space on `E`
+where open sets are measurable. -/
+theorem measurableSet_extend_target [MeasurableSpace E] [OpensMeasurableSpace E]
+    (e : OpenPartialHomeomorph M H) (I : ModelWithCorners 𝕜 E H) :
+    MeasurableSet (e.extend I).target := by
+  rw [e.extend_target]
+  exact (e.open_target.preimage I.continuous_symm).measurableSet.inter
+    I.isClosed_range.measurableSet
+
+/-- An extended chart `e.extend I`, restricted to its source, is a measurable embedding for the
+Borel measurable spaces. -/
+theorem measurableEmbedding_extend_restrict [MeasurableSpace E] [BorelSpace E]
+    [MeasurableSpace M] [BorelSpace M] (e : OpenPartialHomeomorph M H)
+    (I : ModelWithCorners 𝕜 E H) :
+    MeasurableEmbedding (e.source.domRestrict (e.extend I)) := by
+  let f : PartialHomeomorph M E :=
+    { toPartialEquiv := e.extend I
+      continuousOn_toFun := e.continuousOn_extend
+      continuousOn_invFun := e.continuousOn_extend_symm }
+  have hrange : MeasurableSet (Set.range (f.source.domRestrict f)) := by
+    rw [Set.range_domRestrict, f.image_source_eq_target]
+    exact e.measurableSet_extend_target I
+  have hemb := f.isEmbedding_restrict.measurableEmbedding hrange
+  rwa [e.extend_source] at hemb
+
+/-- For a Borel measurable space on `M`, the image under `e.extend I` of a measurable subset of
+`e.source` is measurable in any measurable space on `E` where open sets are measurable. -/
+theorem measurableSet_image_extend [MeasurableSpace E] [OpensMeasurableSpace E]
+    [MeasurableSpace M] [BorelSpace M] (e : OpenPartialHomeomorph M H)
+    (I : ModelWithCorners 𝕜 E H) {s : Set M} (hs : MeasurableSet s) (hsub : s ⊆ e.source) :
+    MeasurableSet (e.extend I '' s) :=
+  OpensMeasurableSpace.borel_le _ <| by
+    let : MeasurableSpace E := borel E
+    have : BorelSpace E := ⟨rfl⟩
+    have him : e.source.domRestrict (e.extend I) '' (Subtype.val ⁻¹' s) = e.extend I '' s := by
+      rw [Set.image_domRestrict, Set.inter_eq_left.2 hsub]
+    rw [← him]
+    exact (e.measurableEmbedding_extend_restrict I).measurableSet_image.2
+      (hs.preimage measurable_subtype_coe)
+
+/-- The preimage of a Borel measurable set in `E` under `e.extend I`, intersected with `e.source`,
+is measurable whenever open subsets of `M` are measurable. -/
+theorem measurableSet_preimage_extend_inter [MeasurableSpace E] [BorelSpace E]
+    [MeasurableSpace M] [OpensMeasurableSpace M] (e : OpenPartialHomeomorph M H)
+    (I : ModelWithCorners 𝕜 E H) {A : Set E} (hA : MeasurableSet A) :
+    MeasurableSet (e.extend I ⁻¹' A ∩ e.source) := by
+  have hcont : Continuous (e.source.domRestrict (e.extend I)) := by
+    rw [← continuousOn_iff_continuous_domRestrict, ← e.extend_source (I := I)]
+    exact e.continuousOn_extend
+  have hval : MeasurableEmbedding (Subtype.val : e.source → M) :=
+    .subtype_coe e.open_source.measurableSet
+  have hseq : e.extend I ⁻¹' A ∩ e.source =
+      Subtype.val '' (e.source.domRestrict (e.extend I) ⁻¹' A) := by
+    ext x
+    simp [and_comm]
+  rw [hseq]
+  exact hval.measurableSet_image.2 (hcont.measurable hA)
+
+end ExtendMeasurability
 
 end OpenPartialHomeomorph
