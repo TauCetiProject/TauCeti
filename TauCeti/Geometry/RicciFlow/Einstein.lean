@@ -375,7 +375,7 @@ theorem tendsto_scalarCurvature_einsteinFlow_nhdsLT_atTop (hc : 0 < c) (hE : 0 <
   TauCeti.tendsto_scalarCurvature_nhdsLT_atTop_of_inner_eq_one_sub_two_mul_smul hc hE
     (s := {τ | 2 * c * τ < 1})
     (mem_of_superset self_mem_nhdsWithin fun τ hτ ↦
-      show 2 * c * τ < 1 from (lt_inv_mul_iff₀ (by positivity)).1 (by rwa [mul_one]))
+      Set.mem_ofPred_eq.mpr ((lt_inv_mul_iff₀ (by positivity)).1 (by rwa [mul_one])))
     (fun _ hτ ↦ einsteinFlow_inner hτ) hRic
 
 end EinsteinFlow

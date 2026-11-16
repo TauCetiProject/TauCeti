@@ -55,10 +55,11 @@ differentiable fields; this determines the curvature tensor.
 * `Bundle.ContMDiffRiemannianMetric.scalarCurvature_rescale_const`: `Scal(c g) = c⁻¹ Scal(g)`.
 * `Bundle.ContMDiffRiemannianMetric.subsingleton_tangentSpace_of_inner_eq_smul_of_nonpos` and
   `Bundle.ContMDiffRiemannianMetric.finrank_eq_zero_of_inner_eq_smul_of_nonpos`: metrics with
-  `g' = a g` for a constant `a ≤ 0` exist only over zero tangent spaces.
+  `g' = a g` at a point `x` for a constant `a ≤ 0` exist only over a zero tangent space at `x`.
 * `Bundle.ContMDiffRiemannianMetric.ricciTensor_leviCivitaConnection_eq_of_inner_eq_smul` and
-  `Bundle.ContMDiffRiemannianMetric.scalarCurvature_eq_inv_mul_of_inner_eq_smul`: the same for a
-  metric `g'` known only to satisfy `g' = a g` for a constant `a`, with no sign condition.
+  `Bundle.ContMDiffRiemannianMetric.scalarCurvature_eq_inv_mul_of_inner_eq_smul`:
+  `Ric(g') = Ric(g)` and `Scal(g') = a⁻¹ Scal(g)` for a metric `g'` known only to satisfy
+  `g' = a g` for a constant `a`, with no sign condition.
 * `scalarCurvature_eq_of_inner_eq_smul_of_ricciTensor_eq_smul_inner` and
   `ricciTensor_leviCivitaConnection_eq_smul_inner_of_inner_eq_smul`, in the namespace
   `Bundle.ContMDiffRiemannianMetric`: `Scal(a g) = n c / a` and `Ric(a g) = (c / a) (a g)` when
@@ -310,7 +311,7 @@ omit [FiniteDimensional ℝ E] [T2Space M] in
 /-- Two metrics with `g' = a g` for a constant `a ≤ 0` exist only over zero tangent spaces. -/
 theorem subsingleton_tangentSpace_of_inner_eq_smul_of_nonpos
     {g' g : ContMDiffRiemannianMetric I ∞ E (fun x : M ↦ TangentSpace I x)} {a : ℝ}
-    (h : ∀ y, g'.inner y = a • g.inner y) (ha : a ≤ 0) (x : M) :
+    {x : M} (h : g'.inner x = a • g.inner x) (ha : a ≤ 0) :
     Subsingleton (TangentSpace I x) := by
   have hzero (u : TangentSpace I x) : u = 0 := by
     by_contra hu
@@ -323,8 +324,8 @@ omit [FiniteDimensional ℝ E] [T2Space M] in
 /-- Two metrics with `g' = a g` for a constant `a ≤ 0` exist only in dimension zero. -/
 theorem finrank_eq_zero_of_inner_eq_smul_of_nonpos
     {g' g : ContMDiffRiemannianMetric I ∞ E (fun x : M ↦ TangentSpace I x)} {a : ℝ}
-    (h : ∀ y, g'.inner y = a • g.inner y) (ha : a ≤ 0) (x : M) : Module.finrank ℝ E = 0 := by
-  have := subsingleton_tangentSpace_of_inner_eq_smul_of_nonpos h ha x
+    {x : M} (h : g'.inner x = a • g.inner x) (ha : a ≤ 0) : Module.finrank ℝ E = 0 := by
+  have := subsingleton_tangentSpace_of_inner_eq_smul_of_nonpos h ha
   simp [← TauCeti.finrank_tangentSpace (I := I) x, Module.finrank_zero_of_subsingleton]
 
 /-- Metrics which are constant multiples of each other, `g' = a g`, have the same Ricci tensor.
@@ -343,7 +344,7 @@ theorem ricciTensor_leviCivitaConnection_eq_of_inner_eq_smul
       ext y v w
       simp [h]
     exact ricciTensor_leviCivitaConnection_rescale_const g ha x
-  · have hE := (finrank_eq_zero_of_inner_eq_smul_of_nonpos h (not_lt.1 ha) x).trans_le zero_le_one
+  · have hE := (finrank_eq_zero_of_inner_eq_smul_of_nonpos (h x) (not_lt.1 ha)).trans_le zero_le_one
     simp [CovariantDerivative.ricciTensor_eq_zero_of_finrank_le_one _ x hE]
 
 /-- Metrics which are constant multiples of each other, `g' = a g`, have scalar curvatures related
@@ -358,7 +359,7 @@ theorem scalarCurvature_eq_inv_mul_of_inner_eq_smul
       ext y v w
       simp [h]
     exact scalarCurvature_rescale_const g ha x
-  · have hE := (finrank_eq_zero_of_inner_eq_smul_of_nonpos h (not_lt.1 ha) x).trans_le zero_le_one
+  · have hE := (finrank_eq_zero_of_inner_eq_smul_of_nonpos (h x) (not_lt.1 ha)).trans_le zero_le_one
     simp only [scalarCurvature_def]
     simp [CovariantDerivative.scalarCurvature_eq_zero_of_ricciTensor_eq_zero,
       CovariantDerivative.ricciTensor_eq_zero_of_finrank_le_one _ x hE]
@@ -394,7 +395,7 @@ theorem ricciTensor_leviCivitaConnection_eq_smul_inner_of_inner_eq_smul
   simp only [LinearMap.smul_apply, innerₗ_apply_apply, smul_eq_mul, inner_riemannianBundle, h,
     smul_apply]
   rcases eq_or_ne a 0 with rfl | ha
-  · have := subsingleton_tangentSpace_of_inner_eq_smul_of_nonpos h le_rfl x
+  · have := subsingleton_tangentSpace_of_inner_eq_smul_of_nonpos (h x) le_rfl
     simp [Subsingleton.elim u 0]
   · field_simp
 
