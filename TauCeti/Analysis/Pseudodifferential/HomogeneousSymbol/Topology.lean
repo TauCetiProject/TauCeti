@@ -8,7 +8,7 @@ module
 public import Mathlib.Analysis.LocallyConvex.WithSeminorms
 public import Mathlib.Topology.Algebra.UniformFilterBasis
 public import Mathlib.Topology.Sets.Compacts
-public import TauCeti.Analysis.Pseudodifferential.HomogeneousSymbol
+public import TauCeti.Analysis.Pseudodifferential.HomogeneousSymbol.Basic
 import Mathlib.Analysis.Calculus.ContDiff.Bounds
 import TauCeti.Analysis.Calculus.IteratedFDeriv.CompLinear
 import TauCeti.Analysis.Normed.Module.Multilinear.Basic
