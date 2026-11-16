@@ -9,7 +9,7 @@ public import TauCeti.Probability.Density
 public import TauCeti.Probability.Distributions.Beta.Basic
 public import TauCeti.MeasureTheory.Measure.Typeclasses.Probability
 import TauCeti.Analysis.Calculus.RealCharts
-import TauCeti.Analysis.SpecialFunctions.Beta
+import TauCeti.Analysis.SpecialFunctions.Beta.Basic
 import TauCeti.MeasureTheory.Measure.WithDensity
 
 /-!

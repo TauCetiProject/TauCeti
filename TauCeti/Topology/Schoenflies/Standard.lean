@@ -87,9 +87,9 @@ theorem exists_homeomorph_eq_equatorInclusion
     rw [hA, hC, ← inter_union_distrib_right, hUV.inter_eq, empty_union]
   -- Brown supplies discs with the same parametrization on their common boundary.
   obtain ⟨eA, heA, hnA⟩ := hb.exists_homeomorph_closure_connectedComponentIn_compl_range
-    hEF hE huσ
+    hEF huσ
   obtain ⟨eC, -, hnC⟩ := hb.exists_homeomorph_closure_connectedComponentIn_compl_range
-    hEF hE hvσ
+    hEF hvσ
   have hB (z : closedBall (0 : E) 1) : ‖(B z : (ℝ ∙ (p : F))ᗮ)‖ = 1 ↔ ‖(z : E)‖ = 1 := by
     simp [B]
   -- Glue both discs at once, retaining the coordinates of the positive disc.

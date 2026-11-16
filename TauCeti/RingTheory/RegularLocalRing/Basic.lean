@@ -186,7 +186,7 @@ theorem _root_.Ideal.exists_mem_notMem_maximalIdeal_sq_of_quotient (I : Ideal R)
   exact absurd hbad (by norm_cast; omega)
 
 /-- If `R` is a regular local ring and `x ∈ 𝔪 \ 𝔪²`, then `R ⧸ (x)` is a regular local ring. -/
-@[stacks 00NQ "(2), for one generator"]
+@[stacks 00NQ "second assertion, for one generator: the quotient is regular local"]
 theorem quotient_span_singleton {x : R} (hxm : x ∈ maximalIdeal R)
     (hx : x ∉ maximalIdeal R ^ 2) : IsRegularLocalRing (R ⧸ span {x}) := by
   -- the only minimal prime of the domain `R` is `0`, and `x ≠ 0` as `x ∉ 𝔪²`
@@ -311,6 +311,8 @@ theorem of_isLocalization (S : Type*) [CommRing S] [Algebra R S] [IsLocalization
   exact .of_ringEquiv (IsLocalization.algEquiv (q.comap (algebraMap R S)).primeCompl
     (Localization.AtPrime (q.comap (algebraMap R S))) (Localization.AtPrime q)).toRingEquiv
 
+/-- A localization of a regular ring is a regular ring: the instance form of `of_isLocalization`
+for `Localization M`. -/
 instance isRegularRing_localization : IsRegularRing (Localization M) :=
   of_isLocalization M _
 

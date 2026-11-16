@@ -10,6 +10,7 @@ public import TauCeti.RingTheory.MvPowerSeries.TateAlgebra.KrullDimension
 public import TauCeti.RingTheory.PowerSeries.Weierstrass.Quotient
 import Mathlib.RingTheory.Ideal.KrullsHeightTheorem
 import TauCeti.RingTheory.Ideal.MonicSpan
+import TauCeti.RingTheory.MvPowerSeries.TateAlgebra.Distinguished
 import TauCeti.RingTheory.MvPowerSeries.TateAlgebra.Groebner
 import TauCeti.RingTheory.RegularLocalRing.Basic
 import TauCeti.RingTheory.RegularLocalRing.Maximal
