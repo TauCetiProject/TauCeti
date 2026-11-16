@@ -34,9 +34,6 @@ lattice and the convergent `q`-series expansion of `Θ_{D₄}`.
 
 ## Main statements
 
-* `TauCeti.IntegralLattice.thetaFormRealModelCheckerboardLatticeFour_ne_zero`,
-  `TauCeti.IntegralLattice.not_isCuspForm_thetaFormRealModelCheckerboardLatticeFour`:
-  `Θ_{D₄}` is nonzero and is not a cusp form.
 * `TauCeti.IntegralLattice.thetaSeries_realModel_checkerboardLattice_four_slash_of_mem_Gamma0`:
   `Θ_{D₄} ∣[2] A = Θ_{D₄}` for every `A ∈ Γ₀(2)`.
 * `TauCeti.IntegralLattice.thetaFormRealModelCheckerboardLatticeFour_eq_neg_correctedE2`,
@@ -58,7 +55,7 @@ lattice and the convergent `q`-series expansion of `Θ_{D₄}`.
 public section
 
 open Module ModularForm UpperHalfPlane Matrix.SpecialLinearGroup CongruenceSubgroup
-open scoped MatrixGroups ArithmeticFunction.sigma ModularForm
+open scoped MatrixGroups ArithmeticFunction.sigma
 
 namespace TauCeti.IntegralLattice
 
@@ -82,20 +79,6 @@ theorem coe_thetaFormRealModelCheckerboardLatticeFour :
         ((checkerboardLattice 4).realModel (isPosDef_checkerboardLattice 4)) := by
   dsimp only [thetaFormRealModelCheckerboardLatticeFour, ModularForm.coe_mcast]
   exact ZLattice.coe_thetaFormGamma0 _ _ _
-
-/-- The `D₄` theta form on `Γ₀(2)` is nonzero. -/
-@[simp]
-theorem thetaFormRealModelCheckerboardLatticeFour_ne_zero :
-    thetaFormRealModelCheckerboardLatticeFour ≠ 0 := fun h ↦
-  ZLattice.thetaSeries_ne_zero_of_re_eq_zero _ UpperHalfPlane.I_re (by
-    rw [← coe_thetaFormRealModelCheckerboardLatticeFour, h, FunLike.coe_zero]
-    rfl)
-
-/-- The `D₄` theta form on `Γ₀(2)` is not a cusp form. -/
-@[simp]
-theorem not_isCuspForm_thetaFormRealModelCheckerboardLatticeFour :
-    ¬ ModularForm.IsCuspForm thetaFormRealModelCheckerboardLatticeFour :=
-  ZLattice.not_isCuspForm_of_coe_eq_thetaSeries _ coe_thetaFormRealModelCheckerboardLatticeFour
 
 /-- The theta series of the real model of `D₄` is invariant in weight two under every matrix
 `A ∈ Γ₀(2)`. -/
