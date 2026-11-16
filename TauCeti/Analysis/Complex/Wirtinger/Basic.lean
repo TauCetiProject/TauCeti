@@ -10,6 +10,7 @@ public import Mathlib.Analysis.Calculus.FDeriv.RestrictScalars
 public import Mathlib.Analysis.Calculus.LineDeriv.Basic
 public import Mathlib.Analysis.Complex.Basic
 public import Mathlib.Analysis.Complex.Exponential
+public import Mathlib.Analysis.SpecialFunctions.Trigonometric.Basic
 public import TauCeti.Analysis.Normed.Operator.ComplexLinearPart
 public import TauCeti.LinearAlgebra.Complex.LinearPart
 import Mathlib.Analysis.Calculus.ContDiff.Operations
@@ -84,6 +85,8 @@ Their comparison with the Levi form is in `TauCeti.Analysis.Complex.Wirtinger.Le
 * `TauCeti.wirtingerDeriv_cexp_mul_sub_conj_mul_conj`,
   `TauCeti.conjWirtingerDeriv_cexp_mul_sub_conj_mul_conj`: the twisted exponential
   `exp (a z - conj a conj z)` has `∂ = a ·` and `\bar∂ = -conj a ·`.
+  Translation by `w` multiplies it by `exp (2πiθ)` when `Im (a w) = π (k + θ)` for an integer `k`
+  (`TauCeti.cexp_mul_add_sub_conj_mul_conj_add_of_im_mul_eq`).
 * `TauCeti.fderiv_eq_wirtingerPartsCLM`, `TauCeti.wirtingerPartsCLM_inj`: in one variable the
   real derivative is `wirtingerPartsCLM` of its two Wirtinger parts, which it determines; the
   Wirtinger parts of `wirtingerPartsCLM a b` are `a` and `b`
@@ -548,6 +551,20 @@ theorem cexp_mul_add_sub_conj_mul_conj_add (z w : ℂ) :
       cexp (((2 * (a * w).im : ℝ) : ℂ) * I) * cexp (a * z - conj a * conj z) := by
   rw [← sub_conj, map_mul, ← Complex.exp_add, map_add]
   ring_nf
+
+open scoped Real in
+/-- If `Im (a w) = π (k + θ)` for an integer `k`, then under translation by `w` the twisted
+exponential `exp (a z - conj a conj z)` is multiplied by `exp (2πiθ)`. In particular it is a
+section of the flat line with holonomy `exp (2πiθ)` along `w`. -/
+theorem cexp_mul_add_sub_conj_mul_conj_add_of_im_mul_eq {w : ℂ} {θ : ℝ} {k : ℤ}
+    (h : (a * w).im = π * (k + θ)) (z : ℂ) :
+    cexp (a * (z + w) - conj a * conj (z + w)) =
+      cexp (2 * π * θ * I) * cexp (a * z - conj a * conj z) := by
+  rw [cexp_mul_add_sub_conj_mul_conj_add, h]
+  congr 1
+  push_cast
+  rw [show (2 * (π * (k + θ)) * I : ℂ) = k * (2 * π * I) + 2 * π * θ * I by ring, Complex.exp_add,
+    exp_int_mul_two_pi_mul_I, one_mul]
 
 end TwistedExp
 

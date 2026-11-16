@@ -7,7 +7,6 @@ module
 
 public import Mathlib.MeasureTheory.Function.L2Space
 public import TauCeti.Analysis.Complex.Wirtinger.FlatTorus.Basic
-import Mathlib.Analysis.SpecialFunctions.Trigonometric.Basic
 import TauCeti.Analysis.Fourier.Torus.UnitCube
 import TauCeti.Analysis.InnerProductSpace.WeakSolution
 import TauCeti.MeasureTheory.Function.L2Space
@@ -305,18 +304,6 @@ private theorem cexp_dualCoeff_mul_sub_conj_mul_conj_latticeCoord (hω : (conj �
   push_cast
   ring_nf
 
-/-- A twisted exponential with `Im (a ω_j) = π (k_j + θ_j)` is a section of the flat line with
-holonomy `exp (2πiθ_j)` along `ω_j`. -/
-private theorem cexp_mul_add_sub_conj_mul_conj_add_of_im_mul_eq {a ω : ℂ} {θ : ℝ} {k : ℤ}
-    (h : (a * ω).im = π * (k + θ)) (z : ℂ) :
-    cexp (a * (z + ω) - conj a * conj (z + ω)) =
-      cexp (2 * π * θ * I) * cexp (a * z - conj a * conj z) := by
-  rw [cexp_mul_add_sub_conj_mul_conj_add, h]
-  congr 1
-  push_cast
-  rw [show (2 * (π * (k + θ)) * I : ℂ) = k * (2 * π * I) + 2 * π * θ * I by ring, Complex.exp_add,
-    exp_int_mul_two_pi_mul_I, one_mul]
-
 /-- **Uniqueness of weak solutions of `∂bar y = f` on a flat line with nontrivial holonomy.** Let
 `ω₁, ω₂` be linearly independent over `ℝ`, and let `θ₁` or `θ₂` not be an integer. If `y` is a
 square-integrable section in lattice coordinates which is a weak solution of `∂bar y = 0`, that is,
@@ -348,8 +335,8 @@ theorem eq_zero_of_forall_setIntegral_mul_conj_wirtingerDeriv_eq_zero
       · exact h ⟨-k₁, by push_cast; linarith⟩
       · exact h ⟨-k₂, by push_cast; linarith⟩
     have h := hy _ ⟨contDiff_cexp_mul_sub_conj_mul_conj _,
-      cexp_mul_add_sub_conj_mul_conj_add_of_im_mul_eq ha₁,
-      cexp_mul_add_sub_conj_mul_conj_add_of_im_mul_eq ha₂⟩
+      cexp_mul_add_sub_conj_mul_conj_add_of_im_mul_eq _ ha₁,
+      cexp_mul_add_sub_conj_mul_conj_add_of_im_mul_eq _ ha₂⟩
     simp only [wirtingerDeriv_cexp_mul_sub_conj_mul_conj, map_mul, mul_left_comm (y _) (conj _),
       integral_const_mul, mul_eq_zero, map_eq_zero, ha, false_or] at h
     rw [← h]
