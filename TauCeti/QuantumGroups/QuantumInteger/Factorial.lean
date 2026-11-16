@@ -9,6 +9,7 @@ public import TauCeti.QuantumGroups.QuantumInteger.Binomial
 public import TauCeti.QuantumGroups.QuantumInteger.Laurent.Basic
 public import Mathlib.Algebra.Algebra.Opposite
 public import Mathlib.RingTheory.RootsOfUnity.PrimitiveRoots
+public import Mathlib.RingTheory.TensorProduct.Basic
 
 import Mathlib.Tactic
 
@@ -68,6 +69,36 @@ public section
 open Finset LaurentPolynomial
 
 namespace TauCeti
+
+section PowerCommutation
+
+variable {R A : Type*} [CommSemiring R] [Semiring A] [Algebra R A]
+
+/-- If `x * u = c • (u * x)` in an `R`-algebra, then `x * u ^ n = c ^ n • (u ^ n * x)`. -/
+theorem mul_pow_of_mul_eq_smul_mul {c : R} {u x : A} (h : x * u = c • (u * x)) (n : ℕ) :
+    x * u ^ n = c ^ n • (u ^ n * x) := by
+  have hxu : SemiconjBy x u (c • u) := by rw [SemiconjBy, smul_mul_assoc, h]
+  simpa only [smul_pow, smul_mul_assoc] using (hxu.pow_right n).eq
+
+/-- If `x * u = r ^ 2 • (u * x)` in an `R`-algebra, then
+`(u * x) ^ n = r ^ (n * (n - 1)) • (u ^ n * x ^ n)`. -/
+theorem mul_pow_of_mul_eq_sq_smul_mul {r : R} {u x : A} (h : x * u = r ^ 2 • (u * x))
+    (n : ℕ) : (u * x) ^ n = r ^ (n * (n - 1)) • (u ^ n * x ^ n) := by
+  have hop : MulOpposite.op u * MulOpposite.op x = r ^ 2 • (MulOpposite.op x * MulOpposite.op u) :=
+    by simpa only [← MulOpposite.op_mul, MulOpposite.op_smul] using congrArg MulOpposite.op h
+  induction n with
+  | zero => simp
+  | succ n ih =>
+    have hxnu : x ^ n * u = (r ^ 2) ^ n • (u * x ^ n) := MulOpposite.op_injective <| by
+      simpa only [← MulOpposite.op_pow, ← MulOpposite.op_mul, MulOpposite.op_smul] using
+        mul_pow_of_mul_eq_smul_mul hop n
+    have hexp : n * (n - 1) + 2 * n = (n + 1) * n := by
+      cases n with | zero => rfl | succ => rw [Nat.add_sub_cancel]; ring
+    rw [pow_succ, ih, smul_mul_assoc, mul_assoc, ← mul_assoc (x ^ n), hxnu, smul_mul_assoc,
+      mul_smul_comm, smul_smul, ← pow_mul, ← pow_add, hexp, mul_assoc u (x ^ n) x, ← pow_succ x,
+      ← mul_assoc (u ^ n) u, ← pow_succ u, Nat.add_sub_cancel]
+
+end PowerCommutation
 
 section Field
 
@@ -271,6 +302,24 @@ theorem quantumDividedPower_def (q : K) (x : A) (n : ℕ) :
     MulOpposite.unop (quantumDividedPower q x n) =
       quantumDividedPower q (MulOpposite.unop x) n := by simp [quantumDividedPower_def]
 
+open scoped TensorProduct in
+/-- The quantum divided power of a pure tensor `u ⊗ₜ[K] v` in `A ⊗[K] B`, placing the divided
+power on the left factor: `(u ⊗ₜ v)^(n) = u^(n) ⊗ₜ v^n`. -/
+theorem quantumDividedPower_tmul_left {B : Type*} [Semiring B] [Algebra K B]
+    (q : K) (u : A) (v : B) (n : ℕ) :
+    quantumDividedPower q (u ⊗ₜ[K] v) n = quantumDividedPower q u n ⊗ₜ[K] (v ^ n) := by
+  rw [quantumDividedPower_def, Algebra.TensorProduct.tmul_pow, TensorProduct.smul_tmul',
+    ← quantumDividedPower_def]
+
+open scoped TensorProduct in
+/-- The quantum divided power of a pure tensor `u ⊗ₜ[K] v` in `A ⊗[K] B`, placing the divided
+power on the right factor: `(u ⊗ₜ v)^(n) = u^n ⊗ₜ v^(n)`. -/
+theorem quantumDividedPower_tmul_right {B : Type*} [Semiring B] [Algebra K B]
+    (q : K) (u : A) (v : B) (n : ℕ) :
+    quantumDividedPower q (u ⊗ₜ[K] v) n = (u ^ n) ⊗ₜ[K] quantumDividedPower q v n := by
+  rw [quantumDividedPower_def, Algebra.TensorProduct.tmul_pow, ← TensorProduct.tmul_smul,
+    ← quantumDividedPower_def]
+
 theorem quantumFactorial_smul_quantumDividedPower {q : K} {n : ℕ}
     (hn : quantumFactorial q n ≠ 0) (x : A) :
     quantumFactorial q n • quantumDividedPower q x n = x ^ n := by
@@ -280,10 +329,8 @@ theorem quantumFactorial_smul_quantumDividedPower {q : K} {n : ℕ}
 theorem mul_quantumDividedPower_of_mul_eq_smul_mul (q : K) {c : K} {u x : A}
     (h : u * x = c • (x * u)) (n : ℕ) :
     u * quantumDividedPower q x n = c ^ n • (quantumDividedPower q x n * u) := by
-  have hux : SemiconjBy u x (c • x) := by rw [SemiconjBy, smul_mul_assoc, h]
-  have hpow : u * x ^ n = c ^ n • (x ^ n * u) := by
-    simpa only [smul_pow, smul_mul_assoc] using (hux.pow_right n).eq
-  rw [quantumDividedPower_def, mul_smul_comm, hpow, smul_mul_assoc, smul_comm]
+  rw [quantumDividedPower_def, mul_smul_comm, mul_pow_of_mul_eq_smul_mul h,
+    smul_mul_assoc, smul_comm]
 
 theorem quantumDividedPower_mul_of_mul_eq_smul_mul (q : K) {c : K} {u x : A}
     (h : x * u = c • (u * x)) (n : ℕ) :
@@ -293,28 +340,6 @@ theorem quantumDividedPower_mul_of_mul_eq_smul_mul (q : K) {c : K} {u x : A}
     simpa only [← MulOpposite.op_mul, MulOpposite.op_smul] using congrArg MulOpposite.op h
   simpa only [MulOpposite.op_mul, MulOpposite.op_smul, op_quantumDividedPower] using
     mul_quantumDividedPower_of_mul_eq_smul_mul q hop n
-
-theorem mul_pow_of_mul_eq_smul_mul {c : K} {u x : A} (h : x * u = c • (u * x)) (n : ℕ) :
-    x * u ^ n = c ^ n • (u ^ n * x) := by
-  have hxu : SemiconjBy x u (c • u) := by rw [SemiconjBy, smul_mul_assoc, h]
-  simpa only [smul_pow, smul_mul_assoc] using (hxu.pow_right n).eq
-
-/-- If `x u = r² • (u x)`, then `(u x)^n = r^(n(n - 1)) • (u^n x^n)`. -/
-theorem mul_pow_of_mul_eq_sq_smul_mul {r : K} {u x : A} (h : x * u = r ^ 2 • (u * x))
-    (n : ℕ) : (u * x) ^ n = r ^ (n * (n - 1)) • (u ^ n * x ^ n) := by
-  have hop : MulOpposite.op u * MulOpposite.op x = r ^ 2 • (MulOpposite.op x * MulOpposite.op u) :=
-    by simpa only [← MulOpposite.op_mul, MulOpposite.op_smul] using congrArg MulOpposite.op h
-  induction n with
-  | zero => simp
-  | succ n ih =>
-    have hxnu : x ^ n * u = (r ^ 2) ^ n • (u * x ^ n) := MulOpposite.op_injective <| by
-      simpa only [← MulOpposite.op_pow, ← MulOpposite.op_mul, MulOpposite.op_smul] using
-        mul_pow_of_mul_eq_smul_mul hop n
-    have hexp : n * (n - 1) + 2 * n = (n + 1) * n := by
-      cases n with | zero => rfl | succ => rw [Nat.add_sub_cancel]; ring
-    rw [pow_succ, ih, smul_mul_assoc, mul_assoc, ← mul_assoc (x ^ n), hxnu, smul_mul_assoc,
-      mul_smul_comm, smul_smul, ← pow_mul, ← pow_add, hexp, mul_assoc u (x ^ n) x, ← pow_succ x,
-      ← mul_assoc (u ^ n) u, ← pow_succ u, Nat.add_sub_cancel]
 
 theorem quantumDividedPower_mul_of_mul_eq_sq_smul_mul (q : K) {r : K} {u x : A}
     (h : x * u = r ^ 2 • (u * x)) (n : ℕ) :
@@ -351,6 +376,27 @@ theorem quantumDividedPower_add {q : K} {x y : A} (h : y * x = q ^ 2 • (x * y)
     quantumDividedPower q (x + y) n = ∑ k ∈ range (n + 1),
       q ^ (k * (n - k)) • (quantumDividedPower q x k * quantumDividedPower q y (n - k)) :=
   inv_quantumFactorial_smul_add_pow h hn
+
+/-- Taking `MulOpposite.unop` of the alternating divided-power sum
+`∑ r ∈ range (m + 1), (-1)^r • (op(u)^(r) * op(z) * op(u)^(m - r))` reverses the sum and
+multiplies by `(-1)^m`. -/
+theorem unop_sum_neg_one_pow_smul_quantumDividedPower_mul_mul (q : K) (m : ℕ) (u z : A) :
+    MulOpposite.unop (∑ r ∈ range (m + 1), (-1 : K) ^ r •
+      (quantumDividedPower q (MulOpposite.op u) r * MulOpposite.op z *
+        quantumDividedPower q (MulOpposite.op u) (m - r))) =
+    (-1 : K) ^ m • ∑ r ∈ range (m + 1),
+      (-1 : K) ^ r • (quantumDividedPower q u r * z * quantumDividedPower q u (m - r)) := by
+  rw [Finset.unop_sum, ← sum_range_reflect, smul_sum]
+  refine sum_congr rfl fun r hr => ?_
+  have hrm : r ≤ m := Nat.lt_succ_iff.mp (mem_range.mp hr)
+  have h1 : (-1 : K) ^ r * (-1 : K) ^ r = 1 := by rw [← mul_pow, neg_one_mul, neg_neg, one_pow]
+  have hsign : (-1 : K) ^ (m - r) = (-1 : K) ^ m * (-1 : K) ^ r :=
+    calc (-1 : K) ^ (m - r)
+        = (-1 : K) ^ (m - r) * ((-1 : K) ^ r * (-1 : K) ^ r) := by rw [h1, mul_one]
+      _ = (-1 : K) ^ m * (-1 : K) ^ r := by rw [← mul_assoc, ← pow_add, Nat.sub_add_cancel hrm]
+  simp only [MulOpposite.unop_smul, MulOpposite.unop_mul, unop_quantumDividedPower,
+    MulOpposite.unop_op, Nat.add_succ_sub_one, add_zero, Nat.sub_sub_self hrm, ← mul_assoc,
+    smul_smul, hsign]
 
 end DividedPower
 

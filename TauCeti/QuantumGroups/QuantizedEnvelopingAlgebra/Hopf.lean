@@ -9,7 +9,6 @@ public import TauCeti.QuantumGroups.QuantizedEnvelopingAlgebra.Antipode
 public import TauCeti.Algebra.HopfAlgebra.Antipode
 public import Mathlib.RingTheory.Coalgebra.GroupLike
 import Mathlib.Tactic.Module
-import Mathlib.Tactic.Ring
 
 /-!
 # The Hopf algebra structure on the Drinfeld–Jimbo quantized enveloping algebra
@@ -88,6 +87,8 @@ noncomputable def counitAlgHom : QuantizedEnvelopingAlgebra D q →ₐ[K] K :=
 @[simp] theorem counitAlgHom_normalizedF (i : ι) : counitAlgHom D q (normalizedF D q i) = 0 := by
   simp [normalizedF_def]
 
+/-- The unconditional counit `counitAlgHom D q : U_q(D) →ₐ[K] K` witnesses nontriviality of
+`QuantizedEnvelopingAlgebra D q` for every parameter `q : K`, including degenerate ones. -/
 noncomputable instance : Nontrivial (QuantizedEnvelopingAlgebra D q) :=
   (counitAlgHom D q).toRingHom.domain_nontrivial
 
@@ -120,16 +121,6 @@ private theorem comulElemF_summand_comm (i : ι) :
           (f D q i ⊗ₜ[K] simpleKInv D q i)) := by
   rw [Algebra.TensorProduct.tmul_mul_tmul, Algebra.TensorProduct.tmul_mul_tmul, mul_one, one_mul,
     simpleKInv_mul_f, D.cartan_apply_self, zpow_two, ← pow_two, TensorProduct.tmul_smul]
-
-private theorem quantumDividedPower_tmul_left (q' : K) (u v : QuantizedEnvelopingAlgebra D q)
-    (n : ℕ) : quantumDividedPower q' (u ⊗ₜ[K] v) n = quantumDividedPower q' u n ⊗ₜ[K] (v ^ n) := by
-  rw [quantumDividedPower_def, Algebra.TensorProduct.tmul_pow, TensorProduct.smul_tmul',
-    ← quantumDividedPower_def]
-
-private theorem quantumDividedPower_tmul_right (q' : K) (u v : QuantizedEnvelopingAlgebra D q)
-    (n : ℕ) : quantumDividedPower q' (u ⊗ₜ[K] v) n = (u ^ n) ⊗ₜ[K] quantumDividedPower q' v n := by
-  rw [quantumDividedPower_def, Algebra.TensorProduct.tmul_pow, ← TensorProduct.tmul_smul,
-    ← quantumDividedPower_def]
 
 private theorem quantumDividedPower_comulElemE {i : ι} {n : ℕ}
     (hn : quantumFactorial (q ^ D.symmetrizer i) n ≠ 0) :

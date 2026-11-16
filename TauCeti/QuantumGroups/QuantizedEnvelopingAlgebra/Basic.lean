@@ -212,31 +212,12 @@ private theorem serreSum_add_left {A : Type*} [Ring A] [Algebra K A]
     rw [hsum, ← sum_smul, ← mul_sum,
       sum_neg_one_pow_mul_zpow_one_sub_mul_quantumBinomial hqᵢ hb₀, mul_zero, zero_smul]
 
-private theorem unop_sum_serre {A : Type*} [Ring A] [Algebra K A] (qᵢ : K) (m : ℕ) (u z : A) :
-    MulOpposite.unop (∑ r ∈ range (m + 1), (-1 : K) ^ r •
-      (quantumDividedPower qᵢ (MulOpposite.op u) r * MulOpposite.op z *
-        quantumDividedPower qᵢ (MulOpposite.op u) (m - r))) =
-    (-1 : K) ^ m • ∑ r ∈ range (m + 1),
-      (-1 : K) ^ r • (quantumDividedPower qᵢ u r * z * quantumDividedPower qᵢ u (m - r)) := by
-  change (MulOpposite.opAddEquiv.symm) _ = _
-  rw [map_sum, ← sum_range_reflect, smul_sum]
-  refine sum_congr rfl fun r hr => ?_
-  have hrm : r ≤ m := Nat.lt_succ_iff.mp (mem_range.mp hr)
-  have h1 : (-1 : K) ^ r * (-1 : K) ^ r = 1 := by rw [← mul_pow, neg_one_mul, neg_neg, one_pow]
-  have hsign : (-1 : K) ^ (m - r) = (-1 : K) ^ m * (-1 : K) ^ r :=
-    calc (-1 : K) ^ (m - r)
-        = (-1 : K) ^ (m - r) * ((-1 : K) ^ r * (-1 : K) ^ r) := by rw [h1, mul_one]
-      _ = (-1 : K) ^ m * (-1 : K) ^ r := by rw [← mul_assoc, ← pow_add, Nat.sub_add_cancel hrm]
-  simp only [MulOpposite.opAddEquiv_symm_apply, MulOpposite.unop_smul, MulOpposite.unop_mul,
-    unop_quantumDividedPower, MulOpposite.unop_op, Nat.add_succ_sub_one, add_zero,
-    Nat.sub_sub_self hrm, ← mul_assoc, smul_smul, hsign]
-
 /-- Evaluating `MulOpposite.unop` on `serreSum` in `Aᵐᵒᵖ` multiplies by `(-1)^(1 - aᵢⱼ)`. -/
-theorem unop_serreSum {A : Type*} [Ring A] [Algebra K A]
+theorem unop_serreSum {A : Type*} [Semiring A] [Algebra K A]
     (D : CartanDatum ι X Y) (q : K) (u : ι → A) (i j : ι) :
     MulOpposite.unop (serreSum D q (fun l => MulOpposite.op (u l)) i j) =
       (-1 : K) ^ D.serreLength i j • serreSum D q u i j :=
-  unop_sum_serre _ _ (u i) (u j)
+  unop_sum_neg_one_pow_smul_quantumDividedPower_mul_mul _ _ (u i) (u j)
 
 /-- **Additivity of quantum Serre combinations** on `q`-commuting families: if `yᵢ xᵢ = qᵢ² xᵢ yᵢ`,
 `yᵢ xⱼ = qᵢ^(aᵢⱼ) xⱼ yᵢ`, `xᵢ yⱼ = qᵢ^(-aᵢⱼ) yⱼ xᵢ`, and `[1 - aᵢⱼ]_(qᵢ)! ≠ 0`, then
@@ -266,8 +247,8 @@ theorem serreSum_add {A : Type*} [Ring A] [Algebra K A]
   have hop_right := congrArg MulOpposite.unop <| serreSum_add_left D q
     (x := fun l => MulOpposite.op (y l)) (y := fun l => MulOpposite.op (x l))
     hij hfac hop_yx hop_yz hop_hy
-  simp only [← MulOpposite.op_add, add_comm (y i) (x i), unop_sum_serre,
-    MulOpposite.unop_zero] at hop_right
+  simp only [← MulOpposite.op_add, add_comm (y i) (x i),
+    unop_sum_neg_one_pow_smul_quantumDividedPower_mul_mul, MulOpposite.unop_zero] at hop_right
   have hinv : (-1 : K) ^ D.serreLength i j * (-1 : K) ^ D.serreLength i j = 1 := by
     rw [← mul_pow, neg_one_mul, neg_neg, one_pow]
   have hright := congrArg ((-1 : K) ^ D.serreLength i j • ·) hop_right
@@ -361,10 +342,10 @@ noncomputable def k (y : Y) : QuantizedEnvelopingAlgebra D q := generator D q (.
 noncomputable def simpleK (i : ι) : QuantizedEnvelopingAlgebra D q := k D q (D.simpleTorus i)
 /-- The inverse simple toral generator `Kᵢ⁻¹ = K_(-dᵢ hᵢ)`. -/
 noncomputable def simpleKInv (i : ι) : QuantizedEnvelopingAlgebra D q := k D q (-D.simpleTorus i)
-/-- The normalized raising operator `eᵢ = Kᵢ⁻¹ Eᵢ`, satisfying `Δ(eᵢ) = eᵢ ⊗ Kᵢ⁻¹ + 1 ⊗ eᵢ`. -/
+/-- The normalized raising operator `eᵢ = Kᵢ⁻¹ Eᵢ`. -/
 noncomputable def normalizedE (i : ι) : QuantizedEnvelopingAlgebra D q :=
   simpleKInv D q i * e D q i
-/-- The normalized lowering operator `fᵢ = Fᵢ Kᵢ`, satisfying `Δ(fᵢ) = fᵢ ⊗ 1 + Kᵢ ⊗ fᵢ`. -/
+/-- The normalized lowering operator `fᵢ = Fᵢ Kᵢ`. -/
 noncomputable def normalizedF (i : ι) : QuantizedEnvelopingAlgebra D q :=
   f D q i * simpleK D q i
 
