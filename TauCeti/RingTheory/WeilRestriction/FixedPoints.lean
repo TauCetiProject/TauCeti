@@ -15,7 +15,7 @@ import TauCeti.SetTheory.Cardinal.Finite
 /-!
 # Fixed-point subschemes of Weil restrictions and Edixhoven's tame descent
 
-Let `B` be a finite projective `A`-algebra, `C` a finitely presented `B`-algebra, and `Γ` a monoid
+Let `B` be a finite projective `A`-algebra, `C` a `B`-algebra, and `Γ` a monoid
 acting on `B` (`ρB : Γ →* (B ≃ₐ[A] B)`) and `ρB`-semilinearly on `C` (`ρC : Γ →* RingAut C`). Via
 `mulSemiringActionOfInduced`, `Γ` acts on `WeilRestriction A B C` by `A`-algebra automorphisms.
 This file studies `(Res_{B/A} Spec C)^Γ` with coordinate ring
@@ -34,7 +34,7 @@ This file studies `(Res_{B/A} Spec C)^Γ` with coordinate ring
 4. **Tame Galois descent (`counitFixedPointQuotient`,
    `fixedPointQuotientBaseChangeAlgEquivOfTraceOne`, `fixedPointQuotientBaseChangeAlgEquiv`)**:
    when `A → B` is injective with `B^Γ = A` and `|Γ|` is invertible in `A` (or `B` has a trace-`1`
-   element), `(Res_{B/A} (B ⊗[A] D))^Γ ≃ D` for every finitely presented `A`-algebra `D`. The
+   element), `(Res_{B/A} (B ⊗[A] D))^Γ ≃ D` for every `A`-algebra `D`. The
    affine-line specialization lives in `TauCeti.RingTheory.WeilRestriction.Polynomial`.
 
 ## Main declarations
@@ -66,7 +66,6 @@ section InducedFixedPoints
 
 variable {A B C : Type*} [CommRing A] [CommRing B] [CommRing C]
   [Algebra A B] [Algebra B C] [Module.Finite A B] [Module.Projective A B]
-  [FinitePresentation B C]
   {Γ : Type*} [Monoid Γ] (ρB : Γ →* (B ≃ₐ[A] B)) (ρC : Γ →* RingAut C)
   (h : ∀ γ b, ρC γ (algebraMap B C b) = algebraMap B C (ρB γ b))
 
@@ -161,9 +160,9 @@ theorem fixedPointQuotientAlgEquivOfTrivial_symm_apply (hB : ρB = 1) (hC : ρC 
   (fixedPointQuotientAlgEquivOfTrivial ρB ρC h hB hC).symm_apply_eq.mpr
     (fixedPointQuotientAlgEquivOfTrivial_mk ρB ρC h hB hC x).symm
 
-/-- For finite `Γ`, `WeilRestriction A B C ⧸ fixedPointIdealOfInduced ρB ρC h` is finitely presented
-over `A`. -/
-instance finitePresentation_quotient_fixedPointIdealOfInduced [Finite Γ] :
+/-- For finite `Γ` and finitely presented `C`,
+`WeilRestriction A B C ⧸ fixedPointIdealOfInduced ρB ρC h` is finitely presented over `A`. -/
+instance finitePresentation_quotient_fixedPointIdealOfInduced [FinitePresentation B C] [Finite Γ] :
     FinitePresentation A (WeilRestriction A B C ⧸ fixedPointIdealOfInduced ρB ρC h) := by
   let _ := mulSemiringActionOfInduced ρB ρC h
   have _ := smulCommClass_mulSemiringActionOfInduced ρB ρC h
@@ -175,7 +174,6 @@ section Smoothness
 
 variable {A B C : Type*} [CommRing A] [CommRing B] [CommRing C]
   [Algebra A B] [Algebra B C] [Module.Finite A B] [Module.Projective A B]
-  [FinitePresentation B C]
   {Γ : Type*} [Group Γ] (ρB : Γ →* (B ≃ₐ[A] B)) (ρC : Γ →* RingAut C)
   (h : ∀ γ b, ρC γ (algebraMap B C b) = algebraMap B C (ρB γ b))
 
@@ -201,7 +199,6 @@ section Functoriality
 variable {A B C C' C'' : Type*} [CommRing A] [CommRing B] [CommRing C] [CommRing C'] [CommRing C'']
   [Algebra A B] [Algebra B C] [Algebra B C'] [Algebra B C'']
   [Module.Finite A B] [Module.Projective A B]
-  [FinitePresentation B C] [FinitePresentation B C'] [FinitePresentation B C'']
   {Γ : Type*} [Monoid Γ] (ρB : Γ →* (B ≃ₐ[A] B))
   (ρC : Γ →* RingAut C) (h : ∀ γ b, ρC γ (algebraMap B C b) = algebraMap B C (ρB γ b))
   (ρC' : Γ →* RingAut C') (h' : ∀ γ b, ρC' γ (algebraMap B C' b) = algebraMap B C' (ρB γ b))
@@ -311,7 +308,7 @@ section TraceOne
 variable (A B D Γ : Type*) [CommRing A] [CommRing B] [CommRing D]
   [Algebra A B] [Algebra A D]
   [Group Γ] [MulSemiringAction Γ B] [SMulCommClass Γ A B]
-  [Module.Finite A B] [Module.Projective A B] [FinitePresentation A D]
+  [Module.Finite A B] [Module.Projective A B]
 
 private abbrev baseChangeFixedPointIdeal : Ideal (WeilRestriction A B (B ⊗[A] D)) :=
   fixedPointIdealOfInduced (MulSemiringAction.toAlgAut Γ A B)
@@ -524,7 +521,7 @@ variable (A B D Γ : Type*) [CommRing A] [CommRing B] [CommRing D]
   [Algebra A B] [Algebra A D]
   [Group Γ] [MulSemiringAction Γ B] [SMulCommClass Γ A B]
   [Module.Finite A B] [Module.Projective A B]
-  [FinitePresentation A D] [FaithfulSMul A B] [Algebra.IsInvariant A B Γ]
+  [FaithfulSMul A B] [Algebra.IsInvariant A B Γ]
 
 private theorem bijective_counitFixedPointQuotient (hΓ : IsUnit (Nat.card Γ : A)) :
     Function.Bijective (counitFixedPointQuotient A B D Γ) := by
@@ -540,7 +537,7 @@ private theorem bijective_counitFixedPointQuotient (hΓ : IsUnit (Nat.card Γ : 
 
 /-- **Tame Galois descent of base-changed Weil restrictions.** When `A → B` is injective with
 `B^Γ = A` and `(Nat.card Γ : A)` is invertible in `A`, `(Res_{B/A} (B ⊗[A] D))^Γ ≃ D` for every
-finitely presented `A`-algebra `D`. -/
+`A`-algebra `D`. -/
 def fixedPointQuotientBaseChangeAlgEquiv (hΓ : IsUnit (Nat.card Γ : A)) :
     (WeilRestriction A B (B ⊗[A] D) ⧸
         fixedPointIdealOfInduced (MulSemiringAction.toAlgAut Γ A B)
