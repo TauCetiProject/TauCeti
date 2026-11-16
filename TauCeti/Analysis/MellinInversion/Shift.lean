@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.Contour.Residue.Basic
-public import TauCeti.Analysis.MellinInversion.Basic
+public import TauCeti.Analysis.MellinInversion
 import Mathlib.Analysis.SpecialFunctions.Complex.Analytic
 import TauCeti.Analysis.Contour.Residue.Rectangle
 
