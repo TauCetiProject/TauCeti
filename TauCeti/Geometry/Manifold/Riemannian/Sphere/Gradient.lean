@@ -113,31 +113,27 @@ theorem mvfderiv_coe_mgradient_inner_coe_sphere (a : E) (p : sphere (0 : E) 1) :
     mvfderiv (𝓡 n) ((↑) : sphere (0 : E) 1 → E) p
         (Manifold.mgradient (𝓡 n) (fun q : sphere (0 : E) 1 ↦ inner ℝ a (q : E)) p) =
       a - inner ℝ a (p : E) • (p : E) := by
-  have hp : inner ℝ (p : E) (p : E) = 1 := by
-    rw [real_inner_self_eq_norm_sq, norm_eq_of_mem_sphere p, one_pow]
-  have ht : a - inner ℝ a (p : E) • (p : E) ∈ (ℝ ∙ (p : E))ᗮ := by
-    rw [Submodule.mem_orthogonal_singleton_iff_inner_right, inner_sub_right,
-      real_inner_smul_right, hp, real_inner_comm]
-    ring
-  -- The tangent vector whose image in `E` is the tangential part of `a`.
-  let u : TangentSpace (𝓡 n) p := (sphereTangentEquiv p).symm ⟨_, ht⟩
-  have hu : mvfderiv (𝓡 n) ((↑) : sphere (0 : E) 1 → E) p u =
-      a - inner ℝ a (p : E) • (p : E) := by
-    rw [mvfderiv_apply_eq_mfderiv_apply, ← coe_sphereTangentEquiv_apply,
-      LinearIsometryEquiv.apply_symm_apply]
-  have hgrad : Manifold.mgradient (𝓡 n) (fun q : sphere (0 : E) 1 ↦ inner ℝ a (q : E)) p = u := by
-    refine (Manifold.eq_mgradient_iff.2 fun v ↦ ?_).symm
-    rw [inner_tangentSpace_sphere, hu, mvfderiv_inner_coe_sphere, inner_sub_left,
-      real_inner_smul_left, inner_coe_mvfderiv_subtypeVal_sphere, mul_zero, sub_zero]
-  rw [hgrad, hu]
+  have : FiniteDimensional ℝ E := .of_fact_finrank_eq_succ n
+  have : CompleteSpace E := FiniteDimensional.completeSpace ℝ E
+  have hgrad : ∇ (toDual ℝ E a) p = a :=
+    (hasGradientAt_iff_hasFDerivAt.2 (toDual ℝ E a).hasFDerivAt).gradient
+  have hfn : (fun q : sphere (0 : E) 1 ↦ inner ℝ a (q : E)) =
+      (toDual ℝ E a) ∘ ((↑) : sphere (0 : E) 1 → E) :=
+    funext fun q ↦ toDual_apply_apply.symm
+  rw [hfn, mvfderiv_coe_mgradient_comp_coe_sphere (toDual ℝ E a).differentiableAt, hgrad]
 
 /-- **The length of the round gradient of a height function.** The squared length at `p` of the
 round gradient of `q ↦ ⟪a, q⟫` is `‖a‖² - ⟪a, p⟫²`. -/
 theorem norm_mgradient_inner_coe_sphere_sq (a : E) (p : sphere (0 : E) 1) :
     ‖Manifold.mgradient (𝓡 n) (fun q : sphere (0 : E) 1 ↦ inner ℝ a (q : E)) p‖ ^ 2 =
       ‖a‖ ^ 2 - inner ℝ a (p : E) ^ 2 := by
-  rw [norm_tangentSpace_sphere, mvfderiv_coe_mgradient_inner_coe_sphere, norm_sub_sq_real,
-    norm_smul, norm_eq_of_mem_sphere p, real_inner_smul_right, Real.norm_eq_abs, mul_one, sq_abs]
-  ring
+  have : FiniteDimensional ℝ E := .of_fact_finrank_eq_succ n
+  have : CompleteSpace E := FiniteDimensional.completeSpace ℝ E
+  have hgrad : ∇ (toDual ℝ E a) p = a :=
+    (hasGradientAt_iff_hasFDerivAt.2 (toDual ℝ E a).hasFDerivAt).gradient
+  have hfn : (fun q : sphere (0 : E) 1 ↦ inner ℝ a (q : E)) =
+      (toDual ℝ E a) ∘ ((↑) : sphere (0 : E) 1 → E) :=
+    funext fun q ↦ toDual_apply_apply.symm
+  rw [hfn, norm_mgradient_comp_coe_sphere_sq (toDual ℝ E a).differentiableAt, hgrad]
 
 end TauCeti

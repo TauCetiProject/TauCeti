@@ -7,12 +7,15 @@ module
 
 public import Mathlib.Analysis.InnerProductSpace.Laplacian
 public import TauCeti.Analysis.Normed.Module.Ball.Radial.Cone
-public import TauCeti.Geometry.Manifold.Instances.Sphere
 public import TauCeti.Geometry.Manifold.Riemannian.Laplacian
 public import TauCeti.Geometry.Manifold.Riemannian.Sphere.Basic
+import Mathlib.Analysis.Calculus.LineDeriv.Basic
+import TauCeti.Analysis.Calculus.FDeriv.Norm
 import TauCeti.Analysis.Calculus.Gradient
+import TauCeti.Analysis.Calculus.IteratedFDeriv.Homogeneous
 import TauCeti.Analysis.InnerProductSpace.Laplacian.Basic
 import TauCeti.Analysis.InnerProductSpace.NormPow
+import TauCeti.Geometry.Manifold.Instances.Sphere
 import TauCeti.Geometry.Manifold.MFDeriv.NormedSpace
 import TauCeti.Geometry.Manifold.Riemannian.Sphere.Gradient
 import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.LeviCivita.Immersion
@@ -20,9 +23,9 @@ import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.LeviCivita.Imm
 /-!
 # Hessian, Laplace–Beltrami operator, and polar Laplacian on the round sphere
 
-For an ambient function `F : E → ℝ` twice differentiable at a point `p` of the unit sphere
-`Sⁿ ⊂ E` (`dim E = n + 1`), the Gauss formula for the isometric immersion `Sⁿ → E` expresses the
-round scalar Hessian of the restriction `F ∘ (↑)` as
+For an ambient function `F : E → ℝ` that is `C²` at a point `p` of the unit sphere `Sⁿ ⊂ E`
+(`dim E = n + 1`), the Gauss formula for the isometric immersion `Sⁿ → E` expresses the round scalar
+Hessian of the restriction `F ∘ (↑)` as
 
 `Hess_{Sⁿ}(F|_{Sⁿ})(p)(v, w) = D²F(p)(v, w) - ⟪∇F(p), p⟫ ⟪v, w⟫`,
 
@@ -56,10 +59,7 @@ and for radial power profiles `‖y‖ ^ μ * sphereExtend f y`,
   Laplace–Beltrami operator of `F ∘ (↑)` and of linear height functions (`-n ⟪a, p⟫`).
 * `TauCeti.laplaceBeltrami_comp_coe_sphere_of_smul`: Euler homogeneity formula
   `Δ_{Sⁿ}(F|_{Sⁿ})(p) = Δ_E F(p) - μ (μ + n - 1) F(p)`.
-* `TauCeti.fderiv_sphereExtend_self`, `TauCeti.inner_gradient_sphereExtend_self`,
-  `TauCeti.contDiffAt_sphereExtend`: radial derivative/gradient orthogonality and smoothness away
-  from `0` of `sphereExtend f`.
-* `TauCeti.laplacian_sphereExtend`, `TauCeti.laplacian_mul_sphereExtend`,
+* `TauCeti.laplacian_sphereExtend`, `TauCeti.laplacian_comp_norm_mul_sphereExtend`,
   `TauCeti.laplacian_norm_rpow_mul_sphereExtend`: polar decomposition of the Euclidean Laplacian.
 
 ## References
@@ -88,9 +88,9 @@ variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] {n : ℕ}
 
 local notation "ι" => ((↑) : sphere (0 : E) 1 → E)
 
-/-- **Round Hessian of a restricted ambient function.** For `F : E → ℝ` twice differentiable at
-`p ∈ Sⁿ`, the scalar Hessian of `F ∘ (↑)` for the round metric is the ambient second derivative on
-the pushforward tangent vectors minus `⟪∇ F p, p⟫` times the round metric. -/
+/-- **Round Hessian of a restricted ambient function.** For `F : E → ℝ` that is `C²` at `p ∈ Sⁿ`,
+the scalar Hessian of `F ∘ (↑)` for the round metric is the ambient second derivative on the
+pushforward tangent vectors minus `⟪∇ F p, p⟫` times the round metric. -/
 theorem hessian_comp_coe_sphere [CompleteSpace E] {F : E → ℝ} {p : sphere (0 : E) 1}
     (hF : ContDiffAt ℝ 2 F p) (v w : TangentSpace (𝓡 n) p) :
     Manifold.hessian (𝓡 n) (F ∘ ι) p v w =
@@ -128,51 +128,33 @@ theorem hessian_comp_coe_sphere [CompleteSpace E] {F : E → ℝ} {p : sphere (0
     (isLeviCivitaConnection_leviCivitaConnection (I := 𝓡 n)).inner_apply_eq_inner_mvfderiv
       (contMDiff_coe_sphere (m := 2) p) inner_tangentSpace_sphere hV hY,
     hVp, hev.mvfderiv_eq, mvfderiv_comp_apply_of_differentiableAt hG.differentiableAt hι, hG.fderiv]
-  have hdual : inner ℝ (fderiv ℝ (∇ F) p (mvfderiv (𝓡 n) ι p v)) (mvfderiv (𝓡 n) ι p w) =
-      iteratedFDeriv ℝ 2 F p ![mvfderiv (𝓡 n) ι p v, mvfderiv (𝓡 n) ι p w] := by
-    have hLF : (toDual ℝ E).toContinuousLinearEquiv ∘ ∇ F = fderiv ℝ F :=
-      funext fun _ ↦ toDual_gradient
-    rw [iteratedFDeriv_two_apply, ← hLF, ContinuousLinearEquiv.comp_fderiv]
-    rfl
   simp only [sub_apply, add_apply, smul_apply, ContinuousLinearMap.smulRight_apply,
     ContinuousLinearMap.id_apply, inner_sub_left, inner_add_left, real_inner_smul_left,
-    inner_coe_mvfderiv_subtypeVal_sphere, mul_zero, add_zero, hdual, ← inner_tangentSpace_sphere]
+    inner_coe_mvfderiv_subtypeVal_sphere, mul_zero, add_zero, inner_fderiv_gradient,
+    ← inner_tangentSpace_sphere]
 
 /-- The round Hessian of the height function `q ↦ ⟪a, q⟫` at `p ∈ Sⁿ` is `-⟪a, p⟫` times the round
 metric. -/
 theorem hessian_inner_coe_sphere (a : E) (p : sphere (0 : E) 1) (v w : TangentSpace (𝓡 n) p) :
     Manifold.hessian (𝓡 n) (fun q : sphere (0 : E) 1 ↦ inner ℝ a (q : E)) p v w =
       -inner ℝ a (p : E) * inner ℝ v w := by
-  have hX : MDifferentiableAt (𝓡 n) (𝓡 n).tangent
-      (fun y ↦ (⟨y, Manifold.mgradient (𝓡 n) (fun q : sphere (0 : E) 1 ↦ inner ℝ a (q : E)) y⟩ :
-        TangentBundle (𝓡 n) (sphere (0 : E) 1))) p :=
-    (Manifold.contMDiff_mgradient (((innerSL ℝ a).contDiff.contMDiff.comp
-      contMDiff_coe_sphere).of_le le_top) p).mdifferentiableAt one_ne_zero
-  let V := FiberBundle.extend (EuclideanSpace ℝ (Fin n)) v
-  have hVp : V p = v := FiberBundle.extend_apply_self (EuclideanSpace ℝ (Fin n)) v
-  have hV : MDifferentiableAt (𝓡 n) (𝓡 n).tangent
-      (fun y ↦ (⟨y, V y⟩ : TangentBundle (𝓡 n) (sphere (0 : E) 1))) p :=
-    FiberBundle.mdifferentiableAt_extend (𝓡 n) (EuclideanSpace ℝ (Fin n)) v
-  have heq : (fun q : sphere (0 : E) 1 ↦ mvfderiv (𝓡 n) ι q
-        (Manifold.mgradient (𝓡 n) (fun y : sphere (0 : E) 1 ↦ inner ℝ a (y : E)) q)) =
-      (fun z : E ↦ a - inner ℝ a z • z) ∘ ι :=
-    funext fun q ↦ mvfderiv_coe_mgradient_inner_coe_sphere a q
-  have hG : HasFDerivAt (fun z : E ↦ a - inner ℝ a z • z)
-      (0 - (inner ℝ a (p : E) • .id ℝ E + (innerSL ℝ a).smulRight (p : E))) (p : E) :=
-    (hasFDerivAt_const a (p : E)).sub (((innerSL ℝ a).hasFDerivAt).smul (hasFDerivAt_id (p : E)))
-  have hι : MDifferentiableAt (𝓡 n) 𝓘(ℝ, E) ι p :=
-    (contMDiff_coe_sphere (m := 1) p).mdifferentiableAt one_ne_zero
-  rw [Manifold.hessian_def, ← hVp,
-    (isLeviCivitaConnection_leviCivitaConnection (I := 𝓡 n)).inner_apply_eq_inner_mvfderiv
-      (contMDiff_coe_sphere (m := 2) p) inner_tangentSpace_sphere hV hX,
-    hVp, heq, mvfderiv_comp_apply_of_differentiableAt hG.differentiableAt hι, hG.fderiv]
-  simp only [zero_sub, neg_apply, add_apply, smul_apply, ContinuousLinearMap.smulRight_apply,
-    ContinuousLinearMap.id_apply, inner_neg_left, inner_add_left, real_inner_smul_left,
-    inner_coe_mvfderiv_subtypeVal_sphere, mul_zero, add_zero, ← inner_tangentSpace_sphere, neg_mul]
+  have : FiniteDimensional ℝ E := .of_fact_finrank_eq_succ n
+  have : CompleteSpace E := FiniteDimensional.completeSpace ℝ E
+  have hgrad : ∇ (toDual ℝ E a) p = a :=
+    (hasGradientAt_iff_hasFDerivAt.2 (toDual ℝ E a).hasFDerivAt).gradient
+  have hfn : (fun q : sphere (0 : E) 1 ↦ inner ℝ a (q : E)) = (toDual ℝ E a) ∘ ι :=
+    funext fun q ↦ toDual_apply_apply.symm
+  have h2 : iteratedFDeriv ℝ 2 (toDual ℝ E a) p
+      ![mvfderiv (𝓡 n) ι p v, mvfderiv (𝓡 n) ι p w] = 0 := by
+    rw [iteratedFDeriv_two_apply]
+    have hf : fderiv ℝ (toDual ℝ E a) = fun _ ↦ toDual ℝ E a :=
+      funext fun _ ↦ (toDual ℝ E a).fderiv
+    rw [hf, fderiv_fun_const, Pi.zero_apply, zero_apply, zero_apply]
+  rw [hfn, hessian_comp_coe_sphere (toDual ℝ E a).contDiff.contDiffAt, h2, hgrad]
+  ring
 
-/-- **Round Laplace–Beltrami of a restricted ambient function.** For `F : E → ℝ` twice
-differentiable at `p ∈ Sⁿ`,
-`Δ_{Sⁿ}(F|_{Sⁿ})(p) = Δ_E F(p) - D²F(p)(p, p) - n ⟪∇ F p, p⟫`. -/
+/-- **Round Laplace–Beltrami of a restricted ambient function.** For `F : E → ℝ` that is `C²` at
+`p ∈ Sⁿ`, `Δ_{Sⁿ}(F|_{Sⁿ})(p) = Δ_E F(p) - D²F(p)(p, p) - n ⟪∇ F p, p⟫`. -/
 theorem laplaceBeltrami_comp_coe_sphere [FiniteDimensional ℝ E] {F : E → ℝ}
     {p : sphere (0 : E) 1} (hF : ContDiffAt ℝ 2 F p) :
     Manifold.laplaceBeltrami (𝓡 n) (F ∘ ι) p =
@@ -208,7 +190,7 @@ theorem laplaceBeltrami_comp_coe_sphere [FiniteDimensional ℝ E] {F : E → ℝ
   ring
 
 /-- The height function `q ↦ ⟪a, q⟫` on `Sⁿ` is a round Laplace–Beltrami eigenfunction with
-eigenvalue `n`: `Δ_{Sⁿ}(⟪a, ·⟫)(p) = -n ⟪a, p⟫`. -/
+eigenvalue `-n`: `Δ_{Sⁿ}(⟪a, ·⟫)(p) = -n ⟪a, p⟫`. -/
 theorem laplaceBeltrami_inner_coe_sphere (a : E) (p : sphere (0 : E) 1) :
     Manifold.laplaceBeltrami (𝓡 n) (fun q : sphere (0 : E) 1 ↦ inner ℝ a (q : E)) p =
       -(n : ℝ) * inner ℝ a (p : E) := by
@@ -224,36 +206,28 @@ theorem laplaceBeltrami_comp_coe_sphere_of_smul [FiniteDimensional ℝ E] {F : E
     {p : sphere (0 : E) 1} {μ : ℝ} (hF : ContDiffAt ℝ 2 F p)
     (hsmul : ∀ t : ℝ, 0 < t → F (t • (p : E)) = t ^ μ * F p) :
     Manifold.laplaceBeltrami (𝓡 n) (F ∘ ι) p = Δ F p - μ * (μ + n - 1) * F p := by
-  let L : ℝ →L[ℝ] E := (1 : ℝ →L[ℝ] ℝ).smulRight (p : E)
-  have hL1 : L 1 = (p : E) := one_smul ℝ (p : E)
-  have hFd : ∀ᶠ y in 𝓝 (p : E), DifferentiableAt ℝ F y :=
-    (hF.eventually (by simp)).mono fun y hy ↦ hy.differentiableAt (by simp)
-  have hL_ev : ∀ᶠ t in 𝓝 (1 : ℝ), DifferentiableAt ℝ F (L t) :=
-    L.continuous.continuousAt.eventually (hL1.symm ▸ hFd)
-  have hd_lhs : deriv (F ∘ L) =ᶠ[𝓝 (1 : ℝ)] fun t ↦ fderiv ℝ F (L t) (p : E) :=
-    hL_ev.mono fun t ht ↦ by
-      simpa [L] using (ht.hasFDerivAt.comp_hasDerivAt t L.hasFDerivAt.hasDerivAt).deriv
-  have hd_rhs : deriv (F ∘ L) =ᶠ[𝓝 (1 : ℝ)] fun t ↦ μ * t ^ (μ - 1) * F p := by
-    have heq : F ∘ L =ᶠ[𝓝 (1 : ℝ)] fun t ↦ t ^ μ * F p :=
-      Filter.eventually_of_mem (Ioi_mem_nhds zero_lt_one) fun t ht ↦ hsmul t ht
-    filter_upwards [heq.deriv, Ioi_mem_nhds zero_lt_one] with t ht ht0
-    rw [ht, ((Real.hasDerivAt_rpow_const (p := μ) (Or.inl ht0.ne')).mul_const (F p)).deriv]
+  have hhom : (fun t : ℝ ↦ F (t • (p : E))) =ᶠ[𝓝 (1 : ℝ)] fun t ↦ t ^ μ • F p :=
+    Filter.eventually_of_mem (Ioi_mem_nhds zero_lt_one) fun t ht ↦ hsmul t ht
+  have hFd : ∀ᶠ t in 𝓝 (1 : ℝ), DifferentiableAt ℝ F (t • (p : E)) := by
+    have hF_ev : ∀ᶠ y in 𝓝 (p : E), DifferentiableAt ℝ F y :=
+      (hF.eventually (by simp)).mono fun y hy ↦ hy.differentiableAt (by simp)
+    have hcont : ContinuousAt (fun t : ℝ ↦ t • (p : E)) 1 :=
+      continuous_id.continuousAt.smul continuousAt_const
+    exact hcont.eventually (by simpa only [one_smul] using hF_ev)
   have h1 : inner ℝ (∇ F p) (p : E) = μ * F p := by
-    have h := (hd_lhs.symm.trans hd_rhs).eq_of_nhds
-    simpa [hL1, inner_gradient_left] using h
+    rw [inner_gradient_left]
+    simpa using (hF.differentiableAt (by simp)).hasFDerivAt.apply_self_eq_smul_of_eventuallyEq
+      (Real.hasDerivAt_rpow_const (p := μ) (Or.inl one_ne_zero)) hhom
   have h2 : iteratedFDeriv ℝ 2 F p ![p, p] = μ * (μ - 1) * F p := by
-    have hF' : DifferentiableAt ℝ (fderiv ℝ F) (L 1) :=
-      hL1.symm ▸ (hF.fderiv_right (m := 1) (by norm_num)).differentiableAt one_ne_zero
-    have h2_lhs : HasDerivAt (fun t ↦ fderiv ℝ F (L t) (p : E))
-        (iteratedFDeriv ℝ 2 F p ![p, p]) 1 := by
-      refine ((hF'.hasFDerivAt.comp_hasDerivAt 1 L.hasFDerivAt.hasDerivAt).clm_apply
-        (hasDerivAt_const 1 (p : E))).congr_deriv ?_
-      simp [L, hL1, iteratedFDeriv_two_apply]
-    have h2_rhs : HasDerivAt (fun t ↦ μ * t ^ (μ - 1) * F p) (μ * (μ - 1) * F p) 1 := by
-      simpa [mul_assoc] using
-        (((Real.hasDerivAt_rpow_const (p := μ - 1) (Or.inl one_ne_zero)).const_mul μ).mul_const
-          (F p))
-    exact (h2_lhs.congr_of_eventuallyEq (hd_rhs.symm.trans hd_lhs)).unique h2_rhs
+    have hF' : DifferentiableAt ℝ (fderiv ℝ F) p :=
+      (hF.fderiv_right (m := 1) (by norm_num)).differentiableAt one_ne_zero
+    have hw : ∀ᶠ t in 𝓝 (1 : ℝ), HasDerivAt (fun s : ℝ ↦ s ^ μ) (μ * t ^ (μ - 1)) t :=
+      Filter.eventually_of_mem (Ioi_mem_nhds zero_lt_one) fun t ht ↦
+        Real.hasDerivAt_rpow_const (p := μ) (Or.inl ht.ne')
+    have hw' : HasDerivAt (fun t : ℝ ↦ μ * t ^ (μ - 1)) (μ * (μ - 1)) 1 := by
+      simpa using (Real.hasDerivAt_rpow_const (p := μ - 1) (Or.inl one_ne_zero)).const_mul μ
+    simpa [smul_eq_mul] using
+      iteratedFDeriv_two_self_eq_smul_of_eventuallyEq hFd hF' hw hw' hhom
   rw [laplaceBeltrami_comp_coe_sphere hF, h1, h2]
   ring
 
@@ -263,53 +237,11 @@ end AmbientRestriction
 
 section PolarLaplacian
 
-/-- The radial directional derivative of `sphereExtend f` at `x` along `x` vanishes unconditionally,
-as `sphereExtend f` is constant on positive rays. -/
-@[simp]
-theorem fderiv_sphereExtend_self {E G : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
-    [NormedAddCommGroup G] [NormedSpace ℝ G] (f : sphere (0 : E) 1 → G) (x : E) :
-    fderiv ℝ (sphereExtend f) x x = 0 := by
-  rcases eq_or_ne x 0 with rfl | _
-  · simp
-  by_cases hd : DifferentiableAt ℝ (sphereExtend f) x
-  · have hpath : HasDerivAt (fun t : ℝ ↦ t • x) x 1 := by
-      simpa using (hasDerivAt_id (1 : ℝ)).smul_const x
-    have h1 : HasDerivAt (sphereExtend f ∘ fun t : ℝ ↦ t • x)
-        (fderiv ℝ (sphereExtend f) x x) 1 :=
-      HasFDerivAt.comp_hasDerivAt 1 (by simpa only [one_smul] using hd.hasFDerivAt) hpath
-    have hconst : (sphereExtend f ∘ fun t : ℝ ↦ t • x) =ᶠ[𝓝 (1 : ℝ)] fun _ ↦ sphereExtend f x :=
-      Filter.eventually_of_mem (Ioi_mem_nhds zero_lt_one) fun t ht ↦
-        sphereExtend_smul_of_pos f ht x
-    exact h1.unique ((hasDerivAt_const (1 : ℝ) (sphereExtend f x)).congr_of_eventuallyEq hconst)
-  · rw [fderiv_zero_of_not_differentiableAt hd, zero_apply]
-
-variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E]
-
-/-- The Euclidean gradient of `sphereExtend f` is everywhere orthogonal to the position vector, with
-no regularity or dimension assumptions. -/
-theorem inner_gradient_sphereExtend_self [CompleteSpace E] (f : sphere (0 : E) 1 → ℝ) (x : E) :
-    ⟪∇ (sphereExtend f) x, x⟫_ℝ = 0 := by
-  rw [inner_gradient_left, fderiv_sphereExtend_self]
-
-variable {n : ℕ} [Fact (finrank ℝ E = n + 1)]
-
-/-- Away from the origin, `sphereExtend f` inherits `C^m` regularity from `f` at `x / ‖x‖`. -/
-theorem contDiffAt_sphereExtend {G : Type*} [NormedAddCommGroup G] [NormedSpace ℝ G]
-    {m : ℕ∞ω} {f : sphere (0 : E) 1 → G} {x : E} (hx : x ≠ 0)
-    (hf : ContMDiffAt (𝓡 n) 𝓘(ℝ, G) m f
-      ⟨NormedSpace.normalize x, mem_sphere_zero_iff_norm.2 (NormedSpace.norm_normalize hx)⟩) :
-    ContDiffAt ℝ m (sphereExtend f) x := by
-  let U : TopologicalSpace.Opens E := ⟨{0}ᶜ, isOpen_compl_singleton⟩
-  let xU : U := ⟨x, hx⟩
-  have hcomp : ContMDiffAt 𝓘(ℝ, E) 𝓘(ℝ, G) m (sphereExtend f ∘ (Subtype.val : U → E)) xU := by
-    refine (hf.comp xU (contMDiff_normalize_sphere xU)).congr_of_eventuallyEq ?_
-    exact .of_forall fun y ↦ sphereExtend_of_ne_zero f y.2
-  exact contMDiffAt_iff_contDiffAt.1 (contMDiffAt_subtype_iff.1 hcomp)
-
-variable [FiniteDimensional ℝ E]
+variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] {n : ℕ}
+  [Fact (finrank ℝ E = n + 1)] [FiniteDimensional ℝ E]
 
 /-- **Euclidean Laplacian of a `0`-homogeneous radial extension.** For `x ≠ 0` and `f : Sⁿ → ℝ`
-twice differentiable at `x / ‖x‖`, `Δ (sphereExtend f) x = Δ_{Sⁿ} f (x / ‖x‖) / ‖x‖²`. -/
+that is `C²` at `x / ‖x‖`, `Δ (sphereExtend f) x = Δ_{Sⁿ} f (x / ‖x‖) / ‖x‖²`. -/
 theorem laplacian_sphereExtend {f : sphere (0 : E) 1 → ℝ} {x : E} (hx : x ≠ 0)
     (hf : ContMDiffAt (𝓡 n) 𝓘(ℝ) 2 f
       ⟨NormedSpace.normalize x, mem_sphere_zero_iff_norm.2 (NormedSpace.norm_normalize hx)⟩) :
@@ -341,8 +273,8 @@ theorem laplacian_sphereExtend {f : sphere (0 : E) 1 → ℝ} {x : E} (hx : x �
 
 /-- **Polar decomposition of the Euclidean Laplacian** for a radial-angular product
 `y ↦ g ‖y‖ * sphereExtend f y` away from the origin. -/
-theorem laplacian_mul_sphereExtend {g : ℝ → ℝ} {f : sphere (0 : E) 1 → ℝ} {x : E} (hx : x ≠ 0)
-    (hg : ContDiffAt ℝ 2 g ‖x‖)
+theorem laplacian_comp_norm_mul_sphereExtend {g : ℝ → ℝ} {f : sphere (0 : E) 1 → ℝ} {x : E}
+    (hx : x ≠ 0) (hg : ContDiffAt ℝ 2 g ‖x‖)
     (hf : ContMDiffAt (𝓡 n) 𝓘(ℝ) 2 f
       ⟨NormedSpace.normalize x, mem_sphere_zero_iff_norm.2 (NormedSpace.norm_normalize hx)⟩) :
     Δ (fun y : E ↦ g ‖y‖ * sphereExtend f y) x =
@@ -353,8 +285,8 @@ theorem laplacian_mul_sphereExtend {g : ℝ → ℝ} {f : sphere (0 : E) 1 → �
   have hgn : ContDiffAt ℝ 2 (fun y : E ↦ g ‖y‖) x := hg.comp x (contDiffAt_norm ℝ hx)
   have hfn : ContDiffAt ℝ 2 (sphereExtend f) x := contDiffAt_sphereExtend hx hf
   have horth : ⟪∇ (fun y : E ↦ g ‖y‖) x, ∇ (sphereExtend f) x⟫_ℝ = 0 := by
-    rw [inner_gradient_left, show (fun y : E ↦ g ‖y‖) = g ∘ norm from rfl,
-      fderiv_comp x (hg.differentiableAt (by norm_num))
+    rw [inner_gradient_left,
+      fderiv_fun_comp x (hg.differentiableAt (by norm_num))
         (hasFDerivAt_norm_of_ne hx).differentiableAt,
       (hasFDerivAt_norm_of_ne hx).fderiv]
     simp
@@ -377,19 +309,24 @@ theorem laplacian_norm_rpow_mul_sphereExtend (μ : ℝ) {f : sphere (0 : E) 1 �
         Manifold.laplaceBeltrami (𝓡 n) f
           ⟨NormedSpace.normalize x,
             mem_sphere_zero_iff_norm.2 (NormedSpace.norm_normalize hx)⟩) := by
-  have hpow : ContDiffAt ℝ 2 (fun y : E ↦ ‖y‖ ^ μ) x :=
-    (contDiffAt_norm ℝ hx).rpow_const_of_ne (norm_ne_zero_iff.2 hx)
-  have hfn : ContDiffAt ℝ 2 (sphereExtend f) x := contDiffAt_sphereExtend hx hf
-  have horth : ⟪∇ (fun y : E ↦ ‖y‖ ^ μ) x, ∇ (sphereExtend f) x⟫_ℝ = 0 := by
-    rw [inner_gradient_left, fderiv_norm_rpow_of_ne μ hx]
-    simp
-  have hdim : (finrank ℝ E : ℝ) = n + 1 := by exact_mod_cast (Fact.out : finrank ℝ E = n + 1)
   have hnorm : 0 < ‖x‖ := norm_pos_iff.2 hx
-  have hrpow : ‖x‖ ^ μ / ‖x‖ ^ 2 = ‖x‖ ^ (μ - 2) := by
+  have hg : ContDiffAt ℝ 2 (fun r : ℝ ↦ r ^ μ) ‖x‖ :=
+    contDiffAt_id.rpow_const_of_ne hnorm.ne'
+  have hd1 : deriv (fun r : ℝ ↦ r ^ μ) =ᶠ[𝓝 ‖x‖] fun r ↦ μ * r ^ (μ - 1) :=
+    Filter.eventually_of_mem (Ioi_mem_nhds hnorm) fun r hr ↦
+      (Real.hasDerivAt_rpow_const (p := μ) (Or.inl hr.ne')).deriv
+  have hd2 : deriv (deriv (fun r : ℝ ↦ r ^ μ)) ‖x‖ = μ * (μ - 1) * ‖x‖ ^ (μ - 2) := by
+    rw [hd1.deriv_eq]
+    simpa [mul_assoc, sub_sub, one_add_one_eq_two] using
+      ((Real.hasDerivAt_rpow_const (p := μ - 1) (Or.inl hnorm.ne')).const_mul μ).deriv
+  have hrpow1 : ‖x‖ ^ (μ - 1) / ‖x‖ = ‖x‖ ^ (μ - 2) := by
+    rw [div_eq_mul_inv, ← Real.rpow_neg_one, ← Real.rpow_add hnorm]
+    ring_nf
+  have hrpow2 : ‖x‖ ^ μ / ‖x‖ ^ 2 = ‖x‖ ^ (μ - 2) := by
     rw [div_eq_mul_inv, ← Real.rpow_natCast, ← Real.rpow_neg hnorm.le, ← Real.rpow_add hnorm]
     ring_nf
-  rw [hpow.laplacian_fun_mul hfn, laplacian_norm_rpow_of_ne μ hx, laplacian_sphereExtend hx hf,
-    horth, hdim, mul_div_left_comm, hrpow]
+  rw [laplacian_comp_norm_mul_sphereExtend hx hg hf, hd1.eq_of_nhds, hd2,
+    mul_div_assoc, mul_div_assoc, hrpow1, mul_div_right_comm, hrpow2]
   ring
 
 end PolarLaplacian

@@ -11,9 +11,10 @@ public import Mathlib.MeasureTheory.Function.LpSpace.ContinuousFunctions
 public import TauCeti.Analysis.MvPolynomial.Sphere
 public import TauCeti.Geometry.Manifold.Riemannian.Sphere.Laplacian
 public import TauCeti.Geometry.Manifold.Riemannian.VolumeDensity.Volume
+import Mathlib.Analysis.Analytic.Polynomial
 import Mathlib.Analysis.InnerProductSpace.Projection.Basic
-import Mathlib.MeasureTheory.Function.ContinuousMapDense
 import Mathlib.Topology.Algebra.Module.FiniteDimension
+import TauCeti.Analysis.MvPolynomial.Jacobian
 import TauCeti.Analysis.MvPolynomial.Laplacian
 import TauCeti.Geometry.Manifold.Riemannian.DivergenceTheorem
 import TauCeti.Geometry.Manifold.Riemannian.VolumeDensity.Support
@@ -33,16 +34,17 @@ unit round sphere `Sᵐ ⊂ EuclideanSpace ℝ σ` (`dim = m + 1`), with the sig
    for every `m ≥ 0` (`TauCeti.laplaceBeltrami_harmonicSphereRestriction`), obtained from Euler's
    homogeneity reduction `TauCeti.laplaceBeltrami_comp_coe_sphere_of_smul` and
    `MvPolynomial.laplacian_eval_euclidean`.
-2. **Orthogonality and `L²` completeness.** For `m ≥ 1`, the sequence `d ↦ d (d + m - 1)` is
-   strictly increasing (`TauCeti.strictMono_natCast_mul_add_sub_one`), so Green's second identity
-   for `riemannianVolume` forces spherical harmonics of distinct degrees (and, more generally, any
-   `C²` eigenfunction with eigenvalue `λ ≠ d (d + m - 1)`) to be `L²`-orthogonal to degree-`d`
-   spherical harmonics. Combining Stone–Weierstrass uniform density on `C(Sᵐ, 𝕜)` with density of
-   continuous functions in `L²(Sᵐ, 𝕜)` shows that the span of spherical harmonics is dense in
-   `L²(Sᵐ, 𝕜)` (`TauCeti.topologicalClosure_iSup_map_toLp_harmonicSphereRestriction`).
-3. **Complete `C²` eigenspace classification (`m ≥ 1`).** Orthogonal projection onto the
-   finite-dimensional degree-`d` harmonic subspace in `L²(Sᵐ, ℝ)` identifies the full `C²`
-   eigenspace of `-d (d + m - 1)` with the range of `harmonicSphereRestriction σ d`
+2. **Orthogonality.** For `m ≥ 1`, the sequence `d ↦ d (d + m - 1)` is strictly increasing
+   (`TauCeti.strictMono_natCast_mul_add_sub_one`), so Green's second identity for
+   `riemannianVolume` forces spherical harmonics of distinct degrees (and, more generally, any `C²`
+   eigenfunction with `Δ_{Sᵐ} g = -λ g` and `λ ≠ d (d + m - 1)`) to be `L²`-orthogonal to
+   degree-`d` spherical harmonics (`TauCeti.integral_harmonicSphereRestriction_mul_eq_zero`, and
+   `TauCeti.inner_toLp_harmonicSphereRestriction_eq_zero` over any `[RCLike 𝕜]`).
+3. **Complete `C²` eigenspace classification (`m ≥ 1`).** Combining `L²` completeness of spherical
+   harmonics (`TauCeti.eq_zero_of_forall_inner_toLp_harmonicSphereRestriction_eq_zero`) with
+   orthogonal projection onto the finite-dimensional degree-`d` harmonic subspace in `L²(Sᵐ, ℝ)`
+   identifies the full `C²` eigenspace of `-d (d + m - 1)` with the range of
+   `harmonicSphereRestriction σ d`
    (`TauCeti.laplaceBeltrami_eq_neg_mul_iff_exists_harmonicSphereRestriction`), and every nonzero
    `C²` solution of `Δ_{Sᵐ} f = -λ f` has `λ = d (d + m - 1)` and comes from a degree-`d` harmonic
    homogeneous polynomial (`TauCeti.eq_harmonicSphereRestriction_of_laplaceBeltrami_eq_neg_mul`).
@@ -51,22 +53,20 @@ unit round sphere `Sᵐ ⊂ EuclideanSpace ℝ σ` (`dim = m + 1`), with the sig
 
 ## Main results
 
-* `MvPolynomial.contMDiff_sphereEval`, `MvPolynomial.contMDiff_harmonicSphereRestriction`:
+* `MvPolynomial.contMDiff_sphereEval`, `TauCeti.contMDiff_harmonicSphereRestriction`:
   polynomial restrictions and spherical harmonics are `C^k` (`k : ℕ∞ω`) on `Sᵐ`.
 * `TauCeti.laplaceBeltrami_harmonicSphereRestriction`: degree-`d` spherical harmonics satisfy
   `Δ_{Sᵐ} f = -d (d + m - 1) f`.
 * `TauCeti.integral_harmonicSphereRestriction_mul_eq_zero`,
   `TauCeti.inner_toLp_harmonicSphereRestriction_eq_zero`: orthogonality of distinct degrees
-  (`m ≥ 1`).
-* `TauCeti.topologicalClosure_iSup_map_toLp_harmonicSphereRestriction`: `L²(Sᵐ, 𝕜)` density of
-  spherical harmonics (`[RCLike 𝕜]`).
+  (`m ≥ 1`, over `ℝ` and any `[RCLike 𝕜]`).
 * `TauCeti.laplaceBeltrami_eq_neg_mul_iff_exists_harmonicSphereRestriction`,
   `TauCeti.eq_harmonicSphereRestriction_of_laplaceBeltrami_eq_neg_mul`: complete `C²` eigenspace
   identification on `Sᵐ` (`m ≥ 1`).
 
 ## References
 
-* M. E. Taylor, *Lectures on Lie Groups*, §8.2, Proposition 8.2.1 (spherical harmonics and the
+* M. E. Taylor, *Introduction to Lie Groups*, §8.2, Proposition 8.2.1 (spherical harmonics and the
   spectrum of the round Laplacian).
 * S. Axler, P. Bourdon and W. Ramey, *Harmonic Function Theory*, 2nd ed., Springer (2001),
   Chapter 5 (spherical harmonics and `L²` decomposition on the unit sphere).
@@ -83,23 +83,6 @@ noncomputable section
 
 namespace MvPolynomial
 
-/-- Evaluating a polynomial over a normed commutative `ℝ`-algebra on `EuclideanSpace ℝ σ` is `C^k`
-for every `k : ℕ∞ω` (in particular real-analytic for `k = ω`). -/
-theorem contDiff_eval_algebraMap {σ R : Type*} [Fintype σ] [NormedCommRing R] [NormedAlgebra ℝ R]
-    {k : ℕ∞ω} (p : MvPolynomial σ R) :
-    ContDiff ℝ k fun x : EuclideanSpace ℝ σ ↦ eval (fun i ↦ algebraMap ℝ R (x i)) p := by
-  induction p using MvPolynomial.induction_on with
-  | C a => simpa only [eval_C] using contDiff_const
-  | add p q hp hq => simpa only [eval_add] using hp.add hq
-  | mul_X p i hp =>
-      have hfun : (fun x : EuclideanSpace ℝ σ ↦ algebraMap ℝ R (x i)) =
-          ⇑(((1 : ℝ →L[ℝ] ℝ).smulRight (1 : R)).comp (EuclideanSpace.proj i)) :=
-        funext fun x ↦ by simp [Algebra.algebraMap_eq_smul_one]
-      have hcoord : ContDiff ℝ k fun x : EuclideanSpace ℝ σ ↦ algebraMap ℝ R (x i) := by
-        rw [hfun]
-        exact ContinuousLinearMap.contDiff _
-      simpa only [eval_mul, eval_X] using hp.mul hcoord
-
 /-- Restricting a polynomial over a normed commutative `ℝ`-algebra to the unit round sphere gives a
 `C^k` map for every `k : ℕ∞ω` (including `ω` and `∞`). -/
 theorem contMDiff_sphereEval {σ R : Type*} [Fintype σ] {m : ℕ}
@@ -112,28 +95,18 @@ theorem contMDiff_sphereEval {σ R : Type*} [Fintype σ] {m : ℕ}
   rw [heq]
   exact (contDiff_eval_algebraMap p).contMDiff.comp contMDiff_coe_sphere
 
-/-- Every spherical harmonic in the image of `harmonicSphereRestriction` is `C^k` on the round
-sphere for every `k : ℕ∞ω` (in particular analytic and `C^∞`). -/
-theorem contMDiff_harmonicSphereRestriction {σ R : Type*} [Fintype σ] {m : ℕ}
-    [Fact (finrank ℝ (EuclideanSpace ℝ σ) = m + 1)] [NormedCommRing R] [NormedAlgebra ℝ R]
-    {k : ℕ∞ω} (d : ℕ) (p : harmonicSubmodule σ R d) :
-    ContMDiff (𝓡 m) 𝓘(ℝ, R) k (harmonicSphereRestriction σ d p) := by
-  rw [harmonicSphereRestriction_coe]
-  exact contMDiff_sphereEval (p : MvPolynomial σ R)
-
-/-- Away from the origin, multiplying the `0`-homogeneous radial extension `TauCeti.sphereExtend`
-of a degree-`d` spherical harmonic by `‖x‖ ^ d` recovers the ambient harmonic polynomial. -/
-theorem norm_pow_mul_sphereExtend_harmonicSphereRestriction {σ : Type*} [Fintype σ] (d : ℕ)
-    (p : harmonicSubmodule σ ℝ d) {x : EuclideanSpace ℝ σ} (hx : x ≠ 0) :
-    ‖x‖ ^ d * TauCeti.sphereExtend (harmonicSphereRestriction σ d p) x =
-      eval x (p : MvPolynomial σ ℝ) := by
-  rw [TauCeti.sphereExtend_of_ne_zero _ hx]
-  simpa only [NormedSpace.normalize, harmonicSphereRestriction_coe] using
-    ((mem_harmonicSubmodule_iff.1 p.2).1.eval_eq_norm_pow_mul_sphereEval hx).symm
-
 end MvPolynomial
 
 namespace TauCeti
+
+/-- Every spherical harmonic in the image of `MvPolynomial.harmonicSphereRestriction` is `C^k` on
+the round sphere for every `k : ℕ∞ω` (in particular analytic and `C^∞`). -/
+theorem contMDiff_harmonicSphereRestriction {σ R : Type*} [Fintype σ] {m : ℕ}
+    [Fact (finrank ℝ (EuclideanSpace ℝ σ) = m + 1)] [NormedCommRing R] [NormedAlgebra ℝ R]
+    {k : ℕ∞ω} (d : ℕ) (p : MvPolynomial.harmonicSubmodule σ R d) :
+    ContMDiff (𝓡 m) 𝓘(ℝ, R) k (MvPolynomial.harmonicSphereRestriction σ d p) := by
+  rw [MvPolynomial.harmonicSphereRestriction_coe]
+  exact MvPolynomial.contMDiff_sphereEval (p : MvPolynomial σ R)
 
 section Eigenvalue
 
@@ -141,7 +114,7 @@ variable {σ : Type*} [Fintype σ] {m : ℕ} [Fact (finrank ℝ (EuclideanSpace 
 
 /-- **Spherical harmonics are round Laplace–Beltrami eigenfunctions.** Every real harmonic
 homogeneous polynomial `p` of degree `d` restricts on `Sᵐ` to an eigenfunction of
-`Manifold.laplaceBeltrami (𝓡 m)` with eigenvalue `d (d + m - 1)` (`Δ_{Sᵐ} f = -d (d + m - 1) f`),
+`Manifold.laplaceBeltrami (𝓡 m)` with eigenvalue `-d (d + m - 1)` (`Δ_{Sᵐ} f = -d (d + m - 1) f`),
 valid for every `m : ℕ` and `d : ℕ`. -/
 theorem laplaceBeltrami_harmonicSphereRestriction (d : ℕ)
     (p : MvPolynomial.harmonicSubmodule σ ℝ d) (x : sphere (0 : EuclideanSpace ℝ σ) 1) :
@@ -149,11 +122,11 @@ theorem laplaceBeltrami_harmonicSphereRestriction (d : ℕ)
       -(d : ℝ) * ((d : ℝ) + m - 1) * MvPolynomial.harmonicSphereRestriction σ d p x := by
   obtain ⟨hp_hom, hp_lap⟩ := MvPolynomial.mem_harmonicSubmodule_iff.1 p.2
   let F : EuclideanSpace ℝ σ → ℝ := fun y ↦ MvPolynomial.eval y (p : MvPolynomial σ ℝ)
-  have hF_eq : F = fun y ↦ MvPolynomial.eval (fun i ↦ algebraMap ℝ ℝ (y i)) p.1 := by
-    funext y
-    simp only [F, Algebra.algebraMap_self, RingHom.id_apply]
-  have hF : ContDiffAt ℝ 2 F x :=
-    hF_eq ▸ (MvPolynomial.contDiff_eval_algebraMap (k := 2) p.1).contDiffAt
+  have hF : ContDiffAt ℝ 2 F x := by
+    have h := (AnalyticOnNhd.eval_continuousLinearMap
+      (EuclideanSpace.equiv σ ℝ).toContinuousLinearMap p.1).contDiff (n := 2)
+    simpa only [F, ContinuousLinearEquiv.coe_coe, PiLp.coe_continuousLinearEquiv] using
+      h.contDiffAt (x := (x : EuclideanSpace ℝ σ))
   have hrestr : ⇑(MvPolynomial.harmonicSphereRestriction σ d p) = F ∘ Subtype.val := by
     funext y
     simp only [MvPolynomial.harmonicSphereRestriction_coe, MvPolynomial.sphereEval_apply,
@@ -167,17 +140,16 @@ theorem laplaceBeltrami_harmonicSphereRestriction (d : ℕ)
   simp only [Function.comp_apply, F]
   ring
 
-/-- For `1 ≤ m`, the spherical Laplace–Beltrami eigenvalues `d ↦ d (d + m - 1)` are strictly
-increasing in the degree `d : ℕ`. -/
+/-- For `1 ≤ m`, the eigenvalues `d ↦ d (d + m - 1)` of `-Δ_{Sᵐ}` are strictly increasing in the
+degree `d : ℕ`. -/
 theorem strictMono_natCast_mul_add_sub_one {m : ℕ} (hm : 1 ≤ m) :
     StrictMono fun d : ℕ ↦ (d : ℝ) * ((d : ℝ) + m - 1) := by
   intro d₁ d₂ hd
   nlinarith [show (d₁ : ℝ) < d₂ from Nat.cast_lt.2 hd,
     show (1 : ℝ) ≤ m from Nat.one_le_cast.2 hm, Nat.cast_nonneg (α := ℝ) d₁]
 
-/-- Green's second identity on the round sphere forces any `C²` eigenfunction with
-`Δ_{Sᵐ} g = -λ g` and `λ ≠ d (d + m - 1)` to be `L²`-orthogonal to every degree-`d` spherical
-harmonic. -/
+/-- Any `C²` function `g` on `Sᵐ` satisfying `Δ_{Sᵐ} g = -λ g` with `λ ≠ d (d + m - 1)` is
+`L²`-orthogonal (with respect to `riemannianVolume`) to every degree-`d` spherical harmonic. -/
 theorem integral_harmonicSphereRestriction_mul_eq_zero_of_laplaceBeltrami_eq_neg_mul
     {g : sphere (0 : EuclideanSpace ℝ σ) 1 → ℝ} (hg : ContMDiff (𝓡 m) 𝓘(ℝ, ℝ) 2 g) {lam : ℝ}
     (heig : ∀ x, Manifold.laplaceBeltrami (𝓡 m) g x = -lam * g x) {d : ℕ}
@@ -186,22 +158,9 @@ theorem integral_harmonicSphereRestriction_mul_eq_zero_of_laplaceBeltrami_eq_neg
     ∫ x, MvPolynomial.harmonicSphereRestriction σ d p x * g x
       ∂riemannianVolume (𝓡 m) (sphere (0 : EuclideanSpace ℝ σ) 1) = 0 := by
   have : IsManifold (𝓡 m) ∞ (sphere (0 : EuclideanSpace ℝ σ) 1) := IsManifold.of_le le_top
-  let h : sphere (0 : EuclideanSpace ℝ σ) 1 → ℝ := MvPolynomial.harmonicSphereRestriction σ d p
-  have hh : ContMDiff (𝓡 m) 𝓘(ℝ, ℝ) 2 h := MvPolynomial.contMDiff_harmonicSphereRestriction d p
-  have hgreen := Manifold.integral_mul_laplaceBeltrami_right_eq_left hh
-    (HasCompactSupport.of_compactSpace h) hg
-  have hlhs : (fun x ↦ h x * Manifold.laplaceBeltrami (𝓡 m) g x) =
-      fun x ↦ -lam * (h x * g x) := funext fun x ↦ by rw [heig x]; ring
-  have hrhs : (fun x ↦ Manifold.laplaceBeltrami (𝓡 m) h x * g x) =
-      fun x ↦ -((d : ℝ) * ((d : ℝ) + m - 1)) * (h x * g x) := funext fun x ↦ by
-    rw [show Manifold.laplaceBeltrami (𝓡 m) h x = _ from
-      laplaceBeltrami_harmonicSphereRestriction d p x]
-    ring
-  rw [hlhs, hrhs, integral_const_mul, integral_const_mul] at hgreen
-  have hsub : (lam - (d : ℝ) * ((d : ℝ) + m - 1)) *
-      ∫ x, h x * g x ∂riemannianVolume (𝓡 m) (sphere (0 : EuclideanSpace ℝ σ) 1) = 0 := by
-    linarith
-  exact (mul_eq_zero.1 hsub).resolve_left (sub_ne_zero.2 hlam)
+  exact Manifold.integral_mul_eq_zero_of_laplaceBeltrami_eq_neg_mul
+    (contMDiff_harmonicSphereRestriction d p) (HasCompactSupport.of_compactSpace _) hg
+    (fun x ↦ by rw [laplaceBeltrami_harmonicSphereRestriction]; ring) heig hlam.symm
 
 /-- Spherical harmonics of distinct degrees on `Sᵐ` (`m ≥ 1`) are orthogonal with respect to the
 round `riemannianVolume`. -/
@@ -211,84 +170,105 @@ theorem integral_harmonicSphereRestriction_mul_eq_zero (hm : 1 ≤ m) {d₁ d₂
         MvPolynomial.harmonicSphereRestriction σ d₂ p₂ x
       ∂riemannianVolume (𝓡 m) (sphere (0 : EuclideanSpace ℝ σ) 1) = 0 :=
   integral_harmonicSphereRestriction_mul_eq_zero_of_laplaceBeltrami_eq_neg_mul
-    (MvPolynomial.contMDiff_harmonicSphereRestriction d₂ p₂)
+    (contMDiff_harmonicSphereRestriction d₂ p₂)
     (fun x ↦ by rw [laplaceBeltrami_harmonicSphereRestriction]; ring)
     ((strictMono_natCast_mul_add_sub_one hm).injective.ne hd.symm) p₁
 
-/-- In `L²(Sᵐ, ℝ)` with the round Riemannian volume (`m ≥ 1`), spherical harmonics of distinct
-degrees are orthogonal. -/
-theorem inner_toLp_harmonicSphereRestriction_eq_zero (hm : 1 ≤ m) {d₁ d₂ : ℕ} (hd : d₁ ≠ d₂)
-    (p₁ : MvPolynomial.harmonicSubmodule σ ℝ d₁) (p₂ : MvPolynomial.harmonicSubmodule σ ℝ d₂) :
-    ⟪ContinuousMap.toLp (E := ℝ) 2 (riemannianVolume (𝓡 m) (sphere (0 : EuclideanSpace ℝ σ) 1)) ℝ
+/-- Apply an `ℝ`-linear functional coefficientwise to a harmonic homogeneous polynomial. -/
+private def mapLinearHarmonic {𝕜 : Type*} [RCLike 𝕜] {d : ℕ} (φ : 𝕜 →ₗ[ℝ] ℝ)
+    (p : MvPolynomial.harmonicSubmodule σ 𝕜 d) : MvPolynomial.harmonicSubmodule σ ℝ d := by
+  classical
+  let q : MvPolynomial σ ℝ := .ofCoeff (Finsupp.mapRange.linearMap φ p.1.coeff)
+  have hq_coeff (n : σ →₀ ℕ) : q.coeff n = φ (p.1.coeff n) := by
+    simp only [q, Finsupp.mapRange.linearMap_apply, Finsupp.mapRange_apply]
+  have hhom : q.IsHomogeneous d :=
+    fun n hn ↦ (MvPolynomial.mem_harmonicSubmodule_iff.1 p.2).1 fun h0 ↦ hn (by simp [hq_coeff, h0])
+  have hlap : MvPolynomial.laplacian q = 0 := by
+    ext n
+    rw [MvPolynomial.laplacian_apply, MvPolynomial.coeff_sum, AddMonoidAlgebra.coeff_zero,
+      Finsupp.zero_apply]
+    have hcoeff (i : σ) : (MvPolynomial.pderiv i (MvPolynomial.pderiv i q)).coeff n =
+        φ ((MvPolynomial.pderiv i (MvPolynomial.pderiv i p.1)).coeff n) := by
+      simp only [MvPolynomial.coeff_pderiv, hq_coeff, ← Nat.cast_add_one]
+      rw [mul_comm _ ((_ : ℕ) : ℝ), mul_comm _ ((_ : ℕ) : ℝ), ← nsmul_eq_mul, ← nsmul_eq_mul,
+        mul_comm _ ((_ : ℕ) : 𝕜), mul_comm _ ((_ : ℕ) : 𝕜), ← nsmul_eq_mul, ← nsmul_eq_mul,
+        map_nsmul, map_nsmul]
+    rw [Finset.sum_congr rfl fun i _ ↦ hcoeff i, ← map_sum, ← MvPolynomial.coeff_sum,
+      ← MvPolynomial.laplacian_apply, (MvPolynomial.mem_harmonicSubmodule_iff.1 p.2).2,
+      AddMonoidAlgebra.coeff_zero, Finsupp.zero_apply, map_zero]
+  exact ⟨q, MvPolynomial.mem_harmonicSubmodule_iff.2 ⟨hhom, hlap⟩⟩
+
+private theorem harmonicSphereRestriction_mapLinearHarmonic {𝕜 : Type*} [RCLike 𝕜] {d : ℕ}
+    (φ : 𝕜 →ₗ[ℝ] ℝ) (p : MvPolynomial.harmonicSubmodule σ 𝕜 d)
+    (x : sphere (0 : EuclideanSpace ℝ σ) 1) :
+    MvPolynomial.harmonicSphereRestriction σ d (mapLinearHarmonic φ p) x =
+      φ (MvPolynomial.harmonicSphereRestriction σ d p x) := by
+  classical
+  have hq_hom := (MvPolynomial.mem_harmonicSubmodule_iff.1 (mapLinearHarmonic φ p).2).1
+  have hp_hom := (MvPolynomial.mem_harmonicSubmodule_iff.1 p.2).1
+  have hq_coeff (n : σ →₀ ℕ) : (mapLinearHarmonic φ p).1.coeff n = φ (p.1.coeff n) := by
+    simp only [mapLinearHarmonic, Finsupp.mapRange.linearMap_apply, Finsupp.mapRange_apply]
+  rw [MvPolynomial.harmonicSphereRestriction_coe, MvPolynomial.harmonicSphereRestriction_coe,
+    MvPolynomial.sphereEval_apply, MvPolynomial.sphereEval_apply, ← MvPolynomial.aeval_eq_eval,
+    ← MvPolynomial.aeval_eq_eval, hq_hom.aeval_eq_sum_finsuppAntidiag,
+    hp_hom.aeval_eq_sum_finsuppAntidiag, map_sum]
+  refine Finset.sum_congr rfl fun s _ ↦ ?_
+  have hprod : ∏ i, algebraMap ℝ 𝕜 (x.val i) ^ s i = algebraMap ℝ 𝕜 (∏ i, x.val i ^ s i) := by
+    simp
+  simp only [Algebra.algebraMap_self, RingHom.id_apply, hq_coeff, hprod]
+  rw [mul_comm (p.1.coeff s), ← Algebra.smul_def, map_smul, smul_eq_mul, mul_comm]
+
+/-- In `L²(Sᵐ, 𝕜)` with the round Riemannian volume (`m ≥ 1`, `[RCLike 𝕜]`), spherical harmonics of
+distinct degrees are orthogonal. -/
+theorem inner_toLp_harmonicSphereRestriction_eq_zero {𝕜 : Type*} [RCLike 𝕜] (hm : 1 ≤ m)
+    {d₁ d₂ : ℕ} (hd : d₁ ≠ d₂) (p₁ : MvPolynomial.harmonicSubmodule σ 𝕜 d₁)
+    (p₂ : MvPolynomial.harmonicSubmodule σ 𝕜 d₂) :
+    ⟪ContinuousMap.toLp (E := 𝕜) 2 (riemannianVolume (𝓡 m) (sphere (0 : EuclideanSpace ℝ σ) 1)) 𝕜
         (MvPolynomial.harmonicSphereRestriction σ d₁ p₁),
-      ContinuousMap.toLp (E := ℝ) 2 (riemannianVolume (𝓡 m) (sphere (0 : EuclideanSpace ℝ σ) 1)) ℝ
-        (MvPolynomial.harmonicSphereRestriction σ d₂ p₂)⟫_ℝ = 0 := by
+      ContinuousMap.toLp (E := 𝕜) 2 (riemannianVolume (𝓡 m) (sphere (0 : EuclideanSpace ℝ σ) 1)) 𝕜
+        (MvPolynomial.harmonicSphereRestriction σ d₂ p₂)⟫_𝕜 = 0 := by
+  have : IsManifold (𝓡 m) 1 (sphere (0 : EuclideanSpace ℝ σ) 1) := IsManifold.of_le le_top
+  let μ := riemannianVolume (𝓡 m) (sphere (0 : EuclideanSpace ℝ σ) 1)
+  let f₁ := MvPolynomial.harmonicSphereRestriction σ d₁ p₁
+  let f₂ := MvPolynomial.harmonicSphereRestriction σ d₂ p₂
+  let h₁ := MvPolynomial.harmonicSphereRestriction (R := ℝ) σ d₁
+  let h₂ := MvPolynomial.harmonicSphereRestriction (R := ℝ) σ d₂
+  let r₁ := mapLinearHarmonic (RCLike.reLm : 𝕜 →ₗ[ℝ] ℝ) p₁
+  let i₁ := mapLinearHarmonic (RCLike.imLm : 𝕜 →ₗ[ℝ] ℝ) p₁
+  let r₂ := mapLinearHarmonic (RCLike.reLm : 𝕜 →ₗ[ℝ] ℝ) p₂
+  let i₂ := mapLinearHarmonic (RCLike.imLm : 𝕜 →ₗ[ℝ] ℝ) p₂
+  have hint : Integrable (fun x ↦ f₂ x * starRingEnd 𝕜 (f₁ x)) μ :=
+    (f₂.continuous.mul ((RCLike.conjCLE (K := 𝕜)).continuous.comp
+      f₁.continuous)).integrable_of_hasCompactSupport (HasCompactSupport.of_compactSpace _)
+  have hintMul (a b) : Integrable (fun x ↦ h₁ a x * h₂ b x) μ :=
+    ((h₁ a).continuous.mul (h₂ b).continuous).integrable_of_hasCompactSupport
+      (HasCompactSupport.of_compactSpace _)
+  have hmul (a b) : ∫ x, h₁ a x * h₂ b x ∂μ = 0 :=
+    integral_harmonicSphereRestriction_mul_eq_zero hm hd a b
   rw [ContinuousMap.inner_toLp]
-  simp only [RCLike.conj_to_real, mul_comm (MvPolynomial.harmonicSphereRestriction σ d₂ p₂ _)]
-  exact integral_harmonicSphereRestriction_mul_eq_zero hm hd p₁ p₂
+  apply RCLike.ext
+  · rw [map_zero, ← RCLike.reCLM_apply, ← RCLike.reCLM.integral_comp_comm hint]
+    have hre : (fun x ↦ RCLike.reCLM (f₂ x * starRingEnd 𝕜 (f₁ x))) =
+        fun x ↦ h₁ r₁ x * h₂ r₂ x + h₁ i₁ x * h₂ i₂ x := funext fun x ↦ by
+      simp only [RCLike.reCLM_apply, RCLike.mul_re, RCLike.conj_re, RCLike.conj_im,
+        harmonicSphereRestriction_mapLinearHarmonic, RCLike.reLm_coe, RCLike.imLm_coe,
+        f₁, f₂, h₁, h₂, r₁, i₁, r₂, i₂]
+      ring
+    rw [hre, integral_add (hintMul r₁ r₂) (hintMul i₁ i₂), hmul r₁ r₂, hmul i₁ i₂, add_zero]
+  · rw [map_zero, ← RCLike.imCLM_apply, ← RCLike.imCLM.integral_comp_comm hint]
+    have him : (fun x ↦ RCLike.imCLM (f₂ x * starRingEnd 𝕜 (f₁ x))) =
+        fun x ↦ h₁ r₁ x * h₂ i₂ x - h₁ i₁ x * h₂ r₂ x := funext fun x ↦ by
+      simp only [RCLike.imCLM_apply, RCLike.mul_im, RCLike.conj_re, RCLike.conj_im,
+        harmonicSphereRestriction_mapLinearHarmonic, RCLike.reLm_coe, RCLike.imLm_coe,
+        f₁, f₂, h₁, h₂, r₁, i₁, r₂, i₂]
+      ring
+    rw [him, integral_sub (hintMul r₁ i₂) (hintMul i₁ r₂), hmul r₁ i₂, hmul i₁ r₂, sub_zero]
 
 end Eigenvalue
 
 section Completeness
 
 variable {σ : Type*} [Fintype σ] {m : ℕ} [Fact (finrank ℝ (EuclideanSpace ℝ σ) = m + 1)]
-
-/-- **`L²` completeness of spherical harmonics on the round sphere.** For `[RCLike 𝕜]`, the span of
-the images in `L²(Sᵐ, 𝕜)` (with respect to `riemannianVolume`) of all harmonic sphere-restriction
-spaces is dense. -/
-theorem topologicalClosure_iSup_map_toLp_harmonicSphereRestriction {𝕜 : Type*} [RCLike 𝕜] :
-    Submodule.topologicalClosure
-      (⨆ d, (LinearMap.range (MvPolynomial.harmonicSphereRestriction (R := 𝕜) σ d)).map
-        (ContinuousMap.toLp (E := 𝕜) 2
-          (riemannianVolume (𝓡 m) (sphere (0 : EuclideanSpace ℝ σ) 1)) 𝕜).toLinearMap) = ⊤ := by
-  have : IsManifold (𝓡 m) 1 (sphere (0 : EuclideanSpace ℝ σ) 1) := IsManifold.of_le le_top
-  let μ := riemannianVolume (𝓡 m) (sphere (0 : EuclideanSpace ℝ σ) 1)
-  let T := ContinuousMap.toLp (E := 𝕜) 2 μ 𝕜
-  let S₀ : Submodule 𝕜 C(sphere (0 : EuclideanSpace ℝ σ) 1, 𝕜) :=
-    ⨆ d, LinearMap.range (MvPolynomial.harmonicSphereRestriction (R := 𝕜) σ d)
-  rw [← Submodule.map_iSup]
-  have hS₀ : Dense (S₀ : Set C(sphere (0 : EuclideanSpace ℝ σ) 1, 𝕜)) := by
-    intro f
-    rw [← Submodule.topologicalClosure_coe,
-      MvPolynomial.topologicalClosure_iSup_range_harmonicSphereRestriction]
-    trivial
-  have hd : Dense ((S₀.map T.toLinearMap : Submodule 𝕜 (Lp 𝕜 2 μ)) : Set (Lp 𝕜 2 μ)) := by
-    rw [Submodule.map_coe]
-    exact (ContinuousMap.toLp_denseRange (p := 2) 𝕜 μ 𝕜
-      (by simp)).dense_image T.continuous hS₀
-  exact eq_top_iff.2 fun g _ ↦ hd g
-
-/-- An element of `L²(Sᵐ, 𝕜)` orthogonal to every degree-`d` spherical harmonic is zero. -/
-theorem eq_zero_of_forall_inner_toLp_harmonicSphereRestriction_eq_zero {𝕜 : Type*} [RCLike 𝕜]
-    {g : Lp 𝕜 2 (riemannianVolume (𝓡 m) (sphere (0 : EuclideanSpace ℝ σ) 1))}
-    (horth : ∀ (d : ℕ) (p : MvPolynomial.harmonicSubmodule σ 𝕜 d),
-      ⟪ContinuousMap.toLp (E := 𝕜) 2
-          (riemannianVolume (𝓡 m) (sphere (0 : EuclideanSpace ℝ σ) 1)) 𝕜
-          (MvPolynomial.harmonicSphereRestriction σ d p), g⟫_𝕜 = 0) :
-    g = 0 := by
-  let μ := riemannianVolume (𝓡 m) (sphere (0 : EuclideanSpace ℝ σ) 1)
-  let T := ContinuousMap.toLp (E := 𝕜) 2 μ 𝕜
-  let W : Submodule 𝕜 (Lp 𝕜 2 μ) :=
-    ⨆ d, (LinearMap.range (MvPolynomial.harmonicSphereRestriction (R := 𝕜) σ d)).map T.toLinearMap
-  let K : Submodule 𝕜 (Lp 𝕜 2 μ) :=
-    { carrier := {u | ⟪u, g⟫_𝕜 = 0}
-      zero_mem' := inner_zero_left g
-      add_mem' := fun {u v} hu hv ↦ by
-        change ⟪u + v, g⟫_𝕜 = 0
-        rw [inner_add_left, hu, hv, add_zero]
-      smul_mem' := fun c {u} hu ↦ by
-        change ⟪c • u, g⟫_𝕜 = 0
-        rw [inner_smul_left, hu, mul_zero] }
-  have hWK : W ≤ K := iSup_le fun d ↦ by
-    rintro _ ⟨_, ⟨p, rfl⟩, rfl⟩
-    exact horth d p
-  have hclosed : IsClosed (K : Set (Lp 𝕜 2 μ)) :=
-    isClosed_eq (continuous_id.inner continuous_const) continuous_const
-  have hcl : closure (W : Set (Lp 𝕜 2 μ)) ⊆ K := closure_minimal hWK hclosed
-  have hgW : g ∈ W.topologicalClosure := by
-    rw [topologicalClosure_iSup_map_toLp_harmonicSphereRestriction]
-    trivial
-  exact inner_self_eq_zero.1 (hcl hgW)
 
 /-- **Complete `C²` degree-`d` eigenspace identification on the round sphere (`m ≥ 1`).** A `C²`
 function `f : Sᵐ → ℝ` satisfies `Δ_{Sᵐ} f = -d (d + m - 1) f` if and only if it is the restriction

@@ -42,8 +42,9 @@ extension used in the Alexander trick.
 ## Main results
 
 * `TauCeti.sphereExtend_coe`, `TauCeti.sphereExtend_smul_of_pos`,
-  `TauCeti.sphereCone_eq_norm_smul_sphereExtend`: restriction, `0`-homogeneity, and relation to
-  `TauCeti.sphereCone`.
+  `TauCeti.continuousAt_sphereExtend`, `TauCeti.continuousOn_sphereExtend`,
+  `TauCeti.sphereCone_eq_norm_smul_sphereExtend`: restriction, `0`-homogeneity, continuity away from
+  the origin, and relation to `TauCeti.sphereCone`.
 * `TauCeti.sphereCone_smul_coe`: the cone sends `r • u` to `r • f u` for `r ≥ 0`.
 * `TauCeti.sphereCone_smul`: the cone is positively homogeneous.
 * `TauCeti.continuous_sphereCone`: the cone over a continuous bounded map is continuous.
@@ -225,16 +226,51 @@ theorem sphereExtend_zero_fun {H : Type*} [Zero H] :
   ext x
   by_cases hx : x = 0 <;> simp [sphereExtend, hx]
 
+@[simp]
 theorem sphereExtend_add {H : Type*} [AddZeroClass H] (f₁ f₂ : sphere (0 : E) 1 → H) :
     sphereExtend (f₁ + f₂) = sphereExtend f₁ + sphereExtend f₂ := by
   ext x
   by_cases hx : x = 0 <;> simp [sphereExtend, hx]
 
-theorem sphereExtend_smul_fun {R H : Type*} [Zero H] [SMulZeroClass R H] (c : R)
+@[simp]
+theorem sphereExtend_const_smul {R H : Type*} [Zero H] [SMulZeroClass R H] (c : R)
     (f : sphere (0 : E) 1 → H) :
     sphereExtend (c • f) = c • sphereExtend f := by
   ext x
   by_cases hx : x = 0 <;> simp [sphereExtend, hx]
+
+/-- Away from the origin, `sphereExtend f` is continuous at `x` whenever `f` is continuous at
+`‖x‖⁻¹ • x`. -/
+theorem continuousAt_sphereExtend {H : Type*} [TopologicalSpace H] [Zero H]
+    {f : sphere (0 : E) 1 → H} {x : E} (hx : x ≠ 0)
+    (hf : ContinuousAt f
+      ⟨NormedSpace.normalize x, mem_sphere_zero_iff_norm.2 (NormedSpace.norm_normalize hx)⟩) :
+    ContinuousAt (sphereExtend f) x := by
+  have heq : (({0}ᶜ : Set E).domRestrict (sphereExtend f)) =
+      (f ∘ Prod.fst) ∘ homeomorphUnitSphereProd E := by
+    funext y
+    rw [domRestrict_apply, sphereExtend_of_ne_zero f y.2, Function.comp_apply, Function.comp_apply]
+    congr 1
+    ext
+    simp only [homeomorphUnitSphereProd_apply_fst_coe, NormedSpace.normalize]
+  have hx_eq : (homeomorphUnitSphereProd E ⟨x, mem_compl_singleton_iff.2 hx⟩).1 =
+      ⟨NormedSpace.normalize x, mem_sphere_zero_iff_norm.2 (NormedSpace.norm_normalize hx)⟩ := by
+    ext
+    simp only [homeomorphUnitSphereProd_apply_fst_coe, NormedSpace.normalize]
+  have hcont : ContinuousAt (({0}ᶜ : Set E).domRestrict (sphereExtend f))
+      ⟨x, mem_compl_singleton_iff.2 hx⟩ := by
+    rw [heq]
+    exact ((hx_eq ▸ hf).comp continuous_fst.continuousAt).comp
+      (homeomorphUnitSphereProd E).continuous.continuousAt
+  exact (continuousWithinAt_iff_continuousAt_domRestrict _ _).2 hcont
+    |>.continuousAt (isOpen_compl_singleton.mem_nhds hx)
+
+/-- The `0`-homogeneous radial extension of a continuous map on the unit sphere is continuous
+away from the origin. -/
+theorem continuousOn_sphereExtend {H : Type*} [TopologicalSpace H] [Zero H]
+    {f : sphere (0 : E) 1 → H} (hf : Continuous f) :
+    ContinuousOn (sphereExtend f) {0}ᶜ :=
+  fun _ hx ↦ (continuousAt_sphereExtend hx hf.continuousAt).continuousWithinAt
 
 /-- The cone over `f` is `‖x‖` times its `0`-homogeneous radial extension `sphereExtend f`. -/
 theorem sphereCone_eq_norm_smul_sphereExtend (f : sphere (0 : E) 1 → F) (x : E) :
@@ -244,7 +280,7 @@ theorem sphereCone_eq_norm_smul_sphereExtend (f : sphere (0 : E) 1 → F) (x : E
   · rw [sphereCone_of_ne_zero hx, sphereExtend_of_ne_zero f hx]
     congr 2
     ext
-    exact homeomorphUnitSphereProd_apply_fst_coe E ⟨x, mem_compl_singleton_iff.2 hx⟩
+    simp only [homeomorphUnitSphereProd_apply_fst_coe, NormedSpace.normalize]
 
 end TauCeti
 

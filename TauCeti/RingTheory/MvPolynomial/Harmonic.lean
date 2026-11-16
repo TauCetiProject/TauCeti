@@ -9,6 +9,8 @@ public import Mathlib.LinearAlgebra.FiniteDimensional.Lemmas
 public import Mathlib.RingTheory.MvPolynomial.EulerIdentity
 public import TauCeti.RingTheory.MvPolynomial.Finrank
 public import TauCeti.RingTheory.MvPolynomial.Homogeneous
+import Mathlib.Algebra.MvPolynomial.Equiv
+import Mathlib.Algebra.Polynomial.Monic
 
 /-!
 # Harmonic polynomials and the Fischer decomposition
@@ -60,10 +62,11 @@ notation class `Laplacian`, so that this file stays purely algebraic.
 * `MvPolynomial.laplacian_normSq_mul`: `Δ (r² q) = r² Δ q + (2n + 4e) q` for `q ∈ P_e`.
 * `MvPolynomial.laplacian_normSq_pow_mul`: `Δ (r^(2(k+1)) h) = 2(k+1)(2l + n + 2k) r^(2k) h`
   for `h ∈ H_l`.
-* `MvPolynomial.eq_zero_of_laplacian_normSq_mul_eq_zero`,
-  `MvPolynomial.eq_zero_of_normSq_mul_eq_zero`, and `MvPolynomial.exists_laplacian_normSq_mul_eq`:
-  with at least one variable, `Δ (r² q) = 0 → q = 0` and `r² q = 0 → q = 0` (under
-  `HasUniqueDiv R`), and `q ↦ Δ (r² q)` is bijective on `P_e` over a field of characteristic zero.
+* `MvPolynomial.eq_zero_of_normSq_mul_eq_zero`,
+  `MvPolynomial.eq_zero_of_laplacian_normSq_mul_eq_zero`, and
+  `MvPolynomial.exists_laplacian_normSq_mul_eq`: with at least one variable, `r² q = 0 → q = 0`
+  over any commutative semiring, `Δ (r² q) = 0 → q = 0` under `HasUniqueDiv R`, and
+  `q ↦ Δ (r² q)` is bijective on `P_e` over a field of characteristic zero.
 * `MvPolynomial.harmonicSubmodule_sup_map_mulLeft_normSq` and
   `MvPolynomial.disjoint_ker_laplacian_range_mulLeft_normSq`: the Fischer decomposition
   `P_(e+2) = H_(e+2) ⊕ r² P_e`.
@@ -230,6 +233,26 @@ theorem laplacian_normSq_pow_mul {h : MvPolynomial σ R} {l : ℕ} (hh : h.IsHom
     push_cast
     ring
 
+/-- With at least one variable, `r² = ∑ᵢ Xᵢ²` is a non-zero-divisor over any commutative semiring:
+if `r² q = 0`, then `q = 0`. -/
+theorem eq_zero_of_normSq_mul_eq_zero [Nonempty σ] {q : MvPolynomial σ R}
+    (h : normSq σ R * q = 0) : q = 0 := by
+  classical
+  obtain ⟨i₀⟩ := ‹Nonempty σ›
+  let e := (renameEquiv R (Equiv.optionSubtypeNe i₀).symm).trans
+    (optionEquivLeft R {j // j ≠ i₀})
+  have he : e (normSq σ R) =
+      Polynomial.X ^ 2 + Polynomial.C (normSq {j // j ≠ i₀} R) := by
+    rw [normSq_def, map_sum, ← (Equiv.optionSubtypeNe i₀).sum_comp, Fintype.sum_option]
+    simp only [e, AlgEquiv.trans_apply, map_pow, renameEquiv_apply, rename_X,
+      Equiv.symm_apply_apply, optionEquivLeft_X_none, optionEquivLeft_X_some, normSq_def, map_sum]
+  have hmonic : (e (normSq σ R)).Monic := by
+    rw [he]
+    exact Polynomial.monic_X_pow_add_C _ two_ne_zero
+  have hmul : e (normSq σ R) * e q = 0 := by
+    rw [← map_mul, h, map_zero]
+  exact e.injective ((hmonic.mul_right_eq_zero_iff.1 hmul).trans (map_zero e).symm)
+
 end NormSq
 
 section Harmonic
@@ -257,8 +280,7 @@ theorem map_mem_harmonicSubmodule {S : Type*} [CommSemiring S] (f : R →+* S) {
     {p : MvPolynomial σ R} (hp : p ∈ harmonicSubmodule σ R d) :
     map f p ∈ harmonicSubmodule σ S d := by
   rw [mem_harmonicSubmodule_iff] at hp ⊢
-  refine ⟨fun m hm ↦ hp.1 fun h0 ↦ hm (by rw [coeff_map, h0, map_zero]), ?_⟩
-  rw [← map_laplacian, hp.2, map_zero]
+  exact ⟨hp.1.map f, by rw [← map_laplacian, hp.2, map_zero]⟩
 
 /-- With no variables, every harmonic polynomial of positive degree is zero. -/
 @[simp]
@@ -333,12 +355,6 @@ theorem eq_zero_of_laplacian_normSq_mul_eq_zero [Nonempty σ] {q : MvPolynomial 
   rw [← sum_homogeneousComponent q]
   exact Finset.sum_eq_zero fun d _ ↦ hc d
 
-/-- With at least one variable and unique division by positive integers, `r² = ∑ᵢ Xᵢ²` is a
-non-zero-divisor: if `r² q = 0`, then `q = 0`. -/
-theorem eq_zero_of_normSq_mul_eq_zero [Nonempty σ] {q : MvPolynomial σ R}
-    (h : normSq σ R * q = 0) : q = 0 :=
-  eq_zero_of_laplacian_normSq_mul_eq_zero (by rw [h, map_zero])
-
 /-- **The Fischer decomposition**, disjointness: a harmonic polynomial divisible by `r²` is
 zero. -/
 theorem disjoint_ker_laplacian_range_mulLeft_normSq :
@@ -351,40 +367,36 @@ theorem disjoint_ker_laplacian_range_mulLeft_normSq :
   rw [LinearMap.mulLeft_apply, eq_zero_of_laplacian_normSq_mul_eq_zero hΔ, mul_zero]
 
 /-- **Linear independence of the iterated Fischer summands**: with at least one variable over a
-commutative ring with `HasUniqueDiv`, if `h_k ∈ H_(d - 2k)` for `0 ≤ k ≤ d / 2` satisfy
+commutative semiring with `HasUniqueDiv`, if `h_k ∈ H_(d - 2k)` for `0 ≤ k ≤ d / 2` satisfy
 `∑_{k ≤ d/2} r^(2k) h_k = 0`, then every `h_k` is zero. With no variables this fails: `r² = 0`, so
 for `d = 2` the component `h₁ ∈ H_0` is unconstrained. -/
-theorem sum_normSq_pow_mul_eq_zero_iff {R : Type*} [CommRing R] [HasUniqueDiv R] [Nonempty σ]
+theorem sum_normSq_pow_mul_eq_zero_iff [Nonempty σ]
     {d : ℕ} {h : ℕ → MvPolynomial σ R}
     (hh : ∀ k ≤ d / 2, h k ∈ harmonicSubmodule σ R (d - 2 * k)) :
     ∑ k ∈ Finset.Iic (d / 2), normSq σ R ^ k * h k = 0 ↔ ∀ k ≤ d / 2, h k = 0 := by
   refine ⟨?_, fun hz ↦ Finset.sum_eq_zero fun k hk ↦ by rw [hz k (Finset.mem_Iic.1 hk), mul_zero]⟩
   induction d using Nat.strong_induction_on generalizing h with
   | _ d ih =>
-  have hrange (m : ℕ) : Finset.Iic m = Finset.range (m + 1) := by
-    ext k; simp
   rcases lt_or_ge d 2 with hd | hd
-  · rw [Nat.div_eq_of_lt hd, hrange]
+  · rw [Nat.div_eq_of_lt hd, ← Nat.range_succ_eq_Iic]
     intro h0 k hk
     have hk0 : k = 0 := by have := Nat.div_eq_of_lt hd; omega
     subst hk0
     simpa using h0
   obtain ⟨e, rfl⟩ : ∃ e, d = e + 2 := ⟨d - 2, by omega⟩
-  rw [Nat.add_div_right e two_pos, hrange, Finset.sum_range_succ']
-  simp only [pow_zero, one_mul, pow_succ', mul_assoc, ← Finset.mul_sum, ← hrange]
+  rw [Nat.add_div_right e two_pos, ← Nat.range_succ_eq_Iic, Finset.sum_range_succ']
+  simp only [pow_zero, one_mul, pow_succ', mul_assoc, ← Finset.mul_sum, Nat.range_succ_eq_Iic]
   intro hsum
+  have hΔ : laplacian (normSq σ R * ∑ x ∈ Finset.Iic (e / 2), normSq σ R ^ x * h (x + 1)) = 0 := by
+    have := congrArg laplacian hsum
+    rwa [map_add, (hh 0 (Nat.zero_le _)).2, add_zero, map_zero] at this
+  have htail_sum : ∑ x ∈ Finset.Iic (e / 2), normSq σ R ^ x * h (x + 1) = 0 :=
+    eq_zero_of_laplacian_normSq_mul_eq_zero hΔ
   have hh0 : h 0 = 0 := by
-    have hmem : h 0 ∈ LinearMap.ker laplacian ⊓
-        LinearMap.range (LinearMap.mulLeft R (normSq σ R)) :=
-      ⟨(hh 0 (by omega)).2, -∑ x ∈ Finset.Iic (e / 2), normSq σ R ^ x * h (x + 1), by
-        rw [LinearMap.mulLeft_apply, mul_neg, neg_eq_iff_add_eq_zero]
-        exact hsum⟩
-    rwa [disjoint_ker_laplacian_range_mulLeft_normSq.eq_bot, Submodule.mem_bot] at hmem
-  rw [hh0, add_zero] at hsum
+    rwa [htail_sum, mul_zero, zero_add] at hsum
   have htail := (ih e (by omega) (h := fun j ↦ h (j + 1)) fun j hj ↦ by
     simpa [show e + 2 - 2 * (j + 1) = e - 2 * j by omega] using
-      hh (j + 1) (by rw [Nat.add_div_right e two_pos]; omega))
-    (eq_zero_of_normSq_mul_eq_zero hsum)
+      hh (j + 1) (by rw [Nat.add_div_right e two_pos]; omega)) htail_sum
   intro k hk
   rcases k with _ | j
   · exact hh0
@@ -483,6 +495,59 @@ private noncomputable def fischerLinearMap (σ K : Type*) [Field K] [Fintype σ]
   map_add' g h := Subtype.ext <| by simp [mul_add, Finset.sum_add_distrib]
   map_smul' c h := Subtype.ext <| by simp [Finset.smul_sum]
 
+omit [CharZero K] [Nonempty σ] in
+@[simp]
+private theorem coe_fischerLinearMap_apply (d : ℕ)
+    (h : Π k : Fin (d / 2 + 1), harmonicSubmodule σ K (d - 2 * k)) :
+    (fischerLinearMap σ K d h : MvPolynomial σ K) =
+      ∑ k : Fin (d / 2 + 1), normSq σ K ^ (k : ℕ) * (h k : MvPolynomial σ K) :=
+  rfl
+
+private theorem fischerLinearMap_injective (d : ℕ) :
+    Function.Injective (fischerLinearMap σ K d) := by
+  refine (injective_iff_map_eq_zero _).2 fun h hh ↦ funext fun k ↦ Subtype.ext ?_
+  let h' : ℕ → MvPolynomial σ K := fun j ↦
+    if hj : j ≤ d / 2 then (h ⟨j, Nat.lt_succ_of_le hj⟩ : _) else 0
+  have hsum : ∑ j ∈ Finset.Iic (d / 2), normSq σ K ^ j * h' j = 0 := by
+    rw [← Nat.range_succ_eq_Iic, ← Fin.sum_univ_eq_sum_range]
+    have hval : (fischerLinearMap σ K d h : MvPolynomial σ K) = 0 := by
+      rw [hh, Submodule.coe_zero]
+    rw [coe_fischerLinearMap_apply] at hval
+    refine Eq.trans (Finset.sum_congr rfl fun j _ ↦ ?_) hval
+    simp only [h', dite_eq_left (Nat.le_of_lt_succ j.isLt)]
+  have hzero := (sum_normSq_pow_mul_eq_zero_iff (h := h') fun j hj ↦ by
+    simp only [h', dite_eq_left hj]
+    exact (h ⟨j, Nat.lt_succ_of_le hj⟩).2).1 hsum k (Nat.le_of_lt_succ k.isLt)
+  simpa [h', dite_eq_left (Nat.le_of_lt_succ k.isLt)] using hzero
+
+omit [Nonempty σ] in
+private theorem fischerLinearMap_surjective (d : ℕ) :
+    Function.Surjective (fischerLinearMap σ K d) := by
+  classical
+  rw [← LinearMap.range_eq_top, eq_top_iff]
+  intro p _
+  have hp : (p : MvPolynomial σ K) ∈
+      ⨆ k ≤ d / 2, (harmonicSubmodule σ K (d - 2 * k)).map
+        (LinearMap.mulLeft K (normSq σ K ^ k)) := by
+    rw [← homogeneousSubmodule_eq_iSup_map_mulLeft_normSq_pow]; exact p.2
+  suffices hle : ⨆ k ≤ d / 2, (harmonicSubmodule σ K (d - 2 * k)).map
+      (LinearMap.mulLeft K (normSq σ K ^ k)) ≤
+      (LinearMap.range (fischerLinearMap σ K d)).map (homogeneousSubmodule σ K d).subtype by
+    rcases hle hp with ⟨q, hq, hqp⟩
+    exact Subtype.ext hqp ▸ hq
+  refine iSup₂_le fun k hk ↦ ?_
+  rintro _ ⟨q, hq, rfl⟩
+  let k₀ : Fin (d / 2 + 1) := ⟨k, Nat.lt_succ_of_le hk⟩
+  refine ⟨fischerLinearMap σ K d (Pi.single k₀ ⟨q, hq⟩), ⟨_, rfl⟩, ?_⟩
+  rw [Submodule.subtype_apply, coe_fischerLinearMap_apply, LinearMap.mulLeft_apply,
+    Finset.sum_eq_single k₀ (fun j _ hj ↦ by simp [Pi.single_eq_of_ne hj])
+      fun hk₀ ↦ (hk₀ (Finset.mem_univ k₀)).elim]
+  simp [k₀]
+
+private theorem fischerLinearMap_bijective (d : ℕ) :
+    Function.Bijective (fischerLinearMap σ K d) :=
+  ⟨fischerLinearMap_injective d, fischerLinearMap_surjective d⟩
+
 /-- **The iterated Fischer decomposition as a linear equivalence**: over a field of characteristic
 zero and with at least one variable, `(h_k)_{k ≤ d/2} ↦ ∑_{k ≤ d/2} r^(2k) h_k` is a linear
 isomorphism from `∏_{k ≤ d/2} H_(d - 2k)` onto `P_d`. -/
@@ -490,44 +555,14 @@ noncomputable def fischerEquiv (σ K : Type*) [Field K] [CharZero K] [Fintype σ
     (d : ℕ) :
     (Π k : Fin (d / 2 + 1), harmonicSubmodule σ K (d - 2 * k)) ≃ₗ[K]
       homogeneousSubmodule σ K d :=
-  LinearEquiv.ofBijective (fischerLinearMap σ K d) ⟨by
-    refine (injective_iff_map_eq_zero _).2 fun h hh ↦ funext fun k ↦ Subtype.ext ?_
-    let h' : ℕ → MvPolynomial σ K := fun j ↦
-      if hj : j ≤ d / 2 then (h ⟨j, Nat.lt_succ_of_le hj⟩ : _) else 0
-    have hsum : ∑ j ∈ Finset.Iic (d / 2), normSq σ K ^ j * h' j = 0 := by
-      have hrange : Finset.Iic (d / 2) = Finset.range (d / 2 + 1) := by ext j; simp
-      rw [hrange, ← Fin.sum_univ_eq_sum_range]
-      refine Eq.trans (Finset.sum_congr rfl fun j _ ↦ ?_) (congrArg Subtype.val hh)
-      simp only [h', dite_eq_left (Nat.le_of_lt_succ j.isLt)]
-    have hzero := (sum_normSq_pow_mul_eq_zero_iff (h := h') fun j hj ↦ by
-      simp only [h', dite_eq_left hj]
-      exact (h ⟨j, Nat.lt_succ_of_le hj⟩).2).1 hsum k (Nat.le_of_lt_succ k.isLt)
-    simpa [h', dite_eq_left (Nat.le_of_lt_succ k.isLt)] using hzero, by
-    classical
-    rw [← LinearMap.range_eq_top, eq_top_iff]
-    intro p _
-    have hp : (p : MvPolynomial σ K) ∈
-        ⨆ k ≤ d / 2, (harmonicSubmodule σ K (d - 2 * k)).map
-          (LinearMap.mulLeft K (normSq σ K ^ k)) := by
-      rw [← homogeneousSubmodule_eq_iSup_map_mulLeft_normSq_pow]; exact p.2
-    suffices hle : ⨆ k ≤ d / 2, (harmonicSubmodule σ K (d - 2 * k)).map
-        (LinearMap.mulLeft K (normSq σ K ^ k)) ≤
-        (LinearMap.range (fischerLinearMap σ K d)).map (homogeneousSubmodule σ K d).subtype by
-      rcases hle hp with ⟨q, hq, hqp⟩
-      exact Subtype.ext hqp ▸ hq
-    refine iSup₂_le fun k hk ↦ ?_
-    rintro _ ⟨q, hq, rfl⟩
-    let k₀ : Fin (d / 2 + 1) := ⟨k, Nat.lt_succ_of_le hk⟩
-    refine ⟨fischerLinearMap σ K d (Pi.single k₀ ⟨q, hq⟩), ⟨_, rfl⟩, ?_⟩
-    exact Eq.trans (Finset.sum_eq_single k₀ (fun j _ hj ↦ by simp [Pi.single_eq_of_ne hj])
-      fun hk₀ ↦ (hk₀ (Finset.mem_univ k₀)).elim) (by simp [k₀])⟩
+  LinearEquiv.ofBijective (fischerLinearMap σ K d) (fischerLinearMap_bijective d)
 
 @[simp]
 theorem coe_fischerEquiv_apply (d : ℕ)
     (h : Π k : Fin (d / 2 + 1), harmonicSubmodule σ K (d - 2 * k)) :
     (fischerEquiv σ K d h : MvPolynomial σ K) =
-      ∑ k : Fin (d / 2 + 1), normSq σ K ^ (k : ℕ) * (h k : MvPolynomial σ K) :=
-  (rfl)
+      ∑ k : Fin (d / 2 + 1), normSq σ K ^ (k : ℕ) * (h k : MvPolynomial σ K) := by
+  rw [fischerEquiv, LinearEquiv.ofBijective_apply, coe_fischerLinearMap_apply]
 
 /-- Every homogeneous polynomial of degree `d` over a field of characteristic zero (with at least
 one variable) decomposes uniquely as `∑_{k ≤ d/2} r^(2k) h_k` with `h_k ∈ H_(d - 2k)`. -/
