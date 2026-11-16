@@ -77,17 +77,21 @@ local notation "G" => spinCGroup (realCliffordForm n 0) hQ
 local notation "𝔤" => LeftInvariantDerivation IC G
 local notation "𝔰" => LeftInvariantDerivation IS (spinGroup (realCliffordForm n 0))
 local notation "d" => ContinuousMonoidHom.lieWeight (I := IC) (detContinuousMonoidHom _ hQ)
+local notation "ιS" =>
+  ContinuousMonoidHom.lieMap (I := IS) (I' := IC) (ofSpinContinuousMonoidHom _ hQ)
+local notation "ιC" =>
+  ContinuousMonoidHom.lieMap (I := 𝓡 1) (I' := IC) (ofCircleContinuousMonoidHom _ hQ)
 
 /-- The Lie differential of the defining central quotient `Spin(n) × U(1) → Spinᶜ(n)` is
 bijective. -/
 theorem lieMap_mkContinuousMonoidHom_bijective :
     Function.Bijective
-      (ContinuousMonoidHom.lieMap (I := IC) (I' := IC) (mkContinuousMonoidHom _ hQ)) := by
-  apply ContinuousMonoidHom.lieMap_bijective_of_isLocalDiffeomorphAt
-  have hcoe : (mkContinuousMonoidHom (realCliffordForm n 0) hQ :
-      spinGroup (realCliffordForm n 0) × Circle → G) = mk _ hQ :=
-    funext (mkContinuousMonoidHom_apply _ hQ)
-  exact hcoe.symm ▸ isLocalDiffeomorph_realMk n hQ 1
+      (ContinuousMonoidHom.lieMap (I := IC) (I' := IC) (mkContinuousMonoidHom _ hQ)) :=
+  ContinuousMonoidHom.lieMap_bijective_of_isLocalDiffeomorphAt _ <| by
+    have hcoe : (mkContinuousMonoidHom (realCliffordForm n 0) hQ :
+        spinGroup (realCliffordForm n 0) × Circle → G) = mk _ hQ :=
+      funext (mkContinuousMonoidHom_apply _ hQ)
+    exact hcoe.symm ▸ isLocalDiffeomorph_realMk n hQ 1
 
 /-- The Lie-algebra equivalence induced by the central double-cover quotient homomorphism
 `Spin(n) × U(1) → Spinᶜ(n)`. -/
@@ -114,57 +118,36 @@ def realSpinProdCircleLieEquiv : (𝔰 × LeftInvariantDerivation (𝓡 1) Circl
 images in `Lie(Spinᶜ(n))`. -/
 @[simp]
 theorem realSpinProdCircleLieEquiv_apply (p : 𝔰 × LeftInvariantDerivation (𝓡 1) Circle) :
-    realSpinProdCircleLieEquiv n hQ p =
-      ContinuousMonoidHom.lieMap (I := IS) (I' := IC) (ofSpinContinuousMonoidHom _ hQ) p.1 +
-        ContinuousMonoidHom.lieMap (I := 𝓡 1) (I' := IC)
-          (ofCircleContinuousMonoidHom _ hQ) p.2 := by
-  -- Congruence avoids dependent rewriting across the reducible `spinCGroup` Lie-group model.
-  calc
-    realSpinProdCircleLieEquiv n hQ p
-      = ContinuousMonoidHom.lieMap (I := IC) (I' := IC) (mkContinuousMonoidHom _ hQ)
-          (TauCeti.Lie.prodLieEquiv.symm p) := (rfl)
-    _ = ContinuousMonoidHom.lieMap (I := IS) (I' := IC)
-          ((mkContinuousMonoidHom _ hQ).comp (ContinuousMonoidHom.inl _ _)) p.1 +
-        ContinuousMonoidHom.lieMap (I := 𝓡 1) (I' := IC)
-          ((mkContinuousMonoidHom _ hQ).comp (ContinuousMonoidHom.inr _ _)) p.2 :=
-      TauCeti.Lie.lieMap_prodLieEquiv_symm (mkContinuousMonoidHom _ hQ) p
-    _ = ContinuousMonoidHom.lieMap (I := IS) (I' := IC) (ofSpinContinuousMonoidHom _ hQ) p.1 +
-        ContinuousMonoidHom.lieMap (I := 𝓡 1) (I' := IC)
-          (ofCircleContinuousMonoidHom _ hQ) p.2 :=
-      congrArg₂ (· + ·)
-        (congrArg (fun f ↦ ContinuousMonoidHom.lieMap (I := IS) (I' := IC) f p.1)
-          (mkContinuousMonoidHom_comp_inl _ hQ))
-        (congrArg (fun f ↦ ContinuousMonoidHom.lieMap (I := 𝓡 1) (I' := IC) f p.2)
-          (mkContinuousMonoidHom_comp_inr _ hQ))
+    realSpinProdCircleLieEquiv n hQ p = ιS p.1 + ιC p.2 :=
+  (TauCeti.Lie.lieMap_prodLieEquiv_symm (mkContinuousMonoidHom _ hQ) p).trans <|
+    congrArg₂ (· + ·)
+      (congrArg (fun f ↦ ContinuousMonoidHom.lieMap (I := IS) (I' := IC) f p.1)
+        (mkContinuousMonoidHom_comp_inl _ hQ))
+      (congrArg (fun f ↦ ContinuousMonoidHom.lieMap (I := 𝓡 1) (I' := IC) f p.2)
+        (mkContinuousMonoidHom_comp_inr _ hQ))
 
 /-- The Lie differential of the Spin inclusion `Spin(n) → Spinᶜ(n)` is injective. -/
-theorem lieMap_ofSpinContinuousMonoidHom_injective :
-    Function.Injective
-      (ContinuousMonoidHom.lieMap (I := IS) (I' := IC) (ofSpinContinuousMonoidHom _ hQ)) := by
+theorem lieMap_ofSpinContinuousMonoidHom_injective : Function.Injective ιS := by
   intro X Y hXY
   apply TauCeti.Lie.lieMap_comp_inl_injective
     (lieMap_mkContinuousMonoidHom_bijective n hQ).injective
-  exact (congrArg (fun f ↦ ContinuousMonoidHom.lieMap (I := IS) (I' := IC) f X)
-    (mkContinuousMonoidHom_comp_inl _ hQ)).trans
-    (hXY.trans (congrArg (fun f ↦ ContinuousMonoidHom.lieMap (I := IS) (I' := IC) f Y)
-      (mkContinuousMonoidHom_comp_inl _ hQ)).symm)
+  have h := mkContinuousMonoidHom_comp_inl (realCliffordForm n 0) hQ
+  exact (congrArg (fun f ↦ ContinuousMonoidHom.lieMap (I := IS) (I' := IC) f X) h).trans <|
+    hXY.trans (congrArg (fun f ↦ ContinuousMonoidHom.lieMap (I := IS) (I' := IC) f Y) h).symm
 
 /-- The Lie differential of the central circle inclusion `U(1) → Spinᶜ(n)` is injective. -/
-theorem lieMap_ofCircleContinuousMonoidHom_injective :
-    Function.Injective
-      (ContinuousMonoidHom.lieMap (I := 𝓡 1) (I' := IC) (ofCircleContinuousMonoidHom _ hQ)) := by
+theorem lieMap_ofCircleContinuousMonoidHom_injective : Function.Injective ιC := by
   intro Z W hZW
   apply TauCeti.Lie.lieMap_comp_inr_injective
     (lieMap_mkContinuousMonoidHom_bijective n hQ).injective
-  exact (congrArg (fun f ↦ ContinuousMonoidHom.lieMap (I := 𝓡 1) (I' := IC) f Z)
-    (mkContinuousMonoidHom_comp_inr _ hQ)).trans
-    (hZW.trans (congrArg (fun f ↦ ContinuousMonoidHom.lieMap (I := 𝓡 1) (I' := IC) f W)
-      (mkContinuousMonoidHom_comp_inr _ hQ)).symm)
+  have h := mkContinuousMonoidHom_comp_inr (realCliffordForm n 0) hQ
+  exact (congrArg (fun f ↦ ContinuousMonoidHom.lieMap (I := 𝓡 1) (I' := IC) f Z) h).trans <|
+    hZW.trans (congrArg (fun f ↦ ContinuousMonoidHom.lieMap (I := 𝓡 1) (I' := IC) f W) h).symm
 
 /-- The determinant differential vanishes on the image of the Spin Lie algebra. -/
 @[simp]
 theorem lieWeight_detContinuousMonoidHom_lieMap_ofSpinContinuousMonoidHom (X : 𝔰) :
-    d (ContinuousMonoidHom.lieMap (I := IS) (I' := IC) (ofSpinContinuousMonoidHom _ hQ) X) = 0 := by
+    d (ιS X) = 0 := by
   have h := LinearMap.congr_fun
     (ContinuousMonoidHom.lieWeight_comp (I := IS) (I' := IC)
       (detContinuousMonoidHom _ hQ) (ofSpinContinuousMonoidHom _ hQ)) X
@@ -176,61 +159,30 @@ theorem lieWeight_detContinuousMonoidHom_lieMap_ofSpinContinuousMonoidHom (X : �
 which the determinant differential vanishes. -/
 @[simp]
 theorem range_lieMap_ofSpinContinuousMonoidHom :
-    (ContinuousMonoidHom.lieMap (I := IS) (I' := IC) (ofSpinContinuousMonoidHom _ hQ)).range =
+    (ιS).range =
       ContinuousMonoidHom.lieWeightKerLieSubalgebra (I := IC) (detContinuousMonoidHom _ hQ) := by
-  apply SetLike.ext
-  intro Y
-  refine ⟨?_, fun hY ↦ ?_⟩
+  refine SetLike.ext fun Y ↦ ⟨?_, fun hY ↦ ?_⟩
   · rintro ⟨X, rfl⟩
     exact (ContinuousMonoidHom.mem_lieWeightKerLieSubalgebra _).mpr
       (lieWeight_detContinuousMonoidHom_lieMap_ofSpinContinuousMonoidHom n hQ X)
-  · have hY0 : d Y = 0 := (ContinuousMonoidHom.mem_lieWeightKerLieSubalgebra _).mp hY
-    let p := (realSpinProdCircleLieEquiv n hQ).symm Y
-    have hp : realSpinProdCircleLieEquiv n hQ p = Y :=
-      (realSpinProdCircleLieEquiv n hQ).apply_symm_apply Y
-    have hd : 2 * circleLieAlgebraEquiv p.2 = 0 := calc
-      2 * circleLieAlgebraEquiv p.2
-        = 0 + 2 * circleLieAlgebraEquiv p.2 := (zero_add _).symm
-      _ = d (ContinuousMonoidHom.lieMap (I := IS) (I' := IC)
-              (ofSpinContinuousMonoidHom _ hQ) p.1) +
-            d (ContinuousMonoidHom.lieMap (I := 𝓡 1) (I' := IC)
-              (ofCircleContinuousMonoidHom _ hQ) p.2) :=
-        congrArg₂ (· + ·)
-          (lieWeight_detContinuousMonoidHom_lieMap_ofSpinContinuousMonoidHom n hQ p.1).symm
-          (lieWeight_detContinuousMonoidHom_lieMap_ofCircleContinuousMonoidHom n hQ p.2).symm
-      _ = d (ContinuousMonoidHom.lieMap (I := IS) (I' := IC)
-              (ofSpinContinuousMonoidHom _ hQ) p.1 +
-            ContinuousMonoidHom.lieMap (I := 𝓡 1) (I' := IC)
-              (ofCircleContinuousMonoidHom _ hQ) p.2) := (map_add d _ _).symm
-      _ = d (realSpinProdCircleLieEquiv n hQ p) :=
-        congrArg d (realSpinProdCircleLieEquiv_apply n hQ p).symm
-      _ = d Y := congrArg d hp
-      _ = 0 := hY0
-    have hp2 : p.2 = 0 :=
-      circleLieAlgebraEquiv.injective
-        ((mul_eq_zero.mp hd).resolve_left two_ne_zero |>.trans (map_zero _).symm)
-    refine ⟨p.1, ?_⟩
-    calc
-      ContinuousMonoidHom.lieMap (I := IS) (I' := IC) (ofSpinContinuousMonoidHom _ hQ) p.1
-        = ContinuousMonoidHom.lieMap (I := IS) (I' := IC) (ofSpinContinuousMonoidHom _ hQ) p.1 +
-            0 := (add_zero _).symm
-      _ = ContinuousMonoidHom.lieMap (I := IS) (I' := IC) (ofSpinContinuousMonoidHom _ hQ) p.1 +
-            ContinuousMonoidHom.lieMap (I := 𝓡 1) (I' := IC)
-              (ofCircleContinuousMonoidHom _ hQ) 0 :=
-        congrArg _ (map_zero _).symm
-      _ = ContinuousMonoidHom.lieMap (I := IS) (I' := IC) (ofSpinContinuousMonoidHom _ hQ) p.1 +
-            ContinuousMonoidHom.lieMap (I := 𝓡 1) (I' := IC)
-              (ofCircleContinuousMonoidHom _ hQ) p.2 :=
-        congrArg _ (congrArg _ hp2.symm)
-      _ = realSpinProdCircleLieEquiv n hQ p := (realSpinProdCircleLieEquiv_apply n hQ p).symm
-      _ = Y := hp
+  · let p := (realSpinProdCircleLieEquiv n hQ).symm Y
+    have hp : ιS p.1 + ιC p.2 = Y :=
+      (realSpinProdCircleLieEquiv_apply n hQ p).symm.trans
+        ((realSpinProdCircleLieEquiv n hQ).apply_symm_apply Y)
+    have hd : 2 * circleLieAlgebraEquiv p.2 = 0 := by
+      have hsum : d (ιS p.1) + d (ιC p.2) = 0 :=
+        (map_add d _ _).symm.trans <| (congrArg d hp).trans
+          ((ContinuousMonoidHom.mem_lieWeightKerLieSubalgebra _).mp hY)
+      simpa only [lieWeight_detContinuousMonoidHom_lieMap_ofSpinContinuousMonoidHom,
+        lieWeight_detContinuousMonoidHom_lieMap_ofCircleContinuousMonoidHom, zero_add] using hsum
+    have hp2 : p.2 = 0 := circleLieAlgebraEquiv.injective <|
+      (mul_eq_zero.mp hd).resolve_left two_ne_zero |>.trans (map_zero _).symm
+    exact ⟨p.1, (add_zero _).symm.trans <| (congrArg _ (map_zero _).symm).trans <|
+      (congrArg _ (congrArg _ hp2.symm)).trans hp⟩
 
 /-- Linear-map form of exactness: the linear range of `ofSpin_*` equals `ker(d det)`. -/
 theorem range_lieMap_ofSpinContinuousMonoidHom_toLinearMap :
-    LinearMap.range
-        (ContinuousMonoidHom.lieMap (I := IS) (I' := IC)
-          (ofSpinContinuousMonoidHom _ hQ)).toLinearMap =
-      LinearMap.ker d :=
+    LinearMap.range (ιS).toLinearMap = LinearMap.ker d :=
   (congrArg LieSubalgebra.toSubmodule (range_lieMap_ofSpinContinuousMonoidHom n hQ)).trans
     (ContinuousMonoidHom.lieWeightKerLieSubalgebra_toSubmodule _)
 
@@ -238,25 +190,19 @@ theorem range_lieMap_ofSpinContinuousMonoidHom_toLinearMap :
 determinant differential. -/
 def realSpinLieEquivDetKer :
     𝔰 ≃ₗ⁅ℝ⁆ ContinuousMonoidHom.lieWeightKerLieSubalgebra (I := IC) (detContinuousMonoidHom _ hQ) :=
-  (LieEquiv.ofInjective
-    (ContinuousMonoidHom.lieMap (I := IS) (I' := IC) (ofSpinContinuousMonoidHom _ hQ))
-    (lieMap_ofSpinContinuousMonoidHom_injective n hQ)).trans
-      (LieEquiv.ofEq _ _ (congrArg SetLike.coe (range_lieMap_ofSpinContinuousMonoidHom n hQ)))
+  (LieEquiv.ofInjective ιS (lieMap_ofSpinContinuousMonoidHom_injective n hQ)).trans
+    (LieEquiv.ofEq _ _ (congrArg SetLike.coe (range_lieMap_ofSpinContinuousMonoidHom n hQ)))
 
 /-- Coercing `realSpinLieEquivDetKer` to `Lie(Spinᶜ(n))` recovers `ofSpin_*`. -/
 @[simp]
-theorem coe_realSpinLieEquivDetKer_apply (X : 𝔰) :
-    (realSpinLieEquivDetKer n hQ X : 𝔤) =
-      ContinuousMonoidHom.lieMap (I := IS) (I' := IC) (ofSpinContinuousMonoidHom _ hQ) X :=
+theorem coe_realSpinLieEquivDetKer_apply (X : 𝔰) : (realSpinLieEquivDetKer n hQ X : 𝔤) = ιS X :=
   (rfl)
 
 /-- Applying `ofSpin_*` to the inverse equivalence recovers the ambient kernel element. -/
 @[simp]
 theorem lieMap_ofSpin_realSpinLieEquivDetKer_symm_apply
     (Y : ContinuousMonoidHom.lieWeightKerLieSubalgebra (I := IC) (detContinuousMonoidHom _ hQ)) :
-    ContinuousMonoidHom.lieMap (I := IS) (I' := IC) (ofSpinContinuousMonoidHom _ hQ)
-        ((realSpinLieEquivDetKer n hQ).symm Y) =
-      (Y : 𝔤) :=
+    ιS ((realSpinLieEquivDetKer n hQ).symm Y) = (Y : 𝔤) :=
   congrArg Subtype.val ((realSpinLieEquivDetKer n hQ).apply_symm_apply Y)
 
 /-- **The Spin–determinant splitting of `Lie(Spinᶜ(n))`**. It refines `realDetLieLinearEquiv` by
@@ -271,34 +217,22 @@ def realSpinProdDetLinearEquiv : (𝔰 × ℝ) ≃ₗ[ℝ] 𝔤 :=
 
 /-- Reconstruction adds the Spin Lie-algebra image to the half-speed central determinant lift. -/
 theorem realSpinProdDetLinearEquiv_apply (p : 𝔰 × ℝ) :
-    realSpinProdDetLinearEquiv n hQ p =
-      ContinuousMonoidHom.lieMap (I := IS) (I' := IC) (ofSpinContinuousMonoidHom _ hQ) p.1 +
-        realDetLieLift n hQ p.2 :=
+    realSpinProdDetLinearEquiv n hQ p = ιS p.1 + realDetLieLift n hQ p.2 :=
   (realDetLieLinearEquiv_apply n hQ _).trans
     (congrArg (· + realDetLieLift n hQ p.2)
       ((LinearEquiv.coe_ofEq_apply
         (ContinuousMonoidHom.lieWeightKerLieSubalgebra_toSubmodule _)
-        (realSpinLieEquivDetKer n hQ p.1)).trans
-          (coe_realSpinLieEquivDetKer_apply n hQ p.1)))
+        (realSpinLieEquivDetKer n hQ p.1)).trans (coe_realSpinLieEquivDetKer_apply n hQ p.1)))
 
 /-- Evaluating the determinant weight on `realSpinProdDetLinearEquiv (X, a)` recovers `a`. -/
 @[simp]
 theorem lieWeight_detContinuousMonoidHom_realSpinProdDetLinearEquiv (p : 𝔰 × ℝ) :
-    d (realSpinProdDetLinearEquiv n hQ p) = p.2 := by
-  calc
-    d (realSpinProdDetLinearEquiv n hQ p)
-      = d (ContinuousMonoidHom.lieMap (I := IS) (I' := IC)
-            (ofSpinContinuousMonoidHom _ hQ) p.1 +
-          realDetLieLift n hQ p.2) :=
-      congrArg d (realSpinProdDetLinearEquiv_apply n hQ p)
-    _ = d (ContinuousMonoidHom.lieMap (I := IS) (I' := IC)
-            (ofSpinContinuousMonoidHom _ hQ) p.1) +
-          d (realDetLieLift n hQ p.2) := map_add d _ _
-    _ = 0 + p.2 :=
-      congrArg₂ (· + ·)
+    d (realSpinProdDetLinearEquiv n hQ p) = p.2 :=
+  (congrArg d (realSpinProdDetLinearEquiv_apply n hQ p)).trans <|
+    (map_add d _ _).trans <|
+      (congrArg₂ (· + ·)
         (lieWeight_detContinuousMonoidHom_lieMap_ofSpinContinuousMonoidHom n hQ p.1)
-        (lieWeight_detContinuousMonoidHom_realDetLieLift n hQ p.2)
-    _ = p.2 := zero_add p.2
+        (lieWeight_detContinuousMonoidHom_realDetLieLift n hQ p.2)).trans (zero_add p.2)
 
 /-- The second component of `(realSpinProdDetLinearEquiv n hQ).symm Y` is the determinant weight
 `d det(Y)`. -/
@@ -312,84 +246,43 @@ theorem realSpinProdDetLinearEquiv_symm_snd (Y : 𝔤) :
 `Lie(Spinᶜ(n))` removes the central determinant lift `realDetLieLift (d det(Y))`. -/
 @[simp]
 theorem lieMap_ofSpin_realSpinProdDetLinearEquiv_symm_fst (Y : 𝔤) :
-    ContinuousMonoidHom.lieMap (I := IS) (I' := IC) (ofSpinContinuousMonoidHom _ hQ)
-        ((realSpinProdDetLinearEquiv n hQ).symm Y).1 =
-      Y - realDetLieLift n hQ (d Y) := by
-  apply eq_sub_of_add_eq
-  calc
-    ContinuousMonoidHom.lieMap (I := IS) (I' := IC) (ofSpinContinuousMonoidHom _ hQ)
-          ((realSpinProdDetLinearEquiv n hQ).symm Y).1 +
-        realDetLieLift n hQ (d Y)
-      = ContinuousMonoidHom.lieMap (I := IS) (I' := IC) (ofSpinContinuousMonoidHom _ hQ)
-            ((realSpinProdDetLinearEquiv n hQ).symm Y).1 +
-          realDetLieLift n hQ ((realSpinProdDetLinearEquiv n hQ).symm Y).2 :=
-      congrArg _ (congrArg (realDetLieLift n hQ) (realSpinProdDetLinearEquiv_symm_snd n hQ Y).symm)
-    _ = realSpinProdDetLinearEquiv n hQ ((realSpinProdDetLinearEquiv n hQ).symm Y) :=
-      (realSpinProdDetLinearEquiv_apply n hQ _).symm
-    _ = Y := (realSpinProdDetLinearEquiv n hQ).apply_symm_apply Y
+    ιS ((realSpinProdDetLinearEquiv n hQ).symm Y).1 = Y - realDetLieLift n hQ (d Y) :=
+  eq_sub_of_add_eq <|
+    (congrArg _ (congrArg (realDetLieLift n hQ)
+      (realSpinProdDetLinearEquiv_symm_snd n hQ Y).symm)).trans <|
+      (realSpinProdDetLinearEquiv_apply n hQ _).symm.trans
+        ((realSpinProdDetLinearEquiv n hQ).apply_symm_apply Y)
 
 /-- The inverse splitting sends `ofSpin_* X` to `(X, 0)`. -/
 @[simp]
 theorem realSpinProdDetLinearEquiv_symm_lieMap_ofSpin (X : 𝔰) :
-    (realSpinProdDetLinearEquiv n hQ).symm
-        (ContinuousMonoidHom.lieMap (I := IS) (I' := IC) (ofSpinContinuousMonoidHom _ hQ) X) =
-      (X, 0) := by
-  apply (realSpinProdDetLinearEquiv n hQ).injective
-  calc
-    realSpinProdDetLinearEquiv n hQ
-        ((realSpinProdDetLinearEquiv n hQ).symm
-          (ContinuousMonoidHom.lieMap (I := IS) (I' := IC) (ofSpinContinuousMonoidHom _ hQ) X))
-      = ContinuousMonoidHom.lieMap (I := IS) (I' := IC) (ofSpinContinuousMonoidHom _ hQ) X :=
-      (realSpinProdDetLinearEquiv n hQ).apply_symm_apply _
-    _ = ContinuousMonoidHom.lieMap (I := IS) (I' := IC) (ofSpinContinuousMonoidHom _ hQ) X + 0 :=
-      (add_zero _).symm
-    _ = ContinuousMonoidHom.lieMap (I := IS) (I' := IC) (ofSpinContinuousMonoidHom _ hQ) X +
-          realDetLieLift n hQ 0 :=
-      congrArg _ (map_zero _).symm
-    _ = realSpinProdDetLinearEquiv n hQ (X, 0) :=
-      (realSpinProdDetLinearEquiv_apply n hQ (X, 0)).symm
+    (realSpinProdDetLinearEquiv n hQ).symm (ιS X) = (X, 0) :=
+  (realSpinProdDetLinearEquiv n hQ).injective <|
+    ((realSpinProdDetLinearEquiv n hQ).apply_symm_apply _).trans <|
+      (add_zero _).symm.trans <| (congrArg _ (map_zero _).symm).trans
+        (realSpinProdDetLinearEquiv_apply n hQ (X, 0)).symm
 
 /-- The inverse splitting sends `realDetLieLift a` to `(0, a)`. -/
 @[simp]
 theorem realSpinProdDetLinearEquiv_symm_realDetLieLift (a : ℝ) :
-    (realSpinProdDetLinearEquiv n hQ).symm (realDetLieLift n hQ a) = (0, a) := by
-  apply (realSpinProdDetLinearEquiv n hQ).injective
-  calc
-    realSpinProdDetLinearEquiv n hQ ((realSpinProdDetLinearEquiv n hQ).symm (realDetLieLift n hQ a))
-      = realDetLieLift n hQ a := (realSpinProdDetLinearEquiv n hQ).apply_symm_apply _
-    _ = 0 + realDetLieLift n hQ a := (zero_add _).symm
-    _ = ContinuousMonoidHom.lieMap (I := IS) (I' := IC) (ofSpinContinuousMonoidHom _ hQ) 0 +
-          realDetLieLift n hQ a :=
-      congrArg (· + realDetLieLift n hQ a) (map_zero _).symm
-    _ = realSpinProdDetLinearEquiv n hQ (0, a) :=
-      (realSpinProdDetLinearEquiv_apply n hQ (0, a)).symm
+    (realSpinProdDetLinearEquiv n hQ).symm (realDetLieLift n hQ a) = (0, a) :=
+  (realSpinProdDetLinearEquiv n hQ).injective <|
+    ((realSpinProdDetLinearEquiv n hQ).apply_symm_apply _).trans <|
+      (zero_add _).symm.trans <| (congrArg (· + _) (map_zero _).symm).trans
+        (realSpinProdDetLinearEquiv_apply n hQ (0, a)).symm
 
 /-- **Lie bracket in Spin–determinant coordinates**: the central determinant component brackets
 trivially, while the Spin component carries the native Spin Lie bracket. -/
 @[simp]
 theorem lie_realSpinProdDetLinearEquiv (p q : 𝔰 × ℝ) :
     ⁅realSpinProdDetLinearEquiv n hQ p, realSpinProdDetLinearEquiv n hQ q⁆ =
-      realSpinProdDetLinearEquiv n hQ (⁅p.1, q.1⁆, 0) := by
-  let f := ContinuousMonoidHom.lieMap (I := IS) (I' := IC) (ofSpinContinuousMonoidHom _ hQ)
-  calc
-    ⁅realSpinProdDetLinearEquiv n hQ p, realSpinProdDetLinearEquiv n hQ q⁆
-      = ⁅f p.1 + realDetLieLift n hQ p.2, f q.1 + realDetLieLift n hQ q.2⁆ :=
-      congrArg₂ (⁅·, ·⁆)
-        (realSpinProdDetLinearEquiv_apply n hQ p)
-        (realSpinProdDetLinearEquiv_apply n hQ q)
-    _ = ⁅f p.1 + realDetLieLift n hQ p.2, f q.1⁆ +
-          ⁅f p.1 + realDetLieLift n hQ p.2, realDetLieLift n hQ q.2⁆ :=
-      lie_add _ _ _
-    _ = (⁅f p.1, f q.1⁆ + ⁅realDetLieLift n hQ p.2, f q.1⁆) +
-          ⁅f p.1 + realDetLieLift n hQ p.2, realDetLieLift n hQ q.2⁆ :=
-      congrArg (· + _) (add_lie _ _ _)
-    _ = (f ⁅p.1, q.1⁆ + 0) + 0 :=
-      congrArg₂ (· + ·)
-        (congrArg₂ (· + ·) (f.map_lie p.1 q.1).symm (realDetLieLift_lie n hQ p.2 (f q.1)))
-        (lie_realDetLieLift n hQ _ q.2)
-    _ = f ⁅p.1, q.1⁆ + 0 := add_zero _
-    _ = f ⁅p.1, q.1⁆ + realDetLieLift n hQ 0 := congrArg (f ⁅p.1, q.1⁆ + ·) (map_zero _).symm
-    _ = realSpinProdDetLinearEquiv n hQ (⁅p.1, q.1⁆, 0) :=
+      realSpinProdDetLinearEquiv n hQ (⁅p.1, q.1⁆, 0) :=
+  (congrArg₂ (⁅·, ·⁆) (realSpinProdDetLinearEquiv_apply n hQ p)
+    (realSpinProdDetLinearEquiv_apply n hQ q)).trans <| (lie_add _ _ _).trans <|
+    (congrArg (· + _) (add_lie _ _ _)).trans <|
+    (congrArg₂ (· + ·) (congrArg₂ (· + ·) ((ιS).map_lie p.1 q.1).symm
+      (realDetLieLift_lie n hQ p.2 (ιS q.1))) (lie_realDetLieLift n hQ _ q.2)).trans <|
+    (add_zero _).trans <| (congrArg (ιS ⁅p.1, q.1⁆ + ·) (map_zero _).symm).trans
       (realSpinProdDetLinearEquiv_apply n hQ (⁅p.1, q.1⁆, 0)).symm
 
 /-- **Lie exponential in Spin–determinant coordinates**: `(X, a)` exponentiates to the class
@@ -397,47 +290,26 @@ theorem lie_realSpinProdDetLinearEquiv (p q : 𝔰 × ℝ) :
 @[simp]
 theorem lieExp_realSpinProdDetLinearEquiv (p : 𝔰 × ℝ) :
     lieExp (realSpinProdDetLinearEquiv n hQ p) =
-      mk _ hQ (lieExp p.1, Circle.exp (p.2 / 2)) := by
-  calc
-    lieExp (realSpinProdDetLinearEquiv n hQ p)
-      = lieExp
-          (ContinuousMonoidHom.lieMap (I := IS) (I' := IC)
-              (ofSpinContinuousMonoidHom _ hQ) p.1 +
-            realDetLieLift n hQ p.2) :=
-      congrArg (fun Y : 𝔤 ↦ lieExp Y) (realSpinProdDetLinearEquiv_apply n hQ p)
-    _ = lieExp
-          (ContinuousMonoidHom.lieMap (I := IS) (I' := IC)
-            (ofSpinContinuousMonoidHom _ hQ) p.1) *
-          ofCircle _ hQ (Circle.exp (p.2 / 2)) :=
-      lieExp_add_realDetLieLift n hQ _ p.2
-    _ = ofSpinContinuousMonoidHom _ hQ (lieExp p.1) * ofCircle _ hQ (Circle.exp (p.2 / 2)) :=
-      congrArg (· * ofCircle _ hQ (Circle.exp (p.2 / 2)))
-        (ContinuousMonoidHom.map_lieExp (ofSpinContinuousMonoidHom _ hQ) p.1).symm
-    _ = mk _ hQ (lieExp p.1, Circle.exp (p.2 / 2)) := by
-      rw [ofSpinContinuousMonoidHom_apply]
-      exact ofSpin_mul_ofCircle _ hQ (lieExp p.1) (Circle.exp (p.2 / 2))
+      mk _ hQ (lieExp p.1, Circle.exp (p.2 / 2)) :=
+  (congrArg (fun Y : 𝔤 ↦ lieExp Y) (realSpinProdDetLinearEquiv_apply n hQ p)).trans <|
+    (lieExp_add_realDetLieLift n hQ _ p.2).trans <|
+    (congrArg (· * ofCircle _ hQ (Circle.exp (p.2 / 2)))
+      ((ContinuousMonoidHom.map_lieExp (ofSpinContinuousMonoidHom _ hQ) p.1).symm.trans
+        (ofSpinContinuousMonoidHom_apply _ hQ (lieExp p.1)))).trans
+      (ofSpin_mul_ofCircle _ hQ (lieExp p.1) (Circle.exp (p.2 / 2)))
 
 /-- Conjugating by `[s, z]` in `Spinᶜ(n)` acts on `ofSpin_* X` as `ofSpin_* (Ad(s) X)`: the central
 circle factor acts trivially. -/
 @[simp]
 theorem Ad_mk_lieMap_ofSpinContinuousMonoidHom
     (s : spinGroup (realCliffordForm n 0)) (z : Circle) (X : 𝔰) :
-    Lie.Ad (I := IC) (mk _ hQ (s, z))
-        (ContinuousMonoidHom.lieMap (I := IS) (I' := IC) (ofSpinContinuousMonoidHom _ hQ) X) =
-      ContinuousMonoidHom.lieMap (I := IS) (I' := IC)
-        (ofSpinContinuousMonoidHom _ hQ) (Lie.Ad (I := IS) s X) := by
+    Lie.Ad (I := IC) (mk _ hQ (s, z)) (ιS X) = ιS (Lie.Ad (I := IS) s X) := by
   let _ : T2Space G := (IC).t2Space_of_lieGroup ∞
-  let Y := ContinuousMonoidHom.lieMap (I := IS) (I' := IC) (ofSpinContinuousMonoidHom _ hQ) X
-  calc
-    Lie.Ad (I := IC) (mk _ hQ (s, z)) Y
-      = Lie.Ad (I := IC) (ofSpin _ hQ s * ofCircle _ hQ z) Y :=
-      congrArg (fun g : G ↦ Lie.Ad (I := IC) g Y) (ofSpin_mul_ofCircle _ hQ s z).symm
-    _ = Lie.Ad (I := IC) (ofSpin _ hQ s) Y :=
-      Lie.Ad_mul_right_of_mem_center (ofSpin _ hQ s) (ofCircle_mem_center _ hQ z) Y
-    _ = Lie.Ad (I := IC) (ofSpinContinuousMonoidHom _ hQ s) Y :=
-      congrArg (fun g : G ↦ Lie.Ad (I := IC) g Y) (ofSpinContinuousMonoidHom_apply _ hQ s).symm
-    _ = ContinuousMonoidHom.lieMap (I := IS) (I' := IC)
-          (ofSpinContinuousMonoidHom _ hQ) (Lie.Ad (I := IS) s X) :=
+  exact (congrArg (fun g : G ↦ Lie.Ad (I := IC) g (ιS X))
+      (ofSpin_mul_ofCircle _ hQ s z).symm).trans <|
+    (Lie.Ad_mul_right_of_mem_center (ofSpin _ hQ s) (ofCircle_mem_center _ hQ z) (ιS X)).trans <|
+    (congrArg (fun g : G ↦ Lie.Ad (I := IC) g (ιS X))
+      (ofSpinContinuousMonoidHom_apply _ hQ s).symm).trans
       (ContinuousMonoidHom.lieMap_Ad (ofSpinContinuousMonoidHom _ hQ) s X).symm
 
 /-- **Adjoint action in Spin–determinant coordinates**: `[s, z]` acts as `Ad(s)` on the Spin
@@ -446,26 +318,12 @@ component and fixes the determinant parameter. -/
 theorem Ad_mk_realSpinProdDetLinearEquiv
     (s : spinGroup (realCliffordForm n 0)) (z : Circle) (p : 𝔰 × ℝ) :
     Lie.Ad (I := IC) (mk _ hQ (s, z)) (realSpinProdDetLinearEquiv n hQ p) =
-      realSpinProdDetLinearEquiv n hQ (Lie.Ad (I := IS) s p.1, p.2) := by
-  calc
-    Lie.Ad (I := IC) (mk _ hQ (s, z)) (realSpinProdDetLinearEquiv n hQ p)
-      = Lie.Ad (I := IC) (mk _ hQ (s, z))
-          (ContinuousMonoidHom.lieMap (I := IS) (I' := IC)
-              (ofSpinContinuousMonoidHom _ hQ) p.1 +
-            realDetLieLift n hQ p.2) :=
-      congrArg (Lie.Ad (I := IC) (mk _ hQ (s, z))) (realSpinProdDetLinearEquiv_apply n hQ p)
-    _ = Lie.Ad (I := IC) (mk _ hQ (s, z))
-          (ContinuousMonoidHom.lieMap (I := IS) (I' := IC)
-            (ofSpinContinuousMonoidHom _ hQ) p.1) +
-        Lie.Ad (I := IC) (mk _ hQ (s, z)) (realDetLieLift n hQ p.2) :=
-      map_add (Lie.Ad (I := IC) (mk _ hQ (s, z))) _ _
-    _ = ContinuousMonoidHom.lieMap (I := IS) (I' := IC)
-          (ofSpinContinuousMonoidHom _ hQ) (Lie.Ad (I := IS) s p.1) +
-        realDetLieLift n hQ p.2 :=
-      congrArg₂ (· + ·)
-        (Ad_mk_lieMap_ofSpinContinuousMonoidHom n hQ s z p.1)
-        (Ad_realDetLieLift n hQ (mk _ hQ (s, z)) p.2)
-    _ = realSpinProdDetLinearEquiv n hQ (Lie.Ad (I := IS) s p.1, p.2) :=
+      realSpinProdDetLinearEquiv n hQ (Lie.Ad (I := IS) s p.1, p.2) :=
+  (congrArg (Lie.Ad (I := IC) (mk _ hQ (s, z)))
+      (realSpinProdDetLinearEquiv_apply n hQ p)).trans <|
+    (map_add (Lie.Ad (I := IC) (mk _ hQ (s, z))) _ _).trans <|
+    (congrArg₂ (· + ·) (Ad_mk_lieMap_ofSpinContinuousMonoidHom n hQ s z p.1)
+      (Ad_realDetLieLift n hQ (mk _ hQ (s, z)) p.2)).trans
       (realSpinProdDetLinearEquiv_apply n hQ (Lie.Ad (I := IS) s p.1, p.2)).symm
 
 /-- The Spin–determinant splitting of `Lie(Spinᶜ(n))` in quadratic Clifford coordinates. -/
@@ -487,18 +345,9 @@ bracket and annihilate the determinant component. -/
 theorem lie_realQuadraticProdDetLinearEquiv
     (p q : quadraticLieSubalgebra (realCliffordForm n 0) × ℝ) :
     ⁅realQuadraticProdDetLinearEquiv n hQ p, realQuadraticProdDetLinearEquiv n hQ q⁆ =
-      realQuadraticProdDetLinearEquiv n hQ (⁅p.1, q.1⁆, 0) := by
-  calc
-    ⁅realQuadraticProdDetLinearEquiv n hQ p, realQuadraticProdDetLinearEquiv n hQ q⁆
-      = realSpinProdDetLinearEquiv n hQ
-          (⁅(realSpinLieEquivQuadratic n).symm p.1,
-            (realSpinLieEquivQuadratic n).symm q.1⁆, 0) :=
-      lie_realSpinProdDetLinearEquiv n hQ
-        ((realSpinLieEquivQuadratic n).symm p.1, p.2)
-        ((realSpinLieEquivQuadratic n).symm q.1, q.2)
-    _ = realSpinProdDetLinearEquiv n hQ ((realSpinLieEquivQuadratic n).symm ⁅p.1, q.1⁆, 0) :=
-      congrArg (fun X : 𝔰 ↦ realSpinProdDetLinearEquiv n hQ (X, 0))
-        ((realSpinLieEquivQuadratic n).symm.map_lie p.1 q.1).symm
-    _ = realQuadraticProdDetLinearEquiv n hQ (⁅p.1, q.1⁆, 0) := (rfl)
+      realQuadraticProdDetLinearEquiv n hQ (⁅p.1, q.1⁆, 0) :=
+  (lie_realSpinProdDetLinearEquiv n hQ _ _).trans <|
+    congrArg (fun X : 𝔰 ↦ realSpinProdDetLinearEquiv n hQ (X, 0))
+      ((realSpinLieEquivQuadratic n).symm.map_lie p.1 q.1).symm
 
 end CliffordAlgebra.spinCGroup
