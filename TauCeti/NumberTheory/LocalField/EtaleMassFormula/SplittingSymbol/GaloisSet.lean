@@ -261,10 +261,9 @@ theorem splittingSymbol_sum {m l : ℕ} (ρ₁ : GaloisSet K m) (ρ₂ : GaloisS
   let E₂ := (TauCeti.MulAction.orbitRelQuotientSumEquiv
     (G := Gal(SeparableClosure K/K)) (X := Fin m) (Y := Fin l)).symm
   let E := E₂.trans E₁
-  rw [splittingSymbol_def, splittingSymbol_def, splittingSymbol_def,
-    ← Multiset.map_univ_val_equiv E, ← Finset.univ_disjSum_univ, Finset.val_disjSum,
-    Multiset.disjSum, Multiset.map_add, Multiset.map_map, Multiset.map_map,
-    Multiset.map_add, Multiset.map_map, Multiset.map_map]
+  simp only [splittingSymbol_def]
+  rw [← Multiset.map_univ_val_equiv E, ← Finset.univ_disjSum_univ, Finset.val_disjSum,
+    Multiset.map_map, Multiset.map_disjSum]
   congr 1
   · refine Multiset.map_congr rfl fun ω _ ↦ ?_
     have hE : (Quotient.mk'' (e (Sum.inl ω.out)) :

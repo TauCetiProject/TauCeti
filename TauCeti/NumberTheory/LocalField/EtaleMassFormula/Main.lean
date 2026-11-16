@@ -127,9 +127,11 @@ theorem etaleMass_eq (n : ℕ) :
           rw [Set.mem_preimage, Set.mem_singleton_iff, Subtype.ext_iff,
             Nat.Partition.ext_iff]).symm
     rw [← efib.tsum_eq fun r ↦ 1 / q ^ (e₁ r.1).1.discriminantExponent]
+    have hval : ∀ ρ, (e₁ (efib ρ).1).1 = ρ.1 := fun ρ ↦ by simp [e₁, efib]
+    simp_rw [hval]
     exact etaleMass_ramificationPartition n k π hπ
-  rw [Finset.sum_congr rfl fun π _ ↦ hπ_term π,
-    Finset.sum_const, Finset.card_univ, Fintype.card_coe, nsmul_eq_mul, mul_one_div]
+  simp_rw [hπ_term]
+  simp [S, div_eq_mul_inv]
 
 variable (K) in
 /-- **Bhargava's Theorem 1.1**: for a family `A` of étale `K`-algebras of degree `n` containing
@@ -164,19 +166,8 @@ theorem etaleMass_three :
     etaleMass K 3 =
       1 + 1 / (Nat.card 𝓀[K] : ℝ≥0∞) + 1 / (Nat.card 𝓀[K] : ℝ≥0∞) ^ 2 := by
   classical
-  have h2 : ((Finset.univ : Finset (2 : ℕ).Partition).filter fun π ↦ π.parts.card ≤ 1) =
-      {Nat.Partition.indiscrete 2} := by
-    ext π
-    simp only [Finset.mem_filter, Finset.mem_univ, true_and, Finset.mem_singleton]
-    refine ⟨fun hle ↦ ?_, fun h ↦ by simp [h]⟩
-    obtain ⟨a, ha⟩ := Multiset.card_eq_one.1
-      (le_antisymm hle (Multiset.card_pos.2 (π.parts_ne_zero two_ne_zero)))
-    have hak : a = 2 := by
-      have hsum := π.parts_sum
-      rwa [ha, Multiset.sum_singleton] at hsum
-    exact Nat.Partition.ext (by simp [ha, hak])
   rw [etaleMass_eq, Finset.sum_range_succ, Finset.sum_range_succ, Finset.sum_range_succ,
     Finset.sum_range_one]
-  simp [Finset.univ_unique, h2]
+  simp [Finset.univ_unique, Nat.Partition.card_parts_le_one_iff, Finset.filter_eq']
 
 end TauCeti

@@ -386,8 +386,8 @@ theorem coe_orbitSumEquiv_apply {i₀ : Fin n} {s : Set (Fin n)} [DecidablePred 
     (hi₀ : i₀ ∈ s) (e₁ : Fin m ≃ s) (e₂ : Fin l ≃ {j : Fin n // j ∉ s})
     (p : {ρ₁ : GaloisSet K m // ρ₁.IsTransitive} × GaloisSet K l) :
     (orbitSumEquiv hi₀ e₁ e₂ p : GaloisSet K n) =
-      sum p.1.1 p.2 ((Equiv.sumCongr e₁ e₂).trans (Equiv.sumCompl (· ∈ s))) :=
-  (rfl)
+      sum p.1.1 p.2 ((Equiv.sumCongr e₁ e₂).trans (Equiv.sumCompl (· ∈ s))) := by
+  simp [orbitSumEquiv, Equiv.prodSubtypeFstEquivSubtypeProd]
 
 /-- The first component of `orbitSumEquiv.symm` restricts to `s` along `e₁`. -/
 @[simp]
@@ -396,8 +396,8 @@ theorem coe_fst_orbitSumEquiv_symm_apply {i₀ : Fin n} {s : Set (Fin n)} [Decid
     (ρ : {ρ : GaloisSet K n //
       letI := ρ.mulAction; MulAction.orbit Gal(SeparableClosure K/K) i₀ = s}) :
     (((orbitSumEquiv hi₀ e₁ e₂).symm ρ).1 : GaloisSet K m) =
-      ρ.1.restrict (val_apply_mem_iff_of_orbit_eq ρ.2) e₁ :=
-  (rfl)
+      ρ.1.restrict (val_apply_mem_iff_of_orbit_eq ρ.2) e₁ := by
+  simp [orbitSumEquiv, Equiv.prodSubtypeFstEquivSubtypeProd]
 
 /-- The second component of `orbitSumEquiv.symm` restricts to `sᶜ` along `e₂`. -/
 @[simp]
@@ -406,7 +406,7 @@ theorem snd_orbitSumEquiv_symm_apply {i₀ : Fin n} {s : Set (Fin n)} [Decidable
     (ρ : {ρ : GaloisSet K n //
       letI := ρ.mulAction; MulAction.orbit Gal(SeparableClosure K/K) i₀ = s}) :
     ((orbitSumEquiv hi₀ e₁ e₂).symm ρ).2 =
-      ρ.1.restrict (fun σ j ↦ not_congr (val_apply_mem_iff_of_orbit_eq ρ.2 σ j)) e₂ :=
-  (rfl)
+      ρ.1.restrict (fun σ j ↦ not_congr (val_apply_mem_iff_of_orbit_eq ρ.2 σ j)) e₂ := by
+  simp [orbitSumEquiv, Equiv.prodSubtypeFstEquivSubtypeProd]
 
 end TauCeti.GaloisSet

@@ -66,18 +66,6 @@ variable {K : Type*} [Field K] [ValuativeRel K] [TopologicalSpace K]
 
 /-! ### The transitive mass by residue degree -/
 
-/-- Rewrite a `tsum` over a subtype `{a : α // p a}` in `ℝ≥0∞` as a `tsum` over `α` of an
-`if ... then ... else 0` summand. -/
-private theorem tsum_subtype_eq_tsum_ite {α : Type*} (p : α → Prop) [DecidablePred p]
-    (u : α → ℝ≥0∞) :
-    (∑' x : {a : α // p a}, u x.1) = ∑' a : α, if p a then u a else 0 := by
-  rw [← (Equiv.subtypeEquivRight fun a ↦ iff_of_eq Set.mem_ofPred_eq).tsum_eq fun x ↦ u x.1]
-  simp only [Equiv.subtypeEquivRight_apply]
-  rw [_root_.tsum_subtype {a : α | p a} u]
-  refine tsum_congr fun a ↦ ?_
-  rw [Set.indicator_apply]
-  exact if_congr (iff_of_eq Set.mem_ofPred_eq) rfl rfl
-
 /-- Factorial-cleared form of `etaleMass_isTransitive_splittingSymbol`: the labelled Galois sets of
 size `f * e` with splitting symbol `{(f, e)}` have total weight
 `(f * e)! / (f · q ^ (f(e - 1)))`. -/
@@ -91,20 +79,21 @@ private theorem tsum_splittingSymbol_singleton (f e : ℕ) (hf : 0 < f) (he : 0 
   set i₀ : Fin (f * e) := ⟨0, hfe⟩
   set q : ℝ≥0∞ := (Nat.card 𝓀[K] : ℝ≥0∞)
   let g : IntermediateField K (SeparableClosure K) → ℝ≥0∞ :=
-    fun L ↦ if L.inertiaDegree = f then 1 / q ^ L.discriminantExponent else 0
+    ({L : IntermediateField K (SeparableClosure K) | L.inertiaDegree = f}).indicator
+      fun L ↦ 1 / q ^ L.discriminantExponent
   -- Identify Galois sets of symbol `{(f, e)}` with transitive Galois sets whose base stabilizer
   -- fixes a subextension of residue degree `f`.
-  let p₁ : {ρ : GaloisSet K (f * e) // ρ.IsTransitive} → Prop :=
-    fun ρ ↦ (letI := ρ.1.mulAction
+  let q₁ : GaloisSet K (f * e) → Prop :=
+    fun ρ ↦ (letI := ρ.mulAction
       (IntermediateField.fixedField
         (MulAction.stabilizer Gal(SeparableClosure K/K) i₀)).inertiaDegree) = f
-  let e₁ : {ρ : GaloisSet K (f * e) // ρ.splittingSymbol = {(f, e)}} ≃
-      {ρ : {ρ : GaloisSet K (f * e) // ρ.IsTransitive} // p₁ ρ} :=
+  let s₁ : Set {ρ : GaloisSet K (f * e) // ρ.IsTransitive} := {ρ | q₁ ρ.1}
+  let e₁ : {ρ : GaloisSet K (f * e) // ρ.splittingSymbol = {(f, e)}} ≃ s₁ :=
     (Equiv.subtypeEquivRight fun ρ ↦
       (ρ.splittingSymbol_eq_singleton_iff i₀ f e).trans
         (and_congr_right fun htrans ↦
           and_iff_right (ρ.finrank_fixedField_stabilizer_of_isTransitive htrans i₀))).trans
-      (Equiv.subtypeSubtypeEquivSubtypeInter _ _).symm
+      (Equiv.subtypeSubtypeEquivSubtypeInter GaloisSet.IsTransitive q₁).symm
   have hsum₁ :
       ∑' ρ : {ρ : GaloisSet K (f * e) // ρ.splittingSymbol = {(f, e)}},
           1 / q ^ ρ.1.discriminantExponent =
@@ -113,15 +102,18 @@ private theorem tsum_splittingSymbol_singleton (f e : ℕ) (hf : 0 < f) (he : 0 
           g (IntermediateField.fixedField
             (MulAction.stabilizer Gal(SeparableClosure K/K) i₀))) := by
     rw [← e₁.symm.tsum_eq]
-    have hcongr : ∀ r : {ρ : {ρ : GaloisSet K (f * e) // ρ.IsTransitive} // p₁ ρ},
-        1 / q ^ (e₁.symm r).1.discriminantExponent =
-          1 / q ^ r.1.1.discriminantExponent := fun _ ↦ rfl
-    rw [tsum_congr hcongr, tsum_subtype_eq_tsum_ite p₁ fun ρ ↦ 1 / q ^ ρ.1.discriminantExponent]
+    have hval₁ : ∀ r : s₁, (e₁.symm r).1 = r.1.1 := fun r ↦ by
+      simp only [e₁, Equiv.symm_trans_apply, Equiv.symm_symm, Equiv.subtypeEquivRight_symm_apply]
+      exact Equiv.subtypeSubtypeEquivSubtypeInter_apply_coe GaloisSet.IsTransitive q₁ r
+    simp_rw [hval₁]
+    rw [_root_.tsum_subtype s₁ fun ρ ↦ 1 / q ^ ρ.1.discriminantExponent]
     refine tsum_congr fun ρ ↦ ?_
-    rw [ρ.1.discriminantExponent_of_isTransitive ρ.2 i₀]
+    simp only [g, s₁, q₁, Set.indicator_apply, Set.mem_ofPred_eq,
+      ρ.1.discriminantExponent_of_isTransitive ρ.2 i₀]
   -- Evaluate the subfield sum via Serre's mass formula over the unramified extension of degree `f`.
-  let e₂ : {L : {L : IntermediateField K (SeparableClosure K) // Module.finrank K L = f * e} //
-        L.1.inertiaDegree = f} ≃
+  let s₂ : Set {L : IntermediateField K (SeparableClosure K) // Module.finrank K L = f * e} :=
+    Subtype.val ⁻¹' {L | L.inertiaDegree = f}
+  let e₂ : s₂ ≃
       {L : IntermediateField K (SeparableClosure K) //
         Module.finrank K L = f * e ∧ L.inertiaDegree = f} :=
     Equiv.subtypeSubtypeEquivSubtypeInter
@@ -130,11 +122,16 @@ private theorem tsum_splittingSymbol_singleton (f e : ℕ) (hf : 0 < f) (he : 0 
   have hsum₂ :
       ∑' L : {L : IntermediateField K (SeparableClosure K) // Module.finrank K L = f * e}, g L.1 =
         (e : ℝ≥0∞) / q ^ (f * (e - 1)) := by
-    rw [← tsum_subtype_eq_tsum_ite
-          (fun L : {L : IntermediateField K (SeparableClosure K) // Module.finrank K L = f * e} ↦
-            L.1.inertiaDegree = f)
-          (fun L ↦ 1 / q ^ L.1.discriminantExponent),
-      ← e₂.symm.tsum_eq]
+    have hcomp :
+        ∀ L : {L : IntermediateField K (SeparableClosure K) // Module.finrank K L = f * e},
+          g L.1 = s₂.indicator (fun L ↦ 1 / q ^ L.1.discriminantExponent) L :=
+      fun _ ↦ (Set.indicator_comp_right Subtype.val).symm
+    rw [tsum_congr hcomp, ← _root_.tsum_subtype s₂, ← e₂.symm.tsum_eq]
+    have hval₂ : ∀ L : {L : IntermediateField K (SeparableClosure K) //
+          Module.finrank K L = f * e ∧ L.inertiaDegree = f},
+        (e₂.symm L).1.1 = L.1 := fun L ↦
+      Equiv.subtypeSubtypeEquivSubtypeInter_symm_apply_coe_coe _ _ L
+    simp_rw [hval₂]
     exact tsum_inertiaDegree_eq hf.ne' e
   -- Combine via the transitive Galois-set bridge and absorb `(f * e - 1)! * e = (f * e)! / f`.
   rw [hsum₁, GaloisSet.tsum_isTransitive i₀ g, hsum₂]
@@ -278,8 +275,124 @@ private def baseOrbitIndex {n : ℕ} (σ : Multiset (ℕ × ℕ)) (i₀ : Fin n)
       rw [Finset.card_erase_of_mem hi₀_O, hO_card]⟩⟩⟩
 
 open scoped Classical in
+/-- The first component of `baseOrbitIndex` is the `(f, e)` pair of the stabilizer fixed field of
+`i₀`. -/
+private theorem baseOrbitIndex_fst_val {n : ℕ} (σ : Multiset (ℕ × ℕ)) (i₀ : Fin n)
+    (ρ : {ρ : GaloisSet K n // ρ.splittingSymbol = σ}) :
+    (baseOrbitIndex σ i₀ ρ).1.1 =
+      (letI := ρ.1.mulAction
+      (fun F : IntermediateField K (SeparableClosure K) ↦
+        (F.inertiaDegree, Module.finrank K F / F.inertiaDegree))
+        (IntermediateField.fixedField
+          (MulAction.stabilizer Gal(SeparableClosure K/K) i₀))) :=
+  rfl
+
+open scoped Classical in
+/-- The second component of `baseOrbitIndex` is the punctured orbit of `i₀`. -/
+private theorem baseOrbitIndex_snd_val {n : ℕ} (σ : Multiset (ℕ × ℕ)) (i₀ : Fin n)
+    (ρ : {ρ : GaloisSet K n // ρ.splittingSymbol = σ}) :
+    (baseOrbitIndex σ i₀ ρ).2.1 =
+      (letI := ρ.1.mulAction
+      (MulAction.orbit Gal(SeparableClosure K/K) i₀).toFinset.erase i₀) :=
+  rfl
+
+open scoped Classical in
+/-- A Galois set with splitting symbol `σ` lies in the `baseOrbitIndex` fibre over `⟨x, T⟩` if and
+only if `i₀` has orbit `insert i₀ T` and stabilizer fixed-field pair `x`. -/
+private theorem baseOrbitIndex_eq_iff {n : ℕ} (σ : Multiset (ℕ × ℕ)) (i₀ : Fin n)
+    (x : σ.toFinset) (T : (Finset.univ.erase i₀).powersetCard (x.1.1 * x.1.2 - 1))
+    (r : {ρ : GaloisSet K n // ρ.splittingSymbol = σ}) :
+    baseOrbitIndex σ i₀ r = ⟨x, T⟩ ↔
+      (letI := r.1.mulAction;
+        MulAction.orbit Gal(SeparableClosure K/K) i₀ =
+          ((insert i₀ T.1 : Finset (Fin n)) : Set (Fin n))) ∧
+        (letI := r.1.mulAction;
+          (fun F : IntermediateField K (SeparableClosure K) ↦
+            (F.inertiaDegree, Module.finrank K F / F.inertiaDegree))
+            (IntermediateField.fixedField
+              (MulAction.stabilizer Gal(SeparableClosure K/K) i₀))) = x.1 := by
+  rcases x with ⟨x, hx_fin⟩
+  rcases T with ⟨T, hT⟩
+  have hi₀_notMem_T : i₀ ∉ T :=
+    fun h ↦ Finset.notMem_erase i₀ Finset.univ ((Finset.mem_powersetCard.1 hT).1 h)
+  let := r.1.mulAction
+  constructor
+  · intro hΦ
+    have hpair_eq := congrArg (fun p : BaseOrbitIdx σ i₀ ↦ p.1.1) hΦ
+    rw [baseOrbitIndex_fst_val] at hpair_eq
+    have hT_eq := congrArg (fun p : BaseOrbitIdx σ i₀ ↦ p.2.1) hΦ
+    rw [baseOrbitIndex_snd_val] at hT_eq
+    have hi₀_orb : i₀ ∈ (MulAction.orbit Gal(SeparableClosure K/K) i₀).toFinset :=
+      Set.mem_toFinset.2 (MulAction.mem_orbit_self i₀)
+    have horb_fin : (MulAction.orbit Gal(SeparableClosure K/K) i₀).toFinset = insert i₀ T := by
+      rw [← Finset.insert_erase hi₀_orb, hT_eq]
+    exact ⟨by rw [← horb_fin, Set.coe_toFinset], hpair_eq⟩
+  · rintro ⟨horb, hpair_eq⟩
+    have hO : (MulAction.orbit Gal(SeparableClosure K/K) i₀).toFinset = insert i₀ T := by
+      ext j; simp [horb]
+    have hfst : (baseOrbitIndex σ i₀ r).1 = ⟨x, hx_fin⟩ :=
+      Subtype.ext (by rw [baseOrbitIndex_fst_val]; exact hpair_eq)
+    have hT' : (baseOrbitIndex σ i₀ r).2.1 = T := by
+      rw [baseOrbitIndex_snd_val, hO]
+      exact Finset.erase_insert hi₀_notMem_T
+    rcases hΦ : baseOrbitIndex σ i₀ r with ⟨x', T', hT'_mem⟩
+    rw [hΦ] at hfst hT'
+    cases hfst
+    cases hT'
+    rfl
+
+open scoped Classical in
+/-- Equivalence identifying the fibre of `baseOrbitIndex σ i₀` over `⟨x, T⟩` with pairs of Galois
+sets of symbols `{x}` and `σ.erase x` along bijections labelling `insert i₀ T` and its
+complement. -/
+private def baseOrbitIndexFiberEquiv {n m l : ℕ} (σ : Multiset (ℕ × ℕ)) (i₀ : Fin n)
+    (x : σ.toFinset) (T : (Finset.univ.erase i₀).powersetCard (x.1.1 * x.1.2 - 1))
+    (e₁ : Fin m ≃ ((insert i₀ T.1 : Finset (Fin n)) : Set (Fin n)))
+    (e₂ : Fin l ≃ {j : Fin n // j ∉ ((insert i₀ T.1 : Finset (Fin n)) : Set (Fin n))}) :
+    {ρ₁ : GaloisSet K m // ρ₁.splittingSymbol = {x.1}} ×
+        {ρ₂ : GaloisSet K l // ρ₂.splittingSymbol = σ.erase x.1} ≃
+      baseOrbitIndex (K := K) σ i₀ ⁻¹' {⟨x, T⟩} :=
+  let hx : x.1 ∈ σ := Multiset.mem_toFinset.1 x.2
+  let hi₀_S : i₀ ∈ ((insert i₀ T.1 : Finset (Fin n)) : Set (Fin n)) :=
+    Finset.mem_coe.2 (Finset.mem_insert_self i₀ T.1)
+  let p_sym : GaloisSet K n → Prop := fun ρ ↦ ρ.splittingSymbol = σ
+  let q_orb : GaloisSet K n → Prop := fun ρ ↦
+    (letI := ρ.mulAction;
+      MulAction.orbit Gal(SeparableClosure K/K) i₀ =
+        ((insert i₀ T.1 : Finset (Fin n)) : Set (Fin n))) ∧
+      (letI := ρ.mulAction;
+        (fun F : IntermediateField K (SeparableClosure K) ↦
+          (F.inertiaDegree, Module.finrank K F / F.inertiaDegree))
+          (IntermediateField.fixedField
+            (MulAction.stabilizer Gal(SeparableClosure K/K) i₀))) = x.1
+  have hmem : ∀ r : Subtype p_sym,
+      r ∈ baseOrbitIndex (K := K) σ i₀ ⁻¹' {⟨x, T⟩} ↔ q_orb r.1 := fun r ↦ by
+    rw [Set.mem_preimage, Set.mem_singleton_iff]
+    exact baseOrbitIndex_eq_iff σ i₀ x T r
+  (orbitSplittingSymbolEquiv hx hi₀_S e₁ e₂).trans
+    (((Equiv.subtypeEquivRight hmem).trans
+      (Equiv.subtypeSubtypeEquivSubtypeInter p_sym q_orb)).trans
+        (Equiv.subtypeEquivRight (p := fun ρ ↦ p_sym ρ ∧ q_orb ρ) fun _ ↦
+          ⟨fun h ↦ ⟨h.2.1, h.2.2, h.1⟩, fun h ↦ ⟨h.2.2, h.1, h.2.1⟩⟩)).symm
+
+open scoped Classical in
+/-- The underlying Galois set of `baseOrbitIndexFiberEquiv` is `GaloisSet.sum`. -/
+private theorem coe_baseOrbitIndexFiberEquiv_apply {n m l : ℕ} (σ : Multiset (ℕ × ℕ))
+    (i₀ : Fin n) (x : σ.toFinset)
+    (T : (Finset.univ.erase i₀).powersetCard (x.1.1 * x.1.2 - 1))
+    (e₁ : Fin m ≃ ((insert i₀ T.1 : Finset (Fin n)) : Set (Fin n)))
+    (e₂ : Fin l ≃ {j : Fin n // j ∉ ((insert i₀ T.1 : Finset (Fin n)) : Set (Fin n))})
+    (p : {ρ₁ : GaloisSet K m // ρ₁.splittingSymbol = {x.1}} ×
+      {ρ₂ : GaloisSet K l // ρ₂.splittingSymbol = σ.erase x.1}) :
+    (baseOrbitIndexFiberEquiv σ i₀ x T e₁ e₂ p).1.1 =
+      GaloisSet.sum p.1.1 p.2.1
+        ((Equiv.sumCongr e₁ e₂).trans
+          (Equiv.sumCompl (· ∈ ((insert i₀ T.1 : Finset (Fin n)) : Set (Fin n))))) := by
+  simp [baseOrbitIndexFiberEquiv, coe_orbitSplittingSymbolEquiv_apply]
+
+open scoped Classical in
 /-- On the fibre of `baseOrbitIndex` over `⟨x, T⟩`, the total discriminant weight factors via
-`orbitSplittingSymbolEquiv` into the product of the `{x}` weight on `Fin (x.1 * x.2)` and the
+`baseOrbitIndexFiberEquiv` into the product of the `{x}` weight on `Fin (x.1 * x.2)` and the
 `σ.erase x` weight on `Fin (n - x.1 * x.2)`. -/
 private theorem tsum_baseOrbitIndex_fiber {n : ℕ} (σ : Multiset (ℕ × ℕ)) (i₀ : Fin n)
     (x : σ.toFinset) (hm_pos : 0 < x.1.1 * x.1.2)
@@ -290,17 +403,12 @@ private theorem tsum_baseOrbitIndex_fiber {n : ℕ} (σ : Multiset (ℕ × ℕ))
           1 / (Nat.card 𝓀[K] : ℝ≥0∞) ^ ρ₁.1.discriminantExponent) *
         ∑' ρ₂ : {ρ₂ : GaloisSet K (n - x.1.1 * x.1.2) // ρ₂.splittingSymbol = σ.erase x.1},
           1 / (Nat.card 𝓀[K] : ℝ≥0∞) ^ ρ₂.1.discriminantExponent := by
-  rcases x with ⟨x, hx_fin⟩
-  rcases T with ⟨T, hT⟩
-  dsimp only at hm_pos hT ⊢
-  have hx : x ∈ σ := Multiset.mem_toFinset.1 hx_fin
-  let m := x.1 * x.2
+  let m := x.1.1 * x.1.2
   set q : ℝ≥0∞ := (Nat.card 𝓀[K] : ℝ≥0∞)
   have hq0 : q ≠ 0 := Nat.cast_ne_zero.mpr (Finite.card_pos (α := 𝓀[K])).ne'
-  obtain ⟨hT_sub, hT_card⟩ := Finset.mem_powersetCard.1 hT
-  have hi₀_notMem_T : i₀ ∉ T := fun h ↦ Finset.notMem_erase i₀ Finset.univ (hT_sub h)
-  set S : Finset (Fin n) := insert i₀ T
-  have hi₀_S : i₀ ∈ (S : Set (Fin n)) := Finset.mem_coe.2 (Finset.mem_insert_self i₀ T)
+  obtain ⟨hT_sub, hT_card⟩ := Finset.mem_powersetCard.1 T.2
+  have hi₀_notMem_T : i₀ ∉ T.1 := fun h ↦ Finset.notMem_erase i₀ Finset.univ (hT_sub h)
+  set S : Finset (Fin n) := insert i₀ T.1
   have hS_card : S.card = m := by
     rw [Finset.card_insert_of_notMem hi₀_notMem_T, hT_card]
     omega
@@ -310,71 +418,14 @@ private theorem tsum_baseOrbitIndex_fiber {n : ℕ} (σ : Multiset (ℕ × ℕ))
   let e₁ : Fin m ≃ (S : Set (Fin n)) := (Fintype.equivFinOfCardEq (by simp [hS_card])).symm
   let e₂ : Fin (n - m) ≃ {j : Fin n // j ∉ (S : Set (Fin n))} :=
     (Fintype.equivFinOfCardEq hSc_card).symm
-  -- Rewrite singleton-preimage membership explicitly via `Set.mem_preimage` and
-  -- `Set.mem_singleton_iff`.
-  let p_sym : GaloisSet K n → Prop := fun ρ ↦ ρ.splittingSymbol = σ
-  let q_orb : GaloisSet K n → Prop := fun ρ ↦
-    (letI := ρ.mulAction;
-      MulAction.orbit Gal(SeparableClosure K/K) i₀ = (S : Set (Fin n))) ∧
-      (letI := ρ.mulAction;
-        (fun F : IntermediateField K (SeparableClosure K) ↦
-          (F.inertiaDegree, Module.finrank K F / F.inertiaDegree))
-          (IntermediateField.fixedField
-            (MulAction.stabilizer Gal(SeparableClosure K/K) i₀))) = x
-  have hmem : ∀ r : Subtype p_sym,
-      r ∈ baseOrbitIndex (K := K) σ i₀ ⁻¹' {⟨⟨x, hx_fin⟩, ⟨T, hT⟩⟩} ↔ q_orb r.1 := by
-    intro r
-    rw [Set.mem_preimage, Set.mem_singleton_iff]
-    let := r.1.mulAction
-    constructor
-    · intro hΦ
-      have hpair_eq := congrArg (fun p : BaseOrbitIdx σ i₀ ↦ p.1.1) hΦ
-      have hT_eq : (MulAction.orbit Gal(SeparableClosure K/K) i₀).toFinset.erase i₀ = T :=
-        congrArg (fun p : BaseOrbitIdx σ i₀ ↦ p.2.1) hΦ
-      have hi₀_orb : i₀ ∈ (MulAction.orbit Gal(SeparableClosure K/K) i₀).toFinset :=
-        Set.mem_toFinset.2 (MulAction.mem_orbit_self i₀)
-      have horb_fin : (MulAction.orbit Gal(SeparableClosure K/K) i₀).toFinset = S := by
-        rw [← Finset.insert_erase hi₀_orb, hT_eq]
-      exact ⟨by rw [← horb_fin, Set.coe_toFinset], hpair_eq⟩
-    · rintro ⟨horb, hpair_eq⟩
-      have hO : (MulAction.orbit Gal(SeparableClosure K/K) i₀).toFinset = S := by
-        ext j; simp [horb]
-      have hT' : (baseOrbitIndex σ i₀ r).2.1 = T := by
-        change (MulAction.orbit Gal(SeparableClosure K/K) i₀).toFinset.erase i₀ = T
-        rw [hO]
-        exact Finset.erase_insert hi₀_notMem_T
-      have hfst : (baseOrbitIndex σ i₀ r).1 = ⟨x, hx_fin⟩ := Subtype.ext hpair_eq
-      rcases hΦ : baseOrbitIndex σ i₀ r with ⟨x', T', hT'_mem⟩
-      rw [hΦ] at hfst hT'
-      cases hfst
-      cases hT'
-      rfl
-  let efib :
-      {ρ : GaloisSet K n //
-        (letI := ρ.mulAction;
-          MulAction.orbit Gal(SeparableClosure K/K) i₀ = (S : Set (Fin n))) ∧
-          (letI := ρ.mulAction;
-            (fun F : IntermediateField K (SeparableClosure K) ↦
-              (F.inertiaDegree, Module.finrank K F / F.inertiaDegree))
-              (IntermediateField.fixedField
-                (MulAction.stabilizer Gal(SeparableClosure K/K) i₀))) = x ∧
-          ρ.splittingSymbol = σ} ≃
-      baseOrbitIndex (K := K) σ i₀ ⁻¹' {⟨⟨x, hx_fin⟩, ⟨T, hT⟩⟩} :=
-    (((Equiv.subtypeEquivRight hmem).trans
-      (Equiv.subtypeSubtypeEquivSubtypeInter p_sym q_orb)).trans
-        (Equiv.subtypeEquivRight (p := fun ρ ↦ p_sym ρ ∧ q_orb ρ) fun _ ↦
-          ⟨fun h ↦ ⟨h.2.1, h.2.2, h.1⟩, fun h ↦ ⟨h.2.2, h.1, h.2.1⟩⟩)).symm
-  let E := (orbitSplittingSymbolEquiv hx hi₀_S e₁ e₂).trans efib
+  let E := baseOrbitIndexFiberEquiv (K := K) σ i₀ x T e₁ e₂
   rw [← E.tsum_eq]
-  have hw : ∀ p : {ρ₁ : GaloisSet K m // ρ₁.splittingSymbol = {x}} ×
-        {ρ₂ : GaloisSet K (n - m) // ρ₂.splittingSymbol = σ.erase x},
+  have hw : ∀ p : {ρ₁ : GaloisSet K m // ρ₁.splittingSymbol = {x.1}} ×
+        {ρ₂ : GaloisSet K (n - m) // ρ₂.splittingSymbol = σ.erase x.1},
       1 / q ^ (E p).1.1.discriminantExponent =
         (1 / q ^ p.1.1.discriminantExponent) * (1 / q ^ p.2.1.discriminantExponent) := by
     intro p
-    have hE : (E p).1.1 = GaloisSet.sum p.1.1 p.2.1
-        ((Equiv.sumCongr e₁ e₂).trans (Equiv.sumCompl (· ∈ (S : Set (Fin n))))) :=
-      coe_orbitSplittingSymbolEquiv_apply hx hi₀_S e₁ e₂ p
-    rw [hE, GaloisSet.discriminantExponent_sum, pow_add]
+    rw [coe_baseOrbitIndexFiberEquiv_apply, GaloisSet.discriminantExponent_sum, pow_add]
     simp only [one_div]
     exact ENNReal.mul_inv (Or.inl (pow_ne_zero _ hq0))
       (Or.inl (ENNReal.pow_ne_top (ENNReal.natCast_ne_top _)))
@@ -386,7 +437,7 @@ private theorem tsum_baseOrbitIndex_fiber {n : ℕ} (σ : Multiset (ℕ × ℕ))
 /-- Binomial-factorial-automorphism identity combining the `(n - 1).choose (x.1 * x.2 - 1)`
 choices of punctured orbit with the weights of `{x}` and `σ.erase x`. -/
 private theorem choose_mul_div_splittingSymbol_erase_eq {n : ℕ} {σ : Multiset (ℕ × ℕ)}
-    {x : ℕ × ℕ} (hx : x ∈ σ) (hx1 : 0 < x.1) (hm_pos : 0 < x.1 * x.2) (hm_le : x.1 * x.2 ≤ n)
+    {x : ℕ × ℕ} (hx : x ∈ σ) (hm_pos : 0 < x.1 * x.2) (hm_le : x.1 * x.2 ≤ n)
     {q : ℝ≥0∞} (hq0 : q ≠ 0) (hqt : q ≠ ⊤) :
     ((n - 1).choose (x.1 * x.2 - 1) : ℝ≥0∞) *
         ((((x.1 * x.2)! : ℝ≥0∞) / ((x.1 : ℝ≥0∞) * q ^ (x.1 * (x.2 - 1)))) *
@@ -407,7 +458,7 @@ private theorem choose_mul_div_splittingSymbol_erase_eq {n : ℕ} {σ : Multiset
   have hcnt0 : (σ.count x : ℝ≥0∞) ≠ 0 := Nat.cast_ne_zero.mpr (Multiset.count_pos.2 hx).ne'
   have hcntt : (σ.count x : ℝ≥0∞) ≠ ⊤ := ENNReal.natCast_ne_top _
   have hd1_0 : (x.1 : ℝ≥0∞) * q ^ (x.1 * (x.2 - 1)) ≠ 0 :=
-    mul_ne_zero (Nat.cast_ne_zero.mpr hx1.ne') (pow_ne_zero _ hq0)
+    mul_ne_zero (Nat.cast_ne_zero.mpr (left_ne_zero_of_mul hm_pos.ne')) (pow_ne_zero _ hq0)
   have hd1_t : (x.1 : ℝ≥0∞) * q ^ (x.1 * (x.2 - 1)) ≠ ⊤ :=
     ENNReal.mul_ne_top (ENNReal.natCast_ne_top _) (ENNReal.pow_ne_top hqt)
   have hden :
@@ -506,10 +557,7 @@ private theorem tsum_splittingSymbol_eq :
               rw [Multiset.map_cons, Multiset.sum_cons] at hcons
               omega)]
       simp_rw [hfib_eq]
-      rw [Finset.sum_const, Finset.card_univ, Fintype.card_coe, Finset.card_powersetCard,
-        Finset.card_erase_of_mem (Finset.mem_univ i₀), Finset.card_univ, Fintype.card_fin,
-        nsmul_eq_mul]
-      exact choose_mul_div_splittingSymbol_erase_eq hx (hσ x hx).1 hm_pos hm_le hq0 hqt
+      simpa using choose_mul_div_splittingSymbol_erase_eq hx hm_pos hm_le hq0 hqt
     -- Sum `hx_term` over `x ∈ σ.toFinset` using `∑ count(x) * (x.1 * x.2) = n`.
     simp_rw [hx_term, div_eq_mul_inv]
     rw [← Finset.sum_mul,
@@ -569,7 +617,7 @@ theorem etaleMass_ramificationPartition (n k : ℕ) (π : k.Partition)
           h.symm ▸ σ.2.2.2)
     have hcongr : ∀ r : Ψ ⁻¹' {σ},
         1 / q ^ r.1.1.discriminantExponent = 1 / q ^ (efib r).1.discriminantExponent :=
-      fun _ ↦ rfl
+      fun r ↦ by simp [efib]
     have hexp : splittingSymbolExponent σ.1 = k := by
       rw [← sum_ramificationPartition, σ.2.2.2, π.parts_sum]
     have haut0 : (splittingSymbolAut σ.1 : ℝ≥0∞) ≠ 0 :=
