@@ -8,7 +8,7 @@ module
 public import TauCeti.Analysis.Sobolev.Mollification.Basic
 public import Mathlib.Analysis.Calculus.BumpFunction.Normed
 public import Mathlib.MeasureTheory.Function.LpSeminorm.Indicator
-public import Mathlib.Analysis.Distribution.TestFunction
+public import TauCeti.Analysis.Distribution.TestFunction.Approximation
 import Mathlib.MeasureTheory.Measure.Haar.Unique
 
 /-!
@@ -40,7 +40,7 @@ public section
 namespace TauCeti
 
 open MeasureTheory Set TopologicalSpace
-open scoped ContDiff Convolution ENNReal Distributions Pointwise
+open scoped ContDiff Convolution ENNReal Distributions
 
 variable {E F : Type*} [MeasurableSpace E] [NormedAddCommGroup E] [NormedSpace ℝ E]
   [BorelSpace E] [NormedAddCommGroup F] [NormedSpace ℝ F]
@@ -148,23 +148,16 @@ theorem HasWeakFDerivOn.exists_testFunction_convolution_normed
         (phi.normed mu ⋆[ContinuousLinearMap.lsmul ℝ ℝ, mu] (Omega : Set E).indicator U) x := by
   have hK'Omega : Metric.cthickening δ (tsupport u) ⊆ Omega := fun x hx =>
     hball x hx (Metric.mem_closedBall_self (phi.rOut_pos.le.trans hphi))
-  set g := phi.normed mu ⋆[ContinuousLinearMap.lsmul ℝ ℝ, mu] u
-  have hgs : tsupport g ⊆ Metric.cthickening δ (tsupport u) := by
-    have hsupp : Function.support g ⊆ Metric.thickening phi.rOut (tsupport u) := by
-      refine (support_convolution_subset _).trans ?_
-      rw [phi.support_normed_eq, ← ball_add_zero]
-      exact add_subset_add_left (subset_tsupport u)
-    exact (closure_mono hsupp).trans <| (Metric.closure_thickening_subset_cthickening _ _).trans <|
-      Metric.cthickening_mono hphi _
-  refine ⟨⟨g, phi.hasCompactSupport_normed.contDiff_convolution_left _ phi.contDiff_normed
-      (hu.locallyIntegrable hp), huc.isCompact.cthickening.of_isClosed_subset
-        (isClosed_tsupport _) hgs, hgs.trans hK'Omega⟩, rfl, hgs, fun x hx => ?_⟩
+  obtain ⟨φ, hφ, hφs⟩ := (hu.locallyIntegrable hp).exists_testFunction_eq_normed_convolution
+    huc.isCompact subset_rfl hK'Omega phi hphi
+  refine ⟨φ, hφ, hφs, fun x hx => ?_⟩
   have huOmega : (Omega : Set E).indicator u = u :=
     indicator_eq_self.2 ((subset_tsupport u).trans
       ((Metric.self_subset_cthickening _).trans hK'Omega))
   have := h.fderiv_indicator_convolution_normed (hu.restrict Omega) hU hp hq phi x
     ((Metric.closedBall_subset_closedBall hphi).trans (hball x hx))
   rw [huOmega, convolution_flip, convolution_flip] at this
+  rw [hφ]
   exact this
 
 end TauCeti
