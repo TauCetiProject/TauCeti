@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Geometry.Manifold.DifferentialForm.Relative
+public import TauCeti.Geometry.Manifold.DifferentialForm.Relative.Basic
 public import TauCeti.Analysis.Calculus.DifferentialForm.Relative.FirstJet
 import TauCeti.Geometry.Manifold.VectorBundle.Submersion
 
@@ -30,11 +30,15 @@ So if a continuous form `η` vanishes at the zero vector `0_b`, the chart expres
 `0_b` has zero derivative at the chart point of `0_b`, within the range of the model
 (`TauCeti.hasFDerivWithinAt_inChartAt_vectorBundlePoincareHomotopy_zeroSection`), and outright
 over a boundaryless base
-(`TauCeti.hasFDerivAt_inChartAt_vectorBundlePoincareHomotopy_zeroSection`). Since `P η` also
-vanishes at `0_b`, its value and first derivative both vanish there. For a closed form `η`
-vanishing along the whole zero section, `P η` is thus a primitive of `η` with zero first jet
-along the zero section. Vanishing of `η` as a full ambient tensor is needed: vanishing of its
-restriction to the zero section only makes the value of `P η` vanish.
+(`TauCeti.hasFDerivAt_inChartAt_vectorBundlePoincareHomotopy_zeroSection`). Since `P η`
+vanishes along the zero section for every form `η`
+(`TauCeti.vectorBundlePoincareHomotopy_zeroSection`), its value and first derivative both vanish
+at `0_b`. For a closed `C¹` form `η` on a `C²` bundle over a `C²` base, vanishing as a full
+ambient tensor along the whole zero section, `P η` is moreover a primitive of `η`
+(`TauCeti.mextDeriv_vectorBundlePoincareHomotopy`, whose correction term `ρ^* η` vanishes), so it
+is a primitive with zero first jet along the zero section. Vanishing of `η` as a full ambient
+tensor is needed here: vanishing of its restriction to the zero section alone does not make the
+first jet of `P η` vanish.
 
 A primitive with zero first jet along a submanifold is the input to the relative Moser argument
 which, for two symplectic forms agreeing on the full ambient tangent spaces along a compact
@@ -75,22 +79,9 @@ variable {B FV : Type*} {V : B → Type*} [∀ b, AddCommGroup (V b)] [∀ b, Mo
 
 variable [IsManifold IB 1 B] [ContMDiffVectorBundle 1 FV V IB]
 
-/-- The flat fibre-scaling map `((q, w), t) ↦ (q, t • w)` has derivative
-`((a, b), c) ↦ (a, t • b + c • w)` at `((q, w), t)`. -/
-private theorem hasFDerivAt_fiberScaling (y : EB × FV) (t : ℝ) :
-    HasFDerivAt (fun z : (EB × FV) × ℝ ↦ (z.1.1, z.2 • z.1.2))
-      ((ContinuousLinearMap.fst ℝ EB FV ∘L ContinuousLinearMap.fst ℝ (EB × FV) ℝ).prod
-        (t • (ContinuousLinearMap.snd ℝ EB FV ∘L ContinuousLinearMap.fst ℝ (EB × FV) ℝ) +
-          (ContinuousLinearMap.snd ℝ (EB × FV) ℝ).smulRight y.2)) (y, t) := by
-  have h2 : HasFDerivAt (fun z : (EB × FV) × ℝ ↦ z.2 • z.1.2)
-      ((y, t).2 • (ContinuousLinearMap.snd ℝ EB FV ∘L ContinuousLinearMap.fst ℝ (EB × FV) ℝ) +
-        (ContinuousLinearMap.snd ℝ (EB × FV) ℝ).smulRight (y, t).1.2) (y, t) :=
-    hasFDerivAt_snd.fun_smul hasFDerivAt_fst.snd
-  exact hasFDerivAt_fst.fst.prodMk h2
-
 /-- On the flat cylinder over the target of a preferred chart of the total space, the pullback of
-`H^* η`, for fibre scaling `H`, is the chart expression of `η` at `(y.1, t • y.2)` precomposed with
-the derivative of the flat scaling `((q, w), t) ↦ (q, t • w)`: in the chart, `H` is that scaling. -/
+`H^* η`, for fibre scaling `H`, is the pullback of the chart expression of `η` by the flat fibre
+scaling `TauCeti.fiberScaling`: in the chart, `H` is that scaling. -/
 private theorem mpullbackWithin_cylinderChart_mpullback_vectorBundleFiberScaling
     (η : RoughForm (IB.prod 𝓘(ℝ, FV)) (TotalSpace FV V) F (k + 1)) (p : TotalSpace FV V)
     {y : EB × FV} (hy : y ∈ (extChartAt (IB.prod 𝓘(ℝ, FV)) p).target) {t : ℝ}
@@ -100,19 +91,14 @@ private theorem mpullbackWithin_cylinderChart_mpullback_vectorBundleFiberScaling
       ((extChartAt (IB.prod 𝓘(ℝ, FV)) p).target ×ˢ Icc 0 1)
       (mpullback ((IB.prod 𝓘(ℝ, FV)).prod (𝓡∂ 1)) (IB.prod 𝓘(ℝ, FV))
         (vectorBundleFiberScaling FV V) η) (y, t) =
-      (mpullbackWithin 𝓘(ℝ, EB × FV) (IB.prod 𝓘(ℝ, FV)) (extChartAt (IB.prod 𝓘(ℝ, FV)) p).symm
-        (range (IB.prod 𝓘(ℝ, FV))) η (y.1, t • y.2)).compContinuousLinearMap
-          ((ContinuousLinearMap.fst ℝ EB FV ∘L ContinuousLinearMap.fst ℝ (EB × FV) ℝ).prod
-            (t • (ContinuousLinearMap.snd ℝ EB FV ∘L ContinuousLinearMap.fst ℝ (EB × FV) ℝ) +
-              (ContinuousLinearMap.snd ℝ (EB × FV) ℝ).smulRight y.2)) := by
-  have hST : MapsTo (fun z : (EB × FV) × ℝ ↦ (z.1.1, z.2 • z.1.2))
-      ((extChartAt (IB.prod 𝓘(ℝ, FV)) p).target ×ˢ Icc 0 1)
+      fiberScalingPullback (η.inChartAt p) (y, t) := by
+  have hST : MapsTo fiberScaling ((extChartAt (IB.prod 𝓘(ℝ, FV)) p).target ×ˢ Icc 0 1)
       (extChartAt (IB.prod 𝓘(ℝ, FV)) p).target :=
-    fun z hz ↦ smul_snd_mem_extChartAt_target p hz.1 z.2
+    fun z hz ↦ (fiberScaling_apply z).symm ▸ smul_snd_mem_extChartAt_target p hz.1 z.2
   have hcomp : EqOn (vectorBundleFiberScaling FV V ∘ cylinderChart (IB.prod 𝓘(ℝ, FV)) p)
-      ((extChartAt (IB.prod 𝓘(ℝ, FV)) p).symm ∘ fun z : (EB × FV) × ℝ ↦ (z.1.1, z.2 • z.1.2))
+      ((extChartAt (IB.prod 𝓘(ℝ, FV)) p).symm ∘ fiberScaling)
       ((extChartAt (IB.prod 𝓘(ℝ, FV)) p).target ×ˢ Icc 0 1) := fun z hz ↦ by
-    simp only [Function.comp_apply, cylinderChart_apply]
+    simp only [Function.comp_apply, cylinderChart_apply, fiberScaling_apply]
     rw [vectorBundleFiberScaling_extChartAt_symm p hz.1, projIcc_of_mem _ hz.2]
   have hyt : (y, t) ∈ (extChartAt (IB.prod 𝓘(ℝ, FV)) p).target ×ˢ Icc (0 : ℝ) 1 := ⟨hy, ht⟩
   have hu : UniqueDiffWithinAt ℝ ((extChartAt (IB.prod 𝓘(ℝ, FV)) p).target ×ˢ Icc (0 : ℝ) 1)
@@ -124,10 +110,13 @@ private theorem mpullbackWithin_cylinderChart_mpullback_vectorBundleFiberScaling
     ((contMDiff_vectorBundleFiberScaling (n := 1) _).mdifferentiableAt one_ne_zero
       |>.mdifferentiableWithinAt) (mapsTo_univ _ _) hu.uniqueMDiffWithinAt,
     mpullbackWithin_congr hcomp hyt]
-  exact mpullbackWithin_comp_apply_of_hasFDerivWithinAt
-    (hasFDerivAt_fiberScaling y t).hasFDerivWithinAt
+  rw [mpullbackWithin_comp_apply_of_hasFDerivWithinAt
+    ((contDiff_fiberScaling (r := 1)).differentiable one_ne_zero _).hasFDerivAt.hasFDerivWithinAt
     (mdifferentiableWithinAt_extChartAt_symm (hST hyt)) (hST.mono_right
-      (extChartAt_target_subset_range p)) hu η
+      (extChartAt_target_subset_range p)) hu η, fiberScalingPullback_apply]
+  congr 1
+  ext v
+  exact (mpullbackWithin_apply _ _ η _ v).trans (RoughForm.inChartAt_apply η p _ v).symm
 
 /-- **The relative Poincaré operator in a chart.** In the preferred chart at any point `p` of the
 total space of a vector bundle, the relative Poincaré operator of a form `η` is the flat relative
@@ -139,30 +128,10 @@ theorem inChartAt_vectorBundlePoincareHomotopy
     (vectorBundlePoincareHomotopy η).inChartAt p y =
       fiberwisePoincareHomotopy (η.inChartAt p) y := by
   rw [vectorBundlePoincareHomotopy_def,
-    inChartAt_homotopyOperator p subset_rfl (uniqueDiffOn_extChartAt_target p) _ hy]
-  refine (cylinderHomotopy_apply _ y).trans (Eq.trans ?_ (fiberwisePoincareHomotopy_apply _ y).symm)
-  refine intervalIntegral.integral_congr fun t ht ↦ ?_
-  rw [uIcc_of_le zero_le_one] at ht
-  rw [mpullbackWithin_cylinderChart_mpullback_vectorBundleFiberScaling η p hy ht]
-  ext v
-  simp only [ContinuousAlternatingMap.compContinuousLinearMap_apply,
-    ContinuousAlternatingMap.curryLeft_apply_apply]
-  -- `erw`: the pulled-back value is an alternating map on a tangent space of the model space,
-  -- which is the model space itself only by definition.
-  erw [ContinuousAlternatingMap.compContinuousLinearMap_apply]
-  rw [mpullbackWithin_apply, RoughForm.inChartAt_apply]
-  refine congrArg _ (funext fun i ↦ ?_)
-  -- The derivative of the flat scaling sends `(0, 1)` to `(0, y.2)` and `(w, 0)` to
-  -- `(w.1, t • w.2)`.
-  have hA (w : EB × FV) (c : ℝ) :
-      ((ContinuousLinearMap.fst ℝ EB FV ∘L ContinuousLinearMap.fst ℝ (EB × FV) ℝ).prod
-        (t • (ContinuousLinearMap.snd ℝ EB FV ∘L ContinuousLinearMap.fst ℝ (EB × FV) ℝ) +
-          (ContinuousLinearMap.snd ℝ (EB × FV) ℝ).smulRight y.2)) (w, c) =
-        (w.1, t • w.2 + c • y.2) := by
-    simp
-  cases i using Fin.cases with
-  | zero => exact congrArg _ ((hA 0 1).trans (by simp))
-  | succ j => exact congrArg _ ((hA (v j) 0).trans (by simp [Prod.map]))
+    inChartAt_homotopyOperator p subset_rfl (uniqueDiffOn_extChartAt_target p) _ hy,
+    fiberwisePoincareHomotopy_def]
+  exact cylinderHomotopy_congr fun t ht ↦
+    mpullbackWithin_cylinderChart_mpullback_vectorBundleFiberScaling η p hy ht
 
 /-- **Zero first jet of the relative Poincaré primitive.** Let `η` be a continuous form on the
 total space of a `C¹` vector bundle which vanishes, as a full ambient tensor, at the zero vector

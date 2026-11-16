@@ -254,6 +254,7 @@ def cylinderChart (I : ModelWithCorners ℝ E H) (x₀ : M) : E × ℝ → M × 
   Prod.map (extChartAt I x₀).symm (projIcc 0 1 zero_le_one)
 
 /-- The cylinder chart sends `(y, t)` to `((extChartAt I x₀).symm y, projIcc 0 1 t)`. -/
+@[simp]
 theorem cylinderChart_apply (x₀ : M) (p : E × ℝ) :
     cylinderChart I x₀ p = ((extChartAt I x₀).symm p.1, projIcc 0 1 zero_le_one p.2) :=
   (rfl)
