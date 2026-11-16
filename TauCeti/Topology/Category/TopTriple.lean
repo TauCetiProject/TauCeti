@@ -25,7 +25,8 @@ natural.
 Nested subsets `s ⊆ t ⊆ w` of a topological space give the triple `TopTriple.ofInclusions`, whose
 three pairs are the pairs `TopPair.ofInclusion` of the three inclusions among them.
 Nested subsets `B ⊆ A` of a topological space `X` give the triple `TopTriple.ofSubset`, whose outer
-and total pairs are the pairs `TopPair.ofSubset A` and `TopPair.ofSubset B`.
+and total pairs are the pairs `TopPair.ofSubset A` and `TopPair.ofSubset B`
+(`TopTriple.ofSubsetTotalPairIso`).
 -/
 
 @[expose] public section
@@ -241,6 +242,21 @@ lemma totalToOuter_app_ofSubset {X : TopCat.{u}} {A B : Set X} (h : B ⊆ A) :
   ext x : 2
   · exact Subtype.ext (TopPair.ofSubsetMap_snd_apply (𝟙 X) _ x).symm
   · exact (TopPair.ofSubsetMap_fst_apply _ _ x).symm
+
+/-- For nested subsets `B ⊆ A` of `X`, the pair `(X, B)` is isomorphic to the total pair of the
+triple `(X, A, B)`, through the identity of `X`. -/
+def ofSubsetTotalPairIso {X : TopCat.{u}} {A B : Set X} (h : B ⊆ A) :
+    TopPair.ofSubset B ≅ totalPair.obj (ofSubset h) where
+  hom := TopPair.ofHom (𝟙 X) (TopCat.ofHom ⟨fun q ↦ q, continuous_id⟩) rfl
+  inv := TopPair.ofHom (𝟙 X) (TopCat.ofHom ⟨fun q ↦ q, continuous_id⟩) rfl
+  hom_inv_id := TopPair.hom_ext_of_fst _ rfl
+  inv_hom_id := TopPair.hom_ext_of_fst _ rfl
+
+@[simp] lemma ofSubsetTotalPairIso_hom_fst {X : TopCat.{u}} {A B : Set X} (h : B ⊆ A) :
+    TopPair.Hom.fst (ofSubsetTotalPairIso h).hom = 𝟙 X := (rfl)
+
+@[simp] lemma ofSubsetTotalPairIso_inv_fst {X : TopCat.{u}} {A B : Set X} (h : B ⊆ A) :
+    TopPair.Hom.fst (ofSubsetTotalPairIso h).inv = 𝟙 X := (rfl)
 
 end TopTriple
 
