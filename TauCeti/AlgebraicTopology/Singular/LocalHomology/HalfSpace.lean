@@ -123,7 +123,7 @@ private theorem isZero_localHomology_halfSpace_of_pos (hn : finrank ℝ E = n)
     refine ⟨IsEmbedding.subtypeVal.comp IsEmbedding.subtypeVal, ?_⟩
     have : range j' = {y : E | 0 < f y} := by
       ext y
-      refine ⟨?_, fun hy ↦ ⟨⟨⟨y, (show 0 < f y from hy).le⟩, hy⟩, rfl⟩⟩
+      refine ⟨?_, fun (hy : 0 < f y) ↦ ⟨⟨⟨y, hy.le⟩, hy⟩, rfl⟩⟩
       rintro ⟨z, rfl⟩
       exact z.2
     rw [this]
@@ -259,14 +259,17 @@ Hausdorff space `M` charted on `EuclideanHalfSpace n` and a compact `A ⊆ M`, `
 vanishes for `k > n`. -/
 theorem isZero_localHomology_of_isCompact_euclideanHalfSpace {Λ : Type} [Ring Λ]
     (N : ModuleCat.{0} Λ) {n : ℕ} [NeZero n] {M : Type} [TopologicalSpace M] [T2Space M]
-    [hM : ChartedSpace (EuclideanHalfSpace n) M] {A : Set M} (hA : IsCompact A) {k : ℕ}
+    [ChartedSpace (EuclideanHalfSpace n) M] {A : Set M} (hA : IsCompact A) {k : ℕ}
     (hk : n < k) : IsZero (localHomology N A k) := by
   have hf : (EuclideanSpace.proj (0 : Fin n) : StrongDual ℝ (EuclideanSpace ℝ (Fin n))) ≠ 0 :=
     fun h ↦ by simpa using congrArg (· (EuclideanSpace.single (0 : Fin n) (1 : ℝ))) h
-  -- `EuclideanHalfSpace n` is by definition the subtype `{x | 0 ≤ x 0}`, which is the half-space
-  -- of the coordinate functional `EuclideanSpace.proj 0`.
-  let _ : ChartedSpace ↥{x : EuclideanSpace ℝ (Fin n) | 0 ≤ EuclideanSpace.proj (0 : Fin n) x} M :=
-    hM
+  -- Transport the charts along the identity homeomorphism from `EuclideanHalfSpace n`, the
+  -- subtype `{x | 0 ≤ x 0}`, to the half-space of the coordinate functional
+  -- `EuclideanSpace.proj 0`.
+  let H := ↥{x : EuclideanSpace ℝ (Fin n) | 0 ≤ EuclideanSpace.proj (0 : Fin n) x}
+  let e : EuclideanHalfSpace n ≃ₜ H := (Homeomorph.refl _).subtype fun x ↦ by simp
+  let _ : ChartedSpace H (EuclideanHalfSpace n) := e.isOpenEmbedding.singletonChartedSpace
+  let _ : ChartedSpace H M := ChartedSpace.comp H (EuclideanHalfSpace n) M
   exact isZero_localHomology_of_isCompact_halfSpace N hf finrank_euclideanSpace_fin hA hk
 
 end HalfSpaceModule

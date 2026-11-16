@@ -220,6 +220,18 @@ private def outwardPush (hpT : p ∉ T) (hT : ∀ z ∈ T, ∀ c : ℝ, 1 ≤ c 
     exact continuous_max_one_div_norm_sub continuous_subtype_val
       (fun z ↦ ne_of_mem_of_not_mem z.2 hpT) r
 
+/-- The value of the outward radial push. -/
+private lemma coe_outwardPush_apply (hpT : p ∉ T)
+    (hT : ∀ z ∈ T, ∀ c : ℝ, 1 ≤ c → p + c • (z - p) ∈ T) (r : ℝ) (z : T) :
+    (outwardPush hpT hT r z : E) = p + max 1 (r / ‖(z : E) - p‖) • ((z : E) - p) :=
+  rfl
+
+/-- A set `S` closed under outward radial moves from `p` stays so after removing `p`. -/
+private lemma add_smul_sub_mem_diff_singleton
+    (hS : ∀ z ∈ S, ∀ c : ℝ, 1 ≤ c → p + c • (z - p) ∈ S) :
+    ∀ z ∈ S \ {p}, ∀ c : ℝ, 1 ≤ c → p + c • (z - p) ∈ S \ {p} := fun z hz c hc ↦
+  ⟨hS _ hz.1 _ hc, fun h ↦ hz.2 <| by simpa [sub_eq_zero, (one_pos.trans_le hc).ne'] using h⟩
+
 /-- The straight-line homotopy from the outward radial push to the identity of `T`. Every point
 of the segment from `z` to its push is `p + c • (z - p)` with `c ≥ 1`. -/
 private def outwardPushHomotopy (hpT : p ∉ T)
@@ -250,34 +262,31 @@ def diffHomotopyEquivDiffSingleton (hK : StarConvex ℝ p K) (hp : p ∈ K) (hKr
     (hS : ∀ z ∈ S, ∀ c : ℝ, 1 ≤ c → p + c • (z - p) ∈ S) :
     ContinuousMap.HomotopyEquiv ↥(S \ K) ↥(S \ {p}) where
   toFun := ContinuousMap.inclusion (sdiff_subset_sdiff_right (singleton_subset_iff.2 hp))
+  -- The outward push of `S \ {p}`, which lands in `S \ K`.
   invFun :=
-    { toFun z := ⟨p + max 1 (r / ‖(z : E) - p‖) • ((z : E) - p), by
+    { toFun z := ⟨outwardPush (T := S \ {p}) (fun h ↦ h.2 rfl)
+          (add_smul_sub_mem_diff_singleton hS) r z, by
         have hd : 0 < ‖(z : E) - p‖ := norm_pos_iff.2 (sub_ne_zero.2 z.2.2)
-        refine ⟨hS _ z.2.1 _ (le_max_left _ _), fun h ↦ ?_⟩
+        refine ⟨mem_of_mem_sdiff (Subtype.prop _), fun h ↦ ?_⟩
         -- The pushed point lies at distance at least `r` from `p`, outside `ball p r ⊇ K`.
         have hc : (0 : ℝ) < max 1 (r / ‖(z : E) - p‖) := one_pos.trans_le (le_max_left _ _)
         have hlt : max 1 (r / ‖(z : E) - p‖) * ‖(z : E) - p‖ < r := by
-          simpa [dist_eq_norm, norm_smul, abs_of_pos hc] using hKr h
+          simpa [coe_outwardPush_apply, dist_eq_norm, norm_smul, abs_of_pos hc] using hKr h
         have := (div_le_iff₀ hd).1 (le_max_right 1 (r / ‖(z : E) - p‖))
         linarith⟩
-      continuous_toFun := by
-        refine Continuous.subtype_mk (continuous_const.add (Continuous.smul ?_
-          (continuous_subtype_val.sub continuous_const))) _
-        exact continuous_max_one_div_norm_sub continuous_subtype_val (fun z ↦ z.2.2) r }
-  -- Both composites are the outward push of the respective complement, pointwise by definition.
+      continuous_toFun := by fun_prop }
+  -- Both composites are the outward push of the respective complement.
   left_inv := by
     have hT : ∀ z ∈ S \ K, ∀ c : ℝ, 1 ≤ c → p + c • (z - p) ∈ S \ K := fun z hz c hc ↦
       ⟨hS _ hz.1 _ hc, hK.add_smul_sub_mem_compl hKr hz.2 (Or.inl hc)⟩
     refine ⟨(outwardPushHomotopy (T := S \ K) (fun h ↦ h.2 hp) hT r).cast ?_ rfl⟩
-    ext
-    rfl
+    ext z
+    simp [coe_outwardPush_apply]
   right_inv := by
-    have hT : ∀ z ∈ S \ {p}, ∀ c : ℝ, 1 ≤ c → p + c • (z - p) ∈ S \ {p} := fun z hz c hc ↦
-      ⟨hS _ hz.1 _ hc, fun h ↦ hz.2 <| by
-        simpa [sub_eq_zero, (one_pos.trans_le hc).ne'] using h⟩
-    refine ⟨(outwardPushHomotopy (T := S \ {p}) (fun h ↦ h.2 rfl) hT r).cast ?_ rfl⟩
-    ext
-    rfl
+    refine ⟨(outwardPushHomotopy (T := S \ {p}) (fun h ↦ h.2 rfl)
+      (add_smul_sub_mem_diff_singleton hS) r).cast ?_ rfl⟩
+    ext z
+    simp
 
 /-- The homotopy equivalence `StarConvex.diffHomotopyEquivDiffSingleton` is the inclusion. -/
 @[simp]
