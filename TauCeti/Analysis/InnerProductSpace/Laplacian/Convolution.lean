@@ -29,24 +29,58 @@ shown to solve Poisson's equation: the Laplacian moves onto the smooth compactly
 factor, where the distributional identity for the kernel applies
 (`TauCeti.laplacian_convolution_eq_neg_of_integral_laplacian_mul`).
 
-It is also how a distributional solution of `Δu = v` is regularized: the Laplacian of the
-mollification `ρ ⋆ u` at `y` is the pairing of `u` with the Laplacian of the test function
-`t ↦ ρ (y - t)`, so `Δ (ρ ⋆ u) = ρ ⋆ v`
-(`TauCeti.laplacian_convolution_apply_eq_of_integral_laplacian_smul_eq`).
+It is also how a distributional solution of `Δu = v` on an open set `Ω` is regularized: the
+Laplacian of the mollification `ρ ⋆ u` at `y` is the pairing of `u` with the Laplacian of the
+reflected translate `t ↦ ρ (y - t)` (`TauCeti.reflectTranslateTestFunction`), a test function on
+`Ω` when `y - t ∈ Ω` for every `t` in the support of `ρ`. At such points
+`Δ (ρ ⋆ u) y = (ρ ⋆ v) y`
+(`TauCeti.laplacian_convolution_apply_eq_of_integral_laplacian_smul_eq`); when `Ω` is the whole
+space, this holds everywhere.
 
 ## Main declarations
 
 * `HasCompactSupport.laplacian_convolution_right`: `Δ (f ⋆[L, μ] g) = f ⋆[L, μ] Δ g`.
 * `TauCeti.laplacian_convolution_eq_neg_of_integral_laplacian_mul`: if `-ΔK = δ` in the sense of
   distributions, then `-Δ (K ⋆ f) = f` for every `C²` function `f` with compact support.
+* `TauCeti.reflectTranslateTestFunction`: the reflected translate `t ↦ ρ (y - t)` as a test
+  function on `Ω`, with its Laplacian `TauCeti.laplacian_reflectTranslateTestFunction`.
 * `TauCeti.laplacian_convolution_apply_eq_of_integral_laplacian_smul_eq`: if `Δu = v` in the sense
-  of distributions, then `Δ (ρ ⋆ u) = ρ ⋆ v` for every smooth `ρ` with compact support.
+  of distributions on `Ω` and `ρ` is smooth with compact support, then
+  `Δ (ρ ⋆ u) y = (ρ ⋆ v) y` whenever `y - t ∈ Ω` for every `t` in the support of `ρ`.
 -/
 
 public section
 
 open ContinuousLinearMap InnerProductSpace Laplacian MeasureTheory
 open scoped ContDiff Convolution Distributions
+
+namespace TauCeti
+
+section ReflectTranslate
+
+variable {E F : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [NormedAddCommGroup F]
+  [NormedSpace ℝ F] {Ω : TopologicalSpace.Opens E}
+
+/-- The reflected translate `t ↦ ρ (y - t)` of a smooth compactly supported function `ρ`, as a
+test function on `Ω`; this needs `y - t ∈ Ω` for every `t` in the support of `ρ`. Its pairing with
+a function `u` is the convolution `(ρ ⋆ u) y`. -/
+def reflectTranslateTestFunction (ρ : E → F) (y : E)
+    (hρ : ContDiff ℝ ∞ ρ) (hρc : HasCompactSupport ρ) (hy : ∀ t ∈ tsupport ρ, y - t ∈ Ω) :
+    𝓓(Ω, F) :=
+  ⟨ρ ∘ Homeomorph.subLeft y, hρ.comp (contDiff_const.sub contDiff_id),
+    hρc.comp_homeomorph _, fun t ht ↦ by
+      simpa using hy _ (tsupport_comp_subset_preimage ρ (Homeomorph.subLeft y).continuous ht)⟩
+
+/-- The reflected translate of `ρ` about `y` takes the value `ρ (y - t)` at `t`. -/
+@[simp]
+theorem reflectTranslateTestFunction_apply (ρ : E → F) (y : E)
+    (hρ : ContDiff ℝ ∞ ρ) (hρc : HasCompactSupport ρ) (hy : ∀ t ∈ tsupport ρ, y - t ∈ Ω)
+    (t : E) : reflectTranslateTestFunction ρ y hρ hρc hy t = ρ (y - t) :=
+  (rfl)
+
+end ReflectTranslate
+
+end TauCeti
 
 variable {E E₀ E' F : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteDimensional ℝ E]
   [MeasurableSpace E] [BorelSpace E] {μ : Measure E} [SFinite μ] [μ.IsAddLeftInvariant]
@@ -112,6 +146,21 @@ theorem laplacian_convolution_eq_neg_of_integral_laplacian_mul [μ.IsNegInvarian
         rw [hKΔ _ hφf (hc.comp_left φ.map_zero) x]
         simp
 
+omit [MeasurableSpace E] [BorelSpace E] in
+/-- The Laplacian of the reflected translate `t ↦ ρ (y - t)` is the reflected translate of the
+Laplacian of `ρ`. -/
+theorem laplacian_reflectTranslateTestFunction {Ω : TopologicalSpace.Opens E} (ρ : E → F)
+    (y : E) (hρ : ContDiff ℝ ∞ ρ) (hρc : HasCompactSupport ρ)
+    (hy : ∀ t ∈ tsupport ρ, y - t ∈ Ω) (t : E) :
+    Δ (reflectTranslateTestFunction ρ y hρ hρc hy : E → F) t = Δ ρ (y - t) := by
+  -- Invariance of the Laplacian under `t ↦ -t` and under translations.
+  have hcomp : (reflectTranslateTestFunction ρ y hρ hρc hy : E → F) =
+      (fun s ↦ ρ (s + y)) ∘ LinearIsometryEquiv.neg ℝ (E := E) := by
+    ext s
+    simp [neg_add_eq_sub]
+  rw [hcomp, laplacian_comp_linearIsometryEquiv_right, laplacian_comp_add_right]
+  simp [neg_add_eq_sub]
+
 /-- **Mollifying a distributional solution of `Δu = v`.** Let `Δu = v` in the sense of
 distributions on the open set `Ω`: `∫ Δφ • u = ∫ φ • v` for every test function `φ` on `Ω`. If `ρ`
 is smooth with compact support and `y - t ∈ Ω` for every `t` in the support of `ρ`, then the
@@ -122,19 +171,9 @@ theorem laplacian_convolution_apply_eq_of_integral_laplacian_smul_eq [μ.IsNegIn
     {ρ : E → ℝ} (hρ : ContDiff ℝ ∞ ρ) (hρc : HasCompactSupport ρ) {y : E}
     (hy : ∀ t ∈ tsupport ρ, y - t ∈ Ω) :
     Δ (ρ ⋆[lsmul ℝ ℝ, μ] u) y = (ρ ⋆[lsmul ℝ ℝ, μ] v) y := by
-  -- The reflected translate `ψ t = ρ (y - t)` is a test function on `Ω`.
-  let ψ : 𝓓(Ω, ℝ) := ⟨ρ ∘ Homeomorph.subLeft y, hρ.comp (contDiff_const.sub contDiff_id),
-    hρc.comp_homeomorph _, fun t ht ↦ by
-      simpa using hy _ (tsupport_comp_subset_preimage ρ (Homeomorph.subLeft y).continuous ht)⟩
-  have hψ : ∀ t, (ψ : E → ℝ) t = ρ (y - t) := fun _ ↦ by simp [ψ]
-  have hΔψ : ∀ t, Δ (ψ : E → ℝ) t = Δ ρ (y - t) := fun t ↦ by
-    have hcomp : (ψ : E → ℝ) = (fun s ↦ ρ (s + y)) ∘ LinearIsometryEquiv.neg ℝ (E := E) := by
-      ext s
-      simp [ψ, neg_add_eq_sub]
-    rw [hcomp, laplacian_comp_linearIsometryEquiv_right, laplacian_comp_add_right]
-    simp [neg_add_eq_sub]
   rw [← convolution_flip, hρc.laplacian_convolution_right _ hu (hρ.of_le (by simp)),
     convolution_def, ← convolution_flip, convolution_def]
-  simpa only [flip_apply, lsmul_apply, hψ, hΔψ] using huv ψ
+  simpa only [flip_apply, lsmul_apply, reflectTranslateTestFunction_apply,
+    laplacian_reflectTranslateTestFunction] using huv (reflectTranslateTestFunction ρ y hρ hρc hy)
 
 end TauCeti

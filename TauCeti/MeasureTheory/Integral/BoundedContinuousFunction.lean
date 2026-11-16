@@ -11,13 +11,13 @@ public import Mathlib.Topology.ContinuousMap.Bounded.Normed
 /-!
 # Integrating bounded continuous functions against an integrable weight
 
-On a second-countable space `α` with a measure `μ`, a bounded continuous function `u : α →ᵇ F`
-times an integrable scalar weight `w` is integrable, and the integral `∫ w • u ∂μ` depends
-Lipschitz continuously on `u` for the supremum norm, with constant `∫ ‖w‖ ∂μ`
-(`MeasureTheory.Integrable.lipschitzWith_integral_smul`). The space need not be compact, and the
-measure need not be finite. This is what lets an integral identity against a fixed weight pass to
-uniform limits, for instance from smooth functions to all bounded uniformly continuous ones in a
-distributional identity tested against a compactly supported function.
+On a space `α` with a measure `μ`, where `α` or `F` is second-countable, a bounded continuous
+function `u : α →ᵇ F` times an integrable scalar weight `w` is integrable, and the integral
+`∫ w • u ∂μ` depends Lipschitz continuously on `u` for the supremum norm, with constant
+`∫ ‖w‖ ∂μ` (`MeasureTheory.Integrable.lipschitzWith_integral_smul`). The space need not
+be compact, and the measure need not be finite. This is what lets an integral identity against a
+fixed weight pass to uniform limits, for instance from smooth functions to all bounded uniformly
+continuous ones in a distributional identity tested against a compactly supported function.
 -/
 
 public section
@@ -26,8 +26,8 @@ namespace MeasureTheory
 
 open scoped BoundedContinuousFunction
 
-variable {α 𝕜 F : Type*} [TopologicalSpace α] [SecondCountableTopology α] [MeasurableSpace α]
-  [OpensMeasurableSpace α] {μ : Measure α} [NormedRing 𝕜] [NormedAddCommGroup F]
+variable {α 𝕜 F : Type*} [TopologicalSpace α] [MeasurableSpace α] [OpensMeasurableSpace α]
+  {μ : Measure α} [NormedRing 𝕜] [NormedAddCommGroup F] [SecondCountableTopologyEither α F]
   [Module 𝕜 F] [IsBoundedSMul 𝕜 F] {w : α → 𝕜}
 
 /-- A bounded continuous function times an integrable scalar weight is integrable. -/

@@ -390,14 +390,12 @@ theorem _root_.HasCompactSupport.norm_iteratedFDeriv_convolution_left_le
   rw [← convolution_flip, hρc.iteratedFDeriv_convolution_right _ hu hρ hn, convolution_def]
   refine (norm_integral_le_of_norm_le ((hgi.comp_sub_left x).mul_const M)
     (Eventually.of_forall fun y ↦ ?_)).trans_eq ?_
-  · have hL : ‖(lsmul ℝ ℝ : ℝ →L[ℝ] E' →L[ℝ] E').flip (u y)‖ ≤ ‖u y‖ :=
-      ((le_opNorm _ _).trans (mul_le_of_le_one_left (norm_nonneg _)
-        ((opNorm_flip _).trans_le opNorm_lsmul_le)))
-    calc _ ≤ ‖u y‖ * ‖iteratedFDeriv ℝ n ρ (x - y)‖ :=
-          (norm_compContinuousMultilinearMap_le _ _).trans (by gcongr; exact hL)
+  · calc _ ≤ ‖u y‖ * ‖iteratedFDeriv ℝ n ρ (x - y)‖ :=
+          (norm_compContinuousMultilinearMap_le _ _).trans_eq (by simp)
       _ ≤ ‖iteratedFDeriv ℝ n ρ (x - y)‖ * M := by
           rw [mul_comm]
-          exact mul_le_mul_of_nonneg_left (huM y) (norm_nonneg _)
+          gcongr
+          exact huM y
   · rw [integral_mul_const, integral_sub_left_eq_self (fun y ↦ ‖iteratedFDeriv ℝ n ρ y‖) μ x,
       mul_comm]
 

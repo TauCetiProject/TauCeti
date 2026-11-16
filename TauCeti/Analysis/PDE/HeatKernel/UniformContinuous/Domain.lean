@@ -9,11 +9,11 @@ public import TauCeti.Analysis.PDE.HeatKernel.UniformContinuous.Core
 public import Mathlib.Analysis.Distribution.TestFunction
 import Mathlib.Analysis.Calculus.BumpFunction.Normed
 import TauCeti.Analysis.Calculus.BumpFunction.Convolution
-import TauCeti.Analysis.Calculus.ContDiff.Convolution
 import TauCeti.Analysis.InnerProductSpace.Laplacian.Convolution
 import TauCeti.Analysis.Sobolev.WeakDeriv.Laplacian
 import TauCeti.MeasureTheory.Integral.BoundedContinuousFunction
 import TauCeti.Topology.Algebra.Module.LinearPMap.GraphCore
+import TauCeti.Topology.ContinuousMap.Bounded.Mollification
 
 /-!
 # The domain of the heat generator on bounded uniformly continuous functions
@@ -42,10 +42,11 @@ is the classical Laplacian and Green's identity holds, and these functions form 
 the whole generator graph.
 
 Conversely, let `Δf = g` in the sense of distributions and mollify: `fₙ = ρₙ ⋆ f` with normalized
-bumps `ρₙ` of radii tending to zero. Each `fₙ` is smooth with bounded derivatives of every order,
-so it lies in the domain with `A fₙ = Δfₙ`, and `Δfₙ = ρₙ ⋆ g` because the Laplacian of `ρₙ ⋆ f`
-at `y` is the pairing of `f` with the Laplacian of the test function `t ↦ ρₙ (y - t)`. By uniform
-continuity, `fₙ → f` and `ρₙ ⋆ g → g` uniformly, and the generator is closed.
+bumps `ρₙ` of radii tending to zero (`ContDiffBump.normedConvolutionBUC`). Each `fₙ` is smooth with
+bounded derivatives of every order, so it lies in the domain with `A fₙ = Δfₙ`, and
+`Δfₙ = ρₙ ⋆ g` because the Laplacian of `ρₙ ⋆ f` at `y` is the pairing of `f` with the Laplacian
+of the test function `t ↦ ρₙ (y - t)`. By uniform continuity, `fₙ → f` and `ρₙ ⋆ g → g`
+uniformly, and the generator is closed.
 
 ## Main declarations
 
@@ -78,47 +79,7 @@ variable {E F : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E]
   [FiniteDimensional ℝ E] [MeasurableSpace E] [BorelSpace E]
   [NormedAddCommGroup F] [NormedSpace ℝ F]
 
-/-- The mollification `ρ ⋆ f` of a bounded uniformly continuous function by a normalized bump, as
-a bounded uniformly continuous function: it is bounded by `‖f‖` and Lipschitz. -/
-private def normedConvolutionBUC (ρ : ContDiffBump (0 : E))
-    (f : uniformContinuousSubmodule ℝ E F) : uniformContinuousSubmodule ℝ E F :=
-  ⟨.ofNormedAddCommGroup (ρ.normed volume ⋆[lsmul ℝ ℝ, volume] (f.val : E → F))
-    (ρ.hasCompactSupport_normed.continuous_convolution_left (lsmul ℝ ℝ) ρ.continuous_normed
-      f.val.continuous.locallyIntegrable) ‖f.val‖
-    (ρ.norm_normed_convolution_le f.val.norm_coe_le_norm),
-    (mem_uniformContinuousSubmodule _).2
-      (ρ.hasCompactSupport_normed.lipschitzWith_convolution_left (ρ.contDiff_normed (n := 1))
-        f.val.continuous.locallyIntegrable f.val.norm_coe_le_norm).uniformContinuous⟩
-
-private theorem coe_normedConvolutionBUC (ρ : ContDiffBump (0 : E))
-    (f : uniformContinuousSubmodule ℝ E F) :
-    ((normedConvolutionBUC ρ f).val : E → F) =
-      ρ.normed volume ⋆[lsmul ℝ ℝ, volume] (f.val : E → F) := rfl
-
-/-- The mollification of a bounded continuous function is smooth with bounded derivatives of
-every order. -/
-private theorem normedConvolutionBUC_mem_smoothBoundedDerivativesSubmodule
-    (ρ : ContDiffBump (0 : E)) (f : uniformContinuousSubmodule ℝ E F) :
-    normedConvolutionBUC ρ f ∈ smoothBoundedDerivativesSubmodule ℝ E F := by
-  refine (mem_smoothBoundedDerivativesSubmodule ℝ E F _).2 ⟨?_, fun m ↦
-    ⟨‖f.val‖ * ∫ y, ‖iteratedFDeriv ℝ m (ρ.normed volume) y‖, fun x ↦ ?_⟩⟩
-  · exact ρ.hasCompactSupport_normed.contDiff_convolution_left (lsmul ℝ ℝ) ρ.contDiff_normed
-      f.val.continuous.locallyIntegrable
-  · rw [coe_normedConvolutionBUC]
-    exact ρ.hasCompactSupport_normed.norm_iteratedFDeriv_convolution_left_le
-      (ρ.contDiff_normed (n := (⊤ : ℕ∞))) le_top f.val.continuous.locallyIntegrable
-      f.val.norm_coe_le_norm x
-
 variable [CompleteSpace F]
-
-/-- Mollifications by normalized bumps of radii tending to zero converge to a bounded uniformly
-continuous function in the supremum norm. -/
-private theorem tendsto_normedConvolutionBUC {ρ : ℕ → ContDiffBump (0 : E)}
-    (hρ : Tendsto (fun n ↦ (ρ n).rOut) atTop (𝓝 0)) (f : uniformContinuousSubmodule ℝ E F) :
-    Tendsto (fun n ↦ normedConvolutionBUC (ρ n) f) atTop (𝓝 f) := by
-  rw [tendsto_subtype_rng, BoundedContinuousFunction.tendsto_iff_tendstoUniformly]
-  exact ContDiffBump.tendstoUniformly_normed_convolution hρ
-    ((mem_uniformContinuousSubmodule _).1 f.2)
 
 /-- **On its domain, the heat generator is the distributional Laplacian.** For `f` in the domain
 of the heat generator `A` on bounded uniformly continuous functions, `∫ Δφ • f = ∫ φ • A f` for
@@ -174,21 +135,22 @@ theorem mem_graph_generator_heatSemigroupBUC_iff {f g : uniformContinuousSubmodu
     exact integral_laplacian_smul_eq_integral_smul_generator_heatSemigroupBUC u φ
   -- Mollify: `ρₙ ⋆ f` lies in the domain, with generator value `Δ (ρₙ ⋆ f) = ρₙ ⋆ g`.
   let ρ : ℕ → ContDiffBump (0 : E) := ContDiffBump.shrinking one_pos
-  have hgraph : ∀ n, (normedConvolutionBUC (ρ n) f, normedConvolutionBUC (ρ n) g) ∈
+  have hgraph : ∀ n, ((ρ n).normedConvolutionBUC volume f, (ρ n).normedConvolutionBUC volume g) ∈
       S.generator.graph := fun n ↦ by
     obtain ⟨hdom, hΔ⟩ := exists_generator_heatSemigroupBUC_eq_laplacian
-      (normedConvolutionBUC_mem_smoothBoundedDerivativesSubmodule (ρ n) f)
+      ((ρ n).normedConvolutionBUC_mem_smoothBoundedDerivativesSubmodule volume f)
     refine (LinearPMap.mem_graph_iff _).2 ⟨⟨_, ?_⟩, rfl, Subtype.ext (BoundedContinuousFunction.ext
       fun y ↦ ?_)⟩
     · rwa [StronglyContinuousSemigroup.generator_domain]
     · refine (congrFun hΔ y).trans ?_
-      rw [coe_normedConvolutionBUC, coe_normedConvolutionBUC]
+      rw [ContDiffBump.coe_normedConvolutionBUC, ContDiffBump.coe_normedConvolutionBUC]
       exact laplacian_convolution_apply_eq_of_integral_laplacian_smul_eq (Ω := ⊤)
         f.val.continuous.locallyIntegrable h (ρ n).contDiff_normed
         (ρ n).hasCompactSupport_normed fun _ _ ↦ trivial
   have hρ := ContDiffBump.tendsto_rOut_shrinking (c := (0 : E)) one_pos
   exact S.isClosed_generator.mem_of_tendsto
-    ((tendsto_normedConvolutionBUC hρ f).prodMk_nhds (tendsto_normedConvolutionBUC hρ g))
+    ((ContDiffBump.tendsto_normedConvolutionBUC hρ volume f).prodMk_nhds
+      (ContDiffBump.tendsto_normedConvolutionBUC hρ volume g))
     (Eventually.of_forall hgraph)
 
 /-- **The domain of the heat generator on bounded uniformly continuous functions** is the set of
