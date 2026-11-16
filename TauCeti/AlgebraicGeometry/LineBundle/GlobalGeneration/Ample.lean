@@ -12,6 +12,7 @@ public import TauCeti.AlgebraicGeometry.LineBundle.TwistedSections
 import Mathlib.CategoryTheory.Limits.Preserves.Shapes.Products
 import TauCeti.Algebra.Category.ModuleCat.Sheaf.Invertible.FinitePresentation
 import TauCeti.AlgebraicGeometry.Modules.Quasicoherent.FiniteType
+import TauCeti.AlgebraicGeometry.Modules.Tensor.FinitePresentation
 
 /-!
 # Serre's global generation theorem for ample line bundles

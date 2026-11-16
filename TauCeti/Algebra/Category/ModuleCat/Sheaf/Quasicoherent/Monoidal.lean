@@ -40,9 +40,6 @@ kind; this is the local input for the tensor product of locally free sheaves.
   `ObjectProperty.IsMonoidal`;
 * `SheafOfModules.QuasicoherentData.isIso_tensor_presentation_generators_π`: the tensor data
   presents `M ⊗ N` by free sheaves where the data for `M` and `N` do;
-* `SheafOfModules.LocalGeneratorsData.tensor` and
-  `TauCeti.SheafOfModules.isFiniteType_tensorObj`: `M ⊗ N` is of finite type when `M` and `N`
-  are;
 * `TauCeti.SheafOfModules.isFinitePresentation_tensorObj` and
   `TauCeti.SheafOfModules.isMonoidal_isFinitePresentation`: finite presentation is an
   `ObjectProperty.IsMonoidal`.
@@ -160,50 +157,6 @@ instance isFinitePresentation_tensorObj [M.IsFinitePresentation] [N.IsFinitePres
   obtain ⟨qM, _⟩ := IsFinitePresentation.exists_quasicoherentData M
   obtain ⟨qN, _⟩ := IsFinitePresentation.exists_quasicoherentData N
   exact IsFinitePresentation.mk (M := M ⊗ N) ⟨qM.tensor qN, inferInstance⟩
-
-/-- Local generators for `M ⊗ N` built from local generators for `M` and for `N`. Its cover is
-the common refinement of the two covers, and over each of its members the generators are the
-tensor product of the restricted generators of `M` and `N`. -/
-@[expose, simps I X generators]
-def _root_.SheafOfModules.LocalGeneratorsData.tensor (qM : M.LocalGeneratorsData)
-    (qN : N.LocalGeneratorsData) : (M ⊗ N).LocalGeneratorsData :=
-  let r := GrothendieckTopology.CoversTop.commonRefinement qM.coversTop qN.coversTop
-  { I := r.I
-    X := r.X
-    coversTop := r.coversTop
-    generators i :=
-      @GeneratingSections.equivOfIso _ _ _ _ _ _ _ _
-        (overTensorIso M N (r.X i)).symm
-        (GeneratingSections.tensor (R := R.over (r.X i))
-          ((qM.ofRefinement r.X r.coversTop r.leftIndex r.left).generators i)
-          ((qN.ofRefinement r.X r.coversTop r.rightIndex r.right).generators i)) }
-
-omit [HasPullbacks C] in
-/-- The generators of `M ⊗ N` over `X` assembled in `LocalGeneratorsData.tensor` from finite
-generators of `M.over X` and `N.over X` are finite. -/
-private theorem isFiniteType_equivOfIso_overTensorIso_tensor (X : C)
-    (G : (M.over X).GeneratingSections) (H : (N.over X).GeneratingSections)
-    (hG : G.IsFiniteType) (hH : H.IsFiniteType) :
-    (@GeneratingSections.equivOfIso _ _ _ _ _ _ _ _
-      (overTensorIso M N X).symm
-      (GeneratingSections.tensor (R := R.over X) G H)).IsFiniteType :=
-  GeneratingSections.isFiniteType_equivOfIso _ _
-    (hσ := @GeneratingSections.isFiniteType_tensor _ _ _ (R.over X) _ _ G H hG hH)
-
-/-- The tensor product of finite-type local generators is of finite type. -/
-instance (qM : M.LocalGeneratorsData) (qN : N.LocalGeneratorsData) [qM.IsFiniteType]
-    [qN.IsFiniteType] : (qM.tensor qN).IsFiniteType where
-  isFiniteType := fun (i : (qM.coversTop.commonRefinement qN.coversTop).I) ↦
-    isFiniteType_equivOfIso_overTensorIso_tensor _ _ _
-      (LocalGeneratorsData.IsFiniteType.isFiniteType (p := qM.ofRefinement _ _ _ _) i)
-      (LocalGeneratorsData.IsFiniteType.isFiniteType (p := qN.ofRefinement _ _ _ _) i)
-
-/-- The tensor product of two sheaves of modules of finite type is of finite type. -/
-instance isFiniteType_tensorObj [M.IsFiniteType] [N.IsFiniteType] :
-    (M ⊗ N).IsFiniteType := by
-  obtain ⟨qM, _⟩ := IsFiniteType.exists_localGeneratorsData M
-  obtain ⟨qN, _⟩ := IsFiniteType.exists_localGeneratorsData N
-  exact IsFiniteType.mk (M := M ⊗ N) ⟨qM.tensor qN, inferInstance⟩
 
 /-- Finite presentation of sheaves of modules is a monoidal property: the unit is finitely
 presented and finitely presented sheaves are closed under tensor products. -/

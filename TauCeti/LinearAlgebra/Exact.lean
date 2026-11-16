@@ -8,7 +8,6 @@ module
 public import Mathlib.Algebra.Module.Projective
 public import Mathlib.LinearAlgebra.FiniteDimensional.Lemmas
 public import Mathlib.LinearAlgebra.Prod
-public import Mathlib.RingTheory.Noetherian.Basic
 
 /-!
 # Exact sequences of linear maps
@@ -432,19 +431,6 @@ theorem exact_ker_comp {P : Type*} [AddCommGroup P] [Module R P] {π : P →ₗ[
 
 end ShortExact
 
-/-- If `M --f--> N --g--> P` is exact at `N`, `M` is finitely generated, and `P` is Noetherian,
-then `N` is finitely generated.
-
-In particular, over a Noetherian ring `R`, `N` is finitely generated whenever `M` and `P` are.
-This is deduced from `Module.Finite.of_exact`, which asks the second map to be surjective, by
-corestricting `g` to its range (a submodule of the Noetherian module `P`, hence finitely
-generated). -/
-theorem finite_of_exact {R M N P : Type*} [Ring R] [AddCommGroup M]
-    [Module R M] [AddCommGroup N] [Module R N] [AddCommGroup P] [Module R P] {f : M →ₗ[R] N}
-    {g : N →ₗ[R] P} (h : Function.Exact f g) [Module.Finite R M] [IsNoetherian R P] :
-    Module.Finite R N :=
-  Module.Finite.of_exact h.rangeRestrict g.surjective_rangeRestrict
-
 /-- If `M --f--> N --g--> P` is exact at `N` and both `M` and `P` are finite-dimensional, then so
 is `N`.
 
@@ -454,7 +440,7 @@ theorem finiteDimensional_of_exact {k M N P : Type*} [DivisionRing k] [AddCommGr
     [Module k M] [AddCommGroup N] [Module k N] [AddCommGroup P] [Module k P] {f : M →ₗ[k] N}
     {g : N →ₗ[k] P} (h : Function.Exact f g) [FiniteDimensional k M] [FiniteDimensional k P] :
     FiniteDimensional k N :=
-  finite_of_exact h
+  Module.Finite.of_exact h.rangeRestrict g.surjective_rangeRestrict
 
 /-- Let `A → B → C` and `A → B' → C'` be exact with `A → B` and `A → B'` injective, let
 `B → B' → W` be exact where `B' → W` is the composite of `B' → C'` with a map `C' → W`, and let

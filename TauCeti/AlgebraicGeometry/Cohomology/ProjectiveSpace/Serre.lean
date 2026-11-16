@@ -21,13 +21,15 @@ import TauCeti.AlgebraicGeometry.Cohomology.ProjectiveSpace.Vanishing
 import TauCeti.AlgebraicGeometry.LineBundle.GlobalGeneration.Ample
 import TauCeti.AlgebraicGeometry.Modules.FinitePresentation.Abelian
 import TauCeti.AlgebraicGeometry.Modules.Quasicoherent.Pushforward.Finite
+import TauCeti.AlgebraicGeometry.Modules.Tensor.FinitePresentation
+import TauCeti.AlgebraicGeometry.ProjectiveSpectrum.ProjectiveOver.ClosedImmersion
 import TauCeti.AlgebraicGeometry.ProjectiveSpectrum.TwistingSheaf.Ample
 import TauCeti.AlgebraicGeometry.ProjectiveSpectrum.TwistingSheaf.Pullback
 import TauCeti.AlgebraicGeometry.ProjectiveSpectrum.TwistingSheaf.TensorProduct
 import TauCeti.AlgebraicGeometry.VectorBundle.Dual.Basic
 import TauCeti.AlgebraicGeometry.VectorBundle.FiniteLocallyFree
 import TauCeti.AlgebraicGeometry.VectorBundle.ProjectionFormula
-import TauCeti.LinearAlgebra.Exact
+import TauCeti.LinearAlgebra.Exact.Noetherian
 
 /-!
 # Serre's finiteness and vanishing theorems on projective space
