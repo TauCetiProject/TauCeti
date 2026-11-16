@@ -14,27 +14,25 @@ import Mathlib.RingTheory.Norm.Transitivity
 /-!
 # Norm compatibility of prime-power circular units
 
-Across a single prime-power step `K = ℚ(ζ_{p ^ (k + 1)}) ⊆ L = ℚ(ζ_{p ^ (k + 2)})` with compatible
-primitive roots `algebraMap K L ζK = ζL ^ p`, the relative Galois group `Gal(L / K)` has order `p`
-and permutes `ζL` by multiplication by the `p`-th roots of unity `(ζL ^ (p ^ (k + 1))) ^ j`
-(`0 ≤ j < p`).
+This file establishes field-norm compatibility across a single prime-power step
+`K = ℚ(ζ_{p ^ (k + 1)}) ⊆ L = ℚ(ζ_{p ^ (k + 2)})` with compatible primitive roots
+`algebraMap K L ζK = ζL ^ p`, providing the transition formulas needed for norm-compatible
+circular-unit systems in cyclotomic `ℤ_p`-towers.
 
-Evaluating `X ^ p - C (ζL ^ b) ^ p = ∏ j < p, (X - C ((ξ ^ b) ^ j * ζL ^ b))` at `1` yields
-`Algebra.norm K (1 - ζL ^ b) = 1 - ζK ^ b` for every prime `p` and integer `b` with `p ∤ b`, and
-hence `Algebra.norm K (cyclotomicRatio ζL b) = cyclotomicRatio ζK b`. For the root `ζL` itself,
-`Algebra.norm K ζL = ζK` when `p` is odd and `Algebra.norm K ζL = -ζK` when `p = 2`. Consequently,
-the odd-prime smoothed real circular units `smoothedCyclotomicUnit` are strictly norm-compatible,
-whereas the dyadic real generators `dyadicSmoothedCyclotomicUnit` acquire the explicit sign
-`(-1) ^ ((1 - b) / 2)`.
+We compute `Algebra.norm K ζL` (`ζK` for odd `p` and `-ζK` for `p = 2`), show
+`Algebra.norm K (1 - ζL ^ b) = 1 - ζK ^ b` and
+`Algebra.norm K (cyclotomicRatio ζL b) = cyclotomicRatio ζK b` whenever `p ∤ b`, and deduce strict
+norm compatibility for odd-prime `smoothedCyclotomicUnit`s together with the explicit sign
+`(-1) ^ ((1 - b) / 2)` for dyadic `dyadicSmoothedCyclotomicUnit`s.
 
 ## Main results
 
 * `TauCeti.norm_zeta_of_prime_pow`: `Algebra.norm K ζL = if Odd p then ζK else -ζK`.
 * `TauCeti.norm_one_sub_zpow_of_prime_pow`: `Algebra.norm K (1 - ζL ^ b) = 1 - ζK ^ b` for
   `¬ (p : ℤ) ∣ b`.
-* `TauCeti.cyclotomicRatio_norm`: `Algebra.norm K (cyclotomicRatio ζL b) = cyclotomicRatio ζK b`.
-* `TauCeti.smoothedCyclotomicUnit_norm`: norm compatibility of `smoothedCyclotomicUnit` for odd `p`.
-* `TauCeti.dyadicSmoothedCyclotomicUnit_norm`: norm formula with sign `(-1) ^ ((1 - b) / 2)` for
+* `TauCeti.norm_cyclotomicRatio`: `Algebra.norm K (cyclotomicRatio ζL b) = cyclotomicRatio ζK b`.
+* `TauCeti.norm_smoothedCyclotomicUnit`: norm compatibility of `smoothedCyclotomicUnit` for odd `p`.
+* `TauCeti.norm_dyadicSmoothedCyclotomicUnit`: norm formula with sign `(-1) ^ ((1 - b) / 2)` for
   `p = 2` and `a ≥ 2`.
 
 ## References
@@ -170,7 +168,7 @@ theorem norm_one_sub_zpow_of_prime_pow {ζK : K} {ζL : L} (hζL : IsPrimitiveRo
 
 /-- **Norm compatibility of cyclotomic ratios.** For EVERY prime `p`, `k : ℕ`, and `b : ℤ` not
 divisible by `p`, `Algebra.norm K (cyclotomicRatio ζL b) = cyclotomicRatio ζK b`. -/
-theorem cyclotomicRatio_norm {ζK : K} {ζL : L} (hζL : IsPrimitiveRoot ζL (p ^ (k + 2)))
+theorem norm_cyclotomicRatio {ζK : K} {ζL : L} (hζL : IsPrimitiveRoot ζL (p ^ (k + 2)))
     (hcompat : algebraMap K L ζK = ζL ^ p) {b : ℤ} (hb : ¬ (p : ℤ) ∣ b) :
     Algebra.norm K (cyclotomicRatio ζL b) = cyclotomicRatio ζK b := by
   have : NumberField L := IsCyclotomicExtension.numberField {p ^ (k + 2)} ℚ L
@@ -192,7 +190,7 @@ section SmoothedNorms
 /-- **Norm compatibility of odd-prime smoothed circular units.** Across a prime-power step
 `ℚ(ζ_{p ^ (k + 1)}) ⊆ ℚ(ζ_{p ^ (k + 2)})` for odd `p`, the norm of `smoothedCyclotomicUnit` at
 level `p ^ (k + 2)` is `smoothedCyclotomicUnit` at level `p ^ (k + 1)` with the same `b`. -/
-theorem smoothedCyclotomicUnit_norm {p k : ℕ} [hp : Fact p.Prime] {K L : Type*} [Field K]
+theorem norm_smoothedCyclotomicUnit {p k : ℕ} [hp : Fact p.Prime] {K L : Type*} [Field K]
     [NumberField K] [IsCyclotomicExtension {p ^ (k + 1)} ℚ K] [Field L] [NumberField L]
     [IsCyclotomicExtension {p ^ (k + 2)} ℚ L] [Algebra K L] [IsScalarTower ℚ K L]
     (hodd : Odd p) {ζK : K} {ζL : L}
@@ -217,12 +215,12 @@ theorem smoothedCyclotomicUnit_norm {p k : ℕ} [hp : Fact p.Prime] {K L : Type*
     exact absurd (Nat.le_of_dvd one_pos hgcd) (not_le.mpr hp.out.one_lt)
   rw [coe_smoothedCyclotomicUnit hodd hζL hbL h2hL, coe_smoothedCyclotomicUnit hodd hζK hbK h2hK,
     map_mul, Algebra.norm_zpow, norm_zeta_of_prime_pow hζL hcompat, ite_eq_left hodd,
-    cyclotomicRatio_norm hζL hcompat hp_ndvd_b]
+    norm_cyclotomicRatio hζL hcompat hp_ndvd_b]
 
 /-- **Dyadic norm formula with explicit sign.** Across a dyadic step
 `ℚ(ζ_{2 ^ (k + 2)}) ⊆ ℚ(ζ_{2 ^ (k + 3)})` with `ζK = ζL ^ 2`, for every odd integer `b`, the norm
 of `dyadicSmoothedCyclotomicUnit` acquires the sign `(-1) ^ ((1 - b) / 2)`. -/
-theorem dyadicSmoothedCyclotomicUnit_norm {k : ℕ} {K L : Type*} [Field K] [NumberField K]
+theorem norm_dyadicSmoothedCyclotomicUnit {k : ℕ} {K L : Type*} [Field K] [NumberField K]
     [IsCyclotomicExtension {2 ^ (k + 2)} ℚ K] [Field L] [NumberField L]
     [IsCyclotomicExtension {2 ^ (k + 3)} ℚ L] [Algebra K L] [IsScalarTower ℚ K L]
     {ζK : K} {ζL : L} (hζK : IsPrimitiveRoot ζK (2 ^ (k + 2)))
@@ -239,7 +237,7 @@ theorem dyadicSmoothedCyclotomicUnit_norm {k : ℕ} {K L : Type*} [Field K] [Num
   rw [coe_dyadicSmoothedCyclotomicUnit hζL hb, coe_dyadicSmoothedCyclotomicUnit hζK hb,
     map_mul, Algebra.norm_zpow, norm_zeta_of_prime_pow (p := 2) (k := k + 1) hζL hcompat,
     ite_eq_right (by decide : ¬ Odd 2),
-    cyclotomicRatio_norm (p := 2) (k := k + 1) hζL hcompat h2_ndvd,
+    norm_cyclotomicRatio (p := 2) (k := k + 1) hζL hcompat h2_ndvd,
     neg_eq_neg_one_mul, mul_zpow, mul_assoc]
 
 end SmoothedNorms
