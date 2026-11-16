@@ -17,8 +17,6 @@ import TauCeti.Algebra.AlgebraicGroup.Representation.UnipotentPoint.NoCharacters
 import TauCeti.Algebra.AlgebraicGroup.Torus.Recognition
 import TauCeti.Algebra.AlgebraicGroup.Unipotent.Radical.Construction
 import TauCeti.Algebra.AlgebraicGroup.Unipotent.Semisimple
-import TauCeti.Algebra.Bialgebra.BaseChange
-import TauCeti.Algebra.Coalgebra.Convolution
 import TauCeti.RingTheory.Smooth.GeometricallyReduced
 
 /-!
@@ -148,73 +146,6 @@ theorem not_reductive_multiplicativeGroup_of_isPurelyInseparable {K : Type u} [F
     have := (LinearEquiv.ofBijective (Algebra.linearMap k K) hbij).finrank_eq
     rw [Module.finrank_self] at this
     omega
-
-/-- A bialgebra map `Res_{B/k} 𝔾ₘ → U` is classified by a group-like element of `B ⊗[k] U`. -/
-private theorem isGroupLikeElem_multiplicativeGroupPoints_toConv
-    {B U : Type u} [CommRing B] [Algebra k B] [Module.Finite k B] [Module.Projective k B]
-    [CommRing U] [Bialgebra k U] (φ : WeilRestriction k B B[T;T⁻¹] →ₐc[k] U) :
-    IsGroupLikeElem B
-      (multiplicativeGroupPoints k B U (toConv (φ : WeilRestriction k B B[T;T⁻¹] →ₐ[k] U)) :
-        B ⊗[k] U) := by
-  let v := multiplicativeGroupPoints k B U (toConv (φ : WeilRestriction k B B[T;T⁻¹] →ₐ[k] U))
-  refine ⟨?_, ?_⟩
-  · -- Compatibility with the counit gives `(B ⊗ ε)(v) = 1` in `B ⊗[k] k ≃ B`.
-    have hc := congrArg (fun w : (B ⊗[k] k)ˣ ↦ Algebra.TensorProduct.rid k B B (w : B ⊗[k] k))
-      (multiplicativeGroupPoints_naturality (Bialgebra.counitAlgHom k U)
-        (toConv (φ : WeilRestriction k B B[T;T⁻¹] →ₐ[k] U)))
-    rw [ofConv_toConv, BialgHom.counitAlgHom_comp φ,
-      ← TauCeti.Bialgebra.ofConv_one_eq_counitAlgHom, toConv_ofConv, map_one, Units.val_one,
-      map_one, Units.coe_map, MonoidHom.coe_ofClass] at hc
-    have hrid (z : B ⊗[k] U) :
-        Algebra.TensorProduct.rid k B B
-            (Algebra.TensorProduct.lTensor (S := B) B (Bialgebra.counitAlgHom k U) z) =
-          Coalgebra.counit (R := B) z := by
-      induction z using TensorProduct.inductionOn with
-      | add x y hx hy => simp only [map_add, hx, hy]
-      | tmul b u => simp [Algebra.smul_def, mul_comm]
-    exact (hrid v).symm.trans hc.symm
-  · -- Compatibility with comultiplication splits `(B ⊗ Δ)(v)` into the two tensor inclusions.
-    let e := TauCeti.Algebra.TensorProduct.baseChangeTensorAlgEquiv k B U U
-    have hd := multiplicativeGroupPoints_naturality (Bialgebra.comulAlgHom k U)
-      (toConv (φ : WeilRestriction k B B[T;T⁻¹] →ₐ[k] U))
-    have hmul :
-        toConv ((Bialgebra.comulAlgHom k U).comp (φ : WeilRestriction k B B[T;T⁻¹] →ₐ[k] U)) =
-          toConv ((Algebra.TensorProduct.includeLeft : U →ₐ[k] U ⊗[k] U).comp φ) *
-            toConv ((Algebra.TensorProduct.includeRight : U →ₐ[k] U ⊗[k] U).comp φ) := by
-      simpa only [← TauCeti.Bialgebra.comulPoint_eq_include_mul, BialgHom.mapDomain_apply,
-        ofConv_toConv] using
-        map_mul (BialgHom.mapDomain (A := U ⊗[k] U) φ)
-          (toConv (Algebra.TensorProduct.includeLeft : U →ₐ[k] U ⊗[k] U))
-          (toConv (Algebra.TensorProduct.includeRight : U →ₐ[k] U ⊗[k] U))
-    rw [ofConv_toConv, hmul, map_mul, multiplicativeGroupPoints_naturality,
-      multiplicativeGroupPoints_naturality] at hd
-    have hde := congrArg (fun w : (B ⊗[k] (U ⊗[k] U))ˣ ↦ e (w : B ⊗[k] (U ⊗[k] U))) hd.symm
-    simp only [Units.coe_map, MonoidHom.coe_ofClass, Units.val_mul, map_mul] at hde
-    have hleft (z : B ⊗[k] U) :
-        e (Algebra.TensorProduct.lTensor (S := B) B
-            (Algebra.TensorProduct.includeLeft : U →ₐ[k] U ⊗[k] U) z) = z ⊗ₜ[B] 1 := by
-      induction z using TensorProduct.inductionOn with
-      | add x y hx hy => simp only [map_add, TensorProduct.add_tmul, hx, hy]
-      | tmul b u => simp [e, Algebra.TensorProduct.one_def]
-    have hright (z : B ⊗[k] U) :
-        e (Algebra.TensorProduct.lTensor (S := B) B
-            (Algebra.TensorProduct.includeRight : U →ₐ[k] U ⊗[k] U) z) = 1 ⊗ₜ[B] z := by
-      induction z using TensorProduct.inductionOn with
-      | add x y hx hy => simp only [map_add, TensorProduct.tmul_add, hx, hy]
-      | tmul b u =>
-        apply e.symm.injective
-        simp [e, Algebra.TensorProduct.one_def]
-    have hlTensor (z : B ⊗[k] U) :
-        TensorProduct.AlgebraTensorModule.distribBaseChange k B U U
-            (Algebra.TensorProduct.map (AlgHom.id k B) (Bialgebra.comulAlgHom k U) z) =
-          e (Algebra.TensorProduct.lTensor (S := B) B (Bialgebra.comulAlgHom k U) z) := by
-      induction z using TensorProduct.inductionOn with
-      | add x y hx hy => simp only [map_add, hx, hy]
-      | tmul b u =>
-        simp [e, ← AlgEquiv.coe_toLinearEquiv,
-          TauCeti.Algebra.TensorProduct.baseChangeTensorAlgEquiv_toLinearEquiv]
-    rw [← Bialgebra.comulAlgHom_apply, TensorProduct.comulAlgHom_baseChange, hlTensor, hde,
-      hleft, hright, Algebra.TensorProduct.tmul_mul_tmul, mul_one, one_mul]
 
 /-- **Every homomorphism from a smooth unipotent group to `Res_{K/k} 𝔾ₘ` is trivial**, for every
 finite field extension `K / k` in any characteristic. A bialgebra map from the coordinate Hopf

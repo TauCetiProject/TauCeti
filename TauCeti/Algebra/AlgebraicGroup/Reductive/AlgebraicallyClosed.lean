@@ -14,8 +14,9 @@ import TauCeti.Algebra.AlgebraicGroup.Unipotent.Radical.Descent
 
 Over a perfect field (and in particular over an algebraically closed field), reductivity can be
 tested by the unipotent radical over the ground field: `AlgebraicClosure k / k` is separable, so
-smooth connected normal unipotent subgroups over `AlgebraicClosure k` descend to `k`
-(`FiniteTypeCommHopfAlgCat.unipotentRadicalDefiningIdeal_baseChange_eq_augmentation_iff`).
+the geometric unipotent radical over `AlgebraicClosure k` descends to the `k`-unipotent radical
+(`FiniteTypeCommHopfAlgCat.baseChangeHopfIdeal_unipotentRadicalDefiningIdeal`,
+`FiniteTypeCommHopfAlgCat.unipotentRadicalDefiningIdeal_baseChange_eq_augmentation_iff`).
 Consequently the geometric fibre of a reductive group over any field is itself reductive, letting
 results over algebraically closed fields be applied to the geometric fibre and then descended.
 
