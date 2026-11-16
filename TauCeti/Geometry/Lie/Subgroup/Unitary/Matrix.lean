@@ -319,9 +319,12 @@ theorem posDef_matrixTraceForm : G.matrixTraceForm.toQuadraticMap.PosDef := by
 theorem isInvariantForm_matrixTraceForm :
     TauCeti.Representation.IsInvariantForm G.matrixAdjointRepresentation G.matrixTraceForm := by
   refine TauCeti.Representation.isInvariantForm_iff.mpr fun g X Y ↦ ?_
-  simp only [matrixTraceForm_apply, coe_matrixAdjointRepresentation_apply,
-    ← Unitary.conjStarAlgAut_apply (S := ℝ), ← map_mul]
-  rw [Unitary.conjStarAlgAut_apply]
+  simp only [matrixTraceForm_apply, coe_matrixAdjointRepresentation_apply]
+  -- Merge `(g X g⋆) (g Y g⋆)` into `g (X Y) g⋆`: both factors are images of the conjugation
+  -- automorphism `Unitary.conjStarAlgAut`, so `map_mul` combines them, and unfolding it again
+  -- leaves a single conjugate whose trace is cyclic.
+  rw [← Unitary.conjStarAlgAut_apply (S := ℝ), ← Unitary.conjStarAlgAut_apply (S := ℝ), ← map_mul,
+    Unitary.conjStarAlgAut_apply]
   rw [Matrix.trace_mul_comm, ← mul_assoc, Matrix.UnitaryGroup.star_mul_self, one_mul]
 
 section FromBlocks

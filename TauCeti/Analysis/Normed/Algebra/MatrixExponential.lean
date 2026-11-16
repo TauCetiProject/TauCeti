@@ -218,6 +218,10 @@ theorem hasDerivAt_exp_smul_apply (X : Matrix m m 𝕜) (i j : m) :
   have h := (LinearMap.toContinuousLinearMap (entryLinearMap ℝ 𝕜 i j)).hasFDerivAt.comp_hasDerivAt
     0 (hasDerivAt_exp_smul_const X (0 : ℝ))
   rw [zero_smul, exp_zero, one_mul] at h
+  -- `h` is about `entryLinearMap ℝ 𝕜 i j ∘ fun t ↦ exp (t • X)` with derivative
+  -- `entryLinearMap ℝ 𝕜 i j X`; both unfold definitionally to the `(i, j)` entry, so `exact`
+  -- closes the goal by that unfolding (`simpa [entryLinearMap_apply]` leaves the derivative
+  -- `toContinuousLinearMap (entryLinearMap ℝ 𝕜 i j) X` unrewritten).
   exact h
 
 /-- An entry of `X` vanishes if that entry of `exp (t • X)` vanishes for every real `t`. -/
