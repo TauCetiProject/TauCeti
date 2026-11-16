@@ -10,6 +10,7 @@ public import TauCeti.MeasureTheory.Measure.Lebesgue.HalfSqRadius
 public import Mathlib.MeasureTheory.Measure.Haar.OfBasis
 public import TauCeti.Geometry.Symplectic.Manifold.DuistermaatHeckman
 import Mathlib.LinearAlgebra.Finsupp.VectorSpace
+import TauCeti.MeasureTheory.Measure.Lebesgue.Weighted.Orthant
 import TauCeti.MeasureTheory.Measure.Haar.OfBasis
 
 /-!
@@ -29,9 +30,9 @@ restated for the Duistermaat–Heckman measure of the symplectic manifold `ℂ^�
 Since `μ` is the linear map `a ↦ Σ_i a_i (-α_i)` applied to the moment map `(|z_i|² / 2)_i` of the
 reversed rotation action `z_i ↦ exp(-i θ_i) z_i` (`TauCeti.weightMomentMap_eq_linearCombination`),
 and the latter pushes Lebesgue measure to `(2π)^|ι|` times Lebesgue measure on the closed positive
-orthant (`TauCeti.map_volume_pi_half_sq_add_sq`), for arbitrary weights the pushforward of
-Lebesgue measure by `μ` is `(2π)^|ι|` times the image of Lebesgue measure on the orthant under that
-linear map (`TauCeti.map_volume_weightMomentMap`).
+orthant (`TauCeti.map_volume_euclideanSpace_half_sq_add_sq`), for arbitrary weights the
+pushforward of Lebesgue measure by `μ` is `(2π)^|ι|` times the image of Lebesgue measure on the
+orthant under that linear map (`TauCeti.map_volume_weightMomentMap`).
 
 When the negated weights form a basis `b` of `𝔱*`, so that `μ = ½ Σ_i (q_i² + p_i²) b_i` is the
 moment map of the action `z_i ↦ exp(-i b_i(ξ)) z_i`, this pushforward is `(2π)^|ι|` times the Haar
@@ -44,6 +45,20 @@ covolume one. For the standard torus `ℝ^ι / (2πℤ)^ι` acting on `ℂ^ι` b
 Duistermaat–Heckman measure is `(2π)^|ι|` times Lebesgue measure on the positive orthant. Near a
 fixed point of a symplectic toric manifold the action is modelled on this one, so this is also the
 local form of the Duistermaat–Heckman measure there.
+
+For a circle acting with positive weights, `z_i ↦ exp(-i a_i θ) z_i` with `a_i > 0`, the moment map
+is `H = Σ_i a_i (q_i² + p_i²) / 2`, and its Duistermaat–Heckman measure has a density: it is
+`(2π)^n` times the measure on `[0, ∞)` with density `s^(n-1) / ((n-1)! ∏_i a_i)`, where `n ≥ 1` is
+the number of weights (`TauCeti.map_volume_sum_mul_half_sq_add_sq`). This is the image of the
+orthant measure above under the linear form `y ↦ Σ_i a_i y_i`
+(`TauCeti.map_volume_restrict_pi_Ici_sum_mul`). On the chamber `(0, ∞)` of regular values the
+density is a polynomial of degree `n - 1`, and the factor `1 / ∏_i a_i` records the weights. For
+example, for weights `(k, k)` on `ℂ²` the density is `(2π)² s / k²`. Integrating, the ellipsoid
+`{H ≤ c}` has volume `(2π c)^n / (n! ∏_i a_i)`
+(`TauCeti.volume_setOf_sum_mul_half_sq_add_sq_le`). The same computation for the weights `a_i ν`
+along a covector `ν ∈ 𝔱*` gives the Duistermaat–Heckman measure of the corresponding circle
+subgroup action, supported on the ray through `ν`
+(`TauCeti.duistermaatHeckmanMeasure_weightMomentMap_neg_smul`).
 
 ## References
 
@@ -76,16 +91,11 @@ theorem map_volume_weightMomentMap (α : ι → StrongDual ℝ 𝔱) :
           (Fintype.linearCombination ℝ (-α)) := by
   have hL : Measurable (Fintype.linearCombination ℝ (-α)) :=
     (LinearMap.continuous_of_finiteDimensional _).measurable
-  have hp := PiLp.volume_preserving_ofLp ι
-  have hP : MeasurePreserving (Prod.map WithLp.ofLp WithLp.ofLp)
-      (volume : Measure (EuclideanSpace ℝ ι × EuclideanSpace ℝ ι)) volume :=
-    hp.prod hp
   have hfun : weightMomentMap α = Fintype.linearCombination ℝ (-α) ∘
-      (fun x : (ι → ℝ) × (ι → ℝ) ↦ fun i ↦ (x.1 i ^ 2 + x.2 i ^ 2) / 2) ∘
-        Prod.map WithLp.ofLp WithLp.ofLp :=
+      fun x : EuclideanSpace ℝ ι × EuclideanSpace ℝ ι ↦ fun i ↦ (x.1 i ^ 2 + x.2 i ^ 2) / 2 :=
     funext (weightMomentMap_eq_linearCombination α)
-  rw [hfun, ← Measure.map_map hL (by fun_prop), ← Measure.map_map (by fun_prop) hP.measurable,
-    hP.map_eq, map_volume_pi_half_sq_add_sq, Measure.map_smul]
+  rw [hfun, ← Measure.map_map hL (by fun_prop), map_volume_euclideanSpace_half_sq_add_sq,
+    Measure.map_smul]
   exact hL.aemeasurable
 
 /-- **The Duistermaat–Heckman measure of the weight model, as a symplectic manifold.** Regard
@@ -101,6 +111,101 @@ theorem duistermaatHeckmanMeasure_weightMomentMap (α : ι → StrongDual ℝ �
           (Fintype.linearCombination ℝ (-α)) := by
   rw [SmoothTwoForm.duistermaatHeckmanMeasure_def,
     SymplecticForm.liouvilleMeasure_constSmooth_stdSymplecticForm, map_volume_weightMomentMap]
+
+/-! ### Circle actions with positive weights -/
+
+/-- **The Duistermaat–Heckman measure of a circle acting with positive weights.** Let the circle
+act on `ℂ^ι` by `z_i ↦ exp(-i a_i θ) z_i` with weights `a_i > 0`, with moment map
+`H = ∑_i a_i (q_i² + p_i²) / 2`. Then `H` pushes Lebesgue measure on `ℂ^ι`, for `ι` with `n ≥ 1`
+elements, to `(2π)^n` times the measure on `[0, ∞)` with the polynomial density
+`s^(n-1) / ((n-1)! ∏ i, a i)`. -/
+theorem map_volume_sum_mul_half_sq_add_sq [Nonempty ι] {a : ι → ℝ} (ha : ∀ i, 0 < a i) :
+    (volume : Measure (EuclideanSpace ℝ ι × EuclideanSpace ℝ ι)).map
+        (fun x ↦ ∑ i, a i * ((x.1 i ^ 2 + x.2 i ^ 2) / 2)) =
+      ENNReal.ofReal (2 * π) ^ Fintype.card ι •
+        (volume.restrict (Ici 0)).withDensity fun s ↦ ENNReal.ofReal
+          (s ^ (Fintype.card ι - 1) / ((Fintype.card ι - 1).factorial * ∏ i, a i)) := by
+  have hcomp : (fun x : EuclideanSpace ℝ ι × EuclideanSpace ℝ ι ↦
+      ∑ i, a i * ((x.1 i ^ 2 + x.2 i ^ 2) / 2)) =
+      (fun y : ι → ℝ ↦ ∑ i, a i * y i) ∘ fun x i ↦ (x.1 i ^ 2 + x.2 i ^ 2) / 2 :=
+    (rfl)
+  rw [hcomp, ← Measure.map_map (by fun_prop) (by fun_prop),
+    map_volume_euclideanSpace_half_sq_add_sq, Measure.map_smul,
+    map_volume_restrict_pi_Ici_sum_mul ha]
+  exact (by fun_prop : Measurable fun y : ι → ℝ ↦ ∑ i, a i * y i).aemeasurable
+
+/-- **The volume of a sublevel of the moment map of a circle acting with positive weights.** For
+weights `a_i > 0` and `c ≥ 0`, the ellipsoid `{∑_i a_i (q_i² + p_i²) / 2 ≤ c}` in `ℂ^ι` has
+Lebesgue measure `(2π c)^n / (n! ∏ i, a i)`, where `n` is the number of elements of `ι`. -/
+theorem volume_setOf_sum_mul_half_sq_add_sq_le {a : ι → ℝ} (ha : ∀ i, 0 < a i) {c : ℝ}
+    (hc : 0 ≤ c) :
+    volume {x : EuclideanSpace ℝ ι × EuclideanSpace ℝ ι |
+        ∑ i, a i * ((x.1 i ^ 2 + x.2 i ^ 2) / 2) ≤ c} =
+      ENNReal.ofReal ((2 * π * c) ^ Fintype.card ι /
+        ((Fintype.card ι).factorial * ∏ i, a i)) := by
+  have hh : Measurable fun x : EuclideanSpace ℝ ι × EuclideanSpace ℝ ι ↦
+      fun i ↦ (x.1 i ^ 2 + x.2 i ^ 2) / 2 := by fun_prop
+  have hS : MeasurableSet {y : ι → ℝ | ∑ i, a i * y i ≤ c} :=
+    measurableSet_le (by fun_prop) measurable_const
+  have hset : {y : ι → ℝ | ∑ i, a i * y i ≤ c} ∩ univ.pi (fun _ ↦ Ici 0) =
+      {y : ι → ℝ | (∀ i, 0 ≤ y i) ∧ ∑ i, a i * y i ≤ c} := by
+    ext y
+    simp only [mem_inter_iff, mem_ofPred_eq, mem_univ_pi, mem_Ici]
+    exact and_comm
+  have hpre : {x : EuclideanSpace ℝ ι × EuclideanSpace ℝ ι |
+      ∑ i, a i * ((x.1 i ^ 2 + x.2 i ^ 2) / 2) ≤ c} =
+      (fun x i ↦ (x.1 i ^ 2 + x.2 i ^ 2) / 2) ⁻¹' {y : ι → ℝ | ∑ i, a i * y i ≤ c} :=
+    (rfl)
+  -- Pass to the orthant coordinates `y_i = (q_i² + p_i²) / 2` and use the weighted simplex.
+  rw [hpre, ← Measure.map_apply hh hS, map_volume_euclideanSpace_half_sq_add_sq,
+    smul_apply, Measure.restrict_apply hS, hset, volume_setOf_forall_nonneg_and_sum_mul_le ha hc,
+    smul_eq_mul, ← ENNReal.ofReal_pow (by positivity), ← ENNReal.ofReal_mul (by positivity)]
+  congr 1
+  ring
+
+/-- **The Duistermaat–Heckman measure of the weight model of a circle action.** For weights
+`a_i > 0` and a covector `ν ∈ 𝔱*`, the moment map `μ = ½ Σ_i (q_i² + p_i²) a_i ν` of the action
+`z_i ↦ exp(-i a_i ν(ξ)) z_i` on `ℂ^ι`, for `ι` with `n ≥ 1` elements, pushes Lebesgue measure to
+`(2π)^n` times the image under `s ↦ s ν` of the measure on `[0, ∞)` with density
+`s^(n-1) / ((n-1)! ∏ i, a i)`. -/
+theorem map_volume_weightMomentMap_neg_smul [Nonempty ι] {a : ι → ℝ} (ha : ∀ i, 0 < a i)
+    (ν : StrongDual ℝ 𝔱) :
+    (volume : Measure (EuclideanSpace ℝ ι × EuclideanSpace ℝ ι)).map
+        (weightMomentMap fun i ↦ -(a i • ν)) =
+      ENNReal.ofReal (2 * π) ^ Fintype.card ι •
+        ((volume.restrict (Ici 0)).withDensity fun s ↦ ENNReal.ofReal
+          (s ^ (Fintype.card ι - 1) / ((Fintype.card ι - 1).factorial * ∏ i, a i))).map
+            fun s ↦ s • ν := by
+  have hfun : weightMomentMap (fun i ↦ -(a i • ν)) =
+      (fun s : ℝ ↦ s • ν) ∘ fun x : EuclideanSpace ℝ ι × EuclideanSpace ℝ ι ↦
+        ∑ i, a i * ((x.1 i ^ 2 + x.2 i ^ 2) / 2) := by
+    funext x
+    rw [weightMomentMap_def, Function.comp_apply, Finset.sum_smul]
+    refine Finset.sum_congr rfl fun i _ ↦ ?_
+    ext ξ
+    simp only [smul_neg, smul_smul, neg_apply,
+      smul_apply, smul_eq_mul]
+    ring
+  rw [hfun, ← Measure.map_map (by fun_prop) (by fun_prop),
+    map_volume_sum_mul_half_sq_add_sq ha, Measure.map_smul]
+  exact (continuous_id.smul continuous_const).measurable.aemeasurable
+
+/-- **The Duistermaat–Heckman measure of the weight model of a circle action, as a symplectic
+manifold.** Regard `ℂ^ι`, for `ι` with `n ≥ 1` elements, as a manifold with the standard
+symplectic form `Σ dq_i ∧ dp_i`. For weights `a_i > 0` and a covector `ν ∈ 𝔱*`, the
+Duistermaat–Heckman measure of `μ = ½ Σ_i (q_i² + p_i²) a_i ν` is `(2π)^n` times the image under
+`s ↦ s ν` of the measure on `[0, ∞)` with density `s^(n-1) / ((n-1)! ∏ i, a i)`. -/
+theorem duistermaatHeckmanMeasure_weightMomentMap_neg_smul [Nonempty ι] {a : ι → ℝ}
+    (ha : ∀ i, 0 < a i) (ν : StrongDual ℝ 𝔱) :
+    (stdSymplecticForm (V := EuclideanSpace ℝ ι)).constSmooth.duistermaatHeckmanMeasure
+        (Fintype.card ι) (weightMomentMap fun i ↦ -(a i • ν)) =
+      ENNReal.ofReal (2 * π) ^ Fintype.card ι •
+        ((volume.restrict (Ici 0)).withDensity fun s ↦ ENNReal.ofReal
+          (s ^ (Fintype.card ι - 1) / ((Fintype.card ι - 1).factorial * ∏ i, a i))).map
+            fun s ↦ s • ν := by
+  rw [SmoothTwoForm.duistermaatHeckmanMeasure_def,
+    SymplecticForm.liouvilleMeasure_constSmooth_stdSymplecticForm,
+    map_volume_weightMomentMap_neg_smul ha]
 
 end TauCeti
 
