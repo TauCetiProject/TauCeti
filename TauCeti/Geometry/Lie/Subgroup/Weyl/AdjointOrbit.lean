@@ -8,6 +8,7 @@ module
 public import TauCeti.Geometry.Lie.Adjoint.Representation.Stabilizer
 public import TauCeti.Geometry.Lie.Subgroup.Torus.Conjugacy
 public import TauCeti.Geometry.Lie.Subgroup.Weyl.Group
+import TauCeti.RepresentationTheory.Continuous.Basic
 
 /-!
 # Adjoint orbits meet the Lie algebra of a maximal torus in Weyl orbits
@@ -78,22 +79,16 @@ theorem IsMaximalTorus.exists_mem_connectedComponentIn_stabilizer_mul_mem_normal
         ((continuousAdjointRepresentation (I := I) (G := G)).toRepresentation.stabilizer Y :
           Set G) 1,
       c * g ∈ Subgroup.normalizer (T : Set G) := by
-  let _ : IsTopologicalGroup G := topologicalGroup_of_lieGroup I ∞
   let _ : IsMulCommutative T := hT.isTorus.isMulCommutative
-  set K := (continuousAdjointRepresentation (I := I) (G := G)).toRepresentation.stabilizer Y
   -- `T` fixes `Y ∈ Lie(T)`, and `g T g⁻¹` fixes `Ad_g X = Y` because `T` fixes `X ∈ Lie(T)`.
-  have hTK : T ≤ K := le_stabilizer_continuousAdjointRepresentation hY
-  have hSK : T.map (MulAut.conj g).toMonoidHom ≤ K := by
-    rintro _ ⟨t, ht, rfl⟩
-    rw [mem_stabilizer_continuousAdjointRepresentation_iff, MulEquiv.coe_toMonoidHom,
-      MulAut.conj_apply, ← hg]
-    simp only [Ad_mul, Ad_inv, LieEquiv.trans_apply, LieEquiv.symm_apply_apply,
-      Ad_apply_eq_self_of_mem_lieSubalgebraOfSubgroup ht hX]
-  obtain ⟨c, hc, hmap⟩ := (hT.map_conj g).exists_mem_connectedComponentIn_map_conj_eq_of_le I
-    (isClosed_stabilizer_continuousAdjointRepresentation Y) hT hSK hTK
-  refine ⟨c, hc, ?_⟩
-  rw [Subgroup.mem_normalizer_iff_map_conj_eq, map_mul]
-  exact (Subgroup.map_map _ _ _).symm.trans hmap
+  have hSK : T.map (MulAut.conj g).toMonoidHom ≤
+      (continuousAdjointRepresentation (I := I) (G := G)).toRepresentation.stabilizer Y := by
+    rw [← hg, ← continuousAdjointRepresentation_apply, ← ContRepresentation.toRepresentation_apply,
+      Representation.stabilizer_conj]
+    exact Subgroup.map_mono (le_stabilizer_continuousAdjointRepresentation hX)
+  exact hT.exists_mem_connectedComponentIn_mul_mem_normalizer_of_le I
+    (isClosed_stabilizer_continuousAdjointRepresentation Y)
+    (le_stabilizer_continuousAdjointRepresentation hY) hSK
 
 /-- **Elements of a torus Lie algebra in one adjoint orbit are in one orbit of the normalizer.**
 If `Ad_g X = Y` for `X, Y` in the Lie algebra of a maximal torus `T` of a compact Lie group, then
