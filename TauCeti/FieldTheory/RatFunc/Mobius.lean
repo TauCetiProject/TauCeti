@@ -8,6 +8,8 @@ module
 public import Mathlib.LinearAlgebra.Matrix.GeneralLinearGroup.Projective
 public import TauCeti.FieldTheory.RatFunc.Automorphism
 public import TauCeti.FieldTheory.RatFunc.Basic
+-- Non-public: the nonzero determinant of a generator of `k(X)`, in the proofs only.
+import TauCeti.Algebra.Polynomial.RingDivision
 -- Non-public: `Matrix.GeneralLinearGroup.mem_center_iff_entries` identifies the kernel of the
 -- action below with the centre of `GL₂(k)`, in the proofs only.
 import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.CenterFinTwo
@@ -378,34 +380,13 @@ theorem exists_mobiusOf_eq_of_adjoin_eq_top {f : RatFunc K}
   have hdenle : f.denom.natDegree ≤ 1 := le_of_max_le_right hmax.le
   have hnum := Polynomial.eq_X_add_C_of_natDegree_le_one hnumle
   have hden := Polynomial.eq_X_add_C_of_natDegree_le_one hdenle
-  set a := f.num.coeff 1 with ha
+  set a := f.num.coeff 1
   set b := f.num.coeff 0
-  set c := f.denom.coeff 1 with hc
+  set c := f.denom.coeff 1
   set d := f.denom.coeff 0
-  have hdet : a * d - b * c ≠ 0 := by
-    -- `a * d = b * c` gives `C c * num = C a * denom`, and coprimality then forces whichever of
-    -- `num`, `denom` has degree one to divide a nonzero constant
-    intro hzero
-    have hCz := congrArg Polynomial.C hzero
-    simp only [map_sub, map_mul, map_zero] at hCz
-    have hkey : Polynomial.C c * f.num = Polynomial.C a * f.denom := by
-      rw [hnum, hden]
-      linear_combination -hCz
-    rcases max_eq_iff.mp hmax with ⟨h1, -⟩ | ⟨h1, -⟩
-    · have hane : a ≠ 0 := by
-        rw [ha, ← h1]
-        exact Polynomial.leadingCoeff_ne_zero.mpr fun h0 ↦ by simp [h0] at h1
-      have := Polynomial.natDegree_eq_zero_of_isUnit
-        ((isCoprime_num_denom f).isUnit_of_dvd' dvd_rfl
-          ((Polynomial.dvd_C_mul hane).mp ⟨Polynomial.C c, by rw [← hkey, mul_comm]⟩))
-      omega
-    · have hcne : c ≠ 0 := by
-        rw [hc, ← h1]
-        exact Polynomial.leadingCoeff_ne_zero.mpr f.denom_ne_zero
-      have := Polynomial.natDegree_eq_zero_of_isUnit
-        ((isCoprime_num_denom f).symm.isUnit_of_dvd' dvd_rfl
-          ((Polynomial.dvd_C_mul hcne).mp ⟨Polynomial.C a, by rw [hkey, mul_comm]⟩))
-      omega
+  have hdet : a * d - b * c ≠ 0 :=
+    Polynomial.coeff_one_mul_coeff_zero_sub_ne_zero_of_isCoprime_of_max_natDegree_eq_one
+      (isCoprime_num_denom f) hmax
   refine ⟨a, b, c, d, hdet, ?_⟩
   rw [mobiusOf_def, ← num_div_denom f]
   conv_rhs => rw [hnum, hden]
