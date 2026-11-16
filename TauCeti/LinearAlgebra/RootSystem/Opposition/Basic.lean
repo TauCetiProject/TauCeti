@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.LinearAlgebra.RootSystem.CartanMatrix
 public import TauCeti.LinearAlgebra.RootSystem.LongestElement
 
 /-!
@@ -45,6 +46,8 @@ alone.
 * `RootPairing.coroot_opposition`: the coroot of `opposition i` is `-w₀` applied to the coroot of
   `i`.
 * `RootPairing.pairing_opposition`: the opposition involution preserves the root pairings.
+* `RootPairing.cartanMatrix_oppositionPerm`: the opposition involution preserves the Cartan matrix,
+  with its orientation.
 * `TauCeti.opposition_mem_support`: **the opposition involution permutes the simple roots.**
 * `TauCeti.neg_smul_mem_posRootCone_longestElement`: **`-w₀` preserves the positive root cone**, the
   consequence of that permutation for nonnegative combinations of the simple roots;
@@ -239,5 +242,13 @@ theorem pairing_opposition (i j : ι) :
     P.pairing (opposition P b i) (opposition P b j) = P.pairing i j := by
   rw [← root_coroot'_eq_pairing, coroot'_opposition, root_opposition, smul_neg,
     smul_smul_longestElement, map_neg, neg_neg, root_coroot'_eq_pairing]
+
+/-- **The opposition involution is a symmetry of the Cartan matrix**, with its orientation: the
+entry at `(δ i, δ j)` is the entry at `(i, j)`. -/
+@[simp]
+theorem cartanMatrix_oppositionPerm (i j : b.support) :
+    b.cartanMatrix (oppositionPerm P b i) (oppositionPerm P b j) = b.cartanMatrix i j :=
+  FaithfulSMul.algebraMap_injective ℤ R <| by
+    simp only [Base.algebraMap_cartanMatrixIn_apply, coe_oppositionPerm, pairing_opposition]
 
 end RootPairing

@@ -64,6 +64,16 @@ def neg : P.Aut where
 theorem neg_smul_eq_neg (x : M) : neg P • x = -x :=
   (rfl)
 
+/-- The weight map of `-1` is `-1`. -/
+@[simp]
+theorem neg_weightMap : (neg P).toHom.weightMap = -LinearMap.id :=
+  (rfl)
+
+/-- The coweight map of `-1` is `-1`. -/
+@[simp]
+theorem neg_coweightMap : (neg P).toHom.coweightMap = -LinearMap.id :=
+  (rfl)
+
 /-- `-1` acts on weights by the linear equivalence `-1`. -/
 @[simp]
 theorem neg_weightEquiv : (neg P).weightEquiv = LinearEquiv.neg R :=
@@ -86,45 +96,59 @@ theorem neg_indexEquiv_symm : (neg P).indexEquiv.symm = (neg P).indexEquiv :=
 
 end Equiv
 
+variable {P} in
 /-- **`-1` is natural with respect to morphisms of root pairings**: every morphism acts linearly on
 weights and coweights, so commutes with negation. -/
 theorem Hom.comp_neg (f : P.Hom Q) :
     f.comp (Equiv.neg P).toHom = (Equiv.neg Q).toHom.comp f := by
+  have hw : (f.comp (Equiv.neg P).toHom).weightMap = ((Equiv.neg Q).toHom.comp f).weightMap :=
+    LinearMap.ext (map_neg f.weightMap)
   ext i
-  · exact map_neg f.weightMap i
+  · exact congr($hw i)
   · exact (map_neg f.coweightMap i).symm
-  · refine Q.root.injective ?_
-    change Q.root (f.indexEquiv (P.reflectionPerm i i)) =
-      Q.root (Q.reflectionPerm (f.indexEquiv i) (f.indexEquiv i))
-    rw [← Hom.root_weightMap_apply, root_reflectionPerm, root_reflectionPerm,
-      reflection_apply_self, reflection_apply_self, map_neg, Hom.root_weightMap_apply]
+  -- A morphism's action on indices is determined by its weight map on the roots.
+  · exact Q.root.injective <| by rw [← Hom.root_weightMap_apply, ← Hom.root_weightMap_apply, hw]
 
 namespace Equiv
 
+variable {P} in
 /-- **`-1` is natural with respect to equivalences of root pairings.** -/
 theorem comp_neg (e : P.Equiv Q) : e.comp (neg P) = (neg Q).comp e := by
-  have h := Hom.comp_neg P e.toHom
+  have h := Hom.comp_neg e.toHom
   ext i
   · exact congr(Hom.weightMap $h i)
   · exact congr(Hom.coweightMap $h i)
   · exact congr(Hom.indexEquiv $h i)
 
+variable {P} in
 /-- **Conjugation by an equivalence of root pairings carries `-1` to `-1`.** -/
 @[simp]
 theorem autCongr_neg (e : P.Equiv Q) : e.autCongr (neg P) = neg Q := by
   rw [autCongr_apply, ← comp_neg, ← comp_assoc]
   simp
 
+variable {P} in
 /-- **`-1` is central** in the automorphism group of a root pairing: every automorphism acts
 linearly on weights, so commutes with negation. -/
-theorem commute_neg (g : P.Aut) : Commute (neg P) g :=
-  (comp_neg P g).symm
+theorem commute_neg (g : P.Aut) : Commute (neg P) g := by
+  rw [commute_iff_eq, mul_eq_comp, mul_eq_comp, comp_neg]
 
 /-- **`-1` is an involution.**
 
 Not a `simp` lemma: `RootPairing.Equiv.mul_eq_comp` rewrites the product in `P.Aut` first. -/
 theorem neg_mul_neg : neg P * neg P = 1 :=
   weightHom_injective P (LinearEquiv.ext fun x ↦ by simp)
+
+/-- `-1` is an involution, stated with `RootPairing.Equiv.comp`, the `simp` normal form of products
+in `P.Aut`. -/
+@[simp]
+theorem neg_comp_neg : (neg P).comp (neg P) = 1 := by
+  rw [← mul_eq_comp, neg_mul_neg]
+
+/-- The square of `-1` is trivial. -/
+@[simp]
+theorem neg_sq : neg P ^ 2 = 1 := by
+  rw [sq, neg_mul_neg]
 
 /-- `-1` is its own inverse. -/
 @[simp]

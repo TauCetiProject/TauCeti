@@ -23,9 +23,11 @@ The automorphism is the product of the central automorphism `-1`
 `TauCeti.opposition`, and it carries the simple roots of `b` onto themselves. Since it is an
 automorphism, it preserves the root pairings, so the induced permutation `TauCeti.oppositionPerm`
 of the simple roots is a symmetry of the Cartan matrix, read with its orientation
-(`RootPairing.pairing_opposition`). On the coroot functionals it matches the coroot of
-`opposition i` after `δ` with the coroot of `i` before: in particular `δ` carries a weight whose
-simple coroot values are those of the fundamental weight `ϖᵢ` to one with the values of
+(`RootPairing.pairing_opposition` and `RootPairing.cartanMatrix_oppositionPerm`, which need only
+the opposition involution and are proved in
+`TauCeti/LinearAlgebra/RootSystem/Opposition/Basic.lean`). On the coroot functionals it matches the
+coroot of `opposition i` after `δ` with the coroot of `i` before: in particular `δ` carries a weight
+whose simple coroot values are those of the fundamental weight `ϖᵢ` to one with the values of
 `ϖ_{opposition i}`.
 
 In the decomposition `Aut(P) = W ⋊ Aut(P, b)` of `RootPairing.Base.semidirectProductMulEquiv`,
@@ -52,7 +54,6 @@ criterion that every finite-dimensional module of a semisimple Lie algebra is se
 * `RootPairing.coroot'_oppositionAut_smul` and
   `RootPairing.coroot'_oppositionAut_smul_eq_ite`: the coroot values of `δ x`, and the image of a
   fundamental weight.
-* `RootPairing.cartanMatrix_oppositionPerm`: the opposition involution preserves the Cartan matrix.
 * `RootPairing.semidirectProductMulEquiv_symm_neg`: the factors of `-1` are `w₀` and `δ`.
 * `RootPairing.eq_oppositionAut_iff_neg_mul_mem_weylGroup`: `δ` is the only based automorphism
   whose negative is in the Weyl group.
@@ -97,6 +98,14 @@ theorem oppositionAut_def : oppositionAut P b = Equiv.neg P * (longestElement P 
 theorem oppositionAut_smul (x : M) : oppositionAut P b • x = -(longestElement P b • x) := by
   rw [oppositionAut_def, mul_smul, Equiv.neg_smul_eq_neg, Subgroup.smul_def]
 
+/-- The opposition automorphism acts on weights by the longest element followed by `-1`. -/
+@[simp]
+theorem oppositionAut_weightEquiv :
+    (oppositionAut P b).weightEquiv =
+      (longestElement P b : P.Aut).weightEquiv ≪≫ₗ LinearEquiv.neg R := by
+  rw [oppositionAut_def, Equiv.mul_eq_comp, Equiv.weightEquiv_comp_toLin,
+    Equiv.neg_weightEquiv]
+
 /-- The opposition automorphism acts on coweights by `-1` followed by the action of the longest
 element, `RootPairing.Equiv.coweightEquiv` being contravariant. -/
 @[simp]
@@ -130,24 +139,30 @@ theorem oppositionAut_mem_basedAut : oppositionAut P b ∈ b.basedAut :=
 theorem map_oppositionAut : b.map (oppositionAut P b) = b :=
   Base.map_eq_of_mem_basedAut (oppositionAut_mem_basedAut P b)
 
-/-- The longest element is an involution of the root pairing, in the ambient automorphism group. -/
-private theorem longestElement_mul_longestElement :
-    (longestElement P b : P.Aut) * longestElement P b = 1 := by
-  rw [← Subgroup.coe_mul, ← pow_two, longestElement_sq, Subgroup.coe_one]
-
 /-- **The opposition automorphism is an involution.**
 
 Not a `simp` lemma: `RootPairing.Equiv.mul_eq_comp` rewrites the product in `P.Aut` first. -/
 theorem oppositionAut_mul_self : oppositionAut P b * oppositionAut P b = 1 := by
-  rw [oppositionAut_def, (Equiv.commute_neg P _).symm.mul_mul_mul_comm, Equiv.neg_mul_neg,
+  rw [oppositionAut_def, (Equiv.commute_neg _).symm.mul_mul_mul_comm, Equiv.neg_mul_neg,
     longestElement_mul_longestElement, one_mul]
+
+/-- The opposition automorphism is an involution, stated with `RootPairing.Equiv.comp`, the `simp`
+normal form of products in `P.Aut`. -/
+@[simp]
+theorem oppositionAut_comp_self : (oppositionAut P b).comp (oppositionAut P b) = 1 := by
+  rw [← Equiv.mul_eq_comp, oppositionAut_mul_self]
+
+/-- The square of the opposition automorphism is trivial. -/
+@[simp]
+theorem oppositionAut_sq : oppositionAut P b ^ 2 = 1 := by
+  rw [sq, oppositionAut_mul_self]
 
 /-- The opposition automorphism is its own inverse. -/
 @[simp]
 theorem oppositionAut_inv : (oppositionAut P b)⁻¹ = oppositionAut P b :=
   inv_eq_of_mul_eq_one_right (oppositionAut_mul_self P b)
 
-/-! ### Coroots, fundamental weights and the Cartan matrix -/
+/-! ### Coroots and fundamental weights -/
 
 /-- **The coroot values of `δ x` are those of `x`, permuted by the opposition involution.** Like
 `TauCeti.coroot'_opposition` it is stated with `P.coroot'` and tagged `@[grind =]` rather than
@@ -167,14 +182,6 @@ theorem coroot'_oppositionAut_smul_eq_ite [DecidableEq ι] {i : ι} {x : M}
   exact if_congr ⟨fun h ↦ by rw [← h, opposition_opposition], fun h ↦ by
     rw [h, opposition_opposition]⟩ rfl rfl
 
-/-- **The opposition involution is a symmetry of the Cartan matrix**, with its orientation: the
-entry at `(δ i, δ j)` is the entry at `(i, j)`. -/
-@[simp]
-theorem cartanMatrix_oppositionPerm (i j : b.support) :
-    b.cartanMatrix (oppositionPerm P b i) (oppositionPerm P b j) = b.cartanMatrix i j :=
-  FaithfulSMul.algebraMap_injective ℤ R <| by
-    simp only [Base.algebraMap_cartanMatrixIn_apply, coe_oppositionPerm, pairing_opposition]
-
 /-! ### The based factor of `-1` -/
 
 /-- `-1` times the opposition automorphism is the longest element. -/
@@ -185,7 +192,7 @@ theorem neg_mul_oppositionAut :
 /-- **`-1` is the longest element times the opposition automorphism.** -/
 theorem longestElement_mul_oppositionAut :
     (longestElement P b : P.Aut) * oppositionAut P b = Equiv.neg P := by
-  rw [oppositionAut_def, ← mul_assoc, ← (Equiv.commute_neg P _).eq, mul_assoc,
+  rw [oppositionAut_def, ← mul_assoc, ← (Equiv.commute_neg _).eq, mul_assoc,
     longestElement_mul_longestElement, mul_one]
 
 /-- **The factors of `-1` in `W ⋊ Aut(P, b)` are `w₀` and the opposition automorphism.** -/
@@ -203,7 +210,7 @@ theorem eq_oppositionAut_iff_neg_mul_mem_weylGroup {g : P.Aut} (hg : g ∈ b.bas
   refine ⟨fun h ↦ h ▸ neg_mul_oppositionAut P b ▸ (longestElement P b).2, fun h ↦ ?_⟩
   -- `δ⁻¹ g = w₀ (-g)` is both in the Weyl group and based, hence trivial.
   have hW : (oppositionAut P b)⁻¹ * g ∈ P.weylGroup := by
-    rw [oppositionAut_inv, oppositionAut_def, (Equiv.commute_neg P _).eq, mul_assoc]
+    rw [oppositionAut_inv, oppositionAut_def, (Equiv.commute_neg _).eq, mul_assoc]
     exact mul_mem (longestElement P b).2 h
   have hB : (oppositionAut P b)⁻¹ * g ∈ b.basedAut :=
     mul_mem (inv_mem (oppositionAut_mem_basedAut P b)) hg
@@ -224,7 +231,7 @@ theorem oppositionAut_map (e : P.Equiv Q) :
     rw [Base.mem_basedAut_iff, Base.support_map_eq, Finset.coe_image, Set.image_image]
     simp only [Equiv.indexEquiv_autCongr_apply, _root_.Equiv.symm_apply_apply]
     rw [← Set.image_image, Base.mem_basedAut_iff.mp (oppositionAut_mem_basedAut P b)]
-  · rw [← Equiv.autCongr_neg P e, ← map_mul, neg_mul_oppositionAut]
+  · rw [← Equiv.autCongr_neg e, ← map_mul, neg_mul_oppositionAut]
     simpa using (e.weylGroupEquiv (longestElement P b)).2
 
 /-- **Change of base for the opposition involution**: the opposition involution of `b.map e` is
@@ -241,7 +248,8 @@ end Map
 conjugate `g δ g⁻¹` of that of `b`. -/
 theorem oppositionAut_map_eq_mul_mul_inv (g : P.Aut) :
     oppositionAut P (b.map g) = g * oppositionAut P b * g⁻¹ := by
-  rw [oppositionAut_map, Equiv.autCongr_apply, mul_assoc]
+  rw [oppositionAut_map, Equiv.autCongr_apply, mul_assoc, Equiv.mul_eq_comp, Equiv.mul_eq_comp]
+  -- The inverse in `P.Aut` is `RootPairing.Equiv.symm` by definition of Mathlib's group structure.
   rfl
 
 /-! ### When the opposition automorphism is trivial -/
