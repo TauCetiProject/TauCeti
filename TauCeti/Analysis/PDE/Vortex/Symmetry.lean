@@ -41,8 +41,7 @@ the end framing. This constant gauge does not tend to one at infinity, so it is 
 frame of the line at infinity rather than an element of the framed gauge group.
 
 Both actions preserve `Cⁿ` fields (`TauCeti.Vortex.contDiff_translateField`,
-`TauCeti.Vortex.contDiff_rotateField`) and, by composition, the smooth framed gauge group
-(`TauCeti.Vortex.comp_add_mem_framedGaugeGroup`, `TauCeti.Vortex.comp_mul_mem_framedGaugeGroup`).
+`TauCeti.Vortex.contDiff_rotateField`).
 
 These are identities of smooth differential expressions; their Sobolev completions, and the
 induced action on the divisor of a vortex, are not treated here.
@@ -202,14 +201,6 @@ theorem translateField_gaugeTransform (a : ℂ) (g : ℂ → Circle)
   funext z
   simp only [translateField_apply, gaugeTransform_apply, gaugeForm_apply,
     fderiv_comp_add_right (f := fun w ↦ (g w : ℂ)) a]
-
-/-- A gauge of the smooth framed group composed with a translation is again in the smooth
-framed group. -/
-theorem comp_add_mem_framedGaugeGroup {u : ℂ → Circle} (hu : u ∈ framedGaugeGroup) (a : ℂ) :
-    (fun w ↦ u (w + a)) ∈ framedGaugeGroup := by
-  obtain ⟨hs, ht⟩ := (mem_framedGaugeGroup u).1 hu
-  exact (mem_framedGaugeGroup _).2 ⟨hs.comp (contDiff_id.add contDiff_const),
-    ht.comp (Homeomorph.addRight a).map_cocompact.le⟩
 
 @[simp]
 theorem translateField_vacuumField (a : ℂ) : translateField a vacuumField = vacuumField := by
@@ -585,14 +576,6 @@ theorem rotateField_gaugeTransform (u : Circle) (g : ℂ → Circle)
   fin_cases i <;>
     simp [gaugeTransform_apply, gaugeForm_comp_mul, clm_apply_coe, clm_apply_coe_mul_I,
       -gaugeForm_apply] <;> ring
-
-/-- A gauge of the smooth framed group composed with multiplication by a nonzero constant, such
-as a rotation, is again in the smooth framed group. -/
-theorem comp_mul_mem_framedGaugeGroup {u : ℂ → Circle} (hu : u ∈ framedGaugeGroup) {c : ℂ}
-    (hc : c ≠ 0) : (fun w ↦ u (c * w)) ∈ framedGaugeGroup := by
-  obtain ⟨hs, ht⟩ := (mem_framedGaugeGroup u).1 hu
-  exact (mem_framedGaugeGroup _).2 ⟨hs.comp (contDiff_const.mul contDiff_id),
-    ht.comp (Filter.tendsto_cocompact_mul_left₀ hc)⟩
 
 @[simp]
 theorem rotateField_vacuumField (u : Circle) : rotateField u vacuumField = vacuumField := by
