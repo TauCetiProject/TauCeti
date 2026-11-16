@@ -307,6 +307,12 @@ theorem _root_.ContDiff.continuous_conjWirtingerDeriv_apply {g : V → W} (hg : 
   continuous_iff_continuousAt.2 fun x ↦
     (hg.contDiffAt.conjWirtingerDeriv_apply (m := 0) (by simp) v).continuousAt
 
+/-- The Wirtinger derivative of a `C¹` map, evaluated on a fixed vector, is continuous. -/
+theorem _root_.ContDiff.continuous_wirtingerDeriv_apply {g : V → W} (hg : ContDiff ℝ 1 g)
+    (v : V) : Continuous fun z ↦ wirtingerDeriv g z v :=
+  continuous_iff_continuousAt.2 fun x ↦
+    (hg.contDiffAt.wirtingerDeriv_apply (m := 0) (by simp) v).continuousAt
+
 /-- The conjugate Wirtinger derivative vanishes off the topological support. -/
 theorem conjWirtingerDeriv_of_notMem_tsupport {g : V → W} {x : V} (hx : x ∉ tsupport g) :
     conjWirtingerDeriv g x = 0 := by
