@@ -28,10 +28,10 @@ each other, with constants depending only on `E` and `μ`:
 
 So a convex function with `λ ≤ MA_v ≤ Λ` vanishing on the boundary of `G` has depth comparable
 to `μ(G) ^ (2 / n)` when `n ≥ 1`. Both bounds, and the upper volume estimate for sections below,
-also hold in dimension zero, where `G` is the whole space and `MA_v(G) = μ(G)`;
-`mongeAmpereMeasure_ite_const`, the quantitative comparison on a section, the depth bound
-involving the distance to the boundary and the lower volume estimate for sections assume
-`n ≥ 1`. Both bounds are affine invariant. They are proved for a domain
+also hold in dimension zero, where `G` is the whole space and `MA_v(G) = μ(G)`
+(`TauCeti.mongeAmpereMeasure_ite_self_of_subsingleton`); the quantitative comparison on a section,
+the depth bound involving the distance to the boundary and the lower volume estimate for sections
+assume `n ≥ 1`. Both bounds are affine invariant. They are proved for a domain
 normalized by an affine equivalence `T` between the balls of radii `r` and `1` about `0`
 (`TauCeti.exists_affineEquiv_ball_subset_image_subset_ball`), and transferred back by the change
 of variables `MA_{v ∘ T⁻¹}(s) = |det L| MA_v(T⁻¹ '' s)`, where `L` is the linear part of `T⁻¹`
@@ -110,37 +110,6 @@ theorem mongeAmpereMeasure_ite_mul_norm_sq_add {U : Set E} [DecidablePred (· �
   simp only [(hH _).fderiv, ContinuousLinearMap.det, ContinuousLinearMap.toLinearMap_smul,
     ContinuousLinearMap.coe_id, LinearMap.det_smul, LinearMap.det_id, mul_one]
   exact withDensity_const _
-
-omit [μ.IsAddHaarMeasure] in
-/-- On a positive-dimensional space, a constant potential on any set, extended by `⊤` outside it,
-has zero Monge–Ampère measure with respect to any measure `μ`: its only subgradient at an interior
-point of the set is `0`, and a point is null for every additive Haar measure. -/
-theorem mongeAmpereMeasure_ite_const [Nontrivial E] {U : Set E} [DecidablePred (· ∈ U)] (c : ℝ) :
-    mongeAmpereMeasure μ (fun y => if y ∈ U then (c : EReal) else ⊤) = 0 := by
-  by_cases hf : Convex ℝ {p : E × ℝ | (if p.1 ∈ U then (c : EReal) else ⊤) ≤ p.2}
-  swap
-  · exact mongeAmpereMeasure_eq_zero_of_not_convex μ hf
-  by_cases hμ : μ ≪ (addHaar : Measure E)
-  swap
-  · exact mongeAmpereMeasure_eq_zero_of_not_absolutelyContinuous μ hμ
-  ext s hs
-  rw [mongeAmpereMeasure_apply μ hf ite_ne_bot hμ hs, setOf_ite_ne_top, _root_.zero_apply]
-  refine measure_mono_null (fun y hy => ?_) (hμ (measure_singleton 0))
-  -- A subgradient `y` at an interior point `x` of `U`, tested at `x + t • y` for a small `t > 0`,
-  -- has `t ‖y‖² ≤ 0`.
-  obtain ⟨x, hx, hxy⟩ := (mem_subgradientImage_iff _).1 hy
-  have hsub := (mem_subdifferential_ite_iff (innerₗ E) (u := fun _ => c)
-    (interior_subset hx.2)).1 hxy
-  have hU : ∀ᶠ t : ℝ in nhds 0, x + t • y ∈ U :=
-    (by fun_prop : Continuous fun t : ℝ => x + t • y).continuousAt.eventually_mem
-      (by simpa using mem_interior_iff_mem_nhds.1 hx.2)
-  obtain ⟨t, htU, ht⟩ := ((hU.filter_mono nhdsWithin_le_nhds).and
-    (self_mem_nhdsWithin : Ioi (0 : ℝ) ∈ nhdsWithin 0 (Ioi 0))).exists
-  have h := hsub _ htU
-  simp only [add_sub_cancel_left, innerₗ_apply_apply, real_inner_smul_left,
-    real_inner_self_eq_norm_sq, add_le_iff_nonpos_right] at h
-  exact norm_eq_zero.1 (pow_eq_zero_iff two_ne_zero |>.1
-    ((nonpos_of_mul_nonpos_right h ht).antisymm (sq_nonneg _)))
 
 /-- **Subtracting a plane on a section.** Let `u` be convex on an open set `Ω`, and let
 `S = {y ∈ Ω | u y < u x + ℓ (y - x) + h}`. The Monge–Ampère measure of `u + L + c`, extended by
@@ -360,18 +329,6 @@ theorem exists_ofReal_neg_pow_le_mul_ofReal_mul_measure_mul_mongeAmpereMeasure :
     _ = c₁ * (R * B)⁻¹ * ENNReal.ofReal d * μ G * M := by ring
 
 omit [Nontrivial E] in
-/-- In a subsingleton space, a potential convex on an open set `G` containing a point, extended by
-`⊤` off `G`, has Monge–Ampère mass `μ univ` on `G`: every vector is a subgradient there. -/
-private theorem mongeAmpereMeasure_ite_self_of_subsingleton [Subsingleton E] {G : Set E}
-    [DecidablePred (· ∈ G)] {v : E → ℝ} (hGo : IsOpen G) (hv : ConvexOn ℝ G v) {x₀ : E}
-    (hx₀ : x₀ ∈ G) :
-    mongeAmpereMeasure μ (fun x => if x ∈ G then (v x : EReal) else ⊤) G = μ univ := by
-  rw [mongeAmpereMeasure_ite_apply μ hGo hv AbsolutelyContinuous.rfl hGo.measurableSet]
-  congr 1
-  exact eq_univ_of_forall fun _ =>
-    mem_biUnion ⟨hx₀, hx₀⟩ fun x' _ => by simp [Subsingleton.elim x' x₀]
-
-omit [Nontrivial E] in
 /-- **The depth of a convex function is controlled by its volume and Monge–Ampère mass.** There
 is a constant `C`, depending only on `E` and `μ`, such that for every bounded open set `G`, every
 `v` convex on `G`, continuous on its closure and nonnegative on its frontier, and every `x₀ ∈ G`,
@@ -387,10 +344,10 @@ theorem exists_ofReal_neg_pow_le_mul_measure_mul_mongeAmpereMeasure :
   rcases subsingleton_or_nontrivial E with hE | hE
   · -- In a subsingleton space `G = univ` and `MA_v(G) = μ univ`, which is positive and finite.
     have hpos : μ univ ≠ 0 := (isOpen_univ.measure_pos μ univ_nonempty).ne'
-    refine ⟨((μ univ)⁻¹ * (μ univ)⁻¹).toNNReal, fun G _ v hGo _ hv _ _ x₀ hx₀ => ?_⟩
+    refine ⟨((μ univ)⁻¹ * (μ univ)⁻¹).toNNReal, fun G _ v _ _ _ _ _ x₀ hx₀ => ?_⟩
     have hGu : G = univ := Subsingleton.eq_univ_of_nonempty ⟨x₀, hx₀⟩
     rw [finrank_zero_of_subsingleton, pow_zero,
-      mongeAmpereMeasure_ite_self_of_subsingleton μ hGo hv hx₀, hGu, ENNReal.coe_toNNReal
+      mongeAmpereMeasure_ite_self_of_subsingleton μ hx₀, hGu, ENNReal.coe_toNNReal
         (ENNReal.mul_ne_top (ENNReal.inv_ne_top.2 hpos) (ENNReal.inv_ne_top.2 hpos)),
       mul_assoc, mul_mul_mul_comm, ENNReal.inv_mul_cancel hpos (measure_ne_top μ univ), one_mul]
   obtain ⟨C, hC⟩ := exists_ofReal_neg_pow_le_mul_ofReal_mul_measure_mul_mongeAmpereMeasure μ
