@@ -22,10 +22,8 @@ count the triples of representatives `(σᵢ, τⱼ, υₖ)` with `σᵢ g₁ τ
 two bookkeepings are matched through the one-sided description of the multiplicity
 (`multiplicity_eq_card_filter`).
 
-Vendored from the in-review mathlib4 PR
-[#41328](https://github.com/leanprover-community/mathlib4/pull/41328) (Chris Birkbeck), per the
-ModularForms roadmap's dependency policy; migrate to Mathlib and delete this file when that
-stack merges.
+Vendored from mathlib4 PR
+[#41328](https://github.com/leanprover-community/mathlib4/pull/41328) (Chris Birkbeck).
 
 ## Main results
 

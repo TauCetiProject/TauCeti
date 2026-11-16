@@ -6,10 +6,10 @@ Authors: Claude
 module
 
 public import Mathlib.Topology.Algebra.ClopenNhdofOne
-public import Mathlib.Topology.UniformSpace.CompactConvergence
+public import Mathlib.Topology.CompactOpen
 public import TauCeti.Topology.LocallyConstant.Compact
 import Mathlib.Topology.Separation.Connected
-import Mathlib.Topology.Separation.DisjointCover
+import TauCeti.Topology.ContinuousMap.LocallyConstant
 
 /-!
 # Locally constant functions on topological groups
@@ -187,19 +187,15 @@ theorem isLocallyConstant_iff_exists_comp_quotientMk_eq {A : Type*} {f : G → A
 variable [TotallyDisconnectedSpace G]
 
 /-- **Density of cylinder functions.** On a profinite group, the continuous functions that factor
-through the quotient by some open normal subgroup are dense in `C(G, R)` for every uniform
-space `R`. -/
-theorem dense_setOf_comp_quotientMk (R : Type*) [UniformSpace R] :
+through the quotient by some open normal subgroup are dense in `C(G, R)` for every topological
+space `R`, with the compact-open topology. When `R` is a uniform space, this is the topology of
+uniform convergence. -/
+theorem dense_setOf_comp_quotientMk (R : Type*) [TopologicalSpace R] :
     Dense {F : C(G, R) |
       ∃ (U : OpenNormalSubgroup G) (g : G ⧸ U.toSubgroup → R), g ∘ (↑) = F} := by
-  refine fun f ↦ (mem_closure_iff_nhds_basis
-    (nhds_basis_uniformity' ContinuousMap.hasBasis_compactConvergenceUniformity_of_compact)).mpr
-    fun V hV ↦ ?_
-  -- Approximate `f` within `V` by a function factoring through a finite discrete space.
-  obtain ⟨N, c, h, hc, hch⟩ := ContinuousMap.exists_finite_approximation_of_mem_nhds_diagonal f
-    (nhdsSet_diagonal_le_uniformity hV)
-  have hloc : IsLocallyConstant (h ∘ c) :=
-    (IsLocallyConstant.of_discrete h).comp_continuous hc
-  exact ⟨⟨h ∘ c, hloc.continuous⟩, hloc.exists_comp_quotientMk_eq, fun x ↦ hch x⟩
+  -- Locally constant functions are dense, and each one factors through a finite quotient.
+  refine LocallyConstant.denseRange_toContinuousMap.mono <| Set.range_subset_iff.mpr fun f ↦ ?_
+  rw [Set.mem_ofPred_eq, LocallyConstant.coe_continuousMap]
+  exact f.isLocallyConstant.exists_comp_quotientMk_eq
 
 end TauCeti

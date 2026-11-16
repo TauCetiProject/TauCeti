@@ -161,7 +161,6 @@ theorem edist_sq_div_le_add (hττ₀ : τ < τ₀) (x x₀ z : X) :
   simp only [ENNReal.toReal_div, ENNReal.toReal_pow, ENNReal.toReal_mul, ENNReal.toReal_ofNat,
     ENNReal.coe_toReal, ENNReal.toReal_sub_of_le (ENNReal.coe_le_coe.2 hττ₀.le)
       ENNReal.coe_ne_top]
-  have hτr : (0 : ℝ) < τ := NNReal.coe_pos.2 (pos_iff_ne_zero.2 hτ)
   have hsr : (0 : ℝ) < τ₀ - τ := sub_pos.2 (NNReal.coe_lt_coe.2 hττ₀)
   calc (edist x₀ z).toReal ^ 2 / (2 * τ₀)
       ≤ ((edist x x₀).toReal + (edist x z).toReal) ^ 2 / (2 * τ₀) := by gcongr
@@ -264,7 +263,6 @@ private theorem toReal_edist_sq_mul_le (hττ' : τ < τ') {A B : ℝ}
   rw [ha, EReal.coe_le_coe_add_coe_ennreal_iff hP'] at hA'
   simp only [ENNReal.toReal_div, ENNReal.toReal_pow, ENNReal.toReal_mul, ENNReal.toReal_ofNat,
     ENNReal.coe_toReal] at hB hA'
-  have hτr : (0 : ℝ) < τ := NNReal.coe_pos.2 hτ
   have hττ'r : (τ : ℝ) < τ' := NNReal.coe_lt_coe.2 hττ'
   have key : (edist x v).toReal ^ 2 * (τ' - τ) / (2 * τ * τ') ≤ B - A := by
     have : (edist x v).toReal ^ 2 * (τ' - τ) / (2 * τ * τ') =

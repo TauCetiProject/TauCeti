@@ -234,10 +234,6 @@ theorem automorphismGroup_cyclicPowTriple :
 each branch point, so its genus is `(n - 1) / 2`. -/
 theorem genus_cyclicPowTriple (hk : k.Coprime n) (hk' : (k + 1).Coprime n) :
     (cyclicPowTriple n k).genus = (n - 1) / 2 := by
-  have hn : n ≠ 0 := by
-    rintro rfl
-    rw [Nat.coprime_zero_right] at hk hk'
-    omega
   rw [genus_def, eulerChar_eq_cycleCounts, cycleCounts_eq_card_cycleData,
     cycleData_cyclicPowTriple hk hk']
   simp only [Multiset.card_singleton, Nat.cast_one]

@@ -37,13 +37,9 @@ Jacobian this pointwise product is the tensor product of line bundles.
   bundled form, as homomorphisms of the homomorphism groups, with `Hom.comp_zpow` and
   `Hom.zpow_comp` the resulting integer-power laws.
 
-This advances `TauCetiRoadmap/JacobianChallenge/README.md`, Layer E, "Abelian variety = smooth,
-proper, geometrically connected group scheme over `k`; basic API", by supplying the group structure
-on the homomorphism sets. Layer F's universal property produces a *unique* homomorphism of abelian
-varieties; the group law here is the ambient structure in which that uniqueness and the Albanese
-functoriality are expressed. No external mathematics is vendored; the group structure is transported
-from Mathlib's `CategoryTheory.MonObj.Hom.commGroup` on morphisms into a commutative group object,
-via the existing Tau Ceti abelian-variety homomorphism API.
+No external mathematics is vendored; the group structure is transported from Mathlib's
+`CategoryTheory.MonObj.Hom.commGroup` on morphisms into a commutative group object, via the
+existing Tau Ceti abelian-variety homomorphism API.
 -/
 
 public section

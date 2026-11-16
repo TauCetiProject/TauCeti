@@ -14,7 +14,7 @@ public import TauCeti.Analysis.SpecificLimits.CentralBinomial
 
 The integer walk is recurrent exactly when its right-step probability is one half.
 Every other parameter, including the deterministic endpoints, gives a transient walk.
-For such a walk, from any finite initial law, almost every path visits each integer
+For such a walk, from any initial measure, almost every path visits each integer
 only finitely often. This statement also holds for arbitrary realizations of the path law.
 
 The diagonal Green function is the central-binomial series with parameter `p * (1 - p)`:
@@ -76,10 +76,10 @@ theorem integerWalk_ae_infinite_setOf_eq (p : unitInterval) (hp : (p : ℝ) = 1 
   (integerWalk p).ae_infinite_setOf_eq_markovChainLaw_dirac
     (Kernel.isRecurrent_iff.mp ((integerWalk_isRecurrent_iff p x).mpr hp))
 
-/-- From any finite initial measure, a biased integer walk visits every integer only
+/-- From any initial measure, a biased integer walk visits every integer only
 finitely often, on one common full-measure event. -/
 theorem integerWalk_ae_forall_finite_setOf_eq (p : unitInterval)
-    (hp : (p : ℝ) ≠ 1 / 2) (ν : Measure ℤ) [IsFiniteMeasure ν] :
+    (hp : (p : ℝ) ≠ 1 / 2) (ν : Measure ℤ) :
     ∀ᵐ ω ∂markovChainLaw ν (integerWalk p), ∀ y : ℤ, {n | ω n = y}.Finite := by
   apply ae_all_iff.mpr
   intro y
@@ -97,7 +97,7 @@ open TauCeti.Probability
 /-- Finiteness of visits for a biased integer walk transfers to any realization.
 No topology or canonical construction of the sample space is required. -/
 theorem integerWalk_ae_forall_finite_setOf_eq {Ω : Type*} [MeasurableSpace Ω]
-    {P : Measure Ω} {ν : Measure ℤ} [IsFiniteMeasure ν] {p : unitInterval}
+    {P : Measure Ω} {ν : Measure ℤ} {p : unitInterval}
     {X : Ω → ℕ → ℤ} (hX : HasLaw X (markovChainLaw ν (integerWalk p)) P)
     (hp : (p : ℝ) ≠ 1 / 2) :
     ∀ᵐ ω ∂P, ∀ y : ℤ, {n | X ω n = y}.Finite := by

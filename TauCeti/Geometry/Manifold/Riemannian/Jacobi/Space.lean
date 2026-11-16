@@ -161,8 +161,13 @@ theorem finiteDimensional_jacobiFieldSpace (hγ : IsGeodesicCurveOn I γ s)
 
 /-- Initial data bound the dimension of the Jacobi-field space by twice the manifold dimension. -/
 theorem finrank_jacobiFieldSpace_le (hγ : IsGeodesicCurveOn I γ s)
-    (hs : IsPreconnected s) {a : ℝ} (ha : a ∈ s) :
+    (hs : IsPreconnected s) :
     Module.finrank ℝ (jacobiFieldSpace hγ) ≤ 2 * Module.finrank ℝ E := by
+  rcases s.eq_empty_or_nonempty with rfl | ⟨a, ha⟩
+  · have : Subsingleton (jacobiFieldSpace hγ) :=
+      ⟨fun V W ↦ jacobiFieldSpace_ext fun t ht ↦ ht.elim⟩
+    rw [Module.finrank_zero_of_subsingleton]
+    exact zero_le
   simpa [Module.finrank_prod, TauCeti.finrank_tangentSpace, two_mul] using
     LinearMap.finrank_le_finrank_of_injective
       (jacobiInitialData_injective hγ hs ha)

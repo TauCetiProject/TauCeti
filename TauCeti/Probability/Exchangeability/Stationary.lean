@@ -11,8 +11,8 @@ public import TauCeti.Probability.Process.PathLaw.ProcessShift
 /-!
 # Exchangeable laws are stationary
 
-This file records the Layer 0 stationarity bridge from the Exchangeability roadmap: a finitely
-exchangeable process has a shift-invariant path law.  The existing implication
+This file records the stationarity bridge for exchangeable processes: a finitely exchangeable
+process has a shift-invariant path law.  The existing implication
 `Exchangeable.contractable` gives the exchangeability-to-contractability bridge.  The lemmas here
 first expose the shift-stationarity consequences at the natural `Contractable` level, then provide
 thin `Exchangeable`-named wrappers for downstream code that starts from exchangeability.

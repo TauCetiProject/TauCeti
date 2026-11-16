@@ -216,7 +216,7 @@ theorem isAutomatic_of_eventually_periodic (hp : 0 < p) (h : ∀ n, N ≤ n → 
   · convert (unaryPeriodicDFAO a N p).isAutomatic with n
     simp [DFAO.eval_eq_evalFrom, Nat.digits_one, evalFrom_unaryPeriodicDFAO, truncOut_trunc h]
   · convert (periodicDFAO k a N p).isAutomatic with n
-    simp [DFAO.eval_eq_evalFrom, evalFrom_periodicDFAO _ (fun d hd ↦ Nat.digits_lt_base hk hd),
+    simp [DFAO.eval_eq_evalFrom, evalFrom_periodicDFAO _ (fun _ hd ↦ Nat.digits_lt_base hk hd),
       Nat.ofDigits_digits, truncOut_trunc h]
 
 end EventuallyPeriodic

@@ -76,14 +76,6 @@ vertex directly as an object of the path category. The classification is the exc
 type-correct, so `simpleRepHom` and everything downstream of it spell the base vertex as
 `(CategoryTheory.Paths.of Q).obj i`, and pin the implicit vertex of the spanning
 subrepresentations to match.
-
-The roadmap pins the simplicity result as `simpleRep_simple`, so the instance carries that name
-rather than the `simple_simpleRep` a Mathlib predicate prefix would give it.
-
-## References
-
-This implements the vertex simples of Layer 1 of
-`TauCetiRoadmap/RepresentationTheory/QuiverRepresentations/README.md`.
 -/
 
 public section

@@ -102,12 +102,9 @@ theorem hasseDeriv_coe (p : R[X]) : hasseDeriv k (p : R⟦X⟧) = (p.hasseDeriv 
 theorem trunc_hasseDeriv (f : R⟦X⟧) (n : ℕ) :
     trunc n (hasseDeriv k f) = (trunc (n + k) f).hasseDeriv k := by
   ext m
-  simp only [coeff_trunc, Polynomial.hasseDeriv_coeff, coeff_hasseDeriv]
-  split_ifs with h₁ h₂ h₂
-  · rfl
-  · omega
-  · omega
-  · rw [mul_zero]
+  -- both sides are `(m + k).choose k * coeff (m + k) f` if `m < n` (equivalently
+  -- `m + k < n + k`), and `0` otherwise
+  simp [coeff_trunc, Polynomial.hasseDeriv_coeff]
 
 /-- The Hasse derivative of a monomial: `D⁽ᵏ⁾ (a Xⁿ) = n.choose k * a Xⁿ⁻ᵏ`. -/
 @[simp]
@@ -118,8 +115,9 @@ theorem hasseDeriv_monomial (n : ℕ) (a : R) :
 
 /-- Positive Hasse derivatives vanish on constants. -/
 theorem hasseDeriv_C {k : ℕ} (hk : 0 < k) (a : R) : hasseDeriv k (C a) = 0 := by
-  rw [← monomial_zero_eq_C_apply, hasseDeriv_monomial, Nat.choose_eq_zero_of_lt hk, Nat.cast_zero,
-    zero_mul, map_zero]
+  rw [← monomial_zero_eq_C_apply, hasseDeriv_monomial, Nat.choose_eq_zero_of_lt hk]
+  -- the coefficient is now `((0 : ℕ) : R) * a = 0`
+  simp only [Nat.cast_zero, zero_mul, map_zero]
 
 /-- Hasse derivatives commute with coefficient maps. -/
 @[simp]
@@ -138,7 +136,7 @@ theorem hasseDeriv_comp (l : ℕ) :
   have key : (n + k).choose k * (n + (k + l)).choose l =
       (k + l).choose k * (n + (k + l)).choose (k + l) := by
     have h := Nat.choose_mul (n := n + k + l) (k := k + l) (s := l) (by omega)
-    rw [show n + k + l - l = n + k by omega, show k + l - l = k by omega] at h
+    simp only [Nat.add_sub_cancel] at h
     rw [← add_assoc, Nat.choose_symm_add]
     linarith
   simp only [LinearMap.comp_apply, LinearMap.smul_apply, map_nsmul, coeff_hasseDeriv, add_assoc]
@@ -149,34 +147,37 @@ theorem hasseDeriv_comp (l : ℕ) :
 theorem hasseDeriv_mul (f g : R⟦X⟧) :
     hasseDeriv k (f * g) = ∑ ij ∈ antidiagonal k, hasseDeriv ij.1 f * hasseDeriv ij.2 g := by
   ext n
-  -- Both sides only see the coefficients of `f` and `g` below `N`, so we may replace them by
-  -- their truncations and apply the polynomial Leibniz rule.
+  -- Up to degree `n`, both sides only see the coefficients of `f` and `g` below `N`, so we may
+  -- replace them by their truncations and apply the polynomial Leibniz rule.
   set N := n + k + 1
-  have htrunc (h : R⟦X⟧) {m : ℕ} (hm : m < N) : coeff m (trunc N h : R⟦X⟧) = coeff m h := by
-    simp [coeff_trunc, hm]
-  have hcoeff (i : ℕ) (hi : i ≤ k) (h : R⟦X⟧) {m : ℕ} (hm : m ≤ n) :
-      coeff m (hasseDeriv i h) = coeff m (hasseDeriv i (trunc N h : R⟦X⟧)) := by
-    rw [coeff_hasseDeriv, coeff_hasseDeriv, htrunc h (by omega)]
-  have hsum (ij : ℕ × ℕ) (hij : ij ∈ antidiagonal k) :
-      coeff n (hasseDeriv ij.1 f * hasseDeriv ij.2 g) =
-        coeff n (hasseDeriv ij.1 (trunc N f : R⟦X⟧) * hasseDeriv ij.2 (trunc N g : R⟦X⟧)) := by
-    rw [mem_antidiagonal] at hij
-    simp only [coeff_mul]
+  -- the `m`th coefficient of `D⁽ⁱ⁾ f * D⁽ʲ⁾ g` only involves `coeff a f` and `coeff b g` with
+  -- `a ≤ m + i` and `b ≤ m + j`, which truncation at `N > m + i + j` leaves unchanged
+  have htrunc (i j m : ℕ) (h : m + i + j < N) :
+      coeff m (hasseDeriv i f * hasseDeriv j g) =
+        coeff m (hasseDeriv i (trunc N f : R⟦X⟧) * hasseDeriv j (trunc N g : R⟦X⟧)) := by
+    simp only [coeff_mul, coeff_hasseDeriv]
     refine Finset.sum_congr rfl fun ab hab ↦ ?_
     rw [mem_antidiagonal] at hab
-    rw [hcoeff ij.1 (by omega) f (by omega), hcoeff ij.2 (by omega) g (by omega)]
-  have hpoly : ∑ ij ∈ antidiagonal k,
-      hasseDeriv ij.1 (trunc N f : R⟦X⟧) * hasseDeriv ij.2 (trunc N g : R⟦X⟧) =
-        hasseDeriv k ((trunc N f * trunc N g : R[X]) : R⟦X⟧) := by
-    rw [hasseDeriv_coe, Polynomial.hasseDeriv_mul]
-    simp only [← Polynomial.coeToPowerSeries.ringHom_apply, map_sum, map_mul]
-    simp only [Polynomial.coeToPowerSeries.ringHom_apply, hasseDeriv_coe]
-  rw [map_sum, Finset.sum_congr rfl hsum, ← map_sum, hpoly, coeff_hasseDeriv, coeff_hasseDeriv,
-    Polynomial.coe_mul, coeff_mul, coeff_mul]
-  congr 1
-  refine Finset.sum_congr rfl fun ab hab ↦ ?_
-  rw [mem_antidiagonal] at hab
-  rw [htrunc f (by omega), htrunc g (by omega)]
+    have ha : ab.1 + i < N := by omega
+    have hb : ab.2 + j < N := by omega
+    simp only [Polynomial.coeff_coe, coeff_trunc, ite_eq_left ha, ite_eq_left hb]
+  calc coeff n (hasseDeriv k (f * g))
+      = coeff n (hasseDeriv k ((trunc N f * trunc N g : R[X]) : R⟦X⟧)) := by
+        simp only [coeff_hasseDeriv, Polynomial.coe_mul]
+        congr 1
+        -- `htrunc` for `i = j = 0`, where `D⁽⁰⁾` is the identity
+        simpa only [hasseDeriv_zero, LinearMap.id_apply, add_zero] using
+          htrunc 0 0 (n + k) (by omega)
+    _ = ∑ ij ∈ antidiagonal k,
+          coeff n (hasseDeriv ij.1 (trunc N f : R⟦X⟧) * hasseDeriv ij.2 (trunc N g : R⟦X⟧)) := by
+        -- view the coercion `R[X] → R⟦X⟧` as a ring hom, so that it commutes with the sum and
+        -- the products of the polynomial Leibniz rule
+        rw [hasseDeriv_coe, Polynomial.hasseDeriv_mul, ← Polynomial.coeToPowerSeries.ringHom_apply]
+        simp only [map_sum, map_mul, Polynomial.coeToPowerSeries.ringHom_apply, hasseDeriv_coe]
+    _ = coeff n (∑ ij ∈ antidiagonal k, hasseDeriv ij.1 f * hasseDeriv ij.2 g) := by
+        rw [map_sum]
+        exact Finset.sum_congr rfl fun ij hij ↦
+          (htrunc ij.1 ij.2 n (by rw [mem_antidiagonal] at hij; omega)).symm
 
 /-- The Leibniz rule for a product with `X`: `D⁽ᵏ⁺¹⁾ (X * f) = X * D⁽ᵏ⁺¹⁾ f + D⁽ᵏ⁾ f`. -/
 theorem hasseDeriv_succ_X_mul (f : R⟦X⟧) :

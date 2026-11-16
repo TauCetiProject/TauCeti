@@ -64,7 +64,7 @@ theorem exists_contMDiff_family_apply_eq (hn : 1 ≤ n) {V : Set M} (hV : IsOpen
       ((continuousAt_extChartAt_symm y).preimage_mem_nhds
         (by rw [extChartAt_to_inv]; exact hV.mem_nhds hy))
   obtain ⟨r, hr, hrV⟩ := Metric.mem_nhds_iff.1 hVy
-  set K := closedBall (e y) (r / 2) with hK
+  set K := closedBall (e y) (r / 2)
   have hKr : K ⊆ ball (e y) r := closedBall_subset_ball (by linarith)
   have hKc : IsCompact K := isCompact_closedBall _ _
   have hKt : K ⊆ interior e.target := fun p hp ↦ (hrV (hKr hp)).1

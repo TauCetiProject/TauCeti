@@ -18,9 +18,6 @@ Jacobian is differentiable, the derivative at a base time of its pullback is the
 agrees with the identity to first order at the point. This is the vector-space calculus statement
 underlying the infinitesimal adjoint action of a Lie group.
 
-This supplies a prerequisite for Deliverable A, Layer 1 of
-`TauCetiRoadmap/RepresentationTheory/LieGroups/README.md`.
-
 ## Main result
 
 * `VectorField.hasDerivAt_parametric_pullback`: differentiating the parametric pullback gives the
@@ -29,8 +26,6 @@ This supplies a prerequisite for Deliverable A, Layer 1 of
 
 ## References
 
-* [Lie groups and the Lie algebra correspondence roadmap](https://github.com/TauCetiProject/TauCetiRoadmap/blob/main/TauCetiRoadmap/RepresentationTheory/LieGroups/README.md),
-  Deliverable A, Layer 1, "The infinitesimal adjoint".
 * Sébastien Gouëzel, `Mathlib/Analysis/Calculus/VectorField.lean`, definitions
   `VectorField.pullback` and `VectorField.lieBracket`.
 -/

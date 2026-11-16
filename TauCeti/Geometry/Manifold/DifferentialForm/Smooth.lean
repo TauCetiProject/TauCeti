@@ -308,6 +308,16 @@ theorem eval₂_add_right (φ : SmoothBundleForm I F V 2) (x : M)
   simpa only [eval₂, Matrix.vecCons, ← Fin.cons_update, Fin.update_cons_zero] using
     (φ.1 x).map_update_add ![v, w] (0 : Fin 1).succ w w'
 
+/-- Ordered-pair evaluation vanishes when its first tangent argument is zero. -/
+theorem eval₂_zero_left (φ : SmoothBundleForm I F V 2) (x : M) (w : TangentSpace I x) :
+    φ.eval₂ x 0 w = 0 := by
+  simpa using eval₂_add_left φ x 0 0 w
+
+/-- Ordered-pair evaluation vanishes when its second tangent argument is zero. -/
+theorem eval₂_zero_right (φ : SmoothBundleForm I F V 2) (x : M) (v : TangentSpace I x) :
+    φ.eval₂ x v 0 = 0 := by
+  simpa using eval₂_add_right φ x v 0 0
+
 /-- Real scalar multiplication in the first tangent argument scales the fibre value. -/
 theorem eval₂_smul_left (φ : SmoothBundleForm I F V 2) (x : M)
     (c : ℝ) (v w : TangentSpace I x) :
@@ -335,6 +345,16 @@ theorem eval₂_neg_right (φ : SmoothBundleForm I F V 2) (x : M) (v w : Tangent
   simpa only [eval₂, Matrix.vecCons, ← Fin.cons_update, Fin.update_cons_zero,
     ContinuousAlternatingMap.coe_toAlternatingMap] using
     (φ.1 x).toAlternatingMap.map_update_neg ![v, w] (0 : Fin 1).succ w
+
+/-- Ordered-pair evaluation is subtractive in its first tangent argument. -/
+theorem eval₂_sub_left (φ : SmoothBundleForm I F V 2) (x : M) (v v' w : TangentSpace I x) :
+    φ.eval₂ x (v - v') w = φ.eval₂ x v w - φ.eval₂ x v' w := by
+  rw [sub_eq_add_neg, eval₂_add_left, eval₂_neg_left, ← sub_eq_add_neg]
+
+/-- Ordered-pair evaluation is subtractive in its second tangent argument. -/
+theorem eval₂_sub_right (φ : SmoothBundleForm I F V 2) (x : M) (v w w' : TangentSpace I x) :
+    φ.eval₂ x v (w - w') = φ.eval₂ x v w - φ.eval₂ x v w' := by
+  rw [sub_eq_add_neg, eval₂_add_right, eval₂_neg_right, ← sub_eq_add_neg]
 
 /-- Two smooth bundle-valued two-forms have the same value at a point when their ordered-pair
 evaluations there agree. -/
@@ -374,7 +394,7 @@ theorem contMDiff_eval₂ {n : WithTop ℕ∞} [ENat.LEInfty n]
   have hb : ContMDiff I' I n b := fun y ↦ by
     have hy := hU y
     rw [← contMDiffWithinAt_univ] at hy ⊢
-    exact (contMDiffWithinAt_totalSpace.mp hy).1
+    exact (contMDiffWithinAt_totalSpace_iff.mp hy).1
   have hφ := (φ.toContMDiffSection.contMDiff.of_le ENat.LEInfty.out).comp hb
   have hφ' : ContMDiff I' (I.prod 𝓘(ℝ, E [⋀^Fin 2]→L[ℝ] F)) n
       (fun y ↦ TotalSpace.mk' (E [⋀^Fin 2]→L[ℝ] F)
@@ -480,7 +500,8 @@ theorem isSmoothForm_iff_forall_contMDiffAt_trivializationAt_apply [IsManifold I
       (fun y ↦ φ y ((trivializationAt E (TangentSpace I) x).symmL ℝ y ∘ v)) x := by
   rw [isSmoothForm_def]
   refine forall_congr' fun x ↦ ?_
-  simp only [contMDiffAt_section, FiberBundle.trivializationAt_continuousAlternatingMap_apply_snd,
+  simp only [contMDiffAt_section_iff,
+    FiberBundle.trivializationAt_continuousAlternatingMap_apply_snd,
     contMDiffAt_continuousAlternatingMap_apply,
     ContinuousAlternatingMap.compContinuousLinearMap_apply]
 
@@ -758,7 +779,7 @@ lemma contMDiff_apply {n : WithTop ℕ∞} [ENat.LEInfty n]
   have h := SmoothBundleForm.contMDiff_eval₂ form hV hW
   intro y₀
   have hy := h y₀
-  have hy' := (Bundle.contMDiffAt_totalSpace (IM := I') (IB := I) (n := n)).mp hy
+  have hy' := (Bundle.contMDiffAt_totalSpace_iff (IM := I') (IB := I) (n := n)).mp hy
   simpa [Bundle.Trivial.eq_trivialization, SmoothBundleForm.eval₂] using hy'.2
 
 end Evaluation

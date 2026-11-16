@@ -19,6 +19,8 @@ Affine-map uniqueness, computations and affine-subspace avoidance for `AffineMap
 
 * `AffineMap.ext_of_ne`: affine maps from a division ring that agree at two distinct points are
   equal.
+* `AffineMap.apply_eq_linear_add_apply_zero`: an affine map is its linear part plus its value at
+  `0`.
 * `AffineMap.apply_eq_add_mul_sub`: an affine function on the line is
   `s ↦ f 0 + s * (f 1 - f 0)`.
 * `AffineMap.lineMap_vsub_lineMap_eq_vsub_add_smul_sub_smul`: the difference of points on two
@@ -42,6 +44,11 @@ theorem ext_of_ne {k V P : Type*} [DivisionRing k] [AddCommGroup V] [Module k V]
     rw [lineMap_apply_ring', div_mul_cancel₀ _ (sub_ne_zero.mpr hab.symm)]
     exact (sub_add_cancel c a).symm
   rw [hc, f.apply_lineMap, g.apply_lineMap, ha, hb]
+
+/-- An affine map on a module is its linear part plus its value at `0`. -/
+theorem apply_eq_linear_add_apply_zero {k V W : Type*} [Ring k] [AddCommGroup V] [Module k V]
+    [AddCommGroup W] [Module k W] (f : V →ᵃ[k] W) (x : V) : f x = f.linear x + f 0 := by
+  simpa using congrFun f.decomp x
 
 /-- An affine function on the line is determined by its values at `0` and `1`. -/
 theorem apply_eq_add_mul_sub {k : Type*} [CommRing k] (f : k →ᵃ[k] k) (s : k) :

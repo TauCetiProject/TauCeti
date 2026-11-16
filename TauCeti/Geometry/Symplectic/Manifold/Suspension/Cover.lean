@@ -10,7 +10,7 @@ public import TauCeti.Geometry.Symplectic.Manifold.Orientation
 public import TauCeti.Geometry.Symplectic.Manifold.Prod
 public import TauCeti.Geometry.Symplectic.StandardCompatible
 import TauCeti.Geometry.Manifold.Diffeomorph.Prod
-import TauCeti.Geometry.Manifold.LocalDiffeomorph.Prod
+import TauCeti.Geometry.Manifold.LocalDiffeomorph.Prod.Basic
 
 /-!
 # The covering map of a symplectic suspension
@@ -90,6 +90,20 @@ theorem suspensionCover_eq_suspensionCover_iff {p p' : (ℝ × ℝ) × M} :
 theorem suspensionCover_deck (j k : ℤ) (p : (ℝ × ℝ) × M) :
     suspensionCover φ (p.1 + ((j : ℝ), (k : ℝ)), (φ ^ (-k)) p.2) = suspensionCover φ p :=
   (suspensionCover_eq_suspensionCover_iff φ).2 ⟨j, k, rfl⟩
+
+/-- The deck transformation `((s, t), x) ↦ ((s + 1, t), x)` preserves the covering map. -/
+@[simp]
+theorem suspensionCover_add_fst (p : (ℝ × ℝ) × M) :
+    suspensionCover φ (p.1 + (1, 0), p.2) = suspensionCover φ p := by
+  obtain ⟨⟨s, t⟩, x⟩ := p
+  simp [suspensionCover_apply]
+
+/-- The deck transformation `((s, t), x) ↦ ((s, t + 1), φ⁻¹ x)` preserves the covering map. -/
+@[simp]
+theorem suspensionCover_add_snd_symm (p : (ℝ × ℝ) × M) :
+    suspensionCover φ (p.1 + (0, 1), φ.symm p.2) = suspensionCover φ p := by
+  obtain ⟨⟨s, t⟩, x⟩ := p
+  simp [suspensionCover_apply, mk_add_one]
 
 variable [IsManifold I ∞ M] [T2Space M] [LocallyCompactSpace M]
 

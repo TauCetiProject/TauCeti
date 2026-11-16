@@ -28,6 +28,9 @@ compositions `e.trans e'`, source restrictions `e.restr u`, and coordinate trans
 * `PartialEquiv.preimage_eq_iUnion_symm_image`: if every point of `f ⁻¹' P` lies in the source of
   one of a family of partial equivalences `e x`, the preimage is the union of the images under
   `(e x).symm` of the sets of coordinates which `f ∘ (e x).symm` carries into `P`.
+* `PartialEquiv.preimage_singleton_inter_symm_image_eq_singleton`: the fibre of `f` over `f x`
+  inside `e.symm '' s` is `{x}` when `e x` is the only point of `s` that `f ∘ e.symm` carries to
+  `f x`.
 -/
 
 public section
@@ -94,5 +97,15 @@ theorem preimage_eq_iUnion_symm_image {ι δ : Type*} {f : α → δ}
   · intro hz
     obtain ⟨x, w, hw, rfl⟩ := Set.mem_iUnion.mp hz
     exact (hiff x w (hT x hw)).1 hw
+
+/-- If `e x` lies in a set `s` of coordinates and is the only point of `s` that `f ∘ e.symm`
+carries to `f x`, then the fibre of `f` over `f x` inside `e.symm '' s` is `{x}`. -/
+theorem preimage_singleton_inter_symm_image_eq_singleton {δ : Type*} {f : α → δ} {x : α}
+    (e : PartialEquiv α β) (hx : x ∈ e.source) {s : Set β} (hxs : e x ∈ s)
+    (hisol : ∀ z ∈ s, z ≠ e x → f (e.symm z) ≠ f x) :
+    f ⁻¹' {f x} ∩ e.symm '' s = {x} := by
+  refine Set.eq_singleton_iff_unique_mem.2 ⟨⟨rfl, e x, hxs, e.left_inv hx⟩, ?_⟩
+  rintro _ ⟨hz, z, hzs, rfl⟩
+  rw [not_imp_not.1 (hisol z hzs) hz, e.left_inv hx]
 
 end PartialEquiv

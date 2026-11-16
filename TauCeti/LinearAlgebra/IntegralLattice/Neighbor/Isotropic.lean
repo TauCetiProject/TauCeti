@@ -431,8 +431,6 @@ theorem exists_isNeighbor_of_not_dvd_discriminant (hp : p.Prime) (hp₂ : p ≠ 
     (hv₀ : (p : ℚ)⁻¹ • (v : V) ∉ L.carrier) :
     ∃ M : IntegralLattice V, L.IsNeighbor M p ∧ L.carrier ⊓ M.carrier = L.neighborKernel p v ∧
       (L.IsEven → M.IsEven) := by
-  have : L.IsNondegenerate :=
-    ⟨L.discriminant_pos_iff.mp (Nat.pos_of_ne_zero fun h ↦ hdisc (h ▸ dvd_zero p))⟩
   obtain ⟨w, hw⟩ := L.exists_isCoprime_integralForm hp
     ((Nat.Prime.coprime_iff_not_dvd hp).mpr hdisc) (v := v) fun y hy ↦ hv₀ <| by
       simp [hy, ← Nat.cast_smul_eq_nsmul ℚ, hp.ne_zero]

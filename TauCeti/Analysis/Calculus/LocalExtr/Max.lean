@@ -53,7 +53,7 @@ theorem IsMinFilter.not_both_deriv_neg_max {f g : ℝ → ℝ} {a b x : ℝ}
   rintro ⟨ha, hb⟩
   have hm : ∀ᶠ t in 𝓝[>] x, Max.max (f x) (g x) ≤ Max.max (f t) (g t) :=
     hmin
-  have hfalse : ∀ᶠ t in 𝓝[>] x, False := by
+  have hfalse : ∀ᶠ _ in 𝓝[>] x, False := by
     filter_upwards [hf.eventually_lt_of_neg ha, hg.eventually_lt_of_neg hb, hm]
       with t hft hgt hmt
     exact (not_lt_of_ge hmt) (max_lt

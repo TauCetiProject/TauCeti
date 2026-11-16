@@ -37,9 +37,6 @@ group objects.
 
 The base-change argument follows
 `TauCeti.AlgebraicGeometry.AbelianVariety.IsIsogeny.baseChange`.
-
-This is the base-change stability needed for the central-isogeny interface in Layer 6 of the
-ReductiveGroups roadmap.
 -/
 
 public section

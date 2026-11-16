@@ -71,7 +71,7 @@ variable {K : Type*} [CommRing K] [LinearOrder K] [IsStrictOrderedRing K] {A : M
 strictly positive. -/
 theorem IsIrreducible.isPrimitive_one_add [DecidableEq n] (hA : A.IsIrreducible) :
     (1 + A).IsPrimitive := by
-  choose k hk0 hk using (isIrreducible_iff_exists_pow_pos hA.nonneg).1 hA
+  choose k _ hk using (isIrreducible_iff_exists_pow_pos hA.nonneg).1 hA
   -- A power `N` beyond every `k i j` works, since `(1 + A) ^ N` dominates a positive multiple of
   -- each `A ^ k i j` by the binomial theorem.
   obtain ⟨N, hN, hkN⟩ : ∃ N, 0 < N ∧ ∀ i j, k i j ≤ N :=

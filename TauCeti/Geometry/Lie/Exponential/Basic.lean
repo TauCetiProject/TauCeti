@@ -15,7 +15,7 @@ This file defines the tangent-space exponential of a real Lie group modeled on a
 space by evaluating the canonical invariant one-parameter subgroup at time one. For a
 finite-dimensional smooth Lie group, it transports this construction across the canonical
 equivalence between left-invariant derivations and tangent vectors at the identity to obtain the
-roadmap-facing Lie-group exponential.
+derivation-based Lie-group exponential `lieExp`.
 
 ## Main results
 
@@ -23,6 +23,8 @@ roadmap-facing Lie-group exponential.
 * `mulInvariantExp_smul`: scaling a tangent vector is evaluation at the corresponding time.
 * `mulInvariantOneParameterSubgroup_eq_mulInvariantExp_smul`: the bundled subgroup is the
   exponential along a line.
+* `range_mulInvariantOneParameterSubgroup`: the bundled subgroup traces out the curve
+  `t ↦ mulInvariantExp (t • v)`.
 * `mulInvariantExp_add_smul`: the exponential along a fixed line is a one-parameter subgroup.
 * `mulInvariantExp_nsmul`: natural scaling of a tangent vector becomes a group power.
 * `mulInvariantExp_zero`, `mulInvariantExp_neg`: the identity and inverse laws.
@@ -33,11 +35,6 @@ roadmap-facing Lie-group exponential.
 * `oneParameterSubgroup_eq_mulInvariantOneParameterSubgroup`: the public rewrite theorem exposing
   the transported tangent-space subgroup across the module boundary.
 * `contMDiff_oneParameterSubgroup`: the generated subgroup is smooth in its real parameter.
-
-## References
-
-* [Lie groups and the Lie algebra correspondence roadmap](https://github.com/TauCetiProject/TauCetiRoadmap/blob/main/TauCetiRoadmap/RepresentationTheory/LieGroups/README.md),
-  Deliverable A, Layer 0, "The exponential map".
 -/
 
 public section
@@ -52,7 +49,7 @@ variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
   {G : Type*} [TopologicalSpace G] [ChartedSpace H G] [Group G]
 
 /-- The tangent-space exponential obtained by evaluating the canonical invariant curve at time
-one. This is the tangent-vector precursor of the roadmap's derivation-based `lieExp`. -/
+one. This is the tangent-vector precursor of the derivation-based `lieExp`. -/
 noncomputable def mulInvariantExp [CompleteSpace E]
     [LieGroup I (minSmoothness ℝ 3) G] [T2Space G]
     [BoundarylessManifold I G] (v : GroupLieAlgebra I G) : G :=
@@ -81,6 +78,15 @@ theorem mulInvariantOneParameterSubgroup_eq_mulInvariantExp_smul [CompleteSpace 
     [BoundarylessManifold I G] (v : GroupLieAlgebra I G) (t : ℝ) :
     mulInvariantOneParameterSubgroup v (Multiplicative.ofAdd t) = mulInvariantExp (t • v) := by
   rw [mulInvariantOneParameterSubgroup_apply, mulInvariantExp_smul]
+
+/-- The canonical one-parameter subgroup traces out the curve `t ↦ exp (t v)`. -/
+theorem range_mulInvariantOneParameterSubgroup [CompleteSpace E]
+    [LieGroup I (minSmoothness ℝ 3) G] [T2Space G]
+    [BoundarylessManifold I G] (v : GroupLieAlgebra I G) :
+    Set.range (mulInvariantOneParameterSubgroup v) =
+      Set.range fun t : ℝ ↦ mulInvariantExp (t • v) := by
+  rw [← Multiplicative.ofAdd.surjective.range_comp]
+  exact congrArg Set.range (funext (mulInvariantOneParameterSubgroup_eq_mulInvariantExp_smul v))
 
 /-- The exponential along a line satisfies the one-parameter subgroup law. -/
 @[simp]

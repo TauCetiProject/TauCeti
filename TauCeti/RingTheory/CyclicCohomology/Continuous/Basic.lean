@@ -506,7 +506,7 @@ def continuousCyclicCochains.toCyclicCochains (n : ℕ) :
 @[simp]
 theorem continuousCyclicCochains.coe_toCyclicCochains {n : ℕ}
     (φ : continuousCyclicCochains R A M n) :
-    (toCyclicCochains R A M n φ : MultilinearMap R (fun _ : Fin (n + 1) ↦ A) M) =
+    (toCyclicCochains R A M n φ : MultilinearMap (RingHom.id R) (fun _ : Fin (n + 1) ↦ A) M) =
       (φ : ContinuousMultilinearMap R (fun _ : Fin (n + 1) ↦ A) M).toMultilinearMap :=
   (rfl)
 

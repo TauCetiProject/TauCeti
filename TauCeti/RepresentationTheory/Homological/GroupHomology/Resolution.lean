@@ -43,7 +43,7 @@ namespace Rep
 
 universe u
 
-variable {k G : Type u} [CommRing k] [Group G] [DecidableEq G] (A : Rep.{u} k G)
+variable {k G : Type u} [CommRing k] [Group G] (A : Rep.{u} k G)
 
 /-- **Group homology from a projective resolution, through a comparison map.** For a projective
 resolution `P` of the trivial representation `k` and a chain map `φ` from the bar resolution to `P`

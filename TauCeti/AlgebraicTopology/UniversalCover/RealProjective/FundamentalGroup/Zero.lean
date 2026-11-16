@@ -13,7 +13,9 @@ public import TauCeti.AlgebraicTopology.UniversalCover.RealProjective.Basic
 
 Real projective zero-space is a single point: the unit sphere in `ℝ¹` consists of two antipodal
 points, and the antipodal quotient identifies them. The sibling modules compute the fundamental
-group of `RP¹` and of `RPⁿ` for `2 ≤ n`; this file supplies the remaining boundary case.
+group of `RP¹` (`TauCeti.RealProjectiveSpace.Line.fundamentalGroupMulEquiv`) and of `RPⁿ` for
+`2 ≤ n` (`TauCeti.RealProjectiveSpace.fundamentalGroupMulEquiv`); this file supplies the
+remaining boundary case `n = 0`.
 
 The instance `TauCeti.RealProjectiveSpace.instUniqueZero` gives uniqueness directly. Mathlib's
 generic contractibility instance for a nonempty subsingleton space makes `RP⁰` contractible and
@@ -26,13 +28,6 @@ group.
   is the trivial group `PUnit`.
 * `TauCeti.RealProjectiveSpace.Zero.card_fundamentalGroup`: the fundamental group has one
   element.
-
-## Roadmap
-
-This closes the `n = 0` boundary case of `π₁(RPⁿ)` in Stage 4, item 13 of
-`TauCetiRoadmap/UniversalCovers/README.md`. The `n = 1` case is
-`TauCeti.RealProjectiveSpace.Line.fundamentalGroupMulEquiv`, while
-`TauCeti.RealProjectiveSpace.fundamentalGroupMulEquiv` covers `2 ≤ n`.
 
 ## References
 

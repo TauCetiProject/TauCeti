@@ -145,7 +145,7 @@ theorem IsNaturallyComplete.of_projective [T2Space A] [Module.Finite A M]
   have _ : T2Space M := t2Space_moduleTopology_of_projective
   rw [isNaturallyComplete_iff]
   refine ⟨?_, inferInstance⟩
-  obtain ⟨n, f, g, -, hg, hfg⟩ := Module.Finite.exists_comp_eq_id_of_projective A M
+  obtain ⟨n, f, g, -, _, hfg⟩ := Module.Finite.exists_comp_eq_id_of_projective A M
   have hfc : Continuous f := IsModuleTopology.continuous_of_linearMap f
   have hgc : Continuous g := IsModuleTopology.continuous_of_linearMap g
   have hfg' : ∀ x, f (g x) = x := fun x ↦ congr($hfg x)

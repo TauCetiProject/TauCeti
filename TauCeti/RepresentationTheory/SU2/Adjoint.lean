@@ -73,6 +73,8 @@ The Pauli map is a covering map (`TauCeti.SU2.isCoveringMap_toSO3`).
 * `TauCeti.pauliRotation_eq_one_iff`: the kernel of `U(2) → SO(3)` is the scalar matrices.
 * `TauCeti.SU2.toSO3_eq_one_iff`: the kernel of `SU(2) → SO(3)` is `{1, -1}`.
 * `TauCeti.SU2.ker_toSO3`: the kernel of `SU(2) → SO(3)` is the center of `SU(2)`.
+* `TauCeti.SU2.mem_center_iff`: the center of `SU(2)` is `{1, -1}`.
+* `TauCeti.SU2.center_ne_top`: `SU(2)` is not commutative.
 * `TauCeti.SU2.coe_toSO3_torusHom`: the maximal torus `diag (z, z⁻¹)` maps to the rotations about
   the axis `(0, 0, 1)`.
 * `TauCeti.SU2.toSO3_surjective`: `SU(2) → SO(3)` is surjective.
@@ -345,6 +347,12 @@ theorem ker_toSO3 : toSO3.ker = Subgroup.center SU2 := by
       exact (smul_right_injective _ I_ne_zero h).symm
     exact ⟨_, eq_smul_one_of_commute_pauli (hcomm 2) (hcomm 0)⟩
 
+/-- **The center of `SU(2)` is `{1, -1}`.** -/
+theorem mem_center_iff {g : SU2} :
+    g ∈ Subgroup.center SU2 ↔
+      (g : Matrix (Fin 2) (Fin 2) ℂ) = 1 ∨ (g : Matrix (Fin 2) (Fin 2) ℂ) = -1 := by
+  rw [← ker_toSO3, MonoidHom.mem_ker, toSO3_eq_one_iff]
+
 /-- Conjugation by the torus element `diag (z, z⁻¹)` acts on `ℝ³` by the rotation about the axis
 `(0, 0, 1)` by the angle `-2 arg z`. -/
 private theorem pauliCoord_torusMatrix_mul_pauli_mul_star (z : Circle) (x : Fin 3 → ℝ) :
@@ -388,6 +396,20 @@ theorem toSO3_torusExp_eq_one_iff {θ : ℝ} : toSO3 (torusExp θ) = 1 ↔ ∃ n
     · simpa using congrFun (congrFun h 0) 1
   rw [h, Circle.exp_eq_one]
   exact exists_congr fun n ↦ ⟨fun h ↦ by linarith, fun h ↦ by linarith⟩
+
+/-- `SU(2)` is not commutative: its centre is not the whole group. The torus element
+`diag (i, -i)` is not central, since its image in `SO(3)`, the rotation by `π`, is not the
+identity. -/
+theorem center_ne_top : Subgroup.center SU2 ≠ ⊤ := by
+  intro h
+  have hmem : torusExp (Real.pi / 2) ∈ toSO3.ker := ker_toSO3 ▸ h ▸ Subgroup.mem_top _
+  obtain ⟨n, hn⟩ := toSO3_torusExp_eq_one_iff.mp (MonoidHom.mem_ker.mp hmem)
+  -- `π / 2 = n π` forces `2 n = 1`, impossible in `ℤ`.
+  have h2 : ((2 * n : ℤ) : ℝ) = 1 := by
+    push_cast
+    nlinarith [Real.pi_pos]
+  have : 2 * n = 1 := by exact_mod_cast h2
+  omega
 
 /-- The fixed rotation of coordinates `x ↦ (x₁, -x₂, -x₀)` carrying the Pauli coordinates to the
 coordinates of `TauCeti.realCliffordThreeZeroPureQuaternionEquiv`. -/

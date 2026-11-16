@@ -25,7 +25,8 @@ GNS construction shows that every positive-definite function arises this way. Th
 feature vectors preserves the kernel, so it extends to a unitary representation in which
 `gnsVector 1` is a cyclic vector with coefficient `φ`. Any other unitary representation with a
 vector whose coefficient is `φ` receives an intertwining linear isometry from the GNS space, which
-is onto when that vector is cyclic.
+is onto when that vector is cyclic. When `φ` vanishes at infinity, so does every coefficient of
+its GNS representation, since the GNS vectors span a dense subspace.
 
 ## Main declarations
 
@@ -34,6 +35,8 @@ is onto when that vector is cyclic.
 * `Matrix.PosSemidef.gnsRepresentation`: the GNS unitary representation of a positive-definite
   function, with `Matrix.PosSemidef.isUnitary_gnsRepresentation` and
   `Matrix.PosSemidef.inner_gnsVector_one_gnsRepresentation`.
+* `Matrix.PosSemidef.tendsto_inner_gnsRepresentation_cofinite`: the GNS representation of a
+  positive-definite function vanishing at infinity has coefficients vanishing at infinity.
 * `Matrix.PosSemidef.gnsIsometry` and `Matrix.PosSemidef.gnsEquiv`: the universal property of
   the GNS representation.
 * `TauCeti.posSemidef_inv_mul_iff_exists_isUnitary`: a function on a group is positive definite
@@ -49,7 +52,7 @@ public section
 
 noncomputable section
 
-open InnerProductSpace
+open Filter InnerProductSpace Topology
 open scoped ComplexConjugate ComplexOrder
 
 namespace ContRepresentation.IsUnitary
@@ -167,6 +170,65 @@ theorem norm_gnsVector_sub_sq (g h : G) :
   rw [@norm_sub_sq 𝕜, ← inner_self_eq_norm_sq (𝕜 := 𝕜), ← inner_self_eq_norm_sq (𝕜 := 𝕜)]
   simp only [inner_gnsVector, inv_mul_cancel]
   ring
+
+/-- If a positive-definite function vanishes at infinity, then so does every coefficient
+`g ↦ ⟪x, π g y⟫` of its GNS representation `π`. -/
+theorem tendsto_inner_gnsRepresentation_cofinite (hφ0 : Tendsto φ cofinite (𝓝 0))
+    (x y : hφ.gnsSpace) :
+    Tendsto (fun g ↦ ⟪x, hφ.gnsRepresentation g y⟫_𝕜) cofinite (𝓝 0) := by
+  set S := Submodule.span 𝕜 (Set.range hφ.gnsVector)
+  -- Coefficients of GNS vectors are translates of `φ`, so the claim holds on the span `S`.
+  have hS : ∀ x ∈ S, ∀ y ∈ S,
+      Tendsto (fun g ↦ ⟪x, hφ.gnsRepresentation g y⟫_𝕜) cofinite (𝓝 0) := by
+    intro x hx y hy
+    induction hx using Submodule.span_induction with
+    | mem _ hx =>
+      obtain ⟨a, rfl⟩ := hx
+      induction hy using Submodule.span_induction with
+      | mem _ hy =>
+        obtain ⟨b, rfl⟩ := hy
+        have hinj : Function.Injective fun g : G ↦ a⁻¹ * (g * b) :=
+          fun g k h ↦ mul_right_cancel (mul_left_cancel h)
+        simpa [Function.comp_def] using hφ0.comp hinj.tendsto_cofinite
+      | zero => simpa using tendsto_const_nhds
+      | add _ _ _ _ h₁ h₂ => simpa [inner_add_right] using h₁.add h₂
+      | smul c _ _ h => simpa [inner_smul_right] using h.const_mul c
+    | zero => simpa using tendsto_const_nhds
+    | add _ _ _ _ h₁ h₂ => simpa [inner_add_left] using h₁.add h₂
+    | smul c _ _ h => simpa [inner_smul_left] using h.const_mul (conj c)
+  -- A function uniformly approximated by functions vanishing at infinity vanishes at infinity.
+  have hlim (f : G → 𝕜) (hf : ∀ ε > 0, ∃ f' : G → 𝕜,
+      Tendsto f' cofinite (𝓝 0) ∧ ∀ g, ‖f g - f' g‖ < ε) : Tendsto f cofinite (𝓝 0) := by
+    refine Metric.tendsto_nhds.mpr fun ε hε ↦ ?_
+    obtain ⟨f', hf', hclose⟩ := hf (ε / 2) (half_pos hε)
+    filter_upwards [Metric.tendsto_nhds.mp hf' (ε / 2) (half_pos hε)] with g hg
+    rw [dist_zero_right] at hg ⊢
+    linarith [norm_sub_norm_le (f g) (f' g), hclose g]
+  have hdense (z : hφ.gnsSpace) {δ : ℝ} (hδ : 0 < δ) : ∃ z' ∈ S, ‖z - z'‖ < δ := by
+    have hz : z ∈ closure (S : Set hφ.gnsSpace) := by
+      rw [← Submodule.topologicalClosure_coe, hφ.gnsVector_dense]
+      trivial
+    simpa only [dist_eq_norm, SetLike.mem_coe] using Metric.mem_closure_iff.mp hz δ hδ
+  have hπ := hφ.isUnitary_gnsRepresentation
+  -- Approximate `x` and then `y` by elements of `S`, using `‖⟪u, π g v⟫‖ ≤ ‖u‖ * ‖v‖`.
+  have hS' : ∀ y ∈ S, Tendsto (fun g ↦ ⟪x, hφ.gnsRepresentation g y⟫_𝕜) cofinite (𝓝 0) := by
+    intro y hy
+    refine hlim _ fun ε hε ↦ ?_
+    obtain ⟨x', hx', hxx'⟩ := hdense x (div_pos hε (by positivity : (0 : ℝ) < ‖y‖ + 1))
+    refine ⟨_, hS x' hx' y hy, fun g ↦ ?_⟩
+    rw [← inner_sub_left]
+    have h := (lt_div_iff₀ (by positivity : (0 : ℝ) < ‖y‖ + 1)).mp hxx'
+    calc ‖⟪x - x', hφ.gnsRepresentation g y⟫_𝕜‖
+        ≤ ‖x - x'‖ * ‖hφ.gnsRepresentation g y‖ := norm_inner_le_norm _ _
+      _ < ε := by rw [hπ.norm_map]; nlinarith [norm_nonneg (x - x')]
+  refine hlim _ fun ε hε ↦ ?_
+  obtain ⟨y', hy', hyy'⟩ := hdense y (div_pos hε (by positivity : (0 : ℝ) < ‖x‖ + 1))
+  refine ⟨_, hS' y' hy', fun g ↦ ?_⟩
+  rw [← inner_sub_right, ← map_sub]
+  have h := (lt_div_iff₀ (by positivity : (0 : ℝ) < ‖x‖ + 1)).mp hyy'
+  calc ‖⟪x, hφ.gnsRepresentation g (y - y')⟫_𝕜‖
+      ≤ ‖x‖ * ‖hφ.gnsRepresentation g (y - y')‖ := norm_inner_le_norm _ _
+    _ < ε := by rw [hπ.norm_map]; nlinarith [norm_nonneg (y - y'), norm_nonneg x]
 
 section Universal
 

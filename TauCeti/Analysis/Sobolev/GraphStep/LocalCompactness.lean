@@ -59,7 +59,7 @@ theorem isCompactOperator_restrictBaseL [FiniteDimensional ℝ F]
     IsCompactOperator (restrictBaseL base (SetLike.coe_subset_coe.mp
       (subset_closure.trans hVO))) := by
   let hV : V ≤ Omega := SetLike.coe_subset_coe.mp (subset_closure.trans hVO)
-  refine isCompactOperator_of_forall_isCompactOperator_compLpL_comp _ fun ℓ ↦ ?_
+  refine isCompactOperator_of_forall_isCompactOperator_compLpL_comp ℝ fun ℓ ↦ ?_
   have heq : (ℓ.compLpL p (mu.restrict V)).comp (restrictBaseL base hV) =
       ((W1p.valueL (mu := mu) (Omega := V) (p := p)).comp (W1p.restrictL hV)).comp
         (toW1pL base ℓ) := by
@@ -74,7 +74,7 @@ theorem isCompactOperator_restrictBaseL [FiniteDimensional ℝ F]
     rw [value_toW1pL]
     exact (ℓ.coeFn_compLpL (base (prev base u))).symm.filter_mono
       (ae_mono (Measure.restrict_mono_set mu (SetLike.coe_subset_coe.mpr hV)))
-  rw [heq]
+  rw [← ContinuousLinearMap.coe_comp, heq]
   exact (W1p.isCompactOperator_valueL_restrictL hVc hVO).comp_clm (toW1pL base ℓ)
 
 /-- Restriction of `W^{1,2}(ℝ, F)` paths to a bounded interval, scaled by a constant, is

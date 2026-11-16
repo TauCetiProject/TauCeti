@@ -160,7 +160,6 @@ theorem cliffordMultiplicityRepresentation_mk_apply (p : implementers A)
       W.ρ p.1.1 (f.hom.hom.hom (p.1.2.symm x)) := (rfl)
 
 /-- A kernel unit acts on `Hom_N(A,W)` by precomposition with its inverse. -/
-@[simp]
 theorem cliffordMultiplicityRepresentation_mk_kernelLift (d : (End A)ˣ)
     (f : A ⟶ (Action.res (FGModuleCat k) (Subgroup.inclusion (le_inertia A))).obj W) :
     cliffordMultiplicityRepresentation A W (QuotientGroup.mk (kernelLift A d)) f =

@@ -100,6 +100,10 @@ spanning the matched subalgebra are generators.
   `TauCeti.StrandsAlgebra.matchedIdem_mul_matchedIdem`: the `I(s)` are orthogonal idempotents of the
   matched subalgebra.
 * `TauCeti.StrandsAlgebra.differential_matchedIdem`: the `I(s)` are cycles.
+* `TauCeti.StrandsAlgebra.matchedIdem_ne_zero`,
+  `TauCeti.StrandsAlgebra.matchedIdem_mul_matchedIdem_ne_zero_iff`: over a nontrivial semiring
+  `I(s)` is nonzero when every element of `s` is a value of `M`, so `I(s) I(t) ≠ 0` exactly when
+  `s = t`.
 * `TauCeti.StrandsAlgebra.horizontalCompletion_mul_horizontalCompletion`: the product of two
   generators.
 * `TauCeti.StrandsAlgebra.matchedOne_mul`, `TauCeti.StrandsAlgebra.mul_matchedOne`: `∑ₛ I(s)` is
@@ -119,6 +123,10 @@ spanning the matched subalgebra are generators.
   `a(ρ, h)` is the matched subalgebra.
 * `TauCeti.StrandsAlgebra.differential_mem_matchedAlgebra`: the algebra of a matching is closed
   under the differential.
+* `TauCeti.StrandsAlgebra.repr_matchedIdem_apply_idOn`: the coefficient of `I(s)` at the identity
+  diagram of a set of points over `s` is `1`.
+* `TauCeti.StrandsAlgebra.repr_apply_idOn_eq`: an element of the matched subalgebra takes the same
+  value at the identity diagrams of any two sets of points over the same pairs.
 
 ## References
 
@@ -272,13 +280,9 @@ def matchedSubalgebra (M : α → β) : NonUnitalSubalgebra R (StrandsAlgebra R 
     refine ⟨fun χ hχ ↦ ?_, fun χ a b hab ↦ ?_⟩
     · -- A diagram in a product starts where a diagram of `x` starts and ends where one of `y`
       -- ends.
-      rw [repr_mul_apply] at hχ
-      obtain ⟨φ, -, hφ⟩ := exists_ne_zero_of_sum_ne_zero hχ
-      obtain ⟨ψ, -, hψ⟩ := exists_ne_zero_of_sum_ne_zero hφ
-      rw [ne_eq, ite_eq_right_iff, not_imp] at hψ
-      obtain ⟨⟨hc, rfl⟩, hψ⟩ := hψ
+      obtain ⟨φ, ψ, hc, rfl, hφ, hψ⟩ := exists_of_repr_mul_ne_zero hχ
       rw [source_trans_of_target_eq hc.target_eq, target_trans_of_target_eq hc.target_eq]
-      exact ⟨(hx.1 φ (left_ne_zero_of_mul hψ)).1, (hy.1 ψ (right_ne_zero_of_mul hψ)).2⟩
+      exact ⟨(hx.1 φ hφ).1, (hy.1 ψ hψ).2⟩
     -- Reduce to a diagram `χ` with a horizontal strand at `a` that can move to `b`.
     wlog hχ : χ.CanMoveHorizontal a b generalizing a b
     · by_cases hχ' : χ.CanMoveHorizontal b a
@@ -447,6 +451,31 @@ theorem isIdempotentElem_matchedIdem (M : α → β) (s : Finset β) :
     IsIdempotentElem (matchedIdem R M s) := by
   simp [IsIdempotentElem, matchedIdem_mul_matchedIdem]
 
+/-- The idempotent `I(s)` of a set `s` of values of `M` is nonzero over a nontrivial semiring:
+choosing one point over each element of `s` gives an identity diagram with coefficient `1`. -/
+theorem matchedIdem_ne_zero [Nontrivial R] {M : α → β} {s : Finset β}
+    (hs : (s : Set β) ⊆ Set.range M) : matchedIdem R M s ≠ 0 := by
+  choose f hf using fun b : s ↦ hs b.2
+  have hf' : Function.Injective f := fun b c h ↦ Subtype.ext (by simpa [hf] using congrArg M h)
+  have hS : (s.attach.image f).image M = s := by
+    ext b
+    simp [hf]
+  have hcard : #(s.attach.image f) = #s := by
+    rw [card_image_of_injective _ hf', card_attach]
+  intro h
+  have h' := congrArg (fun x ↦ (basis R α).repr x (idOn (s.attach.image f))) h
+  simp [repr_matchedIdem_apply, hS, hcard] at h'
+
+/-- The idempotents `I(s)` of two sets of values of `M` multiply to a nonzero element exactly when
+the sets agree. -/
+theorem matchedIdem_mul_matchedIdem_ne_zero_iff [Nontrivial R] {M : α → β} {s t : Finset β}
+    (hs : (s : Set β) ⊆ Set.range M) :
+    matchedIdem R M s * matchedIdem R M t ≠ 0 ↔ s = t := by
+  rw [matchedIdem_mul_matchedIdem]
+  split_ifs with hst
+  · exact iff_of_true (matchedIdem_ne_zero hs) hst
+  · exact iff_of_false (fun h ↦ h rfl) hst
+
 end Idempotents
 
 /-! ### The matched completion sums -/
@@ -562,6 +591,19 @@ theorem mem_matchedChoices {h : Finset β} {U : Finset α} :
   simp only [matchedChoices, mem_filter, mem_univ, true_and]
   refine and_congr_right fun hU ↦ ?_
   rw [← card_image_iff, hU, eq_comm]
+
+omit [LinearOrder α] in
+/-- There is a choice of one point of each pair in `h` exactly when `h` consists of pairs of
+`M`. -/
+@[simp]
+theorem matchedChoices_nonempty_iff {h : Finset β} :
+    (matchedChoices M h).Nonempty ↔ h ⊆ univ.image M := by
+  refine ⟨fun ⟨U, hU⟩ ↦ (mem_matchedChoices.1 hU).1 ▸ image_subset_image (subset_univ U),
+    fun hh ↦ ?_⟩
+  classical
+  obtain ⟨u, -, hu, hus⟩ :=
+    exists_subset_injOn_image_eq_of_surjOn Set.univ h fun b hb ↦ by simpa using hh hb
+  exact ⟨u, mem_matchedChoices.2 ⟨hus, hu⟩⟩
 
 variable (M) in
 /-- The element `a(ρ, h)` of the algebra of the matching `M`: the sum of the diagrams obtained from
@@ -906,6 +948,12 @@ theorem isMatchedGenerator_idOn_empty (s : Finset β) :
   disjoint_source := by simp
   disjoint_target := by simp
 
+/-- The single strand of a chord `i < j`, with no horizontal strands added, indexes a generator. -/
+theorem isMatchedGenerator_single_empty {i j : α} (h : i < j) :
+    IsMatchedGenerator M (single i j h.le) ∅ :=
+  ⟨fun _ hk ↦ h.ne ((mem_single.1 hk).1.symm.trans (mem_single.1 hk).2), by simp, by simp,
+    disjoint_empty_right _, disjoint_empty_right _⟩
+
 /-- The idempotent `I(s)` is the generator `a(∅, s)`: the empty diagram with a horizontal strand
 added at one point of each pair in `s`. -/
 theorem matchedIdem_eq_horizontalCompletion (s : Finset β) :
@@ -1224,6 +1272,32 @@ theorem differential_mem_matchedAlgebra {x : StrandsAlgebra R α} (hx : x ∈ ma
   exact differential_mem_matchedSubalgebra hx
 
 end Span
+
+/-! ### The idempotents `I(s)` and the identity diagrams -/
+
+section IdemIdOn
+
+variable [DecidableEq β] {M : α → β} {s : Finset β}
+
+/-- The coefficient of `I(s)` at the identity diagram of a set `S` of points over `s` is `1`. -/
+@[simp]
+theorem repr_matchedIdem_apply_idOn {S : Finset α} (hS : S ∈ matchedChoices M s) :
+    (basis R α).repr (matchedIdem R M s) (idOn S) = 1 := by
+  rw [mem_matchedChoices] at hS
+  have hcard : #S = #s := by rw [← hS.1, card_image_of_injOn hS.2]
+  simp [repr_matchedIdem_apply, hS.1, hcard]
+
+/-- An element of the matched subalgebra takes the same value at the identity diagrams of any two
+sets of points over the same pairs: they differ by moving horizontal strands within matched
+pairs. -/
+theorem repr_apply_idOn_eq {x : StrandsAlgebra R α} (hx : x ∈ matchedSubalgebra R M)
+    {S T : Finset α} (hS : S ∈ matchedChoices M s) (hT : T ∈ matchedChoices M s) :
+    (basis R α).repr x (idOn S) = (basis R α).repr x (idOn T) := by
+  refine repr_eq_of_matchedSetoid hx ?_
+  simpa [idOn_addHorizontal] using
+    (isMatchedGenerator_idOn_empty M s).matchedSetoid_addHorizontal hS hT
+
+end IdemIdOn
 
 /-! ### The unit of the matched subalgebra -/
 

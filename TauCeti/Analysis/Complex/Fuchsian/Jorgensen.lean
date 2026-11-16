@@ -111,8 +111,6 @@ open Matrix.SpecialLinearGroup (dilation dilation_inv dilation_zpow conj_dilatio
   dilation_conj_apply_one_one diag_or_antidiag_of_conj_dilation trace_dilation
   trace_commutatorElement_dilation exists_tendsto_dilation_conj trace_mul_mul_inv)
 
-attribute [local simp] Matrix.adjugate_fin_two
-
 /-! ### Jørgensen's sequence for a dilation -/
 
 /-- The off-diagonal products `βₙ` of the iteration satisfy `βₙ₊₁ = -(1 + βₙ) βₙ (u - u⁻¹)²`. -/
@@ -320,7 +318,7 @@ theorem one_le_abs_trace_sq_sub_four_add_abs_trace_commutatorElement_sub_two_of_
     exact (Subgroup.inv_mul_mul_mem_conjAct_smul_iff (P : PSL(2, ℝ)) _ Γ).2 hB
   rw [mk_inv_mul_mul, hAg] at hD
   group at hD
-  set X : SL(2, ℝ) := P⁻¹ * B * P with hX
+  set X : SL(2, ℝ) := P⁻¹ * B * P
   have hXcoe : (X : PSL(2, ℝ)) = (P : PSL(2, ℝ))⁻¹ * B * P := mk_inv_mul_mul P B
   -- the exceptional cases correspond under the change of frame
   have hconj (y : PSL(2, ℝ))

@@ -111,9 +111,6 @@ private theorem affineAtWorstNodalOfRelativeDimensionOne_of_baseChange_field
   have H : IsPullback (pullback.fst _ _) (X' ↘ Spec (.of K)) (X ↘ Spec (.of R))
       (Spec.map (CommRingCat.ofHom (algebraMap R K))) := IsPullback.of_hasPullback _ _
   have hs := (Scheme.isPullback_singularLocus_subschemeι H).flip.paste_vert H
-  -- Fixing the universe lets instance search find isomorphism invariance.
-  have : MorphismProperty.RespectsIso @FormallyUnramified.{u} :=
-    MorphismProperty.IsStableUnderBaseChange.respectsIso
   have hu : FormallyUnramified (hs.isoPullback.hom ≫
       pullback.snd ((X.singularLocus R).subschemeι ≫ (X ↘ Spec (.of R)))
         (Spec.map (CommRingCat.ofHom (algebraMap R K)))) := by

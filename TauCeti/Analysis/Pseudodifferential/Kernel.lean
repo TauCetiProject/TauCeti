@@ -10,7 +10,6 @@ public import TauCeti.Analysis.Pseudodifferential.Symbol.Basic
 import Mathlib.Analysis.Calculus.ContDiff.Bounds
 import Mathlib.Analysis.Calculus.LineDeriv.IntegrationByParts
 import Mathlib.Analysis.Calculus.ParametricIntegral
-import Mathlib.Analysis.Distribution.AEEqOfIntegralContDiff
 import Mathlib.Analysis.SpecialFunctions.JapaneseBracket
 import Mathlib.Analysis.Fourier.FourierTransformDeriv
 import TauCeti.Analysis.Calculus.IteratedFDeriv.Prod
@@ -61,6 +60,8 @@ the diagonal.
 * `TauCeti.contDiff_quantizationKernel_of_bound` and `TauCeti.Symbol.contDiff_quantizationKernel`:
   **smoothness**, the kernel of a coefficient of order `m` is `C^k` when `m + k < -n`; each
   derivative of the integrand in `(x, y)` costs one power of the frequency.
+* `TauCeti.Symbol.IsSmoothing.contDiff_quantizationKernel`: the kernel of a smoothing symbol is
+  `C^∞`.
 * `TauCeti.Symbol.quantizationKernel_frequencyLaplacian` and
   `TauCeti.Symbol.quantizationKernel_frequencyLaplacianPow_add`: for `m < -n` the kernel of the
   frequency Laplacian `Δ_ξ a` is `-‖x - y‖² K_a(x, y)`, and iterating, the kernel of
@@ -270,7 +271,7 @@ private theorem norm_iteratedFDeriv_kernelIntegrand_le {a : E × E → V →L[�
         ‖iteratedFDeriv ℝ (i - j) (fun p : E × E ↦ a (p.1, ξ)) p‖
       ≤ ∑ j ∈ Finset.range (i + 1), (i.choose j : ℝ) * (2 * ‖ξ‖) ^ j *
         (C * (1 + ‖ξ‖ ^ 2) ^ (m / 2)) := by
-        gcongr with j hj
+        gcongr with j _
         · exact he_le j
         · exact hg_le (i - j) (Nat.sub_le i j)
     _ = C * (1 + 2 * ‖ξ‖) ^ i * (1 + ‖ξ‖ ^ 2) ^ (m / 2) := by
@@ -328,7 +329,7 @@ theorem contDiff_quantizationKernel_of_bound {a : E × E → V →L[ℂ] W} {k :
         (ContinuousMultilinearMap ℝ (fun _ : Fin i ↦ E × E) (V →L[ℂ] W)) :=
       @PseudoEMetricSpace.pseudoMetrizableSpace
         (ContinuousMultilinearMap ℝ (fun _ : Fin i ↦ E × E) (V →L[ℂ] W)) _
-    simp only [ftaylorSeries, _root_.ContDiff.iteratedFDeriv_prod_left hΦ i (mod_cast hi')]
+    simp only [ftaylorSeries, hΦ.contDiffAt.iteratedFDeriv_prod_left i (mod_cast hi')]
     exact ((ContinuousMultilinearMap.compContinuousLinearMapL _).continuous.comp
       ((hΦ.continuous_iteratedFDeriv (mod_cast hi')).comp
         (continuous_const.prodMk continuous_id))).aestronglyMeasurable
@@ -374,24 +375,11 @@ then `K` is the kernel `y ↦ K_a(x, y)`. -/
 theorem eq_quantizationKernel_of_forall [CompleteSpace V] [CompleteSpace W] {K : E → V →L[ℂ] W}
     (hK : Continuous K) (ha : Integrable (fun ξ ↦ a (x, ξ)))
     (h : ∀ u : 𝓢(E, V), quantizeSchwartzValue a u x = ∫ y, K y (u y)) :
-    K = quantizationKernel a x := by
-  have hK₀ := continuous_quantizationKernel_right ha
-  funext y
-  ext v
-  -- Test against `y ↦ g(y) v` for smooth compactly supported real `g`.
-  have hae : ∀ᵐ y, K y v = quantizationKernel a x y v := by
-    refine ae_eq_of_integral_contDiff_smul_eq (hK.clm_apply continuous_const).locallyIntegrable
-      (hK₀.clm_apply continuous_const).locallyIntegrable fun g hg hgs ↦ ?_
-    have hgc : ContDiff ℝ ∞ (fun y ↦ (g y : ℂ) • v) :=
-      (Complex.ofRealCLM.contDiff.comp hg).smul contDiff_const
-    have hgcs : HasCompactSupport (fun y ↦ (g y : ℂ) • v) :=
-      (hgs.comp_left Complex.ofReal_zero).smul_right
-    have hpt (L : E → V →L[ℂ] W) (y : E) : g y • L y v = L y ((hgcs.toSchwartzMap hgc) y) := by
-      rw [HasCompactSupport.toSchwartzMap_toFun, map_smul, Complex.coe_smul]
-    simp_rw [hpt K, hpt (quantizationKernel a x), ← h,
-      quantizeSchwartzValue_eq_integral_quantizationKernel ha]
-  exact congrFun ((hK.clm_apply continuous_const).ae_eq_iff_eq volume
-    (hK₀.clm_apply continuous_const) |>.1 hae) y
+    K = quantizationKernel a x :=
+  funext fun y ↦ isOpen_univ.eqOn_of_integral_clm_apply_eq (μ := volume) hK.continuousOn
+    (continuous_quantizationKernel_right ha).continuousOn
+    (fun u _ _ ↦ by rw [← h, quantizeSchwartzValue_eq_integral_quantizationKernel ha])
+    (Set.mem_univ y)
 
 /-- **Multiplication by the displacement.** If `ξ ↦ a(x, ξ)` has line derivative `a'(x, ξ)` in
 the direction `v` and both are integrable, then `⟪x - y, v⟫ K_a(x, y) = i K_{a'}(x, y)`. In terms
@@ -534,6 +522,15 @@ theorem contDiff_quantizationKernel (b : Symbol n V W m) (k : ℕ) (hk : m + k <
         gcongr
         exact Finset.single_le_sum (f := fun i ↦ ∑ r : Fin i → Fin n, C (List.ofFn r))
           (fun i _ ↦ Finset.sum_nonneg fun r _ ↦ hC0 _) (Finset.mem_range.2 (Nat.lt_succ_of_le hi))
+
+/-- **The kernel of a smoothing symbol is smooth.** A smoothing symbol has a coefficient of every
+order, so its kernel is `C^k` for every `k` by `TauCeti.Symbol.contDiff_quantizationKernel`. -/
+theorem IsSmoothing.contDiff_quantizationKernel {a : Symbol n V W m} (ha : a.IsSmoothing) :
+    ContDiff ℝ ∞ (Function.uncurry (quantizationKernel a.coefficient)) :=
+  contDiff_infty.2 fun k ↦ by
+    obtain ⟨b, hb⟩ := isSmoothing_iff.1 ha (-n - k - 1)
+    rw [← hb]
+    exact b.contDiff_quantizationKernel k (by linarith)
 
 /-! ### The frequency Laplacian and multiplication by `‖x - y‖²` -/
 

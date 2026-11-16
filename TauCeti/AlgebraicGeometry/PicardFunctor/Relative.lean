@@ -37,6 +37,8 @@ presheaf.
 
 * `TauCeti.AlgebraicGeometry.relativePicardPresheaf`: the presheaf of commutative groups
   `T ↦ Pic(X_T) / Pic(T)` on schemes over `S`;
+* `TauCeti.AlgebraicGeometry.relativePicardPresheafObjMulEquiv`: its value at a scheme `T` with
+  trivial Picard group, such as the spectrum of a field, is `Pic(X_T)`;
 * `TauCeti.AlgebraicGeometry.rigidifiedPicardFunctorIso`: the rigidified Picard functor of
   `(X, x₀)` is naturally isomorphic to the relative Picard presheaf, as presheaves of commutative
   groups.
@@ -109,6 +111,32 @@ lemma relativePicardPresheaf_map_mk {T T' : (Over S)ᵒᵖ} (φ : T ⟶ T')
       QuotientGroup.mk (LineBundleClass.pullback ((Over.pullback f).map φ.unop).left a) :=
   (QuotientGroup.map_mk _ _ _ (range_pullbackHom_fst_le_comap f φ.unop) a).trans
     (by rw [LineBundleClass.pullbackHom_apply])
+
+/-- **`Pic(X_T) / Pic(T)` is `Pic(X_T)` when `T` has trivial Picard group**, for instance when `T`
+is the spectrum of a field or of a local ring
+(`TauCeti.AlgebraicGeometry.LineBundleClass.subsingleton_spec_of_isLocalRing`): no nontrivial
+class is pulled back from `T`, so the quotient map is an isomorphism. -/
+def relativePicardPresheafObjMulEquiv (T : (Over S)ᵒᵖ)
+    [Subsingleton (LineBundleClass T.unop.left)] :
+    (relativePicardPresheaf f).obj T ≃* LineBundleClass (pullback T.unop.hom f) :=
+  (QuotientGroup.quotientMulEquivOfEq (MonoidHom.range_eq_bot_iff.mpr
+    (MonoidHom.ext fun a ↦ by rw [Subsingleton.elim a 1, map_one, MonoidHom.one_apply]))).trans
+    QuotientGroup.quotientBot
+
+/-- The isomorphism `relativePicardPresheafObjMulEquiv` sends the image in `Pic(X_T) / Pic(T)` of
+a line-bundle class on `X_T` to that class. -/
+@[simp]
+lemma relativePicardPresheafObjMulEquiv_mk (T : (Over S)ᵒᵖ)
+    [Subsingleton (LineBundleClass T.unop.left)] (a : LineBundleClass (pullback T.unop.hom f)) :
+    relativePicardPresheafObjMulEquiv f T (QuotientGroup.mk a) = a :=
+  (rfl)
+
+/-- The inverse of `relativePicardPresheafObjMulEquiv` is the quotient map. -/
+@[simp]
+lemma relativePicardPresheafObjMulEquiv_symm_apply (T : (Over S)ᵒᵖ)
+    [Subsingleton (LineBundleClass T.unop.left)] (a : LineBundleClass (pullback T.unop.hom f)) :
+    (relativePicardPresheafObjMulEquiv f T).symm a = QuotientGroup.mk a :=
+  (MulEquiv.symm_apply_eq _).mpr (relativePicardPresheafObjMulEquiv_mk f T a).symm
 
 variable (x₀ : S ⟶ X) (hx₀ : x₀ ≫ f = 𝟙 S)
 

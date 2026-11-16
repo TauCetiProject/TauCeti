@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Topology.Homotopy.HomotopyGroup.ConnectedMap
+public import TauCeti.Topology.Homotopy.HomotopyGroup.ConnectedMap.Basic
 public import TauCeti.Topology.Homotopy.SerreFibration.Exact
 
 /-!
@@ -26,7 +26,10 @@ points at which to evaluate homotopy groups.
 Dually, over an `n`-connected base the fibre is `n`-connected in the total space: if `π_k(B, b)` is
 trivial for every `k ≤ n` (for `k = 0` this says that `B` is path-connected), then the inclusion
 of the fibre `p⁻¹(b) → E` is an `n`-connected map
-(`TauCeti.TopCat.isNConnected_fiberι_of_mem_serreFibrations`).
+(`TauCeti.TopCat.isNConnected_fiberι_of_mem_serreFibrations`). In the opposite range, where the
+base has no homotopy, the fibre inclusion is bijective: if `π_{k+1}(B, b)` and `π_{k+2}(B, b)` are
+trivial, it induces a bijection `π_{k+1}(p⁻¹(b)) → π_{k+1}(E)`
+(`TauCeti.TopCat.bijective_homotopyGroupMap_fiberι_of_mem_serreFibrations`).
 
 ## Implementation notes
 
@@ -50,6 +53,8 @@ of `p` to a point `b` lifts to a point of the fibre over `b`
   weak homotopy equivalence exactly when its fibres are nonempty and weakly contractible.
 * `TauCeti.TopCat.isNConnected_fiberι_of_mem_serreFibrations`: over an `n`-connected base, the
   inclusion of a fibre is `n`-connected.
+* `TauCeti.TopCat.bijective_homotopyGroupMap_fiberι_of_mem_serreFibrations`: where the homotopy
+  groups of the base vanish, the inclusion of a fibre is bijective on homotopy groups.
 
 ## References
 
@@ -244,6 +249,27 @@ theorem isNConnected_fiberι_of_mem_serreFibrations (hp : serreFibrations p) {n 
       obtain ⟨a, ha⟩ := (mem_range_homotopyGroupMap_fiberι_iff hp (e := e) (a := c)).2
         (Subsingleton.elim _ _)
       exact ⟨a, (homotopyGroupMap_fiberι_eq a).symm.trans ha⟩
+
+/-- **The fibre inclusion is bijective where the base has no homotopy.** Let `p : E → B` be a
+Serre fibration and `b : B` a point such that `π_{k+1}(B, b)` and `π_{k+2}(B, b)` are trivial.
+Then the inclusion of the fibre `p⁻¹(b) → E` induces a bijection
+`π_{k+1}(p⁻¹(b), e) → π_{k+1}(E, e)` at every point `e` of the fibre. -/
+theorem bijective_homotopyGroupMap_fiberι_of_mem_serreFibrations (hp : serreFibrations p) {k : ℕ}
+    (hB₁ : Subsingleton (π_ (k + 1) B b)) (hB₂ : Subsingleton (π_ (k + 2) B b)) (e : p.fiber b) :
+    Function.Bijective (HomotopyGroup.map (N := Fin (k + 1)) (p.fiberι b).hom
+      (TopCat.Hom.fiberι_apply p b e)) := by
+  have : Subsingleton (HomotopyGroup (Option (Fin (k + 1))) B b) :=
+    @Equiv.subsingleton _ _ (HomotopyGroup.congrEquiv (finSuccEquiv (k + 1)).symm) hB₂
+  -- By exactness at `π_{k+1}(E)`, every class comes from the fibre, since its projection lies in
+  -- the trivial group `π_{k+1}(B, b)`.
+  refine ⟨?_, fun c ↦ (mem_range_homotopyGroupMap_fiberι_iff hp).2 (Subsingleton.elim _ _)⟩
+  -- By exactness at `π_{k+1}(F)`, the kernel consists of boundaries of classes of the trivial
+  -- group `π_{k+2}(B, b)`.
+  refine (injective_iff_map_eq_one (HomotopyGroup.mapHom (N := Fin (k + 1)) (p.fiberι b).hom
+    (TopCat.Hom.fiberι_apply p b e))).2 fun c hc ↦ ?_
+  rw [HomotopyGroup.mapHom_apply, ← HomotopyGroup.mk_const_eq_one] at hc
+  obtain ⟨a, rfl⟩ := (mem_range_fibrationBoundary_iff hp).2 hc
+  rw [Subsingleton.elim a ⟦GenLoop.const⟧, fibrationBoundary_const, HomotopyGroup.mk_const_eq_one]
 
 end FiberInclusion
 

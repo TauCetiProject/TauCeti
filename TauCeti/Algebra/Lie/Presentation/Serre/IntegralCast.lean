@@ -59,7 +59,7 @@ theorem serreLift_intCast [DecidableEq I] (hZ : IsSerreSystem ℤ CM H E F) :
     serreLift ((hZ.map (matrixIntCastLieHom ℤ)).changeScalars (S := ℤ)) =
       serreLift hZ := by
   apply serre_hom_ext <;> intro i <;>
-    simp only [serreLift_serreH, serreLift_serreE, serreLift_serreF,
+    simp only [serreLift_serreE, serreLift_serreF,
       Function.comp_apply, matrixIntCastLieHom_eq_map] <;>
     exact Matrix.ext fun _ _ ↦ Int.cast_id
 
