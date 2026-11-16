@@ -290,6 +290,18 @@ def euclideanTerminalDataCLE (hα₀ : 0 < α) (hα₁ : α < 1) (hT : (0 : ℝ)
   ContinuousLinearEquiv.ofBijective _ (LinearMap.ker_eq_bot.2 hbij.1)
     (LinearMap.range_eq_top.2 hbij.2)
 
+/-- Uniform ellipticity of the coefficients `aⁱʲ` passes to the precomposed coefficients
+`aⁱʲ ∘ g`, with the same constant. -/
+private theorem mul_norm_sq_le_toQuadraticForm'_compLipschitzL {X : Type*} [MetricSpace X]
+    {K : ℝ≥0} {g : X → slab (E := EuclideanSpace ℝ ι) 0 T} (hg : LipschitzWith K g)
+    {a : ι → ι → HolderSpace α (slab (E := EuclideanSpace ℝ ι) 0 T) ℝ} {lam : ℝ}
+    (ha : ∀ p (ξ : EuclideanSpace ℝ ι),
+      lam * ‖ξ‖ ^ 2 ≤ (Matrix.of fun i j ↦ a i j p).toQuadraticForm' ξ)
+    (p : X) (ξ : EuclideanSpace ℝ ι) :
+    lam * ‖ξ‖ ^ 2 ≤
+      (Matrix.of fun i j ↦ HolderSpace.compLipschitzL g hg (a i j) p).toQuadraticForm' ξ := by
+  simpa only [HolderSpace.compLipschitzL_apply] using ha (g p) ξ
+
 section TerminalDataCLE
 
 variable {hα₀ : 0 < α} {hα₁ : α < 1} {hT : (0 : ℝ) < T}
@@ -400,9 +412,7 @@ private theorem norm_prodMap_neg_compLipschitzL_slabTimeReverse_le :
       (T : ℝ) (sub_self (T : ℝ)).symm (sub_zero (T : ℝ)).symm).isometry.lipschitzWith).prodMap
         (ContinuousLinearMap.id ℝ (CkHolderSpace 2 α (EuclideanSpace ℝ ι) ℝ))‖ ≤ 1 :=
   ContinuousLinearMap.opNorm_le_bound _ zero_le_one fun d ↦ by
-    rw [one_mul, ContinuousLinearMap.coe_prodMap', Prod.norm_def, Prod.norm_def, Prod.map_fst,
-      Prod.map_snd, _root_.neg_apply, norm_neg, ContinuousLinearMap.id_apply]
-    exact max_le_max (HolderSpace.norm_compLipschitzL_apply_le _ _) le_rfl
+    simpa [Prod.norm_def] using max_le_max (HolderSpace.norm_compLipschitzL_apply_le _ d.1) le_rfl
 
 /-- **The Schauder estimate for the terminal-value problem.** For `0 < α < 1`, an ellipticity
 constant `λ > 0`, a bound `K` on the Hölder norms of the coefficients and a bound `T₀` on the
@@ -427,7 +437,7 @@ theorem exists_norm_euclideanTerminalDataCLE_symm_le (hα₀ : 0 < α) (hα₁ :
       (sub_zero (T : ℝ)).symm).isometry.lipschitzWith
   -- The Cauchy problem with the reversed coefficients satisfies the same bounds.
   have h := hest T hT hTT₀ _ _ _
-    (fun _ ξ ↦ by simpa only [HolderSpace.compLipschitzL_apply] using ha _ ξ)
+    (mul_norm_sq_le_toQuadraticForm'_compLipschitzL _ ha)
     (fun i j ↦ (hR (a i j)).trans (hak i j)) (fun i ↦ (hR (b i)).trans (hbk i))
     ((hR c).trans hck)
   rw [← (timeReverseLIE (T : ℝ) (sub_self (T : ℝ)).symm
@@ -465,8 +475,8 @@ theorem exists_norm_euclideanTerminalDataCLE_symm_sub_le (hα₀ : 0 < α) (hα�
   -- The Cauchy problems with the reversed coefficients satisfy the same bounds, and reversing
   -- does not increase the distance between the coefficients.
   have h := hest T hT hTT₀ _ _ _ _ _ _
-    (fun _ ξ ↦ by simpa only [HolderSpace.compLipschitzL_apply] using ha _ ξ)
-    (fun _ ξ ↦ by simpa only [HolderSpace.compLipschitzL_apply] using ha' _ ξ)
+    (mul_norm_sq_le_toQuadraticForm'_compLipschitzL _ ha)
+    (mul_norm_sq_le_toQuadraticForm'_compLipschitzL _ ha')
     (fun i j ↦ (hR (a i j)).trans (hak i j)) (fun i ↦ (hR (b i)).trans (hbk i))
     ((hR c).trans hck) (fun i j ↦ (hR (a' i j)).trans (hak' i j))
     (fun i ↦ (hR (b' i)).trans (hbk' i)) ((hR c').trans hck')
@@ -480,7 +490,10 @@ theorem exists_norm_euclideanTerminalDataCLE_symm_sub_le (hα₀ : 0 < α) (hα�
     timeReverseLIE_comp_euclideanTerminalDataCLE_symm, ← ContinuousLinearMap.sub_comp]
   refine ((ContinuousLinearMap.opNorm_comp_le _ _).trans (mul_le_of_le_one_right (norm_nonneg _)
     norm_prodMap_neg_compLipschitzL_slabTimeReverse_le)).trans ?_
-  -- `exact hδ` fails to unify the two inverses, which agree up to congruence.
+  -- The goal and `hδ` differ only in instance arguments. Chiefly, on the data space
+  -- `C_b^{α,α/2} × C_b^{2,α}` the forward bound in `hδ` has the product topology
+  -- `instTopologicalSpaceProd`, while composing with the data reversal gives the topology of the
+  -- product uniform structure. `exact hδ` fails to unify these definitionally equal instances.
   convert hδ using 1
 
 end TauCeti.ParabolicC2HolderSpace
