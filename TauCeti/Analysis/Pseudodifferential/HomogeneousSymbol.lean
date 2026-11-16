@@ -16,8 +16,6 @@ public import TauCeti.Analysis.Pseudodifferential.Frequency.Cutoff
 import TauCeti.Analysis.Calculus.ContDiff.Bounds
 import TauCeti.Analysis.Calculus.FDeriv.Prod
 import TauCeti.Analysis.Calculus.IteratedFDeriv.Homogeneous
-import TauCeti.Analysis.Normed.Module.Multilinear.Basic
-import TauCeti.Analysis.SpecialFunctions.Pow.Bounds
 
 /-!
 # Homogeneous symbols
@@ -58,11 +56,13 @@ The file develops:
   frequency space it is bounded by `C ‖ξ‖ ^ (m - l)` for positions in a compact set
   (`HomogeneousSymbol.exists_norm_iteratedFDeriv_le`);
 * smoothness of the cut-off term `χ(ξ) • a(x, ξ)` on the whole space, for a frequency cutoff
-  `χ` (`HomogeneousSymbol.contDiff_smul_coefficient`). On a proper frequency space it satisfies
-  the symbol estimates of order `m`, with the weight `⟨ξ⟩ ^ (m - l) = (1 + ‖ξ‖ ^ 2) ^ ((m - l) / 2)`
-  (`HomogeneousSymbol.exists_norm_iteratedFDeriv_smul_coefficient_le`), and changing the cutoff
-  changes it by a smoothing term, whose derivatives are bounded by every power of `⟨ξ⟩`
-  (`HomogeneousSymbol.exists_norm_iteratedFDeriv_sub_smul_coefficient_le`);
+  `χ` (`HomogeneousSymbol.contDiff_smul_coefficient`). It agrees with `a` at frequencies
+  `‖ξ‖ > 2` (`HomogeneousSymbol.iteratedFDeriv_smul_coefficient_of_two_lt_norm`), and on a
+  proper frequency space changing the cutoff changes it by a smoothing term, whose derivatives
+  are bounded by every power of `⟨ξ⟩ = (1 + ‖ξ‖ ^ 2) ^ (1 / 2)`
+  (`HomogeneousSymbol.exists_norm_iteratedFDeriv_sub_smul_coefficient_le`). Its symbol estimates
+  of order `m` are proved with the seminorms of homogeneous symbols, in
+  `TauCeti/Analysis/Pseudodifferential/HomogeneousSymbol/Topology.lean`;
 * on an inner product space, the symbol `HomogeneousSymbol.normRpow`, which is `‖ξ‖ ^ m` times
   the identity and is homogeneous of every real degree `m`.
 * between Hilbert spaces, the pointwise adjoint `HomogeneousSymbol.adjoint`,
@@ -903,41 +903,6 @@ theorem iteratedFDeriv_smul_coefficient_of_two_lt_norm (χ : FrequencyCutoff E) 
       (χ.eventuallyEq_one_of_two_lt_norm hξ)] with q hq
     simp [hq]
   exact heq.iteratedFDeriv ℝ k |>.eq_of_nhds
-
-/-- On a proper frequency space, the cut-off term `χ(ξ) a(x, ξ)` of a homogeneous symbol of
-degree `m` satisfies the symbol estimates of order `m`: its derivatives in `j` position
-directions and `l` frequency directions are bounded by `C ⟨ξ⟩ ^ (m - l)` for positions in a
-compact set and every frequency. -/
-theorem exists_norm_iteratedFDeriv_smul_coefficient_le [ProperSpace E] (χ : FrequencyCutoff E)
-    {K : Set X} (hK : IsCompact K) (j l : ℕ) :
-    ∃ C, 0 ≤ C ∧ ∀ x ∈ K, ∀ (ξ : E) (u : Fin j → X) (w : Fin l → E),
-      ‖iteratedFDeriv ℝ (j + l) (fun p : X × E ↦ χ p.2 • a.coefficient p) (x, ξ)
-          (Fin.append (fun i ↦ (u i, 0)) (fun i ↦ (0, w i)))‖ ≤
-        C * (1 + ‖ξ‖ ^ 2) ^ ((m - l) / 2) * (∏ i, ‖u i‖) * ∏ i, ‖w i‖ := by
-  obtain ⟨C₁, hC₁, h₁⟩ := ((a.contDiff_smul_coefficient χ).of_le (mod_cast le_top) :
-    ContDiff ℝ (j + l) _).exists_norm_iteratedFDeriv_le_one_add_norm_sq_rpow_of_norm_le hK 2 (m - l)
-  obtain ⟨C₂, hC₂, h₂⟩ := a.exists_norm_iteratedFDeriv_le hK j l
-  refine ⟨max C₁ (C₂ * 2 ^ (|m - l| / 2)), le_max_of_le_left hC₁, fun x hx ξ u w ↦ ?_⟩
-  have hprod : 0 ≤ (∏ i, ‖u i‖) * ∏ i, ‖w i‖ := by positivity
-  rw [mul_assoc _ (∏ i, ‖u i‖)]
-  rcases le_or_gt ‖ξ‖ 2 with hξ | hξ
-  · -- Near the zero frequency the cut-off term is smooth, so compactness bounds it.
-    refine ((iteratedFDeriv ℝ (j + l) (fun p : X × E ↦ χ p.2 • a.coefficient p)
-      (x, ξ)).norm_apply_append_prod_le u w).trans ?_
-    refine mul_le_mul_of_nonneg_right ((h₁ x hx ξ hξ).trans ?_) hprod
-    exact mul_le_mul_of_nonneg_right (le_max_left _ _) (by positivity)
-  · -- At large frequencies the cut-off term agrees with the homogeneous symbol.
-    have hξ0 : ξ ≠ 0 := norm_pos_iff.mp (two_pos.trans hξ)
-    rw [a.iteratedFDeriv_smul_coefficient_of_two_lt_norm χ hξ]
-    refine (h₂ x hx ξ hξ0 u w).trans ?_
-    rw [mul_assoc]
-    refine mul_le_mul_of_nonneg_right ?_ hprod
-    calc C₂ * ‖ξ‖ ^ (m - l) ≤ C₂ * (2 ^ (|m - l| / 2) * (1 + ‖ξ‖ ^ 2) ^ ((m - l) / 2)) :=
-          mul_le_mul_of_nonneg_left
-            (norm_rpow_le_one_add_norm_sq_rpow (by linarith) (m - l)) hC₂
-      _ = C₂ * 2 ^ (|m - l| / 2) * (1 + ‖ξ‖ ^ 2) ^ ((m - l) / 2) := by ring
-      _ ≤ max C₁ (C₂ * 2 ^ (|m - l| / 2)) * (1 + ‖ξ‖ ^ 2) ^ ((m - l) / 2) :=
-          mul_le_mul_of_nonneg_right (le_max_right _ _) (by positivity)
 
 /-- On a proper frequency space, changing the frequency cutoff changes the cut-off term of a
 homogeneous symbol by a smoothing term: for positions in a compact set, every derivative of the

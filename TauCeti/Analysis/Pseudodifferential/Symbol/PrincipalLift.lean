@@ -8,10 +8,6 @@ module
 public import TauCeti.Analysis.Pseudodifferential.HomogeneousSymbol.Topology
 public import TauCeti.Analysis.Pseudodifferential.Symbol.Classical
 public import TauCeti.Analysis.Pseudodifferential.Symbol.Topology
-import Mathlib.Analysis.Calculus.ContDiff.Bounds
-import TauCeti.Analysis.Calculus.IteratedFDeriv.CompLinear
-import TauCeti.Analysis.Normed.Module.Multilinear.Basic
-import TauCeti.Analysis.SpecialFunctions.Pow.Bounds
 
 /-!
 # Continuous lifts of principal symbols
@@ -29,7 +25,8 @@ seminorm `p_{K,α,β}` of `χ a` is bounded by a constant times the homogeneous 
 with `i ≤ |α| + |β|` (`TauCeti.HomogeneousSymbol.exists_seminorm_cutoffSymbol_le`).
 
 Consequently a continuous family `t ↦ a_t` of principal symbols, for instance a homotopy of
-elliptic principal symbols, lifts to a continuous family of classical symbols. To start the lift at
+elliptic principal symbols, lifts to a family of classical symbols with principal symbols `a_t`
+whose full symbols depend continuously on `t` in `S^m_{1,0}`. To start the lift at
 a prescribed classical symbol `P₀`, put
 
 `P₀.liftPrincipal χ b = P₀ + χ(ξ) (b - σ(P₀))`,
@@ -40,14 +37,18 @@ lower homogeneous terms, and its remainders after at least one term for the cuto
 of `P₀` (`TauCeti.ClassicalSymbol.term_liftPrincipal_succ`,
 `TauCeti.ClassicalSymbol.remainder_liftPrincipal_succ`), and its full symbol depends continuously
 on `b` (`TauCeti.ClassicalSymbol.continuous_toSymbol_liftPrincipal`). So for a continuous path
-`t ↦ a_t` with `a_0 = σ(P₀)`, the lift `t ↦ P₀.liftPrincipal χ a_t` is a continuous path of
-classical symbols in every coefficient and remainder seminorm, starting at `P₀`, with principal
-symbols `a_t`. In the form `Q(a_t) + P₀ - Q(a_0)` with `Q = ofHomogeneous χ`, this is
-`TauCeti.ClassicalSymbol.liftPrincipal_eq_add_sub`.
+`t ↦ a_t` with `a_0 = σ(P₀)`, the lift `t ↦ P₀.liftPrincipal χ a_t` is a family of classical
+symbols starting at `P₀`, with principal symbols `a_t`, the lower terms and `χ`-remainders of `P₀`,
+and full symbols depending continuously on `t` in `S^m_{1,0}`
+(`Continuous.toSymbol_liftPrincipal`). In the form `Q(a_t) + P₀ - Q(a_0)` with
+`Q = ofHomogeneous χ`, this is `TauCeti.ClassicalSymbol.liftPrincipal_eq_add_sub`.
 
 ## Proof of the estimate
 
-At frequencies `‖ξ‖ > 2` the cut-off term is `a` itself, and homogeneity bounds its derivative in
+The estimate is the specialization to the coordinate directions of the uniform symbol estimate of
+the cut-off term on any `X × E`
+(`TauCeti.HomogeneousSymbol.exists_norm_iteratedFDeriv_smul_coefficient_le_seminorm`). At
+frequencies `‖ξ‖ > 2` the cut-off term is `a` itself, and homogeneity bounds its derivative in
 `|α|` position and `|β|` frequency directions by `‖ξ‖ ^ (m - |β|) p_{K,|α|+|β|}(a)`
 (`TauCeti.HomogeneousSymbol.norm_iteratedFDeriv_append_le_seminorm`), which is at most a constant
 times `⟨ξ⟩ ^ (m - |β|)`. At frequencies `‖ξ‖ ≤ 2` the Leibniz rule bounds the derivatives of
@@ -78,69 +79,6 @@ variable {n : ℕ} {V W : Type*} [NormedAddCommGroup V] [NormedSpace ℂ V] [Nor
 
 namespace HomogeneousSymbol
 
-/-- The cut-off term vanishes near the zero frequency, so all its derivatives vanish there. -/
-private theorem iteratedFDeriv_cutoffSymbol_zero_frequency (χ : FrequencyCutoff (CoordinateSpace n))
-    (a : HomogeneousSymbol (CoordinateSpace n) (CoordinateSpace n) V W m) (k : ℕ)
-    (x : CoordinateSpace n) : iteratedFDeriv ℝ k (cutoffSymbol χ a).coefficient (x, 0) = 0 := by
-  have h0 : (cutoffSymbol χ a).coefficient =ᶠ[𝓝 (x, 0)] 0 := by
-    rw [coefficient_cutoffSymbol_eq_fun]
-    simpa using χ.comp_inv_smul_snd_smul_eventuallyEq_zero 1 a.coefficient
-      (p := (x, (0 : CoordinateSpace n))) (by simp)
-  rw [h0.iteratedFDeriv ℝ k |>.eq_of_nhds, iteratedFDeriv_zero, Pi.zero_apply]
-
-/-- At frequencies `‖ξ‖ ≤ 2`, the derivatives of the cut-off term `χ(ξ) a(x, ξ)` are
-bounded by a constant, depending only on `χ`, `m` and the order `k`, times the homogeneous
-seminorms `p_{K,i}(a)`, `i ≤ k`. -/
-private theorem exists_norm_iteratedFDeriv_cutoffSymbol_le
-    (χ : FrequencyCutoff (CoordinateSpace n)) (K : Compacts (CoordinateSpace n)) (k : ℕ) :
-    ∃ C, 0 ≤ C ∧ ∀ a : HomogeneousSymbol (CoordinateSpace n) (CoordinateSpace n) V W m,
-      ∀ x ∈ K, ∀ ξ : CoordinateSpace n, ‖ξ‖ ≤ 2 →
-        ‖iteratedFDeriv ℝ k (cutoffSymbol χ a).coefficient (x, ξ)‖ ≤
-          C * ((Finset.range (k + 1)).sup fun i ↦ HomogeneousSymbol.seminorm K i) a := by
-  choose B hB using fun i ↦ χ.exists_bound_iteratedFDeriv i
-  set L := ∑ i ∈ Finset.range (k + 1), (k.choose i : ℝ) * max (B i) 0
-  refine ⟨L * 2 ^ |m|, by positivity, fun a x hx ξ hξ2 ↦ ?_⟩
-  set P := ((Finset.range (k + 1)).sup fun i ↦ HomogeneousSymbol.seminorm K i) a
-  rcases eq_or_ne ξ 0 with rfl | hξ
-  · rw [iteratedFDeriv_cutoffSymbol_zero_frequency, norm_zero]
-    positivity
-  -- Away from the zero frequency, apply the Leibniz rule on the open set `ξ ≠ 0`.
-  set S : Set (CoordinateSpace n × CoordinateSpace n) := {p | p.2 ≠ 0}
-  have hS : IsOpen S := isOpen_ne_fun continuous_snd continuous_const
-  have hxξ : (x, ξ) ∈ S := hξ
-  have hχ : ContDiff ℝ ∞ fun p : CoordinateSpace n × CoordinateSpace n ↦ χ p.2 :=
-    χ.contDiff.comp contDiff_snd
-  have hleib := norm_iteratedFDerivWithin_smul_le hχ.contDiffOn a.contDiffOn_coefficient
-    hS.uniqueDiffOn hxξ (n := k) (mod_cast le_top)
-  rw [iteratedFDerivWithin_of_isOpen k hS hxξ, ← coefficient_cutoffSymbol_eq_fun] at hleib
-  refine hleib.trans ?_
-  rw [mul_assoc, Finset.sum_mul]
-  refine Finset.sum_le_sum fun i _ ↦ ?_
-  rw [iteratedFDerivWithin_of_isOpen i hS hxξ, iteratedFDerivWithin_of_isOpen (k - i) hS hxξ,
-    mul_assoc (k.choose i : ℝ), mul_assoc (k.choose i : ℝ)]
-  refine mul_le_mul_of_nonneg_left ?_ (Nat.cast_nonneg _)
-  -- The derivatives of `ξ ↦ χ ξ` on the product are bounded by those of `χ`.
-  have hχi : ‖iteratedFDeriv ℝ i (fun p : CoordinateSpace n × CoordinateSpace n ↦ χ p.2)
-      (x, ξ)‖ ≤ ‖iteratedFDeriv ℝ i χ ξ‖ :=
-    norm_iteratedFDeriv_comp_snd_le (f := χ) (x, ξ)
-  rcases le_or_gt ‖ξ‖ 1 with hξ1 | hξ1
-  · -- Inside the closed unit ball every derivative of `χ` vanishes.
-    rw [χ.iteratedFDeriv_eq_zero_of_norm_le_one i hξ1, norm_zero] at hχi
-    rw [norm_le_zero_iff.1 hχi, norm_zero, zero_mul]
-    positivity
-  · -- On `1 < ‖ξ‖ ≤ 2` both factors are bounded.
-    have hik : k - i ∈ Finset.range (k + 1) := Finset.mem_range.2 (by omega)
-    have ha : ‖iteratedFDeriv ℝ (k - i) a.coefficient (x, ξ)‖ ≤ 2 ^ |m| * P := by
-      refine (a.norm_iteratedFDeriv_coefficient_le_seminorm K (k - i) hx hξ1.le).trans ?_
-      refine mul_le_mul ?_ (Seminorm.le_finset_sup_apply hik) (apply_nonneg _ _) (by positivity)
-      calc ‖ξ‖ ^ m ≤ ‖ξ‖ ^ |m| := Real.rpow_le_rpow_of_exponent_le hξ1.le (le_abs_self m)
-        _ ≤ 2 ^ |m| := Real.rpow_le_rpow (norm_nonneg _) hξ2 (abs_nonneg m)
-    calc ‖iteratedFDeriv ℝ i (fun p : CoordinateSpace n × CoordinateSpace n ↦ χ p.2) (x, ξ)‖ *
-          ‖iteratedFDeriv ℝ (k - i) a.coefficient (x, ξ)‖
-        ≤ max (B i) 0 * (2 ^ |m| * P) :=
-          mul_le_mul (hχi.trans ((hB i ξ).trans (le_max_left _ _))) ha (norm_nonneg _)
-            (le_max_right _ _)
-
 /-- **The cut-off term depends continuously on the homogeneous symbol.** Every seminorm
 `p_{K,α,β}` of the cut-off term `χ(ξ) a(x, ξ)` in `S^m_{1,0}` is bounded by a constant, depending
 only on `χ`, `m`, `K`, `α` and `β`, times the largest of the homogeneous seminorms `p_{K,i}(a)`,
@@ -151,47 +89,16 @@ theorem exists_seminorm_cutoffSymbol_le (χ : FrequencyCutoff (CoordinateSpace n
       Symbol.seminorm K α β (cutoffSymbol χ a) ≤
         C * ((Finset.range (α.length + β.length + 1)).sup fun i ↦
           HomogeneousSymbol.seminorm K i) a := by
-  set k := α.length + β.length
-  set l := β.length
-  obtain ⟨C₁, hC₁, h₁⟩ := exists_norm_iteratedFDeriv_cutoffSymbol_le (V := V) (W := W) (m := m)
-    χ K k
-  refine ⟨C₁ * 5 ^ (|m - l| / 2) + 2 ^ (|m - l| / 2), by positivity, fun a ↦ ?_⟩
-  set P := ((Finset.range (k + 1)).sup fun i ↦ HomogeneousSymbol.seminorm K i) a
-  have hP : 0 ≤ P := apply_nonneg _ _
-  refine Symbol.seminorm_le_bound K α β _ (by positivity) fun x hx ξ ↦ ?_
-  have hw := rpow_weight_pos ξ (m - l)
+  obtain ⟨C, hC, h⟩ := exists_norm_iteratedFDeriv_smul_coefficient_le_seminorm
+    (V := V) (W := W) (m := m) χ K α.length β.length
+  refine ⟨C, hC, fun a ↦ Symbol.seminorm_le_bound K α β _
+    (mul_nonneg hC (apply_nonneg _ _)) fun x hx ξ ↦ ?_⟩
   rw [mixedDeriv_eq_iteratedFDeriv_append α β
-    ((cutoffSymbol χ a).contDiff_coefficient.of_le (mod_cast le_top))]
-  -- The coordinate directions are unit vectors.
-  have hunit : ((∏ i : Fin α.length, ‖EuclideanSpace.single (α.get i) (1 : ℝ)‖) *
-      ∏ i : Fin β.length, ‖EuclideanSpace.single (β.get i) (1 : ℝ)‖) = 1 := by
-    simp
-  rcases le_or_gt ‖ξ‖ 2 with hξ2 | hξ2
-  · -- Near the zero frequency use the bound of the Leibniz rule.
-    refine ((iteratedFDeriv ℝ k (cutoffSymbol χ a).coefficient (x, ξ)).norm_apply_append_prod_le
-      _ _).trans ?_
-    rw [hunit, mul_one]
-    refine (h₁ a x hx ξ hξ2).trans ?_
-    have h5 := Real.one_le_five_rpow_mul_one_add_sq_rpow (t := ‖ξ‖) (by rwa [abs_norm]) (m - l)
-    calc C₁ * P ≤ C₁ * P * (5 ^ (|m - l| / 2) * (1 + ‖ξ‖ ^ 2) ^ ((m - l) / 2)) :=
-          le_mul_of_one_le_right (by positivity) h5
-      _ ≤ (C₁ * 5 ^ (|m - l| / 2) + 2 ^ (|m - l| / 2)) * P * (1 + ‖ξ‖ ^ 2) ^ ((m - l) / 2) := by
-          nlinarith [mul_nonneg (mul_nonneg hP hw.le)
-            (Real.rpow_nonneg zero_le_two (|m - l| / 2))]
-  · -- At large frequencies the cut-off term is the homogeneous symbol itself.
-    have hξ0 : ξ ≠ 0 := norm_pos_iff.1 (two_pos.trans hξ2)
-    rw [coefficient_cutoffSymbol_eq_fun, a.iteratedFDeriv_smul_coefficient_of_two_lt_norm χ hξ2]
-    refine (a.norm_iteratedFDeriv_append_le_seminorm K hx hξ0 _ _).trans ?_
-    rw [hunit, mul_one]
-    have hk : k ∈ Finset.range (k + 1) := Finset.self_mem_range_succ k
-    have hpk : HomogeneousSymbol.seminorm K k a ≤ P := Seminorm.le_finset_sup_apply hk
-    have hξw := norm_rpow_le_one_add_norm_sq_rpow (one_le_two.trans hξ2.le) (m - l)
-    calc ‖ξ‖ ^ (m - l) * HomogeneousSymbol.seminorm K k a
-        ≤ 2 ^ (|m - l| / 2) * (1 + ‖ξ‖ ^ 2) ^ ((m - l) / 2) * P :=
-          mul_le_mul hξw hpk (apply_nonneg _ _) (by positivity)
-      _ ≤ (C₁ * 5 ^ (|m - l| / 2) + 2 ^ (|m - l| / 2)) * P * (1 + ‖ξ‖ ^ 2) ^ ((m - l) / 2) := by
-          nlinarith [mul_nonneg (mul_nonneg hP hw.le)
-            (mul_nonneg hC₁ (Real.rpow_nonneg (by norm_num : (0 : ℝ) ≤ 5) (|m - l| / 2)))]
+    ((cutoffSymbol χ a).contDiff_coefficient.of_le (mod_cast le_top)),
+    coefficient_cutoffSymbol_eq_fun]
+  -- Evaluate the uniform estimate on the coordinate directions, which are unit vectors.
+  simpa using h a x hx ξ (fun i ↦ EuclideanSpace.single (α.get i) 1)
+    fun i ↦ EuclideanSpace.single (β.get i) 1
 
 /-- The cut-off term `a ↦ χ(ξ) a(x, ξ)` is continuous from homogeneous symbols of degree `m` to the
 symbols of order `m`. -/

@@ -8,6 +8,7 @@ module
 public import TauCeti.Analysis.Pseudodifferential.HomogeneousSymbol
 public import TauCeti.Analysis.Pseudodifferential.Symbol.Basic
 import Mathlib.Analysis.Calculus.BumpFunction.InnerProduct
+import TauCeti.Analysis.Pseudodifferential.HomogeneousSymbol.Topology
 import TauCeti.Analysis.SpecialFunctions.Pow.Bounds
 
 /-!

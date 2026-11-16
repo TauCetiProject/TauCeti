@@ -10,7 +10,9 @@ public import Mathlib.Topology.Algebra.UniformFilterBasis
 public import Mathlib.Topology.Sets.Compacts
 public import TauCeti.Analysis.Pseudodifferential.HomogeneousSymbol
 import Mathlib.Analysis.Calculus.ContDiff.Bounds
+import TauCeti.Analysis.Calculus.IteratedFDeriv.CompLinear
 import TauCeti.Analysis.Normed.Module.Multilinear.Basic
+import TauCeti.Analysis.SpecialFunctions.Pow.Bounds
 
 /-!
 # The topology of homogeneous symbols
@@ -40,7 +42,12 @@ Homogeneity transports the estimates on the sphere to every nonzero frequency:
   `‖ξ‖ ^ (m - l)` times the seminorm.
 
 These are the estimates that make the cut-off terms of homogeneous symbols depend continuously on
-them in the symbol classes `S^m_{1,0}`.
+them in the symbol classes `S^m_{1,0}`: for a frequency cutoff `χ`, the derivatives of the cut-off
+term `χ(ξ) a(x, ξ)` in `j` position and `l` frequency directions are bounded by a constant,
+independent of `a`, times `⟨ξ⟩ ^ (m - l)` and the seminorms `p_{K,i}(a)`, `i ≤ j + l`
+(`TauCeti.HomogeneousSymbol.exists_norm_iteratedFDeriv_smul_coefficient_le_seminorm`). For a
+single symbol this gives its symbol estimates of order `m`
+(`TauCeti.HomogeneousSymbol.exists_norm_iteratedFDeriv_smul_coefficient_le`).
 
 The seminorms are set up following `TauCeti.Symbol.seminorm`
 (`TauCeti/Analysis/Pseudodifferential/Symbol/Topology.lean`) and Mathlib's seminorms of the
@@ -90,10 +97,6 @@ private theorem continuousOn_iteratedFDeriv_coefficient (a : HomogeneousSymbol X
     (k : ℕ) : ContinuousOn (iteratedFDeriv ℝ k a.coefficient) {p | p.2 ≠ 0} :=
   ContinuousOn.continuousOn_iteratedFDeriv a.contDiffOn_coefficient
     (isOpen_ne_fun continuous_snd continuous_const) (mod_cast le_top)
-
-private theorem ne_zero_of_norm_eq_one {F : Type*} [NormedAddCommGroup F] {ξ : F} (hξ : ‖ξ‖ = 1) :
-    ξ ≠ 0 :=
-  norm_ne_zero_iff.1 (hξ ▸ one_ne_zero)
 
 /-- The admissible constants in the estimate of the `k`-th derivative of `a` on `K × sphere 0 1`. -/
 private def bounds (K : Compacts X) (k : ℕ) (a : HomogeneousSymbol X E V W m) : Set ℝ :=
@@ -183,7 +186,8 @@ private theorem seminormAux_add_le (K : Compacts X) (k : ℕ) (a b : Homogeneous
     seminormAux K k (a + b) ≤ seminormAux K k a + seminormAux K k b :=
   seminormAux_le_bound K k _ (add_nonneg (seminormAux_nonneg K k a) (seminormAux_nonneg K k b))
     fun x hx ξ hξ ↦ by
-      rw [iteratedFDeriv_coefficient_add a b k (p := (x, ξ)) (ne_zero_of_norm_eq_one hξ)]
+      rw [iteratedFDeriv_coefficient_add a b k (p := (x, ξ))
+        (ne_zero_of_norm_ne_zero (hξ ▸ one_ne_zero))]
       exact (norm_add_le _ _).trans
         (add_le_add (le_seminormAux K k a hx hξ) (le_seminormAux K k b hx hξ))
 
@@ -191,8 +195,8 @@ private theorem seminormAux_smul_le (K : Compacts X) (k : ℕ) (c : ℂ)
     (a : HomogeneousSymbol X E V W m) : seminormAux K k (c • a) ≤ ‖c‖ * seminormAux K k a :=
   seminormAux_le_bound K k _ (mul_nonneg (norm_nonneg c) (seminormAux_nonneg K k a))
     fun x hx ξ hξ ↦ by
-      rw [iteratedFDeriv_coefficient_smul c a k (p := (x, ξ)) (ne_zero_of_norm_eq_one hξ),
-        norm_smul]
+      rw [iteratedFDeriv_coefficient_smul c a k (p := (x, ξ))
+        (ne_zero_of_norm_ne_zero (hξ ▸ one_ne_zero)), norm_smul]
       exact mul_le_mul_of_nonneg_left (le_seminormAux K k a hx hξ) (norm_nonneg c)
 
 /-- The seminorm `p_{K,k}` on the homogeneous symbols of degree `m`: the best constant `C` in the
@@ -243,8 +247,8 @@ theorem norm_iteratedFDeriv_coefficient_le_seminorm (K : Compacts X) (k : ℕ)
   have hv : (fun i ↦ ((v' i).1, t • (v' i).2)) = v := by
     funext i
     simp [v', smul_inv_smul₀ ht.ne']
-  have heq := a.iteratedFDeriv_coefficient_smul_frequency (x := x) (ne_zero_of_norm_eq_one hη)
-    ht k v'
+  have heq := a.iteratedFDeriv_coefficient_smul_frequency (x := x)
+    (ne_zero_of_norm_ne_zero (hη ▸ one_ne_zero)) ht k v'
   rw [smul_inv_smul₀ ht.ne', hv] at heq
   rw [heq, norm_smul, Real.norm_of_nonneg (by positivity), mul_assoc]
   refine mul_le_mul_of_nonneg_left ?_ (by positivity)
@@ -267,7 +271,7 @@ theorem norm_iteratedFDeriv_append_le_seminorm (K : Compacts X) (a : Homogeneous
   have ht : 0 < t := norm_pos_iff.2 hξ
   have hη : ‖t⁻¹ • ξ‖ = 1 := by simp [t, norm_smul, ht.ne']
   have heq := a.iteratedFDeriv_coefficient_smul_frequency_append (x := x)
-    (ne_zero_of_norm_eq_one hη) ht u w
+    (ne_zero_of_norm_ne_zero (hη ▸ one_ne_zero)) ht u w
   rw [smul_inv_smul₀ ht.ne'] at heq
   rw [heq, norm_smul, Real.norm_of_nonneg (by positivity), mul_assoc]
   refine mul_le_mul_of_nonneg_left (((iteratedFDeriv ℝ (j + l) a.coefficient
@@ -283,7 +287,7 @@ theorem seminorm_spatialDeriv_le (K : Compacts X) (k : ℕ) (a : HomogeneousSymb
   refine seminorm_le_bound K k _ (by positivity) fun x hx ξ hξ ↦ ?_
   refine (norm_iteratedFDeriv_le_of_eq_fderiv a _ (v, 0)
     (fun p _ ↦ a.coefficient_spatialDeriv_eq_fderiv v) k (p := (x, ξ))
-    (ne_zero_of_norm_eq_one hξ)).trans ?_
+    (ne_zero_of_norm_ne_zero (hξ ▸ one_ne_zero))).trans ?_
   rw [Prod.norm_mk, norm_zero, max_eq_left (norm_nonneg v)]
   exact mul_le_mul_of_nonneg_left (le_seminorm K (k + 1) a hx hξ) (norm_nonneg v)
 
@@ -296,7 +300,7 @@ theorem seminorm_frequencyDeriv_le (K : Compacts X) (k : ℕ) (a : HomogeneousSy
   refine seminorm_le_bound K k _ (by positivity) fun x hx ξ hξ ↦ ?_
   refine (norm_iteratedFDeriv_le_of_eq_fderiv a _ (0, w)
     (fun _ hp ↦ a.coefficient_frequencyDeriv_eq_fderiv w hp) k (p := (x, ξ))
-    (ne_zero_of_norm_eq_one hξ)).trans ?_
+    (ne_zero_of_norm_ne_zero (hξ ▸ one_ne_zero))).trans ?_
   rw [Prod.norm_mk, norm_zero, max_eq_right (norm_nonneg w)]
   exact mul_le_mul_of_nonneg_left (le_seminorm K (k + 1) a hx hξ) (norm_nonneg w)
 
@@ -307,6 +311,130 @@ theorem norm_coefficient_le_rpow_mul_seminorm (K : Compacts X) (a : HomogeneousS
     ‖a.coefficient (x, ξ)‖ ≤ ‖ξ‖ ^ m * HomogeneousSymbol.seminorm K 0 a := by
   simpa using a.norm_iteratedFDeriv_append_le_seminorm K hx hξ (j := 0) (l := 0) Fin.elim0
     Fin.elim0
+
+omit [ProperSpace E] in
+/-- The cut-off term `χ(ξ) a(x, ξ)` vanishes near the zero frequency, so all its derivatives vanish
+there. -/
+private theorem iteratedFDeriv_smul_coefficient_zero_frequency (χ : FrequencyCutoff E)
+    (a : HomogeneousSymbol X E V W m) (k : ℕ) (x : X) :
+    iteratedFDeriv ℝ k (fun p : X × E ↦ χ p.2 • a.coefficient p) (x, 0) = 0 := by
+  have h0 : (fun p : X × E ↦ χ p.2 • a.coefficient p) =ᶠ[𝓝 (x, 0)] 0 := by
+    simpa using χ.comp_inv_smul_snd_smul_eventuallyEq_zero 1 a.coefficient
+      (p := (x, (0 : E))) (by simp)
+  rw [h0.iteratedFDeriv ℝ k |>.eq_of_nhds, iteratedFDeriv_zero, Pi.zero_apply]
+
+/-- At frequencies `‖ξ‖ ≤ 2`, the derivatives of the cut-off term `χ(ξ) a(x, ξ)` are
+bounded by a constant, depending only on `χ`, `m` and the order `k`, times the homogeneous
+seminorms `p_{K,i}(a)`, `i ≤ k`. -/
+private theorem exists_norm_iteratedFDeriv_smul_coefficient_le_of_norm_le_two
+    (χ : FrequencyCutoff E) (K : Compacts X) (k : ℕ) :
+    ∃ C, 0 ≤ C ∧ ∀ a : HomogeneousSymbol X E V W m, ∀ x ∈ K, ∀ ξ : E, ‖ξ‖ ≤ 2 →
+      ‖iteratedFDeriv ℝ k (fun p : X × E ↦ χ p.2 • a.coefficient p) (x, ξ)‖ ≤
+        C * ((Finset.range (k + 1)).sup fun i ↦ HomogeneousSymbol.seminorm K i) a := by
+  choose B hB using fun i ↦ χ.exists_bound_iteratedFDeriv i
+  set L := ∑ i ∈ Finset.range (k + 1), (k.choose i : ℝ) * max (B i) 0
+  refine ⟨L * 2 ^ |m|, by positivity, fun a x hx ξ hξ2 ↦ ?_⟩
+  set P := ((Finset.range (k + 1)).sup fun i ↦ HomogeneousSymbol.seminorm K i) a
+  rcases eq_or_ne ξ 0 with rfl | hξ
+  · rw [iteratedFDeriv_smul_coefficient_zero_frequency, norm_zero]
+    positivity
+  -- Away from the zero frequency, apply the Leibniz rule on the open set `ξ ≠ 0`.
+  set S : Set (X × E) := {p | p.2 ≠ 0}
+  have hS : IsOpen S := isOpen_ne_fun continuous_snd continuous_const
+  have hxξ : (x, ξ) ∈ S := hξ
+  have hχ : ContDiff ℝ ∞ fun p : X × E ↦ χ p.2 := χ.contDiff.comp contDiff_snd
+  have hleib := norm_iteratedFDerivWithin_smul_le hχ.contDiffOn a.contDiffOn_coefficient
+    hS.uniqueDiffOn hxξ (n := k) (mod_cast le_top)
+  rw [iteratedFDerivWithin_of_isOpen k hS hxξ] at hleib
+  refine hleib.trans ?_
+  rw [mul_assoc, Finset.sum_mul]
+  refine Finset.sum_le_sum fun i _ ↦ ?_
+  rw [iteratedFDerivWithin_of_isOpen i hS hxξ, iteratedFDerivWithin_of_isOpen (k - i) hS hxξ,
+    mul_assoc (k.choose i : ℝ), mul_assoc (k.choose i : ℝ)]
+  refine mul_le_mul_of_nonneg_left ?_ (Nat.cast_nonneg _)
+  -- The derivatives of `ξ ↦ χ ξ` on the product are bounded by those of `χ`.
+  have hχi : ‖iteratedFDeriv ℝ i (fun p : X × E ↦ χ p.2) (x, ξ)‖ ≤ ‖iteratedFDeriv ℝ i χ ξ‖ :=
+    norm_iteratedFDeriv_comp_snd_le (f := χ) (x, ξ)
+  rcases le_or_gt ‖ξ‖ 1 with hξ1 | hξ1
+  · -- Inside the closed unit ball every derivative of `χ` vanishes.
+    rw [χ.iteratedFDeriv_eq_zero_of_norm_le_one i hξ1, norm_zero] at hχi
+    rw [norm_le_zero_iff.1 hχi, norm_zero, zero_mul]
+    positivity
+  · -- On `1 < ‖ξ‖ ≤ 2` both factors are bounded.
+    have hik : k - i ∈ Finset.range (k + 1) := Finset.mem_range.2 (by omega)
+    have ha : ‖iteratedFDeriv ℝ (k - i) a.coefficient (x, ξ)‖ ≤ 2 ^ |m| * P := by
+      refine (a.norm_iteratedFDeriv_coefficient_le_seminorm K (k - i) hx hξ1.le).trans ?_
+      refine mul_le_mul ?_ (Seminorm.le_finset_sup_apply hik) (apply_nonneg _ _) (by positivity)
+      calc ‖ξ‖ ^ m ≤ ‖ξ‖ ^ |m| := Real.rpow_le_rpow_of_exponent_le hξ1.le (le_abs_self m)
+        _ ≤ 2 ^ |m| := Real.rpow_le_rpow (norm_nonneg _) hξ2 (abs_nonneg m)
+    calc ‖iteratedFDeriv ℝ i (fun p : X × E ↦ χ p.2) (x, ξ)‖ *
+          ‖iteratedFDeriv ℝ (k - i) a.coefficient (x, ξ)‖
+        ≤ max (B i) 0 * (2 ^ |m| * P) :=
+          mul_le_mul (hχi.trans ((hB i ξ).trans (le_max_left _ _))) ha (norm_nonneg _)
+            (le_max_right _ _)
+
+/-- **Uniform symbol estimates for the cut-off term.** For positions in `K`, the derivative of the
+cut-off term `χ(ξ) a(x, ξ)` in `j` position directions `u` and `l` frequency directions `w` is
+bounded by `C p(a) ⟨ξ⟩ ^ (m - l) ∏ ‖uᵢ‖ ∏ ‖wᵢ‖`, where `p(a)` is the largest of the homogeneous
+seminorms `p_{K,i}(a)`, `i ≤ j + l`, and the constant `C` depends only on `χ`, `m`, `K`, `j` and
+`l`. -/
+theorem exists_norm_iteratedFDeriv_smul_coefficient_le_seminorm (χ : FrequencyCutoff E)
+    (K : Compacts X) (j l : ℕ) :
+    ∃ C, 0 ≤ C ∧ ∀ a : HomogeneousSymbol X E V W m, ∀ x ∈ K, ∀ (ξ : E) (u : Fin j → X)
+      (w : Fin l → E),
+      ‖iteratedFDeriv ℝ (j + l) (fun p : X × E ↦ χ p.2 • a.coefficient p) (x, ξ)
+          (Fin.append (fun i ↦ (u i, 0)) (fun i ↦ (0, w i)))‖ ≤
+        C * ((Finset.range (j + l + 1)).sup fun i ↦ HomogeneousSymbol.seminorm K i) a *
+          (1 + ‖ξ‖ ^ 2) ^ ((m - l) / 2) * ((∏ i, ‖u i‖) * ∏ i, ‖w i‖) := by
+  obtain ⟨C₁, hC₁, h₁⟩ := exists_norm_iteratedFDeriv_smul_coefficient_le_of_norm_le_two
+    (V := V) (W := W) (m := m) χ K (j + l)
+  refine ⟨C₁ * 5 ^ (|m - l| / 2) + 2 ^ (|m - l| / 2), by positivity, fun a x hx ξ u w ↦ ?_⟩
+  set P := ((Finset.range (j + l + 1)).sup fun i ↦ HomogeneousSymbol.seminorm K i) a
+  have hP : 0 ≤ P := apply_nonneg _ _
+  have hw : 0 < (1 + ‖ξ‖ ^ 2) ^ ((m - l) / 2) := by positivity
+  have hprod : 0 ≤ (∏ i, ‖u i‖) * ∏ i, ‖w i‖ := by positivity
+  rcases le_or_gt ‖ξ‖ 2 with hξ2 | hξ2
+  · -- Near the zero frequency use the bound of the Leibniz rule.
+    refine ((iteratedFDeriv ℝ (j + l) (fun p : X × E ↦ χ p.2 • a.coefficient p)
+      (x, ξ)).norm_apply_append_prod_le u w).trans
+      (mul_le_mul_of_nonneg_right ((h₁ a x hx ξ hξ2).trans ?_) hprod)
+    have h5 := Real.one_le_five_rpow_mul_one_add_sq_rpow (t := ‖ξ‖) (by rwa [abs_norm]) (m - l)
+    calc C₁ * P ≤ C₁ * P * (5 ^ (|m - l| / 2) * (1 + ‖ξ‖ ^ 2) ^ ((m - l) / 2)) :=
+          le_mul_of_one_le_right (by positivity) h5
+      _ ≤ (C₁ * 5 ^ (|m - l| / 2) + 2 ^ (|m - l| / 2)) * P * (1 + ‖ξ‖ ^ 2) ^ ((m - l) / 2) := by
+          nlinarith [mul_nonneg (mul_nonneg hP hw.le)
+            (Real.rpow_nonneg zero_le_two (|m - l| / 2))]
+  · -- At large frequencies the cut-off term is the homogeneous symbol itself.
+    have hξ0 : ξ ≠ 0 := norm_pos_iff.1 (two_pos.trans hξ2)
+    rw [a.iteratedFDeriv_smul_coefficient_of_two_lt_norm χ hξ2]
+    refine (a.norm_iteratedFDeriv_append_le_seminorm K hx hξ0 u w).trans
+      (mul_le_mul_of_nonneg_right ?_ hprod)
+    have hk : j + l ∈ Finset.range (j + l + 1) := Finset.self_mem_range_succ _
+    have hpk : HomogeneousSymbol.seminorm K (j + l) a ≤ P := Seminorm.le_finset_sup_apply hk
+    have hξw := norm_rpow_le_one_add_norm_sq_rpow (one_le_two.trans hξ2.le) (m - l)
+    calc ‖ξ‖ ^ (m - l) * HomogeneousSymbol.seminorm K (j + l) a
+        ≤ 2 ^ (|m - l| / 2) * (1 + ‖ξ‖ ^ 2) ^ ((m - l) / 2) * P :=
+          mul_le_mul hξw hpk (apply_nonneg _ _) (by positivity)
+      _ ≤ (C₁ * 5 ^ (|m - l| / 2) + 2 ^ (|m - l| / 2)) * P * (1 + ‖ξ‖ ^ 2) ^ ((m - l) / 2) := by
+          nlinarith [mul_nonneg (mul_nonneg hP hw.le)
+            (mul_nonneg hC₁ (Real.rpow_nonneg (by norm_num : (0 : ℝ) ≤ 5) (|m - l| / 2)))]
+
+/-- On a proper frequency space, the cut-off term `χ(ξ) a(x, ξ)` of a homogeneous symbol of
+degree `m` satisfies the symbol estimates of order `m`: its derivatives in `j` position
+directions and `l` frequency directions are bounded by `C ⟨ξ⟩ ^ (m - l)` for positions in a
+compact set and every frequency. -/
+theorem exists_norm_iteratedFDeriv_smul_coefficient_le (a : HomogeneousSymbol X E V W m)
+    (χ : FrequencyCutoff E) {K : Set X} (hK : IsCompact K) (j l : ℕ) :
+    ∃ C, 0 ≤ C ∧ ∀ x ∈ K, ∀ (ξ : E) (u : Fin j → X) (w : Fin l → E),
+      ‖iteratedFDeriv ℝ (j + l) (fun p : X × E ↦ χ p.2 • a.coefficient p) (x, ξ)
+          (Fin.append (fun i ↦ (u i, 0)) (fun i ↦ (0, w i)))‖ ≤
+        C * (1 + ‖ξ‖ ^ 2) ^ ((m - l) / 2) * (∏ i, ‖u i‖) * ∏ i, ‖w i‖ := by
+  obtain ⟨C, hC, h⟩ := exists_norm_iteratedFDeriv_smul_coefficient_le_seminorm
+    (V := V) (W := W) (m := m) χ ⟨K, hK⟩ j l
+  set P := ((Finset.range (j + l + 1)).sup fun i ↦ HomogeneousSymbol.seminorm ⟨K, hK⟩ i) a
+  refine ⟨C * P, mul_nonneg hC (apply_nonneg _ _), fun x hx ξ u w ↦ ?_⟩
+  rw [mul_assoc _ (∏ i, ‖u i‖)]
+  exact h a x (SetLike.mem_coe.1 (by rwa [Compacts.coe_mk])) ξ u w
 
 end Seminorm
 
