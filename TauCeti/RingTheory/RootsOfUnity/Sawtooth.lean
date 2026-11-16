@@ -8,7 +8,6 @@ module
 public import Mathlib.Algebra.Ring.GeomSum
 public import Mathlib.Algebra.BigOperators.Field
 public import Mathlib.Algebra.BigOperators.Intervals
-public import Mathlib.Algebra.CharZero.Defs
 public import Mathlib.Algebra.Order.Interval.Finset.SuccPred
 
 import Mathlib.Tactic.FieldSimp
@@ -19,8 +18,8 @@ import Mathlib.Tactic.Ring
 /-!
 # The sawtooth sum at a root of unity
 
-For `N > 0` and an `N`-th root of unity `ζ` in a field of characteristic zero, the finite sum of
-the sawtooth weights `j / N - 1 / 2` against the powers of `ζ` is
+For an `N`-th root of unity `ζ` in a field in which `2` and `N` are invertible, the finite sum
+of the sawtooth weights `j / N - 1 / 2` against the powers of `ζ` is
 
 `∑_{1 ≤ j < N} (j / N - 1 / 2) ζ ^ j = (ζ + 1) / (2 (ζ - 1))`  if `ζ ≠ 1`,
 
@@ -72,35 +71,34 @@ theorem sum_range_natCast_mul_pow_of_pow_eq_one {N : ℕ} {ζ : K} (hζN : ζ ^ 
     exact sum_congr rfl fun j _ ↦ by ring
   linear_combination (-1 : K) * h + (-1 : K) * hmul
 
-variable [CharZero K]
-
-/-- The sawtooth weights `j / N - 1 / 2`, `1 ≤ j < N`, sum to zero. -/
-theorem sum_Ico_div_sub_half (N : ℕ) :
+/-- The sawtooth weights `j / N - 1 / 2`, `1 ≤ j < N`, sum to zero, provided `2` is invertible
+and `N` is either `0` or invertible in `K`. -/
+theorem sum_Ico_div_sub_half (h2 : (2 : K) ≠ 0) {N : ℕ} (hN : (N : K) = 0 → N = 0) :
     ∑ j ∈ Ico 1 N, ((j : K) / N - 1 / 2) = 0 := by
-  rcases Nat.eq_zero_or_pos N with rfl | hN
+  rcases Nat.eq_zero_or_pos N with rfl | hN0
   · simp
-  have hN' : (N : K) ≠ 0 := Nat.cast_ne_zero.mpr hN.ne'
-  have hsum := sum_range_eq_add_Ico (fun j : ℕ ↦ (j : K) / N - 1 / 2) hN
+  have hN' : (N : K) ≠ 0 := fun h ↦ hN0.ne' (hN h)
+  have hsum := sum_range_eq_add_Ico (fun j : ℕ ↦ (j : K) / N - 1 / 2) hN0
   have hid : ∑ j ∈ range N, (j : K) = N * (N - 1) / 2 := by
     have h := sum_range_id_mul_two N
-    rw [eq_div_iff (by norm_num : (2 : K) ≠ 0), ← Nat.cast_sum]
-    exact_mod_cast (by rw [h, Nat.cast_mul, Nat.cast_sub hN, Nat.cast_one] :
+    rw [eq_div_iff h2, ← Nat.cast_sum]
+    exact_mod_cast (by rw [h, Nat.cast_mul, Nat.cast_sub hN0, Nat.cast_one] :
       ((∑ i ∈ range N, i) * 2 : ℕ) = (N : K) * (N - 1))
   rw [sum_sub_distrib, ← sum_div, hid, sum_const, card_range, nsmul_eq_mul] at hsum
   push_cast at hsum
   set S := ∑ j ∈ Ico 1 N, ((j : K) / N - 1 / 2)
   field_simp at hsum
   have h2NS : (2 * N : K) * S = 0 := by linear_combination -hsum
-  exact (mul_eq_zero.mp h2NS).resolve_left (mul_ne_zero (by norm_num : (2 : K) ≠ 0) hN')
+  exact (mul_eq_zero.mp h2NS).resolve_left (mul_ne_zero h2 hN')
 
-/-- **The sawtooth sum at a nontrivial root of unity.** For `N > 0` and `ζ ^ N = 1`, `ζ ≠ 1`, in a
-field of characteristic zero, `∑_{1 ≤ j < N} (j / N - 1 / 2) ζ ^ j = (ζ + 1) / (2 (ζ - 1))`.
+/-- **The sawtooth sum at a nontrivial root of unity.** If `2` and `N` are invertible in `K` and
+`ζ ^ N = 1`, `ζ ≠ 1`, then `∑_{1 ≤ j < N} (j / N - 1 / 2) ζ ^ j = (ζ + 1) / (2 (ζ - 1))`.
 For `ζ = e^{2π i t}` the right-hand side is `cot (π t) / (2 i)`. -/
-theorem sum_Ico_div_sub_half_mul_pow_of_pow_eq_one {N : ℕ} (hN : 0 < N) {ζ : K}
-    (hζN : ζ ^ N = 1) (hζ : ζ ≠ 1) :
+theorem sum_Ico_div_sub_half_mul_pow_of_pow_eq_one (h2 : (2 : K) ≠ 0) {N : ℕ}
+    (hN' : (N : K) ≠ 0) {ζ : K} (hζN : ζ ^ N = 1) (hζ : ζ ≠ 1) :
     ∑ j ∈ Ico 1 N, ((j : K) / N - 1 / 2) * ζ ^ j = (ζ + 1) / (2 * (ζ - 1)) := by
+  have hN : 0 < N := Nat.pos_of_ne_zero fun h ↦ hN' (by rw [h, Nat.cast_zero])
   have hsub : ζ - 1 ≠ 0 := sub_ne_zero.mpr hζ
-  have hN' : (N : K) ≠ 0 := Nat.cast_ne_zero.mpr hN.ne'
   have hgeom : ∑ j ∈ range N, ζ ^ j = 0 := by
     have h := mul_geom_sum ζ N
     rw [hζN, sub_self] at h
@@ -113,7 +111,7 @@ theorem sum_Ico_div_sub_half_mul_pow_of_pow_eq_one {N : ℕ} (hN : 0 < N) {ζ : 
   rw [hsplit, sum_range_natCast_mul_pow_of_pow_eq_one hζN hζ, hgeom] at hsum
   set S := ∑ j ∈ Ico 1 N, ((j : K) / N - 1 / 2) * ζ ^ j
   push_cast at hsum
-  rw [eq_div_iff (mul_ne_zero (by norm_num : (2 : K) ≠ 0) hsub)]
+  rw [eq_div_iff (mul_ne_zero h2 hsub)]
   field_simp at hsum
   refine mul_left_cancel₀ hN' ?_
   linear_combination -hsum

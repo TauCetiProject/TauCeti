@@ -239,9 +239,11 @@ private theorem sawtoothSum_mul {a : AddCircle (1 : ℚ)} {n : ℕ} (hn : 0 < n)
           ((n * q + x : ℕ) : ℚ) = ((n * q : ℕ) : ℚ) • U n + T n := by
         simp only [U, T, hshift, smul_sum, AddMonoidAlgebra.smul_single', mul_one,
           ← sum_add_distrib, ← AddMonoidAlgebra.single_add, Nat.cast_add]
-      rw [Nat.mul_succ, show T (n * q + n) = T (n * q) + ∑ x ∈ range n,
-          AddMonoidAlgebra.single ((n * q + x) • a) ((n * q + x : ℕ) : ℚ) from sum_range_add _ _ _,
-        hsplit, ih]
+      -- split `T (n * q + n)` into its first `n * q` terms and the last block of `n` terms
+      have hblock : T (n * q + n) = T (n * q) + ∑ x ∈ range n,
+          AddMonoidAlgebra.single ((n * q + x) • a) ((n * q + x : ℕ) : ℚ) :=
+        sum_range_add _ _ _
+      rw [Nat.mul_succ, hblock, hsplit, ih]
       push_cast
       module
   have hn' : (n : ℚ) ≠ 0 := Nat.cast_ne_zero.mpr hn.ne'
@@ -312,8 +314,8 @@ theorem lift_firstEisenstein_of_ne_one {K : Type*} [Field K] [CharZero K]
     AddMonoidAlgebra.lift ℚ K (AddCircle (1 : ℚ)) χ (firstEisenstein a) =
       (χ (Multiplicative.ofAdd a) + 1) / (2 * (χ (Multiplicative.ofAdd a) - 1)) := by
   rw [lift_firstEisenstein_eq_sum]
-  refine sum_Ico_div_sub_half_mul_pow_of_pow_eq_one
-    (AddCircle.isOfFinAddOrder_rat a).addOrderOf_pos ?_ ha
+  refine sum_Ico_div_sub_half_mul_pow_of_pow_eq_one two_ne_zero
+    (Nat.cast_ne_zero.mpr (AddCircle.isOfFinAddOrder_rat a).addOrderOf_pos.ne') ?_ ha
   rw [← map_pow, ← ofAdd_nsmul, addOrderOf_nsmul_eq_zero, ofAdd_zero, map_one]
 
 /-- **The value of `e₁,ₐ` at a degenerate character.** If `χ(a) = 1` for a character `χ` of `ℚ/ℤ`
@@ -323,7 +325,7 @@ theorem lift_firstEisenstein_of_eq_one {A : Type*} [Semiring A] [Algebra ℚ A]
     (ha : χ (Multiplicative.ofAdd a) = 1) :
     AddMonoidAlgebra.lift ℚ A (AddCircle (1 : ℚ)) χ (firstEisenstein a) = 0 := by
   simp only [firstEisenstein, map_sum, AddMonoidAlgebra.lift_single, ofAdd_nsmul, map_pow, ha,
-    one_pow, ← sum_smul, sum_Ico_div_sub_half, zero_smul]
+    one_pow, ← sum_smul, sum_Ico_div_sub_half two_ne_zero Nat.cast_eq_zero.mp, zero_smul]
 
 open Complex in
 /-- **The cotangent value of `e₁,ₐ`.** If a complex character `χ` of `ℚ/ℤ` has `χ(a) = e^{2π i t}`,
@@ -369,6 +371,7 @@ theorem eisenstein_zero_right (k : ℕ) :
     aeval_algebraMap_apply_eq_algebraMap_eval]
 
 /-- `e_{k,-a} = (-1)^k e_{k,a}`. -/
+@[simp]
 theorem eisenstein_neg (k : ℕ) (a : AddCircle (1 : ℚ)) :
     eisenstein k (-a) = (-1) ^ k * eisenstein k a := by
   have h := congrArg (aeval (firstEisenstein a)) (eisensteinPoly_comp_neg_X k)
@@ -401,8 +404,8 @@ private theorem three_nsmul_coe_third : 3 • ((1 / 3 : ℚ) : AddCircle (1 : �
 
 /-- `e₁,₁/₂ = 0`. -/
 theorem firstEisenstein_half : firstEisenstein ((1 / 2 : ℚ) : AddCircle (1 : ℚ)) = 0 := by
-  rw [firstEisenstein_eq_sum two_pos two_nsmul_coe_half, show Ico 1 2 = {1} from rfl,
-    sum_singleton]
+  have hI : Ico 1 2 = {1} := by decide
+  rw [firstEisenstein_eq_sum two_pos two_nsmul_coe_half, hI, sum_singleton]
   norm_num
 
 /-- `e₁,₁/₃ = -e(1/3)/6 + e(2/3)/6`. -/
@@ -410,8 +413,9 @@ theorem firstEisenstein_third :
     firstEisenstein ((1 / 3 : ℚ) : AddCircle (1 : ℚ)) =
       AddMonoidAlgebra.single ((1 / 3 : ℚ) : AddCircle (1 : ℚ)) (-1 / 6) +
         AddMonoidAlgebra.single ((2 / 3 : ℚ) : AddCircle (1 : ℚ)) (1 / 6) := by
-  rw [firstEisenstein_eq_sum three_pos three_nsmul_coe_third, ← two_nsmul_coe_third,
-    show Ico 1 3 = {1, 2} from rfl, sum_pair (by norm_num)]
+  have hI : Ico 1 3 = {1, 2} := by decide
+  rw [firstEisenstein_eq_sum three_pos three_nsmul_coe_third, ← two_nsmul_coe_third, hI,
+    sum_pair (by norm_num)]
   norm_num
 
 /-- `e₂,₀ = -1/4`. -/
@@ -441,17 +445,20 @@ theorem eisenstein_two_third :
     ← two_nsmul_coe_third]
   set x : AddCircle (1 : ℚ) := ((1 / 3 : ℚ) : AddCircle (1 : ℚ))
   have h3 : x + 2 • x = 0 := by rw [← succ_nsmul', three_nsmul_coe_third]
-  have h4 : 2 • 2 • x = x := by
-    rw [← mul_nsmul', show 2 * 2 = 3 + 1 by rfl, add_nsmul, three_nsmul_coe_third, one_nsmul,
-      zero_add]
-  simp only [sq, add_mul, mul_add, AddMonoidAlgebra.single_mul_single, ← two_nsmul, h3,
+  have h2 : 2 • x = -x := eq_neg_of_add_eq_zero_right h3
+  have h4 : 2 • 2 • x = x := by rw [h2, smul_neg, h2, neg_neg]
+  simp only [sq, add_mul, mul_add, AddMonoidAlgebra.single_mul_single, ← two_nsmul, h3, h4,
     add_comm (2 • x) x, AddMonoidAlgebra.coe_algebraMap, Function.comp_apply,
     Algebra.algebraMap_self, RingHom.id_apply]
-  rw [h4, show (11 / 36 : ℚ) = 1 / 36 + 1 / 36 + 1 / 4 by norm_num, AddMonoidAlgebra.single_add,
-    AddMonoidAlgebra.single_add, show (-1 / 6 * (-1 / 6) : ℚ) = 1 / 36 by norm_num,
-    show (1 / 6 * (1 / 6) : ℚ) = 1 / 36 by norm_num,
-    show (1 / 6 * (-1 / 6) : ℚ) = -(1 / 36) by norm_num,
-    show (-1 / 6 * (1 / 6) : ℚ) = -(1 / 36) by norm_num, AddMonoidAlgebra.single_neg]
+  -- write every term as a rational multiple of a basis element and compare coefficients
+  -- split the constant term `11 / 36 = 1 / 36 + 1 / 36 + 1 / 4`, then normalize coefficients
+  have h0 : AddMonoidAlgebra.single (0 : AddCircle (1 : ℚ)) (11 / 36 : ℚ) =
+      AddMonoidAlgebra.single 0 (1 / 36) + AddMonoidAlgebra.single 0 (1 / 36) +
+        AddMonoidAlgebra.single 0 (1 / 4) := by
+    rw [← AddMonoidAlgebra.single_add, ← AddMonoidAlgebra.single_add]
+    norm_num
+  rw [h0]
+  norm_num [AddMonoidAlgebra.single_neg]
   abel
 
 end TauCeti.BostConnes
