@@ -22,8 +22,7 @@ Use `open scoped TauCeti` to install that radial metric via
 The induced-metric identity for a spherical isometric immersion is downstream motivation;
 this file constructs the intrinsic metric without an immersion hypothesis.
 
-Adapted from Yangyang Li's formalization, ported by Riccardo Brasca in commit
-`247d17d130a24baafcb83278fbea532f606084b4` of TauCetiProject/TauCeti (Apache 2.0).
+Adapted from Yangyang Li's formalization, ported by Riccardo Brasca.
 -/
 
 public noncomputable section
@@ -107,8 +106,8 @@ theorem cone_inner (g : ContMDiffRiemannianMetric I n E (fun x : M ↦ TangentSp
           (tangentSpaceProdEquiv p v).2 (tangentSpaceProdEquiv p w).2 := by
   rw [inner_tangentSpace_open]
   rw [cone, ContMDiffRiemannianMetric.warpedProdTangentSpace_inner,
-    ContMDiffRiemannianMetric.restrictOpenTangentSpace_inner, ofLE_inner]
-  rfl
+    ContMDiffRiemannianMetric.restrictOpenTangentSpace_inner, ofLE_inner,
+    TauCeti.riemannianBundle_g_inner_vectorSpace]
 
 /-- The cone metric pairs radial coordinate velocities and adds the radius-scaled link metric. -/
 @[simp]
@@ -137,6 +136,8 @@ theorem isWarpedProduct_cone
   let : RiemannianBundle
       (fun p : radiusDomain × M ↦ TangentSpace ((𝓘(ℝ)).prod I) p) :=
     ⟨(cone g).toRiemannianMetric⟩
-  exact ⟨cone_inner g⟩
+  refine ⟨fun p v w ↦ ?_⟩
+  rw [inner_riemannianBundle (cone g), inner_riemannianBundle g]
+  exact cone_inner g p v w
 
 end Bundle.ContMDiffRiemannianMetric

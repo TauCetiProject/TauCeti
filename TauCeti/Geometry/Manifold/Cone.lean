@@ -18,8 +18,7 @@ differential formulas. These supply the calculus for studying the regular part o
 an immersion.
 The intrinsic metric is constructed separately in `TauCeti.Geometry.Manifold.Riemannian.Cone`.
 
-Adapted from Yangyang Li's formalization, ported by Riccardo Brasca in commit
-`247d17d130a24baafcb83278fbea532f606084b4` of TauCetiProject/TauCeti (Apache 2.0).
+Adapted from Yangyang Li's formalization, ported by Riccardo Brasca.
 -/
 
 public noncomputable section
@@ -82,21 +81,21 @@ theorem contMDiff_radialVector {k : ℕ∞ω} :
   rw [hr, ← Bundle.Trivialization.continuousLinearMapAt_apply_of_mem ℝ t hst]
   exact t.continuousLinearMapAt_symmL hst 1
 
+/-- The positive-radius cone parametrization of a vector-valued map. -/
+def parametrization {M F : Type*} [SMul ℝ F] (f : M → F) (p : radiusDomain × M) : F :=
+  (p.1 : ℝ) • f p.2
+
+/-- Evaluation of the cone parametrization. -/
+theorem parametrization_def {M F : Type*} [SMul ℝ F] (f : M → F)
+    (p : radiusDomain × M) :
+    parametrization f p = (p.1 : ℝ) • f p.2 :=
+  (rfl)
+
 variable
   {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
   {H : Type*} [TopologicalSpace H] {I : ModelWithCorners ℝ E H}
   {M : Type*} [TopologicalSpace M] [ChartedSpace H M]
   {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F]
-
-/-- The positive-radius cone parametrization of a vector-valued map. -/
-def parametrization (f : M → F) (p : radiusDomain × M) : F :=
-  (p.1 : ℝ) • f p.2
-
-omit [TopologicalSpace M] in
-/-- Evaluation of the cone parametrization. -/
-theorem parametrization_def (f : M → F) (p : radiusDomain × M) :
-    parametrization f p = (p.1 : ℝ) • f p.2 :=
-  (rfl)
 
 /-- Local smoothness of a cone parametrization follows from local smoothness of its link. -/
 theorem contMDiffAt_parametrization {f : M → F} {p : radiusDomain × M} {k : ℕ∞ω}
