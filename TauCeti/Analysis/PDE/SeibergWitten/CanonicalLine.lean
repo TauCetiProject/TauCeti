@@ -50,6 +50,8 @@ plane vortex equations, in the convention `∂bar_a α = (∇₁ α + i ∇₂ �
 
 ## Main results
 
+* `TauCeti.SeibergWitten.kahlerSelfDual`: the unit Kähler self-dual two-vector
+  `ω_u = (√2 / 2) ω ∈ Λ⁺ V` (`coe_kahlerSelfDual`, `norm_kahlerSelfDual`).
 * `TauCeti.SeibergWitten.ι_apply_apply_of_cliffordProjection_apply_eq_self`: `c(J v) ψ = i c(v) ψ`
   for `P_α ψ = ψ`, and `TauCeti.SeibergWitten.ι_apply_apply_of_cliffordProjection_apply_eq_zero`:
   `c(J v) β = -i c(v) β` for `P_α β = 0`.
@@ -83,8 +85,43 @@ noncomputable section
 
 namespace TauCeti.SeibergWitten
 
-open CliffordAlgebra Module
+open CliffordAlgebra Module exteriorPower
 open scoped RealInnerProductSpace InnerProductSpace
+
+section KahlerSelfDual
+
+variable {V : Type*} [NormedAddCommGroup V] [InnerProductSpace ℝ V] [Fact (finrank ℝ V = 4)]
+  {o : Orientation ℝ V (Fin 4)} {e : OrthonormalBasis (Fin 4) ℝ V} {J : AlmostComplexStructure V}
+
+attribute [local instance] finiteDimensional_of_finrank_four
+
+variable (o J) in
+/-- The unit Kähler self-dual two-vector `ω_u = (√2 / 2) ω ∈ Λ⁺ V`. -/
+def kahlerSelfDual (hkl : 2 + 2 = finrank ℝ V) (he : e.toBasis.orientation = o)
+    (h₀ : J (e 0) = e 1) (h₂₃ : J (e 2) = e 3) :
+    Module.End.eigenspace (o.hodgeStar hkl : Module.End ℝ (⋀[ℝ]^2 V)) 1 :=
+  ⟨(√2 / 2 : ℝ) • J.kahlerForm, Module.End.mem_eigenspace_iff.2 <| by
+    simp [AlmostComplexStructure.hodgeStar_kahlerForm h₀ h₂₃ hkl he]⟩
+
+/-- The underlying two-vector of `kahlerSelfDual` is `(√2 / 2) ω`. -/
+@[simp]
+theorem coe_kahlerSelfDual (hkl : 2 + 2 = finrank ℝ V) (he : e.toBasis.orientation = o)
+    (h₀ : J (e 0) = e 1) (h₂₃ : J (e 2) = e 3) :
+    (kahlerSelfDual o J hkl he h₀ h₂₃ : ⋀[ℝ]^2 V) = (√2 / 2 : ℝ) • J.kahlerForm :=
+  (rfl)
+
+/-- `kahlerSelfDual` is a unit vector in `Λ⁺ V`. -/
+@[simp]
+theorem norm_kahlerSelfDual {hkl : 2 + 2 = finrank ℝ V} {he : e.toBasis.orientation = o}
+    {h₀ : J (e 0) = e 1} {h₂₃ : J (e 2) = e 3} :
+    ‖kahlerSelfDual o J hkl he h₀ h₂₃‖ = 1 :=
+  (pow_eq_one_iff_of_nonneg (norm_nonneg _) two_ne_zero).1 <| by
+    have hJ := AlmostComplexStructure.inner_apply_apply_of_orthonormalBasis h₀ h₂₃
+    rw [← Submodule.norm_coe, coe_kahlerSelfDual, norm_smul, mul_pow, Real.norm_eq_abs, sq_abs,
+      AlmostComplexStructure.norm_kahlerForm_sq_eq_two hJ, div_pow, Real.sq_sqrt zero_le_two]
+    ring
+
+end KahlerSelfDual
 
 variable {V : Type*} [NormedAddCommGroup V] [InnerProductSpace ℝ V] [Fact (finrank ℝ V = 4)]
   {Q : QuadraticForm ℝ V} {o : Orientation ℝ V (Fin 4)}
