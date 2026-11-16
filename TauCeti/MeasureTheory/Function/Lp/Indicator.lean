@@ -41,13 +41,12 @@ identifies sets up to almost-everywhere equality, and equals the constant one at
   function `G`, as a sum of indicator classes of the fibres of `G`.
 * `MeasureTheory.SimpleFunc.memLp_indicator`, `MeasureTheory.SimpleFunc.integrable_indicator`: a
   simple function cut off to a measurable set of finite measure lies in every `Lᵖ`.
-* `MeasureTheory.SimpleFunc.toLpTop_one`: the class in `L∞` of the constant simple function `1`
-  is `1`.
 * `TauCeti.linftyIndicator μ R s hs`: the class in `Lp R ∞ μ` of the indicator of a measurable set.
 * `MeasureTheory.SimpleFunc.toLpTop_piecewise_const_zero`: the class of a simple function
   `c • 1_s` is `c • linftyIndicator μ R s hs`.
-* `ContinuousLinearMap.eq_zero_of_apply_indicatorConstLp`: a continuous semilinear map out of `Lᵖ`,
-  `p ≠ ∞`, that vanishes on all finite-measure constant indicator classes is zero.
+* `ContinuousLinearMap.ext_indicatorConstLp`,
+  `ContinuousLinearMap.eq_zero_of_apply_indicatorConstLp`: continuous semilinear maps out of `Lᵖ`,
+  `p ≠ ∞`, are determined by their values on all finite-measure constant indicator classes.
 * `ContinuousLinearMap.eq_zero_of_apply_indicatorConstLp_singleton`: a continuous linear map out of
   counting-measure `Lᵖ`, `p ≠ ∞`, that vanishes on singleton-supported vectors is zero.
 * `LinearMap.ext_linftyIndicator`: a continuous linear map out of real `L∞` is determined by its
@@ -183,14 +182,6 @@ open MeasureTheory
 
 variable {α : Type*} [MeasurableSpace α] {μ : Measure α} {s t : Set α}
 
-/-- The class in `L∞` of the constant simple function `1` is `1`. -/
-@[simp]
-theorem _root_.MeasureTheory.SimpleFunc.toLpTop_one {𝕜 E : Type*} [NormedAddCommGroup E] [One E]
-    [NormedRing 𝕜] [Module 𝕜 E] [IsBoundedSMul 𝕜 E] :
-    SimpleFunc.toLpTop μ 𝕜 (1 : SimpleFunc α E) = 1 :=
-  Lp.ext ((SimpleFunc.coeFn_toLpTop (μ := μ) (𝕜 := 𝕜) (1 : SimpleFunc α E)).trans
-    (Lp.coeFn_one (E := E) (μ := μ)).symm)
-
 section LinftyIndicator
 
 variable {R : Type*} [NormedAddCommGroup R] [One R]
@@ -212,12 +203,13 @@ theorem coeFn_linftyIndicator (hs : MeasurableSet s) :
 /-- A constant multiple of an indicator, as a simple function, has class a multiple of
 `TauCeti.linftyIndicator`. -/
 @[simp]
-theorem _root_.MeasureTheory.SimpleFunc.toLpTop_piecewise_const_zero {R : Type*} [NormedRing R]
+theorem _root_.MeasureTheory.SimpleFunc.toLpTop_piecewise_const_zero
+    {𝕜 R : Type*} [NormedRing 𝕜] [NormedRing R] [Module 𝕜 R] [IsBoundedSMul 𝕜 R]
     (hs : MeasurableSet s) (c : R) :
-    SimpleFunc.toLpTop μ R (SimpleFunc.piecewise s hs (SimpleFunc.const α c) 0) =
+    SimpleFunc.toLpTop μ 𝕜 (SimpleFunc.piecewise s hs (SimpleFunc.const α c) 0) =
       c • linftyIndicator μ R s hs := by
   refine Lp.ext ?_
-  filter_upwards [SimpleFunc.coeFn_toLpTop (μ := μ) (𝕜 := R)
+  filter_upwards [SimpleFunc.coeFn_toLpTop (μ := μ) (𝕜 := 𝕜)
       (SimpleFunc.piecewise s hs (SimpleFunc.const α c) 0),
     Lp.coeFn_smul c (linftyIndicator μ R s hs),
     coeFn_linftyIndicator (μ := μ) (R := R) hs] with x h₁ h₂ h₃
@@ -287,6 +279,26 @@ namespace ContinuousLinearMap
 open MeasureTheory
 open scoped ENNReal
 
+/-- Two continuous semilinear maps out of `Lᵖ`, `p ≠ ∞`, that agree on all finite-measure constant
+indicator classes are equal. -/
+theorem ext_indicatorConstLp
+    {α 𝕜₁ 𝕜₂ E F : Type*} [MeasurableSpace α] {μ : Measure α}
+    [NormedRing 𝕜₁] [Semiring 𝕜₂] {σ₁₂ : 𝕜₁ →+* 𝕜₂}
+    [NormedAddCommGroup E] [Module 𝕜₁ E] [IsBoundedSMul 𝕜₁ E]
+    [TopologicalSpace F] [AddCommMonoid F] [Module 𝕜₂ F] [T2Space F]
+    {p : ℝ≥0∞} [Fact (1 ≤ p)] (hp : p ≠ ∞)
+    {S T : Lp E p μ →SL[σ₁₂] F}
+    (h : ∀ (s : Set α) (hs : MeasurableSet s) (hμs : μ s ≠ ∞) (c : E),
+      S (indicatorConstLp p hs hμs c) = T (indicatorConstLp p hs hμs c)) : S = T := by
+  refine ContinuousLinearMap.ext fun f ↦ ?_
+  refine Lp.induction (p := p) hp (fun f ↦ S f = T f) ?_ ?_
+    (isClosed_eq S.continuous T.continuous) f
+  · intro c s hs hμs
+    rw [Lp.simpleFunc.coe_indicatorConst]
+    exact h s hs hμs.ne c
+  · intro f g _ _ _ hfg₁ hfg₂
+    rw [map_add, map_add, hfg₁, hfg₂]
+
 /-- A continuous semilinear map out of `Lᵖ`, `p ≠ ∞`, that vanishes on all finite-measure constant
 indicator classes is zero. -/
 theorem eq_zero_of_apply_indicatorConstLp
@@ -297,15 +309,10 @@ theorem eq_zero_of_apply_indicatorConstLp
     {p : ℝ≥0∞} [Fact (1 ≤ p)] (hp : p ≠ ∞)
     (T : Lp E p μ →SL[σ₁₂] F)
     (h : ∀ (s : Set α) (hs : MeasurableSet s) (hμs : μ s ≠ ∞) (c : E),
-      T (indicatorConstLp p hs hμs c) = 0) : T = 0 := by
-  refine ContinuousLinearMap.ext fun f ↦ ?_
-  refine Lp.induction (p := p) hp (fun f ↦ T f = 0) ?_ ?_
-    (isClosed_eq T.continuous continuous_const) f
-  · intro c s hs hμs
-    rw [Lp.simpleFunc.coe_indicatorConst]
-    exact h s hs hμs.ne c
-  · intro f g _ _ _ hTf hTg
-    rw [map_add, hTf, hTg, add_zero]
+      T (indicatorConstLp p hs hμs c) = 0) : T = 0 :=
+  ext_indicatorConstLp hp fun s hs hμs c ↦ by
+    rw [zero_apply]
+    exact h s hs hμs c
 
 /-- A continuous linear map out of counting-measure `Lᵖ`, `p ≠ ∞`, that vanishes on all
 singleton-supported vectors is zero. No countability of the index space is needed. -/

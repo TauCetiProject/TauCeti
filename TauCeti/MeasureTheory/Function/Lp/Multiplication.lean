@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Analysis.InnerProductSpace.Adjoint
 public import Mathlib.LinearAlgebra.Eigenspace.Basic
+public import Mathlib.MeasureTheory.Constructions.UnitInterval
 public import Mathlib.MeasureTheory.Function.Holder
 public import Mathlib.MeasureTheory.Function.L2Space
 public import Mathlib.MeasureTheory.Function.LpSpace.Indicator
@@ -14,6 +15,7 @@ public import TauCeti.MeasureTheory.Function.Lp.CompMeasurePreservingEquiv
 public import TauCeti.MeasureTheory.Function.Lp.Indicator
 public import TauCeti.MeasureTheory.Function.Lp.LinftyAlgebra
 import Mathlib.Analysis.Normed.Operator.NormedSpace
+import Mathlib.MeasureTheory.Function.LpSpace.ContinuousFunctions
 import TauCeti.MeasureTheory.Function.LpSeminorm.Multiplier
 
 /-!
@@ -27,6 +29,9 @@ adjoint, norm, pullback, unitary-conjugation, eigenspace, and commutant properti
 `L²` with values in any nontrivial space is the `L∞` norm of the symbol, and on complex scalar `L²`
 every bounded operator commuting with indicator multiplications on sets of finite measure is
 locally multiplication by an `L∞` symbol (and globally so when the measure is sigma-finite).
+As a concrete eigenspace example, multiplication by the real-valued coordinate symbol
+`TauCeti.unitInterval.coordLp` on `Lp E 2 (volume : Measure unitInterval)` has no eigenvalues
+(`TauCeti.unitInterval.not_hasEigenvalue_multiplicationOperator_coordLp`).
 
 The construction is Mathlib's Hölder map for scalar multiplication with one exponent equal to
 infinity.  The resulting operator is the ambient multiplication operator compressed in the
@@ -140,8 +145,8 @@ theorem multiplicationOperator_comp_multiplicationOperator (a b : Lp ℂ ∞ μ)
 @[simp]
 theorem multiplicationOperator_mul (a b : Lp ℂ ∞ μ) :
     multiplicationOperator (E := E) (a * b) =
-      multiplicationOperator a * multiplicationOperator b :=
-  (multiplicationOperator_comp_multiplicationOperator a b).symm
+      multiplicationOperator a * multiplicationOperator b := by
+  rw [ContinuousLinearMap.mul_def, multiplicationOperator_comp_multiplicationOperator]
 
 /-- Multiplication operators commute with each other. -/
 theorem commute_multiplicationOperator (a b : Lp ℂ ∞ μ) :
@@ -377,6 +382,24 @@ theorem multiplicationOperator_linftyIndicator_indicatorConstLp
   rw [hmul, hsx, htx, hst]
   by_cases hxs : x ∈ s <;> by_cases hxt : x ∈ t <;> simp [hxs, hxt]
 
+/-- If `s ⊆ t`, multiplying an `L²` constant indicator of `t` by the `L∞` unit indicator of `s`
+restricts it to `s`. -/
+theorem multiplicationOperator_linftyIndicator_indicatorConstLp_of_subset
+    [NormedAddCommGroup E] [NormedSpace ℂ E] {s t : Set α} (hs : MeasurableSet s)
+    (ht : MeasurableSet t) (hμt : μ t ≠ ∞) (hst : s ⊆ t) (v : E) :
+    multiplicationOperator (TauCeti.linftyIndicator μ ℂ s hs) (indicatorConstLp 2 ht hμt v) =
+      indicatorConstLp 2 hs ((measure_mono hst).trans_lt hμt.lt_top).ne v := by
+  simpa [Set.inter_eq_left.mpr hst] using
+    multiplicationOperator_linftyIndicator_indicatorConstLp hs ht hμt v
+
+/-- Multiplying an `L²` constant indicator of `s` by the `L∞` unit indicator of `s` fixes it. -/
+theorem multiplicationOperator_linftyIndicator_indicatorConstLp_self
+    [NormedAddCommGroup E] [NormedSpace ℂ E] {s : Set α} (hs : MeasurableSet s)
+    (hμs : μ s ≠ ∞) (v : E) :
+    multiplicationOperator (TauCeti.linftyIndicator μ ℂ s hs) (indicatorConstLp 2 hs hμs v) =
+      indicatorConstLp 2 hs hμs v :=
+  multiplicationOperator_linftyIndicator_indicatorConstLp_of_subset hs hs hμs Set.Subset.rfl v
+
 /-- On a sigma-finite measure space, the indicator multiplications along `spanningSets μ` converge
 strongly to the identity on `Lp E 2 μ`. -/
 theorem tendsto_multiplicationOperator_linftyIndicator_spanningSets [SigmaFinite μ]
@@ -387,11 +410,9 @@ theorem tendsto_multiplicationOperator_linftyIndicator_spanningSets [SigmaFinite
   set P : ℕ → Lp E 2 μ →L[ℂ] Lp E 2 μ := fun n ↦
     multiplicationOperator
       (TauCeti.linftyIndicator μ ℂ (spanningSets μ n) (measurableSet_spanningSets μ n))
-  have hP (n : ℕ) : ‖P n‖ ≤ 1 := (norm_multiplicationOperator_le _).trans <|
-    Lp.norm_top_le_of_ae_bound zero_le_one <| by
-      filter_upwards [TauCeti.coeFn_linftyIndicator (μ := μ) (R := ℂ)
-        (measurableSet_spanningSets μ n)] with x hx
-      by_cases hxs : x ∈ spanningSets μ n <;> simp [hx, hxs]
+  have hP (n : ℕ) : ‖P n‖ ≤ 1 := (norm_multiplicationOperator_le _).trans
+    (TauCeti.isStarProjection_linftyIndicator (μ := μ) (R := ℂ)
+      (measurableSet_spanningSets μ n)).norm_le
   have hEqui : Equicontinuous ((↑) ∘ P) :=
     ((NormedSpace.equicontinuous_tfae P).out 2 6).2 (⟨1, hP⟩ : ∃ C, ∀ n, ‖P n‖ ≤ C)
   have hClosed : IsClosed {g : Lp E 2 μ | Tendsto (fun n ↦ P n g) atTop (𝓝 g)} :=
@@ -434,16 +455,15 @@ private theorem comp_multiplicationOperator_linftyIndicator_indicatorConstLp {s 
       (indicatorConstLp 2 hr hμr c) =
       c • multiplicationOperator (TauCeti.linftyIndicator μ ℂ (s ∩ r) (hs.inter hr)) u := by
     rw [hcr, map_smul, multiplicationOperator_linftyIndicator_indicatorConstLp hs hr hμr,
-      multiplicationOperator_linftyIndicator_indicatorConstLp (hs.inter hr) hs hμs]
-    congr 2
-    exact (Set.inter_eq_left.mpr hrs).symm
+      multiplicationOperator_linftyIndicator_indicatorConstLp_of_subset (hs.inter hr) hs hμs hrs]
   have hTPr : T (multiplicationOperator (TauCeti.linftyIndicator μ ℂ s hs)
       (indicatorConstLp 2 hr hμr c)) =
       c • multiplicationOperator (TauCeti.linftyIndicator μ ℂ (s ∩ r) (hs.inter hr)) (T u) := by
     rw [hPr, map_smul]
     congr 1
-    exact congrArg (fun S : Lp ℂ 2 μ →L[ℂ] Lp ℂ 2 μ ↦ S u)
+    have h := congrArg (fun S : Lp ℂ 2 μ →L[ℂ] Lp ℂ 2 μ ↦ S u)
       ((commute_iff_eq _ _).mp (hcomm (hs.inter hr) hrs))
+    rwa [mul_apply_eq_comp, mul_apply_eq_comp] at h
   rw [hTPr, multiplicationOperator_linftyIndicator_indicatorConstLp hs hr hμr]
   apply Lp.ext
   let Psr : Lp ℂ ∞ μ := TauCeti.linftyIndicator μ ℂ (s ∩ r) (hs.inter hr)
@@ -482,9 +502,8 @@ theorem exists_norm_le_and_comp_multiplicationOperator_linftyIndicator_eq {s : S
     have hrs : r ⊆ s := Set.inter_subset_right
     have hμr : μ r ≠ ∞ := ((measure_mono hrs).trans_lt hμs.lt_top).ne
     set f := indicatorConstLp 2 hr hμr (1 : ℂ)
-    have hfu : multiplicationOperator (TauCeti.linftyIndicator μ ℂ r hr) u = f := by
-      simpa [u, f, Set.inter_eq_left.mpr hrs] using
-        multiplicationOperator_linftyIndicator_indicatorConstLp hr hs hμs (1 : ℂ)
+    have hfu : multiplicationOperator (TauCeti.linftyIndicator μ ℂ r hr) u = f :=
+      multiplicationOperator_linftyIndicator_indicatorConstLp_of_subset hr hs hμs hrs (1 : ℂ)
     have hTf : T f = multiplicationOperator (TauCeti.linftyIndicator μ ℂ r hr) (T u) := by
       simpa [mul_apply_eq_comp, hfu] using
         congrArg (fun S : Lp ℂ 2 μ →L[ℂ] Lp ℂ 2 μ ↦ S u) ((commute_iff_eq _ _).mp (hcomm hr hrs))
@@ -505,16 +524,9 @@ theorem exists_norm_le_and_comp_multiplicationOperator_linftyIndicator_eq {s : S
   have ha_norm : ‖a‖ ≤ ‖T‖ := by
     rw [Lp.norm_def, ← toReal_eNorm T]
     exact ENNReal.toReal_mono eNorm_ne_top ((eLpNorm_congr_ae hφ_mem.coeFn_toLp).le.trans hφ_eLp)
-  refine ⟨a, ha_norm, ContinuousLinearMap.ext fun f ↦ ?_⟩
-  set P := multiplicationOperator (E := ℂ) (TauCeti.linftyIndicator μ ℂ s hs)
-  refine Lp.induction (p := 2) ENNReal.ofNat_ne_top
-    (fun f ↦ (T ∘L P) f = (multiplicationOperator a ∘L P) f) ?_
-    (fun _ _ _ _ _ hg₁ hg₂ ↦ by simp only [map_add, hg₁, hg₂])
-    (isClosed_eq (T ∘L P).continuous (multiplicationOperator a ∘L P).continuous) f
-  intro c r hr hμr
-  rw [Lp.simpleFunc.coe_indicatorConst]
-  exact comp_multiplicationOperator_linftyIndicator_indicatorConstLp hs hμs hr hμr.ne c T
-    hcomm hφ_mem.coeFn_toLp
+  refine ⟨a, ha_norm, ContinuousLinearMap.ext_indicatorConstLp ENNReal.ofNat_ne_top
+    fun r hr hμr c ↦ comp_multiplicationOperator_linftyIndicator_indicatorConstLp hs hμs hr hμr c T
+      hcomm hφ_mem.coeFn_toLp⟩
 
 /-- **Unconditional commutativity of the multiplier commutant.** On an arbitrary measure space —
 with no sigma-finiteness assumption — any two bounded operators on `Lp ℂ 2 μ` that commute with
@@ -526,21 +538,16 @@ theorem commute_of_forall_commute_multiplicationOperator_linftyIndicator
     (hT : ∀ ⦃s : Set α⦄ (hs : MeasurableSet s), μ s ≠ ∞ →
       Commute T (multiplicationOperator (TauCeti.linftyIndicator μ ℂ s hs))) :
     Commute S T := by
-  refine (commute_iff_eq _ _).mpr (ContinuousLinearMap.ext fun f ↦ ?_)
-  refine Lp.induction (p := 2) ENNReal.ofNat_ne_top (fun f ↦ (S * T) f = (T * S) f) ?_
-    (fun _ _ _ _ _ hg₁ hg₂ ↦ by simp only [map_add, hg₁, hg₂])
-    (isClosed_eq (S * T).continuous (T * S).continuous) f
-  intro c s hs hμs
-  rw [Lp.simpleFunc.coe_indicatorConst]
-  set u := indicatorConstLp 2 hs hμs.ne c
+  refine (commute_iff_eq _ _).mpr
+    (ContinuousLinearMap.ext_indicatorConstLp ENNReal.ofNat_ne_top fun s hs hμs c ↦ ?_)
+  set u := indicatorConstLp 2 hs hμs c
   set P := multiplicationOperator (E := ℂ) (TauCeti.linftyIndicator μ ℂ s hs)
-  have hPu : P u = u := by
-    simpa [P, u, Set.inter_self] using
-      multiplicationOperator_linftyIndicator_indicatorConstLp hs hs hμs.ne c
+  have hPu : P u = u :=
+    multiplicationOperator_linftyIndicator_indicatorConstLp_self hs hμs c
   obtain ⟨a, -, ha⟩ := exists_norm_le_and_comp_multiplicationOperator_linftyIndicator_eq hs
-    hμs.ne S fun t ht hts ↦ hS ht ((measure_mono hts).trans_lt hμs).ne
+    hμs S fun t ht hts ↦ hS ht ((measure_mono hts).trans_lt hμs.lt_top).ne
   obtain ⟨b, -, hb⟩ := exists_norm_le_and_comp_multiplicationOperator_linftyIndicator_eq hs
-    hμs.ne T fun t ht hts ↦ hT ht ((measure_mono hts).trans_lt hμs).ne
+    hμs T fun t ht hts ↦ hT ht ((measure_mono hts).trans_lt hμs.lt_top).ne
   have happly {A B : Lp ℂ 2 μ →L[ℂ] Lp ℂ 2 μ} {x y : Lp ℂ ∞ μ}
       (hA : A ∘L P = multiplicationOperator x ∘L P)
       (hB : B ∘L P = multiplicationOperator y ∘L P) :
@@ -616,9 +623,9 @@ theorem exists_multiplicationOperator_eq_of_forall_commute_linftyIndicator [Sigm
   have hcompat : ∀ᵐ x ∂μ, ∀ m n : ℕ, m ≤ n → x ∈ E m → b m x = b n x := by
     rw [ae_all_iff]; intro m; rw [ae_all_iff]; intro n
     by_cases hmn : m ≤ n
-    · have hem : e n * e m = e m := by
-        have hEmn : E n ∩ E m = E m := Set.inter_eq_right.mpr (monotone_spanningSets μ hmn)
-        simp only [e, TauCeti.linftyIndicator_mul, hEmn]
+    · have hem : e n * e m = e m :=
+        TauCeti.linftyIndicator_mul_linftyIndicator_of_subset_right (hE n) (hE m)
+          (monotone_spanningSets μ hmn)
       have hbm : multiplicationOperator (E := ℂ) (b m * e m) =
           multiplicationOperator (E := ℂ) (b n * e m) := by
         calc multiplicationOperator (E := ℂ) (b m * e m)
@@ -660,27 +667,6 @@ theorem centralizer_range_multiplicationOperator [SigmaFinite μ] :
   · rintro ⟨a, rfl⟩ S ⟨b, rfl⟩
     exact (commute_iff_eq _ _).mp (commute_multiplicationOperator b a)
 
-/-- If a symbol `a ∈ Lp ℂ ∞ μ` avoids `c` almost everywhere, then `multiplicationOperator a` on
-`Lp E 2 μ` has trivial `c`-eigenspace. -/
-theorem eq_zero_of_multiplicationOperator_eq_smul [NormedAddCommGroup E] [NormedSpace ℂ E]
-    {a : Lp ℂ ∞ μ} {c : ℂ} (ha : ∀ᵐ x ∂μ, a x ≠ c) {f : Lp E 2 μ}
-    (hf : multiplicationOperator a f = c • f) : f = 0 := by
-  refine Lp.eq_zero_iff_ae_eq_zero.mpr ?_
-  filter_upwards [(Lp.ext_iff.mp hf.symm).trans (multiplicationOperator_ae a f),
-    Lp.coeFn_smul c f, ha] with x hmul hsmul hne
-  have heq : (a x - c) • f x = 0 := by
-    rw [sub_smul, ← hmul, hsmul, Pi.smul_apply, sub_self]
-  exact (smul_eq_zero.mp heq).resolve_left (sub_ne_zero.mpr hne)
-
-/-- If a symbol `a ∈ Lp ℂ ∞ μ` avoids `c` almost everywhere, then `c` is not an eigenvalue of
-`multiplicationOperator a` on `Lp E 2 μ`. -/
-theorem not_hasEigenvalue_multiplicationOperator [NormedAddCommGroup E] [NormedSpace ℂ E]
-    (a : Lp ℂ ∞ μ) {c : ℂ} (ha : ∀ᵐ x ∂μ, a x ≠ c) :
-    ¬ Module.End.HasEigenvalue (multiplicationOperator (E := E) a).toLinearMap c := by
-  intro hc
-  obtain ⟨v, hv, hv0⟩ := Submodule.exists_mem_ne_zero_of_ne_bot hc
-  exact hv0 <| eq_zero_of_multiplicationOperator_eq_smul ha (Module.End.mem_eigenspace_iff.mp hv)
-
 /-- An `L∞` symbol supported on a finite-measure measurable set `s` whose multiplication operator
 on `Lp E 2 μ` (for a nontrivial space `E`) vanishes is zero in `Lp ℂ ∞ μ` (with no `SigmaFinite`
 hypothesis on `μ`). -/
@@ -704,6 +690,72 @@ theorem eq_zero_of_mul_linftyIndicator_eq_self_of_multiplicationOperator_eq_zero
     exact h0.resolve_right hv
   · rw [hmul, Pi.mul_apply, hsx, Set.indicator_of_notMem hxs, mul_zero, Pi.zero_apply]
 
+/-- If a symbol `a ∈ Lp ℂ ∞ μ` avoids `c` almost everywhere, then `multiplicationOperator a` on
+`Lp E 2 μ` has trivial `c`-eigenspace. -/
+theorem eq_zero_of_multiplicationOperator_eq_smul [NormedAddCommGroup E] [NormedSpace ℂ E]
+    {a : Lp ℂ ∞ μ} {c : ℂ} (ha : ∀ᵐ x ∂μ, a x ≠ c) {f : Lp E 2 μ}
+    (hf : multiplicationOperator a f = c • f) : f = 0 := by
+  refine Lp.eq_zero_iff_ae_eq_zero.mpr ?_
+  filter_upwards [(Lp.ext_iff.mp hf.symm).trans (multiplicationOperator_ae a f),
+    Lp.coeFn_smul c f, ha] with x hmul hsmul hne
+  have heq : (a x - c) • f x = 0 := by
+    rw [sub_smul, ← hmul, hsmul, Pi.smul_apply, sub_self]
+  exact (smul_eq_zero.mp heq).resolve_left (sub_ne_zero.mpr hne)
+
+/-- If a symbol `a ∈ Lp ℂ ∞ μ` avoids `c` almost everywhere, then `c` is not an eigenvalue of
+`multiplicationOperator a` on `Lp E 2 μ`. -/
+theorem not_hasEigenvalue_multiplicationOperator [NormedAddCommGroup E] [NormedSpace ℂ E]
+    (a : Lp ℂ ∞ μ) {c : ℂ} (ha : ∀ᵐ x ∂μ, a x ≠ c) :
+    ¬ Module.End.HasEigenvalue (multiplicationOperator (E := E) a).toLinearMap c := by
+  intro hc
+  obtain ⟨v, hv, hv0⟩ := Submodule.exists_mem_ne_zero_of_ne_bot hc
+  exact hv0 <| eq_zero_of_multiplicationOperator_eq_smul ha (Module.End.mem_eigenspace_iff.mp hv)
+
 end Commutant
 
 end MeasureTheory.Lp
+
+section
+
+open scoped unitInterval
+
+namespace TauCeti.unitInterval
+
+open MeasureTheory
+
+/-- The bounded coordinate symbol `t ↦ (t : ℂ)` in `Lp ℂ ∞ (volume : Measure unitInterval)`. -/
+def coordLp : Lp ℂ ∞ (volume : Measure I) :=
+  ContinuousMap.toLp ∞ (volume : Measure I) ℂ
+    ⟨fun t : I ↦ ((t : ℝ) : ℂ), Complex.continuous_ofReal.comp continuous_subtype_val⟩
+
+/-- Almost everywhere on `unitInterval`, `coordLp` evaluates to `t ↦ (t : ℂ)`. -/
+theorem coeFn_coordLp :
+    ⇑coordLp =ᵐ[volume] fun t : I ↦ ((t : ℝ) : ℂ) := by
+  rw [coordLp]
+  filter_upwards [ContinuousMap.coeFn_toLp (p := ∞) (𝕜 := ℂ) (volume : Measure I)
+    ⟨fun t : I ↦ ((t : ℝ) : ℂ), Complex.continuous_ofReal.comp continuous_subtype_val⟩] with t ht
+  rw [ht, ContinuousMap.coe_mk]
+
+/-- The real-valued coordinate symbol `coordLp` is self-adjoint. -/
+@[simp]
+theorem star_coordLp : star coordLp = coordLp :=
+  Lp.star_eq_self_of_ae_eq_ofReal coeFn_coordLp
+
+/-- Multiplication by the coordinate function `t ↦ (t : ℂ)` on `Lp E 2 (volume : Measure I)` has
+no eigenvalues. -/
+theorem not_hasEigenvalue_multiplicationOperator_coordLp
+    {E : Type*} [NormedAddCommGroup E] [NormedSpace ℂ E] (c : ℂ) :
+    ¬ Module.End.HasEigenvalue
+      (Lp.multiplicationOperator (E := E) coordLp).toLinearMap c := by
+  have hnull : ∀ᵐ t : I ∂volume, ((t : ℝ) : ℂ) ≠ c := by
+    rw [ae_iff]
+    exact Set.Subsingleton.measure_zero
+      (fun _ hx _ hy ↦ Subtype.ext (Complex.ofReal_injective
+        ((not_not.mp hx).trans (not_not.mp hy).symm))) volume
+  refine Lp.not_hasEigenvalue_multiplicationOperator coordLp ?_
+  filter_upwards [coeFn_coordLp, hnull] with t ht hne
+  rwa [ht]
+
+end TauCeti.unitInterval
+
+end

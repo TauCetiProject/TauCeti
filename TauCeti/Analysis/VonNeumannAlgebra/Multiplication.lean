@@ -26,8 +26,9 @@ other such operator (`MeasureTheory.Lp.commute_of_mem_centralizer_range_multipli
 abelian self-adjoint algebra and carries `IsMulCommutative` and `CommCStarAlgebra` instances.
 
 When `μ` is `σ`-finite, `multiplicationAlgebra μ` consists precisely of the multiplication
-operators (`VonNeumannAlgebra.coe_multiplicationAlgebra`), and `a ↦ multiplicationOperator a`
-induces an isometric star algebra isomorphism
+operators (`VonNeumannAlgebra.coe_multiplicationAlgebra`), and the general ⋆-algebra homomorphism
+`VonNeumannAlgebra.multiplicationStarAlgHom μ : Lp ℂ ∞ μ →⋆ₐ[ℂ] multiplicationAlgebra μ` upgrades
+to an isometric star algebra isomorphism
 `VonNeumannAlgebra.multiplicationStarAlgEquiv μ : Lp ℂ ∞ μ ≃⋆ₐ[ℂ] multiplicationAlgebra μ`
 (as well as `VonNeumannAlgebra.multiplicationLinearIsometryEquiv μ`).
 
@@ -43,13 +44,13 @@ Finally, we record the canonical models and checks:
 * `Measure.dirac x₀`: `multiplicationAlgebra (Measure.dirac x₀)` is `⊥ = ⊤ ≅ ℂ` with no
   singleton-measurability hypothesis on `α`.
 * `Measure.count` on a measurable-singleton type `α`: strictly between `⊥` and `⊤` whenever
-  `Nontrivial α`; when `α` is finite, star-isomorphic to the diagonal algebra `α → ℂ` of complex
-  dimension `Nat.card α`.
+  `Nontrivial α` (specializing `VonNeumannAlgebra.bot_lt_multiplicationAlgebra` and
+  `VonNeumannAlgebra.multiplicationAlgebra_lt_top`); when `α` is finite, star-isomorphic to the
+  diagonal algebra `α → ℂ` of complex dimension `Nat.card α`.
 * Atomless measures (`∀ s, μ s ≠ ∞ → ¬ μ.IsAtom s`, and in particular
   `[MeasurableSpace.CountablySeparated α] [NullSingletonClass μ]` such as
-  `(unitInterval, volume)`): `multiplicationAlgebra μ` has no minimal nonzero star projections, and
-  multiplication by the coordinate function `MeasureTheory.Lp.unitIntervalCoordLp` on
-  `Lp E 2 (volume : Measure unitInterval)` has no eigenvalues.
+  `(unitInterval, volume)`): `multiplicationAlgebra μ` has no minimal nonzero star projections
+  (every nonzero idempotent strictly dominates a nonzero star projection).
 
 ## References
 
@@ -135,6 +136,67 @@ open scoped IsMulCommutative in
 noncomputable instance instCommCStarAlgebraMultiplicationAlgebra (μ : Measure α) :
     CommCStarAlgebra (multiplicationAlgebra μ) where
 
+/-- Pointwise multiplication by essentially bounded complex functions, bundled as a unital
+⋆-algebra homomorphism into `multiplicationAlgebra μ` (valid for any measure `μ`). -/
+noncomputable def multiplicationStarAlgHom (μ : Measure α) :
+    Lp ℂ ∞ μ →⋆ₐ[ℂ] multiplicationAlgebra μ :=
+  (Lp.multiplicationStarAlgHom μ ℂ).codRestrict (multiplicationAlgebra μ).toStarSubalgebra
+    fun a ↦ by
+      rw [Lp.multiplicationStarAlgHom_apply]
+      exact multiplicationOperator_mem_multiplicationAlgebra μ a
+
+@[simp]
+theorem coe_multiplicationStarAlgHom_apply {μ : Measure α} (a : Lp ℂ ∞ μ) :
+    ((multiplicationStarAlgHom μ a : multiplicationAlgebra μ) : Lp ℂ 2 μ →L[ℂ] Lp ℂ 2 μ) =
+      Lp.multiplicationOperator a := by
+  rw [multiplicationStarAlgHom, StarAlgHom.coe_codRestrict, Lp.multiplicationStarAlgHom_apply]
+
+/-- If a measure `μ` has two measurable sets `s, t` of positive finite measure with null
+intersection, then `multiplicationAlgebra μ` strictly contains the scalars `⊥`. -/
+theorem bot_lt_multiplicationAlgebra {μ : Measure α} {s t : Set α}
+    (hs : MeasurableSet s) (hμs0 : μ s ≠ 0) (hμs : μ s ≠ ∞)
+    (ht : MeasurableSet t) (hμt0 : μ t ≠ 0) (hμt : μ t ≠ ∞)
+    (hst : μ (s ∩ t) = 0) :
+    ⊥ < multiplicationAlgebra μ := by
+  refine bot_lt_iff_ne_bot.mpr fun hbot ↦ ?_
+  have hmem : Lp.multiplicationOperator (TauCeti.linftyIndicator μ ℂ s hs) ∈
+      (⊥ : VonNeumannAlgebra (Lp ℂ 2 μ)) :=
+    hbot ▸ multiplicationOperator_mem_multiplicationAlgebra μ _
+  obtain ⟨c, hc⟩ := mem_bot.mp hmem
+  have hfs := congr($hc (indicatorConstLp 2 hs hμs (1 : ℂ)))
+  have hft := congr($hc (indicatorConstLp 2 ht hμt (1 : ℂ)))
+  rw [Lp.multiplicationOperator_linftyIndicator_indicatorConstLp_self hs hμs (1 : ℂ)] at hfs
+  rw [Lp.multiplicationOperator_linftyIndicator_indicatorConstLp hs ht hμt (1 : ℂ)] at hft
+  have hfs0 : indicatorConstLp 2 hs hμs (1 : ℂ) ≠ 0 := by
+    simp [TauCeti.indicatorConstLp_eq_zero_iff, hμs0]
+  have hft0 : indicatorConstLp 2 ht hμt (1 : ℂ) ≠ 0 := by
+    simp [TauCeti.indicatorConstLp_eq_zero_iff, hμt0]
+  have hc1 : c = 1 := by
+    have h1 : (c - 1) • indicatorConstLp 2 hs hμs (1 : ℂ) = 0 := by
+      rw [sub_smul, one_smul, sub_eq_zero]
+      simpa [Algebra.algebraMap_eq_smul_one] using hfs
+    exact sub_eq_zero.mp ((smul_eq_zero.mp h1).resolve_right hfs0)
+  have hzero : indicatorConstLp 2 (hs.inter ht)
+      ((measure_mono Set.inter_subset_right).trans_lt hμt.lt_top).ne (1 : ℂ) = 0 := by
+    rw [TauCeti.indicatorConstLp_eq_zero_iff]
+    exact Or.inl hst
+  have hc0 : c = 0 := by
+    have h0 : c • indicatorConstLp 2 ht hμt (1 : ℂ) = 0 := by
+      simpa [Algebra.algebraMap_eq_smul_one, hzero] using hft
+    exact (smul_eq_zero.mp h0).resolve_right hft0
+  exact one_ne_zero (hc1.symm.trans hc0)
+
+/-- If a measure `μ` has two measurable sets `s, t` of positive finite measure with null
+intersection, then `multiplicationAlgebra μ` is strictly contained in `⊤ = B(Lp ℂ 2 μ)`. -/
+theorem multiplicationAlgebra_lt_top {μ : Measure α} {s t : Set α}
+    (hs : MeasurableSet s) (hμs0 : μ s ≠ 0) (hμs : μ s ≠ ∞)
+    (ht : MeasurableSet t) (hμt0 : μ t ≠ 0) (hμt : μ t ≠ ∞)
+    (hst : μ (s ∩ t) = 0) :
+    multiplicationAlgebra μ < ⊤ :=
+  lt_top_iff_ne_top.mpr fun htop ↦
+    (bot_lt_multiplicationAlgebra hs hμs0 hμs ht hμt0 hμt hst).ne' <|
+      (eq_top_iff_eq_bot_of_commutant_eq_self (commutant_multiplicationAlgebra _)).mp htop
+
 end General
 
 section SigmaFinite
@@ -163,25 +225,20 @@ theorem mem_commutant_multiplicationAlgebra_iff {μ : Measure α} [SigmaFinite �
 /-- For a `σ`-finite measure `μ`, `Lp.multiplicationOperator` restricts in codomain to a star
 algebra isomorphism `Lp ℂ ∞ μ ≃⋆ₐ[ℂ] multiplicationAlgebra μ`. -/
 noncomputable def multiplicationStarAlgEquiv : Lp ℂ ∞ μ ≃⋆ₐ[ℂ] multiplicationAlgebra μ :=
-  StarAlgEquiv.ofBijective
-    ((Lp.multiplicationStarAlgHom μ ℂ).codRestrict (multiplicationAlgebra μ).toStarSubalgebra
-      fun a ↦ by
-        rw [Lp.multiplicationStarAlgHom_apply]
-        exact multiplicationOperator_mem_multiplicationAlgebra μ a)
-    (by
-      refine ⟨(StarAlgHom.injective_codRestrict _ _ _).mpr fun _ _ h ↦
-          Lp.multiplicationOperator_injective
-            (by simpa only [Lp.multiplicationStarAlgHom_apply] using h), ?_⟩
-      rintro ⟨_, hT⟩
-      obtain ⟨a, ha⟩ := mem_multiplicationAlgebra_iff.mp hT
-      exact ⟨a, Subtype.ext (by rwa [StarAlgHom.coe_codRestrict,
-        Lp.multiplicationStarAlgHom_apply])⟩)
+  StarAlgEquiv.ofBijective (multiplicationStarAlgHom μ)
+    (show Function.Bijective (multiplicationStarAlgHom μ) from
+      ⟨fun _ _ h ↦ Lp.multiplicationOperator_injective (by
+        simpa only [coe_multiplicationStarAlgHom_apply] using congrArg Subtype.val h),
+      fun ⟨_, hT⟩ ↦ by
+        obtain ⟨a, ha⟩ := mem_multiplicationAlgebra_iff.mp hT
+        exact ⟨a, Subtype.ext (by rwa [coe_multiplicationStarAlgHom_apply])⟩⟩)
 
 @[simp]
 theorem coe_multiplicationStarAlgEquiv_apply {μ : Measure α} [SigmaFinite μ] (a : Lp ℂ ∞ μ) :
     ((multiplicationStarAlgEquiv μ a : multiplicationAlgebra μ) : Lp ℂ 2 μ →L[ℂ] Lp ℂ 2 μ) =
-      Lp.multiplicationOperator a :=
-  Lp.multiplicationStarAlgHom_apply a
+      Lp.multiplicationOperator a := by
+  rw [multiplicationStarAlgEquiv, StarAlgEquiv.ofBijective_apply,
+    coe_multiplicationStarAlgHom_apply]
 
 @[simp]
 theorem multiplicationOperator_multiplicationStarAlgEquiv_symm {μ : Measure α} [SigmaFinite μ]
@@ -198,6 +255,15 @@ theorem multiplicationStarAlgEquiv_symm_multiplicationOperator {μ : Measure α}
   apply EquivLike.injective (multiplicationStarAlgEquiv μ)
   rw [StarAlgEquiv.apply_symm_apply]
   exact Subtype.ext (coe_multiplicationStarAlgEquiv_apply a).symm
+
+@[simp]
+theorem multiplicationStarAlgEquiv_symm_multiplicationStarAlgHom {μ : Measure α} [SigmaFinite μ]
+    (a : Lp ℂ ∞ μ) :
+    (multiplicationStarAlgEquiv μ).symm (multiplicationStarAlgHom μ a) = a := by
+  apply EquivLike.injective (multiplicationStarAlgEquiv μ)
+  rw [StarAlgEquiv.apply_symm_apply]
+  exact Subtype.ext <| by
+    rw [coe_multiplicationStarAlgHom_apply, coe_multiplicationStarAlgEquiv_apply]
 
 theorem norm_multiplicationStarAlgEquiv {μ : Measure α} [SigmaFinite μ] (a : Lp ℂ ∞ μ) :
     ‖multiplicationStarAlgEquiv μ a‖ = ‖a‖ := by
@@ -301,6 +367,18 @@ theorem multiplicationAlgebraCompMeasurePreservingStarAlgEquiv_multiplicationOpe
   rw [coe_multiplicationAlgebraCompMeasurePreservingStarAlgEquiv_apply,
     Lp.conjStarAlgEquiv_compMeasurePreservingₗᵢEquiv_multiplicationOperator]
 
+@[simp]
+theorem multiplicationAlgebraCompMeasurePreservingStarAlgEquiv_multiplicationStarAlgHom
+    (hf : MeasurePreserving f μ ν) (hg : MeasurePreserving g ν μ) (hfg : f ∘ g =ᵐ[ν] id)
+    (a : Lp ℂ ∞ ν) :
+    multiplicationAlgebraCompMeasurePreservingStarAlgEquiv hf hg hfg
+        (multiplicationStarAlgHom ν a) =
+      multiplicationStarAlgHom μ (Lp.compMeasurePreserving f hf a) := by
+  apply Subtype.ext
+  rw [coe_multiplicationAlgebraCompMeasurePreservingStarAlgEquiv_apply,
+    coe_multiplicationStarAlgHom_apply, coe_multiplicationStarAlgHom_apply,
+    Lp.conjStarAlgEquiv_compMeasurePreservingₗᵢEquiv_multiplicationOperator]
+
 /-- A measure-preserving measurable equivalence `e : α ≃ᵐ β` induces a unitary equivalence
 `Lp ℂ 2 ν ≃ₗᵢ[ℂ] Lp ℂ 2 μ` conjugating `multiplicationAlgebra ν` onto `multiplicationAlgebra μ`. -/
 theorem conj_multiplicationAlgebra_measurableEquiv (e : α ≃ᵐ β) (he : MeasurePreserving e μ ν) :
@@ -367,7 +445,9 @@ noncomputable def multiplicationAlgebraDiracStarAlgEquiv (x₀ : α) :
           (⊥ : VonNeumannAlgebra (Lp ℂ 2 (Measure.dirac x₀))) := by
         simpa [multiplicationAlgebra_dirac_eq_bot] using T.2
       obtain ⟨c, hc⟩ := mem_bot.mp hT
-      exact ⟨c, Subtype.ext hc⟩)
+      refine ⟨c, Subtype.ext ?_⟩
+      rw [StarAlgHom.ofId_apply, Algebra.algebraMap_eq_smul_one, SetLike.val_smul,
+        OneMemClass.coe_one, ← Algebra.algebraMap_eq_smul_one, hc])
 
 @[simp]
 theorem multiplicationAlgebraDiracStarAlgEquiv_apply (x₀ : α) (c : ℂ) :
@@ -386,14 +466,14 @@ theorem coe_multiplicationAlgebraDiracStarAlgEquiv_apply (x₀ : α) (c : ℂ) :
 theorem algebraMap_multiplicationAlgebraDiracStarAlgEquiv_symm (x₀ : α)
     (T : multiplicationAlgebra (Measure.dirac x₀)) :
     algebraMap ℂ (multiplicationAlgebra (Measure.dirac x₀))
-        ((multiplicationAlgebraDiracStarAlgEquiv x₀).symm T) = T :=
-  (multiplicationAlgebraDiracStarAlgEquiv x₀).apply_symm_apply T
+        ((multiplicationAlgebraDiracStarAlgEquiv x₀).symm T) = T := by
+  rw [← multiplicationAlgebraDiracStarAlgEquiv_apply, StarAlgEquiv.apply_symm_apply]
 
 @[simp]
 theorem multiplicationAlgebraDiracStarAlgEquiv_symm_algebraMap (x₀ : α) (c : ℂ) :
     (multiplicationAlgebraDiracStarAlgEquiv x₀).symm
-        (algebraMap ℂ (multiplicationAlgebra (Measure.dirac x₀)) c) = c :=
-  (multiplicationAlgebraDiracStarAlgEquiv x₀).symm_apply_apply c
+        (algebraMap ℂ (multiplicationAlgebra (Measure.dirac x₀)) c) = c := by
+  rw [← multiplicationAlgebraDiracStarAlgEquiv_apply, StarAlgEquiv.symm_apply_apply]
 
 /-! ### Counting measure (diagonal algebra `ℂ^α`) -/
 
@@ -401,45 +481,17 @@ theorem multiplicationAlgebraDiracStarAlgEquiv_symm_algebraMap (x₀ : α) (c : 
 strictly contains the scalars `⊥`. -/
 theorem bot_lt_multiplicationAlgebra_count [MeasurableSingletonClass α] [Nontrivial α] :
     ⊥ < multiplicationAlgebra (Measure.count : Measure α) := by
-  refine bot_lt_iff_ne_bot.mpr fun hbot ↦ ?_
   obtain ⟨x, y, hxy⟩ := exists_pair_ne α
-  have hx : MeasurableSet ({x} : Set α) := measurableSet_singleton x
-  have hy : MeasurableSet ({y} : Set α) := measurableSet_singleton y
-  have hμx : (Measure.count : Measure α) {x} ≠ ∞ := by simp
-  have hμy : (Measure.count : Measure α) {y} ≠ ∞ := by simp
-  have hmem : Lp.multiplicationOperator (TauCeti.linftyIndicator Measure.count ℂ {x} hx) ∈
-      (⊥ : VonNeumannAlgebra (Lp ℂ 2 (Measure.count : Measure α))) :=
-    hbot ▸ multiplicationOperator_mem_multiplicationAlgebra Measure.count _
-  obtain ⟨c, hc⟩ := mem_bot.mp hmem
-  have hfx := congr($hc (indicatorConstLp 2 hx hμx (1 : ℂ)))
-  have hfy := congr($hc (indicatorConstLp 2 hy hμy (1 : ℂ)))
-  rw [Lp.multiplicationOperator_linftyIndicator_indicatorConstLp hx hx hμx (1 : ℂ)] at hfx
-  rw [Lp.multiplicationOperator_linftyIndicator_indicatorConstLp hx hy hμy (1 : ℂ)] at hfy
-  have hfx0 : indicatorConstLp 2 hx hμx (1 : ℂ) ≠ 0 := by
-    simp [TauCeti.indicatorConstLp_eq_zero_iff]
-  have hfy0 : indicatorConstLp 2 hy hμy (1 : ℂ) ≠ 0 := by
-    simp [TauCeti.indicatorConstLp_eq_zero_iff]
-  have hc1 : c = 1 := by
-    have h1 : (c - 1) • indicatorConstLp 2 hx hμx (1 : ℂ) = 0 := by
-      rw [sub_smul, one_smul, sub_eq_zero]
-      simpa [Algebra.algebraMap_eq_smul_one, Set.inter_self] using hfx
-    exact sub_eq_zero.mp ((smul_eq_zero.mp h1).resolve_right hfx0)
-  have hzero : indicatorConstLp 2 (hx.inter hy)
-      ((measure_mono Set.inter_subset_right).trans_lt hμy.lt_top).ne (1 : ℂ) = 0 := by
-    rw [TauCeti.indicatorConstLp_eq_zero_iff, Set.singleton_inter_eq_empty.mpr hxy]
-    simp
-  have hc0 : c = 0 := by
-    have h0 : c • indicatorConstLp 2 hy hμy (1 : ℂ) = 0 := by
-      simpa [Algebra.algebraMap_eq_smul_one, hzero] using hfy
-    exact (smul_eq_zero.mp h0).resolve_right hfy0
-  exact one_ne_zero (hc1.symm.trans hc0)
+  exact bot_lt_multiplicationAlgebra (measurableSet_singleton x) (by simp) (by simp)
+    (measurableSet_singleton y) (by simp) (by simp) (by simp [hxy])
 
 /-- On any measurable-singleton space with at least two points, the diagonal multiplication algebra
 is strictly contained in `⊤ = B(Lp ℂ 2 Measure.count)`. -/
 theorem multiplicationAlgebra_count_lt_top [MeasurableSingletonClass α] [Nontrivial α] :
-    multiplicationAlgebra (Measure.count : Measure α) < ⊤ :=
-  lt_top_iff_ne_top.mpr fun htop ↦ (bot_lt_multiplicationAlgebra_count (α := α)).ne' <|
-    (eq_top_iff_eq_bot_of_commutant_eq_self (commutant_multiplicationAlgebra _)).mp htop
+    multiplicationAlgebra (Measure.count : Measure α) < ⊤ := by
+  obtain ⟨x, y, hxy⟩ := exists_pair_ne α
+  exact multiplicationAlgebra_lt_top (measurableSet_singleton x) (by simp) (by simp)
+    (measurableSet_singleton y) (by simp) (by simp) (by simp [hxy])
 
 section FiniteCount
 
@@ -500,11 +552,11 @@ end FiniteCount
 
 /-! ### Atomless measures: absence of minimal projections -/
 
-/-- A nonzero star projection `P ∈ multiplicationAlgebra μ` restricts on some finite-measure
-measurable set `E` to multiplication by the indicator of a positive-measure measurable subset
-`s ⊆ E` (with no `SigmaFinite` hypothesis on `μ`). -/
+/-- A nonzero idempotent `P ∈ multiplicationAlgebra μ` restricts on some finite-measure measurable
+set `E` to multiplication by the indicator of a positive-measure measurable subset `s ⊆ E` (with
+no `SigmaFinite` hypothesis on `μ`). -/
 private theorem exists_measurableSet_subset_and_comp_multiplicationOperator_eq {μ : Measure α}
-    {P : multiplicationAlgebra μ} (hP : IsStarProjection P) (hP0 : P ≠ 0) :
+    {P : multiplicationAlgebra μ} (hP : IsIdempotentElem P) (hP0 : P ≠ 0) :
     ∃ (E : Set α) (hE : MeasurableSet E) (_ : μ E ≠ ∞) (s : Set α) (hs : MeasurableSet s),
       s ⊆ E ∧ 0 < μ s ∧
       (P : Lp ℂ 2 μ →L[ℂ] Lp ℂ 2 μ) ∘L
@@ -519,15 +571,14 @@ private theorem exists_measurableSet_subset_and_comp_multiplicationOperator_eq {
   set eE := TauCeti.linftyIndicator μ ℂ E hE with heE_def
   have hPeE_ne : (P : Lp ℂ 2 μ →L[ℂ] Lp ℂ 2 μ) ∘L Lp.multiplicationOperator eE ≠ 0 := fun h0 ↦
     hPEc <| by
-      have heEc := Lp.multiplicationOperator_linftyIndicator_indicatorConstLp hE hE hμE c
       have h0' := congr($h0 (indicatorConstLp 2 hE hμE c))
-      rw [ContinuousLinearMap.comp_apply, zero_apply, heE_def, heEc] at h0'
-      simpa [Set.inter_self] using h0'
+      rwa [ContinuousLinearMap.comp_apply, zero_apply, heE_def,
+        Lp.multiplicationOperator_linftyIndicator_indicatorConstLp_self hE hμE c] at h0'
   have hPcomm : ∀ b : Lp ℂ ∞ μ,
       Commute (P : Lp ℂ 2 μ →L[ℂ] Lp ℂ 2 μ) (Lp.multiplicationOperator b) := fun b ↦
-    (commute_iff_eq _ _).mpr <| congrArg Subtype.val <|
-      mul_comm P ⟨Lp.multiplicationOperator b,
-        multiplicationOperator_mem_multiplicationAlgebra μ b⟩
+    (commute_iff_eq _ _).mpr <| by
+      simpa only [MulMemClass.coe_mul, coe_multiplicationStarAlgHom_apply] using
+        congrArg Subtype.val (mul_comm P (multiplicationStarAlgHom μ b))
   obtain ⟨b, -, hb_eq⟩ := Lp.exists_norm_le_and_comp_multiplicationOperator_linftyIndicator_eq
     hE hμE (P : Lp ℂ 2 μ →L[ℂ] Lp ℂ 2 μ) fun _ _ _ ↦ hPcomm _
   set p : Lp ℂ ∞ μ := b * eE with hp_def
@@ -537,24 +588,26 @@ private theorem exists_measurableSet_subset_and_comp_multiplicationOperator_eq {
   have heE_idem : IsIdempotentElem eE := TauCeti.isIdempotentElem_linftyIndicator hE
   have hpe : p * eE = p := by rw [hp_def, mul_assoc, heE_idem.eq]
   have hp_idem : IsIdempotentElem p := by
-    let E_op : multiplicationAlgebra μ :=
-      ⟨Lp.multiplicationOperator eE, multiplicationOperator_mem_multiplicationAlgebra μ eE⟩
-    let S_op : multiplicationAlgebra μ :=
-      ⟨Lp.multiplicationOperator p, multiplicationOperator_mem_multiplicationAlgebra μ p⟩
-    have hPE : P * E_op = S_op := Subtype.ext hp_op
-    have hE_idem : E_op * E_op = E_op :=
-      Subtype.ext ((Lp.multiplicationOperator_mul eE eE).symm.trans (congrArg _ heE_idem.eq))
+    let E_op : multiplicationAlgebra μ := multiplicationStarAlgHom μ eE
+    let S_op : multiplicationAlgebra μ := multiplicationStarAlgHom μ p
+    have hPE : P * E_op = S_op := Subtype.ext <| by
+      rw [MulMemClass.coe_mul, ContinuousLinearMap.mul_def, coe_multiplicationStarAlgHom_apply,
+        coe_multiplicationStarAlgHom_apply, hp_op]
+    have hE_idem : E_op * E_op = E_op := by
+      rw [← map_mul, heE_idem.eq]
     have hS_idem : S_op * S_op = S_op := by
-      rw [← hPE, mul_mul_mul_comm, hP.isIdempotentElem.eq, hE_idem]
+      rw [← hPE, mul_mul_mul_comm, hP.eq, hE_idem]
     exact sub_eq_zero.mp <|
       Lp.eq_zero_of_mul_linftyIndicator_eq_self_of_multiplicationOperator_eq_zero (E := ℂ) hE hμE
         (by rw [← heE_def, sub_mul, mul_assoc, hpe])
         (by rw [Lp.multiplicationOperator_sub, Lp.multiplicationOperator_mul]
-            exact sub_eq_zero.mpr (congrArg Subtype.val hS_idem))
+            exact sub_eq_zero.mpr (by
+              simpa only [S_op, MulMemClass.coe_mul, coe_multiplicationStarAlgHom_apply] using
+                congrArg Subtype.val hS_idem))
   obtain ⟨s₀, hs₀, hp_s₀⟩ :=
-    Lp.exists_measurableSet_linftyIndicator_eq_of_isIdempotentElem hp_idem
+    Lp.exists_measurableSet_eq_linftyIndicator_of_isIdempotentElem hp_idem
   have hp_s : p = TauCeti.linftyIndicator μ ℂ (s₀ ∩ E) (hs₀.inter hE) := by
-    rw [← hpe, hp_s₀, heE_def, TauCeti.linftyIndicator_mul]
+    rw [← hpe, hp_s₀, heE_def, TauCeti.linftyIndicator_mul_linftyIndicator]
   refine ⟨E, hE, hμE, s₀ ∩ E, hs₀.inter hE, Set.inter_subset_right,
     pos_iff_ne_zero.mpr fun h0 ↦ hPeE_ne ?_, hp_op.trans (congrArg _ hp_s)⟩
   rw [hp_op, hp_s, (TauCeti.linftyIndicator_eq_zero_iff (hs₀.inter hE)).mpr h0,
@@ -566,16 +619,13 @@ theorem isStarProjection_multiplicationOperator_linftyIndicator {μ : Measure α
     {t : Set α} (ht : MeasurableSet t) :
     IsStarProjection (⟨Lp.multiplicationOperator (TauCeti.linftyIndicator μ ℂ t ht),
       multiplicationOperator_mem_multiplicationAlgebra μ _⟩ : multiplicationAlgebra μ) := by
-  let φ := (Lp.multiplicationStarAlgHom μ ℂ).codRestrict (multiplicationAlgebra μ).toStarSubalgebra
-    fun a ↦ by
-      rw [Lp.multiplicationStarAlgHom_apply]
-      exact multiplicationOperator_mem_multiplicationAlgebra μ a
-  have h : φ (TauCeti.linftyIndicator μ ℂ t ht) =
+  have h : multiplicationStarAlgHom μ (TauCeti.linftyIndicator μ ℂ t ht) =
       ⟨Lp.multiplicationOperator (TauCeti.linftyIndicator μ ℂ t ht),
         multiplicationOperator_mem_multiplicationAlgebra μ _⟩ :=
-    Subtype.ext (by rw [StarAlgHom.coe_codRestrict, Lp.multiplicationStarAlgHom_apply])
+    Subtype.ext (coe_multiplicationStarAlgHom_apply _)
   rw [← h]
-  exact (TauCeti.isStarProjection_linftyIndicator (μ := μ) (R := ℂ) ht).map φ
+  exact (TauCeti.isStarProjection_linftyIndicator (μ := μ) (R := ℂ) ht).map
+    (multiplicationStarAlgHom μ)
 
 /-- If `P` restricts on `E` (`μ E ≠ ∞`) to indicator multiplication by `s ⊆ E` and `t ⊆ s` has
 `μ t ≠ μ s`, then the indicator multiplication of `t` does not equal `P` on `Lp ℂ 2 μ`. -/
@@ -590,10 +640,10 @@ private theorem multiplicationOperator_linftyIndicator_ne_of_subset {μ : Measur
   set eE := TauCeti.linftyIndicator μ ℂ E hE
   set es := TauCeti.linftyIndicator μ ℂ s hs
   set et := TauCeti.linftyIndicator μ ℂ t ht
-  have htE : et * eE = et := by
-    rw [TauCeti.linftyIndicator_mul]; congr 1; exact Set.inter_eq_left.mpr (hts.trans hsE)
-  have hsE' : es * eE = es := by
-    rw [TauCeti.linftyIndicator_mul]; congr 1; exact Set.inter_eq_left.mpr hsE
+  have htE : et * eE = et :=
+    TauCeti.linftyIndicator_mul_linftyIndicator_of_subset_left ht hE (hts.trans hsE)
+  have hsE' : es * eE = es :=
+    TauCeti.linftyIndicator_mul_linftyIndicator_of_subset_left hs hE hsE
   have hzero : Lp.multiplicationOperator (E := ℂ) (et - es) = 0 := by
     rw [Lp.multiplicationOperator_sub, sub_eq_zero, ← htE,
       ← Lp.multiplicationOperator_comp_multiplicationOperator, hQP, hp_op]
@@ -603,12 +653,13 @@ private theorem multiplicationOperator_linftyIndicator_ne_of_subset {μ : Measur
   exact hμts (measure_congr ((TauCeti.linftyIndicator_inj ht hs).mp hts_eq))
 
 /-- For any measure `μ` with no finite-mass atoms (`∀ s, μ s ≠ ∞ → ¬ μ.IsAtom s`, with **no**
-`SigmaFinite` assumption), every nonzero star projection `P ∈ multiplicationAlgebra μ` dominates a
-strictly smaller nonzero star projection `Q ∈ multiplicationAlgebra μ` (`Q * P = Q` and
-`0 ≠ Q ≠ P`): `multiplicationAlgebra μ` has no minimal projections. -/
-theorem exists_isStarProjection_mul_eq_and_ne_multiplicationAlgebra_of_not_isAtom {μ : Measure α}
-    (hμ : ∀ s, μ s ≠ ∞ → ¬ μ.IsAtom s) {P : multiplicationAlgebra μ} (hP : IsStarProjection P)
-    (hP0 : P ≠ 0) :
+`SigmaFinite` assumption), every nonzero idempotent — in particular every nonzero star projection —
+`P ∈ multiplicationAlgebra μ` dominates a strictly smaller nonzero star projection
+`Q ∈ multiplicationAlgebra μ` (`Q * P = Q` and `0 ≠ Q ≠ P`): `multiplicationAlgebra μ` has no
+minimal projections. -/
+theorem exists_multiplicationAlgebra_isStarProjection_ne_zero_and_mul_eq_and_ne_of_not_isAtom
+    {μ : Measure α} (hμ : ∀ s, μ s ≠ ∞ → ¬ μ.IsAtom s) {P : multiplicationAlgebra μ}
+    (hP : IsIdempotentElem P) (hP0 : P ≠ 0) :
     ∃ Q : multiplicationAlgebra μ, IsStarProjection Q ∧ Q ≠ 0 ∧ Q * P = Q ∧ Q ≠ P := by
   obtain ⟨E, hE, hμE, s, hs, hsE, hμs_pos, hp_op⟩ :=
     exists_measurableSet_subset_and_comp_multiplicationOperator_eq hP hP0
@@ -619,90 +670,48 @@ theorem exists_isStarProjection_mul_eq_and_ne_multiplicationAlgebra_of_not_isAto
   set q := TauCeti.linftyIndicator μ ℂ t ht
   set eE := TauCeti.linftyIndicator μ ℂ E hE
   set p := TauCeti.linftyIndicator μ ℂ s hs
-  let Q : multiplicationAlgebra μ :=
-    ⟨Lp.multiplicationOperator q, multiplicationOperator_mem_multiplicationAlgebra μ q⟩
-  refine ⟨Q, isStarProjection_multiplicationOperator_linftyIndicator ht, ?_, ?_, ?_⟩
+  let Q : multiplicationAlgebra μ := multiplicationStarAlgHom μ q
+  refine ⟨Q, (TauCeti.isStarProjection_linftyIndicator (μ := μ) (R := ℂ) ht).map
+    (multiplicationStarAlgHom μ), ?_, ?_, ?_⟩
   · intro hQ0
+    have hq_op : Lp.multiplicationOperator (E := ℂ) q = 0 := by
+      simpa only [Q, coe_multiplicationStarAlgHom_apply, ZeroMemClass.coe_zero] using
+        congrArg Subtype.val hQ0
     have hq0 : q = 0 :=
       Lp.eq_zero_of_mul_linftyIndicator_eq_self_of_multiplicationOperator_eq_zero ht hμt_fin
-        (TauCeti.isIdempotentElem_linftyIndicator ht).eq (congrArg Subtype.val hQ0)
+        (TauCeti.isIdempotentElem_linftyIndicator ht).eq hq_op
     exact hμt_pos.ne' ((TauCeti.linftyIndicator_eq_zero_iff ht).mp hq0)
-  · have hqeE : q * eE = q := by
-      rw [TauCeti.linftyIndicator_mul]; congr 1; exact Set.inter_eq_left.mpr (hts.trans hsE)
-    have hqp : q * p = q := by
-      rw [TauCeti.linftyIndicator_mul]; congr 1; exact Set.inter_eq_left.mpr hts
-    let E_op : multiplicationAlgebra μ :=
-      ⟨Lp.multiplicationOperator eE, multiplicationOperator_mem_multiplicationAlgebra μ eE⟩
-    let S_op : multiplicationAlgebra μ :=
-      ⟨Lp.multiplicationOperator p, multiplicationOperator_mem_multiplicationAlgebra μ p⟩
-    have hPE : P * E_op = S_op := Subtype.ext hp_op
-    have hQE : Q * E_op = Q :=
-      Subtype.ext ((Lp.multiplicationOperator_mul q eE).symm.trans (congrArg _ hqeE))
-    have hQS : Q * S_op = Q :=
-      Subtype.ext ((Lp.multiplicationOperator_mul q p).symm.trans (congrArg _ hqp))
+  · have hqeE : q * eE = q :=
+      TauCeti.linftyIndicator_mul_linftyIndicator_of_subset_left ht hE (hts.trans hsE)
+    have hqp : q * p = q :=
+      TauCeti.linftyIndicator_mul_linftyIndicator_of_subset_left ht hs hts
+    let E_op : multiplicationAlgebra μ := multiplicationStarAlgHom μ eE
+    let S_op : multiplicationAlgebra μ := multiplicationStarAlgHom μ p
+    have hPE : P * E_op = S_op := Subtype.ext <| by
+      rw [MulMemClass.coe_mul, ContinuousLinearMap.mul_def, coe_multiplicationStarAlgHom_apply,
+        coe_multiplicationStarAlgHom_apply, hp_op]
+    have hQE : Q * E_op = Q := by
+      rw [← map_mul, hqeE]
+    have hQS : Q * S_op = Q := by
+      rw [← map_mul, hqp]
     calc Q * P = (Q * E_op) * P := by rw [hQE]
       _ = Q * (P * E_op) := by rw [mul_assoc, mul_comm E_op P]
       _ = Q := by rw [hPE, hQS]
   · exact fun hQP ↦ multiplicationOperator_linftyIndicator_ne_of_subset hE hμE hs ht hsE hts
-      hμts_lt.ne hp_op (congrArg Subtype.val hQP)
+      hμts_lt.ne hp_op
+      ((coe_multiplicationStarAlgHom_apply q).symm.trans (congrArg Subtype.val hQP))
 
 /-- On any countably separated measurable space with null singletons (such as
-`(unitInterval, volume)` or `(ℝ, volume)`), `multiplicationAlgebra μ` has no minimal nonzero star
-projections (with no `SigmaFinite` assumption on `μ`). -/
-theorem exists_isStarProjection_mul_eq_and_ne_multiplicationAlgebra
+`(unitInterval, volume)` or `(ℝ, volume)`), every nonzero idempotent — in particular every nonzero
+star projection — in `multiplicationAlgebra μ` dominates a strictly smaller nonzero star projection
+(with no `SigmaFinite` assumption on `μ`). -/
+theorem exists_multiplicationAlgebra_isStarProjection_ne_zero_and_mul_eq_and_ne
     [MeasurableSpace.CountablySeparated α] (μ : Measure α) [NullSingletonClass μ]
-    {P : multiplicationAlgebra μ} (hP : IsStarProjection P) (hP0 : P ≠ 0) :
+    {P : multiplicationAlgebra μ} (hP : IsIdempotentElem P) (hP0 : P ≠ 0) :
     ∃ Q : multiplicationAlgebra μ, IsStarProjection Q ∧ Q ≠ 0 ∧ Q * P = Q ∧ Q ≠ P :=
-  exists_isStarProjection_mul_eq_and_ne_multiplicationAlgebra_of_not_isAtom
-    (fun s hfin hatom ↦ by
-      obtain ⟨x, -, hx⟩ := hatom.exists_measure_sdiff_singleton_eq_zero_of_measure_ne_top hfin
-      have hzero : μ s = 0 := nonpos_iff_eq_zero.mp <|
-        calc μ s ≤ μ ({x} ∪ (s \ {x})) :=
-              measure_mono fun y hy ↦ by by_cases h : y = x <;> simp [hy, h]
-          _ ≤ μ {x} + μ (s \ {x}) := measure_union_le _ _
-          _ = 0 := by simp [hx]
-      exact hatom.measure_ne_zero hzero)
-    hP hP0
+  exists_multiplicationAlgebra_isStarProjection_ne_zero_and_mul_eq_and_ne_of_not_isAtom
+    (fun _ hfin ↦ Measure.not_isAtom_of_nullSingletonClass_of_measure_ne_top hfin) hP hP0
 
 end ConcreteModels
 
 end VonNeumannAlgebra
-
-namespace MeasureTheory.Lp
-
-/-- The bounded coordinate symbol `t ↦ (t : ℂ)` in `Lp ℂ ∞ (volume : Measure unitInterval)`. -/
-noncomputable def unitIntervalCoordLp : Lp ℂ ∞ (volume : Measure I) :=
-  ContinuousMap.toLp ∞ (volume : Measure I) ℂ
-    ⟨fun t : I ↦ ((t : ℝ) : ℂ), Complex.continuous_ofReal.comp continuous_subtype_val⟩
-
-/-- Almost everywhere on `unitInterval`, `unitIntervalCoordLp` evaluates to `t ↦ (t : ℂ)`. -/
-theorem coeFn_unitIntervalCoordLp :
-    ⇑unitIntervalCoordLp =ᵐ[volume] fun t : I ↦ ((t : ℝ) : ℂ) := by
-  rw [unitIntervalCoordLp]
-  filter_upwards [ContinuousMap.coeFn_toLp (p := ∞) (𝕜 := ℂ) (volume : Measure I)
-    ⟨fun t : I ↦ ((t : ℝ) : ℂ), Complex.continuous_ofReal.comp continuous_subtype_val⟩] with t ht
-  rw [ht, ContinuousMap.coe_mk]
-
-/-- The real-valued coordinate symbol `unitIntervalCoordLp` is self-adjoint. -/
-@[simp]
-theorem star_unitIntervalCoordLp : star unitIntervalCoordLp = unitIntervalCoordLp := by
-  apply Lp.ext
-  filter_upwards [Lp.coeFn_star unitIntervalCoordLp, coeFn_unitIntervalCoordLp] with t hstar ht
-  rw [hstar, Pi.star_apply, ht, Complex.star_def, Complex.conj_ofReal]
-
-/-- Multiplication by the coordinate function `t ↦ (t : ℂ)` on `Lp E 2 (volume : Measure I)` has
-no eigenvalues. -/
-theorem not_hasEigenvalue_multiplicationOperator_unitIntervalCoordLp
-    {E : Type*} [NormedAddCommGroup E] [NormedSpace ℂ E] (c : ℂ) :
-    ¬ Module.End.HasEigenvalue
-      (Lp.multiplicationOperator (E := E) unitIntervalCoordLp).toLinearMap c := by
-  have hnull : ∀ᵐ t : I ∂volume, ((t : ℝ) : ℂ) ≠ c := by
-    rw [ae_iff]
-    exact Set.Subsingleton.measure_zero
-      (fun _ hx _ hy ↦ Subtype.ext (Complex.ofReal_injective
-        ((not_not.mp hx).trans (not_not.mp hy).symm))) volume
-  refine Lp.not_hasEigenvalue_multiplicationOperator unitIntervalCoordLp ?_
-  filter_upwards [coeFn_unitIntervalCoordLp, hnull] with t ht hne
-  rwa [ht]
-
-end MeasureTheory.Lp

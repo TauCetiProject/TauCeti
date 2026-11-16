@@ -11,6 +11,7 @@ public import Mathlib.MeasureTheory.Measure.Dirac.Basic
 public import TauCeti.MeasureTheory.Function.Lp.Indicator
 public import TauCeti.MeasureTheory.Function.Lp.One
 public import TauCeti.MeasureTheory.Function.Lp.Star
+import TauCeti.MeasureTheory.Function.Lp.Const
 
 /-!
 # `L∞` as a normed algebra and a C⋆-algebra
@@ -45,9 +46,9 @@ almost everywhere equalities in place of pointwise ones.
 * `MeasureTheory.Lp.coeFn_algebraMap`: scalars act as almost everywhere constant classes.
 * `MeasureTheory.Lp.exists_eq_algebraMap_dirac`: over a Dirac measure, every element of `L∞` is
   a scalar in the image of `algebraMap`.
-* `TauCeti.linftyIndicator_mul`, `TauCeti.isStarProjection_linftyIndicator`: algebraic and star
-  properties of measurable-set indicators in `L∞`.
-* `MeasureTheory.Lp.exists_measurableSet_linftyIndicator_eq_of_isIdempotentElem`: over a normed
+* `TauCeti.linftyIndicator_mul_linftyIndicator`, `TauCeti.isStarProjection_linftyIndicator`:
+  algebraic and star properties of measurable-set indicators in `L∞`.
+* `MeasureTheory.Lp.exists_measurableSet_eq_linftyIndicator_of_isIdempotentElem`: over a normed
   ring without zero divisors, every idempotent in `Lp R ∞ μ` is the unit indicator of a measurable
   set.
 * The instances `NormedRing`, `NormedCommRing`, `NormedAlgebra`, `StarRing`, `CStarRing`,
@@ -154,15 +155,9 @@ end NormedAlgebra
 /-- Over a Dirac measure `Measure.dirac x₀`, every element of `Lp 𝕜 ∞ (Measure.dirac x₀)` equals
 a scalar in the image of `algebraMap` (with no singleton-measurability assumption on `α`). -/
 theorem exists_eq_algebraMap_dirac [NormedField 𝕜] {x₀ : α} (a : Lp 𝕜 ∞ (Measure.dirac x₀)) :
-    ∃ c : 𝕜, a = algebraMap 𝕜 (Lp 𝕜 ∞ (Measure.dirac x₀)) c := by
-  borelize 𝕜
-  let g : α → 𝕜 := (Lp.aestronglyMeasurable a).mk a
-  have hg_meas : Measurable g := (Lp.aestronglyMeasurable a).stronglyMeasurable_mk.measurable
-  refine ⟨g x₀, Lp.ext ?_⟩
-  have hconst : g =ᵐ[Measure.dirac x₀] fun _ ↦ g x₀ :=
-    (ae_dirac_iff (hg_meas (measurableSet_singleton (g x₀)))).mpr rfl
-  exact (Lp.aestronglyMeasurable a).ae_eq_mk.trans
-    (hconst.trans (by simpa using (coeFn_algebraMap (μ := Measure.dirac x₀) (R := 𝕜) (g x₀)).symm))
+    ∃ c : 𝕜, a = algebraMap 𝕜 (Lp 𝕜 ∞ (Measure.dirac x₀)) c :=
+  (exists_eq_const_dirac a).imp fun c hc ↦ by
+    simpa [algebraMap_eq_const (μ := Measure.dirac x₀) (𝕜 := 𝕜) (R := 𝕜) c] using hc
 
 section StarRing
 
@@ -198,8 +193,8 @@ instance inftyCommCStarAlgebra [CommCStarAlgebra R] : CommCStarAlgebra (Lp R ∞
 section Idempotent
 
 /-- Multiplying measurable-set unit indicators in `Lp R ∞ μ` intersects the underlying sets. -/
-theorem _root_.TauCeti.linftyIndicator_mul [NormedRing R] {s t : Set α} (hs : MeasurableSet s)
-    (ht : MeasurableSet t) :
+theorem _root_.TauCeti.linftyIndicator_mul_linftyIndicator [NormedRing R] {s t : Set α}
+    (hs : MeasurableSet s) (ht : MeasurableSet t) :
     TauCeti.linftyIndicator μ R s hs * TauCeti.linftyIndicator μ R t ht =
       TauCeti.linftyIndicator μ R (s ∩ t) (hs.inter ht) := by
   apply Lp.ext
@@ -210,13 +205,29 @@ theorem _root_.TauCeti.linftyIndicator_mul [NormedRing R] {s t : Set α} (hs : M
   rw [hmul, Pi.mul_apply, hsx, htx, hst]
   by_cases hxs : x ∈ s <;> by_cases hxt : x ∈ t <;> simp [hxs, hxt]
 
+/-- If `s ⊆ t`, multiplying the unit indicator of `s` on the right by that of `t` fixes it. -/
+theorem _root_.TauCeti.linftyIndicator_mul_linftyIndicator_of_subset_left [NormedRing R]
+    {s t : Set α} (hs : MeasurableSet s) (ht : MeasurableSet t) (hst : s ⊆ t) :
+    TauCeti.linftyIndicator μ R s hs * TauCeti.linftyIndicator μ R t ht =
+      TauCeti.linftyIndicator μ R s hs := by
+  rw [TauCeti.linftyIndicator_mul_linftyIndicator]
+  congr 1
+  exact Set.inter_eq_self_of_subset_left hst
+
+/-- If `t ⊆ s`, multiplying the unit indicator of `t` on the left by that of `s` fixes it. -/
+theorem _root_.TauCeti.linftyIndicator_mul_linftyIndicator_of_subset_right [NormedRing R]
+    {s t : Set α} (hs : MeasurableSet s) (ht : MeasurableSet t) (hts : t ⊆ s) :
+    TauCeti.linftyIndicator μ R s hs * TauCeti.linftyIndicator μ R t ht =
+      TauCeti.linftyIndicator μ R t ht := by
+  rw [TauCeti.linftyIndicator_mul_linftyIndicator]
+  congr 1
+  exact Set.inter_eq_self_of_subset_right hts
+
 /-- The unit indicator of a measurable set is an idempotent in `Lp R ∞ μ`. -/
 theorem _root_.TauCeti.isIdempotentElem_linftyIndicator [NormedRing R] {s : Set α}
     (hs : MeasurableSet s) :
-    IsIdempotentElem (TauCeti.linftyIndicator μ R s hs) := by
-  rw [IsIdempotentElem, TauCeti.linftyIndicator_mul]
-  congr 1
-  exact Set.inter_self s
+    IsIdempotentElem (TauCeti.linftyIndicator μ R s hs) :=
+  TauCeti.linftyIndicator_mul_linftyIndicator_of_subset_left hs hs Set.Subset.rfl
 
 /-- Measurable-set unit indicators in `Lp R ∞ μ` are self-adjoint. -/
 @[simp]
@@ -237,7 +248,7 @@ theorem _root_.TauCeti.isStarProjection_linftyIndicator [NormedRing R] [StarRing
 
 /-- Over a normed ring without zero divisors, every idempotent in `Lp R ∞ μ` is the unit indicator
 of a measurable set, for an arbitrary measure `μ`. -/
-theorem exists_measurableSet_linftyIndicator_eq_of_isIdempotentElem [NormedRing R]
+theorem exists_measurableSet_eq_linftyIndicator_of_isIdempotentElem [NormedRing R]
     [NoZeroDivisors R] {p : Lp R ∞ μ} (hp : IsIdempotentElem p) :
     ∃ (s : Set α) (hs : MeasurableSet s), p = TauCeti.linftyIndicator μ R s hs := by
   set s : Set α := {x | 0 < ‖p x‖}
@@ -247,19 +258,14 @@ theorem exists_measurableSet_linftyIndicator_eq_of_isIdempotentElem [NormedRing 
   have hp_mul : ⇑p =ᵐ[μ] ⇑p * ⇑p :=
     (Lp.ext_iff.mp hp.eq.symm).trans (coeFn_mul p p)
   filter_upwards [hp_mul, TauCeti.coeFn_linftyIndicator (μ := μ) (R := R) hs] with x hmul hind
-  have hx01 : p x = 1 ∨ p x = 0 := by
-    have hsub : (p x - 1) * p x = 0 := by
-      rw [sub_mul, one_mul, sub_eq_zero]
-      exact hmul.symm
-    exact (mul_eq_zero.mp hsub).imp sub_eq_zero.mp id
-  rcases hx01 with hx1 | hx0
+  rcases IsIdempotentElem.eq_zero_or_one hmul.symm with hx0 | hx1
+  · have hxs : x ∉ s := by simp [s, hx0]
+    simp [hind, hxs, hx0]
   · by_cases h10 : (1 : R) = 0
     · have hxs : x ∉ s := by simp [s, hx1, h10]
       simp [hind, hxs, hx1, h10]
     · have hxs : x ∈ s := by simp [s, hx1, h10]
       simp [hind, hxs, hx1]
-  · have hxs : x ∉ s := by simp [s, hx0]
-    simp [hind, hxs, hx0]
 
 end Idempotent
 
