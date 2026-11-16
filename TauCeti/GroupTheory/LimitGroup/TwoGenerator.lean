@@ -112,8 +112,7 @@ theorem IsFullyResiduallyFree.coprodLift_subtype_centralizer_injective
   let c : Bool → G := fun b ↦ cond b h g
   refine (CoprodI.coprodLift_injective_iff fun b ↦ (centralizer {c b}).subtype).2 <|
     (injective_iff_map_eq_one _).2 fun w hw ↦ ?_
-  let W := CoprodI.Word.equiv w
-  have hWw : W.prod = w := CoprodI.Word.equiv.symm_apply_apply w
+  obtain ⟨W, rfl⟩ := CoprodI.Word.prod_surjective w
   -- One homomorphism `φ` to a free group keeps `⁅g, h⁆` and every letter of `W` nontrivial.
   obtain ⟨ι, φ, hφ⟩ := isFullyResiduallyFree_def.mp hG
     (insert ⁅g, h⁆ (W.toList.map fun l ↦ (l.2 : G)).toFinset) (by
@@ -132,10 +131,11 @@ theorem IsFullyResiduallyFree.coprodLift_subtype_centralizer_injective
       (by simpa [f] using congrArg Subtype.val h1)
   have hN := (CoprodI.coprodLift_injective_iff fun b ↦ (centralizer {φ (c b)}).subtype).1
     (IsFreeGroup.coprodLift_subtype_centralizer_injective hφgh)
-  have hW : W = .empty := CoprodI.Word.eq_empty_of_lift_prod_eq_one f hf <|
-    (map_eq_one_iff _ hN).1 <| by
-      rw [← map_one φ, ← hw, ← hWw]
-      simp [CoprodI.Word.prod, map_list_prod, Function.comp_def, f]
-  rw [← hWw, hW, CoprodI.Word.prod_empty]
+  have hcomp : (CoprodI.lift fun b ↦ (centralizer {φ (c b)}).subtype).comp
+      (CoprodI.lift fun b ↦ CoprodI.of.comp (f b)) =
+        φ.comp (CoprodI.lift fun b ↦ (centralizer {c b}).subtype) := by ext; simp [f]
+  rw [CoprodI.Word.eq_empty_of_lift_prod_eq_one f hf <| (map_eq_one_iff _ hN).1 <| by
+    rw [← MonoidHom.comp_apply, hcomp, MonoidHom.comp_apply, hw, map_one],
+    CoprodI.Word.prod_empty]
 
 end TauCeti.LimitGroup

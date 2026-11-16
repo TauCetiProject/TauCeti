@@ -14,7 +14,8 @@ Let `f i : M i →* N i` be a family of monoid homomorphisms and `w` a reduced w
 product `CoprodI M` none of whose letters is sent to `1`. Replacing every letter `m : M i` of `w`
 by `f i m` gives a reduced word of `CoprodI N`, whose product is the image of the product of `w`
 under the homomorphism `CoprodI M →* CoprodI N` induced by the `f i`. In particular that image is
-`1` only if `w` is empty.
+`1` only if `w` is empty, since an element of a free product is the product of exactly one reduced
+word.
 
 ## Main definitions
 
@@ -22,6 +23,8 @@ under the homomorphism `CoprodI M →* CoprodI N` induced by the `f i`. In parti
 
 ## Main results
 
+* `Monoid.CoprodI.Word.prod_injective`, `Monoid.CoprodI.Word.prod_surjective`: every element of
+  the free product is the product of exactly one reduced word.
 * `Monoid.CoprodI.Word.prod_map`: the product of the image is the image of the product.
 * `Monoid.CoprodI.Word.eq_empty_of_lift_prod_eq_one`: a reduced word whose product the
   homomorphism induced by the `f i` sends to `1` is empty.
@@ -32,6 +35,34 @@ public section
 namespace Monoid.CoprodI.Word
 
 variable {ι : Type*} {M N : ι → Type*} [∀ i, Monoid (M i)] [∀ i, Monoid (N i)]
+
+section Equiv
+
+variable [DecidableEq ι] [∀ i, DecidableEq (M i)]
+
+@[simp]
+theorem equiv_symm_apply (w : Word M) : equiv.symm w = w.prod :=
+  (rfl)
+
+@[simp]
+theorem equiv_prod (w : Word M) : equiv w.prod = w := by
+  rw [← equiv_symm_apply, Equiv.apply_symm_apply]
+
+@[simp]
+theorem prod_equiv (m : CoprodI M) : (equiv m).prod = m := by
+  rw [← equiv_symm_apply, Equiv.symm_apply_apply]
+
+end Equiv
+
+/-- A reduced word of a free product is determined by its product. -/
+theorem prod_injective : Function.Injective (prod : Word M → CoprodI M) := by
+  classical
+  exact Function.LeftInverse.injective equiv_prod
+
+/-- Every element of a free product is the product of a reduced word. -/
+theorem prod_surjective : Function.Surjective (prod : Word M → CoprodI M) := by
+  classical
+  exact Function.RightInverse.surjective prod_equiv
 
 /-- The image of a reduced word `w` of the free product `CoprodI M` under homomorphisms
 `f i : M i →* N i` of the factors that send no letter of `w` to `1`: each letter `m : M i` is
@@ -69,8 +100,7 @@ theorem prod_map : (w.map f hf).prod = lift (fun i => of.comp (f i)) w.prod := b
 if the homomorphism `CoprodI M →* CoprodI N` induced by the `f i` sends its product to `1`. -/
 theorem eq_empty_of_lift_prod_eq_one (hf : ∀ l ∈ w.toList, f l.1 l.2 ≠ 1)
     (h : lift (fun i => of.comp (f i)) w.prod = 1) : w = empty := by
-  classical
   rw [← map_eq_empty_iff f hf]
-  exact equiv.symm.injective ((prod_map f hf).trans h)
+  exact prod_injective (by rw [prod_map, h, prod_empty])
 
 end Monoid.CoprodI.Word
