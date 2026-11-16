@@ -11,7 +11,6 @@ public import TauCeti.AlgebraicGeometry.EllipticCurve.MinimalModel.RealPeriod
 public import TauCeti.AlgebraicGeometry.EllipticCurve.Tamagawa.Product
 
 import Mathlib.Algebra.FiniteSupport.Basic
-import Mathlib.NumberTheory.NumberField.ProductFormula
 import TauCeti.AlgebraicGeometry.EllipticCurve.Affine.FinitePoint
 import TauCeti.AlgebraicGeometry.EllipticCurve.FormalGroup.Point.Index
 import TauCeti.AlgebraicGeometry.EllipticCurve.IntegralReduction
@@ -21,7 +20,7 @@ import TauCeti.AlgebraicGeometry.EllipticCurve.Isogeny.MinimalRealPeriod
 import TauCeti.AlgebraicGeometry.EllipticCurve.MinimalModel.AdicCompletion
 import TauCeti.AlgebraicGeometry.EllipticCurve.MinimalModel.Reduced
 import TauCeti.AlgebraicGeometry.EllipticCurve.TateModule.Isogeny
-import TauCeti.RingTheory.DedekindDomain.AdicValuation.Transport
+import TauCeti.NumberTheory.NumberField.Global.Places.Rat
 
 /-!
 # Local Kummer ratios, Tamagawa numbers, and the real period under an isogeny
@@ -88,28 +87,6 @@ open IsDedekindDomain IsDedekindDomain.HeightOneSpectrum ValuativeRel Weierstras
 open scoped WithZero
 
 namespace TauCeti.Isogeny
-
-/-! ### Differential constant under variable changes -/
-
-/-- Conjugating an isogeny `φ : W₁ → W₂` with `φ^*ω₂ = c ω₁` by changes of variables `C₁` and `C₂`
-multiplies the differential pullback constant by `C₂.u / C₁.u`. -/
-private theorem pullbackDifferential_variableChangeIsogeny_comp_comp
-    {F : Type*} [Field F] {W₁ W₂ : WeierstrassCurve F}
-    (φ : Isogeny W₁.toAffine W₂.toAffine) {c : F}
-    (hc : φ.pullbackDifferential (Affine.invariantDifferential W₂.toAffine) =
-      c • Affine.invariantDifferential W₁.toAffine)
-    (C₁ C₂ : VariableChange F) :
-    ((variableChangeIsogeny C₂ (rfl : C₂ • W₂.toAffine = (C₂ • W₂).toAffine)).comp
-        (φ.comp (variableChangeIsogeny C₁⁻¹ (inv_smul_smul C₁ W₁.toAffine)))).pullbackDifferential
-        (Affine.invariantDifferential (C₂ • W₂).toAffine) =
-      (c * C₂.u / C₁.u) • Affine.invariantDifferential (C₁ • W₁).toAffine := by
-  rw [pullbackDifferential_comp, LinearMap.comp_apply,
-    pullbackDifferential_variableChangeIsogeny_invariantDifferential, LinearMap.map_smul,
-    pullbackDifferential_comp, LinearMap.comp_apply, hc, LinearMap.map_smul,
-    pullbackDifferential_variableChangeIsogeny_invariantDifferential, smul_smul, smul_smul]
-  congr 1
-  simp only [VariableChange.inv_def, Units.val_inv_eq_inv_val, div_eq_mul_inv]
-  ring
 
 /-! ### Local identity at a finite place -/
 
@@ -278,7 +255,8 @@ theorem zpow_natCard_mul_kummerRatio_mul_tamagawaNumber
     (variableChangeIsogeny C₂ (rfl : C₂ • W₂.toAffine = (C₂ • W₂).toAffine)).comp
       (φ.comp (variableChangeIsogeny C₁⁻¹ (inv_smul_smul C₁ W₁.toAffine)))
   have hψ := zpow_natCard_mul_kummerRatio_mul_tamagawaNumber_of_isMinimal v ψ
-    (pullbackDifferential_variableChangeIsogeny_comp_comp φ hc C₁ C₂) h2
+    (pullbackDifferential_variableChangeIsogeny_comp_comp φ hc C₁ C₂
+      (inv_smul_smul C₁ W₁.toAffine) rfl) h2
     (by simpa [ψ] using hφ)
   simpa only [ψ, kummerRatio_comp, kummerRatio_variableChangeIsogeny, one_mul, mul_one,
     tamagawaNumber_smul] using hψ
@@ -427,58 +405,6 @@ theorem abs_mul_realKummerRatio_mul_minimalRealPeriod_of_isGlobalMinimal
   simpa using abs_mul_realKummerRatio_mul_minimalRealPeriod φ hc
     (C₁ := 1) (C₂ := 1) (by simpa using h₁) (by simpa using h₂)
 
-/-- Equivalence between height-one primes of `ℤ` and `NumberField.FinitePlace ℚ`. -/
-private noncomputable def finitePlaceRatEquiv :
-    HeightOneSpectrum ℤ ≃ NumberField.FinitePlace ℚ :=
-  (equivOfRingEquiv Rat.ringOfIntegersEquiv).symm.trans
-    NumberField.FinitePlace.equivHeightOneSpectrum.symm
-
-/-- At every height-one prime `v` of `ℤ`, `adicAbv ℚ v` agrees with `finitePlaceRatEquiv v`. -/
-private theorem adicAbv_eq_finitePlaceRatEquiv (v : HeightOneSpectrum ℤ) (q : ℚ) :
-    NumberField.HeightOneSpectrum.adicAbv ℚ v q = finitePlaceRatEquiv v q := by
-  let w : HeightOneSpectrum (NumberField.RingOfIntegers ℚ) :=
-    (equivOfRingEquiv Rat.ringOfIntegersEquiv).symm v
-  have hvw : v.asIdeal = Ideal.map Rat.ringOfIntegersEquiv w.asIdeal := by
-    rw [← asIdeal_equivOfRingEquiv Rat.ringOfIntegersEquiv w, Equiv.apply_symm_apply]
-  have hnorm : Ideal.absNorm w.asIdeal = Ideal.absNorm v.asIdeal := by
-    rw [Ideal.absNorm_of_ne_bot w.ne_bot, Ideal.absNorm_of_ne_bot v.ne_bot,
-      Submodule.cardQuot_apply, Submodule.cardQuot_apply]
-    exact Nat.card_congr
-      (Ideal.quotientEquiv w.asIdeal v.asIdeal Rat.ringOfIntegersEquiv hvw).toEquiv
-  have hσ : IsFractionRing.ringEquivOfRingEquiv Rat.ringOfIntegersEquiv q = q :=
-    RingHom.congr_fun (Subsingleton.elim
-      (IsFractionRing.ringEquivOfRingEquiv Rat.ringOfIntegersEquiv).toRingHom (RingHom.id ℚ)) q
-  have hval : v.valuation ℚ q = w.valuation ℚ q := by
-    have hv := valuation_ringEquivOfRingEquiv (K := ℚ) (K' := ℚ) Rat.ringOfIntegersEquiv hvw q
-    rwa [hσ] at hv
-  simp only [finitePlaceRatEquiv, Equiv.trans_apply,
-    NumberField.FinitePlace.equivHeightOneSpectrum_symm_apply,
-    NumberField.FinitePlace.norm_embedding, NumberField.HeightOneSpectrum.adicAbv_def]
-  rcases eq_or_ne q 0 with rfl | hq
-  · simp
-  · rw [WithZeroMulInt.toNNReal_neg_apply _ ((v.valuation ℚ).ne_zero_iff.mpr hq),
-      WithZeroMulInt.toNNReal_neg_apply _ ((w.valuation ℚ).ne_zero_iff.mpr hq)]
-    push_cast
-    rw [hnorm, hval]
-
-/-- A nonzero rational number has nontrivial `v`-adic absolute value at only finitely many
-height-one primes of `ℤ`. -/
-private theorem hasFiniteMulSupport_adicAbv_rat {q : ℚ} (hq : q ≠ 0) :
-    (fun v : HeightOneSpectrum ℤ ↦
-      NumberField.HeightOneSpectrum.adicAbv ℚ v q).HasFiniteMulSupport := by
-  simp_rw [adicAbv_eq_finitePlaceRatEquiv]
-  exact (NumberField.FinitePlace.hasFiniteMulSupport hq).comp_of_injective
-    finitePlaceRatEquiv.injective
-
-/-- The product formula over `ℚ` indexed by `HeightOneSpectrum ℤ`: for any nonzero `q ∈ ℚ`,
-`|q| · ∏ᶠ v : HeightOneSpectrum ℤ, |q|_v = 1`. -/
-private theorem abs_mul_finprod_adicAbv_rat {q : ℚ} (hq : q ≠ 0) :
-    |(q : ℝ)| * ∏ᶠ v : HeightOneSpectrum ℤ, NumberField.HeightOneSpectrum.adicAbv ℚ v q = 1 := by
-  simp_rw [adicAbv_eq_finitePlaceRatEquiv]
-  rw [finprod_comp_equiv finitePlaceRatEquiv (f := fun w ↦ w q),
-    NumberField.FinitePlace.prod_eq_inv_abs_norm hq, Algebra.norm_self, MonoidHom.id_apply,
-    Rat.cast_inv, Rat.cast_abs, mul_inv_cancel₀ (abs_ne_zero.mpr (Rat.cast_ne_zero.mpr hq))]
-
 /-- Multiplying the finite-place identities over all `v : HeightOneSpectrum ℤ` relates the global
 Tamagawa products of `E₁` and `E₂`. -/
 private theorem finprod_adicAbv_mul_finiteKummerRatio_mul_tamagawaProduct
@@ -500,7 +426,7 @@ private theorem finprod_adicAbv_mul_finiteKummerRatio_mul_tamagawaProduct
     have := hGM₂.isMinimal v
     exact adicAbv_mul_finiteKummerRatio_mul_tamagawaNumberAt φ hc two_ne_zero
       (Nat.cast_ne_zero.mpr φ.degree_pos.ne') C₁ C₂ v
-  have hf₁ := hasFiniteMulSupport_adicAbv_rat hq0
+  have hf₁ := NumberField.HeightOneSpectrum.hasFiniteMulSupport_adicAbv_rat hq0
   have hf₂ : (fun v : HeightOneSpectrum ℤ ↦ (φ.finiteKummerRatio v : ℝ)).HasFiniteMulSupport :=
     Function.HasFiniteMulSupport.fun_comp
       φ.hasFiniteMulSupport_finiteKummerRatio_rat (g := Rat.cast) Rat.cast_one
@@ -547,7 +473,7 @@ theorem kummerRatioProduct_mul_minimalRealPeriod_mul_tamagawaProduct
   calc (φ.kummerRatioProduct : ℝ) * (E₁.minimalRealPeriod * E₁.tamagawaProduct (R := ℤ))
       = (|(q : ℝ)| * ∏ᶠ v : HeightOneSpectrum ℤ, NumberField.HeightOneSpectrum.adicAbv ℚ v q) *
           (φ.kummerRatioProduct : ℝ) * (E₁.minimalRealPeriod * E₁.tamagawaProduct (R := ℤ)) := by
-        rw [abs_mul_finprod_adicAbv_rat hq0, one_mul]
+        rw [NumberField.HeightOneSpectrum.abs_mul_finprod_adicAbv_rat hq0, one_mul]
     _ = (|(q : ℝ)| * (φ.realKummerRatio : ℝ) * E₁.minimalRealPeriod) *
           ((∏ᶠ v : HeightOneSpectrum ℤ, NumberField.HeightOneSpectrum.adicAbv ℚ v q) *
             ((∏ᶠ v : HeightOneSpectrum ℤ, φ.finiteKummerRatio v : ℚ) : ℝ) *
