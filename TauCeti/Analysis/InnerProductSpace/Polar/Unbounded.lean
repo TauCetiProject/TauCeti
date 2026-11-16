@@ -7,8 +7,10 @@ module
 
 public import TauCeti.Analysis.InnerProductSpace.LinearPMap.Modulus
 public import TauCeti.Analysis.InnerProductSpace.Polar.Bounded
+import TauCeti.Analysis.InnerProductSpace.LinearPMap.PartialIsometry
 import TauCeti.Analysis.InnerProductSpace.LinearPMap.SubmoduleAdjoint
 import TauCeti.LinearAlgebra.LinearPMap.Basic
+import TauCeti.Topology.Algebra.Module.LinearPMap.GraphCore
 
 /-!
 # The polar decomposition of a closed unbounded operator
@@ -30,9 +32,10 @@ For a closed densely defined operator `T`:
   (`v ∘L v† = (LinearMap.range T.toFun).topologicalClosure.starProjection`).
 * **Uniqueness:** `v = T.polarFactor` is the unique bounded operator `V : E →L[𝕜] F` satisfying
   `(V : E →ₗ[𝕜] F).compPMap T.modulus = T` and vanishing on `ker T`
-  (`LinearPMap.IsClosed.eq_polarFactor_iff`); jointly with `LinearPMap.IsClosed.eq_modulus_iff`,
-  both factors `(v, |T|)` of `T = v |T|` are uniquely determined when `|T|` is nonnegative
-  self-adjoint and `ker v = ker T`.
+  (`LinearPMap.IsClosed.eq_polarFactor_iff`); jointly, both factors `(v, M)` in
+  `T = (v : E →ₗ[𝕜] F).compPMap M` are uniquely determined as `(T.polarFactor, T.modulus)` when
+  `M` is nonnegative self-adjoint and `v` is a partial isometry with `v.ker = M.ker`
+  (`LinearPMap.eq_modulus_and_eq_polarFactor`).
 * **Adjoint and left polar decomposition:** `(T†).modulus = (v : E →ₗ[𝕜] F).compPMap T† = (T T†)^½`
   (`LinearPMap.IsClosed.modulus_adjoint_eq_polarFactor_compPMap_adjoint`,
   `LinearPMap.IsClosed.modulus_adjoint_eq_sqrt_compAdjoint`), `(T†).polarFactor = v†`
@@ -234,81 +237,6 @@ theorem IsClosed.eq_polarFactor_iff {T : E →ₗ.[𝕜] F} {V : E →L[𝕜] F}
   rintro rfl
   exact ⟨hT.polarFactor_compPMap_modulus hd, fun _ hx ↦ hT.polarFactor_apply_of_mem_ker hd hx⟩
 
-private theorem adjoint_apply_apply_of_ker_eq {M : E →ₗ.[𝕜] E} {V : E →L[𝕜] F}
-    (hM : IsSelfAdjoint M) (hVpi : V.IsPartialIsometry) (hVker : V.ker = M.ker) (x : M.domain) :
-    V.adjoint (V (M x)) = M x := by
-  have hx : M x ∈ V.kerᗮ := hVker ▸ hM.isFormalAdjoint.apply_mem_orthogonal_ker x
-  have hsp := congr($(hVpi.adjoint_comp_self_eq_starProjection) (M x))
-  rwa [ContinuousLinearMap.comp_apply, Submodule.starProjection_eq_self_iff.mpr hx] at hsp
-
-private theorem compPMap_adjointComp_eq {M : E →ₗ.[𝕜] E} {V : E →L[𝕜] F}
-    (hM : IsSelfAdjoint M) (hVpi : V.IsPartialIsometry) (hVker : V.ker = M.ker) :
-    ((V : E →ₗ[𝕜] F).compPMap M).adjointComp = M.adjointComp := by
-  have hadj : ((V : E →ₗ[𝕜] F).compPMap M)† =
-      M.comp ((V.adjoint : F →ₗ[𝕜] E).toPMap (M.domain.comap (V.adjoint : F →ₗ[𝕜] E)))
-        fun y ↦ y.2 := by
-    rw [V.compPMap_adjoint M]
-    exact congrArg (fun N : E →ₗ.[𝕜] E ↦
-      N.comp ((V.adjoint : F →ₗ[𝕜] E).toPMap (N.domain.comap (V.adjoint : F →ₗ[𝕜] E)))
-        fun y ↦ y.2) (isSelfAdjoint_def.mp hM)
-  have hproj := adjoint_apply_apply_of_ker_eq hM hVpi hVker
-  have hM'eq : M† = M := isSelfAdjoint_def.mp hM
-  have hMdom : M†.domain = M.domain := congrArg domain hM'eq
-  have hdom : ((V : E →ₗ[𝕜] F).compPMap M).adjointComp.domain = M.adjointComp.domain := by
-    ext x
-    rw [mem_adjointComp_domain, mem_adjointComp_domain, hM'eq]
-    refine ⟨fun ⟨hx, hVMx⟩ ↦ ⟨hx, ?_⟩, fun ⟨hx, hMx⟩ ↦ ⟨hx, ?_⟩⟩
-    · rw [hadj] at hVMx
-      -- Unfold `.comp` domain membership on `hVMx`.
-      change V.adjoint (V (M ⟨x, hx⟩)) ∈ M.domain at hVMx
-      rwa [hproj ⟨x, hx⟩] at hVMx
-    · rw [hadj]
-      -- Unfold `.comp` domain membership to `V.adjoint (V (M ⟨x, hx⟩)) ∈ M.domain`.
-      change V.adjoint (V (M ⟨x, hx⟩)) ∈ M.domain
-      rwa [hproj ⟨x, hx⟩]
-  refine LinearPMap.ext hdom fun x hx₁ hx₂ ↦ ?_
-  have hxM : x ∈ M.domain := adjointComp_domain_le M hx₂
-  have hMx : M ⟨x, hxM⟩ ∈ M.domain :=
-    (SetLike.ext_iff.mp hMdom _).mp (mem_adjointComp_domain.mp hx₂).choose_spec
-  have hVMx : V.adjoint (V (M ⟨x, hxM⟩)) ∈ M.domain := (hproj ⟨x, hxM⟩).symm ▸ hMx
-  rw [adjointComp_apply _ ⟨x, hx₁⟩, adjointComp_apply M ⟨x, hx₂⟩]
-  have rhs_eq : M† ⟨M ⟨x, adjointComp_domain_le M hx₂⟩,
-      (mem_adjointComp_domain.mp hx₂).choose_spec⟩ = M ⟨M ⟨x, hxM⟩, hMx⟩ :=
-    LinearPMap.congr_fun hM'eq (mem_adjointComp_domain.mp hx₂).choose_spec hMx
-  have hVMx_comp : ((V : E →ₗ[𝕜] F).compPMap M) ⟨x, adjointComp_domain_le _ hx₁⟩ ∈
-      (M.comp ((V.adjoint : F →ₗ[𝕜] E).toPMap (M.domain.comap (V.adjoint : F →ₗ[𝕜] E)))
-        fun y ↦ y.2).domain := hVMx
-  have lhs_eq : (((V : E →ₗ[𝕜] F).compPMap M)†)
-      ⟨((V : E →ₗ[𝕜] F).compPMap M) ⟨x, adjointComp_domain_le _ hx₁⟩,
-        (mem_adjointComp_domain.mp hx₁).choose_spec⟩ =
-      M ⟨V.adjoint (V (M ⟨x, hxM⟩)), hVMx⟩ :=
-    LinearPMap.congr_fun hadj (mem_adjointComp_domain.mp hx₁).choose_spec hVMx_comp
-  rw [lhs_eq, rhs_eq]
-  exact congrArg M (Subtype.ext (hproj ⟨x, hxM⟩))
-
-private theorem isClosed_compPMap_of_isPartialIsometry {M : E →ₗ.[𝕜] E} {V : E →L[𝕜] F}
-    (hM : IsSelfAdjoint M) (hVpi : V.IsPartialIsometry) (hVker : V.ker = M.ker) :
-    ((V : E →ₗ[𝕜] F).compPMap M).IsClosed := by
-  have hproj := adjoint_apply_apply_of_ker_eq hM hVpi hVker
-  have hgraph : (((V : E →ₗ[𝕜] F).compPMap M).graph : Set (E × F)) =
-      {p | (p.1, V.adjoint p.2) ∈ (M.graph : Set (E × E)) ∧ V (V.adjoint p.2) = p.2} := by
-    ext ⟨x, y⟩
-    rw [SetLike.mem_coe, mem_graph_iff]
-    refine ⟨?_, fun ⟨hp₁, hp₂⟩ ↦ ?_⟩
-    · rintro ⟨u, rfl, rfl⟩
-      refine ⟨M.mem_graph_iff.mpr ⟨u, rfl, ?_⟩, ?_⟩
-      · rw [LinearMap.compPMap_apply, ContinuousLinearMap.coe_coe, hproj u]
-      · rw [LinearMap.compPMap_apply, ContinuousLinearMap.coe_coe, hproj u]
-    · obtain ⟨u, hu₁, hu₂⟩ := M.mem_graph_iff.mp hp₁
-      let u' : ((V : E →ₗ[𝕜] F).compPMap M).domain := ⟨u, u.2⟩
-      refine ⟨u', hu₁, ?_⟩
-      rw [LinearMap.compPMap_apply, ContinuousLinearMap.coe_coe]
-      exact (congrArg V hu₂).trans hp₂
-  rw [IsClosed, hgraph]
-  exact (hM.isClosed.preimage
-    (continuous_fst.prodMk (V.adjoint.continuous.comp continuous_snd))).inter
-    (isClosed_eq (V.continuous.comp (V.adjoint.continuous.comp continuous_snd)) continuous_snd)
-
 /-- **Joint uniqueness of the polar decomposition.** If `M : E →ₗ.[𝕜] E` is nonnegative and
 self-adjoint, `V : E →L[𝕜] F` is a partial isometry with `V.ker = M.ker`, and
 `(V : E →ₗ[𝕜] F).compPMap M = T`, then `M = T.modulus` and `V = T.polarFactor`.
@@ -319,10 +247,12 @@ theorem eq_modulus_and_eq_polarFactor {T : E →ₗ.[𝕜] F} {M : E →ₗ.[�
     (hVpi : V.IsPartialIsometry) (hVker : V.ker = M.ker)
     (hVM : (V : E →ₗ[𝕜] F).compPMap M = T) :
     M = T.modulus ∧ V = T.polarFactor := by
-  have hT : T.IsClosed := hVM ▸ isClosed_compPMap_of_isPartialIsometry hM hVpi hVker
+  have hrange : LinearMap.range M.toFun ≤ V.kerᗮ :=
+    hVker ▸ hM.isFormalAdjoint.range_le_orthogonal_ker
+  have hT : T.IsClosed := hVM ▸ hVpi.isClosed_compPMap hrange hM.isClosed
   have hd : Dense (T.domain : Set E) := hVM ▸ hM.dense_domain
   have hM' : M = T.modulus :=
-    hT.eq_modulus hd hM hMpos (hVM ▸ (compPMap_adjointComp_eq hM hVpi hVker).symm)
+    hT.eq_modulus hd hM hMpos (hVM ▸ (hVpi.compPMap_adjointComp hrange).symm)
   refine ⟨hM', hT.eq_polarFactor hd (hM' ▸ hVM) fun x hx ↦ ?_⟩
   rw [← hT.ker_modulus hd, ← hM', ← hVker, LinearMap.mem_ker, ContinuousLinearMap.coe_coe] at hx
   exact hx
@@ -381,13 +311,6 @@ theorem IsClosed.adjoint_apply_eq_modulus_apply {T : E →ₗ.[𝕜] F} (hT : T.
         (T.modulus.domain.comap (T.polarFactor.adjoint : F →ₗ[𝕜] E))) fun z ↦ z.2).domain := hv
   exact LinearPMap.congr_fun (hT.adjoint_eq_modulus_comp_adjoint_polarFactor hd) y.2 hcomp
 
-private theorem adjoint_polarFactor_polarFactor_adjoint_apply {T : E →ₗ.[𝕜] F} (hT : T.IsClosed)
-    (hd : Dense (T.domain : Set E)) (y : T†.domain) :
-    T.polarFactor.adjoint (T.polarFactor (T† y)) = T† y := by
-  have h := congr($(hT.adjoint_polarFactor_comp_polarFactor hd) (T† y))
-  rwa [ContinuousLinearMap.comp_apply,
-    Submodule.starProjection_eq_self_iff.mpr (adjoint_apply_mem_orthogonal_ker T y)] at h
-
 private theorem isSelfAdjoint_polarFactor_compPMap_adjoint {T : E →ₗ.[𝕜] F} (hT : T.IsClosed)
     (hd : Dense (T.domain : Set E)) :
     IsSelfAdjoint ((T.polarFactor : E →ₗ[𝕜] F).compPMap T†) := by
@@ -414,44 +337,6 @@ private theorem isSelfAdjoint_polarFactor_compPMap_adjoint {T : E →ₗ.[𝕜] 
   rw [hT.adjoint_apply_eq_modulus_apply hd ⟨y, hy₂⟩]
   exact (hT.polarFactor_modulus_apply hd _ hv₁).symm
 
-private theorem polarFactor_compPMap_adjoint_adjointComp {T : E →ₗ.[𝕜] F} (hT : T.IsClosed)
-    (hd : Dense (T.domain : Set E)) :
-    ((T.polarFactor : E →ₗ[𝕜] F).compPMap T†).adjointComp = T.compAdjoint := by
-  let Q := (T.polarFactor : E →ₗ[𝕜] F).compPMap T†
-  have hQeq : Q† = Q := isSelfAdjoint_def.mp (isSelfAdjoint_polarFactor_compPMap_adjoint hT hd)
-  have hQdom : Q†.domain = Q.domain := congrArg domain hQeq
-  have hdom : Q.adjointComp.domain = T.compAdjoint.domain := by
-    ext y
-    rw [mem_adjointComp_domain, mem_compAdjoint_domain, hQeq]
-    refine ⟨fun ⟨hy, hQy⟩ ↦ ⟨hy, ?_⟩, fun ⟨hy, hTy⟩ ↦ ⟨hy, ?_⟩⟩
-    · have hmem : T.polarFactor (T† ⟨y, hy⟩) ∈ T†.domain := hQy
-      rw [hT.mem_adjoint_domain_iff_adjoint_polarFactor_mem hd,
-        adjoint_polarFactor_polarFactor_adjoint_apply hT hd ⟨y, hy⟩] at hmem
-      exact hmem
-    · have hmem : T.polarFactor (T† ⟨y, hy⟩) ∈ T†.domain :=
-        (hT.mem_adjoint_domain_iff_adjoint_polarFactor_mem hd).mpr
-          (by rwa [adjoint_polarFactor_polarFactor_adjoint_apply hT hd ⟨y, hy⟩])
-      exact hmem
-  refine LinearPMap.ext hdom fun y hy₁ hy₂ ↦ ?_
-  have hyQ : y ∈ Q.domain := adjointComp_domain_le Q hy₁
-  have hyT : y ∈ T†.domain := hyQ
-  have hQy : Q ⟨y, hyQ⟩ ∈ Q.domain :=
-    (SetLike.ext_iff.mp hQdom _).mp (mem_adjointComp_domain.mp hy₁).choose_spec
-  rw [adjointComp_apply Q ⟨y, hy₁⟩, compAdjoint_apply]
-  have hval : Q† ⟨Q ⟨y, adjointComp_domain_le Q hy₁⟩,
-      (mem_adjointComp_domain.mp hy₁).choose_spec⟩ = Q ⟨Q ⟨y, hyQ⟩, hQy⟩ :=
-    LinearPMap.congr_fun hQeq (mem_adjointComp_domain.mp hy₁).choose_spec hQy
-  rw [hval]
-  have hQy' : T.polarFactor (T† ⟨y, hyT⟩) ∈ T†.domain := hQy
-  -- Evaluate `Q` twice using `v† (v (T† y)) = T† y` and `v (|T| (T† y)) = T (T† y)`.
-  change T.polarFactor (T† ⟨T.polarFactor (T† ⟨y, hyT⟩), hQy'⟩) = T ⟨T† ⟨y, _⟩, _⟩
-  have hTy_dom : T.polarFactor.adjoint (T.polarFactor (T† ⟨y, hyT⟩)) ∈ T.domain := by
-    rw [adjoint_polarFactor_polarFactor_adjoint_apply hT hd ⟨y, hyT⟩]
-    exact (mem_compAdjoint_domain.mp hy₂).choose_spec
-  rw [hT.adjoint_apply_eq_modulus_apply hd ⟨_, hQy'⟩,
-    hT.polarFactor_modulus_apply hd _ hTy_dom]
-  exact congrArg T (Subtype.ext (adjoint_polarFactor_polarFactor_adjoint_apply hT hd ⟨y, hyT⟩))
-
 /-- For a closed densely defined operator `T`, the modulus of `T†` is `v ∘ T†` on `D(T†)`. -/
 theorem IsClosed.modulus_adjoint_eq_polarFactor_compPMap_adjoint {T : E →ₗ.[𝕜] F} (hT : T.IsClosed)
     (hd : Dense (T.domain : Set E)) :
@@ -466,9 +351,12 @@ theorem IsClosed.modulus_adjoint_eq_polarFactor_compPMap_adjoint {T : E →ₗ.[
     change 0 ≤ RCLike.re ⟪T.polarFactor (T† ⟨y, hy⟩), (y : F)⟫
     rw [← T.polarFactor.adjoint_inner_right, hT.adjoint_apply_eq_modulus_apply hd ⟨y, hy⟩]
     exact hT.re_inner_modulus_nonneg hd ⟨T.polarFactor.adjoint (y : F), hv⟩
-  refine ((adjoint_isClosed hd).eq_modulus (dense_adjoint_domain hT.isClosable) hQ hQpos ?_).symm
-  rw [← hT.compAdjoint_eq_adjoint_adjointComp]
-  exact polarFactor_compPMap_adjoint_adjointComp hT hd
+  have hrange : LinearMap.range (T†).toFun ≤ T.polarFactor.kerᗮ := by
+    rw [hT.ker_polarFactor hd]
+    rintro _ ⟨y, rfl⟩
+    exact adjoint_apply_mem_orthogonal_ker T y
+  exact ((adjoint_isClosed hd).eq_modulus (dense_adjoint_domain hT.isClosable) hQ hQpos
+    ((hT.isPartialIsometry_polarFactor hd).compPMap_adjointComp hrange)).symm
 
 /-- For a closed operator `T`, the modulus of `T†` is the positive square root of `T T†`:
 `|T†| = (T T†)^(1/2)`. -/
@@ -480,13 +368,14 @@ theorem IsClosed.modulus_adjoint_eq_sqrt_compAdjoint {T : E →ₗ.[𝕜] F} (hT
 theorem IsClosed.polarFactor_adjoint {T : E →ₗ.[𝕜] F} (hT : T.IsClosed)
     (hd : Dense (T.domain : Set E)) :
     (T†).polarFactor = T.polarFactor.adjoint := by
+  have hrange : LinearMap.range (T†).toFun ≤ T.polarFactor.kerᗮ := by
+    rw [hT.ker_polarFactor hd]
+    rintro _ ⟨y, rfl⟩
+    exact adjoint_apply_mem_orthogonal_ker T y
   refine ((adjoint_isClosed hd).eq_polarFactor (dense_adjoint_domain hT.isClosable) ?_
     fun y hy ↦ ?_).symm
   · rw [hT.modulus_adjoint_eq_polarFactor_compPMap_adjoint hd]
-    refine LinearPMap.ext rfl fun y hy₁ hy₂ ↦ ?_
-    -- Unfold `compPMap` twice to `v† (v (T† y)) = T† y`.
-    change T.polarFactor.adjoint (T.polarFactor (T† ⟨y, hy₁⟩)) = T† ⟨y, hy₂⟩
-    exact adjoint_polarFactor_polarFactor_adjoint_apply hT hd ⟨y, hy₁⟩
+    exact (hT.isPartialIsometry_polarFactor hd).adjoint_compPMap_compPMap hrange
   · rw [← orthogonal_range_eq_ker_adjoint hd,
       ← Submodule.orthogonal_closure (LinearMap.range T.toFun), ← hT.range_polarFactor hd,
       T.polarFactor.orthogonal_range, LinearMap.mem_ker, ContinuousLinearMap.coe_coe] at hy
@@ -510,23 +399,6 @@ theorem IsClosed.modulus_adjoint_comp_polarFactor {T : E →ₗ.[𝕜] F} (hT : 
 end LinearPMap
 
 namespace ContinuousLinearMap
-
-section Topological
-
-variable {R E F : Type*} [CommRing R]
-  [AddCommGroup E] [Module R E] [TopologicalSpace E]
-  [AddCommGroup F] [Module R F] [TopologicalSpace F] [T2Space F]
-
-/-- Viewing a continuous linear map `B` into a `T₂` space as a partial linear map on `⊤` produces a
-closed partial linear map. -/
-theorem isClosed_toPMap_top (B : E →L[R] F) : ((B : E →ₗ[R] F).toPMap ⊤).IsClosed := by
-  have h : (((B : E →ₗ[R] F).toPMap ⊤).graph : Set (E × F)) = {p | B p.1 = p.2} := by
-    ext ⟨x, y⟩
-    simp [LinearPMap.mem_graph_iff]
-  rw [LinearPMap.IsClosed, h]
-  exact isClosed_eq (B.continuous.comp continuous_fst) continuous_snd
-
-end Topological
 
 variable {𝕜 E F : Type*} [RCLike 𝕜]
   [NormedAddCommGroup E] [InnerProductSpace 𝕜 E] [CompleteSpace E]

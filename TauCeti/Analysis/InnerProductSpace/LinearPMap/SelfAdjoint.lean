@@ -44,7 +44,10 @@ linear maps used by the semigroup development.
   map is real.
 * `LinearPMap.IsFormalAdjoint.norm_smul_sub_sq`: the square-sum identity for a shift, and the
   graph-norm lower bounds `abs_im_mul_norm_le_norm_smul_sub` (equivalently the resolvent bound
-  `norm_le_inv_abs_im_mul_norm_smul_sub`) and `norm_apply_le_mul_norm_smul_sub`.
+  `norm_le_inv_abs_im_mul_norm_smul_sub`) and `norm_apply_le_mul_norm_smul_sub`; for any partial
+  map with nonnegative real quadratic form,
+  `LinearPMap.neg_re_mul_norm_le_norm_smul_sub_of_re_inner_nonneg` bounds `‖c • x - A x‖` below by
+  `(-re c) * ‖x‖`.
 * `LinearPMap.IsFormalAdjoint.eq_zero_of_apply_eq_smul`: a formally self-adjoint map has no
   eigenvector for a nonreal eigenvalue,
   `LinearPMap.IsFormalAdjoint.inner_apply_eq_mul_inner`: pairing an eigenvector `v` for `c` with
@@ -221,6 +224,25 @@ theorem IsFormalAdjoint.norm_re_smul_sub_le_norm_smul_sub {A : E →ₗ.[𝕜] E
   apply (sq_le_sq₀ (norm_nonneg _) (norm_nonneg _)).mp
   rw [hA.norm_smul_sub_sq c x]
   exact le_add_of_nonneg_left (by positivity)
+
+/-- A partial linear map with nonnegative real quadratic form satisfies
+`(-re c) * ‖x‖ ≤ ‖c • x - A x‖` for every scalar `c`. No symmetry assumption on `A` is needed. -/
+theorem neg_re_mul_norm_le_norm_smul_sub_of_re_inner_nonneg
+    {A : E →ₗ.[𝕜] E} (hpos : ∀ x : A.domain, 0 ≤ RCLike.re (inner 𝕜 (A x) (x : E)))
+    (c : 𝕜) (x : A.domain) : (-RCLike.re c) * ‖(x : E)‖ ≤ ‖c • (x : E) - A x‖ := by
+  rcases eq_or_ne (x : E) 0 with hx0 | hx0
+  · simp [hx0]
+  have hre : (-RCLike.re c) * ‖(x : E)‖ ^ 2 ≤ RCLike.re (inner 𝕜 (A x - c • (x : E)) (x : E)) := by
+    rw [inner_sub_left, inner_smul_left, _root_.map_sub, RCLike.mul_re, RCLike.conj_re,
+      RCLike.conj_im, inner_self_im, inner_self_eq_norm_sq]
+    linarith [hpos x]
+  have hcs : RCLike.re (inner 𝕜 (A x - c • (x : E)) (x : E)) ≤
+      ‖c • (x : E) - A x‖ * ‖(x : E)‖ := by
+    calc RCLike.re (inner 𝕜 (A x - c • (x : E)) (x : E))
+        ≤ ‖inner 𝕜 (A x - c • (x : E)) (x : E)‖ := RCLike.re_le_norm _
+      _ ≤ ‖A x - c • (x : E)‖ * ‖(x : E)‖ := norm_inner_le_norm _ _
+      _ = ‖c • (x : E) - A x‖ * ‖(x : E)‖ := by rw [norm_sub_rev]
+  exact (mul_le_mul_iff_left₀ (norm_pos_iff.mpr hx0)).mp (by nlinarith [hre, hcs])
 
 /-- A nonreal shift dominates the image, up to the constant `1 + |re c| / |im c|`: together with
 `abs_im_mul_norm_le_norm_smul_sub` this bounds the graph norm `max ‖x‖ ‖A x‖` by the shift. -/

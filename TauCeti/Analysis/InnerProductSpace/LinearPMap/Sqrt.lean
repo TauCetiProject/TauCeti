@@ -38,10 +38,6 @@ uniformly over every `RCLike 𝕜`.
 
 ## Main declarations
 
-* `LinearPMap.IsFormalAdjoint.neg_re_mul_norm_le_norm_smul_sub_of_re_inner_nonneg`,
-  `IsSelfAdjoint.mem_resolventSet_of_re_neg_of_re_inner_nonneg`,
-  `IsSelfAdjoint.norm_resolvent_le_of_re_neg_of_re_inner_nonneg`: left-half-plane lower bound,
-  resolvent membership, and norm bound for nonnegative symmetric / self-adjoint partial operators.
 * `LinearPMap.sqrt`: the positive square root `A^(1/2)` of a nonnegative self-adjoint partial map.
 * `IsSelfAdjoint.isSelfAdjoint_sqrt`, `IsSelfAdjoint.dense_sqrt_domain`,
   `IsSelfAdjoint.re_inner_sqrt_nonneg`: `A.sqrt` is self-adjoint, densely defined, and nonnegative.
@@ -71,51 +67,6 @@ variable {𝕜 E : Type*} [RCLike 𝕜] [NormedAddCommGroup E] [InnerProductSpac
 local notation "⟪" x ", " y "⟫" => inner 𝕜 x y
 
 namespace LinearPMap
-
-section LowerBound
-
-/-- A symmetric partial linear map with nonnegative quadratic form satisfies
-`(-re z) * ‖x‖ ≤ ‖z • x - A x‖` whenever `re z ≤ 0`. -/
-theorem IsFormalAdjoint.neg_re_mul_norm_le_norm_smul_sub_of_re_inner_nonneg
-    {A : E →ₗ.[𝕜] E} (hA : A.IsFormalAdjoint A)
-    (hpos : ∀ x : A.domain, 0 ≤ RCLike.re ⟪A x, (x : E)⟫) {z : 𝕜} (hz : RCLike.re z ≤ 0)
-    (x : A.domain) : (-RCLike.re z) * ‖(x : E)‖ ≤ ‖z • (x : E) - A x‖ := by
-  refine le_trans ?_ (hA.norm_re_smul_sub_le_norm_smul_sub z x)
-  refine (sq_le_sq₀ (mul_nonneg (neg_nonneg.mpr hz) (norm_nonneg _)) (norm_nonneg _)).mp ?_
-  rw [@norm_sub_sq 𝕜, hA.re_inner_smul_self_apply ((RCLike.re z : ℝ) : 𝕜) x]
-  simp only [norm_smul, RCLike.ofReal_re, RCLike.norm_ofReal, mul_pow, sq_abs]
-  have hre : 0 ≤ RCLike.re ⟪(x : E), A x⟫ := by
-    rw [inner_re_symm]
-    exact hpos x
-  have hcross : 0 ≤ -2 * RCLike.re z * RCLike.re ⟪(x : E), A x⟫ :=
-    mul_nonneg (by linarith) hre
-  nlinarith [sq_nonneg ‖A x‖]
-
-end LowerBound
-
-section Resolvent
-
-variable [CompleteSpace E]
-
-/-- Every scalar with strictly negative real part lies in the resolvent set of a nonnegative
-self-adjoint partial linear map. -/
-theorem _root_.IsSelfAdjoint.mem_resolventSet_of_re_neg_of_re_inner_nonneg
-    {A : E →ₗ.[𝕜] E} (hA : IsSelfAdjoint A)
-    (hpos : ∀ x : A.domain, 0 ≤ RCLike.re ⟪A x, (x : E)⟫) {z : 𝕜} (hz : RCLike.re z < 0) :
-    z ∈ A.resolventSet :=
-  hA.mem_resolventSet_of_norm_le (neg_pos.mpr hz)
-    (hA.isFormalAdjoint.neg_re_mul_norm_le_norm_smul_sub_of_re_inner_nonneg hpos hz.le)
-
-/-- For a nonnegative self-adjoint partial linear map and `re z < 0`, the resolvent satisfies
-`‖R(z, A)‖ ≤ (-re z)⁻¹`. -/
-theorem _root_.IsSelfAdjoint.norm_resolvent_le_of_re_neg_of_re_inner_nonneg
-    {A : E →ₗ.[𝕜] E} (hA : IsSelfAdjoint A)
-    (hpos : ∀ x : A.domain, 0 ≤ RCLike.re ⟪A x, (x : E)⟫) {z : 𝕜} (hz : RCLike.re z < 0) :
-    ‖A.resolvent z‖ ≤ (-RCLike.re z)⁻¹ :=
-  hA.norm_resolvent_le_of_norm_le (neg_pos.mpr hz)
-    (hA.isFormalAdjoint.neg_re_mul_norm_le_norm_smul_sub_of_re_inner_nonneg hpos hz.le)
-
-end Resolvent
 
 section Sqrt
 
@@ -277,21 +228,10 @@ private theorem sqrt_apply_sqrtS (hA : IsSelfAdjoint A)
 
 private theorem re_inner_sqrtC_sqrtS_nonneg (z : E) :
     0 ≤ RCLike.re ⟪sqrtC A z, sqrtS A z⟫ := by
-  let S₂ : E →L[𝕜] E := CFC.sqrt (sqrtS A)
-  have hS₂_pos : S₂.IsPositive :=
-    ContinuousLinearMap.nonneg_iff_isPositive.mp (CFC.sqrt_nonneg _)
-  have hcomm : Commute S₂ (sqrtC A) := commute_sqrtS_sqrtC.cfcₙ_nnreal NNReal.sqrt
-  have hsq : S₂ * S₂ = sqrtS A := CFC.sqrt_mul_sqrt_self _ sqrtS_nonneg
-  have hinner : ⟪sqrtC A z, sqrtS A z⟫ = ⟪sqrtC A (S₂ z), S₂ z⟫ := by
-    calc ⟪sqrtC A z, sqrtS A z⟫
-        = ⟪sqrtC A z, (S₂ * S₂) z⟫ := by rw [hsq]
-      _ = ⟪sqrtC A z, S₂ (S₂ z)⟫ := rfl
-      _ = ⟪S₂ (sqrtC A z), S₂ z⟫ := (hS₂_pos.inner_left_eq_inner_right _ _).symm
-      _ = ⟪(S₂ * sqrtC A) z, S₂ z⟫ := rfl
-      _ = ⟪(sqrtC A * S₂) z, S₂ z⟫ := by rw [hcomm.eq]
-      _ = ⟪sqrtC A (S₂ z), S₂ z⟫ := rfl
-  rw [hinner]
-  exact isPositive_sqrtC.re_inner_nonneg_left _
+  have hSC : 0 ≤ sqrtS A * sqrtC A :=
+    Commute.mul_nonneg sqrtS_nonneg sqrtC_nonneg commute_sqrtS_sqrtC
+  rw [← isPositive_sqrtS.inner_left_eq_inner_right, ← mul_apply_eq_comp]
+  exact (ContinuousLinearMap.nonneg_iff_isPositive.mp hSC).re_inner_nonneg_left z
 
 private theorem sqrt_isFormalAdjoint (hA : IsSelfAdjoint A)
     (hpos : ∀ x : A.domain, 0 ≤ RCLike.re ⟪A x, (x : E)⟫) :

@@ -7,8 +7,8 @@ module
 
 public import TauCeti.Analysis.InnerProductSpace.LinearPMap.Sqrt
 public import TauCeti.Analysis.InnerProductSpace.Modulus
+import TauCeti.Analysis.Normed.Operator.LinearPMap.GraphCore
 import TauCeti.LinearAlgebra.LinearPMap.Basic
-import TauCeti.Topology.Algebra.Module.LinearPMap.GraphCore
 
 /-!
 # The modulus of a closed unbounded operator
@@ -55,52 +55,7 @@ every `x ∈ D(T)`. Consequently `ker |T| = ker T`, `(range |T|)ᗮ = ker T`, an
 
 public section
 
-open Filter Topology
-
 namespace LinearPMap
-
-section CoreTransfer
-
-variable {𝕜 E F G : Type*} [NormedField 𝕜]
-  [NormedAddCommGroup E] [NormedSpace 𝕜 E]
-  [NormedAddCommGroup F] [NormedSpace 𝕜 F]
-  [NormedAddCommGroup G] [NormedSpace 𝕜 G] [CompleteSpace G]
-
-/-- If `C` is a core for a closed partial linear map `A : E →ₗ.[𝕜] F` and `B : E →ₗ.[𝕜] G` is a
-closed partial linear map into a complete space with `C ≤ B.domain` and `‖B u‖ = ‖A u‖` on `C`,
-then `A.domain ≤ B.domain` and `‖B x‖ = ‖A x‖` on `A.domain`. -/
-private theorem domain_le_and_norm_eq_of_hasCore {A : E →ₗ.[𝕜] F} {B : E →ₗ.[𝕜] G}
-    {C : Submodule 𝕜 E} (hA : A.IsClosed) (hB : B.IsClosed) (hcore : A.HasCore C)
-    (hCB : C ≤ B.domain) (hnorm : ∀ u (hu : u ∈ C), ‖B ⟨u, hCB hu⟩‖ = ‖A ⟨u, hcore.1 hu⟩‖)
-    {x : E} (hx : x ∈ A.domain) :
-    ∃ hxB : x ∈ B.domain, ‖B ⟨x, hxB⟩‖ = ‖A ⟨x, hx⟩‖ := by
-  have hmem : (x, A ⟨x, hx⟩) ∈ _root_.closure ((A.domRestrict C).graph : Set (E × F)) :=
-    (hA.hasCore_iff_graph_subset_closure hcore.1).mp hcore (A.mem_graph ⟨x, hx⟩)
-  obtain ⟨p, hp, hplim⟩ := mem_closure_iff_seq_limit.mp hmem
-  have hv : ∀ n, ∃ u : E, ∃ hu : u ∈ C, p n = (u, A ⟨u, hcore.1 hu⟩) := fun n ↦ by
-    obtain ⟨v, hv⟩ := (mem_graph_iff' (A.domRestrict C)).mp (hp n)
-    have hval : (A.domRestrict C) v = A ⟨v, hcore.1 v.2.1⟩ := A.domRestrict_le.2 rfl
-    exact ⟨v, v.2.1, hv.symm.trans (Prod.ext rfl hval)⟩
-  choose u hu hp_eq using hv
-  have hulim : Tendsto u atTop (𝓝 x) := by
-    simpa [Function.comp_def, hp_eq] using (continuous_fst.tendsto _).comp hplim
-  have hAlim : Tendsto (fun n ↦ A ⟨u n, hcore.1 (hu n)⟩) atTop (𝓝 (A ⟨x, hx⟩)) := by
-    simpa [Function.comp_def, hp_eq] using (continuous_snd.tendsto _).comp hplim
-  have hBcauchy : CauchySeq fun n ↦ B ⟨u n, hCB (hu n)⟩ := by
-    refine Metric.cauchySeq_iff.mpr fun ε hε ↦ ?_
-    obtain ⟨N, hN⟩ := Metric.cauchySeq_iff.mp hAlim.cauchySeq ε hε
-    refine ⟨N, fun m hm n hn ↦ ?_⟩
-    have hdist : dist (B ⟨u m, hCB (hu m)⟩) (B ⟨u n, hCB (hu n)⟩) =
-        dist (A ⟨u m, hcore.1 (hu m)⟩) (A ⟨u n, hcore.1 (hu n)⟩) := by
-      rw [dist_eq_norm, dist_eq_norm, ← B.map_sub, ← A.map_sub]
-      exact hnorm (u m - u n) (C.sub_mem (hu m) (hu n))
-    exact hdist ▸ hN m hm n hn
-  obtain ⟨y, hBlim⟩ := cauchySeq_tendsto_of_complete hBcauchy
-  obtain ⟨hxB, hBy⟩ := hB.mem_domain_of_tendsto (fun n ↦ hCB (hu n)) hulim hBlim
-  refine ⟨hxB, hBy ▸ tendsto_nhds_unique hBlim.norm ?_⟩
-  simpa only [Function.comp_def, hnorm _ (hu _)] using hAlim.norm
-
-end CoreTransfer
 
 variable {𝕜 E F : Type*} [RCLike 𝕜]
   [NormedAddCommGroup E] [InnerProductSpace 𝕜 E] [CompleteSpace E]
@@ -207,24 +162,22 @@ private theorem norm_modulus_apply_of_mem_adjointComp_domain {T : E →ₗ.[𝕜
 
 /-- For a closed densely defined operator `T`, the domain of its modulus `|T|` equals `D(T)`. -/
 theorem IsClosed.modulus_domain {T : E →ₗ.[𝕜] F} (hT : T.IsClosed)
-    (hd : Dense (T.domain : Set E)) : T.modulus.domain = T.domain := by
-  refine le_antisymm (fun x hx ↦ ?_) (fun x hx ↦ ?_)
-  · exact (domain_le_and_norm_eq_of_hasCore (hT.isClosed_modulus hd) hT
-      (hT.hasCore_adjointComp_domain_modulus hd) (adjointComp_domain_le T)
-      (fun u hu ↦ (norm_modulus_apply_of_mem_adjointComp_domain hT hd u hu).symm) hx).1
-  · exact (domain_le_and_norm_eq_of_hasCore hT (hT.isClosed_modulus hd)
-      hT.hasCore_adjointComp_domain (hT.adjointComp_domain_le_modulus_domain hd)
-      (norm_modulus_apply_of_mem_adjointComp_domain hT hd) hx).1
+    (hd : Dense (T.domain : Set E)) : T.modulus.domain = T.domain :=
+  le_antisymm
+    ((hT.hasCore_adjointComp_domain_modulus hd).domain_le_and_norm_eq hT (adjointComp_domain_le T)
+      fun u hu ↦ (norm_modulus_apply_of_mem_adjointComp_domain hT hd u hu).symm).1
+    (hT.hasCore_adjointComp_domain.domain_le_and_norm_eq (hT.isClosed_modulus hd)
+      (hT.adjointComp_domain_le_modulus_domain hd)
+      (norm_modulus_apply_of_mem_adjointComp_domain hT hd)).1
 
 /-- For a closed densely defined operator `T`, `‖|T| x‖ = ‖T x‖` on their common domain
 `D(|T|) = D(T)`. -/
 theorem IsClosed.norm_modulus_apply {T : E →ₗ.[𝕜] F} (hT : T.IsClosed)
     (hd : Dense (T.domain : Set E)) {x : E} (hxM : x ∈ T.modulus.domain) (hx : x ∈ T.domain) :
-    ‖T.modulus ⟨x, hxM⟩‖ = ‖T ⟨x, hx⟩‖ := by
-  obtain ⟨_, hnorm⟩ := domain_le_and_norm_eq_of_hasCore hT (hT.isClosed_modulus hd)
-    hT.hasCore_adjointComp_domain (hT.adjointComp_domain_le_modulus_domain hd)
-    (norm_modulus_apply_of_mem_adjointComp_domain hT hd) hx
-  exact hnorm
+    ‖T.modulus ⟨x, hxM⟩‖ = ‖T ⟨x, hx⟩‖ :=
+  (hT.hasCore_adjointComp_domain.domain_le_and_norm_eq (hT.isClosed_modulus hd)
+    (hT.adjointComp_domain_le_modulus_domain hd)
+    (norm_modulus_apply_of_mem_adjointComp_domain hT hd)).2 ⟨x, hx⟩
 
 /-- The modulus and the operator have the same kernel when `T` is closed and densely defined. -/
 theorem IsClosed.ker_modulus {T : E →ₗ.[𝕜] F} (hT : T.IsClosed)
