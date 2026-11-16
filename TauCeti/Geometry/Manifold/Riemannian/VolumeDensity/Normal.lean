@@ -65,6 +65,50 @@ variable
   {F : Type*} [NormedAddCommGroup F] [InnerProductSpace ℝ F] [FiniteDimensional ℝ F]
   [MeasurableSpace F] [BorelSpace F]
 
+omit [MeasurableSpace F] [BorelSpace F] in
+/-- Local helper packaging the `C¹` partial diffeomorphism `exp_p ∘ A` on `A ⁻¹' U` together with
+the identity expressing its Riemannian Jacobian in `stdOrthonormalBasis ℝ F` as
+`normDet (d(exp_p)_{A x})`. -/
+private theorem exists_partialDiffeomorph_riemannianExp_comp_isometry
+    {M : Type*} [TopologicalSpace M] [ChartedSpace H M] [IsManifold I ∞ M]
+    [RiemannianBundle (fun x : M ↦ TangentSpace I x)]
+    [IsContMDiffRiemannianBundle I ∞ E (fun x : M ↦ TangentSpace I x)]
+    {p : M} {U : Set (TangentSpace I p)} (h : IsNormalDomain I M p U)
+    (A : F ≃ₗᵢ[ℝ] TangentSpace I p) :
+    ∃ Φ : PartialDiffeomorph 𝓘(ℝ, F) I F M 1,
+      Φ.source = A ⁻¹' U ∧ Φ.target = riemannianExp I M p '' U ∧
+      ⇑Φ = riemannianExp I M p ∘ A ∧
+      ∀ x ∈ A ⁻¹' U,
+        TauCeti.riemannianJacobian (I := I) (stdOrthonormalBasis ℝ F).toBasis
+            (riemannianExp I M p ∘ A) x =
+          LinearMap.normDet (U := TangentSpace I p)
+            (mfderiv 𝓘(ℝ, TangentSpace I p) I (riemannianExp I M p) (A x)).toLinearMap := by
+  let b := stdOrthonormalBasis ℝ F
+  have hopen : IsOpen (A ⁻¹' U) := h.isOpen.preimage A.continuous
+  obtain ⟨Φ, hsource, hcoe⟩ :=
+    h.exists_partialDiffeomorph_riemannianExp_comp A.toContinuousLinearEquiv hopen
+      (mapsTo_preimage A U)
+  have hcoeA : (riemannianExp I M p ∘ A.toContinuousLinearEquiv) = riemannianExp I M p ∘ A := by
+    ext x
+    simp [A.coe_toContinuousLinearEquiv]
+  have htarget : Φ.target = riemannianExp I M p '' U := by
+    rw [← Φ.toPartialEquiv.image_source_eq_target, hsource, hcoe, hcoeA, image_comp,
+      image_preimage_eq U A.surjective]
+  refine ⟨Φ.ofLE (m := 1) (by simp), ?_, ?_, ?_, fun x hx ↦ ?_⟩
+  · simpa only [PartialDiffeomorph.ofLE_toPartialEquiv] using hsource
+  · simpa only [PartialDiffeomorph.ofLE_toPartialEquiv] using htarget
+  · simpa only [PartialDiffeomorph.ofLE_toPartialEquiv, hcoeA] using hcoe
+  · have hf : MDifferentiableAt 𝓘(ℝ, TangentSpace I p) I (riemannianExp I M p)
+        (A.toContinuousLinearEquiv x) := by
+      simpa only [A.coe_toContinuousLinearEquiv] using
+        (h.isLocalDiffeomorphOn ⟨A x, hx⟩).contMDiffAt.mdifferentiableAt (by simp)
+    have hmap_basis : b.toBasis.map A.toContinuousLinearEquiv.toLinearEquiv = (b.map A).toBasis :=
+      (b.toBasis_map A).symm
+    rw [← hcoeA,
+      TauCeti.riemannianJacobian_comp_continuousLinearEquiv A.toContinuousLinearEquiv b.toBasis hf,
+      hmap_basis, A.coe_toContinuousLinearEquiv]
+    exact TauCeti.riemannianJacobian_eq_normDet (b.map A) _ (A x)
+
 /-- **Normal-domain pushforward of Jacobian-weighted Lebesgue measure.** For any linear isometry
 equivalence `A : F ≃ₗᵢ[ℝ] TangentSpace I p` and normal domain `U` at `p`, pushing Lebesgue measure
 on `A ⁻¹' U` weighted by `normDet (d(exp_p)_{A x})` forward along `exp_p ∘ A` yields the
@@ -86,36 +130,15 @@ theorem map_withDensity_normDet
     A.toLinearEquiv.finrank_eq.trans (TauCeti.finrank_tangentSpace p)
   let b := stdOrthonormalBasis ℝ F
   have hopen : IsOpen (A ⁻¹' U) := h.isOpen.preimage A.continuous
-  obtain ⟨Φ, hsource, hcoe⟩ :=
-    h.exists_partialDiffeomorph_riemannianExp_comp A.toContinuousLinearEquiv hopen
-      (mapsTo_preimage A U)
-  have hcoeA : (riemannianExp I M p ∘ A.toContinuousLinearEquiv) = riemannianExp I M p ∘ A := by
-    ext x
-    simp [A.coe_toContinuousLinearEquiv]
-  have htarget : Φ.target = riemannianExp I M p '' U := by
-    rw [← Φ.toPartialEquiv.image_source_eq_target, hsource, hcoe, hcoeA, image_comp,
-      image_preimage_eq U A.surjective]
-  have hmap := (Φ.ofLE (m := 1) (by simp)).map_withDensity_riemannianJacobian b.toBasis hdim
-  rw [PartialDiffeomorph.ofLE_toPartialEquiv, hcoe, hcoeA, hsource, htarget,
-    b.addHaar_eq_volume] at hmap
+  obtain ⟨Φ, hsource, htarget, hcoe, hJ⟩ :=
+    exists_partialDiffeomorph_riemannianExp_comp_isometry h A
+  have hmap := Φ.map_withDensity_riemannianJacobian b.toBasis hdim
+  rw [hcoe, hsource, htarget, b.addHaar_eq_volume] at hmap
   refine Eq.trans ?_ hmap
   congr 1
   refine withDensity_congr_ae ?_
   filter_upwards [ae_restrict_mem hopen.measurableSet] with x hx
-  have hf : MDifferentiableAt 𝓘(ℝ, TangentSpace I p) I (riemannianExp I M p)
-      (A.toContinuousLinearEquiv x) := by
-    simpa only [A.coe_toContinuousLinearEquiv] using
-      (h.isLocalDiffeomorphOn ⟨A x, hx⟩).contMDiffAt.mdifferentiableAt (by simp)
-  have hmap_basis : b.toBasis.map A.toContinuousLinearEquiv.toLinearEquiv = (b.map A).toBasis :=
-    (b.toBasis_map A).symm
-  have hJ : TauCeti.riemannianJacobian (I := I) b.toBasis (riemannianExp I M p ∘ A) x =
-      LinearMap.normDet (U := TangentSpace I p)
-        (mfderiv 𝓘(ℝ, TangentSpace I p) I (riemannianExp I M p) (A x)).toLinearMap := by
-    rw [← hcoeA,
-      TauCeti.riemannianJacobian_comp_continuousLinearEquiv A.toContinuousLinearEquiv b.toBasis hf,
-      hmap_basis, A.coe_toContinuousLinearEquiv]
-    exact TauCeti.riemannianJacobian_eq_normDet (b.map A) _ (A x)
-  exact congrArg ENNReal.ofReal hJ.symm
+  exact congrArg ENNReal.ofReal (hJ x hx).symm
 
 /-- **Change of variables on measurable subsets of a normal domain.** For any linear isometry
 equivalence `A : F ≃ₗᵢ[ℝ] TangentSpace I p`, measurable set `s ⊆ F` mapped into a normal domain
@@ -138,7 +161,12 @@ theorem setLIntegral_riemannianVolume_image_eq_setLIntegral_normDet
   let T : Set M := riemannianExp I M p '' (A '' s)
   let ρ : F → ℝ≥0∞ := fun x ↦ ENNReal.ofReal (LinearMap.normDet (U := TangentSpace I p)
     (mfderiv 𝓘(ℝ, TangentSpace I p) I (riemannianExp I M p) (A x)).toLinearMap)
+  have hdim : Module.finrank ℝ F = Module.finrank ℝ E :=
+    A.toLinearEquiv.finrank_eq.trans (TauCeti.finrank_tangentSpace p)
+  let b := stdOrthonormalBasis ℝ F
   have hopen : IsOpen (A ⁻¹' U) := h.isOpen.preimage A.continuous
+  obtain ⟨Φ, hsource, htarget, hcoe, hJ⟩ :=
+    exists_partialDiffeomorph_riemannianExp_comp_isometry h A
   have hTsub : T ⊆ riemannianExp I M p '' U := image_mono hmap.image_subset
   have hTeq : T = (riemannianExp I M p '' U) ∩ (A.symm ∘ riemannianLog I M p U) ⁻¹' s := by
     ext y
@@ -153,49 +181,30 @@ theorem setLIntegral_riemannianVolume_image_eq_setLIntegral_normDet
     rw [hTeq, ← Subtype.image_preimage_coe]
     exact (MeasurableEmbedding.subtype_coe h.isOpen_image.measurableSet).measurableSet_image.mpr
       ((A.symm.continuous.comp_continuousOn h.continuousOn_riemannianLog).domRestrict.measurable hs)
-  have hexp_diff : ContMDiffOn 𝓘(ℝ, TangentSpace I p) I 1 (riemannianExp I M p) U := by
-    have hd := h.toPartialDiffeomorph.contMDiffOn_toFun.of_le (m := 1) (by simp)
-    simpa only [h.toPartialDiffeomorph_source, h.coe_toPartialDiffeomorph] using hd
-  have hρ_cont : ContinuousOn ρ (A ⁻¹' U) := by
-    let b := stdOrthonormalBasis ℝ (TangentSpace I p)
-    have hJac := TauCeti.continuousOn_riemannianJacobian b.toBasis hexp_diff h.isOpen
-    have hnormDet : ContinuousOn (fun v : TangentSpace I p ↦
-        LinearMap.normDet (U := TangentSpace I p)
-          (mfderiv 𝓘(ℝ, TangentSpace I p) I (riemannianExp I M p) v).toLinearMap) U :=
-      hJac.congr fun v _ ↦ (TauCeti.riemannianJacobian_eq_normDet b _ v).symm
-    exact ENNReal.continuous_ofReal.comp_continuousOn
-      (hnormDet.comp A.continuous.continuousOn (mapsTo_preimage A U))
-  have hρ_ae : AEMeasurable ρ (volume.restrict (A ⁻¹' U)) :=
-    hρ_cont.aemeasurable hopen.measurableSet
-  have hF_ae : AEMeasurable (riemannianExp I M p ∘ A)
-      ((volume.restrict (A ⁻¹' U)).withDensity ρ) :=
-    ((hexp_diff.continuousOn.comp A.continuous.continuousOn (mapsTo_preimage A U)).aemeasurable
-      hopen.measurableSet).mono_ac (withDensity_absolutelyContinuous _ _)
+  have hcov := Φ.setLIntegral_riemannianVolume_eq b.toBasis hdim (hφ.indicator hTmeas)
+  rw [hcoe, hsource, htarget, b.addHaar_eq_volume] at hcov
+  simp only [Function.comp_apply] at hcov
   have hind : ∀ x ∈ A ⁻¹' U,
-      ρ x * T.indicator φ (riemannianExp I M p (A x)) =
+      ENNReal.ofReal (TauCeti.riemannianJacobian (I := I) b.toBasis (riemannianExp I M p ∘ A) x) *
+          T.indicator φ (riemannianExp I M p (A x)) =
         s.indicator (fun x ↦ ρ x * φ (riemannianExp I M p (A x))) x := by
     intro x hxU
+    rw [hJ x hxU]
     by_cases hx : x ∈ s
     · have hmem : riemannianExp I M p (A x) ∈ T := mem_image_of_mem _ (mem_image_of_mem _ hx)
-      simp [hx, hmem]
+      simp [ρ, hx, hmem]
     · have hnmem : riemannianExp I M p (A x) ∉ T := by
         rintro ⟨_, ⟨x', hx', rfl⟩, heq⟩
         exact hx (A.injective (h.injOn (hmap hx') hxU heq) ▸ hx')
-      simp [hx, hnmem]
+      simp [ρ, hx, hnmem]
   calc ∫⁻ y in T, φ y ∂riemannianVolume I M
       = ∫⁻ y in T, φ y ∂(riemannianVolume I M).restrict (riemannianExp I M p '' U) := by
         rw [Measure.restrict_restrict_of_subset hTsub]
-    _ = ∫⁻ y, T.indicator φ y ∂(riemannianVolume I M).restrict (riemannianExp I M p '' U) :=
+    _ = ∫⁻ y in riemannianExp I M p '' U, T.indicator φ y ∂riemannianVolume I M :=
         (lintegral_indicator hTmeas _).symm
-    _ = ∫⁻ y, T.indicator φ y ∂Measure.map (riemannianExp I M p ∘ A)
-          ((volume.restrict (A ⁻¹' U)).withDensity ρ) := by
-        rw [← h.map_withDensity_normDet A]
-    _ = ∫⁻ x, T.indicator φ (riemannianExp I M p (A x))
-          ∂((volume.restrict (A ⁻¹' U)).withDensity ρ) :=
-        lintegral_map' (hφ.indicator hTmeas).aemeasurable hF_ae
-    _ = ∫⁻ x in A ⁻¹' U, ρ x * T.indicator φ (riemannianExp I M p (A x)) :=
-        lintegral_withDensity_eq_lintegral_mul₀' hρ_ae
-          ((hφ.indicator hTmeas).comp_aemeasurable hF_ae)
+    _ = ∫⁻ x in A ⁻¹' U, ENNReal.ofReal
+          (TauCeti.riemannianJacobian (I := I) b.toBasis (riemannianExp I M p ∘ A) x) *
+          T.indicator φ (riemannianExp I M p (A x)) := hcov
     _ = ∫⁻ x in A ⁻¹' U, s.indicator (fun x ↦ ρ x * φ (riemannianExp I M p (A x))) x :=
         setLIntegral_congr_fun hopen.measurableSet hind
     _ = ∫⁻ x in s, ρ x * φ (riemannianExp I M p (A x)) ∂volume.restrict (A ⁻¹' U) :=

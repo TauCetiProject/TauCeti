@@ -107,6 +107,7 @@ theorem modelBallVolume_one_dim (κ r : ℝ) : modelBallVolume κ 1 r = r := by
   simp [modelBallVolume]
 
 /-- In zero curvature and positive dimension `n ≠ 0`, `modelBallVolume 0 n r = r ^ n / n`. -/
+@[simp]
 theorem modelBallVolume_zero_curvature {n : ℕ} (hn : n ≠ 0) (r : ℝ) :
     modelBallVolume 0 n r = r ^ n / n := by
   obtain ⟨m, rfl⟩ := Nat.exists_eq_succ_of_ne_zero hn
