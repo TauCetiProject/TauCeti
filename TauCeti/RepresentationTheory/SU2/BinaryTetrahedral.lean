@@ -70,7 +70,7 @@ open Quaternion
 /-- The doubled coordinates `2q = (v₀, v₁, v₂, v₃)` of the 24 points `q` of the binary
 tetrahedral group: the eight vectors `(±2, 0, 0, 0)` up to coordinate permutation, giving
 `±1, ±i, ±j, ±k`, and the sixteen vectors `(±1, ±1, ±1, ±1)`, giving `(±1 ± i ± j ± k) / 2`. -/
-def binaryTetrahedralCoords : Finset (Fin 4 → ℤ) :=
+@[expose] def binaryTetrahedralCoords : Finset (Fin 4 → ℤ) :=
   {![2, 0, 0, 0], ![-2, 0, 0, 0], ![0, 2, 0, 0], ![0, -2, 0, 0], ![0, 0, 2, 0], ![0, 0, -2, 0],
     ![0, 0, 0, 2], ![0, 0, 0, -2]} ∪ Fintype.piFinset fun _ => {1, -1}
 
