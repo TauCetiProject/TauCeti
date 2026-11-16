@@ -75,6 +75,8 @@ noncomputable section
 
 namespace Polynomial
 
+section CommRing
+
 variable {R S : Type*} [CommRing R] [CommRing S]
 
 /-- The **Tschirnhaus transform** of `f` by `T`: the resultant in `X` of `f(X)` and `Y - T(X)`,
@@ -254,6 +256,8 @@ theorem tschirnhausPolynomial_C (f : R[X]) (c : R) :
   simp only [natDegree_C]
   rw [resultant_C_zero_right]
   simp [natDegree_map_eq_of_injective C_injective]
+
+end CommRing
 
 section Algebra
 

@@ -185,7 +185,7 @@ theorem torusCommHopfAlgProperty_semisimpleFactor
       (FiniteTypeCommHopfAlgCat.of k (semisimpleFactor k H)) := by
   let _ : IsReduced (semisimpleFactor k H) := isReduced_of_smooth k _
   let _ : ConnectedSpace (PrimeSpectrum (semisimpleFactor k H)) :=
-    (hH.image (_root_.CommHopfAlgCat.ofHom (semisimplePartBialgHom k H))).connectedSpace k _
+    (hH.image (_root_.CommHopfAlgCat.ofHom (semisimplePartBialgHom k H))).connectedSpace
   exact splitTorusCommHopfAlgProperty.torus k _
     (splitTorusCommHopfAlgProperty.of_groupLikeSetSpan_eq_top _
       (groupLikeSetSpan_semisimpleFactor_eq_top k H))

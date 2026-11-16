@@ -90,8 +90,12 @@ spaces.
   function in `H^s`, `2s > n`, tends to zero at infinity.
 * `TemperedDistribution.MemSobolev.exists_contDiff_ae_eq`: an `L²` function in `H^s`,
   `2s > n + 2k`, agrees almost everywhere with a `C^k` function.
-* `TemperedDistribution.contDiff_of_mem_realSobolevFunctions`: a continuous real function in
-  `H^s`, `2s > n + 2k`, is `C^k`.
+* `TemperedDistribution.exists_contDiff_ae_eq_of_mem_realSobolevFunctions`: the version for real
+  functions; `TemperedDistribution.exists_contDiff_ae_eq_of_forall_mem_realSobolevFunctions` gives
+  a smooth representative of a real function lying in every `H^k`.
+* `TemperedDistribution.contDiff_of_mem_realSobolevFunctions`,
+  `TemperedDistribution.exists_norm_iteratedFDeriv_le_of_mem_realSobolevFunctions`: a continuous
+  real function in `H^s`, `2s > n + 2k`, is `C^k` with bounded derivatives of order at most `k`.
 * `TemperedDistribution.MemSobolev.integrable_norm_pow_mul_norm`,
   `TemperedDistribution.MemSobolev.integral_norm_pow_mul_norm_le`: the moments
   `∫ ‖ξ‖ ^ j ‖v ξ‖ ≤ ‖(1 + ‖ξ‖ ^ 2) ^ (-(s - j) / 2)‖₂ ‖f‖_{H^s}` of `v = 𝓕 f`, `2 (s - j) > n`.
@@ -464,20 +468,42 @@ theorem MemSobolev.exists_contDiff_ae_eq {s : ℝ} {k : ℕ} (hs : finrank ℝ E
   exact ⟨𝓕⁻ (v : E → F), hu.contDiff_fourierInv (by linarith) hv,
     Lp.ae_eq_fourierInv_of_fourier_eq hv⟩
 
+/-- **Real Sobolev functions are `C^k` almost everywhere.** A real function in `H^s`,
+`s > dim E / 2 + k`, agrees almost everywhere with a `C^k` function. -/
+theorem exists_contDiff_ae_eq_of_mem_realSobolevFunctions {s : ℝ} {k : ℕ}
+    (hs : finrank ℝ E + 2 * k < 2 * s) {f : E → ℝ} (hf : f ∈ realSobolevFunctions E s 2) :
+    ∃ g : E → ℝ, ContDiff ℝ k g ∧ f =ᵐ[volume] g := by
+  obtain ⟨u, hu, hS⟩ := mem_realSobolevFunctions.1 hf
+  obtain ⟨g, hg, hug⟩ := hS.exists_contDiff_ae_eq hs
+  refine ⟨fun x ↦ (g x).re, Complex.reCLM.contDiff.comp hg, ?_⟩
+  filter_upwards [Complex.ofRealCLM.coeFn_compLp u, hu, hug] with x h₁ h₂ h₃
+  rw [← h₃, h₁, h₂, Complex.ofRealCLM_apply, Complex.ofReal_re]
+
+open scoped ContDiff in
+/-- **Functions in every Sobolev space are smooth almost everywhere.** A real function lying in
+`H^k` for every `k` agrees almost everywhere with a smooth function. The `C^n` representatives
+given by `exists_contDiff_ae_eq_of_mem_realSobolevFunctions` for the various `n` agree almost
+everywhere, hence everywhere, since they are continuous. -/
+theorem exists_contDiff_ae_eq_of_forall_mem_realSobolevFunctions {f : E → ℝ}
+    (hf : ∀ k : ℕ, f ∈ realSobolevFunctions E k 2) :
+    ∃ g : E → ℝ, ContDiff ℝ ∞ g ∧ f =ᵐ[volume] g := by
+  have hs (n : ℕ) : (finrank ℝ E : ℝ) + 2 * n < 2 * ((finrank ℝ E + n + 1 : ℕ) : ℝ) := by
+    push_cast
+    linarith [(finrank ℝ E).cast_nonneg (α := ℝ)]
+  choose g hg hfg using fun n : ℕ ↦
+    exists_contDiff_ae_eq_of_mem_realSobolevFunctions (hs n) (hf (finrank ℝ E + n + 1))
+  refine ⟨g 0, contDiff_infty.2 fun n ↦ ?_, hfg 0⟩
+  rw [← ((hg n).continuous.ae_eq_iff_eq volume (hg 0).continuous).1 ((hfg n).symm.trans (hfg 0))]
+  exact hg n
+
 /-- **Continuous Sobolev functions are `C^k`.** A continuous real function in `H^s`,
 `s > dim E / 2 + k`, is of class `C^k`: it agrees almost everywhere, hence everywhere, with the
-`C^k` representative given by `MemSobolev.exists_contDiff_ae_eq`. -/
+`C^k` representative given by `exists_contDiff_ae_eq_of_mem_realSobolevFunctions`. -/
 theorem contDiff_of_mem_realSobolevFunctions {s : ℝ} {k : ℕ} (hs : finrank ℝ E + 2 * k < 2 * s)
     {f : E → ℝ} (hf : f ∈ realSobolevFunctions E s 2) (hcont : Continuous f) :
     ContDiff ℝ k f := by
-  obtain ⟨u, hu, hS⟩ := mem_realSobolevFunctions.1 hf
-  obtain ⟨g, hg, hug⟩ := hS.exists_contDiff_ae_eq hs
-  have hae : (fun x ↦ (f x : ℂ)) =ᵐ[volume] g := by
-    filter_upwards [Complex.ofRealCLM.coeFn_compLp u, hu, hug] with x h₁ h₂ h₃
-    rw [← h₃, h₁, h₂, Complex.ofRealCLM_apply]
-  have heq := ((Complex.continuous_ofReal.comp hcont).ae_eq_iff_eq volume hg.continuous).1 hae
-  have hf : f = fun x ↦ (g x).re := funext fun x ↦ by simp [← congrFun heq x]
-  exact hf ▸ Complex.reCLM.contDiff.comp hg
+  obtain ⟨g, hg, hfg⟩ := exists_contDiff_ae_eq_of_mem_realSobolevFunctions hs hf
+  rwa [(hcont.ae_eq_iff_eq volume hg.continuous).1 hfg]
 
 /-- **Derivatives of Sobolev functions vanish at infinity.** For a continuous representative `g`
 of an `L²` function in `H^s` and `s > j + dim E / 2`, the `j`-th derivative of `g` tends to zero
@@ -512,6 +538,29 @@ theorem exists_norm_iteratedFDeriv_le_mul_norm_toBesselPotentialSpace {s : ℝ} 
   refine (hu.norm_iteratedFDeriv_fourierInv_le hsj hv x).trans ?_
   gcongr
   exact Finset.single_le_sum (fun i _ => hc i) (Finset.mem_range.2 (Nat.lt_succ_of_le hj))
+
+/-- **Continuous Sobolev functions have bounded derivatives.** The derivatives of order at most
+`k` of a continuous real function `f` in `H^s`, `s > dim E / 2 + k`, are bounded: those of its
+complexification are, by `exists_norm_iteratedFDeriv_le_mul_norm_toBesselPotentialSpace`. -/
+theorem exists_norm_iteratedFDeriv_le_of_mem_realSobolevFunctions {s : ℝ} {k : ℕ}
+    (hs : finrank ℝ E + 2 * k < 2 * s) {f : E → ℝ} (hf : f ∈ realSobolevFunctions E s 2)
+    (hcont : Continuous f) {n : ℕ} (hn : n ≤ k) :
+    ∃ C, ∀ x, ‖iteratedFDeriv ℝ n f x‖ ≤ C := by
+  obtain ⟨u, hu, hS⟩ := mem_realSobolevFunctions.1 hf
+  have hs' : (finrank ℝ E : ℝ) < 2 * (s - k) := by linarith
+  set g : E → ℂ := fun x ↦ (f x : ℂ)
+  have hgc : Continuous g := Complex.continuous_ofReal.comp hcont
+  have hug : Complex.ofRealCLM.compLp u =ᵐ[volume] g := by
+    filter_upwards [Complex.ofRealCLM.coeFn_compLp u, hu] with x h₁ h₂
+    rw [h₁, h₂, Complex.ofRealCLM_apply]
+  have hg : ContDiff ℝ k g := hS.contDiff_of_ae_eq hs' hgc hug
+  obtain ⟨C, -, hC⟩ :=
+    exists_norm_iteratedFDeriv_le_mul_norm_toBesselPotentialSpace (F := ℂ) hs'
+  have hfg : f = fun x ↦ Complex.reCLM (g x) := funext fun x ↦ by simp [g]
+  refine ⟨‖Complex.reCLM‖ * (C * ‖hS.toBesselPotentialSpace‖), fun x ↦ ?_⟩
+  rw [hfg]
+  exact (Complex.reCLM.norm_iteratedFDeriv_comp_left hg.contDiffAt
+    (by exact_mod_cast hn)).trans (by gcongr; exact hC hS hgc hug n hn x)
 
 open scoped ContDiff in
 /-- **Sobolev functions of every order are smooth.** A continuous representative of an `L²`

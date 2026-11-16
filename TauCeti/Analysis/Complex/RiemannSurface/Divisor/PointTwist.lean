@@ -293,51 +293,6 @@ section LocalLifting
 
 variable [IsManifold 𝓘(ℂ) 1 X]
 
-/-- A section whose germ satisfies the stronger divisor bound lifts locally through the
-actual divisor inclusion, including its normalization at allowed poles. -/
-private theorem exists_local_divisorLift (D : WeilDivisor X) (x : X) (U : Opens X)
-    (f : (divisorSheaf (D + WeilDivisor.ofPoint x)).obj.obj (op U)) (y : U)
-    (hb : ((-D y.1 : ℤ) : WithTop ℤ) ≤ meromorphicOrderAt
-      (Subtype.val.extend (divisorSheafSectionsEquiv _ U f).1 0) y.1) :
-    ∃ (V : Opens X) (_hyV : y.1 ∈ V) (hVU : V ≤ U)
-      (t : (divisorSheaf D).obj.obj (op V)),
-      (divisorSheafMapOfLE (WeilDivisor.le_add_ofPoint D x)).hom.app (op V) t =
-        (divisorSheaf (D + WeilDivisor.ofPoint x)).obj.map (homOfLE hVU).op f := by
-  have := ChartedSpace.t1Space ℂ X
-  let A := D + WeilDivisor.ofPoint x
-  let F := Subtype.val.extend (divisorSheafSectionsEquiv A U f).1 (0 : X → ℂ)
-  have hf : IsDivisorSectionAt A F y.1 :=
-    isDivisorSectionAt_extend (divisorSheafSectionsEquiv A U f).2 y
-  obtain ⟨g, hg, hFg⟩ := exists_isDivisorSectionAt hf.meromorphicAt hb
-  have hk : {z | A z ≤ 0}.indicator g =ᶠ[𝓝[≠] y.1] g := by
-    filter_upwards [A.eventually_eq_zero_nhdsNE y.1] with z hz
-    exact Set.indicator_of_mem (s := {z | A z ≤ 0}) hz.le g
-  have hEq := hf.eventuallyEq_of_nhdsNE (hg.indicator (WeilDivisor.le_add_ofPoint D x))
-    (hFg.trans hk.symm)
-  obtain ⟨v, hv, hvo, hyv⟩ := eventually_nhds_iff.1
-    ((hg.eventually.and (U.isOpen.mem_nhds y.2)).and hEq)
-  let V : Opens X := ⟨v, hvo⟩
-  have hVU : V ≤ U := fun z hz ↦ (hv z hz).1.2
-  let s : divisorSections D V := ⟨g ∘ Subtype.val,
-    comp_val_mem_divisorSections fun z hz ↦ (hv z hz).1.1⟩
-  refine ⟨V, hyv, hVU, (divisorSheafSectionsEquiv D V).symm s, ?_⟩
-  apply (divisorSheafSectionsEquiv A V).injective
-  apply Subtype.ext
-  funext z
-  rw [divisorSheafMapOfLE_app, divisorSheafSectionsEquiv_map]
-  simp only [LinearEquiv.apply_symm_apply]
-  -- Divisor inclusion is defined by normalization with this indicator on the open carrier.
-  change {z : V | A z ≤ 0}.indicator (g ∘ Subtype.val) z =
-    (divisorSheafSectionsEquiv A U f).1 ⟨z.1, hVU z.2⟩
-  calc
-    _ = {z | A z ≤ 0}.indicator g z.1 := by
-      simp only [Set.indicator_apply, Set.mem_ofPred_eq, Function.comp_apply]
-    _ = F z.1 := (hv z.1 z.2).2.symm
-    _ = (divisorSheafSectionsEquiv A U f).1 ⟨z.1, hVU z.2⟩ :=
-      Subtype.val_injective.extend_apply (divisorSheafSectionsEquiv A U f).1
-        (0 : X → ℂ) (⟨z.1, hVU z.2⟩ : U)
-
-
 /-- The old and point-twisted divisor sheaves, followed by coefficient extraction. -/
 def pointTwistSequence (D : WeilDivisor X) (x : X) [∀ U : Opens X, Decidable (x ∈ U)] :
     ShortComplex (TopCat.Sheaf (ModuleCat.{u} ℂ) (TopCat.of X)) :=
@@ -396,34 +351,9 @@ private theorem old_order_bound_of_pointTwistMap_eq_zero (D : WeilDivisor X) (x 
 /-- **Exactness at the middle of the point-twist sequence.** A zero new coefficient is exactly
 the local lifting condition through the old divisor sheaf. -/
 theorem pointTwistSequence_exact (D : WeilDivisor X) (x : X)
-    [∀ U : Opens X, Decidable (x ∈ U)] : (pointTwistSequence D x).Exact := by
-  apply (TopCat.Sheaf.exact_iff_stalkFunctor_map_exact _).2
-  intro y
-  rw [ShortComplex.moduleCat_exact_iff]
-  -- The short-complex objects and arrows are exactly the displayed divisor stalks and maps.
-  change ∀ s, (TopCat.Presheaf.stalkFunctor _ y).map (pointTwistMap D x).hom s = 0 →
-    ∃ t, (TopCat.Presheaf.stalkFunctor _ y).map
-      (divisorSheafMapOfLE (WeilDivisor.le_add_ofPoint D x)).hom t = s
-  intro s hs
-  obtain ⟨U, hyU, f, rfl⟩ := TopCat.Presheaf.exists_germ_eq
-    (divisorSheaf (D + WeilDivisor.ofPoint x)).obj s
-  have hg : TopCat.Presheaf.germ (skyscraperSheaf (X := TopCat.of X) x
-        (ModuleCat.of ℂ (ULift.{u} ℂ))).obj U y hyU ((pointTwistMap D x).hom.app (op U) f) =
-      TopCat.Presheaf.germ (skyscraperSheaf (X := TopCat.of X) x
-        (ModuleCat.of ℂ (ULift.{u} ℂ))).obj U y hyU 0 := by
-    rw [map_zero, ← TopCat.Presheaf.stalkFunctor_map_germ_apply]
-    exact hs
-  obtain ⟨V, hyV, iVU, _, heq⟩ := TopCat.Presheaf.germ_eq _ y hyU hyU _ _ hg
-  let fV := (divisorSheaf (D + WeilDivisor.ofPoint x)).obj.map iVU.op f
-  have hz : (pointTwistMap D x).hom.app (op V) fV = 0 := by
-    rw [← ConcreteCategory.comp_apply, (pointTwistMap D x).hom.naturality,
-      ConcreteCategory.comp_apply]
-    exact heq.trans (map_zero _)
-  obtain ⟨W, hyW, hWV, t, ht⟩ := exists_local_divisorLift D x V fV ⟨y, hyV⟩
-    (old_order_bound_of_pointTwistMap_eq_zero D x fV hz ⟨y, hyV⟩)
-  refine ⟨TopCat.Presheaf.germ (divisorSheaf D).obj W y hyW t, ?_⟩
-  rw [TopCat.Presheaf.stalkFunctor_map_germ_apply, ht,
-    TopCat.Presheaf.germ_res_apply, TopCat.Presheaf.germ_res_apply]
+    [∀ U : Opens X, Decidable (x ∈ U)] : (pointTwistSequence D x).Exact :=
+  exact_divisorSheafMapOfLE_of_neg_le_order _ _ _
+    (old_order_bound_of_pointTwistMap_eq_zero D x)
 
 
 /-- Every scalar coefficient lifts to a germ of the point-twisted divisor sheaf. The lift is

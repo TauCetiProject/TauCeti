@@ -28,10 +28,16 @@ nonnegative point `x` it is the mass `μ` gives to the initial segment below the
 ## Main results
 
 * `MeasureTheory.Measure.cdf_conv` computes the cdf of a convolution;
-* `MeasureTheory.Measure.cdf_map` computes the cdf of a measurable pushforward;
 * `MeasureTheory.Measure.memLp_cdf_comp` proves `Lᵖ` membership of a cdf composed with an
   a.e. measurable function on a finite measure space;
 * `MeasureTheory.Measure.cdf_map` computes the cdf of an almost-everywhere measurable pushforward;
+* `ProbabilityTheory.cdf_zero` computes the cdf of the zero measure, and
+  `ProbabilityTheory.continuousOn_cdf_zero` shows that it is continuous away from zero;
+* `MeasureTheory.Measure.nonempty_setOf_le_cdf` and `MeasureTheory.Measure.nonempty_setOf_lt_cdf`
+  show that a level below one is reached, respectively strictly exceeded, by the cdf at some
+  point, and `MeasureTheory.Measure.bddBelow_setOf_le_cdf` and
+  `MeasureTheory.Measure.bddBelow_setOf_lt_cdf` show that the points where a level above zero is
+  reached, respectively strictly exceeded, are bounded below;
 * `MeasureTheory.Measure.continuousAt_cdf_iff` characterizes continuity of a real probability
   law's cdf at a point by vanishing singleton mass;
 * `MeasureTheory.Measure.continuous_cdf_of_noAtoms` proves continuity for atomless real laws;
@@ -42,7 +48,17 @@ nonnegative point `x` it is the mass `μ` gives to the initial segment below the
   to the right of a point is null, so almost no mass lies on the plateau of a level above that
   point;
 * `MeasureTheory.Measure.cdf_eq_zero_of_measure_Iio_eq_zero` shows that an atomless law with no
-  mass below a point has cdf zero there;
+  mass below a point has cdf zero there, and
+  `MeasureTheory.Measure.cdf_eq_zero_of_lt_of_measure_Iio_eq_zero` shows without atomlessness that
+  the cdf vanishes strictly below such a point;
+* `MeasureTheory.Measure.cdf_eq_zero_of_ae_lt` and `MeasureTheory.Measure.cdf_eq_one_of_ae_le`
+  show that the cdf is zero at a point below almost every sample and one at a point bounding
+  almost every sample from above;
+* `MeasureTheory.Measure.measureReal_Iio_le_iff_forall_cdf_le` characterizes an upper bound on the
+  mass of an open ray by the same upper bound on the cdf at every point strictly to its left,
+  `MeasureTheory.Measure.measureReal_Ioc_eq_cdf_sub` computes the mass of a half-open interval as
+  a cdf increment, and `MeasureTheory.Measure.measureReal_Ioi_eq_one_sub_cdf` computes the mass of
+  an open upper ray as one minus the cdf;
 * `TauCeti.Probability.one_sub_cdf_zero_eq_one` and
   `TauCeti.Probability.one_sub_cdf_zero_eq_one_of_absolutelyContinuous` show that survival starts
   at one for an atomless or absolutely continuous law carried by the nonnegative half-line;
@@ -55,6 +71,11 @@ nonnegative point `x` it is the mass `μ` gives to the initial segment below the
 * `MeasureTheory.Measure.cdf_pos_of_mem_support_of_lt` and
   `MeasureTheory.Measure.cdf_lt_one_of_mem_support_of_lt` derive strict cdf bounds from a
   support point on the appropriate side of the cutoff;
+* `MeasureTheory.Measure.cdf_pos_iff_of_support_eq_Icc` and
+  `MeasureTheory.Measure.cdf_lt_one_iff_of_support_eq_Icc` characterize where the cdf of a law
+  with closed-interval support `Icc a b` is below one (for the second, no further assumption) and
+  positive (for the first, when the law is also carried by the open interval `Ioo a b`, since an
+  atom at `a` would give positive cdf at `a`);
 * `MeasureTheory.Measure.cdf_lt_one_of_strictMonoOn_Ici` gives a strict upper bound for cdfs
   that increase strictly on a right half-line;
 * `MeasureTheory.Measure.cdf_sublevel_measure` evaluates the measure of a CDF sublevel set for
@@ -76,8 +97,9 @@ nonnegative point `x` it is the mass `μ` gives to the initial segment below the
 * `MeasureTheory.Measure.cdf_map_natCast_of_neg` evaluates it below the origin;
 * `MeasureTheory.Measure.cdf_map_intCast` evaluates an integer-valued law's cdf using the
   integer floor, including at negative points;
-* `MeasureTheory.Measure.exists_nat_le_measureReal_Iic` shows that every level below one is
-  reached by a finite cumulative mass of a natural-valued law.
+* `MeasureTheory.Measure.exists_nat_le_measureReal_Iic` and
+  `MeasureTheory.Measure.exists_nat_lt_measureReal_Iic` show that every level below one is
+  reached, respectively strictly exceeded, by a finite cumulative mass of a natural-valued law.
 
 ## Adapted from
 
@@ -273,6 +295,8 @@ theorem cdf_map_intCast (μ : Measure ℤ) [IsProbabilityMeasure μ] (x : ℝ) :
     cdf (μ.map (Int.cast : ℤ → ℝ)) x = μ.real (Iic ⌊x⌋) := by
   rw [cdf_map _ _ (by fun_prop), Int.preimage_Iic]
 
+section Nat
+
 variable (μ : Measure ℕ) [IsProbabilityMeasure μ]
 
 /-- At a nonnegative point, the cdf of a natural-valued law cast to the reals is the cumulative
@@ -309,6 +333,8 @@ theorem exists_nat_lt_measureReal_Iic {u : ℝ} (hu : u < 1) :
     ∃ n : ℕ, u < μ.real (Iic n) := by
   obtain ⟨n, hn⟩ := μ.exists_nat_le_measureReal_Iic (u := (u + 1) / 2) (by linarith)
   exact ⟨n, lt_of_lt_of_le (by linarith) hn⟩
+
+end Nat
 
 /-- The cumulative distribution function of a real probability measure `ν` is continuous at `x`
 if and only if `ν` assigns mass zero to `{x}`. -/
