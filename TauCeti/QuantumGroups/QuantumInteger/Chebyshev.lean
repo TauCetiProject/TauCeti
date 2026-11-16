@@ -45,6 +45,8 @@ computes the same values from the three-term recurrence.
 * `TauCeti.qInt_two_left`, `TauCeti.qInt_neg_two_left`: at `δ = 2` and `δ = -2`, `[n]` is `n` and
   `(-1)^(n+1) n`; in characteristic zero these never vanish for `n ≥ 1`, while in characteristic
   `p` they vanish at `n = p`.
+* `TauCeti.qInt_neg`, `TauCeti.isUnit_qInt_neg_iff`: negating the loop parameter scales `[n]` by
+  `(-1)^(n+1)` and preserves invertibility.
 * `RingHom.map_qInt`: quantum integers commute with ring homomorphisms.
 * `IsSelfAdjoint.qInt`: the quantum integers at a self-adjoint loop parameter are self-adjoint.
 
@@ -136,6 +138,20 @@ theorem qInt_neg_two_left (n : ℕ) : qInt R (-2) n = (-1) ^ (n + 1) * n := by
   rcases n with _ | n
   · simp
   · simp [qInt_def, pow_succ]
+
+/-- Negating the loop parameter scales the quantum integer `[n]` by `(-1)^(n+1)`. -/
+theorem qInt_neg (δ : R) : ∀ n : ℕ, qInt R (-δ) n = (-1) ^ (n + 1) * qInt R δ n
+  | 0 => by simp
+  | 1 => by simp
+  | n + 2 => by
+    rw [qInt_add_two, qInt_neg δ (n + 1), qInt_neg δ n, qInt_add_two]
+    simp only [pow_succ]
+    ring
+
+/-- Negating the loop parameter preserves invertibility of every quantum integer. -/
+theorem isUnit_qInt_neg_iff {δ : R} {n : ℕ} :
+    IsUnit (qInt R (-δ) n) ↔ IsUnit (qInt R δ n) := by
+  rw [qInt_neg, ← (isUnit_neg_one.pow (n + 1)).unit_spec, mul_comm, Units.isUnit_mul_units]
 
 end TauCeti
 

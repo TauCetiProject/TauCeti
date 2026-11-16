@@ -51,6 +51,9 @@ hypothesis `Fact (IsSelfAdjoint (δ : ℂ))` holds for every real `δ` by `Compl
 
 ## Main results
 
+* `TauCeti.TemperleyLieb.pos_of_mem_jonesLoopParameters`,
+  `TauCeti.TemperleyLieb.zero_notMem_jonesLoopParameters`: every admissible loop parameter is
+  strictly positive.
 * `TauCeti.TemperleyLieb.qInt_pos_of_notMem_jonesLoopParameters`,
   `TauCeti.TemperleyLieb.qInt_floor_add_one_neg_of_notMem_jonesLoopParameters`: the signs of the
   quantum integers at an inadmissible positive loop parameter.
@@ -92,6 +95,24 @@ def jonesLoopParameters : Set ℝ :=
 theorem mem_jonesLoopParameters {δ : ℝ} :
     δ ∈ jonesLoopParameters ↔ (∃ m : ℕ, 3 ≤ m ∧ δ = 2 * cos (π / m)) ∨ 2 ≤ δ :=
   Iff.rfl
+
+/-- Every admissible Jones loop parameter is strictly positive. -/
+theorem pos_of_mem_jonesLoopParameters {δ : ℝ} (h : δ ∈ jonesLoopParameters) : 0 < δ := by
+  obtain ⟨m, hm, rfl⟩ | h2 := h
+  · have hm2 : (2 : ℝ) < m := by exact_mod_cast hm
+    have hm0 : (0 : ℝ) < m := by positivity
+    have hcos : 0 < cos (π / m) := by
+      apply cos_pos_of_mem_Ioo
+      refine ⟨by linarith [div_pos pi_pos hm0, pi_pos], ?_⟩
+      rw [div_lt_div_iff₀ hm0 zero_lt_two]
+      nlinarith [pi_pos]
+    positivity
+  · linarith
+
+/-- Zero is not an admissible Jones loop parameter. -/
+@[simp]
+theorem zero_notMem_jonesLoopParameters : (0 : ℝ) ∉ jonesLoopParameters :=
+  fun h ↦ (pos_of_mem_jonesLoopParameters h).ne' rfl
 
 section QuantumInteger
 
