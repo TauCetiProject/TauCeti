@@ -31,6 +31,9 @@ I.4.5–I.4.7.
   carried by a line spanned by a vector of nonzero value.
 * `TauCeti.equivalent_of_equivalent_prod`: **Witt cancellation** for a regular finite-dimensional
   summand, and `TauCeti.equivalent_of_equivalent_prod_right` on the other side.
+* `TauCeti.isRepresentedBy_of_prod_isRepresentedBy_prod`: **Witt cancellation for representation**,
+  cancelling a common regular finite-dimensional summand from an injective isometry of orthogonal
+  sums (and `TauCeti.isRepresentedBy_of_prod_isRepresentedBy_prod_right` on the right).
 * `TauCeti.RegularFormClass` is cancellative under orthogonal sum.
 
 ## References
@@ -210,6 +213,54 @@ theorem equivalent_of_equivalent_prod_right [FiniteDimensional K V₀] {Q₀ : Q
   have hcomm₂ : (Q₂.prod Q₀).Equivalent (Q₀.prod Q₂) :=
     ⟨QuadraticMap.IsometryEquiv.prodComm Q₂ Q₀⟩
   exact equivalent_of_equivalent_prod hQ₀ (hcomm₁.trans (h.trans hcomm₂))
+
+/-- **Witt cancellation for representation**: a regular finite-dimensional summand cancels from a
+representation of orthogonal sums. Neither `Q₁` nor `Q₂` needs to be regular or
+finite-dimensional. -/
+theorem isRepresentedBy_of_prod_isRepresentedBy_prod [FiniteDimensional K V₀]
+    {Q₀ : QuadraticForm K V₀} (hQ₀ : Q₀.Nondegenerate) {Q₁ : QuadraticForm K V₁}
+    {Q₂ : QuadraticForm K V₂} (h : (Q₀.prod Q₁).IsRepresentedBy (Q₀.prod Q₂)) :
+    Q₁.IsRepresentedBy Q₂ := by
+  obtain ⟨f, hf, hfQ⟩ := (isRepresentedBy_iff _ _).mp h
+  let f₀ : V₀ →ₗ[K] V₀ × V₂ := f.comp (LinearMap.inl K V₀ V₁)
+  have hf₀ : Function.Injective f₀ := hf.comp LinearMap.inl_injective
+  let W : Submodule K (V₀ × V₂) := LinearMap.range f₀
+  let eW : Q₀.IsometryEquiv ((Q₀.prod Q₂).restrict W) :=
+    { toLinearEquiv := LinearEquiv.ofInjective f₀ hf₀
+      map_app' := fun x => (hfQ (x, 0)).trans (by simp [QuadraticMap.prod_apply]) }
+  have : FiniteDimensional K W := Module.Finite.equiv eW.toLinearEquiv
+  have hW : ((Q₀.prod Q₂).restrict W).Nondegenerate := eW.nondegenerate_iff.mp hQ₀
+  let P : Submodule K (V₀ × V₂) := LinearMap.BilinForm.orthogonal (Q₀.prod Q₂).polarBilin W
+  have hcompl : IsCompl W P := hW.isCompl_orthogonal
+  have hsplit : (Q₀.prod Q₂).Equivalent (Q₀.prod ((Q₀.prod Q₂).restrict P)) :=
+    ⟨(IsometryEquiv.prodRestrictOrthogonal (Q₀.prod Q₂) W hcompl).symm.trans
+      (eW.symm.prod (IsometryEquiv.refl _))⟩
+  have hQ₂ : Q₂.Equivalent ((Q₀.prod Q₂).restrict P) :=
+    equivalent_of_equivalent_prod hQ₀ hsplit
+  have hmemP : ∀ y : V₁, f (0, y) ∈ P := by
+    intro y
+    rw [LinearMap.BilinForm.mem_orthogonal_iff]
+    rintro _ ⟨x, rfl⟩
+    rw [LinearMap.comp_apply, LinearMap.inl_apply,
+      polarBilin_apply_apply, polar, ← map_add, hfQ, hfQ, hfQ]
+    simp [QuadraticMap.prod_apply]
+  let g : V₁ →ₗ[K] P := (f.comp (LinearMap.inr K V₀ V₁)).codRestrict P hmemP
+  have hg : Function.Injective g := fun y₁ y₂ hy =>
+    LinearMap.inr_injective (hf (congrArg Subtype.val hy))
+  have hQ₁P : Q₁.IsRepresentedBy ((Q₀.prod Q₂).restrict P) :=
+    (isRepresentedBy_iff Q₁ _).mpr ⟨g, hg, fun y =>
+      (hfQ (0, y)).trans (by simp [QuadraticMap.prod_apply])⟩
+  exact hQ₁P.trans hQ₂.symm.isRepresentedBy
+
+/-- **Witt cancellation for representation**, cancelling the common summand on the right. -/
+theorem isRepresentedBy_of_prod_isRepresentedBy_prod_right [FiniteDimensional K V₀]
+    {Q₀ : QuadraticForm K V₀} (hQ₀ : Q₀.Nondegenerate) {Q₁ : QuadraticForm K V₁}
+    {Q₂ : QuadraticForm K V₂} (h : (Q₁.prod Q₀).IsRepresentedBy (Q₂.prod Q₀)) :
+    Q₁.IsRepresentedBy Q₂ := by
+  have hcomm₁ : (Q₀.prod Q₁).Equivalent (Q₁.prod Q₀) := ⟨IsometryEquiv.prodComm Q₀ Q₁⟩
+  have hcomm₂ : (Q₂.prod Q₀).Equivalent (Q₀.prod Q₂) := ⟨IsometryEquiv.prodComm Q₂ Q₀⟩
+  exact isRepresentedBy_of_prod_isRepresentedBy_prod hQ₀
+    (hcomm₁.isRepresentedBy.trans (h.trans hcomm₂.isRepresentedBy))
 
 private theorem isLeftCancelAdd_regularFormClass : IsLeftCancelAdd (RegularFormClass K) where
   add_left_cancel x y z h := by
