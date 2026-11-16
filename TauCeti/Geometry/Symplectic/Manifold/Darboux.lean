@@ -49,8 +49,8 @@ continuous linear symplectomorphisms.
 Only closedness of `form` and its nondegeneracy at `x₀` enter the proof, so the same chart exists
 for a closed two-form that is nondegenerate at `x₀` alone
 (`TauCeti.SmoothTwoForm.exists_darbouxChart_of_nondegenerate_of_isInteriorPoint`); it is then
-nondegenerate on the whole source of the chart. Such forms arise as restrictions of a symplectic
-form to a slice, for example the restriction of `dα` to a hypersurface transverse to the Reeb
+nondegenerate on the whole source of the chart. Such forms arise as restrictions of a closed
+two-form to a slice, for example the restriction of `dα` to a hypersurface transverse to the Reeb
 field of a contact form `α`.
 
 ## Main declarations

@@ -198,8 +198,8 @@ theorem IsLocalDiffeomorph.isSmoothForm_mpullback_iff [IsManifold I 1 M] [IsMani
 
 /-- **Inverting a local pullback identity.** Let `f` be a `C^n` local diffeomorphism at `x`,
 `n ≠ 0`, which pulls `ω` back to `η` near `x`. Then a `C^n` partial diffeomorphism from `M'` to
-`M`, defined near `f x` and sending it to `x`, pulls `η` back to `ω` on its source. It is a local
-inverse of `f`. -/
+`M`, defined near `f x` and sending it to `x`, pulls `η` back to `ω` on its source. It is
+constructed as a local inverse of `f`. -/
 theorem IsLocalDiffeomorphAt.exists_partialDiffeomorph_mpullback_eq
     (hf : IsLocalDiffeomorphAt I I' n f x) (hn : n ≠ 0) {ω : RoughForm I' M' F k}
     {η : RoughForm I M F k} (hfω : ∀ᶠ y in 𝓝 x, mpullback I I' f ω y = η y) :
