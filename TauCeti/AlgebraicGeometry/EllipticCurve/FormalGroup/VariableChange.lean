@@ -517,7 +517,6 @@ theorem formalGroup_smul (C : VariableChange R) (W : WeierstrassCurve R) :
   -- prove it for the universal pair after embedding `UnivRing` in its fraction field, a
   -- `ℚ`-algebra, and specialize
   have hι := IsFractionRing.injective UnivRing (FractionRing UnivRing)
-  have : CharZero (FractionRing UnivRing) := charZero_of_injective_algebraMap hι
   obtain ⟨k, hW, hC⟩ := exists_map_universal C W
   generalize WeierstrassCurve.map Universal.curve (algebraMap _ UnivRing) = W₀ at hW
   generalize ChangeRing.universalChange (MvPolynomial Coeff ℤ) = C₀ at hC
