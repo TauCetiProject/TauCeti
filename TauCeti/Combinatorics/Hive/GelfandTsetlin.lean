@@ -105,17 +105,12 @@ def toGTPattern (h : IntegerHive n) : GTPattern n where
       h (Vertex.ofChart n (i + 1) j hij hj) - h (Vertex.ofChart n i j hij.le hj)
     else 0 else 0
   zeros' {i j} hout := by
-    rcases hout with hnj | hji
-    · by_cases hij : i < j <;> simp [hij, Nat.not_le.mpr hnj]
-    · simp [Nat.not_lt.mpr hji]
+    rcases hout with hnj | hji <;> split_ifs <;> omega
   interlacing' {i j} hij hj := by
-    have hj1 : j + 1 ≤ n := hj
-    have hij1 : i < j + 1 := by omega
-    have hij2 : i + 1 < j + 1 := Nat.succ_lt_succ hij
-    simp only [dite_eq_left hij, dite_eq_left hj.le, dite_eq_left hij1, dite_eq_left hj1,
-      dite_eq_left hij2]
     have hleft := h.le_of_isRhombus (isRhombus_ofChart_diag_y hij hj)
     have hright := h.le_of_isRhombus (isRhombus_ofChart_diag_z hij hj)
+    simp only [dite_eq_left hij, dite_eq_left hj.le, dite_eq_left (by omega : i < j + 1),
+      dite_eq_left (Nat.succ_le_of_lt hj), dite_eq_left (Nat.succ_lt_succ hij)]
     exact ⟨by linarith, by linarith⟩
 
 theorem toGTPattern_apply (h : IntegerHive n) (i j : ℕ) :
@@ -245,15 +240,13 @@ theorem gtCompletion_succ_right (lam : DominantWeight n) (P : GTPattern n) (i : 
     (hj : j < n) :
     gtCompletion lam P i (j + 1) =
       gtCompletion lam P i j + lam.1 ⟨j, hj⟩ + ∑ k ∈ Finset.range i, (P k (j + 1) - P k j) := by
-  rw [gtCompletion_def, gtCompletion_def, TauCeti.prefixSum_succ hj, Finset.sum_sub_distrib]
-  abel
+  rw [gtCompletion_def, gtCompletion_def, TauCeti.prefixSum_succ hj, Finset.sum_sub_distrib]; abel
 
 @[simp] theorem gtCompletion_add (lam₁ lam₂ : DominantWeight n) (P₁ P₂ : GTPattern n) (i j : ℕ) :
     gtCompletion (lam₁ + lam₂) (P₁ + P₂) i j =
       gtCompletion lam₁ P₁ i j + gtCompletion lam₂ P₂ i j := by
   simp only [gtCompletion_def, DominantWeight.coe_add, TauCeti.prefixSum_add, GTPattern.add_apply,
-    Finset.sum_add_distrib]
-  abel
+    Finset.sum_add_distrib]; abel
 
 @[simp] theorem gtCompletion_nsmul (k : ℕ) (lam : DominantWeight n) (P : GTPattern n) (i j : ℕ) :
     gtCompletion (k • lam) (k • P) i j = k • gtCompletion lam P i j := by
@@ -283,9 +276,7 @@ theorem gtCompletion_shift (lam : DominantWeight n) (a : ℤ) (P : GTPattern n) 
 
 theorem gtCompletion_const (lam : DominantWeight n) (m : ℤ) {i j : ℕ} (hij : i ≤ j) (hj : j ≤ n) :
     gtCompletion lam (GTPattern.const n m) i j = TauCeti.prefixSum j lam.1 + i * m := by
-  have hc : GTPattern.const n m = (0 : GTPattern n).shift m := by
-    rw [GTPattern.shift_eq_add_const, zero_add]
-  rw [hc, gtCompletion_shift_gtPattern lam 0 m hij hj, gtCompletion_zero_gtPattern]
+  simpa [GTPattern.shift_eq_add_const] using gtCompletion_shift_gtPattern lam 0 m hij hj
 
 theorem gtCompletion_self (lam : DominantWeight n) (P : GTPattern n) (j : ℕ) :
     gtCompletion lam P j j = TauCeti.prefixSum j lam.1 + P.rowSum j := by
@@ -313,9 +304,8 @@ theorem apply_ofChart_eq_gtCompletion (h : IntegerHive n) {i j : ℕ} (hij : i �
 `gtCompletion (h.boundaryWeight 0) h.toGTPattern p.z (n - p.x)`. -/
 theorem apply_eq_gtCompletion (h : IntegerHive n) (p : Vertex n) :
     h p = gtCompletion (h.boundaryWeight 0) h.toGTPattern p.z (n - p.x) := by
-  have hp := h.apply_ofChart_eq_gtCompletion
+  simpa only [Vertex.ofChart_z_sub_x] using h.apply_ofChart_eq_gtCompletion
     (i := p.z) (j := n - p.x) (by have := p.sum_eq; omega) (Nat.sub_le n p.x)
-  rwa [Vertex.ofChart_z_sub_x] at hp
 
 theorem apply_eq_gtCompletion_of_productBoundary {lam μ γ : DominantWeight n} {h : IntegerHive n}
     (hb : h.boundary = productBoundary lam μ γ) (p : Vertex n) :
@@ -370,9 +360,7 @@ theorem isGTCompletable_iff_sum_sub_le (lam : DominantWeight n) (P : GTPattern n
         (∑ k ∈ Finset.range (i + 1), (P k (j + 2) - P k (j + 1))) ≤
           (lam.1 ⟨j, by omega⟩ - lam.1 ⟨j + 1, by omega⟩) +
             ∑ k ∈ Finset.range i, (P k (j + 1) - P k j) :=
-  ⟨fun h i j hij hj => (gtCompletion_add_gtCompletion_le_iff_sum_sub_le lam P hj).mp (h i j hij hj),
-    fun h i j hij hj =>
-      (gtCompletion_add_gtCompletion_le_iff_sum_sub_le lam P hj).mpr (h i j hij hj)⟩
+  forall₄_congr fun _ _ _ hj => gtCompletion_add_gtCompletion_le_iff_sum_sub_le lam P hj
 
 @[simp] theorem isGTCompletable_zero_right (lam : DominantWeight n) : IsGTCompletable lam 0 := by
   rw [isGTCompletable_iff_sum_sub_le]; intro i j _ hj
@@ -393,20 +381,17 @@ theorem IsGTCompletable.nsmul {lam : DominantWeight n} {P : GTPattern n}
   simp only [isGTCompletable_iff_sum_sub_le, DominantWeight.shift_apply, add_sub_add_right_eq_sub]
 
 @[simp] theorem isGTCompletable_shift_right_iff (lam : DominantWeight n) (P : GTPattern n) (m : ℤ) :
-    IsGTCompletable lam (P.shift m) ↔ IsGTCompletable lam P := by
-  simp only [isGTCompletable_def]
-  refine forall₄_congr fun i j hij hj => ?_
-  rw [gtCompletion_shift_gtPattern lam P m hij (by omega),
-    gtCompletion_shift_gtPattern lam P m (Nat.succ_le_succ (Nat.le_succ_of_le hij)) hj,
-    gtCompletion_shift_gtPattern lam P m (Nat.le_succ_of_le hij) (by omega),
-    gtCompletion_shift_gtPattern lam P m (Nat.succ_le_succ hij) (by omega)]
-  constructor <;> intro _ <;> linarith
+    IsGTCompletable lam (P.shift m) ↔ IsGTCompletable lam P :=
+  forall₄_congr fun i j hij hj => by
+    rw [gtCompletion_shift_gtPattern lam P m hij (by omega),
+      gtCompletion_shift_gtPattern lam P m (by omega) hj,
+      gtCompletion_shift_gtPattern lam P m (by omega) (by omega),
+      gtCompletion_shift_gtPattern lam P m (by omega) (by omega)]
+    constructor <;> intro _ <;> linarith
 
 @[simp] theorem isGTCompletable_const (lam : DominantWeight n) (m : ℤ) :
     IsGTCompletable lam (GTPattern.const n m) := by
-  have hc : GTPattern.const n m = (0 : GTPattern n).shift m := by
-    rw [GTPattern.shift_eq_add_const, zero_add]
-  rw [hc, isGTCompletable_shift_right_iff]; exact isGTCompletable_zero_right lam
+  simpa [GTPattern.shift_eq_add_const] using (isGTCompletable_shift_right_iff lam 0 m).mpr (by simp)
 
 @[simp] theorem isGTCompletable_toGTPattern (h : IntegerHive n) :
     IsGTCompletable (h.boundaryWeight 0) h.toGTPattern := by
@@ -497,13 +482,8 @@ theorem ofGTPattern_shift {lam : DominantWeight n} {P : GTPattern n} (a b : ℤ)
 @[simp] theorem boundary_ofGTPattern_zero (lam : DominantWeight n) (P : GTPattern n)
     (hP : IsGTCompletable lam P) : (ofGTPattern lam P hP).boundary 0 = lam.1 := by
   ext r
-  have hs : Vertex.edgePoint n 0 r.succ =
-      Vertex.ofChart n 0 (r.val + 1) (Nat.zero_le _) r.isLt := by ext <;> simp
-  have hc : Vertex.edgePoint n 0 r.castSucc =
-      Vertex.ofChart n 0 r.val (Nat.zero_le _) r.isLt.le := by ext <;> simp
-  rw [boundary_apply, hs, hc, ofGTPattern_ofChart, ofGTPattern_ofChart,
-    gtCompletion_zero_left, gtCompletion_zero_left, TauCeti.prefixSum_succ r.isLt,
-    add_sub_cancel_left]
+  simp [boundary_apply, Nat.sub_sub_self r.isLt, Nat.sub_sub_self r.isLt.le,
+    TauCeti.prefixSum_succ r.isLt]
 
 @[simp] theorem boundaryWeight_ofGTPattern_zero (lam : DominantWeight n) (P : GTPattern n)
     (hP : IsGTCompletable lam P) :
@@ -542,10 +522,7 @@ theorem antitone_add_weight_of_isGTCompletable {lam : DominantWeight n} {P : GTP
 @[simp] theorem boundary_ofGTPattern_two (lam : DominantWeight n) (P : GTPattern n)
     (hP : IsGTCompletable lam P) :
     (ofGTPattern lam P hP).boundary 2 = fun r => -(lam.1 r.rev + P.weight r.rev) := by
-  ext r
-  have hd := congrFun (coe_dual_boundaryWeight_ofGTPattern_two lam P hP) r.rev
-  simp only [DominantWeight.dual_apply, coe_boundaryWeight, Fin.rev_rev, Pi.add_apply] at hd
-  linarith
+  ext r; simp [← coe_boundaryWeight, boundaryWeight_ofGTPattern_two]
 
 theorem boundary_ofGTPattern_eq_productBoundary {lam μ γ : DominantWeight n} {P : GTPattern n}
     (hTop : P.topRow = μ.1) (hWeight : P.weight = γ.1 - lam.1) (hP : IsGTCompletable lam P) :
@@ -619,13 +596,9 @@ theorem gt_reconstruction_iff (lam μ γ : DominantWeight n) (P : GTPattern n)
           gtCompletion lam P i (j + 1) + gtCompletion lam P (i + 1) (j + 1) := by
   refine ⟨fun ⟨h, hv⟩ i j hij hj => ?_, fun hrem =>
     ⟨(fixedIntegerHiveEquivGTPattern lam μ γ).symm ⟨P, hTop, hWeight, hrem⟩, fun _ => rfl⟩⟩
-  have hr := h.1.le_of_isRhombus (isRhombus_ofChart_diag_x hij hj)
-  have hchart (i' j' : ℕ) (hi' : i' ≤ j') (hj' : j' ≤ n) :
-      h.1 (Vertex.ofChart n i' j' hi' hj') = gtCompletion lam P i' j' := by
-    rw [hv, Vertex.ofChart_z, Vertex.ofChart_x, Nat.sub_sub_self hj']
-  rwa [hchart i j hij (by omega), hchart (i + 1) (j + 2) (by omega) hj,
-    hchart i (j + 1) (by omega) (by omega),
-    hchart (i + 1) (j + 1) (Nat.succ_le_succ hij) (by omega)] at hr
+  simpa only [hv, Vertex.ofChart_z, Vertex.ofChart_x, Nat.sub_sub_self (by omega : j ≤ n),
+    Nat.sub_sub_self hj, Nat.sub_sub_self (by omega : j + 1 ≤ n)] using
+    h.1.le_of_isRhombus (isRhombus_ofChart_diag_x hij hj)
 
 end Reconstruction
 
@@ -656,11 +629,10 @@ theorem toCyclicGTPattern_apply (h : IntegerHive n) (i j : ℕ) :
       if hij : i < j then if hj : j ≤ n then
         h ⟨j - (i + 1), i + 1, n - j, by omega⟩ - h ⟨j - i, i, n - j, by omega⟩
       else 0 else 0 := by
-  by_cases hij : i < j
-  · by_cases hj : j ≤ n
-    · simp [hij, hj]
-    · rw [dite_eq_left hij, dite_eq_right hj, h.toCyclicGTPattern.entry_eq_zero (by omega)]
-  · rw [dite_eq_right hij, h.toCyclicGTPattern.entry_eq_zero (by omega)]
+  split_ifs with hij hj
+  · exact h.toCyclicGTPattern_apply_of_lt_of_le hij hj
+  · exact h.toCyclicGTPattern.entry_eq_zero (by omega)
+  · exact h.toCyclicGTPattern.entry_eq_zero (by omega)
 
 @[simp] theorem toCyclicGTPattern_rotate (h : IntegerHive n) :
     h.rotate.toCyclicGTPattern = h.toGTPattern := by
@@ -702,9 +674,8 @@ def toCyclicGTPatternAddMonoidHom : IntegerHive n →+ GTPattern n :=
 theorem rowSum_toCyclicGTPattern (h : IntegerHive n) {j : ℕ} (hj : j ≤ n) :
     h.toCyclicGTPattern.rowSum j =
       TauCeti.prefixSum j (h.boundaryWeight 1).dual.1 - TauCeti.prefixSum j (h.boundary 2) := by
-  rw [toCyclicGTPattern_def, rowSum_toGTPattern _ hj, boundaryWeight_rotate,
-    boundaryWeight_rotate, boundary_rotate, boundary_rotate]
-  rfl
+  simpa [toCyclicGTPattern_def, boundary_rotate, boundaryWeight_rotate] using
+    h.rotate.rotate.rowSum_toGTPattern hj
 
 @[simp] theorem weight_toCyclicGTPattern (h : IntegerHive n) :
     h.toCyclicGTPattern.weight = (h.boundaryWeight 1).dual.1 - h.boundary 2 := by
@@ -725,13 +696,11 @@ theorem rotate_ofGTPattern_apply (lam : DominantWeight n) (P : GTPattern n)
 @[simp] theorem rotate_ofGTPattern_toCyclicGTPattern (h : IntegerHive n) :
     (ofGTPattern (h.boundaryWeight 2) h.toCyclicGTPattern
       h.isGTCompletable_toCyclicGTPattern).rotate = h := by
-  have hb : h.boundaryWeight 2 = h.rotate.rotate.boundaryWeight 0 := by
-    rw [boundaryWeight_rotate, boundaryWeight_rotate]; rfl
-  have hof : ofGTPattern (h.boundaryWeight 2) h.toCyclicGTPattern
-      h.isGTCompletable_toCyclicGTPattern = h.rotate.rotate := by
-    ext p
-    rw [ofGTPattern_apply, hb, toCyclicGTPattern_def, ← h.rotate.rotate.apply_eq_gtCompletion p]
-  rw [hof, rotate_rotate_rotate]
+  suffices ofGTPattern (h.boundaryWeight 2) h.toCyclicGTPattern
+      h.isGTCompletable_toCyclicGTPattern = h.rotate.rotate by rw [this, rotate_rotate_rotate]
+  ext p
+  rw [ofGTPattern_apply, show h.boundaryWeight 2 = h.rotate.rotate.boundaryWeight 0 by
+    simp [boundaryWeight_rotate], toCyclicGTPattern_def, ← h.rotate.rotate.apply_eq_gtCompletion p]
 
 /-- **Cyclic chart inversion formula**: every integer hive `h` is recovered at `p : Vertex n` from
 `h.boundaryWeight 2` and `h.toCyclicGTPattern` as
