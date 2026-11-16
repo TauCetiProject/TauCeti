@@ -6,8 +6,12 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Combinatorics.Graph.Delete
+public import TauCeti.Combinatorics.Graph.Connectivity.Walk.Trace
 public import Mathlib.Combinatorics.SimpleGraph.Connectivity.Connected
+public import Mathlib.Combinatorics.SimpleGraph.Connectivity.Subgraph
 public import TauCeti.Combinatorics.Graph.Connectivity.Walk.Maps
+public import TauCeti.Combinatorics.SimpleGraph.Paths
+public import TauCeti.Combinatorics.Graph.Simple
 
 /-!
 # Walks in graphs constructed from simple graphs
@@ -160,6 +164,29 @@ theorem toSimpleGraph_reverse (p : (Graph.ofSimpleGraph H).Walk x y) :
   conv_lhs => rw [← toGraph_toSimpleGraph p, ← SimpleGraph.Walk.toGraph_reverse,
     SimpleGraph.Walk.toSimpleGraph_toGraph]
 
+/-- The traced graph of a walk in `Graph.ofSimpleGraph H` becomes the subgraph traced by the
+corresponding simple-graph walk. -/
+@[simp]
+theorem toSimpleGraphSubgraph_walkGraph (p : (Graph.ofSimpleGraph H).Walk x y)
+    (h : (Graph.ofSimpleGraph H).walkGraph p ≤ Graph.ofSimpleGraph H) :
+    ((Graph.ofSimpleGraph H).walkGraph p).toSimpleGraphSubgraph h =
+      p.toSimpleGraph.toSubgraph := by
+  ext a b
+  · simp
+  · rw [← SimpleGraph.Subgraph.mem_edgeSet, ← SimpleGraph.Subgraph.mem_edgeSet]
+    simp
+
+/-- Converting the subgraph traced by a simple-graph walk to a graph recovers the graph traced by
+the corresponding edge-labelled walk. -/
+@[simp]
+theorem _root_.SimpleGraph.Walk.toGraph_toSubgraph (p : H.Walk x y) :
+    p.toSubgraph.toGraph = (Graph.ofSimpleGraph H).walkGraph p.toGraph := by
+  have h := Graph.Walk.toSimpleGraphSubgraph_walkGraph p.toGraph
+    (p.toGraph.walkGraph_le (by simp))
+  apply_fun SimpleGraph.Subgraph.toGraph at h
+  rw [Graph.toGraph_toSimpleGraphSubgraph, SimpleGraph.Walk.toSimpleGraph_toGraph] at h
+  exact h.symm
+
 @[simp]
 theorem nil_toSimpleGraph_iff (p : (Graph.ofSimpleGraph H).Walk x y) :
     p.toSimpleGraph.Nil ↔ p.Nil := by
@@ -296,6 +323,22 @@ theorem support_liftToGraph (p : G.toSimpleGraph.Walk x y) :
       List.map_nil]
   | cons h p ih =>
       rw [liftToGraph_cons, Graph.Walk.support_cons, ih, support_cons, List.map_cons]
+
+/-- Lifting walks of the underlying simple graph preserves and reflects internal disjointness,
+since the lift keeps every vertex sequence. -/
+@[simp]
+theorem internallyDisjoint_liftToGraph_iff {p q : G.toSimpleGraph.Walk x y} :
+    p.liftToGraph.InternallyDisjoint q.liftToGraph ↔ p.InternallyDisjoint q := by
+  simp only [Graph.Walk.internallyDisjoint_def, internallyDisjoint_def, support_liftToGraph,
+    List.forall_mem_map, List.mem_map_of_injective Subtype.val_injective, Subtype.val_inj]
+
+/-- Lifting preserves and reflects disjointness of whole supports, including for walks with
+different endpoints. -/
+theorem disjoint_support_liftToGraph_iff {s t s' t' : G.vertexSet}
+    (p : G.toSimpleGraph.Walk s t) (q : G.toSimpleGraph.Walk s' t') :
+    p.liftToGraph.support.Disjoint q.liftToGraph.support ↔ p.support.Disjoint q.support := by
+  simp only [support_liftToGraph]
+  exact ⟨List.Disjoint.of_map, List.disjoint_map Subtype.val_injective⟩
 
 /-- Lifting a simplified walk preserves its length. -/
 @[simp]
