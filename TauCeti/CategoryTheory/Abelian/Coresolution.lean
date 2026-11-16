@@ -12,6 +12,7 @@ public import TauCeti.Algebra.Homology.ExactSequence
 public import TauCeti.Algebra.Homology.ShortComplex.Exact
 public import TauCeti.Algebra.Homology.ShortComplex.ShortExact
 public import TauCeti.CategoryTheory.Limits.Shapes.Biproduct
+public import TauCeti.CategoryTheory.Preadditive.Retract
 
 /-!
 # Coresolutions with `n` terms
@@ -37,7 +38,8 @@ terms satisfy a property `P` (`CategoryTheory.HasCoresolution`) this is
 `CategoryTheory.hasCoresolution_succ_iff`. When `P` consists of injective objects and is closed
 under binary biproducts, the objects with such a coresolution are closed under extensions
 (`CategoryTheory.HasCoresolution.of_shortExact`, the horseshoe argument) and under retracts
-(`CategoryTheory.HasCoresolution.of_retract`).
+(`CategoryTheory.HasCoresolution.of_retract`, through the complement
+`CategoryTheory.Retract.cokernel` of a retract).
 
 ## Main definitions
 
@@ -53,7 +55,8 @@ under binary biproducts, the objects with such a coresolution are closed under e
 * `CategoryTheory.hasCoresolution_succ_iff`: the recursive description of coresolutions.
 * `CategoryTheory.HasCoresolution.of_shortExact`: closure under extensions.
 * `CategoryTheory.HasCoresolution.of_retract`: closure under retracts.
-* `CategoryTheory.HasCoresolution.map`: exact functors carry coresolutions to coresolutions.
+* `CategoryTheory.ComposableArrows.IsCoresolution.map` and `CategoryTheory.HasCoresolution.map`:
+  exact functors carry coresolutions to coresolutions.
 
 ## References
 
@@ -166,16 +169,8 @@ variable {D : Type u'} [Category.{v'} D] [Abelian D] (F : C ⥤ D) [F.PreservesZ
 
 /-- **Exact functors carry coresolutions to coresolutions.** -/
 theorem IsCoresolution.map {S : ComposableArrows C (n + 1)} (hS : S.IsCoresolution) :
-    ComposableArrows.IsCoresolution (S ⋙ F) where
-  exact :=
-    { zero i hi := by
-        dsimp only [ComposableArrows.map', Functor.comp_map]
-        rw [← F.map_comp, hS.exact.toIsComplex.zero' i (i + 1) (i + 2), F.map_zero]
-      exact i hi :=
-        ShortComplex.exact_of_iso
-          (ShortComplex.isoMk (Iso.refl _) (Iso.refl _) (Iso.refl _) (by simp) (by simp))
-          ((hS.exact.exact i).map F) }
-  isZero_left := F.map_isZero hS.isZero_left
+    ((F.mapComposableArrows (n + 1)).obj S).IsCoresolution :=
+  ⟨hS.exact.map F, F.map_isZero hS.isZero_left⟩
 
 end Map
 
@@ -519,15 +514,6 @@ theorem HasCoresolution.of_shortExact (hP : ∀ Y, P Y → Injective Y)
       (ShortComplex.Splitting.ofHasBinaryBiproduct Q I).shortExact hL.exact v π w hπ
     exact hasCoresolution_succ_iff.2 ⟨Q ⊞ I, ι, hι, hPb _ _ hQ hI, ih hL₃ hβ' hω'⟩
 
-/-- The complement `cokernel r.i` of a retract `X` of `Y` is again a retract of `Y`. -/
-private noncomputable def retractCokernel {X Y : C} (r : Retract X Y) :
-    Retract (cokernel r.i) Y where
-  i := cokernel.desc r.i (𝟙 Y - r.r ≫ r.i) (by simp)
-  r := cokernel.π r.i
-  retract := by
-    ext
-    simp
-
 /-- **Coresolutions of retracts.** Let `P` be a property of injective objects closed under binary
 biproducts. If `Y` has a coresolution with `n` terms satisfying `P`, so does every retract `X` of
 `Y`: if `Y` embeds into `I`, then `X` embeds into `I` too, and the cokernel is an extension of the
@@ -543,7 +529,7 @@ theorem HasCoresolution.of_retract (hP : ∀ Y, P Y → Injective Y)
     refine hasCoresolution_succ_iff.2 ⟨I, r.i ≫ ι, inferInstance, hI, ?_⟩
     exact HasCoresolution.of_shortExact hP hPb
       (TauCeti.kernelCokernelCompSequence_snakeInput_L₃_shortExact r.i ι)
-      (ih (retractCokernel r) hY.of_succ) hY'
+      (ih r.cokernel hY.of_succ) hY'
 
 section Map
 
@@ -556,7 +542,7 @@ coresolutions with terms in `Q`. -/
 theorem HasCoresolution.map (hPQ : ∀ Y, P Y → Q (F.obj Y)) {X : C} {n : ℕ}
     (h : HasCoresolution P X n) : HasCoresolution Q (F.obj X) n := by
   obtain ⟨S, hS, ⟨e⟩, hP⟩ := h
-  exact ⟨S ⋙ F, hS.map F, ⟨F.mapIso e⟩, fun i hi ↦ hPQ _ (hP i hi)⟩
+  exact ⟨(F.mapComposableArrows (n + 1)).obj S, hS.map F, ⟨F.mapIso e⟩, fun i hi ↦ hPQ _ (hP i hi)⟩
 
 end Map
 

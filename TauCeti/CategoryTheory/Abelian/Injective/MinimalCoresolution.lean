@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.CategoryTheory.Preadditive.Injective.Preserves
 public import TauCeti.CategoryTheory.Abelian.Coresolution
 public import TauCeti.CategoryTheory.Abelian.Injective.Envelope
 
@@ -38,6 +39,12 @@ every object when every object has an injective envelope
 
 ## Main results
 
+* `CategoryTheory.ComposableArrows.IsMinimalInjectiveCoresolution.isEssentialMono_map'_one_two`:
+  the first map of a minimal injective coresolution is an injective envelope.
+* `CategoryTheory.ComposableArrows.IsMinimalInjectiveCoresolution.δlast`,
+  `CategoryTheory.ComposableArrows.IsMinimalInjectiveCoresolution.of_iso` and
+  `CategoryTheory.ComposableArrows.IsMinimalInjectiveCoresolution.map`: truncation, invariance
+  under isomorphisms and transport along equivalences, and likewise for injective coresolutions.
 * `CategoryTheory.ComposableArrows.IsMinimalInjectiveCoresolution.nonempty_retract_obj'`: a minimal
   injective coresolution is a termwise retract of any injective coresolution.
 * `CategoryTheory.ComposableArrows.IsMinimalInjectiveCoresolution.exists_iso`: minimal injective
@@ -56,7 +63,7 @@ every object when every object has an injective envelope
 
 public section
 
-universe v u
+universe v v' u u'
 
 namespace CategoryTheory
 
@@ -91,6 +98,13 @@ theorem IsMinimalInjectiveCoresolution.isEssentialMono_cosyzygyι
   rw [IsCoresolution.cosyzygyι_eq_cokernelDesc]
   exact hS.isEssentialMono i hi
 
+/-- The first map of a minimal injective coresolution of `X` is an injective envelope of `X`. -/
+theorem IsMinimalInjectiveCoresolution.isEssentialMono_map'_one_two
+    {S : ComposableArrows C (n + 1)} (hS : S.IsMinimalInjectiveCoresolution) (hn : 1 ≤ n) :
+    IsEssentialMono (S.map' 1 2) :=
+  (isEssentialMono_cokernelDesc_of_eq_zero (hS.isZero_left.eq_of_src _ _) _).1
+    (hS.isEssentialMono 0 (by omega))
+
 /-- An injective coresolution is minimal exactly when each cosyzygy embeds into the next term by
 an essential monomorphism. -/
 theorem isMinimalInjectiveCoresolution_iff {S : ComposableArrows C (n + 1)} :
@@ -99,6 +113,83 @@ theorem isMinimalInjectiveCoresolution_iff {S : ComposableArrows C (n + 1)} :
   ⟨fun hS ↦ ⟨hS.toIsInjectiveCoresolution, hS.isEssentialMono_cosyzygyι⟩,
     fun ⟨hS, h⟩ ↦ ⟨hS, fun i hi ↦ by
       simpa only [IsCoresolution.cosyzygyι_eq_cokernelDesc] using h i hi⟩⟩
+
+section Basic
+
+variable {S T : ComposableArrows C (n + 1)}
+
+/-- Dropping the last term of an injective coresolution with `n + 1` terms leaves one with `n`
+terms. -/
+theorem IsInjectiveCoresolution.δlast {S : ComposableArrows C (n + 2)}
+    (hS : S.IsInjectiveCoresolution) : S.δlast.IsInjectiveCoresolution where
+  toIsCoresolution := hS.toIsCoresolution.δlast
+  injective i hi := hS.injective i (by omega)
+
+/-- Dropping the last term of a minimal injective coresolution with `n + 1` terms leaves one with
+`n` terms. -/
+theorem IsMinimalInjectiveCoresolution.δlast {S : ComposableArrows C (n + 2)}
+    (hS : S.IsMinimalInjectiveCoresolution) : S.δlast.IsMinimalInjectiveCoresolution where
+  toIsInjectiveCoresolution := hS.toIsInjectiveCoresolution.δlast
+  isEssentialMono i hi := hS.isEssentialMono i (by omega)
+
+/-- Injective coresolutions are invariant under isomorphisms of composable arrows. -/
+theorem IsInjectiveCoresolution.of_iso (hS : S.IsInjectiveCoresolution) (e : S ≅ T) :
+    T.IsInjectiveCoresolution where
+  toIsCoresolution := hS.toIsCoresolution.of_iso e
+  injective i hi := Injective.of_iso (e.app _) (hS.injective i hi)
+
+/-- Minimal injective coresolutions are invariant under isomorphisms of composable arrows. -/
+theorem IsMinimalInjectiveCoresolution.of_iso (hS : S.IsMinimalInjectiveCoresolution)
+    (e : S ≅ T) : T.IsMinimalInjectiveCoresolution where
+  toIsInjectiveCoresolution := hS.toIsInjectiveCoresolution.of_iso e
+  isEssentialMono i hi := by
+    -- The isomorphism of cokernels induced by `e` intertwines the two embeddings.
+    let a := cokernel.mapIso (S.map' i (i + 1)) (T.map' i (i + 1)) (e.app _) (e.app _)
+      (naturality' e.hom i (i + 1))
+    have : cokernel.desc (S.map' i (i + 1)) (S.map' (i + 1) (i + 2))
+        (hS.exact.toIsComplex.zero i) ≫ (e.app _).hom =
+          a.hom ≫ cokernel.desc (T.map' i (i + 1)) (T.map' (i + 1) (i + 2))
+            ((hS.toIsInjectiveCoresolution.of_iso e).exact.toIsComplex.zero i) := by
+      ext
+      simp [a, naturality' e.hom (i + 1) (i + 2)]
+    rw [← isEssentialMono_isIso_comp_iff a.hom, ← this, isEssentialMono_comp_isIso_iff]
+    exact hS.isEssentialMono i hi
+
+end Basic
+
+section Map
+
+variable {D : Type u'} [Category.{v'} D] [Abelian D] (F : C ⥤ D) {S : ComposableArrows C (n + 1)}
+
+/-- An exact functor preserving injective objects carries injective coresolutions to injective
+coresolutions. -/
+theorem IsInjectiveCoresolution.map [F.PreservesZeroMorphisms] [F.PreservesHomology]
+    [F.PreservesInjectiveObjects] (hS : S.IsInjectiveCoresolution) :
+    ((F.mapComposableArrows (n + 1)).obj S).IsInjectiveCoresolution where
+  toIsCoresolution := hS.toIsCoresolution.map F
+  injective i hi := F.injective_obj_of_injective (hS.injective i hi)
+
+/-- An equivalence preserves the essentiality of the map out of a cokernel induced by `g`. -/
+private theorem isEssentialMono_cokernelDesc_map_iff [F.IsEquivalence] {A B Z : C} (f : A ⟶ B)
+    (g : B ⟶ Z) (w : f ≫ g = 0) (w' : F.map f ≫ F.map g = 0) :
+    IsEssentialMono (cokernel.desc (F.map f) (F.map g) w') ↔
+      IsEssentialMono (cokernel.desc f g w) := by
+  have : cokernel.desc (F.map f) (F.map g) w' =
+      cokernelComparison f F ≫ F.map (cokernel.desc f g w) := by
+    ext
+    simp
+  rw [this, isEssentialMono_isIso_comp_iff, F.isEssentialMono_map_iff]
+
+/-- **Equivalences carry minimal injective coresolutions to minimal injective coresolutions.** -/
+theorem IsMinimalInjectiveCoresolution.map [F.IsEquivalence]
+    (hS : S.IsMinimalInjectiveCoresolution) :
+    ((F.mapComposableArrows (n + 1)).obj S).IsMinimalInjectiveCoresolution where
+  toIsInjectiveCoresolution := hS.toIsInjectiveCoresolution.map F
+  isEssentialMono i hi :=
+    (isEssentialMono_cokernelDesc_map_iff F (S.map' i (i + 1)) (S.map' (i + 1) (i + 2))
+      (hS.exact.toIsComplex.zero i) _).2 (hS.isEssentialMono i hi)
+
+end Map
 
 section Cons
 
@@ -131,18 +222,18 @@ theorem IsMinimalInjectiveCoresolution.coresolutionCons [Injective I] {e : coker
       rw [coresolutionCons_map'_one_two ι T e]
       exact hι
     | 1, _ =>
-      have h₀ : IsEssentialMono (cokernel.desc (T.map' 0 1) (T.map' 1 2)
-          (hT.exact.toIsComplex.zero' 0 1 2)) := hT.isEssentialMono 0 (by omega)
-      rw [isEssentialMono_cokernelDesc_of_eq_zero (hT.isZero_left.eq_of_src _ _)] at h₀
       have w : ι ≫ cokernel.π ι ≫ e.hom ≫ T.map' 1 2 = 0 := by simp
       refine (isEssentialMono_cokernelDesc_congr (coresolutionCons_map'_one_two ι T e)
         (coresolutionCons_map'_two_three ι T e (by omega)) _ w).2 ?_
       have : cokernel.desc ι (cokernel.π ι ≫ e.hom ≫ T.map' 1 2) w = e.hom ≫ T.map' 1 2 := by
         ext
         simp
-      refine (TauCeti.isEssentialMono_congr this).2 ?_
-      rw [isEssentialMono_isIso_comp_iff]
-      exact h₀
+      -- The goal is stated over the objects of `coresolutionCons ι T e`, equal to `X` and `I`
+      -- only up to unfolding, so the rewriting happens on a restatement.
+      have h : IsEssentialMono (cokernel.desc ι (cokernel.π ι ≫ e.hom ≫ T.map' 1 2) w) := by
+        rw [this, isEssentialMono_isIso_comp_iff]
+        exact hT.isEssentialMono_map'_one_two (by omega)
+      exact h
     | 2, _ =>
       have h₁₂₃ := hT.exact.toIsComplex.zero' 1 2 3
       have w : (cokernel.π ι ≫ e.hom ≫ T.map' 1 2) ≫ T.map' 2 3 = 0 := by

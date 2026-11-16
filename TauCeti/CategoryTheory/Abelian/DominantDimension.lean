@@ -28,9 +28,10 @@ terms of the minimal injective coresolution to be flat rather than projective (H
 this the *flat-dominant dimension*). The flat version is not defined here.
 
 Since projective-injective coresolutions are closed under extensions and retracts
-(`CategoryTheory.HasCoresolution.of_shortExact`, `CategoryTheory.HasCoresolution.of_retract`), the
-dominant dimension of a retract is at least that of the whole object, and that of a biproduct is
-the minimum, in every abelian category.
+(`CategoryTheory.HasProjectiveInjectiveCoresolution.of_shortExact`,
+`CategoryTheory.HasProjectiveInjectiveCoresolution.of_retract`), the dominant dimension of an
+extension is at least the minimum of those of its ends, that of a retract is at least that of the
+whole object, and that of a finite biproduct is the minimum, in every abelian category.
 
 ## Main definitions
 
@@ -51,9 +52,13 @@ the minimum, in every abelian category.
   projective.
 * `CategoryTheory.Retract.dominantDimension_le`: the dominant dimension of a retract is at least
   that of the whole object.
-* `CategoryTheory.dominantDimension_biprod`: the dominant dimension of `X ⊞ Y` is the minimum of
-  those of `X` and `Y`; `CategoryTheory.iInf_dominantDimension_le_dominantDimension_biproduct` for
-  finite biproducts.
+* `CategoryTheory.dominantDimension_le_natCast_iff`, `CategoryTheory.one_le_dominantDimension_iff`
+  and `CategoryTheory.dominantDimension_eq_zero_iff`: upper bounds, and the cases `dom.dim X ≥ 1`
+  and `dom.dim X = 0`.
+* `CategoryTheory.ShortComplex.ShortExact.min_dominantDimension_le`: the dominant dimension of an
+  extension is at least the minimum of those of its ends.
+* `CategoryTheory.dominantDimension_biprod` and `CategoryTheory.dominantDimension_biproduct`: the
+  dominant dimension of a finite biproduct is the minimum of those of its summands.
 * `CategoryTheory.Equivalence.dominantDimension_functor_obj`: equivalences preserve the dominant
   dimension.
 
@@ -101,6 +106,16 @@ rings the established notion asks the terms of the minimal injective coresolutio
 noncomputable def dominantDimension (X : C) : ℕ∞ :=
   ⨆ (n : ℕ) (_ : HasProjectiveInjectiveCoresolution X n), (n : ℕ∞)
 
+theorem dominantDimension_def (X : C) :
+    dominantDimension X = ⨆ (n : ℕ) (_ : HasProjectiveInjectiveCoresolution X n), (n : ℕ∞) := by
+  rw [dominantDimension]
+
+/-- `dom.dim X ≤ d` exactly when every length of a projective-injective coresolution of `X` is at
+most `d`. -/
+theorem dominantDimension_le_iff {X : C} {d : ℕ∞} :
+    dominantDimension X ≤ d ↔ ∀ n : ℕ, HasProjectiveInjectiveCoresolution X n → (n : ℕ∞) ≤ d :=
+  iSup₂_le_iff
+
 @[simp]
 theorem hasProjectiveInjectiveCoresolution_zero (X : C) : HasProjectiveInjectiveCoresolution X 0 :=
   hasCoresolution_zero X
@@ -128,6 +143,13 @@ theorem HasProjectiveInjectiveCoresolution.of_retract {X Y : C} {n : ℕ} (r : R
     (h : HasProjectiveInjectiveCoresolution Y n) : HasProjectiveInjectiveCoresolution X n :=
   HasCoresolution.of_retract (fun _ h ↦ h.2) projective_and_injective_biprod r h
 
+/-- Projective-injective coresolutions of an extension: if the ends of a short exact sequence have
+projective-injective coresolutions with `n` terms, so does the middle. -/
+theorem HasProjectiveInjectiveCoresolution.of_shortExact {S : ShortComplex C} (hS : S.ShortExact)
+    {n : ℕ} (h₁ : HasProjectiveInjectiveCoresolution S.X₁ n)
+    (h₃ : HasProjectiveInjectiveCoresolution S.X₃ n) : HasProjectiveInjectiveCoresolution S.X₂ n :=
+  HasCoresolution.of_shortExact (fun _ h ↦ h.2) projective_and_injective_biprod hS h₁ h₃
+
 /-- **`n ≤ dom.dim X` exactly when `X` has a projective-injective coresolution with `n` terms.**
 Coresolutions can be truncated, so the set of such `n` is downward closed. -/
 theorem natCast_le_dominantDimension_iff {X : C} {n : ℕ} :
@@ -151,6 +173,26 @@ theorem dominantDimension_eq_top_iff {X : C} :
     dominantDimension X = ⊤ ↔ ∀ n : ℕ, HasProjectiveInjectiveCoresolution X n := by
   simp only [← natCast_le_dominantDimension_iff]
   exact ENat.eq_top_iff_forall_ge
+
+/-- `dom.dim X ≤ n` exactly when `X` has no projective-injective coresolution with `n + 1`
+terms. -/
+theorem dominantDimension_le_natCast_iff {X : C} {n : ℕ} :
+    dominantDimension X ≤ n ↔ ¬HasProjectiveInjectiveCoresolution X (n + 1) := by
+  rw [← natCast_le_dominantDimension_iff, Nat.cast_add, Nat.cast_one,
+    ENat.add_one_le_iff (ENat.natCast_ne_top n), not_lt]
+
+/-- **The case `dom.dim X ≥ 1`.** It holds exactly when `X` embeds into a projective-injective
+object. -/
+theorem one_le_dominantDimension_iff {X : C} :
+    1 ≤ dominantDimension X ↔ ∃ (I : C) (ι : X ⟶ I), Mono ι ∧ Projective I ∧ Injective I := by
+  rw [← Nat.cast_one, natCast_le_dominantDimension_iff, HasProjectiveInjectiveCoresolution,
+    hasCoresolution_one_iff]
+
+/-- **The case `dom.dim X = 0`.** It holds exactly when `X` embeds into no projective-injective
+object. -/
+theorem dominantDimension_eq_zero_iff {X : C} :
+    dominantDimension X = 0 ↔ ¬∃ (I : C) (ι : X ⟶ I), Mono ι ∧ Projective I ∧ Injective I := by
+  rw [← one_le_dominantDimension_iff, Order.one_le_iff_ne_zero, not_not]
 
 /-- **The case `dom.dim X ≥ 2`.** It holds exactly when `X` has an injective copresentation
 `0 → X → I⁰ → I¹` by projective-injective objects. -/
@@ -222,28 +264,38 @@ theorem Retract.dominantDimension_le {X Y : C} (r : Retract X Y) :
     dominantDimension Y ≤ dominantDimension X :=
   iSup₂_le fun _ hn ↦ natCast_le_dominantDimension_iff.2 (hn.of_retract r)
 
-/-- **Biproducts.** The dominant dimension of `X ⊞ Y` is at least the minimum of those of `X` and
-`Y`. -/
-theorem min_dominantDimension_le_dominantDimension_biprod (X Y : C) :
+/-- **Extensions.** The dominant dimension of the middle term of a short exact sequence is at least
+the minimum of those of its ends. -/
+theorem ShortComplex.ShortExact.min_dominantDimension_le {S : ShortComplex C} (hS : S.ShortExact) :
+    min (dominantDimension S.X₁) (dominantDimension S.X₃) ≤ dominantDimension S.X₂ := by
+  refine ENat.forall_natCast_le_iff_le.1 fun n hn ↦ ?_
+  rw [le_min_iff, natCast_le_dominantDimension_iff, natCast_le_dominantDimension_iff] at hn
+  exact natCast_le_dominantDimension_iff.2 (hn.1.of_shortExact hS hn.2)
+
+/-- The dominant dimension of `X ⊞ Y` is at least the minimum of those of `X` and `Y`. -/
+private theorem min_dominantDimension_le_dominantDimension_biprod (X Y : C) :
     min (dominantDimension X) (dominantDimension Y) ≤ dominantDimension (X ⊞ Y) := by
   refine ENat.forall_natCast_le_iff_le.1 fun n hn ↦ ?_
   rw [le_min_iff, natCast_le_dominantDimension_iff, natCast_le_dominantDimension_iff] at hn
   exact natCast_le_dominantDimension_iff.2
     (HasCoresolution.biprod projective_and_injective_biprod hn.1 hn.2)
 
-/-- **Biproducts, exactly.** The dominant dimension of `X ⊞ Y` is the minimum of those of `X` and
-`Y`. -/
+/-- **Biproducts.** The dominant dimension of `X ⊞ Y` is the minimum of those of `X` and `Y`. -/
+@[simp]
 theorem dominantDimension_biprod (X Y : C) :
     dominantDimension (X ⊞ Y) = min (dominantDimension X) (dominantDimension Y) :=
   le_antisymm (le_min (Retract.dominantDimension_le ⟨biprod.inl, biprod.fst, by simp⟩)
     (Retract.dominantDimension_le ⟨biprod.inr, biprod.snd, by simp⟩))
     (min_dominantDimension_le_dominantDimension_biprod X Y)
 
-/-- **Finite biproducts.** The dominant dimension of a finite biproduct is at least the infimum of
-those of its summands. -/
-theorem iInf_dominantDimension_le_dominantDimension_biproduct [HasFiniteBiproducts C]
-    {J : Type w} [Finite J] (f : J → C) :
-    (⨅ j, dominantDimension (f j)) ≤ dominantDimension (⨁ f) := by
+/-- **Finite biproducts.** The dominant dimension of a finite biproduct is the infimum of those of
+its summands. -/
+@[simp]
+theorem dominantDimension_biproduct {J : Type w} [Finite J] (f : J → C) [HasBiproduct f] :
+    dominantDimension (⨁ f) = ⨅ j, dominantDimension (f j) := by
+  refine le_antisymm (le_iInf fun j ↦
+    Retract.dominantDimension_le ⟨biproduct.ι f j, biproduct.π f j, biproduct.ι_π_self f j⟩) ?_
+  have : HasFiniteBiproducts C := Abelian.hasFiniteBiproducts
   -- Induction on the finite index type, through `Option`.
   refine Finite.induction_empty_option (P := fun J ↦ ∀ [Finite J] (f : J → C),
     (⨅ j, dominantDimension (f j)) ≤ dominantDimension (⨁ f)) ?_ ?_ ?_ J f

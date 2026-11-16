@@ -44,6 +44,12 @@ categories, in particular to representations of a quiver.
   injective object receives the envelope by a split monomorphism.
 * `TauCeti.IsEssentialMono.comp` and `TauCeti.isEssentialMono_of_isIso`: essential monomorphisms
   are closed under composition and contain the isomorphisms.
+* `TauCeti.isEssentialMono_cokernelDesc_of_eq_zero` and
+  `TauCeti.isEssentialMono_cokernelDesc_epi_comp`: the map out of a cokernel induced by `g` is
+  essential exactly when `g` is, if the morphism divided out is zero, and dividing out `p ≫ f` for
+  an epimorphism `p` is the same as dividing out `f`.
+* `CategoryTheory.Functor.isEssentialMono_map_iff`: equivalences preserve and reflect essential
+  monomorphisms.
 
 ## References
 
@@ -150,5 +156,58 @@ theorem isEssentialMono_comp_isIso_iff {M I I' : C} (f : M ⟶ I) (e : I ⟶ I')
     IsEssentialMono (f ≫ e) ↔ IsEssentialMono f :=
   ⟨fun h ↦ by simpa using h.comp (isEssentialMono_of_isIso (inv e)),
     fun h ↦ h.comp (isEssentialMono_of_isIso e)⟩
+
+section Cokernel
+
+open Limits
+
+variable [HasZeroMorphisms C]
+
+/-- `cokernel.desc f g w` only depends on `f` and `g`. -/
+theorem isEssentialMono_cokernelDesc_congr {A B D : C} {f f' : A ⟶ B} {g g' : B ⟶ D}
+    [HasCokernel f] [HasCokernel f'] (hf : f = f') (hg : g = g') (w : f ≫ g = 0)
+    (w' : f' ≫ g' = 0) :
+    IsEssentialMono (cokernel.desc f g w) ↔ IsEssentialMono (cokernel.desc f' g' w') := by
+  subst hf hg
+  rfl
+
+/-- Dividing out by a zero morphism does not change essentiality. -/
+theorem isEssentialMono_cokernelDesc_of_eq_zero {A B D : C} {f : A ⟶ B} [HasCokernel f]
+    (hf : f = 0) {g : B ⟶ D} (w : f ≫ g = 0) :
+    IsEssentialMono (cokernel.desc f g w) ↔ IsEssentialMono g := by
+  subst hf
+  have : cokernel.desc (0 : A ⟶ B) g w = inv (cokernel.π (0 : A ⟶ B)) ≫ g := by
+    simp [← cancel_epi (cokernel.π (0 : A ⟶ B))]
+  rw [this, isEssentialMono_isIso_comp_iff]
+
+/-- Precomposing with an epimorphism does not change the essentiality of the induced map out of
+the cokernel. -/
+theorem isEssentialMono_cokernelDesc_epi_comp {A A' B D : C} (p : A' ⟶ A) [Epi p]
+    (f : A ⟶ B) [HasCokernel f] {g : B ⟶ D} (w : (p ≫ f) ≫ g = 0) (w' : f ≫ g = 0) :
+    IsEssentialMono (cokernel.desc (p ≫ f) g w) ↔ IsEssentialMono (cokernel.desc f g w') := by
+  have : cokernel.desc (p ≫ f) g w = (cokernelEpiComp p f).hom ≫ cokernel.desc f g w' := by
+    ext
+    simp [cokernelEpiComp]
+  rw [this, isEssentialMono_isIso_comp_iff]
+
+end Cokernel
+
+/-- **Equivalences preserve and reflect essential monomorphisms.** -/
+@[simp]
+theorem _root_.CategoryTheory.Functor.isEssentialMono_map_iff {D : Type*} [Category* D]
+    (F : C ⥤ D) [F.IsEquivalence] {M I : C} (ι : M ⟶ I) :
+    IsEssentialMono (F.map ι) ↔ IsEssentialMono ι := by
+  refine ⟨fun h ↦ ⟨F.mono_of_mono_map h.mono, fun g hg ↦ F.mono_of_mono_map ?_⟩,
+    fun h ↦ ⟨have := h.mono; inferInstance, fun {X} g hg ↦ ?_⟩⟩
+  · exact h.mono_of_mono_comp _ (by simpa using F.map_mono (ι ≫ g))
+  · -- `X` is isomorphic to `F.obj X'`, and `g` composed with this isomorphism is `F.map g'`.
+    let e := F.objObjPreimageIso X
+    let g' : I ⟶ F.objPreimage X := F.preimage (g ≫ e.inv)
+    have hg' : F.map g' = g ≫ e.inv := F.map_preimage _
+    have : Mono g' := h.mono_of_mono_comp g' <| F.mono_of_mono_map <| by
+      rw [F.map_comp, hg', ← Category.assoc]
+      infer_instance
+    have : Mono (g ≫ e.inv) := hg' ▸ F.map_mono g'
+    exact mono_of_mono g e.inv
 
 end TauCeti

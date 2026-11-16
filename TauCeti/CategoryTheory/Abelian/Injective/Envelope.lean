@@ -9,6 +9,7 @@ public import Mathlib.Algebra.Homology.ShortComplex.Exact
 public import Mathlib.CategoryTheory.Abelian.Basic
 public import Mathlib.CategoryTheory.Preadditive.Injective.Basic
 public import TauCeti.CategoryTheory.Injective.Envelope
+public import TauCeti.CategoryTheory.Limits.Shapes.Biproduct
 
 /-!
 # Injective envelopes in an abelian category
@@ -23,16 +24,16 @@ into an injective object, then `E` is a retract of `I` and `cokernel ι` is a re
 
 The proof needs that adding a summand keeps a monomorphism essential: if `ι` is essential, so is
 `biprod.map ι (𝟙 K)` for every `K` (`TauCeti.IsEssentialMono.biprod_map_id`). For modules this is
-the familiar fact that `A ⊕ K` is essential in `E ⊕ K` when `A` is essential in `E`.
+the familiar fact that `A ⊕ K` is essential in `E ⊕ K` when `A` is essential in `E`. More
+generally, a binary biproduct of essential monomorphisms is essential
+(`TauCeti.IsEssentialMono.biprod_map`).
 
 ## Main results
 
 * `TauCeti.IsEssentialMono.biprod_map_id`: `biprod.map ι (𝟙 K)` is an essential monomorphism
   when `ι` is.
-* `TauCeti.isEssentialMono_cokernelDesc_of_eq_zero` and
-  `TauCeti.isEssentialMono_cokernelDesc_epi_comp`: the map out of a cokernel induced by `g` is
-  essential exactly when `g` is, if the morphism divided out is zero, and dividing out `p ≫ f` for
-  an epimorphism `p` is the same as dividing out `f`.
+* `TauCeti.IsEssentialMono.biprod_map`: `biprod.map ι₁ ι₂` is an essential monomorphism when `ι₁`
+  and `ι₂` are.
 * `TauCeti.IsEssentialMono.nonempty_retract_and_nonempty_retract_cokernel`: an injective envelope
   `ι` of a retract of `B` is a retract of every injective object `I` containing `B`, and
   `cokernel ι` is a retract of the cokernel of `B ⟶ I`.
@@ -98,6 +99,16 @@ theorem biprod_map_id {A E : C} {ι : A ⟶ E} (hι : IsEssentialMono ι) (K : C
       rwa [← cancel_mono g₂, zero_comp]
     ext <;> simp [h₁, h₂]
 
+/-- **Binary biproducts of essential monomorphisms are essential.** If `ι₁` and `ι₂` are
+essential monomorphisms, then so is `biprod.map ι₁ ι₂`: it is `biprod.map ι₁ (𝟙 _)` followed by
+`biprod.map (𝟙 _) ι₂`, and the latter is `biprod.map ι₂ (𝟙 _)` up to the braiding. -/
+theorem biprod_map {A₁ E₁ A₂ E₂ : C} {ι₁ : A₁ ⟶ E₁} {ι₂ : A₂ ⟶ E₂} (h₁ : IsEssentialMono ι₁)
+    (h₂ : IsEssentialMono ι₂) : IsEssentialMono (biprod.map ι₁ ι₂) := by
+  rw [biprod_map_factor, ← biprod.braiding_map_braiding ι₂ (𝟙 E₁)]
+  refine (h₁.biprod_map_id _).comp ?_
+  rw [isEssentialMono_isIso_comp_iff, isEssentialMono_comp_isIso_iff]
+  exact h₂.biprod_map_id E₁
+
 /-- **An injective envelope of a retract is a retract, and so is its cokernel.** Let
 `ι : A ⟶ E` be an essential monomorphism into an injective object, `j : B ⟶ I` a monomorphism
 into an injective object, and `A` a retract of `B`. Then `E` is a retract of `I`, and
@@ -152,37 +163,5 @@ theorem nonempty_retract_and_nonempty_retract_cokernel {A B E I : C} [Injective 
     simp [reassoc_of% hgq]
 
 end IsEssentialMono
-
-omit [Abelian C] in
-/-- Essentiality only depends on the morphism. -/
-theorem isEssentialMono_congr {A B : C} {f f' : A ⟶ B} (h : f = f') :
-    IsEssentialMono f ↔ IsEssentialMono f' := by
-  subst h
-  rfl
-
-/-- `cokernel.desc f g w` only depends on `f` and `g`. -/
-theorem isEssentialMono_cokernelDesc_congr {A B D : C} {f f' : A ⟶ B} {g g' : B ⟶ D}
-    (hf : f = f') (hg : g = g') (w : f ≫ g = 0) (w' : f' ≫ g' = 0) :
-    IsEssentialMono (cokernel.desc f g w) ↔ IsEssentialMono (cokernel.desc f' g' w') := by
-  subst hf hg
-  rfl
-
-/-- Dividing out by a zero morphism does not change essentiality. -/
-theorem isEssentialMono_cokernelDesc_of_eq_zero {A B D : C} {f : A ⟶ B} (hf : f = 0)
-    {g : B ⟶ D} (w : f ≫ g = 0) : IsEssentialMono (cokernel.desc f g w) ↔ IsEssentialMono g := by
-  subst hf
-  have : cokernel.desc (0 : A ⟶ B) g w = inv (cokernel.π (0 : A ⟶ B)) ≫ g := by
-    simp [← cancel_epi (cokernel.π (0 : A ⟶ B))]
-  rw [this, isEssentialMono_isIso_comp_iff]
-
-/-- Precomposing with an epimorphism does not change the essentiality of the induced map out of
-the cokernel. -/
-theorem isEssentialMono_cokernelDesc_epi_comp {A A' B D : C} (p : A' ⟶ A) [Epi p]
-    (f : A ⟶ B) {g : B ⟶ D} (w : (p ≫ f) ≫ g = 0) (w' : f ≫ g = 0) :
-    IsEssentialMono (cokernel.desc (p ≫ f) g w) ↔ IsEssentialMono (cokernel.desc f g w') := by
-  have : cokernel.desc (p ≫ f) g w = (cokernelEpiComp p f).hom ≫ cokernel.desc f g w' := by
-    ext
-    simp [cokernelEpiComp]
-  rw [this, isEssentialMono_isIso_comp_iff]
 
 end TauCeti
