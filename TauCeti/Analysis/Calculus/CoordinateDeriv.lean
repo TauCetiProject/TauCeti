@@ -120,6 +120,16 @@ theorem coordinateDeriv_append (α β : List (Fin n)) (f : CoordinateSpace n →
     funext x
     rw [List.cons_append, coordinateDeriv_cons, coordinateDeriv_cons, ih]
 
+/-- Differentiating the derivative of `f` in the coordinate direction `j` along a word is
+differentiating `f` along the word extended by `j`. -/
+theorem coordinateDeriv_eq_append_singleton {f g : CoordinateSpace n → A} (w : List (Fin n))
+    (j : Fin n) (h : ∀ y, g y = fderiv ℝ f y (EuclideanSpace.single j 1)) :
+    coordinateDeriv w g = coordinateDeriv (w ++ [j]) f := by
+  rw [coordinateDeriv_append]
+  congr 1
+  funext y
+  rw [h, coordinateDeriv_cons, coordinateDeriv_nil]
+
 /-- Coordinate derivatives along a word of length `k` of a `C^N` function are `C^m` whenever
 `m + k ≤ N`. -/
 theorem _root_.ContDiff.coordinateDeriv_of_le {N m : WithTop ℕ∞} {f : CoordinateSpace n → A}
