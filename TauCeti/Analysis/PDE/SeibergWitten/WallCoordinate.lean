@@ -7,8 +7,6 @@ module
 
 public import TauCeti.Geometry.Manifold.Riemannian.SelfDual.Basic
 import TauCeti.Geometry.Manifold.Riemannian.Codifferential
-import TauCeti.Geometry.Manifold.Riemannian.VolumeForm.Integral
-import TauCeti.Geometry.Manifold.DifferentialForm.Integration.Regularity
 import Mathlib.Tactic.Linarith
 
 /-!
