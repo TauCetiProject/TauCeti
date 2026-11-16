@@ -9,6 +9,7 @@ public import Mathlib.LinearAlgebra.FiniteDimensional.Defs
 public import Mathlib.Topology.Connected.LocallyConnected
 public import TauCeti.Geometry.RealAnalytic.Semianalytic.Manifold
 import Mathlib.Analysis.Normed.Module.FiniteDimension
+import TauCeti.Geometry.Manifold.ModelTransport.Boundaryless
 import TauCeti.Geometry.RealAnalytic.Semianalytic.Decomposition
 import TauCeti.Topology.ConnectedComponents
 import TauCeti.Topology.LocallyConnected
@@ -182,28 +183,9 @@ end NormedSpace
 
 section Manifold
 
-variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
+variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
   {H : Type*} [TopologicalSpace H] {I : ModelWithCorners ℝ E H} [I.Boundaryless]
   {M : Type*} [TopologicalSpace M] [ChartedSpace H M]
-
-/-- The preferred extended chart at `x` of a boundaryless charted space, bundled as an
-`OpenPartialHomeomorph M E`. -/
-private noncomputable def extChartOpenPartialHomeomorph (I : ModelWithCorners ℝ E H)
-    [I.Boundaryless] (x : M) : OpenPartialHomeomorph M E :=
-  (chartAt H x).trans I.toHomeomorph.toOpenPartialHomeomorph
-
-private theorem coe_extChartOpenPartialHomeomorph (I : ModelWithCorners ℝ E H) [I.Boundaryless]
-    (x : M) : ⇑(extChartOpenPartialHomeomorph I x) = ⇑(extChartAt I x) := by
-  ext y
-  simp [extChartOpenPartialHomeomorph, OpenPartialHomeomorph.trans_apply]
-
-private theorem coe_extChartOpenPartialHomeomorph_symm (I : ModelWithCorners ℝ E H)
-    [I.Boundaryless] (x : M) :
-    ⇑(extChartOpenPartialHomeomorph I x).symm = ⇑(extChartAt I x).symm := by
-  ext z
-  simp [extChartOpenPartialHomeomorph]
-
-variable [FiniteDimensional ℝ E]
 
 /-- **Local connected partition on a manifold.** If `s` is semianalytic at a manifold point `x` and
 `V ∈ 𝓝 x`, there is an open neighborhood `U ⊆ V` of `x` such that `s ∩ U` is partitioned into
@@ -214,10 +196,17 @@ theorem MSemianalyticAt.exists_isConnected_partition_inter {s V : Set M} {x : M}
       IsOpen U ∧ x ∈ U ∧ U ⊆ V ∧
       𝒞.Finite ∧ 𝒞.PairwiseDisjoint id ∧ ⋃₀ 𝒞 = s ∩ U ∧
       ∀ C ∈ 𝒞, IsConnected C ∧ IsLocallyClosed C ∧ MSemianalyticAt I C x := by
-  let e : OpenPartialHomeomorph M E := extChartOpenPartialHomeomorph I x
-  have he : ⇑e = ⇑(extChartAt I x) := coe_extChartOpenPartialHomeomorph I x
-  have he_symm : ⇑e.symm = ⇑(extChartAt I x).symm := coe_extChartOpenPartialHomeomorph_symm I x
-  have hx : x ∈ e.source := by simp [e, extChartOpenPartialHomeomorph, mem_chart_source]
+  -- `BoundarylessModel I M` shares carrier and topology with `M` definitionally, so
+  -- `BoundarylessModel.chart I (chartAt H x)` has type `OpenPartialHomeomorph M E`.
+  let e : OpenPartialHomeomorph M E := BoundarylessModel.chart I (chartAt H x)
+  have he_pe : e.toPartialEquiv = extChartAt I x := by
+    rw [extChartAt]
+    exact BoundarylessModel.chart_toPartialEquiv I (chartAt H x)
+  have he : ⇑e = ⇑(extChartAt I x) := by rw [← e.coe_toPartialEquiv, he_pe]
+  have he_symm : ⇑e.symm = ⇑(extChartAt I x).symm := by rw [← e.coe_toPartialEquiv_symm, he_pe]
+  have hx : x ∈ e.source := by
+    rw [he_pe]
+    exact mem_extChartAt_source (I := I) x
   have hs' : SemianalyticAt (e.symm ⁻¹' s) (e x) := by
     rw [he, he_symm]
     exact (mSemianalyticAt_def I).1 hs
