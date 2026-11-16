@@ -26,9 +26,9 @@ A trajectory from `(p, 0)` to `(q, 1)` is recorded by its point on the middle le
 (`TauCeti.morseContinuationSlice`): the set of `x : M` through which, at time `0`, passes an
 integral curve of `V` tending to `(p, 0)` at `-∞` and to `(q, 1)` at `+∞`. When the time component
 of `V` is positive on this level, every such trajectory crosses it at exactly one time
-(`TauCeti.existsUnique_snd_eq_half_of_isMIntegralCurve`): the time component can cross the level
-only upwards. So, up to translation of time, each trajectory passes through the level at time `0`
-in exactly one way. When `V` is moreover `C¹`, so that an integral curve is determined by any one of
+(`IsMIntegralCurve.existsUnique_snd_eq`): the time component can cross the level only upwards.
+So, up to translation of time, each trajectory passes through the level at time `0` in exactly one
+way. When `V` is moreover `C¹`, so that an integral curve is determined by any one of
 its points, the slice stands for the unparametrized trajectories. The coefficient
 `TauCeti.morseContinuationCoeff` is the number of points of the slice modulo two when the indices
 agree, and `0` otherwise, and `TauCeti.morseContinuationMap` is its linear extension.
@@ -54,8 +54,9 @@ is the identity**
 
 * `TauCeti.morseContinuationSlice`: the points on the level `t = 1 / 2` of the trajectories from
   `(p, 0)` to `(q, 1)`.
-* `TauCeti.existsUnique_snd_eq_half_of_isMIntegralCurve`: such a trajectory crosses the level
-  `t = 1 / 2` exactly once when the time component of the field is positive there.
+* `IsMIntegralCurve.existsUnique_snd_eq`: such a trajectory crosses a level `t = c` with
+  `0 < c < 1`, such as `t = 1 / 2`, exactly once when the time component of the field is positive
+  there.
 * `TauCeti.morseContinuationCoeff`: the coefficient of `q` in the continuation of `p`.
 * `TauCeti.morseContinuationMap`: the mod-two continuation map.
 
@@ -93,8 +94,8 @@ variable {f₀ f₁ : M → ℝ} {V : (z : M × ℝ) → TangentSpace (𝓘(ℝ,
 `(p, 0)` to `(q, 1)`: the points `x` such that an integral curve of `V` through `(x, 1 / 2)` at
 time `0` tends to `(p, 0)` at `-∞` and to `(q, 1)` at `+∞`. When the time component of `V` is
 positive on this level, every such trajectory crosses it exactly once
-(`TauCeti.existsUnique_snd_eq_half_of_isMIntegralCurve`); when `V` is moreover `C¹`, the set
-stands for the unparametrized trajectories. -/
+(`IsMIntegralCurve.existsUnique_snd_eq`); when `V` is moreover `C¹`, the set stands for the
+unparametrized trajectories. -/
 def morseContinuationSlice (V : (z : M × ℝ) → TangentSpace (𝓘(ℝ, E).prod 𝓘(ℝ)) z) (p q : M) :
     Set M :=
   {x | ∃ γ : ℝ → M × ℝ, IsMIntegralCurve γ V ∧ γ 0 = (x, 1 / 2) ∧
@@ -108,28 +109,29 @@ theorem mem_morseContinuationSlice {p q x : M} :
         Tendsto γ atBot (𝓝 (p, 0)) ∧ Tendsto γ atTop (𝓝 (q, 1)) :=
   Iff.rfl
 
-/-- **A continuation trajectory crosses the middle level exactly once.** If the time component of
-the vector field `V` on `M × ℝ` is positive on the level `t = 1 / 2`, then an integral curve of `V`
-whose time component tends to `0` at `-∞` and to `1` at `+∞` meets this level at exactly one time.
-Translating time, each trajectory from `(p, 0)` to `(q, 1)` passes through the level at time `0`
-in exactly one way, which is how `TauCeti.morseContinuationSlice` records it. -/
-theorem existsUnique_snd_eq_half_of_isMIntegralCurve {γ : ℝ → M × ℝ} (hγ : IsMIntegralCurve γ V)
-    (hV : ∀ x, 0 < (V (x, 1 / 2) : E × ℝ).2) (h₀ : Tendsto (fun s ↦ (γ s).2) atBot (𝓝 0))
-    (h₁ : Tendsto (fun s ↦ (γ s).2) atTop (𝓝 1)) :
-    ∃! s, (γ s).2 = 1 / 2 := by
+/-- **A continuation trajectory crosses a level exactly once.** If the time component of the
+vector field `V` on `M × ℝ` is positive on the level `t = c`, then an integral curve of `V` whose
+time component tends to `a < c` at `-∞` and to `b > c` at `+∞` meets this level at exactly one
+time. For `c = 1 / 2` between `0` and `1`, translating time, each trajectory from `(p, 0)` to
+`(q, 1)` passes through the middle level at time `0` in exactly one way, which is how
+`TauCeti.morseContinuationSlice` records it. -/
+theorem _root_.IsMIntegralCurve.existsUnique_snd_eq {γ : ℝ → M × ℝ} (hγ : IsMIntegralCurve γ V)
+    {a b c : ℝ} (hac : a < c) (hcb : c < b) (hV : ∀ x, 0 < (V (x, c) : E × ℝ).2)
+    (h₀ : Tendsto (fun s ↦ (γ s).2) atBot (𝓝 a)) (h₁ : Tendsto (fun s ↦ (γ s).2) atTop (𝓝 b)) :
+    ∃! s, (γ s).2 = c := by
   have hd := hγ.hasDerivAt_snd
   have hcont : Continuous fun s ↦ (γ s).2 :=
     continuous_iff_continuousAt.2 fun s ↦ (hd s).continuousAt
   -- On the level, the time component of `V`, the derivative of that of `γ`, is positive.
-  have hpos : ∀ z : M × ℝ, z.2 = 1 / 2 → 0 < (V z : E × ℝ).2 := by
-    rintro ⟨x, t⟩ (rfl : t = 1 / 2)
+  have hpos : ∀ z : M × ℝ, z.2 = c → 0 < (V z : E × ℝ).2 := by
+    rintro ⟨x, t⟩ (rfl : t = c)
     exact hV x
-  obtain ⟨a, ha⟩ := (h₀.eventually (gt_mem_nhds (by norm_num : (0 : ℝ) < 1 / 2))).exists
-  obtain ⟨b, hb⟩ := (h₁.eventually (lt_mem_nhds (by norm_num : (1 / 2 : ℝ) < 1))).exists
-  obtain ⟨s, hs⟩ := intermediate_value_univ a b hcont ⟨ha.le, hb.le⟩
+  obtain ⟨s₀, hs₀⟩ := (h₀.eventually (gt_mem_nhds hac)).exists
+  obtain ⟨s₁, hs₁⟩ := (h₁.eventually (lt_mem_nhds hcb)).exists
+  obtain ⟨s, hs⟩ := intermediate_value_univ s₀ s₁ hcont ⟨hs₀.le, hs₁.le⟩
   refine ⟨s, hs, fun s' hs' ↦ ?_⟩
   -- Two crossings would give a crossing downwards between them.
-  have hcross : ∀ {s₁ s₂ : ℝ}, s₁ < s₂ → (γ s₁).2 = 1 / 2 → (γ s₂).2 ≠ 1 / 2 :=
+  have hcross : ∀ {s₁ s₂ : ℝ}, s₁ < s₂ → (γ s₁).2 = c → (γ s₂).2 ≠ c :=
     fun {s₁ s₂} h12 h₁ ↦ (lt_image_of_deriv_pos_boundary hcont.continuousOn
       (fun t _ ht ↦ ⟨hd t, hpos (γ t) ht⟩) h₁.ge ⟨h12, le_rfl⟩).ne'
   rcases lt_trichotomy s' s with h | h | h

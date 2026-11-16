@@ -9,6 +9,7 @@ public import Mathlib.Analysis.Calculus.Deriv.Basic
 public import Mathlib.Geometry.Manifold.IntegralCurve.Basic
 public import TauCeti.Geometry.Manifold.VectorField.Prod
 import TauCeti.Geometry.Manifold.IntegralCurve.Basic
+import TauCeti.Geometry.Manifold.MFDeriv.Curve
 
 /-!
 # Integral curves of product vector fields
@@ -80,16 +81,7 @@ second component of the field: for an integral curve `γ` of a vector field `V` 
 `(γ s).2` has derivative `(V (γ s)).2` at `s`. -/
 theorem _root_.IsMIntegralCurve.hasDerivAt_snd {V : Π z : M × E', TangentSpace (I.prod 𝓘(ℝ, E')) z}
     {γ : ℝ → M × E'} (hγ : IsMIntegralCurve γ V) (s : ℝ) :
-    HasDerivAt (fun s ↦ (γ s).2) (V (γ s) : E × E').2 s := by
-  have h := hasMFDerivAt_iff_hasFDerivAt.1 ((hasMFDerivAt_snd (γ s)).comp s (hγ s))
-  rw [hasDerivAt_iff_hasFDerivAt]
-  refine h.congr_fderiv ?_
-  ext
-  -- The tangent space of `M × E'` is not syntactically `E × E'`, so `simp` cannot apply
-  -- `ContinuousLinearMap.smulRight_apply` and `one_smul` until the goal is stated on `E × E'`.
-  change (ContinuousLinearMap.snd ℝ E E') ((1 : ℝ) • (V (γ s) : E × E')) =
-    (1 : ℝ) • (V (γ s) : E × E').2
-  rw [one_smul, one_smul]
-  rfl
+    HasDerivAt (fun s ↦ (γ s).2) (V (γ s) : E × E').2 s :=
+  hasDerivAt_iff_hasFDerivAt.2 (hasMFDerivAt_iff_hasFDerivAt.1 (hγ s).snd_curve)
 
 end TauCeti.Manifold
