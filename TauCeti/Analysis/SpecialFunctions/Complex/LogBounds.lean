@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors, Robby Sneiderman
 module
 
 public import Mathlib.Analysis.SpecialFunctions.Complex.LogBounds
+public import TauCeti.Analysis.SpecialFunctions.Log.Bounds
 public import TauCeti.Analysis.SpecificLimits.WeightedGeometric
 
 /-!
@@ -48,8 +49,7 @@ term takes.
 
 * `Complex.norm_log_le_of_re_mem_Icc`: an explicit principal-log norm bound on every
   positive vertical strip, including empty and singleton strips.
-* `Real.abs_log_le_of_mem_Icc`, `Complex.norm_log_le_of_norm_mem_Icc`: logarithm bounds on an
-  interval `[δ, B]` and on the annulus `δ ≤ ‖w‖ ≤ B`.
+* `Complex.norm_log_le_of_norm_mem_Icc`: a principal-log bound on the annulus `δ ≤ ‖w‖ ≤ B`.
 * `Complex.norm_exp_neg_mul_log_le_of_norm_mem_Icc`: on the same annulus,
   `‖exp (-s log w)‖ ≤ exp (S (|log δ| + π)) B ^ ⌈S⌉₊` for `‖s‖ ≤ S`.
 
@@ -230,23 +230,6 @@ theorem norm_log_le_of_re_mem_Icc {a b : ℝ} (ha : 0 < a) {s : ℂ}
   have h := norm_le_abs_re_add_abs_im (Complex.log s)
   rw [Complex.log_re, Complex.log_im] at h
   linarith
-
-end Complex
-
-namespace Real
-
-/-- On an interval `[δ, B]` with `0 < δ` and `1 ≤ B`, the logarithm is bounded in absolute
-value by `|log δ| + log B`. -/
-theorem abs_log_le_of_mem_Icc {δ B x : ℝ} (hδ : 0 < δ) (hB : 1 ≤ B) (hx : x ∈ Set.Icc δ B) :
-    |log x| ≤ |log δ| + log B := by
-  have h1 : log δ ≤ log x := log_le_log hδ hx.1
-  have h2 : log x ≤ log B := log_le_log (hδ.trans_le hx.1) hx.2
-  have h3 : 0 ≤ log B := log_nonneg hB
-  refine abs_le.2 ⟨?_, ?_⟩ <;> linarith [neg_abs_le (log δ), le_abs_self (log δ)]
-
-end Real
-
-namespace Complex
 
 /-- A principal-log estimate on an annulus: if `δ ≤ ‖w‖ ≤ B` with `0 < δ` and `1 ≤ B`, then
 `‖log w‖ ≤ |log δ| + π + log B`. -/
