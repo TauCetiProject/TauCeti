@@ -62,46 +62,6 @@ noncomputable abbrev EInfty (q n : ℤ) : C :=
   X.E (homOfLE (bot_le : (⊥ : EInt) ≤ q)) (homOfLE (coe_le_coe_add_one q))
     (homOfLE (le_top : ((q + 1 : ℤ) : EInt) ≤ ⊤)) (n - 1) n (n + 1)
 
-/-- The object at `pq = (p, q)` on page `r ≥ 2` of the spectral sequence of `X` is
-`X.EInfty q (p + q)` when `H^{p+q+1}(⊥ ≤ q - r + 2)` and `H^{p+q-1}(q + r - 1 ≤ ⊤)` vanish. -/
-noncomputable def spectralSequencePageXIsoEInfty (r : ℤ) (hr : 2 ≤ r) (pq : ℤ × ℤ) (n : ℤ)
-    (hn : n = pq.1 + pq.2)
-    (h₀ : IsZero ((X.H (n + 1)).obj
-      (mk₁ (homOfLE (bot_le : (⊥ : EInt) ≤ ((pq.2 - r + 2 : ℤ) : EInt))))))
-    (h₃ : IsZero ((X.H (n - 1)).obj
-      (mk₁ (homOfLE (le_top : ((pq.2 + r - 1 : ℤ) : EInt) ≤ ⊤))))) :
-    ((X.spectralSequence coreE₂Cohomological).page r).X pq ≅ X.EInfty pq.2 n :=
-  have h₀₁ : ((pq.2 - r + 2 : ℤ) : EInt) ≤ pq.2 := by simp; lia
-  have h₂₃ : ((pq.2 + 1 : ℤ) : EInt) ≤ ((pq.2 + r - 1 : ℤ) : EInt) := by simp; lia
-  X.spectralSequencePageXIso coreE₂Cohomological r hr pq ((pq.2 - r + 2 : ℤ) : EInt) pq.2
-      ((pq.2 + 1 : ℤ) : EInt) ((pq.2 + r - 1 : ℤ) : EInt) rfl rfl rfl rfl (n - 1) n (n + 1) hn ≪≫
-    (X.isoMapFourδ₁Toδ₀' ⊥ _ _ _ _ bot_le h₀₁ (coe_le_coe_add_one pq.2) h₂₃ (n - 1) n (n + 1)
-      h₀).symm ≪≫
-    X.isoMapFourδ₄Toδ₃' ⊥ _ _ _ ⊤ bot_le (coe_le_coe_add_one pq.2) h₂₃ le_top (n - 1) n (n + 1)
-      h₃
-
-/-- The isomorphism `spectralSequencePageXIsoEInfty` is characterized by the canonical maps from
-`E^n(⊥ ≤ q ≤ q + 1 ≤ q + r - 1)` to the page object and to `X.EInfty q n`. -/
-@[reassoc]
-lemma mapFourδ₁Toδ₀'_comp_spectralSequencePageXIsoEInfty_hom (r : ℤ) (hr : 2 ≤ r) (pq : ℤ × ℤ)
-    (n : ℤ) (hn : n = pq.1 + pq.2)
-    (h₀ : IsZero ((X.H (n + 1)).obj
-      (mk₁ (homOfLE (bot_le : (⊥ : EInt) ≤ ((pq.2 - r + 2 : ℤ) : EInt))))))
-    (h₃ : IsZero ((X.H (n - 1)).obj
-      (mk₁ (homOfLE (le_top : ((pq.2 + r - 1 : ℤ) : EInt) ≤ ⊤))))) :
-    X.mapFourδ₁Toδ₀' ⊥ ((pq.2 - r + 2 : ℤ) : EInt) pq.2 ((pq.2 + 1 : ℤ) : EInt)
-        ((pq.2 + r - 1 : ℤ) : EInt) bot_le (by simp; lia) (coe_le_coe_add_one pq.2)
-        (by simp; lia) (n - 1) n (n + 1) ≫
-      (X.spectralSequencePageXIso coreE₂Cohomological r hr pq ((pq.2 - r + 2 : ℤ) : EInt) pq.2
-        ((pq.2 + 1 : ℤ) : EInt) ((pq.2 + r - 1 : ℤ) : EInt) rfl rfl rfl rfl (n - 1) n (n + 1)
-        hn).inv ≫
-      (X.spectralSequencePageXIsoEInfty r hr pq n hn h₀ h₃).hom =
-    X.mapFourδ₄Toδ₃' ⊥ _ _ _ ⊤ bot_le (coe_le_coe_add_one pq.2) (by simp; lia) le_top
-      (n - 1) n (n + 1) := by
-  simp [spectralSequencePageXIsoEInfty]
-
-section DirectLimit
-
 /-- The object at `pq = (p, q)` on page `r ≥ 2` is `E^n(⊥ ≤ q ≤ q + 1 ≤ q + r - 1)`, `n = p + q`,
 when `H^{n+1}(⊥ ≤ q - r + 2)` vanishes; no condition is put at the top of the filtration. -/
 noncomputable def spectralSequencePageXIsoEBot (r : ℤ) (hr : 2 ≤ r) (pq : ℤ × ℤ) (n : ℤ)
@@ -135,6 +95,42 @@ lemma spectralSequencePageXIsoEBot_inv (r : ℤ) (hr : 2 ≤ r) (pq : ℤ × ℤ
           ((pq.2 + 1 : ℤ) : EInt) ((pq.2 + r - 1 : ℤ) : EInt) rfl rfl rfl rfl (n - 1) n (n + 1)
           hn).inv :=
   (rfl)
+
+/-- The object at `pq = (p, q)` on page `r ≥ 2` of the spectral sequence of `X` is
+`X.EInfty q (p + q)` when `H^{p+q+1}(⊥ ≤ q - r + 2)` and `H^{p+q-1}(q + r - 1 ≤ ⊤)` vanish. -/
+noncomputable def spectralSequencePageXIsoEInfty (r : ℤ) (hr : 2 ≤ r) (pq : ℤ × ℤ) (n : ℤ)
+    (hn : n = pq.1 + pq.2)
+    (h₀ : IsZero ((X.H (n + 1)).obj
+      (mk₁ (homOfLE (bot_le : (⊥ : EInt) ≤ ((pq.2 - r + 2 : ℤ) : EInt))))))
+    (h₃ : IsZero ((X.H (n - 1)).obj
+      (mk₁ (homOfLE (le_top : ((pq.2 + r - 1 : ℤ) : EInt) ≤ ⊤))))) :
+    ((X.spectralSequence coreE₂Cohomological).page r).X pq ≅ X.EInfty pq.2 n :=
+  X.spectralSequencePageXIsoEBot r hr pq n hn h₀ ≪≫
+    X.isoMapFourδ₄Toδ₃' ⊥ _ _ _ ⊤ bot_le (coe_le_coe_add_one pq.2) (by simp; lia) le_top
+      (n - 1) n (n + 1) h₃
+
+/-- The isomorphism `spectralSequencePageXIsoEInfty` is characterized by the canonical maps from
+`E^n(⊥ ≤ q ≤ q + 1 ≤ q + r - 1)` to the page object and to `X.EInfty q n`. -/
+@[reassoc]
+lemma mapFourδ₁Toδ₀'_comp_spectralSequencePageXIsoEInfty_hom (r : ℤ) (hr : 2 ≤ r) (pq : ℤ × ℤ)
+    (n : ℤ) (hn : n = pq.1 + pq.2)
+    (h₀ : IsZero ((X.H (n + 1)).obj
+      (mk₁ (homOfLE (bot_le : (⊥ : EInt) ≤ ((pq.2 - r + 2 : ℤ) : EInt))))))
+    (h₃ : IsZero ((X.H (n - 1)).obj
+      (mk₁ (homOfLE (le_top : ((pq.2 + r - 1 : ℤ) : EInt) ≤ ⊤))))) :
+    X.mapFourδ₁Toδ₀' ⊥ ((pq.2 - r + 2 : ℤ) : EInt) pq.2 ((pq.2 + 1 : ℤ) : EInt)
+        ((pq.2 + r - 1 : ℤ) : EInt) bot_le (by simp; lia) (coe_le_coe_add_one pq.2)
+        (by simp; lia) (n - 1) n (n + 1) ≫
+      (X.spectralSequencePageXIso coreE₂Cohomological r hr pq ((pq.2 - r + 2 : ℤ) : EInt) pq.2
+        ((pq.2 + 1 : ℤ) : EInt) ((pq.2 + r - 1 : ℤ) : EInt) rfl rfl rfl rfl (n - 1) n (n + 1)
+        hn).inv ≫
+      (X.spectralSequencePageXIsoEInfty r hr pq n hn h₀ h₃).hom =
+    X.mapFourδ₄Toδ₃' ⊥ _ _ _ ⊤ bot_le (coe_le_coe_add_one pq.2) (by simp; lia) le_top
+      (n - 1) n (n + 1) := by
+  rw [← spectralSequencePageXIsoEBot_inv_assoc _ _ _ _ _ _ h₀]
+  simp [spectralSequencePageXIsoEInfty]
+
+section DirectLimit
 
 /-- When `H^{n+1}(⊥ ≤ q - r + 2)` vanishes, the epimorphism from the object at `pq = (p, q)` on page
 `r ≥ 2` onto `X.EInfty q n`, `n = p + q`: the canonical map
@@ -183,10 +179,8 @@ lemma spectralSequencePageXIsoEInfty_hom (r : ℤ) (hr : 2 ≤ r) (pq : ℤ × �
     (h₃ : IsZero ((X.H (n - 1)).obj
       (mk₁ (homOfLE (le_top : ((pq.2 + r - 1 : ℤ) : EInt) ≤ ⊤))))) :
     (X.spectralSequencePageXIsoEInfty r hr pq n hn h₀ h₃).hom =
-      X.spectralSequencePageXToEInfty r hr pq n hn h₀ := by
-  rw [← cancel_epi (X.spectralSequencePageXIsoEBot r hr pq n hn h₀).inv,
-    spectralSequencePageXToEInfty_def, Iso.inv_hom_id_assoc, spectralSequencePageXIsoEBot_inv,
-    Category.assoc, mapFourδ₁Toδ₀'_comp_spectralSequencePageXIsoEInfty_hom]
+      X.spectralSequencePageXToEInfty r hr pq n hn h₀ :=
+  (rfl)
 
 /-- When `H^{n+1}(⊥ ≤ q - r + 2)` and `H^{n+1}(⊥ ≤ q - r' + 2)` vanish, the canonical map from the
 object at `pq = (p, q)` on page `r` to the object at `pq` on a later page `r' ≥ r`: the map
