@@ -506,7 +506,7 @@ theorem exists_entropicDualValue_eq_toReal_entropicTransportCost (hc : Measurabl
     ∃ (φ : X → ℝ) (ψ : Y → ℝ) (C : ℝ), Measurable φ ∧ Measurable ψ ∧ (∀ x, |φ x| ≤ C) ∧
       (∀ y, |ψ y| ≤ C) ∧
         entropicDualValue c ε μ ν φ ψ = (entropicTransportCost c ε μ ν).toReal := by
-  obtain ⟨π, hπ, hopt, φ, ψ, C, hφ, hψ, hφC, hψC, hπeq⟩ :=
+  obtain ⟨π, hπ, hopt, φ, ψ, C, hφ, hψ, hφC, hψC, -, -, hπeq⟩ :=
     exists_isCoupling_lintegral_add_mul_klDiv_eq_entropicTransportCost (μ := μ) (ν := ν) hc hcB
       hε
   refine ⟨φ, ψ, C, hφ, hψ, hφC, hψC, ?_⟩

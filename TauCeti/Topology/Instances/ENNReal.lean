@@ -32,6 +32,8 @@ subtraction-based estimates are unavailable, and the superadditivity of the lowe
   `a ≤ b + c`.
 * `TauCeti.truncated_cost_le_add_of_label_eq`: an `ℝ≥0∞`-valued cost truncated at `M` on a
   rectangle varies by at most `η` between points with the same labels.
+* `ENNReal.exists_forall_le_of_continuous`: a continuous finite `ℝ≥0∞`-valued function on a
+  compact space is bounded above by a finite `ℝ≥0` constant.
 -/
 
 public section
@@ -161,5 +163,14 @@ theorem tendsto_ofReal_div_mul_add_mul_enorm_sub {ι F : Type*} [NormedAddCommGr
     simpa [Function.comp_def] using
       (ENNReal.Tendsto.const_mul ((continuous_eNorm.tendsto (0 : F)).comp h0) (Or.inr hM))
   simpa using h1.add h2
+
+/-- Every continuous finite `ℝ≥0∞`-valued function on a compact space is bounded above by a
+constant in `ℝ≥0`. -/
+theorem _root_.ENNReal.exists_forall_le_of_continuous {α : Type*} [TopologicalSpace α]
+    [CompactSpace α] {c : α → ℝ≥0∞} (hc : Continuous c) (hfin : ∀ x, c x ≠ ∞) :
+    ∃ B : ℝ≥0, ∀ x, c x ≤ B := by
+  obtain ⟨B, hB⟩ :=
+    (isCompact_range (ENNReal.continuousOn_toNNReal.comp_continuous hc hfin)).bddAbove
+  exact ⟨B, fun x ↦ (ENNReal.coe_toNNReal (hfin x)) ▸ ENNReal.coe_le_coe.2 (hB ⟨x, rfl⟩)⟩
 
 end TauCeti

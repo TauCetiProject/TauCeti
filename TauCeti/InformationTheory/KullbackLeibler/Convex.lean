@@ -212,11 +212,7 @@ theorem klDiv_add_le {ρ' : Measure α} [IsFiniteMeasure ρ'] :
         exact exp_le_exp.2 (le_of_abs_le (hC x)))⟩
   have hbe {σ : Measure α} [IsFiniteMeasure σ] : Integrable (fun x ↦ exp (f x) - 1) σ :=
     hb.2.sub (integrable_const 1)
-  rw [integral_add_measure hb.1 hb.1, integral_add_measure hbe hbe,
-    show (∫ x, f x ∂μ + ∫ x, f x ∂ν) -
-        (∫ x, (exp (f x) - 1) ∂ρ + ∫ x, (exp (f x) - 1) ∂ρ') =
-      (∫ x, f x ∂μ - ∫ x, (exp (f x) - 1) ∂ρ) +
-        (∫ x, f x ∂ν - ∫ x, (exp (f x) - 1) ∂ρ') by ring]
+  rw [integral_add_measure hb.1 hb.1, integral_add_measure hbe hbe, add_sub_add_comm]
   exact ENNReal.ofReal_add_le.trans (add_le_add
     (ofReal_integral_sub_integral_exp_sub_one_le_klDiv hb.1 hb.2)
     (ofReal_integral_sub_integral_exp_sub_one_le_klDiv hb.1 hb.2))
