@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.AlgebraicGeometry.EllipticCurve.Montgomery.Coordinates
+import TauCeti.Examples.AlgebraicGeometry.EllipticCurve.Montgomery.Basic
 public import Mathlib.Algebra.Field.ZMod
 public import Mathlib.Data.Set.Card
 
@@ -42,33 +43,25 @@ public section
 
 namespace TauCeti.Montgomery
 
+open TauCeti.Examples.Montgomery
+
 section Seven
 
 local instance fibresPrimeSeven : Fact (Nat.Prime 7) := ⟨by decide⟩
 
 /-! ### Coordinate pairs -/
 
-private theorem nonsingular_one_three : (model (0 : ZMod 7) 1).toAffine.Nonsingular 1 3 := by
-  simp only [WeierstrassCurve.Affine.nonsingular_iff, WeierstrassCurve.Affine.equation_iff,
-    model_a₁, model_a₂, model_a₃, model_a₄, model_a₆]
-  decide
-
-private theorem nonsingular_one_four : (model (0 : ZMod 7) 1).toAffine.Nonsingular 1 4 := by
-  simp only [WeierstrassCurve.Affine.nonsingular_iff, WeierstrassCurve.Affine.equation_iff,
-    model_a₁, model_a₂, model_a₃, model_a₄, model_a₆]
-  decide
-
 -- Infinity, the distinguished point `(0, 0)` and the point `(1, 3)` have coordinate pairs
 -- `(1, 0)`, `(0, 1)` and `(1, 1)`.
 example : coordinates (0 : ZMod 7) 1 0 = ⟨1, 0⟩ ∧
     coordinates (0 : ZMod 7) 1 (twoTorsionPoint 0 one_ne_zero) = ⟨0, 1⟩ ∧
-    coordinates (0 : ZMod 7) 1 (.some 1 3 nonsingular_one_three) = ⟨1, 1⟩ :=
+    coordinates (0 : ZMod 7) 1 (.some 1 3 nonsingular_one_three_seven) = ⟨1, 1⟩ :=
   ⟨coordinates_zero .., coordinates_twoTorsionPoint _, coordinates_some ..⟩
 
 -- The point `(1, 4)` is the negative of `(1, 3)` and has the same coordinate pair `(1, 1)`.
-example : WeierstrassCurve.Affine.Point.some 1 4 nonsingular_one_four =
-      -.some 1 3 nonsingular_one_three ∧
-    coordinates (0 : ZMod 7) 1 (.some 1 4 nonsingular_one_four) = ⟨1, 1⟩ := by
+example : WeierstrassCurve.Affine.Point.some 1 4 nonsingular_one_four_seven =
+      -.some 1 3 nonsingular_one_three_seven ∧
+    coordinates (0 : ZMod 7) 1 (.some 1 4 nonsingular_one_four_seven) = ⟨1, 1⟩ := by
   refine ⟨?_, coordinates_some ..⟩
   simp only [WeierstrassCurve.Affine.Point.neg_some, WeierstrassCurve.Affine.negY, model_a₁,
     model_a₃, WeierstrassCurve.Affine.Point.some.injEq]
@@ -179,103 +172,55 @@ example (P : E) :
 
 /-! ### Cross differences of scalar multiples and giant/baby steps -/
 
-private theorem nonsingular_three_three : (model (0 : ZMod 7) 1).toAffine.Nonsingular 3 3 := by
-  simp only [Affine.nonsingular_iff, Affine.equation_iff, model_a₁, model_a₂, model_a₃,
-    model_a₄, model_a₆]
-  decide
-
-private theorem nonsingular_five_five : (model (0 : ZMod 7) 1).toAffine.Nonsingular 5 5 := by
-  simp only [Affine.nonsingular_iff, Affine.equation_iff, model_a₁, model_a₂, model_a₃,
-    model_a₄, model_a₆]
-  decide
-
-private noncomputable def genSeven : E := .some 3 3 nonsingular_three_three
-
-private theorem two_genSeven : (2 : ℕ) • genSeven = .some 1 4 nonsingular_one_four := by
-  have hne : (3 : ZMod 7) ≠ (model (0 : ZMod 7) 1).toAffine.negY 3 3 := by
-    simp only [Affine.negY, model_a₁, model_a₃]
-    decide
-  have hsl : (model (0 : ZMod 7) 1).toAffine.slope 3 3 3 3 = 0 := by
-    rw [Affine.slope_of_Y_ne rfl hne, div_eq_iff]
-    · simp only [Affine.negY, model_a₁, model_a₂, model_a₃, model_a₄]
-      decide
-    · simp only [Affine.negY, model_a₁, model_a₃]
-      decide
-  rw [two_nsmul, genSeven, Affine.Point.add_self_of_Y_ne hne]
-  simp only [Affine.Point.some.injEq, Affine.addX, Affine.addY, Affine.negAddY, hsl,
-    Affine.negY, model_a₁, model_a₂, model_a₃]
-  decide
-
-private theorem three_genSeven : (3 : ℕ) • genSeven = .some 5 5 nonsingular_five_five := by
-  have hxne : (1 : ZMod 7) ≠ 3 := by decide
-  have hsl : (model (0 : ZMod 7) 1).toAffine.slope 1 3 4 3 = 3 := by
-    rw [Affine.slope_of_X_ne hxne, div_eq_iff (by decide)]
-    decide
-  rw [succ_nsmul, two_genSeven, genSeven, Affine.Point.add_of_X_ne hxne]
-  simp only [Affine.Point.some.injEq, Affine.addX, Affine.addY, Affine.negAddY, hsl,
-    Affine.negY, model_a₁, model_a₂, model_a₃]
-  decide
-
-private theorem four_genSeven :
-    (4 : ℕ) • genSeven = twoTorsionPoint 0 (one_ne_zero : (1 : ZMod 7) ≠ 0) := by
-  have h4 : (4 : ℕ) = 2 * 2 := rfl
-  rw [h4, mul_nsmul, two_genSeven, two_nsmul]
-  exact (add_self_eq_twoTorsionPoint_iff one_ne_zero nonsingular_one_four).mpr (by decide)
-
-private theorem eight_genSeven : (8 : ℕ) • genSeven = 0 := by
-  have h8 : (8 : ℕ) = 4 * 2 := rfl
-  rw [h8, mul_nsmul, four_genSeven, two_nsmul, twoTorsionPoint_add_self]
-
-private theorem addOrderOf_genSeven : addOrderOf genSeven = 8 := by
-  refine addOrderOf_eq_prime_pow (p := 2) (n := 2) ?_ eight_genSeven
-  have h22 : 2 ^ 2 = 4 := rfl
-  rw [h22, four_genSeven]
-  exact twoTorsionPoint_ne_zero 0 one_ne_zero
+private theorem eight_genSeven : (8 : ℕ) • generatorSeven = 0 := by
+  rw [← addOrderOf_generatorSeven, addOrderOf_nsmul_eq_zero]
 
 private theorem five_genSeven :
-    (5 : ℕ) • genSeven = -Affine.Point.some 5 5 nonsingular_five_five := by
+    (5 : ℕ) • generatorSeven = -Affine.Point.some 5 5 nonsingular_five_five_seven := by
   apply eq_neg_of_add_eq_zero_left
-  rw [← three_genSeven, ← add_nsmul]
+  rw [← three_nsmul_generatorSeven, ← add_nsmul]
   exact eight_genSeven
 
-private theorem six_genSeven : (6 : ℕ) • genSeven = .some 1 3 nonsingular_one_three := by
-  have hneg : -Affine.Point.some 1 4 nonsingular_one_four = .some 1 3 nonsingular_one_three := by
+private theorem six_genSeven :
+    (6 : ℕ) • generatorSeven = .some 1 3 nonsingular_one_three_seven := by
+  have hneg : -Affine.Point.some 1 4 nonsingular_one_four_seven =
+      .some 1 3 nonsingular_one_three_seven := by
     simp only [Affine.Point.neg_some, Affine.negY, model_a₁, model_a₃, Affine.Point.some.injEq]
     decide
   rw [← hneg]
   apply eq_neg_of_add_eq_zero_left
-  rw [← two_genSeven, ← add_nsmul]
+  rw [← two_nsmul_generatorSeven, ← add_nsmul]
   exact eight_genSeven
 
-private theorem seven_genSeven : (7 : ℕ) • genSeven = -genSeven := by
+private theorem seven_genSeven : (7 : ℕ) • generatorSeven = -generatorSeven := by
   apply eq_neg_of_add_eq_zero_left
   simpa only [succ_nsmul] using eight_genSeven
 
 -- The multiples `[1..8]Q` of `Q = (3, 3)` have coordinate pairs with `x`-coordinates
 -- `3, 1, 5, 0, 5, 1, 3, ∞`, and `Q` has order `8`.
-example : addOrderOf genSeven = 8 ∧
-    coordinates 0 1 ((1 : ℕ) • genSeven) = ⟨3, 1⟩ ∧
-    coordinates 0 1 ((2 : ℕ) • genSeven) = ⟨1, 1⟩ ∧
-    coordinates 0 1 ((3 : ℕ) • genSeven) = ⟨5, 1⟩ ∧
-    coordinates 0 1 ((4 : ℕ) • genSeven) = ⟨0, 1⟩ ∧
-    coordinates 0 1 ((5 : ℕ) • genSeven) = ⟨5, 1⟩ ∧
-    coordinates 0 1 ((6 : ℕ) • genSeven) = ⟨1, 1⟩ ∧
-    coordinates 0 1 ((7 : ℕ) • genSeven) = ⟨3, 1⟩ ∧
-    coordinates 0 1 ((8 : ℕ) • genSeven) = ⟨1, 0⟩ := by
-  refine ⟨addOrderOf_genSeven, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩
-  · rw [one_nsmul, genSeven, coordinates_some]
-  · rw [two_genSeven, coordinates_some]
-  · rw [three_genSeven, coordinates_some]
-  · rw [four_genSeven, coordinates_twoTorsionPoint]
+example : addOrderOf generatorSeven = 8 ∧
+    coordinates 0 1 ((1 : ℕ) • generatorSeven) = ⟨3, 1⟩ ∧
+    coordinates 0 1 ((2 : ℕ) • generatorSeven) = ⟨1, 1⟩ ∧
+    coordinates 0 1 ((3 : ℕ) • generatorSeven) = ⟨5, 1⟩ ∧
+    coordinates 0 1 ((4 : ℕ) • generatorSeven) = ⟨0, 1⟩ ∧
+    coordinates 0 1 ((5 : ℕ) • generatorSeven) = ⟨5, 1⟩ ∧
+    coordinates 0 1 ((6 : ℕ) • generatorSeven) = ⟨1, 1⟩ ∧
+    coordinates 0 1 ((7 : ℕ) • generatorSeven) = ⟨3, 1⟩ ∧
+    coordinates 0 1 ((8 : ℕ) • generatorSeven) = ⟨1, 0⟩ := by
+  refine ⟨addOrderOf_generatorSeven, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩
+  · rw [one_nsmul, generatorSeven, coordinates_some]
+  · rw [two_nsmul_generatorSeven, coordinates_some]
+  · rw [three_nsmul_generatorSeven, coordinates_some]
+  · rw [four_nsmul_generatorSeven, coordinates_twoTorsionPoint]
   · rw [five_genSeven, coordinates_neg, coordinates_some]
   · rw [six_genSeven, coordinates_some]
-  · rw [seven_genSeven, coordinates_neg, genSeven, coordinates_some]
+  · rw [seven_genSeven, coordinates_neg, generatorSeven, coordinates_some]
   · rw [eight_genSeven, coordinates_zero]
 
 -- `(m, n) = (5, 3)`: `[5]Q` and `[3]Q` share coordinate pair `(5, 1)` since `[5 + 3]Q = [8]Q = 0`.
-example : (coordinates 0 1 ((5 : ℤ) • genSeven)).cross
-    (coordinates 0 1 ((3 : ℤ) • genSeven)) = 0 := by
-  have h8 : ((5 : ℤ) + 3) • genSeven = 0 := by
+example : (coordinates 0 1 ((5 : ℤ) • generatorSeven)).cross
+    (coordinates 0 1 ((3 : ℤ) • generatorSeven)) = 0 := by
+  have h8 : ((5 : ℤ) + 3) • generatorSeven = 0 := by
     have h8z : ((5 : ℤ) + 3) = (8 : ℕ) := rfl
     rw [h8z, natCast_zsmul, eight_genSeven]
   exact (cross_coordinates_zsmul_eq_zero_iff (one_ne_zero : (1 : ZMod 7) ≠ 0)).mpr (.inr h8)
@@ -284,21 +229,21 @@ example : (coordinates 0 1 ((5 : ℤ) • genSeven)).cross
 -- `[1]Q` (`2 ≡ 3 · 3`) have nonvanishing cross difference, equivalent via
 -- `cross_eq_zero_iff_zsmul_eq_zero_of_cross_coordinates_eq_zero` to `[2]Q ≠ 0 ∧ [4]Q ≠ 0`.
 example : (⟨3, 2⟩ : Pair (ZMod 7)).cross ⟨2, 3⟩ ≠ 0 ∧
-    (2 : ℤ) • genSeven ≠ 0 ∧ (4 : ℤ) • genSeven ≠ 0 := by
-  have h3 : (⟨3, 2⟩ : Pair (ZMod 7)).cross (coordinates 0 1 ((3 : ℤ) • genSeven)) = 0 := by
+    (2 : ℤ) • generatorSeven ≠ 0 ∧ (4 : ℤ) • generatorSeven ≠ 0 := by
+  have h3 : (⟨3, 2⟩ : Pair (ZMod 7)).cross (coordinates 0 1 ((3 : ℤ) • generatorSeven)) = 0 := by
     have h3z : (3 : ℤ) = (3 : ℕ) := rfl
-    rw [h3z, natCast_zsmul, three_genSeven, coordinates_some, Pair.cross_def]
+    rw [h3z, natCast_zsmul, three_nsmul_generatorSeven, coordinates_some, Pair.cross_def]
     decide
-  have h1 : (⟨2, 3⟩ : Pair (ZMod 7)).cross (coordinates 0 1 ((1 : ℤ) • genSeven)) = 0 := by
-    rw [one_zsmul, genSeven, coordinates_some, Pair.cross_def]
+  have h1 : (⟨2, 3⟩ : Pair (ZMod 7)).cross (coordinates 0 1 ((1 : ℤ) • generatorSeven)) = 0 := by
+    rw [one_zsmul, generatorSeven, coordinates_some, Pair.cross_def]
     decide
-  have h2ne : (2 : ℤ) • genSeven ≠ 0 := by
+  have h2ne : (2 : ℤ) • generatorSeven ≠ 0 := by
     have h2z : (2 : ℤ) = (2 : ℕ) := rfl
-    rw [h2z, natCast_zsmul, two_genSeven]
+    rw [h2z, natCast_zsmul, two_nsmul_generatorSeven]
     exact Affine.Point.some_ne_zero _
-  have h4ne : (4 : ℤ) • genSeven ≠ 0 := by
+  have h4ne : (4 : ℤ) • generatorSeven ≠ 0 := by
     have h4z : (4 : ℤ) = (4 : ℕ) := rfl
-    rw [h4z, natCast_zsmul, four_genSeven]
+    rw [h4z, natCast_zsmul, four_nsmul_generatorSeven]
     exact twoTorsionPoint_ne_zero 0 one_ne_zero
   refine ⟨?_, h2ne, h4ne⟩
   rw [Ne, cross_eq_zero_iff_zsmul_eq_zero_of_cross_coordinates_eq_zero
@@ -310,22 +255,22 @@ example : (⟨3, 2⟩ : Pair (ZMod 7)).cross ⟨2, 3⟩ ≠ 0 ∧
   exact not_or.mpr ⟨h2ne, h4ne⟩
 
 -- `m = n = 0`: both coordinate pairs are `(1, 0)` with cross difference `0`, matching `[0]Q = 0`.
-example : (coordinates 0 1 ((0 : ℤ) • genSeven)).cross
-      (coordinates 0 1 ((0 : ℤ) • genSeven)) = 0 ∧
-    ((0 : ℤ) - 0) • genSeven = 0 ∧ ((0 : ℤ) + 0) • genSeven = 0 := by
+example : (coordinates 0 1 ((0 : ℤ) • generatorSeven)).cross
+      (coordinates 0 1 ((0 : ℤ) • generatorSeven)) = 0 ∧
+    ((0 : ℤ) - 0) • generatorSeven = 0 ∧ ((0 : ℤ) + 0) • generatorSeven = 0 := by
   simp
 
 -- With step `w = 6`: `q = 7 = 6 + 1` leaves `[7]Q = -Q ≠ 0`, while `q = 8 = 6 + 2` annihilates `Q`
 -- and gives vanishing cross difference between `[6]Q = (1, 3)` and `[2]Q = (1, 4)`.
-example : (7 : ℤ) • genSeven ≠ 0 ∧ (8 : ℤ) • genSeven = 0 ∧
-    (coordinates 0 1 ((6 : ℤ) • genSeven)).cross
-      (coordinates 0 1 ((2 : ℤ) • genSeven)) = 0 := by
-  have h8z : (8 : ℤ) • genSeven = 0 := by
+example : (7 : ℤ) • generatorSeven ≠ 0 ∧ (8 : ℤ) • generatorSeven = 0 ∧
+    (coordinates 0 1 ((6 : ℤ) • generatorSeven)).cross
+      (coordinates 0 1 ((2 : ℤ) • generatorSeven)) = 0 := by
+  have h8z : (8 : ℤ) • generatorSeven = 0 := by
     have h8 : (8 : ℤ) = (8 : ℕ) := rfl
     rw [h8, natCast_zsmul, eight_genSeven]
   refine ⟨?_, h8z, cross_coordinates_zsmul_eq_zero_of_zsmul_eq_zero h8z (.inl (by norm_num))⟩
   have h7 : (7 : ℤ) = (7 : ℕ) := rfl
-  rw [h7, natCast_zsmul, seven_genSeven, neg_ne_zero, genSeven]
+  rw [h7, natCast_zsmul, seven_genSeven, neg_ne_zero, generatorSeven]
   exact Affine.Point.some_ne_zero _
 
 -- For `w = 6`, `13 = 2 · 6 + 1`, `17 = 3 · 6 - 1`, and the midpoint `15 = 2 · 6 + 3` has no

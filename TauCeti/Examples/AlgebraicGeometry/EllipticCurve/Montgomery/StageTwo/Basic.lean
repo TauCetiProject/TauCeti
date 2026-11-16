@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.AlgebraicGeometry.EllipticCurve.Montgomery.StageTwo.Basic
+import TauCeti.Examples.AlgebraicGeometry.EllipticCurve.Montgomery.Basic
 
 /-!
 # Examples of Montgomery stage-2 detection
@@ -28,22 +29,16 @@ public section
 
 namespace TauCeti.Montgomery
 
-open WeierstrassCurve
+open TauCeti.Examples.Montgomery WeierstrassCurve
 
 local instance stageTwoPrimeFive : Fact (Nat.Prime 5) := ⟨by decide⟩
 local instance stageTwoPrimeSeven : Fact (Nat.Prime 7) := ⟨by decide⟩
 
-private theorem nonsingular_one_four :
-    (model (0 : ZMod 7) 1).toAffine.Nonsingular 1 4 := by
-  simp only [Affine.nonsingular_iff, Affine.equation_iff, model_a₁, model_a₂, model_a₃,
-    model_a₄, model_a₆]
-  decide
-
 private noncomputable def point : (model (0 : ZMod 7) 1).toAffine.Point :=
-  .some 1 4 nonsingular_one_four
+  .some 1 4 nonsingular_one_four_seven
 
-private theorem point_double : point + point = twoTorsionPoint 0 (by decide) := by
-  exact (add_self_eq_twoTorsionPoint_iff (by decide) nonsingular_one_four).mpr (by decide)
+private theorem point_double : point + point = twoTorsionPoint 0 (by decide) :=
+  (add_self_eq_twoTorsionPoint_iff (by decide) nonsingular_one_four_seven).mpr (by decide)
 
 private theorem four_point : (4 : ℕ) • point = 0 := by
   rw [show (4 : ℕ) = 2 * 2 by decide]
@@ -117,63 +112,13 @@ private theorem nonsingular_three_zero_five :
 private noncomputable def pointFive : (model (0 : ZMod 5) 1).toAffine.Point :=
   .some 3 0 nonsingular_three_zero_five
 
-private theorem two_pointFive : (2 : ℕ) • pointFive = 0 := by
-  have hy : (0 : ZMod 5) = (model (0 : ZMod 5) 1).toAffine.negY 3 0 := by
-    simp [Affine.negY]
-  rw [two_nsmul, pointFive, Affine.Point.add_self_of_Y_eq hy]
-
 private theorem three_pointFive : (3 : ℕ) • pointFive = pointFive := by
   have h3 : (3 : ℕ) = 2 + 1 := rfl
-  rw [h3, add_nsmul, two_pointFive, zero_add, one_nsmul]
+  rw [h3, add_nsmul, two_nsmul_eq_zero_five, zero_add, one_nsmul]
 
 private theorem four_pointFive : (4 : ℤ) • pointFive = 0 := by
   have h4 : (4 : ℤ) = (2 * 2 : ℕ) := rfl
-  rw [h4, natCast_zsmul, mul_nsmul, two_pointFive, nsmul_zero]
-
-private theorem nonsingular_three_three :
-    (model (0 : ZMod 7) 1).toAffine.Nonsingular 3 3 := by
-  simp only [Affine.nonsingular_iff, Affine.equation_iff, model_a₁, model_a₂, model_a₃,
-    model_a₄, model_a₆]
-  decide
-
-private theorem nonsingular_five_five :
-    (model (0 : ZMod 7) 1).toAffine.Nonsingular 5 5 := by
-  simp only [Affine.nonsingular_iff, Affine.equation_iff, model_a₁, model_a₂, model_a₃,
-    model_a₄, model_a₆]
-  decide
-
-private noncomputable def genSeven : (model (0 : ZMod 7) 1).toAffine.Point :=
-  .some 3 3 nonsingular_three_three
-
-private theorem two_genSeven : (2 : ℕ) • genSeven = point := by
-  have hne : (3 : ZMod 7) ≠ (model (0 : ZMod 7) 1).toAffine.negY 3 3 := by
-    simp only [Affine.negY, model_a₁, model_a₃]
-    decide
-  have hsl : (model (0 : ZMod 7) 1).toAffine.slope 3 3 3 3 = 0 := by
-    rw [Affine.slope_of_Y_ne rfl hne, div_eq_iff]
-    · simp only [Affine.negY, model_a₁, model_a₂, model_a₃, model_a₄]
-      decide
-    · simp only [Affine.negY, model_a₁, model_a₃]
-      decide
-  rw [two_nsmul, genSeven, point, Affine.Point.add_self_of_Y_ne hne]
-  simp only [Affine.Point.some.injEq, Affine.addX, Affine.addY, Affine.negAddY, hsl,
-    Affine.negY, model_a₁, model_a₂, model_a₃]
-  decide
-
-private theorem three_genSeven : (3 : ℕ) • genSeven = .some 5 5 nonsingular_five_five := by
-  have hxne : (1 : ZMod 7) ≠ 3 := by decide
-  have hsl : (model (0 : ZMod 7) 1).toAffine.slope 1 3 4 3 = 3 := by
-    rw [Affine.slope_of_X_ne hxne, div_eq_iff (by decide)]
-    decide
-  rw [succ_nsmul, two_genSeven, point, genSeven, Affine.Point.add_of_X_ne hxne]
-  simp only [Affine.Point.some.injEq, Affine.addX, Affine.addY, Affine.negAddY, hsl,
-    Affine.negY, model_a₁, model_a₂, model_a₃]
-  decide
-
-private theorem four_genSeven :
-    (4 : ℕ) • genSeven = twoTorsionPoint 0 (by decide : (1 : ZMod 7) ≠ 0) := by
-  have h4 : (4 : ℕ) = 2 * 2 := rfl
-  rw [h4, mul_nsmul, two_genSeven, two_nsmul, point_double]
+  rw [h4, natCast_zsmul, mul_nsmul, two_nsmul_eq_zero_five]
 
 -- Converse direction of stage-2 detection: for `Q₇ = (3, 3)` of order `8` over `ZMod 7` and
 -- `(m, j) = (3, 1)`, neither `[2]Q₇` nor `[4]Q₇` vanishes, so `7` does not divide the
@@ -181,13 +126,13 @@ private theorem four_genSeven :
 example : ¬ 7 ∣ Nat.gcd ((⟨33, 1⟩ : Pair (ZMod 35)).cross ⟨3, 1⟩).val 35 := by
   have h3z : (3 : ℤ) = (3 : ℕ) := rfl
   rw [prime_dvd_gcd_cross_iff_zsmul_eq_zero (n := 35) (p := 7) (A := 0) (B := 1)
-    (m := 3) (j := 1) (by decide) one_ne_zero genSeven ⟨33, 1⟩ ⟨3, 1⟩ ?_ ?_ ?_ ?_]
+    (m := 3) (j := 1) (by decide) one_ne_zero generatorSeven ⟨33, 1⟩ ⟨3, 1⟩ ?_ ?_ ?_ ?_]
   · refine not_or.mpr ⟨?_, ?_⟩
     · have h2 : (3 - 1 : ℤ) = (2 : ℕ) := rfl
-      rw [h2, natCast_zsmul, two_genSeven, point]
+      rw [h2, natCast_zsmul, two_nsmul_generatorSeven]
       exact Affine.Point.some_ne_zero _
     · have h4 : (3 + 1 : ℤ) = (4 : ℕ) := rfl
-      rw [h4, natCast_zsmul, four_genSeven]
+      rw [h4, natCast_zsmul, four_nsmul_generatorSeven]
       exact twoTorsionPoint_ne_zero 0 (by decide)
   · rw [Pair.ne_zero_iff]
     simp only [Pair.map_x, Pair.map_z]
@@ -195,10 +140,10 @@ example : ¬ 7 ∣ Nat.gcd ((⟨33, 1⟩ : Pair (ZMod 35)).cross ⟨3, 1⟩).val
   · rw [Pair.ne_zero_iff]
     simp only [Pair.map_x, Pair.map_z]
     decide
-  · rw [h3z, natCast_zsmul, three_genSeven, coordinates_some, Pair.cross_def]
+  · rw [h3z, natCast_zsmul, three_nsmul_generatorSeven, coordinates_some, Pair.cross_def]
     simp only [Pair.map_x, Pair.map_z]
     decide
-  · rw [one_zsmul, genSeven, coordinates_some, Pair.cross_def]
+  · rw [one_zsmul, generatorSeven, coordinates_some, Pair.cross_def]
     simp only [Pair.map_x, Pair.map_z]
     decide
 
@@ -210,7 +155,7 @@ example : 1 < Nat.gcd ((⟨33, 1⟩ : Pair (ZMod 35)).cross ⟨3, 1⟩).val 35 �
   refine one_lt_gcd_cross_and_gcd_cross_lt_of_zsmul_eq_zero_of_ne_zero
     (n := 35) (p := 5) (A := 0) (B := 1) (q := 4) (m := 3) (j := 1)
     (by decide) pointFive ⟨33, 1⟩ ⟨3, 1⟩ four_pointFive (.inl (by norm_num)) ?_ ?_
-    (r := 7) (A' := 0) (B' := 1) (by decide) one_ne_zero genSeven ?_ ?_ ?_ ?_ ?_ ?_
+    (r := 7) (A' := 0) (B' := 1) (by decide) one_ne_zero generatorSeven ?_ ?_ ?_ ?_ ?_ ?_
   · rw [h3z, natCast_zsmul, three_pointFive, pointFive, coordinates_some, Pair.cross_def]
     simp only [Pair.map_x, Pair.map_z]
     decide
@@ -218,10 +163,10 @@ example : 1 < Nat.gcd ((⟨33, 1⟩ : Pair (ZMod 35)).cross ⟨3, 1⟩).val 35 �
     simp only [Pair.map_x, Pair.map_z]
     decide
   · have h2 : (3 - 1 : ℤ) = (2 : ℕ) := rfl
-    rw [h2, natCast_zsmul, two_genSeven, point]
+    rw [h2, natCast_zsmul, two_nsmul_generatorSeven]
     exact Affine.Point.some_ne_zero _
   · have h4 : (3 + 1 : ℤ) = (4 : ℕ) := rfl
-    rw [h4, natCast_zsmul, four_genSeven]
+    rw [h4, natCast_zsmul, four_nsmul_generatorSeven]
     exact twoTorsionPoint_ne_zero 0 (by decide)
   · rw [Pair.ne_zero_iff]
     simp only [Pair.map_x, Pair.map_z]
@@ -229,10 +174,10 @@ example : 1 < Nat.gcd ((⟨33, 1⟩ : Pair (ZMod 35)).cross ⟨3, 1⟩).val 35 �
   · rw [Pair.ne_zero_iff]
     simp only [Pair.map_x, Pair.map_z]
     decide
-  · rw [h3z, natCast_zsmul, three_genSeven, coordinates_some, Pair.cross_def]
+  · rw [h3z, natCast_zsmul, three_nsmul_generatorSeven, coordinates_some, Pair.cross_def]
     simp only [Pair.map_x, Pair.map_z]
     decide
-  · rw [one_zsmul, genSeven, coordinates_some, Pair.cross_def]
+  · rw [one_zsmul, generatorSeven, coordinates_some, Pair.cross_def]
     simp only [Pair.map_x, Pair.map_z]
     decide
 

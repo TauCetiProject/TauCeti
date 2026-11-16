@@ -8,6 +8,7 @@ module
 public import TauCeti.AlgebraicGeometry.EllipticCurve.Montgomery.Detection
 import TauCeti.AlgebraicGeometry.EllipticCurve.Montgomery.Double
 import TauCeti.AlgebraicGeometry.EllipticCurve.Montgomery.DiffAdd
+import TauCeti.Examples.AlgebraicGeometry.EllipticCurve.Montgomery.Basic
 import TauCeti.NumberTheory.LcmUpto
 
 /-!
@@ -18,10 +19,11 @@ Starting from `(22, 1)` modulo `35` on the curve `y² = x³ + x` with scaled dou
 modulo `7` — the multiples `m = 2, 3, 4` exhibit all three stage-1 gcd outcomes on one curve:
 
 * At `m = 2`, doubling `(22, 1)` gives `(21, 25)`: modulo `5` it represents `[2](2, 0) = 0` so
-  `5 ∣ gcd(25, 35)`, while modulo `7` it reduces to `(0, 4) ≠ 0`, representing `[2](1, 3) = (0, 0)`
-  whose order `4` does not divide `2`, so `prime_dvd_gcd_iff_addOrderOf_dvd` gives
-  `¬ 7 ∣ gcd(25, 35)` and `one_lt_gcd_and_gcd_lt_of_addOrderOf_dvd_of_not_dvd` certifies a proper
-  factor (`gcd(25, 35) = 5`).
+  `5 ∣ gcd(25, 35)`, while modulo `7` it reduces to `(0, 4) ≠ 0`, representing `[2](1, 3) = (0, 0)`;
+  the original point `(1, 3)` has order `4`, which does not divide `2`, so
+  `prime_dvd_gcd_iff_addOrderOf_dvd` gives `¬ 7 ∣ gcd(25, 35)` and
+  `one_lt_gcd_and_gcd_lt_of_addOrderOf_dvd_of_not_dvd` certifies a proper factor
+  (`gcd(25, 35) = 5`).
 * At `m = 3`, differential addition of `(21, 25)` and `(22, 1)` with difference `(22, 1)` gives
   `(1, 8)`, representing `[3](2, 0) = (2, 0)` modulo `5` and `[3](1, 3) = (1, 4)` modulo `7`;
   neither order divides `3`, so neither prime divides `gcd(8, 35) = 1`.
@@ -40,7 +42,7 @@ public section
 
 namespace TauCeti.Montgomery
 
-open WeierstrassCurve
+open TauCeti.Examples.Montgomery WeierstrassCurve
 
 local instance detectionPrimeFive : Fact (Nat.Prime 5) := ⟨by decide⟩
 local instance detectionPrimeSeven : Fact (Nat.Prime 7) := ⟨by decide⟩
@@ -54,44 +56,27 @@ private theorem nonsingular_two_zero_five :
 private noncomputable def pointFive : (model (0 : ZMod 5) 1).toAffine.Point :=
   .some 2 0 nonsingular_two_zero_five
 
-private theorem two_pointFive : (2 : ℕ) • pointFive = 0 := by
-  have hy : (0 : ZMod 5) = (model (0 : ZMod 5) 1).toAffine.negY 2 0 := by
-    simp [Affine.negY]
-  rw [two_nsmul, pointFive, Affine.Point.add_self_of_Y_eq hy]
-
-private theorem addOrderOf_pointFive : addOrderOf pointFive = 2 := by
-  refine addOrderOf_eq_prime two_pointFive ?_
-  exact Affine.Point.some_ne_zero _
+private theorem addOrderOf_pointFive : addOrderOf pointFive = 2 :=
+  addOrderOf_eq_two_five (Affine.Point.some_ne_zero _)
 
 private theorem three_pointFive : (3 : ℕ) • pointFive = pointFive := by
   have h3 : (3 : ℕ) = 2 + 1 := rfl
-  rw [h3, add_nsmul, two_pointFive, zero_add, one_nsmul]
-
-private theorem nonsingular_one_three :
-    (model (0 : ZMod 7) 1).toAffine.Nonsingular 1 3 := by
-  simp only [Affine.nonsingular_iff, Affine.equation_iff, model_a₁, model_a₂, model_a₃,
-    model_a₄, model_a₆]
-  decide
-
-private theorem nonsingular_one_four :
-    (model (0 : ZMod 7) 1).toAffine.Nonsingular 1 4 := by
-  simp only [Affine.nonsingular_iff, Affine.equation_iff, model_a₁, model_a₂, model_a₃,
-    model_a₄, model_a₆]
-  decide
+  rw [h3, add_nsmul, two_nsmul_eq_zero_five, zero_add, one_nsmul]
 
 private noncomputable def pointSeven : (model (0 : ZMod 7) 1).toAffine.Point :=
-  .some 1 3 nonsingular_one_three
+  .some 1 3 nonsingular_one_three_seven
 
 private theorem pointSeven_double : pointSeven + pointSeven = twoTorsionPoint 0 (by decide) :=
-  (add_self_eq_twoTorsionPoint_iff (by decide) nonsingular_one_three).mpr (by decide)
+  (add_self_eq_twoTorsionPoint_iff (by decide) nonsingular_one_three_seven).mpr (by decide)
 
 private theorem four_pointSeven : (4 : ℕ) • pointSeven = 0 := by
   have h4 : (4 : ℕ) = 2 * 2 := rfl
   simp only [h4, mul_nsmul, two_nsmul, pointSeven_double, twoTorsionPoint_add_self]
 
 private theorem three_pointSeven :
-    (3 : ℕ) • pointSeven = .some 1 4 nonsingular_one_four := by
-  have hneg : -Affine.Point.some 1 3 nonsingular_one_three = .some 1 4 nonsingular_one_four := by
+    (3 : ℕ) • pointSeven = .some 1 4 nonsingular_one_four_seven := by
+  have hneg : -Affine.Point.some 1 3 nonsingular_one_three_seven =
+      .some 1 4 nonsingular_one_four_seven := by
     simp only [Affine.Point.neg_some, Affine.negY, model_a₁, model_a₃, Affine.Point.some.injEq]
     decide
   rw [← hneg, ← pointSeven]
@@ -138,7 +123,7 @@ example : 5 ∣ Nat.gcd (25 : ZMod 35).val 35 ∧ ¬ 7 ∣ Nat.gcd (25 : ZMod 35
     · rw [Pair.ne_zero_iff]
       simp only [Pair.map_x, Pair.map_z]
       decide
-    · rw [two_pointFive, coordinates_zero, Pair.cross_def]
+    · rw [two_nsmul_eq_zero_five, coordinates_zero, Pair.cross_def]
       simp only [Pair.map_x, Pair.map_z]
       decide
   · rw [prime_dvd_gcd_iff_addOrderOf_dvd (n := 35) (p := 7) (A := 0) (B := 1) (m := 2)
@@ -159,7 +144,7 @@ example : 1 < Nat.gcd (25 : ZMod 35).val 35 ∧ Nat.gcd (25 : ZMod 35).val 35 < 
     (by decide) pointFive ⟨21, 25⟩ (by rw [addOrderOf_pointFive]) ?_
     (q := 7) (A' := 0) (B' := 1) (by decide) one_ne_zero pointSeven
     (by rw [addOrderOf_pointSeven]; decide) ?_ ?_
-  · rw [two_pointFive, coordinates_zero, Pair.cross_def]
+  · rw [two_nsmul_eq_zero_five, coordinates_zero, Pair.cross_def]
     simp only [Pair.map_x, Pair.map_z]
     decide
   · rw [Pair.ne_zero_iff]
@@ -222,31 +207,12 @@ example : double (2 : ZMod 35) 4 ⟨21, 25⟩ = ⟨9, 0⟩ ∧
     simp only [Pair.map_x, Pair.map_z]
     decide
 
--- Sharpness of `addOrderOf P ∣ m`: over `ZMod 5`, `model 0 1` has native group cardinality at
--- least `3` (containing `0`, `(2, 0)`, and `(3, 0)`), so `5 ∣ gcd(25, 35)` at `m = 2` holds even
--- though `¬ Nat.card (model 0 1).toAffine.Point ∣ 2`.
+-- Sharpness of `addOrderOf P ∣ m`: over `ZMod 5`, `model 0 1` has native group cardinality `4`,
+-- so `5 ∣ gcd(25, 35)` at `m = 2` holds even though `¬ Nat.card (model 0 1).toAffine.Point ∣ 2`.
 example : 5 ∣ Nat.gcd (25 : ZMod 35).val 35 ∧
     ¬ Nat.card (model (0 : ZMod 5) 1).toAffine.Point ∣ 2 := by
-  refine ⟨by decide, fun hdvd ↦ ?_⟩
-  have : Finite (model (0 : ZMod 5) 1).toAffine.Point :=
-    Finite.of_injective
-      (fun P ↦ match P with | .zero => none | .some x y _ => some (x, y))
-      (by rintro (_ | _) (_ | _) <;> simp)
-  have hle := Nat.le_of_dvd (by decide) hdvd
-  have hns : (model (0 : ZMod 5) 1).toAffine.Nonsingular 3 0 := by
-    simp only [Affine.nonsingular_iff, Affine.equation_iff, model_a₁, model_a₂, model_a₃,
-      model_a₄, model_a₆]
-    decide
-  have h23 : (2 : ZMod 5) ≠ 3 := by decide
-  have hinj : Function.Injective
-      ![0, pointFive, (.some 3 0 hns : (model (0 : ZMod 5) 1).toAffine.Point)] := by
-    intro i j hij
-    fin_cases i <;> fin_cases j <;>
-      simp_all [pointFive, h23.symm, Affine.Point.some_ne_zero,
-        (Affine.Point.some_ne_zero _).symm]
-  have hcard : 3 ≤ Nat.card (model (0 : ZMod 5) 1).toAffine.Point := by
-    simpa using Nat.card_le_card_of_injective _ hinj
-  omega
+  rw [card_point_five]
+  decide
 
 -- Sharpness of `B ≠ 0` and `R.map f ≠ 0` in `prime_dvd_gcd_iff_addOrderOf_dvd`:
 -- on the cusp `model 0 0` over `ZMod 5`, `(1, 1)` is nonsingular with coordinate pair `(1, 0) ≠ 0`
