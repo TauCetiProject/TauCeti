@@ -24,7 +24,7 @@ bounds geometrically, without assuming boundedness inside the strip in advance.
 The analytic principles are Mathlib's `PhragmenLindelof.vertical_strip` and
 `Complex.HadamardThreeLines.norm_le_interp_of_mem_verticalClosedStrip'`; the new input is the
 comparison of their growth hypotheses with finite order, together with stability of finite-order
-strip growth under vertical differences (`isBigO_exp_rpow_add_mul_I_sub`).
+strip growth under vertical differences (`isBigO_add_mul_I_sub_exp_rpow`).
 -/
 
 public section
@@ -73,7 +73,7 @@ theorem isBigO_exp_rpow_exp_exp_vertical_strip (a b A B : ℝ) {c : ℝ} (hc : 0
 
 /-- Finite-order growth along any vertical set `re ⁻¹' s` is preserved under vertical
 differences `z ↦ f (z + h * I) - f z`. -/
-theorem isBigO_exp_rpow_add_mul_I_sub {E : Type*} [SeminormedAddCommGroup E]
+theorem isBigO_add_mul_I_sub_exp_rpow {E : Type*} [SeminormedAddCommGroup E]
     {f : ℂ → E} {s : Set ℝ} {A B : ℝ} (h : ℝ)
     (hf : f =O[cobounded ℂ ⊓ 𝓟 (re ⁻¹' s)] fun w ↦ Real.exp (B * ‖w‖ ^ A)) :
     (fun z ↦ f (z + h * I) - f z) =O[cobounded ℂ ⊓ 𝓟 (re ⁻¹' s)]
@@ -81,14 +81,10 @@ theorem isBigO_exp_rpow_add_mul_I_sub {E : Type*} [SeminormedAddCommGroup E]
   let l := cobounded ℂ ⊓ 𝓟 (re ⁻¹' s)
   set p := max A 0
   have htend : Tendsto (fun z : ℂ ↦ z + h * I) l l := by
-    refine tendsto_inf.2 ⟨tendsto_norm_atTop_iff_cobounded.1 ?_, tendsto_principal.2 ?_⟩
-    · refine tendsto_atTop_mono (fun z ↦ ?_) ((tendsto_atTop_add_const_right _ (-‖(h : ℂ) * I‖)
-        (tendsto_norm_cobounded_atTop.mono_left inf_le_left)).congr fun _ ↦
-          (sub_eq_add_neg _ _).symm)
-      have htri := norm_sub_le (z + h * I) ((h : ℂ) * I)
-      rw [add_sub_cancel_right] at htri; linarith
-    · filter_upwards [(eventually_mem_principal _).filter_mono inf_le_right] with z hz
-      simpa using hz
+    refine tendsto_inf.2 ⟨(tendsto_add_const_cobounded ((h : ℂ) * I)).mono_left inf_le_left,
+      tendsto_principal.2 ?_⟩
+    filter_upwards [(eventually_mem_principal _).filter_mono inf_le_right] with z hz
+    simpa using hz
   have hexp {w z : ℂ} (hw : 1 ≤ ‖w‖) (hwz : ‖w‖ ≤ 2 * ‖z‖) :
       ‖Real.exp (B * ‖w‖ ^ A)‖ ≤ Real.exp (|B| * 2 ^ p * ‖z‖ ^ p) := by
     suffices B * ‖w‖ ^ A ≤ |B| * 2 ^ p * ‖z‖ ^ p by

@@ -19,16 +19,21 @@ primitive there, built from `Complex.wedgeIntegral`. This file records:
 * `TauCeti.norm_wedgeIntegral_le_of_norm_le_const` and
   `TauCeti.norm_wedgeIntegral_le_of_norm_le_mul_norm` -- norm bounds on
   `Complex.wedgeIntegral z w f` from constant or linear bounds on `Complex.Rectangle z w`.
-* `Complex.IsConservativeOn.wedgeIntegral_sub_wedgeIntegral_eq_of_mem_reProdIm` and
-  `Complex.IsConservativeOn.hasDerivAt_wedgeIntegral_of_mem_reProdIm` -- path additivity and
-  differentiation of `Complex.wedgeIntegral` on any axis-aligned product `A ×ℂ B` of order-connected
-  real sets (covering half-planes, open and closed strips, and rectangles, including base points on
-  the boundary).
+* `Complex.isConservativeOn_of_continuousOn_of_differentiableOn_interior` -- Cauchy–Goursat
+  conservativity on any set `S` for functions continuous on `S` and holomorphic on `interior S`.
+* `Complex.IsConservativeOn.wedgeIntegral_sub_wedgeIntegral_eq_of_mem_reProdIm`,
+  `Complex.IsConservativeOn.continuousOn_wedgeIntegral_of_mem_reProdIm`, and
+  `Complex.IsConservativeOn.hasDerivAt_wedgeIntegral_of_mem_reProdIm` -- path additivity (adapting
+  `Complex.IsConservativeOn.eventually_nhds_wedgeIntegral_sub_wedgeIntegral` from
+  `Mathlib.Analysis.Complex.HasPrimitives`), continuity, and differentiation of
+  `Complex.wedgeIntegral` on any axis-aligned product `A ×ℂ B` of order-connected real sets
+  (covering half-planes, open and closed strips, and rectangles, including base points on the
+  boundary).
 -/
 
 public section
 
-open Complex MeasureTheory Metric Set
+open Complex Filter MeasureTheory Metric Set
 open scoped Interval Topology
 
 section BallInter
@@ -59,6 +64,12 @@ noncomputable section WedgeIntegral
 
 variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℂ E] {f : ℂ → E}
 
+private theorem dist_le_dist_of_mem_rectangle {u z w : ℂ} (hu : u ∈ Rectangle z w) :
+    dist u z ≤ dist w z := by
+  rw [dist_eq_re_im, dist_eq_re_im]
+  exact Real.sqrt_le_sqrt (add_le_add (sq_le_sq.2 (abs_sub_left_of_mem_uIcc hu.1))
+    (sq_le_sq.2 (abs_sub_left_of_mem_uIcc hu.2)))
+
 namespace TauCeti
 
 /-- If `‖f u‖ ≤ M` throughout `Rectangle z w`, then `‖wedgeIntegral z w f‖ ≤ 2 * M * ‖w - z‖`. -/
@@ -72,11 +83,11 @@ theorem norm_wedgeIntegral_le_of_norm_le_const {M : ℝ} {z w : ℂ}
       hf _ ⟨by simp, by simpa using uIoc_subset_uIcc hy⟩
   have hM : 0 ≤ M := (norm_nonneg (f z)).trans (hf z ⟨left_mem_uIcc, left_mem_uIcc⟩)
   calc ‖wedgeIntegral z w f‖
-      ≤ ‖∫ x in z.re..w.re, f (x + z.im * I)‖ +
-          ‖I • ∫ y in z.im..w.im, f (w.re + y * I)‖ := norm_add_le _ _
+      ≤ ‖∫ x in z.re..w.re, f (x + z.im * I)‖ + ‖I • ∫ y in z.im..w.im, f (w.re + y * I)‖ :=
+        norm_add_le _ _
     _ ≤ M * |w.re - z.re| + M * |w.im - z.im| := by simpa [norm_smul] using add_le_add hre him
     _ ≤ M * ‖w - z‖ + M * ‖w - z‖ := by
-        rw [← sub_re, ← sub_im]; gcongr; exacts [abs_re_le_norm _, abs_im_le_norm _]
+        rw [← sub_re, ← sub_im]; gcongr <;> [exact abs_re_le_norm _; exact abs_im_le_norm _]
     _ = 2 * M * ‖w - z‖ := by ring
 
 /-- Under a linear norm bound `‖f u‖ ≤ C₀ * ‖u‖` on `Rectangle z w`, the wedge integral satisfies
@@ -84,22 +95,32 @@ theorem norm_wedgeIntegral_le_of_norm_le_const {M : ℝ} {z w : ℂ}
 theorem norm_wedgeIntegral_le_of_norm_le_mul_norm {C₀ : ℝ} {z w : ℂ}
     (hf : ∀ u ∈ Rectangle z w, ‖f u‖ ≤ C₀ * ‖u‖) :
     ‖wedgeIntegral z w f‖ ≤ 2 * C₀ * (‖z‖ + ‖w - z‖) * ‖w - z‖ := by
-  by_cases hzw : z = 0 ∧ w = 0
-  · simp [hzw.1, hzw.2, wedgeIntegral]
+  by_cases hzw : z = 0 ∧ w = 0; · simp [hzw.1, hzw.2, wedgeIntegral]
   have hC₀ : 0 ≤ C₀ := (not_and_or.1 hzw).elim
     (fun hz ↦ nonneg_of_mul_nonneg_left
       ((norm_nonneg _).trans (hf z ⟨left_mem_uIcc, left_mem_uIcc⟩)) (norm_pos_iff.2 hz))
     (fun hw ↦ nonneg_of_mul_nonneg_left
       ((norm_nonneg _).trans (hf w ⟨right_mem_uIcc, right_mem_uIcc⟩)) (norm_pos_iff.2 hw))
   refine (norm_wedgeIntegral_le_of_norm_le_const (M := C₀ * (‖z‖ + ‖w - z‖)) fun u hu ↦
-    (hf u hu).trans <| mul_le_mul_of_nonneg_left
-      ((norm_le_insert' u z).trans <| add_le_add_right ?_ _) hC₀).trans_eq (by ring)
-  rw [← dist_eq_norm, ← dist_eq_norm w z, dist_eq_re_im, dist_eq_re_im]
-  exact Real.sqrt_le_sqrt (add_le_add (sq_le_sq.2 (abs_sub_left_of_mem_uIcc hu.1))
-    (sq_le_sq.2 (abs_sub_left_of_mem_uIcc hu.2)))
+    (hf u hu).trans <| mul_le_mul_of_nonneg_left ((norm_le_insert' u z).trans <|
+      add_le_add_right (by simpa [dist_eq_norm] using dist_le_dist_of_mem_rectangle hu) _)
+      hC₀).trans_eq (by ring)
 
 end TauCeti
 
+/-- Cauchy–Goursat conservativity up to the boundary: a function continuous on `S` and holomorphic
+on `interior S` has zero integral around every closed axis-aligned rectangle contained in `S`. -/
+theorem Complex.isConservativeOn_of_continuousOn_of_differentiableOn_interior {S : Set ℂ}
+    (hcont : ContinuousOn f S) (hdiff : DifferentiableOn ℂ f (interior S)) :
+    IsConservativeOn f S := fun z w hzw ↦ by
+  rw [← add_eq_zero_iff_eq_neg, wedgeIntegral_add_wedgeIntegral_eq]
+  exact integral_boundary_rect_eq_zero_of_continuousOn_of_differentiableOn f z w (hcont.mono hzw)
+    (hdiff.mono <| interior_maximal
+      (fun _ hp ↦ hzw ⟨Ioo_subset_Icc_self hp.1, Ioo_subset_Icc_self hp.2⟩)
+      (isOpen_Ioo.reProdIm isOpen_Ioo))
+
+-- This proof adapts `Complex.IsConservativeOn.eventually_nhds_wedgeIntegral_sub_wedgeIntegral`
+-- from `Mathlib.Analysis.Complex.HasPrimitives` from a ball to `A ×ℂ B`.
 /-- On an axis-aligned product `A ×ℂ B` of order-connected real sets, wedge integrals of a
 continuous conservative function are additive across arbitrary points of `A ×ℂ B`. -/
 theorem Complex.IsConservativeOn.wedgeIntegral_sub_wedgeIntegral_eq_of_mem_reProdIm
@@ -118,9 +139,8 @@ theorem Complex.IsConservativeOn.wedgeIntegral_sub_wedgeIntegral_eq_of_mem_rePro
       IntervalIntegrable (fun y : ℝ ↦ f (x + y * I)) volume y₁ y₂ :=
     (hcont.comp (by fun_prop) fun _ hy ↦
       ⟨by simpa using hx, by simpa using hB.uIcc_subset hy₁ hy₂ hy⟩).intervalIntegrable
-  have hI₁ : I₁ = I₃ + I₇ :=
-    (intervalIntegral.integral_add_adjacent_intervals (intH hb.1 hz.1 hb.2)
-      (intH hz.1 hw.1 hb.2)).symm
+  have hI₁ : I₁ = I₃ + I₇ := (intervalIntegral.integral_add_adjacent_intervals
+    (intH hb.1 hz.1 hb.2) (intH hz.1 hw.1 hb.2)).symm
   have hI₂ : I₂ = I₈ + I₆ := by
     rw [← smul_add, intervalIntegral.integral_add_adjacent_intervals (intV hw.1 hb.2 hz.2)
       (intV hw.1 hz.2 hw.2)]
@@ -130,6 +150,29 @@ theorem Complex.IsConservativeOn.wedgeIntegral_sub_wedgeIntegral_eq_of_mem_rePro
         ⟨hA.uIcc_subset hz.1 hw.1 (by simpa using hp.1),
           hB.uIcc_subset hb.2 hz.2 (by simpa using hp.2)⟩
   grind [wedgeIntegral]
+
+/-- On an axis-aligned product `A ×ℂ B` of order-connected real sets, the wedge integral of a
+continuous conservative function from any base point `b ∈ A ×ℂ B` is continuous on `A ×ℂ B`. -/
+theorem Complex.IsConservativeOn.continuousOn_wedgeIntegral_of_mem_reProdIm
+    {A B : Set ℝ} (hf : IsConservativeOn f (A ×ℂ B)) (hA : A.OrdConnected) (hB : B.OrdConnected)
+    (hcont : ContinuousOn f (A ×ℂ B)) {b : ℂ} (hb : b ∈ A ×ℂ B) :
+    ContinuousOn (fun z ↦ wedgeIntegral b z f) (A ×ℂ B) := fun z hz ↦ by
+  obtain ⟨δ, hδ, hball⟩ := Metric.mem_nhdsWithin_iff.mp
+    ((hcont z hz).preimage_mem_nhdsWithin (ball_mem_nhds (f z) zero_lt_one))
+  have hzero : Tendsto (fun w ↦ wedgeIntegral z w f) (𝓝[A ×ℂ B] z) (𝓝 0) := by
+    refine squeeze_zero_norm' (a := fun w ↦ 2 * (‖f z‖ + 1) * ‖w - z‖) ?_ ?_
+    · filter_upwards [nhdsWithin_le_nhds (ball_mem_nhds z hδ), self_mem_nhdsWithin] with w hwδ hw
+      refine TauCeti.norm_wedgeIntegral_le_of_norm_le_const fun u hu ↦ ?_
+      have huAB : u ∈ A ×ℂ B := ⟨hA.uIcc_subset hz.1 hw.1 hu.1, hB.uIcc_subset hz.2 hw.2 hu.2⟩
+      have hudist : ‖f u - f z‖ < 1 := mem_ball_iff_norm.1 <|
+        hball ⟨mem_ball.2 ((dist_le_dist_of_mem_rectangle hu).trans_lt (mem_ball.1 hwδ)), huAB⟩
+      linarith [norm_sub_norm_le (f u) (f z)]
+    · simpa using (((continuous_id.sub (continuous_const (y := z))).norm.const_mul
+        (2 * (‖f z‖ + 1))).tendsto z).mono_left nhdsWithin_le_nhds
+  simpa [ContinuousWithinAt] using (tendsto_const_nhds.add hzero).congr' <| by
+    filter_upwards [self_mem_nhdsWithin] with w hw
+    exact (eq_add_of_sub_eq'
+      (hf.wedgeIntegral_sub_wedgeIntegral_eq_of_mem_reProdIm hA hB hcont hb hz hw)).symm
 
 /-- On an axis-aligned product `A ×ℂ B` of order-connected real sets, the wedge integral of a
 continuous conservative function from any base point `b ∈ A ×ℂ B` has complex derivative `f z` at

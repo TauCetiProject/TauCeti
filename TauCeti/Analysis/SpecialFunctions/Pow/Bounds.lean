@@ -679,5 +679,6 @@ end TauCeti
 `‖p.1‖ ^ (1 - x) * ‖p.2‖ ^ x ≤ ‖p‖`. -/
 theorem Prod.norm_fst_rpow_mul_norm_snd_rpow_le {E F : Type*} [SeminormedAddGroup E]
     [SeminormedAddGroup F] (p : E × F) {x : ℝ} (hx : x ∈ Set.Icc (0 : ℝ) 1) :
-    ‖p.1‖ ^ (1 - x) * ‖p.2‖ ^ x ≤ ‖p‖ :=
-  TauCeti.rpow_mul_rpow_le_max (norm_nonneg p.1) (norm_nonneg p.2) hx
+    ‖p.1‖ ^ (1 - x) * ‖p.2‖ ^ x ≤ ‖p‖ := by
+  rw [Prod.norm_def]
+  exact TauCeti.rpow_mul_rpow_le_max (norm_nonneg p.1) (norm_nonneg p.2) hx

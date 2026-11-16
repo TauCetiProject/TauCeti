@@ -14,10 +14,10 @@ import TauCeti.Analysis.Complex.HasPrimitives
 
 Mathlib's three-lines theorem is stated on the open strip `verticalStrip a b` and the closed
 strip `verticalClosedStrip a b`, the preimages of `Ioo a b` and `Icc a b` under `Complex.re`.
-This file records their membership criteria, behavior under reflection and vertical translation,
-convexity, closure, the exponential gauge multiplier `scaleFactor` normalizing strip boundary
-bounds, and holomorphic primitives `Complex.wedgeIntegral` for functions satisfying `DiffContOnCl`
-on a vertical strip (specializing `TauCeti.Analysis.Complex.HasPrimitives` to
+This file records their membership criteria, behavior under reflection, convexity, closure, the
+exponential gauge multiplier `scaleFactor` normalizing strip boundary bounds, and holomorphic
+primitives `Complex.wedgeIntegral` for functions satisfying `DiffContOnCl` on a vertical strip
+(specializing `TauCeti.Analysis.Complex.HasPrimitives` to
 `verticalClosedStrip a b = Icc a b ×ℂ univ`).
 -/
 
@@ -30,21 +30,10 @@ namespace TauCeti.Complex.HadamardThreeLines
 
 variable {a b : ℝ} {z : ℂ}
 
-@[simp]
-theorem mem_verticalStrip_iff : z ∈ verticalStrip a b ↔ z.re ∈ Ioo a b :=
+@[simp] theorem mem_verticalStrip_iff : z ∈ verticalStrip a b ↔ z.re ∈ Ioo a b := Iff.rfl
+
+@[simp] theorem mem_verticalClosedStrip_iff : z ∈ verticalClosedStrip a b ↔ z.re ∈ Icc a b :=
   Iff.rfl
-
-@[simp]
-theorem mem_verticalClosedStrip_iff : z ∈ verticalClosedStrip a b ↔ z.re ∈ Icc a b :=
-  Iff.rfl
-
-/-- Vertical translation preserves open-strip membership. -/
-theorem add_mul_I_mem_verticalStrip_iff (z : ℂ) (t : ℝ) :
-    z + t * I ∈ verticalStrip a b ↔ z ∈ verticalStrip a b := by simp
-
-/-- Vertical translation preserves closed-strip membership. -/
-theorem add_mul_I_mem_verticalClosedStrip_iff (z : ℂ) (t : ℝ) :
-    z + t * I ∈ verticalClosedStrip a b ↔ z ∈ verticalClosedStrip a b := by simp
 
 /-- Reflection by `z ↦ w - z` reverses the real endpoints of an open vertical strip. -/
 theorem sub_mem_verticalStrip_iff (w z : ℂ) :
@@ -59,8 +48,7 @@ theorem sub_mem_verticalClosedStrip_iff (w z : ℂ) :
   constructor <;> rintro ⟨_, _⟩ <;> constructor <;> linarith
 
 /-- Reflection in the middle of the unit strip preserves open-strip membership. -/
-theorem one_sub_mem_verticalStrip_iff :
-    1 - z ∈ verticalStrip 0 1 ↔ z ∈ verticalStrip 0 1 := by
+theorem one_sub_mem_verticalStrip_iff : 1 - z ∈ verticalStrip 0 1 ↔ z ∈ verticalStrip 0 1 := by
   simpa only [one_re, sub_self, sub_zero] using
     sub_mem_verticalStrip_iff (a := 0) (b := 1) (1 : ℂ) z
 
@@ -102,6 +90,11 @@ strip, equal to `M₀ ^ (z - 1) * M₁ ^ (-z)` for `0 < M₀` and `0 < M₁`, wi
 noncomputable def scaleFactor (M₀ M₁ : ℝ) (z : ℂ) : ℂ :=
   exp ((z - 1) * Real.log M₀ - z * Real.log M₁)
 
+theorem scaleFactor_def (M₀ M₁ : ℝ) (z : ℂ) :
+    scaleFactor M₀ M₁ z = exp ((z - 1) * Real.log M₀ - z * Real.log M₁) := (rfl)
+
+@[simp] theorem scaleFactor_ne_zero (M₀ M₁ : ℝ) (z : ℂ) : scaleFactor M₀ M₁ z ≠ 0 := exp_ne_zero _
+
 variable {M₀ M₁ : ℝ}
 
 theorem differentiable_scaleFactor (M₀ M₁ : ℝ) : Differentiable ℂ (scaleFactor M₀ M₁) := by
@@ -117,8 +110,7 @@ theorem norm_scaleFactor_le {z : ℂ} (hz : z ∈ verticalClosedStrip 0 1) :
   nlinarith [hz.1, hz.2, neg_abs_le (Real.log M₀), le_abs_self (Real.log M₀),
     neg_abs_le (Real.log M₁), le_abs_self (Real.log M₁), abs_nonneg (Real.log M₀)]
 
-theorem norm_scaleFactor_mul_I (hM₀ : 0 < M₀) (t : ℝ) :
-    ‖scaleFactor M₀ M₁ (t * I)‖ = M₀⁻¹ := by
+theorem norm_scaleFactor_mul_I (hM₀ : 0 < M₀) (t : ℝ) : ‖scaleFactor M₀ M₁ (t * I)‖ = M₀⁻¹ := by
   simp [norm_scaleFactor, Real.exp_neg, Real.exp_log hM₀]
 
 theorem norm_scaleFactor_one_add_mul_I (hM₁ : 0 < M₁) (t : ℝ) :
@@ -132,15 +124,12 @@ theorem norm_scaleFactor_mul_rpow (hM₀ : 0 < M₀) (hM₁ : 0 < M₁) (θ : �
   congr 1; simp only [ofReal_re]; ring
 
 theorem hasDerivAt_scaleFactor (M₀ M₁ : ℝ) (z : ℂ) :
-    HasDerivAt (scaleFactor M₀ M₁)
-      ((Real.log M₀ - Real.log M₁ : ℂ) * scaleFactor M₀ M₁ z) z :=
+    HasDerivAt (scaleFactor M₀ M₁) ((Real.log M₀ - Real.log M₁ : ℂ) * scaleFactor M₀ M₁ z) z :=
   (((((hasDerivAt_id z).sub_const 1).mul_const (Real.log M₀ : ℂ)).sub
-    ((hasDerivAt_id z).mul_const (Real.log M₁ : ℂ))).cexp).congr_deriv
-    (by simp [scaleFactor]; ring)
+    ((hasDerivAt_id z).mul_const (Real.log M₁ : ℂ))).cexp).congr_deriv (by simp [scaleFactor]; ring)
 
-theorem integral_deriv_scaleFactor_add_mul_I (M₀ M₁ c t₀ t : ℝ) :
-    (∫ u in t₀..t,
-      ((Real.log M₀ - Real.log M₁ : ℂ) * I) * scaleFactor M₀ M₁ (c + u * I)) =
+theorem integral_mul_scaleFactor_add_mul_I (M₀ M₁ c t₀ t : ℝ) :
+    (∫ u in t₀..t, ((Real.log M₀ - Real.log M₁ : ℂ) * I) * scaleFactor M₀ M₁ (c + u * I)) =
       scaleFactor M₀ M₁ (c + t * I) - scaleFactor M₀ M₁ (c + t₀ * I) := by
   refine intervalIntegral.integral_eq_sub_of_hasDerivAt
     (f := fun u : ℝ => scaleFactor M₀ M₁ (c + u * I)) (fun u _ => ?_)
@@ -160,8 +149,8 @@ open TauCeti.Complex.HadamardThreeLines
 
 variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℂ E] {f : ℂ → E} {a b : ℝ}
 
-private theorem reProdIm_Icc_univ (a b : ℝ) :
-    Icc a b ×ℂ (univ : Set ℝ) = verticalClosedStrip a b := by
+private theorem verticalClosedStrip_eq_reProdIm (a b : ℝ) :
+    verticalClosedStrip a b = Icc a b ×ℂ (univ : Set ℝ) := by
   ext; simp [verticalClosedStrip, mem_reProdIm]
 
 /-- For `a < b`, a function satisfying `DiffContOnCl ℂ f (verticalStrip a b)` is continuous on
@@ -174,15 +163,11 @@ theorem DiffContOnCl.continuousOn_verticalClosedStrip (hab : a < b)
 continuous up to its boundary has zero integral around every closed rectangle in
 `verticalClosedStrip a b`, even when the rectangle meets the boundary lines. -/
 theorem DiffContOnCl.isConservativeOn_verticalClosedStrip (hab : a < b)
-    (hf : DiffContOnCl ℂ f (verticalStrip a b)) : IsConservativeOn f (verticalClosedStrip a b) := by
-  rintro z w hzw
-  rw [← add_eq_zero_iff_eq_neg, wedgeIntegral_add_wedgeIntegral_eq]
-  refine integral_boundary_rect_eq_zero_of_continuousOn_of_differentiableOn f z w
-    ((hf.continuousOn_verticalClosedStrip hab).mono hzw) (hf.differentiableOn.mono fun u hu => ?_)
-  exact ⟨(le_min (hzw ⟨left_mem_uIcc, left_mem_uIcc⟩).1
-      (hzw ⟨right_mem_uIcc, right_mem_uIcc⟩).1).trans_lt hu.1.1,
-    hu.1.2.trans_le (max_le (hzw ⟨left_mem_uIcc, left_mem_uIcc⟩).2
-      (hzw ⟨right_mem_uIcc, right_mem_uIcc⟩).2)⟩
+    (hf : DiffContOnCl ℂ f (verticalStrip a b)) : IsConservativeOn f (verticalClosedStrip a b) :=
+  Complex.isConservativeOn_of_continuousOn_of_differentiableOn_interior
+    (hf.continuousOn_verticalClosedStrip hab)
+    (by simpa [verticalClosedStrip, Complex.interior_preimage_re, interior_Icc, verticalStrip] using
+      hf.differentiableOn)
 
 /-- Wedge integrals of a function satisfying `DiffContOnCl` on a vertical strip are additive across
 arbitrary points of the closed strip, including boundary points. -/
@@ -190,60 +175,43 @@ theorem DiffContOnCl.wedgeIntegral_sub_wedgeIntegral_eq_of_mem_verticalClosedStr
     (hf : DiffContOnCl ℂ f (verticalStrip a b)) {z₀ z w : ℂ}
     (hz₀ : z₀ ∈ verticalClosedStrip a b) (hz : z ∈ verticalClosedStrip a b)
     (hw : w ∈ verticalClosedStrip a b) :
-    wedgeIntegral z₀ w f - wedgeIntegral z₀ z f = wedgeIntegral z w f :=
-  Complex.IsConservativeOn.wedgeIntegral_sub_wedgeIntegral_eq_of_mem_reProdIm
-    (reProdIm_Icc_univ a b ▸ hf.isConservativeOn_verticalClosedStrip hab)
-    ordConnected_Icc ordConnected_univ
-    (reProdIm_Icc_univ a b ▸ hf.continuousOn_verticalClosedStrip hab)
-    (reProdIm_Icc_univ a b ▸ hz₀) (reProdIm_Icc_univ a b ▸ hz) (reProdIm_Icc_univ a b ▸ hw)
+    wedgeIntegral z₀ w f - wedgeIntegral z₀ z f = wedgeIntegral z w f := by
+  have hc := hf.isConservativeOn_verticalClosedStrip hab
+  have hcont := hf.continuousOn_verticalClosedStrip hab
+  rw [verticalClosedStrip_eq_reProdIm] at hc hcont hz₀ hz hw
+  exact hc.wedgeIntegral_sub_wedgeIntegral_eq_of_mem_reProdIm ordConnected_Icc ordConnected_univ
+    hcont hz₀ hz hw
 
 /-- The wedge integral on a closed vertical strip is continuous up to the boundary. -/
 theorem DiffContOnCl.continuousOn_wedgeIntegral_verticalClosedStrip (hab : a < b)
     (hf : DiffContOnCl ℂ f (verticalStrip a b)) {z₀ : ℂ} (hz₀ : z₀ ∈ verticalClosedStrip a b) :
-    ContinuousOn (fun z => wedgeIntegral z₀ z f) (verticalClosedStrip a b) := fun z hz => by
-  obtain ⟨M, hM⟩ := (isCompact_Icc.reProdIm isCompact_Icc).exists_bound_of_continuousOn
-    ((hf.continuousOn_verticalClosedStrip hab).mono
-      (fun _ hu => hu.1 : Icc a b ×ℂ Icc (z.im - 1) (z.im + 1) ⊆ _))
-  have hzero : Filter.Tendsto (fun w => wedgeIntegral z w f)
-      (𝓝[verticalClosedStrip a b] z) (𝓝 0) := by
-    refine squeeze_zero_norm' (a := fun w => 2 * M * ‖w - z‖) ?_ ?_
-    · filter_upwards [nhdsWithin_le_nhds (Metric.ball_mem_nhds z zero_lt_one),
-        self_mem_nhdsWithin] with w hwball hw
-      have him : |w.im - z.im| ≤ 1 :=
-        (abs_im_le_norm (w - z)).trans ((dist_eq_norm w z).symm.trans_lt hwball).le
-      refine TauCeti.norm_wedgeIntegral_le_of_norm_le_const fun u hu =>
-        hM u ⟨ordConnected_Icc.uIcc_subset hz hw hu.1, ?_⟩
-      have := abs_le.1 ((abs_sub_left_of_mem_uIcc hu.2).trans him)
-      exact ⟨by linarith, by linarith⟩
-    · simpa using (((continuous_id.sub (continuous_const (y := z))).norm.const_mul
-        (2 * M)).tendsto z).mono_left nhdsWithin_le_nhds
-  simpa [ContinuousWithinAt] using (tendsto_const_nhds.add hzero).congr' <| by
-    filter_upwards [self_mem_nhdsWithin] with w hw
-    exact (eq_add_of_sub_eq'
-      (hf.wedgeIntegral_sub_wedgeIntegral_eq_of_mem_verticalClosedStrip hab hz₀ hz hw)).symm
+    ContinuousOn (fun z => wedgeIntegral z₀ z f) (verticalClosedStrip a b) := by
+  have hc := hf.isConservativeOn_verticalClosedStrip hab
+  have hcont := hf.continuousOn_verticalClosedStrip hab
+  rw [verticalClosedStrip_eq_reProdIm] at hc hcont hz₀ ⊢
+  exact hc.continuousOn_wedgeIntegral_of_mem_reProdIm ordConnected_Icc ordConnected_univ hcont hz₀
 
 /-- On the open vertical strip, the wedge integral from any base point in the closed strip has
 complex derivative equal to its integrand. -/
-theorem DiffContOnCl.hasDerivAt_wedgeIntegral_verticalStrip [CompleteSpace E] (hab : a < b)
+theorem DiffContOnCl.hasDerivAt_wedgeIntegral_verticalStrip [CompleteSpace E]
     (hf : DiffContOnCl ℂ f (verticalStrip a b)) {z₀ z : ℂ}
     (hz₀ : z₀ ∈ verticalClosedStrip a b) (hz : z ∈ verticalStrip a b) :
-    HasDerivAt (fun w => wedgeIntegral z₀ w f) (f z) z :=
-  (reProdIm_Icc_univ a b ▸
-      hf.isConservativeOn_verticalClosedStrip hab).hasDerivAt_wedgeIntegral_of_mem_reProdIm
-    ordConnected_Icc ordConnected_univ
-    (reProdIm_Icc_univ a b ▸ hf.continuousOn_verticalClosedStrip hab)
-    (reProdIm_Icc_univ a b ▸ hz₀)
-    (Filter.mem_of_superset ((isOpen_verticalStrip a b).mem_nhds hz)
-      ((verticalStrip_subset_verticalClosedStrip a b).trans (reProdIm_Icc_univ a b).symm.subset))
+    HasDerivAt (fun w => wedgeIntegral z₀ w f) (f z) z := by
+  have hc := hf.isConservativeOn_verticalClosedStrip (hz.1.trans hz.2)
+  have hcont := hf.continuousOn_verticalClosedStrip (hz.1.trans hz.2)
+  have hnhds : verticalClosedStrip a b ∈ 𝓝 z := Filter.mem_of_superset
+    ((isOpen_verticalStrip a b).mem_nhds hz) (verticalStrip_subset_verticalClosedStrip a b)
+  rw [verticalClosedStrip_eq_reProdIm] at hc hcont hz₀ hnhds
+  exact hc.hasDerivAt_wedgeIntegral_of_mem_reProdIm ordConnected_Icc ordConnected_univ hcont hz₀
+    hnhds
 
 /-- The wedge integral of a function satisfying `DiffContOnCl` on a vertical strip again satisfies
 `DiffContOnCl` on that strip. -/
 theorem DiffContOnCl.diffContOnCl_wedgeIntegral_verticalStrip [CompleteSpace E] (hab : a < b)
-    (hf : DiffContOnCl ℂ f (verticalStrip a b)) {z₀ : ℂ}
-    (hz₀ : z₀ ∈ verticalClosedStrip a b) :
+    (hf : DiffContOnCl ℂ f (verticalStrip a b)) {z₀ : ℂ} (hz₀ : z₀ ∈ verticalClosedStrip a b) :
     DiffContOnCl ℂ (fun w => wedgeIntegral z₀ w f) (verticalStrip a b) :=
-  ⟨fun _ hz => (hf.hasDerivAt_wedgeIntegral_verticalStrip hab hz₀
-      hz).differentiableAt.differentiableWithinAt,
+  ⟨fun _ hz =>
+      (hf.hasDerivAt_wedgeIntegral_verticalStrip hz₀ hz).differentiableAt.differentiableWithinAt,
     closure_verticalStrip hab ▸ hf.continuousOn_wedgeIntegral_verticalClosedStrip hab hz₀⟩
 
 end Primitive

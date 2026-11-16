@@ -55,8 +55,9 @@ operations. They are the operators under which Dixmier's generalized limits are 
 
 `LipschitzWith.offDiagSlope` sends a `K`-Lipschitz map `g : 𝕜 → E` over a normed field `𝕜` to its
 bounded continuous difference-quotient `(t, s) ↦ (t - s)⁻¹ • (g t - g s)` on `offDiag univ` of norm
-at most `K`, and `BoundedContinuousFunction.pinnedCurve` recovers `t ↦ g t - g 0` from an
-off-diagonal difference quotient by pinning at `0`.
+at most `K`, with converse `BoundedContinuousFunction.lipschitzWith_of_sub_eq_smul`, and
+`BoundedContinuousFunction.pinnedCurve` recovers `t ↦ g t - g 0` from an off-diagonal difference
+quotient by pinning at `0`.
 -/
 
 public section
@@ -312,21 +313,72 @@ theorem neg_dilate {β : Type*} [SeminormedAddCommGroup β] (f : ℕ →ᵇ β) 
 
 section PinnedCurve
 
-variable {𝕜 E : Type*} [PseudoMetricSpace 𝕜] [Zero 𝕜] [PseudoMetricSpace E] [Zero E] [SMul 𝕜 E]
+variable {𝕜 E : Type*}
 
 /-- From a bounded continuous off-diagonal function `q : offDiag univ →ᵇ E`, recover the curve
 `t ↦ t • q (t, 0)` pinned to vanish at `t = 0`. When `q` is the difference quotient of `g : 𝕜 → E`,
 `q.pinnedCurve t = g t - g 0` (`LipschitzWith.pinnedCurve_offDiagSlope`). -/
-noncomputable def pinnedCurve (q : offDiag (univ : Set 𝕜) →ᵇ E) (t : 𝕜) : E :=
-  open Classical in
-  if h : t = 0 then 0 else t • q ⟨(t, 0), ⟨trivial, trivial, h⟩⟩
+noncomputable def pinnedCurve [TopologicalSpace 𝕜] [Zero 𝕜] [PseudoMetricSpace E] [Zero E]
+    [SMul 𝕜 E] (q : offDiag (univ : Set 𝕜) →ᵇ E) (t : 𝕜) : E :=
+  open Classical in if h : t = 0 then 0 else t • q ⟨(t, 0), ⟨trivial, trivial, h⟩⟩
 
-@[simp]
-theorem pinnedCurve_zero (q : offDiag (univ : Set 𝕜) →ᵇ E) : q.pinnedCurve 0 = 0 := by
-  simp [pinnedCurve]
+@[simp] theorem pinnedCurve_zero [TopologicalSpace 𝕜] [Zero 𝕜] [PseudoMetricSpace E] [Zero E]
+    [SMul 𝕜 E] (q : offDiag (univ : Set 𝕜) →ᵇ E) : q.pinnedCurve 0 = 0 := by simp [pinnedCurve]
 
-theorem pinnedCurve_of_ne_zero (q : offDiag (univ : Set 𝕜) →ᵇ E) {t : 𝕜} (ht : t ≠ 0) :
+theorem pinnedCurve_of_ne_zero [TopologicalSpace 𝕜] [Zero 𝕜] [PseudoMetricSpace E] [Zero E]
+    [SMul 𝕜 E] (q : offDiag (univ : Set 𝕜) →ᵇ E) {t : 𝕜} (ht : t ≠ 0) :
     q.pinnedCurve t = t • q ⟨(t, 0), ⟨trivial, trivial, ht⟩⟩ := by simp [pinnedCurve, ht]
+
+@[simp] theorem zero_pinnedCurve [TopologicalSpace 𝕜] [Zero 𝕜] [PseudoMetricSpace E] [Zero E]
+    [SMulZeroClass 𝕜 E] : (0 : offDiag (univ : Set 𝕜) →ᵇ E).pinnedCurve = 0 := by
+  ext t; by_cases ht : t = 0 <;> simp [pinnedCurve, ht]
+
+@[simp] theorem smul_pinnedCurve {R : Type*} [TopologicalSpace 𝕜] [Zero 𝕜] [PseudoMetricSpace R]
+    [Zero R] [PseudoMetricSpace E] [Zero E] [SMul 𝕜 E] [SMulZeroClass R E] [IsBoundedSMul R E]
+    [SMulCommClass 𝕜 R E] (c : R) (q : offDiag (univ : Set 𝕜) →ᵇ E) :
+    (c • q).pinnedCurve = c • q.pinnedCurve := by
+  ext t; by_cases ht : t = 0 <;> simp [pinnedCurve, ht, smul_comm]
+
+@[simp] theorem add_pinnedCurve [TopologicalSpace 𝕜] [Zero 𝕜] [PseudoMetricSpace E]
+    [AddZeroClass E] [BoundedAdd E] [ContinuousAdd E] [DistribSMul 𝕜 E]
+    (q₁ q₂ : offDiag (univ : Set 𝕜) →ᵇ E) :
+    (q₁ + q₂).pinnedCurve = q₁.pinnedCurve + q₂.pinnedCurve := by
+  ext t; by_cases ht : t = 0 <;> simp [pinnedCurve, ht, smul_add]
+
+@[simp] theorem neg_pinnedCurve [TopologicalSpace 𝕜] [Zero 𝕜] [SeminormedAddCommGroup E]
+    [DistribSMul 𝕜 E] (q : offDiag (univ : Set 𝕜) →ᵇ E) : (-q).pinnedCurve = -q.pinnedCurve := by
+  ext t; by_cases ht : t = 0 <;> simp [pinnedCurve, ht]
+
+@[simp] theorem sub_pinnedCurve [TopologicalSpace 𝕜] [Zero 𝕜] [SeminormedAddCommGroup E]
+    [DistribSMul 𝕜 E] (q₁ q₂ : offDiag (univ : Set 𝕜) →ᵇ E) :
+    (q₁ - q₂).pinnedCurve = q₁.pinnedCurve - q₂.pinnedCurve := by
+  ext t; by_cases ht : t = 0 <;> simp [pinnedCurve, ht, smul_sub]
+
+@[simp] theorem pinnedCurve_compLeftContinuousBounded {R F : Type*} [TopologicalSpace 𝕜] [Zero 𝕜]
+    [NontriviallyNormedField R] [SeminormedAddCommGroup E] [NormedSpace R E]
+    [SeminormedAddCommGroup F] [NormedSpace R F] [SMul 𝕜 E] [SMul 𝕜 F]
+    [LinearMap.CompatibleSMul E F 𝕜 R] (L : E →L[R] F) (q : offDiag (univ : Set 𝕜) →ᵇ E) (t : 𝕜) :
+    (L.compLeftContinuousBounded _ q).pinnedCurve t = L (q.pinnedCurve t) := by
+  by_cases ht : t = 0 <;> simp [pinnedCurve, ht]
+
+theorem norm_pinnedCurve_le [SeminormedAddGroup 𝕜] [SeminormedAddCommGroup E] [SMulZeroClass 𝕜 E]
+    [IsBoundedSMul 𝕜 E] (q : offDiag (univ : Set 𝕜) →ᵇ E) (t : 𝕜) :
+    ‖q.pinnedCurve t‖ ≤ ‖t‖ * ‖q‖ := by
+  rcases eq_or_ne t 0 with rfl | ht; · simp
+  rw [q.pinnedCurve_of_ne_zero ht]
+  exact (norm_smul_le t _).trans (mul_le_mul_of_nonneg_left (q.norm_coe_le_norm _) (norm_nonneg t))
+
+/-- Converse to `LipschitzWith.offDiagSlope`: if the increments of `g : 𝕜 → E` are given off the
+diagonal by `(t - s) • q (t, s)` for `q : offDiag univ →ᵇ E`, then `g` is `‖q‖₊`-Lipschitz. -/
+theorem lipschitzWith_of_sub_eq_smul [SeminormedAddCommGroup 𝕜] [SeminormedAddCommGroup E]
+    [SMulZeroClass 𝕜 E] [IsBoundedSMul 𝕜 E] {q : offDiag (univ : Set 𝕜) →ᵇ E} {g : 𝕜 → E}
+    (hg : ∀ {t s : 𝕜} (h : t ≠ s), g t - g s = (t - s) • q ⟨(t, s), ⟨trivial, trivial, h⟩⟩) :
+    LipschitzWith ‖q‖₊ g :=
+  LipschitzWith.of_dist_le_mul fun t s ↦ by
+    rcases eq_or_ne t s with rfl | h; · simp
+    rw [dist_eq_norm, dist_eq_norm t s, hg h, mul_comm]
+    exact (norm_smul_le (t - s) _).trans
+      (mul_le_mul_of_nonneg_left (q.norm_coe_le_norm _) (norm_nonneg _))
 
 end PinnedCurve
 
@@ -340,8 +392,7 @@ variable {𝕜 E : Type*} [NormedField 𝕜] [SeminormedAddCommGroup E] [NormedS
 /-- The bounded continuous difference-quotient `(t, s) ↦ (t - s)⁻¹ • (g t - g s)` on
 `offDiag (univ : Set 𝕜)` associated with a `K`-Lipschitz map `g : 𝕜 → E`. -/
 noncomputable def offDiagSlope (hg : LipschitzWith K g) : offDiag (univ : Set 𝕜) →ᵇ E :=
-  BoundedContinuousFunction.ofNormedAddCommGroup
-    (fun p ↦ (p.1.1 - p.1.2)⁻¹ • (g p.1.1 - g p.1.2))
+  BoundedContinuousFunction.ofNormedAddCommGroup (fun p ↦ (p.1.1 - p.1.2)⁻¹ • (g p.1.1 - g p.1.2))
     (by
       have hc := hg.continuous
       exact (((continuous_fst.comp continuous_subtype_val).sub
@@ -352,8 +403,7 @@ noncomputable def offDiagSlope (hg : LipschitzWith K g) : offDiag (univ : Set �
       rw [norm_smul, norm_inv, inv_mul_le_iff₀ (norm_pos_iff.2 (sub_ne_zero.2 p.2.2.2)), mul_comm]
       simpa [dist_eq_norm] using hg.dist_le_mul p.1.1 p.1.2
 
-@[simp]
-theorem offDiagSlope_apply (hg : LipschitzWith K g) (p : offDiag (univ : Set 𝕜)) :
+@[simp] theorem offDiagSlope_apply (hg : LipschitzWith K g) (p : offDiag (univ : Set 𝕜)) :
     hg.offDiagSlope p = (p.1.1 - p.1.2)⁻¹ • (g p.1.1 - g p.1.2) := (rfl)
 
 theorem norm_offDiagSlope_le (hg : LipschitzWith K g) : ‖hg.offDiagSlope‖ ≤ K :=
@@ -363,8 +413,7 @@ theorem smul_offDiagSlope_apply (hg : LipschitzWith K g) {t s : 𝕜} (h : t ≠
     (t - s) • hg.offDiagSlope ⟨(t, s), ⟨trivial, trivial, h⟩⟩ = g t - g s :=
   smul_inv_smul₀ (sub_ne_zero.2 h) (g t - g s)
 
-@[simp]
-theorem pinnedCurve_offDiagSlope (hg : LipschitzWith K g) (t : 𝕜) :
+@[simp] theorem pinnedCurve_offDiagSlope (hg : LipschitzWith K g) (t : 𝕜) :
     hg.offDiagSlope.pinnedCurve t = g t - g 0 := by
   rcases eq_or_ne t 0 with rfl | ht; · simp
   simpa [BoundedContinuousFunction.pinnedCurve_of_ne_zero _ ht] using hg.smul_offDiagSlope_apply ht
