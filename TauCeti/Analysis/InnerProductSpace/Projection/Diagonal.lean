@@ -165,9 +165,9 @@ theorem projectorDiagonal_orthogonal : Uᗮ.projectorDiagonal = 1 - U.projectorD
 `(‖vᵢ‖² / ‖v‖²)ᵢ`. For `v = 0` both sides vanish. -/
 theorem projectorDiagonal_span_singleton (v : EuclideanSpace 𝕜 ι) (i : ι) :
     (𝕜 ∙ v).projectorDiagonal i = ‖v i‖ ^ 2 / ‖v‖ ^ 2 := by
-  rw [projectorDiagonal_def, starProjection_singleton, PiLp.smul_apply, smul_eq_mul,
-    EuclideanSpace.inner_single_right, one_mul, div_mul_eq_mul_div, RCLike.conj_mul,
-    ← RCLike.ofReal_pow, ← RCLike.ofReal_div, RCLike.ofReal_re]
+  simp [projectorDiagonal_def, starProjection_singleton, EuclideanSpace.inner_single_right,
+    div_mul_eq_mul_div, RCLike.conj_mul]
+  norm_cast
 
 /-- The diagonal of the projector onto the coordinate subspace spanned by the basis vectors `eᵢ`
 with `i ∈ s` is the indicator function of `s`. -/
