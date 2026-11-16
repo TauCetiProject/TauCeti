@@ -57,8 +57,9 @@ Lakshmibai–Seshadri paths connects `LSPath.stretch` and the denominator-cleari
   `TauCeti.PLPath.raiseWord_flatMap_replicate_map_natCast_smul_eq_some_iff`: dilation by `n > 0`
   intertwines words of root operators with their `n`-fold letterwise replications.
 * `TauCeti.PLPath.reflTransGen_rootStep_map_natCast_smul`,
-  `TauCeti.PLPath.IsIntegralPath.straight_nsmul`: dilation by any `n : ℕ` preserves finite sequences
-  of simple-root steps and preserves integrality of straight paths.
+  `TauCeti.PLPath.IsIntegralPath.map_natCast_smul_of_reflTransGen_rootStep`: dilation by
+  any `n : ℕ` preserves finite sequences of simple-root steps and transports integrality
+  along root-step walks.
 * `TauCeti.LSPath.lowerIter_toPLPath_stretch`, `TauCeti.LSPath.lowerIter_toPLPath_ofBruhatChain`,
   `TauCeti.LSPath.lowerWord_flatMap_replicate_toPLPath_ofBruhatChain_eq_some_iff`: root-operator
   similarity for stretched LS paths and cleared rational Bruhat-chain paths.
@@ -301,22 +302,6 @@ theorem IsIntegralPath.map_natCast_smul_of_reflTransGen_rootStep
     IsIntegralPath b f F (π.map ((n : 𝕜) • LinearMap.id)) :=
   h₀.of_reflTransGen_rootStep
     (reflTransGen_rootStep_map_natCast_smul (apply_root_eq_two hF) n hwalk)
-
-/-- For every integral straight path `straight 𝕜 (f lam)` and every `n : ℕ`, the straight path
-`straight 𝕜 (f (n • lam))` is also an integral path. -/
-theorem IsIntegralPath.straight_nsmul
-    (hF : ∀ (i : b.support) (x : X), F i (f x) = (P.coroot' i x : 𝕜))
-    {lam : X} (h : IsIntegralPath b f F (straight 𝕜 (f lam))) (n : ℕ) :
-    IsIntegralPath b f F (straight 𝕜 (f (n • lam))) := by
-  rw [map_nsmul, ← Nat.cast_smul_eq_nsmul 𝕜, straight_natCast_smul]
-  exact h.pow hF n
-
-/-- Dilation by any `n : ℕ` preserves integrality of straight paths. -/
-theorem IsIntegralPath.map_natCast_smul_straight
-    (hF : ∀ (i : b.support) (x : X), F i (f x) = (P.coroot' i x : 𝕜))
-    {lam : X} (h : IsIntegralPath b f F (straight 𝕜 (f lam))) (n : ℕ) :
-    IsIntegralPath b f F ((straight 𝕜 (f lam)).map ((n : 𝕜) • LinearMap.id)) := by
-  simpa using h.pow hF n
 
 private theorem reflTransGen_rootStep_of_mem_connectedComponentMk_map_natCast_smul
     (hf : Function.Injective f)
