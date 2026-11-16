@@ -99,6 +99,15 @@ theorem rid_comp_lTensor_counit_comp_rTensor (h : M →ₗ[R] N) :
   refine TensorProduct.ext' fun m c ↦ ?_
   simp
 
+/-- The cofree coaction is natural in the coefficient module: it commutes with `f ⊗ id`. -/
+theorem cofreeCoact_comp_rTensor (f : M →ₗ[R] N) :
+    cofreeCoact R C N ∘ₗ f.rTensor C = (f.rTensor C).rTensor C ∘ₗ cofreeCoact R C M := by
+  refine TensorProduct.ext' fun m c => ?_
+  simp only [LinearMap.comp_apply, cofreeCoact_tmul, LinearMap.rTensor_tmul]
+  simpa only [rTensor_def, TensorProduct.map_id, map_tmul, LinearMap.id_apply] using
+    (TensorProduct.map_map_assoc_symm f (LinearMap.id : C →ₗ[R] C)
+      (LinearMap.id : C →ₗ[R] C) (m ⊗ₜ Coalgebra.comul c)).symm
+
 /-- The double cofree coaction reorganized, with the coalgebra's own double comultiplication
 isolated on the right factor. This is pure associator bookkeeping (it does not use
 coassociativity), and feeds the coassociativity proof of the cofree coaction. -/
@@ -195,12 +204,8 @@ noncomputable def cofreeMap (f : M →ₗ[R] N) :
   exact
     { toLinearMap := f.rTensor C
       map_coact := by
-        refine TensorProduct.ext' fun m c => ?_
-        simp only [cofree_coact_eq_cofreeCoact, LinearMap.comp_apply, cofreeCoact_tmul,
-          LinearMap.rTensor_tmul]
-        simpa only [rTensor_def, TensorProduct.map_id, map_tmul, LinearMap.id_apply] using
-          TensorProduct.map_map_assoc_symm f (LinearMap.id : C →ₗ[R] C)
-            (LinearMap.id : C →ₗ[R] C) (m ⊗ₜ Coalgebra.comul c) }
+        simp only [cofree_coact_eq_cofreeCoact, ← rTensor_def]
+        exact (cofreeCoact_comp_rTensor f).symm }
 
 /-- The underlying linear map of `cofreeMap f` is `f ⊗ id`. -/
 @[simp]
