@@ -244,22 +244,13 @@ theorem f4SpecialIsogenyIndexEquiv_f4SignedSimpleRootIndex
     (k : Fin 4 ⊕ Fin 4) :
     f4SpecialIsogenyIndexEquiv (f4SignedSimpleRootIndex k) =
       f4SignedSimpleRootIndex (isogenyReverse k) := by
-  rcases k with i | i
-  · simp [f4SignedSimpleRootIndex_inl, isogenyReverse,
-      f4SpecialIsogenyIndexEquiv_apply, f4SpecialIsogenyIndex_castAdd,
-      lengthPermF4_apply]
-  · have hleft : f4SignedSimpleRootIndex (.inr i) =
-        (Fin.castAdd 44 i : Fin 48) + 24 := by
-      simp only [f4SignedSimpleRootIndex_inr, f4OppositeRootIndex_castAdd]
-      fin_cases i <;> decide +kernel
-    have hright : f4SignedSimpleRootIndex (isogenyReverse (.inr i)) =
-        (Fin.castAdd 44 i.rev : Fin 48) + 24 := by
-      simp only [isogenyReverse, Sum.map_inr, f4SignedSimpleRootIndex_inr,
-        f4OppositeRootIndex_castAdd]
-      fin_cases i <;> decide +kernel
-    rw [hleft, hright, f4SpecialIsogenyIndexEquiv_apply,
-      f4SpecialIsogenyIndex_add_twentyFour, f4SpecialIsogenyIndex_castAdd,
-      lengthPermF4_apply]
+  have hpos (i : Fin 4) :
+      f4SpecialIsogenyIndexEquiv (Fin.castAdd 44 i) = Fin.castAdd 44 i.rev := by
+    simp [lengthPermF4_apply]
+  rcases k with i | i <;>
+    simp only [isogenyReverse, Sum.map_inl, Sum.map_inr, f4SignedSimpleRootIndex_inl,
+      f4SignedSimpleRootIndex_inr, Fin.revPerm_apply,
+      f4SpecialIsogenyIndexEquiv_f4OppositeRootIndex, hpos]
 
 /-- If the special-isogeny images of three roots satisfy `γ' = β' + α'`, with `α'` the image of the
 signed simple root `k`, then the ideal first-order column of the reversed label sends the
@@ -273,34 +264,22 @@ theorem f4ShortRootIdealFirstColumn_eq_basis_of_specialMap_add
     f4ShortRootIdealFirstColumn (isogenyReverse k)
         (f4ShortRootWeightIndexEquiv.symm (Sum.inl iβ)) =
       f4ShortRootLieIdealBasis (f4ShortRootWeightIndexEquiv.symm (Sum.inl iγ)) := by
-  simp only [f4ShortRootIdealFirstColumn_apply]
-  apply Subtype.ext
-  have hsigned : f4SignedSimpleRootIndex (isogenyReverse k) =
-      f4SpecialIsogenyIndexEquiv (f4SignedSimpleRootIndex k) :=
-    (f4SpecialIsogenyIndexEquiv_f4SignedSimpleRootIndex k).symm
-  have hedge := f4ShortRootAdjoint_rootVector_of_add_eq_short
-    (f4SpecialIsogenyIndexEquiv (f4SignedSimpleRootIndex k)) iβ.1 iγ.1
-    iβ.property iγ.property hadd
-  have hbracket := (coe_f4ShortRootAdjoint_apply _ _).symm.trans (congrArg Subtype.val hedge)
-  have hsignedBracket := congrArg
-    (fun δ => ⁅f4ModularRootVector δ,
-      (f4ShortRootLieIdealBasis (f4ShortRootWeightIndexEquiv.symm (Sum.inl iβ)) :
-        f4ModularChevalleyLieAlgebra)⁆) hsigned
-  exact (coe_f4ShortRootSignedSimpleAdjoint_apply _ _).trans (hsignedBracket.trans hbracket)
+  obtain ⟨β, hβ⟩ := iβ
+  obtain ⟨γ, hγ⟩ := iγ
+  have hsigned := congrArg (fun δ => f4ShortRootAdjoint (f4ModularRootVector δ)
+      (f4ShortRootLieIdealBasis (f4ShortRootWeightIndexEquiv.symm (Sum.inl ⟨β, hβ⟩))))
+    (f4SpecialIsogenyIndexEquiv_f4SignedSimpleRootIndex k)
+  exact ((f4ShortRootIdealFirstColumn_apply _ _).trans
+    (f4ShortRootSignedSimpleAdjoint_apply _ _)).trans
+    (hsigned.symm.trans (f4ShortRootAdjoint_rootVector_of_add_eq_short _ β γ hβ hγ hadd))
 
 /-- The special root permutation also reverses the opposite signed-simple indices. -/
 theorem f4SpecialIsogenyIndexEquiv_opposite_f4SignedSimpleRootIndex
     (k : Fin 4 ⊕ Fin 4) :
     f4SpecialIsogenyIndexEquiv (f4OppositeRootIndex (f4SignedSimpleRootIndex k)) =
-      f4OppositeRootIndex (f4SignedSimpleRootIndex (isogenyReverse k)) := by
-  rcases k with i | i
-  · simpa only [isogenyReverse, Sum.map_inl, Sum.map_inr,
-      f4SignedSimpleRootIndex_inl, f4SignedSimpleRootIndex_inr] using
-      f4SpecialIsogenyIndexEquiv_f4SignedSimpleRootIndex (.inr i)
-  · simp only [isogenyReverse, Sum.map_inr, f4SignedSimpleRootIndex_inr,
-      f4OppositeRootIndex_f4OppositeRootIndex]
-    simp [f4SpecialIsogenyIndexEquiv_apply, f4SpecialIsogenyIndex_castAdd,
-      lengthPermF4_apply]
+      f4OppositeRootIndex (f4SignedSimpleRootIndex (isogenyReverse k)) :=
+  (f4SpecialIsogenyIndexEquiv_f4OppositeRootIndex _).trans
+    (congrArg f4OppositeRootIndex (f4SpecialIsogenyIndexEquiv_f4SignedSimpleRootIndex k))
 
 end
 
