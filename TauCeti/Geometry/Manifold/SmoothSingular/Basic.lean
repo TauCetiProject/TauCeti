@@ -424,6 +424,14 @@ theorem coe_smoothSingularSubcomplexMap_app (hφ : ContMDiff I J ∞ φ) {k : Si
       (TopCat.toSSet.map (TopCat.ofHom ⟨φ, hφ.continuous⟩)).app k σ.1 :=
   (rfl)
 
+/-- The map of constant simplices sends a singular simplex to the constant singular simplex. -/
+@[simp]
+theorem coe_smoothSingularSubcomplexConst_app (X : TopCat.{u}) (c : M) {k : SimplexCategoryᵒᵖ}
+    (σ : (TopCat.toSSet.obj X).obj k) :
+    (dsimp% only [Subfunctor.toFunctor_obj] ((smoothSingularSubcomplexConst I X c).app k σ).1) =
+      (TopCat.toSSet.map (TopCat.ofHom ⟨fun _ ↦ c, continuous_const⟩)).app k σ :=
+  (rfl)
+
 /-- For open sets `U ≤ V` of `M`, a singular simplex of `U` is smooth exactly when its image in
 `V` is. -/
 @[simp]
