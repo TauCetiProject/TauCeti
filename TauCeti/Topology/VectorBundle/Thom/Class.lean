@@ -101,7 +101,8 @@ for the fibre classes of an oriented bundle.
 * `Bundle.Trivialization.singularCohomology_thomPairOver_ext`: over a trivializing set, a class in
   the top degree is determined on the fibres.
 * `Bundle.Trivialization.singularHomologyMap_complZeroPairIso_inv_comp_fiberThomPairOverMap_eq`:
-  in homology, the fibre classes read through a trivialization are constant on its base set.
+  in homology, the fibre classes read through a trivialization are constant along paths in `W`
+  within its base set.
 * `Bundle.Trivialization.singularCohomologyMap_complZeroPairIso_hom_eq_sign_det_smul`: fibre classes
   read in two trivializations differ by the sign of the coordinate change.
 
@@ -394,10 +395,10 @@ variable {B : Type w} [TopologicalSpace B] {F : Type w} [NormedAddCommGroup F] [
   (e : Trivialization F (π F E)) [e.IsLinear ℝ] {C : Type u} [Category.{v} C]
   [HasCoproducts.{w} C] [Abelian C] (R : C)
 
-/-- **Fibre classes read in a trivialization are constant on its base set**: for points `b` and
-`b'` joined by a path in `W` within the base set of a linear trivialization `e`, a class of
-`H_d(F, F ∖ {0})`, `d = dim F`, read as a class of the fibre pair over `b` or over `b'` through `e`,
-has the same image in `H_d(E|_W, E₀|_W)`. -/
+/-- **Fibre classes read in a trivialization are constant along paths in its base set**: for
+points `b` and `b'` joined by a path in `W` within the base set of a linear trivialization `e`, a
+class of `H_d(F, F ∖ {0})`, `d = dim F`, read as a class of the fibre pair over `b` or over `b'`
+through `e`, has the same image in `H_d(E|_W, E₀|_W)`. -/
 theorem singularHomologyMap_complZeroPairIso_inv_comp_fiberThomPairOverMap_eq
     {W : Set B} {b b' : B} (h : JoinedIn (W ∩ e.baseSet) b b') (d : ℕ) (hd : finrank ℝ F = d) :
     TopPair.singularHomologyMap
