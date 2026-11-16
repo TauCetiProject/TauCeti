@@ -39,6 +39,13 @@ when endomorphisms are identified with tensors, without adding an instance on th
   finite-dimensional inner product spaces is complete, which discharges completeness hypotheses
   on tensor products in adjoint statements for finite-dimensional factors.
 * `ContinuousLinearMap.rTensor_lTensor_apply_comm`: `f ⊗ 1` and `1 ⊗ g` commute.
+* `ContinuousLinearMap.rTensor_adjoint_inner_left` and
+  `ContinuousLinearMap.lTensor_adjoint_inner_left`, with their `_right` forms: `f† ⊗ 1` and
+  `1 ⊗ g†` are formal adjoints of `f ⊗ 1` and `1 ⊗ g` on the algebraic tensor product, which
+  need not be complete, so that Mathlib's `ContinuousLinearMap.adjoint_rTensor` does not apply.
+* `rTensor_adjoint_comp_self_apply_add_lTensor_adjoint_comp_self_apply_eq_zero_iff`, in the
+  `ContinuousLinearMap` namespace: the positive tensor sum `A†A ⊗ 1 + 1 ⊗ B†B` vanishes exactly
+  on the common kernel of `A ⊗ 1` and `1 ⊗ B`.
 * `InnerProductSpace.tensorDualMetric_tmul`: on pure tensors, the metric on `F ⊗ E*` is the
   product of the inner product of `F` and the dual metric of `E`.
 * `InnerProductSpace.tensorDualMetric_eq_trace`: evaluation carries this metric to the
@@ -151,6 +158,62 @@ variable {𝕜 X₀ X₁ Y₀ Y₁ : Type*} [RCLike 𝕜] [NormedAddCommGroup X�
 theorem rTensor_lTensor_apply_comm (f : X₀ →L[𝕜] X₁) (g : Y₀ →L[𝕜] Y₁) (x : X₀ ⊗[𝕜] Y₀) :
     f.rTensor Y₁ (g.lTensor X₀ x) = g.lTensor X₁ (f.rTensor Y₀ x) := by
   rw [← comp_apply, rTensor_comp_lTensor, ← comp_apply, lTensor_comp_rTensor]
+
+section Adjoint
+
+open scoped InnerProductSpace
+
+/-- `f† ⊗ 1` is a formal adjoint of `f ⊗ 1`, even when the tensor products are not complete. -/
+theorem rTensor_adjoint_inner_left [CompleteSpace X₀] [CompleteSpace X₁] (f : X₀ →L[𝕜] X₁)
+    (x : X₁ ⊗[𝕜] Y₀) (y : X₀ ⊗[𝕜] Y₀) :
+    ⟪f.adjoint.rTensor Y₀ x, y⟫_𝕜 = ⟪x, f.rTensor Y₀ y⟫_𝕜 := by
+  induction x using TensorProduct.inductionOn with
+  | add x₁ x₂ h₁ h₂ => simp only [map_add, inner_add_left, h₁, h₂]
+  | tmul a b =>
+    induction y using TensorProduct.inductionOn with
+    | add y₁ y₂ h₁ h₂ => simp only [map_add, inner_add_right, h₁, h₂]
+    | tmul c d => simp [adjoint_inner_left]
+
+/-- `f† ⊗ 1` is a formal adjoint of `f ⊗ 1`, even when the tensor products are not complete. -/
+theorem rTensor_adjoint_inner_right [CompleteSpace X₀] [CompleteSpace X₁] (f : X₀ →L[𝕜] X₁)
+    (x : X₀ ⊗[𝕜] Y₀) (y : X₁ ⊗[𝕜] Y₀) :
+    ⟪x, f.adjoint.rTensor Y₀ y⟫_𝕜 = ⟪f.rTensor Y₀ x, y⟫_𝕜 := by
+  rw [← inner_conj_symm, rTensor_adjoint_inner_left, inner_conj_symm]
+
+/-- `1 ⊗ g†` is a formal adjoint of `1 ⊗ g`, even when the tensor products are not complete. -/
+theorem lTensor_adjoint_inner_left [CompleteSpace Y₀] [CompleteSpace Y₁] (g : Y₀ →L[𝕜] Y₁)
+    (x : X₀ ⊗[𝕜] Y₁) (y : X₀ ⊗[𝕜] Y₀) :
+    ⟪g.adjoint.lTensor X₀ x, y⟫_𝕜 = ⟪x, g.lTensor X₀ y⟫_𝕜 := by
+  induction x using TensorProduct.inductionOn with
+  | add x₁ x₂ h₁ h₂ => simp only [map_add, inner_add_left, h₁, h₂]
+  | tmul a b =>
+    induction y using TensorProduct.inductionOn with
+    | add y₁ y₂ h₁ h₂ => simp only [map_add, inner_add_right, h₁, h₂]
+    | tmul c d => simp [adjoint_inner_left]
+
+/-- `1 ⊗ g†` is a formal adjoint of `1 ⊗ g`, even when the tensor products are not complete. -/
+theorem lTensor_adjoint_inner_right [CompleteSpace Y₀] [CompleteSpace Y₁] (g : Y₀ →L[𝕜] Y₁)
+    (x : X₀ ⊗[𝕜] Y₀) (y : X₀ ⊗[𝕜] Y₁) :
+    ⟪x, g.adjoint.lTensor X₀ y⟫_𝕜 = ⟪g.lTensor X₀ x, y⟫_𝕜 := by
+  rw [← inner_conj_symm, lTensor_adjoint_inner_left, inner_conj_symm]
+
+/-- The positive tensor sum `A†A ⊗ 1 + 1 ⊗ B†B` vanishes exactly on the common kernel of `A ⊗ 1`
+and `1 ⊗ B`. The tensor products need not be complete. -/
+theorem rTensor_adjoint_comp_self_apply_add_lTensor_adjoint_comp_self_apply_eq_zero_iff
+    [CompleteSpace X₀] [CompleteSpace X₁] [CompleteSpace Y₀] [CompleteSpace Y₁]
+    (A : X₀ →L[𝕜] X₁) (B : Y₀ →L[𝕜] Y₁) (x : X₀ ⊗[𝕜] Y₀) :
+    (A.adjoint ∘L A).rTensor Y₀ x + (B.adjoint ∘L B).lTensor X₀ x = 0 ↔
+      A.rTensor Y₀ x = 0 ∧ B.lTensor X₀ x = 0 := by
+  refine ⟨fun h ↦ ?_, fun h ↦ by simp [rTensor_comp, lTensor_comp, h.1, h.2]⟩
+  -- Pairing with `x` gives `‖(A ⊗ 1) x‖ ^ 2 + ‖(1 ⊗ B) x‖ ^ 2 = 0`.
+  have hx := congrArg (fun y ↦ RCLike.re ⟪y, x⟫_𝕜) h
+  simp only [inner_add_left, map_add, rTensor_comp, lTensor_comp, comp_apply,
+    rTensor_adjoint_inner_left, lTensor_adjoint_inner_left, inner_self_eq_norm_sq,
+    inner_zero_left, map_zero] at hx
+  obtain ⟨hA, hB⟩ := (add_eq_zero_iff_of_nonneg (by positivity) (by positivity)).mp hx
+  exact ⟨by simpa using hA, by simpa using hB⟩
+
+end Adjoint
 
 end ContinuousLinearMap
 
