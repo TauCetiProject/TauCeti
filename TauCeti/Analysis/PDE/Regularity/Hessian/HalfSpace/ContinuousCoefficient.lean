@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.PDE.Regularity.Hessian.HalfSpace.Localization
+import TauCeti.Analysis.PDE.Regularity.Hessian.LowerOrder
 import TauCeti.Analysis.Calculus.BumpFunction.Cutoff
 import TauCeti.MeasureTheory.Function.Lp.Norm
 import TauCeti.MeasureTheory.Function.LpSeminorm.AddMeasure
@@ -76,50 +77,6 @@ namespace TauCeti
 variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteDimensional ℝ E]
   [MeasurableSpace E] [BorelSpace E] {p : ℝ≥0∞} [Fact (1 ≤ p)]
 
-/-- **The lower-order terms as an element of `Lᵖ(Ω)`.** For `u ∈ W^{2,p}(Ω)` and measurable `b`,
-`c` with `‖b‖ ≤ β` and `|c| ≤ γ` almost everywhere on `Ω`, the lower-order part
-`⟪b, ∇u⟫ + c u` is represented by an element of `Lᵖ(Ω)` of norm at most
-`|β| ‖∇u‖ + |γ| ‖u‖`. -/
-private theorem exists_lp_inner_add_mul_le {Omega : Opens (WithLp 2 (ℝ × E))}
-    (u : Wkp (volume : Measure (WithLp 2 (ℝ × E))) Omega p 2)
-    {b : WithLp 2 (ℝ × E) → WithLp 2 (ℝ × E)} {c : WithLp 2 (ℝ × E) → ℝ} {β γ : ℝ}
-    (hb : AEStronglyMeasurable b (volume.restrict (Omega : Set (WithLp 2 (ℝ × E)))))
-    (hbβ : ∀ᵐ x ∂volume.restrict (Omega : Set (WithLp 2 (ℝ × E))), ‖b x‖ ≤ β)
-    (hc : AEStronglyMeasurable c (volume.restrict (Omega : Set (WithLp 2 (ℝ × E)))))
-    (hcγ : ∀ᵐ x ∂volume.restrict (Omega : Set (WithLp 2 (ℝ × E))), |c x| ≤ γ) :
-    ∃ h : Lp ℝ p ((volume : Measure (WithLp 2 (ℝ × E))).restrict Omega),
-      (∀ᵐ x ∂volume.restrict (Omega : Set (WithLp 2 (ℝ × E))),
-        h x = ⟪b x, Wkp.iteratedGradient 0 (Wkp.lowerOrder 1 u) x⟫_ℝ + c x * Wkp.value 2 u x) ∧
-      ‖h‖ ≤ |β| * ‖Wkp.iteratedGradient 0 (Wkp.lowerOrder 1 u)‖ + |γ| * ‖Wkp.value 2 u‖ := by
-  set G := Wkp.iteratedGradient 0 (Wkp.lowerOrder 1 u)
-  set V := Wkp.value 2 u
-  have hdm : AEStronglyMeasurable (fun x => ⟪b x, G x⟫_ℝ)
-      (volume.restrict (Omega : Set (WithLp 2 (ℝ × E)))) :=
-    hb.inner (Lp.aestronglyMeasurable G)
-  have hzm : AEStronglyMeasurable (fun x => c x * V x)
-      (volume.restrict (Omega : Set (WithLp 2 (ℝ × E)))) :=
-    hc.mul (Lp.aestronglyMeasurable V)
-  have hdle : ∀ᵐ x ∂volume.restrict (Omega : Set (WithLp 2 (ℝ × E))),
-      ‖⟪b x, G x⟫_ℝ‖ ≤ |β| * ‖G x‖ := hbβ.mono fun x hx => by
-    rw [Real.norm_eq_abs]
-    exact (abs_real_inner_le_norm _ _).trans
-      (mul_le_mul_of_nonneg_right (hx.trans (le_abs_self β)) (norm_nonneg _))
-  have hzle : ∀ᵐ x ∂volume.restrict (Omega : Set (WithLp 2 (ℝ × E))),
-      ‖c x * V x‖ ≤ |γ| * ‖V x‖ := hcγ.mono fun x hx => by
-    rw [norm_mul, Real.norm_eq_abs]
-    exact mul_le_mul_of_nonneg_right (hx.trans (le_abs_self γ)) (norm_nonneg _)
-  have hd : MemLp (fun x => ⟪b x, G x⟫_ℝ) p (volume.restrict (Omega : Set (WithLp 2 (ℝ × E)))) :=
-    (Lp.memLp G).of_le_mul hdm hdle
-  have hz : MemLp (fun x => c x * V x) p (volume.restrict (Omega : Set (WithLp 2 (ℝ × E)))) :=
-    (Lp.memLp V).of_le_mul hzm hzle
-  refine ⟨(hd.add hz).toLp _, (hd.add hz).coeFn_toLp, ?_⟩
-  rw [Lp.norm_toLp, toReal_eLpNorm,
-    Lp.norm_eq_lpNorm_of_ae_eq (Filter.EventuallyEq.refl _ (G : WithLp 2 (ℝ × E) → _)),
-    Lp.norm_eq_lpNorm_of_ae_eq (Filter.EventuallyEq.refl _ (V : WithLp 2 (ℝ × E) → ℝ))]
-  exact (lpNorm_add_le hd Fact.out).trans (add_le_add
-    (lpNorm_le_mul_lpNorm_of_ae_le_mul hdm (Lp.memLp G) hdle)
-    (lpNorm_le_mul_lpNorm_of_ae_le_mul hzm (Lp.memLp V) hzle))
-
 /-- **The principal part as an element of `Lᵖ(Ω)`.** If `u ∈ W^{2,p}(Ω)` solves
 `tr (A ∘ D²u) + ⟪b, ∇u⟫ + c u = f` almost everywhere on `Ω`, with `f ∈ Lᵖ(Ω)` and measurable `b`,
 `c` such that `‖b‖ ≤ β` and `|c| ≤ γ` almost everywhere, then `tr (A ∘ D²u)` is represented by an
@@ -141,11 +98,17 @@ private theorem exists_lp_traceCLM_comp_eq_and_norm_le {Omega : Opens (WithLp 2 
         traceCLM ℝ (WithLp 2 (ℝ × E)) (A x ∘L Wkp.iteratedGradient 1 u x) = g x) ∧
       ‖g‖ ≤ ‖f‖ + (|β| * ‖Wkp.iteratedGradient 0 (Wkp.lowerOrder 1 u)‖ +
         |γ| * ‖Wkp.value 2 u‖) := by
-  obtain ⟨h, hh, hhnorm⟩ := exists_lp_inner_add_mul_le u hb hbβ hc hcγ
-  refine ⟨f - h, ?_, (norm_sub_le f h).trans (add_le_add le_rfl hhnorm)⟩
-  filter_upwards [heq, hh, Lp.coeFn_sub f h] with x h1 h2 h3
-  rw [h3, Pi.sub_apply, h2, ← h1]
-  ring
+  obtain ⟨hmem, hnorm⟩ := Wkp.memLp_inner_add_mul_and_lpNorm_le subset_rfl u hb hbβ hc hcγ
+  refine ⟨f - hmem.toLp _, ?_, (norm_sub_le _ _).trans (add_le_add le_rfl ?_)⟩
+  · filter_upwards [heq, hmem.coeFn_toLp, Lp.coeFn_sub f (hmem.toLp _)] with x h1 h2 h3
+    rw [h3, Pi.sub_apply, h2, ← h1]
+    ring
+  · rw [Lp.norm_toLp, toReal_eLpNorm, Lp.norm_eq_lpNorm_of_ae_eq (Filter.EventuallyEq.refl _
+        (Wkp.iteratedGradient 0 (Wkp.lowerOrder 1 u) : WithLp 2 (ℝ × E) → _)),
+      Lp.norm_eq_lpNorm_of_ae_eq
+        (Filter.EventuallyEq.refl _ (Wkp.value 2 u : WithLp 2 (ℝ × E) → ℝ))]
+    exact hnorm.trans (add_le_add (mul_le_mul_of_nonneg_right (le_abs_self β) lpNorm_nonneg)
+      (mul_le_mul_of_nonneg_right (le_abs_self γ) lpNorm_nonneg))
 
 /-- The arithmetic of the ball estimate: a bound by `a (F + |β| G + |γ| V) + K (2 m₁ G + m₂ V)`
 with nonnegative coefficients and norms is a bound by a single constant times `F + G + V`. -/
