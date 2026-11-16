@@ -150,8 +150,7 @@ theorem HasProjectiveInjectiveCoresolution.of_shortExact {S : ShortComplex C} (h
     (h₃ : HasProjectiveInjectiveCoresolution S.X₃ n) : HasProjectiveInjectiveCoresolution S.X₂ n :=
   HasCoresolution.of_shortExact (fun _ h ↦ h.2) projective_and_injective_biprod hS h₁ h₃
 
-/-- **`n ≤ dom.dim X` exactly when `X` has a projective-injective coresolution with `n` terms.**
-Coresolutions can be truncated, so the set of such `n` is downward closed. -/
+/-- **`n ≤ dom.dim X` exactly when `X` has a projective-injective coresolution with `n` terms.** -/
 theorem natCast_le_dominantDimension_iff {X : C} {n : ℕ} :
     (n : ℕ∞) ≤ dominantDimension X ↔ HasProjectiveInjectiveCoresolution X n := by
   rw [dominantDimension_def]
@@ -202,8 +201,8 @@ theorem Limits.IsZero.hasProjectiveInjectiveCoresolution {Z : C} (hZ : IsZero Z)
     exact hasCoresolution_succ_iff.2 ⟨Z, 𝟙 Z, inferInstance, ⟨hZ.projective, hZ.injective⟩,
       ih (isZero_cokernel_of_epi _)⟩
 
-/-- **A projective and injective object has dominant dimension `⊤`**, through the coresolution
-`0 → X → X → 0 → 0 → ⋯`. In particular a left self-injective ring has dominant dimension `⊤`. -/
+/-- **A projective and injective object has dominant dimension `⊤`.** In particular a left
+self-injective ring has dominant dimension `⊤`. -/
 theorem dominantDimension_eq_top (X : C) [Projective X] [Injective X] :
     dominantDimension X = ⊤ := by
   refine dominantDimension_eq_top_iff.2 fun n ↦ ?_
@@ -227,9 +226,7 @@ namespace ComposableArrows.IsMinimalInjectiveCoresolution
 
 /-- **The dominant dimension from the minimal injective coresolution.** If `E` is a minimal
 injective coresolution of `X` with `n` terms, then `n ≤ dom.dim X` exactly when the terms of `E`
-are projective. The minimal coresolution is a termwise retract of every injective coresolution
-(`CategoryTheory.ComposableArrows.IsMinimalInjectiveCoresolution.nonempty_retract_obj'`), and
-retracts of projective objects are projective. -/
+are projective. -/
 theorem natCast_le_dominantDimension_iff {n : ℕ} {E : ComposableArrows C (n + 1)}
     (hE : E.IsMinimalInjectiveCoresolution) {X : C} (e : E.obj' 1 ≅ X) :
     (n : ℕ∞) ≤ dominantDimension X ↔ ∀ (i : ℕ) (hi : i < n), Projective (E.obj' (i + 2)) := by
@@ -247,8 +244,7 @@ theorem natCast_le_dominantDimension_iff {n : ℕ} {E : ComposableArrows C (n + 
 
 end ComposableArrows.IsMinimalInjectiveCoresolution
 
-/-- **Retracts.** If `X` is a retract of `Y`, then `dom.dim Y ≤ dom.dim X`: projective-injective
-coresolutions pass to retracts (`CategoryTheory.HasProjectiveInjectiveCoresolution.of_retract`). -/
+/-- **Retracts.** If `X` is a retract of `Y`, then `dom.dim Y ≤ dom.dim X`. -/
 theorem Retract.dominantDimension_le {X Y : C} (r : Retract X Y) :
     dominantDimension Y ≤ dominantDimension X :=
   iSup₂_le fun _ hn ↦ natCast_le_dominantDimension_iff.2 (hn.of_retract r)
@@ -261,21 +257,13 @@ theorem ShortComplex.ShortExact.min_dominantDimension_le {S : ShortComplex C} (h
   rw [le_min_iff, natCast_le_dominantDimension_iff, natCast_le_dominantDimension_iff] at hn
   exact natCast_le_dominantDimension_iff.2 (hn.1.of_shortExact hS hn.2)
 
-/-- The dominant dimension of `X ⊞ Y` is at least the minimum of those of `X` and `Y`. -/
-private theorem min_dominantDimension_le_dominantDimension_biprod (X Y : C) :
-    min (dominantDimension X) (dominantDimension Y) ≤ dominantDimension (X ⊞ Y) := by
-  refine ENat.forall_natCast_le_iff_le.1 fun n hn ↦ ?_
-  rw [le_min_iff, natCast_le_dominantDimension_iff, natCast_le_dominantDimension_iff] at hn
-  exact natCast_le_dominantDimension_iff.2
-    (HasCoresolution.biprod projective_and_injective_biprod hn.1 hn.2)
-
 /-- **Biproducts.** The dominant dimension of `X ⊞ Y` is the minimum of those of `X` and `Y`. -/
 @[simp]
 theorem dominantDimension_biprod (X Y : C) :
     dominantDimension (X ⊞ Y) = min (dominantDimension X) (dominantDimension Y) :=
   le_antisymm (le_min (Retract.dominantDimension_le ⟨biprod.inl, biprod.fst, by simp⟩)
     (Retract.dominantDimension_le ⟨biprod.inr, biprod.snd, by simp⟩))
-    (min_dominantDimension_le_dominantDimension_biprod X Y)
+    (ShortComplex.Splitting.ofHasBinaryBiproduct X Y).shortExact.min_dominantDimension_le
 
 /-- **Finite biproducts.** The dominant dimension of a finite biproduct is the infimum of those of
 its summands. -/
@@ -297,9 +285,8 @@ theorem dominantDimension_biproduct {J : Type w} [Finite J] (f : J → C) [HasBi
     rw [(isZero_biproduct_of_isEmpty f).dominantDimension_eq_top]
     exact le_top
   · intro J _ h _ f
-    rw [iInf_option, dominantDimension_eq_of_iso (biproductOptionIso f)]
-    exact (min_le_min_left _ (h _)).trans
-      (min_dominantDimension_le_dominantDimension_biprod _ _)
+    rw [iInf_option, dominantDimension_eq_of_iso (biproductOptionIso f), dominantDimension_biprod]
+    exact min_le_min_left _ (h _)
 
 section Equivalence
 

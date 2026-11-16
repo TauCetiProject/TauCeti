@@ -100,8 +100,7 @@ theorem biprod_map_id {A E : C} {ι : A ⟶ E} (hι : IsEssentialMono ι) (K : C
     ext <;> simp [h₁, h₂]
 
 /-- **Binary biproducts of essential monomorphisms are essential.** If `ι₁` and `ι₂` are
-essential monomorphisms, then so is `biprod.map ι₁ ι₂`: it is `biprod.map ι₁ (𝟙 _)` followed by
-`biprod.map (𝟙 _) ι₂`, and the latter is `biprod.map ι₂ (𝟙 _)` up to the braiding. -/
+essential monomorphisms, then so is `biprod.map ι₁ ι₂`. -/
 theorem biprod_map {A₁ E₁ A₂ E₂ : C} {ι₁ : A₁ ⟶ E₁} {ι₂ : A₂ ⟶ E₂} (h₁ : IsEssentialMono ι₁)
     (h₂ : IsEssentialMono ι₂) : IsEssentialMono (biprod.map ι₁ ι₂) := by
   rw [biprod_map_factor, ← biprod.braiding_map_braiding ι₂ (𝟙 E₁)]
@@ -115,8 +114,7 @@ into an injective object, and `A` a retract of `B`. Then `E` is a retract of `I`
 `cokernel ι` is a retract of `cokernel j`.
 
 Taking `B = A`, this says that the injective envelope is a retract of every injective object
-containing `A`, and its cokernel a retract of the corresponding cokernel; iterating it compares a
-minimal injective coresolution with an arbitrary one. -/
+containing `A`, and its cokernel a retract of the corresponding cokernel. -/
 theorem nonempty_retract_and_nonempty_retract_cokernel {A B E I : C} [Injective E] [Injective I]
     {ι : A ⟶ E} (hι : IsEssentialMono ι) {j : B ⟶ I} [Mono j] (h : Retract A B) :
     Nonempty (Retract E I) ∧ Nonempty (Retract (cokernel ι) (cokernel j)) := by

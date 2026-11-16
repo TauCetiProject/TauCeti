@@ -12,7 +12,6 @@ public import TauCeti.Algebra.Homology.ExactSequence
 public import TauCeti.Algebra.Homology.ShortComplex.Exact
 public import TauCeti.Algebra.Homology.ShortComplex.ShortExact
 public import TauCeti.CategoryTheory.Limits.Shapes.Biproduct
-public import TauCeti.CategoryTheory.Preadditive.Retract
 
 /-!
 # Coresolutions with `n` terms
@@ -38,8 +37,7 @@ terms satisfy a property `P` (`CategoryTheory.HasCoresolution`) this is
 `CategoryTheory.hasCoresolution_succ_iff`. When `P` consists of injective objects and is closed
 under binary biproducts, the objects with such a coresolution are closed under extensions
 (`CategoryTheory.HasCoresolution.of_shortExact`, the horseshoe argument) and under retracts
-(`CategoryTheory.HasCoresolution.of_retract`, through the complement
-`CategoryTheory.Retract.cokernel` of a retract).
+(`CategoryTheory.HasCoresolution.of_retract`).
 
 ## Main definitions
 
@@ -467,9 +465,7 @@ theorem HasCoresolution.biprod (hP : ∀ A B : C, P A → P B → P (A ⊞ B)) {
 
 /-- **Coresolutions of extensions** (the horseshoe lemma). Let `P` be a property of injective
 objects closed under binary biproducts. If the ends of a short exact sequence
-`0 → B → A → Ω → 0` have coresolutions with `n` terms satisfying `P`, so does the middle: an
-embedding `B ⟶ Q` extends to `A`, and together with an embedding `Ω ⟶ I` it embeds `A` into
-`Q ⊞ I`, with the cokernels again forming a short exact sequence. -/
+`0 → B → A → Ω → 0` have coresolutions with `n` terms satisfying `P`, so does the middle. -/
 theorem HasCoresolution.of_shortExact (hP : ∀ Y, P Y → Injective Y)
     (hPb : ∀ A B : C, P A → P B → P (A ⊞ B)) {n : ℕ} :
     ∀ {L : ShortComplex C}, L.ShortExact → HasCoresolution P L.X₁ n → HasCoresolution P L.X₃ n →
@@ -516,8 +512,7 @@ theorem HasCoresolution.of_shortExact (hP : ∀ Y, P Y → Injective Y)
 
 /-- **Coresolutions of retracts.** Let `P` be a property of injective objects closed under binary
 biproducts. If `Y` has a coresolution with `n` terms satisfying `P`, so does every retract `X` of
-`Y`: if `Y` embeds into `I`, then `X` embeds into `I` too, and the cokernel is an extension of the
-cokernel of `Y ⟶ I` by the complement of `X` in `Y`. -/
+`Y`. -/
 theorem HasCoresolution.of_retract (hP : ∀ Y, P Y → Injective Y)
     (hPb : ∀ A B : C, P A → P B → P (A ⊞ B)) {n : ℕ} :
     ∀ {X Y : C}, Retract X Y → HasCoresolution P Y n → HasCoresolution P X n := by
@@ -529,7 +524,8 @@ theorem HasCoresolution.of_retract (hP : ∀ Y, P Y → Injective Y)
     refine hasCoresolution_succ_iff.2 ⟨I, r.i ≫ ι, inferInstance, hI, ?_⟩
     exact HasCoresolution.of_shortExact hP hPb
       (TauCeti.kernelCokernelCompSequence_snakeInput_L₃_shortExact r.i ι)
-      (ih r.cokernel hY.of_succ) hY'
+      (ih (binaryBiconeOfIsSplitMonoOfCokernel (cokernelIsCokernel r.i)).retract_right hY.of_succ)
+      hY'
 
 section Map
 

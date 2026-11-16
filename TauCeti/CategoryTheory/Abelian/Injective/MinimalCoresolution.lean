@@ -331,8 +331,9 @@ theorem nonempty_retract_obj' (hE : E.IsMinimalInjectiveCoresolution)
   exact ((hE.isEssentialMono_cosyzygyι i hi).nonempty_retract_and_nonempty_retract_cokernel
     (j := hS.cosyzygyι i hi) r').1
 
-/-- The inductive step of the uniqueness of minimal injective coresolutions: an isomorphism of
-`i`-th cosyzygies extends to an isomorphism of `i`-th terms. -/
+/-- For two minimal injective coresolutions with `n` terms, every isomorphism `a` of `i`-th
+cosyzygies extends to an isomorphism `b` of `i`-th terms, compatible with the embeddings of the
+cosyzygies into the terms. -/
 theorem exists_iso_obj'_comm (hE : E.IsMinimalInjectiveCoresolution)
     (hS : S.IsMinimalInjectiveCoresolution) (i : ℕ) (hi : i < n)
     (a : E.cosyzygy i ≅ S.cosyzygy i) :

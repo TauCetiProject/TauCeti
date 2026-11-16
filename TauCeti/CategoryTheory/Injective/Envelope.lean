@@ -163,7 +163,8 @@ open Limits
 
 variable [HasZeroMorphisms C]
 
-/-- `cokernel.desc f g w` only depends on `f` and `g`. -/
+/-- If `f = f'` and `g = g'`, then `cokernel.desc f g w` is an essential monomorphism exactly when
+`cokernel.desc f' g' w'` is. -/
 theorem isEssentialMono_cokernelDesc_congr {A B D : C} {f f' : A ⟶ B} {g g' : B ⟶ D}
     [HasCokernel f] [HasCokernel f'] (hf : f = f') (hg : g = g') (w : f ≫ g = 0)
     (w' : f' ≫ g' = 0) :
