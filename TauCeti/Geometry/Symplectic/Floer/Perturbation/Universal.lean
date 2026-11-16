@@ -106,15 +106,9 @@ private theorem hasDerivAt_sectionCoord_floerOperator_coefficient_difference
       J z (γ r) (ω.hamiltonianVectorField (δKt z) (γ r)) -
       r • Y z (γ r) (ω.hamiltonianVectorField (δKt z) (γ r))
   -- Establish only continuity of the correction; none of its coefficient fields is differentiated.
-  have hγ : MDifferentiableAt 𝓘(ℝ, ℝ) I γ 0 :=
-    (hu.comp 0 (contMDiff_iff_contDiff.mpr (contDiff_prodMk_left z)).contMDiffAt).mdifferentiableAt
-      (by norm_num)
-  have ht : ContMDiffAt 𝓘(ℝ, ℝ × ℝ) I 2
-      (fun p : ℝ × ℝ ↦ u p.1 (z.1, p.2)) (0, z.2) :=
-    hu.comp (0, z.2) (contMDiff_iff_contDiff.mpr (by fun_prop :
-      ContDiff ℝ 2 (fun p : ℝ × ℝ ↦ (p.1, (z.1, p.2))))).contMDiffAt
-  have hVt := (ht.contMDiffAt_curveVelocity_snd_slice (f := fun r t ↦ u r (z.1, t))
-    (m := 1) (by norm_num)).mdifferentiableAt one_ne_zero
+  have hVt := (hu.contMDiffAt_prod_snd_slice.contMDiffAt_curveVelocity_snd_slice
+    (f := fun r t ↦ u r (z.1, t)) (m := 1) (by norm_num)).mdifferentiableAt one_ne_zero
+  have hγ := ((mdifferentiableAt_totalSpace _ _).1 hVt).1
   have hΔt := hVt.sub_sectionAlong (hXt.comp 0 hγ)
   have hYγ : ContinuousAt (fun r ↦ TotalSpace.mk' (E →L[ℝ] E)
       (E := fun x ↦ TangentSpace I x →L[ℝ] TangentSpace I x) (γ r) (Y z (γ r))) 0 :=
@@ -176,14 +170,11 @@ theorem mdifferentiableAt_floerOperator_add_smul_coefficients
     MDifferentiableAt 𝓘(ℝ, ℝ) I.tangent (fun r ↦ TotalSpace.mk' E (u r z)
       (ω.floerOperator (fun w x ↦ J w x + r • Y w x)
         (fun w ↦ Ks w + r • δKs w) (fun w ↦ Kt w + r • δKt w) (u r) z)) 0 := by
-  have hγ : MDifferentiableAt 𝓘(ℝ, ℝ) I (fun r ↦ u r z) 0 :=
-    (hu.comp 0 (contMDiff_iff_contDiff.mpr (contDiff_prodMk_left z)).contMDiffAt).mdifferentiableAt
-      (by norm_num)
-  apply (differentiableAt_sectionCoord_iff _ _ hγ
-    (FiberBundle.mem_baseSet_trivializationAt E (TangentSpace I) (u 0 z))).1
-  have hF := differentiableAt_sectionCoord _ _
-    (ω.mdifferentiableAt_floerOperator J Ks Kt hu hJ hXs hXt)
-    (FiberBundle.mem_baseSet_trivializationAt E (TangentSpace I) (u 0 z))
+  have hF₀ := ω.mdifferentiableAt_floerOperator J Ks Kt hu hJ hXs hXt
+  have hγ := ((mdifferentiableAt_totalSpace _ _).1 hF₀).1
+  have hbase := FiberBundle.mem_baseSet_trivializationAt E (TangentSpace I) (u 0 z)
+  apply (differentiableAt_sectionCoord_iff _ _ hγ hbase).1
+  have hF := differentiableAt_sectionCoord _ _ hF₀ hbase
   have hd := ω.hasDerivAt_sectionCoord_floerOperator_coefficient_difference
     J Y Ks Kt δKs δKt hu hJ hY hXt hδXs hδXt hK
   simpa only [sectionCoord_sub, add_sub_cancel] using! hF.add hd.differentiableAt

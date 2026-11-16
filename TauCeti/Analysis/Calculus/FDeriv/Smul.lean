@@ -60,7 +60,9 @@ theorem _root_.HasFDerivWithinAt.smul_of_eq_zero {c : E → 𝕜'} {c' : E →L[
     (ContinuousAt.comp_continuousWithinAt
       (ContinuousLinearMap.lsmul 𝕜 𝕜' (E := F)).flip.continuous.continuousAt hf)
     hc hc0
-  exact hd.congr_fderiv (by ext v; rfl)
+  simpa only [Function.comp_apply, ContinuousLinearMap.flip_apply,
+    ContinuousLinearMap.lsmul_apply] using
+    hd.congr_fderiv (f' := c'.smulRight (f x)) (by ext v; simp)
 
 /-- At a zero of a differentiable scalar factor, the vector factor need only be continuous
 to differentiate their scalar multiple. Scalars may take values in a normed algebra over the
