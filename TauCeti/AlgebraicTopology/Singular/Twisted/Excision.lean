@@ -69,19 +69,6 @@ section OpenCover
 
 variable {P P' : TopPair.{v}} (f : P ⟶ P') (L : LocalCoefficientSystem.{u, v, max v w} R P'.fst)
 
-/-- If the image of a chain under a map of pairs is supported in the target subspace, and the
-source subspace is the full preimage of the target subspace, then the chain vanishes in relative
-chains of the source pair. -/
-private lemma twistedChainComplexπ_f_eq_zero_of_map_mem [Mono (Hom.fst f)]
-    (hsnd : ∀ x, Hom.fst f x ∈ Set.range P'.map → x ∈ Set.range P.map) {n : ℕ}
-    {z : ((pullback (Hom.fst f).hom).obj L).twistedChainComplex.X n}
-    (hz : (LocalCoefficientSystem.twistedChainComplexMap (Hom.fst f) L).f n z ∈
-      smallTwistedChains L (fun _ : Unit ↦ Set.range P'.map) n) :
-    (P.twistedChainComplexπ _).f n z = 0 :=
-  (twistedChainComplexπ_f_apply_eq_zero_iff _ _ _).2 <|
-    smallTwistedChains_mono _ _ (fun _ : Unit ↦ Set.range P.map) id (fun _ x hx ↦ hsnd x hx) n
-      ((twistedChainComplexMap_f_mem_smallTwistedChains_iff _ L).1 hz)
-
 /-- If each member of a family of subsets lies in the target subspace or in the image of an
 embedding of ambient spaces, every chain subordinate to the family is the sum of a pushforward
 and a chain supported in the target subspace. -/
@@ -131,9 +118,10 @@ private lemma exists_sub_twistedChainComplexMap_f_eq_d {n : ℕ} (y : (P'.twiste
     (P'.twistedChainComplexπ L).f (n + 1)
       (((twistedSubdivisionHomotopy L).idPow N).hom n (n + 1) c), ?_⟩
   · rw [HomologicalComplex.Hom.comm_apply]
-    refine twistedChainComplexπ_f_eq_zero_of_map_mem f L hsnd ?_
-    rw [← HomologicalComplex.Hom.comm_apply, eq_sub_of_add_eq hab, map_sub,
-      HomologicalComplex.Hom.comm_apply]
+    refine twistedChainComplexMap_f_injective f L hsnd (n - 1) ?_
+    rw [map_zero, twistedChainComplexMap_f_twistedChainComplexπ_f_apply,
+      twistedChainComplexπ_f_apply_eq_zero_iff, ← HomologicalComplex.Hom.comm_apply,
+      eq_sub_of_add_eq hab, map_sub, HomologicalComplex.Hom.comm_apply]
     exact sub_mem (iterate_twistedSubdivision_mem_smallTwistedChains L _ hdc N) hdb
   · rw [← twistedChainComplexπ_f_sub_iterate_twistedSubdivision P' L c hy N,
       twistedChainComplexMap_f_twistedChainComplexπ_f_apply, ← hab, map_add, hb₀, add_zero]
@@ -165,7 +153,9 @@ private lemma exists_d_eq_of_twistedChainComplexMap_f_eq_d {n : ℕ}
           ((End.of (twistedSubdivisionChainMap ((pullback (Hom.fst f).hom).obj L)) ^ N).asHom.f n
             a) := by
     rw [← sub_eq_zero, ← map_sub]
-    refine twistedChainComplexπ_f_eq_zero_of_map_mem f L hsnd ?_
+    refine twistedChainComplexMap_f_injective f L hsnd n ?_
+    rw [map_zero, twistedChainComplexMap_f_twistedChainComplexπ_f_apply,
+      twistedChainComplexπ_f_apply_eq_zero_iff]
     have : (LocalCoefficientSystem.twistedChainComplexMap (Hom.fst f) L).f n
         (((pullback (Hom.fst f).hom).obj L).twistedChainComplex.d (n + 1) n w₁ -
           (End.of (twistedSubdivisionChainMap ((pullback (Hom.fst f).hom).obj L)) ^ N).asHom.f n

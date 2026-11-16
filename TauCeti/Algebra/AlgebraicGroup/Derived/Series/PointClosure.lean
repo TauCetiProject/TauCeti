@@ -39,7 +39,7 @@ theorem derivedSeriesDefiningIdeal_eq_vanishingIdeal_derivedSeries_of_dense_poin
   | zero => simpa only [derivedSeriesDefiningIdeal_zero, Subgroup.derivedSeries_zero] using h.symm
   | succ n ih =>
       rw [derivedSeriesDefiningIdeal_succ, ih,
-        comapOfSurjective_derivedDefiningIdeal_quotient_vanishingIdeal_eq_vanishingIdeal_commutator,
+        comapOfSurjective_derivedDefiningIdeal_eq_vanishingIdeal_commutator,
         Subgroup.derivedSeries_succ]
 
 variable [IsAlgClosed k] [Algebra.FiniteType k H] [IsReduced H]

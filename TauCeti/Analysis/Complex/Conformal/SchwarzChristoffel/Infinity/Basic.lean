@@ -348,7 +348,6 @@ theorem tendsto_schwarzChristoffelBoundaryValue_atInfinity (a e : ι → ℝ) (z
     rw [← heq] at this
     exact this
   filter_upwards [hL, hl.eventually_ge_atTop (R + 1)] with x hx hxbig
-  have hnb := Real.nhdsWithin_upperHalfPlaneSet_neBot x
   have hnorm : ∀ᶠ z in 𝓝[upperHalfPlaneSet] ((x : ℂ)), R ≤ ‖z‖ := by
     have hopen : {z : ℂ | R < ‖z‖} ∈ 𝓝 ((x : ℂ)) := by
       refine (isOpen_lt continuous_const continuous_norm).mem_nhds ?_
@@ -376,7 +375,6 @@ theorem tendsto_limUnder_schwarzChristoffelPrimitive_atTop (a e : ι → ℝ) (z
     (Finset.single_le_sum (fun j _ => abs_nonneg (a j)) (Finset.mem_univ i))
   obtain ⟨L, hL, -, -⟩ := exists_tendsto_schwarzChristoffelPrimitive_sub_eq a e z₀
     (p := ∑ i, |a i|) (q := x + 1) fun i _ hi => absurd hi.1 (not_lt.mpr (hle i))
-  have hnb := Real.nhdsWithin_upperHalfPlaneSet_neBot x
   have h := hL x ⟨hx, by linarith⟩
   rwa [h.limUnder_eq]
 
@@ -395,7 +393,6 @@ theorem tendsto_limUnder_schwarzChristoffelPrimitive_atBot (a e : ι → ℝ) (z
       (Finset.single_le_sum (fun j _ => abs_nonneg (a j)) (Finset.mem_univ i)))
   obtain ⟨L, hL, -, -⟩ := exists_tendsto_schwarzChristoffelPrimitive_sub_eq a e z₀
     (p := x - 1) (q := -∑ i, |a i|) fun i _ hi => absurd hi.2 (not_lt.mpr (hle i))
-  have hnb := Real.nhdsWithin_upperHalfPlaneSet_neBot x
   have h := hL x ⟨by linarith, hx⟩
   rwa [h.limUnder_eq]
 

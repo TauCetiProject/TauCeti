@@ -30,8 +30,13 @@ groups.
 * `TauCeti.Subcomodule.toSubmodule`: the underlying submodule.
 * `TauCeti.Subcomodule.finite`: subcomodules of noetherian modules are finite.
 * `TauCeti.Subcomodule.instModuleFinite`: the same finiteness for the subtype of a subcomodule.
+* `TauCeti.Subcomodule.ext` and `TauCeti.Subcomodule.coact_mem`: subcomodules are determined by
+  their elements, and the coaction of an element lies in the tensor product of the subcomodule
+  with the coalgebra.
 * `TauCeti.Subcomodule.rid_lTensor_coact_mem`: a subcomodule is stable under contracting the
   coaction against a linear functional on the coalgebra.
+* `TauCeti.Subcomodule.ofSubmodule`: build a subcomodule from a submodule and the tensor-product
+  stability condition.
 * `⊤` and `⊥`: the full and zero subcomodules, which bound the order of subcomodules.
 * `TauCeti.Subcomodule.toSubmodule_eq_top` and `TauCeti.Subcomodule.toSubmodule_eq_bot`: the
   underlying submodule detects the extreme subcomodules.
@@ -40,10 +45,18 @@ groups.
 * `TauCeti.Subcomodule.isSimpleOrder_of_transitive`: a family of maps that preserves every
   subcomodule and acts transitively on nonzero vectors makes the subcomodule lattice simple.
 * `TauCeti.Subcomodule.map`: the image of a subcomodule under a comodule morphism.
+* `TauCeti.Subcomodule.mem_map`, `TauCeti.Subcomodule.map_le_iff`, `TauCeti.Subcomodule.map_mono`,
+  `TauCeti.Subcomodule.map_bot`, `TauCeti.Subcomodule.map_id` and `TauCeti.Subcomodule.map_map`:
+  membership in an image, and the order and functoriality properties of `map`.
 * `TauCeti.Subcomodule.map_finite`: images preserve finite generation of the underlying
   submodule.
 * `TauCeti.Comodule.Hom.range`: the image subcomodule of a comodule morphism.
+* `TauCeti.Comodule.Hom.range_toSubmodule`, `TauCeti.Comodule.Hom.mem_range` and
+  `TauCeti.Comodule.Hom.range_le_iff`: the underlying submodule, membership and order
+  characterisation of the range.
 * `TauCeti.Comodule.Hom.range_finite`: ranges of morphisms out of finite modules are finite.
+* The instance `AddSubgroupClass (Subcomodule R C M) M` over a commutative ring and an additive
+  group `M`: the subtype of a subcomodule is an additive group.
 
 ## References
 

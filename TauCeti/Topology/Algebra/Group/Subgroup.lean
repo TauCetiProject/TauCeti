@@ -136,10 +136,6 @@ instance instNormal_topologicalClosure_normalClosure {G : Type*} [Group G]
     ((Subgroup.normalClosure s).topologicalClosure).Normal := by
   exact Subgroup.is_normal_topologicalClosure _
 
-end TauCeti
-
-namespace TauCeti
-
 /-- The closed normal closure of relators lies in the kernel of a continuous homomorphism that
 kills them. -/
 theorem topologicalClosure_normalClosure_le_ker {G H : Type*} [Group G] [Monoid H]
@@ -598,10 +594,6 @@ theorem mem_or_inv_mul_mem_of_mem_topologicalClosure_zpowers
       exact hpow k
   exact closure_minimal hsubset
     (hH.union (hH.preimage (continuous_const.mul continuous_id))) hx
-
-end TauCeti
-
-namespace TauCeti
 
 /-! ### Products of topological groups -/
 

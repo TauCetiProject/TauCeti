@@ -644,9 +644,7 @@ theorem dsupport_cone_subset (p : E) (T : 𝓓(Ω, E [⋀^Fin k]→L[ℝ] F) →
   · rw [cone_of_not_exists h, (dsupport_eq_empty_iff (0 : _ →L[ℝ] G)).2 rfl]
     exact empty_subset _
   obtain ⟨χ, hχ⟩ := h
-  have hTc : IsCompact (dsupport T) :=
-    χ.hasCompactSupport.of_isClosed_subset isClosed_dsupport fun x hx ↦
-      subset_tsupport _ (by simp [hχ.self_of_nhdsSet x hx])
+  have hTc : IsCompact (dsupport T) := (isCompact_dsupport_and_subset_of_eventually_eq_one hχ).1
   have hC : (fun q : E × ℝ ↦ p + q.2 • (q.1 - p)) '' (dsupport T ×ˢ Icc 0 1) =
       ⋃ x ∈ dsupport T, segment ℝ p x := by
     ext y
@@ -812,8 +810,7 @@ theorem mass_cone_le (T : 𝓓(Ω, E [⋀^Fin k]→L[ℝ] F) →L[ℝ] V) {r : �
   · rw [cone_of_not_exists h, FunLike.coe_zero, mass_zero]
     exact zero_le
   obtain ⟨χ₀, hχ₀⟩ := h
-  have hTΩ : dsupport T ⊆ Ω := fun x hx ↦
-    χ₀.tsupport_subset (subset_tsupport _ (by simp [hχ₀.self_of_nhdsSet x hx]))
+  have hTΩ : dsupport T ⊆ Ω := (isCompact_dsupport_and_subset_of_eventually_eq_one hχ₀).2
   have hTc : IsCompact (dsupport T) :=
     (isCompact_closedBall p r).of_isClosed_subset isClosed_dsupport hr
   -- For every `ε > 0`, a cutoff supported in the ball of radius `r + ε` gives the bound with
