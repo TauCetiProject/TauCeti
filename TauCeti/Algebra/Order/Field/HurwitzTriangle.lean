@@ -8,6 +8,8 @@ module
 public import Mathlib.Algebra.Order.Field.Basic
 public import Mathlib.Data.Multiset.Basic
 import Mathlib.Algebra.BigOperators.Group.Multiset.Basic
+import Mathlib.Algebra.Order.Field.Rat
+import Mathlib.Data.Rat.Cast.CharZero
 import Mathlib.Tactic.Abel
 import Mathlib.Tactic.IntervalCases
 import Mathlib.Tactic.Linarith
@@ -30,12 +32,13 @@ while every other triple with `1/a + 1/b + 1/c < 1` has deficit at least `1/24`,
 `TauCeti.hyperbolic_pair_deficit_eq_one_div_six_iff`) hold for all natural numbers without
 lower-bound hypotheses on the indices.
 
-Applied to ramification indices and Fuchsian orbifold signatures, these bounds and spectral gaps
-give Hurwitz's sharp `84(g - 1)` bound, Siegel's `π/21` minimal-covolume theorem and its
-`(0; 2, 3, 7)` uniqueness, and the `π/3` minimal-covolume theorem and `(0; 2, 3; 1)` uniqueness for
-cusped Fuchsian groups.
+Applied to ramification indices and Fuchsian orbifold signatures, these bounds and second-smallest
+deficit gaps give Hurwitz's sharp `84(g - 1)` bound, Siegel's `π/21` minimal-covolume theorem and
+its `(0; 2, 3, 7)` uniqueness, and the `π/3` minimal-covolume theorem and `(0; 2, 3; 1)` uniqueness
+for cusped Fuchsian groups.
 
-All bounds and characterizations are stated in an arbitrary linearly ordered field.
+All lower bounds are stated in an arbitrary linearly ordered field, while the equality
+characterizations hold in any characteristic-zero division ring.
 
 ## Main results
 
@@ -68,9 +71,8 @@ variable {K : Type*}
 private theorem pair_deficit_eq_of_multiset_eq [DivisionRing K] [CharZero K] {a b : ℕ}
     (h : ({a, b} : Multiset ℕ) = {2, 3}) :
     (1 : K) - 1 / a - 1 / b = 1 / 6 := by
-  have hsum := congrArg (fun s : Multiset ℕ ↦ (s.map fun n : ℕ ↦ (1 : K) - 1 / n).sum) h
-  simp only [Multiset.insert_eq_cons, Multiset.map_cons, Multiset.sum_cons,
-    Multiset.map_singleton, Multiset.sum_singleton, Nat.cast_ofNat] at hsum
+  have hsum : (1 - 1 / (a : K)) + (1 - 1 / b) = (1 - 1 / 2) + (1 - 1 / 3) := by
+    simpa using congrArg (fun s : Multiset ℕ ↦ (s.map fun n : ℕ ↦ (1 : K) - 1 / n).sum) h
   calc (1 : K) - 1 / a - 1 / b = (1 - 1 / a) + (1 - 1 / b) - 1 := by abel
     _ = (1 - 1 / 2) + (1 - 1 / 3) - 1 := by rw [hsum]
     _ = 1 / 6 := by norm_num
@@ -114,33 +116,21 @@ theorem one_div_six_le_hyperbolic_pair_deficit
   · exact (by norm_num : (1 : K) / 6 ≤ 1 / 4).trans
       (one_div_four_le_hyperbolic_pair_deficit_of_ne hhyper h)
 
-/-- Any pair `{a, b} ≠ {2, 3}` of natural numbers with `1/a + 1/b < 1` has deficit strictly greater
-than `1/6`. -/
-theorem one_div_six_lt_hyperbolic_pair_deficit_of_ne
-    [Field K] [LinearOrder K] [IsStrictOrderedRing K]
-    {a b : ℕ} (hhyper : (1 : K) / a + 1 / b < 1) (hne : ({a, b} : Multiset ℕ) ≠ {2, 3}) :
-    (1 : K) / 6 < 1 - 1 / a - 1 / b :=
-  (by norm_num : (1 : K) / 6 < 1 / 4).trans_le
-    (one_div_four_le_hyperbolic_pair_deficit_of_ne hhyper hne)
-
-/-- For natural numbers `a, b`, the deficit `1 - 1/a - 1/b` equals `1/6` in a linearly ordered
-field if and only if `{a, b} = {2, 3}`. -/
-theorem hyperbolic_pair_deficit_eq_one_div_six_iff
-    [Field K] [LinearOrder K] [IsStrictOrderedRing K] {a b : ℕ} :
+/-- For natural numbers `a, b`, the deficit `1 - 1/a - 1/b` equals `1/6` in a characteristic-zero
+division ring if and only if `{a, b} = {2, 3}`. -/
+theorem hyperbolic_pair_deficit_eq_one_div_six_iff [DivisionRing K] [CharZero K] {a b : ℕ} :
     (1 : K) - 1 / a - 1 / b = 1 / 6 ↔ ({a, b} : Multiset ℕ) = {2, 3} := by
+  have hcast : (((1 : ℚ) - 1 / a - 1 / b : ℚ) : K) = (1 : K) - 1 / a - 1 / b := by
+    push_cast; rfl
+  rw [← hcast, show (1 : K) / 6 = ((1 / 6 : ℚ) : K) by norm_num, Rat.cast_inj]
   refine ⟨fun heq ↦ ?_, pair_deficit_eq_of_multiset_eq⟩
   by_contra hne
-  have hhyper : (1 : K) / a + 1 / b < 1 := by linarith
-  exact (one_div_six_lt_hyperbolic_pair_deficit_of_ne hhyper hne).ne' heq
+  linarith [one_div_four_le_hyperbolic_pair_deficit_of_ne (K := ℚ) (by linarith) hne]
 
-/-- The pair indices `(2, 3)` attain the `1/6` bound. -/
-theorem two_three_deficit_eq_one_div_six [DivisionRing K] [CharZero K] :
-    (1 : K) - 1 / 2 - 1 / 3 = 1 / 6 := by
+example [DivisionRing K] [CharZero K] : (1 : K) - 1 / 2 - 1 / 3 = 1 / 6 := by
   norm_num
 
-/-- The pair indices `(2, 4)` attain the second-smallest pair deficit `1/4`. -/
-theorem two_four_deficit_eq_one_div_four [DivisionRing K] [CharZero K] :
-    (1 : K) - 1 / 2 - 1 / 4 = 1 / 4 := by
+example [DivisionRing K] [CharZero K] : (1 : K) - 1 / 2 - 1 / 4 = 1 / 4 := by
   norm_num
 
 /-! ### Hyperbolic triples -/
@@ -157,9 +147,9 @@ private theorem triple_multiset_swap₂₃ (a b c : ℕ) :
 private theorem triangle_deficit_eq_of_multiset_eq [DivisionRing K] [CharZero K] {a b c : ℕ}
     (h : ({a, b, c} : Multiset ℕ) = {2, 3, 7}) :
     (1 : K) - 1 / a - 1 / b - 1 / c = 1 / 42 := by
-  have hsum := congrArg (fun s : Multiset ℕ ↦ (s.map fun n : ℕ ↦ (1 : K) - 1 / n).sum) h
-  simp only [Multiset.insert_eq_cons, Multiset.map_cons, Multiset.sum_cons,
-    Multiset.map_singleton, Multiset.sum_singleton, Nat.cast_ofNat] at hsum
+  have hsum : (1 - 1 / (a : K)) + ((1 - 1 / b) + (1 - 1 / c)) =
+      (1 - 1 / 2) + ((1 - 1 / 3) + (1 - 1 / 7)) := by
+    simpa using congrArg (fun s : Multiset ℕ ↦ (s.map fun n : ℕ ↦ (1 : K) - 1 / n).sum) h
   calc (1 : K) - 1 / a - 1 / b - 1 / c
       = (1 - 1 / a) + ((1 - 1 / b) + (1 - 1 / c)) - 1 - 1 := by abel
     _ = (1 - 1 / 2) + ((1 - 1 / 3) + (1 - 1 / 7)) - 1 - 1 := by rw [hsum]
@@ -227,35 +217,24 @@ theorem one_div_forty_two_le_hyperbolic_triangle_deficit
   · exact (by norm_num : (1 : K) / 42 ≤ 1 / 24).trans
       (one_div_twenty_four_le_hyperbolic_triangle_deficit_of_ne hhyper h)
 
-/-- Any triple `{a, b, c} ≠ {2, 3, 7}` of natural numbers with `1/a + 1/b + 1/c < 1` has deficit
-strictly greater than `1/42`. -/
-theorem one_div_forty_two_lt_hyperbolic_triangle_deficit_of_ne
-    [Field K] [LinearOrder K] [IsStrictOrderedRing K]
-    {a b c : ℕ} (hhyper : (1 : K) / a + 1 / b + 1 / c < 1)
-    (hne : ({a, b, c} : Multiset ℕ) ≠ {2, 3, 7}) :
-    (1 : K) / 42 < 1 - 1 / a - 1 / b - 1 / c :=
-  (by norm_num : (1 : K) / 42 < 1 / 24).trans_le
-    (one_div_twenty_four_le_hyperbolic_triangle_deficit_of_ne hhyper hne)
-
-/-- For natural numbers `a, b, c`, the deficit `1 - 1/a - 1/b - 1/c` equals `1/42` in a linearly
-ordered field if and only if `{a, b, c} = {2, 3, 7}`. -/
+/-- For natural numbers `a, b, c`, the deficit `1 - 1/a - 1/b - 1/c` equals `1/42` in a
+characteristic-zero division ring if and only if `{a, b, c} = {2, 3, 7}`. -/
 theorem hyperbolic_triangle_deficit_eq_one_div_forty_two_iff
-    [Field K] [LinearOrder K] [IsStrictOrderedRing K] {a b c : ℕ} :
+    [DivisionRing K] [CharZero K] {a b c : ℕ} :
     (1 : K) - 1 / a - 1 / b - 1 / c = 1 / 42 ↔ ({a, b, c} : Multiset ℕ) = {2, 3, 7} := by
+  have hcast : (((1 : ℚ) - 1 / a - 1 / b - 1 / c : ℚ) : K) = (1 : K) - 1 / a - 1 / b - 1 / c := by
+    push_cast; rfl
+  rw [← hcast, show (1 : K) / 42 = ((1 / 42 : ℚ) : K) by norm_num, Rat.cast_inj]
   refine ⟨fun heq ↦ ?_, triangle_deficit_eq_of_multiset_eq⟩
   by_contra hne
-  have hhyper : (1 : K) / a + 1 / b + 1 / c < 1 := by linarith
-  exact (one_div_forty_two_lt_hyperbolic_triangle_deficit_of_ne hhyper hne).ne' heq
+  linarith [one_div_twenty_four_le_hyperbolic_triangle_deficit_of_ne (K := ℚ) (by linarith) hne]
 
 /-- The triangle indices `(2, 3, 7)` attain the `1/42` bound. -/
 theorem two_three_seven_deficit_eq_one_div_forty_two [DivisionRing K] [CharZero K] :
     (1 : K) - 1 / 2 - 1 / 3 - 1 / 7 = 1 / 42 := by
   norm_num
 
-/-- The triangle indices `(2, 3, 8)` attain the second-smallest hyperbolic triangle deficit
-`1/24`. -/
-theorem two_three_eight_deficit_eq_one_div_twenty_four [DivisionRing K] [CharZero K] :
-    (1 : K) - 1 / 2 - 1 / 3 - 1 / 8 = 1 / 24 := by
+example [DivisionRing K] [CharZero K] : (1 : K) - 1 / 2 - 1 / 3 - 1 / 8 = 1 / 24 := by
   norm_num
 
 end TauCeti

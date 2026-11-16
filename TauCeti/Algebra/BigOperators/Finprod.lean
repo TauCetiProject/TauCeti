@@ -64,6 +64,12 @@ left-regular element commutes with `finsum` even when the support is infinite.
 * `IsLeftRegular.mul_finsum`: left multiplication by a left-regular element commutes with
   `finsum`, whatever the support.
 * `Multiset.finsum_count_eq_card`: the multiplicities of a multiset add up to its cardinality.
+* `Set.Finite.finprod_mem_comp_eq_multiset_prod_map` and
+  `Set.Finite.finsum_mem_comp_eq_multiset_sum_map`: a product or sum of `g (f x)` over a finite
+  set `s` factors through the multiset `hs.toFinset.val.map f`.
+* `Set.exists_finprod_mem_comp_eq_multiset_prod_map` and
+  `Set.exists_finsum_mem_comp_eq_multiset_sum_map`: for any set `s`, `∏ᶠ x ∈ s, g (f x)` (or
+  `∑ᶠ x ∈ s, g (f x)`) equals `(m.map g).prod` (or `(m.map g).sum`) for some multiset `m`.
 -/
 
 public section
@@ -337,3 +343,33 @@ theorem Multiset.finsum_count_eq_card {α R : Type*} [DecidableEq α] [AddCommMo
   rw [Function.mem_support] at ha
   exact Finset.mem_coe.2 <| Multiset.mem_toFinset.2 <|
     Multiset.count_ne_zero.1 fun h ↦ ha (by simp [h])
+
+namespace Set.Finite
+
+/-- Taking the product of `g (f x)` over a finite set `s` factors through the multiset
+`hs.toFinset.val.map f` of values of `f` on `s`. -/
+@[to_additive /-- Summing `g (f x)` over a finite set `s` factors through the multiset
+`hs.toFinset.val.map f` of values of `f` on `s`. -/]
+theorem finprod_mem_comp_eq_multiset_prod_map {α β M : Type*} [CommMonoid M] {s : Set α}
+    (hs : s.Finite) (f : α → β) (g : β → M) :
+    ∏ᶠ x ∈ s, g (f x) = ((hs.toFinset.val.map f).map g).prod := by
+  rw [finprod_mem_eq_finite_toFinset_prod _ hs, Finset.prod_eq_multiset_prod, Multiset.map_map]
+  rfl
+
+end Set.Finite
+
+namespace Set
+
+/-- For any set `s : Set α`, `f : α → β`, and `g : β → M`, there exists a multiset `m : Multiset β`
+such that `∏ᶠ x ∈ s, g (f x) = (m.map g).prod`. -/
+@[to_additive /-- For any set `s : Set α`, `f : α → β`, and `g : β → M`, there exists a multiset
+`m : Multiset β` such that `∑ᶠ x ∈ s, g (f x) = (m.map g).sum`. -/]
+theorem exists_finprod_mem_comp_eq_multiset_prod_map {α β M : Type*} [CommMonoid M]
+    (s : Set α) (f : α → β) (g : β → M) :
+    ∃ m : Multiset β, ∏ᶠ x ∈ s, g (f x) = (m.map g).prod := by
+  by_cases ht : (s ∩ Function.mulSupport fun x ↦ g (f x)).Finite
+  · exact ⟨ht.toFinset.val.map f, by
+      rw [← finprod_mem_inter_mulSupport, ht.finprod_mem_comp_eq_multiset_prod_map]⟩
+  · exact ⟨0, by rw [finprod_mem_eq_one_of_infinite ht, Multiset.map_zero, Multiset.prod_zero]⟩
+
+end Set

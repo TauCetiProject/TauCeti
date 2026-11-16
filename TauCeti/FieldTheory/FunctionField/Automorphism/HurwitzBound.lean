@@ -90,7 +90,6 @@ theorem natCard_le_eighty_four_mul_genus_sub_one (hF : IsFunctionField k F)
   classical
   set E := IntermediateField.fixedField G
   have hcard : Module.finrank ↥E F = Nat.card G := (IsGaloisGroup.card_eq_finrank G E F).symm
-  have hGpos : 0 < Nat.card G := Nat.card_pos
   have hFE : IsFunctionField k ↥E := hF.fixedField G
   have hexE : IsIntegrallyClosedIn k ↥E := E.val.isIntegrallyClosedIn E.val.injective hex
   -- The ramified places of the fixed field form a finite set.
@@ -123,7 +122,7 @@ theorem natCard_le_eighty_four_mul_genus_sub_one (hF : IsFunctionField k F)
     rw [hbranch] at hcastQ
     rw [hD, hsum, ← hcard]
     linarith [hcastQ]
-  exact card_le_eighty_four_mul_sub_one hgenus hGpos hkey
+  exact card_le_eighty_four_mul_sub_one hgenus hkey
 
 /-- **The Hurwitz bound for a group of order prime to the characteristic** (Stichtenoth,
 Exercise 3.18): over a perfect constant field of characteristic `p`, a finite group `G` of
