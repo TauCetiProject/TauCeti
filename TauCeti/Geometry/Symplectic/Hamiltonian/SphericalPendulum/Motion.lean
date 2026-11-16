@@ -262,7 +262,7 @@ theorem hasDerivWithinAt_snd_apply_two_of_isMIntegralCurveOn_sphericalPendulum
     ((PiLp.proj 2 (fun _ : Fin 3 ↦ ℝ) 2).comp (ContinuousLinearMap.snd ℝ _ _)).hasFDerivAt
       |>.comp_hasDerivWithinAt t (isIntegralCurveOn_sphericalPendulumVectorField hγ t ht)
 
-/-- **The time between turning heights is the height quadrature.** Let a motion of the spherical
+/-- **The time between two heights is the height quadrature.** Let a motion of the spherical
 pendulum on `[t₁, t₂]` have energy `h` and vertical angular momentum `j`, and suppose its height
 `z = q₃` moves from one of `z₁`, `z₂` to the other and stays strictly between them meanwhile, where
 the radicand `2 (h - z) (1 - z²) - j²` is positive. Then the elapsed time is
@@ -287,7 +287,7 @@ theorem sub_eq_integral_inv_sqrt_of_isMIntegralCurveOn_sphericalPendulum {t₁ t
   have hzd (t : ℝ) (ht : t ∈ Icc t₁ t₂) :=
     hasDerivWithinAt_fst_apply_two_of_isMIntegralCurveOn_sphericalPendulum hγ ht
   -- On the fibre over `(h, j)` the vertical momentum satisfies `p₃² = 2 (h - z) (1 - z²) - j²`, so
-  -- it does not vanish strictly between the turning heights.
+  -- it does not vanish strictly between `z₁` and `z₂`.
   have hp (t : ℝ) (htI : t ∈ Ioo t₁ t₂) :
       |(γ t : EuclideanSpace ℝ (Fin 3) × EuclideanSpace ℝ (Fin 3)).2 2| =
           √(2 * (h - z t) * (1 - z t ^ 2) - j ^ 2) ∧
@@ -325,8 +325,9 @@ end Motion
 /-- The **period** `T(h, j) = 2 ∫ dz / √(2 (h - z) (1 - z²) - j²)` of the height of the spherical
 pendulum at energy `h` and vertical angular momentum `j`. The integral runs over `(-1, 1)`, but the
 integrand vanishes at every height `z` with `2 (h - z) (1 - z²) ≤ j²`, so above the curve of
-relative equilibria (`j ≠ 0`) it is the integral between the two turning points of the height
-(`TauCeti.sphericalPendulumPeriod_eq_integral`). -/
+relative equilibria (`j ≠ 0` and `h` above the minimum of the effective potential
+`TauCeti.sphericalPendulumEffectivePotential j`) it is the integral between the two turning points
+of the height (`TauCeti.sphericalPendulumPeriod_eq_integral`). -/
 noncomputable def sphericalPendulumPeriod (h j : ℝ) : ℝ :=
   2 * ∫ z in (-1)..1, (√(2 * (h - z) * (1 - z ^ 2) - j ^ 2))⁻¹
 
