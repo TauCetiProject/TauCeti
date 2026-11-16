@@ -10,9 +10,13 @@ public import TauCeti.Geometry.Manifold.Riemannian.Hyperbolic.CurvatureEquation
 public import TauCeti.Geometry.Manifold.Riemannian.Hyperbolic.Volume
 public import TauCeti.Geometry.Manifold.Riemannian.WithMetric.Basic
 import TauCeti.Geometry.Manifold.ContMDiff.Log
+import TauCeti.Geometry.Manifold.Riemannian.Hyperbolic.LiouvilleEnergy.Sobolev
+import TauCeti.Geometry.Manifold.Riemannian.MaximumPrinciple
+import TauCeti.Geometry.Manifold.Riemannian.Sobolev.Regularity
 import TauCeti.Geometry.Manifold.Riemannian.TotalCurvature
 import TauCeti.Geometry.Manifold.Riemannian.VolumeDensity.WithMetric
 import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.Curvature.Polarization
+import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.Curvature.Scalar
 
 /-!
 # Hyperbolic metrics in a conformal class of a closed surface
@@ -31,16 +35,34 @@ distance of a compact manifold is complete (`TauCeti.HyperbolicMetric.ofCompactS
 volume then follows separately (`TauCeti.HyperbolicMetric.hasFiniteVolume_of_compactSpace`).
 So the existence of a hyperbolic metric in the conformal class of `g` is equivalent to the
 solvability of the curvature equation, and by the maximum principle there is at most one such
-metric. Since total curvature is a conformal invariant of a closed surface, the area of this
-metric is `-∫ K dV_g`.
+metric.
+
+When the total curvature `∫ K dV_g` is negative, the Liouville energy attains a minimum in
+`H¹(M)` (`TauCeti.Manifold.SobolevH1.exists_forall_dirichletForm_eq_integral_neg_add_exp_mul`),
+giving a weak solution of the curvature equation whose exponential nonlinearity is square
+integrable by the Trudinger inequality (`TauCeti.Manifold.SobolevH1.memLp_exp_mul`). Semilinear
+elliptic regularity
+(`TauCeti.Manifold.SobolevH1.exists_ofSmooth_eq_and_neg_laplaceBeltrami_eq_mul_comp_add`)
+bootstraps this weak solution to a smooth classical solution, yielding the existence and uniqueness
+of a hyperbolic metric in the conformal class of `g` precisely when `∫ Scal^g dV_g < 0`. Since
+total curvature is a conformal invariant of a closed surface, the area of this metric is
+`-∫ K dV_g`.
 
 ## Main results
 
+* `TauCeti.Manifold.existsUnique_contMDiff_neg_laplaceBeltrami_add_add_exp_eq_zero`: on a closed
+  connected smooth Riemannian surface, for every smooth function `K` with `∫ K dV < 0`, the
+  curvature equation `Δ⁺φ + K + e^(2φ) = 0` has a unique smooth solution.
 * `Bundle.ContMDiffRiemannianMetric.exists_hyperbolicMetric_metric_eq_rescale_iff`: a closed
   surface carries a hyperbolic metric conformal to `g` exactly when the curvature equation has a
   smooth solution.
 * `TauCeti.HyperbolicMetric.eq_of_metric_eq_rescale`: two hyperbolic metrics conformal to `g`
   are equal.
+* `Bundle.ContMDiffRiemannianMetric.existsUnique_hyperbolicMetric_metric_eq_rescale`: a closed
+  connected surface with `∫ Scal^g dV_g < 0` carries a unique hyperbolic metric conformal to `g`.
+* `Bundle.ContMDiffRiemannianMetric.exists_hyperbolicMetric_iff_integral_scalarCurvature_neg`:
+  a nonempty closed connected surface carries a hyperbolic metric conformal to `g` if and only if
+  `∫ Scal^g dV_g < 0`.
 * `TauCeti.HyperbolicMetric.hypVolumeOfMetric_eq_of_metric_eq_rescale`: a hyperbolic metric
   conformal to `g` has area `-∫ K dV_g`.
 
@@ -58,6 +80,73 @@ open Bundle Module TauCeti TauCeti.Manifold
 open scoped ContDiff Manifold
 
 noncomputable section
+
+namespace TauCeti.Manifold
+
+section CurvatureEquation
+
+variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
+  {H : Type*} [TopologicalSpace H] {I : ModelWithCorners ℝ E H} [I.Boundaryless]
+  {M : Type*} [TopologicalSpace M] [T2Space M] [PreconnectedSpace M] [CompactSpace M]
+  [ChartedSpace H M] [IsManifold I ∞ M] [MeasurableSpace M] [BorelSpace M]
+  [RiemannianBundle (fun x : M ↦ TangentSpace I x)]
+  [IsContinuousRiemannianBundle E (fun x : M ↦ TangentSpace I x)]
+  [IsContMDiffRiemannianBundle I ∞ E (fun x : M ↦ TangentSpace I x)]
+
+/-- **Smooth solvability of the hyperbolic curvature equation on a closed surface.** On a closed
+connected smooth Riemannian surface, for every smooth function `K` with `∫ K dV < 0`, the
+curvature equation `Δ⁺φ + K + e^(2φ) = 0` has a unique smooth solution `φ`, where
+`Δ⁺ = -div grad` is the nonnegative Laplacian. -/
+theorem existsUnique_contMDiff_neg_laplaceBeltrami_add_add_exp_eq_zero
+    (hE : finrank ℝ E = 2) {K : M → ℝ} (hK : ContMDiff I 𝓘(ℝ) ∞ K)
+    (hK_neg : ∫ x, K x ∂riemannianVolume I M < 0) :
+    ∃! φ : M → ℝ, ContMDiff I 𝓘(ℝ) ∞ φ ∧
+      ∀ x, -laplaceBeltrami I φ x + K x + Real.exp (2 * φ x) = 0 := by
+  let _ : IsContMDiffRiemannianBundle I 1 E (fun x : M ↦ TangentSpace I x) :=
+    IsContMDiffRiemannianBundle.of_le (n := ∞) (by simp)
+  let _ : IsManifold I 1 M := IsManifold.of_le (n := ∞) (by simp)
+  let KLp : MeasureTheory.Lp ℝ 2 (riemannianVolume I M) :=
+    ContinuousMap.toLp 2 (riemannianVolume I M) ℝ ⟨K, hK.continuous⟩
+  have hK_ae : (KLp : M → ℝ) =ᵐ[riemannianVolume I M] K :=
+    ContinuousMap.coeFn_toLp (p := 2) (𝕜 := ℝ) (riemannianVolume I M) ⟨K, hK.continuous⟩
+  have hKLp_neg : ∫ x, KLp x ∂riemannianVolume I M < 0 :=
+    (MeasureTheory.integral_congr_ae hK_ae).symm ▸ hK_neg
+  obtain ⟨w, hw⟩ :=
+    SobolevH1.exists_forall_dirichletForm_eq_integral_neg_add_exp_mul hE KLp hKLp_neg
+  have hF_lp : MeasureTheory.MemLp
+      (fun x ↦ (-1 : ℝ) * Real.exp (2 * SobolevH1.toLp w x) + (-K x)) 2
+      (riemannianVolume I M) := by
+    have hexp : MeasureTheory.MemLp (fun x ↦ Real.exp (2 * SobolevH1.toLp w x)) 2
+        (riemannianVolume I M) :=
+      SobolevH1.memLp_exp_mul hE w 2 ENNReal.ofNat_ne_top
+    have hK_lp : MeasureTheory.MemLp K 2 (riemannianVolume I M) :=
+      MeasureTheory.MemLp.ae_eq hK_ae (MeasureTheory.Lp.memLp KLp)
+    exact (hexp.const_mul (-1)).add hK_lp.neg
+  have hΦ : ContDiff ℝ ∞ fun t : ℝ ↦ Real.exp (2 * t) :=
+    Real.contDiff_exp.comp (contDiff_const.mul contDiff_id)
+  obtain ⟨u, -, hu⟩ :=
+    SobolevH1.exists_ofSmooth_eq_and_neg_laplaceBeltrami_eq_mul_comp_add (by omega)
+      (A := fun _ ↦ (-1 : ℝ)) (C := fun x ↦ -K x) contMDiff_const hK.neg hΦ hF_lp fun v ↦ by
+      rw [hw (SobolevH1.ofSmooth v)]
+      refine MeasureTheory.integral_congr_ae ?_
+      filter_upwards [hK_ae, SobolevH1.toLp_ofSmooth_ae_eq v] with x hKx hvx
+      rw [hKx, hvx]
+      ring
+  have hmono (x : M) : StrictMono fun t : ℝ ↦ K x + Real.exp (2 * t) :=
+    fun _ _ hst ↦ by dsimp only; gcongr
+  refine ⟨u, ⟨u.contMDiff, fun x ↦ by linarith [hu x]⟩, fun φ' ⟨hφ', hφ'_eq⟩ ↦ ?_⟩
+  funext x
+  exact le_antisymm
+    (le_of_le_laplaceBeltrami_of_laplaceBeltrami_le hmono
+      (hφ'.of_le (by simp)) (u.contMDiff.of_le (by simp))
+      (fun y ↦ by linarith [hφ'_eq y]) (fun y ↦ by linarith [hu y]) x)
+    (le_of_le_laplaceBeltrami_of_laplaceBeltrami_le hmono
+      (u.contMDiff.of_le (by simp)) (hφ'.of_le (by simp))
+      (fun y ↦ by linarith [hu y]) (fun y ↦ by linarith [hφ'_eq y]) x)
+
+end CurvatureEquation
+
+end TauCeti.Manifold
 
 variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
   {H : Type*} [TopologicalSpace H] {I : ModelWithCorners ℝ E H}
@@ -137,3 +226,48 @@ theorem hypVolumeOfMetric_eq_of_metric_eq_rescale [I.Boundaryless] [MeasurableSp
   ring
 
 end TauCeti.HyperbolicMetric
+
+namespace Bundle.ContMDiffRiemannianMetric
+
+variable (g : ContMDiffRiemannianMetric I ∞ E (fun x : M ↦ TangentSpace I x))
+
+/-- **Existence and uniqueness of the hyperbolic metric in a conformal class.** On a closed
+connected smooth surface with negative total scalar curvature `∫ Scal^g dV_g < 0`, there is a
+unique hyperbolic metric conformal to `g`. -/
+theorem existsUnique_hyperbolicMetric_metric_eq_rescale [I.Boundaryless] (hE : finrank ℝ E = 2)
+    (hK : ∫ x, g.scalarCurvature x.ofWithMetric ∂riemannianVolume I (WithMetric g) < 0) :
+    ∃! G : HyperbolicMetric (I := I) (M := M),
+      ∃ (f : M → ℝ) (hf : ContMDiff I 𝓘(ℝ) ∞ f) (hf_pos : ∀ x, 0 < f x),
+        G.metric = g.rescale f hf hf_pos := by
+  borelize M
+  let _ : RiemannianBundle (fun x : M ↦ TangentSpace I x) := ⟨g.toRiemannianMetric⟩
+  let _ : IsContinuousRiemannianBundle E (fun x : M ↦ TangentSpace I x) :=
+    instIsContinuousRiemannianBundle g.toContinuousRiemannianMetric
+  let _ : IsContMDiffRiemannianBundle I ∞ E (fun x : M ↦ TangentSpace I x) :=
+    instIsContMDiffRiemannianBundle g
+  have hK' : ∫ x, g.scalarCurvature x / 2 ∂riemannianVolume I M < 0 := by
+    rw [MeasureTheory.integral_div, ← WithMetric.integral_comp_ofWithMetric g g.scalarCurvature]
+    linarith
+  obtain ⟨φ, hφ, hφ_eq⟩ :=
+    (existsUnique_contMDiff_neg_laplaceBeltrami_add_add_exp_eq_zero hE
+      (g.contMDiff_scalarCurvature.div_const 2) hK').exists
+  obtain ⟨G, f, hf, hf_pos, hG⟩ :=
+    (g.exists_hyperbolicMetric_metric_eq_rescale_iff hE).2 ⟨φ, hφ, hφ_eq⟩
+  exact ⟨G, ⟨f, hf, hf_pos, hG⟩, fun G' ⟨f', hf', hf'_pos, hG'⟩ ↦
+    HyperbolicMetric.eq_of_metric_eq_rescale hE G' G hG' hG⟩
+
+/-- **Characterization of conformal classes admitting a hyperbolic metric.** A nonempty closed
+connected smooth surface carries a hyperbolic metric conformal to `g` if and only if its total
+scalar curvature `∫ Scal^g dV_g` is negative. -/
+theorem exists_hyperbolicMetric_iff_integral_scalarCurvature_neg
+    [I.Boundaryless] [Nonempty M] (hE : finrank ℝ E = 2) :
+    (∃ (G : HyperbolicMetric (I := I) (M := M)) (f : M → ℝ) (hf : ContMDiff I 𝓘(ℝ) ∞ f)
+        (hf_pos : ∀ x, 0 < f x), G.metric = g.rescale f hf hf_pos) ↔
+      ∫ x, g.scalarCurvature x.ofWithMetric ∂riemannianVolume I (WithMetric g) < 0 := by
+  refine ⟨fun ⟨G, f, hf, hf_pos, hG⟩ ↦ ?_, fun hK ↦ ?_⟩
+  · exact g.integral_scalarCurvature_neg_of_scalarCurvature_rescale_eq hE hf hf_pos
+      (by norm_num) (hG ▸ G.scalarCurvature_metric_of_finrank_eq_two hE)
+  · obtain ⟨G, hG⟩ := (g.existsUnique_hyperbolicMetric_metric_eq_rescale hE hK).exists
+    exact ⟨G, hG⟩
+
+end Bundle.ContMDiffRiemannianMetric
