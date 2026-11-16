@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.CategoryTheory.Monoidal.Center.Induction.Basic
-public import TauCeti.CategoryTheory.Simple.Rigid
+public import TauCeti.CategoryTheory.Monoidal.Rigid.Mate
 
 /-!
 # Faithfulness of induction into the Drinfeld centre
@@ -40,14 +40,15 @@ attribute [local instance] Abelian.hasFiniteBiproducts
 section UnitSummand
 
 variable {C : Type u} [Category.{v} C] [MonoidalCategory C] [HasZeroMorphisms C]
-  [RightRigidCategory C] [Simple (𝟙_ C)]
+  [Simple (𝟙_ C)] [HasRightDual (SimpleClasses.classOf (𝟙_ C)).repr]
 
 /-- The summand indexed by the class of the tensor unit is isomorphic to `X`, naturally in `X`.
 This uses `SimpleClasses.classOfReprIso (𝟙_ C)`, its right-dual comparison, and the unitors. -/
 def inductionUnitSummandIso (X : C) :
     (SimpleClasses.classOf (𝟙_ C)).repr ⊗ X ⊗ (SimpleClasses.classOf (𝟙_ C)).reprᘁ ≅ X :=
   tensorIso (SimpleClasses.classOfReprIso (𝟙_ C))
-    (tensorIso (Iso.refl X) SimpleClasses.classOfUnitReprRightDualIso) ≪≫ (λ_ _) ≪≫ (ρ_ X)
+    (whiskerLeftIso X (SimpleClasses.classOfReprIso (𝟙_ C)).rightAdjointMate.symm) ≪≫
+      (λ_ (X ⊗ 𝟙_ C)) ≪≫ (ρ_ X)
 
 /-- The unit-summand identification uses the representative's isomorphism to the unit,
 uniqueness of its right dual, and the two unitors. -/
@@ -55,7 +56,7 @@ theorem inductionUnitSummandIso_hom (X : C) :
     (inductionUnitSummandIso X).hom =
       (SimpleClasses.classOfReprIso (𝟙_ C)).hom ▷
           (X ⊗ (SimpleClasses.classOf (𝟙_ C)).reprᘁ) ≫
-        (𝟙_ C) ◁ X ◁ (SimpleClasses.classOfUnitReprRightDualIso (C := C)).hom ≫
+        (𝟙_ C) ◁ X ◁ ((SimpleClasses.classOfReprIso (𝟙_ C)).inv)ᘁ ≫
         (λ_ (X ⊗ 𝟙_ C)).hom ≫ (ρ_ X).hom := by
   simp [inductionUnitSummandIso, tensorHom_def]
 
@@ -64,10 +65,10 @@ comparisons. -/
 theorem inductionUnitSummandIso_inv (X : C) :
     (inductionUnitSummandIso X).inv =
       (ρ_ X).inv ≫ (λ_ (X ⊗ 𝟙_ C)).inv ≫
-        (𝟙_ C) ◁ X ◁ (SimpleClasses.classOfUnitReprRightDualIso (C := C)).inv ≫
+        (𝟙_ C) ◁ X ◁ ((SimpleClasses.classOfReprIso (𝟙_ C)).hom)ᘁ ≫
         (SimpleClasses.classOfReprIso (𝟙_ C)).inv ▷
           (X ⊗ (SimpleClasses.classOf (𝟙_ C)).reprᘁ) := by
-  simp [inductionUnitSummandIso, tensorHom_def', Category.assoc]
+  simp [inductionUnitSummandIso, tensorHom_def', Category.assoc, HasRightDual.rightDual]
 
 /-- The identification of the unit summand is natural in `X`. -/
 @[reassoc]
@@ -75,6 +76,8 @@ theorem inductionUnitSummandIso_hom_naturality {X Y : C} (f : X ⟶ Y) :
     (SimpleClasses.classOf (𝟙_ C)).repr ◁ f ▷ (SimpleClasses.classOf (𝟙_ C)).reprᘁ ≫
         (inductionUnitSummandIso Y).hom = (inductionUnitSummandIso X).hom ≫ f := by
   simp only [inductionUnitSummandIso_hom, Category.assoc]
+  -- The unit's chosen right dual is the unit itself; reduce it for unitor rewriting.
+  dsimp only [HasRightDual.rightDual]
   rw [whisker_exchange_assoc, ← whiskerLeft_comp_assoc, ← whisker_exchange,
     whiskerLeft_comp_assoc, leftUnitor_naturality_assoc, rightUnitor_naturality]
 
