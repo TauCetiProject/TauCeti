@@ -36,9 +36,11 @@ evaluated on the directions.
   same smoothness, and additivity, for maps which are only `C^n` on an open set.
 * `TauCeti.iteratedFDerivAlong_comp_of_hasFDerivAt`: the chain rule for an affine change of
   variables.
-* `List.Perm.iteratedFDerivAlong_eq`: over `ℝ` or `ℂ`, reordering the directions does not change
-  the iterated directional derivative.
-* `TauCeti.iteratedFDerivAlong_ofFn_eq_iteratedFDeriv`: the comparison with `iteratedFDeriv`.
+* `List.Perm.iteratedFDerivAlong_eq`, `List.Perm.iteratedFDerivAlong_eq_of_contDiffAt`: reordering
+  the directions does not change the iterated directional derivative (over `ℝ` or `ℂ` for `C^k`
+  maps, and pointwise whenever `minSmoothness 𝕜 vs.length ≤ n`).
+* `TauCeti.iteratedFDerivAlong_ofFn_eq_iteratedFDeriv`,
+  `ContDiffAt.iteratedFDerivAlong_ofFn_eq_iteratedFDeriv`: comparison with `iteratedFDeriv`.
 * `ContDiffAt.iteratedFDeriv_comp_perm_of_minSmoothness`,
   `ContDiffAt.domDomCongr_iteratedFDeriv_of_minSmoothness`: symmetry of `iteratedFDeriv` at a
   point when `minSmoothness 𝕜 k ≤ n`.
@@ -264,9 +266,7 @@ theorem iteratedFDerivAlong_comp_of_hasFDerivAt {φ : G → E} {L : G →L[𝕜]
       iteratedFDerivAlong_cons_apply, h.fderiv]
     rfl
 
-/-- On an open set where `f` is `C^k`, the derivative of an iterated directional derivative in the
-direction `v`, followed by the direction `w`, is the second derivative applied to `v` and `w`. -/
-theorem iteratedFDerivAlong_cons_cons_apply_of_isOpen {f : E → F} {s : Set E}
+private theorem iteratedFDerivAlong_cons_cons_apply_of_isOpen {f : E → F} {s : Set E}
     (hf : ContDiffOn 𝕜 n f s) (hs : IsOpen s) (v w : E) (vs : List E)
     (hvs : (v :: w :: vs).length ≤ n) {x : E} (hx : x ∈ s) :
     iteratedFDerivAlong 𝕜 (v :: w :: vs) f x =
@@ -281,18 +281,27 @@ theorem iteratedFDerivAlong_cons_cons_apply_of_isOpen {f : E → F} {s : Set E}
     fderiv_clm_apply hd (differentiableAt_const w)]
   simp
 
-/-- The derivative of an iterated directional derivative, in the direction `v`, followed by the
-direction `w`, is the second derivative applied to `v` and `w`. -/
+/-- At a point `x` where `f` is `C^n` with `(v :: w :: vs).length ≤ n`, differentiating
+`iteratedFDerivAlong 𝕜 vs f` in direction `w` followed by direction `v` equals its second
+derivative applied to `v` and `w`. -/
+theorem _root_.ContDiffAt.iteratedFDerivAlong_cons_cons_apply {f : E → F} {x : E}
+    (hf : ContDiffAt 𝕜 n f x) (v w : E) (vs : List E) (hvs : (v :: w :: vs).length ≤ n) :
+    iteratedFDerivAlong 𝕜 (v :: w :: vs) f x =
+      fderiv 𝕜 (fderiv 𝕜 (iteratedFDerivAlong 𝕜 vs f)) x v w := by
+  obtain ⟨u, hu_nhds, hfu⟩ := (hf.of_le hvs).contDiffOn le_rfl (by simp)
+  obtain ⟨s, hsu, hs_open, hxs⟩ := mem_nhds_iff.1 hu_nhds
+  exact iteratedFDerivAlong_cons_cons_apply_of_isOpen (hfu.mono hsu) hs_open v w vs le_rfl hxs
+
+/-- For a `C^n` map `f` with `(v :: w :: vs).length ≤ n`, differentiating
+`iteratedFDerivAlong 𝕜 vs f` in direction `w` followed by direction `v` equals its second
+derivative applied to `v` and `w`. -/
 theorem iteratedFDerivAlong_cons_cons_apply {f : E → F} (hf : ContDiff 𝕜 n f) (v w : E)
     (vs : List E) (hvs : (v :: w :: vs).length ≤ n) (x : E) :
     iteratedFDerivAlong 𝕜 (v :: w :: vs) f x =
       fderiv 𝕜 (fderiv 𝕜 (iteratedFDerivAlong 𝕜 vs f)) x v w :=
-  iteratedFDerivAlong_cons_cons_apply_of_isOpen hf.contDiffOn isOpen_univ v w vs hvs
-    (Set.mem_univ x)
+  hf.contDiffAt.iteratedFDerivAlong_cons_cons_apply v w vs hvs
 
-/-- On an open set where `f` has smoothness at least `minSmoothness 𝕜 k`, the first two directions
-in a list of `k` directions can be exchanged. -/
-theorem iteratedFDerivAlong_swap_apply_of_isOpen {f : E → F} {s : Set E}
+private theorem iteratedFDerivAlong_swap_apply_of_isOpen {f : E → F} {s : Set E}
     (hf : ContDiffOn 𝕜 n f s) (hs : IsOpen s) (v w : E) (vs : List E)
     (hvs : minSmoothness 𝕜 (v :: w :: vs).length ≤ n) {x : E} (hx : x ∈ s) :
     iteratedFDerivAlong 𝕜 (v :: w :: vs) f x = iteratedFDerivAlong 𝕜 (w :: v :: vs) f x := by
@@ -304,17 +313,26 @@ theorem iteratedFDerivAlong_swap_apply_of_isOpen {f : E → F} {s : Set E}
       (by rw [← minSmoothness_add]; congr 1; simp only [List.length_cons]; push_cast; ring) hvs)
   exact ((h2 x hx).contDiffAt (hs.mem_nhds hx)).isSymmSndFDerivAt le_rfl v w
 
+/-- At a point `x` where `f` has smoothness at least `minSmoothness 𝕜 (v :: w :: vs).length`, the
+first two directions in `v :: w :: vs` can be exchanged. -/
+theorem _root_.ContDiffAt.iteratedFDerivAlong_swap_apply {f : E → F} {x : E}
+    (hf : ContDiffAt 𝕜 n f x) (v w : E) (vs : List E)
+    (hvs : minSmoothness 𝕜 (v :: w :: vs).length ≤ n) :
+    iteratedFDerivAlong 𝕜 (v :: w :: vs) f x = iteratedFDerivAlong 𝕜 (w :: v :: vs) f x := by
+  obtain ⟨m, hm, hmn, hm_ne⟩ := exist_minSmoothness_le_ne_infty hvs
+  obtain ⟨u, hu_nhds, hfu⟩ := (hf.of_le hmn).contDiffOn le_rfl (by simp [hm_ne])
+  obtain ⟨s, hsu, hs_open, hxs⟩ := mem_nhds_iff.1 hu_nhds
+  exact iteratedFDerivAlong_swap_apply_of_isOpen (hfu.mono hsu) hs_open v w vs hm hxs
+
 /-- Over `ℝ` or `ℂ`, the first two directions of a `C^k` map, for a list of `k` directions, can
 be exchanged. See `List.Perm.iteratedFDerivAlong_eq` for arbitrary reorderings. -/
 theorem iteratedFDerivAlong_swap [IsRCLikeNormedField 𝕜] {f : E → F} (hf : ContDiff 𝕜 n f)
     (v w : E) (vs : List E) (hvs : (v :: w :: vs).length ≤ n) :
     iteratedFDerivAlong 𝕜 (v :: w :: vs) f = iteratedFDerivAlong 𝕜 (w :: v :: vs) f :=
-  funext fun x => iteratedFDerivAlong_swap_apply_of_isOpen hf.contDiffOn isOpen_univ v w vs
-    (by simpa using hvs) (Set.mem_univ x)
+  funext fun x => (hf.contDiffAt (x := x)).iteratedFDerivAlong_swap_apply v w vs
+    (by simpa using hvs)
 
-/-- On an open set where `f` has smoothness at least `minSmoothness 𝕜 k`, reordering a list of `k`
-directions does not change the iterated directional derivative. -/
-theorem _root_.List.Perm.iteratedFDerivAlong_eq_of_isOpen {vs ws : List E}
+private theorem iteratedFDerivAlong_eq_of_perm_of_isOpen {vs ws : List E}
     (h : vs.Perm ws) {f : E → F} {s : Set E} (hf : ContDiffOn 𝕜 n f s) (hs : IsOpen s)
     (hvs : minSmoothness 𝕜 vs.length ≤ n) {x : E} (hx : x ∈ s) :
     iteratedFDerivAlong 𝕜 vs f x = iteratedFDerivAlong 𝕜 ws f x := by
@@ -328,18 +346,28 @@ theorem _root_.List.Perm.iteratedFDerivAlong_eq_of_isOpen {vs ws : List E}
   | swap v w vs => exact iteratedFDerivAlong_swap_apply_of_isOpen hf hs w v vs hvs hx
   | trans h₁₂ _ ih₁ ih₂ => exact (ih₁ hvs hx).trans (ih₂ (h₁₂.length_eq ▸ hvs) hx)
 
+/-- At a point `x` where `f` has smoothness at least `minSmoothness 𝕜 vs.length`, reordering `vs`
+does not change the iterated directional derivative. -/
+theorem _root_.List.Perm.iteratedFDerivAlong_eq_of_contDiffAt {vs ws : List E}
+    (h : vs.Perm ws) {f : E → F} {x : E} (hf : ContDiffAt 𝕜 n f x)
+    (hvs : minSmoothness 𝕜 vs.length ≤ n) :
+    iteratedFDerivAlong 𝕜 vs f x = iteratedFDerivAlong 𝕜 ws f x := by
+  obtain ⟨m, hm, hmn, hm_ne⟩ := exist_minSmoothness_le_ne_infty hvs
+  obtain ⟨u, hu_nhds, hfu⟩ := (hf.of_le hmn).contDiffOn le_rfl (by simp [hm_ne])
+  obtain ⟨s, hsu, hs_open, hxs⟩ := mem_nhds_iff.1 hu_nhds
+  exact iteratedFDerivAlong_eq_of_perm_of_isOpen h (hfu.mono hsu) hs_open hm hxs
+
 /-- Over `ℝ` or `ℂ`, the iterated directional derivative of a `C^k` map along `k` directions does
 not depend on the order of the directions. -/
 theorem _root_.List.Perm.iteratedFDerivAlong_eq [IsRCLikeNormedField 𝕜] {vs ws : List E}
     (h : vs.Perm ws) {f : E → F} (hf : ContDiff 𝕜 n f) (hvs : vs.length ≤ n) :
     iteratedFDerivAlong 𝕜 vs f = iteratedFDerivAlong 𝕜 ws f :=
-  funext fun x => h.iteratedFDerivAlong_eq_of_isOpen hf.contDiffOn isOpen_univ
-    (by simpa using hvs) (Set.mem_univ x)
+  funext fun x => h.iteratedFDerivAlong_eq_of_contDiffAt (hf.contDiffAt (x := x))
+    (by simpa using hvs)
 
-/-- On an open set where `f` is `C^k`, the iterated directional derivative along
-`m 0, …, m (k - 1)` is the `k`-th iterated derivative evaluated on them. -/
-theorem iteratedFDerivAlong_ofFn_eq_iteratedFDeriv_of_isOpen {f : E → F} {s : Set E} {k : ℕ}
-    (hf : ContDiffOn 𝕜 n f s) (hs : IsOpen s) (hk : k ≤ n) (m : Fin k → E) {x : E} (hx : x ∈ s) :
+private theorem iteratedFDerivAlong_ofFn_eq_iteratedFDeriv_of_isOpen {f : E → F} {s : Set E}
+    {k : ℕ} (hf : ContDiffOn 𝕜 n f s) (hs : IsOpen s) (hk : k ≤ n) (m : Fin k → E) {x : E}
+    (hx : x ∈ s) :
     iteratedFDerivAlong 𝕜 (List.ofFn m) f x = iteratedFDeriv 𝕜 k f x m := by
   induction k generalizing x with
   | zero => simp [Subsingleton.elim m Fin.elim0]
@@ -355,13 +383,21 @@ theorem iteratedFDerivAlong_ofFn_eq_iteratedFDeriv_of_isOpen {f : E → F} {s : 
       fderiv_continuousMultilinear_apply_const_apply hd, iteratedFDeriv_succ_apply_left]
     rfl
 
+/-- At a point `x` where `f` is `C^n` with `k ≤ n`, the iterated directional derivative along
+`m 0, …, m (k - 1)` is the `k`-th iterated derivative evaluated on them. -/
+theorem _root_.ContDiffAt.iteratedFDerivAlong_ofFn_eq_iteratedFDeriv {f : E → F} {x : E} {k : ℕ}
+    (hf : ContDiffAt 𝕜 n f x) (hk : k ≤ n) (m : Fin k → E) :
+    iteratedFDerivAlong 𝕜 (List.ofFn m) f x = iteratedFDeriv 𝕜 k f x m := by
+  obtain ⟨u, hu_nhds, hfu⟩ := (hf.of_le hk).contDiffOn le_rfl (by simp)
+  obtain ⟨s, hsu, hs_open, hxs⟩ := mem_nhds_iff.1 hu_nhds
+  exact iteratedFDerivAlong_ofFn_eq_iteratedFDeriv_of_isOpen (hfu.mono hsu) hs_open le_rfl m hxs
+
 /-- The iterated directional derivative of a `C^k` map along the directions `m 0, …, m (k - 1)` is
 the `k`-th iterated derivative evaluated on them. -/
 theorem iteratedFDerivAlong_ofFn_eq_iteratedFDeriv {f : E → F} {k : ℕ} (hf : ContDiff 𝕜 k f)
     (m : Fin k → E) (x : E) :
     iteratedFDerivAlong 𝕜 (List.ofFn m) f x = iteratedFDeriv 𝕜 k f x m :=
-  iteratedFDerivAlong_ofFn_eq_iteratedFDeriv_of_isOpen hf.contDiffOn isOpen_univ le_rfl m
-    (Set.mem_univ x)
+  hf.contDiffAt.iteratedFDerivAlong_ofFn_eq_iteratedFDeriv le_rfl m
 
 /-- If `f` has smoothness at least `minSmoothness 𝕜 k` at `x` (so `C^k` over `ℝ` or `ℂ`, and `C^ω`
 otherwise), then its `k`-th iterated derivative at `x` is symmetric under any permutation of its
@@ -370,15 +406,11 @@ theorem _root_.ContDiffAt.iteratedFDeriv_comp_perm_of_minSmoothness {f : E → F
     (hf : ContDiffAt 𝕜 n f x) (hn : minSmoothness 𝕜 k ≤ n) (v : Fin k → E)
     (σ : Equiv.Perm (Fin k)) :
     iteratedFDeriv 𝕜 k f x (v ∘ σ) = iteratedFDeriv 𝕜 k f x v := by
-  obtain ⟨m, hm, hmn, hm_ne⟩ := exist_minSmoothness_le_ne_infty hn
-  obtain ⟨u, hu_nhds, hfu⟩ := (hf.of_le hmn).contDiffOn le_rfl (by simp [hm_ne])
-  obtain ⟨s, hsu, hs_open, hxs⟩ := mem_nhds_iff.1 hu_nhds
-  have hfs : ContDiffOn 𝕜 m f s := hfu.mono hsu
-  have hk : (k : ℕ∞ω) ≤ m := le_minSmoothness.trans hm
-  rw [← iteratedFDerivAlong_ofFn_eq_iteratedFDeriv_of_isOpen hfs hs_open hk (v ∘ σ) hxs,
-    ← iteratedFDerivAlong_ofFn_eq_iteratedFDeriv_of_isOpen hfs hs_open hk v hxs]
-  exact (σ.ofFn_comp_perm v).iteratedFDerivAlong_eq_of_isOpen hfs hs_open
-    (by simpa [List.length_ofFn] using hm) hxs
+  have hk : (k : ℕ∞ω) ≤ n := le_minSmoothness.trans hn
+  rw [← hf.iteratedFDerivAlong_ofFn_eq_iteratedFDeriv hk (v ∘ σ),
+    ← hf.iteratedFDerivAlong_ofFn_eq_iteratedFDeriv hk v]
+  exact (σ.ofFn_comp_perm v).iteratedFDerivAlong_eq_of_contDiffAt hf
+    (by simpa [List.length_ofFn] using hn)
 
 /-- If `f` has smoothness at least `minSmoothness 𝕜 k` at `x`, then `iteratedFDeriv 𝕜 k f x` is
 invariant under `ContinuousMultilinearMap.domDomCongr`. -/

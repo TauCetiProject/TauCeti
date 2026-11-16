@@ -7,7 +7,10 @@ module
 
 public import Mathlib.Analysis.Calculus.ContDiff.FaaDiBruno
 public import Mathlib.Analysis.Calculus.ContDiff.Comp
+public import TauCeti.Analysis.Calculus.FormalMultilinearSeries
 import Mathlib.Analysis.Calculus.ContDiff.Operations
+import Mathlib.Data.Fin.Tuple.Sort
+import TauCeti.Analysis.Calculus.ContDiff.FTaylorSeries
 import TauCeti.Analysis.Calculus.IteratedFDeriv.Basic
 import TauCeti.Analysis.Calculus.IteratedFDeriv.CompLinear
 
@@ -18,23 +21,26 @@ The `m`-th coefficient of `q.taylorComp p` is a finite sum, over the ordered par
 of continuous multilinear expressions in the coefficients of `q` and `p` of order at most `m`.
 It depends only on `q 0, …, q m` and `p 1, …, p m` (`FormalMultilinearSeries.taylorComp_congr`),
 depends continuously and smoothly on those finitely many coefficients (`Filter.Tendsto.taylorComp`,
-`ContDiffOn.taylorComp`), distributes over products (`FormalMultilinearSeries.prod_taylorComp`),
-admits `FormalMultilinearSeries.id` as a two-sided unit (`FormalMultilinearSeries.taylorComp_id`,
-`FormalMultilinearSeries.id_taylorComp`), postcomposes along the formal Taylor series of continuous
-linear maps (`FormalMultilinearSeries.ftaylorSeries_clm_taylorComp`), and is associative across
-arbitrary formal multilinear series (`FormalMultilinearSeries.taylorComp_assoc`).
+`ContDiffWithinAt.taylorComp`, `ContDiffOn.taylorComp`, `ContDiffAt.taylorComp`), distributes over
+sums and products (`FormalMultilinearSeries.add_taylorComp`,
+`FormalMultilinearSeries.prod_taylorComp`), admits `FormalMultilinearSeries.id` as a two-sided unit
+(`FormalMultilinearSeries.taylorComp_id`, `FormalMultilinearSeries.id_taylorComp`), postcomposes
+along the formal Taylor series of continuous linear maps
+(`ContinuousLinearMap.ftaylorSeries_taylorComp`), preserves slot symmetry
+(`FormalMultilinearSeries.taylorComp_comp_perm`), and is associative across arbitrary formal
+multilinear series (`FormalMultilinearSeries.taylorComp_assoc`).
 
 For `0 < m`, the single-block partition `OrderedFinpartition.single m` is the unique ordered
 partition of length `1`, and every other partition has strictly smaller parts
 (`OrderedFinpartition.partSize_lt_of_ne_single`) and length at least `2`
 (`OrderedFinpartition.one_lt_length_of_ne_single`). Consequently, an outer series vanishing in
-orders `2` and above reduces `q.taylorComp p m` to its linear term
+orders `2` through `m` reduces `q.taylorComp p m` to its linear term
 (`FormalMultilinearSeries.taylorComp_of_eq_zero`), and when two inner series agree in orders `1`
 through `m - 1`, all nonlinear partition terms cancel in the `m`-th composite coefficient
-(`FormalMultilinearSeries.taylorComp_sub_of_eq_lt`). Dually, using the singleton partition
-`OrderedFinpartition.atomic m` (`OrderedFinpartition.length_lt_of_ne_atomic`), when two outer
-series agree strictly below order `m`, their composite difference reduces to the atomic term
-(`FormalMultilinearSeries.sub_taylorComp_of_eq_lt`).
+(`FormalMultilinearSeries.taylorComp_sub_taylorComp_of_eq_lt_right`). Dually, using the singleton
+partition `OrderedFinpartition.atomic m` (`OrderedFinpartition.length_lt_of_ne_atomic`), when two
+outer series agree in orders `1` through `m - 1`, their composite difference reduces to the atomic
+term (`FormalMultilinearSeries.taylorComp_sub_taylorComp_of_eq_lt_left`).
 
 The inductive step in `FormalMultilinearSeries.taylorComp_assoc` splits ordered partitions of
 `m + 1` via `OrderedFinpartition.extendEquiv` and differentiates along lines in formal series
@@ -110,6 +116,12 @@ theorem single_partSize (n : ℕ) (hn : 0 < n) (i : Fin (single n hn).length) :
     (single n hn).partSize i = n :=
   (rfl)
 
+@[simp]
+theorem single_emb (n : ℕ) (hn : 0 < n) (i : Fin (single n hn).length)
+    (j : Fin ((single n hn).partSize i)) :
+    (single n hn).emb i j = j.cast (single_partSize n hn i) :=
+  (rfl)
+
 /-- For `0 < n`, an ordered partition of `Fin n` equals `OrderedFinpartition.single n hn` if and
 only if it has a single part. -/
 theorem eq_single_iff_length {n : ℕ} (hn : 0 < n) {c : OrderedFinpartition n} :
@@ -151,6 +163,126 @@ theorem partSize_lt_of_ne_single {n : ℕ} (hn : 0 < n) {c : OrderedFinpartition
   have hj : 0 < c.partSize j := c.partSize_pos j
   omega
 
+private def permPart {n : ℕ} (c : OrderedFinpartition n) (σ : Equiv.Perm (Fin n))
+    (i : Fin c.length) : Finset (Fin n) :=
+  Finset.univ.image (σ.symm ∘ c.emb i)
+
+private theorem card_permPart {n : ℕ} (c : OrderedFinpartition n) (σ : Equiv.Perm (Fin n))
+    (i : Fin c.length) : (permPart c σ i).card = c.partSize i := by
+  rw [permPart,
+    Finset.card_image_of_injective _ (σ.symm.injective.comp (c.emb_strictMono i).injective),
+    Finset.card_univ, Fintype.card_fin]
+
+private def permEmb {n : ℕ} (c : OrderedFinpartition n) (σ : Equiv.Perm (Fin n))
+    (i : Fin c.length) : Fin (c.partSize i) ↪o Fin n :=
+  (permPart c σ i).orderEmbOfFin (card_permPart c σ i)
+
+private theorem range_permEmb {n : ℕ} (c : OrderedFinpartition n) (σ : Equiv.Perm (Fin n))
+    (i : Fin c.length) : Set.range (permEmb c σ i) = σ.symm '' Set.range (c.emb i) := by
+  rw [permEmb, Finset.range_orderEmbOfFin, permPart, Finset.coe_image, Finset.coe_univ,
+    Set.image_univ, Set.range_comp]
+
+private def permMax {n : ℕ} (c : OrderedFinpartition n) (σ : Equiv.Perm (Fin n))
+    (i : Fin c.length) : Fin n :=
+  permEmb c σ i ⟨c.partSize i - 1, Nat.sub_one_lt_of_lt (c.partSize_pos i)⟩
+
+private theorem permMax_injective {n : ℕ} (c : OrderedFinpartition n) (σ : Equiv.Perm (Fin n)) :
+    Function.Injective (permMax c σ) := by
+  intro i₁ i₂ h
+  by_contra hne
+  have hmem₁ : permMax c σ i₁ ∈ Set.range (permEmb c σ i₁) := ⟨_, rfl⟩
+  have hmem₂ : permMax c σ i₁ ∈ Set.range (permEmb c σ i₂) := ⟨_, h.symm⟩
+  rw [range_permEmb] at hmem₁ hmem₂
+  obtain ⟨y₁, hy₁, h1⟩ := hmem₁
+  obtain ⟨y₂, hy₂, h2⟩ := hmem₂
+  have hy : y₁ = y₂ := σ.symm.injective (h1.trans h2.symm)
+  exact Set.disjoint_left.mp (c.disjoint (Set.mem_univ i₁) (Set.mem_univ i₂) hne) hy₁ (hy ▸ hy₂)
+
+private def permOrder {n : ℕ} (c : OrderedFinpartition n) (σ : Equiv.Perm (Fin n)) :
+    Equiv.Perm (Fin c.length) :=
+  Tuple.sort (permMax c σ)
+
+/-- Pull back an ordered partition of `Fin n` along a permutation `σ`, sorting each permuted block
+and reordering the blocks by increasing maximum element. -/
+private def mapPerm {n : ℕ} (c : OrderedFinpartition n) (σ : Equiv.Perm (Fin n)) :
+    OrderedFinpartition n where
+  length := c.length
+  partSize i := c.partSize (permOrder c σ i)
+  partSize_pos i := c.partSize_pos (permOrder c σ i)
+  emb i := permEmb c σ (permOrder c σ i)
+  emb_strictMono i := (permEmb c σ (permOrder c σ i)).strictMono
+  parts_strictMono :=
+    (Tuple.monotone_sort (permMax c σ)).strictMono_of_injective
+      ((permMax_injective c σ).comp (permOrder c σ).injective)
+  disjoint := by
+    intro i₁ _ i₂ _ hne
+    rw [Function.onFun, range_permEmb, range_permEmb]
+    refine Set.disjoint_image_of_injective σ.symm.injective ?_
+    exact c.disjoint (Set.mem_univ _) (Set.mem_univ _) ((permOrder c σ).injective.ne hne)
+  cover x := by
+    obtain ⟨i, j, hj⟩ := c.cover (σ x)
+    have hx : x ∈ Set.range (permEmb c σ i) := by
+      rw [range_permEmb]
+      exact ⟨σ x, ⟨j, hj⟩, σ.symm_apply_apply x⟩
+    refine ⟨(permOrder c σ).symm i, ?_⟩
+    rw [Equiv.apply_symm_apply]
+    exact hx
+
+private theorem mapPerm_symm {n : ℕ} (c : OrderedFinpartition n) (σ : Equiv.Perm (Fin n)) :
+    mapPerm (mapPerm c σ) σ.symm = c := by
+  let π := permOrder c σ
+  let π' : Equiv.Perm (Fin c.length) := permOrder (mapPerm c σ) σ.symm
+  have hpart (i : Fin c.length) :
+      permPart (mapPerm c σ) σ.symm i = Finset.univ.image (c.emb (π i)) := by
+    ext x
+    simp only [permPart, mapPerm, Finset.mem_image, Function.comp_apply, Equiv.symm_symm]
+    constructor
+    · rintro ⟨j, -, rfl⟩
+      have hmem : permEmb c σ (π i) j ∈ Set.range (permEmb c σ (π i)) := ⟨j, rfl⟩
+      rw [range_permEmb] at hmem
+      obtain ⟨y, ⟨k, rfl⟩, hy⟩ := hmem
+      exact ⟨k, Finset.mem_univ k, by rw [← hy, σ.apply_symm_apply]⟩
+    · rintro ⟨k, -, rfl⟩
+      have hmem : σ.symm (c.emb (π i) k) ∈ Set.range (permEmb c σ (π i)) := by
+        rw [range_permEmb]
+        exact ⟨c.emb (π i) k, ⟨k, rfl⟩, rfl⟩
+      obtain ⟨j, hj⟩ := hmem
+      exact ⟨j, Finset.mem_univ j, by rw [hj, σ.apply_symm_apply]⟩
+  have hemb (i : Fin c.length) :
+      (permEmb (mapPerm c σ) σ.symm i : Fin (c.partSize (π i)) → Fin n) = c.emb (π i) :=
+    (Finset.orderEmbOfFin_unique (card_permPart (mapPerm c σ) σ.symm i) (fun j ↦ by
+      rw [hpart]
+      exact Finset.mem_image_of_mem _ (Finset.mem_univ j)) (c.emb_strictMono (π i))).symm
+  have hmax (i : Fin c.length) :
+      permMax (mapPerm c σ) σ.symm i =
+        c.emb (π i) ⟨c.partSize (π i) - 1, Nat.sub_one_lt_of_lt (c.partSize_pos (π i))⟩ :=
+    congrFun (hemb i) ⟨c.partSize (π i) - 1, Nat.sub_one_lt_of_lt (c.partSize_pos (π i))⟩
+  have hcomp_mono : StrictMono (fun i ↦ π (π' i)) := by
+    intro a b hab
+    have hlt : permMax (mapPerm c σ) σ.symm (π' a) < permMax (mapPerm c σ) σ.symm (π' b) :=
+      (mapPerm (mapPerm c σ) σ.symm).parts_strictMono hab
+    rw [hmax (π' a), hmax (π' b)] at hlt
+    exact c.parts_strictMono.lt_iff_lt.mp hlt
+  have hπ' (i : Fin c.length) : π (π' i) = i := congrFun hcomp_mono.eq_id i
+  have hce {a b : Fin c.length} (hab : a = b) {x : Fin (c.partSize a)} {y : Fin (c.partSize b)}
+      (hxy : HEq x y) : c.emb a x = c.emb b y := by
+    subst hab
+    rw [eq_of_heq hxy]
+  refine OrderedFinpartition.ext rfl (heq_of_eq (funext fun i ↦ ?_)) ?_
+  · exact congrArg c.partSize (hπ' i)
+  · refine Function.hfunext rfl fun i₁ i₂ hi ↦ ?_
+    obtain rfl : i₁ = i₂ := eq_of_heq hi
+    refine Function.hfunext (congrArg (fun k ↦ Fin (c.partSize k)) (hπ' i₁)) fun j₁ j₂ hj ↦ ?_
+    exact heq_of_eq ((congrFun (hemb (π' i₁)) j₁).trans (hce (hπ' i₁) hj))
+
+/-- Action of a permutation `σ : Equiv.Perm (Fin n)` as a bijection on `OrderedFinpartition n`. -/
+private def permEquiv {n : ℕ} (σ : Equiv.Perm (Fin n)) :
+    OrderedFinpartition n ≃ OrderedFinpartition n where
+  toFun c := mapPerm c σ
+  invFun c := mapPerm c σ.symm
+  left_inv c := mapPerm_symm c σ
+  right_inv c := by simpa only [Equiv.symm_symm] using mapPerm_symm c σ.symm
+
 end OrderedFinpartition
 
 variable {𝕜 : Type*} [NontriviallyNormedField 𝕜]
@@ -175,6 +307,20 @@ theorem Filter.Tendsto.taylorComp {α : Type*} {l : Filter α}
     tendsto_pi_nhds.2 fun i ↦ hp _ (c.partSize_pos i) (c.partSize_le i)
   exact (continuous_eval.tendsto _).comp (hB.prodMk_nhds hP)
 
+/-- The `m`-th coefficient of `y ↦ (q y).taylorComp (p y)` is `C^n` within `s` at `x` whenever the
+coefficients `y ↦ q y k` (`k ≤ m`) and `y ↦ p y k` (`1 ≤ k ≤ m`) are `C^n` within `s` at `x`. -/
+theorem ContDiffWithinAt.taylorComp {M : Type*} [NormedAddCommGroup M] [NormedSpace 𝕜 M]
+    {n : ℕ∞ω} {s : Set M} {x : M}
+    {q : M → FormalMultilinearSeries 𝕜 F G} {p : M → FormalMultilinearSeries 𝕜 E F} {m : ℕ}
+    (hq : ∀ k ≤ m, ContDiffWithinAt 𝕜 n (fun y ↦ q y k) s x)
+    (hp : ∀ k, 1 ≤ k → k ≤ m → ContDiffWithinAt 𝕜 n (fun y ↦ p y k) s x) :
+    ContDiffWithinAt 𝕜 n (fun y ↦ (q y).taylorComp (p y) m) s x := by
+  refine ContDiffWithinAt.sum fun c _ ↦ ?_
+  let B := c.compAlongOrderedFinpartitionL 𝕜 E F G
+  exact B.analyticOnNhd_uncurry_of_multilinear.contDiff.comp_contDiffWithinAt
+    ((hq c.length c.length_le).prodMk
+      (contDiffWithinAt_pi.mpr fun i ↦ hp _ (c.partSize_pos i) (c.partSize_le i)))
+
 /-- The `m`-th coefficient of `x ↦ (q x).taylorComp (p x)` is `C^n` on `s` whenever the
 coefficients `x ↦ q x k` (`k ≤ m`) and `x ↦ p x k` (`1 ≤ k ≤ m`) are `C^n` on `s`. -/
 theorem ContDiffOn.taylorComp {M : Type*} [NormedAddCommGroup M] [NormedSpace 𝕜 M]
@@ -182,37 +328,22 @@ theorem ContDiffOn.taylorComp {M : Type*} [NormedAddCommGroup M] [NormedSpace �
     {q : M → FormalMultilinearSeries 𝕜 F G} {p : M → FormalMultilinearSeries 𝕜 E F} {m : ℕ}
     (hq : ∀ k ≤ m, ContDiffOn 𝕜 n (fun x ↦ q x k) s)
     (hp : ∀ k, 1 ≤ k → k ≤ m → ContDiffOn 𝕜 n (fun x ↦ p x k) s) :
-    ContDiffOn 𝕜 n (fun x ↦ (q x).taylorComp (p x) m) s := by
-  refine ContDiffOn.sum fun c _ ↦ ?_
-  let B := c.compAlongOrderedFinpartitionL 𝕜 E F G
-  exact B.analyticOnNhd_uncurry_of_multilinear.contDiff.comp_contDiffOn
-    ((hq c.length c.length_le).prodMk
-      (contDiffOn_pi.mpr fun i ↦ hp _ (c.partSize_pos i) (c.partSize_le i)))
+    ContDiffOn 𝕜 n (fun x ↦ (q x).taylorComp (p x) m) s :=
+  fun x hx ↦ ContDiffWithinAt.taylorComp (fun k hk ↦ hq k hk x hx)
+    (fun k hk₁ hk₂ ↦ hp k hk₁ hk₂ x hx)
 
-/-- Pointwise version of `ContDiffOn.taylorComp`. -/
+/-- Pointwise version of `ContDiffWithinAt.taylorComp`. -/
 theorem ContDiffAt.taylorComp {M : Type*} [NormedAddCommGroup M] [NormedSpace 𝕜 M]
     {n : ℕ∞ω} {x : M}
     {q : M → FormalMultilinearSeries 𝕜 F G} {p : M → FormalMultilinearSeries 𝕜 E F} {m : ℕ}
     (hq : ∀ k ≤ m, ContDiffAt 𝕜 n (fun y ↦ q y k) x)
     (hp : ∀ k, 1 ≤ k → k ≤ m → ContDiffAt 𝕜 n (fun y ↦ p y k) x) :
-    ContDiffAt 𝕜 n (fun y ↦ (q y).taylorComp (p y) m) x := by
-  refine ContDiffAt.sum fun c _ ↦ ?_
-  let B := c.compAlongOrderedFinpartitionL 𝕜 E F G
-  exact B.analyticOnNhd_uncurry_of_multilinear.contDiff.contDiffAt.comp x
-    ((hq c.length c.length_le).prodMk
-      (contDiffAt_pi.mpr fun i ↦ hp _ (c.partSize_pos i) (c.partSize_le i)))
+    ContDiffAt 𝕜 n (fun y ↦ (q y).taylorComp (p y) m) x :=
+  contDiffWithinAt_univ.mp <| ContDiffWithinAt.taylorComp
+    (fun k hk ↦ (hq k hk).contDiffWithinAt)
+    (fun k hk₁ hk₂ ↦ (hp k hk₁ hk₂).contDiffWithinAt)
 
 namespace FormalMultilinearSeries
-
-@[simp]
-theorem prod_apply (p : FormalMultilinearSeries 𝕜 E F) (q : FormalMultilinearSeries 𝕜 E G)
-    (n : ℕ) : p.prod q n = (p n).prod (q n) :=
-  (rfl)
-
-/-- Unfold `ftaylorSeries` at a given order `n` to `iteratedFDeriv`. -/
-theorem ftaylorSeries_apply (f : E → F) (x : E) (n : ℕ) :
-    ftaylorSeries 𝕜 f x n = iteratedFDeriv 𝕜 n f x :=
-  (rfl)
 
 /-- The `m`-th coefficient of `q.taylorComp p` depends only on `q 0, …, q m` and `p 1, …, p m`. -/
 theorem taylorComp_congr {q₁ q₂ : FormalMultilinearSeries 𝕜 F G}
@@ -282,6 +413,16 @@ theorem taylorComp_one_apply (q : FormalMultilinearSeries 𝕜 F G)
     q.taylorComp p 1 v = q 1 ![p 1 v] := by
   simp
 
+/-- Faà di Bruno composition is additive in the outer formal multilinear series. -/
+@[simp]
+theorem add_taylorComp (q₁ q₂ : FormalMultilinearSeries 𝕜 F G)
+    (p : FormalMultilinearSeries 𝕜 E F) :
+    (q₁ + q₂).taylorComp p = q₁.taylorComp p + q₂.taylorComp p := by
+  funext m
+  ext v
+  simp [FormalMultilinearSeries.taylorComp, compAlongOrderedFinpartition_apply, sum_apply,
+    Finset.sum_add_distrib]
+
 /-- Faà di Bruno composition distributes over Cartesian products of outer formal multilinear
 series. -/
 @[simp]
@@ -293,11 +434,11 @@ theorem prod_taylorComp (q₁ : FormalMultilinearSeries 𝕜 F G)
     simp [FormalMultilinearSeries.taylorComp, compAlongOrderedFinpartition_apply, sum_apply,
       Prod.fst_sum, Prod.snd_sum]
 
-/-- If an outer formal multilinear series vanishes in all orders `k ≥ 2`, then for `0 < m` only the
-single-block partition contributes to `q.taylorComp p m`. -/
+/-- If an outer formal multilinear series vanishes in all orders `2 ≤ k ≤ m`, then for `0 < m` only
+the single-block partition contributes to `q.taylorComp p m`. -/
 theorem taylorComp_of_eq_zero {q : FormalMultilinearSeries 𝕜 F G}
     (p : FormalMultilinearSeries 𝕜 E F) {m : ℕ} (hm : 0 < m)
-    (hq : ∀ k, 2 ≤ k → q k = 0) :
+    (hq : ∀ k, 2 ≤ k → k ≤ m → q k = 0) :
     q.taylorComp p m =
       (continuousMultilinearCurryFin1 𝕜 F G (q 1)).compContinuousMultilinearMap (p m) := by
   classical
@@ -307,7 +448,7 @@ theorem taylorComp_of_eq_zero {q : FormalMultilinearSeries 𝕜 F G}
   · intro c _ hc
     have hgt : 1 < c.length := c.one_lt_length_of_ne_single hm hc
     ext v
-    simp [compAlongOrderedFinpartition_apply, hq c.length hgt]
+    simp [compAlongOrderedFinpartition_apply, hq c.length hgt c.length_le]
   · simp
 
 /-- Composing a formal multilinear series on the right with `FormalMultilinearSeries.id` leaves it
@@ -337,64 +478,54 @@ theorem taylorComp_id (p : FormalMultilinearSeries 𝕜 E F) (x : E) :
   · simp
 
 /-- Composing `FormalMultilinearSeries.id` on the left with a formal multilinear series `p` gives
-`p` (with constant term matching `p 0 ![]`). -/
+`p` (with constant term matching `p 0 v₀`). -/
 @[simp]
-theorem id_taylorComp (p : FormalMultilinearSeries 𝕜 E F) :
-    (FormalMultilinearSeries.id 𝕜 F (p 0 ![])).taylorComp p = p := by
+theorem id_taylorComp (p : FormalMultilinearSeries 𝕜 E F) (v₀ : Fin 0 → E) :
+    (FormalMultilinearSeries.id 𝕜 F (p 0 v₀)).taylorComp p = p := by
   funext m
   rcases m.eq_zero_or_pos with rfl | hm
   · ext v
-    simp [Subsingleton.elim v ![]]
-  · rw [taylorComp_of_eq_zero p hm fun k hk ↦ id_apply_of_one_lt 𝕜 F (p 0 ![]) hk]
+    simp [Subsingleton.elim v v₀]
+  · rw [taylorComp_of_eq_zero p hm fun k hk _ ↦ id_apply_of_one_lt 𝕜 F (p 0 v₀) hk]
     ext v
     simp
 
 /-- Composing the formal Taylor series of a continuous linear map `L` on the left with a formal
-multilinear series `p` postcomposes every term of `p` with `L`. -/
-theorem ftaylorSeries_clm_taylorComp (L : F →L[𝕜] G)
-    (p : FormalMultilinearSeries 𝕜 E F) :
-    (ftaylorSeries 𝕜 L (p 0 0)).taylorComp p = L.compFormalMultilinearSeries p := by
+multilinear series `p` postcomposes every term of `p` with `L`, provided `L y = L (p 0 v₀)`. -/
+theorem _root_.ContinuousLinearMap.ftaylorSeries_taylorComp (L : F →L[𝕜] G)
+    (p : FormalMultilinearSeries 𝕜 E F) {y : F} {v₀ : Fin 0 → E} (hy : L y = L (p 0 v₀)) :
+    (ftaylorSeries 𝕜 L y).taylorComp p = L.compFormalMultilinearSeries p := by
   funext m
   rcases m.eq_zero_or_pos with rfl | hm
   · ext v
-    simp [ftaylorSeries_apply, Subsingleton.elim v 0]
-  · rw [taylorComp_of_eq_zero p hm fun k hk ↦ by
+    simp [TauCeti.ftaylorSeries_apply, hy, Subsingleton.elim v v₀]
+  · rw [taylorComp_of_eq_zero p hm fun k hk _ ↦ by
       obtain ⟨d, rfl⟩ := Nat.exists_eq_add_of_le' hk
-      exact L.iteratedFDeriv_add_two d (p 0 0)]
+      exact L.iteratedFDeriv_add_two d y]
     ext v
-    simp [ftaylorSeries_apply, TauCeti.continuousMultilinearCurryFin1_iteratedFDeriv_one]
-
-/-- The formal Taylor series of the identity map at `x` is `FormalMultilinearSeries.id 𝕜 E x`. -/
-@[simp]
-theorem ftaylorSeries_id (x : E) :
-    ftaylorSeries 𝕜 (_root_.id : E → E) x = FormalMultilinearSeries.id 𝕜 E x := by
-  have h := ftaylorSeries_clm_taylorComp (ContinuousLinearMap.id 𝕜 E)
-    (FormalMultilinearSeries.id 𝕜 E x)
-  rw [id_apply_zero, taylorComp_id, ContinuousLinearMap.coe_id'] at h
-  refine h.trans ?_
-  funext m
-  ext v
-  simp
+    simp [TauCeti.ftaylorSeries_apply, TauCeti.continuousMultilinearCurryFin1_iteratedFDeriv_one]
 
 /-- Composing the formal Taylor series of `Prod.fst` with a product series `p.prod q` recovers
-`p`. -/
+`p`, regardless of the second coordinate of the base point. -/
 theorem ftaylorSeries_fst_taylorComp_prod (p : FormalMultilinearSeries 𝕜 E F)
-    (q : FormalMultilinearSeries 𝕜 E G) :
-    (ftaylorSeries 𝕜 (Prod.fst : F × G → F) (p 0 0, q 0 0)).taylorComp (p.prod q) = p := by
-  have h := ftaylorSeries_clm_taylorComp (ContinuousLinearMap.fst 𝕜 F G) (p.prod q)
-  simp only [prod_apply, ContinuousMultilinearMap.prod_apply, ContinuousLinearMap.coe_fst'] at h
+    (q : FormalMultilinearSeries 𝕜 E G) (v₀ : Fin 0 → E) (y : G) :
+    (ftaylorSeries 𝕜 (Prod.fst : F × G → F) (p 0 v₀, y)).taylorComp (p.prod q) = p := by
+  have h := (ContinuousLinearMap.fst 𝕜 F G).ftaylorSeries_taylorComp (p.prod q)
+    (y := (p 0 v₀, y)) (v₀ := v₀) rfl
+  simp only [ContinuousLinearMap.coe_fst'] at h
   refine h.trans ?_
   funext m
   ext v
   simp
 
 /-- Composing the formal Taylor series of `Prod.snd` with a product series `p.prod q` recovers
-`q`. -/
+`q`, regardless of the first coordinate of the base point. -/
 theorem ftaylorSeries_snd_taylorComp_prod (p : FormalMultilinearSeries 𝕜 E F)
-    (q : FormalMultilinearSeries 𝕜 E G) :
-    (ftaylorSeries 𝕜 (Prod.snd : F × G → G) (p 0 0, q 0 0)).taylorComp (p.prod q) = q := by
-  have h := ftaylorSeries_clm_taylorComp (ContinuousLinearMap.snd 𝕜 F G) (p.prod q)
-  simp only [prod_apply, ContinuousMultilinearMap.prod_apply, ContinuousLinearMap.coe_snd'] at h
+    (q : FormalMultilinearSeries 𝕜 E G) (x : F) (v₀ : Fin 0 → E) :
+    (ftaylorSeries 𝕜 (Prod.snd : F × G → G) (x, q 0 v₀)).taylorComp (p.prod q) = q := by
+  have h := (ContinuousLinearMap.snd 𝕜 F G).ftaylorSeries_taylorComp (p.prod q)
+    (y := (x, q 0 v₀)) (v₀ := v₀) rfl
+  simp only [ContinuousLinearMap.coe_snd'] at h
   refine h.trans ?_
   funext m
   ext v
@@ -403,7 +534,7 @@ theorem ftaylorSeries_snd_taylorComp_prod (p : FormalMultilinearSeries 𝕜 E F)
 /-- When two inner formal multilinear series agree in all positive orders strictly below `m`,
 all nonlinear partition terms in `q.taylorComp p₁ m - q.taylorComp p₂ m` cancel, leaving only the
 single-block term. -/
-theorem taylorComp_sub_of_eq_lt (q : FormalMultilinearSeries 𝕜 F G)
+theorem taylorComp_sub_taylorComp_of_eq_lt_right (q : FormalMultilinearSeries 𝕜 F G)
     {p₁ p₂ : FormalMultilinearSeries 𝕜 E F} {m : ℕ} (hm : 0 < m)
     (hp : ∀ k, 1 ≤ k → k < m → p₁ k = p₂ k) :
     q.taylorComp p₁ m - q.taylorComp p₂ m =
@@ -426,11 +557,11 @@ theorem taylorComp_sub_of_eq_lt (q : FormalMultilinearSeries 𝕜 F G)
   ext v
   exact (map_sub (continuousMultilinearCurryFin1 𝕜 F G (q 1)) (p₁ m v) (p₂ m v)).symm
 
-/-- When two outer formal multilinear series agree in all orders strictly below `m`, all non-atomic
-partition terms in `q₁.taylorComp p m - q₂.taylorComp p m` cancel, leaving only the singleton
-partition term. -/
-theorem sub_taylorComp_of_eq_lt {q₁ q₂ : FormalMultilinearSeries 𝕜 F G}
-    (p : FormalMultilinearSeries 𝕜 E F) {m : ℕ} (hq : ∀ k < m, q₁ k = q₂ k) :
+/-- When two outer formal multilinear series agree in all positive orders strictly below `m`, all
+non-atomic partition terms in `q₁.taylorComp p m - q₂.taylorComp p m` cancel, leaving only the
+singleton partition term. -/
+theorem taylorComp_sub_taylorComp_of_eq_lt_left {q₁ q₂ : FormalMultilinearSeries 𝕜 F G}
+    (p : FormalMultilinearSeries 𝕜 E F) {m : ℕ} (hq : ∀ k, 1 ≤ k → k < m → q₁ k = q₂ k) :
     q₁.taylorComp p m - q₂.taylorComp p m =
       (q₁ m - q₂ m).compContinuousLinearMap
         (fun _ ↦ continuousMultilinearCurryFin1 𝕜 E F (p 1)) := by
@@ -444,11 +575,73 @@ theorem sub_taylorComp_of_eq_lt {q₁ q₂ : FormalMultilinearSeries 𝕜 F G}
     refine Finset.sum_congr rfl fun c hc ↦ ?_
     have hlt : c.length < m := c.length_lt_of_ne_atomic (Finset.mem_erase.mp hc).1
     unfold FormalMultilinearSeries.compAlongOrderedFinpartition
-    rw [hq c.length hlt]
+    rw [hq c.length (c.length_pos (Nat.zero_lt_of_lt hlt)) hlt]
   rw [hrest, add_sub_add_right_eq_sub, compAlongOrderedFinpartition_atomic,
     compAlongOrderedFinpartition_atomic]
   ext v
   simp
+
+/-- Faà di Bruno composition preserves slot symmetry: if every coefficient of `q` and `p` in orders
+`2` through `m` is invariant under slot permutations, then `(q.taylorComp p) m` is invariant under
+slot permutations. -/
+theorem taylorComp_comp_perm (q : FormalMultilinearSeries 𝕜 F G)
+    (p : FormalMultilinearSeries 𝕜 E F) {m : ℕ}
+    (hq : ∀ k, 2 ≤ k → k ≤ m → ∀ (w : Fin k → F) (π : Equiv.Perm (Fin k)), q k (w ∘ π) = q k w)
+    (hp : ∀ k, 2 ≤ k → k ≤ m → ∀ (u : Fin k → E) (τ : Equiv.Perm (Fin k)), p k (u ∘ τ) = p k u)
+    (v : Fin m → E) (σ : Equiv.Perm (Fin m)) :
+    q.taylorComp p m (v ∘ σ) = q.taylorComp p m v := by
+  classical
+  have hq_all (k : ℕ) (hk : k ≤ m) (w : Fin k → F) (π : Equiv.Perm (Fin k)) :
+      q k (w ∘ π) = q k w := by
+    by_cases hk2 : 2 ≤ k
+    · exact hq k hk2 hk w π
+    · have : Subsingleton (Fin k) := ⟨fun a b ↦ Fin.ext (by omega)⟩
+      rw [Subsingleton.elim π 1]
+      rfl
+  have hp_all (k : ℕ) (hk : k ≤ m) (u : Fin k → E) (τ : Equiv.Perm (Fin k)) :
+      p k (u ∘ τ) = p k u := by
+    by_cases hk2 : 2 ≤ k
+    · exact hp k hk2 hk u τ
+    · have : Subsingleton (Fin k) := ⟨fun a b ↦ Fin.ext (by omega)⟩
+      rw [Subsingleton.elim τ 1]
+      rfl
+  rw [FormalMultilinearSeries.taylorComp, sum_apply, sum_apply,
+    ← (OrderedFinpartition.permEquiv σ).sum_comp]
+  refine Finset.sum_congr rfl fun c _ ↦ ?_
+  rw [compAlongOrderedFinpartition_apply, compAlongOrderedFinpartition_apply]
+  let π := OrderedFinpartition.permOrder c σ
+  have hblock (i : Fin c.length) :
+      p (c.partSize (π i)) (fun j ↦ v (σ (OrderedFinpartition.permEmb c σ (π i) j))) =
+        p (c.partSize (π i)) (fun j ↦ v (c.emb (π i) j)) := by
+    have hmem (j : Fin (c.partSize (π i))) :
+        ∃ k : Fin (c.partSize (π i)),
+          c.emb (π i) k = σ (OrderedFinpartition.permEmb c σ (π i) j) := by
+      have hm : OrderedFinpartition.permEmb c σ (π i) j ∈
+          Set.range (OrderedFinpartition.permEmb c σ (π i)) := ⟨j, rfl⟩
+      rw [OrderedFinpartition.range_permEmb] at hm
+      obtain ⟨y, ⟨k, rfl⟩, hy⟩ := hm
+      exact ⟨k, by rw [← hy, σ.apply_symm_apply]⟩
+    let τFun : Fin (c.partSize (π i)) → Fin (c.partSize (π i)) := fun j ↦ (hmem j).choose
+    have hτ_eq (j : Fin (c.partSize (π i))) :
+        c.emb (π i) (τFun j) = σ (OrderedFinpartition.permEmb c σ (π i) j) := (hmem j).choose_spec
+    have hτ_inj : Function.Injective τFun := fun j₁ j₂ h ↦
+      (OrderedFinpartition.permEmb c σ (π i)).injective <| σ.injective <| by
+        rw [← hτ_eq j₁, ← hτ_eq j₂, h]
+    let τ : Equiv.Perm (Fin (c.partSize (π i))) :=
+      Equiv.ofBijective τFun (Finite.injective_iff_bijective.mp hτ_inj)
+    have hfun : (fun j ↦ v (σ (OrderedFinpartition.permEmb c σ (π i) j))) =
+        (fun k ↦ v (c.emb (π i) k)) ∘ τ := funext fun j ↦ congrArg v (hτ_eq j).symm
+    rw [hfun]
+    exact hp_all (c.partSize (π i)) (c.partSize_le (π i)) _ τ
+  have houter :
+      (OrderedFinpartition.permEquiv σ c).applyOrderedFinpartition
+        (fun i ↦ p ((OrderedFinpartition.permEquiv σ c).partSize i)) (v ∘ σ) =
+      (c.applyOrderedFinpartition (fun i ↦ p (c.partSize i)) v) ∘ π := by
+    funext i
+    simp only [OrderedFinpartition.applyOrderedFinpartition_apply]
+    exact hblock i
+  rw [houter]
+  exact hq_all c.length c.length_le _ π
 
 private noncomputable def curryLeftSeries (p : FormalMultilinearSeries 𝕜 E F) (e : E) :
     FormalMultilinearSeries 𝕜 E F :=
@@ -464,14 +657,6 @@ private noncomputable def taylorCompDeriv (q : FormalMultilinearSeries 𝕜 F G)
   fun m ↦ ∑ c : OrderedFinpartition m, ∑ i : Fin c.length,
     ((c.compAlongOrderedFinpartitionL 𝕜 E F G (q c.length)).toContinuousLinearMap
       (fun j ↦ p (c.partSize j)) i) (d (c.partSize i))
-
-private theorem add_taylorComp (q₁ q₂ : FormalMultilinearSeries 𝕜 F G)
-    (p : FormalMultilinearSeries 𝕜 E F) :
-    (q₁ + q₂).taylorComp p = q₁.taylorComp p + q₂.taylorComp p := by
-  funext m
-  ext v
-  simp [FormalMultilinearSeries.taylorComp, compAlongOrderedFinpartition_apply, sum_apply,
-    Finset.sum_add_distrib]
 
 private theorem taylorCompDeriv_add (q : FormalMultilinearSeries 𝕜 F G)
     (p d₁ d₂ : FormalMultilinearSeries 𝕜 E F) :
@@ -688,6 +873,32 @@ theorem norm_taylorComp_le (q : FormalMultilinearSeries 𝕜 F G)
     _ ≤ max 1 B ^ m := pow_le_pow_right₀ (le_max_left _ _) c.length_le
 
 end FormalMultilinearSeries
+
+/-- Up to the order of smoothness, composing the formal Taylor series of `g ∘ f` with `p` agrees
+with nested Taylor composition via Faà di Bruno and associativity. -/
+theorem ContDiffAt.ftaylorSeries_comp_taylorComp {M : Type*} [NormedAddCommGroup M]
+    [NormedSpace 𝕜 M] {n : ℕ∞ω} {g : F → G} {f : E → F} {x : E}
+    (hg : ContDiffAt 𝕜 n g (f x)) (hf : ContDiffAt 𝕜 n f x)
+    (p : FormalMultilinearSeries 𝕜 M E) {m : ℕ} (hm : m ≤ n) :
+    (ftaylorSeries 𝕜 (g ∘ f) x).taylorComp p m =
+      (ftaylorSeries 𝕜 g (f x)).taylorComp ((ftaylorSeries 𝕜 f x).taylorComp p) m := by
+  rw [← FormalMultilinearSeries.taylorComp_assoc]
+  exact FormalMultilinearSeries.taylorComp_congr
+    (fun k hk ↦ iteratedFDeriv_comp hg hf ((Nat.cast_le.mpr hk).trans hm))
+    (fun _ _ _ ↦ rfl)
+
+/-- Up to the order of smoothness, composing the formal Taylor series of a pair map
+`y ↦ (f y, g y)` with `p` is the product of the individual Taylor compositions. -/
+theorem ContDiffAt.ftaylorSeries_prodMk_taylorComp {M : Type*} [NormedAddCommGroup M]
+    [NormedSpace 𝕜 M] {n : ℕ∞ω} {f : E → F} {g : E → G} {x : E}
+    (hf : ContDiffAt 𝕜 n f x) (hg : ContDiffAt 𝕜 n g x)
+    (p : FormalMultilinearSeries 𝕜 M E) {m : ℕ} (hm : m ≤ n) :
+    (ftaylorSeries 𝕜 (fun y ↦ (f y, g y)) x).taylorComp p m =
+      (((ftaylorSeries 𝕜 f x).taylorComp p).prod ((ftaylorSeries 𝕜 g x).taylorComp p)) m := by
+  rw [← FormalMultilinearSeries.prod_taylorComp]
+  exact FormalMultilinearSeries.taylorComp_congr
+    (fun k hk ↦ iteratedFDeriv_prodMk hf hg ((Nat.cast_le.mpr hk).trans hm))
+    (fun _ _ _ ↦ rfl)
 
 /-- **A norm bound for the derivatives of a composite.** If `g` is `Cᵐ` at `f x`, `f` is `Cᵐ` at
 `x`, and the derivatives of `f` at `x` of orders `1` through `m` have norm at most `B`, then the
