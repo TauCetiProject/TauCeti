@@ -16,7 +16,7 @@ chains of `E` by those of the preimages `p⁻¹(C^(i))` of the skeleta gives the
 sequence on cubical chains** (`TauCeti.TopCat.cubicalSerreSpectralSequence`), the form in which
 Serre originally built it and in which it meets the chains on Moore loop spaces, which are cubical
 because the cubical cross product is strictly associative. Its abutment in degree `-n` is the
-cubical homology `Hₙ(E)` (`TauCeti.cubicalFilteredSpaceAbutmentIso`).
+cubical homology `Hₙ(E)` (`TauCeti.chainFiltrationAbutmentIso`).
 
 The comparison of simplicial and cubical chains is an isomorphism from the simplicial Serre
 spectral sequence `TauCeti.TopCat.serreSpectralSequence` onto the cubical one on every page `r ≥ 2`
