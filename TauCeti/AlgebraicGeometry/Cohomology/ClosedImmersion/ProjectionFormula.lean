@@ -11,20 +11,16 @@ public import TauCeti.AlgebraicGeometry.VectorBundle.ProjectionFormula
 /-!
 # Cohomology of twisted direct images along a closed immersion
 
-Combining the closed-immersion cohomology comparison
-(`TauCeti.AlgebraicGeometry.cohomologyPushforwardIso`) with the right-hand projection formula for a
-finite locally free sheaf
-(`TauCeti.AlgebraicGeometry.FiniteLocallyFreeSheaf.pushforwardTensorRightIso`) identifies
-`Hⁿ(Y, (f_* F) ⊗ E)` with `Hⁿ(X, F ⊗ f^* E)` for any closed immersion `f : X ⟶ Y`, sheaf of modules
-`F` on `X`, and finite locally free (in particular, invertible) sheaf `E` on `Y`.
+Combining `TauCeti.AlgebraicGeometry.cohomologyPushforwardIso` with
+`TauCeti.AlgebraicGeometry.FiniteLocallyFreeSheaf.pushforwardTensorRightIso` identifies
+`Hⁿ(Y, (f_* F) ⊗ E)` with `Hⁿ(X, F ⊗ f^* E)` along any closed immersion `f : X ⟶ Y` for a sheaf of
+modules `F` on `X` and finite locally free (in particular, invertible) sheaf `E` on `Y`.
 
 ## Main declarations
 
-* `AlgebraicGeometry.Scheme.Hom.cohomologyPushforwardTensorRightIso`: the additive isomorphism
-  `Hⁿ(Y, (f_* F) ⊗ E) ≅ Hⁿ(X, F ⊗ f^* E)`, natural in `F`.
-* `AlgebraicGeometry.Scheme.Hom.subsingleton_cohomology_pushforward_tensor_iff` and
-  `AlgebraicGeometry.Scheme.Hom.subsingleton_cohomology_pushforward_tensor_iff_of_isInvertible`:
-  equivalence of cohomology vanishing for `(f_* F) ⊗ E` on `Y` and `F ⊗ f^* E` on `X`.
+* `AlgebraicGeometry.Scheme.Hom.cohomologyPushforwardTensorRightIso`
+* `AlgebraicGeometry.Scheme.Hom.subsingleton_cohomology_pushforward_tensor_iff`
+* `AlgebraicGeometry.Scheme.Hom.subsingleton_cohomology_pushforward_tensor_iff_of_isInvertible`
 
 ## References
 
@@ -45,17 +41,15 @@ namespace AlgebraicGeometry.Scheme.Hom
 
 variable {X Y : Scheme.{u}} (f : X ⟶ Y) [IsClosedImmersion f]
 
-/-- For a closed immersion `f : X ⟶ Y`, a sheaf of modules `F` on `X`, and a finite locally free
-sheaf `E` on `Y`, the projection formula and closed-immersion cohomology comparison give an additive
-isomorphism `Hⁿ(Y, (f_* F) ⊗ E) ≅ Hⁿ(X, F ⊗ f^* E)`. -/
+/-- Additive isomorphism `Hⁿ(Y, (f_* F) ⊗ E) ≅ Hⁿ(X, F ⊗ f^* E)` along a closed immersion `f` for
+finite locally free `E`. -/
 def cohomologyPushforwardTensorRightIso (F : X.Modules) (E : FiniteLocallyFreeSheaf Y) (n : ℕ) :
     AddCommGrpCat.of (Cohomology ((pushforward f).obj F ⊗ E.obj) n) ≅
       AddCommGrpCat.of (Cohomology (F ⊗ (pullback f).obj E.obj) n) :=
   (cohomologyFunctor Y n).mapIso ((FiniteLocallyFreeSheaf.pushforwardTensorRightIso f E).app F) ≪≫
     cohomologyPushforwardIso f (F ⊗ (pullback f).obj E.obj) n
 
-/-- The forward map of `cohomologyPushforwardTensorRightIso` applies `pushforwardTensorRightIso` on
-cohomology followed by `cohomologyPushforwardIso`. -/
+/-- Forward map of `cohomologyPushforwardTensorRightIso`. -/
 @[simp]
 theorem cohomologyPushforwardTensorRightIso_hom (F : X.Modules) (E : FiniteLocallyFreeSheaf Y)
     (n : ℕ) :
@@ -65,8 +59,7 @@ theorem cohomologyPushforwardTensorRightIso_hom (F : X.Modules) (E : FiniteLocal
         (cohomologyPushforwardIso f (F ⊗ (pullback f).obj E.obj) n).hom :=
   (rfl)
 
-/-- The inverse of `cohomologyPushforwardTensorRightIso` applies the inverse of
-`cohomologyPushforwardIso` followed by the inverse of `pushforwardTensorRightIso` on cohomology. -/
+/-- Inverse map of `cohomologyPushforwardTensorRightIso`. -/
 @[simp]
 theorem cohomologyPushforwardTensorRightIso_inv (F : X.Modules) (E : FiniteLocallyFreeSheaf Y)
     (n : ℕ) :
@@ -76,7 +69,7 @@ theorem cohomologyPushforwardTensorRightIso_inv (F : X.Modules) (E : FiniteLocal
           ((FiniteLocallyFreeSheaf.pushforwardTensorRightIso f E).app F).inv :=
   (rfl)
 
-/-- `cohomologyPushforwardTensorRightIso` is natural in morphisms `φ : F₁ ⟶ F₂` of `𝒪_X`-modules. -/
+/-- Naturality of `cohomologyPushforwardTensorRightIso` in `φ : F₁ ⟶ F₂`. -/
 @[reassoc]
 theorem cohomologyPushforwardTensorRightIso_naturality {F₁ F₂ : X.Modules} (φ : F₁ ⟶ F₂)
     (E : FiniteLocallyFreeSheaf Y) (n : ℕ) :
@@ -91,17 +84,15 @@ theorem cohomologyPushforwardTensorRightIso_naturality {F₁ F₂ : X.Modules} (
         (cohomologyFunctor Y n).map
             ((FiniteLocallyFreeSheaf.pushforwardTensorRightIso f E).app F₁).hom ≫
           (pushforward f ⋙ cohomologyFunctor Y n).map (φ ▷ (pullback f).obj E.obj) :=
-    ((cohomologyFunctor Y n).map_comp _ _).symm.trans
-      ((congrArg (cohomologyFunctor Y n).map
-        ((FiniteLocallyFreeSheaf.pushforwardTensorRightIso f E).hom.naturality φ)).trans
-        ((cohomologyFunctor Y n).map_comp _ _))
+    ((cohomologyFunctor Y n).map_comp _ _).symm.trans ((congrArg (cohomologyFunctor Y n).map
+      ((FiniteLocallyFreeSheaf.pushforwardTensorRightIso f E).hom.naturality φ)).trans
+      ((cohomologyFunctor Y n).map_comp _ _))
   exact (Category.assoc _ _ _).symm.trans ((eq_whisker hnat _).trans
     ((Category.assoc _ _ _).trans ((whisker_eq _
       (cohomologyPushforwardIso_naturality f (φ ▷ (pullback f).obj E.obj) n)).trans
       (Category.assoc _ _ _).symm)))
 
-/-- Along a closed immersion `f : X ⟶ Y`, `Hⁿ(Y, (f_* F) ⊗ E)` vanishes if and only if
-`Hⁿ(X, F ⊗ f^* E)` vanishes, for any finite locally free sheaf `E` on `Y`. -/
+/-- Along a closed immersion `f`, `Hⁿ(Y, (f_* F) ⊗ E)` vanishes iff `Hⁿ(X, F ⊗ f^* E)` does. -/
 @[simp]
 theorem subsingleton_cohomology_pushforward_tensor_iff (F : X.Modules)
     (E : FiniteLocallyFreeSheaf Y) (n : ℕ) :
@@ -109,8 +100,9 @@ theorem subsingleton_cohomology_pushforward_tensor_iff (F : X.Modules)
       Subsingleton (Cohomology (F ⊗ (pullback f).obj E.obj) n) :=
   (f.cohomologyPushforwardTensorRightIso F E n).addCommGroupIsoToAddEquiv.toEquiv.subsingleton_congr
 
-/-- Along a closed immersion `f : X ⟶ Y`, `Hⁿ(Y, (f_* F) ⊗ L)` vanishes if and only if
-`Hⁿ(X, F ⊗ f^* L)` vanishes, for any invertible `𝒪_Y`-module `L`. -/
+/-- Along a closed immersion `f`, `Hⁿ(Y, (f_* F) ⊗ L)` vanishes iff `Hⁿ(X, F ⊗ f^* L)` does for
+invertible `L`. -/
+@[simp]
 theorem subsingleton_cohomology_pushforward_tensor_iff_of_isInvertible (F : X.Modules)
     (L : Y.Modules) [TauCeti.SheafOfModules.IsInvertible (R := Y.ringCatSheaf) L] (n : ℕ) :
     Subsingleton (Cohomology ((pushforward f).obj F ⊗ L) n) ↔

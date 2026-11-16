@@ -266,23 +266,10 @@ theorem higherDirectImageBasicOpenSectionsAddEquiv_naturality
     f.higherDirectImageBasicOpenSectionsAddEquiv_higherDirectImagePresheafToPresheafIso_hom_app,
     f.higherDirectImageBasicOpenSectionsAddEquiv_higherDirectImagePresheafToPresheafIso_hom_app]
   let adj := PresheafOfModules.sheafificationAdjunction (𝟙 Y.ringCatSheaf.obj)
-  have hunit :
-      (adj.unit.app ((f.higherDirectImagePresheaf n).obj M₂)).app (.op V) (ψ.app (.op V) y) =
-        ((PresheafOfModules.sheafification (𝟙 Y.ringCatSheaf.obj)).map ψ).val.app (.op V)
-          ((adj.unit.app ((f.higherDirectImagePresheaf n).obj M₁)).app (.op V) y) :=
-    congrArg (fun g ↦ g.app (.op V) y) (adj.unit.naturality ψ)
-  have hsheaf :
-      ((f.higherDirectImagePresheafSheafificationIso n).app M₂).hom.val.app (.op V)
-          (((PresheafOfModules.sheafification (𝟙 Y.ringCatSheaf.obj)).map ψ).val.app (.op V)
-            ((adj.unit.app ((f.higherDirectImagePresheaf n).obj M₁)).app (.op V) y)) =
-        ((f.higherDirectImage n).map φ).app V
-          (((f.higherDirectImagePresheafSheafificationIso n).app M₁).hom.val.app (.op V)
-            ((adj.unit.app ((f.higherDirectImagePresheaf n).obj M₁)).app (.op V) y)) :=
-    congrArg (fun g ↦ g.val.app (.op V)
-      ((adj.unit.app ((f.higherDirectImagePresheaf n).obj M₁)).app (.op V) y))
-      ((f.higherDirectImagePresheafSheafificationIso n).hom.naturality φ)
   exact (congrArg (((f.higherDirectImagePresheafSheafificationIso n).app M₂).hom.val.app (.op V))
-    hunit).trans hsheaf
+    (congrArg (fun g ↦ g.app (.op V) y) (adj.unit.naturality ψ))).trans
+    (congrArg (fun g ↦ g.val.app (.op V) ((adj.unit.app _).app (.op V) y))
+      ((f.higherDirectImagePresheafSheafificationIso n).hom.naturality φ))
 
 /-- `cohomologyHigherDirectImageGlobalSectionsLinearEquiv` is natural in morphisms `φ : M₁ ⟶ M₂`
 of quasi-coherent `𝒪_X`-modules, intertwining `cohomologyMapBaseLinear` with the map induced by
@@ -299,14 +286,9 @@ theorem cohomologyHigherDirectImageGlobalSectionsLinearEquiv_naturality
   have htop : (cohomologyOnTopBaseLinearEquiv M₂ R n).symm (cohomologyMapBaseLinear R X φ n x) =
       cohomologyOnMap φ n ⊤ x₀ := by
     apply (cohomologyOnTopBaseLinearEquiv M₂ R n).injective
-    have hx₀ : (cohomologyOnTopIso M₁ n).hom x₀ = x :=
-      (cohomologyOnTopBaseLinearEquiv_apply M₁ R n x₀).symm.trans
-        ((cohomologyOnTopBaseLinearEquiv M₁ R n).apply_symm_apply x)
-    exact ((cohomologyOnTopBaseLinearEquiv M₂ R n).apply_symm_apply _).trans
-      ((cohomologyMapBaseLinear_apply R X φ n x).trans
-        ((congrArg ((cohomologyFunctor X n).map φ) hx₀.symm).trans
-          ((cohomologyOnTopIso_hom_cohomologyOnMap M₁ φ n x₀).symm.trans
-            (cohomologyOnTopBaseLinearEquiv_apply M₂ R n _).symm)))
+    rw [LinearEquiv.apply_symm_apply, cohomologyMapBaseLinear_apply,
+      cohomologyOnTopBaseLinearEquiv_apply, cohomologyOnTopIso_hom_cohomologyOnMap,
+      ← cohomologyOnTopBaseLinearEquiv_apply M₁ R n, LinearEquiv.apply_symm_apply]
   exact (congrArg (f.higherDirectImageBasicOpenSectionsAddEquiv M₂ n ⟨1, Y.basicOpen_one⟩)
     htop).trans
     (f.higherDirectImageBasicOpenSectionsAddEquiv_naturality φ n ⟨1, Y.basicOpen_one⟩ x₀)
