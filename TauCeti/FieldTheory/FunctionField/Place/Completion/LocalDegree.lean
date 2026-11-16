@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.FieldTheory.FunctionField.Place.Completion.Extension
+import Mathlib.FieldTheory.SeparableClosure
 import TauCeti.RingTheory.AdicCompletion.Pi
 
 /-!
@@ -53,6 +54,9 @@ completed extension.
   `e(P' ∣ P) f(P' ∣ P)`.
 * `TauCeti.Place.finiteDimensional_completion` and `TauCeti.Place.finrank_completion`: **the
   local degree** `[F̂'_{P'} : F̂_P] = e(P' ∣ P) f(P' ∣ P)`.
+* `TauCeti.Place.isIntegralClosure_completionIntegers`: `𝒪̂_{P'}` is the integral closure of
+  `𝒪̂_P` in `F̂'_{P'}`.
+* `TauCeti.Place.isSeparable_completion`: completion preserves separability.
 
 ## References
 
@@ -481,6 +485,59 @@ theorem finrank_completion :
   letI := P.completionExtensionAlgebra P' hP
   (Module.finrank_eq_card_basis (nonempty_basis_completion P P' hP).some).trans
     (by simp [mul_comm])
+
+/-- The completed valuation ring `𝒪̂_{P'}` is the integral closure of `𝒪̂_P` in the completed
+field `F̂'_{P'}`: it is a finite `𝒪̂_P`-module, so every element is integral over `𝒪̂_P`, and it is
+a valuation subring, hence integrally closed in `F̂'_{P'}`. -/
+theorem isIntegralClosure_completionIntegers :
+    letI := P.completionExtensionAlgebra P' hP
+    letI := P.completionIntegersExtensionAlgebra P' hP
+    IsIntegralClosure P'.completionPlace.integers P.completionPlace.integers P'.Completion := by
+  let _ := P.completionExtensionAlgebra P' hP
+  let _ := P.completionIntegersExtensionAlgebra P' hP
+  have _ := moduleFinite_completionIntegers P P' hP
+  have _ : Algebra.IsIntegral P.completionPlace.integers P'.completionPlace.integers :=
+    Algebra.IsIntegral.of_finite _ _
+  refine ⟨Subtype.val_injective, fun {x} ↦ ⟨fun hx ↦ ?_, ?_⟩⟩
+  · refine ⟨⟨x, P'.completionPlace.mem_integers_of_isIntegral (fun a ↦ ?_) hx⟩, rfl⟩
+    rw [IsScalarTower.algebraMap_apply P.completionPlace.integers P.Completion P'.Completion,
+      algebraMap_completionExtensionAlgebra, ValuationSubring.algebraMap_apply]
+    exact P.completionExtension_mem_integers P' hP a.2
+  · rintro ⟨y, rfl⟩
+    exact (Algebra.IsIntegral.isIntegral (R := P.completionPlace.integers) y).map
+      (IsScalarTower.toAlgHom P.completionPlace.integers P'.completionPlace.integers P'.Completion)
+
+/-- **Completion preserves separability**: if `F' / F` is separable and the residue extension at
+`P'` is finite, then the completed field extension `F̂'_{P'} / F̂_P` is separable. -/
+theorem isSeparable_completion [Algebra.IsSeparable F F'] :
+    letI := P.completionExtensionAlgebra P' hP
+    Algebra.IsSeparable P.Completion P'.Completion := by
+  let _ := P.completionExtensionAlgebra P' hP
+  rw [← separableClosure.eq_top_iff]
+  obtain ⟨u, t, -, hsp, ht⟩ := exists_residue_basis (k := k) (F := F) P'
+  have hmem (y : F') : P'.completionEmbedding y ∈ separableClosure P.Completion P'.Completion := by
+    rw [mem_separableClosure_iff]
+    have hsep : ((minpoly F y).map (P.completionEmbedding : F →+* P.Completion)).Separable :=
+      Polynomial.Separable.map (Algebra.IsSeparable.isSeparable F y)
+    refine hsep.of_dvd (minpoly.dvd P.Completion (P'.completionEmbedding y) ?_)
+    have hcomp : (algebraMap P.Completion P'.Completion).comp
+        (P.completionEmbedding : F →+* P.Completion) =
+        (P'.completionEmbedding : F' →+* P'.Completion).comp (algebraMap F F') :=
+      RingHom.ext fun x ↦ by
+        simp [algebraMap_completionExtensionAlgebra]
+    rw [Polynomial.aeval_def, Polynomial.eval₂_map, hcomp,
+      ← AlgHom.coe_toRingHom P'.completionEmbedding,
+      ← Polynomial.hom_eval₂ (minpoly F y) (algebraMap F F')
+        (P'.completionEmbedding : F' →+* P'.Completion) y,
+      ← Polynomial.aeval_def, minpoly.aeval, map_zero]
+  refine eq_top_iff.mpr fun x _ ↦ ?_
+  have hx : x ∈ Submodule.span P.Completion
+      (Set.range fun p : Fin (relativeDegree k F P') × Fin (ramificationIdx F P') ↦
+        P'.completionEmbedding ((u p.1 : F') * (t : F') ^ (p.2 : ℕ))) := by
+    rw [span_completion_eq_top P P' hP u hsp ht]
+    exact Submodule.mem_top
+  exact (Submodule.span_le (p := (separableClosure P.Completion P'.Completion).toSubmodule)).mpr
+    (by rintro _ ⟨p, rfl⟩; exact hmem _) hx
 
 end Degree
 

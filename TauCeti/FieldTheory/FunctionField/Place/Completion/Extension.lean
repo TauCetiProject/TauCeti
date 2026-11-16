@@ -232,6 +232,35 @@ theorem coe_algebraMap_completionIntegersExtensionAlgebra (x : P.completionPlace
       P.completionExtension P' hP x :=
   (rfl)
 
+/-- The map of completed valuation rings is injective. -/
+theorem completionIntegersExtension_injective :
+    Function.Injective (P.completionIntegersExtension P' hP) := fun _ _ h ↦
+  Subtype.ext <| (P.completionExtension P' hP).injective <| by
+    simpa only [coe_completionIntegersExtension] using congrArg Subtype.val h
+
+/-- The completed valuation ring of `P'` is torsion-free over that of `P`. -/
+instance isTorsionFree_completionIntegersExtensionAlgebra :
+    letI := P.completionIntegersExtensionAlgebra P' hP
+    Module.IsTorsionFree P.completionPlace.integers P'.completionPlace.integers := by
+  let _ := P.completionIntegersExtensionAlgebra P' hP
+  rw [Module.isTorsionFree_iff_algebraMap_injective,
+    algebraMap_completionIntegersExtensionAlgebra]
+  exact P.completionIntegersExtension_injective P' hP
+
+/-- The completed valuation rings `𝒪̂_P ⊆ 𝒪̂_{P'}` and the completed field `F̂'_{P'}` form a
+scalar tower. -/
+instance isScalarTower_completionIntegersExtensionAlgebra :
+    letI := P.completionExtensionAlgebra P' hP
+    letI := P.completionIntegersExtensionAlgebra P' hP
+    IsScalarTower P.completionPlace.integers P'.completionPlace.integers P'.Completion := by
+  let _ := P.completionExtensionAlgebra P' hP
+  let _ := P.completionIntegersExtensionAlgebra P' hP
+  refine IsScalarTower.of_algebraMap_eq (R := P.completionPlace.integers)
+    (S := P'.completionPlace.integers) (A := P'.Completion) fun x ↦ ?_
+  rw [IsScalarTower.algebraMap_apply P.completionPlace.integers P.Completion P'.Completion,
+    algebraMap_completionExtensionAlgebra, ValuationSubring.algebraMap_apply,
+    ValuationSubring.algebraMap_apply, coe_algebraMap_completionIntegersExtensionAlgebra]
+
 end Integers
 
 section Tower

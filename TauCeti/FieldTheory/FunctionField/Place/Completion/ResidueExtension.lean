@@ -15,7 +15,7 @@ its residue field and the residue field of the place below, but also the embeddi
 between them. The two completion isomorphisms form a commutative square with the
 original and completed residue embeddings.
 
-Consequently the full relative residue degree and separability of the residue
+Consequently finiteness, the full relative residue degree, and separability of the residue
 extension are unchanged by completion. No finiteness or separability assumption
 on the fields or their residues is needed. In particular, the degree here includes
 any inseparable factor; this is the residue degree occurring in local different
@@ -101,5 +101,17 @@ theorem isSeparable_residueField_completion_iff :
     (P'.restrict k F).residueFieldEquivCompletion.toRingEquiv
     P'.residueFieldEquivCompletion.toRingEquiv
     (P'.algebraMap_comp_residueFieldEquivCompletion (k := k) (F := F))).symm
+
+/-- Completion preserves finiteness of the residue field extension. -/
+theorem finiteDimensional_residueField_completion
+    [FiniteDimensional (P'.restrict k F).ResidueField P'.ResidueField] :
+    letI := (P'.restrict k F).completionIntegersExtensionAlgebra P' rfl
+    FiniteDimensional (P'.restrict k F).completionPlace.ResidueField
+      P'.completionPlace.ResidueField :=
+  letI := (P'.restrict k F).completionIntegersExtensionAlgebra P' rfl
+  Module.Finite.of_equiv_equiv
+    (P'.restrict k F).residueFieldEquivCompletion.toRingEquiv
+    P'.residueFieldEquivCompletion.toRingEquiv
+    (P'.algebraMap_comp_residueFieldEquivCompletion (k := k) (F := F))
 
 end TauCeti.Place

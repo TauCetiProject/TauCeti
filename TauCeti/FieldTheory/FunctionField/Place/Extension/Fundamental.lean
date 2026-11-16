@@ -52,6 +52,9 @@ integral closure in `F'` is a finite module over it — the hypothesis of Mathli
 * `TauCeti.Place.sum_ramificationIdx_mul_relativeDegree_eq_finrank_of_isSeparable`: the
   fundamental identity at an arbitrary place, for a separable extension (Stichtenoth,
   Theorem 3.1.11).
+* `TauCeti.Place.isIntegral_iff_forall_restrict_eq_mem_integers_of_isSeparable`: for a finite
+  separable extension, the integral closure of `𝒪_P` is the intersection of the valuation rings
+  above `P`, without a function-field hypothesis.
 * `TauCeti.Place.sum_ramificationIdx_mul_relativeDegree_eq_finrank_of_isFunctionField`: the
   fundamental identity at an arbitrary place of an algebraic function field, for any finite
   extension (Stichtenoth, Theorem 3.1.11, which assumes no separability).
@@ -117,6 +120,39 @@ theorem sum_ramificationIdx_mul_relativeDegree_eq_finrank_of_isSeparable [Algebr
   refine sum_ramificationIdx_mul_relativeDegree_eq_finrank (S := integralClosure P.integers F')
     k F (P.center hR) fun P' ↦ ?_
   rw [hs P', ofPrime_center]
+
+variable {k F} (k') in
+/-- **The integral closure of `𝒪_P` is the intersection of the valuation rings above `P`** for a
+finite separable extension `F' / F` whose constant field extension `k' / k` is integral: an element
+of `F'` is integral over `𝒪_P` exactly when it is regular at every place of `F' / k'` lying over
+`P`.
+
+Unlike `TauCeti.Place.isIntegral_iff_forall_restrict_eq_mem_integers`, this form requires no
+function-field hypothesis: separability makes the local integral closure `𝒪'_P` a Dedekind domain
+with fraction field `F'`, and its height-one primes define places lying over `P`. -/
+theorem isIntegral_iff_forall_restrict_eq_mem_integers_of_isSeparable
+    [Algebra.IsSeparable F F'] (P : Place k F) {x : F'} :
+    IsIntegral P.integers x ↔ ∀ P' : Place k' F', P'.restrict k F = P → x ∈ P'.integers := by
+  refine ⟨fun hx P' hP' ↦ P'.mem_integers_of_isIntegral (fun a ↦ ?_) hx, fun h ↦ ?_⟩
+  · subst hP'
+    exact (mem_integers_restrict_iff k F P' (a : F)).mp a.2
+  let S := integralClosure P.integers F'
+  have : IsScalarTower k P.integers F' := .of_algebraMap_eq fun c ↦ by
+    rw [IsScalarTower.algebraMap_apply P.integers F F',
+      ← IsScalarTower.algebraMap_apply k P.integers F, ← IsScalarTower.algebraMap_apply k F F']
+  have hk' : ∀ c : k', algebraMap k' F' c ∈ S := fun c ↦
+    (IsIntegral.algebraMap (Algebra.IsIntegral.isIntegral (R := k) c)).tower_top
+  let _ : Algebra k' S := ((algebraMap k' F').codRestrict S hk').toAlgebra
+  have : IsScalarTower k' S F' := .of_algebraMap_eq fun _ ↦ rfl
+  obtain ⟨y, rfl⟩ := HeightOneSpectrum.mem_integers_of_valuation_le_one (R := S) F' x fun v ↦ by
+    have hP : (ofPrime k' F' v).restrict k F = P :=
+      (restrict_eq_iff_integers_le k F (ofPrime k' F' v) P).mpr fun f hf ↦ by
+        simpa only [Subalgebra.algebraMap_apply] using
+          algebraMap_mem_integers_ofPrime k' F' v
+            (⟨algebraMap F F' f, isIntegral_algebraMap (x := (⟨f, hf⟩ : P.integers))⟩ : S)
+    rw [← valuation_ofPrime k' F' v]
+    exact (ofPrime k' F' v).mem_integers_iff.mp (h _ hP)
+  exact y.2
 
 open _root_.IntermediateField _root_.IntermediateField.algebraAdjoinAdjoin in
 /-- **The fundamental identity** (Stichtenoth, Theorem 3.1.11) at an arbitrary place `P` of an
