@@ -278,13 +278,16 @@ theorem iSup_gradeBy_eq_top_iff {f : H → ι} :
 every series meets only finitely many degrees. -/
 theorem isInternal_gradeBy_iff [DecidableEq ι] {f : H → ι} :
     DirectSum.IsInternal (gradeBy R N f) ↔ ∀ a : NovikovSeries R H N, (f '' a.support).Finite := by
-  rw [← iSup_gradeBy_eq_top_iff]
-  refine ⟨DirectSum.IsInternal.submodule_iSup_eq_top, fun h => ⟨fun x y hxy => ?_, ?_⟩⟩
+  refine ⟨fun h => iSup_gradeBy_eq_top_iff.1 h.submodule_iSup_eq_top,
+    fun h => ⟨fun x y hxy => DirectSum.ext fun i => Subtype.ext ?_, fun a => ?_⟩⟩
   · -- The summands are recovered as homogeneous components.
-    refine DirectSum.ext fun i => Subtype.ext ?_
     rw [← gradeProj_coeAddMonoidHom, ← gradeProj_coeAddMonoidHom, hxy]
-  · exact (LinearMap.range_eq_top (f := DFinsupp.lsum _ _)).1 <|
-      (Submodule.iSup_eq_range_dfinsupp_lsum _).symm.trans h
+  · -- `a` is the sum of its finitely many homogeneous components.
+    refine ⟨∑ i ∈ (h a).toFinset, DirectSum.of (fun i => gradeBy R N f i) i
+      ⟨gradeProj R N f i a, gradeProj_mem_gradeBy f i a⟩, ?_⟩
+    rw [map_sum]
+    simp only [DirectSum.coeAddMonoidHom_of]
+    exact sum_gradeProj_eq_self (by simp)
 
 end AddZeroClass
 
