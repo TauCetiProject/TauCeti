@@ -378,17 +378,6 @@ theorem acyclic_homotopyCofiber_of_homologyπ : (homotopyCofiber ζ).Acyclic := 
   -- The cycle `l` of `C`, included into the cone, is a boundary of the cone.
   exact ⟨⟨l, hlx⟩, by simp [XEquiv_symm_apply]⟩
 
-include hy in
-/-- If `C.X i` is zero, so is `Hᵢ(C)`, and its basis is empty. -/
-private theorem eq_zero_of_eq_zero {n : ℤ → ℕ} (c : ∀ i, Basis (Fin (n i)) F (C.X i)) {i : ℤ}
-    (hi : n i = 0) : m i = 0 := by
-  by_contra hm
-  have hx (x : C.X i) : x = 0 := (c i).ext_elem fun k ↦ (Fin.cast hi k).elim0
-  have hy0 : y i ⟨0, Nat.pos_of_ne_zero hm⟩ = 0 :=
-    C.moduleCat_iCycles_injective i ((hx _).trans (map_zero _).symm)
-  apply (h i).ne_zero ⟨0, Nat.pos_of_ne_zero hm⟩
-  rw [← hy, hy0, map_zero]
-
 /-- The basis of the boundaries of the mapping cone in degree `j`: a basis of the boundaries `Bⱼ`
 of `C` followed by the cycles representing the homology basis `h j`, included into the cone. -/
 private def coneBoundaryBasis {n : ℤ → ℕ} (c : ∀ i, Basis (Fin (n i)) F (C.X i)) (j : ℤ) :
@@ -494,7 +483,11 @@ theorem reidemeisterTorsion_homotopyCofiber_eq_reidemeisterTorsionWithHomology {
     refine (hn.union (hn.image (· + 1))).subset fun i hi ↦ ?_
     by_cases h0 : n i = 0
     · refine Or.inr ⟨i - 1, fun h1 ↦ hi ?_, by simp⟩
-      rw [h0, eq_zero_of_eq_zero h y hy c h1]
+      have := Module.Finite.of_basis (c (i - 1))
+      have := C.finrank_homology_le_finrank_X (i - 1)
+      rw [finrank_eq_card_basis (h (i - 1)), finrank_eq_card_basis (c (i - 1))] at this
+      simp only [Fintype.card_fin] at this
+      omega
     · exact Or.inl h0
   have hacyc := acyclic_homotopyCofiber_of_homologyπ ζ hG g h y hy hζ
   rw [reidemeisterTorsionWithHomology_eq_finprod hn (fun j ↦ chosenBoundaryBasis C c (j + 1) j) y

@@ -67,18 +67,35 @@ theorem XEquiv_apply {i j : ι} (hij : c.Rel i j) (x : (X φ i : ModuleCat R)) :
   simp only [XEquiv, LinearEquiv.trans_apply, LinearEquiv.prodComm_apply]
   exact Prod.ext congr(($(XIsoBiprod_hom_snd φ i j hij)).hom x) rfl
 
+/-- The projection `sndX` is a left inverse of the inclusion `inrX`. -/
+@[simp]
+theorem inrX_sndX_apply (i : ι) (x : L.X i) : (sndX φ i).hom ((inrX φ i).hom x) = x :=
+  congr(($(inrX_sndX φ i)).hom x)
+
+/-- The projection `fstX` vanishes on the image of the inclusion `inrX`. -/
+@[simp]
+theorem inrX_fstX_apply {i j : ι} (hij : c.Rel i j) (x : L.X i) :
+    (fstX φ i j hij).hom ((inrX φ i).hom x) = 0 :=
+  congr(($(inrX_fstX φ i j hij)).hom x)
+
+/-- The projection `fstX` is a left inverse of the inclusion `inlX`. -/
+@[simp]
+theorem inlX_fstX_apply {i j : ι} (hij : c.Rel i j) (x : K.X j) :
+    (fstX φ i j hij).hom ((inlX φ j i hij).hom x) = x :=
+  congr(($(inlX_fstX φ j i hij)).hom x)
+
+/-- The projection `sndX` vanishes on the image of the inclusion `inlX`. -/
+@[simp]
+theorem inlX_sndX_apply {i j : ι} (hij : c.Rel i j) (x : K.X j) :
+    (sndX φ i).hom ((inlX φ j i hij).hom x) = 0 :=
+  congr(($(inlX_sndX φ j i hij)).hom x)
+
 /-- The inverse of `XEquiv` is the sum of the inclusions `inrX` and `inlX`. -/
 @[simp]
 theorem XEquiv_symm_apply {i j : ι} (hij : c.Rel i j) (y : L.X i × K.X j) :
     (XEquiv φ hij).symm y = (inrX φ i).hom y.1 + (inlX φ j i hij).hom y.2 := by
-  rw [LinearEquiv.symm_apply_eq, XEquiv_apply, map_add, map_add]
-  have h₁ := congr(($(inrX_sndX φ i)).hom y.1)
-  have h₂ := congr(($(inrX_fstX φ i j hij)).hom y.1)
-  have h₃ := congr(($(inlX_sndX φ j i hij)).hom y.2)
-  have h₄ := congr(($(inlX_fstX φ j i hij)).hom y.2)
-  simp only [ModuleCat.hom_comp, LinearMap.comp_apply, ModuleCat.hom_id, LinearMap.id_apply,
-    ModuleCat.hom_zero, LinearMap.zero_apply] at h₁ h₂ h₃ h₄
-  simp [h₁, h₂, h₃, h₄]
+  rw [LinearEquiv.symm_apply_eq]
+  simp
 
 variable (K) in
 /-- The projection `fstX` identifies the term of the mapping cone of `K ⟶ 0` in a degree `i` with
@@ -219,7 +236,7 @@ theorem basis_det_eq_mul (i : ℤ) (w : Fin (nL i + nK (i - 1)) → (homotopyCof
     (basis φ cK cL i).det w = (cL i).det u * (cK (i - 1)).det v := by
   rw [basis, Basis.det_reindex, Basis.det_map, ← Basis.prod_det_sumElim]
   congr 1
-  ext (k | k) <;> simp [hu, hv, -XEquiv_apply, XEquiv_inrX, XEquiv_inlX]
+  ext (k | k) <;> simp [hu, hv]
 
 end Det
 
