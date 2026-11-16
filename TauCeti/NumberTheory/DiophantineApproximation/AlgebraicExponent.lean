@@ -10,6 +10,7 @@ public import TauCeti.NumberTheory.Height.Naive
 -- Proof-only: Northcott finiteness, Möbius identities and field invariance, and Mahler's exponent
 -- at rationals.
 import TauCeti.Algebra.Field.LinearFractional
+import TauCeti.Analysis.Normed.Field.Lipschitz
 import TauCeti.FieldTheory.IntermediateField.Adjoin.Mobius
 import TauCeti.NumberTheory.DiophantineApproximation.MahlerExponent
 import TauCeti.NumberTheory.Height.Counting
@@ -349,53 +350,52 @@ theorem algebraicApproximationExponent_ratCast (n : ℕ) (q : ℚ) :
 
 section Mobius
 
-/-- Metric and left-inverse estimates for a complex approximant `α` close to `ξ` under an integer
-Möbius transformation of nonzero determinant `a * d - b * c` away from its pole `c ξ + d = 0`. -/
-private theorem mobius_sub_and_inv {ξ : ℝ} {a b c d : ℤ} (hdet : a * d - b * c ≠ 0)
-    (hξ : (c : ℝ) * ξ + d ≠ 0) {α : ℂ} (hpos : 0 < ‖(ξ : ℂ) - α‖)
-    (hclose : ‖(ξ : ℂ) - α‖ ≤ |(c : ℝ) * ξ + d| / (2 * (|(c : ℝ)| + 1))) :
+/-- Approximation-specific metric and left-inverse transfer: for `0 ≤ w`, an approximant
+`α ∈ algebraicApproximations n ξ w` with `(|c ξ + d| / (2 (|c| + 1)))⁻¹ ≤ naiveHeight α` maps under
+`z ↦ (a z + b) / (c z + d)` to a point strictly distinct from `(a ξ + b) / (c ξ + d)`, recovered by
+the adjugate inverse, within `(2 |a d - b c| / |c ξ + d| ^ 2) * naiveHeight α ^ (-w - 1)`. -/
+private theorem mobius_sub_le_and_inv_of_mem_algebraicApproximations {n : ℕ} {ξ w : ℝ}
+    {a b c d : ℤ} (hw : 0 ≤ w) (hdet : a * d - b * c ≠ 0) (hξ : (c : ℝ) * ξ + d ≠ 0) {α : ℂ}
+    (hα : α ∈ algebraicApproximations n ξ w)
+    (hH_close : (|(c : ℝ) * ξ + d| / (2 * (|(c : ℝ)| + 1)))⁻¹ ≤ naiveHeight α) :
     ((d : ℂ) * (((a : ℂ) * α + b) / ((c : ℂ) * α + d)) - b) /
         (-(c : ℂ) * (((a : ℂ) * α + b) / ((c : ℂ) * α + d)) + a) = α ∧
       0 < ‖((((a : ℝ) * ξ + b) / ((c : ℝ) * ξ + d) : ℝ) : ℂ) -
         ((a : ℂ) * α + b) / ((c : ℂ) * α + d)‖ ∧
       ‖((((a : ℝ) * ξ + b) / ((c : ℝ) * ξ + d) : ℝ) : ℂ) -
         ((a : ℂ) * α + b) / ((c : ℂ) * α + d)‖ ≤
-        (2 * |((a * d - b * c : ℤ) : ℝ)| / |(c : ℝ) * ξ + d| ^ 2) * ‖(ξ : ℂ) - α‖ := by
-  set ξ' : ℝ := ((a : ℝ) * ξ + b) / ((c : ℝ) * ξ + d)
-  set β : ℂ := ((a : ℂ) * α + b) / ((c : ℂ) * α + d)
-  set Dξ : ℝ := |(c : ℝ) * ξ + d|
-  have hDξ : 0 < Dξ := abs_pos.2 hξ
-  have hnorm_ξ : ‖(c : ℂ) * (ξ : ℂ) + d‖ = Dξ := by
-    rw [← Complex.ofReal_intCast c, ← Complex.ofReal_intCast d, ← Complex.ofReal_mul,
-      ← Complex.ofReal_add, Complex.norm_real, Real.norm_eq_abs]
+        (2 * |((a * d - b * c : ℤ) : ℝ)| / |(c : ℝ) * ξ + d| ^ 2) *
+          naiveHeight α ^ (-w - 1) := by
+  obtain ⟨_, _, hpos, hle⟩ := hα
+  set H := naiveHeight α
+  have hH₁ : 1 ≤ H := one_le_naiveHeight α
+  have hDξ : 0 < |(c : ℝ) * ξ + d| := abs_pos.2 hξ
+  have hnorm_ξ : ‖(c : ℂ) * (ξ : ℂ) + d‖ = |(c : ℝ) * ξ + d| := by
+    have h : (c : ℂ) * (ξ : ℂ) + d = (((c : ℝ) * ξ + d : ℝ) : ℂ) := by push_cast; rfl
+    rw [h, Complex.norm_real, Real.norm_eq_abs]
+  have hclose : ‖(ξ : ℂ) - α‖ ≤ |(c : ℝ) * ξ + d| / (2 * (|(c : ℝ)| + 1)) := calc
+    ‖(ξ : ℂ) - α‖ ≤ H ^ (-w - 1) := hle
+    _ ≤ H ^ (-1 : ℝ) := Real.rpow_le_rpow_of_exponent_le hH₁ (by linarith)
+    _ = H⁻¹ := Real.rpow_neg_one H
+    _ ≤ |(c : ℝ) * ξ + d| / (2 * (|(c : ℝ)| + 1)) := inv_le_of_inv_le₀ (by positivity) hH_close
+  have hc_le : ‖(c : ℂ)‖ * ‖α - (ξ : ℂ)‖ ≤ ‖(c : ℂ) * (ξ : ℂ) + d‖ / 2 := by
+    rw [Complex.norm_intCast, norm_sub_rev, hnorm_ξ]
+    have : |(c : ℝ)| + 1 ≠ 0 := by positivity
+    exact (mul_le_mul (le_add_of_nonneg_right zero_le_one) hclose (norm_nonneg _)
+      (by positivity)).trans_eq (by field_simp)
   have hξ_den : (c : ℂ) * (ξ : ℂ) + d ≠ 0 := norm_pos_iff.mp (hnorm_ξ ▸ hDξ)
-  have hden_lb : Dξ / 2 ≤ ‖(c : ℂ) * α + d‖ := by
-    have hsub : (c : ℂ) * α + d = ((c : ℂ) * (ξ : ℂ) + d) - (c : ℂ) * ((ξ : ℂ) - α) := by ring
-    have htri := norm_sub_norm_le ((c : ℂ) * (ξ : ℂ) + d) ((c : ℂ) * ((ξ : ℂ) - α))
-    rw [← hsub, hnorm_ξ, norm_mul, Complex.norm_intCast] at htri
-    have hc_le : |(c : ℝ)| * ‖(ξ : ℂ) - α‖ ≤ Dξ / 2 := calc
-      |(c : ℝ)| * ‖(ξ : ℂ) - α‖
-          ≤ (|(c : ℝ)| + 1) * (Dξ / (2 * (|(c : ℝ)| + 1))) :=
-            mul_le_mul (by linarith) hclose (norm_nonneg _) (by positivity)
-      _ = Dξ / 2 := by
-            have : |(c : ℝ)| + 1 ≠ 0 := by positivity
-            field_simp
-    linarith
-  have hα_den : (c : ℂ) * α + d ≠ 0 := norm_pos_iff.mp (by linarith)
+  have hα_den : (c : ℂ) * α + d ≠ 0 := norm_pos_iff.mp <|
+    (half_pos (hnorm_ξ ▸ hDξ)).trans_le (div_two_le_norm_mul_add (by rwa [norm_mul]))
   have hdetC : (a : ℂ) * d - b * c ≠ 0 := by exact_mod_cast hdet
-  have hinv : ((d : ℂ) * β - b) / (-(c : ℂ) * β + a) = α := moebius_inv_moebius hdetC hα_den
-  have hξ'ℂ : (ξ' : ℂ) = ((a : ℂ) * (ξ : ℂ) + b) / ((c : ℂ) * (ξ : ℂ) + d) := by simp [ξ']
-  have hnorm_diff : ‖(ξ' : ℂ) - β‖ =
-      |((a * d - b * c : ℤ) : ℝ)| * ‖(ξ : ℂ) - α‖ / (Dξ * ‖(c : ℂ) * α + d‖) := by
-    rw [hξ'ℂ, moebius_sub_moebius hα_den hξ_den, ← Int.cast_mul, ← Int.cast_mul, ← Int.cast_sub,
-      norm_div, norm_mul, norm_mul, hnorm_ξ, Complex.norm_intCast]
-  have : 0 < |((a * d - b * c : ℤ) : ℝ)| := abs_pos.2 (Int.cast_ne_zero.mpr hdet)
-  refine ⟨hinv, by rw [hnorm_diff]; positivity, ?_⟩
-  rw [hnorm_diff]
-  calc |((a * d - b * c : ℤ) : ℝ)| * ‖(ξ : ℂ) - α‖ / (Dξ * ‖(c : ℂ) * α + d‖)
-      ≤ |((a * d - b * c : ℤ) : ℝ)| * ‖(ξ : ℂ) - α‖ / (Dξ ^ 2 / 2) :=
-        div_le_div_of_nonneg_left (by positivity) (by positivity) (by nlinarith)
-    _ = (2 * |((a * d - b * c : ℤ) : ℝ)| / Dξ ^ 2) * ‖(ξ : ℂ) - α‖ := by ring
+  have hξ'ℂ : ((((a : ℝ) * ξ + b) / ((c : ℝ) * ξ + d) : ℝ) : ℂ) =
+      ((a : ℂ) * (ξ : ℂ) + b) / ((c : ℂ) * (ξ : ℂ) + d) := by push_cast; rfl
+  refine ⟨moebius_inv_moebius hdetC hα_den, ?_, ?_⟩
+  · rw [hξ'ℂ, norm_pos_iff, moebius_sub_moebius hα_den hξ_den]
+    exact div_ne_zero (mul_ne_zero hdetC (norm_pos_iff.mp hpos)) (mul_ne_zero hξ_den hα_den)
+  · have hdet_eq : (a : ℂ) * d - b * c = ((a * d - b * c : ℤ) : ℂ) := by push_cast; rfl
+    have hstep := norm_moebius_sub_moebius_le (a := (a : ℂ)) (b := (b : ℂ)) hc_le
+    rw [← hξ'ℂ, norm_sub_rev, norm_sub_rev α, hdet_eq, Complex.norm_intCast, hnorm_ξ] at hstep
+    exact hstep.trans (mul_le_mul_of_nonneg_left hle (by positivity))
 
 /-- Single-approximant transfer: for `0 < w' < w`, an approximant
 `α ∈ algebraicApproximations n ξ w` whose naive height exceeds both
@@ -406,48 +406,42 @@ private theorem mobius_mem_algebraicApproximations {n : ℕ} {ξ w w' : ℝ} {a 
     {α : ℂ} (hα : α ∈ algebraicApproximations n ξ w)
     (hH_close : (|(c : ℝ) * ξ + d| / (2 * (|(c : ℝ)| + 1)))⁻¹ ≤ naiveHeight α)
     (hH_abs : (2 * |((a * d - b * c : ℤ) : ℝ)| / |(c : ℝ) * ξ + d| ^ 2) *
-      (max 1 ((2 * (|(a : ℝ)| + |(b : ℝ)| + |(c : ℝ)| + |(d : ℝ)|)) ^ n)) ^ (w' + 1) ≤
+      ((2 * (|(a : ℝ)| + |(b : ℝ)| + |(c : ℝ)| + |(d : ℝ)|)) ^ n) ^ (w' + 1) ≤
       naiveHeight α ^ (w - w')) :
     (((a : ℂ) * α + b) / ((c : ℂ) * α + d)) ∈
       algebraicApproximations n (((a : ℝ) * ξ + b) / ((c : ℝ) * ξ + d)) w' ∧
       ((d : ℂ) * (((a : ℂ) * α + b) / ((c : ℂ) * α + d)) - b) /
         (-(c : ℂ) * (((a : ℂ) * α + b) / ((c : ℂ) * α + d)) + a) = α := by
-  obtain ⟨halg, hdeg, hpos, hle⟩ := hα
+  obtain ⟨hinv, hβ_pos, hβ_le⟩ :=
+    mobius_sub_le_and_inv_of_mem_algebraicApproximations (hw'.le.trans hww'.le) hdet hξ hα hH_close
+  obtain ⟨halg, hdeg, _, _⟩ := hα
   set H := naiveHeight α
-  have hH₁ : 1 ≤ H := one_le_naiveHeight α
-  have hH₀ : 0 < H := zero_lt_one.trans_le hH₁
-  have hδ₀ : 0 < |(c : ℝ) * ξ + d| / (2 * (|(c : ℝ)| + 1)) := by
-    have := abs_pos.2 hξ; positivity
-  have hclose : ‖(ξ : ℂ) - α‖ ≤ |(c : ℝ) * ξ + d| / (2 * (|(c : ℝ)| + 1)) := calc
-    ‖(ξ : ℂ) - α‖ ≤ H ^ (-w - 1) := hle
-    _ ≤ H ^ (-1 : ℝ) := Real.rpow_le_rpow_of_exponent_le hH₁ (by linarith)
-    _ = H⁻¹ := Real.rpow_neg_one H
-    _ ≤ |(c : ℝ) * ξ + d| / (2 * (|(c : ℝ)| + 1)) := inv_le_of_inv_le₀ hδ₀ hH_close
-  obtain ⟨hinv, hβ_pos, hβ_le⟩ := mobius_sub_and_inv hdet hξ hpos hclose
+  have hH₀ : 0 < H := zero_lt_one.trans_le (one_le_naiveHeight α)
   set β : ℂ := ((a : ℂ) * α + b) / ((c : ℂ) * α + d)
   set K₁ : ℝ := 2 * |((a * d - b * c : ℤ) : ℝ)| / |(c : ℝ) * ξ + d| ^ 2
   set M : ℝ := 2 * (|(a : ℝ)| + |(b : ℝ)| + |(c : ℝ)| + |(d : ℝ)|)
-  set K₂ : ℝ := max 1 (M ^ n)
-  have hK₂ : 0 < K₂ := zero_lt_one.trans_le (le_max_left _ _)
+  have hM₁ : 1 ≤ M := by
+    have habℤ : (1 : ℤ) ≤ |a| + |b| := by
+      rcases eq_or_ne a 0 with rfl | ha
+      · simpa using Int.one_le_abs (fun hb ↦ hdet (by simp [hb]))
+      · linarith [Int.one_le_abs ha, abs_nonneg b]
+    have hab : (1 : ℝ) ≤ |(a : ℝ)| + |(b : ℝ)| := by exact_mod_cast habℤ
+    linarith [abs_nonneg (c : ℝ), abs_nonneg (d : ℝ)]
+  set K₂ : ℝ := M ^ n
+  have hK₂ : 0 < K₂ := zero_lt_one.trans_le (one_le_pow₀ hM₁)
   have hdetQ : (a : ℚ) * d - b * c ≠ 0 := by exact_mod_cast hdet
-  have hβ_alg : IsAlgebraic ℚ β := by
-    simpa [β] using (isAlgebraic_mul_add_div_mul_add_iff (K := ℚ) α hdetQ).mpr halg
-  have hβ_deg : (minpoly ℚ β).natDegree ≤ n := by
-    have hdeg_eq : (minpoly ℚ β).natDegree = (minpoly ℚ α).natDegree := by
-      simpa [β] using TauCeti.minpoly.natDegree_mul_add_div_mul_add (K := ℚ) α hdetQ
-    exact hdeg_eq.trans_le hdeg
-  have hHβ : naiveHeight β ≤ K₂ * H := by
-    refine (naiveHeight_mul_add_div_mul_add_le α hdet).trans (mul_le_mul_of_nonneg_right ?_ hH₀.le)
-    rcases le_or_gt M 1 with hM | hM
-    · exact (pow_le_one₀ (by positivity) hM).trans (le_max_left _ _)
-    · exact (pow_le_pow_right₀ hM.le hdeg).trans (le_max_right _ _)
+  have hβ_alg : IsAlgebraic ℚ β :=
+    (isAlgebraic_mul_add_div_mul_add_iff (K := ℚ) α hdetQ).mpr halg
+  have hβ_deg : (minpoly ℚ β).natDegree ≤ n :=
+    (TauCeti.minpoly.natDegree_mul_add_div_mul_add (K := ℚ) α hdetQ).trans_le hdeg
+  have hHβ : naiveHeight β ≤ K₂ * H :=
+    (naiveHeight_mul_add_div_mul_add_le α hdet).trans
+      (mul_le_mul_of_nonneg_right (pow_le_pow_right₀ hM₁ hdeg) hH₀.le)
   refine ⟨⟨hβ_alg, hβ_deg, hβ_pos, ?_⟩, hinv⟩
-  have hK₁ : 0 ≤ K₁ := by
-    have := abs_pos.2 hξ; positivity
   have hexp₀ : w' + 1 + (-w' - 1) = 0 := by ring
   have hexp : w - w' + (-w - 1) = -w' - 1 := by ring
   calc ‖((((a : ℝ) * ξ + b) / ((c : ℝ) * ξ + d) : ℝ) : ℂ) - β‖
-      ≤ K₁ * H ^ (-w - 1) := hβ_le.trans (mul_le_mul_of_nonneg_left hle hK₁)
+      ≤ K₁ * H ^ (-w - 1) := hβ_le
     _ = K₁ * K₂ ^ (w' + 1) * K₂ ^ (-w' - 1) * H ^ (-w - 1) := by
         rw [mul_assoc K₁, ← Real.rpow_add hK₂, hexp₀, Real.rpow_zero, mul_one]
     _ ≤ H ^ (w - w') * K₂ ^ (-w' - 1) * H ^ (-w - 1) := by gcongr
@@ -464,7 +458,7 @@ private theorem infinite_algebraicApproximations_of_mobius_int {n : ℕ} {ξ w w
     (hξ : (c : ℝ) * ξ + d ≠ 0) (hinf : (algebraicApproximations n ξ w).Infinite) :
     (algebraicApproximations n (((a : ℝ) * ξ + b) / ((c : ℝ) * ξ + d)) w').Infinite := by
   set K₁ : ℝ := 2 * |((a * d - b * c : ℤ) : ℝ)| / |(c : ℝ) * ξ + d| ^ 2
-  set K₂ : ℝ := max 1 ((2 * (|(a : ℝ)| + |(b : ℝ)| + |(c : ℝ)| + |(d : ℝ)|)) ^ n)
+  set K₂ : ℝ := (2 * (|(a : ℝ)| + |(b : ℝ)| + |(c : ℝ)| + |(d : ℝ)|)) ^ n
   set δ₀ : ℝ := |(c : ℝ) * ξ + d| / (2 * (|(c : ℝ)| + 1))
   obtain ⟨R₁, hR₁⟩ := eventually_atTop.1 <|
     (tendsto_rpow_atTop (sub_pos.2 hww')).eventually_ge_atTop (K₁ * K₂ ^ (w' + 1))
@@ -513,11 +507,10 @@ theorem algebraicApproximationExponent_mul_add_div_mul_add (n : ℕ) (ξ : ℝ) 
     (h : a * d - b * c ≠ 0) :
     algebraicApproximationExponent n ((a * ξ + b) / (c * ξ + d)) =
       algebraicApproximationExponent n ξ :=
-  OrderDual.toDual.injective <| apply_mul_add_div_mul_add_eq_of_ratCast_eq_of_int_le
+  OrderDual.toDual.injective <| apply_mul_add_div_mul_add_eq_of_int_le
     (f := fun t ↦ OrderDual.toDual (algebraicApproximationExponent n t))
-    (fun q ↦ congrArg OrderDual.toDual (algebraicApproximationExponent_ratCast n q))
     (fun _ _ _ _ _ hdet ht ↦
-      algebraicApproximationExponent_le_mul_add_div_mul_add_of_int n hdet ht) ξ h
+      (algebraicApproximationExponent_le_mul_add_div_mul_add_of_int n hdet ht).dual) ξ h
 
 /-- Adding a rational number does not change Koksma's exponent. -/
 @[simp]

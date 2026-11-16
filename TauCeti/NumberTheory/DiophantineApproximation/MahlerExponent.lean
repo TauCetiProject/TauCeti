@@ -247,7 +247,7 @@ Lean's convention `x / 0 = 0` applies, both sides vanish because both points are
 theorem mahlerExponent_mul_add_div_mul_add (n : ℕ) (ξ : ℝ) {a b c d : ℚ}
     (h : a * d - b * c ≠ 0) :
     mahlerExponent n ((a * ξ + b) / (c * ξ + d)) = mahlerExponent n ξ :=
-  apply_mul_add_div_mul_add_eq_of_ratCast_eq_of_int_le (mahlerExponent_ratCast n)
+  apply_mul_add_div_mul_add_eq_of_int_le
     (fun _ a' b' c' d' _ ht ↦ mahlerExponent_mul_add_div_mul_add_le_of_int n a' b' c' d' ht) ξ h
 
 /-- Adding a rational number does not change Mahler's exponent. -/

@@ -36,13 +36,13 @@ the disc coordinates centred at a point and at its image, in
 * `TauCeti.neg_mul_moebius_add_ne_zero`, `TauCeti.moebius_inv_moebius`: away from the pole
   `c * t + d = 0`, the adjugate transformation `y ↦ (d * y - b) / (-c * y + a)` has nonzero
   denominator at `y = (a * t + b) / (c * t + d)` and recovers `t` when `a * d - b * c ≠ 0`.
-* `TauCeti.eq_map_neg_div_of_map_mul_add_map_eq_zero`: at the pole `f c * x + f d = 0` of a
+* `RingHom.eq_map_neg_div_of_map_mul_add_map_eq_zero`: at the pole `f c * x + f d = 0` of a
   nonsingular linear fractional transformation with coefficients mapped along `f : K →+* L`,
   `x = f (-d / c)`.
-* `TauCeti.apply_mul_add_div_mul_add_eq_of_ratCast_eq_of_int_le`: a function on a
-  characteristic-zero field that is constant on `ℚ` and nonincreasing under nonsingular integer
-  linear fractional transformations away from their poles is invariant under all nonsingular
-  rational linear fractional transformations, including at the pole.
+* `TauCeti.apply_mul_add_div_mul_add_eq_of_int_le`: a function on a characteristic-zero field
+  that is nonincreasing under nonsingular integer linear fractional transformations away from
+  their poles is invariant under all nonsingular rational linear fractional transformations,
+  including at the pole.
 * `TauCeti.crossRatio_comp_eq_of_sub_eq_div`: maps with factorized differences preserve
   cross-ratios.
 * `TauCeti.div_sub_inv_sub_div_sq_eq_div_sub_sub_div`: the partial-fraction identity for a pole
@@ -57,6 +57,24 @@ the disc coordinates centred at a point and at its image, in
 -/
 
 public section
+
+namespace RingHom
+
+/-- At the pole `f c * x + f d = 0` of a linear fractional transformation with coefficients mapped
+along a field homomorphism `f : K →+* L` and nonzero determinant `a * d - b * c`,
+`x = f (-d / c)`. -/
+theorem eq_map_neg_div_of_map_mul_add_map_eq_zero {K L : Type*} [Field K] [Field L]
+    (f : K →+* L) {a b c d : K} {x : L} (hdet : a * d - b * c ≠ 0)
+    (hx : f c * x + f d = 0) :
+    x = f (-d / c) := by
+  have hc : c ≠ 0 := by
+    rintro rfl
+    have hd : d = 0 := (map_eq_zero f).mp (by simpa using hx)
+    exact hdet (by simp [hd])
+  rw [map_div₀, map_neg, eq_div_iff ((map_ne_zero f).mpr hc)]
+  linear_combination hx
+
+end RingHom
 
 namespace TauCeti
 
@@ -96,38 +114,27 @@ theorem moebius_inv_moebius {𝕜 : Type*} [Field 𝕜] {a b c d t : 𝕜}
   rw [div_eq_iff (neg_mul_moebius_add_ne_zero hdet hjt)]
   linear_combination (div_mul_cancel₀ (a * t + b) hjt)
 
-/-- At the pole `f c * x + f d = 0` of a linear fractional transformation with coefficients mapped
-along a field homomorphism `f : K →+* L` and nonzero determinant `a * d - b * c`, the coefficient
-`c` is nonzero and `x = f (-d / c)`. -/
-theorem eq_map_neg_div_of_map_mul_add_map_eq_zero {K L : Type*} [Field K] [Field L]
-    (f : K →+* L) {a b c d : K} {x : L} (hdet : a * d - b * c ≠ 0)
-    (hx : f c * x + f d = 0) :
-    x = f (-d / c) := by
-  have hc : c ≠ 0 := by
-    rintro rfl
-    have hd : d = 0 := (map_eq_zero f).mp (by simpa using hx)
-    exact hdet (by simp [hd])
-  rw [map_div₀, map_neg, eq_div_iff ((map_ne_zero f).mpr hc)]
-  linear_combination hx
-
 /-- **Invariance under rational linear fractional transformations from a one-sided integer bound.**
-Let `f : 𝕜 → α` be a function from a characteristic-zero field into a partial order that takes a
-common value `v` on all rational numbers and satisfies `f ((a t + b) / (c t + d)) ≤ f t` for every
-integer matrix `(a, b; c, d)` of nonzero determinant away from its pole `c t + d = 0`. Then
-`f ((a t + b) / (c t + d)) = f t` for every rational matrix `(a, b; c, d)` of nonzero determinant,
-including at the pole `c t + d = 0` where Lean's convention `x / 0 = 0` sends `t = -d / c` to
-`0`. -/
-theorem apply_mul_add_div_mul_add_eq_of_ratCast_eq_of_int_le
-    {𝕜 α : Type*} [Field 𝕜] [CharZero 𝕜] [PartialOrder α] {f : 𝕜 → α} {v : α}
-    (hrat : ∀ q : ℚ, f q = v)
+Let `f : 𝕜 → α` be a function from a characteristic-zero field into a partial order satisfying
+`f ((a t + b) / (c t + d)) ≤ f t` for every integer matrix `(a, b; c, d)` of nonzero determinant
+away from its pole `c t + d = 0`. Then `f ((a t + b) / (c t + d)) = f t` for every rational matrix
+`(a, b; c, d)` of nonzero determinant, including at the pole `c t + d = 0` where Lean's convention
+`x / 0 = 0` sends `t = -d / c` to `0` (and `f` is constant on `ℚ` via rational translations). -/
+theorem apply_mul_add_div_mul_add_eq_of_int_le
+    {𝕜 α : Type*} [Field 𝕜] [CharZero 𝕜] [PartialOrder α] {f : 𝕜 → α}
     (hle : ∀ (t : 𝕜) {a b c d : ℤ}, a * d - b * c ≠ 0 → (c : 𝕜) * t + d ≠ 0 →
       f (((a : 𝕜) * t + b) / ((c : 𝕜) * t + d)) ≤ f t)
     (t : 𝕜) {a b c d : ℚ} (hdet : a * d - b * c ≠ 0) :
     f (((a : 𝕜) * t + b) / ((c : 𝕜) * t + d)) = f t := by
-  by_cases ht : (c : 𝕜) * t + d = 0
-  · -- At the pole `t = -d / c`, both `t` and its image `0` are rational.
-    rw [ht, div_zero, eq_map_neg_div_of_map_mul_add_map_eq_zero (Rat.castHom 𝕜) hdet ht,
-      Rat.coe_castHom, ← Rat.cast_zero, hrat, hrat]
+  suffices haway : ∀ {s : 𝕜} {a b c d : ℚ}, a * d - b * c ≠ 0 → (c : 𝕜) * s + d ≠ 0 →
+      f (((a : 𝕜) * s + b) / ((c : 𝕜) * s + d)) = f s by
+    by_cases ht : (c : 𝕜) * t + d = 0
+    · -- At the pole `t = -d / c`, both `t` and its image `0` are rational translates of `0`.
+      rw [ht, div_zero, (Rat.castHom 𝕜).eq_map_neg_div_of_map_mul_add_map_eq_zero hdet ht,
+        Rat.coe_castHom]
+      simpa using (haway (s := 0) (a := 1) (b := -d / c) (c := 0) (d := 1) (by simp) (by simp)).symm
+    · exact haway hdet ht
+  intro t a b c d hdet ht
   -- Clear denominators of `a, b, c, d` by multiplying by `m = a.den * b.den * c.den * d.den`.
   set m : ℕ := a.den * b.den * c.den * d.den
   have hm_pos : 0 < m := mul_pos (mul_pos (mul_pos a.pos b.pos) c.pos) d.pos
