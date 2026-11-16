@@ -11,7 +11,9 @@ public import TauCeti.Algebra.Module.ZLattice.ChangeOfVariables
 public import TauCeti.Analysis.Distribution.SchwartzSpace.ZLattice
 public import TauCeti.Analysis.Fourier.ChangeOfVariables
 import Mathlib.MeasureTheory.Measure.Haar.InnerProductSpace
+import TauCeti.Algebra.Module.ZLattice.ZSpanEquiv
 import TauCeti.Analysis.Fourier.Monomial
+import TauCeti.MeasureTheory.Constructions.Pi
 import TauCeti.Topology.Instances.AddCircle.UnitAddTorus
 
 /-!
@@ -107,22 +109,14 @@ private theorem isQuotientMap_toTorus : Topology.IsQuotientMap o.toTorus :=
   TauCeti.UnitAddTorus.isOpenQuotientMap_coe.isQuotientMap.comp
     ((EuclideanSpace.equiv ι ℝ).toHomeomorph.isQuotientMap.comp o.repr.toHomeomorph.isQuotientMap)
 
-/-- The lattice vector with coordinates `n` in the basis `o`. -/
-private noncomputable def latticeEquiv : (ι → ℤ) ≃ₗ[ℤ] span ℤ (range o.toBasis) :=
-  (o.toBasis.restrictScalars ℤ).equivFun.symm
-
-private theorem repr_latticeEquiv (n : ι → ℤ) (i : ι) : o.repr (o.latticeEquiv n : E) i = n i := by
-  rw [← o.coe_toBasis_repr_apply, ← o.toBasis.restrictScalars_repr_apply ℤ, latticeEquiv,
-    ← Basis.equivFun_apply, LinearEquiv.apply_symm_apply]
-  simp
-
 /-- The exponential monomial of index `n` on the torus is the character `x ↦ exp (2πi ⟪x, m⟫)`
 of the lattice vector `m` with coordinates `n`. -/
 private theorem mFourier_toTorus (n : ι → ℤ) (x : E) :
-    mFourier n (o.toTorus x) = 𝐞 ⟪x, (o.latticeEquiv n : E)⟫ := by
-  have h : ⟪x, (o.latticeEquiv n : E)⟫ = ∑ i, o.repr x i * n i := by
+    mFourier n (o.toTorus x) = 𝐞 ⟪x, (o.toBasis.zspanEquiv n : E)⟫ := by
+  have h : ⟪x, (o.toBasis.zspanEquiv n : E)⟫ = ∑ i, o.repr x i * n i := by
     rw [← o.sum_inner_mul_inner]
-    simp only [real_inner_comm _ x, ← o.repr_apply_apply, repr_latticeEquiv]
+    simp only [real_inner_comm _ x, ← o.repr_apply_apply, ← o.coe_toBasis_repr_apply,
+      Basis.repr_zspanEquiv_apply]
   rw [h, toTorus_def, TauCeti.UnitAddTorus.mFourier_coe_apply, Real.fourierChar_apply]
   congr 1
   push_cast
@@ -131,7 +125,7 @@ private theorem mFourier_toTorus (n : ι → ℤ) (x : E) :
   ring
 
 private theorem mFourier_neg_toTorus (n : ι → ℤ) (x : E) :
-    mFourier (-n) (o.toTorus x) = 𝐞 (-⟪x, (o.latticeEquiv n : E)⟫) := by
+    mFourier (-n) (o.toTorus x) = 𝐞 (-⟪x, (o.toBasis.zspanEquiv n : E)⟫) := by
   rw [mFourier_toTorus, map_neg, Submodule.coe_neg, inner_neg_right]
 
 /-! ### Measure theory of the coordinates -/
@@ -154,18 +148,15 @@ spanned by `o`, up to a null set. -/
 private theorem coords_preimage_ae_eq_fundamentalDomain :
     o.coords ⁻¹' {y : ι → ℝ | ∀ i, y i ∈ Ioc ((0 : ι → ℝ) i) ((0 : ι → ℝ) i + 1)} =ᵐ[volume]
       ZSpan.fundamentalDomain o.toBasis := by
-  have hcube : {y : ι → ℝ | ∀ i, y i ∈ Ioc ((0 : ι → ℝ) i) ((0 : ι → ℝ) i + 1)} =ᵐ[volume]
-      univ.pi fun _ : ι ↦ Ico (0 : ℝ) 1 := by
-    have := (Measure.univ_pi_Ioc_ae_eq_Icc (μ := fun _ : ι ↦ (volume : Measure ℝ))
-      (f := 0) (g := 1)).trans (Measure.univ_pi_Ico_ae_eq_Icc (f := 0) (g := 1)).symm
-    simpa [Set.pi, volume_pi] using this
-  have hset : o.coords ⁻¹' (univ.pi fun _ : ι ↦ Ico (0 : ℝ) 1) =
+  have hset : o.coords ⁻¹' (univ.pi fun i ↦ Ico ((0 : ι → ℝ) i) ((0 : ι → ℝ) i + 1)) =
       ZSpan.fundamentalDomain o.toBasis := by
     ext x
     simp only [mem_preimage, mem_univ_pi, coords_apply, ZSpan.mem_fundamentalDomain,
-      o.coe_toBasis_repr_apply]
+      o.coe_toBasis_repr_apply, Pi.zero_apply, zero_add]
   rw [← hset]
-  exact o.measurePreserving_coords.quasiMeasurePreserving.preimage_ae_eq hcube
+  refine o.measurePreserving_coords.quasiMeasurePreserving.preimage_ae_eq ?_
+  simpa [Set.pi, volume_pi] using Measure.pi_Ioc_ae_eq_pi_Ico
+    (μ := fun _ : ι ↦ (volume : Measure ℝ)) (s := univ) (f := 0) (g := 1)
 
 end OrthonormalBasis
 
@@ -252,7 +243,7 @@ private theorem setIntegral_mul_tsum (n : ι → ℤ) :
 /-- The `n`-th Fourier coefficient of the periodization is the Fourier transform of `f` at the
 lattice vector with coordinates `n`. -/
 private theorem mFourierCoeff_periodization (n : ι → ℤ) :
-    mFourierCoeff (periodization f o) n = 𝓕 (f : E → ℂ) (o.latticeEquiv n) := by
+    mFourierCoeff (periodization f o) n = 𝓕 (f : E → ℂ) (o.toBasis.zspanEquiv n) := by
   have : VAddInvariantMeasure (span ℤ (range o.toBasis)) E volume :=
     inferInstanceAs (VAddInvariantMeasure (span ℤ (range o.toBasis)).toAddSubgroup E volume)
   rw [mFourierCoeff_periodization_eq_setIntegral, setIntegral_mul_tsum, Real.fourier_eq,
@@ -269,7 +260,7 @@ private theorem summable_mFourierCoeff_periodization :
   have h : Summable fun ℓ : span ℤ (range o.toBasis) ↦ 𝓕 (f : E → ℂ) ℓ := by
     simpa [SchwartzMap.fourier_coe] using
       ZLattice.summable_poisson_left (span ℤ (range o.toBasis)) (𝓕 f) 0
-  convert o.latticeEquiv.toEquiv.summable_iff.2 h using 1
+  convert o.toBasis.zspanEquiv.toEquiv.summable_iff.2 h using 1
   ext n
   exact mFourierCoeff_periodization f o n
 
@@ -285,7 +276,7 @@ theorem tsum_eq_tsum_fourier_span_orthonormalBasis (v : E) :
   have h := hasSum_mFourier_series_apply_of_summable (summable_mFourierCoeff_periodization f o)
     (o.toTorus v)
   rw [periodization_toTorus] at h
-  rw [← o.coe_toBasis, ← h.tsum_eq, ← o.latticeEquiv.toEquiv.tsum_eq]
+  rw [← o.coe_toBasis, ← h.tsum_eq, ← o.toBasis.zspanEquiv.toEquiv.tsum_eq]
   congr 1 with n
   rw [LinearEquiv.coe_toEquiv, mFourierCoeff_periodization, mFourier_toTorus, smul_eq_mul,
     Real.fourierChar_apply]
