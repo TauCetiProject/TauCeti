@@ -53,6 +53,7 @@ recovers the law.
 * `Measurable.cond`, `Measurable.cond_const`, and `Measurable.cond_preimage_Ioc` (with the
   corresponding `Icc`, `Ioo`, and `Ico` forms)
 * `ProbabilityTheory.integrable_cond_of_norm_le`
+* `MeasurableEmbedding.map_cond`
 * `ProbabilityTheory.map_cond_preimage`
 * `ProbabilityTheory.cond_univ_restrict`
 * `ProbabilityTheory.cond_compl_singleton_real`,
@@ -229,6 +230,14 @@ theorem integrable_cond_of_norm_le {E : Type*} [NormedAddCommGroup E] {μ : Meas
   filter_upwards [hf.ae_eq_mk, measure_eq_zero_iff_ae_notMem.1 hNnull] with x hx hx'
   rw [hx]
   exact not_lt.1 hx'
+
+/-- A measurable embedding carries a conditional measure to the image measure conditioned on the
+image of the event. The event need not be measurable. -/
+theorem _root_.MeasurableEmbedding.map_cond {μ : Measure Ω} {f : Ω → β}
+    (hf : MeasurableEmbedding f) (s : Set Ω) :
+    (μ[|s]).map f = (μ.map f)[|f '' s] := by
+  rw [cond, Measure.map_smul _ hf.measurable.aemeasurable, cond, hf.map_apply,
+    hf.restrict_map, preimage_image_eq _ hf.injective]
 
 /-- A measurable map that scales measure by a constant factor transports conditional measures:
 if `μ (f ⁻¹' A) = k * ν A` for every measurable `A`, with `k ≠ 0` finite, then `f` carries `μ`
