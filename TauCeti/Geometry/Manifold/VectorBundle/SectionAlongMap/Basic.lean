@@ -17,14 +17,14 @@ differentiation of tangent fields along maps in submanifold geometry.
 The coordinate reading and its algebra laws require only a vector bundle over a topological
 space. For a differentiable base map, differentiability of the total-space section at a point
 is equivalent to differentiability of its coordinate reading in any trivialization containing
-the image point. Differentiability of the total-space section within a set also implies
-differentiability of its coordinate reading within that set.
+the image point. The corresponding equivalences within a set hold both for differentiability
+and for higher manifold regularity.
 -/
 
 public section
 
 open Bundle Filter
-open scoped Manifold Topology
+open scoped ContDiff Manifold Topology
 
 noncomputable section
 
@@ -56,7 +56,7 @@ theorem sectionCoord_apply (x : M) (t : N) :
 
 /-- Coordinate reading commutes with pointwise addition of sections along a map. -/
 @[simp]
-theorem sectionCoord_add (W' : ∀ t, V (γ t)) (x : M) :
+theorem sectionCoord_fun_add (W' : ∀ t, V (γ t)) (x : M) :
     sectionCoord 𝕜 (F := F) γ (fun t ↦ W t + W' t) x =
       sectionCoord 𝕜 (F := F) γ W x + sectionCoord 𝕜 (F := F) γ W' x := by
   funext t
@@ -64,7 +64,7 @@ theorem sectionCoord_add (W' : ∀ t, V (γ t)) (x : M) :
 
 /-- Coordinate reading commutes with pointwise subtraction of sections along a map. -/
 @[simp]
-theorem sectionCoord_sub (W' : ∀ t, V (γ t)) (x : M) :
+theorem sectionCoord_fun_sub (W' : ∀ t, V (γ t)) (x : M) :
     sectionCoord 𝕜 (F := F) γ (fun t ↦ W t - W' t) x =
       sectionCoord 𝕜 (F := F) γ W x - sectionCoord 𝕜 (F := F) γ W' x := by
   funext t
@@ -72,7 +72,7 @@ theorem sectionCoord_sub (W' : ∀ t, V (γ t)) (x : M) :
 
 /-- Coordinate reading commutes with finite sums of sections along a map. -/
 @[simp]
-theorem sectionCoord_sum {ι : Type*} (A : Finset ι) (U : ι → ∀ t, V (γ t)) (x : M) :
+theorem sectionCoord_fun_sum {ι : Type*} (A : Finset ι) (U : ι → ∀ t, V (γ t)) (x : M) :
     sectionCoord 𝕜 (F := F) γ (fun t ↦ ∑ i ∈ A, U i t) x =
       fun t ↦ ∑ i ∈ A, sectionCoord 𝕜 (F := F) γ (U i) x t := by
   classical
@@ -81,17 +81,57 @@ theorem sectionCoord_sum {ι : Type*} (A : Finset ι) (U : ι → ∀ t, V (γ t
 
 /-- Coordinate reading commutes with pointwise scalar multiplication of a section along a map. -/
 @[simp]
-theorem sectionCoord_smul (f : N → 𝕜) (x : M) :
+theorem sectionCoord_fun_smul (f : N → 𝕜) (x : M) :
     sectionCoord 𝕜 (F := F) γ (fun t ↦ f t • W t) x = f • sectionCoord 𝕜 (F := F) γ W x := by
   funext t
   exact map_smul _ _ _
 
 /-- Coordinate reading commutes with negation. -/
 @[simp]
-theorem sectionCoord_neg (x : M) :
+theorem sectionCoord_fun_neg (x : M) :
     sectionCoord 𝕜 (F := F) γ (fun t ↦ -W t) x = -sectionCoord 𝕜 (F := F) γ W x := by
   funext t
   exact map_neg _ _
+
+/-- Coordinate reading commutes with addition of Pi sections. -/
+@[simp]
+theorem sectionCoord_add (W' : ∀ t, V (γ t)) (x : M) :
+    sectionCoord 𝕜 (F := F) γ (W + W') x =
+      sectionCoord 𝕜 (F := F) γ W x + sectionCoord 𝕜 (F := F) γ W' x := by
+  ext t
+  simp only [sectionCoord_apply, Pi.add_apply, map_add]
+
+/-- Coordinate reading commutes with subtraction of Pi sections. -/
+@[simp]
+theorem sectionCoord_sub (W' : ∀ t, V (γ t)) (x : M) :
+    sectionCoord 𝕜 (F := F) γ (W - W') x =
+      sectionCoord 𝕜 (F := F) γ W x - sectionCoord 𝕜 (F := F) γ W' x := by
+  ext t
+  simp only [sectionCoord_apply, Pi.sub_apply, map_sub]
+
+/-- Coordinate reading commutes with negation of Pi sections. -/
+@[simp]
+theorem sectionCoord_neg (x : M) :
+    sectionCoord 𝕜 (F := F) γ (-W) x =
+      -sectionCoord 𝕜 (F := F) γ W x := by
+  ext t
+  simp only [sectionCoord_apply, Pi.neg_apply, map_neg]
+
+/-- Coordinate reading commutes with pointwise scalar multiplication of Pi sections. -/
+@[simp]
+theorem sectionCoord_smul (f : N → 𝕜) (x : M) :
+    sectionCoord 𝕜 (F := F) γ (f • W) x =
+      f • sectionCoord 𝕜 (F := F) γ W x := by
+  ext t
+  simp only [sectionCoord_apply, Pi.smul_apply', map_smul]
+
+/-- Coordinate reading commutes with finite sums of Pi sections. -/
+@[simp]
+theorem sectionCoord_sum {ι : Type*} (A : Finset ι) (U : ι → ∀ t, V (γ t)) (x : M) :
+    sectionCoord 𝕜 (F := F) γ (∑ i ∈ A, U i) x =
+      ∑ i ∈ A, sectionCoord 𝕜 (F := F) γ (U i) x := by
+  ext t
+  simp only [sectionCoord_apply, Finset.sum_apply, map_sum]
 
 /-- Coordinate reading commutes with multiplication by a constant scalar. -/
 @[simp]
@@ -101,7 +141,7 @@ theorem sectionCoord_const_smul (c : 𝕜) (x : M) :
   exact map_smul _ _ _
 
 /-- The zero section along a map has zero coordinate reading. -/
-@[simp, to_fun (attr := simp)]
+@[simp, to_fun (attr := simp) sectionCoord_fun_zero]
 theorem sectionCoord_zero (x : M) :
     sectionCoord 𝕜 (F := F) γ (0 : ∀ t, V (γ t)) x = (0 : N → F) := by
   funext t
@@ -163,6 +203,24 @@ theorem mdifferentiableAt_sectionCoord {x : M} {t : N}
   rw [← mdifferentiableWithinAt_univ]
   exact mdifferentiableWithinAt_sectionCoord γ W h.mdifferentiableWithinAt hx
 
+/-- For a base map differentiable within a set, differentiability of the coordinate reading
+characterizes that of the total-space section within the set. -/
+theorem mdifferentiableWithinAt_sectionCoord_iff {s : Set N} {x : M} {t : N}
+    (hγ : MDifferentiableWithinAt J I γ s t)
+    (hx : γ t ∈ (trivializationAt F V x).baseSet) :
+    MDifferentiableWithinAt J 𝓘(𝕜, F) (sectionCoord 𝕜 (F := F) γ W x) s t ↔
+      MDifferentiableWithinAt J (I.prod 𝓘(𝕜, F))
+        (fun r ↦ TotalSpace.mk' F (γ r) (W r)) s t := by
+  refine ⟨fun h ↦ ?_, fun h ↦ mdifferentiableWithinAt_sectionCoord γ W h hx⟩
+  let e := trivializationAt F V x
+  rw [e.mdifferentiableWithinAt_totalSpace_iff I
+    (fun r ↦ TotalSpace.mk' F (γ r) (W r)) (e.coe_mem_source.mpr hx)]
+  refine ⟨hγ, h.congr_of_eventuallyEq ?_ ?_⟩
+  · filter_upwards
+      [hγ.continuousWithinAt.preimage_mem_nhdsWithin (e.open_baseSet.mem_nhds hx)] with r hr
+    exact (e.continuousLinearMapAt_apply_of_mem 𝕜 hr (W r)).symm
+  · exact (e.continuousLinearMapAt_apply_of_mem 𝕜 hx (W t)).symm
+
 /-- For a differentiable base map, differentiability of the coordinate reading characterizes
 that of the total-space section. -/
 theorem mdifferentiableAt_sectionCoord_iff {x : M} {t : N}
@@ -171,12 +229,35 @@ theorem mdifferentiableAt_sectionCoord_iff {x : M} {t : N}
     MDifferentiableAt J 𝓘(𝕜, F) (sectionCoord 𝕜 (F := F) γ W x) t ↔
       MDifferentiableAt J (I.prod 𝓘(𝕜, F))
         (fun r ↦ TotalSpace.mk' F (γ r) (W r)) t := by
-  refine ⟨fun h ↦ ?_, fun h ↦ mdifferentiableAt_sectionCoord γ W h hx⟩
+  rw [← mdifferentiableWithinAt_univ, ← mdifferentiableWithinAt_univ]
+  exact mdifferentiableWithinAt_sectionCoord_iff γ W (s := Set.univ)
+    hγ.mdifferentiableWithinAt hx
+
+omit [ContMDiffVectorBundle 1 F V I] in
+/-- For a base map of class `C^n` within a set, the coordinate reading characterizes
+`C^n` regularity of the total-space section within that set. -/
+theorem contMDiffWithinAt_sectionCoord_iff {n : ℕ∞ω} {s : Set N} {x : M} {t : N}
+    [ContMDiffVectorBundle n F V I]
+    (hγ : ContMDiffWithinAt J I n γ s t)
+    (hx : γ t ∈ (trivializationAt F V x).baseSet) :
+    ContMDiffWithinAt J 𝓘(𝕜, F) n (sectionCoord 𝕜 (F := F) γ W x) s t ↔
+      ContMDiffWithinAt J (I.prod 𝓘(𝕜, F)) n
+        (fun r ↦ TotalSpace.mk' F (γ r) (W r)) s t := by
   let e := trivializationAt F V x
-  rw [e.mdifferentiableAt_totalSpace_iff I
-    (fun r ↦ TotalSpace.mk' F (γ r) (W r)) (e.coe_mem_source.mpr hx)]
-  refine ⟨hγ, h.congr_of_eventuallyEq ?_⟩
-  filter_upwards [hγ.continuousAt.preimage_mem_nhds (e.open_baseSet.mem_nhds hx)] with r hr
-  exact (e.continuousLinearMapAt_apply_of_mem 𝕜 hr (W r)).symm
+  have hbase : ∀ᶠ r in 𝓝[s] t, γ r ∈ e.baseSet :=
+    hγ.continuousWithinAt.preimage_mem_nhdsWithin (e.open_baseSet.mem_nhds hx)
+  have heq : sectionCoord 𝕜 (F := F) γ W x =ᶠ[𝓝[s] t]
+      fun r ↦ (e (TotalSpace.mk' F (γ r) (W r))).2 := by
+    filter_upwards [hbase] with r hr
+    rw [sectionCoord_apply]
+    exact e.continuousLinearMapAt_apply_of_mem 𝕜 hr _
+  have heq₀ : sectionCoord 𝕜 (F := F) γ W x t =
+      (e (TotalSpace.mk' F (γ t) (W t))).2 := by
+    rw [sectionCoord_apply]
+    exact e.continuousLinearMapAt_apply_of_mem 𝕜 hx _
+  rw [e.contMDiffWithinAt_iff (f := fun r ↦ TotalSpace.mk' F (γ r) (W r))
+    (e.coe_mem_source.mpr hx)]
+  exact ⟨fun h ↦ ⟨hγ, h.congr_of_eventuallyEq heq.symm heq₀.symm⟩,
+    fun h ↦ h.2.congr_of_eventuallyEq heq heq₀⟩
 
 end TauCeti.Manifold

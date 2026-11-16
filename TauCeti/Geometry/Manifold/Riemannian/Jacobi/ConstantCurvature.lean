@@ -134,12 +134,12 @@ theorem IsJacobiFieldOn.alongCurveWithin_smul_sub_smul_eq_zero
     rw [neg_smul, sub_eq_add_neg]
   have h₁ : DifferentiableWithinAt ℝ
       (sectionCoord ℝ (F := E) γ (fun r ↦ φ' r • V r) (γ t)) s t := by
-    rw [sectionCoord_smul]
+    rw [sectionCoord_fun_smul]
     exact (hφ' t).differentiableAt.differentiableWithinAt.smul
       (h.differentiableWithinAt_sectionCoord ht)
   have h₂ : DifferentiableWithinAt ℝ (sectionCoord ℝ (F := E) γ (fun r ↦ (fun r ↦ -φ r) r •
       alongCurveWithin (leviCivitaConnection I M) γ V s r) (γ t)) s t := by
-    rw [sectionCoord_smul]
+    rw [sectionCoord_fun_smul]
     exact (hφ t).differentiableAt.neg.differentiableWithinAt.smul
       (h.differentiableWithinAt_sectionCoord_alongCurveWithin ht)
   rw [hfun, alongCurveWithin_add _ γ _ _ s h₁ h₂,
@@ -182,7 +182,7 @@ theorem IsJacobiFieldOn.exists_eq_smul_add_smul
     by simp [hφa, hφ'a], by simp [hψa, hψ'a], fun t _ ↦ ?_⟩
   · rw [alongCurveWithin_const_smul,
       h.alongCurveWithin_smul_sub_smul_eq_zero hs ha hκ hV hψ hψ' ht, smul_zero]
-  · rw [sectionCoord_smul]
+  · rw [sectionCoord_fun_smul]
     exact (differentiableWithinAt_const _).smul
       (h.differentiableWithinAt_sectionCoord_smul_sub_smul ht (hψ' t).differentiableAt
         (hψ t).differentiableAt)

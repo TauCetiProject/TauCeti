@@ -261,7 +261,7 @@ private theorem hasPairingProductRuleWithinAt_frameSum
   have hcoordTerm {a : ι → ℝ → ℝ} (ha : ∀ i, DifferentiableWithinAt ℝ (a i) s t) (i : ι) :
       DifferentiableWithinAt ℝ
         (sectionCoord ℝ (F := E) γ (fun r ↦ a i r • X i (γ r)) (γ t)) s t := by
-    rw [sectionCoord_smul]
+    rw [sectionCoord_fun_smul]
     exact (ha i).smul (hcoordX i)
   have hterm (i j : ι) : HasPairingProductRuleWithinAt (cov := cov) (s := s) (t := t)
       (fun x ↦ (b x).toLinearMap₁₂) (fun r ↦ aV i r • X i (γ r))

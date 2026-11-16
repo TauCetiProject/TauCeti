@@ -141,8 +141,8 @@ private theorem alongCurveWithin_const_smul_add_id_smul (h : IsNormalDomain I M 
   have hmul := h.alongCurveWithin_id_smul v (D Y) hDY ht
   dsimp only [D, γ, s] at hmul ⊢
   rw [alongCurveWithin_add (leviCivitaConnection I M) γ _ _ s
-      (by rw [sectionCoord_smul]; exact hcoordY.const_smul c)
-      (by rw [sectionCoord_smul]; exact differentiableWithinAt_id.smul hcoordDY),
+      (by rw [sectionCoord_fun_smul]; exact hcoordY.const_smul c)
+      (by rw [sectionCoord_fun_smul]; exact differentiableWithinAt_id.smul hcoordDY),
     alongCurveWithin_const_smul (leviCivitaConnection I M) γ Y c s t, hmul]
   module
 

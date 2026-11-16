@@ -174,7 +174,7 @@ theorem inner_alongCurve_normalFrameExpansion (h : IsNormalDomain I M p U)
     (innerSL ℝ (b i)).hasFDerivAt.comp_hasDerivAt t hy
   have hterm (i : ι) : DifferentiableAt ℝ
       (sectionCoord ℝ (F := E) γ (fun s ↦ ⟪b i, y s⟫_ℝ • e i s) (γ t)) t := by
-    rw [sectionCoord_smul]
+    rw [sectionCoord_fun_smul]
     exact (hcoeff i).differentiableAt.smul (hecoord i)
   have hframe (i : ι) : alongCurve (leviCivitaConnection I M) γ (e i) t =
       leviCivitaConnection I M (normalOrthonormalFrame I M p U b i) (γ t)
@@ -228,10 +228,10 @@ theorem differentiableAt_sectionCoord_normalFrameExpansion (h : IsNormalDomain I
       (fun s ↦ ∑ i, ⟪b i, y s⟫_ℝ • normalOrthonormalFrame I M p U b i (γ s)) := by
     funext s
     exact b.normalFrameExpansion_apply (γ s) (y s)
-  rw [hexp, sectionCoord_sum]
+  rw [hexp, sectionCoord_fun_sum]
   apply DifferentiableAt.fun_sum
   intro i _
-  rw [sectionCoord_smul]
+  rw [sectionCoord_fun_smul]
   exact ((innerSL ℝ (b i)).differentiableAt.comp t hy).smul (hecoord i)
 
 /-- Solving the geometric coefficient equation gives a parallel tangent field. -/

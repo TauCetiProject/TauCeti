@@ -37,8 +37,8 @@ ambient covariant derivative.
 
 ## Main definitions and results
 
-* `TauCeti.Manifold.sectionCoord`: the coordinate reading of a tangent field along a curve in a
-  specified tangent-bundle trivialization; see `VectorBundle/SectionAlongCurve/Basic.lean`.
+* `TauCeti.Manifold.sectionCoord`: the coordinate reading of a vector-bundle section along a map,
+  specialized here to tangent fields along curves; see `VectorBundle/SectionAlongMap/Basic.lean`.
 * `CovariantDerivative.alongCurveInChartWithin`: the model-space formula `v' + Γ(v, u')` within
   a parameter set, computed by `CovariantDerivative.alongCurveInChartWithin_apply`.
 * `CovariantDerivative.alongCurveWithin`: the resulting tangent field along the curve, computed
@@ -204,7 +204,7 @@ private theorem alongCurveInChartWithin_add (W : ∀ t, TangentSpace I (γ t)) (
     alongCurveInChartWithin cov γ (fun r ↦ V r + W r) s x t =
       alongCurveInChartWithin cov γ V s x t + alongCurveInChartWithin cov γ W s x t := by
   rw [alongCurveInChartWithin_apply, alongCurveInChartWithin_apply,
-    alongCurveInChartWithin_apply, sectionCoord_add, derivWithin_add hV hW]
+    alongCurveInChartWithin_apply, sectionCoord_fun_add, derivWithin_add hV hW]
   simp only [Pi.add_apply, map_add, add_apply]
   abel
 
@@ -235,7 +235,7 @@ private theorem alongCurveInChartWithin_sub (W : ∀ t, TangentSpace I (γ t)) (
     alongCurveInChartWithin cov γ (fun r ↦ V r - W r) s x t =
       alongCurveInChartWithin cov γ V s x t - alongCurveInChartWithin cov γ W s x t := by
   rw [alongCurveInChartWithin_apply, alongCurveInChartWithin_apply,
-    alongCurveInChartWithin_apply, sectionCoord_sub, derivWithin_sub hV hW]
+    alongCurveInChartWithin_apply, sectionCoord_fun_sub, derivWithin_sub hV hW]
   simp only [Pi.sub_apply, map_sub, sub_apply]
   abel
 
@@ -266,7 +266,7 @@ private theorem alongCurveInChartWithin_smul (f : 𝕜 → 𝕜) (s : Set 𝕜) 
     alongCurveInChartWithin cov γ (fun r ↦ f r • V r) s x t =
       derivWithin f s t • sectionCoord 𝕜 (F := E) γ V x t +
         f t • alongCurveInChartWithin cov γ V s x t := by
-  rw [alongCurveInChartWithin_apply, alongCurveInChartWithin_apply, sectionCoord_smul,
+  rw [alongCurveInChartWithin_apply, alongCurveInChartWithin_apply, sectionCoord_fun_smul,
     derivWithin_smul hf hV]
   simp only [Pi.smul_apply', map_smul, smul_add]
   abel
@@ -299,7 +299,7 @@ private theorem alongCurveInChartWithin_const_smul (c : 𝕜) (s : Set 𝕜) (x 
       c • alongCurveInChartWithin cov γ V s x t := by
   have hcoord : sectionCoord 𝕜 (F := E) γ (fun r ↦ c • V r) x =
       c • sectionCoord 𝕜 (F := E) γ V x := by
-    rw [sectionCoord_smul (F := E) γ V (fun _ ↦ c) x]
+    rw [sectionCoord_fun_smul (F := E) γ V (fun _ ↦ c) x]
     rfl
   rw [alongCurveInChartWithin_apply, alongCurveInChartWithin_apply, hcoord,
     derivWithin_const_smul_field]
@@ -325,7 +325,7 @@ theorem alongCurve_const_smul (c : 𝕜) (t : 𝕜) :
 @[simp]
 theorem alongCurveWithin_zero (s : Set 𝕜) (t : 𝕜) :
     alongCurveWithin cov γ (fun r : 𝕜 ↦ (0 : TangentSpace I (γ r))) s t = 0 := by
-  rw [alongCurveWithin_apply, alongCurveInChartWithin_apply, fun_sectionCoord_zero (γ := γ)]
+  rw [alongCurveWithin_apply, alongCurveInChartWithin_apply, sectionCoord_fun_zero (γ := γ)]
   simp only [derivWithin_fun_const, Pi.zero_apply, map_zero, zero_apply, add_zero]
 
 /-- The unrestricted moving-chart candidate of the zero field is zero. -/
