@@ -7,8 +7,6 @@ module
 
 public import Mathlib.Algebra.BigOperators.Fin
 public import Mathlib.Data.Fintype.Perm
-public import Mathlib.Data.Fintype.Pi
-public import Mathlib.Tactic.Group
 public import TauCeti.Combinatorics.CoboundaryExpansion.Cochain.Basic
 public import TauCeti.GroupTheory.Perm.MovedNorm
 import Mathlib.Algebra.BigOperators.Group.List.Basic
