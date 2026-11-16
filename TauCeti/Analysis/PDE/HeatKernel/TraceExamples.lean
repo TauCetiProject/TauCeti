@@ -33,10 +33,12 @@ continuity of `g`. This file records three examples showing what this does and d
 * **A bounded family that is not uniformly equicontinuous.** The plane waves are eigenfunctions
   of the heat flow, `S(t) sin ⟪ξ, ·⟫ = exp (-t ‖ξ‖²) sin ⟪ξ, ·⟫`
   (`TauCeti.heatKernel_convolution_sin_inner`). The family `sin ⟪ξ, ·⟫`, `ξ ∈ E`, is bounded by
-  `1`, but `‖S(t) sin ⟪ξ, ·⟫ - sin ⟪ξ, ·⟫‖_∞ = 1 - exp (-t ‖ξ‖²)` tends to `1` as `‖ξ‖ → ∞`
-  for every `t > 0` (`TauCeti.tendsto_eLpNorm_heatKernel_convolution_sin_inner_smul_sub`). So
-  a common modulus of continuity cannot be dropped from a uniform rate of attainment for a
-  family of data.
+  `1`, but for every `t > 0` it moves by exactly
+  `‖S(t) sin ⟪ξ, ·⟫ - sin ⟪ξ, ·⟫‖_∞ = 1 - exp (-t ‖ξ‖²)`
+  (`TauCeti.eLpNorm_heatKernel_convolution_sin_inner_sub`), which tends to `1` along
+  `ξ = k • e`, `k → ∞`, for any `e ≠ 0`
+  (`TauCeti.tendsto_eLpNorm_heatKernel_convolution_sin_inner_smul_sub`). So a common modulus of
+  continuity cannot be dropped from a uniform rate of attainment for a family of data.
 
 ## The argument for the sign
 
