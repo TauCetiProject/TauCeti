@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Analysis.Pseudodifferential.HomogeneousSymbol
+public import TauCeti.Analysis.Pseudodifferential.HomogeneousSymbol.Basic
 public import TauCeti.Analysis.Pseudodifferential.Symbol.Basic
 import Mathlib.Analysis.SpecialFunctions.Pow.Asymptotics
 import TauCeti.Analysis.SpecialFunctions.Pow.Bounds
