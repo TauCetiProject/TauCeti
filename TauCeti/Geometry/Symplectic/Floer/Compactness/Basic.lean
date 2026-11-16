@@ -524,6 +524,26 @@ open Function
 
 variable {P : Type*} [NormedAddCommGroup P] [InnerProductSpace ℝ P]
 
+/-- A solution at `equivRealProdCLM y` of the coordinate Floer equation for `J` and `X` on
+`ℝ × ℝ`, read through the complex coordinate `equivRealProdCLM`, solves it at `y` for `J` and
+`X ∘L equivRealProdCLM`, with `∂ₛ` and `∂ₜ` the derivatives in the directions `1` and `I`. -/
+private theorem fderiv_comp_equivRealProdCLM_I_sub_of_stdComplexLineImag_sub
+    {J : (ℝ × ℝ) × V → V →L[ℝ] V} {X : (ℝ × ℝ) × V → ℝ × ℝ →L[ℝ] V} {u : ℝ × ℝ → V} {y : ℂ}
+    (hfl : fderiv ℝ u (equivRealProdCLM y) stdComplexLineImag -
+        X (equivRealProdCLM y, u (equivRealProdCLM y)) stdComplexLineImag =
+      J (equivRealProdCLM y, u (equivRealProdCLM y))
+        (fderiv ℝ u (equivRealProdCLM y) stdComplexLineReal -
+          X (equivRealProdCLM y, u (equivRealProdCLM y)) stdComplexLineReal)) :
+    fderiv ℝ (u ∘ equivRealProdCLM) y I -
+        (X (equivRealProdCLM y, u (equivRealProdCLM y)) ∘L (equivRealProdCLM : ℂ →L[ℝ] ℝ × ℝ)) I =
+      J (equivRealProdCLM y, u (equivRealProdCLM y))
+        (fderiv ℝ (u ∘ equivRealProdCLM) y 1 -
+          (X (equivRealProdCLM y, u (equivRealProdCLM y)) ∘L
+            (equivRealProdCLM : ℂ →L[ℝ] ℝ × ℝ)) 1) := by
+  simpa only [fderiv_comp_equivRealProdCLM_one, fderiv_comp_equivRealProdCLM_I,
+    ContinuousLinearMap.comp_apply, ContinuousLinearEquiv.coe_coe, equivRealProdCLM_one,
+    equivRealProdCLM_I] using hfl
+
 /-- `TauCeti.Floer.exists_pos_forall_tendsto_tendstoLocallyUniformlyOn_subseq_off_finset` for
 solutions of the coordinate Floer equations on the domain `ℝ × ℝ`, read through the complex
 coordinate `equivRealProdCLM`; the energy is `∫ ‖∂ₛu‖²`. -/
@@ -583,10 +603,8 @@ private theorem exists_pos_forall_tendsto_tendstoLocallyUniformlyOn_subseq_off_f
     hconv (Ω := e ⁻¹' Ω) (p := p) (u := fun k ↦ u k ∘ e) (E := E)
       (hΩ.preimage e.continuous) (preimage_mono hΩD) hpC
       (fun k ↦ (hu k).comp e.contDiff.contDiffOn (mapsTo_preimage _ _))
-      (fun k y hy ↦ by
-        simpa only [he, fderiv_comp_equivRealProdCLM_one, fderiv_comp_equivRealProdCLM_I,
-          ContinuousLinearMap.comp_apply, ContinuousLinearEquiv.coe_coe, equivRealProdCLM_one,
-          equivRealProdCLM_I, Function.comp_apply] using hfl k (e y) hy)
+      (fun k y hy ↦
+        fderiv_comp_equivRealProdCLM_I_sub_of_stdComplexLineImag_sub (hfl k (e y) hy))
       (fun k y hy ↦ huK k hy)
       (fun k ↦ (hint_iff (u k) Ω).2 (hint k)) (fun k ↦ (hint_eq (u k) Ω).trans_le (hE k))
   -- The bubbling set and the limit in the original coordinates.
@@ -788,10 +806,8 @@ private theorem exists_pos_forall_pi_mul_sq_mul_norm_fderiv_sq_le_of_small_energ
     (hu.comp e.contDiff.contDiffOn hball)
     ((hu'.comp e.continuous.continuousOn hcball).congr fun y _ ↦
       fderiv_comp_equivRealProdCLM_one u y)
-    (fun y hy ↦ by
-      simpa only [he, fderiv_comp_equivRealProdCLM_one, fderiv_comp_equivRealProdCLM_I,
-        ContinuousLinearMap.comp_apply, ContinuousLinearEquiv.coe_coe, equivRealProdCLM_one,
-        equivRealProdCLM_I, Function.comp_apply] using hfl (e y) (hball hy))
+    (fun y hy ↦
+      fderiv_comp_equivRealProdCLM_I_sub_of_stdComplexLineImag_sub (hfl (e y) (hball hy)))
     (fun y hy ↦ huK _ (hball hy)) (by simpa only [he, fderiv_comp_equivRealProdCLM_one] using hE)
   simpa only [he, fderiv_comp_equivRealProdCLM_one, ContinuousLinearEquiv.apply_symm_apply] using h
 
