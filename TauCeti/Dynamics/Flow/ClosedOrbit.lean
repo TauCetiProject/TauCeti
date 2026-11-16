@@ -918,10 +918,8 @@ def equivMarkersOver (γ : PeriodicTrajectory ϕ) {p : α} {θ₀ : AddCircle γ
     rw [AddEquiv.apply_symm_apply]
     ext
     exact add_sub_cancel_left θ₀ _
-  right_inv θ := by
-    ext
-    change θ₀ + (γ.zmodEquivReparamSubgroup (γ.zmodEquivReparamSubgroup.symm _) :
-      AddCircle γ.period) = θ.1
+  right_inv θ := Subtype.ext <| by
+    dsimp only
     rw [AddEquiv.apply_symm_apply]
     exact add_sub_cancel θ₀ θ.1
 
