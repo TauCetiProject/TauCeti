@@ -257,6 +257,27 @@ theorem IsIncompressibleVector.lt_sum_filter_norm (hx : IsIncompressibleVector k
       _ = _ := by rw [sum_add_distrib]; simp [sum_filter]
   linarith
 
+/-- A unit vector has at most `k` coordinates with norm greater than `1 / √(k + 1)`. -/
+theorem _root_.EuclideanSpace.card_filter_inv_sqrt_lt_norm_le (hn : ‖x‖ = 1) (k : ℕ) :
+    (univ.filter fun i ↦ 1 / Real.sqrt (k + 1) < ‖x i‖).card ≤ k := by
+  classical
+  have hkp : (0 : ℝ) < k + 1 := by positivity
+  have hsqrt : (Real.sqrt (k + 1 : ℝ)) ^ 2 = k + 1 := Real.sq_sqrt hkp.le
+  by_contra h
+  let s := univ.filter fun i ↦ 1 / Real.sqrt (k + 1) < ‖x i‖
+  have hcard : k + 1 ≤ s.card := Nat.succ_le_of_lt (Nat.lt_of_not_ge h)
+  have hsum : (s.card : ℝ) * (1 / (k + 1 : ℝ)) < ∑ i ∈ s, ‖x i‖ ^ 2 := by
+    calc
+      _ = ∑ _i ∈ s, (1 / Real.sqrt (k + 1 : ℝ)) ^ 2 := by simp [hsqrt]
+      _ < _ := sum_lt_sum_of_nonempty (Finset.card_pos.mp (by omega)) fun i hi ↦
+        pow_lt_pow_left₀ ((mem_filter.mp hi).2) (by positivity) (by norm_num : 2 ≠ 0)
+  have htotal : ∑ i ∈ s, ‖x i‖ ^ 2 ≤ 1 := by
+    calc _ ≤ ∑ i, ‖x i‖ ^ 2 := sum_le_univ_sum_of_nonneg fun _ ↦ sq_nonneg _
+         _ = 1 := by rw [← EuclideanSpace.norm_sq_eq, hn]; norm_num
+  have : (s.card : ℝ) < k + 1 := by nlinarith [(div_lt_iff₀ hkp).mp (by
+    simpa [div_eq_mul_inv] using hsum.trans_le htotal)]
+  exact (by exact_mod_cast hcard : (k + 1 : ℝ) ≤ s.card).not_gt this
+
 /-- An incompressible vector has more than `(k + 1) ρ² / 2` coordinates with norms between
 `ρ / √(2n)` and `1 / √(k + 1)`, where `n` is the number of coordinates.
 This is the spread lemma of Rudelson–Vershynin, including zero sparsity. -/
@@ -266,49 +287,26 @@ theorem IsIncompressibleVector.exists_finset_lt_card_and_forall_norm
       ∀ i ∈ s, ρ / Real.sqrt (2 * Fintype.card ι) < ‖x i‖ ∧
         ‖x i‖ ≤ 1 / Real.sqrt (k + 1) := by
   classical
-  refine ⟨univ.filter (fun i ↦ ρ / Real.sqrt (2 * Fintype.card ι) < ‖x i‖ ∧
-    ‖x i‖ ≤ 1 / Real.sqrt (k + 1)), ?_, fun i hi ↦ (mem_filter.mp hi).2⟩
-  -- A unit vector has at most k coordinates above the upper threshold.
+  let s := univ.filter fun i ↦ ρ / Real.sqrt (2 * Fintype.card ι) < ‖x i‖ ∧
+    ‖x i‖ ≤ 1 / Real.sqrt (k + 1)
+  refine ⟨s, ?_, fun i hi ↦ (mem_filter.mp hi).2⟩
   have hkp : (0 : ℝ) < k + 1 := by positivity
-  have hn : 0 < Fintype.card ι := by
-    by_contra h
-    have : IsEmpty ι := Fintype.card_eq_zero_iff.mp (by omega)
-    have : x = 0 := Subsingleton.elim _ _
-    simpa [this] using hx.1
   have hsqrt : (Real.sqrt (k + 1 : ℝ)) ^ 2 = k + 1 := Real.sq_sqrt hkp.le
-  have hlarge : (univ.filter fun i ↦ 1 / Real.sqrt (k + 1) < ‖x i‖).card ≤ k := by
-    by_contra h
-    let s := univ.filter fun i ↦ 1 / Real.sqrt (k + 1) < ‖x i‖
-    have hcard : k + 1 ≤ s.card := Nat.succ_le_of_lt (Nat.lt_of_not_ge h)
-    have hsum : (s.card : ℝ) * (1 / (k + 1 : ℝ)) < ∑ i ∈ s, ‖x i‖ ^ 2 := by
-      calc
-        _ = ∑ _i ∈ s, (1 / Real.sqrt (k + 1 : ℝ)) ^ 2 := by
-          simp [hsqrt]
-        _ < _ := sum_lt_sum_of_nonempty (Finset.card_pos.mp (by omega)) fun i hi ↦
-          pow_lt_pow_left₀ ((mem_filter.mp hi).2) (by positivity) (by norm_num : 2 ≠ 0)
-    have htotal : ∑ i ∈ s, ‖x i‖ ^ 2 ≤ 1 := by
-      calc _ ≤ ∑ i, ‖x i‖ ^ 2 := sum_le_univ_sum_of_nonneg fun _ ↦ sq_nonneg _
-           _ = 1 := by rw [← EuclideanSpace.norm_sq_eq, hx.1]; norm_num
-    have : (s.card : ℝ) < k + 1 := by nlinarith [(div_lt_iff₀ hkp).mp (by
-      simpa [div_eq_mul_inv] using hsum.trans_le htotal)]
-    exact (by exact_mod_cast hcard : (k + 1 : ℝ) ≤ s.card).not_gt this
-  -- Remove the small coordinates from the mass outside those large coordinates.
+  -- Remove the small coordinates from the mass outside the large coordinates.
   have hmass := hx.lt_sum_filter_norm hρ (a := ρ / Real.sqrt (2 * Fintype.card ι))
-    hlarge
+    (EuclideanSpace.card_filter_inv_sqrt_lt_norm_le hx.norm_eq_one k)
   have hsmall : (Fintype.card ι : ℝ) * (ρ / Real.sqrt (2 * Fintype.card ι)) ^ 2 =
       ρ ^ 2 / 2 := by
+    have hn : (Fintype.card ι : ℝ) ≠ 0 := by
+      have := lt_of_not_ge (fun h ↦ not_isIncompressibleVector_of_card_le h hρ hx)
+      exact_mod_cast (Nat.ne_zero_of_lt this)
     rw [div_pow, Real.sq_sqrt (by positivity)]
-    field_simp
+    field_simp [hn]
   rw [hsmall] at hmass
   -- Bound each remaining squared coordinate by 1/(k + 1) to count the spread coordinates.
-  have hbound :
-      ∑ i ∈ univ.filter (fun i ↦ ρ / Real.sqrt (2 * Fintype.card ι) < ‖x i‖ ∧
-        ‖x i‖ ≤ 1 / Real.sqrt (k + 1)), ‖x i‖ ^ 2 ≤
-      ((univ.filter fun i ↦ ρ / Real.sqrt (2 * Fintype.card ι) < ‖x i‖ ∧
-        ‖x i‖ ≤ 1 / Real.sqrt (k + 1)).card : ℝ) / (k + 1) := by
+  have hbound : ∑ i ∈ s, ‖x i‖ ^ 2 ≤ (s.card : ℝ) / (k + 1) := by
     calc
-      _ ≤ ∑ _i ∈ univ.filter (fun i ↦ ρ / Real.sqrt (2 * Fintype.card ι) < ‖x i‖ ∧
-          ‖x i‖ ≤ 1 / Real.sqrt (k + 1)), (1 / Real.sqrt (k + 1 : ℝ)) ^ 2 :=
+      _ ≤ ∑ _i ∈ s, (1 / Real.sqrt (k + 1 : ℝ)) ^ 2 :=
         sum_le_sum fun i hi ↦ pow_le_pow_left₀ (norm_nonneg _) (mem_filter.mp hi).2.2 2
       _ = _ := by simp [hsqrt, div_eq_mul_inv]
   have hfinal := (lt_div_iff₀ hkp).mp (hmass.trans_le hbound)
