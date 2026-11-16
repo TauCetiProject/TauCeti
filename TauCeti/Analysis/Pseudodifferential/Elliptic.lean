@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.Normed.Operator.Banach
-public import TauCeti.Analysis.Pseudodifferential.HomogeneousSymbol
+public import TauCeti.Analysis.Pseudodifferential.HomogeneousSymbol.Basic
 public import TauCeti.Topology.Algebra.Module.ContinuousLinearMap.Invertible
 public import Mathlib.Analysis.Calculus.ContDiff.Operations
 import TauCeti.Analysis.Calculus.ContinuousLinearMapInverse

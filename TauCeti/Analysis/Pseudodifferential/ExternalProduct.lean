@@ -11,7 +11,7 @@ public import Mathlib.LinearAlgebra.AffineSpace.Ordered
 public import Mathlib.Topology.Algebra.Affine
 public import TauCeti.Analysis.InnerProductSpace.ExternalProductBlock
 public import TauCeti.Analysis.Normed.Module.Basic
-public import TauCeti.Analysis.Pseudodifferential.HomogeneousSymbol
+public import TauCeti.Analysis.Pseudodifferential.HomogeneousSymbol.Basic
 
 /-!
 # The external product of two homogeneous symbols

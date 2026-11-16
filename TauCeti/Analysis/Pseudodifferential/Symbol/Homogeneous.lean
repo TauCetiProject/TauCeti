@@ -5,9 +5,10 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Analysis.Pseudodifferential.HomogeneousSymbol
+public import TauCeti.Analysis.Pseudodifferential.HomogeneousSymbol.Basic
 public import TauCeti.Analysis.Pseudodifferential.Symbol.Basic
 import Mathlib.Analysis.Calculus.BumpFunction.InnerProduct
+import TauCeti.Analysis.Pseudodifferential.HomogeneousSymbol.Topology
 import TauCeti.Analysis.SpecialFunctions.Pow.Bounds
 
 /-!
@@ -91,6 +92,12 @@ theorem coefficient_cutoffSymbol
     (a : HomogeneousSymbol (CoordinateSpace n) (CoordinateSpace n) V W m)
     (p : CoordinateSpace n × CoordinateSpace n) :
     (cutoffSymbol χ a).coefficient p = χ p.2 • a.coefficient p :=
+  (rfl)
+
+/-- The coefficient of the cut-off term, as a function: `p ↦ χ(p.2) a(p)`. -/
+theorem coefficient_cutoffSymbol_eq_fun
+    (a : HomogeneousSymbol (CoordinateSpace n) (CoordinateSpace n) V W m) :
+    (cutoffSymbol χ a).coefficient = fun p ↦ χ p.2 • a.coefficient p :=
   (rfl)
 
 /-- At frequencies of norm at least `2` the cut-off term is the homogeneous symbol itself. -/
