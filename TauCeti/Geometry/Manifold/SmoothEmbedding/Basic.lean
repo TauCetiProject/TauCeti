@@ -5,9 +5,11 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Analysis.RCLike.Basic
 public import Mathlib.Geometry.Manifold.ContMDiffMap
 public import Mathlib.Geometry.Manifold.SmoothEmbedding
 import TauCeti.Geometry.Manifold.Immersion.Basic
+import TauCeti.Geometry.Manifold.Immersion.Differential
 
 /-!
 # Bundled smooth embeddings
@@ -37,8 +39,12 @@ the inputs of the tubular-neighbourhood and surgery constructions.
 
 ## Main results
 
-* `Manifold.IsSmoothEmbedding.contMDiff_iff_comp`: smoothness can be tested after composition
-  with a smooth embedding, without a separate continuity hypothesis.
+* `Manifold.IsSmoothEmbedding.contMDiff_iff_comp`, `contMDiffWithinAt_iff_comp`,
+  `contMDiffAt_iff_comp` and `contMDiffOn_iff_comp`: smoothness (globally, at a point, within a
+  set, or on a set) can be tested after composition with a smooth embedding, without a separate
+  continuity hypothesis.
+* `Manifold.IsSmoothEmbedding.comp`: the composition of smooth embeddings between boundaryless
+  manifolds with a finite-dimensional target model is a smooth embedding.
 * `TauCeti.isSmoothEmbedding_prodMkLeft_of_extChartAt_eq_zero`: the slice `x ↦ (x, c)` of a product
   `M × M'` is a smooth embedding when the preferred chart of `M'` at `c` sends `c` to `0`.
 * `Manifold.IsImmersion.isSmoothEmbedding_of_isProperMap`: an injective proper immersion is a
@@ -83,6 +89,82 @@ theorem contMDiff_iff_comp {f : M → N} {φ : N → N'}
     ContMDiff I J n f ↔ ContMDiff I J' n (φ ∘ f) := by
   rw [ContMDiff.iff_comp_isImmersion hφ.isImmersion]
   exact ⟨And.right, fun h ↦ ⟨hφ.isEmbedding.continuous_iff.2 h.continuous, h⟩⟩
+
+/-- A map into a smoothly embedded manifold is `C^n` within `s` at `x` if and only if its
+composite with the embedding is. No separate continuity assumption is needed.
+
+Adapted from `ContMDiffAt.iff_comp_isImmersionAtOfComplement` in
+`Mathlib.Geometry.Manifold.Immersion`, using the topological embedding property of `φ` in place of
+a pointwise continuity hypothesis. -/
+theorem contMDiffWithinAt_iff_comp {f : M → N} {φ : N → N'} {s : Set M} {x : M}
+    (hφ : Manifold.IsSmoothEmbedding J J' n φ) :
+    ContMDiffWithinAt I J n f s x ↔ ContMDiffWithinAt I J' n (φ ∘ f) s x := by
+  refine ⟨fun hf ↦ (hφ.contMDiff (f x)).comp_contMDiffWithinAt x hf, fun h' ↦ ?_⟩
+  rw [← contMDiffWithinAt_insert_self] at h' ⊢; set s' := insert x s
+  have hf_cont : ContinuousWithinAt f s' x :=
+    hφ.isEmbedding.isInducing.continuousWithinAt_iff.2 h'.continuousWithinAt
+  let h := (hφ.isImmersion.isImmersionAt (f x)).isImmersionAtOfComplement_complement
+  let t := s' ∩ f ⁻¹' h.domChart.source
+  have hxt : x ∈ t := ⟨Set.mem_insert x s, h.mem_domChart_source⟩
+  have ht_mem : t ∈ 𝓝[s'] x := Filter.inter_mem self_mem_nhdsWithin <|
+    hf_cont.preimage_mem_nhdsWithin (h.domChart.open_source.mem_nhds h.mem_domChart_source)
+  suffices ContMDiffWithinAt I J n f t x from this.mono_of_mem_nhdsWithin ht_mem
+  rw [contMDiffWithinAt_iff_of_mem_maximalAtlas' h.domChart_mem_maximalAtlas h.mem_domChart_source]
+  refine ⟨hf_cont.mono Set.inter_subset_left, ?_⟩
+  set f' := (h.domChart.extend J) ∘ f ∘ (extChartAt I x).symm
+  set φ' := (h.codChart.extend J') ∘ φ ∘ (h.domChart.extend J).symm
+  set x' := extChartAt I x x; set u := (extChartAt I x).symm ⁻¹' t ∩ Set.range I
+  have hx' : x' ∈ u := ⟨by simp [x', hxt], Set.mem_range_self _⟩
+  have h'loc : ContDiffWithinAt 𝕜 n ((h.codChart.extend J') ∘ (φ ∘ f) ∘ (extChartAt I x).symm)
+      u x' := by
+    have h't : ContMDiffWithinAt I J' n (φ ∘ f) t x := h'.mono Set.inter_subset_left
+    rw [contMDiffWithinAt_iff_of_mem_maximalAtlas' h.codChart_mem_maximalAtlas] at h't
+    exacts [h't.2, h.mem_codChart_source]
+  have hcomp : ContDiffWithinAt 𝕜 n (φ' ∘ f') u x' := h'loc.congr_of_mem (fun y hy ↦ by
+    simp only [mfld_simps, φ', f']; rw [h.domChart.left_inv]; exact hy.1.2) hx'
+  set f'' := (h.equiv ∘ fun z ↦ (z, 0)) ∘ f'
+  have hf'' : ContDiffWithinAt 𝕜 n f'' u x' := hcomp.congr_of_mem (fun y hy ↦ by
+    simp only [f'', φ', f']; nth_rw 2 [Function.comp_apply]
+    rw [Function.comp_apply, h.writtenInCharts]
+    rw [h.domChart.extend_target_eq_image_source]
+    exact ⟨f ((extChartAt I x).symm y), hy.1.2, rfl⟩) hx'
+  let P : _ →L[𝕜] E' := (ContinuousLinearMap.fst 𝕜 E' _).comp h.equiv.symm.toContinuousLinearMap
+  exact (P.contDiff.contDiffWithinAt.comp x' hf'' (Set.mapsTo_univ _ _)).congr_of_mem
+    (fun _ _ ↦ by simp [P, f'']) hx'
+
+/-- A map into a smoothly embedded manifold is `C^n` at `x` if and only if its composite with
+the embedding is. No separate continuity assumption is needed. -/
+theorem contMDiffAt_iff_comp {f : M → N} {φ : N → N'} {x : M}
+    (hφ : Manifold.IsSmoothEmbedding J J' n φ) :
+    ContMDiffAt I J n f x ↔ ContMDiffAt I J' n (φ ∘ f) x := by
+  simp only [← contMDiffWithinAt_univ, hφ.contMDiffWithinAt_iff_comp]
+
+/-- A map into a smoothly embedded manifold is `C^n` on `s` if and only if its composite with
+the embedding is. No separate continuity assumption is needed. -/
+theorem contMDiffOn_iff_comp {f : M → N} {φ : N → N'} {s : Set M}
+    (hφ : Manifold.IsSmoothEmbedding J J' n φ) :
+    ContMDiffOn I J n f s ↔ ContMDiffOn I J' n (φ ∘ f) s :=
+  forall₂_congr fun _ _ ↦ hφ.contMDiffWithinAt_iff_comp
+
+/-- The composition of two `C^n` smooth embeddings (`1 ≤ n`) whose source and target are
+boundaryless manifolds, with a finite-dimensional target model, is a `C^n` smooth embedding. -/
+theorem comp {𝕜 E₁ H₁ X₁ E₂ H₂ X₂ E₃ H₃ X₃ : Type*} [RCLike 𝕜]
+    [NormedAddCommGroup E₁] [NormedSpace 𝕜 E₁] [TopologicalSpace H₁]
+    [NormedAddCommGroup E₂] [NormedSpace 𝕜 E₂] [TopologicalSpace H₂]
+    [NormedAddCommGroup E₃] [NormedSpace 𝕜 E₃] [FiniteDimensional 𝕜 E₃] [TopologicalSpace H₃]
+    {I₁ : ModelWithCorners 𝕜 E₁ H₁} {I₂ : ModelWithCorners 𝕜 E₂ H₂} {I₃ : ModelWithCorners 𝕜 E₃ H₃}
+    [I₁.Boundaryless] [I₃.Boundaryless] [TopologicalSpace X₁] [ChartedSpace H₁ X₁]
+    [IsManifold I₁ n X₁] [TopologicalSpace X₂] [ChartedSpace H₂ X₂]
+    [TopologicalSpace X₃] [ChartedSpace H₃ X₃] [IsManifold I₃ n X₃] {f : X₁ → X₂} {g : X₂ → X₃}
+    (hg : Manifold.IsSmoothEmbedding I₂ I₃ n g) (hf : Manifold.IsSmoothEmbedding I₁ I₂ n f)
+    (hn : 1 ≤ n) : Manifold.IsSmoothEmbedding I₁ I₃ n (g ∘ f) := by
+  have hn0 : n ≠ 0 := ne_of_gt (zero_lt_one.trans_le hn)
+  refine ⟨(hg.contMDiff.comp hf.contMDiff).isImmersion_of_injective_mfderiv hn fun x ↦ ?_,
+    hg.isEmbedding.comp hf.isEmbedding⟩
+  rw [mfderiv_comp x ((hg.contMDiff (f x)).mdifferentiableAt hn0)
+    ((hf.contMDiff x).mdifferentiableAt hn0)]
+  exact ((hg.isImmersion.isImmersionAt (f x)).mfderiv_injective hn0).comp
+    ((hf.isImmersion.isImmersionAt x).mfderiv_injective hn0)
 
 end Manifold.IsSmoothEmbedding
 
@@ -292,7 +374,7 @@ theorem coe_sumInr {M₂ : Type*} [TopologicalSpace M₂] [ChartedSpace H M₂]
 
 end SmoothEmbedding
 
-open Manifold in
+open _root_.Manifold in
 /-- **Slices of a product.** If the preferred chart of `M'` at `c` sends `c` to `0`, then the slice
 `x ↦ (x, c)` of the product `M × M'` is a smooth embedding: in product charts it is `u ↦ (u, 0)`. -/
 theorem isSmoothEmbedding_prodMkLeft_of_extChartAt_eq_zero [IsManifold I n M] [IsManifold I' n M']

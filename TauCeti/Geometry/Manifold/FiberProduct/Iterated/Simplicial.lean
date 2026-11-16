@@ -19,7 +19,10 @@ manifolds and `k ≥ 1`, every `face i` is a surjective `C^n` submersion and eve
 `C^n` smooth embedding.
 
 ## References
+* J.-L. Brylinski, *Loop Spaces, Characteristic Classes and Geometric Quantization*,
+  Progress in Mathematics 107, Birkhäuser (1993), Chapter V.
 * M. K. Murray, *Bundle gerbes*, J. London Math. Soc. (2) 54 (1996), 403–416, §2.
+* K. Waldorf, *String Connections and Chern–Simons 2-Gerbes*, arXiv:0906.0117, §2.
 -/
 
 public section
@@ -78,41 +81,32 @@ def degen {k : ℕ} (i : Fin k) :
 theorem face_comp_face {k : ℕ} {i j : Fin (k + 1)} (h : i ≤ j) :
     face i ∘ face (π := π) j.succ = face j ∘ face i.castSucc := by
   rcases k with _ | a; · funext y; exact ext fun x ↦ x.elim0
-  simp only [← mapSimplex_δ, ← mapSimplex_comp]
-  exact congrArg (mapSimplex (π := π)) (SimplexCategory.δ_comp_δ h)
-
+  simpa only [← mapSimplex_δ, ← mapSimplex_comp] using
+    congrArg (mapSimplex (π := π)) (SimplexCategory.δ_comp_δ h)
 theorem face_comp_degen_of_le {k : ℕ} {i : Fin (k + 1)} {j : Fin k} (h : i ≤ j.castSucc) :
     face i.castSucc ∘ degen (π := π) j.succ = degen j ∘ face i := by
   rcases k with _ | a; · exact j.elim0
-  simp only [← mapSimplex_δ, ← mapSimplex_σ, ← mapSimplex_comp]
-  exact congrArg (mapSimplex (π := π)) (SimplexCategory.δ_comp_σ_of_le h)
-
+  simpa only [← mapSimplex_δ, ← mapSimplex_σ, ← mapSimplex_comp] using
+    congrArg (mapSimplex (π := π)) (SimplexCategory.δ_comp_σ_of_le h)
 theorem face_castSucc_comp_degen {k : ℕ} (i : Fin k) :
     face i.castSucc ∘ degen (π := π) i = id := by
   rcases k with _ | a; · exact i.elim0
-  simp only [← mapSimplex_δ, ← mapSimplex_σ, ← mapSimplex_comp]
-  exact funext fun y ↦ (congrFun (congrArg (mapSimplex (π := π))
-    (SimplexCategory.δ_comp_σ_self (i := i))) y).trans (mapSimplex_id y)
-
-theorem face_succ_comp_degen {k : ℕ} (i : Fin k) :
-    face i.succ ∘ degen (π := π) i = id := by
+  rw [← mapSimplex_δ, ← mapSimplex_σ, ← mapSimplex_comp, SimplexCategory.δ_comp_σ_self]
+  exact funext mapSimplex_id
+theorem face_succ_comp_degen {k : ℕ} (i : Fin k) : face i.succ ∘ degen (π := π) i = id := by
   rcases k with _ | a; · exact i.elim0
-  simp only [← mapSimplex_δ, ← mapSimplex_σ, ← mapSimplex_comp]
-  exact funext fun y ↦ (congrFun (congrArg (mapSimplex (π := π))
-    (SimplexCategory.δ_comp_σ_succ (i := i))) y).trans (mapSimplex_id y)
-
+  rw [← mapSimplex_δ, ← mapSimplex_σ, ← mapSimplex_comp, SimplexCategory.δ_comp_σ_succ]
+  exact funext mapSimplex_id
 theorem face_comp_degen_of_gt {k : ℕ} {i : Fin (k + 1)} {j : Fin k} (h : j.castSucc < i) :
     face i.succ ∘ degen (π := π) j.castSucc = degen j ∘ face i := by
   rcases k with _ | a; · exact j.elim0
-  simp only [← mapSimplex_δ, ← mapSimplex_σ, ← mapSimplex_comp]
-  exact congrArg (mapSimplex (π := π)) (SimplexCategory.δ_comp_σ_of_gt h)
-
+  simpa only [← mapSimplex_δ, ← mapSimplex_σ, ← mapSimplex_comp] using
+    congrArg (mapSimplex (π := π)) (SimplexCategory.δ_comp_σ_of_gt h)
 theorem degen_comp_degen {k : ℕ} {i j : Fin k} (h : i ≤ j) :
     degen i.castSucc ∘ degen (π := π) j = degen j.succ ∘ degen i := by
   rcases k with _ | a; · exact i.elim0
-  simp only [← mapSimplex_σ, ← mapSimplex_comp]
-  exact congrArg (mapSimplex (π := π)) (SimplexCategory.σ_comp_σ h)
-
+  simpa only [← mapSimplex_σ, ← mapSimplex_comp] using
+    congrArg (mapSimplex (π := π)) (SimplexCategory.σ_comp_σ h)
 theorem surjective_face {k : ℕ} [NeZero k] (i : Fin (k + 1)) :
     Surjective (face i : IteratedFiberProduct π (k + 1) → IteratedFiberProduct π k) := by
   rcases k with _ | a; · exact False.elim (NeZero.ne 0 rfl)
@@ -132,6 +126,7 @@ variable {EY HY Y EM HM M : Type*}
   {n : ℕ∞ω} [IsManifold IY n Y] [IsManifold IM n M] [IY.Boundaryless] [IM.Boundaryless]
   [FiniteDimensional ℝ EY] [FiniteDimensional ℝ EM] {π : Y → M}
 
+/-- Every simplicial Čech nerve map `mapSimplex θ` is `C^m` for `m ≤ n`. -/
 theorem contMDiff_mapSimplex {a b : ℕ} (hn : 1 ≤ n) (hπ : Manifold.IsSubmersion IY IM n π)
     {m : ℕ∞ω} (hmn : m ≤ n) (θ : ⦋a⦌ ⟶ ⦋b⦌) :
     letI := iteratedFiberProductChartedSpace (a + 1) hn hπ
@@ -139,7 +134,7 @@ theorem contMDiff_mapSimplex {a b : ℕ} (hn : 1 ≤ n) (hπ : Manifold.IsSubmer
     ContMDiff 𝓘(ℝ, Fin (iteratedFiberProductDim EY EM (b + 1)) → ℝ)
       𝓘(ℝ, Fin (iteratedFiberProductDim EY EM (a + 1)) → ℝ) m (mapSimplex (π := π) θ) :=
   contMDiff_precomp hn hπ hmn θ.toOrderHom
-
+/-- Every simplicial face map `face i` (`k ≥ 1`) is `C^m` for `m ≤ n`. -/
 theorem contMDiff_face {k : ℕ} [NeZero k] (hn : 1 ≤ n) (hπ : Manifold.IsSubmersion IY IM n π)
     {m : ℕ∞ω} (hmn : m ≤ n) (i : Fin (k + 1)) :
     letI := iteratedFiberProductChartedSpace k hn hπ
@@ -147,7 +142,7 @@ theorem contMDiff_face {k : ℕ} [NeZero k] (hn : 1 ≤ n) (hπ : Manifold.IsSub
     ContMDiff 𝓘(ℝ, Fin (iteratedFiberProductDim EY EM (k + 1)) → ℝ)
       𝓘(ℝ, Fin (iteratedFiberProductDim EY EM k) → ℝ) m (face (π := π) i) :=
   contMDiff_precomp hn hπ hmn i.succAbove
-
+/-- Every simplicial degeneracy map `degen i` (`k ≥ 1`) is `C^m` for `m ≤ n`. -/
 theorem contMDiff_degen {k : ℕ} [NeZero k] (hn : 1 ≤ n) (hπ : Manifold.IsSubmersion IY IM n π)
     {m : ℕ∞ω} (hmn : m ≤ n) (i : Fin k) :
     letI := iteratedFiberProductChartedSpace k hn hπ
@@ -155,29 +150,33 @@ theorem contMDiff_degen {k : ℕ} [NeZero k] (hn : 1 ≤ n) (hπ : Manifold.IsSu
     ContMDiff 𝓘(ℝ, Fin (iteratedFiberProductDim EY EM k) → ℝ)
       𝓘(ℝ, Fin (iteratedFiberProductDim EY EM (k + 1)) → ℝ) m (degen (π := π) i) :=
   contMDiff_precomp hn hπ hmn i.predAbove
-
+/-- The constant-tuple map `y ↦ constDiagonal y k` (`k ≥ 1`) is `C^m` for `m ≤ n`. -/
 theorem contMDiff_constDiagonal (k : ℕ) [NeZero k] (hn : 1 ≤ n)
     (hπ : Manifold.IsSubmersion IY IM n π) {m : ℕ∞ω} (hmn : m ≤ n) :
     letI := iteratedFiberProductChartedSpace k hn hπ
     ContMDiff IY 𝓘(ℝ, Fin (iteratedFiberProductDim EY EM k) → ℝ) m
       (fun y : Y ↦ constDiagonal (π := π) y k) := by
   let := iteratedFiberProductChartedSpace k hn hπ
-  exact (contMDiff_iteratedFiberProduct_iff hn hπ hmn).2 fun _ ↦ by
-    simp only [proj_constDiagonal]; rw [← Function.id_def]; exact contMDiff_id
+  exact (contMDiff_iteratedFiberProduct_iff hn hπ hmn).2 fun _ ↦
+    by simpa [Function.id_def] using contMDiff_id (I := IY) (M := Y)
 
+/-- Every simplicial degeneracy map `degen i` (`k ≥ 1`) is a `C^n` smooth embedding for the chosen
+atlases `iteratedFiberProductChartedSpace`, since `face i.castSucc` is a `C^n` left inverse. -/
 theorem isSmoothEmbedding_degen {k : ℕ} [NeZero k] (hn : 1 ≤ n)
     (hπ : Manifold.IsSubmersion IY IM n π) (i : Fin k) :
     letI := iteratedFiberProductChartedSpace k hn hπ
     letI := iteratedFiberProductChartedSpace (k + 1) hn hπ
     Manifold.IsSmoothEmbedding 𝓘(ℝ, Fin (iteratedFiberProductDim EY EM k) → ℝ)
       𝓘(ℝ, Fin (iteratedFiberProductDim EY EM (k + 1)) → ℝ) n (degen (π := π) i) := by
-  let := iteratedFiberProductChartedSpace k hn hπ
+  let := iteratedFiberProductChartedSpace k hn hπ; have := isManifold_iteratedFiberProduct k hn hπ
   let := iteratedFiberProductChartedSpace (k + 1) hn hπ
-  have := isManifold_iteratedFiberProduct k hn hπ
   have := isManifold_iteratedFiberProduct (k + 1) hn hπ
   exact (contMDiff_degen hn hπ le_rfl i).isSmoothEmbedding_of_leftInverse hn
     (contMDiff_face hn hπ hn i.castSucc) (congrFun (face_castSucc_comp_degen i))
 
+/-- For `k ≥ 1`, the constant-tuple map `y ↦ constDiagonal y k` is a `C^n` smooth embedding into
+`IteratedFiberProduct π k` equipped with the chosen atlas `iteratedFiberProductChartedSpace`, with
+`proj 0` as a `C^n` left inverse. -/
 theorem isSmoothEmbedding_constDiagonal (k : ℕ) [NeZero k] (hn : 1 ≤ n)
     (hπ : Manifold.IsSubmersion IY IM n π) :
     letI := iteratedFiberProductChartedSpace k hn hπ
@@ -194,40 +193,30 @@ theorem isSubmersion_face {k : ℕ} [NeZero k] (hn : 1 ≤ n)
     letI := iteratedFiberProductChartedSpace (k + 1) hn hπ
     Manifold.IsSubmersion 𝓘(ℝ, Fin (iteratedFiberProductDim EY EM (k + 1)) → ℝ)
       𝓘(ℝ, Fin (iteratedFiberProductDim EY EM k) → ℝ) n (face (π := π) i) := by
-  let := iteratedFiberProductChartedSpace k hn hπ
+  let := iteratedFiberProductChartedSpace k hn hπ; have := isManifold_iteratedFiberProduct k hn hπ
   let := iteratedFiberProductChartedSpace (k + 1) hn hπ
-  have := isManifold_iteratedFiberProduct k hn hπ
   have := isManifold_iteratedFiberProduct (k + 1) hn hπ
   have hn0 : n ≠ 0 := ne_of_gt (zero_lt_one.trans_le hn)
   have hsubk := isSubmersion_baseProj_iteratedFiberProduct k hn hπ
-  let htrans := fun (p : IteratedFiberProduct π k × Y) (_ : baseProj p.1 = π p.2) ↦
+  let htr := fun (p : IteratedFiberProduct π k × Y) (_ : baseProj p.1 = π p.2) ↦
     hsubk.transverse_left (IY := IY) hn0 π p
-  let := transverseFiberProductChartedSpace hn hsubk.contMDiff hπ.contMDiff htrans
-  have := isManifold_transverseFiberProduct hn hsubk.contMDiff hπ.contMDiff htrans
-  have hfst := isSubmersion_fst_transverseFiberProduct hn hsubk.contMDiff hπ.contMDiff htrans hπ
+  let := transverseFiberProductChartedSpace hn hsubk.contMDiff hπ.contMDiff htr
+  have := isManifold_transverseFiberProduct hn hsubk.contMDiff hπ.contMDiff htr
   have hlast_eq : (face (Fin.last k) : IteratedFiberProduct π (k + 1) → IteratedFiberProduct π k) =
       (fun p ↦ p.1.1) ∘ ⇑(iteratedFiberProductSuccRightDiffeomorph k hn hπ) := by
     ext y j; simp [Fin.succAbove_last]
-  have hlast : Manifold.IsSubmersion 𝓘(ℝ, Fin (iteratedFiberProductDim EY EM (k + 1)) → ℝ)
-      𝓘(ℝ, Fin (iteratedFiberProductDim EY EM k) → ℝ) n (face (π := π) (Fin.last k)) :=
-    hlast_eq ▸ hfst.comp ((iteratedFiberProductSuccRightDiffeomorph k hn hπ).isSubmersion hn0)
+  have hlast := hlast_eq ▸ (isSubmersion_fst_transverseFiberProduct hn hsubk.contMDiff hπ.contMDiff
+    htr hπ).comp ((iteratedFiberProductSuccRightDiffeomorph k hn hπ).isSubmersion hn0)
   let τ : Fin (k + 1) → Fin (k + 1) := Fin.lastCases i i.succAbove
-  have hτ_inj : Injective τ := fun a b ↦ by
-    refine Fin.lastCases ?_ (fun a' ↦ ?_) a <;> refine Fin.lastCases ?_ (fun b' ↦ ?_) b <;>
-      intro hab
-    · rfl
-    · simp only [τ, Fin.lastCases_last, Fin.lastCases_castSucc] at hab
-      exact False.elim (Fin.succAbove_ne i b' hab.symm)
-    · simp only [τ, Fin.lastCases_last, Fin.lastCases_castSucc] at hab
-      exact False.elim (Fin.succAbove_ne i a' hab)
-    · simp only [τ, Fin.lastCases_castSucc] at hab
-      exact congrArg Fin.castSucc (Fin.succAbove_right_injective hab)
+  have hτ_inj : Injective τ := Fin.lastCases
+    (Fin.lastCases (fun _ ↦ rfl) fun _ h ↦ by simp [τ] at h)
+    (fun _ ↦ Fin.lastCases (fun h ↦ by simp [τ] at h) fun _ h ↦ by simpa [τ] using h)
   let σ : Equiv.Perm (Fin (k + 1)) := Equiv.ofBijective τ (Finite.injective_iff_bijective.1 hτ_inj)
   have hface_eq : (face i : IteratedFiberProduct π (k + 1) → IteratedFiberProduct π k) =
       face (Fin.last k) ∘ ⇑(iteratedFiberProductPermDiffeomorph (k + 1) hn hπ σ) := by
     ext y j; simp [σ, τ, Fin.succAbove_last]
-  rw [hface_eq]
-  exact hlast.comp ((iteratedFiberProductPermDiffeomorph (k + 1) hn hπ σ).isSubmersion hn0)
+  exact hface_eq ▸ hlast.comp
+    ((iteratedFiberProductPermDiffeomorph (k + 1) hn hπ σ).isSubmersion hn0)
 
 end Smooth
 
