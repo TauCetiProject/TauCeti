@@ -49,7 +49,7 @@ fibre classes are compatible with transport along paths. Transport along a path 
 path lifting in the orientation double cover, and the fibre classes are constant along paths in
 the cover: over the base set of a trivialization they are read in the product `W × F`, where the
 fibre inclusions over points joined by a path agree
-(`TauCeti.singularHomologyMap_prodThomPairFiberMap_eq_of_joined`).
+(`Bundle.Trivialization.singularHomologyMap_complZeroPairIso_inv_comp_fiberThomPairOverMap_eq`).
 
 The same construction over every subset `W` of the base gives maps
 `H₀(W; o(E)) ⟶ Hᵣ(E|_W, E₀|_W; ℤ)` commuting with the restrictions. Over a subset of the base set
@@ -188,17 +188,15 @@ private theorem fiberClassOver_eq_of_mapOrientation_eq (e : Trivialization F (π
     (ho : e.mapOrientation (Fin (n + 1)) (h.source_mem.2) o =
       e.mapOrientation (Fin (n + 1)) (h.target_mem.2) o') :
     fiberClassOver F E hF W h.source_mem.1 o = fiberClassOver F E hF W h.target_mem.1 o' := by
-  have hW : W ∩ e.baseSet ⊆ e.baseSet := inter_subset_right
-  rw [← singularHomologyMap_thomPairOverMap_fiberClassOver hF
-      (inter_subset_left : W ∩ e.baseSet ⊆ W) h.source_mem,
-    ← singularHomologyMap_thomPairOverMap_fiberClassOver hF
-      (inter_subset_left : W ∩ e.baseSet ⊆ W) h.target_mem]
-  congr 1
-  apply (ModuleCat.mono_iff_injective (TopPair.singularHomologyMap (e.thomPairOverIso ℝ hW).hom
-    (ModuleCat.of ℤ (ULift.{w} ℤ)) (n + 1))).1 inferInstance
-  rw [singularHomologyMap_thomPairOverIso_fiberClassOver hF e hW,
-    singularHomologyMap_thomPairOverIso_fiberClassOver hF e hW, ho,
-    singularHomologyMap_prodThomPairFiberMap_eq_of_joined _ F _ hF h.joined_subtype]
+  have key := ConcreteCategory.congr_hom
+    (e.singularHomologyMap_complZeroPairIso_inv_comp_fiberThomPairOverMap_eq
+      (ModuleCat.of ℤ (ULift.{w} ℤ)) h (n + 1) hF)
+    ((e.mapOrientation (Fin (n + 1)) h.target_mem.2 o').localOrientation hF).val
+  simp only [TopPair.singularHomologyMap_comp, ConcreteCategory.comp_apply] at key
+  rw [fiberClassOver, fiberClassOver, fiberLocalOrientation_eq hF e h.source_mem.2,
+    fiberLocalOrientation_eq hF e h.target_mem.2, ho, LocalOrientation.coe_map,
+    LocalOrientation.coe_map, Iso.symm_hom, Iso.symm_hom]
+  exact key
 
 /-- **Fibre classes are constant along paths in the orientation double cover**: along a path of
 fibre orientations whose base points stay in `W`, the fibre classes over `W` do not change. -/

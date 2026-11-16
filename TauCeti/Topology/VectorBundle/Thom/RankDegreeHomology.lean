@@ -178,28 +178,30 @@ private theorem singularHomologyMap_thomPairOverIso_fiberClassOver (e : Triviali
     singularHomologyMap_complZeroPairIso_fiberGenerator e (hW x.2), Subtype.coe_eta,
     singularHomologyMap_prodThomPairFiberMap_complZeroPairPointHom_one]
 
-/-- The fibre classes over two points of `W` joined by a path in `W` over the base set of a linear
-trivialization agree. -/
+/-- The fibre generator is the generator of `Hᵣ(F, F ∖ {0}; K)` read back through any linear
+trivialization at `b`. -/
+private theorem fiberGenerator_eq (e : Trivialization F (π F E)) [e.IsLinear ℝ] {b : B}
+    (hb : b ∈ e.baseSet) :
+    fiberGenerator K F E b =
+      TopPair.singularHomologyMap (e.continuousLinearEquivAt ℝ b hb).complZeroPairIso.inv
+        (ModuleCat.of K K) (finrank ℝ F)
+        (complZeroPairPointHom (ModuleCat.of K K) F (finrank ℝ F) rfl (1 : K)) := by
+  rw [← singularHomologyMap_complZeroPairIso_fiberGenerator e hb, ← ConcreteCategory.comp_apply,
+    ← TopPair.singularHomologyMap_comp, Iso.hom_inv_id, TopPair.singularHomologyMap_id,
+    ConcreteCategory.id_apply]
+
+/-- The fibre classes over two points of `W` joined by a path in `W` within the base set of a
+linear trivialization agree. -/
 private theorem fiberClassOver_eq_of_joinedIn (e : Trivialization F (π F E)) [e.IsLinear ℝ]
-    {W : Set B} {x y : W} (h : JoinedIn {z : W | (z : B) ∈ e.baseSet} x y) :
+    {W : Set B} {x y : W} (h : JoinedIn (W ∩ e.baseSet) (x : B) y) :
     fiberClassOver K F E W x = fiberClassOver K F E W y := by
-  have hW : W ∩ e.baseSet ⊆ e.baseSet := inter_subset_right
-  let x' : ↥(W ∩ e.baseSet) := ⟨x, x.2, h.source_mem⟩
-  let y' : ↥(W ∩ e.baseSet) := ⟨y, y.2, h.target_mem⟩
-  -- The two points are joined in `W ∩ e.baseSet`, so their classes in `H₀` agree.
-  have hj : Joined x' y' :=
-    h.joined_subtype.map (f := fun z : {z : W | (z : B) ∈ e.baseSet} ↦
-      (⟨z.1.1, z.1.2, z.2⟩ : ↥(W ∩ e.baseSet))) (by fun_prop)
-  have hxy : fiberClassOver K F E (W ∩ e.baseSet) x' = fiberClassOver K F E (W ∩ e.baseSet) y' := by
-    apply (ModuleCat.mono_iff_injective (TopPair.singularHomologyMap (e.thomPairOverIso ℝ hW).hom
-      (ModuleCat.of K K) (finrank ℝ F))).1 inferInstance
-    rw [singularHomologyMap_thomPairOverIso_fiberClassOver e hW,
-      singularHomologyMap_thomPairOverIso_fiberClassOver e hW,
-      singularHomology₀Section_eq_of_joined _ hj]
-  have := congrArg (TopPair.singularHomologyMap (thomPairOverMap F E inter_subset_left)
-    (ModuleCat.of K K) (finrank ℝ F)) hxy
-  rwa [singularHomologyMap_thomPairOverMap_fiberClassOver,
-    singularHomologyMap_thomPairOverMap_fiberClassOver] at this
+  have key := ConcreteCategory.congr_hom
+    (e.singularHomologyMap_complZeroPairIso_inv_comp_fiberThomPairOverMap_eq (ModuleCat.of K K) h
+      _ rfl) (complZeroPairPointHom (ModuleCat.of K K) F (finrank ℝ F) rfl (1 : K))
+  simp only [TopPair.singularHomologyMap_comp, ConcreteCategory.comp_apply] at key
+  rw [fiberClassOver, fiberClassOver, fiberGenerator_eq e h.source_mem.2,
+    fiberGenerator_eq e h.target_mem.2]
+  exact key
 
 /-- **The fibre classes are constant along paths.** -/
 private theorem fiberClassOver_eq_of_path {W : Set B} {x y : W} (γ : Path x y) :
@@ -213,9 +215,10 @@ private theorem fiberClassOver_eq_of_path {W : Set B} {x y : W} (γ : Path x y) 
       (e.open_baseSet.preimage (continuous_subtype_val.comp γ.continuous)).mem_nhds
         (mem_baseSet_trivializationAt F E _)
     filter_upwards [pathComponentIn_mem_nhds hO] with s hs
-    refine (fiberClassOver_eq_of_joinedIn e ((hs.map γ.continuous.continuousOn).mono ?_)).symm
+    refine (fiberClassOver_eq_of_joinedIn e
+      ((hs.map (continuous_subtype_val.comp γ.continuous).continuousOn).mono ?_)).symm
     rintro _ ⟨u, hu, rfl⟩
-    exact hu
+    exact ⟨(γ u).2, hu⟩
   simpa using hlc.apply_eq_of_preconnectedSpace 0 1
 
 variable (K F E) in
@@ -317,16 +320,10 @@ private theorem thomPairSingularHomologyFinrankInv_restrict (s : Finset B) :
     ← TopPair.singularHomologyMap_comp, fiberThomPairOverMap_comp_thomPairOverMap_assoc,
     fiberThomPairOverMap_comp_thomPairOverUnivIso_hom]
 
-variable (B) in
-/-- The subsets of the base, as subspaces. -/
-private def subsetTopCatFunctor : Set B ⥤ TopCat.{w} where
-  obj W := TopCat.of W
-  map f := TopCat.ofHom (ContinuousMap.inclusion f.le)
-
 variable (F E) in
 /-- The inclusions of the finite unions of the chosen trivializing open sets into the base. -/
 private def baseFiniteTrivializingUnionCocone :
-    Cocone ((monotone_biUnion_baseSet_trivializationAt F E).functor ⋙ subsetTopCatFunctor B) where
+    Cocone ((monotone_biUnion_baseSet_trivializationAt F E).functor ⋙ Set.functorToTopCat) where
   pt := TopCat.of B
   ι := { app _ := TopCat.ofHom ⟨Subtype.val, continuous_subtype_val⟩ }
 
@@ -348,7 +345,7 @@ filtered colimits of their homologies over the finite unions of the chosen trivi
 over these the map is an isomorphism by the Mayer–Vietoris argument. -/
 private instance : IsIso (thomPairSingularHomologyFinrankInv K F E) :=
   isIso_of_isColimit_biUnion_baseSet
-    (A := subsetTopCatFunctor B ⋙ (singularHomologyFunctor (ModuleCat.{w} K) 0).obj
+    (A := Set.functorToTopCat (X := B) ⋙ (singularHomologyFunctor (ModuleCat.{w} K) 0).obj
       (ModuleCat.of K K))
     (ψ := thomPairOverSingularHomologyFinrankInv K F E) le_rfl
     (fun h ↦ thomPairOverSingularHomologyFinrankInv_naturality h)

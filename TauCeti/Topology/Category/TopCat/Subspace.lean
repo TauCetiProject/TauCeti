@@ -7,12 +7,14 @@ module
 
 public import Mathlib.Topology.Category.TopCat.EpiMono
 public import Mathlib.CategoryTheory.CommSq
+public import Mathlib.CategoryTheory.Category.Preorder
 
 /-!
 # Subspace inclusions in `TopCat`
 
 The canonical inclusions of subspaces are monomorphisms, the inclusions of nested subspaces
-compose to an inclusion, and the restrictions of a map to subspaces commute with the
+compose to an inclusion, so the subsets of a space form a diagram of subspaces
+(`Set.functorToTopCat`), and the restrictions of a map to subspaces commute with the
 inclusions. These supply the monomorphism hypotheses for the subspace inclusions in the
 Mayer–Vietoris pushout square, the functoriality of homology along nested subspaces, and the
 naturality of the Mayer–Vietoris sequences.
@@ -75,3 +77,17 @@ lemma commSq_ofHom_inter :
   ⟨rfl⟩
 
 end TopCat
+
+namespace Set
+
+variable {X : Type u} [TopologicalSpace X]
+
+/-- The subsets of a space as subspaces: the functor on the subsets of `X`, ordered by inclusion,
+sending `S` to the subspace `S` and an inclusion `S ⊆ T` to the inclusion of subspaces. This is
+`Set.functorToTypes` with the subspace topologies. -/
+@[expose, simps obj map]
+def functorToTopCat : Set X ⥤ TopCat.{u} where
+  obj S := TopCat.of S
+  map f := TopCat.ofHom (ContinuousMap.inclusion f.le)
+
+end Set
