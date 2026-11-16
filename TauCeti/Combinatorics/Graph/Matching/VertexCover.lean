@@ -60,7 +60,7 @@ theorem IsMatching.encard_le_of_isVertexCover_toSimpleGraph {M : Set E(G)} (hM :
   have hex (e : M) : ∃ v : C, G.Inc e.1 v.1 := by
     obtain ⟨x, y, he⟩ := G.exists_isLink_of_mem_edgeSet e.1.2
     have hxy : (⟨x, he.left_mem⟩ : V(G)) ≠ ⟨y, he.right_mem⟩ := fun h ↦
-      hM.not_isLoopAt e.2 x (Subtype.mk.inj h ▸ he)
+      hM.not_isLoopAt e.2 x (isLink_self_iff.mp (Subtype.mk.inj h ▸ he))
     have hadj : G.toSimpleGraph.Adj ⟨x, he.left_mem⟩ ⟨y, he.right_mem⟩ := by
       rw [G.toSimpleGraph_adj]
       exact ⟨hxy, e.1, he⟩
