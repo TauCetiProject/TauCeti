@@ -8,6 +8,7 @@ module
 public import Mathlib.FieldTheory.KrullTopology
 public import Mathlib.RepresentationTheory.Invariants
 public import Mathlib.RingTheory.TensorProduct.Basic
+import Mathlib.RepresentationTheory.Stabilizer
 import Mathlib.RepresentationTheory.Subrepresentation
 import Mathlib.Topology.Algebra.OpenSubgroup
 import TauCeti.LinearAlgebra.TensorProduct.FiniteExtension
@@ -32,6 +33,11 @@ Injectivity and recognition of invariants require no topological hypothesis on `
 tensor in `L ⊗[k] W` involves only finitely many scalars in `L` and therefore lives over a finite
 Galois subextension. Spanning (Speiser's theorem) holds if and only if all stabilizers are open.
 No characteristic restriction and no finite-dimensionality of `V` over `L` is assumed.
+
+## Main definitions
+
+* `TauCeti.GaloisDescent.openStabilizerSubmodule`: the `L`-submodule of vectors in `V` with open
+  stabilizer in `Gal(L/k)`.
 
 ## Main results
 
@@ -65,37 +71,37 @@ namespace TauCeti.GaloisDescent
 variable {k L V : Type*} [Field k] [Field L] [Algebra k L]
 variable [AddCommGroup V] [Module k V] [Module L V] [IsScalarTower k L V]
 
-section Map
+section NormalSubextension
 
-variable {W : Type*} [AddCommGroup W] [Module k W]
+variable {E : IntermediateField k L} [Normal k E]
 
-/-- For `f : W →ₗ[k] V` whose `L`-multiples transform semilinearly, `Submodule.span E (Set.range f)`
-is preserved by `Gal(L/k)` and fixed pointwise by `E.fixingSubgroup`. -/
-private theorem span_range_mem_and_fix {ρ : Representation k Gal(L/k) V}
-    {f : W →ₗ[k] V} (hsemi : ∀ (g : Gal(L/k)) (a : L) (w : W), ρ g (a • f w) = g a • f w)
-    (E : IntermediateField k L) [Normal k E] :
-    (∀ (g : Gal(L/k)) ⦃u : V⦄,
-      u ∈ Submodule.span E (Set.range f) → ρ g u ∈ Submodule.span E (Set.range f)) ∧
-      (∀ {g : Gal(L/k)}, g ∈ E.fixingSubgroup →
-        ∀ {u : V}, u ∈ Submodule.span E (Set.range f) → ρ g u = u) := by
-  have : IsScalarTower k E V := E.toSubalgebra.isScalarTower_mid
-  have hmain {u : V} (hu : u ∈ Submodule.span E (Set.range f)) (g : Gal(L/k)) :
-      ρ g u ∈ Submodule.span E (Set.range f) ∧
+omit [IsScalarTower k L V] in
+/-- If a set `S` is mapped into `Submodule.span E S` by `Gal(L/k)`, fixed pointwise by
+`E.fixingSubgroup`, and `E`-multiples of its elements transform semilinearly, then
+`Submodule.span E S` has the same three properties. -/
+private theorem span_mem_and_fix {ρ : Representation k Gal(L/k) V} {S : Set V}
+    (hS_mem : ∀ (g : Gal(L/k)), ∀ x ∈ S, ρ g x ∈ Submodule.span E S)
+    (hS_fix : ∀ ⦃g : Gal(L/k)⦄, g ∈ E.fixingSubgroup → ∀ x ∈ S, ρ g x = x)
+    (hS_smul : ∀ (g : Gal(L/k)) (a : E), ∀ x ∈ S,
+      ρ g (a • x) = AlgEquiv.restrictNormalHom E g a • ρ g x) :
+    (∀ (g : Gal(L/k)) ⦃u : V⦄, u ∈ Submodule.span E S → ρ g u ∈ Submodule.span E S) ∧
+      (∀ ⦃g : Gal(L/k)⦄, g ∈ E.fixingSubgroup →
+        ∀ ⦃u : V⦄, u ∈ Submodule.span E S → ρ g u = u) ∧
+      (∀ (g : Gal(L/k)) (a : E) ⦃u : V⦄, u ∈ Submodule.span E S →
+        ρ g (a • u) = AlgEquiv.restrictNormalHom E g a • ρ g u) := by
+  have hmain {u : V} (hu : u ∈ Submodule.span E S) (g : Gal(L/k)) :
+      ρ g u ∈ Submodule.span E S ∧
         (g ∈ E.fixingSubgroup → ρ g u = u) ∧
         ∀ b : E, ρ g (b • u) = AlgEquiv.restrictNormalHom E g b • ρ g u := by
     induction hu using Submodule.span_induction with
-    | mem _ hx =>
-      obtain ⟨w, rfl⟩ := hx
-      have hfw : ρ g (f w) = f w := by simpa using hsemi g 1 w
-      refine ⟨hfw.symm ▸ Submodule.subset_span ⟨w, rfl⟩, fun _ ↦ hfw, fun b ↦ ?_⟩
-      rw [hfw, Subalgebra.smul_def, hsemi, ← AlgEquiv.restrictNormalHom_apply E g b,
-        Subalgebra.smul_def]
+    | mem x hx =>
+      exact ⟨hS_mem g x hx, fun hg ↦ hS_fix hg x hx, fun b ↦ hS_smul g b x hx⟩
     | zero => simp
     | add _ _ _ _ hx hy =>
       refine ⟨by rw [map_add]; exact add_mem hx.1 hy.1,
         fun hg ↦ by rw [map_add, hx.2.1 hg, hy.2.1 hg], fun b ↦ ?_⟩
       rw [smul_add, map_add, hx.2.2 b, hy.2.2 b, map_add, smul_add]
-    | smul a x _ hx =>
+    | smul a _ _ hx =>
       rw [hx.2.2 a]
       refine ⟨Submodule.smul_mem _ _ hx.1, fun hg ↦ ?_, fun b ↦ ?_⟩
       · have ha : AlgEquiv.restrictNormalHom E g a = a := by
@@ -103,7 +109,79 @@ private theorem span_range_mem_and_fix {ρ : Representation k Gal(L/k) V}
           simp [hg]
         rw [ha, hx.2.1 hg]
       · rw [← mul_smul, hx.2.2 (b * a), map_mul, mul_smul]
-  exact ⟨fun g _ hu ↦ (hmain hu g).1, fun hg _ hu ↦ (hmain hu _).2.1 hg⟩
+  exact ⟨fun g _ hu ↦ (hmain hu g).1, fun _ hg _ hu ↦ (hmain hu _).2.1 hg,
+    fun g a _ hu ↦ (hmain hu g).2.2 a⟩
+
+variable [IsScalarTower k E V]
+
+omit [IsScalarTower k L V] in
+/-- The `Gal(E/k)`-representation on `U.restrictScalars k` induced by a `Gal(L/k)`-stable
+`E`-submodule `U` of `V` fixed pointwise by `E.fixingSubgroup`. -/
+private noncomputable def descentRep [IsGalois k L] {ρ : Representation k Gal(L/k) V}
+    {U : Submodule E V}
+    (hU_mem : ∀ (g : Gal(L/k)) ⦃u : V⦄, u ∈ U → ρ g u ∈ U)
+    (hU_fix : ∀ ⦃g : Gal(L/k)⦄, g ∈ E.fixingSubgroup → ∀ ⦃u : V⦄, u ∈ U → ρ g u = u) :
+    Representation k Gal(E/k) (U.restrictScalars k) :=
+  let U' : Subrepresentation ρ :=
+    ⟨U.restrictScalars k, fun g _ hu ↦
+      (U.restrictScalars_mem k _).mpr (hU_mem g ((U.restrictScalars_mem k _).mp hu))⟩
+  haveI : Representation.IsTrivial
+      (U'.toRepresentation.comp (AlgEquiv.restrictNormalHom E).ker.subtype) :=
+    ⟨fun ⟨_, hg⟩ ↦ LinearMap.ext fun u ↦ Subtype.ext <|
+      hU_fix (E.restrictNormalHom_ker ▸ hg) ((U.restrictScalars_mem k _).mp u.2)⟩
+  U'.toRepresentation.ofSurjective (AlgEquiv.restrictNormalHom E)
+    (AlgEquiv.restrictNormalHom_surjective L)
+
+omit [IsScalarTower k L V] in
+private theorem descentRep_restrictNormalHom_coe [IsGalois k L]
+    {ρ : Representation k Gal(L/k) V} {U : Submodule E V}
+    (hU_mem : ∀ (g : Gal(L/k)) ⦃u : V⦄, u ∈ U → ρ g u ∈ U)
+    (hU_fix : ∀ ⦃g : Gal(L/k)⦄, g ∈ E.fixingSubgroup → ∀ ⦃u : V⦄, u ∈ U → ρ g u = u)
+    (g : Gal(L/k)) (u : U.restrictScalars k) :
+    (descentRep hU_mem hU_fix (AlgEquiv.restrictNormalHom E g) u : V) = ρ g u := by
+  rw [descentRep, Representation.ofSurjective_apply]
+  rfl
+
+omit [IsScalarTower k L V] in
+private theorem descentRep_smul [IsGalois k L]
+    {ρ : Representation k Gal(L/k) V} {U : Submodule E V}
+    (hU_mem : ∀ (g : Gal(L/k)) ⦃u : V⦄, u ∈ U → ρ g u ∈ U)
+    (hU_fix : ∀ ⦃g : Gal(L/k)⦄, g ∈ E.fixingSubgroup → ∀ ⦃u : V⦄, u ∈ U → ρ g u = u)
+    (hU_smul : ∀ (g : Gal(L/k)) (a : E) ⦃u : V⦄, u ∈ U →
+      ρ g (a • u) = AlgEquiv.restrictNormalHom E g a • ρ g u)
+    (σ : Gal(E/k)) (a : E) (u : U.restrictScalars k) :
+    descentRep hU_mem hU_fix σ (a • u) = (σ • a) • descentRep hU_mem hU_fix σ u := by
+  obtain ⟨g, rfl⟩ := AlgEquiv.restrictNormalHom_surjective L σ
+  apply Subtype.ext
+  exact (descentRep_restrictNormalHom_coe hU_mem hU_fix g (a • u)).trans
+    ((hU_smul g a u.2).trans (congrArg (AlgEquiv.restrictNormalHom E g a • ·)
+      (descentRep_restrictNormalHom_coe hU_mem hU_fix g u).symm))
+
+end NormalSubextension
+
+section Map
+
+variable {W : Type*} [AddCommGroup W] [Module k W]
+
+omit [IsScalarTower k L V] in
+/-- For `f : W →ₗ[k] V` whose `L`-multiples transform semilinearly, `Submodule.span E (Set.range f)`
+is preserved by `Gal(L/k)`, fixed pointwise by `E.fixingSubgroup`, and `E`-semilinear. -/
+private theorem span_range_mem_and_fix {ρ : Representation k Gal(L/k) V}
+    {f : W →ₗ[k] V} (hsemi : ∀ (g : Gal(L/k)) (a : L) (w : W), ρ g (a • f w) = g a • f w)
+    (E : IntermediateField k L) [Normal k E] :
+    (∀ (g : Gal(L/k)) ⦃u : V⦄,
+      u ∈ Submodule.span E (Set.range f) → ρ g u ∈ Submodule.span E (Set.range f)) ∧
+      (∀ ⦃g : Gal(L/k)⦄, g ∈ E.fixingSubgroup →
+        ∀ ⦃u : V⦄, u ∈ Submodule.span E (Set.range f) → ρ g u = u) ∧
+      (∀ (g : Gal(L/k)) (a : E) ⦃u : V⦄, u ∈ Submodule.span E (Set.range f) →
+        ρ g (a • u) = AlgEquiv.restrictNormalHom E g a • ρ g u) := by
+  have hfw (g : Gal(L/k)) (w : W) : ρ g (f w) = f w := by simpa using hsemi g 1 w
+  refine span_mem_and_fix
+    (by rintro g _ ⟨w, rfl⟩; exact (hfw g w).symm ▸ Submodule.subset_span ⟨w, rfl⟩)
+    (by rintro g _ _ ⟨w, rfl⟩; exact hfw g w) ?_
+  rintro g a _ ⟨w, rfl⟩
+  rw [Subalgebra.smul_def, hsemi, ← AlgEquiv.restrictNormalHom_apply E g a, Subalgebra.smul_def,
+    hfw]
 
 /-- **Injectivity in semilinear Galois descent for arbitrary Galois extensions.** Let `L / k` be a
 Galois extension, possibly infinite, and `ρ` a `k`-linear representation of `Gal(L/k)` on an
@@ -122,22 +200,18 @@ theorem liftBaseChange_injective_of_invariant_of_isGalois [IsGalois k L]
   have : IsGalois k E := ⟨⟩
   have : IsScalarTower k E V := E.toSubalgebra.isScalarTower_mid
   let U : Submodule E V := Submodule.span E (Set.range f)
-  obtain ⟨hU_mem, hU_fix⟩ := span_range_mem_and_fix hsemi E
-  let U' : Subrepresentation ρ := ⟨U.restrictScalars k, hU_mem⟩
-  have : Representation.IsTrivial
-      (U'.toRepresentation.comp (AlgEquiv.restrictNormalHom E).ker.subtype) :=
-    ⟨fun ⟨g, hg⟩ ↦ LinearMap.ext fun u ↦ Subtype.ext <|
-      hU_fix (E.restrictNormalHom_ker ▸ hg) u.2⟩
-  let ρE : Representation k Gal(E/k) (U.restrictScalars k) :=
-    U'.toRepresentation.ofSurjective (AlgEquiv.restrictNormalHom E)
-      (AlgEquiv.restrictNormalHom_surjective L)
+  obtain ⟨hU_mem, hU_fix, hU_smul⟩ := span_range_mem_and_fix hsemi E
+  let ρE := descentRep hU_mem hU_fix
   let fE : W →ₗ[k] U.restrictScalars k :=
     f.codRestrict (U.restrictScalars k) fun w ↦ Submodule.subset_span ⟨w, rfl⟩
   have hfE : Function.Injective fE := fun _ _ h ↦ hf (congrArg Subtype.val h)
   have hsemiE (σ : Gal(E/k)) (a : E) (w : W) : ρE σ (a • fE w) = (σ • a) • fE w := by
+    rw [descentRep_smul hU_mem hU_fix hU_smul]
     obtain ⟨g, rfl⟩ := AlgEquiv.restrictNormalHom_surjective L σ
-    rw [Representation.ofSurjective_apply, Subrepresentation.toRepresentation_apply_coe]
-    exact (hsemi g a w).trans (by rw [← AlgEquiv.restrictNormalHom_apply E g a]; rfl)
+    refine congrArg ((AlgEquiv.restrictNormalHom E g • a) • ·) (Subtype.ext ?_)
+    have hfEw : (fE w : V) = f w := rfl
+    rw [descentRep_restrictNormalHom_coe, hfEw]
+    simpa using hsemi g 1 w
   have hinj := liftBaseChange_injective_of_invariant (ρ := ρE) hfE hsemiE
   have hcomp :
       (U.restrictScalars k).subtype ∘ₗ (fE.liftBaseChange E).restrictScalars k =
@@ -167,29 +241,14 @@ theorem range_eq_invariants_of_liftBaseChange_surjective_of_isGalois [IsGalois k
   have : IsGalois k E := ⟨⟩
   have : IsScalarTower k E V := E.toSubalgebra.isScalarTower_mid
   let U : Submodule E V := Submodule.span E (Set.range f)
-  obtain ⟨hU_mem, hU_fix⟩ :=
+  obtain ⟨hU_mem, hU_fix, hU_smul⟩ :=
     span_range_mem_and_fix (fun g a w ↦ by rw [hsemi, hinv]) E
-  let U' : Subrepresentation ρ := ⟨U.restrictScalars k, hU_mem⟩
-  have : Representation.IsTrivial
-      (U'.toRepresentation.comp (AlgEquiv.restrictNormalHom E).ker.subtype) :=
-    ⟨fun ⟨g, hg⟩ ↦ LinearMap.ext fun u ↦ Subtype.ext <|
-      hU_fix (E.restrictNormalHom_ker ▸ hg) u.2⟩
-  let ρE : Representation k Gal(E/k) (U.restrictScalars k) :=
-    U'.toRepresentation.ofSurjective (AlgEquiv.restrictNormalHom E)
-      (AlgEquiv.restrictNormalHom_surjective L)
+  let ρE := descentRep hU_mem hU_fix
   let fE : W →ₗ[k] U.restrictScalars k :=
     f.codRestrict (U.restrictScalars k) fun w ↦ Submodule.subset_span ⟨w, rfl⟩
-  have hsemiE (σ : Gal(E/k)) (a : E) (u : U.restrictScalars k) :
-      ρE σ (a • u) = (σ • a) • ρE σ u := by
-    obtain ⟨g, rfl⟩ := AlgEquiv.restrictNormalHom_surjective L σ
-    rw [Representation.ofSurjective_apply, Subrepresentation.toRepresentation_apply_coe]
-    exact (hsemi g a u).trans (by
-      rw [← AlgEquiv.restrictNormalHom_apply E g a]
-      exact congrArg ((AlgEquiv.restrictNormalHom E g a : L) • ·) rfl)
   have hinvE (σ : Gal(E/k)) (w : W) : ρE σ (fE w) = fE w := by
     obtain ⟨g, rfl⟩ := AlgEquiv.restrictNormalHom_surjective L σ
-    rw [Representation.ofSurjective_apply, Subrepresentation.toRepresentation_apply_coe]
-    exact hinv g w
+    exact Subtype.ext ((descentRep_restrictNormalHom_coe hU_mem hU_fix g (fE w)).trans (hinv g w))
   have hsurjE : Function.Surjective (fE.liftBaseChange E) := by
     rw [← LinearMap.range_eq_top, LinearMap.range_liftBaseChange, eq_top_iff]
     rintro ⟨u, hu⟩ -
@@ -209,9 +268,11 @@ theorem range_eq_invariants_of_liftBaseChange_surjective_of_isGalois [IsGalois k
     LinearMap.congr_fun hcomp z₀
   have hu₀_inv : u₀ ∈ ρE.invariants := (ρE.mem_invariants u₀).mpr fun σ ↦ by
     obtain ⟨g, rfl⟩ := AlgEquiv.restrictNormalHom_surjective L σ
-    rw [Representation.ofSurjective_apply, Subrepresentation.toRepresentation_apply_coe, hu₀_val]
+    apply Subtype.ext
+    rw [descentRep_restrictNormalHom_coe, hu₀_val]
     exact (ρ.mem_invariants _).mp hv g
-  rw [← range_eq_invariants_of_liftBaseChange_surjective hsemiE hinvE hsurjE] at hu₀_inv
+  rw [← range_eq_invariants_of_liftBaseChange_surjective
+    (descentRep_smul hU_mem hU_fix hU_smul) hinvE hsurjE] at hu₀_inv
   obtain ⟨w, hw⟩ := hu₀_inv
   exact ⟨w, (congrArg Subtype.val hw).trans hu₀_val⟩
 
@@ -234,49 +295,23 @@ theorem span_invariants_eq_top_of_isOpen [IsGalois k L]
   have : IsScalarTower k E V := E.toSubalgebra.isScalarTower_mid
   let S : Set V := Set.range fun g : Gal(L/k) ↦ ρ g v
   let U : Submodule E V := Submodule.span E S
-  have hU_mem (σ : Gal(L/k)) ⦃u : V⦄ (hu : u ∈ U) : ρ σ u ∈ U := by
-    induction hu using Submodule.span_induction with
-    | mem _ hx =>
-      obtain ⟨g, rfl⟩ := hx
+  obtain ⟨hU_mem, hU_fix, hU_smul⟩ := span_mem_and_fix (E := E) (S := S)
+    (by
+      rintro σ _ ⟨g, rfl⟩
       rw [← mul_apply_eq_comp, ← map_mul]
-      exact Submodule.subset_span ⟨σ * g, rfl⟩
-    | zero => rw [map_zero]; exact zero_mem _
-    | add _ _ _ _ hx hy => rw [map_add]; exact add_mem hx hy
-    | smul a _ _ hx =>
-      rw [Subalgebra.smul_def, hsemi, ← AlgEquiv.restrictNormalHom_apply E σ a,
-        ← Subalgebra.smul_def]
-      exact U.smul_mem _ hx
-  have hU_fix {h : Gal(L/k)} (hh : h ∈ E.fixingSubgroup) {u : V} (hu : u ∈ U) :
-      ρ h u = u := by
-    induction hu using Submodule.span_induction with
-    | mem _ hx =>
-      obtain ⟨g, rfl⟩ := hx
+      exact Submodule.subset_span ⟨σ * g, rfl⟩)
+    (by
+      rintro h hh _ ⟨g, rfl⟩
       have hconj : g⁻¹ * h * g ∈ E.fixingSubgroup := by
         rw [← E.restrictNormalHom_ker, MonoidHom.mem_ker] at hh ⊢
         simp [hh]
-      have hv' := congrArg (ρ g) (hfix_v hconj)
-      simpa [← mul_apply_eq_comp, ← map_mul, mul_assoc] using hv'
-    | zero => exact map_zero _
-    | add _ _ _ _ hx hy => rw [map_add, hx, hy]
-    | smul a _ _ hx =>
-      rw [Subalgebra.smul_def, hsemi, (mem_fixingSubgroup_iff E h).mp hh a a.2, hx,
-        ← Subalgebra.smul_def]
-  let U' : Subrepresentation ρ := ⟨U.restrictScalars k, hU_mem⟩
-  have : Representation.IsTrivial
-      (U'.toRepresentation.comp (AlgEquiv.restrictNormalHom E).ker.subtype) :=
-    ⟨fun ⟨g, hg⟩ ↦ LinearMap.ext fun u ↦ Subtype.ext <|
-      hU_fix (E.restrictNormalHom_ker ▸ hg) u.2⟩
-  let ρE : Representation k Gal(E/k) (U.restrictScalars k) :=
-    U'.toRepresentation.ofSurjective (AlgEquiv.restrictNormalHom E)
-      (AlgEquiv.restrictNormalHom_surjective L)
-  have hsemiE (σ : Gal(E/k)) (a : E) (u : U.restrictScalars k) :
-      ρE σ (a • u) = (σ • a) • ρE σ u := by
-    obtain ⟨g, rfl⟩ := AlgEquiv.restrictNormalHom_surjective L σ
-    rw [Representation.ofSurjective_apply, Subrepresentation.toRepresentation_apply_coe]
-    exact (hsemi g a u).trans (by
-      rw [← AlgEquiv.restrictNormalHom_apply E g a]
-      exact congrArg ((AlgEquiv.restrictNormalHom E g a : L) • ·) rfl)
-  have hspanE := span_invariants_eq_top (ρ := ρE) hsemiE
+      simpa [← mul_apply_eq_comp, ← map_mul, mul_assoc] using congrArg (ρ g) (hfix_v hconj))
+    (by
+      rintro σ a _ ⟨g, rfl⟩
+      rw [Subalgebra.smul_def, hsemi, ← AlgEquiv.restrictNormalHom_apply E σ a,
+        Subalgebra.smul_def])
+  let ρE := descentRep hU_mem hU_fix
+  have hspanE := span_invariants_eq_top (ρ := ρE) (descentRep_smul hU_mem hU_fix hU_smul)
   have hvU : (⟨v, Submodule.subset_span ⟨1, by simp⟩⟩ : U.restrictScalars k) ∈
       Submodule.span E (ρE.invariants : Set (U.restrictScalars k)) :=
     hspanE ▸ Submodule.mem_top
@@ -286,11 +321,37 @@ theorem span_invariants_eq_top_of_isOpen [IsGalois k L]
   induction hu using Submodule.span_induction with
   | mem w hw =>
     refine Submodule.subset_span ((ρ.mem_invariants (w : V)).mpr fun g ↦ ?_)
-    have hg := (ρE.mem_invariants w).mp hw (AlgEquiv.restrictNormalHom E g)
-    rwa [Representation.ofSurjective_apply, Subrepresentation.toRepresentation_apply_coe] at hg
+    have hg := congrArg Subtype.val ((ρE.mem_invariants w).mp hw (AlgEquiv.restrictNormalHom E g))
+    rwa [descentRep_restrictNormalHom_coe] at hg
   | zero => exact zero_mem _
   | add _ _ _ _ hx hy => exact add_mem hx hy
   | smul a _ _ hx => exact Submodule.smul_mem _ (a : L) hx
+
+omit [IsScalarTower k L V] in
+/-- The `L`-submodule of vectors in `V` whose stabilizer in `Gal(L/k)` is open for the Krull
+topology under a semilinear representation `ρ`. -/
+def openStabilizerSubmodule [Algebra.IsIntegral k L]
+    {ρ : Representation k Gal(L/k) V}
+    (hsemi : ∀ (g : Gal(L/k)) (a : L) (v : V), ρ g (a • v) = g a • ρ g v) :
+    Submodule L V where
+  carrier := {v : V | IsOpen {g : Gal(L/k) | ρ g v = v}}
+  zero_mem' := Subgroup.isOpen_mono (H₁ := ⊤) (H₂ := ρ.stabilizer 0)
+    (ρ.stabilizer_zero ▸ le_rfl) isOpen_univ
+  add_mem' {x y} hx hy := Subgroup.isOpen_mono (ρ.le_stabilizer_add x y) (hx.inter hy)
+  smul_mem' c {x} hx := Subgroup.isOpen_mono
+    (H₁ := MulAction.stabilizer Gal(L/k) c ⊓ ρ.stabilizer x) (H₂ := ρ.stabilizer (c • x))
+    (fun g ⟨hgc, hgx⟩ ↦ (hsemi g c x).trans
+      (by rw [← AlgEquiv.smul_def, MulAction.mem_stabilizer_iff.mp hgc, ρ.mem_stabilizer.mp hgx]))
+    ((stabilizer_isOpen_of_isIntegral c).inter hx)
+
+omit [IsScalarTower k L V] in
+/-- Membership in `openStabilizerSubmodule hsemi` is openness of the stabilizer in `Gal(L/k)`. -/
+@[simp]
+theorem mem_openStabilizerSubmodule [Algebra.IsIntegral k L]
+    {ρ : Representation k Gal(L/k) V}
+    (hsemi : ∀ (g : Gal(L/k)) (a : L) (v : V), ρ g (a • v) = g a • ρ g v) (v : V) :
+    v ∈ openStabilizerSubmodule hsemi ↔ IsOpen {g : Gal(L/k) | ρ g v = v} :=
+  Iff.rfl
 
 omit [IsScalarTower k L V] in
 /-- **Vectors spanned by invariants have open stabilizers.** Over an algebraic extension `L / k`,
@@ -301,33 +362,11 @@ theorem isOpen_of_span_invariants_eq_top [Algebra.IsIntegral k L]
     (hsemi : ∀ (g : Gal(L/k)) (a : L) (v : V), ρ g (a • v) = g a • ρ g v)
     (hspan : Submodule.span L (ρ.invariants : Set V) = ⊤) (v : V) :
     IsOpen {g : Gal(L/k) | ρ g v = v} := by
-  let stabSubgroup (w : V) : Subgroup Gal(L/k) :=
-    { carrier := {g | ρ g w = w}
-      one_mem' := by simp
-      mul_mem' {g h} hg hh := by
-        rw [Set.mem_ofPred_eq, map_mul, mul_apply_eq_comp, hh, hg]
-      inv_mem' {g} hg := by
-        rw [Set.mem_ofPred_eq]
-        have := congrArg (ρ g⁻¹) hg
-        simpa [← mul_apply_eq_comp, ← map_mul] using this.symm }
-  have hv : v ∈ Submodule.span L (ρ.invariants : Set V) := hspan ▸ Submodule.mem_top
-  induction hv using Submodule.span_induction with
-  | mem x hx =>
-    exact Subgroup.isOpen_mono (H₁ := ⊤) (H₂ := stabSubgroup x)
-      (fun g _ ↦ (ρ.mem_invariants x).mp hx g) isOpen_univ
-  | zero =>
-    exact Subgroup.isOpen_mono (H₁ := ⊤) (H₂ := stabSubgroup 0)
-      (fun g _ ↦ map_zero (ρ g)) isOpen_univ
-  | add x y _ _ hx hy =>
-    exact Subgroup.isOpen_mono (H₁ := stabSubgroup x ⊓ stabSubgroup y) (H₂ := stabSubgroup (x + y))
-      (fun g ⟨hgx, hgy⟩ ↦ (map_add (ρ g) x y).trans (congrArg₂ (· + ·) hgx hgy))
-      (hx.inter hy)
-  | smul a x _ hx =>
-    exact Subgroup.isOpen_mono
-      (H₁ := MulAction.stabilizer Gal(L/k) a ⊓ stabSubgroup x) (H₂ := stabSubgroup (a • x))
-      (fun g ⟨hga, hgx⟩ ↦
-        (hsemi g a x).trans (by rw [← AlgEquiv.smul_def, MulAction.mem_stabilizer_iff.mp hga, hgx]))
-      ((stabilizer_isOpen_of_isIntegral a).inter hx)
+  refine (mem_openStabilizerSubmodule hsemi v).mp
+    (Submodule.span_le.mpr ?_ (hspan ▸ Submodule.mem_top))
+  intro x hx
+  exact Subgroup.isOpen_mono (H₁ := ⊤) (H₂ := ρ.stabilizer x)
+    (fun g _ ↦ (ρ.mem_invariants x).mp hx g) isOpen_univ
 
 /-- **Characterization of discrete semilinear Galois representations.** For a Galois extension
 `L / k` and a semilinear representation `ρ` of `Gal(L/k)` on an `L`-vector space `V`, the invariant

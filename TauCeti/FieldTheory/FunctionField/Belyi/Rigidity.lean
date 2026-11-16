@@ -30,9 +30,10 @@ pointwise. Thus the descent datum of a rigid pair is automatically continuous, a
 
 For an algebraic extension `k` of `ℚ` and the field of moduli `M` of the class of `X`, the
 automorphisms of `k` fixing `M` are precisely the stabilizer of the class
-(`TauCeti.AlgebraicBelyiPair.IsoClass.fixingSubgroup_fieldOfModuli_of_isAlgebraic`). Whenever `k`
-is Galois over `M` — in particular over `AlgebraicClosure ℚ`, any Galois extension of `ℚ`, or any
-finite extension of `ℚ` — a rigid pair is therefore defined over its field of moduli
+(`TauCeti.AlgebraicBelyiPair.IsoClass.fixingSubgroup_fieldOfModuli`), and `k` is automatically
+Galois over `M` (`TauCeti.AlgebraicBelyiPair.IsoClass.isGalois_fieldOfModuli`). A rigid pair over
+any algebraic extension of `ℚ` — in particular over `AlgebraicClosure ℚ`, any Galois extension of
+`ℚ`, or any finite extension of `ℚ` — is therefore defined over its field of moduli
 (`TauCeti.AlgebraicBelyiPair.IsoClass.isDefinedOver_fieldOfModuli`). Since every field of
 definition `K ⊆ k` with `k / K` Galois contains the field of moduli, the field of moduli is the
 smallest field of definition among the subfields over which `k` is Galois
@@ -57,8 +58,8 @@ field over `K`, which can be the function field of a conic without a rational po
 * `TauCeti.AlgebraicBelyiPair.IsoClass.isDefinedOver_of_fixingSubgroup_le`: a rigid pair over `k`
   is defined over every subfield `K` with `k / K` Galois whose automorphism group fixes its class.
 * `TauCeti.AlgebraicBelyiPair.IsoClass.isDefinedOver_fieldOfModuli`: over any algebraic extension
-  `k` of `ℚ` Galois over the field of moduli (such as `AlgebraicClosure ℚ` or any finite extension
-  of `ℚ`), a rigid pair is defined over its field of moduli.
+  `k` of `ℚ` (such as `AlgebraicClosure ℚ` or any finite extension of `ℚ`), a rigid pair is defined
+  over its field of moduli.
 * `TauCeti.AlgebraicBelyiPair.IsoClass.isDefinedOver_iff_fieldOfModuli_le`: over any algebraic
   extension of `ℚ`, a rigid pair is defined over a subfield over which the extension is Galois if
   and only if that subfield contains its field of moduli.
@@ -158,13 +159,12 @@ theorem isDefinedOver_of_fixingSubgroup_le {K : IntermediateField ℚ k} [IsGalo
 
 variable [Algebra.IsAlgebraic ℚ k]
 
-/-- **A rigid pair is defined over its field of moduli.** Over an algebraic extension `k` of `ℚ`
-that is Galois over the field of moduli — in particular over `AlgebraicClosure ℚ`, any Galois
-extension of `ℚ`, or any finite extension of `ℚ` — an algebraic Belyi pair with no nontrivial
-automorphisms is defined over its field of moduli. -/
-theorem isDefinedOver_fieldOfModuli [IsGalois (mk X).fieldOfModuli k] :
+/-- **A rigid pair is defined over its field of moduli.** Over any algebraic extension `k` of `ℚ`
+— such as `AlgebraicClosure ℚ`, any Galois extension of `ℚ`, or any finite extension of `ℚ` — an
+algebraic Belyi pair with no nontrivial automorphisms is defined over its field of moduli. -/
+theorem isDefinedOver_fieldOfModuli :
     (mk X).IsDefinedOver (mk X).fieldOfModuli :=
-  isDefinedOver_of_fixingSubgroup_le (fixingSubgroup_fieldOfModuli_of_isAlgebraic _).le
+  isDefinedOver_of_fixingSubgroup_le (fixingSubgroup_fieldOfModuli _).le
 
 /-- **The field of moduli of a rigid pair is its smallest field of definition over which `k` is
 Galois.** Over an algebraic extension `k` of `ℚ`, an algebraic Belyi pair with no nontrivial
@@ -174,7 +174,7 @@ theorem isDefinedOver_iff_fieldOfModuli_le {K : IntermediateField ℚ k} [IsGalo
     (mk X).IsDefinedOver K ↔ (mk X).fieldOfModuli ≤ K :=
   ⟨IsDefinedOver.fieldOfModuli_le, fun hK ↦ isDefinedOver_of_fixingSubgroup_le <|
     (IntermediateField.fixingSubgroup_antitone hK).trans
-      (fixingSubgroup_fieldOfModuli_of_isAlgebraic _).le⟩
+      (fixingSubgroup_fieldOfModuli _).le⟩
 
 end IsoClass
 

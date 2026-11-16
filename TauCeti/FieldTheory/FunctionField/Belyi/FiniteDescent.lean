@@ -45,7 +45,7 @@ pairs of bounded degree.
 * `TauCeti.AlgebraicBelyiPair.IsoClass.exists_finiteDimensional_isDefinedOver`: every
   isomorphism class is defined over such a field.
 * `TauCeti.AlgebraicBelyiPair.IsoClass.isOpen_stabilizer` and
-  `TauCeti.AlgebraicBelyiPair.IsoClass.fixingSubgroup_fieldOfModuli_of_isAlgebraic`: for `k`
+  `TauCeti.AlgebraicBelyiPair.IsoClass.fixingSubgroup_fieldOfModuli`: for `k`
   algebraic over `ℚ`, the stabilizer of a class in `Aut(k/ℚ)` is open and equals the fixing
   subgroup of its field of moduli.
 * `TauCeti.AlgebraicBelyiPair.IsoClass.finiteDimensional_fieldOfModuli`: for `k` Galois over `ℚ`,
@@ -225,7 +225,8 @@ theorem isOpen_stabilizer [Algebra.IsAlgebraic ℚ k] (c : IsoClass k) :
 /-- **Stabilizers equal the fixing subgroup of the field of moduli**: for a field `k` algebraic
 over `ℚ`, the automorphisms of `k` fixing the field of moduli of `c` pointwise are precisely the
 stabilizer of `c` in `Aut(k/ℚ)`. -/
-theorem fixingSubgroup_fieldOfModuli_of_isAlgebraic [Algebra.IsAlgebraic ℚ k] (c : IsoClass k) :
+@[simp]
+theorem fixingSubgroup_fieldOfModuli [Algebra.IsAlgebraic ℚ k] (c : IsoClass k) :
     c.fieldOfModuli.fixingSubgroup = MulAction.stabilizer (k ≃ₐ[ℚ] k) c := by
   obtain ⟨K, hK, hc⟩ := c.exists_finiteDimensional_isDefinedOver ℚ
   have : Algebra.IsAlgebraic K k := .tower_top (K := ℚ) K
@@ -247,7 +248,7 @@ moduli of a class over `ℚ` is its true orbit size. -/
 theorem finrank_fieldOfModuli_eq_trueOrbitSize [IsGalois ℚ k] (c : IsoClass k) :
     Module.finrank ℚ c.fieldOfModuli = c.trueOrbitSize := by
   rw [IntermediateField.finrank_eq_fixingSubgroup_index,
-    c.fixingSubgroup_fieldOfModuli_of_isAlgebraic, trueOrbitSize_eq_index]
+    c.fixingSubgroup_fieldOfModuli, trueOrbitSize_eq_index]
 
 /-- **Galois orbits are finite**: over a field `k` algebraic over `ℚ`, such as
 `AlgebraicClosure ℚ`, the orbit of an isomorphism class of algebraic Belyi pairs under

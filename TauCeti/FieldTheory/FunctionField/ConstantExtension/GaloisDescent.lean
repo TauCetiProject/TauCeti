@@ -27,38 +27,31 @@ to its function field. Its fixed field `F₀` is the function field of the desce
 * `F` is the constant field extension `F₀ · L` of `F₀`
   (`TauCeti.GaloisDescent.constantCompositum_fixedField_eq_top_of_isOpen`, and
   `TauCeti.GaloisDescent.constantCompositum_fixedField_eq_top` when `Aut_k(L)` is finite);
-* `F₀ / k` is an algebraic function field
-  (`TauCeti.GaloisDescent.isFunctionField_fixedField_of_isOpen` and
-  `TauCeti.GaloisDescent.isFunctionField_fixedField`), with exact constant field `k` whenever `L`
-  is exact in `F` (`TauCeti.GaloisDescent.isIntegrallyClosedIn_fixedField`);
+* `F₀ / k` is an algebraic function field (`TauCeti.GaloisDescent.isFunctionField_fixedField`), with
+  exact constant field `k` whenever `L` is exact in `F`
+  (`TauCeti.GaloisDescent.isIntegrallyClosedIn_fixedField`);
 * degrees over rational subfields descend without assuming exactness of constants: for every
   `x ∈ F₀`, `[F₀ : k(x)] = [F : L(x)]`
-  (`TauCeti.GaloisDescent.finrank_fixedField_over_adjoin_simple_of_isOpen` and
-  `TauCeti.GaloisDescent.finrank_fixedField_over_adjoin_simple`). For a Belyi function `t` fixed by
+  (`TauCeti.GaloisDescent.finrank_fixedField_over_adjoin_simple`). For a Belyi function `t` fixed by
   the action, this says that `t` has the same degree as a function on `F₀` as on `F`. When `F` is
   an algebra over `L(t)` and `F₀` over `k(t)` compatibly, this is `[F₀ : k(t)] = [F : L(t)]`
-  (`TauCeti.GaloisDescent.finrank_ratFunc_fixedField_of_isOpen` and
-  `TauCeti.GaloisDescent.finrank_ratFunc_fixedField`).
+  (`TauCeti.GaloisDescent.finrank_ratFunc_fixedField`).
 
 Effectiveness is discrete Galois descent for `F` as an `L`-vector space with a semilinear action,
 which needs no finiteness of `F` over `L`: `F` is spanned over `L` by `F₀`
 (`TauCeti.GaloisDescent.span_fixedField_eq_top_of_isOpen`), and is the base change `L ⊗[k] F₀`
-(`TauCeti.GaloisDescent.fixedFieldBaseChangeEquivOfIsOpen`).
+(`TauCeti.GaloisDescent.fixedFieldBaseChangeEquiv`).
 
 ## Main results
 
 * `TauCeti.GaloisDescent.constantCompositum_fixedField_eq_top_of_isOpen` and
   `TauCeti.GaloisDescent.constantCompositum_fixedField_eq_top`: `F` is the constant-field
   compositum of `fixedField ρ.range` with `L`.
-* `TauCeti.GaloisDescent.isFunctionField_fixedField_of_isOpen` and
-  `TauCeti.GaloisDescent.isFunctionField_fixedField`: `fixedField ρ.range` is an algebraic
-  function field over `k`.
-* `TauCeti.GaloisDescent.finrank_fixedField_over_adjoin_simple_of_isOpen` and
-  `TauCeti.GaloisDescent.finrank_fixedField_over_adjoin_simple`: degrees over rational subfields
+* `TauCeti.GaloisDescent.isFunctionField_fixedField`: `fixedField ρ.range` is an algebraic function
+  field over `k`.
+* `TauCeti.GaloisDescent.finrank_fixedField_over_adjoin_simple`: degrees over rational subfields
   `k(x)` descend.
-* `TauCeti.GaloisDescent.finrank_ratFunc_fixedField_of_isOpen`,
-  `TauCeti.GaloisDescent.finiteDimensional_ratFunc_fixedField_of_isOpen`,
-  `TauCeti.GaloisDescent.finrank_ratFunc_fixedField`, and
+* `TauCeti.GaloisDescent.finrank_ratFunc_fixedField` and
   `TauCeti.GaloisDescent.finiteDimensional_ratFunc_fixedField`: degree and finiteness over `k(t)`
   descend.
 
@@ -109,29 +102,61 @@ theorem constantCompositum_fixedField_eq_top_of_isOpen [IsGalois k L]
   exact constantCompositum_eq_top_of_span_eq_top (fixedField ρ.range) L F
     (hrange.symm ▸ span_fixedField_eq_top_of_isOpen hρ hopen)
 
+private theorem linearDisjoint_fixedField [IsGalois k L]
+    {ρ : (L ≃ₐ[k] L) →* (F ≃ₐ[k] F)}
+    (hρ : ∀ σ a, ρ σ (algebraMap L F a) = algebraMap L F (σ a))
+    (hopen : ∀ x : F, IsOpen {σ : L ≃ₐ[k] L | ρ σ x = x}) :
+    (IsScalarTower.toAlgHom k L F).fieldRange.LinearDisjoint (fixedField ρ.range) := by
+  let eL : L ≃ₐ[k] (IsScalarTower.toAlgHom k L F).fieldRange :=
+    AlgEquiv.ofInjectiveField (IsScalarTower.toAlgHom k L F)
+  have hfield : IsField (fixedField ρ.range ⊗[k] (IsScalarTower.toAlgHom k L F).fieldRange) :=
+    ((Algebra.TensorProduct.comm k (fixedField ρ.range) _).trans <|
+      (Algebra.TensorProduct.congr eL.symm AlgEquiv.refl).trans <|
+        (fixedFieldBaseChangeEquiv hρ hopen).restrictScalars k).toMulEquiv.isField
+      (Field.toIsField F)
+  exact (IntermediateField.LinearDisjoint.of_isField hfield).symm
+
+private theorem finiteDimensional_fixedField_adjoin_simple [IsGalois k L]
+    {ρ : (L ≃ₐ[k] L) →* (F ≃ₐ[k] F)}
+    (hρ : ∀ σ a, ρ σ (algebraMap L F a) = algebraMap L F (σ a))
+    (hopen : ∀ x : F, IsOpen {σ : L ≃ₐ[k] L | ρ σ x = x})
+    (x : fixedField ρ.range) [FiniteDimensional L⟮(x : F)⟯ F] :
+    FiniteDimensional k⟮x⟯ (fixedField ρ.range) := by
+  let F₀ := fixedField ρ.range
+  have : IsScalarTower k⟮x⟯ F₀ F := .of_algebraMap_eq fun _ ↦ rfl
+  have hsub : (constantCompositum k⟮x⟯ L F).toSubfield = L⟮(x : F)⟯.toSubfield :=
+    constantCompositum_adjoin_simple_toSubfield (k := k) (K := L) (F := F₀) (F' := F) x
+  have : FiniteDimensional (constantCompositum k⟮x⟯ L F) F :=
+    Module.Finite.of_equiv_equiv (RingEquiv.subfieldCongr hsub.symm) (RingEquiv.refl F) rfl
+  have : Algebra.IsAlgebraic k⟮x⟯ (constantCompositum k⟮x⟯ L F) :=
+    isAlgebraic_constantCompositum (k := k) (k' := L) (F := k⟮x⟯) (F' := F)
+  have : Algebra.IsAlgebraic k⟮x⟯ F :=
+    Algebra.IsAlgebraic.trans k⟮x⟯ (constantCompositum k⟮x⟯ L F) F
+  have : Algebra.IsAlgebraic k⟮x⟯ F₀ := Algebra.IsAlgebraic.tower_bot k⟮x⟯ F₀ F
+  let b := Module.Basis.ofVectorSpace k⟮x⟯ F₀
+  let b' := constantExtensionBasisOfLinearDisjoint (linearDisjoint_fixedField hρ hopen)
+    (constantCompositum_fixedField_eq_top_of_isOpen hρ hopen) k⟮x⟯ b
+  have hadj : IntermediateField.adjoin L (Set.range (algebraMap k⟮x⟯ F)) = L⟮(x : F)⟯ := by
+    rw [IntermediateField.range_algebraMap_adjoin_simple, IntermediateField.adjoin_adjoin_right]
+    rfl
+  have : FiniteDimensional (IntermediateField.adjoin L (Set.range (algebraMap k⟮x⟯ F))) F := by
+    rwa [hadj]
+  have : Finite (Module.Basis.ofVectorSpaceIndex k⟮x⟯ F₀) := Module.Finite.finite_basis b'
+  exact Module.Finite.of_basis b
+
 /-- **The function-field property descends along a discrete semilinear action.** Let `L / k` be an
 arbitrary Galois extension and let `F / L` be an algebraic function field. For a semilinear action
 `ρ` of `Gal(L/k)` on `F` whose stabilizers are open, the fixed field `fixedField ρ.range` is an
 algebraic function field over `k`. -/
-theorem isFunctionField_fixedField_of_isOpen [IsGalois k L]
+theorem isFunctionField_fixedField [IsGalois k L]
     {ρ : (L ≃ₐ[k] L) →* (F ≃ₐ[k] F)}
     (hρ : ∀ σ a, ρ σ (algebraMap L F a) = algebraMap L F (σ a))
     (hopen : ∀ x : F, IsOpen {σ : L ≃ₐ[k] L | ρ σ x = x})
     (hF : IsFunctionField L F) :
     IsFunctionField k (fixedField ρ.range) := by
   set F₀ := fixedField ρ.range
-  have hcomp : constantCompositum F₀ L F = ⊤ :=
-    constantCompositum_fixedField_eq_top_of_isOpen hρ hopen
-  have : Algebra.IsAlgebraic F₀ F := isAlgebraic_of_constantCompositum_eq_top (k := k) hcomp
-  let eL : L ≃ₐ[k] (IsScalarTower.toAlgHom k L F).fieldRange :=
-    AlgEquiv.ofInjectiveField (IsScalarTower.toAlgHom k L F)
-  have hfield : IsField (F₀ ⊗[k] (IsScalarTower.toAlgHom k L F).fieldRange) :=
-    ((Algebra.TensorProduct.comm k F₀ _).trans <|
-      (Algebra.TensorProduct.congr eL.symm AlgEquiv.refl).trans <|
-        (fixedFieldBaseChangeEquivOfIsOpen hρ hopen).restrictScalars k).toMulEquiv.isField
-      (Field.toIsField F)
-  have hld : (IsScalarTower.toAlgHom k L F).fieldRange.LinearDisjoint F₀ :=
-    (IntermediateField.LinearDisjoint.of_isField hfield).symm
+  have : Algebra.IsAlgebraic F₀ F := isAlgebraic_of_constantCompositum_eq_top (k := k)
+    (constantCompositum_fixedField_eq_top_of_isOpen hρ hopen)
   have htrF : Algebra.trdeg k F = 1 := by
     rw [← trdeg_eq_of_isAlgebraic_base (S := L)]
     exact hF.trdeg_eq_one
@@ -142,95 +167,27 @@ theorem isFunctionField_fixedField_of_isOpen [IsGalois k L]
     simpa using h
   have : Algebra.Transcendental k F₀ := trdeg_ne_zero_iff.mp (htr ▸ one_ne_zero)
   obtain ⟨x, hx⟩ := Algebra.Transcendental.transcendental (R := k) (A := F₀)
-  have hxL : Transcendental L (algebraMap F₀ F x) := hld.transcendental_algebraMap hx
-  have : FiniteDimensional L⟮algebraMap F₀ F x⟯ F := hF.finiteDimensional_adjoin hxL
-  have htower := trdeg_add_eq k k⟮x⟯ (A := F₀)
-  rw [hx.isFunctionField_adjoin.trdeg_eq_one, htr] at htower
-  have hzero : Algebra.trdeg k⟮x⟯ F₀ = 0 := by
-    rcases Cardinal.add_eq_left_iff.mp htower with h | h
-    · exact absurd ((le_max_left _ _).trans h) Cardinal.one_lt_aleph0.not_ge
-    · exact h
-  have : Algebra.IsAlgebraic k⟮x⟯ F₀ := trdeg_eq_zero_iff.mp hzero
-  let b := Module.Basis.ofVectorSpace k⟮x⟯ F₀
-  let b' := constantExtensionBasisOfLinearDisjoint hld hcomp k⟮x⟯ b
-  have hadj : IntermediateField.adjoin L (Set.range (algebraMap k⟮x⟯ F)) =
-      L⟮algebraMap F₀ F x⟯ := by
-    rw [IntermediateField.range_algebraMap_adjoin_simple, IntermediateField.adjoin_adjoin_right]
-  have : FiniteDimensional (IntermediateField.adjoin L (Set.range (algebraMap k⟮x⟯ F))) F := by
-    rwa [hadj]
-  have : Finite (Module.Basis.ofVectorSpaceIndex k⟮x⟯ F₀) := Module.Finite.finite_basis b'
-  have : FiniteDimensional k⟮x⟯ F₀ := Module.Finite.of_basis b
+  have : FiniteDimensional L⟮(x : F)⟯ F :=
+    hF.finiteDimensional_adjoin ((linearDisjoint_fixedField hρ hopen).transcendental_algebraMap hx)
+  have : FiniteDimensional k⟮x⟯ F₀ := finiteDimensional_fixedField_adjoin_simple hρ hopen x
   exact .of_finiteDimensional_adjoin hx
-
-/-- **The function-field property descends along a finite Galois extension.** -/
-theorem isFunctionField_fixedField [FiniteDimensional k L] [IsGalois k L]
-    {ρ : (L ≃ₐ[k] L) →* (F ≃ₐ[k] F)}
-    (hρ : ∀ σ a, ρ σ (algebraMap L F a) = algebraMap L F (σ a)) (hF : IsFunctionField L F) :
-    IsFunctionField k (fixedField ρ.range) :=
-  isFunctionField_fixedField_of_isOpen hρ (fun _ ↦ isOpen_discrete _) hF
 
 /-- **Degrees descend along discrete semilinear actions.** For an arbitrary Galois extension
 `L / k`, a semilinear action `ρ` of `Gal(L/k)` on `F` with open stabilizers, and an element `x` of
 its fixed field `F₀`, the degree of `F₀` over `k(x)` is the degree of `F` over `L(x)`. -/
-theorem finrank_fixedField_over_adjoin_simple_of_isOpen [IsGalois k L]
+theorem finrank_fixedField_over_adjoin_simple [IsGalois k L]
     {ρ : (L ≃ₐ[k] L) →* (F ≃ₐ[k] F)}
     (hρ : ∀ σ a, ρ σ (algebraMap L F a) = algebraMap L F (σ a))
     (hopen : ∀ x : F, IsOpen {σ : L ≃ₐ[k] L | ρ σ x = x}) (x : fixedField ρ.range) :
     Module.finrank k⟮x⟯ (fixedField ρ.range) = Module.finrank L⟮(x : F)⟯ F := by
-  let F₀ := fixedField ρ.range
-  have hcomp : constantCompositum F₀ L F = ⊤ :=
-    constantCompositum_fixedField_eq_top_of_isOpen hρ hopen
+  have hcomp := constantCompositum_fixedField_eq_top_of_isOpen hρ hopen
   by_cases hfin : FiniteDimensional L⟮(x : F)⟯ F
-  · let eL : L ≃ₐ[k] (IsScalarTower.toAlgHom k L F).fieldRange :=
-      AlgEquiv.ofInjectiveField (IsScalarTower.toAlgHom k L F)
-    have hfield : IsField (F₀ ⊗[k] (IsScalarTower.toAlgHom k L F).fieldRange) :=
-      ((Algebra.TensorProduct.comm k F₀ _).trans <|
-        (Algebra.TensorProduct.congr eL.symm AlgEquiv.refl).trans <|
-          (fixedFieldBaseChangeEquivOfIsOpen hρ hopen).restrictScalars k).toMulEquiv.isField
-        (Field.toIsField F)
-    have hld : (IsScalarTower.toAlgHom k L F).fieldRange.LinearDisjoint F₀ :=
-      (IntermediateField.LinearDisjoint.of_isField hfield).symm
-    have hsub : (constantCompositum k⟮x⟯ L F).toSubfield = L⟮(x : F)⟯.toSubfield :=
-      constantCompositum_adjoin_simple_toSubfield (k := k) (K := L) (F := F₀) (F' := F) x
-    have hmem (z : F) : z ∈ L⟮(x : F)⟯ ↔ z ∈ constantCompositum k⟮x⟯ L F :=
-      SetLike.ext_iff.mp hsub.symm z
-    let e : L⟮(x : F)⟯ ≃+* constantCompositum k⟮x⟯ L F :=
-      { toFun z := ⟨z.1, (hmem z.1).mp z.2⟩
-        invFun z := ⟨z.1, (hmem z.1).mpr z.2⟩
-        left_inv _ := rfl
-        right_inv _ := rfl
-        map_mul' _ _ := rfl
-        map_add' _ _ := rfl }
-    have : FiniteDimensional (constantCompositum k⟮x⟯ L F) F :=
-      Module.Finite.of_equiv_equiv e (RingEquiv.refl F) (RingHom.ext fun _ ↦ rfl)
-    have : Algebra.IsAlgebraic k⟮x⟯ (constantCompositum k⟮x⟯ L F) :=
-      isAlgebraic_constantCompositum (k := k) (k' := L) (F := k⟮x⟯) (F' := F)
-    have : Algebra.IsAlgebraic k⟮x⟯ F :=
-      Algebra.IsAlgebraic.trans k⟮x⟯ (constantCompositum k⟮x⟯ L F) F
-    have : IsScalarTower k⟮x⟯ F₀ F := .of_algebraMap_eq fun _ ↦ rfl
-    have : Algebra.IsAlgebraic k⟮x⟯ F₀ := Algebra.IsAlgebraic.tower_bot k⟮x⟯ F₀ F
-    let b := Module.Basis.ofVectorSpace k⟮x⟯ F₀
-    let b' := constantExtensionBasisOfLinearDisjoint hld hcomp k⟮x⟯ b
-    have hadj : IntermediateField.adjoin L (Set.range (algebraMap k⟮x⟯ F)) = L⟮(x : F)⟯ := by
-      rw [IntermediateField.range_algebraMap_adjoin_simple, IntermediateField.adjoin_adjoin_right]
-      rfl
-    have : FiniteDimensional (IntermediateField.adjoin L (Set.range (algebraMap k⟮x⟯ F))) F := by
-      rwa [hadj]
-    have : Finite (Module.Basis.ofVectorSpaceIndex k⟮x⟯ F₀) := Module.Finite.finite_basis b'
-    have : FiniteDimensional k⟮x⟯ F₀ := Module.Finite.of_basis b
-    exact (finrank_over_adjoin_simple_eq_of_linearDisjoint hld hcomp x).symm
-  · have hfin₀ : ¬ FiniteDimensional k⟮x⟯ F₀ := fun h ↦
+  · have := finiteDimensional_fixedField_adjoin_simple hρ hopen x
+    exact (finrank_over_adjoin_simple_eq_of_linearDisjoint
+      (linearDisjoint_fixedField hρ hopen) hcomp x).symm
+  · have hfin₀ : ¬ FiniteDimensional k⟮x⟯ (fixedField ρ.range) := fun h ↦
       hfin (finiteDimensional_adjoin_simple_of_constantCompositum_eq_top (k := k) hcomp x)
     rw [Module.finrank_of_not_finite hfin₀, Module.finrank_of_not_finite hfin]
-
-/-- **Degrees descend.** For a semilinear action `ρ` of `Gal(L/k)` on `F` over a finite Galois
-extension `L / k` and an element `x` of its fixed field `F₀`, the degree of `F₀` over `k(x)` is the
-degree of `F` over `L(x)`. -/
-theorem finrank_fixedField_over_adjoin_simple [FiniteDimensional k L] [IsGalois k L]
-    {ρ : (L ≃ₐ[k] L) →* (F ≃ₐ[k] F)}
-    (hρ : ∀ σ a, ρ σ (algebraMap L F a) = algebraMap L F (σ a)) (x : fixedField ρ.range) :
-    Module.finrank k⟮x⟯ (fixedField ρ.range) = Module.finrank L⟮(x : F)⟯ F :=
-  finrank_fixedField_over_adjoin_simple_of_isOpen hρ (fun _ ↦ isOpen_discrete _) x
 
 section RatFunc
 
@@ -242,48 +199,27 @@ variable [Algebra (RatFunc L) F] [IsScalarTower L (RatFunc L) F] [IsGalois k L]
 semilinear action of `Gal(L/k)` with open stabilizers on a field `F` over `L(t)`. If the variable
 of `k(t)` acts on the fixed field `F₀` of `ρ` as the variable of `L(t)` acts on `F`, then
 `[F₀ : k(t)] = [F : L(t)]`. -/
-theorem finrank_ratFunc_fixedField_of_isOpen
+theorem finrank_ratFunc_fixedField
     (hρ : ∀ σ a, ρ σ (algebraMap L F a) = algebraMap L F (σ a))
     (hopen : ∀ x : F, IsOpen {σ : L ≃ₐ[k] L | ρ σ x = x})
     (hX : algebraMap (fixedField ρ.range) F (algebraMap (RatFunc k) _ RatFunc.X) =
       algebraMap (RatFunc L) F RatFunc.X) :
     Module.finrank (RatFunc k) (fixedField ρ.range) = Module.finrank (RatFunc L) F := by
   rw [← finrank_adjoin_algebraMap_X (k := k), ← finrank_adjoin_algebraMap_X (k := L), ← hX]
-  exact finrank_fixedField_over_adjoin_simple_of_isOpen hρ hopen
+  exact finrank_fixedField_over_adjoin_simple hρ hopen
     (algebraMap (RatFunc k) (fixedField ρ.range) RatFunc.X)
 
 /-- The fixed field of a discrete semilinear action of `Gal(L/k)` on a field `F` finite over
 `L(t)` is finite over `k(t)`, when the variable of `k(t)` acts on it as the variable of `L(t)` acts
 on `F`. -/
-theorem finiteDimensional_ratFunc_fixedField_of_isOpen [FiniteDimensional (RatFunc L) F]
+theorem finiteDimensional_ratFunc_fixedField [FiniteDimensional (RatFunc L) F]
     (hρ : ∀ σ a, ρ σ (algebraMap L F a) = algebraMap L F (σ a))
     (hopen : ∀ x : F, IsOpen {σ : L ≃ₐ[k] L | ρ σ x = x})
     (hX : algebraMap (fixedField ρ.range) F (algebraMap (RatFunc k) _ RatFunc.X) =
       algebraMap (RatFunc L) F RatFunc.X) :
     FiniteDimensional (RatFunc k) (fixedField ρ.range) :=
   Module.finite_of_finrank_pos
-    (finrank_ratFunc_fixedField_of_isOpen hρ hopen hX ▸ Module.finrank_pos)
-
-variable [FiniteDimensional k L]
-
-/-- **The degree of a Belyi map descends.** Let `ρ` be a semilinear action of `Gal(L/k)` on a
-field `F` over `L(t)`, for a finite Galois extension `L / k`. If the variable of `k(t)` acts on the
-fixed field `F₀` of `ρ` as the variable of `L(t)` acts on `F`, then `[F₀ : k(t)] = [F : L(t)]`. -/
-theorem finrank_ratFunc_fixedField (hρ : ∀ σ a, ρ σ (algebraMap L F a) = algebraMap L F (σ a))
-    (hX : algebraMap (fixedField ρ.range) F (algebraMap (RatFunc k) _ RatFunc.X) =
-      algebraMap (RatFunc L) F RatFunc.X) :
-    Module.finrank (RatFunc k) (fixedField ρ.range) = Module.finrank (RatFunc L) F :=
-  finrank_ratFunc_fixedField_of_isOpen hρ (fun _ ↦ isOpen_discrete _) hX
-
-/-- The fixed field of a semilinear action of `Gal(L/k)` on a field `F` finite over `L(t)`, for a
-finite Galois extension `L / k`, is finite over `k(t)`, when the variable of `k(t)` acts on it as
-the variable of `L(t)` acts on `F`. -/
-theorem finiteDimensional_ratFunc_fixedField [FiniteDimensional (RatFunc L) F]
-    (hρ : ∀ σ a, ρ σ (algebraMap L F a) = algebraMap L F (σ a))
-    (hX : algebraMap (fixedField ρ.range) F (algebraMap (RatFunc k) _ RatFunc.X) =
-      algebraMap (RatFunc L) F RatFunc.X) :
-    FiniteDimensional (RatFunc k) (fixedField ρ.range) :=
-  finiteDimensional_ratFunc_fixedField_of_isOpen hρ (fun _ ↦ isOpen_discrete _) hX
+    (finrank_ratFunc_fixedField hρ hopen hX ▸ Module.finrank_pos)
 
 end RatFunc
 

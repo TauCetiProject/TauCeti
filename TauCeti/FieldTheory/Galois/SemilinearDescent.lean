@@ -9,6 +9,7 @@ public import Mathlib.FieldTheory.Galois.Basic
 public import Mathlib.FieldTheory.KrullTopology
 public import Mathlib.RingTheory.IntegralClosure.IntegrallyClosed
 import Mathlib.FieldTheory.Galois.Infinite
+import Mathlib.Topology.Algebra.OpenSubgroup
 import TauCeti.Algebra.TensorProduct.BaseChange
 import TauCeti.RepresentationTheory.GaloisDescent.Discrete
 import TauCeti.RepresentationTheory.GaloisDescent.Span
@@ -28,19 +29,18 @@ a field automorphism of `F` acting on `L` as `σ`, and the cocycle condition on 
 isomorphisms says that `σ ↦ ρ σ` is a group homomorphism.
 
 Equip `Gal(L/k)` with its Krull topology. When every element of `F` has an open stabilizer under
-`ρ` (which is automatic when `L / k` is finite), the fixed field `F₀ = F ^ ρ` of the action is a
-`k`-form of `F`: extending its scalars back to `L` recovers `F`,
+`ρ` (which is automatic via `isOpen_discrete` when `L / k` is finite), the fixed field
+`F₀ = F ^ ρ` of the action is a `k`-form of `F`: extending its scalars back to `L` recovers `F`,
 
 `L ⊗[k] F₀ ≃ₐ[L] F`,   `a ⊗ x ↦ a • x`
 
-(`TauCeti.GaloisDescent.fixedFieldBaseChangeEquivOfIsOpen`, and
-`TauCeti.GaloisDescent.fixedFieldBaseChangeEquiv` in the finite-degree case). Surjectivity says
-that `F` is spanned over `L` by `F₀`, which is equivalent to openness of stabilizers by Speiser's
-theorem (`TauCeti.GaloisDescent.span_fixedField_eq_top_iff_forall_isOpen`), and injectivity says
-that `F₀` and `L` are linearly disjoint over `k`; both come from the Galois descent theorems for
-discrete semilinear representations in `TauCeti.RepresentationTheory.GaloisDescent.Discrete`. No
-finiteness of `F` over `L` is needed, so the result applies to function fields, where `F` has
-transcendence degree one over `L`.
+(`TauCeti.GaloisDescent.fixedFieldBaseChangeEquiv`). Surjectivity says that `F` is spanned over `L`
+by `F₀`, which is equivalent to openness of stabilizers by Speiser's theorem
+(`TauCeti.GaloisDescent.span_fixedField_eq_top_iff_forall_isOpen`), and injectivity says that `F₀`
+and `L` are linearly disjoint over `k`; both come from the Galois descent theorems for discrete
+semilinear representations in `TauCeti.RepresentationTheory.GaloisDescent.Discrete`. No finiteness
+of `F` over `L` is needed, so the result applies to function fields, where `F` has transcendence
+degree one over `L`.
 
 Conversely, a `k`-form `E` of `F`, an intermediate field for which `a ⊗ x ↦ a • x` is a bijection
 `L ⊗[k] E → F`, carries the semilinear action `TauCeti.GaloisDescent.baseChangeAction` of
@@ -49,7 +49,7 @@ Conversely, a `k`-form `E` of `F`, an intermediate field for which `a ⊗ x ↦ 
 `E` pointwise (`TauCeti.GaloisDescent.eq_baseChangeAction`). Its fixed field is `E` for any Galois
 extension `L / k` (`TauCeti.GaloisDescent.fixedField_baseChangeAction`), and the action attached to
 the fixed field of a discrete semilinear action `ρ` is `ρ`
-(`TauCeti.GaloisDescent.baseChangeAction_fixedField_of_isOpen`). So discrete semilinear actions of
+(`TauCeti.GaloisDescent.baseChangeAction_fixedField`). So discrete semilinear actions of
 `Gal(L/k)` on `F` and `k`-forms of `F` determine each other.
 
 If `L` is relatively algebraically closed in `F`, then `k` is relatively algebraically closed in
@@ -58,22 +58,29 @@ finite or not: an element of `F₀` algebraic over `k` is algebraic over `L`, he
 being fixed by every `σ` it lies in `k`. For function fields this says that the exact constant
 field descends.
 
+## Main definitions
+
+* `TauCeti.GaloisDescent.openStabilizerSubfield`: the intermediate field over `L` of elements of
+  `F` with open stabilizer in `Gal(L/k)`.
+* `TauCeti.GaloisDescent.fixedFieldBaseChangeEquiv`: the isomorphism `L ⊗[k] F₀ ≃ₐ[L] F` for a
+  semilinear action with open stabilizers.
+* `TauCeti.GaloisDescent.baseChangeAction`: the semilinear action of `Gal(L/k)` attached to a
+  `k`-form of `F`.
+
 ## Main results
 
 * `TauCeti.GaloisDescent.span_fixedField_eq_top_of_isOpen`,
   `TauCeti.GaloisDescent.span_fixedField_eq_top_iff_forall_isOpen`, and
   `TauCeti.GaloisDescent.span_fixedField_eq_top`: `F` is spanned over `L` by the fixed field iff
   all stabilizers are open (in particular whenever `Aut_k(L)` is finite).
-* `TauCeti.GaloisDescent.liftEquiv_fixedField_bijective_of_isOpen` and
-  `TauCeti.GaloisDescent.liftEquiv_fixedField_bijective`: the multiplication map `L ⊗[k] F₀ → F`
-  is bijective.
-* `TauCeti.GaloisDescent.fixedFieldBaseChangeEquivOfIsOpen` and
-  `TauCeti.GaloisDescent.fixedFieldBaseChangeEquiv`: the resulting isomorphism `L ⊗[k] F₀ ≃ₐ[L] F`.
-* `TauCeti.GaloisDescent.baseChangeAction`: the semilinear action of a `k`-form, with
-  `TauCeti.GaloisDescent.isOpen_baseChangeAction`,
+* `TauCeti.GaloisDescent.isOpen_of_adjoin_eq_top`: openness of stabilizers propagates from field
+  generators over `L` to all of `F`.
+* `TauCeti.GaloisDescent.liftEquiv_fixedField_bijective`: the multiplication map `L ⊗[k] F₀ → F`
+  is bijective when stabilizers are open.
+* `TauCeti.GaloisDescent.isOpen_baseChangeAction`,
   `TauCeti.GaloisDescent.fixedField_baseChangeAction`, and
-  `TauCeti.GaloisDescent.baseChangeAction_fixedField_of_isOpen`: discrete semilinear actions and
-  `k`-forms correspond.
+  `TauCeti.GaloisDescent.baseChangeAction_fixedField`: discrete semilinear actions and `k`-forms
+  correspond.
 * `TauCeti.GaloisDescent.isIntegrallyClosedIn_fixedField`: relative algebraic closure descends.
 
 ## References
@@ -133,6 +140,61 @@ theorem isOpen_of_span_fixedField_eq_top [Algebra.IsIntegral k L]
   rw [← invariants_toRepresentation_eq_fixedField] at hspan
   exact isOpen_of_span_invariants_eq_top (apply_smul hρ) hspan x
 
+/-- The intermediate field over `L` of elements of `F` whose stabilizer in `Gal(L/k)` is open for
+the Krull topology under a semilinear action `ρ`. -/
+def openStabilizerSubfield [Algebra.IsIntegral k L]
+    {ρ : (L ≃ₐ[k] L) →* (F ≃ₐ[k] F)}
+    (hρ : ∀ σ a, ρ σ (algebraMap L F a) = algebraMap L F (σ a)) :
+    IntermediateField L F :=
+  have h1 : IsOpen {σ : L ≃ₐ[k] L | ρ σ 1 = 1} :=
+    Subgroup.isOpen_mono (H₁ := ⊤) (H₂ := (MulAction.stabilizer (F ≃ₐ[k] F) (1 : F)).comap ρ)
+      (fun σ _ ↦ map_one (ρ σ)) isOpen_univ
+  { carrier := {x : F | IsOpen {σ : L ≃ₐ[k] L | ρ σ x = x}}
+    zero_mem' := (mem_openStabilizerSubmodule (ρ := toRepresentation ρ) (apply_smul hρ) 0).mp
+      (zero_mem _)
+    add_mem' {x y} hx hy :=
+      (mem_openStabilizerSubmodule (ρ := toRepresentation ρ) (apply_smul hρ) (x + y)).mp <|
+        add_mem ((mem_openStabilizerSubmodule (ρ := toRepresentation ρ) (apply_smul hρ) x).mpr hx)
+          ((mem_openStabilizerSubmodule (ρ := toRepresentation ρ) (apply_smul hρ) y).mpr hy)
+    one_mem' := h1
+    mul_mem' {x y} hx hy := Subgroup.isOpen_mono
+      (H₁ := (MulAction.stabilizer (F ≃ₐ[k] F) x).comap ρ ⊓
+        (MulAction.stabilizer (F ≃ₐ[k] F) y).comap ρ)
+      (H₂ := (MulAction.stabilizer (F ≃ₐ[k] F) (x * y)).comap ρ)
+      (fun σ ⟨hσx, hσy⟩ ↦ (map_mul (ρ σ) x y).trans (congrArg₂ (· * ·) hσx hσy))
+      (hx.inter hy)
+    inv_mem' {x} hx := Subgroup.isOpen_mono
+      (H₁ := (MulAction.stabilizer (F ≃ₐ[k] F) x).comap ρ)
+      (H₂ := (MulAction.stabilizer (F ≃ₐ[k] F) x⁻¹).comap ρ)
+      (fun σ hσ ↦ (map_inv₀ (ρ σ) x).trans (congrArg Inv.inv hσ)) hx
+    algebraMap_mem' c := by
+      rw [Algebra.algebraMap_eq_smul_one]
+      exact (mem_openStabilizerSubmodule (ρ := toRepresentation ρ) (apply_smul hρ)
+        (c • (1 : F))).mp <|
+        (openStabilizerSubmodule (ρ := toRepresentation ρ) (apply_smul hρ)).smul_mem c <|
+          (mem_openStabilizerSubmodule (ρ := toRepresentation ρ) (apply_smul hρ) 1).mpr h1 }
+
+/-- Membership in `openStabilizerSubfield hρ` is openness of the stabilizer in `Gal(L/k)`. -/
+@[simp]
+theorem mem_openStabilizerSubfield [Algebra.IsIntegral k L]
+    {ρ : (L ≃ₐ[k] L) →* (F ≃ₐ[k] F)}
+    (hρ : ∀ σ a, ρ σ (algebraMap L F a) = algebraMap L F (σ a)) (x : F) :
+    x ∈ openStabilizerSubfield hρ ↔ IsOpen {σ : L ≃ₐ[k] L | ρ σ x = x} :=
+  Iff.rfl
+
+/-- Over an algebraic extension `L / k`, if `F` is generated as a field over `L` by elements with
+open stabilizer under a semilinear action `ρ`, then every element of `F` has an open stabilizer in
+`Gal(L/k)`. -/
+theorem isOpen_of_adjoin_eq_top [Algebra.IsIntegral k L]
+    {ρ : (L ≃ₐ[k] L) →* (F ≃ₐ[k] F)}
+    (hρ : ∀ σ a, ρ σ (algebraMap L F a) = algebraMap L F (σ a))
+    {S : Set F} (hS : ∀ x ∈ S, IsOpen {σ : L ≃ₐ[k] L | ρ σ x = x})
+    (hadj : adjoin L S = ⊤) (x : F) :
+    IsOpen {σ : L ≃ₐ[k] L | ρ σ x = x} :=
+  (mem_openStabilizerSubfield hρ x).mp
+    ((adjoin_le_iff.mpr fun y hy ↦ (mem_openStabilizerSubfield hρ y).mpr (hS y hy))
+      (hadj ▸ mem_top))
+
 variable [IsScalarTower k L F]
 
 /-- **The fixed field of a discrete semilinear action spans.** For an arbitrary Galois extension
@@ -177,9 +239,10 @@ section FixedField
 variable [IsGalois k L]
 
 /-- **Discrete Galois descent of a field.** For an arbitrary Galois extension `L / k` and a
-semilinear action `ρ` of `Gal(L/k)` on `F` whose stabilizers are open, the multiplication map
-`L ⊗[k] F^ρ → F`, `a ⊗ x ↦ a • x`, is bijective. -/
-theorem liftEquiv_fixedField_bijective_of_isOpen {ρ : (L ≃ₐ[k] L) →* (F ≃ₐ[k] F)}
+semilinear action `ρ` of `Gal(L/k)` on `F` whose stabilizers are open (automatic via
+`isOpen_discrete` when `L / k` is finite), the multiplication map `L ⊗[k] F^ρ → F`,
+`a ⊗ x ↦ a • x`, is bijective. -/
+theorem liftEquiv_fixedField_bijective {ρ : (L ≃ₐ[k] L) →* (F ≃ₐ[k] F)}
     (hρ : ∀ σ a, ρ σ (algebraMap L F a) = algebraMap L F (σ a))
     (hopen : ∀ x : F, IsOpen {σ : L ≃ₐ[k] L | ρ σ x = x}) :
     Function.Bijective
@@ -200,63 +263,28 @@ theorem liftEquiv_fixedField_bijective_of_isOpen {ρ : (L ≃ₐ[k] L) →* (F �
 /-- **Discrete Galois descent of a field.** A semilinear action `ρ` of `Gal(L/k)` on `F` with open
 stabilizers exhibits its fixed field as a `k`-form of `F`: extending scalars from `k` to `L`
 recovers `F`, by `a ⊗ x ↦ a • x`. -/
-noncomputable def fixedFieldBaseChangeEquivOfIsOpen {ρ : (L ≃ₐ[k] L) →* (F ≃ₐ[k] F)}
+noncomputable def fixedFieldBaseChangeEquiv {ρ : (L ≃ₐ[k] L) →* (F ≃ₐ[k] F)}
     (hρ : ∀ σ a, ρ σ (algebraMap L F a) = algebraMap L F (σ a))
     (hopen : ∀ x : F, IsOpen {σ : L ≃ₐ[k] L | ρ σ x = x}) :
     L ⊗[k] fixedField ρ.range ≃ₐ[L] F :=
-  AlgEquiv.ofBijective _ (liftEquiv_fixedField_bijective_of_isOpen hρ hopen)
-
-/-- `TauCeti.GaloisDescent.fixedFieldBaseChangeEquivOfIsOpen` sends `a ⊗ x` to `a • x`. -/
-@[simp]
-theorem fixedFieldBaseChangeEquivOfIsOpen_tmul {ρ : (L ≃ₐ[k] L) →* (F ≃ₐ[k] F)}
-    (hρ : ∀ σ a, ρ σ (algebraMap L F a) = algebraMap L F (σ a))
-    (hopen : ∀ x : F, IsOpen {σ : L ≃ₐ[k] L | ρ σ x = x}) (a : L)
-    (x : fixedField ρ.range) :
-    fixedFieldBaseChangeEquivOfIsOpen hρ hopen (a ⊗ₜ x) = a • (x : F) := by
-  simp [fixedFieldBaseChangeEquivOfIsOpen]
-
-/-- The inverse of `TauCeti.GaloisDescent.fixedFieldBaseChangeEquivOfIsOpen` sends an element of
-the fixed field to its pure tensor with `1`. -/
-@[simp]
-theorem fixedFieldBaseChangeEquivOfIsOpen_symm_apply_coe {ρ : (L ≃ₐ[k] L) →* (F ≃ₐ[k] F)}
-    (hρ : ∀ σ a, ρ σ (algebraMap L F a) = algebraMap L F (σ a))
-    (hopen : ∀ x : F, IsOpen {σ : L ≃ₐ[k] L | ρ σ x = x}) (x : fixedField ρ.range) :
-    (fixedFieldBaseChangeEquivOfIsOpen hρ hopen).symm (x : F) = 1 ⊗ₜ x :=
-  (AlgEquiv.symm_apply_eq _).mpr (by simp)
-
-variable [FiniteDimensional k L]
-
-/-- **Galois descent of a field.** For a finite Galois extension `L / k` and a semilinear action
-`ρ` of `Gal(L/k)` on `F`, the multiplication map `L ⊗[k] F^ρ → F`, `a ⊗ x ↦ a • x`, is
-bijective. -/
-theorem liftEquiv_fixedField_bijective {ρ : (L ≃ₐ[k] L) →* (F ≃ₐ[k] F)}
-    (hρ : ∀ σ a, ρ σ (algebraMap L F a) = algebraMap L F (σ a)) :
-    Function.Bijective
-      (AlgHom.liftEquiv k L (fixedField ρ.range) F (fixedField ρ.range).val) :=
-  liftEquiv_fixedField_bijective_of_isOpen hρ fun _ ↦ isOpen_discrete _
-
-/-- **Galois descent of a field.** Over a finite Galois extension `L / k`, a semilinear action `ρ`
-of `Gal(L/k)` on `F` exhibits its fixed field as a `k`-form of `F`: extending scalars from `k` to
-`L` recovers `F`, by `a ⊗ x ↦ a • x`. -/
-noncomputable def fixedFieldBaseChangeEquiv {ρ : (L ≃ₐ[k] L) →* (F ≃ₐ[k] F)}
-    (hρ : ∀ σ a, ρ σ (algebraMap L F a) = algebraMap L F (σ a)) :
-    L ⊗[k] fixedField ρ.range ≃ₐ[L] F :=
-  fixedFieldBaseChangeEquivOfIsOpen hρ fun _ ↦ isOpen_discrete _
+  AlgEquiv.ofBijective _ (liftEquiv_fixedField_bijective hρ hopen)
 
 /-- `TauCeti.GaloisDescent.fixedFieldBaseChangeEquiv` sends `a ⊗ x` to `a • x`. -/
 @[simp]
 theorem fixedFieldBaseChangeEquiv_tmul {ρ : (L ≃ₐ[k] L) →* (F ≃ₐ[k] F)}
-    (hρ : ∀ σ a, ρ σ (algebraMap L F a) = algebraMap L F (σ a)) (a : L)
+    (hρ : ∀ σ a, ρ σ (algebraMap L F a) = algebraMap L F (σ a))
+    (hopen : ∀ x : F, IsOpen {σ : L ≃ₐ[k] L | ρ σ x = x}) (a : L)
     (x : fixedField ρ.range) :
-    fixedFieldBaseChangeEquiv hρ (a ⊗ₜ x) = a • (x : F) := by
+    fixedFieldBaseChangeEquiv hρ hopen (a ⊗ₜ x) = a • (x : F) := by
   simp [fixedFieldBaseChangeEquiv]
 
 /-- The inverse of `TauCeti.GaloisDescent.fixedFieldBaseChangeEquiv` sends an element of the fixed
 field to its pure tensor with `1`. -/
 @[simp]
 theorem fixedFieldBaseChangeEquiv_symm_apply_coe {ρ : (L ≃ₐ[k] L) →* (F ≃ₐ[k] F)}
-    (hρ : ∀ σ a, ρ σ (algebraMap L F a) = algebraMap L F (σ a)) (x : fixedField ρ.range) :
-    (fixedFieldBaseChangeEquiv hρ).symm (x : F) = 1 ⊗ₜ x :=
+    (hρ : ∀ σ a, ρ σ (algebraMap L F a) = algebraMap L F (σ a))
+    (hopen : ∀ x : F, IsOpen {σ : L ≃ₐ[k] L | ρ σ x = x}) (x : fixedField ρ.range) :
+    (fixedFieldBaseChangeEquiv hρ hopen).symm (x : F) = 1 ⊗ₜ x :=
   (AlgEquiv.symm_apply_eq _).mpr (by simp)
 
 end FixedField
@@ -332,9 +360,9 @@ theorem eq_baseChangeAction (hE : Function.Bijective (AlgHom.liftEquiv k L E F E
 variable [IsGalois k L]
 
 /-- **The fixed field of the action of a `k`-form is the form.** Together with
-`TauCeti.GaloisDescent.baseChangeAction_fixedField_of_isOpen`, this makes `E ↦ baseChangeAction`
-and `ρ ↦ fixedField ρ.range` mutually inverse between the `k`-forms of `F` and the discrete
-semilinear actions of `Gal(L/k)` on `F` for any Galois extension `L / k`. -/
+`TauCeti.GaloisDescent.baseChangeAction_fixedField`, this makes `E ↦ baseChangeAction` and
+`ρ ↦ fixedField ρ.range` mutually inverse between the `k`-forms of `F` and the discrete semilinear
+actions of `Gal(L/k)` on `F` for any Galois extension `L / k`. -/
 theorem fixedField_baseChangeAction (hE : Function.Bijective (AlgHom.liftEquiv k L E F E.val)) :
     fixedField (baseChangeAction hE).range = E := by
   have h := range_eq_invariants_of_liftBaseChange_surjective_of_isGalois
@@ -345,18 +373,12 @@ theorem fixedField_baseChangeAction (hE : Function.Bijective (AlgHom.liftEquiv k
   simpa [Representation.mem_invariants] using (SetLike.ext_iff.mp h x).symm
 
 /-- **A discrete semilinear action is the action of its fixed field.** -/
-theorem baseChangeAction_fixedField_of_isOpen {ρ : (L ≃ₐ[k] L) →* (F ≃ₐ[k] F)}
+theorem baseChangeAction_fixedField {ρ : (L ≃ₐ[k] L) →* (F ≃ₐ[k] F)}
     (hρ : ∀ σ a, ρ σ (algebraMap L F a) = algebraMap L F (σ a))
     (hopen : ∀ x : F, IsOpen {σ : L ≃ₐ[k] L | ρ σ x = x}) :
-    baseChangeAction (liftEquiv_fixedField_bijective_of_isOpen hρ hopen) = ρ :=
-  (eq_baseChangeAction (liftEquiv_fixedField_bijective_of_isOpen hρ hopen) hρ fun σ x ↦
+    baseChangeAction (liftEquiv_fixedField_bijective hρ hopen) = ρ :=
+  (eq_baseChangeAction (liftEquiv_fixedField_bijective hρ hopen) hρ fun σ x ↦
     (mem_fixedField_iff _ _).mp x.2 (ρ σ) ⟨σ, rfl⟩).symm
-
-/-- **A semilinear action over a finite Galois extension is the action of its fixed field.** -/
-theorem baseChangeAction_fixedField [FiniteDimensional k L] {ρ : (L ≃ₐ[k] L) →* (F ≃ₐ[k] F)}
-    (hρ : ∀ σ a, ρ σ (algebraMap L F a) = algebraMap L F (σ a)) :
-    baseChangeAction (liftEquiv_fixedField_bijective hρ) = ρ :=
-  baseChangeAction_fixedField_of_isOpen hρ fun _ ↦ isOpen_discrete _
 
 end Form
 
