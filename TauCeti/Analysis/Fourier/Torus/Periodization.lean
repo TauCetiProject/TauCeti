@@ -6,6 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.Fourier.Torus.Kernel
+import Mathlib.Algebra.Module.ZLattice.Basic
+import TauCeti.MeasureTheory.Measure.Haar.UnitAddTorus
 import TauCeti.Topology.Instances.AddCircle.UnitAddTorus
 
 /-!
@@ -30,6 +32,12 @@ These are the facts that move the Fourier-series arguments on the torus, such as
 kernel theorem of `TauCeti.Analysis.Fourier.Torus.Kernel`, to smooth functions supported in a
 small compact subset of `d → ℝ`.
 
+Without any support condition, periodization does not increase the `L¹` norm: for measurable
+`f`, `∫_{𝕋ᵈ} ‖periodize f‖ ≤ ∫_{ℝᵈ} ‖f‖` (`UnitAddTorus.lintegral_enorm_periodize_le`), since
+the integral over the torus is the integral over the unit cube, and the integer translates of the
+cube tile `d → ℝ`. This is how `L¹` bounds for kernels on `ℝᵈ` become `L¹` bounds for their
+periodizations, the kernels of the corresponding Fourier multipliers on the torus.
+
 ## Main definitions
 
 * `UnitAddTorus.periodize`: the periodization of a function on `d → ℝ`.
@@ -44,6 +52,7 @@ small compact subset of `d → ℝ`.
   set meeting none of its nonzero integer translates, the periodization agrees with `f`, and its
   derivatives are bounded by those of `f`.
 * `UnitAddTorus.periodize_tensor`: periodization of tensor products.
+* `UnitAddTorus.lintegral_enorm_periodize_le`: periodization does not increase the `L¹` norm.
 -/
 
 public section
@@ -202,6 +211,59 @@ theorem derivBound_periodize {S : Set (d → ℝ)}
   · push Not at h
     rw [Finset.sum_eq_zero fun ℓ hℓ ↦ hzero ℓ (h ℓ hℓ), norm_zero]
     exact (norm_nonneg _).trans (hM 0 (Nat.zero_le _) x₀)
+
+/-! ### The `L¹` norm -/
+
+open MeasureTheory Submodule in
+/-- **Periodization does not increase the `L¹` norm.** For every a.e.-measurable
+`f : (d → ℝ) → ℂ`, `∫_{𝕋ᵈ} ‖periodize f‖ ≤ ∫_{ℝᵈ} ‖f‖`. The integral over the torus is the
+integral over the unit cube, where `‖periodize f‖ ≤ ∑_ℓ ‖f (· + ℓ)‖`, and the integer translates of
+the cube tile `d → ℝ`. -/
+theorem lintegral_enorm_periodize_le {f : (d → ℝ) → ℂ} (hf : AEMeasurable f) :
+    ∫⁻ z, ‖periodize f z‖ₑ ≤ ∫⁻ x, ‖f x‖ₑ := by
+  set b := Pi.basisFun ℝ d
+  set L := span ℤ (range b)
+  have hD := ZSpan.isAddFundamentalDomain b (volume : Measure (d → ℝ))
+  have : VAddInvariantMeasure L (d → ℝ) volume :=
+    inferInstanceAs (VAddInvariantMeasure L.toAddSubgroup (d → ℝ) volume)
+  -- The lattice vectors are the integer vectors.
+  set e : (d → ℤ) ≃ L := ((b.restrictScalars ℤ).equivFun.symm).toEquiv
+  have he (n : d → ℤ) : ((e n : L) : d → ℝ) = fun i ↦ (n i : ℝ) := by
+    classical
+    ext i
+    simp [e, b, Module.Basis.equivFun_symm_apply, Pi.basisFun_apply, Pi.single_apply]
+  -- The unit cube `(0, 1]^d` and the fundamental domain `[0, 1)^d` agree up to a null set.
+  have hcube : {x : d → ℝ | ∀ i, x i ∈ Ioc ((0 : d → ℝ) i) ((0 : d → ℝ) i + 1)} =ᵐ[volume]
+      ZSpan.fundamentalDomain b := by
+    have h1 := (Measure.univ_pi_Ioc_ae_eq_Icc (μ := fun _ : d ↦ (volume : Measure ℝ))
+      (f := 0) (g := 1)).trans (Measure.univ_pi_Ico_ae_eq_Icc (f := 0) (g := 1)).symm
+    have h2 : ZSpan.fundamentalDomain b = univ.pi fun _ : d ↦ Ico (0 : ℝ) 1 := by
+      ext x
+      simp [ZSpan.mem_fundamentalDomain, b]
+    rw [h2]
+    simpa [Set.pi, volume_pi] using h1
+  -- The integral over the torus is the integral over the unit cube.
+  have hlift : ∫⁻ z, ‖periodize f z‖ₑ =
+      ∫⁻ x in {x : d → ℝ | ∀ i, x i ∈ Ioc ((0 : d → ℝ) i) ((0 : d → ℝ) i + 1)},
+        ‖periodize f fun i ↦ (x i : UnitAddCircle)‖ₑ := by
+    rw [TauCeti.UnitAddTorus.volume_eq_pi_haarAddCircle]
+    exact lintegral_preimage (fun z ↦ ‖periodize f z‖ₑ) 0
+  rw [hlift, setLIntegral_congr hcube]
+  simp_rw [periodize_coe]
+  have hmeas (ℓ : d → ℤ) : AEMeasurable (fun x ↦ ‖f (x + fun i ↦ (ℓ i : ℝ))‖ₑ)
+      (volume.restrict (ZSpan.fundamentalDomain b)) :=
+    (hf.comp_quasiMeasurePreserving
+      (measurePreserving_add_right volume _).quasiMeasurePreserving).eNorm.restrict
+  calc ∫⁻ x in ZSpan.fundamentalDomain b, ‖∑' ℓ : d → ℤ, f (x + fun i ↦ (ℓ i : ℝ))‖ₑ
+      ≤ ∫⁻ x in ZSpan.fundamentalDomain b, ∑' ℓ : d → ℤ, ‖f (x + fun i ↦ (ℓ i : ℝ))‖ₑ :=
+        lintegral_mono fun x ↦ eNorm_tsum_le_tsum_eNorm
+    _ = ∑' ℓ : d → ℤ, ∫⁻ x in ZSpan.fundamentalDomain b, ‖f (x + fun i ↦ (ℓ i : ℝ))‖ₑ :=
+        lintegral_tsum hmeas
+    _ = ∫⁻ x, ‖f x‖ₑ := by
+        -- The translates of the fundamental domain by the lattice tile `d → ℝ`.
+        rw [hD.lintegral_eq_tsum'' (fun x ↦ ‖f x‖ₑ), ← e.tsum_eq]
+        congr 1 with ℓ
+        simp only [Submodule.vadd_def, vadd_eq_add, he, add_comm]
 
 /-! ### Tensor products -/
 
