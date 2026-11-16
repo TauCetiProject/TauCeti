@@ -17,7 +17,7 @@ the original lattice; the quotient lattice is its image in the quotient vector s
 inclusion and projection form an exact sequence, and the quotient of the original lattice
 by this intersection is isomorphic to its image.
 
-The restriction requires a Noetherian coefficient domain with the given fraction field.
+The restriction requires a Noetherian coefficient ring with the given total ring of fractions.
 The quotient construction and the exactness statement require only `ContinuousAdd V` for
 the ambient topology: the quotient map is then open, so the quotient action is jointly
 continuous. The quotient image is a lattice without a Noetherian or fraction-field hypothesis.
@@ -48,7 +48,7 @@ variable {Γ : Type*} [Monoid Γ] [TopologicalSpace Γ] {O : Type*} [CommRing O]
 
 section Subspace
 
-variable {E : Type*} [Field E] [Algebra O E]
+variable {E : Type*} [CommRing E] [Algebra O E]
   {V : Type*} [AddCommGroup V] [Module E V] [Module O V] [IsScalarTower O E V]
   [TopologicalSpace V] {ρ : ContinuousRep Γ E V}
   (Λ : IntegralModel O ρ) (W : Submodule E V) (hW : ∀ g, ∀ x ∈ W, ρ g x ∈ W)
@@ -59,8 +59,9 @@ def submodel [IsFractionRing O E] [IsNoetherianRing O] :
   lattice := Λ.lattice.comap (W.subtype.restrictScalars O)
   isLattice := Λ.lattice.isLattice_comap W.subtype W.injective_subtype
   stable g x hx := by
-    simpa only [Submodule.mem_comap, LinearMap.restrictScalars_apply,
-      Submodule.subtype_apply, ContinuousRep.coe_subrepresentation_apply] using Λ.stable g x hx
+    simp only [Submodule.mem_comap, LinearMap.restrictScalars_apply,
+      Submodule.subtype_apply, ContinuousRep.coe_subrepresentation_apply] at hx ⊢
+    exact Λ.stable g x hx
 
 @[simp]
 theorem lattice_submodel [IsFractionRing O E] [IsNoetherianRing O] :
@@ -84,17 +85,22 @@ theorem range_submodelInclusion [IsFractionRing O E] [IsNoetherianRing O] :
     LinearMap.range (Λ.submodelInclusion W hW) =
       (W.restrictScalars O).comap Λ.lattice.subtype := by
   ext x
+  simp only [LinearMap.mem_range, Submodule.mem_comap, Submodule.subtype_apply,
+    Submodule.restrictScalars_mem]
   constructor
   · rintro ⟨y, rfl⟩
-    exact (y : W).property
+    simpa only [coe_submodelInclusion_apply] using (y : W).property
   · intro hx
-    exact ⟨⟨⟨x, hx⟩, x.property⟩, rfl⟩
+    refine ⟨⟨⟨x, hx⟩, by simp⟩, Subtype.ext ?_⟩
+    simp
 
 /-- Inclusion of the subspace lattice is injective. -/
 theorem submodelInclusion_injective [IsFractionRing O E] [IsNoetherianRing O] :
     Function.Injective (Λ.submodelInclusion W hW) := by
   intro x y h
-  exact Subtype.ext (Subtype.ext (congrArg (fun z : Λ.lattice ↦ (z : V)) h))
+  have hval := congrArg Subtype.val h
+  simp only [coe_submodelInclusion_apply] at hval
+  exact Subtype.ext (Subtype.ext hval)
 
 /-- Inclusion intertwines the integral actions. -/
 theorem submodelInclusion_equivariant [IsFractionRing O E] [IsNoetherianRing O]
@@ -179,7 +185,7 @@ end Quotient
 
 section Exactness
 
-variable {E : Type*} [Field E] [Algebra O E]
+variable {E : Type*} [CommRing E] [Algebra O E]
   {V : Type*} [AddCommGroup V] [Module E V] [Module O V] [IsScalarTower O E V]
   [TopologicalSpace V] [ContinuousAdd V] {ρ : ContinuousRep Γ E V}
   (Λ : IntegralModel O ρ) (W : Submodule E V) (hW : ∀ g, ∀ x ∈ W, ρ g x ∈ W)
