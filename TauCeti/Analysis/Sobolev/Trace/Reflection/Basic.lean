@@ -43,7 +43,8 @@ Dominated convergence then passes to the limit.
 ## Main declarations
 
 * `TauCeti.normalLinearReflection`: the linear reflection `(t, y) ↦ (-t, y)`, which is Mathlib's
-  `Submodule.reflection` in the hyperplane `{0} × E`.
+  `Submodule.reflection` in the hyperplane `{0} × E`, orthogonal to the normal `(1, 0)`
+  (`TauCeti.normalLinearReflection_eq_reflection`).
 * `TauCeti.normalReflection`: the affine reflection `(t, y) ↦ (2a - t, y)` in `{a} × E`, with
   its measure preservation and derivative. It is the special case of
   `TauCeti.hyperplaneReflection` with normal `(1, 0)`
@@ -220,6 +221,16 @@ theorem normalReflection_eq_hyperplaneReflection (a : ℝ) :
   ext x
   obtain ⟨⟨t, y⟩⟩ := x
   rw [normalReflection_apply, hyperplaneReflection_apply]
+  simp [WithLp.prod_inner_apply, ← WithLp.toLp_smul, ← WithLp.toLp_sub]
+  ring
+
+/-- The linear normal reflection is the reflection in the hyperplane orthogonal to the normal
+direction `(1, 0)`, the linear part of `TauCeti.hyperplaneReflection` with that normal. -/
+theorem normalLinearReflection_eq_reflection :
+    normalLinearReflection E = (ℝ ∙ WithLp.toLp 2 ((1 : ℝ), (0 : E)))ᗮ.reflection := by
+  ext x
+  obtain ⟨⟨t, y⟩⟩ := x
+  rw [normalLinearReflection_apply, reflection_orthogonal_singleton_apply_div_norm_sq]
   simp [WithLp.prod_inner_apply, ← WithLp.toLp_smul, ← WithLp.toLp_sub]
   ring
 

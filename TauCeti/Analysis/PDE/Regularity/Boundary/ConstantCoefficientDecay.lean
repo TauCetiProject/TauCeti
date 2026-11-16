@@ -221,7 +221,7 @@ private theorem dist_boundaryShear_symm_le (h : ⟪ν, conormalShearVector A ν�
 private theorem measurePreserving_boundaryShear (h : ⟪ν, conormalShearVector A ν⟫_ℝ = 0) :
     MeasurePreserving (boundaryShear A ν c₀ h) volume volume := by
   have hdet : LinearMap.det (transvectionL ν (conormalShearVector A ν)).toLinearMap = 1 := by
-    simpa [ContinuousLinearMap.det, h] using det_transvectionL ν (conormalShearVector A ν)
+    simp [h]
   have hL : MeasurePreserving (transvectionL ν (conormalShearVector A ν)) volume volume := by
     refine ⟨(transvectionL ν _).continuous.measurable, ?_⟩
     simpa [hdet] using Measure.map_linearMap_addHaar_eq_smul_addHaar volume
@@ -782,7 +782,7 @@ private theorem exists_boundaryReflection {lam Lam : ℝ} (hlam : 0 < lam)
       W1p.gradient (h - W1p.compHyperplaneReflectionL (U := ⟨ball z (r / κ), isOpen_ball⟩)
         ENNReal.ofNat_ne_top ν c₀ hYρ h) y =
       transvectionL (conormalShearVector A ν) ν (W1p.gradient u (boundaryShear A ν c₀ hs y)) := by
-    have hgh0 := W1p.ae_gradient_eq_zero_of_inner_lt hH hvan
+    have hgh0 := W1p.gradient_ae_eq_zero_of_value_ae_eq_zero_of_inner_lt hH hvan
     have hsub : MeasurableSet (ball z (r / κ) ∩ (H : Set (EuclideanSpace ℝ ι))) :=
       measurableSet_ball.inter H.isOpen.measurableSet
     filter_upwards [ae_restrict_of_ae_restrict_of_subset inter_subset_left

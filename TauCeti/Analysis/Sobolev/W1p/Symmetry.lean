@@ -21,6 +21,8 @@ a test function `ψ`, the first weak derivatives of `u` pair symmetrically with 
 
 ## Main declarations
 
+* `TauCeti.W1p.hasWeakLineDerivOn_inner_gradient`: the weak line derivative of a `W^{1,p}`
+  function in the direction `z` is `⟪∇u, z⟫`.
 * `TauCeti.W1p.hasWeakLineDerivOn_inner_gradient_comm`: second weak derivatives of a
   `W^{1,p}` function are symmetric.
 * `TauCeti.W1p.integral_lineDeriv_smul_inner_gradient_comm`: first derivatives of a test function
@@ -38,15 +40,18 @@ variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteDim
   [MeasurableSpace E] [OpensMeasurableSpace E] {μ : Measure E} [μ.IsAddHaarMeasure]
   {Ω : Opens E} {p : ENNReal} [Fact (1 ≤ p)]
 
+/-- The weak line derivative of `u ∈ W^{1,p}(Ω)` in the direction `z` is `⟪∇u, z⟫`. -/
+theorem W1p.hasWeakLineDerivOn_inner_gradient (U : W1p μ Ω p) (z : E) :
+    HasWeakLineDerivOn μ Ω (W1p.value U) (fun x => ⟪W1p.gradient U x, z⟫_ℝ) z := by
+  simpa only [innerSL_apply_apply] using (W1p.hasWeakFDerivOn U).hasWeakLineDerivOn z
+
 /-- **Second derivatives of a Sobolev function are symmetric.** If `∂_y u = ⟪∇u, y⟫` has the weak
 derivative `G` in the direction `w`, then `∂_w u` has the weak derivative `G` in the direction
 `y`. -/
 theorem W1p.hasWeakLineDerivOn_inner_gradient_comm {U : W1p μ Ω p} {y w : E} {G : E → ℝ}
     (hG : HasWeakLineDerivOn μ Ω (fun x => ⟪W1p.gradient U x, y⟫_ℝ) G w) :
-    HasWeakLineDerivOn μ Ω (fun x => ⟪W1p.gradient U x, w⟫_ℝ) G y := by
-  have hfd : ∀ z, HasWeakLineDerivOn μ Ω (W1p.value U) (fun x => ⟪W1p.gradient U x, z⟫_ℝ) z :=
-    fun z => by simpa only [innerSL_apply_apply] using (W1p.hasWeakFDerivOn U).hasWeakLineDerivOn z
-  exact (hfd y).comm hG (hfd w)
+    HasWeakLineDerivOn μ Ω (fun x => ⟪W1p.gradient U x, w⟫_ℝ) G y :=
+  (W1p.hasWeakLineDerivOn_inner_gradient U y).comm hG (W1p.hasWeakLineDerivOn_inner_gradient U w)
 
 open LineDeriv in
 /-- **Symmetric pairing of first derivatives.** For `u ∈ W^{1,p}(Ω)`, a test function `ψ` on `Ω`
@@ -55,9 +60,9 @@ sides are `-∫ (∂_w ∂_v ψ) u`, and derivatives of test functions commute. 
 theorem W1p.integral_lineDeriv_smul_inner_gradient_comm (U : W1p μ Ω p) (ψ : 𝓓(Ω, ℝ)) (v w : E) :
     ∫ x, lineDeriv ℝ (ψ : E → ℝ) x v • ⟪W1p.gradient U x, w⟫_ℝ ∂μ =
       ∫ x, lineDeriv ℝ (ψ : E → ℝ) x w • ⟪W1p.gradient U x, v⟫_ℝ ∂μ := by
-  have hfd : ∀ z, HasWeakLineDerivOn μ Ω (W1p.value U) (fun x => ⟪W1p.gradient U x, z⟫_ℝ) z :=
-    fun z => by simpa only [innerSL_apply_apply] using (W1p.hasWeakFDerivOn U).hasWeakLineDerivOn z
-  have h := fun z z' : E => (hfd z).integral_lineDeriv_smul_eq_neg_integral_smul (∂_{z'} ψ)
+  have h := fun z z' : E =>
+    (W1p.hasWeakLineDerivOn_inner_gradient U z).integral_lineDeriv_smul_eq_neg_integral_smul
+      (∂_{z'} ψ)
   simp only [TestFunction.lineDerivOp_apply] at h
   rw [← neg_neg (∫ x, _ ∂μ), ← h w v]
   simp_rw [TestFunction.lineDeriv_lineDerivOp_comm ψ v w]

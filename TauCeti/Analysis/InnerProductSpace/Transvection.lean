@@ -99,6 +99,7 @@ theorem transvectionEquivL_symm_apply {ν s : E} (h : ⟪ν, s⟫_ℝ = 0) (x : 
     ContinuousLinearEquiv.equivOfInverse_apply]
 
 /-- The transvection `x ↦ x + ⟪ν, x⟫ s` has determinant `1 + ⟪ν, s⟫`. -/
+@[simp]
 theorem det_transvectionL [FiniteDimensional ℝ E] (ν s : E) :
     (transvectionL ν s).det = 1 + ⟪ν, s⟫_ℝ := by
   rw [ContinuousLinearMap.det, coe_transvectionL, LinearMap.transvection.det,

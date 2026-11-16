@@ -405,7 +405,7 @@ private theorem ae_jetField_eq_zero_of_ae_value_eq_zero (hν : ν ≠ 0)
     (hH : ∀ x, x ∈ H ↔ c₀ < ⟪x, ν⟫_ℝ) {u : W1p mu U 2}
     (hu0 : ∀ᵐ x ∂mu.restrict U, x ∉ H → W1p.value u x = 0) :
     ∀ᵐ x ∂mu.restrict U, x ∉ H → jetField u x = 0 := by
-  have hgrad := W1p.ae_gradient_eq_zero_of_inner_lt hH hu0
+  have hgrad := W1p.gradient_ae_eq_zero_of_value_ae_eq_zero_of_inner_lt hH hu0
   filter_upwards [hu0, hgrad, ae_restrict_of_ae (measure_eq_zero_iff_ae_notMem.1
     (Measure.addHaar_setOf_inner_eq mu hν c₀))] with x hv hg hx hxH
   have hlt : ⟪x, ν⟫_ℝ < c₀ :=

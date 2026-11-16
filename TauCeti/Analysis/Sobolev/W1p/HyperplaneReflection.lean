@@ -352,7 +352,7 @@ theorem W1p0.setIntegral_mul_value_restrictSubCompHyperplaneReflectionL (hp : p 
 
 /-- If `u ∈ W^{1,p}(U)` vanishes on `U ∖ H`, where `H = {x | c < ⟪x, ν⟫}`, then its weak
 gradient vanishes almost everywhere on the open half-space `{x | ⟪x, ν⟫ < c}`. -/
-theorem W1p.ae_gradient_eq_zero_of_inner_lt (hH : ∀ x, x ∈ H ↔ c < ⟪x, ν⟫_ℝ)
+theorem W1p.gradient_ae_eq_zero_of_value_ae_eq_zero_of_inner_lt (hH : ∀ x, x ∈ H ↔ c < ⟪x, ν⟫_ℝ)
     {u : W1p mu U p} (hu0 : ∀ᵐ x ∂mu.restrict U, x ∉ H → W1p.value u x = 0) :
     ∀ᵐ x ∂mu.restrict U, ⟪x, ν⟫_ℝ < c → W1p.gradient u x = 0 := by
   filter_upwards [W1p.gradient_ae_eq_zero_of_value_ae_eq_zero_of_isClosed (u := u)
@@ -381,25 +381,25 @@ theorem W1p.gradient_sub_compHyperplaneReflectionL_hyperplaneReflection_ae (hp :
   rw [h2, h1, hyperplaneReflection_hyperplaneReflection, map_sub, Submodule.reflection_reflection,
     neg_sub]
 
-/-- **The gradient of the odd reflection, pointwise.** Let `u ∈ W^{1,2}(U)` vanish on `U ∖ H`,
-where `H = {x | c < ⟪x, ν⟫}`, `ν ≠ 0`, and let `G = 1_H ‖∇u - t ν‖²` for a real `t`. Then almost
-everywhere on `U` the odd reflection `w = u - u ∘ ρ` satisfies `‖∇w - t ν‖² ≤ G + G ∘ ρ`. Above
+/-- **The gradient of the odd reflection, pointwise.** Let `u ∈ W^{1,p}(U)`, `p < ∞`, vanish on
+`U ∖ H`, where `H = {x | c < ⟪x, ν⟫}`, `ν ≠ 0`, and let `G = 1_H ‖∇u - t ν‖²` for a real `t`.
+Then almost everywhere on `U` the odd reflection `w = u - u ∘ ρ` satisfies
+`‖∇w - t ν‖² ≤ G + G ∘ ρ`. Above
 the hyperplane `∇w = ∇u`; below it `∇w = -R (∇u ∘ ρ)`, and the linear part `R` of `ρ` is an
 isometry sending `ν` to `-ν`. -/
-theorem W1p.ae_norm_gradient_sub_compHyperplaneReflectionL_sub_smul_sq_le (hν : ν ≠ 0)
-    (hH : ∀ x, x ∈ H ↔ c < ⟪x, ν⟫_ℝ) (hU : MapsTo (hyperplaneReflection ν c) U U)
-    {u : W1p mu U 2} (hu0 : ∀ᵐ x ∂mu.restrict U, x ∉ H → W1p.value u x = 0) (t : ℝ) :
+theorem W1p.ae_norm_gradient_sub_compHyperplaneReflectionL_sub_smul_sq_le (hp : p ≠ ⊤)
+    (hν : ν ≠ 0) (hH : ∀ x, x ∈ H ↔ c < ⟪x, ν⟫_ℝ) (hU : MapsTo (hyperplaneReflection ν c) U U)
+    {u : W1p mu U p} (hu0 : ∀ᵐ x ∂mu.restrict U, x ∉ H → W1p.value u x = 0) (t : ℝ) :
     ∀ᵐ x ∂mu.restrict U,
-      ‖W1p.gradient (u - W1p.compHyperplaneReflectionL ENNReal.ofNat_ne_top ν c hU u) x -
-          t • ν‖ ^ 2 ≤
+      ‖W1p.gradient (u - W1p.compHyperplaneReflectionL hp ν c hU u) x - t • ν‖ ^ 2 ≤
         (H : Set E).indicator (fun y => ‖W1p.gradient u y - t • ν‖ ^ 2) x +
           (H : Set E).indicator (fun y => ‖W1p.gradient u y - t • ν‖ ^ 2)
             (hyperplaneReflection ν c x) := by
   set ρ := hyperplaneReflection ν c
-  have hgu0 := W1p.ae_gradient_eq_zero_of_inner_lt hH hu0
+  have hgu0 := W1p.gradient_ae_eq_zero_of_value_ae_eq_zero_of_inner_lt hH hu0
   filter_upwards [Lp.coeFn_sub (W1p.gradient u) (W1p.gradient
-      (W1p.compHyperplaneReflectionL ENNReal.ofNat_ne_top ν c hU u)),
-    W1p.gradient_compHyperplaneReflectionL_ae ENNReal.ofNat_ne_top hU u, hgu0,
+      (W1p.compHyperplaneReflectionL hp ν c hU u)),
+    W1p.gradient_compHyperplaneReflectionL_ae hp hU u, hgu0,
     (measurePreserving_restrict_hyperplaneReflection hU
       U.isOpen.measurableSet).quasiMeasurePreserving.ae hgu0,
     ae_restrict_of_ae (measure_eq_zero_iff_ae_notMem.1
@@ -435,7 +435,8 @@ theorem W1p.setIntegral_norm_gradient_sub_compHyperplaneReflectionL_sub_smul_sq_
         t • ν‖ ^ 2 ∂mu ≤
       2 * ∫ x in (U : Set E) ∩ H, ‖W1p.gradient u x - t • ν‖ ^ 2 ∂mu := by
   set ρ := hyperplaneReflection ν c
-  have hpt := W1p.ae_norm_gradient_sub_compHyperplaneReflectionL_sub_smul_sq_le hν hH hU hu0 t
+  have hpt := W1p.ae_norm_gradient_sub_compHyperplaneReflectionL_sub_smul_sq_le
+    ENNReal.ofNat_ne_top hν hH hU hu0 t
   obtain ⟨G, hG⟩ : ∃ G : E → ℝ,
       (H : Set E).indicator (fun y => ‖W1p.gradient u y - t • ν‖ ^ 2) = G := ⟨_, rfl⟩
   rw [hG] at hpt

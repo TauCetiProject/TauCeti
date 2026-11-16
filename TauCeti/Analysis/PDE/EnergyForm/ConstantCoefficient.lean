@@ -48,9 +48,8 @@ private theorem energyFormH1_ofTestFunctionₗ_eq_sum_sum (A : Matrix ι ι ℝ)
         (EuclideanSpace.basisFun ι ℝ i) •
           ⟪W1p.gradient u x, EuclideanSpace.basisFun ι ℝ j⟫_ℝ ∂mu := by
   set b := EuclideanSpace.basisFun ι ℝ
-  have hloc : ∀ j, LocallyIntegrableOn (fun x => ⟪W1p.gradient u x, b j⟫_ℝ) Omega mu := fun j => by
-    simpa only [innerSL_apply_apply] using
-      ((W1p.hasWeakFDerivOn u).hasWeakLineDerivOn (b j)).locallyIntegrableOn_deriv
+  have hloc : ∀ j, LocallyIntegrableOn (fun x => ⟪W1p.gradient u x, b j⟫_ℝ) Omega mu := fun j =>
+    (W1p.hasWeakLineDerivOn_inner_gradient u (b j)).locallyIntegrableOn_deriv
   rw [energyFormH1_ofTestFunctionₗ_eq_sum]
   refine Finset.sum_congr rfl fun j _ => ?_
   -- The `j`-th column of `A` is `∑ᵢ Aᵢⱼ bᵢ`.
