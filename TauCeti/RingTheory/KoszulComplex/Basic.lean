@@ -36,10 +36,9 @@ Koszul complex `K(x)` of the sequence, whose zeroth homology is `R ⧸ (x₁, �
   after adjoining one scalar to a linear functional.
 * `TauCeti.wedgeLeft_comp_add_map_inl_comp`: the splitting `z = a + e ∧ b` of
   `⋀ⁿ⁺¹ (M × R)` into `a ∈ ⋀ⁿ⁺¹ M` and `b ∈ ⋀ⁿ M`, with `e = (0, 1)`, together with the
-  component identities `TauCeti.exteriorPower.map_fst_comp_map_inl`,
-  `TauCeti.exteriorPower.map_fst_comp_wedgeLeft`,
-  `TauCeti.map_fst_koszulDifferential_snd_comp_wedgeLeft` and
-  `TauCeti.map_fst_koszulDifferential_snd_comp_map_inl`.
+  component identities `TauCeti.map_fst_koszulDifferential_snd_comp_wedgeLeft` and
+  `TauCeti.map_fst_koszulDifferential_snd_comp_map_inl`. The pure exterior-power component
+  identities are in `TauCeti.LinearAlgebra.ExteriorPower.Prod`.
 * `TauCeti.koszulComplex.exactAt_succ_iff`: `Hₖ₊₁(K(φ)) = 0` exactly when the Koszul
   differentials out of and into `⋀ᵏ⁺¹ M` are exact.
 * `TauCeti.koszulComplex.map`: the chain map `K(φ) → K(ψ)` induced by a linear map `g` with

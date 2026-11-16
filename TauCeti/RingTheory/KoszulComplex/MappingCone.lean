@@ -77,9 +77,7 @@ private theorem inlHom_f (n : ℕ) :
 
 /-- The null-homotopy `b ↦ e ∧ b` of `K(φ) → K(φ, y)` followed by multiplication by `y`. -/
 private def inlHomotopy : Homotopy ((y • 𝟙 (koszulComplex φ)) ≫ inlHom φ y) 0 :=
-  (Homotopy.ofEq (by
-    have : φ.coprod (LinearMap.toSpanSingleton R R y) (LinearMap.inr R M R 1) = y := by simp
-    rw [this, Linear.smul_comp, Linear.comp_smul, Category.id_comp, Category.comp_id])).trans
+  (Homotopy.ofEq (by simp)).trans
     (((smulHomotopy _ (LinearMap.inr R M R 1)).compLeft (inlHom φ y)).trans
       (Homotopy.ofEq (Limits.comp_zero)))
 
