@@ -692,12 +692,12 @@ theorem sym2_ne_of_lt_of_lt_of_lt_of_sym2_eq {i₁ i₂ j₁ j₂ : ℕ} (h₁ :
     (he₁ : s(w i₁, w (i₁ + 1)) = s(w j₁, w (j₁ + 1))) :
     s(w i₂, w (i₂ + 1)) ≠ s(w j₂, w (j₂ + 1)) := by
   intro he₂
-  obtain ⟨hi₁, hj₁, _⟩ := hw.up_and_down_of_lt_of_sym2_eq (h₁.trans h₂) (by omega) he₁
-  obtain ⟨hi₂, hj₂, _⟩ := hw.up_and_down_of_lt_of_sym2_eq (h₂.trans h₃) h₄ he₂
+  obtain ⟨hi₁, hj₁, hj₁_ret⟩ := hw.up_and_down_of_lt_of_sym2_eq (h₁.trans h₂) (by omega) he₁
+  obtain ⟨hi₂, hj₂, -⟩ := hw.up_and_down_of_lt_of_sym2_eq (h₂.trans h₃) h₄ he₂
   set s := upSteps k w
   have hw_eq (m : ℕ) (hm : m ≤ 2 * k) : walkOf s m = w m := hw.walkOf_upSteps m hm
   have hsj₁ : s j₁ = false := by
-    have := hw.le_self i₁ (by omega)
+    have hle := hw.le_self i₁ (by omega)
     simp only [s, upSteps, decide_eq_false_iff_not]
     omega
   -- Between `i₁ + 1` and `j₁`, the walk stays in the subtree of `i₁ + 1`, since leaving it by a

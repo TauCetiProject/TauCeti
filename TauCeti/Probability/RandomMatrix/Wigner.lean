@@ -15,9 +15,6 @@ public import Mathlib.Probability.Independence.InfinitePi
 public import TauCeti.MeasureTheory.MeasurableSpace.Pi
 public import TauCeti.LinearAlgebra.Matrix.Trace.Hermitian
 
-import Mathlib.Logic.Equiv.Sum
-import TauCeti.Probability.Independence.Basic
-
 /-!
 # Wigner matrices
 
@@ -35,18 +32,18 @@ and resolvent methods:
 * the matrix depends only on the entries in its corner (`wignerMatrix_congr`,
   `wignerMatrix_ite_lt`), and the top-left `m × m` corner of `Hₙ` is `√(m/n) Hₘ`
   (`submatrix_castLE_wignerMatrix`);
-* measurability in the sample point;
+* measurability in the sample point from corner entries (`measurable_wignerMatrix`,
+  `aemeasurable_wignerMatrix`);
 * when the entries are independent, the minor `Hₙ` is independent of the off-diagonal entries of
   the row and column removed from `Hₙ₊₁` (`indepFun_wignerMatrix_column`); the same holds for
   the actual principal submatrix of `Hₙ₊₁` (`indepFun_submatrix_castSucc_wignerMatrix`),
-  independence passes to and from the `< n` corner (`iIndepFun_sumElim_ofReal_subtype_lt`,
-  `iIndepFun_sumElim_ofReal_ite_lt`), and the law of `Hₙ` depends only on the laws of the entries
-  (`identDistrib_wignerMatrix`);
+  independence restricts to the `< n` corner (`iIndepFun_sumElim_ofReal_subtype_lt`), and the law
+  of `Hₙ` depends only on the laws of the entries (`identDistrib_wignerMatrix`);
 * entries at distinct off-diagonal unordered positions, and their squared absolute values, are
-  independent (`iIndepFun_wignerMatrix_apply_of_ne`,
+  independent whenever the corner upper entries are (`iIndepFun_wignerMatrix_apply_of_ne`,
   `iIndepFun_norm_wignerMatrix_apply_sq_of_ne`);
-* centred entries give centred matrix entries (`integral_wignerMatrix_apply_eq_zero`), `Lᵖ` corner
-  entries give `Lᵖ` matrix entries (`memLp_wignerMatrix_apply`), and a product of `k` matrix
+* centred corner entries give centred matrix entries (`integral_wignerMatrix_apply_eq_zero`), `Lᵖ`
+  corner entries give `Lᵖ` matrix entries (`memLp_wignerMatrix_apply`), and a product of `k` matrix
   entries is integrable when the corner entries lie in `Lᵏ`
   (`integrable_prod_wignerMatrix_apply`);
 * the normalisation check `E trₙ Hₙ² = (σ² + (n - 1) s)/n` when the diagonal entries have second
@@ -223,14 +220,19 @@ theorem aemeasurable_sumElim_ofReal {P : Measure Ω} (hξ : ∀ ij, AEMeasurable
   | inl ij => exact hξ ij
   | inr i => exact Complex.measurable_ofReal.comp_aemeasurable (hη i)
 
-/-- A Wigner matrix with measurable entries is a measurable random matrix. -/
-theorem measurable_wignerMatrix (hξ : ∀ ij, Measurable (ξ ij)) (hη : ∀ i, Measurable (η i))
-    (n : ℕ) : Measurable (wignerMatrix ξ η n) := by
-  rw [← wignerOfArray_comp]
-  refine (measurable_wignerOfArray n).comp (measurable_pi_iff.2 fun k ↦ ?_)
-  cases k with
-  | inl ij => exact hξ ij
-  | inr i => exact Complex.measurable_ofReal.comp (hη i)
+/-- A Wigner matrix of size `n` whose corner entries are measurable is a measurable random
+matrix. -/
+theorem measurable_wignerMatrix {n : ℕ} (hξ : ∀ ij : StrictUpper, ij.1.2 < n → Measurable (ξ ij))
+    (hη : ∀ i < n, Measurable (η i)) : Measurable (wignerMatrix ξ η n) := by
+  refine Measurable.of_eval_matrix _ fun i j ↦ ?_
+  rcases lt_trichotomy i.val j.val with h | h | h
+  · simp only [wignerMatrix_apply_of_lt _ _ _ h]
+    exact measurable_const.mul (hξ _ j.isLt)
+  · obtain rfl := Fin.ext h
+    simp only [wignerMatrix_apply_self]
+    exact measurable_const.mul (Complex.measurable_ofReal.comp (hη _ i.isLt))
+  · simp only [wignerMatrix_apply_of_gt _ _ _ h]
+    exact measurable_const.mul (continuous_star.measurable.comp (hξ _ i.isLt))
 
 /-- A Wigner matrix of size `n` whose corner entries are almost everywhere measurable is almost
 everywhere measurable. -/
@@ -353,50 +355,26 @@ theorem iIndepFun_sumElim_ofReal_subtype_lt {n : ℕ}
   simpa only [Function.comp_def, Sum.elim_map] using
     hindep.precomp (Subtype.val_injective.sumMap Subtype.val_injective)
 
-/-- Extending independent corner entries of size `n` by `0` outside the `n × n` corner produces an
-independent `StrictUpper ⊕ ℕ`-indexed entry array. -/
-theorem iIndepFun_sumElim_ofReal_ite_lt {n : ℕ}
-    (hindep : iIndepFun
-      (fun r : {ij : StrictUpper // ij.1.2 < n} ⊕ {i : ℕ // i < n} ↦
-        Sum.elim (fun ij ↦ ξ ij.1) (fun i ω ↦ (η i.1 ω : ℂ)) r) P) :
-    iIndepFun (fun r : StrictUpper ⊕ ℕ ↦
-      Sum.elim (fun ij ↦ if ij.1.2 < n then ξ ij else 0)
-        (fun i ω ↦ ((if i < n then η i else 0) ω : ℂ)) r) P := by
-  classical
-  let p : StrictUpper ⊕ ℕ → Prop := Sum.elim (fun ij ↦ ij.1.2 < n) (fun i ↦ i < n)
-  let e : {r : StrictUpper ⊕ ℕ // p r} ≃
-      {ij : StrictUpper // ij.1.2 < n} ⊕ {i : ℕ // i < n} := Equiv.subtypeSum
-  have hp : iIndepFun
-      (fun r : {r : StrictUpper ⊕ ℕ // p r} ↦
-        Sum.elim ξ (fun i ω ↦ (η i ω : ℂ)) r.1) P :=
-    (hindep.precomp e.injective).congr fun r ↦ .of_forall fun _ ↦ by
-      rcases r with ⟨ij | i, _⟩ <;>
-        simp +zetaDelta only [Equiv.subtypeSum, Equiv.coe_fn_mk, Sum.elim_inl, Sum.elim_inr]
-  refine (Probability.iIndepFun_ite_zero hp).congr fun r ↦ .of_forall fun _ ↦ ?_
-  rcases r with ij | i
-  · by_cases h : ij.1.2 < n <;> simp [p, h]
-  · by_cases h : i < n <;> simp [p, h]
-
 end Independence
 
 section IndependentEdges
 
 variable [MeasurableSpace Ω] {P : Measure Ω} {ξ : StrictUpper → Ω → ℂ} {η : ℕ → Ω → ℝ}
 
-/-- Entries at distinct unordered off-diagonal positions are independent whenever the
+/-- Entries at distinct unordered off-diagonal positions are independent whenever the corner
 upper-triangular coordinates are independent. No condition is needed on the diagonal entries. -/
 theorem iIndepFun_wignerMatrix_apply_of_ne {ι : Type*} {n : ℕ} (u v : ι → Fin n)
     (hne : ∀ i, u i ≠ v i) (hinj : Function.Injective fun i ↦ s(u i, v i))
-    (hindep : iIndepFun ξ P) :
+    (hindep : iIndepFun (fun ij : {ij : StrictUpper // ij.1.2 < n} ↦ ξ ij.1) P) :
     iIndepFun (fun i ω ↦ wignerMatrix ξ η n ω (u i) (v i)) P := by
-  let e : ι → StrictUpper := fun i ↦
-    ⟨(min (u i).val (v i).val, max (u i).val (v i).val),
-      min_lt_max.mpr (Fin.val_ne_of_ne (hne i))⟩
+  let e : ι → {ij : StrictUpper // ij.1.2 < n} := fun i ↦
+    ⟨⟨(min (u i).val (v i).val, max (u i).val (v i).val),
+      min_lt_max.mpr (Fin.val_ne_of_ne (hne i))⟩, max_lt (u i).isLt (v i).isLt⟩
   have he : Function.Injective e := by
     intro i j hij
     apply hinj
-    have hmin := congrArg (fun x : StrictUpper ↦ x.1.1) hij
-    have hmax := congrArg (fun x : StrictUpper ↦ x.1.2) hij
+    have hmin := congrArg (fun x : {ij : StrictUpper // ij.1.2 < n} ↦ x.1.1.1) hij
+    have hmax := congrArg (fun x : {ij : StrictUpper // ij.1.2 < n} ↦ x.1.1.2) hij
     simp only [e] at hmin hmax
     rw [Sym2.eq_iff]
     simp only [Fin.ext_iff]
@@ -414,11 +392,11 @@ theorem iIndepFun_wignerMatrix_apply_of_ne {ι : Type*} {n : ℕ} (u v : ι → 
       max_eq_left hij.le, wignerMatrix_apply_of_gt _ _ _ hij]
 
 /-- Squared absolute values of entries at distinct unordered off-diagonal positions are
-independent whenever the upper-triangular coordinates are independent. No condition is needed
-on the diagonal entries. -/
+independent whenever the corner upper-triangular coordinates are independent. No condition is
+needed on the diagonal entries. -/
 theorem iIndepFun_norm_wignerMatrix_apply_sq_of_ne {ι : Type*} {n : ℕ} (u v : ι → Fin n)
     (hne : ∀ i, u i ≠ v i) (hinj : Function.Injective fun i ↦ s(u i, v i))
-    (hindep : iIndepFun ξ P) :
+    (hindep : iIndepFun (fun ij : {ij : StrictUpper // ij.1.2 < n} ↦ ξ ij.1) P) :
     iIndepFun (fun i ω ↦ ‖wignerMatrix ξ η n ω (u i) (v i)‖ ^ 2) P :=
   (iIndepFun_wignerMatrix_apply_of_ne u v hne hinj hindep).comp
     (fun _ z ↦ ‖z‖ ^ 2) (fun _ ↦ by fun_prop)
@@ -429,17 +407,18 @@ section Entries
 
 variable [MeasurableSpace Ω] {P : Measure Ω} {ξ : StrictUpper → Ω → ℂ} {η : ℕ → Ω → ℝ}
 
-
-/-- If the entries of the array are centred, every entry of the Wigner matrix has expectation
-zero. -/
-theorem integral_wignerMatrix_apply_eq_zero (hξ : ∀ ij, ∫ ω, ξ ij ω ∂P = 0)
-    (hη : ∀ i, ∫ ω, η i ω ∂P = 0) {n : ℕ} (i j : Fin n) :
+/-- If the corner entries of size `n` are centred, every entry of the `n × n` Wigner matrix has
+expectation zero. -/
+theorem integral_wignerMatrix_apply_eq_zero {n : ℕ}
+    (hξ : ∀ ij : StrictUpper, ij.1.2 < n → ∫ ω, ξ ij ω ∂P = 0)
+    (hη : ∀ i < n, ∫ ω, η i ω ∂P = 0) (i j : Fin n) :
     ∫ ω, wignerMatrix ξ η n ω i j ∂P = 0 := by
   rcases lt_trichotomy i.val j.val with h | h | h
-  · simp [wignerMatrix_apply_of_lt _ _ _ h, integral_const_mul, hξ]
+  · simp [wignerMatrix_apply_of_lt _ _ _ h, integral_const_mul, hξ ⟨(i.val, j.val), h⟩ j.isLt]
   · obtain rfl := Fin.ext h
-    simp [integral_const_mul, integral_complex_ofReal, hη]
-  · simp [wignerMatrix_apply_of_gt _ _ _ h, integral_const_mul, integral_conj, hξ]
+    simp [integral_const_mul, integral_complex_ofReal, hη _ i.isLt]
+  · simp [wignerMatrix_apply_of_gt _ _ _ h, integral_const_mul, integral_conj,
+      hξ ⟨(j.val, i.val), h⟩ i.isLt]
 
 /-- If the corner entries of size `n` lie in `Lᵖ`, so does every entry of the `n × n` Wigner
 matrix. -/

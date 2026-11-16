@@ -105,15 +105,14 @@ theorem norm_inv_mul_sum_integral_prod_wignerMatrix_leading_sub_le {m n : ℕ} (
           #(univ.image w) = m + 1,
         ∫ ω, ∏ t, wignerMatrix ξ η n ω (w t) (w (finRotate (2 * m) t)) ∂P) -
       (s : ℂ) ^ m * catalan m =
-      (((s ^ m * catalan m * ((n.descFactorial (m + 1) : ℝ) - (n : ℝ) ^ (m + 1)) /
+      -(((s ^ m * catalan m * ((n : ℝ) ^ (m + 1) - n.descFactorial (m + 1)) /
         (n : ℝ) ^ (m + 1)) : ℝ) : ℂ) := by
     rw [sum_integral_prod_wignerMatrix_leading hm hξ hξindep hξsq, mul_pow, inv_pow]
     push_cast
     field_simp [hnc]
     ring
-  rw [hexpr, Complex.norm_real, Real.norm_eq_abs, abs_div, abs_mul,
-    abs_of_nonneg (mul_nonneg (pow_nonneg hs m) (Nat.cast_nonneg _)),
-    abs_of_pos (pow_pos hn_pos (m + 1)), abs_sub_comm, abs_of_nonneg (sub_nonneg.mpr hdesc_le)]
+  rw [hexpr, norm_neg, Complex.norm_real,
+    Real.norm_of_nonneg (by have := sub_nonneg.mpr hdesc_le; positivity)]
   calc s ^ m * catalan m * ((n : ℝ) ^ (m + 1) - n.descFactorial (m + 1)) / (n : ℝ) ^ (m + 1)
       ≤ s ^ m * catalan m * (((m + 1).choose 2 : ℝ) * (n : ℝ) ^ m) / ((n : ℝ) ^ m * n) := by
         rw [pow_succ (n : ℝ) m]
@@ -148,11 +147,7 @@ theorem norm_inv_mul_integral_trace_pow_two_mul_wignerMatrix_sub_le {m n : ℕ} 
   have hB : 0 ≤ B :=
     (integral_nonneg fun _ ↦ by positivity).trans (hη 0 (Nat.pos_of_ne_zero hn))
   rcases eq_or_ne m 0 with rfl | hm
-  · have hnc : (n : ℂ) ≠ 0 := Nat.cast_ne_zero.mpr hn
-    simp only [Nat.mul_zero, pow_zero, Matrix.trace_one, Fintype.card_fin, integral_const,
-      probReal_univ, one_smul, inv_mul_cancel₀ hnc, catalan_zero, Nat.cast_one, mul_one, sub_self,
-      norm_zero, Nat.cast_zero, one_mul, zero_add, Nat.choose_succ_self, add_zero]
-    exact div_nonneg hB (Nat.cast_nonneg n)
+  · simpa [hn] using div_nonneg hB (Nat.cast_nonneg n)
   · classical
     let L : ℂ := ∑ w : Fin (2 * m) → Fin n with
       (∀ t, ∃ r ≠ t, s(w r, w (finRotate (2 * m) r)) = s(w t, w (finRotate (2 * m) t))) ∧

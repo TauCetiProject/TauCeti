@@ -9,7 +9,6 @@ public import TauCeti.Combinatorics.TreeWalk.Basic
 public import TauCeti.Combinatorics.TreeWalk.Canonical
 public import TauCeti.Combinatorics.TreeWalk.Relabeling
 public import TauCeti.Combinatorics.TraceWord.Counting
-import Mathlib.Data.Fintype.Fin
 
 /-!
 # Leading trace words as canonical tree walks
@@ -168,17 +167,6 @@ theorem card_image_closedTreeWalk (c : ClosedTreeWalk m) :
   rw [← card_fixed_canonicalWalk, canonicalWalk_closedTreeWalk]
   exact c.2.1.card_vertices
 
-private theorem card_filter_range_sym2_canonicalWalk_eq {k : ℕ} (w : Fin (k + 1) → α)
-    (i : Fin k) :
-    #{j ∈ range k |
-      s(canonicalWalk w j, canonicalWalk w (j + 1)) =
-        s(canonicalWalk w i.castSucc, canonicalWalk w i.succ)} =
-      #{j : Fin k | s(w j.castSucc, w j.succ) = s(w i.castSucc, w i.succ)} := by
-  rw [← Finset.image_fin_univ, filter_image, card_image_of_injective _ Fin.val_injective]
-  refine congrArg card (filter_congr fun j _ ↦ ?_)
-  rw [← Fin.val_succ j, ← Fin.val_castSucc j]
-  simp only [Sym2.eq_iff, canonicalWalk_eq_iff]
-
 /-- A closed path with `m + 1` vertices and each unordered edge traversed twice becomes a tree
 walk after first-visit relabeling. No order on the original vertex type is needed. -/
 theorem isTreeWalk_canonicalWalk (w : Fin (2 * m + 1) → α)
@@ -233,14 +221,8 @@ theorem isTreeWalk_canonicalWalk_cyclic_iff [NeZero m] (w : Fin (2 * m) → α) 
   have hcard : #{j : Fin (2 * m) |
       s(w j, w (finRotate (2 * m) j)) = s(w i, w (finRotate (2 * m) i))} = 2 := by
     simpa only [cyclicPath_castSucc, cyclicPath_succ] using he i
-  obtain ⟨a, b, hab, hmem⟩ := card_eq_two.mp hcard
-  rcases eq_or_ne a i with rfl | hai
-  · have hb : b ∈ ({a, b} : Finset (Fin (2 * m))) := mem_insert_of_mem (mem_singleton_self b)
-    rw [← hmem, mem_filter] at hb
-    exact ⟨b, hab.symm, hb.2⟩
-  · have ha : a ∈ ({a, b} : Finset (Fin (2 * m))) := mem_insert_self a {b}
-    rw [← hmem, mem_filter] at ha
-    exact ⟨a, hai, ha.2⟩
+  obtain ⟨j, hj, hji⟩ := Finset.exists_mem_ne (by rw [hcard]; decide) i
+  exact ⟨j, hji, (mem_filter.mp hj).2⟩
 
 /-- On a finite vertex set `α`, there are `catalan m * (Nat.card α).descFactorial (m + 1)` paths of
 length `2 * m` whose first-visit canonicalization is a tree walk. -/

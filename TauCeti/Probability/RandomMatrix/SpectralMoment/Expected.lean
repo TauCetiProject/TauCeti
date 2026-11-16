@@ -191,35 +191,6 @@ theorem isProbabilityMeasure_bind_spectralMeasure_wignerMatrix [IsProbabilityMea
   isProbabilityMeasure_bind (aemeasurable_spectralMeasure_wignerMatrix hξ hη)
     (.of_forall fun _ ↦ inferInstance)
 
-private theorem lintegral_ofReal_norm_pow_spectralMeasure_le
-    {m : Type*} [Fintype m] [DecidableEq m] [Nonempty m]
-    (A : Matrix m m ℂ) (hA : A.IsHermitian) (k : ℕ) :
-    ∫⁻ x, ENNReal.ofReal ‖x ^ k‖ ∂(A.spectralMeasure hA : Measure ℝ) ≤
-      ENNReal.ofReal (‖(Fintype.card m : ℝ) * ∑ i, ∑ j, ‖A i j‖‖ ^ k) := by
-  set S : ℝ := ∑ i, ∑ j, ‖A i j‖
-  set M : ℝ := (Fintype.card m : ℝ) * S
-  have hentry (i j : m) : ‖A i j‖ ≤ S :=
-    (Finset.single_le_sum (fun _ _ ↦ norm_nonneg _) (Finset.mem_univ j)).trans
-      (Finset.single_le_sum (fun _ _ ↦ Finset.sum_nonneg fun _ _ ↦ norm_nonneg _)
-        (Finset.mem_univ i))
-  have heig (r : Fin (Fintype.card m)) : ‖hA.eigenvalues₀ r ^ k‖ ≤ ‖M‖ ^ k := by
-    have habs : |hA.eigenvalues₀ r| ≤ M := hA.abs_eigenvalues₀_le_of_entry_le hentry r
-    rw [norm_pow, Real.norm_eq_abs, Real.norm_eq_abs]
-    exact pow_le_pow_left₀ (abs_nonneg _) (habs.trans (le_abs_self _)) k
-  rw [Matrix.spectralMeasure_eq_empiricalMeasureOfFintype_eigenvalues₀,
-    lintegral_empiricalMeasureOfFintype (by fun_prop), Fintype.card_fin]
-  calc ((Fintype.card m : ℕ) : ℝ≥0∞)⁻¹ *
-          ∑ r : Fin (Fintype.card m), ENNReal.ofReal ‖hA.eigenvalues₀ r ^ k‖
-      ≤ ((Fintype.card m : ℕ) : ℝ≥0∞)⁻¹ *
-          ∑ _r : Fin (Fintype.card m), ENNReal.ofReal (‖M‖ ^ k) := by
-        gcongr with r
-        exact heig r
-    _ = ((Fintype.card m : ℕ) : ℝ≥0∞)⁻¹ *
-          (((Fintype.card m : ℕ) : ℝ≥0∞) * ENNReal.ofReal (‖M‖ ^ k)) := by
-        simp [Fintype.card_fin]
-    _ = ENNReal.ofReal (‖M‖ ^ k) :=
-        ENNReal.inv_mul_cancel_left (by simp) (by simp)
-
 /-- On a finite measure space, the monomial `x ↦ x ^ k` is integrable against the expected
 empirical spectral measure `P.bind L_{H_{n+1}}` whenever the corner entry coordinates lie in
 `Lᵏ`. -/
@@ -244,10 +215,16 @@ theorem integrable_pow_bind_spectralMeasure_wignerMatrix [IsFiniteMeasure P] {k 
     (memLp_finsetSum Finset.univ fun i _ ↦
       memLp_finsetSum Finset.univ fun j _ ↦
         (memLp_wignerMatrix_apply hξp hηp i j).norm).const_mul _
+  have hM_nonneg (ω : Ω) : 0 ≤ M ω := by
+    dsimp only [M]
+    positivity
   calc ∫⁻ ω, ∫⁻ x, ENNReal.ofReal ‖x ^ k‖ ∂L ω ∂P
-      ≤ ∫⁻ ω, ENNReal.ofReal (‖M ω‖ ^ k) ∂P :=
+      ≤ ∫⁻ ω, ENNReal.ofReal (M ω ^ k) ∂P :=
         lintegral_mono fun ω ↦
-          lintegral_ofReal_norm_pow_spectralMeasure_le _ (wignerMatrix_isHermitian ξ η ω (n + 1)) k
+          Matrix.lintegral_ofReal_norm_pow_spectralMeasure_le _
+            (wignerMatrix_isHermitian ξ η ω (n + 1)) k
+    _ = ∫⁻ ω, ENNReal.ofReal (‖M ω‖ ^ k) ∂P := by
+        simp_rw [Real.norm_of_nonneg (hM_nonneg _)]
     _ = ENNReal.ofReal (∫ ω, ‖M ω‖ ^ k ∂P) :=
         (ofReal_integral_eq_lintegral_ofReal hM.integrable_norm_pow'
           (.of_forall fun _ ↦ by positivity)).symm

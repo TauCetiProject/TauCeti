@@ -102,7 +102,7 @@ theorem toPlanarMatching_def (w : ClosedTreeWalk k) :
 /-- Applying `PerfectMatching.noncrossingPairingEquiv` to `w.toPlanarMatching` recovers
 `w.toNoncrossingPairing`. -/
 @[simp]
-theorem noncrossingPairingEquiv_toPlanarMatching (w : ClosedTreeWalk k) :
+theorem perfectMatching_noncrossingPairingEquiv_toPlanarMatching (w : ClosedTreeWalk k) :
     PerfectMatching.noncrossingPairingEquiv w.toPlanarMatching = w.toNoncrossingPairing :=
   PerfectMatching.noncrossingPairingEquiv.apply_symm_apply w.toNoncrossingPairing
 
