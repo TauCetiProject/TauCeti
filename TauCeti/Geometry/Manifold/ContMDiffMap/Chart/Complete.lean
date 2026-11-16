@@ -13,16 +13,17 @@ public import TauCeti.Topology.ContinuousMap.CompactConvergence
 /-!
 # Completeness of the weak Whitney topology on a manifold
 
-Let `M` be a manifold without boundary, modelled on a locally compact space over `ℝ` or `ℂ`, and
-let `F` be a Banach space. This file proves that the vector-valued `C^r` maps on `M`, for finite or
-smooth regularity `r`, form a complete space in the weak Whitney topology, for the uniform
-structure of this topological vector space (`ContMDiffMap.completeSpace_manifoldWeakWhitney`).
+Let `M` be a manifold, possibly with boundary or corners, modelled on a locally compact space over
+`ℝ` or `ℂ`, and let `F` be a Banach space. This file proves that the vector-valued `C^r` maps on
+`M`, for finite or smooth regularity `r`, form a complete space in the weak Whitney topology, for
+the uniform structure of this topological vector space
+(`ContMDiffMap.completeSpace_manifoldWeakWhitney`).
 
 The proof is local. In each chart, locally uniform limits of the coordinate derivatives of a net
-of maps form the Taylor series of a `C^r` function on the open chart target
-(`HasFTaylorSeriesUpToOn.of_tendstoLocallyUniformlyOn`). These coordinate limits agree on chart
-overlaps, since their values are the pointwise limits of the net, so they glue to a `C^r` map on
-`M` whose coordinate derivatives are the given limits
+of maps form the Taylor series of a `C^r` function on the chart target
+(`HasFTaylorSeriesUpToOn.of_tendstoLocallyUniformlyOn_of_convex`). These coordinate limits agree
+on chart overlaps, since their values are the pointwise limits of the net, so they glue to a `C^r`
+map on `M` whose coordinate derivatives are the given limits
 (`ContMDiffMap.exists_chartIteratedFDeriv_eq_of_tendstoLocallyUniformlyOn`). A Cauchy net has
 such limits, because each coordinate derivative is a continuous additive map into a complete
 space of continuous maps with the topology of compact convergence.
@@ -31,8 +32,11 @@ On a compact manifold the topology is also normable
 (`ContMDiffMap.isNormableSpace_of_compactSpace`), so together these give the Banach spaces of
 `C^k` functions on compact manifolds.
 
-The boundaryless hypothesis makes the chart targets open, which is what the derivative-limit
-theorem needs. Analytic regularity is excluded.
+A chart target need not be open: at boundary and corner points it is relatively open in the
+range of the model, a closed half-space or orthant for the standard models. The range of a model
+with corners is convex, so every point of a chart target has a convex neighbourhood in it, and
+the mean value inequality along segments in that neighbourhood identifies the limits of the
+within-set derivatives. Analytic regularity is excluded.
 
 ## Main results
 
@@ -57,7 +61,7 @@ namespace ContMDiffMap
 
 variable {𝕜 : Type*} [NontriviallyNormedField 𝕜] [IsRCLikeNormedField 𝕜]
   {E : Type*} [NormedAddCommGroup E] [NormedSpace 𝕜 E] [LocallyCompactSpace E]
-  {H : Type*} [TopologicalSpace H] {I : ModelWithCorners 𝕜 E H} [I.Boundaryless]
+  {H : Type*} [TopologicalSpace H] {I : ModelWithCorners 𝕜 E H}
   {M : Type*} [TopologicalSpace M] [ChartedSpace H M]
   {F : Type*} [NormedAddCommGroup F] [NormedSpace 𝕜 F]
 
@@ -77,7 +81,16 @@ theorem exists_chartIteratedFDeriv_eq_of_tendstoLocallyUniformlyOn
       (fun z ↦ q x z m) l (extChartAt I x).target) :
     ∃ h : C^(r : ℕ∞ω)⟮I, M; 𝓘(𝕜, F), F⟯, ∀ (x : M) (m : ℕ) (hm : (m : ℕ∞ω) ≤ r)
       (z : (extChartAt I x).target), chartIteratedFDeriv h x m hm z = q x z m := by
-  have hV (x : M) : IsOpen (extChartAt I x).target := isOpen_extChartAt_target x
+  let _ : RCLike 𝕜 := IsRCLikeNormedField.rclike 𝕜
+  let _ : NormedSpace ℝ E := NormedSpace.restrictScalars ℝ 𝕜 E
+  -- A chart target is relatively open in the convex range of the model, so each of its points
+  -- has a convex neighbourhood in it.
+  have hV (x : M) (z : E) (hz : z ∈ (extChartAt I x).target) : ∃ t ⊆ (extChartAt I x).target,
+      Convex ℝ t ∧ t ∈ 𝓝[(extChartAt I x).target] z := by
+    obtain ⟨r, hr, hrs⟩ := Metric.mem_nhdsWithin_iff.mp (extChartAt_target_mem_nhdsWithin_of_mem hz)
+    exact ⟨Metric.ball z r ∩ range I, hrs, (convex_ball z r).inter I.convex_range,
+      mem_nhdsWithin.mpr ⟨Metric.ball z r, Metric.isOpen_ball, Metric.mem_ball_self hr,
+        fun y hy ↦ ⟨hy.1, extChartAt_target_subset_range x hy.2⟩⟩⟩
   have hcd (x : M) (i : ι) :
       ContDiffOn 𝕜 (r : ℕ∞ω) (f i ∘ (extChartAt I x).symm) (extChartAt I x).target :=
     contDiffOn_comp_extend_symm (f i) (chart_mem_maximalAtlas x)
@@ -92,8 +105,8 @@ theorem exists_chartIteratedFDeriv_eq_of_tendstoLocallyUniformlyOn
   -- In every chart the limits are the Taylor series of the order-zero limit.
   have hT (x : M) : HasFTaylorSeriesUpToOn (r : ℕ∞ω) (fun z ↦ (q x z 0).curry0) (q x)
       (extChartAt I x).target :=
-    HasFTaylorSeriesUpToOn.of_tendstoLocallyUniformlyOn (hV x)
-      (fun i ↦ (hcd x i).ftaylorSeriesWithin (hV x).uniqueDiffOn) (hq x) (hval x)
+    HasFTaylorSeriesUpToOn.of_tendstoLocallyUniformlyOn_of_convex (hV x)
+      (fun i ↦ (hcd x i).ftaylorSeriesWithin (uniqueDiffOn_extChartAt_target x)) (hq x) (hval x)
   -- The glued map, read at each point in its own chart.
   let G : M → F := fun y ↦ (q y (extChartAt I y y) 0).curry0
   have hG (x : M) : EqOn (G ∘ (extChartAt I x).symm) (fun z ↦ (q x z 0).curry0)
@@ -116,14 +129,15 @@ theorem exists_chartIteratedFDeriv_eq_of_tendstoLocallyUniformlyOn
   let h : C^(r : ℕ∞ω)⟮I, M; 𝓘(𝕜, F), F⟯ := ⟨G, hGs⟩
   refine ⟨h, fun x m hm z ↦ (chartIteratedFDeriv_self_target_apply h x m hm z).trans ?_⟩
   exact (iteratedFDerivWithin_congr (hG x) z.2 m).trans
-    ((hT x).eq_iteratedFDerivWithin_of_uniqueDiffOn hm (hV x).uniqueDiffOn z.2).symm
+    ((hT x).eq_iteratedFDerivWithin_of_uniqueDiffOn hm (uniqueDiffOn_extChartAt_target x)
+      z.2).symm
 
 end Gluing
 
-/-- **Completeness of the weak Whitney topology.** On a boundaryless manifold modelled on a
-locally compact space over `ℝ` or `ℂ`, the vector-valued `C^n` maps with values in a Banach space,
-for finite or smooth regularity `n`, form a complete space for the uniform structure of the weak
-Whitney topological vector space. -/
+/-- **Completeness of the weak Whitney topology.** On a manifold, possibly with boundary or
+corners, modelled on a locally compact space over `ℝ` or `ℂ`, the vector-valued `C^n` maps with
+values in a Banach space, for finite or smooth regularity `n`, form a complete space for the
+uniform structure of the weak Whitney topological vector space. -/
 theorem completeSpace_manifoldWeakWhitney [CompleteSpace F] {n : ℕ∞ω} [IsManifold I n M]
     [hn : ENat.LEInfty n] :
     @CompleteSpace C^n⟮I, M; 𝓘(𝕜, F), F⟯

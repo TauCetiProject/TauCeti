@@ -10,6 +10,7 @@ public import Mathlib.Analysis.Calculus.ContDiff.Basic
 public import TauCeti.Analysis.Calculus.FDeriv.Submodule
 public import Mathlib.Analysis.Calculus.FDeriv.OfCompLeft
 public import Mathlib.Analysis.Calculus.UniformLimitsDeriv
+public import TauCeti.Analysis.Calculus.UniformLimitsDeriv
 
 /-!
 # Taylor derivative series: transport, limits, and gluing
@@ -24,7 +25,10 @@ isometry’s range; this lifting does not require the range to be closed.
 Over a real or complex normed field, locally uniform limits of the coefficients of Taylor
 derivative series are again Taylor derivative series, provided the underlying functions converge
 pointwise. This is the derivative-compatibility step in completeness of smooth function spaces.
-The limit argument uses Mathlib's `hasFDerivAt_of_tendstoLocallyUniformlyOn`.
+The set need not be open: it suffices that each of its points has a convex neighbourhood within
+it, as for the closed half-spaces and orthants that are the chart targets of manifolds with
+boundary or corners. The limit argument along segments in those neighbourhoods is
+`Convex.hasFDerivWithinAt_of_tendstoLocallyUniformlyOn`.
 
 Taylor series with matching coefficients glue across two closed sets on their union.
 For a closed cover of the whole space this gives a global piecewise Cᵏ criterion.
@@ -69,10 +73,14 @@ theorem HasFTaylorSeriesUpTo.apply_mem_of_range_subset
     simpa only [ContinuousMultilinearMap.curryLeft_apply, Fin.cons_self_tail]
       using hv (Fin.tail v)
 
-/-- On an open set, locally uniform limits of Taylor derivative series are Taylor derivative
-series of the pointwise limit. No completeness of the target is needed once limits are given. -/
-theorem HasFTaylorSeriesUpToOn.of_tendstoLocallyUniformlyOn [IsRCLikeNormedField 𝕜]
-    {s : Set D} (hs : IsOpen s) {ι : Type*} {l : Filter ι} [l.NeBot]
+/-- **Uniform limits of Taylor series on locally convex sets.** On a set each of whose points has
+a convex neighbourhood within the set, locally uniform limits of Taylor derivative series are
+Taylor derivative series of the pointwise limit. Such sets include convex sets, open sets, and
+their intersections, for instance the closed half-spaces and orthants of models with boundary or
+corners. No completeness of the target is needed once limits are given. -/
+theorem HasFTaylorSeriesUpToOn.of_tendstoLocallyUniformlyOn_of_convex [IsRCLikeNormedField 𝕜]
+    [NormedSpace ℝ D] {s : Set D} (hs : ∀ x ∈ s, ∃ t ⊆ s, Convex ℝ t ∧ t ∈ 𝓝[s] x)
+    {ι : Type*} {l : Filter ι} [l.NeBot]
     {fᵢ : ι → D → F} {qᵢ : ι → D → FormalMultilinearSeries 𝕜 D F}
     (h : ∀ i, HasFTaylorSeriesUpToOn n (fᵢ i) (qᵢ i) s)
     (hq : ∀ m : ℕ, m ≤ n →
@@ -87,15 +95,35 @@ theorem HasFTaylorSeriesUpToOn.of_tendstoLocallyUniformlyOn [IsRCLikeNormedField
       simpa only [Function.comp_def, continuousMultilinearCurryFin0_apply,
         ← ContinuousMultilinearMap.curry0_apply, (h _).zero_eq _ hx] using hf x hx)
   · intro m hm x hx
+    obtain ⟨t, hts, htc, ht⟩ := hs x hx
     have hsuc : ((m + 1 : ℕ) : WithTop ℕ∞) ≤ n :=
       ENat.add_one_natCast_le_withTop_of_lt hm
     have hc := (continuousMultilinearCurryLeftEquiv 𝕜 (fun _ : Fin (m + 1) ↦ D) F).isometry
     have hlim := hc.uniformContinuous.comp_tendstoLocallyUniformlyOn (hq (m + 1) hsuc)
-    exact (hasFDerivAt_of_tendstoLocallyUniformlyOn hs hlim
-      (fun i y hy ↦ ((h i).fderivWithin m hm y hy).hasFDerivAt (hs.mem_nhds hy))
-      (fun y hy ↦ (hq m hm.le).tendsto_at hy) hx).hasFDerivWithinAt
+    exact (htc.hasFDerivWithinAt_of_tendstoLocallyUniformlyOn (hlim.mono hts)
+      (fun i y hy ↦ ((h i).fderivWithin m hm y (hts hy)).mono hts)
+      (fun y hy ↦ (hq m hm.le).tendsto_at (hts hy))
+      (mem_of_mem_nhdsWithin hx ht)).mono_of_mem_nhdsWithin ht
   · intro m hm
     exact (hq m hm).continuousOn (Filter.Eventually.of_forall fun i ↦ (h i).cont m hm).frequently
+
+/-- On an open set, locally uniform limits of Taylor derivative series are Taylor derivative
+series of the pointwise limit. No completeness of the target is needed once limits are given. -/
+theorem HasFTaylorSeriesUpToOn.of_tendstoLocallyUniformlyOn [IsRCLikeNormedField 𝕜]
+    {s : Set D} (hs : IsOpen s) {ι : Type*} {l : Filter ι} [l.NeBot]
+    {fᵢ : ι → D → F} {qᵢ : ι → D → FormalMultilinearSeries 𝕜 D F}
+    (h : ∀ i, HasFTaylorSeriesUpToOn n (fᵢ i) (qᵢ i) s)
+    (hq : ∀ m : ℕ, m ≤ n →
+      TendstoLocallyUniformlyOn (fun i x ↦ qᵢ i x m) (fun x ↦ q x m) l s)
+    (hf : ∀ x ∈ s, Tendsto (fun i ↦ fᵢ i x) l (𝓝 (f x))) :
+    HasFTaylorSeriesUpToOn n f q s := by
+  -- Balls are convex for the real structure obtained by restricting scalars.
+  let _ : RCLike 𝕜 := IsRCLikeNormedField.rclike 𝕜
+  let _ : NormedSpace ℝ D := NormedSpace.restrictScalars ℝ 𝕜 D
+  refine of_tendstoLocallyUniformlyOn_of_convex (fun x hx ↦ ?_) h hq hf
+  obtain ⟨r, hr, hrs⟩ := Metric.isOpen_iff.mp hs x hx
+  exact ⟨Metric.ball x r, hrs, convex_ball x r,
+    mem_nhdsWithin_of_mem_nhds (Metric.ball_mem_nhds x hr)⟩
 
 /-- Locally uniform limits of Taylor derivative series are Taylor derivative series of the
 pointwise limit. This is the whole-source specialization of the open-set result. -/
