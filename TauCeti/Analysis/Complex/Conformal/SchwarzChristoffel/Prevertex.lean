@@ -10,6 +10,7 @@ public import TauCeti.Analysis.Complex.Conformal.SchwarzChristoffel.Converse
 -- with the model of an end of opening `2 * π`, Schwarz reflection and the accompanying
 -- conjugation-symmetric limit transfer, the branch facts for a power with a real base point, and
 -- partial fractions are used only in proofs.
+import TauCeti.Analysis.Calculus.LogDeriv
 import TauCeti.Analysis.Complex.Conformal.PreSchwarzian
 import TauCeti.Analysis.Complex.Conformal.Reflection.Corner
 import TauCeti.Analysis.Complex.Conformal.Reflection.HalfStripExterior

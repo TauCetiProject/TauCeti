@@ -8,6 +8,7 @@ module
 public import TauCeti.Analysis.Complex.Conformal.PreSchwarzian
 public import TauCeti.Analysis.Complex.Conformal.Reflection.Injective
 public import TauCeti.Analysis.Complex.UpperHalfPlane.Topology
+import TauCeti.Analysis.Calculus.LogDeriv
 import TauCeti.Analysis.Complex.Conformal.ImageSimplyConnected
 import TauCeti.Analysis.Complex.Conformal.Inverse.Function
 import TauCeti.Analysis.Complex.Conformal.Reflection.Corner

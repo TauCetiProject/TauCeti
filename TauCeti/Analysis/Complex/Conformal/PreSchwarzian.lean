@@ -12,6 +12,7 @@ public import Mathlib.Analysis.SpecialFunctions.Pow.Deriv
 import Mathlib.Analysis.Calculus.FDeriv.Analytic
 import Mathlib.Analysis.Calculus.MeanValue
 import Mathlib.Analysis.Complex.CauchyIntegral
+import TauCeti.Analysis.Calculus.LogDeriv
 import TauCeti.Analysis.SpecialFunctions.Pow.LogDeriv
 import TauCeti.Analysis.Complex.AtInfinity
 import TauCeti.Analysis.Complex.UpperHalfPlane.Topology
@@ -85,16 +86,6 @@ theorem logDeriv_deriv_comp {f g : ℂ → ℂ} {z : ℂ}
       (hf.deriv.differentiableAt.comp z hg.differentiableAt) hg.deriv.differentiableAt]
   rw [← Function.comp_def (deriv f) g,
     logDeriv_comp hf.deriv.differentiableAt hg.differentiableAt]
-
-/-- The pre-Schwarzian derivative is unchanged by the affine normalisation `w ↦ (w - c) / b` of the
-target, for `b ≠ 0`. -/
-theorem logDeriv_deriv_sub_div_const (f : ℂ → ℂ) (c : ℂ) {b : ℂ} (hb : b ≠ 0) (z : ℂ) :
-    logDeriv (deriv fun z => (f z - c) / b) z = logDeriv (deriv f) z := by
-  have hderiv : deriv (fun z => (f z - c) / b) = fun z => deriv f z / b := by
-    ext z
-    simp only [deriv_div_const, deriv_sub_const]
-  rw [hderiv]
-  simp only [div_eq_mul_inv, logDeriv_mul_const z b⁻¹ (inv_ne_zero hb)]
 
 /-- In the coordinate `w = -1 / z`, the pre-Schwarzian acquires the term `-2 / z`. -/
 theorem logDeriv_deriv_comp_neg_inv {g : ℂ → ℂ} {z : ℂ}
