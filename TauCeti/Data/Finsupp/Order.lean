@@ -21,12 +21,21 @@ and every index in the support of `g` is at least `i`. This decomposition suppor
 ordered monomials by removing one occurrence of their least variable.
 
 It also contains the residual step of the staircase argument: two nonnegative finitely supported
-functions of equal mass lose their smaller matched weight, leaving smaller supports.
+functions of equal mass lose their smaller matched weight, leaving smaller supports. Finally,
+reindexing along an equivalence (`Finsupp.equivMapDomain`) preserves and reflects the componentwise
+order (`Finsupp.equivMapDomain_le_iff`).
 -/
 
 public section
 
 namespace Finsupp
+
+/-- Reindexing along an equivalence preserves and reflects the componentwise order. -/
+@[simp]
+theorem equivMapDomain_le_iff {α β M : Type*} [Zero M] [LE M] (e : α ≃ β) {x y : α →₀ M} :
+    equivMapDomain e x ≤ equivMapDomain e y ↔ x ≤ y := by
+  simp only [le_def]
+  exact e.forall_congr_right.symm.trans (forall_congr' fun a ↦ by simp)
 
 /-- If a finitely supported function into an ordered cancellative additive commutative monoid is
 nonnegative and its sum equals its value at `a`, then it vanishes away from `a`. -/

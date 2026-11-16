@@ -18,9 +18,10 @@ and tails separately. The lexicographic order compares the entries at `0` first,
 compared by their heads, and then by their tails.
 
 Dually, `Finsupp.snoc s x : Fin (n + 1) →₀ M` appends `x` after `s`, and `Finsupp.init t` forgets
-the last entry of `t`; these are the `Finsupp` versions of `Fin.snoc` and `Fin.init`. Adding two
-such vectors adds initial parts and last entries separately. Two such vectors are compared
-lexicographically by their initial parts first, and then by their last entries.
+the last entry of `t`; these are the `Finsupp` versions of `Fin.snoc` and `Fin.init`. Adding or
+componentwise comparing two such vectors operates on initial parts and last entries separately. Two
+such vectors are compared lexicographically by their initial parts first, and then by their last
+entries.
 
 Finally, `Finsupp.ext_iff_of_fin_three` says that a finitely supported function on `Fin 3` is
 determined by its values at any three distinct points, in whatever order they are listed.
@@ -38,7 +39,6 @@ theorem cons_add_cons [AddZeroClass M] (x y : M) (s t : Fin n →₀ M) :
   cases i using Fin.cases <;> simp
 
 /-- Pushing forward along `Fin.succ` prepends `0` at coordinate `0`. -/
-@[simp]
 theorem mapDomain_finSucc [AddCommMonoid M] (s : Fin n →₀ M) :
     s.mapDomain Fin.succ = cons 0 s := by
   ext k
@@ -54,10 +54,7 @@ theorem mapDomain_finSucc [AddCommMonoid M] (s : Fin n →₀ M) :
 @[simp]
 theorem cons_le_cons_iff [Zero M] [LE M] {x y : M} {s t : Fin n →₀ M} :
     cons x s ≤ cons y t ↔ x ≤ y ∧ s ≤ t := by
-  refine ⟨fun h ↦ ⟨by simpa using h 0, fun i ↦ by simpa using h i.succ⟩, fun ⟨h0, hs⟩ k ↦ ?_⟩
-  cases k using Fin.cases with
-  | zero => exact h0
-  | succ i => exact hs i
+  simp [Finsupp.le_def, Fin.forall_fin_succ]
 
 /-- Strict lexicographic comparison of `Finsupp.cons` compares the heads first and compares
 the tails when the heads are equal. -/
@@ -122,6 +119,13 @@ theorem eq_snoc_iff {t : Fin (n + 1) →₀ M} {s : Fin n →₀ M} {y : M} :
     t = snoc s y ↔ init t = s ∧ t (Fin.last n) = y := by
   conv_lhs => rw [← snoc_init_self t]
   exact snoc_inj
+
+/-- Componentwise comparison of `Finsupp.snoc` compares initial parts and last entries
+separately. -/
+@[simp]
+theorem snoc_le_snoc_iff [LE M] {s t : Fin n →₀ M} {x y : M} :
+    snoc s x ≤ snoc t y ↔ s ≤ t ∧ x ≤ y := by
+  simp [Finsupp.le_def, Fin.forall_fin_succ']
 
 /-- Strict lexicographic comparison of `Finsupp.snoc` compares the initial parts first and
 compares the last entries when the initial parts are equal. -/
