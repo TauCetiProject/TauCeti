@@ -46,6 +46,8 @@ maximal atlas.
   `Bundle.Trivialization.coordChangeL_transFiberwiseLinear_right`.
 * `Bundle.Trivialization.transFiberwiseLinear_mem_maximalAtlas_iff`: a gauge transform of a
   member of the maximal atlas is a member exactly when the gauge is bi-`C^n`.
+* `Bundle.Trivialization.mem_maximalAtlas_of_eq_on_baseSet`: a trivialization agreeing on its base
+  set with a member of `G.maximalAtlas` also belongs to `G.maximalAtlas`.
 * `Bundle.Trivialization.contMDiffWithinAt_iff_of_mem_maximalAtlas`,
   `Bundle.Trivialization.contMDiffAt_section_iff_of_mem_maximalAtlas`: smoothness of maps into
   the total space and of sections can be read off in any member of the maximal atlas.
@@ -73,6 +75,23 @@ public section
 
 open Bundle Set Filter OpenPartialHomeomorph
 open scoped Manifold Topology ContDiff
+
+namespace Bundle.Trivialization
+
+/-- If two bundle trivializations have the same base set and agree on every fibre over that base
+set, and the second belongs to the maximal atlas of a structure groupoid `G`, then so does the
+first. -/
+theorem mem_maximalAtlas_of_eq_on_baseSet {B F : Type*} [TopologicalSpace B] [TopologicalSpace F]
+    {E : B → Type*} [TopologicalSpace (TotalSpace F E)] [ChartedSpace (B × F) (TotalSpace F E)]
+    {G : StructureGroupoid (B × F)} {e₁ e₂ : Trivialization F (π F E)}
+    (hbase : e₁.baseSet = e₂.baseSet)
+    (happly : ∀ {b : B}, b ∈ e₁.baseSet → ∀ v : E b, e₁ ⟨b, v⟩ = e₂ ⟨b, v⟩)
+    (he₂ : e₂.toOpenPartialHomeomorph ∈ G.maximalAtlas (TotalSpace F E)) :
+    e₁.toOpenPartialHomeomorph ∈ G.maximalAtlas (TotalSpace F E) :=
+  G.mem_maximalAtlas_of_eqOnSource
+    ⟨by rw [e₁.source_eq, e₂.source_eq, hbase], fun ⟨_, v⟩ hp ↦ happly (e₁.mem_source.mp hp) v⟩ he₂
+
+end Bundle.Trivialization
 
 variable {𝕜 B F : Type*} [NontriviallyNormedField 𝕜] [NormedAddCommGroup F] [NormedSpace 𝕜 F]
   [TopologicalSpace B]

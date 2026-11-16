@@ -7,7 +7,7 @@ module
 
 public import TauCeti.LinearAlgebra.Basis.DiagonalTorus.Basic
 public import TauCeti.LinearAlgebra.Matrix.DotProduct
-public import TauCeti.LinearAlgebra.RootSystem.DiagramPermutations
+public import TauCeti.LinearAlgebra.RootSystem.DiagramPermutations.Basic
 public import TauCeti.LinearAlgebra.RootSystem.SimplyConnectedRootDatum.F4.RootString
 
 /-!

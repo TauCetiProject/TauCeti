@@ -134,14 +134,18 @@ class WorkflowPins(unittest.TestCase):
                     if "push" in triggers:
                         self.assertEqual((triggers["push"] or {}).get("branches"), ["main"])
                     # The local action must come from the last checkout at the workspace root
-                    # before it, of this repository's own ref: no repository or ref override.
+                    # before it. Status workflows explicitly select trusted main;
+                    # the other readers use their own trusted event ref.
                     root = [s for s in steps[: uses[0]]
                             if str(s.get("uses", "")).startswith("actions/checkout@")
                             and "path" not in (s.get("with") or {})]
                     self.assertTrue(root, "no checkout at the workspace root before the action")
                     w = root[-1].get("with") or {}
-                    for key in ("repository", "ref"):
-                        self.assertNotIn(key, w)
+                    self.assertNotIn("repository", w)
+                    if path.name in {"pr-status.yml", "pr-labels.yml"}:
+                        self.assertEqual(w.get("ref"), "main")
+                    else:
+                        self.assertNotIn("ref", w)
                     sparse = str(w.get("sparse-checkout", "")).split()
                     if sparse:
                         self.assertTrue(

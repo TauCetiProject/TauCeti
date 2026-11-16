@@ -278,7 +278,7 @@ theorem im_schwarzChristoffelBoundary_first_lt (a e : Fin (n + 1) → ℝ)
   obtain ⟨i, hxi⟩ := exists_mem_Icc_castSucc_succ a hn'
     ⟨hx.1.le, hx.2.le⟩
   have hfree : ∀ k, e k ≠ 0 → a k ∉ Ioo (a i.castSucc) (a i.succ) :=
-    fun k _ ↦ not_mem_Ioo_castSucc_succ a ha.monotone i k
+    fun k _ ↦ notMem_Ioo_castSucc_succ a ha.monotone i k
   have hmem : schwarzChristoffelBoundary a e z₀ x ∈
       segment ℝ (schwarzChristoffelVertex a e z₀ i.castSucc)
         (schwarzChristoffelVertex a e z₀ i.succ) := by
