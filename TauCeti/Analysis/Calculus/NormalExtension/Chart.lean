@@ -7,7 +7,7 @@ module
 
 public import TauCeti.Analysis.Calculus.FDeriv.PullbackEnd
 public import TauCeti.Analysis.Calculus.InverseFunctionTheorem
-public import TauCeti.Analysis.Calculus.NormalExtension
+public import TauCeti.Analysis.Calculus.NormalExtension.Basic
 import TauCeti.Analysis.Normed.Operator.Basic
 
 /-!
