@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Geometry.Manifold.Instances.AddCircle
 public import TauCeti.Geometry.Manifold.Morse.LocalDiffeomorph
+import TauCeti.Algebra.Ring.Periodic
 import TauCeti.Analysis.Calculus.Morse.OneDimensional
 
 /-!

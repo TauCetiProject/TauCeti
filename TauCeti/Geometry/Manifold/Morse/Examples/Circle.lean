@@ -10,7 +10,6 @@ public import TauCeti.Geometry.Manifold.ContMDiffMap.Chart.AddCircle
 public import TauCeti.Geometry.Manifold.Morse.AddCircle
 public import TauCeti.Geometry.Manifold.Morse.Persistence
 import Mathlib.Analysis.Calculus.Deriv.Pow
-import TauCeti.Topology.UniformSpace.LocallyUniformConvergence
 
 /-!
 # Morse and non-Morse functions on the circle
@@ -73,16 +72,13 @@ noncomputable def circleCos : AddCircle (2 * π) → ℝ :=
 theorem circleCos_coe (θ : ℝ) : circleCos θ = cos θ :=
   cos_periodic.lift_coe θ
 
-private theorem circleCos_eq : circleCos = cos_periodic.lift :=
-  rfl
-
 /-- The cosine on the circle is analytic. -/
 theorem contMDiff_circleCos {n : ℕ∞ω} : ContMDiff 𝓘(ℝ) 𝓘(ℝ) n circleCos :=
-  circleCos_eq ▸ cos_periodic.contMDiff_lift contDiff_cos
+  cos_periodic.contMDiff_lift contDiff_cos
 
 /-- **The cosine is a Morse function on the circle**, with critical points `0` and `π`. -/
 theorem isMorse_circleCos : IsMorse 𝓘(ℝ) circleCos := by
-  rw [circleCos_eq, cos_periodic.isMorse_lift_iff contDiff_cos]
+  rw [circleCos, cos_periodic.isMorse_lift_iff contDiff_cos]
   intro θ hθ
   rw [Real.deriv_cos, neg_eq_zero] at hθ
   rw [show iteratedDeriv 2 cos θ = -cos θ by simp, neg_ne_zero]
@@ -102,14 +98,11 @@ theorem isManifoldNondegenerateCriticalPoint_circleCos_add_lift {h : ℝ → ℝ
     funext y
     induction y using QuotientAddGroup.induction_on
     simp only [Pi.add_apply, circleCos_coe, hh.lift_coe, hper.lift_coe]
-  have hd : Differentiable ℝ h := h₂.differentiable (by simp)
-  have hd' : Differentiable ℝ (deriv h) :=
-    ((contDiff_succ_iff_deriv (n := 1)).1 h₂).2.2.differentiable one_ne_zero
-  have hderiv : deriv (cos + h) = fun θ ↦ -sin θ + deriv h θ :=
-    funext fun θ ↦ ((hasDerivAt_cos θ).add (hd θ).hasDerivAt).deriv
+  have hderiv (θ : ℝ) : deriv (cos + h) θ = -sin θ + deriv h θ := by
+    simpa using iteratedDeriv_add (n := 1) contDiff_cos.contDiffAt
+      (h₂.of_le one_le_two).contDiffAt (x := θ)
   have hderiv₂ (θ : ℝ) : iteratedDeriv 2 (cos + h) θ = -cos θ + iteratedDeriv 2 h θ := by
-    rw [iteratedDeriv_succ, iteratedDeriv_one, hderiv, iteratedDeriv_succ, iteratedDeriv_one]
-    exact ((hasDerivAt_sin θ).fun_neg.fun_add (hd' θ).hasDerivAt).deriv
+    simp [iteratedDeriv_add contDiff_cos.contDiffAt h₂.contDiffAt]
   rw [heq] at hx ⊢
   obtain ⟨θ, rfl⟩ := QuotientAddGroup.mk_surjective x
   have hθ := (hper.coe_mem_criticalPoints_lift_iff θ).1 hx
@@ -247,24 +240,16 @@ theorem continuous_circleCubicCos :
     Continuous (Y := C^∞⟮𝓘(ℝ), AddCircle (2 * π); 𝓘(ℝ), ℝ⟯) fun ε : ℝ ↦
       ⟨circleCubicCos ε, contMDiff_circleCubicCos ε⟩ := by
   refine continuous_iff_continuousAt.2 fun ε₀ ↦
-    ContMDiffMap.tendsto_addCircle_of_tendstoLocallyUniformly fun m _ ↦ ?_
-  have hcomp (ε : ℝ) : circleCubicCos ε ∘ ((↑) : ℝ → AddCircle (2 * π)) =
-      fun θ ↦ cos θ ^ 3 + ε * cos θ :=
-    (periodic_cubicCos ε).lift_comp_coe
-  simp only [ContMDiffMap.coeFn_mk, hcomp]
-  refine (tendstoUniformly_of_dist_le (b := fun ε ↦ |ε - ε₀|) ?_
-    (.of_forall ?_)).tendstoLocallyUniformly
-  · simpa using (continuous_sub_right ε₀).abs.tendsto ε₀
-  intro ε θ
+    ContMDiffMap.tendsto_addCircle_of_norm_iteratedDeriv_sub_le periodic_cubicCos
+      (periodic_cubicCos ε₀) (contDiff_cubicCos ·) (contDiff_cubicCos ε₀) (b := fun _ ε ↦ |ε - ε₀|)
+      (fun _ _ ↦ by simpa using (continuous_sub_right ε₀).abs.tendsto ε₀)
+      fun m _ ↦ .of_forall fun ε θ ↦ ?_
   have hsub : ((fun θ ↦ cos θ ^ 3 + ε * cos θ) - fun θ ↦ cos θ ^ 3 + ε₀ * cos θ) =
       fun θ ↦ (ε - ε₀) * cos θ := by
     funext θ
     simp only [Pi.sub_apply]
     ring
-  rw [dist_eq_norm, ← iteratedFDeriv_sub_apply (contDiff_cubicCos ε).contDiffAt
-    (contDiff_cubicCos ε₀).contDiffAt, hsub,
-    norm_iteratedFDeriv_eq_norm_iteratedDeriv,
-    iteratedDeriv_const_mul _ contDiff_cos.contDiffAt, norm_mul, Real.norm_eq_abs,
+  rw [hsub, iteratedDeriv_const_mul _ contDiff_cos.contDiffAt, norm_mul, Real.norm_eq_abs,
     Real.norm_eq_abs]
   exact mul_le_of_le_one_right (abs_nonneg _) (abs_iteratedDeriv_cos_le_one m θ)
 
@@ -339,15 +324,10 @@ theorem tendsto_circleCosRipple :
     Tendsto (β := C^1⟮𝓘(ℝ), AddCircle (2 * π); 𝓘(ℝ), ℝ⟯)
       (fun N : ℕ ↦ ⟨circleCosRipple N, contMDiff_circleCosRipple N⟩)
       atTop (𝓝 ⟨circleCos, contMDiff_circleCos⟩) := by
-  refine ContMDiffMap.tendsto_addCircle_of_tendstoLocallyUniformly fun m hm ↦ ?_
-  have hcomp (N : ℕ) : circleCosRipple N ∘ ((↑) : ℝ → AddCircle (2 * π)) =
-      fun θ ↦ cos θ + (1 - cos (N * θ)) / N ^ 2 :=
-    (periodic_cosRipple N).lift_comp_coe
-  have hcos : circleCos ∘ ((↑) : ℝ → AddCircle (2 * π)) = cos :=
-    cos_periodic.lift_comp_coe
-  simp only [ContMDiffMap.coeFn_mk, hcomp, hcos]
-  refine (tendstoUniformly_of_dist_le (tendsto_const_div_atTop_nhds_zero_nat 2)
-    (eventually_ne_atTop 0 |>.mono fun N hN θ ↦ ?_)).tendstoLocallyUniformly
+  refine ContMDiffMap.tendsto_addCircle_of_norm_iteratedDeriv_sub_le periodic_cosRipple
+    cos_periodic (contDiff_cosRipple ·) contDiff_cos (b := fun _ N ↦ 2 / N)
+    (fun _ _ ↦ tendsto_const_div_atTop_nhds_zero_nat 2)
+    fun m hm ↦ eventually_ne_atTop 0 |>.mono fun N hN θ ↦ ?_
   have hNpos : (0 : ℝ) < N := Nat.cast_pos.2 (Nat.pos_of_ne_zero hN)
   have hN1 : (1 : ℝ) ≤ N := Nat.one_le_cast.2 (Nat.one_le_iff_ne_zero.2 hN)
   have hsub : ((fun θ ↦ cos θ + (1 - cos (N * θ)) / N ^ 2) - cos) =
@@ -355,8 +335,7 @@ theorem tendsto_circleCosRipple :
     funext θ
     simp only [Pi.sub_apply]
     ring
-  rw [dist_eq_norm, ← iteratedFDeriv_sub_apply (contDiff_cosRipple N).contDiffAt
-    contDiff_cos.contDiffAt, hsub, norm_iteratedFDeriv_eq_norm_iteratedDeriv, Real.norm_eq_abs]
+  rw [hsub, Real.norm_eq_abs]
   have hm' : m ≤ 1 := by exact_mod_cast hm
   interval_cases m
   · -- The perturbation itself is at most `2 / N² ≤ 2 / N`.

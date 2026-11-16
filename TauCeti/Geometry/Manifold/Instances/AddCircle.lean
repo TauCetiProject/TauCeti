@@ -14,6 +14,7 @@ public import TauCeti.Geometry.Manifold.Algebra.LieGroup
 public import TauCeti.Geometry.Manifold.Instances.Quotient
 public import TauCeti.Geometry.Manifold.LocalDiffeomorph.Composition
 public import TauCeti.Geometry.Manifold.PullbackGroupoid
+import TauCeti.Algebra.Ring.Periodic
 import TauCeti.Geometry.Manifold.LocalDiffeomorph.Prod.Basic
 
 /-!
@@ -614,14 +615,7 @@ end AddCircle
 
 namespace Function.Periodic
 
-variable {p : ℝ}
-
-/-- The lift of a periodic function, composed with the quotient map, is the function itself. -/
-theorem lift_comp_coe {α : Type*} {f : ℝ → α} (hf : Periodic f p) :
-    hf.lift ∘ ((↑) : ℝ → AddCircle p) = f :=
-  funext hf.lift_coe
-
-variable [Fact (0 < p)] {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F] {f : ℝ → F}
+variable {p : ℝ} [Fact (0 < p)] {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F] {f : ℝ → F}
 
 /-- The lift of a `p`-periodic function to `AddCircle p` is `C^n` exactly when the function is. -/
 theorem contMDiff_lift_iff (hf : Periodic f p) {n : ℕ∞ω} :

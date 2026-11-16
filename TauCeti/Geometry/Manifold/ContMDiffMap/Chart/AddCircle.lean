@@ -5,8 +5,12 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Analysis.Calculus.IteratedDeriv.Defs
 public import TauCeti.Geometry.Manifold.ContMDiffMap.Chart.Topology
 public import TauCeti.Geometry.Manifold.Instances.AddCircle
+import Mathlib.Analysis.Calculus.IteratedDeriv.Lemmas
+import TauCeti.Algebra.Ring.Periodic
+import TauCeti.Topology.UniformSpace.LocallyUniformConvergence
 
 /-!
 # The weak Whitney topology on functions on a circle
@@ -19,7 +23,10 @@ derivatives of its periodic lift `f ∘ (↑)` on `ℝ`, restricted to the chart
 
 Consequently a family of `C^n` maps on the circle converges in the weak Whitney topology as soon
 as the derivatives of order at most `n` of their lifts converge locally uniformly on `ℝ`
-(`ContMDiffMap.tendsto_addCircle_of_tendstoLocallyUniformly`). This is how explicit families of
+(`ContMDiffMap.tendsto_addCircle_of_tendstoLocallyUniformly`). In particular lifts of periodic
+functions converge when, for each order `m ≤ n`, the `m`-th derivatives of their differences are
+bounded uniformly by constants tending to `0`
+(`ContMDiffMap.tendsto_addCircle_of_norm_iteratedDeriv_sub_le`). This is how explicit families of
 functions on the circle, given by periodic formulas, are shown to converge in the `C^n` topology.
 -/
 
@@ -59,5 +66,24 @@ theorem tendsto_addCircle_of_tendstoLocallyUniformly {ι : Type*} {l : Filter ι
     funext (chartIteratedFDeriv_addCircle_apply φ x m hm)
   simp only [hφ]
   exact (h m hm).comp _ continuous_subtype_val
+
+/-- Lifts of `p`-periodic `C^n` functions `f i` converge to the lift of `g` in the weak Whitney
+topology when, for each order `m ≤ n`, eventually `‖(f i - g)⁽ᵐ⁾ t‖ ≤ b m i` for all `t`, with
+bounds `b m i` tending to `0`. -/
+theorem tendsto_addCircle_of_norm_iteratedDeriv_sub_le {ι : Type*} {l : Filter ι}
+    {f : ι → ℝ → F} {g : ℝ → F} (hf : ∀ i, Function.Periodic (f i) p)
+    (hg : Function.Periodic g p) (hfn : ∀ i, ContDiff ℝ n (f i)) (hgn : ContDiff ℝ n g)
+    {b : ℕ → ι → ℝ} (hb : ∀ m : ℕ, m ≤ n → Tendsto (b m) l (𝓝 0))
+    (h : ∀ m : ℕ, m ≤ n → ∀ᶠ i in l, ∀ t, ‖iteratedDeriv m (f i - g) t‖ ≤ b m i) :
+    Tendsto (β := C^n⟮𝓘(ℝ), AddCircle p; 𝓘(ℝ, F), F⟯)
+      (fun i ↦ ⟨(hf i).lift, (hf i).contMDiff_lift (hfn i)⟩) l
+      (𝓝 ⟨hg.lift, hg.contMDiff_lift hgn⟩) := by
+  refine tendsto_addCircle_of_tendstoLocallyUniformly fun m hm ↦ ?_
+  simp only [coeFn_mk, Function.Periodic.lift_comp_coe]
+  refine (TauCeti.tendstoUniformly_of_dist_le (hb m hm)
+    ((h m hm).mono fun i hi t ↦ ?_)).tendstoLocallyUniformly
+  rw [dist_eq_norm, ← iteratedFDeriv_sub_apply ((hfn i).contDiffAt.of_le hm)
+    (hgn.contDiffAt.of_le hm), norm_iteratedFDeriv_eq_norm_iteratedDeriv]
+  exact hi t
 
 end ContMDiffMap
