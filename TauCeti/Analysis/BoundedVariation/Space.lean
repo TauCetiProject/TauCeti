@@ -191,11 +191,8 @@ theorem ofFunction_coeFn (u : BV μ Ω) : ofFunction u u.memBV = u :=
 everywhere on `Ω`. -/
 @[simp]
 theorem ofFunction_eq_ofFunction_iff {u v : E → ℝ} (hu : MemBV μ Ω u) (hv : MemBV μ Ω v) :
-    ofFunction u hu = ofFunction v hv ↔ u =ᵐ[μ.restrict Ω] v :=
-  ⟨fun h => (coeFn_ofFunction u hu).symm.trans
-      ((Filter.EventuallyEq.of_eq (congrArg (fun w : BV μ Ω => (w : E → ℝ)) h)).trans
-        (coeFn_ofFunction v hv)),
-    fun h => ext ((coeFn_ofFunction u hu).trans (h.trans (coeFn_ofFunction v hv).symm))⟩
+    ofFunction u hu = ofFunction v hv ↔ u =ᵐ[μ.restrict Ω] v := by
+  rw [← toL1_injective.eq_iff, toL1_ofFunction, toL1_ofFunction, Integrable.toL1_eq_toL1_iff]
 
 instance : Zero (BV μ Ω) := ⟨BV.mk 0⟩
 instance : Add (BV μ Ω) := ⟨fun u v => BV.mk (u.toSubmodule + v.toSubmodule)⟩
