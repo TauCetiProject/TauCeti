@@ -49,6 +49,11 @@ In the namespace `TauCeti.ThricePuncturedSphere`:
 * `exists_add_mul_cylindricalEndLift_eq`: the converse for the input ends; for the output end it
   is `Puncture.exists_cylindricalEndLift_inf_eq`.
 * `add_mul_cylindricalEndLift_ne`: a point with `s > 0` on an input end is no center.
+* `le_norm_sub_of_norm_sub_le` and `norm_le_of_norm_sub_le`: a point of one of pairwise disjoint
+  discs lies off the others, and in any disc around `0` containing them all.
+* `norm_add_mul_cylindricalEndLift_sub_lt` and `le_norm_cylindricalEndLift_inf_sub`: the part
+  `s > 0` of an input end lies in the disc `‖w - c i‖ < ‖a i‖ / 2`, and the part `s ≤ -1` of the
+  output end lies off the support `‖w - c i‖ < ‖a i‖ exp (-2π) / 2` of every input end datum.
 -/
 
 public section
@@ -70,6 +75,30 @@ theorem norm_mul_exp_neg_two_pi_div_two_lt {a : ℂ} (ha : a ≠ 0) :
   have := norm_pos_iff.2 ha
   have : Real.exp (-(2 * π)) < 1 := Real.exp_lt_one_iff.2 (by linarith [Real.pi_pos])
   nlinarith
+
+/-- The radius `‖a‖ exp (-2π) / 2` of the disc around the center containing the part `s ≥ 1` of an
+input end is at most `‖a‖ / 2`. -/
+theorem norm_mul_exp_neg_two_pi_div_two_le (a : ℂ) :
+    ‖a‖ * Real.exp (-(2 * π)) / 2 ≤ ‖a‖ / 2 := by
+  have : Real.exp (-(2 * π)) ≤ 1 := Real.exp_le_one_iff.2 (by linarith [Real.pi_pos])
+  nlinarith [norm_nonneg a]
+
+/-- If the discs `‖w - c j‖ ≤ r j` are pairwise disjoint, in the sense that
+`r i + r j ≤ ‖c i - c j‖`, a point of the disc of `i` lies at distance at least `r j` from the
+center of every other `j`. -/
+theorem le_norm_sub_of_norm_sub_le {r : ι → ℝ}
+    (hsep : Pairwise fun i j => r i + r j ≤ ‖c i - c j‖) {i j : ι} (hji : j ≠ i) {w : ℂ}
+    (hw : ‖w - c i‖ ≤ r i) : r j ≤ ‖w - c j‖ := by
+  have h₁ := hsep hji
+  have h₂ : ‖c j - c i‖ ≤ ‖w - c i‖ + ‖w - c j‖ := by
+    simpa using norm_sub_le (w - c i) (w - c j)
+  linarith
+
+/-- If the discs `‖w - c j‖ ≤ r j` lie in the disc `‖w‖ ≤ R`, so does a point of the disc of
+`i`. -/
+theorem norm_le_of_norm_sub_le {r : ι → ℝ} (hout : ∀ i, ‖c i‖ + r i ≤ R) {i : ι} {w : ℂ}
+    (hw : ‖w - c i‖ ≤ r i) : ‖w‖ ≤ R :=
+  (norm_le_norm_add_norm_sub' w (c i)).trans (by linarith [hout i])
 
 /-- **The truncation of a sphere with moving input ends.** For input ends with centers `c i` and
 scales `a i`, the part of the plane cut off along the circle `s = R` of every input end and the
@@ -148,6 +177,24 @@ theorem norm_add_mul_cylindricalEndLift_sub (c a z : ℂ) :
   norm_num
   ring
 
+/-- For a nonzero scale `a`, a point with `s > 0` on the input end with center `c` and scale `a`
+lies in the disc `‖w - c‖ < ‖a‖ / 2`. -/
+theorem norm_add_mul_cylindricalEndLift_sub_lt (c : ℂ) {a z : ℂ} (ha : a ≠ 0) (hz : 0 < z.re) :
+    ‖c + a * zero.cylindricalEndLift z - c‖ < ‖a‖ / 2 := by
+  rw [norm_add_mul_cylindricalEndLift_sub]
+  have : Real.exp (-(2 * π * z.re)) < 1 := Real.exp_lt_one_iff.2 (by nlinarith [Real.pi_pos])
+  nlinarith [norm_pos_iff.2 ha]
+
+/-- If the disc `‖w - c‖ < ‖a‖ / 2` lies in the disc `‖w‖ ≤ 2 exp (2π)`, then a point with
+`s ≤ -1` on the output end lies at distance at least `‖a‖ exp (-2π) / 2` from `c`. -/
+theorem le_norm_cylindricalEndLift_inf_sub {c a : ℂ}
+    (hout : ‖c‖ + ‖a‖ / 2 ≤ 2 * Real.exp (2 * π)) {z : ℂ} (hz : z.re ≤ -1) :
+    ‖a‖ * Real.exp (-(2 * π)) / 2 ≤ ‖inf.cylindricalEndLift z - c‖ := by
+  have hnorm : 2 * Real.exp (2 * π) ≤ ‖inf.cylindricalEndLift z‖ :=
+    two_mul_exp_le_norm_cylindricalEndLift_inf (R := 1) hz |>.trans_eq' (by ring_nf)
+  have h := norm_sub_norm_le (inf.cylindricalEndLift z) c
+  linarith [norm_mul_exp_neg_two_pi_div_two_le a]
+
 /-- The end lift `z ↦ c + a φ₀(z)` of an input end has complex derivative `a φ₀'(z)`. -/
 theorem hasDerivAt_add_mul_cylindricalEndLift (c a w : ℂ) :
     HasDerivAt (fun z ↦ c + a * zero.cylindricalEndLift z)
@@ -170,18 +217,14 @@ theorem add_mul_cylindricalEndLift_mem_puncturedSphereTruncation
   have hR₄ : Real.exp (2 * π) ≤ Real.exp (2 * π * R) := Real.exp_le_exp.2 (by nlinarith)
   have hai := norm_nonneg (a i)
   have hdi : ‖w - c i‖ ≤ ‖a i‖ / 2 := by rw [hd]; nlinarith
-  refine ⟨fun j ↦ ?_, ?_⟩
-  · rcases eq_or_ne j i with rfl | hji
-    · rw [hd]
-      gcongr
-    · have h := hsep hji.symm
-      have htri : ‖c i - c j‖ ≤ ‖w - c i‖ + ‖w - c j‖ := by
-        simpa [norm_sub_rev] using norm_sub_le (c i - w) (c j - w)
-      have : ‖a j‖ * Real.exp (-(2 * π * R)) ≤ ‖a j‖ :=
-        mul_le_of_le_one_right (norm_nonneg _) (Real.exp_le_one_iff.2 (by nlinarith))
-      linarith
-  · have htri : ‖w‖ ≤ ‖c i‖ + ‖w - c i‖ := by simpa using norm_add_le (c i) (w - c i)
-    linarith [hout i]
+  refine ⟨fun j ↦ ?_, (norm_le_of_norm_sub_le hout hdi).trans (by linarith)⟩
+  rcases eq_or_ne j i with rfl | hji
+  · rw [hd]
+    gcongr
+  · have h := le_norm_sub_of_norm_sub_le hsep hji hdi
+    have : ‖a j‖ * Real.exp (-(2 * π * R)) ≤ ‖a j‖ :=
+      mul_le_of_le_one_right (norm_nonneg _) (Real.exp_le_one_iff.2 (by nlinarith))
+    linarith
 
 /-- If the discs `‖w - c i‖ < ‖a i‖ / 2` lie in the disc `‖w‖ ≤ 2 exp (2π)`, then the part
 `-R ≤ s ≤ -1` of the output end lies in the truncation `Σ_R`. -/
@@ -192,14 +235,9 @@ theorem cylindricalEndLift_inf_mem_puncturedSphereTruncation
   have hd := norm_cylindricalEndLift_sub_endCenter inf z
   rw [endCenter_inf, sub_zero, endScale_inf, Complex.norm_ofNat] at hd
   have hπ := Real.pi_pos
-  have hlow : 2 * Real.exp (2 * π) ≤ ‖inf.cylindricalEndLift z‖ :=
-    two_mul_exp_le_norm_cylindricalEndLift_inf (R := 1) (by linarith) |>.trans_eq' (by ring_nf)
-  refine ⟨fun i ↦ ?_, ?_⟩
-  · have htri : ‖inf.cylindricalEndLift z‖ ≤ ‖c i‖ + ‖inf.cylindricalEndLift z - c i‖ := by
-      simpa using norm_add_le (c i) (inf.cylindricalEndLift z - c i)
-    have : ‖a i‖ * Real.exp (-(2 * π * R)) ≤ ‖a i‖ :=
-      mul_le_of_le_one_right (norm_nonneg _) (Real.exp_le_one_iff.2 (by nlinarith))
-    linarith [hout i]
+  refine ⟨fun i ↦ le_trans ?_ (le_norm_cylindricalEndLift_inf_sub (hout i) h₂), ?_⟩
+  · gcongr ‖a i‖ * ?_ / 2
+    exact Real.exp_le_exp.2 (by nlinarith)
   · rw [hd]
     gcongr
     nlinarith
@@ -236,16 +274,14 @@ theorem add_mul_cylindricalEndLift_ne
     (hsep : Pairwise fun i j => ‖a i‖ / 2 + ‖a j‖ / 2 ≤ ‖c i - c j‖) {i : ι} (ha : a i ≠ 0)
     {z : ℂ} (hz : 0 < z.re) (j : ι) : c i + a i * zero.cylindricalEndLift z ≠ c j := by
   have hd := norm_add_mul_cylindricalEndLift_sub (c i) (a i) z
+  have hlt := norm_add_mul_cylindricalEndLift_sub_lt (c i) ha hz
   have hapos := norm_pos_iff.2 ha
-  have hlt : ‖a i‖ * Real.exp (-(2 * π * z.re)) / 2 < ‖a i‖ / 2 := by
-    have : Real.exp (-(2 * π * z.re)) < 1 := Real.exp_lt_one_iff.2 (by nlinarith [Real.pi_pos])
-    nlinarith
   intro h
   rcases eq_or_ne j i with rfl | hji
   · rw [h, sub_self, norm_zero] at hd
     have : 0 < ‖a j‖ * Real.exp (-(2 * π * z.re)) / 2 := by positivity
     linarith
-  · rw [h] at hd
+  · rw [h] at hlt
     have := hsep hji
     linarith [norm_nonneg (a j), norm_sub_rev (c j) (c i)]
 

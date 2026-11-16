@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.Symplectic.Floer.PairOfPants.Capping
+import TauCeti.Analysis.Complex.ThricePuncturedSphere.MovingEnds
 import TauCeti.Geometry.Symplectic.Floer.Pullback
 import TauCeti.Geometry.Manifold.ContMDiff.Prod
 import Mathlib.Geometry.Manifold.Algebra.Monoid
@@ -78,11 +79,6 @@ open TauCeti.ThricePuncturedSphere TauCeti.ThricePuncturedSphere.Puncture
 namespace TauCeti.Floer
 
 variable {M : Type*}
-
-/-- The factor `exp (-2π)` relating the radius of the support of an input end datum to the radius
-of its end disc is less than `1`. -/
-theorem exp_neg_two_pi_lt_one : Real.exp (-(2 * π)) < 1 :=
-  Real.exp_lt_one_iff.2 (by linarith [Real.pi_pos])
 
 section InputEnd
 
@@ -259,23 +255,6 @@ theorem puncturedSpherePerturbation_eq_inputEndPerturbation_of_forall_ne {i : ι
     (fun j _ hj => inputEndPerturbation_eq_zero_of_le_norm_sub (hne j hj) x) (by simp),
     negativePlanePerturbation_eq_zero_of_norm_le hw, add_zero]
 
-omit [Fintype ι] in
-/-- If the discs `‖w - c j‖ < r j` are pairwise disjoint, a point of the disc of `i` lies off the
-disc of every other `j`. -/
-theorem le_norm_sub_of_norm_sub_lt {r : ι → ℝ}
-    (hsep : Pairwise fun i j => r i + r j ≤ ‖c i - c j‖) {i j : ι} (hji : j ≠ i) {w : ℂ}
-    (hw : ‖w - c i‖ < r i) : r j ≤ ‖w - c j‖ := by
-  have h₁ := hsep hji
-  have h₂ : ‖c j - c i‖ ≤ ‖w - c i‖ + ‖w - c j‖ := by
-    simpa using norm_sub_le (w - c i) (w - c j)
-  linarith
-
-omit [Fintype ι] in
-/-- If the discs `‖w - c j‖ < r j` lie in the disc `‖w‖ ≤ R`, so does a point of the disc of `i`. -/
-theorem norm_le_of_norm_sub_lt {r : ι → ℝ} {R : ℝ} (hout : ∀ i, ‖c i‖ + r i ≤ R) {i : ι} {w : ℂ}
-    (hw : ‖w - c i‖ < r i) : ‖w‖ ≤ R :=
-  (norm_le_norm_add_norm_sub' w (c i)).trans (by linarith [hout i])
-
 /-- If discs `‖w - c j‖ < r j` containing the supports of the input end data are pairwise disjoint
 and lie in the disc `‖w‖ ≤ 2 exp (2π)`, then on the disc of the input `i` the datum is the input
 end datum of `i`. -/
@@ -286,8 +265,8 @@ private theorem puncturedSpherePerturbation_eq_inputEndPerturbation_of_norm_sub_
     (x : M) :
     puncturedSpherePerturbation c a H Hout w x = inputEndPerturbation (c i) (a i) (H i) w x :=
   puncturedSpherePerturbation_eq_inputEndPerturbation_of_forall_ne
-    (fun j hj => (hr j).trans (le_norm_sub_of_norm_sub_lt hsep hj hw))
-    (norm_le_of_norm_sub_lt hout hw) x
+    (fun j hj => (hr j).trans (le_norm_sub_of_norm_sub_le hsep hj hw.le))
+    (norm_le_of_norm_sub_le hout hw.le) x
 
 /-- **Near an input end the datum is that end's datum.** If the discs `‖w - c j‖ < ‖a j‖ / 2` are
 pairwise disjoint and lie in the disc `‖w‖ ≤ 2 exp (2π)`, then on the disc of the input `i` the
@@ -298,34 +277,7 @@ theorem puncturedSpherePerturbation_eq_inputEndPerturbation
     (hw : ‖w - c i‖ < ‖a i‖ / 2) (x : M) :
     puncturedSpherePerturbation c a H Hout w x = inputEndPerturbation (c i) (a i) (H i) w x :=
   puncturedSpherePerturbation_eq_inputEndPerturbation_of_norm_sub_lt
-    (fun j => by nlinarith [norm_nonneg (a j), exp_neg_two_pi_lt_one]) hsep hout hw x
-
-/-- On the part `s > 0` of an input end with nonzero scale `a`, the point `c + a φ₀(z)` of its end
-lift lies in the disc `‖w - c‖ < ‖a‖ / 2`. -/
-theorem norm_mul_cylindricalEndLift_lt {a : ℂ} (ha : a ≠ 0) {z : ℂ} (hz : 0 < z.re) :
-    ‖a * zero.cylindricalEndLift z‖ < ‖a‖ / 2 := by
-  have h := norm_cylindricalEndLift_sub_endCenter zero z
-  rw [endCenter_zero, sub_zero, endScale_zero] at h
-  have h2 : ‖(1 / 2 : ℂ)‖ = 1 / 2 := by norm_num
-  rw [norm_mul, h, h2]
-  have : Real.exp (-(2 * π * z.re)) < 1 :=
-    Real.exp_lt_one_iff.2 (by nlinarith [Real.pi_pos])
-  nlinarith [norm_pos_iff.2 ha]
-
-/-- On the part `s ≤ -1` of the output end, the point `φ_∞(z)` lies outside the support
-`‖w - c‖ < ‖a‖ exp (-2π) / 2` of an input end whose disc `‖w - c‖ < ‖a‖ / 2` lies in the disc
-`‖w‖ ≤ 2 exp (2π)`. -/
-theorem le_norm_cylindricalEndLift_inf_sub {c a : ℂ}
-    (hout : ‖c‖ + ‖a‖ / 2 ≤ 2 * Real.exp (2 * π)) {z : ℂ} (hz : z.re ≤ -1) :
-    ‖a‖ * Real.exp (-(2 * π)) / 2 ≤ ‖inf.cylindricalEndLift z - c‖ := by
-  have hnorm : 2 * Real.exp (2 * π) ≤ ‖inf.cylindricalEndLift z‖ := by
-    have h := norm_cylindricalEndLift_sub_endCenter inf z
-    rw [endCenter_inf, sub_zero, endScale_inf, Complex.norm_ofNat] at h
-    rw [h]
-    gcongr
-    nlinarith [Real.pi_pos]
-  have h := norm_sub_norm_le (inf.cylindricalEndLift z) c
-  nlinarith [norm_nonneg a, exp_neg_two_pi_lt_one]
+    (fun j => norm_mul_exp_neg_two_pi_div_two_le (a j)) hsep hout hw x
 
 /-- **The datum on an input end.** If the discs `‖w - c j‖ < ‖a j‖ / 2` are pairwise disjoint and
 lie in the disc `‖w‖ ≤ 2 exp (2π)`, then on the part `s > 0` of the input end `i`, the pullback of
@@ -338,10 +290,8 @@ theorem puncturedSpherePerturbation_cylindricalEndLift_of_pos
     puncturedSpherePerturbation c a H Hout (c i + a i * zero.cylindricalEndLift z) x
         (a i * (deriv zero.cylindricalEndLift z * v)) =
       v.im * (smoothTransition (z.re - 1) * H i z.im x) := by
-  have hlt : ‖c i + a i * zero.cylindricalEndLift z - c i‖ < ‖a i‖ / 2 := by
-    rw [add_sub_cancel_left]
-    exact norm_mul_cylindricalEndLift_lt ha hz
-  rw [puncturedSpherePerturbation_eq_inputEndPerturbation hsep hout hlt,
+  rw [puncturedSpherePerturbation_eq_inputEndPerturbation hsep hout
+      (norm_add_mul_cylindricalEndLift_sub_lt (c i) ha hz),
     inputEndPerturbation_cylindricalEndLift_apply hH ha]
 
 /-- **The datum is `H i(t) dt` far out on each input end.** Under the hypotheses of
@@ -388,18 +338,6 @@ section Smooth
 
 variable {E G : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [TopologicalSpace G]
   {I : ModelWithCorners ℝ E G} [TopologicalSpace M] [ChartedSpace G M]
-
-/-- The preimage `(w - c) / a` of `w` under the affine map `w' ↦ c + a w'`, along which the datum
-of the input end with center `c` and scale `a` is pushed forward, is `C^n` jointly in `c`, `a` and
-`w`, and constant in a target point, at every point with `a ≠ 0`. -/
-theorem contMDiffAt_sub_div {n : WithTop ℕ∞} {c a w : ℂ} (ha : a ≠ 0) (x : M) :
-    ContMDiffAt (𝓘(ℝ, ℂ × ℂ).prod (𝓘(ℝ, ℂ).prod I)) 𝓘(ℝ, ℂ) n
-      (fun p : (ℂ × ℂ) × (ℂ × M) => (p.2.1 - p.1.1) / p.1.2) ((c, a), (w, x)) := by
-  have h : ContDiffAt ℂ n (fun q : (ℂ × ℂ) × ℂ => (q.2 - q.1.1) / q.1.2) ((c, a), w) := by
-    refine ContDiffAt.div (x := ((c, a), w)) (f := fun q : (ℂ × ℂ) × ℂ => q.2 - q.1.1)
-      (g := fun q : (ℂ × ℂ) × ℂ => q.1.2) ?_ ?_ ha <;> fun_prop
-  exact (h.restrict_scalars ℝ).contMDiffAt.comp (f := fun p : (ℂ × ℂ) × (ℂ × M) => (p.1, p.2.1))
-    ((c, a), (w, x)) (contMDiffAt_fst.prodMk_space (contMDiffAt_fst.comp _ contMDiffAt_snd))
 
 /-- **The input end datum is smooth in its center and scale.** For a period-one Hamiltonian of
 class `C^n` on `ℝ × M`, the input end datum is `C^n` jointly in the center `c`, the scale `a`, the

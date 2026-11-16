@@ -34,6 +34,8 @@ compact slice `{x} × K` is `C^n` on a product of open neighbourhoods of `x` and
   a product `(E₁ × E₂) × N₃` with an arbitrary manifold `N₃`.
 * `TauCeti.exists_isOpen_prod_contMDiffOn`: the tube lemma for maps from a product which are
   `C^n` along a compact slice.
+* `TauCeti.contMDiffAt_sub_div`: the coordinate `(w - c) / a` is `C^n` in `c`, `a`, `w` and a
+  manifold factor, wherever `a ≠ 0`.
 
 -/
 
@@ -121,6 +123,20 @@ theorem exists_isOpen_prod_contMDiffOn [IsManifold I' n (X × Y)] [IsManifold J 
   obtain ⟨U, V, hUo, hVo, hU, hV, hUV⟩ :=
     generalized_tube_lemma isCompact_singleton hK (isOpen_setOfPred_contMDiffAt hn) hsub
   exact ⟨U, V, hUo, hVo, hU (mem_singleton x), hV, fun z hz ↦ (hUV hz).contMDiffWithinAt⟩
+
+/-- For a field `𝕜'` normed over `𝕜`, the preimage `(w - c) / a` of `w` under the affine map
+`w' ↦ c + a w'` is `C^n` jointly in `c`, `a` and `w`, and constant in a manifold factor, at every
+point with `a ≠ 0`. -/
+theorem contMDiffAt_sub_div {𝕜' : Type*} [NontriviallyNormedField 𝕜'] [NormedAlgebra 𝕜 𝕜']
+    {c a w : 𝕜'} (ha : a ≠ 0) (x : M) :
+    ContMDiffAt (𝓘(𝕜, 𝕜' × 𝕜').prod (𝓘(𝕜, 𝕜').prod I')) 𝓘(𝕜, 𝕜') n
+      (fun p : (𝕜' × 𝕜') × (𝕜' × M) ↦ (p.2.1 - p.1.1) / p.1.2) ((c, a), (w, x)) := by
+  have h : ContDiffAt 𝕜' n (fun q : (𝕜' × 𝕜') × 𝕜' ↦ (q.2 - q.1.1) / q.1.2) ((c, a), w) := by
+    refine ContDiffAt.div (x := ((c, a), w)) (f := fun q : (𝕜' × 𝕜') × 𝕜' ↦ q.2 - q.1.1)
+      (g := fun q : (𝕜' × 𝕜') × 𝕜' ↦ q.1.2) ?_ ?_ ha <;> fun_prop
+  exact (h.restrict_scalars 𝕜).contMDiffAt.comp
+    (f := fun p : (𝕜' × 𝕜') × (𝕜' × M) ↦ (p.1, p.2.1)) ((c, a), (w, x))
+    (contMDiffAt_fst.prodMk_space (contMDiffAt_fst.comp _ contMDiffAt_snd))
 
 /-- A jointly `C^n` family in the model space, fixing the base point of an extended chart at time
 zero, gives a family on the manifold, jointly `C^n` at the base point and time zero, by

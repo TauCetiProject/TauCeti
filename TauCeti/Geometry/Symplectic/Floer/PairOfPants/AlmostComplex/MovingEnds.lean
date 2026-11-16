@@ -7,6 +7,8 @@ module
 
 public import TauCeti.Geometry.Symplectic.Floer.PairOfPants.AlmostComplex.Capping
 public import TauCeti.Geometry.Symplectic.Floer.PairOfPants.Plumbing.AssociativityPath
+import TauCeti.Analysis.Complex.ThricePuncturedSphere.MovingEnds
+import TauCeti.Geometry.Manifold.ContMDiff.Prod
 
 /-!
 # Almost complex structures on spheres with moving input ends
@@ -200,11 +202,11 @@ private theorem sum_cayley_eq_of_norm_sub_lt (h₀ : ω.Compatible J₀)
         J₀.cayley (negativePlaneAlmostComplex h₀ Jout hJout w x) =
       J₀.cayley (inputEndAlmostComplex h₀ (c i) (a i) (J i) (hJ i) w x) := by
   rw [Finset.sum_eq_single i (fun j _ hj => by
-      have h := le_norm_sub_of_norm_sub_lt hsep hj hw
       rw [inputEndAlmostComplex_eq_of_le_norm_sub h₀
-          (by nlinarith [norm_nonneg (a j), exp_neg_two_pi_lt_one]),
+          ((norm_mul_exp_neg_two_pi_div_two_le (a j)).trans
+            (le_norm_sub_of_norm_sub_le hsep hj hw.le)),
         AlmostComplexStructure.cayley_self]) (by simp),
-    negativePlaneAlmostComplex_eq_of_norm_le h₀ (norm_le_of_norm_sub_lt hout hw),
+    negativePlaneAlmostComplex_eq_of_norm_le h₀ (norm_le_of_norm_sub_le hout hw.le),
     AlmostComplexStructure.cayley_self, add_zero]
 
 /-- Off the supports of all the input end structures, the sum of the Cayley transforms is the
@@ -229,9 +231,8 @@ private theorem sum_cayley_mem (h₀ : ω.Compatible J₀)
       J₀.cayley (negativePlaneAlmostComplex h₀ Jout hJout w x) ∈ s := by
   by_cases h : ∃ i, ‖w - c i‖ < ‖a i‖ * Real.exp (-(2 * π)) / 2
   · obtain ⟨i, hi⟩ := h
-    have hi' : ‖w - c i‖ < ‖a i‖ / 2 :=
-      hi.trans_le (by nlinarith [norm_nonneg (a i), exp_neg_two_pi_lt_one])
-    rw [sum_cayley_eq_of_norm_sub_lt h₀ hsep hout hi' x]
+    rw [sum_cayley_eq_of_norm_sub_lt h₀ hsep hout
+      (hi.trans_le (norm_mul_exp_neg_two_pi_div_two_le (a i))) x]
     exact hin i w x
   · push Not at h
     rw [sum_cayley_eq_of_forall_le_norm_sub h₀ h x]
@@ -332,10 +333,8 @@ theorem cayley_puncturedSphereAlmostComplex_cylindricalEndLift_of_pos (h₀ : ω
         (c i + a i * zero.cylindricalEndLift z) x) =
       smoothTransition (z.re - 1) • J₀.cayley (J i z.im x) := by
   -- The point lies in the disc `‖w - c i‖ < ‖a i‖ / 2` of the input `i`.
-  have hlt : ‖c i + a i * zero.cylindricalEndLift z - c i‖ < ‖a i‖ / 2 := by
-    rw [add_sub_cancel_left]
-    exact norm_mul_cylindricalEndLift_lt ha hz
-  rw [puncturedSphereAlmostComplex_eq_inputEndAlmostComplex h₀ hlt,
+  rw [puncturedSphereAlmostComplex_eq_inputEndAlmostComplex h₀
+      (norm_add_mul_cylindricalEndLift_sub_lt (c i) ha hz),
     cayley_inputEndAlmostComplex_cylindricalEndLift h₀ hJp ha]
 
 /-- **The structure is `J i (t)` far out on each input end.** If `J i` has period one in `t` and
@@ -434,7 +433,7 @@ theorem contMDiffAt_inputEndAlmostComplex (h₀ : ω.Compatible J₀) {n : ℕ�
   refine h₀.contMDiffAt_of_contMDiffAt_cayley (fun _ => tames_inputEndAlmostComplex h₀ _ _) ?_
   simp only [cayley_inputEndAlmostComplex, map_smul]
   -- The point `w' = (w - c) / a` of the end at `0` depends smoothly on `(c, a, w)` for `a ≠ 0`.
-  have hcoordM := contMDiffAt_sub_div (I := I) (n := n) (c := c) (w := w) ha x
+  have hcoordM := contMDiffAt_sub_div (𝕜 := ℝ) (I' := I) (n := n) (c := c) (w := w) ha x
   have hw' : (w - c) / a ≠ zero.endCenter := by
     rw [endCenter_zero]
     exact div_ne_zero (sub_ne_zero.2 hw) ha
