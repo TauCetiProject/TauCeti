@@ -320,6 +320,25 @@ theorem cylinderMap_trans (Ψ : Diffeotopy J n M) :
     (Φ.trans Ψ).cylinderMap = Ψ.cylinderMap ∘ fun p ↦ (Φ.cylinderMap p, p.2) :=
   funext fun p ↦ by simp
 
+/-- The level-preserving motion `(x, t) ↦ (Φ (t, x), t)` of a `C^n` diffeotopy is `C^n`. -/
+theorem contMDiff_cylinderMap_prodMk_snd :
+    ContMDiff (J.prod (𝓡∂ 1)) (J.prod (𝓡∂ 1)) n fun p : M × I ↦ (Φ.cylinderMap p, p.2) :=
+  Φ.contMDiff_cylinderMap.prodMk contMDiff_snd
+
+/-- The level-preserving motion `(x, t) ↦ (Φ (t, x), t)` of a `C^n` diffeotopy, `1 ≤ n`, acts on
+tangent vectors by `w ↦ (dΦ w, w₂)`. -/
+theorem mfderiv_cylinderMap_prodMk_snd (hn : 1 ≤ n) (p : M × I)
+    (w : TangentSpace (J.prod (𝓡∂ 1)) p) :
+    mfderiv (J.prod (𝓡∂ 1)) (J.prod (𝓡∂ 1)) (fun q ↦ (Φ.cylinderMap q, q.2)) p w =
+      (mfderiv (J.prod (𝓡∂ 1)) J Φ.cylinderMap p w, w.2) := by
+  rw [mfderiv_prodMk (Φ.contMDiff_cylinderMap.mdifferentiableAt
+      (zero_lt_one.trans_le (by exact_mod_cast hn)).ne') mdifferentiableAt_snd,
+    mfderiv_snd]
+  -- `ContinuousLinearMap.prod_apply` does not rewrite here: `mfderiv_snd` produces the projection
+  -- on `TangentSpace J p.1 × TangentSpace (𝓡∂ 1) p.2`, which is the tangent space of the product
+  -- only up to unfolding `TangentSpace`. Both sides agree by unfolding `prod` and `snd`.
+  rfl
+
 /-- The time slice of a composite diffeotopy is the composite of its time slices. -/
 @[simp]
 theorem timeSlice_trans (Ψ : Diffeotopy J n M) (t : I) :
