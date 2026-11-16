@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Algebra.AlgebraicGroup.DeligneTorus.Splitting
 public import TauCeti.Algebra.Bialgebra.MonoidAlgebra.GroupLike
+import Mathlib.Algebra.Ring.Fin
 
 /-!
 # Hodge cocharacter and character group of the Deligne torus
@@ -26,12 +27,16 @@ lattice `X*(S) ≃ ℤ × ℤ` sending `(p, q)` to the character `(z₁, z₂) �
   (`TauCeti.DeligneTorus.mu_neg_one_not_mem_mrange`, `TauCeti.DeligneTorus.mu_not_real`);
 * the characters `(p, q) ∈ ℤ × ℤ` act on `R`-points via `TauCeti.DeligneTorus.characterOver`
   (`TauCeti.DeligneTorus.characterGroup` over `ℂ`), complex conjugation exchanges `(p, q)` and
-  `(q, p)` (`TauCeti.DeligneTorus.characterGroup_conj`), `(1, 0)` and `(0, 1)` are dual to `μ`
-  (`TauCeti.DeligneTorus.characterGroup_mu`), `(1, 1)` is the norm
-  (`TauCeti.DeligneTorus.characterOver_one_one`, `TauCeti.DeligneTorus.characterGroup_norm`), and
-  `(p, q)` evaluates to `r ^ (-(p + q))` on `w(r)` (`TauCeti.DeligneTorus.characterGroup_weight`);
+  `(q, p)` (`TauCeti.DeligneTorus.characterGroup_conj`), the character basis `(1, 0), (0, 1)` is
+  dual to the cocharacter basis `μ, muConj`, respectively
+  (`TauCeti.DeligneTorus.characterOver_muOver`, `TauCeti.DeligneTorus.characterOver_muConjOver`),
+  `(1, 1)` is the norm (`TauCeti.DeligneTorus.characterOver_one_one`,
+  `TauCeti.DeligneTorus.characterGroup_norm`), and `(p, q)` evaluates to `r ^ (-(p + q))` on `w(r)`
+  (`TauCeti.DeligneTorus.characterGroup_weight`);
 * the additive group of group-like elements of `baseChangeComplex` is isomorphic to `ℤ × ℤ`
-  (`TauCeti.DeligneTorus.additiveGroupLikeComplexAddEquiv`).
+  (`TauCeti.DeligneTorus.additiveGroupLikeComplexAddEquiv`), with the group-like element
+  corresponding to `(p, q)` evaluating on base-changed points to `characterOver R (p, q)`
+  (`TauCeti.DeligneTorus.ofConv_additiveGroupLikeComplexAddEquiv_symm`).
 
 ## Main definitions
 
@@ -54,9 +59,10 @@ lattice `X*(S) ≃ ℤ × ℤ` sending `(p, q)` to the character `(z₁, z₂) �
 * `TauCeti.DeligneTorus.weight_eq_mu_mul_conj`: `w(r) = μ(r⁻¹) * muConj(r⁻¹)`.
 * `TauCeti.DeligneTorus.mu_neg_one_not_mem_mrange`, `TauCeti.DeligneTorus.mu_not_real`: `μ` is not
   defined over `ℝ`.
-* `TauCeti.DeligneTorus.characterGroup_conj`, `TauCeti.DeligneTorus.characterGroup_mu`,
-  `TauCeti.DeligneTorus.characterGroup_norm`, `TauCeti.DeligneTorus.characterGroup_weight`,
-  `TauCeti.DeligneTorus.characterGroup_injective`.
+* `TauCeti.DeligneTorus.characterGroup_conj`, `TauCeti.DeligneTorus.characterOver_muOver`,
+  `TauCeti.DeligneTorus.characterOver_muConjOver`, `TauCeti.DeligneTorus.characterGroup_norm`,
+  `TauCeti.DeligneTorus.characterGroup_weight`, `TauCeti.DeligneTorus.characterGroup_injective`,
+  `TauCeti.DeligneTorus.ofConv_additiveGroupLikeComplexAddEquiv_symm`.
 
 ## References
 
@@ -265,18 +271,12 @@ end Cocharacters
 
 section Characters
 
-/-- The Laurent-monomial character `(z₁, z₂) ↦ z₁ ^ pq.1 * z₂ ^ pq.2` on `G × G`. -/
-private def prodZPowMonoidHom {G : Type*} [CommGroup G] (pq : ℤ × ℤ) : (G × G) →* G where
-  toFun u := u.1 ^ pq.1 * u.2 ^ pq.2
-  map_one' := by simp
-  map_mul' u v := by rw [Prod.fst_mul, Prod.snd_mul, mul_zpow, mul_zpow, mul_mul_mul_comm]
-
 variable (R : Type*) [CommRing R] [Algebra ℝ R] [Algebra ℂ R] [IsScalarTower ℝ ℂ R]
 
 /-- **Character `(p, q)` of the Deligne torus** over a commutative complex algebra `R`, sending a
 point with splitting `(z₁, z₂) ∈ Rˣ × Rˣ` to `z₁ ^ p * z₂ ^ q`. -/
 noncomputable def characterOver (pq : ℤ × ℤ) : WithConv (S →ₐ[ℝ] R) →* Rˣ :=
-  (prodZPowMonoidHom pq).comp (splittingMulEquiv R).toMonoidHom
+  ((zpowGroupHom pq.1).coprod (zpowGroupHom pq.2)).comp (splittingMulEquiv R).toMonoidHom
 
 /-- **Milne's character group parametrization** of the Deligne torus on complex points, sending
 `pq = (p, q) : ℤ × ℤ` to the character `S(ℂ) →* ℂˣ`, `(z₁, z₂) ↦ z₁ ^ p * z₂ ^ q`. -/
@@ -358,11 +358,6 @@ theorem characterOver_muConjOver (pq : ℤ × ℤ) (z : Rˣ) :
     characterOver R pq (muConjOver R z) = z ^ pq.2 := by
   rw [characterOver_apply, splittingMulEquiv_muConjOver, one_zpow, one_mul]
 
-/-- **The character `(1, 0)` takes value `z` on `μ(z)` and `(0, 1)` takes value `1`.** -/
-theorem characterGroup_mu (z : ℂˣ) :
-    characterGroup (1, 0) (mu z) = z ∧ characterGroup (0, 1) (mu z) = 1 := by
-  simp
-
 /-- **Distinct pairs in `ℤ × ℤ` define distinct characters on `S(ℂ)`.** -/
 theorem characterGroup_injective : Function.Injective characterGroup := by
   intro pq rs h
@@ -371,8 +366,7 @@ theorem characterGroup_injective : Function.Injective characterGroup := by
     intro m n hmn
     have hval := congrArg Units.val hmn
     simp only [Units.val_zpow_eq_zpow_val, u, Units.val_mk0] at hval
-    rw [show (2 : ℂ) = ((2 : ℝ) : ℂ) by norm_num, ← Complex.ofReal_zpow,
-      ← Complex.ofReal_zpow] at hval
+    rw [← Complex.ofReal_ofNat, ← Complex.ofReal_zpow, ← Complex.ofReal_zpow] at hval
     exact (zpow_right_strictMono₀ (by norm_num : (1 : ℝ) < 2)).injective
       (Complex.ofReal_injective hval)
   have h1 : u ^ pq.1 = u ^ rs.1 := by
@@ -414,19 +408,6 @@ theorem characterGroup_weight (pq : ℤ × ℤ) (r : ℂˣ) :
 
 /-! ### Identification of the algebraic character lattice over `ℂ` with `ℤ × ℤ` -/
 
-/-- Additive equivalence `(ULift.{0} (Fin 2) →₀ ℤ) ≃+ ℤ × ℤ` evaluating at `0` and `1`. -/
-private noncomputable def uliftFinTwoFinsuppAddEquiv :
-    (ULift.{0} (Fin 2) →₀ ℤ) ≃+ ℤ × ℤ where
-  toFun c := (c ⟨0⟩, c ⟨1⟩)
-  invFun pq := Finsupp.single ⟨0⟩ pq.1 + Finsupp.single ⟨1⟩ pq.2
-  left_inv c := by
-    ext ⟨i⟩
-    fin_cases i <;> simp
-  right_inv pq := by
-    ext <;> simp
-  map_add' c d := by
-    ext <;> simp
-
 /-- **Algebraic character lattice of `S_ℂ`**: the additive group of group-like elements of
 `baseChangeComplex` is isomorphic to `ℤ × ℤ`. -/
 noncomputable def additiveGroupLikeComplexAddEquiv :
@@ -439,7 +420,58 @@ noncomputable def additiveGroupLikeComplexAddEquiv :
     (eBialg.mapGroupLike.symm.trans
       (TauCeti.MonoidAlgebra.groupLikeEquiv (R := ℂ)
         (H := SplitTorus.characterGroup (ULift.{0} (Fin 2)))))).trans
-    ((AddEquiv.additiveMultiplicative (ULift.{0} (Fin 2) →₀ ℤ)).trans uliftFinTwoFinsuppAddEquiv)
+    ((AddEquiv.additiveMultiplicative (ULift.{0} (Fin 2) →₀ ℤ)).trans
+      ((Finsupp.domCongr Equiv.ulift).trans
+        (Finsupp.addEquivFunOnFinite.trans (RingEquiv.piFinTwo (fun _ : Fin 2 ↦ ℤ)).toAddEquiv)))
+
+/-- **Evaluation of the algebraic character lattice on base-changed points**: evaluating a
+base-changed `R`-point `g` of `S_ℂ` at the group-like element corresponding to `pq : ℤ × ℤ` under
+`additiveGroupLikeComplexAddEquiv.symm` equals `characterOver R pq`. -/
+theorem ofConv_additiveGroupLikeComplexAddEquiv_symm (pq : ℤ × ℤ)
+    (g : WithConv (baseChangeComplex →ₐ[ℂ] R)) :
+    g.ofConv ((additiveGroupLikeComplexAddEquiv.symm pq).toMul : baseChangeComplex) =
+      (characterOver R pq (baseChangeComplexPointsMulEquiv R g) : R) := by
+  let eFinsupp : (ULift.{0} (Fin 2) →₀ ℤ) ≃+ ℤ × ℤ :=
+    (Finsupp.domCongr Equiv.ulift).trans
+      (Finsupp.addEquivFunOnFinite.trans (RingEquiv.piFinTwo (fun _ : Fin 2 ↦ ℤ)).toAddEquiv)
+  let m : ULift.{0} (Fin 2) →₀ ℤ := eFinsupp.symm pq
+  have hm0 : m ⟨0⟩ = pq.1 := congrArg Prod.fst (eFinsupp.apply_symm_apply pq)
+  have hm1 : m ⟨1⟩ = pq.2 := congrArg Prod.snd (eFinsupp.apply_symm_apply pq)
+  have hval : ((additiveGroupLikeComplexAddEquiv.symm pq).toMul : baseChangeComplex) =
+      baseChangeSplitTorusIso.hom.hom.hom
+        (_root_.MonoidAlgebra.single (Multiplicative.ofAdd m) 1) := by
+    simp only [additiveGroupLikeComplexAddEquiv, AddEquiv.symm_trans_apply,
+      MulEquiv.toAdditive_apply_symm_apply, toMul_ofMul, MulEquiv.symm_trans_apply,
+      MulEquiv.symm_symm, BialgEquiv.val_mapGroupLike,
+      TauCeti.MonoidAlgebra.val_groupLikeEquiv_symm, m, eFinsupp]
+    rw [← BialgEquiv.coe_toBialgHom, CommHopfAlgCat.coe_ofIso, Functor.mapIso_hom,
+      ObjectProperty.ι_map, AddEquiv.additiveMultiplicative_symm_apply, toMul_ofMul]
+    rfl
+  let p : WithConv (MonoidAlgebra ℂ (Multiplicative (ULift.{0} (Fin 2) →₀ ℤ)) →ₐ[ℂ] R) :=
+    BialgHom.mapDomain baseChangeSplitTorusIso.hom.hom.hom g
+  have hp := pointsMulEquiv_mapDomain_baseChangeSplitTorusIso g
+  have hp0 : SplitTorus.pointsMulEquiv p ⟨0⟩ =
+      (splittingMulEquiv R (baseChangeComplexPointsMulEquiv R g)).1 := congrArg Prod.fst hp
+  have hp1 : SplitTorus.pointsMulEquiv p ⟨1⟩ =
+      (splittingMulEquiv R (baseChangeComplexPointsMulEquiv R g)).2 := congrArg Prod.snd hp
+  have hchar : g.ofConv ((additiveGroupLikeComplexAddEquiv.symm pq).toMul : baseChangeComplex) =
+      ((freeAbelianCharEquiv.symm (SplitTorus.pointsMulEquiv p) (Multiplicative.ofAdd m) :
+        Rˣ) : R) := by
+    have hmap : g.ofConv ((additiveGroupLikeComplexAddEquiv.symm pq).toMul : baseChangeComplex) =
+        p.ofConv (_root_.MonoidAlgebra.single (Multiplicative.ofAdd m) 1) := by
+      rw [hval]
+      exact (BialgHom.mapDomain_apply_apply (A := R) baseChangeSplitTorusIso.hom.hom.hom g _).symm
+    rw [hmap, ← DiagonalizableGroup.charOfPoint_apply_coe (f := p.ofConv),
+      ← DiagonalizableGroup.pointsMulEquiv_apply,
+      ← MulEquiv.symm_apply_apply freeAbelianCharEquiv (DiagonalizableGroup.pointsMulEquiv p),
+      ← SplitTorus.pointsMulEquiv_eq_freeAbelianCharEquiv]
+  rw [hchar, freeAbelianCharEquiv_symm_apply_ofAdd,
+    Finsupp.prod_fintype _ _ (fun _ ↦ zpow_zero _),
+    Fintype.prod_equiv Equiv.ulift
+      (fun i : ULift.{0} (Fin 2) ↦ SplitTorus.pointsMulEquiv p i ^ m i)
+      (fun i : Fin 2 ↦ SplitTorus.pointsMulEquiv p ⟨i⟩ ^ m ⟨i⟩)
+      (fun _ ↦ rfl),
+    Fin.prod_univ_two, hp0, hp1, hm0, hm1, characterOver_apply]
 
 end Characters
 

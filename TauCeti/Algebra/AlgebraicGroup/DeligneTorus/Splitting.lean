@@ -9,6 +9,7 @@ public import TauCeti.Algebra.AlgebraicGroup.DeligneTorus.Basic
 public import TauCeti.Algebra.AlgebraicGroup.Product
 public import TauCeti.Algebra.AlgebraicGroup.Torus.Basic
 public import TauCeti.RingTheory.TensorProduct.Complex
+import Mathlib.Algebra.Ring.Fin
 import Mathlib.RingTheory.RootsOfUnity.Complex
 import TauCeti.Algebra.AlgebraicGroup.BaseChange.Naturality
 import TauCeti.Algebra.AlgebraicGroup.CommHopfAlgCat.Yoneda
@@ -57,7 +58,8 @@ any product `σ → ℝˣ` every element `g` satisfying `g ^ 4 = 1` already sati
 * `TauCeti.DeligneTorus.baseChangeComplexBialgEquiv`: the coordinate bialgebra splitting
   `baseChangeComplex ≃ₐc[ℂ] ℂ[T;T⁻¹] ⊗[ℂ] ℂ[T;T⁻¹]`.
 * `TauCeti.DeligneTorus.baseChangeSplitTorusIso`: the isomorphism identifying `baseChangeComplex`
-  with the rank-two split torus.
+  with the rank-two split torus, with point compatibility
+  `TauCeti.DeligneTorus.pointsMulEquiv_mapDomain_baseChangeSplitTorusIso`.
 
 ## Main results
 
@@ -376,12 +378,15 @@ theorem mapDomain_baseChangeComplexBialgEquiv {R : Type*} [CommRing R] [Algebra 
   let idH : WithConv (H →ₐ[ℂ] H) := toConv (AlgHom.id ℂ H)
   have hid : BialgHom.mapDomain baseChangeComplexBialgEquiv.toBialgHom idH =
       (baseChangeProductPointsMulEquiv H).symm idH := by
-    change (CommHopfAlgCat.Hom.mapPointsFunctor baseChangeComplexCommHopfIso.hom).app
-        (CommAlgCat.of ℂ H) idH = _
-    rw [show baseChangeComplexCommHopfIso.hom =
-        CommHopfAlgCat.homOfPointsMap baseChangeProductPointsNatIso.inv from rfl,
-      CommHopfAlgCat.mapPointsFunctor_homOfPointsMap]
-    rfl
+    have hnat_iso := CommHopfAlgCat.mapPointsFunctor_homOfPointsMap
+      (H := _root_.CommHopfAlgCat.of ℂ H) (K := _root_.CommHopfAlgCat.of ℂ baseChangeComplex)
+      baseChangeProductPointsNatIso.inv
+    have hmap := congrArg (fun α ↦ α.app (CommAlgCat.of ℂ H) idH) hnat_iso
+    rw [CommHopfAlgCat.Hom.mapPointsFunctor_app_apply, ← BialgHom.mapDomain_apply] at hmap
+    rw [baseChangeComplexBialgEquiv, BialgEquiv.toBialgHom_eq_coe, CommHopfAlgCat.coe_ofIso]
+    exact hmap.trans (by
+      simp only [baseChangeProductPointsNatIso, NatIso.ofComponents_inv_app]
+      rfl)
   have hfp : AlgHom.mapValue (H := H) f.ofConv idH = f := by
     simp only [AlgHom.mapValue_apply, idH, AlgHom.comp_id, toConv_ofConv]
   have hnat := DFunLike.congr_fun
@@ -409,23 +414,17 @@ end SchemeSplitting
 
 section TorusAndNotSplit
 
-/-- Equivalence `(ULift.{0} (Fin 2) → Rˣ) ≃* Rˣ × Rˣ` evaluating at `0` and `1`. -/
-private def uliftFinTwoUnitsMulEquiv (R : Type*) [Monoid R] :
-    (ULift.{0} (Fin 2) → Rˣ) ≃* Rˣ × Rˣ where
-  toFun c := (c ⟨0⟩, c ⟨1⟩)
-  invFun p i := Fin.cases p.1 (fun _ ↦ p.2) i.down
-  left_inv c := funext fun ⟨i⟩ ↦ by fin_cases i <;> rfl
-  right_inv _ := rfl
-  map_mul' _ _ := rfl
-
 private noncomputable def baseChangeSplitTorusPointsMulEquiv (R : Type*) [CommRing R]
     [Algebra ℂ R] :
     WithConv (baseChangeComplex →ₐ[ℂ] R) ≃*
       WithConv (MonoidAlgebra ℂ (Multiplicative (ULift.{0} (Fin 2) →₀ ℤ)) →ₐ[ℂ] R) :=
   (baseChangeComplexPointsMulEquiv R).trans <|
     (splittingMulEquiv R).trans <|
-      (uliftFinTwoUnitsMulEquiv R).symm.trans
-        (SplitTorus.pointsMulEquiv (R := ℂ) (A := R) (σ := ULift.{0} (Fin 2))).symm
+      MulEquiv.prodUnits.symm.trans <|
+        (Units.mapEquiv (RingEquiv.piFinTwo (fun _ : Fin 2 ↦ R)).symm.toMulEquiv).trans <|
+          MulEquiv.piUnits.trans <|
+            (MulEquiv.arrowCongr Equiv.ulift.symm (MulEquiv.refl Rˣ)).trans
+              (SplitTorus.pointsMulEquiv (R := ℂ) (A := R) (σ := ULift.{0} (Fin 2))).symm
 
 private lemma mapValue_baseChangeSplitTorusPointsMulEquiv {R R' : Type*} [CommRing R] [Algebra ℂ R]
     [CommRing R'] [Algebra ℂ R'] (φ : R →ₐ[ℂ] R') (g : WithConv (baseChangeComplex →ₐ[ℂ] R)) :
@@ -437,6 +436,7 @@ private lemma mapValue_baseChangeSplitTorusPointsMulEquiv {R R' : Type*} [CommRi
     baseChangeComplexPointsMulEquiv_mapValue, splittingMulEquiv_mapValue]
   congr 1
   funext ⟨i⟩
+  ext
   fin_cases i <;> rfl
 
 private noncomputable def baseChangeSplitTorusPointsNatIso :
@@ -460,6 +460,50 @@ noncomputable def baseChangeSplitTorusIso :
       inv_hom_id := by
         rw [← CommHopfAlgCat.homOfPointsMap_comp, baseChangeSplitTorusPointsNatIso.hom_inv_id,
           CommHopfAlgCat.homOfPointsMap_id] }
+
+/-- **Compatibility of `baseChangeSplitTorusIso` with `splittingMulEquiv` on points** over every
+commutative `ℂ`-algebra `R` with compatible `ℝ`-algebra structure: the two split-torus coordinates
+of a base-changed point `g` are the two components of `splittingMulEquiv R`. -/
+theorem pointsMulEquiv_mapDomain_baseChangeSplitTorusIso {R : Type*} [CommRing R] [Algebra ℝ R]
+    [Algebra ℂ R] [IsScalarTower ℝ ℂ R] (g : WithConv (baseChangeComplex →ₐ[ℂ] R)) :
+    (SplitTorus.pointsMulEquiv (BialgHom.mapDomain baseChangeSplitTorusIso.hom.hom.hom g) ⟨0⟩,
+      SplitTorus.pointsMulEquiv (BialgHom.mapDomain baseChangeSplitTorusIso.hom.hom.hom g) ⟨1⟩) =
+      splittingMulEquiv R (baseChangeComplexPointsMulEquiv R g) := by
+  let idB : WithConv (baseChangeComplex →ₐ[ℂ] baseChangeComplex) :=
+    toConv (AlgHom.id ℂ baseChangeComplex)
+  have hid : BialgHom.mapDomain baseChangeSplitTorusIso.hom.hom.hom idB =
+      baseChangeSplitTorusPointsMulEquiv baseChangeComplex idB := by
+    have hnat_iso := CommHopfAlgCat.mapPointsFunctor_homOfPointsMap
+      (H := _root_.CommHopfAlgCat.of ℂ baseChangeComplex)
+      (K := (DiagonalizableGroup.coordinateRing ℂ
+        (SplitTorus.characterGroup (ULift.{0} (Fin 2)))).obj)
+      baseChangeSplitTorusPointsNatIso.hom
+    have hmap := congrArg (fun α ↦ α.app (CommAlgCat.of ℂ baseChangeComplex) idB) hnat_iso
+    rw [CommHopfAlgCat.Hom.mapPointsFunctor_app_apply, ← BialgHom.mapDomain_apply] at hmap
+    exact hmap.trans (by
+      simp only [baseChangeSplitTorusPointsNatIso, NatIso.ofComponents_hom_app]
+      rfl)
+  have hg : AlgHom.mapValue (H := baseChangeComplex) g.ofConv idB = g := by
+    simp only [AlgHom.mapValue_apply, idB, AlgHom.comp_id, toConv_ofConv]
+  have hnat := DFunLike.congr_fun
+    (BialgHom.mapValue_mapDomain baseChangeSplitTorusIso.hom.hom.hom g.ofConv).symm idB
+  rw [MonoidHom.comp_apply, MonoidHom.comp_apply, hg, hid] at hnat
+  have hcomp : ∀ i : ULift.{0} (Fin 2),
+      SplitTorus.pointsMulEquiv (BialgHom.mapDomain baseChangeSplitTorusIso.hom.hom.hom g) i =
+        Units.map g.ofConv.toMonoidHom
+          (SplitTorus.pointsMulEquiv (baseChangeSplitTorusPointsMulEquiv baseChangeComplex idB)
+            i) := fun i ↦ by
+    rw [← hnat, SplitTorus.pointsMulEquiv_mapValue]
+  have hsplit : splittingMulEquiv R (baseChangeComplexPointsMulEquiv R g) =
+      (Units.map (g.ofConv : baseChangeComplex →* R)
+          (splittingMulEquiv baseChangeComplex
+            (baseChangeComplexPointsMulEquiv baseChangeComplex idB)).1,
+        Units.map (g.ofConv : baseChangeComplex →* R)
+          (splittingMulEquiv baseChangeComplex
+            (baseChangeComplexPointsMulEquiv baseChangeComplex idB)).2) := by
+    rw [← splittingMulEquiv_mapValue g.ofConv, ← baseChangeComplexPointsMulEquiv_mapValue, hg]
+  rw [hcomp ⟨0⟩, hcomp ⟨1⟩, hsplit]
+  ext <;> simp [baseChangeSplitTorusPointsMulEquiv, MulEquiv.prodUnits]
 
 /-- After base change from `ℝ` to `ℂ`, the Deligne torus is a split torus. -/
 theorem splitTorusCommHopfAlgProperty_baseChange_complex :
@@ -502,24 +546,16 @@ theorem isEmpty_realPoints_mulEquiv_pi (σ : Type*) :
     IsEmpty (WithConv (S →ₐ[ℝ] ℝ) ≃* (σ → ℝˣ)) := by
   refine ⟨fun e ↦ ?_⟩
   let uI : ℂˣ := Units.mk0 Complex.I Complex.I_ne_zero
-  let instM : Monoid (WithConv (S →ₐ[ℝ] ℝ)) := inferInstance
-  let φ : ℂˣ →* (σ → ℝˣ) :=
-    (@MulEquiv.toMonoidHom (WithConv (S →ₐ[ℝ] ℝ)) (σ → ℝˣ) instM.toMulOneClass inferInstance
-      e).comp
-      (@MulEquiv.toMonoidHom ℂˣ (WithConv (S →ₐ[ℝ] ℝ)) inferInstance instM.toMulOneClass
-        realPointsMulEquiv.symm)
+  let ψ : ℂˣ ≃* (σ → ℝˣ) := realPointsMulEquiv.symm.trans e
   have huI4 : uI ^ 4 = 1 := Units.ext Complex.I_pow_four
-  have hg4 : φ uI ^ 4 = 1 := by rw [← map_pow, huI4, map_one]
-  have hg2 : φ uI ^ 2 = 1 := funext fun i ↦ Units.ext <| by
-    have hi4 : ((φ uI i : ℝˣ) : ℝ) ^ 4 = 1 := by
+  have hg4 : ψ uI ^ 4 = 1 := by rw [← map_pow, huI4, map_one]
+  have hg2 : ψ uI ^ 2 = 1 := funext fun i ↦ Units.ext <| by
+    have hi4 : ((ψ uI i : ℝˣ) : ℝ) ^ 4 = 1 := by
       rw [← Units.val_pow_eq_pow_val, ← Pi.pow_apply, hg4, Pi.one_apply, Units.val_one]
     rcases (pow_eq_one_iff_of_ne_zero (by positivity : 4 ≠ 0)).mp hi4 with h1 | ⟨hm1, -⟩
     · simp [h1]
     · norm_num [hm1]
-  have huI2 : uI ^ 2 = 1 :=
-    realPointsMulEquiv.symm.injective <| e.injective <| by
-      change φ (uI ^ 2) = φ 1
-      rw [map_pow, map_one, hg2]
+  have huI2 : uI ^ 2 = 1 := ψ.injective (by rw [map_pow, map_one, hg2])
   have hval := congrArg Units.val huI2
   rw [Units.val_pow_eq_pow_val, Units.val_mk0, sq, Complex.I_mul_I, Units.val_one] at hval
   norm_num at hval

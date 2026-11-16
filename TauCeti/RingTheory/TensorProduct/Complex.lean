@@ -234,11 +234,14 @@ variable (A : Type*) [CommRing A] [Algebra ℝ A] [Algebra ℂ A] [IsScalarTower
 compatible real algebra structure, `A ⊗[ℝ] ℂ ≃ₐ[A] A × A` sends `a ⊗ z` to
 `(a * algebraMap ℂ A z, a * algebraMap ℂ A (starRingEnd ℂ z))`. -/
 noncomputable def tensorProductComplexAlgEquiv : A ⊗[ℝ] ℂ ≃ₐ[A] A × A :=
-  { (Algebra.TensorProduct.comm ℝ A ℂ).toRingEquiv.trans
-      (complexTensorProductEquiv A).toRingEquiv with
-    commutes' a := by
-      change complexTensorProductEquiv A (Algebra.TensorProduct.comm ℝ A ℂ (a ⊗ₜ[ℝ] 1)) = (a, a)
-      simp }
+  AlgEquiv.ofRingEquiv
+    (f := (Algebra.TensorProduct.comm ℝ A ℂ).toRingEquiv.trans
+      (complexTensorProductEquiv A).toRingEquiv)
+    fun a ↦ by
+      rw [RingEquiv.trans_apply, AlgEquiv.coe_toRingEquiv, AlgEquiv.coe_toRingEquiv,
+        Algebra.TensorProduct.algebraMap_apply, Algebra.TensorProduct.comm_tmul,
+        complexTensorProductEquiv_tmul]
+      simp
 
 variable {A}
 

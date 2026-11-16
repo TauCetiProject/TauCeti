@@ -280,7 +280,7 @@ theorem isCompact_ker_norm_real : IsCompact {f : WithConv (S →ₐ[ℝ] ℝ) | 
     exact ⟨fun hf ↦ ⟨⟨(realPointsMulEquiv f : ℂ), mem_sphere_zero_iff_norm.2 hf⟩,
         e.symm_apply_eq.2 (Units.ext rfl)⟩,
       fun ⟨z, hz⟩ ↦ hz ▸ by
-        rw [show realPointsMulEquiv (e.symm (u z)) = u z from e.apply_symm_apply (u z)]
+        rw [← isHomeomorph_realPointsMulEquiv.homeomorph_apply, e.apply_symm_apply]
         exact mem_sphere_zero_iff_norm.mp z.2⟩
   rw [hrange]
   exact isCompact_range (e.continuous_symm.comp hcont)
