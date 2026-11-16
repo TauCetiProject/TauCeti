@@ -84,7 +84,7 @@ theorem ae_lintegral_enorm_adjoint_le {X Y : Type*} [MeasurableSpace X] [Measura
     {μX : Measure X} {μY : Measure Y} {k : X → Y → F →L[𝕜] G} {C : ℝ≥0∞}
     (h : ∀ᵐ x ∂μX, ∫⁻ y, ‖k x y‖ₑ ∂μY ≤ C) :
     ∀ᵐ x ∂μX, ∫⁻ y, ‖adjoint (k x y)‖ₑ ∂μY ≤ C := by
-  simpa only [enorm_eq_nnnorm, LinearIsometryEquiv.nnnorm_map] using h
+  simpa only [eNorm_eq_nnNorm, LinearIsometryEquiv.nnNorm_map] using h
 
 end AdjointKernel
 
@@ -103,23 +103,23 @@ theorem integrable_inner_apply_kernel (hK : AEStronglyMeasurable (uncurry K) (μ
   -- Bound the integrand by `‖v x‖ * ‖K x y‖ ‖u y‖`; integrating in `y` gives `‖v x‖ * S x`, where
   -- `S ∈ L²` by Schur's test, and Hölder's inequality finishes.
   have hS : MemLp (fun x ↦ ∫⁻ y, ‖K x y‖ₑ * ‖u y‖ₑ ∂ν) 2 μ :=
-    memLp_lintegral_mul (k := fun x y ↦ ‖K x y‖ₑ) hK.enorm hu.enorm one_le_two hA hB
+    memLp_lintegral_mul (k := fun x y ↦ ‖K x y‖ₑ) hK.eNorm hu.eNorm one_le_two hA hB
   calc ∫⁻ p, ‖⟪K p.1 p.2 (u p.2), v p.1⟫‖ₑ ∂μ.prod ν
       ≤ ∫⁻ p : α × β, ‖v p.1‖ₑ * (‖K p.1 p.2‖ₑ * ‖u p.2‖ₑ) ∂μ.prod ν :=
-        lintegral_mono fun p ↦ (enorm_inner_le_enorm _ _).trans
+        lintegral_mono fun p ↦ (eNorm_inner_le_eNorm _ _).trans
           (by rw [mul_comm]; gcongr; exact le_opENorm _ _)
     _ = ∫⁻ x, ‖v x‖ₑ * ∫⁻ y, ‖K x y‖ₑ * ‖u y‖ₑ ∂ν ∂μ := by
         rw [lintegral_prod (fun p : α × β ↦ ‖v p.1‖ₑ * (‖K p.1 p.2‖ₑ * ‖u p.2‖ₑ))
-          (hv.aestronglyMeasurable.enorm.comp_fst.mul
-            (hK.enorm.mul hu.aestronglyMeasurable.enorm.comp_snd))]
-        exact lintegral_congr fun x ↦ lintegral_const_mul' ‖v x‖ₑ _ enorm_ne_top
+          (hv.aestronglyMeasurable.eNorm.comp_fst.mul
+            (hK.eNorm.mul hu.aestronglyMeasurable.eNorm.comp_snd))]
+        exact lintegral_congr fun x ↦ lintegral_const_mul' ‖v x‖ₑ _ eNorm_ne_top
     _ ≤ eLpNorm (‖v ·‖ₑ) 2 μ * eLpNorm (fun x ↦ ∫⁻ y, ‖K x y‖ₑ * ‖u y‖ₑ ∂ν) 2 μ := by
         refine Eq.trans_le ?_ (eLpNorm_le_eLpNorm_mul_eLpNorm_ennreal (p := 2) (q := 2) (r := 1)
-          hv.enorm.aestronglyMeasurable hS.aestronglyMeasurable)
-        rw [eLpNorm_one_eq_lintegral_enorm (hv.aestronglyMeasurable.enorm.mul
+          hv.eNorm.aestronglyMeasurable hS.aestronglyMeasurable)
+        rw [eLpNorm_one_eq_lintegral_eNorm (hv.aestronglyMeasurable.eNorm.mul
           hS.aestronglyMeasurable.aemeasurable).aestronglyMeasurable]
-        simp only [Pi.mul_apply, enorm_eq_self]
-    _ < ∞ := ENNReal.mul_lt_top hv.enorm.eLpNorm_lt_top hS.eLpNorm_lt_top
+        simp only [Pi.mul_apply, eNorm_eq_self]
+    _ < ∞ := ENNReal.mul_lt_top hv.eNorm.eLpNorm_lt_top hS.eLpNorm_lt_top
 
 variable [CompleteSpace G] [NormedSpace ℝ G] [SMulCommClass ℝ 𝕜 G]
 
@@ -200,11 +200,11 @@ private theorem ae_lintegral_enorm_adjoint_mul_lt_top
     {u : β → F} (hu : MemLp u 2 ν) :
     ∀ᵐ z ∂ρ, ∫⁻ x, ‖adjoint (K₂ x z)‖ₑ * ∫⁻ y, ‖K₁ x y‖ₑ * ‖u y‖ₑ ∂ν ∂μ < ∞ := by
   have hS : MemLp (fun x ↦ ∫⁻ y, ‖K₁ x y‖ₑ * ‖u y‖ₑ ∂ν) 2 μ :=
-    memLp_lintegral_mul (k := fun x y ↦ ‖K₁ x y‖ₑ) hK₁.enorm hu.enorm one_le_two hA₁ hB₁
+    memLp_lintegral_mul (k := fun x y ↦ ‖K₁ x y‖ₑ) hK₁.eNorm hu.eNorm one_le_two hA₁ hB₁
   have hfin : MemLp (fun z ↦ ∫⁻ x, ‖adjoint (K₂ x z)‖ₑ * ∫⁻ y, ‖K₁ x y‖ₑ * ‖u y‖ₑ ∂ν ∂μ) 2 ρ :=
-    memLp_lintegral_mul (aestronglyMeasurable_uncurry_adjoint hK₂).enorm hS one_le_two
+    memLp_lintegral_mul (aestronglyMeasurable_uncurry_adjoint hK₂).eNorm hS one_le_two
       (ae_lintegral_enorm_adjoint_le hB₂) (ae_lintegral_enorm_adjoint_le hA₂)
-  simpa only [enorm_eq_self] using hfin.ae_enorm_lt_top two_ne_zero
+  simpa only [eNorm_eq_self] using hfin.ae_enorm_lt_top two_ne_zero
 
 variable [NormedSpace ℝ E]
 
@@ -234,10 +234,10 @@ private theorem integral_adjoint_comp_apply_of_lt_top {z : γ} {u : β → F}
   have hlin : ∫⁻ q : α × β, ‖adjoint (K₂ q.1 z)‖ₑ * (‖K₁ q.1 q.2‖ₑ * ‖u q.2‖ₑ) ∂μ.prod ν =
       ∫⁻ x, ‖adjoint (K₂ x z)‖ₑ * ∫⁻ y, ‖K₁ x y‖ₑ * ‖u y‖ₑ ∂ν ∂μ := by
     rw [lintegral_prod _ hN]
-    exact lintegral_congr fun x ↦ lintegral_const_mul' ‖adjoint (K₂ x z)‖ₑ _ enorm_ne_top
+    exact lintegral_congr fun x ↦ lintegral_const_mul' ‖adjoint (K₂ x z)‖ₑ _ eNorm_ne_top
   -- The integrand is integrable on `μ × ν`.
   have hprod : Integrable (uncurry fun x y ↦ adjoint (K₂ x z) (K₁ x y (u y))) (μ.prod ν) := by
-    refine ⟨hΦ, hasFiniteIntegral_iff_enorm.2 ?_⟩
+    refine ⟨hΦ, hasFiniteIntegral_iff_eNorm.2 ?_⟩
     refine (lintegral_mono fun q ↦ ?_).trans_lt (hlin ▸ hH)
     exact (le_opENorm _ _).trans (by gcongr; exact le_opENorm _ _)
   -- For almost every `y` with `u y ≠ 0`, the composed kernel is integrable in `x`.
@@ -245,16 +245,16 @@ private theorem integral_adjoint_comp_apply_of_lt_top {z : γ} {u : β → F}
     filter_upwards [ae_lt_top' hN.lintegral_prod_left'
       ((lintegral_prod_symm _ hN).symm.trans hlin ▸ hH.ne)] with y hy huy
     simp_rw [← mul_assoc] at hy
-    rw [lintegral_mul_const' _ _ enorm_ne_top] at hy
+    rw [lintegral_mul_const' _ _ eNorm_ne_top] at hy
     exact (ENNReal.mul_lt_top_iff.1 hy).elim And.left fun h ↦ h.elim (fun h ↦ h ▸ by simp)
-      fun h ↦ absurd (enorm_eq_zero.1 h) huy
+      fun h ↦ absurd (eNorm_eq_zero.1 h) huy
   calc ∫ y, (∫ x, adjoint (K₂ x z) ∘L K₁ x y ∂μ) (u y) ∂ν
       = ∫ y, ∫ x, adjoint (K₂ x z) (K₁ x y (u y)) ∂μ ∂ν := by
         refine integral_congr_ae ?_
         filter_upwards [hfin, hΨ] with y hy hΨy
         by_cases huy : u y = 0
         · simp [huy]
-        · exact integral_apply ⟨hΨy, hasFiniteIntegral_iff_enorm.2 <|
+        · exact integral_apply ⟨hΨy, hasFiniteIntegral_iff_eNorm.2 <|
             (lintegral_mono fun x ↦ opENorm_comp_le _ _).trans_lt (hy huy)⟩ (u y)
     _ = ∫ x, ∫ y, adjoint (K₂ x z) (K₁ x y (u y)) ∂ν ∂μ := (integral_integral_swap hprod).symm
     _ = ∫ x, adjoint (K₂ x z) (∫ y, K₁ x y (u y) ∂ν) ∂μ := by
@@ -285,7 +285,7 @@ private theorem ae_integral_adjoint_comp_apply
   have hN : AEStronglyMeasurable
       (fun p : γ × α × β ↦ ‖adjoint (K₂ p.2.1 p.1)‖ₑ * (‖K₁ p.2.1 p.2.2‖ₑ * ‖u p.2.2‖ₑ))
       (ρ.prod (μ.prod ν)) :=
-    (h₂.enorm.mul ((hK₁.enorm.mul hum.enorm.comp_snd).comp_snd)).aestronglyMeasurable
+    (h₂.eNorm.mul ((hK₁.eNorm.mul hum.eNorm.comp_snd).comp_snd)).aestronglyMeasurable
   filter_upwards [ae_lintegral_enorm_adjoint_mul_lt_top hK₁ hA₁ hB₁ hK₂ hA₂ hB₂ hu,
     (isBoundedBilinearMap_apply.continuous.comp_aestronglyMeasurable₂ h₂ h₁).prodMk_left,
     hN.prodMk_left,

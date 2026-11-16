@@ -91,11 +91,7 @@ theorem orthogonalSumIsometryOfIsCompl_apply_one_tmul (h : IsCompl S T)
     (L.isSymm_integralForm.restrict T)
   let x := (orthogonalSumCarrierEquiv _ _).symm (es s, et t)
   have hx : (x : (ℚ ⊗[ℤ] S) × (ℚ ⊗[ℤ] T)) = (1 ⊗ₜ[ℤ] s, 1 ⊗ₜ[ℤ] t) := by
-    apply Prod.ext
-    · rw [← coe_orthogonalSumCarrierEquiv_fst]
-      simp [x, es]
-    · rw [← coe_orthogonalSumCarrierEquiv_snd]
-      simp [x, et]
+    simp [x, es, et]
   rw [← hx, ← Isometry.coe_carrierEquiv_apply]
   simp [orthogonalSumIsometryOfIsCompl, Isometry.carrierEquiv_ofCarrierEquiv,
     x, es, et]

@@ -1,12 +1,12 @@
 /-
-Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
+Copyright (c) 2026 The Tau Ceti contributors and Mei contributors. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
-Authors: The Tau Ceti contributors
+Authors: The Tau Ceti contributors, Codex
 -/
 module
 
-public import TauCeti.Algebra.PositiveDegrees.Basic
-public import Mathlib.Algebra.DirectSum.Decomposition
+public import TauCeti.Algebra.PositiveDegrees.Map
+public import TauCeti.Algebra.DirectSum.DegreeTail
 
 /-!
 # Positive gradings and degree submodules
@@ -17,11 +17,13 @@ submodule `PositiveDegrees.degreeSubmodule`, characterized by the vanishing of a
 degree at most the cutoff. For a positive grading, the zero cutoff submodule is the whole module.
 
 These submodules provide degree filtrations without requiring freeness or finite rank of the
-homogeneous pieces.
+homogeneous pieces. Homogeneous linear maps preserve them at the cutoffs prescribed by a
+positive degree map, without a decomposition or positive support on the target.
 
 Adapted from `Mei/Algebra/PositiveDegrees/Grading.lean` in
 [yuma-mizuno-lean/Mei](https://github.com/yuma-mizuno-lean/Mei), commit
-`3d2e9c869ee44c41ae9c7b5c6e2042898430d0ca`, released under Apache 2.0.
+`3d2e9c869ee44c41ae9c7b5c6e2042898430d0ca` and
+`a79c57178cc83666fc244ca6e6eeaa722e9b8bc7`, released under Apache 2.0.
 -/
 
 public section
@@ -41,24 +43,43 @@ variable (d : PositiveDegrees N) (ℒ : N → Submodule R M)
 
 /-- The sum of the homogeneous pieces of degree strictly greater than `k`. -/
 def degreeSubmodule (k : ℕ) : Submodule R M :=
-  ⨆ n : {n : N // (k : ℤ) < d.degree n}, ℒ n
+  DirectSum.degreeTail ℒ d.degree (k + 1)
 
 /-- The defining sum for the degree submodule. -/
 theorem degreeSubmodule_def (k : ℕ) :
-    d.degreeSubmodule ℒ k = ⨆ n : {n : N // (k : ℤ) < d.degree n}, ℒ n := (rfl)
+    d.degreeSubmodule ℒ k = ⨆ n : {n : N // (k : ℤ) < d.degree n}, ℒ n := by
+  rw [degreeSubmodule, DirectSum.degreeTail_def, iSup_subtype]
+  congr 1
 
 /-- A homogeneous piece above the cutoff lies in the degree submodule. -/
 theorem le_degreeSubmodule {n : N} {k : ℕ} (hn : (k : ℤ) < d.degree n) :
-    ℒ n ≤ d.degreeSubmodule ℒ k :=
-  le_iSup (fun n : {n : N // (k : ℤ) < d.degree n} => ℒ n) ⟨n, hn⟩
+    ℒ n ≤ d.degreeSubmodule ℒ k := by
+  rw [degreeSubmodule]
+  exact DirectSum.le_degreeTail ℒ d.degree (by omega)
 
 /-- Degree submodules decrease as the cutoff increases. -/
 theorem degreeSubmodule_antitone : Antitone (d.degreeSubmodule ℒ) := by
   intro k l h
-  rw [degreeSubmodule_def]
-  refine iSup_le fun n => d.le_degreeSubmodule ℒ ?_
-  have := n.property
-  omega
+  simp only [degreeSubmodule]
+  exact DirectSum.degreeTail_antitone ℒ d.degree (Nat.succ_le_succ h)
+
+/-- A homogeneous linear map carries degree submodules into degree submodules
+at the cutoffs prescribed by its positive degree map. Only the source grading
+needs positive support; no direct-sum decomposition is required. -/
+theorem map_degreeSubmodule_le {N' M' : Type*} [AddCommMonoid N']
+    [AddCommMonoid M'] [Module R M'] {e : PositiveDegrees N'}
+    (T : PositiveDegreeMap d e) (ℒ' : N' → Submodule R M')
+    [IsPositiveGrading d ℒ] (f : M →ₗ[R] M')
+    (hf : ∀ n, ℒ n ≤ (ℒ' (T n)).comap f) (k : ℕ) :
+    (d.degreeSubmodule ℒ (T.modulus k)).map f ≤ e.degreeSubmodule ℒ' k := by
+  rw [degreeSubmodule_def, Submodule.map_iSup]
+  refine iSup_le fun n => ?_
+  by_cases hn : n.val ∈ d.monoid
+  · exact (Submodule.map_le_iff_le_comap.mpr (hf n.val)).trans
+      (e.le_degreeSubmodule ℒ' (T.degree_gt k hn n.property))
+  · rw [IsPositiveGrading.eq_bot (d := d) (ℒ := ℒ) n.val (Or.inl hn),
+      Submodule.map_bot]
+    exact bot_le
 
 variable [DecidableEq N] [DirectSum.Decomposition ℒ]
 
@@ -66,20 +87,9 @@ variable [DecidableEq N] [DirectSum.Decomposition ℒ]
 theorem mem_degreeSubmodule_iff {x : M} {k : ℕ} :
     x ∈ d.degreeSubmodule ℒ k ↔
       ∀ n, d.degree n ≤ k → (DirectSum.decompose ℒ x n : M) = 0 := by
-  constructor
-  · intro hx n hn
-    refine Submodule.iSup_induction _
-      (motive := fun x => (DirectSum.decompose ℒ x n : M) = 0) hx (fun m y hy => ?_)
-      (by simp) (fun x y hx hy => by simp [hx, hy])
-    exact DirectSum.decompose_of_mem_ne ℒ hy (by rintro rfl; have := m.property; omega)
-  · intro hx
-    classical
-    rw [← DirectSum.sum_support_decompose ℒ x]
-    refine Submodule.sum_mem _ fun n _ => ?_
-    by_cases hn : (k : ℤ) < d.degree n
-    · exact d.le_degreeSubmodule ℒ hn (DirectSum.decompose ℒ x n).property
-    · rw [hx n (le_of_not_gt hn)]
-      exact Submodule.zero_mem _
+  rw [degreeSubmodule, DirectSum.mem_degreeTail_iff]
+  have hcut (n : N) : d.degree n < ((k + 1 : ℕ) : ℤ) ↔ d.degree n ≤ k := by omega
+  simp only [hcut]
 
 /-- A homogeneous element is above the cutoff exactly when it is zero or its degree is above it. -/
 theorem mem_degreeSubmodule_of_mem_iff {n : N} {x : M} {k : ℕ} (hx : x ∈ ℒ n) :

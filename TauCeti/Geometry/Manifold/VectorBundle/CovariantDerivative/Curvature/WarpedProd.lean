@@ -72,8 +72,6 @@ private theorem IsWarpedProduct.curvatureOperator_horizontal_vertical_horizontal
       (hessian I f p.1 (X p.1) (Y p.1) / f p.1) • prodVectorField 0 V p := by
   have h0M : CMDiff ∞ (T% (0 : Π x : M, TangentSpace I x)) :=
     contMDiff_zeroSection ℝ (TangentSpace I)
-  have h0N : CMDiff ∞ (T% (0 : Π y : N, TangentSpace J y)) :=
-    contMDiff_zeroSection ℝ (TangentSpace J)
   let cov := leviCivitaConnection (I.prod J) (M × N)
   let D := leviCivitaConnection I M
   let a : M → ℝ := fun x ↦ mvfderiv I f x (Y x) / f x

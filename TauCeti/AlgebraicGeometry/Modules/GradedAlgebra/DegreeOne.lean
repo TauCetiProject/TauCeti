@@ -7,7 +7,7 @@ module
 
 public import TauCeti.AlgebraicGeometry.Modules.GradedAlgebra.Sections
 public import TauCeti.AlgebraicGeometry.Modules.Sheaf
-public import TauCeti.RingTheory.GradedAlgebra.DegreeOne
+public import TauCeti.RingTheory.GradedAlgebra.Degree.One
 
 /-!
 # Graded algebras generated in degree one

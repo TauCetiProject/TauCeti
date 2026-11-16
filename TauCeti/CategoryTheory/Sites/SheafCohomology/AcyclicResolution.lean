@@ -257,7 +257,7 @@ of a section of `Kⁿ` over `V`: the complex of sections `K(V)` is exact in degr
 theorem exists_d_hom_app_eq_of_resolution (n : ℕ) (hF : Subsingleton (F.H' (n + 1) V))
     (s : (K.X (n + 1)).obj.obj (op V)) (hs : (K.d (n + 1) (n + 2)).hom.app (op V) s = 0) :
     ∃ t : (K.X n).obj.obj (op V), (K.d n (n + 1)).hom.app (op V) t = s :=
-  (resolutionClass_succ_eq_zero_iff ι hι hι' hK V hKV s hs).1 (Subsingleton.elim _ _)
+  (resolutionClass_succ_eq_zero_iff ι hι hι' hK V hKV s hs).1 (hF.elim _ _)
 
 /-- **Classes of sections are compatible with restriction**: restricting the class of a section
 `s` of `Kⁿ` over `V` along `i : U ⟶ V` gives the class of the restricted section. -/

@@ -142,14 +142,13 @@ theorem f4ShortRootSubspace_mkQ_dividedSquare_rootVector_eq_zero_of_no_specialMa
       have hγshort := (f4Length_f4SpecialIsogenyIndexEquiv_eq_one_iff γ).2 hγlong
       apply hno (f4SpecialIsogenyIndexEquiv γ) hγshort
       exact (f4_root_add_two_iff_specialIsogenyIndexEquiv_root_add_of_short
-        (f4SignedSimpleRootIndex k) β γ hα hβ hγlong).1 hγ)
+        (f4SignedSimpleRootIndex k) β γ hα hγlong).1 hγ)
   rw [hzero, map_zero]
 
 /-- Transport a target root edge to a short-source divided-square quotient column. -/
 theorem f4ShortRootSubspace_mkQ_dividedSquare_rootVector_of_specialMap_add
     (k : Fin 4 ⊕ Fin 4) (β γ : Fin 48)
-    (hα : f4Length (f4SignedSimpleRootIndex k) = 1)
-    (hβ : f4Length β = 2) (hγ : f4Length γ = 2)
+    (hα : f4Length (f4SignedSimpleRootIndex k) = 1) (hγ : f4Length γ = 2)
     (hmap : f4SimplyConnectedRootDatum.root (f4SpecialIsogenyIndexEquiv γ) =
       f4SimplyConnectedRootDatum.root (f4SpecialIsogenyIndexEquiv β) +
         f4SimplyConnectedRootDatum.root
@@ -160,7 +159,7 @@ theorem f4ShortRootSubspace_mkQ_dividedSquare_rootVector_of_specialMap_add
   exact congrArg f4ShortRootSubspace.mkQ
     (f4ModularDividedAdjointSquare_rootVector_of_long_add_two_short k β γ
       ((f4_root_add_two_iff_specialIsogenyIndexEquiv_root_add_of_short
-        (f4SignedSimpleRootIndex k) β γ hα hβ hγ).2 hmap))
+        (f4SignedSimpleRootIndex k) β γ hα hγ).2 hmap))
 
 end
 

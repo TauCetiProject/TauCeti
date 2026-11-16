@@ -165,7 +165,7 @@ theorem e8CubedSimpleRootIsometry_symm_apply
     (Fin.cast (congrArg DynkinType.rank (RootfulNiemeierType.componentType_e8Cubed i)) j)
   rw [e8CubedSimpleRootIsometry.apply_symm_apply] at key
   refine Eq.trans ?_ key.symm
-  have hcast : ∀ (i' : Fin RootfulNiemeierType.e8Cubed.components.length) (hi : i' = i)
+  have hcast : ∀ (i' : Fin RootfulNiemeierType.e8Cubed.components.length) (_ : i' = i)
       (j' : Fin (RootfulNiemeierType.e8Cubed.componentType i').rank),
       j'.1 = j.1 →
       e8CubedSimpleRootIsometry.symm y i j = e8CubedSimpleRootIsometry.symm y i' j' := by

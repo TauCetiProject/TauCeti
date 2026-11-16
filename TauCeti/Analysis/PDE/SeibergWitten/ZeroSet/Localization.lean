@@ -102,7 +102,7 @@ theorem exists_forall_exists_dist_le_of_le (C c c₀ : ℝ) (hc : 0 < c) {σ : �
       (∀ R, c₀ * h ≤ R → (∀ z ∈ Z, R ≤ dist x z) →
         max (1 - s x) 0 ≤ C / r * max (1 - s x) 0 + C / r + C * exp (-(c * R / h))) →
       s x ≤ σ → ∃ z ∈ Z, dist x z ≤ K * h := by
-  set η := 1 - σ with hη_def
+  set η := 1 - σ
   have hη : 0 < η := by linarith
   refine ⟨max c₀ (log (4 * C / η) / c), max 1 (max (2 * C) (8 * C / η)), by positivity, ?_⟩
   intro X _ s Z r h hr hh x hbound hs

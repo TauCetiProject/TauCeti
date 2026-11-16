@@ -86,7 +86,7 @@ theorem evalAt_one_colemanDSeries_one_sub_C_mul_reverse (hc : c * Q.leadingCoeff
   have hgauss : Tendsto (fun N ↦ ((D N : R⟦X⟧) - B.colemanDSeries F).gaussNorm norm 1) atTop
       (𝓝 0) := by
     refine ((hE ▸ PowerSeries.tendsto_gaussNorm_colemanDBounded_trunc_sub_colemanDEntire
-      (PowerSeries.isEntire_coe B) hF (by rwa [Polynomial.coeff_coe]) hF₀' one_pos).comp
+      (PowerSeries.isEntire_coe B) hF (by rwa [Polynomial.coeff_coe]) hF₀' 1).comp
       tendsto_atTop_diagonal).congr' ?_
     filter_upwards [eventually_ge_atTop d] with N hN
     rw [Function.comp_apply, PowerSeries.trunc_coe_eq_self (Nat.lt_succ_of_le (hBd.trans hN)),

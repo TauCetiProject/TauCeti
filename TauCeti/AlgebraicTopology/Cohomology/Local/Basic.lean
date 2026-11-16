@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.AlgebraicTopology.Cohomology.HomotopyInvariance
 public import TauCeti.AlgebraicTopology.Cohomology.UniversalCoefficient
 public import TauCeti.AlgebraicTopology.Singular.LocalHomology.Basic
 
@@ -28,8 +29,14 @@ For a real vector space `F` of dimension `r` and `x = 0`, the pair `(F, F ∖ {0
 of a vector bundle with fibre `F`, so `Hʳ(F, F ∖ {0}; k, k) ≅ k` is the group in which a Thom class
 of the bundle restricts to a generator on every fibre.
 
+For a bounded set `K` in a real normed space `E` that contains `y` and is star-convex about `y`,
+the inclusion `(E, E ∖ K) ⟶ (E, E ∖ {y})` induces isomorphisms on relative singular cohomology,
+mirroring `TauCeti.isIso_singularHomologyMap_compl_of_starConvex`.
+
 ## Main definitions and results
 
+* `TauCeti.isIso_singularCohomologyMap_compl_of_starConvex`: `(E, E ∖ K) ⟶ (E, E ∖ {y})`
+  induces isomorphisms on cohomology for bounded `K` star-convex about `y ∈ K`.
 * `TauCeti.projective_singularHomology_complSingleton`: local homology is projective in every
   degree.
 * `TauCeti.singularCohomologyComplSingletonKroneckerEquiv`: the relative Kronecker map
@@ -59,6 +66,55 @@ open CategoryTheory Limits Module
 universe w
 
 namespace TauCeti
+
+section StarConvex
+
+/-! ### Local cohomology is constant along star-convex sets -/
+
+open Metric
+
+variable {C : Type*} [Category.{w} C] [HasCoproducts.{w} C] [Abelian C] (R : C)
+  (k : Type*) [Ring k] [Linear k C] (M : C)
+  {E : Type w} [NormedAddCommGroup E] [NormedSpace ℝ E] {K : Set E} {y : E}
+
+/-- **Removing a bounded star-convex set does not change cohomology.** If `K` contains `y`, is
+star-convex about `y` and is bounded, then the inclusion `(E, E ∖ K) ⟶ (E, E ∖ {y})` induces
+isomorphisms on relative singular cohomology. -/
+theorem isIso_singularCohomologyMap_compl_of_starConvex (hK : StarConvex ℝ y K) (hy : y ∈ K)
+    (hKb : Bornology.IsBounded K) (n : ℕ) :
+    IsIso (TopPair.singularCohomologyMap (R := R) (k := k) (M := M)
+      (TopPair.ofSubsetMap (𝟙 (TopCat.of E)) (B := Kᶜ) (B' := {y}ᶜ)
+        (Set.compl_subset_compl.2 (Set.singleton_subset_iff.2 hy))) n) := by
+  -- Both `E ∖ K` and `E ∖ {y}` deformation retract onto a sphere about `y` containing `K` in its
+  -- interior, so the inclusion induces isomorphisms on the cohomology of the subspaces.
+  obtain ⟨r, hKr⟩ := (isBounded_iff_subset_ball y).1 hKb
+  let e₁ := hK.complSphereHomotopyEquiv hy hKr
+  let e₂ := (starConvex_singleton y).complSphereHomotopyEquiv rfl
+    (Set.singleton_subset_iff.2 (hKr hy))
+  set f := TopPair.ofSubsetMap (𝟙 (TopCat.of E)) (B := Kᶜ) (B' := {y}ᶜ)
+    (Set.compl_subset_compl.2 (Set.singleton_subset_iff.2 hy))
+  refine TopPair.isIso_singularCohomologyMap_of_forall_isIso f (fun m ↦ ?_) (fun m ↦ ?_) n
+  · -- The ambient map is the identity of `E`, an isomorphism.
+    have : IsIso (TopPair.Hom.fst f) := by
+      rw [show TopPair.Hom.fst f = 𝟙 (TopCat.of E) from TopPair.ofSubsetMap_fst _ _]
+      exact IsIso.id (TopCat.of E)
+    exact (singularCohomologyFunctor R k M m).map_isIso (TopPair.Hom.fst f).op
+  · -- The inclusion of the sphere into `E ∖ K`, followed by the inclusion into `E ∖ {y}`, is the
+    -- inclusion of the sphere into `E ∖ {y}`; both sphere inclusions are homotopy equivalences.
+    let g₁ : TopCat.of (sphere y r) ⟶ (TopPair.ofSubset (Kᶜ : Set (TopCat.of E))).snd :=
+      TopCat.ofHom e₁.toFun
+    let g₂ : TopCat.of (sphere y r) ⟶ (TopPair.ofSubset ({y}ᶜ : Set (TopCat.of E))).snd :=
+      TopCat.ofHom e₂.toFun
+    have hfac : g₁ ≫ TopPair.Hom.snd f = g₂ := hK.ofHom_complSphereHomotopyEquiv_comp_snd hy hKr
+    have h₁ : IsIso (TopCat.singularCohomologyMap (R := R) (k := k) (M := M) g₁ m) :=
+      e₁.isIso_singularCohomologyMap R k M m
+    have h₂ : IsIso (TopCat.singularCohomologyMap (R := R) (k := k) (M := M)
+        (TopPair.Hom.snd f) m ≫ TopCat.singularCohomologyMap g₁ m) := by
+      rw [← TopCat.singularCohomologyMap_comp, hfac]
+      exact e₂.isIso_singularCohomologyMap R k M m
+    exact IsIso.of_isIso_comp_right _ (TopCat.singularCohomologyMap g₁ m)
+
+end StarConvex
 
 section GeneralCoefficients
 

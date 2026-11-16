@@ -26,12 +26,13 @@ identity.
 
 Since the number of inversions of a Weyl-group element is its Coxeter length, the statements below
 are the usual ones about `w₀`: it is the unique element of maximal length, that length is the
-number of positive roots, and `w₀² = 1`. The Coxeter presentation of the Weyl group is not
-available here, so length is spelled throughout as `(inversions P b w).ncard`.
+number of positive roots, and `w₀² = 1`. To work directly with root combinatorics, length is
+spelled throughout as `(inversions P b w).ncard`.
 
 ## Main definitions
 
-* `TauCeti.longestElement` is the longest element `w₀` of the Weyl group of a finite root system.
+* `TauCeti.longestElement` is the longest element `w₀` of the Weyl group of a finite
+  crystallographic reduced root pairing with a base. The roots need not span the weight space.
 
 ## Main results
 
@@ -58,22 +59,15 @@ available here, so length is spelled throughout as `(inversions P b w).ncard`.
 
 ## Implementation notes
 
-`TauCeti.longestElement` is defined for a root system, where
-`RootPairing.finite_weylGroup` supplies the finiteness of the Weyl group. The existence
-theorem behind it is proved one level more generally, for a crystallographic reduced pairing with
-finitely many roots whose Weyl group happens to be finite; that is the shape used in
-`TauCeti/LinearAlgebra/RootSystem/Chamber.lean` as well.
+`RootPairing.finite_weylGroup_of_base` supplies finiteness of the Weyl group without a
+spanning assumption. In particular, the construction and chamber comparisons apply to reductive
+root data with a nontrivial central lattice, as well as to empty root systems. The existence
+theorem behind the definition takes finiteness of the Weyl group explicitly.
 
 ## References
 
-This file implements the "longest element" item of Layer 4 in
-`TauCetiRoadmap/RepresentationTheory/RootSystems/README.md`. That item spells its length clauses
-with the Coxeter length of the Weyl Coxeter system, whose construction is the Layer 2 summit and is
-not yet available. The roadmap pins the two spellings of length to be equal, in its "length equals
-inversions" item `(weylCoxeterSystem P b).length w = (inversions P b w).ncard`, so the length
-statements proved here in the inversion spelling become that item's clauses by rewriting along that
-identity once it lands. The argument is the one in J. E. Humphreys, *Introduction to Lie Algebras
-and Representation Theory*, GTM 9, Ch. III, §10.3.
+The argument is the one in J. E. Humphreys, *Introduction to Lie Algebras and Representation
+Theory*, GTM 9, Ch. III, §10.3.
 -/
 
 public section
@@ -189,19 +183,17 @@ theorem exists_inversions_eq_posRoots_of_finite_weylGroup :
 
 end FiniteWeylGroup
 
-variable [P.IsRootSystem]
-
 /-- **The longest element `w₀` of a finite Weyl group**: the unique element sending every positive
 root to a negative root. Its inversion set is all of the positive roots, so among all Weyl-group
 elements it has the most inversions, that is, the greatest Coxeter length. -/
 noncomputable def longestElement : P.weylGroup :=
-  letI := RootPairing.finite_weylGroup P
+  letI := P.finite_weylGroup_of_base b
   (exists_inversions_eq_posRoots_of_finite_weylGroup P b).choose
 
 /-- **The longest element inverts every positive root.** -/
 @[simp]
 theorem inversions_longestElement : inversions P b (longestElement P b) = posRoots P b :=
-  letI := RootPairing.finite_weylGroup P
+  letI := P.finite_weylGroup_of_base b
   (exists_inversions_eq_posRoots_of_finite_weylGroup P b).choose_spec
 
 /-- **The longest element sends every positive root to a negative root.** -/
@@ -293,7 +285,7 @@ theorem eq_longestElement_iff_ncard_inversions {w : P.weylGroup} :
   exact eq_longestElement_of_inversions_eq_posRoots
     (Set.eq_of_subset_of_ncard_le (inversions_subset_posRoots P b w) h.ge (posRoots_finite P b))
 
-/-- A root system with at least one root has a longest element other than the identity. -/
+/-- A root pairing with at least one root has a longest element other than the identity. -/
 theorem longestElement_ne_one [Nonempty ι] : longestElement P b ≠ 1 := by
   intro h
   have hpos := posRoots_nonempty P b
@@ -365,7 +357,7 @@ end Combinatorics
 section Chamber
 
 variable [LinearOrder R] [IsStrictOrderedRing R] (b : P.Base)
-  [Finite ι] [P.IsCrystallographic] [P.IsReduced] [P.flip.IsReduced] [P.IsRootSystem]
+  [Finite ι] [P.IsCrystallographic] [P.IsReduced] [P.flip.IsReduced]
 
 variable {P b} in
 /-- **The longest element carries the dominant chamber into its negative.** A simple coroot

@@ -79,10 +79,13 @@ private theorem dirichletChartPDFReal_mul_prod_rpow [DecidableEq ι]
     field_simp
   · simp [dirichletChartPDFReal_of_notMem _ hx]
 
+omit [Nonempty ι] in
 private theorem dirichletMomentConst_nonneg {a q : ι → ℝ}
     (ha : ∀ i, 0 < a i) (hq : ∀ i, 0 < a i + q i) :
     0 ≤ Real.Gamma (∑ i, a i) / Real.Gamma (∑ i, (a i + q i)) *
       ∏ i, Real.Gamma (a i + q i) / Real.Gamma (a i) := by
+  rcases isEmpty_or_nonempty ι with hι | hι
+  · simp
   exact mul_nonneg
     (div_nonneg (Real.Gamma_pos_of_pos
       (Finset.sum_pos (fun i _ ↦ ha i) Finset.univ_nonempty)).le
@@ -91,14 +94,18 @@ private theorem dirichletMomentConst_nonneg {a q : ι → ℝ}
     (Finset.prod_nonneg fun i _ ↦ div_nonneg
       (Real.Gamma_pos_of_pos (hq i)).le (Real.Gamma_pos_of_pos (ha i)).le)
 
+omit [Nonempty ι] in
 /-- The nonnegative extended integral of a mixed real power under a Dirichlet law, when every
-shifted concentration parameter is positive. -/
+shifted concentration parameter is positive. For an empty coordinate type both sides are zero. -/
 theorem lintegral_prod_rpow_dirichletMeasure {a q : ι → ℝ}
     (ha : ∀ i, 0 < a i) (hq : ∀ i, 0 < a i + q i) :
     ∫⁻ x, ENNReal.ofReal (∏ i, x i ^ q i) ∂dirichletMeasure a =
       ENNReal.ofReal (Real.Gamma (∑ i, a i) / Real.Gamma (∑ i, (a i + q i)) *
         ∏ i, Real.Gamma (a i + q i) / Real.Gamma (a i)) := by
   classical
+  rcases isEmpty_or_nonempty ι with hι | hι
+  · rw [dirichletMeasure_eq_zero_of_invalid (fun h ↦ (not_nonempty_iff.2 hι) h.1)]
+    simp
   let i₀ : ι := Classical.arbitrary ι
   have hm : Measurable fun x : EuclideanSpace ℝ ι ↦ ENNReal.ofReal (∏ i, x i ^ q i) := by
     fun_prop
@@ -142,6 +149,7 @@ theorem integrable_prod_rpow_dirichletMeasure {a q : ι → ℝ}
   · rw [dirichletMeasure_eq_zero_of_invalid h]
     simp
 
+omit [Nonempty ι] in
 /-- The mixed real-power moment of a Dirichlet law is the ratio of the original and shifted
 normalizing constants. -/
 theorem integral_prod_rpow_dirichletMeasure {a q : ι → ℝ}
@@ -165,6 +173,7 @@ theorem integrable_prod_pow_dirichletMeasure (a : ι → ℝ)
   · rw [dirichletMeasure_eq_zero_of_invalid h]
     simp
 
+omit [Nonempty ι] in
 /-- Natural mixed moments of a Dirichlet law, including the zeroth moment. -/
 theorem integral_prod_pow_dirichletMeasure {a : ι → ℝ} (ha : ∀ i, 0 < a i) (k : ι → ℕ) :
     ∫ x, (∏ i, x i ^ k i) ∂dirichletMeasure a =

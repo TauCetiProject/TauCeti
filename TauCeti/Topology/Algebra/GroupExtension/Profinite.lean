@@ -34,9 +34,16 @@ to equivalence of extensions.
 
 The continuous section is the only step that uses the topology of `E` in an essential way. It comes
 from the continuous section of a profinite group over the quotient by a closed subgroup, applied to
-the kernel, which is closed because it is compact and `E`, being profinite, is Hausdorff. Nothing
-asks the kernel to be *open*: an open kernel would force `G` to be discrete, whereas the extensions
-this dictionary is used on have infinite `G`.
+the kernel, which is closed as the preimage of `1` under the continuous projection onto the
+Hausdorff base `G`. When the extension is decomposed as a twisted product, compactness of `M`
+enters only to turn the continuity of the inclusion into an embedding, in order to apply
+`TauCeti.GroupExtension.continuous_factorSet` in
+`TauCeti.GroupExtension.exists_continuous_factorSet`, and to make the twisted product compact in
+`TauCeti.GroupExtension.factorSetContinuousMulEquiv`
+(alongside `TauCeti.GroupExtension.isClosed_ker_rightHom` and
+`TauCeti.ProfiniteGroupExtension.ofFactorSet`). Nothing asks the kernel to be *open*: an
+open kernel would force `G` to be discrete, whereas the extensions this dictionary is used on have
+infinite `G`.
 
 Bundling the data, `TauCeti.ProfiniteGroupExtension G M` is an extension of `G` by `M` with
 profinite total group, continuous inclusion and projection, inducing the given action of `G` on
@@ -51,6 +58,8 @@ extensions is the subject of `TauCeti/Topology/Algebra/GroupExtension/Cohomology
   continuous inclusion and projection, inducing the given action, bundled with its total group, and
   `TauCeti.ProfiniteGroupExtension.ofFactorSet`, the twisted product of a continuous factor set
   when `G` and `M` are profinite.
+* `TauCeti.ProfiniteGroupExtension.continuousSection`: a continuous normalized section of a
+  profinite extension over a Hausdorff group, chosen once and for all.
 * `TauCeti.ProfiniteGroupExtension.relabelQuotient` and `TauCeti.ProfiniteGroupExtension.relabel`:
   the same profinite total group, with its quotient, or both its kernel and quotient, replaced by
   continuously isomorphic groups whose actions correspond.
@@ -67,8 +76,8 @@ extensions is the subject of `TauCeti/Topology/Algebra/GroupExtension/Cohomology
 
 * `TauCeti.GroupExtension.isClosed_ker_rightHom`: a compact kernel is a closed subgroup of a
   Hausdorff extension.
-* `TauCeti.GroupExtension.exists_continuous_section`: the projection of a profinite extension with
-  compact kernel has a continuous normalized section.
+* `TauCeti.GroupExtension.exists_continuous_section`: the projection of a profinite extension to a
+  Hausdorff group has a continuous normalized section.
 * `TauCeti.GroupExtension.continuous_factorSet`: the factor set of a continuous normalized section
   is continuous whenever the inclusion of the kernel is an embedding, as a compact kernel of a
   Hausdorff extension is.
@@ -81,7 +90,8 @@ extensions is the subject of `TauCeti/Topology/Algebra/GroupExtension/Cohomology
   §VII.4, (7.4.1), for the relabelling of an extension along isomorphisms of its kernel and quotient
   (`TauCeti.ProfiniteGroupExtension.relabel`).
 * L. Ribes, P. Zalesskii, *Profinite Groups*, 2nd ed., Prop. 2.2.2 for the continuous section over
-  an arbitrary closed subgroup, of which the compact-kernel case used here is a special case.
+  an arbitrary closed subgroup, applied here to the closed kernel of the continuous projection onto
+  a Hausdorff group.
 -/
 
 public section
@@ -158,24 +168,21 @@ end ClosedKernel
 section Profinite
 
 variable [IsTopologicalGroup E] [CompactSpace E] [TotallyDisconnectedSpace E]
-  [Group M] [TopologicalSpace M] [CompactSpace M] {S : GroupExtension M E G}
+  [Group M] {S : GroupExtension M E G}
 
-/-- **The projection of a profinite extension with compact kernel has a continuous normalized
-set-theoretic section.** The kernel is compact, hence closed, so the continuous section of a
-profinite group over the quotient by a closed subgroup applies; the base is identified with that
-quotient because the projection is a continuous bijection out of a compact space. -/
-theorem exists_continuous_section [T2Space G] (hinl : Continuous S.inl)
-    (hrh : Continuous S.rightHom) : ∃ σ : S.Section, Continuous ⇑σ ∧ σ 1 = 1 := by
+/-- **The projection of a profinite extension to a Hausdorff group has a continuous normalized
+section.** The hypotheses are a profinite total group `E`, a Hausdorff base `G` and a continuous
+projection `S.rightHom`; no topology on the kernel `M` and no continuity of `S.inl` is needed. -/
+theorem exists_continuous_section [T2Space G] (hrh : Continuous S.rightHom) :
+    ∃ σ : S.Section, Continuous ⇑σ ∧ σ 1 = 1 := by
   -- identify `G` with the quotient of `E` by the kernel of the projection
   let f : E →ₜ* G := ⟨S.rightHom, hrh⟩
   set N := f.toMonoidHom.ker
-  -- Both the section and the equivalence use the bundled projection's kernel, which is
-  -- definitionally the original projection's kernel for the closedness proof below.
   -- Bundling continuity leaves the projection's values unchanged.
   have hf : ∀ x, f x = S.rightHom x := fun _ => rfl
   let e := f.quotientKerEquivOfSurjective S.rightHom_surjective
   -- pull the continuous section of `E → E ⧸ N` back along that identification
-  obtain ⟨s, hs, hsec, hs₁⟩ := TauCeti.exists_continuous_section N (isClosed_ker_rightHom hinl)
+  obtain ⟨s, hs, hsec, hs₁⟩ := TauCeti.exists_continuous_section N f.isClosed_ker
   have hone : e.symm 1 = QuotientGroup.mk 1 := by
     rw [← S.rightHom.map_one, ← hf, f.quotientKerEquivOfSurjective_symm_apply]
   have hsec' : ∀ g : G, S.rightHom (s (e.symm g)) = g := fun g => by
@@ -296,7 +303,7 @@ theorem exists_continuous_factorSet [IsTopologicalGroup E] [CompactSpace E]
     [ContinuousMul G] (hinl : Continuous S.inl)
     (hrh : Continuous S.rightHom) (hact : InducesAction S) :
     ∃ α : FactorSet G M, Continuous ⇑α ∧ ∃ e : α.groupExtension.Equiv S, Continuous ⇑e := by
-  obtain ⟨σ, hσc, hσ⟩ := exists_continuous_section hinl hrh
+  obtain ⟨σ, hσc, hσ⟩ := exists_continuous_section hrh
   exact ⟨factorSet σ hσ hact,
     continuous_factorSet (hinl.isClosedEmbedding S.inl_injective).isEmbedding hσc hσ hact,
     factorSetToGroupExtensionEquiv σ hσ hact,
@@ -346,6 +353,28 @@ namespace ProfiniteGroupExtension
 
 attribute [instance] instGroup instTopologicalSpace instIsTopologicalGroup instCompactSpace
   instTotallyDisconnectedSpace
+
+/-! ### The chosen section -/
+
+section Section
+
+variable [T2Space G] (X : ProfiniteGroupExtension G M)
+
+/-- **A continuous normalized section of a profinite extension over a Hausdorff group**, chosen
+once and for all from `TauCeti.GroupExtension.exists_continuous_section`. The pushforwards
+`TauCeti.ProfiniteGroupExtension.map` of `X` are the twisted products of the pushforwards of the
+factor set of this section. -/
+noncomputable def continuousSection : X.toGroupExtension.Section :=
+  (GroupExtension.exists_continuous_section X.continuous_rightHom).choose
+
+theorem continuous_continuousSection : Continuous ⇑X.continuousSection :=
+  (GroupExtension.exists_continuous_section X.continuous_rightHom).choose_spec.1
+
+@[simp]
+theorem continuousSection_one : X.continuousSection 1 = 1 :=
+  (GroupExtension.exists_continuous_section X.continuous_rightHom).choose_spec.2
+
+end Section
 
 section OfFactorSet
 

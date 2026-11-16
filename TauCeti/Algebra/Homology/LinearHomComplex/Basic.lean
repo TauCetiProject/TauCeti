@@ -36,6 +36,10 @@ complexes.
 
 * `TauCeti.forget₂LinearHomComplexIso`: forgetting the `R`-module structure degreewise recovers
   Mathlib's `CochainComplex.HomComplex`.
+* `CochainComplex.HomComplex.δ_v_apply_of_d_eq_zero` and
+  `CochainComplex.HomComplex.Cochain.v_apply_mem_ker_of_δ_eq_zero`: element-level formulas for the
+  differential of a cochain of complexes of modules on an element killed by the source
+  differential, and the resulting behaviour of closed degree-zero cochains on kernels.
 
 The cochain modules, the differential `δ`, its `R`-linearity and the Leibniz rule for composition
 are supplied by Mathlib.
@@ -200,3 +204,38 @@ def linearHomComplexFunctor :
 end Functoriality
 
 end TauCeti
+
+namespace CochainComplex.HomComplex
+
+/-- On an element killed by the differential of the source, the differential of a cochain of
+complexes of modules is the differential of the target applied to the value of the cochain. -/
+theorem δ_v_apply_of_d_eq_zero {R : Type*} [Ring R] {K L : CochainComplex (ModuleCat R) ℤ}
+    {n m : ℤ} (z : Cochain K L n) {p q r : ℤ} (hpq : p + n = q)
+    (hpr : p + m = r) {a : K.X p} (ha : (K.d p (p + 1)).hom a = 0) :
+    ((δ n m z).v p r hpr).hom a = (L.d q r).hom ((z.v p q hpq).hom a) := by
+  by_cases hnm : n + 1 = m
+  · rw [δ_v n m hnm z p r hpr q (p + 1) (by omega) rfl]
+    simp [ha]
+  · rw [δ_shape _ _ hnm, L.shape q r (by simp [ComplexShape.up_Rel]; omega)]
+    simp
+
+end CochainComplex.HomComplex
+
+namespace CochainComplex.HomComplex.Cochain
+
+/-- A closed cochain of degree zero between complexes of modules sends elements killed by the
+differential to elements killed by the differential. -/
+theorem v_apply_mem_ker_of_δ_eq_zero {R : Type*} [Ring R] {K L : CochainComplex (ModuleCat R) ℤ}
+    (z : Cochain K L 0) (hz : δ 0 1 z = 0) {p q : ℤ} {a : K.X p}
+    (ha : (K.d p q).hom a = 0) :
+    (z.v p p (add_zero p)).hom a ∈ LinearMap.ker (L.d p q).hom := by
+  by_cases hpq : p + 1 = q
+  swap
+  · rw [L.shape p q (by simpa [ComplexShape.up_Rel] using hpq)]
+    simp
+  have key := congrArg (fun φ ↦ ModuleCat.Hom.hom φ a) (Cochain.congr_v hz p q hpq)
+  simpa only [δ_zero_cochain_v, Cochain.zero_v, ModuleCat.hom_sub, ModuleCat.hom_comp,
+    LinearMap.sub_apply, LinearMap.comp_apply, ha, map_zero, sub_zero, ModuleCat.hom_zero,
+    LinearMap.zero_apply, LinearMap.mem_ker] using key
+
+end CochainComplex.HomComplex.Cochain

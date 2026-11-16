@@ -8,7 +8,9 @@ module
 public import Mathlib.Algebra.Group.Idempotent
 
 /-!
-# Conjugating idempotents
+# Idempotents
+
+An injective multiplicative map reflects idempotents (`IsIdempotentElem.map_iff`).
 
 If `b * a = 1` in a monoid, then `a * e * b` is idempotent whenever `e` is. In particular,
 conjugating an idempotent by a unit gives an idempotent, as does conjugating by a one-sided
@@ -26,5 +28,10 @@ theorem mul_mul_of_mul_eq_one (he : IsIdempotentElem e) (h : b * a = 1) :
     IsIdempotentElem (a * e * b) := by
   calc a * e * b * (a * e * b) = a * e * (b * a) * e * b := by simp only [mul_assoc]
     _ = a * e * b := by rw [h, mul_one, he.mul_mul_self]
+
+/-- Idempotency is reflected by an injective multiplicative map. -/
+theorem map_iff {M N F : Type*} [Mul M] [Mul N] [FunLike F M N] [MulHomClass F M N] {f : F}
+    (hf : Function.Injective f) {e : M} : IsIdempotentElem (f e) ↔ IsIdempotentElem e :=
+  ⟨fun h ↦ hf (by rw [map_mul]; exact h.eq), fun h ↦ h.map f⟩
 
 end IsIdempotentElem

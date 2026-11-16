@@ -8,7 +8,7 @@ module
 public import TauCeti.RingTheory.Huber.Restricted.ModuleTopology
 public import Mathlib.Topology.Algebra.InfiniteSum.Module
 public import Mathlib.Topology.Algebra.InfiniteSum.Nonarchimedean
-public import TauCeti.Topology.Algebra.Module.Equicontinuity
+public import TauCeti.Topology.Algebra.Equicontinuity
 
 /-!
 # The universal property of restricted series with module coefficients
@@ -94,7 +94,7 @@ variable {k : ℕ} {A M : Type*} [Semiring A] [AddCommMonoid M] [TopologicalSpac
 
 section Lift
 
-variable {N : Type*} [AddCommGroup N] [UniformSpace N] [IsUniformAddGroup N] [Module A N]
+variable {N : Type*} [AddCommGroup N] [UniformSpace N] [Module A N]
 
 /-- The terms `φₛ(fₛ)` tend to `0`, because the coefficients `fₛ` do and the `φₛ` are
 equicontinuous at `0`. -/
@@ -103,10 +103,11 @@ private theorem tendsto_cofinite_apply_coeff {φ : (Fin k →₀ ℕ) → M →�
     Tendsto (fun s ↦ φ s (((f : MvPowerSeries (Fin k) M) : (Fin k →₀ ℕ) → M) s)) cofinite
       (𝓝 0) := fun W hW ↦ mem_map.mpr <| by
   filter_upwards [(isRestricted_iff.mp (mem_restrictedMvPowerSeriesSubmodule.mp f.2)).eventually
-    (equicontinuousAt_eventually_forall_apply_mem hφ hW)] with s hs
+    (hφ.eventually_forall_apply_mem hW)] with s hs
   exact hs s
 
-variable [ContinuousConstSMul A N] [T2Space N] [CompleteSpace N] [NonarchimedeanAddGroup N]
+variable [IsUniformAddGroup N] [ContinuousConstSMul A N] [T2Space N] [CompleteSpace N]
+  [NonarchimedeanAddGroup N]
 
 /-- The linear map `f ↦ ∑ₛ φₛ(fₛ)` out of `M⟨T₁, …, Tₖ⟩` induced by a family of linear maps
 `φₛ : M → N` equicontinuous at `0`, into a complete Hausdorff nonarchimedean module. It sends
@@ -255,7 +256,7 @@ theorem continuous_restrictedMvPowerSeriesSubmoduleLift {φ : (Fin k →₀ ℕ)
   -- Shrink `U` to an open subgroup `W`; a sum of terms in `W` stays in the closed set `W`.
   obtain ⟨W, hWU⟩ := NonarchimedeanAddGroup.is_nonarchimedean U hU
   obtain ⟨V, hV, hVW⟩ := eventually_iff_exists_mem.mp
-    (equicontinuousAt_eventually_forall_apply_mem hφ (W.isOpen.mem_nhds W.zero_mem))
+    (hφ.eventually_forall_apply_mem (W.isOpen.mem_nhds W.zero_mem))
   refine mem_map.mpr <| mem_of_superset
     (hasBasis_nhds_zero_restrictedMvPowerSeriesSubmodule.mem_of_mem hV) fun f hf ↦ hWU ?_
   exact tsum_mem W.isClosed fun s ↦ hVW _ (hf s) s

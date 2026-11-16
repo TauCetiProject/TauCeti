@@ -77,7 +77,7 @@ theorem ofMul_mk_demushkinWordTwoEvenPadic (α : ℤ_[2]) (q : ℕ) {n : ℕ} (h
         demushkinWordNeTwo_mem q (n - 2) (pow_mem (ht 0 (by decide) (by omega)) q)
           (fun i hi ↦ ht _ (by omega) (by omega))⟩ :=
     Subtype.ext (demushkinWordTwoEvenPadic_eq_padicPow_mul_labuteComm_mul
-      hG α q n x (by omega))
+      hG α q n x)
   rw [hsplit, QuotientGroup.mk_mul, ofMul_mul,
     hG.ofMul_mk_padicPow_mul_labuteComm h0,
     hG.ofMul_mk_demushkinWordNeTwo q (by omega) ht]

@@ -10,7 +10,7 @@ public import TauCeti.NumberTheory.Multiquadratic.Prime.Discriminants
 /-!
 # Prime-discriminant lists for the first genus-field examples
 
-The multiquadratic roadmap's genus-field worked examples use the prime-discriminant lists
+The genus-field worked examples use the prime-discriminant lists
 `[-4, 5]` for `ℚ(√-5)` and `[-4, -3, -7]` for `ℚ(√-21)`. This file gives those shared lists
 a neutral home for the Legendre-character, degree, and Galois worked examples, together with
 the arithmetic witness bundle (prime-discriminant, injectivity, and parity facts) for the

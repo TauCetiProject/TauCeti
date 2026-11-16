@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.LinearAlgebra.TensorProduct.Projective
 public import Mathlib.LinearAlgebra.Charpoly.BaseChange
 public import Mathlib.RingTheory.Finiteness.Projective
 public import TauCeti.LinearAlgebra.End.Split

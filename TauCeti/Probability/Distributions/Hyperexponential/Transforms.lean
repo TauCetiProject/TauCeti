@@ -65,7 +65,7 @@ theorem mgf_id_hyperexponentialMeasure
   simp only [mgf, id_eq]
   rw [integral_hyperexponentialMeasure hr hf]
   apply Finset.sum_congr rfl
-  intro i hi
+  intro i _
   by_cases hwi : p.weights i = 0
   · simp [hwi]
   · have hpos := pos_iff_ne_zero.mpr hwi
@@ -97,7 +97,7 @@ theorem charFun_hyperexponentialMeasure
       simp [← Complex.ofReal_mul])
   rw [charFun_apply_real, integral_hyperexponentialMeasure hr hf]
   apply Finset.sum_congr rfl
-  intro i hi
+  intro i _
   by_cases hwi : p.weights i = 0
   · simp [hwi]
   · rw [← charFun_apply_real, charFun_expMeasure (hr i (pos_iff_ne_zero.mpr hwi))]

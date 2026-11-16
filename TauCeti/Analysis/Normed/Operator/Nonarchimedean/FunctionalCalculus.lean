@@ -61,7 +61,7 @@ theorem IsRowCompact.charPowerSeries_eq_colemanDEntire (hu : u.IsRowCompact)
   ext k
   have hcoeff := tendsto_charCoeff_matrixCoeff_of_tendsto
     (Eventually.of_forall fun n ↦ hu.aeval (htrunc n))
-    (hu.evalAt hB (by simpa only [← PowerSeries.coeff_zero_eq_constantCoeff] using hB₀)) hv k
+    (hu.evalAt (by simpa only [← PowerSeries.coeff_zero_eq_constantCoeff] using hB₀)) hv k
   simp only [← Matrix.coeff_charPowerSeries,
     hu.charPowerSeries_matrixCoeff_aeval (htrunc _)] at hcoeff
   exact tendsto_nhds_unique hcoeff

@@ -236,8 +236,6 @@ private theorem setIntegral_im_mul_conj_eq_zero (hu : ContDiff ℝ 2 u) (hχ₁ 
     u z * conj (fderiv ℝ (fderiv ℝ u) z ω₂ ω₁))] at hint₂
   have hc : Continuous fun p : ℝ × ℝ ↦ (p.1 : ℂ) * ω₁ + p.2 * ω₂ := continuous_latticeCoord
   have hdc : Continuous (fderiv ℝ u) := hu.continuous_fderiv (by norm_num)
-  have hddc : Continuous (fderiv ℝ (fderiv ℝ u)) :=
-    (hu.fderiv_right (m := 1) le_rfl).continuous_fderiv one_ne_zero
   have huc : Continuous u := hu.continuous
   set F₁ : ℂ → ℂ := fun z ↦ fderiv ℝ u z ω₁ * conj (fderiv ℝ u z ω₂) +
     u z * conj (fderiv ℝ (fderiv ℝ u) z ω₁ ω₂)
@@ -312,17 +310,12 @@ private theorem le_norm_sq_mul_add_norm_sq_mul_sub (hω : (conj ω₁ * ω₂).i
   have hq : 0 < q := norm_pos_iff.2 hω₂
   set a := ‖A‖
   set b := ‖B‖
-  have ha : 0 ≤ a := norm_nonneg A
-  have hb : 0 ≤ b := norm_nonneg B
   -- `r² + D² = p² q²`, `|r| ≤ p q` and `r Re (A conj B) ≤ |r| a b`.
   have hrD : r ^ 2 + D ^ 2 = p ^ 2 * q ^ 2 := by
     have h := Complex.sq_norm (conj ω₁ * ω₂)
     rw [normSq_apply, norm_mul, norm_conj, mul_pow] at h
     rw [h]
     ring
-  have hrabs : |r| ≤ p * q := by
-    have h := abs_re_le_norm (conj ω₁ * ω₂)
-    rwa [norm_mul, norm_conj] at h
   have hrP : r * (A * conj B).re ≤ |r| * (a * b) := by
     calc r * (A * conj B).re ≤ |r * (A * conj B).re| := le_abs_self _
       _ = |r| * |(A * conj B).re| := abs_mul _ _
@@ -358,10 +351,9 @@ private theorem mul_setIntegral_le_setIntegral_sub (hu : ContDiff ℝ 1 u)
           ‖ω₁‖ ^ 2 * ‖fderiv ℝ u (p.1 * ω₁ + p.2 * ω₂) ω₂‖ ^ 2 -
           2 * (conj ω₁ * ω₂).re * (fderiv ℝ u (p.1 * ω₁ + p.2 * ω₂) ω₁ *
             conj (fderiv ℝ u (p.1 * ω₁ + p.2 * ω₂) ω₂)).re) := by
-  set L : ℝ × ℝ → ℂ := fun p ↦ (p.1 : ℂ) * ω₁ + p.2 * ω₂ with hL
+  set L : ℝ × ℝ → ℂ := fun p ↦ (p.1 : ℂ) * ω₁ + p.2 * ω₂
   set D := (conj ω₁ * ω₂).im
   have hLc : Continuous L := continuous_latticeCoord
-  have hdc : Continuous (fderiv ℝ u) := hu.continuous_fderiv one_ne_zero
   have hR : IsCompact (Icc (0 : ℝ) 1 ×ˢ Icc (0 : ℝ) 1) := isCompact_Icc.prod isCompact_Icc
   have hW₁ := mul_setIntegral_norm_sq_le_fst (ω₂ := ω₂) hu h₁
   have hW₂ := mul_setIntegral_norm_sq_le_snd (ω₁ := ω₁) hu h₂
@@ -433,11 +425,10 @@ private theorem mul_setIntegral_norm_sq_le_of_four_mul_sq_mul_norm_sq_eq (hu : C
     π ^ 2 / 2 * (|θ₁ - round θ₁| ^ 2 / ‖ω₁‖ ^ 2 + |θ₂ - round θ₂| ^ 2 / ‖ω₂‖ ^ 2) *
         ∫ p in Icc (0 : ℝ) 1 ×ˢ Icc (0 : ℝ) 1, ‖u (p.1 * ω₁ + p.2 * ω₂)‖ ^ 2 ≤
       ∫ p in Icc (0 : ℝ) 1 ×ˢ Icc (0 : ℝ) 1, ‖W (p.1 * ω₁ + p.2 * ω₂)‖ ^ 2 := by
-  set L : ℝ × ℝ → ℂ := fun p ↦ (p.1 : ℂ) * ω₁ + p.2 * ω₂ with hL
+  set L : ℝ × ℝ → ℂ := fun p ↦ (p.1 : ℂ) * ω₁ + p.2 * ω₂
   have hu1 : ContDiff ℝ 1 u := hu.of_le (by norm_num)
   have hR : IsCompact (Icc (0 : ℝ) 1 ×ˢ Icc (0 : ℝ) 1) := isCompact_Icc.prod isCompact_Icc
   have hLc : Continuous L := continuous_latticeCoord
-  have hdc : Continuous (fderiv ℝ u) := hu1.continuous_fderiv one_ne_zero
   have hGc : Continuous fun p ↦ ‖ω₂‖ ^ 2 * ‖fderiv ℝ u (L p) ω₁‖ ^ 2 +
       ‖ω₁‖ ^ 2 * ‖fderiv ℝ u (L p) ω₂‖ ^ 2 -
       2 * (conj ω₁ * ω₂).re * (fderiv ℝ u (L p) ω₁ * conj (fderiv ℝ u (L p) ω₂)).re := by

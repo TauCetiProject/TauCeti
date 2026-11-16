@@ -17,8 +17,7 @@ finite when the plumbing form is negative definite.
 
 ## References
 
-This advances `TauCetiRoadmap/CombinatorialHeegaardFloer/README.md`, Lane L. The filtration by
-sublevel cubical complexes is the construction in A. Némethi,
+The filtration by sublevel cubical complexes is the construction in A. Némethi,
 [arXiv:0709.0841](https://arxiv.org/abs/0709.0841), Section 3.
 -/
 

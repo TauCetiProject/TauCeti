@@ -15,7 +15,7 @@ import TauCeti.GroupTheory.Finiteness
 Malcev's theorem: a surjective endomorphism `f` of a finitely generated residually finite group
 `G` is injective. Indeed, for a finite quotient `π : G →* Q`, precomposition with `f` is an
 injective self-map of the set `G →* Q`, which is finite because a finitely generated group has
-only finitely many homomorphisms to a finite one (`Monoid.FG.finite_monoidHom`). It is therefore a
+only finitely many homomorphisms to a finite one (`IsMulFG.finite_monoidHom`). It is therefore a
 bijection, so `π` factors through `f` and kills its kernel. Residual finiteness then forces the
 kernel to be trivial. Free groups of finite rank are therefore Hopfian, which is how one
 recognizes that a surjection between free groups of the same finite rank is an isomorphism.

@@ -135,11 +135,13 @@ theorem eq_two_of_finite [Finite G] : p = 2 :=
 theorem infinite_of_ne_two (hp : p ≠ 2) : Infinite G :=
   not_finite_iff_infinite.1 fun _ ↦ hp hG.eq_two_of_finite
 
+omit [CompactSpace G] in
 /-- **A finite Demushkin group has two elements.** -/
 theorem natCard_eq_two_of_finite [Finite G] : Nat.card G = 2 := by
   obtain ⟨e⟩ := hG.finite_iff_nonempty_continuousMulEquiv_multiplicative_zmod_two.1 ‹_›
   rw [Nat.card_congr e.toEquiv, Nat.card_congr Multiplicative.toAdd, Nat.card_zmod]
 
+omit [CompactSpace G] in
 /-- **The abelianization of a finite Demushkin group has two elements**: it is a quotient of `G`,
 which has two elements, and it maps onto `ℤ/2`. -/
 theorem natCard_topologicalAbelianization_eq_two_of_finite [Finite G] :
@@ -155,6 +157,7 @@ theorem natCard_topologicalAbelianization_eq_two_of_finite [Finite G] :
         rw [Nat.card_congr Multiplicative.toAdd, Nat.card_zmod]
     _ ≤ Nat.card (TopologicalAbelianization G) := Nat.card_le_card_of_surjective _ hsurj
 
+omit [CompactSpace G] in
 /-- **A finite Demushkin group has `q`-invariant `2`**: its abelianization is the torsion group
 `ℤ/2`. -/
 theorem demushkinQ_eq_two_of_finite [Finite G] : demushkinQ hG = 2 := by

@@ -537,7 +537,8 @@ private theorem tetrahedronSpringMatrix_mulVec_modeBasis (m : Fin 12) :
     fin_cases m <;> refine Prod.ext (funext fun i ↦ ?_) (Matrix.ext fun i j ↦ ?_) <;>
       fin_cases i <;> try fin_cases j
     all_goals
-      simp [tetrahedronModeCoord, tetrahedronModeEigenvalue, Matrix.trace, Fin.sum_univ_three]
+      simp [tetrahedronModeCoord, tetrahedronModeEigenvalue, Matrix.trace, Fin.sum_univ_three,
+        Function.swap, Matrix.vecHead, Matrix.vecTail]
     all_goals norm_num
   rw [← map_smul, ← hm,
     ← tetrahedronSpringMatrix_mulVec_affineFieldEquiv (tetrahedronModeCoord m).1]
@@ -696,9 +697,6 @@ theorem finrank_eigenspace_smul_tetrahedronSpringMatrix {κ m ω : ℝ} (hκm : 
         (Matrix.toLin' ((κ / (2 * m)) • tetrahedronSpringMatrix)) (-(ω ^ 2))) =
       (if ω = 0 then 6 else 0) + (if ω = √(κ / m) then 2 else 0) +
         (if ω = √(2 * κ / m) then 3 else 0) + (if ω = 2 * √(κ / m) then 1 else 0) := by
-  have hm : m ≠ 0 := by
-    rintro rfl
-    simp at hκm
   have hc : κ / (2 * m) ≠ 0 := by
     rw [mul_comm, ← div_div]
     positivity

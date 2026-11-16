@@ -56,7 +56,7 @@ of the ordinary absolute value, exactly as the norm does.
 public section
 
 open NumberField NumberField.ComplexEmbedding ComplexConjugate
-open scoped NumberField.LiesOver
+attribute [local instance] AbsoluteValue.Completion.algebraOfLiesOver
 
 namespace NumberField.InfinitePlace.Completion
 
@@ -153,7 +153,8 @@ theorem completionNormalizedAbsValue_norm (v : InfinitePlace K) (w : InfinitePla
   by_cases hw : w.IsUnramified K
   · obtain ⟨a, rfl⟩ :=
       (Module.Free.bijective_algebraMap_of_finrank_eq_one (hw.finrank_eq_one v)).2 x
-    rw [Algebra.norm_algebraMap, hw.finrank_eq_one v, pow_one, RingHom.algebraMap_toAlgebra]
+    rw [Algebra.norm_algebraMap, hw.finrank_eq_one v, pow_one,
+      AbsoluteValue.Completion.algebraMap_apply_of_liesOver]
     simpa only [hw.finrank_eq_one v, pow_one] using
       (completionNormalizedAbsValue_completionMap (w := w) a).symm
   · have hr : w.IsRamified K := hw

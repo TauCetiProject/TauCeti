@@ -116,7 +116,7 @@ private theorem ramificationIdx_mul_relativeDegree_eq_two_of_conorm_eq {P : Plac
   set f := relativeDegree k k⟮x⟯ P
   set c := D₀.coeff P₀
   have hc : 0 < c := by
-    rcases (Int.natCast_nonneg e).lt_or_eq with he | he
+    rcases (Int.natCast_nonneg e).lt_or_eq with _ | he
     · nlinarith
     · rw [← he] at hcoeff
       omega
@@ -207,7 +207,7 @@ theorem isPoleNumber_two_of_one_lt_ramificationIdx {P : Place k F} (hP : P.degre
   -- `ℓ(P₀) ≥ 2` by Riemann's theorem on `k(x)`, of genus zero.
   have hdim₀ : 2 ≤ Divisor.dim (WeilDivisor.ofPoint P₀) := by
     have h := Divisor.degree_add_one_sub_genus_le_dim hK (WeilDivisor.ofPoint P₀)
-    rw [Divisor.degree_ofPoint, hP₀, genus_adjoin_simple_eq_zero hx] at h
+    rw [Divisor.degree_ofPoint, hP₀, genus_adjoin_simple_eq_zero] at h
     omega
   -- `L(P₀)` embeds into `L(2P)`.
   have hmap : ∀ u ∈ riemannRochSpace (WeilDivisor.ofPoint P₀),
@@ -344,7 +344,7 @@ theorem isHyperellipticFunctionField_of_isPoleNumber_two_of_perfectField [Perfec
     {P : Place k F} (hP : P.degree = 1) (hpole : P.IsPoleNumber 2) :
     IsHyperellipticFunctionField k F :=
   isHyperellipticFunctionField_iff_two_le_genus_and_exists_finrank_adjoin_eq_two.mpr
-    ⟨hg, exists_transcendental_finrank_adjoin_eq_two_of_degree_eq_two hF hex (by omega)
+    ⟨hg, exists_transcendental_finrank_adjoin_eq_two_of_degree_eq_two hF hex
       (by simp [hP]) (two_le_dim_two_zsmul_ofPoint_of_isPoleNumber_two hF hex hpole)⟩
 
 end TauCeti

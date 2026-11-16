@@ -19,8 +19,8 @@ subtraction-based estimates are unavailable, and the superadditivity of the lowe
 
 ## Main declarations
 
-* `TauCeti.tendsto_nhds_zero_of_le_enorm_mul`: a quantity dominated by `‖h‖ₑ` times a finite
-  constant vanishes as `h → 0`.
+* `TauCeti.tendsto_nhds_zero_of_le_enorm_mul`: a quantity dominated near `0` by `‖h‖ₑ` times a
+  finite constant vanishes as `h → 0`.
 * `TauCeti.tendsto_of_le_add_of_le_add`: a family within `wᵢ` of `b` from both sides converges
   to `b` when `wᵢ → 0`.
 * `TauCeti.tendsto_ofReal_div_mul_add_mul_enorm_sub`: the bounds
@@ -42,15 +42,15 @@ open scoped ENNReal NNReal Topology
 
 variable {E : Type*} [TopologicalSpace E] [ESeminormedAddMonoid E]
 
-/-- A quantity dominated by `‖h‖ₑ` times a finite constant vanishes as `h → 0`. This is the form
-in which a linear modulus of continuity yields the qualitative limit. -/
+/-- A quantity dominated, for `h` near `0`, by `‖h‖ₑ` times a finite constant vanishes as `h → 0`.
+This is the form in which a linear modulus of continuity yields the qualitative limit. -/
 theorem tendsto_nhds_zero_of_le_enorm_mul {G : E → ℝ≥0∞} {C : ℝ≥0∞} (hC : C ≠ ∞)
-    (hG : ∀ h : E, G h ≤ ‖h‖ₑ * C) :
-    Filter.Tendsto G (nhds 0) (nhds 0) := by
-  have h0 : Filter.Tendsto (fun h : E => ‖h‖ₑ) (nhds 0) (nhds 0) :=
-    continuous_enorm.tendsto' 0 0 (by simp)
-  exact tendsto_of_tendsto_of_tendsto_of_le_of_le tendsto_const_nhds
-    (by simpa using ENNReal.Tendsto.mul_const h0 (Or.inr hC)) (fun _ => zero_le) hG
+    (hG : ∀ᶠ h in 𝓝 (0 : E), G h ≤ ‖h‖ₑ * C) :
+    Filter.Tendsto G (𝓝 0) (𝓝 0) := by
+  have h0 : Filter.Tendsto (fun h : E => ‖h‖ₑ) (𝓝 0) (𝓝 0) :=
+    continuous_eNorm.tendsto' 0 0 (by simp)
+  exact tendsto_of_tendsto_of_tendsto_of_le_of_le' tendsto_const_nhds
+    (by simpa using ENNReal.Tendsto.mul_const h0 (Or.inr hC)) (.of_forall fun _ => zero_le) hG
 
 /-- In `ℝ≥0∞`, a family that is within `wᵢ` of a fixed value `b` from both sides converges to `b`
 when `wᵢ → 0`. -/
@@ -84,11 +84,10 @@ limit of their sum. -/
 theorem _root_.ENNReal.sum_liminf_le_liminf_sum {ι κ : Type*} {l : Filter ι} (s : Finset κ)
     (f : κ → ι → ℝ≥0∞) :
     ∑ j ∈ s, Filter.liminf (f j) l ≤ Filter.liminf (fun i ↦ ∑ j ∈ s, f j i) l := by
-  classical
-  induction s using Finset.induction_on with
+  induction s using Finset.cons_induction with
   | empty => simp
-  | insert j s hj ih =>
-    simp only [Finset.sum_insert hj]
+  | cons j s hj ih =>
+    simp only [Finset.sum_cons]
     exact (add_le_add le_rfl ih).trans (ENNReal.le_liminf_add _ _)
 
 /-- If `a ≤ b + t c` for every factor `t > 1`, then `a ≤ b + c`. This lets a family of estimates
@@ -160,7 +159,7 @@ theorem tendsto_ofReal_div_mul_add_mul_enorm_sub {ι F : Type*} [NormedAddCommGr
     exact (ENNReal.ofReal_pos.2 (div_pos hK hm₀)).ne'
   have h2 : Filter.Tendsto (fun i => M * ‖s i - a‖ₑ) l (𝓝 0) := by
     simpa [Function.comp_def] using
-      (ENNReal.Tendsto.const_mul ((continuous_enorm.tendsto (0 : F)).comp h0) (Or.inr hM))
+      (ENNReal.Tendsto.const_mul ((continuous_eNorm.tendsto (0 : F)).comp h0) (Or.inr hM))
   simpa using h1.add h2
 
 end TauCeti

@@ -61,11 +61,9 @@ theorem tendsto_measureReal_renewalExcess_le_of_tendsto_renewalFunction_sub_latt
   have := hindep.isProbabilityMeasure
   have hF : (P.map (T 0)) {0} < 1 := by
     rwa [Measure.map_apply (hT 0) (measurableSet_singleton 0)]
-  have hm : Monotone (fun t ↦ ((P.map (T 0)).renewalFunction t).toReal) := by
-    intro s t hst
-    exact ENNReal.toReal_mono (Measure.renewalFunction_lt_top _ hF t).ne
-      (Measure.monotone_renewalFunction _ hst)
   exact tendsto_measureReal_renewalExcess_le_of_tendsto_renewalFunction_sub
-    hT hindep hid hzero x (hm.tendsto_sub_add_of_tendsto_sub_lattice ha hlim x)
+    hT hindep hid hzero x
+    (((P.map (T 0)).monotone_toReal_renewalFunction hF).tendsto_sub_add_of_tendsto_sub_lattice
+      ha hlim x)
 
 end TauCeti.Probability

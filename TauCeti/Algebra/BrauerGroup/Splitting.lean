@@ -85,12 +85,8 @@ are for a `CSA.{u, u} K`, an algebra in the universe of its own base field, beca
 
 ## References
 
-This completes the first bullet of Layer 6 ("the API that the identity and inverse rest on") of the
-[semisimple algebras roadmap](https://github.com/TauCetiProject/TauCetiRoadmap/blob/main/TauCetiRoadmap/RepresentationTheory/SemisimpleAlgebras/README.md),
-whose Layer 2 asks for the Wedderburn uniqueness this consumes, and it supplies the "`[ℍ]` has
-order 2" step of that roadmap's Hamilton-quaternion worked example. See P. Gille, T. Szamuely,
-*Central Simple Algebras and Galois Cohomology*, CUP (2006), §2.4, and R. S. Pierce, *Associative
-Algebras*, Springer GTM 88 (1982), Chapter 12.
+See P. Gille, T. Szamuely, *Central Simple Algebras and Galois Cohomology*, CUP (2006), §2.4, and
+R. S. Pierce, *Associative Algebras*, Springer GTM 88 (1982), Chapter 12.
 -/
 
 public section

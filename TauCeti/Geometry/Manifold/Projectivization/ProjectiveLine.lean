@@ -56,7 +56,6 @@ theorem affineParam_eq (i : Fin 2) (t : ℂ) :
 theorem affineParam_inv {i j : Fin 2} (hij : i ≠ j) {t : ℂ} (ht : t ≠ 0) :
     affineParam i t = affineParam j t⁻¹ := by
   rw [affineParam_eq, affineParam_eq, mk_eq_mk_iff]
-  have h₁ (x : ℂ) : Fin.insertNth (α := fun _ ↦ ℂ) (1 : Fin 2) 1 (fun _ ↦ x) 0 = x := rfl
   refine ⟨Units.mk0 t ht, ?_⟩
   ext k
   fin_cases i <;> fin_cases j <;> fin_cases k <;> simp_all

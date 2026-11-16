@@ -52,6 +52,10 @@ the estimate behind removal of singularities and energy quantization for holomor
 
 * `TauCeti.integral_norm_sub_average_sq_le`: Wirtinger's inequality.
 * `TauCeti.integral_norm_sub_average_sq_eq_iff`: its equality case.
+* `TauCeti.integral_norm_sq_le_of_integral_eq_zero`: Wirtinger's inequality for mean-zero `C¹`
+  loops.
+* `TauCeti.integral_norm_sq_eq_sum_integral_inner_sq`: the interval integral of `‖F‖ ^ 2` is the
+  sum of those of the squared coordinates of `F` in an orthonormal basis.
 * `ContinuousLinearMap.norm_integral_apply_apply_le`: the bound on the integral of a bilinear form
   along a loop.
 
@@ -215,6 +219,17 @@ private theorem integral_inner_sub_average_sq_le_and_eq_iff (hab : a < b)
   · rw [huv t ht]
     simp only [ofReal_add, ofReal_mul, real_smul]
 
+/-- **Splitting an `L²` norm into coordinates.** For `F` square integrable on `(a, b]` and valued
+in a finite-dimensional real inner product space, the interval integral of `‖F‖ ^ 2` is the sum of
+those of the squares of its coordinates in the standard orthonormal basis. -/
+theorem integral_norm_sq_eq_sum_integral_inner_sq {F : ℝ → V} (hab : a ≤ b)
+    (hF : MemLp F 2 (volume.restrict (Ioc a b))) :
+    ∫ x in a..b, ‖F x‖ ^ 2 = ∑ i, ∫ x in a..b, ⟪stdOrthonormalBasis ℝ V i, F x⟫ ^ 2 := by
+  simp_rw [← (stdOrthonormalBasis ℝ V).sum_sq_inner_right]
+  exact intervalIntegral.integral_finsetSum fun i _ =>
+    (intervalIntegrable_iff_integrableOn_Ioc_of_le hab).2
+      ((innerSL ℝ (stdOrthonormalBasis ℝ V i)).comp_memLp' hF).integrable_sq
+
 /-- The squared distance from the mean and the squared derivative split into the squares of their
 coordinates in an orthonormal basis. -/
 private theorem integral_norm_sq_eq_sum (hab : a < b) (hfc : ContinuousOn f [[a, b]])
@@ -222,15 +237,12 @@ private theorem integral_norm_sq_eq_sum (hab : a < b) (hfc : ContinuousOn f [[a,
     (∫ x in a..b, ‖f x - ⨍ y in a..b, f y‖ ^ 2) =
         ∑ i, ∫ x in a..b, ⟪stdOrthonormalBasis ℝ V i, f x - ⨍ y in a..b, f y⟫ ^ 2 ∧
       ∫ x in a..b, ‖f' x‖ ^ 2 = ∑ i, ∫ x in a..b, ⟪stdOrthonormalBasis ℝ V i, f' x⟫ ^ 2 := by
-  set e := stdOrthonormalBasis ℝ V
-  have hint₁ (i) : IntervalIntegrable (fun x => ⟪e i, f x - ⨍ y in a..b, f y⟫ ^ 2) volume a b :=
-    ((continuousOn_const.inner (hfc.sub continuousOn_const)).pow 2).intervalIntegrable
-  have hint₂ (i) : IntervalIntegrable (fun x => ⟪e i, f' x⟫ ^ 2) volume a b :=
-    (intervalIntegrable_iff_integrableOn_Ioc_of_le hab.le).2
-      ((innerSL ℝ (e i)).comp_memLp' hf').integrable_sq
-  simp_rw [← e.sum_sq_inner_right]
-  exact ⟨intervalIntegral.integral_finsetSum fun i _ => hint₁ i,
-    intervalIntegral.integral_finsetSum fun i _ => hint₂ i⟩
+  have hc : ContinuousOn (fun x => f x - ⨍ y in a..b, f y) (Icc a b) := by
+    rw [← uIcc_of_le hab.le]
+    exact hfc.sub continuousOn_const
+  exact ⟨integral_norm_sq_eq_sum_integral_inner_sq hab.le
+      (hc.memLp_restrict_of_subset_isCompact isCompact_Icc measurableSet_Ioc Ioc_subset_Icc_self 2),
+    integral_norm_sq_eq_sum_integral_inner_sq hab.le hf'⟩
 
 /-- **Wirtinger's inequality.** An absolutely continuous function on `[a, b]` with `f a = f b`,
 valued in a finite-dimensional real inner product space and with square-integrable
@@ -246,6 +258,22 @@ theorem integral_norm_sub_average_sq_le (hab : a < b)
   rw [h₁, h₂, Finset.mul_sum]
   exact Finset.sum_le_sum fun i _ =>
     (integral_inner_sub_average_sq_le_and_eq_iff hab hf hff' hfab hf' _).1
+
+/-- **Wirtinger's inequality for mean-zero `C¹` loops.** If `f` has a continuous derivative `f'`,
+`f a = f b` and `f` has mean zero on `[a, b]`, then
+`∫ₐᵇ ‖f‖² ≤ ((b - a) / (2π))² ∫ₐᵇ ‖f'‖²`. -/
+theorem integral_norm_sq_le_of_integral_eq_zero (hab : a < b)
+    (hff' : ∀ t, HasDerivAt f (f' t) t) (hf' : Continuous f') (hfab : f a = f b)
+    (hmean : ∫ x in a..b, f x = 0) :
+    ∫ x in a..b, ‖f x‖ ^ 2 ≤ ((b - a) / (2 * π)) ^ 2 * ∫ x in a..b, ‖f' x‖ ^ 2 := by
+  have hderiv : deriv f = f' := funext fun t ↦ (hff' t).deriv
+  have hf : ContDiff ℝ 1 f :=
+    contDiff_one_iff_deriv.2 ⟨fun t ↦ (hff' t).differentiableAt, hderiv ▸ hf'⟩
+  have h := integral_norm_sub_average_sq_le hab hf.contDiffOn.absolutelyContinuousOnInterval
+    (Filter.Eventually.of_forall fun t _ ↦ hff' t) hfab
+    (hf'.continuousOn.memLp_restrict_of_subset_isCompact isCompact_Icc measurableSet_Ioc
+      Ioc_subset_Icc_self 2)
+  simpa [interval_average_eq, hmean] using h
 
 /-- **Equality in Wirtinger's inequality.** Equality holds exactly when, on `[a, b]`, the function
 is its mean plus a first harmonic `cos (2π t / (b - a)) • u + sin (2π t / (b - a)) • v`. -/

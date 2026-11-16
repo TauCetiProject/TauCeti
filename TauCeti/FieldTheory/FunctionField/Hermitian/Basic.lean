@@ -143,7 +143,6 @@ theorem isFunctionField : IsFunctionField K F :=
 `q · ord_P y = (q + 1) · ord_P x`. -/
 theorem mul_ord_y_eq (hq : 1 < q) {P : Place K F} (hP : P.ord x < 0) :
     (q : ℤ) * P.ord y = (q + 1) * P.ord x := by
-  have hx0 : x ≠ 0 := h.transcendental_x.ne_zero
   have hrhs : P.ord (y ^ q + y) = (q + 1) * P.ord x := by
     rw [h.equation, P.ord_pow]
     push_cast

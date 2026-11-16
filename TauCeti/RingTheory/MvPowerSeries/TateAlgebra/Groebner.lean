@@ -210,7 +210,7 @@ private theorem exists_gap (F : Finset (IsRestricted.subring (R := R) c)) :
       rcases Finset.mem_insert.mp hy with rfl | hy
       · exact absurd ht (by simp)
       · exact hε y hy t ht
-    obtain ⟨δ, hδ0, hδx, hδ⟩ := exists_norm_coeff_mul_prod_gap x hx
+    obtain ⟨δ, _, hδx, hδ⟩ := exists_norm_coeff_mul_prod_gap x hx
     have hxpos : 0 < ‖x‖ := norm_pos_iff.mpr hx
     refine ⟨max ε (δ / ‖x‖), hε0.trans_le (le_max_left _ _),
       max_lt hε1 ((div_lt_one hxpos).mpr hδx), fun y hy t ht ↦ ?_⟩

@@ -94,7 +94,7 @@ theorem exists_evertse (m : ℕ) :
     rw [Module.finrank_eq_card_basis x]
   -- The places of the statement, as underlying absolute values.
   set T : Set (AbsoluteValue K ℝ) :=
-    {v | (∃ w : InfinitePlace K, w.1 = v) ∨ ∃ u ∈ Sfin, u.1 = v} with hT
+    {v | (∃ w : InfinitePlace K, w.1 = v) ∨ ∃ u ∈ Sfin, u.1 = v}
   have hinfT (w : InfinitePlace K) : w.1 ∈ T := Or.inl ⟨w, rfl⟩
   have hfinT (u : FinitePlace K) (hu : u ∈ Sfin) : u.1 ∈ T := Or.inr ⟨u, hu, rfl⟩
   -- The approximation constant: `1` at the finite places, `A₀` at the infinite ones.

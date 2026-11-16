@@ -16,15 +16,17 @@ conventions `ι_{X_f} σ = df` and `{f, g} = σ(X_f, X_g) = df(X_g)`. A first in
 Hamiltonian `f` is constant along the whole maximal integral curve of the Hamiltonian vector field
 `X_f` through each point.
 
-Consequently, if a family `G : M → (ι → ℝ)` of first integrals of `f` is a proper map, every
-maximal integral curve of `X_f` stays in a compact fibre of `G`, and the extension criterion for
-integral curves makes `X_f` complete. No regularity of the fibres is needed, so critical levels
-are allowed. Two cases are singled out: a proper `C²` Hamiltonian has a complete Hamiltonian
-vector field, by conservation of energy; and if a completely integrable system
-`F : M → (ι → ℝ)` is a proper map, the Hamiltonian vector field of each of its integrals `F_i` is
-complete. The last statement is the completeness input of the Liouville–Arnold theorem: the
-Hamiltonian flows of the integrals of a proper integrable system are defined for all time. It
-applies to the harmonic oscillator on the plane.
+Consequently, if a family `G : M → (ι → ℝ)` of first integrals of `f` has compact fibres, for
+instance if it is a proper map, every maximal integral curve of `X_f` stays in a compact fibre of
+`G`, and the extension criterion for integral curves makes `X_f` complete. No regularity of the
+fibres is needed, so critical levels are allowed. Two cases are singled out: a proper `C²`
+Hamiltonian has a complete Hamiltonian vector field, by conservation of energy; and if a
+completely integrable system `F : M → (ι → ℝ)` is a proper map, the Hamiltonian vector field of
+each of its integrals `F_i` is complete. The compact-fibre criterion is also what makes commuting
+Hamiltonian flows complete on a neighbourhood of a compact component of a level
+(`IsNondegenerate.exists_opens_isCompleteVectorField_hamiltonianVectorField`), while the proper
+version gives completeness on the whole manifold, for instance for the harmonic oscillator on the
+plane.
 
 ## Main results
 
@@ -32,8 +34,10 @@ In the namespace `TauCeti.SmoothTwoForm`:
 
 * `IsFirstIntegral.apply_maximalIntegralCurve`: conservation of a first integral along a maximal
   integral curve of a Hamiltonian vector field.
-* `IsNondegenerate.isCompleteVectorField_hamiltonianVectorField_of_isProperMap`: a Hamiltonian
-  vector field with a proper family of first integrals is complete.
+* `IsNondegenerate.isCompleteVectorField_hamiltonianVectorField_of_isCompact_preimage_singleton`,
+  `IsNondegenerate.isCompleteVectorField_hamiltonianVectorField_of_isProperMap`: a Hamiltonian
+  vector field with a family of first integrals whose fibres are compact, for instance a proper
+  family, is complete.
 * `IsNondegenerate.isCompleteVectorField_hamiltonianVectorField_of_isProperMap_self`: the
   Hamiltonian vector field of a proper Hamiltonian is complete.
 * `IsIntegrableSystem.isCompleteVectorField_hamiltonianVectorField_of_isProperMap`: the
@@ -87,6 +91,19 @@ namespace IsNondegenerate
 variable (hσ : σ.IsNondegenerate)
 include hσ
 
+/-- **A Hamiltonian vector field with first integrals with compact levels is complete.** If the
+functions `G_i = G (·) i` are differentiable first integrals of a `C²` Hamiltonian `f` and the
+fibre of `G : M → (ι → ℝ)` through each point is compact, then every maximal integral curve of the
+Hamiltonian vector field of `f` stays in a compact fibre of `G`, so the field is complete. -/
+theorem isCompleteVectorField_hamiltonianVectorField_of_isCompact_preimage_singleton
+    (hf : ContMDiff I 𝓘(ℝ) 2 f) {ι : Type*} {G : M → ι → ℝ}
+    (hG : ∀ x, IsCompact (G ⁻¹' {G x}))
+    (hGf : ∀ i, σ.IsFirstIntegral f (G · i)) (hG' : ∀ i, MDifferentiable I 𝓘(ℝ) (G · i)) :
+    IsCompleteVectorField (σ.hamiltonianVectorField f) :=
+  isCompleteVectorField_of_isCompact_preimage_singleton
+    (hσ.contMDiff_hamiltonianVectorField (n := 1) (by simp) (by rwa [one_add_one_eq_two])) hG
+    fun _ _ ht ↦ funext fun i ↦ (hGf i).apply_maximalIntegralCurve hσ hf (hG' i) ht
+
 /-- **A Hamiltonian vector field with a proper family of first integrals is complete.** If the
 functions `G_i = G (·) i` are differentiable first integrals of a `C²` Hamiltonian `f` and
 `G : M → (ι → ℝ)` is a proper map, then every maximal integral curve of the Hamiltonian vector
@@ -95,9 +112,8 @@ theorem isCompleteVectorField_hamiltonianVectorField_of_isProperMap (hf : ContMD
     {ι : Type*} {G : M → ι → ℝ} (hG : IsProperMap G) (hGf : ∀ i, σ.IsFirstIntegral f (G · i))
     (hG' : ∀ i, MDifferentiable I 𝓘(ℝ) (G · i)) :
     IsCompleteVectorField (σ.hamiltonianVectorField f) :=
-  isCompleteVectorField_of_isProperMap
-    (hσ.contMDiff_hamiltonianVectorField (n := 1) (by simp) (by rwa [one_add_one_eq_two])) hG
-    fun _ _ ht ↦ funext fun i ↦ (hGf i).apply_maximalIntegralCurve hσ hf (hG' i) ht
+  hσ.isCompleteVectorField_hamiltonianVectorField_of_isCompact_preimage_singleton hf
+    (fun _ ↦ hG.isCompact_preimage isCompact_singleton) hGf hG'
 
 /-- **A proper Hamiltonian has a complete Hamiltonian vector field.** By conservation of energy,
 each maximal integral curve of the Hamiltonian vector field of a proper `C²` Hamiltonian `f`

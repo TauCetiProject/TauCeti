@@ -66,10 +66,8 @@ with the node it is deleted from. So the theorems below assume only
 
 ## References
 
-This is the affine-node deletion clause of Layer 0 of
-`TauCetiRoadmap/ZigzagPreprojective/README.md`. See V. Kac, *Infinite dimensional Lie algebras*,
-3rd ed., Chapter 4 and Table Aff 1, and Bourbaki, *Lie Groups and Lie Algebras, Chapters 4-6*,
-plates I-VII for the finite numbering.
+See V. Kac, *Infinite dimensional Lie algebras*, 3rd ed., Chapter 4 and Table Aff 1, and
+Bourbaki, *Lie Groups and Lie Algebras, Chapters 4-6*, plates I-VII for the finite numbering.
 -/
 
 public section

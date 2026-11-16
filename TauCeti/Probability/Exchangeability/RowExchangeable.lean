@@ -92,7 +92,6 @@ measurable map into `ι × ℕ → α`.
 
 * P. Diaconis and D. Freedman, "de Finetti's theorem for Markov chains", *Annals of Probability*
   8 (1980), 115–130.
-* Roadmap: `TauCetiRoadmap/Exchangeability/README.md`, Layer 8, "Markov exchangeability".
 
 No material is adapted from `cameronfreer/exchangeability`, which treats exchangeable sequences
 rather than arrays.
@@ -359,8 +358,7 @@ theorem RowExchangeable.ae_apply_pi_union [IsFiniteMeasure μ] (h : RowExchangea
       (lam ω : Measure (ι → α)) (Set.pi (↑F) B) * (lam ω : Measure (ι → α)) (Set.pi (↑G) B) := by
   classical
   -- each entry is a coordinate of its column, which the witness makes a.e. measurable
-  have hY : ∀ p, AEMeasurable (Y p) μ := fun p => by
-    simpa only [arrayCol_apply] using (hlam.aemeasurable p.2).eval p.1
+  have hY := aemeasurable_entry_of_aemeasurable_arrayCol hlam.aemeasurable
   set C : Set (ι → α) := Set.pi (↑F) B with hC
   set D : Set (ι → α) := Set.pi (↑G) B with hD
   have hCm : MeasurableSet C := .pi F.countable_toSet fun a ha => hB a (Or.inl ha)

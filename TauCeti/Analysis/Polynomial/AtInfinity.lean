@@ -189,7 +189,7 @@ theorem memLp_inv_one_add_norm_eval_sq (hm : 0 < P.natDegree) :
     (continuous_const.add (P.continuous.norm.pow 2)).inv₀ fun z ↦
       (by positivity : (0 : ℝ) < 1 + ‖P.eval z‖ ^ 2).ne'
   rw [memLp_two_iff_integrable_sq hcont.aestronglyMeasurable]
-  obtain ⟨c, hc, hb⟩ := exists_eventually_norm_bounds hm
+  obtain ⟨c, _, hb⟩ := exists_eventually_norm_bounds hm
   refine integrable_of_eventually_mul_one_add_norm_pow_four_le (K := 16 * c ^ 4) (hcont.pow 2)
     (fun z ↦ by positivity) ?_
   filter_upwards [hb] with z ⟨h₁, hr, ha, _⟩

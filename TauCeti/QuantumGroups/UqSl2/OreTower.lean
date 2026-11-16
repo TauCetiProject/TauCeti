@@ -82,7 +82,6 @@ theorem sigmaF_T (n : ℤ) : sigmaF q (T n) = C (q ^ (2 * n)) * T n := by
   simp
 
 /-- `sigmaF` fixes the constants. -/
-@[simp]
 theorem sigmaF_C (a : ℂ) : sigmaF q (C a) = C a :=
   rescale_C _ a
 
