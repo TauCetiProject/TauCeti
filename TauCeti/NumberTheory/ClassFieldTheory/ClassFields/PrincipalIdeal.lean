@@ -54,20 +54,16 @@ of `H` realized inside `SeparableClosure K`.
 * `TauCeti.ClassFieldTheory.extendedHom_hilbertClassField_eq_one`,
   `TauCeti.ClassFieldTheory.extendedHom_eq_one_of_algHom_hilbertClassField`,
   `TauCeti.ClassFieldTheory.extendedHom_rayClassField_eq_one`,
-  `TauCeti.ClassFieldTheory.extendedHom_narrowHilbertClassField_eq_one`,
   `TauCeti.ClassFieldTheory.extendedHom_ringClassField_eq_one`: ideal-class extension is trivial
   into the Hilbert class field and any field into which it embeds over `K`.
 * `TauCeti.ClassFieldTheory.isPrincipal_map_hilbertClassField`: **the principal ideal theorem** —
   every ideal of `𝓞 K` becomes principal in `𝓞 (hilbertClassField K)`.
 * `TauCeti.ClassFieldTheory.isPrincipal_map_of_algHom_hilbertClassField`,
   `TauCeti.ClassFieldTheory.isPrincipal_map_rayClassField`,
-  `TauCeti.ClassFieldTheory.isPrincipal_map_narrowHilbertClassField`,
   `TauCeti.ClassFieldTheory.isPrincipal_map_ringClassField`: principalization of ideals in any
-  extension receiving `hilbertClassField K`, and in ray, narrow Hilbert, and ring class fields.
+  extension receiving `hilbertClassField K`, and in ray and ring class fields.
 * `TauCeti.ClassFieldTheory.isPrincipal_extendedHom_of_algHom_hilbertClassField`,
-  `TauCeti.ClassFieldTheory.isPrincipal_extendedHom_hilbertClassField`,
   `TauCeti.ClassFieldTheory.isPrincipal_extendedHom_rayClassField`,
-  `TauCeti.ClassFieldTheory.isPrincipal_extendedHom_narrowHilbertClassField`,
   `TauCeti.ClassFieldTheory.isPrincipal_extendedHom_ringClassField`: principalization of extended
   fractional ideals.
 
@@ -131,13 +127,6 @@ theorem extendedHom_rayClassField_eq_one {K : Type} [Field K] [NumberField K] (�
   extendedHom_eq_one_of_algHom_hilbertClassField
     (IntermediateField.inclusion (hilbertClassField_le_rayClassField 𝔪))
 
--- Not `@[simp]`: `narrowHilbertClassField K` is an `abbrev` for `rayClassField (narrowModulus K)`,
--- so `extendedHom_rayClassField_eq_one` already simplifies this left-hand side.
-/-- Ideal classes of `𝓞 K` become trivial in the narrow Hilbert class field of `K`. -/
-theorem extendedHom_narrowHilbertClassField_eq_one (K : Type) [Field K] [NumberField K] :
-    ClassGroup.extendedHom (𝓞 K) (𝓞 (narrowHilbertClassField K)) = 1 :=
-  extendedHom_rayClassField_eq_one (narrowModulus K)
-
 /-- Ideal classes of `𝓞 K` become trivial in the ring class field of every order `O` of `K`. -/
 @[simp]
 theorem extendedHom_ringClassField_eq_one {K : Type} [Field K] [NumberField K]
@@ -165,19 +154,12 @@ theorem isPrincipal_map_hilbertClassField (K : Type) [Field K] [NumberField K]
   isPrincipal_map_of_algHom_hilbertClassField (AlgHom.id K (hilbertClassField K)) I
 
 /-- Every ideal of `𝓞 K` becomes principal in the ring of integers of any ray class field of
-`K`. -/
+`K` (including the narrow Hilbert class field). -/
 theorem isPrincipal_map_rayClassField {K : Type} [Field K] [NumberField K] (𝔪 : Modulus K)
     (I : Ideal (𝓞 K)) :
     (I.map (algebraMap (𝓞 K) (𝓞 (rayClassField 𝔪)))).IsPrincipal :=
   isPrincipal_map_of_algHom_hilbertClassField
     (IntermediateField.inclusion (hilbertClassField_le_rayClassField 𝔪)) I
-
-/-- Every ideal of `𝓞 K` becomes principal in the ring of integers of the narrow Hilbert class
-field of `K`. -/
-theorem isPrincipal_map_narrowHilbertClassField (K : Type) [Field K] [NumberField K]
-    (I : Ideal (𝓞 K)) :
-    (I.map (algebraMap (𝓞 K) (𝓞 (narrowHilbertClassField K)))).IsPrincipal :=
-  isPrincipal_map_rayClassField (narrowModulus K) I
 
 /-- Every ideal of `𝓞 K` becomes principal in the ring of integers of the ring class field of any
 order `O` of `K`. -/
@@ -198,29 +180,14 @@ theorem isPrincipal_extendedHom_of_algHom_hilbertClassField {K : Type} [Field K]
     (extendedHom_eq_one_of_algHom_hilbertClassField ι) I
 
 /-- Every fractional ideal of `𝓞 K` extends to a principal fractional ideal over the ring of
-integers of `hilbertClassField K`. -/
-theorem isPrincipal_extendedHom_hilbertClassField (K : Type) [Field K] [NumberField K]
-    (I : FractionalIdeal (𝓞 K)⁰ K) :
-    (FractionalIdeal.extendedHom (hilbertClassField K) (𝓞 (hilbertClassField K)) I :
-      Submodule (𝓞 (hilbertClassField K)) (hilbertClassField K)).IsPrincipal :=
-  isPrincipal_extendedHom_of_algHom_hilbertClassField (AlgHom.id K (hilbertClassField K)) I
-
-/-- Every fractional ideal of `𝓞 K` extends to a principal fractional ideal over the ring of
-integers of any ray class field of `K`. -/
+integers of any ray class field of `K` (including the ordinary and narrow Hilbert class
+fields). -/
 theorem isPrincipal_extendedHom_rayClassField {K : Type} [Field K] [NumberField K] (𝔪 : Modulus K)
     (I : FractionalIdeal (𝓞 K)⁰ K) :
     (FractionalIdeal.extendedHom (rayClassField 𝔪) (𝓞 (rayClassField 𝔪)) I :
       Submodule (𝓞 (rayClassField 𝔪)) (rayClassField 𝔪)).IsPrincipal :=
   isPrincipal_extendedHom_of_algHom_hilbertClassField
     (IntermediateField.inclusion (hilbertClassField_le_rayClassField 𝔪)) I
-
-/-- Every fractional ideal of `𝓞 K` extends to a principal fractional ideal over the ring of
-integers of `narrowHilbertClassField K`. -/
-theorem isPrincipal_extendedHom_narrowHilbertClassField (K : Type) [Field K] [NumberField K]
-    (I : FractionalIdeal (𝓞 K)⁰ K) :
-    (FractionalIdeal.extendedHom (narrowHilbertClassField K) (𝓞 (narrowHilbertClassField K)) I :
-      Submodule (𝓞 (narrowHilbertClassField K)) (narrowHilbertClassField K)).IsPrincipal :=
-  isPrincipal_extendedHom_rayClassField (narrowModulus K) I
 
 /-- Every fractional ideal of `𝓞 K` extends to a principal fractional ideal over the ring of
 integers of the ring class field of any order `O` of `K`. -/
