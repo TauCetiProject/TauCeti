@@ -37,10 +37,6 @@ its elements of finite additive order (`TauCeti.tmul_eq_zero_of_isOfFinAddOrder`
 In particular a set generating `G` modulo torsion spans `A ⊗[ℤ] G`
 (`TauCeti.span_one_tmul_eq_top_of_isOfFinAddOrder`).
 
-If scalar multiplication by `r : R` is surjective on both `U` and `V`, then scalar multiplication
-by `r` is bijective on `U ⊗[R] V` (`TauCeti.bijective_smul_tensorProduct`), without assuming
-torsion-freeness on either factor.
-
 ## References
 
 * J.-P. Serre, *Groupes d'homotopie et classes de groupes abéliens*, Ann. of Math. 58 (1953).
@@ -215,52 +211,5 @@ theorem span_one_tmul_eq_top_of_isOfFinAddOrder {A G : Type*} [DivisionRing A] [
     rw [← sub_add_cancel x y, TensorProduct.tmul_add, tmul_eq_zero_of_isOfFinAddOrder r hxy,
       zero_add, ← mul_one r, ← smul_eq_mul, ← TensorProduct.smul_tmul']
     exact S.smul_mem r (hcl hy)
-
-/-- If scalar multiplication by `r : R` is surjective on both `U` and `V`, then scalar
-multiplication by `r` is bijective on `U ⊗[R] V`. No torsion-freeness is required on `U` or `V`. -/
-theorem bijective_smul_tensorProduct {R U V : Type*} [CommSemiring R] [AddCommMonoid U] [Module R U]
-    [AddCommMonoid V] [Module R V] (r : R)
-    (hU : Function.Surjective (fun u : U ↦ r • u))
-    (hV : Function.Surjective (fun v : V ↦ r • v)) :
-    Function.Bijective (fun t : U ⊗[R] V ↦ r • t) := by
-  have hwd : ∀ {u₁ u₂ : U} (v : V), r • u₁ = r • u₂ → u₁ ⊗ₜ[R] v = u₂ ⊗ₜ[R] v := by
-    intro u₁ u₂ v h
-    obtain ⟨v', rfl⟩ := hV v
-    rw [← TensorProduct.smul_tmul, ← TensorProduct.smul_tmul, h]
-  let chooseU : U → U := fun u ↦ Classical.choose (hU u)
-  have hchooseU : ∀ u : U, r • chooseU u = u := fun u ↦ Classical.choose_spec (hU u)
-  let B : U →ₗ[R] V →ₗ[R] U ⊗[R] V :=
-    { toFun := fun u ↦
-        { toFun := fun v ↦ chooseU u ⊗ₜ[R] v
-          map_add' := fun v₁ v₂ ↦ TensorProduct.tmul_add (chooseU u) v₁ v₂
-          map_smul' := fun a v ↦ by
-            simp only [RingHom.id_apply, TensorProduct.tmul_smul] }
-      map_add' := fun u₁ u₂ ↦ by
-        ext v
-        change chooseU (u₁ + u₂) ⊗ₜ[R] v = chooseU u₁ ⊗ₜ[R] v + chooseU u₂ ⊗ₜ[R] v
-        rw [← TensorProduct.add_tmul]
-        exact hwd v (by rw [smul_add, hchooseU, hchooseU, hchooseU])
-      map_smul' := fun a u ↦ by
-        ext v
-        change chooseU (a • u) ⊗ₜ[R] v = a • (chooseU u ⊗ₜ[R] v)
-        rw [TensorProduct.smul_tmul']
-        exact hwd v (by rw [smul_comm, hchooseU, hchooseU]) }
-  let inv : U ⊗[R] V →ₗ[R] U ⊗[R] V := TensorProduct.lift B
-  refine Function.bijective_iff_has_inverse.mpr ⟨inv, fun t ↦ ?_, fun t ↦ ?_⟩
-  · induction t using TensorProduct.inductionOn with
-    | tmul u v =>
-      change inv (r • (u ⊗ₜ[R] v)) = u ⊗ₜ[R] v
-      rw [TensorProduct.smul_tmul', TensorProduct.lift.tmul]
-      exact hwd v (hchooseU (r • u))
-    | add t₁ t₂ ht₁ ht₂ =>
-      simp only [smul_add, map_add, ht₁, ht₂]
-  · induction t using TensorProduct.inductionOn with
-    | tmul u v =>
-      change r • inv (u ⊗ₜ[R] v) = u ⊗ₜ[R] v
-      rw [TensorProduct.lift.tmul]
-      change r • (chooseU u ⊗ₜ[R] v) = u ⊗ₜ[R] v
-      rw [TensorProduct.smul_tmul', hchooseU]
-    | add t₁ t₂ ht₁ ht₂ =>
-      simp only [map_add, smul_add, ht₁, ht₂]
 
 end TauCeti

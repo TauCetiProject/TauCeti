@@ -84,13 +84,10 @@ theorem MilnorK.ofUnit_def (a : Rˣ) :
   (rfl)
 
 /-- The Milnor symbol `{a₁, …, aₙ}`, defined as the ordered product of degree-one unit classes. -/
-def MilnorK.symbol (l : List Rˣ) : MilnorK R :=
-  (l.map MilnorK.ofUnit).prod
+def MilnorK.symbol (l : List Rˣ) : MilnorK R := (l.map MilnorK.ofUnit).prod
 
 /-- Definitional unfolding of `MilnorK.symbol`. -/
-theorem MilnorK.symbol_def (l : List Rˣ) :
-    MilnorK.symbol l = (l.map MilnorK.ofUnit).prod :=
-  (rfl)
+theorem MilnorK.symbol_def (l : List Rˣ) : MilnorK.symbol l = (l.map MilnorK.ofUnit).prod := (rfl)
 
 variable (R)
 
@@ -121,8 +118,7 @@ theorem ofUnit_mul (a b : Rˣ) : ofUnit (a * b) = ofUnit a + ofUnit b := by
 
 /-- `ofUnit 1 = 0`. -/
 @[simp]
-theorem ofUnit_one : ofUnit (1 : Rˣ) = 0 := by
-  simp only [ofUnit_def, ofMul_one, map_zero]
+theorem ofUnit_one : ofUnit (1 : Rˣ) = 0 := by simp only [ofUnit_def, ofMul_one, map_zero]
 
 /-- `ofUnit a⁻¹ = -ofUnit a`. -/
 theorem ofUnit_inv (a : Rˣ) : ofUnit a⁻¹ = -ofUnit a := by
@@ -151,21 +147,18 @@ theorem isSteinbergPairing_ofUnit_mul :
 
 /-- The empty symbol equals `1`. -/
 @[simp]
-theorem symbol_nil : symbol ([] : List Rˣ) = 1 := by
-  simp [symbol_def]
+theorem symbol_nil : symbol ([] : List Rˣ) = 1 := by simp [symbol_def]
 
 /-- A singleton symbol equals `ofUnit a`. -/
 @[simp]
-theorem symbol_singleton (a : Rˣ) : symbol [a] = ofUnit a := by
-  simp [symbol_def]
+theorem symbol_singleton (a : Rˣ) : symbol [a] = ofUnit a := by simp [symbol_def]
 
 /-- Prepending a unit left-multiplies the symbol by `ofUnit a`. -/
 theorem symbol_cons (a : Rˣ) (l : List Rˣ) : symbol (a :: l) = ofUnit a * symbol l := by
   simp [symbol_def]
 
 /-- A two-entry symbol equals `ofUnit a * ofUnit b`. -/
-theorem symbol_pair (a b : Rˣ) : symbol [a, b] = ofUnit a * ofUnit b := by
-  simp [symbol_def]
+theorem symbol_pair (a b : Rˣ) : symbol [a, b] = ofUnit a * ofUnit b := by simp [symbol_def]
 
 /-- Concatenating lists multiplies symbols in order. -/
 theorem symbol_append (l₁ l₂ : List Rˣ) : symbol (l₁ ++ l₂) = symbol l₁ * symbol l₂ := by
@@ -226,210 +219,126 @@ theorem isHomogeneous_ker_mkAlgHom :
   let mk := RingQuot.mkRingHom (milnorRel R)
   let H : Set (TensorAlgebra ℤ (Additive Rˣ)) :=
     {z | ∀ i : ℕ, mk (DirectSum.decompose 𝒜 z i : TensorAlgebra ℤ (Additive Rˣ)) = 0}
-  have hH_zero : (0 : TensorAlgebra ℤ (Additive Rˣ)) ∈ H := fun i ↦ by simp [mk]
+  have hH_zero : (0 : TensorAlgebra ℤ (Additive Rˣ)) ∈ H := fun _ ↦ by simp [mk]
   have hH_add : ∀ {x y}, x ∈ H → y ∈ H → x + y ∈ H := fun hx hy i ↦ by
     rw [DirectSum.decompose_add, DirectSum.add_apply, Submodule.coe_add, map_add, hx i, hy i,
       add_zero]
   have hH_neg : ∀ {x}, x ∈ H → -x ∈ H := fun hx i ↦ by
     rw [DirectSum.decompose_neg, DFinsupp.neg_apply, Submodule.coe_neg, map_neg, hx i, neg_zero]
-  have hH_mul_left : ∀ {c z}, z ∈ H → c * z ∈ H := fun {c z} hz i ↦ by
+  have hH_mul : ∀ {x y}, (x ∈ H ∨ y ∈ H) → x * y ∈ H := fun {x y} hxy i ↦ by
     let d := DirectSum.decompose 𝒜
-    have hdecomp : c * z =
-        ∑ j ∈ (d c).support, ∑ k ∈ (d z).support,
-          ((d c j : TensorAlgebra ℤ (Additive Rˣ)) * (d z k : TensorAlgebra ℤ (Additive Rˣ))) := by
-      conv_lhs =>
-        rw [← DirectSum.sum_support_decompose 𝒜 c, ← DirectSum.sum_support_decompose 𝒜 z]
-      rw [Finset.sum_mul]
-      exact Finset.sum_congr rfl fun j _ ↦ Finset.mul_sum _ _ _
+    have hdecomp : x * y = ∑ j ∈ (d x).support, ∑ k ∈ (d y).support,
+        ((d x j : TensorAlgebra ℤ (Additive Rˣ)) * (d y k : TensorAlgebra ℤ (Additive Rˣ))) := by
+      conv_lhs => rw [← DirectSum.sum_support_decompose 𝒜 x, ← DirectSum.sum_support_decompose 𝒜 y]
+      rw [Finset.sum_mul]; exact Finset.sum_congr rfl fun j _ ↦ Finset.mul_sum _ _ _
     rw [hdecomp, DirectSum.decompose_sum, DirectSum.sum_apply]
-    change mk ((𝒜 i).subtype _) = 0
-    rw [map_sum, map_sum]
+    change mk ((𝒜 i).subtype _) = 0; rw [map_sum, map_sum]
     refine Finset.sum_eq_zero fun j _ ↦ ?_
     change mk (DirectSum.decompose 𝒜 _ i : TensorAlgebra ℤ (Additive Rˣ)) = 0
     rw [DirectSum.decompose_sum, DirectSum.sum_apply]
-    change mk ((𝒜 i).subtype _) = 0
-    rw [map_sum, map_sum]
+    change mk ((𝒜 i).subtype _) = 0; rw [map_sum, map_sum]
     refine Finset.sum_eq_zero fun k _ ↦ ?_
     change mk (DirectSum.decompose 𝒜 _ i : TensorAlgebra ℤ (Additive Rˣ)) = 0
-    have hmem : (d c j : TensorAlgebra ℤ (Additive Rˣ)) *
-        (d z k : TensorAlgebra ℤ (Additive Rˣ)) ∈ 𝒜 (j + k) :=
-      SetLike.mul_mem_graded (d c j).property (d z k).property
-    rw [DirectSum.decompose_of_mem 𝒜 hmem]
+    rw [DirectSum.decompose_of_mem 𝒜 (SetLike.mul_mem_graded (d x j).property (d y k).property)]
     by_cases hjk : j + k = i
-    · subst hjk
-      rw [DirectSum.of_eq_same, map_mul, hz k, mul_zero]
-    · rw [DirectSum.of_eq_of_ne _ _ _ (Ne.symm hjk), Submodule.coe_zero, map_zero]
-  have hH_mul_right : ∀ {z c}, z ∈ H → z * c ∈ H := fun {z c} hz i ↦ by
-    let d := DirectSum.decompose 𝒜
-    have hdecomp : z * c =
-        ∑ j ∈ (d z).support, ∑ k ∈ (d c).support,
-          ((d z j : TensorAlgebra ℤ (Additive Rˣ)) * (d c k : TensorAlgebra ℤ (Additive Rˣ))) := by
-      conv_lhs =>
-        rw [← DirectSum.sum_support_decompose 𝒜 z, ← DirectSum.sum_support_decompose 𝒜 c]
-      rw [Finset.sum_mul]
-      exact Finset.sum_congr rfl fun j _ ↦ Finset.mul_sum _ _ _
-    rw [hdecomp, DirectSum.decompose_sum, DirectSum.sum_apply]
-    change mk ((𝒜 i).subtype _) = 0
-    rw [map_sum, map_sum]
-    refine Finset.sum_eq_zero fun j _ ↦ ?_
-    change mk (DirectSum.decompose 𝒜 _ i : TensorAlgebra ℤ (Additive Rˣ)) = 0
-    rw [DirectSum.decompose_sum, DirectSum.sum_apply]
-    change mk ((𝒜 i).subtype _) = 0
-    rw [map_sum, map_sum]
-    refine Finset.sum_eq_zero fun k _ ↦ ?_
-    change mk (DirectSum.decompose 𝒜 _ i : TensorAlgebra ℤ (Additive Rˣ)) = 0
-    have hmem : (d z j : TensorAlgebra ℤ (Additive Rˣ)) *
-        (d c k : TensorAlgebra ℤ (Additive Rˣ)) ∈ 𝒜 (j + k) :=
-      SetLike.mul_mem_graded (d z j).property (d c k).property
-    rw [DirectSum.decompose_of_mem 𝒜 hmem]
-    by_cases hjk : j + k = i
-    · subst hjk
-      rw [DirectSum.of_eq_same, map_mul, hz j, zero_mul]
+    · subst hjk; rw [DirectSum.of_eq_same, map_mul]
+      rcases hxy with hx | hy
+      · rw [hx j, zero_mul]
+      · rw [hy k, mul_zero]
     · rw [DirectSum.of_eq_of_ne _ _ _ (Ne.symm hjk), Submodule.coe_zero, map_zero]
   let rc : RingCon (TensorAlgebra ℤ (Additive Rˣ)) :=
     { r := fun x y ↦ x - y ∈ H
-      iseqv :=
-        ⟨fun x ↦ by simpa only [sub_self] using hH_zero,
-         fun {x y} h ↦ by simpa only [neg_sub] using hH_neg h,
-         fun {x y z} h₁ h₂ ↦ by
-           have : x - z = (x - y) + (y - z) := by abel
-           rw [this]
-           exact hH_add h₁ h₂⟩
+      iseqv := ⟨fun _ ↦ by simpa only [sub_self] using hH_zero,
+        fun h ↦ by simpa only [neg_sub] using hH_neg h,
+        fun {x y z} h₁ h₂ ↦ by rw [show x - z = (x - y) + (y - z) by abel]; exact hH_add h₁ h₂⟩
       add' := fun {w x y z} h₁ h₂ ↦ by
-        have : w + y - (x + z) = (w - x) + (y - z) := by abel
-        rw [this]
-        exact hH_add h₁ h₂
+        rw [show w + y - (x + z) = (w - x) + (y - z) by abel]; exact hH_add h₁ h₂
       mul' := fun {w x y z} h₁ h₂ ↦ by
-        have : w * y - x * z = (w - x) * y + x * (y - z) := by
-          rw [sub_mul, mul_sub]
-          abel
-        rw [this]
-        exact hH_add (hH_mul_right h₁) (hH_mul_left h₂) }
+        rw [show w * y - x * z = (w - x) * y + x * (y - z) by rw [sub_mul, mul_sub]; abel]
+        exact hH_add (hH_mul (.inl h₁)) (hH_mul (.inr h₂)) }
   have hrel : ∀ x y, milnorRel R x y → rc.mk' x = rc.mk' y := by
-    intro x y h
-    rw [milnorRel_def] at h
-    rcases h with ⟨a, b, hab, rfl, rfl⟩
-    apply rc.eq.mpr
+    rintro _ _ ⟨a, b, hab, rfl, rfl⟩
+    refine rc.eq.mpr ?_
     change TensorAlgebra.ι ℤ (Additive.ofMul a) * TensorAlgebra.ι ℤ (Additive.ofMul b) - 0 ∈ H
     rw [sub_zero]
     have hmem : TensorAlgebra.ι ℤ (Additive.ofMul a) * TensorAlgebra.ι ℤ (Additive.ofMul b) ∈ 𝒜 2 :=
-      by
-        dsimp only [𝒜]
-        rw [pow_two]
-        exact Submodule.mul_mem_mul ⟨Additive.ofMul a, rfl⟩ ⟨Additive.ofMul b, rfl⟩
+      by rw [show 𝒜 2 = _ ^ 2 from rfl, pow_two]; exact Submodule.mul_mem_mul ⟨_, rfl⟩ ⟨_, rfl⟩
     intro i
     rw [DirectSum.decompose_of_mem 𝒜 hmem]
     by_cases hi : 2 = i
-    · subst hi
-      rw [DirectSum.of_eq_same]
+    · subst hi; rw [DirectSum.of_eq_same]
       simpa only [map_zero] using RingQuot.mkRingHom_rel (r := milnorRel R) ⟨a, b, hab, rfl, rfl⟩
     · rw [DirectSum.of_eq_of_ne _ _ _ (Ne.symm hi), Submodule.coe_zero, map_zero]
-  let q : MilnorK R →+* rc.Quotient := RingQuot.lift ⟨rc.mk', hrel⟩
   intro i x hx
-  have hq : q (mk x) = rc.mk' x := RingQuot.lift_mkRingHom_apply rc.mk' hrel x
+  have hq := RingQuot.lift_mkRingHom_apply rc.mk' hrel x
   rw [RingHom.mem_ker.mp hx, map_zero] at hq
-  have hrc : rc x 0 := rc.eq.mp hq.symm
-  have hxH : x ∈ H := by
-    change x - 0 ∈ H at hrc
-    rwa [sub_zero] at hrc
-  exact RingHom.mem_ker.mpr (hxH i)
+  have hrc : x - 0 ∈ H := rc.eq.mp hq.symm
+  exact RingHom.mem_ker.mpr ((sub_zero x ▸ hrc) i)
 
 /-- `MilnorK.degree R` defines a graded monoid structure on `MilnorK R`. -/
 instance gradedMonoidDegree : SetLike.GradedMonoid (degree R) where
   one_mem := ⟨1, SetLike.GradedOne.one_mem, map_one (RingQuot.mkRingHom (milnorRel R))⟩
-  mul_mem i j _ _ hx hy := by
-    obtain ⟨a, ha, rfl⟩ := hx
-    obtain ⟨b, hb, rfl⟩ := hy
-    exact ⟨a * b, SetLike.GradedMul.mul_mem ha hb, map_mul (RingQuot.mkRingHom (milnorRel R)) a b⟩
+  mul_mem _ _ _ _ := fun ⟨a, ha, ha'⟩ ⟨b, hb, hb'⟩ ↦
+    ⟨a * b, SetLike.GradedMul.mul_mem ha hb, by
+      change RingQuot.mkRingHom (milnorRel R) (a * b) = _
+      rw [map_mul]; exact congrArg₂ (· * ·) ha' hb'⟩
 
 /-- `MilnorK R` is internally `ℕ`-graded by `MilnorK.degree R`. -/
 theorem isInternal_degree : DirectSum.IsInternal (degree R) := by
   let f : TensorAlgebra ℤ (Additive Rˣ) →ₐ[ℤ] MilnorK R :=
     (RingQuot.mkRingHom (milnorRel R)).toIntAlgHom
-  have hf : Function.Surjective f := RingQuot.mkRingHom_surjective (milnorRel R)
-  have hhom : (RingHom.ker f.toRingHom).IsHomogeneous
-      (fun n : ℕ ↦
-        (TensorAlgebra.ι ℤ : Additive Rˣ →ₗ[ℤ] TensorAlgebra ℤ (Additive Rˣ)).range ^ n) :=
-    isHomogeneous_ker_mkAlgHom R
   let 𝒜 : ℕ → Submodule ℤ (TensorAlgebra ℤ (Additive Rˣ)) :=
     fun n ↦ (TensorAlgebra.ι ℤ : Additive Rˣ →ₗ[ℤ] TensorAlgebra ℤ (Additive Rˣ)).range ^ n
+  let φ : (⨁ i, 𝒜 i) →+ (⨁ i, degree R i) := DirectSum.toAddMonoid fun i ↦
+    (DirectSum.of (fun k ↦ degree R k) i).comp
+      (AddMonoidHom.mk' (fun a : 𝒜 i ↦ (⟨f a.val, ⟨a.val, a.property, rfl⟩⟩ : degree R i))
+        fun _ _ ↦ Subtype.ext (map_add f _ _))
+  have hφ_coe : ∀ w, DirectSum.coeAddMonoidHom (degree R) (φ w) =
+      f (DirectSum.coeAddMonoidHom 𝒜 w) := fun w ↦ by
+    induction w using DirectSum.induction_on with
+    | zero => simp
+    | of i a => simp [φ]
+    | add _ _ hx hy => simp [hx, hy]
+  have hφ_apply : ∀ w i, ((φ w i : degree R i) : MilnorK R) =
+      f (w i : TensorAlgebra ℤ (Additive Rˣ)) := fun w i ↦ by
+    induction w using DirectSum.induction_on with
+    | zero => simp
+    | of j a =>
+      by_cases hji : j = i
+      · subst hji; simp [φ]
+      · simp [φ, DirectSum.of_eq_of_ne j i _ (Ne.symm hji)]
+    | add _ _ hx hy => simp [hx, hy]
+  have hφ_surj : Function.Surjective φ := fun z ↦ by
+    induction z using DirectSum.induction_on with
+    | zero => exact ⟨0, map_zero φ⟩
+    | of i b =>
+      obtain ⟨a, ha, hab⟩ := b.property
+      refine ⟨DirectSum.of (fun k ↦ 𝒜 k) i ⟨a, ha⟩, ?_⟩
+      simp only [φ, DirectSum.toAddMonoid_of, AddMonoidHom.comp_apply, AddMonoidHom.mk'_apply]
+      exact congrArg _ (Subtype.ext hab)
+    | add _ _ hx hy =>
+      obtain ⟨wx, rfl⟩ := hx; obtain ⟨wy, rfl⟩ := hy
+      exact ⟨wx + wy, map_add φ wx wy⟩
   constructor
   · intro x y hxy
-    classical
-    have hlift : ∀ z : ⨁ i, degree R i,
-        ∃ w : ⨁ i, 𝒜 i, ∀ i, f (w i : TensorAlgebra ℤ (Additive Rˣ)) = (z i : MilnorK R) := by
-      intro z
-      choose g hg_mem hg_eq using fun i ↦ (z i).property
-      refine ⟨∑ i ∈ z.support, DirectSum.of (fun k ↦ 𝒜 k) i ⟨g i, hg_mem i⟩, fun i ↦ ?_⟩
-      rw [DirectSum.sum_apply]
-      by_cases hi : i ∈ z.support
-      · rw [Finset.sum_eq_single i]
-        · rw [DirectSum.of_eq_same]
-          exact hg_eq i
-        · intro j _ hji
-          rw [DirectSum.of_eq_of_ne j i _ hji.symm]
-        · intro hi'; exact absurd hi hi'
-      · rw [Finset.sum_eq_zero]
-        · have hzi : z i = 0 := by simpa [DFinsupp.mem_support_iff] using hi
-          rw [hzi, Submodule.coe_zero, Submodule.coe_zero, map_zero]
-        · intro j hj
-          have hji : j ≠ i := fun h ↦ hi (h ▸ hj)
-          rw [DirectSum.of_eq_of_ne j i _ hji.symm]
-    obtain ⟨wx, hwx⟩ := hlift x
-    obtain ⟨wy, hwy⟩ := hlift y
-    have hdiff_ker :
-        (DirectSum.coeAddMonoidHom 𝒜 (wx - wy)) ∈ RingHom.ker f.toRingHom := by
+    obtain ⟨wx, rfl⟩ := hφ_surj x; obtain ⟨wy, rfl⟩ := hφ_surj y
+    have hdiff : DirectSum.coeAddMonoidHom 𝒜 (wx - wy) ∈ RingHom.ker f.toRingHom := by
       rw [RingHom.mem_ker, map_sub, map_sub]
       change f (DirectSum.coeAddMonoidHom 𝒜 wx) - f (DirectSum.coeAddMonoidHom 𝒜 wy) = 0
-      rw [sub_eq_zero]
-      have hval : ∀ (z : ⨁ i, degree R i) (w : ⨁ i, 𝒜 i),
-          (∀ i, f (w i : TensorAlgebra ℤ (Additive Rˣ)) = (z i : MilnorK R)) →
-          f (DirectSum.coeAddMonoidHom 𝒜 w) = DirectSum.coeAddMonoidHom (degree R) z := by
-        intro z w hw
-        have h1 : DirectSum.coeAddMonoidHom 𝒜 w =
-            ∑ i ∈ w.support ∪ z.support, (w i : TensorAlgebra ℤ (Additive Rˣ)) := by
-          conv_lhs => rw [← DirectSum.sum_support_of w]
-          rw [map_sum]
-          simp_rw [DirectSum.coeAddMonoidHom_of]
-          refine Finset.sum_subset Finset.subset_union_left fun i _ hi ↦ ?_
-          have hwi : w i = 0 := by simpa [DFinsupp.mem_support_iff] using hi
-          simp [hwi]
-        have h2 : DirectSum.coeAddMonoidHom (degree R) z =
-            ∑ i ∈ w.support ∪ z.support, (z i : MilnorK R) := by
-          conv_lhs => rw [← DirectSum.sum_support_of z]
-          rw [map_sum]
-          simp_rw [DirectSum.coeAddMonoidHom_of]
-          refine Finset.sum_subset Finset.subset_union_right fun i _ hi ↦ ?_
-          have hzi : z i = 0 := by simpa [DFinsupp.mem_support_iff] using hi
-          simp [hzi]
-        rw [h1, h2, map_sum]
-        exact Finset.sum_congr rfl fun i _ ↦ hw i
-      rw [hval x wx hwx, hval y wy hwy]
-      exact hxy
+      rw [← hφ_coe, ← hφ_coe, hxy, sub_self]
     ext i
-    have hi_ker := hhom i hdiff_ker
-    have hdec : DirectSum.decompose 𝒜 (DirectSum.coeAddMonoidHom 𝒜 (wx - wy)) = wx - wy :=
-      DirectSum.Decomposition.right_inv (wx - wy)
-    change ((DirectSum.decompose 𝒜 (DirectSum.coeAddMonoidHom 𝒜 (wx - wy))) i :
-        TensorAlgebra ℤ (Additive Rˣ)) ∈ RingHom.ker f.toRingHom at hi_ker
-    rw [hdec] at hi_ker
-    have hsub0 : f (wx i : TensorAlgebra ℤ (Additive Rˣ)) -
-        f (wy i : TensorAlgebra ℤ (Additive Rˣ)) = 0 := by
-      rw [← map_sub]
-      exact hi_ker
-    rw [hwx i, hwy i, sub_eq_zero] at hsub0
-    exact hsub0
+    have hi := isHomogeneous_ker_mkAlgHom R i hdiff
+    rw [show DirectSum.decompose 𝒜 (DirectSum.coeAddMonoidHom 𝒜 (wx - wy)) = wx - wy from
+      DirectSum.Decomposition.right_inv (wx - wy)] at hi
+    have h0 : f (wx i : TensorAlgebra ℤ (Additive Rˣ)) -
+        f (wy i : TensorAlgebra ℤ (Additive Rˣ)) = 0 := by rw [← map_sub]; exact hi
+    rw [← hφ_apply, ← hφ_apply, sub_eq_zero] at h0
+    exact h0
   · intro z
-    obtain ⟨u, rfl⟩ := hf z
-    classical
-    let du := DirectSum.decompose 𝒜 u
-    refine ⟨∑ i ∈ du.support, DirectSum.of (fun k ↦ degree R k) i
-      ⟨f (du i : TensorAlgebra ℤ (Additive Rˣ)), ⟨du i, (du i).property, rfl⟩⟩, ?_⟩
-    rw [map_sum]
-    conv_rhs => rw [← DirectSum.sum_support_decompose 𝒜 u]
-    rw [map_sum]
-    refine Finset.sum_congr rfl fun i _ ↦ ?_
-    rw [DirectSum.coeAddMonoidHom_of]
+    obtain ⟨u, rfl⟩ := RingQuot.mkRingHom_surjective (milnorRel R) z
+    refine ⟨φ (DirectSum.decompose 𝒜 u), ?_⟩
+    rw [hφ_coe]
+    exact congrArg f (DirectSum.Decomposition.left_inv u)
 
 /-- `MilnorK R` is a graded `ℤ`-algebra with homogeneous components `MilnorK.degree R`. -/
 noncomputable instance gradedAlgebraDegree : GradedAlgebra (degree R) :=
@@ -438,8 +347,7 @@ noncomputable instance gradedAlgebraDegree : GradedAlgebra (degree R) :=
 variable {R}
 
 /-- `1` lies in `MilnorK.degree R 0`. -/
-theorem one_mem_degree_zero : (1 : MilnorK R) ∈ degree R 0 :=
-  SetLike.GradedOne.one_mem
+theorem one_mem_degree_zero : (1 : MilnorK R) ∈ degree R 0 := SetLike.GradedOne.one_mem
 
 /-- `ofUnit a` lies in `MilnorK.degree R 1`. -/
 theorem ofUnit_mem_degree_one (a : Rˣ) : ofUnit a ∈ degree R 1 :=
@@ -455,49 +363,36 @@ theorem symbol_mem_degree (l : List Rˣ) : symbol l ∈ degree R l.length := by
 
 /-- Every symbol of length `n` lies in `MilnorK.degree R n`. -/
 theorem symbol_mem_degree_of_length {l : List Rˣ} {n : ℕ} (hl : l.length = n) :
-    symbol l ∈ degree R n :=
-  hl ▸ symbol_mem_degree l
+    symbol l ∈ degree R n := hl ▸ symbol_mem_degree l
 
 /-- `MilnorK.degree R n` is the `ℤ`-span of length-`n` symbols. -/
 theorem degree_eq_span_symbol (R : Type u) [CommSemiring R] (n : ℕ) :
     degree R n = Submodule.span ℤ {x | ∃ l : List Rˣ, l.length = n ∧ x = symbol l} := by
-  refine le_antisymm ?_ ?_
-  · rintro _ ⟨z, hz, rfl⟩
-    induction n generalizing z with
-    | zero =>
-      rw [pow_zero] at hz
-      have hz' : z ∈ (1 : Submodule ℤ (TensorAlgebra ℤ (Additive Rˣ))) := hz
-      rw [Submodule.one_eq_span, Submodule.mem_span_singleton] at hz'
-      obtain ⟨k, rfl⟩ := hz'
-      change (RingQuot.mkRingHom (milnorRel R)) (k • (1 : TensorAlgebra ℤ (Additive Rˣ))) ∈ _
-      rw [map_zsmul, map_one]
-      exact Submodule.smul_mem _ k (Submodule.subset_span ⟨[], rfl, symbol_nil.symm⟩)
-    | succ n ih =>
-      rw [pow_succ'] at hz
-      refine Submodule.mul_induction_on' ?_ ?_ hz
-      · rintro _ ⟨u, rfl⟩ w hw
-        change RingQuot.mkRingHom (milnorRel R) (TensorAlgebra.ι ℤ u * w) ∈ _
-        rw [map_mul]
-        have hw_span := ih w hw
-        refine Submodule.span_induction ?_ ?_ ?_ ?_ hw_span
-        · rintro _ ⟨l, hl, rfl⟩
-          have h1 : RingQuot.mkRingHom (milnorRel R) (TensorAlgebra.ι ℤ u) =
-              ofUnit (Additive.toMul u) := by
-            rw [ofUnit_def, ofMul_toMul]
-          rw [h1, ← symbol_cons]
-          exact Submodule.subset_span ⟨Additive.toMul u :: l, by simp [hl], rfl⟩
-        · rw [mul_zero]; exact Submodule.zero_mem _
-        · intro x y _ _ hx hy; rw [mul_add]; exact Submodule.add_mem _ hx hy
-        · intro k x _ hx
-          rw [mul_smul_comm k (RingQuot.mkRingHom (milnorRel R) (TensorAlgebra.ι ℤ u))]
-          exact Submodule.smul_mem _ k hx
-      · intro x _ y _ hx hy
-        change RingQuot.mkRingHom (milnorRel R) (x + y) ∈ _
-        rw [map_add]
-        exact Submodule.add_mem _ hx hy
-  · rw [Submodule.span_le]
+  refine le_antisymm ?_
+    (Submodule.span_le.mpr fun _ ⟨l, hl, h⟩ ↦ h ▸ symbol_mem_degree_of_length hl)
+  rintro _ ⟨z, hz, rfl⟩
+  induction n generalizing z with
+  | zero =>
+    rw [pow_zero, Submodule.one_eq_span, SetLike.mem_coe, Submodule.mem_span_singleton] at hz
+    obtain ⟨k, rfl⟩ := hz
+    change RingQuot.mkRingHom (milnorRel R) (k • 1) ∈ _
+    rw [map_zsmul, map_one]
+    exact Submodule.smul_mem _ k (Submodule.subset_span ⟨[], rfl, symbol_nil.symm⟩)
+  | succ n ih =>
+    rw [pow_succ'] at hz
+    refine Submodule.mul_induction_on' ?_ (fun _ _ _ _ hx hy ↦ by
+      change RingQuot.mkRingHom (milnorRel R) (_ + _) ∈ _
+      rw [map_add]; exact Submodule.add_mem _ hx hy) hz
+    rintro _ ⟨u, rfl⟩ w hw
+    change RingQuot.mkRingHom (milnorRel R) (TensorAlgebra.ι ℤ u * w) ∈ _
+    rw [map_mul]
+    refine Submodule.span_induction ?_ (by rw [mul_zero]; exact Submodule.zero_mem _)
+      (fun _ _ _ _ hx hy ↦ by rw [mul_add]; exact Submodule.add_mem _ hx hy)
+      (fun k _ _ hx ↦ by rw [mul_smul_comm k]; exact Submodule.smul_mem _ k hx) (ih w hw)
     rintro _ ⟨l, hl, rfl⟩
-    exact symbol_mem_degree_of_length hl
+    rw [show RingQuot.mkRingHom (milnorRel R) (TensorAlgebra.ι ℤ u) = ofUnit (Additive.toMul u) by
+      rw [ofUnit_def, ofMul_toMul], ← symbol_cons]
+    exact Submodule.subset_span ⟨Additive.toMul u :: l, by simp [hl], rfl⟩
 
 /-- Induction principle for elements of `MilnorK.degree R n` generated by length-`n` symbols. -/
 @[elab_as_elim]
@@ -508,20 +403,12 @@ theorem degree_inductionOn {n : ℕ} {motive : degree R n → Prop} (x : degree 
     (add : ∀ x y, motive x → motive y → motive (x + y))
     (smul : ∀ (k : ℤ) (x : degree R n), motive x → motive (k • x)) :
     motive x := by
-  have hx : x.val ∈ Submodule.span ℤ {y | ∃ l : List Rˣ, l.length = n ∧ y = MilnorK.symbol l} := by
-    rw [← degree_eq_span_symbol]
-    exact x.property
   rcases x with ⟨v, hv⟩
   refine Submodule.span_induction
     (p := fun y hy ↦ motive ⟨y, (degree_eq_span_symbol R n).symm ▸ hy⟩)
-    ?_ ?_ ?_ ?_ hx
-  · rintro _ ⟨l, hl, rfl⟩
-    exact symbol l hl
-  · exact zero
-  · intro a b ha hb hma hmb
-    exact add ⟨a, _⟩ ⟨b, _⟩ hma hmb
-  · intro k a ha hma
-    exact smul k ⟨a, _⟩ hma
+    (fun _ ⟨l, hl, h⟩ ↦ by subst h; exact symbol l hl) zero
+    (fun a b _ _ hma hmb ↦ add ⟨a, _⟩ ⟨b, _⟩ hma hmb)
+    (fun k a _ hma ↦ smul k ⟨a, _⟩ hma) ((degree_eq_span_symbol R n) ▸ hv)
 
 end Grading
 
@@ -532,49 +419,29 @@ variable {R : Type u} [CommSemiring R]
 /-- Two ring homomorphisms out of `MilnorK R` agreeing on `ofUnit a` for all `a : Rˣ` are equal. -/
 theorem ringHom_ext {A : Type*} [Semiring A] {f g : MilnorK R →+* A}
     (h : ∀ a : Rˣ, f (ofUnit a) = g (ofUnit a)) : f = g := by
-  refine RingQuot.ringQuot_ext f g ?_
-  refine RingHom.ext fun z ↦ ?_
+  refine RingQuot.ringQuot_ext f g (RingHom.ext fun z ↦ ?_)
   induction z using TensorAlgebra.induction with
   | algebraMap k =>
+    let ιℤ := algebraMap ℤ (TensorAlgebra ℤ (Additive Rˣ))
     cases k with
     | ofNat n =>
-      let ιℤ := algebraMap ℤ (TensorAlgebra ℤ (Additive Rˣ))
       change f (RingQuot.mkRingHom (milnorRel R) (ιℤ (n : ℕ))) =
         g (RingQuot.mkRingHom (milnorRel R) (ιℤ (n : ℕ)))
       simp [ιℤ]
     | negSucc n =>
-      let ιℤ := algebraMap ℤ (TensorAlgebra ℤ (Additive Rˣ))
-      have hf : f (RingQuot.mkRingHom (milnorRel R) (ιℤ (Int.negSucc n))) +
-          f (RingQuot.mkRingHom (milnorRel R) (ιℤ ((n + 1 : ℕ) : ℤ))) = 0 := by
+      let a := RingQuot.mkRingHom (milnorRel R) (ιℤ (Int.negSucc n))
+      let b := RingQuot.mkRingHom (milnorRel R) (ιℤ ((n + 1 : ℕ) : ℤ))
+      have hsum : ∀ (φ : MilnorK R →+* A), φ a + φ b = 0 := fun φ ↦ by
         rw [← map_add, ← map_add, ← map_add, show Int.negSucc n + ((n + 1 : ℕ) : ℤ) = 0 by omega,
           map_zero, map_zero, map_zero]
-      have hg : g (RingQuot.mkRingHom (milnorRel R) (ιℤ (Int.negSucc n))) +
-          g (RingQuot.mkRingHom (milnorRel R) (ιℤ ((n + 1 : ℕ) : ℤ))) = 0 := by
-        rw [← map_add, ← map_add, ← map_add, show Int.negSucc n + ((n + 1 : ℕ) : ℤ) = 0 by omega,
-          map_zero, map_zero, map_zero]
-      have hpos : f (RingQuot.mkRingHom (milnorRel R) (ιℤ ((n + 1 : ℕ) : ℤ))) =
-          g (RingQuot.mkRingHom (milnorRel R) (ιℤ ((n + 1 : ℕ) : ℤ))) := by
-        simp [ιℤ]
-      have hcalc :
-          f (RingQuot.mkRingHom (milnorRel R) (ιℤ (Int.negSucc n))) =
-          f (RingQuot.mkRingHom (milnorRel R) (ιℤ (Int.negSucc n))) +
-            (g (RingQuot.mkRingHom (milnorRel R) (ιℤ ((n + 1 : ℕ) : ℤ))) +
-              g (RingQuot.mkRingHom (milnorRel R) (ιℤ (Int.negSucc n)))) := by
-        rw [add_comm (g _), hg, add_zero]
-      calc
-        (f.comp (RingQuot.mkRingHom (milnorRel R))) (ιℤ (Int.negSucc n))
-            = f (RingQuot.mkRingHom (milnorRel R) (ιℤ (Int.negSucc n))) := rfl
-        _ = (f (RingQuot.mkRingHom (milnorRel R) (ιℤ (Int.negSucc n))) +
-              f (RingQuot.mkRingHom (milnorRel R) (ιℤ ((n + 1 : ℕ) : ℤ)))) +
-              g (RingQuot.mkRingHom (milnorRel R) (ιℤ (Int.negSucc n))) := by
-              conv_lhs => rw [hcalc]
-              rw [← hpos, add_assoc]
-        _ = (g.comp (RingQuot.mkRingHom (milnorRel R))) (ιℤ (Int.negSucc n)) := by
-              rw [hf, zero_add]; rfl
-  | ι u =>
-    simpa only [RingHom.comp_apply, ofUnit_def, ofMul_toMul] using h (Additive.toMul u)
-  | mul x y hx hy => simp only [map_mul, hx, hy]
-  | add x y hx hy => simp only [map_add, hx, hy]
+      have hpos : f b = g b := by simp [b, ιℤ]
+      change f a = g a
+      calc f a = f a + (f b + g a) := by rw [hpos, add_comm (g b), hsum g, add_zero]
+        _ = (f a + f b) + g a := (add_assoc _ _ _).symm
+        _ = g a := by rw [hsum f, zero_add]
+  | ι u => simpa only [RingHom.comp_apply, ofUnit_def, ofMul_toMul] using h (Additive.toMul u)
+  | mul _ _ hx hy => simp only [map_mul, hx, hy]
+  | add _ _ hx hy => simp only [map_add, hx, hy]
 
 /-- Two `ℤ`-algebra homomorphisms out of `MilnorK R` agreeing on `ofUnit` are equal. -/
 theorem algHom_ext {A : Type*} [Semiring A] [Algebra ℤ A] {f g : MilnorK R →ₐ[ℤ] A}
@@ -589,17 +456,10 @@ def lift {A : Type*} [Ring A] (f : Rˣ → A)
     MilnorK R →+* A :=
   let fLin : Additive Rˣ →ₗ[ℤ] A :=
     (AddMonoidHom.mk' (fun u : Additive Rˣ ↦ f (Additive.toMul u))
-      fun u₁ u₂ ↦ by simp only [toMul_add, hmul]).toIntLinearMap
-  let fTA : TensorAlgebra ℤ (Additive Rˣ) →+* A := (TensorAlgebra.lift ℤ fLin).toRingHom
-  RingQuot.lift
-    ⟨fTA, by
-      intro x y h
-      rw [milnorRel_def] at h
-      rcases h with ⟨a, b, hab, rfl, rfl⟩
-      simp only [fTA, AlgHom.toRingHom_eq_coe, RingHom.coe_coe, map_mul, map_zero,
-        TensorAlgebra.lift_ι_apply, fLin, AddMonoidHom.coe_toIntLinearMap, AddMonoidHom.mk'_apply,
-        toMul_ofMul]
-      exact hsteinberg a b hab⟩
+      fun _ _ ↦ by simp only [toMul_add, hmul]).toIntLinearMap
+  RingQuot.lift ⟨(TensorAlgebra.lift ℤ fLin).toRingHom, by
+    rintro _ _ ⟨a, b, hab, rfl, rfl⟩
+    simpa [fLin] using hsteinberg a b hab⟩
 
 /-- `MilnorK.lift` sends `ofUnit a` to `f a`. -/
 @[simp]
@@ -607,9 +467,7 @@ theorem lift_ofUnit {A : Type*} [Ring A] (f : Rˣ → A)
     (hmul : ∀ a b : Rˣ, f (a * b) = f a + f b)
     (hsteinberg : ∀ a b : Rˣ, (a : R) + b = 1 → f a * f b = 0) (a : Rˣ) :
     lift f hmul hsteinberg (ofUnit a) = f a := by
-  dsimp only [lift, ofUnit]
-  rw [RingQuot.lift_mkRingHom_apply]
-  simp
+  dsimp only [lift, ofUnit]; rw [RingQuot.lift_mkRingHom_apply]; simp
 
 /-- `MilnorK.lift` sends `symbol l` to `(l.map f).prod`. -/
 theorem lift_symbol {A : Type*} [Ring A] (f : Rˣ → A)
@@ -617,9 +475,7 @@ theorem lift_symbol {A : Type*} [Ring A] (f : Rˣ → A)
     (hsteinberg : ∀ a b : Rˣ, (a : R) + b = 1 → f a * f b = 0) (l : List Rˣ) :
     lift f hmul hsteinberg (symbol l) = (l.map f).prod := by
   rw [symbol_def, map_list_prod, List.map_map]
-  congr 1
-  refine List.map_congr_left fun a _ ↦ ?_
-  exact lift_ofUnit f hmul hsteinberg a
+  congr 1; exact List.map_congr_left fun a _ ↦ lift_ofUnit f hmul hsteinberg a
 
 /-- If `f` lands in degree `1` of a ring `A` graded by `ℤ`-submodules `𝒜`, then `lift f` sends
 `MilnorK.degree R n` into degree `n`. -/
@@ -630,19 +486,17 @@ theorem lift_mem_graded {A : Type*} [Ring A] {𝒜 : ℕ → Submodule ℤ A}
     (hdeg : ∀ a : Rˣ, f a ∈ 𝒜 1) {n : ℕ} {x : MilnorK R} (hx : x ∈ degree R n) :
     lift f hmul hsteinberg x ∈ 𝒜 n := by
   rw [degree_eq_span_symbol] at hx
-  refine Submodule.span_induction ?_ ?_ ?_ ?_ hx
-  · rintro _ ⟨l, hl, rfl⟩
-    rw [lift_symbol]
-    subst hl
-    clear hx
-    induction l with
-    | nil => simpa using SetLike.GradedOne.one_mem
-    | cons a l ih =>
-      rw [List.map_cons, List.prod_cons, List.length_cons, Nat.add_comm]
-      exact SetLike.GradedMul.mul_mem (hdeg a) ih
-  · rw [map_zero]; exact Submodule.zero_mem _
-  · intro u v _ _ hu hv; rw [map_add]; exact Submodule.add_mem _ hu hv
-  · intro k u _ hu; rw [map_zsmul]; exact Submodule.smul_mem _ k hu
+  refine Submodule.span_induction ?_ (by rw [map_zero]; exact Submodule.zero_mem _)
+    (fun _ _ _ _ hu hv ↦ by rw [map_add]; exact Submodule.add_mem _ hu hv)
+    (fun k _ _ hu ↦ by rw [map_zsmul]; exact Submodule.smul_mem _ k hu) hx
+  rintro _ ⟨l, rfl, rfl⟩
+  clear hx
+  rw [lift_symbol]
+  induction l with
+  | nil => simpa using SetLike.GradedOne.one_mem
+  | cons a l ih =>
+    rw [List.map_cons, List.prod_cons, List.length_cons, Nat.add_comm]
+    exact SetLike.GradedMul.mul_mem (hdeg a) ih
 
 end Universal
 
@@ -653,28 +507,24 @@ variable {R : Type u} [CommSemiring R] {S : Type v} [CommSemiring S] {T : Type w
 /-- Functorial graded ring homomorphism `MilnorK R →+* MilnorK S` induced by `f : R →+* S`. -/
 def map (f : R →+* S) : MilnorK R →+* MilnorK S :=
   lift (fun a ↦ ofUnit (Units.map f.toMonoidHom a))
-    (fun a b ↦ by rw [map_mul, ofUnit_mul])
+    (fun _ _ ↦ by rw [map_mul, ofUnit_mul])
     (fun a b hab ↦ ofUnit_mul_ofUnit_of_add_eq_one <| by
-      change f (a : R) + f (b : R) = 1
-      rw [← map_add, hab, map_one])
+      change f (a : R) + f (b : R) = 1; rw [← map_add, hab, map_one])
 
 /-- `MilnorK.map f` sends `ofUnit a` to `ofUnit (f a)`. -/
 @[simp]
 theorem map_ofUnit (f : R →+* S) (a : Rˣ) :
-    map f (ofUnit a) = ofUnit (Units.map f.toMonoidHom a) :=
-  lift_ofUnit _ _ _ a
+    map f (ofUnit a) = ofUnit (Units.map f.toMonoidHom a) := lift_ofUnit _ _ _ a
 
 /-- `MilnorK.map f` sends `symbol l` to `symbol (l.map (Units.map f))`. -/
 @[simp]
 theorem map_symbol (f : R →+* S) (l : List Rˣ) :
     map f (symbol l) = symbol (l.map (Units.map f.toMonoidHom)) := by
-  rw [map, lift_symbol, symbol_def, List.map_map]
-  rfl
+  rw [map, lift_symbol, symbol_def, List.map_map]; rfl
 
 /-- `MilnorK.map f` preserves grading degrees. -/
 theorem map_mem_degree (f : R →+* S) {n : ℕ} {x : MilnorK R} (hx : x ∈ degree R n) :
-    map f x ∈ degree S n :=
-  lift_mem_graded _ _ _ (fun _ ↦ ofUnit_mem_degree_one _) hx
+    map f x ∈ degree S n := lift_mem_graded _ _ _ (fun _ ↦ ofUnit_mem_degree_one _) hx
 
 /-- The degree-`n` `ℤ`-linear map `MilnorK.degree R n →ₗ[ℤ] MilnorK.degree S n` induced by `f`. -/
 def mapDegree (f : R →+* S) (n : ℕ) : degree R n →ₗ[ℤ] degree S n where
@@ -685,31 +535,23 @@ def mapDegree (f : R →+* S) (n : ℕ) : degree R n →ₗ[ℤ] degree S n wher
 /-- Underlying value of `mapDegree f n x`. -/
 @[simp]
 theorem mapDegree_apply (f : R →+* S) (n : ℕ) (x : degree R n) :
-    (mapDegree f n x : MilnorK S) = map f x.val := by
-  rfl
+    (mapDegree f n x : MilnorK S) = map f x.val := by rfl
 
 /-- `MilnorK.map` preserves the identity ring homomorphism. -/
 @[simp]
-theorem map_id : map (RingHom.id R) = RingHom.id (MilnorK R) :=
-  ringHom_ext fun a ↦ by simp
+theorem map_id : map (RingHom.id R) = RingHom.id (MilnorK R) := ringHom_ext fun _ ↦ by simp
 
 /-- `MilnorK.map` preserves composition of ring homomorphisms. -/
 theorem map_comp (g : S →+* T) (f : R →+* S) : map (g.comp f) = (map g).comp (map f) :=
-  ringHom_ext fun a ↦ by
-    simp only [map_ofUnit, RingHom.comp_apply]
-    congr 1
+  ringHom_ext fun _ ↦ by simp only [map_ofUnit, RingHom.comp_apply]; congr 1
 
 /-- `MilnorK.mapDegree` preserves the identity ring homomorphism. -/
 @[simp]
-theorem mapDegree_id (n : ℕ) : mapDegree (RingHom.id R) n = LinearMap.id := by
-  ext x
-  simp [map_id]
+theorem mapDegree_id (n : ℕ) : mapDegree (RingHom.id R) n = LinearMap.id := by ext x; simp [map_id]
 
 /-- `MilnorK.mapDegree` preserves composition of ring homomorphisms. -/
 theorem mapDegree_comp (g : S →+* T) (f : R →+* S) (n : ℕ) :
-    mapDegree (g.comp f) n = (mapDegree g n).comp (mapDegree f n) := by
-  ext x
-  simp [map_comp]
+    mapDegree (g.comp f) n = (mapDegree g n).comp (mapDegree f n) := by ext x; simp [map_comp]
 
 end Functoriality
 
@@ -768,11 +610,10 @@ theorem ofUnit_mul_symbol (a : Fˣ) (l : List Fˣ) :
   induction l with
   | nil => simp
   | cons b l ih =>
-    rw [symbol_cons, List.length_cons, pow_succ, ← mul_assoc, ofUnit_mul_comm a b,
+    rw [symbol_cons, List.length_cons, pow_succ', ← mul_assoc, ofUnit_mul_comm a b,
       neg_mul (ofUnit b * ofUnit a), mul_assoc (ofUnit b), ih,
-      mul_smul_comm ((-1 : ℤ) ^ l.length) (ofUnit b), ← neg_smul, ← mul_assoc (ofUnit b)]
-    congr 1
-    ring
+      mul_smul_comm ((-1 : ℤ) ^ l.length) (ofUnit b), ← neg_smul, ← mul_assoc (ofUnit b),
+      neg_one_mul]
 
 /-- Multiplying two symbols commutes up to `(-1) ^ (l₁.length * l₂.length)`. -/
 theorem symbol_mul_symbol (l₁ l₂ : List Fˣ) :
@@ -791,101 +632,55 @@ theorem mul_comm_of_mem_degree {m n : ℕ} {x y : MilnorK F}
     (hx : x ∈ degree F m) (hy : y ∈ degree F n) :
     x * y = ((-1 : ℤ) ^ (m * n)) • (y * x) := by
   rw [degree_eq_span_symbol] at hx hy
-  refine Submodule.span_induction ?_ ?_ ?_ ?_ hx
-  · rintro _ ⟨l₁, hl₁, rfl⟩
-    refine Submodule.span_induction ?_ ?_ ?_ ?_ hy
-    · rintro _ ⟨l₂, hl₂, rfl⟩
-      rw [← hl₁, ← hl₂]
-      exact symbol_mul_symbol l₁ l₂
-    · simp
-    · intro u v _ _ hu hv
-      rw [mul_add, add_mul, smul_add, hu, hv]
-    · intro k u _ hu
-      rw [mul_smul_comm k (symbol l₁), smul_mul_assoc k u, hu, smul_comm]
-  · simp
-  · intro u v _ _ hu hv
-    rw [add_mul, mul_add, smul_add, hu, hv]
-  · intro k u _ hu
-    rw [smul_mul_assoc k u, mul_smul_comm k y, hu, smul_comm]
+  refine Submodule.span_induction ?_ (by simp)
+    (fun _ _ _ _ hu hv ↦ by rw [add_mul, mul_add, smul_add, hu, hv])
+    (fun k u _ hu ↦ by rw [smul_mul_assoc k u, mul_smul_comm k y, hu, smul_comm]) hx
+  rintro _ ⟨l₁, rfl, rfl⟩
+  refine Submodule.span_induction ?_ (by simp)
+    (fun _ _ _ _ hu hv ↦ by rw [mul_add, add_mul, smul_add, hu, hv])
+    (fun k u _ hu ↦ by rw [mul_smul_comm k (symbol l₁), smul_mul_assoc k u, hu, smul_comm]) hy
+  rintro _ ⟨l₂, rfl, rfl⟩
+  exact symbol_mul_symbol l₁ l₂
 
 private theorem list_ofFn_split_two {α : Type*} {n : ℕ} (f : Fin n → α)
     {i j : Fin n} (hij : i.1 < j.1) :
-    List.ofFn f =
-      (List.ofFn f).take i.1 ++
-        f i :: ((List.ofFn f).drop (i.1 + 1)).take (j.1 - i.1 - 1) ++
-          f j :: (List.ofFn f).drop (j.1 + 1) := by
-  refine List.ext_getElem ?_ fun k hk₁ hk₂ ↦ ?_
-  · simp only [List.length_ofFn, List.length_append, List.length_cons, List.length_take,
-      List.length_drop]
-    have := i.isLt
-    have := j.isLt
-    omega
-  · simp only [List.length_ofFn] at hk₁
-    have _ := i.isLt
-    have _ := j.isLt
-    simp only [List.getElem_ofFn, List.getElem_append, List.getElem_cons, List.getElem_take,
-      List.getElem_drop, List.length_append, List.length_cons, List.length_take, List.length_drop,
-      List.length_ofFn]
-    split_ifs <;> first | rfl | (congr 1; exact Fin.ext (by dsimp only; omega))
+    List.ofFn f = (List.ofFn f).take i.1 ++ f i ::
+      ((List.ofFn f).drop (i.1 + 1)).take (j.1 - i.1 - 1) ++
+        f j :: (List.ofFn f).drop (j.1 + 1) := by
+  have _ := i.isLt; have _ := j.isLt
+  refine List.ext_getElem (by simp; omega) fun k hk₁ _ ↦ ?_
+  simp only [List.length_ofFn] at hk₁
+  simp only [List.getElem_ofFn, List.getElem_append, List.getElem_cons, List.getElem_take,
+    List.getElem_drop, List.length_append, List.length_cons, List.length_take, List.length_drop,
+    List.length_ofFn]
+  split_ifs <;> first | rfl | (congr 1; exact Fin.ext (by dsimp only; omega))
 
 private theorem list_ofFn_comp_swap_split_two {α : Type*} {n : ℕ} (f : Fin n → α)
     {i j : Fin n} (hij : i.1 < j.1) :
-    List.ofFn (f ∘ Equiv.swap i j) =
-      (List.ofFn f).take i.1 ++
-        f j :: ((List.ofFn f).drop (i.1 + 1)).take (j.1 - i.1 - 1) ++
-          f i :: (List.ofFn f).drop (j.1 + 1) := by
-  refine List.ext_getElem ?_ fun k hk₁ hk₂ ↦ ?_
-  · simp only [List.length_ofFn, List.length_append, List.length_cons, List.length_take,
-      List.length_drop]
-    have := i.isLt
-    have := j.isLt
-    omega
-  · simp only [List.length_ofFn] at hk₁
-    have _ := i.isLt
-    have _ := j.isLt
-    simp only [List.getElem_ofFn, Function.comp_apply, List.getElem_append, List.getElem_cons,
-      List.getElem_take, List.getElem_drop, List.length_append, List.length_cons, List.length_take,
-      List.length_drop, List.length_ofFn]
-    split_ifs with h1 h2 h3 h4
-    · have hne1 : (⟨k, hk₁⟩ : Fin n) ≠ i := fun h ↦ by
-        have := congrArg Fin.val h; dsimp only at this; omega
-      have hne2 : (⟨k, hk₁⟩ : Fin n) ≠ j := fun h ↦ by
-        have := congrArg Fin.val h; dsimp only at this; omega
-      rw [Equiv.swap_apply_of_ne_of_ne hne1 hne2]
-    · have heq : (⟨k, hk₁⟩ : Fin n) = i := Fin.ext (by dsimp only; omega)
-      rw [heq, Equiv.swap_apply_left]
-    · have hne1 : (⟨k, hk₁⟩ : Fin n) ≠ i := fun h ↦ by
-        have := congrArg Fin.val h; dsimp only at this; omega
-      have hne2 : (⟨k, hk₁⟩ : Fin n) ≠ j := fun h ↦ by
-        have := congrArg Fin.val h; dsimp only at this; omega
-      rw [Equiv.swap_apply_of_ne_of_ne hne1 hne2]
-      congr 1; exact Fin.ext (by dsimp only; omega)
-    · have heq : (⟨k, hk₁⟩ : Fin n) = j := Fin.ext (by dsimp only; omega)
-      rw [heq, Equiv.swap_apply_right]
-    · have hne1 : (⟨k, hk₁⟩ : Fin n) ≠ i := fun h ↦ by
-        have := congrArg Fin.val h; dsimp only at this; omega
-      have hne2 : (⟨k, hk₁⟩ : Fin n) ≠ j := fun h ↦ by
-        have := congrArg Fin.val h; dsimp only at this; omega
-      rw [Equiv.swap_apply_of_ne_of_ne hne1 hne2]
-      congr 1; exact Fin.ext (by dsimp only; omega)
+    List.ofFn (f ∘ Equiv.swap i j) = (List.ofFn f).take i.1 ++ f j ::
+      ((List.ofFn f).drop (i.1 + 1)).take (j.1 - i.1 - 1) ++
+        f i :: (List.ofFn f).drop (j.1 + 1) := by
+  have _ := i.isLt; have _ := j.isLt
+  refine List.ext_getElem (by simp; omega) fun k hk₁ _ ↦ ?_
+  simp only [List.length_ofFn] at hk₁
+  simp only [List.getElem_ofFn, Function.comp_apply, List.getElem_append, List.getElem_cons,
+    List.getElem_take, List.getElem_drop, List.length_append, List.length_cons, List.length_take,
+    List.length_drop, List.length_ofFn]
+  split_ifs <;> first
+    | rw [show (⟨k, hk₁⟩ : Fin n) = i from Fin.ext (by dsimp only; omega), Equiv.swap_apply_left]
+    | rw [show (⟨k, hk₁⟩ : Fin n) = j from Fin.ext (by dsimp only; omega), Equiv.swap_apply_right]
+    | (rw [Equiv.swap_apply_of_ne_of_ne (mt (congrArg Fin.val) (by dsimp only; omega))
+        (mt (congrArg Fin.val) (by dsimp only; omega))]; done)
+    | (rw [Equiv.swap_apply_of_ne_of_ne (mt (congrArg Fin.val) (by dsimp only; omega))
+        (mt (congrArg Fin.val) (by dsimp only; omega))]
+       exact congrArg f (Fin.ext (by dsimp only; omega)))
 
 private theorem symbol_swap_middle (l₁ : List Fˣ) (a : Fˣ) (l₂ : List Fˣ) (b : Fˣ) (l₃ : List Fˣ) :
     symbol (l₁ ++ a :: l₂ ++ b :: l₃) = -symbol (l₁ ++ b :: l₂ ++ a :: l₃) := by
   have hba : ofUnit b * symbol l₂ * ofUnit a = -(ofUnit a * symbol l₂ * ofUnit b) := by
-    calc
-      ofUnit b * symbol l₂ * ofUnit a
-          = (((-1 : ℤ) ^ l₂.length) • (symbol l₂ * ofUnit b)) * ofUnit a := by
-            rw [ofUnit_mul_symbol b l₂]
-      _ = ((-1 : ℤ) ^ l₂.length) • (symbol l₂ * (ofUnit b * ofUnit a)) := by
-            rw [smul_mul_assoc ((-1 : ℤ) ^ l₂.length) (symbol l₂ * ofUnit b), mul_assoc]
-      _ = ((-1 : ℤ) ^ l₂.length) • (symbol l₂ * -(ofUnit a * ofUnit b)) := by
-            rw [ofUnit_mul_comm b a]
-      _ = -(((-1 : ℤ) ^ l₂.length) • ((symbol l₂ * ofUnit a) * ofUnit b)) := by
-            rw [mul_neg (symbol l₂), smul_neg, mul_assoc]
-      _ = -((((-1 : ℤ) ^ l₂.length) • (symbol l₂ * ofUnit a)) * ofUnit b) := by
-            rw [smul_mul_assoc ((-1 : ℤ) ^ l₂.length) (symbol l₂ * ofUnit a)]
-      _ = -(ofUnit a * symbol l₂ * ofUnit b) := by
-            rw [← ofUnit_mul_symbol a l₂]
+    rw [ofUnit_mul_symbol b, smul_mul_assoc ((-1 : ℤ) ^ l₂.length), mul_assoc, ofUnit_mul_comm b a,
+      mul_neg (symbol l₂), smul_neg, ← mul_assoc (symbol l₂),
+      ← smul_mul_assoc ((-1 : ℤ) ^ l₂.length), ← ofUnit_mul_symbol a]
   simp only [symbol_append, symbol_cons, mul_assoc]
   rw [← mul_assoc (ofUnit b) (symbol l₂) (ofUnit a * symbol l₃),
     ← mul_assoc (ofUnit b * symbol l₂) (ofUnit a) (symbol l₃), hba,
@@ -894,24 +689,12 @@ private theorem symbol_swap_middle (l₁ : List Fˣ) (a : Fˣ) (l₂ : List Fˣ)
 /-- Applying a transposition to the entries of a Milnor symbol negates it. -/
 theorem symbol_ofFn_comp_swap {n : ℕ} (a : Fin n → Fˣ) {i j : Fin n} (hij : i ≠ j) :
     symbol (List.ofFn (a ∘ Equiv.swap i j)) = -symbol (List.ofFn a) := by
-  rcases lt_or_gt_of_ne (Fin.val_ne_of_ne hij) with hlt | hgt
-  · set l₁ := (List.ofFn a).take i.1
-    set l₂ := ((List.ofFn a).drop (i.1 + 1)).take (j.1 - i.1 - 1)
-    set l₃ := (List.ofFn a).drop (j.1 + 1)
-    have h1 : List.ofFn a = l₁ ++ a i :: l₂ ++ a j :: l₃ := list_ofFn_split_two a hlt
-    have h2 : List.ofFn (a ∘ Equiv.swap i j) = l₁ ++ a j :: l₂ ++ a i :: l₃ :=
-      list_ofFn_comp_swap_split_two a hlt
-    rw [h2, h1]
-    exact symbol_swap_middle l₁ (a j) l₂ (a i) l₃
+  wlog hlt : i.1 < j.1 generalizing i j
   · rw [Equiv.swap_comm]
-    set l₁ := (List.ofFn a).take j.1
-    set l₂ := ((List.ofFn a).drop (j.1 + 1)).take (i.1 - j.1 - 1)
-    set l₃ := (List.ofFn a).drop (i.1 + 1)
-    have h1 : List.ofFn a = l₁ ++ a j :: l₂ ++ a i :: l₃ := list_ofFn_split_two a hgt
-    have h2 : List.ofFn (a ∘ Equiv.swap j i) = l₁ ++ a i :: l₂ ++ a j :: l₃ :=
-      list_ofFn_comp_swap_split_two a hgt
-    rw [h2, h1]
-    exact symbol_swap_middle l₁ (a i) l₂ (a j) l₃
+    exact this hij.symm (lt_of_le_of_ne (not_lt.mp hlt) (Fin.val_ne_of_ne hij).symm)
+  conv_lhs => rw [list_ofFn_comp_swap_split_two a hlt]
+  conv_rhs => rw [list_ofFn_split_two a hlt]
+  exact symbol_swap_middle _ (a j) _ (a i) _
 
 /-- Permuting the entries of a Milnor symbol multiplies it by the sign of the permutation. -/
 theorem symbol_ofFn_comp_perm {n : ℕ} (σ : Equiv.Perm (Fin n)) (a : Fin n → Fˣ) :
@@ -919,80 +702,36 @@ theorem symbol_ofFn_comp_perm {n : ℕ} (σ : Equiv.Perm (Fin n)) (a : Fin n →
   induction σ using Equiv.Perm.swap_induction_on generalizing a with
   | one => simp
   | swap_mul τ i j hij ih =>
-    have hcomp : a ∘ (Equiv.swap i j * τ) = (a ∘ Equiv.swap i j) ∘ τ := rfl
-    rw [hcomp, ih (a ∘ Equiv.swap i j), symbol_ofFn_comp_swap a hij,
-      Equiv.Perm.sign_mul, Equiv.Perm.sign_swap hij]
+    rw [show a ∘ (Equiv.swap i j * τ) = (a ∘ Equiv.swap i j) ∘ τ from rfl,
+      ih (a ∘ Equiv.swap i j), symbol_ofFn_comp_swap a hij, Equiv.Perm.sign_mul,
+      Equiv.Perm.sign_swap hij]
     simp only [Units.val_neg, neg_mul, one_mul, neg_zsmul, smul_neg]
 
 /-- Any symbol with a repeated entry (not necessarily adjacent) is 2-torsion. -/
 theorem two_nsmul_symbol_ofFn_eq_zero_of_eq {n : ℕ} {a : Fin n → Fˣ} {i j : Fin n}
     (hij : i ≠ j) (ha : a i = a j) :
     2 • symbol (List.ofFn a) = 0 := by
-  have hcomp : a ∘ Equiv.swap i j = a := by
-    ext k
-    by_cases hki : k = i
-    · subst hki; simp [ha]
-    · by_cases hkj : k = j
-      · subst hkj; simp [ha]
+  have hcomp : a ∘ Equiv.swap i j = a := funext fun k ↦ by
+    rcases eq_or_ne k i with rfl | hki
+    · simp [ha]
+    · rcases eq_or_ne k j with rfl | hkj
+      · simp [ha]
       · simp [Equiv.swap_apply_of_ne_of_ne hki hkj]
-  have hneg : symbol (List.ofFn a) = -symbol (List.ofFn a) := by
-    simpa only [hcomp] using symbol_ofFn_comp_swap a hij
-  rw [two_nsmul]
-  conv_rhs => rw [← add_neg_cancel (symbol (List.ofFn a))]
-  congr 1
+  rw [two_nsmul, add_eq_zero_iff_eq_neg]
+  simpa only [hcomp] using symbol_ofFn_comp_swap a hij
 
 /-- In characteristic `2`, any symbol with a repeated entry vanishes. -/
 theorem symbol_ofFn_eq_zero_of_charTwo_of_eq [CharP F 2] {n : ℕ} {a : Fin n → Fˣ} {i j : Fin n}
     (hij : i ≠ j) (ha : a i = a j) :
     symbol (List.ofFn a) = 0 := by
-  have hn : 2 ≤ n := by
-    have _ := i.isLt
-    have _ := j.isLt
-    have _ := Fin.val_ne_of_ne hij
-    omega
-  let i0 : Fin n := ⟨0, by omega⟩
-  let i1 : Fin n := ⟨1, by omega⟩
-  have h01 : i0 ≠ i1 := by simp [i0, i1]
-  let σ₁ : Equiv.Perm (Fin n) := Equiv.swap i0 i
-  let j' : Fin n := σ₁.symm j
-  have hj'_ne : j' ≠ i0 := by
-    intro h
-    have : j = σ₁ i0 := by rw [← h, Equiv.apply_symm_apply]
-    rw [show σ₁ i0 = i from Equiv.swap_apply_left i0 i] at this
-    exact hij this.symm
-  let σ₂ : Equiv.Perm (Fin n) := Equiv.swap i1 j'
-  let σ : Equiv.Perm (Fin n) := σ₁ * σ₂
-  have hσ0 : σ i0 = i := by
-    change σ₁ (σ₂ i0) = i
-    have : σ₂ i0 = i0 := Equiv.swap_apply_of_ne_of_ne h01 hj'_ne.symm
-    rw [this]
-    exact Equiv.swap_apply_left i0 i
-  have hσ1 : σ i1 = j := by
-    change σ₁ (σ₂ i1) = j
-    rw [Equiv.swap_apply_left, Equiv.apply_symm_apply]
-  have hperm := symbol_ofFn_comp_perm σ a
-  have h0_eq : symbol (List.ofFn (a ∘ σ)) = 0 := by
-    have hsplit : List.ofFn (a ∘ σ) =
-        [] ++ (a ∘ σ) i0 :: (a ∘ σ) i1 :: (List.ofFn (a ∘ σ)).drop 2 := by
-      refine List.ext_getElem ?_ fun k hk₁ hk₂ ↦ ?_
-      · simp [List.length_ofFn]; omega
-      · simp only [List.length_ofFn] at hk₁
-        simp only [List.nil_append, List.getElem_ofFn, List.getElem_cons, List.getElem_drop]
-        split_ifs with h0 h1
-        · subst h0; rfl
-        · congr 1; exact Fin.ext (by dsimp only [i1]; omega)
-        · congr 1; exact Fin.ext (by dsimp only; omega)
-    rw [hsplit]
-    have hsame : (a ∘ σ) i1 = (a ∘ σ) i0 := by
-      simp only [Function.comp_apply, hσ0, hσ1, ha]
-    rw [hsame]
-    exact symbol_repeat_adjacent_of_charTwo [] ((a ∘ σ) i0) _
-  rw [h0_eq] at hperm
-  rcases Int.units_eq_one_or (Equiv.Perm.sign σ) with h1 | hm1
-  · rw [h1, Units.val_one, one_zsmul] at hperm
-    exact hperm.symm
-  · rw [hm1, Units.val_neg, Units.val_one, neg_one_zsmul] at hperm
-    exact neg_eq_zero.mp hperm.symm
+  wlog hlt : i.1 < j.1 generalizing i j
+  · exact this hij.symm ha.symm (lt_of_le_of_ne (not_lt.mp hlt) (Fin.val_ne_of_ne hij).symm)
+  rw [list_ofFn_split_two a hlt, ha]
+  simp only [symbol_append, symbol_cons, mul_assoc]
+  rw [← mul_assoc (ofUnit (a j)) (symbol _) (ofUnit (a j) * symbol _),
+    ofUnit_mul_symbol (a j), smul_mul_assoc ((-1 : ℤ) ^ _), mul_assoc (symbol _),
+    ← mul_assoc (ofUnit (a j)), ofUnit_mul_self_of_charTwo, zero_mul, mul_zero, smul_zero,
+    mul_zero]
 
 end FieldIdentities
 
@@ -1029,14 +768,12 @@ theorem subsingleton_degree_of_isCyclic_of_ringChar_ne_zero [IsCyclic Fˣ] (hcha
 
 /-- Milnor K-groups of finite fields vanish in every degree at least two. -/
 theorem finiteField_vanishing (F : Type u) [Field F] [Finite F] (n : ℕ) (hn : 2 ≤ n) :
-    Subsingleton (degree F n) := by
-  have hchar : ringChar F ≠ 0 := by
-    intro h0
+    Subsingleton (degree F n) :=
+  subsingleton_degree_of_isCyclic_of_ringChar_ne_zero (fun h0 ↦ by
     have : CharP F 0 := h0 ▸ ringChar.charP F
     have : CharZero F := CharP.charP_to_charZero F
     exact not_infinite_iff_finite.mpr ‹Finite F›
-      (Infinite.of_injective (Nat.cast : ℕ → F) Nat.cast_injective)
-  exact subsingleton_degree_of_isCyclic_of_ringChar_ne_zero hchar n hn
+      (Infinite.of_injective (Nat.cast : ℕ → F) Nat.cast_injective)) n hn
 
 end FiniteField
 
