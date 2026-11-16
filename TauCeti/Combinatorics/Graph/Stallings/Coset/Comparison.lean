@@ -52,7 +52,7 @@ theorem Hom.range_mapE_cosetGraph_eq_coreDarts
         SerreGraph.Path.IsReduced (S.subgroup S.base).cosetGraph.graph q ∧
           f.graphHom.mapE e ∈ SerreGraph.Path.darts (S.subgroup S.base).cosetGraph.graph q := by
       refine ⟨f.graphHom.toPrefunctor.mapPath p,
-        (f.graphHom.isReduced_mapPath_iff S.graph hfE p).mpr hp, ?_⟩
+        f.graphHom.isReduced_mapPath (fun _ _ _ h => hfE h) p hp, ?_⟩
       -- Substitution avoids `rw`'s transparency mismatch at the mapped path's endpoints.
       exact (f.graphHom.darts_mapPath S.graph p).symm ▸ List.mem_map_of_mem he
     apply ((S.subgroup S.base).cosetGraph.graph.mem_coreDarts_iff _ _).mpr
@@ -74,7 +74,7 @@ theorem Hom.range_mapE_cosetGraph_eq_coreDarts
     obtain ⟨q, hq, hread⟩ := S.mem_subgroup_iff_exists_reduced_path.mp hg
     have hmap : f.graphHom.toPrefunctor.mapPath q = p :=
       (S.subgroup S.base).cosetGraph_isFolded.path_eq_of_read_eq _ _ _
-        ((f.graphHom.isReduced_mapPath_iff S.graph hfE q).mpr hq) hp
+        (f.graphHom.isReduced_mapPath (fun _ _ _ h => hfE h) q hq) hp
         ((f.read_mapPath q).trans hread)
     rw [← hmap] at he
     have he' := f.graphHom.darts_mapPath S.graph q ▸ he

@@ -19,7 +19,9 @@ A path in the quiver of a Serre graph is reduced when no consecutive darts cance
 condition retains the distinction between a loop and its reversed dart, and between parallel
 edges. It is the local normal-form condition used for graph path groups and Stallings graphs.
 The ordered dart list is obtained from Mathlib's `Quiver.Path.weight` in the free monoid;
-its decomposition and mapping lemmas support subgraph and based-core constructions. The paths of
+its decomposition and mapping lemmas support subgraph and based-core constructions. A morphism that
+is injective on the darts issuing from each vertex maps reduced paths to reduced paths
+(`SerreGraph.Hom.isReduced_mapPath`). The paths of
 a restriction `Γ.restrict S hS` are the paths of `Γ` whose darts lie in `S`, a path whose darts lie
 in a subgraph `Γ.subgraph A D hsrc hrev` lifts to it, with the same reducedness, and a path leaving
 a vertex set crosses its boundary along one of its darts.
@@ -170,19 +172,34 @@ theorem Path.IsReduced.of_comp_left {a b c : Γ.V} {p : Γ.Path a b} {q : Γ.Pat
     rw [Prefunctor.mapPath_cons, Path.darts_cons Δ, ih]
     simp
 
-/-- A morphism injective on darts preserves and reflects reduced paths. -/
-theorem Hom.isReduced_mapPath_iff {Δ : SerreGraph} (f : Γ.Hom Δ)
-    (hf : Function.Injective f.mapE) {a b : Γ.V} (p : Γ.Path a b) :
-    Path.IsReduced Δ (f.toPrefunctor.mapPath p) ↔ Path.IsReduced Γ p := by
+variable {Γ} in
+/-- A morphism that is injective on the darts issuing from each vertex maps reduced paths to
+reduced paths, even when it identifies vertices or darts globally. -/
+theorem Hom.isReduced_mapPath {Δ : SerreGraph} (f : Γ.Hom Δ)
+    (hf : ∀ e e' : Γ.E, Γ.src e = Γ.src e' → f.mapE e = f.mapE e' → e = e')
+    {a b : Γ.V} (p : Γ.Path a b) (hp : Path.IsReduced Γ p) :
+    Path.IsReduced Δ (f.toPrefunctor.mapPath p) := by
   induction p with
-  | nil => simp
+  | nil => trivial
   | cons p e ih =>
     cases p with
-    | nil => simp [Path.IsReduced]
-    | cons p k =>
-      simp only [Prefunctor.mapPath_cons, Path.isReduced_cons_cons,
-        Hom.toPrefunctor_map_val, ← f.map_rev, ne_eq, hf.eq_iff] at ih ⊢
-      exact and_congr ih Iff.rfl
+    | nil => trivial
+    | cons p d =>
+      exact ⟨ih hp.1, fun he => hp.2 (hf _ _ (by simp [e.2.1, d.2.2]) (by simpa using he))⟩
+
+/-- A morphism that is injective on the darts issuing from each vertex preserves and reflects
+reduced paths. -/
+theorem Hom.isReduced_mapPath_iff {Δ : SerreGraph} (f : Γ.Hom Δ)
+    (hf : ∀ e e' : Γ.E, Γ.src e = Γ.src e' → f.mapE e = f.mapE e' → e = e')
+    {a b : Γ.V} (p : Γ.Path a b) :
+    Path.IsReduced Δ (f.toPrefunctor.mapPath p) ↔ Path.IsReduced Γ p := by
+  refine ⟨fun hp => ?_, f.isReduced_mapPath hf p⟩
+  induction p with
+  | nil => trivial
+  | cons p e ih =>
+    cases p with
+    | nil => trivial
+    | cons p k => exact ⟨ih hp.1, fun he => hp.2 (by simp [he])⟩
 
 private theorem isReduced_pair_comp {a b c d : Γ.V}
     (e : Quiver.Hom a b) (f : Quiver.Hom b c) (p : Γ.Path c d) :
@@ -377,7 +394,8 @@ theorem mem_of_mem_darts_mapPath {a b : (Γ.restrict S hS).V}
     (q : (Γ.restrict S hS).Path a b) :
     Path.IsReduced Γ ((Γ.restrictInclusion S hS).toPrefunctor.mapPath q) ↔
       Path.IsReduced (Γ.restrict S hS) q :=
-  Hom.isReduced_mapPath_iff _ (Γ.restrictInclusion S hS) Subtype.val_injective q
+  Hom.isReduced_mapPath_iff _ (Γ.restrictInclusion S hS)
+    (fun _ _ _ h => Subtype.val_injective h) q
 
 /-- The restriction is preconnected exactly when any two vertices are joined by a path of `Γ`
 whose darts lie in `S`. -/
@@ -412,7 +430,8 @@ theorem exists_subgraph_path (A : Set Γ.V) (D : Set Γ.E) (hsrc : ∀ e ∈ D, 
     {a b : (Γ.subgraph A D hsrc hrev).V} (q : (Γ.subgraph A D hsrc hrev).Path a b) :
     Path.IsReduced Γ ((Γ.subgraphInclusion A D hsrc hrev).toPrefunctor.mapPath q) ↔
       Path.IsReduced (Γ.subgraph A D hsrc hrev) q :=
-  Hom.isReduced_mapPath_iff _ _ (Γ.subgraphInclusion_mapE_injective A D hsrc hrev) q
+  Hom.isReduced_mapPath_iff _ _
+    (fun _ _ _ h => Γ.subgraphInclusion_mapE_injective A D hsrc hrev h) q
 
 /-- Traversing a rose petal and then its reverse is a backtrack. -/
 theorem rose_not_isReduced_backtrack {α : Type*} (a : α) :
