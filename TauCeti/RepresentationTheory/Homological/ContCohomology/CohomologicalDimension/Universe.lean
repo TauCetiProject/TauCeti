@@ -9,7 +9,7 @@ public import TauCeti.RepresentationTheory.Homological.ContCohomology.Cohomologi
 import TauCeti.RepresentationTheory.Homological.ContCohomology.UniverseComparison
 
 /-!
-# Independence of cohomological dimension from the extra coefficient universe
+# Universe comparison for cohomological dimension in the group's universe
 
 For a topological group `G : Type u`, the vanishing predicates `TauCeti.CohomologicalDimensionLE`
 and `TauCeti.StrictCohomologicalDimensionLE` and the `ℕ∞`-valued invariants
@@ -24,7 +24,9 @@ extra universe parameters of Mathlib's construction. By
 `TauCeti.ContinuousCohomology.continuousCohomology_universe_eq`, those cohomology objects agree in
 every degree for every topological group `G`, with no compactness, profiniteness, or smallness
 hypothesis on `G`. Consequently both vanishing predicates and all three dimension invariants take
-identical values at `v = u` and at `v = 0`.
+identical values at `v = u` and at `v = 0`. This file compares only those two instantiations
+(both restricting coefficients to `G`'s universe `Type u`) and does not prove invariance for
+strictly larger extra universes `v > u`.
 
 None of the equalities or equivalences here is marked `@[simp]`, because at `u = 0` the left- and
 right-hand sides coincide syntactically and a `simp` rule would loop.
@@ -89,25 +91,28 @@ section Invariants
 
 variable (p : ℕ) (G : Type u) [Group G] [TopologicalSpace G] [IsTopologicalGroup G]
 
-/-- **The `p`-cohomological dimension does not depend on the extra coefficient universe**: for a
-topological group `G : Type u`, `cohomologicalDimensionAt p G` formed at extra universe `u` equals
-that formed at extra universe `0`. -/
+/-- **Agreement of `p`-cohomological dimension at extra universes `u` and `0`**: for a topological
+group `G : Type u`, `cohomologicalDimensionAt p G` formed at extra coefficient universe `u` equals
+that formed at extra coefficient universe `0` (both quantifying over discrete `G`-modules in
+`Type u`). -/
 theorem cohomologicalDimensionAt_universe_eq :
     cohomologicalDimensionAt.{u} p G = cohomologicalDimensionAt.{0} p G :=
   eq_of_forall_ge_iff fun c ↦
     ENat.recTopCoe (by simp) (fun _ ↦ by simp [cohomologicalDimensionLE_universe_iff]) c
 
-/-- **The strict `p`-cohomological dimension does not depend on the extra coefficient universe**:
-for a topological group `G : Type u`, `strictCohomologicalDimensionAt p G` formed at extra universe
-`u` equals that formed at extra universe `0`. -/
+/-- **Agreement of strict `p`-cohomological dimension at extra universes `u` and `0`**: for a
+topological group `G : Type u`, `strictCohomologicalDimensionAt p G` formed at extra coefficient
+universe `u` equals that formed at extra coefficient universe `0` (both quantifying over discrete
+`G`-modules in `Type u`). -/
 theorem strictCohomologicalDimensionAt_universe_eq :
     strictCohomologicalDimensionAt.{u} p G = strictCohomologicalDimensionAt.{0} p G :=
   eq_of_forall_ge_iff fun c ↦
     ENat.recTopCoe (by simp) (fun _ ↦ by simp [strictCohomologicalDimensionLE_universe_iff]) c
 
-/-- **The cohomological dimension does not depend on the extra coefficient universe**: for a
-topological group `G : Type u`, `cohomologicalDimension G` formed at extra universe `u` equals that
-formed at extra universe `0`. -/
+/-- **Agreement of cohomological dimension at extra universes `u` and `0`**: for a topological
+group `G : Type u`, `cohomologicalDimension G` formed at extra coefficient universe `u` equals that
+formed at extra coefficient universe `0` (both quantifying over discrete `G`-modules in
+`Type u`). -/
 theorem cohomologicalDimension_universe_eq :
     cohomologicalDimension.{u} G = cohomologicalDimension.{0} G :=
   eq_of_forall_ge_iff fun c ↦

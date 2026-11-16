@@ -8,6 +8,7 @@ module
 public import Mathlib.RepresentationTheory.Homological.ContCohomology.LowDegree
 public import TauCeti.RepresentationTheory.Homological.ContCohomology.Functoriality
 public import TauCeti.RepresentationTheory.Homological.ContCohomology.Resolution.Basic
+import TauCeti.RepresentationTheory.Homological.ContCohomology.DegreeZero
 
 /-!
 # Universe comparison for continuous cohomology in the group's universe
@@ -131,26 +132,22 @@ theorem d_comp_eqToHom_resolutionX_universe_eq (X : TopRep.{v, u, v} R G) (n : �
 /-- The coinduced resolution `TopRep.resolution` of `X : TopRep.{v, u, v} R G` at extra universe
 `v` equals that at extra universe `0`. -/
 theorem resolution_universe_eq (X : TopRep.{v, u, v} R G) :
-    TopRep.resolution.{u, v, v} X = TopRep.resolution.{u, v, 0} X := by
-  unfold TopRep.resolution
-  have hX : TopRep.resolutionX.{u, v, v} X = TopRep.resolutionX.{u, v, 0} X :=
-    funext X.resolutionX_universe_eq
-  have hd : TopRep.d.{u, v, v} X ≍ TopRep.d.{u, v, 0} X :=
-    Function.hfunext rfl fun n _ h ↦ eq_of_heq h ▸ X.d_universe_heq n
-  congr!
+    TopRep.resolution.{u, v, v} X = TopRep.resolution.{u, v, 0} X :=
+  HomologicalComplex.ext (funext X.resolutionX_universe_eq) fun i j hij ↦ by
+    dsimp [ComplexShape.up] at hij
+    subst hij
+    simpa only [TopRep.resolution, CochainComplex.of_d] using
+      X.d_comp_eqToHom_resolutionX_universe_eq i
 
 /-- The shifted coinduced resolution `TopRep.resolution'` of `X : TopRep.{v, u, v} R G` at extra
 universe `v` equals that at extra universe `0`. -/
 theorem resolution'_universe_eq (X : TopRep.{v, u, v} R G) :
-    TopRep.resolution'.{u, v, v} X = TopRep.resolution'.{u, v, 0} X := by
-  unfold TopRep.resolution' TopRep.resolution'X TopRep.resolution'd
-  have hX : (fun n ↦ TopRep.resolutionX.{u, v, v} X (n + 1)) =
-      (fun n ↦ TopRep.resolutionX.{u, v, 0} X (n + 1)) :=
-    funext fun n ↦ X.resolutionX_universe_eq (n + 1)
-  have hd : (fun n ↦ TopRep.d.{u, v, v} X (n + 1)) ≍
-      (fun n ↦ TopRep.d.{u, v, 0} X (n + 1)) :=
-    Function.hfunext rfl fun n _ h ↦ eq_of_heq h ▸ X.d_universe_heq (n + 1)
-  congr!
+    TopRep.resolution'.{u, v, v} X = TopRep.resolution'.{u, v, 0} X :=
+  HomologicalComplex.ext (funext fun n ↦ X.resolutionX_universe_eq (n + 1)) fun i j hij ↦ by
+    dsimp [ComplexShape.up] at hij
+    subst hij
+    simpa only [TopRep.resolution', CochainComplex.of_d, TopRep.resolution'd_eq] using
+      X.d_comp_eqToHom_resolutionX_universe_eq (i + 1)
 
 /-- **Equality of homogeneous cochain complexes across the extra universe.** For
 `X : TopRep.{v, u, v} R G`, the complex `TopRep.homogeneousCochains` formed at extra universe `v`
@@ -271,6 +268,26 @@ theorem cocyclesUniverseIso_def (n : ℕ) (X : TopRep.{v, u, v} R G) :
     cocyclesUniverseIso n X = eqToIso (cocycles_universe_eq n X) :=
   (rfl)
 
+/-- The forward cocycle comparison is the map on cycles induced by
+`TopRep.homogeneousCochainsUniverseIso`. -/
+@[simp]
+theorem cyclesMap_homogeneousCochainsUniverseIso_hom (n : ℕ) (X : TopRep.{v, u, v} R G) :
+    HomologicalComplex.cyclesMap X.homogeneousCochainsUniverseIso.hom n =
+      (cocyclesUniverseIso n X).hom := by
+  rw [TopRep.homogeneousCochainsUniverseIso_def, cocyclesUniverseIso_def, eqToIso.hom, eqToIso.hom]
+  exact eqToHom_map (HomologicalComplex.cyclesFunctor (TopModuleCat R) (ComplexShape.up ℕ) n)
+    X.homogeneousCochains_universe_eq
+
+/-- The inverse cocycle comparison is the map on cycles induced by the inverse of
+`TopRep.homogeneousCochainsUniverseIso`. -/
+@[simp]
+theorem cyclesMap_homogeneousCochainsUniverseIso_inv (n : ℕ) (X : TopRep.{v, u, v} R G) :
+    HomologicalComplex.cyclesMap X.homogeneousCochainsUniverseIso.inv n =
+      (cocyclesUniverseIso n X).inv := by
+  rw [TopRep.homogeneousCochainsUniverseIso_def, cocyclesUniverseIso_def, eqToIso.inv, eqToIso.inv]
+  exact eqToHom_map (HomologicalComplex.cyclesFunctor (TopModuleCat R) (ComplexShape.up ℕ) n)
+    X.homogeneousCochains_universe_eq.symm
+
 /-- **Equality of continuous cohomology modules across the extra universe.** For
 `X : TopRep.{v, u, v} R G`, `continuousCohomology` in degree `n` at extra universe `v` equals that
 at extra universe `0`. -/
@@ -290,6 +307,28 @@ theorem continuousCohomologyUniverseIso_def (n : ℕ) (X : TopRep.{v, u, v} R G)
     continuousCohomologyUniverseIso n X = eqToIso (continuousCohomology_universe_eq n X) :=
   (rfl)
 
+/-- The forward continuous-cohomology comparison is the map on homology induced by
+`TopRep.homogeneousCochainsUniverseIso`. -/
+@[simp]
+theorem homologyMap_homogeneousCochainsUniverseIso_hom (n : ℕ) (X : TopRep.{v, u, v} R G) :
+    HomologicalComplex.homologyMap X.homogeneousCochainsUniverseIso.hom n =
+      (continuousCohomologyUniverseIso n X).hom := by
+  rw [TopRep.homogeneousCochainsUniverseIso_def, continuousCohomologyUniverseIso_def, eqToIso.hom,
+    eqToIso.hom]
+  exact eqToHom_map (HomologicalComplex.homologyFunctor (TopModuleCat R) (ComplexShape.up ℕ) n)
+    X.homogeneousCochains_universe_eq
+
+/-- The inverse continuous-cohomology comparison is the map on homology induced by the inverse of
+`TopRep.homogeneousCochainsUniverseIso`. -/
+@[simp]
+theorem homologyMap_homogeneousCochainsUniverseIso_inv (n : ℕ) (X : TopRep.{v, u, v} R G) :
+    HomologicalComplex.homologyMap X.homogeneousCochainsUniverseIso.inv n =
+      (continuousCohomologyUniverseIso n X).inv := by
+  rw [TopRep.homogeneousCochainsUniverseIso_def, continuousCohomologyUniverseIso_def, eqToIso.inv,
+    eqToIso.inv]
+  exact eqToHom_map (HomologicalComplex.homologyFunctor (TopModuleCat R) (ComplexShape.up ℕ) n)
+    X.homogeneousCochains_universe_eq.symm
+
 -- Not `@[simp]`: `simp` rewrites the implicit codomain `(TopRep.homogeneousCochains X).X n` of
 -- `≫` through `CategoryTheory.Functor.mapHomologicalComplex_obj_X`, so the left-hand side is not
 -- in `simp`-normal form; use with `rw`.
@@ -300,8 +339,7 @@ theorem cocyclesUniverseIso_hom_comp_iCycles (n : ℕ) (X : TopRep.{v, u, v} R G
     (cocyclesUniverseIso n X).hom ≫ (TopRep.homogeneousCochains.{u, v, 0} X).iCycles n =
       (TopRep.homogeneousCochains.{u, v, v} X).iCycles n ≫
         X.homogeneousCochainsUniverseIso.hom.f n := by
-  rw [cocyclesUniverseIso_def, eqToIso.hom, X.homogeneousCochainsUniverseIso_hom_f n]
-  exact (eqToHom_naturality (fun C ↦ C.iCycles n) X.homogeneousCochains_universe_eq).symm
+  rw [← cyclesMap_homogeneousCochainsUniverseIso_hom, HomologicalComplex.cyclesMap_i]
 
 -- Not `@[simp]`, for the same reason as `cocyclesUniverseIso_hom_comp_iCycles`.
 /-- Inverse form of `cocyclesUniverseIso_hom_comp_iCycles`: the inverse cocycle comparison
@@ -311,8 +349,7 @@ theorem cocyclesUniverseIso_inv_comp_iCycles (n : ℕ) (X : TopRep.{v, u, v} R G
     (cocyclesUniverseIso n X).inv ≫ (TopRep.homogeneousCochains.{u, v, v} X).iCycles n =
       (TopRep.homogeneousCochains.{u, v, 0} X).iCycles n ≫
         X.homogeneousCochainsUniverseIso.inv.f n := by
-  rw [cocyclesUniverseIso_def, eqToIso.inv, X.homogeneousCochainsUniverseIso_inv_f n]
-  exact (eqToHom_naturality (fun C ↦ C.iCycles n) X.homogeneousCochains_universe_eq.symm).symm
+  rw [← cyclesMap_homogeneousCochainsUniverseIso_inv, HomologicalComplex.cyclesMap_i]
 
 /-- **The continuous-cohomology comparison preserves cocycle classes**:
 `continuousCohomologyUniverseIso` intertwines the class projections `ContinuousCohomology.π` with
@@ -358,17 +395,11 @@ theorem continuousCohomologyUniverseIso_hom_cochainClass (n : ℕ) (X : TopRep.{
     (ha : ((TopRep.homogeneousCochains.{u, v, v} X).d n (n + 1)).hom a = 0) :
     (continuousCohomologyUniverseIso n X).hom (TopRep.cochainClass.{u, v, v} X n a ha) =
       TopRep.cochainClass.{u, v, 0} X n ((X.homogeneousCochainsUniverseIso.hom.f n).hom a) (by
-        rw [← ConcreteCategory.comp_apply, HomologicalComplex.Hom.comm,
-          ConcreteCategory.comp_apply, ha, map_zero]) := by
+        rw [HomologicalComplex.Hom.comm_apply, ha, map_zero]) := by
   rw [TopRep.cochainClass_def, TopRep.cochainClass_def,
-    continuousCohomologyUniverseIso_hom_π_apply]
-  congr 1
-  apply (TopRep.homogeneousCochains.{u, v, 0} X).iCycles_injective n
-  have hi := ConcreteCategory.congr_hom (cocyclesUniverseIso_hom_comp_iCycles n X)
-    ((TopRep.homogeneousCochains.{u, v, v} X).cyclesMkOfEq a (n + 1)
-      (CochainComplex.next ℕ n) ha)
-  simp only [ConcreteCategory.comp_apply] at hi
-  rw [hi, HomologicalComplex.iCycles_cyclesMkOfEq, HomologicalComplex.iCycles_cyclesMkOfEq]
+    ← homologyMap_homogeneousCochainsUniverseIso_hom]
+  exact HomologicalComplex.homologyMap_homologyπ_cyclesMkOfEq
+    X.homogeneousCochainsUniverseIso.hom a (n + 1) (CochainComplex.next ℕ n) ha
 
 /-- Inverse form of `continuousCohomologyUniverseIso_hom_cochainClass`. -/
 @[simp]
@@ -377,25 +408,13 @@ theorem continuousCohomologyUniverseIso_inv_cochainClass (n : ℕ) (X : TopRep.{
     (ha : ((TopRep.homogeneousCochains.{u, v, 0} X).d n (n + 1)).hom a = 0) :
     (continuousCohomologyUniverseIso n X).inv (TopRep.cochainClass.{u, v, 0} X n a ha) =
       TopRep.cochainClass.{u, v, v} X n ((X.homogeneousCochainsUniverseIso.inv.f n).hom a) (by
-        rw [← ConcreteCategory.comp_apply, HomologicalComplex.Hom.comm,
-          ConcreteCategory.comp_apply, ha, map_zero]) := by
+        rw [HomologicalComplex.Hom.comm_apply, ha, map_zero]) := by
   rw [TopRep.cochainClass_def, TopRep.cochainClass_def,
-    continuousCohomologyUniverseIso_inv_π_apply]
-  congr 1
-  apply (TopRep.homogeneousCochains.{u, v, v} X).iCycles_injective n
-  have hi := ConcreteCategory.congr_hom (cocyclesUniverseIso_inv_comp_iCycles n X)
-    ((TopRep.homogeneousCochains.{u, v, 0} X).cyclesMkOfEq a (n + 1)
-      (CochainComplex.next ℕ n) ha)
-  simp only [ConcreteCategory.comp_apply] at hi
-  rw [hi, HomologicalComplex.iCycles_cyclesMkOfEq, HomologicalComplex.iCycles_cyclesMkOfEq]
+    ← homologyMap_homogeneousCochainsUniverseIso_inv]
+  exact HomologicalComplex.homologyMap_homologyπ_cyclesMkOfEq
+    X.homogeneousCochainsUniverseIso.inv a (n + 1) (CochainComplex.next ℕ n) ha
 
 /-! #### Compatibility with the degree-zero invariants isomorphism -/
-
-private noncomputable def homology0ToKer (C : CochainComplex (TopModuleCat.{v, u} R) ℕ) :
-    C.homology 0 ≅ TopModuleCat.ker (C.d 0 1) :=
-  C.isoHomologyπ₀.symm ≪≫
-    Limits.KernelFork.mapIsoOfIsLimit (C.cyclesIsKernel 0 1 (by simp))
-      (TopModuleCat.isLimitKer (C.d 0 1)) (Iso.refl _)
 
 /-- **Compatibility with `ContinuousCohomology.zeroIso`**: in degree zero, the comparison between
 extra universes `v` and `0` commutes with the canonical isomorphism onto the `G`-invariants
@@ -405,20 +424,15 @@ theorem continuousCohomologyUniverseIso_hom_comp_zeroIso_hom (X : TopRep.{v, u, 
     (continuousCohomologyUniverseIso 0 X).hom ≫
         (_root_.ContinuousCohomology.zeroIso.{u, v, 0} X).hom =
       (_root_.ContinuousCohomology.zeroIso.{u, v, v} X).hom := by
-  have hz0 : (_root_.ContinuousCohomology.zeroIso.{u, v, 0} X).hom =
-      (homology0ToKer (TopRep.homogeneousCochains.{u, v, 0} X)).hom ≫
-        TopModuleCat.ofHom
-          (_root_.ContinuousCohomology.d₀kerIso.{u, v, 0} X).toContinuousLinearMap :=
-    rfl
-  have hzv : (_root_.ContinuousCohomology.zeroIso.{u, v, v} X).hom =
-      (homology0ToKer (TopRep.homogeneousCochains.{u, v, v} X)).hom ≫
-        TopModuleCat.ofHom
-          (_root_.ContinuousCohomology.d₀kerIso.{u, v, v} X).toContinuousLinearMap :=
-    rfl
-  rw [hz0, hzv, continuousCohomologyUniverseIso_def, eqToIso.hom, ← Category.assoc,
-    ← eqToHom_naturality (fun C ↦ (homology0ToKer C).hom) X.homogeneousCochains_universe_eq,
-    Category.assoc]
-  congr 1
+  rw [← cancel_epi (_root_.ContinuousCohomology.π.{u, v, v} X 0),
+    π_comp_continuousCohomologyUniverseIso_hom_assoc]
+  ext σ
+  simp only [ConcreteCategory.comp_apply]
+  rw [coe_zeroIso_hom_π.{u, v, 0} X, coe_zeroIso_hom_π.{u, v, v} X]
+  have h := ConcreteCategory.congr_hom (cocyclesUniverseIso_hom_comp_iCycles 0 X) σ
+  simp only [ConcreteCategory.comp_apply, TopRep.homogeneousCochainsUniverseIso_hom_f_zero,
+    ConcreteCategory.id_apply] at h
+  rw [h]
 
 /-- Inverse-source form of `continuousCohomologyUniverseIso_hom_comp_zeroIso_hom`. -/
 @[reassoc (attr := simp)]
@@ -488,18 +502,6 @@ theorem resolutionMap_comp_eqToHom_resolutionX_universe_eq
   eq_of_heq ((comp_eqToHom_heq _ _).trans
     ((resolutionMap_universe_heq φ f i).trans (eqToHom_comp_heq _ _).symm))
 
-omit [TopologicalSpace G] [IsTopologicalGroup G] [TopologicalSpace H] [IsTopologicalGroup H] in
-private theorem invariantsResMap_comp_eqToHom_aux (φ : H →* G)
-    {A A' : TopRep.{v, u, v} R G} {B B' : TopRep.{v, u, v} R H}
-    (hA : A = A') (hB : B = B')
-    (f : TopRep.res φ A ⟶ B) (g : TopRep.res φ A' ⟶ B') (hfg : f ≍ g) :
-    TopRep.invariantsResMap φ f ≫ eqToHom (congrArg (TopRep.invariantsFunctor R H).obj hB) =
-      eqToHom (congrArg (TopRep.invariantsFunctor R G).obj hA) ≫
-        TopRep.invariantsResMap φ g := by
-  subst hA hB
-  cases hfg
-  simp
-
 /-- **Naturality of `TopRep.homogeneousCochainsUniverseIso` with respect to compatible pairs.** -/
 @[reassoc (attr := simp)]
 theorem cochainsMap_comp_homogeneousCochainsUniverseIso_hom
@@ -512,9 +514,12 @@ theorem cochainsMap_comp_homogeneousCochainsUniverseIso_hom
   ext i : 1
   simp only [HomologicalComplex.comp_f, TopRep.homogeneousCochainsUniverseIso_hom_f,
     _root_.ContinuousCohomology.cochainsMap_f]
-  exact invariantsResMap_comp_eqToHom_aux (φ : H →* G)
-    (X.resolutionX_universe_eq (i + 1)) (Y.resolutionX_universe_eq (i + 1))
-    _ _ (resolutionMap_universe_heq φ f (i + 1))
+  have h := resolutionMap_comp_eqToHom_resolutionX_universe_eq φ f (i + 1)
+  rw [← eqToHom_map (TopRep.resFunctor (φ : H →* G)) (X.resolutionX_universe_eq (i + 1))] at h
+  have h' := congrArg (TopRep.invariantsResMap (φ : H →* G)) h
+  rw [TopRep.invariantsResMap_comp, TopRep.invariantsResMap_map_comp,
+    eqToHom_map, eqToHom_map] at h'
+  exact h'
 
 /-- Inverse form of `cochainsMap_comp_homogeneousCochainsUniverseIso_hom`. -/
 @[reassoc (attr := simp)]
@@ -546,12 +551,10 @@ theorem cocyclesMap_comp_cocyclesUniverseIso_hom
     _root_.ContinuousCohomology.cocyclesMap.{u, v, v} φ f n ≫ (cocyclesUniverseIso n Y).hom =
       (cocyclesUniverseIso n X).hom ≫
         _root_.ContinuousCohomology.cocyclesMap.{u, v, 0} φ f n := by
-  have h := congrArg (HomologicalComplex.cyclesFunctor (TopModuleCat R) (ComplexShape.up ℕ) n).map
-    (cochainsMap_comp_homogeneousCochainsUniverseIso_hom φ f)
-  simp only [Functor.map_comp, TopRep.homogeneousCochainsUniverseIso_def, eqToIso.hom,
-    eqToHom_map] at h
-  rw [cocyclesUniverseIso_def, cocyclesUniverseIso_def, eqToIso.hom, eqToIso.hom]
-  exact h
+  rw [← cyclesMap_homogeneousCochainsUniverseIso_hom,
+    ← cyclesMap_homogeneousCochainsUniverseIso_hom,
+    ← HomologicalComplex.cyclesMap_comp, ← HomologicalComplex.cyclesMap_comp,
+    cochainsMap_comp_homogeneousCochainsUniverseIso_hom]
 
 /-- Inverse form of `cocyclesMap_comp_cocyclesUniverseIso_hom`. -/
 @[reassoc (attr := simp)]
@@ -573,14 +576,10 @@ theorem map_comp_continuousCohomologyUniverseIso_hom
         (continuousCohomologyUniverseIso n Y).hom =
       (continuousCohomologyUniverseIso n X).hom ≫
         _root_.ContinuousCohomology.map.{u, v, 0} φ f n := by
-  have h := congrArg
-    (HomologicalComplex.homologyFunctor (TopModuleCat R) (ComplexShape.up ℕ) n).map
-    (cochainsMap_comp_homogeneousCochainsUniverseIso_hom φ f)
-  simp only [Functor.map_comp, TopRep.homogeneousCochainsUniverseIso_def, eqToIso.hom,
-    eqToHom_map] at h
-  rw [continuousCohomologyUniverseIso_def, continuousCohomologyUniverseIso_def,
-    eqToIso.hom, eqToIso.hom]
-  exact h
+  rw [← homologyMap_homogeneousCochainsUniverseIso_hom,
+    ← homologyMap_homogeneousCochainsUniverseIso_hom,
+    ← HomologicalComplex.homologyMap_comp, ← HomologicalComplex.homologyMap_comp,
+    cochainsMap_comp_homogeneousCochainsUniverseIso_hom]
 
 /-- Inverse form of `map_comp_continuousCohomologyUniverseIso_hom`. -/
 @[reassoc (attr := simp)]
@@ -733,8 +732,8 @@ theorem continuousCohomologyFunctorUniverseIso_zero_univ (n : ℕ) :
     continuousCohomologyFunctorUniverseIso R G n = Iso.refl _ :=
   Iso.ext (NatTrans.ext (funext fun _ ↦ by
     simp only [continuousCohomologyFunctorUniverseIso_hom_app,
-      continuousCohomologyUniverseIso_zero_univ, Iso.refl_hom, NatTrans.id_app]
-    rfl))
+      continuousCohomologyUniverseIso_zero_univ, Iso.refl_hom, NatTrans.id_app,
+      continuousCohomologyFunctor]))
 
 end ZeroUniverse
 
