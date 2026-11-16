@@ -449,8 +449,9 @@ theorem subgroupComap_smul {H : Type*} [Group H] [TopologicalSpace H] (f : H →
 theorem le_ker_comp_quotientMk {H : Type*} [Monoid H] [TopologicalSpace H]
     {N : Subgroup G} [N.Normal] (g : (G ⧸ N) →ₜ* H) :
     N ≤ ((g.comp (Subgroup.quotientMkContinuousMonoidHom N) : G →* H)).ker :=
-  (MonoidHom.comap_ker g.toMonoidHom (QuotientGroup.mk' N)) ▸
-    QuotientGroup.le_comap_mk' N g.toMonoidHom.ker
+  fun x hx => by
+    rw [MonoidHom.mem_ker, MonoidHom.coe_ofClass, ContinuousMonoidHom.coe_comp, Function.comp_apply,
+      Subgroup.quotientMkContinuousMonoidHom_apply, (QuotientGroup.eq_one_iff x).mpr hx, map_one]
 
 end ContinuousMonoidHom
 
