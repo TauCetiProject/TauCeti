@@ -11,6 +11,7 @@ public import TauCeti.Analysis.Matrix.Polar.Deformation
 public import TauCeti.Analysis.Matrix.Sqrt
 import TauCeti.Analysis.Matrix.UnitaryGroup.Torus
 import TauCeti.Basic.Real.Sign
+import TauCeti.Topology.Algebra.Matrix.GeneralLinearGroup.MkOfDetNeZero
 
 /-!
 # The Conley–Zehnder index of a path of symplectic matrices
@@ -88,7 +89,7 @@ noncomputable def graphFrameUnit (A : GLSymplectic n ℝ) : GL (n ⊕ n) ℂ :=
 @[simp]
 theorem coe_graphFrameUnit (A : GLSymplectic n ℝ) :
     (graphFrameUnit A : Matrix (n ⊕ n) (n ⊕ n) ℂ) = graphFrame (A : GL (n ⊕ n) ℝ) :=
-  (rfl)
+  GeneralLinearGroup.val_mkOfDetNeZero _ _
 
 /-- The **unitary graph frame** of a symplectic matrix `A`: the unitary factor of the polar
 decomposition of its graph frame. -/
@@ -100,17 +101,9 @@ theorem graphUnitary_def (A : GLSymplectic n ℝ) :
   (rfl)
 
 /-- The graph frame depends continuously on the symplectic matrix, as an invertible matrix. -/
-theorem continuous_graphFrameUnit : Continuous (graphFrameUnit : GLSymplectic n ℝ → _) := by
-  have hF : Continuous fun A : GLSymplectic n ℝ ↦
-      (graphFrameUnit A : Matrix (n ⊕ n) (n ⊕ n) ℂ) := by
-    simp only [coe_graphFrameUnit]
-    exact continuous_graphFrame.comp (Units.continuous_val.comp continuous_subtype_val)
-  refine Units.continuous_iff.2 ⟨hF, ?_⟩
-  refine (((hF.matrix_det).inv₀ fun A ↦ ?_).smul hF.matrix_adjugate).congr fun A ↦ ?_
-  · rw [coe_graphFrameUnit]
-    exact det_graphFrame_ne_zero A
-  · simp only [Pi.smul_apply', Pi.inv_apply, coe_units_inv, Matrix.inv_def,
-      Ring.inverse_eq_inv']
+theorem continuous_graphFrameUnit : Continuous (graphFrameUnit : GLSymplectic n ℝ → _) :=
+  GeneralLinearGroup.continuous_mkOfDetNeZero
+    (continuous_graphFrame.comp (Units.continuous_val.comp continuous_subtype_val)) _
 
 /-- The positive factor of the graph frame of a symplectic matrix `A` is the real matrix
 `√(1 + Aᵀ A)`: the graph frame is the unitary graph frame times `√(1 + Aᵀ A)`. -/
@@ -137,12 +130,8 @@ theorem realImage_graphUnitary (A : GLSymplectic n ℝ) :
     realImage_mul_map_ofReal _ (isStrictlyPositive_iff_posDef.2 hpos).sqrt.isUnit]
 
 /-- The unitary graph frame depends continuously on the symplectic matrix. -/
-theorem continuous_graphUnitary : Continuous (graphUnitary : GLSymplectic n ℝ → _) := by
-  have h := (GeneralLinearGroup.polarHomotopy (n ⊕ n) ℂ).continuous.comp
-    (continuous_const.prodMk continuous_id : Continuous fun G : GL (n ⊕ n) ℂ ↦ ((1 : I), G))
-  simp only [Function.comp_def, GeneralLinearGroup.polarHomotopy_apply, Set.Icc.coe_one,
-    GeneralLinearGroup.polarDeformation_one] at h
-  exact ((Units.continuous_val.comp h).comp continuous_graphFrameUnit).subtype_mk _
+theorem continuous_graphUnitary : Continuous (graphUnitary : GLSymplectic n ℝ → _) :=
+  GeneralLinearGroup.continuous_polarUnitary.comp continuous_graphFrameUnit
 
 /-- For an orthogonal symplectic matrix `A`, whose graph frame has Gram matrix `2`, the unitary
 graph frame is the graph frame divided by `√2`. -/

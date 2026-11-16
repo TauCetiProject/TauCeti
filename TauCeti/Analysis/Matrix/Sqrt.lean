@@ -90,6 +90,7 @@ theorem PosSemidef.rank_sqrt {S : Matrix ι ι 𝕜} (hS : S.PosSemidef) :
 
 open scoped Classical in
 /-- The square root of a real matrix is symmetric. -/
+@[simp]
 theorem transpose_sqrt (S : Matrix ι ι ℝ) : (CFC.sqrt S)ᵀ = CFC.sqrt S := by
   rw [← Matrix.conjTranspose_eq_transpose_of_trivial,
     (Matrix.LE.le.posSemidef (CFC.sqrt_nonneg S)).isHermitian.eq]
