@@ -464,8 +464,7 @@ theorem norm_weightFirstOrderCoeff_le :
   refine (norm_compHolder₂_apply_le _ _ _).trans ?_
   gcongr
   · exact norm_firstOrderCorrL_le
-  · exact ((HolderSpace.compLipschitzL _ _).le_of_opNorm_le
-      (HolderSpace.norm_compLipschitzL_le_one _) _).trans_eq (one_mul _)
+  · exact HolderSpace.norm_compLipschitzL_apply_le _ _
 
 /-- **Bound on the conjugated zeroth-order coefficient.**
 `‖C_w‖ ≤ ‖C‖ + ‖A‖ (‖M‖ + ‖ℓ‖²) + ‖B‖ ‖ℓ‖`. -/
@@ -483,8 +482,7 @@ theorem norm_weightZerothOrderCoeff_le :
     calc _ ≤ 1 * ‖A‖ * (‖M‖ + ‖ℓ‖ * ‖ℓ‖) := by
           gcongr
           · exact norm_zerothOrderCorrL_le
-          · exact (((HolderSpace.compLipschitzL _ _).le_of_opNorm_le
-              (HolderSpace.norm_compLipschitzL_le_one _) _).trans_eq (one_mul _)).trans hQ
+          · exact (HolderSpace.norm_compLipschitzL_apply_le _ _).trans hQ
       _ = _ := by ring
   have h₂ : ‖gradCorrL.compHolder₂ B (HolderSpace.compLipschitzL _
       (lipschitzWith_slabSpace (a := t₀) (b := t₁)) ℓ)‖ ≤ ‖B‖ * ‖ℓ‖ := by
@@ -492,8 +490,7 @@ theorem norm_weightZerothOrderCoeff_le :
     calc _ ≤ 1 * ‖B‖ * ‖ℓ‖ := by
           gcongr
           · exact norm_gradCorrL_le
-          · exact ((HolderSpace.compLipschitzL _ _).le_of_opNorm_le
-      (HolderSpace.norm_compLipschitzL_le_one _) _).trans_eq (one_mul _)
+          · exact HolderSpace.norm_compLipschitzL_apply_le _ _
       _ = _ := by ring
   refine (norm_add_le _ _).trans (add_le_add ((norm_add_le _ _).trans ?_) h₂)
   gcongr
