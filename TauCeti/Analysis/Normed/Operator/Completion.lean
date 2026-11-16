@@ -24,7 +24,9 @@ These are the continuous semilinear analogues of Mathlib's `NormedAddGroupHom.no
 They make extension to completions an isometric operation, as needed for the norm-preserving
 universal properties of completed normed constructions. Likewise, a linear isometric equivalence
 extends to the linear isometric equivalence `e.completion` between the completions, the analogue
-for equivalences of Mathlib's `LinearIsometry.completion`.
+for equivalences of Mathlib's `LinearIsometry.completion`. More generally, a linear isometry whose
+range is dense extends to a linear isometric equivalence of the completions: the extension is an
+isometry of complete spaces, so its range is closed as well as dense.
 
 Extension to completions also preserves metric quotient maps. If `f` lifts every vector of norm
 less than `r` to a vector of norm less than `r`, so does `f.completion`; the lifts in the
@@ -46,6 +48,8 @@ extension to the completions has the same property.
   completions.
 * `LinearIsometryEquiv.toLinearIsometry_completion`: as a linear isometry, it is
   `LinearIsometry.completion`.
+* `LinearIsometry.completionEquivOfDenseRange`: a linear isometry with dense range extends to a
+  linear isometric equivalence between the completions.
 * `LinearIsometryEquiv.completion_symm`, `LinearIsometryEquiv.completion_refl`,
   `LinearIsometryEquiv.completion_trans`: extension to completions is compatible with inverses,
   identities and composites.
@@ -227,3 +231,36 @@ theorem toLinearIsometry_completion (e : E ≃ₛₗᵢ[σ₁₂] F) :
 end NormedAddCommGroup
 
 end LinearIsometryEquiv
+
+namespace LinearIsometry
+
+variable {𝕜 E F : Type*} [NormedField 𝕜] [SeminormedAddCommGroup E] [NormedSpace 𝕜 E]
+  [NormedAddCommGroup F] [NormedSpace 𝕜 F]
+
+/-- A linear isometry `f : E →ₗᵢ[𝕜] F` with dense range extends to a linear isometric equivalence
+between the completions of `E` and `F`. -/
+noncomputable def completionEquivOfDenseRange (f : E →ₗᵢ[𝕜] F) (hf : DenseRange f) :
+    Completion E ≃ₗᵢ[𝕜] Completion F :=
+  LinearIsometryEquiv.ofSurjective f.completion <| by
+    have hd : DenseRange f.completion := by
+      refine (Completion.denseRange_coe.comp hf (Completion.continuous_coe _)).mono ?_
+      rintro _ ⟨x, rfl⟩
+      exact ⟨x, by simp [completion_apply_coe]⟩
+    rw [← Set.range_eq_univ, ← hd.closure_range,
+      (f.completion.isometry.antilipschitzWith.isClosed_range
+        f.completion.isometry.uniformContinuous).closure_eq]
+
+/-- On `E`, the extension of a linear isometry with dense range is the isometry itself. -/
+@[simp]
+theorem completionEquivOfDenseRange_coe (f : E →ₗᵢ[𝕜] F) (hf : DenseRange f) (x : E) :
+    f.completionEquivOfDenseRange hf x = f x :=
+  f.completion_apply_coe x
+
+/-- As a linear isometry, the extension of a linear isometry with dense range is
+`LinearIsometry.completion`. -/
+@[simp]
+theorem toLinearIsometry_completionEquivOfDenseRange (f : E →ₗᵢ[𝕜] F) (hf : DenseRange f) :
+    (f.completionEquivOfDenseRange hf).toLinearIsometry = f.completion :=
+  (rfl)
+
+end LinearIsometry
