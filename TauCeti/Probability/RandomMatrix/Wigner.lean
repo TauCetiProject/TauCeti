@@ -101,6 +101,19 @@ theorem wignerMatrix_apply_self (i : Fin n) :
     wignerMatrix ξ η n ω i i = (Real.sqrt n : ℂ)⁻¹ * η i.val ω := by
   simp [wignerMatrix]
 
+/-- A Wigner matrix is its zero-diagonal version plus the original real diagonal divided by
+the square root of the dimension. -/
+theorem wignerMatrix_eq_add_diagonal (ξ : StrictUpper → Ω → ℂ) (η : ℕ → Ω → ℝ)
+    (n : ℕ) (ω : Ω) :
+    wignerMatrix ξ η n ω = wignerMatrix ξ (fun _ _ ↦ 0) n ω +
+      diagonal (fun i : Fin n ↦ ((η i ω / Real.sqrt n : ℝ) : ℂ)) := by
+  ext i j
+  rcases lt_trichotomy i.val j.val with hij | hij | hij
+  · simp [wignerMatrix_apply_of_lt _ _ _ hij, Fin.ne_of_val_ne hij.ne]
+  · obtain rfl := Fin.ext hij
+    simp [div_eq_mul_inv, mul_comm]
+  · simp [wignerMatrix_apply_of_gt _ _ _ hij, Fin.ne_of_val_ne hij.ne']
+
 /-- The squared absolute value of a diagonal entry is the corresponding diagonal
 coordinate's square divided by the matrix size. -/
 theorem norm_wignerMatrix_apply_self_sq (i : Fin n) :

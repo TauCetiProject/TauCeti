@@ -34,6 +34,9 @@ by itself; at `z = r`, Lean's totalized inverse gives value one.
 
 Two integers whose images in `ℂ` are at distance less than `1` are equal.
 
+The canonical embedding of an `RCLike` field into `ℂ` is bundled as
+`TauCeti.toComplexStarAlgHom`, so real star-algebra constructions can be transported to `ℂ`.
+
 Dividing by a natural number does not increase the norm, so `‖(a z + b) / M‖ ≤ ‖a‖ C + ‖b‖`
 whenever `‖z‖ ≤ C` (`Complex.norm_mul_add_div_natCast_le`).
 -/
@@ -63,6 +66,67 @@ theorem Complex.norm_one_add_sub_conj_mul_inv_ofReal_sub (z : ℂ) (r : ℝ) :
   rw [heq, norm_div, hnorm, div_self (norm_ne_zero_iff.mpr hne)]
 
 namespace TauCeti
+
+/-- The canonical real star-algebra embedding of an `RCLike` field into `ℂ`. -/
+noncomputable def toComplexStarAlgHom (𝕜 : Type*) [RCLike 𝕜] : 𝕜 →⋆ₐ[ℝ] ℂ where
+  toFun x := (RCLike.re x : ℂ) + (RCLike.im x : ℂ) * Complex.I
+  map_zero' := by simp
+  map_one' := by simp
+  map_add' := by intros; simp only [map_add, Complex.ofReal_add]; ring
+  map_mul' := by
+    intro x y
+    simp only [RCLike.mul_re, RCLike.mul_im, Complex.ofReal_sub, Complex.ofReal_mul,
+      Complex.ofReal_add]
+    ring_nf
+    rw [Complex.I_sq]
+    ring
+  commutes' := by intro r; simp
+  map_star' := by intro x; simp [RCLike.star_def, mul_comm]
+
+/-- The canonical complex embedding sends a scalar to its real and imaginary components. -/
+@[simp]
+theorem toComplexStarAlgHom_apply {𝕜 : Type*} [RCLike 𝕜] (x : 𝕜) :
+    toComplexStarAlgHom 𝕜 x = (RCLike.re x : ℂ) + (RCLike.im x : ℂ) * Complex.I :=
+  (rfl)
+
+/-- The canonical complex embedding is the identity on `ℂ`. -/
+@[simp]
+theorem toComplexStarAlgHom_complex : toComplexStarAlgHom ℂ = .id ℝ ℂ := by
+  ext z
+  simp
+
+/-- The canonical complex embedding of `ℝ` is the real scalar inclusion. -/
+@[simp]
+theorem toComplexStarAlgHom_real : toComplexStarAlgHom ℝ = RCLike.ofRealStarAlgHom ℂ := by
+  ext r
+  simp
+
+/-- The canonical complex embedding preserves the real scalar inclusion. -/
+@[simp]
+theorem toComplexStarAlgHom_comp_ofRealStarAlgHom (𝕜 : Type*) [RCLike 𝕜] :
+    (toComplexStarAlgHom 𝕜).comp (RCLike.ofRealStarAlgHom 𝕜) =
+      RCLike.ofRealStarAlgHom ℂ := by
+  ext r
+  simp
+
+/-- The canonical complex embedding has the same underlying function as `RCLike.map`. -/
+theorem coe_toComplexStarAlgHom_eq_map (𝕜 : Type*) [RCLike 𝕜] :
+    (toComplexStarAlgHom 𝕜 : 𝕜 → ℂ) = RCLike.map 𝕜 ℂ :=
+  (rfl)
+
+/-- The canonical complex embedding preserves distances. -/
+theorem isometry_toComplexStarAlgHom (𝕜 : Type*) [RCLike 𝕜] :
+    Isometry (toComplexStarAlgHom 𝕜) := by
+  apply Isometry.of_dist_eq
+  intro x y
+  rw [dist_eq_norm, ← map_sub, toComplexStarAlgHom_apply, RCLike.norm_to_complex,
+    dist_eq_norm]
+
+/-- The canonical complex embedding is continuous. -/
+@[continuity, fun_prop]
+theorem continuous_toComplexStarAlgHom (𝕜 : Type*) [RCLike 𝕜] :
+    Continuous (toComplexStarAlgHom 𝕜) :=
+  (isometry_toComplexStarAlgHom 𝕜).continuous
 
 open ComplexConjugate Metric
 
