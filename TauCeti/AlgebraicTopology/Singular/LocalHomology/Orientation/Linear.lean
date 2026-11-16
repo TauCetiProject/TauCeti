@@ -52,7 +52,7 @@ on the identification used.
 * `Orientation.localOrientation_euclideanSpace`: on the Euclidean model it is the oriented-chart
   generator of the identity chart.
 * `Orientation.localOrientation_injective`, `Orientation.localOrientation_surjective`: the
-  selection is a bijection.
+  selection is a bijection; `Orientation.localOrientation_inj` is the injectivity as an iff.
 
 ## References
 
@@ -218,6 +218,12 @@ theorem localOrientation_injective (hF : finrank ℝ F = n + 1) :
   · rw [h', localOrientation_neg] at h
     exact absurd (congrArg Subtype.val h)
       ((ω'.localOrientation hF).property.neg_ne (complZeroIso hF))
+
+/-- Two orientations select the same local orientation exactly when they are equal. -/
+@[simp]
+theorem localOrientation_inj {ω ω' : Orientation ℝ F (Fin (n + 1))} (hF : finrank ℝ F = n + 1) :
+    ω.localOrientation hF = ω'.localOrientation hF ↔ ω = ω' :=
+  (localOrientation_injective hF).eq_iff
 
 /-- Every local orientation of `F` at the origin is selected by an orientation of `F`. -/
 theorem localOrientation_surjective (hF : finrank ℝ F = n + 1) :
