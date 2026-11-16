@@ -97,6 +97,8 @@ theorem IsClosed.extDeriv_mpullback_eq_zero {η : SmoothForm I M F k} (hη : η.
   -- `d (φ^* η) = φ^* dη = 0` at `y`, by naturality of the exterior derivative.
   rw [← mextDeriv_eq_extDeriv, ← mpullback_mextDeriv_at hφ ((η.contMDiff (φ y)).of_le (by simp)),
     (isClosed_def η).1 hη, TauCeti.mpullback_zero]
+  -- The zero rough form at `y` takes values in alternating maps on `TangentSpace 𝓘(ℝ, E') y`,
+  -- which is `E'` by definition, so it is the flat zero form at `y`.
   rfl
 
 end SmoothForm

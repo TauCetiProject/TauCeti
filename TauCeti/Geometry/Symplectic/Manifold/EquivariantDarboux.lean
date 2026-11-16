@@ -170,6 +170,7 @@ theorem IsSymplectic.exists_equivariant_darbouxChart {form : SmoothTwoForm I M}
   have hη0 (a b : TangentSpace I x₀) : η 0 ![a, b] = form.eval₂ x₀ a b := by
     have hid (v : TangentSpace I x₀) : mfderiv I 𝓘(ℝ, E) e x₀ v = v := by
       rw [hderiv.mfderiv]
+      -- `TangentSpace I x₀` is `E` by definition, so `v` is a vector of `E` for the identity.
       exact ContinuousLinearMap.id_apply (R₁ := ℝ) (M₁ := E) v
     rw [SmoothBundleForm.eval₂_apply, ← hηe hx₀e, mpullback_apply_pair, hid, hid, hex₀]
     -- The two sides differ only in the type of the entries of `![a, b]`, `TangentSpace I x₀` on
