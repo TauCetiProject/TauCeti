@@ -231,6 +231,41 @@ private theorem twistSlide_last {n m : ℕ} (hm : m + 1 ≤ p + 1) (hn : n = p +
 
 /-! ### Crossing-change distances -/
 
+/-- After `k ≤ m` exchanges of the slide of the first column, the grid link is at crossing-change
+distance at most `k` from the starting link. -/
+private theorem edist_twistSlide_le {n m : ℕ} (hm : m + 1 ≤ p + 1)
+    (hn' : n = p + 1 + (q + 1) + (m + 1)) (k : ℕ) (hk : k ≤ m) :
+    GridLink.crossingChangeGraph.edist
+        (twistSlide p q hm hn' ⟨0, by omega⟩).toGridLink
+        (twistSlide p q hm hn' ⟨k, by omega⟩).toGridLink ≤ k := by
+  induction k with
+  | zero => simp
+  | succ k ih =>
+    have hstep : (twistSlide p q hm hn' ⟨k, by omega⟩).IsCrossCommutation
+        (twistSlide p q hm hn' ⟨k + 1, by omega⟩) := by
+      rw [twistSlide_succ hm hn' ⟨k, by omega⟩ (by simp only; omega)]
+      exact (isCrossCommutation_iff _ _).mpr <| Or.inr <|
+        isColumnCrossCommutation_swapColumns _ <|
+          columnsInterleaving_twistSlide hm hn' _ (by simp only; omega)
+    calc _ ≤ _ + _ := SimpleGraph.edist_triangle
+      _ ≤ k + 1 := by
+        gcongr
+        · exact ih (by omega)
+        · exact hstep.isCrossingChange.edist_le_one
+
+/-- The exchanges of the slide of the first column after the `m`th do not change the link. -/
+private theorem toGridLink_twistSlide_eq {n m : ℕ} (hm : m + 1 ≤ p + 1)
+    (hn' : n = p + 1 + (q + 1) + (m + 1)) (k : ℕ) (hk₁ : m ≤ k) (hk₂ : k ≤ p) :
+    (twistSlide p q hm hn' ⟨m, by omega⟩).toGridLink =
+      (twistSlide p q hm hn' ⟨k, by omega⟩).toGridLink := by
+  induction k, hk₁ using Nat.le_induction with
+  | base => rfl
+  | succ k hk ih =>
+    rw [ih (by omega), toGridLink_eq_iff_movesTo,
+      twistSlide_succ hm hn' ⟨k, by omega⟩ (by simp only; omega)]
+    exact movesTo_swapColumns _ _ <| columnsNoninterleaving_twistSlide hm hn' (by omega) _
+      (by simp only; omega) (by simp only; omega)
+
 /-- From `m + 1` twisted columns to `m`, at most `m` crossing changes are needed. -/
 private theorem edist_twistGrid_succ_le {n m : ℕ} (hm : m + 1 ≤ p + 1)
     (hn : n = p + 1 + (q + 1) + m) :
@@ -238,42 +273,13 @@ private theorem edist_twistGrid_succ_le {n m : ℕ} (hm : m + 1 ≤ p + 1)
         (twistGrid p q (n := n + 1) (m + 1) hm (by omega)).toGridLink
         (twistGrid p q m (by omega) hn).toGridLink ≤ m := by
   have hn' : n + 1 = p + 1 + (q + 1) + (m + 1) := by omega
-  -- The first `m` exchanges are crossing changes.
-  have hcross (k : ℕ) (hk : k ≤ m) :
-      GridLink.crossingChangeGraph.edist
-          (twistSlide p q hm hn' ⟨0, by omega⟩).toGridLink
-          (twistSlide p q hm hn' ⟨k, by omega⟩).toGridLink ≤ k := by
-    induction k with
-    | zero => simp
-    | succ k ih =>
-      have hstep : (twistSlide p q hm hn' ⟨k, by omega⟩).IsCrossCommutation
-          (twistSlide p q hm hn' ⟨k + 1, by omega⟩) := by
-        rw [twistSlide_succ hm hn' ⟨k, by omega⟩ (by simp only; omega)]
-        exact (isCrossCommutation_iff _ _).mpr <| Or.inr <|
-          isColumnCrossCommutation_swapColumns _ <|
-            columnsInterleaving_twistSlide hm hn' _ (by simp only; omega)
-      calc _ ≤ _ + _ := SimpleGraph.edist_triangle
-        _ ≤ k + 1 := by
-          gcongr
-          · exact ih (by omega)
-          · exact hstep.isCrossingChange.edist_le_one
-  -- The remaining exchanges are commutations.
-  have hcomm (k : ℕ) (hk₁ : m ≤ k) (hk₂ : k ≤ p) :
-      (twistSlide p q hm hn' ⟨m, by omega⟩).toGridLink =
-        (twistSlide p q hm hn' ⟨k, by omega⟩).toGridLink := by
-    induction k, hk₁ using Nat.le_induction with
-    | base => rfl
-    | succ k hk ih =>
-      rw [ih (by omega), toGridLink_eq_iff_movesTo,
-        twistSlide_succ hm hn' ⟨k, by omega⟩ (by simp only; omega)]
-      exact movesTo_swapColumns _ _ <| columnsNoninterleaving_twistSlide hm hn' (by omega) _
-        (by simp only; omega) (by simp only; omega)
   have hlast : (twistSlide p q hm hn' ⟨p, by omega⟩).toGridLink =
       (twistGrid p q m (by omega) hn).toGridLink := by
     rw [toGridLink_eq_iff_movesTo, twistSlide_last p q hm hn]
     exact movesTo_stabilizeX_castSucc _ _ _
-  rw [← twistSlide_zero hm hn' (by omega), ← hlast, ← hcomm p (by omega) le_rfl]
-  exact hcross m le_rfl
+  rw [← twistSlide_zero hm hn' (by omega), ← hlast,
+    ← toGridLink_twistSlide_eq p q hm hn' p (by omega) le_rfl]
+  exact edist_twistSlide_le p q hm hn' m le_rfl
 
 /-- The intermediate grid with `m` twisted columns is at most `m choose 2` crossing changes away
 from the standard `(p + 1, q + 1)` torus link grid. -/

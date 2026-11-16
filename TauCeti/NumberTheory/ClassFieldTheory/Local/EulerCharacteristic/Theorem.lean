@@ -10,6 +10,7 @@ public import TauCeti.NumberTheory.ClassFieldTheory.Local.EulerCharacteristic.De
 public import TauCeti.NumberTheory.ClassFieldTheory.Local.EulerCharacteristic.Formula
 public import TauCeti.NumberTheory.ClassFieldTheory.Local.EulerCharacteristic.Induced
 public import TauCeti.NumberTheory.ClassFieldTheory.Local.EulerCharacteristic.ModularInduction
+import TauCeti.RepresentationTheory.Homological.ContCohomology.NatCardComparison
 
 /-!
 # Tate's local Euler characteristic formula
@@ -104,6 +105,44 @@ theorem eulerCharacteristic_mixed (n : ℕ) (hn : n ≠ 0)
   have : NeZero n := ⟨hn⟩
   exact natCard_continuousCohomology_one_eq_mul_of_localEulerCharacteristic_eq_localCardNorm
     p n A (localEulerCharacteristic_eq_localCardNorm p F n A)
+
+/-- **Tate's local Euler characteristic formula for explicit cohomology.** For a finite
+discrete `G_F`-module `M` over a finite compatible extension of `ℚ_p`,
+`#H¹ = #H⁰ · #H² · p ^ ([F : ℚ_p] v_p(#M))`. -/
+theorem natCard_H1_eq_mul (M : Type) [AddCommGroup M] [TopologicalSpace M]
+    [DiscreteTopology M] [DistribMulAction (AbsoluteGaloisGroup F) M]
+    [ContinuousSMul (AbsoluteGaloisGroup F) M] [Finite M] :
+    Nat.card (ContCohomology.H1 (AbsoluteGaloisGroup F) M) =
+      Nat.card (ContCohomology.H0 (AbsoluteGaloisGroup F) M) *
+        Nat.card (ContCohomology.H2 (AbsoluteGaloisGroup F) M) *
+        p ^ (Module.finrank ℚ_[p] F * padicValNat p (Nat.card M)) := by
+  let := AddCommGroup.zmodModule (fun (_ : M) ↦ card_nsmul_eq_zero')
+  let A := ofDiscreteModule (ZMod (Nat.card M)) (AbsoluteGaloisGroup F) M
+  let r := absoluteGaloisGroupRestrictEquiv F
+  let X : GalRep (Nat.card M) F :=
+    TopRep.res ((r : Field.absoluteGaloisGroup F →ₜ* AbsoluteGaloisGroup F) :
+      Field.absoluteGaloisGroup F →* AbsoluteGaloisGroup F) A
+  have hX : IsSmoothDiscrete (ZMod (Nat.card M)) X :=
+    (ofDiscreteModule_isSmoothDiscrete _ _ _).res r.continuous
+  have : Fact (IsSmoothDiscrete (ZMod (Nat.card M)) X) := ⟨hX⟩
+  have hA : IsSmoothDiscrete (ZMod (Nat.card M)) A :=
+    ofDiscreteModule_isSmoothDiscrete _ _ _
+  let := TopRep.distribMulAction A
+  have : Finite X.V := ‹Finite M›
+  have := r.symm.toHomeomorph.isOpenEmbedding.locallyCompactSpace
+  -- Instance synthesis gets stuck on the bundled carrier, so supply its topology explicitly.
+  have hc₀ := @TopRep.natCard_H0_eq_natCard_continuousCohomology
+    _ _ _ _ _ _ _ A hA.discreteTopology
+  have hc₁ := @TopRep.natCard_H1_eq_natCard_continuousCohomology
+    _ _ _ _ _ _ _ A hA.discreteTopology hA.continuousSMul
+  have hc₂ := @TopRep.natCard_H2_eq_natCard_continuousCohomology
+    _ _ _ _ _ _ _ A hA.discreteTopology hA.continuousSMul inferInstance
+  have h := eulerCharacteristic_mixed p F (Nat.card M) Nat.card_pos.ne' X inferInstance
+  rw [r.natCard_continuousCohomology_res A 0,
+    r.natCard_continuousCohomology_res A 1,
+    r.natCard_continuousCohomology_res A 2,
+    ← hc₀, ← hc₁, ← hc₂] at h
+  exact h
 
 /-- **Dimension form of Tate's local Euler characteristic formula.** For a finite smooth
 discrete `𝔽_p`-module, `dim H¹ = dim H⁰ + dim H² + [F : ℚ_p] dim A`. -/

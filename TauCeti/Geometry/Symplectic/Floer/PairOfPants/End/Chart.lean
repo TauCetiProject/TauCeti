@@ -48,6 +48,8 @@ apply to all three ends.
   `TauCeti.Floer.exists_lt_endSign_mul_re_endCoord_of_notMem_truncation`: in real coordinates the
   truncation `S_R` is compact and lies in `S`, and every other point of `S` lies beyond `R` on some
   end.
+* `TauCeti.Floer.subset_preimage_truncation_of_isOpen`: an open set on which every signed
+  longitudinal coordinate is at most `R` lies in `S_R`.
 * `TauCeti.Floer.setIntegral_thricePuncturedSphereReal_eq_setIntegral_truncation`: the integral over
   `S` of a function vanishing beyond `R` on every end is its integral over `S_R`.
 * `TauCeti.Floer.contDiffAt_uncurry_pairOfPantsPerturbation`,
@@ -165,6 +167,16 @@ theorem preimage_truncation_subset_thricePuncturedSphereReal (R : ℝ) :
     Complex.equivRealProdCLM.symm ⁻¹' truncation R ⊆ thricePuncturedSphereReal :=
   fun _ hz ↦ mem_thricePuncturedSphereReal_iff.2 ⟨(mem_truncation.1 hz).1,
     (mem_truncation.1 hz).2.1⟩
+
+/-- An open set on which the signed longitudinal coordinate `±s` of every end is at most `R`
+lies in the truncation `S_R`, in real coordinates. -/
+theorem subset_preimage_truncation_of_isOpen {U : Set (ℝ × ℝ)} (hU : IsOpen U) {R : ℝ}
+    (h : ∀ z ∈ U, ∀ q : Puncture,
+      q.endSign * (q.endCoord (Complex.equivRealProdCLM.symm z)).re ≤ R) :
+    U ⊆ Complex.equivRealProdCLM.symm ⁻¹' truncation R := by
+  have hV := subset_truncation_of_isOpen (hU.preimage Complex.equivRealProdCLM.continuous)
+    fun w hw q ↦ by simpa only [ContinuousLinearEquiv.symm_apply_apply] using h _ hw q
+  exact fun z hz ↦ hV (by simpa using hz)
 
 /-- A point of `S` outside the truncation `S_R` lies beyond `R` on some end. -/
 theorem exists_lt_endSign_mul_re_endCoord_of_notMem_truncation {R : ℝ} {z : ℝ × ℝ}
@@ -578,6 +590,42 @@ theorem endChart_eq_positiveEndChart (q : Puncture) (s t : ℝ) :
     endChart q (q.endSign * s, t) = positiveEndChart q (s, q.endSign * t) := by
   rw [positiveEndChart_mk, ← mul_assoc, endSign_mul_self, one_mul]
 
+/-- The end loop `t ↦ u(φ_q(±s, t))` is the loop of `u ∘ φ'_q` at the height `s`, read with the
+time `±t` of the end. -/
+theorem comp_endChart_eq_comp_positiveEndChart {α : Type*} (u : ℝ × ℝ → α) (q : Puncture)
+    (s : ℝ) :
+    (fun t ↦ u (endChart q (q.endSign * s, t))) =
+      (fun t ↦ (u ∘ positiveEndChart q) (s, t)) ∘ fun t ↦ q.endSign * t := by
+  funext t
+  simp only [comp_apply, endChart_eq_positiveEndChart]
+
+/-- A family which is `J_q(t, u)` along the end `q` beyond `T₀` is `J_q(±t, u)` in the positive end
+chart. -/
+theorem eq_comp_positiveEndChart {α β : Type*} {u : ℝ × ℝ → α} {J : ℝ × ℝ → β}
+    {Jq : ℝ → α → β} {q : Puncture} {T₀ : ℝ}
+    (hJ : ∀ s t, T₀ ≤ s →
+      J (endChart q (q.endSign * s, t)) = Jq t (u (endChart q (q.endSign * s, t))))
+    {z : ℝ × ℝ} (hz : T₀ ≤ z.1) :
+    J (positiveEndChart q z) = Jq (q.endSign * z.2) ((u ∘ positiveEndChart q) z) := by
+  obtain ⟨s, t⟩ := z
+  simp only [comp_apply, positiveEndChart_mk]
+  exact hJ s _ hz
+
+/-- If the end loops `t ↦ u(φ_q(±s, t))` converge uniformly to `y`, then the loops of `u ∘ φ'_q`
+converge uniformly to `t ↦ y(±t)`. -/
+theorem tendstoUniformly_comp_positiveEndChart {α : Type*} [UniformSpace α] {u : ℝ × ℝ → α}
+    {q : Puncture} {y : ℝ → α} {l : Filter ℝ}
+    (h : TendstoUniformly (fun s t ↦ u (endChart q (q.endSign * s, t))) y l) :
+    TendstoUniformly (fun s t ↦ (u ∘ positiveEndChart q) (s, t)) (fun t ↦ y (q.endSign * t))
+      l := by
+  have hloop (s : ℝ) : (fun t ↦ (u ∘ positiveEndChart q) (s, t)) =
+      (fun t ↦ u (endChart q (q.endSign * s, t))) ∘ fun t ↦ q.endSign * t := by
+    rw [comp_endChart_eq_comp_positiveEndChart]
+    funext t
+    simp only [comp_apply, endSign_mul_endSign_mul]
+  rw [funext hloop]
+  exact h.comp _
+
 /-- The positive end chart is `1`-periodic in the angular coordinate. -/
 theorem positiveEndChart_add_one (q : Puncture) (s t : ℝ) :
     positiveEndChart q (s, t + 1) = positiveEndChart q (s, t) := by
@@ -598,6 +646,18 @@ theorem hasFDerivAt_positiveEndChart (q : Puncture) (z : ℝ × ℝ) :
 theorem fderiv_positiveEndChart_apply (q : Puncture) (z v : ℝ × ℝ) :
     fderiv ℝ (positiveEndChart q) z v = q.endSign • fderiv ℝ (endChart q) (q.endSign • z) v := by
   simp [(hasFDerivAt_positiveEndChart q z).fderiv]
+
+/-- The end chart is the positive end chart after the reflection `z ↦ ±z`, so a map read in the end
+chart has, at `z`, the derivative of the map read in the positive end chart at `±z`, composed with
+the reflection. -/
+theorem fderiv_comp_endChart {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] (q : Puncture)
+    (u : ℝ × ℝ → E) (z : ℝ × ℝ) :
+    fderiv ℝ (u ∘ endChart q) z =
+      q.endSign • fderiv ℝ (u ∘ positiveEndChart q) (q.endSign • z) := by
+  have h : u ∘ endChart q = fun z ↦ (u ∘ positiveEndChart q) (q.endSign • z) := by
+    funext z
+    simp [positiveEndChart_apply, smul_smul]
+  rw [h, fderiv_comp_smul]
 
 theorem contDiff_positiveEndChart (q : Puncture) (n : WithTop ℕ∞) :
     ContDiff ℝ n (positiveEndChart q) :=
@@ -653,6 +713,14 @@ noncomputable def positiveEndHamiltonian {X : Type*} (H : Puncture → ℝ → X
 theorem positiveEndHamiltonian_apply {X : Type*} (H : Puncture → ℝ → X → ℝ) (q : Puncture)
     (t : ℝ) (x : X) : positiveEndHamiltonian H q t x = q.endSign * H q (q.endSign * t) x :=
   (rfl)
+
+/-- Passing to the positive end chart twice gives back the end Hamiltonian:
+`(H'_q)'(t, x) = ±(±H_q(±(±t), x)) = H_q(t, x)`. -/
+@[simp]
+theorem positiveEndHamiltonian_positiveEndHamiltonian {X : Type*} (H : Puncture → ℝ → X → ℝ)
+    (q : Puncture) : positiveEndHamiltonian (positiveEndHamiltonian H) q = H q := by
+  funext t x
+  simp only [positiveEndHamiltonian_apply, endSign_mul_endSign_mul]
 
 theorem periodic_positiveEndHamiltonian {X : Type*} {H : Puncture → ℝ → X → ℝ} {q : Puncture}
     (hH : Periodic (H q) 1) : Periodic (positiveEndHamiltonian H q) 1 := by
