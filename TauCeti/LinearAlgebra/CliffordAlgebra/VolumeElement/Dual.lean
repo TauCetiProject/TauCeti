@@ -83,16 +83,11 @@ section Form
 variable (hQ : ∀ v, Q v = -‖v‖ ^ 2)
 include hQ
 
-/-- For `Q v = -‖v‖²`, the element `Γ` acts on every module as an involution. -/
-private theorem involutive_complexVolume :
-    Function.Involutive (ρ (complexVolume Q o)) := fun s ↦ by
-  rw [← mul_apply_eq_comp, ← map_mul, complexVolume_mul_self o hQ, map_one, one_apply_eq_self]
-
 /-- The `±1`-eigenspaces of `Γ` on a module are complementary. -/
 private theorem isCompl_eigenspace_complexVolume_neg {μ : ℂ} (hμ : μ = 1 ∨ μ = -1) :
     IsCompl ((ρ (complexVolume Q o)).eigenspace μ) ((ρ (complexVolume Q o)).eigenspace (-μ)) := by
   have h := TauCeti.isCompl_eigenspace_one_neg_one two_ne_zero.isUnit
-    (involutive_complexVolume ρ o hQ)
+    (map_complexVolume_involutive o hQ ρ)
   rcases hμ with rfl | rfl
   · exact h
   · rw [neg_neg]
@@ -104,7 +99,7 @@ private theorem isCompl_eigenspace_complexVolume_neg {μ : ℂ} (hμ : μ = 1 �
 theorem eigenspace_cliffordReverseDual_complexVolume {μ : ℂ} (hμ : μ = 1 ∨ μ = -1) :
     (cliffordReverseDual ρ (complexVolume Q o)).eigenspace μ =
       ((ρ (complexVolume Q o)).eigenspace (-((-1) ^ (n / 2) * μ))).dualAnnihilator := by
-  have hinv := involutive_complexVolume ρ o hQ
+  have hinv := map_complexVolume_involutive o hQ ρ
   have hμ' : μ * μ = 1 := by rcases hμ with rfl | rfl <;> norm_num
   rcases neg_one_pow_eq_or ℂ (n / 2) with h | h
   · rw [cliffordReverseDual_complexVolume, h, one_smul, one_mul]

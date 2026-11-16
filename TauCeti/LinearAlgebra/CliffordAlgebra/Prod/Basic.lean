@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.LinearAlgebra.CliffordAlgebra.Prod
+import TauCeti.LinearAlgebra.End.Basic
 
 /-!
 # The graded tensor product of Clifford modules
@@ -45,6 +46,7 @@ operator, and the normalized volume element of `V ⊕ W` then acts by the tensor
 
 ## Main results
 
+* `AlgHom.cliffordProdTensor_congr_grading`: congruence of `cliffordProdTensor` in the grading `γ`.
 * `AlgHom.cliffordProdTensor_ι`: a vector `(v, w)` acts by `c₁(v) ⊗ 1 + γ ⊗ c₂(w)`.
 * `AlgHom.cliffordProdTensor_map_inl`: `CliffordAlgebra Q₁` acts through the first factor.
 * `AlgHom.cliffordProdTensor_map_inr_prod`: a product of `k` vectors of `M₂` acts by
@@ -114,6 +116,13 @@ noncomputable def cliffordProdTensor :
     CliffordAlgebra (Q₁.prod Q₂) →ₐ[R] Module.End R (E ⊗[R] F) :=
   CliffordAlgebra.lift (Q₁.prod Q₂)
     ⟨cliffordProdTensorAux ρ₁ γ ρ₂, cliffordProdTensorAux_mul_self ρ₁ γ hγ hγρ ρ₂⟩
+
+/-- Congruence of `AlgHom.cliffordProdTensor` in the grading operator `γ`. -/
+theorem cliffordProdTensor_congr_grading {γ' : Module.End R E} (h : γ = γ')
+    (hγ' : γ' * γ' = 1) (hγ'ρ : ∀ v, γ' * ρ₁ (ι Q₁ v) = -(ρ₁ (ι Q₁ v) * γ')) :
+    cliffordProdTensor ρ₁ γ hγ hγρ ρ₂ = cliffordProdTensor ρ₁ γ' hγ' hγ'ρ ρ₂ := by
+  subst h
+  rfl
 
 /-- A vector `(v, w)` acts on `E ⊗ F` by `c₁(v) ⊗ 1 + γ ⊗ c₂(w)`. -/
 theorem cliffordProdTensor_ι (x : M₁ × M₂) :
@@ -227,12 +236,6 @@ theorem cliffordProdTensor_toProd_tmul (a : CliffordAlgebra Q₁) {j : ZMod 2}
     cliffordProdTensor_map_inr_of_mem_evenOdd ρ₁ γ hγ hγρ ρ₂ hb, LinearMap.rTensor,
     ← Module.End.one_eq_id, ← TensorProduct.map_mul, one_mul]
 
-private theorem pow_apply_of_apply_eq_smul {μ : R} {e : E} (he : γ e = μ • e) (k : ℕ) :
-    (γ ^ k) e = μ ^ k • e := by
-  induction k with
-  | zero => simp
-  | succ k ih => rw [pow_succ', mul_apply_eq_comp, ih, map_smul, he, smul_smul, pow_succ]
-
 /-- On a pure tensor `e ⊗ f` with `γ e = μ • e`, the pure tensor `a ᵍ⊗ b` with `b` of parity `j`
 acts via `CliffordAlgebra.toProd` as `μ ^ j.val • (ρ₁ a e ⊗ ρ₂ b f)`. -/
 theorem cliffordProdTensor_toProd_tmul_tmul_of_apply_eq_smul (a : CliffordAlgebra Q₁) {j : ZMod 2}
@@ -240,7 +243,7 @@ theorem cliffordProdTensor_toProd_tmul_tmul_of_apply_eq_smul (a : CliffordAlgebr
     cliffordProdTensor ρ₁ γ hγ hγρ ρ₂ (toProd Q₁ Q₂ (a ᵍ⊗ₜ b)) (e ⊗ₜ f) =
       μ ^ j.val • (ρ₁ a e ⊗ₜ ρ₂ b f) := by
   rw [cliffordProdTensor_toProd_tmul ρ₁ γ hγ hγρ ρ₂ a hb, map_tmul, mul_apply_eq_comp,
-    pow_apply_of_apply_eq_smul γ he, map_smul, smul_tmul']
+    Module.End.pow_apply_eq_pow_smul_of_apply_eq_smul γ he, map_smul, smul_tmul']
 
 /-- **Koszul sign on homogeneous vectors**: for `b` of parity `j` and `e` of parity `i` in the
 sense `γ e = (-1) ^ i • e`, the pure tensor `a ᵍ⊗ b` acts on `e ⊗ f` via `CliffordAlgebra.toProd`

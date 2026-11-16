@@ -75,7 +75,7 @@ every vector (`CliffordAlgebra.map_lsmul_complexVolume_ι_smul`). Its twisting g
 
 * H. B. Lawson and M.-L. Michelsohn, *Spin Geometry* (1989), Chapter I, §5.
 * N. Berline, E. Getzler and M. Vergne, *Heat Kernels and Dirac Operators* (1992), Chapter 3.
-* L. Nicolaescu, *Lectures on the Geometry of Manifolds*, §2.2, p. 633.
+* L. Nicolaescu, *Lectures on the Geometry of Manifolds*, Chapter 12, §12.1, p. 633.
 -/
 
 public section

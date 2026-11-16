@@ -29,9 +29,9 @@ their orthogonal sum.
 
 ## Main results
 
-* `AlgHom.surjective_cliffordProdTensor`: `cliffordProdTensor` is surjective when `E` and `F` are
+* `AlgHom.cliffordProdTensor_surjective`: `cliffordProdTensor` is surjective when `E` and `F` are
   finite projective and `ρ₁`, `ρ₂` are surjective.
-* `AlgHom.bijective_cliffordProdTensor`: `cliffordProdTensor` is bijective when `E` and `F` are
+* `AlgHom.cliffordProdTensor_bijective`: `cliffordProdTensor` is bijective when `E` and `F` are
   finite projective and `ρ₁`, `ρ₂` are bijective.
 
 ## References
@@ -118,20 +118,18 @@ private theorem cliffordProdTensor_comp_toProd_comp_of
   simp only [LinearMap.comp_apply, LinearEquiv.coe_coe, AlgHom.coe_toLinearMap]
   have h0 := cliffordProdTensor_toProd_tmul ρ₁ γ hγ hγρ ρ₂ a hb₀
   have h1 := cliffordProdTensor_toProd_tmul ρ₁ γ hγ hγρ ρ₂ a hb₁
+  dsimp only [GradedTensorProduct.tmul] at h0 h1
   simp only [ZMod.val_zero, pow_zero, mul_one] at h0
   simp only [ZMod.val_one, pow_one] at h1
-  -- Expose `GradedTensorProduct.of R _ _ (a ⊗ₜ bᵢ)` as the graded pure tensor `a ᵍ⊗ₜ bᵢ`.
-  change cliffordProdTensor ρ₁ γ hγ hγρ ρ₂ (toProd Q₁ Q₂ (a ᵍ⊗ₜ b₀)) +
-      cliffordProdTensor ρ₁ γ hγ hγρ ρ₂ (toProd Q₁ Q₂ (a ᵍ⊗ₜ b₁)) = _
   rw [h0, h1, LinearMap.rTensor_tmul, LinearMap.rTensor_tmul, oddTwistEquiv,
     LinearEquiv.coe_ofInvolutive, oddTwist_tmul_even _ hb₀, oddTwist_tmul_odd _ hb₁,
     LinearMap.lTensor_tmul, LinearMap.lTensor_tmul]
-  rfl
+  simp only [homTensorHomEquiv_apply, homTensorHomMap_apply, AlgHom.coe_toLinearMap]
 
 /-- **Surjectivity of the graded Clifford tensor product**: if `E` and `F` are finite projective
 `R`-modules and `ρ₁` and `ρ₂` are surjective onto `End_R(E)` and `End_R(F)`, then
 `cliffordProdTensor` is surjective onto `End_R(E ⊗_R F)`. -/
-theorem surjective_cliffordProdTensor
+theorem cliffordProdTensor_surjective
     [Module.Finite R E] [Module.Projective R E] [Module.Finite R F] [Module.Projective R F]
     (h₁ : Function.Surjective ρ₁) (h₂ : Function.Surjective ρ₂) :
     Function.Surjective (cliffordProdTensor ρ₁ γ hγ hγρ ρ₂) := by
@@ -149,28 +147,29 @@ theorem surjective_cliffordProdTensor
 /-- **Bijectivity of the graded Clifford tensor product**: if `E` and `F` are finite projective
 `R`-modules and `ρ₁` and `ρ₂` are bijective onto `End_R(E)` and `End_R(F)`, then
 `cliffordProdTensor` is bijective onto `End_R(E ⊗_R F)`. -/
-theorem bijective_cliffordProdTensor
+theorem cliffordProdTensor_bijective
     [Module.Finite R E] [Module.Projective R E] [Module.Finite R F] [Module.Projective R F]
     (h₁ : Function.Bijective ρ₁) (h₂ : Function.Bijective ρ₂) :
     Function.Bijective (cliffordProdTensor ρ₁ γ hγ hγρ ρ₂) := by
   let e₁ : CliffordAlgebra Q₁ ≃ₗ[R] Module.End R E := LinearEquiv.ofBijective ρ₁.toLinearMap h₁
   let e₂ : CliffordAlgebra Q₂ ≃ₗ[R] Module.End R F := LinearEquiv.ofBijective ρ₂.toLinearMap h₂
-  have heq : (cliffordProdTensor ρ₁ γ hγ hγρ ρ₂).toLinearMap ∘ₗ
-        (toProd Q₁ Q₂).toLinearMap ∘ₗ
-        (GradedTensorProduct.of R (evenOdd Q₁) (evenOdd Q₂)).toLinearMap =
-      ((e₁.rTensor (CliffordAlgebra Q₂)).trans <|
-        (oddTwistEquiv (Q₂ := Q₂) hγ).trans <|
-          (e₂.lTensor (Module.End R E)).trans (homTensorHomEquiv R E F E F)).toLinearMap :=
-    cliffordProdTensor_comp_toProd_comp_of hγ hγρ
+  have he₁ : e₁.toLinearMap = ρ₁.toLinearMap :=
+    LinearMap.ext fun x ↦ LinearEquiv.ofBijective_apply ρ₁.toLinearMap x
+  have he₂ : e₂.toLinearMap = ρ₂.toLinearMap :=
+    LinearMap.ext fun x ↦ LinearEquiv.ofBijective_apply ρ₂.toLinearMap x
   have hbij : Function.Bijective
-      (((cliffordProdTensor ρ₁ γ hγ hγρ ρ₂ : _ → _) ∘ (CliffordAlgebra.prodEquiv Q₁ Q₂).symm) ∘
-        GradedTensorProduct.of R (evenOdd Q₁) (evenOdd Q₂)) := by
-    -- Identify the function composite with the linear-equivalence composite `heq`.
-    change Function.Bijective ⇑((cliffordProdTensor ρ₁ γ hγ hγρ ρ₂).toLinearMap ∘ₗ
-      (toProd Q₁ Q₂).toLinearMap ∘ₗ
-      (GradedTensorProduct.of R (evenOdd Q₁) (evenOdd Q₂)).toLinearMap)
-    rw [heq]
-    exact LinearEquiv.bijective _
+      ⇑((cliffordProdTensor ρ₁ γ hγ hγρ ρ₂).toLinearMap ∘ₗ
+        (toProd Q₁ Q₂).toLinearMap ∘ₗ
+        (GradedTensorProduct.of R (evenOdd Q₁) (evenOdd Q₂)).toLinearMap) := by
+    rw [cliffordProdTensor_comp_toProd_comp_of hγ hγρ, ← he₁, ← he₂, ← LinearEquiv.coe_rTensor,
+      ← LinearEquiv.coe_lTensor, LinearMap.coe_comp, LinearMap.coe_comp, LinearMap.coe_comp]
+    exact (homTensorHomEquiv R E F E F).bijective.comp <|
+      (e₂.lTensor (Module.End R E)).bijective.comp <|
+        (oddTwistEquiv (Q₂ := Q₂) hγ).bijective.comp (e₁.rTensor (CliffordAlgebra Q₂)).bijective
+  have htoProd : ⇑(toProd Q₁ Q₂) = ⇑(CliffordAlgebra.prodEquiv Q₁ Q₂).symm :=
+    funext fun x ↦ (CliffordAlgebra.prodEquiv_symm_apply Q₁ Q₂ x).symm
+  rw [LinearMap.coe_comp, LinearMap.coe_comp, AlgHom.coe_toLinearMap, AlgHom.coe_toLinearMap,
+    LinearEquiv.coe_toLinearMap, htoProd, ← Function.comp_assoc] at hbij
   have hbij' : Function.Bijective
       ((cliffordProdTensor ρ₁ γ hγ hγρ ρ₂ : _ → _) ∘ (CliffordAlgebra.prodEquiv Q₁ Q₂).symm) :=
     (Function.Bijective.of_comp_iff _

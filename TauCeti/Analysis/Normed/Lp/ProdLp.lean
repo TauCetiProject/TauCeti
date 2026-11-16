@@ -50,7 +50,9 @@ coordinate embeds the other factor isometrically into `WithLp p (α × β)`.
   and only if `Set.range f` and `Set.range g` are bounded.
 * `TauCeti.toLp_prodMk_eq_add` — `x ↦ (f x, u x)` is `x ↦ ι₁ (f x) + ι₂ (u x)`.
 * `ContinuousLinearMap.withLpProdMap` — the block sum `f ⊕ g` on `WithLp p (α × β)`.
+* `WithLp.instModuleFree` — `WithLp p V` inherits `Module.Free K` from `V`.
 * `LinearMap.rank_withLpMap` — lifting a linear map to `WithLp` preserves its rank.
+* `LinearEquiv.withLpProdAssoc` — associativity of `WithLp` products as a linear equivalence.
 * `ContinuousLinearMap.rank_withLpProdMap` — `rank (f ⊕ g) = rank f + rank g`.
 * `ContinuousLinearMap.norm_withLpProdMap` — `‖f ⊕ g‖ = max ‖f‖ ‖g‖`.
 * `WithLp.norm_fstL_le_one`, `WithLp.norm_sndL_le_one`,
@@ -231,6 +233,16 @@ end Graph
 
 end TauCeti
 
+namespace WithLp
+
+/-- `WithLp p V` inherits `Module.Free K` from `V`, complementing Mathlib's
+`WithLp.instModuleFinite`. -/
+instance instModuleFree {p : ℝ≥0∞} {K V : Type*} [Semiring K] [AddCommGroup V] [Module K V]
+    [Module.Free K V] : Module.Free K (WithLp p V) :=
+  Module.Free.of_equiv (WithLp.linearEquiv p K V).symm
+
+end WithLp
+
 namespace LinearMap
 
 /-- Lifting a linear map to `WithLp` does not change its rank. -/
@@ -242,6 +254,64 @@ theorem rank_withLpMap {p : ℝ≥0∞} {K V V' : Type*} [Semiring K] [AddCommGr
   exact LinearEquiv.rank_map_eq _ _
 
 end LinearMap
+
+namespace LinearEquiv
+
+section Assoc
+
+variable (p : ℝ≥0∞) (K U V W : Type*) [Semiring K]
+  [AddCommGroup U] [Module K U] [AddCommGroup V] [Module K V] [AddCommGroup W] [Module K W]
+
+/-- Associativity of `WithLp` products as a linear equivalence, requiring no norm structure. -/
+def withLpProdAssoc :
+    WithLp p (WithLp p (U × V) × W) ≃ₗ[K] WithLp p (U × WithLp p (V × W)) :=
+  (((WithLp.linearEquiv p K (U × V)).prodCongr (LinearEquiv.refl K W)).trans <|
+    (LinearEquiv.prodAssoc K U V W).trans <|
+      (LinearEquiv.refl K U).prodCongr (WithLp.linearEquiv p K (V × W)).symm).withLpCongr p
+
+/-- Forward application of `LinearEquiv.withLpProdAssoc`. -/
+@[simp]
+theorem withLpProdAssoc_apply (x : WithLp p (WithLp p (U × V) × W)) :
+    withLpProdAssoc p K U V W x = WithLp.toLp p (x.fst.fst, WithLp.toLp p (x.fst.snd, x.snd)) := by
+  simp [withLpProdAssoc]
+
+/-- Inverse application of `LinearEquiv.withLpProdAssoc`. -/
+@[simp]
+theorem withLpProdAssoc_symm_apply (x : WithLp p (U × WithLp p (V × W))) :
+    (withLpProdAssoc p K U V W).symm x =
+      WithLp.toLp p (WithLp.toLp p (x.fst, x.snd.fst), x.snd.snd) := by
+  rcases x with ⟨u, ⟨v, w⟩⟩
+  apply (withLpProdAssoc p K U V W).injective
+  simp
+
+end Assoc
+
+end LinearEquiv
+
+namespace LinearIsometryEquiv
+
+variable (p : ℝ≥0∞) [Fact (1 ≤ p)] (K U V W : Type*) [Semiring K]
+  [SeminormedAddCommGroup U] [Module K U]
+  [SeminormedAddCommGroup V] [Module K V]
+  [SeminormedAddCommGroup W] [Module K W]
+
+/-- Underlying linear equivalence of `LinearIsometryEquiv.withLpProdComm`. -/
+@[simp]
+theorem toLinearEquiv_withLpProdComm :
+    (withLpProdComm p K V W).toLinearEquiv = (LinearEquiv.prodComm K V W).withLpCongr p := by
+  ext x
+  rcases x with ⟨v, w⟩
+  simp
+
+/-- Underlying linear equivalence of `LinearIsometryEquiv.withLpProdAssoc`. -/
+@[simp]
+theorem toLinearEquiv_withLpProdAssoc :
+    (withLpProdAssoc p K U V W).toLinearEquiv = LinearEquiv.withLpProdAssoc p K U V W := by
+  ext x
+  rcases x with ⟨⟨u, v⟩, w⟩
+  simp
+
+end LinearIsometryEquiv
 
 namespace ContinuousLinearMap
 

@@ -34,8 +34,10 @@ A finite nontrivial module has more than one endomorphism (`Module.End.one_lt_na
 Of two endomorphisms conjugate by a linear equivalence, one squares to `κ • 1` exactly when the
 other does (`Module.End.mul_self_eq_smul_one_iff_of_forall_apply_eq`).
 
-An endomorphism acting as a scalar `a` from a monoid acting on the module has `k`-th power acting
-as `a ^ k` (`Module.End.pow_apply_eq_pow_smul`), so it is `1` once `a ^ k = 1`
+An endomorphism acting on a vector `x` by a scalar `μ` has `k`-th power acting on `x` by `μ ^ k`
+(`Module.End.pow_apply_eq_pow_smul_of_apply_eq_smul`), and an endomorphism acting everywhere as a
+scalar `a` from a monoid acting on the module has `k`-th power acting as `a ^ k`
+(`Module.End.pow_apply_eq_pow_smul`), so it is `1` once `a ^ k = 1`
 (`Module.End.pow_eq_one_of_apply_eq_smul`).
 
 A submodule fixed pointwise by an endomorphism `f` is invariant under `f`
@@ -107,6 +109,15 @@ theorem mul_self_eq_smul_one_iff_of_forall_apply_eq {R M N : Type*} [CommSemirin
   have hB : B = e.conjAlgEquiv R A := LinearMap.ext fun w ↦ by
     simp [LinearEquiv.conjAlgEquiv_apply, hAB]
   rw [hB, ← map_mul, ← map_one (e.conjAlgEquiv R), ← map_smul, EmbeddingLike.apply_eq_iff_eq]
+
+/-- If an endomorphism `f` acts on a vector `x` by the scalar `μ`, then `f ^ k` acts on `x` by
+`μ ^ k`. -/
+theorem pow_apply_eq_pow_smul_of_apply_eq_smul {R M : Type*} [Semiring R] [AddCommMonoid M]
+    [Module R M] (f : Module.End R M) {μ : R} {x : M} (hx : f x = μ • x) (k : ℕ) :
+    (f ^ k) x = μ ^ k • x := by
+  induction k with
+  | zero => simp
+  | succ k ih => rw [pow_succ', _root_.mul_apply_eq_comp, ih, map_smul, hx, smul_smul, pow_succ]
 
 /-- The `k`-th power of an endomorphism acting as the scalar `a` acts as `a ^ k`. -/
 theorem pow_apply_eq_pow_smul {R M X : Type*} [Semiring R] [AddCommMonoid X] [Module R X]

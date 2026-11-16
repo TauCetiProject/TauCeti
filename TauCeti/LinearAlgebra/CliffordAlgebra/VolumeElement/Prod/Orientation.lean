@@ -7,30 +7,32 @@ module
 
 public import TauCeti.LinearAlgebra.CliffordAlgebra.VolumeElement.Prod.Basic
 public import TauCeti.LinearAlgebra.Orientation.Prod
--- Private: negated-grading intertwining and orthonormal-basis polar orthogonality are proof-only.
+-- Private: negated-grading intertwining and orthonormal-basis product orientations are proof-only.
+import TauCeti.Analysis.InnerProductSpace.Orthonormal.Prod
 import TauCeti.LinearAlgebra.CliffordAlgebra.OrthonormalBasis
 import TauCeti.LinearAlgebra.CliffordAlgebra.Prod.Neg
 
 /-!
 # Orientation reversal and frame-free product orientations for `complexProdTensor`
 
-Let `V` and `W` be oriented real inner product spaces of dimensions `n` and `m`, with `n` even and
-`Q₁ v = -‖v‖²`. Reversing the orientation of `V` from `o₁` to `-o₁` negates its chirality `Γ_V`
-(`CliffordAlgebra.complexVolume_neg_orientation`). In the graded tensor product
-`CliffordAlgebra.complexProdTensor` on `E ⊗ F`:
+Let `V` be an oriented even-dimensional real inner product space of dimension `n` with
+`Q₁ v = -‖v‖²`, and let `(W, Q₂)` be a real quadratic space. Reversing the orientation of `V` from
+`o₁` to `-o₁` negates its chirality `Γ_V` (`CliffordAlgebra.complexVolume_neg_orientation`). In the
+graded tensor product `CliffordAlgebra.complexProdTensor` on `E ⊗ F`:
 
 * Vectors `(v, 0)` of `V` still act by `c_V(v) ⊗ 1`, while vectors `(0, w)` of `W` act by
   `-Γ_V ⊗ c_W(w)`: as an algebra homomorphism, `complexProdTensor` for `-o₁` equals
   `complexProdTensor` for `o₁` with `ρ₂` precomposed with the grade involution
   `CliffordAlgebra.involute` (`CliffordAlgebra.complexProdTensor_neg_orientation_eq_comp_involute`).
-* When `m` is even, `Γ_W` anticommutes with every vector of `W`, so `1 ⊗ Γ_W` intertwines the
-  `-o₁` and `o₁` product actions on the entire complexified Clifford algebra
+* When `W` is an oriented real inner product space of even dimension `m`, `Γ_W` anticommutes with
+  every vector of `W`, so `1 ⊗ Γ_W` intertwines the `-o₁` and `o₁` product actions on the entire
+  complexified Clifford algebra
   (`CliffordAlgebra.lTensor_complexVolume_comp_complexProdTensor_neg_orientation`). When moreover
   `Q₂ w = -‖w‖²`, conjugation by `1 ⊗ Γ_W` identifies the two algebra maps
   (`CliffordAlgebra.conjAlgEquiv_complexProdTensor_neg_orientation`).
 
-Using the canonical frame-free product orientation `Orientation.prod o₁ o₂` transported along
-`(WithLp.linearEquiv 2 ℝ (V × W)).symm`, the volume formulas of
+When `Q₂ w = -‖w‖²`, using the canonical frame-free product orientation `Orientation.prod o₁ o₂`
+transported along `(WithLp.linearEquiv 2 ℝ (V × W)).symm`, the volume formulas of
 `TauCeti/LinearAlgebra/CliffordAlgebra/VolumeElement/Prod/Basic.lean` hold without choosing frames,
 including in rank zero and for negative orientations
 (`CliffordAlgebra.complexProdTensor_complexVolume_of_prod` and
@@ -67,8 +69,10 @@ open scoped TensorProduct
 
 namespace CliffordAlgebra
 
+section FirstFactor
+
 variable {V W : Type*} [NormedAddCommGroup V] [InnerProductSpace ℝ V]
-  [NormedAddCommGroup W] [InnerProductSpace ℝ W]
+  [AddCommGroup W] [Module ℝ W]
   {Q₁ : QuadraticForm ℝ V} {Q₂ : QuadraticForm ℝ W} {Q : QuadraticForm ℝ (WithLp 2 (V × W))}
   (hQ : ∀ x, Q x = Q₁ (WithLp.ofLp x).1 + Q₂ (WithLp.ofLp x).2)
   [FiniteDimensional ℝ V] {n : ℕ} [Fact (finrank ℝ V = n)] (o₁ : Orientation ℝ V (Fin n))
@@ -79,40 +83,65 @@ variable {V W : Type*} [NormedAddCommGroup V] [InnerProductSpace ℝ V]
 
 /-! ### Reversing the orientation of the first factor -/
 
+private theorem complexProdTensor_neg_orientation_eq :
+    complexProdTensor hQ (-o₁) hQ₁ hn ρ₁ ρ₂ =
+      (AlgHom.cliffordProdTensor ρ₁ (-ρ₁ (complexVolume Q₁ o₁))
+          (by rw [neg_mul_neg, map_complexVolume_mul_self o₁ hQ₁ ρ₁])
+          (fun v ↦ by rw [neg_mul, mul_neg, map_complexVolume_mul_map_ι o₁ hn ρ₁ v]) ρ₂).comp
+        (equivOfIsometry (TauCeti.baseChangeWithLpProdIsometryEquiv hQ ℂ)).toAlgHom := by
+  rw [complexProdTensor_def]
+  congr 1
+  exact AlgHom.cliffordProdTensor_congr_grading ρ₁ _ _ _ ρ₂
+    (by rw [complexVolume_neg_orientation, map_neg]) _ _
+
 /-- Reversing the orientation of `V` negates the second summand's term in `c(v, w)`:
 `c_{-o₁}(v, w) = c_V(v) ⊗ 1 - Γ_V ⊗ c_W(w)`. -/
 theorem complexProdTensor_neg_orientation_ι_one_tmul_toLp (v : V) (w : W) :
     complexProdTensor hQ (-o₁) hQ₁ hn ρ₁ ρ₂ (ι (Q.baseChange ℂ) (1 ⊗ₜ WithLp.toLp 2 (v, w))) =
       (ρ₁ (ι (Q₁.baseChange ℂ) (1 ⊗ₜ v))).rTensor F -
         TensorProduct.map (ρ₁ (complexVolume Q₁ o₁)) (ρ₂ (ι (Q₂.baseChange ℂ) (1 ⊗ₜ w))) := by
-  apply TensorProduct.ext'
-  intro e f
-  simp [complexProdTensor_ι_one_tmul_toLp, sub_eq_add_neg, TensorProduct.neg_tmul]
+  rw [complexProdTensor_neg_orientation_eq]
+  simp only [AlgHom.comp_apply, AlgEquiv.coe_toAlgHom, equivOfIsometry_apply, map_apply_ι,
+    QuadraticMap.IsometryEquiv.toIsometry_apply, TauCeti.baseChangeWithLpProdIsometryEquiv_tmul]
+  exact AlgHom.cliffordProdTensor_neg_ι ρ₁ (ρ₁ (complexVolume Q₁ o₁))
+    (map_complexVolume_mul_self o₁ hQ₁ ρ₁) (map_complexVolume_mul_map_ι o₁ hn ρ₁) ρ₂ _
 
 /-- **Orientation reversal on vectors of `W`**: reversing the orientation of `V` replaces `c(0, w)`
 by `-Γ_V ⊗ c_W(w)`. -/
 theorem complexProdTensor_neg_orientation_ι_one_tmul_toLp_inr (w : W) :
     complexProdTensor hQ (-o₁) hQ₁ hn ρ₁ ρ₂ (ι (Q.baseChange ℂ) (1 ⊗ₜ WithLp.toLp 2 (0, w))) =
       -TensorProduct.map (ρ₁ (complexVolume Q₁ o₁)) (ρ₂ (ι (Q₂.baseChange ℂ) (1 ⊗ₜ w))) := by
-  apply TensorProduct.ext'
-  intro e f
-  simp [TensorProduct.neg_tmul]
+  rw [complexProdTensor_neg_orientation_eq]
+  simp only [AlgHom.comp_apply, AlgEquiv.coe_toAlgHom, equivOfIsometry_apply, map_apply_ι,
+    QuadraticMap.IsometryEquiv.toIsometry_apply, TauCeti.baseChangeWithLpProdIsometryEquiv_tmul,
+    TensorProduct.tmul_zero]
+  exact AlgHom.cliffordProdTensor_neg_ι_inr ρ₁ (ρ₁ (complexVolume Q₁ o₁))
+    (map_complexVolume_mul_self o₁ hQ₁ ρ₁) (map_complexVolume_mul_map_ι o₁ hn ρ₁) ρ₂ _
 
 /-- **Orientation reversal twists the second factor by the grade involution**: `complexProdTensor`
 for `-o₁` coincides with `complexProdTensor` for `o₁` applied to `ρ₂ ∘ involute`. -/
 theorem complexProdTensor_neg_orientation_eq_comp_involute :
     complexProdTensor hQ (-o₁) hQ₁ hn ρ₁ ρ₂ =
       complexProdTensor hQ o₁ hQ₁ hn ρ₁ (ρ₂.comp (involute (Q := Q₂.baseChange ℂ))) := by
-  refine baseChange_algHom_ext Q fun x ↦ ?_
-  apply TensorProduct.ext'
-  intro e f
-  have hx : x = WithLp.toLp 2 ((WithLp.ofLp x).1, (WithLp.ofLp x).2) := rfl
-  rw [hx]
-  simp [complexProdTensor_ι_one_tmul_toLp, TensorProduct.neg_tmul, TensorProduct.tmul_neg]
+  rw [complexProdTensor_neg_orientation_eq,
+    AlgHom.cliffordProdTensor_neg_eq_comp_involute ρ₁ (ρ₁ (complexVolume Q₁ o₁))
+      (map_complexVolume_mul_self o₁ hQ₁ ρ₁) (map_complexVolume_mul_map_ι o₁ hn ρ₁) ρ₂,
+    ← complexProdTensor_def]
+
+end FirstFactor
 
 section EvenSecondFactor
 
-variable [FiniteDimensional ℝ W] {m : ℕ} [Fact (finrank ℝ W = m)] (o₂ : Orientation ℝ W (Fin m))
+variable {V W : Type*} [NormedAddCommGroup V] [InnerProductSpace ℝ V]
+  [NormedAddCommGroup W] [InnerProductSpace ℝ W]
+  {Q₁ : QuadraticForm ℝ V} {Q₂ : QuadraticForm ℝ W} {Q : QuadraticForm ℝ (WithLp 2 (V × W))}
+  (hQ : ∀ x, Q x = Q₁ (WithLp.ofLp x).1 + Q₂ (WithLp.ofLp x).2)
+  [FiniteDimensional ℝ V] {n : ℕ} [Fact (finrank ℝ V = n)] (o₁ : Orientation ℝ V (Fin n))
+  (hQ₁ : ∀ v, Q₁ v = -‖v‖ ^ 2) (hn : Even n)
+  {E F : Type*} [AddCommGroup E] [Module ℂ E] [AddCommGroup F] [Module ℂ F]
+  (ρ₁ : CliffordAlgebra (Q₁.baseChange ℂ) →ₐ[ℂ] Module.End ℂ E)
+  (ρ₂ : CliffordAlgebra (Q₂.baseChange ℂ) →ₐ[ℂ] Module.End ℂ F)
+  [FiniteDimensional ℝ W] {m : ℕ} [Fact (finrank ℝ W = m)] (o₂ : Orientation ℝ W (Fin m))
 
 /-- **Intertwining orientation reversal by `1 ⊗ Γ_W`**: when `W` has even dimension `m`, the
 operator `1 ⊗ Γ_W` (`(ρ₂ (complexVolume Q₂ o₂)).lTensor E`) intertwines `complexProdTensor` for
@@ -122,35 +151,10 @@ theorem lTensor_complexVolume_comp_complexProdTensor_neg_orientation (hm : Even 
     (a : CliffordAlgebra (Q.baseChange ℂ)) :
     (ρ₂ (complexVolume Q₂ o₂)).lTensor E ∘ₗ complexProdTensor hQ (-o₁) hQ₁ hn ρ₁ ρ₂ a =
       complexProdTensor hQ o₁ hQ₁ hn ρ₁ ρ₂ a ∘ₗ (ρ₂ (complexVolume Q₂ o₂)).lTensor E := by
-  induction a using CliffordAlgebra.induction with
-  | algebraMap z =>
-    ext t
-    simp [Algebra.algebraMap_eq_smul_one]
-  | ι z =>
-    induction z using TensorProduct.inductionOn with
-    | tmul c x =>
-      let v := (WithLp.ofLp x).1
-      let w := (WithLp.ofLp x).2
-      have hcx : c ⊗ₜ[ℝ] x = c • ((1 : ℂ) ⊗ₜ[ℝ] WithLp.toLp 2 (v, w)) := by
-        rw [TensorProduct.smul_tmul', smul_eq_mul, mul_one]
-      rw [hcx, map_smul, map_smul, map_smul, LinearMap.comp_smul, LinearMap.smul_comp]
-      congr 1
-      apply TensorProduct.ext'
-      intro e f
-      have hanti : ρ₂ (complexVolume Q₂ o₂) (ρ₂ (ι (Q₂.baseChange ℂ) (1 ⊗ₜ w)) f) =
-          -ρ₂ (ι (Q₂.baseChange ℂ) (1 ⊗ₜ w)) (ρ₂ (complexVolume Q₂ o₂) f) := by
-        rw [← mul_apply_eq_comp, ← map_mul, complexVolume_mul_ι_of_even o₂ hm, map_neg, map_mul,
-          LinearMap.neg_apply, mul_apply_eq_comp]
-      rw [LinearMap.comp_apply, LinearMap.comp_apply, complexProdTensor_ι_one_tmul_toLp,
-        complexProdTensor_ι_one_tmul_toLp]
-      simp [hanti, TensorProduct.tmul_neg, TensorProduct.neg_tmul]
-    | add y z hy hz =>
-      simp only [map_add, LinearMap.comp_add, LinearMap.add_comp, hy, hz]
-  | add a b ha hb =>
-    simp only [map_add, LinearMap.comp_add, LinearMap.add_comp, ha, hb]
-  | mul a b ha hb =>
-    simp only [map_mul, Module.End.mul_eq_comp, ← LinearMap.comp_assoc, ha]
-    rw [LinearMap.comp_assoc, hb, ← LinearMap.comp_assoc]
+  rw [complexProdTensor_neg_orientation_eq, complexProdTensor_def, AlgHom.comp_apply,
+    AlgHom.comp_apply]
+  exact AlgHom.lTensor_comp_cliffordProdTensor_neg ρ₁ _ _ _ ρ₂
+    (ρ₂ (complexVolume Q₂ o₂)) (map_complexVolume_mul_map_ι o₂ hm ρ₂) _
 
 /-- Pointwise form of
 `CliffordAlgebra.lTensor_complexVolume_comp_complexProdTensor_neg_orientation`. -/
@@ -166,41 +170,14 @@ involution `1 ⊗ Γ_W` yields `complexProdTensor` for `o₁`. -/
 theorem conjAlgEquiv_complexProdTensor_neg_orientation (hm : Even m)
     (hQ₂ : ∀ w, Q₂ w = -‖w‖ ^ 2) :
     (((LinearEquiv.ofInvolutive (ρ₂ (complexVolume Q₂ o₂))
-        (involutive_apply_complexVolume o₂ hQ₂ ρ₂)).lTensor E).conjAlgEquiv ℂ).toAlgHom.comp
+        (map_complexVolume_involutive o₂ hQ₂ ρ₂)).lTensor E).conjAlgEquiv ℂ).toAlgHom.comp
         (complexProdTensor hQ (-o₁) hQ₁ hn ρ₁ ρ₂) =
       complexProdTensor hQ o₁ hQ₁ hn ρ₁ ρ₂ := by
-  let hinv := involutive_apply_complexVolume o₂ hQ₂ ρ₂
-  refine baseChange_algHom_ext Q fun x ↦ ?_
-  apply TensorProduct.ext'
-  intro e f
-  let v := (WithLp.ofLp x).1
-  let w := (WithLp.ofLp x).2
-  have hx : x = WithLp.toLp 2 (v, w) := rfl
-  have hsymm : (LinearEquiv.ofInvolutive (ρ₂ (complexVolume Q₂ o₂)) hinv).symm f =
-      ρ₂ (complexVolume Q₂ o₂) f := rfl
-  have hanti : ρ₂ (complexVolume Q₂ o₂)
-      (ρ₂ (ι (Q₂.baseChange ℂ) (1 ⊗ₜ w)) (ρ₂ (complexVolume Q₂ o₂) f)) =
-        -ρ₂ (ι (Q₂.baseChange ℂ) (1 ⊗ₜ w)) f := by
-    rw [← mul_apply_eq_comp, ← map_mul, complexVolume_mul_ι_of_even o₂ hm, map_neg, map_mul,
-      LinearMap.neg_apply, mul_apply_eq_comp, hinv f]
-  rw [hx, AlgHom.comp_apply, AlgEquiv.coe_toAlgHom, complexProdTensor_ι_one_tmul_toLp]
-  simp [LinearEquiv.conjAlgEquiv_apply, LinearEquiv.lTensor, hsymm, hinv f, hanti,
-    TensorProduct.tmul_neg, TensorProduct.neg_tmul]
+  rw [complexProdTensor_neg_orientation_eq, complexProdTensor_def, ← AlgHom.comp_assoc,
+    AlgHom.conjAlgEquiv_cliffordProdTensor_neg ρ₁ _ _ _ ρ₂ (ρ₂ (complexVolume Q₂ o₂))
+      (map_complexVolume_involutive o₂ hQ₂ ρ₂) (map_complexVolume_mul_map_ι o₂ hm ρ₂)]
 
 /-! ### Frame-free product orientation formulas -/
-
-/-- The orientation of the reindexed `L²` product of two orthonormal bases is the canonical
-`Orientation.prod` of their orientations transported along
-`(WithLp.linearEquiv 2 ℝ (V × W)).symm`. -/
-private theorem orientation_reindex_prod_orthonormalBasis (b₁ : OrthonormalBasis (Fin n) ℝ V)
-    (b₂ : OrthonormalBasis (Fin m) ℝ W) :
-    ((b₁.prod b₂).reindex finSumFinEquiv).toBasis.orientation =
-      (Orientation.prod b₁.toBasis.orientation b₂.toBasis.orientation
-        Fact.out Fact.out).map (Fin (n + m)) (WithLp.linearEquiv 2 ℝ (V × W)).symm := by
-  rw [Orientation.prod_basis_orientation, ← Basis.orientation_map]
-  congr 1
-  refine Basis.eq_of_apply_eq (Fin.addCases (fun i ↦ ?_) (fun j ↦ ?_)) <;>
-    simp [Basis.prod_apply]
 
 variable [Fact (finrank ℝ (WithLp 2 (V × W)) = n + m)]
 
@@ -225,7 +202,7 @@ theorem complexProdTensor_complexVolume_of_prod (hm : Even m) (hQ₂ : ∀ w, Q�
         TensorProduct.map (ρ₁ (complexVolume Q₁ b₁.toBasis.orientation))
           (ρ₂' (complexVolume Q₂ b₂.toBasis.orientation)) :=
     complexProdTensor_complexVolume hQ _ hQ₁ hn ρ₁ ρ₂' _ _ hm b₁ rfl b₂ rfl
-      (b₂.isOrthoᵢ_associated hQ₂) (orientation_reindex_prod_orthonormalBasis b₁ b₂)
+      (b₂.isOrthoᵢ_associated hQ₂) (b₁.orientation_reindex_prod b₂ Fact.out Fact.out)
   have hneg_map (u : Module.End ℂ E) (v : Module.End ℂ F) :
       TensorProduct.map (-u) v = -TensorProduct.map u v ∧
         TensorProduct.map u (-v) = -TensorProduct.map u v :=
@@ -264,7 +241,7 @@ theorem complexProdTensor_complexVolume_of_odd_of_prod (hm : Odd m) (hQ₂ : ∀
           Fact.out Fact.out).map (Fin (n + m)) (WithLp.linearEquiv 2 ℝ (V × W)).symm)) =
         (ρ₂' (complexVolume Q₂ b₂.toBasis.orientation)).lTensor E :=
     complexProdTensor_complexVolume_of_odd hQ _ hQ₁ hn ρ₁ ρ₂' _ _ hm b₁ rfl b₂ rfl
-      (b₂.isOrthoᵢ_associated hQ₂) (orientation_reindex_prod_orthonormalBasis b₁ b₂)
+      (b₂.isOrthoᵢ_associated hQ₂) (b₁.orientation_reindex_prod b₂ Fact.out Fact.out)
   rcases b₁.toBasis.orientation_eq_or_eq_neg o₁ with rfl | rfl <;>
     rcases b₂.toBasis.orientation_eq_or_eq_neg o₂ with rfl | rfl
   · exact hbase ρ₂

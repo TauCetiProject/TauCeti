@@ -58,14 +58,17 @@ the positive orientation and `-1` for the negative one.
   `CliffordAlgebra.complexVolume_mul_self_of_forall_eq_zero`: `Γ² = 0` for the zero form in
   positive dimension.
 * `CliffordAlgebra.complexVolume_smul_complexVolume_smul`,
-  `CliffordAlgebra.lsmul_complexVolume_involutive`, and
-  `CliffordAlgebra.involutive_apply_complexVolume`: `Γ` acts as an involution on every module.
+  `CliffordAlgebra.lsmul_complexVolume_involutive`,
+  `CliffordAlgebra.map_complexVolume_mul_self`,
+  `CliffordAlgebra.map_complexVolume_pow_of_even`, and
+  `CliffordAlgebra.map_complexVolume_involutive`: `Γ` acts as an involution on every module.
 * `CliffordAlgebra.conjStar_complexVolume`: `Γ` is fixed by the conjugate-linear Clifford
   involution, while `CliffordAlgebra.star_complexVolume` computes the complex-linear Clifford
   conjugation `star Γ = (-1) ^ ⌊(n + 1) / 2⌋ Γ`; in dimension `2ℓ` this is `(-1) ^ ℓ Γ`.
 * `CliffordAlgebra.complexVolume_mul_eq_involute_mul`: in even dimension, `Γ x = involute x Γ`;
   hence `Γ` anticommutes with odd elements (`CliffordAlgebra.complexVolume_mul_of_mem_odd`), in
-  particular with vectors (`CliffordAlgebra.complexVolume_mul_ι_of_even`). For `Q v = -‖v‖²`,
+  particular with vectors (`CliffordAlgebra.complexVolume_mul_ι_of_even` and
+  `CliffordAlgebra.map_complexVolume_mul_map_ι`). For `Q v = -‖v‖²`,
   conjugation by `Γ` is the grade involution
   (`CliffordAlgebra.complexVolume_mul_mul_complexVolume`).
 * `CliffordAlgebra.complexVolume_mem_center`: in odd dimension, `Γ` is central.
@@ -257,6 +260,14 @@ theorem complexVolume_mul_ι_of_even (hn : Even n) (w : ℂ ⊗[ℝ] V) :
   rw [neg_one_smul, ← ofBaseChangeAux_ι, ← map_mul, volumeElement_mul_ι_of_even o hn, map_neg,
     map_mul]
 
+/-- In even dimension, the image of `Γ` under any `ℂ`-algebra map anticommutes with the image of
+every generating vector. -/
+theorem map_complexVolume_mul_map_ι {A : Type*} [Ring A] [Algebra ℂ A] (hn : Even n)
+    (ρ : CliffordAlgebra (Q.baseChange ℂ) →ₐ[ℂ] A) (w : ℂ ⊗[ℝ] V) :
+    ρ (complexVolume Q o) * ρ (ι (Q.baseChange ℂ) w) =
+      -(ρ (ι (Q.baseChange ℂ) w) * ρ (complexVolume Q o)) := by
+  rw [← map_mul, ← map_mul, complexVolume_mul_ι_of_even o hn, map_neg]
+
 /-- **In even dimension `Γ` intertwines the grade involution**: `Γ x = involute x Γ`. -/
 theorem complexVolume_mul_eq_involute_mul (hn : Even n) (x : CliffordAlgebra (Q.baseChange ℂ)) :
     complexVolume Q o * x = involute x * complexVolume Q o := by
@@ -316,6 +327,19 @@ theorem complexVolume_mul_self : complexVolume Q o * complexVolume Q o = 1 := by
     Complex.I_mul_I]
   simp [Algebra.smul_def, ← pow_add, ← two_mul]
 
+/-- Under `Q v = -‖v‖²`, the image of `Γ` under any `ℂ`-algebra map squares to `1`. -/
+theorem map_complexVolume_mul_self {A : Type*} [Semiring A] [Algebra ℂ A]
+    (ρ : CliffordAlgebra (Q.baseChange ℂ) →ₐ[ℂ] A) :
+    ρ (complexVolume Q o) * ρ (complexVolume Q o) = 1 := by
+  rw [← map_mul, complexVolume_mul_self o hQ, map_one]
+
+/-- Under `Q v = -‖v‖²`, any even power of the image of `Γ` under a `ℂ`-algebra map is `1`. -/
+theorem map_complexVolume_pow_of_even {A : Type*} [Semiring A] [Algebra ℂ A]
+    (ρ : CliffordAlgebra (Q.baseChange ℂ) →ₐ[ℂ] A) {k : ℕ} (hk : Even k) :
+    ρ (complexVolume Q o) ^ k = 1 := by
+  obtain ⟨j, rfl⟩ := hk
+  rw [← two_mul, pow_mul, sq, map_complexVolume_mul_self o hQ ρ, one_pow]
+
 /-- **`Γ` acts as an involution** on every module: `Γ • Γ • ψ = ψ`. -/
 theorem complexVolume_smul_complexVolume_smul {M : Type*}
     [MulAction (CliffordAlgebra (Q.baseChange ℂ)) M] (ψ : M) :
@@ -331,10 +355,10 @@ theorem lsmul_complexVolume_involutive {M : Type*} [AddCommGroup M] [Module ℂ 
 
 /-- Under `Q v = -‖v‖²`, the image of `Γ` under any `ℂ`-algebra map into `End_ℂ(M)` is an
 involution of `M`. -/
-theorem involutive_apply_complexVolume {M : Type*} [AddCommGroup M] [Module ℂ M]
+theorem map_complexVolume_involutive {M : Type*} [AddCommGroup M] [Module ℂ M]
     (ρ : CliffordAlgebra (Q.baseChange ℂ) →ₐ[ℂ] Module.End ℂ M) :
     Function.Involutive (ρ (complexVolume Q o)) := fun x ↦ by
-  rw [← mul_apply_eq_comp, ← map_mul, complexVolume_mul_self o hQ, map_one, one_apply_eq_self]
+  rw [← mul_apply_eq_comp, map_complexVolume_mul_self o hQ ρ, one_apply_eq_self]
 
 /-- **In even dimension, conjugation by `Γ` is the grade involution**: `Γ x Γ = involute x`. -/
 theorem complexVolume_mul_mul_complexVolume (hn : Even n) (x : CliffordAlgebra (Q.baseChange ℂ)) :
