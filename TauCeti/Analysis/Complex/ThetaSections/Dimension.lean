@@ -9,7 +9,7 @@ public import Mathlib.LinearAlgebra.Basis.Defs
 public import Mathlib.LinearAlgebra.Dimension.Finrank
 public import Mathlib.MeasureTheory.Integral.IntervalIntegral.Basic
 public import Mathlib.NumberTheory.ModularForms.JacobiTheta.TwoVariable
-public import TauCeti.Analysis.Complex.Wirtinger.Basic
+public import TauCeti.Analysis.Complex.ThetaSections.Basic
 import Mathlib.Analysis.Analytic.IsolatedZeros
 import Mathlib.Analysis.Complex.Periodic
 import Mathlib.Analysis.Fourier.AddCircle
@@ -19,23 +19,10 @@ import Mathlib.LinearAlgebra.Dimension.Finite
 import Mathlib.LinearAlgebra.Dimension.StrongRankCondition
 import TauCeti.Analysis.Complex.Laurent.Expansion
 import TauCeti.Analysis.Complex.PowerSeries.FourierCoeff
+import TauCeti.Analysis.Fourier.FourierCoeffOn
 
 /-!
-# Level-`k` theta sections on complex tori
-
-Let `τ ∈ ℂ` be a period parameter and `α, β ∈ ℝ` be real characteristics. On the universal cover
-`ℂ` of the complex torus `ℂ / (ℤ + τℤ)`, the level-`k` automorphy factor
-`thetaFactor k τ α β m n z = exp (2πi(mα + nβ) - πikn²τ - 2πiknz)` satisfies the `ℤ²`-cocycle
-identity for every integer level `k : ℤ`, whereas for non-integer real levels the two lattice
-generators fail to commute by the phase `exp (-2πik)`.
-
-The holomorphic sections of the corresponding level-`k` theta line bundle (`k : ℕ`) are realized
-as the `ℂ`-submodule `TauCeti.thetaSections k τ α β` of entire functions `s : ℂ → ℂ` satisfying
-`s (z + 1) = exp (2πiα) * s z` and `s (z + τ) = exp (2πiβ - πikτ - 2πikz) * s z`. The Gaussian
-Hermitian weight `thetaMetric k τ z = exp (-2πk (im z)² / im τ)` makes `thetaMetric k τ z * ‖s z‖²`
-doubly periodic on the lattice `ℤ + τℤ`, and its Wirtinger derivatives yield the constant Chern
-curvature `-πk / im τ` (whose integral against `dx ∧ dy` over a fundamental parallelogram equals
-`k`).
+# Twisted Fourier analysis, characteristic basis, and dimension of theta sections
 
 Via the exponential coordinate `w = exp (2πiz)` (`Function.Periodic.qParam 1`) and Laurent
 expansion on `ℂ \ {0}` (`DifferentiableOn.hasLaurentSeriesOnAnnulus`), every entire function
@@ -44,12 +31,14 @@ quasi-periodic under `z ↦ z + 1` expands into a twisted Fourier series with co
 equivalent to the exact shift-by-`k` recurrence
 `c (m + k) = exp (2πi(m + α)τ - 2πiβ + πikτ) * c m`.
 
+From this recurrence, the Riemann–Lebesgue lemma, and Mathlib's two-variable Jacobi theta
+function `jacobiTheta₂`, we construct the explicit `Fin k`-indexed `ℂ`-basis
+`TauCeti.thetaSectionsBasis` for `0 < k` and `0 < τ.im`, prove
+`Module.finrank ℂ (thetaSections k τ α β) = k`, and classify the boundary cases `0 < k` with
+`τ.im ≤ 0` and `k = 0` with `τ.im ≠ 0`.
+
 ## Main definitions
 
-* `TauCeti.thetaFactor`: the `ℤ²`-automorphy cocycle at integer level `k : ℤ`.
-* `TauCeti.thetaMetric`: the Gaussian Hermitian metric weight `exp (-2πk (im z)² / im τ)`.
-* `TauCeti.thetaSections`: the `ℂ`-submodule of level-`k` holomorphic theta sections with
-  characteristics `(α, β)`.
 * `TauCeti.thetaFourierCoeff`: the `m`-th twisted Fourier coefficient on `[0, 1]`.
 * `TauCeti.characteristicTheta`: the `r`-th level-`k` characteristic theta function built from
   Mathlib's `jacobiTheta₂`.
@@ -58,22 +47,20 @@ equivalent to the exact shift-by-`k` recurrence
 
 ## Main results
 
-* `TauCeti.thetaFactor_cocycle` and `TauCeti.thetaFactor_commutator_real_eq_iff`: the `ℤ²`
-  automorphy cocycle law and integrality obstruction for real levels.
-* `TauCeti.thetaMetric_add_int_add_int_mul_tau`, `TauCeti.wirtingerDeriv_log_thetaMetric`, and
-  `TauCeti.conjWirtingerDeriv_chernForm_thetaMetric`: descent of the Hermitian metric and its
-  constant Chern curvature.
-* `TauCeti.hasSum_thetaFourierCoeff` and `TauCeti.thetaSections_tau_iff_recurrence`: twisted
-  Fourier expansion of quasi-periodic entire functions and exact equivalence with the coefficient
+* `TauCeti.hasSum_thetaFourierCoeff` and
+  `TauCeti.forall_add_tau_iff_forall_thetaFourierCoeff_add`: twisted Fourier expansion of
+  quasi-periodic entire functions and exact equivalence with the integer-level coefficient
   recurrence.
+* `TauCeti.thetaMetric_mul_norm_sq_add_int_add_int_mul_tau`: unconditional lattice invariance of
+  the pointwise Hermitian norm squared `thetaMetric k τ z * ‖s z‖²` for theta sections.
 * `TauCeti.characteristicTheta_mem_thetaSections`, `TauCeti.jacobiTheta₂_mem_thetaSections`, and
   `TauCeti.thetaFourierCoeff_characteristicTheta_fin`: the characteristic theta functions form
   sections dual to the first `k` twisted Fourier coefficients.
 * `TauCeti.finrank_thetaSections`: for `0 < k` and `0 < τ.im`,
   `Module.finrank ℂ (thetaSections k τ α β) = k`.
 * `TauCeti.thetaSections_eq_bot_of_im_nonpos`, `TauCeti.finrank_thetaSections_of_im_nonpos`, and
-  `TauCeti.finrank_thetaSections_zero`: complete boundary classification for `τ.im ≤ 0` and
-  `k = 0`.
+  `TauCeti.finrank_thetaSections_zero`: boundary classification for `0 < k` with `τ.im ≤ 0` and
+  for `k = 0` with `τ.im ≠ 0`.
 
 ## References
 
@@ -90,378 +77,6 @@ open Complex Filter Metric Set
 open scoped Real ENNReal Topology
 
 namespace TauCeti
-
-/-! ### Automorphy factor and integrality obstruction -/
-
-/-- The level-`k` automorphy factor on the lattice `ℤ + τℤ` with real characteristics `(α, β)`:
-`thetaFactor k τ α β m n z = exp (2πi(mα + nβ) - πikn²τ - 2πiknz)`. -/
-noncomputable def thetaFactor (k : ℤ) (τ : ℂ) (α β : ℝ) (m n : ℤ) (z : ℂ) : ℂ :=
-  cexp (2 * π * I * (m * α + n * β) - π * I * k * n ^ 2 * τ - 2 * π * I * k * n * z)
-
-/-- Defining formula for `thetaFactor`. -/
-theorem thetaFactor_def (k : ℤ) (τ : ℂ) (α β : ℝ) (m n : ℤ) (z : ℂ) :
-    thetaFactor k τ α β m n z =
-      cexp (2 * π * I * (m * α + n * β) - π * I * k * n ^ 2 * τ - 2 * π * I * k * n * z) :=
-  (rfl)
-
-/-- The automorphy factor never vanishes. -/
-theorem thetaFactor_ne_zero (k : ℤ) (τ : ℂ) (α β : ℝ) (m n : ℤ) (z : ℂ) :
-    thetaFactor k τ α β m n z ≠ 0 :=
-  Complex.exp_ne_zero _
-
-/-- At the lattice origin `(0, 0)`, the automorphy factor equals `1`. -/
-@[simp]
-theorem thetaFactor_zero_zero (k : ℤ) (τ : ℂ) (α β : ℝ) (z : ℂ) :
-    thetaFactor k τ α β 0 0 z = 1 := by
-  simp [thetaFactor_def]
-
-/-- Along the first lattice generator `(1, 0)`, the automorphy factor is `exp (2πiα)`. -/
-@[simp]
-theorem thetaFactor_one_zero (k : ℤ) (τ : ℂ) (α β : ℝ) (z : ℂ) :
-    thetaFactor k τ α β 1 0 z = cexp (2 * π * I * α) := by
-  simp [thetaFactor_def]
-
-/-- Along the second lattice generator `(0, 1)`, the automorphy factor is
-`exp (2πiβ - πikτ - 2πikz)`. -/
-@[simp]
-theorem thetaFactor_zero_one (k : ℤ) (τ : ℂ) (α β : ℝ) (z : ℂ) :
-    thetaFactor k τ α β 0 1 z = cexp (2 * π * I * β - π * I * k * τ - 2 * π * I * k * z) := by
-  simp [thetaFactor_def]
-
-/-- The `ℤ²`-cocycle identity for `thetaFactor` at any integer level `k : ℤ`. -/
-theorem thetaFactor_cocycle (k : ℤ) (τ : ℂ) (α β : ℝ) (m₁ n₁ m₂ n₂ : ℤ) (z : ℂ) :
-    thetaFactor k τ α β (m₁ + m₂) (n₁ + n₂) z =
-      thetaFactor k τ α β m₁ n₁ (z + m₂ + n₂ * τ) * thetaFactor k τ α β m₂ n₂ z := by
-  simp only [thetaFactor_def, ← Complex.exp_add]
-  have h1 : cexp (((-(k * n₁ * m₂) : ℤ) : ℂ) * (2 * π * I)) = 1 :=
-    Complex.exp_int_mul_two_pi_mul_I (-(k * n₁ * m₂))
-  conv_lhs => rw [← mul_one (cexp _), ← h1, ← Complex.exp_add]
-  congr 1
-  push_cast
-  ring
-
-/-- Shifting the characteristics `(α, β)` by integers leaves `thetaFactor` unchanged. -/
-theorem thetaFactor_add_int (k : ℤ) (τ : ℂ) (α β : ℝ) (a b m n : ℤ) (z : ℂ) :
-    thetaFactor k τ (α + a) (β + b) m n z = thetaFactor k τ α β m n z := by
-  simp only [thetaFactor_def]
-  have h1 : cexp (((m * a + n * b : ℤ) : ℂ) * (2 * π * I)) = 1 :=
-    Complex.exp_int_mul_two_pi_mul_I (m * a + n * b)
-  conv_rhs => rw [← mul_one (cexp _), ← h1, ← Complex.exp_add]
-  congr 1
-  push_cast
-  ring
-
-/-- The automorphy factor is multiplicative in the level and characteristics. -/
-theorem thetaFactor_add_level (k₁ k₂ : ℤ) (τ : ℂ) (α₁ β₁ α₂ β₂ : ℝ) (m n : ℤ) (z : ℂ) :
-    thetaFactor (k₁ + k₂) τ (α₁ + α₂) (β₁ + β₂) m n z =
-      thetaFactor k₁ τ α₁ β₁ m n z * thetaFactor k₂ τ α₂ β₂ m n z := by
-  simp only [thetaFactor_def, ← Complex.exp_add]
-  congr 1
-  push_cast
-  ring
-
-/-- The modulus of `thetaFactor k τ α β m n z` is `exp (πkn² im τ + 2πkn im z)`. -/
-theorem norm_thetaFactor (k : ℤ) (τ : ℂ) (α β : ℝ) (m n : ℤ) (z : ℂ) :
-    ‖thetaFactor k τ α β m n z‖ = Real.exp (π * k * n ^ 2 * τ.im + 2 * π * k * n * z.im) := by
-  rw [thetaFactor_def, Complex.norm_exp]
-  congr 1
-  have hre :
-      (2 * π * I * (m * α + n * β) - π * I * k * n ^ 2 * τ - 2 * π * I * k * n * z).re =
-        ((2 * π * (m * α + n * β) : ℝ) * I - (π * k * n ^ 2 : ℝ) * (I * τ) -
-          (2 * π * k * n : ℝ) * (I * z)).re := by
-    congr 1
-    push_cast
-    ring
-  rw [hre]
-  simp only [sub_re, mul_re, ofReal_re, ofReal_im, I_re, I_im, mul_zero, zero_mul, sub_zero,
-    zero_sub, mul_one, mul_im]
-  ring
-
-/-- For an arbitrary real level `k : ℝ`, composing the `z ↦ z + 1` and `z ↦ z + τ` automorphy
-factors in the two orders differs by the constant phase `exp (-2πik)`. -/
-theorem thetaFactor_commutator_real (k : ℝ) (τ : ℂ) (α β : ℝ) (z : ℂ) :
-    cexp (2 * π * I * β - π * I * k * τ - 2 * π * I * k * (z + 1)) * cexp (2 * π * I * α) =
-      cexp (-2 * π * I * k) *
-        (cexp (2 * π * I * α) * cexp (2 * π * I * β - π * I * k * τ - 2 * π * I * k * z)) := by
-  simp only [← Complex.exp_add]
-  congr 1
-  ring
-
-/-- **Integrality obstruction for the torus automorphy factor.** The `z ↦ z + 1` and `z ↦ z + τ`
-generator factors at real level `k : ℝ` satisfy the abelian compatibility relation if and only if
-`k` is an integer. -/
-theorem thetaFactor_commutator_real_eq_iff (k : ℝ) (τ : ℂ) (α β : ℝ) (z : ℂ) :
-    cexp (2 * π * I * β - π * I * k * τ - 2 * π * I * k * (z + 1)) * cexp (2 * π * I * α) =
-        cexp (2 * π * I * α) * cexp (2 * π * I * β - π * I * k * τ - 2 * π * I * k * z) ↔
-      ∃ n : ℤ, (n : ℝ) = k := by
-  rw [thetaFactor_commutator_real]
-  have hne : cexp (2 * π * I * α) * cexp (2 * π * I * β - π * I * k * τ - 2 * π * I * k * z) ≠ 0 :=
-    mul_ne_zero (Complex.exp_ne_zero _) (Complex.exp_ne_zero _)
-  constructor
-  · intro h
-    have hexp : cexp (-2 * π * I * k) = 1 :=
-      mul_right_cancel₀ hne (by simpa using h)
-    obtain ⟨n, hn⟩ := Complex.exp_eq_one_iff.mp hexp
-    have hmul : (-k : ℂ) * (2 * π * I) = (n : ℂ) * (2 * π * I) := by
-      calc
-        (-k : ℂ) * (2 * π * I) = -2 * π * I * k := by ring
-        _ = (n : ℂ) * (2 * π * I) := hn
-    have hEq : (-k : ℂ) = (n : ℂ) := mul_right_cancel₀ two_pi_I_ne_zero hmul
-    refine ⟨-n, ?_⟩
-    have hR : -k = (n : ℝ) := by exact_mod_cast hEq
-    push_cast
-    linarith
-  · rintro ⟨n, rfl⟩
-    have hexp : cexp (-2 * π * I * (n : ℂ)) = 1 := by
-      rw [show (-2 * π * I * (n : ℂ)) = ((-n : ℤ) : ℂ) * (2 * π * I) by push_cast; ring]
-      exact Complex.exp_int_mul_two_pi_mul_I (-n)
-    rw [ofReal_intCast, hexp, one_mul]
-
-/-! ### Gaussian Hermitian metric and Chern Wirtinger forms -/
-
-/-- The Gaussian Hermitian metric weight `h(z) = exp (-2πk (im z)² / im τ)` for the level-`k`
-theta line on `ℂ / (ℤ + τℤ)`. -/
-noncomputable def thetaMetric (k : ℝ) (τ z : ℂ) : ℝ :=
-  Real.exp (-2 * π * k * z.im ^ 2 / τ.im)
-
-/-- Defining formula for `thetaMetric`. -/
-theorem thetaMetric_def (k : ℝ) (τ z : ℂ) :
-    thetaMetric k τ z = Real.exp (-2 * π * k * z.im ^ 2 / τ.im) :=
-  (rfl)
-
-/-- The Hermitian metric weight `thetaMetric` is strictly positive everywhere. -/
-theorem thetaMetric_pos (k : ℝ) (τ z : ℂ) : 0 < thetaMetric k τ z :=
-  Real.exp_pos _
-
-/-- The Hermitian metric weight is invariant under real integer translations `z ↦ z + 1`. -/
-@[simp]
-theorem thetaMetric_add_one (k : ℝ) (τ z : ℂ) :
-    thetaMetric k τ (z + 1) = thetaMetric k τ z := by
-  simp [thetaMetric_def]
-
-/-- Under any lattice translation `z ↦ z + m + n * τ`, the metric weight `thetaMetric` transforms
-inversely to `‖thetaFactor‖²`, so `h(z) ‖s(z)‖²` descends to the torus whenever `τ.im ≠ 0`. -/
-theorem thetaMetric_add_int_add_int_mul_tau (k : ℤ) {τ : ℂ} (hτ : τ.im ≠ 0) (α β : ℝ)
-    (m n : ℤ) (z : ℂ) :
-    thetaMetric k τ (z + m + n * τ) * ‖thetaFactor k τ α β m n z‖ ^ 2 = thetaMetric k τ z := by
-  rw [thetaMetric_def, thetaMetric_def, norm_thetaFactor, ← Real.exp_nat_mul, ← Real.exp_add]
-  congr 1
-  have him : (z + m + n * τ).im = z.im + n * τ.im := by simp
-  rw [him]
-  field_simp [hτ]
-  ring
-
-/-- Along the single generator shift `z ↦ z + τ` at any real level `k : ℝ`, the metric weight
-transforms inversely to the squared modulus of the generator factor whenever `τ.im ≠ 0`. -/
-theorem thetaMetric_add_tau_mul_norm_sq (k : ℝ) {τ : ℂ} (hτ : τ.im ≠ 0) (β : ℝ) (z : ℂ) :
-    thetaMetric k τ (z + τ) * ‖cexp (2 * π * I * β - π * I * k * τ - 2 * π * I * k * z)‖ ^ 2 =
-      thetaMetric k τ z := by
-  rw [thetaMetric_def, thetaMetric_def, Complex.norm_exp, ← Real.exp_nat_mul, ← Real.exp_add]
-  congr 1
-  have hre :
-      (2 * π * I * β - π * I * k * τ - 2 * π * I * k * z).re =
-        π * k * τ.im + 2 * π * k * z.im := by
-    have hrew :
-        (2 * π * I * β - π * I * k * τ - 2 * π * I * k * z).re =
-          ((2 * π * β : ℝ) * I - (π * k : ℝ) * (I * τ) - (2 * π * k : ℝ) * (I * z)).re := by
-      congr 1
-      push_cast
-      ring
-    rw [hrew]
-    simp only [sub_re, mul_re, ofReal_re, ofReal_im, I_re, I_im, mul_zero, zero_mul, sub_zero,
-      zero_sub, mul_one, mul_im]
-    ring
-  rw [hre, add_im]
-  field_simp [hτ]
-  ring
-
-/-- The `(1, 0)`-Wirtinger derivative of `log (thetaMetric k τ z)` is the Chern connection
-`(1, 0)`-form `∂ log h = 2πik (im z / im τ)`. -/
-theorem wirtingerDeriv_log_thetaMetric (k : ℝ) (τ z : ℂ) :
-    wirtingerDeriv (fun w : ℂ => (Real.log (thetaMetric k τ w) : ℂ)) z 1 =
-      2 * π * I * k * (z.im / τ.im) := by
-  have hfun :
-      (fun w : ℂ => (Real.log (thetaMetric k τ w) : ℂ)) =
-        fun w : ℂ => Complex.ofRealCLM ((-2 * π * k / τ.im) * (Complex.imCLM w) ^ 2) := by
-    ext w
-    simp only [thetaMetric_def, Real.log_exp, Complex.ofRealCLM_apply, Complex.imCLM_apply]
-    congr 1
-    ring
-  have hsq : HasFDerivAt (fun w : ℂ => (Complex.imCLM w) ^ 2)
-      ((2 * z.im) • Complex.imCLM) z := by
-    simpa [pow_one, mul_comm] using (Complex.imCLM.hasFDerivAt (x := z)).pow 2
-  have hreal : HasFDerivAt (fun w : ℂ => (-2 * π * k / τ.im) * (Complex.imCLM w) ^ 2)
-      ((-2 * π * k / τ.im) • ((2 * z.im) • Complex.imCLM)) z :=
-    hsq.const_mul (-2 * π * k / τ.im)
-  have hf : HasFDerivAt (fun w : ℂ => (Real.log (thetaMetric k τ w) : ℂ))
-      (Complex.ofRealCLM.comp ((-2 * π * k / τ.im) • ((2 * z.im) • Complex.imCLM))) z := by
-    rw [hfun]
-    exact Complex.ofRealCLM.hasFDerivAt.comp z hreal
-  rw [wirtingerDeriv_apply, hf.fderiv]
-  simp only [ContinuousLinearMap.comp_apply, smul_apply, Complex.imCLM_apply,
-    Complex.one_im, Complex.I_im, smul_eq_mul, mul_zero, mul_one, Complex.ofRealCLM_apply,
-    Complex.ofReal_zero, zero_sub, Complex.ofReal_mul, Complex.ofReal_div, Complex.ofReal_neg,
-    Complex.ofReal_ofNat]
-  ring
-
-/-- The `(0, 1)`-Wirtinger derivative of the Chern `(1, 0)`-form `2πik (im z / im τ)` is the
-constant curvature `-πk / im τ`, corresponding to first Chern class `(k / im τ) dx ∧ dy`. -/
-theorem conjWirtingerDeriv_chernForm_thetaMetric (k : ℝ) (τ z : ℂ) :
-    conjWirtingerDeriv (fun w : ℂ => 2 * π * I * (k : ℂ) * (w.im / τ.im : ℂ)) z 1 =
-      -(π : ℂ) * k / τ.im := by
-  let c : ℂ := 2 * π * I * k / τ.im
-  have hfun :
-      (fun w : ℂ => 2 * π * I * (k : ℂ) * (w.im / τ.im : ℂ)) =
-        fun w : ℂ => c • Complex.ofRealCLM (Complex.imCLM w) := by
-    ext w
-    simp only [c, Complex.ofRealCLM_apply, Complex.imCLM_apply, smul_eq_mul]
-    ring
-  have hf : HasFDerivAt (fun w : ℂ => 2 * π * I * (k : ℂ) * (w.im / τ.im : ℂ))
-      (c • (Complex.ofRealCLM.comp Complex.imCLM)) z := by
-    rw [hfun]
-    exact (Complex.ofRealCLM.hasFDerivAt.comp z Complex.imCLM.hasFDerivAt).const_smul c
-  rw [conjWirtingerDeriv_apply, hf.fderiv]
-  simp only [smul_apply, ContinuousLinearMap.comp_apply, Complex.imCLM_apply,
-    Complex.one_im, Complex.I_im, Complex.ofRealCLM_apply, Complex.ofReal_zero, Complex.ofReal_one,
-    smul_eq_mul, mul_one, c]
-  have hI : I * (2 * π * I * k / τ.im) = -(2 * π * k / τ.im) := by
-    calc
-      I * (2 * π * I * k / τ.im) = (I * I) * (2 * π * k / τ.im) := by ring
-      _ = -(2 * π * k / τ.im) := by rw [I_mul_I]; ring
-  rw [hI]
-  ring
-
-/-! ### Holomorphic theta sections -/
-
-/-- The holomorphic sections of the level-`k` theta line with characteristics `(α, β)` on the
-complex torus `ℂ / (ℤ + τℤ)`, realized as entire functions `s : ℂ → ℂ` satisfying
-`s (z + 1) = exp (2πiα) * s z` and `s (z + τ) = exp (2πiβ - πikτ - 2πikz) * s z`. -/
-noncomputable def thetaSections (k : ℕ) (τ : ℂ) (α β : ℝ) : Submodule ℂ (ℂ → ℂ) where
-  carrier := {s | Differentiable ℂ s ∧
-    (∀ z, s (z + 1) = cexp (2 * π * I * α) * s z) ∧
-    ∀ z, s (z + τ) = cexp (2 * π * I * β - π * I * k * τ - 2 * π * I * k * z) * s z}
-  add_mem' := by
-    rintro f g ⟨hf, hf1, hfτ⟩ ⟨hg, hg1, hgτ⟩
-    exact ⟨hf.add hg, fun z => by simp [hf1, hg1, mul_add],
-      fun z => by simp [hfτ, hgτ, mul_add]⟩
-  zero_mem' := ⟨differentiable_const 0, fun z => by simp, fun z => by simp⟩
-  smul_mem' := by
-    rintro c f ⟨hf, hf1, hfτ⟩
-    exact ⟨hf.const_smul c, fun z => by simp [hf1]; ring, fun z => by simp [hfτ]; ring⟩
-
-/-- Membership characterization for `thetaSections`. -/
-theorem mem_thetaSections_iff {k : ℕ} {τ : ℂ} {α β : ℝ} {s : ℂ → ℂ} :
-    s ∈ thetaSections k τ α β ↔
-      Differentiable ℂ s ∧
-        (∀ z, s (z + 1) = cexp (2 * π * I * α) * s z) ∧
-        ∀ z, s (z + τ) = cexp (2 * π * I * β - π * I * k * τ - 2 * π * I * k * z) * s z :=
-  Iff.rfl
-
-/-- Every theta section is an entire function. -/
-theorem differentiable_of_mem_thetaSections {k : ℕ} {τ : ℂ} {α β : ℝ} {s : ℂ → ℂ}
-    (hs : s ∈ thetaSections k τ α β) : Differentiable ℂ s :=
-  hs.1
-
-/-- First generator automorphy law for a theta section. -/
-theorem add_one_of_mem_thetaSections {k : ℕ} {τ : ℂ} {α β : ℝ} {s : ℂ → ℂ}
-    (hs : s ∈ thetaSections k τ α β) (z : ℂ) :
-    s (z + 1) = cexp (2 * π * I * α) * s z :=
-  hs.2.1 z
-
-/-- Second generator automorphy law for a theta section. -/
-theorem add_tau_of_mem_thetaSections {k : ℕ} {τ : ℂ} {α β : ℝ} {s : ℂ → ℂ}
-    (hs : s ∈ thetaSections k τ α β) (z : ℂ) :
-    s (z + τ) = cexp (2 * π * I * β - π * I * k * τ - 2 * π * I * k * z) * s z :=
-  hs.2.2 z
-
-private lemma add_int_of_mem_thetaSections {k : ℕ} {τ : ℂ} {α β : ℝ} {s : ℂ → ℂ}
-    (hs : s ∈ thetaSections k τ α β) (m : ℤ) (z : ℂ) :
-    s (z + m) = thetaFactor k τ α β m 0 z * s z := by
-  induction m using Int.induction_on generalizing z with
-  | zero => simp
-  | succ j ih =>
-    have hstep : z + (((j : ℤ) + 1 : ℤ) : ℂ) = (z + (j : ℤ)) + 1 := by push_cast; ring
-    rw [hstep, hs.2.1, ih, ← mul_assoc, ← thetaFactor_one_zero (k : ℤ) τ α β (z + (j : ℤ))]
-    have hcoc := thetaFactor_cocycle (k : ℤ) τ α β 1 0 j 0 z
-    simpa [add_comm] using congrArg (· * s z) hcoc.symm
-  | pred j ih =>
-    have hstep : z + ((-(j : ℤ) - 1 : ℤ) : ℂ) + 1 = z + ((-(j : ℤ) : ℤ) : ℂ) := by
-      push_cast; ring
-    have h1 := hs.2.1 (z + ((-(j : ℤ) - 1 : ℤ) : ℂ))
-    rw [hstep, ih] at h1
-    have hcoc := thetaFactor_cocycle (k : ℤ) τ α β 1 0 (-(j : ℤ) - 1) 0 z
-    have hidx : (1 : ℤ) + (-(j : ℤ) - 1) = -(j : ℤ) := by ring
-    rw [hidx, zero_add, Int.cast_zero, zero_mul, add_zero, thetaFactor_one_zero] at hcoc
-    rw [hcoc, mul_assoc] at h1
-    exact (mul_left_cancel₀ (Complex.exp_ne_zero _) h1).symm
-
-private lemma add_int_mul_tau_of_mem_thetaSections {k : ℕ} {τ : ℂ} {α β : ℝ} {s : ℂ → ℂ}
-    (hs : s ∈ thetaSections k τ α β) (n : ℤ) (z : ℂ) :
-    s (z + n * τ) = thetaFactor k τ α β 0 n z * s z := by
-  induction n using Int.induction_on generalizing z with
-  | zero => simp
-  | succ j ih =>
-    have hstep : z + (((j : ℤ) + 1 : ℤ) : ℂ) * τ = (z + (j : ℤ) * τ) + τ := by push_cast; ring
-    rw [hstep, hs.2.2, ih, ← mul_assoc]
-    have hcoc := thetaFactor_cocycle (k : ℤ) τ α β 0 1 0 j z
-    rw [thetaFactor_zero_one] at hcoc
-    have hcoc' : thetaFactor (k : ℤ) τ α β 0 (j + 1) z =
-        cexp (2 * π * I * β - π * I * k * τ - 2 * π * I * k * (z + (j : ℤ) * τ)) *
-          thetaFactor (k : ℤ) τ α β 0 j z := by
-      simpa [add_comm] using hcoc
-    rw [← hcoc']
-  | pred j ih =>
-    have hstep : z + ((-(j : ℤ) - 1 : ℤ) : ℂ) * τ + τ = z + ((-(j : ℤ) : ℤ) : ℂ) * τ := by
-      push_cast; ring
-    have hτ := hs.2.2 (z + ((-(j : ℤ) - 1 : ℤ) : ℂ) * τ)
-    rw [hstep, ih] at hτ
-    have hcoc := thetaFactor_cocycle (k : ℤ) τ α β 0 1 0 (-(j : ℤ) - 1) z
-    have hidx : (1 : ℤ) + (-(j : ℤ) - 1) = -(j : ℤ) := by ring
-    rw [hidx, zero_add, Int.cast_zero, add_zero, thetaFactor_zero_one] at hcoc
-    rw [hcoc, mul_assoc] at hτ
-    exact (mul_left_cancel₀ (Complex.exp_ne_zero _) hτ).symm
-
-/-- Full lattice automorphy law for a theta section under any translation `z ↦ z + m + n * τ`. -/
-theorem add_int_add_int_mul_tau_of_mem_thetaSections {k : ℕ} {τ : ℂ} {α β : ℝ} {s : ℂ → ℂ}
-    (hs : s ∈ thetaSections k τ α β) (m n : ℤ) (z : ℂ) :
-    s (z + m + n * τ) = thetaFactor k τ α β m n z * s z := by
-  have hsum : z + m + n * τ = (z + n * τ) + m := by ring
-  rw [hsum, add_int_of_mem_thetaSections hs m (z + n * τ),
-    add_int_mul_tau_of_mem_thetaSections hs n z, ← mul_assoc]
-  have hcoc := thetaFactor_cocycle (k : ℤ) τ α β m 0 0 n z
-  simpa using congrArg (· * s z) hcoc.symm
-
-/-- Shifting the characteristics `(α, β)` by integers does not change the space of theta
-sections. -/
-theorem thetaSections_add_int (k : ℕ) (τ : ℂ) (α β : ℝ) (a b : ℤ) :
-    thetaSections k τ (α + a) (β + b) = thetaSections k τ α β := by
-  ext s
-  have hα : cexp (2 * π * I * (α + a : ℝ)) = cexp (2 * π * I * α) := by
-    simpa [thetaFactor_one_zero] using thetaFactor_add_int k τ α β a b 1 0 0
-  have hβ : ∀ z : ℂ,
-      cexp (2 * π * I * (β + b : ℝ) - π * I * k * τ - 2 * π * I * k * z) =
-        cexp (2 * π * I * β - π * I * k * τ - 2 * π * I * k * z) := fun z => by
-    simpa [thetaFactor_zero_one] using thetaFactor_add_int k τ α β a b 0 1 z
-  simp only [mem_thetaSections_iff, hα, hβ]
-
-/-- Pointwise multiplication of theta sections adds levels and characteristics. -/
-theorem mul_mem_thetaSections {k₁ k₂ : ℕ} {τ : ℂ} {α₁ β₁ α₂ β₂ : ℝ} {s₁ s₂ : ℂ → ℂ}
-    (hs₁ : s₁ ∈ thetaSections k₁ τ α₁ β₁) (hs₂ : s₂ ∈ thetaSections k₂ τ α₂ β₂) :
-    (fun z => s₁ z * s₂ z) ∈ thetaSections (k₁ + k₂) τ (α₁ + α₂) (β₁ + β₂) := by
-  refine ⟨hs₁.1.mul hs₂.1, fun z => ?_, fun z => ?_⟩
-  · dsimp only
-    rw [hs₁.2.1, hs₂.2.1]
-    have hmul := thetaFactor_add_level k₁ k₂ τ α₁ β₁ α₂ β₂ 1 0 z
-    simp only [thetaFactor_one_zero] at hmul
-    rw [hmul]
-    ring
-  · dsimp only
-    rw [hs₁.2.2, hs₂.2.2]
-    have hmul := thetaFactor_add_level k₁ k₂ τ α₁ β₁ α₂ β₂ 0 1 z
-    simp only [thetaFactor_zero_one] at hmul
-    push_cast at hmul ⊢
-    rw [hmul]
-    ring
 
 /-! ### Twisted Fourier coefficients and Laurent expansion -/
 
@@ -507,6 +122,16 @@ theorem thetaFourierCoeff_add {α : ℝ} {s₁ s₂ : ℂ → ℂ}
     ← intervalIntegral.integral_add h1 h2]
   refine intervalIntegral.integral_congr fun t _ => ?_
   simp only [Pi.add_apply, mul_add]
+
+private lemma qParam_one (z : ℂ) :
+    Function.Periodic.qParam 1 z = cexp (2 * π * I * z) := by
+  simp [Function.Periodic.qParam]
+
+private lemma qParam_one_zpow (z : ℂ) (n : ℤ) :
+    Function.Periodic.qParam 1 z ^ n = cexp (2 * π * I * n * z) := by
+  rw [qParam_one, ← Complex.exp_int_mul]
+  congr 1
+  ring
 
 private noncomputable def twistedPeriodic (α : ℝ) (s : ℂ → ℂ) (z : ℂ) : ℂ :=
   cexp (-2 * π * I * α * z) * s z
@@ -558,12 +183,12 @@ private lemma thetaFourierCoeff_eq_circleLaurentCoeff {α : ℝ} {s : ℂ → �
   rw [← hsub, thetaFourierCoeff_def]
   refine intervalIntegral.integral_congr fun t _ => ?_
   have hcmap : circleMap 0 1 (2 * π * t) = Function.Periodic.qParam 1 (t : ℂ) := by
-    simp only [circleMap, Function.Periodic.qParam, zero_add, ofReal_one, one_mul, div_one,
-      ofReal_mul, ofReal_ofNat]
+    rw [circleMap, qParam_one]
+    simp
     congr 1
     ring
-  rw [hcmap, twistedCusp_qParam h1, twistedPeriodic, Function.Periodic.qParam, ofReal_one, div_one,
-    ← Complex.exp_int_mul, ← mul_assoc, ← Complex.exp_add]
+  rw [hcmap, twistedCusp_qParam h1, twistedPeriodic, qParam_one_zpow, ← mul_assoc,
+    ← Complex.exp_add]
   congr 2
   push_cast
   ring
@@ -592,12 +217,11 @@ theorem hasSum_thetaFourierCoeff {α : ℝ} {s : ℂ → ℂ} (hs : Differentiab
     simp
   rw [hrhs] at hsum
   refine hsum.congr_fun fun m => ?_
-  simp only [sub_zero, smul_eq_mul, Function.Periodic.qParam, ofReal_one, div_one,
-    ← Complex.exp_int_mul]
+  simp only [sub_zero, smul_eq_mul, qParam_one_zpow]
   symm
   calc
-    cexp (2 * π * I * α * z) * (cexp ((m : ℂ) * (2 * π * I * z)) * thetaFourierCoeff α s m) =
-        thetaFourierCoeff α s m * (cexp (2 * π * I * α * z) * cexp ((m : ℂ) * (2 * π * I * z))) :=
+    cexp (2 * π * I * α * z) * (cexp (2 * π * I * m * z) * thetaFourierCoeff α s m) =
+        thetaFourierCoeff α s m * (cexp (2 * π * I * α * z) * cexp (2 * π * I * m * z)) :=
       by ring
     _ = thetaFourierCoeff α s m * cexp (2 * π * I * (m + α) * z) := by
       rw [← Complex.exp_add]
@@ -663,22 +287,13 @@ theorem eq_zero_of_thetaFourierCoeff_eq_zero {α : ℝ} {s : ℂ → ℂ} (hs : 
   let f : ℝ → ℂ := fun t => cexp (-2 * π * I * α * t) * s t
   have hf_cont : Continuous f :=
     ((continuous_const.mul continuous_ofReal).cexp).mul (hs.continuous.comp continuous_ofReal)
-  have hL2 : MeasureTheory.MemLp f 2 (MeasureTheory.volume.restrict (Ioc (0 : ℝ) 1)) :=
-    (MeasureTheory.memLp_two_iff_integrable_sq_norm hf_cont.aestronglyMeasurable).2
-      ((hf_cont.norm.pow 2).continuousOn.integrableOn_Icc.mono_set Ioc_subset_Icc_self)
-  have hint : ∫ x in (0 : ℝ)..1, ‖f x‖ ^ 2 = 0 := by
-    have hparseval := tsum_sq_fourierCoeffOn zero_lt_one hL2
-    simp_rw [f, fourierCoeffOn_twistedPeriodic_eq_thetaFourierCoeff, h0] at hparseval
-    simpa [f] using hparseval.symm
-  have hae : (fun x : ℝ => ‖f x‖ ^ 2) =ᵐ[MeasureTheory.volume.restrict (Ioc (0 : ℝ) 1)] 0 :=
-    (intervalIntegral.integral_eq_zero_iff_of_le_of_nonneg_ae zero_le_one
-      (Filter.Eventually.of_forall fun x => sq_nonneg _)
-      ((hf_cont.norm.pow 2).intervalIntegrable 0 1)).mp hint
-  have hIoc : ∀ t ∈ Ioc (0 : ℝ) 1, s t = 0 := fun t ht => by
-    have hnorm := MeasureTheory.volume.eqOn_Ioc_of_ae_eq hae
-      (hf_cont.norm.pow 2).continuousOn continuousOn_const ht
-    exact (mul_eq_zero.mp (norm_eq_zero.mp (sq_eq_zero_iff.mp hnorm))).resolve_left
-      (Complex.exp_ne_zero _)
+  have hf0 : EqOn f 0 (Icc (0 : ℝ) 1) :=
+    eqOn_Icc_of_fourierCoeffOn_eq zero_lt_one hf_cont.continuousOn continuousOn_const fun m => by
+      dsimp only [f]
+      rw [fourierCoeffOn_twistedPeriodic_eq_thetaFourierCoeff, h0, fourierCoeffOn_eq_integral]
+      simp
+  have hIoc : ∀ t ∈ Ioc (0 : ℝ) 1, s t = 0 := fun t ht =>
+    (mul_eq_zero.mp (hf0 (Ioc_subset_Icc_self ht))).resolve_left (Complex.exp_ne_zero _)
   have hcl : ((1 / 2 : ℝ) : ℂ) ∈ closure ({z : ℂ | s z = 0} \ {((1 / 2 : ℝ) : ℂ)}) := by
     rw [Metric.mem_closure_iff]
     intro ε hε
@@ -697,58 +312,27 @@ theorem eq_zero_of_thetaFourierCoeff_eq_zero {α : ℝ} {s : ℂ → ℂ} (hs : 
   exact (analyticOnNhd_univ_iff_differentiable.mpr hs).eqOn_zero_of_preconnected_of_mem_closure
     isPreconnected_univ (mem_univ _) hcl (mem_univ z)
 
-private lemma twistedCusp_mul_qParam_eq {k : ℕ} {τ : ℂ} {α β : ℝ} {s : ℂ → ℂ}
+private lemma twistedCusp_mul_qParam_eq {k : ℤ} {τ : ℂ} {α β : ℝ} {s : ℂ → ℂ}
     (h1 : ∀ z, s (z + 1) = cexp (2 * π * I * α) * s z)
     (hτ : ∀ z, s (z + τ) = cexp (2 * π * I * β - π * I * k * τ - 2 * π * I * k * z) * s z)
     {w : ℂ} (hw0 : w ≠ 0) :
     twistedCusp α s (Function.Periodic.qParam 1 τ * w) =
-      cexp (-2 * π * I * α * τ + 2 * π * I * β - π * I * k * τ) * w ^ (-(k : ℤ)) *
+      cexp (-2 * π * I * α * τ + 2 * π * I * β - π * I * k * τ) * w ^ (-k) *
         twistedCusp α s w := by
   set z := Function.Periodic.invQParam 1 w
   have hqz : Function.Periodic.qParam 1 z = w := Function.Periodic.qParam_right_inv one_ne_zero hw0
   have hqadd : Function.Periodic.qParam 1 τ * w = Function.Periodic.qParam 1 (z + τ) := by
-    rw [← hqz]
-    simp only [Function.Periodic.qParam, ofReal_one, div_one, ← Complex.exp_add]
+    rw [← hqz, qParam_one, qParam_one, qParam_one, ← Complex.exp_add]
     congr 1
     ring
   rw [hqadd, twistedCusp_qParam h1, twistedPeriodic, hτ z, ← hqz, twistedCusp_qParam h1,
-    twistedPeriodic, Function.Periodic.qParam, ofReal_one, div_one, ← Complex.exp_int_mul]
+    twistedPeriodic, qParam_one_zpow]
   simp only [← mul_assoc, ← Complex.exp_add]
   congr 2
   push_cast
   ring
 
-private lemma hasLaurentSeriesOnAnnulus_twistedCusp_mul_qParam_shift {k : ℕ} {τ : ℂ} {α β : ℝ}
-    {s : ℂ → ℂ} (hs : Differentiable ℂ s)
-    (h1 : ∀ z, s (z + 1) = cexp (2 * π * I * α) * s z)
-    (hτ : ∀ z, s (z + τ) = cexp (2 * π * I * β - π * I * k * τ - 2 * π * I * k * z) * s z) :
-    HasLaurentSeriesOnAnnulus (fun w => twistedCusp α s (Function.Periodic.qParam 1 τ * w))
-      (fun n : ℤ =>
-        cexp (-2 * π * I * α * τ + 2 * π * I * β - π * I * k * τ) *
-          thetaFourierCoeff α s (n + k)) 0 0 ⊤ := by
-  have hL := hasLaurentSeriesOnAnnulus_twistedCusp hs h1
-  refine ⟨le_rfl, ENNReal.ofReal_lt_top, fun {w} hw => ?_⟩
-  have hw0 : w ≠ 0 := fun h => hw.2 (by simp [h])
-  rw [twistedCusp_mul_qParam_eq h1 hτ hw0]
-  have hmul := (hL.hasSum hw).mul_left
-    (cexp (-2 * π * I * α * τ + 2 * π * I * β - π * I * k * τ) * w ^ (-(k : ℤ)))
-  rw [← (Equiv.addRight (k : ℤ)).hasSum_iff] at hmul
-  refine hmul.congr_fun fun n => ?_
-  simp only [Function.comp_def, Equiv.coe_addRight, sub_zero, smul_eq_mul]
-  have hzpow : w ^ (-(k : ℤ)) * w ^ (n + (k : ℤ)) = w ^ n := by
-    rw [← zpow_add₀ hw0]
-    congr 1
-    ring
-  calc
-    w ^ n * (cexp (-2 * π * I * α * τ + 2 * π * I * β - π * I * k * τ) *
-        thetaFourierCoeff α s (n + k)) =
-        (w ^ (-(k : ℤ)) * w ^ (n + (k : ℤ))) *
-          (cexp (-2 * π * I * α * τ + 2 * π * I * β - π * I * k * τ) *
-            thetaFourierCoeff α s (n + k)) := by rw [hzpow]
-    _ = cexp (-2 * π * I * α * τ + 2 * π * I * β - π * I * k * τ) * w ^ (-(k : ℤ)) *
-          (w ^ (n + (k : ℤ)) * thetaFourierCoeff α s (n + k)) := by ring
-
-private lemma thetaSections_tau_to_recurrence {k : ℕ} {τ : ℂ} {α β : ℝ} {s : ℂ → ℂ}
+private lemma thetaFourierCoeff_add_of_add_tau {k : ℤ} {τ : ℂ} {α β : ℝ} {s : ℂ → ℂ}
     (hs : Differentiable ℂ s) (h1 : ∀ z, s (z + 1) = cexp (2 * π * I * α) * s z)
     (hτ : ∀ z, s (z + τ) = cexp (2 * π * I * β - π * I * k * τ - 2 * π * I * k * z) * s z)
     (m : ℤ) :
@@ -766,8 +350,18 @@ private lemma thetaSections_tau_to_recurrence {k : ℕ} {τ : ℂ} {α β : ℝ}
     refine (hL.hasSum hqw).congr_fun fun n => ?_
     simp only [sub_zero, smul_eq_mul, mul_zpow]
     ring
-  have hL₂ := hasLaurentSeriesOnAnnulus_twistedCusp_mul_qParam_shift hs h1 hτ
-  have hm := congrFun (hL₁.coeff_unique hL₂) m
+  have hm : Function.Periodic.qParam 1 τ ^ m * thetaFourierCoeff α s m =
+      cexp (-2 * π * I * α * τ + 2 * π * I * β - π * I * k * τ) *
+        thetaFourierCoeff α s (m + k) := by
+    rw [← hL₁.circleLaurentCoeff_eq zero_lt_one ENNReal.ofReal_lt_top m,
+      circleLaurentCoeff_congr zero_le_one
+        (g := fun w => cexp (-2 * π * I * α * τ + 2 * π * I * β - π * I * k * τ) •
+          ((w - 0) ^ (-k) • twistedCusp α s w))
+        (fun w hw => by
+          simpa [smul_eq_mul, mul_assoc] using
+            twistedCusp_mul_qParam_eq h1 hτ (fun h => by simp [h] at hw)) m,
+      circleLaurentCoeff_smul, circleLaurentCoeff_sub_zpow_smul_apply, sub_neg_eq_add,
+      ← thetaFourierCoeff_eq_circleLaurentCoeff h1, smul_eq_mul]
   have hinv : cexp (2 * π * I * α * τ - 2 * π * I * β + π * I * k * τ) *
       cexp (-2 * π * I * α * τ + 2 * π * I * β - π * I * k * τ) = 1 := by
     rw [← Complex.exp_add]
@@ -776,28 +370,26 @@ private lemma thetaSections_tau_to_recurrence {k : ℕ} {τ : ℂ} {α β : ℝ}
     rw [this, Complex.exp_zero]
   have hsol := congrArg (cexp (2 * π * I * α * τ - 2 * π * I * β + π * I * k * τ) * ·) hm.symm
   rw [← mul_assoc, hinv, one_mul] at hsol
-  rw [hsol]
-  simp only [Function.Periodic.qParam, ofReal_one, div_one, ← Complex.exp_int_mul, ← mul_assoc,
-    ← Complex.exp_add]
+  rw [hsol, qParam_one_zpow, ← mul_assoc, ← Complex.exp_add]
   congr 2
   ring
 
 /-- **Fourier recurrence characterization.** For an entire function `s` satisfying
-`s (z + 1) = exp (2πiα) * s z`, the second automorphy relation
+`s (z + 1) = exp (2πiα) * s z` and any integer level `k : ℤ`, the second automorphy relation
 `s (z + τ) = exp (2πiβ - πikτ - 2πikz) * s z` holds for all `z ∈ ℂ` if and only if its twisted
 Fourier coefficients satisfy `c (m + k) = exp (2πi(m + α)τ - 2πiβ + πikτ) * c m` for all
 `m ∈ ℤ`. -/
-theorem thetaSections_tau_iff_recurrence {k : ℕ} {τ : ℂ} {α β : ℝ} {s : ℂ → ℂ}
+theorem forall_add_tau_iff_forall_thetaFourierCoeff_add {k : ℤ} {τ : ℂ} {α β : ℝ} {s : ℂ → ℂ}
     (hs : Differentiable ℂ s) (h1 : ∀ z, s (z + 1) = cexp (2 * π * I * α) * s z) :
     (∀ z, s (z + τ) = cexp (2 * π * I * β - π * I * k * τ - 2 * π * I * k * z) * s z) ↔
       ∀ m : ℤ, thetaFourierCoeff α s (m + k) =
         cexp (2 * π * I * (m + α) * τ - 2 * π * I * β + π * I * k * τ) *
           thetaFourierCoeff α s m := by
-  refine ⟨fun hτ m => thetaSections_tau_to_recurrence hs h1 hτ m, fun hrec z => ?_⟩
+  refine ⟨fun hτ m => thetaFourierCoeff_add_of_add_tau hs h1 hτ m, fun hrec z => ?_⟩
   have hL := hasSum_thetaFourierCoeff hs h1 (z + τ)
   have hR := (hasSum_thetaFourierCoeff hs h1 z).mul_left
     (cexp (2 * π * I * β - π * I * k * τ - 2 * π * I * k * z))
-  rw [← (Equiv.addRight (k : ℤ)).hasSum_iff] at hR
+  rw [← (Equiv.addRight k).hasSum_iff] at hR
   have hR' : HasSum
       (fun m : ℤ => thetaFourierCoeff α s m * cexp (2 * π * I * (m + α) * (z + τ)))
       (cexp (2 * π * I * β - π * I * k * τ - 2 * π * I * k * z) * s z) := by
@@ -824,27 +416,29 @@ private lemma norm_thetaFourierCoeff_add_level {k : ℕ} {τ : ℂ} {α β : ℝ
     (hs : s ∈ thetaSections k τ α β) (n : ℤ) :
     ‖thetaFourierCoeff α s (n + k)‖ =
       Real.exp (-2 * π * ((n : ℝ) + α + (k : ℝ) / 2) * τ.im) * ‖thetaFourierCoeff α s n‖ := by
-  have hrec := (thetaSections_tau_iff_recurrence hs.1 hs.2.1).mp hs.2.2 n
+  have hrec := (forall_add_tau_iff_forall_thetaFourierCoeff_add (k := (k : ℤ))
+    (differentiable_of_mem_thetaSections hs) (add_one_of_mem_thetaSections hs)).mp
+    (by simpa using add_tau_of_mem_thetaSections hs) n
   rw [hrec, norm_mul, Complex.norm_exp]
   congr 2
-  have hre :
-      (2 * π * I * ((n : ℂ) + α) * τ - 2 * π * I * β + π * I * k * τ).re =
-        ((2 * π * ((n : ℝ) + α) + π * k : ℝ) * (I * τ) - (2 * π * β : ℝ) * I).re := by
-    congr 1
-    push_cast
-    ring
-  rw [hre]
-  simp only [sub_re, mul_re, ofReal_re, ofReal_im, I_re, I_im, mul_zero, zero_mul, sub_zero,
-    zero_sub, mul_one, mul_im]
+  simp
   ring
+
+private lemma periodic_thetaFourierCoeff_eq_zero {k : ℕ} {τ : ℂ} {α β : ℝ} {s : ℂ → ℂ}
+    (hs : s ∈ thetaSections k τ α β) :
+    Function.Periodic (fun n : ℤ => thetaFourierCoeff α s n = 0) (k : ℤ) := fun n => by
+  have hrec := (forall_add_tau_iff_forall_thetaFourierCoeff_add (k := (k : ℤ))
+    (differentiable_of_mem_thetaSections hs) (add_one_of_mem_thetaSections hs)).mp
+    (by simpa using add_tau_of_mem_thetaSections hs) n
+  exact propext (by dsimp only; rw [hrec, mul_eq_zero, or_iff_right (Complex.exp_ne_zero _)])
 
 /-- When `k > 0` and `τ.im ≤ 0`, there are no nonzero holomorphic theta sections. -/
 theorem thetaSections_eq_bot_of_im_nonpos (k : ℕ) (hk : 0 < k) (τ : ℂ) (hτ : τ.im ≤ 0)
     (α β : ℝ) : thetaSections k τ α β = ⊥ := by
   rw [Submodule.eq_bot_iff]
   intro s hs
-  refine eq_zero_of_thetaFourierCoeff_eq_zero (α := α) hs.1 fun m => ?_
-  have hrec := (thetaSections_tau_iff_recurrence hs.1 hs.2.1).mp hs.2.2
+  refine eq_zero_of_thetaFourierCoeff_eq_zero (α := α) (differentiable_of_mem_thetaSections hs)
+    fun m => ?_
   have hzero_ge : ∀ n : ℤ, 0 ≤ (n : ℝ) + α + (k : ℝ) / 2 → thetaFourierCoeff α s n = 0 := by
     intro n hn
     have hle : ∀ j : ℕ, ‖thetaFourierCoeff α s n‖ ≤ ‖thetaFourierCoeff α s (n + j * k)‖ := by
@@ -877,13 +471,7 @@ theorem thetaSections_eq_bot_of_im_nonpos (k : ℕ) (hk : 0 < k) (τ : ℂ) (hτ
     have hk1 : (1 : ℝ) ≤ k := by exact_mod_cast hk
     nlinarith
   have hj0 : thetaFourierCoeff α s (m + j * k) = 0 := hzero_ge _ hge
-  clear hj hge
-  induction j with
-  | zero => simpa using hj0
-  | succ j ih =>
-    have hidx : m + ((j + 1 : ℕ) : ℤ) * k = (m + j * k) + k := by push_cast; ring
-    rw [hidx, hrec, mul_eq_zero] at hj0
-    exact ih (hj0.resolve_left (Complex.exp_ne_zero _))
+  exact ((periodic_thetaFourierCoeff_eq_zero hs).nat_mul j m).mp hj0
 
 /-- For positive level `k > 0` and `τ.im ≤ 0`, `thetaSections k τ α β` has dimension `0`. -/
 theorem finrank_thetaSections_of_im_nonpos (k : ℕ) (hk : 0 < k) (τ : ℂ) (hτ : τ.im ≤ 0)
@@ -903,10 +491,8 @@ theorem thetaMetric_mul_norm_sq_add_int_add_int_mul_tau {k : ℕ} {τ : ℂ}
       simp [thetaMetric_def]
     · rw [thetaSections_eq_bot_of_im_nonpos k hk τ hτ.le α β, Submodule.mem_bot] at hs
       simp [hs]
-  · rw [add_int_add_int_mul_tau_of_mem_thetaSections hs m n z, norm_mul, mul_pow, ← mul_assoc]
-    have hm := thetaMetric_add_int_add_int_mul_tau (k : ℤ) hτ α β m n z
-    rw [Int.cast_natCast] at hm
-    rw [hm]
+  · rw [add_int_add_int_mul_tau_of_mem_thetaSections hs m n z, norm_mul, mul_pow, ← mul_assoc,
+      thetaMetric_add_int_add_int_mul_tau_mul_norm_thetaFactor_sq (k : ℝ) hτ α β m n z]
 
 /-! ### Characteristic theta basis functions -/
 
@@ -934,7 +520,7 @@ junk-value convention `jacobiTheta₂_undef`). -/
 theorem characteristicTheta_undef {k : ℕ} {τ : ℂ} (h : k = 0 ∨ τ.im ≤ 0) (α β : ℝ) (r : ℤ)
     (z : ℂ) : characteristicTheta k τ α β r z = 0 := by
   have him : (k * τ).im ≤ 0 := by
-    rw [show (k : ℂ) * τ = ((k : ℝ) : ℂ) * τ by norm_cast, im_ofReal_mul]
+    rw [← ofReal_natCast, im_ofReal_mul]
     rcases h with rfl | hτ
     · simp
     · exact mul_nonpos_of_nonneg_of_nonpos (Nat.cast_nonneg k) hτ
@@ -972,7 +558,7 @@ theorem characteristicTheta_add_tau (k : ℕ) (τ : ℂ) (α β : ℝ) (r : ℤ)
 
 /-- Shifting the characteristic index `r` by the level `k` multiplies `characteristicTheta` by a
 nonzero scalar depending only on `(k, τ, α, β, r)`. -/
-theorem characteristicTheta_add_level (k : ℕ) (τ : ℂ) (α β : ℝ) (r : ℤ) (z : ℂ) :
+theorem characteristicTheta_index_add_level (k : ℕ) (τ : ℂ) (α β : ℝ) (r : ℤ) (z : ℂ) :
     characteristicTheta k τ α β (r + k) z =
       cexp (2 * π * I * β - π * I * k * τ - 2 * π * I * (r + α) * τ) *
         characteristicTheta k τ α β r z := by
@@ -1002,8 +588,8 @@ theorem differentiable_characteristicTheta (k : ℕ) (τ : ℂ) (α β : ℝ) (r
 /-- Every characteristic theta function belongs to `thetaSections k τ α β`. -/
 theorem characteristicTheta_mem_thetaSections (k : ℕ) (τ : ℂ) (α β : ℝ) (r : ℤ) :
     characteristicTheta k τ α β r ∈ thetaSections k τ α β :=
-  ⟨differentiable_characteristicTheta k τ α β r, characteristicTheta_add_one k τ α β r,
-    characteristicTheta_add_tau k τ α β r⟩
+  mem_thetaSections_iff.mpr ⟨differentiable_characteristicTheta k τ α β r,
+    characteristicTheta_add_one k τ α β r, characteristicTheta_add_tau k τ α β r⟩
 
 /-- Mathlib's `jacobiTheta₂ · τ` is a level-`1` theta section with zero characteristics for every
 `τ : ℂ`. -/
@@ -1024,7 +610,7 @@ theorem hasSum_characteristicTheta {k : ℕ} (hk : 0 < k) {τ : ℂ} (hτ : 0 < 
           cexp (2 * π * I * ((r + n * k : ℤ) + α) * z))
       (characteristicTheta k τ α β r z) := by
   have hkτ : 0 < (k * τ).im := by
-    rw [show (k : ℂ) * τ = ((k : ℝ) : ℂ) * τ by norm_cast, im_ofReal_mul]
+    rw [← ofReal_natCast, im_ofReal_mul]
     exact mul_pos (Nat.cast_pos.mpr hk) hτ
   have hsum := (hasSum_jacobiTheta₂_term (k * z + (r + α) * τ - β) hkτ).mul_left
     (cexp (2 * π * I * (r + α) * z))
@@ -1043,7 +629,6 @@ private lemma hasLaurentSeriesOnAnnulus_twistedCusp_characteristicTheta {k : ℕ
           let n : ℤ := (m' - r) / k
           cexp (2 * π * I * n * ((r + α) * τ - β) + π * I * k * n ^ 2 * τ)
         else 0) 0 0 ⊤ := by
-  have hs := characteristicTheta_mem_thetaSections k τ α β r
   refine ⟨le_rfl, ENNReal.ofReal_lt_top, fun {w} hw => ?_⟩
   have hw0 : w ≠ 0 := fun h => hw.2 (by simp [h])
   set z := Function.Periodic.invQParam 1 w
@@ -1058,7 +643,7 @@ private lemma hasLaurentSeriesOnAnnulus_twistedCusp_characteristicTheta {k : ℕ
             cexp (2 * π * I * q * ((r + α) * τ - β) + π * I * k * q ^ 2 * τ)
           else 0))
       (twistedCusp α (characteristicTheta k τ α β r) w) := by
-    rw [← hqz, twistedCusp_qParam hs.2.1, twistedPeriodic]
+    rw [← hqz, twistedCusp_qParam (characteristicTheta_add_one k τ α β r), twistedPeriodic]
     have hchar := (hasSum_characteristicTheta hk hτ α β r z).mul_left (cexp (-2 * π * I * α * z))
     refine hchar.congr_fun fun n => ?_
     have hdvd : (k : ℤ) ∣ (r + n * k) - r := by
@@ -1066,8 +651,7 @@ private lemma hasLaurentSeriesOnAnnulus_twistedCusp_characteristicTheta {k : ℕ
       exact dvd_mul_left (k : ℤ) n
     have hdiv : ((r + n * (k : ℤ)) - r) / (k : ℤ) = n := by
       rw [add_sub_cancel_left, Int.mul_ediv_cancel n hk0]
-    simp only [hdvd, ↓reduceIte, hdiv, sub_zero, smul_eq_mul,
-      Function.Periodic.qParam, ofReal_one, div_one, ← Complex.exp_int_mul, ← Complex.exp_add]
+    simp only [hdvd, ↓reduceIte, hdiv, sub_zero, smul_eq_mul, qParam_one_zpow, ← Complex.exp_add]
     congr 1
     push_cast
     ring
@@ -1086,8 +670,8 @@ private lemma thetaFourierCoeff_characteristicTheta_eq {k : ℕ} (hk : 0 < k) {�
         let n : ℤ := (m - r) / k
         cexp (2 * π * I * n * ((r + α) * τ - β) + π * I * k * n ^ 2 * τ)
       else 0 := by
-  have hs := characteristicTheta_mem_thetaSections k τ α β r
-  have hL₁ := hasLaurentSeriesOnAnnulus_twistedCusp hs.1 hs.2.1
+  have hL₁ := hasLaurentSeriesOnAnnulus_twistedCusp (differentiable_characteristicTheta k τ α β r)
+    (characteristicTheta_add_one k τ α β r)
   have hL₂ := hasLaurentSeriesOnAnnulus_twistedCusp_characteristicTheta hk hτ α β r
   exact congrFun (hL₁.coeff_unique hL₂) m
 
@@ -1146,18 +730,6 @@ private lemma thetaFourierCoeff_eq_zero_of_fin_eq_zero {k : ℕ} (hk : 0 < k) {�
     {s : ℂ → ℂ} (hs : s ∈ thetaSections k τ α β)
     (hfin : ∀ r : Fin k, thetaFourierCoeff α s r = 0) (m : ℤ) :
     thetaFourierCoeff α s m = 0 := by
-  have hrec := (thetaSections_tau_iff_recurrence hs.1 hs.2.1).mp hs.2.2
-  have hstep : ∀ n : ℤ, thetaFourierCoeff α s (n + k) = 0 ↔ thetaFourierCoeff α s n = 0 :=
-    fun n => by rw [hrec n, mul_eq_zero, or_iff_right (Complex.exp_ne_zero _)]
-  have hshift : ∀ (r : ℤ) (q : ℤ),
-      thetaFourierCoeff α s r = 0 → thetaFourierCoeff α s (r + q * k) = 0 := by
-    intro r q hr
-    refine Int.induction_on q (by simpa using hr) (fun j ih => ?_) (fun j ih => ?_)
-    · have : r + ((j : ℤ) + 1) * k = (r + j * k) + k := by ring
-      rw [this, hstep]
-      exact ih
-    · have : (r + (-(j : ℤ) - 1) * k) + k = r + (-(j : ℤ)) * k := by ring
-      exact (hstep _).mp (this.symm ▸ ih)
   have hkpos : (0 : ℤ) < k := Int.natCast_pos.mpr hk
   have hrem_nn : 0 ≤ m % (k : ℤ) := Int.emod_nonneg m hkpos.ne'
   have hrem_lt : m % (k : ℤ) < k := Int.emod_lt_of_pos m hkpos
@@ -1167,24 +739,25 @@ private lemma thetaFourierCoeff_eq_zero_of_fin_eq_zero {k : ℕ} (hk : 0 < k) {�
     rw [hr_cast, mul_comm]
     exact (Int.emod_add_mul_ediv m (k : ℤ)).symm
   rw [hm]
-  exact hshift r (m / (k : ℤ)) (hfin r)
+  exact ((periodic_thetaFourierCoeff_eq_zero hs).int_mul (m / (k : ℤ)) r).mpr (hfin r)
 
 private noncomputable def thetaSectionsEquivFun (k : ℕ) (hk : 0 < k) (τ : ℂ) (hτ : 0 < τ.im)
     (α β : ℝ) : thetaSections k τ α β ≃ₗ[ℂ] (Fin k → ℂ) :=
   let toLin : thetaSections k τ α β →ₗ[ℂ] (Fin k → ℂ) :=
     { toFun := fun s r => thetaFourierCoeff α s.1 r
       map_add' := fun s₁ s₂ => funext fun r =>
-        thetaFourierCoeff_add ((s₁.2.1.continuous.comp continuous_ofReal).intervalIntegrable 0 1)
-          ((s₂.2.1.continuous.comp continuous_ofReal).intervalIntegrable 0 1) r
+        thetaFourierCoeff_add
+          (((differentiable_of_mem_thetaSections s₁.2).continuous.comp
+            continuous_ofReal).intervalIntegrable 0 1)
+          (((differentiable_of_mem_thetaSections s₂.2).continuous.comp
+            continuous_ofReal).intervalIntegrable 0 1) r
       map_smul' := fun c s => funext fun r => thetaFourierCoeff_smul α c s.1 r }
   let inv : (Fin k → ℂ) → thetaSections k τ α β :=
     fun v => ∑ r : Fin k, v r • ⟨characteristicTheta k τ α β r,
       characteristicTheta_mem_thetaSections k τ α β r⟩
   have hright : Function.RightInverse inv toLin := fun v => by
     ext r'
-    simp only [inv, map_sum, map_smul, Finset.sum_apply, Pi.smul_apply, smul_eq_mul,
-      toLin, LinearMap.coe_mk, AddHom.coe_mk, thetaFourierCoeff_characteristicTheta_fin hτ]
-    simp
+    simp [inv, toLin, thetaFourierCoeff_characteristicTheta_fin hτ]
   LinearEquiv.ofLinearMap toLin
     { toFun := inv
       map_add' := fun v w => by
@@ -1198,7 +771,8 @@ private noncomputable def thetaSectionsEquivFun (k : ℕ) (hk : 0 < k) (τ : ℂ
       have hfin : ∀ r : Fin k, thetaFourierCoeff α (inv (toLin s) - s).1 r = 0 :=
         fun r => congrFun hdiff r
       have hzero : (inv (toLin s) - s).1 = 0 :=
-        eq_zero_of_thetaFourierCoeff_eq_zero (inv (toLin s) - s).2.1
+        eq_zero_of_thetaFourierCoeff_eq_zero
+          (differentiable_of_mem_thetaSections (inv (toLin s) - s).2)
           (thetaFourierCoeff_eq_zero_of_fin_eq_zero hk (inv (toLin s) - s).2 hfin)
       exact sub_eq_zero.mp (Subtype.ext hzero))
 
@@ -1250,8 +824,10 @@ theorem finrank_thetaSections (k : ℕ) (hk : 0 < k) (τ : ℂ) (hτ : 0 < τ.im
 private lemma thetaFourierCoeff_zero_level_eq_zero_of_ne {τ : ℂ} (hτ : τ.im ≠ 0) {α β : ℝ}
     {s : ℂ → ℂ} (hs : s ∈ thetaSections 0 τ α β) {m : ℤ} (hm : thetaFourierCoeff α s m ≠ 0) :
     (m : ℝ) + α = 0 ∧ ∃ b : ℤ, (b : ℝ) = β := by
-  have hrec := (thetaSections_tau_iff_recurrence hs.1 hs.2.1).mp hs.2.2 m
-  simp only [Nat.cast_zero, add_zero, mul_zero, zero_mul] at hrec
+  have hrec := (forall_add_tau_iff_forall_thetaFourierCoeff_add (k := 0)
+    (differentiable_of_mem_thetaSections hs) (add_one_of_mem_thetaSections hs)).mp
+    (by simpa using add_tau_of_mem_thetaSections hs) m
+  simp only [Int.cast_zero, add_zero, mul_zero, zero_mul] at hrec
   have hexp : cexp (2 * π * I * (m + α) * τ - 2 * π * I * β) = 1 :=
     mul_right_cancel₀ hm (by simpa using hrec.symm)
   have hnorm_eq := norm_thetaFourierCoeff_add_level hs m
@@ -1266,14 +842,10 @@ private lemma thetaFourierCoeff_zero_level_eq_zero_of_ne {τ : ℂ} (hτ : τ.im
     have : (-2 * π * τ.im) * ((m : ℝ) + α) = 0 := by linarith
     exact (mul_eq_zero.mp this).resolve_left hne
   have hmaC : ((m : ℂ) + α) = 0 := by exact_mod_cast hma
-  rw [hmaC, mul_zero, zero_mul, zero_sub] at hexp
-  obtain ⟨b, hb⟩ := Complex.exp_eq_one_iff.mp hexp
-  have hmul : (-β : ℂ) * (2 * π * I) = (b : ℂ) * (2 * π * I) := by
-    calc
-      (-β : ℂ) * (2 * π * I) = -(2 * π * I * β) := by ring
-      _ = (b : ℂ) * (2 * π * I) := hb
-  have hR : -β = (b : ℝ) := by exact_mod_cast mul_right_cancel₀ two_pi_I_ne_zero hmul
-  exact ⟨hma, -b, by push_cast; linarith⟩
+  rw [hmaC, mul_zero, zero_mul, zero_sub, Complex.exp_neg, inv_eq_one,
+    Complex.exp_eq_one_iff] at hexp
+  refine ⟨hma, ?_⟩
+  simpa [mul_comm (2 * π * I), mul_left_inj' two_pi_I_ne_zero, ← ofReal_intCast, eq_comm] using hexp
 
 /-- At level `k = 0` with `τ.im ≠ 0` and integer characteristics `(α, β) ∈ ℤ × ℤ`, the theta
 sections are precisely the constant functions. -/
@@ -1286,7 +858,8 @@ theorem mem_thetaSections_zero_iff_const {τ : ℂ} (hτ : τ.im ≠ 0) {α β :
   · intro hs
     refine ⟨thetaFourierCoeff a s (-a), ?_⟩
     ext z
-    have hsum := hasSum_thetaFourierCoeff hs.1 hs.2.1 z
+    have hsum := hasSum_thetaFourierCoeff (differentiable_of_mem_thetaSections hs)
+      (add_one_of_mem_thetaSections hs) z
     have hsingle : HasSum
         (fun m : ℤ => thetaFourierCoeff a s m * cexp (2 * π * I * (m + a) * z))
         (thetaFourierCoeff a s (-a)) := by
@@ -1305,14 +878,12 @@ theorem mem_thetaSections_zero_iff_const {τ : ℂ} (hτ : τ.im ≠ 0) {α β :
         exact hm (eq_neg_of_add_eq_zero_left hmaZ)
     exact hsum.unique hsingle
   · rintro ⟨c, rfl⟩
-    refine ⟨differentiable_const c, fun z => ?_, fun z => ?_⟩
+    refine mem_thetaSections_iff.mpr ⟨differentiable_const c, fun _ => ?_, fun _ => ?_⟩
     · have ha : cexp (2 * π * I * (a : ℂ)) = 1 := by
-        rw [show (2 * π * I * (a : ℂ)) = (a : ℂ) * (2 * π * I) by ring]
-        exact Complex.exp_int_mul_two_pi_mul_I a
+        simpa [mul_comm] using Complex.exp_int_mul_two_pi_mul_I a
       simp [ha]
     · have hb : cexp (2 * π * I * (b : ℂ)) = 1 := by
-        rw [show (2 * π * I * (b : ℂ)) = (b : ℂ) * (2 * π * I) by ring]
-        exact Complex.exp_int_mul_two_pi_mul_I b
+        simpa [mul_comm] using Complex.exp_int_mul_two_pi_mul_I b
       simp [hb]
 
 /-- At level `k = 0` with `τ.im ≠ 0`, non-trivial flat characteristics (`α ∉ ℤ` or `β ∉ ℤ`) admit
@@ -1322,7 +893,8 @@ theorem thetaSections_zero_eq_bot_of_not_int {τ : ℂ} (hτ : τ.im ≠ 0) {α 
     thetaSections 0 τ α β = ⊥ := by
   rw [Submodule.eq_bot_iff]
   intro s hs
-  refine eq_zero_of_thetaFourierCoeff_eq_zero (α := α) hs.1 fun m => ?_
+  refine eq_zero_of_thetaFourierCoeff_eq_zero (α := α) (differentiable_of_mem_thetaSections hs)
+    fun m => ?_
   by_contra hm
   obtain ⟨hma, hb⟩ := thetaFourierCoeff_zero_level_eq_zero_of_ne hτ hs hm
   exact h ⟨⟨-m, by push_cast; linarith⟩, hb⟩
