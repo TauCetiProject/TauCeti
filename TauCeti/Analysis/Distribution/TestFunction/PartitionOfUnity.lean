@@ -15,9 +15,11 @@ import TauCeti.Analysis.Calculus.BumpFunction.Cutoff
 
 A test function can be written as a finite sum of tests subordinate to any open cover of its
 support. Consequently, an additive map on test functions which vanishes locally vanishes globally;
-continuity of the additive map is not required. Every compact subset of the domain also has a
-cutoff test function equal to one on a neighbourhood of it, and every point of the domain has a
-test function with a prescribed value there, supported in a given neighbourhood of the point.
+continuity of the additive map is not required. If `E` is finite-dimensional, every compact
+subset of the domain also has a cutoff test function equal to one on a neighbourhood of it, and
+every point of the domain has a test function with a prescribed value there, supported in a given
+neighbourhood of the point; in infinite dimension every test function is zero
+(`TestFunction.eq_zero_of_not_finiteDimensional`).
 Near a point where a complex test function `φ` does not vanish, every complex test function
 supported close enough to the point is a smooth multiple of `φ`
 (`TestFunction.exists_mem_nhds_forall_exists_contDiff_eq_mul`); this is how localization
@@ -30,10 +32,12 @@ sends tests on `Ω` to tests on `U`. This is `TestFunction.cutoffCLM`, a continu
 `𝓓^{n}(Ω, F) →L[ℝ] 𝓓^{n}(U, F)` for the LF topologies; it is the localization step used to glue
 distributions and currents defined on the members of an open cover.
 
-The decomposition uses Mathlib's `SmoothPartitionOfUnity.exists_isSubordinate`, applied to the
-compact support, and the cutoff packages `IsCompact.exists_contDiff_cutoff` as a test function.
-This is the partition-of-unity localization of distributions described in Hörmander, *The Analysis
-of Linear Partial Differential Operators I*, §2.2 (Localization).
+The decomposition multiplies by a finite smooth partition of unity on the compact support
+(`IsCompact.exists_contDiff_tsupport_subset_finset_sum_eq_one`, built from Mathlib's
+`SmoothPartitionOfUnity.exists_isSubordinate`), and the cutoff packages
+`IsCompact.exists_contDiff_cutoff` as a test function. This is the partition-of-unity localization
+of distributions described in Hörmander, *The Analysis of Linear Partial Differential Operators I*,
+§2.2 (Localization).
 -/
 
 public section
@@ -115,29 +119,22 @@ theorem exists_sum_subordinate (φ : 𝓓^{n}(Ω, F)) {ι : Type*} (U : ι → S
   swap
   · exact ⟨∅, isEmptyElim, isEmptyElim, by simp [eq_zero_of_not_finiteDimensional φ hE],
       isEmptyElim⟩
-  obtain ⟨s, hs⟩ := φ.hasCompactSupport.elim_finite_subcover U hU hcover
-  have hs' : tsupport φ ⊆ ⋃ i : s, U i := by
-    intro x hx
-    obtain ⟨i, hi, hxi⟩ := mem_iUnion₂.mp (hs hx)
-    exact mem_iUnion.mpr ⟨⟨i, hi⟩, hxi⟩
-  obtain ⟨ρ, hρ⟩ := SmoothPartitionOfUnity.exists_isSubordinate 𝓘(ℝ, E)
-    (isClosed_tsupport φ) (fun i : s ↦ U i) (fun i ↦ hU i) hs'
+  obtain ⟨s, χ, hχ, hχ0, hχ1, hsum⟩ :=
+    φ.hasCompactSupport.isCompact.exists_contDiff_tsupport_subset_finset_sum_eq_one hU hcover
   let ψ : s → 𝓓^{n}(Ω, F) := fun i ↦
-    ⟨fun x ↦ ρ i x • φ x,
-      ((ρ i).contMDiff.contDiff.of_le (by simp)).smul φ.contDiff,
-      φ.hasCompactSupport.smul_left,
-      (tsupport_smul_subset_right _ _).trans φ.tsupport_subset⟩
-  refine ⟨s, ψ, fun i ↦ (tsupport_smul_subset_left _ _).trans (hρ i), ?_, fun i x ↦ ?_⟩
+    ⟨fun x ↦ χ i x • φ x, ((hχ i).1.of_le (by simp)).smul φ.contDiff,
+      φ.hasCompactSupport.smul_left, (tsupport_smul_subset_right _ _).trans φ.tsupport_subset⟩
+  refine ⟨s, ψ, fun i ↦ (tsupport_smul_subset_left _ _).trans (hχ i).2.2, ?_, fun i x ↦ ?_⟩
   · ext x
     simp only [sum_apply]
     by_cases hx : x ∈ tsupport φ
-    · have hsum : ∑ i : s, ρ i x = 1 := by
-        simpa only [finsum_eq_sum_of_fintype] using ρ.sum_eq_one hx
-      simp only [ψ, coe_mk, ← Finset.sum_smul, hsum, one_smul]
+    · simp only [ψ, coe_mk, ← Finset.sum_smul, Finset.sum_coe_sort s (fun i ↦ χ i x),
+        hsum x hx, one_smul]
     · simp [ψ, image_eq_zero_of_notMem_tsupport hx]
-  · -- Each summand is `ρ i • φ` with `0 ≤ ρ i ≤ 1`.
-    simpa [ψ, norm_smul, abs_of_nonneg (ρ.nonneg i x)] using
-      mul_le_of_le_one_left (norm_nonneg (φ x)) (ρ.le_one i x)
+  · -- Each summand is `χ i • φ` with `0 ≤ χ i ≤ 1`.
+    have hle : χ i x ≤ 1 := (Finset.single_le_sum (fun j _ ↦ hχ0 j x) i.2).trans (hχ1 x)
+    simpa [ψ, norm_smul, abs_of_nonneg (hχ0 i x)] using
+      mul_le_of_le_one_left (norm_nonneg (φ x)) hle
 
 /-- A compact subset `K` of an open set `W` contained in the domain has a test function with values
 in `[0, 1]`, equal to one on a neighbourhood of `K`, whose topological support lies in `W`. -/

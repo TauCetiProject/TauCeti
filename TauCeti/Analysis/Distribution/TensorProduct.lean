@@ -41,9 +41,8 @@ real test functions it is the product of the pairings,
 
 `(S ⊗ T) ((x, y) ↦ φ x ψ y) = S φ * T ψ`,
 
-and when `V = Ω ×ˢ O` it is the only distribution with this property: when `E` and `D` are
-finite-dimensional, such tensor products span a dense subspace of the test functions on `Ω ×ˢ O`
-(`TestFunction.ext_prodSMulCLM`), and otherwise every test function on `V` is zero. The tensor
+and when `V = Ω ×ˢ O` it is the only distribution with this property: such tensor products span
+a dense subspace of the test functions on `Ω ×ˢ O` (`TestFunction.ext_prodSMulCLM`). The tensor
 product is bilinear, satisfies the Leibniz rule
 `∂_{(v, w)} (S ⊗ T) = ∂_{v} S ⊗ T + S ⊗ ∂_{w} T`, and is supported in the product of the
 supports. The tensor product of the point masses at `a` and `b` is the point mass at `(a, b)`.
@@ -449,16 +448,8 @@ only distribution on `V` taking the value `S φ * T ψ` on every tensor product
 `(x, y) ↦ φ x ψ y` of real test functions. -/
 theorem tensorProduct_eq (hV : (V : Set (E × D)) = (Ω : Set E) ×ˢ (O : Set D)) {U : 𝓓'(V, ℂ)}
     (h : ∀ (φ : 𝓓(Ω, ℝ)) (ψ : 𝓓(O, ℝ)), U (prodSMulCLM ψ hV.symm.subset φ) = S φ * T ψ) :
-    S.tensorProduct T hV.subset = U := by
-  by_cases hED : FiniteDimensional ℝ (E × D)
-  · have : FiniteDimensional ℝ E :=
-      Module.Finite.of_surjective (LinearMap.fst ℝ E D) LinearMap.fst_surjective
-    have : FiniteDimensional ℝ D :=
-      Module.Finite.of_surjective (LinearMap.snd ℝ E D) LinearMap.snd_surjective
-    exact ext_prodSMulCLM hV fun ψ φ ↦ by rw [tensorProduct_prodSMulCLM, h]
-  -- Otherwise every test function on `V` is zero.
-  ext φ
-  simp [eq_zero_of_not_finiteDimensional φ hED]
+    S.tensorProduct T hV.subset = U :=
+  ext_prodSMulCLM hV fun ψ φ ↦ by rw [tensorProduct_prodSMulCLM, h]
 
 @[simp]
 theorem add_tensorProduct (S' : 𝓓'(Ω, ℂ)) :

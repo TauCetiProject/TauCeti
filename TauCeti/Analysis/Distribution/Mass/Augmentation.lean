@@ -15,17 +15,21 @@ import TauCeti.Analysis.Distribution.TestFunction.PartitionOfUnity
 The augmentation of a compactly supported functional is bounded by its mass times the norm
 of the constant being tested. Since augmentation vanishes on compactly supported boundaries,
 this gives a lower bound for the mass of every boundary perturbation. For a weighted point
-current the bound is sharp: its mass is the absolute value of its coefficient, and adding a
-compactly supported boundary cannot decrease that mass.
+current on a finite-dimensional space the bound is sharp: its mass is the absolute value of its
+coefficient, and adding a compactly supported boundary cannot decrease that mass. On an
+infinite-dimensional space every test form is zero, so every functional, in particular every
+point current, has mass and augmentation zero
+(`Distribution.augmentation_eq_zero_of_not_finiteDimensional`).
 
 These statements use the existing Euclidean test-form model, including its actual exterior
 derivative. They apply to real-linear functionals, so in particular to currents, without a
 finite-mass assumption on the competitor. Constants are evaluated only through compactly
 supported cutoffs. No constant function is treated as a test on a noncompact domain.
 
-In degree zero this distinguishes boundary perturbations from arbitrary competitors with the
-same ordinary boundary: zero has smaller mass than a nonzero point current, but has different
-augmentation and cannot be obtained by a compactly supported boundary perturbation.
+In degree zero, on a finite-dimensional space, this distinguishes boundary perturbations from
+arbitrary competitors with the same ordinary boundary: zero has smaller mass than a nonzero point
+current, but has different augmentation and cannot be obtained by a compactly supported boundary
+perturbation.
 
 ## References
 

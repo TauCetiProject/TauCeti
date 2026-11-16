@@ -22,23 +22,22 @@ import TauCeti.MeasureTheory.Function.AEEqOfLIntegral.Basic
 
 Let `Ω` be an open set of a real normed space `E`, let `F` be a finite-dimensional real normed
 space and let `T : 𝓓(Ω, F) →L[ℝ] ℝ` have locally finite mass
-(`Distribution.HasLocallyFiniteMass`). With `F = E [⋀^Fin k]→L[ℝ] ℝ` this is a `k`-current of
-locally finite mass. Then `T` is represented by integration against its mass measure
-`‖T‖ = Distribution.massMeasure T` with a density of dual norm one:
+(`Distribution.HasLocallyFiniteMass`). With `E` finite-dimensional and `F = E [⋀^Fin k]→L[ℝ] ℝ`
+this is a `k`-current of locally finite mass. Then `T` is represented by integration against its
+mass measure `‖T‖ = Distribution.massMeasure T` with a density of dual norm one:
 
 `T φ = ∫ τ(x) (φ x) d‖T‖(x)` for every `φ ∈ 𝓓(Ω, F)`, and `‖τ(x)‖ = 1` for `‖T‖`-almost every `x`.
 
 The **polar density** `τ = Distribution.polarDensity T` takes values in the native normed dual
-`StrongDual ℝ F` of the fibre, with its dual norm. For `F = E [⋀^Fin k]→L[ℝ] ℝ` over an inner
-product space `E`, the norm on `F` is the comass and its dual norm is the mass norm of `k`-vectors,
-under `exteriorPower.formDualEquiv`; so `τ(x)` is Federer's orientation `vec T (x)` of the current,
-and the representation is `T = ‖T‖ ∧ vec T`. The density is unique `‖T‖`-almost everywhere
-(`Distribution.ae_eq_polarDensity`). The mass measure lives on the open domain `Ω` and need not be
-finite near its frontier, so the density is only locally integrable. The density is constructed
-for finite-dimensional `E`, and the representation `Distribution.apply_eq_integral_polarDensity`
-is stated there; the other statements hold for every `E`, since on an infinite-dimensional space
-every test function is zero and `‖T‖` is the zero measure
-(`Distribution.massMeasure_eq_zero_of_not_finiteDimensional`).
+`StrongDual ℝ F` of the fibre, with its dual norm. For `F = E [⋀^Fin k]→L[ℝ] ℝ` over a
+finite-dimensional inner product space `E`, the norm on `F` is the comass and its dual norm is the
+mass norm of `k`-vectors, under `exteriorPower.formDualEquiv`; so `τ(x)` is Federer's orientation
+`vec T (x)` of the current, and the representation is `T = ‖T‖ ∧ vec T`. The density is unique
+`‖T‖`-almost everywhere (`Distribution.ae_eq_polarDensity`). The mass measure lives on the open
+domain `Ω` and need not be finite near its frontier, so the density is only locally integrable. The
+density is constructed for finite-dimensional `E`; the statements hold for every `E`, since on an
+infinite-dimensional space every test function is zero and `‖T‖` is the zero measure
+(`Distribution.massMeasure_eq_zero_of_not_finiteDimensional`), so `τ = 0` represents `T`.
 
 The proof assembles the scalar distributions `ψ ↦ T (ψ • bᵢ)` along a basis `b` of `F`. Each has
 order zero, so it is a difference of two regular measures
@@ -82,14 +81,15 @@ namespace Distribution
 open MeasureTheory TopologicalSpace TestFunction Set
 open scoped ENNReal Distributions BoundedContinuousFunction
 
-variable {E F : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
+variable {E F : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
   [MeasurableSpace E] [BorelSpace E] [NormedAddCommGroup F] [NormedSpace ℝ F]
   [FiniteDimensional ℝ F] {Ω : Opens E} {T : 𝓓(Ω, F) →L[ℝ] ℝ}
 
 /-- A distribution of locally finite mass is represented by integration against a measurable
 field `g` of linear functionals, locally integrable with respect to a measure `ρ` that is finite on
 compact sets and dominates `‖T‖`. -/
-private theorem exists_measurable_dual_density (hT : HasLocallyFiniteMass T) :
+private theorem exists_measurable_dual_density [FiniteDimensional ℝ E]
+    (hT : HasLocallyFiniteMass T) :
     ∃ ρ : Measure Ω, IsFiniteMeasureOnCompacts ρ ∧ massMeasure T ≪ ρ ∧
       ∃ g : Ω → StrongDual ℝ F, Measurable g ∧ LocallyIntegrable g ρ ∧
         ∀ φ : 𝓓(Ω, F), T φ = ∫ x, g x (φ x) ∂ρ := by
@@ -141,7 +141,7 @@ private theorem exists_measurable_dual_density (hT : HasLocallyFiniteMass T) :
   exact ⟨ρ, hρ, hlam, g, hgm, hgint, hrep⟩
 
 /-- Existence of a density of dual norm at most one representing `T` against `‖T‖`. -/
-private theorem exists_le_one (hT : HasLocallyFiniteMass T) :
+private theorem exists_le_one [FiniteDimensional ℝ E] (hT : HasLocallyFiniteMass T) :
     ∃ τ : Ω → StrongDual ℝ F, Measurable τ ∧ (∀ᵐ x ∂massMeasure T, ‖τ x‖ ≤ 1) ∧
       ∀ φ : 𝓓(Ω, F), T φ = ∫ x, τ x (φ x) ∂massMeasure T := by
   have := Ω.isOpen.locallyCompactSpace
@@ -167,8 +167,8 @@ private theorem exists_le_one (hT : HasLocallyFiniteMass T) :
 omit [FiniteDimensional ℝ F] in
 /-- A density of dual norm at most one representing `T` against `‖T‖` has norm one almost
 everywhere. -/
-private theorem ae_norm_eq_one_of_le_one (hT : HasLocallyFiniteMass T) {τ : Ω → StrongDual ℝ F}
-    (hτ1 : ∀ᵐ x ∂massMeasure T, ‖τ x‖ ≤ 1)
+private theorem ae_norm_eq_one_of_le_one [FiniteDimensional ℝ E] (hT : HasLocallyFiniteMass T)
+    {τ : Ω → StrongDual ℝ F} (hτ1 : ∀ᵐ x ∂massMeasure T, ‖τ x‖ ≤ 1)
     (hτ : ∀ φ : 𝓓(Ω, F), T φ = ∫ x, τ x (φ x) ∂massMeasure T) :
     ∀ᵐ x ∂massMeasure T, ‖τ x‖ = 1 := by
   have := Ω.isOpen.locallyCompactSpace
@@ -199,9 +199,14 @@ private theorem ae_norm_eq_one_of_le_one (hT : HasLocallyFiniteMass T) {τ : Ω 
 
 private theorem exists_polarDensity (hT : HasLocallyFiniteMass T) :
     ∃ τ : Ω → StrongDual ℝ F, Measurable τ ∧ (∀ᵐ x ∂massMeasure T, ‖τ x‖ = 1) ∧
-      ∀ φ : 𝓓(Ω, F), T φ = ∫ x, τ x (φ x) ∂massMeasure T :=
-  let ⟨τ, hτm, hτ1, hτ⟩ := exists_le_one hT
-  ⟨τ, hτm, ae_norm_eq_one_of_le_one hT hτ1 hτ, hτ⟩
+      ∀ φ : 𝓓(Ω, F), T φ = ∫ x, τ x (φ x) ∂massMeasure T := by
+  by_cases hE : FiniteDimensional ℝ E
+  · obtain ⟨τ, hτm, hτ1, hτ⟩ := exists_le_one hT
+    exact ⟨τ, hτm, ae_norm_eq_one_of_le_one hT hτ1 hτ, hτ⟩
+  -- In infinite dimension every test function and the mass measure are zero.
+  refine ⟨0, measurable_const, by simp [massMeasure_eq_zero_of_not_finiteDimensional hE],
+    fun φ => ?_⟩
+  simp [TestFunction.eq_zero_of_not_finiteDimensional φ hE]
 
 open scoped Classical in
 /-- The **polar density** `τ` of a functional `T` on `F`-valued test functions on `Ω` with respect
@@ -217,7 +222,7 @@ def polarDensity (T : 𝓓(Ω, F) →L[ℝ] ℝ) : Ω → StrongDual ℝ F :=
       ∀ φ : 𝓓(Ω, F), T φ = ∫ x, τ x (φ x) ∂massMeasure T then h.choose
   else 0
 
-omit [FiniteDimensional ℝ E] [FiniteDimensional ℝ F] in
+omit [FiniteDimensional ℝ F] in
 /-- The polar density is measurable. -/
 @[fun_prop]
 theorem measurable_polarDensity : Measurable (polarDensity T) := by
@@ -225,7 +230,7 @@ theorem measurable_polarDensity : Measurable (polarDensity T) := by
   split_ifs with h
   exacts [h.choose_spec.1, measurable_const]
 
-omit [FiniteDimensional ℝ E] [FiniteDimensional ℝ F] in
+omit [FiniteDimensional ℝ F] in
 /-- The polar density of a functional without locally finite mass is `0`, by convention. -/
 @[simp]
 theorem polarDensity_of_not_hasLocallyFiniteMass (hT : ¬HasLocallyFiniteMass T) :
@@ -253,16 +258,12 @@ theorem apply_eq_integral_polarDensity (hT : HasLocallyFiniteMass T) (φ : 𝓓(
     T φ = ∫ x, polarDensity T x (φ x) ∂massMeasure T :=
   (polarDensity_spec hT).2 φ
 
-omit [FiniteDimensional ℝ E] in
 /-- The polar density of a functional of locally finite mass has dual norm one at `‖T‖`-almost
 every point. -/
 theorem ae_norm_polarDensity_eq_one (hT : HasLocallyFiniteMass T) :
-    ∀ᵐ x ∂massMeasure T, ‖polarDensity T x‖ = 1 := by
-  by_cases hE : FiniteDimensional ℝ E
-  · exact (polarDensity_spec hT).1
-  · simp [massMeasure_eq_zero_of_not_finiteDimensional hE]
+    ∀ᵐ x ∂massMeasure T, ‖polarDensity T x‖ = 1 :=
+  (polarDensity_spec hT).1
 
-omit [FiniteDimensional ℝ E] in
 /-- The polar density of a functional of locally finite mass is locally integrable with respect
 to its mass measure. -/
 theorem locallyIntegrable_polarDensity (hT : HasLocallyFiniteMass T) :
@@ -276,14 +277,12 @@ theorem locallyIntegrable_polarDensity (hT : HasLocallyFiniteMass T) :
     measurable_polarDensity.aestronglyMeasurable (M := 1)
     (ae_restrict_of_ae ((ae_norm_polarDensity_eq_one hT).mono fun x hx => hx.le))
 
-omit [FiniteDimensional ℝ E] in
 /-- The pairing `x ↦ τ(x) (φ x)` of a test with the polar density is integrable with respect to
 the mass measure, for a functional of locally finite mass. -/
 theorem integrable_polarDensity_apply (hT : HasLocallyFiniteMass T) (φ : 𝓓(Ω, F)) :
     Integrable (fun x : Ω => polarDensity T x (φ x)) (massMeasure T) :=
   φ.integrable_bilin_subtype (ContinuousLinearMap.apply ℝ ℝ) (locallyIntegrable_polarDensity hT)
 
-omit [FiniteDimensional ℝ E] in
 /-- **Uniqueness of the polar density.** A locally integrable field `τ : Ω → StrongDual ℝ F` with
 `T φ = ∫ τ(x) (φ x) d‖T‖` for every test `φ` agrees with the polar density of `T` at `‖T‖`-almost
 every point. -/
