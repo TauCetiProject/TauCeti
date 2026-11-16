@@ -60,8 +60,6 @@ the other operator's cokernel through its class
 
 ## Main results
 
-* `ContinuousLinearMap.IsFredholm.finrank_detLine`: the determinant line of a Fredholm operator is
-  one-dimensional.
 * `ContinuousLinearMap.detLineCoprodEquiv`: for a surjective stabilization `D₁.coprod D₂` by a
   finite-dimensional space `Λ`, the isomorphism
   `det (ker (D₁.coprod D₂)) ⊗ (det Λ)^* ≃ det (ker D₁) ⊗ (det (F ⧸ range D₁))^*`.
@@ -98,14 +96,6 @@ namespace ContinuousLinearMap
 
 variable {𝕜 E F : Type*} [NontriviallyNormedField 𝕜] [AddCommGroup E] [Module 𝕜 E]
   [TopologicalSpace E] [AddCommGroup F] [Module 𝕜 F] [TopologicalSpace F]
-
-/-- The determinant line `det (ker T) ⊗ (det (F ⧸ range T))^*` of a Fredholm operator is
-one-dimensional. -/
-theorem IsFredholm.finrank_detLine {T : E →L[𝕜] F} (hT : IsFredholm T) :
-    finrank 𝕜 (T : E →ₗ[𝕜] F).detLine = 1 :=
-  have := hT.finite_ker
-  have := hT.finite_coker
-  LinearMap.finrank_detLine _
 
 section Stabilization
 

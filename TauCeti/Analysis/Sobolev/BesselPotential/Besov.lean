@@ -6,9 +6,10 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.FunctionalSpaces.BesselPotentialSpace
-public import TauCeti.Analysis.FunctionalSpaces.BesovSpace
-import TauCeti.Analysis.Distribution.TemperedDistribution.BesselPotential
+public import TauCeti.Analysis.FunctionalSpaces.BesovSpace.Basic
+import TauCeti.Analysis.Distribution.TemperedDistribution.DyadicSymbol
 import TauCeti.Analysis.Distribution.TemperedDistribution.Lp
+import TauCeti.Analysis.Sobolev.BesselPotential.Schwartz
 
 /-!
 # Bessel-potential spaces between Besov spaces
@@ -54,10 +55,15 @@ estimates, paraproducts) specialize to `H^s`.
 
 * `TemperedDistribution.MemSobolev.memBesov`: `H^{s,p} ⊆ B^s_{p,∞}` for tempered distributions.
 * `TemperedDistribution.MemBesov.memSobolev`: `B^s_{p,1} ⊆ H^{s,p}` for tempered distributions.
+* `TemperedDistribution.MemSobolev.of_le`: consequently `H^{s,p} ⊆ H^{s',p}` for `s' ≤ s`.
 * `BesselPotentialSpace.toBesovSpace`: the inclusion `H^{s,p} → B^s_{p,∞}` as a continuous
   linear map.
 * `TauCeti.BesovSpace.toBesselPotentialSpace`: the inclusion `B^s_{p,1} → H^{s,p}` as a
   continuous linear map.
+* `SchwartzMap.memBesov`: Schwartz functions lie in every Besov space `B^s_{p,q}`, `q ≠ 0`, since
+  they lie in `H^{s+1,p} ⊆ B^{s+1}_{p,∞}`.
+* `SchwartzMap.toBesovSpaceCLM`: the inclusion of the Schwartz functions in `B^s_{p,q}` as a
+  continuous linear map, with blocks computed by `TauCeti.BesovSpace.block_toBesovSpaceCLM`.
 * `TemperedDistribution.memBesov_two_two_iff_memSobolev`: `u ∈ B^s_{2,2}` if and only if
   `u ∈ H^{s,2}`.
 * `TauCeti.BesovSpace.besselPotentialSpaceEquiv`: the identity on tempered distributions as an
@@ -173,6 +179,15 @@ theorem MemBesov.memSobolev {u : 𝓢'(E, F)} (hu : u.MemBesov φ s p 1) : u.Mem
   obtain ⟨g, hg, -⟩ := hC u f hf hsum
   exact ⟨g, hg⟩
 
+/-- **Monotonicity of the Bessel-potential scale.** `H^{s,p} ⊆ H^{s',p}` for `s' ≤ s`, for every
+`1 ≤ p ≤ ∞` and every complex Banach space `F`. For `s' < s` this is the chain
+`H^{s,p} ⊆ B^s_{p,∞} ⊆ B^{s'}_{p,1} ⊆ H^{s',p}`. -/
+theorem MemSobolev.of_le {u : 𝓢'(E, F)} (hu : u.MemSobolev s p) {s' : ℝ} (h : s' ≤ s) :
+    u.MemSobolev s' p := by
+  rcases h.lt_or_eq with h | rfl
+  · exact ((hu.memBesov default).of_lt h one_ne_zero).memSobolev
+  · exact hu
+
 end TemperedDistribution
 
 namespace BesselPotentialSpace
@@ -208,6 +223,31 @@ theorem toDistr_toBesovSpace (u : H^{s, p}(E, F)) : (toBesovSpace φ u).toDistr 
 
 end BesselPotentialSpace
 
+namespace SchwartzMap
+
+open TemperedDistribution
+
+/-- **Schwartz functions lie in every Besov space.** A Schwartz function lies in `H^{s+1,p}`,
+hence in `B^{s+1}_{p,∞}`, hence in `B^s_{p,q}` for every fine index `q ≠ 0`. -/
+theorem memBesov (f : 𝓢(E, F)) (φ : ContDiffBump (0 : E)) (s : ℝ) (p : ℝ≥0∞) [Fact (1 ≤ p)]
+    {q : ℝ≥0∞} (hq : q ≠ 0) : (f : 𝓢'(E, F)).MemBesov φ s p q :=
+  ((f.memSobolev (s := s + 1) (p := p)).memBesov φ).of_lt (lt_add_one s) hq
+
+variable (F) in
+/-- The inclusion of the Schwartz functions in the Besov space `B^s_{p,q}`, as a continuous linear
+map: the composite `𝓢 → H^{s+1,p} → B^{s+1}_{p,∞} → B^s_{p,q}`. -/
+def toBesovSpaceCLM (φ : ContDiffBump (0 : E)) (s : ℝ) (p q : ℝ≥0∞) [Fact (1 ≤ p)]
+    [Fact (1 ≤ q)] : 𝓢(E, F) →L[ℂ] TauCeti.BesovSpace F φ s p q :=
+  TauCeti.BesovSpace.inclusionOfLT F φ p ∞ q (lt_add_one s) ∘L
+    BesselPotentialSpace.toBesovSpace φ ∘L toBesselPotentialSpaceCLM (s + 1) p
+
+@[simp]
+theorem toDistr_toBesovSpaceCLM (φ : ContDiffBump (0 : E)) (s : ℝ) (p q : ℝ≥0∞) [Fact (1 ≤ p)]
+    [Fact (1 ≤ q)] (f : 𝓢(E, F)) : (toBesovSpaceCLM F φ s p q f).toDistr = f := by
+  simp [toBesovSpaceCLM]
+
+end SchwartzMap
+
 namespace TauCeti.BesovSpace
 
 open TemperedDistribution
@@ -238,6 +278,17 @@ def toBesselPotentialSpace : BesovSpace F φ s p 1 →L[ℂ] H^{s, p}(E, F) :=
 theorem toDistr_toBesselPotentialSpace (u : BesovSpace F φ s p 1) :
     (toBesselPotentialSpace u).toDistr = u.toDistr := by
   simp [toBesselPotentialSpace]
+
+/-- The `j`-th block of a Schwartz function `f` is the Schwartz function `𝓕⁻ (ψⱼ • 𝓕 f)`, where
+`ψⱼ` is the `j`-th piece of the Littlewood–Paley partition. -/
+@[simp]
+theorem block_toBesovSpaceCLM {q : ℝ≥0∞} [Fact (1 ≤ q)] (f : 𝓢(E, F)) (j : ℕ) :
+    (SchwartzMap.toBesovSpaceCLM F φ s p q f).block j =
+      (SchwartzMap.fourierMultiplierCLM F
+        (fun ξ ↦ (φ.inhomogeneousLittlewoodPaley j ξ : ℂ)) f).toLp p :=
+  Lp.toTemperedDistribution_injective <| by
+    simp only [coe_block, SchwartzMap.toDistr_toBesovSpaceCLM,
+      littlewoodPaleyBlock_toTemperedDistributionCLM_eq, Lp.toTemperedDistribution_toLp_eq]
 
 end TauCeti.BesovSpace
 
