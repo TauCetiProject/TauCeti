@@ -10,8 +10,9 @@ public import Mathlib.Analysis.Normed.Ring.Basic
 /-!
 # Elementary inequalities in seminormed rings
 
-This file records elementary consequences of the submultiplicativity of the norm, and an estimate
-for `‖w - 1‖` with `‖w‖ = 1` when the norm is multiplicative.
+This file records elementary consequences of the submultiplicativity of the norm, multiplicativity
+of positive powers under `NormMulClass` without `NormOneClass` (`TauCeti.norm_pow'`), and an
+estimate for `‖w - 1‖` with `‖w‖ = 1` when the norm is multiplicative.
 -/
 
 public section
@@ -68,6 +69,17 @@ theorem norm_pow_le_max_mul {R : Type*} [SeminormedRing R] (x : R) (n : ℕ) :
   · simp
   · exact (norm_pow_le' x n.succ_pos).trans
       (le_mul_of_one_le_left (by positivity) (le_max_right _ _))
+
+/-- Positive powers preserve the norm in any monoid with a multiplicative norm, without assuming
+`NormOneClass`. Compare Mathlib's `norm_pow_le'` for submultiplicative norms and `norm_pow` with
+`NormOneClass`. -/
+theorem norm_pow' {M : Type*} [Monoid M] [Norm M] [NormMulClass M] (x : M) {n : ℕ} (hn : 0 < n) :
+    ‖x ^ n‖ = ‖x‖ ^ n := by
+  obtain ⟨m, rfl⟩ := Nat.exists_eq_succ_of_ne_zero hn.ne'
+  clear hn
+  induction m with
+  | zero => simp
+  | succ m ih => rw [pow_succ x (m + 1), norm_mul, ih, pow_succ ‖x‖ (m + 1)]
 
 /-- Without the normalisation `‖1‖ = 1`, a product with a power still satisfies
 `‖x * yⁿ‖ ≤ ‖x‖ * ‖y‖ⁿ`, including the case `n = 0`, where `x * y⁰ = x`. -/

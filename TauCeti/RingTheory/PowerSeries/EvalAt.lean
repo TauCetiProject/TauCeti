@@ -14,6 +14,7 @@ public import Mathlib.Topology.Algebra.InfiniteSum.Nonarchimedean
 public import TauCeti.RingTheory.PowerSeries.HasseDeriv.Basic
 import Mathlib.Topology.Algebra.InfiniteSum.Module
 import TauCeti.Algebra.Polynomial.Taylor
+import TauCeti.RingTheory.PowerSeries.GaussNorm
 import TauCeti.RingTheory.PowerSeries.Restricted
 
 /-!
@@ -64,7 +65,8 @@ coefficient rings here may have nilpotents.
 * `PowerSeries.evalAt_map_algebraMap`: evaluation is compatible with extension of scalars.
 * `PowerSeries.evalAt_rescale`: rescaling the variable rescales the point of evaluation.
 * `PowerSeries.commute_evalAt`: the values of a series at `b` commute with `b`.
-* `PowerSeries.norm_evalAt_le_gaussNorm`: the Gauss-norm bound in an ultrametric algebra.
+* `PowerSeries.norm_evalAt_le_gaussNorm` and `PowerSeries.IsRestricted.norm_evalAt_le_gaussNorm`:
+  the Gauss-norm bound in an ultrametric algebra.
 * `PowerSeries.norm_evalAt_le_mul_gaussNorm_of_norm_algebraMap_le`: a coefficient map
   bounded by `C` gives an evaluation bound by `C`, even without norm-one identity in the target;
   `PowerSeries.norm_evalAt_le_gaussNorm_of_norm_algebraMap_le` is the contractive case.
@@ -362,6 +364,13 @@ theorem norm_evalAt_le_gaussNorm [IsUltrametricDist A] [NormOneClass A] {r : ℝ
     ‖f.evalAt b‖ ≤ gaussNorm norm r f :=
   norm_evalAt_le_gaussNorm_of_norm_algebraMap_le hf
     (fun a ↦ by simpa [Algebra.algebraMap_eq_smul_one] using norm_smul_le a (1 : A)) hb
+
+/-- **Closed-disc evaluation bound for restricted series.** In an ultrametric normed algebra with
+`‖1‖ = 1`, if `f` is restricted at `r`, then at every point `b` with `‖b‖ ≤ r` the value
+`f.evalAt b` has norm at most `gaussNorm norm r f`. -/
+theorem IsRestricted.norm_evalAt_le_gaussNorm [IsUltrametricDist A] [NormOneClass A] {r : ℝ}
+    (hf : f.IsRestricted r) {b : A} (hb : ‖b‖ ≤ r) : ‖f.evalAt b‖ ≤ gaussNorm norm r f :=
+  PowerSeries.norm_evalAt_le_gaussNorm (TauCeti.PowerSeries.hasGaussNorm_of_isRestricted hf) hb
 
 /-- In any normed algebra, the value of a series at a point `b` with `‖b‖ ≤ q * r`, where
 `0 ≤ q < 1`, is bounded by `(‖1‖ + 1) * (1 - q)⁻¹` times the Gauss norm of the series at the radius

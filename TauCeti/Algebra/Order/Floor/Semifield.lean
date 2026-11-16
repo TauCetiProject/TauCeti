@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.BigOperators.Group.Finset.Defs
+public import Mathlib.Algebra.Order.Floor.Div
 public import Mathlib.Algebra.Order.Floor.Semifield
 public import Mathlib.Order.Interval.Finset.Nat
 
@@ -26,8 +27,13 @@ Dually, for `B > 0` and any natural degree bound `n`, multiplying `B < ⌊B⌋�
 `n < (2 * ⌊B⌋₊ + 1) * (⌊n / B⌋₊ + 1)`. This includes `n = 0` and `B < 1`, and counts the available
 jet conditions on an integer interval of radius `B`.
 
+For natural numbers `m` and `n`, the ceiling of the semifield quotient `(m : K) / n` agrees with
+natural-number ceiling division `m ⌈/⌉ n` (`Nat.ceil_div_eq_ceilDiv`), dual to Mathlib's
+`Nat.floor_div_eq_div`.
+
 ## Main results
 
+* `Nat.ceil_div_eq_ceilDiv`: `⌈(m : K) / n⌉₊ = m ⌈/⌉ n`.
 * `TauCeti.natCast_ceil_div_sub_ceil_div_lt`: `⌈t / τ⌉₊ - ⌈s / τ⌉₊ < (t - s) / τ + 1`.
 * `TauCeti.mem_Ico_ceil_div_iff`: `n ∈ [⌈s / τ⌉₊, ⌈t / τ⌉₊)` if and only if `n τ ∈ [s, t)`.
 * `TauCeti.exists_pos_nat_mul_bounds`: a positive multiple `N a` lies in `(t, t + a]`.
@@ -143,3 +149,23 @@ example : ⌊(1 / 2 : ℚ)⌋₊ = 0 ∧ ⌊(3 : ℚ) / (1 / 2)⌋₊ = 6 ∧
     lt_two_mul_floor_add_one_mul_floor_div_add_one (by norm_num) 2⟩ <;> norm_num
 
 end TauCeti
+
+namespace Nat
+
+/-- Natural ceiling division is the ceiling of semifield division: `⌈(m : K) / n⌉₊ = m ⌈/⌉ n`.
+Compare `Nat.floor_div_eq_div`. -/
+theorem ceil_div_eq_ceilDiv {K : Type*} [DivisionSemiring K] [LinearOrder K]
+    [IsStrictOrderedRing K] [FloorSemiring K] (m n : ℕ) :
+    ⌈(m : K) / n⌉₊ = m ⌈/⌉ n := by
+  rcases eq_or_ne n 0 with rfl | hn
+  · simp
+  have hn0 : 0 < n := Nat.pos_of_ne_zero hn
+  have hK : (0 : K) < n := Nat.cast_pos.mpr hn0
+  refine le_antisymm ?_ ?_
+  · rw [Nat.ceil_le, div_le_iff₀ hK, ← Nat.cast_mul, Nat.cast_le, Nat.mul_comm]
+    exact (_root_.ceilDiv_le_iff_le_mul hn0).mp le_rfl
+  · rw [_root_.ceilDiv_le_iff_le_mul hn0, Nat.mul_comm, ← Nat.cast_le (α := K), Nat.cast_mul,
+      ← div_le_iff₀ hK]
+    exact Nat.le_ceil _
+
+end Nat

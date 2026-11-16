@@ -7,6 +7,7 @@ module
 
 public import Mathlib.NumberTheory.Padics.Complex
 public import TauCeti.Analysis.Normed.Ring.LogGauge.Rational
+import TauCeti.Analysis.Normed.Field.Basic
 import TauCeti.Analysis.Normed.Ring.Commensurable
 import TauCeti.Analysis.Normed.Unbundled.SpectralNorm.Commensurable
 import TauCeti.NumberTheory.Padics.Complex.Basic
@@ -168,11 +169,13 @@ theorem image_norm_ne_zero :
   ext r
   constructor
   · rintro ⟨x, hx, rfl⟩
-    obtain ⟨q, hq⟩ := WithTop.ne_top_iff_exists.mp (show addValuation p x ≠ ⊤ by simpa using hx)
+    have hv : addValuation p x ≠ ⊤ := by simpa using hx
+    obtain ⟨q, hq⟩ := WithTop.ne_top_iff_exists.mp hv
     exact ⟨-q, by simp [addValuation_eq_coe_iff.mp hq.symm]⟩
   · rintro ⟨q, rfl⟩
     obtain ⟨x, hx⟩ := addValuation_surjective (p := p) (-q)
-    have hx0 : x ≠ 0 := by simpa using (show addValuation p x ≠ ⊤ by simp [hx])
+    have hv : addValuation p x ≠ ⊤ := by simp [hx]
+    have hx0 : x ≠ 0 := by simpa using hv
     exact ⟨x, hx0, by simpa using addValuation_eq_coe_iff.mp hx⟩
 
 variable (p) in
@@ -191,28 +194,10 @@ theorem range_norm :
     · exact ⟨0, norm_zero⟩
     · exact ⟨x, rfl⟩
 
-/-- **Norm density of `ℂ_[p]`**: since every rational power of `p` occurs as a norm in `ℂ_[p]`,
-`ℂ_[p]` is a densely normed field. -/
+/-- **Norm density of `ℂ_[p]`**: since `ℂ_[p]` is an algebraically closed nontrivially normed field,
+it is a densely normed field. -/
 noncomputable instance denselyNormedField : DenselyNormedField ℂ_[p] where
-  lt_norm_lt r₁ r₂ hr₁ hlt := by
-    have hp1 : (1 : ℝ) < p := Nat.one_lt_cast.mpr (Fact.out : p.Prime).one_lt
-    have hp0 : (0 : ℝ) < p := zero_lt_one.trans hp1
-    have hlogp : 0 < Real.log p := Real.log_pos hp1
-    -- Separate the positive radius `max r₁ (r₂ / 2)` from `r₂` by a rational power of `p`.
-    set r' := max r₁ (r₂ / 2)
-    have hr'0 : 0 < r' := lt_max_of_lt_right (by linarith)
-    have hr'lt : r' < r₂ := max_lt hlt (by linarith)
-    obtain ⟨q, hq₁, hq₂⟩ := exists_rat_btwn
-      (div_lt_div_of_pos_right (Real.log_lt_log hr'0 hr'lt) hlogp)
-    have hpow₁ : r' < (p : ℝ) ^ (q : ℝ) := by
-      rw [← Real.exp_log hr'0, Real.rpow_def_of_pos hp0, Real.exp_lt_exp, mul_comm]
-      exact (div_lt_iff₀ hlogp).mp hq₁
-    have hpow₂ : (p : ℝ) ^ (q : ℝ) < r₂ := by
-      rw [← Real.exp_log (hr'0.trans hr'lt), Real.rpow_def_of_pos hp0, Real.exp_lt_exp, mul_comm]
-      exact (lt_div_iff₀ hlogp).mp hq₂
-    obtain ⟨x, -, hx⟩ : ∃ x : ℂ_[p], x ≠ 0 ∧ ‖x‖ = (p : ℝ) ^ (q : ℝ) :=
-      (image_norm_ne_zero p).symm.subset ⟨q, rfl⟩
-    exact ⟨x, (le_max_left _ _).trans_lt (hx.symm ▸ hpow₁), hx.symm ▸ hpow₂⟩
+  lt_norm_lt _ _ := by exact NormedField.exists_lt_norm_lt_of_isAlgClosed ℂ_[p]
 
 -- Ensure that the induced `NontriviallyNormedField` agrees definitionally with Mathlib's.
 example :
