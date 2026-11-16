@@ -116,58 +116,26 @@ theorem isNaturallyComplete {A : Type*} [CommRing A] [UniformSpace A] [IsUniform
     P.hasDenominatorPower_denom_one (({1} : Finset A) : Set A) (Localization.Away (1 : A))
   have hT : IsOpen ((Ideal.span (({1} : Finset A) : Set A) : Ideal A) : Set A) := by
     simp [Ideal.span_singleton_one]
-  have hpb : ∀ t ∈ ({1} : Finset A), IsPowerBounded t := by
-    intro t ht
-    rw [Finset.mem_singleton.mp ht]
-    exact isPowerBounded_one
+  have hpb : ∀ t ∈ ({1} : Finset A), IsPowerBounded t := by simp [isPowerBounded_one]
   set B := ratLoc P {1} 1 hden
   let σ : A ≃+* B := P.toCompletionLocEquivDenomOne {1} hpb (Localization.Away (1 : A))
   have hσ_alg (a : A) : σ a = algebraMap A B a :=
     (P.toCompletionLocEquivDenomOne_apply {1} hpb (Localization.Away (1 : A)) a).trans
       (algebraMap_ratLoc P {1} 1 hden ▸ rfl)
-  have hσ_cont : Continuous σ :=
-    (funext hσ_alg).symm ▸ continuous_algebraMap_ratLoc P {1} 1 hden
-  have hσ_symm_cont : Continuous σ.symm :=
-    P.continuous_toCompletionLocEquivDenomOne_symm {1} hpb (Localization.Away (1 : A))
-  let fwd : B ⊗[A] M →ₗ[A] M := TensorProduct.lift
-    { toFun := fun b ↦
-        { toFun := fun x ↦ σ.symm b • x
-          map_add' := fun _ _ ↦ smul_add _ _ _
-          map_smul' := fun a x ↦ by
-            dsimp
-            rw [← smul_assoc, smul_eq_mul, mul_comm, ← smul_eq_mul, smul_assoc] }
-      map_add' := fun b₁ b₂ ↦ LinearMap.ext fun x ↦ by simp [add_smul]
-      map_smul' := fun a b ↦ LinearMap.ext fun x ↦ by
-        dsimp
-        have hab : σ.symm (a • b) = a * σ.symm b := by
-          rw [Algebra.smul_def, map_mul, ← hσ_alg, σ.symm_apply_apply]
-        rw [hab, mul_smul] }
+  let σₐ : A ≃ₐ[A] B := AlgEquiv.ofRingEquiv (f := σ) hσ_alg
+  let e : B ⊗[A] M ≃ₗ[A] M := σₐ.symm.toLinearEquiv.rTensor M ≪≫ₗ TensorProduct.lid A M
   let fwdₛ : B ⊗[A] M →ₛₗ[(σ.symm : B →+* A)] M :=
-    { toFun := fwd
-      map_add' := map_add fwd
-      map_smul' := fun b z ↦ by
+    { toFun := e, map_add' := e.map_add, map_smul' := fun b z ↦ by
         induction z using TensorProduct.inductionOn with
-        | tmul b' x =>
-          simp only [fwd, TensorProduct.smul_tmul', smul_eq_mul, TensorProduct.lift.tmul]
-          dsimp
-          rw [map_mul, mul_smul]
+        | tmul b' x => simp [e, σₐ, TensorProduct.smul_tmul', smul_eq_mul, mul_smul]
         | add z₁ z₂ ih₁ ih₂ => simp [smul_add, map_add, ih₁, ih₂] }
   let bwdₛ : M →ₛₗ[(σ : A →+* B)] B ⊗[A] M :=
-    { toFun := fun x ↦ 1 ⊗ₜ[A] x
-      map_add' := fun x y ↦ TensorProduct.tmul_add 1 x y
-      map_smul' := fun a x ↦ by
-        dsimp
-        rw [← TensorProduct.smul_tmul, Algebra.smul_def, mul_one, hσ_alg, TensorProduct.smul_tmul',
-          smul_eq_mul, mul_one] }
-  refine (h.isNaturallyComplete_tensor P {1} 1 hden hT).of_semilinear
-    hσ_symm_cont hσ_cont fwdₛ bwdₛ (fun z ↦ ?_) (fun x ↦ ?_)
-  · induction z using TensorProduct.inductionOn with
-    | tmul b x =>
-      dsimp [fwdₛ, bwdₛ, fwd]
-      rw [← TensorProduct.smul_tmul, Algebra.smul_def, mul_one, ← hσ_alg, σ.apply_symm_apply]
-    | add z₁ z₂ ih₁ ih₂ => rw [map_add, map_add, ih₁, ih₂]
-  · dsimp [fwdₛ, bwdₛ, fwd]
-    simp
+    { toFun := e.symm, map_add' := e.symm.map_add, map_smul' := fun a x ↦ by
+        simp [e, σₐ, hσ_alg, TensorProduct.smul_tmul', Algebra.smul_def] }
+  exact (h.isNaturallyComplete_tensor P {1} 1 hden hT).of_semilinear
+    (P.continuous_toCompletionLocEquivDenomOne_symm {1} hpb (Localization.Away (1 : A)))
+    ((funext hσ_alg).symm ▸ continuous_algebraMap_ratLoc P {1} 1 hden)
+    fwdₛ bwdₛ e.left_inv e.right_inv
 
 /-- **Finite projective modules are stably pseudocoherent** (Kedlaya–Liu II, Definition 2.4.1 and
 Remark 1.2.4): each base change `A⟨T/s⟩ ⊗[A] M` is finite projective over the complete Hausdorff

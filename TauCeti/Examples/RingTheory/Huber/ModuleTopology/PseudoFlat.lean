@@ -72,40 +72,27 @@ example (k : ℕ) :
 example (m : ℚ_[p]) :
     let X : restrictedMvPowerSeriesCompletion 1 ℚ_[p] :=
       ((weightedX (fun _ : Fin 1 ↦ ({1} : Set ℚ_[p])) isWeightFamily_one_weight 0 :
-          weightedRestrictedSubring _ _) :
-        restrictedMvPowerSeriesCompletion 1 ℚ_[p])
-    restrictedCoeff (A := ℚ_[p]) 1 X = 1 ∧
-      restrictedCoeff (A := ℚ_[p]) 0 X = 0 ∧
+          weightedRestrictedSubring _ _) : restrictedMvPowerSeriesCompletion 1 ℚ_[p])
+    restrictedCoeff (A := ℚ_[p]) 1 X = 1 ∧ restrictedCoeff (A := ℚ_[p]) 0 X = 0 ∧
       (restrictedPowerSeriesTensorToNull (X ⊗ₜ[ℚ_[p]] m)).1 1 = m ∧
       (restrictedPowerSeriesTensorToNull (X ⊗ₜ[ℚ_[p]] m)).1 0 = 0 ∧
-      Function.Bijective
-        (restrictedPowerSeriesTensorToNull (A := ℚ_[p]) (M := ℚ_[p])) := by
+      Function.Bijective (restrictedPowerSeriesTensorToNull (A := ℚ_[p]) (M := ℚ_[p])) := by
   intro X
-  have h1 : restrictedCoeff (A := ℚ_[p]) 1 X = 1 := by
-    rw [restrictedCoeff_coe, coe_weightedX]
-    simp [MvPowerSeries.coeff_X]
-  have h0 : restrictedCoeff (A := ℚ_[p]) 0 X = 0 := by
-    rw [restrictedCoeff_coe, coe_weightedX, Finsupp.single_zero]
-    exact MvPowerSeries.coeff_zero_X (R := ℚ_[p]) 0
-  refine ⟨h1, h0, ?_, ?_, restrictedPowerSeriesTensorToNull_bijective .of_projective⟩
-  · rw [coe_restrictedPowerSeriesTensorToNull_tmul, h1, one_smul]
-  · rw [coe_restrictedPowerSeriesTensorToNull_tmul, h0, zero_smul]
+  have h1 : restrictedCoeff (A := ℚ_[p]) 1 X = 1 := by simp [X]
+  have h0 : restrictedCoeff (A := ℚ_[p]) 0 X = 0 := by simp [X]
+  exact ⟨h1, h0, by rw [coe_restrictedPowerSeriesTensorToNull_tmul, h1, one_smul],
+    by rw [coe_restrictedPowerSeriesTensorToNull_tmul, h0, zero_smul],
+    restrictedPowerSeriesTensorToNull_bijective .of_projective⟩
 
 -- Pure-tensor evaluation on negative-degree Laurent monomials `a T⁻¹ ⊗ m` in `ℚ_p⟨T, T⁻¹⟩ ⊗ M`.
 example (a m : ℚ_[p]) :
     let Tinv : RestrictedLaurentSeries ℚ_[p] := ⟨twoSidedMonomial (-1) a⟩
-    (restrictedLaurentSeriesTensorToNull
-        (Tinv.toTwoSided ⊗ₜ[ℚ_[p]] m)).1 (-1) = a • m ∧
-      (restrictedLaurentSeriesTensorToNull
-        (Tinv.toTwoSided ⊗ₜ[ℚ_[p]] m)).1 1 = 0 ∧
-      Function.Bijective
-        (restrictedLaurentSeriesTensorToNull (A := ℚ_[p]) (M := ℚ_[p])) := by
+    (restrictedLaurentSeriesTensorToNull (Tinv.toTwoSided ⊗ₜ[ℚ_[p]] m)).1 (-1) = a • m ∧
+      (restrictedLaurentSeriesTensorToNull (Tinv.toTwoSided ⊗ₜ[ℚ_[p]] m)).1 1 = 0 ∧
+      Function.Bijective (restrictedLaurentSeriesTensorToNull (A := ℚ_[p]) (M := ℚ_[p])) := by
   intro Tinv
-  refine ⟨?_, ?_, restrictedLaurentSeriesTensorToNull_bijective .of_projective⟩
-  · rw [restrictedLaurentSeriesTensorToNull_tmul]
-    simp [Tinv, coe_twoSidedMonomial]
-  · rw [restrictedLaurentSeriesTensorToNull_tmul]
-    simp [Tinv, coe_twoSidedMonomial]
+  refine ⟨?_, ?_, restrictedLaurentSeriesTensorToNull_bijective .of_projective⟩ <;>
+    (rw [restrictedLaurentSeriesTensorToNull_tmul]; simp [Tinv, coe_twoSidedMonomial])
 
 end PadicRestrictedSeries
 
@@ -124,32 +111,24 @@ example (p : ℕ) [Fact p.Prime] :
     haveI : IsModuleTopology A Q := ⟨rfl⟩
     IsStablyPseudoCoherent A Q ⊤ ∧ ¬ IsPseudoFlat A Q ⊤ ∧ ¬ IsPseudoFlat A Q 2 := by
   intro A X Q
-  let : TopologicalSpace Q := moduleTopology A Q
-  have : IsModuleTopology A Q := ⟨rfl⟩
+  let : TopologicalSpace Q := moduleTopology A Q; have : IsModuleTopology A Q := ⟨rfl⟩
   have : IsTopologicalAddGroup Q := IsModuleTopology.isTopologicalAddGroup A Q
   let : UniformSpace Q := IsTopologicalAddGroup.rightUniformSpace Q
   have : IsUniformAddGroup Q := isUniformAddGroup_of_addCommGroup
-  have : Module.Finite A Q :=
-    Module.Finite.of_surjective (Submodule.mkQ _) (Submodule.mkQ_surjective _)
-  have hQ_spc : IsStablyPseudoCoherent A Q ⊤ :=
-    IsStablyPseudoCoherent.of_isStronglyNoetherian
-  have hX_coeff1 : restrictedCoeff (A := ℚ_[p]) 1 X = 1 := by
-    rw [restrictedCoeff_coe, coe_weightedX]
-    simp [MvPowerSeries.coeff_X]
+  have : Module.Finite A Q := .of_surjective (Submodule.mkQ _) (Submodule.mkQ_surjective _)
+  have hQ_spc : IsStablyPseudoCoherent A Q ⊤ := .of_isStronglyNoetherian
+  have hX_coeff1 : restrictedCoeff (A := ℚ_[p]) 1 X = 1 := by simp [X]
   have hX_ne : X ≠ 0 := fun h0 ↦
     (one_ne_zero : (1 : ℚ_[p]) ≠ 0) (by simpa [h0] using hX_coeff1.symm)
-  have hX_reg : IsSMulRegular A X := fun a b (hab : X * a = X * b) ↦
-    mul_left_cancel₀ hX_ne hab
-  have hX_not_unit : ¬ IsUnit X := by
-    rintro ⟨u, hu⟩
-    have hmul : X * (u⁻¹ : Units A) = 1 := by simp [← hu]
-    have heq := congrArg (restrictedMvPowerSeriesCompletionEquiv 1 ℚ_[p]) hmul
+  have hX_reg : IsSMulRegular A X := fun a b (hab : X * a = X * b) ↦ mul_left_cancel₀ hX_ne hab
+  have hX_not_unit : ¬ IsUnit X := fun ⟨u, hu⟩ ↦ by
+    have heq := congrArg (restrictedMvPowerSeriesCompletionEquiv 1 ℚ_[p])
+      (show X * (u⁻¹ : Units A) = 1 by simp [← hu])
     rw [map_mul, map_one, restrictedMvPowerSeriesCompletionEquiv_coe] at heq
     have hc := congrArg (fun f : weightedRestrictedSubring _ _ ↦
       MvPowerSeries.coeff (0 : Fin 1 →₀ ℕ) f.1) heq
     simp [Subring.coe_mul, coe_weightedX] at hc
-  exact ⟨hQ_spc,
-    not_isPseudoFlat_quotient_span_singleton hX_reg hX_not_unit hQ_spc,
+  exact ⟨hQ_spc, not_isPseudoFlat_quotient_span_singleton hX_reg hX_not_unit hQ_spc,
     not_isPseudoFlat_quotient_span_singleton hX_reg hX_not_unit (hQ_spc.mono le_top)⟩
 
 -- Without Hausdorffness (`T0Space`), any nontrivial `ℚ_[p]`-module equipped with the indiscrete
@@ -164,11 +143,9 @@ example (p : ℕ) [Fact p.Prime] (B : Type*) [AddCommGroup B] [Module ℚ_[p] B]
   refine IsProProjective.not_of_not_t2Space fun hT2 ↦ ?_
   obtain ⟨x, y, hxy⟩ := exists_pair_ne B
   obtain ⟨U, V, hU, hV, hxU, hyV, hUV⟩ := hT2.t2 hxy
-  rcases (TopologicalSpace.isOpen_top_iff U).mp hU with rfl | rfl
-  · exact hxU
-  · rcases (TopologicalSpace.isOpen_top_iff V).mp hV with rfl | rfl
-    · exact hyV
-    · exact Set.disjoint_left.mp hUV (Set.mem_univ x) (Set.mem_univ x)
+  rcases (TopologicalSpace.isOpen_top_iff U).mp hU with rfl | rfl; · exact hxU
+  rcases (TopologicalSpace.isOpen_top_iff V).mp hV with rfl | rfl; · exact hyV
+  exact Set.disjoint_left.mp hUV (Set.mem_univ x) (Set.mem_univ x)
 
 end NonExamples
 

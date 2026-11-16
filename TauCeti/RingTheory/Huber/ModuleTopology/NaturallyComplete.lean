@@ -118,28 +118,20 @@ theorem IsNaturallyComplete.of_semilinear {B N : Type*} [Semiring B] [Topologica
     (hσ' : Continuous σ') (f : M →ₛₗ[σ] N) (g : N →ₛₗ[σ'] M)
     (hfg : Function.LeftInverse g f) (hgf : Function.RightInverse g f)
     (h : IsNaturallyComplete A M) : IsNaturallyComplete B N := by
-  let _ : TopologicalSpace M := moduleTopology A M
-  let _ : TopologicalSpace N := moduleTopology B N
-  let _ : IsTopologicalAddGroup M := IsModuleTopology.isTopologicalAddGroup A M
-  let _ : IsTopologicalAddGroup N := IsModuleTopology.isTopologicalAddGroup B N
-  let _ : UniformSpace M := IsTopologicalAddGroup.rightUniformSpace M
-  let _ : UniformSpace N := IsTopologicalAddGroup.rightUniformSpace N
+  let _ : TopologicalSpace M := moduleTopology A M; let _ : TopologicalSpace N := moduleTopology B N
+  let _ := IsModuleTopology.isTopologicalAddGroup A M
+  let _ := IsModuleTopology.isTopologicalAddGroup B N
+  let _ := IsTopologicalAddGroup.rightUniformSpace M
+  let _ := IsTopologicalAddGroup.rightUniformSpace N
   have _ : IsUniformAddGroup M := isUniformAddGroup_of_addCommGroup
   have _ : IsUniformAddGroup N := isUniformAddGroup_of_addCommGroup
-  have _ : IsModuleTopology A M := inferInstance
-  have _ : IsModuleTopology B N := inferInstance
+  have _ : IsModuleTopology A M := ⟨rfl⟩; have _ : IsModuleTopology B N := ⟨rfl⟩
   have _ : T2Space M := h.2
   have hf := IsModuleTopology.continuous_of_linearMapₛₗ hσ f
   have hg := IsModuleTopology.continuous_of_linearMapₛₗ hσ' g
-  let ue : M ≃ᵤ N :=
-    { toFun := f
-      invFun := g
-      left_inv := hfg
-      right_inv := hgf
-      uniformContinuous_toFun := uniformContinuous_addMonoidHom_of_continuous
-        (f := f.toAddMonoidHom) hf
-      uniformContinuous_invFun := uniformContinuous_addMonoidHom_of_continuous
-        (f := g.toAddMonoidHom) hg }
+  let ue : M ≃ᵤ N := ⟨⟨f, g, hfg, hgf⟩,
+    uniformContinuous_addMonoidHom_of_continuous (f := f.toAddMonoidHom) hf,
+    uniformContinuous_addMonoidHom_of_continuous (f := g.toAddMonoidHom) hg⟩
   exact ⟨(UniformEquiv.completeSpace_iff ue).mp h.1, .of_injective_continuous hgf.injective hg⟩
 
 /-- **Natural completeness is invariant under topological semilinear equivalence.** -/
