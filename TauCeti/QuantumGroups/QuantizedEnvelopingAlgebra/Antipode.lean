@@ -7,6 +7,7 @@ module
 
 public import TauCeti.QuantumGroups.QuantizedEnvelopingAlgebra.Basic
 import Mathlib.Tactic.Ring
+import TauCeti.Algebra.Algebra.Basic
 
 /-!
 # The antipode of the Drinfeld–Jimbo quantized enveloping algebra
@@ -143,10 +144,8 @@ private theorem serreNormalizedE_term {i j : ι} (hij : i ≠ j) (hq : q ≠ 0) 
   have hedp_kis : quantumDividedPower qᵢ (e D q i) r * simpleKInv D q i ^ s =
       qᵢ ^ (2 * (s : ℤ) * (r : ℤ)) •
         (simpleKInv D q i ^ s * quantumDividedPower qᵢ (e D q i) r) := by
-    have h1 : e D q i * simpleKInv D q i ^ s =
-        qᵢ ^ (2 * (s : ℤ)) • (simpleKInv D q i ^ s * e D q i) := by
-      have h0 := mul_pow_of_mul_eq_smul_mul (e_mul_simpleKInv D q i i) s
-      rwa [D.cartan_apply_self, ← zpow_natCast _ s, ← zpow_mul] at h0
+    have h1 := mul_pow_of_mul_eq_smul_mul (e_mul_simpleKInv D q i i) s
+    rw [D.cartan_apply_self, ← zpow_natCast _ s, ← zpow_mul] at h1
     rw [quantumDividedPower_mul_of_mul_eq_smul_mul qᵢ h1 r, ← zpow_natCast _ r, ← zpow_mul]
   rw [hnorm r, hnorm s, normalizedE_def]
   simp only [smul_mul_assoc, mul_smul_comm, mul_assoc]
@@ -264,22 +263,17 @@ noncomputable def antipodeSqEquiv :
 
 private theorem opComm_antipodeOp_comp_antipodeOp :
     (AlgHom.opComm (antipodeOp D q)).comp (antipodeOp D q) = (antipodeSqEquiv D q).toAlgHom := by
-  apply hom_ext
-  · intro i
-    simp only [AlgHom.coe_comp, Function.comp_apply, antipodeOp_e, MulOpposite.op_neg,
-      MulOpposite.op_mul, AlgHom.opComm_apply_apply, MulOpposite.unop_neg, MulOpposite.unop_mul,
-      MulOpposite.unop_op, map_neg, map_mul, antipodeOp_simpleKInv, neg_mul, neg_neg]
-    rw [simpleKInv_mul_e, D.cartan_apply_self, zpow_neg, zpow_two, ← pow_two, smul_mul_assoc,
+  apply hom_ext <;> intro x <;>
+    simp only [AlgHom.coe_comp, Function.comp_apply, antipodeOp_e, antipodeOp_f, antipodeOp_k,
+      MulOpposite.op_neg, MulOpposite.op_mul, AlgHom.opComm_apply_apply, MulOpposite.unop_neg,
+      MulOpposite.unop_mul, MulOpposite.unop_op, map_neg, map_mul, antipodeOp_simpleKInv,
+      antipodeOp_simpleK, neg_mul, mul_neg, neg_neg, AlgEquiv.coe_toAlgHom, antipodeSqEquiv_k]
+  · rw [simpleKInv_mul_e, D.cartan_apply_self, zpow_neg, zpow_two, ← pow_two, smul_mul_assoc,
       mul_assoc, simpleKInv_mul_simpleK, mul_one]
     simp [inv_pow]
-  · intro i
-    simp only [AlgHom.coe_comp, Function.comp_apply, antipodeOp_f, MulOpposite.op_neg,
-      MulOpposite.op_mul, AlgHom.opComm_apply_apply, MulOpposite.unop_neg, MulOpposite.unop_mul,
-      MulOpposite.unop_op, map_neg, map_mul, antipodeOp_simpleK, mul_neg, neg_neg]
-    rw [← mul_assoc, simpleKInv_mul_f, D.cartan_apply_self, zpow_two, ← pow_two, smul_mul_assoc,
+  · rw [← mul_assoc, simpleKInv_mul_f, D.cartan_apply_self, zpow_two, ← pow_two, smul_mul_assoc,
       mul_assoc, simpleKInv_mul_simpleK, mul_one]
     simp
-  · intro y; simp
 
 private theorem antipodeOp_bijective : Function.Bijective (antipodeOp D q) := by
   have hcomp : Function.Bijective ((AlgHom.opComm (antipodeOp D q)) ∘ (antipodeOp D q)) := by
@@ -309,7 +303,8 @@ theorem antipodeLinearEquiv_apply (x : QuantizedEnvelopingAlgebra D q) :
     (antipodeEquiv D q).symm (MulOpposite.op x) = (antipodeLinearEquiv D q).symm x := (rfl)
 @[simp] theorem antipodeLinearEquiv_one : antipodeLinearEquiv D q 1 = 1 := by
   simp [antipodeLinearEquiv_apply]
-theorem antipodeLinearEquiv_mul (x y : QuantizedEnvelopingAlgebra D q) :
+/-- The antipode is anti-multiplicative: `S (x * y) = S y * S x`. -/
+@[simp] theorem antipodeLinearEquiv_mul (x y : QuantizedEnvelopingAlgebra D q) :
     antipodeLinearEquiv D q (x * y) = antipodeLinearEquiv D q y * antipodeLinearEquiv D q x := by
   simp [antipodeLinearEquiv_apply]
 @[simp] theorem antipodeLinearEquiv_e (i : ι) :
@@ -346,12 +341,10 @@ theorem antipodeLinearEquiv_antipodeLinearEquiv_k (y : Y) :
 
 @[simp] theorem antipodeLinearEquiv_symm_e (i : ι) :
     (antipodeLinearEquiv D q).symm (e D q i) = -(e D q i * simpleKInv D q i) := by
-  rw [LinearEquiv.symm_apply_eq, map_neg, antipodeLinearEquiv_mul, antipodeLinearEquiv_e,
-    antipodeLinearEquiv_simpleKInv, mul_neg, neg_neg, simpleK_mul_simpleKInv_assoc]
+  simp [LinearEquiv.symm_apply_eq]
 @[simp] theorem antipodeLinearEquiv_symm_f (i : ι) :
     (antipodeLinearEquiv D q).symm (f D q i) = -(simpleK D q i * f D q i) := by
-  rw [LinearEquiv.symm_apply_eq, map_neg, antipodeLinearEquiv_mul, antipodeLinearEquiv_f,
-    antipodeLinearEquiv_simpleK, neg_mul, neg_neg, mul_assoc, simpleK_mul_simpleKInv, mul_one]
+  simp [LinearEquiv.symm_apply_eq, mul_assoc]
 @[simp] theorem antipodeLinearEquiv_symm_k (y : Y) :
     (antipodeLinearEquiv D q).symm (k D q y) = k D q (-y) := by
   rw [LinearEquiv.symm_apply_eq, antipodeLinearEquiv_k, neg_neg]

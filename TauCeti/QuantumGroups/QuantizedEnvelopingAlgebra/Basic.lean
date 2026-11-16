@@ -145,10 +145,7 @@ private theorem serreSum_add_left_term {A : Type*} [Ring A] [Algebra K A]
   have hb_eq : ((b - b₁ : ℕ) : ℤ) = (b : ℤ) - (b₁ : ℤ) := by omega
   have hq_exp : qᵢ ^ (a₁ * b₁) * qᵢ ^ (a₂ * (b - b₁)) * (qᵢ ^ D.cartan i j) ^ b₁ *
       (qᵢ ^ (2 * a₂)) ^ b₁ = qᵢ ^ (a₂ * b) * qᵢ ^ ((b₁ : ℤ) * (1 - (b : ℤ))) := by
-    rw [← zpow_natCast qᵢ (a₁ * b₁), ← zpow_natCast qᵢ (a₂ * (b - b₁)),
-      ← zpow_natCast qᵢ (a₂ * b), ← pow_mul qᵢ, ← zpow_natCast qᵢ (2 * a₂ * b₁),
-      ← zpow_natCast _ b₁, ← zpow_mul, ← zpow_add₀ hqᵢ, ← zpow_add₀ hqᵢ,
-      ← zpow_add₀ hqᵢ, ← zpow_add₀ hqᵢ]
+    simp only [← zpow_natCast, ← zpow_mul, ← zpow_add₀ hqᵢ]
     congr 1; push_cast; rw [hcart, hm_eq, hb_eq]; ring
   rw [pow_add (-1 : K)]
   linear_combination (-1 : K) ^ a₁ * (-1 : K) ^ b₁ * quantumBinomial qᵢ b b₁ * hq_exp
@@ -212,7 +209,9 @@ private theorem serreSum_add_left {A : Type*} [Ring A] [Algebra K A]
     rw [hsum, ← sum_smul, ← mul_sum,
       sum_neg_one_pow_mul_zpow_one_sub_mul_quantumBinomial hqᵢ hb₀, mul_zero, zero_smul]
 
-/-- Evaluating `MulOpposite.unop` on `serreSum` in `Aᵐᵒᵖ` multiplies by `(-1)^(1 - aᵢⱼ)`. -/
+/-- Evaluating `MulOpposite.unop` on the opposite-algebra quantum Serre combination reverses the
+sum and multiplies by the sign factor `(-1)^(D.serreLength i j)` (equal to `(-1)^(1 - aᵢⱼ)` for
+`i ≠ j`). -/
 theorem unop_serreSum {A : Type*} [Semiring A] [Algebra K A]
     (D : CartanDatum ι X Y) (q : K) (u : ι → A) (i j : ι) :
     MulOpposite.unop (serreSum D q (fun l => MulOpposite.op (u l)) i j) =
@@ -249,20 +248,23 @@ theorem serreSum_add {A : Type*} [Ring A] [Algebra K A]
     hij hfac hop_yx hop_yz hop_hy
   simp only [← MulOpposite.op_add, add_comm (y i) (x i),
     unop_sum_neg_one_pow_smul_quantumDividedPower_mul_mul, MulOpposite.unop_zero] at hop_right
-  have hinv : (-1 : K) ^ D.serreLength i j * (-1 : K) ^ D.serreLength i j = 1 := by
-    rw [← mul_pow, neg_one_mul, neg_neg, one_pow]
-  have hright := congrArg ((-1 : K) ^ D.serreLength i j • ·) hop_right
-  simp only [smul_smul, hinv, one_smul, smul_zero] at hright
-  have hsplit : serreSum D q (fun l => x l + y l) i j =
-      (∑ r ∈ range (D.serreLength i j + 1), (-1 : K) ^ r •
-        (quantumDividedPower (q ^ D.symmetrizer i) (x i + y i) r * x j *
-          quantumDividedPower (q ^ D.symmetrizer i) (x i + y i) (D.serreLength i j - r))) +
-      (∑ r ∈ range (D.serreLength i j + 1), (-1 : K) ^ r •
-        (quantumDividedPower (q ^ D.symmetrizer i) (x i + y i) r * y j *
-          quantumDividedPower (q ^ D.symmetrizer i) (x i + y i) (D.serreLength i j - r))) := by
-    rw [serreSum_def, ← sum_add_distrib]
-    exact sum_congr rfl fun r _ => by simp only [mul_add, add_mul, smul_add]
-  rw [hsplit, hleft, hright, add_zero]
+  have hright := (smul_eq_zero.mp hop_right).resolve_left
+    (pow_ne_zero _ (neg_ne_zero.mpr one_ne_zero))
+  rw [serreSum_def]
+  simp_rw [mul_add, add_mul, smul_add, sum_add_distrib]
+  rw [hleft, hright, add_zero]
+
+/-- When `aᵢⱼ = 0` and `qᵢ - qᵢ⁻¹ ≠ 0`, vanishing of the quantum Serre combination
+`serreSum D q x i j` implies that `x i` and `x j` commute. -/
+theorem commute_of_serreSum_eq_zero {A : Type*} [Ring A] [Algebra K A]
+    (D : CartanDatum ι X Y) (q : K) {x : ι → A} {i j : ι} (hcartan : D.cartan i j = 0)
+    (hq : q ^ D.symmetrizer i - (q ^ D.symmetrizer i)⁻¹ ≠ 0) (h : serreSum D q x i j = 0) :
+    Commute (x i) (x j) := by
+  rw [serreSum_def, D.serreLength_of_cartan_eq_zero hcartan, sum_range_succ, sum_range_one] at h
+  simp only [pow_zero, pow_one, one_smul, neg_one_smul, Nat.sub_zero, Nat.sub_self,
+    quantumDividedPower_zero, quantumDividedPower_one hq, one_mul, mul_one,
+    ← sub_eq_add_neg] at h
+  exact (sub_eq_zero.mp h).symm
 
 /-- The defining relations of the Drinfeld–Jimbo quantized enveloping algebra on
 `FreeAlgebra K (Generator ι Y)`. Splitting diagonal and off-diagonal commutators avoids requiring
@@ -435,14 +437,12 @@ theorem k_mul_f (y : Y) (i : ι) :
   rw [← smul_mul_assoc, ← k_mul_f_mul_k_neg, mul_assoc, mul_assoc, k_neg_mul_k, mul_one]
 theorem e_mul_k (y : Y) (i : ι) :
     e D q i * k D q y = q ^ (-D.pairing (D.root i) y) • (k D q y * e D q i) := by
-  rcases eq_or_ne q 0 with rfl | hq
-  · simp
-  · rw [k_mul_e, smul_smul, ← zpow_add₀ hq, neg_add_cancel, zpow_zero, one_smul]
+  rw [← mul_smul_comm, ← map_neg (D.pairing (D.root i)), ← k_mul_e_mul_k_neg D q (-y) i, neg_neg,
+    ← mul_assoc, ← mul_assoc, k_mul_k_neg, one_mul]
 theorem f_mul_k (y : Y) (i : ι) :
     f D q i * k D q y = q ^ D.pairing (D.root i) y • (k D q y * f D q i) := by
-  rcases eq_or_ne q 0 with rfl | hq
-  · simp
-  · rw [k_mul_f, smul_smul, ← zpow_add₀ hq, add_neg_cancel, zpow_zero, one_smul]
+  rw [← mul_smul_comm, ← neg_neg (D.pairing (D.root i) y), ← map_neg (D.pairing (D.root i)),
+    ← k_mul_f_mul_k_neg D q (-y) i, neg_neg, ← mul_assoc, ← mul_assoc, k_mul_k_neg, one_mul]
 
 /-- Symmetrizability in exponent form: `qᵢ^(aᵢⱼ) = qⱼ^(aⱼᵢ)`. -/
 theorem zpow_symmetrizer_cartan_comm (i j : ι) :
@@ -454,8 +454,7 @@ private theorem zpow_pairing_simpleTorus (i j : ι) :
   rw [D.pairing_root_simpleTorus, ← D.symmetrizer_mul_cartan, ← zpow_natCast, ← zpow_mul]
 private theorem zpow_neg_pairing_simpleTorus (i j : ι) :
     q ^ (-D.pairing (D.root j) (D.simpleTorus i)) = (q ^ D.symmetrizer i) ^ (-D.cartan i j) := by
-  rw [D.pairing_root_simpleTorus, ← D.symmetrizer_mul_cartan, ← mul_neg, ← zpow_natCast,
-    ← zpow_mul]
+  rw [zpow_neg, zpow_pairing_simpleTorus, ← zpow_neg]
 
 theorem simpleK_mul_e (i j : ι) : simpleK D q i * e D q j =
     (q ^ D.symmetrizer i) ^ D.cartan i j • (e D q j * simpleK D q i) := by
@@ -535,27 +534,19 @@ theorem serreE_eq_zero {i j : ι} (hij : i ≠ j) : serreSum D q (e D q) i j = 0
 theorem serreF_eq_zero {i j : ι} (hij : i ≠ j) : serreSum D q (f D q) i j = 0 := by
   simpa using mkAlgHom_eq_of_rel D q (Rel.serre_f hij)
 
-private theorem commute_of_serreSum_eq_zero {A : Type*} [Ring A] [Algebra K A] {x : ι → A}
-    {i j : ι} (hcartan : D.cartan i j = 0)
-    (hq : q ^ D.symmetrizer i - (q ^ D.symmetrizer i)⁻¹ ≠ 0) (h : serreSum D q x i j = 0) :
-    Commute (x i) (x j) := by
-  rw [serreSum_def, D.serreLength_of_cartan_eq_zero hcartan, sum_range_succ, sum_range_one] at h
-  simp only [pow_zero, pow_one, one_smul, neg_one_smul, Nat.sub_zero, Nat.sub_self,
-    quantumDividedPower_zero, quantumDividedPower_one hq, one_mul, mul_one,
-    ← sub_eq_add_neg] at h
-  exact (sub_eq_zero.mp h).symm
-
-/-- When `i ≠ j`, `aᵢⱼ = 0`, and `qᵢ - qᵢ⁻¹ ≠ 0`, `Eᵢ` and `Eⱼ` commute. -/
-theorem commute_e_e_of_cartan_eq_zero {i j : ι} (hij : i ≠ j) (hcartan : D.cartan i j = 0)
+/-- When `aᵢⱼ = 0` and `qᵢ - qᵢ⁻¹ ≠ 0`, `Eᵢ` and `Eⱼ` commute. -/
+theorem commute_e_e_of_cartan_eq_zero {i j : ι} (hcartan : D.cartan i j = 0)
     (hq : q ^ D.symmetrizer i - (q ^ D.symmetrizer i)⁻¹ ≠ 0) :
     Commute (e D q i) (e D q j) :=
-  commute_of_serreSum_eq_zero D q hcartan hq (serreE_eq_zero D q hij)
+  commute_of_serreSum_eq_zero D q hcartan hq
+    (serreE_eq_zero D q (by rintro rfl; simp at hcartan))
 
-/-- When `i ≠ j`, `aᵢⱼ = 0`, and `qᵢ - qᵢ⁻¹ ≠ 0`, `Fᵢ` and `Fⱼ` commute. -/
-theorem commute_f_f_of_cartan_eq_zero {i j : ι} (hij : i ≠ j) (hcartan : D.cartan i j = 0)
+/-- When `aᵢⱼ = 0` and `qᵢ - qᵢ⁻¹ ≠ 0`, `Fᵢ` and `Fⱼ` commute. -/
+theorem commute_f_f_of_cartan_eq_zero {i j : ι} (hcartan : D.cartan i j = 0)
     (hq : q ^ D.symmetrizer i - (q ^ D.symmetrizer i)⁻¹ ≠ 0) :
     Commute (f D q i) (f D q j) :=
-  commute_of_serreSum_eq_zero D q hcartan hq (serreF_eq_zero D q hij)
+  commute_of_serreSum_eq_zero D q hcartan hq
+    (serreF_eq_zero D q (by rintro rfl; simp at hcartan))
 
 /-! ### Universal property and generator induction -/
 
@@ -645,10 +636,8 @@ theorem hom_ext {φ ψ : QuantizedEnvelopingAlgebra D q →ₐ[K] A}
     (he : ∀ i, φ (e D q i) = ψ (e D q i)) (hf : ∀ i, φ (f D q i) = ψ (f D q i))
     (hk : ∀ y, φ (k D q y) = ψ (k D q y)) : φ = ψ := by
   apply RingQuot.ringQuot_ext' K φ ψ
-  apply FreeAlgebra.hom_ext; funext g; cases g
-  · exact he _
-  · exact hf _
-  · exact hk _
+  apply FreeAlgebra.hom_ext; funext g
+  rcases g with i | i | y; exacts [he i, hf i, hk y]
 
 /-- Equivalence between `K`-algebra maps `QuantizedEnvelopingAlgebra D q →ₐ[K] A` and
 `GeneratorTuple D q A`. -/
@@ -850,6 +839,12 @@ noncomputable def map (φ : CartanDatum.Hom D D') (q : K) :
 @[simp] theorem map_simpleKInv (φ : CartanDatum.Hom D D') (q : K) (i : ι) :
     map φ q (simpleKInv D q i) = simpleKInv D' q i := by
   rw [simpleKInv_def, map_k, map_neg, φ.map_simpleTorus, ← simpleKInv_def]
+@[simp] theorem map_normalizedE (φ : CartanDatum.Hom D D') (q : K) (i : ι) :
+    map φ q (normalizedE D q i) = normalizedE D' q i := by
+  rw [normalizedE_def, map_mul, map_simpleKInv, map_e, ← normalizedE_def]
+@[simp] theorem map_normalizedF (φ : CartanDatum.Hom D D') (q : K) (i : ι) :
+    map φ q (normalizedF D q i) = normalizedF D' q i := by
+  rw [normalizedF_def, map_mul, map_f, map_simpleK, ← normalizedF_def]
 @[simp] theorem map_id (D : CartanDatum ι X Y) (q : K) :
     map (CartanDatum.Hom.id D) q = AlgHom.id K (QuantizedEnvelopingAlgebra D q) := by ext <;> simp
 theorem map_comp (ψ : CartanDatum.Hom D' D'') (φ : CartanDatum.Hom D D') (q : K) :

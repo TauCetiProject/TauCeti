@@ -72,12 +72,9 @@ private noncomputable def counitTuple : GeneratorTuple D q K where
 noncomputable def counitAlgHom : QuantizedEnvelopingAlgebra D q →ₐ[K] K :=
   lift (counitTuple D q)
 
-@[simp] theorem counitAlgHom_e (i : ι) : counitAlgHom D q (e D q i) = 0 :=
-  lift_e (counitTuple D q) i
-@[simp] theorem counitAlgHom_f (i : ι) : counitAlgHom D q (f D q i) = 0 :=
-  lift_f (counitTuple D q) i
-@[simp] theorem counitAlgHom_k (y : Y) : counitAlgHom D q (k D q y) = 1 :=
-  lift_k (counitTuple D q) y
+@[simp] theorem counitAlgHom_e (i : ι) : counitAlgHom D q (e D q i) = 0 := lift_e _ i
+@[simp] theorem counitAlgHom_f (i : ι) : counitAlgHom D q (f D q i) = 0 := lift_f _ i
+@[simp] theorem counitAlgHom_k (y : Y) : counitAlgHom D q (k D q y) = 1 := lift_k _ y
 @[simp] theorem counitAlgHom_simpleK (i : ι) : counitAlgHom D q (simpleK D q i) = 1 := by
   simp [simpleK_def]
 @[simp] theorem counitAlgHom_simpleKInv (i : ι) : counitAlgHom D q (simpleKInv D q i) = 1 := by
@@ -108,17 +105,14 @@ private noncomputable def comulElemF (i : ι) :
   f D q i ⊗ₜ[K] simpleKInv D q i + 1 ⊗ₜ[K] f D q i
 
 private theorem comulElemE_summand_comm (i : ι) :
-    (simpleK D q i ⊗ₜ[K] e D q i) * (e D q i ⊗ₜ[K] (1 : QuantizedEnvelopingAlgebra D q)) =
-      (q ^ D.symmetrizer i) ^ 2 •
-        ((e D q i ⊗ₜ[K] (1 : QuantizedEnvelopingAlgebra D q)) * (simpleK D q i ⊗ₜ[K] e D q i)) := by
+    (simpleK D q i ⊗ₜ[K] e D q i) * (e D q i ⊗ₜ[K] 1) =
+      (q ^ D.symmetrizer i) ^ 2 • ((e D q i ⊗ₜ[K] 1) * (simpleK D q i ⊗ₜ[K] e D q i)) := by
   rw [Algebra.TensorProduct.tmul_mul_tmul, Algebra.TensorProduct.tmul_mul_tmul, mul_one, one_mul,
     simpleK_mul_e, D.cartan_apply_self, zpow_two, ← pow_two, TensorProduct.smul_tmul']
 
 private theorem comulElemF_summand_comm (i : ι) :
-    (f D q i ⊗ₜ[K] simpleKInv D q i) * ((1 : QuantizedEnvelopingAlgebra D q) ⊗ₜ[K] f D q i) =
-      (q ^ D.symmetrizer i) ^ 2 •
-        (((1 : QuantizedEnvelopingAlgebra D q) ⊗ₜ[K] f D q i) *
-          (f D q i ⊗ₜ[K] simpleKInv D q i)) := by
+    (f D q i ⊗ₜ[K] simpleKInv D q i) * (1 ⊗ₜ[K] f D q i) =
+      (q ^ D.symmetrizer i) ^ 2 • ((1 ⊗ₜ[K] f D q i) * (f D q i ⊗ₜ[K] simpleKInv D q i)) := by
   rw [Algebra.TensorProduct.tmul_mul_tmul, Algebra.TensorProduct.tmul_mul_tmul, mul_one, one_mul,
     simpleKInv_mul_f, D.cartan_apply_self, zpow_two, ← pow_two, TensorProduct.tmul_smul]
 
@@ -311,9 +305,7 @@ theorem comulAlgHom_quantumDividedPower_f {i : ι} {n : ℕ}
 
 /-- Coassociativity of `comulAlgHom`: `(Δ ⊗ id) ∘ Δ = (id ⊗ Δ) ∘ Δ`. -/
 theorem comulAlgHom_coassoc :
-    (Algebra.TensorProduct.assoc K K K
-        (QuantizedEnvelopingAlgebra D q) (QuantizedEnvelopingAlgebra D q)
-        (QuantizedEnvelopingAlgebra D q)).toAlgHom.comp
+    (Algebra.TensorProduct.assoc K K K _ _ _).toAlgHom.comp
       ((Algebra.TensorProduct.map (comulAlgHom D q hserre) (.id K _)).comp
         (comulAlgHom D q hserre)) =
       (Algebra.TensorProduct.map (.id K _) (comulAlgHom D q hserre)).comp
@@ -321,11 +313,13 @@ theorem comulAlgHom_coassoc :
   apply hom_ext <;> intro x <;>
     simp [TensorProduct.tmul_add, TensorProduct.add_tmul, add_assoc, Algebra.TensorProduct.one_def]
 
+/-- Left counit identity for `counitAlgHom` and `comulAlgHom`: `(ε ⊗ id) ∘ Δ = lid⁻¹`. -/
 theorem counitAlgHom_comulAlgHom_left :
     (Algebra.TensorProduct.map (counitAlgHom D q) (.id K _)).comp (comulAlgHom D q hserre) =
       (Algebra.TensorProduct.lid K (QuantizedEnvelopingAlgebra D q)).symm.toAlgHom := by
   apply hom_ext <;> intro x <;> simp
 
+/-- Right counit identity for `counitAlgHom` and `comulAlgHom`: `(id ⊗ ε) ∘ Δ = rid⁻¹`. -/
 theorem counitAlgHom_comulAlgHom_right :
     (Algebra.TensorProduct.map (.id K _) (counitAlgHom D q)).comp (comulAlgHom D q hserre) =
       (Algebra.TensorProduct.rid K K (QuantizedEnvelopingAlgebra D q)).symm.toAlgHom := by
@@ -338,19 +332,6 @@ noncomputable def bialgebra : Bialgebra K (QuantizedEnvelopingAlgebra D q) :=
   Bialgebra.ofAlgHom (comulAlgHom D q hserre) (counitAlgHom D q)
     (comulAlgHom_coassoc D q hserre) (counitAlgHom_comulAlgHom_left D q hserre)
     (counitAlgHom_comulAlgHom_right D q hserre)
-
-/-- The `HopfAlgebra` structure on `QuantizedEnvelopingAlgebra D q` extending `bialgebra D q hserre`
-with antipode `antipodeLinearEquiv D q`. -/
-@[expose, instance_reducible]
-noncomputable def hopfAlgebra : HopfAlgebra K (QuantizedEnvelopingAlgebra D q) :=
-  letI := bialgebra D q hserre
-  have hb_cm : Coalgebra.comul (R := K) (A := QuantizedEnvelopingAlgebra D q) =
-      (comulAlgHom D q hserre).toLinearMap := rfl
-  have hb_cu : Coalgebra.counit (R := K) (A := QuantizedEnvelopingAlgebra D q) =
-      (counitAlgHom D q).toLinearMap := rfl
-  HopfAlgebra.ofAntipodeOfAdjoin (antipodeOp D q) (adjoin_range_generator D q)
-    (by rintro _ ⟨i | i | y, rfl⟩ <;> simp [hb_cm, hb_cu, mul_assoc])
-    (by rintro _ ⟨i | i | y, rfl⟩ <;> simp [hb_cm, hb_cu, simpleK_mul_simpleKInv_assoc])
 
 @[simp] theorem bialgebra_comulAlgHom :
     letI := bialgebra D q hserre
@@ -368,6 +349,16 @@ noncomputable def hopfAlgebra : HopfAlgebra K (QuantizedEnvelopingAlgebra D q) :
     letI := bialgebra D q hserre
     Coalgebra.counit (R := K) (A := QuantizedEnvelopingAlgebra D q) =
       (counitAlgHom D q).toLinearMap := (rfl)
+
+/-- The `HopfAlgebra` structure on `QuantizedEnvelopingAlgebra D q` extending `bialgebra D q hserre`
+with antipode `antipodeLinearEquiv D q`. -/
+@[expose, instance_reducible]
+noncomputable def hopfAlgebra : HopfAlgebra K (QuantizedEnvelopingAlgebra D q) :=
+  letI := bialgebra D q hserre
+  HopfAlgebra.ofAntipodeOfAdjoin (antipodeOp D q) (adjoin_range_generator D q)
+    (by rintro _ ⟨i | i | y, rfl⟩ <;> simp [bialgebra_comul, bialgebra_counit, mul_assoc])
+    (by rintro _ ⟨i | i | y, rfl⟩ <;>
+      simp [bialgebra_comul, bialgebra_counit, simpleK_mul_simpleKInv_assoc])
 
 /-- Every toral element `K_y` is group-like in `bialgebra D q hserre`. -/
 theorem isGroupLikeElem_k (y : Y) :
@@ -439,20 +430,26 @@ theorem serre_ne_zero_of_hom (φ : CartanDatum.Hom D D') {q : K}
     quantumFactorial (q ^ D'.symmetrizer i) (D'.serreLength i j) ≠ 0 := by
   rw [φ.symmetrizer_eq, φ.serreLength_eq]; exact hserre i j hij
 
+/-- A morphism of Cartan data preserves the counit: `ε' ∘ map φ q = ε`. -/
 @[simp] theorem counitAlgHom_comp_map (φ : CartanDatum.Hom D D') (q : K) :
     (counitAlgHom D' q).comp (map φ q) = counitAlgHom D q := by
   apply hom_ext <;> intro x <;> simp
 
-theorem map_comp_comulAlgHom (φ : CartanDatum.Hom D D') (q : K)
-    (hserre : ∀ i j, i ≠ j → quantumFactorial (q ^ D.symmetrizer i) (D.serreLength i j) ≠ 0) :
+section WithSerre
+
+variable (φ : CartanDatum.Hom D D') (q : K)
+  (hserre : ∀ i j, i ≠ j → quantumFactorial (q ^ D.symmetrizer i) (D.serreLength i j) ≠ 0)
+
+/-- A morphism of Cartan data preserves the coproduct:
+`(map φ q ⊗ map φ q) ∘ Δ = Δ' ∘ map φ q`. -/
+theorem map_comp_comulAlgHom :
     (Algebra.TensorProduct.map (map φ q) (map φ q)).comp (comulAlgHom D q hserre) =
       (comulAlgHom D' q (serre_ne_zero_of_hom φ hserre)).comp (map φ q) := by
   apply hom_ext <;> intro x <;> simp
 
 /-- A morphism of Cartan data induces a bialgebra homomorphism between the corresponding quantized
 enveloping algebras. -/
-noncomputable def mapBialgHom (φ : CartanDatum.Hom D D') (q : K)
-    (hserre : ∀ i j, i ≠ j → quantumFactorial (q ^ D.symmetrizer i) (D.serreLength i j) ≠ 0) :
+noncomputable def mapBialgHom :
     letI := bialgebra D q hserre
     letI := bialgebra D' q (serre_ne_zero_of_hom φ hserre)
     QuantizedEnvelopingAlgebra D q →ₐc[K] QuantizedEnvelopingAlgebra D' q :=
@@ -462,19 +459,18 @@ noncomputable def mapBialgHom (φ : CartanDatum.Hom D D') (q : K)
     (by simpa only [bialgebra_counitAlgHom] using counitAlgHom_comp_map φ q)
     (by simpa only [bialgebra_comulAlgHom] using map_comp_comulAlgHom φ q hserre)
 
-@[simp] theorem mapBialgHom_toAlgHom (φ : CartanDatum.Hom D D') (q : K)
-    (hserre : ∀ i j, i ≠ j → quantumFactorial (q ^ D.symmetrizer i) (D.serreLength i j) ≠ 0) :
+@[simp] theorem mapBialgHom_toAlgHom :
     letI := bialgebra D q hserre
     letI := bialgebra D' q (serre_ne_zero_of_hom φ hserre)
     (mapBialgHom φ q hserre : QuantizedEnvelopingAlgebra D q →ₐ[K]
       QuantizedEnvelopingAlgebra D' q) = map φ q := (rfl)
 
-@[simp] theorem mapBialgHom_apply (φ : CartanDatum.Hom D D') (q : K)
-    (hserre : ∀ i j, i ≠ j → quantumFactorial (q ^ D.symmetrizer i) (D.serreLength i j) ≠ 0)
-    (x : QuantizedEnvelopingAlgebra D q) :
+@[simp] theorem mapBialgHom_apply (x : QuantizedEnvelopingAlgebra D q) :
     letI := bialgebra D q hserre
     letI := bialgebra D' q (serre_ne_zero_of_hom φ hserre)
     mapBialgHom φ q hserre x = map φ q x := (rfl)
+
+end WithSerre
 
 end Functoriality
 
