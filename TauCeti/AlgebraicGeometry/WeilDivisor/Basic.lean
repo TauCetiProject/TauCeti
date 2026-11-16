@@ -217,9 +217,8 @@ lemma domCongr_ofPoint (e : X ≃ Y) (x : X) :
   simp [ofPoint]
 
 @[simp]
-lemma pushforward_id : pushforward (id : X → X) = AddMonoidHom.id (WeilDivisor X) := by
-  ext D x
-  simp [pushforward, coeff]
+lemma pushforward_id : pushforward (id : X → X) = AddMonoidHom.id (WeilDivisor X) :=
+  Finsupp.mapDomain.addMonoidHom_id
 
 lemma pushforward_comp (g : Y → Z) (f : X → Y) :
     pushforward (g ∘ f) = (pushforward g).comp (pushforward f) :=
@@ -376,11 +375,8 @@ weights. The point divisors generate the free abelian group of Weil divisors and
 a subgroup of `ℤ`, it is `d·ℤ` for a unique `d ≥ 0`, the index of the weights. -/
 lemma weightedDegree_range (w : X → ℤ) :
     (weightedDegree w : WeilDivisor X →+ ℤ).range = AddSubgroup.closure (Set.range w) := by
-  -- `weightedDegree` is the additive-monoid-hom wrapper around the linear-combination map, so
-  -- its range is definitionally the additive subgroup underlying the linear map range.
-  change (Finsupp.linearCombination ℤ w).range.toAddSubgroup =
-    AddSubgroup.closure (Set.range w)
-  rw [Finsupp.range_linearCombination, Submodule.span_int_eq_addSubgroupClosure]
+  rw [weightedDegree_eq_weight, Finsupp.weight, ← LinearMap.range_toAddSubgroup,
+    Finsupp.range_linearCombination, Submodule.span_int_eq_addSubgroupClosure]
 
 /-- An effective divisor has nonnegative weighted degree when the weights are nonnegative on its
 support. -/
