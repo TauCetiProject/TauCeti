@@ -80,6 +80,11 @@ nonzero entries, both `±1`, giving the quaternions `(±1 ± i) / √2`, `(±1 �
 def binaryOctahedralCosetCoords : Finset (Fin 4 → ℤ) :=
   (Fintype.piFinset fun _ => {-1, 0, 1}).filter fun w => ∑ i, w i ^ 2 = 2
 
+/-- The scaled coordinate vectors as an explicit finite filter, for finite checks by `decide`. -/
+theorem binaryOctahedralCosetCoords_def : binaryOctahedralCosetCoords =
+    (Fintype.piFinset fun _ => {-1, 0, 1}).filter fun w => ∑ i, w i ^ 2 = 2 :=
+  (rfl)
+
 /-- **The 24 scaled coordinate vectors are distinct.** -/
 @[simp]
 theorem card_binaryOctahedralCosetCoords : binaryOctahedralCosetCoords.card = 24 := by
