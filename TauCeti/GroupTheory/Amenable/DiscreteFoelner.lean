@@ -37,6 +37,9 @@ function `x ↦ ∑_{g ∈ K} (f_g (g x) - f_g x)` is at least `u` everywhere; b
 assigns it the value `0`. Reiter's condition then yields Følner sets among the superlevel sets of
 `p`, by `TauCeti.hasFoelnerSets_of_forall_exists_sum_tsum_abs_sub_lt`.
 
+Additive counterparts are provided for `TauCeti.AddAmenable`, `TauCeti.HasAddFoelnerSets`, and
+additive Reiter's condition.
+
 ## Main results
 
 * `TauCeti.Amenable.exists_sum_tsum_abs_sub_lt`: an amenable discrete group satisfies Reiter's
@@ -46,7 +49,13 @@ assigns it the value `0`. Reiter's condition then yields Følner sets among the 
 * `TauCeti.Amenable.hasFoelnerSets`: an amenable discrete group has Følner sets.
 * `TauCeti.amenable_iff_hasFoelnerSets`: a discrete group is amenable exactly when it has Følner
   sets.
+* `TauCeti.amenable_iff_maxFoelner_neBot`: a discrete group is amenable iff its maximal Følner
+  filter is nontrivial.
 * `TauCeti.amenable_iff_exists_finset`: the same characterization in terms of finite sets.
+* Additive counterparts: `TauCeti.AddAmenable.exists_sum_tsum_abs_sub_lt`,
+  `TauCeti.addAmenable_iff_exists_sum_tsum_abs_sub_lt`, `TauCeti.AddAmenable.hasAddFoelnerSets`,
+  `TauCeti.addAmenable_iff_hasAddFoelnerSets`, `TauCeti.addAmenable_iff_maxAddFoelner_neBot`, and
+  `TauCeti.addAmenable_iff_exists_finset`.
 
 ## References
 
@@ -64,7 +73,7 @@ open scoped Pointwise symmDiff
 
 namespace TauCeti
 
-variable {G : Type*} [Group G] [TopologicalSpace G] [IsTopologicalGroup G]
+variable {G : Type*} [Group G] [TopologicalSpace G]
 
 /-- The vector `(δ_{g x} - δ_x)_{g ∈ K}` in the finite product `K → ℓ¹(G)`. -/
 private def translateSubSingle [DecidableEq G] (K : Finset G) (x : G) : K → lp (fun _ : G ↦ ℝ) 1 :=
@@ -163,7 +172,7 @@ theorem amenable_iff_hasFoelnerSets [DiscreteTopology G] : Amenable G ↔ HasFoe
 
 /-- A discrete additive group is amenable exactly when it has additive Følner sets. -/
 theorem addAmenable_iff_hasAddFoelnerSets {A : Type*} [AddGroup A] [TopologicalSpace A]
-    [IsTopologicalAddGroup A] [DiscreteTopology A] : AddAmenable A ↔ HasAddFoelnerSets A := by
+    [DiscreteTopology A] : AddAmenable A ↔ HasAddFoelnerSets A := by
   rw [← amenable_multiplicative_iff, amenable_iff_hasFoelnerSets, hasFoelnerSets_multiplicative_iff]
 
 attribute [to_additive existing addAmenable_iff_hasAddFoelnerSets] amenable_iff_hasFoelnerSets
@@ -198,11 +207,11 @@ theorem amenable_iff_exists_finset [DiscreteTopology G] [DecidableEq G] :
 
 section Additive
 
-variable {A : Type*} [AddGroup A] [TopologicalSpace A] [IsTopologicalAddGroup A]
+variable {A : Type*} [AddGroup A] [TopologicalSpace A]
 
 private theorem exists_sum_tsum_abs_sub_lt_of_equiv {α β : Type*} [DecidableEq β] (e : α ≃ β)
-    {op₁ : α → α → α} {op₂ : β → β → β} {K : Finset α} {ε : ℝ} {p : β → ℝ}
-    (hp0 : 0 ≤ p) (hpfin : p.HasFiniteSupport) (hp1 : ∑' x, p x = 1)
+    {op₁ : α → α → α} {op₂ : β → β → β} {K : Finset α} {ε : ℝ} {p : β → ℝ} (hp0 : 0 ≤ p)
+    (hpfin : p.HasFiniteSupport) (hp1 : ∑' x, p x = 1)
     (hpε : ∑ b ∈ K.image e, ∑' x, |p (op₂ b x) - p x| < ε)
     (he : ∀ a x, e (op₁ a x) = op₂ (e a) (e x)) :
     ∃ q : α → ℝ, 0 ≤ q ∧ q.HasFiniteSupport ∧ ∑' x, q x = 1 ∧
@@ -214,9 +223,7 @@ private theorem exists_sum_tsum_abs_sub_lt_of_equiv {α β : Type*} [DecidableEq
     refine lt_of_eq_of_lt (sum_congr rfl fun a _ => ?_) hpε
     simpa only [Function.comp_apply, he] using e.tsum_eq fun x => |p (op₂ (e a) x) - p x|
 
-/-- A discrete additive group is amenable exactly when it satisfies **Reiter's condition**: for
-every finite `K` and `ε > 0` there is a finitely supported probability density `p` with
-`∑_{a ∈ K} ∑_x |p (-a + x) - p x| < ε`. -/
+/-- A discrete additive group is amenable iff it satisfies additive **Reiter's condition**. -/
 theorem addAmenable_iff_exists_sum_tsum_abs_sub_lt [DiscreteTopology A] :
     AddAmenable A ↔ ∀ K : Finset A, ∀ ε : ℝ, 0 < ε →
       ∃ p : A → ℝ, 0 ≤ p ∧ p.HasFiniteSupport ∧ ∑' x, p x = 1 ∧
@@ -230,15 +237,15 @@ theorem addAmenable_iff_exists_sum_tsum_abs_sub_lt [DiscreteTopology A] :
   · obtain ⟨p, hp0, hpfin, hp1, hpε⟩ := h (K.image Multiplicative.toAdd) ε hε
     exact exists_sum_tsum_abs_sub_lt_of_equiv Multiplicative.toAdd hp0 hpfin hp1 hpε
       fun _ _ => by simp
+attribute [to_additive existing addAmenable_iff_exists_sum_tsum_abs_sub_lt]
+  amenable_iff_exists_sum_tsum_abs_sub_lt
 
-/-- **Reiter's condition for additive groups.** In an amenable discrete additive group, for every
-finite `K` and `ε > 0` there is a finitely supported probability density `p` with
-`∑_{a ∈ K} ∑_x |p (-a + x) - p x| < ε`. -/
+/-- **Reiter's condition for additive groups.** -/
 theorem AddAmenable.exists_sum_tsum_abs_sub_lt [DiscreteTopology A] [AddAmenable A] (K : Finset A)
-    {ε : ℝ} (hε : 0 < ε) :
-    ∃ p : A → ℝ, 0 ≤ p ∧ p.HasFiniteSupport ∧ ∑' x, p x = 1 ∧
+    {ε : ℝ} (hε : 0 < ε) : ∃ p : A → ℝ, 0 ≤ p ∧ p.HasFiniteSupport ∧ ∑' x, p x = 1 ∧
       ∑ a ∈ K, ∑' x, |p (-a + x) - p x| < ε :=
   addAmenable_iff_exists_sum_tsum_abs_sub_lt.1 ‹_› K _ hε
+attribute [to_additive existing] Amenable.exists_sum_tsum_abs_sub_lt
 
 end Additive
 

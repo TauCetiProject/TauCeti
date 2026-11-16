@@ -39,28 +39,23 @@ nontrivial filter. The proof picks for `(K, n)` a witness for `K` with tolerance
 
 ## Main definitions
 
-* `TauCeti.HasFoelnerSets G`, `TauCeti.HasAddFoelnerSets A`: the counting-measure Følner filter is
-  nontrivial.
+* `TauCeti.HasFoelnerSets G`: the counting-measure Følner filter of `G` is nontrivial.
+* `TauCeti.HasAddFoelnerSets A`: additive counterpart for an additive group `A`.
 
 ## Main results
 
-* `IsFoelner.tendsto_card_smul_symmDiff_div_card`,
-  `IsAddFoelner.tendsto_card_vadd_symmDiff_div_card`: the real cardinality ratios of a
+* `IsFoelner.tendsto_card_smul_symmDiff_div_card`: the real cardinality ratios of a
   counting-measure Følner family of finite sets tend to zero.
-* `IsFoelner.exists_finset_card_smul_symmDiff_lt`,
-  `IsAddFoelner.exists_finset_card_vadd_symmDiff_lt`: a nontrivial counting-measure Følner family
+* `IsFoelner.exists_finset_card_smul_symmDiff_lt`: a nontrivial counting-measure Følner family
   passes every finite test.
-* `TauCeti.exists_isFoelner_atTop`, `TauCeti.exists_isAddFoelner_atTop`: if every finite test has a
-  witness, there is a Følner family of finite nonempty sets indexed by `Finset G × ℕ` along `atTop`.
-* `TauCeti.hasFoelnerSets_iff`, `TauCeti.hasAddFoelnerSets_iff`: `HasFoelnerSets G` and
-  `HasAddFoelnerSets A` are equivalent to the finite-set condition.
-* `TauCeti.HasFoelnerSets.of_tendsto_card_smul_symmDiff_div_card`,
-  `TauCeti.HasAddFoelnerSets.of_tendsto_card_vadd_symmDiff_div_card`: finite sets with vanishing
+* `TauCeti.exists_isFoelner_atTop`: if every finite test has a witness, there is a Følner family
+  of finite nonempty sets indexed by `Finset G × ℕ` along `atTop`.
+* `TauCeti.hasFoelnerSets_iff`: `HasFoelnerSets G` is equivalent to the finite-set condition.
+* `TauCeti.HasFoelnerSets.of_tendsto_card_smul_symmDiff_div_card`: finite sets with vanishing
   relative translation boundaries along a nontrivial filter give Følner sets.
-* `MulEquiv.hasFoelnerSets_iff`, `AddEquiv.hasAddFoelnerSets_iff`: having Følner sets is invariant
-  under group isomorphisms.
-* `TauCeti.hasFoelnerSets_multiplicative_iff`, `TauCeti.hasAddFoelnerSets_additive_iff`: agreement
-  across `Multiplicative` and `Additive`.
+* `MulEquiv.hasFoelnerSets_iff`: having Følner sets is invariant under group isomorphisms.
+* Additive counterparts via `@[to_additive]` and `TauCeti.hasFoelnerSets_multiplicative_iff`,
+  `TauCeti.hasAddFoelnerSets_additive_iff`.
 
 ## References
 
@@ -232,6 +227,18 @@ theorem HasFoelnerSets.of_tendsto_card_smul_symmDiff_div_card [DecidableEq G] {�
   exact ⟨F i, hni, fun g hg =>
     (div_lt_iff₀ (by exact_mod_cast hni.card_pos)).1 (hi g hg)⟩
 
+private theorem exists_finset_symmDiff_lt_of_equiv {α β : Type*} [DecidableEq α] [DecidableEq β]
+    (e : α ≃ β) {act₁ : α → Finset α → Finset α} {act₂ : β → Finset β → Finset β}
+    {K : Finset α} {ε : ℝ}
+    (h : ∃ F : Finset β, F.Nonempty ∧ ∀ b ∈ K.image e, (#(act₂ b F ∆ F) : ℝ) < ε * #F)
+    (he : ∀ a F, act₁ a (F.image e.symm) = (act₂ (e a) F).image e.symm) :
+    ∃ F : Finset α, F.Nonempty ∧ ∀ a ∈ K, (#(act₁ a F ∆ F) : ℝ) < ε * #F := by
+  obtain ⟨F, hF, hFK⟩ := h
+  refine ⟨F.image e.symm, hF.image _, fun a ha => ?_⟩
+  rw [he, ← image_symmDiff _ _ e.symm.injective, card_image_of_injective _ e.symm.injective,
+    card_image_of_injective _ e.symm.injective]
+  exact hFK (e a) (mem_image_of_mem _ ha)
+
 end TauCeti
 
 namespace MulEquiv
@@ -247,14 +254,8 @@ private theorem hasFoelnerSets_of_mulEquiv (e : G ≃* H) (h : HasFoelnerSets G)
     HasFoelnerSets H := by
   classical
   rw [TauCeti.hasFoelnerSets_iff] at h ⊢
-  intro K ε hε
-  obtain ⟨F, hF, hFK⟩ := h (K.image e.symm) ε hε
-  refine ⟨F.image e, hF.image e, fun g hg => ?_⟩
-  -- The isomorphism carries the test for `e.symm g` on `F` to the test for `g` on `e '' F`.
-  have h_eq : (g • F.image e) ∆ F.image e = ((e.symm g • F) ∆ F).image e := by
-    rw [image_symmDiff _ _ e.injective, image_smul_distrib, apply_symm_apply]
-  rw [h_eq, card_image_of_injective _ e.injective, card_image_of_injective _ e.injective]
-  exact hFK _ (mem_image_of_mem _ hg)
+  exact fun K ε hε => exists_finset_symmDiff_lt_of_equiv e.symm.toEquiv (h (K.image e.symm) ε hε)
+    fun g F => by simp [image_smul_distrib]
 
 /-- Having Følner sets is invariant under group isomorphisms. -/
 @[to_additive AddEquiv.hasAddFoelnerSets_iff
@@ -266,18 +267,6 @@ end MulEquiv
 
 namespace TauCeti
 
-private theorem exists_finset_symmDiff_lt_of_equiv {α β : Type*} [DecidableEq α] [DecidableEq β]
-    (e : α ≃ β) {act₁ : α → Finset α → Finset α} {act₂ : β → Finset β → Finset β}
-    {K : Finset α} {ε : ℝ}
-    (h : ∃ F : Finset β, F.Nonempty ∧ ∀ b ∈ K.image e, (#(act₂ b F ∆ F) : ℝ) < ε * #F)
-    (he : ∀ a F, act₁ a (F.image e.symm) = (act₂ (e a) F).image e.symm) :
-    ∃ F : Finset α, F.Nonempty ∧ ∀ a ∈ K, (#(act₁ a F ∆ F) : ℝ) < ε * #F := by
-  obtain ⟨F, hF, hFK⟩ := h
-  refine ⟨F.image e.symm, hF.image _, fun a ha => ?_⟩
-  rw [he, ← image_symmDiff _ _ e.symm.injective, card_image_of_injective _ e.symm.injective,
-    card_image_of_injective _ e.symm.injective]
-  exact hFK (e a) (mem_image_of_mem _ ha)
-
 /-- `Multiplicative A` has Følner sets if and only if `A` has additive Følner sets. -/
 @[simp]
 theorem hasFoelnerSets_multiplicative_iff {A : Type*} [AddGroup A] :
@@ -287,11 +276,11 @@ theorem hasFoelnerSets_multiplicative_iff {A : Type*} [AddGroup A] :
   refine ⟨fun h K ε hε => exists_finset_symmDiff_lt_of_equiv Multiplicative.ofAdd
       (h (K.image Multiplicative.ofAdd) ε hε) fun a F => by
         simp only [vadd_finset_def, smul_finset_def, image_image, vadd_eq_add, smul_eq_mul,
-          Function.comp_def]; rfl,
+          Function.comp_def, Multiplicative.ofAdd_symm_eq, toAdd_mul, toAdd_ofAdd],
     fun h K ε hε => exists_finset_symmDiff_lt_of_equiv Multiplicative.toAdd
       (h (K.image Multiplicative.toAdd) ε hε) fun g F => by
         simp only [vadd_finset_def, smul_finset_def, image_image, vadd_eq_add, smul_eq_mul,
-          Function.comp_def]; rfl⟩
+          Function.comp_def, Multiplicative.toAdd_symm_eq, ofAdd_add, ofAdd_toAdd]⟩
 
 /-- `Additive G` has additive Følner sets if and only if `G` has Følner sets. -/
 @[simp]

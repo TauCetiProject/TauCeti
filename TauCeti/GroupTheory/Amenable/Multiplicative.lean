@@ -44,19 +44,18 @@ variable (A) in
 def multiplicativeEquiv : Mean (Multiplicative A) ≃ AddMean A where
   toFun m := AddMean.mk₀
     (m.toPositiveLinearMap.toLinearMap ∘ₗ (UCB.multiplicativeAlgEquiv A).symm.toLinearMap)
-    (fun f hf => map_nonneg m <| by
-      simpa using (UCB.multiplicativeAlgEquiv_symm_le_iff (f := 0) (g := f)).2 hf) (by simp)
+    (fun _ hf => map_nonneg m
+      (by simpa using UCB.multiplicativeAlgEquiv_symm_le_iff.2 hf)) (by simp)
   invFun m := mk₀
     (m.toPositiveLinearMap.toLinearMap ∘ₗ (UCB.multiplicativeAlgEquiv A).toLinearMap)
-    (fun f hf => map_nonneg m <| by
-      simpa using (UCB.multiplicativeAlgEquiv_le_iff (f := 0) (g := f)).2 hf) (by simp)
-  left_inv m := ext fun f => by simp
-  right_inv m := AddMean.ext fun f => by simp
+    (fun _ hf => map_nonneg m
+      (by simpa using UCB.multiplicativeAlgEquiv_le_iff.2 hf)) (by simp)
+  left_inv _ := ext fun _ => by simp
+  right_inv _ := AddMean.ext fun _ => by simp
 
 @[simp] theorem multiplicativeEquiv_apply (m : Mean (Multiplicative A)) (f : AddUCB A) :
     multiplicativeEquiv A m f = m ((UCB.multiplicativeAlgEquiv A).symm f) := by
   simp [multiplicativeEquiv]
-
 @[simp] theorem multiplicativeEquiv_symm_apply (m : AddMean A) (f : UCB (Multiplicative A)) :
     (multiplicativeEquiv A).symm m f = m (UCB.multiplicativeAlgEquiv A f) := by
   simp [multiplicativeEquiv]
@@ -68,16 +67,28 @@ def multiplicativeEquiv : Mean (Multiplicative A) ≃ AddMean A where
       simpa [← UCB.multiplicativeAlgEquiv_leftTranslation] using
         hm g.toAdd (UCB.multiplicativeAlgEquiv A f),
     fun hm a f => by simpa using hm (ofAdd a) ((UCB.multiplicativeAlgEquiv A).symm f)⟩
-
 @[simp] theorem isLeftInvariant_multiplicativeEquiv_symm_iff {m : AddMean A} :
     ((multiplicativeEquiv A).symm m).IsLeftInvariant ↔ m.IsLeftInvariant := by
   rw [← isLeftInvariant_multiplicativeEquiv_iff, Equiv.apply_symm_apply]
 
-/-- Pushing forward a mean along `φ.toMultiplicative` corresponds to pushing forward its additive
-mean along `φ`. -/
+/-- `multiplicativeEquiv` intertwines pushforward along `φ.toMultiplicative` and `φ`. -/
 theorem multiplicativeEquiv_map (φ : A →ₜ+ B) (m : Mean (Multiplicative A)) :
     multiplicativeEquiv B (m.map φ.toMultiplicative) = (multiplicativeEquiv A m).map φ :=
-  AddMean.ext fun f => by simp [UCB.multiplicativeAlgEquiv_symm_compRightAlgHom]
+  AddMean.ext fun _ => by simp [UCB.multiplicativeAlgEquiv_symm_compRightAlgHom]
+/-- `(multiplicativeEquiv _).symm` intertwines pushforward along `φ` and `φ.toMultiplicative`. -/
+theorem multiplicativeEquiv_symm_map (φ : A →ₜ+ B) (m : AddMean A) :
+    (multiplicativeEquiv B).symm (m.map φ) =
+      ((multiplicativeEquiv A).symm m).map φ.toMultiplicative :=
+  ext fun _ => by simp [UCB.multiplicativeAlgEquiv_compRightAlgHom]
+
+/-- `multiplicativeEquiv` sends point evaluation at `x` to additive evaluation at `x.toAdd`. -/
+@[simp] theorem multiplicativeEquiv_eval (x : Multiplicative A) :
+    multiplicativeEquiv A (eval (Multiplicative A) x) = AddMean.eval A x.toAdd :=
+  AddMean.ext fun _ => by simp
+/-- `(multiplicativeEquiv _).symm` sends additive evaluation at `a` to evaluation at `ofAdd a`. -/
+@[simp] theorem multiplicativeEquiv_symm_eval (a : A) :
+    (multiplicativeEquiv A).symm (AddMean.eval A a) = eval (Multiplicative A) (ofAdd a) :=
+  ext fun _ => by simp
 
 end Mean
 
@@ -104,18 +115,17 @@ variable (G) in
 def additiveEquiv : AddMean (Additive G) ≃ Mean G where
   toFun m := Mean.mk₀
     (m.toPositiveLinearMap.toLinearMap ∘ₗ (AddUCB.additiveAlgEquiv G).symm.toLinearMap)
-    (fun f hf => map_nonneg m <| by
-      simpa using (AddUCB.additiveAlgEquiv_symm_le_iff (f := 0) (g := f)).2 hf) (by simp)
+    (fun _ hf => map_nonneg m
+      (by simpa using AddUCB.additiveAlgEquiv_symm_le_iff.2 hf)) (by simp)
   invFun m := mk₀
     (m.toPositiveLinearMap.toLinearMap ∘ₗ (AddUCB.additiveAlgEquiv G).toLinearMap)
-    (fun f hf => map_nonneg m <| by
-      simpa using (AddUCB.additiveAlgEquiv_le_iff (f := 0) (g := f)).2 hf) (by simp)
-  left_inv m := ext fun f => by simp
-  right_inv m := Mean.ext fun f => by simp
+    (fun _ hf => map_nonneg m
+      (by simpa using AddUCB.additiveAlgEquiv_le_iff.2 hf)) (by simp)
+  left_inv _ := ext fun _ => by simp
+  right_inv _ := Mean.ext fun _ => by simp
 
 @[simp] theorem additiveEquiv_apply (m : AddMean (Additive G)) (f : UCB G) :
     additiveEquiv G m f = m ((AddUCB.additiveAlgEquiv G).symm f) := by simp [additiveEquiv]
-
 @[simp] theorem additiveEquiv_symm_apply (m : Mean G) (f : AddUCB (Additive G)) :
     (additiveEquiv G).symm m f = m (AddUCB.additiveAlgEquiv G f) := by simp [additiveEquiv]
 
@@ -126,16 +136,25 @@ def additiveEquiv : AddMean (Additive G) ≃ Mean G where
       simpa [← AddUCB.additiveAlgEquiv_leftTranslation] using
         hm a.toMul (AddUCB.additiveAlgEquiv G f),
     fun hm g f => by simpa using hm (ofMul g) ((AddUCB.additiveAlgEquiv G).symm f)⟩
-
 @[simp] theorem isLeftInvariant_additiveEquiv_symm_iff {m : Mean G} :
     ((additiveEquiv G).symm m).IsLeftInvariant ↔ m.IsLeftInvariant := by
   rw [← isLeftInvariant_additiveEquiv_iff, Equiv.apply_symm_apply]
 
-/-- Pushing forward an additive mean along `φ.toAdditive` corresponds to pushing forward its
-multiplicative mean along `φ`. -/
+/-- `additiveEquiv` intertwines pushforward along `φ.toAdditive` and `φ`. -/
 theorem additiveEquiv_map (φ : G →ₜ* H) (m : AddMean (Additive G)) :
     additiveEquiv H (m.map φ.toAdditive) = (additiveEquiv G m).map φ :=
-  Mean.ext fun f => by simp [AddUCB.additiveAlgEquiv_symm_compRightAlgHom]
+  Mean.ext fun _ => by simp [AddUCB.additiveAlgEquiv_symm_compRightAlgHom]
+/-- `(additiveEquiv _).symm` intertwines pushforward along `φ` and `φ.toAdditive`. -/
+theorem additiveEquiv_symm_map (φ : G →ₜ* H) (m : Mean G) :
+    (additiveEquiv H).symm (m.map φ) = ((additiveEquiv G).symm m).map φ.toAdditive :=
+  ext fun _ => by simp [AddUCB.additiveAlgEquiv_compRightAlgHom]
+
+/-- `additiveEquiv` sends additive evaluation at `x` to evaluation at `x.toMul`. -/
+@[simp] theorem additiveEquiv_eval (x : Additive G) :
+    additiveEquiv G (eval (Additive G) x) = Mean.eval G x.toMul := Mean.ext fun _ => by simp
+/-- `(additiveEquiv _).symm` sends evaluation at `g` to additive evaluation at `ofMul g`. -/
+@[simp] theorem additiveEquiv_symm_eval (g : G) :
+    (additiveEquiv G).symm (Mean.eval G g) = eval (Additive G) (ofMul g) := ext fun _ => by simp
 
 end AddMean
 

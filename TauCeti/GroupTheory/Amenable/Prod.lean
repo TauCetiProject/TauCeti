@@ -31,8 +31,9 @@ trivial group.
 
 No discreteness is needed: the factors are arbitrary topological groups, and the product carries the
 product topology. A finite product of discrete groups is again discrete, so this covers finite
-products of discrete groups. Additive counterparts follow via
-`TauCeti.ContinuousMulEquiv.prodMultiplicative` and `TauCeti.ContinuousMulEquiv.piMultiplicative`.
+products of discrete groups. For the additive counterparts, `AddAmenable.prod` uses
+`TauCeti.ContinuousMulEquiv.prodMultiplicative`, while `addAmenable_prod_iff`, `AddAmenable.pi`,
+and `addAmenable_pi_iff` are obtained directly via `@[to_additive]`.
 
 ## Main definitions
 
@@ -43,14 +44,14 @@ products of discrete groups. Additive counterparts follow via
 * `TauCeti.Mean.map_fst_prod`, `TauCeti.Mean.map_snd_prod`: the marginals of `m.prod n` are `m` and
   `n`.
 * `TauCeti.Mean.IsLeftInvariant.prod`: the iterated mean of left-invariant means is left invariant.
-* `TauCeti.Amenable.prod`, `TauCeti.AddAmenable.prod`: the product of two amenable topological
-  groups is amenable.
-* `TauCeti.amenable_prod_iff`, `TauCeti.addAmenable_prod_iff`: a product of two topological groups
-  is amenable exactly when both factors are.
-* `TauCeti.Amenable.pi`, `TauCeti.AddAmenable.pi`: the product of a finite family of amenable
-  topological groups is amenable.
-* `TauCeti.amenable_pi_iff`, `TauCeti.addAmenable_pi_iff`: a finite product of topological groups is
-  amenable exactly when every factor is.
+* `TauCeti.Amenable.prod`: the product of two amenable topological groups is amenable.
+* `TauCeti.amenable_prod_iff`: a product of two topological groups is amenable exactly when both
+  factors are.
+* `TauCeti.Amenable.pi`: the product of a finite family of amenable topological groups is amenable.
+* `TauCeti.amenable_pi_iff`: a finite product of topological groups is amenable exactly when every
+  factor is.
+* Additive counterparts: `TauCeti.AddAmenable.prod`, `TauCeti.addAmenable_prod_iff`,
+  `TauCeti.AddAmenable.pi`, and `TauCeti.addAmenable_pi_iff`.
 
 ## References
 

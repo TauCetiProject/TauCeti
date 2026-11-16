@@ -7,8 +7,8 @@ module
 
 public import TauCeti.GroupTheory.Amenable.Finite
 public import TauCeti.GroupTheory.Amenable.WeakStar
-public import TauCeti.Topology.Algebra.ContinuousMonoidHom.Basic
 public import Mathlib.GroupTheory.Finiteness
+import TauCeti.Topology.Algebra.ContinuousMonoidHom.Basic
 
 /-!
 # Directed unions of amenable subgroups
@@ -34,17 +34,16 @@ restricts to a function in the `UCB` space of each of them.
 
 ## Main results
 
-* `TauCeti.Amenable.of_forall_finset_subset_range`,
-  `TauCeti.AddAmenable.of_forall_finset_subset_range`: a topological group is amenable if each of
-  its finite subsets lies in the range of a continuous homomorphism from an amenable topological
-  group, drawn from a fixed family.
-* `TauCeti.amenable_iSup_of_directed`, `TauCeti.addAmenable_iSup_of_directed`: the supremum of a
-  directed family of amenable subgroups is an amenable subgroup.
-* `TauCeti.Amenable.of_directed_of_iSup_eq_top`,
-  `TauCeti.AddAmenable.of_directed_of_iSup_eq_top`: a topological group which is the supremum of a
+* `TauCeti.Amenable.of_forall_finset_subset_range`: a topological group is amenable if each of its
+  finite subsets lies in the range of a continuous homomorphism from an amenable topological group,
+  drawn from a fixed family.
+* `TauCeti.amenable_iSup_of_directed`: the supremum of a directed family of amenable subgroups is
+  an amenable subgroup.
+* `TauCeti.Amenable.of_directed_of_iSup_eq_top`: a topological group which is the supremum of a
   directed family of amenable subgroups is amenable.
-* `TauCeti.Amenable.of_forall_fg`, `TauCeti.AddAmenable.of_forall_fg`: a topological group whose
-  finitely generated subgroups are amenable is amenable.
+* `TauCeti.Amenable.of_forall_fg`: a topological group whose finitely generated subgroups are
+  amenable is amenable.
+* Additive counterparts for `TauCeti.AddAmenable` and `TauCeti.addAmenable_iSup_of_directed`.
 
 ## References
 
@@ -105,7 +104,7 @@ theorem amenable_iSup_of_directed {ι : Type*} {H : ι → Subgroup G}
   · rw [iSup_of_empty]
     infer_instance
   refine .of_forall_finset_subset_range
-    (fun i => ⟨Subgroup.inclusion (le_iSup H i), continuous_subtype_val.subtype_mk _⟩) fun s => ?_
+    (fun i => ContinuousMonoidHom.subgroupInclusion (le_iSup H i)) fun s => ?_
   have hH' : Directed (· ⊆ ·) fun i => (H i : Set G) :=
     hH.mono_comp _ fun _ _ => SetLike.coe_subset_coe.2
   obtain ⟨i, hi⟩ := hH'.exists_mem_subset_of_finset_subset_biUnion (s := s.image Subtype.val) <| by
@@ -120,7 +119,7 @@ amenable additive subgroups is amenable. -/]
 theorem Amenable.of_directed_of_iSup_eq_top {ι : Type*} {H : ι → Subgroup G}
     (hH : Directed (· ≤ ·) H) (htop : ⨆ i, H i = ⊤) [∀ i, Amenable (H i)] : Amenable G :=
   have := amenable_iSup_of_directed hH
-  .of_denseRange ⟨(⨆ i, H i).subtype, continuous_subtype_val⟩
+  .of_denseRange (ContinuousMonoidHom.subgroupSubtype (⨆ i, H i))
     (Function.Surjective.denseRange fun x => ⟨⟨x, htop ▸ Subgroup.mem_top x⟩, rfl⟩)
 
 /-- A topological group all of whose finitely generated subgroups are amenable is amenable. -/
@@ -129,7 +128,7 @@ are amenable is amenable. -/]
 theorem Amenable.of_forall_fg (h : ∀ K : Subgroup G, K.FG → Amenable K) : Amenable G := by
   have : ∀ K : {K : Subgroup G // K.FG}, Amenable K.1 := fun K => h K.1 K.2
   refine .of_forall_finset_subset_range
-    (fun K : {K : Subgroup G // K.FG} => ⟨K.1.subtype, continuous_subtype_val⟩) fun s => ?_
+    (fun K : {K : Subgroup G // K.FG} => ContinuousMonoidHom.subgroupSubtype K.1) fun s => ?_
   refine ⟨⟨Subgroup.closure s, (Group.fg_iff_subgroup_fg _).1 inferInstance⟩, fun x hx => ?_⟩
   exact ⟨⟨x, Subgroup.subset_closure hx⟩, rfl⟩
 

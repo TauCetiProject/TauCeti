@@ -23,6 +23,9 @@ When `r` is equivariant along a homomorphism `φ : H →* G`, in the sense that
 `r (φ h * x) = h * r x`, the pullback intertwines `L_h` with `L_(φ h)`. Such maps arise as the
 retractions of a discrete group onto a subgroup along a choice of right coset representatives.
 
+Additive counterparts are provided for `TauCeti.AddUCB G` and
+`TauCeti.AddUCB.compRightAlgHomOfDiscrete`.
+
 ## References
 
 * B. Bekka, P. de la Harpe, A. Valette, *Kazhdan's Property (T)*, Appendix G.1.
@@ -42,8 +45,7 @@ section Multiplicative
 variable {G : Type*} [Group G] [TopologicalSpace G] [DiscreteTopology G]
 
 /-- On a discrete group the UCB subalgebra is the entire bounded-function algebra. -/
-@[to_additive (attr := simp) addUcb_eq_top
-/-- On a discrete additive group the UCB subalgebra is the entire bounded-function algebra. -/]
+@[to_additive (attr := simp) addUcb_eq_top /-- On a discrete additive group, `addUcb G = ⊤`. -/]
 theorem ucb_eq_top : ucb G = ⊤ := by
   ext f
   simp [mem_ucb_iff, nhds_discrete]
@@ -56,9 +58,7 @@ variable {G : Type*} [Group G] [TopologicalSpace G] [DiscreteTopology G]
 
 variable (G) in
 /-- The canonical algebra equivalence from UCB to all bounded functions on a discrete group. -/
-@[to_additive
-/-- The canonical algebra equivalence from `AddUCB` to all bounded functions on a discrete additive
-group. -/]
+@[to_additive /-- Canonical algebra equivalence `AddUCB G ≃ₐ[ℝ] (G →ᵇ ℝ)` on a discrete group. -/]
 def discreteAlgEquiv : UCB G ≃ₐ[ℝ] (G →ᵇ ℝ) :=
   (Subalgebra.equivOfEq _ _ ucb_eq_top).trans Subalgebra.topEquiv
 
@@ -88,16 +88,14 @@ theorem discreteAlgEquiv_symm_compContinuous_mulRight (g : G) (f : G →ᵇ ℝ)
   simp [coe_rightTranslation]
 
 /-- The inverse discrete identification preserves and reflects the pointwise order. -/
-@[to_additive (attr := simp)
-/-- The inverse discrete identification preserves and reflects the pointwise order. -/]
+@[to_additive (attr := simp) /-- `AddUCB.discreteAlgEquiv.symm` preserves/reflects the order. -/]
 theorem discreteAlgEquiv_symm_le_discreteAlgEquiv_symm_iff {f h : G →ᵇ ℝ} :
     (discreteAlgEquiv G).symm f ≤ (discreteAlgEquiv G).symm h ↔ f ≤ h :=
   Iff.rfl
 
 variable (G) in
 /-- The discrete identification as a linear isometry equivalence for the supremum norm. -/
-@[to_additive
-/-- The discrete identification as a linear isometry equivalence for the supremum norm. -/]
+@[to_additive /-- Discrete identification `AddUCB G ≃ₗᵢ[ℝ] (G →ᵇ ℝ)` for the supremum norm. -/]
 def discreteLinearIsometryEquiv : UCB G ≃ₗᵢ[ℝ] (G →ᵇ ℝ) where
   toLinearEquiv := (discreteAlgEquiv G).toLinearEquiv
   norm_map' _ := rfl
@@ -118,8 +116,7 @@ variable {H : Type*} [Group H] [TopologicalSpace H] [IsTopologicalGroup H]
 
 /-- On a discrete group `G`, the pullback `f ↦ f ∘ r` along an arbitrary map `r : G → H`, as a
 unital algebra homomorphism from `UCB H` to `UCB G`. -/
-@[to_additive /-- On a discrete additive group `G`, the pullback `f ↦ f ∘ r` along an arbitrary map
-`r : G → H`, as a unital algebra homomorphism from `AddUCB H` to `AddUCB G`. -/]
+@[to_additive /-- Pullback `f ↦ f ∘ r : AddUCB H →ₐ[ℝ] AddUCB G` along `r : G → H`. -/]
 def compRightAlgHomOfDiscrete (r : G → H) : UCB H →ₐ[ℝ] UCB G where
   toFun f := (discreteAlgEquiv G).symm
     ((f : H →ᵇ ℝ).compContinuous ⟨r, continuous_of_discreteTopology⟩)

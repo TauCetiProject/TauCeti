@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.GroupTheory.Amenable.Subgroup
+import TauCeti.GroupTheory.Amenable.Multiplicative
 
 /-!
 # Extensions of amenable discrete groups
@@ -23,6 +24,8 @@ function `q ↦ n (k ↦ f (s q * ψ k))` on `Q` is averaged by a mean `m` on `Q
 (`TauCeti.Mean.extension`). Translating `f` by `g` translates this function on `Q` by `φ g`, so
 the iterated mean is left invariant when `n` and `m` are.
 
+Additive counterparts are provided for `TauCeti.AddAmenable`.
+
 ## Main definitions
 
 * `TauCeti.UCB.fiberAverage ψ n`: the fiber average `f ↦ (x ↦ n (k ↦ f (x * ψ k)))`.
@@ -36,6 +39,9 @@ the iterated mean is left invariant when `n` and `m` are.
   amenable.
 * `TauCeti.amenable_iff_subgroup_quotient`: a discrete group with a normal subgroup `N` is
   amenable exactly when `N` and `G ⧸ N` are.
+* `TauCeti.Amenable.of_subgroup_quotient` and additive counterparts
+  `TauCeti.AddAmenable.of_ker_le_range`, `TauCeti.addAmenable_iff_addSubgroup_quotient`, and
+  `TauCeti.AddAmenable.of_addSubgroup_quotient`.
 
 ## References
 
@@ -178,12 +184,9 @@ theorem AddAmenable.of_ker_le_range {A B C : Type*} [AddGroup A] [TopologicalSpa
     [TopologicalSpace C] [DiscreteTopology C] [AddAmenable B] [AddAmenable C] (ψ : B →+ A)
     (φ : A →+ C) (h : φ.ker ≤ ψ.range) : AddAmenable A := by
   rw [← amenable_multiplicative_iff]
-  refine .of_ker_le_range (AddMonoidHom.toMultiplicative ψ) (AddMonoidHom.toMultiplicative φ) ?_
-  intro x hx
-  have hx' : x.toAdd ∈ φ.ker := by
-    simpa [MonoidHom.mem_ker, AddMonoidHom.coe_toMultiplicative] using hx
-  obtain ⟨b, hb⟩ := h hx'
-  exact ⟨Multiplicative.ofAdd b, by simp [hb]⟩
+  exact .of_ker_le_range (AddMonoidHom.toMultiplicative ψ) (AddMonoidHom.toMultiplicative φ)
+    (by simpa only [MonoidHom.coe_toMultiplicative_ker, MonoidHom.coe_toMultiplicative_range] using
+      AddSubgroup.toSubgroup.monotone h)
 
 attribute [to_additive existing] Amenable.of_ker_le_range
 
@@ -193,9 +196,8 @@ amenable. -/
 /-- A discrete additive group with a normal additive subgroup `N` is amenable
 exactly when `N` and `G ⧸ N` are amenable. -/]
 theorem amenable_iff_subgroup_quotient (N : Subgroup G) [N.Normal] :
-    Amenable G ↔ Amenable N ∧ Amenable (G ⧸ N) := by
-  have := QuotientGroup.discreteTopology (isOpen_discrete (N : Set G))
-  exact ⟨fun _ => ⟨inferInstance, inferInstance⟩,
+    Amenable G ↔ Amenable N ∧ Amenable (G ⧸ N) :=
+  ⟨fun _ => ⟨inferInstance, inferInstance⟩,
     fun ⟨_, _⟩ => .of_ker_le_range N.subtype (QuotientGroup.mk' N) (by simp)⟩
 
 /-- A discrete group is amenable when it has an amenable normal subgroup with amenable

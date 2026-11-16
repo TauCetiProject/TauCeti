@@ -42,21 +42,19 @@ variable {𝕜 A B : Type*} [NormedField 𝕜]
   [AddGroup A] [TopologicalSpace A] [IsTopologicalAddGroup A]
   [AddGroup B] [TopologicalSpace B] [IsTopologicalAddGroup B]
 
-/-- Precomposing a function in `ucbSubalgebra 𝕜 (Multiplicative A)` with `ofAdd` yields a function
-in `addUcbSubalgebra 𝕜 A`. -/
+/-- Precomposing in `ucbSubalgebra 𝕜 (Multiplicative A)` with `ofAdd` yields `addUcbSubalgebra`. -/
 theorem compContinuous_ofAdd_mem_addUcbSubalgebra {f : Multiplicative A →ᵇ 𝕜}
     (hf : f ∈ ucbSubalgebra 𝕜 (Multiplicative A)) :
     f.compContinuous ⟨ofAdd, continuous_ofAdd⟩ ∈ addUcbSubalgebra 𝕜 A := by
   rw [mem_ucbSubalgebra_iff] at hf; rw [mem_addUcbSubalgebra_iff]
-  intro ε hε; rw [show 𝓝 (0 : A) = map toAdd (𝓝 1) from nhds_toAdd 1, eventually_map]
+  intro ε hε; rw [← toAdd_one, nhds_toAdd, eventually_map]
   filter_upwards [hf ε hε] with u hu x; simpa using hu (ofAdd x)
 
-/-- Precomposing a function in `addUcbSubalgebra 𝕜 A` with `toAdd` yields a function in
-`ucbSubalgebra 𝕜 (Multiplicative A)`. -/
+/-- Precomposing in `addUcbSubalgebra 𝕜 A` with `toAdd` yields `ucbSubalgebra`. -/
 theorem compContinuous_toAdd_mem_ucbSubalgebra {f : A →ᵇ 𝕜} (hf : f ∈ addUcbSubalgebra 𝕜 A) :
     f.compContinuous ⟨toAdd, continuous_toAdd⟩ ∈ ucbSubalgebra 𝕜 (Multiplicative A) := by
   rw [mem_addUcbSubalgebra_iff] at hf; rw [mem_ucbSubalgebra_iff]
-  intro ε hε; rw [show 𝓝 (1 : Multiplicative A) = map ofAdd (𝓝 0) from nhds_ofAdd 0, eventually_map]
+  intro ε hε; rw [← ofAdd_zero, nhds_ofAdd, eventually_map]
   filter_upwards [hf ε hε] with u hu x; simpa using hu x.toAdd
 
 namespace UCB
@@ -73,55 +71,43 @@ def multiplicativeAlgEquiv : UCB (Multiplicative A) ≃ₐ[ℝ] AddUCB A where
 
 @[simp] theorem multiplicativeAlgEquiv_apply (f : UCB (Multiplicative A)) (x : A) :
     (multiplicativeAlgEquiv A f : A →ᵇ ℝ) x = (f : Multiplicative A →ᵇ ℝ) (ofAdd x) := (rfl)
-
 @[simp] theorem multiplicativeAlgEquiv_symm_apply (f : AddUCB A) (x : Multiplicative A) :
     ((multiplicativeAlgEquiv A).symm f : Multiplicative A →ᵇ ℝ) x = (f : A →ᵇ ℝ) x.toAdd := (rfl)
 
 @[simp] theorem multiplicativeAlgEquiv_le_iff {f g : UCB (Multiplicative A)} :
-    multiplicativeAlgEquiv A f ≤ multiplicativeAlgEquiv A g ↔ f ≤ g :=
-  ⟨fun h => le_def.2 fun x => AddUCB.le_def.1 h x.toAdd,
-    fun h => AddUCB.le_def.2 fun x => le_def.1 h (ofAdd x)⟩
-
+    multiplicativeAlgEquiv A f ≤ multiplicativeAlgEquiv A g ↔ f ≤ g := Iff.rfl
 @[simp] theorem multiplicativeAlgEquiv_symm_le_iff {f g : AddUCB A} :
-    (multiplicativeAlgEquiv A).symm f ≤ (multiplicativeAlgEquiv A).symm g ↔ f ≤ g :=
-  ⟨fun h => AddUCB.le_def.2 fun x => le_def.1 h (ofAdd x),
-    fun h => le_def.2 fun x => AddUCB.le_def.1 h x.toAdd⟩
+    (multiplicativeAlgEquiv A).symm f ≤ (multiplicativeAlgEquiv A).symm g ↔ f ≤ g := Iff.rfl
 
 /-- `multiplicativeAlgEquiv` preserves the supremum norm. -/
 theorem norm_multiplicativeAlgEquiv (f : UCB (Multiplicative A)) :
     ‖multiplicativeAlgEquiv A f‖ = ‖f‖ :=
   le_antisymm ((f : Multiplicative A →ᵇ ℝ).norm_compContinuous_le _)
     ((multiplicativeAlgEquiv A f : A →ᵇ ℝ).norm_compContinuous_le ⟨toAdd, continuous_toAdd⟩)
-
 @[simp] theorem norm_coe_multiplicativeAlgEquiv (f : UCB (Multiplicative A)) :
     ‖(multiplicativeAlgEquiv A f : A →ᵇ ℝ)‖ = ‖(f : Multiplicative A →ᵇ ℝ)‖ :=
   norm_multiplicativeAlgEquiv f
-
 /-- `(multiplicativeAlgEquiv _).symm` preserves the supremum norm. -/
 theorem norm_multiplicativeAlgEquiv_symm (f : AddUCB A) :
     ‖(multiplicativeAlgEquiv A).symm f‖ = ‖f‖ := by
   simpa using (norm_multiplicativeAlgEquiv ((multiplicativeAlgEquiv A).symm f)).symm
-
 @[simp] theorem norm_coe_multiplicativeAlgEquiv_symm (f : AddUCB A) :
     ‖((multiplicativeAlgEquiv A).symm f : Multiplicative A →ᵇ ℝ)‖ = ‖(f : A →ᵇ ℝ)‖ :=
   norm_multiplicativeAlgEquiv_symm f
 
 variable (A) in
 /-- `UCB (Multiplicative A)` is canonically isometric as a real Banach space to `AddUCB A`. -/
-def multiplicativeLinearIsometryEquiv : UCB (Multiplicative A) ≃ₗᵢ[ℝ] AddUCB A where
-  toLinearEquiv := (multiplicativeAlgEquiv A).toLinearEquiv
-  norm_map' := norm_multiplicativeAlgEquiv
+def multiplicativeLinearIsometryEquiv : UCB (Multiplicative A) ≃ₗᵢ[ℝ] AddUCB A :=
+  ⟨(multiplicativeAlgEquiv A).toLinearEquiv, norm_multiplicativeAlgEquiv⟩
 
 @[simp] theorem multiplicativeLinearIsometryEquiv_apply (f : UCB (Multiplicative A)) :
     multiplicativeLinearIsometryEquiv A f = multiplicativeAlgEquiv A f := (rfl)
-
 @[simp] theorem multiplicativeLinearIsometryEquiv_symm_apply (f : AddUCB A) :
     (multiplicativeLinearIsometryEquiv A).symm f = (multiplicativeAlgEquiv A).symm f := (rfl)
 
 @[simp] theorem multiplicativeAlgEquiv_leftTranslation (a : A) (f : UCB (Multiplicative A)) :
     multiplicativeAlgEquiv A (leftTranslation (ofAdd a) f) =
       AddUCB.leftTranslation a (multiplicativeAlgEquiv A f) := by ext; simp
-
 @[simp] theorem multiplicativeAlgEquiv_symm_leftTranslation (a : A) (f : AddUCB A) :
     (multiplicativeAlgEquiv A).symm (AddUCB.leftTranslation a f) =
       leftTranslation (ofAdd a) ((multiplicativeAlgEquiv A).symm f) := by ext; simp
@@ -129,19 +115,15 @@ def multiplicativeLinearIsometryEquiv : UCB (Multiplicative A) ≃ₗᵢ[ℝ] Ad
 @[simp] theorem multiplicativeAlgEquiv_rightTranslation (a : A) (f : UCB (Multiplicative A)) :
     multiplicativeAlgEquiv A (rightTranslation (ofAdd a) f) =
       AddUCB.rightTranslation a (multiplicativeAlgEquiv A f) := by ext; simp
-
 @[simp] theorem multiplicativeAlgEquiv_symm_rightTranslation (a : A) (f : AddUCB A) :
     (multiplicativeAlgEquiv A).symm (AddUCB.rightTranslation a f) =
       rightTranslation (ofAdd a) ((multiplicativeAlgEquiv A).symm f) := by ext; simp
 
-/-- `multiplicativeAlgEquiv` intertwines pullback along `φ.toMultiplicative` with pullback along
-`φ`. -/
+/-- `multiplicativeAlgEquiv` intertwines pullback along `φ.toMultiplicative` and `φ`. -/
 theorem multiplicativeAlgEquiv_compRightAlgHom (φ : A →ₜ+ B) (f : UCB (Multiplicative B)) :
     multiplicativeAlgEquiv A (compRightAlgHom φ.toMultiplicative f) =
       AddUCB.compRightAlgHom φ (multiplicativeAlgEquiv B f) := by ext; simp
-
-/-- `(multiplicativeAlgEquiv _).symm` intertwines pullback along `φ` with pullback along
-`φ.toMultiplicative`. -/
+/-- `(multiplicativeAlgEquiv _).symm` intertwines pullback along `φ` and `φ.toMultiplicative`. -/
 theorem multiplicativeAlgEquiv_symm_compRightAlgHom (φ : A →ₜ+ B) (f : AddUCB B) :
     (multiplicativeAlgEquiv A).symm (AddUCB.compRightAlgHom φ f) =
       compRightAlgHom φ.toMultiplicative ((multiplicativeAlgEquiv B).symm f) := by ext; simp
@@ -155,21 +137,19 @@ variable {𝕜 G H : Type*} [NormedField 𝕜]
   [Group G] [TopologicalSpace G] [IsTopologicalGroup G]
   [Group H] [TopologicalSpace H] [IsTopologicalGroup H]
 
-/-- Precomposing a function in `addUcbSubalgebra 𝕜 (Additive G)` with `ofMul` yields a function in
-`ucbSubalgebra 𝕜 G`. -/
+/-- Precomposing in `addUcbSubalgebra 𝕜 (Additive G)` with `ofMul` lies in `ucbSubalgebra 𝕜 G`. -/
 theorem compContinuous_ofMul_mem_ucbSubalgebra {f : Additive G →ᵇ 𝕜}
     (hf : f ∈ addUcbSubalgebra 𝕜 (Additive G)) :
     f.compContinuous ⟨ofMul, continuous_ofMul⟩ ∈ ucbSubalgebra 𝕜 G := by
   rw [mem_addUcbSubalgebra_iff] at hf; rw [mem_ucbSubalgebra_iff]
-  intro ε hε; rw [show 𝓝 (1 : G) = map toMul (𝓝 0) from nhds_toMul 0, eventually_map]
+  intro ε hε; rw [← toMul_zero, nhds_toMul, eventually_map]
   filter_upwards [hf ε hε] with u hu x; simpa using hu (ofMul x)
 
-/-- Precomposing a function in `ucbSubalgebra 𝕜 G` with `toMul` yields a function in
-`addUcbSubalgebra 𝕜 (Additive G)`. -/
+/-- Precomposing in `ucbSubalgebra 𝕜 G` with `toMul` lies in `addUcbSubalgebra 𝕜 (Additive G)`. -/
 theorem compContinuous_toMul_mem_addUcbSubalgebra {f : G →ᵇ 𝕜} (hf : f ∈ ucbSubalgebra 𝕜 G) :
     f.compContinuous ⟨toMul, continuous_toMul⟩ ∈ addUcbSubalgebra 𝕜 (Additive G) := by
   rw [mem_ucbSubalgebra_iff] at hf; rw [mem_addUcbSubalgebra_iff]
-  intro ε hε; rw [show 𝓝 (0 : Additive G) = map ofMul (𝓝 1) from nhds_ofMul 1, eventually_map]
+  intro ε hε; rw [← ofMul_one, nhds_ofMul, eventually_map]
   filter_upwards [hf ε hε] with u hu x; simpa using hu x.toMul
 
 namespace AddUCB
@@ -186,53 +166,40 @@ def additiveAlgEquiv : AddUCB (Additive G) ≃ₐ[ℝ] UCB G where
 
 @[simp] theorem additiveAlgEquiv_apply (f : AddUCB (Additive G)) (x : G) :
     (additiveAlgEquiv G f : G →ᵇ ℝ) x = (f : Additive G →ᵇ ℝ) (ofMul x) := (rfl)
-
 @[simp] theorem additiveAlgEquiv_symm_apply (f : UCB G) (x : Additive G) :
     ((additiveAlgEquiv G).symm f : Additive G →ᵇ ℝ) x = (f : G →ᵇ ℝ) x.toMul := (rfl)
 
 @[simp] theorem additiveAlgEquiv_le_iff {f g : AddUCB (Additive G)} :
-    additiveAlgEquiv G f ≤ additiveAlgEquiv G g ↔ f ≤ g :=
-  ⟨fun h => le_def.2 fun x => UCB.le_def.1 h x.toMul,
-    fun h => UCB.le_def.2 fun x => le_def.1 h (ofMul x)⟩
-
+    additiveAlgEquiv G f ≤ additiveAlgEquiv G g ↔ f ≤ g := Iff.rfl
 @[simp] theorem additiveAlgEquiv_symm_le_iff {f g : UCB G} :
-    (additiveAlgEquiv G).symm f ≤ (additiveAlgEquiv G).symm g ↔ f ≤ g :=
-  ⟨fun h => UCB.le_def.2 fun x => le_def.1 h (ofMul x),
-    fun h => le_def.2 fun x => UCB.le_def.1 h x.toMul⟩
+    (additiveAlgEquiv G).symm f ≤ (additiveAlgEquiv G).symm g ↔ f ≤ g := Iff.rfl
 
 /-- `additiveAlgEquiv` preserves the supremum norm. -/
 theorem norm_additiveAlgEquiv (f : AddUCB (Additive G)) : ‖additiveAlgEquiv G f‖ = ‖f‖ :=
   le_antisymm ((f : Additive G →ᵇ ℝ).norm_compContinuous_le _)
     ((additiveAlgEquiv G f : G →ᵇ ℝ).norm_compContinuous_le ⟨toMul, continuous_toMul⟩)
-
 @[simp] theorem norm_coe_additiveAlgEquiv (f : AddUCB (Additive G)) :
-    ‖(additiveAlgEquiv G f : G →ᵇ ℝ)‖ = ‖(f : Additive G →ᵇ ℝ)‖ :=
-  norm_additiveAlgEquiv f
-
+    ‖(additiveAlgEquiv G f : G →ᵇ ℝ)‖ = ‖(f : Additive G →ᵇ ℝ)‖ := norm_additiveAlgEquiv f
 /-- `(additiveAlgEquiv _).symm` preserves the supremum norm. -/
 theorem norm_additiveAlgEquiv_symm (f : UCB G) : ‖(additiveAlgEquiv G).symm f‖ = ‖f‖ := by
   simpa using (norm_additiveAlgEquiv ((additiveAlgEquiv G).symm f)).symm
-
 @[simp] theorem norm_coe_additiveAlgEquiv_symm (f : UCB G) :
     ‖((additiveAlgEquiv G).symm f : Additive G →ᵇ ℝ)‖ = ‖(f : G →ᵇ ℝ)‖ :=
   norm_additiveAlgEquiv_symm f
 
 variable (G) in
 /-- `AddUCB (Additive G)` is canonically isometric as a real Banach space to `UCB G`. -/
-def additiveLinearIsometryEquiv : AddUCB (Additive G) ≃ₗᵢ[ℝ] UCB G where
-  toLinearEquiv := (additiveAlgEquiv G).toLinearEquiv
-  norm_map' := norm_additiveAlgEquiv
+def additiveLinearIsometryEquiv : AddUCB (Additive G) ≃ₗᵢ[ℝ] UCB G :=
+  ⟨(additiveAlgEquiv G).toLinearEquiv, norm_additiveAlgEquiv⟩
 
 @[simp] theorem additiveLinearIsometryEquiv_apply (f : AddUCB (Additive G)) :
     additiveLinearIsometryEquiv G f = additiveAlgEquiv G f := (rfl)
-
 @[simp] theorem additiveLinearIsometryEquiv_symm_apply (f : UCB G) :
     (additiveLinearIsometryEquiv G).symm f = (additiveAlgEquiv G).symm f := (rfl)
 
 @[simp] theorem additiveAlgEquiv_leftTranslation (g : G) (f : AddUCB (Additive G)) :
     additiveAlgEquiv G (leftTranslation (ofMul g) f) =
       UCB.leftTranslation g (additiveAlgEquiv G f) := by ext; simp
-
 @[simp] theorem additiveAlgEquiv_symm_leftTranslation (g : G) (f : UCB G) :
     (additiveAlgEquiv G).symm (UCB.leftTranslation g f) =
       leftTranslation (ofMul g) ((additiveAlgEquiv G).symm f) := by ext; simp
@@ -240,18 +207,15 @@ def additiveLinearIsometryEquiv : AddUCB (Additive G) ≃ₗᵢ[ℝ] UCB G where
 @[simp] theorem additiveAlgEquiv_rightTranslation (g : G) (f : AddUCB (Additive G)) :
     additiveAlgEquiv G (rightTranslation (ofMul g) f) =
       UCB.rightTranslation g (additiveAlgEquiv G f) := by ext; simp
-
 @[simp] theorem additiveAlgEquiv_symm_rightTranslation (g : G) (f : UCB G) :
     (additiveAlgEquiv G).symm (UCB.rightTranslation g f) =
       rightTranslation (ofMul g) ((additiveAlgEquiv G).symm f) := by ext; simp
 
-/-- `additiveAlgEquiv` intertwines pullback along `φ.toAdditive` with pullback along `φ`. -/
+/-- `additiveAlgEquiv` intertwines pullback along `φ.toAdditive` and `φ`. -/
 theorem additiveAlgEquiv_compRightAlgHom (φ : G →ₜ* H) (f : AddUCB (Additive H)) :
     additiveAlgEquiv G (compRightAlgHom φ.toAdditive f) =
       UCB.compRightAlgHom φ (additiveAlgEquiv H f) := by ext; simp
-
-/-- `(additiveAlgEquiv _).symm` intertwines pullback along `φ` with pullback along
-`φ.toAdditive`. -/
+/-- `(additiveAlgEquiv _).symm` intertwines pullback along `φ` and `φ.toAdditive`. -/
 theorem additiveAlgEquiv_symm_compRightAlgHom (φ : G →ₜ* H) (f : UCB H) :
     (additiveAlgEquiv G).symm (UCB.compRightAlgHom φ f) =
       compRightAlgHom φ.toAdditive ((additiveAlgEquiv H).symm f) := by ext; simp
