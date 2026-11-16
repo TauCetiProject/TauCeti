@@ -6,17 +6,18 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.AlgebraicGeometry.Cohomology.Module.Base
-public import TauCeti.AlgebraicGeometry.Modules.Biprod
 public import TauCeti.AlgebraicGeometry.Modules.Tensor.Product
 public import TauCeti.AlgebraicGeometry.ProjectiveSpectrum.ProjectiveOver
 public import TauCeti.AlgebraicGeometry.ProjectiveSpectrum.TwistingSheaf.Basic
+import Mathlib.Algebra.Module.Equiv.Basic
+import Mathlib.RingTheory.Finiteness.Cardinality
 import TauCeti.Algebra.Homology.ShortComplex.ShortExact
 import TauCeti.AlgebraicGeometry.Cohomology.Biproduct
 import TauCeti.AlgebraicGeometry.Cohomology.ClosedImmersion.Linear
 import TauCeti.AlgebraicGeometry.Cohomology.LongExactSequence
 import TauCeti.AlgebraicGeometry.Cohomology.ProjectiveSpace.HigherCohomology
 import TauCeti.AlgebraicGeometry.Cohomology.ProjectiveSpace.Vanishing
-import TauCeti.AlgebraicGeometry.LineBundle.GlobalGeneration.Ample
+import TauCeti.AlgebraicGeometry.Modules.Biprod
 import TauCeti.AlgebraicGeometry.Modules.FinitePresentation.Abelian
 import TauCeti.AlgebraicGeometry.Modules.Quasicoherent.Pushforward.Finite
 import TauCeti.AlgebraicGeometry.ProjectiveSpectrum.ClosedImmersion
@@ -25,7 +26,6 @@ import TauCeti.AlgebraicGeometry.ProjectiveSpectrum.TwistingSheaf.Pullback
 import TauCeti.AlgebraicGeometry.ProjectiveSpectrum.TwistingSheaf.TensorProduct
 import TauCeti.AlgebraicGeometry.VectorBundle.Dual.Basic
 import TauCeti.AlgebraicGeometry.VectorBundle.ProjectionFormula
-import TauCeti.LinearAlgebra.SymmetricAlgebra.GradedMap
 
 /-!
 # Serre's finiteness and vanishing theorems on projective schemes
@@ -51,9 +51,6 @@ The argument proceeds in three steps:
 
 ## Main results
 
-* `AlgebraicGeometry.Proj.exists_epi_biproduct_twistingSheaf`: every quasi-coherent module of finite
-  type on a quasi-compact, quasi-separated `Proj A` generated in degree one is a quotient of a
-  finite direct sum of `𝒪(-n)` for `n ≫ 0`.
 * `AlgebraicGeometry.Scheme.Modules.finite_cohomology_of_isProjectiveOver`: **Serre's finiteness
   theorem** — for a projective scheme `X` over a Noetherian ring `R` and a quasi-coherent
   `𝒪_X`-module `F` of finite type, `Hᵠ(X, F)` is a finitely generated `R`-module for every `q`.
@@ -66,9 +63,12 @@ The argument proceeds in three steps:
 
 ## References
 
-* R. Hartshorne, *Algebraic Geometry*, GTM 52, Springer, 1977, Theorem III.5.2.
-* [The Stacks Project, Tag 01Q3](https://stacks.math.columbia.edu/tag/01Q3) and
-  [Tag 02O5](https://stacks.math.columbia.edu/tag/02O5) (Serre finiteness and vanishing).
+* R. Hartshorne, *Algebraic Geometry*, GTM 52, Springer, 1977, Theorem III.5.2 (Serre finiteness
+  and vanishing).
+* [The Stacks Project, Tag 01Q3](https://stacks.math.columbia.edu/tag/01Q3) (global generation
+  after twisting by an ample invertible sheaf) and
+  [Tag 02O6](https://stacks.math.columbia.edu/tag/02O6) (finiteness of cohomology of coherent
+  sheaves on proper schemes).
 -/
 
 public section
@@ -80,104 +80,53 @@ universe u
 
 noncomputable section
 
-namespace AlgebraicGeometry.Proj
-
-/-- **Finite negative-twist presentation on `Proj`.** On a quasi-compact, quasi-separated `Proj A`
-covered by degree-one standard opens, every quasi-coherent module `F` of finite type admits an
-epimorphism `(⨁ fun _ : Fin k ↦ 𝒪(-n)) ⟶ F` for all sufficiently large `n : ℕ`. -/
-theorem exists_epi_biproduct_twistingSheaf
-    {A : Type u} {σ : Type*} [CommRing A] [SetLike σ A] [AddSubgroupClass σ A]
-    {𝒜 : ℕ → σ} [GradedRing 𝒜] [CompactSpace (Proj 𝒜)] [QuasiSeparatedSpace (Proj 𝒜)]
-    {ι : Type u} (f : ι → A) (hf : ∀ i, f i ∈ 𝒜 1)
-    (hcover : ⨆ i, basicOpen 𝒜 (f i) = ⊤)
-    (F : (Proj 𝒜).Modules) [F.IsQuasicoherent] [F.IsFiniteType] :
-    ∃ n₀ : ℕ, ∀ n ≥ n₀,
-      ∃ (k : ℕ) (p : (⨁ fun _ : Fin k ↦ twistingSheaf 𝒜 (-(n : ℤ))) ⟶ F), Epi p := by
-  let L : InvertibleSheaf (Proj 𝒜) :=
-    ⟨twistingSheaf 𝒜 1, isInvertible_twistingSheaf_of_iSup_eq_top f hf hcover 1⟩
-  have hL : (LineBundleClass.mk L).IsAmple :=
-    isAmple_twistingSheaf f hf hcover Nat.one_pos
-  obtain ⟨n₀, hn₀⟩ := F.exists_epi_biproduct_of_isAmple L hL
-  refine ⟨n₀, fun n hn ↦ ?_⟩
-  let K : InvertibleSheaf (Proj 𝒜) :=
-    ⟨twistingSheaf 𝒜 (-(n : ℤ)), isInvertible_twistingSheaf_of_iSup_eq_top f hf hcover _⟩
-  have hK : LineBundleClass.mk K = (LineBundleClass.mk L ^ n)⁻¹ := by
-    rw [lineBundleClass_twistingSheaf_eq_zpow f hf hcover (-(n : ℤ)), zpow_neg, zpow_natCast]
-  exact hn₀ n hn K hK
-
-end AlgebraicGeometry.Proj
-
 namespace TauCeti.AlgebraicGeometry.Serre
 
 open TauCeti.SymmetricAlgebra
 
-/-- Every finite `R`-module is a quotient of `Fin (n + 2) → R` for some `n : ℕ`. The shift by `2`
-ensures the indexing type is nontrivial so that `Proj (Sym_R (Fin (n + 2) → R))` is positive-
-dimensional projective space. -/
-private lemma exists_surjective_fin_add_two (R M : Type u) [CommRing R] [AddCommMonoid M]
-    [Module R M] [Module.Finite R M] :
-    ∃ (n : ℕ) (g : (Fin (n + 2) → R) →ₗ[R] M), Function.Surjective g := by
-  obtain ⟨s, hs⟩ := ‹Module.Finite R M›.fg_top
-  let n : ℕ := Fintype.card s
-  let e : Fin n ≃ s := (Fintype.equivFin s).symm
-  let proj : (Fin (n + 2) → R) →ₗ[R] (Fin n → R) :=
-    { toFun := fun v i ↦ v (Fin.castLE (Nat.le_add_right n 2) i)
-      map_add' := fun _ _ ↦ rfl
-      map_smul' := fun _ _ ↦ rfl }
-  let g₀ : (Fin n → R) →ₗ[R] M := Fintype.linearCombination R fun i : Fin n ↦ (e i : M)
-  refine ⟨n, g₀.comp proj, ?_⟩
-  have hg₀ : Function.Surjective g₀ := by
-    rw [← LinearMap.range_eq_top, Fintype.range_linearCombination]
-    have hrange : Set.range (fun i : Fin n ↦ (e i : M)) = (s : Set M) := by
-      ext x
-      simp only [Set.mem_range, Finset.mem_coe]
-      exact ⟨fun ⟨i, hi⟩ ↦ hi ▸ (e i).2, fun hx ↦ ⟨e.symm ⟨x, hx⟩, by simp⟩⟩
-    rw [hrange, hs]
-  have hproj : Function.Surjective proj := by
-    intro w
-    refine ⟨fun j ↦ if h : j.1 < n then w ⟨j.1, h⟩ else 0, ?_⟩
-    ext i
-    simp [proj, i.2]
-  exact hg₀.comp hproj
+/-- On `Proj (Sym_R M)` for a finite module `M` over a Noetherian ring `R`, every quasi-coherent
+module `G` of finite type fits into a short exact sequence
+`0 ⟶ K ⟶ ⨁_{Fin k} 𝒪(-m) ⟶ G ⟶ 0` whose kernel `K` is finitely presented. -/
+private lemma exists_kernel_shortExact_biproduct_twistingSheaf
+    {R M : Type u} [CommRing R] [IsNoetherianRing R] [AddCommMonoid M] [Module R M]
+    [Module.Finite R M] (G : (Proj (homogeneousSubmodule R M)).Modules)
+    [G.IsQuasicoherent] [G.IsFiniteType] :
+    ∃ (m k : ℕ)
+      (p : (⨁ fun _ : Fin k ↦ Proj.twistingSheaf (homogeneousSubmodule R M) (-(m : ℤ))) ⟶ G),
+      (kernel p).IsFinitePresentation ∧
+        (ShortComplex.mk (kernel.ι p) p (kernel.condition p)).ShortExact := by
+  have : QuasiSeparatedSpace (Proj (homogeneousSubmodule R M)) :=
+    quasiSeparatedSpace_of_quasiSeparated (projToSpec R M)
+  obtain ⟨m, hm⟩ := Proj.exists_epi_biproduct_twistingSheaf (_root_.SymmetricAlgebra.ι R M)
+    (ι_mem_homogeneousSubmodule R M) (iSup_basicOpen_ι_eq_top R M id (by simp)) G
+  obtain ⟨k, p, hp⟩ := hm m le_rfl
+  have : (Proj.twistingSheaf (homogeneousSubmodule R M) (-(m : ℤ))).IsFinitePresentation :=
+    TauCeti.SheafOfModules.IsInvertible.isFinitePresentation
+      (R := (Proj (homogeneousSubmodule R M)).ringCatSheaf) (M := _)
+  exact ⟨m, k, p, Scheme.Modules.isFinitePresentation_kernel p, TauCeti.kernelSequence_shortExact p⟩
 
-/-- A surjective linear map `g : M' →ₗ[R] M` induces a surjective graded homomorphism on symmetric
-algebras. -/
-private lemma surjective_gradedMap {R M' M : Type u} [CommRing R] [AddCommMonoid M']
-    [Module R M'] [AddCommMonoid M] [Module R M] {g : M' →ₗ[R] M} (hg : Function.Surjective g) :
-    Function.Surjective (SymmetricAlgebra.gradedMap R g) := by
-  simpa only [Function.Surjective, SymmetricAlgebra.gradedMap_apply] using
-    SymmetricAlgebra.map_surjective R g hg
-
-/-- The morphism on `Proj` induced by a surjective linear map `g : M' →ₗ[R] M` commutes with the
-structure morphisms to `Spec R`. -/
-private lemma projMap_gradedMap_isOver {R M' M : Type u} [CommRing R] [AddCommMonoid M']
-    [Module R M'] [AddCommMonoid M] [Module R M] {g : M' →ₗ[R] M} (hg : Function.Surjective g) :
-    (Proj.map (SymmetricAlgebra.gradedMap R g)
-      (HomogeneousIdeal.irrelevant_le_map_of_surjective _
-        (surjective_gradedMap hg))).IsOver (Spec (.of R)) where
-  comp_over := by
-    rw [over_eq_projToSpec, over_eq_projToSpec, projToSpec_def, projToSpec_def,
-      Proj.map_toSpecZero_assoc, ← Spec.map_comp, ← CommRingCat.ofHom_comp]
-    congr 2
-    ext r
-    simp [GradedRingHom.gradedZeroRingHom]
-
-/-- Monoidal tensor product of two twisting sheaves on `Proj (Sym_R M)` is isomorphic to the sum
-twist. -/
-private def twistingSheafTensorIso {R M : Type u} [CommRing R] [AddCommMonoid M] [Module R M]
-    (m n : ℤ) :
-    Proj.twistingSheaf (homogeneousSubmodule R M) m ⊗
-      Proj.twistingSheaf (homogeneousSubmodule R M) n ≅
-      Proj.twistingSheaf (homogeneousSubmodule R M) (m + n) :=
-  (InvertibleSheaf.tensorProductObjIso
-    ⟨Proj.twistingSheaf (homogeneousSubmodule R M) m, inferInstance⟩
-    ⟨Proj.twistingSheaf (homogeneousSubmodule R M) n, inferInstance⟩).symm ≪≫
-    eqToIso (InvertibleSheaf.tensorProduct_obj
-      ⟨Proj.twistingSheaf (homogeneousSubmodule R M) m, inferInstance⟩
-      ⟨Proj.twistingSheaf (homogeneousSubmodule R M) n, inferInstance⟩) ≪≫
-    Scheme.Modules.isoOfSheafIso (Proj (homogeneousSubmodule R M))
-      (Proj.twistingSheaf.tensorProductIso (_root_.SymmetricAlgebra.ι R M)
-        (ι_mem_homogeneousSubmodule R M) (iSup_basicOpen_ι_eq_top R M id (by simp)) m n)
+/-- Every `Proj (Sym_R M)` for a finite `R`-module `M` embeds as a closed subscheme over `Spec R`
+into positive-dimensional projective space `Proj (Sym_R (Fin (d + 2) → R))` so that twisting
+sheaves pull back to twisting sheaves. The shift by `2` ensures the indexing type is nontrivial. -/
+private lemma exists_closedImmersion_proj_fin_add_two (R M : Type u) [CommRing R]
+    [AddCommMonoid M] [Module R M] [Module.Finite R M] :
+    ∃ (d : ℕ) (j : Proj (homogeneousSubmodule R M) ⟶
+        Proj (homogeneousSubmodule R (Fin (d + 2) → R))),
+      IsClosedImmersion j ∧ j.IsOver (Spec (.of R)) ∧
+        ∀ n : ℤ, Nonempty ((Scheme.Modules.pullback j).obj
+          (Proj.twistingSheaf (homogeneousSubmodule R (Fin (d + 2) → R)) n) ≅
+          Proj.twistingSheaf (homogeneousSubmodule R M) n) := by
+  obtain ⟨d, g₀, hg₀⟩ := Module.Finite.exists_fin' R M
+  let proj : (Fin (d + 2) → R) →ₗ[R] (Fin d → R) :=
+    LinearMap.funLeft R R (Fin.castLE (Nat.le_add_right d 2))
+  have hproj : Function.Surjective proj :=
+    LinearMap.funLeft_surjective_of_injective R R (Fin.castLE (Nat.le_add_right d 2))
+      (Fin.castLE_injective (Nat.le_add_right d 2))
+  let φ := SymmetricAlgebra.gradedMap R (g₀.comp proj)
+  have hφ_surj : Function.Surjective φ := SymmetricAlgebra.gradedMap_surjective R (hg₀.comp hproj)
+  let hφ := HomogeneousIdeal.irrelevant_le_map_of_surjective φ hφ_surj
+  exact ⟨d, Proj.map φ hφ, Proj.isClosedImmersion_map φ hφ hφ_surj, inferInstance,
+    fun n ↦ ⟨asIso (Proj.pullbackTwistingSheafMap φ hφ n)⟩⟩
 
 /-- Serre's finiteness theorem on positive-dimensional projective space `Proj (Sym_R M)` over a
 Noetherian ring `R`, proved by descending induction on the cohomological degree. -/
@@ -188,8 +137,6 @@ private theorem finite_cohomology_proj_of_basis {R M : Type u} [CommRing R] [IsN
     Module.Finite R (Cohomology F q) := by
   have := Fintype.ofFinite κ
   have : Module.Finite R M := Module.Finite.of_basis b
-  have : QuasiSeparatedSpace (Proj (homogeneousSubmodule R M)) :=
-    quasiSeparatedSpace_of_quasiSeparated (projToSpec R M)
   -- Descending induction on `d` with `card κ ≤ q + d`.
   suffices h : ∀ (d : ℕ) (G : (Proj (homogeneousSubmodule R M)).Modules)
       [G.IsQuasicoherent] [G.IsFiniteType] (r : ℕ),
@@ -203,29 +150,18 @@ private theorem finite_cohomology_proj_of_basis {R M : Type u} [CommRing R] [IsN
     infer_instance
   | succ d ih =>
     intro G _ _ r hr
-    obtain ⟨n₀, hn₀⟩ := Proj.exists_epi_biproduct_twistingSheaf (_root_.SymmetricAlgebra.ι R M)
-      (ι_mem_homogeneousSubmodule R M) (iSup_basicOpen_ι_eq_top R M id (by simp)) G
-    obtain ⟨k, p, hp⟩ := hn₀ n₀ le_rfl
+    obtain ⟨m, k, p, _, hS⟩ := exists_kernel_shortExact_biproduct_twistingSheaf G
     let T : (Proj (homogeneousSubmodule R M)).Modules :=
-      Proj.twistingSheaf (homogeneousSubmodule R M) (-(n₀ : ℤ))
-    have : T.IsFinitePresentation :=
-      TauCeti.SheafOfModules.IsInvertible.isFinitePresentation
-        (R := (Proj (homogeneousSubmodule R M)).ringCatSheaf) (M := T)
-    let E : (Proj (homogeneousSubmodule R M)).Modules := ⨁ fun _ : Fin k ↦ T
-    have : E.IsFinitePresentation := inferInstance
-    have : (kernel p).IsFinitePresentation := Scheme.Modules.isFinitePresentation_kernel p
-    let S : ShortComplex (Proj (homogeneousSubmodule R M)).Modules :=
-      ShortComplex.mk (kernel.ι p) p (kernel.condition p)
-    have hS : S.ShortExact := TauCeti.kernelSequence_shortExact p
-    have hE : Module.Finite R (Cohomology E r) := by
+      Proj.twistingSheaf (homogeneousSubmodule R M) (-(m : ℤ))
+    have hE : Module.Finite R (Cohomology (⨁ fun _ : Fin k ↦ T) r) := by
       have (_ : Fin k) : Module.Finite R (Cohomology T r) :=
-        b.finite_cohomology_twistingSheaf (-(n₀ : ℤ)) r
+        b.finite_cohomology_twistingSheaf (-(m : ℤ)) r
       exact Module.Finite.equiv
         (Scheme.Modules.cohomologyBiproductLinearEquiv R (fun _ : Fin k ↦ T) r).symm
     have hK : Module.Finite R (Cohomology (kernel p) (r + 1)) :=
       ih (kernel p) (r + 1) (by omega)
     let δ := cohomologyδBaseLinear R (Proj (homogeneousSubmodule R M)) hS r (r + 1) rfl
-    have hex : Function.Exact (cohomologyMapBaseLinear R (Proj (homogeneousSubmodule R M)) S.g r)
+    have hex : Function.Exact (cohomologyMapBaseLinear R (Proj (homogeneousSubmodule R M)) p r)
         δ :=
       exact_cohomologyMapBaseLinear_cohomologyδBaseLinear R (Proj (homogeneousSubmodule R M)) hS r
     have hNoeth : IsNoetherian R (Cohomology (kernel p) (r + 1)) :=
@@ -244,8 +180,6 @@ private theorem exists_subsingleton_cohomology_tensor_twistingSheaf_of_basis
       Subsingleton (Cohomology (Proj.twistingSheaf (homogeneousSubmodule R M) n ⊗ F) q) := by
   have := Fintype.ofFinite κ
   have : Module.Finite R M := Module.Finite.of_basis b
-  have : QuasiSeparatedSpace (Proj (homogeneousSubmodule R M)) :=
-    quasiSeparatedSpace_of_quasiSeparated (projToSpec R M)
   have : MonoidalPreadditive (Proj (homogeneousSubmodule R M)).Modules :=
     TauCeti.SheafOfModules.monoidalPreadditive (Proj (homogeneousSubmodule R M)).sheaf
   -- Per-degree vanishing by descending induction on `d` with `card κ ≤ r + d`.
@@ -263,20 +197,9 @@ private theorem exists_subsingleton_cohomology_tensor_twistingSheaf_of_basis
       exact b.subsingleton_cohomology_proj_of_card_le _ r (by omega)
     | succ d ih =>
       intro G _ _ r hr hrcard
-      obtain ⟨m, hm⟩ := Proj.exists_epi_biproduct_twistingSheaf (_root_.SymmetricAlgebra.ι R M)
-        (ι_mem_homogeneousSubmodule R M) (iSup_basicOpen_ι_eq_top R M id (by simp)) G
-      obtain ⟨k, p, hp⟩ := hm m le_rfl
+      obtain ⟨m, k, p, _, hS⟩ := exists_kernel_shortExact_biproduct_twistingSheaf G
       let T : (Proj (homogeneousSubmodule R M)).Modules :=
         Proj.twistingSheaf (homogeneousSubmodule R M) (-(m : ℤ))
-      have : T.IsFinitePresentation :=
-        TauCeti.SheafOfModules.IsInvertible.isFinitePresentation
-          (R := (Proj (homogeneousSubmodule R M)).ringCatSheaf) (M := T)
-      let E : (Proj (homogeneousSubmodule R M)).Modules := ⨁ fun _ : Fin k ↦ T
-      have : E.IsFinitePresentation := inferInstance
-      have : (kernel p).IsFinitePresentation := Scheme.Modules.isFinitePresentation_kernel p
-      let S : ShortComplex (Proj (homogeneousSubmodule R M)).Modules :=
-        ShortComplex.mk (kernel.ι p) p (kernel.condition p)
-      have hS : S.ShortExact := TauCeti.kernelSequence_shortExact p
       obtain ⟨n₁, hn₁⟩ := ih (kernel p) (r + 1) (Nat.succ_pos r) (by omega)
       refine ⟨max n₁ ((m : ℤ) + 1 - Fintype.card κ), fun n hn ↦ ?_⟩
       let L : (Proj (homogeneousSubmodule R M)).Modules :=
@@ -287,14 +210,18 @@ private theorem exists_subsingleton_cohomology_tensor_twistingSheaf_of_basis
       have : L.IsFinitePresentation :=
         TauCeti.SheafOfModules.IsInvertible.isFinitePresentation
           (R := (Proj (homogeneousSubmodule R M)).ringCatSheaf) (M := L)
-      have hSn : (S.map (tensorLeft L)).ShortExact :=
+      have hSn : ((ShortComplex.mk (kernel.ι p) p (kernel.condition p)).map
+          (tensorLeft L)).ShortExact :=
         Scheme.Modules.shortExact_map_tensorLeft L hS
       -- `L ⊗ E ≅ ⨁_{Fin k} 𝒪(n - m)` has vanishing `H^r` since `n - m > -card κ`.
-      have hE : Subsingleton (Cohomology (L ⊗ E) r) := by
-        let eE : L ⊗ E ≅ ⨁ fun _ : Fin k ↦
+      have hE : Subsingleton (Cohomology (L ⊗ (⨁ fun _ : Fin k ↦ T)) r) := by
+        let eE : L ⊗ (⨁ fun _ : Fin k ↦ T) ≅ ⨁ fun _ : Fin k ↦
             Proj.twistingSheaf (homogeneousSubmodule R M) (n + -(m : ℤ)) :=
           leftDistributor L (fun _ : Fin k ↦ T) ≪≫
-            biproduct.mapIso fun _ ↦ twistingSheafTensorIso n (-(m : ℤ))
+            biproduct.mapIso fun _ ↦
+              Proj.twistingSheaf.tensorIso (_root_.SymmetricAlgebra.ι R M)
+                (ι_mem_homogeneousSubmodule R M) (iSup_basicOpen_ι_eq_top R M id (by simp))
+                n (-(m : ℤ))
         have hsum : ∀ _ : Fin k,
             Subsingleton (Cohomology
               (Proj.twistingSheaf (homogeneousSubmodule R M) (n + -(m : ℤ))) r) := fun _ ↦
@@ -342,13 +269,7 @@ theorem finite_cohomology_of_isProjectiveOver (R : Type u) [CommRing R] [IsNoeth
     Module.Finite R (Cohomology F q) := by
   obtain ⟨M, _, _, _, i₀, hi₀, hi₀R⟩ :=
     Scheme.IsProjectiveOver.exists_isClosedImmersion (R := R) (X := X)
-  obtain ⟨d, g, hg⟩ := exists_surjective_fin_add_two R M
-  let φ := SymmetricAlgebra.gradedMap R g
-  let hφ := HomogeneousIdeal.irrelevant_le_map_of_surjective φ (surjective_gradedMap hg)
-  let j : Proj (homogeneousSubmodule R M) ⟶
-      Proj (homogeneousSubmodule R (Fin (d + 2) → R)) := Proj.map φ hφ
-  have : IsClosedImmersion j := Proj.isClosedImmersion_map φ hφ (surjective_gradedMap hg)
-  have : j.IsOver (Spec (.of R)) := projMap_gradedMap_isOver hg
+  obtain ⟨d, j, _, _, -⟩ := exists_closedImmersion_proj_fin_add_two R M
   let i : X ⟶ Proj (homogeneousSubmodule R (Fin (d + 2) → R)) := i₀ ≫ j
   have : ((pushforward i).obj F).IsFinitePresentation :=
     isFinitePresentation_pushforward_of_isFinite i F
@@ -367,12 +288,7 @@ theorem exists_subsingleton_cohomology_pullback_twistingSheaf_tensor
     ∃ n₀ : ℤ, ∀ n ≥ n₀, ∀ q > 0,
       Subsingleton (Cohomology
         ((pullback i).obj (Proj.twistingSheaf (homogeneousSubmodule R M) n) ⊗ F) q) := by
-  obtain ⟨d, g, hg⟩ := exists_surjective_fin_add_two R M
-  let φ := SymmetricAlgebra.gradedMap R g
-  let hφ := HomogeneousIdeal.irrelevant_le_map_of_surjective φ (surjective_gradedMap hg)
-  let j : Proj (homogeneousSubmodule R M) ⟶
-      Proj (homogeneousSubmodule R (Fin (d + 2) → R)) := Proj.map φ hφ
-  have : IsClosedImmersion j := Proj.isClosedImmersion_map φ hφ (surjective_gradedMap hg)
+  obtain ⟨d, j, _, _, hjPull⟩ := exists_closedImmersion_proj_fin_add_two R M
   let ι : X ⟶ Proj (homogeneousSubmodule R (Fin (d + 2) → R)) := i ≫ j
   have : ((pushforward ι).obj F).IsFinitePresentation :=
     isFinitePresentation_pushforward_of_isFinite ι F
@@ -385,6 +301,7 @@ theorem exists_subsingleton_cohomology_pullback_twistingSheaf_tensor
     hn₀ n hn q hq
   -- Identify `𝒪_{ℙ}(n) ⊗ ι_* F ≅ ι_* (i^* 𝒪_{Proj (Sym M)}(n) ⊗ F)` via the projection formula
   -- and the pullback isomorphism for twisting sheaves.
+  obtain ⟨ej⟩ := hjPull n
   let E : FiniteLocallyFreeSheaf (Proj (homogeneousSubmodule R (Fin (d + 2) → R))) :=
     (InvertibleSheaf.toFiniteLocallyFree _).obj
       ⟨Proj.twistingSheaf (homogeneousSubmodule R (Fin (d + 2) → R)) n, inferInstance⟩
@@ -392,7 +309,7 @@ theorem exists_subsingleton_cohomology_pullback_twistingSheaf_tensor
       (pullback i).obj (Proj.twistingSheaf (homogeneousSubmodule R M) n) :=
     eqToIso (FiniteLocallyFreeSheaf.pullback_obj_obj ι E) ≪≫
       ((Scheme.Modules.pullbackComp i j).app E.obj).symm ≪≫
-      (pullback i).mapIso (asIso (Proj.pullbackTwistingSheafMap φ hφ n))
+      (pullback i).mapIso ej
   let eProj : Proj.twistingSheaf (homogeneousSubmodule R (Fin (d + 2) → R)) n ⊗
       (pushforward ι).obj F ≅
       (pushforward ι).obj

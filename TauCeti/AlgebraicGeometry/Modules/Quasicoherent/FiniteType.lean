@@ -11,8 +11,11 @@ public import TauCeti.AlgebraicGeometry.Modules.FinitePresentation.Basic
 public import TauCeti.AlgebraicGeometry.Modules.Quasicoherent.Images
 public import TauCeti.AlgebraicGeometry.Modules.Restriction.FiniteType
 public import TauCeti.AlgebraicGeometry.Modules.Sections
+public import TauCeti.AlgebraicGeometry.Modules.Tensor.Product
 public import TauCeti.Algebra.Category.ModuleCat.Sheaf.FinitePresentation
 public import Mathlib.AlgebraicGeometry.Morphisms.QuasiCompact
+import Mathlib.RingTheory.TensorProduct.Finite
+import TauCeti.AlgebraicGeometry.Modules.Tensor.AffineSections
 
 /-!
 # Finite-type quasi-coherent submodules
@@ -33,7 +36,8 @@ immersions into quasi-compact quasi-separated schemes.
 
 On an affine scheme, generators of the global sections of a quasi-coherent module give a
 surjection onto it from a free module of finite rank. Consequently a quasi-coherent module is of
-finite type exactly when its sections over every affine open are finitely generated.
+finite type exactly when its sections over every affine open are finitely generated, and the tensor
+product of two quasi-coherent modules of finite type is of finite type.
 
 ## Main declarations
 
@@ -54,6 +58,8 @@ finite type exactly when its sections over every affine open are finitely genera
   of finite rank.
 * `AlgebraicGeometry.Scheme.Modules.isFiniteType_iff_finite_sections`: a quasi-coherent module is
   of finite type if and only if its sections over every affine open are finitely generated.
+* `AlgebraicGeometry.Scheme.Modules.isFiniteType_tensorObj`: the tensor product of two
+  quasi-coherent modules of finite type is of finite type.
 
 ## References
 
@@ -293,5 +299,17 @@ are finitely generated. -/
 theorem isFiniteType_iff_finite_sections (K : X.Modules) [K.IsQuasicoherent] :
     K.IsFiniteType ↔ ∀ U : X.Opens, IsAffineOpen U → Module.Finite Γ(X, U) Γ(K, U) :=
   ⟨fun _ U hU ↦ K.finite_sections_of_isAffineOpen U hU, isFiniteType_of_finite_sections K⟩
+
+open MonoidalCategory in
+/-- The tensor product of two quasi-coherent `𝒪_X`-modules of finite type is of finite type. -/
+instance isFiniteType_tensorObj (M N : X.Modules) [M.IsQuasicoherent] [M.IsFiniteType]
+    [N.IsQuasicoherent] [N.IsFiniteType] : (M ⊗ N).IsFiniteType := by
+  refine isFiniteType_of_finite_sections (M ⊗ N) fun U hU ↦ ?_
+  have := M.finite_sections_of_isAffineOpen U hU
+  have := N.finite_sections_of_isAffineOpen U hU
+  let e : TensorProduct Γ(X, U) Γ(M, U) Γ(N, U) ≃ₗ[Γ(X, U)] Γ(M ⊗ N, U) :=
+    LinearEquiv.ofBijective (Functor.LaxMonoidal.μ (sectionsFunctor U) M N).hom
+      (bijective_μ_sectionsFunctor M N hU)
+  exact Module.Finite.equiv e
 
 end AlgebraicGeometry.Scheme.Modules

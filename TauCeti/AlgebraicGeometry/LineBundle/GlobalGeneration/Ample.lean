@@ -9,13 +9,11 @@ public import Mathlib.Algebra.Category.ModuleCat.Sheaf.Generators
 public import Mathlib.Topology.QuasiSeparated
 public import TauCeti.AlgebraicGeometry.LineBundle.Ample
 public import TauCeti.AlgebraicGeometry.LineBundle.Power
-public import TauCeti.AlgebraicGeometry.LineBundle.TwistedSections
 public import TauCeti.AlgebraicGeometry.Modules.Biprod
-public import TauCeti.AlgebraicGeometry.Modules.Quasicoherent.FiniteType
-public import TauCeti.AlgebraicGeometry.Modules.Tensor.AffineSections
 import Mathlib.CategoryTheory.Monoidal.Preadditive
-import Mathlib.RingTheory.TensorProduct.Finite
 import TauCeti.Algebra.Category.ModuleCat.Sheaf.Invertible.FinitePresentation
+import TauCeti.AlgebraicGeometry.LineBundle.TwistedSections
+import TauCeti.AlgebraicGeometry.Modules.Quasicoherent.FiniteType
 import TauCeti.AlgebraicGeometry.Modules.Sheaf
 import TauCeti.CategoryTheory.Monoidal.Epi
 
@@ -49,16 +47,11 @@ The proof follows Hartshorne, Theorem II.5.17, and the Stacks Project, Tag 01Q3:
 
 ## Main results
 
-* `AlgebraicGeometry.Scheme.Modules.Hom.epi_of_surjective_on_affineOpenCover`: a morphism into a
-  quasi-coherent module that is surjective on sections over every member of an affine open cover is
-  an epimorphism.
-* `AlgebraicGeometry.Scheme.Modules.isFiniteType_tensorObj`: the tensor product of two
-  quasi-coherent modules of finite type is of finite type.
-* `AlgebraicGeometry.Scheme.Modules.nonvanishingLocus_tensorPowSection`: for `k > 0`, the
-  nonvanishing locus of `sᵏ` equals that of `s`.
 * `TauCeti.AlgebraicGeometry.LineBundleClass.IsAmple.exists_pos_finite_affine_cover`: an ample line
   bundle has a positive power with finitely many global sections whose nonvanishing loci are affine
   and cover `X`.
+* `AlgebraicGeometry.Scheme.Modules.exists_generatingSections_tensorPow_of_affineOpenCover`:
+  twisting generation for an invertible sheaf admitting a finite affine nonvanishing cover.
 * `AlgebraicGeometry.Scheme.Modules.exists_generatingSections_tensorPow_of_isAmple` and
   `AlgebraicGeometry.Scheme.Modules.exists_generatingSections_tensor_of_isAmple`: Serre's
   twisting-generation theorem for ample line bundles.
@@ -68,7 +61,8 @@ The proof follows Hartshorne, Theorem II.5.17, and the Stacks Project, Tag 01Q3:
 ## References
 
 * R. Hartshorne, *Algebraic Geometry*, GTM 52, Springer, 1977, Theorem II.5.17.
-* [The Stacks Project, Tag 01Q3](https://stacks.math.columbia.edu/tag/01Q3).
+* [The Stacks Project, Tag 01Q3](https://stacks.math.columbia.edu/tag/01Q3) (global generation
+  after twisting by an ample invertible sheaf).
 -/
 
 public section
@@ -81,173 +75,9 @@ universe u
 
 noncomputable section
 
-namespace AlgebraicGeometry.Scheme.Modules
-
-variable {X : Scheme.{u}}
-
-/-! ### Compatibility of `tmulRight` and `tensorPowSection` with monoidal structure -/
-
-/-- The associator of `X.Modules` identifies `(t ⊗ a) ⊗ b` with `t ⊗ (a ⊗ b)` on sections. -/
-theorem associator_hom_app_tmulRight (F A B : X.Modules) {U : X.Opens}
-    (t : Γ(F, U)) (a : Γ(A, U)) (b : Γ(B, U)) :
-    (α_ F A B).hom.app U (tmulRight (F ⊗ A) b (tmulRight F a t)) =
-      tmulRight F (tmulRight A b a) t := by
-  have h := congrArg (fun φ ↦ φ.hom ((t ⊗ₜ a) ⊗ₜ b))
-    (Functor.LaxMonoidal.associativity (sectionsFunctor U) F A B)
-  simp only [ModuleCat.hom_comp, LinearMap.comp_apply] at h
-  rw [tmulRight_apply, tmulRight_apply, tmulRight_apply, tmulRight_apply]
-  exact h
-
-/-- The left unitor `𝒪_X ⊗ F ≅ F` sends `r ⊗ t` to `r • t`. -/
-theorem leftUnitor_hom_app_tmulRight (F : X.Modules) {U : X.Opens}
-    (r : Γ(X, U)) (t : Γ(F, U)) :
-    (λ_ F).hom.app U (tmulRight (𝟙_ X.Modules) t r) = r • t := by
-  have h := congrArg (fun φ ↦ φ.hom (r ⊗ₜ t))
-    (Functor.LaxMonoidal.left_unitality (sectionsFunctor U) F)
-  simp only [sectionsFunctor_ε, ModuleCat.hom_comp, LinearMap.comp_apply] at h
-  exact (congrArg ((λ_ F).hom.app U)
-    (tmulRight_apply (𝟙_ X.Modules) t (show Γ(𝟙_ X.Modules, U) from r))).trans h.symm
-
-/-- The block decomposition `Lᵐ ⊗ Lⁿ ≅ Lⁿ⁺ᵐ` carries `eᵐ ⊗ eⁿ` to `eⁿ⁺ᵐ`. -/
-theorem tensorPowAddIso_hom_app_tmulRight_tensorPowSection {L : X.Modules} {U : X.Opens}
-    (e : Γ(L, U)) (m n : ℕ) :
-    (tensorPowAddIso L m n).hom.app U
-        (tmulRight (tensorPow L m) (tensorPowSection e n) (tensorPowSection e m)) =
-      tensorPowSection e (n + m) := by
-  induction m with
-  | zero =>
-    rw [tensorPowAddIso_zero, tensorPowSection_zero]
-    exact (leftUnitor_hom_app_tmulRight (tensorPow L n) (1 : Γ(X, U)) _).trans (one_smul _ _)
-  | succ m ih =>
-    rw [tensorPowAddIso_succ_hom, Hom.comp_app, ConcreteCategory.comp_apply,
-      tensorPowSection_succ, associator_hom_app_tmulRight, whiskerLeft_app_tmulRight, ih]
-    exact (tensorPowSection_succ e (n + m)).symm
-
-/-! ### Epimorphisms from affine open covers and finite-type tensor products -/
-
-/-- A morphism into a quasi-coherent `𝒪_X`-module is an epimorphism as soon as it is surjective on
-sections over every member of an affine open cover of `X`. -/
-theorem Hom.epi_of_surjective_on_affineOpenCover {M N : X.Modules} [N.IsQuasicoherent]
-    (φ : M ⟶ N) {ι : Type*} (U : ι → X.Opens) (hU : ∀ i, IsAffineOpen (U i))
-    (hcover : ⨆ i, U i = ⊤) (hsurj : ∀ i, Function.Surjective (φ.app (U i))) : Epi φ := by
-  have : Sheaf.IsLocallySurjective
-      ((TauCeti.AlgebraicGeometry.Scheme.Modules.toSheaf X).map φ) := by
-    constructor
-    intro V y x hxV
-    obtain ⟨i, hxi⟩ := Opens.mem_iSup.mp (hcover.symm ▸ Opens.mem_top x)
-    obtain ⟨f, hfV, hxf⟩ := (hU i).exists_basicOpen_le ⟨x, hxV⟩ hxi
-    have hV : X.basicOpen f ≤ V := hfV
-    have hUi : X.basicOpen f ≤ U i := X.basicOpen_le f
-    let y' : Γ(N, X.basicOpen f) := N.presheaf.map (homOfLE hV).op y
-    obtain ⟨m, z, hz⟩ := N.exists_pow_smul_eq_map (hU i) f rfl hUi y'
-    obtain ⟨a, ha⟩ := hsurj i z
-    obtain ⟨u, hu⟩ : IsUnit (X.presheaf.map (homOfLE hUi).op f ^ m) :=
-      (X.toRingedSpace.isUnit_res_basicOpen f).pow m
-    refine ⟨X.basicOpen f, homOfLE hV,
-      ⟨(u⁻¹ : (Γ(X, X.basicOpen f))ˣ).1 • M.presheaf.map (homOfLE hUi).op a, ?_⟩, hxf⟩
-    have hnat : φ.app (X.basicOpen f) (M.presheaf.map (homOfLE hUi).op a) =
-        N.presheaf.map (homOfLE hUi).op (φ.app (U i) a) :=
-      φ.mapPresheaf.naturality_apply (homOfLE hUi).op a
-    -- In `Sheaf.IsLocallySurjective`, the map on sections is `φ.app` and restriction is
-    -- `N.presheaf.map`.
-    change φ.app (X.basicOpen f) _ = y'
-    rw [Hom.app_smul, hnat, ha, ← hz, ← hu, smul_smul, Units.inv_mul, one_smul]
-  exact (TauCeti.AlgebraicGeometry.Scheme.Modules.toSheaf X).epi_of_epi_map
-    (Sheaf.epi_of_isLocallySurjective _)
-
-/-- The tensor product of two quasi-coherent `𝒪_X`-modules of finite type is of finite type. -/
-instance isFiniteType_tensorObj (M N : X.Modules) [M.IsQuasicoherent] [M.IsFiniteType]
-    [N.IsQuasicoherent] [N.IsFiniteType] : (M ⊗ N).IsFiniteType := by
-  refine isFiniteType_of_finite_sections (M ⊗ N) fun U hU ↦ ?_
-  have := M.finite_sections_of_isAffineOpen U hU
-  have := N.finite_sections_of_isAffineOpen U hU
-  let e : TensorProduct Γ(X, U) Γ(M, U) Γ(N, U) ≃ₗ[Γ(X, U)] Γ(M ⊗ N, U) :=
-    LinearEquiv.ofBijective (Functor.LaxMonoidal.μ (sectionsFunctor U) M N).hom
-      (bijective_μ_sectionsFunctor M N hU)
-  exact Module.Finite.equiv e
-
-/-! ### Monoidal tensor powers of invertible sheaves -/
-
-/-- The monoidal tensor product of two invertible sheaves is invertible. -/
-instance isInvertible_tensorObj (L K : X.Modules)
-    [TauCeti.AlgebraicGeometry.SheafOfModules.isInvertible X L]
-    [TauCeti.AlgebraicGeometry.SheafOfModules.isInvertible X K] :
-    TauCeti.AlgebraicGeometry.SheafOfModules.isInvertible X (L ⊗ K) :=
-  (TauCeti.AlgebraicGeometry.SheafOfModules.isInvertible X).prop_of_iso
-    (InvertibleSheaf.tensorProductObjIso ⟨L, inferInstance⟩ ⟨K, inferInstance⟩)
-    (InvertibleSheaf.tensorProduct ⟨L, inferInstance⟩ ⟨K, inferInstance⟩).property
-
-/-- Every monoidal tensor power `L^{⊗ n}` of an invertible sheaf is invertible. -/
-instance isInvertible_tensorPow (L : X.Modules)
-    [TauCeti.AlgebraicGeometry.SheafOfModules.isInvertible X L] (n : ℕ) :
-    TauCeti.AlgebraicGeometry.SheafOfModules.isInvertible X (tensorPow L n) := by
-  induction n with
-  | zero => exact TauCeti.AlgebraicGeometry.SheafOfModules.isInvertible_tensorUnit X
-  | succ n ih => exact isInvertible_tensorObj L (tensorPow L n)
-
-/-- For a positive integer `k`, the nonvanishing locus of the tensor power section `sᵏ` equals the
-nonvanishing locus of `s`. -/
-theorem nonvanishingLocus_tensorPowSection {L : X.Modules}
-    [TauCeti.AlgebraicGeometry.SheafOfModules.isInvertible X L]
-    {U : X.Opens} (s : Γ(L, U)) {k : ℕ} (hk : 0 < k) :
-    (tensorPow L k).nonvanishingLocus (tensorPowSection s k) = L.nonvanishingLocus s := by
-  ext x
-  by_cases hxU : x ∈ U
-  · obtain ⟨V, t, hxV⟩ := exists_mem_trivialization L x
-    let W : X.Opens := U ⊓ V
-    let iWU : W ⟶ U := homOfLE inf_le_left
-    let iWV : W ⟶ V := homOfLE inf_le_right
-    have hxW : x ∈ (W : Set X) := ⟨hxU, hxV⟩
-    let e : Γ(L, W) := L.presheaf.map iWV.op (trivializationGenerator L t)
-    have he : W ≤ L.nonvanishingLocus e := by
-      rw [nonvanishingLocus_map, nonvanishingLocus_trivializationGenerator]
-      exact le_inf le_rfl inf_le_right
-    obtain ⟨f, hf⟩ := surjective_smul_of_le_nonvanishingLocus he (L.presheaf.map iWU.op s)
-    beta_reduce at hf
-    have hek : W ≤ (tensorPow L k).nonvanishingLocus (tensorPowSection e k) := by
-      rw [le_nonvanishingLocus_iff _ (𝟙 W)]
-      intro W' j
-      simpa only [Category.comp_id] using
-        bijective_smul_tensorPowSection e (fun W'' l ↦ by
-          simpa only [Category.comp_id] using (le_nonvanishingLocus_iff e (𝟙 W)).mp he W'' l)
-          k W' j
-    have hLHS : W ⊓ (tensorPow L k).nonvanishingLocus (tensorPowSection s k) = X.basicOpen f := by
-      rw [← nonvanishingLocus_map iWU, map_tensorPowSection, ← hf, tensorPowSection_smul,
-        nonvanishingLocus_smul, X.basicOpen_pow f hk,
-        inf_eq_left.mpr ((X.basicOpen_le f).trans hek)]
-    have hRHS : W ⊓ L.nonvanishingLocus s = X.basicOpen f := by
-      rw [← nonvanishingLocus_map iWU, ← hf, nonvanishingLocus_smul,
-        inf_eq_left.mpr ((X.basicOpen_le f).trans he)]
-    have hmem := congrArg (fun O : X.Opens ↦ x ∈ (O : Set X)) (hLHS.trans hRHS.symm)
-    simpa only [Opens.coe_inf, Set.mem_inter_iff, hxW, true_and] using iff_of_eq hmem
-  · exact ⟨fun h ↦ (hxU (nonvanishingLocus_le _ h)).elim,
-      fun h ↦ (hxU (nonvanishingLocus_le _ h)).elim⟩
-
-end AlgebraicGeometry.Scheme.Modules
-
 namespace TauCeti.AlgebraicGeometry
 
 variable {X : Scheme.{u}}
-
-/-- The underlying sheaf of `InvertibleSheaf.tensorPow L n` is isomorphic to the monoidal tensor
-power `TauCeti.tensorPow L.obj n`. -/
-def InvertibleSheaf.tensorPowObjIso (L : InvertibleSheaf X) :
-    (n : ℕ) → (L.tensorPow n).obj ≅ TauCeti.tensorPow L.obj n
-  | 0 =>
-    eqToIso (congrArg (·.obj) (L.tensorPow_zero)) ≪≫ InvertibleSheaf.trivialObjIsoUnit X
-  | n + 1 =>
-    eqToIso (congrArg (·.obj) (L.tensorPow_succ n)) ≪≫
-      InvertibleSheaf.tensorProductObjIso (L.tensorPow n) L ≪≫
-      whiskerRightIso (L.tensorPowObjIso n) L.obj ≪≫
-      tensorPowSuccIso L.obj n
-
-/-- The line-bundle class of the monoidal tensor power `TauCeti.tensorPow L.obj n` is
-`(mk L) ^ n`. -/
-@[simp]
-theorem LineBundleClass.mk_tensorPow_obj (L : InvertibleSheaf X) (n : ℕ) :
-    LineBundleClass.mk ⟨TauCeti.tensorPow L.obj n, inferInstance⟩ = LineBundleClass.mk L ^ n := by
-  rw [← LineBundleClass.mk_tensorPow]
-  exact LineBundleClass.mk_eq_mk_iff.mpr ⟨(L.tensorPowObjIso n).symm⟩
 
 /-- **Common affine cover by sections of a single power of an ample line bundle.** If `L` is an
 ample line bundle on `X`, then there exist a positive integer `d` and finitely many global sections
@@ -311,6 +141,88 @@ variable {X : Scheme.{u}}
 
 /-! ### Serre's twisting-generation theorem -/
 
+/-- Raise a global section of `F ⊗ M^{⊗ k}` to degree `n ≥ k` by tensoring with `s^{n - k}` and
+combining the tensor powers `M^{⊗ k} ⊗ M^{⊗ (n - k)} ≅ M^{⊗ n}`. -/
+private def raiseSection (F M : X.Modules) (s : Γ(M, ⊤)) {k n : ℕ} (hkn : k ≤ n)
+    (g : Γ(F ⊗ tensorPow M k, ⊤)) : Γ(F ⊗ tensorPow M n, ⊤) :=
+  let ψ : (F ⊗ tensorPow M k) ⊗ tensorPow M (n - k) ⟶ F ⊗ tensorPow M n :=
+    (α_ F (tensorPow M k) (tensorPow M (n - k))).hom ≫
+      F ◁ (tensorPowAddIso M k (n - k)).hom ≫
+      F ◁ eqToHom (congrArg (tensorPow M) (Nat.sub_add_cancel hkn))
+  ψ.app ⊤ (tmulRight (F ⊗ tensorPow M k) (tensorPowSection s (n - k)) g)
+
+/-- If `g ∈ Γ(F ⊗ M^{⊗ k}, ⊤)` restricts to `t ⊗ sᵏ` on `U`, then `raiseSection` restricts to
+`t ⊗ sⁿ` on `U`. -/
+private lemma map_raiseSection (F M : X.Modules) (s : Γ(M, ⊤)) {U : X.Opens} {k n : ℕ}
+    (hkn : k ≤ n) (g : Γ(F ⊗ tensorPow M k, ⊤)) (t : Γ(F, U))
+    (hg : (F ⊗ tensorPow M k).presheaf.map U.leTop.op g =
+      tmulRight F (tensorPowSection (M.presheaf.map U.leTop.op s) k) t) :
+    (F ⊗ tensorPow M n).presheaf.map U.leTop.op (raiseSection F M s hkn g) =
+      tmulRight F (tensorPowSection (M.presheaf.map U.leTop.op s) n) t := by
+  let ψ : (F ⊗ tensorPow M k) ⊗ tensorPow M (n - k) ⟶ F ⊗ tensorPow M n :=
+    (α_ F (tensorPow M k) (tensorPow M (n - k))).hom ≫
+      F ◁ (tensorPowAddIso M k (n - k)).hom ≫
+      F ◁ eqToHom (congrArg (tensorPow M) (Nat.sub_add_cancel hkn))
+  have hnat : ψ.app U (((F ⊗ tensorPow M k) ⊗ tensorPow M (n - k)).presheaf.map U.leTop.op
+      (tmulRight (F ⊗ tensorPow M k) (tensorPowSection s (n - k)) g)) =
+      (F ⊗ tensorPow M n).presheaf.map U.leTop.op (raiseSection F M s hkn g) :=
+    ψ.mapPresheaf.naturality_apply U.leTop.op _
+  rw [← hnat, map_tmulRight_tensorPowSection, hg]
+  simp only [ψ, Hom.comp_app, ConcreteCategory.comp_apply, associator_hom_app_tmulRight,
+    whiskerLeft_app_tmulRight, tensorPowAddIso_hom_app_tmulRight_tensorPowSection]
+  have heq : ∀ (a : ℕ) (h : a = n),
+      (eqToHom (congrArg (tensorPow M) h)).app U
+        (tensorPowSection (M.presheaf.map U.leTop.op s) a) =
+      tensorPowSection (M.presheaf.map U.leTop.op s) n := by
+    rintro _ rfl
+    simp
+  exact congrArg (fun x ↦ tmulRight F x t) (heq _ (Nat.sub_add_cancel hkn))
+
+/-- If `sFam : I → Γ(F ⊗ M^{⊗ n}, ⊤)` contains sections restricting on `U = X_s` to `t ⊗ sⁿ` for
+every `t` in a generating set `T` of `Γ(F, U)`, then the induced morphism
+`free I ⟶ F ⊗ M^{⊗ n}` is surjective on sections over `U`. -/
+private lemma surjective_freeHomEquiv_symm_app_of_span_eq_top
+    (F M : X.Modules) [TauCeti.AlgebraicGeometry.SheafOfModules.isInvertible X M]
+    (s : Γ(M, ⊤)) (n : ℕ) {I : Type u} (sFam : I → (F ⊗ tensorPow M n).sections)
+    (T : Set Γ(F, M.nonvanishingLocus s))
+    (hT : Submodule.span Γ(X, M.nonvanishingLocus s) T = ⊤)
+    (hmem : ∀ t ∈ T, ∃ p : I,
+      (sFam p).eval (op (M.nonvanishingLocus s)) =
+        tmulRight F
+          (tensorPowSection (M.presheaf.map (M.nonvanishingLocus s).leTop.op s) n) t) :
+    Function.Surjective
+      (Hom.app ((F ⊗ tensorPow M n).freeHomEquiv.symm sFam :
+          (SheafOfModules.free I : X.Modules) ⟶ F ⊗ tensorPow M n)
+        (M.nonvanishingLocus s)) := by
+  let U := M.nonvanishingLocus s
+  let freeI : X.Modules := SheafOfModules.free I
+  let φ : freeI ⟶ F ⊗ tensorPow M n := (F ⊗ tensorPow M n).freeHomEquiv.symm sFam
+  intro y
+  have hU : U ≤ M.nonvanishingLocus (M.presheaf.map U.leTop.op s) := by
+    rw [nonvanishingLocus_map]
+    exact le_inf le_rfl le_rfl
+  obtain ⟨x, rfl⟩ :=
+    (bijective_tmulRight_tensorPowSection_of_le_nonvanishingLocus F _ hU n).2 y
+  have hx : x ∈ Submodule.span Γ(X, U) T := hT ▸ Submodule.mem_top
+  induction hx using Submodule.span_induction with
+  | mem t ht =>
+    obtain ⟨p, hp⟩ := hmem t ht
+    refine ⟨(SheafOfModules.freeSection (R := X.ringCatSheaf) p).eval (op U), ?_⟩
+    have h1 : Hom.app φ U ((SheafOfModules.freeSection (R := X.ringCatSheaf) p).eval (op U)) =
+        (sFam p).eval (op U) :=
+      congrArg (fun σ : (F ⊗ tensorPow M n).sections ↦ σ.eval (op U))
+        (SheafOfModules.sectionsMap_freeHomEquiv_symm_freeSection sFam p)
+    exact h1.trans hp
+  | zero => exact ⟨0, by simp⟩
+  | add a b _ _ ha hb =>
+    obtain ⟨a', ha'⟩ := ha
+    obtain ⟨b', hb'⟩ := hb
+    exact ⟨a' + b', by rw [map_add, ha', hb', map_add]⟩
+  | smul r a _ ha =>
+    obtain ⟨a', ha'⟩ := ha
+    let a'' : Γ(freeI, U) := a'
+    exact ⟨r • a'', by rw [Hom.app_smul φ r a'', ha', LinearMap.map_smul]⟩
+
 /-- **Twisting generation for a line bundle with an affine nonvanishing cover.** Let `X` be
 quasi-compact and quasi-separated, `M` an invertible sheaf with finitely many global sections whose
 nonvanishing loci are affine and cover `X`, and `F` a quasi-coherent `𝒪_X`-module of finite type.
@@ -346,77 +258,24 @@ theorem exists_generatingSections_tensorPow_of_affineOpenCover
   choose k g hg using hext
   let n₀ : ℕ := Finset.univ.sup k
   refine ⟨n₀, fun n hn ↦ ?_⟩
-  -- Raise every extended section from degree `k p` to degree `n` by tensoring with `sᵢ^{n - k p}`.
-  let ψ (p : I) : (F ⊗ tensorPow M (k p)) ⊗ tensorPow M (n - k p) ⟶ F ⊗ tensorPow M n :=
-    have hdk : n - k p + k p = n :=
-      Nat.sub_add_cancel ((Finset.le_sup (f := k) (Finset.mem_univ p)).trans hn)
-    (α_ F (tensorPow M (k p)) (tensorPow M (n - k p))).hom ≫
-      F ◁ (tensorPowAddIso M (k p) (n - k p)).hom ≫
-      F ◁ eqToHom (congrArg (tensorPow M) hdk)
-  let sec (p : I) : Γ(F ⊗ tensorPow M n, ⊤) :=
-    (ψ p).app ⊤ (tmulRight (F ⊗ tensorPow M (k p)) (tensorPowSection (s p.1.down) (n - k p)) (g p))
-  -- On `U i`, the raised section `sec ⟨⟨i⟩, t⟩` restricts to `t ⊗ sᵢⁿ`.
-  have hsec_res (p : I) :
-      (F ⊗ tensorPow M n).presheaf.map (U p.1.down).leTop.op (sec p) =
-        tmulRight F (tensorPowSection (M.presheaf.map (U p.1.down).leTop.op (s p.1.down)) n)
-          p.2.1 := by
-    have hnat := (ψ p).mapPresheaf.naturality_apply (U p.1.down).leTop.op
-      (tmulRight (F ⊗ tensorPow M (k p)) (tensorPowSection (s p.1.down) (n - k p)) (g p))
-    refine hnat.symm.trans ?_
-    change (ψ p).app (U p.1.down) _ = _
-    rw [map_tmulRight_tensorPowSection, hg p]
-    have hdk : n - k p + k p = n :=
-      Nat.sub_add_cancel ((Finset.le_sup (f := k) (Finset.mem_univ p)).trans hn)
-    simp only [ψ, Hom.comp_app, ConcreteCategory.comp_apply, associator_hom_app_tmulRight,
-      whiskerLeft_app_tmulRight, tensorPowAddIso_hom_app_tmulRight_tensorPowSection]
-    have heq : ∀ (a : ℕ) (h : a = n),
-        (eqToHom (congrArg (tensorPow M) h)).app (U p.1.down)
-          (tensorPowSection (M.presheaf.map (U p.1.down).leTop.op (s p.1.down)) a) =
-        tensorPowSection (M.presheaf.map (U p.1.down).leTop.op (s p.1.down)) n := by
-      rintro _ rfl
-      simp
-    exact congrArg (fun x ↦ tmulRight F x p.2.1) (heq _ hdk)
-  -- The morphism `free I ⟶ F ⊗ M^{⊗ n}` induced by `sec` is surjective on sections over each `U i`.
+  have hkn (p : I) : k p ≤ n := (Finset.le_sup (f := k) (Finset.mem_univ p)).trans hn
+  let sec (p : I) : Γ(F ⊗ tensorPow M n, ⊤) := raiseSection F M (s p.1.down) (hkn p) (g p)
   have : (tensorPow M n).IsQuasicoherent :=
     InvertibleSheaf.isQuasicoherent_obj ⟨tensorPow M n, inferInstance⟩
   have hqc : (F ⊗ tensorPow M n).IsQuasicoherent :=
     Scheme.Modules.isQuasicoherent_tensorObj X F (tensorPow M n)
-  let freeI : X.Modules := SheafOfModules.free I
   let sFam : I → (F ⊗ tensorPow M n).sections := fun p ↦
     (F ⊗ tensorPow M n).sectionsEquivTop.symm (sec p)
-  let φ : freeI ⟶ F ⊗ tensorPow M n :=
+  let φ : (SheafOfModules.free I : X.Modules) ⟶ F ⊗ tensorPow M n :=
     (F ⊗ tensorPow M n).freeHomEquiv.symm sFam
   have hφ : Epi φ := by
-    refine @Hom.epi_of_surjective_on_affineOpenCover X freeI (F ⊗ tensorPow M n) hqc φ _ U haff
-      hcover fun i y ↦ ?_
-    have hUi : U i ≤ M.nonvanishingLocus (M.presheaf.map (U i).leTop.op (s i)) := by
-      rw [nonvanishingLocus_map]
-      exact le_inf le_rfl le_rfl
-    obtain ⟨x, rfl⟩ :=
-      (bijective_tmulRight_tensorPowSection_of_le_nonvanishingLocus F _ hUi n).2 y
-    have hx : x ∈ Submodule.span Γ(X, U i) (T i : Set Γ(F, U i)) := hT i ▸ Submodule.mem_top
-    induction hx using Submodule.span_induction with
-    | mem t ht =>
-      let p : I := ⟨⟨i⟩, ⟨t, ht⟩⟩
-      refine ⟨(SheafOfModules.freeSection (R := X.ringCatSheaf) p).eval (op (U i)), ?_⟩
-      have h1 : φ.app (U i)
-          ((SheafOfModules.freeSection (R := X.ringCatSheaf) p).eval (op (U i))) =
-          (sFam p).eval (op (U i)) :=
-        congrArg (fun σ : (F ⊗ tensorPow M n).sections ↦ σ.eval (op (U i)))
-          (SheafOfModules.sectionsMap_freeHomEquiv_symm_freeSection sFam p)
-      rw [h1]
-      exact (sectionsEquivTop_symm_val (F ⊗ tensorPow M n) (sec p) (U i)).trans (hsec_res p)
-    | zero => exact ⟨0, by simp⟩
-    | add a b _ _ ha hb =>
-      obtain ⟨a', ha'⟩ := ha
-      obtain ⟨b', hb'⟩ := hb
-      exact ⟨a' + b', by rw [map_add, ha', hb', map_add]⟩
-    | smul r a _ ha =>
-      obtain ⟨a', ha'⟩ := ha
-      exact ⟨r • a', by rw [Hom.app_smul, ha', LinearMap.map_smul]⟩
-  have hφ' : @Epi (SheafOfModules X.ringCatSheaf) _ _ _ φ :=
-    ⟨fun g h hgh ↦ @Epi.left_cancellation X.Modules _ _ _ _ hφ _ g h hgh⟩
-  exact ⟨{ I := I, s := sFam, epi := hφ' }, ⟨inferInstance⟩⟩
+    refine @Hom.epi_of_surjective_on_affineOpenCover X _ (F ⊗ tensorPow M n) hqc φ _ U haff
+      hcover fun i ↦
+        surjective_freeHomEquiv_symm_app_of_span_eq_top F M (s i) n sFam (T i) (hT i)
+          fun t ht ↦ ⟨⟨⟨i⟩, ⟨t, ht⟩⟩,
+            (sectionsEquivTop_symm_val (F ⊗ tensorPow M n) (sec ⟨⟨i⟩, ⟨t, ht⟩⟩) (U i)).trans
+              (map_raiseSection F M (s i) (hkn ⟨⟨i⟩, ⟨t, ht⟩⟩) (g _) t (hg _))⟩
+  exact ⟨{ I := I, s := sFam, epi := (epi_iff_sheafOfModules φ).mp hφ }, ⟨inferInstance⟩⟩
 
 /-- **Serre's twisting-generation theorem (for monoidal tensor powers).** Let `X` be a
 quasi-separated scheme, `L` an ample invertible sheaf on `X`, and `F` a quasi-coherent
@@ -470,10 +329,7 @@ theorem exists_generatingSections_tensorPow_of_isAmple
   obtain ⟨eL⟩ := LineBundleClass.mk_eq_mk_iff.mp hAB
   let e : (F ⊗ tensorPow L.obj r.1) ⊗ tensorPow M q ≅ F ⊗ tensorPow L.obj n :=
     α_ F (tensorPow L.obj r.1) (tensorPow M q) ≪≫ whiskerLeftIso F eL
-  let e' : @Iso (SheafOfModules X.ringCatSheaf) _
-      ((F ⊗ tensorPow L.obj r.1) ⊗ tensorPow M q) (F ⊗ tensorPow L.obj n) :=
-    { hom := e.hom, inv := e.inv, hom_inv_id := e.hom_inv_id, inv_hom_id := e.inv_hom_id }
-  exact ⟨SheafOfModules.GeneratingSections.equivOfIso e' σ, ⟨hσ.finite⟩⟩
+  exact ⟨SheafOfModules.GeneratingSections.equivOfIso (sheafIsoOfIso X e) σ, ⟨hσ.finite⟩⟩
 
 /-- **Serre's twisting-generation theorem (for any representative of `L^{⊗ n}`).** Let `X` be a
 quasi-separated scheme, `L` an ample invertible sheaf on `X`, and `F` a quasi-coherent
@@ -493,9 +349,7 @@ theorem exists_generatingSections_tensor_of_isAmple
     rw [LineBundleClass.mk_tensorPow_obj, hK]
   obtain ⟨eK⟩ := LineBundleClass.mk_eq_mk_iff.mp hclass
   let e : F ⊗ tensorPow L.obj n ≅ F ⊗ K.obj := whiskerLeftIso F eK
-  let e' : @Iso (SheafOfModules X.ringCatSheaf) _ (F ⊗ tensorPow L.obj n) (F ⊗ K.obj) :=
-    { hom := e.hom, inv := e.inv, hom_inv_id := e.hom_inv_id, inv_hom_id := e.inv_hom_id }
-  exact ⟨SheafOfModules.GeneratingSections.equivOfIso e' σ, ⟨hσ.finite⟩⟩
+  exact ⟨SheafOfModules.GeneratingSections.equivOfIso (sheafIsoOfIso X e) σ, ⟨hσ.finite⟩⟩
 
 /-- **Finite negative-twist presentation.** Let `X` be a quasi-separated scheme, `L` an ample
 invertible sheaf on `X`, and `F` a quasi-coherent `𝒪_X`-module of finite type. Then there exists
@@ -519,8 +373,7 @@ theorem exists_epi_biproduct_of_isAmple
   have : MonoidalPreadditive X.Modules := TauCeti.SheafOfModules.monoidalPreadditive X.sheaf
   -- Tensor the epimorphism `free σ.I ⟶ F ⊗ K^∨` on the left by `K`.
   let π : (SheafOfModules.free (R := X.ringCatSheaf) σ.I : X.Modules) ⟶ F ⊗ K.dual.obj := σ.π
-  have hπ : Epi (C := X.Modules) π :=
-    ⟨fun g h hgh ↦ @Epi.left_cancellation (SheafOfModules X.ringCatSheaf) _ _ _ _ σ.epi _ g h hgh⟩
+  have hπ : Epi (C := X.Modules) π := (epi_iff_sheafOfModules π).mpr σ.epi
   have : (tensorLeft K.obj).IsLeftAdjoint := ⟨ihom K.obj, ⟨ihom.adjunction K.obj⟩⟩
   have : Epi (K.obj ◁ π) := TauCeti.epi_whiskerLeft K.obj π
   -- Identify `K ⊗ (F ⊗ K^∨) ≅ F`.

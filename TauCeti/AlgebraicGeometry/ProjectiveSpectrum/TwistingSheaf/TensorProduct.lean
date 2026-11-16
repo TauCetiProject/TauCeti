@@ -27,9 +27,11 @@ sheafified tensor product follows the Cartier divisor construction in
 
 * `AlgebraicGeometry.Proj.twistingSheaf.tensorPresheafHom`: multiplication of sections, as a
   morphism from the sectionwise tensor product of `𝒪(m)` and `𝒪(n)` to `𝒪(m + n)`.
-* `AlgebraicGeometry.Proj.twistingSheaf.tensorProductIso`: the isomorphism
-  `𝒪(m) ⊗ 𝒪(n) ≅ 𝒪(m + n)` when the degree-one standard opens cover `Proj A`, with
-  `AlgebraicGeometry.Proj.twistingSheaf.tensorProductIso_hom_tmul` describing it on pure tensors.
+* `AlgebraicGeometry.Proj.twistingSheaf.tensorProductIso` and
+  `AlgebraicGeometry.Proj.twistingSheaf.tensorIso`: the isomorphisms `𝒪(m) ⊗ 𝒪(n) ≅ 𝒪(m + n)`
+  (sheaf-level and monoidal in `(Proj A).Modules`) when the degree-one standard opens cover
+  `Proj A`, with `AlgebraicGeometry.Proj.twistingSheaf.tensorProductIso_hom_tmul` describing it on
+  pure tensors.
 * `AlgebraicGeometry.Proj.lineBundleClass_twistingSheaf_eq_zpow`: `[𝒪(n)] = [𝒪(1)] ^ n` in the
   group of line-bundle classes.
 
@@ -42,7 +44,7 @@ public section
 
 noncomputable section
 
-open CategoryTheory TopologicalSpace Opposite TensorProduct
+open CategoryTheory MonoidalCategory TopologicalSpace Opposite TensorProduct
 
 namespace AlgebraicGeometry.Proj
 
@@ -192,6 +194,17 @@ def tensorProductIso :
   TauCeti.SheafOfModules.tensorProductIso (Proj 𝒜).sheaf _ _ ≪≫
     @asIso _ _ _ _ _ (isIso_sheafification_map_tensorPresheafHom f hf hcover m n) ≪≫
     TauCeti.SheafOfModules.sheafificationIso (Proj 𝒜).ringCatSheaf _
+
+/-- **Monoidal tensor product of twisting sheaves**: when the standard opens of degree-one
+elements cover `Proj A`, the monoidal tensor product `𝒪(m) ⊗ 𝒪(n)` in `(Proj A).Modules` is
+isomorphic to `𝒪(m + n)`. -/
+def tensorIso :
+    twistingSheaf 𝒜 m ⊗ twistingSheaf 𝒜 n ≅ twistingSheaf 𝒜 (m + n) :=
+  Scheme.Modules.isoOfSheafIso (Proj 𝒜)
+    ((twistingSheaf 𝒜 m).tensorUnderlyingIso (twistingSheaf 𝒜 n) ≪≫
+      (TauCeti.SheafOfModules.tensorProductIso (Proj 𝒜).sheaf
+        (twistingSheaf 𝒜 m) (twistingSheaf 𝒜 n)).symm ≪≫
+      tensorProductIso f hf hcover m n)
 
 /-- The forward isomorphism is sheafified multiplication of sections. -/
 private theorem tensorProductIso_hom :

@@ -25,8 +25,11 @@ isomorphism criterion using sections over the members of a basis.
 * `TauCeti.AlgebraicGeometry.Scheme.Modules.toSheaf`, the functor sending an `𝒪_X`-module to its
   underlying sheaf of abelian groups, with instances saying that it is additive and preserves
   finite limits and finite colimits;
-* `TauCeti.AlgebraicGeometry.Scheme.Modules.isoOfSheafIso`, which lifts an isomorphism of
-  underlying sheaves of modules to an isomorphism in `X.Modules`;
+* `TauCeti.AlgebraicGeometry.Scheme.Modules.isoOfSheafIso` and
+  `AlgebraicGeometry.Scheme.Modules.sheafIsoOfIso`, which convert isomorphisms between
+  `X.Modules` and the underlying category `SheafOfModules X.ringCatSheaf`;
+* `AlgebraicGeometry.Scheme.Modules.epi_iff_sheafOfModules`: epimorphisms in `X.Modules` coincide
+  with epimorphisms in `SheafOfModules X.ringCatSheaf`;
 * `AlgebraicGeometry.Scheme.Modules.sectionsLinearEquiv`, the `Γ(X, U)`-linear equivalence of
   sections over `U` induced by an isomorphism of `𝒪_X`-modules;
 * `TauCeti.AlgebraicGeometry.Scheme.Modules.shortExact_map_toSheaf`: a short exact sequence of
@@ -87,6 +90,42 @@ lemma _root_.AlgebraicGeometry.Scheme.Modules.isoOfSheafIso_inv_val (X : Scheme.
     {M N : X.Modules} (e : @Iso (SheafOfModules X.ringCatSheaf) _ M N) :
     (_root_.AlgebraicGeometry.Scheme.Modules.isoOfSheafIso X e).inv.val = e.inv.val :=
   by simp only [_root_.AlgebraicGeometry.Scheme.Modules.isoOfSheafIso]
+
+/-- Convert an isomorphism of `𝒪_X`-modules into an isomorphism of underlying sheaves of
+modules. -/
+def _root_.AlgebraicGeometry.Scheme.Modules.sheafIsoOfIso (X : Scheme.{u})
+    {M N : X.Modules} (e : M ≅ N) :
+    @Iso (SheafOfModules X.ringCatSheaf) _ M N :=
+  { hom := ⟨e.hom.val⟩
+    inv := ⟨e.inv.val⟩
+    hom_inv_id := by
+      apply SheafOfModules.Hom.ext
+      exact congrArg SheafOfModules.Hom.val e.hom_inv_id
+    inv_hom_id := by
+      apply SheafOfModules.Hom.ext
+      exact congrArg SheafOfModules.Hom.val e.inv_hom_id }
+
+@[simp]
+lemma _root_.AlgebraicGeometry.Scheme.Modules.sheafIsoOfIso_hom_val (X : Scheme.{u})
+    {M N : X.Modules} (e : M ≅ N) :
+    (_root_.AlgebraicGeometry.Scheme.Modules.sheafIsoOfIso X e).hom.val = e.hom.val := by
+  simp only [_root_.AlgebraicGeometry.Scheme.Modules.sheafIsoOfIso]
+
+@[simp]
+lemma _root_.AlgebraicGeometry.Scheme.Modules.sheafIsoOfIso_inv_val (X : Scheme.{u})
+    {M N : X.Modules} (e : M ≅ N) :
+    (_root_.AlgebraicGeometry.Scheme.Modules.sheafIsoOfIso X e).inv.val = e.inv.val := by
+  simp only [_root_.AlgebraicGeometry.Scheme.Modules.sheafIsoOfIso]
+
+variable {X} in
+/-- A morphism of `𝒪_X`-modules is an epimorphism in `X.Modules` if and only if it is an
+epimorphism in the underlying category `SheafOfModules X.ringCatSheaf`. -/
+theorem _root_.AlgebraicGeometry.Scheme.Modules.epi_iff_sheafOfModules
+    {M N : X.Modules} (f : M ⟶ N) :
+    Epi f ↔ @Epi (SheafOfModules X.ringCatSheaf) _ _ _ f :=
+  ⟨fun h ↦ ⟨fun g h' hgh ↦ @Epi.left_cancellation X.Modules _ _ _ _ h _ g h' hgh⟩,
+   fun h ↦ ⟨fun g h' hgh ↦
+     @Epi.left_cancellation (SheafOfModules X.ringCatSheaf) _ _ _ _ h _ g h' hgh⟩⟩
 
 variable {X} in
 /-- An isomorphism of `𝒪_X`-modules induces a `Γ(X, U)`-linear equivalence between the modules

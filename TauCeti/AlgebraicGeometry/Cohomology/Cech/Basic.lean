@@ -14,6 +14,7 @@ public import TauCeti.AlgebraicGeometry.Scheme.Opens
 public import TauCeti.CategoryTheory.Sites.SheafCohomology.Cech.Functor
 public import TauCeti.Topology.Sheaves.Leray.Basic
 import Mathlib.Algebra.Category.Grp.Zero
+import TauCeti.AlgebraicGeometry.Modules.Biprod
 import TauCeti.AlgebraicGeometry.Modules.Quasicoherent.Colimits
 
 /-!
@@ -322,7 +323,6 @@ lemma exists_mono_isQuasicoherent_subsingleton_cohomology [CompactSpace X]
     (U i).ι.isAffineOpen_iff_of_isOpenImmersion.mp (by
       rw [Scheme.Hom.image_preimage_eq_opensRange_inf, Scheme.Opens.opensRange_ι]
       exact (hU i).inf hV)⟩
-  have : HasFiniteBiproducts X.Modules := .of_hasFiniteProducts
   let F : 𝒰.I₀ → X.Modules := fun i ↦
     (pushforward (U i).ι).obj ((restrictFunctor (U i).ι).obj M)
   have hF (i : 𝒰.I₀) : (F i).IsQuasicoherent := by

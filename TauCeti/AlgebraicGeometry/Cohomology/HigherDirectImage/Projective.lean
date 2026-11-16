@@ -8,9 +8,12 @@ module
 public import Mathlib.AlgebraicGeometry.Modules.Tilde
 public import TauCeti.AlgebraicGeometry.Cohomology.HigherDirectImage.Quasicoherent
 public import TauCeti.AlgebraicGeometry.Cohomology.ProjectiveSpace.Serre
+import Mathlib.CategoryTheory.Limits.Preserves.Shapes.Zero
 import TauCeti.AlgebraicGeometry.Modules.FinitePresentation.Basic
 import TauCeti.AlgebraicGeometry.Modules.Quasicoherent.Basic
+import TauCeti.AlgebraicGeometry.Modules.Sheaf
 import TauCeti.AlgebraicGeometry.ProjectiveSpectrum.TwistingSheaf.Quasicoherent
+import TauCeti.AlgebraicGeometry.Scheme.Opens
 
 /-!
 # Higher direct images on projective schemes over a Noetherian affine base
@@ -56,7 +59,8 @@ Combined with Serre's finiteness and vanishing theorems
 
 ## References
 
-* R. Hartshorne, *Algebraic Geometry*, GTM 52, Springer, 1977, Propositions III.8.5 and III.5.2.
+* R. Hartshorne, *Algebraic Geometry*, GTM 52, Springer, 1977, Proposition III.8.5 and Theorem
+  III.5.2.
 * [The Stacks Project, Tag 01XK](https://stacks.math.columbia.edu/tag/01XK) (higher direct images
   over an affine base) and [Tag 02O5](https://stacks.math.columbia.edu/tag/02O5) (coherence of
   higher direct images).
@@ -82,14 +86,8 @@ private def cohomologyEquivPreimageTop (M : X.Modules) (n : ℕ) :
   let res : cohomologyOn M n ⊤ ≃ₗ[Γ(X, ⊤)] cohomologyOn M n (f ⁻¹ᵁ ⊤) :=
     LinearEquiv.ofLinearMap (cohomologyOnResLinear M n (le_of_eq f.preimage_top))
       (cohomologyOnResLinear M n (le_of_eq f.preimage_top.symm))
-      (LinearMap.ext fun x ↦ by
-        simp only [LinearMap.comp_apply, cohomologyOnResLinear_apply, LinearMap.id_apply,
-          cohomologyOnRes_comp_apply, cohomologyOnRes_refl]
-        rfl)
-      (LinearMap.ext fun x ↦ by
-        simp only [LinearMap.comp_apply, cohomologyOnResLinear_apply, LinearMap.id_apply,
-          cohomologyOnRes_comp_apply, cohomologyOnRes_refl]
-        rfl)
+      (by rw [cohomologyOnResLinear_comp, cohomologyOnResLinear_refl])
+      (by rw [cohomologyOnResLinear_comp, cohomologyOnResLinear_refl])
   (cohomologyOnTopLinearEquiv M n).symm.trans res
 
 variable [IsAffine Y] [QuasiCompact f] [QuasiSeparated f]
@@ -114,21 +112,15 @@ theorem higherDirectImageGlobalSectionsAddEquiv_smul (M : X.Modules) [M.IsQuasic
   let y : ((f.higherDirectImagePresheaf n).obj M).obj (.op ⊤) := y₀
   have hy : (f.higherDirectImagePresheafToPresheafIso M n).hom.app (.op ⊤) y =
       cohomologyEquivPreimageTop f M n x := hy₀
-  have htop : (show Y.ringCatSheaf.obj.obj (.op ⊤) from Y.presheaf.map (⊤ : Y.Opens).leTop.op r) =
-      (show Y.ringCatSheaf.obj.obj (.op ⊤) from r) := by
-    rw [show (⊤ : Y.Opens).leTop = 𝟙 _ from rfl, op_id, CategoryTheory.Functor.map_id]
-    rfl
   have hsmul : cohomologyEquivPreimageTop f M n (f.appTop r • x) =
       (f.higherDirectImagePresheafToPresheafIso M n).hom.app (.op ⊤)
         ((show Y.ringCatSheaf.obj.obj (.op ⊤) from r) • y) := by
     rw [LinearEquiv.map_smul, ← hy]
-    exact ((congrArg (fun s ↦ e.hom.app (.op ⊤) (s • y)) htop).symm.trans
-      (f.higherDirectImagePresheafToPresheafIso_hom_app_smul M n r ⊤ y)).symm
+    simpa only [Scheme.presheaf_map_top_leTop, ConcreteCategory.id_apply] using
+      (f.higherDirectImagePresheafToPresheafIso_hom_app_smul M n r ⊤ y).symm
   -- Apply the basic-open comparison at `⊤ = D(1)` and use linearity of sheafification.
-  change f.higherDirectImageBasicOpenSectionsAddEquiv M n ⟨1, Y.basicOpen_one⟩
-      (cohomologyEquivPreimageTop f M n (f.appTop r • x)) =
-    r • f.higherDirectImageBasicOpenSectionsAddEquiv M n ⟨1, Y.basicOpen_one⟩
-      (cohomologyEquivPreimageTop f M n x)
+  simp only [higherDirectImageGlobalSectionsAddEquiv, AddEquiv.trans_apply,
+    LinearEquiv.coe_toAddEquiv, LinearEquiv.coe_addEquiv_apply]
   rw [hsmul, ← hy,
     f.higherDirectImageBasicOpenSectionsAddEquiv_higherDirectImagePresheafToPresheafIso_hom_app,
     f.higherDirectImageBasicOpenSectionsAddEquiv_higherDirectImagePresheafToPresheafIso_hom_app]
@@ -152,22 +144,16 @@ def cohomologyEquivHigherDirectImageSections (R : Type u) [CommRing R] {X : Sche
   __ := (X ↘ Spec (.of R)).higherDirectImageGlobalSectionsAddEquiv M n
   map_smul' r x := by
     let f := X ↘ Spec (.of R)
-    -- On `Cohomology M n`, `r` acts through `baseRingToGlobalSections`; on `moduleSpecΓFunctor`,
-    -- `r` acts through `(ΓSpecIso R).inv` followed by restriction along the identity of `⊤`.
-    have htop : ((Spec (.of R)).ringCatSheaf.obj.map
-        ((initialOpOfTerminal isTerminalTop).to (.op ⊤))).hom = RingHom.id _ := by
-      rw [IsInitial.to_self, CategoryTheory.Functor.map_id]
-      rfl
+    simp only [AddEquiv.toFun_eq_coe, RingHom.id_apply]
+    -- `moduleSpecΓFunctor.obj N` has carrier `Γ(N, ⊤)` with the `R`-module structure given by
+    -- `Scheme.Modules.smul_Spec_def`, which `rw` does not match through the functor application.
     have hrhs :
         (r : R) • (show moduleSpecΓFunctor.obj ((f.higherDirectImage n).obj M) from
           f.higherDirectImageGlobalSectionsAddEquiv M n x) =
-        (Scheme.ΓSpecIso (.of R)).inv r • f.higherDirectImageGlobalSectionsAddEquiv M n x :=
-      congrArg (fun g : _ →+* _ ↦ g ((Scheme.ΓSpecIso (.of R)).inv.hom r) •
-        (show ((f.higherDirectImage n).obj M).val.obj (.op ⊤) from
-          f.higherDirectImageGlobalSectionsAddEquiv M n x)) htop
-    change f.higherDirectImageGlobalSectionsAddEquiv M n (r • x) =
-      r • (show moduleSpecΓFunctor.obj ((f.higherDirectImage n).obj M) from
-        f.higherDirectImageGlobalSectionsAddEquiv M n x)
+        (Scheme.ΓSpecIso (.of R)).inv r • f.higherDirectImageGlobalSectionsAddEquiv M n x := by
+      refine (Scheme.Modules.smul_Spec_def (M := (f.higherDirectImage n).obj M) (U := ⊤) r
+        (f.higherDirectImageGlobalSectionsAddEquiv M n x)).trans ?_
+      simp
     rw [hrhs, base_smul_cohomology, baseRingToGlobalSections_apply]
     exact f.higherDirectImageGlobalSectionsAddEquiv_smul M n ((Scheme.ΓSpecIso (.of R)).inv r) x
 
@@ -208,11 +194,8 @@ theorem isFinitePresentation_higherDirectImage_of_isProjectiveOver (R : Type u) 
     finite_cohomology_of_isProjectiveOver R F q
   have : Module.FinitePresentation (CommRingCat.of R) M :=
     Module.finitePresentation_of_finite (CommRingCat.of R) M
-  let e : @Iso (SheafOfModules (Spec (.of R)).ringCatSheaf) _ (tilde M)
-      (((X ↘ Spec (.of R)).higherDirectImage q).obj F) :=
-    let i := tildeCohomologyIsoHigherDirectImage R F q
-    { hom := i.hom, inv := i.inv, hom_inv_id := i.hom_inv_id, inv_hom_id := i.inv_hom_id }
-  exact (SheafOfModules.isFinitePresentation (Spec (.of R)).ringCatSheaf).prop_of_iso e
+  exact (SheafOfModules.isFinitePresentation (Spec (.of R)).ringCatSheaf).prop_of_iso
+    (sheafIsoOfIso (Spec (.of R)) (tildeCohomologyIsoHigherDirectImage R F q))
     (isFinitePresentation_tilde M)
 
 /-- **Serre vanishing for higher direct images.** Let `R` be a Noetherian commutative ring, `M` a
@@ -237,14 +220,10 @@ theorem exists_isZero_higherDirectImage_pullback_twistingSheaf_tensor
     (Proj.twistingSheaf (TauCeti.SymmetricAlgebra.homogeneousSubmodule R M) n) ⊗ F
   have : G.IsQuasicoherent := isQuasicoherent_tensorObj X _ F
   have : Subsingleton (Cohomology G q) := hn₀ n hn q hq
-  let N : ModuleCat.{u} (CommRingCat.of R) := ModuleCat.of (CommRingCat.of R) (Cohomology G q)
-  have hzero : IsZero N := ModuleCat.isZero_of_subsingleton N
-  have htilde : IsZero (tilde N) :=
-    (IsZero.iff_id_eq_zero _).mpr (by
-      change 𝟙 ((tilde.functor (.of R)).obj N) = 0
-      rw [← (tilde.functor (.of R)).map_id, hzero.eq_of_src (𝟙 N) 0]
-      exact tilde.map_zero)
-  exact htilde.of_iso (tildeCohomologyIsoHigherDirectImage R G q).symm
+  have hzero (A : CommRingCat.{u}) (N : ModuleCat.{u} A) [Subsingleton N] : IsZero (tilde N) :=
+    (tilde.functor A).map_isZero (ModuleCat.isZero_of_subsingleton N)
+  exact (hzero (.of R) (ModuleCat.of (CommRingCat.of R) (Cohomology G q))).of_iso
+    (tildeCohomologyIsoHigherDirectImage R G q).symm
 
 end AlgebraicGeometry.Scheme.Modules
 

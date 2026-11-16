@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.AlgebraicGeometry.LineBundle.Functoriality
+public import TauCeti.CategoryTheory.Monoidal.TensorPow.Basic
 
 /-!
 # Tensor powers of line bundles
@@ -14,7 +15,8 @@ For a line bundle `L` on a scheme `X` and `n : ℕ`, the tensor power `L^{⊗n}`
 defined recursively by `L^{⊗0} = 𝒪_X` and `L^{⊗(n+1)} = L^{⊗n} ⊗ L`.
 These powers retain invertibility as bundled line bundles and provide the objects used in
 global generation and ample twisting. They use `InvertibleSheaf.tensorProduct`, the operation
-defining multiplication in `LineBundleClass`, rather than the monoidal product of `X.Modules`.
+defining multiplication in `LineBundleClass`, and `InvertibleSheaf.tensorPowObjIso` compares them
+with the monoidal tensor powers `TauCeti.tensorPow` in `X.Modules`.
 The comparisons below assert existence of isomorphisms; they do not specify coherent morphisms.
 
 Ported from `roed-math/TauCeti-w2-fresh`, branch
@@ -23,8 +25,14 @@ Ported from `roed-math/TauCeti-w2-fresh`, branch
 ## Main declarations
 
 * `TauCeti.AlgebraicGeometry.InvertibleSheaf.tensorPow L n`: the tensor power `L^{⊗n}`.
-* `TauCeti.AlgebraicGeometry.LineBundleClass.mk_tensorPow`: the class of `L^{⊗n}` is the `n`-th
-  power of the class of `L` in the Picard group.
+* `AlgebraicGeometry.Scheme.Modules.isInvertible_tensorPow`: every monoidal tensor power
+  `TauCeti.tensorPow L n` of an invertible sheaf is invertible.
+* `TauCeti.AlgebraicGeometry.InvertibleSheaf.tensorPowObjIso`: the underlying sheaf of
+  `L.tensorPow n` is isomorphic to the monoidal tensor power `TauCeti.tensorPow L.obj n`.
+* `TauCeti.AlgebraicGeometry.LineBundleClass.mk_tensorPow` and
+  `TauCeti.AlgebraicGeometry.LineBundleClass.mk_tensorPow_obj`: the class of `L^{⊗n}` (and of the
+  monoidal tensor power `TauCeti.tensorPow L.obj n`) is the `n`-th power of the class of `L` in
+  the Picard group.
 * `TauCeti.AlgebraicGeometry.InvertibleSheaf.nonempty_tensorPow_obj_iso`: tensor powers of
   isomorphic line bundles are isomorphic.
 * `TauCeti.AlgebraicGeometry.InvertibleSheaf.nonempty_tensorPow_add_iso` and
@@ -40,7 +48,7 @@ Ported from `roed-math/TauCeti-w2-fresh`, branch
 
 public section
 
-open CategoryTheory AlgebraicGeometry
+open CategoryTheory AlgebraicGeometry MonoidalCategory
 
 namespace TauCeti
 
@@ -109,7 +117,39 @@ theorem nonempty_pullback_tensorPow_iso (f : X ⟶ Y) (L : InvertibleSheaf Y) (n
   rw [← LineBundleClass.mk_eq_mk_iff, ← LineBundleClass.pullback_mk]
   simp
 
+/-- Every monoidal tensor power `L^{⊗ n}` of an invertible sheaf is invertible. -/
+instance _root_.AlgebraicGeometry.Scheme.Modules.isInvertible_tensorPow (L : X.Modules)
+    [SheafOfModules.isInvertible X L] (n : ℕ) :
+    SheafOfModules.isInvertible X (TauCeti.tensorPow L n) := by
+  induction n with
+  | zero => exact SheafOfModules.isInvertible_tensorUnit X
+  | succ n ih => exact _root_.AlgebraicGeometry.Scheme.Modules.isInvertible_tensorObj L _
+
+/-- The underlying sheaf of `InvertibleSheaf.tensorPow L n` is isomorphic to the monoidal tensor
+power `TauCeti.tensorPow L.obj n`. -/
+noncomputable def tensorPowObjIso (L : InvertibleSheaf X) :
+    (n : ℕ) → (L.tensorPow n).obj ≅ TauCeti.tensorPow L.obj n
+  | 0 =>
+    eqToIso (congrArg (·.obj) L.tensorPow_zero) ≪≫ trivialObjIsoUnit X
+  | n + 1 =>
+    eqToIso (congrArg (·.obj) (L.tensorPow_succ n)) ≪≫
+      tensorProductObjIso (L.tensorPow n) L ≪≫
+      whiskerRightIso (L.tensorPowObjIso n) L.obj ≪≫
+      tensorPowSuccIso L.obj n
+
 end InvertibleSheaf
+
+namespace LineBundleClass
+
+/-- The line-bundle class of the monoidal tensor power `TauCeti.tensorPow L.obj n` is
+`(mk L) ^ n`. -/
+@[simp]
+theorem mk_tensorPow_obj (L : InvertibleSheaf X) (n : ℕ) :
+    mk ⟨TauCeti.tensorPow L.obj n, inferInstance⟩ = mk L ^ n := by
+  rw [← mk_tensorPow]
+  exact mk_eq_mk_iff.mpr ⟨(L.tensorPowObjIso n).symm⟩
+
+end LineBundleClass
 
 end AlgebraicGeometry
 
