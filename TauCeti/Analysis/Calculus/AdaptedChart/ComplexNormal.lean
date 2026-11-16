@@ -37,9 +37,10 @@ continuous. It is nevertheless Lipschitz in the normal directions: near the base
 
 `‖Φ^* J (a, w) - Φ^* J (a, 0)‖ ≤ C ‖w‖`
 
-(`OpenPartialHomeomorph.exists_norm_pullbackEnd_sub_pullbackEnd_le_of_coe_eq_normalExtension`).
-This holds for any chart given by a normal extension `γ x + A x w` with `C¹` data and a field `J`
-that is Lipschitz near the base point, because such a chart is affine in the normal variable:
+(`OpenPartialHomeomorph.exists_norm_pullbackEnd_sub_pullbackEnd_le_of_coe_eq_normalExtension`,
+in `TauCeti.Analysis.Calculus.AdaptedChart`). This holds for any chart given by a normal
+extension `γ x + A x w` with `C¹` data and a field `J` that is Lipschitz near the base point,
+because such a chart is affine in the normal variable:
 `Φ (a, w) - Φ (a, 0) = A a w`, and `DΦ (a, w) - DΦ (a, 0)` is `(v, w') ↦ (DA v) w`, both linear
 in `w`. No derivative of `Φ^* J` in the curve direction enters. For the complex normal chart it
 gives `‖Φ^* J (a, w) - J_std‖ ≤ C ‖w‖`
@@ -53,11 +54,10 @@ continuation compares two holomorphic curves; that estimate itself is not stated
 * `TauCeti.complexNormalExtension`: the extension `u a + Z a x + J (u a) (Z a y)`.
 * `TauCeti.fderiv_complexNormalExtension_zero`: its derivative on the zero section.
 * `TauCeti.fderiv_complexNormalExtension_intertwines`: that derivative is complex linear.
-* `TauCeti.exists_complexNormalChart`: the inverse function theorem for the extension.
+* `TauCeti.exists_complexNormalChart`: the inverse function theorem for the extension, a case of
+  `TauCeti.exists_normalExtensionChart`.
 * `OpenPartialHomeomorph.pullbackEnd_of_coe_eq_complexNormalExtension`: the pulled-back
   structure is standard on the zero section.
-* `OpenPartialHomeomorph.exists_norm_pullbackEnd_sub_pullbackEnd_le_of_coe_eq_normalExtension`:
-  transverse Lipschitz control of the structure pulled back along any normal-extension chart.
 * `OpenPartialHomeomorph.exists_norm_pullbackEnd_sub_le_of_coe_eq_complexNormalExtension`: the
   pulled-back structure differs from the standard one by `O(‖w‖)`.
 
@@ -112,20 +112,13 @@ theorem contDiffAt_complexNormalExtension {n : ℕ∞ω} {a : V} {y : N × N}
     ContDiffAt 𝕜 n (complexNormalExtension u J Z) (a, y) :=
   contDiffAt_normalExtension hu (hZ.continuousLinearMapCoprod ((hJ.comp a hu).clm_comp hZ))
 
-/-- If `u` and `Z` are `C^n` on an open `U` and `u` maps `U` into a set `Ω` on which `J` is
+/-- If `u` and `Z` are `C^n` on a set `U` and `u` maps `U` into a set `Ω` on which `J` is
 `C^n`, the complex normal extension is `C^n` on `U ×ˢ univ`. -/
 theorem contDiffOn_complexNormalExtension {n : ℕ∞ω} {U : Set V} {Ω : Set W}
     (hu : ContDiffOn 𝕜 n u U) (hZ : ContDiffOn 𝕜 n Z U) (hJ : ContDiffOn 𝕜 n J Ω)
     (huΩ : MapsTo u U Ω) :
-    ContDiffOn 𝕜 n (complexNormalExtension u J Z) (U ×ˢ univ) := by
-  have hA : ContDiffOn 𝕜 n (fun a ↦ (Z a).coprod ((J (u a)).comp (Z a))) U := by
-    simp_rw [← ContinuousLinearMap.comp_fst_add_comp_snd]
-    exact (hZ.clm_comp contDiffOn_const).add
-      (((hJ.comp hu huΩ).clm_comp hZ).clm_comp contDiffOn_const)
-  have hfst : MapsTo (Prod.fst : V × (N × N) → V) (U ×ˢ univ) U := fun _ hp ↦ hp.1
-  exact ((hu.comp contDiffOn_fst hfst).add
-    ((hA.comp contDiffOn_fst hfst).clm_apply contDiffOn_snd)).congr fun p _ ↦ by
-      simp [ContinuousLinearMap.coprod_apply, add_assoc]
+    ContDiffOn 𝕜 n (complexNormalExtension u J Z) (U ×ˢ univ) :=
+  contDiffOn_normalExtension hu (hZ.continuousLinearMapCoprod ((hJ.comp hu huΩ).clm_comp hZ))
 
 /-- On the zero section the derivative of the complex normal extension is the frame
 `(v, x, y) ↦ Du v + Z x + J (Z y)`. It needs only a continuous frame and a continuous `J`. -/
@@ -187,25 +180,9 @@ theorem exists_complexNormalChart [CompleteSpace V] [CompleteSpace N] {U : Set V
     (hframe : ((fderiv 𝕜 u a₀).coprod ((Z a₀).coprod ((J (u a₀)).comp (Z a₀)))).IsInvertible) :
     ∃ e : OpenPartialHomeomorph (V × (N × N)) W, ⇑e = complexNormalExtension u J Z ∧
       (a₀, 0) ∈ e.source ∧ e.source ⊆ U ×ˢ univ ∧ e.target ⊆ Ω ∧
-      ContDiffOn 𝕜 ℓ e e.source ∧ ContDiffOn 𝕜 ℓ e.symm e.target := by
-  have hΦ : ContDiffOn 𝕜 ℓ (complexNormalExtension u J Z) (U ×ˢ univ) :=
-    contDiffOn_complexNormalExtension hu hZ hJ huΩ
-  have hs : IsOpen ((U ×ˢ univ) ∩ complexNormalExtension u J Z ⁻¹' Ω) :=
-    hΦ.continuousOn.isOpen_inter_preimage (hU.prod isOpen_univ) hΩ
-  have hmem : (a₀, (0 : N × N)) ∈ (U ×ˢ univ) ∩ complexNormalExtension u J Z ⁻¹' Ω :=
-    ⟨⟨ha₀, mem_univ _⟩, by simpa only [mem_preimage, complexNormalExtension_zero] using huΩ ha₀⟩
-  have hu₁ : ContDiffAt 𝕜 1 u a₀ := (hu.contDiffAt (hU.mem_nhds ha₀)).of_le hℓ
-  have hZc : ContinuousAt Z a₀ := hZ.continuousOn.continuousAt (hU.mem_nhds ha₀)
-  have hJc : ContinuousAt J (u a₀) := hJ.continuousOn.continuousAt (hΩ.mem_nhds (huΩ ha₀))
-  obtain ⟨E, hE⟩ := hframe
-  rw [← fderiv_complexNormalExtension_zero (hu₁.differentiableAt one_ne_zero) hZc hJc] at hE
-  obtain ⟨e, he, hx, hsub, hsymm⟩ :=
-    TauCeti.ContDiffOn.exists_openPartialHomeomorph (hΦ.mono inter_subset_left) hs hmem hℓ hE
-  refine ⟨e, he, hx, fun p hp ↦ (hsub hp).1, fun y hy ↦ ?_, ?_, hsymm⟩
-  · rw [← e.right_inv hy, he]
-    exact (hsub (e.map_target hy)).2
-  · rw [he]
-    exact hΦ.mono fun p hp ↦ (hsub hp).1
+      ContDiffOn 𝕜 ℓ e e.source ∧ ContDiffOn 𝕜 ℓ e.symm e.target :=
+  exists_normalExtensionChart hU hΩ ha₀ hℓ hu
+    (hZ.continuousLinearMapCoprod ((hJ.comp hu huΩ).clm_comp hZ)) huΩ hframe
 
 end Chart
 
@@ -213,193 +190,12 @@ end TauCeti
 
 namespace OpenPartialHomeomorph
 
-section Lipschitz
-
-variable {𝕜 V E W : Type*} [RCLike 𝕜] [NormedAddCommGroup V] [NormedSpace 𝕜 V]
-  [NormedAddCommGroup E] [NormedSpace 𝕜 E] [NormedAddCommGroup W] [NormedSpace 𝕜 W]
-
-/-- The conjugates `G ∘ K ∘ M` and `G' ∘ K' ∘ M'`, with `G` a left inverse of `M` and `G'` a
-right inverse of `M'`, differ by at most the differences of `K, K'` and of `M, M'`. -/
-private theorem norm_comp_comp_sub_comp_comp_le {G G' : W →L[𝕜] V} {K K' : W →L[𝕜] W}
-    {M M' : V →L[𝕜] W} (hGM : G.comp M = ContinuousLinearMap.id 𝕜 V)
-    (hMG : M'.comp G' = ContinuousLinearMap.id 𝕜 W) :
-    ‖G.comp (K.comp M) - G'.comp (K'.comp M')‖ ≤
-      ‖G‖ * ‖M - M'‖ * ‖G'‖ * ‖K‖ * ‖M‖ + ‖G'‖ * ‖K - K'‖ * ‖M‖ +
-        ‖G'‖ * ‖K'‖ * ‖M - M'‖ := by
-  -- `G - G' = G ∘ (M' - M) ∘ G'`, since `G ∘ M = id` and `M' ∘ G' = id`.
-  have hG : G - G' = G.comp ((M' - M).comp G') := by
-    rw [ContinuousLinearMap.sub_comp, ContinuousLinearMap.comp_sub, hMG,
-      ← ContinuousLinearMap.comp_assoc, hGM, ContinuousLinearMap.comp_id,
-      ContinuousLinearMap.id_comp]
-  have hsplit : G.comp (K.comp M) - G'.comp (K'.comp M') =
-      (G - G').comp (K.comp M) + G'.comp ((K - K').comp M) + G'.comp (K'.comp (M - M')) := by
-    ext v
-    simp only [sub_apply, add_apply,
-      ContinuousLinearMap.comp_apply, map_sub]
-    abel
-  have h₁ : ‖(G - G').comp (K.comp M)‖ ≤ ‖G‖ * ‖M - M'‖ * ‖G'‖ * ‖K‖ * ‖M‖ := by
-    calc ‖(G - G').comp (K.comp M)‖ ≤ ‖G - G'‖ * (‖K‖ * ‖M‖) :=
-          (ContinuousLinearMap.opNorm_comp_le _ _).trans
-            (mul_le_mul_of_nonneg_left (ContinuousLinearMap.opNorm_comp_le _ _) (norm_nonneg _))
-      _ ≤ ‖G‖ * (‖M' - M‖ * ‖G'‖) * (‖K‖ * ‖M‖) := by
-          rw [hG]
-          gcongr
-          exact (ContinuousLinearMap.opNorm_comp_le _ _).trans
-            (mul_le_mul_of_nonneg_left (ContinuousLinearMap.opNorm_comp_le _ _) (norm_nonneg _))
-      _ = ‖G‖ * ‖M - M'‖ * ‖G'‖ * ‖K‖ * ‖M‖ := by rw [norm_sub_rev]; ring
-  have h₂ : ‖G'.comp ((K - K').comp M)‖ ≤ ‖G'‖ * ‖K - K'‖ * ‖M‖ :=
-    (ContinuousLinearMap.opNorm_comp_le _ _).trans <| by
-      rw [mul_assoc]
-      exact mul_le_mul_of_nonneg_left (ContinuousLinearMap.opNorm_comp_le _ _) (norm_nonneg _)
-  have h₃ : ‖G'.comp (K'.comp (M - M'))‖ ≤ ‖G'‖ * ‖K'‖ * ‖M - M'‖ :=
-    (ContinuousLinearMap.opNorm_comp_le _ _).trans <| by
-      rw [mul_assoc]
-      exact mul_le_mul_of_nonneg_left (ContinuousLinearMap.opNorm_comp_le _ _) (norm_nonneg _)
-  rw [hsplit]
-  exact (norm_add₃_le).trans (add_le_add (add_le_add h₁ h₂) h₃)
-
-/-- The derivatives of a normal extension at `(x, w)` and at `(x, 0)` differ by `(DA ·) w`. -/
-private theorem norm_fderiv_normalExtension_sub_le {γ : V → W} {A : V → E →L[𝕜] W} {x : V}
-    {w : E} (hγ : DifferentiableAt 𝕜 γ x) (hA : DifferentiableAt 𝕜 A x) :
-    ‖fderiv 𝕜 (TauCeti.normalExtension γ A) (x, w) -
-        fderiv 𝕜 (TauCeti.normalExtension γ A) (x, 0)‖ ≤ ‖fderiv 𝕜 A x‖ * ‖w‖ := by
-  rw [(TauCeti.hasFDerivAt_normalExtension hγ.hasFDerivAt hA.hasFDerivAt (y := w)).fderiv,
-    (TauCeti.hasFDerivAt_normalExtension hγ.hasFDerivAt hA.hasFDerivAt (y := 0)).fderiv]
-  refine ContinuousLinearMap.opNorm_le_bound _ (by positivity) fun p ↦ ?_
-  simp only [sub_apply, add_apply,
-    ContinuousLinearMap.comp_apply, ContinuousLinearMap.flip_apply, map_zero,
-    zero_apply, add_zero, add_sub_cancel_left, ContinuousLinearMap.coe_fst']
-  calc ‖fderiv 𝕜 A x p.1 w‖ ≤ ‖fderiv 𝕜 A x‖ * ‖p.1‖ * ‖w‖ :=
-        ContinuousLinearMap.le_opNorm₂ _ _ _
-    _ ≤ ‖fderiv 𝕜 A x‖ * ‖w‖ * ‖p‖ := by
-        rw [mul_right_comm]
-        gcongr
-        exact norm_fst_le p
-
-/-- The pointwise estimate behind
-`exists_norm_pullbackEnd_sub_pullbackEnd_le_of_coe_eq_normalExtension`: at `(x, w)` and `(x, 0)`,
-given bounds on the derivatives of the chart and its inverse, on `J` and on the frame, and a
-Lipschitz constant of `J` on a set containing both images. -/
-private theorem norm_pullbackEnd_sub_pullbackEnd_le {γ : V → W} {A : V → E →L[𝕜] W}
-    {J : W → W →L[𝕜] W} {e : OpenPartialHomeomorph (V × E) W} {K : ℝ≥0} {t : Set W}
-    {BA BD BM BG BJ : ℝ} (he : ⇑e = TauCeti.normalExtension γ A) (hK : LipschitzOnWith K J t)
-    {x : V} {w : E} (hps : (x, w) ∈ e.source) (hqs : (x, 0) ∈ e.source)
-    (hγ : DifferentiableAt 𝕜 γ x) (hA : DifferentiableAt 𝕜 A x)
-    (hpes : DifferentiableAt 𝕜 e.symm (e (x, w))) (hqes : DifferentiableAt 𝕜 e.symm (e (x, 0)))
-    (hpt : e (x, w) ∈ t) (hqt : e (x, 0) ∈ t) (hBA : ‖A x‖ ≤ BA) (hBD : ‖fderiv 𝕜 A x‖ ≤ BD)
-    (hBM : ‖fderiv 𝕜 (TauCeti.normalExtension γ A) (x, w)‖ ≤ BM)
-    (hpG : ‖fderiv 𝕜 e.symm (e (x, w))‖ ≤ BG) (hqG : ‖fderiv 𝕜 e.symm (e (x, 0))‖ ≤ BG)
-    (hpJ : ‖J (e (x, w))‖ ≤ BJ) (hBJ : ‖J (e (x, 0))‖ ≤ BJ) :
-    ‖e.pullbackEnd J (x, w) - e.pullbackEnd J (x, 0)‖ ≤
-      (BG * BD * BG * BJ * BM + BG * (K * BA) * BM + BG * BJ * BD) * ‖w‖ := by
-  have hd {y : E} : DifferentiableAt 𝕜 e (x, y) := by
-    rw [he]
-    exact (TauCeti.hasFDerivAt_normalExtension hγ.hasFDerivAt hA.hasFDerivAt).differentiableAt
-  -- The chart moves by `A x w` in the normal direction, and its derivative by `(DA ·) w`.
-  have hM : ‖fderiv 𝕜 e (x, w) - fderiv 𝕜 e (x, 0)‖ ≤ BD * ‖w‖ := by
-    rw [he]
-    exact (norm_fderiv_normalExtension_sub_le hγ hA).trans (by gcongr)
-  have hJ : ‖J (e (x, w)) - J (e (x, 0))‖ ≤ K * BA * ‖w‖ := by
-    calc ‖J (e (x, w)) - J (e (x, 0))‖ ≤ K * ‖e (x, w) - e (x, 0)‖ := hK.norm_sub_le hpt hqt
-      _ ≤ K * (BA * ‖w‖) := by
-          rw [he]
-          simp only [TauCeti.normalExtension_apply, add_sub_add_left_eq_sub, map_zero, sub_zero]
-          gcongr
-          exact (ContinuousLinearMap.le_opNorm _ _).trans (by gcongr)
-      _ = K * BA * ‖w‖ := by ring
-  have hMp : ‖fderiv 𝕜 e (x, w)‖ ≤ BM := by rwa [he]
-  have hBG : 0 ≤ BG := (norm_nonneg _).trans hpG
-  have hBD' : 0 ≤ BD := (ContinuousLinearMap.opNorm_nonneg _).trans hBD
-  have hBJ' : 0 ≤ BJ := (norm_nonneg _).trans hBJ
-  have hBA' : 0 ≤ BA := (ContinuousLinearMap.opNorm_nonneg _).trans hBA
-  rw [pullbackEnd_def, pullbackEnd_def]
-  calc _ ≤ _ := norm_comp_comp_sub_comp_comp_le (K := J (e (x, w))) (K' := J (e (x, 0)))
-        (e.fderiv_symm_comp_fderiv_of_mem_source hps hd hpes)
-        (e.fderiv_comp_fderiv_symm_of_mem_source hqs hd hqes)
-    _ ≤ BG * (BD * ‖w‖) * BG * BJ * BM + BG * (K * BA * ‖w‖) * BM + BG * BJ * (BD * ‖w‖) := by
-        gcongr
-    _ = (BG * BD * BG * BJ * BM + BG * (K * BA) * BM + BG * BJ * BD) * ‖w‖ := by ring
-
-/-- Near `(x₀, 0)`, the hypotheses of `norm_pullbackEnd_sub_pullbackEnd_le` hold with bounds
-given by the values at `(x₀, 0)` plus one. -/
-private theorem eventually_normalExtension_chart_bounds {γ : V → W} {A : V → E →L[𝕜] W}
-    {J : W → W →L[𝕜] W} {e : OpenPartialHomeomorph (V × E) W} {x₀ : V} {K : ℝ≥0} {t : Set W}
-    (he : ⇑e = TauCeti.normalExtension γ A) (hx₀ : (x₀, 0) ∈ e.source)
-    (hγ : ContDiffAt 𝕜 1 γ x₀) (hA : ContDiffAt 𝕜 1 A x₀) (ht : t ∈ 𝓝 (γ x₀))
-    (hJ : LipschitzOnWith K J t) (hes : ContDiffAt 𝕜 1 e.symm (γ x₀)) :
-    ∀ᶠ q in 𝓝 (x₀, (0 : E)), q ∈ e.source ∧ (DifferentiableAt 𝕜 γ q.1 ∧
-      DifferentiableAt 𝕜 A q.1) ∧ DifferentiableAt 𝕜 e.symm (e q) ∧ e q ∈ t ∧
-      ‖A q.1‖ ≤ ‖A x₀‖ + 1 ∧ ‖fderiv 𝕜 A q.1‖ ≤ ‖fderiv 𝕜 A x₀‖ + 1 ∧
-      ‖fderiv 𝕜 (TauCeti.normalExtension γ A) q‖ ≤
-        ‖fderiv 𝕜 (TauCeti.normalExtension γ A) (x₀, 0)‖ + 1 ∧
-      ‖fderiv 𝕜 e.symm (e q)‖ ≤ ‖fderiv 𝕜 e.symm (γ x₀)‖ + 1 ∧
-      ‖J (e q)‖ ≤ ‖J (γ x₀)‖ + 1 := by
-  have hep₀ : e (x₀, 0) = γ x₀ := by rw [he, TauCeti.normalExtension_zero]
-  have hec : ContinuousAt e (x₀, 0) := e.continuousAt hx₀
-  have hb {f : V × E → ℝ} {c : ℝ} (hf : Tendsto f (𝓝 (x₀, 0)) (𝓝 c)) :
-      ∀ᶠ q in 𝓝 (x₀, (0 : E)), f q ≤ c + 1 :=
-    hf.eventually (eventually_le_nhds (lt_add_one _))
-  have hfst : Tendsto (Prod.fst : V × E → V) (𝓝 (x₀, 0)) (𝓝 x₀) := continuousAt_fst
-  have hdiff : ∀ᶠ x in 𝓝 x₀, DifferentiableAt 𝕜 γ x ∧ DifferentiableAt 𝕜 A x :=
-    ((hγ.eventually (by simp)).and (hA.eventually (by simp))).mono fun x hx ↦
-      ⟨hx.1.differentiableAt one_ne_zero, hx.2.differentiableAt one_ne_zero⟩
-  have hsymm : ∀ᶠ y in 𝓝 (e (x₀, 0)), DifferentiableAt 𝕜 e.symm y := by
-    rw [hep₀]
-    exact (hes.eventually (by simp)).mono fun y hy ↦ hy.differentiableAt one_ne_zero
-  have hG : Tendsto (fun q ↦ ‖fderiv 𝕜 e.symm (e q)‖) (𝓝 (x₀, 0))
-      (𝓝 ‖fderiv 𝕜 e.symm (γ x₀)‖) :=
-    ((hes.continuousAt_fderiv one_ne_zero).norm.tendsto.comp (hep₀ ▸ hec.tendsto))
-  have hJt : Tendsto (fun q ↦ ‖J (e q)‖) (𝓝 (x₀, 0)) (𝓝 ‖J (γ x₀)‖) :=
-    ((hJ.continuousOn.continuousAt ht).norm.tendsto.comp (hep₀ ▸ hec.tendsto))
-  exact (e.open_source.eventually_mem hx₀).and <| (hfst.eventually hdiff).and <|
-    (hec.eventually hsymm).and <| (hec.eventually_mem (by rwa [hep₀])).and <|
-    (hb (hA.continuousAt.norm.tendsto.comp hfst)).and <|
-    (hb ((continuous_norm.continuousAt.comp
-      (hA.continuousAt_fderiv one_ne_zero)).tendsto.comp hfst)).and <|
-    (hb ((TauCeti.contDiffAt_normalExtension hγ hA).continuousAt_fderiv
-      one_ne_zero).norm.tendsto).and <| (hb hG).and (hb hJt)
-
-/-- **Transverse Lipschitz control along a normal-extension chart.** Let `e` be a chart whose
-underlying map is the normal extension `(x, w) ↦ γ x + A x w`, with `γ` and `A` of class `C¹`
-at `x₀` and a `C¹` inverse at `γ x₀`, and let `J` be Lipschitz on a neighbourhood of `γ x₀`.
-Then the pulled-back field `e^* J` is Lipschitz in the normal variable near `(x₀, 0)`:
-`‖e^* J (x, w) - e^* J (x, 0)‖ ≤ C ‖w‖`. No regularity of `e^* J` in `x` is claimed. -/
-theorem exists_norm_pullbackEnd_sub_pullbackEnd_le_of_coe_eq_normalExtension
-    {γ : V → W} {A : V → E →L[𝕜] W} {J : W → W →L[𝕜] W} {e : OpenPartialHomeomorph (V × E) W}
-    {x₀ : V} {K : ℝ≥0} {t : Set W} (he : ⇑e = TauCeti.normalExtension γ A)
-    (hx₀ : (x₀, 0) ∈ e.source) (hγ : ContDiffAt 𝕜 1 γ x₀) (hA : ContDiffAt 𝕜 1 A x₀)
-    (ht : t ∈ 𝓝 (γ x₀)) (hJ : LipschitzOnWith K J t) (hes : ContDiffAt 𝕜 1 e.symm (γ x₀)) :
-    ∃ C, ∀ᶠ p in 𝓝 (x₀, (0 : E)),
-      ‖e.pullbackEnd J p - e.pullbackEnd J (p.1, 0)‖ ≤ C * ‖p.2‖ := by
-  have hgood := eventually_normalExtension_chart_bounds he hx₀ hγ hA ht hJ hes
-  -- Each point `(x, w)` near `(x₀, 0)` is compared with its foot `(x, 0)`, also near `(x₀, 0)`.
-  have hzero : Tendsto (fun p : V × E ↦ (p.1, (0 : E))) (𝓝 (x₀, 0)) (𝓝 (x₀, 0)) :=
-    (continuous_fst.prodMk continuous_const).tendsto' _ _ rfl
-  set BA := ‖A x₀‖ + 1
-  set BD := ‖fderiv 𝕜 A x₀‖ + 1
-  set BM := ‖fderiv 𝕜 (TauCeti.normalExtension γ A) (x₀, 0)‖ + 1
-  set BG := ‖fderiv 𝕜 e.symm (γ x₀)‖ + 1
-  set BJ := ‖J (γ x₀)‖ + 1
-  refine ⟨BG * BD * BG * BJ * BM + BG * (K * BA) * BM + BG * BJ * BD, ?_⟩
-  filter_upwards [hgood, hzero.eventually hgood] with p
-    ⟨hps, ⟨hpγ, hpA⟩, hpes, hpt, hpA', hpDA, hpM, hpG, hpJ⟩ ⟨hqs, _, hqes, hqt, _, _, _, hqG, hqJ⟩
-  exact norm_pullbackEnd_sub_pullbackEnd_le he hJ hps hqs hpγ hpA hpes hqes hpt hqt hpA' hpDA hpM
-    hpG hqG hpJ hqJ
-
-end Lipschitz
-
 section ComplexNormal
 
 variable {𝕜 V N W : Type*} [NontriviallyNormedField 𝕜] [NormedAddCommGroup V] [NormedSpace 𝕜 V]
   [NormedAddCommGroup N] [NormedSpace 𝕜 N] [NormedAddCommGroup W] [NormedSpace 𝕜 W]
   {u : V → W} {J : W → W →L[𝕜] W} {Z : V → N →L[𝕜] W}
   {e : OpenPartialHomeomorph (V × (N × N)) W}
-
-omit [NormedSpace 𝕜 V] in
-/-- A complex normal chart inverts the curve on the zero section of its source. -/
-theorem symm_apply_of_coe_eq_complexNormalExtension (he : ⇑e = TauCeti.complexNormalExtension u J Z)
-    {a : V} (ha : (a, 0) ∈ e.source) : e.symm (u a) = (a, 0) := by
-  rw [← TauCeti.complexNormalExtension_zero (u := u) (J := J) (Z := Z) a, ← he, e.left_inv ha]
 
 /-- **The chart straightens `J` along the curve.** At a point `(a, 0)` of the source where `u` is
 `J`-holomorphic for `j`, `J (u a)² = -1` and the inverse chart is differentiable, the
