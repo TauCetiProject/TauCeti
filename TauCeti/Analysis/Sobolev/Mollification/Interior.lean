@@ -8,6 +8,8 @@ module
 public import TauCeti.Analysis.Sobolev.Mollification.Basic
 public import Mathlib.Analysis.Calculus.BumpFunction.Normed
 public import Mathlib.MeasureTheory.Function.LpSeminorm.Indicator
+public import Mathlib.Analysis.Distribution.TestFunction
+import Mathlib.MeasureTheory.Measure.Haar.Unique
 
 /-!
 # Interior mollification of domain Sobolev functions
@@ -24,6 +26,10 @@ with the geometric condition that the closed ball of the outer radius lies insid
 The vector-valued formulation applies to successive weak derivative fields when constructing
 smooth local approximations in higher-order Sobolev spaces.
 
+`HasWeakFDerivOn.exists_testFunction_convolution_normed` packages the mollifications of a compactly
+supported field as test functions on `Ω` whose derivatives near the support are the mollifications
+of the weak derivative; this approximates Sobolev test fields by smooth ones.
+
 ## References
 
 L. C. Evans, *Partial Differential Equations*, Chapter 5, §5.3.1.
@@ -34,7 +40,7 @@ public section
 namespace TauCeti
 
 open MeasureTheory Set TopologicalSpace
-open scoped ContDiff Convolution ENNReal
+open scoped ContDiff Convolution ENNReal Distributions Pointwise
 
 variable {E F : Type*} [MeasurableSpace E] [NormedAddCommGroup E] [NormedSpace ℝ E]
   [BorelSpace E] [NormedAddCommGroup F] [NormedSpace ℝ F]
@@ -122,5 +128,43 @@ theorem HasWeakFDerivOn.fderiv_indicator_convolution_normed
         (ContinuousLinearMap.lsmul ℝ ℝ :
           ℝ →L[ℝ] (E →L[ℝ] F) →L[ℝ] E →L[ℝ] F).flip, mu] phi.normed mu) x :=
   (h.hasFDerivAt_indicator_convolution_normed hu hU hp hq phi x hx).fderiv
+
+omit [SFinite mu] [IsLocallyFiniteMeasure mu] in
+/-- **Mollifications of compactly supported Sobolev fields are test functions.** Let `u` be a
+compactly supported `Lᵖ` field with weak derivative field `U ∈ L^q(Omega)`, `1 ≤ p, q`, and let
+the closed `δ`-balls around the points of `K = cthickening δ (tsupport u)` lie in `Omega`. Then
+for a normalized bump `phi` with `phi.rOut ≤ δ`, the mollification of `u` by `phi` is a test
+function on `Omega` supported in `K`, whose derivative on `K` is the mollification of the zero
+extension of `U`. -/
+theorem HasWeakFDerivOn.exists_testFunction_convolution_normed
+    [FiniteDimensional ℝ E] [HasContDiffBump E] [mu.IsAddHaarMeasure]
+    (h : HasWeakFDerivOn mu Omega u U) (huc : HasCompactSupport u) (hu : MemLp u p mu)
+    (hU : MemLp U q (mu.restrict Omega)) (hp : 1 ≤ p) (hq : 1 ≤ q) {δ : ℝ}
+    (hball : ∀ x ∈ Metric.cthickening δ (tsupport u), Metric.closedBall x δ ⊆ Omega)
+    (phi : ContDiffBump (0 : E)) (hphi : phi.rOut ≤ δ) :
+    ∃ φ : 𝓓(Omega, F), ⇑φ = phi.normed mu ⋆[ContinuousLinearMap.lsmul ℝ ℝ, mu] u ∧
+      tsupport φ ⊆ Metric.cthickening δ (tsupport u) ∧
+      ∀ x ∈ Metric.cthickening δ (tsupport u), fderiv ℝ φ x =
+        (phi.normed mu ⋆[ContinuousLinearMap.lsmul ℝ ℝ, mu] (Omega : Set E).indicator U) x := by
+  have hK'Omega : Metric.cthickening δ (tsupport u) ⊆ Omega := fun x hx =>
+    hball x hx (Metric.mem_closedBall_self (phi.rOut_pos.le.trans hphi))
+  set g := phi.normed mu ⋆[ContinuousLinearMap.lsmul ℝ ℝ, mu] u
+  have hgs : tsupport g ⊆ Metric.cthickening δ (tsupport u) := by
+    have hsupp : Function.support g ⊆ Metric.thickening phi.rOut (tsupport u) := by
+      refine (support_convolution_subset _).trans ?_
+      rw [phi.support_normed_eq, ← ball_add_zero]
+      exact add_subset_add_left (subset_tsupport u)
+    exact (closure_mono hsupp).trans <| (Metric.closure_thickening_subset_cthickening _ _).trans <|
+      Metric.cthickening_mono hphi _
+  refine ⟨⟨g, phi.hasCompactSupport_normed.contDiff_convolution_left _ phi.contDiff_normed
+      (hu.locallyIntegrable hp), huc.isCompact.cthickening.of_isClosed_subset
+        (isClosed_tsupport _) hgs, hgs.trans hK'Omega⟩, rfl, hgs, fun x hx => ?_⟩
+  have huOmega : (Omega : Set E).indicator u = u :=
+    indicator_eq_self.2 ((subset_tsupport u).trans
+      ((Metric.self_subset_cthickening _).trans hK'Omega))
+  have := h.fderiv_indicator_convolution_normed (hu.restrict Omega) hU hp hq phi x
+    ((Metric.closedBall_subset_closedBall hphi).trans (hball x hx))
+  rw [huOmega, convolution_flip, convolution_flip] at this
+  exact this
 
 end TauCeti

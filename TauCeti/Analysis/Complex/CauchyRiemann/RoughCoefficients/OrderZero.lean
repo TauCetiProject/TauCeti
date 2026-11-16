@@ -9,11 +9,13 @@ public import TauCeti.Analysis.Complex.CauchyRiemann.RoughCoefficients.Weak
 import TauCeti.Analysis.Calculus.BumpFunction.Convolution
 import TauCeti.Analysis.Complex.Wirtinger.DivergenceLaplace
 import TauCeti.Analysis.Distribution.TestFunction.LineDeriv
+import TauCeti.Analysis.InnerProductSpace.Adjoint
 import TauCeti.Analysis.InnerProductSpace.Laplacian.Basic
 import TauCeti.Analysis.Sobolev.Leibniz
 import TauCeti.Analysis.Sobolev.Local.Morrey.Higher
 import TauCeti.Analysis.Sobolev.Mollification.Interior
 import TauCeti.MeasureTheory.Function.Lp.ApproximateIdentity
+import TauCeti.Topology.MetricSpace.Thickening
 
 /-!
 # Order-zero regularity for real Cauchy–Riemann equations with Sobolev coefficients
@@ -86,44 +88,6 @@ section Mollify
 
 variable {ψ : ℂ → V} {Dψ : ℂ → ℂ →L[ℝ] V}
 
-omit [CompleteSpace V] in
-/-- The mollifications of a bounded compactly supported field `ψ` with weak derivative `Dψ` are
-test functions supported in `K' = cthickening δ (tsupport ψ)`. When the `δ`-balls around `K'` lie
-in `Ω`, their derivative on `K'` is the mollification of the zero extension of `Dψ`. -/
-private theorem exists_testFunction_mollify (hψ : HasWeakFDerivOn volume Ω ψ Dψ)
-    (hψc : HasCompactSupport ψ) (hψb : MemLp ψ ⊤) (hDψ : MemLp Dψ s (volume.restrict Ω))
-    (hs1 : 1 ≤ s) {δ : ℝ} (hδ : 0 < δ)
-    (hball : ∀ z ∈ cthickening δ (tsupport ψ), closedBall z δ ⊆ Ω) (n : ℕ) :
-    ∃ φ : 𝓓(Ω, V),
-      ⇑φ = (ContDiffBump.shrinking hδ n : ContDiffBump (0 : ℂ)).normed volume
-        ⋆[ContinuousLinearMap.lsmul ℝ ℝ, volume] ψ ∧
-      tsupport φ ⊆ cthickening δ (tsupport ψ) ∧
-      ∀ z ∈ cthickening δ (tsupport ψ), fderiv ℝ φ z =
-        ((ContDiffBump.shrinking hδ n : ContDiffBump (0 : ℂ)).normed volume
-          ⋆[ContinuousLinearMap.lsmul ℝ ℝ, volume] (Ω : Set ℂ).indicator Dψ) z := by
-  have hK'Ω : cthickening δ (tsupport ψ) ⊆ Ω := fun z hz => hball z hz (mem_closedBall_self hδ.le)
-  set ρ : ContDiffBump (0 : ℂ) := ContDiffBump.shrinking hδ n
-  have hρδ : ρ.rOut ≤ δ := by
-    rw [ContDiffBump.rOut_shrinking]
-    exact div_le_self hδ.le (by linarith [n.cast_nonneg (α := ℝ)])
-  set g := ρ.normed volume ⋆[ContinuousLinearMap.lsmul ℝ ℝ, volume] ψ
-  have hgs : tsupport g ⊆ cthickening δ (tsupport ψ) := by
-    have hsupp : Function.support g ⊆ thickening ρ.rOut (tsupport ψ) := by
-      refine (support_convolution_subset _).trans ?_
-      rw [ρ.support_normed_eq, ← ball_add_zero]
-      exact add_subset_add_left (subset_tsupport ψ)
-    exact (closure_mono hsupp).trans <| (closure_thickening_subset_cthickening _ _).trans <|
-      cthickening_mono hρδ _
-  refine ⟨⟨g, ρ.hasCompactSupport_normed.contDiff_convolution_left _ ρ.contDiff_normed
-      (hψb.locallyIntegrable le_top), hψc.isCompact.cthickening.of_isClosed_subset
-        (isClosed_tsupport _) hgs, hgs.trans hK'Ω⟩, rfl, hgs, fun z hz => ?_⟩
-  have hψΩ : (Ω : Set ℂ).indicator ψ = ψ :=
-    indicator_eq_self.2 ((subset_tsupport ψ).trans ((self_subset_cthickening _).trans hK'Ω))
-  have := hψ.fderiv_indicator_convolution_normed (hψb.restrict Ω) hDψ le_top hs1 ρ z
-    ((closedBall_subset_closedBall hρδ).trans (hball z hz))
-  rw [hψΩ, convolution_flip, convolution_flip] at this
-  exact this
-
 /-- Pairings of the derivatives of mollifications with a fixed field converge. -/
 private theorem tendsto_integral_inner_fderiv_mollify {K' : Set ℂ} (hK'm : MeasurableSet K')
     (hK'Ω : K' ⊆ Ω) [Fact (1 ≤ s)] {ρ : ℕ → ContDiffBump (0 : ℂ)}
@@ -189,16 +153,6 @@ private theorem tendsto_integral_inner_mollify {K' : Set ℂ} (hK'm : Measurable
     · rw [indicator_of_notMem hz, indicator_of_notMem hz, inner_zero_left]
 
 omit [CompleteSpace V] in
-/-- A compact set `K ⊆ Ω` has a closed thickening `K'` such that the closed `δ`-balls around the
-points of `K'` lie in `Ω`. -/
-private theorem exists_forall_closedBall_subset {K : Set ℂ} (hK : IsCompact K) (hKΩ : K ⊆ Ω) :
-    ∃ δ > 0, ∀ z ∈ cthickening δ K, closedBall z δ ⊆ Ω := by
-  obtain ⟨δ₀, hδ₀, hδ₀Ω⟩ := hK.exists_cthickening_subset_open Ω.isOpen hKΩ
-  have hδ : 0 < δ₀ / 2 := half_pos hδ₀
-  exact ⟨δ₀ / 2, hδ, fun z hz => (closedBall_subset_cthickening hz _).trans <|
-    (cthickening_cthickening_subset hδ.le hδ.le _).trans <| by rw [add_halves]; exact hδ₀Ω⟩
-
-omit [CompleteSpace V] in
 /-- The weak equation tested against `ψ` localizes: since `Dψ` vanishes almost everywhere on `Ω`
 where `ψ` does, an identity between integrals over a set `K' ⊆ Ω` containing the support of `ψ`
 is the same identity over `Ω`. -/
@@ -253,7 +207,7 @@ theorem IsWeakCRSolution.integral_inner_eq_of_hasWeakFDerivOn
       ∫ z in Ω, (-⟪Dψ z 1, ξ z⟫_ℝ - ⟪Dψ z I, J z (ξ z)⟫_ℝ -
         ⟪ψ z, DJ z I (ξ z)⟫_ℝ + ⟪ψ z, S z (ξ z)⟫_ℝ) = ∫ z in Ω, ⟪ψ z, η z⟫_ℝ := by
   -- A compact neighbourhood `K'` of the support of `ψ` whose `δ`-balls stay in `Ω`.
-  obtain ⟨δ, hδ, hball⟩ := exists_forall_closedBall_subset hψc.isCompact hψΩ
+  obtain ⟨δ, hδ, hball⟩ := hψc.isCompact.exists_forall_closedBall_subset_of_isOpen Ω.isOpen hψΩ
   set K' := cthickening δ (tsupport ψ)
   have hK'c : IsCompact K' := hψc.isCompact.cthickening
   have hK'm : MeasurableSet K' := isClosed_cthickening.measurableSet
@@ -284,7 +238,9 @@ theorem IsWeakCRSolution.integral_inner_eq_of_hasWeakFDerivOn
     fun ha => memLp_one_iff_integrable.1 ((innerSL ℝ : V →L[ℝ] V →L[ℝ] ℝ).memLp_of_bilin 1
       (hψb.restrict K') (memLp_one_iff_integrable.2 ha))
   -- Test the weak equation against the mollifications of `ψ` and pass to the limit.
-  choose φ hφ hφs hderiv using exists_testFunction_mollify hψ hψc hψb hDψ hs1 hδ hball
+  choose φ hφ hφs hderiv using fun n => hψ.exists_testFunction_convolution_normed hψc hψb hDψ
+    le_top hs1 hball (ContDiffBump.shrinking hδ n) ((ContDiffBump.rOut_shrinking hδ n).trans_le
+      (div_le_self hδ.le (le_add_of_nonneg_left n.cast_nonneg)))
   have hρ := ContDiffBump.tendsto_rOut_shrinking (c := (0 : ℂ)) hδ
   have hlimD : ∀ (c : ℂ) {a : ℂ → V}, MemLp a q (volume.restrict K') →
       Tendsto (fun n => ∫ z, ⟪fderiv ℝ (φ n : ℂ → V) z c, a z⟫_ℝ) atTop
@@ -308,17 +264,13 @@ omit [CompleteSpace V] in
 `W^{1,p}_loc` agrees almost everywhere with a continuous map, by Morrey's embedding, so it is
 locally bounded on `Ω`. -/
 theorem IsSobolevCRCoefficients.memLpLoc_top_coeff [FiniteDimensional ℝ V]
-    (hc : IsSobolevCRCoefficients p Ω J DJ S) (hp : 2 < p) : MemLpLoc ⊤ Ω J := by
-  obtain ⟨g, hg, hJg⟩ := (memWkpLoc_succ_iff_of_isOpen.2 ⟨hc.memLpLoc_coeff, DJ,
-    hc.hasWeakFDerivOn, memWkpLoc_zero_iff.2 hc.memLpLoc_deriv⟩ :
-      MemWkpLoc p Ω (0 + 1) J).exists_contDiffOn_ae_eq hp
-  exact hg.continuousOn.memLpLoc.congr_ae hJg.symm
+    (hc : IsSobolevCRCoefficients p Ω J DJ S) (hp : 2 < p) : MemLpLoc ⊤ Ω J :=
+  (memWkpLoc_succ_iff_of_isOpen.2 ⟨hc.memLpLoc_coeff, DJ, hc.hasWeakFDerivOn,
+    memWkpLoc_zero_iff.2 hc.memLpLoc_deriv⟩ : MemWkpLoc p Ω (0 + 1) J).memLpLoc_top hp
 
 /-- `M ↦ Mᵀ v`, as a continuous linear map. -/
 private noncomputable def adjointApply (v : V) : (V →L[ℝ] V) →L[ℝ] V :=
-  let e : (V →L[ℝ] V) ≃L[ℝ] V →L[ℝ] V :=
-    (ContinuousLinearMap.adjoint (𝕜 := ℝ) (E := V) (F := V)).toContinuousLinearEquiv
-  (ContinuousLinearMap.apply ℝ V v).comp (e : (V →L[ℝ] V) →L[ℝ] V →L[ℝ] V)
+  (ContinuousLinearMap.apply ℝ V v).comp (ContinuousLinearMap.adjointRealCLM (𝕜 := ℝ))
 
 private theorem inner_adjointApply (v : V) (M : V →L[ℝ] V) (w : V) :
     ⟪adjointApply v M, w⟫_ℝ = ⟪v, M w⟫_ℝ := by
