@@ -23,10 +23,9 @@ representation:
   then acting by `k` adds `m • f k - f k` to the value at `m`, for any scalar multiplication of
   `G` on `M`: `k • f (k⁻¹ * m * k) = m • f k - f k + f m`.
 * `groupCohomology.smul_zero_of_isCocycle₁`: an action admitting a `1`-cocycle fixes `0`.
-* `groupCohomology.isMulCocycle₁_iff_isMulCrossedHom`, `groupCohomology.IsMulCocycle₁.mul`,
-  `groupCohomology.IsMulCocycle₁.pow`, `groupCohomology.IsMulCoboundary₁.isMulCocycle₁`:
-  over a commutative coefficient group, `IsMulCocycle₁` agrees with `TauCeti.IsMulCrossedHom`, is
-  closed under pointwise products and powers, and contains every multiplicative `1`-coboundary.
+* `groupCohomology.isMulCocycle₁_iff_isMulCrossedHom`, `groupCohomology.IsMulCocycle₁.pow`:
+  over a commutative coefficient group, `IsMulCocycle₁` agrees with `TauCeti.IsMulCrossedHom` and
+  is closed under pointwise powers.
 * `groupCohomology.zeroLocus`: the zero locus `{g | f g = 0}` is a subgroup of `G`, for any group
   action (not necessarily distributive) admitting the cocycle. As a set it is `f ⁻¹' {0}`
   (`groupCohomology.coe_zeroLocus`), and on `Additive M` it agrees with `oneLocus`
@@ -75,34 +74,10 @@ theorem isMulCocycle₁_iff_isMulCrossedHom {G M : Type*} [Mul G] [CommGroup M] 
     {f : G → M} : IsMulCocycle₁ f ↔ TauCeti.IsMulCrossedHom f :=
   TauCeti.isMulCrossedHom_iff.symm
 
-/-- View a multiplicative `1`-cocycle as a `TauCeti.IsMulCrossedHom`. -/
-theorem IsMulCocycle₁.isMulCrossedHom {G M : Type*} [Mul G] [CommGroup M] [SMul G M]
-    {f : G → M} (hf : IsMulCocycle₁ f) : TauCeti.IsMulCrossedHom f :=
-  TauCeti.isMulCrossedHom_iff.mpr hf
-
-/-- A pointwise product of multiplicative `1`-cocycles is a multiplicative `1`-cocycle. -/
-theorem IsMulCocycle₁.mul {G M : Type*} [Monoid G] [CommGroup M] [MulDistribMulAction G M]
-    {f f' : G → M} (hf : IsMulCocycle₁ f) (hf' : IsMulCocycle₁ f') :
-    IsMulCocycle₁ (f * f') := fun g h => by
-  simp only [Pi.mul_apply, hf g h, hf' g h, smul_mul', mul_mul_mul_comm]
-
 /-- A pointwise power of a multiplicative `1`-cocycle is a multiplicative `1`-cocycle. -/
 theorem IsMulCocycle₁.pow {G M : Type*} [Monoid G] [CommGroup M] [MulDistribMulAction G M]
     {f : G → M} (hf : IsMulCocycle₁ f) (n : ℕ) : IsMulCocycle₁ (f ^ n) := fun g h => by
   simp only [Pi.pow_apply, hf g h, mul_pow, smul_pow']
-
-/-- For `a : M`, the principal map `g ↦ g • a / a` is a multiplicative `1`-coboundary. -/
-theorem isMulCoboundary₁_smul_div_self {G M : Type*} [CommGroup M] [SMul G M] (a : M) :
-    IsMulCoboundary₁ (fun g : G => g • a / a) :=
-  ⟨a, fun _ => rfl⟩
-
-/-- Every multiplicative `1`-coboundary is a multiplicative `1`-cocycle. -/
-theorem IsMulCoboundary₁.isMulCocycle₁ {G M : Type*} [Monoid G] [CommGroup M]
-    [MulDistribMulAction G M] {f : G → M} (hf : IsMulCoboundary₁ f) : IsMulCocycle₁ f := by
-  obtain ⟨a, ha⟩ := hf
-  intro g h
-  rw [← ha, ← ha, ← ha]
-  exact (TauCeti.isMulCrossedHom_smul_div_self a).map_mul g h
 
 /-- An additive `1`-cocycle into `Additive M`, read multiplicatively via `Additive.toMul`, is a
 multiplicative crossed homomorphism. -/

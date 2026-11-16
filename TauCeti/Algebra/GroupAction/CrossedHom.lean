@@ -25,19 +25,18 @@ order induced by left complement decompositions `g = n * d`. In contrast to
 
 Without commutativity of `M` or distributivity of the action:
 
-* Over a monoid `G` and a right-cancellative monoid `M` with `1`, every multiplicative crossed
+* Over a monoid `G` acting on a right-cancellative `MulOneClass` `M`, every multiplicative crossed
   homomorphism sends `1` to `1` (`TauCeti.IsMulCrossedHom.map_one`) and forces the action to fix
-  `1` (`TauCeti.IsMulCrossedHom.smul_one`).
+  `1` (`TauCeti.IsMulCrossedHom.smul_one`). When `G` is a group, the `1`-locus `{g | f g = 1}` is
+  a subgroup of `G` (`TauCeti.IsMulCrossedHom.oneLocus`), compatible with restriction along
+  subgroup inclusions (`TauCeti.IsMulCrossedHom.map_subtype_oneLocus_comp_inclusion`).
 * Over groups `G` and `M`, `k • f (k⁻¹ * m * k) = m • f k * f m * (f k)⁻¹`
-  (`TauCeti.IsMulCrossedHom.smul_apply_inv_mul_mul`), `g • f g⁻¹ = (f g)⁻¹`
-  (`TauCeti.IsMulCrossedHom.smul_map_inv`), and the `1`-locus `{g | f g = 1}` is a subgroup of `G`
-  (`TauCeti.IsMulCrossedHom.oneLocus`), compatible with restriction along subgroup inclusions
-  (`TauCeti.IsMulCrossedHom.map_subtype_oneLocus_comp_inclusion`).
-* When `G` acts on a group `M` by group automorphisms (`MulDistribMulAction G M`), the principal
-  map `g ↦ g • a / a` is a multiplicative crossed homomorphism
-  (`TauCeti.isMulCrossedHom_smul_div_self`), and conjugating a multiplicative crossed homomorphism
-  on `H ≤ G` by `g : G` produces one on `g H g⁻¹` whose `1`-locus in `G` is conjugated by `g`
-  (`TauCeti.IsMulCrossedHom.conj`, `TauCeti.IsMulCrossedHom.map_subtype_oneLocus_conj`), extending
+  (`TauCeti.IsMulCrossedHom.smul_apply_inv_mul_mul`) and `g • f g⁻¹ = (f g)⁻¹`
+  (`TauCeti.IsMulCrossedHom.smul_map_inv`).
+* When a group `G` acts on a monoid `M` by monoid endomorphisms (`MulDistribMulAction G M`),
+  conjugating a multiplicative crossed homomorphism on `H ≤ G` by `g : G` produces one on `g H g⁻¹`
+  (`TauCeti.IsMulCrossedHom.conj`); when `M` is right-cancellative, its `1`-locus in `G` is
+  conjugated by `g` (`TauCeti.IsMulCrossedHom.map_subtype_oneLocus_conj`), extending
   `groupCohomology.zeroLocus` and `groupCohomology.IsCocycle₁.conj` from
   `TauCeti.RepresentationTheory.Homological.GroupCohomology.Cocycle`.
 
@@ -86,14 +85,14 @@ section Monoid
 
 variable {G M : Type*} [Monoid G] [MulOneClass M] [IsRightCancelMul M] [MulAction G M]
 
-/-- A multiplicative crossed homomorphism into a right-cancellative monoid with `1` sends `1` to
+/-- A multiplicative crossed homomorphism into a right-cancellative `MulOneClass` sends `1` to
 `1`. -/
 theorem IsMulCrossedHom.map_one {f : G → M} (hf : IsMulCrossedHom f) : f 1 = 1 := by
   have h := hf.map_mul 1 1
   rw [mul_one, one_smul] at h
   exact (mul_right_cancel ((one_mul (f 1)).trans h)).symm
 
-/-- A monoid action on a right-cancellative monoid with `1` admitting a multiplicative crossed
+/-- A monoid action on a right-cancellative `MulOneClass` admitting a multiplicative crossed
 homomorphism fixes `1`. -/
 theorem IsMulCrossedHom.smul_one {f : G → M} (hf : IsMulCrossedHom f) (g : G) :
     g • (1 : M) = 1 := by
@@ -110,15 +109,6 @@ section MulDistribMulAction
 theorem isMulCrossedHom_const_one {G M : Type*} [Monoid G] [Monoid M] [MulDistribMulAction G M] :
     IsMulCrossedHom (fun _ : G => (1 : M)) := fun g _ => by
   rw [MulDistribMulAction.smul_one g, mul_one]
-
-/-- **Principal multiplicative crossed homomorphism.** For any `MulDistribMulAction` of `G` on a
-not-necessarily-commutative group `M` and `a : M`, the map `g ↦ g • a / a` is a multiplicative
-crossed homomorphism. -/
-theorem isMulCrossedHom_smul_div_self {G M : Type*} [Monoid G] [Group M]
-    [MulDistribMulAction G M] (a : M) :
-    IsMulCrossedHom (fun g : G => g • a / a) := fun g h => by
-  simp only [div_eq_mul_inv, smul_mul', smul_inv', mul_smul]
-  group
 
 end MulDistribMulAction
 
@@ -148,21 +138,23 @@ theorem IsMulCrossedHom.comp_inclusion {G M : Type*} [Group G] [Mul M] [SMul G M
     IsMulCrossedHom (c ∘ Subgroup.inclusion hLH) :=
   hc.comp (Subgroup.inclusion hLH) fun _ _ => rfl
 
-variable {G M : Type*} [Group G] [Group M] [MulAction G M]
-
 /-- The value of a multiplicative crossed homomorphism at `g⁻¹`, acted on by `g`, is `(f g)⁻¹`. -/
-theorem IsMulCrossedHom.smul_map_inv {f : G → M} (hf : IsMulCrossedHom f) (g : G) :
+theorem IsMulCrossedHom.smul_map_inv {G M : Type*} [Group G] [Group M] [MulAction G M]
+    {f : G → M} (hf : IsMulCrossedHom f) (g : G) :
     g • f g⁻¹ = (f g)⁻¹ := by
   rw [← mul_eq_one_iff_eq_inv, ← hf.map_one, ← mul_inv_cancel g, hf.map_mul]
 
 /-- The value of a multiplicative crossed homomorphism at `g⁻¹` is `g⁻¹ • (f g)⁻¹`. -/
-theorem IsMulCrossedHom.map_inv {f : G → M} (hf : IsMulCrossedHom f) (g : G) :
+theorem IsMulCrossedHom.map_inv {G M : Type*} [Group G] [Group M] [MulAction G M]
+    {f : G → M} (hf : IsMulCrossedHom f) (g : G) :
     f g⁻¹ = g⁻¹ • (f g)⁻¹ := by
   rw [← hf.smul_map_inv, inv_smul_smul]
 
+variable {G M : Type*} [Group G] [MulOneClass M] [IsRightCancelMul M] [MulAction G M]
+
 /-- **The `1`-locus of a multiplicative crossed homomorphism**, `{g | f g = 1}`, as a subgroup of
-`G`, for any group action (not necessarily distributive) on any group `M` (not necessarily
-commutative). -/
+`G`, for any group action (not necessarily distributive) on a right-cancellative `MulOneClass` `M`
+(not necessarily commutative). -/
 def IsMulCrossedHom.oneLocus {f : G → M} (hf : IsMulCrossedHom f) : Subgroup G where
   carrier := {g | f g = 1}
   one_mem' := hf.map_one
@@ -171,8 +163,8 @@ def IsMulCrossedHom.oneLocus {f : G → M} (hf : IsMulCrossedHom f) : Subgroup G
     rw [hf.map_mul, hg, hh, hf.smul_one, mul_one]
   inv_mem' {g} hg := by
     simp only [Set.mem_ofPred_eq] at hg ⊢
-    have h := hf.smul_map_inv g
-    rwa [hg, inv_one, ← hf.smul_one g, smul_left_cancel_iff] at h
+    have h := hf.map_mul g⁻¹ g
+    rwa [inv_mul_cancel, hf.map_one, hg, hf.smul_one, one_mul, eq_comm] at h
 
 /-- An element lies in the `1`-locus of a multiplicative crossed homomorphism iff the map equals
 `1` there. -/
@@ -217,24 +209,23 @@ section Conj
 
 open scoped Pointwise
 
-variable {G M : Type*} [Group G] [Group M] [MulDistribMulAction G M] {H : Subgroup G}
+variable {G M : Type*} [Group G] [Monoid M] [MulDistribMulAction G M] {H : Subgroup G}
 
 /-- Conjugating a multiplicative crossed homomorphism `c` on `H` by `g` gives the multiplicative
 crossed homomorphism `x ↦ g • c (g⁻¹ * x * g)` on `g H g⁻¹`. -/
 theorem IsMulCrossedHom.conj {c : H → M} (hc : IsMulCrossedHom c) (g : G) :
     IsMulCrossedHom fun x : ↥(MulAut.conj g • H) =>
-      g • c ((Subgroup.equivSMul (MulAut.conj g) H).symm x) := by
-  intro x y
-  dsimp only
-  rw [_root_.map_mul, hc.map_mul, smul_mul', Subgroup.smul_def, Subgroup.smul_def, smul_smul,
-    smul_smul, Subgroup.equivSMul_symm_apply_coe (MulAut.conj g) H x]
-  simp only [MulAut.smul_def, MulAut.conj_inv_apply]
-  group
+      g • c ((Subgroup.equivSMul (MulAut.conj g) H).symm x) :=
+  isMulCrossedHom_iff.mpr fun x y => by
+    rw [_root_.map_mul, hc.map_mul, smul_mul', Subgroup.smul_def, Subgroup.smul_def, smul_smul,
+      smul_smul, Subgroup.equivSMul_symm_apply_coe (MulAut.conj g) H x]
+    simp only [MulAut.smul_def, MulAut.conj_inv_apply, mul_assoc, mul_inv_cancel_left]
 
 /-- The `1`-locus of the conjugate `x ↦ g • c (g⁻¹ * x * g)` of a multiplicative crossed
 homomorphism on `H`, viewed in `G`, is the conjugate by `g` of the `1`-locus of `c`. -/
 @[simp]
-theorem IsMulCrossedHom.map_subtype_oneLocus_conj {c : H → M} (hc : IsMulCrossedHom c) (g : G) :
+theorem IsMulCrossedHom.map_subtype_oneLocus_conj [IsRightCancelMul M] {c : H → M}
+    (hc : IsMulCrossedHom c) (g : G) :
     (hc.conj g).oneLocus.map (MulAut.conj g • H).subtype =
       MulAut.conj g • hc.oneLocus.map H.subtype := by
   have hsmul (m : M) : g • m = 1 ↔ m = 1 := by
@@ -247,8 +238,9 @@ theorem IsMulCrossedHom.map_subtype_oneLocus_conj {c : H → M} (hc : IsMulCross
   · rintro ⟨y, hy, rfl⟩
     exact ⟨_, hy, Subgroup.equivSMul_symm_apply_coe (MulAut.conj g) H y⟩
   · rintro ⟨z, hz, hzx⟩
-    refine ⟨Subgroup.equivSMul _ H z, by simpa using hz, ?_⟩
-    rw [Subgroup.equivSMul_apply_coe, hzx, smul_inv_smul]
+    refine ⟨Subgroup.equivSMul (MulAut.conj g) H z, ?_, ?_⟩
+    · rwa [MulEquiv.symm_apply_apply]
+    · rw [Subgroup.equivSMul_apply_coe, hzx, smul_inv_smul]
 
 end Conj
 
