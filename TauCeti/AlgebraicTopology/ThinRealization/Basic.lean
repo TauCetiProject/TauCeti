@@ -10,29 +10,16 @@ public import TauCeti.AlgebraicTopology.FatRealization
 /-!
 # The thin geometric realization of a simplicial space
 
-A simplicial space is a functor `X : SimplexCategoryᵒᵖ ⥤ TopCat`: a space `Xₙ` for each `n` with
-all simplicial operators along morphisms `f : ⦋m⦌ ⟶ ⦋n⦌` of `SimplexCategory`, both faces and
-degeneracies. Its thin (ordinary topological) geometric realization `|X|`
-(`TauCeti.thinRealization X`) is the quotient of the disjoint union `Σ n, Xₙ × Δⁿ` by the
-identifications `(X(f) x, t) ∼ (x, f_* t)` for every morphism `f : ⦋m⦌ ⟶ ⦋n⦌`, where `f_*` is the
-induced affine map of topological simplices (`SimplexCategory.toTop`).
+The thin geometric realization `|X|` (`TauCeti.thinRealization X`) of a simplicial space
+`X : SimplexCategoryᵒᵖ ⥤ TopCat` is the quotient of `Σ n, Xₙ × Δⁿ` by the identifications
+`(X(f) x, t) ∼ (x, f_* t)` for all morphisms `f : ⦋m⦌ ⟶ ⦋n⦌` in `SimplexCategory`.
 
-This file constructs `TauCeti.thinRealization X` with its characteristic maps
-`TauCeti.thinRealization.ι X n : C(Xₙ × Δⁿ, |X|)`, its universal property
-(`TauCeti.thinRealization.desc`, `TauCeti.thinRealization.hom_ext`), its quotient topology
-(`TauCeti.thinRealization.isOpen_iff`, `TauCeti.thinRealization.isClosed_iff`,
-`TauCeti.thinRealization.continuous_iff`), its functoriality (`TauCeti.thinRealizationFunctor`),
-augmentations (`TauCeti.thinRealization.augment`), homotopies (`TauCeti.thinRealization.homotopy`),
-and open and closed restriction theorems (`TauCeti.thinRealization.isOpenEmbedding_map`,
-`TauCeti.thinRealization.isClosedEmbedding_map`). The API and partial-inverse restriction proofs
-parallel `TauCeti.fatRealization` (`TauCeti/AlgebraicTopology/FatRealization.lean`) for full
-simplicial spaces.
-
-Forgetting the degeneracy identifications gives the canonical comparison map
-`TauCeti.thinRealization.fatToThin X : ‖X‖ ⟶ |X|` from the fat realization
-(`TauCeti.fatRealization`) of the underlying semi-simplicial space to the thin realization. It is
-a natural quotient map (`TauCeti.thinRealization.isQuotientMap_fatToThin`) compatible with
-augmentations (`TauCeti.thinRealization.fatToThin_comp_augment`).
+This file constructs `TauCeti.thinRealization X` together with its characteristic maps
+(`TauCeti.thinRealization.ι`), universal property (`desc`, `hom_ext`), quotient topology
+(`isOpen_iff`, `isClosed_iff`, `continuous_iff`), functoriality (`TauCeti.thinRealizationFunctor`),
+augmentations (`augment`), homotopies (`homotopy`), open and closed restriction theorems
+(`isOpenEmbedding_map`, `isClosedEmbedding_map`), and the natural quotient comparison map
+`TauCeti.thinRealization.fatToThin X : ‖X‖ ⟶ |X|` from `TauCeti.fatRealization`.
 
 ## References
 
@@ -82,8 +69,7 @@ theorem ι_map {m n : SimplexCategory} (f : m ⟶ n) (x : X.obj (op n)) (t : toT
 
 /-- Every point of the thin realization lies in the image of a characteristic map. -/
 theorem ι_jointly_surjective (p : thinRealization X) : ∃ n x t, ι X n (x, t) = p := by
-  induction p using Quot.ind with
-  | mk p => exact ⟨p.1, p.2.1, p.2.2, rfl⟩
+  rcases p with ⟨p⟩; exact ⟨p.1, p.2.1, p.2.2, rfl⟩
 
 /-- The thin realization carries the quotient topology of `Σ n, Xₙ × Δⁿ`. -/
 theorem isQuotientMap_sigma :
@@ -93,31 +79,26 @@ theorem isQuotientMap_sigma :
 
 /-- A set in the thin realization is open exactly when its preimage under every characteristic map
 is open. -/
-theorem isOpen_iff {s : Set (thinRealization X)} : IsOpen s ↔ ∀ n, IsOpen (ι X n ⁻¹' s) := by
-  rw [← (isQuotientMap_sigma X).isOpen_preimage, isOpen_sigma_iff]
-  rfl
+theorem isOpen_iff {s : Set (thinRealization X)} : IsOpen s ↔ ∀ n, IsOpen (ι X n ⁻¹' s) :=
+  (isQuotientMap_sigma X).isOpen_preimage.symm.trans isOpen_sigma_iff
 
 /-- A set in the thin realization is closed exactly when its preimage under every characteristic
 map is closed. -/
-theorem isClosed_iff {s : Set (thinRealization X)} :
-    IsClosed s ↔ ∀ n, IsClosed (ι X n ⁻¹' s) := by
+theorem isClosed_iff {s : Set (thinRealization X)} : IsClosed s ↔ ∀ n, IsClosed (ι X n ⁻¹' s) := by
   simp only [← isOpen_compl_iff, isOpen_iff, preimage_compl]
 
 /-- A map out of the thin realization is continuous exactly when its composite with every
 characteristic map is continuous. -/
 theorem continuous_iff {Z : Type*} [TopologicalSpace Z] {g : thinRealization X → Z} :
-    Continuous g ↔ ∀ n, Continuous (g ∘ ι X n) := by
-  rw [(isQuotientMap_sigma X).continuous_iff, continuous_sigma_iff]
-  rfl
+    Continuous g ↔ ∀ n, Continuous (g ∘ ι X n) :=
+  (isQuotientMap_sigma X).continuous_iff.trans continuous_sigma_iff
 
 /-- Two continuous maps out of the thin realization agree as soon as they agree on the image of
 every characteristic map. -/
 @[ext]
 theorem hom_ext {Z : TopCat} {g h : thinRealization X ⟶ Z}
-    (H : ∀ n x t, g (ι X n (x, t)) = h (ι X n (x, t))) : g = h := by
-  ext p
-  obtain ⟨n, x, t, rfl⟩ := ι_jointly_surjective X p
-  exact H n x t
+    (H : ∀ n x t, g (ι X n (x, t)) = h (ι X n (x, t))) : g = h :=
+  TopCat.ext fun p ↦ let ⟨n, x, t, hp⟩ := ι_jointly_surjective X p; hp ▸ H n x t
 
 section Desc
 
@@ -145,9 +126,8 @@ variable {X} {Y : SimplexCategoryᵒᵖ ⥤ TopCat.{u}}
 /-- The map of thin realizations induced by a map of simplicial spaces. -/
 def map (φ : X ⟶ Y) : thinRealization X ⟶ thinRealization Y :=
   TopCat.ofHom <|
-    desc (Z := thinRealization Y) (fun n ↦ (ι Y n).comp ((φ.app (op n)).hom.prodMap (.id _))) <| by
-    intro m n f x t
-    simp
+    desc (Z := thinRealization Y) (fun n ↦ (ι Y n).comp ((φ.app (op n)).hom.prodMap (.id _)))
+      fun _ _ _ _ _ ↦ by simp
 
 @[simp]
 theorem map_ι (φ : X ⟶ Y) (n : SimplexCategory) (x : X.obj (op n)) (t : toTop.{u}.obj n) :
@@ -155,13 +135,11 @@ theorem map_ι (φ : X ⟶ Y) (n : SimplexCategory) (x : X.obj (op n)) (t : toTo
   (rfl)
 
 @[simp]
-theorem map_id : map (𝟙 X) = 𝟙 (thinRealization X) := by
-  ext; simp
+theorem map_id : map (𝟙 X) = 𝟙 (thinRealization X) := by ext; simp
 
 @[simp]
 theorem map_comp {W : SimplexCategoryᵒᵖ ⥤ TopCat.{u}} (φ : X ⟶ Y) (ψ : Y ⟶ W) :
-    map (φ ≫ ψ) = map φ ≫ map ψ := by
-  ext; simp
+    map (φ ≫ ψ) = map φ ≫ map ψ := by ext; simp
 
 end Map
 
@@ -181,9 +159,8 @@ variable {X} {Z : TopCat.{u}}
 
 /-- The map `|X| ⟶ Z` induced by an augmentation `ε : X ⟶ const Z`, sending `[x, t]` to `ε x`. -/
 def augment (ε : X ⟶ (Functor.const _).obj Z) : thinRealization X ⟶ Z :=
-  TopCat.ofHom <| desc (Z := Z) (fun n ↦ (ε.app (op n)).hom.comp ContinuousMap.fst) <| by
-    intro m n f x t
-    simp
+  TopCat.ofHom <|
+    desc (Z := Z) (fun n ↦ (ε.app (op n)).hom.comp ContinuousMap.fst) fun _ _ _ _ _ ↦ by simp
 
 @[simp]
 theorem augment_ι (ε : X ⟶ (Functor.const _).obj Z) (n : SimplexCategory) (x : X.obj (op n))
@@ -193,20 +170,16 @@ theorem augment_ι (ε : X ⟶ (Functor.const _).obj Z) (n : SimplexCategory) (x
 /-- If an augmentation is a quotient map in one degree, its thin realization is a quotient map.
 No condition on the other degrees or simplicial operators is needed. -/
 theorem isQuotientMap_augment (ε : X ⟶ (Functor.const _).obj Z) (n : SimplexCategory)
-    (hε : IsQuotientMap (ε.app (op n))) : IsQuotientMap (augment ε) := by
-  obtain ⟨t⟩ : Nonempty (toTop.{u}.obj n) := inferInstance
-  let j : X.obj (op n) → thinRealization X := fun x ↦ ι X n (x, t)
-  have hj : Continuous j := (ι X n).continuous.comp (continuous_id.prodMk continuous_const)
-  have heq : (augment ε) ∘ j = fun x ↦ ε.app (op n) x :=
-    funext fun x ↦ augment_ι ε n x t
-  exact IsQuotientMap.of_comp hj (augment ε).hom.continuous (heq.symm ▸ hε)
+    (hε : IsQuotientMap (ε.app (op n))) : IsQuotientMap (augment ε) :=
+  let ⟨t⟩ : Nonempty (toTop.{u}.obj n) := inferInstance
+  IsQuotientMap.of_comp ((ι X n).continuous.comp (continuous_id.prodMk (continuous_const (y := t))))
+    (augment ε).hom.continuous hε
 
 /-- The augmentation of `|X|` induced by `ε` restricts along `|φ|` to the augmentation of `|Y|`
 induced by `φ ≫ ε`. -/
 @[reassoc (attr := simp)]
 theorem map_comp_augment {Y : SimplexCategoryᵒᵖ ⥤ TopCat.{u}} (φ : Y ⟶ X)
-    (ε : X ⟶ (Functor.const _).obj Z) : map φ ≫ augment ε = augment (φ ≫ ε) := by
-  ext; simp
+    (ε : X ⟶ (Functor.const _).obj Z) : map φ ≫ augment ε = augment (φ ≫ ε) := by ext; simp
 
 end Augment
 
@@ -250,22 +223,16 @@ section Restriction
 variable {X} {Y : SimplexCategoryᵒᵖ ⥤ TopCat.{u}} (φ : Y ⟶ X)
 
 /-- The points of `|X|` in the image of `|φ|` are those of the form `[φ y, t]`. -/
-theorem range_map :
-    range (map φ) = {p | ∃ n y t, ι X n (φ.app (op n) y, t) = p} := by
-  ext p
-  constructor
-  · rintro ⟨q, rfl⟩
-    obtain ⟨n, y, t, rfl⟩ := ι_jointly_surjective Y q
-    exact ⟨n, y, t, rfl⟩
-  · rintro ⟨n, y, t, rfl⟩
-    exact ⟨ι Y n (y, t), rfl⟩
+theorem range_map : range (map φ) = {p | ∃ n y t, ι X n (φ.app (op n) y, t) = p} :=
+  Set.ext fun _ ↦
+    ⟨by rintro ⟨q, rfl⟩; obtain ⟨n, y, t, rfl⟩ := ι_jointly_surjective Y q; exact ⟨n, y, t, rfl⟩,
+     by rintro ⟨n, y, t, rfl⟩; exact ⟨ι Y n (y, t), rfl⟩⟩
 
 /-- If a simplex of `X` lies in the image of `φ`, so does its image under any simplicial
 operator. -/
 private theorem map_mem_range {m n : SimplexCategoryᵒᵖ} (f : m ⟶ n) {x : X.obj m}
-    (hx : x ∈ range (φ.app m)) : X.map f x ∈ range (φ.app n) := by
-  obtain ⟨y, rfl⟩ := hx
-  exact ⟨Y.map f y, NatTrans.naturality_apply φ f y⟩
+    (hx : x ∈ range (φ.app m)) : X.map f x ∈ range (φ.app n) :=
+  let ⟨y, hy⟩ := hx; ⟨Y.map f y, hy ▸ NatTrans.naturality_apply φ f y⟩
 
 section PartialInv
 
@@ -323,16 +290,11 @@ is the image under `φ × id` of the preimage of `W`. -/
 private theorem preimage_ι_image_map (W : Set (thinRealization Y)) (n : SimplexCategory) :
     ι X n ⁻¹' (map φ '' W) = Prod.map (φ.app (op n)) id '' (ι Y n ⁻¹' W) := by
   ext ⟨x, t⟩
-  constructor
-  · rintro ⟨q, hq, hqx⟩
-    have h := partialInv_map hinj hsat q
-    rw [hqx] at h
-    obtain ⟨y, rfl, rfl⟩ := exists_eq_of_partialInv_eq_some hinj hsat h
-    exact ⟨(y, t), hq, rfl⟩
-  · rintro ⟨⟨y, t'⟩, hy, hyx⟩
-    simp only [Prod.map_apply, id_eq, Prod.mk.injEq] at hyx
-    obtain ⟨rfl, rfl⟩ := hyx
-    exact ⟨ι Y n (y, t'), hy, rfl⟩
+  refine ⟨?_, by rintro ⟨⟨y, t'⟩, hy, h⟩; obtain ⟨rfl, rfl⟩ := Prod.mk.inj h; exact ⟨_, hy, rfl⟩⟩
+  rintro ⟨q, hq, hqx⟩
+  obtain ⟨y, rfl, rfl⟩ := exists_eq_of_partialInv_eq_some hinj hsat
+    (hqx ▸ partialInv_map hinj hsat q)
+  exact ⟨(y, t), hq, rfl⟩
 
 end PartialInv
 
@@ -344,14 +306,11 @@ an open embedding. -/
 theorem isOpenEmbedding_map (hφ : ∀ n, IsOpenEmbedding (φ.app n))
     (hsat : ∀ ⦃m n : SimplexCategoryᵒᵖ⦄ (f : m ⟶ n) (x : X.obj m),
       X.map f x ∈ range (φ.app n) → x ∈ range (φ.app m)) :
-    IsOpenEmbedding (map φ) := by
+    IsOpenEmbedding (map φ) :=
   have hinj : ∀ n, Function.Injective (φ.app n) := fun n ↦ (hφ n).injective
-  refine .of_continuous_injective_isOpenMap (map φ).hom.continuous (map_injective hinj hsat)
-    fun W hW ↦ ?_
-  rw [isOpen_iff] at hW ⊢
-  intro n
-  rw [preimage_ι_image_map hinj hsat]
-  exact ((hφ (op n)).prodMap .id).isOpenMap _ (hW n)
+  .of_continuous_injective_isOpenMap (map φ).hom.continuous (map_injective hinj hsat) fun W hW ↦
+    (isOpen_iff X).2 fun n ↦ preimage_ι_image_map hinj hsat W n ▸
+      ((hφ (op n)).prodMap .id).isOpenMap _ ((isOpen_iff Y).1 hW n)
 
 /-- **Closed restriction.** If `φ : Y ⟶ X` is levelwise a closed embedding and a simplex of `X`
 lies in the image of `φ` whenever its image under a simplicial operator does, then `|φ| : |Y| ⟶ |X|`
@@ -359,14 +318,11 @@ is a closed embedding. -/
 theorem isClosedEmbedding_map (hφ : ∀ n, IsClosedEmbedding (φ.app n))
     (hsat : ∀ ⦃m n : SimplexCategoryᵒᵖ⦄ (f : m ⟶ n) (x : X.obj m),
       X.map f x ∈ range (φ.app n) → x ∈ range (φ.app m)) :
-    IsClosedEmbedding (map φ) := by
+    IsClosedEmbedding (map φ) :=
   have hinj : ∀ n, Function.Injective (φ.app n) := fun n ↦ (hφ n).injective
-  refine .of_continuous_injective_isClosedMap (map φ).hom.continuous (map_injective hinj hsat)
-    fun W hW ↦ ?_
-  rw [isClosed_iff] at hW ⊢
-  intro n
-  rw [preimage_ι_image_map hinj hsat]
-  exact ((hφ (op n)).prodMap .id).isClosedMap _ (hW n)
+  .of_continuous_injective_isClosedMap (map φ).hom.continuous (map_injective hinj hsat) fun W hW ↦
+    (isClosed_iff X).2 fun n ↦ preimage_ι_image_map hinj hsat W n ▸
+      ((hφ (op n)).prodMap .id).isClosedMap _ ((isClosed_iff Y).1 hW n)
 
 variable {Z : TopCat.{u}} (ε : X ⟶ (Functor.const _).obj Z) {V : Set Z}
 
@@ -375,24 +331,21 @@ part of `|X|` lying over `V` is exactly the image of `|Y|`. -/
 theorem preimage_augment_eq_range_map (hrange : ∀ n, range (φ.app n) = ε.app n ⁻¹' V) :
     augment ε ⁻¹' V = range (map φ) := by
   ext p
-  constructor
-  · intro hp
-    obtain ⟨n, x, t, rfl⟩ := ι_jointly_surjective X p
-    obtain ⟨y, rfl⟩ : x ∈ range (φ.app (op n)) := by rwa [hrange]
-    exact ⟨ι Y n (y, t), rfl⟩
-  · rintro ⟨q, rfl⟩
-    obtain ⟨n, y, t, rfl⟩ := ι_jointly_surjective Y q
+  refine ⟨fun hp ↦ ?_, by
+    rintro ⟨q, rfl⟩; obtain ⟨n, y, t, rfl⟩ := ι_jointly_surjective Y q
     rw [mem_preimage, ← ConcreteCategory.comp_apply, map_comp_augment, augment_ι]
-    exact (hrange (op n)).subset ⟨y, rfl⟩
+    exact (hrange (op n)).subset ⟨y, rfl⟩⟩
+  obtain ⟨n, x, t, rfl⟩ := ι_jointly_surjective X p
+  obtain ⟨y, rfl⟩ : x ∈ range (φ.app (op n)) := by rwa [hrange]
+  exact ⟨ι Y n (y, t), rfl⟩
 
 /-- If the image of `φ` in every level is the preimage of a set under an augmentation, then a
 simplex lies in the image of `φ` whenever its image under a simplicial operator does. -/
 private theorem mem_range_of_map_mem_range (hrange : ∀ n, range (φ.app n) = ε.app n ⁻¹' V)
     ⦃m n : SimplexCategoryᵒᵖ⦄ (f : m ⟶ n) (x : X.obj m)
     (hx : X.map f x ∈ range (φ.app n)) : x ∈ range (φ.app m) := by
-  rw [hrange, mem_preimage, NatTrans.naturality_apply] at hx
-  rw [hrange]
-  simpa using hx
+  rw [hrange] at hx ⊢
+  simpa [NatTrans.naturality_apply] using hx
 
 /-- If `φ` is levelwise an open embedding whose image is the preimage of `V` under an augmentation
 `ε`, then `|φ|` is an open embedding; by `preimage_augment_eq_range_map` its image is the part of
@@ -428,21 +381,20 @@ theorem fatToThin_ι (n : SemiSimplexCategory)
     (x : X.obj (op (SemiSimplexCategory.toSimplexCategory.obj n)))
     (t : SemiSimplexCategory.toTop.{u}.obj n) :
     fatToThin X (fatRealization.ι _ n (x, t)) =
-      ι X (SemiSimplexCategory.toSimplexCategory.obj n) (x, t) := by
-  dsimp only [fatToThin]
-  exact fatRealization.desc_ι (X := SemiSimplexCategory.toSimplexCategory.op ⋙ X) _ _ n (x, t)
+      ι X (SemiSimplexCategory.toSimplexCategory.obj n) (x, t) :=
+  fatRealization.desc_ι (X := SemiSimplexCategory.toSimplexCategory.op ⋙ X) _ _ n (x, t)
 
 /-- The canonical comparison map from fat realization to thin realization is a quotient map. -/
-theorem isQuotientMap_fatToThin : IsQuotientMap (fatToThin X) := by
+theorem isQuotientMap_fatToThin : IsQuotientMap (fatToThin X) :=
   let j : (Σ n : SimplexCategory, X.obj (op n) × toTop.{u}.obj n) →
       fatRealization (SemiSimplexCategory.toSimplexCategory.op ⋙ X) :=
     fun p ↦ fatRealization.ι _ (SemiSimplexCategory.mk p.1.len) p.2
-  have hj : Continuous j := continuous_sigma fun ⟨k⟩ ↦
-    (fatRealization.ι (SemiSimplexCategory.toSimplexCategory.op ⋙ X)
-      (SemiSimplexCategory.mk k)).continuous
   have heq : (fatToThin X) ∘ j = fun p ↦ ι X p.1 p.2 :=
     funext fun ⟨n, x, t⟩ ↦ fatToThin_ι X (SemiSimplexCategory.mk n.len) x t
-  exact IsQuotientMap.of_comp hj (fatToThin X).hom.continuous (heq.symm ▸ isQuotientMap_sigma X)
+  IsQuotientMap.of_comp
+    (continuous_sigma fun ⟨k⟩ ↦ (fatRealization.ι (SemiSimplexCategory.toSimplexCategory.op ⋙ X)
+      (SemiSimplexCategory.mk k)).continuous)
+    (fatToThin X).hom.continuous (heq.symm ▸ isQuotientMap_sigma X)
 
 /-- The canonical comparison map from fat realization to thin realization is surjective. -/
 theorem fatToThin_surjective : Function.Surjective (fatToThin X) :=
@@ -457,7 +409,7 @@ theorem fatToThin_naturality {X Y : SimplexCategoryᵒᵖ ⥤ TopCat.{u}} (φ : 
   ext n x t
   simp only [ConcreteCategory.comp_apply, fatRealization.map_ι, Functor.whiskerLeft_app,
     fatToThin_ι]
-  exact (map_ι φ _ x t).symm
+  rfl
 
 /-- The canonical comparison map from fat realization to thin realization commutes with
 augmentations. -/
@@ -469,7 +421,7 @@ theorem fatToThin_comp_augment {X : SimplexCategoryᵒᵖ ⥤ TopCat.{u}} {Z : T
   ext n x t
   simp only [ConcreteCategory.comp_apply, fatToThin_ι, fatRealization.augment_ι,
     Functor.whiskerLeft_app]
-  exact augment_ι ε _ x t
+  rfl
 
 end FatToThin
 
