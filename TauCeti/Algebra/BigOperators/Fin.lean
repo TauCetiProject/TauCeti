@@ -60,6 +60,15 @@ public section
 
 namespace Fin
 
+/-- Reindex the product omitting an index by the order-preserving map `Fin.succAbove`. -/
+@[to_additive /-- Reindex the sum omitting an index by the order-preserving map
+`Fin.succAbove`. -/]
+theorem prod_univ_succAbove_eq_erase {M : Type*} [CommMonoid M] {n : ℕ}
+    (f : Fin (n + 1) → M) (j : Fin (n + 1)) :
+    (∏ i : Fin n, f (j.succAbove i)) = ∏ i ∈ Finset.univ.erase j, f i := by
+  classical
+  simp only [univ_succAbove n j, Finset.erase_cons, Finset.prod_map, coe_succAboveEmb]
+
 /-- Successive differences telescope to the endpoint difference. -/
 theorem sum_univ_succ_sub_castSucc {G : Type*} [AddCommGroup G] {n : ℕ}
     (f : Fin (n + 1) → G) :
