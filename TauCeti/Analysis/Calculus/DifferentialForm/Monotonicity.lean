@@ -119,7 +119,7 @@ open AlmostComplexStructure
 
 variable [MeasurableSpace V] [BorelSpace V]
 
-include h₀ h₂ hkl he in
+include h₀ h₂ in
 /-- **The monotonicity identity.** For a closed `C¹` two-form `F` on a Hermitian four-space and
 a compactly supported `C¹` function `φ`,
 
@@ -133,6 +133,7 @@ theorem integral_mul_inner_kahlerForm_eq {F : V → V [⋀^Fin 2]→L[ℝ] ℝ} 
       ∫ x, deriv φ (‖x‖ ^ 2) * (F x ![x, J x] -
         ‖x‖ ^ 2 * ⟪J.kahlerForm, (alternatingFormEquiv V 2).symm (F x)⟫) := by
   have hJ := inner_apply_apply_of_orthonormalBasis h₀ h₂
+  have hkl : 2 + 2 = finrank ℝ V := (Fact.out : finrank ℝ V = 4).symm
   -- The radial primitive `λₓ(v) = ω(x, v) / 2` of the Kähler form, with `dλ = ω`.
   set B := (J.symplecticForm hJ).toBilinForm.toContinuousBilinearMap
   have hB (v w : V) : B v w = ⟪J v, w⟫ := by simp [B]
@@ -166,22 +167,21 @@ theorem integral_mul_inner_kahlerForm_eq {F : V → V [⋀^Fin 2]→L[ℝ] ℝ} 
     (h.trans (integral_congr_ae (Eventually.of_forall fun x ↦ ?_)))
   · rw [hc, extDeriv_liouvilleFormCLM_symplecticForm hJ, Pi.smul_apply', wedge_smul_right,
       ContinuousAlternatingMap.smul_apply, smul_eq_mul,
-      wedge_alternatingFormEquiv_kahlerForm_apply h₀ h₂ hkl he]
+      wedge_alternatingFormEquiv_kahlerForm_apply h₀ h₂ hkl]
   · dsimp only
     rw [extDeriv_function_smul (hg.differentiable one_ne_zero x) (hF.differentiable one_ne_zero x),
       hdF, smul_zero, zero_add]
     have hA : alternatizeUncurryFin ((fderiv ℝ g x).smulRight (F x)) =
         wedge (ofSubsingleton ℝ V ℝ (0 : Fin 1) (fderiv ℝ g x)) (F x) := by
       ext v
-      rw [alternatizeUncurryFin_smulRight_apply, wedge_def]
-      congr 2
+      rw [alternatizeUncurryFin_smulRight_apply_eq_wedge, Fin.cast_refl, Function.comp_id]
     have hassoc := wedge_assoc (lam x) (ofSubsingleton ℝ V ℝ (0 : Fin 1) (fderiv ℝ g x)) (F x)
       (e ∘ finCongr (hkl.trans Fact.out))
     have hcast : (e ∘ finCongr (hkl.trans Fact.out) : Fin (1 + (1 + 2)) → V) =
         (e ∘ finCongr (hkl.trans Fact.out)) ∘ Fin.cast (Nat.add_assoc 1 1 2).symm :=
       funext fun _ ↦ by simp
     rw [hc, hA, hcast, ← hassoc, hdg, wedge_smul_left, ContinuousAlternatingMap.smul_apply,
-      smul_eq_mul, wedge_wedge_ofSubsingleton_innerSL_apply h₀ h₂ hkl he]
+      smul_eq_mul, wedge_wedge_ofSubsingleton_innerSL_apply h₀ h₂ hkl]
 
 include h₀ h₂ hkl he in
 /-- **The monotonicity inequality.** For a closed `C¹` two-form `F` on a Hermitian four-space and
@@ -199,7 +199,7 @@ theorem integral_mul_inner_kahlerForm_le {F : V → V [⋀^Fin 2]→L[ℝ] ℝ} 
         (⟪J.kahlerForm, (alternatingFormEquiv V 2).symm (F x)⟫ / 2 +
           ‖(2⁻¹ : ℝ) • ((alternatingFormEquiv V 2).symm (F x) -
             o.hodgeStar hkl ((alternatingFormEquiv V 2).symm (F x)))‖ / √2) := by
-  rw [integral_mul_inner_kahlerForm_eq h₀ h₂ hkl he hF hdF hφ hφc]
+  rw [integral_mul_inner_kahlerForm_eq h₀ h₂ hF hdF hφ hφc]
   -- Both integrands are continuous and vanish outside the support of `x ↦ φ'(‖x‖²)`.
   have := hφ.continuous_deriv le_rfl
   have hcc : HasCompactSupport fun x : V ↦ deriv φ (‖x‖ ^ 2) := hφc.deriv.comp_norm_sq

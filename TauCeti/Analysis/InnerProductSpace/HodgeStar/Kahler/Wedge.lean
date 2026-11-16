@@ -35,21 +35,21 @@ namespace TauCeti.AlmostComplexStructure
 
 variable {V : Type*} [NormedAddCommGroup V] [InnerProductSpace ℝ V] [FiniteDimensional ℝ V]
   [Fact (finrank ℝ V = 4)]
-  {e : OrthonormalBasis (Fin 4) ℝ V} {J : AlmostComplexStructure V} {o : Orientation ℝ V (Fin 4)}
+  {e : OrthonormalBasis (Fin 4) ℝ V} {J : AlmostComplexStructure V}
   (h₀ : J (e 0) = e 1) (h₂ : J (e 2) = e 3) (hkl : 2 + 2 = finrank ℝ V)
-  (he : e.toBasis.orientation = o)
 
-include h₀ h₂ he in
+include h₀ h₂ in
 /-- **`ω ∧ β = ⟪ω, β⟫ vol`**: the wedge of the Kähler form with a two-form `β`, evaluated on a
 positively oriented unitary frame, is the inner product of `ω` with `β`. -/
 theorem wedge_alternatingFormEquiv_kahlerForm_apply (β : V [⋀^Fin 2]→L[ℝ] ℝ) :
     wedge (alternatingFormEquiv V 2 J.kahlerForm) β (e ∘ finCongr (hkl.trans Fact.out)) =
       ⟪J.kahlerForm, (alternatingFormEquiv V 2).symm β⟫ := by
+  obtain ⟨o, he⟩ : ∃ o, e.toBasis.orientation = o := ⟨_, rfl⟩
   rw [o.wedge_apply_orthonormalBasis even_two hkl e he,
     ← o.alternatingFormInner_formHodgeStar_left even_two, o.formHodgeStar_alternatingFormEquiv,
     hodgeStar_kahlerForm h₀ h₂ hkl he, alternatingFormInner_apply, LinearEquiv.symm_apply_apply]
 
-include h₀ h₂ he in
+include h₀ h₂ in
 /-- **`(J x)^♭ ∧ x^♭ ∧ β = (β(x, J x) - ‖x‖² ⟪ω, β⟫) vol`**: the wedge of the covectors of `J x`
 and `x` with a two-form `β`, evaluated on a positively oriented unitary frame. Here
 `β(x, J x) - ‖x‖² ⟪ω, β⟫ = -⟪⋆(x ∧ J x), β⟫`. -/
@@ -57,6 +57,7 @@ theorem wedge_wedge_ofSubsingleton_innerSL_apply (x : V) (β : V [⋀^Fin 2]→L
     wedge (wedge (ofSubsingleton ℝ V ℝ (0 : Fin 1) (innerSL ℝ (J x)))
       (ofSubsingleton ℝ V ℝ (0 : Fin 1) (innerSL ℝ x))) β (e ∘ finCongr (hkl.trans Fact.out)) =
       β ![x, J x] - ‖x‖ ^ 2 * ⟪J.kahlerForm, (alternatingFormEquiv V 2).symm β⟫ := by
+  obtain ⟨o, he⟩ : ∃ o, e.toBasis.orientation = o := ⟨_, rfl⟩
   have hw : wedge (ofSubsingleton ℝ V ℝ (0 : Fin 1) (innerSL ℝ (J x)))
       (ofSubsingleton ℝ V ℝ (0 : Fin 1) (innerSL ℝ x)) =
         alternatingFormEquiv V 2 (-ιMulti ℝ 2 ![x, J x]) := by
