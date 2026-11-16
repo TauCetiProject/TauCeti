@@ -70,15 +70,21 @@ theorem hasEigenvalue_one_pow_smul_iff (f : End K V) {c : K} (hc : c ≠ 0) (m :
 finite-dimensional space have an `m`-th power with the eigenvalue `1`. -/
 theorem finite_setOf_hasEigenvalue_one_pow_smul [FiniteDimensional K V] (f : End K V) {m : ℕ}
     (hm : m ≠ 0) : {c : K | ((c • f) ^ m).HasEigenvalue 1}.Finite := by
-  refine ((f ^ m).finite_hasEigenvalue.preimage' (f := fun c : K ↦ (c ^ m)⁻¹)
-    fun μ _ ↦ (Polynomial.nthRootsFinset m μ⁻¹).finite_toSet.subset fun c hc ↦ ?_).subset
-    fun c hc ↦ ?_
-  · rw [Finset.mem_coe, Polynomial.mem_nthRootsFinset (Nat.pos_of_ne_zero hm), ← hc.out, inv_inv]
-  · have hc₀ : c ≠ 0 := by
+  -- A bad `c` is nonzero, so `(c ^ m)⁻¹` is an eigenvalue of `f ^ m`.
+  have hsub : {c : K | ((c • f) ^ m).HasEigenvalue 1} ⊆
+      (fun c : K ↦ (c ^ m)⁻¹) ⁻¹' {μ | (f ^ m).HasEigenvalue μ} := by
+    intro c hc
+    have hc₀ : c ≠ 0 := by
       rintro rfl
       obtain ⟨v, hv⟩ := Set.mem_ofPred.1 hc |>.exists_hasEigenvector
       simpa [zero_pow hm, eq_comm, hv.2] using hv.apply_eq_smul
-    exact (hasEigenvalue_one_pow_smul_iff f hc₀ m).1 hc
+    exact Set.mem_preimage.2 ((hasEigenvalue_one_pow_smul_iff f hc₀ m).1 (Set.mem_ofPred.1 hc))
+  -- Each fiber of `c ↦ (c ^ m)⁻¹` lies among the `m`-th roots of `μ⁻¹`.
+  have hfiber (μ : K) : ((fun c : K ↦ (c ^ m)⁻¹) ⁻¹' {μ}).Finite := by
+    refine (Polynomial.nthRootsFinset m μ⁻¹).finite_toSet.subset fun c hc ↦ ?_
+    obtain rfl := Set.mem_singleton_iff.1 (Set.mem_preimage.1 hc)
+    rw [Finset.mem_coe, Polynomial.mem_nthRootsFinset (Nat.pos_of_ne_zero hm), inv_inv]
+  exact ((f ^ m).finite_hasEigenvalue.preimage' fun μ _ ↦ hfiber μ).subset hsub
 
 /-- Only countably many rescalings `c • f` of an endomorphism `f` of a finite-dimensional space
 have a positive power with the eigenvalue `1`. -/

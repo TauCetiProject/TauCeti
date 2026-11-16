@@ -9,6 +9,7 @@ public import Mathlib.Analysis.Normed.Module.FiniteDimension
 public import Mathlib.Topology.GDelta.Basic
 public import TauCeti.LinearAlgebra.Eigenspace.Smul
 import Mathlib.Topology.Algebra.Module.Cardinality
+import TauCeti.LinearAlgebra.Eigenspace.Det
 
 /-!
 # Generic operators have no power with the eigenvalue one
@@ -75,8 +76,7 @@ open set. -/
 theorem isOpen_setOf_not_hasEigenvalue (μ : 𝕜) :
     IsOpen {A : E →L[𝕜] E | ¬End.HasEigenvalue (A : E →ₗ[𝕜] E) μ} := by
   have h (A : E →L[𝕜] E) : End.HasEigenvalue (A : E →ₗ[𝕜] E) μ ↔ (A - μ • 1).det = 0 := by
-    rw [End.hasEigenvalue_iff, End.eigenspace_def, ← LinearMap.det_eq_zero_iff_ker_ne_bot, det,
-      toLinearMap_sub, toLinearMap_smul, toLinearMap_one]
+    simp [End.hasEigenvalue_iff_det_sub_eq_zero, det]
   simp only [h]
   exact isOpen_ne_fun (continuous_det.comp (continuous_id.sub continuous_const)) continuous_const
 
@@ -101,8 +101,8 @@ theorem isOpen_setOf_forall_le_not_hasEigenvalue_one_pow_mul (N : E →L[𝕜] E
 
 /-- **Generic operators have no power with the eigenvalue one.** For a fixed continuous linear
 map `N` of a finite-dimensional space over a complete field, the continuous linear maps `G` such
-that no positive power of `N * G` has the eigenvalue `1` are dense. Already the rescalings
-`c • G` of a given `G` with this property accumulate at `G`. -/
+that no positive power of `N * G` has the eigenvalue `1` are dense. For every `G`, already the
+rescalings `c • G` with this property accumulate at `G` as `c → 1`. -/
 theorem dense_setOf_forall_not_hasEigenvalue_one_pow_mul (N : E →L[𝕜] E) :
     Dense {G : E →L[𝕜] E | ∀ m ≠ 0,
       ¬End.HasEigenvalue (((N * G) ^ m : E →L[𝕜] E) : E →ₗ[𝕜] E) 1} := by
