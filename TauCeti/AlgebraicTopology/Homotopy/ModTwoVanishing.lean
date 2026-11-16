@@ -101,10 +101,8 @@ theorem subsingleton_singularHomology_nConnectedCover (X : TopCat.{0}) [T2Space 
     (serreFibrations_nConnectedCoverProj (m + 2) X x)
     (fun b ↦ (isEilenbergMacLaneSpace_fiber_nConnectedCoverProj X x m hX b).imp fun _ h ↦
       h.of_mulEquiv (MulEquiv.multiplicativeAdditive _).symm) (i + 1)
-  exact (subsingleton_singularChains_homology_iff_isZero _ _ _).2 <|
-    ((subsingleton_singularChains_homology_iff_isZero _ _ _).1 (hX₂ i)).of_iso
-      (asIso (((singularHomologyFunctor (ModuleCat.{0} (ZMod 2)) (i + 1)).obj
-        (ModuleCat.of (ZMod 2) (ZMod 2))).map (nConnectedCoverProj (m + 2) X x)))
+  exact (subsingleton_singularChains_homology_iff_of_isIso _
+    (nConnectedCoverProj (m + 2) X x) _).2 (hX₂ i)
 
 /-- The induction along the Whitehead tower: for an `(n + 1)`-connected space with the mod-two
 homology of a point, every homotopy group `π_{N + 2}` with `N ≥ n` is uniquely two-divisible. The
@@ -146,10 +144,8 @@ private theorem isUniquelyTwoDivisible_homotopyGroup_of_add (d : ℕ) :
     -- `f` is a homology isomorphism, so `X` is mod-two acyclic.
     have hX₂ (i : ℕ) : Subsingleton (((singularChains (ZMod 2)).obj X).homology (i + 1)) := by
       have := hf.isIso_singularHomologyMap (ModuleCat.of (ZMod 2) (ZMod 2)) (i + 1)
-      exact (subsingleton_singularChains_homology_iff_isZero _ _ _).2 <|
-        ((subsingleton_singularChains_homology_iff_isZero _ _ _).1 (hZ₂ i)).of_iso
-          (asIso (((singularHomologyFunctor (ModuleCat.{0} (ZMod 2)) (i + 1)).obj
-            (ModuleCat.of (ZMod 2) (ZMod 2))).map (cwApproximationMap (TopCat.of Z) z)))
+      exact (subsingleton_singularChains_homology_iff_of_isIso _
+        (cwApproximationMap (TopCat.of Z) z) _).2 (hZ₂ i)
     have hC₂ := subsingleton_singularHomology_nConnectedCover X x₀ n hX hX₂
     -- The cover has the homotopy groups of `X`, hence of `Z`, above dimension `n + 2`.
     exact (ih (n + 1) c₀ hC hC₂ _ (by omega)).of_addEquiv

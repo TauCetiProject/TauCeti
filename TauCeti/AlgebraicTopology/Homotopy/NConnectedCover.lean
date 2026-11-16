@@ -273,18 +273,17 @@ theorem isEilenbergMacLaneSpace_fiber_nConnectedCoverProj [PathConnectedSpace X]
     (hX : ∀ k, k ≠ 0 → k < m + 2 → Subsingleton (π_ k X x)) (b : X) :
     ∃ y, IsEilenbergMacLaneSpace (π_ (m + 2) X x) (m + 1)
       ((nConnectedCoverProj (m + 2) X x).fiber b) y := by
-  have hK := isEilenbergMacLaneSpace_killHomotopyGroups (m + 2) X x hX
-  have := hK.pathConnectedSpace
   -- The projection is the source projection of the mapping-path fibre.
   have hset : ⇑(nConnectedCoverProj (m + 2) X x) ⁻¹' {b} =
       MappingPathFiber.proj (killHomotopyGroupsIncl (m + 2 + 1) X x).hom
         (killHomotopyGroupsIncl (m + 2 + 1) X x x) ⁻¹' {b} := by
     ext z
-    rw [Set.mem_preimage, Set.mem_preimage, MappingPathFiber.proj_apply,
-      ← TopCat.Hom.homotopyFiberProj_apply _ x z]
-  let e := ((Homeomorph.setCongr hset).toHomotopyEquiv.trans
-    (MappingPathFiber.projFiberHomotopyEquivLoopSpace _ _ b
-      (PathConnectedSpace.somePath _ _))).symm
-  exact ⟨e (Path.refl _), hK.loopSpace.of_homotopyEquiv e _⟩
+    -- Both projections send `z` to its source point `z.val.1`.
+    rw [Set.mem_preimage, Set.mem_preimage, TopCat.Hom.homotopyFiberProj_apply _ x z,
+      MappingPathFiber.proj_apply]
+  obtain ⟨y, hy⟩ := (isEilenbergMacLaneSpace_killHomotopyGroups (m + 2) X x
+    hX).exists_fiber_mappingPathFiberProj _ _ b
+  let e := (Homeomorph.setCongr hset).symm.toHomotopyEquiv
+  exact ⟨e y, hy.of_homotopyEquiv e _⟩
 
 end TauCeti

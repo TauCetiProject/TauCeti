@@ -7,7 +7,6 @@ module
 
 public import TauCeti.AlgebraicTopology.EilenbergMacLane.Homology
 public import TauCeti.AlgebraicTopology.Singular.Fibration.Comparison
-import TauCeti.AlgebraicTopology.EilenbergMacLane.HomotopyEquiv
 import TauCeti.AlgebraicTopology.EilenbergMacLane.LoopSpace
 import TauCeti.AlgebraicTopology.Singular.Contractible
 import TauCeti.Topology.Homotopy.MappingPath.PathFibration
@@ -81,7 +80,8 @@ private theorem isIso_singularHomologyMap_of_fiber {G : Type} [Group G] {n : ℕ
   TauCeti.TopCat.isIso_singularHomologyMap_of_isZero_fiber hp k i
     (fun b ↦ (hfib b).choose_spec.pathConnectedSpace) fun b q hq0 _ ↦ by
       obtain ⟨q, rfl⟩ := Nat.exists_eq_succ_of_ne_zero hq0
-      exact (subsingleton_singularChains_homology_iff_isZero k _ _).1 (hK (hfib b).choose_spec q)
+      -- Singular homology is, by definition, the homology of `singularChains k`.
+      exact ModuleCat.isZero_iff_subsingleton.2 (hK (hfib b).choose_spec q)
 
 /-- The induction on the degree, through the based path fibration. The degree is written `j + 1`
 so that the induction does not have to carry a `NeZero` instance. -/
@@ -105,15 +105,12 @@ private theorem subsingleton_singularHomology_of_bijective_zsmul_succ (hmk : (m 
       (MappingPathFiber.isHurewiczFibration_proj.{0} _ _).mem_serreFibrations
     -- Every fibre is homotopy equivalent to the loop space, a `K(A, j + 1)` space.
     have hfib (b : X) : ∃ y, IsEilenbergMacLaneSpace (Multiplicative A) (j + 1) (p.fiber b) y :=
-      let e := (MappingPathFiber.projFiberHomotopyEquivLoopSpace (ContinuousMap.id X) x b
-        (PathConnectedSpace.somePath b x)).symm
-      ⟨e (Path.refl x), hX.loopSpace.of_homotopyEquiv e _⟩
+      hX.exists_fiber_mappingPathFiberProj (ContinuousMap.id X) x b
     have := isIso_singularHomologyMap_of_fiber k hp hfib ih (i + 1)
     -- The total space is contractible, so its positive-degree homology vanishes.
-    exact (subsingleton_singularChains_homology_iff_isZero k _ _).2 <|
-      (isZero_singularHomologyFunctor_of_contractibleSpace _ _ (Nat.succ_ne_zero i)).of_iso
-        (asIso (((singularHomologyFunctor (ModuleCat.{0} k) (i + 1)).obj
-          (ModuleCat.of k k)).map p)).symm
+    exact (subsingleton_singularChains_homology_iff_of_isIso k p (i + 1)).1 <|
+      ModuleCat.isZero_iff_subsingleton.1 <|
+        isZero_singularHomologyFunctor_of_contractibleSpace _ _ (Nat.succ_ne_zero i)
 
 /-- **`K(A, n)` spaces of uniquely `m`-divisible groups are acyclic modulo `m`.** If
 multiplication by the integer `m` is a bijection of the abelian group `A`, then every `K(A, n)`
