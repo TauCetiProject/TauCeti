@@ -49,10 +49,20 @@ theorem IsPrimitive.changeLevel_eq_changeLevel_iff [CommMonoidWithZero R] [NeZer
 
 /-- The primitive character associated to `χ` is principal if and only if `χ` is principal. -/
 @[simp]
-theorem primitiveCharacter_eq_one_iff [CommMonoidWithZero R] [NeZero N]
-    (χ : DirichletCharacter R N) : χ.primitiveCharacter = 1 ↔ χ = 1 :=
-  ⟨fun h ↦ by rw [← χ.changeLevel_primitiveCharacter, h, map_one],
-    fun h ↦ by rcases h with rfl; exact primitiveCharacter_one⟩
+theorem primitiveCharacter_eq_one_iff [CommMonoidWithZero R]
+    (χ : DirichletCharacter R N) : χ.primitiveCharacter = 1 ↔ χ = 1 := by
+  rcases eq_or_ne N 0 with rfl | hN
+  · have hc : χ.conductor = 0 := conductor_eq_zero_iff_level_eq_zero.mpr rfl
+    have hchg := χ.changeLevel_primitiveCharacter
+    generalize χ.conductor_dvd_level = hdvd at hchg
+    generalize χ.conductor = k, χ.primitiveCharacter = ψ at hc hdvd hchg ⊢
+    subst hc
+    rw [changeLevel_self] at hchg
+    subst hchg
+    rfl
+  · have : NeZero N := ⟨hN⟩
+    exact ⟨fun h ↦ by rw [← χ.changeLevel_primitiveCharacter, h, map_one],
+      fun h ↦ by rcases h with rfl; exact primitiveCharacter_one⟩
 
 section Quadratic
 
@@ -60,9 +70,19 @@ variable [CommRing R]
 
 /-- The primitive character associated to `χ` is quadratic if and only if `χ` is quadratic. -/
 @[simp]
-theorem isQuadratic_primitiveCharacter_iff [NeZero N] (χ : DirichletCharacter R N) :
+theorem isQuadratic_primitiveCharacter_iff (χ : DirichletCharacter R N) :
     χ.primitiveCharacter.IsQuadratic ↔ χ.IsQuadratic := by
-  rw [← isQuadratic_changeLevel_iff χ.conductor_dvd_level, χ.changeLevel_primitiveCharacter]
+  rcases eq_or_ne N 0 with rfl | hN
+  · have hc : χ.conductor = 0 := conductor_eq_zero_iff_level_eq_zero.mpr rfl
+    have hchg := χ.changeLevel_primitiveCharacter
+    generalize χ.conductor_dvd_level = hdvd at hchg
+    generalize χ.conductor = k, χ.primitiveCharacter = ψ at hc hdvd hchg ⊢
+    subst hc
+    rw [changeLevel_self] at hchg
+    subst hchg
+    rfl
+  · have : NeZero N := ⟨hN⟩
+    rw [← isQuadratic_changeLevel_iff χ.conductor_dvd_level, χ.changeLevel_primitiveCharacter]
 
 /-- The common-level product of two primitive characters, one of them quadratic, is principal
 exactly when they are the same primitive character. In particular, different primitive levels

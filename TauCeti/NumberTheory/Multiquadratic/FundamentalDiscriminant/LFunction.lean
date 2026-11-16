@@ -17,12 +17,16 @@ character has positive real continued L-values on the real interval `[1, ∞)`. 
 uses the continued `DirichletCharacter.LFunction`, not the Dirichlet series, whose convergence
 at `1` is not assumed.
 
+Siegel's lower bound `c * |D| ^ (-ε) ≤ Re L(1, χ_D)` holds uniformly for all fundamental
+discriminants `D ≠ 1`, stated as
+`TauCeti.Multiquadratic.exists_pos_forall_rpow_le_fundamentalDiscriminantCharCast_LFunction_one_re`.
+
 ## Main results
 
-* `TauCeti.Multiquadratic.fundamentalDiscriminantCharCast_LFunction_pos`: `0 < L(s, χ_D)` for
-  `s ≥ 1` and `D ≠ 1`, providing the nonvanishing input for the class-number formula.
-* `TauCeti.Multiquadratic.exists_pos_forall_rpow_le_LFunction_one_re`: Siegel's lower bound
-  `c * |D| ^ (-ε) ≤ Re L(1, χ_D)` for all fundamental discriminants `D ≠ 1`.
+* `fundamentalDiscriminantCharCast_LFunction_pos`: `0 < L(s, χ_D)` for `s ≥ 1` and `D ≠ 1`,
+  providing the nonvanishing input for the class-number formula.
+* `exists_pos_forall_rpow_le_fundamentalDiscriminantCharCast_LFunction_one_re`: Siegel's lower
+  bound `c * |D| ^ (-ε) ≤ Re L(1, χ_D)` for all fundamental discriminants `D ≠ 1`.
 
 ## References
 
@@ -48,7 +52,8 @@ theorem fundamentalDiscriminantCharCast_LFunction_pos {D : ℤ} [NeZero D.natAbs
 /-- **Siegel's theorem for fundamental-discriminant characters.** For every `ε > 0` there exists
 `c > 0` such that for every fundamental discriminant `D ≠ 1`, the associated complex quadratic
 Dirichlet character `χ_D` of conductor `|D|` satisfies `c * |D| ^ (-ε) ≤ Re L(1, χ_D)`. -/
-theorem exists_pos_forall_rpow_le_LFunction_one_re {ε : ℝ} (hε : 0 < ε) :
+theorem exists_pos_forall_rpow_le_fundamentalDiscriminantCharCast_LFunction_one_re {ε : ℝ}
+    (hε : 0 < ε) :
     ∃ c : ℝ, 0 < c ∧ ∀ (D : ℤ) [NeZero D.natAbs] (hD : Int.IsFundamentalDiscr D), D ≠ 1 →
       c * |(D : ℝ)| ^ (-ε) ≤
         ((fundamentalDiscriminantCharCast ℂ D hD).LFunction 1).re := by

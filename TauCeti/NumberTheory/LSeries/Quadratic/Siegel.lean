@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.NumberTheory.LSeries.Quadratic.Pair.SmoothedSum
-import Mathlib.NumberTheory.DirichletCharacter.Orthogonality
 import TauCeti.Analysis.SpecialFunctions.Log.OneAddLog
 import TauCeti.NumberTheory.DirichletCharacter.LFunction.Bounds
 import TauCeti.NumberTheory.DirichletCharacter.LFunction.ChangeLevel
@@ -17,8 +16,9 @@ import TauCeti.NumberTheory.LSeries.Quadratic.Pair.Sign
 /-!
 # Siegel's theorem for quadratic Dirichlet `L`-functions
 
-Goldfeld's fundamental inequality (`DirichletCharacter.le_LFunction_one_mul_mul_re_of_nonpos`)
-bounds `Re (L(1, χ) L(1, ψ) L(1, χ.mul ψ))` from below whenever `χ` mod `M` and `ψ` mod `N` are
+Goldfeld's fundamental inequality
+(`DirichletCharacter.le_LFunction_one_mul_mul_re_of_pair_re_nonpos`) bounds
+`Re (L(1, χ) L(1, ψ) L(1, χ.mul ψ))` from below whenever `χ` mod `M` and `ψ` mod `N` are
 nonprincipal quadratic Dirichlet characters with `χ.mul ψ ≠ 1` and `3 / 4 ≤ β` satisfies
 `Re (ζ(β) L(β, χ) L(β, ψ) L(β, χ.mul ψ)) ≤ 0`. Dividing by `L(1, ψ) > 0` and bounding
 `L(1, χ.mul ψ) ≤ 1 + log (M N)` yields an explicit single-character lower bound for `L(1, χ)`.
@@ -32,12 +32,13 @@ primitive nonprincipal quadratic `χ` of level `M > N₁`, or no primitive nonpr
 at `β = 1 - δ` makes the four-factor product nonpositive by
 `DirichletCharacter.pair_nonpos_of_forall_ne_zero` and
 `DirichletCharacter.LFunction_changeLevel_eq_zero_iff`. Finitely many small conductors `M ≤ N₀`
-are handled by finiteness of `DirichletCharacter ℂ M`, and imprimitive characters follow from the
-primitive case via `DirichletCharacter.exists_norm_LFunction_changeLevel_le_rpow`.
+are handled by `TauCeti.DirichletCharacter.exists_pos_forall_le_LFunction_one_re_of_le`, and
+imprimitive characters follow from the primitive case via
+`DirichletCharacter.exists_norm_LFunction_changeLevel_le_rpow`.
 
 ## Main results
 
-* `DirichletCharacter.le_LFunction_one_re_of_nonpos`: explicit Goldfeld lower bound for
+* `DirichletCharacter.le_LFunction_one_re_of_pair_re_nonpos`: explicit Goldfeld lower bound for
   `Re L(1, χ)` in terms of an auxiliary nonprincipal quadratic character `ψ` and point
   `3 / 4 ≤ β` where the four-factor product has nonpositive real part.
 * `DirichletCharacter.le_LFunction_one_re_of_LFunction_eq_zero`: specialization when `L(β, ψ) = 0`.
@@ -63,7 +64,7 @@ namespace DirichletCharacter
 quadratic Dirichlet characters with `χ.mul ψ ≠ 1` and `3 / 4 ≤ β` satisfies
 `Re (ζ(β) L(β, χ) L(β, ψ) L(β, χ.mul ψ)) ≤ 0`, then `Re L(1, χ)` is bounded below explicitly in
 terms of `1 - β`, `M * N`, and `Re L(1, ψ)`. -/
-theorem le_LFunction_one_re_of_nonpos {M N : ℕ} [NeZero M] [NeZero N]
+theorem le_LFunction_one_re_of_pair_re_nonpos {M N : ℕ} [NeZero M] [NeZero N]
     {χ : DirichletCharacter ℂ M} {ψ : DirichletCharacter ℂ N}
     (hχ : χ.IsQuadratic) (hψ : ψ.IsQuadratic) (hχ₁ : χ ≠ 1) (hψ₁ : ψ ≠ 1)
     (hχψ : χ.mul ψ ≠ 1) {β : ℝ} (hβ : 3 / 4 ≤ β)
@@ -72,7 +73,7 @@ theorem le_LFunction_one_re_of_nonpos {M N : ℕ} [NeZero M] [NeZero N]
         ((ψ.LFunction 1).re * (1 + Real.log ((M : ℝ) * N))) ≤
       (χ.LFunction 1).re := by
   have : NeZero (Nat.lcm M N) := ⟨Nat.lcm_ne_zero (NeZero.ne M) (NeZero.ne N)⟩
-  have hgold := le_LFunction_one_mul_mul_re_of_nonpos hχ hψ hχ₁ hψ₁ hχψ hβ hsign
+  have hgold := le_LFunction_one_mul_mul_re_of_pair_re_nonpos hχ hψ hχ₁ hψ₁ hχψ hβ hsign
   have hχ_pos := Complex.pos_iff.mp (LFunction_apply_one_pos hχ hχ₁)
   have hψ_pos := Complex.pos_iff.mp (LFunction_apply_one_pos hψ hψ₁)
   have hχψ_pos := Complex.pos_iff.mp (LFunction_apply_one_pos (isQuadratic_mul hχ hψ) hχψ)
@@ -106,8 +107,8 @@ theorem le_LFunction_one_re_of_nonpos {M N : ℕ} [NeZero M] [NeZero N]
 
 /-- **Goldfeld lower bound from an exceptional real zero.** If `L(β, ψ) = 0` for a nonprincipal
 quadratic character `ψ` mod `N` and `3 / 4 ≤ β`, then `Re L(1, χ)` satisfies the explicit Goldfeld
-lower bound of `le_LFunction_one_re_of_nonpos` for every nonprincipal quadratic `χ` mod `M` with
-`χ.mul ψ ≠ 1`. -/
+lower bound of `le_LFunction_one_re_of_pair_re_nonpos` for every nonprincipal quadratic `χ` mod `M`
+with `χ.mul ψ ≠ 1`. -/
 theorem le_LFunction_one_re_of_LFunction_eq_zero {M N : ℕ} [NeZero M] [NeZero N]
     {χ : DirichletCharacter ℂ M} {ψ : DirichletCharacter ℂ N}
     (hχ : χ.IsQuadratic) (hψ : ψ.IsQuadratic) (hχ₁ : χ ≠ 1) (hψ₁ : ψ ≠ 1)
@@ -115,7 +116,7 @@ theorem le_LFunction_one_re_of_LFunction_eq_zero {M N : ℕ} [NeZero M] [NeZero 
     (1 / 3360000000 : ℝ) * (1 - β) * ((M : ℝ) * N) ^ (-8 * (1 - β)) /
         ((ψ.LFunction 1).re * (1 + Real.log ((M : ℝ) * N))) ≤
       (χ.LFunction 1).re :=
-  le_LFunction_one_re_of_nonpos hχ hψ hχ₁ hψ₁ hχψ hβ (by simp [hzero])
+  le_LFunction_one_re_of_pair_re_nonpos hχ hψ hχ₁ hψ₁ hχψ hβ (by simp [hzero])
 
 private theorem LFunction_ne_zero_of_no_primitive_zero {δ : ℝ} (hδ : δ < 1)
     (hno : ¬ ∃ (N₁ : ℕ) (_ : NeZero N₁) (ψ₁ : DirichletCharacter ℂ N₁) (β₁ : ℝ),
@@ -168,32 +169,6 @@ private theorem exists_aux_character {δ : ℝ} (hδ : δ ∈ Ioo 0 (1 / 4)) :
         LFunction_ne_zero_of_no_primitive_zero hδ1 hex (isQuadratic_mul hχq hψq) hχψ1 hσ⟩
     exact (Complex.le_def.mp hnonpos).1
 
-private theorem exists_pos_forall_le_LFunction_one_re_of_le (Q : ℕ) :
-    ∃ c : ℝ, 0 < c ∧ ∀ (M : ℕ) [NeZero M], M ≤ Q → ∀ (χ : DirichletCharacter ℂ M),
-      χ.IsQuadratic → χ ≠ 1 → c ≤ (χ.LFunction 1).re := by
-  classical
-  induction Q with
-  | zero =>
-    exact ⟨1, one_pos, fun M _ hM _ _ _ ↦ absurd (Nat.eq_zero_of_le_zero hM) (NeZero.ne M)⟩
-  | succ Q ih =>
-    obtain ⟨c₀, hc₀, hih⟩ := ih
-    set S : Finset (DirichletCharacter ℂ (Q + 1)) :=
-      Finset.univ.filter fun χ ↦ χ.IsQuadratic ∧ χ ≠ 1
-    by_cases hS : S.Nonempty
-    · set c₁ : ℝ := S.inf' hS fun χ ↦ (χ.LFunction 1).re
-      have hc₁ : 0 < c₁ := (Finset.lt_inf'_iff hS).mpr fun χ hχ ↦ by
-        obtain ⟨hχq, hχ1⟩ := (Finset.mem_filter.mp hχ).2
-        exact (Complex.pos_iff.mp (LFunction_apply_one_pos hχq hχ1)).1
-      refine ⟨min c₀ c₁, lt_min hc₀ hc₁, fun M _ hM χ hχq hχ1 ↦ ?_⟩
-      rcases Nat.of_le_succ hM with hle | rfl
-      · exact (min_le_left _ _).trans (hih M hle χ hχq hχ1)
-      · exact (min_le_right _ _).trans
-          (Finset.inf'_le _ (Finset.mem_filter.mpr ⟨Finset.mem_univ _, hχq, hχ1⟩))
-    · refine ⟨c₀, hc₀, fun M _ hM χ hχq hχ1 ↦ ?_⟩
-      rcases Nat.of_le_succ hM with hle | rfl
-      · exact hih M hle χ hχq hχ1
-      · exact absurd ⟨χ, Finset.mem_filter.mpr ⟨Finset.mem_univ _, hχq, hχ1⟩⟩ hS
-
 private theorem exists_pos_forall_rpow_le_LFunction_one_re_of_lt {ε : ℝ} (hε : 0 < ε)
     {N₀ : ℕ} [NeZero N₀] {ψ₀ : DirichletCharacter ℂ N₀} {β : ℝ}
     (hψp : ψ₀.IsPrimitive) (hψq : ψ₀.IsQuadratic) (hψ1 : ψ₀ ≠ 1) (hβ34 : β ∈ Ico (3 / 4) 1)
@@ -214,7 +189,7 @@ private theorem exists_pos_forall_rpow_le_LFunction_one_re_of_lt {ε : ℝ} (hε
   have hMN1 : 1 ≤ (M : ℝ) * N₀ := by nlinarith
   have hMN_pos : 0 < (M : ℝ) * N₀ := by positivity
   have hχψ1 : χ.mul ψ₀ ≠ 1 := mt (hχp.mul_eq_one_iff hψp hψq).mp fun ⟨h, _⟩ ↦ hNM.ne' h
-  have hgold := le_LFunction_one_re_of_nonpos hχq hψq hχ1 hψ1 hχψ1
+  have hgold := le_LFunction_one_re_of_pair_re_nonpos hχq hψq hχ1 hψ1 hχψ1
     hβ34.1 (hsign M hNM χ hχp hχq)
   have hrpow : ((M : ℝ) * N₀) ^ (-(ε / 2)) ≤ ((M : ℝ) * N₀) ^ (-8 * (1 - β)) :=
     Real.rpow_le_rpow_of_exponent_le hMN1 (by linarith)
@@ -251,7 +226,8 @@ private theorem exists_pos_forall_rpow_le_LFunction_one_re_of_isPrimitive {ε : 
     exists_aux_character (δ := δ) ⟨hδ0, by linarith⟩
   obtain ⟨c_large, hc_large, hlarge⟩ := exists_pos_forall_rpow_le_LFunction_one_re_of_lt hε
     hψp hψq hψ1 ⟨by linarith [hβ.1], hβ.2⟩ (by linarith [hβ.1]) hsign
-  obtain ⟨c_small, hc_small, hsmall⟩ := exists_pos_forall_le_LFunction_one_re_of_le N₀
+  obtain ⟨c_small, hc_small, hsmall⟩ :=
+    TauCeti.DirichletCharacter.exists_pos_forall_le_LFunction_one_re_of_le N₀
   refine ⟨min c_large c_small, lt_min hc_large hc_small, fun M _ χ hχp hχq hχ1 ↦ ?_⟩
   rcases lt_or_ge N₀ M with hNM | hMN
   · exact (mul_le_mul_of_nonneg_right (min_le_left _ _) (by positivity)).trans

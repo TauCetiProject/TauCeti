@@ -6,7 +6,7 @@ Authors: Claude
 module
 
 public import Mathlib.NumberTheory.LSeries.Basic
-public import TauCeti.Analysis.MellinInversion
+public import TauCeti.Analysis.MellinInversion.Basic
 public import TauCeti.Analysis.SpecialFunctions.Gamma.Vertical
 
 /-!

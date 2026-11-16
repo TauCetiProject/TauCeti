@@ -18,7 +18,8 @@ import TauCeti.NumberTheory.NumberField.Quadratic.RingOfIntegers
 
 Combining the analytic class number inequality `h(K) ≥ √|D| L(1, χ_D) / π`
 (`TauCeti.NumberField.sqrt_mul_LFunction_one_re_div_le_classNumber`) with Siegel's lower bound
-`L(1, χ_D) ≥ c(ε) |D| ^ (-ε)` (`TauCeti.Multiquadratic.exists_pos_forall_rpow_le_LFunction_one_re`)
+`L(1, χ_D) ≥ c(ε) |D| ^ (-ε)` from
+`TauCeti.Multiquadratic.exists_pos_forall_rpow_le_fundamentalDiscriminantCharCast_LFunction_one_re`
 yields **Siegel's class-number bound**: for every universe `u` and `ε > 0` there is an (ineffective)
 constant `c > 0` such that every imaginary quadratic number field `K : Type u` satisfies
 
@@ -68,7 +69,8 @@ theorem exists_pos_forall_abs_discr_rpow_le_classNumber {ε : ℝ} (hε : 0 < ε
       ∀ (K : Type u) [Field K] [NumberField K] [IsTotallyComplex K],
         finrank ℚ K = 2 →
         c * |(discr K : ℝ)| ^ ((1 : ℝ) / 2 - ε) ≤ classNumber K := by
-  obtain ⟨c₀, hc₀, hS⟩ := TauCeti.Multiquadratic.exists_pos_forall_rpow_le_LFunction_one_re hε
+  obtain ⟨c₀, hc₀, hS⟩ :=
+    Multiquadratic.exists_pos_forall_rpow_le_fundamentalDiscriminantCharCast_LFunction_one_re hε
   refine ⟨c₀ / π, div_pos hc₀ Real.pi_pos, fun K _ _ _ hK ↦ ?_⟩
   have hD : Int.IsFundamentalDiscr (discr K) := TauCeti.Multiquadratic.isFundamentalDiscr_discr hK
   have hD_neg : discr K < 0 := (isTotallyComplex_iff_discr_lt_zero hK).mp inferInstance

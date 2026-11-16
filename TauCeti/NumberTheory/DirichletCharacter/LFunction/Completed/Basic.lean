@@ -12,15 +12,13 @@ public import TauCeti.Analysis.SpecialFunctions.Pow.Complex
 public import TauCeti.NumberTheory.DirichletCharacter.LFunction.Conjugate
 
 /-!
-# Completed and uncompleted Dirichlet L-functions
+# Completed Dirichlet L-functions
 
 These results supplement Mathlib's continued Dirichlet functions with meromorphy and conjugation.
-Both the completed function `χ.completedLFunction` and the uncompleted function `χ.LFunction` are
-meromorphic on the whole complex plane. For a nonprincipal character the two polar terms of
-Mathlib's Hurwitz decomposition cancel, so the completed function is Mathlib's entire periodic
-completion `ZMod.completedLFunction₀`. The functions themselves are Mathlib's, without any change
-of representative. The conjugation comparison is asserted only away from the possible poles at zero
-and one.
+For a nonprincipal character the two polar terms of Mathlib's Hurwitz decomposition cancel, so the
+completed function is Mathlib's entire periodic completion `ZMod.completedLFunction₀`.
+The functions themselves are Mathlib's, without any change of representative. The conjugation
+comparison is asserted only away from the possible poles at zero and one.
 
 The analytic input is David Loeffler and Michael Stoll's development in
 `Mathlib.NumberTheory.LSeries.DirichletContinuation`.
@@ -84,23 +82,6 @@ theorem meromorphic_completedLFunction : Meromorphic χ.completedLFunction := by
   unfold completedLFunction
   rw [funext (ZMod.completedLFunction_eq (χ ·))]
   fun_prop
-
-/-- Every Dirichlet character has a meromorphic L-function on the whole plane. -/
-@[fun_prop]
-theorem meromorphic_LFunction : Meromorphic χ.LFunction := by
-  intro z
-  by_cases hχ : χ = 1
-  · have hne : ∀ᶠ s in 𝓝[≠] z, s ≠ 1 := by
-      rcases eq_or_ne z 1 with rfl | hz1
-      · exact self_mem_nhdsWithin
-      · exact nhdsWithin_le_nhds (isOpen_ne.mem_nhds hz1)
-    refine (((differentiable_LFunctionTrivChar₁ N).analyticAt z).meromorphicAt.div
-      (analyticAt_id.sub (analyticAt_const (v := (1 : ℂ)))).meromorphicAt).congr
-      (hne.mono fun s hs ↦ ?_)
-    have hs1 : s - 1 ≠ 0 := sub_ne_zero.mpr hs
-    rw [hχ, Pi.div_apply, Pi.sub_apply, id_eq, LFunctionTrivChar₁, Function.update_of_ne hs,
-      LFunctionTrivChar, mul_div_cancel_left₀ _ hs1]
-  · exact ((differentiable_LFunction hχ).analyticAt z).meromorphicAt
 
 /-- For a nonprincipal character the completed L-function is the entire periodic completion
 `ZMod.completedLFunction₀` of the character values. -/

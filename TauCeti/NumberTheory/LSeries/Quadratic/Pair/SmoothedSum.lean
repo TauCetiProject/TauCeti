@@ -11,12 +11,12 @@ public import TauCeti.NumberTheory.LSeries.SmoothedSum
 import Mathlib.Analysis.SpecialFunctions.Complex.Analytic
 import Mathlib.Analysis.SpecialFunctions.ImproperIntegrals
 import TauCeti.Analysis.Contour.Residue.ChangeOfVariables
-import TauCeti.Analysis.Contour.Residue.Rectangle
+import TauCeti.Analysis.MellinInversion.Shift
 import TauCeti.Analysis.SpecialFunctions.Gamma.Growth
 import TauCeti.Analysis.SpecialFunctions.Gamma.Order
 import TauCeti.Analysis.SpecialFunctions.Gamma.Residue
 import TauCeti.NumberTheory.DirichletCharacter.LFunction.Bounds
-import TauCeti.NumberTheory.DirichletCharacter.LFunction.Completed.Basic
+import TauCeti.NumberTheory.DirichletCharacter.LFunction.Meromorphic
 import TauCeti.NumberTheory.LSeries.Quadratic.Character
 import TauCeti.NumberTheory.LSeries.RiemannZeta
 import TauCeti.NumberTheory.LSeries.Twist
@@ -50,7 +50,7 @@ yield Goldfeld's fundamental lower bound
   the simple-pole case `χ ≠ 1`, `ψ ≠ 1`, `χ.mul ψ ≠ 1`.
 * `DirichletCharacter.norm_mellinInv_Gamma_mul_pair_le`: explicit `(M N)² x ^ (β - 1 / 2)` bound on
   the shifted integral at `Re w = 1 / 2 - β` for `β ∈ [3 / 4, 5 / 4]` and `x ≥ 0`.
-* `DirichletCharacter.le_LFunction_one_mul_mul_re_of_nonpos`: Goldfeld's lower bound on
+* `DirichletCharacter.le_LFunction_one_mul_mul_re_of_pair_re_nonpos`: Goldfeld's lower bound on
   `Re (L(1, χ) L(1, ψ) L(1, χ.mul ψ))` when `Re F(β) ≤ 0`.
 
 ## References
@@ -114,34 +114,14 @@ private theorem norm_riemannZeta_le_three_mul {s : ℂ} (hs : 1 / 2 ≤ s.re)
 private theorem norm_LFunction_le_three_mul {L : ℕ} [NeZero L] (ρ : DirichletCharacter ℂ L)
     {s : ℂ} (hs : 1 / 2 ≤ s.re) (hs1 : 1 / 2 ≤ ‖s - 1‖) :
     ‖ρ.LFunction s‖ ≤ 3 * L * (1 + ‖s‖) := by
-  by_cases hρ : ρ = 1
-  · have hne : s ≠ 1 := fun h ↦ by simp [h] at hs1; linarith
-    rw [hρ, ← LFunctionTrivChar, LFunctionTrivChar_eq_mul_riemannZeta hne, norm_mul]
-    have hprod : ‖∏ p ∈ L.primeFactors, (1 - (p : ℂ) ^ (-s))‖ ≤ L := by
-      rw [norm_prod]
-      calc
-        ∏ p ∈ L.primeFactors, ‖1 - (p : ℂ) ^ (-s)‖
-          ≤ ∏ p ∈ L.primeFactors, (p : ℝ) :=
-            Finset.prod_le_prod₀ (fun _ _ ↦ norm_nonneg _) fun p hp ↦ by
-              have hp2 : (2 : ℝ) ≤ p := Nat.cast_le.mpr (Nat.prime_of_mem_primeFactors hp).two_le
-              have hcpow : ‖(p : ℂ) ^ (-s)‖ ≤ 1 := by
-                rw [norm_natCast_cpow_of_pos (Nat.pos_of_mem_primeFactors hp), neg_re]
-                exact Real.rpow_le_one_of_one_le_of_nonpos (by linarith) (by linarith)
-              linarith [norm_sub_le (1 : ℂ) ((p : ℂ) ^ (-s)), norm_one (α := ℂ)]
-        _ = ((∏ p ∈ L.primeFactors, p : ℕ) : ℝ) := by push_cast; rfl
-        _ ≤ L := Nat.cast_le.mpr (Nat.le_of_dvd (NeZero.pos L) L.prod_primeFactors_dvd)
-    calc
-      ‖∏ p ∈ L.primeFactors, (1 - (p : ℂ) ^ (-s))‖ * ‖riemannZeta s‖
-        ≤ (L : ℝ) * (3 * (1 + ‖s‖)) :=
-          mul_le_mul hprod (norm_riemannZeta_le_three_mul hs hs1) (norm_nonneg _) (by positivity)
-      _ = 3 * L * (1 + ‖s‖) := by ring
-  · have hb := ρ.norm_LFunction_le_level_mul_norm_div_re hρ (by linarith)
-    have hL0 : 0 ≤ (L : ℝ) * ‖s‖ := mul_nonneg (Nat.cast_nonneg L) (norm_nonneg s)
-    have hdiv : (L : ℝ) * ‖s‖ / s.re ≤ 2 * L * ‖s‖ := by
-      calc (L : ℝ) * ‖s‖ / s.re ≤ ((L : ℝ) * ‖s‖) / (1 / 2) :=
-            div_le_div_of_nonneg_left hL0 (by norm_num) hs
-        _ = 2 * L * ‖s‖ := by ring
-    nlinarith [(Nat.one_le_cast.mpr (NeZero.one_le (n := L)) : (1 : ℝ) ≤ L), norm_nonneg s]
+  have hne : s ≠ 1 := fun h ↦ by simp [h] at hs1; linarith
+  have hb := ρ.norm_LFunction_le (by linarith : 0 < s.re) (.inr hne)
+  have hinv : ‖s - 1‖⁻¹ ≤ 2 := by
+    rw [inv_le_comm₀ (by linarith) two_pos]; norm_num; exact hs1
+  have hdiv : ‖s‖ / s.re ≤ 2 * ‖s‖ := by
+    rw [div_le_iff₀ (by linarith)]
+    nlinarith [norm_nonneg s]
+  nlinarith [Nat.cast_nonneg (α := ℝ) L, norm_nonneg s]
 
 private theorem norm_pairProd_le (χ : DirichletCharacter ℂ M) (ψ : DirichletCharacter ℂ N)
     {s : ℂ} (hs : 1 / 2 ≤ s.re) (hs1 : 1 / 2 ≤ ‖s - 1‖) :
@@ -606,7 +586,7 @@ private theorem quarter_mul_sub_mul_rpow_le_LFunction_one_re {χ : DirichletChar
 quadratic Dirichlet characters whose product `χ.mul ψ` is also nonprincipal. If `3 / 4 ≤ β` and
 `Re (ζ(β) L(β, χ) L(β, ψ) L(β, χ.mul ψ)) ≤ 0`, then
 `(1 / 3360000000) (1 - β) (M N) ^ (-8 (1 - β)) ≤ Re (L(1, χ) L(1, ψ) L(1, χ.mul ψ))`. -/
-theorem le_LFunction_one_mul_mul_re_of_nonpos {χ : DirichletCharacter ℂ M}
+theorem le_LFunction_one_mul_mul_re_of_pair_re_nonpos {χ : DirichletCharacter ℂ M}
     {ψ : DirichletCharacter ℂ N} (hχ : χ.IsQuadratic) (hψ : ψ.IsQuadratic) (hχ₁ : χ ≠ 1)
     (hψ₁ : ψ ≠ 1) (hχψ : χ.mul ψ ≠ 1) {β : ℝ} (hβ : 3 / 4 ≤ β)
     (hsign : (riemannZeta β * χ.LFunction β * ψ.LFunction β * (χ.mul ψ).LFunction β).re ≤ 0) :
