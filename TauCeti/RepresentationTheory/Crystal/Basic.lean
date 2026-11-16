@@ -536,6 +536,32 @@ def toStrictHom (ψ : StrictIso c d) : StrictHom c d where
 @[simp]
 theorem coe_toStrictHom (ψ : StrictIso c d) : ⇑ψ.toStrictHom = ψ := (rfl)
 
+/-- Replace the source of a strict crystal isomorphism along an equality of normal crystals on the
+same carrier. -/
+def congrLeft {c₁ c₂ : NormalCrystal P b B} (h : c₁ = c₂) (ψ : StrictIso c₁ d) :
+    StrictIso c₂ d where
+  toEquiv := ψ.toEquiv
+  wt_toFun x := by subst h; exact ψ.wt_toFun x
+  e_toFun i x := by subst h; exact ψ.e_toFun i x
+
+@[simp]
+theorem coe_congrLeft {c₁ c₂ : NormalCrystal P b B} (h : c₁ = c₂) (ψ : StrictIso c₁ d) :
+    ⇑(ψ.congrLeft h) = ψ :=
+  (rfl)
+
+/-- Replace the target of a strict crystal isomorphism along an equality of normal crystals on the
+same carrier. -/
+def congrRight {d₁ d₂ : NormalCrystal P b B'} (h : d₁ = d₂) (ψ : StrictIso c d₁) :
+    StrictIso c d₂ where
+  toEquiv := ψ.toEquiv
+  wt_toFun x := by subst h; exact ψ.wt_toFun x
+  e_toFun i x := by subst h; exact ψ.e_toFun i x
+
+@[simp]
+theorem coe_congrRight {d₁ d₂ : NormalCrystal P b B'} (h : d₁ = d₂) (ψ : StrictIso c d₁) :
+    ⇑(ψ.congrRight h) = ψ :=
+  (rfl)
+
 variable (ψ : StrictIso c d) (i : b.support) (x : B)
 
 @[simp]

@@ -31,6 +31,8 @@ cover bond `b_λ(x, y)` of Chirivì–Fang–Littelmann, studied in
   positive reflection is `0`, and `RootPairing.reflectionBond_self` says the bond of a weight with
   itself is `0`.
 * `RootPairing.reflectionBond_reflection`: the bond of `x` and `s_β x` is `-⟨x, β^∨⟩`.
+* `RootPairing.reflectionBond_neg_neg`: negating both weights and reversing their order preserves
+  their bond.
 * `RootPairing.reflectionBond_dvd_sub`: when `y = s_β x` for a positive root `β`, the bond of `x`
   and `y` divides `f x - f y` for every linear form `f`.
 * `RootPairing.abs_reflectionBond_smul_smul`: the bond is invariant under the Weyl group, up to
@@ -102,6 +104,20 @@ theorem reflectionBond_reflection [P.IsReduced] [NoZeroDivisors R] {β : ι} (h�
     rw [hne] at hc
     rw [hne, reflectionBond_self, CharZero.eq_neg_self_iff.mp hc, neg_zero]
   · exact reflectionBond_eq_neg_coroot' hβ rfl hne
+
+/-- **Negating two weights and reversing their order preserves their reflection bond.** -/
+theorem reflectionBond_neg_neg [P.IsReduced] [NoZeroDivisors R] (x y : M) :
+    P.reflectionBond b (-y) (-x) = P.reflectionBond b x y := by
+  rcases eq_or_ne y x with rfl | hxy
+  · simp
+  by_cases h : ∃ β, b.IsPos β ∧ P.reflection β x = y
+  · obtain ⟨β, hβ, h⟩ := h
+    have h' : P.reflection β (-y) = -x := by rw [map_neg, ← h, reflection_same]
+    rw [reflectionBond_eq_coroot' hβ h' (by simpa [eq_comm] using hxy), map_neg,
+      reflectionBond_eq_neg_coroot' hβ h hxy]
+  · rw [reflectionBond_eq_zero_of_not_exists h, reflectionBond_eq_zero_of_not_exists]
+    rintro ⟨β, hβ, h'⟩
+    exact h ⟨β, hβ, neg_injective (by rw [← map_neg, ← h', reflection_same])⟩
 
 /-- **The bond divides the change of every linear form.** If `y = s_β x` for a positive root `β`,
 then `x - y = -⟨y, β^∨⟩ β`, so the bond of `x` and `y` divides `f x - f y` for every linear form

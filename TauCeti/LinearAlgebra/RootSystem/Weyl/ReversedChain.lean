@@ -29,7 +29,7 @@ Specializing `CoxeterSystem.MinimalCosetRepChain.reverseMul` to `TauCeti.weylCox
 
 * `TauCeti.conj_longestElement_simple` and
   `TauCeti.conj_longestElement_mem_parabolic_wallIndices_iff`.
-* `TauCeti.minimalCosetRep_mul_longestElement_smul`, `RootPairing.reflectionBond_neg_neg`, and
+* `TauCeti.minimalCosetRep_mul_longestElement_smul` and
   `TauCeti.reflectionBond_minimalCosetRep_mul_longestElement`.
 * `CoxeterSystem.MinimalCosetRepChain.bondGcd_reverseMul_longestElement`,
   `CoxeterSystem.MinimalCosetRepChain.isAChain_reverseMul_longestElement_iff`, and
@@ -45,28 +45,6 @@ Specializing `CoxeterSystem.MinimalCosetRepChain.reverseMul` to `TauCeti.weylCox
 public section
 
 universe u v w x
-
-namespace RootPairing
-
-variable {ι : Type u} {R : Type v} {M : Type w} {N : Type x}
-  [CommRing R] [CharZero R] [NoZeroDivisors R] [AddCommGroup M] [Module R M]
-  [AddCommGroup N] [Module R N] (P : RootPairing ι R M N) {b : P.Base} [P.IsReduced]
-
-/-- **Negating two weights and reversing their order preserves their reflection bond.** -/
-theorem reflectionBond_neg_neg (x y : M) :
-    P.reflectionBond b (-y) (-x) = P.reflectionBond b x y := by
-  rcases eq_or_ne y x with rfl | hxy
-  · simp
-  by_cases h : ∃ β, b.IsPos β ∧ P.reflection β x = y
-  · obtain ⟨β, hβ, h⟩ := h
-    have h' : P.reflection β (-y) = -x := by rw [map_neg, ← h, reflection_same]
-    rw [reflectionBond_eq_coroot' hβ h' (by simpa [eq_comm] using hxy), map_neg,
-      reflectionBond_eq_neg_coroot' hβ h hxy]
-  · rw [reflectionBond_eq_zero_of_not_exists h, reflectionBond_eq_zero_of_not_exists]
-    rintro ⟨β, hβ, h'⟩
-    exact h ⟨β, hβ, neg_injective (by rw [← map_neg, ← h', reflection_same])⟩
-
-end RootPairing
 
 namespace TauCeti
 
@@ -182,27 +160,8 @@ theorem bondGcd_reverseMul_longestElement :
           ((D k.succ).1 • -(TauCeti.longestElement P b • lam)) =
         P.reflectionBond b ((C (k.cast hlen).rev.castSucc).1 • lam)
           ((C (k.cast hlen).rev.succ).1 • lam) := by
-    have h₁ : (D k.castSucc).1 =
-        (TauCeti.weylCoxeterSystem P b).minimalCosetRep
-          (P.wallIndices b (-(TauCeti.longestElement P b • lam)))
-          ((C (k.cast hlen).rev.succ).1 * TauCeti.longestElement P b) := by
-      rw [CoxeterSystem.MinimalCosetRepChain.reverseMul_apply]
-      exact congrArg (fun j : Fin (C.length + 1) ↦
-        (TauCeti.weylCoxeterSystem P b).minimalCosetRep
-          (P.wallIndices b (-(TauCeti.longestElement P b • lam)))
-          ((C j).1 * TauCeti.longestElement P b))
-        (Fin.ext (by simp [Fin.val_rev]; omega))
-    have h₂ : (D k.succ).1 =
-        (TauCeti.weylCoxeterSystem P b).minimalCosetRep
-          (P.wallIndices b (-(TauCeti.longestElement P b • lam)))
-          ((C (k.cast hlen).rev.castSucc).1 * TauCeti.longestElement P b) := by
-      rw [CoxeterSystem.MinimalCosetRepChain.reverseMul_apply]
-      exact congrArg (fun j : Fin (C.length + 1) ↦
-        (TauCeti.weylCoxeterSystem P b).minimalCosetRep
-          (P.wallIndices b (-(TauCeti.longestElement P b • lam)))
-          ((C j).1 * TauCeti.longestElement P b))
-        (Fin.ext (by simp [Fin.val_rev]))
-    rw [h₁, h₂, TauCeti.reflectionBond_minimalCosetRep_mul_longestElement]
+    rw [reverseMul_castSucc, reverseMul_succ,
+      TauCeti.reflectionBond_minimalCosetRep_mul_longestElement]
   refine Nat.dvd_antisymm
     (TauCeti.dvd_bondGcd_iff.mpr fun j ↦ ?_)
     (TauCeti.dvd_bondGcd_iff.mpr fun k ↦ ?_)

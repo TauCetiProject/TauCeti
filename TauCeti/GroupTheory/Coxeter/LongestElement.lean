@@ -279,6 +279,25 @@ theorem reverseMul_apply (k : Fin ((C.reverseMul h hJK).length + 1)) :
       cs.minimalCosetRep K ((C (Fin.rev ⟨k, by simpa using k.2⟩)).1 * w₀) :=
   (rfl)
 
+/-- The `k`-th step of a reversed chain starts at the `(rev k).succ`-th vertex of `C`, times `w₀`.
+-/
+theorem reverseMul_castSucc (k : Fin (C.reverseMul h hJK).length) :
+    ((C.reverseMul h hJK) k.castSucc).1 =
+      cs.minimalCosetRep K ((C (k.cast (length_reverseMul h hJK C)).rev.succ).1 * w₀) := by
+  rw [reverseMul_apply]
+  have hk : k.1 < C.length := by simpa using k.2
+  exact congrArg (fun j : Fin (C.length + 1) ↦ cs.minimalCosetRep K ((C j).1 * w₀))
+    (Fin.ext (by simp [Fin.val_rev]; omega))
+
+/-- The `k`-th step of a reversed chain ends at the `(rev k).castSucc`-th vertex of `C`, times
+`w₀`. -/
+theorem reverseMul_succ (k : Fin (C.reverseMul h hJK).length) :
+    ((C.reverseMul h hJK) k.succ).1 =
+      cs.minimalCosetRep K ((C (k.cast (length_reverseMul h hJK C)).rev.castSucc).1 * w₀) := by
+  rw [reverseMul_apply]
+  exact congrArg (fun j : Fin (C.length + 1) ↦ cs.minimalCosetRep K ((C j).1 * w₀))
+    (Fin.ext (by simp [Fin.val_rev]))
+
 /-- The reversed chain starts at the coset of the last element of the chain, times `w₀`. -/
 @[simp]
 theorem head_reverseMul : (C.reverseMul h hJK).head.1 = cs.minimalCosetRep K (C.last.1 * w₀) := by

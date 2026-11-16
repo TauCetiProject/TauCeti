@@ -11,6 +11,7 @@ public import TauCeti.RepresentationTheory.LSPath.Reparametrization
 import Mathlib.Algebra.Order.BigOperators.Group.Finset
 import Mathlib.Data.Set.Finite.List
 import TauCeti.Data.Rat.BoundedDen
+import TauCeti.LinearAlgebra.RootSystem.Reduced
 import TauCeti.LinearAlgebra.RootSystem.Weyl.IntervalBondGcd
 
 /-!
@@ -50,6 +51,7 @@ The straight path `t ↦ t λ` (`TauCeti.LSPath.straight`) and, for a simple roo
 ## Main definitions
 
 * `TauCeti.LSPath`: Littelmann's encoding `(τ; a)` of a Lakshmibai–Seshadri path of shape `λ`.
+* `TauCeti.LSPath.congr`: transport of encodings along an equality of shape weights.
 * `TauCeti.LSPath.duration`: the duration `a_{j+1} - a_j` of the `j`-th segment.
 * `TauCeti.LSPath.timed`: the distinguished timed presentation, running with constant velocity
   `τ_j λ` for time `a_{j+1} - a_j`.
@@ -61,6 +63,8 @@ The straight path `t ↦ t λ` (`TauCeti.LSPath.straight`) and, for a simple roo
 
 * `TauCeti.LSPath.finite`: **for dominant `λ` there are finitely many Lakshmibai–Seshadri paths
   of shape `λ`.**
+* `TauCeti.LSPath.eq_straight_of_forall_coroot'_eq_zero`: every LS path of a pure central shape
+  equals `straight`.
 * `TauCeti.LSPath.bruhatLE_dir_succ` and `TauCeti.LSPath.strictAnti_length_dir`: the directions
   strictly decrease in the Bruhat order, and so do their lengths.
 * `TauCeti.LSPath.sum_duration`, `TauCeti.LSPath.isTimed_timed` and
@@ -134,6 +138,21 @@ theorem ext {π π' : LSPath P b lam} (hdir : List.ofFn π.dir = List.ofFn π'.d
   obtain rfl := List.ofFn_injective hdir
   obtain rfl := List.ofFn_injective htime
   rfl
+
+/-- Two Lakshmibai–Seshadri encodings of the same shape are equal once their lengths, directions,
+and break times agree pointwise. -/
+theorem eq_of_length_dir_time {π π' : LSPath P b lam}
+    (hlen : π.length = π'.length)
+    (hdir : ∀ j : Fin (π.length + 1), (π.dir j).1 = (π'.dir (j.cast (by rw [hlen]))).1)
+    (htime : ∀ k : Fin (π.length + 2), π.time k = π'.time (k.cast (by rw [hlen]))) :
+    π = π' := by
+  apply LSPath.ext
+  · refine List.ext_getElem (by simp [hlen]) fun n h₁ _ ↦ Subtype.ext ?_
+    rw [List.getElem_ofFn, List.getElem_ofFn]
+    exact hdir ⟨n, by simpa only [List.length_ofFn] using h₁⟩
+  · refine List.ext_getElem (by simp [hlen]) fun n h₁ _ ↦ ?_
+    rw [List.getElem_ofFn, List.getElem_ofFn]
+    exact htime ⟨n, by simpa only [List.length_ofFn] using h₁⟩
 
 /-- The directions of a Lakshmibai–Seshadri path decrease in the Bruhat order of `W / W_λ`; they
 strictly decrease by `TauCeti.LSPath.dir_succ_ne`. -/
@@ -289,11 +308,82 @@ theorem eq_straight_iff_dir_zero_eq_one (π : LSPath P b lam) :
       · simpa using hzero
       · simpa using hlast
 
+/-- **Uniqueness of the LS path for a pure central shape.** If `χ` is annihilated by every simple
+coroot (including `χ = 0`, pure central characters, and arbitrary weights when `ι` is empty), every
+Lakshmibai–Seshadri path of shape `χ` equals `straight χ`. -/
+theorem eq_straight_of_forall_coroot'_eq_zero {χ : M}
+    (hχ : ∀ i ∈ b.support, P.coroot' i χ = 0) (π : LSPath P b χ) :
+    π = straight χ := by
+  have := P.flip_isReduced
+  rw [eq_straight_iff_dir_zero_eq_one]
+  exact eq_of_isMinimalCosetRep_of_smul_eq
+    (mem_dominantChamber_of_forall_coroot'_eq_zero P b hχ) (π.dir 0).2
+    ((weylCoxeterSystem P b).isMinimalCosetRep_one _)
+    (by rw [smul_eq_self_of_forall_coroot'_eq_zero b hχ, one_smul])
+
 /-- The path of the straight Lakshmibai–Seshadri path is the straight path along `λ`. -/
 @[simp]
 theorem toPLPath_straight :
     (straight lam : LSPath P b lam).toPLPath 𝕜 f = PLPath.straight 𝕜 (f lam) := by
   simp [toPLPath, timed, duration, straight, PLPath.straight_def]
+
+section Congr
+
+/-- Transport of Lakshmibai–Seshadri encodings along an equality of shape weights. -/
+def congr {lam lam' : M} (h : lam = lam') : LSPath P b lam ≃ LSPath P b lam' :=
+  h ▸ Equiv.refl _
+
+@[simp]
+theorem congr_refl (lam : M) :
+    (congr (rfl : lam = lam) : LSPath P b lam ≃ LSPath P b lam) = Equiv.refl _ :=
+  (rfl)
+
+@[simp]
+theorem congr_symm {lam lam' : M} (h : lam = lam') :
+    (congr (P := P) (b := b) h).symm = congr h.symm := by subst h; rfl
+
+@[simp]
+theorem congr_trans {lam₁ lam₂ lam₃ : M} (h₁ : lam₁ = lam₂) (h₂ : lam₂ = lam₃) :
+    (congr (P := P) (b := b) h₁).trans (congr h₂) = congr (h₁.trans h₂) := by subst h₁ h₂; rfl
+
+@[simp]
+theorem congr_congr {lam₁ lam₂ lam₃ : M} (h₁ : lam₁ = lam₂) (h₂ : lam₂ = lam₃)
+    (π : LSPath P b lam₁) :
+    congr h₂ (congr h₁ π) = congr (h₁.trans h₂) π := by subst h₁ h₂; rfl
+
+@[simp]
+theorem length_congr {lam lam' : M} (h : lam = lam') (π : LSPath P b lam) :
+    (congr h π).length = π.length := by subst h; rfl
+
+@[simp]
+theorem dir_congr {lam lam' : M} (h : lam = lam') (π : LSPath P b lam)
+    (j : Fin ((congr h π).length + 1)) :
+    ((congr h π).dir j).1 = (π.dir (j.cast (by rw [length_congr]))).1 := by subst h; rfl
+
+@[simp]
+theorem time_congr {lam lam' : M} (h : lam = lam') (π : LSPath P b lam)
+    (k : Fin ((congr h π).length + 2)) :
+    (congr h π).time k = π.time (k.cast (by rw [length_congr])) := by subst h; rfl
+
+@[simp]
+theorem duration_congr {lam lam' : M} (h : lam = lam') (π : LSPath P b lam)
+    (j : Fin ((congr h π).length + 1)) :
+    (congr h π).duration j = π.duration (j.cast (by rw [length_congr])) := by subst h; rfl
+
+@[simp]
+theorem congr_straight {lam lam' : M} (h : lam = lam') :
+    congr (P := P) (b := b) h (straight lam) = straight lam' := by subst h; rfl
+
+omit [LinearOrder 𝕜] [IsStrictOrderedRing 𝕜] in
+@[simp]
+theorem timed_congr {lam lam' : M} (h : lam = lam') (π : LSPath P b lam) :
+    (congr h π).timed 𝕜 f = π.timed 𝕜 f := by subst h; rfl
+
+@[simp]
+theorem toPLPath_congr {lam lam' : M} (h : lam = lam') (π : LSPath P b lam) :
+    (congr h π).toPLPath 𝕜 f = π.toPLPath 𝕜 f := by subst h; rfl
+
+end Congr
 
 /-- The **two-direction** Lakshmibai–Seshadri path `(sᵢ, 1; 0, a, 1)` along a simple root `αᵢ`
 with `⟨λ, αᵢ^∨⟩ ≠ 0`, for `0 < a < 1` with `a ⟨λ, αᵢ^∨⟩ ∈ ℤ`. It runs along `sᵢ λ` until time

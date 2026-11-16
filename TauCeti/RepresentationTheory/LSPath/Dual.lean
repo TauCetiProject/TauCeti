@@ -19,12 +19,11 @@ represented by its minimal coset representative. By
 `CoxeterSystem.MinimalCosetRepChain.isAChain_one_sub_reverseMul_longestElement_iff` and
 `TauCeti.minimalCosetRep_mul_longestElement_smul`, its distinguished timed presentation is
 `TauCeti.PLPath.reverseTimed (π.timed 𝕜 f)` and its path is `(π.toPLPath 𝕜 f).reverse`, with no
-dominance assumption on `λ`. We also provide shape transport `TauCeti.LSPath.congr` along `λ = λ'`.
+dominance assumption on `λ`.
 
 ## Main definitions and results
 
-* `TauCeti.LSPath.congr` and `TauCeti.LSPath.dual`: shape transport and Littelmann's duality
-  `LSPath P b λ ≃ LSPath P b (-(w₀ • λ))`.
+* `TauCeti.LSPath.dual`: Littelmann's duality `LSPath P b λ ≃ LSPath P b (-(w₀ • λ))`.
 * `TauCeti.LSPath.timed_dual` and `TauCeti.LSPath.toPLPath_dual`: compatibility with
   `TauCeti.PLPath.reverseTimed` and `TauCeti.PLPath.reverse`.
 * `TauCeti.LSPath.dual_symm_eq_congr_dual` and `TauCeti.LSPath.congr_dual_dual`: involutivity.
@@ -47,88 +46,6 @@ open RootPairing
 
 variable {ι : Type u} {M : Type w} {N : Type x} [AddCommGroup M] [AddCommGroup N]
   {P : RootPairing ι ℤ M N} {b : P.Base} [Finite ι] [P.IsReduced]
-
-/-! ### Extensionality and transport along an equality of shapes -/
-
-section Congr
-
-/-- Two Lakshmibai–Seshadri encodings of the same shape are equal once their lengths, directions,
-and break times agree pointwise. -/
-theorem eq_of_length_dir_time {lam : M} {π π' : LSPath P b lam}
-    (hlen : π.length = π'.length)
-    (hdir : ∀ j : Fin (π.length + 1), (π.dir j).1 = (π'.dir (j.cast (by rw [hlen]))).1)
-    (htime : ∀ k : Fin (π.length + 2), π.time k = π'.time (k.cast (by rw [hlen]))) :
-    π = π' := by
-  apply LSPath.ext
-  · refine List.ext_getElem (by simp [hlen]) fun n h₁ _ ↦ Subtype.ext ?_
-    rw [List.getElem_ofFn, List.getElem_ofFn]
-    exact hdir ⟨n, by simpa only [List.length_ofFn] using h₁⟩
-  · refine List.ext_getElem (by simp [hlen]) fun n h₁ _ ↦ ?_
-    rw [List.getElem_ofFn, List.getElem_ofFn]
-    exact htime ⟨n, by simpa only [List.length_ofFn] using h₁⟩
-
-/-- Transport of Lakshmibai–Seshadri encodings along an equality of shape weights. -/
-def congr {lam lam' : M} (h : lam = lam') : LSPath P b lam ≃ LSPath P b lam' :=
-  h ▸ Equiv.refl _
-
-@[simp]
-theorem congr_refl (lam : M) :
-    (congr (rfl : lam = lam) : LSPath P b lam ≃ LSPath P b lam) = Equiv.refl _ :=
-  (rfl)
-
-@[simp]
-theorem congr_symm {lam lam' : M} (h : lam = lam') :
-    (congr (P := P) (b := b) h).symm = congr h.symm := by subst h; rfl
-
-@[simp]
-theorem congr_trans {lam₁ lam₂ lam₃ : M} (h₁ : lam₁ = lam₂) (h₂ : lam₂ = lam₃) :
-    (congr (P := P) (b := b) h₁).trans (congr h₂) = congr (h₁.trans h₂) := by subst h₁ h₂; rfl
-
-@[simp]
-theorem congr_congr {lam₁ lam₂ lam₃ : M} (h₁ : lam₁ = lam₂) (h₂ : lam₂ = lam₃)
-    (π : LSPath P b lam₁) :
-    congr h₂ (congr h₁ π) = congr (h₁.trans h₂) π := by subst h₁ h₂; rfl
-
-@[simp]
-theorem length_congr {lam lam' : M} (h : lam = lam') (π : LSPath P b lam) :
-    (congr h π).length = π.length := by subst h; rfl
-
-@[simp]
-theorem dir_congr {lam lam' : M} (h : lam = lam') (π : LSPath P b lam)
-    (j : Fin ((congr h π).length + 1)) :
-    ((congr h π).dir j).1 = (π.dir (j.cast (by rw [length_congr]))).1 := by subst h; rfl
-
-@[simp]
-theorem time_congr {lam lam' : M} (h : lam = lam') (π : LSPath P b lam)
-    (k : Fin ((congr h π).length + 2)) :
-    (congr h π).time k = π.time (k.cast (by rw [length_congr])) := by subst h; rfl
-
-@[simp]
-theorem duration_congr {lam lam' : M} (h : lam = lam') (π : LSPath P b lam)
-    (j : Fin ((congr h π).length + 1)) :
-    (congr h π).duration j = π.duration (j.cast (by rw [length_congr])) := by subst h; rfl
-
-@[simp]
-theorem congr_straight {lam lam' : M} (h : lam = lam') :
-    congr (P := P) (b := b) h (straight lam) = straight lam' := by subst h; rfl
-
-section Realization
-
-variable (𝕜 : Type*) {V : Type*} [Field 𝕜] [LinearOrder 𝕜] [IsStrictOrderedRing 𝕜]
-  [AddCommGroup V] [Module 𝕜 V] (f : M →+ V)
-
-omit [LinearOrder 𝕜] [IsStrictOrderedRing 𝕜] in
-@[simp]
-theorem timed_congr {lam lam' : M} (h : lam = lam') (π : LSPath P b lam) :
-    (congr h π).timed 𝕜 f = π.timed 𝕜 f := by subst h; rfl
-
-@[simp]
-theorem toPLPath_congr {lam lam' : M} (h : lam = lam') (π : LSPath P b lam) :
-    (congr h π).toPLPath 𝕜 f = π.toPLPath 𝕜 f := by subst h; rfl
-
-end Realization
-
-end Congr
 
 /-! ### Littelmann's dual Lakshmibai–Seshadri path -/
 
@@ -169,7 +86,7 @@ private noncomputable def dualAux {lam : M} (π : LSPath P b lam) :
 
 private theorem dualAux_congr {lam lam' : M} (h : lam = lam') (π : LSPath P b lam) :
     dualAux (congr h π) =
-      congr (congrArg (fun m ↦ -(longestElement P b • m)) h) (dualAux π) := by subst h; rfl
+      congr (congrArg (fun m ↦ -(longestElement P b • m)) h) (dualAux π) := by subst h; simp
 
 private theorem neg_longestElement_smul_neg_longestElement_smul (lam : M) :
     -(longestElement P b • -(longestElement P b • lam)) = lam := by
