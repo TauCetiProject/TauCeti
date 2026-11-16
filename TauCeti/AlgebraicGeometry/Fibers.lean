@@ -26,7 +26,7 @@ For a domain, the generic fibre is canonically isomorphic to Mathlib's scheme-th
 the generic point. Iterated scalar extension is also canonically isomorphic to direct scalar
 extension, compatibly with both pullback projections. Along an `R`-algebra map `φ : K → L`, the
 scalar extension to `L` is the base change along `Spec φ` of the scalar extension to `K`, through
-the comparison map `TauCeti.genericFiberMap` (`TauCeti.isPullback_genericFiber_map`).
+the comparison map `TauCeti.genericFiberMap` (`TauCeti.isPullback_genericFiberMap`).
 -/
 
 public section
@@ -437,7 +437,7 @@ lemma genericFiberMap_snd :
 /-- **Scalar extension along an algebra map.** For an `R`-algebra map `φ : K → L`, the scalar
 extension of a scheme over `R` to `L` is the base change along `Spec φ` of its scalar extension to
 `K`, through the comparison map `TauCeti.genericFiberMap`. -/
-lemma isPullback_genericFiber_map :
+lemma isPullback_genericFiberMap :
     IsPullback (genericFiberMap R φ toBase) (genericFiber R L toBase).hom
       (genericFiber R K toBase).hom (Spec.map (CommRingCat.ofHom φ.toRingHom)) :=
   IsPullback.of_right (by

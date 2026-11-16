@@ -344,7 +344,7 @@ private noncomputable def mapExtensionGenericι :
       Spec.map (CommRingCat.ofHom (algebraMap F.localRing F.extensionField)))
     (by
       rw [Category.assoc, genericι_toBase, ← Category.assoc,
-        (isPullback_genericFiber_map K T.field toK).w, Category.assoc,
+        (isPullback_genericFiberMap K T.field toK).w, Category.assoc,
         T.spec_map_field_comp_spec_map_algebraMap, Category.assoc])
 
 private lemma isPullback_mapExtensionGenericι :
@@ -353,7 +353,7 @@ private lemma isPullback_mapExtensionGenericι :
       (Spec.map (CommRingCat.ofHom (algebraMap F.localRing F.extensionField))) :=
   IsPullback.of_right (by
       rw [mapExtensionGenericι, pullback.lift_fst, ← T.spec_map_field_comp_spec_map_algebraMap]
-      exact (isPullback_genericFiber_map K T.field toK).paste_horiz M.isPullback_genericι)
+      exact (isPullback_genericFiberMap K T.field toK).paste_horiz M.isPullback_genericι)
     (pullback.lift_snd _ _ _) (IsPullback.of_hasPullback _ _)
 
 /-- **Base change of a model along a map of chosen extensions.** A model over the local ring of
