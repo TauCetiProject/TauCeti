@@ -28,6 +28,11 @@ If the source is finite over the field, the truncated Euler characteristic of th
 structure sheaf is the rank of the source over the field
 (`Scheme.Hom.eulerCharBelow_pushforward_structureSheaf`).
 
+An isomorphism of schemes is a closed immersion, and pullback along it is direct image along its
+inverse. So pullback along an isomorphism over `R` preserves cohomology as an `R`-module
+(`Scheme.Hom.cohomologyPullbackBaseLinearEquivOfIsIso`), again without any hypothesis on the
+schemes or the coefficient sheaf.
+
 ## References
 
 * R. Hartshorne, *Algebraic Geometry*, III, Lemma 2.10 and Theorem 5.2.
@@ -181,5 +186,31 @@ theorem eulerCharBelow_pushforward_structureSheaf [IsFinite (X ↘ Spec (.of k))
 end Field
 
 end
+
+section IsIso
+
+variable {X Y : Scheme.{u}} (g : X ⟶ Y) [IsIso g] (R : Type u) [CommRing R]
+  [X.Over (Spec (.of R))] [Y.Over (Spec (.of R))] [g.IsOver (Spec (.of R))]
+
+/-- Pullback along an isomorphism of schemes over `R` preserves cohomology as an `R`-module.
+Along an isomorphism, pullback is direct image along the inverse, both being left adjoint to
+direct image along `g`, so this is the closed-immersion comparison for the inverse of `g`. -/
+noncomputable def cohomologyPullbackBaseLinearEquivOfIsIso (M : Y.Modules) (n : ℕ) :
+    Cohomology ((pullback g).obj M) n ≃ₗ[R] Cohomology M n :=
+  let E : Y.Modules ≌ X.Modules := .mk (pushforward (inv g)) (pushforward g)
+    ((pushforwardId Y).symm ≪≫ pushforwardCongr (IsIso.inv_hom_id g).symm ≪≫
+      (pushforwardComp (inv g) g).symm)
+    (pushforwardComp g (inv g) ≪≫ pushforwardCongr (IsIso.hom_inv_id g) ≪≫ pushforwardId X)
+  (cohomologyBaseLinearEquivOfIso R
+      (((pullbackPushforwardAdjunction g).leftAdjointUniq E.toAdjunction).app M) n).trans
+    (cohomologyPushforwardBaseLinearEquiv (inv g) R M n)
+
+/-- Pullback along an isomorphism of schemes over a commutative ring preserves cohomology
+finranks, including the value zero assigned to modules of infinite rank. -/
+theorem finrank_cohomology_pullback_of_isIso (M : Y.Modules) (n : ℕ) :
+    Module.finrank R (Cohomology ((pullback g).obj M) n) = Module.finrank R (Cohomology M n) :=
+  (cohomologyPullbackBaseLinearEquivOfIsIso g R M n).finrank_eq
+
+end IsIso
 
 end AlgebraicGeometry.Scheme.Hom

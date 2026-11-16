@@ -5,8 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.AlgebraicGeometry.Cohomology.FlatBaseChange
-public import TauCeti.AlgebraicGeometry.IntersectionNumber.Weight
+public import TauCeti.AlgebraicGeometry.Cohomology.ClosedImmersion.Linear
+public import TauCeti.AlgebraicGeometry.IntersectionNumber.Basic
 public import TauCeti.AlgebraicGeometry.LineBundle.BaseChange
 public import TauCeti.AlgebraicGeometry.LineBundle.ProjectiveLine
 
@@ -31,20 +31,20 @@ sheaf `I` itself, because that is how Tau Ceti represents an effective Cartier d
 intersection numbers it says `(E · E) = -1` over `κ`
 (`AlgebraicGeometry.Scheme.IdealSheafData.isExceptionalCurveOfFirstKind_iff_intersectionNumber`).
 
-The numerical invariants of an exceptional curve do not depend on the chosen field: whenever `E`
-is regarded as a scheme over a field `k`, for instance the residue field of a discrete valuation
-ring through the special fibre of a model, then
+The cohomological and numerical invariants of an exceptional curve do not depend on the chosen
+field:
 
-* `E` has genus zero over its constant field, `dim_{Γ(E, 𝒪_E)} H¹(E, 𝒪_E) = 0`, and so
-  `dim_k H¹(E, 𝒪_E) = 0`;
-* its self-intersection over `k` is minus its weight, `(E · E) = -dim_k H⁰(E, 𝒪_E)`.
+* `E` is an integral curve, and its structure sheaf has no higher cohomology, `Hⁿ(E, 𝒪_E) = 0` for
+  `n ≥ 1`; in particular `E` has genus zero over its constant field and over every field `k` over
+  which `E` lies;
+* whenever `E` is regarded as a scheme over a field `k`, for instance the residue field of a
+  discrete valuation ring through the special fibre of a model, its self-intersection over `k` is
+  minus its weight, `(E · E) = -dim_k H⁰(E, 𝒪_E)`, and the conormal bundle has degree
+  `dim_k H⁰(E, 𝒪_E)`.
 
 For a component `Cⱼ` of the special fibre of a regular model, these say that `j` is a
-`(-1)`-index of the numerical type (`TauCeti.NumericalType.IsMinusOneIndex`): its genus over the
-constant field is zero and its diagonal entry `aⱼⱼ` of the intersection matrix is `-wⱼ`
-(`Scheme.Hom.specialFiberIntersectionMatrix_self_eq_neg_specialFiberWeight`).
-This is the numerical shadow of an exceptional curve on which the combinatorial theory of minimal
-numerical types rests.
+`(-1)`-index of the numerical type (`TauCeti.NumericalType.IsMinusOneIndex`); see
+`TauCeti.AlgebraicGeometry.IntersectionNumber.ExceptionalCurve.SpecialFiber`.
 
 ## Main definitions
 
@@ -57,19 +57,22 @@ numerical types rests.
   the normal bundle condition is the self-intersection `(E · E) = -1` over `κ`.
 * `AlgebraicGeometry.Scheme.IdealSheafData.IsExceptionalCurveOfFirstKind.isField_globalSections`:
   the global functions on `E` form a field.
-* `IsExceptionalCurveOfFirstKind.finrank_globalSections_cohomology_one_trivial_eq_zero` and
-  `IsExceptionalCurveOfFirstKind.finrank_cohomology_one_trivial_eq_zero`: `E` has genus zero.
+* `IsExceptionalCurveOfFirstKind.isIntegral_subscheme` and
+  `IsExceptionalCurveOfFirstKind.topologicalKrullDim_subscheme`: `E` is an integral curve, so in
+  particular `I ≠ ⊤` (`not_isExceptionalCurveOfFirstKind_top`).
+* `IsExceptionalCurveOfFirstKind.subsingleton_cohomology_succ_trivial`: `Hⁿ(E, 𝒪_E) = 0` for
+  `n ≥ 1`, with the genus-zero consequences
+  `IsExceptionalCurveOfFirstKind.finrank_globalSections_cohomology_one_trivial_eq_zero` and
+  `IsExceptionalCurveOfFirstKind.finrank_cohomology_one_trivial_eq_zero`.
 * `AlgebraicGeometry.Scheme.IdealSheafData.IsExceptionalCurveOfFirstKind.intersectionNumber_self`:
-  `(E · E) = -dim_k H⁰(E, 𝒪_E)` over every field `k` over which `E` lies.
-* `Scheme.Hom.specialFiberIntersectionMatrix_self_eq_neg_specialFiberWeight`: the
-  corresponding diagonal entry of the intersection matrix of a regular model.
+  `(E · E) = -dim_k H⁰(E, 𝒪_E)` over every field `k` over which `E` lies, and
+  `IsExceptionalCurveOfFirstKind.intersectionNumber_mk_toInvertibleSheaf`: the conormal bundle
+  has degree `dim_k H⁰(E, 𝒪_E)`.
 
 ## References
 
 * The Stacks Project, Chapter *Resolution of Surfaces*, the definition of exceptional curves of
   the first kind and Castelnuovo's contractibility criterion.
-* [The Stacks Project, Tag 0C76](https://stacks.math.columbia.edu/tag/0C76): `(-1)`-indices of
-  numerical types, the numerical counterpart of exceptional curves.
 * Q. Liu, *Algebraic Geometry and Arithmetic Curves*, Section 9.3, on exceptional divisors and
   Castelnuovo's criterion on regular fibred surfaces.
 -/
@@ -78,7 +81,7 @@ public section
 
 noncomputable section
 
-open CategoryTheory AlgebraicGeometry IsLocalRing Order
+open CategoryTheory AlgebraicGeometry
 open TauCeti TauCeti.AlgebraicGeometry TauCeti.AlgebraicGeometry.Scheme.Modules
 open Module (finrank)
 
@@ -133,6 +136,19 @@ theorem isExceptionalCurveOfFirstKind_iff_intersectionNumber {I : X.IdealSheafDa
   · exact (nonempty_iso_twistingSheaf_iff_intersectionNumber hI e).mp he
   · exact (nonempty_iso_twistingSheaf_iff_intersectionNumber hI e).mpr he
 
+/-- The cohomology of the structure sheaf is invariant, as a module over the base ring, under an
+isomorphism of schemes over a commutative ring `R`. -/
+private def cohomologyTrivialLinearEquivOfIsIso {Y Z : Scheme.{u}} (g : Y ⟶ Z) [IsIso g]
+    (R : Type u) [CommRing R] [Y.Over (Spec (.of R))] [Z.Over (Spec (.of R))]
+    [g.IsOver (Spec (.of R))] (n : ℕ) :
+    Cohomology (InvertibleSheaf.trivial Y).obj n ≃ₗ[R]
+      Cohomology (InvertibleSheaf.trivial Z).obj n :=
+  -- The pullback of the structure sheaf `𝒪_Z` is the structure sheaf `𝒪_Y`.
+  (Scheme.Modules.cohomologyBaseLinearEquivOfIso R ((Scheme.Modules.pullback g).mapIso
+      (InvertibleSheaf.trivialObjIsoUnit Z) ≪≫ Scheme.Modules.pullbackObjUnitIso g ≪≫
+        (InvertibleSheaf.trivialObjIsoUnit Y).symm) n).symm.trans
+    (g.cohomologyPullbackBaseLinearEquivOfIsIso R _ n)
+
 namespace IsExceptionalCurveOfFirstKind
 
 variable {I : X.IdealSheafData} (hE : I.IsExceptionalCurveOfFirstKind)
@@ -158,34 +174,72 @@ theorem quasiSeparatedSpace : QuasiSeparatedSpace I.subscheme := by
   obtain ⟨κ, _, e, -⟩ := hE.exists_iso
   exact quasiSeparatedSpace_of_quasiSeparated (e.inv ≫ (projectiveLine κ ↘ Spec (.of κ)))
 
+/-- An exceptional curve of the first kind is integral, as the projective line is. -/
+theorem isIntegral_subscheme : IsIntegral I.subscheme := by
+  obtain ⟨κ, _, e, -⟩ := hE.exists_iso
+  have : Nonempty I.subscheme := ⟨e.hom.base (Classical.arbitrary _)⟩
+  exact isIntegral_of_isOpenImmersion e.inv
+
+/-- An exceptional curve of the first kind is one-dimensional, as the projective line is. -/
+theorem topologicalKrullDim_subscheme : topologicalKrullDim I.subscheme = 1 := by
+  obtain ⟨κ, _, e, -⟩ := hE.exists_iso
+  rw [← IsHomeomorph.topologicalKrullDim_eq _ e.hom.homeomorph.isHomeomorph]
+  exact (projectiveLine.isCurveOver κ).topologicalKrullDim_eq_one
+
+/-- **An exceptional curve has no higher cohomology of the structure sheaf**: `Hⁿ(E, 𝒪_E) = 0`
+for `n ≥ 1`, as on the projective line. In particular `E` has genus zero, and its higher
+cohomology is finite-dimensional over every field over which `E` lies. -/
+theorem subsingleton_cohomology_succ_trivial (n : ℕ) :
+    Subsingleton (Cohomology (InvertibleSheaf.trivial I.subscheme).obj (n + 1)) := by
+  obtain ⟨κ, _, e, -⟩ := hE.exists_iso
+  -- Regard `E` as a curve over `κ` through `e`, and compare with `ℙ¹_κ` over `κ`.
+  let : I.subscheme.Over (Spec (.of κ)) := ⟨e.inv ≫ (projectiveLine κ ↘ Spec (.of κ))⟩
+  have : e.inv.IsOver (Spec (.of κ)) := ⟨rfl⟩
+  have : Subsingleton (Cohomology (InvertibleSheaf.trivial (projectiveLine κ)).obj (n + 1)) := by
+    rcases n with _ | n
+    · exact inferInstanceAs (Subsingleton (Cohomology _ 1))
+    · exact (Pi.basisFun κ (Fin 2)).subsingleton_cohomology_proj_of_card_le _ (n + 2) (by simp)
+  exact (cohomologyTrivialLinearEquivOfIsIso e.inv κ (n + 1)).toEquiv.subsingleton
+
 /-- **An exceptional curve has genus zero over its constant field**:
 `dim_{Γ(E, 𝒪_E)} H¹(E, 𝒪_E) = 0`. This is the genus `gᵢ` of a component of the numerical type of
 a regular model. -/
 theorem finrank_globalSections_cohomology_one_trivial_eq_zero :
-    finrank Γ(I.subscheme, ⊤) (Cohomology (InvertibleSheaf.trivial I.subscheme).obj 1) = 0 := by
-  obtain ⟨κ, _, e, -⟩ := hE.exists_iso
-  -- Regard `E` as a curve over `κ` through `e`, and compare with `ℙ¹_κ` over `κ`.
-  let : I.subscheme.Over (Spec (.of κ)) := ⟨e.inv ≫ (projectiveLine κ ↘ Spec (.of κ))⟩
-  -- This holds by the choice of the structure morphism.
-  have he : e.inv ≫ (projectiveLine κ ↘ Spec (.of κ)) = I.subscheme ↘ Spec (.of κ) := rfl
-  have h₀ : finrank κ (Cohomology (InvertibleSheaf.trivial I.subscheme).obj 0) = 1 := by
-    rw [finrank_cohomology_trivial_eq_of_isIso (k := κ) e.inv he 0,
-      (projectiveLine.cohomologyZeroTrivialLinearEquiv κ).finrank_eq, Module.finrank_self]
-  have h₁ : finrank κ (Cohomology (InvertibleSheaf.trivial I.subscheme).obj 1) = 0 := by
-    rw [finrank_cohomology_trivial_eq_of_isIso (k := κ) e.inv he 1]
-    exact Module.finrank_zero_of_subsingleton
-  have h := Scheme.Modules.finrank_cohomology_eq_finrank_cohomology_zero_trivial_mul κ
-    hE.isField_globalSections (InvertibleSheaf.trivial I.subscheme).obj 1
-  rwa [h₀, h₁, one_mul, eq_comm] at h
+    finrank Γ(I.subscheme, ⊤) (Cohomology (InvertibleSheaf.trivial I.subscheme).obj 1) = 0 :=
+  have := hE.subsingleton_cohomology_succ_trivial 0
+  have : Nontrivial Γ(I.subscheme, ⊤) := ⟨hE.isField_globalSections.exists_pair_ne⟩
+  Module.finrank_zero_of_subsingleton
 
 variable (k : Type u) [Field k] [I.subscheme.Over (Spec (.of k))]
 
 /-- **An exceptional curve has genus zero**: `dim_k H¹(E, 𝒪_E) = 0` over every field `k` over which
 `E` lies. -/
 theorem finrank_cohomology_one_trivial_eq_zero :
-    finrank k (Cohomology (InvertibleSheaf.trivial I.subscheme).obj 1) = 0 := by
-  rw [Scheme.Modules.finrank_cohomology_eq_finrank_cohomology_zero_trivial_mul k
-    hE.isField_globalSections, hE.finrank_globalSections_cohomology_one_trivial_eq_zero, mul_zero]
+    finrank k (Cohomology (InvertibleSheaf.trivial I.subscheme).obj 1) = 0 :=
+  have := hE.subsingleton_cohomology_succ_trivial 0
+  Module.finrank_zero_of_subsingleton
+
+/-- Intersection numbers with an exceptional curve `E` over a field `k` are those computed over
+`κ` on `ℙ¹_κ` through an isomorphism `e : ℙ¹_κ ≅ E`, scaled by `dim_k H⁰(E, 𝒪_E)`. -/
+private lemma intersectionNumber_eq_mul {κ : Type u} [Field κ]
+    (e : projectiveLine κ ≅ I.subscheme) (a : LineBundleClass X) :
+    LineBundleClass.intersectionNumber k I.subschemeι a =
+      LineBundleClass.intersectionNumber κ (e.hom ≫ I.subschemeι) a *
+        finrank k (Cohomology (InvertibleSheaf.trivial I.subscheme).obj 0) := by
+  have := hE.compactSpace
+  have := hE.quasiSeparatedSpace
+  -- Regard `ℙ¹_κ` as a scheme over `k` through `e`, and compute there.
+  let : (projectiveLine κ).Over (Spec (.of k)) := ⟨e.hom ≫ (I.subscheme ↘ Spec (.of k))⟩
+  have : e.hom.IsOver (Spec (.of k)) := ⟨rfl⟩
+  have hκ : IsField Γ(projectiveLine κ, ⊤) := MulEquiv.isField hE.isField_globalSections
+    (Scheme.Γ.mapIso e.op).commRingCatIsoToRingEquiv.symm.toMulEquiv
+  have h := LineBundleClass.eulerDegree_mul_finrank_cohomology_zero_trivial k κ hκ
+    (LineBundleClass.pullback (e.hom ≫ I.subschemeι) a)
+  rw [(projectiveLine.cohomologyZeroTrivialLinearEquiv κ).finrank_eq, Module.finrank_self,
+    Nat.cast_one, mul_one, (cohomologyTrivialLinearEquivOfIsIso e.hom k 0).finrank_eq,
+    ← LineBundleClass.pullback_comp, LineBundleClass.eulerDegree_pullback_of_isIso e.hom rfl] at h
+  rw [LineBundleClass.intersectionNumber_def, LineBundleClass.intersectionNumber_def, h, mul_comm,
+    LineBundleClass.pullback_comp]
 
 /-- **The self-intersection of an exceptional curve is minus its weight.** Over every field `k`
 over which an exceptional curve of the first kind `E` lies,
@@ -195,57 +249,27 @@ theorem intersectionNumber_self :
         (LineBundleClass.mk hE.isEffectiveCartier.toInvertibleSheaf)⁻¹ =
       -(finrank k (Cohomology (InvertibleSheaf.trivial I.subscheme).obj 0) : ℤ) := by
   obtain ⟨_, κ, _, e, he⟩ := isExceptionalCurveOfFirstKind_iff_intersectionNumber.mp hE
-  rw [LineBundleClass.intersectionNumber_def] at he
-  have := hE.compactSpace
-  have := hE.quasiSeparatedSpace
-  -- Regard `ℙ¹_κ` as a scheme over `k` through `e`, and compute there.
-  let : (projectiveLine κ).Over (Spec (.of k)) := ⟨e.hom ≫ (I.subscheme ↘ Spec (.of k))⟩
-  -- This holds by the choice of the structure morphism.
-  have hek : e.hom ≫ (I.subscheme ↘ Spec (.of k)) = projectiveLine κ ↘ Spec (.of k) := rfl
-  have hκ : IsField Γ(projectiveLine κ, ⊤) := MulEquiv.isField hE.isField_globalSections
-    (Scheme.Γ.mapIso e.op).commRingCatIsoToRingEquiv.symm.toMulEquiv
-  have h := LineBundleClass.eulerDegree_mul_finrank_cohomology_zero_trivial (κ := κ) k hκ
-    (LineBundleClass.pullback (e.hom ≫ I.subschemeι)
-      (LineBundleClass.mk hE.isEffectiveCartier.toInvertibleSheaf)⁻¹)
-  rw [(projectiveLine.cohomologyZeroTrivialLinearEquiv κ).finrank_eq, Module.finrank_self,
-    Nat.cast_one, mul_one, he, finrank_cohomology_trivial_eq_of_isIso (k := k) e.hom hek 0,
-    ← LineBundleClass.pullback_comp,
-    LineBundleClass.eulerDegree_pullback_of_isIso (k := k) e.hom hek] at h
-  rw [LineBundleClass.intersectionNumber_def, h, mul_neg_one]
+  rw [hE.intersectionNumber_eq_mul k e, he, neg_one_mul]
+
+/-- **The conormal bundle of an exceptional curve has degree its weight.** Over every field `k`
+over which an exceptional curve of the first kind `E` lies,
+`(-E · E) = deg_k 𝒪_X(-E)|_E = dim_k H⁰(E, 𝒪_E)`. -/
+theorem intersectionNumber_mk_toInvertibleSheaf :
+    LineBundleClass.intersectionNumber k I.subschemeι
+        (LineBundleClass.mk hE.isEffectiveCartier.toInvertibleSheaf) =
+      finrank k (Cohomology (InvertibleSheaf.trivial I.subscheme).obj 0) := by
+  obtain ⟨κ, _, e, he⟩ := hE.exists_iso
+  rw [hE.intersectionNumber_eq_mul k e, LineBundleClass.intersectionNumber_mk,
+    (projectiveLine.nonempty_iso_twistingSheaf_iff κ _ 1).mp he, one_mul]
 
 end IsExceptionalCurveOfFirstKind
 
+/-- The whole scheme is not an exceptional curve of the first kind: the ideal sheaf `⊤` cuts out
+the empty subscheme. -/
+@[simp]
+theorem not_isExceptionalCurveOfFirstKind_top :
+    ¬ (⊤ : X.IdealSheafData).IsExceptionalCurveOfFirstKind := fun hE ↦
+  have := hE.isIntegral_subscheme
+  IsEmpty.false (α := (⊤ : X.IdealSheafData).subscheme) (Classical.arbitrary _)
+
 end AlgebraicGeometry.Scheme.IdealSheafData
-
-namespace AlgebraicGeometry.Scheme.Hom
-
-open AlgebraicGeometry.Scheme.IdealSheafData (vanishingIdeal
-  isEffectiveCartier_vanishingIdeal_closure_singleton_of_isRegular)
-
-variable {R : Type u} [CommRing R] [IsLocalRing R] [Ring.DimensionLEOne R]
-  {X : Scheme.{u}} (toBase : X ⟶ Spec (.of R)) [IsIntegral X] [IsNoetherian X]
-  [TauCeti.AlgebraicGeometry.IsRegular X]
-
-/-- **An exceptional component of the special fibre is a `(-1)`-component.** Let `X` be a regular
-Noetherian integral scheme over a local ring `R` of dimension at most one, with all points of
-codimension at most two and generic point away from the closed point. If the component `Cⱼ` of
-the special fibre, with its reduced structure, is an exceptional curve of the first kind, then the
-diagonal entry `aⱼⱼ = (Cⱼ · Cⱼ)` of the intersection matrix of the special fibre is minus the
-weight `wⱼ = dim_k H⁰(Cⱼ, 𝒪_{Cⱼ})` over the residue field `k` of `R`. Together with
-`IsExceptionalCurveOfFirstKind.finrank_globalSections_cohomology_one_trivial_eq_zero`, which
-makes the genus of `Cⱼ` over its constant field zero, this is the condition of a `(-1)`-index of
-the numerical type. -/
-theorem specialFiberIntersectionMatrix_self_eq_neg_specialFiberWeight
-    (hX : ∀ x : X, coheight x ≤ 2) (hη : toBase (genericPoint X) ≠ closedPoint R)
-    (j : (toBase.finite_setOf_base_eq_closedPoint
-        (toBase.maximalIdeal_ne_bot_of_base_ne_closedPoint hη) hη).toFinset)
-    (hj : (vanishingIdeal ⟨closure {((j : CodimensionOnePoint X) : X)},
-      isClosed_closure⟩).IsExceptionalCurveOfFirstKind) :
-    toBase.specialFiberIntersectionMatrix hX hη j j =
-      -(toBase.specialFiberWeight ((Set.Finite.mem_toFinset _).mp j.2) : ℤ) := by
-  let := subschemeOverResidueField (toBase.ker_specialFiberι_le_vanishingIdeal_closure_singleton
-    ((Set.Finite.mem_toFinset _).mp j.2))
-  rw [specialFiberIntersectionMatrix_apply, specialFiberWeight_def]
-  exact hj.intersectionNumber_self (ResidueField R)
-
-end AlgebraicGeometry.Scheme.Hom

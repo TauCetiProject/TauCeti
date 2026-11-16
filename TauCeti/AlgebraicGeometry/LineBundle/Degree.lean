@@ -212,7 +212,7 @@ theorem LineBundleClass.finrank_cohomology_zero_trivial_dvd_eulerDegree (hX : Is
   rw [eulerDegree_mk]
   exact L.finrank_cohomology_zero_trivial_dvd_eulerDegree k hX
 
-variable {κ : Type u} [Field κ] [X.Over (Spec (.of κ))]
+variable (κ : Type u) [Field κ] [X.Over (Spec (.of κ))]
 
 /-- **The degree over two base fields.** If the global functions of `X` form a field, then for two
 structures of `X` over fields `k` and `κ`, which need not be related, the degrees of an
@@ -224,21 +224,9 @@ theorem InvertibleSheaf.eulerDegree_mul_finrank_cohomology_zero_trivial (hX : Is
     L.eulerDegree k * finrank κ (Scheme.Modules.Cohomology (InvertibleSheaf.trivial X).obj 0) =
       finrank k (Scheme.Modules.Cohomology (InvertibleSheaf.trivial X).obj 0) *
         L.eulerDegree κ := by
-  -- Every dimension over `k` or over `κ` is the dimension over the constant field, scaled by
-  -- `dim_k H⁰(X, 𝒪_X)`, respectively `dim_κ H⁰(X, 𝒪_X)`.
-  have hk (M : X.Modules) (i : ℕ) := congrArg (Nat.cast : ℕ → ℤ)
-    (Scheme.Modules.finrank_cohomology_eq_finrank_cohomology_zero_trivial_mul k hX M i)
-  have hκ (M : X.Modules) (i : ℕ) := congrArg (Nat.cast : ℕ → ℤ)
-    (Scheme.Modules.finrank_cohomology_eq_finrank_cohomology_zero_trivial_mul κ hX M i)
-  push_cast at hk hκ
-  rw [eulerDegree_eq_finrank_sub, eulerDegree_eq_finrank_sub]
-  linear_combination
-    (finrank κ (Scheme.Modules.Cohomology (InvertibleSheaf.trivial X).obj 0) : ℤ) *
-        (hk L.obj 0 - hk L.obj 1 - hk (InvertibleSheaf.trivial X).obj 0 +
-          hk (InvertibleSheaf.trivial X).obj 1) -
-      (finrank k (Scheme.Modules.Cohomology (InvertibleSheaf.trivial X).obj 0) : ℤ) *
-        (hκ L.obj 0 - hκ L.obj 1 - hκ (InvertibleSheaf.trivial X).obj 0 +
-          hκ (InvertibleSheaf.trivial X).obj 1)
+  rw [eulerDegree_def, eulerDegree_def, sub_mul, mul_sub,
+    Scheme.Modules.eulerCharBelow_mul_finrank_cohomology_zero_trivial k κ hX,
+    Scheme.Modules.eulerCharBelow_mul_finrank_cohomology_zero_trivial k κ hX]
 
 /-- **The degree over two base fields.** If the global functions of `X` form a field, then for two
 structures of `X` over fields `k` and `κ`, which need not be related, the degrees of a line-bundle
@@ -250,7 +238,7 @@ theorem LineBundleClass.eulerDegree_mul_finrank_cohomology_zero_trivial (hX : Is
         eulerDegree κ a := by
   obtain ⟨L, rfl⟩ := mk_surjective a
   rw [eulerDegree_mk, eulerDegree_mk]
-  exact L.eulerDegree_mul_finrank_cohomology_zero_trivial k hX
+  exact L.eulerDegree_mul_finrank_cohomology_zero_trivial k κ hX
 
 end ConstantField
 
