@@ -22,8 +22,8 @@ interarrival tail, the forcing term in the renewal equation for the excess tail.
 
 This is the candidate limiting distribution of the residual waiting time in an
 ordinary renewal process. Its construction does not require a nonlattice law, and no
-convergence assertion is made here; for a nonlattice probability law, normalization holds
-precisely when the extended mean is finite. Taking the inverse in `ℝ≥0∞` also makes
+convergence assertion is made here; for any nonlattice measure on `ℝ≥0`, normalization holds
+precisely when the extended first moment is finite. Taking the inverse in `ℝ≥0∞` also makes
 the infinite-mean case explicit: the resulting measure is zero, not a probability.
 
 ## References
@@ -82,14 +82,8 @@ zero and infinite means. -/
 
 /-- The equilibrium excess-life measure has total mass at most one for every measure `F`,
 and is therefore always finite. -/
-instance (F : Measure ℝ≥0) : IsFiniteMeasure (equilibriumExcessLaw F) := by
-  refine ⟨?_⟩
-  rw [equilibriumExcessLaw_univ]
-  by_cases h0 : (∫⁻ u, (u : ℝ≥0∞) ∂F) = 0
-  · simp [h0]
-  · by_cases htop : (∫⁻ u, (u : ℝ≥0∞) ∂F) = ∞
-    · simp [htop]
-    · simp [ENNReal.inv_mul_cancel h0 htop]
+instance (F : Measure ℝ≥0) : IsFiniteMeasure (equilibriumExcessLaw F) :=
+  ⟨by simp [lt_top_iff_ne_top]⟩
 
 /-- Normalization holds precisely for a finite, nonzero extended mean. In particular,
 an infinite-mean interarrival law does not give a probability distribution by this formula. -/
@@ -126,14 +120,17 @@ theorem isProbabilityMeasure_equilibriumExcessLaw_iff_of_measure_singleton_lt_on
   ⟨fun h => (F.isProbabilityMeasure_equilibriumExcessLaw_iff.1 h).2,
     F.isProbabilityMeasure_equilibriumExcessLaw_of_measure_singleton_lt_one hzero⟩
 
-/-- For a nonlattice probability interarrival law, the equilibrium excess-life measure
-is a probability measure (equivalently, has total mass one) precisely when the extended
-interarrival mean is finite. -/
+/-- For a nonlattice measure on `ℝ≥0` (in particular, a nonlattice probability interarrival
+law), the equilibrium excess-life measure is a probability measure (equivalently, has total
+mass one) precisely when the extended first moment is finite. -/
 theorem isProbabilityMeasure_equilibriumExcessLaw_iff_of_not_isLattice
-    (F : Measure ℝ≥0) [IsProbabilityMeasure F] (hNL : ¬ F.IsLattice) :
-    IsProbabilityMeasure F.equilibriumExcessLaw ↔ (∫⁻ u, (u : ℝ≥0∞) ∂F) ≠ ∞ :=
-  F.isProbabilityMeasure_equilibriumExcessLaw_iff_of_measure_singleton_lt_one
-    (measure_singleton_zero_lt_one_of_not_isLattice hNL)
+    (F : Measure ℝ≥0) (hNL : ¬ F.IsLattice) :
+    IsProbabilityMeasure F.equilibriumExcessLaw ↔ (∫⁻ u, (u : ℝ≥0∞) ∂F) ≠ ∞ := by
+  rw [isProbabilityMeasure_equilibriumExcessLaw_iff, and_iff_right_iff_imp]
+  intro _ hz
+  refine hNL (isLattice_iff.2 ⟨1, isLatticeSpan_iff.2 ⟨zero_lt_one, ?_⟩⟩)
+  filter_upwards [(lintegral_eq_zero_iff measurable_coe_nnreal_ennreal).1 hz] with u hu
+  exact ⟨0, by simpa using hu.symm⟩
 
 /-- With infinite mean the candidate excess-life measure is zero. -/
 @[simp] theorem equilibriumExcessLaw_eq_zero_of_mean_eq_top (F : Measure ℝ≥0)

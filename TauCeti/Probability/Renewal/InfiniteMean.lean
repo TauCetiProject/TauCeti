@@ -6,7 +6,9 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Probability.Renewal.Blackwell
-public import TauCeti.Probability.Renewal.Lattice.InfiniteMean
+import TauCeti.MeasureTheory.Integral.Lebesgue.Support
+import TauCeti.Probability.Renewal.Lattice.Blackwell
+import TauCeti.Analysis.SpecificLimits.LatticeIncrements
 
 /-!
 # Vanishing renewal increments for infinite-mean interarrival laws
@@ -55,7 +57,16 @@ theorem tendsto_renewalFunction_add_sub_of_mean_eq_top
     Tendsto (fun t : ℝ≥0 ↦ (F.renewalFunction (t + u)).toReal -
       (F.renewalFunction t).toReal) atTop (𝓝 0) := by
   by_cases hL : F.IsLattice
-  · exact hL.tendsto_renewalFunction_add_sub_of_mean_eq_top hmean u
+  · have hzero := F.measure_singleton_lt_one_of_lintegral_pos (f := fun x ↦ (x : ℝ≥0∞))
+      (a := 0) (by simp) (hmean ▸ ENNReal.zero_lt_top)
+    obtain ⟨a, hmax⟩ := hL.exists_isGreatest_of_measure_zero_lt_one hzero
+    have hgrid : Tendsto (fun n : ℕ ↦ (F.renewalFunction (a * (n + 1))).toReal -
+        (F.renewalFunction (a * n)).toReal) atTop (𝓝 0) := by
+      simpa only [hmean, ENNReal.inv_top, ENNReal.toReal_zero, mul_zero,
+        Nat.cast_add, Nat.cast_one, mul_comm] using
+        hmax.1.tendsto_renewalFunction_succ_mul_sub hmax
+    exact (F.monotone_toReal_renewalFunction hzero).tendsto_sub_add_of_tendsto_sub_lattice
+      hmax.1.pos hgrid u
   · simpa [hmean] using F.tendsto_renewalFunction_add_sub hL u
 
 /-- For any probability law on `ℝ≥0` of infinite extended mean, lattice or nonlattice, the
