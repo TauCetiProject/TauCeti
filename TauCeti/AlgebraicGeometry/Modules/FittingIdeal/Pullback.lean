@@ -71,25 +71,17 @@ theorem _root_.AlgebraicGeometry.Scheme.fittingIdeal_kaehlerDifferential_preimag
   let : Algebra R Γ(X, U) := ((X.baseRingToStructurePresheaf R).app (op U)).hom.toAlgebra
   let : Algebra R' Γ(X', g ⁻¹ᵁ U) :=
     ((X'.baseRingToStructurePresheaf R').app (op (g ⁻¹ᵁ U))).hom.toAlgebra
-  let : Algebra Γ(X, U) Γ(X', g ⁻¹ᵁ U) := (g.appLE U (g ⁻¹ᵁ U) le_rfl).hom.toAlgebra
+  let : Algebra Γ(X, U) Γ(X', g ⁻¹ᵁ U) := (g.app U).hom.toAlgebra
+  let : Algebra R Γ(X', g ⁻¹ᵁ U) :=
+    ((g.app U).hom.comp (algebraMap R Γ(X, U))).toAlgebra
   have := finiteType_sections_of_locallyOfFiniteType R X ⟨U, hU⟩
   have := finiteType_sections_of_locallyOfFiniteType R' X' ⟨g ⁻¹ᵁ U, hU.preimage g⟩
-  -- Sections over affine opens of a fibre product of schemes form the pushout of rings; replace
-  -- `Γ(Spec R, ⊤)` and `Γ(Spec R', ⊤)` by `R` and `R'`.
-  have hpush : IsPushout (CommRingCat.ofHom (algebraMap R R'))
-      (CommRingCat.ofHom (algebraMap R Γ(X, U))) (CommRingCat.ofHom (algebraMap R' Γ(X', g ⁻¹ᵁ U)))
-      (CommRingCat.ofHom (algebraMap Γ(X, U) Γ(X', g ⁻¹ᵁ U))) := by
-    simpa only [RingHom.algebraMap_toAlgebra, CommRingCat.ofHom_hom,
-      Scheme.Hom.appLE_eq_app] using
-      Scheme.isPushout_baseRingToStructurePresheaf_of_isAffineOpen H hU
-  let : Algebra R Γ(X', g ⁻¹ᵁ U) :=
-    ((algebraMap R' Γ(X', g ⁻¹ᵁ U)).comp (algebraMap R R')).toAlgebra
-  have : IsScalarTower R R' Γ(X', g ⁻¹ᵁ U) := .of_algebraMap_eq' rfl
-  have hw := congrArg CommRingCat.Hom.hom hpush.w
-  simp only [CommRingCat.hom_comp, CommRingCat.hom_ofHom] at hw
-  have : IsScalarTower R Γ(X, U) Γ(X', g ⁻¹ᵁ U) := .of_algebraMap_eq' hw
+  have : IsScalarTower R Γ(X, U) Γ(X', g ⁻¹ᵁ U) := .of_algebraMap_eq' rfl
+  have : IsScalarTower R R' Γ(X', g ⁻¹ᵁ U) :=
+    Scheme.Modules.isScalarTower_baseRingToStructurePresheaf_app g U H.toCommSq
   have : Algebra.IsPushout R R' Γ(X, U) Γ(X', g ⁻¹ᵁ U) :=
-    CommRingCat.isPushout_iff_isPushout.mp hpush
+    Scheme.algebraIsPushout_baseRingToStructurePresheaf_of_isAffineOpen H hU
+  rw [Scheme.Hom.appLE_eq_app]
   exact fittingIdeal_kaehlerDifferential_eq_map R R' Γ(X, U) Γ(X', g ⁻¹ᵁ U) k
 
 end Differentials

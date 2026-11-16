@@ -9,6 +9,7 @@ public import TauCeti.AlgebraicGeometry.Modules.Localization
 public import TauCeti.AlgebraicGeometry.Modules.Quasicoherent.Basic
 public import TauCeti.AlgebraicGeometry.Modules.Quasicoherent.Restriction
 public import TauCeti.AlgebraicGeometry.Modules.Tensor.Product
+import Mathlib.Algebra.Category.ModuleCat.Kernels
 
 /-!
 # Colimits of quasicoherent sheaves
@@ -44,6 +45,8 @@ components.
   open, sections are naturally global sections on the affine chart;
 * `TauCeti.AlgebraicGeometry.isColimitMapCoconeSectionsFunctor`: sections over an affine open
   preserve small colimits of quasicoherent sheaves;
+* `TauCeti.AlgebraicGeometry.cokernelSectionsEquiv`: sections of `cokernel φ` over an affine open
+  are the quotient of the target sections by the range of `φ`;
 * `TauCeti.AlgebraicGeometry.toModule_sectionsFunctor_map_bijective`: the sections over an affine
   open of a coproduct of quasicoherent sheaves are the direct sum of their sections.
 
@@ -193,6 +196,49 @@ def isColimitMapCoconeSectionsFunctor {K : J ⥤ X.Modules} (hK : ∀ j, (K.obj 
     (isColimitMapCoconeModuleSpecΓFunctor (K := K ⋙ restrictFunctor hU.fromSpec)
       (fun j ↦ have := hK j; isQuasicoherent_restrictFunctor _ _)
       (isColimitOfPreserves (restrictFunctor hU.fromSpec) hc))
+
+private instance preservesZeroMorphisms_sectionsFunctor (U : X.Opens) :
+    (sectionsFunctor U).PreservesZeroMorphisms :=
+  ⟨fun _ _ ↦ rfl⟩
+
+private lemma preservesColimit_parallelPair_zero_sectionsFunctor {M N : X.Modules}
+    [M.IsQuasicoherent] [N.IsQuasicoherent] (φ : M ⟶ N) (U : X.affineOpens) :
+    PreservesColimit (parallelPair φ 0) (sectionsFunctor U.1) :=
+  preservesColimit_of_preserves_colimit_cocone (cokernelIsCokernel φ) <|
+    isColimitMapCoconeSectionsFunctor (K := parallelPair φ 0)
+      (by rintro (_ | _) <;> dsimp <;> infer_instance) (cokernelIsCokernel φ) U.2
+
+/-- Over an affine open `U`, the sections of the cokernel of a morphism `φ : M ⟶ N` of
+quasicoherent `𝒪_X`-modules identify with
+`Γ(N, U) ⧸ LinearMap.range ((sectionsFunctor U).map φ).hom`. -/
+def cokernelSectionsEquiv {M N : X.Modules} [M.IsQuasicoherent] [N.IsQuasicoherent]
+    (φ : M ⟶ N) (U : X.affineOpens) :
+    (Γ(N, U.1) ⧸ LinearMap.range ((sectionsFunctor U.1).map φ).hom) ≃ₗ[Γ(X, U)]
+      Γ(cokernel φ, U.1) := by
+  haveI := preservesColimit_parallelPair_zero_sectionsFunctor φ U
+  exact (PreservesCokernel.iso (sectionsFunctor U.1) φ ≪≫
+    ModuleCat.cokernelIsoRangeQuotient ((sectionsFunctor U.1).map φ)).symm.toLinearEquiv
+
+/-- `cokernelSectionsEquiv` sends the quotient class of a section `s ∈ Γ(N, U)` to its image under
+the cokernel projection `(cokernel.π φ).app U`. -/
+theorem cokernelSectionsEquiv_mk {M N : X.Modules} [M.IsQuasicoherent] [N.IsQuasicoherent]
+    (φ : M ⟶ N) (U : X.affineOpens) (s : Γ(N, U.1)) :
+    cokernelSectionsEquiv φ U (Submodule.Quotient.mk s) = (cokernel.π φ).app U.1 s := by
+  have := preservesColimit_parallelPair_zero_sectionsFunctor φ U
+  let F := sectionsFunctor U.1
+  let e := PreservesCokernel.iso F φ ≪≫ ModuleCat.cokernelIsoRangeQuotient (F.map φ)
+  have hπ : ModuleCat.ofHom (LinearMap.range (F.map φ).hom).mkQ ≫ e.inv = F.map (cokernel.π φ) := by
+    rw [Iso.comp_inv_eq]
+    exact ((PreservesCokernel.π_iso_hom_assoc F φ _).trans
+      (ModuleCat.cokernel_π_cokernelIsoRangeQuotient_hom (F.map φ))).symm
+  exact congrArg (fun ψ : F.obj N ⟶ F.obj (cokernel φ) ↦ ψ s) hπ
+
+/-- The inverse of `cokernelSectionsEquiv` sends the image of `s ∈ Γ(N, U)` under `cokernel.π φ`
+to its quotient class modulo the range of `φ` on `U`. -/
+theorem cokernelSectionsEquiv_symm_π {M N : X.Modules} [M.IsQuasicoherent] [N.IsQuasicoherent]
+    (φ : M ⟶ N) (U : X.affineOpens) (s : Γ(N, U.1)) :
+    (cokernelSectionsEquiv φ U).symm ((cokernel.π φ).app U.1 s) = Submodule.Quotient.mk s :=
+  (LinearEquiv.symm_apply_eq _).mpr (cokernelSectionsEquiv_mk φ U s).symm
 
 /-- If `P` is the coproduct of a family of quasicoherent sheaves `Mᵢ`, with coprojections `gᵢ`,
 then over an affine open `U` the induced map `⨁ᵢ Γ(Mᵢ, U) → Γ(P, U)` is bijective. The scheme

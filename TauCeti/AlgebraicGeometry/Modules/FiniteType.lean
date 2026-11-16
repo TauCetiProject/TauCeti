@@ -26,6 +26,8 @@ of `𝒪_X^n ⟶ N` for finitely many global sections of `N`.
   is of finite type.
 * `AlgebraicGeometry.Scheme.Modules.isFiniteType_image`: the image of a morphism out of a module
   of finite type is of finite type.
+* `AlgebraicGeometry.Scheme.Modules.isFiniteType_cokernel`: the cokernel of a morphism into a
+  module of finite type is of finite type.
 
 ## References
 
@@ -65,5 +67,10 @@ theorem isFiniteType_of_epi {M N : X.Modules} (p : M ⟶ N) [Epi p] [M.IsFiniteT
 instance isFiniteType_image {M N : X.Modules} (f : M ⟶ N) [M.IsFiniteType] :
     (image f).IsFiniteType :=
   isFiniteType_of_epi (factorThruImage f)
+
+/-- The cokernel of a morphism into a module of finite type is of finite type. -/
+instance isFiniteType_cokernel {M N : X.Modules} (f : M ⟶ N) [N.IsFiniteType] :
+    (cokernel f).IsFiniteType :=
+  isFiniteType_of_epi (cokernel.π f)
 
 end AlgebraicGeometry.Scheme.Modules

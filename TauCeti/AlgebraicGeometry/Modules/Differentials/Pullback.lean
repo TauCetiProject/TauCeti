@@ -10,6 +10,7 @@ public import TauCeti.AlgebraicGeometry.Modules.Pullback.Sections
 import Mathlib.RingTheory.Kaehler.TensorProduct
 import TauCeti.AlgebraicGeometry.Modules.AffineRestriction
 import TauCeti.AlgebraicGeometry.Modules.Pullback.BaseChange
+import TauCeti.RingTheory.Kaehler.BaseChange
 
 /-!
 # Pullback, cotangent map, and base change of relative differentials
@@ -76,31 +77,6 @@ noncomputable section
 
 section CommSq
 
-private lemma pullbackPushforwardAdjunction_homEquiv_app_apply
-    {X Y : Scheme.{u}} (f : X ⟶ Y) {M : Y.Modules} {N : X.Modules}
-    (φ : (Scheme.Modules.pullback f).obj M ⟶ N) (V : Y.Opens) (s : Γ(M, V)) :
-    (((Scheme.Modules.pullbackPushforwardAdjunction f).homEquiv M N φ).app V) s =
-      φ.app (f ⁻¹ᵁ V) (f.pullbackSections M V s) := by
-  rw [Adjunction.homEquiv_unit]
-  simp only [Scheme.Modules.Hom.comp_app, Scheme.Modules.pushforward_map_app]
-  exact (ConcreteCategory.comp_apply _ _ s).trans
-    (congrArg (φ.app (f ⁻¹ᵁ V)) (f.pullbackSections_apply M V s).symm)
-
-private lemma pullbackComp_inv_comp_app_pullbackSections
-    {X Y Z : Scheme.{u}} (f : X ⟶ Y) (g : Y ⟶ Z) {M : Z.Modules} {N : Y.Modules} {P : X.Modules}
-    (α : (Scheme.Modules.pullback g).obj M ⟶ N) (β : (Scheme.Modules.pullback f).obj N ⟶ P)
-    (W : Z.Opens) (s : Γ(M, W)) :
-    ((Scheme.Modules.pullbackComp f g).inv.app M ≫ (Scheme.Modules.pullback f).map α ≫ β).app
-        ((f ≫ g) ⁻¹ᵁ W) ((f ≫ g).pullbackSections M W s) =
-      β.app (f ⁻¹ᵁ (g ⁻¹ᵁ W))
-        (f.pullbackSections N (g ⁻¹ᵁ W)
-          (α.app (g ⁻¹ᵁ W) (g.pullbackSections M W s))) := by
-  simp only [Scheme.Modules.Hom.comp_app, ConcreteCategory.comp_apply]
-  rw [Scheme.Hom.pullbackSections_comp]
-  -- `((f ≫ g) ⁻¹ᵁ W)` is definitionally `f ⁻¹ᵁ (g ⁻¹ᵁ W)`.
-  exact congrArg (β.app (f ⁻¹ᵁ (g ⁻¹ᵁ W)))
-    (Scheme.Hom.pullbackSections_naturality f _ (g ⁻¹ᵁ W) α (g.pullbackSections M W s))
-
 variable {R S : Type u} [CommRing R] [CommRing S] [Algebra R S]
   {X Y : Scheme.{u}} [X.Over (Spec (.of S))] [Y.Over (Spec (.of R))] {f : X ⟶ Y}
 
@@ -111,32 +87,18 @@ def pushforwardDerivationOfCommSq
     (C : CommSq f (X ↘ Spec (.of S)) (Y ↘ Spec (.of R))
       (Spec.map (CommRingCat.ofHom (algebraMap R S))))
     {M : X.Modules} (d : M.Derivation S) :
-    ((Scheme.Modules.pushforward f).obj M).Derivation R where
-  d {U} := d.d.comp (f.app U.unop).hom.toAddMonoidHom
-  d_mul a b := by
-    -- Pushforward restricts scalars along `f.app`; expose that action and additive composition.
-    change d.d (f.app _ (a * b)) = f.app _ a • d.d (f.app _ b) +
-      f.app _ b • d.d (f.app _ a)
-    rw [map_mul, d.d_mul]
-  d_map {U V} i a := by
-    -- The underlying presheaf of `f_* M` precomposes with preimage on opens.
-    change d.d (f.app V.unop (Y.presheaf.map i a)) =
-      M.val.map ((Opens.map f.base).map i.unop).op (d.d (f.app U.unop a))
-    rw [← ConcreteCategory.comp_apply, f.naturality i, ConcreteCategory.comp_apply, d.d_map]
-    rfl
-  d_app {U} r := by
-    -- Expose the additive composition so we can rewrite the pulled-back constant from `R` via `S`.
-    change d.d (f.app U.unop ((Y.baseRingToStructurePresheaf R).app U r)) = 0
-    let : X.Over (Spec (.of R)) :=
-      ⟨(X ↘ Spec (.of S)) ≫ Spec.map (CommRingCat.ofHom (algebraMap R S))⟩
-    have : f.IsOver (Spec (.of R)) := ⟨C.w⟩
-    have hr : f.app U.unop ((Y.baseRingToStructurePresheaf R).app U r) =
-        (X.baseRingToStructurePresheaf S).app (op (f ⁻¹ᵁ U.unop)) (algebraMap R S r) :=
-      (Scheme.Modules.app_baseRingToStructurePresheaf R f U.unop r).trans
-        (X.baseRingToStructurePresheaf_app_algebraMap (R := R) (S := S) rfl
-          (f ⁻¹ᵁ U.unop) r).symm
-    rw [hr]
-    exact d.d_app (algebraMap R S r)
+    ((Scheme.Modules.pushforward f).obj M).Derivation R :=
+  letI : X.Over (Spec (.of R)) :=
+    ⟨(X ↘ Spec (.of S)) ≫ Spec.map (CommRingCat.ofHom (algebraMap R S))⟩
+  haveI : f.IsOver (Spec (.of R)) := ⟨C.w⟩
+  pushforwardDerivation R f
+    { d := d.d
+      d_mul := d.d_mul
+      d_map := d.d_map
+      d_app {U} r :=
+        (congrArg (d.d (X := U))
+          (X.baseRingToStructurePresheaf_app_algebraMap (R := R) (S := S) rfl U.unop r).symm).trans
+          (d.d_app (algebraMap R S r)) }
 
 /-- Evaluating `pushforwardDerivationOfCommSq` on a local function `a` differentiates `f.app U a`.
 -/
@@ -146,7 +108,10 @@ lemma pushforwardDerivationOfCommSq_d
       (Spec.map (CommRingCat.ofHom (algebraMap R S))))
     {M : X.Modules} (d : M.Derivation S) (U : Y.Opens) (a : Γ(Y, U)) :
     (pushforwardDerivationOfCommSq C d).d a = d.d (f.app U a) :=
-  (rfl)
+  letI : X.Over (Spec (.of R)) :=
+    ⟨(X ↘ Spec (.of S)) ≫ Spec.map (CommRingCat.ofHom (algebraMap R S))⟩
+  haveI : f.IsOver (Spec (.of R)) := ⟨C.w⟩
+  pushforwardDerivation_d R f _ U a
 
 /-- The canonical morphism `f^* Ω_{Y/R} ⟶ Ω_{X/S}` associated to a commutative square over
 `Spec S ⟶ Spec R`, obtained by transposing the universal `S`-derivation of `X` across the universal
@@ -159,7 +124,10 @@ def relativeDifferentialsPullbackHom
     ((Y.relativeDifferentialsHomEquiv R _).symm
       (pushforwardDerivationOfCommSq C (X.universalDerivation S)))
 
-private lemma pullbackPushforwardAdjunction_homEquiv_relativeDifferentialsPullbackHom
+/-- The pullback–pushforward adjunction transpose of `relativeDifferentialsPullbackHom C` is the
+morphism induced by `pushforwardDerivationOfCommSq C (X.universalDerivation S)`. -/
+@[simp]
+theorem pullbackPushforwardAdjunction_homEquiv_relativeDifferentialsPullbackHom
     (C : CommSq f (X ↘ Spec (.of S)) (Y ↘ Spec (.of R))
       (Spec.map (CommRingCat.ofHom (algebraMap R S)))) :
     (Scheme.Modules.pullbackPushforwardAdjunction f).homEquiv _ _
@@ -179,13 +147,14 @@ theorem relativeDifferentialsPullbackHom_app_pullbackSections_d
         (f.pullbackSections (Y.relativeDifferentials R) V
           ((Y.universalDerivation R).d (X := op V) b)) =
       (X.universalDerivation S).d (X := op (f ⁻¹ᵁ V)) (f.app V b) := by
-  refine (pullbackPushforwardAdjunction_homEquiv_app_apply f
+  refine (Scheme.Modules.pullbackPushforwardAdjunction_homEquiv_app_apply f
     (relativeDifferentialsPullbackHom C) V _).symm.trans ?_
   refine (congrArg (fun g ↦ g.app V ((Y.universalDerivation R).d (X := op V) b))
     (pullbackPushforwardAdjunction_homEquiv_relativeDifferentialsPullbackHom C)).trans ?_
-  exact congrArg (fun D ↦ D.d b)
+  exact (congrArg (fun D ↦ D.d b)
     (Y.relativeDifferentialsHomEquiv_symm_fac R
-      (pushforwardDerivationOfCommSq C (X.universalDerivation S)))
+      (pushforwardDerivationOfCommSq C (X.universalDerivation S)))).trans
+    (pushforwardDerivationOfCommSq_d C (X.universalDerivation S) V b)
 
 /-- On sections over any open `U ≤ f⁻¹ V`, `relativeDifferentialsPullbackHom` sends the pulled-back
 differential of `b ∈ Γ(Y, V)` to `d (f.appLE V U hUV b)`. -/
@@ -223,8 +192,9 @@ theorem pullback_relativeDifferentials_hom_ext {R : Type u} [CommRing R]
   apply ((Scheme.Modules.pullbackPushforwardAdjunction f).homEquiv _ _).injective
   apply Y.relativeDifferentials_hom_ext R
   intro V b
-  exact (pullbackPushforwardAdjunction_homEquiv_app_apply f φ V.unop _).trans
-    ((h V.unop b).trans (pullbackPushforwardAdjunction_homEquiv_app_apply f ψ V.unop _).symm)
+  exact (Scheme.Modules.pullbackPushforwardAdjunction_homEquiv_app_apply f φ V.unop _).trans
+    ((h V.unop b).trans
+      (Scheme.Modules.pullbackPushforwardAdjunction_homEquiv_app_apply f ψ V.unop _).symm)
 
 /-- Along the identity morphism and identity ring map, `relativeDifferentialsPullbackHom` is the
 canonical unitor `(𝟙 X)^* Ω_{X/R} ⟶ Ω_{X/R}`. -/
@@ -246,14 +216,20 @@ theorem relativeDifferentialsPullbackHom_id (R : Type u) [CommRing R]
       (Scheme.Modules.pullbackId X).hom (X.relativeDifferentials R)
     rw [Scheme.Modules.conjugateEquiv_pullbackId_hom] at hconj
     exact hconj.symm
-  have happ := (pullbackPushforwardAdjunction_homEquiv_app_apply (𝟙 X)
+  have happ := (Scheme.Modules.pullbackPushforwardAdjunction_homEquiv_app_apply (𝟙 X)
     ((Scheme.Modules.pullbackId X).hom.app (X.relativeDifferentials R)) V
       ((X.universalDerivation R).d (X := op V) b)).symm.trans
     (congrArg (fun g ↦ g.app V ((X.universalDerivation R).d (X := op V) b)) hid)
   refine (relativeDifferentialsPullbackHom_app_pullbackSections_d C V b).trans ?_
   refine Eq.trans ?_ happ.symm
-  -- `(𝟙 X).app V` and `(𝟙 (X.relativeDifferentials R)).app V` both act as identities on sections.
-  rfl
+  have hb : Scheme.Hom.app (𝟙 X) V b = b :=
+    (congrArg (fun φ : Γ(X, V) ⟶ Γ(X, V) ↦ φ b) (Scheme.Hom.id_app V)).trans
+      (ConcreteCategory.id_apply b)
+  exact (congrArg (X.universalDerivation R).d hb).trans
+    ((congrArg (fun φ : Γ(X.relativeDifferentials R, V) ⟶ Γ(X.relativeDifferentials R, V) ↦
+        φ ((X.universalDerivation R).d (X := op V) b))
+      (Scheme.Modules.Hom.id_app (M := X.relativeDifferentials R))).trans
+      (ConcreteCategory.id_apply _)).symm
 
 /-- `relativeDifferentialsPullbackHom` is compatible with composition of commutative squares, up to
 `Scheme.Modules.pullbackComp`. -/
@@ -277,13 +253,17 @@ theorem relativeDifferentialsPullbackHom_comp
   intro W c
   refine (relativeDifferentialsPullbackHom_app_pullbackSections_d C_fg W c).trans ?_
   refine Eq.trans ?_
-    (pullbackComp_inv_comp_app_pullbackSections f g
+    (Scheme.Modules.pullbackComp_inv_comp_app_pullbackSections f g
       (relativeDifferentialsPullbackHom C_g) (relativeDifferentialsPullbackHom C_f) W _).symm
   refine Eq.trans ?_
     (congrArg (fun x ↦ (relativeDifferentialsPullbackHom C_f).app (f ⁻¹ᵁ (g ⁻¹ᵁ W))
       (f.pullbackSections _ (g ⁻¹ᵁ W) x))
       (relativeDifferentialsPullbackHom_app_pullbackSections_d C_g W c)).symm
-  exact (relativeDifferentialsPullbackHom_app_pullbackSections_d C_f (g ⁻¹ᵁ W) (g.app W c)).symm
+  have happ : (f ≫ g).app W c = f.app (g ⁻¹ᵁ W) (g.app W c) :=
+    (congrArg (fun φ : Γ(Z, W) ⟶ Γ(X, f ⁻¹ᵁ g ⁻¹ᵁ W) ↦ φ c) (Scheme.Hom.comp_app f g W)).trans
+      (CommRingCat.comp_apply _ _ c)
+  exact (congrArg (X.universalDerivation T).d happ).trans
+    (relativeDifferentialsPullbackHom_app_pullbackSections_d C_f (g ⁻¹ᵁ W) (g.app W c)).symm
 
 /-- `relativeDifferentialsPullbackHom` respects equality of morphisms via `pullbackCongr`. -/
 @[reassoc]
@@ -321,6 +301,28 @@ private lemma commSq_of_isOver (f : X ⟶ Y) [hf : f.IsOver (Spec (.of R))] :
 def cotangentMap (f : X ⟶ Y) [f.IsOver (Spec (.of R))] :
     (Scheme.Modules.pullback f).obj (Y.relativeDifferentials R) ⟶ X.relativeDifferentials R :=
   relativeDifferentialsPullbackHom (commSq_of_isOver R f)
+
+/-- For any morphism `f : X ⟶ Y` over `Spec R` and its commuting square over `Spec R ⟶ Spec R`,
+`cotangentMap R f` agrees with `relativeDifferentialsPullbackHom`. -/
+theorem cotangentMap_eq_relativeDifferentialsPullbackHom (f : X ⟶ Y) [f.IsOver (Spec (.of R))]
+    (C : CommSq f (X ↘ Spec (.of R)) (Y ↘ Spec (.of R))
+      (Spec.map (CommRingCat.ofHom (algebraMap R R)))) :
+    cotangentMap R f = relativeDifferentialsPullbackHom C := by
+  rw [cotangentMap, Subsingleton.elim (commSq_of_isOver R f) C]
+
+/-- The pullback–pushforward adjunction transpose of `cotangentMap R f` is the morphism induced by
+`pushforwardDerivation R f (X.universalDerivation R)`. -/
+@[simp]
+theorem pullbackPushforwardAdjunction_homEquiv_cotangentMap
+    (f : X ⟶ Y) [f.IsOver (Spec (.of R))] :
+    (Scheme.Modules.pullbackPushforwardAdjunction f).homEquiv _ _ (cotangentMap R f) =
+      (Y.relativeDifferentialsHomEquiv R _).symm
+        (pushforwardDerivation R f (X.universalDerivation R)) := by
+  rw [cotangentMap, pullbackPushforwardAdjunction_homEquiv_relativeDifferentialsPullbackHom]
+  congr 1
+  ext U a
+  exact (pushforwardDerivationOfCommSq_d _ _ U.unop a).trans
+    (pushforwardDerivation_d R f _ U.unop a).symm
 
 /-- On `f⁻¹ V`, `cotangentMap R f` sends the pulled-back differential of `b ∈ Γ(Y, V)` to
 `d (f.app V b)`. -/
@@ -394,6 +396,7 @@ theorem cotangentMap_of_isOpenImmersion (f : X ⟶ Y) [f.IsOver (Spec (.of R))]
   refine (congrArg (fun D : ((Scheme.Modules.pushforward f).obj
       (X.relativeDifferentials R)).Derivation R ↦ D.d (X := V) b)
     (Y.relativeDifferentialsHomEquiv_symm_fac R _)).trans ?_
+  refine (pushforwardDerivationOfCommSq_d _ (X.universalDerivation R) V.unop b).trans ?_
   -- Expose the evaluation of `restrictAdjunction.unit ≫ pushforward.map` on sections over `V`.
   change (X.universalDerivation R).d (X := op (f ⁻¹ᵁ V.unop)) (f.app V.unop b) =
     (relativeDifferentialsRestrictIso R f).hom.app (f ⁻¹ᵁ V.unop)
@@ -405,11 +408,8 @@ theorem cotangentMap_of_isOpenImmersion (f : X ⟶ Y) [f.IsOver (Spec (.of R))]
   refine Eq.trans ?_
     (relativeDifferentialsRestrictIso_hom_app_d R f (f ⁻¹ᵁ V.unop) _).symm
   apply congrArg (X.universalDerivation R).d
-  rw [Scheme.Hom.appIso_hom, CommRingCat.comp_apply,
-    ← CommRingCat.comp_apply (Y.presheaf.map (homOfLE (f.image_preimage_le V.unop)).op),
-    f.naturality, CommRingCat.comp_apply, ← X.presheaf.map_comp_apply,
-    Subsingleton.elim (_ ≫ _ : op (f ⁻¹ᵁ V.unop) ⟶ op (f ⁻¹ᵁ V.unop)) (𝟙 _), X.presheaf.map_id]
-  rfl
+  exact (congrArg (fun φ : Γ(Y, V.unop) ⟶ Γ(X, f ⁻¹ᵁ V.unop) ↦ φ b)
+    ((Iso.comp_inv_eq _).mp (f.app_appIso_inv V.unop))).trans (CommRingCat.comp_apply _ _ b)
 
 /-- Along an open immersion over `Spec R`, `cotangentMap R f` is an isomorphism. -/
 instance isIso_cotangentMap_of_isOpenImmersion (f : X ⟶ Y) [f.IsOver (Spec (.of R))]
@@ -420,28 +420,6 @@ instance isIso_cotangentMap_of_isOpenImmersion (f : X ⟶ Y) [f.IsOver (Spec (.o
 end CotangentMap
 
 section AffineCharts
-
-private lemma kaehlerBaseChange_linearMap_ext
-    {R A B M : Type u} [CommRing R] [CommRing A] [CommRing B] [AddCommGroup M]
-    [Algebra R A] [Algebra A B] [Module A M] [Module B M] [IsScalarTower A B M]
-    {L₁ L₂ : B ⊗[A] Ω[A⁄R] →ₗ[B] M}
-    (h : ∀ a : A, L₁ (1 ⊗ₜ[A] KaehlerDifferential.D R A a) =
-      L₂ (1 ⊗ₜ[A] KaehlerDifferential.D R A a)) :
-    L₁ = L₂ := by
-  let : Module R M := Module.compHom M (algebraMap R A)
-  have : IsScalarTower R A M := .of_algebraMap_smul fun _ _ ↦ rfl
-  let j : Ω[A⁄R] →ₗ[A] B ⊗[A] Ω[A⁄R] :=
-    { toFun ω := 1 ⊗ₜ[A] ω
-      map_add' := TensorProduct.tmul_add 1
-      map_smul' c ω := by rw [TensorProduct.tmul_smul]; rfl }
-  have hj : L₁.restrictScalars A ∘ₗ j = L₂.restrictScalars A ∘ₗ j :=
-    Derivation.liftKaehlerDifferential_unique _ _ (Derivation.ext fun a ↦ h a)
-  refine TensorProduct.AlgebraTensorModule.ext fun b ω ↦ ?_
-  have hb : b ⊗ₜ[A] ω = b • j ω := by
-    change b ⊗ₜ[A] ω = b • (1 ⊗ₜ[A] ω)
-    rw [TensorProduct.smul_tmul', smul_eq_mul, mul_one]
-  rw [hb, map_smul, map_smul]
-  exact congrArg (b • ·) congr($hj ω)
 
 /-- Over affine opens `V` of `Y` and `U ≤ f⁻¹ V` of `X`, the sections of `f^* Ω_{Y/R}` over `U`
 identify with the tensor product `Γ(X, U) ⊗[Γ(Y, V)] Ω[Γ(Y, V)⁄R]`. -/
@@ -488,32 +466,26 @@ theorem pullbackRelativeDifferentialsSectionsEquiv_tmul_D (R : Type u) [CommRing
   exact congrArg (fun x ↦ a • f.pullbackSectionsLE (Y.relativeDifferentials R) V.1 U.1 hUV x)
     (relativeDifferentialsSectionsEquiv_D R Y V b)
 
-/-- For a morphism `f : X ⟶ Y` over `Spec R` and opens `V` of `Y` and `U ≤ f⁻¹ V` of `X`,
-`f.appLE V U hUV` makes `R → Γ(Y, V) → Γ(X, U)` a scalar tower. -/
-lemma isScalarTower_baseRing_appLE (R : Type u) [CommRing R]
-    {X Y : Scheme.{u}} [X.Over (Spec (.of R))] [Y.Over (Spec (.of R))]
-    (f : X ⟶ Y) [f.IsOver (Spec (.of R))]
-    (V : Y.Opens) (U : X.Opens) (hUV : U ≤ f ⁻¹ᵁ V) :
-    letI : Algebra R Γ(Y, V) := ((Y.baseRingToStructurePresheaf R).app (op V)).hom.toAlgebra
-    letI : Algebra R Γ(X, U) := ((X.baseRingToStructurePresheaf R).app (op U)).hom.toAlgebra
-    letI : Algebra Γ(Y, V) Γ(X, U) := (f.appLE V U hUV).hom.toAlgebra
-    IsScalarTower R Γ(Y, V) Γ(X, U) := by
-  let : Algebra R Γ(Y, V) := ((Y.baseRingToStructurePresheaf R).app (op V)).hom.toAlgebra
-  let : Algebra R Γ(X, U) := ((X.baseRingToStructurePresheaf R).app (op U)).hom.toAlgebra
-  let : Algebra Γ(Y, V) Γ(X, U) := (f.appLE V U hUV).hom.toAlgebra
-  refine IsScalarTower.of_algebraMap_eq fun r ↦ ?_
-  -- Expose `algebraMap` for `RingHom.toAlgebra` on both coordinate rings.
-  change (X.baseRingToStructurePresheaf R).app (op U) r =
-    f.appLE V U hUV ((Y.baseRingToStructurePresheaf R).app (op V) r)
-  rw [Scheme.Hom.appLE, CommRingCat.comp_apply,
-    Scheme.Modules.app_baseRingToStructurePresheaf R f V r]
-  have hn := (X.baseRingToStructurePresheaf R).naturality_apply (homOfLE hUV).op r
-  simp only [Functor.const_obj_obj, Functor.const_obj_map, ConcreteCategory.id_apply] at hn
-  exact hn
+/-- The inverse of `pullbackRelativeDifferentialsSectionsEquiv` sends the pulled-back differential
+of `b ∈ Γ(Y, V)` to `1 ⊗ₜ D b`. -/
+@[simp]
+theorem pullbackRelativeDifferentialsSectionsEquiv_symm_pullbackSectionsLE_d
+    (R : Type u) [CommRing R] {X Y : Scheme.{u}} [Y.Over (Spec (.of R))] (f : X ⟶ Y)
+    (V : Y.affineOpens) (U : X.affineOpens) (hUV : U.1 ≤ f ⁻¹ᵁ V.1) (b : Γ(Y, V)) :
+    letI : Algebra R Γ(Y, V) := ((Y.baseRingToStructurePresheaf R).app (op V.1)).hom.toAlgebra
+    letI : Algebra Γ(Y, V) Γ(X, U) := (f.appLE V.1 U.1 hUV).hom.toAlgebra
+    (pullbackRelativeDifferentialsSectionsEquiv R f V U hUV).symm
+        (f.pullbackSectionsLE (Y.relativeDifferentials R) V.1 U.1 hUV
+          ((Y.universalDerivation R).d (X := op V.1) b)) =
+      (1 : Γ(X, U)) ⊗ₜ[Γ(Y, V)] KaehlerDifferential.D R Γ(Y, V) b := by
+  let : Algebra R Γ(Y, V) := ((Y.baseRingToStructurePresheaf R).app (op V.1)).hom.toAlgebra
+  let : Algebra Γ(Y, V) Γ(X, U) := (f.appLE V.1 U.1 hUV).hom.toAlgebra
+  exact (LinearEquiv.symm_apply_eq _).mpr
+    ((pullbackRelativeDifferentialsSectionsEquiv_tmul_D R f V U hUV 1 b).trans (one_smul _ _)).symm
 
 /-- On compatible affine opens `V` of `Y` and `U ≤ f⁻¹ V` of `X`, `(cotangentMap R f).app U`
-identifies under `pullbackRelativeDifferentialsSectionsEquiv` and
-`relativeDifferentialsSectionsEquiv` with `KaehlerDifferential.mapBaseChange R Γ(Y, V) Γ(X, U)`. -/
+agrees under `pullbackRelativeDifferentialsSectionsEquiv` and `relativeDifferentialsSectionsEquiv`
+with `KaehlerDifferential.mapBaseChange R Γ(Y, V) Γ(X, U)`. -/
 theorem cotangentMap_app_pullbackRelativeDifferentialsSectionsEquiv
     (R : Type u) [CommRing R] {X Y : Scheme.{u}}
     [X.Over (Spec (.of R))] [Y.Over (Spec (.of R))] (f : X ⟶ Y) [f.IsOver (Spec (.of R))]
@@ -521,32 +493,32 @@ theorem cotangentMap_app_pullbackRelativeDifferentialsSectionsEquiv
     letI : Algebra R Γ(Y, V) := ((Y.baseRingToStructurePresheaf R).app (op V.1)).hom.toAlgebra
     letI : Algebra R Γ(X, U) := ((X.baseRingToStructurePresheaf R).app (op U.1)).hom.toAlgebra
     letI : Algebra Γ(Y, V) Γ(X, U) := (f.appLE V.1 U.1 hUV).hom.toAlgebra
-    haveI : IsScalarTower R Γ(Y, V) Γ(X, U) := isScalarTower_baseRing_appLE R f V.1 U.1 hUV
+    haveI : IsScalarTower R Γ(Y, V) Γ(X, U) :=
+      Scheme.Modules.isScalarTower_baseRingToStructurePresheaf_appLE R f V.1 U.1 hUV
     ∀ ω : Γ(X, U) ⊗[Γ(Y, V)] Ω[Γ(Y, V)⁄R],
-      (relativeDifferentialsSectionsEquiv R X U).symm
-          ((cotangentMap R f).app U.1
-            (pullbackRelativeDifferentialsSectionsEquiv R f V U hUV ω)) =
-        KaehlerDifferential.mapBaseChange R Γ(Y, V) Γ(X, U) ω := by
+      (cotangentMap R f).app U.1 (pullbackRelativeDifferentialsSectionsEquiv R f V U hUV ω) =
+        relativeDifferentialsSectionsEquiv R X U
+          (KaehlerDifferential.mapBaseChange R Γ(Y, V) Γ(X, U) ω) := by
   let : Algebra R Γ(Y, V) := ((Y.baseRingToStructurePresheaf R).app (op V.1)).hom.toAlgebra
   let : Algebra R Γ(X, U) := ((X.baseRingToStructurePresheaf R).app (op U.1)).hom.toAlgebra
   let : Algebra Γ(Y, V) Γ(X, U) := (f.appLE V.1 U.1 hUV).hom.toAlgebra
-  have : IsScalarTower R Γ(Y, V) Γ(X, U) := isScalarTower_baseRing_appLE R f V.1 U.1 hUV
+  have : IsScalarTower R Γ(Y, V) Γ(X, U) :=
+    Scheme.Modules.isScalarTower_baseRingToStructurePresheaf_appLE R f V.1 U.1 hUV
   let φU : Γ((Scheme.Modules.pullback f).obj (Y.relativeDifferentials R), U.1) →ₗ[Γ(X, U)]
       Γ(X.relativeDifferentials R, U.1) :=
-    { toFun := (cotangentMap R f).app U.1, map_add' := map_add _,
-      map_smul' := (cotangentMap R f).app_smul }
-  let L : Γ(X, U) ⊗[Γ(Y, V)] Ω[Γ(Y, V)⁄R] →ₗ[Γ(X, U)] Ω[Γ(X, U)⁄R] :=
-    (relativeDifferentialsSectionsEquiv R X U).symm.toLinearMap ∘ₗ
-      φU ∘ₗ (pullbackRelativeDifferentialsSectionsEquiv R f V U hUV).toLinearMap
-  suffices hL : L = KaehlerDifferential.mapBaseChange R Γ(Y, V) Γ(X, U) from
-    fun ω ↦ congr($hL ω)
-  refine kaehlerBaseChange_linearMap_ext fun b ↦ ?_
-  simp only [L, LinearMap.comp_apply, LinearEquiv.coe_coe,
-    pullbackRelativeDifferentialsSectionsEquiv_tmul_D, one_smul, φU, LinearMap.coe_mk,
-    AddHom.coe_mk, cotangentMap_app_pullbackSectionsLE_d,
-    KaehlerDifferential.mapBaseChange_tmul, KaehlerDifferential.map_D]
-  exact (LinearEquiv.symm_apply_eq _).mpr
-    (relativeDifferentialsSectionsEquiv_D R X U (f.appLE V.1 U.1 hUV b)).symm
+    ((Scheme.Modules.sectionsFunctor U.1).map (cotangentMap R f)).hom
+  let L₁ : Γ(X, U) ⊗[Γ(Y, V)] Ω[Γ(Y, V)⁄R] →ₗ[Γ(X, U)] Γ(X.relativeDifferentials R, U.1) :=
+    φU ∘ₗ (pullbackRelativeDifferentialsSectionsEquiv R f V U hUV).toLinearMap
+  let L₂ : Γ(X, U) ⊗[Γ(Y, V)] Ω[Γ(Y, V)⁄R] →ₗ[Γ(X, U)] Γ(X.relativeDifferentials R, U.1) :=
+    (relativeDifferentialsSectionsEquiv R X U).toLinearMap ∘ₗ
+      KaehlerDifferential.mapBaseChange R Γ(Y, V) Γ(X, U)
+  suffices hL : L₁ = L₂ from fun ω ↦ congr($hL ω)
+  refine TauCeti.kaehlerBaseChange_linearMap_ext fun b ↦ ?_
+  dsimp only [L₁, L₂, LinearMap.comp_apply, LinearEquiv.coe_coe]
+  rw [pullbackRelativeDifferentialsSectionsEquiv_tmul_D, one_smul,
+    KaehlerDifferential.mapBaseChange_tmul, KaehlerDifferential.map_D, one_smul,
+    relativeDifferentialsSectionsEquiv_D, RingHom.algebraMap_toAlgebra]
+  exact cotangentMap_app_pullbackSectionsLE_d R f V.1 U.1 hUV b
 
 end AffineCharts
 
@@ -576,40 +548,46 @@ theorem isIso_relativeDifferentialsPullbackHom :
   let U' : X'.affineOpens := ⟨g ⁻¹ᵁ U.1, U.2.preimage g⟩
   let : Algebra R Γ(X, U) := ((X.baseRingToStructurePresheaf R).app (op U.1)).hom.toAlgebra
   let : Algebra S Γ(X', U') := ((X'.baseRingToStructurePresheaf S).app (op U'.1)).hom.toAlgebra
-  let : Algebra Γ(X, U) Γ(X', U') := (g.appLE U.1 U'.1 le_rfl).hom.toAlgebra
-  have hpush : IsPushout (CommRingCat.ofHom (algebraMap R S))
-      (CommRingCat.ofHom (algebraMap R Γ(X, U)))
-      (CommRingCat.ofHom (algebraMap S Γ(X', U')))
-      (CommRingCat.ofHom (algebraMap Γ(X, U) Γ(X', U'))) := by
-    simpa only [U', RingHom.algebraMap_toAlgebra, CommRingCat.ofHom_hom,
-      Scheme.Hom.appLE_eq_app] using
-      Scheme.isPushout_baseRingToStructurePresheaf_of_isAffineOpen H U.2
-  let : Algebra R Γ(X', U') := ((algebraMap S Γ(X', U')).comp (algebraMap R S)).toAlgebra
-  have : IsScalarTower R S Γ(X', U') := .of_algebraMap_eq' rfl
-  have hw := congrArg CommRingCat.Hom.hom hpush.w
-  simp only [CommRingCat.hom_comp, CommRingCat.hom_ofHom] at hw
-  have : IsScalarTower R Γ(X, U) Γ(X', U') := .of_algebraMap_eq' hw
+  let : Algebra Γ(X, U) Γ(X', U') := (g.app U.1).hom.toAlgebra
+  let : Algebra R Γ(X', U') := ((g.app U.1).hom.comp (algebraMap R Γ(X, U))).toAlgebra
+  have : IsScalarTower R Γ(X, U) Γ(X', U') := .of_algebraMap_eq' rfl
+  have : IsScalarTower R S Γ(X', U') :=
+    Scheme.Modules.isScalarTower_baseRingToStructurePresheaf_app g U.1 H.toCommSq
   have : Algebra.IsPushout R S Γ(X, U) Γ(X', U') :=
-    CommRingCat.isPushout_iff_isPushout.mp hpush
-  let e₁ := pullbackRelativeDifferentialsSectionsEquiv R g U U' le_rfl
+    Scheme.algebraIsPushout_baseRingToStructurePresheaf_of_isAffineOpen H U.2
+  let e₁ : Γ(X', U') ⊗[Γ(X, U)] Ω[Γ(X, U)⁄R] ≃ₗ[Γ(X', U')]
+      Γ((Scheme.Modules.pullback g).obj (X.relativeDifferentials R), U'.1) :=
+    ((relativeDifferentialsSectionsEquiv R X U).baseChange Γ(X, U) Γ(X', U')).trans
+      (g.pullbackSectionsEquiv (X.relativeDifferentials R) U.2 U'.2)
   let e₂ := relativeDifferentialsSectionsEquiv S X' U'
   let e₃ := KaehlerDifferential.tensorKaehlerEquiv R S Γ(X, U) Γ(X', U')
   let φ : Γ((Scheme.Modules.pullback g).obj (X.relativeDifferentials R), U'.1) →ₗ[Γ(X', U')]
       Γ(X'.relativeDifferentials S, U'.1) :=
-    { toFun := (relativeDifferentialsPullbackHom H.toCommSq).app U'.1, map_add' := map_add _,
-      map_smul' := (relativeDifferentialsPullbackHom H.toCommSq).app_smul }
+    ((Scheme.Modules.sectionsFunctor U'.1).map
+      (relativeDifferentialsPullbackHom H.toCommSq)).hom
   have hφ : e₂.symm.toLinearMap ∘ₗ φ ∘ₗ e₁.toLinearMap = e₃.toLinearMap := by
-    refine kaehlerBaseChange_linearMap_ext fun a ↦ ?_
-    simp only [LinearMap.comp_apply, LinearEquiv.coe_coe, e₁, e₃,
-      pullbackRelativeDifferentialsSectionsEquiv_tmul_D, one_smul, φ, LinearMap.coe_mk,
-      AddHom.coe_mk, relativeDifferentialsPullbackHom_app_pullbackSectionsLE_d,
-      KaehlerDifferential.tensorKaehlerEquiv_tmul_D]
-    exact (LinearEquiv.symm_apply_eq _).mpr
-      (relativeDifferentialsSectionsEquiv_D S X' U' (g.appLE U.1 U'.1 le_rfl a)).symm
+    refine TauCeti.kaehlerBaseChange_linearMap_ext fun a ↦ ?_
+    have he₁ : e₁ ((1 : Γ(X', U')) ⊗ₜ[Γ(X, U)] KaehlerDifferential.D R Γ(X, U) a) =
+        g.pullbackSections (X.relativeDifferentials R) U.1
+          ((X.universalDerivation R).d (X := op U.1) a) :=
+      (congrArg (g.pullbackSectionsEquiv (X.relativeDifferentials R) U.2 U'.2)
+        ((LinearEquiv.baseChange_tmul _ _ _ _ 1 _).trans
+          (congrArg ((1 : Γ(X', U')) ⊗ₜ[Γ(X, U)] ·)
+            (relativeDifferentialsSectionsEquiv_D R X U a)))).trans
+        (g.pullbackSectionsEquiv_one_tmul (X.relativeDifferentials R) U.2 U'.2 _)
+    refine (congrArg e₂.symm ((congrArg φ he₁).trans
+      (relativeDifferentialsPullbackHom_app_pullbackSections_d H.toCommSq U.1 a))).trans ?_
+    refine ((LinearEquiv.symm_apply_eq e₂).mpr
+      (relativeDifferentialsSectionsEquiv_D S X' U' (g.app U.1 a)).symm).trans ?_
+    exact ((KaehlerDifferential.tensorKaehlerEquiv_tmul_D R S Γ(X, U) Γ(X', U') 1 a).trans
+      (one_smul _ _)).symm
   have hfun : ((relativeDifferentialsPullbackHom H.toCommSq).app U'.1 : _ → _) =
       e₁.symm.trans (e₃.trans e₂) := by
     ext x
-    simpa [φ] using congrArg e₂ congr($hφ (e₁.symm x))
+    have hx := congrArg e₂ congr($hφ (e₁.symm x))
+    dsimp only [LinearMap.comp_apply, LinearEquiv.coe_coe, LinearEquiv.trans_apply] at hx ⊢
+    rw [LinearEquiv.apply_symm_apply, LinearEquiv.apply_symm_apply] at hx
+    exact hx
   rw [hfun]
   exact (e₁.symm.trans (e₃.trans e₂)).bijective
 
@@ -628,14 +606,32 @@ lemma relativeDifferentialsBaseChangeIso_hom :
     (relativeDifferentialsBaseChangeIso H).hom = relativeDifferentialsPullbackHom H.toCommSq :=
   (rfl)
 
-/-- On sections over `g⁻¹ U`, `relativeDifferentialsBaseChangeIso` sends the pulled-back
-differential of `a ∈ Γ(X, U)` to `d (g.app U a)`. -/
-lemma relativeDifferentialsBaseChangeIso_hom_app_pullbackSections_d (U : X.Opens) (a : Γ(X, U)) :
-    (relativeDifferentialsBaseChangeIso H).hom.app (g ⁻¹ᵁ U)
-        (g.pullbackSections (X.relativeDifferentials R) U
-          ((X.universalDerivation R).d (X := op U) a)) =
-      (X'.universalDerivation S).d (X := op (g ⁻¹ᵁ U)) (g.app U a) :=
-  relativeDifferentialsPullbackHom_app_pullbackSections_d H.toCommSq U a
+/-- On sections over `g⁻¹ U`, `(relativeDifferentialsBaseChangeIso H).inv` sends `d (g.app U a)`
+to the pulled-back differential of `a ∈ Γ(X, U)`. -/
+@[simp]
+theorem relativeDifferentialsBaseChangeIso_inv_app_d (U : X.Opens) (a : Γ(X, U)) :
+    (relativeDifferentialsBaseChangeIso H).inv.app (g ⁻¹ᵁ U)
+        ((X'.universalDerivation S).d (X := op (g ⁻¹ᵁ U)) (g.app U a)) =
+      g.pullbackSections (X.relativeDifferentials R) U
+        ((X.universalDerivation R).d (X := op U) a) := by
+  rw [← relativeDifferentialsPullbackHom_app_pullbackSections_d H.toCommSq U a,
+    ← relativeDifferentialsBaseChangeIso_hom H, ← ConcreteCategory.comp_apply,
+    ← Scheme.Modules.Hom.comp_app, Iso.hom_inv_id, Scheme.Modules.Hom.id_app,
+    ConcreteCategory.id_apply]
+
+/-- On sections over `V ≤ g⁻¹ U`, `(relativeDifferentialsBaseChangeIso H).inv` sends
+`d (g.appLE U V hUV a)` to the pulled-back differential of `a ∈ Γ(X, U)`. -/
+@[simp]
+theorem relativeDifferentialsBaseChangeIso_inv_app_d_appLE
+    (U : X.Opens) (V : X'.Opens) (hUV : V ≤ g ⁻¹ᵁ U) (a : Γ(X, U)) :
+    (relativeDifferentialsBaseChangeIso H).inv.app V
+        ((X'.universalDerivation S).d (X := op V) (g.appLE U V hUV a)) =
+      g.pullbackSectionsLE (X.relativeDifferentials R) U V hUV
+        ((X.universalDerivation R).d (X := op U) a) := by
+  rw [← relativeDifferentialsPullbackHom_app_pullbackSectionsLE_d H.toCommSq U V hUV a,
+    ← relativeDifferentialsBaseChangeIso_hom H, ← ConcreteCategory.comp_apply,
+    ← Scheme.Modules.Hom.comp_app, Iso.hom_inv_id, Scheme.Modules.Hom.id_app,
+    ConcreteCategory.id_apply]
 
 end SingleScheme
 
@@ -698,7 +694,6 @@ omit [X.Over (Spec (.of R))] [X'.Over (Spec (.of S))]
   [f.IsOver (Spec (.of R))] [f'.IsOver (Spec (.of S))] in
 /-- The forward morphism of `cotangentSourceBaseChangeIso` factors through `pullbackComp`,
 `pullbackCongr`, and `relativeDifferentialsPullbackHom`. -/
-@[simp]
 lemma cotangentSourceBaseChangeIso_hom
     (H_Y : IsPullback g_Y (Y' ↘ Spec (.of S)) (Y ↘ Spec (.of R))
       (Spec.map (CommRingCat.ofHom (algebraMap R S))))
@@ -708,6 +703,21 @@ lemma cotangentSourceBaseChangeIso_hom
         (Scheme.Modules.pullbackCongr w).hom.app (Y.relativeDifferentials R) ≫
         (Scheme.Modules.pullbackComp f' g_Y).inv.app (Y.relativeDifferentials R) ≫
         (Scheme.Modules.pullback f').map (relativeDifferentialsPullbackHom H_Y.toCommSq) := by
+  simp [cotangentSourceBaseChangeIso]
+
+omit [X.Over (Spec (.of R))] [X'.Over (Spec (.of S))]
+  [f.IsOver (Spec (.of R))] [f'.IsOver (Spec (.of S))] in
+/-- The inverse morphism of `cotangentSourceBaseChangeIso` factors through
+`(relativeDifferentialsBaseChangeIso H_Y).inv`, `pullbackComp`, and `pullbackCongr`. -/
+lemma cotangentSourceBaseChangeIso_inv
+    (H_Y : IsPullback g_Y (Y' ↘ Spec (.of S)) (Y ↘ Spec (.of R))
+      (Spec.map (CommRingCat.ofHom (algebraMap R S))))
+    (w : g_X ≫ f = f' ≫ g_Y) :
+    (cotangentSourceBaseChangeIso H_Y w).inv =
+      (Scheme.Modules.pullback f').map (relativeDifferentialsBaseChangeIso H_Y).inv ≫
+        (Scheme.Modules.pullbackComp f' g_Y).hom.app (Y.relativeDifferentials R) ≫
+        (Scheme.Modules.pullbackCongr w).inv.app (Y.relativeDifferentials R) ≫
+        (Scheme.Modules.pullbackComp g_X f).inv.app (Y.relativeDifferentials R) := by
   simp [cotangentSourceBaseChangeIso]
 
 /-- **Base-change compatibility of the cotangent map**: for a morphism `f : X ⟶ Y` over `Spec R`

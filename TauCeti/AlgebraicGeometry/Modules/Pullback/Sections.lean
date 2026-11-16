@@ -22,7 +22,10 @@ image of the tensor product of the pullbacks of `x` and `y`, and the identificat
 multiplicative on sections of algebras.
 Along the inclusion `U.ι` of an open, pulling back sections over `U` is a bijection onto the global
 sections of the pullback (`Scheme.Modules.bijective_pullbackSectionsLE_ι`). A morphism out of a
-pullback is determined by its values on pulled-back sections (`Scheme.Modules.pullback_hom_ext`).
+pullback is determined by its values on pulled-back sections (`Scheme.Modules.pullback_hom_ext`),
+with its adjunction transpose evaluated by
+`Scheme.Modules.pullbackPushforwardAdjunction_homEquiv_app_apply` and composite morphisms out of
+iterated pullbacks evaluated by `Scheme.Modules.pullbackComp_inv_comp_app_pullbackSections`.
 -/
 
 public section
@@ -246,5 +249,34 @@ lemma pullbackObjUnitIso_inv_app_one :
   exact (congrArg (fun x ↦ (pullbackObjUnitIso g).inv.app ⊤ x) h').symm.trans
     congr($((pullbackObjUnitIso g).hom_inv_id).app ⊤
       (pullbackSections g (𝟙_ X.Modules) ⊤ (1 : Γ(X, ⊤))))
+
+/-- Evaluating the pullback–pushforward adjunction transpose of `φ : f^* M ⟶ N` on a section
+`s ∈ Γ(M, V)` agrees with applying `φ` to the pulled-back section `f.pullbackSections M V s`. -/
+lemma _root_.AlgebraicGeometry.Scheme.Modules.pullbackPushforwardAdjunction_homEquiv_app_apply
+    {X Y : Scheme.{u}} (f : X ⟶ Y) {M : Y.Modules} {N : X.Modules}
+    (φ : (pullback f).obj M ⟶ N) (V : Y.Opens) (s : Γ(M, V)) :
+    (((pullbackPushforwardAdjunction f).homEquiv M N φ).app V) s =
+      φ.app (f ⁻¹ᵁ V) (f.pullbackSections M V s) := by
+  rw [Adjunction.homEquiv_unit]
+  simp only [Scheme.Modules.Hom.comp_app, Scheme.Modules.pushforward_map_app]
+  exact (ConcreteCategory.comp_apply _ _ s).trans
+    (congrArg (φ.app (f ⁻¹ᵁ V)) (f.pullbackSections_apply M V s).symm)
+
+/-- Evaluating a composite morphism `(f ≫ g)^* M ⟶ f^* g^* M ⟶ f^* N ⟶ P` on a pulled-back
+section computes the iterated pullback and application of `α` and `β`. -/
+lemma _root_.AlgebraicGeometry.Scheme.Modules.pullbackComp_inv_comp_app_pullbackSections
+    {X Y Z : Scheme.{u}} (f : X ⟶ Y) (g : Y ⟶ Z) {M : Z.Modules} {N : Y.Modules} {P : X.Modules}
+    (α : (pullback g).obj M ⟶ N) (β : (pullback f).obj N ⟶ P)
+    (W : Z.Opens) (s : Γ(M, W)) :
+    ((pullbackComp f g).inv.app M ≫ (pullback f).map α ≫ β).app
+        ((f ≫ g) ⁻¹ᵁ W) ((f ≫ g).pullbackSections M W s) =
+      β.app (f ⁻¹ᵁ (g ⁻¹ᵁ W))
+        (f.pullbackSections N (g ⁻¹ᵁ W)
+          (α.app (g ⁻¹ᵁ W) (g.pullbackSections M W s))) := by
+  simp only [Scheme.Modules.Hom.comp_app, ConcreteCategory.comp_apply]
+  rw [Scheme.Hom.pullbackSections_comp]
+  -- `((f ≫ g) ⁻¹ᵁ W)` is definitionally `f ⁻¹ᵁ (g ⁻¹ᵁ W)`.
+  exact congrArg (β.app (f ⁻¹ᵁ (g ⁻¹ᵁ W)))
+    (Scheme.Hom.pullbackSections_naturality f _ (g ⁻¹ᵁ W) α (g.pullbackSections M W s))
 
 end AlgebraicGeometry.Scheme.Hom
