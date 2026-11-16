@@ -343,14 +343,9 @@ theorem coordinates_map_inverse {x : E} (h : E' → E) (k : E → E') (g : E' ×
   have hx : h (k x) = x := hbase.eq_of_nhds
   rw [map_mk (h ∘ k) _ s hs (hh.comp x hk) (contDiffAt_fibreComp hk hg hl)]
   -- Near `x` the transformed section is `s` itself.
-  have hs' : ContinuousAt (fun y ↦ (y, s y)) x :=
-    continuousAt_id.prodMk (by simpa only [hx] using hs.continuousAt)
-  have heq : (fun y ↦ l (y, g (k y, s (h (k y))))) =ᶠ[𝓝 x] s := by
-    rw [hx] at hfibre
-    have hfib := hs'.eventually hfibre
-    filter_upwards [hbase, hfib] with y hy hyf
-    simp only [Function.comp_apply, id_eq] at hy
-    simpa only [hy] using hyf
+  have heq : (fun y ↦ l (y, g (k y, s (h (k y))))) =ᶠ[𝓝 x] s :=
+    eventuallyEq_of_inverse_germ hbase (by simpa only [hx] using hs.continuousAt)
+      (by simpa only [hx] using hfibre)
   funext i
   simp only [coordinates_mk, Function.comp_apply, hx]
   exact (heq.iteratedFDeriv 𝕜 i).eq_of_nhds

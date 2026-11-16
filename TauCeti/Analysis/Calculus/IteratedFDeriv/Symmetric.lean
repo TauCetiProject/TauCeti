@@ -24,11 +24,11 @@ derivative of the `k`-th derivative, and of permutations fixing the first argume
 on the `k + 1` arguments of the derivative of the `k`-th derivative and are handled by the
 inductive hypothesis at all points near the base point.
 
-The hypothesis is pointwise: no smoothness away from the point is needed. For maps which are
-`C^k` everywhere over `ℝ` or `ℂ`, the symmetry also follows from `List.Perm.iteratedFDerivAlong_eq`
-in `TauCeti.Analysis.Calculus.IteratedFDeriv.DirectionList`. The pointwise form is what identifies
-the finite jets of local sections, which are smooth only near the point, with tuples of symmetric
-multilinear maps.
+The hypothesis is local: only `C^k` regularity near the point is needed, not on the whole space.
+For maps which are `C^k` everywhere over `ℝ` or `ℂ`, the symmetry also follows from
+`List.Perm.iteratedFDerivAlong_eq` in `TauCeti.Analysis.Calculus.IteratedFDeriv.DirectionList`.
+The local form is what identifies the finite jets of local sections, which are smooth only near
+the point, with tuples of symmetric multilinear maps.
 
 ## Main results
 
@@ -57,11 +57,13 @@ theorem ContinuousMultilinearMap.domDomCongrₗᵢ_apply {ι ι' : Type*} [Finty
 
 /-- The derivative of a family of multilinear maps which are invariant under one permutation of
 their arguments near a point is invariant under the same permutation at that point. -/
-theorem ContinuousMultilinearMap.fderiv_apply_comp_perm_of_eventually {k : ℕ}
-    {G : E → ContinuousMultilinearMap 𝕜 (fun _ : Fin k ↦ E) F} (σ : Perm (Fin k))
-    (hG : ∀ᶠ y in 𝓝 x, ∀ v : Fin k → E, G y (v ∘ σ) = G y v) (w : E) (v : Fin k → E) :
-    fderiv 𝕜 G x w (v ∘ σ) = fderiv 𝕜 G x w v := by
-  have hcongr : (ContinuousMultilinearMap.domDomCongrₗᵢ 𝕜 E F σ) ∘ G =ᶠ[𝓝 x] G :=
+theorem ContinuousMultilinearMap.fderiv_apply_comp_perm_of_eventually {X ι : Type*}
+    [NormedAddCommGroup X] [NormedSpace 𝕜 X] [Finite ι] {a : X}
+    {G : X → ContinuousMultilinearMap 𝕜 (fun _ : ι ↦ E) F} (σ : Perm ι)
+    (hG : ∀ᶠ y in 𝓝 a, ∀ v : ι → E, G y (v ∘ σ) = G y v) (w : X) (v : ι → E) :
+    fderiv 𝕜 G a w (v ∘ σ) = fderiv 𝕜 G a w v := by
+  have := Fintype.ofFinite ι
+  have hcongr : (ContinuousMultilinearMap.domDomCongrₗᵢ 𝕜 E F σ) ∘ G =ᶠ[𝓝 a] G :=
     hG.mono fun y hy ↦ by ext v; exact hy v
   have hd := congrArg (fun L ↦ L w v) (hcongr.fderiv_eq (𝕜 := 𝕜))
   simp only [LinearIsometryEquiv.comp_fderiv, ContinuousLinearMap.comp_apply,
