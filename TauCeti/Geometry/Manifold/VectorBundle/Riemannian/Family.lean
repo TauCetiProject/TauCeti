@@ -72,12 +72,11 @@ theorem isSmoothMetricFamilyOn_iff_toSymmetricSection :
           (E := fun x ↦ symmetricBilinearMaps ℝ (V x) ℝ) q.2
           ((g q.1).toSymmetricSection q.2)) (s ×ˢ univ) := by
   rw [isSmoothMetricFamilyOn_iff]
-  apply forall₂_congr
-  intro q _
   simpa only [ContMDiffRiemannianMetric.coe_toSymmetricSection_apply] using
-    (Manifold.contMDiffWithinAt_symmetricBilinearMaps_iff
-      (f := fun q : ℝ × M ↦ q.2)
-      (b := fun q ↦ (g q.1).toSymmetricSection q.2)).symm
+    (Manifold.contMDiffOn_symmetricBilinearMaps_iff
+      (f := fun q : ℝ × M ↦ TotalSpace.mk' (symmetricBilinearMaps ℝ F ℝ)
+        (E := fun x ↦ symmetricBilinearMaps ℝ (V x) ℝ) q.2
+        ((g q.1).toSymmetricSection q.2))).symm
 
 namespace IsSmoothMetricFamilyOn
 
@@ -88,6 +87,15 @@ theorem contMDiffOn (hg : IsSmoothMetricFamilyOn g s) :
         (E := fun x : M ↦ V x →L[ℝ] V x →L[ℝ] ℝ)
         q.2 ((g q.1).inner q.2)) (s ×ˢ univ) :=
   isSmoothMetricFamilyOn_iff.mp hg
+
+/-- The coefficient field is smooth at `(t, x)` whenever the time set is a neighborhood
+of `t`, so the within-set condition can be removed there. -/
+theorem contMDiffAt (hg : IsSmoothMetricFamilyOn g s) {t : ℝ} (hs : s ∈ 𝓝 t) (x : M) :
+    ContMDiffAt (𝓘(ℝ).prod I) (I.prod 𝓘(ℝ, F →L[ℝ] F →L[ℝ] ℝ)) ∞
+      (fun q : ℝ × M ↦ TotalSpace.mk' (F →L[ℝ] F →L[ℝ] ℝ)
+        (E := fun x : M ↦ V x →L[ℝ] V x →L[ℝ] ℝ)
+        q.2 ((g q.1).inner q.2)) (t, x) :=
+  hg.contMDiffOn.contMDiffAt (prod_mem_nhds hs Filter.univ_mem)
 
 /-- Restricting the time set preserves joint smoothness. -/
 theorem mono (hg : IsSmoothMetricFamilyOn g s) (hrs : r ⊆ s) :
@@ -112,15 +120,16 @@ theorem comp (hg : IsSmoothMetricFamilyOn g s) {c : ℝ → ℝ}
       (fun _ hq ↦ hq.1)).prodMk contMDiffOn_snd)
     (fun _ hq ↦ ⟨hcs hq.1, mem_univ _⟩)
 
-/-- A smooth change of time restricts a family to the preimage of its time set. -/
+/-- A change of time smooth on the preimage of the time set preserves joint smoothness
+there; no regularity outside that preimage is required. -/
 theorem comp_preimage (hg : IsSmoothMetricFamilyOn g s) {c : ℝ → ℝ}
-    (hc : ContDiff ℝ ∞ c) : IsSmoothMetricFamilyOn (g ∘ c) (c ⁻¹' s) :=
-  hg.comp hc.contDiffOn (fun _ ht ↦ ht)
+    (hc : ContDiffOn ℝ ∞ c (c ⁻¹' s)) : IsSmoothMetricFamilyOn (g ∘ c) (c ⁻¹' s) :=
+  hg.comp hc (fun _ ht ↦ ht)
 
 /-- Translating time preserves joint smoothness on the translated time set. -/
 theorem comp_add_const_preimage (hg : IsSmoothMetricFamilyOn g s) (a : ℝ) :
     IsSmoothMetricFamilyOn (fun t ↦ g (t + a)) ((fun t : ℝ ↦ t + a) ⁻¹' s) :=
-  hg.comp_preimage (contDiff_id.add contDiff_const)
+  hg.comp_preimage (contDiff_id.add contDiff_const).contDiffOn
 
 section Evaluation
 
@@ -130,10 +139,13 @@ variable {EN : Type*} [NormedAddCommGroup EN] [NormedSpace ℝ EN]
   {n : ℕ∞ω} {c : N → ℝ} {b : N → M} {u : Set N} {y : N}
   {v w : (z : N) → V (b z)}
 
-/-- Evaluating a smooth metric family along a change of time and two bundle-valued maps is
-`C^n` within a set at a point. The base map's regularity follows from either vector field. -/
-theorem contMDiffWithinAt_inner (hg : IsSmoothMetricFamilyOn g s) (hn : n ≤ ∞)
-    (hc : ContMDiffWithinAt J 𝓘(ℝ) n c u y) (hcs : MapsTo c u s) (hy : y ∈ u)
+/-- Evaluating a smooth metric family along `C^n` time and bundle-valued maps is `C^n`
+within `u` at `y`, for `n ≤ ∞`. The time `c y` must belong to `s`, and nearby points of `u`
+must eventually map into `s`; membership of `y` in `u` is not required. The base map's
+regularity follows from either vector field. -/
+theorem contMDiffWithinAt_inner_comp (hg : IsSmoothMetricFamilyOn g s) (hn : n ≤ ∞)
+    (hc : ContMDiffWithinAt J 𝓘(ℝ) n c u y) (hcy : c y ∈ s)
+    (hcs : ∀ᶠ z in 𝓝[u] y, c z ∈ s)
     (hv : ContMDiffWithinAt J (I.prod 𝓘(ℝ, F)) n
       (fun z ↦ TotalSpace.mk' F (b z) (v z)) u y)
     (hw : ContMDiffWithinAt J (I.prod 𝓘(ℝ, F)) n
@@ -141,13 +153,30 @@ theorem contMDiffWithinAt_inner (hg : IsSmoothMetricFamilyOn g s) (hn : n ≤ �
     ContMDiffWithinAt J 𝓘(ℝ) n
       (fun z ↦ (g (c z)).inner (b z) (v z) (w z)) u y := by
   have hb := (contMDiffWithinAt_totalSpace_iff.mp hv).1
-  have hcoeff := ((hg.contMDiffOn.of_le hn) (c y, b y) ⟨hcs hy, mem_univ _⟩).comp (t := s ×ˢ univ) y
-    (hc.prodMk hb) (fun z hz ↦ ⟨hcs hz, mem_univ _⟩)
+  have hcoeff := (((hg.contMDiffOn.of_le hn) (c y, b y) ⟨hcy, mem_univ _⟩).comp' (t := s ×ˢ univ) y
+    (hc.prodMk hb)).mono_of_mem_nhdsWithin
+      (Filter.inter_mem self_mem_nhdsWithin (hcs.mono fun _ hz ↦ ⟨hz, mem_univ _⟩))
   exact (contMDiffWithinAt_totalSpace_iff.mp
     (hcoeff.clm_bundle_apply₂ (F₃ := ℝ) (E₃ := Bundle.Trivial M ℝ) hv hw)).2
 
-/-- Evaluating a smooth metric family along smooth time and bundle-valued maps is `C^n` on
-their domain, for every regularity at most smooth. -/
+/-- Evaluating a smooth metric family along `C^n` time and bundle-valued maps is `C^n`
+at `y`, for `n ≤ ∞`, if `s` is a neighborhood of `c y`. The base map's regularity follows
+from either vector field. -/
+theorem contMDiffAt_inner_comp (hg : IsSmoothMetricFamilyOn g s) (hn : n ≤ ∞)
+    (hc : ContMDiffAt J 𝓘(ℝ) n c y) (hs : s ∈ 𝓝 (c y))
+    (hv : ContMDiffAt J (I.prod 𝓘(ℝ, F)) n
+      (fun z ↦ TotalSpace.mk' F (b z) (v z)) y)
+    (hw : ContMDiffAt J (I.prod 𝓘(ℝ, F)) n
+      (fun z ↦ TotalSpace.mk' F (b z) (w z)) y) :
+    ContMDiffAt J 𝓘(ℝ) n (fun z ↦ (g (c z)).inner (b z) (v z) (w z)) y := by
+  have hb := (contMDiffAt_totalSpace_iff.mp hv).1
+  have hcoeff := ((hg.contMDiffAt hs (b y)).of_le hn).comp y (hc.prodMk hb)
+  exact (contMDiffAt_totalSpace_iff.mp
+    (hcoeff.clm_bundle_apply₂ (F₃ := ℝ) (E₃ := Bundle.Trivial M ℝ) hv hw)).2
+
+/-- Evaluating a smooth metric family along `C^n` time and bundle-valued maps is `C^n`
+on `u`, for `n ≤ ∞`, when the time map sends all of `u` into `s`. The base map's regularity
+follows from either vector field. -/
 theorem contMDiffOn_inner_comp (hg : IsSmoothMetricFamilyOn g s) (hn : n ≤ ∞)
     (hc : ContMDiffOn J 𝓘(ℝ) n c u) (hcs : MapsTo c u s)
     (hv : ContMDiffOn J (I.prod 𝓘(ℝ, F)) n
@@ -155,12 +184,14 @@ theorem contMDiffOn_inner_comp (hg : IsSmoothMetricFamilyOn g s) (hn : n ≤ ∞
     (hw : ContMDiffOn J (I.prod 𝓘(ℝ, F)) n
       (fun z ↦ TotalSpace.mk' F (b z) (w z)) u) :
     ContMDiffOn J 𝓘(ℝ) n (fun z ↦ (g (c z)).inner (b z) (v z) (w z)) u :=
-  fun y hy ↦ hg.contMDiffWithinAt_inner hn (hc y hy) hcs hy (hv y hy) (hw y hy)
+  fun y hy ↦ hg.contMDiffWithinAt_inner_comp hn (hc y hy) (hcs hy)
+    (Filter.mem_of_superset self_mem_nhdsWithin fun _ hz ↦ hcs hz) (hv y hy) (hw y hy)
 
 end Evaluation
 
 /-- Pairing a smooth metric family with two jointly `C^n` bundle-valued fields gives a jointly
-`C^n` real-valued function on any subset of the family's time-space domain. -/
+`C^n` real-valued function on `u`, for `n ≤ ∞`, provided `u` lies in the family's time-space
+domain `s ×ˢ univ`. -/
 theorem contMDiffOn_inner (hg : IsSmoothMetricFamilyOn g s) {n : ℕ∞ω} (hn : n ≤ ∞)
     {u : Set (ℝ × M)} (hu : u ⊆ s ×ˢ univ) {v w : (q : ℝ × M) → V q.2}
     (hv : ContMDiffOn (𝓘(ℝ).prod I) (I.prod 𝓘(ℝ, F)) n
@@ -176,18 +207,28 @@ set. This permits time derivatives without choosing local coordinates. -/
 theorem contDiffOn_inner (hg : IsSmoothMetricFamilyOn g s) (x : M) (v w : V x) :
     ContDiffOn ℝ ∞ (fun t ↦ (g t).inner x v w) s := by
   intro t ht
-  exact (hg.contMDiffWithinAt_inner le_rfl contMDiffWithinAt_id (fun _ ht ↦ ht) ht
+  exact (hg.contMDiffWithinAt_inner_comp le_rfl contMDiffWithinAt_id ht self_mem_nhdsWithin
     (contMDiffWithinAt_const (c := TotalSpace.mk' F x v))
     (contMDiffWithinAt_const (c := TotalSpace.mk' F x w))).contDiffWithinAt
 
 /-- A jointly smooth scalar multiple of a smooth family's coefficients is smooth. Only
 coefficient equality at times in the time set is required; the target metrics are already given. -/
-theorem smul (hg : IsSmoothMetricFamilyOn g s) {a : ℝ × M → ℝ}
+theorem of_inner_eq_smul (hg : IsSmoothMetricFamilyOn g s) {a : ℝ × M → ℝ}
     (ha : ContMDiffOn (𝓘(ℝ).prod I) 𝓘(ℝ) ∞ a (s ×ˢ univ))
     (heq : ∀ t ∈ s, ∀ x, (h t).inner x = a (t, x) • (g t).inner x) :
     IsSmoothMetricFamilyOn h s := by
   apply isSmoothMetricFamilyOn_iff.mpr
   exact (ha.smul_totalSpace hg.contMDiffOn).congr fun q hq ↦ by rw [heq q.1 hq.1 q.2]
+
+/-- A time-dependent scalar multiple of a smooth family's coefficients is smooth when the
+scalar is smooth on the time set. Coefficient equality is required only on that set; the target
+metrics are already given, so no condition on the scalar outside the time set is needed. -/
+theorem of_inner_eq_smul_const (hg : IsSmoothMetricFamilyOn g s) {a : ℝ → ℝ}
+    (ha : ContDiffOn ℝ ∞ a s)
+    (heq : ∀ t ∈ s, ∀ x, (h t).inner x = a t • (g t).inner x) :
+    IsSmoothMetricFamilyOn h s :=
+  hg.of_inner_eq_smul (ha.contMDiffOn.comp
+    (contMDiffOn_fst (s := s ×ˢ (univ : Set M))) (fun _ hq ↦ hq.1)) heq
 
 variable [∀ x, ContinuousConstSMul ℝ (V x)]
 
@@ -198,7 +239,7 @@ theorem rescale (hg : IsSmoothMetricFamilyOn g s) {a : ℝ → M → ℝ}
     (ha : ContMDiffOn (𝓘(ℝ).prod I) 𝓘(ℝ) ∞ (fun q ↦ a q.1 q.2) (s ×ˢ univ))
     (haslice : ∀ t, ContMDiff I 𝓘(ℝ) ∞ (a t)) (hapos : ∀ t x, 0 < a t x) :
     IsSmoothMetricFamilyOn (fun t ↦ (g t).rescale (a t) (haslice t) (hapos t)) s := by
-  apply hg.smul ha
+  apply hg.of_inner_eq_smul ha
   intro t _ x
   ext v w
   simp
@@ -208,11 +249,19 @@ theorem rescale_const (hg : IsSmoothMetricFamilyOn g s) {a : ℝ → ℝ}
     (ha : ContDiffOn ℝ ∞ a s) (hapos : ∀ t, 0 < a t) :
     IsSmoothMetricFamilyOn
       (fun t ↦ (g t).rescale (fun _ ↦ a t) contMDiff_const (fun _ ↦ hapos t)) s :=
-  hg.rescale (ha.contMDiffOn.comp
-    (contMDiffOn_fst (s := s ×ˢ (univ : Set M))) (fun _ hq ↦ hq.1))
-    (fun _ ↦ contMDiff_const) (fun t _ ↦ hapos t)
+  hg.of_inner_eq_smul_const ha (fun t _ x ↦ by ext v w; simp)
 
 end IsSmoothMetricFamilyOn
+
+/-- Smoothness on the whole time axis is equivalent to unrestricted joint smoothness of
+the coefficient field. -/
+theorem isSmoothMetricFamilyOn_univ :
+    IsSmoothMetricFamilyOn g univ ↔
+      ContMDiff (𝓘(ℝ).prod I) (I.prod 𝓘(ℝ, F →L[ℝ] F →L[ℝ] ℝ)) ∞
+        (fun q : ℝ × M ↦ TotalSpace.mk' (F →L[ℝ] F →L[ℝ] ℝ)
+          (E := fun x : M ↦ V x →L[ℝ] V x →L[ℝ] ℝ)
+          q.2 ((g q.1).inner q.2)) := by
+  rw [isSmoothMetricFamilyOn_iff, univ_prod_univ, contMDiffOn_univ]
 
 /-- Joint smoothness depends only on the metrics at times in the time set. -/
 theorem isSmoothMetricFamilyOn_congr (heq : EqOn g h s) :
