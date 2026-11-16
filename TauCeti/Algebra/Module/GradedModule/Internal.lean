@@ -81,6 +81,9 @@ Koszul twist and its tuple operation work over any ring: their integer signs are
 * `TauCeti.LinearMap.IsHomogeneous.isHomogeneous_ker` and
   `TauCeti.LinearMap.IsHomogeneous.isHomogeneous_range`: the kernel and the image of a homogeneous
   map are homogeneous submodules.
+* `TauCeti.exists_relative_boundary_of_forall_homogeneous`: for maps of graded modules with
+  homogeneous differentials, relative cycles modulo homogeneous submodules are relative boundaries
+  once the homogeneous ones are.
 * `TauCeti.LinearMap.IsHomogeneous.koszulTwist_apply` and
   `TauCeti.LinearMap.IsHomogeneous.koszulTwist_comp`: pointwise and operator forms of commuting a
   homogeneous linear map with Koszul twists up to the sign determined by its degree.
@@ -461,6 +464,64 @@ theorem isHomogeneous_range {ι : Type*} [DecidableEq ι] [AddMonoid ι]
   | add x y hx hy => simpa using Submodule.add_mem _ hx hy
 
 end LinearMap.IsHomogeneous
+
+section RelativeBoundary
+
+open _root_.DirectSum
+
+variable {R : Type*} [Ring R] {M N : Type*} [AddCommGroup M] [Module R M]
+  [AddCommGroup N] [Module R N] {𝒢 : ℤ → Submodule R M} {𝒩 : ℤ → Submodule R N}
+  [DirectSum.Decomposition 𝒢] [DirectSum.Decomposition 𝒩]
+
+/-- Summing the components of `y` of degrees `i - 1`, over a set of degrees `i` containing the
+support of `y` shifted up by one, recovers `y`. -/
+private theorem sum_decompose_sub_one [∀ (i) (x : 𝒩 i), Decidable (x ≠ 0)] {F : Finset ℤ}
+    (y : N) (hF : (decompose 𝒩 y).support.image (· + 1) ⊆ F) :
+    ∑ i ∈ F, (decompose 𝒩 y (i - 1) : N) = y := by
+  rw [← Finset.sum_subset hF fun i _ hi ↦ by
+      rw [DFinsupp.notMem_support_iff.1 fun h ↦
+        hi (Finset.mem_image.2 ⟨_, h, sub_add_cancel i 1⟩), ZeroMemClass.coe_zero],
+    Finset.sum_image fun _ _ _ _ h ↦ add_right_cancel h]
+  exact (Finset.sum_congr rfl fun i _ ↦ by rw [add_sub_cancel_right]).trans
+    (sum_support_decompose 𝒩 y)
+
+/-- **Relative cycles are relative boundaries once homogeneous ones are.** For maps of graded
+modules `Φ : M → N`, of degree `0`, and differentials `dM`, `dN` of degree `1`, and homogeneous
+submodules `A` of `M` and `S`, `T` of `N`: if every homogeneous pair `(x, y)` with `dM x ∈ A`,
+`y ∈ T` and `Φ x - dN y ∈ S` is `(dM u, Φ u + dN v)` modulo `A` and `S`, with `v ∈ T`, then so is
+every pair. -/
+theorem exists_relative_boundary_of_forall_homogeneous {dM : M →ₗ[R] M} {dN : N →ₗ[R] N}
+    {Φ : M →ₗ[R] N} (hdM : LinearMap.IsHomogeneous dM 𝒢 𝒢 1)
+    (hdN : LinearMap.IsHomogeneous dN 𝒩 𝒩 1) (hΦ : LinearMap.IsHomogeneous Φ 𝒢 𝒩 0)
+    {A : Submodule R M} {S T : Submodule R N} (hA : DirectSum.SetLike.IsHomogeneous 𝒢 A)
+    (hS : DirectSum.SetLike.IsHomogeneous 𝒩 S) (hT : DirectSum.SetLike.IsHomogeneous 𝒩 T)
+    (H : ∀ i, ∀ x ∈ 𝒢 i, ∀ y ∈ 𝒩 (i - 1), dM x ∈ A → y ∈ T → Φ x - dN y ∈ S →
+      ∃ u v, v ∈ T ∧ dM u - x ∈ A ∧ Φ u + dN v - y ∈ S)
+    {x : M} {y : N} (hx : dM x ∈ A) (hy : y ∈ T) (hxy : Φ x - dN y ∈ S) :
+    ∃ u v, v ∈ T ∧ dM u - x ∈ A ∧ Φ u + dN v - y ∈ S := by
+  classical
+  -- The pair `(x, y)` splits into the homogeneous pairs `(xᵢ, yᵢ₋₁)`.
+  have key (i : ℤ) : ∃ u v, v ∈ T ∧ dM u - (decompose 𝒢 x i : M) ∈ A ∧
+      Φ u + dN v - (decompose 𝒩 y (i - 1) : N) ∈ S := by
+    refine H i _ (SetLike.coe_mem _) _ (SetLike.coe_mem _) ?_ (hT _ hy) ?_
+    · rw [hdM.map_decompose]
+      exact hA _ hx
+    · rw [hΦ.map_decompose, hdN.map_decompose, add_zero, sub_add_cancel]
+      simpa [decompose_sub] using hS i hxy
+  choose u v hv hu huv using key
+  let F : Finset ℤ := (decompose 𝒢 x).support ∪ (decompose 𝒩 y).support.image (· + 1)
+  have hx' : ∑ i ∈ F, (decompose 𝒢 x i : M) = x := by
+    rw [← Finset.sum_subset Finset.subset_union_left fun i _ hi ↦ by
+      rw [DFinsupp.notMem_support_iff.1 hi, ZeroMemClass.coe_zero]]
+    exact sum_support_decompose 𝒢 x
+  have hy' := sum_decompose_sub_one y (F := F) Finset.subset_union_right
+  refine ⟨∑ i ∈ F, u i, ∑ i ∈ F, v i, sum_mem fun i _ ↦ hv i, ?_, ?_⟩
+  · rw [map_sum, ← hx', ← Finset.sum_sub_distrib]
+    exact sum_mem fun i _ ↦ hu i
+  · rw [map_sum, map_sum, ← Finset.sum_add_distrib, ← hy', ← Finset.sum_sub_distrib]
+    exact sum_mem fun i _ ↦ huv i
+
+end RelativeBoundary
 
 section FiniteSupport
 

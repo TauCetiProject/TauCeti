@@ -163,9 +163,9 @@ theorem map_decompose_eq_zero (hM : IsDGLeftModule h ℳ dM) {x : M} (hx : dM x 
     ZeroMemClass.coe_zero]
 
 /-- The converse of `exists_mem_of_forall_exists`: if every **homogeneous** relative cycle of a
-degree-zero map `f` is a relative boundary, then so is every relative cycle. The homogeneous
-components of a relative cycle are relative cycles, and the relative boundaries bounding them add
-up. -/
+degree-zero map `f` is a relative boundary, then so is every relative cycle. This is
+`TauCeti.exists_relative_boundary_of_forall_homogeneous` with the zero submodules for the relative
+cycles and boundaries and the whole module for the second chain. -/
 theorem exists_of_forall_mem_exists {N : Type*} [AddCommGroup N] [Module R N] [Module A N]
     [IsScalarTower R A N] {𝒩 : ℤ → Submodule R N} [SetLike.GradedSMul 𝒜 𝒩]
     [DirectSum.Decomposition 𝒩] {dN : N →ₗ[R] N} (hM : IsDGLeftModule h ℳ dM)
@@ -174,25 +174,22 @@ theorem exists_of_forall_mem_exists {N : Type*} [AddCommGroup N] [Module R N] [M
       ∃ u v, dM u = c ∧ f u + dN v = w)
     (c : M) (w : N) (hc : dM c = 0) (hcw : f c = dN w) :
     ∃ u v, dM u = c ∧ f u + dN v = w := by
-  classical
-  have key (n : ℤ) :
-      ∃ u v, dM u = decompose ℳ c n ∧ f u + dN v = decompose 𝒩 w (n - 1) := by
-    refine hrel n _ _ (SetLike.coe_mem _) (SetLike.coe_mem _) (hM.map_decompose_eq_zero hc n) ?_
-    rw [hf.map_decompose, add_zero, hcw, hN.map_decompose, sub_add_cancel]
-  choose u v huv using key
-  -- Every degree in which `c` or `w` has a nonzero component, the latter shifted by one.
-  let s := (decompose ℳ c).support ∪ (decompose 𝒩 w).support.image (· + 1)
-  refine ⟨∑ n ∈ s, u n, ∑ n ∈ s, v n, ?_, ?_⟩
-  · simp_rw [map_sum, (huv _).1]
-    conv_rhs => rw [← DirectSum.sum_support_decompose ℳ c]
-    exact (Finset.sum_subset Finset.subset_union_left fun n _ hn ↦ by simpa using hn).symm
-  · simp_rw [map_sum, ← Finset.sum_add_distrib, (huv _).2]
-    conv_rhs => rw [← DirectSum.sum_support_decompose 𝒩 w]
-    rw [← Finset.sum_image (g := (· - 1)) (f := fun m ↦ (decompose 𝒩 w m : N))
-      fun _ _ _ _ h ↦ by simpa using h]
-    refine (Finset.sum_subset (fun m hm ↦ Finset.mem_image.mpr ⟨m + 1,
-      Finset.mem_union_right _ (Finset.mem_image_of_mem _ hm), add_sub_cancel_right m 1⟩)
-      fun m _ hm ↦ by simpa using hm).symm
+  have hrel' : ∀ n, ∀ c ∈ ℳ n, ∀ w ∈ 𝒩 (n - 1), dM c ∈ (⊥ : Submodule R M) →
+      w ∈ (⊤ : Submodule R N) → f.restrictScalars R c - dN w ∈ (⊥ : Submodule R N) →
+      ∃ u v, v ∈ (⊤ : Submodule R N) ∧ dM u - c ∈ (⊥ : Submodule R M) ∧
+        f.restrictScalars R u + dN v - w ∈ (⊥ : Submodule R N) := by
+    intro n c hc w hw hdc _ hcw
+    obtain ⟨u, v, hu, huv⟩ :=
+      hrel n c w hc hw (by simpa using hdc) (by simpa [sub_eq_zero] using hcw)
+    exact ⟨u, v, Submodule.mem_top, by simp [hu], by simp [huv]⟩
+  obtain ⟨u, v, -, hu, huv⟩ := exists_relative_boundary_of_forall_homogeneous
+    hM.isHomogeneous hN.isHomogeneous (Φ := f.restrictScalars R)
+    (LinearMap.isHomogeneous_def.mpr fun _ _ hx ↦ hf.map_mem hx)
+    (fun _ _ hx ↦ by simp [(Submodule.mem_bot R).1 hx])
+    (fun _ _ hx ↦ by simp [(Submodule.mem_bot R).1 hx])
+    (fun _ _ _ ↦ Submodule.mem_top) hrel' (by simpa using hc) Submodule.mem_top
+    (by simpa [sub_eq_zero] using hcw)
+  exact ⟨u, v, by simpa [sub_eq_zero] using hu, by simpa [sub_eq_zero] using huv⟩
 
 /-- The Leibniz rule against a cycle: the sign disappears with the term it multiplies, so the
 scalar need not be homogeneous. -/
