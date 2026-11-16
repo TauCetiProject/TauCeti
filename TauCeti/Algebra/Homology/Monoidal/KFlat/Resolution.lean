@@ -539,8 +539,10 @@ end kFlatResolution
 variable (E : C ⥤ C) (p : E ⟶ 𝟭 C) [HasColimitsOfShape ℕ C]
 
 -- `kFlatResolutionFunctor` is exposed so that `(kFlatResolutionFunctor E p).obj K` is
--- definitionally `kFlatResolution E.obj p.app K` in public theorem signatures (`map` and `app`);
--- the underlying stage sequence and `kFlatResolution.map` remain unexposed `public def`s.
+-- definitionally `kFlatResolution E.obj p.app K` in public theorem signatures
+-- (`kFlatResolutionFunctor_map` and `kFlatResolutionNatTrans_app`); `kFlatResolution.map` (like
+-- `kFlatResolution.π`) remains an unexposed `public def`, while `stageMap` and `sequenceMap` are
+-- `private`.
 /-- The functorial cell-attachment resolution associated to a functor `E : C ⥤ C` and a natural
 transformation `p : E ⟶ 𝟭 C`. Its value on a complex `K` is
 `CochainComplex.kFlatResolution E.obj p.app K`. -/

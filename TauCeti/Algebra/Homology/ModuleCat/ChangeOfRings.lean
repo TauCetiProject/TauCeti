@@ -15,6 +15,11 @@ For a homomorphism `f : R →+* S` of commutative rings, `TauCeti.complexBaseCha
 `ModuleCat.extendScalars f` degreewise to cochain complexes of `R`-modules. Composing it with
 degreewise restriction of scalars identifies naturally with left tensoring by `S` concentrated in
 degree `0` (`TauCeti.complexBaseChangeCompRestrictScalarsIso`).
+
+This provides the complex-level functor derived to `- ⊗^L_R S` on unbounded derived categories:
+since degreewise restriction of scalars preserves and reflects quasi-isomorphisms,
+`TauCeti.complexBaseChangeCompRestrictScalarsIso` reduces preservation of quasi-isomorphisms
+between K-flat complexes by `TauCeti.complexBaseChange f` to left tensoring with `S[0]`.
 -/
 
 public section
@@ -63,12 +68,12 @@ theorem complexBaseChangeCompRestrictScalarsIso_hom_app_f
           ((single (ModuleCat.{u} R) (ComplexShape.up ℤ) 0).obj
             ((ModuleCat.restrictScalars f).obj (𝟙_ (ModuleCat.{u} S))))
           K (MonoidalCategory.curriedTensor (ModuleCat.{u} R)) (ComplexShape.up ℤ) 0 j j
-          (by change (0 : ℤ) + j = j; omega) := by
+          (zero_add j) := by
   simp [complexBaseChangeCompRestrictScalarsIso]
 
 /-- On the degree-`(0, j)` summand, the inverse comparison `complexBaseChangeCompRestrictScalarsIso`
-projects out the single-object factor and applies
-`(ModuleCat.extendScalarsCompRestrictScalarsIso f).inv`. -/
+identifies the degree-`0` term of the single complex on the left factor via `singleObjXSelf` and
+applies `(ModuleCat.extendScalarsCompRestrictScalarsIso f).inv`. -/
 @[reassoc (attr := simp), simp]
 theorem ι_complexBaseChangeCompRestrictScalarsIso_inv_app_f
     {R S : Type u} [CommRing R] [CommRing S] (f : R →+* S)
@@ -77,7 +82,7 @@ theorem ι_complexBaseChangeCompRestrictScalarsIso_inv_app_f
         ((single (ModuleCat.{u} R) (ComplexShape.up ℤ) 0).obj
           ((ModuleCat.restrictScalars f).obj (𝟙_ (ModuleCat.{u} S))))
         K (MonoidalCategory.curriedTensor (ModuleCat.{u} R)) (ComplexShape.up ℤ) 0 j j
-        (by change (0 : ℤ) + j = j; omega) ≫
+        (zero_add j) ≫
       ((complexBaseChangeCompRestrictScalarsIso f).inv.app K).f j =
     ((singleObjXSelf (ComplexShape.up ℤ) 0
         ((ModuleCat.restrictScalars f).obj (𝟙_ (ModuleCat.{u} S)))).hom ▷ K.X j) ≫

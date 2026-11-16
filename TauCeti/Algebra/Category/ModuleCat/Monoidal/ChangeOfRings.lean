@@ -103,6 +103,14 @@ noncomputable def extendScalarsCompRestrictScalarsIso :
         (restrictScalars f)) ≪≫
     extendScalarsCompTensorLeftIso f (𝟙_ (ModuleCat.{u} P))
 
+-- The carrier of `(restrictScalars f).obj (𝟙_ (ModuleCat.{u} P))` is definitionally `P`
+-- (`𝟙_ (ModuleCat.{u} P)` is `ModuleCat.of P P` and `restrictScalars` leaves the carrier
+-- unchanged), with `P`-action given by multiplication on `P`.
+private lemma smul_one_unit (s : P) :
+    (s • (1 : P) : (restrictScalars f).obj (𝟙_ (ModuleCat.{u} P))) =
+      (s : (restrictScalars f).obj (𝟙_ (ModuleCat.{u} P))) :=
+  mul_one s
+
 /-- The forward map of `extendScalarsCompRestrictScalarsIso` sends `s ⊗ x` to `s ⊗ x`. -/
 @[simp]
 theorem extendScalarsCompRestrictScalarsIso_hom_app_tmul (X : ModuleCat.{u} A)
@@ -111,12 +119,33 @@ theorem extendScalarsCompRestrictScalarsIso_hom_app_tmul (X : ModuleCat.{u} A)
         (restrictScalars f).obj (𝟙_ (ModuleCat.{u} P)) ⊗ X) → _)
         ((extendScalarsCompRestrictScalarsIso f).hom.app X) (s ⊗ₜ[A, f] x) =
       TensorProduct.tmul A (M := (restrictScalars f).obj (𝟙_ (ModuleCat.{u} P))) (N := X)
-        (show (restrictScalars f).obj (𝟙_ (ModuleCat.{u} P)) from s) x :=
-  congr_arg
-    (fun t : P ↦
-      TensorProduct.tmul A (M := (restrictScalars f).obj (𝟙_ (ModuleCat.{u} P))) (N := X)
-        (show (restrictScalars f).obj (𝟙_ (ModuleCat.{u} P)) from t) x)
-    (mul_one s)
+        (s : (restrictScalars f).obj (𝟙_ (ModuleCat.{u} P))) x := by
+  have hhom : ((extendScalarsCompRestrictScalarsIso f).hom.app X :
+      (restrictScalars f).obj ((extendScalars f).obj X) ⟶
+        (restrictScalars f).obj (𝟙_ (ModuleCat.{u} P)) ⊗ X) =
+      (restrictScalars f).map (λ_ ((extendScalars f).obj X)).inv ≫
+        (extendScalarsCompTensorLeftIso f (𝟙_ (ModuleCat.{u} P))).hom.app X := by
+    dsimp [extendScalarsCompRestrictScalarsIso]
+    rw [Category.id_comp, MonoidalCategory.leftUnitorNatIso_inv_app]
+  calc
+    (Hom.hom : ((restrictScalars f).obj ((extendScalars f).obj X) ⟶
+        (restrictScalars f).obj (𝟙_ (ModuleCat.{u} P)) ⊗ X) → _)
+        ((extendScalarsCompRestrictScalarsIso f).hom.app X) (s ⊗ₜ[A, f] x)
+      = ((extendScalarsCompTensorLeftIso f (𝟙_ (ModuleCat.{u} P))).hom.app X)
+          (((restrictScalars f).map (λ_ ((extendScalars f).obj X)).inv) (s ⊗ₜ[A, f] x)) :=
+        (congrArg (fun g ↦ g.hom (s ⊗ₜ[A, f] x)) hhom).trans (ModuleCat.comp_apply _ _ _)
+    _ = ((extendScalarsCompTensorLeftIso f (𝟙_ (ModuleCat.{u} P))).hom.app X)
+          (TensorProduct.tmul P (M := 𝟙_ (ModuleCat.{u} P)) (N := (extendScalars f).obj X)
+            (1 : P) (s ⊗ₜ[A, f] x)) :=
+        congrArg ((extendScalarsCompTensorLeftIso f (𝟙_ (ModuleCat.{u} P))).hom.app X)
+          ((restrictScalars.map_apply f (λ_ ((extendScalars f).obj X)).inv (s ⊗ₜ[A, f] x)).trans
+            (MonoidalCategory.leftUnitor_inv_apply (M := (extendScalars f).obj X) (s ⊗ₜ[A, f] x)))
+    _ = TensorProduct.tmul A (M := (restrictScalars f).obj (𝟙_ (ModuleCat.{u} P))) (N := X)
+          (s • (1 : P)) x :=
+        extendScalarsCompTensorLeftIso_hom_app_tmul f (𝟙_ (ModuleCat.{u} P)) X (1 : P) s x
+    _ = TensorProduct.tmul A (M := (restrictScalars f).obj (𝟙_ (ModuleCat.{u} P))) (N := X)
+          (s : (restrictScalars f).obj (𝟙_ (ModuleCat.{u} P))) x := by
+        rw [smul_one_unit]
 
 /-- The inverse of `extendScalarsCompRestrictScalarsIso` sends `s ⊗ x` to `s ⊗ x`. -/
 @[simp]
@@ -126,7 +155,39 @@ theorem extendScalarsCompRestrictScalarsIso_inv_app_tmul (X : ModuleCat.{u} A)
         (restrictScalars f).obj ((extendScalars f).obj X)) → _)
         ((extendScalarsCompRestrictScalarsIso f).inv.app X)
         (TensorProduct.tmul A (M := (restrictScalars f).obj (𝟙_ (ModuleCat.{u} P))) (N := X) s x) =
-      (show P from s) ⊗ₜ[A, f] x :=
-  congr_arg (fun t : P ↦ t ⊗ₜ[A, f] x) (mul_one (show P from s))
+      (s : P) ⊗ₜ[A, f] x := by
+  have hinv : ((extendScalarsCompRestrictScalarsIso f).inv.app X :
+      (restrictScalars f).obj (𝟙_ (ModuleCat.{u} P)) ⊗ X ⟶
+        (restrictScalars f).obj ((extendScalars f).obj X)) =
+      (extendScalarsCompTensorLeftIso f (𝟙_ (ModuleCat.{u} P))).inv.app X ≫
+        (restrictScalars f).map (λ_ ((extendScalars f).obj X)).hom := by
+    dsimp [extendScalarsCompRestrictScalarsIso]
+    rw [Category.comp_id, MonoidalCategory.leftUnitorNatIso_hom_app]
+  -- View `s` in the definitionally equal carrier `P` of
+  -- `(restrictScalars f).obj (𝟙_ (ModuleCat P))`.
+  let s' : P := s
+  have hstep₁ :
+      ((extendScalarsCompRestrictScalarsIso f).inv.app X :
+          (restrictScalars f).obj (𝟙_ (ModuleCat.{u} P)) ⊗ X ⟶
+            (restrictScalars f).obj ((extendScalars f).obj X))
+        (TensorProduct.tmul A (M := (restrictScalars f).obj (𝟙_ (ModuleCat.{u} P))) (N := X) s x) =
+      ((restrictScalars f).map (λ_ ((extendScalars f).obj X)).hom)
+        (TensorProduct.tmul P (M := 𝟙_ (ModuleCat.{u} P)) (N := (extendScalars f).obj X)
+          s ((1 : P) ⊗ₜ[A, f] x)) :=
+    (congrArg (fun g ↦ g.hom (TensorProduct.tmul A
+      (M := (restrictScalars f).obj (𝟙_ (ModuleCat.{u} P))) (N := X) s x)) hinv).trans
+      ((ModuleCat.comp_apply _ _ _).trans
+        (congrArg ((restrictScalars f).map (λ_ ((extendScalars f).obj X)).hom)
+          (extendScalarsCompTensorLeftIso_inv_app_tmul f (𝟙_ (ModuleCat.{u} P)) X s x)))
+  have hstep₂ :
+      ((restrictScalars f).map (λ_ ((extendScalars f).obj X)).hom)
+        (TensorProduct.tmul P (M := 𝟙_ (ModuleCat.{u} P)) (N := (extendScalars f).obj X)
+          s ((1 : P) ⊗ₜ[A, f] x)) =
+      s' ⊗ₜ[A, f] x :=
+    (restrictScalars.map_apply f (λ_ ((extendScalars f).obj X)).hom _).trans
+      ((MonoidalCategory.leftUnitor_hom_apply (M := (extendScalars f).obj X) s'
+          ((1 : P) ⊗ₜ[A, f] x)).trans
+        ((ExtendScalars.smul_tmul f s' 1 x).trans (by rw [mul_one])))
+  exact hstep₁.trans hstep₂
 
 end ModuleCat

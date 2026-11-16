@@ -40,7 +40,7 @@ unbounded cochain complexes of `R`-modules with respect to quasi-isomorphisms.
   1286–1318.
 * Joël Riou, *Formalization of derived categories in Lean/mathlib*, Ann. Formaliz. Math. 1 (2025),
   1–42.
-* [The Stacks Project][stacks], Section 15.60 (Tag 06Y2).
+* [The Stacks Project][stacks], Section 15.60, Lemma 15.60.10 (Tag 06Y4).
 -/
 
 public section

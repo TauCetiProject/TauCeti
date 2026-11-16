@@ -404,15 +404,6 @@ theorem leftDerivedTensorObjModelIsoOfIsStrictlyLEFlat_hom
   have : P.IsKFlat := P.isKFlat_of_boundedAbove_flat b
   simp [leftDerivedTensorObjModelIsoOfIsStrictlyLEFlat]
 
-/-- On a complex `L`, `leftDerivedTensorObjModelIsoOfIsStrictlyLEFlat` is given by
-`(α.app P).app L`. -/
-theorem leftDerivedTensorObjModelIsoOfIsStrictlyLEFlat_hom_app
-    (P : CochainComplex (ModuleCat.{u} R) ℤ) (b : ℤ)
-    [P.IsStrictlyLE b] [∀ i, Module.Flat R (P.X i)]
-    (L : CochainComplex (ModuleCat.{u} R) ℤ) :
-    (leftDerivedTensorObjModelIsoOfIsStrictlyLEFlat LF α P b).hom.app L = (α.app P).app L := by
-  simp
-
 /-- **Bounded-above flat models compute derived tensor products in the right variable.** If `Q` is
 a bounded-above complex of flat `R`-modules, then
 `DerivedCategory.Q ⋙ LF.flip.obj (DerivedCategory.Q.obj Q)` is naturally isomorphic to the ordinary
@@ -437,15 +428,6 @@ theorem leftDerivedTensorFlipObjModelIsoOfIsStrictlyLEFlat_hom
       Functor.bifunctorCounit₂ α Q := by
   have : Q.IsKFlat := Q.isKFlat_of_boundedAbove_flat b
   simp [leftDerivedTensorFlipObjModelIsoOfIsStrictlyLEFlat]
-
-/-- On a complex `K`, `leftDerivedTensorFlipObjModelIsoOfIsStrictlyLEFlat` is given by
-`(α.app K).app Q`. -/
-theorem leftDerivedTensorFlipObjModelIsoOfIsStrictlyLEFlat_hom_app
-    (Q : CochainComplex (ModuleCat.{u} R) ℤ) (b : ℤ)
-    [Q.IsStrictlyLE b] [∀ i, Module.Flat R (Q.X i)]
-    (K : CochainComplex (ModuleCat.{u} R) ℤ) :
-    (leftDerivedTensorFlipObjModelIsoOfIsStrictlyLEFlat LF α Q b).hom.app K = (α.app K).app Q := by
-  simp
 
 end ModelComparison
 

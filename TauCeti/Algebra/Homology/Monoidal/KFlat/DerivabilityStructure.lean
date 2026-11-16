@@ -52,7 +52,7 @@ structure.
   1286–1318.
 * Joël Riou, *Formalization of derived categories in Lean/mathlib*, Ann. Formaliz. Math. 1 (2025),
   1–42.
-* [The Stacks Project][stacks], Section 15.60 (Tag 06Y2).
+* [The Stacks Project][stacks], Section 15.60, Lemmas 15.60.5 and 15.60.10 (Tags 06Y2 and 06Y4).
 -/
 
 public section
@@ -77,13 +77,13 @@ lemma kFlat_iff {C : Type*} [Category* C] [Abelian C] [MonoidalCategory C] [Mono
 
 instance : (CochainComplex.kFlat C).IsClosedUnderIsomorphisms where
   of_iso e hK := by
-    have : IsKFlat _ := hK
+    rw [kFlat_iff] at hK ⊢
     exact isKFlat_of_iso e
 
 instance : (CochainComplex.kFlat C).IsStableUnderShift ℤ where
   isStableUnderShiftBy n := ⟨fun K hK ↦ by
-    have : K.IsKFlat := hK
-    change (K⟦n⟧).IsKFlat
+    rw [kFlat_iff] at hK
+    rw [ObjectProperty.prop_shift_iff, kFlat_iff]
     infer_instance⟩
 
 /-- The full subcategory of `CochainComplex C ℤ` consisting of K-flat complexes. -/
