@@ -134,8 +134,8 @@ theorem piLpSingleLI_eq_symm_single [DecidableEq ι] (i : ι) (h : Lp (E i) p μ
 
 /-- `piLpSingleLI` acts pointwise almost everywhere by `PiLp.single`. -/
 theorem coeFn_piLpSingleLI [DecidableEq ι] (i : ι) (h : Lp (E i) p μ) :
-    piLpSingleLI p 𝕜 E μ i h =ᵐ[μ] fun x ↦ PiLp.single p i (h x) := by
-  rw [piLpSingleLI_eq_symm_single (𝕜 := 𝕜)]; exact coeFn_piLpEquiv_symm_single (𝕜 := 𝕜) i h
+    piLpSingleLI p 𝕜 E μ i h =ᵐ[μ] fun x ↦ PiLp.single p i (h x) :=
+  piLpSingleLI_eq_symm_single (𝕜 := 𝕜) i h ▸ coeFn_piLpEquiv_symm_single (𝕜 := 𝕜) i h
 
 /-- Every `f : Lp (PiLp p E) p μ` is the finite sum of its coordinate inclusions `piLpSingleLI`. -/
 theorem eq_sum_piLpSingleLI [DecidableEq ι] (f : Lp (PiLp p E) p μ) :

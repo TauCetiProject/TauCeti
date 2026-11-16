@@ -88,8 +88,7 @@ theorem multiplicationOperator_smul (c : ℂ) (a : Lp ℂ ∞ μ) :
     multiplicationOperator (E := E) (c • a) = c • multiplicationOperator a := by
   simp [multiplicationOperator]
 
-/-- `multiplicationOperator a` is `operatorMultiplication 2` by the scalar-diagonal symbol
-`a • 1`. -/
+/-- `multiplicationOperator a` is `operatorMultiplication 2` by `a • 1`. -/
 private theorem multiplicationOperator_eq_operatorMultiplication (a : Lp ℂ ∞ μ) :
     multiplicationOperator (E := E) a =
       operatorMultiplication 2 (a • (1 : Lp (E →L[ℂ] E) ∞ μ)) := by
@@ -97,22 +96,23 @@ private theorem multiplicationOperator_eq_operatorMultiplication (a : Lp ℂ ∞
   rw [multiplicationOperator_apply, operatorMultiplication_lpSMul_left,
     operatorMultiplication_one, id_apply]
 
+private theorem coeFn_lpSMul_one (a : Lp ℂ ∞ μ) :
+    (a • (1 : Lp (E →L[ℂ] E) ∞ μ) : Lp (E →L[ℂ] E) ∞ μ) =ᵐ[μ] fun x ↦ a x • 1 := by
+  filter_upwards [coeFn_lpSMul (r := ∞) a (1 : Lp (E →L[ℂ] E) ∞ μ),
+    coeFn_one (E := E →L[ℂ] E) (μ := μ)] with x hx h1
+  rw [hx, Pi.smul_apply', h1, Pi.one_apply]
+
 /-- Composing multiplication operators multiplies their symbols in the same order. -/
 theorem multiplicationOperator_comp_multiplicationOperator (a b : Lp ℂ ∞ μ) :
     multiplicationOperator (E := E) a ∘L multiplicationOperator b =
       multiplicationOperator (a * b) := by
-  rw [multiplicationOperator_eq_operatorMultiplication,
-    multiplicationOperator_eq_operatorMultiplication,
-    multiplicationOperator_eq_operatorMultiplication,
+  simp only [multiplicationOperator_eq_operatorMultiplication,
     operatorMultiplication_comp_operatorMultiplication]
   congr 1; apply Lp.ext
-  filter_upwards [coeFn_mul (a • (1 : Lp (E →L[ℂ] E) ∞ μ)) (b • (1 : Lp (E →L[ℂ] E) ∞ μ)),
-    coeFn_lpSMul (r := ∞) a (1 : Lp (E →L[ℂ] E) ∞ μ),
-    coeFn_lpSMul (r := ∞) b (1 : Lp (E →L[ℂ] E) ∞ μ),
-    coeFn_lpSMul (r := ∞) (a * b) (1 : Lp (E →L[ℂ] E) ∞ μ),
-    coeFn_mul a b, coeFn_one (E := E →L[ℂ] E) (μ := μ)] with x h₁ h₂ h₃ h₄ h₅ h1
-  rw [h₁, Pi.mul_apply, h₂, h₃, h₄, Pi.smul_apply', Pi.smul_apply', Pi.smul_apply', h₅,
-    Pi.mul_apply, h1, Pi.one_apply, smul_mul_smul_comm, one_mul]
+  filter_upwards [coeFn_mul (a • (1 : Lp (E →L[ℂ] E) ∞ μ)) (b • 1), coeFn_lpSMul_one (E := E) a,
+    coeFn_lpSMul_one (E := E) b, coeFn_lpSMul_one (E := E) (a * b), coeFn_mul a b]
+    with x h₁ h₂ h₃ h₄ h₅
+  rw [h₁, Pi.mul_apply, h₂, h₃, h₄, h₅, Pi.mul_apply, smul_mul_smul_comm, one_mul]
 
 /-- Multiplication operators commute with each other. -/
 theorem commute_multiplicationOperator (a b : Lp ℂ ∞ μ) :
@@ -146,12 +146,9 @@ theorem multiplicationOperator_algebraMap (c : ℂ) :
   rw [multiplicationOperator_eq_operatorMultiplication,
     ← operatorMultiplication_algebraMap (p := 2)]
   congr 1; apply Lp.ext
-  filter_upwards [coeFn_lpSMul (r := ∞) (algebraMap ℂ (Lp ℂ ∞ μ) c) (1 : Lp (E →L[ℂ] E) ∞ μ),
-    coeFn_algebraMap (R := ℂ) (μ := μ) c,
-    coeFn_algebraMap (R := E →L[ℂ] E) (μ := μ) c,
-    coeFn_one (E := E →L[ℂ] E) (μ := μ)] with x h₁ h₂ h₃ h1
-  rw [h₁, Pi.smul_apply', h₂, h₃, h1, Pi.one_apply, Algebra.algebraMap_self_apply,
-    Algebra.algebraMap_eq_smul_one]
+  filter_upwards [coeFn_lpSMul_one (E := E) _, coeFn_algebraMap (R := ℂ) (μ := μ) c,
+    coeFn_algebraMap (R := E →L[ℂ] E) (μ := μ) c] with x h₁ h₂ h₃
+  rw [h₁, h₂, h₃, Algebra.algebraMap_self_apply, Algebra.algebraMap_eq_smul_one]
 
 end NormedSpace
 
@@ -165,15 +162,11 @@ theorem adjoint_multiplicationOperator (a : Lp ℂ ∞ μ) :
     ContinuousLinearMap.adjoint (𝕜 := ℂ) (E := Lp E 2 μ) (F := Lp E 2 μ)
       (multiplicationOperator (E := E) a) =
       multiplicationOperator (E := E) (star a) := by
-  rw [multiplicationOperator_eq_operatorMultiplication,
-    multiplicationOperator_eq_operatorMultiplication, adjoint_operatorMultiplication]
+  simp only [multiplicationOperator_eq_operatorMultiplication, adjoint_operatorMultiplication]
   congr 1; apply Lp.ext
-  filter_upwards [coeFn_star (a • (1 : Lp (E →L[ℂ] E) ∞ μ)),
-    coeFn_lpSMul (r := ∞) a (1 : Lp (E →L[ℂ] E) ∞ μ),
-    coeFn_lpSMul (r := ∞) (star a) (1 : Lp (E →L[ℂ] E) ∞ μ),
-    coeFn_star a, coeFn_one (E := E →L[ℂ] E) (μ := μ)] with x h₁ h₂ h₃ h₄ h1
-  rw [h₁, Pi.star_apply, h₂, Pi.smul_apply', h₃, Pi.smul_apply', h₄, Pi.star_apply, h1,
-    Pi.one_apply, star_smul, star_one]
+  filter_upwards [coeFn_star (a • (1 : Lp (E →L[ℂ] E) ∞ μ)), coeFn_lpSMul_one (E := E) a,
+    coeFn_lpSMul_one (E := E) (star a), coeFn_star a] with x h₁ h₂ h₃ h₄
+  rw [h₁, Pi.star_apply, h₂, h₃, h₄, Pi.star_apply, star_smul, star_one]
 
 end InnerProductSpace
 
@@ -186,10 +179,7 @@ variable [IsFiniteMeasure μ]
 theorem multiplicationOperator_const (c : ℂ) :
     multiplicationOperator (E := E) (Lp.const ∞ μ c) =
       c • ContinuousLinearMap.id ℂ (Lp E 2 μ) := by
-  have hc : Lp.const ∞ μ c = algebraMap ℂ (Lp ℂ ∞ μ) c := by
-    simpa only [Algebra.algebraMap_self_apply] using
-      (Lp.algebraMap_eq_const (R := ℂ) (μ := μ) c).symm
-  rw [hc, multiplicationOperator_algebraMap]
+  rw [← multiplicationOperator_algebraMap, Lp.algebraMap_eq_const, Algebra.algebraMap_self_apply]
 
 end FiniteMeasure
 
@@ -203,11 +193,9 @@ values in a nontrivial space is exactly the `L∞` norm of `a`. -/
 theorem norm_multiplicationOperator [SigmaFinite μ] [Nontrivial E] (a : Lp ℂ ∞ μ) :
     ‖multiplicationOperator (E := E) a‖ = ‖a‖ := by
   rw [multiplicationOperator_eq_operatorMultiplication, norm_operatorMultiplication]
-  have h : ∀ᵐ x ∂μ, ‖(a • (1 : Lp (E →L[ℂ] E) ∞ μ) : Lp (E →L[ℂ] E) ∞ μ) x‖ = ‖a x‖ := by
-    filter_upwards [coeFn_lpSMul (r := ∞) a (1 : Lp (E →L[ℂ] E) ∞ μ),
-      coeFn_one (E := E →L[ℂ] E) (μ := μ)] with x hx h1
-    rw [hx, Pi.smul_apply', h1, Pi.one_apply, norm_smul, ContinuousLinearMap.one_def,
-      ContinuousLinearMap.norm_id, mul_one]
+  have h : ∀ᵐ x ∂μ, ‖(a • (1 : Lp (E →L[ℂ] E) ∞ μ) : Lp (E →L[ℂ] E) ∞ μ) x‖ = ‖a x‖ :=
+    (coeFn_lpSMul_one (E := E) a).mono fun x hx ↦ by
+      rw [hx, norm_smul, ContinuousLinearMap.one_def, ContinuousLinearMap.norm_id, mul_one]
   exact le_antisymm (Lp.norm_le_norm_of_ae_le (h.mono fun _ hx ↦ hx.le))
     (Lp.norm_le_norm_of_ae_le (h.mono fun _ hx ↦ hx.ge))
 

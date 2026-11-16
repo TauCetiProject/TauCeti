@@ -23,19 +23,18 @@ Cauchy–Schwarz estimate bounds the sum of coordinate norms by `√(card ι)` t
 The coordinate spaces may be different seminormed groups, or pseudometric spaces for the
 distance comparisons.
 
-Every finite `PiLp` vector is the sum of its coordinate `PiLp.single` vectors
-(`PiLp.univ_sum_single`), for finite `ι` and `p ≥ 1` coordinate placement bundles as a linear
-isometry `PiLp.singleLI`, and for `0 < p < ∞` the `p`-th power of the `PiLp` norm is the sum of
-the `p`-th powers of the coordinate norms (`PiLp.norm_rpow_eq_sum`). Extending a vector of
-`Lᵖ(ι, E)` by zero along an embedding `f : ι ↪ ι'` places its coordinate `i` in the slot `f i`,
-and the vectors so obtained are those whose coordinates outside the range of `f` vanish. In
-particular, extending a vector of `Lᵖ(Fin k, E)` by zero onto the first `k` coordinates of
-`Lᵖ(Fin n, E)`, for `k ≤ n`, places its coordinates in the slots `j < k`; the vectors so obtained
-are those whose coordinates `j ≥ k` vanish. The finite sum against a zero-extended vector reduces
-to the sum over its original coordinates. Over an index type with at most one element, the `Lᵖ`
-norm is the norm of the coordinate. Reindexing the coordinates along the identity bijection is the
-identity, and any linear isometry equivalence into `PiLp p F` restricts to coordinatewise submodules
-via `LinearIsometryEquiv.submodulePiLp`.
+Extending a vector of `Lᵖ(ι, E)` by zero along an embedding `f : ι ↪ ι'` places its coordinate `i`
+in the slot `f i`, and the vectors so obtained are those whose coordinates outside the range of
+`f` vanish. In particular, extending a vector of `Lᵖ(Fin k, E)` by zero onto the first `k`
+coordinates of `Lᵖ(Fin n, E)`, for `k ≤ n`, places its coordinates in the slots `j < k`; the
+vectors so obtained are those whose coordinates `j ≥ k` vanish.
+The finite sum against a zero-extended vector reduces to the sum over its original coordinates.
+Over an index type with at most one element, the `Lᵖ` norm is the norm of the coordinate.
+Reindexing the coordinates along the identity bijection is the identity.
+
+We also record `PiLp.univ_sum_single`, the coordinate isometry `PiLp.singleLI`, the power identity
+`PiLp.norm_rpow_eq_sum`, and coordinatewise submodule restriction
+`LinearIsometryEquiv.submodulePiLp`.
 
 ## Source
 
@@ -94,8 +93,7 @@ protected theorem norm_nonneg' [∀ i, SeminormedAddGroup (E i)] (x : PiLp p E) 
 of the coordinate norms. -/
 theorem norm_rpow_eq_sum [∀ i, SeminormedAddGroup (E i)] (hp : 0 < p.toReal) (x : PiLp p E) :
     ‖x‖ ^ p.toReal = ∑ i, ‖x i‖ ^ p.toReal := by
-  rw [norm_eq_sum hp, ← Real.rpow_mul
-    (Finset.sum_nonneg fun _ _ ↦ Real.rpow_nonneg (norm_nonneg _) _),
+  rw [norm_eq_sum hp, ← Real.rpow_mul (Finset.sum_nonneg fun _ _ ↦ by positivity),
     one_div_mul_cancel hp.ne', Real.rpow_one]
 
 variable [∀ i, SeminormedAddCommGroup (E i)]
@@ -113,8 +111,7 @@ variable {p E}
 
 /-- `PiLp.singleLI` evaluates as `PiLp.single`. -/
 @[simp] theorem singleLI_apply (i : ι) (v : E i) :
-    singleLI (𝕜 := 𝕜) p E i v = single p i v := by
-  simp [singleLI]
+    singleLI (𝕜 := 𝕜) p E i v = single p i v := by simp [singleLI]
 
 end SingleLI
 
@@ -319,13 +316,12 @@ end CongrLeft
 section SubmodulePiLp
 variable {ι 𝕜 X : Type*} [Fintype ι] {p : ℝ≥0∞} [Fact (1 ≤ p)] [Ring 𝕜]
   [SeminormedAddCommGroup X] [Module 𝕜 X] {F : ι → Type*} [∀ i, SeminormedAddCommGroup (F i)]
-  [∀ i, Module 𝕜 (F i)]
+  [∀ i, Module 𝕜 (F i)] (e : X ≃ₗᵢ[𝕜] PiLp p F) (M : Submodule 𝕜 X)
+  (N : ∀ i, Submodule 𝕜 (F i)) (hMN : ∀ x, x ∈ M ↔ ∀ i, e x i ∈ N i)
 
 /-- Restrict a linear isometry equivalence `e : X ≃ₗᵢ[𝕜] PiLp p F` to a submodule `M` of `X`
 characterized coordinatewise by `x ∈ M ↔ ∀ i, e x i ∈ N i`. -/
-noncomputable def submodulePiLp (e : X ≃ₗᵢ[𝕜] PiLp p F) (M : Submodule 𝕜 X)
-    (N : ∀ i, Submodule 𝕜 (F i)) (hMN : ∀ x, x ∈ M ↔ ∀ i, e x i ∈ N i) :
-    ↥M ≃ₗᵢ[𝕜] PiLp p (fun i ↦ ↥(N i)) where
+noncomputable def submodulePiLp : ↥M ≃ₗᵢ[𝕜] PiLp p (fun i ↦ ↥(N i)) where
   toFun x := WithLp.toLp p fun i ↦ ⟨e x.1 i, (hMN x.1).mp x.2 i⟩
   invFun g := ⟨e.symm (WithLp.toLp p fun i ↦ (g i : F i)),
     (hMN _).mpr fun i ↦ by rw [e.apply_symm_apply, PiLp.toLp_apply]; exact (g i).2⟩
@@ -338,20 +334,16 @@ noncomputable def submodulePiLp (e : X ≃ₗᵢ[𝕜] PiLp p F) (M : Submodule 
       ((e.norm_map x.1).trans (Submodule.norm_coe x))
 
 /-- Coordinatewise evaluation of `e.submodulePiLp M N hMN` in `F i`. -/
-@[simp] theorem coe_submodulePiLp_apply (e : X ≃ₗᵢ[𝕜] PiLp p F) (M : Submodule 𝕜 X)
-    (N : ∀ i, Submodule 𝕜 (F i)) (hMN : ∀ x, x ∈ M ↔ ∀ i, e x i ∈ N i) (x : ↥M) (i : ι) :
+@[simp] theorem coe_submodulePiLp_apply (x : ↥M) (i : ι) :
     (e.submodulePiLp M N hMN x i : F i) = e x.1 i := (rfl)
 
 /-- Coordinatewise evaluation of `(e.submodulePiLp M N hMN).symm` under `e`. -/
-@[simp] theorem apply_coe_submodulePiLp_symm (e : X ≃ₗᵢ[𝕜] PiLp p F) (M : Submodule 𝕜 X)
-    (N : ∀ i, Submodule 𝕜 (F i)) (hMN : ∀ x, x ∈ M ↔ ∀ i, e x i ∈ N i)
-    (g : PiLp p (fun i ↦ ↥(N i))) (i : ι) :
+@[simp] theorem apply_coe_submodulePiLp_symm (g : PiLp p (fun i ↦ ↥(N i))) (i : ι) :
     e ((e.submodulePiLp M N hMN).symm g : X) i = (g i : F i) := by
   rw [← e.coe_submodulePiLp_apply M N hMN, LinearIsometryEquiv.apply_symm_apply]
 
 /-- On `PiLp.single`, `(e.submodulePiLp M N hMN).symm` embeds via `e.symm`. -/
-theorem coe_submodulePiLp_symm_single [DecidableEq ι] (e : X ≃ₗᵢ[𝕜] PiLp p F) (M : Submodule 𝕜 X)
-    (N : ∀ i, Submodule 𝕜 (F i)) (hMN : ∀ x, x ∈ M ↔ ∀ i, e x i ∈ N i) (j : ι) (h : ↥(N j)) :
+theorem coe_submodulePiLp_symm_single [DecidableEq ι] (j : ι) (h : ↥(N j)) :
     ((e.submodulePiLp M N hMN).symm (PiLp.single p j h) : X) =
       e.symm (PiLp.single p j (h : F j)) :=
   e.injective <| by

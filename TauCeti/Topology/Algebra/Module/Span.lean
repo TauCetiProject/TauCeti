@@ -12,15 +12,15 @@ public import TauCeti.Topology.Algebra.Module.Submodule
 
 A generating family, regarded as a family in the closure of its span, has dense span there.
 This lets constructions on densely spanning families apply to arbitrary closed spans.
-Conversely, a continuous semilinear map sending a generating set into a closed submodule sends the
-topological closure of its span into that submodule
-(`Continuous.apply_mem_of_mem_topologicalClosure_span`), and a densely spanning family stays densely
-spanning when pushed forward along a continuous linear map with dense range, such as the projection
-onto a quotient module, so that a quotient of a module spanned densely by a countable family is
-again spanned densely by one. Restricting a point-continuous family of maps to a dense-range index
-map likewise preserves the closed span of all their ranges
-(`DenseRange.topologicalClosure_span_iUnion_range_comp_eq`). No norm, separation, or completeness
-assumptions are needed.
+Conversely, a densely spanning family stays densely spanning when pushed forward along a
+continuous linear map with dense range, such as the projection onto a quotient module, so that a
+quotient of a module spanned densely by a countable family is again spanned densely by one.
+Restricting a point-continuous family of maps to a dense-range index map likewise preserves the
+closed span of all their ranges (`DenseRange.topologicalClosure_span_iUnion_range_comp_eq`).
+No norm, separation, or completeness assumptions are needed.
+
+Likewise, a continuous semilinear map sending a generating set into a closed submodule sends the
+closure of its span there (`Continuous.apply_mem_of_mem_topologicalClosure_span`).
 -/
 
 public section

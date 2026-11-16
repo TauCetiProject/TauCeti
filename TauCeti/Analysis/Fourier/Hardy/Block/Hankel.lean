@@ -158,10 +158,8 @@ theorem blockToeplitz_comp_sub_blockToeplitz {r : ℕ} (A B : BlockSymbol r) :
     blockToeplitz r A ∘L blockToeplitz r B - blockToeplitz r (A * B) =
       -(adjoint (blockHankel r (star A)) ∘L blockHankel r B) := by
   ext f : 1; apply (blockHardyEquiv r).symm.injective; apply Subtype.ext
-  have hmul := DFunLike.congr_fun
+  have hmul := congrArg (· ((blockHardyEquiv r).symm f).1)
     (Lp.operatorMultiplication_comp_operatorMultiplication (p := 2) A B)
-    ((blockHardyEquiv r).symm f : Lp (EuclideanSpace ℂ (Fin r)) 2 (haarAddCircle (T := 1)))
-  rw [comp_apply] at hmul
   simp [coe_blockHardyEquiv_symm_blockToeplitz_apply, adjoint_blockHankel, coe_blockHankel_apply,
     ← hmul]
 
@@ -181,9 +179,8 @@ theorem blockHankel_eq_zero_iff {r : ℕ} (A : BlockSymbol r) :
   · ext f : 1; refine (blockHardyOrthogonalEquiv r).injective (PiLp.ext fun i ↦ ?_)
     rw [blockHardyOrthogonalEquiv_blockHankel_apply, zero_apply, map_zero, PiLp.zero_apply]
     refine Finset.sum_eq_zero fun j _ ↦ ?_
-    have hij : hankel (blockSymbolEntry r i j A) = 0 := (hankel_eq_zero_iff _).mpr fun n hn ↦ by
-      rw [fourierCoeff_blockSymbolEntry, hA n hn, zero_apply, PiLp.zero_apply]
-    rw [hij, zero_apply]
+    rw [(hankel_eq_zero_iff _).mpr fun n hn ↦ by simp [fourierCoeff_blockSymbolEntry, hA n hn],
+      zero_apply]
 
 /-- `T_A ∘L T_B = T_{A * B}` when `B` is analytic (`fourierCoeff B n = 0` for `n < 0`). -/
 theorem blockToeplitz_comp_of_analytic {r : ℕ} (A B : BlockSymbol r)

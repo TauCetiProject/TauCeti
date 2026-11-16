@@ -148,7 +148,8 @@ theorem operatorMultiplication_comp_operatorMultiplication (A B : Lp (E →L[�
   set f := indicatorConstLp p ht hμt_top.ne u
   set g := indicatorConstLp p ht hμt_top.ne (c * ‖u‖)
   have hf_pos : 0 < ‖f‖ := by
-    rw [norm_indicatorConstLp' hp0 hμt_pos.ne']; exact mul_pos (norm_pos_iff.mpr hu_ne)
+    rw [norm_indicatorConstLp' hp0 hμt_pos.ne']
+    exact mul_pos (norm_pos_iff.mpr hu_ne)
       (Real.rpow_pos_of_pos (ENNReal.toReal_pos hμt_pos.ne' hμt_top.ne) _)
   have hfg : c * ‖f‖ = ‖g‖ := by
     rw [norm_indicatorConstLp' hp0 hμt_pos.ne', norm_indicatorConstLp' hp0 hμt_pos.ne',
@@ -161,10 +162,8 @@ theorem operatorMultiplication_comp_operatorMultiplication (A B : Lp (E →L[�
     rw [hmul, hf_ae, hg_ae]; by_cases hx : x ∈ t
     · simpa [hx, Real.norm_of_nonneg (mul_nonneg hc0 (norm_nonneg u))] using (hts x hx).le
     · simp [hx]
-  have hcancel : c * ‖f‖ ≤ ‖operatorMultiplication p A‖ * ‖f‖ :=
-    hfg ▸ (Lp.norm_le_norm_of_ae_le hpoint).trans (le_opNorm _ _)
   exact (not_le_of_gt (by linarith [hc_def, hlt] : ‖operatorMultiplication p A‖ < c))
-    (le_of_mul_le_mul_right hcancel hf_pos)
+    (le_of_mul_le_mul_right (hfg ▸ (Lp.norm_le_norm_of_ae_le hpoint).trans (le_opNorm _ _)) hf_pos)
 
 /-- On a σ-finite measure space, `operatorMultiplication p` is an isometry. -/
 theorem isometry_operatorMultiplication [SigmaFinite μ] :

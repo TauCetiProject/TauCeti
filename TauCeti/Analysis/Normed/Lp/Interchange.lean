@@ -26,15 +26,11 @@ public noncomputable section
 
 open scoped ENNReal
 
-section Memℓp
-
-variable {α ι : Type*} [Fintype ι] {E : α → ι → Type*} [∀ a i, NormedAddCommGroup (E a i)]
-  {p q : ℝ≥0∞} [Fact (1 ≤ q)]
-
 namespace TauCeti
 
 /-- A sequence of finite `PiLp` vectors lies in `ℓᵖ` iff each coordinate sequence lies in `ℓᵖ`. -/
-theorem memℓp_piLp_iff {f : ∀ a, PiLp q (E a)} :
+theorem memℓp_piLp_iff {α ι : Type*} [Fintype ι] {E : α → ι → Type*}
+    [∀ a i, NormedAddCommGroup (E a i)] {p q : ℝ≥0∞} [Fact (1 ≤ q)] {f : ∀ a, PiLp q (E a)} :
     Memℓp f p ↔ ∀ i, Memℓp (fun a ↦ f a i) p := by
   refine ⟨fun hf i ↦ hf.mono' fun a ↦ PiLp.norm_apply_le (f a) i, fun hf ↦ ?_⟩
   classical
@@ -45,16 +41,11 @@ end TauCeti
 
 alias ⟨Memℓp.eval_piLp, Memℓp.of_eval_piLp⟩ := TauCeti.memℓp_piLp_iff
 
-end Memℓp
-
 namespace lp
 
-variable {α ι : Type*} [Fintype ι]
-
-section NormedRing
-
-variable (p : ℝ≥0∞) [Fact (1 ≤ p)] (𝕜 : Type*) [NormedRing 𝕜] (E : α → ι → Type*)
-  [∀ a i, NormedAddCommGroup (E a i)] [∀ a i, Module 𝕜 (E a i)] [∀ a i, IsBoundedSMul 𝕜 (E a i)]
+variable {α ι : Type*} [Fintype ι] (p : ℝ≥0∞) [Fact (1 ≤ p)] (𝕜 : Type*) [NormedRing 𝕜]
+  (E : α → ι → Type*) [∀ a i, NormedAddCommGroup (E a i)] [∀ a i, Module 𝕜 (E a i)]
+  [∀ a i, IsBoundedSMul 𝕜 (E a i)]
 
 private theorem norm_toLp_eval_eq (f : lp (fun a ↦ PiLp p (E a)) p) :
     ‖WithLp.toLp p (fun i ↦ (⟨fun a ↦ f a i, (lp.memℓp f).eval_piLp i⟩ : lp (fun a ↦ E a i) p))‖ =
@@ -111,23 +102,19 @@ variable {p 𝕜 E}
 
 /-- `lp.piLpEquiv` interchanges `lp.single` and `PiLp.single`. -/
 @[simp] theorem piLpEquiv_single_single [DecidableEq α] [DecidableEq ι] (a : α) (j : ι)
-    (x : E a j) :
-    piLpEquiv p 𝕜 E (lp.single p a (PiLp.single p j x)) = PiLp.single p j (lp.single p a x) := by
+    (x : E a j) : piLpEquiv p 𝕜 E (lp.single p a (PiLp.single p j x)) =
+      PiLp.single p j (lp.single p a x) := by
   ext i : 1; rcases eq_or_ne i j with rfl | hij <;> simp [*]
 
 /-- On `PiLp.single p j g`, `(lp.piLpEquiv).symm` evaluates at `a` to `PiLp.single p j (g a)`. -/
 @[simp] theorem piLpEquiv_symm_single_apply [DecidableEq ι] (j : ι) (g : lp (fun a ↦ E a j) p)
-    (a : α) :
-    (piLpEquiv p 𝕜 E).symm (PiLp.single p j g) a = PiLp.single p j (g a) := by
+    (a : α) : (piLpEquiv p 𝕜 E).symm (PiLp.single p j g) a = PiLp.single p j (g a) := by
   ext i; rcases eq_or_ne i j with rfl | hij <;> simp [*]
 
 /-- `(lp.piLpEquiv).symm` interchanges `PiLp.single` and `lp.single`. -/
 @[simp] theorem piLpEquiv_symm_single_single [DecidableEq α] [DecidableEq ι] (j : ι) (a : α)
-    (x : E a j) :
-    (piLpEquiv p 𝕜 E).symm (PiLp.single p j (lp.single p a x)) =
+    (x : E a j) : (piLpEquiv p 𝕜 E).symm (PiLp.single p j (lp.single p a x)) =
       lp.single p a (PiLp.single p j x) :=
   (piLpEquiv p 𝕜 E).symm_apply_eq.mpr (piLpEquiv_single_single (𝕜 := 𝕜) a j x).symm
-
-end NormedRing
 
 end lp

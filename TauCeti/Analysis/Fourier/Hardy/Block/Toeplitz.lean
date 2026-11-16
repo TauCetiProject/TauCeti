@@ -221,13 +221,11 @@ theorem exists_blockToeplitz_eq_iff_inner_blockHardyBasis_succ {r : ℕ}
           ⟪blockHardyBasis r (m, i), T (blockHardyBasis r (n, j))⟫_ℂ := by
   refine ⟨?_, fun h ↦ ?_⟩
   · rintro ⟨A, rfl⟩ m n i j
-    rw [inner_blockHardyBasis_blockToeplitz_blockHardyBasis_eq_fourierCoeff_blockSymbolEntry,
-      inner_blockHardyBasis_blockToeplitz_blockHardyBasis_eq_fourierCoeff_blockSymbolEntry]
+    simp only [inner_blockHardyBasis_blockToeplitz_blockHardyBasis_eq_fourierCoeff_blockSymbolEntry]
     congr 1; push_cast; ring
   · choose a ha using fun i j : Fin r ↦
       (exists_toeplitz_eq_iff_inner_hardyBasis_succ (T.piLpEntry i j)).mpr fun m n ↦ by
-        simpa only [blockHardyBasis_apply, PiLp.inner_single_left, piLpEntry_apply] using
-          h m n i j
+        simpa only [blockHardyBasis_apply, PiLp.inner_single_left, piLpEntry_apply] using h m n i j
     refine ⟨∑ i : Fin r, ∑ j : Fin r, blockSymbolSingle r i j (a i j), ?_⟩
     ext f i : 2; rw [blockToeplitz_apply_apply, apply_eq_sum_piLpEntry]
     exact Finset.sum_congr rfl fun j _ ↦ by rw [blockSymbolEntry_sum_blockSymbolSingle, ha i j]
@@ -251,8 +249,8 @@ theorem existsUnique_blockToeplitz_eq_iff_adjoint_comp_comp_eq {r : ℕ}
     rw [exists_blockToeplitz_eq_iff_inner_blockHardyBasis_succ]
     exact ⟨fun h ↦ HilbertBasis.ext_inner_apply (blockHardyBasis r) (blockHardyBasis r)
       fun ⟨m, i⟩ ⟨n, j⟩ ↦ by rw [hshift, h], fun h m n i j ↦ by rw [← hshift, h]⟩
-  refine ⟨fun ⟨A, hA, _⟩ ↦ hexists.1 ⟨A, hA⟩, fun h ↦ ?_⟩
-  obtain ⟨A, hA⟩ := hexists.2 h
-  exact ⟨A, hA, fun A' hA' ↦ blockToeplitz_injective r (hA'.trans hA.symm)⟩
+  exact ⟨fun ⟨A, hA, _⟩ ↦ hexists.1 ⟨A, hA⟩, fun h ↦
+    let ⟨A, hA⟩ := hexists.2 h
+    ⟨A, hA, fun _ hA' ↦ blockToeplitz_injective r (hA'.trans hA.symm)⟩⟩
 
 end TauCeti

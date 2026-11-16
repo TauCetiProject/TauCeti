@@ -247,8 +247,7 @@ theorem norm_toLp_top_le (f : C(α, E)) : ‖toLp ∞ μ 𝕜 f‖ ≤ ‖f‖ :
 
 /-- On a compact finite-measure space whose measure is positive on nonempty open sets, the `L∞`
 norm of a continuous function equals its supremum norm. -/
-@[simp]
-theorem norm_toLp_top [μ.IsOpenPosMeasure] (f : C(α, E)) : ‖toLp ∞ μ 𝕜 f‖ = ‖f‖ := by
+@[simp] theorem norm_toLp_top [μ.IsOpenPosMeasure] (f : C(α, E)) : ‖toLp ∞ μ 𝕜 f‖ = ‖f‖ := by
   rw [toLp_def, BoundedContinuousFunction.toLp_top_eq_toLpTop,
     BoundedContinuousFunction.norm_toLpTop, LinearIsometryEquiv.norm_map]
 
