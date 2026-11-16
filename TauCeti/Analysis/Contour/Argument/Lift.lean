@@ -505,9 +505,9 @@ theorem exists_continuousOn_eq_norm_mul_exp (hc : ContinuousOn c (Icc a b))
     exact ⟨_, hθ, fun t ht ↦ by simpa only [sub_zero] using hlift t ht⟩
   · exact ⟨0, continuousOn_const, fun t ht ↦ absurd ht (by simp [Icc_eq_empty_of_lt hab])⟩
 
-/-- **The variation of a continuous argument is well defined.** Two continuous arguments `θ` and
-`θ'` of a function nowhere zero on a preconnected set `s` change by the same amount between any
-two points `a` and `b` of `s`. -/
+/-- **The variation of a continuous argument is well defined.** Two continuous arguments `φ` and
+`φ'` of a function `f` nowhere zero on a preconnected set `s` change by the same amount between
+any two points `x` and `y` of `s`. -/
 theorem sub_eq_sub_of_eq_norm_mul_exp {X : Type*} [TopologicalSpace X] {s : Set X} {f : X → ℂ}
     {φ φ' : X → ℝ} {x y : X} (hs : IsPreconnected s) (hx : x ∈ s) (hy : y ∈ s)
     (hne : ∀ p ∈ s, f p ≠ 0) (hφ : ContinuousOn φ s) (hφ' : ContinuousOn φ' s)
