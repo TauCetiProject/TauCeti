@@ -108,9 +108,9 @@ private theorem exists_lpNorm_iteratedGradient_ball_le_of_lt (hp : 1 < p)
     exists_lpNorm_smul_iteratedGradient_le_of_sum_mul_inner_eq_of_abs_sub_le hp hp_top
   obtain ⟨c, hc0, hcut⟩ := exists_forall_contDiff_cutoff_closedBall (E := EuclideanSpace ℝ (Fin n))
   refine ⟨C, δ, hδ, 4 * c, by positivity, fun {A lam} hlam hA {Omega x₀ R} hR {a ε Λ} ha hε
-    haA hΛ haΛ u f hf heq s t hs hst htR => ?_⟩
+    haA hΛ haΛ u f hf heq s t _ hst htR => ?_⟩
   set m := (s + t) / 2 with hm
-  obtain ⟨ζ, hζ, hζr, hζ1, hζts, hζg, hζh⟩ := hcut x₀ hs.le (show s < m by linarith)
+  obtain ⟨ζ, hζ, hζr, hζ1, hζts, hζg, hζh⟩ := hcut x₀ (show s < m by linarith)
   set U : Opens (EuclideanSpace ℝ (Fin n)) := ⟨ball x₀ t, isOpen_ball⟩
   have hUR : (U : Set (EuclideanSpace ℝ (Fin n))) ⊆ ball x₀ R := ball_subset_ball htR
   have hU : U ≤ Omega := fun x hx => hR (hUR hx)

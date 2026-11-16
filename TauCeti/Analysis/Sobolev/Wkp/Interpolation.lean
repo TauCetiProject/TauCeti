@@ -406,9 +406,9 @@ theorem Wkp.exists_lpNorm_gradient_ball_le (hp_top : p ≠ ⊤) :
             c / (t - s) ^ 2 * lpNorm (Wkp.value 2 u) p (mu.restrict (ball x₀ t))) +
           finrank ℝ E ^ 2 / ε * lpNorm (Wkp.value 2 u) p (mu.restrict (ball x₀ t)) := by
   obtain ⟨c, hc0, hcut⟩ := exists_forall_contDiff_cutoff_closedBall (E := E)
-  refine ⟨4 * c, by positivity, fun {Omega} u x₀ s t hs hst ht ε hε => ?_⟩
+  refine ⟨4 * c, by positivity, fun {Omega} u x₀ s t _ hst ht ε hε => ?_⟩
   set m := (s + t) / 2 with hm
-  obtain ⟨η, hη, hηr, hη1, hηts, hηg, hηh⟩ := hcut x₀ hs.le (show s < m by linarith)
+  obtain ⟨η, hη, hηr, hη1, hηts, hηg, hηh⟩ := hcut x₀ (show s < m by linarith)
   set U : Opens E := ⟨ball x₀ t, isOpen_ball⟩
   have hU : U ≤ Omega := fun x hx => ht hx
   have hsU : ball x₀ s ⊆ U := ball_subset_ball hst.le

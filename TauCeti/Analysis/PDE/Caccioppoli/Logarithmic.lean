@@ -334,9 +334,9 @@ theorem exists_setIntegral_ball_norm_gradient_sq_div_sq_le :
         (2 * Lam / lam) ^ 2 * (c / (R - r)) ^ 2 * mu.real (ball x₀ R) := by
   obtain ⟨c, hc0, hc⟩ := exists_forall_contDiff_cutoff_closedBall (E := EuclideanSpace ℝ ι)
   refine ⟨2 * (c + 1), by positivity, ?_⟩
-  intro mu _ Omega a lam Lam u x₀ r R m h ha hu hr hrR hball hm hum
+  intro mu _ Omega a lam Lam u x₀ r R m h ha hu _ hrR hball hm hum
   -- A cutoff equal to one on `B(x₀, r)`, supported in `closedBall x₀ ((r + R)/2) ⊆ B(x₀, R)`.
-  obtain ⟨ψ, hψ, hrange, hone, hts, hgrad, -⟩ := hc x₀ hr.le (by linarith : r < (r + R) / 2)
+  obtain ⟨ψ, hψ, hrange, hone, hts, hgrad, -⟩ := hc x₀ (by linarith : r < (r + R) / 2)
   have hsubR : closedBall x₀ ((r + R) / 2) ⊆ ball x₀ R := closedBall_subset_ball (by linarith)
   have htsR : tsupport ψ ⊆ ball x₀ R := hts.trans hsubR
   have hcpt : HasCompactSupport ψ :=

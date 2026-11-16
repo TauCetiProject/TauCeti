@@ -233,7 +233,7 @@ theorem exists_setIntegral_ball_norm_gradient_div_value_sq_le_lowerOrder :
   have hx₀ : x₀ ∈ (Omega : Set (EuclideanSpace ℝ ι)) := hball (Metric.mem_ball_self (by linarith))
   have hgamma : 0 ≤ gamma := (norm_nonneg _).trans (hc_bound x₀ hx₀)
   -- A cutoff equal to `1` on `B(x₀, r)`, supported in `closedBall x₀ (3r/2)`, with `‖∇ψ‖ ≤ 2c₀/r`.
-  obtain ⟨ψ, hψ, hψr, hψ1, hψts, hψg, -⟩ := hcut x₀ hr.le (by linarith : r < 3 * r / 2)
+  obtain ⟨ψ, hψ, hψr, hψ1, hψts, hψg, -⟩ := hcut x₀ (by linarith : r < 3 * r / 2)
   have hR : 3 * r / 2 - r = r / 2 := by ring
   rw [hR] at hψg
   have hclosed : Metric.closedBall x₀ (3 * r / 2) ⊆ (Omega : Set (EuclideanSpace ℝ ι)) :=

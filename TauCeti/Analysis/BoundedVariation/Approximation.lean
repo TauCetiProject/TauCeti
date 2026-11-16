@@ -80,7 +80,7 @@ private theorem exists_cutoff_approximation (hu : Integrable u μ) :
   -- Cut off on expanding balls with derivative bound tending to zero.
   obtain ⟨c, _, hcut⟩ := exists_forall_contDiff_cutoff_closedBall (E := E)
   have hcut' (n : ℕ) := hcut (0 : E) (r := n + 1) (R := 2 * (n + 1))
-    (by positivity) (by linarith [Nat.cast_nonneg (α := ℝ) n])
+    (by linarith [Nat.cast_nonneg (α := ℝ) n])
   choose χ hχ hχ01 hχone hχsupp hχgrad _ using hcut'
   have hχnorm (n : ℕ) (x : E) : ‖χ n x‖ ≤ 1 := by
     rw [Real.norm_eq_abs, abs_of_nonneg (hχ01 n (mem_range_self x)).1]

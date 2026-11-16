@@ -248,14 +248,14 @@ theorem exists_setIntegral_ball_norm_gradient_sq_le_add_setIntegral_of_cutoff :
   obtain ⟨C, hC0, hC⟩ := exists_forall_contDiff_cutoff_closedBall (E := EuclideanSpace ℝ ι)
   refine ⟨2 * (C + 1), by positivity, ?_⟩
   intro mu _ Omega w A g x₀ r R hA hg hg0 hrR hball hcacc
-  rcases le_or_gt r 0 with hr | hr
+  rcases le_or_gt r 0 with hr | _
   · rw [Metric.ball_eq_empty.2 hr, Measure.restrict_empty, integral_zero_measure]
     exact add_nonneg (mul_nonneg (mul_nonneg hA (sq_nonneg _))
       (integral_nonneg fun x => sq_nonneg _))
       (integral_nonneg_of_ae (ae_restrict_of_ae_restrict_of_subset hball hg0))
   -- A cutoff equal to one on `ball x₀ r` and supported in
   -- `closedBall x₀ ((r + R) / 2) ⊆ ball x₀ R`.
-  obtain ⟨ψ, hψ, hrange, hone, hts, hgrad, -⟩ := hC x₀ hr.le (by linarith : r < (r + R) / 2)
+  obtain ⟨ψ, hψ, hrange, hone, hts, hgrad, -⟩ := hC x₀ (by linarith : r < (r + R) / 2)
   have htsR : tsupport ψ ⊆ ball x₀ R :=
     hts.trans (closedBall_subset_ball (by linarith))
   have hcpt : HasCompactSupport ψ :=

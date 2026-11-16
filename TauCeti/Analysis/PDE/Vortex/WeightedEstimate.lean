@@ -371,10 +371,10 @@ theorem exists_pos_mul_integral_sq_mul_norm_sq_le_integral_sq_mul_inner_gaugeFix
   have hca : c ^ 2 < a := by linarith
   obtain ⟨c₀, hc₀, hgap⟩ :=
     exists_pos_mul_integral_norm_sq_le_integral_norm_sq_gaugeFixedAdjoint (μ := μ) hx hsol hlim
-  obtain ⟨R, hR₀, hR⟩ := exists_exterior_lt_mass hlim ha
+  obtain ⟨R, -, hR⟩ := exists_exterior_lt_mass hlim ha
   set m : ℝ := min c₀ a
   have hm : 0 < m := lt_min hc₀ (lt_of_le_of_lt (sq_nonneg c) hca)
-  obtain ⟨R₂, _, θ, hθ, hθR, hθout, hθd⟩ := exists_contDiff_angle_cutoff (E := ℂ) hR₀.le
+  obtain ⟨R₂, _, θ, hθ, hθR, hθout, hθd⟩ := exists_contDiff_angle_cutoff (E := ℂ) R
     (by positivity : 0 < √m / 4)
   set b : ℝ := 16 * c ^ 2 * R₂ ^ 2 / m + 1 with hb_def
   have hb : 1 ≤ b := by

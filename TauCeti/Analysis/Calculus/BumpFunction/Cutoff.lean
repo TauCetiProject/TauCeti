@@ -507,7 +507,7 @@ private theorem smoothTransition_radial_cutoff [InnerProductSpace ℝ E] {r R : 
       (div_nonpos_of_nonpos_of_nonneg (by nlinarith [norm_nonneg (x - x₀)]) hD0.le))
 
 /-- **Radial cutoffs with quantitative derivative bounds.** There is a universal constant `c`
-such that for every centre `x₀` and radii `0 ≤ r < R`, some smooth `ψ` with values in `[0, 1]`
+such that for every centre `x₀` and radii `r < R`, some smooth `ψ` with values in `[0, 1]`
 equals one on `closedBall x₀ r`, has topological support in `closedBall x₀ R`, and satisfies
 
 `‖∇ψ x‖ ≤ c / (R - r)` and `‖D(∇ψ) x‖ ≤ c / (R - r)²` for every `x`.
@@ -515,9 +515,10 @@ equals one on `closedBall x₀ r`, has topological support in `closedBall x₀ R
 The inverse dependence on the gap `R - r` is what iteration arguments over families of balls with
 geometrically shrinking gaps need; the second-derivative bound is what localizing a second-order
 equation needs. The cutoff is `Real.smoothTransition ((R² - ‖x - x₀‖²) / (R² - r²))`, and `c` is
-determined by bounds for the first two derivatives of `Real.smoothTransition`. -/
+determined by bounds for the first two derivatives of `Real.smoothTransition`. For `r < 0` the
+ball of radius `r` is empty and `ψ = 0` serves. -/
 theorem exists_forall_contDiff_cutoff_closedBall [InnerProductSpace ℝ E] [CompleteSpace E] :
-    ∃ c : ℝ, 0 ≤ c ∧ ∀ (x₀ : E) {r R : ℝ}, 0 ≤ r → r < R →
+    ∃ c : ℝ, 0 ≤ c ∧ ∀ (x₀ : E) {r R : ℝ}, r < R →
       ∃ ψ : E → ℝ, ContDiff ℝ ∞ ψ ∧ range ψ ⊆ Icc 0 1 ∧ EqOn ψ 1 (Metric.closedBall x₀ r) ∧
         tsupport ψ ⊆ Metric.closedBall x₀ R ∧ (∀ x, ‖∇ ψ x‖ ≤ c / (R - r)) ∧
         ∀ x, ‖fderiv ℝ (∇ ψ) x‖ ≤ c / (R - r) ^ 2 := by
@@ -532,7 +533,17 @@ theorem exists_forall_contDiff_cutoff_closedBall [InnerProductSpace ℝ E] [Comp
   have hS1neg : ∀ τ < 0, deriv S τ = 0 := fun τ hτ => Real.smoothTransition.deriv_of_neg hτ
   have hS2neg : ∀ τ < 0, deriv (deriv S) τ = 0 := fun τ hτ =>
     Real.smoothTransition.deriv_deriv_of_neg hτ
-  refine ⟨2 * L₁ + 4 * L₂, by positivity, fun x₀ r R hr hrR => ?_⟩
+  refine ⟨2 * L₁ + 4 * L₂, by positivity, fun x₀ r R hrR => ?_⟩
+  by_cases hr : 0 ≤ r
+  swap
+  · -- For `r < 0` the ball of radius `r` is empty and `ψ = 0` meets every clause.
+    have hc0 : 0 ≤ 2 * L₁ + 4 * L₂ := by positivity
+    have hRr : 0 < R - r := sub_pos.2 hrR
+    refine ⟨fun _ ↦ 0, contDiff_const, by simp, fun x hx ↦ ?_, by simp, fun x ↦ ?_, fun x ↦ ?_⟩
+    · simp [Metric.closedBall_eq_empty.2 (not_le.1 hr)] at hx
+    · simpa only [gradient_fun_const, norm_zero] using div_nonneg hc0 hRr.le
+    · simpa only [gradient_fun_const', fderiv_fun_const, Pi.zero_apply, norm_zero]
+        using div_nonneg hc0 (sq_nonneg _)
   have hD0 := sq_sub_sq_pos_of_lt hr hrR
   have hD' := sub_sq_le_sq_sub_sq hr hrR.le
   have hRD := div_sq_sub_sq_le_one_div_sub hr hrR
@@ -591,20 +602,20 @@ theorem exists_forall_contDiff_cutoff_closedBall [InnerProductSpace ℝ E] [Comp
       _ = (2 * L₁ + 4 * L₂) / (R - r) ^ 2 := by ring
 
 open Real in
-/-- **A slowly rising angle.** For `0 ≤ R` and `0 < ε`, some smooth `θ` vanishes on the closed
+/-- **A slowly rising angle.** For every `R` and `0 < ε`, some smooth `θ` vanishes on the closed
 ball of radius `R`, equals `π / 2` near every point outside a larger ball of radius `R₂`, and has
 gradient at most `ε`. Then `cos θ` and `sin θ` form a partition of unity in the sense of squares
 whose gradients are at most `ε`, as used in IMS-type localization. The angle is
 `π / 2 * (1 - ψ)` for a radial cutoff `ψ` from `exists_forall_contDiff_cutoff_closedBall` with a
 gap large enough to make its gradient small. -/
-theorem exists_contDiff_angle_cutoff [InnerProductSpace ℝ E] [CompleteSpace E] {R ε : ℝ}
-    (hR : 0 ≤ R) (hε : 0 < ε) :
+theorem exists_contDiff_angle_cutoff [InnerProductSpace ℝ E] [CompleteSpace E] (R : ℝ) {ε : ℝ}
+    (hε : 0 < ε) :
     ∃ R₂ > R, ∃ θ : E → ℝ, ContDiff ℝ ∞ θ ∧ (∀ z, ‖z‖ ≤ R → θ z = 0) ∧
       (∀ z, R₂ < ‖z‖ → θ =ᶠ[𝓝 z] fun _ ↦ π / 2) ∧ ∀ z, ‖fderiv ℝ θ z‖ ≤ ε := by
   obtain ⟨C, hC, hcut⟩ := exists_forall_contDiff_cutoff_closedBall (E := E)
   set K : ℝ := π * C / (2 * ε) + 1
   have hK : 0 < K := by positivity
-  obtain ⟨ψ, hψ, -, hψ1, hψt, hψd, -⟩ := hcut 0 hR (lt_add_of_pos_right R hK)
+  obtain ⟨ψ, hψ, -, hψ1, hψt, hψd, -⟩ := hcut 0 (lt_add_of_pos_right R hK)
   refine ⟨R + K, lt_add_of_pos_right R hK, fun z ↦ π / 2 * (1 - ψ z),
     contDiff_const.mul (contDiff_const.sub hψ), fun z hz ↦ ?_, fun z hz ↦ ?_, fun z ↦ ?_⟩
   · have : ψ z = 1 := hψ1 (by simpa using hz)
@@ -692,17 +703,26 @@ theorem exists_contDiff_cutoff_annulus [InnerProductSpace ℝ E] [FiniteDimensio
 
 open MeasureTheory Metric in
 /-- **Smooth plateaus on the line with uniformly bounded derivative.** There is a constant `C`
-such that around every centre `c` and for every radius `0 ≤ r`, some smooth `ψ : ℝ → ℝ` has
+such that around every centre `c` and for every radius `r`, some smooth `ψ : ℝ → ℝ` has
 topological support in `closedBall c (r + 1)` and satisfies `2 r ≤ ∫ ψ²` and `∫ ψ'² ≤ C`. The
 `L²` mass of the plateau grows with `r` while the energy of its derivative stays bounded, which is
 what escaping approximate kernels of first-order operators need. The plateau is the radial cutoff
 `TauCeti.exists_forall_contDiff_cutoff_closedBall` between radii `r` and `r + 1`. -/
-theorem exists_forall_contDiff_plateau : ∃ C : ℝ, ∀ (c : ℝ) {r : ℝ}, 0 ≤ r → ∃ ψ : ℝ → ℝ,
+theorem exists_forall_contDiff_plateau : ∃ C : ℝ, ∀ c r : ℝ, ∃ ψ : ℝ → ℝ,
     ContDiff ℝ ∞ ψ ∧ tsupport ψ ⊆ closedBall c (r + 1) ∧
       2 * r ≤ ∫ s, ψ s ^ 2 ∧ ∫ s, deriv ψ s ^ 2 ≤ C := by
   obtain ⟨K, -, hK⟩ := exists_forall_contDiff_cutoff_closedBall (E := ℝ)
-  refine ⟨2 * K ^ 2, fun c r hr ↦ ?_⟩
-  obtain ⟨ψ, hψ, -, hψ1, hψt, hψd, -⟩ := hK c hr (lt_add_one r)
+  refine ⟨2 * K ^ 2, fun c r ↦ ?_⟩
+  by_cases hr : 0 ≤ r
+  swap
+  · -- For `r < 0` the plateau `ψ = 0` meets every clause.
+    refine ⟨fun _ ↦ 0, contDiff_const, by simp, ?_, ?_⟩
+    · simp only [ne_eq, OfNat.ofNat_ne_zero, not_false_eq_true, zero_pow, integral_zero]
+      linarith [not_le.1 hr]
+    · simp only [deriv_const', ne_eq, OfNat.ofNat_ne_zero, not_false_eq_true, zero_pow,
+        integral_zero]
+      positivity
+  obtain ⟨ψ, hψ, -, hψ1, hψt, hψd, -⟩ := hK c (lt_add_one r)
   have hψc : HasCompactSupport ψ := (isCompact_closedBall c _).of_isClosed_subset
     (isClosed_tsupport ψ) hψt
   refine ⟨ψ, hψ, hψt, ?_, ?_⟩

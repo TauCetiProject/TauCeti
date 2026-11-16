@@ -178,7 +178,7 @@ theorem exists_eLpNorm_rpow_le_mul_eLpNorm_rpow :
           eLpNorm (fun x => W1p.value u x ^ (p / 2)) 2 (mu.restrict (Metric.ball x₀ ρ)) := by
   obtain ⟨c, hc0, hcut⟩ := exists_forall_contDiff_cutoff_closedBall (E := EuclideanSpace ℝ ι)
   refine ⟨2 * √2 * c, by positivity, ?_⟩
-  intro mu _ Omega a lam Lam q S u ε p x₀ r ρ h ha hS hu hε hεu hp hr hrρ hball
+  intro mu _ Omega a lam Lam q S u ε p x₀ r ρ h ha hS hu hε hεu hp _ hrρ hball
   have hlam := h.pos
   set K := |p| * Lam / ((1 - p) * lam)
   have hK : 0 ≤ K := div_nonneg (mul_nonneg (abs_nonneg p) h.upper_nonneg) (by positivity)
@@ -186,7 +186,7 @@ theorem exists_eLpNorm_rpow_le_mul_eLpNorm_rpow :
   set ρ' := (r + ρ) / 2
   have hrρ' : r < ρ' := by simp only [ρ']; linarith
   have hρ'ρ : ρ' < ρ := by simp only [ρ']; linarith
-  obtain ⟨ψ, hψ, _, hψ1, hψts, hψg, -⟩ := hcut x₀ hr.le hrρ'
+  obtain ⟨ψ, hψ, _, hψ1, hψts, hψg, -⟩ := hcut x₀ hrρ'
   set G := c / (ρ' - r) with hG_def
   have hρ'B : Metric.closedBall x₀ ρ' ⊆ Metric.ball x₀ ρ :=
     Metric.closedBall_subset_ball hρ'ρ
