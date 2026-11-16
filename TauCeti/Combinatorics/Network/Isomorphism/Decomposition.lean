@@ -38,7 +38,7 @@ public section
 
 namespace TauCeti.Network.Iso
 
-universe u u' w w'
+universe u u' u'' w w'
 
 variable {K : Type w} [LE K] {V : Type u} {W : Type u'}
   {N : Network K V} {N' : Network K W} {R : Type w'}
@@ -81,19 +81,93 @@ def weightedWalkEquiv (e : N ≃ₙ N') : WeightedWalk N.Hom R ≃ WeightedWalk 
     rintro ⟨s, t, p, q⟩
     exact weightedWalk_mk_eq _ _ (e.mapPath_mapPath_symm p) q
 
-@[simp]
 theorem weightedWalkEquiv_apply (e : N ≃ₙ N') (p : WeightedWalk N.Hom R) :
     e.weightedWalkEquiv R p = ⟨_, _, e.mapPath p.walk, p.weight⟩ :=
   (rfl)
 
+/-- The source of a transported weighted walk is the transported source. -/
+@[simp]
+theorem source_weightedWalkEquiv (e : N ≃ₙ N') (p : WeightedWalk N.Hom R) :
+    (e.weightedWalkEquiv R p).source = e.vertexEquiv p.source := by
+  rw [weightedWalkEquiv_apply]
+
+/-- The target of a transported weighted walk is the transported target. -/
+@[simp]
+theorem target_weightedWalkEquiv (e : N ≃ₙ N') (p : WeightedWalk N.Hom R) :
+    (e.weightedWalkEquiv R p).target = e.vertexEquiv p.target := by
+  rw [weightedWalkEquiv_apply]
+
+/-- The walk of a transported weighted walk is the transported walk. -/
+@[simp]
+theorem walk_weightedWalkEquiv (e : N ≃ₙ N') (p : WeightedWalk N.Hom R) :
+    @Quiver.Path.cast W ⟨N'.Hom⟩ _ _ _ _ (source_weightedWalkEquiv e p)
+      (target_weightedWalkEquiv e p) (e.weightedWalkEquiv R p).walk = e.mapPath p.walk := by
+  cases weightedWalkEquiv_apply e p
+  rfl
+
+/-- The weight of a transported weighted walk is unchanged. -/
+@[simp]
+theorem weight_weightedWalkEquiv (e : N ≃ₙ N') (p : WeightedWalk N.Hom R) :
+    (e.weightedWalkEquiv R p).weight = p.weight := by
+  rw [weightedWalkEquiv_apply]
+
+/-- The arrows of a transported weighted walk are the transported arrows. -/
+@[simp]
+theorem arrows_weightedWalkEquiv (e : N ≃ₙ N') (p : WeightedWalk N.Hom R) :
+    (e.weightedWalkEquiv R p).walk.arrows = p.walk.arrows.map e.totalHomEquiv := by
+  change (e.mapPath p.walk).arrows = _
+  exact e.arrows_mapPath p.walk
+
+/-- The vertices of a transported weighted walk are the transported vertices. -/
+@[simp]
+theorem vertices_weightedWalkEquiv (e : N ≃ₙ N') (p : WeightedWalk N.Hom R) :
+    (e.weightedWalkEquiv R p).walk.vertices = p.walk.vertices.map e.vertexEquiv := by
+  change (e.mapPath p.walk).vertices = _
+  exact e.vertices_mapPath p.walk
+
+/-- Transport preserves the length of a weighted walk. -/
+@[simp]
+theorem length_weightedWalkEquiv (e : N ≃ₙ N') (p : WeightedWalk N.Hom R) :
+    (e.weightedWalkEquiv R p).walk.length = p.walk.length := by
+  change (e.mapPath p.walk).length = _
+  exact e.length_mapPath p.walk
+
+/-- Transport preserves and reflects whether a weighted walk is a path. -/
+@[simp]
+theorem isPath_weightedWalkEquiv (e : N ≃ₙ N') (p : WeightedWalk N.Hom R) :
+    (e.weightedWalkEquiv R p).walk.IsPath ↔ p.walk.IsPath := by
+  change (e.mapPath p.walk).IsPath ↔ _
+  exact e.isPath_mapPath p.walk
+
 /-- The inverse of weighted-walk transport is transport along the inverse isomorphism. -/
 @[simp]
 theorem weightedWalkEquiv_symm (e : N ≃ₙ N') :
-    (e.weightedWalkEquiv R).symm = e.symm.weightedWalkEquiv R := by
+    e.symm.weightedWalkEquiv R = (e.weightedWalkEquiv R).symm := by
   ext p
   simp only [weightedWalkEquiv, Equiv.coe_fn_symm_mk, Equiv.coe_fn_mk]
 
+/-- Transport along the identity network isomorphism fixes weighted walks. -/
+@[simp]
+theorem weightedWalkEquiv_refl (N : Network K V) :
+    (refl N).weightedWalkEquiv R = Equiv.refl _ := by
+  apply Equiv.ext
+  rintro ⟨s, t, p, q⟩
+  exact weightedWalk_mk_eq (refl_vertexEquiv_apply N s) (refl_vertexEquiv_apply N t)
+    (mapPath_refl N p) q
+
+/-- Weighted-walk transport commutes with composition of network isomorphisms. -/
+@[simp]
+theorem weightedWalkEquiv_trans {X : Type u''} {N'' : Network K X}
+    (e : N ≃ₙ N') (f : N' ≃ₙ N'') :
+    (e.trans f).weightedWalkEquiv R =
+      (e.weightedWalkEquiv R).trans (f.weightedWalkEquiv R) := by
+  apply Equiv.ext
+  rintro ⟨s, t, p, q⟩
+  exact weightedWalk_mk_eq (trans_vertexEquiv_apply e f s) (trans_vertexEquiv_apply e f t)
+    (mapPath_trans e f p) q
+
 /-- The assignment of a transported weighted walk is the transported assignment. -/
+@[simp]
 theorem assignment_weightedWalkEquiv [AddCommMonoid R] (e : N ≃ₙ N')
     (p : WeightedWalk N.Hom R) :
     (e.weightedWalkEquiv R p).assignment = e.assignmentEquiv R p.assignment := by
@@ -113,19 +187,89 @@ def weightedClosedWalkEquiv (e : N ≃ₙ N') :
     rintro ⟨s, c, q⟩
     exact weightedClosedWalk_mk_eq _ (e.mapPath_mapPath_symm c) q
 
-@[simp]
 theorem weightedClosedWalkEquiv_apply (e : N ≃ₙ N') (c : WeightedClosedWalk N.Hom R) :
     e.weightedClosedWalkEquiv R c = ⟨_, e.mapPath c.walk, c.weight⟩ :=
   (rfl)
 
+/-- The base of a transported weighted closed walk is the transported base. -/
+@[simp]
+theorem base_weightedClosedWalkEquiv (e : N ≃ₙ N') (c : WeightedClosedWalk N.Hom R) :
+    (e.weightedClosedWalkEquiv R c).base = e.vertexEquiv c.base := by
+  rw [weightedClosedWalkEquiv_apply]
+
+/-- The walk of a transported weighted closed walk is the transported walk. -/
+@[simp]
+theorem walk_weightedClosedWalkEquiv (e : N ≃ₙ N') (c : WeightedClosedWalk N.Hom R) :
+    @Quiver.Path.cast W ⟨N'.Hom⟩ _ _ _ _ (base_weightedClosedWalkEquiv e c)
+      (base_weightedClosedWalkEquiv e c) (e.weightedClosedWalkEquiv R c).walk =
+        e.mapPath c.walk := by
+  cases weightedClosedWalkEquiv_apply e c
+  rfl
+
+/-- The weight of a transported weighted closed walk is unchanged. -/
+@[simp]
+theorem weight_weightedClosedWalkEquiv (e : N ≃ₙ N') (c : WeightedClosedWalk N.Hom R) :
+    (e.weightedClosedWalkEquiv R c).weight = c.weight := by
+  rw [weightedClosedWalkEquiv_apply]
+
+/-- The arrows of a transported weighted closed walk are the transported arrows. -/
+@[simp]
+theorem arrows_weightedClosedWalkEquiv (e : N ≃ₙ N') (c : WeightedClosedWalk N.Hom R) :
+    (e.weightedClosedWalkEquiv R c).walk.arrows = c.walk.arrows.map e.totalHomEquiv := by
+  change (e.mapPath c.walk).arrows = _
+  exact e.arrows_mapPath c.walk
+
+/-- The vertices of a transported weighted closed walk are the transported vertices. -/
+@[simp]
+theorem vertices_weightedClosedWalkEquiv (e : N ≃ₙ N')
+    (c : WeightedClosedWalk N.Hom R) :
+    (e.weightedClosedWalkEquiv R c).walk.vertices = c.walk.vertices.map e.vertexEquiv := by
+  change (e.mapPath c.walk).vertices = _
+  exact e.vertices_mapPath c.walk
+
+/-- Transport preserves the length of a weighted closed walk. -/
+@[simp]
+theorem length_weightedClosedWalkEquiv (e : N ≃ₙ N')
+    (c : WeightedClosedWalk N.Hom R) :
+    (e.weightedClosedWalkEquiv R c).walk.length = c.walk.length := by
+  change (e.mapPath c.walk).length = _
+  exact e.length_mapPath c.walk
+
+/-- Transport preserves and reflects whether a weighted closed walk is a cycle. -/
+@[simp]
+theorem isCycle_weightedClosedWalkEquiv (e : N ≃ₙ N')
+    (c : WeightedClosedWalk N.Hom R) :
+    (e.weightedClosedWalkEquiv R c).walk.IsCycle ↔ c.walk.IsCycle := by
+  change (e.mapPath c.walk).IsCycle ↔ _
+  exact e.isCycle_mapPath c.walk
+
 /-- The inverse of weighted closed-walk transport is transport along the inverse isomorphism. -/
 @[simp]
 theorem weightedClosedWalkEquiv_symm (e : N ≃ₙ N') :
-    (e.weightedClosedWalkEquiv R).symm = e.symm.weightedClosedWalkEquiv R := by
+    e.symm.weightedClosedWalkEquiv R = (e.weightedClosedWalkEquiv R).symm := by
   ext c
   simp only [weightedClosedWalkEquiv, Equiv.coe_fn_symm_mk, Equiv.coe_fn_mk]
 
+/-- Transport along the identity network isomorphism fixes weighted closed walks. -/
+@[simp]
+theorem weightedClosedWalkEquiv_refl (N : Network K V) :
+    (refl N).weightedClosedWalkEquiv R = Equiv.refl _ := by
+  apply Equiv.ext
+  rintro ⟨s, c, q⟩
+  exact weightedClosedWalk_mk_eq (refl_vertexEquiv_apply N s) (mapPath_refl N c) q
+
+/-- Weighted closed-walk transport commutes with composition of network isomorphisms. -/
+@[simp]
+theorem weightedClosedWalkEquiv_trans {X : Type u''} {N'' : Network K X}
+    (e : N ≃ₙ N') (f : N' ≃ₙ N'') :
+    (e.trans f).weightedClosedWalkEquiv R =
+      (e.weightedClosedWalkEquiv R).trans (f.weightedClosedWalkEquiv R) := by
+  apply Equiv.ext
+  rintro ⟨s, c, q⟩
+  exact weightedClosedWalk_mk_eq (trans_vertexEquiv_apply e f s) (mapPath_trans e f c) q
+
 /-- The assignment of a transported weighted closed walk is the transported assignment. -/
+@[simp]
 theorem assignment_weightedClosedWalkEquiv [AddCommMonoid R] (e : N ≃ₙ N')
     (c : WeightedClosedWalk N.Hom R) :
     (e.weightedClosedWalkEquiv R c).assignment = e.assignmentEquiv R c.assignment := by
@@ -177,9 +321,9 @@ def pathCycleDecompositionEquiv (e : N ≃ₙ N') (f : N.Assignment R) :
   invFun := mapPathCycleDecomposition e.symm <| by
     rw [← assignmentEquiv_symm, Equiv.symm_apply_apply]
   left_inv D := by
-    ext1 <;> simp [← weightedWalkEquiv_symm, ← weightedClosedWalkEquiv_symm]
+    ext1 <;> simp
   right_inv D := by
-    ext1 <;> simp [← weightedWalkEquiv_symm, ← weightedClosedWalkEquiv_symm]
+    ext1 <;> simp
 
 @[simp]
 theorem pathCycleDecompositionEquiv_apply_paths (e : N ≃ₙ N') {f : N.Assignment R}
@@ -197,15 +341,17 @@ theorem pathCycleDecompositionEquiv_apply_cycles (e : N ≃ₙ N') {f : N.Assign
 theorem pathCycleDecompositionEquiv_symm_apply_paths (e : N ≃ₙ N') {f : N.Assignment R}
     (D : PathCycleDecomposition (e.assignmentEquiv R f)) :
     ((e.pathCycleDecompositionEquiv f).symm D).paths =
-      D.paths.map (e.symm.weightedWalkEquiv R) := by
+      D.paths.map (e.weightedWalkEquiv R).symm := by
   simp only [pathCycleDecompositionEquiv, Equiv.coe_fn_symm_mk, mapPathCycleDecomposition_paths]
+  rw [weightedWalkEquiv_symm]
 
 @[simp]
 theorem pathCycleDecompositionEquiv_symm_apply_cycles (e : N ≃ₙ N') {f : N.Assignment R}
     (D : PathCycleDecomposition (e.assignmentEquiv R f)) :
     ((e.pathCycleDecompositionEquiv f).symm D).cycles =
-      D.cycles.map (e.symm.weightedClosedWalkEquiv R) := by
+      D.cycles.map (e.weightedClosedWalkEquiv R).symm := by
   simp only [pathCycleDecompositionEquiv, Equiv.coe_fn_symm_mk, mapPathCycleDecomposition_cycles]
+  rw [weightedClosedWalkEquiv_symm]
 
 /-- The path part of a transported decomposition is the transported path part. -/
 @[simp]
@@ -224,5 +370,27 @@ theorem cycleAssignment_pathCycleDecompositionEquiv (e : N ≃ₙ N') {f : N.Ass
   simp only [PathCycleDecomposition.cycleAssignment_def, pathCycleDecompositionEquiv_apply_cycles,
     assignmentEquiv_list_sum, List.map_map, Function.comp_def,
     assignment_weightedClosedWalkEquiv]
+
+/-- The path part of a decomposition pulled back along an isomorphism is pulled back. -/
+@[simp]
+theorem pathAssignment_pathCycleDecompositionEquiv_symm (e : N ≃ₙ N')
+    {f : N.Assignment R} (D : PathCycleDecomposition (e.assignmentEquiv R f)) :
+    ((e.pathCycleDecompositionEquiv f).symm D).pathAssignment =
+      (e.assignmentEquiv R).symm D.pathAssignment := by
+  rw [assignmentEquiv_symm]
+  simp only [PathCycleDecomposition.pathAssignment_def,
+    pathCycleDecompositionEquiv_symm_apply_paths, assignmentEquiv_list_sum, List.map_map,
+    Function.comp_def, ← weightedWalkEquiv_symm, assignment_weightedWalkEquiv]
+
+/-- The cycle part of a decomposition pulled back along an isomorphism is pulled back. -/
+@[simp]
+theorem cycleAssignment_pathCycleDecompositionEquiv_symm (e : N ≃ₙ N')
+    {f : N.Assignment R} (D : PathCycleDecomposition (e.assignmentEquiv R f)) :
+    ((e.pathCycleDecompositionEquiv f).symm D).cycleAssignment =
+      (e.assignmentEquiv R).symm D.cycleAssignment := by
+  rw [assignmentEquiv_symm]
+  simp only [PathCycleDecomposition.cycleAssignment_def,
+    pathCycleDecompositionEquiv_symm_apply_cycles, assignmentEquiv_list_sum, List.map_map,
+    Function.comp_def, ← weightedClosedWalkEquiv_symm, assignment_weightedClosedWalkEquiv]
 
 end TauCeti.Network.Iso
