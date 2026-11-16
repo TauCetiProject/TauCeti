@@ -26,9 +26,12 @@ of `εH` with image in `K`, that is every solution `u` of period one in `t` of
 is independent of `t`
 (`TauCeti.SymplecticForm.exists_pos_forall_eq_comp_fst_of_isComplexLinearMap`) and so is an
 upward gradient line of `εH`
-(`TauCeti.SymplecticForm.exists_pos_forall_hasDerivAt_gradient_of_isComplexLinearMap`). This is the
-identification of the Floer cylinders of a `C²`-small autonomous Hamiltonian with its gradient
-lines. The threshold `ε₀` depends on `ω`, `J`, `H` and `K` only, not on the cylinder.
+(`TauCeti.SymplecticForm.exists_pos_forall_hasDerivAt_gradient_of_isComplexLinearMap`). The
+threshold `ε₀` depends on `ω`, `J`, `H` and `K` only, not on the cylinder. This is one half of
+Floer's identification, on a flat target, of the Floer cylinders of a small autonomous Hamiltonian
+with its gradient lines: for a fixed `H`, the cylinders of `εH` in `K` are gradient lines. It
+gives no threshold in terms of a `C²` norm, and it does not show that every gradient line is a
+cylinder.
 
 The analytic core is `TauCeti.SymplecticForm.eq_comp_fst_of_isComplexLinearMap_perturbedFDeriv`:
 a cylinder of `εH` whose derivative is bounded by `M` is independent of `t` as soon as
@@ -50,7 +53,7 @@ uniformly in `ε` and in the cylinder.
   sequence of solutions with unbounded derivative at the centre would have to bubble, at the cost
   of energy at least `2δ`. Translating a cylinder, every such square lies in a horizontal strip
   of width one, over which the energy of the cylinder is its total energy
-  (`TauCeti.setLIntegral_univ_prod_Icc_add_one_eq_of_periodic`).
+  (`TauCeti.setLIntegral_univ_prod_Icc_add_eq_of_periodic`).
 
 So for `|ε|` small the energy of every cylinder of `εH` in `K` is below `δ`, its derivative is
 bounded by `M` everywhere, and the slice-energy argument applies.
@@ -80,11 +83,6 @@ variable {V : Type*} [NormedAddCommGroup V] [InnerProductSpace ℝ V] [FiniteDim
 
 section Scaling
 
-/-- The Hamiltonian vector field of `εH` is `ε X_H`. -/
-private theorem hamiltonianVectorField_const_mul_eq (ε : ℝ) :
-    ω.hamiltonianVectorField (fun y ↦ ε * H y) = ε • ω.hamiltonianVectorField H :=
-  funext fun x ↦ ω.hamiltonianVectorField_const_mul ε H x
-
 omit [FiniteDimensional ℝ V] in
 /-- The perturbation `εH dt`, as a function of the domain point and the target point, is `C¹`. -/
 private theorem contDiff_const_mul_comp_snd {W : Type*} [NormedAddCommGroup W] [NormedSpace ℝ W]
@@ -96,7 +94,7 @@ private theorem norm_fderiv_hamiltonianVectorField_const_mul_le (hH : ContDiff �
     (ha : ∀ x, ‖fderiv ℝ (ω.hamiltonianVectorField H) x‖ ≤ a) (ε : ℝ) (x : V) :
     ‖fderiv ℝ (ω.hamiltonianVectorField fun y ↦ ε * H y) x‖ ≤ |ε| * a := by
   have hX := (ω.contDiff_hamiltonianVectorField (n := 2) hH).differentiable (by norm_num)
-  rw [hamiltonianVectorField_const_mul_eq, fderiv_const_smul (hX x), norm_smul, norm_eq_abs]
+  rw [hamiltonianVectorField_const_mul', fderiv_const_smul (hX x), norm_smul, norm_eq_abs]
   exact mul_le_mul_of_nonneg_left (ha x) (abs_nonneg ε)
 
 /-- A bound `c` on `d²X_H` gives the bound `|ε| c` on `d²X_{εH}`. -/
@@ -106,7 +104,7 @@ private theorem norm_fderiv_fderiv_hamiltonianVectorField_const_mul_le (hH : Con
   have hX := ω.contDiff_hamiltonianVectorField (n := 2) hH
   have hdX : fderiv ℝ (ω.hamiltonianVectorField fun y ↦ ε * H y) =
       ε • fderiv ℝ (ω.hamiltonianVectorField H) := funext fun y ↦ by
-    rw [hamiltonianVectorField_const_mul_eq, fderiv_const_smul (hX.differentiable (by norm_num) y),
+    rw [hamiltonianVectorField_const_mul', fderiv_const_smul (hX.differentiable (by norm_num) y),
       Pi.smul_apply]
   have hddX := (hX.fderiv_right (m := 1) (by norm_num)).differentiable one_ne_zero x
   rw [hdX, fderiv_const_smul hddX]
@@ -275,7 +273,8 @@ private theorem setLIntegral_ball_floerEnergyDensity_le (hH : ContDiff ℝ 3 H) 
     simp only [floerEnergyDensity_def, perturbedFDeriv_apply_stdComplexLineReal,
       perturbedFDeriv_apply_stdComplexLineImag, fderiv_add_snd_of_periodic_snd hper, hper]
   exact (lintegral_mono_set hsub).trans_eq
-    (setLIntegral_univ_prod_Icc_add_one_eq_of_periodic hmeas hdper _)
+    (by simpa only [Measure.volume_eq_prod] using
+      setLIntegral_univ_prod_Icc_add_eq_of_periodic one_pos hmeas hdper _)
 
 /-- **A uniform bound on the derivative.** There are `ε₀ > 0` and `M` such that for `|ε| < ε₀`
 every finite-energy Floer cylinder `u` of `εH` with image in `K` has `‖du‖ ≤ M` everywhere, and
