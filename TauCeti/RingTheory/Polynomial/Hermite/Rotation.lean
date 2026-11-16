@@ -11,6 +11,7 @@ public import Mathlib.RingTheory.Polynomial.Hermite.Basic
 import Mathlib.Algebra.BigOperators.NatAntidiagonal
 import Mathlib.Data.Nat.Choose.Sum
 import Mathlib.Tactic.LinearCombination
+import TauCeti.Data.Nat.Choose.Sum
 import TauCeti.RingTheory.Polynomial.Hermite.Derivative
 
 /-!
@@ -67,17 +68,19 @@ private theorem sum_antidiagonal_succ_choose_mul_mul_natCast_mul (p q : R) (a b 
     ∑ ij ∈ antidiagonal (m + 1),
         ((m + 1).choose ij.1 : R) * (p ^ ij.1 * q ^ ij.2 * a ij.1 * (ij.2 * b (ij.2 - 1))) =
       (m + 1) * q * rotationSum p q a b m := by
-  rw [Nat.sum_antidiagonal_succ', rotationSum, mul_sum]
-  simp only [Nat.cast_zero, zero_mul, mul_zero, zero_add, add_tsub_cancel_right]
-  refine sum_congr rfl fun ij hij => ?_
-  rw [mem_antidiagonal] at hij
-  have hchoose : ((m + 1).choose ij.1 : R) * (ij.2 + 1 : ℕ) = (m + 1) * (m.choose ij.1 : R) := by
-    rw [Nat.choose_symm_of_eq_add (by omega : m + 1 = ij.1 + (ij.2 + 1)),
-      Nat.choose_symm_of_eq_add hij.symm]
-    have h := congrArg (Nat.cast (R := R)) (Nat.add_one_mul_choose_eq m ij.2)
-    push_cast at h ⊢
-    linear_combination -h
-  linear_combination (p ^ ij.1 * q ^ (ij.2 + 1) * a ij.1 * b ij.2) * hchoose
+  rw [← Nat.sum_antidiagonal_swap]
+  have h := sum_antidiagonal_choose_succ_nsmul_nsmul
+    (fun j i => p ^ i * q ^ j * a i * b (j - 1)) m
+  simp only [nsmul_eq_mul, add_tsub_cancel_right] at h
+  calc _ = ∑ ij ∈ antidiagonal (m + 1),
+        ((m + 1).choose ij.1 : R) * (ij.1 * (p ^ ij.2 * q ^ ij.1 * a ij.2 * b (ij.1 - 1))) :=
+        sum_congr rfl fun ij hij => by
+          rw [mem_antidiagonal] at hij
+          simp only [Prod.fst_swap, Prod.snd_swap, Nat.choose_symm_of_eq_add hij.symm]
+          ring
+    _ = _ := by
+      rw [h, rotationSum_comm, rotationSum, Nat.cast_succ, mul_assoc]
+      exact congrArg _ (by rw [mul_sum]; exact sum_congr rfl fun ij _ => by ring)
 
 /-- Raising the second index, using the three-term recurrence of `b`. -/
 private theorem sum_antidiagonal_choose_mul_succ (p q y : R) (a b : ℕ → R)
