@@ -219,10 +219,11 @@ theorem incidenceCount_le_chromaticNumber_lineGraph (G : Graph α β) (x : α) :
   exact SimpleGraph.le_chromaticNumber_of_pairwise_adj (Nat.card_coe_set_eq _).ge _
     (G.pairwise_lineGraph_adj_inclusion x)
 
-/-- For a simple graph `H`, proper edge-colourings of `Graph.ofSimpleGraph H` need as many colours
-as colourings of Mathlib's `SimpleGraph.lineGraph`. -/
+/-- The chromatic number of the line graph of `Graph.ofSimpleGraph H` is the chromatic index of
+the simple graph `H`. -/
+@[simp]
 theorem chromaticNumber_lineGraph_ofSimpleGraph (H : SimpleGraph α) :
-    (ofSimpleGraph H).lineGraph.chromaticNumber = H.lineGraph.chromaticNumber :=
+    (ofSimpleGraph H).lineGraph.chromaticNumber = H.chromaticIndex :=
   SimpleGraph.chromaticNumber_congr (lineGraphOfSimpleGraphIso H)
 
 end Graph

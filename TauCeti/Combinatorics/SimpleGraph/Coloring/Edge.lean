@@ -22,15 +22,53 @@ Snir Broshi.
 
 public section
 
-universe u w
+universe u v w x
 
 namespace SimpleGraph
 
-variable {V : Type u} {k : ℕ}
+variable {V : Type u} {W : Type v} {G H : SimpleGraph V} {G' : SimpleGraph W}
+  {C : Type w} {D : Type x} {k m : ℕ}
 
 /-- A proper edge-colouring of a simple graph is a colouring of its line graph. -/
 abbrev EdgeColoring (G : SimpleGraph V) (C : Type w) : Type (max u w) :=
   G.lineGraph.Coloring C
+
+namespace EdgeColoring
+
+/-- Construct a proper edge-colouring from a colour function on the edges in which distinct edges
+with a common endpoint receive different colours. -/
+@[expose] def mk (c : G.edgeSet → C)
+    (valid : ∀ ⦃e f : G.edgeSet⦄ ⦃x : V⦄, e ≠ f → x ∈ (e : Sym2 V) →
+      x ∈ (f : Sym2 V) → c e ≠ c f) :
+    G.EdgeColoring C :=
+  SimpleGraph.Coloring.mk c fun h ↦
+    let ⟨hef, _x, he, hf⟩ := lineGraph_adj_iff_exists.1 h
+    valid hef he hf
+
+/-- A proper edge-colouring built by `SimpleGraph.EdgeColoring.mk` is its colour function. -/
+@[simp]
+theorem coe_mk (c : G.edgeSet → C)
+    (valid : ∀ ⦃e f : G.edgeSet⦄ ⦃x : V⦄, e ≠ f → x ∈ (e : Sym2 V) →
+      x ∈ (f : Sym2 V) → c e ≠ c f) :
+    ⇑(mk c valid) = c :=
+  rfl
+
+/-- Distinct edges with a common endpoint receive different colours. -/
+theorem ne_of_mem (c : G.EdgeColoring C) {e f : G.edgeSet} (hef : e ≠ f) {x : V}
+    (he : x ∈ (e : Sym2 V)) (hf : x ∈ (f : Sym2 V)) : c e ≠ c f :=
+  c.valid (lineGraph_adj_iff_exists.2 ⟨hef, x, he, hf⟩)
+
+/-- Restrict a proper edge-colouring to a subgraph. -/
+@[expose] def ofLE (h : G ≤ H) (c : H.EdgeColoring C) : G.EdgeColoring C :=
+  c.comp (Copy.ofLE G H h).lineGraph.toHom
+
+/-- Restricting a proper edge-colouring keeps the colour of each edge. -/
+@[simp]
+theorem ofLE_apply (h : G ≤ H) (c : H.EdgeColoring C) (e : G.edgeSet) :
+    c.ofLE h e = c ⟨e, edgeSet_mono h e.2⟩ := by
+  simp [ofLE, Copy.lineGraph, Copy.toLineGraphEmbedding]
+
+end EdgeColoring
 
 /-- A simple graph is edge-colourable with `C` when it has a proper edge-colouring by `C`. -/
 abbrev EdgeColorableWith (G : SimpleGraph V) (C : Type w) : Prop :=
@@ -50,5 +88,64 @@ theorem edgeColorable_iff_edgeColorableWith (G : SimpleGraph V) :
 /-- The chromatic index of a simple graph is the chromatic number of its line graph. -/
 noncomputable abbrev chromaticIndex (G : SimpleGraph V) : ℕ∞ :=
   G.lineGraph.chromaticNumber
+
+/-- Edge-colourability by zero colours characterizes the graph with no edges. -/
+theorem edgeColorable_zero_iff : G.EdgeColorable 0 ↔ G = ⊥ := by
+  change G.lineGraph.Colorable 0 ↔ G = ⊥
+  rw [colorable_zero_iff, Set.isEmpty_coe_sort, edgeSet_eq_empty]
+
+/-- A simple graph has chromatic index zero exactly when it has no edges. -/
+theorem chromaticIndex_eq_zero_iff : G.chromaticIndex = 0 ↔ G = ⊥ := by
+  rw [chromaticNumber_eq_zero_iff, Set.isEmpty_coe_sort, edgeSet_eq_empty]
+
+/-- The graph with no edges has chromatic index zero. -/
+theorem chromaticIndex_bot : (⊥ : SimpleGraph V).chromaticIndex = 0 :=
+  chromaticIndex_eq_zero_iff.2 rfl
+
+/-- Increasing the number of available colours preserves edge-colourability. -/
+theorem EdgeColorable.mono (hkm : k ≤ m) (h : G.EdgeColorable k) : G.EdgeColorable m :=
+  SimpleGraph.Colorable.mono hkm h
+
+/-- Restricting a graph preserves edge-colourability. -/
+theorem EdgeColorable.of_le (hGH : G ≤ H) (h : H.EdgeColorable k) : G.EdgeColorable k :=
+  ⟨EdgeColoring.ofLE hGH h.some⟩
+
+/-- Restricting a graph preserves edge-colourability by a given colour type. -/
+theorem EdgeColorableWith.of_le (hGH : G ≤ H) (h : H.EdgeColorableWith C) :
+    G.EdgeColorableWith C :=
+  ⟨EdgeColoring.ofLE hGH h.some⟩
+
+/-- Embedding the colour type preserves edge-colourability. -/
+theorem EdgeColorableWith.of_embedding (f : C ↪ D) (h : G.EdgeColorableWith C) :
+    G.EdgeColorableWith D :=
+  ⟨G.lineGraph.recolorOfEmbedding f h.some⟩
+
+/-- Graph and colour isomorphisms induce an equivalence of edge-colourings. -/
+def edgeColoringCongr (f : G ≃g G') (g : C ≃ D) : G.EdgeColoring C ≃ G'.EdgeColoring D :=
+  coloringCongr f.lineGraph g
+
+/-- Isomorphic graphs are edge-colourable by a given colour type simultaneously. -/
+theorem edgeColorableWith_congr (f : G ≃g G') :
+    G.EdgeColorableWith C ↔ G'.EdgeColorableWith C :=
+  (edgeColoringCongr f (Equiv.refl C)).nonempty_congr
+
+/-- Isomorphic graphs are edge-colourable by a given number of colours simultaneously. -/
+theorem edgeColorable_congr (f : G ≃g G') : G.EdgeColorable k ↔ G'.EdgeColorable k :=
+  edgeColorableWith_congr f
+
+/-- Isomorphic graphs have the same chromatic index. -/
+theorem chromaticIndex_congr (f : G ≃g G') : G.chromaticIndex = G'.chromaticIndex :=
+  chromaticNumber_congr f.lineGraph
+
+/-- Passing to a subgraph cannot increase the chromatic index. -/
+@[gcongr]
+theorem chromaticIndex_mono (hGH : G ≤ H) : G.chromaticIndex ≤ H.chromaticIndex :=
+  chromaticNumber_mono_of_hom (Copy.ofLE G H hGH).lineGraph.toHom
+
+/-- The chromatic index is at most `k` exactly when the graph is edge-colourable by at most `k`
+colours. -/
+theorem chromaticIndex_le_iff_edgeColorable (G : SimpleGraph V) :
+    G.chromaticIndex ≤ k ↔ G.EdgeColorable k :=
+  chromaticNumber_le_iff_colorable
 
 end SimpleGraph
