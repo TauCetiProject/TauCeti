@@ -12,6 +12,9 @@ public import TauCeti.RingTheory.Jacobson.FiniteType
 public import TauCeti.RingTheory.Ideal.MinimalPrime.Localization
 public import TauCeti.RingTheory.RegularLocalRing.Basic
 public import TauCeti.RingTheory.Smooth.Regular
+import Mathlib.RingTheory.Ideal.MinimalPrime.Localization
+import Mathlib.RingTheory.Localization.LocalizationLocalization
+import TauCeti.RingTheory.Localization.FractionRing
 
 /-!
 # Krull dimension of standard smooth algebras over a field
@@ -30,7 +33,10 @@ and every maximal ideal of `P` has height `n` (`MvPolynomial.height_eq_natCard_o
 Moreover `Spec S` is pure-dimensional of dimension `n`: for every minimal prime `P` of `S`, the
 quotient `S ⧸ P` has dimension `n`. Choose a maximal ideal `m ⊇ P`. The local ring `S_m` is
 regular, hence a domain, so every prime contained in `m` contains `P`; thus a chain of primes
-below `m` realizing its height `n` is a chain in `V(P)`.
+below `m` realizing its height `n` is a chain in `V(P)`. When a reduced algebra `B` has a
+localization `S = M⁻¹ B` standard smooth of relative dimension `n` at a minimal prime `P`, this
+determines both the transcendence degree of `P.ResidueField` and the dimension of its Kähler
+differentials.
 
 ## Main declarations
 
@@ -40,7 +46,13 @@ below `m` realizing its height `n` is a chain in `V(P)`.
   algebra of relative dimension `n` over a field has Krull dimension `n`;
 * `TauCeti.ringKrullDim_quotient_of_isStandardSmoothOfRelativeDimension` and
   `TauCeti.isPureDimensional_primeSpectrum_of_isStandardSmoothOfRelativeDimension`: every
-  irreducible component of its spectrum has dimension `n`.
+  irreducible component of its spectrum has dimension `n`;
+* `TauCeti.trdeg_residueField_of_isStandardSmoothOfRelativeDimension`: at a minimal prime `P` of a
+  reduced `k`-algebra `B` admitting a standard-smooth localization of relative dimension `n`,
+  `Algebra.trdeg k P.ResidueField = n`;
+* `TauCeti.finrank_kaehlerDifferential_residueField_of_isStandardSmoothOfRelativeDimension`: under
+  the same localization hypothesis over any base ring `R`, `Ω[P.ResidueField⁄R]` has dimension
+  `n` over `P.ResidueField`.
 
 ## References
 
@@ -51,6 +63,8 @@ below `m` realizing its height `n` is a chain in `V(P)`.
 public section
 
 namespace TauCeti
+
+section
 
 variable (k : Type*) {S : Type*} [Field k] [CommRing S] [Algebra k S] (n : ℕ)
   [Algebra.IsStandardSmoothOfRelativeDimension n k S]
@@ -120,5 +134,81 @@ theorem isPureDimensional_primeSpectrum_of_isStandardSmoothOfRelativeDimension :
     IsPureDimensional n (PrimeSpectrum S) :=
   isPureDimensional_primeSpectrum_iff.mpr fun _ hP ↦
     ringKrullDim_quotient_of_isStandardSmoothOfRelativeDimension k n hP
+
+/-- If a localization `S` of a reduced `k`-algebra `B` at a submonoid `M ≤ P.primeCompl` is
+standard smooth of relative dimension `n` over a field `k` at a minimal prime `P` of `B`, then the
+residue field `P.ResidueField` has transcendence degree `n` over `k`. -/
+theorem trdeg_residueField_of_isStandardSmoothOfRelativeDimension {B : Type*} [CommRing B]
+    [Algebra k B] [IsReduced B] {P : Ideal B} [P.IsPrime] (hP : P ∈ minimalPrimes B)
+    (M : Submonoid B) (hM : M ≤ P.primeCompl) [Algebra B S] [IsScalarTower k B S]
+    [IsLocalization M S] :
+    Algebra.trdeg k P.ResidueField = n := by
+  have : IsLocalization.AtPrime P.ResidueField P :=
+    isLocalization_atPrime_residueField_of_mem_minimalPrimes hP
+  let : Algebra S P.ResidueField :=
+    IsLocalization.localizationAlgebraOfSubmonoidLe S P.ResidueField M P.primeCompl hM
+  have : IsScalarTower B S P.ResidueField :=
+    IsLocalization.localization_isScalarTower_of_submonoid_le S P.ResidueField M P.primeCompl hM
+  have : IsScalarTower k S P.ResidueField := .of_algebraMap_eq fun c ↦ by
+    rw [IsScalarTower.algebraMap_apply k B P.ResidueField,
+      IsScalarTower.algebraMap_apply B S P.ResidueField,
+      ← IsScalarTower.algebraMap_apply k B S]
+  have hdisj : Disjoint (M : Set B) P :=
+    Set.disjoint_left.mpr fun _ hm ↦ hM hm
+  have hPS_min : P.map (algebraMap B S) ∈ minimalPrimes S := by
+    have hmem : P.map (algebraMap B S) ∈ ((⊥ : Ideal B).map (algebraMap B S)).minimalPrimes := by
+      rw [IsLocalization.minimalPrimes_map M S ⊥, Set.mem_preimage]
+      rwa [IsLocalization.under_map_of_isPrime_disjoint M S ‹P.IsPrime› hdisj]
+    rwa [Ideal.map_bot] at hmem
+  have hdimS : ringKrullDim (S ⧸ P.map (algebraMap B S)) = n :=
+    ringKrullDim_quotient_of_isStandardSmoothOfRelativeDimension k n hPS_min
+  have : Algebra.IsStandardSmooth k S :=
+    Algebra.IsStandardSmoothOfRelativeDimension.isStandardSmooth n
+  let g : (S ⧸ P.map (algebraMap B S)) →ₐ[k] P.ResidueField :=
+    Ideal.Quotient.liftₐ (P.map (algebraMap B S)) (IsScalarTower.toAlgHom k S P.ResidueField)
+      IsFractionRing.map_le_ker_of_isScalarTower_quotient
+  let : Algebra (S ⧸ P.map (algebraMap B S)) P.ResidueField := g.toRingHom.toAlgebra
+  have : IsScalarTower S (S ⧸ P.map (algebraMap B S)) P.ResidueField :=
+    .of_algebraMap_eq fun s ↦ by
+      rw [Ideal.Quotient.algebraMap_eq, RingHom.algebraMap_toAlgebra (i := g.toRingHom),
+        AlgHom.toRingHom_eq_coe, RingHom.coe_coe, ← Ideal.Quotient.mkₐ_eq_mk k]
+      exact (AlgHom.congr_fun
+        (Ideal.Quotient.liftₐ_comp (P.map (algebraMap B S))
+          (IsScalarTower.toAlgHom k S P.ResidueField)
+          IsFractionRing.map_le_ker_of_isScalarTower_quotient) s).symm
+  have : IsScalarTower k (S ⧸ P.map (algebraMap B S)) P.ResidueField :=
+    .of_algebraMap_eq fun c ↦ by
+      rw [RingHom.algebraMap_toAlgebra (i := g.toRingHom), AlgHom.toRingHom_eq_coe,
+        RingHom.coe_coe, g.commutes]
+  have : IsFractionRing (S ⧸ P.map (algebraMap B S)) P.ResidueField :=
+    IsFractionRing.quotient_map_of_isLocalization M hdisj
+  exact trdeg_eq_of_ringKrullDim_eq_of_isFractionRing k (D := S ⧸ P.map (algebraMap B S)) hdimS
+
+end
+
+/-- If a localization `S` of a reduced `R`-algebra `B` at a submonoid `M ≤ P.primeCompl` is
+standard smooth of relative dimension `n` over `R` at a minimal prime `P` of `B`, then the Kähler
+differentials `Ω[P.ResidueField⁄R]` have dimension `n` over `P.ResidueField`. -/
+theorem finrank_kaehlerDifferential_residueField_of_isStandardSmoothOfRelativeDimension
+    {R B S : Type*} [CommRing R] [CommRing B] [Algebra R B] [IsReduced B]
+    {P : Ideal B} [P.IsPrime] (hP : P ∈ minimalPrimes B) (M : Submonoid B) (hM : M ≤ P.primeCompl)
+    [CommRing S] [Algebra R S] [Algebra B S] [IsScalarTower R B S] [IsLocalization M S]
+    (n : ℕ) [Algebra.IsStandardSmoothOfRelativeDimension n R S] :
+    Module.finrank P.ResidueField (KaehlerDifferential R P.ResidueField) = n := by
+  have : IsLocalization.AtPrime P.ResidueField P :=
+    isLocalization_atPrime_residueField_of_mem_minimalPrimes hP
+  let : Algebra S P.ResidueField :=
+    IsLocalization.localizationAlgebraOfSubmonoidLe S P.ResidueField M P.primeCompl hM
+  have : IsScalarTower B S P.ResidueField :=
+    IsLocalization.localization_isScalarTower_of_submonoid_le S P.ResidueField M P.primeCompl hM
+  have : IsScalarTower R S P.ResidueField := .of_algebraMap_eq fun c ↦ by
+    rw [IsScalarTower.algebraMap_apply R B P.ResidueField,
+      IsScalarTower.algebraMap_apply B S P.ResidueField,
+      ← IsScalarTower.algebraMap_apply R B S]
+  have : IsLocalization (P.primeCompl.map (algebraMap B S)) P.ResidueField :=
+    IsLocalization.isLocalization_of_submonoid_le S P.ResidueField M P.primeCompl hM
+  have : Algebra.FormallyEtale S P.ResidueField :=
+    Algebra.FormallyEtale.of_isLocalization (P.primeCompl.map (algebraMap B S))
+  exact finrank_kaehlerDifferential_of_isStandardSmoothOfRelativeDimension (R := R) (S := S) n
 
 end TauCeti

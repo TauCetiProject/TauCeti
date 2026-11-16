@@ -10,12 +10,11 @@ public import Mathlib.RingTheory.KrullDimension.Basic
 public import Mathlib.RingTheory.QuasiFinite.Basic
 
 import Mathlib.RingTheory.FiniteStability
-import Mathlib.RingTheory.NoetherNormalization
 import Mathlib.RingTheory.ZariskisMainTheorem
 import TauCeti.RingTheory.KrullDimension.FiniteType
 
 /-!
-# Quasi-finiteness from fibre quotients and one-dimensional Noether normalization
+# Quasi-finiteness from fibre quotients
 
 Let `S` be an `R`-algebra of finite type and `q` a prime ideal of `S` lying over `p = q.under R`.
 By Zariski's main theorem (`Algebra.QuasiFiniteAt.of_weaklyQuasiFiniteAt`), `S` is quasi-finite over
@@ -31,11 +30,11 @@ Both hypotheses are needed:
   `q` of `S` lying over `(π)` with `S ⧸ π S ≃ R ⧸ (π)` finite over `R`, yet
   `K ⊗[R] S_q ≃ K[X]_{(X)}` has dimension `1`, so `S` is not quasi-finite over `R` at `q`.
 
-Combining this criterion with Noether normalization in Krull dimension at most `1` yields a
-quasi-finite polynomial parameter lift modulo a maximal ideal `𝔪` of `R`: when `A` is of finite type
-over `R` and `A ⧸ 𝔪 A` has Krull dimension at most `1`, there exists `a : A` such that for every
-`x : A` congruent to `a` modulo `𝔪 A`, `A` is quasi-finite over `R[X]` (via `X ↦ x`) at every prime
-containing `𝔪 A`.
+Combining this criterion with one-dimensional Noether normalization
+(`TauCeti.exists_finite_aeval_of_krullDimLE_one`) yields a quasi-finite polynomial parameter lift
+modulo a maximal ideal `𝔪` of `R`: when `A` is of finite type over `R` and `A ⧸ 𝔪 A` has Krull
+dimension at most `1`, there exists `a : A` such that for every `x : A` congruent to `a` modulo
+`𝔪 A`, `A` is quasi-finite over `R[X]` (via `X ↦ x`) at every prime containing `𝔪 A`.
 
 ## Main results
 
@@ -44,10 +43,9 @@ containing `𝔪 A`.
   `S ⧸ J` implies `Algebra.QuasiFiniteAt R q`.
 * `Algebra.QuasiFiniteAt.of_quasiFinite_quotient`: global `Algebra.QuasiFinite R (S ⧸ J)` with
   `J ≤ (q.under R).map (algebraMap R S)` implies `Algebra.QuasiFiniteAt R q`.
-* `TauCeti.exists_finite_aeval_of_krullDimLE_one`: a finite-type algebra of Krull dimension at most
-  `1` over a field `k` is module-finite over `k[X]` along `Polynomial.aeval x₀` for some `x₀`.
-* `TauCeti.exists_forall_quasiFiniteAt_of_krullDimLE_one_quotient`: lifting `x₀` modulo `𝔪 A`
-  produces `a : A` making every `x ≡ a (mod 𝔪 A)` quasi-finite over `R[X]` at all primes above `𝔪`.
+* `TauCeti.exists_forall_quasiFiniteAt_of_krullDimLE_one_quotient`: lifting a Noether
+  normalization parameter modulo `𝔪 A` produces `a : A` making every `x ≡ a (mod 𝔪 A)` quasi-finite
+  over `R[X]` at all primes above `𝔪`.
 
 ## References
 
@@ -76,10 +74,10 @@ theorem of_quasiFiniteAt_quotient {J : Ideal S} {q : Ideal S} [q.IsPrime]
     let I := (q.under R).map (algebraMap R Sq)
     let f : S →ₐ[R] Sq ⧸ I := IsScalarTower.toAlgHom R S (Sq ⧸ I)
     have hfJ : ∀ s ∈ J, f s = 0 := fun s hs ↦ by
-      change Ideal.Quotient.mk I (algebraMap S Sq s) = 0
-      rw [Ideal.Quotient.eq_zero_iff_mem,
-        show I = ((q.under R).map (algebraMap R S)).map (algebraMap S Sq) by
-          simp [I, Ideal.map_map, ← IsScalarTower.algebraMap_eq]]
+      have hI : I = ((q.under R).map (algebraMap R S)).map (algebraMap S Sq) := by
+        simp [I, Ideal.map_map, ← IsScalarTower.algebraMap_eq]
+      rw [IsScalarTower.toAlgHom_apply, IsScalarTower.algebraMap_apply S Sq (Sq ⧸ I),
+        Ideal.Quotient.algebraMap_eq, Ideal.Quotient.eq_zero_iff_mem, hI]
       exact Ideal.mem_map_of_mem _ (hJ hs)
     let φ₀ : S ⧸ J →ₐ[R] Sq ⧸ I := Ideal.Quotient.liftₐ J f hfJ
     let φ : Localization.AtPrime p →ₐ[R] Sq ⧸ I :=
@@ -92,10 +90,13 @@ theorem of_quasiFiniteAt_quotient {J : Ideal S} {q : Ideal S} [q.IsPrime]
     obtain ⟨z, rfl⟩ := Ideal.Quotient.mk_surjective z
     obtain ⟨x, ⟨s, hs⟩, rfl⟩ := IsLocalization.exists_mk'_eq q.primeCompl z
     have hsp : Ideal.Quotient.mk J s ∈ p.primeCompl := by simpa [← hp] using hs
+    have hφ₀ (a : S) : φ₀ (Ideal.Quotient.mk J a) = Ideal.Quotient.mk I (algebraMap S Sq a) := by
+      have h := AlgHom.congr_fun (Ideal.Quotient.liftₐ_comp J f hfJ) a
+      simpa only [AlgHom.comp_apply, Ideal.Quotient.mkₐ_eq_mk, f, IsScalarTower.toAlgHom_apply,
+        IsScalarTower.algebraMap_apply S Sq (Sq ⧸ I), Ideal.Quotient.algebraMap_eq] using h
     refine ⟨IsLocalization.mk' (Localization.AtPrime p) (Ideal.Quotient.mk J x) ⟨_, hsp⟩, ?_⟩
-    simp only [φ, IsLocalization.liftAlgHom_apply, IsLocalization.lift_mk'_spec]
-    change Ideal.Quotient.mk I _ = Ideal.Quotient.mk I _ * Ideal.Quotient.mk I _
-    dsimp only [Sq]
+    simp only [φ, IsLocalization.liftAlgHom_apply, IsLocalization.lift_mk'_spec,
+      AlgHom.toRingHom_eq_coe, RingHom.coe_coe, hφ₀]
     rw [← map_mul, IsLocalization.mk'_spec' (Localization.AtPrime q) x ⟨s, hs⟩]
   exact .of_weaklyQuasiFiniteAt q
 
@@ -115,57 +116,6 @@ theorem of_quasiFinite_quotient {J : Ideal S} {q : Ideal S} [q.IsPrime]
 end Algebra.QuasiFiniteAt
 
 namespace TauCeti
-
-/-- Surjectivity of `k[X] → MvPolynomial (Fin s) k` when `s ≤ 1`. -/
-private lemma exists_surjective_algHom_mvPolynomial_of_le_one (k : Type*) [Field k] {s : ℕ}
-    (hs : s ≤ 1) :
-    ∃ φ : k[X] →ₐ[k] MvPolynomial (Fin s) k, Function.Surjective φ := by
-  rcases Nat.le_one_iff_eq_zero_or_eq_one.mp hs with rfl | rfl
-  · refine ⟨Polynomial.aeval 0, fun p ↦ ?_⟩
-    induction p using MvPolynomial.induction_on with
-    | C c => exact ⟨Polynomial.C c, by simp⟩
-    | add p q hp hq =>
-      obtain ⟨P, rfl⟩ := hp
-      obtain ⟨Q, rfl⟩ := hq
-      exact ⟨P + Q, map_add _ P Q⟩
-    | mul_X p i _ => exact Fin.elim0 i
-  · refine ⟨Polynomial.aeval (MvPolynomial.X 0), fun p ↦ ?_⟩
-    induction p using MvPolynomial.induction_on with
-    | C c => exact ⟨Polynomial.C c, by simp⟩
-    | add p q hp hq =>
-      obtain ⟨P, rfl⟩ := hp
-      obtain ⟨Q, rfl⟩ := hq
-      exact ⟨P + Q, map_add _ P Q⟩
-    | mul_X p i hp =>
-      obtain ⟨P, rfl⟩ := hp
-      obtain rfl : i = 0 := Subsingleton.elim i 0
-      exact ⟨P * Polynomial.X, by simp⟩
-
-/-- **One-dimensional Noether normalization.** Every finite-type algebra `A₀` of Krull dimension at
-most `1` over a field `k` is module-finite over `k[X]` via `Polynomial.aeval x₀` for some
-`x₀ : A₀`. -/
-theorem exists_finite_aeval_of_krullDimLE_one (k A₀ : Type*) [Field k] [CommRing A₀]
-    [Algebra k A₀] [Algebra.FiniteType k A₀] [Ring.KrullDimLE 1 A₀] :
-    ∃ x₀ : A₀, (Polynomial.aeval (R := k) x₀).toRingHom.Finite := by
-  rcases subsingleton_or_nontrivial A₀ with _ | _
-  · refine ⟨0, ?_⟩
-    rw [RingHom.Finite]
-    let : Module k[X] A₀ := RingHom.toModule (Polynomial.aeval (R := k) (0 : A₀)).toRingHom
-    infer_instance
-  · obtain ⟨s, g, hinj, hfin⟩ := exists_finite_inj_algHom_of_fg k A₀
-    have hdim : ringKrullDim A₀ = s := by
-      simpa using
-        ringKrullDim_eq_of_injective_of_isIntegral_mvPolynomial g.toRingHom hinj hfin.to_isIntegral
-    have hs : s ≤ 1 := by
-      have hle : (s : WithBot ℕ∞) ≤ (1 : ℕ) := hdim ▸ Ring.krullDimLE_iff.mp ‹_›
-      exact mod_cast hle
-    obtain ⟨φ, hφ⟩ := exists_surjective_algHom_mvPolynomial_of_le_one k hs
-    refine ⟨g (φ Polynomial.X), ?_⟩
-    have heq : Polynomial.aeval (R := k) (g (φ Polynomial.X)) = g.comp φ := by
-      ext
-      simp
-    rw [heq]
-    exact RingHom.Finite.comp hfin (RingHom.Finite.of_surjective _ hφ)
 
 /-- Let `A` be a finite-type `R`-algebra and `𝔪` a maximal ideal of `R` such that `A ⧸ 𝔪 A` has
 Krull dimension at most `1`. Then there exists `a : A` such that for every `x : A` with

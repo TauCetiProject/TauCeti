@@ -102,8 +102,10 @@ private lemma relativeDimensionLE_fromSpec_toBase (M : Model R K C toK) {d : ℕ
     rw [← PrimeSpectrum.topologicalKrullDim_eq_ringKrullDim]
     exact hV.fromSpec.isOpenEmbedding.isInducing.topologicalKrullDim_le.trans
       ((relativeDimensionLE_iff_of_field toK).mp inferInstance)
-  change RelativeDimensionLE d (hU.fromSpec ≫ (M.total ↘ Spec (.of R)))
-  rw [HomIsOver.comp_over (f := hU.fromSpec) (S := Spec (.of R))]
+  have hcomp : hU.fromSpec ≫ M.toBase =
+      Spec.map (CommRingCat.ofHom (algebraMap R Γ(M.total, U))) :=
+    HomIsOver.comp_over (f := hU.fromSpec) (S := Spec (.of R))
+  rw [hcomp]
   refine (relativeDimensionLE_SpecMap_iff R Γ(M.total, U)).mpr fun p _ ↦
     (TauCeti.IsDiscreteValuationRing.ringKrullDim_fiber_le
       (K := K) (B := Γ(C, M.genericι ⁻¹ᵁ U)) p).trans hdimB

@@ -10,6 +10,8 @@ public import Mathlib.RingTheory.Etale.Kaehler
 public import Mathlib.RingTheory.Kaehler.JacobiZariski
 public import Mathlib.RingTheory.Kaehler.Polynomial
 public import Mathlib.RingTheory.RingHom.Etale
+public import Mathlib.RingTheory.Smooth.StandardSmooth
+import Mathlib.RingTheory.Smooth.StandardSmoothCotangent
 import Mathlib.RingTheory.TensorProduct.Quotient
 import TauCeti.RingTheory.MvPolynomial.Ideal
 
@@ -44,6 +46,9 @@ the common zero locus `T ⧸ (aᵢ)` of such elements is then étale over `R`
 * `TauCeti.kaehlerBasisOfFormallyEtale`: the induced basis of `Ω[T⁄R]`, with coordinates
   computed by `TauCeti.kaehlerBasisOfFormallyEtale_repr_map` and determinants by
   `TauCeti.kaehlerBasisOfFormallyEtale_det_map`;
+* `TauCeti.finrank_kaehlerDifferential_of_isStandardSmoothOfRelativeDimension`: if `S` is standard
+  smooth of relative dimension `n` over `R` and a field `F` is formally étale over `S`, then
+  `Module.finrank F Ω[F⁄R] = n`;
 * `TauCeti.formallyEtale_of_bijective_mapBaseChange` and
   `TauCeti.formallyEtale_iff_bijective_mapBaseChange`: formal étaleness of `T` over `S` when `T`
   is formally smooth over `R`;
@@ -111,6 +116,25 @@ theorem kaehlerBasisOfFormallyEtale_det_map {ι : Type*} [Fintype ι] [Decidable
   simp [Basis.toMatrix_apply]
 
 end Basis
+
+/-- If `S` is standard smooth of relative dimension `n` over `R` and a field `F` is formally étale
+over `S`, then `Ω[F⁄R]` has `F`-dimension `n`. -/
+theorem finrank_kaehlerDifferential_of_isStandardSmoothOfRelativeDimension
+    {R S F : Type*} [CommRing R] [CommRing S] [Field F] [Algebra R S] [Algebra R F]
+    [Algebra S F] [IsScalarTower R S F] (n : ℕ)
+    [Algebra.IsStandardSmoothOfRelativeDimension n R S] [Algebra.FormallyEtale S F] :
+    Module.finrank F Ω[F⁄R] = n := by
+  have : Nontrivial S := (algebraMap S F).domain_nontrivial
+  have : Algebra.IsStandardSmooth R S :=
+    Algebra.IsStandardSmoothOfRelativeDimension.isStandardSmooth n
+  let b := Module.Free.chooseBasis S Ω[S⁄R]
+  have hcard : Cardinal.mk (Module.Free.ChooseBasisIndex S Ω[S⁄R]) = n :=
+    b.mk_eq_rank''.trans (Algebra.IsStandardSmoothOfRelativeDimension.rank_kaehlerDifferential n)
+  have : Finite (Module.Free.ChooseBasisIndex S Ω[S⁄R]) :=
+    Cardinal.lt_aleph0_iff_finite.mp (hcard ▸ Cardinal.natCast_lt_aleph0)
+  let _ := Fintype.ofFinite (Module.Free.ChooseBasisIndex S Ω[S⁄R])
+  rw [Module.finrank_eq_card_basis (kaehlerBasisOfFormallyEtale R S F b)]
+  exact_mod_cast (Cardinal.mk_fintype _).symm.trans hcard
 
 variable {R S T}
 

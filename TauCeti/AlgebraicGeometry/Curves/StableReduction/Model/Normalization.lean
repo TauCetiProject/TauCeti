@@ -16,10 +16,9 @@ public import TauCeti.AlgebraicGeometry.Curves.StableReduction.Fibers
 public import TauCeti.AlgebraicGeometry.Curves.StableReduction.Model.Isomorphism
 
 import Mathlib.RingTheory.Localization.BaseChange
-import TauCeti.AlgebraicGeometry.Modules.Differentials.Quasicoherent
 import TauCeti.AlgebraicGeometry.Modules.GlobalSections
 import TauCeti.RingTheory.DiscreteValuationRing.FractionRing
-import TauCeti.RingTheory.IntegralClosure.DiscreteValuationRing
+import TauCeti.RingTheory.Localization.Integral
 import TauCeti.RingTheory.SerreCondition.Normal
 
 /-!
@@ -62,17 +61,15 @@ ring `R` with no excellence or Japanese assumption
 
 ## Main results
 
-* `TauCeti.AlgebraicGeometry.isFinite_fromNormalization_of_isPullback` and
-  `TauCeti.Model.isFinite_fromNormalization_genericι`: when `C` is smooth of relative dimension `1`
+* `TauCeti.Model.isFinite_fromNormalization_genericι`: when `C` is smooth of relative dimension `1`
   over `K`, the normalization in the generic fibre is finite over any discrete valuation ring `R`.
 * `TauCeti.Model.genericι_normalization`: the generic fibre of the normalization is included
   through the canonical morphism to the normalization.
 * `TauCeti.Model.isProper_normalization`: the normalization of a proper model is a proper model.
 * `TauCeti.Model.normalizationLift_comp` and `TauCeti.Model.eq_normalizationLift`: the universal
   property of the normalization, in the category of models.
-* `TauCeti.Model.isNormalScheme_normalization_of_smooth` and
-  `TauCeti.Model.isNormalScheme_normalization_total`: normalizing a model with smooth generic fibre
-  gives a normal total space, including for disconnected generic fibres.
+* `TauCeti.Model.isNormalScheme_normalization_of_smooth`: normalizing a model with smooth generic
+  fibre gives a normal total space, including for disconnected generic fibres.
 * `TauCeti.Model.isIso_normalizationHom_of_isNormalScheme`: when the total space of `M` is already
   normal, `M.normalizationHom` is an isomorphism.
 
@@ -99,65 +96,6 @@ namespace TauCeti
 
 universe u
 
-namespace AlgebraicGeometry
-
-/-- **Finiteness of normalization in a smooth generic fibre of relative dimension one.** Let `R` be
-a discrete valuation ring with fraction field `K`, let `X` be a scheme locally of finite type over
-`Spec R`, and let `C` be its generic fibre over `Spec K`, with projection `g : C ⟶ X`. If `C` is
-smooth of relative dimension `1` over `Spec K`, then the normalization of `X` in `C` along `g` is
-finite over `X`. No excellence or Japanese hypothesis on `R` and no flatness hypothesis on `X` are
-needed. -/
-@[stacks 0C2U]
-theorem isFinite_fromNormalization_of_isPullback
-    {R K : Type u} [CommRing R] [IsDomain R] [_root_.IsDiscreteValuationRing R]
-    [Field K] [Algebra R K] [IsFractionRing R K]
-    {X C : Scheme.{u}} {toBase : X ⟶ Spec (.of R)} [LocallyOfFiniteType toBase]
-    {toK : C ⟶ Spec (.of K)} [SmoothOfRelativeDimension 1 toK] {g : C ⟶ X}
-    (H : IsPullback g toK toBase (Spec.map (CommRingCat.ofHom (algebraMap R K)))) :
-    haveI : IsAffineHom g := MorphismProperty.of_isPullback (P := @IsAffineHom) H.flip inferInstance
-    IsFinite g.fromNormalization := by
-  have : IsAffineHom g := MorphismProperty.of_isPullback (P := @IsAffineHom) H.flip inferInstance
-  refine g.isFinite_fromNormalization_iff.mpr fun U hU ↦ ?_
-  let : X.Over (Spec (.of R)) := ⟨toBase⟩
-  let : C.Over (Spec (.of K)) := ⟨toK⟩
-  have : LocallyOfFiniteType (X ↘ Spec (.of R)) := inferInstanceAs (LocallyOfFiniteType toBase)
-  have hV : IsAffineOpen (g ⁻¹ᵁ U) := hU.preimage g
-  let : Algebra R Γ(X, U) := ((X.baseRingToStructurePresheaf R).app (op U)).hom.toAlgebra
-  let : Algebra K Γ(C, g ⁻¹ᵁ U) :=
-    ((C.baseRingToStructurePresheaf K).app (op (g ⁻¹ᵁ U))).hom.toAlgebra
-  let : Algebra Γ(X, U) Γ(C, g ⁻¹ᵁ U) := (g.app U).hom.toAlgebra
-  have hpush : IsPushout (CommRingCat.ofHom (algebraMap R K))
-      (CommRingCat.ofHom (algebraMap R Γ(X, U)))
-      (CommRingCat.ofHom (algebraMap K Γ(C, g ⁻¹ᵁ U)))
-      (CommRingCat.ofHom (algebraMap Γ(X, U) Γ(C, g ⁻¹ᵁ U))) :=
-    Scheme.isPushout_baseRingToStructurePresheaf_of_isAffineOpen H hU
-  let : Algebra R Γ(C, g ⁻¹ᵁ U) := ((algebraMap K Γ(C, g ⁻¹ᵁ U)).comp (algebraMap R K)).toAlgebra
-  have : IsScalarTower R K Γ(C, g ⁻¹ᵁ U) := .of_algebraMap_eq' rfl
-  have hw := congrArg CommRingCat.Hom.hom hpush.w
-  simp only [CommRingCat.hom_comp, CommRingCat.hom_ofHom] at hw
-  have : IsScalarTower R Γ(X, U) Γ(C, g ⁻¹ᵁ U) := .of_algebraMap_eq' hw
-  have : Algebra.IsPushout R Γ(X, U) K Γ(C, g ⁻¹ᵁ U) :=
-    Algebra.IsPushout.symm (CommRingCat.isPushout_iff_isPushout.mp hpush)
-  have : Algebra.FiniteType R Γ(X, U) := finiteType_sections_of_locallyOfFiniteType R X ⟨U, hU⟩
-  have hsm : RingHom.Locally (RingHom.IsStandardSmoothOfRelativeDimension 1)
-      (toK.appLE ⊤ (g ⁻¹ᵁ U) le_top).hom :=
-    HasRingHomProperty.appLE (P := @SmoothOfRelativeDimension 1)
-      (Q := RingHom.Locally (RingHom.IsStandardSmoothOfRelativeDimension 1))
-      (f := toK) ‹_› ⟨⊤, isAffineOpen_top _⟩ ⟨g ⁻¹ᵁ U, hV⟩ le_top
-  have hloc : RingHom.Locally (RingHom.IsStandardSmoothOfRelativeDimension 1)
-      (algebraMap K Γ(C, g ⁻¹ᵁ U)) := by
-    change RingHom.Locally (RingHom.IsStandardSmoothOfRelativeDimension 1)
-      ((C.baseRingToStructurePresheaf K).app (op (g ⁻¹ᵁ U))).hom
-    rw [Scheme.baseRingToStructurePresheaf_app_eq_appLE, CommRingCat.hom_comp]
-    exact (RingHom.locally_respectsIso
-      (RingHom.isStandardSmoothOfRelativeDimension_respectsIso (n := 1))).right _
-      (Scheme.ΓSpecIso (.of K)).symm.commRingCatIsoToRingEquiv hsm
-  open TauCeti.IsDiscreteValuationRing in
-  exact finite_integralClosure_of_locally_isStandardSmoothOfRelativeDimension_one
-    (R := R) (K := K) hloc
-
-end AlgebraicGeometry
-
 namespace Model
 
 variable {R K : Type u} [CommRing R] [IsDomain R] [IsDiscreteValuationRing R]
@@ -172,37 +110,6 @@ over `K`. -/
 instance isFinite_fromNormalization_genericι [SmoothOfRelativeDimension 1 toK] :
     IsFinite M.genericι.fromNormalization :=
   TauCeti.AlgebraicGeometry.isFinite_fromNormalization_of_isPullback M.isPullback_genericι
-
-/-- If `A` is an integrally closed ring and `B` is a localization of `A` away from `t` into which
-`A` injects, then every element of `B` integral over `A` lies in the image of `A`. -/
-private lemma mem_range_of_isIntegrallyClosed_of_isLocalization_away {A B : Type*} [CommRing A]
-    [IsIntegrallyClosed A] [CommRing B] [Algebra A B] (t : A) [IsLocalization.Away t B]
-    (hinj : Function.Injective (algebraMap A B)) {s : B} (hs : _root_.IsIntegral A s) :
-    s ∈ (algebraMap A B).range := by
-  have ht : t ∈ A⁰ := mem_nonZeroDivisors_iff_right.mpr fun x hx ↦ hinj <| by
-    rw [map_zero]
-    exact (IsLocalization.Away.algebraMap_pow_isUnit (S := B) t 1).mul_left_inj.mp
-      (by simp [pow_one, ← map_mul, hx])
-  have hsub : Submonoid.powers t ≤ A⁰ := (Submonoid.powers_le (P := A⁰)).mpr ht
-  let : Algebra B (FractionRing A) :=
-    IsLocalization.localizationAlgebraOfSubmonoidLe B (FractionRing A) (.powers t) A⁰ hsub
-  have : IsScalarTower A B (FractionRing A) :=
-    IsLocalization.localization_isScalarTower_of_submonoid_le B (FractionRing A) (.powers t) A⁰ hsub
-  obtain ⟨a, ha⟩ := IsIntegrallyClosed.isIntegral_iff.mp
-    (hs.map (IsScalarTower.toAlgHom A B (FractionRing A)))
-  rw [IsScalarTower.toAlgHom_apply] at ha
-  refine ⟨a, ?_⟩
-  obtain ⟨⟨c, y⟩, hc⟩ := IsLocalization.surj (.powers t) (algebraMap A B a - s)
-  obtain ⟨n, hy⟩ := y.2
-  have hc0 : algebraMap A (FractionRing A) c = 0 := by
-    rw [IsScalarTower.algebraMap_apply A B (FractionRing A), ← hc, map_mul, map_sub,
-      ← IsScalarTower.algebraMap_apply A B (FractionRing A), ha, sub_self, zero_mul]
-  have hc' : c = 0 := IsFractionRing.injective A (FractionRing A) (hc0.trans (map_zero _).symm)
-  have h0 : (algebraMap A B a - s) * algebraMap A B (t ^ n) = 0 := by
-    simpa [hy, hc'] using hc
-  rw [map_pow] at h0
-  exact sub_eq_zero.mp ((IsLocalization.Away.algebraMap_pow_isUnit (S := B) t n).mul_left_inj.mp
-    (h0.trans (zero_mul _).symm))
 
 /-- The generic fibre of the normalization of the total space of `M` in `C`, over the fraction
 field, is `C`. -/
@@ -220,7 +127,7 @@ def normalizationGenericFiberIso :
 
 /-- The normalization of a model with smooth generic fibre is normal, even if that fibre is
 disconnected. No excellence or finiteness of normalization hypothesis is needed. -/
-theorem isNormalScheme_normalization_of_smooth [Smooth toK] :
+instance isNormalScheme_normalization_of_smooth [Smooth toK] :
     AlgebraicGeometry.IsNormalScheme M.genericι.normalization := by
   have := AlgebraicGeometry.IsRegular.of_smooth toK
   exact M.genericι.isNormalScheme_normalization
@@ -302,11 +209,6 @@ theorem isIso_normalizationHom_iff : IsIso M.normalizationHom ↔
   rw [isIso_iff_isIso_hom, normalizationHom_hom, Scheme.Hom.isIso_fromNormalization_iff]
   exact forall₂_congr fun U _ ↦ and_iff_right (M.genericι.app_injective U)
 
-/-- The total space of the normalization of a model with smooth generic fibre is normal. -/
-instance isNormalScheme_normalization_total [Smooth toK] :
-    AlgebraicGeometry.IsNormalScheme M.normalization.total :=
-  M.isNormalScheme_normalization_of_smooth
-
 /-- If the total space of `M` is already normal, then `M.normalizationHom` is an isomorphism. -/
 theorem isIso_normalizationHom_of_isNormalScheme [AlgebraicGeometry.IsNormalScheme M.total] :
     IsIso M.normalizationHom := by
@@ -345,8 +247,15 @@ theorem isIso_normalizationHom_of_isNormalScheme [AlgebraicGeometry.IsNormalSche
     rw [IsLocalization.Away, ← Algebra.algebraMapSubmonoid_powers,
       Algebra.isLocalization_iff_isPushout (S := Submonoid.powers π) (A := K)]
     infer_instance
-  exact mem_range_of_isIntegrallyClosed_of_isLocalization_away (algebraMap R Γ(M.total, U) π)
-    (M.genericι.app_injective U) hs
+  have hsub : Submonoid.powers (algebraMap R Γ(M.total, U) π) ≤ Γ(M.total, U)⁰ :=
+    fun c hc ↦ isRegular_iff_mem_nonZeroDivisors.mp <|
+      (_root_.IsLocalization.injective_iff_isRegular (S := Γ(C, M.genericι ⁻¹ᵁ U))
+        (Submonoid.powers (algebraMap R Γ(M.total, U) π))).mp
+        (M.genericι.app_injective U) ⟨c, hc⟩
+  have hclosed : IsIntegrallyClosedIn Γ(M.total, U) Γ(C, M.genericι ⁻¹ᵁ U) :=
+    TauCeti.IsLocalization.isIntegrallyClosedIn_of_isIntegrallyClosed
+      (Submonoid.powers (algebraMap R Γ(M.total, U) π)) hsub
+  exact (isIntegrallyClosedIn_iff.mp hclosed).2 hs
 
 variable {M} {N : Model R K C toK}
 
