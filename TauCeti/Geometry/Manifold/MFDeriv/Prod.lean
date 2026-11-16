@@ -60,6 +60,8 @@ fields on a product manifold.
   differential on the varied factor.
 * `MDifferentiableAt.hasLeftInverse_mfderiv_fst_prod_iff`: the differential of a
   parameter-preserving map splits exactly when the differential of its slice splits.
+* `MDifferentiableAt.injective_mfderiv_fst_prod_iff`: the differential of a
+  parameter-preserving map is injective exactly when the differential of its slice is.
 * `TauCeti.mfderiv_swap`: the derivative of the exchange of factors exchanges the components.
 * `MDifferentiableAt.curry_left` and `MDifferentiableAt.curry_right`: a curried function
   differentiable jointly is differentiable in each variable separately.
@@ -391,6 +393,35 @@ variable {𝕜 : Type*} [NontriviallyNormedField 𝕜]
   {M M' N : Type*} [TopologicalSpace M] [ChartedSpace H M]
   [TopologicalSpace M'] [ChartedSpace H' M'] [TopologicalSpace N] [ChartedSpace G N]
   {f : M × M' → N} {p : M × M'}
+
+/-- For a differentiable map on a product of manifolds with corners, the differential of the
+parameter-preserving map is injective if and only if the differential of its slice is injective.
+No finite-dimensionality assumption is needed. -/
+theorem MDifferentiableAt.injective_mfderiv_fst_prod_iff
+    (hf : MDifferentiableAt (I.prod I') J f p) :
+    Function.Injective (mfderiv (I.prod I') (I.prod J) (fun q ↦ (q.1, f q)) p) ↔
+      Function.Injective (mfderiv I' J (fun x ↦ f (p.1, x)) p.2) := by
+  rw [injective_iff_map_eq_zero, injective_iff_map_eq_zero]
+  constructor
+  · intro h v hv
+    have hfv : mfderiv (I.prod I') J f p (0, v) = 0 := by
+      have hfirst : mfderiv I J (fun x ↦ f (x, p.2)) p.1 (0 : TangentSpace I p.1) = 0 :=
+        map_zero _
+      -- The product tangent space and its coordinate tangent spaces use the same model vectors.
+      exact (mfderiv_prod_eq_add_apply hf).trans
+        ((congrArg₂ (· + ·) hfirst hv).trans (zero_add _))
+    have hprod : mfderiv (I.prod I') (I.prod J) (fun q ↦ (q.1, f q)) p (0, v) = 0 := by
+      rw [mfderiv_prodMk mdifferentiableAt_fst hf, mfderiv_fst]
+      -- Product tangent spaces are the products of the coordinate model spaces by definition.
+      exact Prod.ext rfl hfv
+    exact congrArg Prod.snd (h _ hprod)
+  · intro h v hv
+    rw [mfderiv_prodMk mdifferentiableAt_fst hf, mfderiv_fst] at hv
+    have h₁ : v.1 = (0 : TangentSpace I p.1) := congrArg Prod.fst hv
+    have h₂ : mfderiv (I.prod I') J f p v = 0 := congrArg Prod.snd hv
+    rw [mfderiv_prod_eq_add_apply hf] at h₂
+    simp only [h₁, map_zero, zero_add] at h₂
+    exact Prod.ext h₁ (h _ h₂)
 
 /-- The differential of a parameter-preserving map has a continuous linear left inverse
 if and only if the differential of its slice at the fixed parameter does.
