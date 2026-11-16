@@ -46,6 +46,11 @@ Interval integrals of elementary functions in closed form or as series, continui
   `C ≥ 0`.
 * `TauCeti.integral_cexp_intCast_mul_mul_I`: `∫ θ in -π..π, exp (k θ i)` is `2π` for
   integer `k = 0` and `0` otherwise, the orthogonality of the Fourier characters on `[-π, π]`.
+* `TauCeti.norm_inv_mul_intervalIntegral_cexp_mul_I_le_one`,
+  `TauCeti.norm_inv_mul_intervalIntegral_cexp_mul_I_le`, and
+  `TauCeti.tendsto_inv_mul_intervalIntegral_cexp_mul_I`: the time average
+  `T⁻¹ * ∫ t in 0..T, exp (i t u)` has modulus at most `1` (and at most `2 / (|u| * |T|)` for
+  `u ≠ 0`) and tends to `1` when `u = 0` and `0` otherwise.
 * `TauCeti.integral_cos_pow_mul_cexp`: `∫ θ in -π..π, cosᵏ θ exp (n θ i)` in closed form, via the
   binomial expansion `TauCeti.cos_pow_mul_cexp` of `cosᵏ θ exp (n θ i)` into characters.
 * `TauCeti.integral_sin_pow_even_eq_ascPochhammer`: the Wallis integral
@@ -275,6 +280,73 @@ theorem integral_cexp_intCast_mul_mul_I (k : ℤ) :
       Complex.exp_eq_exp_iff_exists_int.mpr ⟨k, by push_cast; ring⟩
     simp_rw [mul_right_comm _ _ Complex.I]
     rw [integral_exp_mul_complex hc, ite_eq_right hk, hper, sub_self, zero_div]
+
+/-- The time average `T⁻¹ * ∫ t in 0..T, exp (t * u * I)` of a complex exponential character has
+modulus at most `1`, for every real frequency `u` and every `T : ℝ`. -/
+theorem norm_inv_mul_intervalIntegral_cexp_mul_I_le_one (u T : ℝ) :
+    ‖(T⁻¹ : ℂ) * ∫ t in (0 : ℝ)..T, Complex.exp (t * u * Complex.I)‖ ≤ 1 := by
+  by_cases hT : T = 0
+  · simp [hT]
+  have hnorm_e : ∀ t : ℝ, ‖Complex.exp (t * u * Complex.I)‖ ≤ 1 := fun t => by
+    have : (t : ℂ) * u * Complex.I = ((t * u : ℝ) : ℂ) * Complex.I := by push_cast; ring
+    rw [this, Complex.norm_exp_ofReal_mul_I]
+  have hint : ‖∫ t in (0 : ℝ)..T, Complex.exp (t * u * Complex.I)‖ ≤ |T| := by
+    simpa only [one_mul, sub_zero] using
+      intervalIntegral.norm_integral_le_of_norm_le_const (a := 0) (b := T) (C := 1) fun t _ =>
+        hnorm_e t
+  rw [norm_mul, ← Complex.ofReal_inv, Complex.norm_real, Real.norm_eq_abs, abs_inv]
+  calc
+    |T|⁻¹ * ‖∫ t in (0 : ℝ)..T, Complex.exp (t * u * Complex.I)‖ ≤ |T|⁻¹ * |T| :=
+      mul_le_mul_of_nonneg_left hint (inv_nonneg.mpr (abs_nonneg T))
+    _ = 1 := inv_mul_cancel₀ (abs_ne_zero.mpr hT)
+
+/-- Quantitative `O(|u|⁻¹ |T|⁻¹)` decay of the time average `T⁻¹ * ∫ t in 0..T, exp (t * u * I)`
+for any nonzero real frequency `u` and every `T : ℝ`. -/
+theorem norm_inv_mul_intervalIntegral_cexp_mul_I_le {u : ℝ} (hu : u ≠ 0) (T : ℝ) :
+    ‖(T⁻¹ : ℂ) * ∫ t in (0 : ℝ)..T, Complex.exp (t * u * Complex.I)‖ ≤ 2 / (|u| * |T|) := by
+  by_cases hT : T = 0
+  · simp [hT]
+  have hc : (u : ℂ) * Complex.I ≠ 0 := mul_ne_zero (Complex.ofReal_ne_zero.mpr hu) Complex.I_ne_zero
+  have hfun : (fun t : ℝ => Complex.exp (t * u * Complex.I)) =
+      fun t : ℝ => Complex.exp (((u : ℂ) * Complex.I) * t) := by
+    funext t; congr 1; ring
+  have hnum : ‖Complex.exp (((u : ℂ) * Complex.I) * T) - 1‖ ≤ 2 := by
+    have harg : ((u : ℂ) * Complex.I) * T = ((u * T : ℝ) : ℂ) * Complex.I := by push_cast; ring
+    calc
+      ‖Complex.exp (((u : ℂ) * Complex.I) * T) - 1‖
+          ≤ ‖Complex.exp (((u : ℂ) * Complex.I) * T)‖ + ‖(1 : ℂ)‖ := norm_sub_le _ _
+      _ = 2 := by rw [harg, Complex.norm_exp_ofReal_mul_I, norm_one]; norm_num
+  rw [hfun, integral_exp_mul_complex hc, Complex.ofReal_zero, mul_zero, Complex.exp_zero,
+    norm_mul, norm_div, ← Complex.ofReal_inv, Complex.norm_real, Real.norm_eq_abs, abs_inv,
+    norm_mul, Complex.norm_real, Complex.norm_I, mul_one, Real.norm_eq_abs]
+  calc
+    |T|⁻¹ * (‖Complex.exp (((u : ℂ) * Complex.I) * T) - 1‖ / |u|)
+        ≤ |T|⁻¹ * (2 / |u|) :=
+      mul_le_mul_of_nonneg_left
+        (div_le_div_of_nonneg_right hnum (abs_nonneg _)) (inv_nonneg.mpr (abs_nonneg T))
+    _ = 2 / (|u| * |T|) := by ring
+
+open Filter in
+open scoped Topology in
+/-- As `T → ∞`, the time average `T⁻¹ * ∫ t in 0..T, exp (t * u * I)` of a complex exponential
+character converges to `1` when `u = 0` and to `0` when `u ≠ 0`. -/
+theorem tendsto_inv_mul_intervalIntegral_cexp_mul_I (u : ℝ) :
+    Tendsto (fun T : ℝ => (T⁻¹ : ℂ) * ∫ t in (0 : ℝ)..T, Complex.exp (t * u * Complex.I))
+      atTop (𝓝 (if u = 0 then (1 : ℂ) else 0)) := by
+  by_cases hu : u = 0
+  · subst hu
+    simp only [Complex.ofReal_zero, mul_zero, zero_mul, Complex.exp_zero, ↓reduceIte]
+    refine tendsto_const_nhds.congr' ?_
+    filter_upwards [eventually_gt_atTop (0 : ℝ)] with T hT
+    rw [intervalIntegral.integral_const, sub_zero, Complex.real_smul, mul_one,
+      inv_mul_cancel₀ (Complex.ofReal_ne_zero.mpr hT.ne')]
+  · simp only [hu, ↓reduceIte]
+    refine squeeze_zero_norm' (a := fun T : ℝ => 2 / (|u| * T)) ?_ ?_
+    · filter_upwards [eventually_gt_atTop (0 : ℝ)] with T hT
+      simpa only [abs_of_pos hT] using norm_inv_mul_intervalIntegral_cexp_mul_I_le hu T
+    · have hlim : Tendsto (fun T : ℝ => (2 / |u|) * T⁻¹) atTop (𝓝 0) := by
+        simpa only [mul_zero] using tendsto_inv_atTop_zero.const_mul (2 / |u|)
+      exact hlim.congr fun T => by ring
 
 /-- The binomial expansion of `cosᵏ θ exp (n θ i)` into the Fourier characters
 `exp ((2m - k + n) θ i)`. -/
