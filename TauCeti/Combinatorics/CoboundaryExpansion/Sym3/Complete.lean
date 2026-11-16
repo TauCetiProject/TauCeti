@@ -14,7 +14,7 @@ import Mathlib.Tactic.Ring
 /-!
 # The `Sym(3)` coboundary constant of the complete complex is `k/3`
 
-For every finite linearly ordered `V` with `4 ≤ Fintype.card V`:
+For every finite linearly ordered `V` with `3 ≤ Fintype.card V`:
 
 * `h1_complete_movedNorm_fin_three`: `h1 (complete V) (movedNorm (Fin 3)) = card V / 3`;
 * `h1Norm_complete_movedNorm_fin_three`: in the normalized convention the value is
@@ -102,29 +102,25 @@ private theorem h1_complete_fin_le (k : ℕ) (hk : 3 ≤ k) :
   rw [div_le_div_iff₀ hD' (by norm_num)]
   exact_mod_cast (by omega : Sym3.defect α * 3 ≤ k * D)
 
-private theorem h1_complete_movedNorm_fin_three_of_three_le {V : Type*} [Fintype V]
-    [LinearOrder V] (hV : 3 ≤ Fintype.card V) :
+variable {V : Type*} [Fintype V] [LinearOrder V]
+
+/-- The permutation coboundary constant of the complete complex is `k/3` for every `k ≥ 3`,
+attained with values in `Sym(3)` (Beasley, Theorem 8, stated there for `k ≥ 4`; the same seeds
+cover `k = 3`). -/
+theorem h1_complete_movedNorm_fin_three (hV : 3 ≤ Fintype.card V) :
     h1 (complete V) (movedNorm (Fin 3)) = (Fintype.card V : ℝ) / 3 := by
   refine le_antisymm ?_ (card_div_three_le_h1_of_nontrivial hV _ isConjInvariant_movedNorm)
   rw [h1_complete_eq_of_card_eq isConjInvariant_movedNorm (Fintype.card_fin _).symm]
   exact h1_complete_fin_le _ hV
 
-variable {V : Type*} [Fintype V] [LinearOrder V]
-
-/-- The permutation coboundary constant of the complete complex is `k/3` for every `k ≥ 4`,
-attained with values in `Sym(3)` (Beasley, Theorem 8). -/
-theorem h1_complete_movedNorm_fin_three (hV : 4 ≤ Fintype.card V) :
-    h1 (complete V) (movedNorm (Fin 3)) = (Fintype.card V : ℝ) / 3 :=
-  h1_complete_movedNorm_fin_three_of_three_le (by omega)
-
 /-- The same constant in the normalized convention:
-`(k choose 2) / (k choose 3) · k/3 = k/(k-2)`. -/
-theorem h1Norm_complete_movedNorm_fin_three (hV : 4 ≤ Fintype.card V) :
+`(k choose 2) / (k choose 3) · k/3 = k/(k-2)` for every `k ≥ 3`. -/
+theorem h1Norm_complete_movedNorm_fin_three (hV : 3 ≤ Fintype.card V) :
     h1Norm (complete V) (movedNorm (Fin 3)) = (Fintype.card V : ℝ) / (Fintype.card V - 2) := by
   have h : (Fintype.card V : ℝ) - 2 ≠ 0 := by
-    have : (4 : ℝ) ≤ Fintype.card V := by exact_mod_cast hV
+    have : (3 : ℝ) ≤ Fintype.card V := by exact_mod_cast hV
     linarith
-  rw [h1Norm_complete (by omega), h1_complete_movedNorm_fin_three hV]
+  rw [h1Norm_complete hV, h1_complete_movedNorm_fin_three hV]
   field_simp
 
 /-- On the complete complex with four vertices the `Sym(3)` coboundary constant is `4/3`. -/
