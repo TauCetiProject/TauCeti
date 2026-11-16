@@ -349,17 +349,11 @@ theorem exists_norm_subOne_expGauge_sub_le :
 @[fun_prop, continuity]
 theorem continuous_expGauge : Continuous (expGauge hs) := by
   obtain ⟨C, -, hlip⟩ := exists_norm_subOne_expGauge_sub_le (hs := hs)
-  refine SobolevTopologicalGaugeGroup.continuous_iff.2 (continuous_iff_continuousAt.2 fun F ↦ ?_)
-  rw [ContinuousAt, tendsto_iff_norm_sub_tendsto_zero]
-  have hR : ∀ᶠ G in 𝓝 F, ‖G‖ ≤ ‖F‖ + 1 := by
-    filter_upwards [ball_mem_nhds F one_pos] with G hG
-    linarith [norm_le_norm_add_norm_sub' G F, mem_ball_iff_norm.1 hG]
-  have hd : Tendsto (fun G ↦ ‖G - F‖) (𝓝 F) (𝓝 0) :=
-    tendsto_iff_norm_sub_tendsto_zero.1 tendsto_id
-  refine squeeze_zero' (.of_forall fun _ ↦ norm_nonneg _) ?_
-    (by simpa using hd.const_mul (Real.exp (C * (‖F‖ + 1))))
-  filter_upwards [hR] with G hG
-  exact hlip hG (le_add_of_nonneg_right zero_le_one)
+  refine SobolevTopologicalGaugeGroup.continuous_iff.2 (continuous_iff_continuousAt.2 fun F ↦
+    continuousAt_of_locally_lipschitz one_pos (Real.exp (C * (‖F‖ + 1))) fun G hG ↦ ?_)
+  simpa only [dist_eq_norm] using hlip
+    (by linarith [norm_le_norm_add_norm_sub' G F, dist_eq_norm G F])
+    (le_add_of_nonneg_right zero_le_one)
 
 /-- **The phase of a gauge near the identity.** There is `C ≥ 0` such that for every `u ∈ G_s`
 with `C ‖u - 1‖_{H^s} < 1`, the phase `arg u` is almost everywhere an `L²` function in `H^s`, of
