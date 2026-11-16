@@ -7,6 +7,8 @@ module
 
 public import Mathlib.Analysis.SpecialFunctions.Integrals.Basic
 
+import TauCeti.Analysis.SpecialFunctions.Integrals.Exp
+
 /-!
 # Smooth exponential cutoffs with length-independent integral bounds
 
@@ -36,6 +38,10 @@ namespace TauCeti.ExponentialCutoff
 /-- Endpoint-zero smooth exponential cutoff with independent length and scale. -/
 def cutoff (L scale t : ℝ) : ℝ :=
   (1 - Real.exp (-scale * t)) * (1 - Real.exp (-scale * (L - t)))
+
+/-- The defining exponential-product formula of the cutoff. -/
+theorem cutoff_def (L scale t : ℝ) : cutoff L scale t =
+    (1 - Real.exp (-scale * t)) * (1 - Real.exp (-scale * (L - t))) := (rfl)
 
 /-- The exponential cutoff is smooth for every real length and scale. -/
 theorem contDiff_cutoff (L scale : ℝ) : ContDiff ℝ ∞ (cutoff L scale) := by
@@ -83,46 +89,6 @@ theorem cutoff_defect_le (L scale t : ℝ) :
     dsimp [cutoff]
     nlinarith
   nlinarith [sq_nonneg (1 - cutoff L scale t)]
-
-private theorem integral_exp_neg_mul_le {L scale : ℝ} (hscale : 0 < scale) :
-    (∫ t : ℝ in 0..L, Real.exp (-scale * t)) ≤ 1 / scale := by
-  rw [intervalIntegral.integral_comp_mul_left Real.exp (neg_ne_zero.mpr hscale.ne')]
-  simp only [mul_zero, integral_exp, Real.exp_zero, smul_eq_mul]
-  have hpos := (Real.exp_pos (-(scale * L))).le
-  apply (mul_le_mul_iff_of_pos_left hscale).mp
-  field_simp
-  nlinarith
-
--- Both public integral bounds use this same positive exponential-pair majorant.
-private theorem integral_le_exp_pair {f : ℝ → ℝ} {L scale K : ℝ}
-    (hL : 0 ≤ L) (hscale : 0 < scale) (hK : 0 ≤ K)
-    (hbound : ∀ t ∈ Icc 0 L, f t ≤
-      K * (Real.exp (-scale * t) + Real.exp (-scale * (L - t)))) :
-    (∫ t in (0 : ℝ)..L, f t) ≤ K * (2 / scale) := by
-  by_cases hf : IntervalIntegrable f volume 0 L
-  swap
-  · rw [integral_undef hf]
-    positivity
-  have hA : Continuous (fun t : ℝ ↦ Real.exp (-scale * t)) := by fun_prop
-  have hB : Continuous (fun t : ℝ ↦ Real.exp (-scale * (L - t))) := by fun_prop
-  have hreflect : (∫ t : ℝ in 0..L, Real.exp (-scale * (L - t))) =
-      ∫ t : ℝ in 0..L, Real.exp (-scale * t) := by
-    rw [intervalIntegral.integral_comp_sub_left (fun t ↦ Real.exp (-scale * t)) L]
-    simp only [sub_self, sub_zero]
-  calc
-    (∫ t in (0 : ℝ)..L, f t) ≤
-        ∫ t in (0 : ℝ)..L,
-          K * (Real.exp (-scale * t) + Real.exp (-scale * (L - t))) :=
-      intervalIntegral.integral_mono_on hL hf
-        (((hA.add hB).const_mul K).intervalIntegrable 0 L) hbound
-    _ = K * (2 * ∫ t : ℝ in 0..L, Real.exp (-scale * t)) := by
-      rw [intervalIntegral.integral_const_mul,
-        intervalIntegral.integral_add (hA.intervalIntegrable 0 L) (hB.intervalIntegrable 0 L),
-        hreflect, ← two_mul]
-    _ ≤ K * (2 / scale) :=
-      mul_le_mul_of_nonneg_left
-        (by simpa only [mul_one_div] using
-          mul_le_mul_of_nonneg_left (integral_exp_neg_mul_le hscale) (by norm_num : (0 : ℝ) ≤ 2)) hK
 
 /-- The integrated squared-cutoff defect is at most `4/scale`, independently of length. -/
 theorem integral_cutoff_defect_le {L scale : ℝ} (hL : 0 ≤ L) (hscale : 0 < scale) :

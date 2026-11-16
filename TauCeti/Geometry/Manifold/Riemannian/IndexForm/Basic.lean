@@ -258,6 +258,23 @@ theorem indexFormIntegrandWithin_const_smul_right (c : ℝ) (t : ℝ) :
   rw [indexFormIntegrandWithin_comm, indexFormIntegrandWithin_const_smul_left,
     indexFormIntegrandWithin_comm]
 
+/-- The diagonal index density of a scalar multiple of a parallel field, with derivatives
+within any parameter set. Only differentiability of the scalar and the field's coordinate
+reading at the evaluation point is required. -/
+theorem indexFormIntegrandWithin_smul_of_alongCurveWithin_eq_zero
+    (φ : ℝ → ℝ) {t : ℝ} (hφ : DifferentiableWithinAt ℝ φ s t)
+    (hV : DifferentiableWithinAt ℝ (sectionCoord (F := E) γ V (γ t)) s t)
+    (hparallel : alongCurveWithin (leviCivitaConnection I M) γ V s t = 0) :
+    indexFormIntegrandWithin I γ (fun r ↦ φ r • V r) (fun r ↦ φ r • V r) s t =
+      derivWithin φ s t ^ 2 * inner ℝ (V t) (V t) - φ t ^ 2 *
+        inner ℝ ((leviCivitaConnection I M).curvatureTensor (γ t) (V t)
+          (curveVelocityWithin I γ s t) (curveVelocityWithin I γ s t)) (V t) := by
+  rw [indexFormIntegrandWithin_def,
+    alongCurveWithin_smul _ γ V φ s hφ hV, hparallel, smul_zero, add_zero]
+  simp only [real_inner_smul_left, real_inner_smul_right, map_smul,
+    LinearMap.smul_apply]
+  ring
+
 /-- The index form is homogeneous in the first field. -/
 @[to_fun (attr := simp) indexForm_fun_const_smul_left]
 theorem indexForm_const_smul_left (c : ℝ) :

@@ -42,23 +42,6 @@ variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimension
   [IsContMDiffRiemannianBundle I ∞ E (fun x : M ↦ TangentSpace I x)]
   {γ : ℝ → M} {V : ∀ t, TangentSpace I (γ t)} {s : Set ℝ} {t : ℝ}
 
-/-- The diagonal index density of a scalar multiple of a parallel field, with derivatives
-within any parameter set. Only differentiability of the scalar and the field's coordinate
-reading at the evaluation point is required. -/
-theorem indexFormIntegrandWithin_smul_of_alongCurveWithin_eq_zero
-    (φ : ℝ → ℝ) (hφ : DifferentiableWithinAt ℝ φ s t)
-    (hV : DifferentiableWithinAt ℝ (sectionCoord (F := E) γ V (γ t)) s t)
-    (hparallel : alongCurveWithin (leviCivitaConnection I M) γ V s t = 0) :
-    indexFormIntegrandWithin I γ (fun r ↦ φ r • V r) (fun r ↦ φ r • V r) s t =
-      derivWithin φ s t ^ 2 * inner ℝ (V t) (V t) - φ t ^ 2 *
-        inner ℝ ((leviCivitaConnection I M).curvatureTensor (γ t) (V t)
-          (curveVelocityWithin I γ s t) (curveVelocityWithin I γ s t)) (V t) := by
-  rw [indexFormIntegrandWithin_def,
-    alongCurveWithin_smul _ γ V φ s hφ hV, hparallel, smul_zero, add_zero]
-  simp only [real_inner_smul_left, real_inner_smul_right, map_smul,
-    LinearMap.smul_apply]
-  ring
-
 /-- Summing diagonal index densities of scalar multiples of an orthonormal parallel frame
 gives the dimension times the squared scalar derivative minus the weighted Ricci contraction.
 The frame index is any finite type, including the empty type. -/
@@ -90,7 +73,8 @@ theorem sum_indexFormIntegrandWithin_smul_of_alongCurveWithin_eq_zero
   exact Finset.sum_congr rfl fun i _ ↦ real_inner_comm _ _
 
 /-- The trace of the cutoff index densities integrates to the derivative energy minus
-the cutoff-weighted Ricci integral. Parallelism is needed only in the open segment. -/
+the cutoff-weighted Ricci integral. Only the weighted Ricci term must be integrable;
+parallelism is needed only in the open segment. -/
 theorem integral_sum_indexFormIntegrand_cutoff_smul
     {ι : Type*} [Fintype ι] (e : ∀ r, OrthonormalBasis ι ℝ (TangentSpace I (γ r)))
     (L scale : ℝ)
@@ -98,8 +82,9 @@ theorem integral_sum_indexFormIntegrand_cutoff_smul
       (sectionCoord (F := E) γ (fun t ↦ e t i) (γ r)) r)
     (hparallel : ∀ r ∈ uIoo 0 L, ∀ i,
       alongCurve (leviCivitaConnection I M) γ (fun t ↦ e t i) r = 0)
-    (hRic : IntervalIntegrable (fun r ↦ (leviCivitaConnection I M).ricciTensor (γ r)
-      (curveVelocity I γ r) (curveVelocity I γ r)) volume 0 L) :
+    (hRic : IntervalIntegrable (fun r ↦ ExponentialCutoff.cutoff L scale r ^ 2 *
+      (leviCivitaConnection I M).ricciTensor (γ r)
+        (curveVelocity I γ r) (curveVelocity I γ r)) volume 0 L) :
     (∫ r in (0 : ℝ)..L, ∑ i, indexFormIntegrand I γ
         (fun t ↦ ExponentialCutoff.cutoff L scale t • e t i)
         (fun t ↦ ExponentialCutoff.cutoff L scale t • e t i) r) =
@@ -111,10 +96,8 @@ theorem integral_sum_indexFormIntegrand_cutoff_smul
   have hD : Continuous (fun r ↦ deriv (ExponentialCutoff.cutoff L scale) r ^ 2) := by
     simp_rw [(ExponentialCutoff.hasDerivAt_cutoff L scale _).deriv]
     fun_prop
-  have hφ : Continuous (fun r : ℝ ↦ ExponentialCutoff.cutoff L scale r ^ 2) :=
-    (ExponentialCutoff.contDiff_cutoff L scale).continuous.pow 2
   rw [← intervalIntegral.integral_const_mul, ← intervalIntegral.integral_sub
-    ((hD.intervalIntegrable 0 L).const_mul _) (hRic.continuousOn_mul hφ.continuousOn)]
+    ((hD.intervalIntegrable 0 L).const_mul _) hRic]
   apply intervalIntegral.integral_congr_uIoo
   intro r hr
   simpa only [indexFormIntegrandWithin_univ, derivWithin_univ, curveVelocityWithin_univ]
@@ -149,7 +132,10 @@ theorem integral_ricci_le_of_integral_sum_indexFormIntegrand_nonneg
     positivity
   apply ExponentialCutoff.integral_le_of_integral_cutoff_sq_mul_le
     hL hscale hK hRic hbound
-  rw [integral_sum_indexFormIntegrand_cutoff_smul e L scale he hparallel hRic] at hindex
+  have hφ : Continuous (fun r : ℝ ↦ ExponentialCutoff.cutoff L scale r ^ 2) :=
+    (ExponentialCutoff.contDiff_cutoff L scale).continuous.pow 2
+  rw [integral_sum_indexFormIntegrand_cutoff_smul e L scale he hparallel
+    (hRic.continuousOn_mul hφ.continuousOn)] at hindex
   exact (sub_nonneg.mp hindex).trans
     (mul_le_mul_of_nonneg_left (ExponentialCutoff.integral_deriv_cutoff_sq_le hscale.le)
       (Nat.cast_nonneg _))
