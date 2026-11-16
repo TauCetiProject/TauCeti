@@ -5,7 +5,6 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Algebra.Homology.Monoidal.Homology.Kunneth.Projective
 public import TauCeti.AlgebraicTopology.Singular.Cubical.Kunneth.Pair
 public import TauCeti.AlgebraicTopology.Singular.Cubical.Comparison.Relative.Homotopy
 public import TauCeti.AlgebraicTopology.Singular.Excision
@@ -285,16 +284,14 @@ theorem cubicalChainComplexProdToSingular_naturality :
       cubicalChainComplexProdToSingular k A B ≫ TopPair.singularChainComplexMap
         (ofSubsetMap (g ⊗ₘ h) (TopCat.mapsTo_tensorHom_preimage_union g h hg hh))
         (ModuleCat.of k k) := by
-  have hfst : Hom.fst (prodLeftMap (ofSubsetMap h hh) (Hom.fst (ofSubsetMap g hg))) =
-      Hom.fst (ofSubsetMap g hg) ⊗ₘ Hom.fst (ofSubsetMap h hh) :=
-    (rfl)
   have hpair : prodLeftMap (ofSubsetMap h hh) (Hom.fst (ofSubsetMap g hg)) ≫
       prodLeftToPreimageUnion A' B' = prodLeftToPreimageUnion A B ≫
-        ofSubsetMap (g ⊗ₘ h) (TopCat.mapsTo_tensorHom_preimage_union g h hg hh) := by
-    refine hom_ext_of_fst _ ?_
-    rw [Hom.fst_comp, Hom.fst_comp, prodLeftToPreimageUnion_fst, prodLeftToPreimageUnion_fst, hfst,
-      ofSubsetMap_fst, ofSubsetMap_fst, ofSubsetMap_fst]
-    exact (Category.comp_id _).trans (Category.id_comp _).symm
+        ofSubsetMap (g ⊗ₘ h) (TopCat.mapsTo_tensorHom_preimage_union g h hg hh) :=
+    hom_ext_of_fst _ (by
+      -- `prodLeftMap_fst` must fire before `ofSubsetMap_fst` rewrites its argument.
+      simp only [Hom.fst_comp, prodLeftMap_fst, prodLeftToPreimageUnion_fst]
+      simp only [ofSubsetMap_fst]
+      ext; rfl)
   refine coequalizer.hom_ext ?_
   rw [π_cubicalChainComplexProdMap_assoc, π_cubicalChainComplexProdToSingular,
     π_cubicalChainComplexProdToSingular_assoc, cubicalToSingularRel_naturality_assoc,
@@ -430,11 +427,7 @@ theorem isIso_singularHomologyKunnethPair_of_projective (hA : IsOpen A) (hB : Is
     IsIso (singularHomologyKunnethPair k A B n) := by
   have (p : ℕ) : Projective (((ofSubset A).cubicalChainComplex k).homology p) :=
     Projective.of_iso (TopPair.singularCubicalHomologyIso k _ p) (hA' p)
-  have := isIso_homologyKunneth_of_projective ((ofSubset A).cubicalChainComplex k)
-    ((ofSubset B).cubicalChainComplex k) n
-  have : IsIso (cubicalHomologyKunnethPair k (ofSubset A) (ofSubset B) n) := by
-    rw [cubicalHomologyKunnethPair_def]
-    infer_instance
+  have := isIso_cubicalHomologyKunnethPair_of_projective k (ofSubset A) (ofSubset B) n
   exact isIso_singularHomologyKunnethPair k hA hB n
 
 end Kunneth

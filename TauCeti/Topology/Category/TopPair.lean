@@ -419,6 +419,12 @@ abbrev prodLeftMap {P P' : TopPair.{u}} {X X' : TopCat.{u}} (f : P ⟶ P') (g : 
     ext x
     exact Prod.ext rfl (Hom.w_apply f x.2))
 
+/-- The map of ambient spaces underlying `prodLeftMap f g` is the product `g × f` of the maps. -/
+@[simp]
+lemma prodLeftMap_fst {P P' : TopPair.{u}} {X X' : TopCat.{u}} (f : P ⟶ P') (g : X ⟶ X') :
+    Hom.fst (prodLeftMap f g) = g ⊗ₘ Hom.fst f :=
+  (rfl)
+
 @[simp]
 lemma prodLeftMap_id (P : TopPair.{u}) (X : TopCat.{u}) :
     prodLeftMap (𝟙 P) (𝟙 X) = 𝟙 (P.prodLeft X) :=

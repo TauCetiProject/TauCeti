@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Algebra.Homology.Monoidal.Homology.Kunneth.Projective
 public import TauCeti.AlgebraicTopology.Singular.Cubical.Comparison.Relative.Prod
 public import TauCeti.AlgebraicTopology.Singular.Cubical.Kunneth.Relative
 
@@ -34,8 +35,9 @@ quasi-isomorphisms by the relative Eilenberg–Zilber theorem for a space and a 
 quasi-isomorphism (`TauCeti.quasiIso_cubicalCrossProductPair`): the **Eilenberg–Zilber theorem for
 a product of pairs**. Consequently the Künneth map
 `⨁_{p + q = n} Hₚ(X, A; k) ⊗ H_q(Y, B; k) ⟶ Hₙ(N(P × Q))` is an isomorphism over a field
-(`TauCeti.isIso_cubicalHomologyKunnethPair_of_isSemisimpleRing`). Everything is natural in both
-pairs.
+(`TauCeti.isIso_cubicalHomologyKunnethPair_of_isSemisimpleRing`), and over any commutative ring
+when the relative homology of `P` is projective
+(`TauCeti.isIso_cubicalHomologyKunnethPair_of_projective`). Everything is natural in both pairs.
 
 No hypothesis is placed on the subspaces. When `A` and `B` are open, the homology of `N(P × Q)`
 is the relative singular homology of `(X × Y, A × Y ∪ X × B)`, and the Künneth map in relative
@@ -62,8 +64,9 @@ relative cycles.
 * `TauCeti.cubicalCrossProductPair_naturality`, `TauCeti.cubicalHomologyKunnethPair_naturality`:
   naturality in both pairs.
 * `TauCeti.isIso_cubicalHomologyKunnethPair`,
-  `TauCeti.isIso_cubicalHomologyKunnethPair_of_isSemisimpleRing`: the Künneth theorem for a
-  product of pairs.
+  `TauCeti.isIso_cubicalHomologyKunnethPair_of_isSemisimpleRing`,
+  `TauCeti.isIso_cubicalHomologyKunnethPair_of_projective`: the Künneth theorem for a product of
+  pairs.
 
 ## References
 
@@ -295,5 +298,16 @@ theorem isIso_cubicalHomologyKunnethPair
 instance isIso_cubicalHomologyKunnethPair_of_isSemisimpleRing [IsSemisimpleRing k] (n : ℕ) :
     IsIso (cubicalHomologyKunnethPair k P Q n) :=
   isIso_cubicalHomologyKunnethPair k P Q n
+
+/-- **The Künneth theorem for a product of pairs with projective homology**: if the relative
+cubical homology modules `Hₚ(X, A; k)` are all projective, then
+`⨁_{p + q = n} Hₚ(X, A; k) ⊗ H_q(Y, B; k) ≅ Hₙ(N(P × Q))`. No condition is placed on the pair
+`Q`. -/
+theorem isIso_cubicalHomologyKunnethPair_of_projective
+    [∀ p, Projective ((P.cubicalChainComplex k).homology p)] (n : ℕ) :
+    IsIso (cubicalHomologyKunnethPair k P Q n) := by
+  have := isIso_homologyKunneth_of_projective (P.cubicalChainComplex k) (Q.cubicalChainComplex k) n
+  rw [cubicalHomologyKunnethPair_def]
+  infer_instance
 
 end TauCeti
