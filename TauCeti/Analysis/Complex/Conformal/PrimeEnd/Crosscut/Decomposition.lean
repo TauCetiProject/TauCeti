@@ -26,6 +26,9 @@ identified common edges and boundary arcs. Schoenflies identifies each cell with
 Each inside is a connected component of `U \ range τ`, by the Jordan complementary-component
 theorem. Their closures meet the original frontier in different arcs, so they are distinct.
 The crosscut two-side theorem then shows that they exhaust `U \ range τ`.
+For two closed sets `A` and `B` covering `closure U` and meeting along the crosscut, each inside
+is preconnected and misses `A ∩ B`, so it lies in `A` or in `B`; as each of `A` and `B` meets
+`U` off the crosscut, one inside lies in `A` and the other in `B`.
 
 ## Main results
 
@@ -36,6 +39,10 @@ The crosscut two-side theorem then shows that they exhaust `U \ range τ`.
   injective boundary paths.
 * `Path.IsCrosscut.exists_filledHull_union_filledHull_eq_closure`: existence of such paths.
 * `Path.IsCrosscut.exists_filledHull_union_filledHull_eq_closedBall`: the disc specialization.
+* `Path.IsCrosscut.exists_eq_filledHull_of_union_eq_closure` and
+  `Path.IsCrosscut.exists_eq_filledHull_of_union_eq_closedBall`: these are the only pieces. If
+  `closure U` is the union of two closed sets meeting exactly along the crosscut, each with a
+  point off it, each of them is one of these filled hulls.
 
 ## References
 
@@ -335,5 +342,97 @@ theorem IsCrosscut.exists_filledHull_union_filledHull_eq_closedBall {c : ℂ} {r
   simpa only [hfr, closure_ball c hr.ne'] using
     hτ.exists_filledHull_union_filledHull_eq_closure isOpen_ball isBounded_ball
       (hfr.symm ▸ isJordanCurve_sphere c hr)
+
+/-- A preconnected subset of `closure U` off the crosscut lies in one of two closed sets covering
+`closure U` and meeting exactly along the crosscut. -/
+private theorem subset_or_subset_of_isPreconnected {A B W : Set ℂ} (hA : IsClosed A)
+    (hB : IsClosed B) (hAB : A ∪ B = closure U) (hAB' : A ∩ B = range τ)
+    (hW : IsPreconnected W) (hWs : W ⊆ closure U \ range τ) : W ⊆ A ∨ W ⊆ B := by
+  have hmem {p : ℂ} (hp : p ∈ W) : p ∈ A ∪ B := hAB ▸ (hWs hp).1
+  rcases isPreconnected_iff_subset_of_disjoint.mp hW Bᶜ Aᶜ hB.isOpen_compl hA.isOpen_compl
+    (fun p hp ↦ by
+      by_contra hc
+      rw [mem_union, not_or, notMem_compl_iff, notMem_compl_iff] at hc
+      exact (hWs hp).2 (hAB' ▸ ⟨hc.2, hc.1⟩))
+    (eq_empty_of_forall_notMem fun p ⟨hp, hpB, hpA⟩ ↦ (hmem hp).elim hpA hpB) with h | h
+  · exact Or.inl fun p hp ↦ (hmem hp).resolve_right (h hp)
+  · exact Or.inr fun p hp ↦ (hmem hp).resolve_left (h hp)
+
+/-- A piece of `closure U` with a point off the crosscut, whose complementary piece is closed,
+meets `U` off the crosscut. -/
+private theorem nonempty_inter_sdiff_range {A B : Set ℂ} (hB : IsClosed B)
+    (hAB : A ∪ B = closure U) (hAB' : A ∩ B = range τ) (hAτ : (A \ range τ).Nonempty) :
+    (A ∩ (U \ range τ)).Nonempty := by
+  obtain ⟨p, hpA, hpτ⟩ := hAτ
+  obtain ⟨q, hqN, hqU⟩ := mem_closure_iff.mp (hAB ▸ Or.inl hpA : p ∈ closure U) _
+    (hB.isOpen_compl.inter (isCompact_range τ.continuous).isClosed.isOpen_compl)
+    ⟨fun h ↦ hpτ (hAB' ▸ ⟨hpA, h⟩), hpτ⟩
+  exact ⟨q, (hAB ▸ subset_closure hqU : q ∈ A ∪ B).resolve_right hqN.1, hqU, hqN.2⟩
+
+/-- If the inside of a Jordan curve `J` through the crosscut lies in `A`, the inside of another
+lies in `B`, and their filled hulls cover `closure U`, then `A` is the filled hull of `J`. -/
+private theorem eq_filledHull_of_subset {A B J K : Set ℂ} (hA : IsClosed A) (hB : IsClosed B)
+    (hAB : A ∪ B = closure U) (hAB' : A ∩ B = range τ) (hτJ : range τ ⊆ J)
+    (hJ : IsJordanCurve J) (hK : IsJordanCurve K)
+    (hcover : filledHull J ∪ filledHull K = closure U) (hJA : filledHull J \ J ⊆ A)
+    (hKB : filledHull K \ K ⊆ B) : A = filledHull J := by
+  refine Subset.antisymm (fun p hp ↦ ?_) (hJ.closure_filledHull_sdiff ▸ closure_minimal hJA hA)
+  rcases (hcover ▸ hAB ▸ Or.inl hp : p ∈ filledHull J ∪ filledHull K) with h | h
+  · exact h
+  · exact subset_filledHull (hτJ (hAB' ▸
+      ⟨hp, (hK.closure_filledHull_sdiff ▸ closure_minimal hKB hB) h⟩))
+
+/-- **The closed pieces of a crosscut.** Let `τ` be a crosscut of a bounded open set `U ⊆ ℂ`
+whose frontier is a Jordan curve. If `closure U` is the union of two closed sets `A` and `B`
+meeting exactly along `τ`, each with a point off `τ`, then `A` is the filled hull of the Jordan
+curve made of `τ` and an injective path in `frontier U` with the same endpoints. -/
+theorem IsCrosscut.exists_eq_filledHull_of_union_eq_closure (hτ : IsCrosscut τ U)
+    (hUo : IsOpen U) (hUb : Bornology.IsBounded U) (hUJ : IsJordanCurve (frontier U))
+    {A B : Set ℂ} (hA : IsClosed A) (hB : IsClosed B) (hAB : A ∪ B = closure U)
+    (hAB' : A ∩ B = range τ) (hAτ : (A \ range τ).Nonempty) (hBτ : (B \ range τ).Nonempty) :
+    ∃ α : Path x y, Injective α ∧ range α ⊆ frontier U ∧ IsJordanCurve (range τ ∪ range α) ∧
+      A = filledHull (range τ ∪ range α) := by
+  obtain ⟨α, β, hα, hβ, hαβu, hαβi, hJα, hJβ, hcover, -⟩ :=
+    hτ.exists_filledHull_union_filledHull_eq_closure hUo hUb hUJ
+  have hαf : range α ⊆ frontier U := hαβu ▸ subset_union_left
+  have hβf : range β ⊆ frontier U := hαβu ▸ subset_union_right
+  have hunion := (hτ.disjoint_and_union_filledHull_sdiff hUo hUb hUJ hα hβ hαf hβf hαβi).2
+  set Wα := filledHull (range τ ∪ range α) \ (range τ ∪ range α)
+  set Wβ := filledHull (range τ ∪ range β) \ (range τ ∪ range β)
+  have hWs {W : Set ℂ} (hW : W ⊆ Wα ∪ Wβ) : W ⊆ closure U \ range τ :=
+    hW.trans (hunion ▸ sdiff_subset_sdiff_left subset_closure)
+  have hnot {C D : Set ℂ} (hCD : C ∩ D = range τ) (hD : (D ∩ (U \ range τ)).Nonempty)
+      (hα : Wα ⊆ C) (hβ : Wβ ⊆ C) : False := by
+    obtain ⟨q, hqD, hq⟩ := hD
+    rcases (hunion ▸ hq : q ∈ Wα ∪ Wβ) with h | h
+    · exact hq.2 (hCD ▸ ⟨hα h, hqD⟩)
+    · exact hq.2 (hCD ▸ ⟨hβ h, hqD⟩)
+  have hAn := nonempty_inter_sdiff_range hB hAB hAB' hAτ
+  have hBn := nonempty_inter_sdiff_range hA (by rwa [union_comm]) (by rwa [inter_comm]) hBτ
+  rcases subset_or_subset_of_isPreconnected hA hB hAB hAB'
+      hJα.isConnected_filledHull_sdiff.isPreconnected (hWs subset_union_left) with h₁ | h₁ <;>
+    rcases subset_or_subset_of_isPreconnected hA hB hAB hAB'
+      hJβ.isConnected_filledHull_sdiff.isPreconnected (hWs subset_union_right) with h₂ | h₂
+  · exact (hnot hAB' hBn h₁ h₂).elim
+  · exact ⟨α, hα, hαf, hJα,
+      eq_filledHull_of_subset hA hB hAB hAB' subset_union_left hJα hJβ hcover h₁ h₂⟩
+  · exact ⟨β, hβ, hβf, hJβ, eq_filledHull_of_subset hA hB hAB hAB' subset_union_left hJβ hJα
+      (by rwa [union_comm]) h₂ h₁⟩
+  · exact (hnot (by rwa [inter_comm]) hAn h₁ h₂).elim
+
+/-- **The closed pieces of a crosscut of a disc.** If `closedBall c r` is the union of two closed
+sets `A` and `B` meeting exactly along a crosscut `τ` of `ball c r`, each with a point off `τ`,
+then `A` is the filled hull of the Jordan curve made of `τ` and an injective path in
+`sphere c r` with the same endpoints. -/
+theorem IsCrosscut.exists_eq_filledHull_of_union_eq_closedBall {c : ℂ} {r : ℝ}
+    (hτ : IsCrosscut τ (ball c r)) {A B : Set ℂ} (hA : IsClosed A) (hB : IsClosed B)
+    (hAB : A ∪ B = closedBall c r) (hAB' : A ∩ B = range τ) (hAτ : (A \ range τ).Nonempty)
+    (hBτ : (B \ range τ).Nonempty) :
+    ∃ α : Path x y, Injective α ∧ range α ⊆ sphere c r ∧ IsJordanCurve (range τ ∪ range α) ∧
+      A = filledHull (range τ ∪ range α) := by
+  have hr := hτ.radius_pos
+  have hfr := frontier_ball c hr.ne'
+  simpa only [hfr] using hτ.exists_eq_filledHull_of_union_eq_closure isOpen_ball isBounded_ball
+    (hfr.symm ▸ isJordanCurve_sphere c hr) hA hB (closure_ball c hr.ne' ▸ hAB) hAB' hAτ hBτ
 
 end Path
