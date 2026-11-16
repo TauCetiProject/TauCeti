@@ -85,7 +85,7 @@ multiple of `constantCurvature V`, specifically `(scalar r / 2) • constantCurv
 * `TauCeti.FourTensor.IsAlgebraicCurvature.eq_of_apply_self_eq_of_linearIndependent` and
   `TauCeti.FourTensor.IsAlgebraicCurvature.eq_of_apply_self_eq`: sectional polarization of
   algebraic curvature tensors.
-* `TauCeti.FourTensor.eq_zero_of_antisymm_first_of_finrank_le_one` and
+* `TauCeti.FourTensor.eq_zero_of_finrank_le_one_of_antisymm_first` and
   `TauCeti.FourTensor.IsAlgebraicCurvature.eq_zero_of_finrank_le_one`: on a finite-dimensional
   space `V` with `Module.finrank ℝ V ≤ 1`, four-tensors antisymmetric in their first two arguments
   vanish.
@@ -363,7 +363,9 @@ def toLinearMap₄ : FourTensor V →ₗ[ℝ] V →ₗ[ℝ] V →ₗ[ℝ] V →�
     r.toLinearMap₄ u v z w = r ![u, v, z, w] := (rfl)
 /-- Currying a four-tensor into a four-linear form is injective. -/
 theorem toLinearMap₄_injective : Function.Injective (toLinearMap₄ (V := V)) := fun _ _ h ↦ by
-  ext m; rw [← FinVec.etaExpand_eq m]; exact congr($h (m 0) (m 1) (m 2) (m 3))
+  ext m
+  have hm : m = ![m 0, m 1, m 2, m 3] := by ext i; fin_cases i <;> rfl
+  rw [hm, ← toLinearMap₄_apply, ← toLinearMap₄_apply, h]
 @[simp] theorem toLinearMap₄_eq_zero_iff {r : FourTensor V} : r.toLinearMap₄ = 0 ↔ r = 0 :=
   map_eq_zero_iff _ toLinearMap₄_injective
 
@@ -385,8 +387,14 @@ theorem IsAlgebraicCurvature.eq_of_apply_self_eq_of_linearIndependent {r₁ r₂
     (h : ∀ u v : V, LinearIndependent ℝ ![u, v] → r₁ ![u, v, u, v] = r₂ ![u, v, u, v]) :
     r₁ = r₂ := by
   refine toLinearMap₄_injective (LinearMap.eq_of_cyclic_eq_zero_of_linearIndependent
-    (by norm_num : (6 : ℝ) ≠ 0) hr₁.antisymm_first hr₁.antisymm_last hr₁.cyclic_eq_zero
-    hr₂.antisymm_first hr₂.antisymm_last hr₂.cyclic_eq_zero fun u v huv ↦ ?_)
+    (by norm_num : (6 : ℝ) ≠ 0)
+    (fun _ _ _ _ ↦ by simp only [toLinearMap₄_apply]; exact hr₁.antisymm_first ..)
+    (fun _ _ _ _ ↦ by simp only [toLinearMap₄_apply]; exact hr₁.antisymm_last ..)
+    (fun _ _ _ _ ↦ by simp only [toLinearMap₄_apply]; exact hr₁.cyclic_eq_zero ..)
+    (fun _ _ _ _ ↦ by simp only [toLinearMap₄_apply]; exact hr₂.antisymm_first ..)
+    (fun _ _ _ _ ↦ by simp only [toLinearMap₄_apply]; exact hr₂.antisymm_last ..)
+    (fun _ _ _ _ ↦ by simp only [toLinearMap₄_apply]; exact hr₂.cyclic_eq_zero ..)
+    fun u v huv ↦ ?_)
   simp only [toLinearMap₄_apply, hr₁.antisymm_last u v v u, hr₂.antisymm_last u v v u, h u v huv]
 /-- **Polarization of algebraic curvature tensors.** Two algebraic curvature tensors with the same
 sectional-numerator values `r ![u, v, u, v]` for all `u, v` are equal. -/
@@ -397,7 +405,7 @@ theorem IsAlgebraicCurvature.eq_of_apply_self_eq {r₁ r₂ : FourTensor V}
 
 /-- On a real normed space of dimension at most `1`, every four-tensor antisymmetric in its first
 two arguments vanishes. -/
-theorem eq_zero_of_antisymm_first_of_finrank_le_one [FiniteDimensional ℝ V]
+theorem eq_zero_of_finrank_le_one_of_antisymm_first [FiniteDimensional ℝ V]
     (hn : Module.finrank ℝ V ≤ 1) {r : FourTensor V}
     (hr₁ : ∀ u v z w, r ![u, v, z, w] = -r ![v, u, z, w]) : r = 0 := by
   apply toLinearMap₄_injective; rw [map_zero]
@@ -406,7 +414,7 @@ theorem eq_zero_of_antisymm_first_of_finrank_le_one [FiniteDimensional ℝ V]
   rw [show i = j from Fin.ext (by omega)]; simp [apply_self_first_of_antisymm hr₁]
 theorem IsAlgebraicCurvature.eq_zero_of_finrank_le_one [FiniteDimensional ℝ V]
     {r : FourTensor V} (hr : IsAlgebraicCurvature r) (hn : Module.finrank ℝ V ≤ 1) : r = 0 :=
-  eq_zero_of_antisymm_first_of_finrank_le_one hn hr.antisymm_first
+  eq_zero_of_finrank_le_one_of_antisymm_first hn hr.antisymm_first
 
 /-- The bilinear form `(x, y) ↦ r(x, u, y, v)` whose metric trace is the Ricci contraction. -/
 private def ricciSlice (r : FourTensor V) (u v : V) : BilinForm ℝ V :=

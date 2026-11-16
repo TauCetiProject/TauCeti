@@ -46,7 +46,8 @@ from `scalarPart` and `tracelessRicciPart`.
   `scalarPart r + tracelessRicciPart r + weyl r = r`.
 * `TauCeti.FourTensor.curvatureOperator_scalarPart`,
   `TauCeti.FourTensor.curvatureOperator_tracelessRicciPart`,
-  `TauCeti.FourTensor.IsAlgebraicCurvature.curvatureOperator_eq`: bivector operator decomposition.
+  `TauCeti.FourTensor.IsAlgebraicCurvature.curvatureOperator_eq_add`: bivector operator
+  decomposition.
 * `TauCeti.FourTensor.ricci_weyl`, `TauCeti.FourTensor.scalar_weyl`, `TauCeti.FourTensor.weyl_weyl`,
   `TauCeti.FourTensor.weyl_kulkarniNomizu_innerₗ`,
   `TauCeti.FourTensor.weyl_eq_sub_kulkarniNomizu_schouten`: trace-freeness, idempotence, vanishing
@@ -103,30 +104,25 @@ private theorem bilinForm_eq_zero_of_finrank_eq_zero (hn : Module.finrank ℝ V 
 
 /-- The Ricci endomorphism on `V` associated with a four-tensor `r`, characterized by
 `⟪ricciEnd r u, v⟫ = ricci r u v`. -/
-def ricciEnd : FourTensor V →ₗ[ℝ] Module.End ℝ V where
-  toFun r := (ricci r).symmCompOfNondegenerate (innerₗ V) TauCeti.nondegenerate_inner
-  map_add' _ _ := LinearMap.ext fun _ ↦ ext_inner_right ℝ fun _ ↦ by
-    simp [inner_add_left, ← innerₗ_apply_apply]
-  map_smul' _ _ := LinearMap.ext fun _ ↦ ext_inner_right ℝ fun _ ↦ by simp [← innerₗ_apply_apply]
+def ricciEnd : FourTensor V →ₗ[ℝ] Module.End ℝ V :=
+  (TauCeti.bilinFormEquivEnd V).toLinearMap ∘ₗ ricci
 
 @[simp] theorem inner_ricciEnd_left (r : FourTensor V) (u v : V) :
     ⟪ricciEnd r u, v⟫ = ricci r u v :=
-  LinearMap.BilinForm.symmCompOfNondegenerate_left_apply (ricci r) TauCeti.nondegenerate_inner v u
+  TauCeti.inner_bilinFormEquivEnd_left (ricci r) u v
 /-- `ricciEnd r` is uniquely characterized by `⟪ricciEnd r u, v⟫ = ricci r u v`. -/
 theorem ricciEnd_eq_iff (r : FourTensor V) (A : Module.End ℝ V) :
     ricciEnd r = A ↔ ∀ u v, ⟪A u, v⟫ = ricci r u v :=
-  ⟨fun h ↦ h ▸ inner_ricciEnd_left r, fun h ↦
-    LinearMap.ext fun u ↦ ext_inner_right ℝ fun v ↦ by rw [inner_ricciEnd_left, h]⟩
+  TauCeti.bilinFormEquivEnd_eq_iff (ricci r) A
 @[simp] theorem innerₗ_comp_ricciEnd (r : FourTensor V) : innerₗ V ∘ₗ ricciEnd r = ricci r :=
-  LinearMap.ext₂ (inner_ricciEnd_left r)
+  TauCeti.innerₗ_comp_bilinFormEquivEnd (ricci r)
 @[simp] theorem ricciEnd_eq_zero_iff {r : FourTensor V} : ricciEnd r = 0 ↔ ricci r = 0 :=
-  ⟨fun h ↦ by simp [← innerₗ_comp_ricciEnd, h], fun h ↦ TauCeti.innerₗ_comp_eq_iff.mp (by simp [h])⟩
+  map_eq_zero_iff (TauCeti.bilinFormEquivEnd V) (TauCeti.bilinFormEquivEnd V).injective
 
 /-- `ricciEnd r` is symmetric on `V` iff `ricci r` is symmetric. -/
 @[simp] theorem isSymmetric_ricciEnd_iff {r : FourTensor V} :
     (ricciEnd r).IsSymmetric ↔ (ricci r).IsSymm :=
-  ⟨fun h ↦ ⟨fun u v ↦ by rw [← inner_ricciEnd_left, h u v, real_inner_comm, inner_ricciEnd_left]⟩,
-    fun h u v ↦ by rw [inner_ricciEnd_left, real_inner_comm, inner_ricciEnd_left, h.eq]⟩
+  TauCeti.isSymmetric_bilinFormEquivEnd_iff
 /-- When `ricci r` is symmetric, `⟪u, ricciEnd r v⟫ = ricci r u v`. -/
 theorem inner_ricciEnd_right {r : FourTensor V} (hr : (ricci r).IsSymm) (u v : V) :
     ⟪u, ricciEnd r v⟫ = ricci r u v := by rw [← isSymmetric_ricciEnd_iff.mpr hr u v]; simp
@@ -140,13 +136,11 @@ theorem IsAlgebraicCurvature.inner_ricciEnd_right {r : FourTensor V} (hr : IsAlg
 /-- The operator trace of `ricciEnd r` equals the scalar contraction `scalar r`. -/
 @[simp] theorem trace_ricciEnd (r : FourTensor V) :
     LinearMap.trace ℝ V (ricciEnd r) = scalar r := by
-  rw [LinearMap.trace_eq_sum_inner _ (stdOrthonormalBasis ℝ V), scalar_apply,
-    bilinFormTrace_eq_sum _ (stdOrthonormalBasis ℝ V)]
-  exact Finset.sum_congr rfl fun i _ ↦ by rw [real_inner_comm, inner_ricciEnd_left]
+  simp [ricciEnd, scalar_apply]
 
 @[simp] theorem ricciEnd_constantCurvature :
-    ricciEnd (constantCurvature V) = ((Module.finrank ℝ V : ℝ) - 1) • LinearMap.id :=
-  TauCeti.innerₗ_comp_eq_iff.mp (by ext; simp [ricci_constantCurvature])
+    ricciEnd (constantCurvature V) = ((Module.finrank ℝ V : ℝ) - 1) • LinearMap.id := by
+  simp [ricciEnd, ricci_constantCurvature]
 
 /-- The trace-free Ricci bilinear form `Ric₀(r) = Ric(r) - (Scal(r) / n) g`. -/
 def tracelessRicci : FourTensor V →ₗ[ℝ] BilinForm ℝ V :=
@@ -172,7 +166,7 @@ theorem tracelessRicci_apply_apply (r : FourTensor V) (u v : V) :
       ← scalar_apply, mul_div_cancel₀ _ (Nat.cast_ne_zero.mpr hn : (Module.finrank ℝ V : ℝ) ≠ 0)]
 
 /-- `tracelessRicci r` is symmetric iff `ricci r` is symmetric. -/
-theorem isSymm_tracelessRicci_iff {r : FourTensor V} :
+@[simp] theorem isSymm_tracelessRicci_iff {r : FourTensor V} :
     (tracelessRicci r).IsSymm ↔ (ricci r).IsSymm :=
   ⟨fun h ↦ ⟨fun u v ↦ by
       have := h.eq u v; simp only [tracelessRicci_apply_apply, real_inner_comm u v] at this
@@ -191,39 +185,36 @@ theorem IsAlgebraicCurvature.isSymm_tracelessRicci {r : FourTensor V}
 
 /-- The trace-free Ricci endomorphism `ricciEnd r - (scalar r / n) • Id` on `V`. -/
 def tracelessRicciEnd : FourTensor V →ₗ[ℝ] Module.End ℝ V :=
-  ricciEnd (V := V) - ((Module.finrank ℝ V : ℝ)⁻¹ • scalar (V := V)).smulRight LinearMap.id
+  (TauCeti.bilinFormEquivEnd V).toLinearMap ∘ₗ tracelessRicci
 
 theorem tracelessRicciEnd_apply (r : FourTensor V) :
     tracelessRicciEnd r = ricciEnd r - (scalar r / Module.finrank ℝ V) • LinearMap.id := by
-  ext u; simp [tracelessRicciEnd, div_eq_inv_mul]
+  simp only [tracelessRicciEnd, ricciEnd, LinearMap.comp_apply, LinearEquiv.coe_toLinearMap,
+    tracelessRicci_apply]
+  rw [map_sub (TauCeti.bilinFormEquivEnd V), map_smul, TauCeti.bilinFormEquivEnd_innerₗ]
 theorem tracelessRicciEnd_apply_apply (r : FourTensor V) (u : V) :
     tracelessRicciEnd r u = ricciEnd r u - (scalar r / Module.finrank ℝ V) • u := by
   simp [tracelessRicciEnd_apply]
 
 @[simp] theorem inner_tracelessRicciEnd_left (r : FourTensor V) (u v : V) :
-    ⟪tracelessRicciEnd r u, v⟫ = tracelessRicci r u v := by
-  simp [tracelessRicciEnd_apply, tracelessRicci_apply_apply, inner_sub_left, real_inner_smul_left]
+    ⟪tracelessRicciEnd r u, v⟫ = tracelessRicci r u v :=
+  TauCeti.inner_bilinFormEquivEnd_left (tracelessRicci r) u v
 /-- `tracelessRicciEnd r` is uniquely characterized by
 `⟪tracelessRicciEnd r u, v⟫ = tracelessRicci r u v`. -/
 theorem tracelessRicciEnd_eq_iff (r : FourTensor V) (A : Module.End ℝ V) :
     tracelessRicciEnd r = A ↔ ∀ u v, ⟪A u, v⟫ = tracelessRicci r u v :=
-  ⟨fun h ↦ h ▸ inner_tracelessRicciEnd_left r, fun h ↦
-    LinearMap.ext fun u ↦ ext_inner_right ℝ fun v ↦ by rw [inner_tracelessRicciEnd_left, h]⟩
+  TauCeti.bilinFormEquivEnd_eq_iff (tracelessRicci r) A
 @[simp] theorem innerₗ_comp_tracelessRicciEnd (r : FourTensor V) :
     innerₗ V ∘ₗ tracelessRicciEnd r = tracelessRicci r :=
-  LinearMap.ext₂ (inner_tracelessRicciEnd_left r)
+  TauCeti.innerₗ_comp_bilinFormEquivEnd (tracelessRicci r)
 @[simp] theorem tracelessRicciEnd_eq_zero_iff {r : FourTensor V} :
     tracelessRicciEnd r = 0 ↔ tracelessRicci r = 0 :=
-  ⟨fun h ↦ by simp [← innerₗ_comp_tracelessRicciEnd, h],
-    fun h ↦ TauCeti.innerₗ_comp_eq_iff.mp (by simp [h])⟩
+  map_eq_zero_iff (TauCeti.bilinFormEquivEnd V) (TauCeti.bilinFormEquivEnd V).injective
 
 /-- `tracelessRicciEnd r` is symmetric on `V` iff `tracelessRicci r` is symmetric. -/
 @[simp] theorem isSymmetric_tracelessRicciEnd_iff {r : FourTensor V} :
     (tracelessRicciEnd r).IsSymmetric ↔ (tracelessRicci r).IsSymm :=
-  ⟨fun h ↦ ⟨fun u v ↦ by
-      rw [← inner_tracelessRicciEnd_left, h u v, real_inner_comm, inner_tracelessRicciEnd_left]⟩,
-    fun h u v ↦ by
-      rw [inner_tracelessRicciEnd_left, real_inner_comm, inner_tracelessRicciEnd_left, h.eq]⟩
+  TauCeti.isSymmetric_bilinFormEquivEnd_iff
 /-- When `ricci r` is symmetric, `⟪u, tracelessRicciEnd r v⟫ = tracelessRicci r u v`. -/
 theorem inner_tracelessRicciEnd_right {r : FourTensor V} (hr : (ricci r).IsSymm) (u v : V) :
     ⟪u, tracelessRicciEnd r v⟫ = tracelessRicci r u v := by
@@ -239,9 +230,7 @@ theorem IsAlgebraicCurvature.inner_tracelessRicciEnd_right {r : FourTensor V}
 /-- The operator trace of `tracelessRicciEnd r` vanishes for every four-tensor `r`. -/
 @[simp] theorem trace_tracelessRicciEnd (r : FourTensor V) :
     LinearMap.trace ℝ V (tracelessRicciEnd r) = 0 := by
-  rw [LinearMap.trace_eq_sum_inner _ (stdOrthonormalBasis ℝ V), ← bilinFormTrace_tracelessRicci r,
-    bilinFormTrace_eq_sum _ (stdOrthonormalBasis ℝ V)]
-  exact Finset.sum_congr rfl fun i _ ↦ by rw [real_inner_comm, inner_tracelessRicciEnd_left]
+  simp [tracelessRicciEnd]
 @[simp] theorem tracelessRicciEnd_constantCurvature : tracelessRicciEnd (constantCurvature V) = 0 :=
   tracelessRicciEnd_eq_zero_iff.mpr tracelessRicci_constantCurvature
 
@@ -303,13 +292,13 @@ theorem schouten_apply (r : FourTensor V) :
       (ricci r - (scalar r / (2 * ((Module.finrank ℝ V : ℝ) - 1))) • innerₗ V) := by
   ext; simp only [schouten, LinearMap.add_apply, LinearMap.smulRight_apply,
     LinearMap.neg_apply, LinearMap.sub_apply, LinearMap.smul_apply, smul_eq_mul]; ring
-@[simp] theorem schouten_apply_apply (r : FourTensor V) (u v : V) :
+theorem schouten_apply_apply (r : FourTensor V) (u v : V) :
     schouten r u v = ((Module.finrank ℝ V : ℝ) - 2)⁻¹ *
       (ricci r u v - scalar r / (2 * ((Module.finrank ℝ V : ℝ) - 1)) * ⟪u, v⟫) := by
   simp [schouten_apply]
 /-- `schouten r` is symmetric whenever `ricci r` is symmetric. -/
 theorem isSymm_schouten {r : FourTensor V} (hr : (ricci r).IsSymm) : (schouten r).IsSymm :=
-  ⟨fun u v ↦ by simp [hr.eq u v, real_inner_comm u v]⟩
+  ⟨fun u v ↦ by simp [schouten_apply_apply, hr.eq u v, real_inner_comm u v]⟩
 /-- For an algebraic curvature tensor `r`, `schouten r` is symmetric. -/
 theorem IsAlgebraicCurvature.isSymm_schouten {r : FourTensor V} (hr : IsAlgebraicCurvature r) :
     (schouten r).IsSymm := FourTensor.isSymm_schouten hr.isSymm_ricci
@@ -347,7 +336,7 @@ theorem weyl_antisymm_last {r : FourTensor V}
 /-! ### Bivector curvature operators of the decomposition pieces -/
 
 /-- The scalar curvature component acts on `⋀[ℝ]^2 V` as `(scalar r / (n (n - 1))) • Id`. -/
-@[simp] theorem curvatureOperator_scalarPart (r : FourTensor V) :
+theorem curvatureOperator_scalarPart (r : FourTensor V) :
     curvatureOperator ⟨scalarPart r, mem_algebraicCurvatureSubmodule.mpr
       (isAlgebraicCurvature_scalarPart r)⟩ =
       (scalar r / ((Module.finrank ℝ V : ℝ) * ((Module.finrank ℝ V : ℝ) - 1))) • LinearMap.id :=
@@ -364,7 +353,8 @@ theorem curvatureOperator_tracelessRicciPart (r : FourTensor V)
     congr 1; ring
 /-- **Bivector operator decomposition**: `curvatureOperator r` splits into its scalar multiple of
 `Id`, `(2 / (n - 2)) • wedgeEnd (tracelessRicciEnd r) Id`, and the Weyl operator. -/
-theorem IsAlgebraicCurvature.curvatureOperator_eq {r : FourTensor V} (hr : IsAlgebraicCurvature r) :
+theorem IsAlgebraicCurvature.curvatureOperator_eq_add {r : FourTensor V}
+    (hr : IsAlgebraicCurvature r) :
     curvatureOperator ⟨r, mem_algebraicCurvatureSubmodule.mpr hr⟩ =
       (scalar r / ((Module.finrank ℝ V : ℝ) * ((Module.finrank ℝ V : ℝ) - 1))) • LinearMap.id +
         (2 / ((Module.finrank ℝ V : ℝ) - 2)) • wedgeEnd (tracelessRicciEnd r) LinearMap.id +
@@ -408,19 +398,19 @@ theorem ricci_scalarPart {r : FourTensor V}
     (hr₁ : ∀ u v z w, r ![u, v, z, w] = -r ![v, u, z, w]) :
     ricci (scalarPart r) = (scalar r / Module.finrank ℝ V) • innerₗ V := by
   rcases eq_or_ne (Module.finrank ℝ V) 1 with hn1 | hn1
-  · simp [eq_zero_of_antisymm_first_of_finrank_le_one hn1.le hr₁]
+  · simp [eq_zero_of_finrank_le_one_of_antisymm_first hn1.le hr₁]
   · exact ricci_scalarPart_of_finrank_ne_one hn1 r
 /-- For an algebraic curvature tensor `r`, `ricci (scalarPart r) = (scalar r / n) • innerₗ V`. -/
 theorem IsAlgebraicCurvature.ricci_scalarPart {r : FourTensor V} (hr : IsAlgebraicCurvature r) :
     ricci (scalarPart r) = (scalar r / Module.finrank ℝ V) • innerₗ V :=
   FourTensor.ricci_scalarPart hr.antisymm_first
 theorem ricciEnd_scalarPart_of_finrank_ne_one (hn : Module.finrank ℝ V ≠ 1) (r : FourTensor V) :
-    ricciEnd (scalarPart r) = (scalar r / Module.finrank ℝ V) • LinearMap.id :=
-  TauCeti.innerₗ_comp_eq_iff.mp (by ext; simp [ricci_scalarPart_of_finrank_ne_one hn r])
+    ricciEnd (scalarPart r) = (scalar r / Module.finrank ℝ V) • LinearMap.id := by
+  simp [ricciEnd, ricci_scalarPart_of_finrank_ne_one hn r]
 theorem ricciEnd_scalarPart {r : FourTensor V}
     (hr₁ : ∀ u v z w, r ![u, v, z, w] = -r ![v, u, z, w]) :
-    ricciEnd (scalarPart r) = (scalar r / Module.finrank ℝ V) • LinearMap.id :=
-  TauCeti.innerₗ_comp_eq_iff.mp (by ext; simp [ricci_scalarPart hr₁])
+    ricciEnd (scalarPart r) = (scalar r / Module.finrank ℝ V) • LinearMap.id := by
+  simp [ricciEnd, ricci_scalarPart hr₁]
 theorem IsAlgebraicCurvature.ricciEnd_scalarPart {r : FourTensor V} (hr : IsAlgebraicCurvature r) :
     ricciEnd (scalarPart r) = (scalar r / Module.finrank ℝ V) • LinearMap.id :=
   FourTensor.ricciEnd_scalarPart hr.antisymm_first
@@ -436,7 +426,7 @@ theorem scalar_scalarPart_of_finrank_ne_one (hn : Module.finrank ℝ V ≠ 1) (r
 theorem scalar_scalarPart {r : FourTensor V}
     (hr₁ : ∀ u v z w, r ![u, v, z, w] = -r ![v, u, z, w]) : scalar (scalarPart r) = scalar r := by
   rcases eq_or_ne (Module.finrank ℝ V) 1 with hn1 | hn1
-  · simp [eq_zero_of_antisymm_first_of_finrank_le_one hn1.le hr₁]
+  · simp [eq_zero_of_finrank_le_one_of_antisymm_first hn1.le hr₁]
   · exact scalar_scalarPart_of_finrank_ne_one hn1 r
 /-- For an algebraic curvature tensor `r`, `scalar (scalarPart r) = scalar r`. -/
 theorem IsAlgebraicCurvature.scalar_scalarPart {r : FourTensor V} (hr : IsAlgebraicCurvature r) :
@@ -450,9 +440,8 @@ theorem IsAlgebraicCurvature.scalar_scalarPart {r : FourTensor V} (hr : IsAlgebr
 /-- Away from dimension `2`, `ricci (tracelessRicciPart r) = tracelessRicci r` for every `r`. -/
 theorem ricci_tracelessRicciPart_of_finrank_ne_two (hn : Module.finrank ℝ V ≠ 2)
     (r : FourTensor V) : ricci (tracelessRicciPart r) = tracelessRicci r := by
-  rw [tracelessRicciPart_apply, map_smul, ricci_kulkarniNomizu_innerₗ,
-    bilinFormTrace_tracelessRicci, zero_smul, add_zero, smul_smul,
-    inv_mul_cancel₀ (finrank_sub_two_ne_zero hn), one_smul]
+  simp [tracelessRicciPart_apply, ricci_kulkarniNomizu_innerₗ, smul_smul,
+    finrank_sub_two_ne_zero hn]
 /-- For any skew-pair four-tensor `r`, `ricci (tracelessRicciPart r) = tracelessRicci r`. -/
 theorem ricci_tracelessRicciPart {r : FourTensor V}
     (hr₁ : ∀ u v z w, r ![u, v, z, w] = -r ![v, u, z, w])
@@ -481,25 +470,25 @@ theorem IsAlgebraicCurvature.tracelessRicci_tracelessRicciPart {r : FourTensor V
     tracelessRicci (FourTensor.tracelessRicciPart r) = tracelessRicci r :=
   FourTensor.tracelessRicci_tracelessRicciPart hr.antisymm_first hr.antisymm_last
 theorem ricciEnd_tracelessRicciPart_of_finrank_ne_two (hn : Module.finrank ℝ V ≠ 2)
-    (r : FourTensor V) : ricciEnd (tracelessRicciPart r) = tracelessRicciEnd r :=
-  TauCeti.innerₗ_comp_eq_iff.mp (by simp [ricci_tracelessRicciPart_of_finrank_ne_two hn r])
+    (r : FourTensor V) : ricciEnd (tracelessRicciPart r) = tracelessRicciEnd r := by
+  simp [ricciEnd, tracelessRicciEnd, ricci_tracelessRicciPart_of_finrank_ne_two hn r]
 theorem ricciEnd_tracelessRicciPart {r : FourTensor V}
     (hr₁ : ∀ u v z w, r ![u, v, z, w] = -r ![v, u, z, w])
     (hr₂ : ∀ u v z w, r ![u, v, z, w] = -r ![u, v, w, z]) :
-    ricciEnd (tracelessRicciPart r) = tracelessRicciEnd r :=
-  TauCeti.innerₗ_comp_eq_iff.mp (by simp [ricci_tracelessRicciPart hr₁ hr₂])
+    ricciEnd (tracelessRicciPart r) = tracelessRicciEnd r := by
+  simp [ricciEnd, tracelessRicciEnd, ricci_tracelessRicciPart hr₁ hr₂]
 theorem IsAlgebraicCurvature.ricciEnd_tracelessRicciPart {r : FourTensor V}
     (hr : IsAlgebraicCurvature r) :
     ricciEnd (FourTensor.tracelessRicciPart r) = tracelessRicciEnd r :=
   FourTensor.ricciEnd_tracelessRicciPart hr.antisymm_first hr.antisymm_last
 theorem tracelessRicciEnd_tracelessRicciPart_of_finrank_ne_two (hn : Module.finrank ℝ V ≠ 2)
-    (r : FourTensor V) : tracelessRicciEnd (tracelessRicciPart r) = tracelessRicciEnd r :=
-  TauCeti.innerₗ_comp_eq_iff.mp (by simp [tracelessRicci_tracelessRicciPart_of_finrank_ne_two hn r])
+    (r : FourTensor V) : tracelessRicciEnd (tracelessRicciPart r) = tracelessRicciEnd r := by
+  simp [tracelessRicciEnd, tracelessRicci_tracelessRicciPart_of_finrank_ne_two hn r]
 theorem tracelessRicciEnd_tracelessRicciPart {r : FourTensor V}
     (hr₁ : ∀ u v z w, r ![u, v, z, w] = -r ![v, u, z, w])
     (hr₂ : ∀ u v z w, r ![u, v, z, w] = -r ![u, v, w, z]) :
-    tracelessRicciEnd (tracelessRicciPart r) = tracelessRicciEnd r :=
-  TauCeti.innerₗ_comp_eq_iff.mp (by simp [tracelessRicci_tracelessRicciPart hr₁ hr₂])
+    tracelessRicciEnd (tracelessRicciPart r) = tracelessRicciEnd r := by
+  simp [tracelessRicciEnd, tracelessRicci_tracelessRicciPart hr₁ hr₂]
 theorem IsAlgebraicCurvature.tracelessRicciEnd_tracelessRicciPart {r : FourTensor V}
     (hr : IsAlgebraicCurvature r) :
     tracelessRicciEnd (FourTensor.tracelessRicciPart r) = tracelessRicciEnd r :=
@@ -587,13 +576,13 @@ theorem kulkarniNomizu_schouten_innerₗ (hn : Module.finrank ℝ V ≠ 2) (r : 
     kulkarniNomizu (schouten r) (innerₗ V) = scalarPart r + tracelessRicciPart r := by
   rcases lt_or_gt_of_ne hn with hnlt | hngt
   · have hkn (h k : BilinForm ℝ V) : kulkarniNomizu h k = 0 :=
-      eq_zero_of_antisymm_first_of_finrank_le_one (by omega) (kulkarniNomizu_antisymm_first h k)
+      eq_zero_of_finrank_le_one_of_antisymm_first (by omega) (kulkarniNomizu_antisymm_first h k)
     simp [hkn, scalarPart_apply, constantCurvature_eq_smul_kulkarniNomizu, tracelessRicciPart_apply]
   · have : (Module.finrank ℝ V : ℝ) ≠ 0 := Nat.cast_ne_zero.mpr (by omega)
     have := finrank_sub_one_ne_zero (V := V) (by omega)
-    rw [schouten_eq_add_of_three_le_finrank hngt r, map_add, LinearMap.add_apply, map_smul,
-      map_smul, LinearMap.smul_apply, LinearMap.smul_apply, ← tracelessRicciPart_apply,
-      scalarPart_apply, constantCurvature_eq_smul_kulkarniNomizu, smul_smul, add_comm]
+    rw [add_comm (scalarPart r), schouten_eq_add_of_three_le_finrank hngt r,
+      tracelessRicciPart_apply, scalarPart_apply, constantCurvature_eq_smul_kulkarniNomizu]
+    simp only [map_add, map_smul, LinearMap.add_apply, LinearMap.smul_apply, smul_smul]
     congr 2; field_simp
 /-- Away from dimension `2`, `weyl r = r - kulkarniNomizu (schouten r) (innerₗ V)`. -/
 theorem weyl_eq_sub_kulkarniNomizu_schouten (hn : Module.finrank ℝ V ≠ 2) (r : FourTensor V) :
@@ -608,16 +597,14 @@ theorem bilinFormTrace_schouten_of_finrank_ne_one_of_finrank_ne_two
   · simp [eq_zero_of_finrank_eq_zero hn0 r]
   · have : (Module.finrank ℝ V : ℝ) ≠ 0 := Nat.cast_ne_zero.mpr hn0
     have := finrank_sub_one_ne_zero hn₁
-    rw [schouten_eq_add_of_three_le_finrank (by omega) r, map_add, map_smul,
-      bilinFormTrace_tracelessRicci, smul_zero, zero_add, map_smul, bilinFormTrace_inner,
-      smul_eq_mul]; field_simp
+    simp [schouten_eq_add_of_three_le_finrank (by omega) r]; field_simp
 /-- Away from dimension `2`, if `r` is antisymmetric in its first pair,
 `bilinFormTrace (schouten r) = scalar r / (2 (n - 1))`. -/
 theorem bilinFormTrace_schouten (hn : Module.finrank ℝ V ≠ 2) {r : FourTensor V}
     (hr₁ : ∀ u v z w, r ![u, v, z, w] = -r ![v, u, z, w]) :
     bilinFormTrace (schouten r) = scalar r / (2 * ((Module.finrank ℝ V : ℝ) - 1)) := by
   rcases eq_or_ne (Module.finrank ℝ V) 1 with hn1 | hn1
-  · simp [eq_zero_of_antisymm_first_of_finrank_le_one hn1.le hr₁]
+  · simp [eq_zero_of_finrank_le_one_of_antisymm_first hn1.le hr₁]
   · exact bilinFormTrace_schouten_of_finrank_ne_one_of_finrank_ne_two hn1 hn r
 theorem IsAlgebraicCurvature.bilinFormTrace_schouten {r : FourTensor V}
     (hr : IsAlgebraicCurvature r) (hn : Module.finrank ℝ V ≠ 2) :
@@ -643,14 +630,14 @@ theorem schouten_weyl_of_finrank_ne_one (hn : Module.finrank ℝ V ≠ 1) (r : F
   rcases (by omega : Module.finrank ℝ V = 0 ∨ Module.finrank ℝ V = 2 ∨ 3 ≤ Module.finrank ℝ V)
     with h0 | h2 | h3
   · simp [eq_zero_of_finrank_eq_zero h0 (weyl r)]
-  · ext; simp [h2]
+  · ext; simp [schouten_apply_apply, h2]
   · rw [schouten_eq_add_of_three_le_finrank h3, tracelessRicci_weyl_of_finrank_ne_two (by omega) r,
       scalar_weyl_of_finrank_ne_one hn r]; simp
 /-- If `r` is antisymmetric in its first pair, `schouten (weyl r) = 0` in all dimensions. -/
 theorem schouten_weyl {r : FourTensor V} (hr₁ : ∀ u v z w, r ![u, v, z, w] = -r ![v, u, z, w]) :
     schouten (weyl r) = 0 := by
   rcases eq_or_ne (Module.finrank ℝ V) 1 with hn1 | hn1
-  · simp [eq_zero_of_antisymm_first_of_finrank_le_one hn1.le hr₁]
+  · simp [eq_zero_of_finrank_le_one_of_antisymm_first hn1.le hr₁]
   · exact schouten_weyl_of_finrank_ne_one hn1 r
 theorem IsAlgebraicCurvature.schouten_weyl {r : FourTensor V} (hr : IsAlgebraicCurvature r) :
     schouten (FourTensor.weyl r) = 0 := FourTensor.schouten_weyl hr.antisymm_first
@@ -659,7 +646,7 @@ theorem IsAlgebraicCurvature.schouten_weyl {r : FourTensor V} (hr : IsAlgebraicC
     weyl (kulkarniNomizu h (innerₗ V)) = 0 := by
   rcases (by omega : Module.finrank ℝ V ≤ 1 ∨ Module.finrank ℝ V = 2 ∨ 3 ≤ Module.finrank ℝ V)
     with h1 | h2 | h3
-  · rw [eq_zero_of_antisymm_first_of_finrank_le_one h1 (kulkarniNomizu_antisymm_first h (innerₗ V)),
+  · rw [eq_zero_of_finrank_le_one_of_antisymm_first h1 (kulkarniNomizu_antisymm_first h (innerₗ V)),
       map_zero]
   · rw [eq_smul_constantCurvature_of_finrank_eq_two h2 (kulkarniNomizu_antisymm_first h (innerₗ V))
       (kulkarniNomizu_antisymm_last h (innerₗ V)), map_smul, weyl_constantCurvature, smul_zero]
@@ -668,8 +655,7 @@ theorem IsAlgebraicCurvature.schouten_weyl {r : FourTensor V} (hr : IsAlgebraicC
 
 /-! ### Vanishing of the Weyl tensor in dimension at most three -/
 
-/-- **In dimension `3`, the Weyl part of any skew-pair four-tensor vanishes.** -/
-theorem weyl_eq_zero_of_finrank_eq_three (hn : Module.finrank ℝ V = 3) {r : FourTensor V}
+private theorem weyl_eq_zero_of_finrank_eq_three (hn : Module.finrank ℝ V = 3) {r : FourTensor V}
     (hr₁ : ∀ u v z w, r ![u, v, z, w] = -r ![v, u, z, w])
     (hr₂ : ∀ u v z w, r ![u, v, z, w] = -r ![u, v, w, z]) : weyl r = 0 := by
   apply toLinearMap₄_injective; rw [map_zero]
@@ -682,16 +668,13 @@ theorem weyl_eq_zero_of_finrank_eq_three (hn : Module.finrank ℝ V = 3) {r : Fo
     rw [ricci_apply_orthonormalBasis b, ← Finset.sum_neg_distrib]
     exact Finset.sum_congr rfl fun i _ ↦ weyl_antisymm_last hr₂ (b i) y z (b i)
   simp [OrthonormalBasis.coe_toBasis, hsum, ricci_weyl hr₁ hr₂]
-theorem IsAlgebraicCurvature.weyl_eq_zero_of_finrank_eq_three {r : FourTensor V}
-    (hr : IsAlgebraicCurvature r) (hn : Module.finrank ℝ V = 3) : FourTensor.weyl r = 0 :=
-  FourTensor.weyl_eq_zero_of_finrank_eq_three hn hr.antisymm_first hr.antisymm_last
 /-- **In dimension at most `3`, the Weyl part of any skew-pair four-tensor vanishes.** -/
 theorem weyl_eq_zero_of_finrank_le_three (hn : Module.finrank ℝ V ≤ 3) {r : FourTensor V}
     (hr₁ : ∀ u v z w, r ![u, v, z, w] = -r ![v, u, z, w])
     (hr₂ : ∀ u v z w, r ![u, v, z, w] = -r ![u, v, w, z]) : weyl r = 0 := by
   rcases (by omega : Module.finrank ℝ V ≤ 1 ∨ Module.finrank ℝ V = 2 ∨ Module.finrank ℝ V = 3)
     with h1 | h2 | h3
-  · rw [eq_zero_of_antisymm_first_of_finrank_le_one h1 hr₁, map_zero]
+  · rw [eq_zero_of_finrank_le_one_of_antisymm_first h1 hr₁, map_zero]
   · rw [eq_smul_constantCurvature_of_finrank_eq_two h2 hr₁ hr₂, map_smul, weyl_constantCurvature,
       smul_zero]
   · exact weyl_eq_zero_of_finrank_eq_three h3 hr₁ hr₂
@@ -731,18 +714,15 @@ theorem ricciEnd_compContinuousLinearMap_linearIsometryEquiv (e : W ≃ₗᵢ[�
     ricciEnd (r.compContinuousLinearMap fun _ ↦ e.toLinearIsometry.toContinuousLinearMap) =
       e.toLinearEquiv.symm.conj (ricciEnd r) :=
   LinearMap.ext fun u ↦ ext_inner_right ℝ fun v ↦ by
-    rw [inner_ricciEnd_left, ricci_compContinuousLinearMap_linearIsometryEquiv]
-    simp only [LinearEquiv.conj_apply, LinearMap.comp_apply, LinearEquiv.coe_coe,
-      ← LinearIsometryEquiv.toLinearEquiv_symm, LinearIsometryEquiv.coe_toLinearEquiv]
-    rw [← e.inner_map_map, e.apply_symm_apply, inner_ricciEnd_left, e.symm_symm]
+    rw [inner_ricciEnd_left, ricci_compContinuousLinearMap_linearIsometryEquiv, ← e.inner_map_map]
+    simp [LinearEquiv.conj_apply]
 /-- Pulling back along `e : W ≃ₗᵢ[ℝ] V` conjugates `tracelessRicciEnd r` via
 `e.toLinearEquiv.symm.conj`. -/
 theorem tracelessRicciEnd_compContinuousLinearMap_linearIsometryEquiv (e : W ≃ₗᵢ[ℝ] V)
     (r : FourTensor V) :
     tracelessRicciEnd (r.compContinuousLinearMap fun _ ↦ e.toLinearIsometry.toContinuousLinearMap) =
       e.toLinearEquiv.symm.conj (tracelessRicciEnd r) := by
-  rw [tracelessRicciEnd_apply, tracelessRicciEnd_apply, map_sub, map_smul, LinearEquiv.conj_id,
-    ricciEnd_compContinuousLinearMap_linearIsometryEquiv,
+  simp [tracelessRicciEnd_apply, ricciEnd_compContinuousLinearMap_linearIsometryEquiv,
     scalar_compContinuousLinearMap_linearIsometryEquiv, e.toLinearEquiv.finrank_eq]
 /-- Orthogonal equivariance of `scalarPart` under pullback along `e : W ≃ₗᵢ[ℝ] V`. -/
 theorem scalarPart_compContinuousLinearMap_linearIsometryEquiv (e : W ≃ₗᵢ[ℝ] V) (r : FourTensor V) :
@@ -770,7 +750,7 @@ theorem schouten_compContinuousLinearMap_linearIsometryEquiv (e : W ≃ₗᵢ[�
     (r : FourTensor V) (u v : W) :
     schouten (r.compContinuousLinearMap fun _ ↦ e.toLinearIsometry.toContinuousLinearMap) u v =
       schouten r (e u) (e v) := by
-  simp [ricci_compContinuousLinearMap_linearIsometryEquiv,
+  simp [schouten_apply_apply, ricci_compContinuousLinearMap_linearIsometryEquiv,
     scalar_compContinuousLinearMap_linearIsometryEquiv, e.toLinearEquiv.finrank_eq]
 /-- Orthogonal equivariance of `weyl` under pullback along `e : W ≃ₗᵢ[ℝ] V`. -/
 theorem weyl_compContinuousLinearMap_linearIsometryEquiv (e : W ≃ₗᵢ[ℝ] V) (r : FourTensor V) :

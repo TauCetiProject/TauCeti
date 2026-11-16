@@ -153,26 +153,28 @@ private def pairSymmEquivSymmBilin :
     fun _ _ _ _ ↦ by simpa using (TauCeti.BilinForm.mem_symmSubmodule.mp B.2).eq _ _⟩⟩
   left_inv _ := Subtype.ext <| toLinearMap₄_injective <| by ext; simp [ofExteriorBilin_apply]
   right_inv _ := Subtype.ext <| exteriorPower.bilinMap_ext_ιMulti_two fun _ _ _ _ ↦ by simp
-private theorem inner_symmComp (B : BilinForm ℝ (⋀[ℝ]^2 V)) (a b : ⋀[ℝ]^2 V) :
-    ⟪B.symmCompOfNondegenerate (innerₗ (⋀[ℝ]^2 V)) TauCeti.nondegenerate_inner a, b⟫ = B a b :=
-  B.symmCompOfNondegenerate_left_apply TauCeti.nondegenerate_inner b a
+omit [FiniteDimensional ℝ V] in
+@[simp] private theorem coe_toPairSymm_apply (r : algebraicCurvatureSubmodule V) :
+    (toPairSymm r : FourTensor V) = r.1 := rfl
+@[simp] private theorem coe_pairSymmEquivSymmBilin_apply (r : pairSymmSubmodule V) :
+    (pairSymmEquivSymmBilin r : BilinForm ℝ (⋀[ℝ]^2 V)) = pairSymmToBilin r := rfl
 
 /-- The curvature operator on `⋀[ℝ]^2 V` associated with an algebraic curvature tensor `r`,
 characterized by `⟪curvatureOperator r (u ∧ v), z ∧ w⟫ = r ![u, v, z, w]`. -/
-def curvatureOperator : algebraicCurvatureSubmodule V →ₗ[ℝ] Module.End ℝ (⋀[ℝ]^2 V) where
-  toFun r := (pairSymmEquivSymmBilin (toPairSymm r)).1.symmCompOfNondegenerate (innerₗ _)
-    TauCeti.nondegenerate_inner
-  map_add' _ _ := exteriorPower.linearMap_ext_inner_ιMulti_two fun _ _ _ _ ↦ by
-    simp [inner_add_left, inner_symmComp]
-  map_smul' _ _ := exteriorPower.linearMap_ext_inner_ιMulti_two fun _ _ _ _ ↦ by
-    simp [real_inner_smul_left, inner_symmComp]
+def curvatureOperator : algebraicCurvatureSubmodule V →ₗ[ℝ] Module.End ℝ (⋀[ℝ]^2 V) :=
+  (TauCeti.bilinFormEquivEnd (⋀[ℝ]^2 V)).toLinearMap ∘ₗ
+    (TauCeti.BilinForm.symmSubmodule ℝ (⋀[ℝ]^2 V)).subtype ∘ₗ
+    pairSymmEquivSymmBilin.toLinearMap ∘ₗ toPairSymm
+
+private theorem inner_curvatureOperator (r : algebraicCurvatureSubmodule V) (a b : ⋀[ℝ]^2 V) :
+    ⟪curvatureOperator r a, b⟫ = pairSymmToBilin (toPairSymm r) a b := by
+  simp [curvatureOperator]
 
 /-- Pairing `curvatureOperator r` on pure wedges `u ∧ v` and `z ∧ w` recovers `r ![u, v, z, w]`. -/
 @[simp] theorem inner_curvatureOperator_ιMulti (r : algebraicCurvatureSubmodule V) (u v z w : V) :
     ⟪curvatureOperator r (exteriorPower.ιMulti ℝ 2 ![u, v]),
-      exteriorPower.ιMulti ℝ 2 ![z, w]⟫ = r.1 ![u, v, z, w] :=
-  (inner_symmComp (pairSymmEquivSymmBilin (toPairSymm r)).1 _ _).trans
-    (pairSymmToBilin_ιMulti (toPairSymm r) ![u, v] ![z, w])
+      exteriorPower.ιMulti ℝ 2 ![z, w]⟫ = r.1 ![u, v, z, w] := by
+  rw [inner_curvatureOperator, pairSymmToBilin_ιMulti]; simp
 
 /-- `curvatureOperator r` is uniquely characterized by its pairings on decomposable bivectors. -/
 theorem curvatureOperator_eq_iff (r : algebraicCurvatureSubmodule V)
@@ -201,10 +203,10 @@ theorem curvatureOperator_injective : Function.Injective (curvatureOperator (V :
 
 /-- The curvature operator of an algebraic curvature tensor is symmetric on `⋀[ℝ]^2 V`. -/
 theorem isSymmetric_curvatureOperator (r : algebraicCurvatureSubmodule V) :
-    (curvatureOperator r).IsSymmetric := fun a b ↦ by
-  have hsymm := TauCeti.BilinForm.mem_symmSubmodule.mp (pairSymmEquivSymmBilin (toPairSymm r)).2
-  dsimp only [curvatureOperator, LinearMap.coe_mk, AddHom.coe_mk]
-  rw [inner_symmComp, real_inner_comm _ a, inner_symmComp]; exact hsymm.eq a b
+    (curvatureOperator r).IsSymmetric := by
+  simp only [curvatureOperator, LinearMap.comp_apply, LinearEquiv.coe_coe,
+    Submodule.coe_subtype, TauCeti.isSymmetric_bilinFormEquivEnd_iff]
+  exact TauCeti.BilinForm.mem_symmSubmodule.mp (pairSymmEquivSymmBilin (toPairSymm r)).2
 
 /-- An endomorphism of `⋀[ℝ]^2 V` is a *Bianchi endomorphism* if it is symmetric for the Gram inner
 product and its pure-bivector pairings satisfy the first Bianchi identity. -/
@@ -290,9 +292,9 @@ theorem IsBianchiEnd.isAlgebraicCurvature_ofExteriorEnd {R : Module.End ℝ (⋀
     IsAlgebraicCurvature (ofExteriorEnd R) ↔ IsBianchiEnd R := by
   refine ⟨fun h ↦ ⟨?_, fun u v z w ↦ by simpa using h.cyclic_eq_zero u v z w⟩,
     IsBianchiEnd.isAlgebraicCurvature_ofExteriorEnd⟩
-  have hbil : innerₗ (⋀[ℝ]^2 V) ∘ₗ R = (innerₗ (⋀[ℝ]^2 V) ∘ₗ R).flip :=
-    exteriorPower.bilinMap_ext_ιMulti_two fun u v z w ↦ by simpa using h.swap_pairs u v z w
-  exact fun x y ↦ by simpa [real_inner_comm] using congr($hbil x y)
+  rw [← TauCeti.isSymm_innerₗ_comp_iff, LinearMap.BilinForm.isSymm_iff_flip]
+  exact (exteriorPower.bilinMap_ext_ιMulti_two fun u v z w ↦ by
+    simpa using h.swap_pairs u v z w).symm
 
 variable (V) in
 /-- **Algebraic curvature tensors correspond to symmetric Bianchi endomorphisms of `⋀[ℝ]^2 V`.**
@@ -343,19 +345,15 @@ theorem curvatureOperator_pullbackAlgebraicCurvature_linearIsometryEquiv {W : Ty
   rw [curvatureOperator_eq_iff]; intro u v z w
   have hmap : e.toLinearIsometry.toLinearMap = e.toLinearEquiv.toLinearMap :=
     LinearMap.ext fun _ ↦ by simp
-  have hf (x : ⋀[ℝ]^2 W) : e.toLinearEquiv.exteriorPower 2 x =
-      exteriorPower.map 2 e.toLinearIsometry.toLinearMap x := by
+  have hf (x : ⋀[ℝ]^2 W) : exteriorPower.map 2 e.toLinearIsometry.toLinearMap x =
+      e.toLinearEquiv.exteriorPower 2 x := by
     rw [hmap, ← LinearEquiv.exteriorPower_toLinearMap, LinearEquiv.coe_toLinearMap]
-  have hcancel (y : ⋀[ℝ]^2 V) : exteriorPower.map 2 e.toLinearIsometry.toLinearMap
-      ((e.toLinearEquiv.exteriorPower 2).symm y) = y := by
-    rw [← hf, LinearEquiv.apply_symm_apply]
-  simp only [LinearEquiv.conj_apply, LinearMap.comp_apply, LinearEquiv.coe_coe,
-    LinearEquiv.symm_symm, ← exteriorPower.inner_map_map e.toLinearIsometry, hcancel, hf,
-    exteriorPower.map_apply_ιMulti_two, LinearIsometry.coe_toLinearMap,
-    LinearIsometryEquiv.coe_toLinearIsometry, inner_curvatureOperator_ιMulti,
-    coe_pullbackAlgebraicCurvature_apply]
-  exact
-    (compContinuousLinearMap_apply_vec r.1 e.toLinearIsometry.toContinuousLinearMap u v z w).symm
+  rw [← exteriorPower.inner_map_map e.toLinearIsometry, hf]
+  simp only [LinearEquiv.conj_apply, LinearMap.comp_apply, LinearEquiv.coe_toLinearMap,
+    LinearEquiv.symm_symm, LinearEquiv.apply_symm_apply]
+  rw [← hf, exteriorPower.map_apply_ιMulti_two, exteriorPower.map_apply_ιMulti_two,
+    coe_pullbackAlgebraicCurvature_apply, compContinuousLinearMap_apply_vec]
+  simp
 
 /-! ### Comparison of `wedgeEnd` with the Kulkarni–Nomizu product -/
 
@@ -381,20 +379,17 @@ theorem isBianchiEnd_wedgeEnd {A B : Module.End ℝ V} (hA : A.IsSymmetric) (hB 
   rw [← isAlgebraicCurvature_ofExteriorEnd_iff, ofExteriorEnd_wedgeEnd]
   exact mem_algebraicCurvatureSubmodule.mp <| (algebraicCurvatureSubmodule V).smul_mem (1 / 2 : ℝ)
     (mem_algebraicCurvatureSubmodule.mpr (isAlgebraicCurvature_kulkarniNomizu
-      ⟨fun x y ↦ by simp [hA x y, real_inner_comm]⟩ ⟨fun x y ↦ by simp [hB x y, real_inner_comm]⟩))
+      (TauCeti.isSymm_innerₗ_comp_iff.mpr hA) (TauCeti.isSymm_innerₗ_comp_iff.mpr hB)))
 
 /-- Whenever `kulkarniNomizu h k` is an algebraic curvature tensor, its curvature operator is
 `2 • wedgeEnd A B`, where `A` and `B` are the Riesz endomorphisms representing `h` and `k`. -/
 theorem curvatureOperator_kulkarniNomizu {h k : BilinForm ℝ V}
     (hr : kulkarniNomizu h k ∈ algebraicCurvatureSubmodule V) :
     curvatureOperator ⟨kulkarniNomizu h k, hr⟩ =
-      (2 : ℝ) • wedgeEnd (h.symmCompOfNondegenerate (innerₗ V) TauCeti.nondegenerate_inner)
-        (k.symmCompOfNondegenerate (innerₗ V) TauCeti.nondegenerate_inner) := by
-  have H (b : BilinForm ℝ V) :
-      innerₗ V ∘ₗ b.symmCompOfNondegenerate (innerₗ V) TauCeti.nondegenerate_inner = b :=
-    LinearMap.ext₂ fun x y ↦ b.symmCompOfNondegenerate_left_apply TauCeti.nondegenerate_inner y x
+      (2 : ℝ) • wedgeEnd (TauCeti.bilinFormEquivEnd V h) (TauCeti.bilinFormEquivEnd V k) := by
   refine ofExteriorEnd_injective ?_
-  rw [ofExteriorEnd_curvatureOperator, map_smul, ofExteriorEnd_wedgeEnd, H h, H k, smul_smul]
+  rw [ofExteriorEnd_curvatureOperator, map_smul, ofExteriorEnd_wedgeEnd,
+    TauCeti.innerₗ_comp_bilinFormEquivEnd, TauCeti.innerₗ_comp_bilinFormEquivEnd, smul_smul]
   norm_num
 
 /-! ### Dimension formula -/

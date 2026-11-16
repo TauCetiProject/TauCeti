@@ -41,9 +41,8 @@ curvature-operator convention for Kulkarni–Nomizu products on inner product sp
   `exteriorPower.ιMulti_two_smul_left`, `exteriorPower.ιMulti_two_smul_right`,
   `exteriorPower.ιMulti_two_swap`, and `exteriorPower.linearMap_ext_ιMulti_two`: bilinearity,
   swap antisymmetry, and pure-wedge extensionality for `u ∧ w`.
-* `TauCeti.wedgeEnd_apply_ιMulti`, `TauCeti.wedgeEnd_comm`, `TauCeti.wedgeEnd_self`, and
-  `TauCeti.wedgeEnd_id`: evaluation, commutativity, diagonal specialization to
-  `exteriorPower.map 2`, and the identity law for `wedgeEnd`.
+* `TauCeti.wedgeEnd_apply_ιMulti`, `TauCeti.wedgeEnd_comm`, and `TauCeti.wedgeEnd_self`:
+  evaluation, commutativity, and diagonal specialization to `exteriorPower.map 2` for `wedgeEnd`.
 -/
 
 public section
@@ -202,11 +201,6 @@ theorem wedgeEnd_comm (A B : Module.End R M) : wedgeEnd A B = wedgeEnd B A := we
   exteriorPower.linearMap_ext_ιMulti_two fun u v ↦ by
     have hAv : ![A u, A v] = A ∘ ![u, v] := by ext i; fin_cases i <;> rfl
     simp [exteriorPower.map_apply_ιMulti, ← two_smul R, smul_smul, hAv]
-
-/-- `wedgeEnd id id` is the identity on `⋀[R]^2 M`. -/
-theorem wedgeEnd_id :
-    wedgeEnd (LinearMap.id : Module.End R M) LinearMap.id = LinearMap.id := by
-  rw [wedgeEnd_self, exteriorPower.map_id]
 
 end WedgeEnd
 
