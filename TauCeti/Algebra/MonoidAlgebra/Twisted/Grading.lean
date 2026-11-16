@@ -5,47 +5,35 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Algebra.Group.Equiv.TypeTags
 public import Mathlib.Algebra.MonoidAlgebra.Grading
 public import TauCeti.Algebra.DirectSum.Internal
-public import TauCeti.Algebra.MonoidAlgebra.Twisted.Basic
+public import TauCeti.Algebra.MonoidAlgebra.Twisted.NoZeroDivisors
 public import TauCeti.RingTheory.GradedAlgebra.Degree.Width
 
 /-!
 # Weight gradings on twisted monoid algebras
 
-Every function `w : G → ι` on a monoid `G` decomposes the twisted monoid algebra
-`TauCeti.twistedMonoidAlgebra k G α` as the internal direct sum of the submodules
-`TauCeti.TwistedMonoidAlgebra.gradeBy k G α w i` spanned by the twisted basis elements `of g` in the
-fiber `w g = i`. Each graded piece is free over `k` on `{g : G // w g = i}`.
+Every function `w : G → ι` decomposes `TauCeti.twistedMonoidAlgebra k G α` as the internal direct
+sum of the fiber submodules `TauCeti.TwistedMonoidAlgebra.gradeBy k G α w i`, each free over `k` on
+`{g : G // w g = i}`. When `w : Additive G →+ ι` is additive, `gradeByHom k G α w` is an internal
+`GradedAlgebra` structure; specializing to `w = id` gives `grade k G α` and specializing to
+`G = Multiplicative L` gives `gradeByAddHom` for twisted lattice algebras. Over `[NoZeroDivisors k]`
+and `[AddCancelCommMonoid L] [HasUniqueDiv L]`, the `UniqueProds` instances in
+`TauCeti.Algebra.MonoidAlgebra.Twisted.NoZeroDivisors` supply `NoZeroDivisors` (and `IsDomain` over
+a domain `k`), making `minHomogPart` and `maxHomogPart` nonzero and multiplicative and `minDeg`,
+`maxDeg`, `degWidth` additive on nonzero products. For `α = 1`, `addMonoidAlgebraEquiv` identifies
+the algebra with `AddMonoidAlgebra k L`.
 
-When `w : Additive G →+ ι` is an additive homomorphism out of `Additive G`, the twisted
-multiplication table `of g * of h = α g h • of (g * h)` respects `w`, making
-`TauCeti.TwistedMonoidAlgebra.gradeByHom k G α w` an internal `GradedAlgebra` structure on the
-(generally noncommutative) algebra `twistedMonoidAlgebra k G α`. Specializing to `w = id` gives the
-fine `Additive G`-grading `TauCeti.TwistedMonoidAlgebra.grade k G α`, and specializing to
-`G = Multiplicative L` for an additive monoid `L` gives `gradeByAddHom` for twisted lattice and
-quantum torus algebras. For the trivial factor set `1`, `addMonoidAlgebraEquiv` identifies
-`twistedMonoidAlgebra k (Multiplicative L) 1` with `AddMonoidAlgebra k L` compatibly with `gradeBy`.
+## Main definitions and results
 
-## Main definitions
-
-* `TauCeti.TwistedMonoidAlgebra.gradeBy` and `TauCeti.TwistedMonoidAlgebra.basisGradeBy`: the
-  fiber submodules of `w : G → ι` and their canonical `k`-bases.
-* `TauCeti.TwistedMonoidAlgebra.gradeByHom`, `TauCeti.TwistedMonoidAlgebra.grade`, and
-  `TauCeti.TwistedMonoidAlgebra.gradeByAddHom`: internal `GradedAlgebra` structures induced by
-  additive weights on monoids and lattices.
-* `TauCeti.TwistedMonoidAlgebra.addMonoidAlgebraEquiv`: the `k`-algebra equivalence between
-  `twistedMonoidAlgebra k (Multiplicative L) 1` and `AddMonoidAlgebra k L`.
-
-## Main results
-
-* `TauCeti.TwistedMonoidAlgebra.gradeBy_isInternal`, `TauCeti.TwistedMonoidAlgebra.finrank_gradeBy`,
-  `TauCeti.TwistedMonoidAlgebra.repr_decompose_gradeBy`: internal direct-sum decomposition, piece
-  ranks, and coordinate restriction under projection.
-* `TauCeti.TwistedMonoidAlgebra.degWidth_of_mul`, `TauCeti.TwistedMonoidAlgebra.degWidth_mul_of`:
-  invariance of degree width under multiplication by twisted basis units `of g`.
-* `TauCeti.TwistedMonoidAlgebra.map_gradeBy_addMonoidAlgebraEquiv`: compatibility of `gradeBy` with
-  `AddMonoidAlgebra.gradeBy` for the trivial factor set `1`.
+* `TauCeti.TwistedMonoidAlgebra.gradeBy`, `basisGradeBy`, `gradeBy_isInternal`, `finrank_gradeBy`,
+  `repr_decompose_gradeBy`: fiber submodules, bases, direct-sum decomposition, ranks, and
+  projections.
+* `TauCeti.TwistedMonoidAlgebra.gradeByHom`, `grade`, `gradeByAddHom`, `degWidth_of_mul`,
+  `degWidth_mul_of`: additive weight `GradedAlgebra` structures and basis-unit width invariance.
+* `TauCeti.TwistedMonoidAlgebra.addMonoidAlgebraEquiv`, `map_gradeBy_addMonoidAlgebraEquiv`:
+  trivial-twist `k`-algebra equivalence with `AddMonoidAlgebra k L` and grading compatibility.
 -/
 
 public section
@@ -233,19 +221,13 @@ theorem minDeg_smul_of (w : Additive G →+ ι) {c : k} (hc : c ≠ 0) (g : G) :
     GradedAlgebra.minDeg (gradeByHom k G α w) (c • (of g : twistedMonoidAlgebra k G α)) =
       w (Additive.ofMul g) := by
   refine GradedAlgebra.minDeg_of_mem_ne_zero _ (smul_of_mem_gradeByHom k G α w c g) fun h0 ↦ hc ?_
-  have h := congrArg (fun x ↦ (basis k G α).repr x g) h0
-  rw [← basis_apply k G α g, map_smul, Basis.repr_self, Finsupp.smul_single_one,
-    Finsupp.single_eq_same, map_zero, Finsupp.zero_apply] at h
-  exact h
+  simpa using congrArg (fun x ↦ (basis k G α).repr x g) h0
 
 theorem maxDeg_smul_of (w : Additive G →+ ι) {c : k} (hc : c ≠ 0) (g : G) :
     GradedAlgebra.maxDeg (gradeByHom k G α w) (c • (of g : twistedMonoidAlgebra k G α)) =
       w (Additive.ofMul g) := by
   refine GradedAlgebra.maxDeg_of_mem_ne_zero _ (smul_of_mem_gradeByHom k G α w c g) fun h0 ↦ hc ?_
-  have h := congrArg (fun x ↦ (basis k G α).repr x g) h0
-  rw [← basis_apply k G α g, map_smul, Basis.repr_self, Finsupp.smul_single_one,
-    Finsupp.single_eq_same, map_zero, Finsupp.zero_apply] at h
-  exact h
+  simpa using congrArg (fun x ↦ (basis k G α).repr x g) h0
 
 end Degree
 
@@ -259,23 +241,21 @@ theorem degWidth_of (w : Additive G →+ ι) (g : G) :
     GradedAlgebra.degWidth (gradeByHom k G α w) (of g : twistedMonoidAlgebra k G α) = 0 :=
   GradedAlgebra.degWidth_of_mem _ (of_mem_gradeByHom k G α w g)
 
-/-- In a twisted group algebra without zero divisors, multiplying on the left by any twisted basis
-unit `of g` preserves the degree width. -/
-theorem degWidth_of_mul [IsOrderedAddMonoid ι]
-    [NoZeroDivisors (twistedMonoidAlgebra k G α)] (w : Additive G →+ ι)
+/-- In a twisted group algebra, multiplying on the left by any twisted basis unit `of g` preserves
+the degree width. -/
+theorem degWidth_of_mul [IsOrderedAddMonoid ι] (w : Additive G →+ ι)
     (g : G) (x : twistedMonoidAlgebra k G α) :
     GradedAlgebra.degWidth (gradeByHom k G α w) (of g * x) =
       GradedAlgebra.degWidth (gradeByHom k G α w) x :=
-  GradedAlgebra.degWidth_mul_of_isUnit_left _ (isUnit_of g) x
+  GradedAlgebra.degWidth_mul_of_isUnit_of_mem_left _ (isUnit_of g) (of_mem_gradeByHom k G α w g) x
 
-/-- In a twisted group algebra without zero divisors, multiplying on the right by any twisted basis
-unit `of g` preserves the degree width. -/
-theorem degWidth_mul_of [IsOrderedAddMonoid ι]
-    [NoZeroDivisors (twistedMonoidAlgebra k G α)] (w : Additive G →+ ι)
+/-- In a twisted group algebra, multiplying on the right by any twisted basis unit `of g` preserves
+the degree width. -/
+theorem degWidth_mul_of [IsOrderedAddMonoid ι] (w : Additive G →+ ι)
     (x : twistedMonoidAlgebra k G α) (g : G) :
     GradedAlgebra.degWidth (gradeByHom k G α w) (x * of g) =
       GradedAlgebra.degWidth (gradeByHom k G α w) x :=
-  GradedAlgebra.degWidth_mul_of_isUnit_right _ (isUnit_of g) x
+  GradedAlgebra.degWidth_mul_of_isUnit_of_mem_right _ (isUnit_of g) (of_mem_gradeByHom k G α w g) x
 
 end GroupWidth
 
@@ -285,23 +265,12 @@ section Lattice
 
 variable (k L : Type*) [CommSemiring k] [AddMonoid L]
 
-/-- The canonical additive homomorphism identifying `Additive (Multiplicative L)` with `L`. -/
-def additiveMultiplicativeHom : Additive (Multiplicative L) →+ L where
-  toFun x := Multiplicative.toAdd (Additive.toMul x)
-  map_zero' := rfl
-  map_add' _ _ := rfl
-
-@[simp]
-theorem additiveMultiplicativeHom_ofMul_ofAdd (m : L) :
-    additiveMultiplicativeHom L (Additive.ofMul (Multiplicative.ofAdd m)) = m :=
-  (rfl)
-
 /-- Grading of a twisted additive-monoid (or lattice) algebra
 `twistedMonoidAlgebra k (Multiplicative L) α` by an additive weight `w : L →+ ι`. -/
 noncomputable abbrev gradeByAddHom {ι : Type*} [AddMonoid ι]
     (α : Multiplicative L → Multiplicative L → kˣ) [IsFactorSet α] (w : L →+ ι) :
     ι → Submodule k (twistedMonoidAlgebra k (Multiplicative L) α) :=
-  gradeByHom k (Multiplicative L) α (w.comp (additiveMultiplicativeHom L))
+  gradeByHom k (Multiplicative L) α (w.comp (AddEquiv.additiveMultiplicative L).toAddMonoidHom)
 
 /-- For the trivial factor set `1`, `twistedMonoidAlgebra k (Multiplicative L) 1` is canonically
 isomorphic as a `k`-algebra to `AddMonoidAlgebra k L`. -/
@@ -348,5 +317,30 @@ theorem map_gradeBy_addMonoidAlgebraEquiv {ι : Type*} (w : L → ι) (i : ι) :
       (Submodule.subset_span ⟨_, ⟨Multiplicative.ofAdd m, hwm, rfl⟩, rfl⟩)
 
 end Lattice
+
+/-! ### Checks -/
+
+example {k L : Type*} [CommRing k] [IsDomain k] [AddCommGroup L] [HasUniqueDiv L]
+    (α : Multiplicative L → Multiplicative L → kˣ) [IsFactorSet α] (w : L →+ ℤ)
+    {x y : twistedMonoidAlgebra k (Multiplicative L) α} (hx : x ≠ 0) (hy : y ≠ 0) :
+    let 𝒜 := gradeByAddHom k L α w
+    GradedAlgebra.minHomogPart 𝒜 x ≠ 0 ∧ GradedAlgebra.maxHomogPart 𝒜 x ≠ 0 ∧
+      GradedAlgebra.minHomogPart 𝒜 (x * y) =
+        GradedAlgebra.minHomogPart 𝒜 x * GradedAlgebra.minHomogPart 𝒜 y ∧
+      GradedAlgebra.maxHomogPart 𝒜 (x * y) =
+        GradedAlgebra.maxHomogPart 𝒜 x * GradedAlgebra.maxHomogPart 𝒜 y ∧
+      GradedAlgebra.minDeg 𝒜 (x * y) = GradedAlgebra.minDeg 𝒜 x + GradedAlgebra.minDeg 𝒜 y ∧
+      GradedAlgebra.maxDeg 𝒜 (x * y) = GradedAlgebra.maxDeg 𝒜 x + GradedAlgebra.maxDeg 𝒜 y ∧
+      GradedAlgebra.degWidth 𝒜 (x * y) = GradedAlgebra.degWidth 𝒜 x + GradedAlgebra.degWidth 𝒜 y :=
+  ⟨GradedAlgebra.minHomogPart_ne_zero _ hx, GradedAlgebra.maxHomogPart_ne_zero _ hx,
+    GradedAlgebra.minHomogPart_mul _ x y, GradedAlgebra.maxHomogPart_mul _ x y,
+    GradedAlgebra.minDeg_mul _ hx hy, GradedAlgebra.maxDeg_mul _ hx hy,
+    GradedAlgebra.degWidth_mul _ hx hy⟩
+
+example (k L : Type*) [CommSemiring k] [AddMonoid L] {ι : Type*} [AddMonoid ι] (w : L →+ ι)
+    (i : ι) :
+    (gradeByAddHom k L 1 w i).map (addMonoidAlgebraEquiv k L).toLinearMap =
+      AddMonoidAlgebra.gradeBy k w i :=
+  map_gradeBy_addMonoidAlgebraEquiv k L w i
 
 end TauCeti.TwistedMonoidAlgebra

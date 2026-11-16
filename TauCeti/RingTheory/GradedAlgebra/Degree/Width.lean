@@ -161,17 +161,9 @@ theorem coe_decompose_eq_zero_of_lt_minDeg {x : A} {i : ι} (hi : i < minDeg �
     (decompose 𝒜 x i : A) = 0 :=
   by_contra fun h ↦ (minDeg_le_of_decompose_ne_zero 𝒜 h).not_gt hi
 
-theorem decompose_eq_zero_of_lt_minDeg {x : A} {i : ι} (hi : i < minDeg 𝒜 x) :
-    decompose 𝒜 x i = 0 :=
-  Subtype.ext (coe_decompose_eq_zero_of_lt_minDeg 𝒜 hi)
-
 theorem coe_decompose_eq_zero_of_maxDeg_lt {x : A} {i : ι} (hi : maxDeg 𝒜 x < i) :
     (decompose 𝒜 x i : A) = 0 :=
   by_contra fun h ↦ (le_maxDeg_of_decompose_ne_zero 𝒜 h).not_gt hi
-
-theorem decompose_eq_zero_of_maxDeg_lt {x : A} {i : ι} (hi : maxDeg 𝒜 x < i) :
-    decompose 𝒜 x i = 0 :=
-  Subtype.ext (coe_decompose_eq_zero_of_maxDeg_lt 𝒜 hi)
 
 theorem minDeg_le_maxDeg (x : A) : minDeg 𝒜 x ≤ maxDeg 𝒜 x := by
   by_cases hx : x = 0
@@ -254,10 +246,6 @@ theorem minDeg_add_eq_left {x y : A} (hx : x ≠ 0) (h : minDeg 𝒜 x < minDeg 
     coe_decompose_eq_zero_of_lt_minDeg 𝒜 hi,
     coe_decompose_eq_zero_of_lt_minDeg 𝒜 (hi.trans h), add_zero]
 
-theorem minDeg_add_eq_right {x y : A} (hy : y ≠ 0) (h : minDeg 𝒜 y < minDeg 𝒜 x) :
-    minDeg 𝒜 (x + y) = minDeg 𝒜 y := by
-  rw [add_comm, minDeg_add_eq_left 𝒜 hy h]
-
 /-- When two nonzero elements have strictly ordered greatest degrees, the sum inherits the larger
 greatest degree. -/
 theorem maxDeg_add_eq_left {x y : A} (hx : x ≠ 0) (h : maxDeg 𝒜 y < maxDeg 𝒜 x) :
@@ -270,10 +258,6 @@ theorem maxDeg_add_eq_left {x y : A} (hx : x ≠ 0) (h : maxDeg 𝒜 y < maxDeg 
   rw [decompose_add, DirectSum.add_apply, AddMemClass.coe_add,
     coe_decompose_eq_zero_of_maxDeg_lt 𝒜 hi,
     coe_decompose_eq_zero_of_maxDeg_lt 𝒜 (h.trans hi), add_zero]
-
-theorem maxDeg_add_eq_right {x y : A} (hy : y ≠ 0) (h : maxDeg 𝒜 x < maxDeg 𝒜 y) :
-    maxDeg 𝒜 (x + y) = maxDeg 𝒜 y := by
-  rw [add_comm, maxDeg_add_eq_left 𝒜 hy h]
 
 end Decomposition
 
@@ -343,26 +327,7 @@ section StrictMono
 
 variable [AddLeftStrictMono ι] [AddRightStrictMono ι]
 
-omit [DecidableEq ι] in
-private theorem add_le_add_of_strictMono {a b c d : ι} (hab : a ≤ b) (hcd : c ≤ d) :
-    a + c ≤ b + d := by
-  have h1 : a + c ≤ b + c :=
-    hab.eq_or_lt.elim (fun e ↦ e ▸ le_rfl) fun h ↦ (add_lt_add_left h c).le
-  have h2 : b + c ≤ b + d :=
-    hcd.eq_or_lt.elim (fun e ↦ e ▸ le_rfl) fun h ↦ (add_lt_add_right h b).le
-  exact h1.trans h2
-
-omit [DecidableEq ι] in
-private theorem add_lt_add_of_lt_of_le' {a b c d : ι} (hab : a < b) (hcd : c ≤ d) :
-    a + c < b + d :=
-  lt_of_lt_of_le (add_lt_add_left hab c)
-    (hcd.eq_or_lt.elim (fun e ↦ e ▸ le_rfl) fun h ↦ (add_lt_add_right h b).le)
-
-omit [DecidableEq ι] in
-private theorem add_lt_add_of_le_of_lt' {a b c d : ι} (hab : a ≤ b) (hcd : c < d) :
-    a + c < b + d :=
-  lt_of_le_of_lt (hab.eq_or_lt.elim (fun e ↦ e ▸ le_rfl) fun h ↦ (add_lt_add_left h c).le)
-    (add_lt_add_right hcd b)
+attribute [local instance] addLeftMono_of_addLeftStrictMono addRightMono_of_addRightStrictMono
 
 /-- Below `minDeg 𝒜 x + minDeg 𝒜 y`, every homogeneous component of `x * y` vanishes. -/
 theorem coe_decompose_mul_eq_zero_of_lt {x y : A} {k : ι} (hk : k < minDeg 𝒜 x + minDeg 𝒜 y) :
@@ -379,7 +344,7 @@ theorem coe_decompose_mul_eq_zero_of_lt {x y : A} {k : ι} (hk : k < minDeg 𝒜
     minDeg_le_of_decompose_ne_zero 𝒜 ((mem_support_decompose_iff 𝒜).mp hij.1.1)
   have hj : minDeg 𝒜 y ≤ ij.2 :=
     minDeg_le_of_decompose_ne_zero 𝒜 ((mem_support_decompose_iff 𝒜).mp hij.1.2)
-  exact absurd (hij.2 ▸ add_le_add_of_strictMono hi hj) hk.not_ge
+  exact absurd (hij.2 ▸ add_le_add hi hj) hk.not_ge
 
 /-- Above `maxDeg 𝒜 x + maxDeg 𝒜 y`, every homogeneous component of `x * y` vanishes. -/
 theorem coe_decompose_mul_eq_zero_of_gt {x y : A} {k : ι} (hk : maxDeg 𝒜 x + maxDeg 𝒜 y < k) :
@@ -396,7 +361,7 @@ theorem coe_decompose_mul_eq_zero_of_gt {x y : A} {k : ι} (hk : maxDeg 𝒜 x +
     le_maxDeg_of_decompose_ne_zero 𝒜 ((mem_support_decompose_iff 𝒜).mp hij.1.1)
   have hj : ij.2 ≤ maxDeg 𝒜 y :=
     le_maxDeg_of_decompose_ne_zero 𝒜 ((mem_support_decompose_iff 𝒜).mp hij.1.2)
-  exact absurd (hij.2 ▸ add_le_add_of_strictMono hi hj) hk.not_ge
+  exact absurd (hij.2 ▸ add_le_add hi hj) hk.not_ge
 
 /-- **Extremal lower convolution identity.** For nonzero `x` and `y`, the homogeneous component of
 `x * y` in degree `minDeg 𝒜 x + minDeg 𝒜 y` is the single product
@@ -413,9 +378,9 @@ theorem coe_decompose_mul_minDeg_add {x y : A} (hx : x ≠ 0) (hy : y ≠ 0) :
     have hj : minDeg 𝒜 y ≤ ij.2 :=
       minDeg_le_of_decompose_ne_zero 𝒜 ((mem_support_decompose_iff 𝒜).mp hij.1.2)
     rcases hi.lt_or_eq with hlt | heq
-    · exact absurd hij.2 (add_lt_add_of_lt_of_le' hlt hj).ne'
+    · exact absurd hij.2 (add_lt_add_of_lt_of_le hlt hj).ne'
     · have hjlt : minDeg 𝒜 y < ij.2 := hj.lt_of_ne fun hj' ↦ hne (Prod.ext heq.symm hj'.symm)
-      exact absurd hij.2 (add_lt_add_of_le_of_lt' hi hjlt).ne'
+      exact absurd hij.2 (add_lt_add_of_le_of_lt hi hjlt).ne'
   · exfalso
     apply hnot
     rw [Finset.mem_filter, Finset.mem_product]
@@ -437,9 +402,9 @@ theorem coe_decompose_mul_maxDeg_add {x y : A} (hx : x ≠ 0) (hy : y ≠ 0) :
     have hj : ij.2 ≤ maxDeg 𝒜 y :=
       le_maxDeg_of_decompose_ne_zero 𝒜 ((mem_support_decompose_iff 𝒜).mp hij.1.2)
     rcases hi.lt_or_eq with hlt | heq
-    · exact absurd hij.2 (add_lt_add_of_lt_of_le' hlt hj).ne
+    · exact absurd hij.2 (add_lt_add_of_lt_of_le hlt hj).ne
     · have hjlt : ij.2 < maxDeg 𝒜 y := hj.lt_of_ne fun hj' ↦ hne (Prod.ext heq hj')
-      exact absurd hij.2 (add_lt_add_of_le_of_lt' hi hjlt).ne
+      exact absurd hij.2 (add_lt_add_of_le_of_lt hi hjlt).ne
   · exfalso
     apply hnot
     rw [Finset.mem_filter, Finset.mem_product]
@@ -538,28 +503,6 @@ theorem minHomogPart_pow (x : A) (n : ℕ) : minHomogPart 𝒜 (x ^ n) = minHomo
 theorem maxHomogPart_pow (x : A) (n : ℕ) : maxHomogPart 𝒜 (x ^ n) = maxHomogPart 𝒜 x ^ n :=
   map_pow (maxHomogPartHom 𝒜) x n
 
-theorem minDeg_list_prod {l : List A} (hl : ∀ x ∈ l, x ≠ 0) :
-    minDeg 𝒜 l.prod = (l.map (minDeg 𝒜)).sum := by
-  induction l with
-  | nil => simp
-  | cons a l ih =>
-    rw [List.forall_mem_cons] at hl
-    rcases subsingleton_or_nontrivial A with _ | _
-    · exact absurd (Subsingleton.elim a 0) hl.1
-    · have hprod : l.prod ≠ 0 := List.prod_ne_zero fun h0 ↦ hl.2 0 h0 rfl
-      rw [List.prod_cons, minDeg_mul 𝒜 hl.1 hprod, List.map_cons, List.sum_cons, ih hl.2]
-
-theorem maxDeg_list_prod {l : List A} (hl : ∀ x ∈ l, x ≠ 0) :
-    maxDeg 𝒜 l.prod = (l.map (maxDeg 𝒜)).sum := by
-  induction l with
-  | nil => simp
-  | cons a l ih =>
-    rw [List.forall_mem_cons] at hl
-    rcases subsingleton_or_nontrivial A with _ | _
-    · exact absurd (Subsingleton.elim a 0) hl.1
-    · have hprod : l.prod ≠ 0 := List.prod_ne_zero fun h0 ↦ hl.2 0 h0 rfl
-      rw [List.prod_cons, maxDeg_mul 𝒜 hl.1 hprod, List.map_cons, List.sum_cons, ih hl.2]
-
 theorem minDeg_pow {x : A} (hx : x ≠ 0) (n : ℕ) : minDeg 𝒜 (x ^ n) = n • minDeg 𝒜 x := by
   rcases subsingleton_or_nontrivial A with _ | _
   · exact absurd (Subsingleton.elim x 0) hx
@@ -588,8 +531,8 @@ theorem mem_minDeg_of_mul_mem {a b : A} {d : ι} (hab : a * b ∈ 𝒜 d) (hne :
   have hle_b := minDeg_le_maxDeg 𝒜 b
   refine ⟨(mem_minDeg_iff_maxDeg_eq_minDeg 𝒜).mpr ?_,
     (mem_minDeg_iff_maxDeg_eq_minDeg 𝒜).mpr ?_⟩
-  · exact (hle_a.eq_of_not_lt fun hlt ↦ (add_lt_add_of_lt_of_le' hlt hle_b).ne heq).symm
-  · exact (hle_b.eq_of_not_lt fun hlt ↦ (add_lt_add_of_le_of_lt' hle_a hlt).ne heq).symm
+  · exact (hle_a.eq_of_not_lt fun hlt ↦ (add_lt_add_of_lt_of_le hlt hle_b).ne heq).symm
+  · exact (hle_b.eq_of_not_lt fun hlt ↦ (add_lt_add_of_le_of_lt hle_a hlt).ne heq).symm
 
 /-- Every divisor of a nonzero homogeneous element lies in `𝒜 (minDeg 𝒜 a)`. -/
 theorem mem_minDeg_of_dvd_of_mem {a b : A} {d : ι} (hdvd : a ∣ b) (hb : b ∈ 𝒜 d) (hb0 : b ≠ 0) :
@@ -706,6 +649,40 @@ variable {A σ : Type*} [Semiring A] [SetLike σ A] [AddSubmonoidClass σ A]
 theorem degWidth_one : degWidth 𝒜 (1 : A) = 0 := by
   simp [degWidth]
 
+/-- Multiplying on the left by a homogeneous unit preserves the degree width without any
+zero-divisor hypothesis on `A`. -/
+theorem degWidth_mul_of_isUnit_of_mem_left [IsOrderedAddMonoid ι] {u : A} {d : ι}
+    (hu : IsUnit u) (hud : u ∈ 𝒜 d) (x : A) :
+    degWidth 𝒜 (u * x) = degWidth 𝒜 x := by
+  rcases subsingleton_or_nontrivial A with _ | _
+  · simp [Subsingleton.elim (u * x) x]
+  by_cases hx : x = 0
+  · simp [hx]
+  have hmin : minDeg 𝒜 (u * x) = d + minDeg 𝒜 x := by
+    rw [minDeg_mul_of_mul_ne_zero 𝒜, minDeg_of_mem_ne_zero 𝒜 hud hu.ne_zero]
+    simpa [minHomogPart_of_mem 𝒜 hud] using mt hu.mul_right_eq_zero.mp (minHomogPart_ne_zero 𝒜 hx)
+  have hmax : maxDeg 𝒜 (u * x) = d + maxDeg 𝒜 x := by
+    rw [maxDeg_mul_of_mul_ne_zero 𝒜, maxDeg_of_mem_ne_zero 𝒜 hud hu.ne_zero]
+    simpa [maxHomogPart_of_mem 𝒜 hud] using mt hu.mul_right_eq_zero.mp (maxHomogPart_ne_zero 𝒜 hx)
+  rw [degWidth, hmax, hmin, add_sub_add_left_eq_sub, ← degWidth]
+
+/-- Multiplying on the right by a homogeneous unit preserves the degree width without any
+zero-divisor hypothesis on `A`. -/
+theorem degWidth_mul_of_isUnit_of_mem_right [IsOrderedAddMonoid ι] {u : A} {d : ι}
+    (hu : IsUnit u) (hud : u ∈ 𝒜 d) (x : A) :
+    degWidth 𝒜 (x * u) = degWidth 𝒜 x := by
+  rcases subsingleton_or_nontrivial A with _ | _
+  · simp [Subsingleton.elim (x * u) x]
+  by_cases hx : x = 0
+  · simp [hx]
+  have hmin : minDeg 𝒜 (x * u) = minDeg 𝒜 x + d := by
+    rw [minDeg_mul_of_mul_ne_zero 𝒜, minDeg_of_mem_ne_zero 𝒜 hud hu.ne_zero]
+    simpa [minHomogPart_of_mem 𝒜 hud] using mt hu.mul_left_eq_zero.mp (minHomogPart_ne_zero 𝒜 hx)
+  have hmax : maxDeg 𝒜 (x * u) = maxDeg 𝒜 x + d := by
+    rw [maxDeg_mul_of_mul_ne_zero 𝒜, maxDeg_of_mem_ne_zero 𝒜 hud hu.ne_zero]
+    simpa [maxHomogPart_of_mem 𝒜 hud] using mt hu.mul_left_eq_zero.mp (maxHomogPart_ne_zero 𝒜 hx)
+  rw [degWidth, hmax, hmin, add_sub_add_right_eq_sub, ← degWidth]
+
 section NoZeroDivisors
 
 variable [IsOrderedAddMonoid ι] [NoZeroDivisors A]
@@ -722,21 +699,13 @@ theorem degWidth_of_isUnit {u : A} (hu : IsUnit u) : degWidth 𝒜 u = 0 :=
 
 /-- Multiplying on the left by a unit leaves the degree width unchanged. -/
 theorem degWidth_mul_of_isUnit_left {u : A} (hu : IsUnit u) (x : A) :
-    degWidth 𝒜 (u * x) = degWidth 𝒜 x := by
-  rcases subsingleton_or_nontrivial A with _ | _
-  · simp [Subsingleton.elim (u * x) x]
-  by_cases hx : x = 0
-  · simp [hx]
-  · rw [degWidth_mul 𝒜 hu.ne_zero hx, degWidth_of_isUnit 𝒜 hu, zero_add]
+    degWidth 𝒜 (u * x) = degWidth 𝒜 x :=
+  degWidth_mul_of_isUnit_of_mem_left 𝒜 hu (mem_minDeg_of_isUnit 𝒜 hu) x
 
 /-- Multiplying on the right by a unit leaves the degree width unchanged. -/
 theorem degWidth_mul_of_isUnit_right {u : A} (hu : IsUnit u) (x : A) :
-    degWidth 𝒜 (x * u) = degWidth 𝒜 x := by
-  rcases subsingleton_or_nontrivial A with _ | _
-  · simp [Subsingleton.elim (x * u) x]
-  by_cases hx : x = 0
-  · simp [hx]
-  · rw [degWidth_mul 𝒜 hx hu.ne_zero, degWidth_of_isUnit 𝒜 hu, add_zero]
+    degWidth 𝒜 (x * u) = degWidth 𝒜 x :=
+  degWidth_mul_of_isUnit_of_mem_right 𝒜 hu (mem_minDeg_of_isUnit 𝒜 hu) x
 
 theorem degWidth_pow (x : A) (n : ℕ) : degWidth 𝒜 (x ^ n) = n • degWidth 𝒜 x := by
   rcases subsingleton_or_nontrivial A with _ | _

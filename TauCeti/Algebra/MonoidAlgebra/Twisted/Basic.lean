@@ -41,8 +41,10 @@ a basis and the multiplication table above holds on the nose.
   one of its arguments lies in a normal subgroup `N` is pulled back from a factor set on `G ⧸ N`;
 * `TauCeti.twistedMonoidAlgebra k G α`: the twisted monoid algebra `k_α[G]`;
 * `TauCeti.TwistedMonoidAlgebra.of`: its basis elements, with the multiplication table
-  `TauCeti.TwistedMonoidAlgebra.of_mul_of`, the basis `TauCeti.TwistedMonoidAlgebra.basis`, and the
-  dimension count `TauCeti.TwistedMonoidAlgebra.finrank_eq_natCard`;
+  `TauCeti.TwistedMonoidAlgebra.of_mul_of`, the basis `TauCeti.TwistedMonoidAlgebra.basis`, the
+  coordinate formulas `TauCeti.TwistedMonoidAlgebra.repr_of` and
+  `TauCeti.TwistedMonoidAlgebra.repr_mul_apply`, and the dimension count
+  `TauCeti.TwistedMonoidAlgebra.finrank_eq_natCard`;
 * `TauCeti.TwistedMonoidAlgebra.lift`: the universal property. A family `u : G → A` in a
   `k`-algebra `A` with `u 1 = 1` and `u g * u h = α g h • u (g * h)` -- that is, a projective
   representation with factor set `α` -- extends uniquely to an algebra map `k_α[G] →ₐ[k] A`;
@@ -345,6 +347,10 @@ theorem isUnit_of (g : G) : IsUnit (of g : twistedMonoidAlgebra k G α) := by
 
 end Group
 
+noncomputable instance instRing {R G : Type*} [CommRing R] [Monoid G]
+    (α : G → G → Rˣ) [IsFactorSet α] : Ring (twistedMonoidAlgebra R G α) :=
+  Subalgebra.toRing (R := R) (A := Module.End R (G →₀ R)) (twistedMonoidAlgebra R G α)
+
 variable (k G α)
 
 /-- The twisted translations form a basis of `k_α[G]` indexed by `G`: the twisted monoid algebra is
@@ -359,6 +365,9 @@ theorem basis_apply (g : G) : basis k G α g = of g :=
 instance : Module.Free k (twistedMonoidAlgebra k G α) :=
   Module.Free.of_basis (basis k G α)
 
+instance instIsCancelAdd [IsCancelAdd k] : IsCancelAdd (twistedMonoidAlgebra k G α) :=
+  (basis k G α).repr.injective.isCancelAdd _ (map_add _)
+
 /-- The twisted monoid algebra has dimension `#G`, as the ordinary monoid algebra does. For an
 infinite `G` both sides are `0`. -/
 theorem finrank_eq_natCard [StrongRankCondition k] :
@@ -366,6 +375,42 @@ theorem finrank_eq_natCard [StrongRankCondition k] :
   finrank_eq_nat_card_basis (basis k G α)
 
 variable {k G α}
+
+@[simp]
+theorem repr_of (g : G) : (basis k G α).repr (of g) = Finsupp.single g 1 := by
+  rw [← basis_apply k G α g, Basis.repr_self]
+
+@[simp]
+theorem repr_one : (basis k G α).repr (1 : twistedMonoidAlgebra k G α) = Finsupp.single 1 1 := by
+  rw [← of_one, repr_of]
+
+/-- Every element of `k_α[G]` is the linear combination of the basis elements `of g` weighted by
+its `(basis k G α).repr` coordinates. -/
+theorem sum_repr_of (x : twistedMonoidAlgebra k G α) :
+    ((basis k G α).repr x).sum (fun g c ↦ c • (of g : twistedMonoidAlgebra k G α)) = x := by
+  simpa only [Finsupp.linearCombination_apply, basis_apply] using
+    (basis k G α).linearCombination_repr x
+
+/-- Coordinates of a product in `k_α[G]` with respect to `TauCeti.TwistedMonoidAlgebra.basis`. -/
+theorem repr_mul_apply [DecidableEq G] (x y : twistedMonoidAlgebra k G α) (g : G) :
+    (basis k G α).repr (x * y) g =
+      ((basis k G α).repr x).sum fun g₁ c₁ ↦
+        ((basis k G α).repr y).sum fun g₂ c₂ ↦
+          if g₁ * g₂ = g then (α g₁ g₂ : k) * (c₁ * c₂) else 0 := by
+  let eval : twistedMonoidAlgebra k G α →ₗ[k] k :=
+    (Finsupp.lapply (R := k) g).comp (basis k G α).repr.toLinearMap
+  change eval (x * y) = _
+  conv_lhs => rw [← sum_repr_of x, ← sum_repr_of y]
+  rw [Finsupp.sum_mul, map_finsuppSum]
+  refine Finsupp.sum_congr fun g₁ _ ↦ ?_
+  rw [Finsupp.mul_sum, map_finsuppSum]
+  refine Finsupp.sum_congr fun g₂ _ ↦ ?_
+  simp only [eval, LinearMap.comp_apply, LinearEquiv.coe_toLinearMap, Finsupp.lapply_apply,
+    smul_mul_assoc, mul_smul_comm, of_mul_of, smul_smul, map_smul, repr_of,
+    Finsupp.single_apply, smul_eq_mul, mul_ite, mul_one, mul_zero]
+  split_ifs
+  · rw [← mul_assoc, mul_comm _ (α g₁ g₂ : k), mul_comm ((basis k G α).repr y g₂)]
+  · rfl
 
 /-- An algebra map out of `k_α[G]` is determined by its values on the basis elements. -/
 @[ext]

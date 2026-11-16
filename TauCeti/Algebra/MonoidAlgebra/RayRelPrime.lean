@@ -20,51 +20,30 @@ import Mathlib.LinearAlgebra.Span.Basic
 /-!
 # Weighted degree width and relative primality along independent rays in group algebras
 
-For an additive monoid homomorphism `w : M →+ ι` into a linearly ordered commutative monoid or
-group, the grading `AddMonoidAlgebra.gradeBy R w` of `R[M]` endows every nonzero element `x` with a
-least weight `minDeg (gradeBy R w) x`, a greatest weight `maxDeg (gradeBy R w) x`, and (when `ι` is
-an ordered group) a nonnegative degree width `degWidth (gradeBy R w) x`. The first part of this
-file connects these graded invariants to the exponent support `x.coeff.support` and to Mathlib's
-`AddMonoidAlgebra.supDegree` and `AddMonoidAlgebra.infDegree`.
-
-The second part applies degree width under rational additive functionals `w : L →+ ℚ` (constructed
-by Baer's criterion for divisible `ℤ`-modules) to divisibility in the group algebra `R[L]` of a
-torsion-free commutative group `L` over a commutative semiring `R` without zero divisors:
-
-* If `h ∣ P` for a nonzero `P : R[L]` supported on the cyclic subgroup `ℤ • a`, then every
-  functional `w : L →+ ℚ` vanishing on `a` assigns `P` width `0`, hence assigns `h` width `0`, so
-  `w` is constant on `h.coeff.support`. Consequently every difference of exponents in the support
-  of `h` has a nonzero integer multiple in `ℤ • a`
-  (`AddMonoidAlgebra.exists_zsmul_sub_eq_zsmul_of_dvd_of_support_subset_zsmul`).
-* If `a, b : L` are `ℤ`-linearly independent, any common divisor `h` of nonzero `P` supported on
-  `ℤ • a` and nonzero `Q` supported on `ℤ • b` has singleton support, i.e. is a monomial
-  `single d r` (`AddMonoidAlgebra.exists_eq_single_of_dvd_of_support_subset_zsmul`).
-* If, in addition, `P` has at least one unit coefficient, then `r` divides that unit coefficient
-  and is therefore a unit, making `single d r` a unit of `R[L]`; hence `IsRelPrime P Q`
-  (`AddMonoidAlgebra.isRelPrime_of_support_subset_zsmul`).
-* Specializing to factors of the form `1 + single a c` (which have constant term `coeff 0 = 1`
-  along any nonzero ray) yields unconditional relative primality of finite products
-  `∏ r ∈ s, (1 + single a (c r))` and `∏ t ∈ u, (1 + single b (d t))` along `ℤ`-linearly
-  independent rays (`AddMonoidAlgebra.isRelPrime_prod_one_add_single` and
-  `AddMonoidAlgebra.isRelPrime_one_add_single`). No finite-generation hypothesis on `L` is needed.
+For an additive homomorphism `w : M →+ ι` into a linearly ordered commutative monoid or group, the
+grading `AddMonoidAlgebra.gradeBy R w` of `R[M]` endows every nonzero `x` with `minDeg`, `maxDeg`,
+and (over an ordered group) `degWidth (gradeBy R w) x`. After connecting these graded invariants to
+`x.coeff.support`, `AddMonoidAlgebra.supDegree`, and `AddMonoidAlgebra.infDegree`, this file applies
+rational functionals `w : L →+ ℚ` (constructed via Baer's criterion) to divisibility in the group
+algebra `R[L]` of a torsion-free commutative group `L` over `[CommSemiring R] [NoZeroDivisors R]`:
+any divisor of a nonzero element supported on `ℤ • a` has ray-collinear support differences, common
+divisors along `ℤ`-linearly independent rays are monomials, and finite products of binomials
+`1 + single a (c r)` along `ℤ`-linearly independent rays are relatively prime without any
+finite-generation hypothesis on `L`.
 
 ## Main results
 
 * `AddMonoidAlgebra.supDegree_withBot_eq_maxDeg_gradeBy`,
-  `AddMonoidAlgebra.infDegree_withTop_eq_minDeg_gradeBy`: compatibility of `maxDeg` and `minDeg`
-  for `gradeBy R w` with `supDegree` and `infDegree`.
-* `AddMonoidAlgebra.degWidth_gradeBy_eq_zero_iff_forall_mem_support`: `degWidth (gradeBy R w) x = 0`
-  iff `w` is constant on `x.coeff.support`.
-* `AddMonoidAlgebra.exists_zsmul_sub_eq_zsmul_of_dvd_of_support_subset_zsmul`: differences of
-  supported exponents of any divisor of a nonzero element supported on `ℤ • a` lie in the
-  `ℤ`-saturation of `ℤ • a`.
+  `AddMonoidAlgebra.infDegree_withTop_eq_minDeg_gradeBy`,
+  `AddMonoidAlgebra.degWidth_gradeBy_eq_zero_iff_forall_mem_support`: compatibility of `maxDeg`,
+  `minDeg`, and `degWidth` for `gradeBy R w` with `supDegree`, `infDegree`, and `x.coeff.support`.
+* `AddMonoidAlgebra.exists_zsmul_sub_eq_zsmul_of_dvd_of_support_subset_zsmul`: support differences
+  of divisors of nonzero elements supported on `ℤ • a` lie in the `ℤ`-saturation of `ℤ • a`.
 * `AddMonoidAlgebra.exists_eq_single_of_dvd_of_support_subset_zsmul`: common divisors of nonzero
   elements supported on `ℤ`-linearly independent rays are monomials.
-* `AddMonoidAlgebra.isRelPrime_of_support_subset_zsmul`: relative primality of nonzero elements
-  supported on `ℤ`-linearly independent rays when one has a unit coefficient.
-* `AddMonoidAlgebra.isRelPrime_prod_one_add_single`, `AddMonoidAlgebra.isRelPrime_one_add_single`:
-  relative primality of binomials `1 + single a c` and of finite products thereof along
-  `ℤ`-linearly independent rays.
+* `AddMonoidAlgebra.isRelPrime_of_support_subset_zsmul`,
+  `AddMonoidAlgebra.isRelPrime_prod_one_add_single`, `AddMonoidAlgebra.isRelPrime_one_add_single`:
+  relative primality of ray-supported elements and finite products of ray binomials.
 -/
 
 public section
@@ -160,34 +139,6 @@ end WeightDegree
 
 /-! ### Divisibility and relative primality along rays in torsion-free group algebras -/
 
-/-- If no nonzero integer multiple of `d` lies in `ℤ • a`, Baer's criterion extends the projection
-onto `d` to an additive homomorphism `w : L →+ ℚ` with `w a = 0` and `w d = 1`. -/
-private theorem exists_addMonoidHom_rat_eq_zero_and_eq_one {L : Type*} [AddCommGroup L]
-    {a d : L} (hd : ∀ n : ℤ, n ≠ 0 → ∀ k : ℤ, n • d ≠ k • a) :
-    ∃ w : L →+ ℚ, w a = 0 ∧ w d = 1 := by
-  let S : Submodule ℤ L := Submodule.span ℤ {a}
-  let i : S × ℤ →+ L :=
-    { toFun p := (p.1 : L) + p.2 • d
-      map_zero' := by simp
-      map_add' p q := by simp [add_smul]; abel }
-  have hi : Function.Injective i := (injective_iff_map_eq_zero i).mpr fun ⟨x, v⟩ hxv ↦ by
-    have hv : v = 0 := by_contra fun hv ↦ by
-      obtain ⟨k, hk⟩ := Submodule.mem_span_singleton.mp x.2
-      have heq : v • d = (-k) • a := by
-        rw [neg_smul, hk, eq_neg_iff_add_eq_zero, add_comm]
-        exact hxv
-      exact hd v hv (-k) heq
-    subst hv
-    have hx0 : (x : L) = 0 := by simpa [i] using hxv
-    exact Prod.ext (Subtype.ext hx0) rfl
-  let g : S × ℤ →+ ℚ := (Int.castAddHom ℚ).comp (AddMonoidHom.snd S ℤ)
-  obtain ⟨w, hw⟩ := (Module.Baer.of_divisible ℚ).extension_property_addMonoidHom i hi g
-  have hwa : w a = 0 := by
-    simpa [i, g] using DFunLike.congr_fun hw (⟨a, Submodule.mem_span_singleton_self a⟩, 0)
-  have hwd : w d = 1 := by
-    simpa [i, g] using DFunLike.congr_fun hw (0, 1)
-  exact ⟨w, hwa, hwd⟩
-
 section RayDivisibility
 
 variable {R L : Type*} [CommSemiring R] [NoZeroDivisors R] [AddCommGroup L] [HasUniqueDiv L]
@@ -200,7 +151,30 @@ theorem exists_zsmul_sub_eq_zsmul_of_dvd_of_support_subset_zsmul {a : L} {h P : 
     {x y : L} (hx : x ∈ h.coeff.support) (hy : y ∈ h.coeff.support) :
     ∃ (n k : ℤ), n ≠ 0 ∧ n • (x - y) = k • a := by
   by_contra! H
-  obtain ⟨w, hwa, hwxy⟩ := exists_addMonoidHom_rat_eq_zero_and_eq_one fun n hn k ↦ H n k hn
+  -- Extend the projection onto `x - y` to `w : L →+ ℚ` with `w a = 0` and `w (x - y) = 1`
+  -- via Baer's criterion for the divisible `ℤ`-module `ℚ`.
+  let d : L := x - y
+  let S : Submodule ℤ L := Submodule.span ℤ {a}
+  let i : S × ℤ →+ L :=
+    { toFun p := (p.1 : L) + p.2 • d
+      map_zero' := by simp
+      map_add' p q := by simp [add_smul]; abel }
+  have hi : Function.Injective i := (injective_iff_map_eq_zero i).mpr fun ⟨z, v⟩ hzv ↦ by
+    have hv : v = 0 := by_contra fun hv ↦ by
+      obtain ⟨k, hk⟩ := Submodule.mem_span_singleton.mp z.2
+      have heq : v • d = (-k) • a := by
+        rw [neg_smul, hk, eq_neg_iff_add_eq_zero, add_comm]
+        exact hzv
+      exact H v (-k) hv heq
+    subst hv
+    have hz0 : (z : L) = 0 := by simpa [i] using hzv
+    exact Prod.ext (Subtype.ext hz0) rfl
+  let g : S × ℤ →+ ℚ := (Int.castAddHom ℚ).comp (AddMonoidHom.snd S ℤ)
+  obtain ⟨w, hw⟩ := (Module.Baer.of_divisible ℚ).extension_property_addMonoidHom i hi g
+  have hwa : w a = 0 := by
+    simpa [i, g] using DFunLike.congr_fun hw (⟨a, Submodule.mem_span_singleton_self a⟩, 0)
+  have hwxy : w (x - y) = 1 := by
+    simpa [i, g, d] using DFunLike.congr_fun hw (0, 1)
   have hPmem : P ∈ gradeBy R w 0 := fun m hm ↦ by
     obtain ⟨k, rfl⟩ := hP hm
     simp [hwa]
@@ -265,20 +239,6 @@ theorem isRelPrime_of_support_subset_zsmul {a b : L} (hlin : LinearIndependent �
   have hr : IsUnit r := isUnit_of_dvd_unit hdvd_coeff hm₀
   exact (isUnit_single_iff d r).mpr ⟨⟨toAddUnits d, rfl⟩, hr⟩
 
-/-- Symmetric form of `AddMonoidAlgebra.isRelPrime_of_support_subset_zsmul` with the unit
-coefficient hypothesis on the second factor. -/
-theorem isRelPrime_of_support_subset_zsmul_right {a b : L} (hlin : LinearIndependent ℤ ![a, b])
-    {P Q : R[L]} (hP : (P.coeff.support : Set L) ⊆ Set.range (· • a : ℤ → L))
-    (hQ : (Q.coeff.support : Set L) ⊆ Set.range (· • b : ℤ → L))
-    (hP0 : P ≠ 0) (hQunit : ∃ m : L, IsUnit (Q.coeff m)) :
-    IsRelPrime P Q := by
-  have hlin' : LinearIndependent ℤ ![b, a] := by
-    have h := hlin.comp ![1, 0] (by decide)
-    convert h using 1
-    ext i
-    fin_cases i <;> rfl
-  exact (isRelPrime_of_support_subset_zsmul hlin' hQ hP hP0 hQunit).symm
-
 end RayDivisibility
 
 /-! ### Finite products of ray binomials `1 + single a (c r)` -/
@@ -296,8 +256,7 @@ theorem support_prod_one_add_single_subset_nsmul {R L κ : Type*} [CommSemiring 
   | empty =>
     intro m hm
     rw [Finset.prod_empty, one_def] at hm
-    have hm0 : m = 0 := Finset.mem_singleton.mp (Finsupp.support_single_subset hm)
-    exact ⟨0, by simp [hm0]⟩
+    exact ⟨0, by simp [Finset.mem_singleton.mp (Finsupp.support_single_subset hm)]⟩
   | insert r s hr ih =>
     intro m hm
     rw [Finset.prod_insert hr] at hm
@@ -306,23 +265,23 @@ theorem support_prod_one_add_single_subset_nsmul {R L κ : Type*} [CommSemiring 
     dsimp only at hn₂
     rcases Finset.mem_union.mp (Finsupp.support_add hm₁) with h1 | h1
     · rw [one_def] at h1
-      have hm₁0 : m₁ = 0 := Finset.mem_singleton.mp (Finsupp.support_single_subset h1)
-      exact ⟨n₂, by simp [hm₁0, hn₂]⟩
-    · have hm₁a : m₁ = a := Finset.mem_singleton.mp (Finsupp.support_single_subset h1)
-      exact ⟨1 + n₂, by dsimp only; rw [hm₁a, ← hn₂, add_nsmul, one_nsmul]⟩
+      exact ⟨n₂, by simp [Finset.mem_singleton.mp (Finsupp.support_single_subset h1), hn₂]⟩
+    · exact ⟨1 + n₂, by
+        dsimp only
+        rw [Finset.mem_singleton.mp (Finsupp.support_single_subset h1), ← hn₂, add_nsmul,
+          one_nsmul]⟩
 
 /-- Every exponent in the support of `∏ r ∈ s, (1 + single a (c r))` is an integer multiple of
 `a`. -/
 theorem support_prod_one_add_single_subset_zsmul {R L κ : Type*} [CommSemiring R] [AddCommGroup L]
     (s : Finset κ) (a : L) (c : κ → R) :
     (((∏ r ∈ s, (1 + single a (c r) : R[L])).coeff.support : Set L)) ⊆
-      Set.range (· • a : ℤ → L) := fun m hm ↦ by
+      Set.range (· • a : ℤ → L) := fun _ hm ↦ by
   obtain ⟨n, hn⟩ := support_prod_one_add_single_subset_nsmul s a c hm
   exact ⟨n, by simpa [natCast_zsmul] using hn⟩
 
 /-- For a nonzero element `a` of a torsion-free additive commutative group `L`, the constant term
-of `∏ r ∈ s, (1 + single a (c r))` is `1`: all non-constant contributions lie in positive multiples
-of `a` and therefore never cancel `0`. -/
+of `∏ r ∈ s, (1 + single a (c r))` is `1`. -/
 @[simp]
 theorem coeff_zero_prod_one_add_single {R L κ : Type*} [CommSemiring R] [AddCommGroup L]
     [IsAddTorsionFree L] {a : L} (ha : a ≠ 0) (s : Finset κ) (c : κ → R) :
@@ -333,18 +292,16 @@ theorem coeff_zero_prod_one_add_single {R L κ : Type*} [CommSemiring R] [AddCom
   | insert r s hr ih =>
     set P : R[L] := ∏ t ∈ s, (1 + single a (c t))
     rw [Finset.prod_insert hr, add_mul, one_mul, coeff_add, Finsupp.add_apply, ih]
-    have hneg : P.coeff (-a) = 0 := by
-      by_contra hne
+    have hneg : P.coeff (-a) = 0 := by_contra fun hne ↦ by
       obtain ⟨n, hn⟩ :=
         support_prod_one_add_single_subset_nsmul s a c (Finsupp.mem_support_iff.mpr hne)
-      dsimp only at hn
       have h0 : ((n : ℤ) + 1) • a = (0 : ℤ) • a := by
+        dsimp only at hn
         rw [add_smul, one_smul, natCast_zsmul, hn, neg_add_cancel, zero_smul]
       have hn0 : (n : ℤ) + 1 = 0 := (IsAddTorsionFree.zsmul_left_inj ha).mp h0
       omega
-    have hmul : (single a (c r) * P).coeff 0 = 0 := by
-      rw [← add_neg_cancel a, coeff_single_mul_add, hneg, mul_zero]
-    rw [hmul, add_zero]
+    rw [show (single a (c r) * P).coeff 0 = 0 by
+      rw [← add_neg_cancel a, coeff_single_mul_add, hneg, mul_zero], add_zero]
 
 section UniqueDiv
 
@@ -356,14 +313,11 @@ theorem isRelPrime_prod_one_add_single {a b : L} (hlin : LinearIndependent ℤ !
     IsRelPrime (∏ r ∈ s, (1 + single a (c r) : R[L]))
       (∏ t ∈ u, (1 + single b (d t) : R[L])) := by
   rcases subsingleton_or_nontrivial R with _ | _
-  · intro h _ _
-    exact isUnit_of_subsingleton h
+  · exact fun h _ _ ↦ isUnit_of_subsingleton h
   have ha : a ≠ 0 := by simpa using hlin.ne_zero 0
   have hb : b ≠ 0 := by simpa using hlin.ne_zero 1
-  have hQ0 : (∏ t ∈ u, (1 + single b (d t) : R[L])) ≠ 0 := fun h0 ↦ by
-    have h1 := coeff_zero_prod_one_add_single (R := R) hb u d
-    rw [h0, coeff_zero, Finsupp.zero_apply] at h1
-    exact zero_ne_one h1
+  have hQ0 : (∏ t ∈ u, (1 + single b (d t) : R[L])) ≠ 0 := fun h0 ↦
+    zero_ne_one (α := R) (by simpa [h0] using coeff_zero_prod_one_add_single (R := R) hb u d)
   refine isRelPrime_of_support_subset_zsmul hlin
     (support_prod_one_add_single_subset_zsmul s a c)
     (support_prod_one_add_single_subset_zsmul u b d) hQ0 ⟨0, ?_⟩
@@ -376,20 +330,6 @@ theorem isRelPrime_one_add_single {a b : L} (hlin : LinearIndependent ℤ ![a, b
     IsRelPrime (1 + single a c : R[L]) (1 + single b d : R[L]) := by
   simpa using isRelPrime_prod_one_add_single hlin ({()} : Finset Unit) ({()} : Finset Unit)
     (fun _ ↦ c) (fun _ ↦ d)
-
-/-- Variant of `AddMonoidAlgebra.isRelPrime_prod_one_add_single` written with scalar multiples
-`c r • single a 1`. -/
-theorem isRelPrime_prod_one_add_smul_single {a b : L} (hlin : LinearIndependent ℤ ![a, b])
-    {κ₁ κ₂ : Type*} (s : Finset κ₁) (u : Finset κ₂) (c : κ₁ → R) (d : κ₂ → R) :
-    IsRelPrime (∏ r ∈ s, (1 + c r • single a (1 : R) : R[L]))
-      (∏ t ∈ u, (1 + d t • single b (1 : R) : R[L])) := by
-  simpa [smul_single] using isRelPrime_prod_one_add_single hlin s u c d
-
-/-- Variant of `AddMonoidAlgebra.isRelPrime_one_add_single` written with scalar multiples
-`c • single a 1` and `d • single b 1`. -/
-theorem isRelPrime_one_add_smul_single {a b : L} (hlin : LinearIndependent ℤ ![a, b]) (c d : R) :
-    IsRelPrime (1 + c • single a (1 : R) : R[L]) (1 + d • single b (1 : R) : R[L]) := by
-  simpa [smul_single] using isRelPrime_one_add_single hlin c d
 
 end UniqueDiv
 
