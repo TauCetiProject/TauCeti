@@ -10,8 +10,7 @@ public import TauCeti.Geometry.Manifold.Riemannian.WithMetric.Basic
 public import TauCeti.Geometry.Manifold.VectorBundle.Riemannian.Conformal
 import Mathlib.Analysis.Calculus.FDeriv.Add
 import Mathlib.Analysis.Calculus.FDeriv.Equiv
-import TauCeti.Geometry.Manifold.ContMDiff.Subtype
-import TauCeti.Geometry.Manifold.VectorBundle.Tangent.Basic
+import TauCeti.Geometry.Manifold.LocalDiffeomorph.OpenSubset
 
 /-!
 # Constant metric rescaling of asymptotically Euclidean ends
@@ -19,24 +18,24 @@ import TauCeti.Geometry.Manifold.VectorBundle.Tangent.Basic
 Multiplying a `C^m` Riemannian metric `g` on a `C¹` manifold `M` by a positive constant `c > 0`
 turns an asymptotically Euclidean end `e` of order `t` with excised radius `R` into an
 asymptotically Euclidean end `e.rescale m hc` of the same order `t` on
-`WithMetric (rescaledMetric m hc)` with excised radius `√c * R` and parametrization
+`WithMetric (rescaledMetric I M m hc)` with excised radius `√c * R` and parametrization
 `y ↦ toWithMetric _ (e.toFun ((√c)⁻¹ • y))`.
 
-The compensating coordinate dilation `y ↦ (√c)⁻¹ • y` cancels the metric scaling factor `c` in
-the pulled-back metric coefficients, giving
+Rescaling `g` alone multiplies the asymptotic metric limit by `c` (sending `δ_ij` to `c δ_ij`), so
+the compensating coordinate dilation `y ↦ (√c)⁻¹ • y` cancels `c` in the pulled-back metric
+coefficients and restores the Euclidean limit `δ_ij`, yielding
 
 `(e.rescale m hc).metricCoeff y i j = e.metricCoeff ((√c)⁻¹ • y) i j`
 
-on the exterior domain `√c * e.radius < ‖y‖`. Because `fderiv_comp_smul` and
-`fderiv_const_smul_field` require no differentiability hypotheses, this holds for every smoothness
-order `m : ℕ∞ω` of the ambient metric.
+for every `y : EuclideanSpace ℝ (Fin n)`. Because an asymptotically Euclidean end `e` already
+guarantees `C²` regularity and second-order decay of `e.metricCoeff` on its exterior domain, and
+smooth linear dilation preserves both properties, `e.rescale m hc` requires no `2 ≤ m` assumption on
+the ambient metric.
 
 ## Main definitions
 
-* `TauCeti.AsymptoticallyEuclideanEnd.rescaledMetric`: the constant rescaling `c • g` (`0 < c`) of
-  the ambient `C^m` Riemannian metric on `M`.
 * `TauCeti.AsymptoticallyEuclideanEnd.rescale`: the rescaled asymptotically Euclidean end on
-  `WithMetric (rescaledMetric m hc)`.
+  `WithMetric (rescaledMetric I M m hc)`.
 
 ## Main results
 
@@ -60,319 +59,246 @@ namespace TauCeti
 
 namespace AsymptoticallyEuclideanEnd
 
-variable {n : ℕ} {M : Type*} [TopologicalSpace M]
-  [ChartedSpace (EuclideanSpace ℝ (Fin n)) M]
-  [RiemannianBundle (fun x : M ↦ TangentSpace (𝓡 n) x)] {t : ℝ}
+variable {n : ℕ}
+  {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
+  {H : Type*} [TopologicalSpace H] {I : ModelWithCorners ℝ E H}
+  {M : Type*} [TopologicalSpace M] [ChartedSpace H M]
+  [RiemannianBundle (fun x : M ↦ TangentSpace I x)] {t : ℝ}
 
-/-- The constant rescaling `c • g` (`0 < c`) of the ambient `C^m` Riemannian metric on `M`. -/
-abbrev rescaledMetric (m : ℕ∞ω) [IsManifold (𝓡 n) 1 M]
-    [IsContMDiffRiemannianBundle (𝓡 n) m (EuclideanSpace ℝ (Fin n))
-      (fun x : M ↦ TangentSpace (𝓡 n) x)] {c : ℝ} (hc : 0 < c) :
-    ContMDiffRiemannianMetric (𝓡 n) m (EuclideanSpace ℝ (Fin n))
-      (fun x : M ↦ TangentSpace (𝓡 n) x) :=
-  (ContMDiffRiemannianMetric.ofIsContMDiffRiemannianBundle (IB := 𝓡 n) (n := m)
-    (F := EuclideanSpace ℝ (Fin n)) (V := fun x : M ↦ TangentSpace (𝓡 n) x)).rescale
-    (fun _ ↦ c) contMDiff_const (fun _ ↦ hc)
-
-/-- Domain dilation `y ↦ (√c)⁻¹ • y` from `exteriorBall n (√c * R)` to
-`exteriorBall n R`. -/
-private def rescaleMapDomain {R c : ℝ} (hc : 0 < c) :
-    exteriorBall n (Real.sqrt c * R) → exteriorBall n R := fun y ↦
-  ⟨(Real.sqrt c)⁻¹ • (y : EuclideanSpace ℝ (Fin n)), mem_exteriorBall.2 <| by
-    have hs : 0 < Real.sqrt c := Real.sqrt_pos.2 hc
-    rw [norm_smul, Real.norm_of_nonneg (inv_nonneg.2 hs.le)]
-    have hy : Real.sqrt c * R < ‖(y : EuclideanSpace ℝ (Fin n))‖ := mem_exteriorBall.1 y.2
-    calc R = (Real.sqrt c)⁻¹ * (Real.sqrt c * R) := by field_simp
-      _ < (Real.sqrt c)⁻¹ * ‖(y : EuclideanSpace ℝ (Fin n))‖ :=
-        mul_lt_mul_of_pos_left hy (inv_pos.2 hs)⟩
-
-private theorem surjective_rescaleMapDomain {R c : ℝ} (hc : 0 < c) :
-    Function.Surjective (rescaleMapDomain (n := n) (R := R) hc) := fun x ↦ by
+/-- Membership in the dilated exterior ball is equivalent to membership of the scaled point in the
+original exterior ball. -/
+private theorem mem_exteriorBall_inv_sqrt_smul_iff {R c : ℝ} (hc : 0 < c)
+    (y : EuclideanSpace ℝ (Fin n)) :
+    y ∈ exteriorBall (EuclideanSpace ℝ (Fin n)) (Real.sqrt c * R) ↔
+      (Real.sqrt c)⁻¹ • y ∈ exteriorBall (EuclideanSpace ℝ (Fin n)) R := by
   have hs : 0 < Real.sqrt c := Real.sqrt_pos.2 hc
-  refine ⟨⟨Real.sqrt c • (x : EuclideanSpace ℝ (Fin n)), mem_exteriorBall.2 ?_⟩, ?_⟩
-  · rw [norm_smul, Real.norm_of_nonneg hs.le]
-    exact mul_lt_mul_of_pos_left (mem_exteriorBall.1 x.2) hs
-  · ext
-    simp [rescaleMapDomain, smul_smul, inv_mul_cancel₀ hs.ne']
+  simp only [mem_exteriorBall, norm_smul, Real.norm_of_nonneg (inv_nonneg.2 hs.le)]
+  exact (lt_inv_mul_iff₀ hs).symm
 
-private theorem contMDiff_rescaleMapDomain {R c : ℝ} (hc : 0 < c) :
-    ContMDiff (𝓡 n) (𝓡 n) ∞ (rescaleMapDomain (n := n) (R := R) hc) := by
-  refine (TauCeti.ContMDiff.subtypeVal_comp_iff (exteriorBall n R)
-    (rescaleMapDomain hc)).1 ?_
-  exact (contDiff_const_smul (Real.sqrt c)⁻¹).contMDiff.comp contMDiff_subtype_val
+/-- Domain dilation `y ↦ (√c)⁻¹ • y` as a smooth diffeomorphism from
+`exteriorBall (EuclideanSpace ℝ (Fin n)) (√c * R)` to
+`exteriorBall (EuclideanSpace ℝ (Fin n)) R`. -/
+private def rescaleMapDomain {R c : ℝ} (hc : 0 < c) :
+    exteriorBall (EuclideanSpace ℝ (Fin n)) (Real.sqrt c * R) ≃ₘ^∞⟮𝓡 n, 𝓡 n⟯
+      exteriorBall (EuclideanSpace ℝ (Fin n)) R :=
+  ((Units.mk0 (Real.sqrt c)⁻¹ (inv_ne_zero (Real.sqrt_pos.2 hc).ne') •
+    ContinuousLinearEquiv.refl ℝ (EuclideanSpace ℝ (Fin n))).toDiffeomorph).subtype
+    (fun x ↦ by simpa using mem_exteriorBall_inv_sqrt_smul_iff hc x)
 
-private theorem mfderiv_rescaleMapDomain_apply {R c : ℝ} (hc : 0 < c)
-    (y : exteriorBall n (Real.sqrt c * R)) (v : TangentSpace (𝓡 n) y) :
-    mfderiv (𝓡 n) (𝓡 n) (rescaleMapDomain (n := n) (R := R) hc) y v =
-      (Real.sqrt c)⁻¹ • (v : EuclideanSpace ℝ (Fin n)) := by
-  have hv := TauCeti.Manifold.tangentSpaceOpenEquiv_mfderiv_apply
-    (I := 𝓡 n) (I' := 𝓡 n) (f := rescaleMapDomain (n := n) (R := R) hc)
-    (A := fun z : EuclideanSpace ℝ (Fin n) ↦ (Real.sqrt c)⁻¹ • z) rfl (x := y) v
-  rw [TauCeti.Manifold.tangentSpaceOpenEquiv_apply,
-    TauCeti.Manifold.tangentSpaceOpenEquiv_apply] at hv
-  let L : EuclideanSpace ℝ (Fin n) →L[ℝ] EuclideanSpace ℝ (Fin n) :=
-    (Real.sqrt c)⁻¹ • ContinuousLinearMap.id ℝ _
-  have hL : (fun z : EuclideanSpace ℝ (Fin n) ↦ (Real.sqrt c)⁻¹ • z) = ⇑L :=
-    funext fun _ ↦ rfl
-  have hf : mfderiv (𝓡 n) (𝓡 n) (⇑L) (y : EuclideanSpace ℝ (Fin n)) = L :=
-    (L.hasFDerivAt (x := (y : EuclideanSpace ℝ (Fin n)))).hasMFDerivAt.mfderiv
-  have hsmul : mfderiv (𝓡 n) (𝓡 n)
-      (fun z : EuclideanSpace ℝ (Fin n) ↦ (Real.sqrt c)⁻¹ • z) (y : _) v =
-      (Real.sqrt c)⁻¹ • (v : EuclideanSpace ℝ (Fin n)) := by
-    rw [hL]
-    exact DFunLike.congr_fun hf (v : EuclideanSpace ℝ (Fin n))
-  exact hv.trans hsmul
+/-- Pointwise coercion formula for `rescaleMapDomain`. -/
+private theorem rescaleMapDomain_val {R c : ℝ} (hc : 0 < c)
+    (y : exteriorBall (EuclideanSpace ℝ (Fin n)) (Real.sqrt c * R)) :
+    (rescaleMapDomain hc y : EuclideanSpace ℝ (Fin n)) =
+      (Real.sqrt c)⁻¹ • (y : EuclideanSpace ℝ (Fin n)) := by
+  rw [rescaleMapDomain, Diffeomorph.subtype_apply_coe]; simp
 
-private theorem openPullbackMetricCoeff_rescale (m : ℕ∞ω) [IsManifold (𝓡 n) 1 M]
-    [IsContMDiffRiemannianBundle (𝓡 n) m (EuclideanSpace ℝ (Fin n))
-      (fun x : M ↦ TangentSpace (𝓡 n) x)]
-    (e : AsymptoticallyEuclideanEnd n M t) {c : ℝ} (hc : 0 < c)
+/-- The second Fréchet derivative of a scalar-dilated function `w ↦ f (a • w)` scales by `a * a`. -/
+private theorem fderiv_fderiv_comp_smul {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F]
+    (f : F → ℝ) (a : ℝ) (y : F) :
+    fderiv ℝ (fderiv ℝ (fun w ↦ f (a • w))) y = (a * a) • fderiv ℝ (fderiv ℝ f) (a • y) := by
+  have hf1 : fderiv ℝ (fun w ↦ f (a • w)) = a • (fun z ↦ fderiv ℝ f (a • z)) :=
+    funext fun z ↦ fderiv_comp_smul (f := f) (x := z) a
+  have hsmul : fderiv ℝ (a • fun z ↦ fderiv ℝ f (a • z)) y =
+      a • fderiv ℝ (fun z ↦ fderiv ℝ f (a • z)) y :=
+    congrFun (fderiv_const_smul_field (𝕜 := ℝ) (f := fun z ↦ fderiv ℝ f (a • z)) a) y
+  rw [hf1, hsmul, fderiv_comp_smul (f := fderiv ℝ f) (x := y) a, smul_smul]
+
+/-- Dilation scaling identity for the `k`-th order decay bound under `y ↦ s⁻¹ • y`. -/
+private theorem inv_pow_mul_rpow_smul {s r t C : ℝ} (hs : 0 < s) (hr : 0 < r) (k : ℕ) :
+    s⁻¹ ^ k * (C * (s⁻¹ * r) ^ (-t - k)) = C * s ^ t * r ^ (-t - k) := by
+  rw [Real.mul_rpow (inv_nonneg.2 hs.le) hr.le, Real.inv_rpow hs.le,
+    Real.rpow_sub hs, Real.rpow_neg hs.le, Real.rpow_natCast, inv_div, div_inv_eq_mul, inv_pow]
+  have hsk : s ^ k ≠ 0 := pow_ne_zero k hs.ne'
+  field_simp [hs.ne', hsk]
+
+section Rescale
+
+variable (m : ℕ∞ω) [FiniteDimensional ℝ E] [IsManifold I 1 M]
+  [IsContMDiffRiemannianBundle I m E (fun x : M ↦ TangentSpace I x)]
+  (e : AsymptoticallyEuclideanEnd n I M t) {c : ℝ} (hc : 0 < c)
+
+/-- Postcomposing a total map `ψ : ℝⁿ → M` with `WithMetric.toWithMetric (rescaledMetric I M m hc)`
+multiplies its pulled-back metric coefficients by `c`. -/
+private theorem pullbackMetricCoeff_toWithMetric_rescaledMetric_comp
+    (ψ : EuclideanSpace ℝ (Fin n) → M) (x : EuclideanSpace ℝ (Fin n)) (i j : Fin n) :
+    pullbackMetricCoeff I (WithMetric.toWithMetric (rescaledMetric I M m hc) ∘ ψ) x i j =
+      c * pullbackMetricCoeff I ψ x i j := by
+  set g_c := rescaledMetric I M m hc
+  have hderiv (k : Fin n) :
+      mfderiv (𝓡 n) I (WithMetric.toWithMetric g_c ∘ ψ) x (EuclideanSpace.basisFun (Fin n) ℝ k) =
+        mfderiv I I (WithMetric.toWithMetric g_c) (ψ x)
+          (mfderiv (𝓡 n) I ψ x (EuclideanSpace.basisFun (Fin n) ℝ k)) := by
+    have h := (WithMetric.diffeomorph g_c ∞).symm.mfderiv_diffeomorph_comp (K := 𝓡 n)
+      (hn := by simp) (f := ψ) (x := x)
+    rw [WithMetric.coe_diffeomorph_symm] at h
+    exact (DFunLike.congr_fun h _).trans (ContinuousLinearMap.comp_apply _ _ _)
+  rw [pullbackMetricCoeff_def, pullbackMetricCoeff_def, hderiv i, hderiv j,
+    WithMetric.inner_def, WithMetric.ofWithMetric_toWithMetric,
+    WithMetric.mfderiv_ofWithMetric_mfderiv_toWithMetric,
+    WithMetric.mfderiv_ofWithMetric_mfderiv_toWithMetric]
+  -- `RiemannianBundle` installs `RiemannianBundle.g.inner` as the fibre `Inner.inner`.
+  exact (ContMDiffRiemannianMetric.rescaleConst_inner _ hc (ψ x) _ _).trans
+    (congrArg (c * ·) (ContMDiffRiemannianMetric.ofIsContMDiffRiemannianBundle_inner (ψ x) _ _))
+
+/-- On the dilated exterior ball, the pulled-back metric coefficients of the rescaled end agree
+with `e.metricCoeff` evaluated at `(√c)⁻¹ • y`. -/
+private theorem openPullbackMetricCoeff_rescale
     {y : EuclideanSpace ℝ (Fin n)} (hy : Real.sqrt c * e.radius < ‖y‖) (i j : Fin n) :
-    openPullbackMetricCoeff
-        (WithMetric.toWithMetric (rescaledMetric (n := n) (M := M) m hc) ∘
-          e.toFun ∘ rescaleMapDomain hc) y i j =
+    openPullbackMetricCoeff I
+        (WithMetric.toWithMetric (rescaledMetric I M m hc) ∘ e.toFun ∘ rescaleMapDomain hc)
+        y i j =
       e.metricCoeff ((Real.sqrt c)⁻¹ • y) i j := by
-  set g_c := rescaledMetric (n := n) (M := M) m hc
+  set g_c := rescaledMetric I M m hc
   set s := Real.sqrt c
   have hs : 0 < s := Real.sqrt_pos.2 hc
-  have hy' : y ∈ exteriorBall n (s * e.radius) := mem_exteriorBall.2 hy
-  have hsy' : s⁻¹ • y ∈ exteriorBall n e.radius := (rescaleMapDomain hc ⟨y, hy'⟩).2
-  let p : M := e.toFun (rescaleMapDomain hc ⟨y, hy'⟩)
-  have hcomp_deriv (k : Fin n) :
-      mfderiv (𝓡 n) (𝓡 n) (WithMetric.toWithMetric g_c ∘ e.toFun ∘ rescaleMapDomain hc)
-          ⟨y, hy'⟩ (EuclideanSpace.basisFun (Fin n) ℝ k) =
-        mfderiv (𝓡 n) (𝓡 n) (WithMetric.toWithMetric g_c) p
-          (s⁻¹ • mfderiv (𝓡 n) (𝓡 n) e.toFun (rescaleMapDomain hc ⟨y, hy'⟩)
-            (EuclideanSpace.basisFun (Fin n) ℝ k)) := by
-    have h1 := mfderiv_comp_apply (I := 𝓡 n) (I' := 𝓡 n) (I'' := 𝓡 n) ⟨y, hy'⟩
-      ((WithMetric.contMDiff_toWithMetric (g := g_c) (k := ∞)).mdifferentiable (by simp) _)
-      ((e.contMDiff.comp (contMDiff_rescaleMapDomain hc)).mdifferentiable (by simp) _)
-      (EuclideanSpace.basisFun (Fin n) ℝ k)
-    have h2 := mfderiv_comp_apply (I := 𝓡 n) (I' := 𝓡 n) (I'' := 𝓡 n) ⟨y, hy'⟩
-      (e.contMDiff.mdifferentiable (by simp) _)
-      ((contMDiff_rescaleMapDomain hc).mdifferentiable (by simp) _)
-      (EuclideanSpace.basisFun (Fin n) ℝ k)
-    have h3 : mfderiv (𝓡 n) (𝓡 n) e.toFun (rescaleMapDomain hc ⟨y, hy'⟩)
-        (mfderiv (𝓡 n) (𝓡 n) (rescaleMapDomain hc) ⟨y, hy'⟩
-          (EuclideanSpace.basisFun (Fin n) ℝ k)) =
-        s⁻¹ • mfderiv (𝓡 n) (𝓡 n) e.toFun (rescaleMapDomain hc ⟨y, hy'⟩)
-          (EuclideanSpace.basisFun (Fin n) ℝ k) := by
-      let v : TangentSpace (𝓡 n) (rescaleMapDomain hc ⟨y, hy'⟩) :=
-        EuclideanSpace.basisFun (Fin n) ℝ k
-      have hmd : mfderiv (𝓡 n) (𝓡 n) (rescaleMapDomain hc) ⟨y, hy'⟩
-          (EuclideanSpace.basisFun (Fin n) ℝ k) = s⁻¹ • v :=
-        mfderiv_rescaleMapDomain_apply hc ⟨y, hy'⟩ (EuclideanSpace.basisFun (Fin n) ℝ k)
-      rw [hmd, map_smul]
-    rw [h1, h2, h3]
-    rfl
-  rw [openPullbackMetricCoeff_of_mem _ hy', e.metricCoeff_of_mem hsy',
-    hcomp_deriv i, hcomp_deriv j, WithMetric.inner_def, WithMetric.ofWithMetric_toWithMetric,
-    WithMetric.mfderiv_ofWithMetric_mfderiv_toWithMetric,
-    WithMetric.mfderiv_ofWithMetric_mfderiv_toWithMetric,
-    ContMDiffRiemannianMetric.rescale_inner,
-    ContMDiffRiemannianMetric.ofIsContMDiffRiemannianBundle_inner]
-  have hbilin (u v : TangentSpace (𝓡 n) p) :
-      RiemannianBundle.g.inner p (s⁻¹ • u) (s⁻¹ • v) =
-        s⁻¹ * (s⁻¹ * RiemannianBundle.g.inner p u v) := by
-    rw [map_smul, map_smul, smul_apply, smul_eq_mul, smul_eq_mul]
-  rw [hbilin]
-  have hcs : c * (s⁻¹ * s⁻¹) = 1 := by
-    have hs2 : s * s = c := Real.mul_self_sqrt hc.le
-    field_simp [hs.ne']
-    linarith
-  have hinner : RiemannianBundle.g.inner p
-      (mfderiv (𝓡 n) (𝓡 n) e.toFun (rescaleMapDomain hc ⟨y, hy'⟩)
-        (EuclideanSpace.basisFun (Fin n) ℝ i))
-      (mfderiv (𝓡 n) (𝓡 n) e.toFun (rescaleMapDomain hc ⟨y, hy'⟩)
-        (EuclideanSpace.basisFun (Fin n) ℝ j)) =
-      inner ℝ
-        (mfderiv (𝓡 n) (𝓡 n) e.toFun ⟨s⁻¹ • y, hsy'⟩ (EuclideanSpace.basisFun (Fin n) ℝ i))
-        (mfderiv (𝓡 n) (𝓡 n) e.toFun ⟨s⁻¹ • y, hsy'⟩ (EuclideanSpace.basisFun (Fin n) ℝ j)) :=
-    rfl
-  rw [hinner]
-  calc c * (s⁻¹ * (s⁻¹ * inner ℝ _ _))
-      = (c * (s⁻¹ * s⁻¹)) * inner ℝ _ _ := by ring
-    _ = inner ℝ _ _ := by rw [hcs, one_mul]
+  have hy' : y ∈ exteriorBall (EuclideanSpace ℝ (Fin n)) (s * e.radius) := mem_exteriorBall.2 hy
+  have hsy' : s⁻¹ • y ∈ exteriorBall (EuclideanSpace ℝ (Fin n)) e.radius :=
+    (mem_exteriorBall_inv_sqrt_smul_iff hc y).1 hy'
+  -- Extend `e.toFun` to a total map so metric rescaling and scalar dilation factor cleanly.
+  let ψ : EuclideanSpace ℝ (Fin n) → M :=
+    Subtype.val.extend e.toFun (fun _ ↦ e.toFun ⟨s⁻¹ • y, hsy'⟩)
+  have hψ : ∀ z : exteriorBall (EuclideanSpace ℝ (Fin n)) e.radius, ψ z.1 = e.toFun z :=
+    Subtype.val_injective.extend_apply e.toFun _
+  have heq_rescaled :
+      ∀ z : exteriorBall (EuclideanSpace ℝ (Fin n)) (s * e.radius),
+        (fun w ↦ (WithMetric.toWithMetric g_c ∘ ψ) (s⁻¹ • w)) z.1 =
+          (WithMetric.toWithMetric g_c ∘ e.toFun ∘ rescaleMapDomain hc) z := fun z ↦ by
+    change WithMetric.toWithMetric g_c (ψ (s⁻¹ • z.1)) =
+      WithMetric.toWithMetric g_c (e.toFun (rescaleMapDomain hc z))
+    rw [← rescaleMapDomain_val hc z, hψ (rescaleMapDomain hc z)]
+  rw [openPullbackMetricCoeff_eq_pullbackMetricCoeff_of_eqOn
+        (ψ := fun w ↦ (WithMetric.toWithMetric g_c ∘ ψ) (s⁻¹ • w)) heq_rescaled hy' i j,
+    e.metricCoeff_eq_pullbackMetricCoeff_of_eqOn hψ (mem_exteriorBall.1 hsy') i j,
+    pullbackMetricCoeff_comp_smul (WithMetric.toWithMetric g_c ∘ ψ) (inv_ne_zero hs.ne') y i j,
+    pullbackMetricCoeff_toWithMetric_rescaledMetric_comp m hc ψ (s⁻¹ • y) i j]
+  have hcs : s⁻¹ ^ 2 * c = 1 := by
+    rw [← Real.sq_sqrt hc.le, inv_pow, inv_mul_cancel₀ (pow_ne_zero 2 hs.ne')]
+  rw [← mul_assoc, hcs, one_mul]
 
 /-- Rescaling a `C^m` Riemannian metric by a positive constant `c` turns an asymptotically
 Euclidean end `e` of `M` into an asymptotically Euclidean end of
-`WithMetric (rescaledMetric m hc)` with radius `√c * e.radius` and parametrization
+`WithMetric (rescaledMetric I M m hc)` with radius `√c * e.radius` and parametrization
 `y ↦ toWithMetric _ (e.toFun ((√c)⁻¹ • y))`. -/
-def rescale (m : ℕ∞ω) [IsManifold (𝓡 n) 1 M]
-    [IsContMDiffRiemannianBundle (𝓡 n) m (EuclideanSpace ℝ (Fin n))
-      (fun x : M ↦ TangentSpace (𝓡 n) x)]
-    (e : AsymptoticallyEuclideanEnd n M t) {c : ℝ} (hc : 0 < c) :
-    AsymptoticallyEuclideanEnd n (WithMetric (rescaledMetric (n := n) (M := M) m hc)) t :=
-  let g_c := rescaledMetric (n := n) (M := M) m hc
+def rescale : AsymptoticallyEuclideanEnd n I (WithMetric (rescaledMetric I M m hc)) t :=
+  let g_c := rescaledMetric I M m hc
   let s : ℝ := Real.sqrt c
   have hs : 0 < s := Real.sqrt_pos.2 hc
   { radius := s * e.radius
     radius_pos := mul_pos hs e.radius_pos
     toFun := WithMetric.toWithMetric g_c ∘ e.toFun ∘ rescaleMapDomain hc
     contMDiff := WithMetric.contMDiff_toWithMetric.comp
-      (e.contMDiff.comp (contMDiff_rescaleMapDomain hc))
-    injective := (WithMetric.toWithMetric_injective _).comp <| e.injective.comp fun x y hxy ↦ by
-      have hv :
-          s⁻¹ • (x : EuclideanSpace ℝ (Fin n)) = s⁻¹ • (y : EuclideanSpace ℝ (Fin n)) :=
-        congrArg Subtype.val hxy
-      exact Subtype.ext (smul_right_injective _ (inv_ne_zero hs.ne') hv)
-    mfderiv_bijective := fun y ↦ by
+      (e.contMDiff.comp (rescaleMapDomain hc).contMDiff)
+    injective := (WithMetric.toWithMetric_injective g_c).comp
+      (e.injective.comp (rescaleMapDomain hc).injective)
+    mfderiv_bijective y := by
       rw [mfderiv_comp y
           ((WithMetric.contMDiff_toWithMetric (g := g_c) (k := ∞)).mdifferentiable (by simp) _)
-          ((e.contMDiff.comp (contMDiff_rescaleMapDomain hc)).mdifferentiable (by simp) y),
+          ((e.contMDiff.comp (rescaleMapDomain hc).contMDiff).mdifferentiable (by simp) y),
         mfderiv_comp y (e.contMDiff.mdifferentiable (by simp) _)
-          ((contMDiff_rescaleMapDomain hc).mdifferentiable (by simp) y),
+          ((rescaleMapDomain hc).contMDiff.mdifferentiable (by simp) y),
         WithMetric.mfderiv_toWithMetric]
-      have hsmul_bij : Function.Bijective (mfderiv (𝓡 n) (𝓡 n) (rescaleMapDomain hc) y) :=
-        ⟨fun u v huv ↦ by
-          have hu := mfderiv_rescaleMapDomain_apply hc y u
-          have hv := mfderiv_rescaleMapDomain_apply hc y v
-          have h : s⁻¹ • (u : EuclideanSpace ℝ (Fin n)) =
-              s⁻¹ • (v : EuclideanSpace ℝ (Fin n)) := by
-            rw [← hu, ← hv, huv]
-          exact smul_right_injective _ (inv_ne_zero hs.ne') h,
-         fun v ↦ by
-          let vE : EuclideanSpace ℝ (Fin n) := v
-          let w : TangentSpace (𝓡 n) y := s • vE
-          refine ⟨w, ?_⟩
-          have h :
-              (mfderiv (𝓡 n) (𝓡 n) (rescaleMapDomain hc) y w : EuclideanSpace ℝ (Fin n)) =
-                s⁻¹ • (s • vE) :=
-            mfderiv_rescaleMapDomain_apply hc y w
-          exact h.trans (by rw [smul_smul, inv_mul_cancel₀ hs.ne', one_smul])⟩
       exact Function.bijective_id.comp
-        ((e.mfderiv_bijective (rescaleMapDomain hc y)).comp hsmul_bij)
+        ((e.mfderiv_bijective (rescaleMapDomain hc y)).comp
+          ((rescaleMapDomain hc).isInvertible_mfderiv (by simp)).bijective)
+    contDiffOn_openPullbackMetricCoeff i j := by
+      -- Transport `C²` regularity of `e.metricCoeff` along the smooth dilation `y ↦ s⁻¹ • y`.
+      have hmaps : Set.MapsTo (fun y : EuclideanSpace ℝ (Fin n) ↦ s⁻¹ • y)
+          (exteriorBall (EuclideanSpace ℝ (Fin n)) (s * e.radius) : Set _)
+          (exteriorBall (EuclideanSpace ℝ (Fin n)) e.radius : Set _) :=
+        fun y hy ↦ (mem_exteriorBall_inv_sqrt_smul_iff hc y).1 hy
+      exact ((e.contDiffOn_two_metricCoeff i j).comp
+        (contDiff_const_smul s⁻¹).contDiffOn hmaps).congr fun y hy ↦
+          openPullbackMetricCoeff_rescale m e hc (mem_exteriorBall.1 hy) i j
     decay := by
       obtain ⟨C, hC⟩ := e.decay
       simp only [← e.metricCoeff_eq_openPullbackMetricCoeff] at hC
       refine ⟨C * s ^ t, fun y hy i j ↦ ?_⟩
       let f : EuclideanSpace ℝ (Fin n) → ℝ := fun w ↦ e.metricCoeff w i j
-      have hsy : e.radius < ‖s⁻¹ • y‖ := by
-        rw [norm_smul, Real.norm_of_nonneg (inv_nonneg.2 hs.le)]
-        calc e.radius = s⁻¹ * (s * e.radius) := by field_simp
-          _ < s⁻¹ * ‖y‖ := mul_lt_mul_of_pos_left hy (inv_pos.2 hs)
+      have hsy : e.radius < ‖s⁻¹ • y‖ :=
+        mem_exteriorBall.1 ((mem_exteriorBall_inv_sqrt_smul_iff hc y).1 (mem_exteriorBall.2 hy))
       have hy0 : 0 < ‖y‖ := (mul_pos hs e.radius_pos).trans hy
       have hnorm : ‖s⁻¹ • y‖ = s⁻¹ * ‖y‖ := by
         rw [norm_smul, Real.norm_of_nonneg (inv_nonneg.2 hs.le)]
-      have hev : (fun z ↦ openPullbackMetricCoeff
+      -- Locally near `y`, the rescaled coefficients equal `z ↦ f (s⁻¹ • z)`.
+      have hev : (fun z ↦ openPullbackMetricCoeff I
             (WithMetric.toWithMetric g_c ∘ e.toFun ∘ rescaleMapDomain hc) z i j) =ᶠ[𝓝 y]
           (fun z ↦ f (s⁻¹ • z)) :=
-        eventually_of_mem ((exteriorBall n (s * e.radius)).isOpen.mem_nhds (mem_exteriorBall.2 hy))
+        eventually_of_mem
+          ((exteriorBall (EuclideanSpace ℝ (Fin n)) (s * e.radius)).isOpen.mem_nhds
+            (mem_exteriorBall.2 hy))
           fun z hz ↦ openPullbackMetricCoeff_rescale m e hc (mem_exteriorBall.1 hz) i j
-      have hf1 : fderiv ℝ (fun w ↦ f (s⁻¹ • w)) = fun z ↦ s⁻¹ • fderiv ℝ f (s⁻¹ • z) :=
-        funext fun z ↦ fderiv_comp_smul (f := f) (x := z) s⁻¹
-      have hf2 : fderiv ℝ (fderiv ℝ (fun w ↦ f (s⁻¹ • w))) y =
-          (s⁻¹ * s⁻¹) • fderiv ℝ (fderiv ℝ f) (s⁻¹ • y) := by
-        rw [hf1]
-        have hpi : (fun z ↦ s⁻¹ • fderiv ℝ f (s⁻¹ • z)) =
-            s⁻¹ • (fun z ↦ fderiv ℝ f (s⁻¹ • z)) := rfl
-        have hsmul : fderiv ℝ (s⁻¹ • fun z ↦ fderiv ℝ f (s⁻¹ • z)) y =
-            s⁻¹ • fderiv ℝ (fun z ↦ fderiv ℝ f (s⁻¹ • z)) y :=
-          congrFun (fderiv_const_smul_field (𝕜 := ℝ)
-            (f := fun z ↦ fderiv ℝ f (s⁻¹ • z)) s⁻¹) y
-        rw [hpi, hsmul, fderiv_comp_smul (f := fderiv ℝ f) (x := y) s⁻¹, smul_smul]
       obtain ⟨h0, h1, h2⟩ := hC (s⁻¹ • y) hsy i j
-      have hev0 : openPullbackMetricCoeff
-            (WithMetric.toWithMetric g_c ∘ e.toFun ∘ rescaleMapDomain hc) y i j =
-          f (s⁻¹ • y) := hev.self_of_nhds
-      have hev1 : fderiv ℝ (fun z ↦ openPullbackMetricCoeff
-            (WithMetric.toWithMetric g_c ∘ e.toFun ∘ rescaleMapDomain hc) z i j) y =
-          s⁻¹ • fderiv ℝ f (s⁻¹ • y) := by
-        rw [hev.fderiv_eq, hf1]
-      have hev2 : fderiv ℝ (fderiv ℝ (fun z ↦ openPullbackMetricCoeff
-            (WithMetric.toWithMetric g_c ∘ e.toFun ∘ rescaleMapDomain hc) z i j)) y =
-          (s⁻¹ * s⁻¹) • fderiv ℝ (fderiv ℝ f) (s⁻¹ • y) :=
-        hev.fderiv.fderiv_eq.trans hf2
+      -- Transfer the 0th-, 1st-, and 2nd-order bounds via `inv_pow_mul_rpow_smul`.
       refine ⟨?_, ?_, ?_⟩
-      · rw [hev0]
-        have hrpow : ‖s⁻¹ • y‖ ^ (-t) = s ^ t * ‖y‖ ^ (-t) := by
-          rw [hnorm, Real.mul_rpow (inv_nonneg.2 hs.le) hy0.le, Real.inv_rpow hs.le,
-            Real.rpow_neg hs.le, inv_inv]
-        calc |f (s⁻¹ • y) - if i = j then 1 else 0|
-            ≤ C * ‖s⁻¹ • y‖ ^ (-t) := h0
-          _ = C * s ^ t * ‖y‖ ^ (-t) := by rw [hrpow]; ring
-      · rw [hev1]
-        have hrpow :
-            s⁻¹ * (C * ‖s⁻¹ • y‖ ^ (-t - 1)) = C * s ^ t * ‖y‖ ^ (-t - 1) := by
-          rw [hnorm, Real.mul_rpow (inv_nonneg.2 hs.le) hy0.le, Real.inv_rpow hs.le,
-            Real.rpow_sub hs, Real.rpow_neg hs.le, Real.rpow_one, inv_div, div_inv_eq_mul]
-          field_simp [hs.ne']
-        calc ‖s⁻¹ • fderiv ℝ f (s⁻¹ • y)‖
-            ≤ ‖s⁻¹‖ * ‖fderiv ℝ f (s⁻¹ • y)‖ := ContinuousLinearMap.opNorm_smul_le _ _
-          _ = s⁻¹ * ‖fderiv ℝ f (s⁻¹ • y)‖ := by
-              rw [Real.norm_of_nonneg (inv_nonneg.2 hs.le)]
-          _ ≤ s⁻¹ * (C * ‖s⁻¹ • y‖ ^ (-t - 1)) :=
-              mul_le_mul_of_nonneg_left h1 (inv_nonneg.2 hs.le)
-          _ = C * s ^ t * ‖y‖ ^ (-t - 1) := hrpow
-      · rw [hev2]
-        have hrpow :
-            s⁻¹ * s⁻¹ * (C * ‖s⁻¹ • y‖ ^ (-t - 2)) = C * s ^ t * ‖y‖ ^ (-t - 2) := by
-          rw [hnorm, Real.mul_rpow (inv_nonneg.2 hs.le) hy0.le, Real.inv_rpow hs.le,
-            Real.rpow_sub hs, Real.rpow_neg hs.le, Real.rpow_two, inv_div, div_inv_eq_mul]
-          field_simp [hs.ne']
-        calc ‖(s⁻¹ * s⁻¹) • fderiv ℝ (fderiv ℝ f) (s⁻¹ • y)‖
-            ≤ ‖s⁻¹ * s⁻¹‖ * ‖fderiv ℝ (fderiv ℝ f) (s⁻¹ • y)‖ :=
-              ContinuousLinearMap.opNorm_smul_le _ _
-          _ = (s⁻¹ * s⁻¹) * ‖fderiv ℝ (fderiv ℝ f) (s⁻¹ • y)‖ := by
-              rw [Real.norm_of_nonneg (mul_nonneg (inv_nonneg.2 hs.le) (inv_nonneg.2 hs.le))]
-          _ ≤ s⁻¹ * s⁻¹ * (C * ‖s⁻¹ • y‖ ^ (-t - 2)) :=
-              mul_le_mul_of_nonneg_left h2 (mul_nonneg (inv_nonneg.2 hs.le) (inv_nonneg.2 hs.le))
-          _ = C * s ^ t * ‖y‖ ^ (-t - 2) := hrpow }
+      · rw [openPullbackMetricCoeff_rescale m e hc hy i j]
+        have hrpow := inv_pow_mul_rpow_smul (C := C) (t := t) hs hy0 0
+        simp only [pow_zero, one_mul, Nat.cast_zero, sub_zero, ← hnorm] at hrpow
+        exact h0.trans_eq hrpow
+      · rw [hev.fderiv_eq, fderiv_comp_smul (f := f) (x := y) s⁻¹]
+        have hrpow := inv_pow_mul_rpow_smul (C := C) (t := t) hs hy0 1
+        simp only [pow_one, Nat.cast_one, ← hnorm] at hrpow
+        have hs' : 0 ≤ s⁻¹ := inv_nonneg.2 hs.le
+        exact ((ContinuousLinearMap.opNorm_smul_le _ _).trans_eq
+          (by rw [Real.norm_of_nonneg hs'])).trans
+          ((mul_le_mul_of_nonneg_left h1 hs').trans_eq hrpow)
+      · rw [hev.fderiv.fderiv_eq, fderiv_fderiv_comp_smul f s⁻¹ y]
+        have hrpow := inv_pow_mul_rpow_smul (C := C) (t := t) hs hy0 2
+        simp only [sq, Nat.cast_ofNat, ← hnorm] at hrpow
+        have hs2 : 0 ≤ s⁻¹ * s⁻¹ := mul_nonneg (inv_nonneg.2 hs.le) (inv_nonneg.2 hs.le)
+        exact ((ContinuousLinearMap.opNorm_smul_le _ _).trans_eq
+          (by rw [Real.norm_of_nonneg hs2])).trans
+          ((mul_le_mul_of_nonneg_left h2 hs2).trans_eq hrpow) }
 
 @[simp]
-theorem radius_rescale (m : ℕ∞ω) [IsManifold (𝓡 n) 1 M]
-    [IsContMDiffRiemannianBundle (𝓡 n) m (EuclideanSpace ℝ (Fin n))
-      (fun x : M ↦ TangentSpace (𝓡 n) x)]
-    (e : AsymptoticallyEuclideanEnd n M t) {c : ℝ} (hc : 0 < c) :
-    (e.rescale m hc).radius = Real.sqrt c * e.radius := by
-  rfl
+theorem radius_rescale : (e.rescale m hc).radius = Real.sqrt c * e.radius := by rfl
 
 /-- Pointwise evaluation of the rescaled end parametrization:
 `(e.rescale m hc).toFun y = WithMetric.toWithMetric _ (e.toFun ((√c)⁻¹ • y))`. -/
-theorem toFun_rescale (m : ℕ∞ω) [IsManifold (𝓡 n) 1 M]
-    [IsContMDiffRiemannianBundle (𝓡 n) m (EuclideanSpace ℝ (Fin n))
-      (fun x : M ↦ TangentSpace (𝓡 n) x)]
-    (e : AsymptoticallyEuclideanEnd n M t) {c : ℝ} (hc : 0 < c)
-    {y : EuclideanSpace ℝ (Fin n)} (hy : y ∈ exteriorBall n (e.rescale m hc).radius)
-    (hy' : (Real.sqrt c)⁻¹ • y ∈ exteriorBall n e.radius) :
-    (e.rescale m hc).toFun ⟨y, hy⟩ =
-      WithMetric.toWithMetric (rescaledMetric (n := n) (M := M) m hc)
-        (e.toFun ⟨(Real.sqrt c)⁻¹ • y, hy'⟩) := by
-  rfl
+@[simp]
+theorem toFun_rescale (y : exteriorBall (EuclideanSpace ℝ (Fin n)) (e.rescale m hc).radius) :
+    (e.rescale m hc).toFun y =
+      WithMetric.toWithMetric (rescaledMetric I M m hc)
+        (e.toFun ⟨(Real.sqrt c)⁻¹ • y.1, mem_exteriorBall.2 <| by
+          have hs : 0 < Real.sqrt c := Real.sqrt_pos.2 hc
+          rw [norm_smul, Real.norm_of_nonneg (inv_nonneg.2 hs.le), lt_inv_mul_iff₀ hs]
+          simpa only [radius_rescale] using mem_exteriorBall.1 y.2⟩) := by
+  dsimp only [rescale, Function.comp_apply]
+  exact congrArg (WithMetric.toWithMetric (rescaledMetric I M m hc) ∘ e.toFun)
+    (Subtype.ext (rescaleMapDomain_val hc y))
 
 /-- The range of a rescaled end is the image of the original end's range under
 `WithMetric.toWithMetric`. -/
-theorem range_rescale (m : ℕ∞ω) [IsManifold (𝓡 n) 1 M]
-    [IsContMDiffRiemannianBundle (𝓡 n) m (EuclideanSpace ℝ (Fin n))
-      (fun x : M ↦ TangentSpace (𝓡 n) x)]
-    (e : AsymptoticallyEuclideanEnd n M t) {c : ℝ} (hc : 0 < c) :
+@[simp]
+theorem range_rescale :
     Set.range (e.rescale m hc).toFun =
-      WithMetric.toWithMetric (rescaledMetric (n := n) (M := M) m hc) '' Set.range e.toFun := by
+      WithMetric.toWithMetric (rescaledMetric I M m hc) '' Set.range e.toFun := by
   dsimp only [rescale]
-  rw [Set.range_comp, Set.range_comp, (surjective_rescaleMapDomain hc).range_eq, Set.image_univ]
+  have hsurj : Function.Surjective (rescaleMapDomain (n := n) (R := e.radius) hc) :=
+    (rescaleMapDomain hc).surjective
+  rw [Set.range_comp, Set.range_comp, hsurj.range_eq, Set.image_univ]
 
 /-- Under constant metric rescaling `g ↦ c • g`, the pulled-back metric coefficients satisfy
-`(e.rescale m hc).metricCoeff y = e.metricCoeff ((√c)⁻¹ • y)` on the exterior domain. -/
-theorem metricCoeff_rescale (m : ℕ∞ω) [IsManifold (𝓡 n) 1 M]
-    [IsContMDiffRiemannianBundle (𝓡 n) m (EuclideanSpace ℝ (Fin n))
-      (fun x : M ↦ TangentSpace (𝓡 n) x)]
-    (e : AsymptoticallyEuclideanEnd n M t) {c : ℝ} (hc : 0 < c)
-    {y : EuclideanSpace ℝ (Fin n)} (hy : Real.sqrt c * e.radius < ‖y‖) (i j : Fin n) :
+`(e.rescale m hc).metricCoeff y = e.metricCoeff ((√c)⁻¹ • y)` everywhere on `ℝⁿ`. -/
+@[simp]
+theorem metricCoeff_rescale (y : EuclideanSpace ℝ (Fin n)) (i j : Fin n) :
     (e.rescale m hc).metricCoeff y i j = e.metricCoeff ((Real.sqrt c)⁻¹ • y) i j := by
-  rw [metricCoeff_eq_openPullbackMetricCoeff]
-  exact openPullbackMetricCoeff_rescale m e hc hy i j
+  by_cases hy : y ∈ exteriorBall (EuclideanSpace ℝ (Fin n)) (Real.sqrt c * e.radius)
+  · rw [metricCoeff_eq_openPullbackMetricCoeff]
+    exact openPullbackMetricCoeff_rescale m e hc (mem_exteriorBall.1 hy) i j
+  · have hy' : y ∉ exteriorBall (EuclideanSpace ℝ (Fin n)) (e.rescale m hc).radius := by
+      simpa only [radius_rescale] using hy
+    have hsy' : (Real.sqrt c)⁻¹ • y ∉ exteriorBall (EuclideanSpace ℝ (Fin n)) e.radius :=
+      mt (mem_exteriorBall_inv_sqrt_smul_iff hc y).2 hy
+    rw [(e.rescale m hc).metricCoeff_of_notMem hy', e.metricCoeff_of_notMem hsy']
 
 /-- Under constant metric rescaling `g ↦ c • g`, the pulled-back metric matrix satisfies
-`(e.rescale m hc).metricMatrix y = e.metricMatrix ((√c)⁻¹ • y)` on the exterior domain. -/
-theorem metricMatrix_rescale (m : ℕ∞ω) [IsManifold (𝓡 n) 1 M]
-    [IsContMDiffRiemannianBundle (𝓡 n) m (EuclideanSpace ℝ (Fin n))
-      (fun x : M ↦ TangentSpace (𝓡 n) x)]
-    (e : AsymptoticallyEuclideanEnd n M t) {c : ℝ} (hc : 0 < c)
-    {y : EuclideanSpace ℝ (Fin n)} (hy : Real.sqrt c * e.radius < ‖y‖) :
+`(e.rescale m hc).metricMatrix y = e.metricMatrix ((√c)⁻¹ • y)` everywhere on `ℝⁿ`. -/
+@[simp]
+theorem metricMatrix_rescale (y : EuclideanSpace ℝ (Fin n)) :
     (e.rescale m hc).metricMatrix y = e.metricMatrix ((Real.sqrt c)⁻¹ • y) := by
-  ext i j
-  rw [metricMatrix_apply, metricMatrix_apply]
-  exact e.metricCoeff_rescale m hc hy i j
+  ext i j; rw [metricMatrix_apply, metricMatrix_apply]; exact e.metricCoeff_rescale m hc y i j
+
+end Rescale
 
 end AsymptoticallyEuclideanEnd
 

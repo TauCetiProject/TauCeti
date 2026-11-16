@@ -38,13 +38,19 @@ conformal Laplacian of `g` applied to `u`.
 ## Main definitions
 
 * `Bundle.ContMDiffRiemannianMetric.rescale`: the rescaled metric `f • g`.
+* `Bundle.ContMDiffRiemannianMetric.rescaleConst`: constant rescaling `c • g` (`0 < c`).
+* `TauCeti.rescaledMetric`: constant rescaling `c • g` of the ambient `C^m` Riemannian metric on
+  the tangent bundle of a `C¹` manifold.
 * `Bundle.ContMDiffRiemannianMetric.conformalClass`: the conformal class `[g]`.
 
 ## Main results
 
 * `Bundle.ContMDiffRiemannianMetric.rescale_one`,
   `Bundle.ContMDiffRiemannianMetric.rescale_rescale`,
-  `Bundle.ContMDiffRiemannianMetric.rescale_inv_rescale`: the action laws of rescaling.
+  `Bundle.ContMDiffRiemannianMetric.rescale_inv_rescale`,
+  `Bundle.ContMDiffRiemannianMetric.rescaleConst_one`,
+  `Bundle.ContMDiffRiemannianMetric.rescaleConst_rescaleConst`,
+  `Bundle.ContMDiffRiemannianMetric.rescaleConst_inv_rescaleConst`: the action laws of rescaling.
 * `Bundle.ContMDiffRiemannianMetric.rescale_inj`: uniqueness of the conformal factor.
 * `Bundle.ContMDiffRiemannianMetric.mem_conformalClass_comm`,
   `Bundle.ContMDiffRiemannianMetric.mem_conformalClass_trans`,
@@ -298,4 +304,76 @@ theorem mem_conformalClass_iff_existsUnique_rpow [∀ b, Nontrivial (E b)]
   · rintro ⟨u, hu, -⟩
     exact (mem_conformalClass_iff_exists_rpow hp).mpr ⟨u, hu⟩
 
+/-! ### Constant rescaling -/
+
+/-- The Riemannian metric `c • g` obtained by multiplying a `C^n` Riemannian metric `g` by a
+positive constant `c > 0`. -/
+def rescaleConst (g : ContMDiffRiemannianMetric IB n F E) {c : ℝ} (hc : 0 < c) :
+    ContMDiffRiemannianMetric IB n F E :=
+  g.rescale (fun _ ↦ c) contMDiff_const (fun _ ↦ hc)
+
+/-- Constant rescaling multiplies the fibrewise inner product by `c`. -/
+@[simp]
+theorem rescaleConst_inner (g : ContMDiffRiemannianMetric IB n F E) {c : ℝ} (hc : 0 < c)
+    (b : B) (v w : E b) :
+    (g.rescaleConst hc).inner b v w = c * g.inner b v w :=
+  (rfl)
+
+/-- Constant rescaling by `1` leaves a metric unchanged. -/
+@[simp]
+theorem rescaleConst_one (g : ContMDiffRiemannianMetric IB n F E) :
+    g.rescaleConst one_pos = g :=
+  g.rescale_one
+
+/-- Iterated constant rescaling multiplies the scaling constants. -/
+@[simp]
+theorem rescaleConst_rescaleConst (g : ContMDiffRiemannianMetric IB n F E) {c₁ c₂ : ℝ}
+    (hc₁ : 0 < c₁) (hc₂ : 0 < c₂) :
+    (g.rescaleConst hc₁).rescaleConst hc₂ = g.rescaleConst (mul_pos hc₂ hc₁) :=
+  g.rescale_rescale (fun _ ↦ c₂) contMDiff_const (fun _ ↦ hc₂)
+
+/-- Constant rescaling by `c⁻¹` undoes constant rescaling by `c`. -/
+theorem rescaleConst_inv_rescaleConst (g : ContMDiffRiemannianMetric IB n F E) {c : ℝ}
+    (hc : 0 < c) :
+    (g.rescaleConst hc).rescaleConst (inv_pos.2 hc) = g := by
+  ext b v w
+  simp [inv_mul_cancel₀ hc.ne']
+
+/-- Constant rescaling by `c` undoes constant rescaling by `c⁻¹`. -/
+theorem rescaleConst_rescaleConst_inv (g : ContMDiffRiemannianMetric IB n F E) {c : ℝ}
+    (hc : 0 < c) :
+    (g.rescaleConst (inv_pos.2 hc)).rescaleConst hc = g := by
+  ext b v w
+  simp [mul_inv_cancel₀ hc.ne']
+
+/-- Every constant rescaling of `g` lies in the conformal class of `g`. -/
+@[simp]
+theorem rescaleConst_mem_conformalClass (g : ContMDiffRiemannianMetric IB n F E) {c : ℝ}
+    (hc : 0 < c) :
+    g.rescaleConst hc ∈ g.conformalClass :=
+  g.rescale_mem_conformalClass
+
+/-- Constant rescaling preserves the conformal class. -/
+@[simp]
+theorem conformalClass_rescaleConst (g : ContMDiffRiemannianMetric IB n F E) {c : ℝ}
+    (hc : 0 < c) :
+    (g.rescaleConst hc).conformalClass = g.conformalClass :=
+  g.conformalClass_rescale
+
 end Bundle.ContMDiffRiemannianMetric
+
+namespace TauCeti
+
+/-- The constant rescaling `c • g` (`0 < c`) of the ambient `C^m` Riemannian metric on the tangent
+bundle of a `C¹` manifold `M`. -/
+abbrev rescaledMetric {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
+    {H : Type*} [TopologicalSpace H] (I : ModelWithCorners ℝ E H)
+    (M : Type*) [TopologicalSpace M] [ChartedSpace H M] [IsManifold I 1 M]
+    [RiemannianBundle (fun x : M ↦ TangentSpace I x)] (m : ℕ∞ω)
+    [IsContMDiffRiemannianBundle I m E (fun x : M ↦ TangentSpace I x)]
+    {c : ℝ} (hc : 0 < c) :
+    ContMDiffRiemannianMetric I m E (fun x : M ↦ TangentSpace I x) :=
+  (ContMDiffRiemannianMetric.ofIsContMDiffRiemannianBundle (IB := I) (n := m)
+    (F := E) (V := fun x : M ↦ TangentSpace I x)).rescaleConst hc
+
+end TauCeti
