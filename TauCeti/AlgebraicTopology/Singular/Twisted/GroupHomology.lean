@@ -8,7 +8,7 @@ module
 public import TauCeti.AlgebraicTopology.LocalCoefficient.QuotientCovering.Exact
 public import TauCeti.AlgebraicTopology.Singular.Coinvariants
 public import TauCeti.AlgebraicTopology.Singular.ModuleChains.Resolution
-public import TauCeti.AlgebraicTopology.Singular.Transfer.Sign
+public import TauCeti.AlgebraicTopology.Singular.Transfer.PermutationLocalSystem
 public import Mathlib.RepresentationTheory.Homological.GroupHomology.Basic
 public import TauCeti.RepresentationTheory.Homological.GroupHomology.Naturality
 public import TauCeti.AlgebraicTopology.Singular.Twisted.Coefficients

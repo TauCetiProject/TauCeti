@@ -28,6 +28,10 @@ the fibres are finite, the transfer `IsCoveringMap.permutationLocalSystemTransfe
 sum of all sheets with coefficient `r`. On singular chains they induce the projection and the
 transfer of the covering (`TauCeti.AlgebraicTopology.Singular.Transfer.PermutationLocalSystem`).
 
+A continuous map `σ : E → E` over the base commutes with monodromy, so moving each sheet by `σ`
+is an endomorphism of the permutation local system
+(`IsCoveringMap.permutationLocalSystemFiberMap`). On singular chains it induces `σ_*`.
+
 The local-system viewpoint follows Hatcher, *Algebraic Topology*, Section 3.H; the covering
 monodromy is Mathlib's `IsCoveringMap.monodromyFunctor`.
 -/
@@ -200,5 +204,45 @@ theorem permutationLocalSystemTransfer_app (hfin : ∀ b, Finite ↥(p ⁻¹' {b
   simp [Finsupp.equivFunOnFinite_symm_eq_sum]
 
 end Transfer
+
+section FiberMap
+
+variable (hp : IsCoveringMap p) (R : Type u) [Ring R] (σ : C(E, E)) (hσ : ⇑p ∘ ⇑σ = ⇑p)
+
+/-- The endomorphism of the permutation local system of `p` moving each sheet by a map `σ` over
+the base: on the fibre over `x` it is the linear extension of `σ` restricted to that fibre. It
+commutes with transport because `σ` commutes with monodromy. -/
+noncomputable def permutationLocalSystemFiberMap :
+    hp.permutationLocalSystem R ⟶ hp.permutationLocalSystem R where
+  app x := ModuleCat.ofHom (Finsupp.lmapDomain R R (Function.fiberMap σ hσ x.as))
+  naturality x y γ := by
+    dsimp only [permutationLocalSystem]
+    rw [← ModuleCat.ofHom_comp, ← ModuleCat.ofHom_comp]
+    congr 1
+    refine Finsupp.lhom_ext' fun e ↦ LinearMap.ext_ring ?_
+    simp [hp.fiberMap_monodromy hp σ hσ]
+
+/-- The endomorphism moving the sheets by `σ` is the linear extension of `σ` on each fibre. -/
+@[simp]
+theorem permutationLocalSystemFiberMap_app_apply (x : FundamentalGroupoid B)
+    (f : (p ⁻¹' {x.as}) →₀ R) :
+    ((hp.permutationLocalSystemFiberMap R σ hσ).app x).hom f =
+      Finsupp.mapDomain (Function.fiberMap σ hσ x.as) f :=
+  (rfl)
+
+/-- The endomorphism moving the sheets by `σ` sends the coefficients at a sheet `e` to the
+coefficients at `σ e`. -/
+@[reassoc (attr := simp)]
+theorem permutationLocalSystemSingle_fiberMap_app (x : FundamentalGroupoid B)
+    (e : p ⁻¹' {x.as}) :
+    hp.permutationLocalSystemSingle R x e ≫ (hp.permutationLocalSystemFiberMap R σ hσ).app x =
+      hp.permutationLocalSystemSingle R x (Function.fiberMap σ hσ x.as e) := by
+  ext : 1
+  refine LinearMap.ext_ring ?_
+  rw [ModuleCat.hom_comp, LinearMap.comp_apply, permutationLocalSystemSingle_hom_apply,
+    permutationLocalSystemSingle_hom_apply, permutationLocalSystemFiberMap_app_apply,
+    Finsupp.mapDomain_single]
+
+end FiberMap
 
 end IsCoveringMap
