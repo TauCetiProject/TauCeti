@@ -9,7 +9,6 @@ public import TauCeti.Examples.RingTheory.Huber.CompleteRankOneBase
 public import TauCeti.RingTheory.Huber.TopologicallyFiniteType.Saturated
 
 import TauCeti.NumberTheory.Padics.Complex.MaximalIdeal
-import TauCeti.RingTheory.Huber.CompleteRankOneBase.FractionRing
 import TauCeti.RingTheory.Huber.Restricted.Adic
 import TauCeti.RingTheory.Huber.WeightedEval.Completion
 

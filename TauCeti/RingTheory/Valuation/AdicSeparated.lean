@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.RingTheory.AdicCompletion.Basic
+public import Mathlib.RingTheory.Localization.Away.Basic
 public import Mathlib.RingTheory.Valuation.ValuationRing
 
 /-!
@@ -13,7 +14,8 @@ public import Mathlib.RingTheory.Valuation.ValuationRing
 
 Let `R` be a valuation ring and `ϖ ∈ R`. If `R` is separated for the `ϖ`-adic topology, then `ϖ`
 behaves like a uniformiser for divisibility: every nonzero element divides a power of `ϖ`.
-Consequently a module on which `ϖ` acts injectively has no torsion at all. Over the valuation ring
+Consequently a module on which `ϖ` acts injectively has no torsion at all, and when `R` is a domain
+with `ϖ ≠ 0` any fraction ring of `R` is already the localisation `R[1/ϖ]`. Over the valuation ring
 of a complete rank-one valued field, this is what identifies flatness with the absence of
 `ϖ`-torsion for the admissible algebras of Bosch–Lütkebohmert.
 
@@ -21,6 +23,8 @@ of a complete rank-one valued field, this is what identifies flatness with the a
 
 * `TauCeti.PreValuationRing.exists_dvd_pow_of_isHausdorff`: in a valuation ring that is separated
   for the `ϖ`-adic topology, every nonzero element divides a power of `ϖ`.
+* `TauCeti.PreValuationRing.isLocalization_away_of_isFractionRing`: over a `ϖ`-adically separated
+  valuation domain with `ϖ ≠ 0`, any fraction ring is the localisation away from `ϖ`.
 * `IsSMulRegular.of_isHausdorff`: over such a ring, a module on which `ϖ` is regular is
   torsion-free.
 
@@ -43,6 +47,27 @@ theorem TauCeti.PreValuationRing.exists_dvd_pow_of_isHausdorff {R : Type*} [Comm
   · exact absurd hdvd (h n)
   · rw [SModEq.zero, smul_eq_mul, Ideal.mul_top, Ideal.span_singleton_pow]
     exact Ideal.mem_span_singleton.mpr hdvd
+
+open scoped nonZeroDivisors in
+/-- Over a `ϖ`-adically separated valuation domain with `ϖ ≠ 0`, any fraction ring is already the
+localisation away from `ϖ`, since every nonzero element divides a power of `ϖ`. -/
+theorem TauCeti.PreValuationRing.isLocalization_away_of_isFractionRing {R : Type*} [CommRing R]
+    [IsDomain R] [PreValuationRing R] {ϖ : R} (hϖ : ϖ ≠ 0) [IsHausdorff (Ideal.span {ϖ}) R]
+    (K : Type*) [CommRing K] [Algebra R K] [IsFractionRing R K] :
+    IsLocalization.Away ϖ K where
+  map_units := by
+    rintro ⟨_, n, rfl⟩
+    exact IsLocalization.map_units K ⟨ϖ ^ n, mem_nonZeroDivisors_of_ne_zero (pow_ne_zero n hϖ)⟩
+  surj z := by
+    obtain ⟨⟨a, b⟩, hz⟩ := IsLocalization.surj R⁰ z
+    obtain ⟨n, c, hbc⟩ := TauCeti.PreValuationRing.exists_dvd_pow_of_isHausdorff (ϖ := ϖ)
+      (nonZeroDivisors.ne_zero b.2)
+    refine ⟨⟨a * c, _, n, rfl⟩, ?_⟩
+    calc
+      z * algebraMap R K (ϖ ^ n) = z * algebraMap R K b * algebraMap R K c := by
+        rw [hbc, map_mul, mul_assoc]
+      _ = algebraMap R K (a * c) := by rw [hz, map_mul]
+  exists_of_eq h := ⟨1, by simpa using IsFractionRing.injective R K h⟩
 
 /-- Over a valuation ring that is separated for the `ϖ`-adic topology, a module on which `ϖ`
 acts injectively has no torsion: multiplication by every nonzero scalar is injective. -/

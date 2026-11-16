@@ -13,13 +13,17 @@ public import TauCeti.RingTheory.Huber.CompleteRankOneBase.Basic
 public import TauCeti.RingTheory.Huber.TopologicallyFiniteType.FinitePresentation
 public import TauCeti.Topology.Algebra.Nonarchimedean.AdicTopology.Module
 
+import TauCeti.Algebra.Module.Torsion.Basic
+import TauCeti.Analysis.Normed.Module.StrictGenerators
 import TauCeti.RingTheory.AdicCompletion.Finite
 import TauCeti.RingTheory.Huber.CompleteRankOneBase.FractionRing
 import TauCeti.RingTheory.Huber.Restricted.Adic
 import TauCeti.RingTheory.Huber.Restricted.GaussNorm
 import TauCeti.RingTheory.Huber.Restricted.Noetherian
+import TauCeti.RingTheory.Localization.Finiteness
 import TauCeti.RingTheory.MvPowerSeries.TateAlgebra.Submodule
 import TauCeti.RingTheory.MvPowerSeries.TateAlgebra.UnitBall
+import TauCeti.Topology.Algebra.Ring.Subring
 
 /-!
 # Saturated submodules, Artin–Rees, and adhesiveness over complete rank-one bases
@@ -89,42 +93,6 @@ require no topology on `A`; specializations are provided both for
 public section
 
 namespace TauCeti.Huber
-
-/-! ### Characterisations of `ϖ`-saturated submodules -/
-
-section SaturationDefs
-
-variable {O A E : Type*} [CommRing O] [CommRing A] [Algebra O A] [AddCommGroup E] [Module A E]
-  [Module O E] [IsScalarTower O A E]
-
-omit [Algebra O A] [IsScalarTower O A E] in
-/-- A submodule `M` of an `A`-module `E` is `ϖ`-saturated (`∀ x, ϖ • x ∈ M → x ∈ M`) if and only
-if it is saturated with respect to all powers of `ϖ`. -/
-theorem forall_pow_smul_mem_iff_forall_smul_mem (ϖ : O) (M : Submodule A E) :
-    (∀ (k : ℕ) (x : E), (ϖ ^ k) • x ∈ M → x ∈ M) ↔ ∀ x : E, ϖ • x ∈ M → x ∈ M := by
-  refine ⟨fun h x hx ↦ h 1 x (by simpa only [pow_one] using hx), fun h k ↦ ?_⟩
-  induction k with
-  | zero => intro x hx; simpa only [pow_zero, one_smul] using hx
-  | succ k ih =>
-    intro x hx
-    rw [pow_succ, mul_smul] at hx
-    exact h x (ih (ϖ • x) hx)
-
-/-- The quotient `E ⧸ M` has no `ϖ`-torsion if and only if `M` is `ϖ`-saturated in `E`. -/
-theorem torsionBy_quotient_eq_bot_iff_forall_smul_mem (ϖ : O) (M : Submodule A E) :
-    Submodule.torsionBy O (E ⧸ M) ϖ = ⊥ ↔ ∀ x : E, ϖ • x ∈ M → x ∈ M := by
-  rw [eq_bot_iff]
-  refine ⟨fun h x hx ↦ ?_, fun h q hq ↦ ?_⟩
-  · have hmk : Submodule.Quotient.mk (p := M) x ∈ Submodule.torsionBy O (E ⧸ M) ϖ := by
-      rw [Submodule.mem_torsionBy_iff, ← Submodule.Quotient.mk_smul, Submodule.Quotient.mk_eq_zero]
-      exact hx
-    exact (Submodule.Quotient.mk_eq_zero M).mp (h hmk)
-  · obtain ⟨x, rfl⟩ := Submodule.Quotient.mk_surjective M q
-    rw [Submodule.mem_torsionBy_iff, ← Submodule.Quotient.mk_smul,
-      Submodule.Quotient.mk_eq_zero] at hq
-    exact (Submodule.mem_bot _).mpr ((Submodule.Quotient.mk_eq_zero M).mpr (h x hq))
-
-end SaturationDefs
 
 /-! ### Unit-ball comparison and generic-fibre noetherianity -/
 
@@ -225,46 +193,12 @@ private theorem exists_unitClosedBallEquiv (n : ℕ)
       restrictedMvPowerSeriesCompletionGaussEquiv_coe, restrictedMvPowerSeriesGaussEquiv_weightedC,
       RingEquiv.coe_toRingHom]
   open scoped Valued in
+  rw [RingEquiv.trans_apply, RingEquiv.trans_apply, he₁₂]
   apply Subtype.ext; ext ν
-  change MvPowerSeries.coeff ν
-    ((TauCeti.MvPowerSeries.restrictedIntegerEquiv
-        (e₂ (e₁ (algebraMap O _ a))) :
-      MvPowerSeries.IsRestricted.subring (R := ValuedFractionField O) (fun _ : Fin n ↦ 1)) :
-      MvPowerSeries (Fin n) (ValuedFractionField O)) = _
-  rw [he₁₂, TauCeti.MvPowerSeries.coeff_restrictedIntegerEquiv,
+  rw [TauCeti.MvPowerSeries.coeff_restrictedIntegerEquiv,
     MvPowerSeries.coe_algebraMap_isRestrictedSubring,
     MvPowerSeries.coe_algebraMap_isRestrictedSubring, MvPowerSeries.coeff_C, MvPowerSeries.coeff_C]
   split_ifs <;> [exact he₀_coe a; rfl]
-
-/-- If `algebraMap P T` embeds `P` onto the closed unit ball of a normed commutative ring `T` and
-maps `ϖP : P` to a unit of norm strictly less than `1`, then `T` is the localisation `P[1/ϖP]`. -/
-private theorem isLocalization_away_of_range_eq_closedBall {P T : Type*} [CommRing P]
-    [NormedCommRing T] [Algebra P T] (hj_inj : Function.Injective (algebraMap P T))
-    (hj_range : ∀ f : T, f ∈ Set.range (algebraMap P T) ↔ ‖f‖ ≤ 1) {ϖP : P}
-    (hjϖ_unit : IsUnit (algebraMap P T ϖP)) (hϖ1 : ‖algebraMap P T ϖP‖ < 1) :
-    IsLocalization.Away ϖP T where
-  map_units := by
-    rintro ⟨_, m, rfl⟩
-    rw [map_pow]
-    exact hjϖ_unit.pow m
-  surj f := by
-    have hpos : 0 < (max ‖f‖ 1)⁻¹ := inv_pos.mpr (lt_of_lt_of_le one_pos (le_max_right _ _))
-    obtain ⟨m, hm⟩ := exists_pow_lt_of_lt_one hpos hϖ1
-    have hm1 : ‖algebraMap P T ϖP‖ ^ (m + 1) ≤ (max ‖f‖ 1)⁻¹ :=
-      (pow_le_pow_of_le_one (norm_nonneg _) hϖ1.le m.le_succ).trans hm.le
-    have hgm : ‖f * algebraMap P T ϖP ^ (m + 1)‖ ≤ 1 :=
-      calc
-        ‖f * algebraMap P T ϖP ^ (m + 1)‖ ≤ ‖f‖ * ‖algebraMap P T ϖP‖ ^ (m + 1) :=
-          (norm_mul_le _ _).trans
-            (mul_le_mul_of_nonneg_left (norm_pow_le' _ m.succ_pos) (norm_nonneg _))
-        _ ≤ max ‖f‖ 1 * ‖algebraMap P T ϖP‖ ^ (m + 1) :=
-          mul_le_mul_of_nonneg_right (le_max_left _ _) (pow_nonneg (norm_nonneg _) _)
-        _ ≤ max ‖f‖ 1 * (max ‖f‖ 1)⁻¹ :=
-          mul_le_mul_of_nonneg_left hm1 (le_trans zero_le_one (le_max_right _ _))
-        _ = 1 := mul_inv_cancel₀ (ne_of_gt (lt_of_lt_of_le one_pos (le_max_right _ _)))
-    obtain ⟨p, hp⟩ := (hj_range _).mpr hgm
-    exact ⟨⟨p, _, m + 1, rfl⟩, by simpa only [map_pow] using hp.symm⟩
-  exists_of_eq h := ⟨1, by simpa using hj_inj h⟩
 
 /-- Core bridge from `P = O⟨ξ₁, …, ξₙ⟩` into a noetherian normed `P`-algebra `T` (the Gauss-normed
 Tate algebra over `ValuedFractionField O`): `algebraMap P T` is injective with range the closed unit
@@ -276,7 +210,6 @@ private theorem exists_tate_bridge (n : ℕ) :
       (_ : Algebra (restrictedMvPowerSeriesCompletion n O) T),
       Function.Injective (algebraMap (restrictedMvPowerSeriesCompletion n O) T) ∧
       (∀ f : T, f ∈ Set.range (algebraMap (restrictedMvPowerSeriesCompletion n O) T) ↔ ‖f‖ ≤ 1) ∧
-      IsUnit (algebraMap (restrictedMvPowerSeriesCompletion n O) T (algebraMap O _ ϖ)) ∧
       IsLocalization.Away (algebraMap O (restrictedMvPowerSeriesCompletion n O) ϖ) T ∧
       (∀ {ι : Type} [Fintype ι] (N : Submodule T (ι → T)),
         ∃ F : Finset (ι → T), (∀ x ∈ F, x ∈ N ∧ ‖x‖ = 1) ∧
@@ -294,28 +227,29 @@ private theorem exists_tate_bridge (n : ℕ) :
   let _ : Algebra (restrictedMvPowerSeriesCompletion n O) T :=
     ((Subring.unitClosedBall T).subtype.comp e.toRingHom).toAlgebra
   open scoped Valued in
+  have halg (p : restrictedMvPowerSeriesCompletion n O) :
+      algebraMap (restrictedMvPowerSeriesCompletion n O) T p = (e p : T) := by
+    rw [RingHom.algebraMap_toAlgebra, RingHom.comp_apply, Subring.coe_subtype,
+      RingEquiv.toRingHom_eq_coe, RingHom.coe_coe]
+  open scoped Valued in
   have hj_inj : Function.Injective (algebraMap (restrictedMvPowerSeriesCompletion n O) T) :=
     Subtype.val_injective.comp e.injective
   open scoped Valued in
   have hj_range (f : T) :
       f ∈ Set.range (algebraMap (restrictedMvPowerSeriesCompletion n O) T) ↔ ‖f‖ ≤ 1 := by
     rw [← Subring.mem_unitClosedBall]
-    refine ⟨by rintro ⟨p, rfl⟩; exact (e p).2, fun hf ↦ ⟨e.symm ⟨f, hf⟩, ?_⟩⟩
-    change ((e (e.symm ⟨f, hf⟩) : Subring.unitClosedBall T) : T) = f
-    rw [RingEquiv.apply_symm_apply]
+    refine ⟨by rintro ⟨p, rfl⟩; rw [halg]; exact (e p).2, fun hf ↦ ⟨e.symm ⟨f, hf⟩, ?_⟩⟩
+    rw [halg, RingEquiv.apply_symm_apply]
   open scoped Valued in
   have hϖK : algebraMap O (ValuedFractionField O) ϖ ≠ 0 :=
     (map_ne_zero_iff _ (WithVal.algebraMap_right_injective _
       (IsFractionRing.injective O (FractionRing O)))).mpr (IsCompleteRankOneBase.ne_zero (ϖ := ϖ))
   open scoped Valued in
-  have hjϖ_unit :
-      IsUnit (algebraMap (restrictedMvPowerSeriesCompletion n O) T (algebraMap O _ ϖ)) := by
-    change IsUnit ((e (algebraMap O _ ϖ) : Subring.unitClosedBall T) : T)
+  have hjϖ_unit : IsUnit ((e (algebraMap O _ ϖ) : Subring.unitClosedBall T) : T) := by
     rw [he_alg]
     exact (IsUnit.mk0 _ hϖK).map (algebraMap (ValuedFractionField O) T)
   open scoped Valued in
-  have hϖT1 : ‖algebraMap (restrictedMvPowerSeriesCompletion n O) T (algebraMap O _ ϖ)‖ < 1 := by
-    change ‖((e (algebraMap O _ ϖ) : Subring.unitClosedBall T) : T)‖ < 1
+  have hϖT1 : ‖((e (algebraMap O _ ϖ) : Subring.unitClosedBall T) : T)‖ < 1 := by
     rw [he_alg, MvPowerSeries.norm_algebraMap_isRestrictedSubring,
       Valued.toNormedField.norm_lt_one_iff]
     refine lt_of_le_of_ne ((ValuationRing.integers O (FractionRing O)).map_le_one ϖ) fun h1 ↦
@@ -325,11 +259,18 @@ private theorem exists_tate_bridge (n : ℕ) :
             (IsFractionRing.injective O (FractionRing O))).mpr
               (IsCompleteRankOneBase.ne_zero (ϖ := ϖ)))) h1)
   open scoped Valued in
+  have : IsLocalization.Away (e (algebraMap O _ ϖ)) T :=
+    (Subring.unitClosedBall T).isLocalizationAway_of_isOpen (Subring.isOpen_unitClosedBall T)
+      (e (algebraMap O _ ϖ))
+      (TauCeti.MvPowerSeries.isTopologicallyNilpotent_iff_norm_lt_one.mpr hϖT1) hjϖ_unit
+  open scoped Valued in
+  have hloc : IsLocalization.Away (algebraMap O (restrictedMvPowerSeriesCompletion n O) ϖ) T :=
+    IsLocalization.of_ringEquiv_left e (Submonoid.map_powers e _) halg
+  open scoped Valued in
   exact ⟨T, inferInstance, inferInstance,
     TauCeti.MvPowerSeries.isNoetherianRing_isRestricted_subring
       (K := ValuedFractionField O) (c := fun _ : Fin n ↦ 1),
-    inferInstance, hj_inj, hj_range, hjϖ_unit,
-    isLocalization_away_of_range_eq_closedBall hj_inj hj_range hjϖ_unit hϖT1,
+    inferInstance, hj_inj, hj_range, hloc,
     fun N ↦ N.exists_finset_norm_eq_one_isRestricted_subring⟩
 
 include ϖ in
@@ -338,7 +279,7 @@ include ϖ in
 theorem isNoetherianRing_localization_away_restrictedMvPowerSeriesCompletion (n : ℕ) :
     IsNoetherianRing (Localization.Away
       (algebraMap O (restrictedMvPowerSeriesCompletion n O) ϖ)) := by
-  obtain ⟨T, _, _, _, _, _, _, _, hloc, _⟩ := exists_tate_bridge ϖ n
+  obtain ⟨T, _, _, _, _, _, _, hloc, _⟩ := exists_tate_bridge ϖ n
   have : IsLocalization.Away (algebraMap O (restrictedMvPowerSeriesCompletion n O) ϖ) T := hloc
   exact isNoetherianRing_of_ringEquiv T
     (IsLocalization.algEquiv
@@ -390,70 +331,6 @@ theorem IsTopologicallyFinitePresentation.isNoetherianRing_localization_away
 
 /-! ### Uniform approximation in finite free modules over `O⟨ξ₁, …, ξₙ⟩` -/
 
-/-- Over a localisation `T = P[1/ϖP]`, every element of the `T`-span of the image of a
-`P`-submodule `M ≤ (ι → P)` lands in that image after scaling by a power of `ϖP`. -/
-private theorem exists_pow_smul_eq_of_mem_span {P T ι : Type*} [CommRing P] [CommRing T]
-    [Algebra P T] (ϖP : P) [IsLocalization.Away ϖP T] (J : (ι → P) →ₗ[P] (ι → T))
-    (M : Submodule P (ι → P)) {y : ι → T}
-    (hy : y ∈ Submodule.span T (J '' (M : Set (ι → P)))) :
-    ∃ s : ℕ, ∃ m ∈ M, (algebraMap P T ϖP) ^ s • y = J m := by
-  refine Submodule.span_induction ?_ ?_ ?_ ?_ hy
-  · rintro _ ⟨m, hm, rfl⟩
-    exact ⟨0, m, hm, by simp⟩
-  · exact ⟨0, 0, M.zero_mem, by simp⟩
-  · rintro y₁ y₂ - - ⟨s₁, m₁, hm₁, h₂₁⟩ ⟨s₂, m₂, hm₂, h₂⟩
-    refine ⟨s₁ + s₂, ϖP ^ s₂ • m₁ + ϖP ^ s₁ • m₂,
-      M.add_mem (M.smul_mem _ hm₁) (M.smul_mem _ hm₂), ?_⟩
-    have h₁' : (algebraMap P T ϖP) ^ (s₁ + s₂) • y₁ = J (ϖP ^ s₂ • m₁) := by
-      rw [add_comm, pow_add, mul_smul, h₂₁, map_smul, ← map_pow, algebraMap_smul]
-    have h₂' : (algebraMap P T ϖP) ^ (s₁ + s₂) • y₂ = J (ϖP ^ s₁ • m₂) := by
-      rw [pow_add, mul_smul, h₂, map_smul, ← map_pow, algebraMap_smul]
-    rw [smul_add, h₁', h₂', map_add]
-  · rintro t y - ⟨s₂, m, hm, h₂⟩
-    obtain ⟨s₁, p, hp⟩ := IsLocalization.Away.surj ϖP t
-    refine ⟨s₁ + s₂, p • m, M.smul_mem p hm, ?_⟩
-    calc
-      (algebraMap P T ϖP) ^ (s₁ + s₂) • (t • y)
-          = ((algebraMap P T ϖP) ^ s₁ * t) • ((algebraMap P T ϖP) ^ s₂ • y) := by
-            rw [pow_add, ← mul_smul, mul_right_comm, mul_smul]
-      _ = algebraMap P T p • J m := by rw [mul_comm, hp, h₂]
-      _ = J (p • m) := by rw [algebraMap_smul, map_smul]
-
-/-- Lift a strict norm-bounded `T`-linear decomposition of `J v` along norm-one generators `F` back
-to a `P`-linear combination of their lifts `g₀ : F → (ι → P)` whenever `ϖP ^ r • v ∈ M`. -/
-private theorem exists_sum_of_pow_smul_mem {P T ι : Type*} [CommRing P] [NormedCommRing T]
-    [Algebra P T] [Fintype ι] [DecidableEq (ι → P)]
-    (hj_range : ∀ f : T, f ∈ Set.range (algebraMap P T) ↔ ‖f‖ ≤ 1)
-    {ϖP : P} (hjϖ_unit : IsUnit (algebraMap P T ϖP)) (J : (ι → P) →ₗ[P] (ι → T))
-    (hJ_inj : Function.Injective J) (hJ_range : ∀ w : ι → T, w ∈ Set.range J ↔ ‖w‖ ≤ 1)
-    {M : Submodule P (ι → P)} {F : Finset (ι → T)}
-    (hFgen : ∀ y ∈ Submodule.span T (J '' (M : Set (ι → P))),
-      ∃ a : (ι → T) → T, y = ∑ x ∈ F, a x • x ∧ ∀ x ∈ F, ‖a x‖ ≤ ‖y‖)
-    {g₀ : F → (ι → P)} (hg₀ : ∀ x : F, J (g₀ x) = x.1) {r : ℕ} {v : ι → P}
-    (hv : ϖP ^ r • v ∈ M) :
-    ∃ p : (ι → P) → P, v = ∑ g ∈ Finset.univ.image g₀, p g • g := by
-  let N : Submodule T (ι → T) := Submodule.span T (J '' (M : Set (ι → P)))
-  obtain ⟨uϖ, huϖ⟩ := hjϖ_unit
-  have hJv_mem : J v ∈ N := by
-    have hmul : (algebraMap P T ϖP) ^ r • J v ∈ N := by
-      rw [← map_pow, algebraMap_smul, ← map_smul]
-      exact Submodule.subset_span ⟨ϖP ^ r • v, hv, rfl⟩
-    have hinv : (↑(uϖ⁻¹) : T) ^ r * (algebraMap P T ϖP) ^ r = 1 := by
-      rw [← huϖ, ← mul_pow, Units.inv_mul, one_pow]
-    simpa only [← mul_smul, hinv, one_smul] using N.smul_mem ((↑(uϖ⁻¹) : T) ^ r) hmul
-  obtain ⟨a, ha_sum, ha_norm⟩ := hFgen (J v) hJv_mem
-  choose p₀ hp₀ using fun x : F ↦
-    (hj_range (a x.1)).mpr ((ha_norm x.1 x.2).trans ((hJ_range (J v)).mp ⟨v, rfl⟩))
-  have hg₀_inj : Function.Injective g₀ := fun x y h ↦
-    Subtype.ext (by rw [← hg₀ x, ← hg₀ y, h])
-  let p : (ι → P) → P := Function.extend g₀ p₀ 0
-  refine ⟨p, hJ_inj ?_⟩
-  rw [map_sum, ha_sum, ← Finset.sum_attach F,
-    Finset.sum_image fun x _ y _ hxy ↦ hg₀_inj hxy]
-  refine Finset.sum_congr rfl fun x _ ↦ ?_
-  have hpx : p (g₀ x) = p₀ x := hg₀_inj.extend_apply p₀ 0 x
-  rw [hpx, map_smul, ← algebraMap_smul T (p₀ x), hp₀ x, hg₀ x]
-
 include ϖ in
 /-- **Simultaneous integral generator lemma over `O⟨ξ₁, …, ξₙ⟩`.** Let `P = O⟨ξ₁, …, ξₙ⟩` and
 `ι` be a finite index type. For ANY `P`-submodule `M` of `ι → P` (not assumed saturated or
@@ -469,11 +346,9 @@ private theorem exists_finset_pow_smul_mem_and_eq_sum {n : ℕ} {ι : Type} [Fin
         (ϖ ^ r) • v ∈ M →
           ∃ p : (ι → restrictedMvPowerSeriesCompletion n O) →
             restrictedMvPowerSeriesCompletion n O, v = ∑ g ∈ G, p g • g := by
-  classical
   let _ := Fintype.ofFinite ι
   set P := restrictedMvPowerSeriesCompletion n O
-  obtain ⟨T, _, _, _, _, hj_inj, hj_range, hjϖ_unit, hloc, hstrict⟩ := exists_tate_bridge ϖ n
-  have : IsLocalization.Away (algebraMap O P ϖ) T := hloc
+  obtain ⟨T, _, _, _, _, hj_inj, hj_range, _, hstrict⟩ := exists_tate_bridge ϖ n
   let J : (ι → P) →ₗ[P] (ι → T) :=
     { toFun u i := algebraMap P T (u i)
       map_add' _ _ := funext fun _ ↦ map_add (algebraMap P T) _ _
@@ -485,25 +360,32 @@ private theorem exists_finset_pow_smul_mem_and_eq_sum {n : ℕ} {ι : Type} [Fin
       fun hw ↦ ?_⟩
     choose u hu using fun i ↦ (hj_range (w i)).mpr (hw i)
     exact ⟨u, funext hu⟩
-  set ϖP : P := algebraMap O P ϖ
-  obtain ⟨F, hF1, hFgen⟩ := hstrict (Submodule.span T (J '' (M : Set (ι → P))))
-  choose g₀ hg₀ using fun x : F ↦ (hJ_range x.1).mpr (le_of_eq (hF1 x.1 x.2).2)
-  have hF_clear (x : F) : ∃ s : ℕ, (ϖ ^ s) • g₀ x ∈ M := by
-    obtain ⟨s, m, hm, hs⟩ := exists_pow_smul_eq_of_mem_span ϖP J M (hF1 x.1 x.2).1
-    refine ⟨s, ?_⟩
-    have hJeq : J ((ϖ ^ s) • g₀ x) = J m := by
-      rw [← algebraMap_smul P, map_pow, map_smul, ← algebraMap_smul T, map_pow, hg₀ x, hs]
-    exact hJ_inj hJeq ▸ hm
-  choose s₀ hs₀ using hF_clear
+  let N : Submodule T (ι → T) := Submodule.span T (J '' (M : Set (ι → P)))
+  have hN : ∃ F : Finset (ι → T), (∀ x ∈ F, x ∈ N ∧ ‖x‖ ≤ 1) ∧
+      ∀ y ∈ N, ∃ a : (ι → T) → T, y = ∑ x ∈ F, a x • x ∧ ∀ x ∈ F, ‖a x‖ ≤ ‖y‖ := by
+    obtain ⟨F, hF1, hFgen⟩ := hstrict N
+    exact ⟨F, fun x hx ↦ ⟨(hF1 x hx).1, (hF1 x hx).2.le⟩, hFgen⟩
+  obtain ⟨G, hGN, hGsum⟩ := N.exists_finset_subset_preimage_and_eq_sum_smul hJ_inj
+    (fun a ha ↦ (hj_range a).mpr ha) hJ_range hN
+  have hG_clear (g : G) : ∃ s : ℕ, (ϖ ^ s) • g.1 ∈ M := by
+    obtain ⟨a, ha, hs⟩ :=
+      (J.apply_mem_span_image_iff_exists_smul_mem_span hJ_inj
+        (Submonoid.powers (algebraMap O P ϖ))).mp (hGN g.1 g.2)
+    obtain ⟨s, rfl⟩ := (Submonoid.mem_powers_iff _ _).mp ha
+    rw [M.span_eq, ← map_pow, algebraMap_smul] at hs
+    exact ⟨s, hs⟩
+  choose s₀ hs₀ using hG_clear
   let k : ℕ := Finset.univ.sup s₀
-  refine ⟨Finset.univ.image g₀, k, fun g hg ↦ ?_, fun r v hv ↦ ?_⟩
-  · obtain ⟨x, -, rfl⟩ := Finset.mem_image.mp hg
-    have hsplit : (ϖ ^ k) • g₀ x = ϖP ^ (k - s₀ x) • ((ϖ ^ s₀ x) • g₀ x) := by
+  refine ⟨G, k, fun g hg ↦ ?_, fun r v hv ↦ hGsum v ?_⟩
+  · have hsplit :
+        (ϖ ^ k) • g = algebraMap O P ϖ ^ (k - s₀ ⟨g, hg⟩) • ((ϖ ^ s₀ ⟨g, hg⟩) • g) := by
       rw [← map_pow, algebraMap_smul, ← mul_smul, ← pow_add,
-        Nat.sub_add_cancel (Finset.le_sup (Finset.mem_univ x))]
-    exact hsplit ▸ M.smul_mem _ (hs₀ x)
-  · refine exists_sum_of_pow_smul_mem (r := r) hj_range hjϖ_unit J hJ_inj hJ_range hFgen hg₀ ?_
-    rwa [← map_pow, algebraMap_smul]
+        Nat.sub_add_cancel (Finset.le_sup (Finset.mem_univ (⟨g, hg⟩ : G)))]
+    exact hsplit ▸ M.smul_mem _ (hs₀ ⟨g, hg⟩)
+  · refine (J.apply_mem_span_image_iff_exists_smul_mem_span hJ_inj
+        (Submonoid.powers (algebraMap O P ϖ))).mpr
+      ⟨algebraMap O P ϖ ^ r, (Submonoid.mem_powers_iff _ _).mpr ⟨r, rfl⟩, ?_⟩
+    rwa [M.span_eq, ← map_pow, algebraMap_smul]
 
 /-! ### Artin–Rees, subspace `ϖ`-adic topology, and strictness -/
 
@@ -534,22 +416,6 @@ theorem exists_inf_pow_smul_le_pi_restrictedMvPowerSeriesCompletion {n : ℕ} {�
   rw [hterm]
   exact Submodule.smul_mem_pointwise_smul _ _ _ (M.smul_mem (p g) (hGk g hg))
 
-/-- Lift a finite generating map `(Fin r → A) →ₗ[A] E` along a surjective algebra homomorphism
-`P →+* A` to a surjective `P`-linear map `(Fin r → P) →ₗ[P] E`. -/
-private theorem exists_fin_surjective_of_surjective {P A E : Type*} [CommRing P] [CommRing A]
-    [Algebra P A] [AddCommGroup E] [Module A E] [Module P E] [IsScalarTower P A E]
-    [Module.Finite A E] (hπ : Function.Surjective (algebraMap P A)) :
-    ∃ (r : ℕ) (qP : (Fin r → P) →ₗ[P] E), Function.Surjective qP := by
-  obtain ⟨r, qA, hqA⟩ := Module.Finite.exists_fin' A E
-  let liftVec : (Fin r → P) →ₗ[P] (Fin r → A) :=
-    { toFun u i := algebraMap P A (u i)
-      map_add' _ _ := funext fun _ ↦ map_add (algebraMap P A) _ _
-      map_smul' _ _ := funext fun _ ↦ by simp [Algebra.smul_def] }
-  have hlift : Function.Surjective liftVec := fun v ↦ by
-    choose u hu using fun i ↦ hπ (v i)
-    exact ⟨u, funext hu⟩
-  exact ⟨r, qA.restrictScalars P ∘ₗ liftVec, hqA.comp hlift⟩
-
 include ϖ in
 /-- **Artin–Rees for submodules of finite modules over quotients of `O⟨ξ₁, …, ξₙ⟩`**
 (Bosch–Lütkebohmert I, Lemma 1.2(a); Bosch 2014, §7.3, Lemma 7(ii)). Let `π : O⟨ξ₁, …, ξₙ⟩ →ₐ[O] A`
@@ -567,8 +433,11 @@ theorem exists_inf_pow_smul_le_of_surjective {A E : Type*} [CommRing A] [Algebra
   let _ : Algebra P A := π.toRingHom.toAlgebra
   let _ : Module P E := Module.compHom E π.toRingHom
   have : IsScalarTower P A E := IsScalarTower.of_algebraMap_smul fun _ _ ↦ rfl
-  obtain ⟨r, qP, hqP⟩ := exists_fin_surjective_of_surjective (P := P) (A := A) (E := E) hπ
-  let M' : Submodule P (Fin r → P) := (M.restrictScalars P).comap qP
+  have : Module.Finite P E :=
+    ⟨by simpa only [Submodule.restrictScalars_top] using
+      (Module.Finite.fg_top (R := A) (M := E)).restrictScalars_of_surjective hπ⟩
+  obtain ⟨r, qP, hqP⟩ := Module.Finite.exists_fin' P E
+  set M' : Submodule P (Fin r → P) := (M.restrictScalars P).comap qP with hM'_def
   obtain ⟨k, hk⟩ := exists_inf_pow_smul_le_pi_restrictedMvPowerSeriesCompletion ϖ M'
   refine ⟨k, fun m x ⟨hxM, hxPow⟩ ↦ ?_⟩
   rw [Ideal.span_singleton_pow, Submodule.ideal_span_singleton_smul, SetLike.mem_coe,
@@ -577,12 +446,12 @@ theorem exists_inf_pow_smul_le_of_surjective {A E : Type*} [CommRing A] [Algebra
   obtain ⟨v, rfl⟩ := hqP y
   have hπϖ : π (algebraMap O P ϖ) = algebraMap O A ϖ := π.commutes ϖ
   have hqv : qP (algebraMap O P ϖ ^ (m + k) • v) = algebraMap O A ϖ ^ (m + k) • qP v := by
-    rw [map_smul]
-    change π (algebraMap O P ϖ ^ (m + k)) • qP v = _
-    rw [map_pow, hπϖ]
+    rw [map_smul, ← algebraMap_smul A, RingHom.algebraMap_toAlgebra, AlgHom.toRingHom_eq_coe,
+      RingHom.coe_coe, map_pow, hπϖ]
   have hv_mem : algebraMap O P ϖ ^ (m + k) • v ∈
       M' ⊓ (Ideal.span {algebraMap O P ϖ} ^ (m + k) • ⊤) :=
-    ⟨by change qP _ ∈ M; rwa [hqv], by
+    Submodule.mem_inf.mpr ⟨by
+      rw [hM'_def, Submodule.mem_comap, Submodule.restrictScalars_mem, hqv]; exact hxM, by
       rw [Ideal.span_singleton_pow, Submodule.ideal_span_singleton_smul]
       exact Submodule.smul_mem_pointwise_smul _ _ _ Submodule.mem_top⟩
   have hv_in := hk m hv_mem
@@ -590,9 +459,9 @@ theorem exists_inf_pow_smul_le_of_surjective {A E : Type*} [CommRing A] [Algebra
   rw [← hqv]
   rw [Submodule.mem_smul_pointwise_iff_exists] at hv_in
   obtain ⟨w, hwM', hwEq⟩ := hv_in
-  rw [← hwEq, map_smul]
-  change π (algebraMap O P ϖ ^ m) • qP w ∈ _
-  rw [map_pow, hπϖ]
+  rw [← hwEq, map_smul, ← algebraMap_smul A, RingHom.algebraMap_toAlgebra,
+    AlgHom.toRingHom_eq_coe, RingHom.coe_coe, map_pow, hπϖ]
+  rw [hM'_def, Submodule.mem_comap, Submodule.restrictScalars_mem] at hwM'
   exact Submodule.smul_mem_pointwise_smul _ _ _ hwM'
 
 include ϖ in
@@ -707,7 +576,7 @@ theorem fg_of_forall_smul_mem_pi_restrictedMvPowerSeriesCompletion {n : ℕ} {ι
     (hsat : ∀ u : ι → restrictedMvPowerSeriesCompletion n O, ϖ • u ∈ M → u ∈ M) :
     M.FG := by
   obtain ⟨G, k, hGk, hGsum⟩ := exists_finset_pow_smul_mem_and_eq_sum ϖ M
-  have hpow := (forall_pow_smul_mem_iff_forall_smul_mem ϖ M).mpr hsat
+  have hpow := (M.forall_pow_smul_mem_iff_forall_smul_mem ϖ).mpr hsat
   refine ⟨G, le_antisymm ?_ fun u hu ↦ ?_⟩
   · exact Submodule.span_le.mpr fun g hg ↦ hpow k g (hGk g hg)
   · obtain ⟨p, rfl⟩ := hGsum 0 u (by simpa only [pow_zero, one_smul] using hu)
@@ -729,38 +598,20 @@ theorem fg_of_forall_smul_mem_of_surjective {A E : Type*} [CommRing A] [Algebra 
   let _ : Module P E := Module.compHom E π.toRingHom
   have : IsScalarTower P A E := IsScalarTower.of_algebraMap_smul fun _ _ ↦ rfl
   have : IsScalarTower O P E := IsScalarTower.of_algebraMap_smul fun a x ↦ by
-    change π (algebraMap O P a) • x = a • x
-    rw [π.commutes, algebraMap_smul]
-  obtain ⟨r, qP, hqP⟩ := exists_fin_surjective_of_surjective (P := P) (A := A) (E := E) hπ
-  let M' : Submodule P (Fin r → P) := (M.restrictScalars P).comap qP
+    rw [← algebraMap_smul A, RingHom.algebraMap_toAlgebra, AlgHom.toRingHom_eq_coe,
+      RingHom.coe_coe, π.commutes, algebraMap_smul]
+  have : Module.Finite P E :=
+    ⟨by simpa only [Submodule.restrictScalars_top] using
+      (Module.Finite.fg_top (R := A) (M := E)).restrictScalars_of_surjective hπ⟩
+  obtain ⟨r, qP, hqP⟩ := Module.Finite.exists_fin' P E
+  set M' : Submodule P (Fin r → P) := (M.restrictScalars P).comap qP with hM'_def
   have hM'_sat (u : Fin r → P) (hu : ϖ • u ∈ M') : u ∈ M' := by
-    change qP u ∈ M
+    rw [hM'_def, Submodule.mem_comap, Submodule.restrictScalars_mem] at hu ⊢
     apply hsat
-    have hsmul : qP (ϖ • u) = ϖ • qP u := by
-      rw [← algebraMap_smul P ϖ u, map_smul, algebraMap_smul]
-    exact hsmul ▸ hu
-  obtain ⟨G, hG⟩ := fg_of_forall_smul_mem_pi_restrictedMvPowerSeriesCompletion ϖ hM'_sat
-  classical
-  refine ⟨G.image qP, le_antisymm ?_ fun x hx ↦ ?_⟩
-  · rw [Finset.coe_image]
-    refine Submodule.span_le.mpr ?_
-    rintro _ ⟨u, huG, rfl⟩
-    have huM' : u ∈ M' := hG ▸ Submodule.subset_span huG
-    exact huM'
-  · obtain ⟨u, rfl⟩ := hqP x
-    have hu_span : u ∈ Submodule.span P (G : Set (Fin r → P)) := by
-      rw [hG]
-      exact hx
-    refine Submodule.span_induction ?_ ?_ ?_ ?_ hu_span
-    · intro v hv
-      exact Submodule.subset_span (Finset.mem_coe.mpr (Finset.mem_image_of_mem qP hv))
-    · simp
-    · intro v₁ v₂ _ _ hv₁ hv₂
-      rw [map_add]
-      exact Submodule.add_mem _ hv₁ hv₂
-    · intro p v _ hv
-      rw [map_smul]
-      exact Submodule.smul_mem _ (π p) hv
+    rwa [← algebraMap_smul P ϖ u, map_smul, algebraMap_smul] at hu
+  have hM' : M'.FG := fg_of_forall_smul_mem_pi_restrictedMvPowerSeriesCompletion ϖ hM'_sat
+  exact (Submodule.map_comap_eq_of_surjective hqP (M.restrictScalars P) ▸
+    hM'.map qP).of_restrictScalars P
 
 include ϖ in
 /-- **Saturated submodules of finite modules over strictly topologically finite type `O`-algebras
@@ -1023,9 +874,7 @@ theorem IsTopologicallyFinitePresentation.isAdicComplete {A : Type*} [CommRing A
   have hmap : ((Ideal.span {algebraMap O P ϖ}).map
       (Ideal.Quotient.mk (RingHom.ker π.toRingHom))).map e =
         Ideal.span {algebraMap O A ϖ} := by
-    change ((Ideal.span {algebraMap O P ϖ}).map
-      (Ideal.Quotient.mk (RingHom.ker π.toRingHom))).map e.toRingHom = _
-    rw [Ideal.map_map]
+    rw [← Ideal.map_coe, ← e.toRingHom_eq_coe, Ideal.map_map]
     have hcomp : e.toRingHom.comp (Ideal.Quotient.mk (RingHom.ker π.toRingHom)) = π.toRingHom :=
       RingHom.ext fun _ ↦ rfl
     rw [hcomp, Ideal.map_span, Set.image_singleton]
