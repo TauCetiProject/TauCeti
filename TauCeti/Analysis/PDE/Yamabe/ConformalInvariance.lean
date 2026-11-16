@@ -112,35 +112,6 @@ private theorem yamabeQuotient_eq_withMetric
   simp only [g.scalarCurvature_def]
   exact yamabeQuotient_def I u
 
-omit [T2Space M] [SigmaCompactSpace M] [IsManifold I ∞ M] [MeasurableSpace M] [BorelSpace M]
-  [I.Boundaryless] in
-/-- Multiplying a smooth metric by a positive constant `c` multiplies `‖mgradient I u y‖²` by
-`c⁻¹`, without regularity assumptions on `u`. -/
-private theorem norm_sq_mgradient_rescale_const [IsManifold I 1 M]
-    (g : ContMDiffRiemannianMetric I ∞ E (fun x : M ↦ TangentSpace I x)) {c : ℝ} (hc : 0 < c)
-    (u : M → ℝ) (y : M) :
-    (letI : RiemannianBundle (fun x : M ↦ TangentSpace I x) :=
-       ⟨(g.rescale (fun _ ↦ c) contMDiff_const fun _ ↦ hc).toRiemannianMetric⟩;
-     ‖mgradient I u y‖ ^ 2) =
-      c⁻¹ * (letI : RiemannianBundle (fun x : M ↦ TangentSpace I x) := ⟨g.toRiemannianMetric⟩;
-        ‖mgradient I u y‖ ^ 2) := by
-  set v₀ : TangentSpace I y :=
-    letI : RiemannianBundle (fun x : M ↦ TangentSpace I x) := ⟨g.toRiemannianMetric⟩
-    mgradient I u y
-  have hgrad : (letI : RiemannianBundle (fun x : M ↦ TangentSpace I x) :=
-      ⟨(g.rescale (fun _ ↦ c) contMDiff_const fun _ ↦ hc).toRiemannianMetric⟩;
-      mgradient I u y) = c⁻¹ • v₀ := g.mgradient_rescale_const hc u y
-  have hsq₀ : (letI : RiemannianBundle (fun x : M ↦ TangentSpace I x) := ⟨g.toRiemannianMetric⟩;
-      ‖v₀‖ ^ 2) = g.inner y v₀ v₀ := by
-    let _ : RiemannianBundle (fun x : M ↦ TangentSpace I x) := ⟨g.toRiemannianMetric⟩
-    rw [← real_inner_self_eq_norm_sq, inner_riemannianBundle]
-  rw [hsq₀]
-  let _ : RiemannianBundle (fun x : M ↦ TangentSpace I x) :=
-    ⟨(g.rescale (fun _ ↦ c) contMDiff_const fun _ ↦ hc).toRiemannianMetric⟩
-  rw [← real_inner_self_eq_norm_sq, inner_riemannianBundle, hgrad, rescale_inner]
-  simp only [map_smul, smul_apply, smul_eq_mul]
-  field_simp
-
 omit [I.Boundaryless] in
 /-- If the installed fibre metric is `g`, its Yamabe quotient is `yamabeQuotient I u`. This
 transports the Yamabe quotient along an equality of fibre metrics, such as
