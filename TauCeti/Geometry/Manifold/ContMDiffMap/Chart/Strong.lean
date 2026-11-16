@@ -9,6 +9,7 @@ public import TauCeti.Geometry.Manifold.ContMDiffMap.Chart.Seminorm
 public import Mathlib.Topology.Compactness.LocallyFinite
 public import Mathlib.Topology.MetricSpace.Thickening
 import TauCeti.Geometry.Manifold.ContMDiffMap.Chart.CoordinateChange
+import TauCeti.Geometry.Manifold.ContMDiffMap.Chart.WithSeminorms
 import TauCeti.Geometry.Manifold.ExtChartAt
 import TauCeti.Topology.LocallyFinite.Basic
 
@@ -44,6 +45,12 @@ neighbourhoods, for every finite order at most `n`.
 * `ContMDiffMap.manifoldStrongWhitneyTopology_eq_manifoldWeakWhitneyTopology`: on a compact
   manifold the two topologies agree, so that compact chart `C^k` seminorm balls generate the
   strong topology there.
+* `ContMDiffMap.manifoldStrongWhitneyTopology_eq_manifoldWeakWhitneyTopology_iff`: for a
+  σ-compact, weakly locally compact manifold and a nonzero target, they agree only when the
+  manifold is compact. On a noncompact manifold a strong neighbourhood of `0` whose tolerances tend
+  to zero at infinity contains no nonzero constant map, while every weak neighbourhood of `0`
+  contains the small ones
+  (`ContMDiffMap.manifoldStrongWhitneyTopology_ne_manifoldWeakWhitneyTopology`).
 * `ContMDiffMap.hasBasis_nhds_manifoldStrongWhitney_atlasCkControl`: **chart-family
   independence**. The same neighbourhoods may be read in arbitrary charts of the maximal atlas
   (`ContMDiffMap.AtlasCkControl`), and for any family of such charts covering `M`, those read in
@@ -323,7 +330,8 @@ theorem manifoldStrongWhitneyTopology_le_manifoldWeakWhitneyTopology :
 
 /-- **Small multiples of a compactly supported map tend to zero in the strong Whitney topology.**
 Compact support cannot be dropped: on `ℝ` a strong neighbourhood of `0` whose tolerances tend to
-zero at infinity contains no nonzero constant. -/
+zero at infinity contains no nonzero constant
+(`ContMDiffMap.manifoldStrongWhitneyTopology_ne_manifoldWeakWhitneyTopology`). -/
 theorem tendsto_smul_manifoldStrongWhitney (u : C^n⟮I, M; 𝓘(𝕜, F), F⟯)
     (hu : HasCompactSupport u) : Tendsto (fun δ : 𝕜 ↦ δ • u) (𝓝 0) (𝓝 0) := by
   refine (hasBasis_nhds_manifoldStrongWhitney 0).tendsto_right_iff.mpr fun c _ ↦ ?_
@@ -390,6 +398,80 @@ theorem manifoldStrongWhitneyTopology_eq_manifoldWeakWhitneyTopology [CompactSpa
     le_generateFrom <| by
       rintro _ ⟨c, f, rfl⟩
       exact c.isOpen_ball_manifoldWeakWhitney f
+
+/-- On a noncompact, σ-compact and weakly locally compact manifold, some strong `C⁰` neighbourhood
+of `0` contains no nonzero constant map: along a sequence of points `xⱼ` leaving every compact set,
+the one asking for `‖g xⱼ‖ < 1 / (j + 1)` for all `j`. -/
+private theorem exists_strongCkControl_forall_const_notMem_ball [SigmaCompactSpace M]
+    [WeaklyLocallyCompactSpace M] [NoncompactSpace M] :
+    ∃ c : StrongCkControl I M n, ∀ v : F, v ≠ 0 →
+      ContMDiffMap.const v ∉ c.ball (0 : C^n⟮I, M; 𝓘(𝕜, F), F⟯) := by
+  let K := CompactExhaustion.choice M
+  choose x hx using fun j ↦ (ne_univ_iff_exists_notMem _).mp (K.isCompact j).ne_univ
+  -- Only the points `x j` with `j < N` lie in `K N`, a neighbourhood of any given point.
+  have hfin : LocallyFinite fun j : ULift.{u} ℕ ↦ ({x j.down} : Set M) := by
+    intro y
+    obtain ⟨N, hN⟩ := K.exists_mem_nhds y
+    refine ⟨K N, hN, ((finite_Iio N).preimage ULift.down_injective.injOn).subset ?_⟩
+    rintro j ⟨_, rfl, hj⟩
+    exact lt_of_not_ge fun hNj ↦ hx j.down (K.subset hNj hj)
+  refine ⟨{ ι := ULift.{u} ℕ
+            center := fun j ↦ x j.down
+            compact := fun j ↦ ⟨{⟨_, mem_extChartAt_target (x j.down)⟩}, isCompact_singleton⟩
+            order := 0
+            order_le := by simp
+            tolerance := fun j ↦ 1 / (j.down + 1)
+            tolerance_pos := fun _ ↦ Nat.one_div_pos_of_nat
+            locallyFinite := by simpa only [Compacts.coe_mk, image_singleton,
+              extChartAt_to_inv] using hfin }, fun v hv hmem ↦ ?_⟩
+  obtain ⟨j, hj⟩ := exists_nat_one_div_lt (norm_pos_iff.mpr hv)
+  have hlt := StrongCkControl.mem_ball_iff_forall_norm_sub_lt.mp hmem ⟨j⟩ 0 le_rfl _ rfl
+  simp only [chartIteratedFDeriv_zero, ContinuousMap.zero_apply, sub_zero] at hlt
+  have hval : chartIteratedFDeriv (ContMDiffMap.const (n := n) (I := I) v) (x j) 0 (by simp)
+      ⟨_, mem_extChartAt_target (x j)⟩ (fun i ↦ Fin.elim0 i) = v :=
+    chartIteratedFDeriv_zero_apply _ (x j) ⟨_, mem_extChartAt_target (x j)⟩ fun i ↦ Fin.elim0 i
+  refine (hj.trans_le ?_).not_gt hlt
+  calc ‖v‖ = ‖chartIteratedFDeriv (ContMDiffMap.const (n := n) (I := I) v) (x j) 0 (by simp)
+        ⟨_, mem_extChartAt_target (x j)⟩ (fun i ↦ Fin.elim0 i)‖ := by rw [hval]
+    _ ≤ _ := (ContinuousMultilinearMap.le_opNorm _ _).trans_eq (by simp)
+
+/-- **On a noncompact manifold the strong Whitney topology is strictly finer than the weak one.**
+Along a sequence of points `xⱼ` leaving every compact set, the maps `g` with `‖g xⱼ‖ < 1 / (j + 1)`
+for all `j` form a strong neighbourhood of `0` containing no nonzero constant map, while every
+weak neighbourhood of `0` contains the small constant maps. On `ℝ`, for instance, a tolerance
+tending to zero at infinity excludes every nonzero constant perturbation, unlike a weak
+neighbourhood, which controls the map only on finitely many compact sets. -/
+theorem manifoldStrongWhitneyTopology_ne_manifoldWeakWhitneyTopology [Nontrivial F]
+    [SigmaCompactSpace M] [WeaklyLocallyCompactSpace M] [NoncompactSpace M] :
+    (manifoldStrongWhitneyTopology : TopologicalSpace C^n⟮I, M; 𝓘(𝕜, F), F⟯) ≠
+      manifoldWeakWhitneyTopology := by
+  intro h
+  obtain ⟨c, hc⟩ := exists_strongCkControl_forall_const_notMem_ball (I := I) (M := M) (n := n)
+    (F := F)
+  obtain ⟨v, hv⟩ := exists_ne (0 : F)
+  have hopen : IsOpen (c.ball (0 : C^n⟮I, M; 𝓘(𝕜, F), F⟯)) := h ▸ c.isOpen_ball 0
+  -- Small multiples of the constant map at `v` tend to `0` in the weak topology.
+  have hsmul : Continuous fun δ : 𝕜 ↦ δ • (ContMDiffMap.const v : C^n⟮I, M; 𝓘(𝕜, F), F⟯) :=
+    continuous_id.smul continuous_const
+  have ht : Tendsto (fun δ : 𝕜 ↦ δ • (ContMDiffMap.const v : C^n⟮I, M; 𝓘(𝕜, F), F⟯))
+      (𝓝[≠] 0) (𝓝 0) := by
+    simpa using (hsmul.tendsto 0).mono_left nhdsWithin_le_nhds
+  obtain ⟨δ, hδ, hδ0⟩ :=
+    ((ht.eventually (hopen.mem_nhds (c.mem_ball_self 0))).and self_mem_nhdsWithin).exists
+  have hconst : δ • (ContMDiffMap.const v : C^n⟮I, M; 𝓘(𝕜, F), F⟯) = ContMDiffMap.const (δ • v) :=
+    ContMDiffMap.ext fun _ ↦ rfl
+  exact hc (δ • v) (smul_ne_zero hδ0 hv) (hconst ▸ hδ)
+
+/-- **The strong and weak Whitney topologies agree exactly on compact manifolds**, for a
+σ-compact, weakly locally compact source and a nonzero target. -/
+theorem manifoldStrongWhitneyTopology_eq_manifoldWeakWhitneyTopology_iff [Nontrivial F]
+    [SigmaCompactSpace M] [WeaklyLocallyCompactSpace M] :
+    (manifoldStrongWhitneyTopology : TopologicalSpace C^n⟮I, M; 𝓘(𝕜, F), F⟯) =
+      manifoldWeakWhitneyTopology ↔ CompactSpace M := by
+  refine ⟨fun h ↦ ?_, fun _ ↦ manifoldStrongWhitneyTopology_eq_manifoldWeakWhitneyTopology⟩
+  by_contra hM
+  have := not_compactSpace_iff.mp hM
+  exact manifoldStrongWhitneyTopology_ne_manifoldWeakWhitneyTopology h
 
 end Compact
 
