@@ -19,10 +19,7 @@ reverse. In Mathlib's vocabulary, `A` and `B` are the transvections
 `(1, 0)`.
 
 The conjugates `Bᵏ A B⁻ᵏ`, for `k` ranging over any set of distinct integers, also freely
-generate a free subgroup. Hence every free group of countable rank embeds in `SL(2, ℤ)`, and,
-comparing with the rank-two embedding, the elements `bᵏ a b⁻ᵏ` of the free group `F(a, b)`
-freely generate a free subgroup of `F(a, b)`. In particular `FreeGroup (Fin n)` embeds in
-`FreeGroup (Fin 2)` by sending the `i`-th generator to `bⁱ a b⁻ⁱ`.
+generate a free subgroup. Hence every free group of countable rank embeds in `SL(2, ℤ)`.
 
 Linearity over the Noetherian ring `ℤ` is the input from which equational Noetherianity of free
 groups of finite rank follows, through the Hilbert basis theorem.
@@ -40,8 +37,6 @@ groups of finite rank follows, through the Hilbert basis theorem.
   distinct `k` freely generate a free subgroup of `SL(2, ℤ)`.
 * `TauCeti.exists_injective_freeGroup_SL`: every free group of countable rank embeds in
   `SL(2, ℤ)`.
-* `TauCeti.injective_freeGroup_lift_conj_zpow_of`: the elements `bᵏ a b⁻ᵏ` for distinct `k`
-  freely generate a free subgroup of `FreeGroup (Fin 2)`.
 
 ## References
 
@@ -144,21 +139,5 @@ theorem exists_injective_freeGroup_SL (ι : Type*) [Countable ι] :
     ∃ f : FreeGroup ι →* SL(2, ℤ), Function.Injective f := by
   obtain ⟨k, hk⟩ := Countable.exists_injective_nat ι
   exact ⟨_, injective_freeGroup_lift_conj_transvection_two (Nat.cast_injective.comp hk)⟩
-
-/-- For distinct integers `k i`, the elements `bᵏ⁽ⁱ⁾ a b⁻ᵏ⁽ⁱ⁾` of the free group `F(a, b)` freely
-generate a free subgroup. In particular `FreeGroup (Fin n)` embeds in `FreeGroup (Fin 2)` by
-sending the `i`-th generator to `bⁱ a b⁻ⁱ`. -/
-theorem injective_freeGroup_lift_conj_zpow_of {ι : Type*} {k : ι → ℤ}
-    (hk : Function.Injective k) :
-    Function.Injective (FreeGroup.lift fun i =>
-      (FreeGroup.of (1 : Fin 2) ^ k i * FreeGroup.of 0 * (FreeGroup.of 1 ^ k i)⁻¹)) := by
-  -- Composing with Sanov's embedding gives the conjugate family in `SL(2, ℤ)`.
-  refine Function.Injective.of_comp (f := FreeGroup.lift
-    ![transvection (zero_ne_one : (0 : Fin 2) ≠ 1) (2 : ℤ),
-      transvection (one_ne_zero : (1 : Fin 2) ≠ 0) (2 : ℤ)]) ?_
-  rw [← MonoidHom.coe_comp]
-  convert injective_freeGroup_lift_conj_transvection_two hk using 2
-  ext i
-  simp
 
 end TauCeti
