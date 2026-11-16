@@ -254,7 +254,10 @@ theorem weightSpace_eq_comap_of_injective (π : C →ₗc[R] MonoidAlgebra R X)
     weightSpace W π x = (weightSpace V π x).comap f.toLinearMap := by
   let : Comodule R (MonoidAlgebra R X) V := Comodule.Corestrict (M := V) π
   let : Comodule R (MonoidAlgebra R X) W := Comodule.Corestrict (M := W) π
-  exact (Comodule.corestrictHom π f).weightSpace_eq_comap_of_injective hf x
+  rw [weightSpace_eq_comoduleWeightSpace, weightSpace_eq_comoduleWeightSpace,
+    ← Comodule.corestrictHom_toLinearMap π f]
+  exact (Comodule.corestrictHom π f).weightSpace_eq_comap_of_injective
+    (fun a b h ↦ hf (by simpa only [Comodule.corestrictHom_apply] using h)) x
 
 variable [Module.Flat R C]
 
@@ -264,14 +267,13 @@ the weight submodules of the ambient comodule. -/
 theorem weightSpace_subcomodule (N : Subcomodule R C V) (π : C →ₗc[R] MonoidAlgebra R X)
     (x : X) : weightSpace N π x = (weightSpace V π x).comap (SMulMemClass.subtype N) := by
   rw [weightSpace_eq_comap_of_injective π (Subcomodule.subtype N)
-    (fun a b h ↦ Subtype.val_injective (by simpa using h)) x, Subcomodule.subtype_toLinearMap]
+    (Subcomodule.subtype_injective N) x, Subcomodule.subtype_toLinearMap]
 
 /-- A vector of a subcomodule is a weight vector of the subcomodule exactly when it is one of the
 ambient comodule. -/
 theorem mem_weightSpace_subcomodule {N : Subcomodule R C V} {π : C →ₗc[R] MonoidAlgebra R X}
     {x : X} {n : N} : n ∈ weightSpace N π x ↔ (n : V) ∈ weightSpace V π x := by
-  rw [weightSpace_subcomodule]
-  rfl
+  rw [weightSpace_subcomodule, Submodule.mem_comap, SMulMemClass.subtype_apply]
 
 end Subcomodule
 

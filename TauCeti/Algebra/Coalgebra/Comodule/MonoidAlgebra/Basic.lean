@@ -553,6 +553,7 @@ theorem weightSpace_eq_comap_of_injective (f : Hom R (MonoidAlgebra R G) W V)
     (hf : Function.Injective f) (g : G) :
     weightSpace R G W g = (weightSpace R G V g).comap f.toLinearMap := by
   ext w
+  rw [Submodule.mem_comap, Hom.coe_toLinearMap]
   refine ⟨f.map_mem_weightSpace, fun hw ↦ ?_⟩
   have h : f (weightProj R G W g w) = f w := by
     rw [f.map_weightProj]
@@ -581,15 +582,14 @@ theorem weightSpace_subcomodule (N : Subcomodule R (MonoidAlgebra R G) V) (g : G
     letI : Comodule R (MonoidAlgebra R G) N := Subcomodule.instComodule N
     weightSpace R G N g = (weightSpace R G V g).comap (SMulMemClass.subtype N) := by
   rw [Hom.weightSpace_eq_comap_of_injective (Subcomodule.subtype N)
-    (fun a b h ↦ Subtype.val_injective (by simpa using h)) g, Subcomodule.subtype_toLinearMap]
+    (Subcomodule.subtype_injective N) g, Subcomodule.subtype_toLinearMap]
 
 /-- A vector of a subcomodule is a weight vector of the subcomodule exactly when it is one of the
 ambient comodule. -/
 theorem mem_weightSpace_subcomodule {N : Subcomodule R (MonoidAlgebra R G) V} {g : G} {n : N} :
     letI : Comodule R (MonoidAlgebra R G) N := Subcomodule.instComodule N
     n ∈ weightSpace R G N g ↔ (n : V) ∈ weightSpace R G V g := by
-  rw [weightSpace_subcomodule]
-  rfl
+  rw [weightSpace_subcomodule, Submodule.mem_comap, SMulMemClass.subtype_apply]
 
 variable (R G V)
 

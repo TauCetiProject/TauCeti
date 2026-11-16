@@ -187,11 +187,6 @@ theorem mem_weightSubcomodule {x : X} {v : V} :
     v ∈ weightSubcomodule V π hπ x ↔ v ∈ weightSpace V π x :=
   (Iff.rfl)
 
-/-- With its inherited coaction, the `x`-weight subcomodule has pure weight `x`. -/
-theorem mem_weightSpace_weightSubcomodule (x : X) (n : weightSubcomodule V π hπ x) :
-    n ∈ weightSpace (weightSubcomodule V π hπ x) π x :=
-  mem_weightSpace_subcomodule.mpr n.2
-
 end TauCeti.DiagonalizableGroup
 
 namespace BialgHom
