@@ -249,6 +249,13 @@ theorem perturbedMFDeriv_comp_add_right (ω : SmoothTwoForm I M) (Ks Kt : ℝ ×
   -- The two sides differ only in how the tangent spaces at `u (z + v)` are written.
   rfl
 
+/-- The perturbed derivative at `z` only depends on the components of the perturbation at `z`. -/
+theorem perturbedMFDeriv_congr (ω : SmoothTwoForm I M) {Ks Kt Ks' Kt' : ℝ × ℝ → M → ℝ}
+    (u : ℝ × ℝ → M) {z : ℝ × ℝ} (hs : Ks z = Ks' z) (ht : Kt z = Kt' z) :
+    ω.perturbedMFDeriv Ks Kt u z = ω.perturbedMFDeriv Ks' Kt' u z := by
+  refine ContinuousLinearMap.ext fun a ↦ ?_
+  simp only [perturbedMFDeriv_apply, hs, ht]
+
 /-- The symplectic area density of `du - X_K` for a manifold target. -/
 def floerEnergyDensity (ω : SmoothTwoForm I M) (Ks Kt : ℝ × ℝ → M → ℝ)
     (u : ℝ × ℝ → M) (z : ℝ × ℝ) : ℝ :=
