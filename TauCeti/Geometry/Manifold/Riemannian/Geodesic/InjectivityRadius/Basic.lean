@@ -13,29 +13,10 @@ public import TauCeti.Geometry.Manifold.Riemannian.Jacobi.ExpKernel
 
 The *injectivity radius* `inj(p)` at a point `p` of a smooth Riemannian manifold `M` is the
 supremum in `[0, ∞]` of the radii `r` for which the open tangent ball `B(0, r) ⊆ T_p M` is a normal
-domain (`TauCeti.Manifold.IsNormalDomain`): inside the natural domain of `exp_p`, the exponential
-map restricts to a diffeomorphism from `B(0, r)` onto its image in `M`. When `M` carries its
-Riemannian distance, Gauss's lemma identifies that image with the metric ball of radius `r` around
-`p`; the metric-ball partial-diffeomorphism characterization is proved in
-`TauCeti.Geometry.Manifold.Riemannian.Geodesic.InjectivityRadius.Distance`, so that
-`injectivityRadiusAt` and `injectivityRadius` apply directly to Riemannian manifolds before a
-metric space instance is installed (such as `Metric.sphere`, whose default metric is chordal). The
-global *injectivity radius* `inj(M)` is the infimum `⨅ p, inj(p)`.
-
-Every condition in `IsNormalDomain` has finite character on open balls around the origin, because
-`B(0, r)` is the union of the smaller balls `B(0, s)` (`0 < s < r`). Consequently the supremum is
-exact: for every `r > 0`, `B(0, r)` is a normal domain if and only if `r ≤ inj(p)`, and the open
-extended-norm ball `{v ∈ T_p M | ‖v‖ₑ < inj(p)}` is itself the largest open-ball normal domain at
-`p` whenever `inj(p) > 0`. In particular `inj(p) = ∞` if and only if `T_p M` is a global normal
-domain.
-
-By contraposition, `inj(p)` is bounded above by the norm of any vector outside `expDomain`, any
-critical point of `exp_p` (including nonzero conjugate parameters along radial geodesics), and the
-larger norm of any distinct pair of tangent vectors with the same exponential image. On a
-boundaryless Hausdorff manifold, normal balls exist around every point (`inj(p) > 0`), uniformly
-normal neighbourhoods give a positive local lower bound near each point and on each compact set,
-and therefore a compact Riemannian manifold has strictly positive global injectivity radius
-(`inj(M) > 0`), with no connectedness or nonemptiness assumption.
+domain (`TauCeti.Manifold.IsNormalDomain`). Defining it via normal domains makes `inj(p)` and the
+global injectivity radius `inj(M) = ⨅ p, inj(p)` apply before an intrinsic metric instance is
+installed (e.g. on embedded spheres); the metric-ball characterization is proved in
+`TauCeti.Geometry.Manifold.Riemannian.Geodesic.InjectivityRadius.Distance`.
 
 ## Main definitions
 
@@ -44,23 +25,19 @@ and therefore a compact Riemannian manifold has strictly positive global injecti
 
 ## Main results
 
-* `TauCeti.Manifold.isNormalDomain_ball_iff_ofReal_le_injectivityRadiusAt` and
-  `TauCeti.Manifold.isNormalDomain_eball_iff_le_injectivityRadiusAt`: for `r > 0`, the open ball of
-  radius `r` (real or extended-nonnegative-real, including `⊤`) is a normal domain at `p` if and
-  only if its radius is at most `inj(p)`.
-* `TauCeti.Manifold.isNormalDomain_eball_injectivityRadiusAt`: when `0 < inj(p)`, the open ball
-  `Metric.eball 0 (inj(p))` is itself the largest open-ball normal domain at `p`.
-* `TauCeti.Manifold.injectivityRadiusAt_eq_top_iff_isNormalDomain_univ`: `inj(p) = ⊤` if and only if
-  `Set.univ` is a normal domain at `p`.
+* `TauCeti.Manifold.isNormalDomain_ball_iff_ofReal_le_injectivityRadiusAt`,
+  `TauCeti.Manifold.isNormalDomain_eball_iff_le_injectivityRadiusAt`,
+  `TauCeti.Manifold.isNormalDomain_eball_injectivityRadiusAt`,
+  `TauCeti.Manifold.injectivityRadiusAt_eq_top_iff_isNormalDomain_univ`: exact attainment of the
+  supremum on open balls (real or extended, including `⊤`).
 * `TauCeti.Manifold.injectivityRadiusAt_le_of_notMem_expDomain`,
   `TauCeti.Manifold.injectivityRadiusAt_le_of_not_injective_mfderiv_riemannianExp`,
-  `TauCeti.Manifold.injectivityRadiusAt_le_of_isConjugateOn`, and
-  `TauCeti.Manifold.injectivityRadiusAt_le_max_of_riemannianExp_eq`: upper bounds on `inj(p)` from
+  `TauCeti.Manifold.injectivityRadiusAt_le_of_isConjugateOn`,
+  `TauCeti.Manifold.injectivityRadiusAt_le_max_of_riemannianExp_eq`: upper bounds from
   incompleteness, critical/conjugate vectors, and colliding geodesics.
-* `TauCeti.Manifold.injectivityRadiusAt_pos`: `0 < inj(p)` on a boundaryless Hausdorff manifold.
-* `IsCompact.exists_pos_forall_le_injectivityRadiusAt` and
-  `TauCeti.Manifold.injectivityRadius_pos`: positive uniform lower bound on compact sets, and
-  `0 < inj(M)` when `M` is compact.
+* `TauCeti.Manifold.injectivityRadiusAt_pos`, `IsCompact.exists_pos_forall_le_injectivityRadiusAt`,
+  `TauCeti.Manifold.injectivityRadius_pos`: strict positivity on boundaryless Hausdorff manifolds
+  and uniform positive lower bounds on compact sets and compact manifolds.
 
 ## References
 
@@ -79,6 +56,13 @@ open scoped ContDiff ENNReal Manifold Topology
 noncomputable section
 
 namespace TauCeti.Manifold
+
+private theorem starConvex_eball_zero {V : Type*} [NormedAddCommGroup V] [NormedSpace ℝ V]
+    (r : ℝ≥0∞) : StarConvex ℝ (0 : V) (Metric.eball 0 r) :=
+  starConvex_zero_iff.2 fun v hv t ht₀ ht₁ ↦ by
+    simp only [Metric.mem_eball, edist_zero_right] at hv ⊢
+    rw [eNorm_smul, Real.eNorm_of_nonneg ht₀]
+    exact (mul_le_of_le_one_left zero_le (ENNReal.ofReal_le_one.2 ht₁)).trans_lt hv
 
 variable
   {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
@@ -133,58 +117,43 @@ theorem injectivityRadius_of_isEmpty [IsEmpty M] : injectivityRadius I M = ⊤ :
 /-- Every normal tangent ball of radius `r` bounds the injectivity radius from below by `r`. -/
 theorem IsNormalDomain.ofReal_le_injectivityRadiusAt {p : M} {r : ℝ}
     (h : IsNormalDomain I M p (Metric.ball 0 r)) :
-    ENNReal.ofReal r ≤ injectivityRadiusAt I M p := by
-  rw [injectivityRadiusAt_def]
-  exact le_iSup₂ (f := fun (r : ℝ) (_ : IsNormalDomain I M p (Metric.ball 0 r)) ↦ ENNReal.ofReal r)
-    r h
+    ENNReal.ofReal r ≤ injectivityRadiusAt I M p :=
+  le_iSup₂ (f := fun (r : ℝ) (_ : IsNormalDomain I M p (Metric.ball 0 r)) ↦ ENNReal.ofReal r) r h
 
 /-- Any positive radius strictly below `injectivityRadiusAt I M p` gives a normal tangent ball. -/
 theorem isNormalDomain_ball_of_lt_injectivityRadiusAt {p : M} {r : ℝ} (hr₀ : 0 < r)
     (hr : ENNReal.ofReal r < injectivityRadiusAt I M p) :
     IsNormalDomain I M p (Metric.ball 0 r) := by
-  rw [injectivityRadiusAt_def, lt_iSup_iff] at hr
-  obtain ⟨R, hR⟩ := hr
-  rw [lt_iSup_iff] at hR
-  obtain ⟨hRnorm, hrR⟩ := hR
-  have hlt : r < R := (ENNReal.ofReal_lt_ofReal_iff_of_nonneg hr₀.le).1 hrR
-  exact hRnorm.ball (Metric.ball_subset_ball hlt.le) hr₀
+  simp only [injectivityRadiusAt_def, lt_iSup_iff] at hr
+  obtain ⟨R, hRnorm, hrR⟩ := hr
+  exact hRnorm.ball (Metric.ball_subset_ball ((ENNReal.ofReal_lt_ofReal_iff_of_nonneg hr₀.le).1
+    hrR).le) hr₀
 
 /-- **Attainment of the supremum.** Every positive radius `r` with
 `ENNReal.ofReal r ≤ injectivityRadiusAt I M p` gives a normal tangent ball `B(0, r)`, because
 `B(0, r)` is the union of the strictly smaller balls `B(0, s)` (`0 < s < r`). -/
 theorem isNormalDomain_ball_of_le_injectivityRadiusAt {p : M} {r : ℝ} (hr₀ : 0 < r)
     (hr : ENNReal.ofReal r ≤ injectivityRadiusAt I M p) :
-    IsNormalDomain I M p (Metric.ball 0 r) where
-  isOpen := Metric.isOpen_ball
-  zero_mem := Metric.mem_ball_self hr₀
-  starConvex := (convex_ball (0 : TangentSpace I p) r).starConvex (Metric.mem_ball_self hr₀)
-  subset_expDomain v hv := by
-    rw [mem_ball_zero_iff] at hv
-    have hs₀ : 0 < (‖v‖ + r) / 2 := by linarith [norm_nonneg v]
-    have hsr : (‖v‖ + r) / 2 < r := by linarith
-    have hs_lt : ENNReal.ofReal ((‖v‖ + r) / 2) < injectivityRadiusAt I M p :=
-      ((ENNReal.ofReal_lt_ofReal_iff hr₀).2 hsr).trans_le hr
-    exact (isNormalDomain_ball_of_lt_injectivityRadiusAt hs₀ hs_lt).subset_expDomain
-      (mem_ball_zero_iff.2 (by linarith))
-  injOn v hv w hw hvw := by
-    rw [mem_ball_zero_iff] at hv hw
-    have hm₀ : 0 ≤ max ‖v‖ ‖w‖ := (norm_nonneg v).trans (le_max_left _ _)
-    have hmr : max ‖v‖ ‖w‖ < r := max_lt hv hw
-    have hs₀ : 0 < (max ‖v‖ ‖w‖ + r) / 2 := by linarith
-    have hsr : (max ‖v‖ ‖w‖ + r) / 2 < r := by linarith
-    have hs_lt : ENNReal.ofReal ((max ‖v‖ ‖w‖ + r) / 2) < injectivityRadiusAt I M p :=
-      ((ENNReal.ofReal_lt_ofReal_iff hr₀).2 hsr).trans_le hr
-    exact (isNormalDomain_ball_of_lt_injectivityRadiusAt hs₀ hs_lt).injOn
-      (mem_ball_zero_iff.2 (by linarith [le_max_left ‖v‖ ‖w‖]))
-      (mem_ball_zero_iff.2 (by linarith [le_max_right ‖v‖ ‖w‖])) hvw
-  isLocalDiffeomorphOn := fun ⟨v, hv⟩ ↦ by
-    rw [mem_ball_zero_iff] at hv
-    have hs₀ : 0 < (‖v‖ + r) / 2 := by linarith [norm_nonneg v]
-    have hsr : (‖v‖ + r) / 2 < r := by linarith
-    have hs_lt : ENNReal.ofReal ((‖v‖ + r) / 2) < injectivityRadiusAt I M p :=
-      ((ENNReal.ofReal_lt_ofReal_iff hr₀).2 hsr).trans_le hr
-    exact (isNormalDomain_ball_of_lt_injectivityRadiusAt hs₀ hs_lt).isLocalDiffeomorphOn
-      ⟨v, mem_ball_zero_iff.2 (by linarith)⟩
+    IsNormalDomain I M p (Metric.ball 0 r) := by
+  have hmid {x : ℝ} (hx0 : 0 ≤ x) (hxr : x < r) :
+      IsNormalDomain I M p (Metric.ball 0 ((x + r) / 2)) :=
+    isNormalDomain_ball_of_lt_injectivityRadiusAt (by linarith)
+      (((ENNReal.ofReal_lt_ofReal_iff hr₀).2 (by linarith)).trans_le hr)
+  exact
+    { isOpen := Metric.isOpen_ball
+      zero_mem := Metric.mem_ball_self hr₀
+      starConvex := (convex_ball (0 : TangentSpace I p) r).starConvex (Metric.mem_ball_self hr₀)
+      subset_expDomain := fun v hv ↦
+        (hmid (norm_nonneg v) (mem_ball_zero_iff.1 hv)).subset_expDomain
+          (mem_ball_zero_iff.2 (by linarith [mem_ball_zero_iff.1 hv]))
+      injOn := fun v hv w hw hvw ↦ by
+        rw [mem_ball_zero_iff] at hv hw
+        exact (hmid ((norm_nonneg v).trans (le_max_left _ _)) (max_lt hv hw)).injOn
+          (mem_ball_zero_iff.2 (by linarith [le_max_left ‖v‖ ‖w‖, max_lt hv hw]))
+          (mem_ball_zero_iff.2 (by linarith [le_max_right ‖v‖ ‖w‖, max_lt hv hw])) hvw
+      isLocalDiffeomorphOn := fun ⟨v, hv⟩ ↦
+        (hmid (norm_nonneg v) (mem_ball_zero_iff.1 hv)).isLocalDiffeomorphOn
+          ⟨v, mem_ball_zero_iff.2 (by linarith [mem_ball_zero_iff.1 hv])⟩ }
 
 /-- **Exact characterization of normal tangent balls.** For `r > 0`, the open ball `B(0, r)` in
 `T_p M` is a normal domain if and only if `ENNReal.ofReal r ≤ injectivityRadiusAt I M p`. -/
@@ -200,22 +169,21 @@ theorem isNormalDomain_ball_of_le_injectivityRadius {r : ℝ} (hr₀ : 0 < r)
   isNormalDomain_ball_of_le_injectivityRadiusAt hr₀ (hr.trans (injectivityRadius_le p))
 
 /-- Every tangent vector of extended norm strictly less than `inj(p)` lies in a normal tangent ball
-at `p`. -/
-private theorem exists_isNormalDomain_ball_of_enorm_lt {p : M} {v : TangentSpace I p}
+at `p` whose radius is still strictly below `inj(p)`. -/
+theorem exists_isNormalDomain_ball_of_enorm_lt_injectivityRadiusAt {p : M} {v : TangentSpace I p}
     (hv : ‖v‖ₑ < injectivityRadiusAt I M p) :
     ∃ r : ℝ, 0 < r ∧ v ∈ Metric.ball 0 r ∧ ENNReal.ofReal r < injectivityRadiusAt I M p ∧
       IsNormalDomain I M p (Metric.ball 0 r) := by
   obtain ⟨r, -, hvr, hr⟩ := ENNReal.lt_iff_exists_real_btwn.1 hv
   have hr₀ : 0 < r := ENNReal.ofReal_pos.1 (zero_le.trans_lt hvr)
-  have hnorm : ‖v‖ < r := (ENNReal.ofReal_lt_ofReal_iff hr₀).1 (by rwa [ofReal_norm])
-  exact ⟨r, hr₀, mem_ball_zero_iff.2 hnorm, hr,
-    isNormalDomain_ball_of_lt_injectivityRadiusAt hr₀ hr⟩
+  exact ⟨r, hr₀, mem_ball_zero_iff.2 ((ENNReal.ofReal_lt_ofReal_iff hr₀).1 (by rwa [ofReal_norm])),
+    hr, isNormalDomain_ball_of_lt_injectivityRadiusAt hr₀ hr⟩
 
 /-- Every tangent vector with `‖v‖ₑ < inj(p)` belongs to `expDomain I M p`. -/
 theorem mem_expDomain_of_enorm_lt_injectivityRadiusAt {p : M} {v : TangentSpace I p}
     (hv : ‖v‖ₑ < injectivityRadiusAt I M p) :
     v ∈ expDomain I M p := by
-  obtain ⟨r, -, hvr, -, hball⟩ := exists_isNormalDomain_ball_of_enorm_lt hv
+  obtain ⟨_, -, hvr, -, hball⟩ := exists_isNormalDomain_ball_of_enorm_lt_injectivityRadiusAt hv
   exact hball.subset_expDomain hvr
 
 /-- At every tangent vector with `‖v‖ₑ < inj(p)`, the exponential map is a smooth local
@@ -223,14 +191,14 @@ diffeomorphism. -/
 theorem isLocalDiffeomorphAt_riemannianExp_of_enorm_lt_injectivityRadiusAt
     {p : M} {v : TangentSpace I p} (hv : ‖v‖ₑ < injectivityRadiusAt I M p) :
     IsLocalDiffeomorphAt 𝓘(ℝ, TangentSpace I p) I ∞ (riemannianExp I M p) v := by
-  obtain ⟨r, -, hvr, -, hball⟩ := exists_isNormalDomain_ball_of_enorm_lt hv
+  obtain ⟨_, -, hvr, -, hball⟩ := exists_isNormalDomain_ball_of_enorm_lt_injectivityRadiusAt hv
   exact hball.isLocalDiffeomorphOn ⟨v, hvr⟩
 
 /-- At every tangent vector with `‖v‖ₑ < inj(p)`, the differential of `exp_p` is injective. -/
 theorem injective_mfderiv_riemannianExp_of_enorm_lt_injectivityRadiusAt
     {p : M} {v : TangentSpace I p} (hv : ‖v‖ₑ < injectivityRadiusAt I M p) :
     Injective (mfderiv 𝓘(ℝ, TangentSpace I p) I (riemannianExp I M p) v) := by
-  obtain ⟨r, -, hvr, -, hball⟩ := exists_isNormalDomain_ball_of_enorm_lt hv
+  obtain ⟨_, -, hvr, -, hball⟩ := exists_isNormalDomain_ball_of_enorm_lt_injectivityRadiusAt hv
   exact hball.injective_mfderiv_riemannianExp hvr
 
 /-- The exponential map is injective on `Metric.eball (0 : TangentSpace I p) (inj(p))`. -/
@@ -238,17 +206,12 @@ theorem injOn_riemannianExp_eball_injectivityRadiusAt (p : M) :
     InjOn (riemannianExp I M p) (Metric.eball 0 (injectivityRadiusAt I M p)) := by
   intro v hv w hw hvw
   simp only [Metric.mem_eball, edist_zero_right] at hv hw
-  have hmax : max ‖v‖ₑ ‖w‖ₑ < injectivityRadiusAt I M p := max_lt hv hw
-  obtain ⟨r, -, hmr, hr⟩ := ENNReal.lt_iff_exists_real_btwn.1 hmax
+  obtain ⟨r, -, hmr, hr⟩ := ENNReal.lt_iff_exists_real_btwn.1 (max_lt hv hw)
   have hr₀ : 0 < r := ENNReal.ofReal_pos.1 (zero_le.trans_lt hmr)
-  have hvr : ‖v‖ < r := (ENNReal.ofReal_lt_ofReal_iff hr₀).1 <| by
-    rw [ofReal_norm]
-    exact (le_max_left ‖v‖ₑ ‖w‖ₑ).trans_lt hmr
-  have hwr : ‖w‖ < r := (ENNReal.ofReal_lt_ofReal_iff hr₀).1 <| by
-    rw [ofReal_norm]
-    exact (le_max_right ‖v‖ₑ ‖w‖ₑ).trans_lt hmr
+  have hmem {u : TangentSpace I p} (hu : ‖u‖ₑ < ENNReal.ofReal r) : u ∈ Metric.ball 0 r :=
+    mem_ball_zero_iff.2 ((ENNReal.ofReal_lt_ofReal_iff hr₀).1 (by rwa [ofReal_norm]))
   exact (isNormalDomain_ball_of_lt_injectivityRadiusAt hr₀ hr).injOn
-    (mem_ball_zero_iff.2 hvr) (mem_ball_zero_iff.2 hwr) hvw
+    (hmem ((le_max_left _ _).trans_lt hmr)) (hmem ((le_max_right _ _).trans_lt hmr)) hvw
 
 /-- When `0 < inj(p)`, the extended metric ball `Metric.eball 0 (inj(p))`—which is a tangent ball
 when `inj(p) < ⊤` and `Set.univ` when `inj(p) = ⊤`—is the maximal open-ball normal domain at `p`. -/
@@ -257,10 +220,7 @@ theorem isNormalDomain_eball_injectivityRadiusAt {p : M}
     IsNormalDomain I M p (Metric.eball 0 (injectivityRadiusAt I M p)) where
   isOpen := Metric.isOpen_eball
   zero_mem := Metric.mem_eball_self hpos
-  starConvex := starConvex_zero_iff.2 fun v hv t ht₀ ht₁ ↦ by
-    simp only [Metric.mem_eball, edist_zero_right] at hv ⊢
-    rw [eNorm_smul, Real.eNorm_of_nonneg ht₀]
-    exact (mul_le_of_le_one_left zero_le (ENNReal.ofReal_le_one.2 ht₁)).trans_lt hv
+  starConvex := starConvex_eball_zero _
   subset_expDomain v hv :=
     mem_expDomain_of_enorm_lt_injectivityRadiusAt
       (by simpa only [Metric.mem_eball, edist_zero_right] using hv)
@@ -273,36 +233,27 @@ theorem isNormalDomain_eball_injectivityRadiusAt {p : M}
 if and only if `r ≤ injectivityRadiusAt I M p`. -/
 theorem isNormalDomain_eball_iff_le_injectivityRadiusAt {p : M} {r : ℝ≥0∞} (hr : 0 < r) :
     IsNormalDomain I M p (Metric.eball 0 r) ↔ r ≤ injectivityRadiusAt I M p := by
-  refine ⟨fun h ↦ ?_, fun hle ↦ ?_⟩
-  · refine ENNReal.le_of_forall_pos_nnreal_lt fun s hs hsr ↦ ?_
-    have hs' : 0 < (s : ℝ) := NNReal.coe_pos.2 hs
-    have hsub : Metric.ball (0 : TangentSpace I p) (s : ℝ) ⊆ Metric.eball 0 r := by
-      intro v hv
-      rw [Metric.mem_eball, edist_zero_right, ← ofReal_norm]
-      exact ((ENNReal.ofReal_lt_ofReal_iff hs').2 (mem_ball_zero_iff.1 hv)).trans
-        (by simpa only [ENNReal.ofReal_coe_nnreal] using hsr)
-    simpa only [ENNReal.ofReal_coe_nnreal] using (h.ball hsub hs').ofReal_le_injectivityRadiusAt
-  · have hpos : 0 < injectivityRadiusAt I M p := hr.trans_le hle
-    exact (isNormalDomain_eball_injectivityRadiusAt hpos).mono (Metric.eball_subset_eball hle)
-      Metric.isOpen_eball (Metric.mem_eball_self hr)
-      (starConvex_zero_iff.2 fun v hv t ht₀ ht₁ ↦ by
-        simp only [Metric.mem_eball, edist_zero_right] at hv ⊢
-        rw [eNorm_smul, Real.eNorm_of_nonneg ht₀]
-        exact (mul_le_of_le_one_left zero_le (ENNReal.ofReal_le_one.2 ht₁)).trans_lt hv)
+  refine ⟨fun h ↦ ENNReal.le_of_forall_pos_nnreal_lt fun s hs hsr ↦ ?_, fun hle ↦
+    (isNormalDomain_eball_injectivityRadiusAt (hr.trans_le hle)).mono
+      (Metric.eball_subset_eball hle) Metric.isOpen_eball (Metric.mem_eball_self hr)
+      (starConvex_eball_zero r)⟩
+  have hs' : 0 < (s : ℝ) := NNReal.coe_pos.2 hs
+  have hsub : Metric.ball (0 : TangentSpace I p) (s : ℝ) ⊆ Metric.eball 0 r := fun v hv ↦ by
+    rw [Metric.mem_eball, edist_zero_right, ← ofReal_norm]
+    exact ((ENNReal.ofReal_lt_ofReal_iff hs').2 (mem_ball_zero_iff.1 hv)).trans
+      (by simpa only [ENNReal.ofReal_coe_nnreal] using hsr)
+  simpa only [ENNReal.ofReal_coe_nnreal] using (h.ball hsub hs').ofReal_le_injectivityRadiusAt
 
 /-- The injectivity radius at `p` is infinite if and only if every open tangent ball around `0` is
 a normal domain. -/
 theorem injectivityRadiusAt_eq_top_iff {p : M} :
     injectivityRadiusAt I M p = ⊤ ↔
       ∀ r : ℝ, 0 < r → IsNormalDomain I M p (Metric.ball 0 r) := by
-  refine ⟨fun h r hr ↦ isNormalDomain_ball_of_le_injectivityRadiusAt hr (h ▸ le_top), fun h ↦ ?_⟩
-  rw [eq_top_iff]
-  refine ENNReal.le_of_forall_pos_nnreal_lt fun r _ _ ↦ ?_
-  calc (r : ℝ≥0∞) = ENNReal.ofReal (r : ℝ) := ENNReal.ofReal_coe_nnreal.symm
-    _ ≤ ENNReal.ofReal ((r : ℝ) + 1) :=
-      ENNReal.ofReal_le_ofReal (le_add_of_nonneg_right zero_le_one)
-    _ ≤ injectivityRadiusAt I M p :=
-      (h ((r : ℝ) + 1) (by positivity)).ofReal_le_injectivityRadiusAt
+  refine ⟨fun h r hr ↦ isNormalDomain_ball_of_le_injectivityRadiusAt hr (h ▸ le_top), fun h ↦
+    eq_top_iff.2 <| ENNReal.le_of_forall_pos_nnreal_lt fun r _ _ ↦ ?_⟩
+  simpa only [ENNReal.ofReal_coe_nnreal] using (ENNReal.ofReal_le_ofReal
+    (le_add_of_nonneg_right zero_le_one)).trans
+    (h ((r : ℝ) + 1) (by positivity)).ofReal_le_injectivityRadiusAt
 
 /-- The injectivity radius at `p` is infinite if and only if the whole tangent space `T_p M` is a
 normal domain. -/
@@ -377,7 +328,7 @@ theorem injectivityRadiusAt_le_of_isConjugateOn {p : M} {v : TangentSpace I p} {
 /-- **Positivity of the pointwise injectivity radius.** At every point of a boundaryless Hausdorff
 Riemannian manifold, `0 < injectivityRadiusAt I M p`. -/
 theorem injectivityRadiusAt_pos (p : M) : 0 < injectivityRadiusAt I M p := by
-  obtain ⟨r, hr, hnorm⟩ := exists_isNormalDomain_ball (I := I) (M := M) p
+  obtain ⟨_, hr, hnorm⟩ := exists_isNormalDomain_ball (I := I) (M := M) p
   exact (ENNReal.ofReal_pos.2 hr).trans_le hnorm.ofReal_le_injectivityRadiusAt
 
 /-- The pointwise injectivity radius on a boundaryless Hausdorff Riemannian manifold is nonzero. -/
@@ -390,16 +341,11 @@ radius. -/
 theorem injectivityRadiusAt_eq_top_of_subsingleton [Subsingleton E] (p : M) :
     injectivityRadiusAt I M p = ⊤ := by
   have : Subsingleton (TangentSpace I p) := ‹Subsingleton E›
-  refine injectivityRadiusAt_eq_top_iff_isNormalDomain_univ.2
-    ⟨isOpen_univ, mem_univ _, starConvex_univ _, ?_, ?_, ?_⟩
-  · intro v _
-    rw [Subsingleton.elim v 0]
-    exact zero_mem_expDomain p
-  · intro v _ w _ _
-    exact Subsingleton.elim v w
-  · intro ⟨v, _⟩
-    rw [Subsingleton.elim v 0]
-    exact isLocalDiffeomorphAt_riemannianExp_zero p
+  exact injectivityRadiusAt_eq_top_iff_isNormalDomain_univ.2
+    ⟨isOpen_univ, mem_univ _, starConvex_univ _,
+      fun v _ ↦ Subsingleton.elim v 0 ▸ zero_mem_expDomain p,
+      fun v _ w _ _ ↦ Subsingleton.elim v w,
+      fun ⟨v, _⟩ ↦ Subsingleton.elim v 0 ▸ isLocalDiffeomorphAt_riemannianExp_zero p⟩
 
 /-- A zero-dimensional boundaryless Hausdorff manifold has infinite global injectivity radius. -/
 @[simp]
@@ -418,14 +364,14 @@ theorem exists_pos_eventually_le_injectivityRadiusAt (p : M) :
 such that `ENNReal.ofReal r ≤ injectivityRadiusAt I M q` for all `q ∈ K`. -/
 theorem _root_.IsCompact.exists_pos_forall_le_injectivityRadiusAt {K : Set M} (hK : IsCompact K) :
     ∃ r : ℝ, 0 < r ∧ ∀ q ∈ K, ENNReal.ofReal r ≤ injectivityRadiusAt I M q := by
-  obtain ⟨r, hr, U, -, hKU, hnorm⟩ :=
+  obtain ⟨r, hr, _, -, hKU, hnorm⟩ :=
     hK.exists_pos_exists_isOpen_superset_forall_isNormalDomain_ball (I := I)
   exact ⟨r, hr, fun q hq ↦ (hnorm q (hKU hq)).ofReal_le_injectivityRadiusAt⟩
 
 /-- **Positivity of the global injectivity radius of a compact Riemannian manifold.** No
 connectedness or nonemptiness hypothesis is required (when `M` is empty, `inj(M) = ⊤`). -/
 theorem injectivityRadius_pos [CompactSpace M] : 0 < injectivityRadius I M := by
-  obtain ⟨r, hr, hle⟩ :=
+  obtain ⟨_, hr, hle⟩ :=
     (isCompact_univ (X := M)).exists_pos_forall_le_injectivityRadiusAt (I := I)
   exact (ENNReal.ofReal_pos.2 hr).trans_le (le_injectivityRadius_iff.2 fun q ↦ hle q (mem_univ q))
 

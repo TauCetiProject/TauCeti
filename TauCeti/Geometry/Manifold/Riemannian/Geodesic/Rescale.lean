@@ -11,39 +11,24 @@ public import TauCeti.Geometry.Manifold.Riemannian.Scaling
 /-!
 # Geodesics and the exponential map under constant rescaling of a metric
 
-Let `g` be a Riemannian metric on `M` and `c` a positive constant. Multiplying `g` by the constant
-function `c` leaves the Levi-Civita connection unchanged on differentiable vector fields
-(`Bundle.ContMDiffRiemannianMetric.leviCivitaConnection_rescale_const_apply`), so it leaves the
-Christoffel map in every tangent trivialization unchanged. Consequently, covariant differentiation
-along curves, covariant acceleration, the geodesic equation, the geodesic spray, maximal geodesic
-intervals, maximal geodesics, and the Riemannian exponential map and its domain are all unchanged
-when passing from `g` to `c g`. Only tangent-vector norms—and therefore metric balls in tangent
-spaces and Riemannian distances—scale by `√c`.
-
-The file first records that two connections agreeing on vector fields differentiable at `x` have
-the same Christoffel map at `x`, and hence the same along-curve derivative and covariant
-acceleration at any parameter mapping to `x`. Specializing to the Levi-Civita connections of `g`
-and `c g` yields the rescaling invariance of geodesics and of the exponential map.
+Multiplying a Riemannian metric `g` on `M` by a positive constant `c` leaves the Levi-Civita
+connection unchanged on differentiable vector fields (`leviCivitaConnection_rescale_const_apply`),
+and therefore leaves Christoffel maps, along-curve covariant derivatives, covariant acceleration,
+geodesics, the geodesic spray, maximal geodesic intervals, maximal geodesics, `expDomain`, and
+`riemannianExp` unchanged.
 
 ## Main results
 
-* `TauCeti.Manifold.christoffelMap_congr`: two connections agreeing on vector fields differentiable
-  at `x` have the same model-space Christoffel map at `x`.
-* `CovariantDerivative.alongCurveWithin_congr_covariantDerivative` and
-  `CovariantDerivative.accelerationWithin_congr_covariantDerivative`: along-curve differentiation
-  and covariant acceleration at `t` depend on the connection only through vector fields
-  differentiable at `γ t`.
-* `Bundle.ContMDiffRiemannianMetric.isGeodesicCurveOn_rescale_const_iff` and
-  `Bundle.ContMDiffRiemannianMetric.isGeodesicCurveOnFrom_rescale_const_iff`: `c g` and `g` have
-  the same parametrized geodesics.
-* `Bundle.ContMDiffRiemannianMetric.geodesicSpray_rescale_const`: `c g` and `g` have the same
-  geodesic spray.
-* `Bundle.ContMDiffRiemannianMetric.geodesicInterval_rescale_const` and
-  `Bundle.ContMDiffRiemannianMetric.maximalGeodesic_rescale_const`: `c g` and `g` have the same
-  maximal geodesic intervals and maximal geodesics.
-* `Bundle.ContMDiffRiemannianMetric.expDomain_rescale_const` and
-  `Bundle.ContMDiffRiemannianMetric.riemannianExp_rescale_const`: `c g` and `g` have the same
-  exponential domain and exponential map.
+* `TauCeti.Manifold.christoffelMap_congr`,
+  `CovariantDerivative.alongCurveWithin_congr_covariantDerivative`,
+  `CovariantDerivative.accelerationWithin_congr_covariantDerivative`: dependence on the connection
+  only through vector fields differentiable at the point.
+* `Bundle.ContMDiffRiemannianMetric.isGeodesicCurveOn_rescale_const_iff`,
+  `Bundle.ContMDiffRiemannianMetric.geodesicSpray_rescale_const`,
+  `Bundle.ContMDiffRiemannianMetric.geodesicInterval_rescale_const`,
+  `Bundle.ContMDiffRiemannianMetric.maximalGeodesic_rescale_const`,
+  `Bundle.ContMDiffRiemannianMetric.expDomain_rescale_const`,
+  `Bundle.ContMDiffRiemannianMetric.riemannianExp_rescale_const`: invariance under `g ↦ c g`.
 
 ## References
 
@@ -81,12 +66,11 @@ theorem TauCeti.Manifold.christoffelMap_congr
     christoffelMap b hcov₁ x = christoffelMap b hcov₂ x := by
   by_cases hx : x ∈ e.baseSet
   · ext v u
-    have hread : ∀ᶠ y in 𝓝 x, (e ⟨y, e.symm y v⟩).2 = v :=
-      Filter.eventually_of_mem (e.open_baseSet.mem_nhds hx) fun y hy ↦
-        congrArg Prod.snd (e.apply_mk_symm hy v)
     have hσ : MDiffAt (T% (fun y ↦ e.symm y v)) x :=
-      (e.mdifferentiableAt_section_iff I _ hx).2
-        (mdifferentiableAt_const.congr_of_eventuallyEq hread)
+      (e.mdifferentiableAt_section_iff I _ hx).2 <|
+        mdifferentiableAt_const.congr_of_eventuallyEq <|
+          Filter.eventually_of_mem (e.open_baseSet.mem_nhds hx) fun y hy ↦
+            show (e ⟨y, e.symm y v⟩).2 = v from congrArg Prod.snd (e.apply_mk_symm hy v)
     have heq :
         e.symm x (christoffelMap b hcov₁ x v u) = e.symm x (christoffelMap b hcov₂ x v u) := by
       rw [← covariantDerivative_symm_apply_symm b hcov₁ hx,
@@ -114,8 +98,7 @@ theorem alongCurve_congr_covariantDerivative
     {γ : 𝕜 → M} {V : ∀ r, TangentSpace I (γ r)} {t : 𝕜}
     (h : ∀ ⦃Y : Π y : M, TangentSpace I y⦄, MDiffAt (T% Y) (γ t) → cov₁ Y (γ t) = cov₂ Y (γ t)) :
     alongCurve cov₁ γ V t = alongCurve cov₂ γ V t := by
-  rw [← alongCurveWithin_univ, ← alongCurveWithin_univ]
-  exact alongCurveWithin_congr_covariantDerivative h
+  simpa only [← alongCurveWithin_univ] using alongCurveWithin_congr_covariantDerivative h
 
 /-- Covariant acceleration within `s` at `t` depends on the connection only through its action on
 vector fields differentiable at `γ t`. -/
@@ -124,8 +107,7 @@ theorem accelerationWithin_congr_covariantDerivative
     {γ : 𝕜 → M} {s : Set 𝕜} {t : 𝕜}
     (h : ∀ ⦃Y : Π y : M, TangentSpace I y⦄, MDiffAt (T% Y) (γ t) → cov₁ Y (γ t) = cov₂ Y (γ t)) :
     accelerationWithin cov₁ γ s t = accelerationWithin cov₂ γ s t := by
-  rw [accelerationWithin_def, accelerationWithin_def]
-  exact alongCurveWithin_congr_covariantDerivative h
+  simpa only [accelerationWithin_def] using alongCurveWithin_congr_covariantDerivative h
 
 /-- Unrestricted covariant acceleration at `t` depends on the connection only through its action on
 vector fields differentiable at `γ t`. -/
@@ -134,8 +116,7 @@ theorem acceleration_congr_covariantDerivative
     {γ : 𝕜 → M} {t : 𝕜}
     (h : ∀ ⦃Y : Π y : M, TangentSpace I y⦄, MDiffAt (T% Y) (γ t) → cov₁ Y (γ t) = cov₂ Y (γ t)) :
     acceleration cov₁ γ t = acceleration cov₂ γ t := by
-  rw [← accelerationWithin_univ, ← accelerationWithin_univ]
-  exact accelerationWithin_congr_covariantDerivative h
+  simpa only [← accelerationWithin_univ] using accelerationWithin_congr_covariantDerivative h
 
 end CovariantDerivative
 
@@ -150,12 +131,13 @@ variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimension
 section GeodesicEquation
 
 variable [IsManifold I 2 M] {n : ℕ∞ω}
+  (g : ContMDiffRiemannianMetric I n E (fun x : M ↦ TangentSpace I x)) (hn : 1 ≤ n)
+  {c : ℝ} (hc : 0 < c)
 
 /-- Multiplying a `C¹` metric by a positive constant does not change covariant differentiation
 along a curve for the Levi-Civita connection. -/
 theorem alongCurveWithin_leviCivitaConnection_rescale_const
-    (g : ContMDiffRiemannianMetric I n E (fun x : M ↦ TangentSpace I x)) (hn : 1 ≤ n)
-    {c : ℝ} (hc : 0 < c) (γ : ℝ → M) (V : ∀ r, TangentSpace I (γ r)) (s : Set ℝ) (t : ℝ) :
+    (γ : ℝ → M) (V : ∀ r, TangentSpace I (γ r)) (s : Set ℝ) (t : ℝ) :
     (letI : RiemannianBundle (fun x : M ↦ TangentSpace I x) :=
         ⟨(g.rescale (fun _ ↦ c) contMDiff_const fun _ ↦ hc).toRiemannianMetric⟩;
       letI : IsContMDiffRiemannianBundle I 1 E (fun x : M ↦ TangentSpace I x) :=
@@ -171,9 +153,7 @@ theorem alongCurveWithin_leviCivitaConnection_rescale_const
 
 /-- Multiplying a `C¹` metric by a positive constant does not change the covariant acceleration of
 a curve for the Levi-Civita connection. -/
-theorem accelerationWithin_leviCivitaConnection_rescale_const
-    (g : ContMDiffRiemannianMetric I n E (fun x : M ↦ TangentSpace I x)) (hn : 1 ≤ n)
-    {c : ℝ} (hc : 0 < c) (γ : ℝ → M) (s : Set ℝ) (t : ℝ) :
+theorem accelerationWithin_leviCivitaConnection_rescale_const (γ : ℝ → M) (s : Set ℝ) (t : ℝ) :
     (letI : RiemannianBundle (fun x : M ↦ TangentSpace I x) :=
         ⟨(g.rescale (fun _ ↦ c) contMDiff_const fun _ ↦ hc).toRiemannianMetric⟩;
       letI : IsContMDiffRiemannianBundle I 1 E (fun x : M ↦ TangentSpace I x) :=
@@ -189,9 +169,7 @@ theorem accelerationWithin_leviCivitaConnection_rescale_const
 
 /-- Multiplying a `C¹` metric by a positive constant does not change which curves are geodesics on
 a parameter set. -/
-theorem isGeodesicCurveOn_rescale_const_iff
-    (g : ContMDiffRiemannianMetric I n E (fun x : M ↦ TangentSpace I x)) (hn : 1 ≤ n)
-    {c : ℝ} (hc : 0 < c) (γ : ℝ → M) (s : Set ℝ) :
+theorem isGeodesicCurveOn_rescale_const_iff (γ : ℝ → M) (s : Set ℝ) :
     (letI : RiemannianBundle (fun x : M ↦ TangentSpace I x) :=
         ⟨(g.rescale (fun _ ↦ c) contMDiff_const fun _ ↦ hc).toRiemannianMetric⟩;
       letI : IsContMDiffRiemannianBundle I 1 E (fun x : M ↦ TangentSpace I x) :=
@@ -201,7 +179,7 @@ theorem isGeodesicCurveOn_rescale_const_iff
       letI : IsContMDiffRiemannianBundle I 1 E (fun x : M ↦ TangentSpace I x) :=
         IsContMDiffRiemannianBundle.of_le hn;
       IsGeodesicCurveOn I γ s) := by
-  have hacc (r : ℝ) := accelerationWithin_leviCivitaConnection_rescale_const g hn hc γ s r
+  have hacc := accelerationWithin_leviCivitaConnection_rescale_const g hn hc γ s
   refine ⟨fun h ↦ ?_, fun h ↦ ?_⟩ <;> obtain ⟨hu, hcγ, ha⟩ := h
   · let _ : RiemannianBundle (fun x : M ↦ TangentSpace I x) := ⟨g.toRiemannianMetric⟩
     let _ : IsContMDiffRiemannianBundle I 1 E (fun x : M ↦ TangentSpace I x) :=
@@ -214,9 +192,7 @@ theorem isGeodesicCurveOn_rescale_const_iff
     exact ⟨hu, hcγ, fun r hr ↦ (hacc r).trans (ha r hr)⟩
 
 /-- Multiplying a `C¹` metric by a positive constant does not change all-time geodesics. -/
-theorem isGeodesicCurve_rescale_const_iff
-    (g : ContMDiffRiemannianMetric I n E (fun x : M ↦ TangentSpace I x)) (hn : 1 ≤ n)
-    {c : ℝ} (hc : 0 < c) (γ : ℝ → M) :
+theorem isGeodesicCurve_rescale_const_iff (γ : ℝ → M) :
     (letI : RiemannianBundle (fun x : M ↦ TangentSpace I x) :=
         ⟨(g.rescale (fun _ ↦ c) contMDiff_const fun _ ↦ hc).toRiemannianMetric⟩;
       letI : IsContMDiffRiemannianBundle I 1 E (fun x : M ↦ TangentSpace I x) :=
@@ -226,40 +202,13 @@ theorem isGeodesicCurve_rescale_const_iff
       letI : IsContMDiffRiemannianBundle I 1 E (fun x : M ↦ TangentSpace I x) :=
         IsContMDiffRiemannianBundle.of_le hn;
       IsGeodesicCurve I γ) := by
-  have h₁ : (letI : RiemannianBundle (fun x : M ↦ TangentSpace I x) :=
-        ⟨(g.rescale (fun _ ↦ c) contMDiff_const fun _ ↦ hc).toRiemannianMetric⟩;
-      letI : IsContMDiffRiemannianBundle I 1 E (fun x : M ↦ TangentSpace I x) :=
-        IsContMDiffRiemannianBundle.of_le hn;
-      IsGeodesicCurve I γ) ↔
-    (letI : RiemannianBundle (fun x : M ↦ TangentSpace I x) :=
-        ⟨(g.rescale (fun _ ↦ c) contMDiff_const fun _ ↦ hc).toRiemannianMetric⟩;
-      letI : IsContMDiffRiemannianBundle I 1 E (fun x : M ↦ TangentSpace I x) :=
-        IsContMDiffRiemannianBundle.of_le hn;
-      IsGeodesicCurveOn I γ univ) := by
-    let _ : RiemannianBundle (fun x : M ↦ TangentSpace I x) :=
-      ⟨(g.rescale (fun _ ↦ c) contMDiff_const fun _ ↦ hc).toRiemannianMetric⟩
-    let _ : IsContMDiffRiemannianBundle I 1 E (fun x : M ↦ TangentSpace I x) :=
-      IsContMDiffRiemannianBundle.of_le hn
-    exact isGeodesicCurveOn_univ.symm
-  have h₂ : (letI : RiemannianBundle (fun x : M ↦ TangentSpace I x) := ⟨g.toRiemannianMetric⟩;
-      letI : IsContMDiffRiemannianBundle I 1 E (fun x : M ↦ TangentSpace I x) :=
-        IsContMDiffRiemannianBundle.of_le hn;
-      IsGeodesicCurve I γ) ↔
-    (letI : RiemannianBundle (fun x : M ↦ TangentSpace I x) := ⟨g.toRiemannianMetric⟩;
-      letI : IsContMDiffRiemannianBundle I 1 E (fun x : M ↦ TangentSpace I x) :=
-        IsContMDiffRiemannianBundle.of_le hn;
-      IsGeodesicCurveOn I γ univ) := by
-    let _ : RiemannianBundle (fun x : M ↦ TangentSpace I x) := ⟨g.toRiemannianMetric⟩
-    let _ : IsContMDiffRiemannianBundle I 1 E (fun x : M ↦ TangentSpace I x) :=
-      IsContMDiffRiemannianBundle.of_le hn
-    exact isGeodesicCurveOn_univ.symm
-  exact h₁.trans ((isGeodesicCurveOn_rescale_const_iff g hn hc γ univ).trans h₂.symm)
+  simp only [← isGeodesicCurveOn_univ]
+  exact isGeodesicCurveOn_rescale_const_iff g hn hc γ univ
 
 /-- Multiplying a `C¹` metric by a positive constant does not change geodesics with prescribed
 initial data. -/
 theorem isGeodesicCurveOnFrom_rescale_const_iff
-    (g : ContMDiffRiemannianMetric I n E (fun x : M ↦ TangentSpace I x)) (hn : 1 ≤ n)
-    {c : ℝ} (hc : 0 < c) (γ : ℝ → M) (s : Set ℝ) (p : M) (v : TangentSpace I p) :
+    (γ : ℝ → M) (s : Set ℝ) (p : M) (v : TangentSpace I p) :
     (letI : RiemannianBundle (fun x : M ↦ TangentSpace I x) :=
         ⟨(g.rescale (fun _ ↦ c) contMDiff_const fun _ ↦ hc).toRiemannianMetric⟩;
       letI : IsContMDiffRiemannianBundle I 1 E (fun x : M ↦ TangentSpace I x) :=
@@ -282,9 +231,7 @@ theorem isGeodesicCurveOnFrom_rescale_const_iff
     exact ⟨hgeo.2 hγ, h0, hi⟩
 
 /-- Multiplying a `C¹` metric by a positive constant leaves the geodesic spray unchanged. -/
-theorem geodesicSpray_rescale_const
-    (g : ContMDiffRiemannianMetric I n E (fun x : M ↦ TangentSpace I x)) (hn : 1 ≤ n)
-    {c : ℝ} (hc : 0 < c) :
+theorem geodesicSpray_rescale_const :
     (letI : RiemannianBundle (fun x : M ↦ TangentSpace I x) :=
         ⟨(g.rescale (fun _ ↦ c) contMDiff_const fun _ ↦ hc).toRiemannianMetric⟩;
       letI : IsContMDiffRiemannianBundle I 1 E (fun x : M ↦ TangentSpace I x) :=
@@ -296,20 +243,10 @@ theorem geodesicSpray_rescale_const
       geodesicSpray I M) := by
   have : IsManifold I 1 M := IsManifold.of_le (n := 2) (by norm_num)
   funext z
-  have h₁ :=
-    (letI : RiemannianBundle (fun x : M ↦ TangentSpace I x) :=
-        ⟨(g.rescale (fun _ ↦ c) contMDiff_const fun _ ↦ hc).toRiemannianMetric⟩;
-      letI : IsContMDiffRiemannianBundle I 1 E (fun x : M ↦ TangentSpace I x) :=
-        IsContMDiffRiemannianBundle.of_le hn;
-      geodesicSpray_apply (I := I) (M := M) z)
-  have h₂ :=
-    (letI : RiemannianBundle (fun x : M ↦ TangentSpace I x) := ⟨g.toRiemannianMetric⟩;
-      letI : IsContMDiffRiemannianBundle I 1 E (fun x : M ↦ TangentSpace I x) :=
-        IsContMDiffRiemannianBundle.of_le hn;
-      geodesicSpray_apply (I := I) (M := M) z)
-  exact h₁.trans ((congrArg (fun Γ : E →L[ℝ] E →L[ℝ] E ↦ (z.2, -Γ z.2 z.2))
+  simp only [geodesicSpray_apply]
+  exact congrArg (fun Γ : E →L[ℝ] E →L[ℝ] E ↦ (z.2, -Γ z.2 z.2))
     (christoffelMap_congr (finBasis ℝ E) _ _ fun _ _ hY ↦
-      leviCivitaConnection_rescale_const_apply g hn hc hY)).trans h₂.symm)
+      leviCivitaConnection_rescale_const_apply g hn hc hY)
 
 end GeodesicEquation
 
@@ -328,24 +265,8 @@ theorem geodesicInterval_rescale_const (p : M) (v : TangentSpace I p) :
     (letI : RiemannianBundle (fun x : M ↦ TangentSpace I x) := ⟨g.toRiemannianMetric⟩;
       geodesicInterval I M p v) := by
   have : IsManifold I 2 M := IsManifold.of_le (n := ∞) (by simp)
-  let g' := g.rescale (fun _ ↦ c) contMDiff_const fun _ ↦ hc
   ext t
-  have h₁ : t ∈ (letI : RiemannianBundle (fun x : M ↦ TangentSpace I x) := ⟨g'.toRiemannianMetric⟩;
-      geodesicInterval I M p v) ↔
-    (letI : RiemannianBundle (fun x : M ↦ TangentSpace I x) := ⟨g'.toRiemannianMetric⟩;
-      ∃ γ a b, IsGeodesicCurveOnFrom I γ (Ioo a b) p v ∧ t ∈ Ioo a b) := by
-    let _ : RiemannianBundle (fun x : M ↦ TangentSpace I x) := ⟨g'.toRiemannianMetric⟩
-    exact mem_geodesicInterval_iff
-  have h₂ : t ∈ (letI : RiemannianBundle (fun x : M ↦ TangentSpace I x) := ⟨g.toRiemannianMetric⟩;
-      geodesicInterval I M p v) ↔
-    (letI : RiemannianBundle (fun x : M ↦ TangentSpace I x) := ⟨g.toRiemannianMetric⟩;
-      ∃ γ a b, IsGeodesicCurveOnFrom I γ (Ioo a b) p v ∧ t ∈ Ioo a b) := by
-    let _ : RiemannianBundle (fun x : M ↦ TangentSpace I x) := ⟨g.toRiemannianMetric⟩
-    exact mem_geodesicInterval_iff
-  rw [h₁, h₂]
-  exact exists_congr fun γ ↦ exists_congr fun a ↦ exists_congr fun b ↦
-    and_congr_left fun _ ↦
-      isGeodesicCurveOnFrom_rescale_const_iff g (by simp) hc γ (Ioo a b) p v
+  simp only [mem_geodesicInterval_iff, isGeodesicCurveOnFrom_rescale_const_iff g (by simp) hc]
 
 /-- Multiplying a smooth metric by a positive constant leaves maximal geodesics unchanged. -/
 theorem maximalGeodesic_rescale_const (p : M) (v : TangentSpace I p) (t : ℝ) :
@@ -355,16 +276,7 @@ theorem maximalGeodesic_rescale_const (p : M) (v : TangentSpace I p) (t : ℝ) :
     (letI : RiemannianBundle (fun x : M ↦ TangentSpace I x) := ⟨g.toRiemannianMetric⟩;
       maximalGeodesic I M p v t) := by
   have : IsManifold I 2 M := IsManifold.of_le (n := ∞) (by simp)
-  let g' := g.rescale (fun _ ↦ c) contMDiff_const fun _ ↦ hc
-  have h₁ :=
-    (letI : RiemannianBundle (fun x : M ↦ TangentSpace I x) := ⟨g'.toRiemannianMetric⟩;
-      maximalGeodesic_def (I := I) (M := M) p v t)
-  have h₂ :=
-    (letI : RiemannianBundle (fun x : M ↦ TangentSpace I x) := ⟨g.toRiemannianMetric⟩;
-      maximalGeodesic_def (I := I) (M := M) p v t)
-  exact h₁.trans ((congrArg
-    (fun S ↦ (maximalIntegralCurve S (TotalSpace.mk' E p v) t).proj)
-    (geodesicSpray_rescale_const g (by simp) hc)).trans h₂.symm)
+  simp only [maximalGeodesic_def, geodesicSpray_rescale_const g (by simp) hc]
 
 /-- Multiplying a smooth metric by a positive constant leaves the natural domain of the Riemannian
 exponential map unchanged. -/
@@ -374,21 +286,8 @@ theorem expDomain_rescale_const (p : M) :
       expDomain I M p) =
     (letI : RiemannianBundle (fun x : M ↦ TangentSpace I x) := ⟨g.toRiemannianMetric⟩;
       expDomain I M p) := by
-  let g' := g.rescale (fun _ ↦ c) contMDiff_const fun _ ↦ hc
   ext v
-  have h₁ : v ∈ (letI : RiemannianBundle (fun x : M ↦ TangentSpace I x) := ⟨g'.toRiemannianMetric⟩;
-      expDomain I M p) ↔
-    (1 : ℝ) ∈ (letI : RiemannianBundle (fun x : M ↦ TangentSpace I x) := ⟨g'.toRiemannianMetric⟩;
-      geodesicInterval I M p v) := by
-    let _ : RiemannianBundle (fun x : M ↦ TangentSpace I x) := ⟨g'.toRiemannianMetric⟩
-    exact mem_expDomain_iff
-  have h₂ : v ∈ (letI : RiemannianBundle (fun x : M ↦ TangentSpace I x) := ⟨g.toRiemannianMetric⟩;
-      expDomain I M p) ↔
-    (1 : ℝ) ∈ (letI : RiemannianBundle (fun x : M ↦ TangentSpace I x) := ⟨g.toRiemannianMetric⟩;
-      geodesicInterval I M p v) := by
-    let _ : RiemannianBundle (fun x : M ↦ TangentSpace I x) := ⟨g.toRiemannianMetric⟩
-    exact mem_expDomain_iff
-  rw [h₁, h₂, geodesicInterval_rescale_const g hc p v]
+  simp only [mem_expDomain_iff, geodesicInterval_rescale_const g hc]
 
 /-- Multiplying a smooth metric by a positive constant does not change geodesic completeness at a
 point. -/
@@ -398,20 +297,7 @@ theorem isGeodesicallyCompleteAt_rescale_const_iff (p : M) :
       IsGeodesicallyCompleteAt I M p) ↔
     (letI : RiemannianBundle (fun x : M ↦ TangentSpace I x) := ⟨g.toRiemannianMetric⟩;
       IsGeodesicallyCompleteAt I M p) := by
-  let g' := g.rescale (fun _ ↦ c) contMDiff_const fun _ ↦ hc
-  have h₁ : (letI : RiemannianBundle (fun x : M ↦ TangentSpace I x) := ⟨g'.toRiemannianMetric⟩;
-      IsGeodesicallyCompleteAt I M p) ↔
-    (letI : RiemannianBundle (fun x : M ↦ TangentSpace I x) := ⟨g'.toRiemannianMetric⟩;
-      expDomain I M p) = univ := by
-    let _ : RiemannianBundle (fun x : M ↦ TangentSpace I x) := ⟨g'.toRiemannianMetric⟩
-    exact expDomain_eq_univ_iff.symm
-  have h₂ : (letI : RiemannianBundle (fun x : M ↦ TangentSpace I x) := ⟨g.toRiemannianMetric⟩;
-      IsGeodesicallyCompleteAt I M p) ↔
-    (letI : RiemannianBundle (fun x : M ↦ TangentSpace I x) := ⟨g.toRiemannianMetric⟩;
-      expDomain I M p) = univ := by
-    let _ : RiemannianBundle (fun x : M ↦ TangentSpace I x) := ⟨g.toRiemannianMetric⟩
-    exact expDomain_eq_univ_iff.symm
-  rw [h₁, h₂, expDomain_rescale_const g hc p]
+  simp only [← expDomain_eq_univ_iff, expDomain_rescale_const g hc]
 
 /-- Multiplying a smooth metric by a positive constant leaves the Riemannian exponential map
 unchanged. -/
@@ -421,14 +307,7 @@ theorem riemannianExp_rescale_const (p : M) (v : TangentSpace I p) :
       riemannianExp I M p v) =
     (letI : RiemannianBundle (fun x : M ↦ TangentSpace I x) := ⟨g.toRiemannianMetric⟩;
       riemannianExp I M p v) := by
-  let g' := g.rescale (fun _ ↦ c) contMDiff_const fun _ ↦ hc
-  have h₁ :=
-    (letI : RiemannianBundle (fun x : M ↦ TangentSpace I x) := ⟨g'.toRiemannianMetric⟩;
-      riemannianExp_def (I := I) (M := M) p v)
-  have h₂ :=
-    (letI : RiemannianBundle (fun x : M ↦ TangentSpace I x) := ⟨g.toRiemannianMetric⟩;
-      riemannianExp_def (I := I) (M := M) p v)
-  exact h₁.trans ((maximalGeodesic_rescale_const g hc p v 1).trans h₂.symm)
+  simp only [riemannianExp_def, maximalGeodesic_rescale_const g hc]
 
 end Exponential
 
