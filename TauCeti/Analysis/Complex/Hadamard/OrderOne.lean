@@ -324,9 +324,9 @@ every `s` the family `ρ ↦ E₁(ρ⁻¹ s) ^ m_ρ` over `ℂ` is multipliable 
 theorem hadamard_of_orderLE_one (h : OrderLE f 1) (hf : Differentiable ℂ f) (hf0 : f 0 ≠ 0) :
     ∃ a b : ℂ, exp a = f 0 ∧ b = logDeriv f 0 ∧ ∀ s : ℂ,
       Multipliable (fun ρ : ℂ ↦
-        weierstrassFactorOne (ρ⁻¹ * s) ^ (MeromorphicOn.divisor f Set.univ ρ).toNat) ∧
+        weierstrassFactor 1 (ρ⁻¹ * s) ^ (MeromorphicOn.divisor f Set.univ ρ).toNat) ∧
       f s = exp (a + b * s) * ∏' ρ : ℂ,
-        weierstrassFactorOne (ρ⁻¹ * s) ^ (MeromorphicOn.divisor f Set.univ ρ).toNat := by
+        weierstrassFactor 1 (ρ⁻¹ * s) ^ (MeromorphicOn.divisor f Set.univ ρ).toNat := by
   have hsum := h.summable_divisor_toNat_mul_norm_inv_sq hf (by norm_num)
   obtain ⟨a, ha, hfa⟩ := h.exists_eq_cexp_mul_divisorProductOne hf hf0
   refine ⟨a, logDeriv f 0, ha, rfl, fun s ↦ ⟨(hasProd_divisorProductOne hsum s).multipliable, ?_⟩⟩
@@ -383,7 +383,8 @@ theorem OrderLE.hasSumLocallyUniformlyOn_logDeriv_sub (h : OrderLE f 1)
   refine hasSumLocallyUniformlyOn_iff_tendstoLocallyUniformlyOn.mpr <|
     (hasSumLocallyUniformlyOn_iff_tendstoLocallyUniformlyOn.mp
       (hasSumLocallyUniformlyOn_logDeriv_divisorProductOne h0 hsum)).congr_right fun z hz ↦ ?_
-  have hfz : f z ≠ 0 := fun hfz ↦ divisorProductOne_ne_zero hsum h0 hz
+  have hfz : f z ≠ 0 := fun hfz ↦ divisorProductOne_ne_zero hsum
+    (fun _ ↦ le_of_eq (Function.notMem_support.mp hz))
     ((divisorProductOne_eq_zero_iff hf hf0 hsum z).mpr hfz)
   rw [h.logDeriv_eq_add_logDeriv_divisorProductOne hf hf0 hfz, add_sub_cancel_left]
 
@@ -404,7 +405,7 @@ example (s : ℂ) :
     1 - s = exp (0 + (-1) * s) * divisorProductOne (fun s ↦ 1 - s) s ∧
       logDeriv (fun s : ℂ ↦ 1 - s) 0 = -1 := by
   refine ⟨?_, by simp [logDeriv_apply]⟩
-  rw [divisorProductOne_one_sub, weierstrassFactorOne_def, mul_left_comm, ← exp_add]
+  rw [divisorProductOne_one_sub, weierstrassFactor_one_left, mul_left_comm, ← exp_add]
   simp
 
 end TauCeti
