@@ -34,11 +34,11 @@ example, the middle map is Fredholm without injectivity of `f₁` or surjectivit
 
 ## Main declarations
 
-* `ContinuousLinearMap.isFredholm₂_of_exact_of_isFredholm₁₃`,
-  `ContinuousLinearMap.isFredholm₃_of_exact_of_isFredholm₁₂` and
-  `ContinuousLinearMap.isFredholm₁_of_exact_of_isFredholm₂₃`: two out of three.
-* `ContinuousLinearMap.index_eq_add_of_exact`: the index is additive along a map of short exact
-  sequences.
+* `ContinuousLinearMap.IsFredholm.isFredholm₂_of_exact`,
+  `ContinuousLinearMap.IsFredholm.isFredholm₃_of_exact` and
+  `ContinuousLinearMap.IsFredholm.isFredholm₁_of_exact`: two out of three.
+* `ContinuousLinearMap.IsFredholm.index_eq_add_of_exact`: the index is additive along a map of
+  short exact sequences.
 
 ## References
 
@@ -75,7 +75,7 @@ variable [IsRCLikeNormedField 𝕜]
 /-- **Two out of three, middle.** In a commutative diagram with exact rows, `f₂` surjective and
 `g₁` injective, if the outer vertical maps are Fredholm, then so is the middle one, provided its
 domain and codomain are complete. -/
-theorem isFredholm₂_of_exact_of_isFredholm₁₃ [CompleteSpace E₂] [CompleteSpace F₂]
+theorem IsFredholm.isFredholm₂_of_exact [CompleteSpace E₂] [CompleteSpace F₂]
     (hi₁ : i₁.IsFredholm) (hi₃ : i₃.IsFredholm) (hf : Exact f₁ f₂) (hg : Exact g₁ g₂)
     (hf₂ : Surjective f₂) (hg₁ : Injective g₁)
     (h₁ : g₁ ∘L i₁ = i₂ ∘L f₁) (h₂ : g₂ ∘L i₂ = i₃ ∘L f₂) :
@@ -93,7 +93,7 @@ theorem isFredholm₂_of_exact_of_isFredholm₁₃ [CompleteSpace E₂] [Complet
 /-- **Two out of three, right.** In a commutative diagram with exact rows, `f₂` surjective and
 `g₁`, `g₂` respectively injective and surjective, if the first two vertical maps are Fredholm,
 then so is the third one, provided its domain and codomain are complete. -/
-theorem isFredholm₃_of_exact_of_isFredholm₁₂ [CompleteSpace E₃] [CompleteSpace F₃]
+theorem IsFredholm.isFredholm₃_of_exact [CompleteSpace E₃] [CompleteSpace F₃]
     (hi₁ : i₁.IsFredholm) (hi₂ : i₂.IsFredholm) (hf : Exact f₁ f₂) (hg : Exact g₁ g₂)
     (hf₂ : Surjective f₂) (hg₁ : Injective g₁) (hg₂ : Surjective g₂)
     (h₁ : g₁ ∘L i₁ = i₂ ∘L f₁) (h₂ : g₂ ∘L i₂ = i₃ ∘L f₂) :
@@ -109,7 +109,7 @@ theorem isFredholm₃_of_exact_of_isFredholm₁₂ [CompleteSpace E₃] [Complet
 /-- **Two out of three, left.** In a commutative diagram with exact rows, `f₁`, `f₂`
 respectively injective and surjective and `g₁` injective, if the last two vertical maps are
 Fredholm, then so is the first one, provided its domain and codomain are complete. -/
-theorem isFredholm₁_of_exact_of_isFredholm₂₃ [CompleteSpace E₁] [CompleteSpace F₁]
+theorem IsFredholm.isFredholm₁_of_exact [CompleteSpace E₁] [CompleteSpace F₁]
     (hi₂ : i₂.IsFredholm) (hi₃ : i₃.IsFredholm) (hf : Exact f₁ f₂) (hg : Exact g₁ g₂)
     (hf₁ : Injective f₁) (hf₂ : Surjective f₂) (hg₁ : Injective g₁)
     (h₁ : g₁ ∘L i₁ = i₂ ∘L f₁) (h₂ : g₂ ∘L i₂ = i₃ ∘L f₂) :
@@ -127,10 +127,11 @@ end IsRCLikeNormedField
 /-- **Additivity of the index along a map of short exact sequences.** In a commutative diagram
 with short exact rows, if the outer vertical maps are Fredholm, then
 `index i₂ = index i₁ + index i₃`. No completeness is needed; between Banach spaces over `ℝ` or
-`ℂ` the middle map is then Fredholm by `isFredholm₂_of_exact_of_isFredholm₁₃`. -/
-theorem index_eq_add_of_exact (hi₁ : i₁.IsFredholm) (hi₃ : i₃.IsFredholm) (hf : Exact f₁ f₂)
-    (hg : Exact g₁ g₂) (hf₁ : Injective f₁) (hf₂ : Surjective f₂) (hg₁ : Injective g₁)
-    (hg₂ : Surjective g₂) (h₁ : g₁ ∘L i₁ = i₂ ∘L f₁) (h₂ : g₂ ∘L i₂ = i₃ ∘L f₂) :
+`ℂ` the middle map is then Fredholm by `IsFredholm.isFredholm₂_of_exact`. -/
+theorem IsFredholm.index_eq_add_of_exact (hi₁ : i₁.IsFredholm) (hi₃ : i₃.IsFredholm)
+    (hf : Exact f₁ f₂) (hg : Exact g₁ g₂) (hf₁ : Injective f₁) (hf₂ : Surjective f₂)
+    (hg₁ : Injective g₁) (hg₂ : Surjective g₂)
+    (h₁ : g₁ ∘L i₁ = i₂ ∘L f₁) (h₂ : g₂ ∘L i₂ = i₃ ∘L f₂) :
     i₂.index = i₁.index + i₃.index := by
   have := hi₁.finite_ker
   have := hi₁.finite_coker

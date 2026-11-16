@@ -8,6 +8,9 @@ module
 public import Mathlib.Algebra.Module.LinearMap.Index
 public import Mathlib.Algebra.Module.SnakeLemma
 public import TauCeti.LinearAlgebra.Exact
+public import TauCeti.LinearAlgebra.LinearMap.Ker
+public import TauCeti.LinearAlgebra.LinearMap.Range
+public import TauCeti.LinearAlgebra.Quotient.Basic
 
 import Mathlib.Algebra.Exact.Sequence
 
@@ -28,11 +31,12 @@ six-term exact sequence
 0 → ker i₁ → ker i₂ → ker i₃ → coker i₁ → coker i₂ → coker i₃ → 0.
 ```
 Its outer maps are the restrictions of `f₁, f₂` to the kernels and the maps `g₁, g₂` induce on
-the cokernels; the connecting map is Mathlib's `SnakeLemma.δ'`. This file records the exactness of
-the kernel row and of the cokernel row, and derives the two-out-of-three property for vertical
-maps with finite-dimensional kernel and cokernel together with the additivity of the index,
-`index i₂ = index i₁ + index i₃`. These are the algebraic inputs for the corresponding statements
-about Fredholm operators.
+the cokernels; the connecting map `Function.Exact.snakeδ` is Mathlib's `SnakeLemma.δ'` applied to
+the kernel inclusion of `i₃` and the cokernel projection of `i₁`. This file records the exactness
+of the kernel row, of the cokernel row and at both ends of the connecting map, and derives the
+two-out-of-three property for vertical maps with finite-dimensional kernel and cokernel together
+with the additivity of the index, `index i₂ = index i₁ + index i₃`. These are the algebraic
+inputs for the corresponding statements about Fredholm operators.
 
 The sequence is built from Mathlib's module form of the snake lemma rather than from the
 categorical `CategoryTheory.ShortComplex.SnakeInput`, so that the six modules may live in
@@ -42,6 +46,9 @@ different universes.
 
 * `Function.Exact.restrict_ker`: the kernel row `ker i₁ → ker i₂ → ker i₃` is exact.
 * `Function.Exact.mapQ_range`: the cokernel row `coker i₁ → coker i₂ → coker i₃` is exact.
+* `Function.Exact.snakeδ`: the connecting map `ker i₃ → coker i₁`, with exactness
+  `Function.Exact.restrict_ker_snakeδ` at `ker i₃` and `Function.Exact.snakeδ_mapQ_range` at
+  `coker i₁`.
 * `LinearMap.finiteDimensional_ker₂_of_finiteDimensional_ker₁₃` and
   `LinearMap.finiteDimensional_coker₂_of_finiteDimensional_coker₁₃`: finiteness in the middle.
 * `LinearMap.finiteDimensional_ker₃_of_finiteDimensional_ker₂_coker₁` and
@@ -58,34 +65,7 @@ different universes.
 
 public section
 
-open Function Module Submodule
-
-namespace LinearMap
-
-section Square
-
-variable {R M M' N N' : Type*} [Ring R] [AddCommGroup M] [Module R M] [AddCommGroup M']
-  [Module R M'] [AddCommGroup N] [Module R N] [AddCommGroup N'] [Module R N']
-  {f : M →ₗ[R] M'} {g : N →ₗ[R] N'} {i : M →ₗ[R] N} {i' : M' →ₗ[R] N'}
-
-/-- In a commutative square `g ∘ i = i' ∘ f`, the map `f` sends the kernel of `i` into the kernel
-of `i'`. -/
-theorem apply_mem_ker_of_comp_eq (h : g ∘ₗ i = i' ∘ₗ f) : ∀ x ∈ ker i, f x ∈ ker i' := by
-  intro x hx
-  rw [mem_ker, ← LinearMap.comp_apply, ← h, LinearMap.comp_apply, mem_ker.1 hx, map_zero]
-
-/-- In a commutative square `g ∘ i = i' ∘ f`, the map `g` sends the range of `i` into the range
-of `i'`. -/
-theorem range_le_comap_range_of_comp_eq (h : g ∘ₗ i = i' ∘ₗ f) :
-    range i ≤ (range i').comap g := by
-  rintro _ ⟨x, rfl⟩
-  exact ⟨f x, (LinearMap.congr_fun h x).symm⟩
-
-end Square
-
-end LinearMap
-
-open LinearMap
+open Function Module Submodule LinearMap
 
 variable {R M₁ M₂ M₃ N₁ N₂ N₃ : Type*}
   [AddCommGroup M₁] [AddCommGroup M₂] [AddCommGroup M₃]
@@ -103,8 +83,8 @@ injective `g₁`, the restrictions of `f₁` and `f₂` to the kernels of the ve
 exact sequence `ker i₁ → ker i₂ → ker i₃`. -/
 theorem Function.Exact.restrict_ker (hf : Exact f₁ f₂) (hg₁ : Injective g₁)
     (h₁ : g₁ ∘ₗ i₁ = i₂ ∘ₗ f₁) (h₂ : g₂ ∘ₗ i₂ = i₃ ∘ₗ f₂) :
-    Exact (f₁.restrict (apply_mem_ker_of_comp_eq h₁))
-      (f₂.restrict (apply_mem_ker_of_comp_eq h₂)) := by
+    Exact (f₁.restrict (fun _ ↦ map_mem_ker_of_comp_eq f₁ h₁))
+      (f₂.restrict (fun _ ↦ map_mem_ker_of_comp_eq f₂ h₂)) := by
   rintro ⟨y, hy⟩
   constructor
   · intro h0
@@ -130,6 +110,60 @@ theorem Function.Exact.mapQ_range (hg : Exact g₁ g₂) (hf₂ : Surjective f�
   exact ⟨i₂ w, ⟨w, rfl⟩, LinearMap.congr_fun h₂ w⟩
 
 end Ring
+
+section CommRing
+
+variable [CommRing R] [Module R M₁] [Module R M₂] [Module R M₃] [Module R N₁] [Module R N₂]
+  [Module R N₃]
+  {f₁ : M₁ →ₗ[R] M₂} {f₂ : M₂ →ₗ[R] M₃} {g₁ : N₁ →ₗ[R] N₂} {g₂ : N₂ →ₗ[R] N₃}
+  {i₁ : M₁ →ₗ[R] N₁} {i₂ : M₂ →ₗ[R] N₂} {i₃ : M₃ →ₗ[R] N₃}
+
+/-- The connecting map `ker i₃ → coker i₁` of the snake lemma, for a commutative diagram with
+exact rows, `f₂` surjective and `g₁` injective. It is Mathlib's `SnakeLemma.δ'` for the kernel
+inclusion of `i₃` and the cokernel projection of `i₁`. -/
+noncomputable def Function.Exact.snakeδ (hf : Exact f₁ f₂) (hg : Exact g₁ g₂)
+    (hf₂ : Surjective f₂) (hg₁ : Injective g₁)
+    (h₁ : g₁ ∘ₗ i₁ = i₂ ∘ₗ f₁) (h₂ : g₂ ∘ₗ i₂ = i₃ ∘ₗ f₂) : ker i₃ →ₗ[R] N₁ ⧸ range i₁ :=
+  SnakeLemma.δ' i₁ i₂ i₃ f₁ f₂ hf g₁ g₂ hg h₁ h₂ (ker i₃).subtype (exact_subtype_ker_map i₃)
+    (range i₁).mkQ (exact_map_mkQ_range i₁) hf₂ hg₁
+
+/-- The connecting map `Function.Exact.snakeδ` is Mathlib's `SnakeLemma.δ'`. -/
+theorem Function.Exact.snakeδ_eq_δ' (hf : Exact f₁ f₂) (hg : Exact g₁ g₂)
+    (hf₂ : Surjective f₂) (hg₁ : Injective g₁)
+    (h₁ : g₁ ∘ₗ i₁ = i₂ ∘ₗ f₁) (h₂ : g₂ ∘ₗ i₂ = i₃ ∘ₗ f₂) :
+    hf.snakeδ hg hf₂ hg₁ h₁ h₂ = SnakeLemma.δ' i₁ i₂ i₃ f₁ f₂ hf g₁ g₂ hg h₁ h₂ (ker i₃).subtype
+      (exact_subtype_ker_map i₃) (range i₁).mkQ (exact_map_mkQ_range i₁) hf₂ hg₁ :=
+  (rfl)
+
+/-- The connecting map sends `x ∈ ker i₃` to the class of `z`, where `f₂ y = x` and
+`g₁ z = i₂ y`. -/
+theorem Function.Exact.snakeδ_apply (hf : Exact f₁ f₂) (hg : Exact g₁ g₂)
+    (hf₂ : Surjective f₂) (hg₁ : Injective g₁)
+    (h₁ : g₁ ∘ₗ i₁ = i₂ ∘ₗ f₁) (h₂ : g₂ ∘ₗ i₂ = i₃ ∘ₗ f₂) (x : ker i₃) (y : M₂)
+    (hy : f₂ y = x) (z : N₁) (hz : g₁ z = i₂ y) :
+    hf.snakeδ hg hf₂ hg₁ h₁ h₂ x = Submodule.Quotient.mk z :=
+  SnakeLemma.δ'_eq i₁ i₂ i₃ f₁ f₂ hf g₁ g₂ hg h₁ h₂ _ _ _ _ hf₂ hg₁ x y hy z hz
+
+/-- **Exactness at `ker i₃`.** The snake sequence `ker i₂ → ker i₃ → coker i₁` is exact. -/
+theorem Function.Exact.restrict_ker_snakeδ (hf : Exact f₁ f₂) (hg : Exact g₁ g₂)
+    (hf₂ : Surjective f₂) (hg₁ : Injective g₁)
+    (h₁ : g₁ ∘ₗ i₁ = i₂ ∘ₗ f₁) (h₂ : g₂ ∘ₗ i₂ = i₃ ∘ₗ f₂) :
+    Exact (f₂.restrict fun _ ↦ map_mem_ker_of_comp_eq f₂ h₂) (hf.snakeδ hg hf₂ hg₁ h₁ h₂) :=
+  SnakeLemma.exact_δ'_right i₁ i₂ i₃ f₁ f₂ hf g₁ g₂ hg h₁ h₂ (ker i₂).subtype
+    (exact_subtype_ker_map i₂) (ker i₃).subtype (exact_subtype_ker_map i₃) (range i₁).mkQ
+    (exact_map_mkQ_range i₁) hf₂ hg₁ _ (by ext; simp) (ker i₃).injective_subtype
+
+/-- **Exactness at `coker i₁`.** The snake sequence `ker i₃ → coker i₁ → coker i₂` is exact. -/
+theorem Function.Exact.snakeδ_mapQ_range (hf : Exact f₁ f₂) (hg : Exact g₁ g₂)
+    (hf₂ : Surjective f₂) (hg₁ : Injective g₁)
+    (h₁ : g₁ ∘ₗ i₁ = i₂ ∘ₗ f₁) (h₂ : g₂ ∘ₗ i₂ = i₃ ∘ₗ f₂) :
+    Exact (hf.snakeδ hg hf₂ hg₁ h₁ h₂)
+      ((range i₁).mapQ (range i₂) g₁ (range_le_comap_range_of_comp_eq h₁)) :=
+  SnakeLemma.exact_δ'_left i₁ i₂ i₃ f₁ f₂ hf g₁ g₂ hg h₁ h₂ (ker i₃).subtype
+    (exact_subtype_ker_map i₃) (range i₁).mkQ (exact_map_mkQ_range i₁) (range i₂).mkQ
+    (exact_map_mkQ_range i₂) hf₂ hg₁ _ (mapQ_mkQ ..) (range i₁).mkQ_surjective
+
+end CommRing
 
 namespace LinearMap
 
@@ -162,17 +196,14 @@ of `i₂` forces a finite-dimensional kernel of `i₁`. -/
 theorem finiteDimensional_ker₁_of_finiteDimensional_ker₂ [FiniteDimensional k (ker i₂)]
     (hf₁ : Injective f₁) (h₁ : g₁ ∘ₗ i₁ = i₂ ∘ₗ f₁) :
     FiniteDimensional k (ker i₁) :=
-  .of_injective (f₁.restrict (apply_mem_ker_of_comp_eq h₁))
-    fun _ _ hxy ↦ Subtype.ext (hf₁ (congrArg Subtype.val hxy))
+  .of_injective _ (injective_restrict hf₁ fun _ ↦ map_mem_ker_of_comp_eq f₁ h₁)
 
 /-- In a commutative square `g₂ ∘ i₂ = i₃ ∘ f₂` with `g₂` surjective, a finite-dimensional
 cokernel of `i₂` forces a finite-dimensional cokernel of `i₃`. -/
 theorem finiteDimensional_coker₃_of_finiteDimensional_coker₂
     [FiniteDimensional k (N₂ ⧸ range i₂)] (hg₂ : Surjective g₂) (h₂ : g₂ ∘ₗ i₂ = i₃ ∘ₗ f₂) :
     FiniteDimensional k (N₃ ⧸ range i₃) :=
-  .of_surjective ((range i₂).mapQ (range i₃) g₂ (range_le_comap_range_of_comp_eq h₂))
-    (range_eq_top.1 (by
-      rw [range_mapQ, range_eq_top.2 hg₂, Submodule.map_top, range_mkQ]))
+  .of_surjective _ (mapQ_surjective _ _ g₂ (range_le_comap_range_of_comp_eq h₂) hg₂)
 
 end DivisionRing
 
@@ -183,22 +214,6 @@ variable {k : Type*} [Field k] [Module k M₁] [Module k M₂] [Module k M₃] [
   {f₁ : M₁ →ₗ[k] M₂} {f₂ : M₂ →ₗ[k] M₃} {g₁ : N₁ →ₗ[k] N₂} {g₂ : N₂ →ₗ[k] N₃}
   {i₁ : M₁ →ₗ[k] N₁} {i₂ : M₂ →ₗ[k] N₂} {i₃ : M₃ →ₗ[k] N₃}
 
-/-- The connecting map of the snake lemma, with exactness at both of its ends. -/
-private theorem exists_exact_restrict_ker_exact_mapQ_range (hf : Exact f₁ f₂) (hg : Exact g₁ g₂)
-    (hf₂ : Surjective f₂) (hg₁ : Injective g₁)
-    (h₁ : g₁ ∘ₗ i₁ = i₂ ∘ₗ f₁) (h₂ : g₂ ∘ₗ i₂ = i₃ ∘ₗ f₂) :
-    ∃ δ : ker i₃ →ₗ[k] N₁ ⧸ range i₁,
-      Exact (f₂.restrict (apply_mem_ker_of_comp_eq h₂)) δ ∧
-        Exact δ ((range i₁).mapQ (range i₂) g₁ (range_le_comap_range_of_comp_eq h₁)) :=
-  ⟨SnakeLemma.δ' i₁ i₂ i₃ f₁ f₂ hf g₁ g₂ hg h₁ h₂ (ker i₃).subtype (exact_subtype_ker_map i₃)
-      (range i₁).mkQ (exact_map_mkQ_range i₁) hf₂ hg₁,
-    SnakeLemma.exact_δ'_right i₁ i₂ i₃ f₁ f₂ hf g₁ g₂ hg h₁ h₂ (ker i₂).subtype
-      (exact_subtype_ker_map i₂) (ker i₃).subtype (exact_subtype_ker_map i₃) (range i₁).mkQ
-      (exact_map_mkQ_range i₁) hf₂ hg₁ _ (by ext; simp) (ker i₃).injective_subtype,
-    SnakeLemma.exact_δ'_left i₁ i₂ i₃ f₁ f₂ hf g₁ g₂ hg h₁ h₂ (ker i₃).subtype
-      (exact_subtype_ker_map i₃) (range i₁).mkQ (exact_map_mkQ_range i₁) (range i₂).mkQ
-      (exact_map_mkQ_range i₂) hf₂ hg₁ _ (mapQ_mkQ ..) (range i₁).mkQ_surjective⟩
-
 /-- In a commutative diagram with exact rows, `f₂` surjective and `g₁` injective, if the kernel
 of `i₂` and the cokernel of `i₁` are finite dimensional, so is the kernel of `i₃`: the snake
 sequence `ker i₂ → ker i₃ → coker i₁` is exact. -/
@@ -207,8 +222,7 @@ theorem finiteDimensional_ker₃_of_finiteDimensional_ker₂_coker₁ [FiniteDim
     (hf₂ : Surjective f₂) (hg₁ : Injective g₁)
     (h₁ : g₁ ∘ₗ i₁ = i₂ ∘ₗ f₁) (h₂ : g₂ ∘ₗ i₂ = i₃ ∘ₗ f₂) :
     FiniteDimensional k (ker i₃) :=
-  have ⟨_, hδ, _⟩ := exists_exact_restrict_ker_exact_mapQ_range hf hg hf₂ hg₁ h₁ h₂
-  TauCeti.finiteDimensional_of_exact hδ
+  TauCeti.finiteDimensional_of_exact (hf.restrict_ker_snakeδ hg hf₂ hg₁ h₁ h₂)
 
 /-- In a commutative diagram with exact rows, `f₂` surjective and `g₁` injective, if the kernel
 of `i₃` and the cokernel of `i₂` are finite dimensional, so is the cokernel of `i₁`: the snake
@@ -218,8 +232,7 @@ theorem finiteDimensional_coker₁_of_finiteDimensional_ker₃_coker₂ [FiniteD
     (hf₂ : Surjective f₂) (hg₁ : Injective g₁)
     (h₁ : g₁ ∘ₗ i₁ = i₂ ∘ₗ f₁) (h₂ : g₂ ∘ₗ i₂ = i₃ ∘ₗ f₂) :
     FiniteDimensional k (N₁ ⧸ range i₁) :=
-  have ⟨_, _, hδ⟩ := exists_exact_restrict_ker_exact_mapQ_range hf hg hf₂ hg₁ h₁ h₂
-  TauCeti.finiteDimensional_of_exact hδ
+  TauCeti.finiteDimensional_of_exact (hf.snakeδ_mapQ_range hg hf₂ hg₁ h₁ h₂)
 
 /-- **Additivity of the index along a map of short exact sequences.** For a commutative diagram
 whose rows `0 → M₁ → M₂ → M₃ → 0` and `0 → N₁ → N₂ → N₃ → 0` are short exact, if the outer
@@ -236,14 +249,10 @@ theorem index_eq_add_of_exact [FiniteDimensional k (ker i₁)] [FiniteDimensiona
   -- `0 → ker i₁ → ker i₂ → ker i₃ → coker i₁ → coker i₂ → coker i₃ → 0`
   have := finiteDimensional_ker₂_of_finiteDimensional_ker₁₃ hf hg₁ h₁ h₂
   have := finiteDimensional_coker₂_of_finiteDimensional_coker₁₃ hg hf₂ h₁ h₂
-  obtain ⟨δ, hδ₁, hδ₂⟩ := exists_exact_restrict_ker_exact_mapQ_range hf hg hf₂ hg₁ h₁ h₂
-  have := Module.sum_neg_one_pow_finrank_eq_zero_of_exact_six
-    (f₁.restrict (apply_mem_ker_of_comp_eq h₁)) (f₂.restrict (apply_mem_ker_of_comp_eq h₂))
-    δ ((range i₁).mapQ (range i₂) g₁ (range_le_comap_range_of_comp_eq h₁))
-    ((range i₂).mapQ (range i₃) g₂ (range_le_comap_range_of_comp_eq h₂))
-    (fun _ _ hxy ↦ Subtype.ext (hf₁ (congrArg Subtype.val hxy))) (hf.restrict_ker hg₁ h₁ h₂) hδ₁
-    hδ₂ (hg.mapQ_range hf₂ h₁ h₂) (range_eq_top.1 (by
-      rw [range_mapQ, range_eq_top.2 hg₂, Submodule.map_top, range_mkQ]))
+  have := Module.sum_neg_one_pow_finrank_eq_zero_of_exact_six _ _ _ _ _
+    (injective_restrict hf₁ fun _ ↦ map_mem_ker_of_comp_eq f₁ h₁) (hf.restrict_ker hg₁ h₁ h₂)
+    (hf.restrict_ker_snakeδ hg hf₂ hg₁ h₁ h₂) (hf.snakeδ_mapQ_range hg hf₂ hg₁ h₁ h₂)
+    (hg.mapQ_range hf₂ h₁ h₂) (mapQ_surjective _ _ g₂ (range_le_comap_range_of_comp_eq h₂) hg₂)
   simp only [index_eq_finrank_sub]
   linarith
 
