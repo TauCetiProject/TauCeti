@@ -54,7 +54,8 @@ of `O`, `Res(F, ν_{k,n₀})` grows by an associate of `p ^ deg F` at every step
 
 ## Main results
 
-* `TauCeti.Iwasawa.growthTransition_constantCoeff`: for `0 < n₀`, the constant coefficient of
+* `TauCeti.Iwasawa.coeff_zero_growthTransitionPoly`,
+  `TauCeti.Iwasawa.growthTransition_constantCoeff`: for `0 < n₀`, the constant coefficient of
   `ν_{n,n₀}` is `p ^ (n + 1 - n₀)`.
 * `TauCeti.Iwasawa.growthTransitionPoly_zero_left`, `TauCeti.Iwasawa.growthTransition_zero_left`:
   `ν_{n,0} = (1 + X) ^ p ^ n - 1`.
@@ -90,10 +91,9 @@ def growthTransitionPoly (p : ℕ) (O : Type*) [CommRing O] (n₀ n : ℕ) : O[X
     if j = 0 then Polynomial.X else ∑ i ∈ Finset.range p, (1 + Polynomial.X) ^ (i * p ^ (j - 1))
 
 /-- The cyclotomic transition element `ν_{n,n₀} = ω_n / ω_{n₀ - 1} = ∏_{n₀ ≤ j ≤ n} ξ_j` in
-`O⟦X⟧`, written without division (`ω_{-1} = 1`, so `n₀ = 0` gives `ω_n`). -/
+`O⟦X⟧`, defined by coercing `growthTransitionPoly p O n₀ n`. -/
 def growthTransition (p : ℕ) (O : Type*) [CommRing O] (n₀ n : ℕ) : O⟦X⟧ :=
-  ∏ j ∈ Finset.Ico n₀ (n + 1),
-    if j = 0 then X else ∑ i ∈ Finset.range p, (1 + X) ^ (i * p ^ (j - 1))
+  growthTransitionPoly p O n₀ n
 
 /-- Unfolding `growthTransitionPoly`. -/
 theorem growthTransitionPoly_def (p : ℕ) (O : Type*) [CommRing O] (n₀ n : ℕ) :
@@ -101,20 +101,41 @@ theorem growthTransitionPoly_def (p : ℕ) (O : Type*) [CommRing O] (n₀ n : �
       ∏ j ∈ Finset.Ico n₀ (n + 1), if j = 0 then Polynomial.X
         else ∑ i ∈ Finset.range p, (1 + Polynomial.X) ^ (i * p ^ (j - 1)) := (rfl)
 
-/-- Unfolding `growthTransition`. -/
-theorem growthTransition_def (p : ℕ) (O : Type*) [CommRing O] (n₀ n : ℕ) :
-    growthTransition p O n₀ n =
-      ∏ j ∈ Finset.Ico n₀ (n + 1),
-        if j = 0 then X else ∑ i ∈ Finset.range p, (1 + X) ^ (i * p ^ (j - 1)) := (rfl)
-
 /-- Coercing `growthTransitionPoly` from `O[X]` to `O⟦X⟧` gives `growthTransition`. -/
 @[simp]
 theorem coe_growthTransitionPoly (p : ℕ) (O : Type*) [CommRing O] (n₀ n : ℕ) :
-    ((growthTransitionPoly p O n₀ n : O[X]) : O⟦X⟧) = growthTransition p O n₀ n := by
-  rw [growthTransitionPoly_def, growthTransition_def, ← Polynomial.coeToPowerSeries.ringHom_apply,
-    map_prod]
+    ((growthTransitionPoly p O n₀ n : O[X]) : O⟦X⟧) = growthTransition p O n₀ n := (rfl)
+
+/-- Unfolding `growthTransition` as a product in `O⟦X⟧`. -/
+theorem growthTransition_def (p : ℕ) (O : Type*) [CommRing O] (n₀ n : ℕ) :
+    growthTransition p O n₀ n =
+      ∏ j ∈ Finset.Ico n₀ (n + 1),
+        if j = 0 then X else ∑ i ∈ Finset.range p, (1 + X) ^ (i * p ^ (j - 1)) := by
+  rw [← coe_growthTransitionPoly, growthTransitionPoly_def,
+    ← Polynomial.coeToPowerSeries.ringHom_apply, map_prod]
   refine Finset.prod_congr rfl fun j _ ↦ ?_
   split_ifs <;> simp [Polynomial.coeToPowerSeries.ringHom_apply]
+
+/-- Mapping `growthTransitionPoly` along a ring homomorphism changes the coefficient ring. -/
+@[simp]
+theorem map_growthTransitionPoly {O O' : Type*} [CommRing O] [CommRing O'] (f : O →+* O')
+    (p n₀ n : ℕ) :
+    (growthTransitionPoly p O n₀ n).map f = growthTransitionPoly p O' n₀ n := by
+  rw [← Polynomial.coe_mapRingHom, growthTransitionPoly_def, growthTransitionPoly_def, map_prod]
+  refine Finset.prod_congr rfl fun j _ ↦ ?_
+  split_ifs
+  · simp
+  · rw [map_sum]
+    simp
+
+/-- Mapping `growthTransition` along a ring homomorphism changes the coefficient ring. -/
+@[simp]
+theorem map_growthTransition {O O' : Type*} [CommRing O] [CommRing O'] (f : O →+* O')
+    (p n₀ n : ℕ) :
+    PowerSeries.map f (growthTransition p O n₀ n) = growthTransition p O' n₀ n := by
+  ext k
+  rw [coeff_map, ← coe_growthTransitionPoly, ← coe_growthTransitionPoly, Polynomial.coeff_coe,
+    Polynomial.coeff_coe, ← map_growthTransitionPoly f, Polynomial.coeff_map]
 
 /-- When `n < n₀`, the transition product is empty and equals `1`. -/
 @[simp]
@@ -136,7 +157,7 @@ theorem growthTransitionPoly_zero_zero (p : ℕ) (O : Type*) [CommRing O] :
 /-- At level `(0, 0)`, the transition series is `X`. -/
 theorem growthTransition_zero_zero (p : ℕ) (O : Type*) [CommRing O] :
     growthTransition p O 0 0 = X := by
-  simp [growthTransition_def]
+  rw [← coe_growthTransitionPoly, growthTransitionPoly_zero_zero, Polynomial.coe_X]
 
 /-- At diagonal level `(n, n)` with `n > 0`, the transition polynomial is the single factor
 `ξ_n`. -/
@@ -144,11 +165,6 @@ theorem growthTransitionPoly_self_of_pos (p : ℕ) (O : Type*) [CommRing O] {n :
     growthTransitionPoly p O n n =
       ∑ i ∈ Finset.range p, (1 + Polynomial.X) ^ (i * p ^ (n - 1)) := by
   rw [growthTransitionPoly_def, Nat.Ico_succ_singleton, Finset.prod_singleton, ite_eq_right hn.ne']
-
-/-- At diagonal level `(n, n)` with `n > 0`, the transition series is the single factor `ξ_n`. -/
-theorem growthTransition_self_of_pos (p : ℕ) (O : Type*) [CommRing O] {n : ℕ} (hn : 0 < n) :
-    growthTransition p O n n = ∑ i ∈ Finset.range p, (1 + X) ^ (i * p ^ (n - 1)) := by
-  rw [growthTransition_def, Nat.Ico_succ_singleton, Finset.prod_singleton, ite_eq_right hn.ne']
 
 /-- Consecutive transition polynomials multiply: `ν_{m,n₀} * ν_{n,m+1} = ν_{n,n₀}`. -/
 theorem growthTransitionPoly_mul_of_le (p : ℕ) (O : Type*) [CommRing O] {n₀ m n : ℕ}
@@ -160,11 +176,12 @@ theorem growthTransitionPoly_mul_of_le (p : ℕ) (O : Type*) [CommRing O] {n₀ 
 /-- Consecutive transition series multiply: `ν_{m,n₀} * ν_{n,m+1} = ν_{n,n₀}`. -/
 theorem growthTransition_mul_of_le (p : ℕ) (O : Type*) [CommRing O] {n₀ m n : ℕ}
     (h₁ : n₀ ≤ m + 1) (h₂ : m ≤ n) :
-    growthTransition p O n₀ m * growthTransition p O (m + 1) n = growthTransition p O n₀ n :=
-  Finset.prod_Ico_consecutive _ h₁ (Nat.succ_le_succ h₂)
+    growthTransition p O n₀ m * growthTransition p O (m + 1) n = growthTransition p O n₀ n := by
+  rw [← coe_growthTransitionPoly, ← coe_growthTransitionPoly, ← Polynomial.coe_mul,
+    growthTransitionPoly_mul_of_le p O h₁ h₂, coe_growthTransitionPoly]
 
 /-- For `m ≤ n`, `ν_{m,n₀}` divides `ν_{n,n₀}` in `O[X]`. -/
-theorem growthTransitionPoly_dvd_of_le (p : ℕ) (O : Type*) [CommRing O] {n₀ m n : ℕ}
+theorem growthTransitionPoly_dvd_of_le (p : ℕ) (O : Type*) [CommRing O] (n₀ : ℕ) {m n : ℕ}
     (hmn : m ≤ n) : growthTransitionPoly p O n₀ m ∣ growthTransitionPoly p O n₀ n := by
   by_cases hm : n₀ ≤ m + 1
   · exact ⟨growthTransitionPoly p O (m + 1) n,
@@ -173,12 +190,9 @@ theorem growthTransitionPoly_dvd_of_le (p : ℕ) (O : Type*) [CommRing O] {n₀ 
     exact one_dvd _
 
 /-- For `m ≤ n`, `ν_{m,n₀}` divides `ν_{n,n₀}` in `O⟦X⟧`. -/
-theorem growthTransition_dvd_of_le (p : ℕ) (O : Type*) [CommRing O] {n₀ m n : ℕ}
-    (hmn : m ≤ n) : growthTransition p O n₀ m ∣ growthTransition p O n₀ n := by
-  by_cases hm : n₀ ≤ m + 1
-  · exact ⟨growthTransition p O (m + 1) n, (growthTransition_mul_of_le p O hm hmn).symm⟩
-  · rw [growthTransition_of_lt p O (by omega)]
-    exact one_dvd _
+theorem growthTransition_dvd_of_le (p : ℕ) (O : Type*) [CommRing O] (n₀ : ℕ) {m n : ℕ}
+    (hmn : m ≤ n) : growthTransition p O n₀ m ∣ growthTransition p O n₀ n :=
+  _root_.map_dvd Polynomial.coeToPowerSeries.ringHom (growthTransitionPoly_dvd_of_le p O n₀ hmn)
 
 /-- For `0 < n₀`, the product of the diagonal factors `ξ_j = ν_{j,j}` for `j < n₀` is
 `ν_{n₀ - 1, 0}`. -/
@@ -245,19 +259,29 @@ theorem growthTransition_zero_left (p : ℕ) (O : Type*) [CommRing O] (n : ℕ) 
   rw [← coe_growthTransitionPoly, growthTransitionPoly_zero_left]
   simp
 
+/-- For `0 < n₀`, the constant term of `ν_{n,n₀}` in `O[X]` is `p ^ (n + 1 - n₀)`. -/
+@[simp]
+theorem coeff_zero_growthTransitionPoly (p : ℕ) (O : Type*) [CommRing O] (n₀ n : ℕ)
+    (h₀ : 0 < n₀) :
+    (growthTransitionPoly p O n₀ n).coeff 0 = (p : O) ^ (n + 1 - n₀) := by
+  rw [Polynomial.coeff_zero_eq_eval_zero, ← Polynomial.coe_evalRingHom, growthTransitionPoly_def,
+    map_prod]
+  have hterm (j : ℕ) (hj : j ∈ Finset.Ico n₀ (n + 1)) :
+      Polynomial.evalRingHom 0 (if j = 0 then (Polynomial.X : O[X])
+        else ∑ i ∈ Finset.range p, (1 + Polynomial.X : O[X]) ^ (i * p ^ (j - 1))) =
+        (p : O) := by
+    rw [ite_eq_right (by have := (Finset.mem_Ico.mp hj).1; omega), map_sum]
+    simp
+  rw [Finset.prod_congr rfl hterm, Finset.prod_const, Nat.card_Ico]
+
 /-- On `O⟦X⟧ ⧸ (X)`, the transition `ν_{n,n₀}` acts by `p ^ (n + 1 - n₀)` when `0 < n₀`,
 whereas `ν_{n,0}` has constant coefficient `0`. -/
+@[simp]
 theorem growthTransition_constantCoeff (p : ℕ) (O : Type*) [CommRing O] (n₀ n : ℕ)
     (h₀ : 0 < n₀) :
     constantCoeff (growthTransition p O n₀ n) = (p : O) ^ (n + 1 - n₀) := by
-  rw [growthTransition_def, map_prod]
-  have hterm (j : ℕ) (hj : j ∈ Finset.Ico n₀ (n + 1)) :
-      constantCoeff
-        (if j = 0 then X else ∑ i ∈ Finset.range p, (1 + X : O⟦X⟧) ^ (i * p ^ (j - 1))) =
-        (p : O) := by
-    rw [ite_eq_right (by have := (Finset.mem_Ico.mp hj).1; omega)]
-    simp
-  rw [Finset.prod_congr rfl hterm, Finset.prod_const, Nat.card_Ico]
+  rw [← coe_growthTransitionPoly, Polynomial.constantCoeff_coe,
+    coeff_zero_growthTransitionPoly p O n₀ n h₀]
 
 /-- When `p ≠ 0`, every transition polynomial `ν_{n,n₀}` is monic. -/
 theorem monic_growthTransitionPoly (p : ℕ) [NeZero p] (O : Type*) [CommRing O] (n₀ n : ℕ) :
@@ -299,13 +323,6 @@ theorem natDegree_growthTransitionPoly (p : ℕ) [NeZero p] (O : Type*) [CommRin
         TauCeti.Polynomial.natDegree_one_add_X_pow_sub_one] at hdeg
       omega
 
-/-- Over a nontrivial ring and for `p ≠ 0`, `deg ν_{n,n₀} = p ^ n - p ^ (n₀ - 1)` when
-`0 < n₀`. -/
-theorem natDegree_growthTransitionPoly_of_pos (p : ℕ) [NeZero p] (O : Type*) [CommRing O]
-    [Nontrivial O] {n₀ : ℕ} (h₀ : 0 < n₀) (n : ℕ) :
-    (growthTransitionPoly p O n₀ n).natDegree = p ^ n - p ^ (n₀ - 1) := by
-  rw [natDegree_growthTransitionPoly, ite_eq_right h₀.ne']
-
 end General
 
 section Prime
@@ -314,7 +331,7 @@ variable (p : ℕ) [Fact p.Prime] (O : Type*) [CommRing O]
 
 /-- When `p` is prime, the transition polynomial `ν_{n,n₀}` is the product of the shifted
 prime-power cyclotomic polynomials `Φ_{p ^ j}(X + 1)` for `n₀ ≤ j ≤ n`. -/
-theorem growthTransitionPoly_eq_prod_cyclotomic (n₀ n : ℕ) :
+theorem growthTransitionPoly_eq_prod_cyclotomic_comp_X_add_one (n₀ n : ℕ) :
     growthTransitionPoly p O n₀ n =
       ∏ j ∈ Finset.Ico n₀ (n + 1), (Polynomial.cyclotomic (p ^ j) O).comp (Polynomial.X + 1) := by
   rw [growthTransitionPoly_def]
@@ -324,16 +341,17 @@ theorem growthTransitionPoly_eq_prod_cyclotomic (n₀ n : ℕ) :
   · simp [Polynomial.cyclotomic_prime_pow_comp_X_add_one_eq_sum p j]
 
 /-- When `p` is prime, the diagonal transition polynomial `ν_{j,j}` is `Φ_{p ^ j}(X + 1)`. -/
-theorem growthTransitionPoly_self_eq_cyclotomic (j : ℕ) :
+theorem growthTransitionPoly_self_eq_cyclotomic_comp_X_add_one (j : ℕ) :
     growthTransitionPoly p O j j = (Polynomial.cyclotomic (p ^ j) O).comp (Polynomial.X + 1) := by
-  rw [growthTransitionPoly_eq_prod_cyclotomic, Nat.Ico_succ_singleton, Finset.prod_singleton]
+  rw [growthTransitionPoly_eq_prod_cyclotomic_comp_X_add_one, Nat.Ico_succ_singleton,
+    Finset.prod_singleton]
 
 /-- When `p` is prime and `(p : O) ∈ I`, every transition polynomial `ν_{n,n₀}` is distinguished
 at `I`. -/
 theorem isDistinguishedAt_growthTransitionPoly {p : ℕ} [Fact p.Prime] {O : Type*} [CommRing O]
     {I : Ideal O} (hp : (p : O) ∈ I) (n₀ n : ℕ) :
     (growthTransitionPoly p O n₀ n).IsDistinguishedAt I := by
-  rw [growthTransitionPoly_eq_prod_cyclotomic]
+  rw [growthTransitionPoly_eq_prod_cyclotomic_comp_X_add_one]
   exact Polynomial.isDistinguishedAt_prod fun j _ ↦
     Polynomial.cyclotomic_prime_pow_comp_X_add_one_isDistinguishedAt p hp j
 
@@ -352,7 +370,7 @@ theorem associated_resultant_growthTransitionPoly {p : ℕ} [Fact p.Prime] {O : 
   have hprod : ((growthTransitionPoly p O (m + 1) k : O[X]) : O⟦X⟧) =
       ∏ j ∈ Finset.Ico m k,
         (((Polynomial.cyclotomic (p ^ (j + 1)) O).comp (Polynomial.X + 1) : O[X]) : O⟦X⟧) := by
-    rw [growthTransitionPoly_eq_prod_cyclotomic, ← Finset.prod_Ico_add'
+    rw [growthTransitionPoly_eq_prod_cyclotomic_comp_X_add_one, ← Finset.prod_Ico_add'
       (fun j ↦ (Polynomial.cyclotomic (p ^ j) O).comp (Polynomial.X + 1)) m k 1,
       ← Polynomial.coeToPowerSeries.ringHom_apply, map_prod]
     simp only [Polynomial.coeToPowerSeries.ringHom_apply]

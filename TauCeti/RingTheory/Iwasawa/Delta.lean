@@ -5,20 +5,24 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.RingTheory.Iwasawa.PseudoIsomorphism
 public import TauCeti.RingTheory.Polynomial.Distinguished
 public import TauCeti.RingTheory.PowerSeries.Weierstrass.Charpoly
 public import Mathlib.Algebra.Module.Submodule.Pointwise
 public import Mathlib.RingTheory.PowerSeries.Ideal
 
-import TauCeti.LinearAlgebra.LinearMap.Cardinality
+import TauCeti.Algebra.Module.Submodule.Pointwise
+import TauCeti.GroupTheory.Index.Exact
 import TauCeti.RingTheory.PowerSeries.OneAddXPow
+import TauCeti.RingTheory.RegularLocalRing.PowerSeries
 
 /-!
 # The cyclotomic delta submodule
 
 For a module `M` over `O⟦X⟧`, its delta submodule is the increasing union of the kernels of
 `ωₙ = (1 + X) ^ (p ^ n) - 1`. Linear maps preserve this submodule, injective maps reflect it, and
-linear maps with finite kernel and cokernel preserve the finiteness of scalar multiples `a • M_δ`.
+linear maps with finite kernel and cokernel (in particular pseudo-isomorphisms when `O⟦X⟧` has
+Krull dimension `2`) preserve the finiteness of scalar multiples `a • M_δ`.
 On a vertical block `O⟦X⟧ ⧸ (ϖ ^ m)` over a local domain with prime `ϖ` and `p ≠ 0`, the delta
 submodule vanishes.
 
@@ -197,14 +201,12 @@ theorem finite_smul_deltaSubmodule_of_finite_ker {p : ℕ} {O M N : Type*} [Comm
     rcases hx with ⟨y, hy, rfl⟩
     exact ⟨f y, f.map_deltaSubmodule_le p ⟨y, hy, rfl⟩, (map_smul f a y).symm⟩
   let g := f.restrict hmap
-  have hgker : Finite (LinearMap.ker g) := by
+  have : Finite (LinearMap.ker g) := by
     refine Finite.of_injective (fun x : LinearMap.ker g ↦
       (⟨x.1.1, congr_arg Subtype.val x.2⟩ : LinearMap.ker f)) ?_
     intro x y hxy
     exact Subtype.ext (Subtype.ext (Subtype.mk.inj hxy))
-  refine Nat.finite_of_card_ne_zero ?_
-  rw [g.card_eq_card_range_mul_card_ker]
-  exact mul_ne_zero Nat.card_pos.ne' Nat.card_pos.ne'
+  exact (LinearMap.exact_subtype_ker_map g).finite
 
 /-- A surjective linear map with finite kernel preserves the finiteness of
 `a • deltaSubmodule p O _`. -/
@@ -262,55 +264,10 @@ private theorem finite_smul_deltaSubmodule_of_finite_quotient {p : ℕ} {O N : T
     [AddCommGroup N] [Module O⟦X⟧ N] (I : Submodule O⟦X⟧ N) (hcoker : Finite (N ⧸ I)) (a : O⟦X⟧)
     (hI : Finite ↥(a • deltaSubmodule p O I)) :
     Finite ↥(a • deltaSubmodule p O N) := by
-  let S : Submodule O⟦X⟧ N := a • deltaSubmodule p O N
-  let T : Submodule O⟦X⟧ N := (a • deltaSubmodule p O I).map I.subtype
-  have hT_eq : T = a • (I ⊓ deltaSubmodule p O N) := by
-    dsimp only [T]
-    rw [Submodule.map_pointwise_smul, Submodule.map_deltaSubmodule_subtype]
-  have hTS : T ≤ S := hT_eq ▸ smul_mono_right a inf_le_right
-  have hfin_sub : Finite ↥(T.comap S.subtype) := by
-    refine Finite.of_surjective
-      (fun y : ↥(a • deltaSubmodule p O I) ↦
-        (⟨⟨y.1.1, hTS ⟨y.1, y.2, rfl⟩⟩, ⟨y.1, y.2, rfl⟩⟩ : ↥(T.comap S.subtype))) ?_
-    rintro ⟨⟨z, hzS⟩, hzT⟩
-    rcases hzT with ⟨y, hy, hyz⟩
-    exact ⟨⟨y, hy⟩, Subtype.ext (Subtype.ext hyz)⟩
-  let D := deltaSubmodule p O N
-  let K := I.comap D.subtype
-  have hfin_DK : Finite (↥D ⧸ K) := by
-    let ι : ↥D ⧸ K →ₗ[O⟦X⟧] N ⧸ I :=
-      Submodule.liftQ K (I.mkQ ∘ₗ D.subtype) (by rw [LinearMap.ker_comp, Submodule.ker_mkQ])
-    refine Finite.of_injective ι fun q₁ q₂ hq ↦ ?_
-    obtain ⟨x₁, rfl⟩ := Submodule.mkQ_surjective _ q₁
-    obtain ⟨x₂, rfl⟩ := Submodule.mkQ_surjective _ q₂
-    rw [← sub_eq_zero, ← map_sub, ← map_sub] at hq
-    dsimp only [ι] at hq
-    rw [Submodule.mkQ_apply, Submodule.liftQ_apply, LinearMap.coe_comp, Function.comp_apply,
-      Submodule.mkQ_apply, Submodule.Quotient.mk_eq_zero] at hq
-    rw [← sub_eq_zero, ← map_sub, Submodule.mkQ_apply, Submodule.Quotient.mk_eq_zero]
-    exact hq
-  let π₀ : ↥D →ₗ[O⟦X⟧] ↥S ⧸ T.comap S.subtype :=
-    (T.comap S.subtype).mkQ ∘ₗ
-      { toFun y := ⟨a • y.1, Submodule.smul_mem_pointwise_smul y.1 a D y.2⟩
-        map_add' x y := Subtype.ext (smul_add a x.1 y.1)
-        map_smul' r x := Subtype.ext (smul_comm a r x.1) }
-  have hK_le : K ≤ LinearMap.ker π₀ := fun y hy ↦ by
-    rw [LinearMap.mem_ker, LinearMap.coe_comp, Function.comp_apply, Submodule.mkQ_apply,
-      Submodule.Quotient.mk_eq_zero, Submodule.mem_comap, hT_eq]
-    exact Submodule.smul_mem_pointwise_smul y.1 a _ ⟨hy, y.2⟩
-  let π : ↥D ⧸ K →ₗ[O⟦X⟧] ↥S ⧸ T.comap S.subtype := Submodule.liftQ K π₀ hK_le
-  have hπ_surj : Function.Surjective π := fun q ↦ by
-    obtain ⟨⟨s, hs⟩, rfl⟩ := Submodule.mkQ_surjective _ q
-    obtain ⟨y, hy, rfl⟩ := (Submodule.mem_smul_pointwise_iff_exists _ _ _).mp hs
-    exact ⟨Submodule.Quotient.mk ⟨y, hy⟩, rfl⟩
-  have hfin_quot : Finite (↥S ⧸ T.comap S.subtype) := Finite.of_surjective π hπ_surj
-  let g := (T.comap S.subtype).mkQ
-  have hgker : Finite (LinearMap.ker g) := by
-    rw [Submodule.ker_mkQ]
-    exact hfin_sub
-  refine Nat.finite_of_card_ne_zero ?_
-  rw [g.card_eq_card_range_mul_card_ker]
-  exact mul_ne_zero Nat.card_pos.ne' Nat.card_pos.ne'
+  have hmap : Finite ↥((a • deltaSubmodule p O I).map I.subtype) :=
+    Finite.of_equiv _ (Submodule.equivMapOfInjective I.subtype I.subtype_injective _).toEquiv
+  rw [Submodule.map_pointwise_smul, Submodule.map_deltaSubmodule_subtype] at hmap
+  exact Submodule.finite_pointwise_smul_of_finite_quotient hcoker hmap
 
 /-- A linear map with finite kernel and finite cokernel preserves and reflects the finiteness of
 `a • deltaSubmodule p O _`. -/
@@ -325,6 +282,16 @@ theorem finite_smul_deltaSubmodule_iff_of_finite_ker_of_finite_coker {p : ℕ} {
     exact hker
   exact finite_smul_deltaSubmodule_of_finite_quotient (LinearMap.range f) hcoker a
     (finite_smul_deltaSubmodule_of_surjective_of_finite_ker f.surjective_rangeRestrict hker' a hM)
+
+/-- Over a local Noetherian coefficient ring `O` with finite residue field such that `O⟦X⟧` has
+Krull dimension `2`, a pseudo-isomorphism preserves the finiteness of `a • deltaSubmodule p O _`. -/
+theorem IsPseudoIsomorphism.finite_smul_deltaSubmodule_iff {p : ℕ} {O M N : Type*} [CommRing O]
+    [IsLocalRing O] [IsNoetherianRing O] [Finite (IsLocalRing.ResidueField O)]
+    (hdim : ringKrullDim O⟦X⟧ = 2) [AddCommGroup M] [Module O⟦X⟧ M] [AddCommGroup N]
+    [Module O⟦X⟧ N] {f : M →ₗ[O⟦X⟧] N} (hf : IsPseudoIsomorphism f) (a : O⟦X⟧) :
+    Finite ↥(a • deltaSubmodule p O M) ↔ Finite ↥(a • deltaSubmodule p O N) := by
+  obtain ⟨hker, hcoker⟩ := (isPseudoIsomorphism_iff_finite hdim).mp hf
+  exact finite_smul_deltaSubmodule_iff_of_finite_ker_of_finite_coker hker hcoker a
 
 end Transport
 

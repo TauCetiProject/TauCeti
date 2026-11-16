@@ -21,6 +21,7 @@ import Mathlib.RingTheory.LocalRing.ResidueField.Ideal
 import Mathlib.RingTheory.Localization.Ideal
 import Mathlib.RingTheory.QuotSMulTop
 import Mathlib.RingTheory.Spectrum.Prime.Topology
+import TauCeti.RingTheory.LocalRing.ResidueField.Quotient
 
 /-!
 # General facts about the length of a module
@@ -385,6 +386,8 @@ section LocalRing
 
 open _root_.IsLocalRing
 
+section
+
 variable {A : Type*} [CommRing A] [IsLocalRing A]
 
 /-- The residue field of a local ring has length one over the ring. -/
@@ -406,18 +409,20 @@ theorem natCard_eq_natCard_residueField_pow_length {M : Type*} [AddCommGroup M] 
     rw [Module.length_eq_zero_iff.mpr inferInstance, ENat.toNat_zero, pow_zero, Nat.card_unique]
   | @of_simple_quotient M _ _ N hQ hN ih =>
     obtain ⟨m, hm, ⟨e⟩⟩ := isSimpleModule_iff_quot_maximal.mp hQ
-    rw [eq_maximalIdeal hm] at e
-    have hcardQ : Nat.card (M ⧸ N) = Nat.card (ResidueField A) := Nat.card_congr e.toEquiv
+    have hcardQ : Nat.card (M ⧸ N) = Nat.card (ResidueField A) :=
+      Nat.card_congr (e.trans (quotientEquivResidueField hm)).toEquiv
     have hlen : Module.length A M = Module.length A N + 1 := by
       rw [Module.length_eq_add_of_exact N.subtype N.mkQ N.injective_subtype N.mkQ_surjective
         (LinearMap.exact_subtype_mkQ N), Module.length_eq_one_iff.mpr hQ]
     rw [Submodule.card_eq_card_quotient_mul_card N, hcardQ, ih, hlen,
       ENat.toNat_add (Module.length_ne_top_iff.mpr hN) (by simp), ENat.toNat_one, pow_succ]
 
+end
+
 /-- Every finite module over a commutative local ring has cardinality equal to the
 `(Module.length A M).toNat`-th power of the residue cardinality. -/
-theorem natCard_eq_natCard_residueField_pow_length_of_finite (M : Type*) [AddCommGroup M]
-    [Module A M] [Finite M] :
+theorem natCard_eq_natCard_residueField_pow_length_of_finite (A M : Type*) [CommRing A]
+    [IsLocalRing A] [AddCommGroup M] [Module A M] [Finite M] :
     Nat.card M = Nat.card (ResidueField A) ^ (Module.length A M).toNat :=
   natCard_eq_natCard_residueField_pow_length
     (isFiniteLength_iff_isNoetherian_isArtinian.mpr ⟨inferInstance, isArtinian_of_finite⟩)

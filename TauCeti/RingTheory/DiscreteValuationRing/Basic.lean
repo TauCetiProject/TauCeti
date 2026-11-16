@@ -37,8 +37,8 @@ it sends `x` to a nonzero nonunit.
 * `TauCeti.IsDiscreteValuationRing.addVal_eq_one_iff_irreducible`: the uniformizers are the
   elements of additive valuation `1`.
 * `TauCeti.IsDiscreteValuationRing.span_singleton_eq_maximalIdeal_pow` and
-  `TauCeti.IsDiscreteValuationRing.mem_maximalIdeal_of_eq_unit_mul_pow`: writing `x = u * ϖ ^ e`
-  identifies `(x)` with `𝔪 ^ e`, and places `x` in `𝔪` when `0 < e`.
+  `TauCeti.IsDiscreteValuationRing.span_singleton_eq_maximalIdeal_pow_of_addVal_eq`: writing
+  `x = u * ϖ ^ e` or having `addVal S x = e` identifies `(x)` with `𝔪 ^ e`.
 * `TauCeti.IsDiscreteValuationRing.natCard_quotient_maximalIdeal_pow` and
   `TauCeti.IsDiscreteValuationRing.natCard_quotient_span_singleton`: the quotient by `𝔪 ^ n` has
   cardinality `Nat.card (ResidueField S) ^ n`, and for `x ≠ 0` the quotient by `(x)` has
@@ -195,13 +195,15 @@ theorem span_singleton_eq_maximalIdeal_pow {ϖ x : S} (hϖ : Irreducible ϖ) {u 
     Ideal.span {x} = maximalIdeal S ^ e := by
   rw [hx, Ideal.span_singleton_mul_left_unit hu, ← Ideal.span_singleton_pow, ← hϖ.maximalIdeal_eq]
 
-/-- An element `x = u * ϖ ^ e` with `0 < e` lies in the maximal ideal of a discrete valuation
-ring. -/
-theorem mem_maximalIdeal_of_eq_unit_mul_pow {ϖ x : S} (hϖ : Irreducible ϖ) {u : S} (hu : IsUnit u)
-    {e : ℕ} (he : 0 < e) (hx : x = u * ϖ ^ e) :
-    x ∈ maximalIdeal S :=
-  Ideal.pow_le_self he.ne' <|
-    span_singleton_eq_maximalIdeal_pow hϖ hu hx ▸ Ideal.mem_span_singleton_self x
+/-- An element of finite additive valuation `e` generates the ideal `𝔪 ^ e`. -/
+theorem span_singleton_eq_maximalIdeal_pow_of_addVal_eq {x : S} {e : ℕ}
+    (hx : _root_.IsDiscreteValuationRing.addVal S x = e) :
+    Ideal.span {x} = maximalIdeal S ^ e := by
+  have hx0 : x ≠ 0 := by rintro rfl; simp at hx
+  obtain ⟨ϖ, hϖ⟩ := _root_.IsDiscreteValuationRing.exists_irreducible S
+  obtain ⟨n, u, rfl⟩ := _root_.IsDiscreteValuationRing.eq_unit_mul_pow_irreducible hx0 hϖ
+  rw [_root_.IsDiscreteValuationRing.addVal_def' u hϖ n, Nat.cast_inj] at hx
+  exact hx ▸ span_singleton_eq_maximalIdeal_pow hϖ u.isUnit rfl
 
 /-- For a nonzero element `x` of a discrete valuation ring, the quotient `S ⧸ (x)` has cardinality
 `Nat.card (ResidueField S) ^ (addVal S x).toNat`. No finiteness assumption on the residue field is
@@ -209,10 +211,9 @@ needed. -/
 theorem natCard_quotient_span_singleton {x : S} (hx : x ≠ 0) :
     Nat.card (S ⧸ Ideal.span {x}) =
       Nat.card (ResidueField S) ^ (_root_.IsDiscreteValuationRing.addVal S x).toNat := by
-  obtain ⟨ϖ, hϖ⟩ := _root_.IsDiscreteValuationRing.exists_irreducible S
-  obtain ⟨n, u, rfl⟩ := _root_.IsDiscreteValuationRing.eq_unit_mul_pow_irreducible hx hϖ
-  rw [_root_.IsDiscreteValuationRing.addVal_def' u hϖ n, ENat.toNat_natCast,
-    span_singleton_eq_maximalIdeal_pow hϖ u.isUnit rfl, natCard_quotient_maximalIdeal_pow]
+  rw [span_singleton_eq_maximalIdeal_pow_of_addVal_eq
+      (ENat.natCast_toNat (_root_.IsDiscreteValuationRing.addVal_eq_top_iff.not.mpr hx)).symm,
+    natCard_quotient_maximalIdeal_pow]
 
 section Map
 

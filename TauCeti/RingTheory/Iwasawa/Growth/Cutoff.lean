@@ -10,14 +10,17 @@ public import TauCeti.RingTheory.Iwasawa.EulerQuotient
 public import TauCeti.RingTheory.Iwasawa.Growth.Transition
 
 import Mathlib.Algebra.CharP.Algebra
+import Mathlib.Algebra.Field.ZMod
 import Mathlib.Data.ZMod.Basic
 import Mathlib.RingTheory.PowerSeries.Inverse
-import TauCeti.RingTheory.DiscreteValuationRing.IntegrallyClosed
+import TauCeti.RingTheory.DiscreteValuationRing.Basic
+import TauCeti.RingTheory.Ideal.Quotient.Operations
 import TauCeti.RingTheory.Polynomial.Cyclotomic.Basic
 import TauCeti.RingTheory.Polynomial.Cyclotomic.PrimePow
 import TauCeti.RingTheory.Polynomial.Distinguished
 import TauCeti.RingTheory.Polynomial.Resultant.Basic
 import TauCeti.RingTheory.PowerSeries.Weierstrass.Norm
+import TauCeti.RingTheory.QuotSMulTop
 import TauCeti.RingTheory.RegularLocalRing.PowerSeries
 
 /-!
@@ -54,8 +57,6 @@ delta-submodule criterion fails: on `M = 𝔽_p⟦ϖ⟧⟦X⟧ ⧸ (X)`, `ω_0 =
 
 ## Main results
 
-* `TauCeti.Iwasawa.IsPseudoIsomorphism.finite_smul_deltaSubmodule_iff`: over `O⟦X⟧` of Krull
-  dimension `2`, a pseudo-isomorphism preserves the finiteness of `a • deltaSubmodule p O M`.
 * `TauCeti.Iwasawa.finite_quotSMulTop_growthTransition_iff_resultant_charPoly_ne_zero`: all
   `M ⧸ ν_{k,n₀} M` (`k ≥ n₀`) are finite iff `Res(F_M, ξ_j) ≠ 0` for all `j ≥ n₀`.
 * `TauCeti.Iwasawa.finite_prod_growthTransition_smul_deltaSubmodule_iff_resultant_charPoly_ne_zero`
@@ -86,65 +87,15 @@ theorem iSup_torsionBy_growthTransition_zero (p : ℕ) (O M : Type*) [CommRing O
     (⨆ m, torsionBy O⟦X⟧ M (growthTransition p O 0 m)) = deltaSubmodule p O M := by
   simp_rw [growthTransition_zero_left, deltaSubmodule_def]
 
-section Transport
-
-/-- Over a local Noetherian coefficient ring `O` with finite residue field such that `O⟦X⟧` has
-Krull dimension `2`, a pseudo-isomorphism preserves the finiteness of `a • deltaSubmodule p O _`. -/
-theorem IsPseudoIsomorphism.finite_smul_deltaSubmodule_iff {p : ℕ} {O M N : Type*} [CommRing O]
-    [IsLocalRing O] [IsNoetherianRing O] [Finite (ResidueField O)] (hdim : ringKrullDim O⟦X⟧ = 2)
-    [AddCommGroup M] [Module O⟦X⟧ M] [AddCommGroup N] [Module O⟦X⟧ N] {f : M →ₗ[O⟦X⟧] N}
-    (hf : IsPseudoIsomorphism f) (a : O⟦X⟧) :
-    Finite ↥(a • deltaSubmodule p O M) ↔ Finite ↥(a • deltaSubmodule p O N) := by
-  obtain ⟨hker, hcoker⟩ := (isPseudoIsomorphism_iff_finite hdim).mp hf
-  exact finite_smul_deltaSubmodule_iff_of_finite_ker_of_finite_coker hker hcoker a
-
-end Transport
-
 section Blocks
 
 variable {p : ℕ} [Fact p.Prime] {O : Type*} [CommRing O] [IsDomain O]
   [IsDiscreteValuationRing O]
 
-/-- If `F` is monic, `n ≠ 0`, and `torsionBy O⟦X⟧ (O⟦X⟧ ⧸ (F)) a = ⊥`, then multiplication by
-`a * F ^ (n - 1)` embeds `O⟦X⟧ ⧸ (F)` injectively into `O⟦X⟧ ⧸ (F ^ n)`. -/
-private theorem exists_injective_quotient_span_pow {F : O[X]} (hF : F.Monic) {n : ℕ} (hn : n ≠ 0)
-    {a : O⟦X⟧} (ha : torsionBy O⟦X⟧ (O⟦X⟧ ⧸ Ideal.span {(F : O⟦X⟧)}) a = ⊥) :
-    ∃ ψ : O⟦X⟧ ⧸ Ideal.span {(F : O⟦X⟧)} →ₗ[O⟦X⟧]
-        O⟦X⟧ ⧸ Ideal.span {((F ^ n : O[X]) : O⟦X⟧)},
-      Function.Injective ψ ∧
-        ∀ s : O⟦X⟧, ψ (Ideal.Quotient.mk _ s) =
-          Ideal.Quotient.mk _ (a * ((F ^ (n - 1) : O[X]) : O⟦X⟧) * s) := by
-  set Fn1 : O⟦X⟧ := ((F ^ (n - 1) : O[X]) : O⟦X⟧)
-  have hFn : ((F ^ n : O[X]) : O⟦X⟧) = Fn1 * (F : O⟦X⟧) := by
-    rw [← Polynomial.coe_mul, ← pow_succ, Nat.sub_add_cancel (Nat.pos_of_ne_zero hn)]
-  have hFn1_ne : Fn1 ≠ 0 := (Polynomial.coe_eq_zero_iff).not.mpr (hF.pow _).ne_zero
-  let ψ : O⟦X⟧ ⧸ Ideal.span {(F : O⟦X⟧)} →ₗ[O⟦X⟧]
-      O⟦X⟧ ⧸ Ideal.span {((F ^ n : O[X]) : O⟦X⟧)} :=
-    Submodule.liftQ _ ((Ideal.Quotient.mkₐ O⟦X⟧ _).toLinearMap ∘ₗ
-      LinearMap.lsmul O⟦X⟧ O⟦X⟧ (a * Fn1)) fun s hs ↦ by
-      obtain ⟨t, rfl⟩ := Ideal.mem_span_singleton.mp hs
-      simp only [LinearMap.coe_comp, Function.comp_apply, LinearMap.lsmul_apply, smul_eq_mul,
-        AlgHom.toLinearMap_apply, Ideal.Quotient.mkₐ_eq_mk, LinearMap.mem_ker,
-        Ideal.Quotient.eq_zero_iff_mem, Ideal.mem_span_singleton, hFn]
-      exact ⟨a * t, by ring⟩
-  have hψ (s : O⟦X⟧) :
-      ψ (Ideal.Quotient.mk _ s) = Ideal.Quotient.mk _ (a * Fn1 * s) := by
-    dsimp only [ψ]
-    rw [← Ideal.Quotient.mk_eq_mk, Submodule.liftQ_apply, LinearMap.coe_comp, Function.comp_apply,
-      LinearMap.lsmul_apply, smul_eq_mul, AlgHom.toLinearMap_apply, Ideal.Quotient.mkₐ_eq_mk]
-  refine ⟨ψ, ?_, hψ⟩
-  rw [← LinearMap.ker_eq_bot, eq_bot_iff]
-  intro q hq
-  obtain ⟨s, rfl⟩ := Ideal.Quotient.mk_surjective q
-  rw [LinearMap.mem_ker, hψ, Ideal.Quotient.eq_zero_iff_mem, Ideal.mem_span_singleton, hFn,
-    mul_comm a Fn1, mul_assoc, mul_dvd_mul_iff_left hFn1_ne,
-    ← Ideal.mem_span_singleton, ← Ideal.Quotient.eq_zero_iff_mem] at hq
-  have hmem : Ideal.Quotient.mk (Ideal.span {(F : O⟦X⟧)}) s ∈
-      torsionBy O⟦X⟧ (O⟦X⟧ ⧸ Ideal.span {(F : O⟦X⟧)}) a := by
-    rw [mem_torsionBy_iff, ← Ideal.Quotient.mk_eq_mk, ← Submodule.Quotient.mk_smul, smul_eq_mul,
-      Ideal.Quotient.mk_eq_mk]
-    exact hq
-  rwa [ha, mem_bot] at hmem
+private theorem smul_quotient_mk {R : Type*} [CommRing R] (I : Ideal R) (r s : R) :
+    r • Ideal.Quotient.mk I s = Ideal.Quotient.mk I (r * s) := by
+  rw [← Ideal.Quotient.mk_eq_mk, ← Submodule.Quotient.mk_smul, smul_eq_mul,
+    Ideal.Quotient.mk_eq_mk]
 
 variable [IsAdicComplete (maximalIdeal O) O]
 
@@ -161,12 +112,12 @@ private theorem smul_deltaSubmodule_quotient_span_pow_eq_bot {F : O[X]}
   obtain ⟨m, hm⟩ := (mem_deltaSubmodule p O _ x).mp hx
   rw [← growthTransition_zero_left] at hm
   let k := max m n₀
-  obtain ⟨q, hq⟩ := growthTransition_dvd_of_le p O (n₀ := 0) (le_max_left m n₀)
+  obtain ⟨q, hq⟩ := growthTransition_dvd_of_le p O 0 (le_max_left m n₀)
   have hxk : growthTransition p O 0 k • x = 0 := by
     rw [hq, mul_comm, mul_smul, hm, smul_zero]
   have hkres : (F ^ n).resultant (growthTransitionPoly p O n₀ k) ≠ 0 := by
-    rw [growthTransitionPoly_eq_prod_cyclotomic, (hF.pow n).monic.resultant_prod_right,
-      Finset.prod_ne_zero_iff]
+    rw [growthTransitionPoly_eq_prod_cyclotomic_comp_X_add_one,
+      (hF.pow n).monic.resultant_prod_right, Finset.prod_ne_zero_iff]
     exact fun j hj ↦ hres j (Finset.mem_Ico.mp hj).1
   have H := (hF.pow n).isWeierstrassFactorizationAt
   have hbot : torsionBy O⟦X⟧ (O⟦X⟧ ⧸ Ideal.span {((F ^ n : O[X]) : O⟦X⟧)})
@@ -187,44 +138,48 @@ private theorem infinite_smul_deltaSubmodule_quotient_span_pow_of_dvd [CharZero 
     (hdvd : F ∣ (Polynomial.cyclotomic (p ^ j₀) O).comp (Polynomial.X + 1)) :
     Infinite ↥((∏ j ∈ Finset.range n₀, growthTransition p O j j) •
       deltaSubmodule p O (O⟦X⟧ ⧸ Ideal.span {((F ^ n : O[X]) : O⟦X⟧)})) := by
+  obtain ⟨m, rfl⟩ := Nat.exists_eq_succ_of_ne_zero hn
+  rw [Polynomial.coe_pow, pow_succ]
   set W : O[X] := ∏ j ∈ Finset.range n₀, growthTransitionPoly p O j j
   have hWres : F.resultant W ≠ 0 := by
     rw [hF.monic.resultant_prod_right, Finset.prod_ne_zero_iff]
     intro j hj
-    rw [growthTransitionPoly_self_eq_cyclotomic, Ne, hF.monic.resultant_eq_zero_iff_dvd hirr]
+    rw [growthTransitionPoly_self_eq_cyclotomic_comp_X_add_one, Ne,
+      hF.monic.resultant_eq_zero_iff_dvd hirr]
     have hne : j ≠ j₀ := by have := Finset.mem_range.mp hj; omega
-    exact hF.monic.not_dvd_cyclotomic_comp_X_add_one_of_dvd hirr.not_isUnit
+    exact Polynomial.not_dvd_cyclotomic_comp_X_add_one_of_dvd hirr.not_isUnit
       ((Nat.pow_right_injective (Fact.out : p.Prime).one_lt).ne hne) hdvd
   have hQtor : torsionBy O⟦X⟧ (O⟦X⟧ ⧸ Ideal.span {(F : O⟦X⟧)}) (W : O⟦X⟧) = ⊥ :=
     hF.isWeierstrassFactorizationAt.torsionBy_eq_bot_iff _ |>.mpr
       (hF.isWeierstrassFactorizationAt.norm_mk_coe_eq_resultant _ ▸ hWres)
-  obtain ⟨ψ, hψ_inj, hψ_mk⟩ := exists_injective_quotient_span_pow hF.monic hn hQtor
-  have hψ_mem (q : O⟦X⟧ ⧸ Ideal.span {(F : O⟦X⟧)}) :
-      ψ q ∈ (∏ j ∈ Finset.range n₀, growthTransition p O j j) •
-        deltaSubmodule p O (O⟦X⟧ ⧸ Ideal.span {((F ^ n : O[X]) : O⟦X⟧)}) := by
+  have hFm_ne : (F : O⟦X⟧) ^ m ≠ 0 :=
+    pow_ne_zero m ((Polynomial.coe_eq_zero_iff).not.mpr hF.monic.ne_zero)
+  let ι := Ideal.mulLeftQuotientSpanSingleton ((F : O⟦X⟧) ^ m) (F : O⟦X⟧)
+  let ψ := ι ∘ₗ LinearMap.lsmul O⟦X⟧ _ (W : O⟦X⟧)
+  have hψ_inj : Function.Injective ψ :=
+    (Ideal.mulLeftQuotientSpanSingleton_injective (isRegular_iff_ne_zero.mpr hFm_ne).left _).comp
+      ((isSMulRegular_iff_torsionBy_eq_bot _ _).mpr hQtor)
+  have hw : (W : O⟦X⟧) = ∏ j ∈ Finset.range n₀, growthTransition p O j j := by
+    rw [← Polynomial.coeToPowerSeries.ringHom_apply, map_prod]
+    simp [Polynomial.coeToPowerSeries.ringHom_apply]
+  obtain ⟨u, hu⟩ : F ∣ (1 + Polynomial.X) ^ p ^ j₀ - 1 := by
+    rw [← growthTransitionPoly_zero_left p O j₀,
+      growthTransitionPoly_eq_prod_cyclotomic_comp_X_add_one]
+    exact hdvd.trans (Finset.dvd_prod_of_mem _ (Finset.mem_Ico.mpr ⟨Nat.zero_le _, by omega⟩))
+  have hcoe : ((1 + X) ^ p ^ j₀ - 1 : O⟦X⟧) = (F : O⟦X⟧) * (u : O⟦X⟧) := by
+    simpa using congr_arg (Polynomial.coeToPowerSeries.ringHom (R := O)) hu
+  have hι_delta (q : O⟦X⟧ ⧸ Ideal.span {(F : O⟦X⟧)}) : ι q ∈ deltaSubmodule p O _ := by
     obtain ⟨s, rfl⟩ := Ideal.Quotient.mk_surjective q
-    have hw : (W : O⟦X⟧) = ∏ j ∈ Finset.range n₀, growthTransition p O j j := by
-      rw [← Polynomial.coeToPowerSeries.ringHom_apply, map_prod]
-      simp [Polynomial.coeToPowerSeries.ringHom_apply]
-    rw [Submodule.mem_smul_pointwise_iff_exists]
-    refine ⟨Ideal.Quotient.mk _ (((F ^ (n - 1) : O[X]) : O⟦X⟧) * s),
-      (mem_deltaSubmodule p O _ _).mpr ⟨j₀, ?_⟩, ?_⟩
-    · obtain ⟨u, hu⟩ : F ∣ (1 + Polynomial.X) ^ p ^ j₀ - 1 := by
-        rw [← growthTransitionPoly_zero_left p O j₀, growthTransitionPoly_eq_prod_cyclotomic]
-        exact hdvd.trans (Finset.dvd_prod_of_mem _ (Finset.mem_Ico.mpr ⟨Nat.zero_le _, by omega⟩))
-      have hcoe : ((1 + X) ^ p ^ j₀ - 1 : O⟦X⟧) = (F : O⟦X⟧) * (u : O⟦X⟧) := by
-        simpa using congr_arg (Polynomial.coeToPowerSeries.ringHom (R := O)) hu
-      have hFn : ((F ^ n : O[X]) : O⟦X⟧) = (F : O⟦X⟧) * ((F ^ (n - 1) : O[X]) : O⟦X⟧) := by
-        rw [← Polynomial.coe_mul, ← pow_succ', Nat.sub_add_cancel (Nat.pos_of_ne_zero hn)]
-      rw [← Ideal.Quotient.mk_eq_mk, ← Submodule.Quotient.mk_smul, smul_eq_mul,
-        Ideal.Quotient.mk_eq_mk, Ideal.Quotient.eq_zero_iff_mem, Ideal.mem_span_singleton, hFn,
-        hcoe]
-      exact ⟨(u : O⟦X⟧) * s, by ring⟩
-    · rw [← hw, hψ_mk, ← Ideal.Quotient.mk_eq_mk, ← Submodule.Quotient.mk_smul, smul_eq_mul,
-        Ideal.Quotient.mk_eq_mk, mul_assoc]
+    refine (mem_deltaSubmodule p O _ _).mpr ⟨j₀, ?_⟩
+    rw [Ideal.mulLeftQuotientSpanSingleton_mk, smul_quotient_mk, Ideal.Quotient.eq_zero_iff_mem,
+      Ideal.mem_span_singleton, hcoe]
+    exact ⟨(u : O⟦X⟧) * s, by ring⟩
+  have hψ_mem (q : O⟦X⟧ ⧸ Ideal.span {(F : O⟦X⟧)}) :
+      ψ q ∈ (∏ j ∈ Finset.range n₀, growthTransition p O j j) • deltaSubmodule p O _ := by
+    simpa only [ψ, LinearMap.comp_apply, LinearMap.lsmul_apply, map_smul, hw] using
+      Submodule.smul_mem_pointwise_smul (ι q) (W : O⟦X⟧) _ (hι_delta q)
   have hdeg : 0 < F.natDegree := Nat.pos_of_ne_zero fun h0 ↦
     hirr.not_isUnit (Polynomial.eq_one_of_monic_natDegree_zero hF.monic h0 ▸ isUnit_one)
-  have : Infinite O := Infinite.of_injective (Nat.cast : ℕ → O) Nat.cast_injective
   have := hF.isWeierstrassFactorizationAt.infinite_quotient hdeg
   exact Infinite.of_injective (fun q ↦ (⟨ψ q, hψ_mem q⟩ : _)) fun q₁ q₂ h ↦
     hψ_inj (congr_arg Subtype.val h)
@@ -348,9 +303,7 @@ private theorem finite_quotSMulTop_growthTransition_iff_of_notMem {M : Type*} [A
       exact (finite_quotSMulTop_iff_resultant_charPoly_ne_zero hM hXdist).mpr
         (hξ₀ ▸ hres 0 (Nat.zero_le 0))
   · refine ⟨fun _ j hj ↦ hres_pos (hn₀.trans_le hj), fun _ k _ ↦ ?_⟩
-    have : Subsingleton (QuotSMulTop (growthTransition p O n₀ k) M) := by
-      rw [QuotSMulTop, Submodule.smul_eq_self_of_isUnit (hunit_gt hn₀),
-        Submodule.Quotient.subsingleton_iff]
+    have := QuotSMulTop.subsingleton_of_isUnit (M := M) (hunit_gt (k := k) hn₀)
     infer_instance
 
 /-- **Resultant criterion for finite transition quotients.** For a finitely generated torsion
@@ -367,14 +320,14 @@ theorem finite_quotSMulTop_growthTransition_iff_resultant_charPoly_ne_zero {M : 
   · refine ⟨fun hfin j hj ↦ ?_, fun hres k _ ↦ ?_⟩
     · have h := resultant_charPoly_ne_zero_of_finite_quotSMulTop
         (coe_growthTransitionPoly p O n₀ j ▸ hfin j hj)
-      rw [growthTransitionPoly_eq_prod_cyclotomic, monic_charPoly.resultant_prod_right,
-        Finset.prod_ne_zero_iff] at h
+      rw [growthTransitionPoly_eq_prod_cyclotomic_comp_X_add_one,
+        monic_charPoly.resultant_prod_right, Finset.prod_ne_zero_iff] at h
       exact h j (Finset.mem_Ico.mpr ⟨hj, Nat.lt_succ_self j⟩)
     · rw [← coe_growthTransitionPoly,
         finite_quotSMulTop_iff_resultant_charPoly_ne_zero hM
           (isDistinguishedAt_growthTransitionPoly hpO n₀ k),
-        growthTransitionPoly_eq_prod_cyclotomic, monic_charPoly.resultant_prod_right,
-        Finset.prod_ne_zero_iff]
+        growthTransitionPoly_eq_prod_cyclotomic_comp_X_add_one,
+        monic_charPoly.resultant_prod_right, Finset.prod_ne_zero_iff]
       exact fun j hj ↦ hres j (Finset.mem_Ico.mp hj).1
   · exact finite_quotSMulTop_growthTransition_iff_of_notMem hM hpO n₀
 
@@ -395,6 +348,8 @@ theorem finite_prod_growthTransition_smul_deltaSubmodule_iff_resultant_charPoly_
   have hdim := TauCeti.PowerSeries.ringKrullDim_of_isDiscreteValuationRing (R := O)
   rw [hf.finite_smul_deltaSubmodule_iff hdim, hf.charPoly_eq_prod hϖ hF hirr]
   exact finite_smul_deltaSubmodule_elementary_iff hϖ m hF hirr hn n₀
+
+end Cutoff
 
 /-- **The cyclotomic cutoff** (Neukirch–Schmidt–Wingberg, Proposition 5.3.17): over a
 characteristic-zero coefficient ring `O`, for a finitely generated torsion `O⟦X⟧`-module `M`, the
@@ -417,7 +372,9 @@ theorem finite_quotient_growthTransition_iff (p : ℕ) [Fact p.Prime] (O : Type*
 /-- Every finitely generated torsion `O⟦X⟧`-module over a characteristic-zero complete discrete
 valuation ring with finite residue field admits a cutoff `n₀` above which all transition quotients
 `M ⧸ ν_{k,n₀} M` (`k ≥ n₀`) are finite. -/
-theorem exists_finite_quotSMulTop_growthTransition [CharZero O] {M : Type*} [AddCommGroup M]
+theorem exists_finite_quotSMulTop_growthTransition (p : ℕ) [Fact p.Prime] {O : Type*} [CommRing O]
+    [IsDomain O] [IsDiscreteValuationRing O] [IsAdicComplete (maximalIdeal O) O]
+    [Finite (ResidueField O)] [CharZero O] {M : Type*} [AddCommGroup M]
     [Module O⟦X⟧ M] [Module.Finite O⟦X⟧ M] (hM : Module.IsTorsion O⟦X⟧ M) :
     ∃ n₀ : ℕ, ∀ k, n₀ ≤ k → Finite (QuotSMulTop (growthTransition p O n₀ k) M) := by
   obtain ⟨m, hm⟩ := exists_deltaSubmodule_eq_torsionBy p O M
@@ -436,8 +393,6 @@ theorem exists_finite_quotSMulTop_growthTransition [CharZero O] {M : Type*} [Add
   rcases hy with ⟨x, hx, rfl⟩
   exact (mem_torsionBy_iff _ _).mp hx
 
-end Cutoff
-
 -- Equal characteristic: over `O = 𝔽_p⟦ϖ⟧` and `M = O⟦X⟧ ⧸ (X)`, `ω_0 = X` kills `M_δ = M`, yet
 -- `M ⧸ ξ_1 M = M` is infinite, since `ξ_1 = X ^ (p - 1)`: the cutoff criterion needs
 -- characteristic zero.
@@ -449,40 +404,24 @@ example (p : ℕ) [Fact p.Prime] :
       ¬ Finite (M ⧸ (growthTransition p O 1 1 • (⊤ : Submodule (PowerSeries O) M))) := by
   intro O M
   have hXsmul : (X : O⟦X⟧) • (⊤ : Submodule O⟦X⟧ M) = ⊥ := by
-    rw [eq_bot_iff]
-    intro z hz
-    rw [Submodule.mem_smul_pointwise_iff_exists] at hz
-    rcases hz with ⟨y, -, rfl⟩
-    obtain ⟨f, rfl⟩ := Ideal.Quotient.mk_surjective y
-    rw [← Ideal.Quotient.mk_eq_mk, ← Submodule.Quotient.mk_smul, smul_eq_mul,
-      Ideal.Quotient.mk_eq_mk, mem_bot, Ideal.Quotient.eq_zero_iff_mem, Ideal.mem_span_singleton]
-    exact dvd_mul_right X f
-  refine ⟨eq_bot_iff.mpr fun z hz ↦ ?_, ?_⟩
-  · rw [Submodule.mem_smul_pointwise_iff_exists] at hz
-    rcases hz with ⟨x, _, rfl⟩
-    rw [growthTransition_zero_zero, ← hXsmul, Submodule.mem_smul_pointwise_iff_exists]
-    exact ⟨x, trivial, rfl⟩
-  · have : CharP O p := charP_of_injective_ringHom C_injective p
-    have hξ : growthTransition p O 1 1 = X ^ (p ^ 1).totient := by
-      rw [← coe_growthTransitionPoly, growthTransitionPoly_self_eq_cyclotomic,
-        Polynomial.cyclotomic_prime_pow_comp_X_add_one_eq_X_pow]
-      simp
-    have hpos : 0 < (p ^ 1).totient :=
-      Nat.totient_pos.mpr (pow_pos (Fact.out : p.Prime).pos 1)
-    have hsmul₁ : growthTransition p O 1 1 • (⊤ : Submodule O⟦X⟧ M) = ⊥ := by
-      rw [hξ, ← Nat.sub_add_cancel hpos, pow_succ, mul_smul, hXsmul]
-      simp
-    have hOinf : Infinite O := by
-      refine Infinite.of_injective (fun k : ℕ ↦ (X : O) ^ k) fun k₁ k₂ hk ↦ ?_
-      by_contra hne
-      have hc := congr_arg (PowerSeries.coeff k₁) hk
-      simp [PowerSeries.coeff_X_pow, hne] at hc
-    refine not_finite_iff_infinite.mpr
-      (Infinite.of_injective
-        (fun b : O ↦ Submodule.Quotient.mk (Ideal.Quotient.mk _ (C b))) fun b₁ b₂ hb ↦ ?_)
-    rw [Submodule.Quotient.eq, hsmul₁, mem_bot, sub_eq_zero, Ideal.Quotient.eq,
-      Ideal.mem_span_singleton, PowerSeries.X_dvd_iff, map_sub, constantCoeff_C,
-      constantCoeff_C] at hb
-    exact sub_eq_zero.mp hb
+    simp [M, Ideal.Quotient.smul_top]
+  refine ⟨eq_bot_iff.mpr ((smul_mono_right _ le_top).trans_eq
+    (by rw [growthTransition_zero_zero, hXsmul])), ?_⟩
+  have : CharP O p := charP_of_injective_ringHom C_injective p
+  have hξ : growthTransition p O 1 1 = X ^ (p ^ 1).totient := by
+    rw [← coe_growthTransitionPoly, growthTransitionPoly_self_eq_cyclotomic_comp_X_add_one,
+      Polynomial.cyclotomic_prime_pow_comp_X_add_one_eq_X_pow]
+    simp
+  have hpos : 0 < (p ^ 1).totient :=
+    Nat.totient_pos.mpr (pow_pos (Fact.out : p.Prime).pos 1)
+  have hsmul₁ : growthTransition p O 1 1 • (⊤ : Submodule O⟦X⟧ M) = ⊥ := by
+    rw [hξ, ← Nat.sub_add_cancel hpos, pow_succ, mul_smul, hXsmul]
+    simp
+  refine not_finite_iff_infinite.mpr
+    (Infinite.of_injective
+      (fun b : O ↦ Submodule.Quotient.mk (Ideal.Quotient.mk _ (C b))) fun b₁ b₂ hb ↦ ?_)
+  rw [Submodule.Quotient.eq, hsmul₁, mem_bot, sub_eq_zero, Ideal.Quotient.eq,
+    Ideal.mem_span_singleton] at hb
+  simpa [PowerSeries.X_dvd_iff, sub_eq_zero] using hb
 
 end TauCeti.Iwasawa
