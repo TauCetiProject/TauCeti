@@ -622,12 +622,13 @@ theorem finrank_eq_two_pow_of_odd_of_surjective_lsmul [Nontrivial S]
     omega
   exact Nat.mul_self_inj.mp (heq.symm.trans hpow)
 
-private theorem centralFixedSubmodule_eq_oddVolumeSubmodule {μ : ℂ} (hμ : μ = 1 ∨ μ = -1)
-    (hc : ∀ a : CliffordAlgebra (Q.baseChange ℂ),
-      Commute (halfOneAdd ℂ (μ • complexVolume Q o)) a) :
-    centralFixedSubmodule E hc = oddVolumeSubmodule (E := E) Q o hn μ := by
+private theorem fixedSubmodule_smulLeft_eq_oddVolumeSubmodule {μ : ℂ} (hμ : μ = 1 ∨ μ = -1)
+    (hc : halfOneAdd ℂ (μ • complexVolume Q o) ∈
+      Set.center (CliffordAlgebra (Q.baseChange ℂ))) :
+    (Module.End.smulLeft (M := E) (halfOneAdd ℂ (μ • complexVolume Q o)) hc).fixedSubmodule =
+      oddVolumeSubmodule (E := E) Q o hn μ := by
   ext x
-  rw [mem_centralFixedSubmodule, mem_oddVolumeSubmodule]
+  rw [LinearMap.mem_fixedSubmodule_iff, Module.End.smulLeft_apply, mem_oddVolumeSubmodule]
   constructor
   · intro hx
     have hsq : (μ • complexVolume Q o) * (μ • complexVolume Q o) = 1 := by
@@ -644,11 +645,12 @@ private theorem centralFixedSubmodule_eq_oddVolumeSubmodule {μ : ℂ} (hμ : μ
       mul_self_eq_one_iff.mpr hμ, one_smul, ← two_smul ℂ x, invOf_smul_smul]
 
 omit hQ in
-private theorem commute_halfOneAdd_complexVolume {μ : ℂ}
-    (a : CliffordAlgebra (Q.baseChange ℂ)) :
-    Commute (halfOneAdd ℂ (μ • complexVolume Q o)) a :=
-  commute_halfOneAdd ℂ
-    ((Commute.symm (Subalgebra.mem_center_iff.mp (complexVolume_mem_center o hn) a)).smul_left μ)
+private theorem halfOneAdd_complexVolume_mem_center {μ : ℂ} :
+    halfOneAdd ℂ (μ • complexVolume Q o) ∈ Set.center (CliffordAlgebra (Q.baseChange ℂ)) :=
+  Semigroup.mem_center_iff.mpr fun a ↦
+    (commute_halfOneAdd ℂ
+      ((Commute.symm
+        (Subalgebra.mem_center_iff.mp (complexVolume_mem_center o hn) a)).smul_left μ)).symm
 
 omit hn hQ in
 private theorem halfOneAdd_complexVolume_smul_self {μ : ℂ} (hμ : μ = 1 ∨ μ = -1)
@@ -674,7 +676,7 @@ private theorem halfOneAdd_complexVolume_mul_eq [Nontrivial S]
 
 /-- **Single-factor odd evaluation is injective.** For a nontrivial odd spinor factor `S` on which
 `ω` acts by `μ`, evaluation `S ⊗[ℂ] Hom_Cl(S, E) → E` is injective for every Clifford module `E`. -/
-theorem isotypicEval_odd_injective [Nontrivial S]
+theorem isotypicEval_injective_of_odd [Nontrivial S]
     (hsurj : Function.Surjective
       (Algebra.lsmul ℂ ℂ S : CliffordAlgebra (Q.baseChange ℂ) →ₐ[ℂ] Module.End ℂ S))
     {μ : ℂ} (hω : ∀ s : S, complexVolume Q o • s = μ • s) :
@@ -682,7 +684,7 @@ theorem isotypicEval_odd_injective [Nontrivial S]
       (isotypicEval ℂ (A := CliffordAlgebra (Q.baseChange ℂ)) (S := S) (M := E)) := by
   have := _root_.Module.Finite.of_surjective_end _ hsurj
   have hμ := eq_one_or_eq_neg_one_of_complexVolume_smul Q o hQ hω
-  exact isotypicEval_injective_of_central (commute_halfOneAdd_complexVolume Q o hn)
+  exact isotypicEval_injective_of_central (halfOneAdd_complexVolume_mem_center Q o hn)
     (halfOneAdd_complexVolume_smul_self Q o hμ hω) hsurj
     (halfOneAdd_complexVolume_mul_eq Q o hn hQ hsurj hω)
 
@@ -697,11 +699,11 @@ theorem range_isotypicEval_eq_oddVolumeSubmodule [Nontrivial S]
       oddVolumeSubmodule (E := E) Q o hn μ := by
   have := _root_.Module.Finite.of_surjective_end _ hsurj
   have hμ := eq_one_or_eq_neg_one_of_complexVolume_smul Q o hQ hω
-  rw [range_isotypicEval_eq_centralFixedSubmodule (commute_halfOneAdd_complexVolume Q o hn)
+  rw [range_isotypicEval_eq_fixedSubmodule_smulLeft (halfOneAdd_complexVolume_mem_center Q o hn)
       (halfOneAdd_complexVolume_smul_self Q o hμ hω) hsurj
       (halfOneAdd_complexVolume_mul_eq Q o hn hQ hsurj hω),
-    centralFixedSubmodule_eq_oddVolumeSubmodule Q o hn hQ hμ
-      (commute_halfOneAdd_complexVolume Q o hn)]
+    fixedSubmodule_smulLeft_eq_oddVolumeSubmodule Q o hn hQ hμ
+      (halfOneAdd_complexVolume_mem_center Q o hn)]
 
 /-- **Single-factor odd Clifford evaluation.** Evaluation `s ⊗ T ↦ T s` is a Clifford-module
 isomorphism from `S ⊗[ℂ] Hom_Cl(S, E)` onto the matching volume submodule `E^μ`. -/
@@ -712,7 +714,7 @@ def oddVolumeFactorEquiv [Nontrivial S]
     S ⊗[ℂ] (S →ₗ[CliffordAlgebra (Q.baseChange ℂ)] E) ≃ₗ[CliffordAlgebra (Q.baseChange ℂ)]
       oddVolumeSubmodule (E := E) Q o hn μ :=
   (LinearEquiv.ofInjective (isotypicEval ℂ)
-      (isotypicEval_odd_injective Q o hn hQ hsurj hω)).trans
+      (isotypicEval_injective_of_odd Q o hn hQ hsurj hω)).trans
     (LinearEquiv.ofEq _ _ (range_isotypicEval_eq_oddVolumeSubmodule Q o hn hQ hsurj hω))
 
 /-- Coercing `oddVolumeFactorEquiv` to `E` recovers `isotypicEval ℂ`. -/
@@ -825,7 +827,7 @@ theorem bijective_lsmul_prod_of_odd :
   exact (hbij₁.prodMap hbij₂).comp split.bijective
 
 include hsurj₁ hsurj₂ hω₁ hω₂ in
-private theorem isotypicProdEval_odd_bijective :
+private theorem isotypicProdEval_bijective_of_odd :
     Function.Bijective
       ((isotypicEval ℂ (A := CliffordAlgebra (Q.baseChange ℂ)) (S := S₁) (M := E)).coprod
         (isotypicEval ℂ (A := CliffordAlgebra (Q.baseChange ℂ)) (S := S₂) (M := E))) := by
@@ -844,7 +846,7 @@ def oddVolumeTwoFactorEquiv :
       (S₂ ⊗[ℂ] (S₂ →ₗ[CliffordAlgebra (Q.baseChange ℂ)] E))) ≃ₗ[
         CliffordAlgebra (Q.baseChange ℂ)] E :=
   .ofBijective ((isotypicEval ℂ).coprod (isotypicEval ℂ))
-    (isotypicProdEval_odd_bijective Q o hn hQ hsurj₁ hsurj₂ hω₁ hω₂)
+    (isotypicProdEval_bijective_of_odd Q o hn hQ hsurj₁ hsurj₂ hω₁ hω₂)
 
 /-- Applying `oddVolumeTwoFactorEquiv` sums the two single-factor evaluations. -/
 @[simp]

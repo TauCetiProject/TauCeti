@@ -5,22 +5,25 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.RingTheory.Idempotents.Module
+public import Mathlib.LinearAlgebra.FixedSubmodule
 public import TauCeti.RingTheory.Morita.ModuleEnd
 -- Private: `dualTensorHom_bijective` supplies a finite coordinate family `∑ᵢ φᵢ(t) vᵢ = t` inside
--- the bijectivity proof.
+-- the single-factor proofs, and `isIdempotentElem_of_smul_eq_self` proves idempotence of the block
+-- projections inside the two-factor bijectivity proof.
 import Mathlib.LinearAlgebra.Contraction
+import TauCeti.RingTheory.Idempotents.Module
 
 /-!
 # Morita evaluation at a central idempotent and over a two-block algebra
 
 Let `k` be a commutative semiring, `A` a `k`-algebra, and `S` a finite projective `k`-module on
-which `A` acts onto the whole endomorphism algebra `End_k S`, with a central element `e ∈ A` that
-fixes `S` pointwise and annihilates the kernel of the action (`lsmul a = lsmul b → e * a = e * b`).
-Then `e` is automatically a central idempotent (`TauCeti.isIdempotentElem_of_smul_eq_self`), the
-fixed-point locus
+which `A` acts onto the whole endomorphism algebra `End_k S`, with a central element `e ∈ A`
+(`hc : e ∈ Set.center A`) that fixes `S` pointwise and annihilates the kernel of the action
+(`lsmul a = lsmul b → e * a = e * b`). Then `e` is automatically a central idempotent
+(`TauCeti.isIdempotentElem_of_smul_eq_self`), left multiplication `Module.End.smulLeft e hc` is
+`A`-linear so its fixed-point locus
 
-`TauCeti.centralFixedSubmodule M hc = {x : M | e • x = x}`
+`(Module.End.smulLeft (M := M) e hc).fixedSubmodule = {x : M | e • x = x}`
 
 is an `A`-submodule of any `A`-module `M` (unlike the piece `e • (⊤ : Submodule k M)` for a
 non-central idempotent in `TauCeti.RingTheory.Idempotents.Module`, which is only a `k`-submodule),
@@ -28,9 +31,10 @@ and evaluation
 
 `TauCeti.isotypicEval k : S ⊗[k] (S →ₗ[A] M) →ₗ[A] M`,  `s ⊗ T ↦ T s`,
 
-is injective with range equal to `centralFixedSubmodule M hc`. It therefore restricts to an
-`A`-linear isomorphism `TauCeti.isotypicTensorEquivOfCentral` onto `centralFixedSubmodule M hc`,
-without requiring `k` to be a field or `M` to be finite, projective, or semisimple.
+is injective with range equal to `(Module.End.smulLeft (M := M) e hc).fixedSubmodule`. It therefore
+restricts to an `A`-linear isomorphism `TauCeti.isotypicTensorEquivOfCentral` onto
+`(Module.End.smulLeft (M := M) e hc).fixedSubmodule`, without requiring `k` to be a field or `M` to
+be finite, projective, or semisimple.
 
 When `A` acts on two finite projective `k`-modules `S₁` and `S₂` so that the combined action
 `A →ₐ[k] End_k S₁ × End_k S₂` is bijective, the preimages `e₁` and `e₂` of `(1, 0)` and `(0, 1)`
@@ -49,7 +53,7 @@ This is the situation of an odd-dimensional complexified Clifford algebra, which
 * `TauCeti.homOfDualOfCentral`: the multiplicity map `M →ₗ[k] (S →ₗ[A] M)` attached to a dual
   functional on `S` and a central idempotent factor.
 * `TauCeti.isotypicTensorEquivOfCentral`: single-factor evaluation
-  `S ⊗[k] (S →ₗ[A] M) ≃ₗ[A] centralFixedSubmodule M hc`.
+  `S ⊗[k] (S →ₗ[A] M) ≃ₗ[A] (Module.End.smulLeft (M := M) e hc).fixedSubmodule`.
 * `TauCeti.isotypicProdTensorEquivOfBijective`: two-factor evaluation
   `((S₁ ⊗[k] (S₁ →ₗ[A] M)) × (S₂ ⊗[k] (S₂ →ₗ[A] M))) ≃ₗ[A] M` for `A ≅ End_k S₁ × End_k S₂`.
 
@@ -58,9 +62,9 @@ This is the situation of an odd-dimensional complexified Clifford algebra, which
 * `TauCeti.sum_homOfDualOfCentral_coord_apply`: coordinate reconstruction of `e • x` in a finite
   basis of `S`.
 * `TauCeti.isotypicEval_injective_of_central` and
-  `TauCeti.range_isotypicEval_eq_centralFixedSubmodule`: injectivity and exact range of
+  `TauCeti.range_isotypicEval_eq_fixedSubmodule_smulLeft`: injectivity and exact range of
   single-factor evaluation.
-* `TauCeti.finrank_centralFixedSubmodule_eq_finrank_mul_finrank_linearMap` and
+* `TauCeti.finrank_fixedSubmodule_smulLeft_eq_finrank_mul_finrank_linearMap` and
   `TauCeti.finrank_eq_add_finrank_mul_finrank_linearMap_of_bijective_prod`: dimension formulas over
   a field.
 
@@ -135,14 +139,14 @@ private theorem centralLift_one
     centralLift e hsurj (1 : Module.End k S) = e := by
   rw [centralLift_eq_mul hsurj hker (map_one _), mul_one]
 
-private theorem centralLift_lsmul_mul (hc : ∀ a : A, Commute e a)
+private theorem centralLift_lsmul_mul (hc : e ∈ Set.center A)
     (hsurj : Function.Surjective (Algebra.lsmul k k S : A →ₐ[k] Module.End k S))
     (hker : ∀ a b : A, Algebra.lsmul k k S a = Algebra.lsmul k k S b → e * a = e * b)
     (a : A) (f : Module.End k S) :
     centralLift e hsurj (Algebra.lsmul k k S a * f) = a * centralLift e hsurj f := by
   obtain ⟨b, rfl⟩ := hsurj f
   rw [← map_mul, centralLift_eq_mul hsurj hker rfl, centralLift_eq_mul hsurj hker rfl,
-    ← mul_assoc, hc a, mul_assoc]
+    (Set.mem_center_iff.mp hc).left_comm]
 
 private theorem centralLift_smul_self (heS : ∀ s : S, e • s = s)
     (hsurj : Function.Surjective (Algebra.lsmul k k S : A →ₐ[k] Module.End k S))
@@ -154,7 +158,7 @@ private theorem centralLift_smul_self (heS : ∀ s : S, e • s = s)
 /-- Given a central element `e ∈ A` killing the kernel of a surjective action `A →ₐ[k] End_k S`,
 a dual form `φ : Dual k S` and a vector `x : M` define the `A`-linear map `s ↦ (e * a) • x`, where
 `a ∈ A` acts on `S` as the rank-one endomorphism `t ↦ φ t • s`. -/
-noncomputable def homOfDualOfCentral (hc : ∀ a : A, Commute e a)
+noncomputable def homOfDualOfCentral (hc : e ∈ Set.center A)
     (hsurj : Function.Surjective (Algebra.lsmul k k S : A →ₐ[k] Module.End k S))
     (hker : ∀ a b : A, Algebra.lsmul k k S a = Algebra.lsmul k k S b → e * a = e * b)
     (φ : Dual k S) : M →ₗ[k] S →ₗ[A] M where
@@ -176,7 +180,7 @@ noncomputable def homOfDualOfCentral (hc : ∀ a : A, Commute e a)
     exact smul_comm _ c x
 
 @[simp]
-private theorem homOfDualOfCentral_apply (hc : ∀ a : A, Commute e a)
+private theorem homOfDualOfCentral_apply (hc : e ∈ Set.center A)
     (hsurj : Function.Surjective (Algebra.lsmul k k S : A →ₐ[k] Module.End k S))
     (hker : ∀ a b : A, Algebra.lsmul k k S a = Algebra.lsmul k k S b → e * a = e * b)
     (φ : Dual k S) (x : M) (s : S) :
@@ -185,7 +189,7 @@ private theorem homOfDualOfCentral_apply (hc : ∀ a : A, Commute e a)
 
 /-- Evaluating `homOfDualOfCentral` at `s` applies `e * a` to `x` for any `a ∈ A` acting on `S` as
 `t ↦ φ t • s`. -/
-theorem homOfDualOfCentral_apply_eq_mul_smul (hc : ∀ a : A, Commute e a)
+theorem homOfDualOfCentral_apply_eq_mul_smul (hc : e ∈ Set.center A)
     (hsurj : Function.Surjective (Algebra.lsmul k k S : A →ₐ[k] Module.End k S))
     (hker : ∀ a b : A, Algebra.lsmul k k S a = Algebra.lsmul k k S b → e * a = e * b)
     (φ : Dual k S) (x : M) (s : S) {a : A} (ha : Algebra.lsmul k k S a = φ.smulRight s) :
@@ -195,7 +199,7 @@ theorem homOfDualOfCentral_apply_eq_mul_smul (hc : ∀ a : A, Commute e a)
 /-- **Matrix-unit relation at a central idempotent.** When `e` fixes `S` pointwise, evaluating
 `homOfDualOfCentral` on `T s` for any `A`-linear `T : S →ₗ[A] M` returns `φ s • T`. -/
 @[simp]
-theorem homOfDualOfCentral_apply_map (hc : ∀ a : A, Commute e a) (heS : ∀ s : S, e • s = s)
+theorem homOfDualOfCentral_apply_map (hc : e ∈ Set.center A) (heS : ∀ s : S, e • s = s)
     (hsurj : Function.Surjective (Algebra.lsmul k k S : A →ₐ[k] Module.End k S))
     (hker : ∀ a b : A, Algebra.lsmul k k S a = Algebra.lsmul k k S b → e * a = e * b)
     (φ : Dual k S) (T : S →ₗ[A] M) (s : S) :
@@ -206,7 +210,7 @@ theorem homOfDualOfCentral_apply_map (hc : ∀ a : A, Commute e a) (heS : ∀ s 
 
 /-- The candidate projection-inverse `M →ₗ[k] S ⊗[k] (S →ₗ[A] M)` attached to a dual coordinate
 family `∑ᵢ φᵢ(t) vᵢ = t`. -/
-private noncomputable def isotypicEvalCentralInv (hc : ∀ a : A, Commute e a)
+private noncomputable def isotypicEvalCentralInv (hc : e ∈ Set.center A)
     (hsurj : Function.Surjective (Algebra.lsmul k k S : A →ₐ[k] Module.End k S))
     (hker : ∀ a b : A, Algebra.lsmul k k S a = Algebra.lsmul k k S b → e * a = e * b)
     {ι : Type*} (s : Finset ι) (φ : ι → Dual k S) (v : ι → S) :
@@ -225,7 +229,7 @@ private theorem centralLift_sum {ι : Type*}
   | insert i s hi ih =>
     rw [Finset.sum_insert hi, Finset.sum_insert hi, centralLift_add hsurj hker, ih]
 
-private theorem isotypicEval_isotypicEvalCentralInv (hc : ∀ a : A, Commute e a)
+private theorem isotypicEval_isotypicEvalCentralInv (hc : e ∈ Set.center A)
     (hsurj : Function.Surjective (Algebra.lsmul k k S : A →ₐ[k] Module.End k S))
     (hker : ∀ a b : A, Algebra.lsmul k k S a = Algebra.lsmul k k S b → e * a = e * b)
     {ι : Type*} (s : Finset ι) (φ : ι → Dual k S) (v : ι → S)
@@ -240,7 +244,7 @@ private theorem isotypicEval_isotypicEvalCentralInv (hc : ∀ a : A, Commute e a
     TensorProduct.mk_apply, map_sum, isotypicEval_tmul, homOfDualOfCentral_apply,
     ← Finset.sum_smul, hlift]
 
-private theorem isotypicEvalCentralInv_isotypicEval (hc : ∀ a : A, Commute e a)
+private theorem isotypicEvalCentralInv_isotypicEval (hc : e ∈ Set.center A)
     (heS : ∀ s : S, e • s = s)
     (hsurj : Function.Surjective (Algebra.lsmul k k S : A →ₐ[k] Module.End k S))
     (hker : ∀ a b : A, Algebra.lsmul k k S a = Algebra.lsmul k k S b → e * a = e * b)
@@ -257,7 +261,7 @@ private theorem isotypicEvalCentralInv_isotypicEval (hc : ∀ a : A, Commute e a
 /-- **Single-factor evaluation is injective** when `S` is finite projective over `k` and `e` is a
 central element fixing `S` and annihilating the kernel of a surjective action `A →ₐ[k] End_k S`. -/
 theorem isotypicEval_injective_of_central [Module.Finite k S] [Module.Projective k S]
-    (hc : ∀ a : A, Commute e a) (heS : ∀ s : S, e • s = s)
+    (hc : e ∈ Set.center A) (heS : ∀ s : S, e • s = s)
     (hsurj : Function.Surjective (Algebra.lsmul k k S : A →ₐ[k] Module.End k S))
     (hker : ∀ a b : A, Algebra.lsmul k k S a = Algebra.lsmul k k S b → e * a = e * b) :
     Function.Injective (isotypicEval k (A := A) (S := S) (M := M)) := by
@@ -270,12 +274,13 @@ theorem isotypicEval_injective_of_central [Module.Finite k S] [Module.Projective
 
 /-- **Exact range of single-factor evaluation.** Under the single-factor Morita hypotheses, the
 image of `S ⊗[k] (S →ₗ[A] M) →ₗ[A] M` is precisely the fixed-point submodule
-`centralFixedSubmodule M hc = {x : M | e • x = x}`. -/
-theorem range_isotypicEval_eq_centralFixedSubmodule [Module.Finite k S] [Module.Projective k S]
-    (hc : ∀ a : A, Commute e a) (heS : ∀ s : S, e • s = s)
+`(Module.End.smulLeft (M := M) e hc).fixedSubmodule = {x : M | e • x = x}`. -/
+theorem range_isotypicEval_eq_fixedSubmodule_smulLeft [Module.Finite k S] [Module.Projective k S]
+    (hc : e ∈ Set.center A) (heS : ∀ s : S, e • s = s)
     (hsurj : Function.Surjective (Algebra.lsmul k k S : A →ₐ[k] Module.End k S))
     (hker : ∀ a b : A, Algebra.lsmul k k S a = Algebra.lsmul k k S b → e * a = e * b) :
-    LinearMap.range (isotypicEval k (A := A) (S := S) (M := M)) = centralFixedSubmodule M hc := by
+    LinearMap.range (isotypicEval k (A := A) (S := S) (M := M)) =
+      (Module.End.smulLeft (M := M) e hc).fixedSubmodule := by
   obtain ⟨u, hu⟩ := (dualTensorHom_bijective (R := k) (M := S) (N := S)).2 LinearMap.id
   obtain ⟨s, rfl⟩ := TensorProduct.exists_finset u
   have hs (t : S) : ∑ p ∈ s, p.1 t • p.2 = t := by
@@ -284,18 +289,18 @@ theorem range_isotypicEval_eq_centralFixedSubmodule [Module.Finite k S] [Module.
   · rintro _ ⟨y, rfl⟩
     induction y using TensorProduct.inductionOn with
     | tmul t T =>
-      rw [isotypicEval_tmul]
-      exact apply_mem_centralFixedSubmodule hc heS T t
+      rw [isotypicEval_tmul, LinearMap.mem_fixedSubmodule_iff, Module.End.smulLeft_apply,
+        ← T.map_smul, heS]
     | add y z hy hz =>
       rw [map_add]
-      exact (centralFixedSubmodule M hc).add_mem hy hz
-  · exact ⟨isotypicEvalCentralInv hc hsurj hker s _ _ x,
-      (isotypicEval_isotypicEvalCentralInv hc hsurj hker s _ _ hs x).trans
-        ((mem_centralFixedSubmodule hc).mp hx)⟩
+      exact ((Module.End.smulLeft (M := M) e hc).fixedSubmodule).add_mem hy hz
+  · rw [LinearMap.mem_fixedSubmodule_iff, Module.End.smulLeft_apply] at hx
+    exact ⟨isotypicEvalCentralInv hc hsurj hker s _ _ x,
+      (isotypicEval_isotypicEvalCentralInv hc hsurj hker s _ _ hs x).trans hx⟩
 
 /-- A finite basis of `S` reconstructs the projection `e • x` of any vector `x : M` from its
 single-factor multiplicity components `homOfDualOfCentral hc hsurj hker (b.coord i) x`. -/
-theorem sum_homOfDualOfCentral_coord_apply (hc : ∀ a : A, Commute e a)
+theorem sum_homOfDualOfCentral_coord_apply (hc : e ∈ Set.center A)
     (hsurj : Function.Surjective (Algebra.lsmul k k S : A →ₐ[k] Module.End k S))
     (hker : ∀ a b : A, Algebra.lsmul k k S a = Algebra.lsmul k k S b → e * a = e * b)
     {ι : Type*} [Fintype ι] (b : Basis ι k S) (x : M) :
@@ -306,20 +311,21 @@ theorem sum_homOfDualOfCentral_coord_apply (hc : ∀ a : A, Commute e a)
     TensorProduct.mk_apply, map_sum, isotypicEval_tmul] using hsum
 
 /-- **Single-factor Morita evaluation.** Evaluation `s ⊗ T ↦ T s` identifies `S ⊗[k] (S →ₗ[A] M)`
-with the `A`-submodule `centralFixedSubmodule M hc = {x : M | e • x = x}`. -/
+with the `A`-submodule `(Module.End.smulLeft (M := M) e hc).fixedSubmodule = {x : M | e • x = x}`.
+-/
 noncomputable def isotypicTensorEquivOfCentral [Module.Finite k S] [Module.Projective k S]
-    (hc : ∀ a : A, Commute e a) (heS : ∀ s : S, e • s = s)
+    (hc : e ∈ Set.center A) (heS : ∀ s : S, e • s = s)
     (hsurj : Function.Surjective (Algebra.lsmul k k S : A →ₐ[k] Module.End k S))
     (hker : ∀ a b : A, Algebra.lsmul k k S a = Algebra.lsmul k k S b → e * a = e * b) :
-    S ⊗[k] (S →ₗ[A] M) ≃ₗ[A] centralFixedSubmodule M hc :=
+    S ⊗[k] (S →ₗ[A] M) ≃ₗ[A] (Module.End.smulLeft (M := M) e hc).fixedSubmodule :=
   (LinearEquiv.ofInjective (isotypicEval k)
       (isotypicEval_injective_of_central hc heS hsurj hker)).trans
-    (LinearEquiv.ofEq _ _ (range_isotypicEval_eq_centralFixedSubmodule hc heS hsurj hker))
+    (LinearEquiv.ofEq _ _ (range_isotypicEval_eq_fixedSubmodule_smulLeft hc heS hsurj hker))
 
 /-- Coercing `isotypicTensorEquivOfCentral` to `M` recovers `isotypicEval k`. -/
 @[simp]
 theorem coe_isotypicTensorEquivOfCentral_apply [Module.Finite k S] [Module.Projective k S]
-    (hc : ∀ a : A, Commute e a) (heS : ∀ s : S, e • s = s)
+    (hc : e ∈ Set.center A) (heS : ∀ s : S, e • s = s)
     (hsurj : Function.Surjective (Algebra.lsmul k k S : A →ₐ[k] Module.End k S))
     (hker : ∀ a b : A, Algebra.lsmul k k S a = Algebra.lsmul k k S b → e * a = e * b)
     (x : S ⊗[k] (S →ₗ[A] M)) :
@@ -329,18 +335,21 @@ theorem coe_isotypicTensorEquivOfCentral_apply [Module.Finite k S] [Module.Proje
 /-- The inverse of `isotypicTensorEquivOfCentral` for any finite coordinate family
 `∑ᵢ φᵢ(t) vᵢ = t` on `S`. -/
 theorem isotypicTensorEquivOfCentral_symm_apply [Module.Finite k S] [Module.Projective k S]
-    (hc : ∀ a : A, Commute e a) (heS : ∀ s : S, e • s = s)
+    (hc : e ∈ Set.center A) (heS : ∀ s : S, e • s = s)
     (hsurj : Function.Surjective (Algebra.lsmul k k S : A →ₐ[k] Module.End k S))
     (hker : ∀ a b : A, Algebra.lsmul k k S a = Algebra.lsmul k k S b → e * a = e * b)
     {ι : Type*} (s : Finset ι) (φ : ι → Dual k S) (v : ι → S)
-    (hv : ∀ t, ∑ i ∈ s, φ i t • v i = t) (x : centralFixedSubmodule M hc) :
+    (hv : ∀ t, ∑ i ∈ s, φ i t • v i = t)
+    (x : (Module.End.smulLeft (M := M) e hc).fixedSubmodule) :
     (isotypicTensorEquivOfCentral hc heS hsurj hker).symm x =
       ∑ i ∈ s, v i ⊗ₜ homOfDualOfCentral hc hsurj hker (φ i) (x : M) := by
   apply (isotypicTensorEquivOfCentral hc heS hsurj hker).injective
   apply Subtype.ext
+  have hx : e • (x : M) = x := by
+    simpa only [LinearMap.mem_fixedSubmodule_iff, Module.End.smulLeft_apply] using x.2
   rw [LinearEquiv.apply_symm_apply, coe_isotypicTensorEquivOfCentral_apply]
   calc
-    (x : M) = e • (x : M) := ((mem_centralFixedSubmodule hc).mp x.2).symm
+    (x : M) = e • (x : M) := hx.symm
     _ = isotypicEval k (isotypicEvalCentralInv hc hsurj hker s φ v (x : M)) :=
       (isotypicEval_isotypicEvalCentralInv hc hsurj hker s φ v hv (x : M)).symm
     _ = isotypicEval k (∑ i ∈ s, v i ⊗ₜ homOfDualOfCentral hc hsurj hker (φ i) (x : M)) := by
@@ -348,10 +357,11 @@ theorem isotypicTensorEquivOfCentral_symm_apply [Module.Finite k S] [Module.Proj
 
 /-- The inverse of `isotypicTensorEquivOfCentral` in a finite basis `b` of `S`. -/
 theorem isotypicTensorEquivOfCentral_symm_apply_basis [Module.Finite k S] [Module.Projective k S]
-    (hc : ∀ a : A, Commute e a) (heS : ∀ s : S, e • s = s)
+    (hc : e ∈ Set.center A) (heS : ∀ s : S, e • s = s)
     (hsurj : Function.Surjective (Algebra.lsmul k k S : A →ₐ[k] Module.End k S))
     (hker : ∀ a b : A, Algebra.lsmul k k S a = Algebra.lsmul k k S b → e * a = e * b)
-    {ι : Type*} [Fintype ι] (b : Basis ι k S) (x : centralFixedSubmodule M hc) :
+    {ι : Type*} [Fintype ι] (b : Basis ι k S)
+    (x : (Module.End.smulLeft (M := M) e hc).fixedSubmodule) :
     (isotypicTensorEquivOfCentral hc heS hsurj hker).symm x =
       ∑ i, b i ⊗ₜ homOfDualOfCentral hc hsurj hker (b.coord i) (x : M) :=
   isotypicTensorEquivOfCentral_symm_apply hc heS hsurj hker Finset.univ b.coord b
@@ -360,13 +370,14 @@ theorem isotypicTensorEquivOfCentral_symm_apply_basis [Module.Finite k S] [Modul
 /-- **Naturality of the single-factor inverse** along any `A`-linear map `g : M →ₗ[A] N`. -/
 @[simp]
 theorem isotypicTensorEquivOfCentral_symm_apply_map [Module.Finite k S] [Module.Projective k S]
-    (hc : ∀ a : A, Commute e a) (heS : ∀ s : S, e • s = s)
+    (hc : e ∈ Set.center A) (heS : ∀ s : S, e • s = s)
     (hsurj : Function.Surjective (Algebra.lsmul k k S : A →ₐ[k] Module.End k S))
     (hker : ∀ a b : A, Algebra.lsmul k k S a = Algebra.lsmul k k S b → e * a = e * b)
-    (g : M →ₗ[A] N) (x : centralFixedSubmodule M hc) :
+    (g : M →ₗ[A] N) (x : (Module.End.smulLeft (M := M) e hc).fixedSubmodule) :
     (isotypicTensorEquivOfCentral (M := N) hc heS hsurj hker).symm
         ⟨g x, by
-          rw [mem_centralFixedSubmodule, ← g.map_smul, (mem_centralFixedSubmodule hc).mp x.2]⟩ =
+          rw [LinearMap.mem_fixedSubmodule_iff, Module.End.smulLeft_apply, ← g.map_smul,
+            ← Module.End.smulLeft_apply e hc, LinearMap.mem_fixedSubmodule_iff.mp x.2]⟩ =
       AlgebraTensorModule.map (LinearMap.id (R := A) (M := S))
         (LinearMap.compRight (M := S) k g)
         ((isotypicTensorEquivOfCentral hc heS hsurj hker).symm x) := by
@@ -404,14 +415,16 @@ private theorem apply_prodIdempotentSnd :
     AlgEquiv.ofBijective _ h (prodIdempotentSnd h) = (0, 1) :=
   (AlgEquiv.ofBijective _ h).apply_symm_apply (0, 1)
 
-private theorem commute_prodIdempotentFst (a : A) : Commute (prodIdempotentFst h) a := by
-  rw [commute_iff_eq]
+private theorem prodIdempotentFst_mem_center : prodIdempotentFst h ∈ Set.center A := by
+  rw [Semigroup.mem_center_iff]
+  intro a
   apply (AlgEquiv.ofBijective _ h).injective
   rw [map_mul, map_mul, apply_prodIdempotentFst]
   ext1 <;> simp
 
-private theorem commute_prodIdempotentSnd (a : A) : Commute (prodIdempotentSnd h) a := by
-  rw [commute_iff_eq]
+private theorem prodIdempotentSnd_mem_center : prodIdempotentSnd h ∈ Set.center A := by
+  rw [Semigroup.mem_center_iff]
+  intro a
   apply (AlgEquiv.ofBijective _ h).injective
   rw [map_mul, map_mul, apply_prodIdempotentSnd]
   ext1 <;> simp
@@ -477,27 +490,29 @@ theorem isotypicProdEval_bijective_of_bijective_prod :
     Function.Bijective
       ((isotypicEval k (A := A) (S := S₁) (M := M)).coprod
         (isotypicEval k (A := A) (S := S₂) (M := M))) := by
-  let e₁ := isotypicTensorEquivOfCentral (M := M) (commute_prodIdempotentFst h)
+  let e₁ := isotypicTensorEquivOfCentral (M := M) (prodIdempotentFst_mem_center h)
     (prodIdempotentFst_smul h) (lsmul_fst_surjective h) (fun _ _ ↦ prodIdempotentFst_mul_eq h)
-  let e₂ := isotypicTensorEquivOfCentral (M := M) (commute_prodIdempotentSnd h)
+  let e₂ := isotypicTensorEquivOfCentral (M := M) (prodIdempotentSnd_mem_center h)
     (prodIdempotentSnd_smul h) (lsmul_snd_surjective h) (fun _ _ ↦ prodIdempotentSnd_mul_eq h)
   have idem₁ := isIdempotentElem_of_smul_eq_self (prodIdempotentFst_smul h)
     (fun _ _ ↦ prodIdempotentFst_mul_eq h)
   have idem₂ := isIdempotentElem_of_smul_eq_self (prodIdempotentSnd_smul h)
     (fun _ _ ↦ prodIdempotentSnd_mul_eq h)
   let inv : M → ((S₁ ⊗[k] (S₁ →ₗ[A] M)) × (S₂ ⊗[k] (S₂ →ₗ[A] M))) := fun m ↦
-    (e₁.symm ⟨prodIdempotentFst h • m, by rw [mem_centralFixedSubmodule, ← mul_smul, idem₁]⟩,
-     e₂.symm ⟨prodIdempotentSnd h • m, by rw [mem_centralFixedSubmodule, ← mul_smul, idem₂]⟩)
+    (e₁.symm ⟨prodIdempotentFst h • m, by
+        rw [LinearMap.mem_fixedSubmodule_iff, Module.End.smulLeft_apply, ← mul_smul, idem₁]⟩,
+     e₂.symm ⟨prodIdempotentSnd h • m, by
+        rw [LinearMap.mem_fixedSubmodule_iff, Module.End.smulLeft_apply, ← mul_smul, idem₂]⟩)
   have coe_e₁ (z) : isotypicEval k z = (e₁ z : M) := by simp [e₁]
   have coe_e₂ (z) : isotypicEval k z = (e₂ z : M) := by simp [e₂]
   refine ⟨Function.LeftInverse.injective (g := inv) fun ⟨x, y⟩ ↦ ?_,
     Function.RightInverse.surjective (g := inv) fun m ↦ ?_⟩
   · have hx : prodIdempotentFst h • isotypicEval k x = isotypicEval k x := by
       rw [coe_e₁]
-      exact (mem_centralFixedSubmodule _).mp (e₁ x).2
+      simpa only [LinearMap.mem_fixedSubmodule_iff, Module.End.smulLeft_apply] using (e₁ x).2
     have hy : prodIdempotentSnd h • isotypicEval k y = isotypicEval k y := by
       rw [coe_e₂]
-      exact (mem_centralFixedSubmodule _).mp (e₂ y).2
+      simpa only [LinearMap.mem_fixedSubmodule_iff, Module.End.smulLeft_apply] using (e₂ y).2
     have hxy : prodIdempotentFst h • isotypicEval k y = 0 := by
       rw [← hy, ← mul_smul, prodIdempotent_mul_fst_snd h, zero_smul]
     have hyx : prodIdempotentSnd h • isotypicEval k x = 0 := by
@@ -554,13 +569,14 @@ variable {k A S S₁ S₂ M : Type*} [Field k] [Semiring A] [Algebra k A]
   [AddCommGroup S₂] [Module k S₂] [Module A S₂] [IsScalarTower k A S₂] [FiniteDimensional k S₂]
   [AddCommGroup M] [Module k M] [Module A M] [IsScalarTower k A M]
 
-/-- Over a field, the dimension of `centralFixedSubmodule M hc` is `dim S · dim (S →ₗ[A] M)`,
-without assuming `M` is finite-dimensional. -/
-theorem finrank_centralFixedSubmodule_eq_finrank_mul_finrank_linearMap
-    {e : A} (hc : ∀ a : A, Commute e a) (heS : ∀ s : S, e • s = s)
+/-- Over a field, the dimension of `(Module.End.smulLeft (M := M) e hc).fixedSubmodule` is
+`dim S · dim (S →ₗ[A] M)`, without assuming `M` is finite-dimensional. -/
+theorem finrank_fixedSubmodule_smulLeft_eq_finrank_mul_finrank_linearMap
+    {e : A} (hc : e ∈ Set.center A) (heS : ∀ s : S, e • s = s)
     (hsurj : Function.Surjective (Algebra.lsmul k k S : A →ₐ[k] Module.End k S))
     (hker : ∀ a b : A, Algebra.lsmul k k S a = Algebra.lsmul k k S b → e * a = e * b) :
-    finrank k (centralFixedSubmodule M hc) = finrank k S * finrank k (S →ₗ[A] M) := by
+    finrank k (Module.End.smulLeft (M := M) e hc).fixedSubmodule =
+      finrank k S * finrank k (S →ₗ[A] M) := by
   rw [← ((isotypicTensorEquivOfCentral (M := M) hc heS hsurj hker).restrictScalars k).finrank_eq,
     finrank_tensorProduct]
 
