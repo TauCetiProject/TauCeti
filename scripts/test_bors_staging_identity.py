@@ -32,12 +32,11 @@ class ConcurrencyTests(unittest.TestCase):
         self.assertEqual(group(), group(run=2))
         self.assertIs(WORKFLOW['concurrency']['cancel-in-progress'], True)
 
-    def test_unrelated_labels_cannot_cancel_the_self_tested_binding_run(self):
-        binding = dict(event='pull_request_target', action='labeled', pr=7, labels=('self-tested',))
-        self.assertEqual(group(**binding, label='self-tested'), 'pr-build-7')
-        self.assertEqual(group(**binding, label='full-lint'), 'pr-build-7')
-        self.assertEqual(group(**binding), 'pr-build-irrelevant-label-1')
-        self.assertEqual(group(**binding, run=2), 'pr-build-irrelevant-label-2')
+    def test_label_events_cannot_enter_build_concurrency(self):
+        self.assertNotIn('labeled', WORKFLOW[True]['pull_request_target']['types'])
+        self.assertNotIn('unlabeled', WORKFLOW[True]['pull_request_target']['types'])
+        self.assertEqual(group(event='workflow_dispatch', manual='7'),
+                         group(event='pull_request_target', pr=7))
 
     def test_distinct_candidates_repositories_and_bases_are_isolated(self):
         for changes in [dict(batch_id=13), dict(head_sha='d' * 40),

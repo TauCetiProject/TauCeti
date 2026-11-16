@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.GroupTheory.GroupAction.Quotient
+public import Mathlib.GroupTheory.GroupAction.Transitive
 public import Mathlib.GroupTheory.Index
 public import Mathlib.GroupTheory.Perm.Cycle.Basic
 
@@ -42,6 +43,8 @@ assumed.
   transitive action of a group with as many elements as the finite set acted on is regular, so
   only the identity fixes a point.
 * `TauCeti.isPretransitive_prod_left`: a product with a subsingleton stays pretransitive.
+* `MonoidHom.isPretransitive_range_iff`: the image of a permutation representation is
+  transitive exactly when every point is reached from a fixed base point.
 * `MonoidHom.isCycleOn_apply_of_zpowers_eq_top`: the image of a generator under a transitive
   permutation representation of a cyclic group is one cycle on the whole set.
 
@@ -132,6 +135,17 @@ namespace MonoidHom
 open Equiv
 
 variable {G X : Type*} [Group G]
+
+/-- The image of a permutation representation is transitive exactly when every point is
+reached from a fixed base point. -/
+theorem isPretransitive_range_iff (ρ : G →* Perm X) (a : X) :
+    IsPretransitive ρ.range X ↔ ∀ x, ∃ g, ρ g a = x := by
+  rw [isPretransitive_iff_base a]
+  refine forall_congr' fun x => ⟨?_, ?_⟩
+  · rintro ⟨⟨_, g, rfl⟩, hg⟩
+    exact ⟨g, hg⟩
+  · rintro ⟨g, hg⟩
+    exact ⟨⟨ρ g, g, rfl⟩, hg⟩
 
 /-- **A generator of a cyclic group acts as one cycle in every transitive permutation
 representation.** If `g` generates `G` and the image of `ρ : G →* Perm X` acts transitively,
