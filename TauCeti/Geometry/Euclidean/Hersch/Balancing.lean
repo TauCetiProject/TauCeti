@@ -5,7 +5,7 @@ Authors: Giada Franz, The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Geometry.Euclidean.Hersch.Basic
+public import TauCeti.Analysis.InnerProductSpace.Sphere.Hersch.Basic
 public import Mathlib.MeasureTheory.Integral.Bochner.Basic
 import TauCeti.AlgebraicTopology.Singular.BrouwerFixedPoint
 

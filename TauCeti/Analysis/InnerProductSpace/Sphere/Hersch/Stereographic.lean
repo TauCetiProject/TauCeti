@@ -5,7 +5,7 @@ Authors: Giada Franz, The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Geometry.Euclidean.Hersch.Basic
+public import TauCeti.Analysis.InnerProductSpace.Sphere.Hersch.Basic
 public import Mathlib.Geometry.Manifold.Instances.Sphere
 
 /-!
@@ -43,8 +43,8 @@ theorem herschMap_smul_self (hu : ‖u‖ = 1) (hρ0 : 0 ≤ ρ) (hρ1 : ρ ≤ 
     herschMap (ρ • u) u = u := by
   have hs := Real.sq_sqrt (by nlinarith : 0 ≤ 1 - ρ ^ 2)
   have hs0 : 0 ≤ √(1 - ρ ^ 2) := Real.sqrt_nonneg _
-  rw [herschMap_def, norm_smul_of_nonneg hρ0, hu, mul_one, real_inner_smul_left,
-    real_inner_self_eq_norm_sq, hu, smul_smul, ← add_smul, smul_smul]
+  simp only [herschMap_def, norm_smul_of_nonneg hρ0, hu, mul_one, real_inner_smul_left,
+    real_inner_self_eq_norm_sq, smul_smul, ← add_smul]
   set s := √(1 - ρ ^ 2)
   convert one_smul ℝ u using 2
   field_simp
@@ -56,8 +56,8 @@ theorem herschMap_smul_neg_self (hu : ‖u‖ = 1) (hρ0 : 0 ≤ ρ) (hρ1 : ρ 
   have hs := Real.sq_sqrt (by nlinarith : 0 ≤ 1 - ρ ^ 2)
   have hs0 : 0 ≤ √(1 - ρ ^ 2) := Real.sqrt_nonneg _
   have hρ' : 1 + -ρ ≠ 0 := by linarith
-  rw [herschMap_def, norm_smul_of_nonneg hρ0, hu, mul_one, inner_neg_right, real_inner_smul_left,
-    real_inner_self_eq_norm_sq, hu, smul_smul, smul_neg, ← neg_smul, ← add_smul, smul_smul]
+  simp only [herschMap_def, norm_smul_of_nonneg hρ0, hu, mul_one, inner_neg_right,
+    real_inner_smul_left, real_inner_self_eq_norm_sq, smul_smul, smul_neg, ← neg_smul, ← add_smul]
   set s := √(1 - ρ ^ 2)
   convert neg_one_smul ℝ u using 2
   field_simp
@@ -86,12 +86,9 @@ theorem stereographic_herschHomeomorph (hu : ‖u‖ = 1) (hρ0 : 0 ≤ ρ) (hρ
     field_simp
     linear_combination -hs
   apply Subtype.ext
-  rw [Submodule.coe_smul, stereographic_apply, stereographic_apply, Submodule.coe_smul,
-    Submodule.coe_smul, Submodule.coe_orthogonalProjectionOnto_apply,
+  simp only [stereographic_apply, Submodule.coe_smul, Submodule.coe_orthogonalProjectionOnto_apply,
     Submodule.starProjection_orthogonal_val,
-    Submodule.starProjection_unit_singleton ℝ hu', Submodule.coe_orthogonalProjectionOnto_apply,
-    Submodule.starProjection_orthogonal_val, Submodule.starProjection_unit_singleton ℝ hu',
-    coe_herschHomeomorph, herschMap_def,
+    Submodule.starProjection_unit_singleton ℝ hu', coe_herschHomeomorph, herschMap_def,
     norm_smul_of_nonneg hρ0, hu, mul_one, real_inner_smul_left, ← hw, hlam]
   simp only [inner_neg_left, inner_add_right, inner_smul_right, real_inner_self_eq_norm_sq, hu,
     ← hw, neg_neg, sub_neg_eq_add, smul_neg, neg_smul]

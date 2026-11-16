@@ -5,7 +5,7 @@ Authors: Giada Franz, The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Geometry.Euclidean.Hersch.Stereographic
+public import TauCeti.Analysis.InnerProductSpace.Sphere.Hersch.Stereographic
 import Mathlib.Analysis.InnerProductSpace.PiL2
 public import TauCeti.MeasureTheory.Constructions.HaarToSphere
 import Mathlib.MeasureTheory.Measure.Lebesgue.EqHaar
