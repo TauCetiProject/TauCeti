@@ -297,6 +297,11 @@ attribute [instance] GradedExactEquiv.functor_additive
 
 namespace GradedExactEquiv
 
+/-- Helper for the `eqToHom` lemmas below: after unfolding, an `eqToHom` between objects that are
+definitionally equal but not syntactically equal remains, and it is the identity. -/
+private theorem eqToHom_self_comp {D : Type*} [Category D] {Y Z : D} (h : Y = Y) (f : Y ⟶ Z) :
+    eqToHom h ≫ f = f := by simp
+
 variable {C : Type u₁} {D : Type u₂} {K : Type u₃}
 variable [Category.{v₁} C] [Preadditive C] [HasZeroObject C] [HasBinaryBiproducts C]
 variable [Category.{v₂} D] [Preadditive D] [HasZeroObject D] [HasBinaryBiproducts D]
@@ -339,6 +344,7 @@ theorem refl_commShift_hom_app (E : GradedExactStructure C) (X : C) :
   simp only [GradedExactEquiv.refl, Equivalence.refl_functor, Functor.comp_obj, Functor.id_obj,
     Iso.trans_hom, Iso.symm_hom, NatTrans.comp_app, Functor.rightUnitor_hom_app,
     Functor.leftUnitor_inv_app, Category.comp_id]
+  -- the remaining `eqToHom` is between definitionally equal objects, hence the identity
   exact (eqToHom_refl _ _).symm
 
 /-- The inverse of a graded exact equivalence is a graded exact equivalence. -/
@@ -386,7 +392,7 @@ theorem symm_commShift_hom_app (h : GradedExactEquiv E E') (X : D) :
     Functor.associator_hom_app, Functor.whiskerLeft_app, Functor.associator_inv_app,
     Functor.rightUnitor_hom_app, Category.comp_id, Category.id_comp, eqToHom_naturality,
     eqToHom_refl]
-  exact ((congrArg (· ≫ _) (eqToHom_refl _ _)).trans (Category.id_comp _)).symm
+  exact (eqToHom_self_comp _ _).symm
 
 /-- A composite of graded exact equivalences is a graded exact equivalence, for the composed
 commutation isomorphism. -/
@@ -417,7 +423,7 @@ theorem trans_commShift_hom_app (h : GradedExactEquiv E E') (h' : GradedExactEqu
     Iso.symm_hom, Functor.isoWhiskerRight_hom, Functor.isoWhiskerLeft_hom, NatTrans.comp_app,
     Functor.associator_inv_app, Functor.whiskerRight_app, Functor.associator_hom_app,
     Functor.whiskerLeft_app, Category.comp_id, Category.id_comp, eqToHom_naturality, eqToHom_refl]
-  exact ((congrArg (· ≫ _) (eqToHom_refl _ _)).trans (Category.id_comp _)).symm
+  exact (eqToHom_self_comp _ _).symm
 
 end GradedExactEquiv
 

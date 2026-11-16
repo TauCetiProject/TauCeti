@@ -195,6 +195,11 @@ structure EnoughInjectives (E : ExactStructure C) : Prop where
 
 namespace InjectivePresentation
 
+/-- Helper for the `eqToHom` lemmas below: after unfolding, an `eqToHom` between objects that are
+definitionally equal but not syntactically equal remains, and it is the identity. -/
+private theorem eqToHom_self_comp {D : Type*} [Category D] {Y Z : D} (h : Y = Y) (f : Y ⟶ Z) :
+    eqToHom h ≫ f = f := by simp
+
 /-- The tautological injective presentation in the split exact structure. -/
 noncomputable def split (X : C) : (ExactStructure.split C).InjectivePresentation X where
   I := X
@@ -253,7 +258,7 @@ monomorphism into an injective object. -/
     eqToHom (abelian_I X).symm ≫ (abelian X).p ≫ eqToHom (abelian_K X) =
       cokernel.π (Injective.ι X) := by
   simp only [abelian, eqToHom_naturality, eqToHom_refl, Category.id_comp]
-  exact (congrArg (· ≫ _) (eqToHom_refl _ _)).trans (Category.id_comp _)
+  exact eqToHom_self_comp _ _
 
 section Comparison
 

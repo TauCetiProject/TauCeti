@@ -290,6 +290,11 @@ structure EnoughProjectives (E : ExactStructure C) : Prop where
 
 namespace ProjectivePresentation
 
+/-- Helper for the `eqToHom` lemmas below: after unfolding, an `eqToHom` between objects that are
+definitionally equal but not syntactically equal remains, and it is the identity. -/
+private theorem eqToHom_self_comp {D : Type*} [Category D] {Y Z : D} (h : Y = Y) (f : Y ⟶ Z) :
+    eqToHom h ≫ f = f := by simp
+
 section Functor
 
 variable {D : Type u'} [Category.{v'} D] [Preadditive D] [HasZeroObject D]
@@ -326,7 +331,7 @@ image of the inflation. -/
     eqToHom (P.map_K hF hPP').symm ≫ (P.map hF hPP').i ≫ eqToHom (P.map_P hF hPP') =
       F.map P.i := by
   simp only [map, eqToHom_naturality, eqToHom_refl, Category.id_comp]
-  exact (congrArg (· ≫ _) (eqToHom_refl _ _)).trans (Category.id_comp _)
+  exact eqToHom_self_comp _ _
 
 /-- After identifying the projective term, the image presentation ends with the image of the
 deflation. -/
@@ -334,7 +339,7 @@ deflation. -/
     (hPP' : E.isProjective ≤ E'.isProjective.inverseImage F) :
     eqToHom (P.map_P hF hPP').symm ≫ (P.map hF hPP').p = F.map P.p := by
   simp only [map]
-  exact (congrArg (· ≫ _) (eqToHom_refl _ _)).trans (Category.id_comp _)
+  exact eqToHom_self_comp _ _
 
 end Functor
 
@@ -361,6 +366,7 @@ noncomputable def split (X : C) : (ExactStructure.split C).ProjectivePresentatio
 identity. -/
 @[simp] theorem split_p (X : C) : eqToHom (split_P X).symm ≫ (split X).p = 𝟙 X := by
   simp only [split, Category.comp_id]
+  -- the remaining `eqToHom` is between the definitionally equal objects `(split X).P` and `X`
   exact eqToHom_refl _ _
 
 /-- Mathlib's projective presentation gives a relative projective presentation for the canonical
@@ -390,7 +396,7 @@ noncomputable def abelian {A : Type u} [Category.{v} A] [Abelian A]
     eqToHom (abelian_K X).symm ≫ (abelian X).i ≫ eqToHom (abelian_P X) =
       kernel.ι (Projective.π X) := by
   simp only [abelian, eqToHom_naturality, eqToHom_refl, Category.id_comp]
-  exact (congrArg (· ≫ _) (eqToHom_refl _ _)).trans (Category.id_comp _)
+  exact eqToHom_self_comp _ _
 
 /-- After identifying the projective term, the presentation ends with Mathlib's chosen
 epimorphism from a projective object. -/
@@ -398,7 +404,7 @@ epimorphism from a projective object. -/
     [CategoryTheory.EnoughProjectives A] (X : A) :
     eqToHom (abelian_P X).symm ≫ (abelian X).p = Projective.π X := by
   simp only [abelian]
-  exact (congrArg (· ≫ _) (eqToHom_refl _ _)).trans (Category.id_comp _)
+  exact eqToHom_self_comp _ _
 
 section Comparison
 
