@@ -5,10 +5,11 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Logic.Equiv.Fin.Basic
-public import Mathlib.Topology.OpenPartialHomeomorph.Basic
-public import TauCeti.Geometry.RealAlgebraic.Semialgebraic.Local
+public import Mathlib.Algebra.BigOperators.Fin
+public import Mathlib.Topology.OpenPartialHomeomorph.Constructions
+public import TauCeti.Geometry.RealAlgebraic.Semialgebraic.Function
 public import TauCeti.Topology.Algebra.Projectivization
+public import TauCeti.Topology.PiCurry
 import TauCeti.Geometry.RealAlgebraic.Semialgebraic.Rational
 
 /-!
@@ -33,15 +34,9 @@ cone semialgebraicity is equivalent to global semialgebraicity in every standard
 chart (`TauCeti.isMixedSemialgebraic_iff_forall_chart`,
 `TauCeti.isMultiprojectiveSemialgebraic_iff_forall_chart`), without assuming projection closure:
 inverse charts are polynomial in homogeneous coordinates, while the standard charts are rational
-with nonvanishing denominators on the corresponding coordinate opens.
-
-Over `ℝ`, compactness of `M = ∀ i : ι, ℙ ℝ (Fin (n i + 1) → ℝ)` upgrades local chartwise
-semialgebraicity (`TauCeti.SemialgebraicAt`) at every point of `M` to global semialgebraicity
-(`TauCeti.isMultiprojectiveSemialgebraic_iff_forall_semialgebraicAt`,
-`TauCeti.isMultiprojectiveSemialgebraic_iff_exists_semialgebraicAt`), derived as the empty-affine
-case of `TauCeti.isMixedSemialgebraic_of_isBounded_fst`: every point is covered by the chart
-preimage of a bounded open semialgebraic ball, finitely many such patches cover the compact closure,
-and rational transition pullbacks assemble them in any target chart.
+with nonvanishing denominators on the corresponding coordinate opens. Local-to-global criteria
+over `ℝ` (`TauCeti.SemialgebraicAt`) are proved in
+`TauCeti.Geometry.RealAlgebraic.Multiprojective.Local`.
 
 ## Main declarations
 
@@ -54,15 +49,14 @@ and rational transition pullbacks assemble them in any target chart.
 * `TauCeti.multiprojectiveCone`, `TauCeti.mixedCone`: punctured-cone preimages in flattened
   homogeneous coordinates.
 * `TauCeti.IsMultiprojectiveSemialgebraic`, `TauCeti.IsMixedSemialgebraic`: semialgebraic subsets
-  of multiprojective and mixed affine–multiprojective spaces, with `MeasureTheory.IsSetAlgebra`
-  and Boolean closure.
+  of multiprojective and mixed affine–multiprojective spaces, with `MeasureTheory.IsSetAlgebra`,
+  Boolean closure, and singletons (`TauCeti.isMultiprojectiveSemialgebraic_singleton`,
+  `TauCeti.isMixedSemialgebraic_singleton`).
+* `TauCeti.multiprojectiveInsertNthPoly`: flattened homogeneous coordinate polynomials representing
+  `(TauCeti.multiprojectiveAffineChart I).symm`.
 * `TauCeti.isMixedSemialgebraic_iff_forall_chart`,
   `TauCeti.isMultiprojectiveSemialgebraic_iff_forall_chart`: equivalence of cone and chart
   semialgebraicity over any strict ordered field.
-* `TauCeti.isMixedSemialgebraic_of_isBounded_fst`,
-  `TauCeti.isMultiprojectiveSemialgebraic_iff_forall_semialgebraicAt`,
-  `TauCeti.isMultiprojectiveSemialgebraic_iff_exists_semialgebraicAt`: local-to-global chartwise
-  criteria over `ℝ`.
 
 ## References
 
@@ -74,61 +68,104 @@ and rational transition pullbacks assemble them in any target chart.
 
 public section
 
-open MeasureTheory Metric MvPolynomial Set Topology
+open MeasureTheory MvPolynomial Set Topology
 open scoped LinearAlgebra.Projectivization
 
 namespace TauCeti
 
 /-! ### Standard product affine opens and charts -/
 
-section Charts
+section AffineOpen
 
-variable {ι σ K : Type*} [Field K] {n : ι → ℕ}
+variable {ι σ K : Type*} [DivisionRing K] {α : ι → Type*}
 
 /-- The standard product affine open of a multiprojective space associated to homogeneous
-coordinate indices `I : ∀ i, Fin (n i + 1)`: the locus where the `I i`-th homogeneous coordinate
-of the `i`-th factor is nonzero for every `i`. -/
-def multiprojectiveAffineOpen (I : ∀ i, Fin (n i + 1)) :
-    Set (∀ i, ℙ K (Fin (n i + 1) → K)) :=
+coordinate indices `I : ∀ i, α i`: the locus where the `I i`-th homogeneous coordinate of the
+`i`-th factor is nonzero for every `i`. -/
+def multiprojectiveAffineOpen (I : ∀ i, α i) :
+    Set (∀ i, ℙ K (α i → K)) :=
   {p | ∀ i, p i ∈ Projectivization.affineOpen (I i)}
 
 @[simp]
-theorem mem_multiprojectiveAffineOpen {I : ∀ i, Fin (n i + 1)}
-    {p : ∀ i, ℙ K (Fin (n i + 1) → K)} :
+theorem mem_multiprojectiveAffineOpen {I : ∀ i, α i}
+    {p : ∀ i, ℙ K (α i → K)} :
     p ∈ multiprojectiveAffineOpen I ↔ ∀ i, p i ∈ Projectivization.affineOpen (I i) :=
   Iff.rfl
 
 /-- `TauCeti.multiprojectiveAffineOpen` as `Set.pi` over `Set.univ`. -/
-theorem multiprojectiveAffineOpen_eq_univ_pi (I : ∀ i, Fin (n i + 1)) :
+theorem multiprojectiveAffineOpen_eq_univ_pi (I : ∀ i, α i) :
     multiprojectiveAffineOpen (K := K) I = univ.pi fun i ↦ Projectivization.affineOpen (I i) := by
   ext p
   simp
 
 /-- Every point of a multiprojective space lies in some standard product affine open. -/
-theorem exists_mem_multiprojectiveAffineOpen (p : ∀ i, ℙ K (Fin (n i + 1) → K)) :
+theorem exists_mem_multiprojectiveAffineOpen (p : ∀ i, ℙ K (α i → K)) :
     ∃ I, p ∈ multiprojectiveAffineOpen I := by
   choose I hI using fun i ↦ Projectivization.exists_mem_affineOpen (p i)
   exact ⟨I, hI⟩
 
 /-- The standard product affine opens cover multiprojective space. -/
 theorem iUnion_multiprojectiveAffineOpen :
-    ⋃ I : ∀ i, Fin (n i + 1), multiprojectiveAffineOpen (K := K) I = univ :=
+    ⋃ I : ∀ i, α i, multiprojectiveAffineOpen (K := K) I = univ :=
   eq_univ_of_forall fun p ↦ mem_iUnion.2 (exists_mem_multiprojectiveAffineOpen p)
 
 /-- On an empty product of projective spaces, every standard product affine open is the whole
 space. -/
 @[simp]
-theorem multiprojectiveAffineOpen_eq_univ [IsEmpty ι] (I : ∀ i, Fin (n i + 1)) :
+theorem multiprojectiveAffineOpen_eq_univ [IsEmpty ι] (I : ∀ i, α i) :
     multiprojectiveAffineOpen (K := K) I = univ :=
   eq_univ_of_forall fun _ i ↦ isEmptyElim i
+
+/-- The standard product affine open of a mixed affine–multiprojective space
+`(σ → K) × ∀ i, ℙ K (α i → K)` at `I : ∀ i, α i`. -/
+def mixedAffineOpen (σ : Type*) (I : ∀ i, α i) :
+    Set ((σ → K) × ∀ i, ℙ K (α i → K)) :=
+  univ ×ˢ multiprojectiveAffineOpen I
+
+@[simp]
+theorem mem_mixedAffineOpen {I : ∀ i, α i}
+    {x : (σ → K) × ∀ i, ℙ K (α i → K)} :
+    x ∈ mixedAffineOpen σ I ↔ x.2 ∈ multiprojectiveAffineOpen I := by
+  simp [mixedAffineOpen]
+
+/-- Every point of a mixed affine–multiprojective space lies in some standard product affine
+open. -/
+theorem exists_mem_mixedAffineOpen (x : (σ → K) × ∀ i, ℙ K (α i → K)) :
+    ∃ I, x ∈ mixedAffineOpen σ I := by
+  obtain ⟨I, hI⟩ := exists_mem_multiprojectiveAffineOpen x.2
+  exact ⟨I, mem_mixedAffineOpen.2 hI⟩
+
+section Open
+
+variable [TopologicalSpace K] [T1Space K] [Finite ι]
+
+/-- In a finite product of projective spaces, each standard product affine open is open. -/
+theorem isOpen_multiprojectiveAffineOpen (I : ∀ i, α i) :
+    IsOpen (multiprojectiveAffineOpen (K := K) I) := by
+  rw [multiprojectiveAffineOpen_eq_univ_pi]
+  exact isOpen_set_pi finite_univ fun i _ ↦ Projectivization.isOpen_affineOpen (I i)
+
+/-- In a mixed affine–multiprojective space with finitely many projective factors, each standard
+product affine open is open. -/
+theorem isOpen_mixedAffineOpen (I : ∀ i, α i) :
+    IsOpen (mixedAffineOpen (K := K) σ I) :=
+  isOpen_univ.prod (isOpen_multiprojectiveAffineOpen I)
+
+end Open
+
+end AffineOpen
+
+section Charts
+
+variable {ι σ K : Type*} [Field K] {n : ι → ℕ}
 
 /-- The standard product affine chart of `∀ i, ℙ K (Fin (n i + 1) → K)` at
 `I : ∀ i, Fin (n i + 1)`, with coordinates flattened to `(Σ i, Fin (n i)) → K` via
 `Equiv.piCurry`. -/
 noncomputable def multiprojectiveAffineChart (I : ∀ i, Fin (n i + 1)) :
     PartialEquiv (∀ i, ℙ K (Fin (n i + 1) → K)) ((Σ i, Fin (n i)) → K) :=
-  (PartialEquiv.pi fun i ↦ Projectivization.affineChart (K := K) (I i)).trans
-    (Equiv.piCurry fun i (_ : Fin (n i)) ↦ K).symm.toPartialEquiv
+  (PartialEquiv.pi fun i ↦ Projectivization.affineChart (K := K) (I i)).transEquiv
+    (Equiv.piCurry fun i (_ : Fin (n i)) ↦ K).symm
 
 @[simp]
 theorem multiprojectiveAffineChart_source (I : ∀ i, Fin (n i + 1)) :
@@ -162,6 +199,16 @@ theorem multiprojectiveAffineChart_symm_mem_affineOpen (I : ∀ i, Fin (n i + 1)
   intro i
   simp [multiprojectiveAffineChart_symm_apply]
 
+/-- The standard product affine chart image of `S ∩ multiprojectiveAffineOpen I` is the
+inverse-chart preimage of `S`. -/
+theorem multiprojectiveAffineChart_image_inter_affineOpen
+    (S : Set (∀ i, ℙ K (Fin (n i + 1) → K))) (I : ∀ i, Fin (n i + 1)) :
+    multiprojectiveAffineChart I '' (S ∩ multiprojectiveAffineOpen I) =
+      (multiprojectiveAffineChart I).symm ⁻¹' S := by
+  rw [inter_comm, ← multiprojectiveAffineChart_source,
+    (multiprojectiveAffineChart I).image_source_inter_eq', multiprojectiveAffineChart_target,
+    univ_inter]
+
 /-- The source of the transition map from chart `I` to chart `J` consists of the flattened
 coordinates `z` for which `Fin.insertNth (I i) 1 (fun k ↦ z ⟨i, k⟩) (J i) ≠ 0` for every `i`. -/
 theorem multiprojectiveAffineChart_symm_trans_source (I J : ∀ i, Fin (n i + 1)) :
@@ -178,31 +225,12 @@ theorem multiprojectiveAffineChart_symm_trans_apply (I J : ∀ i, Fin (n i + 1))
         Fin.insertNth (α := fun _ ↦ K) (I q.1) 1 (fun k ↦ z ⟨q.1, k⟩) (J q.1) := by
   simp [PartialEquiv.trans_apply]
 
-/-- The standard product affine open of a mixed affine–multiprojective space
-`(σ → K) × ∀ i, ℙ K (Fin (n i + 1) → K)` at `I : ∀ i, Fin (n i + 1)`. -/
-def mixedAffineOpen (σ : Type*) (I : ∀ i, Fin (n i + 1)) :
-    Set ((σ → K) × ∀ i, ℙ K (Fin (n i + 1) → K)) :=
-  univ ×ˢ multiprojectiveAffineOpen I
-
-@[simp]
-theorem mem_mixedAffineOpen {I : ∀ i, Fin (n i + 1)}
-    {x : (σ → K) × ∀ i, ℙ K (Fin (n i + 1) → K)} :
-    x ∈ mixedAffineOpen σ I ↔ x.2 ∈ multiprojectiveAffineOpen I := by
-  simp [mixedAffineOpen]
-
-/-- Every point of a mixed affine–multiprojective space lies in some standard product affine
-open. -/
-theorem exists_mem_mixedAffineOpen (x : (σ → K) × ∀ i, ℙ K (Fin (n i + 1) → K)) :
-    ∃ I, x ∈ mixedAffineOpen σ I := by
-  obtain ⟨I, hI⟩ := exists_mem_multiprojectiveAffineOpen x.2
-  exact ⟨I, mem_mixedAffineOpen.2 hI⟩
-
 /-- The standard product affine chart of `(σ → K) × ∀ i, ℙ K (Fin (n i + 1) → K)` at
 `I : ∀ i, Fin (n i + 1)`, flattened to `(σ ⊕ Σ i, Fin (n i)) → K`. -/
 noncomputable def mixedAffineChart (σ : Type*) (I : ∀ i, Fin (n i + 1)) :
     PartialEquiv ((σ → K) × ∀ i, ℙ K (Fin (n i + 1) → K)) ((σ ⊕ Σ i, Fin (n i)) → K) :=
-  ((PartialEquiv.refl (σ → K)).prod (multiprojectiveAffineChart I)).trans
-    (Equiv.sumArrowEquivProdArrow σ (Σ i, Fin (n i)) K).symm.toPartialEquiv
+  ((PartialEquiv.refl (σ → K)).prod (multiprojectiveAffineChart I)).transEquiv
+    (Equiv.sumArrowEquivProdArrow σ (Σ i, Fin (n i)) K).symm
 
 @[simp]
 theorem mixedAffineChart_source (I : ∀ i, Fin (n i + 1)) :
@@ -246,6 +274,26 @@ theorem mixedAffineChart_symm_mem_affineOpen (I : ∀ i, Fin (n i + 1))
     (mixedAffineChart σ I).symm z ∈ mixedAffineOpen σ I := by
   simp
 
+/-- The mixed product affine chart image of `S ∩ mixedAffineOpen σ I` is the inverse-chart preimage
+of `S`. -/
+theorem mixedAffineChart_image_inter_affineOpen
+    (S : Set ((σ → K) × ∀ i, ℙ K (Fin (n i + 1) → K))) (I : ∀ i, Fin (n i + 1)) :
+    mixedAffineChart σ I '' (S ∩ mixedAffineOpen σ I) =
+      (mixedAffineChart σ I).symm ⁻¹' S := by
+  rw [inter_comm, ← mixedAffineChart_source, (mixedAffineChart σ I).image_source_inter_eq',
+    mixedAffineChart_target, univ_inter]
+
+/-- The mixed product affine chart image of `(univ ×ˢ S) ∩ mixedAffineOpen σ I` is the preimage
+under `w ↦ w ∘ Sum.inr` of the multiprojective chart image of `S ∩ multiprojectiveAffineOpen I`. -/
+theorem mixedAffineChart_image_univ_prod_inter_affineOpen
+    (S : Set (∀ i, ℙ K (Fin (n i + 1) → K))) (I : ∀ i, Fin (n i + 1)) :
+    mixedAffineChart σ I '' ((univ : Set (σ → K)) ×ˢ S ∩ mixedAffineOpen σ I) =
+      (fun w : (σ ⊕ Σ i, Fin (n i)) → K ↦ w ∘ Sum.inr) ⁻¹'
+        (multiprojectiveAffineChart I '' (S ∩ multiprojectiveAffineOpen I)) := by
+  rw [mixedAffineChart_image_inter_affineOpen, multiprojectiveAffineChart_image_inter_affineOpen]
+  ext w
+  simp
+
 section Topology
 
 variable [TopologicalSpace K]
@@ -262,24 +310,6 @@ theorem continuous_mixedAffineChart_symm (I : ∀ i, Fin (n i + 1)) :
   (continuous_pi fun a ↦ continuous_apply (Sum.inl a : σ ⊕ Σ i, Fin (n i))).prodMk
     ((continuous_multiprojectiveAffineChart_symm I).comp
       (continuous_pi fun q ↦ continuous_apply (Sum.inr q : σ ⊕ Σ i, Fin (n i))))
-
-section Open
-
-variable [T1Space K] [Finite ι]
-
-/-- In a finite product of projective spaces, each standard product affine open is open. -/
-theorem isOpen_multiprojectiveAffineOpen (I : ∀ i, Fin (n i + 1)) :
-    IsOpen (multiprojectiveAffineOpen (K := K) I) := by
-  rw [multiprojectiveAffineOpen_eq_univ_pi]
-  exact isOpen_set_pi finite_univ fun i _ ↦ Projectivization.isOpen_affineOpen (I i)
-
-/-- In a mixed affine–multiprojective space with finitely many projective factors, each standard
-product affine open is open. -/
-theorem isOpen_mixedAffineOpen (I : ∀ i, Fin (n i + 1)) :
-    IsOpen (mixedAffineOpen (K := K) σ I) :=
-  isOpen_univ.prod (isOpen_multiprojectiveAffineOpen I)
-
-end Open
 
 variable [ContinuousMul K] [ContinuousInv₀ K]
 
@@ -306,29 +336,37 @@ variable [T1Space K] [Finite ι]
 /-- The standard product affine chart of a finite product of projective spaces, as an open partial
 homeomorphism onto `(Σ i, Fin (n i)) → K`. -/
 noncomputable def multiprojectiveAffineOpenPartialHomeomorph (I : ∀ i, Fin (n i + 1)) :
-    OpenPartialHomeomorph (∀ i, ℙ K (Fin (n i + 1) → K)) ((Σ i, Fin (n i)) → K) where
-  toPartialEquiv := multiprojectiveAffineChart I
-  open_source := by simpa using isOpen_multiprojectiveAffineOpen I
-  open_target := by simp
-  continuousOn_toFun := by simpa using continuousOn_multiprojectiveAffineChart I
-  continuousOn_invFun := (continuous_multiprojectiveAffineChart_symm I).continuousOn
+    OpenPartialHomeomorph (∀ i, ℙ K (Fin (n i + 1) → K)) ((Σ i, Fin (n i)) → K) :=
+  (OpenPartialHomeomorph.pi fun i ↦
+    Projectivization.affineOpenPartialHomeomorph (K := K) (I i)).transHomeomorph
+    (piCurryHomeomorph fun i (_ : Fin (n i)) ↦ K).symm
 
 @[simp]
 theorem multiprojectiveAffineOpenPartialHomeomorph_toPartialEquiv (I : ∀ i, Fin (n i + 1)) :
     (multiprojectiveAffineOpenPartialHomeomorph (K := K) I).toPartialEquiv =
-      multiprojectiveAffineChart I :=
-  (rfl)
+      multiprojectiveAffineChart I := by
+  refine PartialEquiv.ext (fun p ↦ ?_) (fun z ↦ ?_) ?_
+  · ext q
+    simp [multiprojectiveAffineOpenPartialHomeomorph]
+  · ext i
+    have h : (piCurryHomeomorph fun i (_ : Fin (n i)) ↦ K) z i = fun k ↦ z ⟨i, k⟩ :=
+      funext fun k ↦ by simp
+    simp [multiprojectiveAffineOpenPartialHomeomorph, h]
+  · ext p
+    simp [multiprojectiveAffineOpenPartialHomeomorph, multiprojectiveAffineChart]
 
 @[simp]
 theorem coe_multiprojectiveAffineOpenPartialHomeomorph (I : ∀ i, Fin (n i + 1)) :
     ⇑(multiprojectiveAffineOpenPartialHomeomorph (K := K) I) = multiprojectiveAffineChart I :=
-  (rfl)
+  congrArg (fun e : PartialEquiv _ _ ↦ ⇑e)
+    (multiprojectiveAffineOpenPartialHomeomorph_toPartialEquiv I)
 
 @[simp]
 theorem coe_multiprojectiveAffineOpenPartialHomeomorph_symm (I : ∀ i, Fin (n i + 1)) :
     ⇑(multiprojectiveAffineOpenPartialHomeomorph (K := K) I).symm =
       (multiprojectiveAffineChart I).symm :=
-  (rfl)
+  congrArg (fun e : PartialEquiv _ _ ↦ ⇑e.symm)
+    (multiprojectiveAffineOpenPartialHomeomorph_toPartialEquiv I)
 
 /-- The inverse of a standard product affine chart is an open embedding onto
 `TauCeti.multiprojectiveAffineOpen I`. -/
@@ -341,27 +379,32 @@ theorem isOpenEmbedding_multiprojectiveAffineChart_symm (I : ∀ i, Fin (n i + 1
 homeomorphism onto `(σ ⊕ Σ i, Fin (n i)) → K`. -/
 noncomputable def mixedAffineOpenPartialHomeomorph (σ : Type*) (I : ∀ i, Fin (n i + 1)) :
     OpenPartialHomeomorph ((σ → K) × ∀ i, ℙ K (Fin (n i + 1) → K))
-      ((σ ⊕ Σ i, Fin (n i)) → K) where
-  toPartialEquiv := mixedAffineChart σ I
-  open_source := by simpa using isOpen_mixedAffineOpen I
-  open_target := by simp
-  continuousOn_toFun := by simpa using continuousOn_mixedAffineChart I
-  continuousOn_invFun := (continuous_mixedAffineChart_symm I).continuousOn
+      ((σ ⊕ Σ i, Fin (n i)) → K) :=
+  ((OpenPartialHomeomorph.refl (σ → K)).prod
+    (multiprojectiveAffineOpenPartialHomeomorph I)).transHomeomorph
+    Homeomorph.sumArrowHomeomorphProdArrow.symm
 
 @[simp]
 theorem mixedAffineOpenPartialHomeomorph_toPartialEquiv (I : ∀ i, Fin (n i + 1)) :
-    (mixedAffineOpenPartialHomeomorph (K := K) σ I).toPartialEquiv = mixedAffineChart σ I :=
-  (rfl)
+    (mixedAffineOpenPartialHomeomorph (K := K) σ I).toPartialEquiv = mixedAffineChart σ I := by
+  refine PartialEquiv.ext (fun x ↦ ?_) (fun z ↦ ?_) ?_
+  · ext c
+    rw [mixedAffineChart_apply]
+    simp [mixedAffineOpenPartialHomeomorph]
+  · simp [mixedAffineOpenPartialHomeomorph]
+  · ext x
+    simp [mixedAffineOpenPartialHomeomorph, mixedAffineChart]
 
 @[simp]
 theorem coe_mixedAffineOpenPartialHomeomorph (I : ∀ i, Fin (n i + 1)) :
     ⇑(mixedAffineOpenPartialHomeomorph (K := K) σ I) = mixedAffineChart σ I :=
-  (rfl)
+  congrArg (fun e : PartialEquiv _ _ ↦ ⇑e) (mixedAffineOpenPartialHomeomorph_toPartialEquiv I)
 
 @[simp]
 theorem coe_mixedAffineOpenPartialHomeomorph_symm (I : ∀ i, Fin (n i + 1)) :
     ⇑(mixedAffineOpenPartialHomeomorph (K := K) σ I).symm = (mixedAffineChart σ I).symm :=
-  (rfl)
+  congrArg (fun e : PartialEquiv _ _ ↦ ⇑e.symm)
+    (mixedAffineOpenPartialHomeomorph_toPartialEquiv I)
 
 end Topology
 
@@ -499,6 +542,37 @@ theorem multiprojectiveCone_univ :
   ext v
   simp [mem_multiprojectiveCone]
 
+@[simp]
+theorem multiprojectiveCone_union (S T : Set (∀ i, ℙ K (Fin (n i + 1) → K))) :
+    multiprojectiveCone (S ∪ T) = multiprojectiveCone S ∪ multiprojectiveCone T := by
+  ext v
+  simp only [mem_multiprojectiveCone, mem_union]
+  exact ⟨fun ⟨hv, h⟩ ↦ h.imp (fun hS ↦ ⟨hv, hS⟩) fun hT ↦ ⟨hv, hT⟩,
+    fun h ↦ h.elim (fun ⟨hv, hS⟩ ↦ ⟨hv, Or.inl hS⟩) fun ⟨hv, hT⟩ ↦ ⟨hv, Or.inr hT⟩⟩
+
+@[simp]
+theorem multiprojectiveCone_inter (S T : Set (∀ i, ℙ K (Fin (n i + 1) → K))) :
+    multiprojectiveCone (S ∩ T) = multiprojectiveCone S ∩ multiprojectiveCone T := by
+  ext v
+  simp only [mem_multiprojectiveCone, mem_inter_iff]
+  exact ⟨fun ⟨hv, hS, hT⟩ ↦ ⟨⟨hv, hS⟩, ⟨hv, hT⟩⟩, fun ⟨⟨hv, hS⟩, _, hT⟩ ↦ ⟨hv, hS, hT⟩⟩
+
+@[simp]
+theorem multiprojectiveCone_sdiff (S T : Set (∀ i, ℙ K (Fin (n i + 1) → K))) :
+    multiprojectiveCone (S \ T) = multiprojectiveCone S \ multiprojectiveCone T := by
+  ext v
+  simp only [mem_multiprojectiveCone, mem_sdiff]
+  exact ⟨fun ⟨hv, hS, hT⟩ ↦ ⟨⟨hv, hS⟩, fun ⟨_, hT'⟩ ↦ hT hT'⟩,
+    fun ⟨⟨hv, hS⟩, hT⟩ ↦ ⟨hv, hS, fun hT' ↦ hT ⟨hv, hT'⟩⟩⟩
+
+@[simp]
+theorem multiprojectiveCone_compl (S : Set (∀ i, ℙ K (Fin (n i + 1) → K))) :
+    multiprojectiveCone Sᶜ = multiprojectivePuncturedCone n K \ multiprojectiveCone S := by
+  ext v
+  simp only [mem_multiprojectiveCone, mem_compl_iff, mem_sdiff, mem_multiprojectivePuncturedCone]
+  exact ⟨fun ⟨hv, hS⟩ ↦ ⟨hv, fun ⟨_, hS'⟩ ↦ hS hS'⟩,
+    fun ⟨hv, hS⟩ ↦ ⟨hv, fun hS' ↦ hS ⟨hv, hS'⟩⟩⟩
+
 variable [LinearOrder K]
 
 /-- A subset `S` of a mixed affine–multiprojective space
@@ -549,7 +623,7 @@ theorem isMixedSemialgebraic_univ_prod_iff {T : Set (∀ i, ℙ K (Fin (n i + 1)
 
 /-- The product of an affine semialgebraic set and a multiprojective semialgebraic set is mixed
 semialgebraic. -/
-theorem IsSemialgebraic.prod_isMultiprojectiveSemialgebraic {A : Set (σ → K)}
+theorem IsSemialgebraic.isMixedSemialgebraic_prod {A : Set (σ → K)}
     {B : Set (∀ i, ℙ K (Fin (n i + 1) → K))} (hA : IsSemialgebraic A)
     (hB : IsMultiprojectiveSemialgebraic B) : IsMixedSemialgebraic (A ×ˢ B) := by
   rw [IsMixedSemialgebraic, mixedCone_prod]
@@ -598,6 +672,37 @@ theorem isSemialgebraic_multiprojectivePuncturedCone [Finite ι] :
 theorem isSemialgebraic_mixedPuncturedCone [Finite ι] :
     IsSemialgebraic (mixedPuncturedCone σ n K) :=
   isSemialgebraic_multiprojectivePuncturedCone.preimage_comp Sum.inr
+
+/-- Every singleton in a finite product of projective spaces is multiprojective semialgebraic. -/
+theorem isMultiprojectiveSemialgebraic_singleton [Finite ι]
+    (p : ∀ i : ι, ℙ K (Fin (n i + 1) → K)) :
+    IsMultiprojectiveSemialgebraic ({p} : Set (∀ i : ι, ℙ K (Fin (n i + 1) → K))) := by
+  rw [isMultiprojectiveSemialgebraic_def]
+  have hminors : IsSemialgebraic
+      (⋂ (i : ι) (j : Fin (n i + 1)) (k : Fin (n i + 1)),
+        {v : (Σ i, Fin (n i + 1)) → K |
+          eval v (C ((p i).rep k) * X ⟨i, j⟩ - C ((p i).rep j) * X ⟨i, k⟩) = 0}) :=
+    .iInter fun _ ↦ .iInter fun _ ↦ .iInter fun _ ↦ isSemialgebraic_eval_eq_zero _
+  convert isSemialgebraic_multiprojectivePuncturedCone.inter hminors using 1
+  ext v
+  simp only [mem_multiprojectiveCone, mem_singleton_iff, funext_iff, mem_inter_iff,
+    mem_multiprojectivePuncturedCone, mem_iInter, mem_ofPred_eq, map_sub, map_mul, eval_C, eval_X,
+    sub_eq_zero]
+  refine ⟨fun ⟨hv, hp⟩ ↦ ⟨hv, fun i j k ↦ ?_⟩, fun ⟨hv, hp⟩ ↦ ⟨hv, fun i ↦ ?_⟩⟩
+  · have hi := (hp i).trans (p i).mk_rep.symm
+    have hmul := (Projectivization.mk_eq_mk_iff_forall_mul_eq (hv i) (p i).rep_ne_zero).1 hi j k
+    rw [mul_comm, hmul, mul_comm]
+  · rw [← (p i).mk_rep, Projectivization.mk_eq_mk_iff_forall_mul_eq (hv i) (p i).rep_ne_zero]
+    intro j k
+    rw [mul_comm, hp i j k, mul_comm]
+
+/-- Every singleton in a finite-dimensional mixed space is mixed semialgebraic. -/
+theorem isMixedSemialgebraic_singleton [Finite σ] [Finite ι]
+    (c : (σ → K) × ∀ i : ι, ℙ K (Fin (n i + 1) → K)) :
+    IsMixedSemialgebraic ({c} : Set ((σ → K) × ∀ i : ι, ℙ K (Fin (n i + 1) → K))) := by
+  rw [← Prod.eta c, ← singleton_prod_singleton]
+  exact (isSemialgebraic_singleton c.1).isMixedSemialgebraic_prod
+    (isMultiprojectiveSemialgebraic_singleton c.2)
 
 @[simp]
 theorem isMixedSemialgebraic_empty :
@@ -649,27 +754,22 @@ theorem IsMixedSemialgebraic.iUnion {α : Type*} [Finite α]
 theorem IsMultiprojectiveSemialgebraic.union {S T : Set (∀ i, ℙ K (Fin (n i + 1) → K))}
     (hS : IsMultiprojectiveSemialgebraic S) (hT : IsMultiprojectiveSemialgebraic T) :
     IsMultiprojectiveSemialgebraic (S ∪ T) := by
-  rw [← isMixedSemialgebraic_univ_prod_iff (σ := Empty)] at hS hT ⊢
-  rw [prod_union]
+  rw [IsMultiprojectiveSemialgebraic] at hS hT ⊢
+  rw [multiprojectiveCone_union]
   exact hS.union hT
 
 theorem IsMultiprojectiveSemialgebraic.inter {S T : Set (∀ i, ℙ K (Fin (n i + 1) → K))}
     (hS : IsMultiprojectiveSemialgebraic S) (hT : IsMultiprojectiveSemialgebraic T) :
     IsMultiprojectiveSemialgebraic (S ∩ T) := by
-  rw [← isMixedSemialgebraic_univ_prod_iff (σ := Empty)] at hS hT ⊢
-  rw [← univ_inter univ, ← prod_inter_prod]
+  rw [IsMultiprojectiveSemialgebraic] at hS hT ⊢
+  rw [multiprojectiveCone_inter]
   exact hS.inter hT
 
 theorem IsMultiprojectiveSemialgebraic.sdiff {S T : Set (∀ i, ℙ K (Fin (n i + 1) → K))}
     (hS : IsMultiprojectiveSemialgebraic S) (hT : IsMultiprojectiveSemialgebraic T) :
     IsMultiprojectiveSemialgebraic (S \ T) := by
   rw [IsMultiprojectiveSemialgebraic] at hS hT ⊢
-  have h : multiprojectiveCone (S \ T) = multiprojectiveCone S \ multiprojectiveCone T := by
-    ext v
-    simp only [mem_multiprojectiveCone, mem_sdiff]
-    exact ⟨fun ⟨hv, hS, hT⟩ ↦ ⟨⟨hv, hS⟩, fun ⟨_, hT'⟩ ↦ hT hT'⟩,
-      fun ⟨⟨hv, hS⟩, hT⟩ ↦ ⟨hv, hS, fun hT' ↦ hT ⟨hv, hT'⟩⟩⟩
-  rw [h]
+  rw [multiprojectiveCone_sdiff]
   exact hS.sdiff hT
 
 theorem IsMultiprojectiveSemialgebraic.biUnion {α : Type*} {A : Set α} (hA : A.Finite)
@@ -710,12 +810,8 @@ theorem isSetAlgebra_setOf_isMultiprojectiveSemialgebraic :
     IsSetAlgebra {S : Set (∀ i, ℙ K (Fin (n i + 1) → K)) | IsMultiprojectiveSemialgebraic S} where
   empty_mem := isMultiprojectiveSemialgebraic_empty
   compl_mem S hS := by
-    rw [mem_ofPred_eq, ← isMixedSemialgebraic_univ_prod_iff (σ := Empty)] at hS ⊢
-    have hc : (univ : Set (Empty → K)) ×ˢ Sᶜ = ((univ : Set (Empty → K)) ×ˢ S)ᶜ := by
-      ext ⟨_, p⟩
-      simp
-    rw [hc]
-    exact isSetAlgebra_setOf_isMixedSemialgebraic.compl_mem hS
+    rw [mem_ofPred_eq, IsMultiprojectiveSemialgebraic, multiprojectiveCone_compl]
+    exact isSemialgebraic_multiprojectivePuncturedCone.sdiff hS
   union_mem _ _ hS hT := hS.union hT
 
 @[simp]
@@ -779,27 +875,41 @@ section GlobalCharts
 
 variable {ι σ K : Type*} [Field K] {n : ι → ℕ}
 
-/-- Polynomial coordinates inserting `1` in position `I i` of the `i`-th homogeneous block. -/
+/-- Flattened homogeneous coordinate polynomials inserting `1` in position `I i` of the `i`-th
+factor, representing `(TauCeti.multiprojectiveAffineChart I).symm` in homogeneous coordinates. -/
+noncomputable def multiprojectiveInsertNthPoly (I : ∀ i, Fin (n i + 1)) :
+    (Σ i, Fin (n i + 1)) → MvPolynomial (Σ i, Fin (n i)) K :=
+  fun q ↦ Fin.insertNth (α := fun _ ↦ MvPolynomial (Σ i, Fin (n i)) K) (I q.1) 1
+    (fun k ↦ X ⟨q.1, k⟩) q.2
+
+@[simp]
+theorem eval_multiprojectiveInsertNthPoly (I : ∀ i, Fin (n i + 1))
+    (z : (Σ i, Fin (n i)) → K) (i : ι) (j : Fin (n i + 1)) :
+    eval z (multiprojectiveInsertNthPoly I ⟨i, j⟩) =
+      Fin.insertNth (α := fun _ ↦ K) (I i) 1 (fun k ↦ z ⟨i, k⟩) j := by
+  induction j using (I i).succAboveCases with
+  | x => simp [multiprojectiveInsertNthPoly]
+  | p k => simp [multiprojectiveInsertNthPoly]
+
+/-- Mixed polynomial coordinates acting as the identity on `σ` and inserting `1` in position `I i`
+of the `i`-th homogeneous block. -/
 private noncomputable def mixedInsertNthPoly (σ : Type*) (I : ∀ i, Fin (n i + 1)) :
     (σ ⊕ Σ i, Fin (n i + 1)) → MvPolynomial (σ ⊕ Σ i, Fin (n i)) K :=
-  Sum.elim (fun a ↦ X (.inl a))
-    fun q ↦ Fin.insertNth (α := fun _ ↦ MvPolynomial (σ ⊕ Σ i, Fin (n i)) K) (I q.1) 1
-      (fun k ↦ X (.inr ⟨q.1, k⟩)) q.2
+  Sum.elim (fun a ↦ X (.inl a)) (fun q ↦ rename Sum.inr (multiprojectiveInsertNthPoly I q))
 
 private theorem eval_mixedInsertNthPoly_inr (I : ∀ i, Fin (n i + 1))
     (z : (σ ⊕ Σ i, Fin (n i)) → K) (i : ι) (j : Fin (n i + 1)) :
     eval z (mixedInsertNthPoly σ I (.inr ⟨i, j⟩)) =
       Fin.insertNth (α := fun _ ↦ K) (I i) 1 (fun k ↦ z (.inr ⟨i, k⟩)) j := by
-  induction j using (I i).succAboveCases with
-  | x => simp [mixedInsertNthPoly]
-  | p k => simp [mixedInsertNthPoly]
+  simp [mixedInsertNthPoly, eval_rename]
 
 private theorem mixedInsertNthPoly_preimage_mixedCone
     (S : Set ((σ → K) × ∀ i, ℙ K (Fin (n i + 1) → K))) (I : ∀ i, Fin (n i + 1)) :
     (fun z c ↦ eval z (mixedInsertNthPoly σ I c)) ⁻¹' mixedCone S =
       mixedAffineChart σ I '' (S ∩ mixedAffineOpen σ I) := by
+  rw [mixedAffineChart_image_inter_affineOpen]
   ext z
-  simp only [mem_preimage, mem_mixedCone, mem_image, mem_inter_iff]
+  simp only [mem_preimage, mem_mixedCone]
   have heval_inl : (fun a ↦ eval z (mixedInsertNthPoly σ I (.inl a))) = z ∘ Sum.inl :=
     funext fun _ ↦ by simp [mixedInsertNthPoly]
   have heval_inr (i : ι) :
@@ -819,15 +929,7 @@ private theorem mixedInsertNthPoly_preimage_mixedCone
     simp only [multiprojectiveAffineChart_symm_apply, Projectivization.affineChart_symm_apply]
     congr 1
     exact (heval_inr i).symm
-  constructor
-  · rintro ⟨_, hzS⟩
-    exact ⟨(mixedAffineChart σ I).symm z,
-      ⟨hsymm_eq ▸ hzS, mixedAffineChart_symm_mem_affineOpen I z⟩,
-      (mixedAffineChart σ I).right_inv (by simp)⟩
-  · rintro ⟨x, ⟨hxS, hxI⟩, rfl⟩
-    refine ⟨hne, ?_⟩
-    rw [← hsymm_eq, (mixedAffineChart σ I).left_inv (by simpa using hxI)]
-    exact hxS
+  exact ⟨fun ⟨_, hzS⟩ ↦ hsymm_eq ▸ hzS, fun hzS ↦ ⟨hne, hsymm_eq ▸ hzS⟩⟩
 
 variable [LinearOrder K]
 
@@ -846,18 +948,10 @@ theorem IsMultiprojectiveSemialgebraic.isSemialgebraic_chart
     (I : ∀ i, Fin (n i + 1)) :
     IsSemialgebraic (multiprojectiveAffineChart I '' (S ∩ multiprojectiveAffineOpen I)) := by
   have h := ((isMixedSemialgebraic_univ_prod_iff (σ := Empty)).2 hS).isSemialgebraic_chart I
+  rw [mixedAffineChart_image_univ_prod_inter_affineOpen] at h
   convert h.preimage_comp (Sum.elim Empty.elim id) using 1
   ext z
-  simp only [mem_image, mem_inter_iff, mem_preimage, mem_prod, mem_univ, true_and,
-    mem_mixedAffineOpen, Prod.exists]
-  constructor
-  · rintro ⟨p, ⟨hpS, hpI⟩, rfl⟩
-    refine ⟨Empty.elim, p, ⟨hpS, hpI⟩, ?_⟩
-    ext (e | q)
-    · exact e.elim
-    · rfl
-  · rintro ⟨_, p, ⟨hpS, hpI⟩, hpz⟩
-    exact ⟨p, ⟨hpS, hpI⟩, funext fun q ↦ congrFun hpz (.inr q)⟩
+  simp [Function.comp_def]
 
 /-- In a finite product of projective spaces, each standard product affine open is
 multiprojective semialgebraic. -/
@@ -888,36 +982,32 @@ theorem isSemialgebraicOn_multiprojectiveAffineChart_symm_trans [Finite ι]
       (multiprojectiveAffineChart J))
       ((multiprojectiveAffineChart (K := K) I).symm.trans
         (multiprojectiveAffineChart J)).source := by
-  let P : ∀ i, Fin (n i + 1) → MvPolynomial (Σ i, Fin (n i)) K :=
-    fun i ↦ Fin.insertNth (α := fun _ ↦ MvPolynomial (Σ i, Fin (n i)) K) (I i) 1
-      fun k ↦ X ⟨i, k⟩
-  have hP (z : (Σ i, Fin (n i)) → K) (i : ι) (j : Fin (n i + 1)) :
-      eval z (P i j) = Fin.insertNth (α := fun _ ↦ K) (I i) 1 (fun k ↦ z ⟨i, k⟩) j := by
-    induction j using (I i).succAboveCases with
-    | x => simp [P]
-    | p k => simp [P]
   have hsrc_eq : ((multiprojectiveAffineChart (K := K) I).symm.trans
-      (multiprojectiveAffineChart J)).source = ⋂ i : ι, {z | eval z (P i (J i)) ≠ 0} := by
+      (multiprojectiveAffineChart J)).source =
+        ⋂ i : ι, {z | eval z (multiprojectiveInsertNthPoly I ⟨i, J i⟩) ≠ 0} := by
     rw [multiprojectiveAffineChart_symm_trans_source]
     ext z
-    simp [hP]
+    simp
   have hsrc : IsSemialgebraic
       ((multiprojectiveAffineChart (K := K) I).symm.trans
         (multiprojectiveAffineChart J)).source := by
     rw [hsrc_eq]
     exact .iInter fun _ ↦ isSemialgebraic_eval_ne_zero _
-  refine (isSemialgebraicOn_eval_div (fun q : Σ i, Fin (n i) ↦ P q.1 ((J q.1).succAbove q.2))
-    (fun q : Σ i, Fin (n i) ↦ P q.1 (J q.1)) hsrc ?_).congr fun z _ ↦ ?_
+  refine (isSemialgebraicOn_eval_div
+    (fun q : Σ i, Fin (n i) ↦ multiprojectiveInsertNthPoly I ⟨q.1, (J q.1).succAbove q.2⟩)
+    (fun q : Σ i, Fin (n i) ↦ multiprojectiveInsertNthPoly I ⟨q.1, J q.1⟩) hsrc ?_).congr
+    fun z _ ↦ ?_
   · intro z hz q
     rw [hsrc_eq, mem_iInter] at hz
     exact hz q.1
   · ext q
-    simp [multiprojectiveAffineChart_symm_trans_apply, hP]
+    simp [multiprojectiveAffineChart_symm_trans_apply]
 
 variable [IsStrictOrderedRing K] [Finite ι]
 
-/-- Transporting a semialgebraic subset `B` of the `I`-chart image of `S` to chart `J` preserves
-semialgebraicity, without assuming projection closure. -/
+/-- If the intersection of the `I`-chart image of `S` with `B` is semialgebraic, then transporting
+`S ∩ (mixedAffineOpen σ I ∩ mixedAffineChart σ I ⁻¹' B)` to chart `J` yields a semialgebraic set,
+without assuming projection closure. -/
 theorem isSemialgebraic_mixedAffineChart_image_inter
     {S : Set ((σ → K) × ∀ i, ℙ K (Fin (n i + 1) → K))}
     {I J : ∀ i, Fin (n i + 1)} {B : Set ((σ ⊕ Σ i, Fin (n i)) → K)}
@@ -925,20 +1015,15 @@ theorem isSemialgebraic_mixedAffineChart_image_inter
     IsSemialgebraic
       (mixedAffineChart σ J ''
         ((S ∩ (mixedAffineOpen σ I ∩ mixedAffineChart σ I ⁻¹' B)) ∩ mixedAffineOpen σ J)) := by
-  let P : ∀ i, Fin (n i + 1) → MvPolynomial (σ ⊕ Σ i, Fin (n i)) K :=
-    fun i ↦ Fin.insertNth (α := fun _ ↦ MvPolynomial (σ ⊕ Σ i, Fin (n i)) K) (J i) 1
-      fun k ↦ X (.inr ⟨i, k⟩)
-  have hP (w : (σ ⊕ Σ i, Fin (n i)) → K) (i : ι) (j : Fin (n i + 1)) :
-      eval w (P i j) = Fin.insertNth (α := fun _ ↦ K) (J i) 1 (fun k ↦ w (.inr ⟨i, k⟩)) j := by
-    induction j using (J i).succAboveCases with
-    | x => simp [P]
-    | p k => simp [P]
-  let UJ : Set ((σ ⊕ Σ i, Fin (n i)) → K) := ⋂ i : ι, {w | eval w (P i (I i)) ≠ 0}
+  rw [mixedAffineChart_image_inter_affineOpen] at hSB ⊢
+  let UJ : Set ((σ ⊕ Σ i, Fin (n i)) → K) :=
+    ⋂ i : ι, {w | eval w (mixedInsertNthPoly σ J (.inr ⟨i, I i⟩)) ≠ 0}
   have hUJ : IsSemialgebraic UJ := .iInter fun _ ↦ isSemialgebraic_eval_ne_zero _
   let f : (σ ⊕ Σ i, Fin (n i)) → MvPolynomial (σ ⊕ Σ i, Fin (n i)) K :=
-    Sum.elim (fun a ↦ X (.inl a)) fun q ↦ P q.1 ((I q.1).succAbove q.2)
+    Sum.elim (fun a ↦ X (.inl a))
+      fun q ↦ mixedInsertNthPoly σ J (.inr ⟨q.1, (I q.1).succAbove q.2⟩)
   let g : (σ ⊕ Σ i, Fin (n i)) → MvPolynomial (σ ⊕ Σ i, Fin (n i)) K :=
-    Sum.elim (fun _ ↦ 1) fun q ↦ P q.1 (I q.1)
+    Sum.elim (fun _ ↦ 1) fun q ↦ mixedInsertNthPoly σ J (.inr ⟨q.1, I q.1⟩)
   convert hSB.inter_preimage_eval_div hUJ f g
     (fun w hw c ↦ by
       cases c with
@@ -951,72 +1036,53 @@ theorem isSemialgebraic_mixedAffineChart_image_inter
       mixedAffineChart σ I ((mixedAffineChart σ J).symm w) := by
     ext (a | q)
     · simp [f, g]
-    · simp [f, g, hP, multiprojectiveAffineChart_symm_apply]
+    · simp [f, g, eval_mixedInsertNthPoly_inr, multiprojectiveAffineChart_symm_apply]
   have hUJ_mem : w ∈ UJ ↔ (mixedAffineChart σ J).symm w ∈ mixedAffineOpen σ I := by
-    simp [UJ, hP, multiprojectiveAffineChart_symm_apply]
-  rw [mem_inter_iff, mem_preimage, hTw, hUJ_mem]
-  constructor
-  · rintro ⟨y, ⟨⟨hyS, hyI, hyB⟩, hyJ⟩, rfl⟩
-    have hsymm : (mixedAffineChart σ J).symm (mixedAffineChart σ J y) = y :=
-      (mixedAffineChart σ J).left_inv (by rw [mixedAffineChart_source]; exact hyJ)
-    rw [hsymm]
-    exact ⟨hyI, ⟨y, ⟨hyS, hyI⟩, rfl⟩, hyB⟩
-  · rintro ⟨hyI, ⟨y', ⟨hy'S, hy'I⟩, hchart_eq⟩, hyB⟩
-    let y := (mixedAffineChart σ J).symm w
-    have hyJ : y ∈ mixedAffineOpen σ J := mixedAffineChart_symm_mem_affineOpen J w
-    have hyy' : y = y' := by
-      have hly : (mixedAffineChart σ I).symm (mixedAffineChart σ I y) = y :=
-        (mixedAffineChart σ I).left_inv (by rw [mixedAffineChart_source]; exact hyI)
-      have hly' : (mixedAffineChart σ I).symm (mixedAffineChart σ I y') = y' :=
-        (mixedAffineChart σ I).left_inv (by rw [mixedAffineChart_source]; exact hy'I)
-      rw [← hly, ← hchart_eq, hly']
-    exact ⟨y, ⟨⟨hyy' ▸ hy'S, hyI, hyB⟩, hyJ⟩, (mixedAffineChart σ J).right_inv (by simp)⟩
+    simp [UJ, eval_mixedInsertNthPoly_inr, multiprojectiveAffineChart_symm_apply]
+  simp only [mem_preimage, mem_inter_iff]
+  rw [hTw, hUJ_mem]
+  refine ⟨fun ⟨hS, hI, hB⟩ ↦ ⟨hI, ?_, hB⟩, fun ⟨hI, hS, hB⟩ ↦ ⟨?_, hI, hB⟩⟩
+  · rwa [(mixedAffineChart σ I).left_inv (by rw [mixedAffineChart_source]; exact hI)]
+  · rwa [(mixedAffineChart σ I).left_inv (by rw [mixedAffineChart_source]; exact hI)] at hS
 
 private theorem isSemialgebraic_mixedCone_inter_eval_ne_zero
     {S : Set ((σ → K) × ∀ i, ℙ K (Fin (n i + 1) → K))} (I : ∀ i, Fin (n i + 1))
     (hI : IsSemialgebraic (mixedAffineChart σ I '' (S ∩ mixedAffineOpen σ I))) :
     IsSemialgebraic (mixedCone S ∩ ⋂ i : ι, {w | eval w (X (.inr ⟨i, I i⟩)) ≠ 0}) := by
+  rw [mixedAffineChart_image_inter_affineOpen] at hI
   let W : Set ((σ ⊕ Σ i, Fin (n i + 1)) → K) := ⋂ i : ι, {w | eval w (X (.inr ⟨i, I i⟩)) ≠ 0}
   have hW : IsSemialgebraic W := .iInter fun _ ↦ isSemialgebraic_eval_ne_zero _
   let f : (σ ⊕ Σ i, Fin (n i)) → MvPolynomial (σ ⊕ Σ i, Fin (n i + 1)) K :=
     Sum.elim (fun a ↦ X (.inl a)) fun q ↦ X (.inr ⟨q.1, (I q.1).succAbove q.2⟩)
   let g : (σ ⊕ Σ i, Fin (n i)) → MvPolynomial (σ ⊕ Σ i, Fin (n i + 1)) K :=
     Sum.elim (fun _ ↦ 1) fun q ↦ X (.inr ⟨q.1, I q.1⟩)
-  convert hI.inter_preimage_eval_div hW f g (fun w hw c ↦ ?_) using 1
-  · ext w
-    simp only [mem_inter_iff, mem_preimage]
-    refine ⟨fun ⟨⟨hw, hwS⟩, hwI⟩ ↦ ⟨hwI, ?_⟩, fun ⟨hwI, hfw⟩ ↦ ?_⟩
-    · have hwI' : ∀ i, w (.inr ⟨i, I i⟩) ≠ 0 := by simpa [W] using hwI
-      let x : (σ → K) × ∀ i, ℙ K (Fin (n i + 1) → K) :=
-        (w ∘ Sum.inl, fun i ↦ Projectivization.mk K (fun j ↦ w (.inr ⟨i, j⟩)) (hw i))
-      have hxI : x ∈ mixedAffineOpen σ I := by
-        simp [x, Projectivization.mk_mem_affineOpen_iff, hwI']
-      refine ⟨x, ⟨hwS, hxI⟩, ?_⟩
-      ext (a | q) <;> simp [x, f, g]
-    · have hwI' : ∀ i, w (.inr ⟨i, I i⟩) ≠ 0 := by simpa [W] using hwI
-      have hw0 : ∀ i, (fun j ↦ w (.inr ⟨i, j⟩)) ≠ 0 := fun i h0 ↦ hwI' i (congrFun h0 (I i))
-      obtain ⟨x, ⟨hxS, hxI⟩, hxw⟩ := hfw
-      refine ⟨⟨hw0, ?_⟩, hwI⟩
-      have hx_eq : x = (w ∘ Sum.inl,
-          fun i ↦ Projectivization.mk K (fun j ↦ w (.inr ⟨i, j⟩)) (hw0 i)) := by
-        have hlx : (mixedAffineChart σ I).symm (mixedAffineChart σ I x) = x :=
-          (mixedAffineChart σ I).left_inv (by rw [mixedAffineChart_source]; exact hxI)
-        rw [← hlx, hxw, mixedAffineChart_symm_apply]
-        refine Prod.ext (funext fun a ↦ by simp [f, g]) (funext fun i ↦ ?_)
-        simp only [multiprojectiveAffineChart_symm_apply, Projectivization.affineChart_symm_apply]
-        have hcoord : (fun k ↦ eval w (f (.inr ⟨i, k⟩)) / eval w (g (.inr ⟨i, k⟩))) =
-            fun k ↦ w (.inr ⟨i, (I i).succAbove k⟩) / w (.inr ⟨i, I i⟩) :=
-          funext fun k ↦ by simp [f, g]
-        rw [Function.comp_def]
-        simp only [hcoord]
-        exact (Projectivization.mk_eq_mk_iff' K _ _ _ (hw0 i)).2 ⟨(w (.inr ⟨i, I i⟩))⁻¹,
-          (Fin.insertNth_one_div_eq_inv_smul (I i) (fun j ↦ w (.inr ⟨i, j⟩)) (hwI' i)).symm⟩
-      rwa [← hx_eq]
-  · cases c with
-    | inl _ => simp [g]
-    | inr q =>
-      simp only [W, mem_iInter, mem_ofPred_eq] at hw
-      simpa [g] using hw q.1
+  convert hI.inter_preimage_eval_div hW f g (fun w hw c ↦ by
+      cases c with
+      | inl _ => simp [g]
+      | inr q =>
+        simp only [W, mem_iInter, mem_ofPred_eq] at hw
+        simpa [g] using hw q.1) using 1
+  ext w
+  simp only [mem_inter_iff, mem_preimage, mem_mixedCone]
+  refine ⟨fun ⟨⟨hw, hwS⟩, hwI⟩ ↦ ⟨hwI, ?_⟩, fun ⟨hwI, hfw⟩ ↦ ⟨?_, hwI⟩⟩
+  · have hwI' : ∀ i, w (.inr ⟨i, I i⟩) ≠ 0 := by simpa [W] using hwI
+    convert hwS using 1
+    rw [mixedAffineChart_symm_apply]
+    refine Prod.ext (funext fun a ↦ by simp [f, g]) (funext fun i ↦ ?_)
+    simp only [multiprojectiveAffineChart_symm_apply, Projectivization.affineChart_symm_apply,
+      Function.comp_def, f, g, Sum.elim_inr, eval_X]
+    exact (Projectivization.mk_eq_mk_iff' K _ _ _ (hw i)).2 ⟨(w (.inr ⟨i, I i⟩))⁻¹,
+      (Fin.insertNth_one_div_eq_inv_smul (I i) (fun j ↦ w (.inr ⟨i, j⟩)) (hwI' i)).symm⟩
+  · have hwI' : ∀ i, w (.inr ⟨i, I i⟩) ≠ 0 := by simpa [W] using hwI
+    have hw0 : ∀ i, (fun j ↦ w (.inr ⟨i, j⟩)) ≠ 0 := fun i h0 ↦ hwI' i (congrFun h0 (I i))
+    refine ⟨hw0, ?_⟩
+    convert hfw using 1
+    rw [mixedAffineChart_symm_apply]
+    refine Prod.ext (funext fun a ↦ by simp [f, g]) (funext fun i ↦ ?_)
+    simp only [multiprojectiveAffineChart_symm_apply, Projectivization.affineChart_symm_apply,
+      Function.comp_def, f, g, Sum.elim_inr, eval_X]
+    exact ((Projectivization.mk_eq_mk_iff' K _ _ _ (hw0 i)).2 ⟨(w (.inr ⟨i, I i⟩))⁻¹,
+      (Fin.insertNth_one_div_eq_inv_smul (I i) (fun j ↦ w (.inr ⟨i, j⟩)) (hwI' i)).symm⟩).symm
 
 /-- **Cone-versus-chart equivalence for mixed spaces.** Over a strict ordered field and finitely
 many projective factors, a subset `S ⊆ (σ → K) × ∀ i, ℙ K (Fin (n i + 1) → K)` is mixed
@@ -1050,21 +1116,8 @@ theorem isMultiprojectiveSemialgebraic_iff_forall_chart
   refine ⟨fun hS I ↦ hS.isSemialgebraic_chart I, fun hchart ↦ ?_⟩
   rw [← isMixedSemialgebraic_univ_prod_iff (σ := Empty), isMixedSemialgebraic_iff_forall_chart]
   intro I
-  convert (hchart I).preimage_comp Sum.inr using 1
-  ext z
-  simp only [mem_image, mem_inter_iff, mem_prod, mem_univ, true_and, mem_mixedAffineOpen,
-    mem_preimage, Prod.exists]
-  constructor
-  · rintro ⟨_, p, ⟨hpS, hpI⟩, rfl⟩
-    refine ⟨p, ⟨hpS, hpI⟩, ?_⟩
-    ext q
-    simp
-  · rintro ⟨p, ⟨hpS, hpI⟩, hpz⟩
-    refine ⟨Empty.elim, p, ⟨hpS, hpI⟩, ?_⟩
-    ext (e | q)
-    · exact e.elim
-    · rw [mixedAffineChart_apply_inr]
-      exact congrFun hpz q
+  rw [mixedAffineChart_image_univ_prod_inter_affineOpen]
+  exact (hchart I).preimage_comp Sum.inr
 
 /-- For `ι = Fin m`, multiprojective semialgebraicity is equivalent to semialgebraicity of every
 standard product chart image in `Fin (∑ i, n i) → K` via `finSigmaFinEquiv`. -/
@@ -1079,122 +1132,5 @@ theorem isMultiprojectiveSemialgebraic_iff_forall_fin_chart {m : ℕ} {n : Fin m
   exact forall_congr' fun _ ↦ (isSemialgebraic_preimage_comp_equiv finSigmaFinEquiv).symm
 
 end GlobalCharts
-
-/-! ### Local-to-global chart characterization over `ℝ` -/
-
-section RealLocalToGlobal
-
-variable {ι σ : Type*} {n : ι → ℕ}
-
-/-- **Local-to-global chart criterion on mixed spaces with bounded affine projection.**
-If `S ⊆ (σ → ℝ) × ∀ i : ι, ℙ ℝ (Fin (n i + 1) → ℝ)` has bounded projection to `σ → ℝ` and is
-locally semialgebraic at every point of `closure (Prod.fst '' S) ×ˢ univ` in some standard product
-affine chart containing that point, then `S` is mixed semialgebraic. -/
-theorem isMixedSemialgebraic_of_isBounded_fst [Finite ι] [Finite σ]
-    {S : Set ((σ → ℝ) × ∀ i, ℙ ℝ (Fin (n i + 1) → ℝ))}
-    (hb : Bornology.IsBounded (Prod.fst '' S))
-    (hloc : ∀ x ∈ closure (Prod.fst '' S) ×ˢ (univ : Set (∀ i, ℙ ℝ (Fin (n i + 1) → ℝ))),
-      ∃ I, x ∈ mixedAffineOpen σ I ∧
-        SemialgebraicAt (mixedAffineChart σ I '' (S ∩ mixedAffineOpen σ I))
-          (mixedAffineChart σ I x)) :
-    IsMixedSemialgebraic S := by
-  cases nonempty_fintype ι
-  cases nonempty_fintype σ
-  let Kset := closure (Prod.fst '' S) ×ˢ (univ : Set (∀ i, ℙ ℝ (Fin (n i + 1) → ℝ)))
-  have hK : IsCompact Kset := hb.isCompact_closure.prod isCompact_univ
-  have hSK : S ⊆ Kset := fun x hx ↦ ⟨subset_closure ⟨x, hx, rfl⟩, mem_univ x.2⟩
-  choose I hxI hsemi using fun x : Kset ↦ hloc x.1 x.2
-  have hball (x : Kset) :
-      ∃ ε > 0, IsSemialgebraic
-        ((mixedAffineChart σ (I x) '' (S ∩ mixedAffineOpen σ (I x))) ∩
-          ball (mixedAffineChart σ (I x) x.1) ε) :=
-    semialgebraicAt_iff_exists_ball.1 (hsemi x)
-  choose ε hε hSball using hball
-  let B : Kset → Set ((σ ⊕ Σ i, Fin (n i)) → ℝ) :=
-    fun x ↦ ball (mixedAffineChart σ (I x) x.1) (ε x)
-  let V : Kset → Set ((σ → ℝ) × ∀ i, ℙ ℝ (Fin (n i + 1) → ℝ)) :=
-    fun x ↦ mixedAffineOpen σ (I x) ∩ mixedAffineChart σ (I x) ⁻¹' B x
-  have hV_open (x : Kset) : IsOpen (V x) := by
-    simpa [V] using (mixedAffineOpenPartialHomeomorph (K := ℝ) σ (I x)).isOpen_inter_preimage
-      isOpen_ball
-  have hxV (x : Kset) : x.1 ∈ V x := ⟨hxI x, mem_ball_self (hε x)⟩
-  obtain ⟨t, ht⟩ := hK.elim_nhds_subcover' (fun x hx ↦ V ⟨x, hx⟩)
-    fun x hx ↦ (hV_open ⟨x, hx⟩).mem_nhds (hxV ⟨x, hx⟩)
-  rw [isMixedSemialgebraic_iff_forall_chart]
-  intro J
-  have hcover : mixedAffineChart σ J '' (S ∩ mixedAffineOpen σ J) =
-      ⋃ x ∈ t, mixedAffineChart σ J '' ((S ∩ V x) ∩ mixedAffineOpen σ J) := by
-    ext w
-    simp only [mem_iUnion, mem_image, mem_inter_iff]
-    constructor
-    · rintro ⟨y, ⟨hyS, hyJ⟩, hyw⟩
-      obtain ⟨x, hxt, hyx⟩ := mem_iUnion₂.1 (ht (hSK hyS))
-      exact ⟨x, hxt, y, ⟨⟨hyS, hyx⟩, hyJ⟩, hyw⟩
-    · rintro ⟨_, _, y, ⟨⟨hyS, _⟩, hyJ⟩, hyw⟩
-      exact ⟨y, ⟨hyS, hyJ⟩, hyw⟩
-  rw [hcover]
-  exact .biUnion t.finite_toSet fun x _ ↦
-    isSemialgebraic_mixedAffineChart_image_inter (hSball x)
-
-/-- **Local-to-global chart criterion on real multiprojective space (existential chart form).**
-A subset `S` of `M = ∀ i : ι, ℙ ℝ (Fin (n i + 1) → ℝ)` is multiprojective semialgebraic if and
-only if at every point `p : M` there is a standard product affine chart `I` around `p` in which
-`S` is locally semialgebraic (`TauCeti.SemialgebraicAt`) at `multiprojectiveAffineChart I p`. -/
-theorem isMultiprojectiveSemialgebraic_iff_exists_semialgebraicAt [Finite ι]
-    {S : Set (∀ i, ℙ ℝ (Fin (n i + 1) → ℝ))} :
-    IsMultiprojectiveSemialgebraic S ↔
-      ∀ p, ∃ I : ∀ i, Fin (n i + 1), p ∈ multiprojectiveAffineOpen I ∧
-        SemialgebraicAt (multiprojectiveAffineChart I '' (S ∩ multiprojectiveAffineOpen I))
-          (multiprojectiveAffineChart I p) := by
-  refine ⟨fun hS p ↦ ?_, fun hloc ↦ ?_⟩
-  · obtain ⟨I, hpI⟩ := exists_mem_multiprojectiveAffineOpen p
-    exact ⟨I, hpI, (hS.isSemialgebraic_chart I).semialgebraicAt _⟩
-  · rw [← isMixedSemialgebraic_univ_prod_iff (σ := Empty)]
-    refine isMixedSemialgebraic_of_isBounded_fst
-      (isCompact_univ.isBounded.subset (subset_univ _)) fun ⟨x₀, p⟩ _ ↦ ?_
-    obtain ⟨I, hpI, hSp⟩ := hloc p
-    obtain ⟨U, hUo, hpU, hU, hsU⟩ := semialgebraicAt_def.1 hSp
-    refine ⟨I, mem_mixedAffineOpen.2 hpI, ?_⟩
-    have hchart : mixedAffineChart Empty I ''
-        ((univ : Set (Empty → ℝ)) ×ˢ S ∩ mixedAffineOpen Empty I) =
-        (fun w : (Empty ⊕ Σ i, Fin (n i)) → ℝ ↦ w ∘ Sum.inr) ⁻¹'
-          (multiprojectiveAffineChart I '' (S ∩ multiprojectiveAffineOpen I)) := by
-      ext w
-      simp only [mem_image, mem_inter_iff, mem_prod, mem_univ, true_and, mem_mixedAffineOpen,
-        mem_preimage, Prod.exists]
-      constructor
-      · rintro ⟨_, q, ⟨hqS, hqI⟩, rfl⟩
-        exact ⟨q, ⟨hqS, hqI⟩, rfl⟩
-      · rintro ⟨q, ⟨hqS, hqI⟩, hqw⟩
-        refine ⟨Empty.elim, q, ⟨hqS, hqI⟩, ?_⟩
-        ext (e | c)
-        · exact e.elim
-        · rw [mixedAffineChart_apply_inr]
-          exact congrFun hqw c
-    have hpt : mixedAffineChart Empty I (x₀, p) ∘ Sum.inr = multiprojectiveAffineChart I p :=
-      funext fun q ↦ mixedAffineChart_apply_inr I (x₀, p) q
-    rw [hchart, semialgebraicAt_def]
-    exact ⟨(fun w ↦ w ∘ Sum.inr) ⁻¹' U,
-      hUo.preimage (continuous_pi fun q ↦ continuous_apply (Sum.inr q : Empty ⊕ Σ i, Fin (n i))),
-      by rw [mem_preimage, hpt]; exact hpU,
-      hU.preimage_comp Sum.inr, hsU.preimage_comp Sum.inr⟩
-
-/-- **Local-to-global chart criterion on real multiprojective space (universal chart form).**
-A subset `S` of `M = ∀ i : ι, ℙ ℝ (Fin (n i + 1) → ℝ)` is multiprojective semialgebraic if and
-only if at every point `p : M` and in every standard product affine chart `I` containing `p`, the
-chart image of `S` is locally semialgebraic at `multiprojectiveAffineChart I p`. -/
-theorem isMultiprojectiveSemialgebraic_iff_forall_semialgebraicAt [Finite ι]
-    {S : Set (∀ i, ℙ ℝ (Fin (n i + 1) → ℝ))} :
-    IsMultiprojectiveSemialgebraic S ↔
-      ∀ p (I : ∀ i, Fin (n i + 1)), p ∈ multiprojectiveAffineOpen I →
-        SemialgebraicAt (multiprojectiveAffineChart I '' (S ∩ multiprojectiveAffineOpen I))
-          (multiprojectiveAffineChart I p) := by
-  refine ⟨fun hS p I _ ↦ (hS.isSemialgebraic_chart I).semialgebraicAt _, fun h ↦ ?_⟩
-  rw [isMultiprojectiveSemialgebraic_iff_exists_semialgebraicAt]
-  intro p
-  obtain ⟨I, hpI⟩ := exists_mem_multiprojectiveAffineOpen p
-  exact ⟨I, hpI, h p I hpI⟩
-
-end RealLocalToGlobal
 
 end TauCeti

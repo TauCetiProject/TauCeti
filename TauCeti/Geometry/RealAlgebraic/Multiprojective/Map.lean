@@ -7,7 +7,6 @@ module
 
 public import TauCeti.Geometry.RealAlgebraic.Multiprojective.Basic
 public import TauCeti.Geometry.RealAlgebraic.Semialgebraic.Function
-public import TauCeti.Geometry.RealAlgebraic.Semialgebraic.QuantifierElimination
 import TauCeti.Geometry.RealAlgebraic.Semialgebraic.Image
 
 /-!
@@ -19,7 +18,8 @@ identified with `((σ₁ ⊕ σ₂) → K) × ∀ k : ι₁ ⊕ ι₂, ℙ K (Fi
 `TauCeti.mixedProdEquiv`. Under this identification, a map `f : X₁ → X₂` is *mixed semialgebraic*
 on `s ⊆ X₁` (`TauCeti.IsMixedSemialgebraicOn f s`) if `s` and the graph `s.graphOn f` are mixed
 semialgebraic. Specializing `σ₁, σ₂` to empty index types yields semialgebraic maps between pure
-multiprojective spaces (`TauCeti.IsMultiprojectiveSemialgebraicOn`), and specializing `X₁` to an
+multiprojective spaces (`TauCeti.IsMultiprojectiveSemialgebraicOn`, using Mathlib's
+`Equiv.sumPiEquivProdPi` on the product of multiprojective spaces), and specializing `X₁` to an
 affine space `σ → K` and `X₂` to a multiprojective space `M` recovers graphs `s.graphOn τ ⊆
 (σ → K) × M` of maps from an affine subset (such as the carrier of a simplicial complex) into `M`.
 
@@ -29,22 +29,23 @@ semialgebraicity, continuity, and chartwise real analyticity are developed in
 
 ## Main declarations
 
-* `TauCeti.sumPiProjectivizationEquiv`, `TauCeti.mixedProdEquiv`: canonical identifications of
-  products of multiprojective and mixed spaces with a single multiprojective or mixed space over
-  sum index types, together with their homeomorphism versions.
-* `TauCeti.IsMixedSemialgebraic.prod`, `TauCeti.IsMixedSemialgebraic.fst_image`,
-  `TauCeti.IsMixedSemialgebraic.snd_image`: products and coordinate projections of mixed
-  semialgebraic sets.
+* `TauCeti.mixedProdEquiv`, `TauCeti.mixedProdHomeomorph`, `TauCeti.mixedProdChartIndexEquiv`:
+  canonical identifications of products of mixed spaces and their chart coordinate index types
+  with a single mixed space over sum index types.
+* `TauCeti.IsMixedSemialgebraic.prod`, `TauCeti.IsMixedSemialgebraic.preimage_swap`,
+  `TauCeti.IsMixedSemialgebraic.image_fst`, `TauCeti.IsMixedSemialgebraic.image_snd`: products,
+  factor swaps, and coordinate projections of mixed semialgebraic sets.
 * `TauCeti.IsMixedSemialgebraicOn`, `TauCeti.IsMixedSemialgebraicMap`,
   `TauCeti.IsMultiprojectiveSemialgebraicOn`, `TauCeti.IsMultiprojectiveSemialgebraicMap`:
   semialgebraic maps via graphs.
 * `TauCeti.isMixedSemialgebraic_graphOn_iff_forall_chart`,
   `TauCeti.isMixedSemialgebraicOn_iff_forall_isSemialgebraicOn`,
-  `TauCeti.isMixedSemialgebraic_affine_graphOn_iff_forall_chart`: chartwise characterizations of
-  mixed semialgebraic graphs and maps.
+  `TauCeti.isMixedSemialgebraic_affine_graphOn_iff_forall_chart`,
+  `TauCeti.isMixedSemialgebraic_affine_graphOn_iff_forall_isSemialgebraicOn`: chartwise
+  characterizations of mixed semialgebraic graphs and maps.
 * `TauCeti.isMixedSemialgebraicOn_id`, `TauCeti.isMixedSemialgebraicOn_diag`,
   `TauCeti.IsMixedSemialgebraicOn.prodMk`, `TauCeti.IsMixedSemialgebraicOn.comp`,
-  `TauCeti.IsMixedSemialgebraicOn.isMixedSemialgebraic_image`,
+  `TauCeti.IsMixedSemialgebraicOn.isMixedSemialgebraic_image_inter`,
   `TauCeti.IsMixedSemialgebraicOn.isMixedSemialgebraic_inter_preimage`: basic calculus of mixed
   semialgebraic maps.
 
@@ -61,124 +62,13 @@ public section
 open MvPolynomial Set Topology
 open scoped LinearAlgebra.Projectivization
 
-namespace Projectivization
-
-/-- Over a field, two nonzero coordinate tuples represent the same projective point if and only if
-all of their `2 × 2` minors `v i * w j = v j * w i` vanish. -/
-theorem mk_eq_mk_iff_forall_mul_eq {K ι : Type*} [Field K] {v w : ι → K}
-    (hv : v ≠ 0) (hw : w ≠ 0) :
-    mk K v hv = mk K w hw ↔ ∀ i j, v i * w j = v j * w i := by
-  rw [mk_eq_mk_iff']
-  constructor
-  · rintro ⟨c, rfl⟩ i j
-    simp only [Pi.smul_apply, smul_eq_mul]
-    ring
-  · intro h
-    obtain ⟨j₀, hj₀⟩ := Function.ne_iff.1 hw
-    refine ⟨v j₀ / w j₀, funext fun i ↦ ?_⟩
-    simp only [Pi.smul_apply, smul_eq_mul, div_mul_eq_mul_div, ← h i j₀,
-      mul_div_cancel_right₀ _ hj₀]
-
-end Projectivization
-
 namespace TauCeti
 
 /-! ### Canonical product equivalences -/
 
-section ProductEquiv
+section IndexEquiv
 
-variable {K σ₁ σ₂ ι₁ ι₂ : Type*} [DivisionRing K] {n₁ : ι₁ → ℕ} {n₂ : ι₂ → ℕ}
-
-/-- Canonical equivalence identifying a binary product of multiprojective spaces with a single
-multiprojective space indexed by `ι₁ ⊕ ι₂`. -/
-def sumPiProjectivizationEquiv (n₁ : ι₁ → ℕ) (n₂ : ι₂ → ℕ) :
-    ((∀ i : ι₁, ℙ K (Fin (n₁ i + 1) → K)) × (∀ j : ι₂, ℙ K (Fin (n₂ j + 1) → K))) ≃
-      ∀ k : ι₁ ⊕ ι₂, ℙ K (Fin (Sum.elim n₁ n₂ k + 1) → K) where
-  toFun pq := fun
-    | .inl i => pq.1 i
-    | .inr j => pq.2 j
-  invFun p := (fun i ↦ p (.inl i), fun j ↦ p (.inr j))
-  left_inv pq := by rcases pq with ⟨_, _⟩; rfl
-  right_inv p := funext fun k ↦ by cases k <;> rfl
-
-@[simp]
-theorem sumPiProjectivizationEquiv_apply_inl
-    (pq : (∀ i : ι₁, ℙ K (Fin (n₁ i + 1) → K)) × (∀ j : ι₂, ℙ K (Fin (n₂ j + 1) → K)))
-    (i : ι₁) : sumPiProjectivizationEquiv n₁ n₂ pq (.inl i) = pq.1 i :=
-  (rfl)
-
-@[simp]
-theorem sumPiProjectivizationEquiv_apply_inr
-    (pq : (∀ i : ι₁, ℙ K (Fin (n₁ i + 1) → K)) × (∀ j : ι₂, ℙ K (Fin (n₂ j + 1) → K)))
-    (j : ι₂) : sumPiProjectivizationEquiv n₁ n₂ pq (.inr j) = pq.2 j :=
-  (rfl)
-
-@[simp]
-theorem sumPiProjectivizationEquiv_symm_apply
-    (p : ∀ k : ι₁ ⊕ ι₂, ℙ K (Fin (Sum.elim n₁ n₂ k + 1) → K)) :
-    (sumPiProjectivizationEquiv n₁ n₂).symm p = (fun i ↦ p (.inl i), fun j ↦ p (.inr j)) :=
-  (rfl)
-
-/-- Topological refinement of `TauCeti.sumPiProjectivizationEquiv`. -/
-def sumPiProjectivizationHomeomorph [TopologicalSpace K] (n₁ : ι₁ → ℕ) (n₂ : ι₂ → ℕ) :
-    ((∀ i : ι₁, ℙ K (Fin (n₁ i + 1) → K)) × (∀ j : ι₂, ℙ K (Fin (n₂ j + 1) → K))) ≃ₜ
-      ∀ k : ι₁ ⊕ ι₂, ℙ K (Fin (Sum.elim n₁ n₂ k + 1) → K) where
-  toEquiv := sumPiProjectivizationEquiv n₁ n₂
-  continuous_toFun := continuous_pi fun
-    | .inl i => (continuous_apply i).comp continuous_fst
-    | .inr j => (continuous_apply j).comp continuous_snd
-  continuous_invFun :=
-    (continuous_pi fun i ↦ continuous_apply (Sum.inl i : ι₁ ⊕ ι₂)).prodMk
-      (continuous_pi fun j ↦ continuous_apply (Sum.inr j : ι₁ ⊕ ι₂))
-
-/-- Canonical equivalence identifying a binary product of mixed affine–multiprojective spaces with
-a single mixed space over `σ₁ ⊕ σ₂` and `ι₁ ⊕ ι₂`. -/
-def mixedProdEquiv (σ₁ σ₂ : Type*) (n₁ : ι₁ → ℕ) (n₂ : ι₂ → ℕ) :
-    (((σ₁ → K) × ∀ i : ι₁, ℙ K (Fin (n₁ i + 1) → K)) ×
-      ((σ₂ → K) × ∀ j : ι₂, ℙ K (Fin (n₂ j + 1) → K))) ≃
-      ((σ₁ ⊕ σ₂ → K) × ∀ k : ι₁ ⊕ ι₂, ℙ K (Fin (Sum.elim n₁ n₂ k + 1) → K)) where
-  toFun xy := (Sum.elim xy.1.1 xy.2.1, sumPiProjectivizationEquiv n₁ n₂ (xy.1.2, xy.2.2))
-  invFun z := ((z.1 ∘ Sum.inl, fun i ↦ z.2 (.inl i)), (z.1 ∘ Sum.inr, fun j ↦ z.2 (.inr j)))
-  left_inv xy := by
-    rcases xy with ⟨⟨_, _⟩, ⟨_, _⟩⟩
-    ext <;> rfl
-  right_inv z := by
-    rcases z with ⟨_, _⟩
-    refine Prod.ext (funext fun c ↦ by cases c <;> rfl) (funext fun k ↦ by cases k <;> rfl)
-
-@[simp]
-theorem mixedProdEquiv_apply
-    (xy : ((σ₁ → K) × ∀ i : ι₁, ℙ K (Fin (n₁ i + 1) → K)) ×
-      ((σ₂ → K) × ∀ j : ι₂, ℙ K (Fin (n₂ j + 1) → K))) :
-    mixedProdEquiv σ₁ σ₂ n₁ n₂ xy =
-      (Sum.elim xy.1.1 xy.2.1, sumPiProjectivizationEquiv n₁ n₂ (xy.1.2, xy.2.2)) :=
-  (rfl)
-
-@[simp]
-theorem mixedProdEquiv_symm_apply
-    (z : (σ₁ ⊕ σ₂ → K) × ∀ k : ι₁ ⊕ ι₂, ℙ K (Fin (Sum.elim n₁ n₂ k + 1) → K)) :
-    (mixedProdEquiv σ₁ σ₂ n₁ n₂).symm z =
-      ((z.1 ∘ Sum.inl, fun i ↦ z.2 (.inl i)), (z.1 ∘ Sum.inr, fun j ↦ z.2 (.inr j))) :=
-  (rfl)
-
-/-- Topological refinement of `TauCeti.mixedProdEquiv`. -/
-def mixedProdHomeomorph [TopologicalSpace K] (σ₁ σ₂ : Type*) (n₁ : ι₁ → ℕ) (n₂ : ι₂ → ℕ) :
-    (((σ₁ → K) × ∀ i : ι₁, ℙ K (Fin (n₁ i + 1) → K)) ×
-      ((σ₂ → K) × ∀ j : ι₂, ℙ K (Fin (n₂ j + 1) → K))) ≃ₜ
-      ((σ₁ ⊕ σ₂ → K) × ∀ k : ι₁ ⊕ ι₂, ℙ K (Fin (Sum.elim n₁ n₂ k + 1) → K)) where
-  toEquiv := mixedProdEquiv σ₁ σ₂ n₁ n₂
-  continuous_toFun :=
-    (continuous_pi fun
-      | .inl a₁ => (continuous_apply a₁).comp (continuous_fst.comp continuous_fst)
-      | .inr a₂ => (continuous_apply a₂).comp (continuous_fst.comp continuous_snd)).prodMk
-      ((sumPiProjectivizationHomeomorph n₁ n₂).continuous.comp
-        ((continuous_snd.comp continuous_fst).prodMk (continuous_snd.comp continuous_snd)))
-  continuous_invFun :=
-    (((continuous_pi fun a₁ ↦ continuous_apply (Sum.inl a₁ : σ₁ ⊕ σ₂)).comp continuous_fst).prodMk
-      ((continuous_pi fun i ↦ continuous_apply (Sum.inl i : ι₁ ⊕ ι₂)).comp continuous_snd)).prodMk
-      (((continuous_pi fun a₂ ↦
-          continuous_apply (Sum.inr a₂ : σ₁ ⊕ σ₂)).comp continuous_fst).prodMk
-        ((continuous_pi fun j ↦ continuous_apply (Sum.inr j : ι₁ ⊕ ι₂)).comp continuous_snd))
+variable {ι₁ ι₂ : Type*} {n₁ : ι₁ → ℕ} {n₂ : ι₂ → ℕ}
 
 /-- Combine chart index choices on `ι₁` and `ι₂` into a chart index choice on `ι₁ ⊕ ι₂`. -/
 def sumPiFinIndex (I₁ : ∀ i : ι₁, Fin (n₁ i + 1)) (I₂ : ∀ j : ι₂, Fin (n₂ j + 1)) :
@@ -201,41 +91,186 @@ theorem sumPiFinIndex_eta (I : ∀ k : ι₁ ⊕ ι₂, Fin (Sum.elim n₁ n₂ 
     sumPiFinIndex (fun i ↦ I (.inl i)) (fun j ↦ I (.inr j)) = I :=
   funext fun k ↦ by cases k <;> rfl
 
-/-- Coordinate index equivalence between the sum of mixed cone indices and the mixed cone index of
-the combined space. -/
-def mixedProdConeIndexEquiv (σ₁ σ₂ : Type*) {ι₁ ι₂ : Type*} (n₁ : ι₁ → ℕ) (n₂ : ι₂ → ℕ) :
-    ((σ₁ ⊕ Σ i, Fin (n₁ i + 1)) ⊕ (σ₂ ⊕ Σ j, Fin (n₂ j + 1))) ≃
-      ((σ₁ ⊕ σ₂) ⊕ Σ k : ι₁ ⊕ ι₂, Fin (Sum.elim n₁ n₂ k + 1)) where
-  toFun
-    | .inl (.inl a₁) => .inl (.inl a₁)
-    | .inl (.inr ⟨i, j⟩) => .inr ⟨.inl i, j⟩
-    | .inr (.inl a₂) => .inl (.inr a₂)
-    | .inr (.inr ⟨i, j⟩) => .inr ⟨.inr i, j⟩
-  invFun
-    | .inl (.inl a₁) => .inl (.inl a₁)
-    | .inl (.inr a₂) => .inr (.inl a₂)
-    | .inr ⟨.inl i, j⟩ => .inl (.inr ⟨i, j⟩)
-    | .inr ⟨.inr i, j⟩ => .inr (.inr ⟨i, j⟩)
-  left_inv x := by rcases x with ((_ | ⟨_, _⟩) | (_ | ⟨_, _⟩)) <;> rfl
-  right_inv y := by rcases y with ((_ | _) | ⟨_ | _, _⟩) <;> rfl
+/-- Shared index combinator identifying `(σ₁ ⊕ Σ i, t (.inl i)) ⊕ (σ₂ ⊕ Σ j, t (.inr j))` with
+`(σ₁ ⊕ σ₂) ⊕ Σ k : ι₁ ⊕ ι₂, t k`. -/
+private def mixedProdIndexEquiv (σ₁ σ₂ : Type*) {ι₁ ι₂ : Type*} (t : ι₁ ⊕ ι₂ → Type*) :
+    ((σ₁ ⊕ Σ i, t (.inl i)) ⊕ (σ₂ ⊕ Σ j, t (.inr j))) ≃
+      ((σ₁ ⊕ σ₂) ⊕ Σ k : ι₁ ⊕ ι₂, t k) :=
+  (Equiv.sumSumSumComm σ₁ (Σ i, t (.inl i)) σ₂ (Σ j, t (.inr j))).trans
+    (Equiv.sumCongr (.refl (σ₁ ⊕ σ₂)) (Equiv.sumSigmaDistrib t).symm)
 
-/-- Coordinate index equivalence between the sum of mixed chart indices and the mixed chart index
-of the combined space. -/
-def mixedProdChartIndexEquiv (σ₁ σ₂ : Type*) {ι₁ ι₂ : Type*} (n₁ : ι₁ → ℕ) (n₂ : ι₂ → ℕ) :
+/-- Private cone-index specialization of `mixedProdIndexEquiv` with syntactic `Fin (n i + 1)`
+factors. -/
+private def mixedProdConeIndexEquiv (σ₁ σ₂ : Type*) (n₁ : ι₁ → ℕ) (n₂ : ι₂ → ℕ) :
+    ((σ₁ ⊕ Σ i, Fin (n₁ i + 1)) ⊕ (σ₂ ⊕ Σ j, Fin (n₂ j + 1))) ≃
+      ((σ₁ ⊕ σ₂) ⊕ Σ k : ι₁ ⊕ ι₂, Fin (Sum.elim n₁ n₂ k + 1)) :=
+  mixedProdIndexEquiv σ₁ σ₂ fun k ↦ Fin (Sum.elim n₁ n₂ k + 1)
+
+@[simp]
+private theorem mixedProdConeIndexEquiv_inl_inl (σ₁ σ₂ : Type*) (n₁ : ι₁ → ℕ) (n₂ : ι₂ → ℕ)
+    (a₁ : σ₁) :
+    mixedProdConeIndexEquiv σ₁ σ₂ n₁ n₂ (.inl (.inl a₁)) = .inl (.inl a₁) :=
+  (rfl)
+
+@[simp]
+private theorem mixedProdConeIndexEquiv_inl_inr (σ₁ σ₂ : Type*) (n₁ : ι₁ → ℕ) (n₂ : ι₂ → ℕ)
+    (p : Σ i, Fin (n₁ i + 1)) :
+    mixedProdConeIndexEquiv σ₁ σ₂ n₁ n₂ (.inl (.inr p)) = .inr ⟨.inl p.1, p.2⟩ :=
+  (rfl)
+
+@[simp]
+private theorem mixedProdConeIndexEquiv_inr_inl (σ₁ σ₂ : Type*) (n₁ : ι₁ → ℕ) (n₂ : ι₂ → ℕ)
+    (a₂ : σ₂) :
+    mixedProdConeIndexEquiv σ₁ σ₂ n₁ n₂ (.inr (.inl a₂)) = .inl (.inr a₂) :=
+  (rfl)
+
+@[simp]
+private theorem mixedProdConeIndexEquiv_inr_inr (σ₁ σ₂ : Type*) (n₁ : ι₁ → ℕ) (n₂ : ι₂ → ℕ)
+    (q : Σ j, Fin (n₂ j + 1)) :
+    mixedProdConeIndexEquiv σ₁ σ₂ n₁ n₂ (.inr (.inr q)) = .inr ⟨.inr q.1, q.2⟩ :=
+  (rfl)
+
+@[simp]
+private theorem mixedProdConeIndexEquiv_symm_inl_inl (σ₁ σ₂ : Type*) (n₁ : ι₁ → ℕ) (n₂ : ι₂ → ℕ)
+    (a₁ : σ₁) :
+    (mixedProdConeIndexEquiv σ₁ σ₂ n₁ n₂).symm (.inl (.inl a₁)) = .inl (.inl a₁) :=
+  (rfl)
+
+@[simp]
+private theorem mixedProdConeIndexEquiv_symm_inl_inr (σ₁ σ₂ : Type*) (n₁ : ι₁ → ℕ) (n₂ : ι₂ → ℕ)
+    (a₂ : σ₂) :
+    (mixedProdConeIndexEquiv σ₁ σ₂ n₁ n₂).symm (.inl (.inr a₂)) = .inr (.inl a₂) :=
+  (rfl)
+
+@[simp]
+private theorem mixedProdConeIndexEquiv_symm_inr_inl (σ₁ σ₂ : Type*) (n₁ : ι₁ → ℕ) (n₂ : ι₂ → ℕ)
+    (i : ι₁) (j : Fin (n₁ i + 1)) :
+    (mixedProdConeIndexEquiv σ₁ σ₂ n₁ n₂).symm (.inr ⟨.inl i, j⟩) = .inl (.inr ⟨i, j⟩) :=
+  (rfl)
+
+@[simp]
+private theorem mixedProdConeIndexEquiv_symm_inr_inr (σ₁ σ₂ : Type*) (n₁ : ι₁ → ℕ) (n₂ : ι₂ → ℕ)
+    (j : ι₂) (l : Fin (n₂ j + 1)) :
+    (mixedProdConeIndexEquiv σ₁ σ₂ n₁ n₂).symm (.inr ⟨.inr j, l⟩) = .inr (.inr ⟨j, l⟩) :=
+  (rfl)
+
+/-- Chart coordinate index equivalence between
+`(σ₁ ⊕ Σ i, Fin (n₁ i)) ⊕ (σ₂ ⊕ Σ j, Fin (n₂ j))` and
+`(σ₁ ⊕ σ₂) ⊕ Σ k : ι₁ ⊕ ι₂, Fin (Sum.elim n₁ n₂ k)`. -/
+def mixedProdChartIndexEquiv (σ₁ σ₂ : Type*) (n₁ : ι₁ → ℕ) (n₂ : ι₂ → ℕ) :
     ((σ₁ ⊕ Σ i, Fin (n₁ i)) ⊕ (σ₂ ⊕ Σ j, Fin (n₂ j))) ≃
-      ((σ₁ ⊕ σ₂) ⊕ Σ k : ι₁ ⊕ ι₂, Fin (Sum.elim n₁ n₂ k)) where
-  toFun
-    | .inl (.inl a₁) => .inl (.inl a₁)
-    | .inl (.inr ⟨i, j⟩) => .inr ⟨.inl i, j⟩
-    | .inr (.inl a₂) => .inl (.inr a₂)
-    | .inr (.inr ⟨i, j⟩) => .inr ⟨.inr i, j⟩
-  invFun
-    | .inl (.inl a₁) => .inl (.inl a₁)
-    | .inl (.inr a₂) => .inr (.inl a₂)
-    | .inr ⟨.inl i, j⟩ => .inl (.inr ⟨i, j⟩)
-    | .inr ⟨.inr i, j⟩ => .inr (.inr ⟨i, j⟩)
-  left_inv x := by rcases x with ((_ | ⟨_, _⟩) | (_ | ⟨_, _⟩)) <;> rfl
-  right_inv y := by rcases y with ((_ | _) | ⟨_ | _, _⟩) <;> rfl
+      ((σ₁ ⊕ σ₂) ⊕ Σ k : ι₁ ⊕ ι₂, Fin (Sum.elim n₁ n₂ k)) :=
+  mixedProdIndexEquiv σ₁ σ₂ fun k ↦ Fin (Sum.elim n₁ n₂ k)
+
+@[simp]
+theorem mixedProdChartIndexEquiv_inl_inl (σ₁ σ₂ : Type*) (n₁ : ι₁ → ℕ) (n₂ : ι₂ → ℕ) (a₁ : σ₁) :
+    mixedProdChartIndexEquiv σ₁ σ₂ n₁ n₂ (.inl (.inl a₁)) = .inl (.inl a₁) :=
+  (rfl)
+
+@[simp]
+theorem mixedProdChartIndexEquiv_inl_inr (σ₁ σ₂ : Type*) (n₁ : ι₁ → ℕ) (n₂ : ι₂ → ℕ)
+    (p : Σ i, Fin (n₁ i)) :
+    mixedProdChartIndexEquiv σ₁ σ₂ n₁ n₂ (.inl (.inr p)) = .inr ⟨.inl p.1, p.2⟩ :=
+  (rfl)
+
+@[simp]
+theorem mixedProdChartIndexEquiv_inr_inl (σ₁ σ₂ : Type*) (n₁ : ι₁ → ℕ) (n₂ : ι₂ → ℕ) (a₂ : σ₂) :
+    mixedProdChartIndexEquiv σ₁ σ₂ n₁ n₂ (.inr (.inl a₂)) = .inl (.inr a₂) :=
+  (rfl)
+
+@[simp]
+theorem mixedProdChartIndexEquiv_inr_inr (σ₁ σ₂ : Type*) (n₁ : ι₁ → ℕ) (n₂ : ι₂ → ℕ)
+    (q : Σ j, Fin (n₂ j)) :
+    mixedProdChartIndexEquiv σ₁ σ₂ n₁ n₂ (.inr (.inr q)) = .inr ⟨.inr q.1, q.2⟩ :=
+  (rfl)
+
+@[simp]
+theorem mixedProdChartIndexEquiv_symm_inl_inl (σ₁ σ₂ : Type*) (n₁ : ι₁ → ℕ) (n₂ : ι₂ → ℕ)
+    (a₁ : σ₁) :
+    (mixedProdChartIndexEquiv σ₁ σ₂ n₁ n₂).symm (.inl (.inl a₁)) = .inl (.inl a₁) :=
+  (rfl)
+
+@[simp]
+theorem mixedProdChartIndexEquiv_symm_inl_inr (σ₁ σ₂ : Type*) (n₁ : ι₁ → ℕ) (n₂ : ι₂ → ℕ)
+    (a₂ : σ₂) :
+    (mixedProdChartIndexEquiv σ₁ σ₂ n₁ n₂).symm (.inl (.inr a₂)) = .inr (.inl a₂) :=
+  (rfl)
+
+@[simp]
+theorem mixedProdChartIndexEquiv_symm_inr_inl (σ₁ σ₂ : Type*) (n₁ : ι₁ → ℕ) (n₂ : ι₂ → ℕ)
+    (i : ι₁) (k : Fin (n₁ i)) :
+    (mixedProdChartIndexEquiv σ₁ σ₂ n₁ n₂).symm (.inr ⟨.inl i, k⟩) = .inl (.inr ⟨i, k⟩) :=
+  (rfl)
+
+@[simp]
+theorem mixedProdChartIndexEquiv_symm_inr_inr (σ₁ σ₂ : Type*) (n₁ : ι₁ → ℕ) (n₂ : ι₂ → ℕ)
+    (j : ι₂) (l : Fin (n₂ j)) :
+    (mixedProdChartIndexEquiv σ₁ σ₂ n₁ n₂).symm (.inr ⟨.inr j, l⟩) = .inr (.inr ⟨j, l⟩) :=
+  (rfl)
+
+end IndexEquiv
+
+section ProductEquiv
+
+variable {K σ₁ σ₂ ι₁ ι₂ : Type*} [DivisionRing K] {n₁ : ι₁ → ℕ} {n₂ : ι₂ → ℕ}
+
+/-- Canonical equivalence identifying a binary product of mixed affine–multiprojective spaces with
+a single mixed space over `σ₁ ⊕ σ₂` and `ι₁ ⊕ ι₂`. -/
+def mixedProdEquiv (σ₁ σ₂ : Type*) (n₁ : ι₁ → ℕ) (n₂ : ι₂ → ℕ) :
+    (((σ₁ → K) × ∀ i : ι₁, ℙ K (Fin (n₁ i + 1) → K)) ×
+      ((σ₂ → K) × ∀ j : ι₂, ℙ K (Fin (n₂ j + 1) → K))) ≃
+      ((σ₁ ⊕ σ₂ → K) × ∀ k : ι₁ ⊕ ι₂, ℙ K (Fin (Sum.elim n₁ n₂ k + 1) → K)) :=
+  (Equiv.prodProdProdComm _ _ _ _).trans
+    (Equiv.prodCongr (Equiv.sumArrowEquivProdArrow σ₁ σ₂ K).symm
+      (Equiv.sumPiEquivProdPi fun k : ι₁ ⊕ ι₂ ↦ ℙ K (Fin (Sum.elim n₁ n₂ k + 1) → K)).symm)
+
+@[simp]
+theorem mixedProdEquiv_apply
+    (xy : ((σ₁ → K) × ∀ i : ι₁, ℙ K (Fin (n₁ i + 1) → K)) ×
+      ((σ₂ → K) × ∀ j : ι₂, ℙ K (Fin (n₂ j + 1) → K))) :
+    mixedProdEquiv σ₁ σ₂ n₁ n₂ xy =
+      (Sum.elim xy.1.1 xy.2.1,
+        (Equiv.sumPiEquivProdPi fun k : ι₁ ⊕ ι₂ ↦
+          ℙ K (Fin (Sum.elim n₁ n₂ k + 1) → K)).symm (xy.1.2, xy.2.2)) := by
+  rcases xy with ⟨⟨_, _⟩, _, _⟩
+  rfl
+
+@[simp]
+theorem mixedProdEquiv_symm_apply
+    (z : (σ₁ ⊕ σ₂ → K) × ∀ k : ι₁ ⊕ ι₂, ℙ K (Fin (Sum.elim n₁ n₂ k + 1) → K)) :
+    (mixedProdEquiv σ₁ σ₂ n₁ n₂).symm z =
+      ((z.1 ∘ Sum.inl, fun i ↦ z.2 (.inl i)), (z.1 ∘ Sum.inr, fun j ↦ z.2 (.inr j))) := by
+  rcases z with ⟨_, _⟩
+  rfl
+
+/-- Topological refinement of `TauCeti.mixedProdEquiv`. -/
+def mixedProdHomeomorph [TopologicalSpace K] (σ₁ σ₂ : Type*) (n₁ : ι₁ → ℕ) (n₂ : ι₂ → ℕ) :
+    (((σ₁ → K) × ∀ i : ι₁, ℙ K (Fin (n₁ i + 1) → K)) ×
+      ((σ₂ → K) × ∀ j : ι₂, ℙ K (Fin (n₂ j + 1) → K))) ≃ₜ
+      ((σ₁ ⊕ σ₂ → K) × ∀ k : ι₁ ⊕ ι₂, ℙ K (Fin (Sum.elim n₁ n₂ k + 1) → K)) :=
+  (Homeomorph.prodProdProdComm _ _ _ _).trans
+    (Homeomorph.prodCongr Homeomorph.sumArrowHomeomorphProdArrow.symm
+      (Homeomorph.sumPiEquivProdPi ι₁ ι₂ fun k ↦
+        ℙ K (Fin (Sum.elim n₁ n₂ k + 1) → K)).symm)
+
+@[simp]
+theorem mixedProdHomeomorph_toEquiv [TopologicalSpace K]
+    (σ₁ σ₂ : Type*) (n₁ : ι₁ → ℕ) (n₂ : ι₂ → ℕ) :
+    (mixedProdHomeomorph (K := K) σ₁ σ₂ n₁ n₂).toEquiv = mixedProdEquiv σ₁ σ₂ n₁ n₂ :=
+  Equiv.ext fun ⟨⟨_, _⟩, _, _⟩ ↦
+    Prod.ext (funext fun k ↦ by cases k <;> rfl) (funext fun k ↦ by cases k <;> rfl)
+
+@[simp]
+theorem coe_mixedProdHomeomorph [TopologicalSpace K]
+    (σ₁ σ₂ : Type*) (n₁ : ι₁ → ℕ) (n₂ : ι₂ → ℕ) :
+    ⇑(mixedProdHomeomorph (K := K) σ₁ σ₂ n₁ n₂) = mixedProdEquiv σ₁ σ₂ n₁ n₂ :=
+  congrArg DFunLike.coe (mixedProdHomeomorph_toEquiv σ₁ σ₂ n₁ n₂)
+
+@[simp]
+theorem coe_mixedProdHomeomorph_symm [TopologicalSpace K]
+    (σ₁ σ₂ : Type*) (n₁ : ι₁ → ℕ) (n₂ : ι₂ → ℕ) :
+    ⇑(mixedProdHomeomorph (K := K) σ₁ σ₂ n₁ n₂).symm = (mixedProdEquiv σ₁ σ₂ n₁ n₂).symm :=
+  congrArg (fun e : _ ≃ _ ↦ ⇑e.symm) (mixedProdHomeomorph_toEquiv σ₁ σ₂ n₁ n₂)
 
 end ProductEquiv
 
@@ -251,11 +286,17 @@ theorem mem_multiprojectiveAffineOpen_sumPiFinIndex
     {I₁ : ∀ i : ι₁, Fin (n₁ i + 1)} {I₂ : ∀ j : ι₂, Fin (n₂ j + 1)}
     {r : ∀ k : ι₁ ⊕ ι₂, ℙ K (Fin (Sum.elim n₁ n₂ k + 1) → K)} :
     r ∈ multiprojectiveAffineOpen (sumPiFinIndex I₁ I₂) ↔
-      ((sumPiProjectivizationEquiv n₁ n₂).symm r).1 ∈ multiprojectiveAffineOpen I₁ ∧
-        ((sumPiProjectivizationEquiv n₁ n₂).symm r).2 ∈ multiprojectiveAffineOpen I₂ := by
-  rw [mem_multiprojectiveAffineOpen, mem_multiprojectiveAffineOpen, mem_multiprojectiveAffineOpen]
-  exact ⟨fun h ↦ ⟨fun i ↦ h (.inl i), fun j ↦ h (.inr j)⟩,
-    fun ⟨h₁, h₂⟩ ↦ fun | .inl i => h₁ i | .inr j => h₂ j⟩
+      (Equiv.sumPiEquivProdPi (fun k : ι₁ ⊕ ι₂ ↦ ℙ K (Fin (Sum.elim n₁ n₂ k + 1) → K)) r).1 ∈
+        multiprojectiveAffineOpen I₁ ∧
+      (Equiv.sumPiEquivProdPi (fun k : ι₁ ⊕ ι₂ ↦ ℙ K (Fin (Sum.elim n₁ n₂ k + 1) → K)) r).2 ∈
+        multiprojectiveAffineOpen I₂ :=
+  mem_multiprojectiveAffineOpen.trans <|
+    (⟨fun h ↦ ⟨fun i ↦ h (.inl i), fun j ↦ h (.inr j)⟩,
+      fun ⟨h₁, h₂⟩ ↦ fun | .inl i => h₁ i | .inr j => h₂ j⟩ :
+      (∀ k, r k ∈ Projectivization.affineOpen (sumPiFinIndex I₁ I₂ k)) ↔
+        (∀ i, r (.inl i) ∈ Projectivization.affineOpen (I₁ i)) ∧
+          (∀ j, r (.inr j) ∈ Projectivization.affineOpen (I₂ j))).trans
+      (and_congr mem_multiprojectiveAffineOpen.symm mem_multiprojectiveAffineOpen.symm)
 
 /-- Left-factor coordinates of `multiprojectiveAffineChart (sumPiFinIndex I₁ I₂)`. -/
 theorem multiprojectiveAffineChart_sumPiFinIndex_inl
@@ -263,9 +304,11 @@ theorem multiprojectiveAffineChart_sumPiFinIndex_inl
     (r : ∀ k : ι₁ ⊕ ι₂, ℙ K (Fin (Sum.elim n₁ n₂ k + 1) → K))
     (i : ι₁) (k : Fin (n₁ i)) :
     multiprojectiveAffineChart (sumPiFinIndex I₁ I₂) r ⟨.inl i, k⟩ =
-      multiprojectiveAffineChart I₁ ((sumPiProjectivizationEquiv n₁ n₂).symm r).1 ⟨i, k⟩ :=
+      multiprojectiveAffineChart I₁
+        (Equiv.sumPiEquivProdPi (fun k : ι₁ ⊕ ι₂ ↦ ℙ K (Fin (Sum.elim n₁ n₂ k + 1) → K)) r).1
+        ⟨i, k⟩ :=
   (multiprojectiveAffineChart_apply (sumPiFinIndex I₁ I₂) r ⟨.inl i, k⟩).trans
-    (multiprojectiveAffineChart_apply I₁ ((sumPiProjectivizationEquiv n₁ n₂).symm r).1 ⟨i, k⟩).symm
+    (multiprojectiveAffineChart_apply I₁ (fun i' ↦ r (.inl i')) ⟨i, k⟩).symm
 
 /-- Right-factor coordinates of `multiprojectiveAffineChart (sumPiFinIndex I₁ I₂)`. -/
 theorem multiprojectiveAffineChart_sumPiFinIndex_inr
@@ -273,9 +316,11 @@ theorem multiprojectiveAffineChart_sumPiFinIndex_inr
     (r : ∀ k : ι₁ ⊕ ι₂, ℙ K (Fin (Sum.elim n₁ n₂ k + 1) → K))
     (j : ι₂) (l : Fin (n₂ j)) :
     multiprojectiveAffineChart (sumPiFinIndex I₁ I₂) r ⟨.inr j, l⟩ =
-      multiprojectiveAffineChart I₂ ((sumPiProjectivizationEquiv n₁ n₂).symm r).2 ⟨j, l⟩ :=
+      multiprojectiveAffineChart I₂
+        (Equiv.sumPiEquivProdPi (fun k : ι₁ ⊕ ι₂ ↦ ℙ K (Fin (Sum.elim n₁ n₂ k + 1) → K)) r).2
+        ⟨j, l⟩ :=
   (multiprojectiveAffineChart_apply (sumPiFinIndex I₁ I₂) r ⟨.inr j, l⟩).trans
-    (multiprojectiveAffineChart_apply I₂ ((sumPiProjectivizationEquiv n₁ n₂).symm r).2 ⟨j, l⟩).symm
+    (multiprojectiveAffineChart_apply I₂ (fun j' ↦ r (.inr j')) ⟨j, l⟩).symm
 
 /-- Membership in `mixedCone ((mixedProdEquiv σ₁ σ₂ n₁ n₂).symm ⁻¹' W)` unpacked into the left and
 right cone representatives. -/
@@ -284,12 +329,14 @@ theorem mem_mixedCone_preimage_mixedProdEquiv_symm
       ((σ₂ → K) × ∀ j : ι₂, ℙ K (Fin (n₂ j + 1) → K)))}
     {w : ((σ₁ ⊕ σ₂) ⊕ Σ k : ι₁ ⊕ ι₂, Fin (Sum.elim n₁ n₂ k + 1)) → K} :
     w ∈ mixedCone ((mixedProdEquiv σ₁ σ₂ n₁ n₂).symm ⁻¹' W) ↔
-      ∃ (hw₁ : ∀ i : ι₁, (fun j ↦ w (.inr ⟨.inl i, j⟩)) ≠ 0)
-        (hw₂ : ∀ j : ι₂, (fun l ↦ w (.inr ⟨.inr j, l⟩)) ≠ 0),
+      ∃ (hw₁ : ∀ i : ι₁, (fun j : Fin (n₁ i + 1) ↦ w (.inr ⟨.inl i, j⟩)) ≠ 0)
+        (hw₂ : ∀ j : ι₂, (fun l : Fin (n₂ j + 1) ↦ w (.inr ⟨.inr j, l⟩)) ≠ 0),
         (((fun a₁ ↦ w (.inl (.inl a₁)),
-            fun i ↦ Projectivization.mk K (fun j ↦ w (.inr ⟨.inl i, j⟩)) (hw₁ i)),
+            fun i ↦ Projectivization.mk K
+              (fun j : Fin (n₁ i + 1) ↦ w (.inr ⟨.inl i, j⟩)) (hw₁ i)),
           (fun a₂ ↦ w (.inl (.inr a₂)),
-            fun j ↦ Projectivization.mk K (fun l ↦ w (.inr ⟨.inr j, l⟩)) (hw₂ j))) ∈ W) := by
+            fun j ↦ Projectivization.mk K
+              (fun l : Fin (n₂ j + 1) ↦ w (.inr ⟨.inr j, l⟩)) (hw₂ j))) ∈ W) := by
   simp only [mem_mixedCone, mem_preimage, mixedProdEquiv_symm_apply]
   constructor
   · rintro ⟨hw, hwW⟩
@@ -311,16 +358,40 @@ theorem IsMixedSemialgebraic.prod
     ((isMixedSemialgebraic_def.1 hS₂).preimage_comp (fun c ↦ e (.inr c))) using 1
   ext w
   rw [mem_mixedCone_preimage_mixedProdEquiv_symm, mem_inter_iff]
-  simp only [mem_preimage, mem_mixedCone, Function.comp_def, e, mixedProdConeIndexEquiv]
+  simp only [mem_preimage, mem_mixedCone, Function.comp_def, e,
+    mixedProdConeIndexEquiv_inl_inl, mixedProdConeIndexEquiv_inl_inr,
+    mixedProdConeIndexEquiv_inr_inl, mixedProdConeIndexEquiv_inr_inr]
   exact ⟨fun ⟨hw₁, hw₂, h₁, h₂⟩ ↦ ⟨⟨hw₁, h₁⟩, ⟨hw₂, h₂⟩⟩,
     fun ⟨⟨hw₁, h₁⟩, ⟨hw₂, h₂⟩⟩ ↦ ⟨hw₁, hw₂, h₁, h₂⟩⟩
+
+/-- Swapping the two factors of a product mixed space preserves mixed semialgebraicity. -/
+theorem IsMixedSemialgebraic.preimage_swap
+    {W : Set (((σ₁ → K) × ∀ i : ι₁, ℙ K (Fin (n₁ i + 1) → K)) ×
+      ((σ₂ → K) × ∀ j : ι₂, ℙ K (Fin (n₂ j + 1) → K)))}
+    (hW : IsMixedSemialgebraic ((mixedProdEquiv σ₁ σ₂ n₁ n₂).symm ⁻¹' W)) :
+    IsMixedSemialgebraic ((mixedProdEquiv σ₂ σ₁ n₂ n₁).symm ⁻¹' (Prod.swap ⁻¹' W)) := by
+  rw [isMixedSemialgebraic_def]
+  let sw : ((σ₁ ⊕ σ₂) ⊕ Σ k : ι₁ ⊕ ι₂, Fin (Sum.elim n₁ n₂ k + 1)) →
+      ((σ₂ ⊕ σ₁) ⊕ Σ k : ι₂ ⊕ ι₁, Fin (Sum.elim n₂ n₁ k + 1))
+    | .inl (.inl a₁) => .inl (.inr a₁)
+    | .inl (.inr a₂) => .inl (.inl a₂)
+    | .inr ⟨.inl i, j⟩ => .inr ⟨.inr i, j⟩
+    | .inr ⟨.inr j, l⟩ => .inr ⟨.inl j, l⟩
+  convert (isMixedSemialgebraic_def.1 hW).preimage_comp sw using 1
+  ext w
+  rw [mem_mixedCone_preimage_mixedProdEquiv_symm, mem_preimage,
+    mem_mixedCone_preimage_mixedProdEquiv_symm]
+  simp only [Function.comp_def, mem_preimage, Prod.swap_prod_mk, sw]
+  exact ⟨fun ⟨hw₂, hw₁, h⟩ ↦ ⟨hw₁, hw₂, h⟩, fun ⟨hw₁, hw₂, h⟩ ↦ ⟨hw₂, hw₁, h⟩⟩
 
 /-- The product of two multiprojective semialgebraic sets is multiprojective semialgebraic. -/
 theorem IsMultiprojectiveSemialgebraic.prod
     {S₁ : Set (∀ i : ι₁, ℙ K (Fin (n₁ i + 1) → K))}
     {S₂ : Set (∀ j : ι₂, ℙ K (Fin (n₂ j + 1) → K))}
     (hS₁ : IsMultiprojectiveSemialgebraic S₁) (hS₂ : IsMultiprojectiveSemialgebraic S₂) :
-    IsMultiprojectiveSemialgebraic ((sumPiProjectivizationEquiv n₁ n₂).symm ⁻¹' (S₁ ×ˢ S₂)) := by
+    IsMultiprojectiveSemialgebraic
+      (Equiv.sumPiEquivProdPi (fun k : ι₁ ⊕ ι₂ ↦ ℙ K (Fin (Sum.elim n₁ n₂ k + 1) → K)) ⁻¹'
+        (S₁ ×ˢ S₂)) := by
   rw [← isMixedSemialgebraic_univ_prod_iff (σ := Empty ⊕ Empty)]
   have h₁ : IsMixedSemialgebraic ((univ : Set (Empty → K)) ×ˢ S₁) :=
     (isMixedSemialgebraic_univ_prod_iff (σ := Empty)).2 hS₁
@@ -337,7 +408,7 @@ variable [HasSemialgebraicProjections K]
 
 /-- Given projection closure, projecting a mixed semialgebraic subset of `X₁ × X₂` onto `X₁`
 preserves mixed semialgebraicity when `X₂` has finitely many affine and projective coordinates. -/
-theorem IsMixedSemialgebraic.fst_image [Finite σ₂] [Finite ι₂]
+theorem IsMixedSemialgebraic.image_fst [Finite σ₂] [Finite ι₂]
     {W : Set (((σ₁ → K) × ∀ i : ι₁, ℙ K (Fin (n₁ i + 1) → K)) ×
       ((σ₂ → K) × ∀ j : ι₂, ℙ K (Fin (n₂ j + 1) → K)))}
     (hW : IsMixedSemialgebraic ((mixedProdEquiv σ₁ σ₂ n₁ n₂).symm ⁻¹' W)) :
@@ -351,67 +422,54 @@ theorem IsMixedSemialgebraic.fst_image [Finite σ₂] [Finite ι₂]
   · rw [mem_mixedCone]
     rintro ⟨hw₁, ⟨y₁, x₂, p₂⟩, hmem, hy₁⟩
     let w₂ : (σ₂ ⊕ Σ j, Fin (n₂ j + 1)) → K := Sum.elim x₂ fun q ↦ (p₂ q.1).rep q.2
-    refine ⟨Sum.elim w₁ w₂, ?_, rfl⟩
+    refine ⟨Sum.elim w₁ w₂, ?_, Sum.elim_comp_inl w₁ w₂⟩
     rw [mem_mixedCone_preimage_mixedProdEquiv_symm]
     have hw₁' : ∀ i : ι₁,
-        (fun j : Fin (n₁ i + 1) ↦ (Sum.elim w₁ w₂ ∘ e.symm) (.inr ⟨.inl i, j⟩)) ≠ 0 := hw₁
+        (fun j : Fin (n₁ i + 1) ↦ (Sum.elim w₁ w₂ ∘ e.symm) (.inr ⟨.inl i, j⟩)) ≠ 0 := by
+      simpa [e] using hw₁
     have hw₂ : ∀ j : ι₂,
-        (fun l : Fin (n₂ j + 1) ↦ (Sum.elim w₁ w₂ ∘ e.symm) (.inr ⟨.inr j, l⟩)) ≠ 0 :=
-      fun j ↦ (p₂ j).rep_ne_zero
-    have heq : (((fun a₁ ↦ (Sum.elim w₁ w₂ ∘ e.symm) (.inl (.inl a₁)),
+        (fun l : Fin (n₂ j + 1) ↦ (Sum.elim w₁ w₂ ∘ e.symm) (.inr ⟨.inr j, l⟩)) ≠ 0 := by
+      intro j
+      simpa [e, w₂] using (p₂ j).rep_ne_zero
+    refine ⟨hw₁', hw₂, ?_⟩
+    have h₁ : (fun a₁ ↦ (Sum.elim w₁ w₂ ∘ e.symm) (.inl (.inl a₁)),
         fun i ↦ Projectivization.mk K
-          (fun j ↦ (Sum.elim w₁ w₂ ∘ e.symm) (.inr ⟨.inl i, j⟩)) (hw₁' i)),
-        (fun a₂ ↦ (Sum.elim w₁ w₂ ∘ e.symm) (.inl (.inr a₂)),
-          fun j ↦ Projectivization.mk K
-            (fun l ↦ (Sum.elim w₁ w₂ ∘ e.symm) (.inr ⟨.inr j, l⟩)) (hw₂ j)))) =
-        (y₁, x₂, p₂) :=
-      Prod.ext hy₁.symm (Prod.ext rfl (funext fun j ↦ (p₂ j).mk_rep))
-    exact ⟨hw₁', hw₂, heq.symm ▸ hmem⟩
+          (fun j : Fin (n₁ i + 1) ↦ (Sum.elim w₁ w₂ ∘ e.symm) (.inr ⟨.inl i, j⟩)) (hw₁' i)) =
+        y₁ := by
+      simp only [Function.comp_def] at hy₁
+      simp only [Function.comp_apply, e, mixedProdConeIndexEquiv_symm_inl_inl,
+        mixedProdConeIndexEquiv_symm_inr_inl, Sum.elim_inl]
+      exact hy₁.symm
+    have h₂ : (fun a₂ ↦ (Sum.elim w₁ w₂ ∘ e.symm) (.inl (.inr a₂)),
+        fun j ↦ Projectivization.mk K
+          (fun l : Fin (n₂ j + 1) ↦ (Sum.elim w₁ w₂ ∘ e.symm) (.inr ⟨.inr j, l⟩)) (hw₂ j)) =
+        (x₂, p₂) := by
+      refine Prod.ext (funext fun a₂ ↦ by simp [e, w₂]) (funext fun j ↦ ?_)
+      simp only [Function.comp_apply, e, mixedProdConeIndexEquiv_symm_inr_inr, w₂, Sum.elim_inr]
+      exact (p₂ j).mk_rep
+    rwa [h₁, h₂]
   · rintro ⟨u, hu, rfl⟩
     rw [mem_mixedCone_preimage_mixedProdEquiv_symm] at hu
     obtain ⟨hw₁, _, hmem⟩ := hu
     rw [mem_mixedCone]
-    have hw₁' : ∀ i : ι₁, (fun j : Fin (n₁ i + 1) ↦ (u ∘ Sum.inl) (.inr ⟨i, j⟩)) ≠ 0 := hw₁
-    exact ⟨hw₁', _, hmem, rfl⟩
+    have hw₁' : ∀ i : ι₁,
+        (fun j : Fin (n₁ i + 1) ↦ (u ∘ Sum.inl) (.inr ⟨i, j⟩)) ≠ 0 := by
+      simpa [e] using hw₁
+    refine ⟨hw₁', _, hmem, ?_⟩
+    simp [e, Function.comp_def]
 
 /-- Given projection closure, projecting a mixed semialgebraic subset of `X₁ × X₂` onto `X₂`
 preserves mixed semialgebraicity when `X₁` has finitely many affine and projective coordinates. -/
-theorem IsMixedSemialgebraic.snd_image [Finite σ₁] [Finite ι₁]
+theorem IsMixedSemialgebraic.image_snd [Finite σ₁] [Finite ι₁]
     {W : Set (((σ₁ → K) × ∀ i : ι₁, ℙ K (Fin (n₁ i + 1) → K)) ×
       ((σ₂ → K) × ∀ j : ι₂, ℙ K (Fin (n₂ j + 1) → K)))}
     (hW : IsMixedSemialgebraic ((mixedProdEquiv σ₁ σ₂ n₁ n₂).symm ⁻¹' W)) :
     IsMixedSemialgebraic (Prod.snd '' W) := by
-  rw [isMixedSemialgebraic_def]
-  let e := mixedProdConeIndexEquiv σ₁ σ₂ n₁ n₂
-  convert ((isMixedSemialgebraic_def.1 hW).preimage_comp e.symm).image_comp_inr using 1
-  ext w₂
-  simp only [mem_image, mem_preimage]
-  constructor
-  · rw [mem_mixedCone]
-    rintro ⟨hw₂, ⟨⟨x₁, p₁⟩, y₂⟩, hmem, hy₂⟩
-    let w₁ : (σ₁ ⊕ Σ i, Fin (n₁ i + 1)) → K := Sum.elim x₁ fun q ↦ (p₁ q.1).rep q.2
-    refine ⟨Sum.elim w₁ w₂, ?_, rfl⟩
-    rw [mem_mixedCone_preimage_mixedProdEquiv_symm]
-    have hw₁ : ∀ i : ι₁,
-        (fun j : Fin (n₁ i + 1) ↦ (Sum.elim w₁ w₂ ∘ e.symm) (.inr ⟨.inl i, j⟩)) ≠ 0 :=
-      fun i ↦ (p₁ i).rep_ne_zero
-    have hw₂' : ∀ j : ι₂,
-        (fun l : Fin (n₂ j + 1) ↦ (Sum.elim w₁ w₂ ∘ e.symm) (.inr ⟨.inr j, l⟩)) ≠ 0 := hw₂
-    have heq : (((fun a₁ ↦ (Sum.elim w₁ w₂ ∘ e.symm) (.inl (.inl a₁)),
-        fun i ↦ Projectivization.mk K
-          (fun j ↦ (Sum.elim w₁ w₂ ∘ e.symm) (.inr ⟨.inl i, j⟩)) (hw₁ i)),
-        (fun a₂ ↦ (Sum.elim w₁ w₂ ∘ e.symm) (.inl (.inr a₂)),
-          fun j ↦ Projectivization.mk K
-            (fun l ↦ (Sum.elim w₁ w₂ ∘ e.symm) (.inr ⟨.inr j, l⟩)) (hw₂' j)))) =
-        ((x₁, p₁), y₂) :=
-      Prod.ext (Prod.ext rfl (funext fun i ↦ (p₁ i).mk_rep)) hy₂.symm
-    exact ⟨hw₁, hw₂', heq.symm ▸ hmem⟩
-  · rintro ⟨u, hu, rfl⟩
-    rw [mem_mixedCone_preimage_mixedProdEquiv_symm] at hu
-    obtain ⟨_, hw₂, hmem⟩ := hu
-    rw [mem_mixedCone]
-    have hw₂' : ∀ j : ι₂, (fun l : Fin (n₂ j + 1) ↦ (u ∘ Sum.inr) (.inr ⟨j, l⟩)) ≠ 0 := hw₂
-    exact ⟨hw₂', _, hmem, rfl⟩
+  have hswap : Prod.snd '' W = Prod.fst '' (Prod.swap ⁻¹' W) := by
+    ext y
+    simp [Prod.exists, and_comm]
+  rw [hswap]
+  exact hW.preimage_swap.image_fst
 
 end Projections
 
@@ -442,13 +500,15 @@ def IsMixedSemialgebraicMap
   IsMixedSemialgebraicOn f univ
 
 /-- A map `f` between multiprojective spaces is *multiprojective semialgebraic on* `s` if both `s`
-and its graph `s.graphOn f` (viewed via `TauCeti.sumPiProjectivizationEquiv`) are multiprojective
+and its graph `s.graphOn f` (viewed via `Equiv.sumPiEquivProdPi`) are multiprojective
 semialgebraic. -/
 def IsMultiprojectiveSemialgebraicOn
     (f : (∀ i : ι₁, ℙ K (Fin (n₁ i + 1) → K)) → ∀ j : ι₂, ℙ K (Fin (n₂ j + 1) → K))
     (s : Set (∀ i : ι₁, ℙ K (Fin (n₁ i + 1) → K))) : Prop :=
   IsMultiprojectiveSemialgebraic s ∧
-    IsMultiprojectiveSemialgebraic ((sumPiProjectivizationEquiv n₁ n₂).symm ⁻¹' s.graphOn f)
+    IsMultiprojectiveSemialgebraic
+      (Equiv.sumPiEquivProdPi (fun k : ι₁ ⊕ ι₂ ↦ ℙ K (Fin (Sum.elim n₁ n₂ k + 1) → K)) ⁻¹'
+        s.graphOn f)
 
 /-- A map between multiprojective spaces is *multiprojective semialgebraic* if its graph over the
 whole domain is multiprojective semialgebraic. -/
@@ -483,7 +543,9 @@ theorem isMultiprojectiveSemialgebraicOn_def
     {s : Set (∀ i : ι₁, ℙ K (Fin (n₁ i + 1) → K))} :
     IsMultiprojectiveSemialgebraicOn f s ↔
       IsMultiprojectiveSemialgebraic s ∧
-        IsMultiprojectiveSemialgebraic ((sumPiProjectivizationEquiv n₁ n₂).symm ⁻¹' s.graphOn f) :=
+        IsMultiprojectiveSemialgebraic
+          (Equiv.sumPiEquivProdPi (fun k : ι₁ ⊕ ι₂ ↦ ℙ K (Fin (Sum.elim n₁ n₂ k + 1) → K)) ⁻¹'
+            s.graphOn f) :=
   Iff.rfl
 
 theorem IsMixedSemialgebraicOn.isMixedSemialgebraic
@@ -501,21 +563,40 @@ theorem IsMixedSemialgebraicOn.graph
     IsMixedSemialgebraic ((mixedProdEquiv σ₁ σ₂ n₁ n₂).symm ⁻¹' s.graphOn f) :=
   hf.2
 
-/-- Pure multiprojective semialgebraicity on `s` coincides with mixed semialgebraicity after
-adjoining empty affine factors. -/
-theorem isMixedSemialgebraicOn_empty_prod_iff
+theorem IsMultiprojectiveSemialgebraicOn.isMultiprojectiveSemialgebraic
+    {f : (∀ i : ι₁, ℙ K (Fin (n₁ i + 1) → K)) → ∀ j : ι₂, ℙ K (Fin (n₂ j + 1) → K)}
+    {s : Set (∀ i : ι₁, ℙ K (Fin (n₁ i + 1) → K))}
+    (hf : IsMultiprojectiveSemialgebraicOn f s) : IsMultiprojectiveSemialgebraic s :=
+  hf.1
+
+theorem IsMultiprojectiveSemialgebraicOn.graph
+    {f : (∀ i : ι₁, ℙ K (Fin (n₁ i + 1) → K)) → ∀ j : ι₂, ℙ K (Fin (n₂ j + 1) → K)}
+    {s : Set (∀ i : ι₁, ℙ K (Fin (n₁ i + 1) → K))}
+    (hf : IsMultiprojectiveSemialgebraicOn f s) :
+    IsMultiprojectiveSemialgebraic
+      (Equiv.sumPiEquivProdPi (fun k : ι₁ ⊕ ι₂ ↦ ℙ K (Fin (Sum.elim n₁ n₂ k + 1) → K)) ⁻¹'
+        s.graphOn f) :=
+  hf.2
+
+/-- Pure multiprojective semialgebraicity on `s` coincides with mixed semialgebraicity on
+`univ ×ˢ s` after adjoining an arbitrary domain affine factor `σ₁` and an empty target affine
+factor `σ₂`. -/
+theorem isMixedSemialgebraicOn_univ_prod_iff [IsEmpty σ₂]
     {f : (∀ i : ι₁, ℙ K (Fin (n₁ i + 1) → K)) → ∀ j : ι₂, ℙ K (Fin (n₂ j + 1) → K)}
     {s : Set (∀ i : ι₁, ℙ K (Fin (n₁ i + 1) → K))} :
     IsMixedSemialgebraicOn
-        (fun xp : (Empty → K) × ∀ i : ι₁, ℙ K (Fin (n₁ i + 1) → K) ↦ (xp.1, f xp.2))
-        ((univ : Set (Empty → K)) ×ˢ s) ↔
+        (fun xp : (σ₁ → K) × ∀ i : ι₁, ℙ K (Fin (n₁ i + 1) → K) ↦
+          ((isEmptyElim : σ₂ → K), f xp.2))
+        ((univ : Set (σ₁ → K)) ×ˢ s) ↔
       IsMultiprojectiveSemialgebraicOn f s := by
-  refine and_congr (isMixedSemialgebraic_univ_prod_iff (σ := Empty)) ?_
-  rw [← isMixedSemialgebraic_univ_prod_iff (σ := Empty ⊕ Empty)]
-  suffices h : (mixedProdEquiv Empty Empty n₁ n₂).symm ⁻¹'
-      ((univ : Set (Empty → K)) ×ˢ s).graphOn (fun xp ↦ (xp.1, f xp.2)) =
-      (univ : Set (Empty ⊕ Empty → K)) ×ˢ
-        ((sumPiProjectivizationEquiv n₁ n₂).symm ⁻¹' s.graphOn f) by rw [h]
+  refine and_congr (isMixedSemialgebraic_univ_prod_iff (σ := σ₁)) ?_
+  rw [← isMixedSemialgebraic_univ_prod_iff (σ := σ₁ ⊕ σ₂)]
+  suffices h : (mixedProdEquiv σ₁ σ₂ n₁ n₂).symm ⁻¹'
+      ((univ : Set (σ₁ → K)) ×ˢ s).graphOn
+        (fun xp ↦ ((isEmptyElim : σ₂ → K), f xp.2)) =
+      (univ : Set (σ₁ ⊕ σ₂ → K)) ×ˢ
+        (Equiv.sumPiEquivProdPi (fun k : ι₁ ⊕ ι₂ ↦
+          ℙ K (Fin (Sum.elim n₁ n₂ k + 1) → K)) ⁻¹' s.graphOn f) by rw [h]
   ext ⟨x, p⟩
   refine ⟨fun h ↦ ⟨trivial, ?_⟩, fun ⟨_, h⟩ ↦ ?_⟩
   · obtain ⟨⟨_, hps⟩, heq⟩ := mem_graphOn.1 h
@@ -538,15 +619,26 @@ theorem IsMixedSemialgebraicOn.mono
   ext w
   rw [mem_mixedCone_preimage_mixedProdEquiv_symm, mem_inter_iff,
     mem_mixedCone_preimage_mixedProdEquiv_symm, mem_preimage, mem_mixedCone]
-  simp only [Function.comp_def, e, mixedProdConeIndexEquiv]
+  simp only [Function.comp_def, e,
+    mixedProdConeIndexEquiv_inl_inl, mixedProdConeIndexEquiv_inl_inr]
   constructor
   · rintro ⟨hw₁, hw₂, hmem⟩
     obtain ⟨ht_mem, hfx⟩ := mem_graphOn.1 hmem
-    have hw₁' : ∀ i : ι₁, (fun j : Fin (n₁ i + 1) ↦ w (.inr ⟨.inl i, j⟩)) ≠ 0 := hw₁
-    exact ⟨⟨hw₁, hw₂, mem_graphOn.2 ⟨hts ht_mem, hfx⟩⟩, hw₁', ht_mem⟩
+    exact ⟨⟨hw₁, hw₂, mem_graphOn.2 ⟨hts ht_mem, hfx⟩⟩, hw₁, ht_mem⟩
   · rintro ⟨⟨hw₁, hw₂, hmem⟩, _, ht_mem⟩
     obtain ⟨_, hfx⟩ := mem_graphOn.1 hmem
     exact ⟨hw₁, hw₂, mem_graphOn.2 ⟨ht_mem, hfx⟩⟩
+
+/-- Restricting a multiprojective semialgebraic map to a multiprojective semialgebraic subset
+preserves multiprojective semialgebraicity. -/
+theorem IsMultiprojectiveSemialgebraicOn.mono
+    {f : (∀ i : ι₁, ℙ K (Fin (n₁ i + 1) → K)) → ∀ j : ι₂, ℙ K (Fin (n₂ j + 1) → K)}
+    {s t : Set (∀ i : ι₁, ℙ K (Fin (n₁ i + 1) → K))}
+    (hf : IsMultiprojectiveSemialgebraicOn f s) (ht : IsMultiprojectiveSemialgebraic t)
+    (hts : t ⊆ s) : IsMultiprojectiveSemialgebraicOn f t :=
+  (isMixedSemialgebraicOn_univ_prod_iff (σ₁ := Empty) (σ₂ := Empty)).1 <|
+    ((isMixedSemialgebraicOn_univ_prod_iff (σ₁ := Empty) (σ₂ := Empty)).2 hf).mono
+      ((isMixedSemialgebraic_univ_prod_iff (σ := Empty)).2 ht) (prod_mono_right hts)
 
 theorem IsMixedSemialgebraicMap.isMixedSemialgebraicOn
     {f : ((σ₁ → K) × ∀ i : ι₁, ℙ K (Fin (n₁ i + 1) → K)) →
@@ -554,6 +646,13 @@ theorem IsMixedSemialgebraicMap.isMixedSemialgebraicOn
     (hf : IsMixedSemialgebraicMap f)
     {s : Set ((σ₁ → K) × ∀ i : ι₁, ℙ K (Fin (n₁ i + 1) → K))} (hs : IsMixedSemialgebraic s) :
     IsMixedSemialgebraicOn f s :=
+  hf.mono hs (subset_univ _)
+
+theorem IsMultiprojectiveSemialgebraicMap.isMultiprojectiveSemialgebraicOn
+    {f : (∀ i : ι₁, ℙ K (Fin (n₁ i + 1) → K)) → ∀ j : ι₂, ℙ K (Fin (n₂ j + 1) → K)}
+    (hf : IsMultiprojectiveSemialgebraicMap f)
+    {s : Set (∀ i : ι₁, ℙ K (Fin (n₁ i + 1) → K))} (hs : IsMultiprojectiveSemialgebraic s) :
+    IsMultiprojectiveSemialgebraicOn f s :=
   hf.mono hs (subset_univ _)
 
 /-- Mixed semialgebraicity on `s` depends only on the values of `f` on `s`. -/
@@ -565,12 +664,28 @@ theorem IsMixedSemialgebraicOn.congr
     IsMixedSemialgebraicOn g s :=
   ⟨hf.1, graphOn_inj.2 hfg ▸ hf.2⟩
 
+/-- Multiprojective semialgebraicity on `s` depends only on the values of `f` on `s`. -/
+theorem IsMultiprojectiveSemialgebraicOn.congr
+    {f g : (∀ i : ι₁, ℙ K (Fin (n₁ i + 1) → K)) → ∀ j : ι₂, ℙ K (Fin (n₂ j + 1) → K)}
+    {s : Set (∀ i : ι₁, ℙ K (Fin (n₁ i + 1) → K))}
+    (hf : IsMultiprojectiveSemialgebraicOn f s) (hfg : EqOn f g s) :
+    IsMultiprojectiveSemialgebraicOn g s :=
+  ⟨hf.1, graphOn_inj.2 hfg ▸ hf.2⟩
+
 @[simp]
 theorem isMixedSemialgebraicOn_empty
     (f : ((σ₁ → K) × ∀ i : ι₁, ℙ K (Fin (n₁ i + 1) → K)) →
       ((σ₂ → K) × ∀ j : ι₂, ℙ K (Fin (n₂ j + 1) → K))) :
     IsMixedSemialgebraicOn f ∅ :=
   ⟨isMixedSemialgebraic_empty, by simp⟩
+
+@[simp]
+theorem isMultiprojectiveSemialgebraicOn_empty
+    (f : (∀ i : ι₁, ℙ K (Fin (n₁ i + 1) → K)) → ∀ j : ι₂, ℙ K (Fin (n₂ j + 1) → K)) :
+    IsMultiprojectiveSemialgebraicOn f ∅ :=
+  (isMixedSemialgebraicOn_univ_prod_iff (σ₁ := Empty) (σ₂ := Empty)).1 <| by
+    rw [prod_empty]
+    exact isMixedSemialgebraicOn_empty _
 
 /-- Finite Boolean glueing: if `f` is mixed semialgebraic on `s` and on `t`, then it is mixed
 semialgebraic on `s ∪ t`. -/
@@ -581,6 +696,18 @@ theorem IsMixedSemialgebraicOn.union
     (hfs : IsMixedSemialgebraicOn f s) (hft : IsMixedSemialgebraicOn f t) :
     IsMixedSemialgebraicOn f (s ∪ t) :=
   ⟨hfs.1.union hft.1, by rw [graphOn_union, preimage_union]; exact hfs.2.union hft.2⟩
+
+/-- Finite Boolean glueing: if `f` is multiprojective semialgebraic on `s` and on `t`, then it is
+multiprojective semialgebraic on `s ∪ t`. -/
+theorem IsMultiprojectiveSemialgebraicOn.union
+    {f : (∀ i : ι₁, ℙ K (Fin (n₁ i + 1) → K)) → ∀ j : ι₂, ℙ K (Fin (n₂ j + 1) → K)}
+    {s t : Set (∀ i : ι₁, ℙ K (Fin (n₁ i + 1) → K))}
+    (hfs : IsMultiprojectiveSemialgebraicOn f s) (hft : IsMultiprojectiveSemialgebraicOn f t) :
+    IsMultiprojectiveSemialgebraicOn f (s ∪ t) :=
+  (isMixedSemialgebraicOn_univ_prod_iff (σ₁ := Empty) (σ₂ := Empty)).1 <| by
+    rw [prod_union]
+    exact ((isMixedSemialgebraicOn_univ_prod_iff (σ₁ := Empty) (σ₂ := Empty)).2 hfs).union
+      ((isMixedSemialgebraicOn_univ_prod_iff (σ₁ := Empty) (σ₂ := Empty)).2 hft)
 
 /-- Piecewise Boolean glueing of two mixed semialgebraic maps along a mixed semialgebraic set. -/
 theorem IsMixedSemialgebraicOn.piecewise
@@ -624,16 +751,18 @@ theorem isMixedSemialgebraicOn_iff_isSemialgebraicOn_of_isEmpty [IsEmpty ι₁] 
 private theorem isSemialgebraic_id_cone_eq (σ : Type*) [Finite σ] [Finite ι] (n : ι → ℕ) :
     IsSemialgebraic
       {w : ((σ ⊕ σ) ⊕ Σ k : ι ⊕ ι, Fin (Sum.elim n n k + 1)) → K |
-        (∀ j : ι, (fun l ↦ w (.inr ⟨.inr j, l⟩)) ≠ 0) ∧
+        (∀ j : ι, (fun l : Fin (n j + 1) ↦ w (.inr ⟨.inr j, l⟩)) ≠ 0) ∧
         (∀ a : σ, w (.inl (.inl a)) = w (.inl (.inr a))) ∧
         ∀ (i : ι) (j k : Fin (n i + 1)),
           w (.inr ⟨.inl i, j⟩) * w (.inr ⟨.inr i, k⟩) =
             w (.inr ⟨.inl i, k⟩) * w (.inr ⟨.inr i, j⟩)} := by
   have h₁ : IsSemialgebraic
-      (⋂ i : ι, ⋃ l : Fin (n i + 1),
-        {w : ((σ ⊕ σ) ⊕ Σ k : ι ⊕ ι, Fin (Sum.elim n n k + 1)) → K |
-          eval w (X (.inr ⟨.inr i, l⟩)) ≠ 0}) :=
-    .iInter fun _ ↦ .iUnion fun _ ↦ isSemialgebraic_eval_ne_zero _
+      ((fun w : ((σ ⊕ σ) ⊕ Σ k : ι ⊕ ι, Fin (Sum.elim n n k + 1)) → K ↦
+        fun q : Σ j : ι, Fin (n j + 1) ↦ w (.inr ⟨.inr q.1, q.2⟩)) ⁻¹'
+          multiprojectivePuncturedCone n K) :=
+    isSemialgebraic_multiprojectivePuncturedCone.preimage_comp
+      (fun q : Σ j : ι, Fin (n j + 1) ↦
+        (Sum.inr ⟨.inr q.1, q.2⟩ : (σ ⊕ σ) ⊕ Σ k : ι ⊕ ι, Fin (Sum.elim n n k + 1)))
   have h₂ : IsSemialgebraic
       (⋂ a : σ, {w : ((σ ⊕ σ) ⊕ Σ k : ι ⊕ ι, Fin (Sum.elim n n k + 1)) → K |
         eval w (X (.inl (.inl a)) - X (.inl (.inr a))) = 0}) :=
@@ -646,9 +775,8 @@ private theorem isSemialgebraic_id_cone_eq (σ : Type*) [Finite σ] [Finite ι] 
     .iInter fun _ ↦ .iInter fun _ ↦ .iInter fun _ ↦ isSemialgebraic_eval_eq_zero _
   convert (h₁.inter h₂).inter h₃ using 1
   ext w
-  simp only [mem_inter_iff, mem_iInter, mem_iUnion, mem_ofPred_eq, map_sub, map_mul,
-    eval_X, sub_eq_zero, Function.ne_iff, Pi.zero_apply, and_assoc]
-  exact Iff.rfl
+  simp only [mem_inter_iff, mem_preimage, mem_multiprojectivePuncturedCone, mem_iInter,
+    mem_ofPred_eq, map_sub, map_mul, eval_X, sub_eq_zero, and_assoc]
 
 /-- The identity map on a mixed space with finitely many affine and projective factors is mixed
 semialgebraic on every mixed semialgebraic domain. -/
@@ -662,20 +790,17 @@ theorem isMixedSemialgebraicOn_id [Finite σ] [Finite ι]
       (isSemialgebraic_id_cone_eq (K := K) σ n) using 1
   ext w
   rw [mem_mixedCone_preimage_mixedProdEquiv_symm, mem_inter_iff, mem_preimage, mem_mixedCone]
-  simp only [Function.comp_def, e, mixedProdConeIndexEquiv, mem_ofPred_eq]
+  simp only [Function.comp_def, e,
+    mixedProdConeIndexEquiv_inl_inl, mixedProdConeIndexEquiv_inl_inr, mem_ofPred_eq]
   constructor
   · rintro ⟨hw₁, hw₂, hmem⟩
     obtain ⟨hws, heq⟩ := mem_graphOn.1 hmem
-    have hw₁' : ∀ i : ι, (fun j : Fin (n i + 1) ↦ w (.inr ⟨.inl i, j⟩)) ≠ 0 := hw₁
-    have hw₂' : ∀ i : ι, (fun j : Fin (n i + 1) ↦ w (.inr ⟨.inr i, j⟩)) ≠ 0 := hw₂
-    exact ⟨⟨hw₁', hws⟩, hw₂', fun a ↦ congrFun (congrArg Prod.fst heq) a,
-      fun i ↦ (Projectivization.mk_eq_mk_iff_forall_mul_eq (hw₁' i) (hw₂' i)).1
+    exact ⟨⟨hw₁, hws⟩, hw₂, fun a ↦ congrFun (congrArg Prod.fst heq) a,
+      fun i ↦ (Projectivization.mk_eq_mk_iff_forall_mul_eq (hw₁ i) (hw₂ i)).1
         (congrFun (congrArg Prod.snd heq) i)⟩
   · rintro ⟨⟨hw₁, hws⟩, hw₂, ha, hp⟩
-    have hw₁' : ∀ i : ι, (fun j : Fin (n i + 1) ↦ w (.inr ⟨.inl i, j⟩)) ≠ 0 := hw₁
-    have hw₂' : ∀ i : ι, (fun j : Fin (n i + 1) ↦ w (.inr ⟨.inr i, j⟩)) ≠ 0 := hw₂
-    refine ⟨hw₁', hw₂', mem_graphOn.2 ⟨hws, Prod.ext (funext ha) (funext fun i ↦ ?_)⟩⟩
-    exact (Projectivization.mk_eq_mk_iff_forall_mul_eq (hw₁' i) (hw₂' i)).2 (hp i)
+    refine ⟨hw₁, hw₂, mem_graphOn.2 ⟨hws, Prod.ext (funext ha) (funext fun i ↦ ?_)⟩⟩
+    exact (Projectivization.mk_eq_mk_iff_forall_mul_eq (hw₁ i) (hw₂ i)).2 (hp i)
 
 @[simp]
 theorem isMixedSemialgebraicMap_id [Finite σ] [Finite ι] :
@@ -688,48 +813,10 @@ theorem isMixedSemialgebraicMap_id [Finite σ] [Finite ι] :
 theorem isMultiprojectiveSemialgebraicMap_id [Finite ι] :
     IsMultiprojectiveSemialgebraicMap
       (id : (∀ i : ι, ℙ K (Fin (n i + 1) → K)) → ∀ i : ι, ℙ K (Fin (n i + 1) → K)) :=
-  isMixedSemialgebraicOn_empty_prod_iff.1 <| by
+  (isMixedSemialgebraicOn_univ_prod_iff (σ₁ := Empty) (σ₂ := Empty)).1 <| by
     rw [univ_prod_univ]
-    exact isMixedSemialgebraicOn_id isMixedSemialgebraic_univ
-
-/-- Every singleton in a finite-dimensional mixed space is mixed semialgebraic. -/
-theorem isMixedSemialgebraic_singleton [Finite σ] [Finite ι]
-    (c : (σ → K) × ∀ i : ι, ℙ K (Fin (n i + 1) → K)) :
-    IsMixedSemialgebraic ({c} : Set ((σ → K) × ∀ i : ι, ℙ K (Fin (n i + 1) → K))) := by
-  rw [isMixedSemialgebraic_def]
-  have h₁ : IsSemialgebraic
-      (⋂ i : ι, ⋃ j : Fin (n i + 1),
-        {w : (σ ⊕ Σ i, Fin (n i + 1)) → K | eval w (X (.inr ⟨i, j⟩)) ≠ 0}) :=
-    .iInter fun _ ↦ .iUnion fun _ ↦ isSemialgebraic_eval_ne_zero _
-  have h₂ : IsSemialgebraic
-      (⋂ a : σ, {w : (σ ⊕ Σ i, Fin (n i + 1)) → K | eval w (X (.inl a) - C (c.1 a)) = 0}) :=
-    .iInter fun _ ↦ isSemialgebraic_eval_eq_zero _
-  have h₃ : IsSemialgebraic
-      (⋂ (i : ι) (j : Fin (n i + 1)) (k : Fin (n i + 1)),
-        {w : (σ ⊕ Σ i, Fin (n i + 1)) → K |
-          eval w (C ((c.2 i).rep k) * X (.inr ⟨i, j⟩) -
-            C ((c.2 i).rep j) * X (.inr ⟨i, k⟩)) = 0}) :=
-    .iInter fun _ ↦ .iInter fun _ ↦ .iInter fun _ ↦ isSemialgebraic_eval_eq_zero _
-  convert (h₁.inter h₂).inter h₃ using 1
-  ext w
-  rw [mem_mixedCone, mem_inter_iff, mem_inter_iff]
-  simp only [mem_iInter, mem_iUnion, mem_ofPred_eq, map_sub, map_mul, eval_X, eval_C, sub_eq_zero]
-  constructor
-  · rintro ⟨hw, hwc⟩
-    have hwc' := mem_singleton_iff.1 hwc
-    refine ⟨⟨fun i ↦ Function.ne_iff.1 (hw i),
-        fun a ↦ congrFun (congrArg Prod.fst hwc') a⟩, fun i j k ↦ ?_⟩
-    have hi : Projectivization.mk K (fun j ↦ w (.inr ⟨i, j⟩)) (hw i) =
-        Projectivization.mk K (c.2 i).rep (c.2 i).rep_ne_zero :=
-      (congrFun (congrArg Prod.snd hwc') i).trans (c.2 i).mk_rep.symm
-    have hmul := (Projectivization.mk_eq_mk_iff_forall_mul_eq (hw i) (c.2 i).rep_ne_zero).1 hi j k
-    rw [mul_comm, hmul, mul_comm]
-  · rintro ⟨⟨hw, ha⟩, hp⟩
-    have hw' : ∀ i : ι, (fun j ↦ w (.inr ⟨i, j⟩)) ≠ 0 := fun i ↦ Function.ne_iff.2 (hw i)
-    refine ⟨hw', mem_singleton_iff.2 (Prod.ext (funext ha) (funext fun i ↦ ?_))⟩
-    rw [← (c.2 i).mk_rep, Projectivization.mk_eq_mk_iff_forall_mul_eq (hw' i) (c.2 i).rep_ne_zero]
-    intro j k
-    rw [mul_comm, hp i j k, mul_comm]
+    exact (isMixedSemialgebraicOn_id isMixedSemialgebraic_univ).congr fun x _ ↦
+      Prod.ext (Subsingleton.elim _ _) rfl
 
 /-- A constant map into a finite-dimensional mixed space is mixed semialgebraic on every mixed
 semialgebraic domain. -/
@@ -780,16 +867,12 @@ theorem IsMixedSemialgebraicOn.prodMk
     have hfg' := congrArg (mixedProdEquiv σ₂ σ₃ n₂ n₃).symm hfg
     rw [Equiv.symm_apply_apply] at hfg'
     obtain ⟨hf_eq, hg_eq⟩ := Prod.mk.inj hfg'
-    have hw₁' : ∀ i : ι₁, (fun j : Fin (n₁ i + 1) ↦ w (.inr ⟨.inl i, j⟩)) ≠ 0 := hw₁
-    exact ⟨⟨hw₁', fun j ↦ hw₂₃ (.inl j), mem_graphOn.2 ⟨hws, hf_eq⟩⟩,
-      ⟨hw₁', fun l ↦ hw₂₃ (.inr l), mem_graphOn.2 ⟨hws, hg_eq⟩⟩⟩
+    exact ⟨⟨hw₁, fun j ↦ hw₂₃ (.inl j), mem_graphOn.2 ⟨hws, hf_eq⟩⟩,
+      ⟨hw₁, fun l ↦ hw₂₃ (.inr l), mem_graphOn.2 ⟨hws, hg_eq⟩⟩⟩
   · rintro ⟨⟨hw₁, hw₂, hmem₁₂⟩, ⟨_, hw₃, hmem₁₃⟩⟩
     obtain ⟨hws, hf_eq⟩ := mem_graphOn.1 hmem₁₂
     obtain ⟨_, hg_eq⟩ := mem_graphOn.1 hmem₁₃
-    have hw₁' : ∀ i : ι₁, (fun j : Fin (n₁ i + 1) ↦ w (.inr ⟨.inl i, j⟩)) ≠ 0 := hw₁
-    have hw₂' : ∀ j : ι₂, (fun l : Fin (n₂ j + 1) ↦ w (.inr ⟨.inr (.inl j), l⟩)) ≠ 0 := hw₂
-    have hw₃' : ∀ l : ι₃, (fun m : Fin (n₃ l + 1) ↦ w (.inr ⟨.inr (.inr l), m⟩)) ≠ 0 := hw₃
-    refine ⟨hw₁', fun | .inl j => hw₂' j | .inr l => hw₃' l, mem_graphOn.2 ⟨hws, ?_⟩⟩
+    refine ⟨hw₁, fun | .inl j => hw₂ j | .inr l => hw₃ l, mem_graphOn.2 ⟨hws, ?_⟩⟩
     exact (congrArg (mixedProdEquiv σ₂ σ₃ n₂ n₃) (Prod.ext hf_eq hg_eq)).trans
       ((mixedProdEquiv σ₂ σ₃ n₂ n₃).apply_symm_apply _)
 
@@ -800,43 +883,13 @@ theorem IsMultiprojectiveSemialgebraicOn.prodMk
     {g : (∀ i : ι₁, ℙ K (Fin (n₁ i + 1) → K)) → ∀ l : ι₃, ℙ K (Fin (n₃ l + 1) → K)}
     {s : Set (∀ i : ι₁, ℙ K (Fin (n₁ i + 1) → K))}
     (hf : IsMultiprojectiveSemialgebraicOn f s) (hg : IsMultiprojectiveSemialgebraicOn g s) :
-    IsMultiprojectiveSemialgebraicOn (fun p ↦ sumPiProjectivizationEquiv n₂ n₃ (f p, g p)) s := by
-  refine ⟨hf.1, ?_⟩
-  rw [isMultiprojectiveSemialgebraic_def]
-  let f₁₂ : (Σ k : ι₁ ⊕ ι₂, Fin (Sum.elim n₁ n₂ k + 1)) →
-      Σ k : ι₁ ⊕ (ι₂ ⊕ ι₃), Fin (Sum.elim n₁ (Sum.elim n₂ n₃) k + 1)
-    | ⟨.inl i, j⟩ => ⟨.inl i, j⟩
-    | ⟨.inr j, l⟩ => ⟨.inr (.inl j), l⟩
-  let f₁₃ : (Σ k : ι₁ ⊕ ι₃, Fin (Sum.elim n₁ n₃ k + 1)) →
-      Σ k : ι₁ ⊕ (ι₂ ⊕ ι₃), Fin (Sum.elim n₁ (Sum.elim n₂ n₃) k + 1)
-    | ⟨.inl i, j⟩ => ⟨.inl i, j⟩
-    | ⟨.inr l, m⟩ => ⟨.inr (.inr l), m⟩
-  convert ((isMultiprojectiveSemialgebraic_def.1 hf.2).preimage_comp f₁₂).inter
-    ((isMultiprojectiveSemialgebraic_def.1 hg.2).preimage_comp f₁₃) using 1
-  ext v
-  simp only [mem_multiprojectiveCone, mem_inter_iff, mem_preimage, Function.comp_def,
-    sumPiProjectivizationEquiv_symm_apply]
-  constructor
-  · rintro ⟨hv, hmem⟩
-    obtain ⟨hvs, hfg⟩ := mem_graphOn.1 hmem
-    have hfg' := congrArg (sumPiProjectivizationEquiv n₂ n₃).symm hfg
-    rw [Equiv.symm_apply_apply] at hfg'
-    obtain ⟨hf_eq, hg_eq⟩ := Prod.mk.inj hfg'
-    have hv₁₂ : ∀ k : ι₁ ⊕ ι₂, (fun j ↦ v (f₁₂ ⟨k, j⟩)) ≠ 0 :=
-      fun | .inl i => hv (.inl i) | .inr j => hv (.inr (.inl j))
-    have hv₁₃ : ∀ k : ι₁ ⊕ ι₃, (fun j ↦ v (f₁₃ ⟨k, j⟩)) ≠ 0 :=
-      fun | .inl i => hv (.inl i) | .inr l => hv (.inr (.inr l))
-    exact ⟨⟨hv₁₂, mem_graphOn.2 ⟨hvs, hf_eq⟩⟩, ⟨hv₁₃, mem_graphOn.2 ⟨hvs, hg_eq⟩⟩⟩
-  · rintro ⟨⟨hv₁₂, hmem₁₂⟩, ⟨hv₁₃, hmem₁₃⟩⟩
-    obtain ⟨hvs, hf_eq⟩ := mem_graphOn.1 hmem₁₂
-    obtain ⟨_, hg_eq⟩ := mem_graphOn.1 hmem₁₃
-    have hv : ∀ k : ι₁ ⊕ (ι₂ ⊕ ι₃), (fun j ↦ v ⟨k, j⟩) ≠ 0 := fun
-      | .inl i => hv₁₂ (.inl i)
-      | .inr (.inl j) => hv₁₂ (.inr j)
-      | .inr (.inr l) => hv₁₃ (.inr l)
-    refine ⟨hv, mem_graphOn.2 ⟨hvs, ?_⟩⟩
-    exact (congrArg (sumPiProjectivizationEquiv n₂ n₃) (Prod.ext hf_eq hg_eq)).trans
-      ((sumPiProjectivizationEquiv n₂ n₃).apply_symm_apply _)
+    IsMultiprojectiveSemialgebraicOn
+      (fun p ↦ (Equiv.sumPiEquivProdPi fun k : ι₂ ⊕ ι₃ ↦
+        ℙ K (Fin (Sum.elim n₂ n₃ k + 1) → K)).symm (f p, g p)) s := by
+  rw [← isMixedSemialgebraicOn_univ_prod_iff (σ₁ := Empty) (σ₂ := Empty ⊕ Empty)]
+  have hf' := (isMixedSemialgebraicOn_univ_prod_iff (σ₁ := Empty) (σ₂ := Empty)).2 hf
+  have hg' := (isMixedSemialgebraicOn_univ_prod_iff (σ₁ := Empty) (σ₂ := Empty)).2 hg
+  exact (hf'.prodMk hg').congr fun xp _ ↦ Prod.ext (Subsingleton.elim _ _) rfl
 
 /-- The diagonal map `x ↦ mixedProdEquiv σ σ n n (x, x)` on a finite-dimensional mixed space is
 mixed semialgebraic on every mixed semialgebraic domain. -/
@@ -845,11 +898,13 @@ theorem isMixedSemialgebraicOn_diag [Finite σ] [Finite ι]
     IsMixedSemialgebraicOn (fun x ↦ mixedProdEquiv σ σ n n (x, x)) s :=
   (isMixedSemialgebraicOn_id hs).prodMk (isMixedSemialgebraicOn_id hs)
 
-/-- The diagonal map `p ↦ sumPiProjectivizationEquiv n n (p, p)` on a multiprojective space is
+/-- The diagonal map `p ↦ (Equiv.sumPiEquivProdPi _).symm (p, p)` on a multiprojective space is
 multiprojective semialgebraic. -/
 theorem isMultiprojectiveSemialgebraicMap_diag [Finite ι] :
     IsMultiprojectiveSemialgebraicMap
-      (fun p : ∀ i : ι, ℙ K (Fin (n i + 1) → K) ↦ sumPiProjectivizationEquiv n n (p, p)) :=
+      (fun p : ∀ i : ι, ℙ K (Fin (n i + 1) → K) ↦
+        (Equiv.sumPiEquivProdPi fun k : ι ⊕ ι ↦
+          ℙ K (Fin (Sum.elim n n k + 1) → K)).symm (p, p)) :=
   isMultiprojectiveSemialgebraicMap_id.prodMk isMultiprojectiveSemialgebraicMap_id
 
 /-- First projection from a product mixed space is mixed semialgebraic. -/
@@ -866,30 +921,28 @@ theorem isMixedSemialgebraicMap_fst [Finite σ₁] [Finite ι₁] [Finite ι₂]
     | .inr ⟨.inl i, j⟩ => .inr ⟨.inl (.inl i), j⟩
     | .inr ⟨.inr i', j⟩ => .inr ⟨.inr i', j⟩
   have h₂ : IsSemialgebraic
-      (⋂ j : ι₂, ⋃ l : Fin (n₂ j + 1),
-        {w : (((σ₁ ⊕ σ₂) ⊕ σ₁) ⊕
-            Σ k : (ι₁ ⊕ ι₂) ⊕ ι₁, Fin (Sum.elim (Sum.elim n₁ n₂) n₁ k + 1)) → K |
-          eval w (X (.inr ⟨.inl (.inr j), l⟩)) ≠ 0}) :=
-    .iInter fun _ ↦ .iUnion fun _ ↦ isSemialgebraic_eval_ne_zero _
+      ((fun w : (((σ₁ ⊕ σ₂) ⊕ σ₁) ⊕
+          Σ k : (ι₁ ⊕ ι₂) ⊕ ι₁, Fin (Sum.elim (Sum.elim n₁ n₂) n₁ k + 1)) → K ↦
+        fun q : Σ j : ι₂, Fin (n₂ j + 1) ↦ w (.inr ⟨.inl (.inr q.1), q.2⟩)) ⁻¹'
+          multiprojectivePuncturedCone n₂ K) :=
+    isSemialgebraic_multiprojectivePuncturedCone.preimage_comp
+      (fun q : Σ j : ι₂, Fin (n₂ j + 1) ↦
+        (Sum.inr ⟨.inl (.inr q.1), q.2⟩ :
+          ((σ₁ ⊕ σ₂) ⊕ σ₁) ⊕ Σ k : (ι₁ ⊕ ι₂) ⊕ ι₁, Fin (Sum.elim (Sum.elim n₁ n₂) n₁ k + 1)))
   convert ((isMixedSemialgebraic_def.1
       (isMixedSemialgebraicMap_id (K := K) (σ := σ₁) (n := n₁)).2).preimage_comp f₁₁).inter
     h₂ using 1
   ext w
   rw [mem_mixedCone_preimage_mixedProdEquiv_symm, mem_inter_iff]
   simp only [mem_preimage, Function.comp_def, mem_mixedCone_preimage_mixedProdEquiv_symm,
-    mem_iInter, mem_iUnion, mem_ofPred_eq, eval_X, f₁₁]
+    mem_multiprojectivePuncturedCone, f₁₁]
   constructor
   · rintro ⟨hw₁₂, hw₁', hmem⟩
     obtain ⟨_, heq⟩ := mem_graphOn.1 hmem
-    have hw₁ : ∀ i : ι₁, (fun j : Fin (n₁ i + 1) ↦ w (.inr ⟨.inl (.inl i), j⟩)) ≠ 0 :=
-      fun i ↦ hw₁₂ (.inl i)
-    exact ⟨⟨hw₁, hw₁', mem_graphOn.2 ⟨trivial, heq⟩⟩, fun j ↦ Function.ne_iff.1 (hw₁₂ (.inr j))⟩
+    exact ⟨⟨fun i ↦ hw₁₂ (.inl i), hw₁', mem_graphOn.2 ⟨trivial, heq⟩⟩, fun j ↦ hw₁₂ (.inr j)⟩
   · rintro ⟨⟨hw₁, hw₁', hmem⟩, hw₂⟩
     obtain ⟨_, heq⟩ := mem_graphOn.1 hmem
-    have hw₁₀ : ∀ i : ι₁, (fun j : Fin (n₁ i + 1) ↦ w (.inr ⟨.inl (.inl i), j⟩)) ≠ 0 := hw₁
-    have hw₂₀ : ∀ j : ι₂, (fun l : Fin (n₂ j + 1) ↦ w (.inr ⟨.inl (.inr j), l⟩)) ≠ 0 :=
-      fun j ↦ Function.ne_iff.2 (hw₂ j)
-    exact ⟨fun | .inl i => hw₁₀ i | .inr j => hw₂₀ j, hw₁', mem_graphOn.2 ⟨trivial, heq⟩⟩
+    exact ⟨fun | .inl i => hw₁ i | .inr j => hw₂ j, hw₁', mem_graphOn.2 ⟨trivial, heq⟩⟩
 
 /-- Second projection from a product mixed space is mixed semialgebraic. -/
 theorem isMixedSemialgebraicMap_snd [Finite σ₂] [Finite ι₁] [Finite ι₂] :
@@ -898,37 +951,29 @@ theorem isMixedSemialgebraicMap_snd [Finite σ₂] [Finite ι₁] [Finite ι₂]
         ((mixedProdEquiv σ₁ σ₂ n₁ n₂).symm z).2) := by
   refine ⟨isMixedSemialgebraic_univ, ?_⟩
   rw [isMixedSemialgebraic_def]
-  let f₂₂ : ((σ₂ ⊕ σ₂) ⊕ Σ k : ι₂ ⊕ ι₂, Fin (Sum.elim n₂ n₂ k + 1)) →
+  let swG : (((σ₂ ⊕ σ₁) ⊕ σ₂) ⊕ Σ k : (ι₂ ⊕ ι₁) ⊕ ι₂, Fin (Sum.elim (Sum.elim n₂ n₁) n₂ k + 1)) →
       (((σ₁ ⊕ σ₂) ⊕ σ₂) ⊕ Σ k : (ι₁ ⊕ ι₂) ⊕ ι₂, Fin (Sum.elim (Sum.elim n₁ n₂) n₂ k + 1))
-    | .inl (.inl a₂) => .inl (.inl (.inr a₂))
+    | .inl (.inl (.inl a₂)) => .inl (.inl (.inr a₂))
+    | .inl (.inl (.inr a₁)) => .inl (.inl (.inl a₁))
     | .inl (.inr a₂') => .inl (.inr a₂')
-    | .inr ⟨.inl j, l⟩ => .inr ⟨.inl (.inr j), l⟩
+    | .inr ⟨.inl (.inl j), l⟩ => .inr ⟨.inl (.inr j), l⟩
+    | .inr ⟨.inl (.inr i), j⟩ => .inr ⟨.inl (.inl i), j⟩
     | .inr ⟨.inr j', l⟩ => .inr ⟨.inr j', l⟩
-  have h₁ : IsSemialgebraic
-      (⋂ i : ι₁, ⋃ j : Fin (n₁ i + 1),
-        {w : (((σ₁ ⊕ σ₂) ⊕ σ₂) ⊕
-            Σ k : (ι₁ ⊕ ι₂) ⊕ ι₂, Fin (Sum.elim (Sum.elim n₁ n₂) n₂ k + 1)) → K |
-          eval w (X (.inr ⟨.inl (.inl i), j⟩)) ≠ 0}) :=
-    .iInter fun _ ↦ .iUnion fun _ ↦ isSemialgebraic_eval_ne_zero _
-  convert ((isMixedSemialgebraic_def.1
-      (isMixedSemialgebraicMap_id (K := K) (σ := σ₂) (n := n₂)).2).preimage_comp f₂₂).inter
-    h₁ using 1
+  convert (isMixedSemialgebraic_def.1
+      (isMixedSemialgebraicMap_fst (K := K) (σ₁ := σ₂) (σ₂ := σ₁) (n₁ := n₂) (n₂ := n₁)).2
+    ).preimage_comp swG using 1
   ext w
-  rw [mem_mixedCone_preimage_mixedProdEquiv_symm, mem_inter_iff]
-  simp only [mem_preimage, Function.comp_def, mem_mixedCone_preimage_mixedProdEquiv_symm,
-    mem_iInter, mem_iUnion, mem_ofPred_eq, eval_X, f₂₂]
+  rw [mem_mixedCone_preimage_mixedProdEquiv_symm, mem_preimage,
+    mem_mixedCone_preimage_mixedProdEquiv_symm]
   constructor
-  · rintro ⟨hw₁₂, hw₂', hmem⟩
+  · rintro ⟨hw₁₂, hw₂, hmem⟩
     obtain ⟨_, heq⟩ := mem_graphOn.1 hmem
-    have hw₂ : ∀ j : ι₂, (fun l : Fin (n₂ j + 1) ↦ w (.inr ⟨.inl (.inr j), l⟩)) ≠ 0 :=
-      fun j ↦ hw₁₂ (.inr j)
-    exact ⟨⟨hw₂, hw₂', mem_graphOn.2 ⟨trivial, heq⟩⟩, fun i ↦ Function.ne_iff.1 (hw₁₂ (.inl i))⟩
-  · rintro ⟨⟨hw₂, hw₂', hmem⟩, hw₁⟩
+    exact ⟨fun | .inl j => hw₁₂ (.inr j) | .inr i => hw₁₂ (.inl i), hw₂,
+      mem_graphOn.2 ⟨trivial, heq⟩⟩
+  · rintro ⟨hw₂₁, hw₂, hmem⟩
     obtain ⟨_, heq⟩ := mem_graphOn.1 hmem
-    have hw₁₀ : ∀ i : ι₁, (fun j : Fin (n₁ i + 1) ↦ w (.inr ⟨.inl (.inl i), j⟩)) ≠ 0 :=
-      fun i ↦ Function.ne_iff.2 (hw₁ i)
-    have hw₂₀ : ∀ j : ι₂, (fun l : Fin (n₂ j + 1) ↦ w (.inr ⟨.inl (.inr j), l⟩)) ≠ 0 := hw₂
-    exact ⟨fun | .inl i => hw₁₀ i | .inr j => hw₂₀ j, hw₂', mem_graphOn.2 ⟨trivial, heq⟩⟩
+    exact ⟨fun | .inl i => hw₂₁ (.inr i) | .inr j => hw₂₁ (.inl j), hw₂,
+      mem_graphOn.2 ⟨trivial, heq⟩⟩
 
 /-! ### Images, preimages, and composition under projection closure -/
 
@@ -949,11 +994,11 @@ theorem isMixedSemialgebraicOn_iff_graph [Finite σ₂] [Finite ι₂]
     ext x
     simp
   rw [← hfst]
-  exact hG.fst_image
+  exact hG.image_fst
 
-/-- Given projection closure, the image of a mixed semialgebraic subset under a mixed semialgebraic
-map from a finite-dimensional mixed space is mixed semialgebraic. -/
-theorem IsMixedSemialgebraicOn.isMixedSemialgebraic_image [Finite σ₁] [Finite ι₁]
+/-- Given projection closure, the image of `s ∩ t` under a mixed semialgebraic map on `s` from a
+finite-dimensional mixed space is mixed semialgebraic when `t` is mixed semialgebraic. -/
+theorem IsMixedSemialgebraicOn.isMixedSemialgebraic_image_inter [Finite σ₁] [Finite ι₁]
     {f : ((σ₁ → K) × ∀ i : ι₁, ℙ K (Fin (n₁ i + 1) → K)) →
       ((σ₂ → K) × ∀ j : ι₂, ℙ K (Fin (n₂ j + 1) → K))}
     {s t : Set ((σ₁ → K) × ∀ i : ι₁, ℙ K (Fin (n₁ i + 1) → K))}
@@ -963,7 +1008,7 @@ theorem IsMixedSemialgebraicOn.isMixedSemialgebraic_image [Finite σ₁] [Finite
     ext y
     simp
   rw [himg]
-  exact (hf.mono (hf.1.inter ht) inter_subset_left).graph.snd_image
+  exact (hf.mono (hf.1.inter ht) inter_subset_left).graph.image_snd
 
 theorem IsMixedSemialgebraicMap.isMixedSemialgebraic_image [Finite σ₁] [Finite ι₁]
     {f : ((σ₁ → K) × ∀ i : ι₁, ℙ K (Fin (n₁ i + 1) → K)) →
@@ -971,21 +1016,29 @@ theorem IsMixedSemialgebraicMap.isMixedSemialgebraic_image [Finite σ₁] [Finit
     (hf : IsMixedSemialgebraicMap f)
     {s : Set ((σ₁ → K) × ∀ i : ι₁, ℙ K (Fin (n₁ i + 1) → K))} (hs : IsMixedSemialgebraic s) :
     IsMixedSemialgebraic (f '' s) := by
-  simpa using IsMixedSemialgebraicOn.isMixedSemialgebraic_image hf hs
+  simpa using IsMixedSemialgebraicOn.isMixedSemialgebraic_image_inter hf hs
 
-theorem IsMultiprojectiveSemialgebraicOn.isMultiprojectiveSemialgebraic_image [Finite ι₁]
+theorem IsMultiprojectiveSemialgebraicOn.isMultiprojectiveSemialgebraic_image_inter [Finite ι₁]
     {f : (∀ i : ι₁, ℙ K (Fin (n₁ i + 1) → K)) → ∀ j : ι₂, ℙ K (Fin (n₂ j + 1) → K)}
     {s t : Set (∀ i : ι₁, ℙ K (Fin (n₁ i + 1) → K))}
     (hf : IsMultiprojectiveSemialgebraicOn f s) (ht : IsMultiprojectiveSemialgebraic t) :
     IsMultiprojectiveSemialgebraic (f '' (s ∩ t)) := by
   rw [← isMixedSemialgebraic_univ_prod_iff (σ := Empty)]
-  have hf' := isMixedSemialgebraicOn_empty_prod_iff.2 hf
+  have hf' := (isMixedSemialgebraicOn_univ_prod_iff (σ₁ := Empty) (σ₂ := Empty)).2 hf
   have ht' : IsMixedSemialgebraic ((univ : Set (Empty → K)) ×ˢ t) :=
     (isMixedSemialgebraic_univ_prod_iff (σ := Empty)).2 ht
-  convert hf'.isMixedSemialgebraic_image ht' using 1
+  convert hf'.isMixedSemialgebraic_image_inter ht' using 1
   ext ⟨x₀, q⟩
   simp only [mem_prod, mem_univ, true_and, mem_image, mem_inter_iff, Prod.exists, Prod.mk.injEq]
-  refine ⟨fun ⟨p, hp, hfp⟩ ↦ ⟨x₀, p, hp, rfl, hfp⟩, fun ⟨_, p, hp, _, hfp⟩ ↦ ⟨p, hp, hfp⟩⟩
+  refine ⟨fun ⟨p, hp, hfp⟩ ↦ ⟨x₀, p, hp, Subsingleton.elim _ _, hfp⟩,
+    fun ⟨_, p, hp, _, hfp⟩ ↦ ⟨p, hp, hfp⟩⟩
+
+theorem IsMultiprojectiveSemialgebraicMap.isMultiprojectiveSemialgebraic_image [Finite ι₁]
+    {f : (∀ i : ι₁, ℙ K (Fin (n₁ i + 1) → K)) → ∀ j : ι₂, ℙ K (Fin (n₂ j + 1) → K)}
+    (hf : IsMultiprojectiveSemialgebraicMap f)
+    {s : Set (∀ i : ι₁, ℙ K (Fin (n₁ i + 1) → K))} (hs : IsMultiprojectiveSemialgebraic s) :
+    IsMultiprojectiveSemialgebraic (f '' s) := by
+  simpa using IsMultiprojectiveSemialgebraicOn.isMultiprojectiveSemialgebraic_image_inter hf hs
 
 /-- Given projection closure, the preimage of a mixed semialgebraic set inside the domain of a
 mixed semialgebraic map into a finite-dimensional mixed space is mixed semialgebraic. -/
@@ -1009,14 +1062,14 @@ theorem IsMixedSemialgebraicOn.isMixedSemialgebraic_inter_preimage [Finite σ₂
     ext w
     rw [mem_mixedCone_preimage_mixedProdEquiv_symm, mem_inter_iff,
       mem_mixedCone_preimage_mixedProdEquiv_symm, mem_preimage, mem_mixedCone]
-    simp only [Function.comp_def, e, mixedProdConeIndexEquiv]
+    dsimp only [Function.comp_def, e,
+      mixedProdConeIndexEquiv_inr_inl, mixedProdConeIndexEquiv_inr_inr]
     constructor
     · rintro ⟨hw₁, hw₂, hG, _, ht_mem⟩
-      have hw₂' : ∀ j : ι₂, (fun l : Fin (n₂ j + 1) ↦ w (.inr ⟨.inr j, l⟩)) ≠ 0 := hw₂
-      exact ⟨⟨hw₁, hw₂, hG⟩, hw₂', ht_mem⟩
+      exact ⟨⟨hw₁, hw₂, hG⟩, hw₂, ht_mem⟩
     · rintro ⟨⟨hw₁, hw₂, hG⟩, _, ht_mem⟩
       exact ⟨hw₁, hw₂, hG, trivial, ht_mem⟩
-  exact hinter.fst_image
+  exact hinter.image_fst
 
 theorem IsMixedSemialgebraicMap.isMixedSemialgebraic_preimage [Finite σ₂] [Finite ι₂]
     {f : ((σ₁ → K) × ∀ i : ι₁, ℙ K (Fin (n₁ i + 1) → K)) →
@@ -1033,12 +1086,19 @@ theorem IsMultiprojectiveSemialgebraicOn.isMultiprojectiveSemialgebraic_inter_pr
     (hf : IsMultiprojectiveSemialgebraicOn f s) (ht : IsMultiprojectiveSemialgebraic t) :
     IsMultiprojectiveSemialgebraic (s ∩ f ⁻¹' t) := by
   rw [← isMixedSemialgebraic_univ_prod_iff (σ := Empty)]
-  have hf' := isMixedSemialgebraicOn_empty_prod_iff.2 hf
+  have hf' := (isMixedSemialgebraicOn_univ_prod_iff (σ₁ := Empty) (σ₂ := Empty)).2 hf
   have ht' : IsMixedSemialgebraic ((univ : Set (Empty → K)) ×ˢ t) :=
     (isMixedSemialgebraic_univ_prod_iff (σ := Empty)).2 ht
   convert hf'.isMixedSemialgebraic_inter_preimage ht' using 1
   ext ⟨_, p⟩
   simp
+
+theorem IsMultiprojectiveSemialgebraicMap.isMultiprojectiveSemialgebraic_preimage [Finite ι₂]
+    {f : (∀ i : ι₁, ℙ K (Fin (n₁ i + 1) → K)) → ∀ j : ι₂, ℙ K (Fin (n₂ j + 1) → K)}
+    (hf : IsMultiprojectiveSemialgebraicMap f)
+    {t : Set (∀ j : ι₂, ℙ K (Fin (n₂ j + 1) → K))} (ht : IsMultiprojectiveSemialgebraic t) :
+    IsMultiprojectiveSemialgebraic (f ⁻¹' t) := by
+  simpa using IsMultiprojectiveSemialgebraicOn.isMultiprojectiveSemialgebraic_inter_preimage hf ht
 
 /-- Given projection closure, composing mixed semialgebraic maps through a finite-dimensional
 intermediate mixed space preserves mixed semialgebraicity. -/
@@ -1065,7 +1125,7 @@ theorem IsMixedSemialgebraicOn.comp [Finite σ₂] [Finite ι₂]
     · rintro ⟨hz₁, hgz⟩
       exact ⟨(f (e₁₃.symm z).1, z), ⟨⟨hz₁, rfl⟩, ⟨hst hz₁, hgz⟩⟩, rfl⟩
   rw [← hW_img]
-  refine IsMixedSemialgebraic.snd_image ?_
+  refine IsMixedSemialgebraic.image_snd ?_
   rw [isMixedSemialgebraic_def]
   let f₁₂ : ((σ₁ ⊕ σ₂) ⊕ Σ k : ι₁ ⊕ ι₂, Fin (Sum.elim n₁ n₂ k + 1)) →
       ((σ₂ ⊕ (σ₁ ⊕ σ₃)) ⊕ Σ k : ι₂ ⊕ (ι₁ ⊕ ι₃), Fin (Sum.elim n₂ (Sum.elim n₁ n₃) k + 1))
@@ -1082,9 +1142,10 @@ theorem IsMixedSemialgebraicOn.comp [Finite σ₂] [Finite ι₂]
   convert ((isMixedSemialgebraic_def.1 hf.2).preimage_comp f₁₂).inter
     ((isMixedSemialgebraic_def.1 hg.2).preimage_comp f₂₃) using 1
   ext w
-  rw [mem_mixedCone_preimage_mixedProdEquiv_symm, mem_inter_iff]
-  simp only [W, e₁₃, mem_preimage, Function.comp_def, mem_mixedCone_preimage_mixedProdEquiv_symm,
-    mixedProdEquiv_symm_apply, f₁₂, f₂₃]
+  rw [mem_mixedCone_preimage_mixedProdEquiv_symm, mem_inter_iff, mem_preimage,
+    mem_mixedCone_preimage_mixedProdEquiv_symm, mem_preimage,
+    mem_mixedCone_preimage_mixedProdEquiv_symm]
+  dsimp only [W, e₁₃, Function.comp_def, mixedProdEquiv_symm_apply, f₁₂, f₂₃]
   exact ⟨fun ⟨hw₂, hw₁₃, h₁₂, h₂₃⟩ ↦
       ⟨⟨fun i ↦ hw₁₃ (.inl i), hw₂, h₁₂⟩, ⟨hw₂, fun l ↦ hw₁₃ (.inr l), h₂₃⟩⟩,
     fun ⟨⟨hw₁, hw₂, h₁₂⟩, ⟨_, hw₃, h₂₃⟩⟩ ↦
@@ -1107,9 +1168,10 @@ theorem IsMultiprojectiveSemialgebraicOn.comp [Finite ι₂]
     (hg : IsMultiprojectiveSemialgebraicOn g t) (hf : IsMultiprojectiveSemialgebraicOn f s)
     (hst : MapsTo f s t) :
     IsMultiprojectiveSemialgebraicOn (g ∘ f) s := by
-  rw [← isMixedSemialgebraicOn_empty_prod_iff]
-  exact (isMixedSemialgebraicOn_empty_prod_iff.2 hg).comp
-    (isMixedSemialgebraicOn_empty_prod_iff.2 hf) fun _ hx ↦ ⟨trivial, hst hx.2⟩
+  rw [← isMixedSemialgebraicOn_univ_prod_iff (σ₁ := Empty) (σ₂ := Empty)]
+  exact ((isMixedSemialgebraicOn_univ_prod_iff (σ₁ := Empty) (σ₂ := Empty)).2 hg).comp
+    ((isMixedSemialgebraicOn_univ_prod_iff (σ₁ := Empty) (σ₂ := Empty)).2 hf)
+    fun _ hx ↦ ⟨trivial, hst hx.2⟩
 
 theorem IsMultiprojectiveSemialgebraicMap.comp [Finite ι₂]
     {g : (∀ j : ι₂, ℙ K (Fin (n₂ j + 1) → K)) → ∀ l : ι₃, ℙ K (Fin (n₃ l + 1) → K)}
@@ -1169,6 +1231,31 @@ theorem mixedAffineChart_sumPiFinIndex_inr
         (mixedAffineChart_apply_inr I₂ ((mixedProdEquiv σ₁ σ₂ n₁ n₂).symm z).2 ⟨j, l⟩).symm)
 
 omit [LinearOrder K] in
+private theorem mixedProdEquiv_symm_mixedAffineChart_symm
+    (I₁ : ∀ i : ι₁, Fin (n₁ i + 1)) (I₂ : ∀ j : ι₂, Fin (n₂ j + 1))
+    (u : ((σ₁ ⊕ Σ i, Fin (n₁ i)) ⊕ (σ₂ ⊕ Σ j, Fin (n₂ j))) → K) :
+    (mixedProdEquiv σ₁ σ₂ n₁ n₂).symm
+        ((mixedAffineChart (σ₁ ⊕ σ₂) (sumPiFinIndex I₁ I₂)).symm
+          (u ∘ (mixedProdChartIndexEquiv σ₁ σ₂ n₁ n₂).symm)) =
+      ((mixedAffineChart σ₁ I₁).symm (u ∘ Sum.inl),
+        (mixedAffineChart σ₂ I₂).symm (u ∘ Sum.inr)) := by
+  refine Prod.ext
+    (Prod.ext (funext fun _ ↦ by simp)
+      (funext fun _ ↦ by
+        simp only [mixedAffineChart_symm_apply, mixedProdEquiv_symm_apply, Sum.elim_inl,
+          Sum.elim_inr, multiprojectiveAffineChart_symm_apply, sumPiFinIndex_inl,
+          Function.comp_apply, mixedProdChartIndexEquiv_symm_inr_inl, sumPiFinIndex_inr,
+          mixedProdChartIndexEquiv_symm_inr_inr, Projectivization.affineChart_symm_apply]
+        exact Projectivization.affineChart_symm_apply _ _))
+    (Prod.ext (funext fun _ ↦ by simp)
+      (funext fun _ ↦ by
+        simp only [mixedAffineChart_symm_apply, mixedProdEquiv_symm_apply, Sum.elim_inl,
+          Sum.elim_inr, multiprojectiveAffineChart_symm_apply, sumPiFinIndex_inl,
+          Function.comp_apply, mixedProdChartIndexEquiv_symm_inr_inl, sumPiFinIndex_inr,
+          mixedProdChartIndexEquiv_symm_inr_inr, Projectivization.affineChart_symm_apply]
+        exact Projectivization.affineChart_symm_apply _ _))
+
+omit [LinearOrder K] in
 /-- In standard product affine charts `(I₁, I₂)`, the chart image of
 `(mixedProdEquiv σ₁ σ₂ n₁ n₂).symm ⁻¹' s.graphOn f` corresponds under
 `TauCeti.mixedProdChartIndexEquiv` to the encoded graph of
@@ -1187,48 +1274,23 @@ theorem preimage_mixedProdChartIndexEquiv_image_graphOn
         (mixedAffineChart σ₁ I₁ ''
           (s ∩ mixedAffineOpen σ₁ I₁ ∩ f ⁻¹' mixedAffineOpen σ₂ I₂)).graphOn
           (mixedAffineChart σ₂ I₂ ∘ f ∘ (mixedAffineChart σ₁ I₁).symm) := by
-  let e := mixedProdChartIndexEquiv σ₁ σ₂ n₁ n₂
-  let mp := mixedProdEquiv (K := K) σ₁ σ₂ n₁ n₂
+  rw [mixedAffineChart_image_inter_affineOpen, inter_right_comm s,
+    mixedAffineChart_image_inter_affineOpen]
   ext u
-  rw [mem_preimage_sumArrowEquivProdArrow_graphOn, mem_preimage, mem_image]
+  rw [mem_preimage_sumArrowEquivProdArrow_graphOn, mem_preimage, mem_preimage, mem_preimage,
+    mixedProdEquiv_symm_mixedAffineChart_symm, mem_graphOn, mem_preimage, mem_inter_iff,
+    mem_preimage, Function.comp_apply, Function.comp_apply]
   constructor
-  · rintro ⟨z, ⟨hzG, hzI⟩, hzu⟩
-    obtain ⟨hx₁s, hfx₁⟩ := mem_graphOn.1 hzG
-    obtain ⟨hx₁I, hx₂I⟩ := mem_mixedAffineOpen_sumPiFinIndex.1 hzI
-    have hu₁ : mixedAffineChart σ₁ I₁ (mp.symm z).1 = u ∘ Sum.inl := funext fun c ↦ by
-      rw [← mixedAffineChart_sumPiFinIndex_inl I₁ I₂ z c, congrFun hzu (e (.inl c)),
-        Function.comp_apply, e.symm_apply_apply]
-      rfl
-    have hu₂ : mixedAffineChart σ₂ I₂ (mp.symm z).2 = u ∘ Sum.inr := funext fun c ↦ by
-      rw [← mixedAffineChart_sumPiFinIndex_inr I₁ I₂ z c, congrFun hzu (e (.inr c)),
-        Function.comp_apply, e.symm_apply_apply]
-      rfl
-    have hsymm : (mixedAffineChart σ₁ I₁).symm (u ∘ Sum.inl) = (mp.symm z).1 := by
-      rw [← hu₁]
-      exact (mixedAffineChart σ₁ I₁).left_inv (by rw [mixedAffineChart_source]; exact hx₁I)
-    have hfx₁' : f (mp.symm z).1 = (mp.symm z).2 := hfx₁
-    refine ⟨⟨(mp.symm z).1, ⟨⟨hx₁s, hx₁I⟩, ?_⟩, hu₁⟩, ?_⟩
-    · rw [mem_preimage, hfx₁']
-      exact hx₂I
-    · rw [Function.comp_apply, Function.comp_apply, hsymm, hfx₁', hu₂]
-  · rintro ⟨⟨x₁, ⟨⟨hx₁s, hx₁I⟩, hfx₁I⟩, hu₁⟩, hu₂⟩
-    have hsymm : (mixedAffineChart σ₁ I₁).symm (u ∘ Sum.inl) = x₁ := by
-      rw [← hu₁]
-      exact (mixedAffineChart σ₁ I₁).left_inv (by rw [mixedAffineChart_source]; exact hx₁I)
-    rw [Function.comp_apply, Function.comp_apply, hsymm] at hu₂
-    refine ⟨mp (x₁, f x₁), ⟨?_, ?_⟩, ?_⟩
-    · rw [mem_preimage, mp.symm_apply_apply]
-      exact mem_graphOn.2 ⟨hx₁s, rfl⟩
-    · rw [mem_mixedAffineOpen_sumPiFinIndex, mp.symm_apply_apply]
-      exact ⟨hx₁I, hfx₁I⟩
-    · ext c
-      obtain ⟨d | d, rfl⟩ := e.surjective c
-      · rw [mixedAffineChart_sumPiFinIndex_inl, mp.symm_apply_apply, Function.comp_apply,
-          e.symm_apply_apply]
-        exact congrFun hu₁ d
-      · rw [mixedAffineChart_sumPiFinIndex_inr, mp.symm_apply_apply, Function.comp_apply,
-          e.symm_apply_apply]
-        exact congrFun hu₂ d
+  · rintro ⟨hx₁s, hfx₁⟩
+    refine ⟨⟨hx₁s, ?_⟩, ?_⟩
+    · rw [hfx₁]
+      exact mixedAffineChart_symm_mem_affineOpen I₂ _
+    · rw [hfx₁]
+      exact (mixedAffineChart σ₂ I₂).right_inv (by rw [mixedAffineChart_target]; exact mem_univ _)
+  · rintro ⟨⟨hx₁s, hfx₁I⟩, hchart⟩
+    refine ⟨hx₁s, ?_⟩
+    rw [← hchart]
+    exact ((mixedAffineChart σ₂ I₂).left_inv (by rw [mixedAffineChart_source]; exact hfx₁I)).symm
 
 variable [IsStrictOrderedRing K]
 
@@ -1246,14 +1308,15 @@ theorem isMixedSemialgebraic_graphOn_iff_forall_chart [Finite ι₁] [Finite ι�
             (mixedAffineChart σ₁ I₁ ''
               (s ∩ mixedAffineOpen σ₁ I₁ ∩ f ⁻¹' mixedAffineOpen σ₂ I₂)).graphOn
               (mixedAffineChart σ₂ I₂ ∘ f ∘ (mixedAffineChart σ₁ I₁).symm)) := by
+  let e := mixedProdChartIndexEquiv σ₁ σ₂ n₁ n₂
   rw [isMixedSemialgebraic_iff_forall_chart]
   constructor
   · intro h I₁ I₂
     rw [← preimage_mixedProdChartIndexEquiv_image_graphOn]
-    exact (h (sumPiFinIndex I₁ I₂)).preimage_comp (mixedProdChartIndexEquiv σ₁ σ₂ n₁ n₂).symm
+    exact (h (sumPiFinIndex I₁ I₂)).preimage_comp e.symm
   · intro h I
     rw [← sumPiFinIndex_eta I]
-    exact (isSemialgebraic_preimage_comp_equiv (mixedProdChartIndexEquiv σ₁ σ₂ n₁ n₂).symm).1 <|
+    exact (isSemialgebraic_preimage_comp_equiv e.symm).1 <|
       (preimage_mixedProdChartIndexEquiv_image_graphOn f s _ _).symm ▸ h _ _
 
 /-- Given projection closure, `f` is mixed semialgebraic on `s` if and only if in every pair of
@@ -1316,29 +1379,33 @@ theorem isMixedSemialgebraic_affine_graphOn_iff_forall_chart [Finite ι]
   rw [isMixedSemialgebraic_iff_forall_chart]
   exact forall_congr' fun I ↦ by rw [mixedAffineChart_image_affine_graphOn]
 
-/-- Given projection closure, `s ⊆ σ → K` is semialgebraic and `s.graphOn τ` is mixed semialgebraic
-if and only if `multiprojectiveAffineChart I ∘ τ` is `TauCeti.IsSemialgebraicOn` on
-`s ∩ τ ⁻¹' multiprojectiveAffineOpen I` for every chart `I`. -/
-theorem isSemialgebraic_and_isMixedSemialgebraic_graphOn_iff
+/-- Given projection closure, `s.graphOn τ` is mixed semialgebraic if and only if
+`multiprojectiveAffineChart I ∘ τ` is `TauCeti.IsSemialgebraicOn` on
+`s ∩ τ ⁻¹' multiprojectiveAffineOpen I` for every standard product affine chart `I`. -/
+theorem isMixedSemialgebraic_affine_graphOn_iff_forall_isSemialgebraicOn
     [HasSemialgebraicProjections K] [Finite ι]
     {τ : (σ → K) → ∀ i : ι, ℙ K (Fin (n i + 1) → K)} {s : Set (σ → K)} :
-    (IsSemialgebraic s ∧ IsMixedSemialgebraic (s.graphOn τ)) ↔
+    IsMixedSemialgebraic (s.graphOn τ) ↔
       ∀ I : ∀ i : ι, Fin (n i + 1),
         IsSemialgebraicOn (multiprojectiveAffineChart I ∘ τ)
           (s ∩ τ ⁻¹' multiprojectiveAffineOpen I) := by
   rw [isMixedSemialgebraic_affine_graphOn_iff_forall_chart]
-  constructor
-  · rintro ⟨_, hG⟩ I
-    exact isSemialgebraicOn_iff_graph.2 (hG I)
-  · intro h
-    refine ⟨?_, fun I ↦ (h I).graph⟩
-    have hs : s = ⋃ I : ∀ i : ι, Fin (n i + 1), s ∩ τ ⁻¹' multiprojectiveAffineOpen I := by
-      ext x
-      simp only [mem_iUnion, mem_inter_iff, mem_preimage]
-      exact ⟨fun hxs ↦ let ⟨I, hI⟩ := exists_mem_multiprojectiveAffineOpen (τ x); ⟨I, hxs, hI⟩,
-        fun ⟨_, hxs, _⟩ ↦ hxs⟩
-    rw [hs]
-    exact .iUnion fun I ↦ (h I).isSemialgebraic
+  exact forall_congr' fun _ ↦ isSemialgebraicOn_iff_graph.symm
+
+/-- Given projection closure, if the graph `s.graphOn τ` of a map into a finite-dimensional
+multiprojective space is mixed semialgebraic, then the affine domain `s` is semialgebraic. -/
+theorem IsMixedSemialgebraic.isSemialgebraic_of_graphOn
+    [HasSemialgebraicProjections K] [Finite ι]
+    {τ : (σ → K) → ∀ i : ι, ℙ K (Fin (n i + 1) → K)} {s : Set (σ → K)}
+    (h : IsMixedSemialgebraic (s.graphOn τ)) : IsSemialgebraic s := by
+  have hI := isMixedSemialgebraic_affine_graphOn_iff_forall_isSemialgebraicOn.1 h
+  have hs : s = ⋃ I : ∀ i : ι, Fin (n i + 1), s ∩ τ ⁻¹' multiprojectiveAffineOpen I := by
+    ext x
+    simp only [mem_iUnion, mem_inter_iff, mem_preimage]
+    exact ⟨fun hxs ↦ let ⟨I, hpI⟩ := exists_mem_multiprojectiveAffineOpen (τ x); ⟨I, hxs, hpI⟩,
+      fun ⟨_, hxs, _⟩ ↦ hxs⟩
+  rw [hs]
+  exact .iUnion fun I ↦ (hI I).isSemialgebraic
 
 end ChartGraphs
 

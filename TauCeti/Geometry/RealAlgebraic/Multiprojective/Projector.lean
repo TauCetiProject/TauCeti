@@ -8,6 +8,8 @@ module
 public import TauCeti.Geometry.RealAlgebraic.Multiprojective.Basic
 public import TauCeti.Geometry.RealAlgebraic.ProjectorEmbedding
 
+import TauCeti.Geometry.RealAlgebraic.Semialgebraic.Rational
+
 /-!
 # The product projector embedding of multiprojective space
 
@@ -21,7 +23,9 @@ flattened coordinates), where each factor is symmetric, idempotent, and of trace
 
 This file develops the algebraic, topological, semialgebraic, and Nash properties of the product
 projector embedding and connects them to the multiprojective and mixed semialgebraic theory in
-`TauCeti.Geometry.RealAlgebraic.Multiprojective.Basic`, `Map`, and `Nash`:
+`TauCeti.Geometry.RealAlgebraic.Multiprojective.Basic`,
+`TauCeti.Geometry.RealAlgebraic.Semialgebraic.Function` (`TauCeti.IsSemialgebraicOn`), and
+`TauCeti.Geometry.RealAlgebraic.Nash.Basic` (`TauCeti.IsNashAt`):
 
 * Over `ℝ`, `TauCeti.multiprojectiveProjector` and `TauCeti.multiprojectiveProjectorCoord` are
   closed embeddings onto compact real algebraic loci, yielding the homeomorphisms
@@ -30,20 +34,26 @@ projector embedding and connects them to the multiprojective and mixed semialgeb
   transport to relative complements inside the product projector locus
   (`TauCeti.image_multiprojectiveProjector_compl`,
   `TauCeti.image_multiprojectiveProjectorCoord_compl`).
-* Over any strict ordered field and finite factor index `ι`, the relation
-  `{(a, p) | multiprojectiveProjectorCoord p = a}` is mixed semialgebraic without assuming
-  projection closure (`TauCeti.isMixedSemialgebraic_multiprojectiveProjectorCoord_rel`), and the
-  standard product affine charts and their inverses are semialgebraic in the matrix-entry model.
-* Over an ordered field with semialgebraic projections (such as `ℝ`), a subset `S` of
-  multiprojective space is multiprojective semialgebraic if and only if its embedded image
-  `multiprojectiveProjectorCoord '' S` is semialgebraic in affine matrix coordinates
-  (`TauCeti.isSemialgebraic_image_multiprojectiveProjectorCoord_iff`), and a map
-  `τ : (σ → K) → ∀ i, ℙ K (Fin (n i + 1) → K)` from an affine space has mixed semialgebraic graph
-  over `s` if and only if `multiprojectiveProjectorCoord ∘ τ` is `TauCeti.IsSemialgebraicOn` on `s`
+* Over any strict ordered field and finite factor index `ι` (without assuming projection closure),
+  the equality locus `{(a, p) | multiprojectiveProjectorCoord p = a}` is mixed semialgebraic
+  (`TauCeti.isMixedSemialgebraic_setOf_multiprojectiveProjectorCoord_eq`), the standard product
+  affine charts and their inverses are semialgebraic in the matrix-entry model, a subset `S` of a
+  mixed space is mixed semialgebraic if and only if its image under
+  `Prod.map id multiprojectiveProjectorCoord` is semialgebraic
+  (`TauCeti.isSemialgebraic_preimage_prodMap_multiprojectiveProjectorCoord_iff`),
+  a subset `S` of multiprojective space is multiprojective semialgebraic if and only if
+  `multiprojectiveProjectorCoord '' S` is semialgebraic
+  (`TauCeti.isSemialgebraic_image_multiprojectiveProjectorCoord_iff`), and an affine-domain map
+  `τ : (σ → K) → ∀ i, ℙ K (Fin (n i + 1) → K)` has mixed semialgebraic graph over `s` if and only
+  if `multiprojectiveProjectorCoord ∘ τ` has semialgebraic graph over `s`
+  (`TauCeti.isMixedSemialgebraic_graphOn_iff_graph_multiprojectiveProjectorCoord_comp`).
+* Over an ordered field with semialgebraic projections (such as `ℝ`), `τ` has mixed semialgebraic
+  graph over `s` if and only if `multiprojectiveProjectorCoord ∘ τ` is `TauCeti.IsSemialgebraicOn`
+  on `s`
   (`TauCeti.isMixedSemialgebraic_graphOn_iff_isSemialgebraicOn_multiprojectiveProjectorCoord_comp`).
 * Over `ℝ`, both the chart-to-projector entries and the projector-to-chart ratio coordinates are
   Nash germs (`TauCeti.isNashAt_multiprojectiveProjectorCoord_affineChart_symm`,
-  `TauCeti.isNashAt_multiprojectiveAffineChart_projectorCoord`).
+  `TauCeti.isNashAt_multiprojectiveProjectorCoord_affineChart`).
 
 ## Main definitions
 
@@ -59,8 +69,14 @@ projector embedding and connects them to the multiprojective and mixed semialgeb
 
 ## References
 
+* J. Bochnak, M. Coste, and M.-F. Roy, *Real Algebraic Geometry*, Ergebnisse der Mathematik und
+  ihrer Grenzgebiete (3) 36, Springer (1998), §3.4.
 * S. Łojasiewicz, *Triangulation of semi-analytic sets*, Annali della Scuola Normale Superiore di
   Pisa (3) 18 (1964), 449–474, §3, p. 464.
+
+The product projector locus, closed-embedding, and affine-chart arguments adapt the single-factor
+constructions and proofs in `TauCeti.LinearAlgebra.Projectivization.Projector` and
+`TauCeti.Geometry.RealAlgebraic.ProjectorEmbedding`.
 -/
 
 public section
@@ -173,6 +189,11 @@ theorem multiprojectiveProjectorCoord_def (p : ∀ i, ℙ K (α i → K)) :
       multiprojectiveMatrixCoordEquiv α K (multiprojectiveProjector p) :=
   (rfl)
 
+theorem multiprojectiveProjectorCoord_eq_comp :
+    (multiprojectiveProjectorCoord : (∀ i, ℙ K (α i → K)) → (Σ i, α i × α i) → K) =
+      multiprojectiveMatrixCoordEquiv α K ∘ multiprojectiveProjector :=
+  funext multiprojectiveProjectorCoord_def
+
 @[simp]
 theorem multiprojectiveProjectorCoord_apply (p : ∀ i, ℙ K (α i → K)) (q : Σ i, α i × α i) :
     multiprojectiveProjectorCoord p q = Projectivization.projector (p q.1) q.2.1 q.2.2 :=
@@ -199,6 +220,11 @@ theorem multiprojectiveProjectorLocus_eq_univ_pi :
 def multiprojectiveProjectorCoordLocus (α : ι → Type*) (K : Type*) [∀ i, Fintype (α i)]
     [Field K] : Set ((Σ i, α i × α i) → K) :=
   multiprojectiveMatrixCoordEquiv α K '' multiprojectiveProjectorLocus α K
+
+theorem multiprojectiveProjectorCoordLocus_def :
+    multiprojectiveProjectorCoordLocus α K =
+      multiprojectiveMatrixCoordEquiv α K '' multiprojectiveProjectorLocus α K :=
+  (rfl)
 
 @[simp]
 theorem mem_multiprojectiveProjectorCoordLocus {a : (Σ i, α i × α i) → K} :
@@ -251,10 +277,8 @@ theorem range_multiprojectiveProjector :
 theorem range_multiprojectiveProjectorCoord :
     range (multiprojectiveProjectorCoord : (∀ i, ℙ K (α i → K)) → (Σ i, α i × α i) → K) =
       multiprojectiveProjectorCoordLocus α K := by
-  have hcomp : (multiprojectiveProjectorCoord : (∀ i, ℙ K (α i → K)) → (Σ i, α i × α i) → K) =
-      multiprojectiveMatrixCoordEquiv α K ∘ multiprojectiveProjector := rfl
-  rw [hcomp, range_comp, range_multiprojectiveProjector]
-  rfl
+  rw [multiprojectiveProjectorCoord_eq_comp, range_comp, range_multiprojectiveProjector,
+    multiprojectiveProjectorCoordLocus_def]
 
 /-- Relative complements in multiprojective space transport under `TauCeti.multiprojectiveProjector`
 to relative complements inside `TauCeti.multiprojectiveProjectorLocus`. -/
@@ -276,10 +300,9 @@ theorem image_multiprojectiveProjectorCoord_compl (S : Set (∀ i, ℙ K (α i �
 /-- Over an ordered field, `TauCeti.multiprojectiveProjector` maps a standard product affine open
 `multiprojectiveAffineOpen I` onto the matrices of the product projector locus whose `(I i, I i)`
 diagonal entry is nonzero for every `i`. -/
-theorem image_multiprojectiveProjector_affineOpen {n : ι → ℕ} (I : ∀ i, Fin (n i + 1)) :
+theorem image_multiprojectiveProjector_affineOpen (I : ∀ i, α i) :
     multiprojectiveProjector '' multiprojectiveAffineOpen (K := K) I =
-      multiprojectiveProjectorLocus (fun i ↦ Fin (n i + 1)) K ∩
-        {A | ∀ i, A i (I i) (I i) ≠ 0} := by
+      multiprojectiveProjectorLocus α K ∩ {A | ∀ i, A i (I i) (I i) ≠ 0} := by
   ext A
   constructor
   · rintro ⟨p, hp, rfl⟩
@@ -292,14 +315,11 @@ theorem image_multiprojectiveProjector_affineOpen {n : ι → ℕ} (I : ∀ i, F
       not_not.1 (mt Projectivization.projector_apply_self_eq_zero_iff.2 (hAI i)), rfl⟩
 
 /-- Flattened coordinate form of `TauCeti.image_multiprojectiveProjector_affineOpen`. -/
-theorem image_multiprojectiveProjectorCoord_affineOpen {n : ι → ℕ} (I : ∀ i, Fin (n i + 1)) :
+theorem image_multiprojectiveProjectorCoord_affineOpen (I : ∀ i, α i) :
     multiprojectiveProjectorCoord '' multiprojectiveAffineOpen (K := K) I =
-      multiprojectiveProjectorCoordLocus (fun i ↦ Fin (n i + 1)) K ∩
-        {a | ∀ i, a ⟨i, I i, I i⟩ ≠ 0} := by
-  have hcomp : (multiprojectiveProjectorCoord :
-      (∀ i, ℙ K (Fin (n i + 1) → K)) → (Σ i, Fin (n i + 1) × Fin (n i + 1)) → K) =
-      multiprojectiveMatrixCoordEquiv (fun i ↦ Fin (n i + 1)) K ∘ multiprojectiveProjector := rfl
-  rw [hcomp, image_comp, image_multiprojectiveProjector_affineOpen]
+      multiprojectiveProjectorCoordLocus α K ∩ {a | ∀ i, a ⟨i, I i, I i⟩ ≠ 0} := by
+  rw [multiprojectiveProjectorCoord_eq_comp, image_comp,
+    image_multiprojectiveProjector_affineOpen, multiprojectiveProjectorCoordLocus_def]
   ext a
   constructor
   · rintro ⟨A, ⟨hA, hAI⟩, rfl⟩
@@ -315,8 +335,8 @@ theorem multiprojectiveAffineChart_eq_multiprojectiveProjector_div {n : ι → �
       multiprojectiveProjector p q.1 ((I q.1).succAbove q.2) (I q.1) /
         multiprojectiveProjector p q.1 (I q.1) (I q.1) := by
   funext q
-  rw [multiprojectiveAffineChart_apply, Projectivization.affineChart_eq_projector_div]
-  rfl
+  rw [multiprojectiveAffineChart_apply, Projectivization.affineChart_eq_projector_div,
+    multiprojectiveProjector_apply]
 
 end Projector
 
@@ -380,47 +400,47 @@ theorem isCompact_multiprojectiveProjectorCoordLocus :
 `TauCeti.multiprojectiveProjectorLocus α ℝ`. -/
 noncomputable def multiprojectiveProjectorHomeomorph (α : ι → Type*) [∀ i, Fintype (α i)] :
     (∀ i, ℙ ℝ (α i → ℝ)) ≃ₜ multiprojectiveProjectorLocus α ℝ :=
-  (isHomeomorph_iff_continuous_bijective.2
-    ⟨continuous_multiprojectiveProjector.subtype_mk multiprojectiveProjector_mem_locus,
-      fun _ _ h ↦ multiprojectiveProjector_injective (congrArg Subtype.val h),
-      fun ⟨A, hA⟩ ↦ by
-        obtain ⟨p, hp⟩ := range_multiprojectiveProjector.symm.subset hA
-        exact ⟨p, Subtype.ext hp⟩⟩).homeomorph _
+  isClosedEmbedding_multiprojectiveProjector.isEmbedding.toHomeomorph.trans
+    (Homeomorph.setCongr range_multiprojectiveProjector)
 
 @[simp]
-theorem coe_multiprojectiveProjectorHomeomorph (p : ∀ i, ℙ ℝ (α i → ℝ)) :
+theorem coe_multiprojectiveProjectorHomeomorph_apply (p : ∀ i, ℙ ℝ (α i → ℝ)) :
     (multiprojectiveProjectorHomeomorph α p : ∀ i, Matrix (α i) (α i) ℝ) =
-      multiprojectiveProjector p :=
-  (rfl)
+      multiprojectiveProjector p := by
+  simp [multiprojectiveProjectorHomeomorph, Homeomorph.setCongr]
 
 @[simp]
 theorem multiprojectiveProjectorHomeomorph_symm_apply_projector (p : ∀ i, ℙ ℝ (α i → ℝ)) :
     (multiprojectiveProjectorHomeomorph α).symm
-        ⟨multiprojectiveProjector p, multiprojectiveProjector_mem_locus p⟩ = p :=
-  (multiprojectiveProjectorHomeomorph α).symm_apply_apply p
+        ⟨multiprojectiveProjector p, multiprojectiveProjector_mem_locus p⟩ = p := by
+  apply (multiprojectiveProjectorHomeomorph α).injective
+  ext1
+  simp
 
 /-- Over `ℝ`, the flattened product projector map as a homeomorphism onto
 `TauCeti.multiprojectiveProjectorCoordLocus α ℝ`. -/
 noncomputable def multiprojectiveProjectorCoordHomeomorph (α : ι → Type*) [∀ i, Fintype (α i)] :
     (∀ i, ℙ ℝ (α i → ℝ)) ≃ₜ multiprojectiveProjectorCoordLocus α ℝ :=
-  (isHomeomorph_iff_continuous_bijective.2
-    ⟨continuous_multiprojectiveProjectorCoord.subtype_mk multiprojectiveProjectorCoord_mem_locus,
-      fun _ _ h ↦ multiprojectiveProjectorCoord_injective (congrArg Subtype.val h),
-      fun ⟨a, ha⟩ ↦ by
-        obtain ⟨p, hp⟩ := range_multiprojectiveProjectorCoord.symm.subset ha
-        exact ⟨p, Subtype.ext hp⟩⟩).homeomorph _
+  (multiprojectiveProjectorHomeomorph α).trans
+    ((multiprojectiveMatrixCoordHomeomorph α ℝ).image (multiprojectiveProjectorLocus α ℝ))
 
 @[simp]
-theorem coe_multiprojectiveProjectorCoordHomeomorph (p : ∀ i, ℙ ℝ (α i → ℝ)) :
+theorem coe_multiprojectiveProjectorCoordHomeomorph_apply (p : ∀ i, ℙ ℝ (α i → ℝ)) :
     (multiprojectiveProjectorCoordHomeomorph α p : (Σ i, α i × α i) → ℝ) =
       multiprojectiveProjectorCoord p :=
-  (rfl)
+  (congrArg Subtype.val
+    (Homeomorph.trans_apply (multiprojectiveProjectorHomeomorph α)
+      ((multiprojectiveMatrixCoordHomeomorph α ℝ).image
+        (multiprojectiveProjectorLocus α ℝ)) p)).trans <| by
+    simp [multiprojectiveProjectorCoord_def]
 
 @[simp]
 theorem multiprojectiveProjectorCoordHomeomorph_symm_apply_projector (p : ∀ i, ℙ ℝ (α i → ℝ)) :
     (multiprojectiveProjectorCoordHomeomorph α).symm
-        ⟨multiprojectiveProjectorCoord p, multiprojectiveProjectorCoord_mem_locus p⟩ = p :=
-  (multiprojectiveProjectorCoordHomeomorph α).symm_apply_apply p
+        ⟨multiprojectiveProjectorCoord p, multiprojectiveProjectorCoord_mem_locus p⟩ = p := by
+  apply (multiprojectiveProjectorCoordHomeomorph α).injective
+  ext1
+  simp
 
 end Topology
 
@@ -435,12 +455,15 @@ matrix-entry coordinates `(Σ i, α i × α i) → K`. -/
 theorem isSemialgebraic_multiprojectiveProjectorCoordLocus {α : ι → Type*} [Finite ι]
     [∀ i, Fintype (α i)] :
     IsSemialgebraic (multiprojectiveProjectorCoordLocus α K) := by
+  have hcurry (i : ι) (a : (Σ i, α i × α i) → K) :
+      Function.curry (fun q : α i × α i ↦ a ⟨i, q⟩) = fun j k ↦ a ⟨i, j, k⟩ :=
+    funext₂ fun _ _ ↦ Function.curry_apply _ _ _
   have h : multiprojectiveProjectorCoordLocus α K =
       ⋂ i : ι, (fun a : (Σ i, α i × α i) → K ↦ fun q : α i × α i ↦ a ⟨i, q⟩) ⁻¹'
         {b : α i × α i → K | Matrix.of (Function.curry b) ∈ projectorLocus (α i) K} := by
     ext a
-    simp only [mem_multiprojectiveProjectorCoordLocus, mem_iInter, mem_preimage, mem_ofPred_eq]
-    rfl
+    simp only [mem_multiprojectiveProjectorCoordLocus, mem_iInter, mem_preimage, mem_ofPred_eq,
+      hcurry]
   rw [h]
   exact .iInter fun i ↦ (isSemialgebraic_projectorLocus (ι := α i) (K := K)).preimage_comp
     (fun q : α i × α i ↦ (⟨i, q⟩ : Σ i, α i × α i))
@@ -449,11 +472,11 @@ section OrderedProjector
 
 variable [IsStrictOrderedRing K] {n : ι → ℕ}
 
-/-- Over a strict ordered field and finite factor index `ι`, the graph relation
+/-- Over a strict ordered field and finite factor index `ι`, the equality locus
 `{(a, p) | multiprojectiveProjectorCoord p = a}` is mixed semialgebraic without assuming projection
 closure: in homogeneous coordinates `v_i` it is cut out inside `mixedPuncturedCone` by the
 polynomial equations `(v_iᵀ v_i) * a ⟨i, j, k⟩ = v_i j * v_i k`. -/
-theorem isMixedSemialgebraic_multiprojectiveProjectorCoord_rel [Finite ι] :
+theorem isMixedSemialgebraic_setOf_multiprojectiveProjectorCoord_eq [Finite ι] :
     IsMixedSemialgebraic
       {ap : (((Σ i, Fin (n i + 1) × Fin (n i + 1)) → K) × ∀ i, ℙ K (Fin (n i + 1) → K)) |
         multiprojectiveProjectorCoord ap.2 = ap.1} := by
@@ -489,37 +512,37 @@ theorem isSemialgebraicMap_multiprojectiveProjectorCoord_affineChart_symm [Finit
     (I : ∀ i, Fin (n i + 1)) :
     IsSemialgebraicMap
       (multiprojectiveProjectorCoord ∘ ⇑(multiprojectiveAffineChart (K := K) I).symm) := by
-  rw [← isSemialgebraicOn_univ]
-  let V : ∀ i, Fin (n i + 1) →
-      MvPolynomial ((Σ i, Fin (n i)) ⊕ Σ i, Fin (n i + 1) × Fin (n i + 1)) K :=
-    fun i ↦ Fin.insertNth (α := fun _ ↦ MvPolynomial _ K) (I i) 1 fun k ↦ X (.inl ⟨i, k⟩)
-  have hV (z : (Σ i, Fin (n i)) → K) (a : (Σ i, Fin (n i + 1) × Fin (n i + 1)) → K)
-      (i : ι) (r : Fin (n i + 1)) :
-      eval (Sum.elim z a) (V i r) =
-        Fin.insertNth (α := fun _ ↦ K) (I i) 1 (fun k ↦ z ⟨i, k⟩) r := by
-    induction r using (I i).succAboveCases with
-    | x => simp [V]
-    | p k => simp [V]
-  refine isSemialgebraicOn_of_forall_eq_iff isSemialgebraic_univ
-    (fun q ↦ (∑ r, V q.1 r * V q.1 r) * X (.inr q) - V q.1 q.2.1 * V q.1 q.2.2) fun z _ a ↦ ?_
-  simp only [map_sub, map_mul, map_sum, hV, eval_X, Sum.elim_inr, Function.comp_apply, funext_iff]
-  refine forall_congr' fun q ↦ ?_
-  set v : Fin (n q.1 + 1) → K := Fin.insertNth (I q.1) 1 (fun k ↦ z ⟨q.1, k⟩)
-  have hs : v ⬝ᵥ v ≠ 0 := dotProduct_self_eq_zero.not.mpr (Fin.insertNth_one_ne_zero (I q.1) _)
-  rw [multiprojectiveProjectorCoord_apply, multiprojectiveAffineChart_symm_apply,
-    Projectivization.affineChart_symm_apply, Projectivization.projector_mk, rankOneProjector_apply,
-    div_eq_iff hs, sub_eq_zero, eq_comm]
-  simp [v, dotProduct, mul_comm]
+  let V : ∀ i, Fin (n i + 1) → MvPolynomial (Σ i, Fin (n i)) K :=
+    fun i r ↦ multiprojectiveInsertNthPoly I ⟨i, r⟩
+  have hfn :
+      (multiprojectiveProjectorCoord ∘ ⇑(multiprojectiveAffineChart (K := K) I).symm) =
+        fun z q ↦
+          eval z (V q.1 q.2.1 * V q.1 q.2.2) /
+            eval z (∑ r : Fin (n q.1 + 1), V q.1 r * V q.1 r) := by
+    ext z q
+    simp [V, multiprojectiveAffineChart_symm_apply, Projectivization.affineChart_symm_apply,
+      rankOneProjector_apply, dotProduct]
+  rw [hfn]
+  refine isSemialgebraicMap_eval_div
+    (fun q : Σ i, Fin (n i + 1) × Fin (n i + 1) ↦ V q.1 q.2.1 * V q.1 q.2.2)
+    (fun q : Σ i, Fin (n i + 1) × Fin (n i + 1) ↦ ∑ r : Fin (n q.1 + 1), V q.1 r * V q.1 r)
+    fun z q ↦ ?_
+  have hsum : eval z (∑ r : Fin (n q.1 + 1), V q.1 r * V q.1 r) =
+      Fin.insertNth (α := fun _ ↦ K) (I q.1) 1 (fun k ↦ z ⟨q.1, k⟩) ⬝ᵥ
+        Fin.insertNth (α := fun _ ↦ K) (I q.1) 1 (fun k ↦ z ⟨q.1, k⟩) := by
+    simp [V, dotProduct]
+  rw [hsum]
+  exact dotProduct_self_eq_zero.not.mpr (Fin.insertNth_one_ne_zero (I q.1) _)
 
 /-- For a finite factor index `ι`, the image of a standard product affine open under
 `TauCeti.multiprojectiveProjectorCoord` is semialgebraic. -/
-theorem isSemialgebraic_image_multiprojectiveProjectorCoord_affineOpen [Finite ι]
-    (I : ∀ i, Fin (n i + 1)) :
+theorem isSemialgebraic_image_multiprojectiveProjectorCoord_affineOpen {α : ι → Type*}
+    [∀ i, Fintype (α i)] [Finite ι] (I : ∀ i, α i) :
     IsSemialgebraic (multiprojectiveProjectorCoord '' multiprojectiveAffineOpen (K := K) I) := by
   rw [image_multiprojectiveProjectorCoord_affineOpen]
   convert isSemialgebraic_multiprojectiveProjectorCoordLocus.inter
     (.iInter fun i ↦ isSemialgebraic_eval_ne_zero
-      (X ⟨i, I i, I i⟩ : MvPolynomial (Σ i, Fin (n i + 1) × Fin (n i + 1)) K)) using 1
+      (X ⟨i, I i, I i⟩ : MvPolynomial (Σ i, α i × α i) K)) using 1
   ext a
   simp
 
@@ -531,155 +554,177 @@ theorem isSemialgebraicOn_multiprojectiveProjectorCoord_affineChart [Finite ι]
       (fun a : (Σ i, Fin (n i + 1) × Fin (n i + 1)) → K ↦ fun q : Σ i, Fin (n i) ↦
         a ⟨q.1, (I q.1).succAbove q.2, I q.1⟩ / a ⟨q.1, I q.1, I q.1⟩)
       (multiprojectiveProjectorCoord '' multiprojectiveAffineOpen (K := K) I) := by
-  refine isSemialgebraicOn_of_forall_eq_iff
-    (isSemialgebraic_image_multiprojectiveProjectorCoord_affineOpen I)
-    (fun q ↦ X (.inl ⟨q.1, I q.1, I q.1⟩) * X (.inr q) -
-      X (.inl ⟨q.1, (I q.1).succAbove q.2, I q.1⟩))
-    fun a ha z ↦ ?_
-  rw [mem_ofPred_eq, image_multiprojectiveProjectorCoord_affineOpen] at ha
-  simp only [funext_iff, map_sub, map_mul, eval_X, Sum.elim_inl, Sum.elim_inr]
-  refine forall_congr' fun q ↦ ?_
-  have hne : a ⟨q.1, I q.1, I q.1⟩ ≠ 0 := ha.2 q.1
-  rw [div_eq_iff hne, eq_comm, ← sub_eq_zero, mul_comm]
+  refine (isSemialgebraicOn_eval_div
+    (fun q : Σ i, Fin (n i) ↦ X ⟨q.1, (I q.1).succAbove q.2, I q.1⟩)
+    (fun q : Σ i, Fin (n i) ↦ X ⟨q.1, I q.1, I q.1⟩)
+    (isSemialgebraic_image_multiprojectiveProjectorCoord_affineOpen I) fun a ha q ↦ ?_).congr
+    fun a _ ↦ funext fun q ↦ by simp
+  rw [image_multiprojectiveProjectorCoord_affineOpen] at ha
+  simpa using ha.2 q.1
 
-/-- **Semialgebraic subsets in the product projector model.** Over an ordered field with
-semialgebraic projections (such as `ℝ`) and finitely many projective factors, a subset `S` of
-`∀ i, ℙ K (Fin (n i + 1) → K)` has semialgebraic image under `TauCeti.multiprojectiveProjectorCoord`
-if and only if `S` is multiprojective semialgebraic. -/
-theorem isSemialgebraic_image_multiprojectiveProjectorCoord_iff [HasSemialgebraicProjections K]
-    [Finite ι] {S : Set (∀ i, ℙ K (Fin (n i + 1) → K))} :
-    IsSemialgebraic (multiprojectiveProjectorCoord '' S) ↔ IsMultiprojectiveSemialgebraic S := by
+private theorem isMixedSemialgebraic_of_isSemialgebraic_preimage_prodMap
+    [Finite ι] {S : Set ((σ → K) × ∀ i, ℙ K (Fin (n i + 1) → K))}
+    (hE : IsSemialgebraic
+      (Equiv.sumArrowEquivProdArrow σ (Σ i, Fin (n i + 1) × Fin (n i + 1)) K ⁻¹'
+        (Prod.map id multiprojectiveProjectorCoord '' S))) :
+    IsMixedSemialgebraic S := by
   let μ := Σ i, Fin (n i + 1) × Fin (n i + 1)
-  let R : Set ((μ → K) × ∀ i, ℙ K (Fin (n i + 1) → K)) :=
-    {ap | multiprojectiveProjectorCoord ap.2 = ap.1}
-  have hR : IsSemialgebraic (mixedCone R) :=
-    isMixedSemialgebraic_def.1 isMixedSemialgebraic_multiprojectiveProjectorCoord_rel
-  rw [isMultiprojectiveSemialgebraic_def]
-  constructor
-  · intro hS
-    convert (hR.inter (hS.preimage_comp Sum.inl)).image_comp_inr using 1
-    ext v
-    rw [mem_multiprojectiveCone, mem_image]
-    constructor
-    · rintro ⟨hv, hvS⟩
-      let p : ∀ i, ℙ K (Fin (n i + 1) → K) :=
-        fun i ↦ Projectivization.mk K (fun j ↦ v ⟨i, j⟩) (hv i)
-      refine ⟨Sum.elim (multiprojectiveProjectorCoord p) v, ⟨?_, ⟨p, hvS, rfl⟩⟩,
-        funext fun _ ↦ Sum.elim_inr _ _ _⟩
-      rw [mem_mixedCone]
-      exact ⟨hv, rfl⟩
-    · rintro ⟨w, ⟨hwR, p, hpS, hp_eq⟩, rfl⟩
-      rw [mem_mixedCone] at hwR
-      obtain ⟨hw, hwp⟩ := hwR
-      have hp' : (fun i ↦ Projectivization.mk K (fun j ↦ w (.inr ⟨i, j⟩)) (hw i)) = p :=
-        multiprojectiveProjectorCoord_injective (hwp.trans hp_eq.symm)
-      exact ⟨hw, hp'.symm ▸ hpS⟩
-  · intro hS
-    convert (hR.inter (hS.preimage_comp Sum.inr)).image_comp_inl using 1
-    ext a
-    rw [mem_image, mem_image]
-    constructor
-    · rintro ⟨p, hpS, rfl⟩
-      let v : (Σ i, Fin (n i + 1)) → K := fun q ↦ (p q.1).rep q.2
-      have hv : ∀ i, (fun j ↦ v ⟨i, j⟩) ≠ 0 := fun i ↦ (p i).rep_ne_zero
-      have hmk : (fun i ↦ Projectivization.mk K (fun j ↦ v ⟨i, j⟩) (hv i)) = p :=
-        funext fun i ↦ (p i).mk_rep
-      refine ⟨Sum.elim (multiprojectiveProjectorCoord p) v, ⟨?_, ?_⟩,
-        funext fun _ ↦ Sum.elim_inl _ _ _⟩
-      · exact mem_mixedCone.2 ⟨hv, show multiprojectiveProjectorCoord
-          (fun i ↦ Projectivization.mk K (fun j ↦ v ⟨i, j⟩) (hv i)) =
-          multiprojectiveProjectorCoord p by rw [hmk]⟩
-      · exact mem_multiprojectiveCone.2 ⟨hv, hmk ▸ hpS⟩
-    · rintro ⟨w, ⟨hwR, hwS⟩, rfl⟩
-      exact ⟨_, (mem_multiprojectiveCone.1 hwS).2, (mem_mixedCone.1 hwR).2⟩
-
-private theorem isSemialgebraicOn_multiprojectiveProjectorCoord_comp_of_graphOn
-    [HasSemialgebraicProjections K] [Finite ι]
-    {τ : (σ → K) → ∀ i, ℙ K (Fin (n i + 1) → K)} {s : Set (σ → K)}
-    (hG : IsMixedSemialgebraic (s.graphOn τ)) :
-    IsSemialgebraicOn (multiprojectiveProjectorCoord ∘ τ) s := by
-  let μ := Σ i, Fin (n i + 1) × Fin (n i + 1)
-  let R : Set ((μ → K) × ∀ i, ℙ K (Fin (n i + 1) → K)) :=
-    {ap | multiprojectiveProjectorCoord ap.2 = ap.1}
-  have hR : IsSemialgebraic (mixedCone R) :=
-    isMixedSemialgebraic_def.1 isMixedSemialgebraic_multiprojectiveProjectorCoord_rel
-  rw [isSemialgebraicOn_iff_graph]
-  let f₁ : (σ ⊕ Σ i, Fin (n i + 1)) → (σ ⊕ μ) ⊕ Σ i, Fin (n i + 1) :=
-    Sum.elim (Sum.inl ∘ Sum.inl) Sum.inr
-  let f₂ : (μ ⊕ Σ i, Fin (n i + 1)) → (σ ⊕ μ) ⊕ Σ i, Fin (n i + 1) :=
-    Sum.elim (Sum.inl ∘ Sum.inr) Sum.inr
-  convert (((isMixedSemialgebraic_def.1 hG).preimage_comp f₁).inter
-      (hR.preimage_comp f₂)).image_comp_inl using 1
-  ext za
-  rw [mem_preimage_sumArrowEquivProdArrow_graphOn, mem_image]
-  constructor
-  · rintro ⟨hzas, hza⟩
-    let p := τ (za ∘ Sum.inl)
-    let v : (Σ i, Fin (n i + 1)) → K := fun q ↦ (p q.1).rep q.2
-    have hv : ∀ i, (fun j ↦ v ⟨i, j⟩) ≠ 0 := fun i ↦ (p i).rep_ne_zero
-    have hmk : (fun i ↦ Projectivization.mk K (fun j ↦ v ⟨i, j⟩) (hv i)) = p :=
-      funext fun i ↦ (p i).mk_rep
-    refine ⟨Sum.elim za v, ⟨?_, ?_⟩, funext fun _ ↦ Sum.elim_inl _ _ _⟩
-    · rw [mem_preimage, mem_mixedCone]
-      exact ⟨hv, mem_graphOn.2 ⟨hzas, hmk.symm⟩⟩
-    · rw [mem_preimage, mem_mixedCone]
-      exact ⟨hv, show multiprojectiveProjectorCoord
-        (fun i ↦ Projectivization.mk K (fun j ↦ v ⟨i, j⟩) (hv i)) = za ∘ Sum.inr by
-        rw [hmk]; exact hza⟩
-  · rintro ⟨u, ⟨hu₁, hu₂⟩, rfl⟩
-    rw [mem_preimage, mem_mixedCone] at hu₁ hu₂
-    obtain ⟨hu, huG⟩ := hu₁
-    obtain ⟨_, huR⟩ := hu₂
-    obtain ⟨hus, hτu⟩ := mem_graphOn.1 huG
-    have hτu' : τ ((u ∘ Sum.inl) ∘ Sum.inl) =
-        fun i ↦ Projectivization.mk K (fun j ↦ u (.inr ⟨i, j⟩)) (hu i) := hτu
-    have huR' : multiprojectiveProjectorCoord
-        (fun i ↦ Projectivization.mk K (fun j ↦ u (.inr ⟨i, j⟩)) (hu i)) =
-        (u ∘ Sum.inl) ∘ Sum.inr := huR
-    exact ⟨hus, by rw [Function.comp_apply, hτu', huR']⟩
-
-private theorem isMixedSemialgebraic_graphOn_of_isSemialgebraicOn_multiprojectiveProjectorCoord_comp
-    [HasSemialgebraicProjections K] [Finite ι]
-    {τ : (σ → K) → ∀ i, ℙ K (Fin (n i + 1) → K)} {s : Set (σ → K)}
-    (hφ : IsSemialgebraicOn (multiprojectiveProjectorCoord ∘ τ) s) :
-    IsMixedSemialgebraic (s.graphOn τ) := by
-  let μ := Σ i, Fin (n i + 1) × Fin (n i + 1)
-  let R : Set ((μ → K) × ∀ i, ℙ K (Fin (n i + 1) → K)) :=
-    {ap | multiprojectiveProjectorCoord ap.2 = ap.1}
-  have hR : IsSemialgebraic (mixedCone R) :=
-    isMixedSemialgebraic_def.1 isMixedSemialgebraic_multiprojectiveProjectorCoord_rel
+  let f : σ ⊕ μ → MvPolynomial (σ ⊕ Σ i, Fin (n i + 1)) K :=
+    Sum.elim (fun a ↦ X (.inl a))
+      fun q ↦ X (.inr ⟨q.1, q.2.1⟩) * X (.inr ⟨q.1, q.2.2⟩)
+  let g : σ ⊕ μ → MvPolynomial (σ ⊕ Σ i, Fin (n i + 1)) K :=
+    Sum.elim (fun _ ↦ 1)
+      fun q ↦ ∑ r : Fin (n q.1 + 1), X (.inr ⟨q.1, r⟩) * X (.inr ⟨q.1, r⟩)
+  have hg (w : (σ ⊕ Σ i, Fin (n i + 1)) → K)
+      (hw : w ∈ mixedPuncturedCone σ n K) (c : σ ⊕ μ) : eval w (g c) ≠ 0 := by
+    cases c with
+    | inl _ => simp [g]
+    | inr q =>
+      have hsum : eval w (g (.inr q)) =
+          (fun r ↦ w (.inr ⟨q.1, r⟩)) ⬝ᵥ (fun r ↦ w (.inr ⟨q.1, r⟩)) := by
+        simp [g, dotProduct]
+      rw [hsum]
+      exact dotProduct_self_eq_zero.not.mpr (mem_mixedPuncturedCone.1 hw q.1)
+  have heval (w : (σ ⊕ Σ i, Fin (n i + 1)) → K) (hw : w ∈ mixedPuncturedCone σ n K) :
+      Equiv.sumArrowEquivProdArrow σ μ K (fun c ↦ eval w (f c) / eval w (g c)) =
+        Prod.map id multiprojectiveProjectorCoord
+          (w ∘ Sum.inl,
+            fun i ↦ Projectivization.mk K (fun j ↦ w (.inr ⟨i, j⟩))
+              (mem_mixedPuncturedCone.1 hw i)) := by
+    refine Prod.ext (funext fun a ↦ by simp [f, g]) (funext fun q ↦ ?_)
+    simp [f, g, rankOneProjector_apply, dotProduct]
   rw [isMixedSemialgebraic_def]
-  let g₁ : σ ⊕ μ → μ ⊕ (σ ⊕ Σ i, Fin (n i + 1)) := Sum.elim (Sum.inr ∘ Sum.inl) Sum.inl
-  let g₂ : (μ ⊕ Σ i, Fin (n i + 1)) → μ ⊕ (σ ⊕ Σ i, Fin (n i + 1)) :=
-    Sum.elim Sum.inl (Sum.inr ∘ Sum.inr)
-  convert (((isSemialgebraicOn_iff_graph.1 hφ).preimage_comp g₁).inter
-      (hR.preimage_comp g₂)).image_comp_inr using 1
+  convert hE.inter_preimage_eval_div isSemialgebraic_mixedPuncturedCone f g hg using 1
   ext w
-  rw [mem_mixedCone, mem_image]
-  constructor
-  · rintro ⟨hw, hwG⟩
-    obtain ⟨hws, hτw⟩ := mem_graphOn.1 hwG
-    let p : ∀ i, ℙ K (Fin (n i + 1) → K) :=
-      fun i ↦ Projectivization.mk K (fun j ↦ w (.inr ⟨i, j⟩)) (hw i)
-    refine ⟨Sum.elim (multiprojectiveProjectorCoord p) w, ⟨?_, ?_⟩,
-      funext fun _ ↦ Sum.elim_inr _ _ _⟩
-    · rw [mem_preimage, mem_preimage_sumArrowEquivProdArrow_graphOn]
-      refine ⟨hws, ?_⟩
-      rw [Function.comp_apply]
-      have h₁ : (Sum.elim (multiprojectiveProjectorCoord p) w ∘ g₁) ∘ Sum.inl = w ∘ Sum.inl := rfl
-      have h₂ : (Sum.elim (multiprojectiveProjectorCoord p) w ∘ g₁) ∘ Sum.inr =
-          multiprojectiveProjectorCoord p := rfl
-      rw [h₁, h₂, hτw]
-    · rw [mem_preimage, mem_mixedCone]
-      exact ⟨hw, rfl⟩
-  · rintro ⟨u, ⟨hu₁, hu₂⟩, rfl⟩
-    rw [mem_preimage, mem_preimage_sumArrowEquivProdArrow_graphOn] at hu₁
-    rw [mem_preimage, mem_mixedCone] at hu₂
-    obtain ⟨hws, hτu⟩ := hu₁
-    obtain ⟨hw, hpu⟩ := hu₂
-    have hw' : ∀ i, (fun j ↦ u (.inr (.inr ⟨i, j⟩))) ≠ 0 := hw
-    refine ⟨hw', mem_graphOn.2 ⟨hws, ?_⟩⟩
-    exact multiprojectiveProjectorCoord_injective (hτu.trans hpu.symm)
+  rw [mem_mixedCone, mem_inter_iff, mem_preimage, mem_preimage]
+  refine ⟨fun ⟨hw, hwS⟩ ↦ ⟨mem_mixedPuncturedCone.2 hw, ?_⟩,
+    fun ⟨hw, hfw⟩ ↦ ⟨mem_mixedPuncturedCone.1 hw, ?_⟩⟩
+  · rw [heval w (mem_mixedPuncturedCone.2 hw)]
+    exact mem_image_of_mem _ hwS
+  · rwa [heval w hw,
+      (Function.Injective.prodMap Function.injective_id
+        multiprojectiveProjectorCoord_injective).mem_set_image] at hfw
+
+private theorem isSemialgebraic_preimage_prodMap_inter_affineOpen
+    [Finite ι] {S : Set ((σ → K) × ∀ i, ℙ K (Fin (n i + 1) → K))}
+    (hS : IsMixedSemialgebraic S) (I : ∀ i, Fin (n i + 1)) :
+    IsSemialgebraic
+      (((fun z : (σ ⊕ Σ i, Fin (n i + 1) × Fin (n i + 1)) → K ↦ z ∘ Sum.inr) ⁻¹'
+          (multiprojectiveProjectorCoord '' multiprojectiveAffineOpen (K := K) I)) ∩
+        Equiv.sumArrowEquivProdArrow σ (Σ i, Fin (n i + 1) × Fin (n i + 1)) K ⁻¹'
+          (Prod.map id multiprojectiveProjectorCoord '' S)) := by
+  let μ := Σ i, Fin (n i + 1) × Fin (n i + 1)
+  let UI : Set ((σ ⊕ μ) → K) :=
+    (fun z ↦ z ∘ Sum.inr) ⁻¹'
+      (multiprojectiveProjectorCoord '' multiprojectiveAffineOpen (K := K) I)
+  have hUI : IsSemialgebraic UI :=
+    (isSemialgebraic_image_multiprojectiveProjectorCoord_affineOpen I).preimage_comp Sum.inr
+  have hchartS : IsSemialgebraic ((mixedAffineChart σ I).symm ⁻¹' S) := by
+    rw [← mixedAffineChart_image_inter_affineOpen]
+    exact hS.isSemialgebraic_chart I
+  let f : (σ ⊕ Σ i, Fin (n i)) → MvPolynomial (σ ⊕ μ) K :=
+    Sum.elim (fun a ↦ X (.inl a)) fun q ↦ X (.inr ⟨q.1, (I q.1).succAbove q.2, I q.1⟩)
+  let g : (σ ⊕ Σ i, Fin (n i)) → MvPolynomial (σ ⊕ μ) K :=
+    Sum.elim (fun _ ↦ 1) fun q ↦ X (.inr ⟨q.1, I q.1, I q.1⟩)
+  have hg (z : (σ ⊕ μ) → K) (hz : z ∈ UI) (c : σ ⊕ Σ i, Fin (n i)) : eval z (g c) ≠ 0 := by
+    cases c with
+    | inl _ => simp [g]
+    | inr q =>
+      rw [mem_preimage, image_multiprojectiveProjectorCoord_affineOpen] at hz
+      simpa [g] using hz.2 q.1
+  convert hchartS.inter_preimage_eval_div hUI f g hg using 1
+  ext z
+  simp only [mem_inter_iff, mem_preimage]
+  refine and_congr_right fun hz ↦ ?_
+  obtain ⟨p, hpI, hp_eq⟩ := hz
+  have hfg : (fun c ↦ eval z (f c) / eval z (g c)) = mixedAffineChart σ I (z ∘ Sum.inl, p) := by
+    ext (a | q)
+    · simp [f, g]
+    · rw [mixedAffineChart_apply_inr, multiprojectiveAffineChart_eq_multiprojectiveProjector_div]
+      have hp_at (r : μ) : z (.inr r) = multiprojectiveProjector p r.1 r.2.1 r.2.2 := by
+        simpa using (congrFun hp_eq r).symm
+      simp [f, g, hp_at]
+  have hprod : Equiv.sumArrowEquivProdArrow σ μ K z =
+      Prod.map id multiprojectiveProjectorCoord (z ∘ Sum.inl, p) :=
+    Prod.ext (funext fun _ ↦ by simp)
+      (funext fun q ↦ by
+        rw [Equiv.sumArrowEquivProdArrow_apply_snd, Prod.map_snd]
+        exact (congrFun hp_eq q).symm)
+  have hmemI : (z ∘ Sum.inl, p) ∈ (mixedAffineChart σ I).source := by
+    rw [mixedAffineChart_source]
+    exact mem_mixedAffineOpen.2 hpI
+  rw [hprod, (Function.Injective.prodMap Function.injective_id
+      multiprojectiveProjectorCoord_injective).mem_set_image, hfg,
+    (mixedAffineChart σ I).left_inv hmemI]
+
+/-- **Mixed semialgebraic subsets in the product projector model.** Over a strict ordered field and
+finitely many projective factors, a subset `S ⊆ (σ → K) × ∀ i, ℙ K (Fin (n i + 1) → K)` is mixed
+semialgebraic if and only if its embedded image under `Prod.map id multiprojectiveProjectorCoord`
+is semialgebraic. No projection-closure hypothesis is required. -/
+theorem isSemialgebraic_preimage_prodMap_multiprojectiveProjectorCoord_iff
+    [Finite ι] {S : Set ((σ → K) × ∀ i, ℙ K (Fin (n i + 1) → K))} :
+    IsSemialgebraic
+        (Equiv.sumArrowEquivProdArrow σ (Σ i, Fin (n i + 1) × Fin (n i + 1)) K ⁻¹'
+          (Prod.map id multiprojectiveProjectorCoord '' S)) ↔
+      IsMixedSemialgebraic S := by
+  refine ⟨isMixedSemialgebraic_of_isSemialgebraic_preimage_prodMap, fun hS ↦ ?_⟩
+  set E := Equiv.sumArrowEquivProdArrow σ (Σ i, Fin (n i + 1) × Fin (n i + 1)) K ⁻¹'
+    (Prod.map id multiprojectiveProjectorCoord '' S)
+  have hcover : E =
+      ⋃ I : ∀ i, Fin (n i + 1),
+        ((fun z : (σ ⊕ Σ i, Fin (n i + 1) × Fin (n i + 1)) → K ↦ z ∘ Sum.inr) ⁻¹'
+            (multiprojectiveProjectorCoord '' multiprojectiveAffineOpen (K := K) I)) ∩ E := by
+    ext z
+    simp only [mem_iUnion, mem_inter_iff]
+    refine ⟨fun hz ↦ ?_, fun ⟨_, _, hz⟩ ↦ hz⟩
+    rcases hz with ⟨⟨x, p⟩, hpS, hp_eq⟩
+    obtain ⟨I, hpI⟩ := exists_mem_multiprojectiveAffineOpen p
+    refine ⟨I, ?_, ⟨(x, p), hpS, hp_eq⟩⟩
+    have hz_inr : z ∘ Sum.inr = multiprojectiveProjectorCoord p :=
+      funext fun q ↦ (congrFun (congrArg Prod.snd hp_eq) q).symm
+    rw [mem_preimage, hz_inr]
+    exact mem_image_of_mem _ hpI
+  rw [hcover]
+  exact .iUnion fun I ↦ isSemialgebraic_preimage_prodMap_inter_affineOpen hS I
+
+/-- **Semialgebraic subsets in the product projector model.** Over a strict ordered field and
+finitely many projective factors, a subset `S` of `∀ i, ℙ K (Fin (n i + 1) → K)` has semialgebraic
+image under `TauCeti.multiprojectiveProjectorCoord` if and only if `S` is multiprojective
+semialgebraic. No projection-closure hypothesis is required. -/
+theorem isSemialgebraic_image_multiprojectiveProjectorCoord_iff [Finite ι]
+    {S : Set (∀ i, ℙ K (Fin (n i + 1) → K))} :
+    IsSemialgebraic (multiprojectiveProjectorCoord '' S) ↔ IsMultiprojectiveSemialgebraic S := by
+  let e := (Equiv.emptySum Empty (Σ i, Fin (n i + 1) × Fin (n i + 1))).symm
+  rw [← isSemialgebraic_preimage_comp_equiv e,
+    ← isMixedSemialgebraic_univ_prod_iff (σ := Empty),
+    ← isSemialgebraic_preimage_prodMap_multiprojectiveProjectorCoord_iff]
+  convert Iff.rfl using 2
+  ext z
+  simp only [mem_preimage, mem_image, mem_prod, mem_univ, true_and, Prod.exists,
+    Prod.map_apply, id_eq, Prod.ext_iff]
+  exact ⟨fun ⟨_, p, hp, _, hp_eq⟩ ↦ ⟨p, hp, hp_eq⟩,
+    fun ⟨p, hp, hp_eq⟩ ↦ ⟨z ∘ Sum.inl, p, hp, rfl, hp_eq⟩⟩
+
+/-- **Graphs of maps from affine space via the product projector model.** Over a strict ordered
+field and finitely many projective factors, a map
+`τ : (σ → K) → ∀ i, ℙ K (Fin (n i + 1) → K)` from an arbitrary affine space has mixed semialgebraic
+graph over `s ⊆ σ → K` if and only if `multiprojectiveProjectorCoord ∘ τ` has semialgebraic graph
+over `s`. No projection-closure hypothesis is required. -/
+theorem isMixedSemialgebraic_graphOn_iff_graph_multiprojectiveProjectorCoord_comp
+    [Finite ι] {τ : (σ → K) → ∀ i, ℙ K (Fin (n i + 1) → K)} {s : Set (σ → K)} :
+    IsMixedSemialgebraic (s.graphOn τ) ↔
+      IsSemialgebraic
+        (Equiv.sumArrowEquivProdArrow σ (Σ i, Fin (n i + 1) × Fin (n i + 1)) K ⁻¹'
+          s.graphOn (multiprojectiveProjectorCoord ∘ τ)) := by
+  have hgraph :
+      Prod.map id multiprojectiveProjectorCoord '' s.graphOn τ =
+        s.graphOn (multiprojectiveProjectorCoord ∘ τ) := by
+    ext ⟨x, a⟩
+    simp only [mem_image, mem_graphOn, Prod.exists, Prod.map_apply, id_eq, Prod.mk.injEq,
+      Function.comp_apply]
+    exact ⟨fun ⟨_, _, ⟨hx', hτx'⟩, hx'_eq, ha⟩ ↦ ⟨hx'_eq ▸ hx', hx'_eq ▸ hτx' ▸ ha⟩,
+      fun ⟨hx, ha⟩ ↦ ⟨x, τ x, ⟨hx, rfl⟩, rfl, ha⟩⟩
+  rw [← isSemialgebraic_preimage_prodMap_multiprojectiveProjectorCoord_iff, hgraph]
 
 /-- **Semialgebraic maps from affine space via the product projector model.** Over an ordered field
 with semialgebraic projections and finitely many projective factors, a map
@@ -691,8 +736,8 @@ theorem isMixedSemialgebraic_graphOn_iff_isSemialgebraicOn_multiprojectiveProjec
     {τ : (σ → K) → ∀ i, ℙ K (Fin (n i + 1) → K)} {s : Set (σ → K)} :
     IsMixedSemialgebraic (s.graphOn τ) ↔
       IsSemialgebraicOn (multiprojectiveProjectorCoord ∘ τ) s :=
-  ⟨isSemialgebraicOn_multiprojectiveProjectorCoord_comp_of_graphOn,
-    isMixedSemialgebraic_graphOn_of_isSemialgebraicOn_multiprojectiveProjectorCoord_comp⟩
+  isMixedSemialgebraic_graphOn_iff_graph_multiprojectiveProjectorCoord_comp.trans
+    isSemialgebraicOn_iff_graph.symm
 
 end OrderedProjector
 
@@ -724,7 +769,7 @@ theorem isNashAt_multiprojectiveProjectorCoord_affineChart_symm {ι : Type*} [Fi
 /-- Over `ℝ`, each ratio coordinate `a ⟨q.1, (I q.1).succAbove q.2, I q.1⟩ / a ⟨q.1, I q.1, I q.1⟩`
 recovering `TauCeti.multiprojectiveAffineChart I` from the flattened product projector model is a
 Nash germ at every point `a` with `a ⟨q.1, I q.1, I q.1⟩ ≠ 0`. -/
-theorem isNashAt_multiprojectiveAffineChart_projectorCoord {ι : Type*} [Fintype ι]
+theorem isNashAt_multiprojectiveProjectorCoord_affineChart {ι : Type*} [Fintype ι]
     {n : ι → ℕ} (I : ∀ i, Fin (n i + 1)) (q : Σ i, Fin (n i))
     {a : (Σ i, Fin (n i + 1) × Fin (n i + 1)) → ℝ} (ha : a ⟨q.1, I q.1, I q.1⟩ ≠ 0) :
     IsNashAt

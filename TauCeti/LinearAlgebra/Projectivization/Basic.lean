@@ -26,7 +26,8 @@ union of its unit translates (`Projectivization.preimage_image_mk'`). These two 
 from Zayn Blore's Mathlib pull request
 [mathlib4#44117](https://github.com/leanprover-community/mathlib4/pull/44117). Equivalently,
 two nonzero vectors give the same point exactly when the first lies on the line spanned by the
-second (`Projectivization.mk_eq_mk_iff_mem_span`).
+second (`Projectivization.mk_eq_mk_iff_mem_span`), and for coordinate tuples over a field, when all
+`2 × 2` minors `v i * w j = v j * w i` vanish (`Projectivization.mk_eq_mk_iff_forall_mul_eq`).
 
 A linear map `G : V →ₗ[K] W` induces the map `Projectivization.linearProjection G`, sending
 `[v]` to `[G v]` on the set `Projectivization.linearProjectionDomain G` of points where `G` does
@@ -169,6 +170,20 @@ theorem linearProjection_mk [Nonempty (Projectivization K W)] (G : V →ₗ[K] W
 end LinearProjection
 
 variable {K : Type*} [Field K] {ι : Type*}
+
+/-- Over a field, two nonzero coordinate tuples represent the same projective point if and only if
+all of their `2 × 2` minors `v i * w j = v j * w i` vanish. -/
+theorem mk_eq_mk_iff_forall_mul_eq {v w : ι → K} (hv : v ≠ 0) (hw : w ≠ 0) :
+    mk K v hv = mk K w hw ↔ ∀ i j, v i * w j = v j * w i := by
+  rw [mk_eq_mk_iff']
+  constructor
+  · rintro ⟨c, rfl⟩ i j
+    exact mul_right_comm c (w i) (w j)
+  · intro h
+    obtain ⟨j₀, hj₀⟩ := Function.ne_iff.1 hw
+    refine ⟨v j₀ / w j₀, funext fun i ↦ ?_⟩
+    simp only [Pi.smul_apply, smul_eq_mul, div_mul_eq_mul_div, ← h i j₀,
+      mul_div_cancel_right₀ _ hj₀]
 
 /-- At any nonzero coordinate of a projective point, there is a representative normalized
 to `1` whose coordinates are the ratios of the chosen representative's coordinates. -/
