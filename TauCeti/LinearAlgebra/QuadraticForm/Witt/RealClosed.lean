@@ -5,14 +5,13 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Algebra.BrauerGroup.Real
 public import TauCeti.LinearAlgebra.QuadraticForm.RegularFormClass.Hasse.RealClosed
 public import TauCeti.LinearAlgebra.QuadraticForm.Witt.Clifford
 public import TauCeti.LinearAlgebra.QuadraticForm.Witt.Signature
 import Mathlib.FieldTheory.IsRealClosed.Real
 
 /-!
-# The Clifford invariant and `I²/I³` over ordered real closed fields and `ℝ`
+# The Clifford invariant over ordered real closed fields and `ℝ`
 
 Over an ordered real closed field `K`, every Witt class equals the integer cast of its signature
 `σ = signature x ∈ ℤ` (`WittRing.intCast_signature`). Combined with eightfold periodicity of the
@@ -37,27 +36,19 @@ The formula also witnesses two sharp boundaries of the general theory:
   regular forms over `K`, since `⟨1, 1, 1, 1⟩` (`σ = 4`) and `⟨-1, -1, -1, -1⟩` (`σ = -4`) share
   all four invariants `(4, 0, 1, [(-1, -1)])`.
 
-On the filtration quotient `I(K)²/I(K)³`, elements of `I(K)²` have signature divisible by `4`, so
-`σ % 8` is `0` (when `x ∈ I(K)³`) or `4` (when `x ∉ I(K)³`). Thus `ker(cliffordHomI2) = I(K)³` and
-`cliffordHomI2Bar` is injective over every ordered real closed field. Over `ℝ`, Frobenius' theorem
-identifies `BrauerGroup ℝ` with `{1, [ℍ[ℝ]]}`, making `cliffordHomI2Bar` an isomorphism
-`I(ℝ)²/I(ℝ)³ ≃+ Additive (BrauerGroup ℝ)`.
+## Main results
 
-## Main definitions and results
-
-* `TauCeti.WittRing.cliffordInvariant_eq_ite_signature` and
-  `TauCeti.RegularFormClass.cliffordInvariant_eq_ite_signature`: eightfold-periodic formula for the
+* `TauCeti.WittRing.cliffordInvariant_eq_ite_signature`,
+  `TauCeti.RegularFormClass.cliffordInvariant_eq_ite_signature`, and
+  `QuadraticForm.cliffordInvariant_formClass_eq_ite_signature`: eightfold-periodic formula for the
   Clifford invariant over an ordered real closed field.
 * `TauCeti.WittRing.not_forall_cliffordInvariant_add_eq_mul`: the Clifford invariant is not a
   homomorphism on `W(K)` over any semireal field.
 * `TauCeti.RegularFormClass.four_nsmul_one_invariants_eq_and_ne`: `⟨1, 1, 1, 1⟩` and
   `⟨-1, -1, -1, -1⟩` share rank, discriminant, Hasse invariant, and Clifford invariant while
   remaining non-isometric over any ordered field.
-* `TauCeti.cliffordHomI2_eq_zero_iff_mem_fundamentalIdeal_cube`, `TauCeti.ker_cliffordHomI2`, and
-  `TauCeti.cliffordHomI2Bar_injective`: `ker(c : I(K)² → Br(K)) = I(K)³` over any ordered real
-  closed field.
-* `TauCeti.cliffordHomI2BarEquivReal`: the isomorphism
-  `I(ℝ)²/I(ℝ)³ ≃+ Additive (BrauerGroup ℝ)`.
+* `TauCeti.cliffordInvariant_formClass_realSignatureForm`: the Clifford invariant of the real
+  normal form `p⟨1⟩ ⊥ q⟨-1⟩` is `[ℍ[ℝ]]` when `(p - q) % 8 ∈ {3, 4, 5, 6}` and `1` otherwise.
 
 ## References
 
@@ -211,37 +202,6 @@ theorem four_nsmul_one_invariants_eq_and_ne :
 
 end RegularFormClass
 
-/-! ### Kernel and injectivity on `I(K)²/I(K)³` -/
-
-/-- **Merkurjev's kernel criterion over an ordered real closed field**: an element of `I(K)²` lies
-in the kernel of `cliffordHomI2` if and only if it belongs to `I(K)³`. -/
-theorem cliffordHomI2_eq_zero_iff_mem_fundamentalIdeal_cube (x : ↥(fundamentalIdeal K ^ 2)) :
-    cliffordHomI2 x = 0 ↔ (x : WittRing K) ∈ fundamentalIdeal K ^ 3 := by
-  refine ⟨fun hx => ?_, cliffordHomI2_eq_zero⟩
-  rw [cliffordHomI2_apply, ofMul_eq_zero,
-    WittRing.cliffordInvariant_eq_one_iff_signature] at hx
-  obtain ⟨k, hk⟩ := (mem_fundamentalIdeal_pow_iff_dvd_signature (K := K) 2).mp x.2
-  rw [mem_fundamentalIdeal_pow_iff_dvd_signature]
-  have hrem : WittRing.signature (x : WittRing K) % (2 ^ 3 : ℤ) = 0 := by omega
-  exact Int.dvd_of_emod_eq_zero hrem
-
-/-- Over an ordered real closed field, the kernel of
-`cliffordHomI2 : I(K)² →+ Additive (BrauerGroup K)` is `I(K)³`. -/
-@[simp]
-theorem ker_cliffordHomI2 : (cliffordHomI2 (K := K)).ker = fundamentalI3InI2 K := by
-  ext x
-  rw [AddMonoidHom.mem_ker, mem_fundamentalI3InI2,
-    cliffordHomI2_eq_zero_iff_mem_fundamentalIdeal_cube]
-
-/-- Over an ordered real closed field, the induced Clifford homomorphism
-`cliffordHomI2Bar : I(K)²/I(K)³ →+ Additive (BrauerGroup K)` is injective. -/
-theorem cliffordHomI2Bar_injective : Function.Injective (cliffordHomI2Bar (K := K)) := by
-  rw [injective_iff_map_eq_zero]
-  intro q hq
-  obtain ⟨x, rfl⟩ := QuotientAddGroup.mk_surjective q
-  rw [cliffordHomI2Bar_mk, cliffordHomI2_eq_zero_iff_mem_fundamentalIdeal_cube] at hq
-  exact (QuotientAddGroup.eq_zero_iff x).mpr (mem_fundamentalI3InI2.mpr hq)
-
 end IsRealClosed
 
 end TauCeti
@@ -280,38 +240,6 @@ theorem cliffordInvariant_formClass_realSignatureForm (p q : ℕ) :
       else 1 := by
   rw [QuadraticForm.cliffordInvariant_formClass_eq_ite_signature, sigPos_realSignatureForm,
     sigNeg_realSignatureForm, BrauerGroup.quaternionClass_neg_one_neg_one_real]
-
-/-- Over `ℝ`, `cliffordHomI2Bar` is surjective onto `Additive (BrauerGroup ℝ)`, since `4 ∈ I(ℝ)²`
-maps to `[ℍ[ℝ]]`, which generates `BrauerGroup ℝ`. -/
-theorem cliffordHomI2Bar_surjective_real :
-    Function.Surjective (cliffordHomI2Bar (K := ℝ)) := by
-  intro y
-  rcases Quaternion.eq_one_or_eq_mk (Additive.toMul y) with hy | hy
-  · refine ⟨0, ?_⟩
-    rw [map_zero]
-    exact Additive.toMul.injective hy.symm
-  · refine ⟨(⟨4, four_mem_fundamentalIdeal_sq⟩ : ↥(fundamentalIdeal ℝ ^ 2)), ?_⟩
-    rw [cliffordHomI2Bar_mk, cliffordHomI2_apply,
-      WittRing.cliffordInvariant_eq_ite_signature]
-    have hsig : WittRing.signature (4 : WittRing ℝ) = 4 := by
-      simpa using map_ofNat WittRing.signature 4
-    rw [hsig]
-    norm_num
-    rw [BrauerGroup.quaternionClass_neg_one_neg_one_real]
-    exact Additive.toMul.injective hy.symm
-
-/-- **The isomorphism `I(ℝ)²/I(ℝ)³ ≃+ Additive (BrauerGroup ℝ)`**: over `ℝ`, the Clifford
-homomorphism identifies `I(ℝ)²/I(ℝ)³` with the Brauer group of `ℝ`. -/
-noncomputable def cliffordHomI2BarEquivReal :
-    (↥(fundamentalIdeal ℝ ^ 2) ⧸ fundamentalI3InI2 ℝ) ≃+ Additive (BrauerGroup.{0, 0} ℝ) :=
-  AddEquiv.ofBijective (cliffordHomI2Bar (K := ℝ))
-    ⟨cliffordHomI2Bar_injective, cliffordHomI2Bar_surjective_real⟩
-
-/-- `cliffordHomI2BarEquivReal` agrees with `cliffordHomI2Bar` on every class. -/
-@[simp]
-theorem cliffordHomI2BarEquivReal_apply
-    (q : ↥(fundamentalIdeal ℝ ^ 2) ⧸ fundamentalI3InI2 ℝ) :
-    cliffordHomI2BarEquivReal q = cliffordHomI2Bar q := (rfl)
 
 section Examples
 
