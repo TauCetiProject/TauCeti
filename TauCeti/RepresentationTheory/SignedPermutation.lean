@@ -30,12 +30,13 @@ a simplex transports its coefficient by a sign.
 A function `f` is invariant exactly when `f (g • x) = ε g x • f x` for all `g` and `x`
 (`TauCeti.mem_invariants_signedPermRep_iff`). In particular its value at `x` is fixed by the sign
 `ε g x` of every element `g` of the stabilizer of `x`: it lies in the submodule
-`TauCeti.signFixed R ε x`. On the stabilizer, `ε (·) x` is a character with values `±1`, so this
-submodule is the invariants of a rank-one sign representation of the stabilizer on `M`. It is all of
-`M` when the character is trivial (`TauCeti.signFixed_eq_top`), and zero when the character is
-nontrivial and `2` is a nonzerodivisor on `M` (`TauCeti.signFixed_eq_bot`), for instance when `2` is
-invertible in `R`. Without that hypothesis it need not vanish: over `𝔽₂` the sign `-1` acts
-trivially, and over `ℤ/4` the vectors fixed by `-1` are the `2`-torsion.
+`TauCeti.signFixed R ε x` (`TauCeti.apply_mem_signFixed_of_mem_invariants`). On the stabilizer,
+`ε (·) x` is a character with values `±1`, so this submodule is the invariants of a rank-one sign
+representation of the stabilizer on `M`. It is all of `M` when the character is trivial
+(`TauCeti.signFixed_eq_top`), and zero when the character is nontrivial and `2` is a nonzerodivisor
+on `M` (`TauCeti.signFixed_eq_bot`), for instance when `2` is invertible in `R`. Without that
+hypothesis it need not vanish: over `𝔽₂` the sign `-1` acts trivially, and over `ℤ/4` the vectors
+fixed by `-1` are the `2`-torsion.
 
 **The orbit decomposition.** When every orbit is finite, an invariant function is determined by
 its values at a chosen representative of each orbit, and these values can be prescribed freely in
@@ -206,6 +207,11 @@ theorem mem_invariants_signedPermRep_iff {f : X →₀ M} :
   · ext y
     rw [signedPermRep_apply, ← hf, smul_inv_smul]
 
+/-- The value of an invariant function at `x` is fixed by the stabilizer sign at `x`. -/
+theorem apply_mem_signFixed_of_mem_invariants {f : X →₀ M}
+    (hf : f ∈ (signedPermRep R M ε hε).invariants) (x : X) : f x ∈ signFixed R ε x :=
+  mem_signFixed_iff.2 fun g hg ↦ by rw [← (mem_invariants_signedPermRep_iff hε).1 hf, hg]
+
 /-- The vector `ε a x • m` attached to `a • x` does not depend on the choice of `a`, when `m` is
 fixed by the stabilizer sign at `x`. -/
 theorem smul_eq_smul_of_mem_signFixed {x : X} {m : M} (hm : m ∈ signFixed R ε x) {a b : G}
@@ -309,8 +315,9 @@ finite group, take `hfin := Finite.finite_mulAction_orbit`. -/
 noncomputable def invariantsSignedPermRepEquiv (hfin : ∀ x : X, (orbit G x).Finite) :
     (signedPermRep R M ε hε).invariants ≃ₗ[R] orbitSignFixed R M ε where
   toFun f := ⟨(f : X →₀ M).comapDomain Quotient.out Quotient.out_injective.injOn,
-    mem_orbitSignFixed_iff.2 fun ω ↦ mem_signFixed_iff.2 fun g hg ↦ by
-      rw [comapDomain_apply, ← (mem_invariants_signedPermRep_iff hε).1 f.2, hg]⟩
+    mem_orbitSignFixed_iff.2 fun ω ↦ by
+      rw [comapDomain_apply]
+      exact apply_mem_signFixed_of_mem_invariants hε f.2 _⟩
   map_add' _ _ := by ext; simp
   map_smul' _ _ := by ext; simp
   invFun := ofOrbitSignFixed hε hfin
@@ -414,9 +421,8 @@ theorem invariantsSignedPermRepEquivFinsupp_symm_apply_eq_zero
     (hfin : ∀ x : X, (orbit G x).Finite) (h2 : IsSMulRegular M (2 : R))
     (c : trivialSignOrbits ε →₀ M) {x : X} (hx : ⟦x⟧ ∉ trivialSignOrbits ε) :
     ((invariantsSignedPermRepEquivFinsupp R M hε hfin h2).symm c : X →₀ M) x = 0 := by
-  set f := (invariantsSignedPermRepEquivFinsupp R M hε hfin h2).symm c
-  have hf : (f : X →₀ M) x ∈ signFixed R ε x := mem_signFixed_iff.2 fun g hg ↦ by
-    rw [← (mem_invariants_signedPermRep_iff hε).1 f.2, hg]
+  have hf := apply_mem_signFixed_of_mem_invariants hε
+    ((invariantsSignedPermRepEquivFinsupp R M hε hfin h2).symm c).2 x
   rw [mk_mem_trivialSignOrbits_iff hε] at hx
   push Not at hx
   simpa [signFixed_eq_bot h2 hx] using hf
