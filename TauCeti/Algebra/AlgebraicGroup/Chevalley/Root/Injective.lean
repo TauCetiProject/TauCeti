@@ -65,12 +65,24 @@ universe v
 variable {t : DynkinType} {ht : t.Valid} (D : ChevalleyDatum t ht)
 
 /-- Every root has a nonzero coordinate vector in the chosen basis of the weight lattice. -/
-theorem coordinateRoot_ne_zero (γ : Fin t.numRoots) : D.coordinateRoot γ ≠ 0 := by
-  intro h0
-  have hroot : (t.simplyConnectedRootDatum ht).root γ = 0 := by
-    have h := congrArg D.weightLatticeEmbedding h0
-    simpa [coordinateRoot_def] using h
-  exact (t.simplyConnectedRootDatum ht).ne_zero γ hroot
+theorem coordinateRoot_ne_zero (γ : Fin t.numRoots) : D.coordinateRoot γ ≠ 0 := fun h0 =>
+  (t.simplyConnectedRootDatum ht).ne_zero γ <| by
+    simpa [coordinateRoot_def] using congrArg D.weightLatticeEmbedding h0
+
+/-- Proportional coordinate roots (with a nonzero coefficient on `β`) come from equal or
+opposite roots, by reducedness of the pinned simply-connected root datum. -/
+theorem eq_or_eq_neg_of_smul_coordinateRoot_eq {α β : Fin t.numRoots} {a b : ℤ} (ha : a ≠ 0)
+    (h : a • D.coordinateRoot β = b • D.coordinateRoot α) :
+    (t.simplyConnectedRootDatum ht).root α = (t.simplyConnectedRootDatum ht).root β ∨
+      (t.simplyConnectedRootDatum ht).root α = -(t.simplyConnectedRootDatum ht).root β := by
+  have hroot : a • (t.simplyConnectedRootDatum ht).root β =
+      b • (t.simplyConnectedRootDatum ht).root α := by
+    have := congrArg D.weightLatticeEmbedding h
+    rw [map_zsmul, map_zsmul] at this
+    simpa only [coordinateRoot_def, D.weightLatticeEmbedding_repr, Submodule.coe_mk] using this
+  let _ := t.isReduced_simplyConnectedRootDatum ht
+  refine RootPairing.IsReduced.eq_or_eq_neg (P := t.simplyConnectedRootDatum ht) α β fun hlin => ?_
+  exact ha (hlin.eq_zero_of_pair (by rw [hroot, neg_smul, neg_add_cancel])).2
 
 private theorem rootSubgroupPoints_injective_of_rootable (γ : Fin t.numRoots)
     (K : Type v) [Field K] [RootableBy Kˣ ℕ] :
@@ -91,17 +103,13 @@ private theorem rootSubgroupPoints_injective_of_rootable (γ : Fin t.numRoots)
 theorem rootSubgroupPoints_injective (γ : Fin t.numRoots) (A : Type v) [CommRing A] [IsDomain A] :
     Function.Injective (D.rootSubgroupPoints γ A) := by
   intro u v huv
-  let f : A →+* AlgebraicClosure (FractionRing A) :=
-    (algebraMap (FractionRing A) (AlgebraicClosure (FractionRing A))).comp
-      (algebraMap A (FractionRing A))
+  let K := AlgebraicClosure (FractionRing A)
+  let f : A →+* K := (algebraMap (FractionRing A) K).comp (algebraMap A (FractionRing A))
   have hf : Function.Injective f :=
-    (algebraMap (FractionRing A) (AlgebraicClosure (FractionRing A))).injective.comp
-      (IsFractionRing.injective A (FractionRing A))
-  have hmap := congrArg
-    ((D.pointsPresentation A).map (D.pointsPresentation (AlgebraicClosure (FractionRing A))) f) huv
+    (algebraMap (FractionRing A) K).injective.comp (IsFractionRing.injective A (FractionRing A))
+  have hmap := congrArg ((D.pointsPresentation A).map (D.pointsPresentation K) f) huv
   simp only [D.map_rootSubgroupPoints] at hmap
-  have heq := D.rootSubgroupPoints_injective_of_rootable γ (AlgebraicClosure (FractionRing A)) hmap
-  exact toAdd.injective (hf (congrArg toAdd heq))
+  exact toAdd.injective (hf (congrArg toAdd (D.rootSubgroupPoints_injective_of_rootable γ K hmap)))
 
 private theorem eq_zero_of_rootSubgroupPoints_eq_infinite {K : Type v} [Field K] [Infinite K]
     {α β : Fin t.numRoots} (hαβ : α ≠ β) {a b : K}
@@ -110,71 +118,47 @@ private theorem eq_zero_of_rootSubgroupPoints_eq_infinite {K : Type v} [Field K]
   suffices ha : a = 0 by
     refine ⟨ha, ?_⟩
     rw [ha, ofAdd_zero, map_one] at h
-    have hb := D.rootSubgroupPoints_injective β K (h.symm.trans (map_one _).symm)
-    simpa using congrArg toAdd hb
+    simpa using congrArg toAdd (D.rootSubgroupPoints_injective β K (h.symm.trans (map_one _).symm))
   by_contra ha
   have hb : b ≠ 0 := by
     rintro rfl
     rw [ofAdd_zero, map_one] at h
-    have h0 := D.rootSubgroupPoints_injective α K (h.trans (map_one _).symm)
-    exact ha (by simpa using congrArg toAdd h0)
+    exact ha <| by
+      simpa using congrArg toAdd (D.rootSubgroupPoints_injective α K (h.trans (map_one _).symm))
   have hker : ∀ s : Fin t.rank → Kˣ,
-      torusCharacter s (D.coordinateRoot α) = 1 →
-        torusCharacter s (D.coordinateRoot β) = 1 := by
+      torusCharacter s (D.coordinateRoot α) = 1 → torusCharacter s (D.coordinateRoot β) = 1 := by
     intro s hsα
-    have hconj : D.torusPoints K s * D.rootSubgroupPoints α K (ofAdd a) *
-        (D.torusPoints K s)⁻¹ =
-        D.torusPoints K s * D.rootSubgroupPoints β K (ofAdd b) * (D.torusPoints K s)⁻¹ := by
-      rw [h]
+    have hconj := congrArg (fun g => D.torusPoints K s * g * (D.torusPoints K s)⁻¹) h
     rw [D.torusPoints_conj_rootSubgroupPoints, D.torusPoints_conj_rootSubgroupPoints,
       hsα, Units.val_one, one_mul, h] at hconj
     have heq : b = (torusCharacter s (D.coordinateRoot β) : K) * b := by
       simpa using congrArg toAdd (D.rootSubgroupPoints_injective β K hconj)
     exact Units.ext ((mul_right_cancel₀ hb (by simpa using heq.symm)).trans rfl)
-  obtain ⟨i, hi⟩ : ∃ i, D.coordinateRoot α i ≠ 0 :=
-    Function.ne_iff.mp (D.coordinateRoot_ne_zero α)
-  have hprop := smul_eq_smul_of_torusCharacter_eq_one hker i
-  have hrootprop :
-      D.coordinateRoot α i • (t.simplyConnectedRootDatum ht).root β =
-        D.coordinateRoot β i • (t.simplyConnectedRootDatum ht).root α := by
-    have h := congrArg D.weightLatticeEmbedding hprop
-    rw [map_zsmul, map_zsmul] at h
-    simpa only [coordinateRoot_def, D.weightLatticeEmbedding_repr, Submodule.coe_mk] using h
-  have hnotlin : ¬ LinearIndependent ℤ
-      ![(t.simplyConnectedRootDatum ht).root α, (t.simplyConnectedRootDatum ht).root β] := by
-    intro hlin
-    have hzero : (-D.coordinateRoot β i) • (t.simplyConnectedRootDatum ht).root α +
-        D.coordinateRoot α i • (t.simplyConnectedRootDatum ht).root β = 0 := by
-      rw [hrootprop, neg_smul, neg_add_cancel]
-    exact hi (hlin.eq_zero_of_pair hzero).2
-  let _ := t.isReduced_simplyConnectedRootDatum ht
-  rcases RootPairing.IsReduced.eq_or_eq_neg (P := t.simplyConnectedRootDatum ht) α β hnotlin with
-      heq | hneg
+  obtain ⟨i, hi⟩ : ∃ i, D.coordinateRoot α i ≠ 0 := Function.ne_iff.mp (D.coordinateRoot_ne_zero α)
+  rcases D.eq_or_eq_neg_of_smul_coordinateRoot_eq hi
+      (smul_eq_smul_of_torusCharacter_eq_one hker i) with heq | hneg
   · exact hαβ ((t.simplyConnectedRootDatum ht).root.injective heq)
-  · have hβ : β = (t.simplyConnectedRootDatum ht).reflectionPerm α α := by
-      apply (t.simplyConnectedRootDatum ht).root.injective
-      rw [RootPairing.root_reflectionPerm, RootPairing.reflection_apply_self, hneg, neg_neg]
+  · have hβ : β = (t.simplyConnectedRootDatum ht).reflectionPerm α α :=
+      (t.simplyConnectedRootDatum ht).root.injective <| by
+        rw [RootPairing.root_reflectionPerm, RootPairing.reflection_apply_self, hneg, neg_neg]
+    have hcontra {γ δ : Fin t.numRoots} {x y : K} (hy : y ≠ 0)
+        (hγ : γ ∈ posRoots (t.rationalRootSystem ht) (t.rationalBase ht))
+        (hδ : δ ∈ negRoots (t.rationalRootSystem ht) (t.rationalBase ht))
+        (heq' : D.rootSubgroupPoints γ K (ofAdd x) = D.rootSubgroupPoints δ K (ofAdd y)) :
+        False := by
+      have hmem : D.rootSubgroupPoints δ K (ofAdd y) ∈ D.borelSubgroup K :=
+        heq' ▸ D.positivePoints_le_borelSubgroup K (D.rootSubgroupPoints_mem_positivePoints K hγ _)
+      have h1 := (D.rootSubgroupPoints_mem_borelSubgroup_iff_of_mem_negRoots K hδ _).mp hmem
+      exact hy <| by
+        simpa using congrArg toAdd (D.rootSubgroupPoints_injective δ K (h1.trans (map_one _).symm))
     rcases mem_posRoots_or_mem_negRoots (t.rationalRootSystem ht) (t.rationalBase ht) α with
         hpos | hneg'
-    · have hβneg : β ∈ negRoots (t.rationalRootSystem ht) (t.rationalBase ht) := by
-        rw [hβ, ← t.reflectionPerm_rationalRootSystem ht]
-        exact (reflectionPerm_self_mem_negRoots_iff_mem_posRoots _ _ _).mpr hpos
-      have hmem : D.rootSubgroupPoints β K (ofAdd b) ∈ D.borelSubgroup K := by
-        rw [← h]
-        exact D.positivePoints_le_borelSubgroup K (D.rootSubgroupPoints_mem_positivePoints K hpos _)
-      have h1 := (D.rootSubgroupPoints_mem_borelSubgroup_iff_of_mem_negRoots K hβneg _).mp hmem
-      have h0 := D.rootSubgroupPoints_injective β K (h1.trans (map_one _).symm)
-      exact hb (by simpa using congrArg toAdd h0)
-    · have hβpos : β ∈ posRoots (t.rationalRootSystem ht) (t.rationalBase ht) := by
-        rw [hβ, ← t.reflectionPerm_rationalRootSystem ht]
-        exact (reflectionPerm_self_mem_posRoots_iff_mem_negRoots _ _ _).mpr hneg'
-      have hmem : D.rootSubgroupPoints α K (ofAdd a) ∈ D.borelSubgroup K := by
-        rw [h]
-        exact D.positivePoints_le_borelSubgroup K
-          (D.rootSubgroupPoints_mem_positivePoints K hβpos _)
-      have h1 := (D.rootSubgroupPoints_mem_borelSubgroup_iff_of_mem_negRoots K hneg' _).mp hmem
-      have h0 := D.rootSubgroupPoints_injective α K (h1.trans (map_one _).symm)
-      exact ha (by simpa using congrArg toAdd h0)
+    · exact hcontra hb hpos
+        (by rw [hβ, ← t.reflectionPerm_rationalRootSystem ht]
+            exact (reflectionPerm_self_mem_negRoots_iff_mem_posRoots _ _ _).mpr hpos) h
+    · exact hcontra ha
+        (by rw [hβ, ← t.reflectionPerm_rationalRootSystem ht]
+            exact (reflectionPerm_self_mem_posRoots_iff_mem_negRoots _ _ _).mpr hneg') hneg' h.symm
 
 /-- Over an integral domain, if two root elements at distinct roots are equal then both
 additive parameters are zero. -/
@@ -182,14 +166,11 @@ theorem eq_zero_of_rootSubgroupPoints_eq {A : Type v} [CommRing A] [IsDomain A]
     {α β : Fin t.numRoots} (hαβ : α ≠ β) {a b : A}
     (h : D.rootSubgroupPoints α A (ofAdd a) = D.rootSubgroupPoints β A (ofAdd b)) :
     a = 0 ∧ b = 0 := by
-  let f : A →+* AlgebraicClosure (FractionRing A) :=
-    (algebraMap (FractionRing A) (AlgebraicClosure (FractionRing A))).comp
-      (algebraMap A (FractionRing A))
+  let K := AlgebraicClosure (FractionRing A)
+  let f : A →+* K := (algebraMap (FractionRing A) K).comp (algebraMap A (FractionRing A))
   have hf : Function.Injective f :=
-    (algebraMap (FractionRing A) (AlgebraicClosure (FractionRing A))).injective.comp
-      (IsFractionRing.injective A (FractionRing A))
-  have hmap := congrArg
-    ((D.pointsPresentation A).map (D.pointsPresentation (AlgebraicClosure (FractionRing A))) f) h
+    (algebraMap (FractionRing A) K).injective.comp (IsFractionRing.injective A (FractionRing A))
+  have hmap := congrArg ((D.pointsPresentation A).map (D.pointsPresentation K) f) h
   simp only [D.map_rootSubgroupPoints, toAdd_ofAdd] at hmap
   obtain ⟨ha, hb⟩ := D.eq_zero_of_rootSubgroupPoints_eq_infinite hαβ hmap
   exact ⟨hf (ha.trans (map_zero f).symm), hf (hb.trans (map_zero f).symm)⟩
@@ -200,28 +181,19 @@ theorem disjoint_range_rootSubgroupPoints (A : Type v) [CommRing A] [IsDomain A]
     Disjoint (D.rootSubgroupPoints α A).range (D.rootSubgroupPoints β A).range := by
   rw [Subgroup.disjoint_def]
   rintro g ⟨u, rfl⟩ ⟨v, hv⟩
-  have hv' : D.rootSubgroupPoints α A (ofAdd (toAdd u)) =
-      D.rootSubgroupPoints β A (ofAdd (toAdd v)) := by
-    simpa only [ofAdd_toAdd] using hv.symm
-  have h := (D.eq_zero_of_rootSubgroupPoints_eq hαβ hv').1
-  have hu : u = 1 := toAdd.injective (h.trans (toAdd_one (α := A)).symm)
-  rw [hu, map_one]
+  have h := (D.eq_zero_of_rootSubgroupPoints_eq hαβ (a := toAdd u) (b := toAdd v) <| by
+    simpa only [ofAdd_toAdd] using hv.symm).1
+  rw [toAdd.injective (h.trans (toAdd_one (α := A)).symm), map_one]
 
 /-- **Distinct roots give distinct root-subgroup images** over every integral domain. -/
 theorem range_rootSubgroupPoints_eq_iff (A : Type v) [CommRing A] [IsDomain A]
     (α β : Fin t.numRoots) :
     (D.rootSubgroupPoints α A).range = (D.rootSubgroupPoints β A).range ↔ α = β := by
-  constructor
-  · intro h
-    by_contra hne
-    have hdisj := D.disjoint_range_rootSubgroupPoints A hne
-    rw [Subgroup.disjoint_def] at hdisj
-    have hmemα : D.rootSubgroupPoints α A (ofAdd 1) ∈ (D.rootSubgroupPoints α A).range :=
-      ⟨ofAdd 1, rfl⟩
-    have hmemβ : D.rootSubgroupPoints α A (ofAdd 1) ∈ (D.rootSubgroupPoints β A).range :=
-      h ▸ hmemα
-    exact D.rootSubgroupPoints_ofAdd_one_ne_one A α (hdisj hmemα hmemβ)
-  · rintro rfl
-    rfl
+  refine ⟨fun h => by_contra fun hne => ?_, fun h => h ▸ rfl⟩
+  have hdisj := D.disjoint_range_rootSubgroupPoints A hne
+  rw [Subgroup.disjoint_def] at hdisj
+  have hmemα : D.rootSubgroupPoints α A (ofAdd 1) ∈ (D.rootSubgroupPoints α A).range :=
+    ⟨ofAdd 1, rfl⟩
+  exact D.rootSubgroupPoints_ofAdd_one_ne_one A α (hdisj hmemα (h ▸ hmemα))
 
 end TauCeti.DynkinType.ChevalleyDatum
