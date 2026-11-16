@@ -344,12 +344,12 @@ theorem of_isCentralIsogeny (hG : semisimpleCommHopfAlgProperty k G) (f : Q.obj 
       k G).mp hG
   rw [semisimpleCommHopfAlgProperty_iff_solvableRadicalDefiningIdeal_baseChange_eq_augmentation]
   have hinj : Function.Injective f.hom := hf.injective
+  let _ : Algebra.Smooth k G := hG.smooth
   refine ⟨(smoothCommHopfAlgProperty_iff _).mp <|
-      .of_injective f.hom.toAlgHom hinj ((smoothCommHopfAlgProperty_iff _).mpr hG.smooth),
+      f.hom.toAlgHom.smoothCommHopfAlgProperty_of_injective hinj,
     .of_injective f.hom.toAlgHom hinj hG.geometricallyConnected, ?_⟩
   let K := AlgebraicClosure k
   have hfK := hf.baseChange (L := K)
-  let _ : Algebra.Smooth k G := hG.smooth
   let _ : IsReduced (FiniteTypeCommHopfAlgCat.baseChange (K := K) G) :=
     isReduced_of_smooth K (K ⊗[k] G)
   exact FiniteTypeCommHopfAlgCat.solvableRadicalDefiningIdeal_eq_augmentation_of_isCentral

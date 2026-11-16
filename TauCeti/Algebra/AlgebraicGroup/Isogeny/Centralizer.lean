@@ -7,8 +7,8 @@ module
 
 public import TauCeti.Algebra.AlgebraicGroup.Isogeny.Tangent
 public import TauCeti.Algebra.AlgebraicGroup.Tangent.Lie.Adjoint.Centralizer.Map
+import TauCeti.Algebra.AlgebraicGroup.Isogeny.Etale
 import TauCeti.Algebra.AlgebraicGroup.Smooth.CharZero
-import TauCeti.RingTheory.Etale.Reduced
 import TauCeti.RingTheory.RingHom.Quotient
 import Mathlib.RingTheory.RingHom.Finite
 

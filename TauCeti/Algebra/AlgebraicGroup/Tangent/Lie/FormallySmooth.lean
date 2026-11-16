@@ -39,7 +39,7 @@ theorem derivationCompLieHom_surjective_of_formallySmooth (φ : A' →ₐc[R] A)
   exact ⟨e, (derivationCompLieHom_apply φ e).trans he⟩
 
 /-- The Lie differential of a formally étale affine monoid morphism is bijective. -/
-theorem derivationCompLieHom_bijective_of_formallyEtale (φ : A' →ₐc[R] A)
+theorem _root_.BialgHom.derivationCompLieHom_bijective_of_formallyEtale (φ : A' →ₐc[R] A)
     (hφ : φ.toAlgHom.toRingHom.FormallyEtale) :
     Function.Bijective (derivationCompLieHom (B := B) φ) := by
   let _ := φ.toAlgHom.toRingHom.toAlgebra

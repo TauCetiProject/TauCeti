@@ -10,10 +10,10 @@ public import TauCeti.Algebra.AlgebraicGroup.HopfIdeal.Quotient.Kernel.Etale
 public import TauCeti.Algebra.AlgebraicGroup.Tangent.Cotangent
 public import TauCeti.Algebra.AlgebraicGroup.Tangent.Lie.Cotangent
 import Mathlib.RingTheory.RingHom.Etale
+import TauCeti.Algebra.AlgebraicGroup.Isogeny.Etale
+import TauCeti.Algebra.AlgebraicGroup.Smooth.GeometricallyReduced
 import TauCeti.Algebra.AlgebraicGroup.Tangent.Lie.FormallySmooth
 import TauCeti.Algebra.AlgebraicGroup.Tangent.Regularity
-import TauCeti.Algebra.AlgebraicGroup.Smooth.CharZero
-import TauCeti.RingTheory.Etale.Reduced
 
 /-!
 # Differentials of affine isogenies
@@ -21,16 +21,16 @@ import TauCeti.RingTheory.Etale.Reduced
 The differential of an isogeny with étale scheme-theoretic kernel is bijective, over any
 commutative base ring, with values in any coefficient algebra, and with no smoothness or
 finiteness hypothesis on either group: the coordinate map is then étale. The differential
-therefore gives a Lie algebra equivalence `lieEquivOfEtaleKernel`, and
-`cotangentDualLieEquivOfEtaleKernel` on the cotangent-dual Lie algebras. The kernel need not be
+therefore gives a Lie algebra equivalence `lieEquivOfEtaleKernel` over any coefficient algebra,
+and `cotangentDualLieEquivOfEtaleKernel` on the cotangent-dual Lie algebras. The kernel need not be
 trivial: this comparison applies, for example, to central isogenies with nontrivial étale kernel.
 
 Over a field the converse holds too: the differential of an isogeny is bijective exactly when its
 kernel is étale, which distinguishes separable from inseparable isogenies in positive
 characteristic. The converse uses the identification of the Lie algebra of the kernel with the
 kernel of the differential. In characteristic zero the kernel of every isogeny is étale, by
-Cartier's theorem, so `cotangentDualLieEquivOfCharZero` supplies the equivalence without any
-kernel hypothesis.
+Cartier's theorem (`IsIsogeny.algebraEtale_quotient_kernelHopfIdeal_of_charZero`), so
+`cotangentDualLieEquivOfCharZero` supplies the equivalence without any kernel hypothesis.
 
 An isogeny from a smooth affine group over a field preserves Lie dimension, with no hypothesis on
 the target. Smoothness identifies Lie dimension with the Krull dimension of the coordinate ring,
@@ -44,11 +44,11 @@ characteristic is needed.
 * W. C. Waterhouse, *Introduction to Affine Group Schemes*, §§6 and 11.
 
 The étale-kernel results build on `CommHopfAlgCat.etale_iff_algebraEtale_quotient_kernelHopfIdeal`
-and `derivationCompLieHom_bijective_of_formallyEtale`, and the converse over a field on
+and `BialgHom.derivationCompLieHom_bijective_of_formallyEtale`, and the converse over a field on
 `CommHopfAlgCat.finrank_kernelLie`; the Lie dimension comparison uses
 `HopfAlgebra.smooth_iff_finrank_lie_eq_ringKrullDim` and `IsIsogeny.ringKrullDim_eq`, and
 descends smoothness with `IsIsogeny.finiteType_source` and
-`smoothCommHopfAlgProperty.of_injective`.
+`AlgHom.smoothCommHopfAlgProperty_of_injective`.
 -/
 
 public section
@@ -63,33 +63,35 @@ universe u v
 section CommRing
 
 variable {R : Type u} [CommRing R] {H K : _root_.CommHopfAlgCat.{v} R} {f : H ⟶ K}
+  {B : Type*} [CommRing B] [Algebra R B]
 
 /-- The differential of an isogeny with étale kernel is bijective on derivations with values in
 any coefficient algebra. Neither group needs to be smooth or of finite type, and the base can be
 any commutative ring. -/
-theorem derivationCompLieHom_bijective_of_etaleKernel {B : Type*} [CommRing B] [Algebra R B]
+theorem derivationCompLieHom_bijective_of_etaleKernel
     (hf : IsIsogeny f) (hker : Algebra.Etale R (K ⧸ (kernelHopfIdeal f).toIdeal)) :
     Function.Bijective (derivationCompLieHom (B := B) f.hom) := by
   let _ := f.hom.toAlgHom.toRingHom.toAlgebra
   have : Algebra.Etale H K :=
     (CommHopfAlgCat.etale_iff_algebraEtale_quotient_kernelHopfIdeal f hf.faithfullyFlat).mpr hker
-  exact derivationCompLieHom_bijective_of_formallyEtale f.hom
+  exact f.hom.derivationCompLieHom_bijective_of_formallyEtale
     (inferInstance : Algebra.FormallyEtale H K)
 
 /-- The differential of an isogeny with étale kernel, as a Lie algebra equivalence from the
-source group to the target group. Neither group needs to be smooth or of finite type. -/
+source group to the target group, on derivations with values in any coefficient algebra. Neither
+group needs to be smooth or of finite type. -/
 noncomputable def lieEquivOfEtaleKernel (hf : IsIsogeny f)
     (hker : Algebra.Etale R (K ⧸ (kernelHopfIdeal f).toIdeal)) :
-    Derivation R K (Bialgebra.CounitAlgebra R K R) ≃ₗ⁅R⁆
-      Derivation R H (Bialgebra.CounitAlgebra R H R) :=
-  LieEquiv.ofBijective (derivationCompLieHom (B := R) f.hom)
+    Derivation R K (Bialgebra.CounitAlgebra R K B) ≃ₗ⁅B⁆
+      Derivation R H (Bialgebra.CounitAlgebra R H B) :=
+  LieEquiv.ofBijective (derivationCompLieHom (B := B) f.hom)
     (hf.derivationCompLieHom_bijective_of_etaleKernel hker)
 
 /-- The forward Lie homomorphism of the equivalence is the differential. -/
 @[simp]
 theorem lieEquivOfEtaleKernel_toLieHom (hf : IsIsogeny f)
     (hker : Algebra.Etale R (K ⧸ (kernelHopfIdeal f).toIdeal)) :
-    (hf.lieEquivOfEtaleKernel hker).toLieHom = derivationCompLieHom (B := R) f.hom := by
+    (hf.lieEquivOfEtaleKernel (B := B) hker).toLieHom = derivationCompLieHom (B := B) f.hom := by
   ext d a
   rfl
 
@@ -98,23 +100,23 @@ coordinate map. Use `rw` with this lemma: registering it for `simp` would preven
 of the equivalence with its inverse. -/
 theorem lieEquivOfEtaleKernel_apply (hf : IsIsogeny f)
     (hker : Algebra.Etale R (K ⧸ (kernelHopfIdeal f).toIdeal))
-    (d : Derivation R K (Bialgebra.CounitAlgebra R K R)) :
-    hf.lieEquivOfEtaleKernel hker d = derivationComp (B := R) f.hom d := by
+    (d : Derivation R K (Bialgebra.CounitAlgebra R K B)) :
+    hf.lieEquivOfEtaleKernel hker d = derivationComp (B := B) f.hom d := by
   calc
-    hf.lieEquivOfEtaleKernel hker d = derivationCompLieHom (B := R) f.hom d :=
+    hf.lieEquivOfEtaleKernel hker d = derivationCompLieHom (B := B) f.hom d :=
       congrArg (fun g ↦ g d) (hf.lieEquivOfEtaleKernel_toLieHom hker)
-    _ = derivationComp (B := R) f.hom d := derivationCompLieHom_apply _ _
+    _ = derivationComp (B := B) f.hom d := derivationCompLieHom_apply _ _
 
 /-- The Lie equivalence acts pointwise by precomposition, transporting the resulting value
-between the two counit coefficient algebras through the base ring. -/
+between the two counit coefficient algebras through the coefficient algebra `B`. -/
 @[simp]
 theorem lieEquivOfEtaleKernel_apply_apply (hf : IsIsogeny f)
     (hker : Algebra.Etale R (K ⧸ (kernelHopfIdeal f).toIdeal))
-    (d : Derivation R K (Bialgebra.CounitAlgebra R K R)) (a : H) :
+    (d : Derivation R K (Bialgebra.CounitAlgebra R K B)) (a : H) :
     hf.lieEquivOfEtaleKernel hker d a =
-      (Bialgebra.CounitAlgebra.algEquivSelf R H R).symm
-        (Bialgebra.CounitAlgebra.algEquivSelf R K R (d ((f.hom : H →ₐ[R] K) a))) := by
-  apply (Bialgebra.CounitAlgebra.algEquivSelf R H R).injective
+      (Bialgebra.CounitAlgebra.algEquivSelf R H B).symm
+        (Bialgebra.CounitAlgebra.algEquivSelf R K B (d ((f.hom : H →ₐ[R] K) a))) := by
+  apply (Bialgebra.CounitAlgebra.algEquivSelf R H B).injective
   rw [AlgEquiv.apply_symm_apply]
   rw [lieEquivOfEtaleKernel_apply]
   exact algEquivSelf_derivationComp_apply f.hom d a
@@ -126,7 +128,7 @@ noncomputable def cotangentDualLieEquivOfEtaleKernel (hf : IsIsogeny f)
     Module.Dual R (Bialgebra.CotangentSpace R K) ≃ₗ⁅R⁆
       Module.Dual R (Bialgebra.CotangentSpace R H) :=
   (Derivation.cotangentDualLieEquiv (R := R) (H := K)).trans
-    ((hf.lieEquivOfEtaleKernel hker).trans
+    ((hf.lieEquivOfEtaleKernel (B := R) hker).trans
       (Derivation.cotangentDualLieEquiv (R := R) (H := H)).symm)
 
 /-- The cotangent-dual Lie equivalence acts by the existing differential. Use `rw`:
@@ -186,7 +188,7 @@ theorem finrank_lie_eq [Algebra.Smooth k K] (hf : IsIsogeny f) :
       Module.finrank k (Derivation k H (Bialgebra.CounitAlgebra k H k)) := by
   have := hf.finiteType_source
   have : Algebra.Smooth k H := (smoothCommHopfAlgProperty_iff H).mp
-    (.of_injective f.hom.toAlgHom hf.injective ((smoothCommHopfAlgProperty_iff K).mpr ‹_›))
+    (f.hom.toAlgHom.smoothCommHopfAlgProperty_of_injective hf.injective)
   have hK := HopfAlgebra.smooth_iff_finrank_lie_eq_ringKrullDim.mp ‹Algebra.Smooth k K›
   have hH := HopfAlgebra.smooth_iff_finrank_lie_eq_ringKrullDim.mp ‹Algebra.Smooth k H›
   exact_mod_cast hK.trans (hf.ringKrullDim_eq.trans hH.symm)
@@ -196,14 +198,6 @@ end Field
 section CharZero
 
 variable {k : Type u} [Field k] [CharZero k] {H K : _root_.CommHopfAlgCat.{v} k} {f : H ⟶ K}
-
-/-- In characteristic zero the scheme-theoretic kernel of an isogeny is étale. Neither group needs
-to be of finite type. -/
-theorem algebraEtale_quotient_kernelHopfIdeal_of_charZero (hf : IsIsogeny f) :
-    Algebra.Etale k (K ⧸ (kernelHopfIdeal f).toIdeal) :=
-  let _ := moduleFinite_quotient_kernelHopfIdeal hf.finite
-  algebraEtale_iff_finite_and_isReduced.2
-    ⟨‹_›, HopfAlgebra.isReduced_of_charZero k (K ⧸ (kernelHopfIdeal f).toIdeal)⟩
 
 /-- In characteristic zero the differential of an affine isogeny identifies the actual
 cotangent-dual Lie algebras. Neither group needs to be of finite type, and no connectedness or
