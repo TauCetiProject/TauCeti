@@ -5,7 +5,6 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Algebra.Algebra.Rat
 public import Mathlib.LinearAlgebra.LinearIndependent.Defs
 import Mathlib.RingTheory.Localization.Module
 
@@ -68,6 +67,6 @@ theorem linearIndependent_rat_finCons_one_iff {n : ℕ} (α : Fin n → A) :
     ← linearIndependent_equiv (finSuccEquiv n).symm]
   congr! 1
   ext i
-  cases i <;> rfl
+  cases i <;> simp
 
 end TauCeti
