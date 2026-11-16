@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Dynamics.Billiard.PeriodicPolygon
-import TauCeti.Analysis.InnerProductSpace.Sphere.Antipodal
+import TauCeti.Analysis.InnerProductSpace.Sphere.Chord
 
 /-!
 # Inscribed polygon perimeter bounds on spheres
@@ -236,7 +236,6 @@ center `c` and radius `R` has perimeter `3 √3 R` if and only if the centroid o
 theorem inscribedPerimeter_zmod_three_eq_iff_sum_sub_eq_zero {χ : α → F} {s : ZMod 3 → α} {c : F}
     {R : ℝ} (hs : ∀ k, χ (s k) ∈ Metric.sphere c R) :
     inscribedPerimeter χ s = 3 * √3 * R ↔ ∑ k : ZMod 3, (χ (s k) - c) = 0 := by
-  have hR : 0 ≤ R := hs 0 ▸ dist_nonneg
   have hn (k : ZMod 3) : ‖χ (s k) - c‖ = R := by simpa [dist_eq_norm] using hs k
   have hsum3 : ∑ k : ZMod 3, (χ (s k) - c) =
       (χ (s 0) - c) + (χ (s 1) - c) + (χ (s 2) - c) := by
@@ -255,33 +254,20 @@ theorem inscribedPerimeter_zmod_three_eq_iff_sum_sub_eq_zero {χ : α → F} {s 
     exact norm_eq_zero.1 (sq_eq_zero_iff.1 h0)
   · intro hsum
     rw [inscribedPerimeter_zmod_three_eq_iff_norm_sub_eq hs]
-    -- When `x₀ + x₁ + x₂ = 0` with `‖xᵢ‖ = R`, the parallelogram law gives
-    -- `‖x_(k+1) - x_k‖ = √3 R`.
-    have hedge {x y z : F} (hx : ‖x‖ = R) (hy : ‖y‖ = R) (hz : ‖z‖ = R) (hxyz : x + y + z = 0) :
-        ‖y - x‖ = √3 * R := by
-      have hxy : y + x = -z := eq_neg_of_add_eq_zero_left (by rwa [add_comm y x])
-      have hpar : ‖y + x‖ ^ 2 + ‖y - x‖ ^ 2 = 4 * R ^ 2 := by
-        rw [parallelogram_law_with_norm ℝ, hx, hy]
-        ring
-      rw [hxy, norm_neg, hz] at hpar
-      have hsq : ‖y - x‖ ^ 2 = (√3 * R) ^ 2 := by
-        rw [mul_pow, Real.sq_sqrt (by norm_num)]
-        linarith
-      exact (pow_left_inj₀ (norm_nonneg _) (by positivity) two_ne_zero).1 hsq
     have he0 : ‖χ (s ((0 : ZMod 3) + 1)) - χ (s 0)‖ = √3 * R := by
       have h01 : (0 : ZMod 3) + 1 = 1 := rfl
-      rw [h01, ← sub_sub_sub_cancel_right (χ (s 1)) (χ (s 0)) c]
-      exact hedge (hn 0) (hn 1) (hn 2) hsum
+      rw [h01, norm_sub_rev, ← sub_sub_sub_cancel_right (χ (s 0)) (χ (s 1)) c]
+      exact norm_sub_eq_sqrt_three_mul_of_add_add_eq_zero (hn 0) (hn 1) (hn 2) hsum
     have he1 : ‖χ (s ((1 : ZMod 3) + 1)) - χ (s 1)‖ = √3 * R := by
       have h11 : (1 : ZMod 3) + 1 = 2 := rfl
       have hsum' : (χ (s 1) - c) + (χ (s 2) - c) + (χ (s 0) - c) = 0 := by rw [← hsum]; abel
-      rw [h11, ← sub_sub_sub_cancel_right (χ (s 2)) (χ (s 1)) c]
-      exact hedge (hn 1) (hn 2) (hn 0) hsum'
+      rw [h11, norm_sub_rev, ← sub_sub_sub_cancel_right (χ (s 1)) (χ (s 2)) c]
+      exact norm_sub_eq_sqrt_three_mul_of_add_add_eq_zero (hn 1) (hn 2) (hn 0) hsum'
     have he2 : ‖χ (s ((2 : ZMod 3) + 1)) - χ (s 2)‖ = √3 * R := by
       have h21 : (2 : ZMod 3) + 1 = 0 := rfl
       have hsum' : (χ (s 2) - c) + (χ (s 0) - c) + (χ (s 1) - c) = 0 := by rw [← hsum]; abel
-      rw [h21, ← sub_sub_sub_cancel_right (χ (s 0)) (χ (s 2)) c]
-      exact hedge (hn 2) (hn 0) (hn 1) hsum'
+      rw [h21, norm_sub_rev, ← sub_sub_sub_cancel_right (χ (s 2)) (χ (s 0)) c]
+      exact norm_sub_eq_sqrt_three_mul_of_add_add_eq_zero (hn 2) (hn 0) (hn 1) hsum'
     intro k
     fin_cases k
     · exact he0
