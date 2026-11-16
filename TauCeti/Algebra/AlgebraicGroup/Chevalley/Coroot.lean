@@ -156,6 +156,14 @@ theorem map_simpleCorootPoints {A : Type v} {B : Type*} [CommRing A] [CommRing B
   intro r c
   simp [coe_simpleCorootPoints, diagGL_apply]
 
+/-- Simple coroot points centralize every torus point in the commutative split torus. -/
+@[simp]
+theorem simpleCorootPoints_conj_torusPoints (i : Fin t.rank) (A : Type v) [CommRing A]
+    (u : Aˣ) (s : Fin t.rank → Aˣ) :
+    D.simpleCorootPoints i A u * D.torusPoints A s * (D.simpleCorootPoints i A u)⁻¹ =
+      D.torusPoints A s := by
+  rw [D.simpleCorootPoints_eq_torusPoints, D.torusPoints_conj_torusPoints]
+
 attribute [local instance 100] LieRing.ofAssociativeRing
 attribute [local instance high] Algebra.toModule
 

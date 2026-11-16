@@ -5,32 +5,22 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+import Mathlib.Data.ZMod.Basic
 import Mathlib.FieldTheory.IsAlgClosed.AlgebraicClosure
-import Mathlib.RingTheory.Ideal.Quotient.Operations
-import Mathlib.RingTheory.Localization.FractionRing
+import Mathlib.NumberTheory.Padics.PadicVal.Basic
+import TauCeti.Algebra.Lie.UniversalEnveloping.Kostant.RootSubgroup.Triangular
 public import TauCeti.Algebra.AlgebraicGroup.Chevalley.Borel
-public import TauCeti.Algebra.AlgebraicGroup.Chevalley.Torus.Basic
-public import TauCeti.FieldTheory.IsAlgClosed.Units
-public import TauCeti.LinearAlgebra.Basis.DiagonalTorus.FieldEndomorphism
 
 /-!
 # Injectivity and distinctness of root subgroups of a Chevalley datum
 
-For the simply connected datum `TauCeti.DynkinType.scChevalleyDatum`, every root subgroup is a
-closed immersion over `ℤ` (`TauCeti.DynkinType.ChevalleyDatum.isClosedImmersion_rootSubgroup`). For
-a general `TauCeti.DynkinType.ChevalleyDatum`, closed immersion over nonreduced rings can fail (for
-example in the symmetric-square lattice of `SL₂` in characteristic `2`), yet:
-
-* over every *integral domain* `A`, `D.rootSubgroupPoints γ A` is injective
-  (`rootSubgroupPoints_injective`), proved over fields with divisible units via torus conjugation
-  since `D.coordinateRoot γ ≠ 0`, then transferred along
-  `A →+* FractionRing A →+* AlgebraicClosure (FractionRing A)`;
-* over *every commutative ring* `A`, opposite root subgroups intersect trivially
-  (`inf_range_rootSubgroupPoints_reflectionPerm_self_eq_bot`);
-* over *every nontrivial commutative ring* `A`, distinct root indices have incomparable and
-  distinct root subgroups (`range_rootSubgroupPoints_le_iff`,
-  `range_rootSubgroupPoints_injective`), proved by passing to an algebraic closure of a residue
-  field `A ⧸ 𝔪`.
+For `TauCeti.DynkinType.scChevalleyDatum`, every root subgroup is a closed immersion over `ℤ`
+(`TauCeti.DynkinType.isClosedImmersion_rootSubgroup_scChevalleyDatum`). For an arbitrary
+`TauCeti.DynkinType.ChevalleyDatum`, this module proves root-subgroup faithfulness and separation:
+`rootSubgroupPoints_injective`, `rootSubgroupPoints_eq_iff`, `rootSubgroupPoints_eq_one_iff`, and
+`inf_range_rootSubgroupPoints_reflectionPerm_self_eq_bot` over every commutative ring `A`, and
+`range_rootSubgroupPoints_le_iff`, `range_rootSubgroupPoints_injective`, and
+`range_rootSubgroupPoints_eq_iff` over every nontrivial commutative ring `A`.
 
 ## References
 
@@ -43,195 +33,231 @@ public section
 
 namespace TauCeti.DynkinType.ChevalleyDatum
 
-open Multiplicative
+open Multiplicative TauCeti.UniversalEnvelopingAlgebra
 
 universe v
 
 variable {t : DynkinType} {ht : t.Valid} (D : ChevalleyDatum t ht)
 
-/-! ## Coordinate roots in the character lattice -/
-
-/-- Embedding `D.coordinateRoot γ` from the chosen basis of `Λ(D)` into the full weight lattice
-recovers the root of `t.simplyConnectedRootDatum ht`. -/
-@[simp]
-theorem weightLatticeEmbedding_coordinateRoot (γ : Fin t.numRoots) :
-    D.weightLatticeEmbedding (D.coordinateRoot γ) = (t.simplyConnectedRootDatum ht).root γ := by
-  rw [coordinateRoot_def, weightLatticeEmbedding_repr]
-
-/-- Distinct root indices have distinct coordinate roots in `Λ(D)`. -/
-theorem coordinateRoot_injective : Function.Injective D.coordinateRoot := fun _ _ h =>
-  (t.simplyConnectedRootDatum ht).root.injective
-    (by simpa only [D.weightLatticeEmbedding_coordinateRoot] using
-      congrArg D.weightLatticeEmbedding h)
-
-/-- Every coordinate root of a Chevalley datum is nonzero. -/
-@[simp]
-theorem coordinateRoot_ne_zero (γ : Fin t.numRoots) : D.coordinateRoot γ ≠ 0 := fun h =>
-  (t.simplyConnectedRootDatum ht).ne_zero γ
-    (by simpa only [D.weightLatticeEmbedding_coordinateRoot, map_zero] using
-      congrArg D.weightLatticeEmbedding h)
-
-private theorem eq_or_eq_reflectionPerm_of_zsmul_coordinateRoot_eq {α β : Fin t.numRoots}
-    {a b : ℤ} (ha : a ≠ 0) (h : a • D.coordinateRoot α = b • D.coordinateRoot β) :
-    α = β ∨ α = (t.simplyConnectedRootDatum ht).reflectionPerm β β := by
-  let P := t.simplyConnectedRootDatum ht
-  have : P.IsReduced := t.isReduced_simplyConnectedRootDatum ht
-  have hroot : a • P.root α = b • P.root β := by
-    simpa only [map_zsmul, D.weightLatticeEmbedding_coordinateRoot] using
-      congrArg D.weightLatticeEmbedding h
-  have hdep : ¬ LinearIndependent ℤ ![P.root α, P.root β] := fun hli =>
-    ha ((LinearIndependent.pair_iff.mp hli a (-b) (by rw [neg_smul, hroot, add_neg_cancel])).1)
-  rcases RootPairing.IsReduced.eq_or_eq_neg (P := P) α β hdep with heq | hneg
-  · exact Or.inl (P.root.injective heq)
-  · exact Or.inr (P.root.injective (by
-      rw [RootPairing.root_reflectionPerm, RootPairing.reflection_apply_self, hneg]))
-
-/-- **Positive integer multiples of coordinate roots determine the root index.** Since the pinned
-root datum is reduced and no root is zero, `m • D.coordinateRoot α = d • D.coordinateRoot β` with
-`0 < m` forces `α = β` without any positivity hypothesis on `d`. -/
-theorem eq_of_nsmul_coordinateRoot_eq {α β : Fin t.numRoots} {m d : ℕ}
-    (hm : 0 < m) (h : m • D.coordinateRoot α = d • D.coordinateRoot β) : α = β := by
-  have hz : (m : ℤ) • D.coordinateRoot α = (d : ℤ) • D.coordinateRoot β := by
-    simpa only [natCast_zsmul] using h
-  rcases D.eq_or_eq_reflectionPerm_of_zsmul_coordinateRoot_eq (Int.natCast_ne_zero.mpr hm.ne') hz
-    with rfl | rfl
-  · rfl
-  · rw [D.coordinateRoot_reflectionPerm_self, smul_neg] at h
-    have hsum : (m + d) • D.coordinateRoot β = 0 := by rw [add_smul, ← h, add_neg_cancel]
-    exact (D.coordinateRoot_ne_zero β
-      ((smul_eq_zero.mp hsum).resolve_left (Nat.add_pos_left hm d).ne')).elim
-
 /-! ## Injectivity of root subgroups -/
 
-private theorem rootSubgroupPoints_injective_of_rootableBy (K : Type v) [Field K]
-    [RootableBy Kˣ ℕ] (γ : Fin t.numRoots) : Function.Injective (D.rootSubgroupPoints γ K) := by
-  rw [← MonoidHom.ker_eq_bot_iff, Subgroup.eq_bot_iff_forall]
-  intro u hu
-  rw [MonoidHom.mem_ker] at hu
-  by_contra hu1
-  have ha : toAdd u ≠ 0 := fun h0 => hu1 (toAdd.injective h0)
-  obtain ⟨s, hs⟩ :=
-    torusCharacter_surjective (D.coordinateRoot_ne_zero γ) (Units.mk0 (toAdd u) ha)⁻¹
-  dsimp only at hs
-  have hconj := D.torusPoints_conj_rootSubgroupPoints γ K s (toAdd u)
-  rw [ofAdd_toAdd, hu, mul_one, mul_inv_cancel, hs, Units.val_inv_eq_inv_val, Units.val_mk0,
-    inv_mul_cancel₀ ha] at hconj
-  exact D.rootSubgroupPoints_ofAdd_one_ne_one K γ hconj.symm
+private noncomputable abbrev simpleOp (i : Fin t.rank) :=
+  D.representation (_root_.UniversalEnvelopingAlgebra.ι ℚ ((t.lieBasis ht).rootGenerator (.inl i)))
 
-/-- **Every root subgroup of a Chevalley datum is injective over an integral domain.**
-This embeds `A` into an algebraic closure of its fraction field and transfers faithfulness via
-`D.map_rootSubgroupPoints`. -/
-theorem rootSubgroupPoints_injective (A : Type v) [CommRing A] [IsDomain A]
-    (γ : Fin t.numRoots) : Function.Injective (D.rootSubgroupPoints γ A) := by
-  let F := FractionRing A
-  let K := AlgebraicClosure F
-  let φ : A →+* K := (algebraMap F K).comp (algebraMap A F)
-  have hφ : Function.Injective φ :=
-    (RingHom.injective (algebraMap F K)).comp (IsFractionRing.injective A F)
-  intro u₁ u₂ h
-  have hmap := congrArg ((D.pointsPresentation A).map (D.pointsPresentation K) φ) h
-  rw [D.map_rootSubgroupPoints, D.map_rootSubgroupPoints] at hmap
-  have heq := D.rootSubgroupPoints_injective_of_rootableBy K γ hmap
-  exact toAdd.injective (hφ (toAdd_ofAdd _ ▸ toAdd_ofAdd _ ▸ congrArg toAdd heq))
+private noncomputable def simpleDivPowEnd (i : Fin t.rank) (n : ℕ) : Module.End ℤ D.lattice :=
+  integralDividedPower (D.simpleOp i) D.lattice n fun _ hv =>
+    dividedPower_apply_mem_of_kostantForm_apply_mem (t.lieBasis ht).rootGenerator
+      (t.lieBasis ht).h D.representation D.representation_mem_lattice (.inl i) n hv
 
-@[simp]
-theorem rootSubgroupPoints_eq_one_iff (A : Type v) [CommRing A] [IsDomain A]
-    (γ : Fin t.numRoots) (u : Multiplicative A) :
-    D.rootSubgroupPoints γ A u = 1 ↔ u = 1 :=
+private noncomputable def simpleDivPowMat (i : Fin t.rank) (n : ℕ) :
+    Matrix (Fin D.dim) (Fin D.dim) ℤ :=
+  LinearMap.toMatrixAlgEquiv D.basis (D.simpleDivPowEnd i n)
+
+private theorem simpleDivPowMat_pow (i : Fin t.rank) (n : ℕ) :
+    D.simpleDivPowMat i 1 ^ n = n.factorial • D.simpleDivPowMat i n := by
+  have hend : ∀ m, D.simpleDivPowEnd i 1 ^ m = m.factorial • D.simpleDivPowEnd i m := Nat.rec
+    (by simp [simpleDivPowEnd]) fun m ih => by
+      rw [pow_succ, ih, smul_mul_assoc, simpleDivPowEnd, simpleDivPowEnd, mul_integralDividedPower,
+        smul_smul, Nat.choose_succ_self_right, Nat.factorial_succ, mul_comm]; rfl
+  simpa only [simpleDivPowMat, map_pow, map_nsmul]
+    using congrArg (LinearMap.toMatrixAlgEquiv D.basis) (hend n)
+
+private theorem simpleDivPowMat_eq_zero_of_weight_ne (i : Fin t.rank) {r s : Fin D.dim} {n : ℕ}
+    (hrs : D.weight r ≠
+      D.weight s + n • (t.simplyConnectedRootDatum ht).root (t.simpleIndex ht i)) :
+    D.simpleDivPowMat i n r s = 0 := by
+  rw [simpleDivPowMat, LinearMap.toMatrixAlgEquiv_apply, simpleDivPowEnd]
+  exact repr_integralDividedPower_eq_zero_of_weight_ne (t.lieBasis ht).rootGenerator
+    (t.lieBasis ht).h D.representation D.lattice D.representation_mem_lattice D.basis D.weight
+    D.isCartanWeightVector_basis (fun j => by
+      rw [t.lie_lieBasis_h_rootGenerator ht (.inl i) j,
+        t.rootGeneratorWeight_inl_eq_root_simpleIndex ht i]) hrs
+
+private theorem simpleRootSubgroup_matrix_eq_sum (i : Fin t.rank) (A : Type*) [CommRing A]
+    (u : A) : ((D.rootSubgroupPoints (t.simpleIndex ht i) A (ofAdd u) :
+        Matrix.GeneralLinearGroup (Fin D.dim) A) : Matrix (Fin D.dim) (Fin D.dim) A) =
+      ∑ k ∈ Finset.range (nilpotencyClass (D.simpleOp i) + 2),
+        u ^ k • (D.simpleDivPowMat i k).map (Int.cast : ℤ → A) := by
+  rw [D.coe_rootSubgroupPoints_simpleIndex]
+  simpa only [MulEquiv.apply_symm_apply, toAdd_ofAdd] using
+    kostantRootSubgroupMatrix_eq_sum (t.lieBasis ht).rootGenerator (t.lieBasis ht).h
+      D.representation D.lattice D.representation_mem_lattice (.inl i)
+      (D.isNilpotent_representation_rootGenerator (.inl i)) D.basis
+      (nilpotencyClass (D.simpleOp i) + 2) (D.simpleDivPowMat i) (Nat.le_add_right _ 2)
+      (fun k _ s => by
+        rw [← D.basis.sum_repr (integralDividedPower _ D.lattice k _ (D.basis s))]
+        exact Finset.sum_congr rfl fun r _ => by
+          simp only [simpleDivPowMat, simpleDivPowEnd, LinearMap.toMatrixAlgEquiv_apply])
+      ((AdditiveGroup.gaPointsMulEquiv (R := ℤ) (A := A)).symm (ofAdd u))
+
+private theorem exists_bezout_simpleDivPowMat_one (i : Fin t.rank) :
+    ∃ c : Fin D.dim × Fin D.dim → ℤ,
+      ∑ pq : Fin D.dim × Fin D.dim, c pq * D.simpleDivPowMat i 1 pq.1 pq.2 = 1 := by
+  let I : Ideal ℤ := Ideal.span (Set.range fun pq : Fin D.dim × Fin D.dim =>
+    D.simpleDivPowMat i 1 pq.1 pq.2)
+  have hI : I = ⊤ := by_contra fun hne => by
+    obtain ⟨p, hp, hdiv⟩ : ∃ p : ℕ, p.Prime ∧ ∀ r s, (p : ℤ) ∣ D.simpleDivPowMat i 1 r s := by
+      let d := Submodule.IsPrincipal.generator I
+      have hdI : Ideal.span {d} = I := Submodule.IsPrincipal.span_singleton_generator I
+      have hd r s : d ∣ D.simpleDivPowMat i 1 r s :=
+        Ideal.mem_span_singleton.mp (hdI.symm ▸ Ideal.subset_span ⟨(r, s), rfl⟩)
+      by_cases hd0 : d.natAbs = 0
+      · exact ⟨2, Nat.prime_two, fun r s => by
+          have h0 := hd r s; rw [Int.natAbs_eq_zero.mp hd0, zero_dvd_iff] at h0; simp [h0]⟩
+      · exact ⟨d.natAbs.minFac, Nat.minFac_prime fun h1 => hne (by
+          rw [← Submodule.IsPrincipal.span_singleton_generator I, Ideal.span_singleton_eq_top]
+          exact Int.isUnit_iff_natAbs_eq.mpr h1),
+          fun r s => (Int.natCast_dvd.mpr (Nat.minFac_dvd d.natAbs)).trans (hd r s)⟩
+    have hpow_div : ∀ n r s, (p : ℤ) ^ n ∣ (D.simpleDivPowMat i 1 ^ n) r s := Nat.rec
+      (fun _ _ => by simp) fun n ih r s => by
+        rw [pow_succ, pow_succ, Matrix.mul_apply]
+        exact Finset.dvd_sum fun k _ => mul_dvd_mul (ih r k) (hdiv k s)
+    have : Fact p.Prime := ⟨hp⟩
+    have hdiv_all (n : ℕ) (hn : n ≠ 0) (r s : Fin D.dim) : (p : ℤ) ∣ D.simpleDivPowMat i n r s := by
+      have hdvdN : p ^ n ∣ n.factorial * (D.simpleDivPowMat i n r s).natAbs := by
+        rw [← Int.natCast_dvd_natCast, Nat.cast_mul, Nat.cast_pow]
+        simpa only [D.simpleDivPowMat_pow i n, Matrix.smul_apply, nsmul_eq_mul, Int.natAbs_mul,
+          Int.natAbs_natCast, Nat.cast_mul] using Int.dvd_natAbs.mpr (hpow_div n r s)
+      by_contra hndvd
+      have hcop := (hp.coprime_iff_not_dvd.mpr fun h => hndvd (Int.natCast_dvd.mpr h)).pow_left n
+      have hfin := Nat.finiteMultiplicity_iff.mpr ⟨hp.ne_one, Nat.factorial_pos n⟩
+      exact (not_lt_of_ge (hfin.pow_dvd_iff_le_multiplicity.mp (hcop.dvd_of_dvd_mul_right hdvdN)))
+        (multiplicity_factorial_lt_of_ne_zero p hn)
+    refine D.rootSubgroupPoints_ofAdd_one_ne_one (ZMod p) (t.simpleIndex ht i)
+      (Subtype.ext (Matrix.GeneralLinearGroup.ext fun r s => ?_))
+    rw [D.simpleRootSubgroup_matrix_eq_sum i (ZMod p) 1, Finset.sum_range_succ']
+    have hM0 : D.simpleDivPowMat i 0 = 1 := by simp [simpleDivPowMat, simpleDivPowEnd]
+    have hsum0 : ∑ k ∈ Finset.range (nilpotencyClass (D.simpleOp i) + 1),
+        ((1 : ZMod p) ^ (k + 1) • (D.simpleDivPowMat i (k + 1)).map
+          (Int.cast : ℤ → ZMod p)) r s = 0 := Finset.sum_eq_zero fun k _ => by
+      simpa only [one_pow, one_smul, Matrix.map_apply] using
+        (ZMod.intCast_zmod_eq_zero_iff_dvd _ p).mpr (hdiv_all (k + 1) (Nat.succ_ne_zero k) r s)
+    simp only [Matrix.add_apply, Matrix.sum_apply, hsum0, zero_add, pow_zero, one_smul, hM0,
+      Matrix.map_one Int.cast Int.cast_zero Int.cast_one, Subgroup.coe_one, Units.val_one]
+  obtain ⟨c, hc⟩ := Ideal.mem_span_range_iff_exists_fun.mp
+    (hI.symm ▸ Submodule.mem_top : (1 : ℤ) ∈ I)
+  exact ⟨c, by simpa only [smul_eq_mul] using hc⟩
+
+private theorem rootSubgroupPoints_simpleIndex_injective (A : Type v) [CommRing A]
+    (i : Fin t.rank) : Function.Injective (D.rootSubgroupPoints (t.simpleIndex ht i) A) := by
+  obtain ⟨c, hc⟩ := D.exists_bezout_simpleDivPowMat_one i
+  let α := (t.simplyConnectedRootDatum ht).root (t.simpleIndex ht i)
+  let S := Finset.univ.filter fun pq : Fin D.dim × Fin D.dim => D.weight pq.1 = D.weight pq.2 + α
+  let mat (u : A) : Matrix (Fin D.dim) (Fin D.dim) A :=
+    ((D.rootSubgroupPoints (t.simpleIndex ht i) A (ofAdd u) :
+      Matrix.GeneralLinearGroup (Fin D.dim) A) : Matrix (Fin D.dim) (Fin D.dim) A)
+  have hcS : ∑ pq ∈ S, c pq * D.simpleDivPowMat i 1 pq.1 pq.2 = 1 := by
+    rw [← hc]; refine Finset.sum_subset (Finset.subset_univ S) fun pq _ hpq => by
+      rw [D.simpleDivPowMat_eq_zero_of_weight_ne i
+        (by simpa only [S, Finset.mem_filter, Finset.mem_univ, true_and, one_smul] using hpq),
+        mul_zero]
+  have hentry (u : A) {pq} (hpq : pq ∈ S) :
+      mat u pq.1 pq.2 = u * (D.simpleDivPowMat i 1 pq.1 pq.2 : A) := by
+    have hwt : D.weight pq.1 = D.weight pq.2 + α := (Finset.mem_filter.mp hpq).2
+    dsimp only [mat]
+    rw [D.simpleRootSubgroup_matrix_eq_sum i A u, Matrix.sum_apply, Finset.sum_eq_single 1]
+    · simp only [pow_one, Matrix.smul_apply, Matrix.map_apply, smul_eq_mul]
+    · intro k _ hk1
+      have hne : D.weight pq.1 ≠ D.weight pq.2 + k • α := fun heq => hk1 (by
+        have h1k : 1 • α = k • α := add_left_cancel (by rw [one_smul, ← hwt, heq])
+        have h0 : (1 : ℤ) - k = 0 := (smul_eq_zero.mp (by
+          rw [sub_smul, one_smul, natCast_zsmul, ← h1k, one_smul, sub_self])).resolve_right
+          ((t.simplyConnectedRootDatum ht).ne_zero _)
+        omega)
+      simp only [Matrix.smul_apply, Matrix.map_apply, smul_eq_mul,
+        D.simpleDivPowMat_eq_zero_of_weight_ne i hne, Int.cast_zero, mul_zero]
+    · exact fun habs => (habs (Finset.mem_range.mpr (by omega))).elim
+  have hrecover (u : A) : ∑ pq ∈ S, (c pq : A) * mat u pq.1 pq.2 = u := by
+    calc ∑ pq ∈ S, (c pq : A) * mat u pq.1 pq.2
+      _ = u * ((∑ pq ∈ S, c pq * D.simpleDivPowMat i 1 pq.1 pq.2 : ℤ) : A) := by
+        rw [Int.cast_sum, Finset.mul_sum]
+        exact Finset.sum_congr rfl fun pq hpq => by rw [hentry u hpq, Int.cast_mul]; ring
+      _ = u := by rw [hcS, Int.cast_one, mul_one]
+  intro u₁ u₂ h; refine toAdd.injective ?_
+  rw [← hrecover (toAdd u₁), ← hrecover (toAdd u₂)]; simp only [mat, ofAdd_toAdd, h]
+
+/-- **Every root subgroup of a Chevalley datum is injective over every commutative ring.** -/
+theorem rootSubgroupPoints_injective (A : Type v) [CommRing A] (γ : Fin t.numRoots) :
+    Function.Injective (D.rootSubgroupPoints γ A) :=
+  D.rootSubgroupPoints_injective_of_simple A (D.rootSubgroupPoints_simpleIndex_injective A) γ
+
+/-- Equality of elements in a root subgroup is equivalent to equality of their parameters. -/
+@[simp] theorem rootSubgroupPoints_eq_iff (A : Type v) [CommRing A] (γ : Fin t.numRoots)
+    {u v : Multiplicative A} : D.rootSubgroupPoints γ A u = D.rootSubgroupPoints γ A v ↔ u = v :=
+  (D.rootSubgroupPoints_injective A γ).eq_iff
+
+/-- A root-subgroup element is trivial if and only if its parameter is `1`. -/
+@[simp] theorem rootSubgroupPoints_eq_one_iff (A : Type v) [CommRing A] (γ : Fin t.numRoots)
+    (u : Multiplicative A) : D.rootSubgroupPoints γ A u = 1 ↔ u = 1 :=
   map_eq_one_iff (D.rootSubgroupPoints γ A) (D.rootSubgroupPoints_injective A γ)
 
 /-! ## Trivial intersection of opposite root subgroups and distinctness -/
 
-private theorem eq_one_of_mem_posRoots_of_mem_range_reflectionPerm_self {A : Type v} [CommRing A]
-    {γ : Fin t.numRoots} (hpos : γ ∈ posRoots (t.rationalRootSystem ht) (t.rationalBase ht))
-    {g : D.points A} (hg : g ∈ (D.rootSubgroupPoints γ A).range)
-    (hg' : g ∈ (D.rootSubgroupPoints
-      ((t.simplyConnectedRootDatum ht).reflectionPerm γ γ) A).range) : g = 1 := by
-  obtain ⟨u, rfl⟩ := hg; obtain ⟨v, hv⟩ := hg'
-  have hneg : (t.simplyConnectedRootDatum ht).reflectionPerm γ γ ∈
-      negRoots (t.rationalRootSystem ht) (t.rationalBase ht) := by
-    rw [← t.reflectionPerm_rationalRootSystem ht]
-    exact (reflectionPerm_self_mem_negRoots_iff_mem_posRoots _ _ _).mpr hpos
-  have hB : D.rootSubgroupPoints _ A v ∈ D.borelSubgroup A :=
-    hv ▸ D.positivePoints_le_borelSubgroup A (D.rootSubgroupPoints_mem_positivePoints A hpos u)
-  exact hv ▸ (D.rootSubgroupPoints_mem_borelSubgroup_iff_of_mem_negRoots A hneg v).mp hB
-
-/-- **Opposite root subgroups intersect trivially over every commutative ring.** One of the two
-roots is positive and the other is negative, and negative root elements in `D.borelSubgroup A` are
-trivial. -/
-theorem inf_range_rootSubgroupPoints_reflectionPerm_self_eq_bot (A : Type v) [CommRing A]
-    (γ : Fin t.numRoots) :
-    (D.rootSubgroupPoints γ A).range ⊓
+/-- **Opposite root subgroups intersect trivially over every commutative ring.** -/
+@[simp] theorem inf_range_rootSubgroupPoints_reflectionPerm_self_eq_bot (A : Type v) [CommRing A]
+    (γ : Fin t.numRoots) : (D.rootSubgroupPoints γ A).range ⊓
       (D.rootSubgroupPoints ((t.simplyConnectedRootDatum ht).reflectionPerm γ γ) A).range = ⊥ := by
-  rw [Subgroup.eq_bot_iff_forall]
-  rintro g ⟨hg, hg'⟩
-  rcases mem_posRoots_or_mem_negRoots (t.rationalRootSystem ht) (t.rationalBase ht) γ with
-    hpos | hneg
-  · exact D.eq_one_of_mem_posRoots_of_mem_range_reflectionPerm_self hpos hg hg'
-  · have hinv₁ : (t.rationalRootSystem ht).reflectionPerm
-        ((t.rationalRootSystem ht).reflectionPerm γ γ)
-        ((t.rationalRootSystem ht).reflectionPerm γ γ) = γ := reflectionPerm_self_involutive _ γ
-    have hinv₂ : (t.simplyConnectedRootDatum ht).reflectionPerm
+  have hpos {δ} (hd : δ ∈ posRoots (t.rationalRootSystem ht) (t.rationalBase ht)) {g : D.points A}
+      (hg : g ∈ (D.rootSubgroupPoints δ A).range)
+      (hg' : g ∈ (D.rootSubgroupPoints
+        ((t.simplyConnectedRootDatum ht).reflectionPerm δ δ) A).range) : g = 1 := by
+    obtain ⟨u, rfl⟩ := hg; obtain ⟨v, hv⟩ := hg'
+    have hneg : (t.simplyConnectedRootDatum ht).reflectionPerm δ δ ∈
+        negRoots (t.rationalRootSystem ht) (t.rationalBase ht) := by
+      rw [← t.reflectionPerm_rationalRootSystem ht]
+      exact (reflectionPerm_self_mem_negRoots_iff_mem_posRoots _ _ _).mpr hd
+    exact hv ▸ (D.rootSubgroupPoints_mem_borelSubgroup_iff_of_mem_negRoots A hneg v).mp
+      (hv ▸ D.positivePoints_le_borelSubgroup A (D.rootSubgroupPoints_mem_positivePoints A hd u))
+  rw [Subgroup.eq_bot_iff_forall]; rintro g ⟨hg, hg'⟩
+  rcases mem_posRoots_or_mem_negRoots (t.rationalRootSystem ht) (t.rationalBase ht) γ with h | h
+  · exact hpos h hg hg'
+  · have hinv : (t.simplyConnectedRootDatum ht).reflectionPerm
         ((t.simplyConnectedRootDatum ht).reflectionPerm γ γ)
         ((t.simplyConnectedRootDatum ht).reflectionPerm γ γ) = γ :=
       reflectionPerm_self_involutive _ γ
-    have hpos' : (t.simplyConnectedRootDatum ht).reflectionPerm γ γ ∈
-        posRoots (t.rationalRootSystem ht) (t.rationalBase ht) := by
-      rw [← t.reflectionPerm_rationalRootSystem ht,
-        ← reflectionPerm_self_mem_negRoots_iff_mem_posRoots]
-      rwa [hinv₁]
-    exact D.eq_one_of_mem_posRoots_of_mem_range_reflectionPerm_self hpos' hg' (by rwa [hinv₂])
+    refine hpos (by rw [← t.reflectionPerm_rationalRootSystem ht,
+      reflectionPerm_self_mem_posRoots_iff_mem_negRoots]; exact h) hg' (by rwa [hinv])
 
 private theorem eq_of_rootSubgroupPoints_ofAdd_one_mem_range (K : Type v) [Field K] [Infinite K]
     {α β : Fin t.numRoots}
     (hmem : D.rootSubgroupPoints α K (ofAdd 1) ∈ (D.rootSubgroupPoints β K).range) : α = β := by
   obtain ⟨b, hb⟩ := hmem
-  have hb0 : toAdd b ≠ 0 := fun h0 => by
-    have hb1 : b = 1 := toAdd.injective h0; rw [hb1, map_one] at hb
-    exact D.rootSubgroupPoints_ofAdd_one_ne_one K α hb.symm
+  have hb0 : toAdd b ≠ 0 := fun h0 => D.rootSubgroupPoints_ofAdd_one_ne_one K α
+    (by rw [← hb, toAdd.injective (h0.trans toAdd_one.symm), map_one])
   obtain ⟨d, hd, z, hz⟩ := exists_nsmul_eq_zsmul_of_torusCharacter_eq_one_imp
     (ξ := D.coordinateRoot α) (η := D.coordinateRoot β) fun s hs => by
       have hconj := congrArg (fun g => D.torusPoints K s * g * (D.torusPoints K s)⁻¹) hb
       rw [← ofAdd_toAdd b, D.torusPoints_conj_rootSubgroupPoints,
         D.torusPoints_conj_rootSubgroupPoints, hs, Units.val_one, one_mul, ← hb] at hconj
-      have hval : (torusCharacter s (D.coordinateRoot β) : K) * toAdd b = 1 * toAdd b := by
-        simpa only [one_mul, toAdd_ofAdd] using
-          congrArg toAdd (D.rootSubgroupPoints_injective K β hconj)
-      exact Units.ext (mul_right_cancel₀ hb0 hval)
-  have hz' : (d : ℤ) • D.coordinateRoot β = z • D.coordinateRoot α := by
-    simpa only [natCast_zsmul] using hz
-  rcases D.eq_or_eq_reflectionPerm_of_zsmul_coordinateRoot_eq (Int.natCast_ne_zero.mpr hd.ne') hz'
-    with rfl | rfl
+      exact Units.ext (mul_right_cancel₀ hb0
+        (by simpa using congrArg toAdd (D.rootSubgroupPoints_injective K β hconj)))
+  rcases D.eq_or_eq_reflectionPerm_of_zsmul_coordinateRoot_eq (b := z)
+      (Int.natCast_ne_zero.mpr hd.ne') (by simpa only [natCast_zsmul] using hz) with rfl | rfl
   · rfl
-  · have hbot : D.rootSubgroupPoints α K (ofAdd 1) ∈ (⊥ : Subgroup (D.points K)) := by
-      rw [← D.inf_range_rootSubgroupPoints_reflectionPerm_self_eq_bot K α]
-      exact ⟨⟨ofAdd 1, rfl⟩, ⟨b, hb⟩⟩
-    exact (D.rootSubgroupPoints_ofAdd_one_ne_one K α (Subgroup.mem_bot.mp hbot)).elim
+  · exact (D.rootSubgroupPoints_ofAdd_one_ne_one K α (Subgroup.mem_bot.mp
+      ((D.inf_range_rootSubgroupPoints_reflectionPerm_self_eq_bot K α).symm ▸
+        ⟨⟨ofAdd 1, rfl⟩, ⟨b, hb⟩⟩))).elim
 
 /-- **Over any nontrivial commutative ring, one root subgroup is contained in another only at the
-same root.** Passing to an algebraic closure of a residue field `A ⧸ 𝔪` reduces to the
-infinite-field case. -/
-@[simp]
-theorem range_rootSubgroupPoints_le_iff (A : Type v) [CommRing A] [Nontrivial A]
+same root.** -/
+@[simp] theorem range_rootSubgroupPoints_le_iff (A : Type v) [CommRing A] [Nontrivial A]
     {α β : Fin t.numRoots} :
-    (D.rootSubgroupPoints α A).range ≤ (D.rootSubgroupPoints β A).range ↔ α = β := by
-  refine ⟨fun hle => ?_, fun h => h ▸ le_rfl⟩
-  obtain ⟨b, hb⟩ := hle ⟨ofAdd 1, rfl⟩
-  obtain ⟨𝔪, _⟩ := Ideal.exists_maximal A
-  let _ : Field (A ⧸ 𝔪) := Ideal.Quotient.field 𝔪
-  let K := AlgebraicClosure (A ⧸ 𝔪)
-  let φ : A →+* K := (algebraMap (A ⧸ 𝔪) K).comp (Ideal.Quotient.mk 𝔪)
-  have hmap := congrArg ((D.pointsPresentation A).map (D.pointsPresentation K) φ) hb
-  rw [D.map_rootSubgroupPoints, D.map_rootSubgroupPoints, toAdd_ofAdd, map_one] at hmap
-  exact D.eq_of_rootSubgroupPoints_ofAdd_one_mem_range K ⟨_, hmap⟩
+    (D.rootSubgroupPoints α A).range ≤ (D.rootSubgroupPoints β A).range ↔ α = β :=
+  ⟨fun hle => by
+    obtain ⟨b, hb⟩ := hle ⟨ofAdd 1, rfl⟩; obtain ⟨𝔪, _⟩ := Ideal.exists_maximal A
+    let _ : Field (A ⧸ 𝔪) := Ideal.Quotient.field 𝔪; let K := AlgebraicClosure (A ⧸ 𝔪)
+    have hmap := congrArg ((D.pointsPresentation A).map (D.pointsPresentation K)
+      ((algebraMap (A ⧸ 𝔪) K).comp (Ideal.Quotient.mk 𝔪))) hb
+    rw [D.map_rootSubgroupPoints, D.map_rootSubgroupPoints, toAdd_ofAdd, map_one] at hmap
+    exact D.eq_of_rootSubgroupPoints_ofAdd_one_mem_range K ⟨_, hmap⟩, fun h => h ▸ le_rfl⟩
 
 /-- **Over any nontrivial commutative ring, distinct root indices give distinct root subgroups.** -/
 theorem range_rootSubgroupPoints_injective (A : Type v) [CommRing A] [Nontrivial A] :
     Function.Injective fun α : Fin t.numRoots => (D.rootSubgroupPoints α A).range :=
   fun _ _ h => (D.range_rootSubgroupPoints_le_iff A).mp h.le
 
-@[simp]
-theorem range_rootSubgroupPoints_eq_iff (A : Type v) [CommRing A] [Nontrivial A]
+/-- Over any nontrivial commutative ring, two root subgroups coincide iff they share a root. -/
+@[simp] theorem range_rootSubgroupPoints_eq_iff (A : Type v) [CommRing A] [Nontrivial A]
     {α β : Fin t.numRoots} :
     (D.rootSubgroupPoints α A).range = (D.rootSubgroupPoints β A).range ↔ α = β :=
   (D.range_rootSubgroupPoints_injective A).eq_iff

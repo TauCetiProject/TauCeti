@@ -407,6 +407,41 @@ theorem exists_torusCharacter_ne {K : Type*} [Field K] [Infinite K] {μ ν : κ 
     (h : μ ≠ ν) : ∃ s : κ → Kˣ, torusCharacter s μ ≠ torusCharacter s ν := by
   simpa only [weightChar_apply] using DFunLike.ne_iff.mp (weightChar_injective.ne h)
 
+/-- **Kernel inclusion between split-torus characters over an infinite field forces rational
+proportionality.** If every torus point killed by `ξ` is also killed by `η`, then `d • η = m • ξ`
+for some integer `m` and positive natural number `d`. -/
+theorem exists_nsmul_eq_zsmul_of_torusCharacter_eq_one_imp {K : Type*} [Field K] [Infinite K]
+    {ξ η : κ → ℤ} (hker : ∀ s : κ → Kˣ, torusCharacter s ξ = 1 → torusCharacter s η = 1) :
+    ∃ d : ℕ, 0 < d ∧ ∃ m : ℤ, d • η = m • ξ := by
+  classical
+  by_cases hξ : ξ = 0
+  · subst hξ
+    have hη : η = 0 := by_contra fun hη0 => by
+      obtain ⟨s, hs⟩ := exists_torusCharacter_ne (K := K) hη0
+      exact hs ((hker s (torusCharacter_zero s)).trans (torusCharacter_zero s).symm)
+    exact ⟨1, Nat.one_pos, 0, by simp [hη]⟩
+  obtain ⟨i₀, hi₀⟩ := Function.ne_iff.mp hξ
+  have hprop : ξ i₀ • η = η i₀ • ξ := by_contra fun hne => by
+    obtain ⟨i₁, hi₁⟩ := Function.ne_iff.mp hne
+    let δ : ℤ := ξ i₀ * η i₁ - η i₀ * ξ i₁
+    obtain ⟨t, ht⟩ := exists_torusCharacter_ne (K := K) (μ := Pi.single i₀ δ) (ν := 0) fun h0 =>
+      sub_ne_zero.mpr hi₁ (by simpa using congrFun h0 i₀)
+    simp only [torusCharacter_single, torusCharacter_zero] at ht
+    let s : κ → Kˣ := Pi.mulSingle i₀ (t i₀ ^ (-ξ i₁)) * Pi.mulSingle i₁ (t i₀ ^ (ξ i₀))
+    have hsξ : torusCharacter s ξ = 1 := by
+      rw [torusCharacter_mul, torusCharacter_mulSingle, torusCharacter_mulSingle,
+        ← zpow_mul, ← zpow_mul, ← zpow_add, neg_mul, mul_comm (ξ i₁), neg_add_cancel, zpow_zero]
+    have hδ : -ξ i₁ * η i₀ + ξ i₀ * η i₁ = δ := by dsimp [δ]; ring
+    have hsη := hker s hsξ
+    rw [torusCharacter_mul, torusCharacter_mulSingle, torusCharacter_mulSingle,
+      ← zpow_mul, ← zpow_mul, ← zpow_add, hδ] at hsη
+    exact ht hsη
+  rcases lt_or_gt_of_ne hi₀ with hneg | hpos
+  · refine ⟨(-ξ i₀).toNat, Int.lt_toNat.mpr (neg_pos.mpr hneg), -η i₀, ?_⟩
+    rw [← natCast_zsmul, Int.toNat_of_nonneg (neg_nonneg.mpr hneg.le), neg_smul, hprop, neg_smul]
+  · refine ⟨(ξ i₀).toNat, Int.lt_toNat.mpr hpos, η i₀, ?_⟩
+    rw [← natCast_zsmul, Int.toNat_of_nonneg hpos.le, hprop]
+
 /-- The weight characters of a field that is a `ℚ`-algebra separate weights: such a field has
 characteristic zero, hence infinitely many elements. -/
 theorem weightChar_injective_of_algebraRat (k : Type*) [Field k] [Algebra ℚ k] :

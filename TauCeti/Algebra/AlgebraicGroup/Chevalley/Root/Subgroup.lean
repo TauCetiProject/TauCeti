@@ -242,6 +242,26 @@ theorem weylElement_conj_rootSubgroupPoints (i : Fin t.rank) (γ : Fin t.numRoot
     D.representation_mem_lattice D.isNilpotent_representation_rootGenerator i γ
     (CommAlgCat.of ℤ A) u)
 
+open Multiplicative in
+/-- Conjugation by `D.weylElement (t.simpleIndex ht i) A 1` maps each root subgroup onto the
+reflected root subgroup, over every commutative ring `A`. -/
+@[simp] theorem map_range_rootSubgroupPoints_conj_weylElement (i : Fin t.rank) (A : Type v)
+    [CommRing A] (γ : Fin t.numRoots) :
+    (D.rootSubgroupPoints γ A).range.map
+        (MulAut.conj (D.weylElement (t.simpleIndex ht i) A 1) : D.points A →* D.points A) =
+      (D.rootSubgroupPoints
+        ((t.simplyConnectedRootDatum ht).reflectionPerm (t.simpleIndex ht i) γ) A).range := by
+  let ε : ℤˣ := t.chevalleyWeylSign ht (t.simpleIndex ht i) γ
+  refine le_antisymm (fun _ ⟨_, ⟨u, rfl⟩, hu⟩ => ⟨ofAdd (((ε : ℤ) : A) * toAdd u), by
+    rw [← hu, MonoidHom.coe_ofClass, MulAut.conj_apply]
+    conv_rhs => rw [← ofAdd_toAdd u, D.weylElement_conj_rootSubgroupPoints]⟩)
+    (fun _ ⟨u, hu⟩ => ⟨D.rootSubgroupPoints γ A (ofAdd ((((ε⁻¹ : ℤˣ) : ℤ) : A) * toAdd u)),
+      ⟨_, rfl⟩, by
+        have hε : ((ε : ℤ) : A) * (((ε⁻¹ : ℤˣ) : ℤ) : A) = 1 := by
+          rw [← Int.cast_mul, Units.mul_inv, Int.cast_one]
+        rw [MonoidHom.coe_ofClass, MulAut.conj_apply, D.weylElement_conj_rootSubgroupPoints,
+          ← mul_assoc, hε, one_mul, ofAdd_toAdd, hu]⟩)
+
 /-- A root subgroup of the datum is injective exactly when the underlying divided-power
 exponential on the base-changed lattice is. -/
 theorem rootSubgroupPoints_injective_iff (γ : Fin t.numRoots) (A : Type v) [CommRing A] :

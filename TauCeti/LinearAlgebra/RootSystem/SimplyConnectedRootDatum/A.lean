@@ -11,6 +11,7 @@ public import TauCeti.LinearAlgebra.RootSystem.SimplyConnectedRootDatum.Basic
 import TauCeti.Algebra.Group.AffineSequence
 import TauCeti.Algebra.Group.Submonoid.Telescoping
 import TauCeti.Data.Fin.DistinctPairs
+import TauCeti.LinearAlgebra.LinearEquiv.Basic
 import TauCeti.LinearAlgebra.RootSystem.Swap
 
 /-!
@@ -113,6 +114,9 @@ hypotheses this simply connected datum does not carry.
   involution, and is nontrivial as soon as the chain has two nodes.
 * `TauCeti.DynkinType.support_map_typeASimplyConnectedBase_typeAGraphAut`: it preserves the pinned
   base.
+* `TauCeti.DynkinType.aut_typeASimplyConnectedRootDatum_one_eq_one_or_reflection` and
+  `TauCeti.DynkinType.aut_typeASimplyConnectedRootDatum_one_mul_comm`: in rank `1`, the
+  automorphism group consists solely of `1` and the simple reflection, and is abelian.
 
 ## References
 
@@ -770,6 +774,64 @@ of the root system. -/
       (hmem l (mem_typeASimplyConnectedBase_support.mp hl))
   · rw [mem_typeASimplyConnectedBase_support, hsymm]
     exact hmem k (mem_typeASimplyConnectedBase_support.mp hk)
+
+/-! ## Automorphisms of the simply connected `A₁` root datum -/
+
+/-- On `typeASimplyConnectedRootDatum 1`, the weight map of the simple reflection is `-id`. -/
+@[simp] theorem reflection_typeASimplyConnectedRootDatum_one_weightMap :
+    (RootPairing.Equiv.reflection (typeASimplyConnectedRootDatum 1)
+      (typeASimpleIndex 1 0)).toHom.weightMap = -LinearMap.id :=
+  LinearMap.ext fun x => funext fun k => by
+    rcases Subsingleton.elim k 0 with rfl
+    have hroot : (typeASimplyConnectedRootDatum 1).root (typeASimpleIndex 1 0) 0 = 2 := by
+      rw [root_typeASimpleIndex]; simp [CartanMatrix.A]
+    simp only [← RootPairing.Equiv.weightEquiv_apply, RootPairing.Equiv.reflection_weightEquiv,
+      RootPairing.reflection_apply, RootPairing.coroot', LinearMap.flip_apply,
+      toLinearMap_typeASimplyConnectedRootDatum, coroot_typeASimpleIndex 0, dotProduct_single,
+      LinearMap.neg_apply, LinearMap.id_apply, Pi.neg_apply, Pi.sub_apply, Pi.smul_apply, hroot,
+      smul_eq_mul, mul_one]; ring
+
+/-- On `typeASimplyConnectedRootDatum 1`, the coweight map of the simple reflection is `-id`. -/
+@[simp] theorem reflection_typeASimplyConnectedRootDatum_one_coweightMap :
+    (RootPairing.Equiv.reflection (typeASimplyConnectedRootDatum 1)
+      (typeASimpleIndex 1 0)).toHom.coweightMap = -LinearMap.id :=
+  LinearMap.ext fun y => funext fun k => by
+    rcases Subsingleton.elim k 0 with rfl
+    have hroot : (typeASimplyConnectedRootDatum 1).root (typeASimpleIndex 1 0) 0 = 2 := by
+      rw [root_typeASimpleIndex]; simp [CartanMatrix.A]
+    simp only [← RootPairing.Equiv.coweightEquiv_apply, RootPairing.Equiv.reflection_coweightEquiv,
+      RootPairing.coreflection_apply, RootPairing.root', toLinearMap_typeASimplyConnectedRootDatum,
+      coroot_typeASimpleIndex 0, Pi.single_eq_same, LinearMap.neg_apply, LinearMap.id_apply,
+      Pi.neg_apply, Pi.sub_apply, Pi.smul_apply, smul_eq_mul, dotProduct, Fin.sum_univ_one, hroot]
+    ring
+
+/-- On `typeASimplyConnectedRootDatum 1`, the simple reflection sends every root to its opposite. -/
+theorem reflectionPerm_typeASimpleIndex_one_zero (γ : Fin (1 * (1 + 1))) :
+    (typeASimplyConnectedRootDatum 1).reflectionPerm (typeASimpleIndex 1 0) γ =
+      (typeASimplyConnectedRootDatum 1).reflectionPerm γ γ :=
+  (typeASimplyConnectedRootDatum 1).root.injective <| by
+    have hneg := congrArg (fun f : (Fin 1 → ℤ) →ₗ[ℤ] (Fin 1 → ℤ) =>
+      f ((typeASimplyConnectedRootDatum 1).root γ))
+      reflection_typeASimplyConnectedRootDatum_one_weightMap
+    simpa [← RootPairing.Equiv.weightEquiv_apply, RootPairing.Equiv.reflection_weightEquiv,
+      RootPairing.root_reflectionPerm, RootPairing.reflection_apply_self] using hneg
+
+/-- **Classification of automorphisms of `typeASimplyConnectedRootDatum 1`**: every automorphism is
+either `1` or the simple reflection at node `0`. -/
+theorem aut_typeASimplyConnectedRootDatum_one_eq_one_or_reflection
+    (g : RootPairing.Aut (typeASimplyConnectedRootDatum 1)) :
+    g = 1 ∨ g = RootPairing.Equiv.reflection (typeASimplyConnectedRootDatum 1)
+      (typeASimpleIndex 1 0) :=
+  g.weightEquiv.toLinearMap_eq_id_or_neg_of_unique.imp
+    (fun h => RootPairing.Equiv.weightHom_injective _ (LinearEquiv.toLinearMap_injective h))
+    (fun h => RootPairing.Equiv.weightHom_injective _ (LinearEquiv.toLinearMap_injective
+      (h.trans reflection_typeASimplyConnectedRootDatum_one_weightMap.symm)))
+
+/-- **The automorphism group of `typeASimplyConnectedRootDatum 1` is commutative.** -/
+theorem aut_typeASimplyConnectedRootDatum_one_mul_comm
+    (g h : RootPairing.Aut (typeASimplyConnectedRootDatum 1)) : g * h = h * g := by
+  rcases aut_typeASimplyConnectedRootDatum_one_eq_one_or_reflection g with rfl | rfl <;>
+    rcases aut_typeASimplyConnectedRootDatum_one_eq_one_or_reflection h with rfl | rfl <;> simp
 
 end DynkinType
 

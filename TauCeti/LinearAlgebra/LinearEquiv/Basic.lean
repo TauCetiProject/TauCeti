@@ -26,6 +26,8 @@ Linear maps conjugate under linear equivalences have linearly equivalent kernels
 `LinearMap.kerEquivOfComp` and `LinearMap.cokerEquivOfComp`.
 Coordinate relabelling of function modules (`LinearEquiv.funCongrLeft`) is injective in the
 coordinate equivalence over a nontrivial target module.
+Every `ℤ`-linear automorphism of a rank-one free `ℤ`-module `ι → ℤ` is either `LinearMap.id` or
+`-LinearMap.id` (`LinearEquiv.toLinearMap_eq_id_or_neg_of_unique`).
 -/
 
 public section
@@ -103,6 +105,24 @@ theorem funCongrLeft_injective (R M : Type*) [Semiring R] [AddCommMonoid M] [Mod
   rw [funCongrLeft_apply, funCongrLeft_apply, LinearMap.funLeft_apply, LinearMap.funLeft_apply,
     Pi.single_eq_same, Pi.single_eq_of_ne (Ne.symm hne)] at hj
   exact hm hj
+
+/-- Every `ℤ`-linear automorphism of a rank-one free `ℤ`-module `ι → ℤ` is either the identity or
+negation. -/
+theorem toLinearMap_eq_id_or_neg_of_unique {ι : Type*} [Unique ι] (e : (ι → ℤ) ≃ₗ[ℤ] (ι → ℤ)) :
+    (e : (ι → ℤ) →ₗ[ℤ] (ι → ℤ)) = LinearMap.id ∨ (e : (ι → ℤ) →ₗ[ℤ] (ι → ℤ)) = -LinearMap.id := by
+  have hscale (f : (ι → ℤ) →ₗ[ℤ] (ι → ℤ)) (x : ι → ℤ) :
+      f x default = f (fun _ => 1) default * x default := by
+    have hx : x = x default • (fun _ : ι => (1 : ℤ)) :=
+      funext fun i => by simp [Unique.eq_default i]
+    conv_lhs => rw [hx, LinearMap.map_smul, Pi.smul_apply, smul_eq_mul, mul_comm]
+  have hprod : e (fun _ => 1) default * e.symm (fun _ => 1) default = 1 := by
+    have h1 : e (e.symm (fun _ => 1)) default = 1 := by simp
+    rwa [← coe_toLinearMap, hscale, ← coe_toLinearMap, hscale, mul_one] at h1
+  rcases Int.mul_eq_one_iff_eq_one_or_neg_one.mp hprod with ⟨h1, _⟩ | ⟨h1, _⟩
+  · exact Or.inl (LinearMap.ext fun x => funext fun i => by
+      rw [Unique.eq_default i, hscale (e : _ →ₗ[ℤ] _)]; simp [h1])
+  · exact Or.inr (LinearMap.ext fun x => funext fun i => by
+      rw [Unique.eq_default i, hscale (e : _ →ₗ[ℤ] _)]; simp [h1])
 
 end LinearEquiv
 

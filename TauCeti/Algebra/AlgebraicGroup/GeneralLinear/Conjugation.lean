@@ -7,7 +7,10 @@ module
 
 public import TauCeti.Algebra.AlgebraicGroup.CommHopfAlgCat.InnerConjugation
 public import TauCeti.Algebra.AlgebraicGroup.GeneralLinear.FunctorOfPoints
+public import TauCeti.Algebra.AlgebraicGroup.GeneralLinear.HopfIdealPoints.Basic
 public import TauCeti.Algebra.AlgebraicGroup.Hopf.PointConjugation
+public import TauCeti.Algebra.AlgebraicGroup.HopfIdeal.Equalizer
+import TauCeti.Algebra.AlgebraicGroup.HopfIdeal.Points.Equalizer
 
 /-!
 # Conjugation of `GLₙ` by a constant matrix, in coordinates
@@ -122,5 +125,22 @@ theorem conjCoordinateIso_inv (P : Matrix.GeneralLinearGroup (Fin n) R) :
     conjCoordinateIso P⁻¹ = (conjCoordinateIso P).symm := by
   rw [conjCoordinateIso, conjCoordinateIso, map_inv,
     _root_.CommHopfAlgCat.innerConjugationIso_inv_point]
+
+-- Not `@[simp]`: `mem_hopfIdealPointsSubgroup_iff` already simplifies the left-hand side.
+/-- A matrix `M : GLₙ(A)` lies in the subgroup cut out by the equalizer Hopf ideal of conjugation
+by `P : GLₙ(R)` and the identity iff the base change of `P` centralizes `M`. -/
+theorem mem_hopfIdealPointsSubgroup_equalizer_conjCoordinateIso_iff
+    (P : Matrix.GeneralLinearGroup (Fin n) R) (A : Type v) [CommRing A] [Algebra R A]
+    (M : Matrix.GeneralLinearGroup (Fin n) A) :
+    M ∈ hopfIdealPointsSubgroup n (CommHopfAlgCat.equalizerHopfIdeal (conjCoordinateIso P).hom
+          (CategoryStruct.id (coordinateHopfAlgebra R n))) A ↔
+      Matrix.GeneralLinearGroup.map (algebraMap R A) P * M *
+          (Matrix.GeneralLinearGroup.map (algebraMap R A) P)⁻¹ = M := by
+  rw [mem_hopfIdealPointsSubgroup_iff,
+    ← CommHopfAlgCat.mem_quotientPointsSubgroup_iff _ _ (CommAlgCat.of R A),
+    CommHopfAlgCat.mem_quotientPointsSubgroup_equalizerHopfIdeal_iff,
+    ← (pointsMulEquiv (R := R) n).injective.eq_iff, BialgHom.mapDomain_apply,
+    BialgHom.mapDomain_apply, pointsMulEquiv_toConv_comp_conjCoordinateIso,
+    _root_.CommHopfAlgCat.hom_id, AlgHom.comp_id, WithConv.toConv_ofConv, MulEquiv.apply_symm_apply]
 
 end TauCeti.GeneralLinear

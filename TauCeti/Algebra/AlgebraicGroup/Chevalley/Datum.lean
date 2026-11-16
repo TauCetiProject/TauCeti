@@ -261,6 +261,47 @@ theorem sum_coordinateRoot_smul (γ : Fin t.numRoots) :
   have h := congrArg Subtype.val (D.weightLatticeBasis.sum_repr ⟨_, D.root_mem_weightLattice γ⟩)
   rwa [Submodule.coe_sum] at h
 
+/-- Distinct root indices have distinct coordinate roots in `Λ(D)`. -/
+theorem coordinateRoot_injective : Function.Injective D.coordinateRoot := fun α β h =>
+  (t.simplyConnectedRootDatum ht).root.injective <| by
+    rw [← D.sum_coordinateRoot_smul α, ← D.sum_coordinateRoot_smul β, h]
+
+/-- Equality of coordinate roots is equivalent to equality of root indices. -/
+@[simp] theorem coordinateRoot_eq_iff {α β : Fin t.numRoots} :
+    D.coordinateRoot α = D.coordinateRoot β ↔ α = β := D.coordinateRoot_injective.eq_iff
+
+/-- Every coordinate root of a Chevalley datum is nonzero. -/
+@[simp] theorem coordinateRoot_ne_zero (γ : Fin t.numRoots) : D.coordinateRoot γ ≠ 0 := fun h =>
+  (t.simplyConnectedRootDatum ht).ne_zero γ <| by rw [← D.sum_coordinateRoot_smul γ, h]; simp
+
+/-- Proportional coordinate roots with a nonzero coefficient are equal or opposite. -/
+theorem eq_or_eq_reflectionPerm_of_zsmul_coordinateRoot_eq {α β : Fin t.numRoots} {a b : ℤ}
+    (ha : a ≠ 0) (h : a • D.coordinateRoot α = b • D.coordinateRoot β) :
+    α = β ∨ α = (t.simplyConnectedRootDatum ht).reflectionPerm β β := by
+  let P := t.simplyConnectedRootDatum ht
+  have : P.IsReduced := t.isReduced_simplyConnectedRootDatum ht
+  have hroot : a • P.root α = b • P.root β := by
+    rw [← D.sum_coordinateRoot_smul α, ← D.sum_coordinateRoot_smul β,
+      Finset.smul_sum, Finset.smul_sum]
+    refine Finset.sum_congr rfl fun i _ => ?_
+    rw [smul_smul, smul_smul]; exact congrArg (· • _) (congrFun h i)
+  have hdep : ¬ LinearIndependent ℤ ![P.root α, P.root β] := fun hli =>
+    ha ((LinearIndependent.pair_iff.mp hli a (-b) (by rw [neg_smul, hroot, add_neg_cancel])).1)
+  rcases RootPairing.IsReduced.eq_or_eq_neg (P := P) α β hdep with heq | hneg
+  · exact Or.inl (P.root.injective heq)
+  · exact Or.inr (P.root.injective (by
+      rw [RootPairing.root_reflectionPerm, RootPairing.reflection_apply_self, hneg]))
+
+/-- **Positive integer multiples of coordinate roots determine the root index.** -/
+theorem eq_of_nsmul_coordinateRoot_eq {α β : Fin t.numRoots} {m d : ℕ}
+    (hm : 0 < m) (h : m • D.coordinateRoot α = d • D.coordinateRoot β) : α = β := by
+  rcases D.eq_or_eq_reflectionPerm_of_zsmul_coordinateRoot_eq (b := (d : ℤ))
+      (Int.natCast_ne_zero.mpr hm.ne') (by simpa only [natCast_zsmul] using h) with rfl | rfl
+  · rfl
+  · rw [D.coordinateRoot_reflectionPerm_self, smul_neg] at h
+    exact (D.coordinateRoot_ne_zero β ((smul_eq_zero.mp (by rw [add_smul, ← h, add_neg_cancel] :
+      (m + d) • D.coordinateRoot β = 0)).resolve_left (Nat.add_pos_left hm d).ne')).elim
+
 /-! ## Nilpotence of the root generators -/
 
 /-- **The lattice spans the representation space through its weight basis.** -/
