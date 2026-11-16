@@ -676,8 +676,8 @@ private theorem exists_localFourier_le_succ {ι : Type*} {s : Finset ι} {c : ι
   have hp' : ContDiff ℝ ∞ p := ContDiff.sum fun i _ ↦ (hb i).mul contDiff_const
   have hpW : ∀ y ∈ W, p y ≠ 0 := fun y hy ↦
     norm_pos_iff.1 ((mul_pos hc' (by positivity)).trans_le (hp y hy η hη hηR))
-  obtain ⟨Ψ, hΨK, hpΨ, hΨb⟩ := φ.exists_mul_eq_of_forall_ne_zero hW hKW hφ hp' hpW (n := n)
-    (by positivity) (fun l hl z hz ↦ hQ p ((1 + ‖η‖) ^ M) z (by positivity)
+  obtain ⟨Ψ, hΨK, hpΨ, hΨb⟩ := φ.exists_mul_eq_of_forall_ne_zero hW hKW hφ hp'.contDiffOn hpW
+    (n := n) (by positivity) (fun l hl z hz ↦ hQ p ((1 + ‖η‖) ^ M) z (by positivity)
       (hp'.of_le (by exact_mod_cast le_top)) (fun j hj ↦ hA z hz η j hj)
       (hp z (hKW hz) η hη hηR) l hl) hB
   rw [localFourier_eq_localFourier_sub_sum s c ha m T hpΨ]

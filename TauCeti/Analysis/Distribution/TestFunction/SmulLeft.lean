@@ -120,13 +120,13 @@ open scoped ContDiff
 `Ψ` supported in `K` with `p Ψ = φ`. If the derivatives of order at most `n` of `p⁻¹` are bounded
 by `Q ≥ 0` on `K` and those of `φ` by `B`, then those of `Ψ` are bounded by `2 ^ n Q B`. -/
 theorem exists_mul_eq_of_forall_ne_zero (φ : 𝓓(Ω, ℂ)) {K W : Set E} (hW : IsOpen W)
-    (hKW : K ⊆ W) (hφK : tsupport φ ⊆ K) {p : E → ℂ} (hp : ContDiff ℝ ∞ p)
+    (hKW : K ⊆ W) (hφK : tsupport φ ⊆ K) {p : E → ℂ} (hp : ContDiffOn ℝ ∞ p W)
     (hpW : ∀ y ∈ W, p y ≠ 0) {n : ℕ} {Q B : ℝ} (hQ0 : 0 ≤ Q)
     (hQ : ∀ i ≤ n, ∀ y ∈ K, ‖iteratedFDeriv ℝ i (fun z ↦ (p z)⁻¹) y‖ ≤ Q)
     (hB : ∀ i ≤ n, ∀ y, ‖iteratedFDeriv ℝ i φ y‖ ≤ B) :
     ∃ Ψ : 𝓓(Ω, ℂ), tsupport Ψ ⊆ K ∧ (∀ y, p y * Ψ y = φ y) ∧
       ∀ i ≤ n, ∀ y, ‖iteratedFDeriv ℝ i Ψ y‖ ≤ 2 ^ n * Q * B := by
-  have hinv : ContDiffOn ℝ ∞ (fun y ↦ (p y)⁻¹) W := hp.contDiffOn.inv hpW
+  have hinv : ContDiffOn ℝ ∞ (fun y ↦ (p y)⁻¹) W := hp.inv hpW
   have hcd : ContDiff ℝ ∞ (fun y ↦ (p y)⁻¹ * φ y) :=
     (ContinuousLinearMap.mul ℝ ℂ).contDiff_of_tsupport_subset_right hinv φ.contDiff.contDiffOn
       hW (hφK.trans hKW)
