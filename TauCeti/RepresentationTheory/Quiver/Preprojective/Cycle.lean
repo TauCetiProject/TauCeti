@@ -19,10 +19,11 @@ not necessarily induced. Over every nontrivial commutative ring `k`, both the si
 preprojective algebra `Π⁺(G)` and the additive preprojective algebra `Π_k(OrientedQuiver G o)` of
 **every** orientation `o` of `G` contain a homogeneous element of path degree `m` which does not
 lie in the commutator submodule `[Π, Π]`: its class in the cyclic quotient `Π / [Π, Π]` is
-nonzero. Note that when `m` is odd `G` is not bipartite, so `Π⁺(G)` and `Π_k(OrientedQuiver G o)`
-need not be isomorphic
-(`TauCeti.DoubledQuiver.Orientation.not_exists_forall_vertexCorner_eq_smul_of_not_isBipartite`);
-nevertheless the matrix representation constructed here factors through both quotients directly.
+nonzero. Note that when `m` is odd `G` is not bipartite, so when `2 ≠ 0` no cornerwise unit-gauge
+comparison of relators exists
+(`TauCeti.DoubledQuiver.Orientation.not_exists_forall_vertexCorner_eq_smul_of_not_isBipartite`) and
+the bipartite isomorphism is unavailable; nevertheless the matrix representation constructed here
+factors through both quotients directly.
 
 ## The unidirectional cycle representation
 
@@ -52,8 +53,8 @@ and oriented preprojective algebras.
 
 ## References
 
-* T. Schedler, *Hochschild homology of preprojective algebras over the integers*, Adv. Math. 225
-  (2010), Theorem 13.1.1, https://arxiv.org/abs/0704.3278.
+* T. Schedler, *Zeroth Hochschild homology of preprojective algebras over the integers*,
+  Theorem 13.1.1, https://arxiv.org/abs/0704.3278 (arXiv v3).
 * Y. Liu and Z. Wang, *A-infinity deformations of zigzag algebras via Ginzburg dg algebras*,
   Corollary 3.4, https://arxiv.org/abs/2301.06757.
 -/
@@ -146,9 +147,7 @@ private theorem signlessMatrixRepresentation_cycleWalkElem {V : Type u} [Fintype
       have hmat : c.extendByZero (cycleMatrix k m) (c (↑r : Fin m)) (c ((↑r : Fin m) + 1)) = 1 := by
         rw [c.extendByZero_apply_apply_of_adj _ hadj]
         simp [cycleMatrix]
-      rw [cycleWalkElem, map_mul, map_mul, signlessMatrixRepresentation_ofArrow,
-        Copy.toHom_apply, Copy.toHom_apply, hmat, ih,
-        ← mul_kronecker_mul, single_mul_single_same, mul_one, mul_one, Nat.cast_succ]
+      simp [cycleWalkElem, hmat, ih, ← mul_kronecker_mul]
 
 private theorem signlessMatrixRepresentation_ofArrow_mul_reverse {V : Type u} [Fintype V]
     [DecidableEq V] {G : SimpleGraph V} [DecidableRel G.Adj] {m : ℕ} [NeZero m] (hm : 3 ≤ m)
@@ -160,9 +159,8 @@ private theorem signlessMatrixRepresentation_ofArrow_mul_reverse {V : Type u} [F
   obtain ⟨j, rfl⟩ := exists_eq_vertex G b
   have h : G.Adj i j := (nonempty_hom_iff G).1 ⟨e⟩
   have he : e = arrow G h := Subsingleton.elim _ _
-  rw [he, reverse_arrow, map_mul, map_mul, signlessMatrixRepresentation_ofArrow,
-    signlessMatrixRepresentation_ofArrow, ← mul_kronecker_mul, single_mul_single_same, mul_one,
-    extendByZero_cycleMatrix_mul k hm c j i, kronecker_zero]
+  rw [he, reverse_arrow, map_mul, map_mul]
+  simp [← mul_kronecker_mul, extendByZero_cycleMatrix_mul k hm c j i]
 
 private noncomputable def cycleOrientedPathRep {V : Type u} [Fintype V] [DecidableEq V]
     {G : SimpleGraph V} [DecidableRel G.Adj] (o : Orientation G) {m : ℕ} [NeZero m] (hm : 3 ≤ m)
@@ -186,15 +184,14 @@ private theorem cycleOrientedPathRep_localPreprojectiveRelator {V : Type u} [Fin
       doubledArrowSign k b •
         (ofArrow ((symmetrifyMap G o).map b) *
           ofArrow (Quiver.reverse ((symmetrifyMap G o).map b))) := by
-    rw [mul_smul_comm, map_smul, map_mul, orientationPathAlgebraEquiv_symm_apply,
-      orientationPathAlgebraEquiv_symm_apply, mapAlgHom_ofArrow, mapAlgHom_ofArrow,
-      Prefunctor.map_reverse]
+    rw [orientationPathAlgebraEquiv_symm_apply, mul_smul_comm, map_smul, map_mul]
+    simp only [mapAlgHom_ofArrow, Prefunctor.map_reverse]
   simp only [cycleOrientedPathRep, AlgHom.comp_apply, AlgEquiv.coe_toAlgHom, hsymm_mul, map_smul,
     signlessMatrixRepresentation_ofArrow_mul_reverse k hm c, smul_zero]
 
 /-- **A copy of an `m`-cycle (`m ≥ 3`) produces a nonzero signless cyclic class in degree `m`.**
-Over every nontrivial commutative ring, the closed `m`-step walk around the cycle is homogeneous of
-path degree `m` in `Π⁺(G)` and does not lie in the commutator submodule. -/
+Over every nontrivial commutative ring, a copy of `cycleGraph m` (`m ≥ 3`) in `G` yields an element
+of path degree `m` in `Π⁺(G)` outside the commutator submodule. -/
 theorem exists_mem_signlessPreprojectiveGrade_notMem_commutatorSubmodule_of_cycleGraph
     [Nontrivial k] {V : Type u} [Finite V] {G : SimpleGraph V}
     [inst : ∀ i, Fintype (G.neighborSet i)] {m : ℕ} (hm : 3 ≤ m) (c : (cycleGraph m).Copy G) :
@@ -211,15 +208,12 @@ theorem exists_mem_signlessPreprojectiveGrade_notMem_commutatorSubmodule_of_cycl
   have htr := trace_map_eq_zero_of_mem_commutatorSubmodule
     (signlessMatrixRepresentation k (c.extendByZero (cycleMatrix k m))
       (sum_extendByZero_cycleMatrix_mul k hm c)) hcomm
-  rw [signlessMatrixRepresentation_cycleWalkElem k hm c m, Fin.natCast_self, trace_kronecker,
-    trace_single_eq_same, one_mul, trace_one, Fintype.card_unit, Nat.cast_one] at htr
-  exact one_ne_zero htr
+  simp [signlessMatrixRepresentation_cycleWalkElem, trace_kronecker] at htr
 
 /-- **A copy of an `m`-cycle (`m ≥ 3`) produces a nonzero preprojective cyclic class in degree `m`
-for every orientation.** Over every nontrivial commutative ring and for any orientation `o` of `G`
-(even when `m` is odd and `G` is non-bipartite), the oriented image of the closed `m`-step cycle
-walk is homogeneous of path degree `m` in `Π_k(OrientedQuiver G o)` and does not lie in the
-commutator submodule. -/
+for every orientation.** Over every nontrivial commutative ring and for every orientation `o` of `G`
+(including odd `m` on non-bipartite graphs), a copy of `cycleGraph m` (`m ≥ 3`) in `G` yields an
+element of path degree `m` in `Π_k(OrientedQuiver G o)` outside the commutator submodule. -/
 theorem exists_mem_preprojectiveGrade_notMem_commutatorSubmodule_of_cycleGraph
     [Nontrivial k] {V : Type u} [Finite V] {G : SimpleGraph V} (o : Orientation G)
     {m : ℕ} (hm : 3 ≤ m) (c : (cycleGraph m).Copy G) :
@@ -230,11 +224,8 @@ theorem exists_mem_preprojectiveGrade_notMem_commutatorSubmodule_of_cycleGraph
   have : NeZero m := ⟨by omega⟩
   have : Fintype V := Fintype.ofFinite V
   let y := orientationPathAlgebraEquiv o k (cycleWalkElem k hm c m)
-  have hy_grade : y ∈ grade k (Symmetrify (OrientedQuiver G o)) m := by
-    have hx := cycleWalkElem_mem_grade k hm c m
-    rw [← gradeBy_const_one] at hx ⊢
-    simpa only [y, orientationPathAlgebraEquiv_apply] using
-      mapAlgHom_mem_gradeBy k _ _ (fun {_ _} _ => (1 : ℕ)) hx
+  have hy_grade : y ∈ grade k (Symmetrify (OrientedQuiver G o)) m :=
+    (orientationPathAlgebraEquiv_mem_grade_iff o k).2 (cycleWalkElem_mem_grade k hm c m)
   let ρ := preprojectiveLiftOfForallLocalPreprojectiveRelator (cycleOrientedPathRep k o hm c)
     (cycleOrientedPathRep_localPreprojectiveRelator k o hm c)
   refine ⟨preprojectiveMk k (OrientedQuiver G o) y,
@@ -245,9 +236,11 @@ theorem exists_mem_preprojectiveGrade_notMem_commutatorSubmodule_of_cycleGraph
     simpa only [y, cycleOrientedPathRep, AlgHom.comp_apply, AlgEquiv.coe_toAlgHom,
       AlgEquiv.symm_apply_apply, Fin.natCast_self] using
       signlessMatrixRepresentation_cycleWalkElem k hm c m
-  rw [hρ, trace_kronecker, trace_single_eq_same, one_mul, trace_one, Fintype.card_unit,
-    Nat.cast_one] at htr
-  exact one_ne_zero htr
+  simp [hρ, trace_kronecker] at htr
+
+private theorem exists_cycleGraph_isContained_of_not_isAcyclic {V : Type u} {G : SimpleGraph V}
+    (hG : ¬ G.IsAcyclic) : ∃ m ≥ 3, cycleGraph m ⊑ G := by
+  simpa only [isAcyclic_iff_free_cycleGraph, not_forall, SimpleGraph.not_free, exists_prop] using hG
 
 /-- **Non-acyclic graphs have nonzero signless cyclic classes in degree at least three.** If a
 finite simple graph `G` is not acyclic, then over every nontrivial commutative ring some element of
@@ -258,10 +251,7 @@ theorem exists_mem_signlessPreprojectiveGrade_notMem_commutatorSubmodule_of_not_
     ∃ d : ℕ, 3 ≤ d ∧ ∃ z : signlessPreprojectiveAlgebra k (DoubledQuiver G),
       z ∈ signlessPreprojectiveGrade k (DoubledQuiver G) d ∧
         z ∉ commutatorSubmodule k (signlessPreprojectiveAlgebra k (DoubledQuiver G)) := by
-  have hcopy : ∃ m ≥ 3, Nonempty ((cycleGraph m).Copy G) := by
-    by_contra! h
-    exact hG (isAcyclic_iff_free_cycleGraph.mpr fun m hm ⟨c⟩ => (h m hm).false c)
-  obtain ⟨m, hm, ⟨c⟩⟩ := hcopy
+  obtain ⟨m, hm, ⟨c⟩⟩ := exists_cycleGraph_isContained_of_not_isAcyclic hG
   exact ⟨m, hm,
     exists_mem_signlessPreprojectiveGrade_notMem_commutatorSubmodule_of_cycleGraph k hm c⟩
 
@@ -275,10 +265,7 @@ theorem exists_mem_preprojectiveGrade_notMem_commutatorSubmodule_of_not_isAcycli
     ∃ d : ℕ, 3 ≤ d ∧ ∃ z : preprojectiveAlgebra k (OrientedQuiver G o),
       z ∈ preprojectiveGrade k (OrientedQuiver G o) d ∧
         z ∉ commutatorSubmodule k (preprojectiveAlgebra k (OrientedQuiver G o)) := by
-  have hcopy : ∃ m ≥ 3, Nonempty ((cycleGraph m).Copy G) := by
-    by_contra! h
-    exact hG (isAcyclic_iff_free_cycleGraph.mpr fun m hm ⟨c⟩ => (h m hm).false c)
-  obtain ⟨m, hm, ⟨c⟩⟩ := hcopy
+  obtain ⟨m, hm, ⟨c⟩⟩ := exists_cycleGraph_isContained_of_not_isAcyclic hG
   exact ⟨m, hm,
     exists_mem_preprojectiveGrade_notMem_commutatorSubmodule_of_cycleGraph k o hm c⟩
 

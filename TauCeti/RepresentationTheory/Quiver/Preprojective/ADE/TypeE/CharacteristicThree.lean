@@ -10,8 +10,6 @@ public import TauCeti.RepresentationTheory.Quiver.Preprojective.CyclicQuotient
 import all TauCeti.RepresentationTheory.Quiver.Preprojective.ADE.TypeE.Basic
 import Mathlib.Data.List.Rotate
 import Mathlib.Data.ZMod.Basic
-import TauCeti.RepresentationTheory.Quiver.Preprojective.InducedSubgraph
-import TauCeti.RepresentationTheory.Quiver.Preprojective.Isomorphism
 
 /-!
 # A degree-six cyclic class of the `E₆` preprojective algebra in characteristic three
@@ -443,37 +441,31 @@ private def e6Embedding {n : ℕ} (hn : 6 ≤ n) :
   map_rel_iff' := by
     intro i j
     rw [diagramGraph_E_adj, diagramGraph_E_adj]
-    rfl
+    simp
 
 variable (k : Type*) [CommRing k] [CharP k 3] {n : ℕ}
 
+/-- **An induced `E₆` subdiagram detects a nonzero degree-six signless cyclic class in
+characteristic three.** -/
+theorem exists_mem_signlessPreprojectiveGrade_six_notMem_commutatorSubmodule_of_e6_embedding
+    {V : Type*} [Finite V] {H : SimpleGraph V} [∀ i, Fintype (H.neighborSet i)]
+    (f : diagramGraph (CartanMatrix.E 6) ↪g H) :
+    ∃ z : signlessPreprojectiveAlgebra k (DoubledQuiver H),
+      z ∈ signlessPreprojectiveGrade k (DoubledQuiver H) 6 ∧
+        z ∉ commutatorSubmodule k (signlessPreprojectiveAlgebra k (DoubledQuiver H)) :=
+  exists_mem_signlessPreprojectiveGrade_notMem_commutatorSubmodule_of_embedding k f
+    ⟨_, signlessWord_E6_cyclicWord_mem_grade_six k inferInstance,
+      signlessWord_E6_cyclicWord_not_mem_commutatorSubmodule k inferInstance⟩
+
 /-- **In characteristic three, the signless preprojective algebra of the Bourbaki-labelled `Eₙ`
-graph, `n ≥ 6`, has a degree-six element which is not a sum of commutators.** Retaining the first
-six Bourbaki vertices embeds `E₆` as an induced subdiagram, and the degree-six branch-node class of
-`E₆` lifts along the graded-surjective induced-subgraph quotient. -/
+graph, `n ≥ 6`, has a degree-six element which is not a sum of commutators.** -/
 theorem exists_mem_signlessPreprojectiveGrade_E_six_notMem_commutatorSubmodule (hn : 6 ≤ n) :
     ∃ z : signlessPreprojectiveAlgebra k (DoubledQuiver (diagramGraph (CartanMatrix.E n))),
       z ∈ signlessPreprojectiveGrade k (DoubledQuiver (diagramGraph (CartanMatrix.E n))) 6 ∧
         z ∉ commutatorSubmodule k
-          (signlessPreprojectiveAlgebra k (DoubledQuiver (diagramGraph (CartanMatrix.E n)))) := by
-  let f := e6Embedding hn
-  let e := signlessPreprojectiveAlgebraEquiv k f.isoInduceRange
-  let w := signlessWord k G [3, 2, 3, 2, 3, 1, 3]
-  have hw_grade : e w ∈ signlessPreprojectiveGrade k
-      (DoubledQuiver ((diagramGraph (CartanMatrix.E n)).induce (Set.range f))) 6 :=
-    signlessPreprojectiveAlgebraEquiv_mem_signlessPreprojectiveGrade k _
-      (signlessWord_E6_cyclicWord_mem_grade_six k inferInstance)
-  rw [← signlessPreprojectiveGrade_map_signlessPreprojectiveInducedSubgraphHom k
-    (diagramGraph (CartanMatrix.E n)) (Set.range f) 6] at hw_grade
-  obtain ⟨z, hz, hzw⟩ := Submodule.mem_map.mp hw_grade
-  refine ⟨z, hz, fun hcomm => ?_⟩
-  apply signlessWord_E6_cyclicWord_not_mem_commutatorSubmodule k inferInstance
-  have h1 : signlessPreprojectiveInducedSubgraphHom k
-      (diagramGraph (CartanMatrix.E n)) (Set.range f) z ∈ commutatorSubmodule k _ :=
-    map_mem_commutatorSubmodule _ hcomm
-  rw [AlgHom.toLinearMap_apply] at hzw
-  rw [hzw] at h1
-  simpa only [AlgEquiv.symm_apply_apply] using map_mem_commutatorSubmodule e.symm h1
+          (signlessPreprojectiveAlgebra k (DoubledQuiver (diagramGraph (CartanMatrix.E n)))) :=
+  exists_mem_signlessPreprojectiveGrade_six_notMem_commutatorSubmodule_of_e6_embedding k
+    (e6Embedding hn)
 
 /-- **In characteristic three, the additive preprojective algebra of every orientation of the
 Bourbaki-labelled `Eₙ` graph, `n ≥ 6`, has a degree-six element which is not a sum of
@@ -486,11 +478,9 @@ theorem exists_mem_preprojectiveGrade_E_six_notMem_commutatorSubmodule (hn : 6 �
           (preprojectiveAlgebra k (OrientedQuiver (diagramGraph (CartanMatrix.E n)) o)) := by
   obtain ⟨z, hz, hz0⟩ :=
     exists_mem_signlessPreprojectiveGrade_E_six_notMem_commutatorSubmodule k hn
+  by_contra! hall
   let C := eColoring _ (diagramGraph_E_adj (n := n))
-  let E := C.signlessPreprojectiveAlgebraEquiv k o
-  refine ⟨E z, C.signlessPreprojectiveAlgebraEquiv_mem_preprojectiveGrade k o hz, fun h => ?_⟩
-  apply hz0
-  simpa only [AlgEquiv.symm_apply_apply] using map_mem_commutatorSubmodule E.symm h
+  exact hz0 ((C.preprojectiveGrade_le_commutatorSubmodule_iff k o 6).mp hall hz)
 
 end InducedE6
 

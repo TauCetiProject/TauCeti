@@ -454,8 +454,7 @@ theorem signlessPreprojectiveInducedSubgraphHom_mem_signlessPreprojectiveGrade
     (p := (signlessPreprojectiveGrade k (DoubledQuiver (G.induce S)) d).comap
       (inducedSubgraphPathAlgebraHom k G S).toLinearMap)).2 ?_ hy
   rintro _ ⟨⟨⟨a, b, p⟩, rfl⟩, rfl⟩
-  change inducedSubgraphPathAlgebraHom k G S (ofPath ⟨a, b, p⟩) ∈
-    signlessPreprojectiveGrade k (DoubledQuiver (G.induce S)) p.length
+  simp only [SetLike.mem_coe, Submodule.mem_comap, AlgHom.toLinearMap_apply]
   rw [inducedSubgraphPathAlgebraHom, liftAlgHom_ofPath]
   exact inducedSubgraphPath_mem_signlessPreprojectiveGrade k G S p
 
@@ -476,10 +475,10 @@ theorem signlessPreprojectiveGrade_map_signlessPreprojectiveInducedSubgraphHom (
         (signlessPreprojectiveMk k _).toLinearMap)).2 ?_ hz
   rintro _ ⟨⟨⟨a, b, p⟩, rfl⟩, rfl⟩
   obtain ⟨x, hxgrade, hx⟩ := inducedSubgraphPathAlgebraHom_surjective_ofPath k G S p
+  simp only [SetLike.mem_coe, Submodule.mem_comap, Submodule.mem_map, AlgHom.toLinearMap_apply]
   refine ⟨signlessPreprojectiveMk k _ x, signlessPreprojectiveMk_mem_grade k _ hxgrade, ?_⟩
-  rw [AlgHom.toLinearMap_apply, signlessPreprojectiveInducedSubgraphHom,
-    signlessPreprojectiveLift_signlessPreprojectiveMk, hx]
-  rfl
+  rw [signlessPreprojectiveInducedSubgraphHom, signlessPreprojectiveLift_signlessPreprojectiveMk,
+    hx]
 
 /-- The homomorphism from a signless preprojective algebra onto the algebra of an induced
 subgraph is surjective. -/

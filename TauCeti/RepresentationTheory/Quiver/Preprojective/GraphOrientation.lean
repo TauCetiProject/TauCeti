@@ -149,6 +149,39 @@ theorem orientationPathAlgebraEquiv_symm_signlessPreprojectiveRelator
     mapAlgHom_signlessPreprojectiveRelator k _ _
       ((symmetrifyMap_isCovering G o).star_bijective i)]
 
+private theorem orientationPathAlgebraEquiv_mem_grade {n : ℕ}
+    {x : pathAlgebra k (DoubledQuiver G)} (hx : x ∈ grade k (DoubledQuiver G) n) :
+    orientationPathAlgebraEquiv o k x ∈ grade k (Symmetrify (OrientedQuiver G o)) n := by
+  rw [← gradeBy_const_one] at hx ⊢
+  rw [orientationPathAlgebraEquiv_apply]
+  exact mapAlgHom_mem_gradeBy k _ _ (fun {_ _} _ => (1 : ℕ)) hx
+
+private theorem orientationPathAlgebraEquiv_symm_mem_grade {n : ℕ}
+    {x : pathAlgebra k (Symmetrify (OrientedQuiver G o))}
+    (hx : x ∈ grade k (Symmetrify (OrientedQuiver G o)) n) :
+    (orientationPathAlgebraEquiv o k).symm x ∈ grade k (DoubledQuiver G) n := by
+  rw [← gradeBy_const_one] at hx ⊢
+  rw [orientationPathAlgebraEquiv_symm_apply]
+  exact mapAlgHom_mem_gradeBy k _ _ (fun {_ _} _ => (1 : ℕ)) hx
+
+/-- **Restoring an orientation preserves the path-length grading.** -/
+@[simp]
+theorem orientationPathAlgebraEquiv_mem_grade_iff {n : ℕ}
+    {x : pathAlgebra k (DoubledQuiver G)} :
+    orientationPathAlgebraEquiv o k x ∈ grade k (Symmetrify (OrientedQuiver G o)) n ↔
+      x ∈ grade k (DoubledQuiver G) n :=
+  ⟨fun h => by simpa using orientationPathAlgebraEquiv_symm_mem_grade o k h,
+   orientationPathAlgebraEquiv_mem_grade o k⟩
+
+/-- **Forgetting an orientation preserves the path-length grading.** -/
+@[simp]
+theorem orientationPathAlgebraEquiv_symm_mem_grade_iff {n : ℕ}
+    {x : pathAlgebra k (Symmetrify (OrientedQuiver G o))} :
+    (orientationPathAlgebraEquiv o k).symm x ∈ grade k (DoubledQuiver G) n ↔
+      x ∈ grade k (Symmetrify (OrientedQuiver G o)) n :=
+  ⟨fun h => by simpa using orientationPathAlgebraEquiv_mem_grade o k h,
+   orientationPathAlgebraEquiv_symm_mem_grade o k⟩
+
 end PathAlgebra
 
 /-! ### Transporting the signless quotient -/
@@ -363,10 +396,7 @@ theorem signlessPreprojectiveAlgebraEquiv_mem_preprojectiveGrade (o : Orientatio
   obtain ⟨p, hp, rfl⟩ := (mem_signlessPreprojectiveGrade_iff k (DoubledQuiver G)).1 hx
   rw [signlessPreprojectiveAlgebraEquiv_signlessPreprojectiveMk]
   apply preprojectiveMk_mem_preprojectiveGrade
-  apply rescale_mem_grade
-  rw [orientationPathAlgebraEquiv_apply]
-  rw [← gradeBy_const_one] at hp ⊢
-  exact mapAlgHom_mem_gradeBy k _ _ (fun {_ _} _ => (1 : ℕ)) hp
+  exact rescale_mem_grade _ ((orientationPathAlgebraEquiv_mem_grade_iff o k).2 hp)
 
 /-- The inverse bipartite comparison for an arbitrary orientation rescales by the head-colour sign
 and applies the inverse orientation path-algebra identification. -/
@@ -391,13 +421,8 @@ theorem signlessPreprojectiveAlgebraEquiv_symm_mem_signlessPreprojectiveGrade (o
       signlessPreprojectiveGrade k (DoubledQuiver G) n := by
   obtain ⟨p, hp, rfl⟩ := (mem_preprojectiveGrade_iff k (OrientedQuiver G o)).1 hx
   rw [signlessPreprojectiveAlgebraEquiv_symm_preprojectiveMk]
-  apply signlessPreprojectiveMk_mem_grade
-  have hres : rescale (doubledLabelling k fun _ j _ =>
-      if C.orientedColor o j then (1 : k) else -1) p ∈
-      grade k (Symmetrify (OrientedQuiver G o)) n := rescale_mem_grade _ hp
-  rw [orientationPathAlgebraEquiv_symm_apply]
-  rw [← gradeBy_const_one] at hres ⊢
-  exact mapAlgHom_mem_gradeBy k _ _ (fun {_ _} _ => (1 : ℕ)) hres
+  exact signlessPreprojectiveMk_mem_grade k _
+    ((orientationPathAlgebraEquiv_symm_mem_grade_iff o k).2 (rescale_mem_grade _ hp))
 
 /-- **The bipartite comparison preserves path degree**: an element of the signless algebra has
 degree `n` if and only if its image in the preprojective algebra of `o` does. -/
