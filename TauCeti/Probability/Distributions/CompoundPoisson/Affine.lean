@@ -56,7 +56,7 @@ open TauCeti.Probability
 translation as an outer pushforward. -/
 theorem affine_compoundPoissonMeasure {Ω : Type*} [MeasurableSpace Ω]
     {P : Measure Ω} {X : Ω → ℝ} {r : ℝ≥0} {μ : Measure ℝ} [SFinite μ]
-    {a b : ℝ} (hX : HasLaw X (compoundPoissonMeasure r μ) P) :
+    (hX : HasLaw X (compoundPoissonMeasure r μ) P) (a b : ℝ) :
     HasLaw (fun ω ↦ a + b * X ω)
       ((compoundPoissonMeasure r (μ.map (fun x ↦ b * x))).map (fun x ↦ a + x)) P :=
   (HasLaw.mk (by fun_prop) (compoundPoissonMeasure_map_affine r μ a b)).fun_comp hX
