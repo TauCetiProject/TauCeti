@@ -8,6 +8,7 @@ module
 public import TauCeti.Analysis.Analytic.MultiIndex.Coeff
 public import TauCeti.Analysis.Complex.PowerSeries.TaylorRemainder
 import Mathlib.RingTheory.RootsOfUnity.Complex
+import TauCeti.RingTheory.RootsOfUnity.Basic
 
 /-!
 # Multi-index Cauchy inequalities and truncated Taylor bounds on polydiscs
@@ -51,37 +52,6 @@ variable {ι : Type*} [Fintype ι] {V : Type*} [NormedAddCommGroup V] [NormedSpa
 
 namespace FormalMultilinearSeries
 
-/-- Character orthogonality on `(ι → Fin m)` for a primitive `m`-th root of unity `ω`: when every
-coordinate of `α` and `β` is strictly less than `m`, summing `∏ i, (ω ^ β i * (ω⁻¹) ^ α i) ^ j i`
-over `j : ι → Fin m` isolates `β = α` with weight `m ^ card ι`. -/
-private theorem sum_prod_pow_mul_inv_pow_eq [DecidableEq ι] {m : ℕ} (hm0 : m ≠ 0) {ω : ℂ}
-    (hprim : IsPrimitiveRoot ω m) {α β : ι → ℕ} (hα : ∀ i, α i < m) (hβ : ∀ i, β i < m) :
-    (∑ j : ι → Fin m, ∏ i, (ω ^ β i * (ω⁻¹) ^ α i) ^ (j i : ℕ)) =
-      if β = α then (m : ℂ) ^ Fintype.card ι else 0 := by
-  have hω_ne : ω ≠ 0 := hprim.ne_zero hm0
-  rw [← Fintype.prod_sum (fun i (t : Fin m) ↦ (ω ^ β i * (ω⁻¹) ^ α i) ^ (t : ℕ))]
-  split_ifs with hβα
-  · subst hβα
-    simp [inv_pow, mul_inv_cancel₀ (pow_ne_zero _ hω_ne)]
-  · obtain ⟨i₀, hi₀⟩ := Function.ne_iff.1 hβα
-    refine Finset.prod_eq_zero (Finset.mem_univ i₀) ?_
-    set ζ : ℂ := ω ^ β i₀ * (ω⁻¹) ^ α i₀
-    have hζ1 : ζ ≠ 1 := by
-      intro h1
-      have hpow : ω ^ β i₀ = ω ^ α i₀ := by
-        calc ω ^ β i₀ = ζ * ω ^ α i₀ := by
-              simp [ζ, mul_assoc, inv_pow, inv_mul_cancel₀ (pow_ne_zero _ hω_ne)]
-          _ = ω ^ α i₀ := by rw [h1, one_mul]
-      exact hi₀ (hprim.injOn_pow (Finset.mem_range.2 (hβ i₀)) (Finset.mem_range.2 (hα i₀)) hpow)
-    have hζm : ζ ^ m = 1 := by
-      dsimp only [ζ]
-      rw [mul_pow, ← pow_mul, mul_comm (β i₀) m, pow_mul, hprim.pow_eq_one,
-        ← pow_mul, mul_comm (α i₀) m, pow_mul, inv_pow, hprim.pow_eq_one]
-      simp
-    rw [Fin.sum_univ_eq_sum_range (fun t ↦ ζ ^ t) m]
-    refine eq_zero_of_ne_zero_of_mul_left_eq_zero (sub_ne_zero_of_ne hζ1) ?_
-    rw [mul_geom_sum, hζm, sub_self]
-
 /-- Discrete Fourier extraction of `p.mvCoeff α` by averaging `p k` over the finite torus grid
 `z j i = ρ * ω ^ j i` (`m = k + 1`, `k = ∑ i, α i`). -/
 private theorem sum_smul_apply_grid_eq_mvCoeff [DecidableEq ι]
@@ -101,17 +71,11 @@ private theorem sum_smul_apply_grid_eq_mvCoeff [DecidableEq ι]
     refine Finset.sum_congr rfl fun β hβ ↦ ?_
     have hcoef : (∏ i, (ω⁻¹) ^ ((j i : ℕ) * α i)) * (∏ i, (ρ * ω ^ (j i : ℕ)) ^ β i) =
         (∏ i, (ω ^ β i * (ω⁻¹) ^ α i) ^ (j i : ℕ)) * ρ ^ k := by
-      have hρk : (∏ i, ρ ^ β i) = ρ ^ k := by
-        rw [Finset.prod_pow_eq_pow_sum, (mem_piAntidiag.1 hβ).1]
-      have hfac : (∏ i, (ρ * ω ^ (j i : ℕ)) ^ β i) =
-          (∏ i, ρ ^ β i) * ∏ i, (ω ^ β i) ^ (j i : ℕ) := by
-        rw [← Finset.prod_mul_distrib]
-        exact Finset.prod_congr rfl fun i _ ↦ by simp only [mul_pow, ← pow_mul, mul_comm (j i : ℕ)]
-      have hχ : (∏ i, (ω⁻¹) ^ ((j i : ℕ) * α i)) = ∏ i, ((ω⁻¹) ^ α i) ^ (j i : ℕ) :=
-        Finset.prod_congr rfl fun i _ ↦ by rw [← pow_mul, mul_comm]
-      rw [hfac, hρk, hχ, mul_left_comm, ← Finset.prod_mul_distrib, mul_comm (ρ ^ k)]
-      congr 1
-      exact Finset.prod_congr rfl fun i _ ↦ by rw [mul_comm, mul_pow]
+      rw [← (mem_piAntidiag.1 hβ).1, ← Finset.prod_pow_eq_pow_sum, ← Finset.prod_mul_distrib,
+        ← Finset.prod_mul_distrib]
+      refine Finset.prod_congr rfl fun i _ ↦ ?_
+      rw [mul_pow, pow_mul', pow_right_comm ω (j i : ℕ), mul_pow]
+      ring
     rw [smul_smul, hcoef, mul_smul]
   simp_rw [hterm]
   rw [Finset.sum_comm]
@@ -130,7 +94,7 @@ private theorem sum_smul_apply_grid_eq_mvCoeff [DecidableEq ι]
         have hβ_lt (i : ι) : β i < m :=
           (Finset.single_le_sum (fun _ _ ↦ Nat.zero_le _) (Finset.mem_univ i)).trans_lt
             ((mem_piAntidiag.1 hβ).1.trans_lt (Nat.lt_succ_self k))
-        rw [sum_prod_pow_mul_inv_pow_eq (Nat.succ_ne_zero k) hprim hα_lt hβ_lt]
+        rw [hprim.sum_prod_pow_mul_inv_pow_eq hα_lt hβ_lt]
     _ = ((m : ℂ) ^ Fintype.card ι) • (ρ ^ k • p.mvCoeff α) := by
         rw [Finset.sum_eq_single α]
         · simp

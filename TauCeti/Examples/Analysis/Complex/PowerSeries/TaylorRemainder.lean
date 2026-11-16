@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Analysis.Complex.PowerSeries.MultiIndex
 public import TauCeti.Analysis.Complex.Schwarz
+import Mathlib.Analysis.Analytic.CPolynomialDef
 import Mathlib.Analysis.Analytic.OfScalars
 import Mathlib.Tactic.FinCases
 
@@ -66,28 +67,33 @@ example : ‖((1 : ℂ) ^ 2)‖ ≤ 4 * (‖(1 : ℂ) - 0‖ / 2) ^ 2 :=
 noncomputable def sqSeries : FormalMultilinearSeries ℂ ℂ ℂ :=
   FormalMultilinearSeries.ofScalars ℂ (Pi.single 2 1)
 
+/-- The `k`-th Taylor coefficient of `sqSeries` is `1` for `k = 2` and `0` otherwise. -/
+@[simp]
+theorem sqSeries_coeff (k : ℕ) : sqSeries.coeff k = if k = 2 then 1 else 0 := by
+  simp [sqSeries, Pi.single_apply]
+
+/-- All terms of `sqSeries` outside degree `2` vanish. -/
+@[simp]
+theorem sqSeries_of_ne {k : ℕ} (hk : k ≠ 2) : sqSeries k = 0 := by
+  simp [sqSeries, hk]
+
+/-- `sqSeries` represents `z ↦ z ^ 2` on `Metric.ball 0 2`. -/
 theorem hasFPowerSeriesOnBall_sqSeries :
-    HasFPowerSeriesOnBall (fun z : ℂ ↦ z ^ 2) sqSeries 0 (2 : ℝ≥0) where
-  r_le := by
-    refine FormalMultilinearSeries.le_radius_of_summable _ (r := 2) ?_
-    refine summable_of_ne_finset_zero (s := {2}) fun n hn ↦ ?_
-    have hn2 : n ≠ 2 := by simpa using hn
-    simp [sqSeries, hn2]
-  r_pos := by simp
-  hasSum := fun {y} _ ↦ by
-    have h2 : sqSeries 2 (fun _ ↦ y) = (0 + y) ^ 2 := by simp [sqSeries]
-    rw [← h2]
-    exact hasSum_single 2 fun n hn ↦ by simp [sqSeries, Pi.single_eq_of_ne hn]
+    HasFPowerSeriesOnBall (fun z : ℂ ↦ z ^ 2) sqSeries 0 (2 : ℝ≥0) :=
+  (HasFiniteFPowerSeriesOnBall.mk' (n := 3)
+    (fun _ hm ↦ sqSeries_of_ne (by omega))
+    (by simp)
+    (fun y _ ↦ by simp [sq])).toHasFPowerSeriesOnBall
 
 -- Exact remainder norms `1, 1, 0` at `T = 0, 2, 3`.
 example : ‖((1 : ℂ) ^ 2) - sqSeries.partialSum 0 1‖ = 1 := by
   simp [FormalMultilinearSeries.partialSum]
 
 example : ‖((1 : ℂ) ^ 2) - sqSeries.partialSum 2 1‖ = 1 := by
-  norm_num [FormalMultilinearSeries.partialSum, Finset.sum_range_succ, sqSeries]
+  norm_num [FormalMultilinearSeries.partialSum, Finset.sum_range_succ]
 
 example : ‖((1 : ℂ) ^ 2) - sqSeries.partialSum 3 1‖ = 0 := by
-  norm_num [FormalMultilinearSeries.partialSum, Finset.sum_range_succ, sqSeries]
+  norm_num [FormalMultilinearSeries.partialSum, Finset.sum_range_succ]
 
 -- Corresponding remainder bounds `4, 3, 2` from `HasFPowerSeriesOnBall.norm_sub_partialSum_le`.
 example : ‖((1 : ℂ) ^ 2) - sqSeries.partialSum 0 1‖ ≤ 4 := by
@@ -108,15 +114,28 @@ example : ‖((1 : ℂ) ^ 2) - sqSeries.partialSum 3 1‖ ≤ 2 := by
 /-! ### Multi-index Cauchy inequality on `Fin 2 → ℂ` for `z 0 * z 1` -/
 
 /-- The unsymmetrised bilinear map `(u, v) ↦ u 0 * v 1` on `Fin 2 → ℂ`. -/
-noncomputable def prodCoordMap : ContinuousMultilinearMap ℂ (fun _ : Fin 2 ↦ Fin 2 → ℂ) ℂ :=
+private noncomputable def prodCoordMap : ContinuousMultilinearMap ℂ (fun _ : Fin 2 ↦ Fin 2 → ℂ) ℂ :=
   (ContinuousMultilinearMap.mkPiAlgebraFin ℂ 2 ℂ).compContinuousLinearMap
     (fun j : Fin 2 ↦ ContinuousLinearMap.proj (R := ℂ) j)
 
-/-- The formal multilinear series on `Fin 2 → ℂ` whose only nonzero term is `prodCoordMap` in
-degree `2`, representing `z ↦ z 0 * z 1`. -/
+/-- The formal multilinear series on `Fin 2 → ℂ` whose only nonzero term is `(u, v) ↦ u 0 * v 1`
+in degree `2`, representing `z ↦ z 0 * z 1`. -/
 noncomputable def prodCoordSeries : FormalMultilinearSeries ℂ (Fin 2 → ℂ) ℂ :=
   fun k ↦ if h : k = 2 then h ▸ prodCoordMap else 0
 
+/-- All terms of `prodCoordSeries` outside degree `2` vanish. -/
+@[simp]
+theorem prodCoordSeries_of_ne {k : ℕ} (hk : k ≠ 2) : prodCoordSeries k = 0 := by
+  simp [prodCoordSeries, hk]
+
+/-- In degree `2`, `prodCoordSeries` evaluates `(u, v)` to `u 0 * v 1`. -/
+@[simp]
+theorem prodCoordSeries_two_apply (v : Fin 2 → Fin 2 → ℂ) :
+    prodCoordSeries 2 v = v 0 0 * v 1 1 := by
+  simp [prodCoordSeries, prodCoordMap]
+
+/-- The `![1, 1]` multi-index coefficient of `prodCoordSeries` is `1`. -/
+@[simp]
 theorem mvCoeff_prodCoordSeries_one_one :
     prodCoordSeries.mvCoeff ![1, 1] = 1 := by
   rw [FormalMultilinearSeries.mvCoeff_eq_sum prodCoordSeries (k := 2) (by decide)]
@@ -133,21 +152,15 @@ theorem mvCoeff_prodCoordSeries_one_one :
     simp [hmem]
   refine (Finset.sum_congr hfilt fun _ _ ↦ rfl).trans ?_
   rw [Finset.sum_pair (by decide)]
-  simp [prodCoordSeries, prodCoordMap]
+  simp
 
+/-- `prodCoordSeries` represents `z ↦ z 0 * z 1` on `Metric.ball 0 2`. -/
 theorem hasFPowerSeriesOnBall_prodCoordSeries :
-    HasFPowerSeriesOnBall (fun z : Fin 2 → ℂ ↦ z 0 * z 1) prodCoordSeries 0 (2 : ℝ≥0) where
-  r_le := by
-    refine FormalMultilinearSeries.le_radius_of_summable _ (r := 2) ?_
-    refine summable_of_ne_finset_zero (s := {2}) fun n hn ↦ ?_
-    have hn2 : n ≠ 2 := by simpa using hn
-    simp [prodCoordSeries, hn2]
-  r_pos := by simp
-  hasSum := fun {y} _ ↦ by
-    have h2 : prodCoordSeries 2 (fun _ ↦ y) = (0 + y) 0 * (0 + y) 1 := by
-      simp [prodCoordSeries, prodCoordMap]
-    rw [← h2]
-    exact hasSum_single 2 fun n hn ↦ by simp [prodCoordSeries, hn]
+    HasFPowerSeriesOnBall (fun z : Fin 2 → ℂ ↦ z 0 * z 1) prodCoordSeries 0 (2 : ℝ≥0) :=
+  (HasFiniteFPowerSeriesOnBall.mk' (n := 3)
+    (fun _ hm ↦ prodCoordSeries_of_ne (by omega))
+    (by simp)
+    (fun y _ ↦ by simp [Finset.sum_range_succ])).toHasFPowerSeriesOnBall
 
 private theorem norm_prodCoord_le_four {y : Fin 2 → ℂ} (hy : y ∈ ball (0 : Fin 2 → ℂ) 2) :
     ‖y 0 * y 1‖ ≤ 4 := by
