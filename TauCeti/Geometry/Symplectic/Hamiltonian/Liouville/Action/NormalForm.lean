@@ -8,6 +8,10 @@ module
 public import TauCeti.Geometry.Symplectic.Cotangent.Bundle.ActionAngle
 public import TauCeti.Geometry.Symplectic.Hamiltonian.Liouville.Action.Chart
 
+import TauCeti.Analysis.Normed.Module.FiniteDimension
+import TauCeti.Geometry.Manifold.LocalDiffeomorph.Basic
+import TauCeti.Geometry.Manifold.MFDeriv.Basic
+
 -- Access the body of `IsLocalDiffeomorphAt` to destructure the partial diffeomorphism witnessing
 -- that the actions are a local diffeomorphism.
 import all Mathlib.Geometry.Manifold.LocalDiffeomorph
@@ -183,48 +187,10 @@ private theorem contMDiffOn_rescaledCover {t : Set (ι → ℝ)} (ht : IsOpen t)
 
 end Model
 
-/-! ### Descending a map through a local diffeomorphism -/
-
-section Descent
-
-variable {V E H M F G N : Type*} [NormedAddCommGroup V] [NormedSpace ℝ V]
-  [NormedAddCommGroup E] [NormedSpace ℝ E] [TopologicalSpace H] {I : ModelWithCorners ℝ E H}
-  [TopologicalSpace M] [ChartedSpace H M]
-  [NormedAddCommGroup F] [NormedSpace ℝ F] [TopologicalSpace G] {J : ModelWithCorners ℝ F G}
-  [TopologicalSpace N] [ChartedSpace G N]
-  {Ψ : V → M} {κ : V → N} {Φ : M → N} {W : Set V} {q : V}
-
-/-- If `Φ ∘ Ψ = κ` on an open neighbourhood of `q`, the differential of `Φ` at `Ψ q` takes
-`dΨ(u)` to `dκ(u)`. -/
-private theorem mfderiv_apply_mfderiv_of_eqOn_comp (hW : IsOpen W) (hq : q ∈ W)
-    (hΦΨ : EqOn (Φ ∘ Ψ) κ W) (hΦ : MDifferentiableAt I J Φ (Ψ q))
-    (hΨ : MDifferentiableAt 𝓘(ℝ, V) I Ψ q) (u : TangentSpace 𝓘(ℝ, V) q) :
-    mfderiv I J Φ (Ψ q) (mfderiv 𝓘(ℝ, V) I Ψ q u) = mfderiv 𝓘(ℝ, V) J κ q u := by
-  rw [← mfderiv_comp_apply q hΦ hΨ,
-    (Filter.eventuallyEq_of_mem (hW.mem_nhds hq) hΦΨ).mfderiv_eq]
-  -- The cast between the tangent spaces at `(Φ ∘ Ψ) q` and `κ q` is definitionally the identity.
-  rfl
-
-/-- If `Φ ∘ Ψ = κ` on an open set `W ∋ q`, where `Ψ` is a local diffeomorphism at `q` and `κ` is
-smooth on `W` with injective differential at `q`, between spaces of the same finite dimension,
-then `Φ` is a local diffeomorphism at `Ψ q`. -/
-private theorem isLocalDiffeomorphAt_of_eqOn_comp [FiniteDimensional ℝ V] [FiniteDimensional ℝ F]
-    [IsManifold J ∞ N] (hW : IsOpen W) (hq : q ∈ W) (hΦΨ : EqOn (Φ ∘ Ψ) κ W)
-    (hκ : ContMDiffOn 𝓘(ℝ, V) J ∞ κ W) (hκ' : Injective (mfderiv 𝓘(ℝ, V) J κ q))
-    (hdim : Module.finrank ℝ V = Module.finrank ℝ F)
-    (hΨ : IsLocalDiffeomorphAt 𝓘(ℝ, V) I ∞ Ψ q) :
-    IsLocalDiffeomorphAt I J ∞ Φ (Ψ q) := by
-  refine IsLocalDiffeomorphAt.of_comp_right (isLocalDiffeomorphAt_of_injective_mfderiv
-    (hκ.congr hΦΨ) hW hq BoundarylessManifold.isInteriorPoint (by simp) ?_ hdim) hΨ
-  rwa [(Filter.eventuallyEq_of_mem (hW.mem_nhds hq) hΦΨ).mfderiv_eq]
-
-end Descent
-
 variable {E H M : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
   [TopologicalSpace H] {I : ModelWithCorners ℝ E H} [I.Boundaryless] [TopologicalSpace M]
   [ChartedSpace H M] [IsManifold I ∞ M] [T2Space M]
   {σ : SmoothTwoForm I M} {ι : Type*} [Fintype ι] [DecidableEq ι] {F : M → ι → ℝ}
-
 
 /-- **The Liouville–Arnold theorem in action–angle form.** On a symplectic manifold of dimension
 `2 · |ι|`, let `F` be a smooth family of pairwise Poisson-commuting functions, and let the
@@ -308,11 +274,11 @@ theorem exists_actionAngle (hσ : σ.IsSymplectic) (hF : ContMDiff I 𝓘(ℝ, �
   have hΦloc (q : (ι → ℝ) × (ι → ℝ)) (hq : q ∈ W) :
       IsLocalDiffeomorphAt I
         ((ModelWithCorners.pi fun _ : ι ↦ 𝓘(ℝ)).prod 𝓘(ℝ, (ι → ℝ) →L[ℝ] ℝ)) ∞ Φ (Ψ q) :=
-    isLocalDiffeomorphAt_of_eqOn_comp hW hq hΦΨW
+    isLocalDiffeomorphAt_of_eqOn_comp hW hq BoundarylessManifold.isInteriorPoint (by simp) hΦΨW
       (contMDiffOn_rescaledCover hU₀ fun c hc ↦ (contMDiffAt_iff_contDiffAt.1
         (hAloc c hc).contMDiffAt).contDiffWithinAt)
       (injective_mfderiv_rescaledCover ha (hdA q.2 hq.2).1 (hdA q.2 hq.2).2)
-      CotangentBundle.finrank_actionAngleCover_model (hΨloc q hq)
+      (by simp only [Module.finrank_prod, ContinuousLinearMap.dual_finrank_eq]) (hΨloc q hq)
   refine ⟨Ψ '' W, (fun c ↦ a⁻¹ • A c) '' U₀, Φ, fun J ↦ ΦA.symm (a • J), ?_, ?_, ?_, ?_, ?_, ?_,
     ?_, ?_, ?_⟩
   · -- `Ψ` is a local homeomorphism on the open set `W`, so `Ψ '' W` is open.
@@ -351,8 +317,9 @@ theorem exists_actionAngle (hσ : σ.IsSymplectic) (hF : ContMDiff I 𝓘(ℝ, �
     have hΨsurj := ((hΨloc q hq).isInvertible_mfderiv (by simp)).surjective
     obtain ⟨v', rfl⟩ := hΨsurj v
     obtain ⟨w', rfl⟩ := hΨsurj w
-    have hchain := mfderiv_apply_mfderiv_of_eqOn_comp hW hq hΦΨW
-      ((hΦloc q hq).mdifferentiableAt (by simp)) ((hΨloc q hq).mdifferentiableAt (by simp))
+    have hchain := mfderiv_apply_mfderiv_of_eventuallyEq_comp
+      (Filter.eventuallyEq_of_mem (hW.mem_nhds hq) hΦΨW) ((hΦloc q hq).mdifferentiableAt (by simp))
+      ((hΨloc q hq).mdifferentiableAt (by simp))
     -- The components of `dA` are the derivatives of the components of `A`.
     have hAi (i : ι) (u : ι → ℝ) : fderiv ℝ A q.2 u i = fderiv ℝ (fun c ↦ A c i) q.2 u := by
       rw [((hasFDerivAt_pi'.1 (hdA q.2 hq.2).1) i).fderiv, ContinuousLinearMap.comp_apply,

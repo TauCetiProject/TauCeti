@@ -11,6 +11,8 @@ public import TauCeti.Geometry.Manifold.VectorBundle.Scalar
 public import TauCeti.Geometry.Manifold.VectorBundle.Translate
 public import TauCeti.Geometry.Symplectic.Cotangent.Bundle.Liouville
 
+import TauCeti.Analysis.Normed.Module.FiniteDimension
+
 /-!
 # Action–angle coordinates on the cotangent bundle of a torus
 
@@ -264,15 +266,6 @@ theorem eval₂_symplecticForm_mfderiv_actionAngleCover (x : (ι → ℝ) × (ι
   rw [← Finset.sum_neg_distrib]
   exact Finset.sum_congr rfl fun j _ ↦ by ring
 
-omit [Fintype ι] in
-/-- The source `ℝ^ι × ℝ^ι` of the action–angle covering map and the model
-`ℝ^ι × (ℝ^ι →L[ℝ] ℝ)` of the cotangent bundle of the torus have the same dimension. -/
-theorem finrank_actionAngleCover_model [Finite ι] :
-    Module.finrank ℝ ((ι → ℝ) × (ι → ℝ)) = Module.finrank ℝ ((ι → ℝ) × ((ι → ℝ) →L[ℝ] ℝ)) := by
-  -- Covectors are linear maps by finite dimensionality.
-  rw [Module.finrank_prod, Module.finrank_prod,
-    LinearMap.toContinuousLinearMap.symm.finrank_eq, Module.finrank_linearMap_self]
-
 /-- **The action–angle covering map is a local diffeomorphism.** Its pullback
 `∑ j, dθ_j ∧ dI_j` of the canonical symplectic form is nondegenerate, so its differential is
 injective, between spaces of the same dimension. -/
@@ -284,7 +277,8 @@ theorem isLocalDiffeomorph_actionAngleCover :
   intro x
   refine isLocalDiffeomorphAt_of_injective_mfderiv (contMDiff_actionAngleCover p).contMDiffOn
     isOpen_univ (Set.mem_univ x) BoundarylessManifold.isInteriorPoint (by simp)
-    ((injective_iff_map_eq_zero _).2 fun v hv ↦ ?_) finrank_actionAngleCover_model
+    ((injective_iff_map_eq_zero _).2 fun v hv ↦ ?_)
+    (by simp only [Module.finrank_prod, ContinuousLinearMap.dual_finrank_eq])
   -- A vector killed by the differential pairs to zero with every vector under `∑ dθ_j ∧ dI_j`.
   have h (w : TangentSpace 𝓘(ℝ, (ι → ℝ) × (ι → ℝ)) x) :
       ∑ j, (v.1 j * w.2 j - w.1 j * v.2 j) = 0 :=
