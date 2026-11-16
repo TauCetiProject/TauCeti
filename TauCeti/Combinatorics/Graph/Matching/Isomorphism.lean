@@ -7,17 +7,15 @@ module
 
 public import TauCeti.Combinatorics.Graph.Incidence.Isomorphism
 public import TauCeti.Combinatorics.Graph.Matching.Capacitated
-public import TauCeti.Combinatorics.Graph.Regular
 
 /-!
-# Isomorphism invariance of matchings, vertex covers and bipartitions
+# Isomorphism invariance of matchings
 
-A multigraph isomorphism transports sets of actual edges and actual vertices by its two
-equivalences. This transport preserves and reflects matchings, perfect matchings, vertex covers
-and bipartitions. Pulling vertex capacities and edge multiplicities back along the isomorphism
-preserves and reflects multiset capacitated matchings, and isomorphic multigraphs are regular of
-the same degree. Edge identities are part of the isomorphism, so parallel edges and loops are
-treated exactly as in the original graph.
+A multigraph isomorphism transports sets of actual edges by its edge equivalence. This transport
+preserves and reflects matchings and perfect matchings. Pulling vertex capacities and edge
+multiplicities back along the isomorphism preserves and reflects multiset capacitated matchings.
+Edge identities are part of the isomorphism, so parallel edges and loops are treated exactly as in
+the original graph.
 
 Proper edge-colourings are colourings of the line graph, so they are transported by
 `SimpleGraph.coloringCongr` applied to `Graph.Iso.lineGraph`.
@@ -65,32 +63,6 @@ theorem isPerfectMatching_image_iff (f : Iso G H) (M : Set E(G)) :
   refine and_congr_right fun _ ↦ forall_congr' fun x ↦ ?_
   simp only [exists_mem_image, map_inc_iff]
 
-/-- A graph isomorphism preserves and reflects vertex covers. -/
-@[simp]
-theorem isVertexCover_image_iff (f : Iso G H) (C : Set V(G)) :
-    H.IsVertexCover (f.vertexEquiv '' C) ↔ G.IsVertexCover C := by
-  rw [isVertexCover_iff_forall_exists_inc, isVertexCover_iff_forall_exists_inc,
-    ← f.edgeEquiv.forall_congr_right]
-  refine forall_congr' fun e ↦ ?_
-  simp only [exists_mem_image, map_inc_iff]
-
-private theorem isBipartition_map (f : Iso G H) {L R : Finset V(G)} (h : G.IsBipartition L R) :
-    H.IsBipartition (L.map f.vertexEquiv.toEmbedding) (R.map f.vertexEquiv.toEmbedding) where
-  disjoint := (Finset.disjoint_map _).2 h.disjoint
-  mem_or_mem x := by simpa only [Finset.mem_map_equiv] using h.mem_or_mem (f.vertexEquiv.symm x)
-  isLink {e x y} he := by
-    simp only [Finset.mem_map_equiv]
-    exact h.isLink
-      ((f.map_isLink_iff (f.edgeEquiv.symm ⟨e, he.edge_mem⟩) _ _).1 (by simpa using he))
-
-/-- A graph isomorphism preserves and reflects bipartitions. -/
-@[simp]
-theorem isBipartition_map_iff (f : Iso G H) (L R : Finset V(G)) :
-    H.IsBipartition (L.map f.vertexEquiv.toEmbedding) (R.map f.vertexEquiv.toEmbedding) ↔
-      G.IsBipartition L R := by
-  refine ⟨fun h ↦ ?_, f.isBipartition_map⟩
-  simpa [Finset.map_map] using f.symm.isBipartition_map h
-
 /-- Pulling vertex capacities and edge multiplicities back along a graph isomorphism preserves
 and reflects multiset capacitated matchings. -/
 @[simp]
@@ -105,16 +77,6 @@ theorem isCapacitatedMatching_comp_iff [Fintype E(G)] [Fintype E(H)] (f : Iso G 
     simp
   rw [hv, f.incidentEdges_map, Finset.sum_map]
   simp
-
-/-- Isomorphic multigraphs are regular of the same degree. -/
-theorem isRegularOfDegree_iff (f : Iso G H) (k : ℕ) :
-    H.IsRegularOfDegree k ↔ G.IsRegularOfDegree k := by
-  rw [isRegularOfDegree_def, isRegularOfDegree_def]
-  refine ⟨fun h x hx ↦ ?_, fun h y hy ↦ ?_⟩
-  · rw [← f.encard_incidenceSet_vertexEquiv ⟨x, hx⟩]
-    exact h _ (f.vertexEquiv _).2
-  · simpa using (f.encard_incidenceSet_vertexEquiv (f.vertexEquiv.symm ⟨y, hy⟩)).trans
-      (h _ (Subtype.prop _))
 
 end Iso
 
