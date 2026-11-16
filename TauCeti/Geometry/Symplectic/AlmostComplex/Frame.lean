@@ -148,6 +148,16 @@ theorem continuousLinearMapOfBilin_associatedBilinForm (hg : ∀ v w, ω v (J₀
     associatedBilinForm_apply, real_inner_comm, ← hg, hJ.associatedBilinForm_apply_swap]
   simp
 
+/-- If the inner product of `V` is the metric `ω(·, J₀ ·)`, a `J`-invariant `ω` has `J = J₀ P` for
+the Riesz operator `P` of the metric `ω(·, J ·)`. -/
+private theorem toContinuousLinearMap_eq_mul_continuousLinearMapOfBilin
+    (hg : ∀ v w, ω v (J₀ w) = ⟪v, w⟫) (hJ : ω.Invariant J) :
+    LinearMap.toContinuousLinearMap J.toLinearMap =
+      LinearMap.toContinuousLinearMap J₀.toLinearMap *
+        (ω.associatedBilinForm J).toContinuousBilinearMap♯ := by
+  simp [continuousLinearMapOfBilin_associatedBilinForm hg hJ, ← mul_assoc,
+    AlmostComplexStructure.toContinuousLinearMap_mul_self]
+
 /-- The unitary frame of the structure `J₀` whose metric is the inner product of `V` is the
 identity. -/
 @[simp]
@@ -196,9 +206,8 @@ private theorem unitaryFrame_eq_neg_mul_sqrt_mul (hg : ∀ v w, ω v (J₀ w) = 
   rw [unitaryFrame_def, ContinuousLinearMap.metricChangeTransport_eq_iff hH]
   refine ⟨hpos, ?_⟩
   -- `A h♯ A = B A = T⁻²`, and `R T T R = 1`.
-  have hAPA : A * h♯ * A = B * A := by
-    rw [hP, show A * -(A * B) * A = -(A * A) * B * A by noncomm_ring, hAA]
-    simp
+  have hJP : B = A * h♯ := toContinuousLinearMap_eq_mul_continuousLinearMapOfBilin hg hJ.invariant
+  have hAPA : A * h♯ * A = B * A := by rw [hJP]
   calc -A * R * A * h♯ * (-A * R * A)
       = A * R * (A * h♯ * A) * R * A := by noncomm_ring
     _ = -(A * (R * T) * (T * R) * A) := by
@@ -211,22 +220,22 @@ product of `V` is the metric `ω(·, J₀ ·)`. -/
 theorem Compatible.apply_unitaryFrame (hg : ∀ v w, ω v (J₀ w) = ⟪v, w⟫) (hJ : ω.Compatible J)
     (v : V) : J (ω.unitaryFrame J v) = ω.unitaryFrame J (J₀ v) := by
   have hH := hJ.isStrictlyPositive_continuousLinearMapOfBilin
-  have hP := continuousLinearMapOfBilin_associatedBilinForm hg hJ.invariant
   have hAA := AlmostComplexStructure.toContinuousLinearMap_mul_self J₀
-  have hRR := CFC.sqrt_mul_sqrt_self _ hH.nonneg
   have hRT := ContinuousLinearMap.sqrt_mul_metricChangeTransport hH
   have hΨ := unitaryFrame_eq_neg_mul_sqrt_mul hg hJ
   rw [← unitaryFrame_def] at hRT
-  set A := LinearMap.toContinuousLinearMap J₀.toLinearMap
-  set B := LinearMap.toContinuousLinearMap J.toLinearMap
-  set R := CFC.sqrt (ω.associatedBilinForm J).toContinuousBilinearMap♯
-  -- Both sides are `A R` for `R = P^(1/2)`: `B = A P = A R R` and `R Ψ = 1`, while `Ψ A = A R` by
-  -- the formula `Ψ = -A R A`.
-  have hB : B = A * (R * R) := by
-    rw [hRR, hP, show A * -(A * B) = -(A * A) * B by noncomm_ring, hAA]
-    simp
-  have hL : B * ω.unitaryFrame J = A * R := by simp [hB, mul_assoc, hRT]
-  have hR : ω.unitaryFrame J * A = A * R := by simp [hΨ, mul_assoc, hAA]
+  -- Both sides are `J₀ R` for `R = P^(1/2)`: `J = J₀ P = J₀ R R` and `R Ψ = 1`, while
+  -- `Ψ J₀ = J₀ R` by the formula `Ψ = -J₀ R J₀`.
+  have hL : LinearMap.toContinuousLinearMap J.toLinearMap * ω.unitaryFrame J =
+      LinearMap.toContinuousLinearMap J₀.toLinearMap *
+        CFC.sqrt (ω.associatedBilinForm J).toContinuousBilinearMap♯ := by
+    rw [toContinuousLinearMap_eq_mul_continuousLinearMapOfBilin hg hJ.invariant]
+    conv_lhs => rw [← CFC.sqrt_mul_sqrt_self _ hH.nonneg]
+    rw [mul_assoc, mul_assoc, hRT, mul_one]
+  have hR : ω.unitaryFrame J * LinearMap.toContinuousLinearMap J₀.toLinearMap =
+      LinearMap.toContinuousLinearMap J₀.toLinearMap *
+        CFC.sqrt (ω.associatedBilinForm J).toContinuousBilinearMap♯ := by
+    simp [hΨ, mul_assoc, hAA]
   exact congr($(hL.trans hR.symm) v)
 
 /-- **The unitary frame is symplectic**: `ω(Ψ_J u, Ψ_J v) = ω(u, v)`, when the inner product of `V`
@@ -283,12 +292,10 @@ theorem Compatible.transport_unitaryFrameEquiv (hJ : ω.Compatible J)
     (hg : ∀ v w, ω v (J₀ w) = ⟪v, w⟫) :
     J₀.transport hJ.unitaryFrameEquiv.toLinearEquiv = J := by
   refine AlmostComplexStructure.toLinearMap_injective (LinearMap.ext fun w ↦ ?_)
-  have h := hJ.apply_unitaryFrame hg (hJ.unitaryFrameEquiv.symm w)
-  rw [← hJ.unitaryFrameEquiv_apply, ContinuousLinearEquiv.apply_symm_apply,
-    ← hJ.unitaryFrameEquiv_apply] at h
-  refine (AlmostComplexStructure.transport_apply _ _ w).trans ?_
-  rw [ContinuousLinearEquiv.coe_symm_toLinearEquiv, ContinuousLinearEquiv.coe_toLinearEquiv]
-  exact h.symm
+  -- This is `J Ψ = Ψ J₀` at `Ψ⁻¹ w`.
+  have hw : ω.unitaryFrame J (hJ.unitaryFrameEquiv.symm w) = w :=
+    (hJ.unitaryFrameEquiv_apply _).symm.trans (hJ.unitaryFrameEquiv.apply_symm_apply w)
+  simpa [hw] using (hJ.apply_unitaryFrame hg (hJ.unitaryFrameEquiv.symm w)).symm
 
 /-- **The unitary frames of a smooth family of compatible structures are smooth.** If the
 endomorphisms of a family `J x` of `ω`-compatible structures depend `C^n` on `x ∈ s` in the
