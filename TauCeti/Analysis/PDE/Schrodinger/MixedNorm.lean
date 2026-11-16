@@ -57,50 +57,6 @@ namespace TauCeti
 variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteDimensional ℝ E]
   [MeasurableSpace E] [BorelSpace E] {p q : ℝ≥0} {r r' : ℝ≥0∞} [r'.HolderConjugate r]
 
-omit [FiniteDimensional ℝ E] [MeasurableSpace E] [BorelSpace E] in
-/-- Admissibility `2 / q + n / r = n / 2` with `2 < q` forces `2 ≤ r`. -/
-private theorem two_le_of_admissible (hq : 2 < q) (hr0 : r ≠ 0)
-    (hqr : 2 / (q : ℝ) + Module.finrank ℝ E * (r⁻¹).toReal = Module.finrank ℝ E / 2) :
-    2 ≤ r := by
-  have hq0 : (0 : ℝ) < 2 / q := div_pos two_pos (by exact_mod_cast zero_lt_two.trans hq)
-  have hlt : (r⁻¹).toReal < 2⁻¹ := by nlinarith
-  rw [← ENNReal.inv_le_inv, ← ENNReal.ofReal_toReal (ENNReal.inv_ne_top.2 hr0),
-    ← ENNReal.ofReal_toReal (a := 2⁻¹) (by simp)]
-  exact ENNReal.ofReal_le_ofReal (hlt.le.trans_eq (by simp))
-
-/-- For `G` integrable in time with values in `L²`, so is `t ↦ S(-t) G(t)`. -/
-private theorem integrable_schrodingerPropagator_neg_apply {G : ℝ → Lp ℂ 2 (volume : Measure E)}
-    (hG : Integrable G) : Integrable fun t ↦ schrodingerPropagator ℂ (-t) (G t) :=
-  hG.norm.mono' ((continuous_phasePropagator_uncurry laplacianSymbol).comp_aestronglyMeasurable
-    (continuous_neg.aestronglyMeasurable.prodMk hG.aestronglyMeasurable))
-    (ae_of_all _ fun _ ↦ (norm_phasePropagator_apply _ _ _).le)
-
-/-- For `F` integrable in time with values in `L²`, so is `s ↦ S(t - s) F(s)`, for every `t`. -/
-private theorem integrable_schrodingerPropagator_sub_apply {F : ℝ → Lp ℂ 2 (volume : Measure E)}
-    (hF : Integrable F) (t : ℝ) : Integrable fun s ↦ schrodingerPropagator ℂ (t - s) (F s) :=
-  hF.norm.mono' ((continuous_phasePropagator_uncurry laplacianSymbol).comp_aestronglyMeasurable
-    ((continuous_const.sub continuous_id).aestronglyMeasurable.prodMk hF.aestronglyMeasurable))
-    (ae_of_all _ fun _ ↦ (norm_phasePropagator_apply _ _ _).le)
-
-/-- The retarded Duhamel integral `t ↦ ∫_{s < t} S(t - s) F(s) ds` of a forcing term `F` integrable
-in time is almost everywhere strongly measurable. -/
-private theorem aestronglyMeasurable_setIntegral_Iio_schrodingerPropagator_sub
-    {F : ℝ → Lp ℂ 2 (volume : Measure E)} (hF : Integrable F) :
-    AEStronglyMeasurable fun t ↦ ∫ s in Iio t, schrodingerPropagator ℂ (t - s) (F s) := by
-  -- The integrand on the half-plane `s < t`, as a function of `(t, s)`.
-  set K : ℝ × ℝ → Lp ℂ 2 (volume : Measure E) := {q : ℝ × ℝ | q.2 < q.1}.indicator
-    fun q ↦ schrodingerPropagator ℂ (q.1 - q.2) (F q.2)
-  have hK : AEStronglyMeasurable K (volume.prod volume) :=
-    ((continuous_phasePropagator_uncurry laplacianSymbol).comp_aestronglyMeasurable
-      ((continuous_fst.sub continuous_snd).aestronglyMeasurable.prodMk
-        hF.aestronglyMeasurable.comp_snd)).indicator
-      (measurableSet_lt measurable_snd measurable_fst)
-  refine hK.integral_prod_right'.congr (ae_of_all _ fun t ↦ ?_)
-  dsimp only
-  -- `(t, s)` lies in the half-plane `s < t` exactly when `s ∈ Iio t`.
-  rw [← integral_indicator measurableSet_Iio]
-  rfl
-
 /-- **The Strichartz estimate for the Schrödinger equation** in every dimension `n`, at a
 non-endpoint admissible pair with finite `r`: `2 < q < ∞`, `2 / q + n / r = n / 2` and
 `0 < r < ∞`, with `p` the Hölder conjugate of `q`. There is `C` such that for every `f ∈ L²(E)`,
@@ -121,7 +77,8 @@ theorem exists_eLpNorm_eLpNorm_schrodingerPropagator_le (hq : 2 < q)
   exact ⟨C, fun f ↦ (continuous_phasePropagator_apply laplacianSymbol f).aestronglyMeasurable
     |>.eLpNorm_eLpNorm_le_of_forall_enorm_integral_inner_le (q' := p) (r' := (1 - r⁻¹)⁻¹)
       ENNReal.coe_ne_top hr hr2 fun G hG _ ↦
-        hC f G hG.aestronglyMeasurable (integrable_schrodingerPropagator_neg_apply hG)⟩
+        hC f G hG.aestronglyMeasurable
+          (integrable_phasePropagator_apply _ continuous_neg.aestronglyMeasurable hG)⟩
 
 /-- **The retarded Strichartz estimate for the Schrödinger equation** in every dimension `n`, at a
 non-endpoint admissible pair with finite `r`: `2 < q < ∞`, `2 / q + n / r = n / 2` and `r < ∞`,
@@ -140,7 +97,8 @@ theorem exists_eLpNorm_eLpNorm_setIntegral_Iio_schrodingerPropagator_sub_le (hq 
   obtain ⟨C, hC⟩ :=
     exists_enorm_integral_setIntegral_Iio_inner_schrodingerPropagator_sub_le (r' := r') hq hpq hqr
   have := hpq.symm.coe_ennreal
-  refine ⟨C, fun F hF ↦ (aestronglyMeasurable_setIntegral_Iio_schrodingerPropagator_sub hF
+  refine ⟨C, fun F hF ↦ (aestronglyMeasurable_setIntegral_Iio_phasePropagator_sub laplacianSymbol
+    hF.aestronglyMeasurable
     |>.eLpNorm_eLpNorm_le_of_forall_enorm_integral_inner_le (𝕜 := ℂ) (q' := p) (r' := r')
       ENNReal.coe_ne_top hr (two_le_of_admissible hq (ENNReal.HolderConjugate.ne_zero r r') hqr)
       fun G hG _ ↦ ?_)⟩
@@ -148,31 +106,13 @@ theorem exists_eLpNorm_eLpNorm_setIntegral_Iio_schrodingerPropagator_sub_le (hq 
   have hpair (t : ℝ) : ⟪(∫ s in Iio t, schrodingerPropagator ℂ (t - s) (F s) :
       Lp ℂ 2 (volume : Measure E)), G t⟫_ℂ =
       ∫ s in Iio t, ⟪schrodingerPropagator ℂ (t - s) (F s), G t⟫_ℂ := by
-    rw [← inner_conj_symm, ← integral_inner
-      (integrable_schrodingerPropagator_sub_apply hF t).integrableOn, ← integral_conj]
+    have hint : Integrable fun s ↦ schrodingerPropagator ℂ (t - s) (F s) :=
+      integrable_phasePropagator_apply _
+        (continuous_const.sub continuous_id).aestronglyMeasurable hF
+    rw [← inner_conj_symm, ← integral_inner hint.integrableOn, ← integral_conj]
     simp_rw [inner_conj_symm]
   simp_rw [hpair]
   exact hC F G hF.aestronglyMeasurable hG.aestronglyMeasurable
-
-/-- On `[0, T]`, Duhamel's formula is the free evolution minus `i` times the retarded integral of
-the forcing term cut off to `(0, T]`. -/
-private theorem schrodingerDuhamel_eq_sub_setIntegral_Iio (f : Lp ℂ 2 (volume : Measure E))
-    (F : ℝ → Lp ℂ 2 (volume : Measure E)) {T t : ℝ} (ht : t ∈ Icc 0 T) :
-    schrodingerDuhamel f F t = schrodingerPropagator ℂ t f - Complex.I •
-      ∫ s in Iio t, schrodingerPropagator ℂ (t - s) ((Ioc 0 T).indicator F s) := by
-  have hset : Iio t ∩ Ioc 0 T = Ioo 0 t := by
-    ext s
-    simp only [mem_inter_iff, mem_Iio, mem_Ioc, mem_Ioo]
-    constructor
-    · rintro ⟨h1, h2, -⟩
-      exact ⟨h2, h1⟩
-    · rintro ⟨h1, h2⟩
-      exact ⟨h2, h1, h2.le.trans ht.2⟩
-  have hind (s : ℝ) : schrodingerPropagator ℂ (t - s) ((Ioc 0 T).indicator F s) =
-      (Ioc 0 T).indicator (fun s ↦ schrodingerPropagator ℂ (t - s) (F s)) s := by
-    by_cases hs : s ∈ Ioc 0 T <;> simp [hs]
-  simp_rw [schrodingerDuhamel_def, hind, setIntegral_indicator measurableSet_Ioc, hset,
-    intervalIntegral.integral_of_le ht.1, integral_Ioc_eq_integral_Ioo]
 
 /-- **The Strichartz estimate for the inhomogeneous Schrödinger equation** in every dimension `n`,
 at a non-endpoint admissible pair with finite `r`: `2 < q < ∞`, `2 / q + n / r = n / 2` and

@@ -98,6 +98,13 @@ private theorem inner_truncPow (N : ℝ≥0) (s : ℝ) (y : E) :
     congr 1
     field_simp
 
+/-- An exponent `2 ≤ r < ∞` has `1 ≤ r - 1`. -/
+private theorem one_le_toReal_sub_one {r : ℝ≥0∞} (hr : r ≠ ∞) (hr2 : 2 ≤ r) :
+    1 ≤ r.toReal - 1 := by
+  have := ENNReal.toReal_mono hr hr2
+  simp only [ENNReal.toReal_ofNat] at this
+  linarith
+
 /-! ### Truncated powers of `L²` functions -/
 
 /-- The truncated power of an `L²` function, composed pointwise. -/
@@ -150,10 +157,7 @@ private theorem eLpNorm_truncLp_rpow_le (N : ℝ≥0) {r : ℝ≥0∞} (hr : r �
     eLpNorm (truncLp (𝕜 := 𝕜) N le_rfl u) r μ ^ r.toReal ≤
       ENNReal.ofReal (∫ x, ‖u x‖ * min ‖u x‖ N ^ (r.toReal - 1) ∂μ) := by
   have hr0 : r ≠ 0 := (two_pos.trans_le hr2).ne'
-  have hs : 1 ≤ r.toReal - 1 := by
-    have := ENNReal.toReal_mono hr hr2
-    simp only [ENNReal.toReal_ofNat] at this
-    linarith
+  have hs := one_le_toReal_sub_one hr hr2
   have hint : Integrable (fun x ↦ ‖u x‖ * min ‖u x‖ N ^ (r.toReal - 1)) μ := by
     refine (L2.integrable_inner (𝕜 := 𝕜) u (truncLp (𝕜 := 𝕜) N hs u)).norm.congr ?_
     filter_upwards [coeFn_truncLp (𝕜 := 𝕜) N hs u] with x hx
@@ -319,10 +323,7 @@ private theorem eLpNorm_indicator_truncNorm_le (hq : q ≠ ∞) (hr : r ≠ ∞)
       ‖Φ b‖ ≤ K) :
     eLpNorm (A.indicator fun b ↦ truncNorm (𝕜 := 𝕜) N r (Φ b)) q ρ ≤ M := by
   have hq0 : q ≠ 0 := ENNReal.HolderConjugate.ne_zero q q'
-  have hs : 1 ≤ r.toReal - 1 := by
-    have := ENNReal.toReal_mono hr hr2
-    simp only [ENNReal.toReal_ofNat] at this
-    linarith
+  have hs := one_le_toReal_sub_one hr hr2
   have hpos : ∀ b ∈ A, 0 < truncNorm (𝕜 := 𝕜) N r (Φ b) := fun b hb ↦ ha.trans_le (hAψ b hb).1
   set f := A.indicator fun b ↦ truncNorm (𝕜 := 𝕜) N r (Φ b) with hf_def
   set G := testFn (𝕜 := 𝕜) N r hs Φ A (q.toReal - r.toReal)

@@ -47,6 +47,9 @@ Reversing time reverses the phase: `exp(i(-t)ω(D)) = exp(it(-ω)(D))`
   `TauCeti.adjoint_phasePropagator`: unitarity.
 * `TauCeti.continuous_phasePropagator_apply`, `TauCeti.continuous_phasePropagator_uncurry`: strong
   continuity and joint continuity.
+* `TauCeti.aestronglyMeasurable_phasePropagator_apply`, `TauCeti.integrable_phasePropagator_apply`,
+  `TauCeti.aestronglyMeasurable_setIntegral_Iio_phasePropagator_sub`: measurability and
+  integrability of `a ↦ exp(iτ(a)ω(D)) G(a)` and of retarded integrals.
 * `TauCeti.phaseGroup`, `TauCeti.isUnitary_phaseGroup`: the unitary C₀-group.
 
 ## References
@@ -285,10 +288,47 @@ theorem isUnitary_phaseGroup : (phaseGroup E F ω).IsUnitary :=
 
 /-- **Joint strong continuity**: `(t, f) ↦ exp(itω(D)) f` is continuous on `ℝ × L²`. -/
 theorem continuous_phasePropagator_uncurry :
-    Continuous fun p : ℝ × Lp F 2 (volume : Measure E) ↦ phasePropagator F ω p.1 p.2 :=
-  continuous_iff_continuousAt.2 fun _ ↦ by
-    rw [ContinuousAt]
-    simpa only [phaseGroup_apply] using (phaseGroup E F ω).tendsto_apply
-      continuous_fst.continuousAt continuous_snd.continuousAt
+    Continuous fun p : ℝ × Lp F 2 (volume : Measure E) ↦ phasePropagator F ω p.1 p.2 := by
+  simpa only [phaseGroup_apply] using (phaseGroup E F ω).continuous_uncurry
+
+section Measurability
+
+variable {α : Type*} {mα : MeasurableSpace α} {μ : Measure α} {τ : α → ℝ}
+  {G : α → Lp F 2 (volume : Measure E)}
+
+/-- If the times `τ` and the `L²`-valued function `G` are almost everywhere strongly measurable,
+so is `a ↦ exp(iτ(a)ω(D)) G(a)`. -/
+theorem aestronglyMeasurable_phasePropagator_apply (hτ : AEStronglyMeasurable τ μ)
+    (hG : AEStronglyMeasurable G μ) :
+    AEStronglyMeasurable (fun a ↦ phasePropagator F ω (τ a) (G a)) μ :=
+  (continuous_phasePropagator_uncurry ω).comp_aestronglyMeasurable (hτ.prodMk hG)
+
+/-- If the times `τ` are almost everywhere strongly measurable and the `L²`-valued function `G` is
+integrable, then `a ↦ exp(iτ(a)ω(D)) G(a)` is integrable, since each operator preserves the norm. -/
+theorem integrable_phasePropagator_apply (hτ : AEStronglyMeasurable τ μ) (hG : Integrable G μ) :
+    Integrable (fun a ↦ phasePropagator F ω (τ a) (G a)) μ :=
+  hG.norm.mono' (aestronglyMeasurable_phasePropagator_apply ω hτ hG.aestronglyMeasurable)
+    (ae_of_all _ fun _ ↦ (norm_phasePropagator_apply _ _ _).le)
+
+end Measurability
+
+/-- The retarded integral `t ↦ ∫_{s < t} exp(i(t - s)ω(D)) G(s) ds` of an almost everywhere
+strongly measurable `G : ℝ → L²` is almost everywhere strongly measurable. -/
+theorem aestronglyMeasurable_setIntegral_Iio_phasePropagator_sub
+    {G : ℝ → Lp F 2 (volume : Measure E)} (hG : AEStronglyMeasurable G) :
+    AEStronglyMeasurable fun t ↦ ∫ s in Set.Iio t, phasePropagator F ω (t - s) (G s) := by
+  -- The integrand on the half-plane `s < t`, as a function of `(t, s)`.
+  set K : ℝ × ℝ → Lp F 2 (volume : Measure E) := {q : ℝ × ℝ | q.2 < q.1}.indicator
+    fun q ↦ phasePropagator F ω (q.1 - q.2) (G q.2)
+  have hK : AEStronglyMeasurable K (volume.prod volume) :=
+    (aestronglyMeasurable_phasePropagator_apply ω
+      (continuous_fst.sub continuous_snd).aestronglyMeasurable hG.comp_snd).indicator
+      (measurableSet_lt measurable_snd measurable_fst)
+  refine hK.integral_prod_right'.congr (ae_of_all _ fun t ↦ ?_)
+  dsimp only
+  rw [← integral_indicator measurableSet_Iio]
+  refine integral_congr_ae (ae_of_all _ fun s ↦ ?_)
+  -- `(t, s)` lies in the half-plane `s < t` exactly when `s ∈ Iio t`.
+  by_cases hs : s < t <;> simp [K, hs]
 
 end TauCeti
