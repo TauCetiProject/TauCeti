@@ -55,6 +55,11 @@ vanishes near `∂B` its extension by zero lies in `W^{1,p}_0(U ∩ H)`
   `(u - u ∘ ρ)|_{U ∩ H}` is `u - u ∘ ρ`.
 * `TauCeti.W1p0.setIntegral_mul_value_restrictSubCompHyperplaneReflectionL`: integrating a
   function `f` against `(φ - φ ∘ ρ)|_{U ∩ H}` is integrating its odd reflection against `φ`.
+* `TauCeti.W1p.gradient_restrictL_sub_compHyperplaneReflectionL_ae`: the weak gradient of
+  `(u - u ∘ ρ)|_{U ∩ H}` is `∇u - R (∇u ∘ ρ)`.
+* `TauCeti.W1p0.setIntegral_inner_gradient_restrictSubCompHyperplaneReflectionL`: integrating a
+  vector field `G` against the gradient of `(φ - φ ∘ ρ)|_{U ∩ H}` is integrating its odd
+  reflection `1_H G - R (1_H G ∘ ρ)` against `∇φ`.
 -/
 
 public section
@@ -157,6 +162,25 @@ theorem W1p.value_restrictL_sub_compHyperplaneReflectionL_ae (hp : p ≠ ⊤)
       W1p.value_compHyperplaneReflectionL_ae hp hU u] with x h1 h2
     rw [h1, Pi.sub_apply, h2]
   filter_upwards [W1p.value_restrictL_ae (inf_le_left : U ⊓ H ≤ U)
+      (u - W1p.compHyperplaneReflectionL hp ν c hU u),
+    ae_restrict_of_ae_restrict_of_subset (SetLike.coe_subset_coe.2 inf_le_left) hU'] with x h1 h2
+  rw [h1, h2]
+
+/-- The restriction of `u - u ∘ ρ` to `U ∩ H` has weak gradient `∇u - R (∇u ∘ ρ)`, where `R` is the
+linear part of `ρ`. -/
+theorem W1p.gradient_restrictL_sub_compHyperplaneReflectionL_ae (hp : p ≠ ⊤)
+    (hU : MapsTo (hyperplaneReflection ν c) U U) (u : W1p mu U p) :
+    W1p.gradient (W1p.restrictL (inf_le_left : U ⊓ H ≤ U)
+      (u - W1p.compHyperplaneReflectionL hp ν c hU u)) =ᵐ[mu.restrict (U ⊓ H : Opens E)]
+        fun x => W1p.gradient u x -
+          (ℝ ∙ ν)ᗮ.reflection (W1p.gradient u (hyperplaneReflection ν c x)) := by
+  have hU' : ∀ᵐ x ∂mu.restrict U, W1p.gradient (u - W1p.compHyperplaneReflectionL hp ν c hU u) x =
+      W1p.gradient u x - (ℝ ∙ ν)ᗮ.reflection (W1p.gradient u (hyperplaneReflection ν c x)) := by
+    filter_upwards [Lp.coeFn_sub (W1p.gradient u)
+        (W1p.gradient (W1p.compHyperplaneReflectionL hp ν c hU u)),
+      W1p.gradient_compHyperplaneReflectionL_ae hp hU u] with x h1 h2
+    rw [W1p.gradient_sub, h1, Pi.sub_apply, h2]
+  filter_upwards [W1p.gradient_restrictL_ae (inf_le_left : U ⊓ H ≤ U)
       (u - W1p.compHyperplaneReflectionL hp ν c hU u),
     ae_restrict_of_ae_restrict_of_subset (SetLike.coe_subset_coe.2 inf_le_left) hU'] with x h1 h2
   rw [h1, h2]
@@ -342,5 +366,74 @@ theorem W1p0.setIntegral_mul_value_restrictSubCompHyperplaneReflectionL (hp : p 
         rw [← integral_sub (f := fun x => g x * v x) (g := fun x => g (ρ x) * v x) hgv
           ((hg.comp_measurePreserving hρ).integrable_mul hv)]
         simp_rw [sub_mul]
+
+/-- **Testing a vector field against the gradient of the reflected difference.** Let
+`H = {x | c < ⟪x, ν⟫}` and let `U` be an open set mapped into itself by the reflection `ρ` in the
+hyperplane `∂H`, with linear part `R = (ℝ ∙ ν)ᗮ.reflection`. For `φ ∈ W^{1,p}_0(U)`, `p < ∞`, and
+a vector field `G ∈ L^q(U ∩ H)` with `1/q + 1/p = 1`, integrating `G` against the gradient of the
+restriction of `φ - φ ∘ ρ` to `U ∩ H` is integrating the odd reflection
+`x ↦ 1_H G x - R (1_H G (ρ x))` of `G` against `∇φ` on `U`:
+
+`∫_{U ∩ H} ⟪G, ∇(φ - φ ∘ ρ)⟫ = ∫_U ⟪1_H G - R (1_H G ∘ ρ), ∇φ⟫`.
+
+This turns a divergence datum `∂ᵢGⁱ` of an equation on `U ∩ H` into the divergence datum of the
+reflected equation on `U`. -/
+theorem W1p0.setIntegral_inner_gradient_restrictSubCompHyperplaneReflectionL (hp : p ≠ ⊤)
+    (hH : ∀ x, x ∈ H ↔ c < ⟪x, ν⟫_ℝ) (hU : MapsTo (hyperplaneReflection ν c) U U)
+    {q : ENNReal} [q.HolderTriple p 1] {G : E → E} (hG : MemLp G q (mu.restrict (U ⊓ H)))
+    (φ : W1p0 mu U p) :
+    ∫ x in U ⊓ H, ⟪G x, W1p.gradient
+        (W1p0.restrictSubCompHyperplaneReflectionL hp hH hU φ : W1p mu (U ⊓ H) p) x⟫_ℝ ∂mu =
+      ∫ x in U, ⟪(H : Set E).indicator G x -
+        (ℝ ∙ ν)ᗮ.reflection ((H : Set E).indicator G (hyperplaneReflection ν c x)),
+          W1p.gradient (φ : W1p mu U p) x⟫_ℝ ∂mu := by
+  set ρ := hyperplaneReflection ν c
+  set R := (ℝ ∙ ν)ᗮ.reflection
+  set g := (H : Set E).indicator G
+  set v : E → E := ⇑(W1p.gradient (φ : W1p mu U p))
+  have hρ : MeasurePreserving ρ (mu.restrict U) (mu.restrict U) :=
+    measurePreserving_restrict_hyperplaneReflection hU U.isOpen.measurableSet
+  have hHm : MeasurableSet (H : Set E) := H.isOpen.measurableSet
+  have hg : MemLp g q (mu.restrict U) := by
+    rw [memLp_indicator_iff_restrict hHm.nullMeasurableSet, Measure.restrict_restrict hHm,
+      inter_comm]
+    exact hG
+  have hv : MemLp v p (mu.restrict U) := Lp.memLp _
+  have hRvρ : MemLp (fun x => R (v (ρ x))) p (mu.restrict U) := by
+    have hvρ := hv.comp_measurePreserving hρ
+    exact hvρ.congr_norm (R.continuous.comp_aestronglyMeasurable hvρ.aestronglyMeasurable)
+      (ae_of_all _ fun x => (R.norm_map _).symm)
+  -- Hölder's inequality: the inner product of an `L^q` and an `Lᵖ` field is integrable.
+  have hint : ∀ {a b : E → E}, MemLp a q (mu.restrict U) → MemLp b p (mu.restrict U) →
+      Integrable (fun x => ⟪a x, b x⟫_ℝ) (mu.restrict U) := fun ha hb =>
+    memLp_one_iff_integrable.1 (ha.of_bilin (fun y z => ⟪y, z⟫_ℝ) 1 hb continuous_inner
+      (ae_of_all _ fun x => by simpa using nnNorm_inner_le_nnNorm (𝕜 := ℝ) _ _))
+  -- The gradient of the reflected difference is `v - R (v ∘ ρ)` on `U ∩ H`.
+  have hgrad : W1p.gradient
+      (W1p0.restrictSubCompHyperplaneReflectionL hp hH hU φ : W1p mu (U ⊓ H) p) =ᵐ[mu.restrict
+        (U ⊓ H : Opens E)] fun x => v x - R (v (ρ x)) := by
+    rw [W1p0.coe_restrictSubCompHyperplaneReflectionL]
+    exact W1p.gradient_restrictL_sub_compHyperplaneReflectionL_ae hp hU _
+  calc ∫ x in U ⊓ H, ⟪G x, W1p.gradient
+          (W1p0.restrictSubCompHyperplaneReflectionL hp hH hU φ : W1p mu (U ⊓ H) p) x⟫_ℝ ∂mu
+      = ∫ x in U ⊓ H, ⟪G x, v x - R (v (ρ x))⟫_ℝ ∂mu := by
+        refine integral_congr_ae ?_
+        filter_upwards [hgrad] with x hx
+        rw [hx]
+    _ = ∫ x in U, ⟪g x, v x - R (v (ρ x))⟫_ℝ ∂mu := by
+        rw [← setIntegral_indicator hHm]
+        refine integral_congr_ae (ae_of_all _ fun x => ?_)
+        by_cases hx : x ∈ (H : Set E) <;> simp [g, hx]
+    _ = ∫ x in U, ⟪g x, v x⟫_ℝ ∂mu - ∫ x in U, ⟪R (g (ρ x)), v x⟫_ℝ ∂mu := by
+        rw [← setIntegral_inner_reflection_comp_hyperplaneReflection hU U.isOpen.measurableSet,
+          ← integral_sub (hint hg hv) (hint hg hRvρ)]
+        simp_rw [inner_sub_right]
+    _ = ∫ x in U, ⟪g x - R (g (ρ x)), v x⟫_ℝ ∂mu := by
+        have hRgρ : MemLp (fun x => R (g (ρ x))) q (mu.restrict U) := by
+          have hgρ := hg.comp_measurePreserving hρ
+          exact hgρ.congr_norm (R.continuous.comp_aestronglyMeasurable hgρ.aestronglyMeasurable)
+            (ae_of_all _ fun x => (R.norm_map _).symm)
+        rw [← integral_sub (hint hg hv) (hint hRgρ hv)]
+        simp_rw [inner_sub_left]
 
 end TauCeti
