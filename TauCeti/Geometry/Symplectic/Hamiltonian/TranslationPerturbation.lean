@@ -7,10 +7,10 @@ module
 
 public import TauCeti.Geometry.Symplectic.Hamiltonian.Flow
 public import TauCeti.Geometry.Manifold.MFDeriv.FixedPoint
+import TauCeti.Analysis.Calculus.BumpFunction.Cutoff
 import TauCeti.Analysis.Calculus.FDeriv.Comp
 import TauCeti.Analysis.Calculus.Sard.EqualDimension
 import TauCeti.Dynamics.PeriodicPts.LocalPerturbation
-import Mathlib.Geometry.Manifold.PartitionOfUnity
 import Mathlib.Topology.MetricSpace.Thickening
 
 /-!
@@ -134,16 +134,9 @@ theorem exists_hamiltonianFlow_eventuallyEq_add {K W : Set V} (hK : IsCompact K)
         (∀ w ∉ W, ω.hamiltonianFlow H hX 1 =ᶠ[𝓝 w] id) ∧
         ∀ w, ‖ω.hamiltonianFlow H hX 1 w - w‖ ≤ C * ‖c‖ := by
   obtain ⟨ρ, hρ, hρW⟩ := hK.exists_cthickening_subset_open hW hKW
-  -- A smooth cutoff `χ`, equal to `1` on the `2ρ/3`-neighbourhood of `K` and supported in its
-  -- `ρ`-neighbourhood.
-  obtain ⟨χ, hχ, -, hχs, hχ1⟩ := exists_contDiff_support_eq_eq_one_iff (n := ⊤)
-    (isOpen_thickening (δ := ρ) (E := K)) (isClosed_cthickening (δ := ρ / 3 + ρ / 3) (E := K))
-    (cthickening_subset_thickening' hρ (by linarith) K)
-  have hχt : tsupport χ ⊆ cthickening ρ K := by
-    rw [tsupport, hχs]
-    exact closure_thickening_subset_cthickening ρ K
-  have hχc : HasCompactSupport χ := (hK.cthickening (r := ρ)).of_isClosed_subset
-    (isClosed_tsupport χ) hχt
+  -- A smooth cutoff `χ`, equal to `1` on the `2ρ/3`-neighbourhood of `K` and supported in `W`.
+  obtain ⟨χ, hχ, -, hχ1, hχc, hχW⟩ := (hK.cthickening (r := ρ / 3 + ρ / 3)).exists_contDiff_cutoff
+    hW ((cthickening_mono (by linarith) K).trans hρW)
   -- The field `F(w) = χ(w) w` has a bounded derivative.
   set F : V → V := fun w ↦ χ w • w
   have hF : ContDiff ℝ (⊤ : ℕ∞) F := hχ.smul contDiff_id
@@ -154,7 +147,7 @@ theorem exists_hamiltonianFlow_eventuallyEq_add {K W : Set V} (hK : IsCompact K)
   set H : V → ℝ := fun w ↦ B c (F w)
   have hH : ContDiff ℝ (⊤ : ℕ∞) H := (B c).contDiff.comp hF
   have hHχ : support H ⊆ support χ := fun w hw h ↦ hw (by simp [H, F, h])
-  have hHW : tsupport H ⊆ W := (closure_mono hHχ).trans (hχt.trans hρW)
+  have hHW : tsupport H ⊆ W := (closure_mono hHχ).trans hχW
   have hHc : HasCompactSupport H := hχc.mono hHχ
   refine ⟨H, hH, hHc, hHW, ω.exists_lipschitzWith_hamiltonianVectorField (hH.of_le (by simp)) hHc,
     fun hX ↦ ⟨fun hc x hx ↦ ω.hamiltonianFlow_eventuallyEq_add_of_forall hX (fun z hz ↦ ?_) hc hx,
@@ -163,7 +156,7 @@ theorem exists_hamiltonianFlow_eventuallyEq_add {K W : Set V} (hK : IsCompact K)
   · -- Near `K` the Hamiltonian is the linear function `ω(c, ·)`, whose field is `c`.
     have hev : H =ᶠ[𝓝 z] fun y ↦ ω c y := by
       filter_upwards [isOpen_thickening.mem_nhds hz] with y hy
-      have : χ y = 1 := (hχ1 y).1 (thickening_subset_cthickening _ _ hy)
+      have : χ y = 1 := interior_subset (hχ1 (thickening_subset_cthickening _ _ hy))
       simp [H, F, B, this]
     rw [ω.hamiltonianVectorField_congr_of_eventuallyEq hev, hamiltonianVectorField_apply_left]
   · -- The field is bounded by `‖B⁻¹‖ ‖B‖ M ‖c‖`, which bounds the displacement at time one.
