@@ -10,7 +10,7 @@ public import TauCeti.Analysis.PDE.EnergyForm.Restriction
 public import TauCeti.Analysis.PDE.MaximumPrinciple.GlobalBoundedness
 public import TauCeti.Analysis.PDE.Regularity.Oscillation
 public import TauCeti.Analysis.Sobolev.W1p.Truncation
-import Mathlib.Analysis.SpecialFunctions.Log.Base
+import TauCeti.Analysis.SpecificLimits.DecayIteration
 import TauCeti.MeasureTheory.Measure.Haar.NormedSpace
 import TauCeti.MeasureTheory.Measure.OpenPos
 
@@ -70,10 +70,9 @@ is the boundary step of the global Hölder estimate for the Dirichlet problem.
 ## Main declarations
 
 * `TauCeti.PDE.energyFormH1_posPart_left_le_setIntegral`: `a(u⁺, v) ≤ ∫_Ω f⁺ v` for every
-  nonnegative `v ∈ H¹(Ω)`; the case `f = 0` is `TauCeti.PDE.energyFormH1_posPart_left_nonpos`.
+  nonnegative `v ∈ H¹(Ω)` with `f⁺ v` integrable.
 * `TauCeti.PDE.energyFormH1_extendByZeroL_posPart_le_setIntegral`: the zero extension of `u⁺` is
-  a weak subsolution on every larger open set; the case `f = 0` is
-  `TauCeti.PDE.energyFormH1_extendByZeroL_posPart_nonpos`.
+  a weak subsolution on every larger open set.
 * `TauCeti.PDE.exists_ae_value_le_mul_add_of_mul_measureReal_le_measureReal_ball_diff`: the
   reduction of the supremum at the boundary with a right-hand side; the case `f = 0` is
   `TauCeti.PDE.exists_ae_value_le_mul_of_mul_measureReal_le_measureReal_ball_diff`.
@@ -305,30 +304,15 @@ theorem energyFormH1_posPart_left_le_setIntegral
   · rw [indicator_of_notMem (s := {y | 0 < W1p.value u y}) hux,
       indicator_of_notMem (s := {y | 0 < W1p.value u y}) hux, map_zero]
 
-/-- **Subsolutions vanishing on the boundary may be tested against any nonnegative function.**
-Let `a` be measurable and uniformly elliptic on `Ω`, and let `u ∈ H¹(Ω)` be a weak subsolution of
-`-∂ᵢ(aⁱʲ ∂ⱼu) ≤ 0`, that is `a(u, v) ≤ 0` for every nonnegative `v ∈ H¹₀(Ω)`, with `u ≤ 0` on
-`∂Ω` in the sense that `u⁺ ∈ H¹₀(Ω)`. Then `a(u⁺, v) ≤ 0` for every nonnegative `v ∈ H¹(Ω)`, with
-no boundary condition on `v`. -/
-theorem energyFormH1_posPart_left_nonpos
-    (h : UniformlyEllipticOn (Omega : Set (EuclideanSpace ℝ ι)) a lam Lam)
-    (ha : AEStronglyMeasurable a (mu.restrict Omega)) {u : W1p mu Omega 2}
-    (hboundary : W1p.posPart (by norm_num) u ∈ w1p0Submodule mu Omega 2)
-    (hu : ∀ v : W1p0 mu Omega 2,
-      (∀ᵐ x ∂mu.restrict Omega, 0 ≤ W1p.value (v : W1p mu Omega 2) x) →
-        energyFormH1 a 0 0 u (v : W1p mu Omega 2) ≤ 0)
-    {v : W1p mu Omega 2} (hv : ∀ᵐ x ∂mu.restrict Omega, 0 ≤ W1p.value v x) :
-    energyFormH1 a 0 0 (W1p.posPart (by norm_num) u) v ≤ 0 := by
-  simpa using energyFormH1_posPart_left_le_setIntegral h ha hboundary (f := 0)
-    (fun v hv => by simpa using hu v hv) hv (by simp)
-
 /-- **The zero extension of the positive part of a subsolution is a subsolution.** Let `a` be
 measurable and uniformly elliptic on `Ω`, and let `u ∈ H¹(Ω)` be a weak subsolution of
 `-∂ᵢ(aⁱʲ ∂ⱼu) ≤ f` with `u⁺ ∈ H¹₀(Ω)`. For every larger open set `Ω' ⊇ Ω` and every coefficient
 field `a'` agreeing with `a` on `Ω`, the zero extension `ū ∈ H¹₀(Ω')` of `u⁺` satisfies
 `a'(ū, v) ≤ ∫_{Ω'} f₀ v` for every nonnegative `v ∈ H¹(Ω')` with `f₀ v` integrable, where `f₀` is
-the zero extension of `f⁺`. In particular `ū` is a weak subsolution of `-∂ᵢ(a'ⁱʲ ∂ⱼū) ≤ f₀` on
-`Ω'`. -/
+the zero extension of `f⁺`. In particular, when `f₀ v` is integrable for every `v ∈ H¹₀(Ω')`
+(for instance when `Ω'` has finite measure and `f ∈ Lʳ` with `r > max 1 (2n/(n+2))`,
+`TauCeti.W1p0.integrable_mul_value_of_memLp`), `ū` is a weak subsolution of
+`-∂ᵢ(a'ⁱʲ ∂ⱼū) ≤ f₀` on `Ω'`. -/
 theorem energyFormH1_extendByZeroL_posPart_le_setIntegral {Omega' : Opens (EuclideanSpace ℝ ι)}
     (hsub : Omega ≤ Omega') {a' : EuclideanSpace ℝ ι → Matrix ι ι ℝ}
     (haa' : EqOn a' a (Omega : Set (EuclideanSpace ℝ ι)))
@@ -375,26 +359,6 @@ theorem energyFormH1_extendByZeroL_posPart_le_setIntegral {Omega' : Opens (Eucli
   refine le_of_eq_of_le ?_ (energyFormH1_posPart_left_le_setIntegral h ha hboundary hu hres hint)
   rw [energyFormH1_def, energyFormH1_def]
   exact setIntegral_congr_fun hOm fun x hx => by rw [haa' hx]
-
-/-- **The zero extension of the positive part of a subsolution is a subsolution.** Let `a` be
-measurable and uniformly elliptic on `Ω`, and let `u ∈ H¹(Ω)` be a weak subsolution of
-`-∂ᵢ(aⁱʲ ∂ⱼu) ≤ 0` with `u⁺ ∈ H¹₀(Ω)`. For every larger open set `Ω' ⊇ Ω` and every coefficient
-field `a'` agreeing with `a` on `Ω`, the zero extension `ū ∈ H¹₀(Ω')` of `u⁺` satisfies
-`a'(ū, v) ≤ 0` for every nonnegative `v ∈ H¹(Ω')`. In particular `ū` is a weak subsolution of
-`-∂ᵢ(a'ⁱʲ ∂ⱼū) ≤ 0` on `Ω'`. -/
-theorem energyFormH1_extendByZeroL_posPart_nonpos {Omega' : Opens (EuclideanSpace ℝ ι)}
-    (hsub : Omega ≤ Omega') {a' : EuclideanSpace ℝ ι → Matrix ι ι ℝ}
-    (haa' : EqOn a' a (Omega : Set (EuclideanSpace ℝ ι)))
-    (h : UniformlyEllipticOn (Omega : Set (EuclideanSpace ℝ ι)) a lam Lam)
-    (ha : AEStronglyMeasurable a (mu.restrict Omega)) {u : W1p mu Omega 2}
-    (hboundary : W1p.posPart (by norm_num) u ∈ w1p0Submodule mu Omega 2)
-    (hu : ∀ v : W1p0 mu Omega 2,
-      (∀ᵐ x ∂mu.restrict Omega, 0 ≤ W1p.value (v : W1p mu Omega 2) x) →
-        energyFormH1 a 0 0 u (v : W1p mu Omega 2) ≤ 0)
-    {v : W1p mu Omega' 2} (hv : ∀ᵐ x ∂mu.restrict Omega', 0 ≤ W1p.value v x) :
-    energyFormH1 a' 0 0 (W1p0.extendByZeroL hsub ⟨_, hboundary⟩ : W1p mu Omega' 2) v ≤ 0 := by
-  simpa using energyFormH1_extendByZeroL_posPart_le_setIntegral hsub haa' h ha hboundary
-    (f := 0) (fun v hv => by simpa using hu v hv) hv (by simp)
 
 /-- The whole-space problem behind the boundary estimate: extending `a` by `λ I` off `Ω` gives a
 uniformly elliptic field on the whole space, for which the zero extension `ū` of `u⁺` is a weak
@@ -889,62 +853,6 @@ theorem exists_ae_abs_value_le_pow_mul_of_mul_measureReal_le_measureReal_ball_di
   rw [h3] at h2
   exact abs_le.2 ⟨neg_le.1 h2, h1⟩
 
-/-- The datum term along the radii of the iteration: if `2t = R / 4ʲ` and
-`4^(-γ) ≤ q₁` with `γ > 0`, then `t^γ ≤ R^γ q₁ʲ`. -/
-private theorem rpow_le_mul_pow_of_div_pow_eq {R t γ q₁ : ℝ} {j : ℕ} (hR : 0 < R) (ht : 0 < t)
-    (h2t : R / 4 ^ j = 2 * t) (hγ : 0 < γ) (hq₁ : ((4 : ℝ) ^ γ)⁻¹ ≤ q₁) :
-    t ^ γ ≤ R ^ γ * q₁ ^ j := by
-  have h4 : ((4 : ℝ) ^ j) ^ γ = ((4 : ℝ) ^ γ) ^ j := by
-    rw [← Real.rpow_natCast (4 : ℝ) j, ← Real.rpow_mul (by norm_num), mul_comm,
-      Real.rpow_mul (by norm_num), Real.rpow_natCast]
-  calc t ^ γ ≤ (2 * t) ^ γ := Real.rpow_le_rpow ht.le (by linarith) hγ.le
-    _ = R ^ γ * (((4 : ℝ) ^ γ)⁻¹) ^ j := by
-      rw [← h2t, Real.div_rpow hR.le (by positivity), h4, inv_pow, div_eq_mul_inv]
-    _ ≤ R ^ γ * q₁ ^ j := by gcongr
-
-/-- One step of the iteration multiplies the bound by `q = (1 + q₁)/2`: if `1 - δ ≤ q₁ < 1` and
-the datum term `A` is at most `q₁ʲ E`, then with `X = M + 2 E / (1 - q₁)`,
-`(1 - δ) qʲ X + A ≤ qʲ⁺¹ X`. -/
-private theorem one_sub_mul_pow_mul_add_le_pow_succ_mul {δ q₁ M E A : ℝ} (j : ℕ)
-    (hq₁δ : 1 - δ ≤ q₁) (hq₁0 : 0 < q₁) (hq₁ : q₁ < 1) (hM : 0 ≤ M) (hE : 0 ≤ E)
-    (hA : A ≤ q₁ ^ j * E) :
-    (1 - δ) * (((1 + q₁) / 2) ^ j * (M + 2 / (1 - q₁) * E)) + A ≤
-      ((1 + q₁) / 2) ^ (j + 1) * (M + 2 / (1 - q₁) * E) := by
-  set q : ℝ := (1 + q₁) / 2
-  set X : ℝ := M + 2 / (1 - q₁) * E
-  -- `q₁ X + E ≤ q X`, since `(q - q₁) X = (1 - q₁)/2 X ≥ E`.
-  have hkey : q₁ * X + E ≤ q * X := by
-    have hDE : E = (1 - q₁) / 2 * (2 / (1 - q₁) * E) := by field_simp
-    have hmono : (1 - q₁) / 2 * (2 / (1 - q₁) * E) ≤ (1 - q₁) / 2 * X :=
-      mul_le_mul_of_nonneg_left (by simp only [X]; linarith) (by linarith)
-    have hqX : q * X = q₁ * X + (1 - q₁) / 2 * X := by simp only [q]; ring
-    linarith
-  have hq₁q : q₁ ^ j ≤ q ^ j := pow_le_pow_left₀ hq₁0.le (by simp only [q]; linarith) j
-  calc (1 - δ) * (q ^ j * X) + A ≤ q₁ * (q ^ j * X) + q ^ j * E :=
-        add_le_add (mul_le_mul_of_nonneg_right hq₁δ (by positivity))
-          (hA.trans (mul_le_mul_of_nonneg_right hq₁q hE))
-    _ = q ^ j * (q₁ * X + E) := by ring
-    _ ≤ q ^ j * (q * X) := mul_le_mul_of_nonneg_left hkey (by positivity)
-    _ = q ^ (j + 1) * X := by ring
-
-/-- Passing from the radii `R / 4ʲ` to arbitrary radii: if `R / ρ < 4ʲ⁺¹` and `0 < q < 1`, then
-`qʲ⁺¹ ≤ (ρ / R)^α` for `α = log₄ (1 / q)`. -/
-private theorem pow_succ_le_div_rpow_logb {q ρ R : ℝ} {j : ℕ} (hq0 : 0 < q) (hq1 : q < 1)
-    (hρ : 0 < ρ) (hR : 0 < R) (hj : R / ρ < 4 ^ (j + 1)) :
-    q ^ (j + 1) ≤ (ρ / R) ^ Real.logb 4 q⁻¹ := by
-  set α : ℝ := Real.logb 4 q⁻¹
-  have h4 : ((4 : ℝ) ^ (j + 1)) ^ α = q⁻¹ ^ (j + 1) := by
-    rw [← Real.rpow_natCast (4 : ℝ) (j + 1), ← Real.rpow_mul (by norm_num), mul_comm,
-      Real.rpow_mul (by norm_num), Real.rpow_logb (by norm_num) (by norm_num) (inv_pos.2 hq0),
-      Real.rpow_natCast]
-  have hlt : ((4 : ℝ) ^ (j + 1))⁻¹ ≤ ρ / R := by
-    rw [inv_le_comm₀ (by positivity) (by positivity), inv_div]
-    exact hj.le
-  have hα : 0 < α := Real.logb_pos (by norm_num) ((one_lt_inv₀ hq0).2 hq1)
-  calc q ^ (j + 1) = (((4 : ℝ) ^ (j + 1)) ^ α)⁻¹ := by rw [h4, inv_pow, inv_inv]
-    _ = (((4 : ℝ) ^ (j + 1))⁻¹) ^ α := (Real.inv_rpow (by positivity) _).symm
-    _ ≤ (ρ / R) ^ α := Real.rpow_le_rpow (by positivity) hlt hα.le
-
 /-- The discrete form of the decay at the boundary with a right-hand side: iterating the
 reduction of the supremum `u ≤ (1 - δ) M + K t^γ ‖f‖ / λ` from `B(x₀, 2t)` to `B(x₀, t/2)` along
 the radii `2t = R / 4ʲ` gives `u ≤ qʲ (M + D E)` on `Ω ∩ B(x₀, R / 4ʲ)`, where
@@ -1027,7 +935,8 @@ private theorem ae_value_le_pow_mul_add_of_forall_ae_value_le {r : ℝ≥0} {θ 
           ball x₀ (2 * t)))).toReal / lam
         ≤ K * (R ^ γ * q₁ ^ j) * F / lam := by
           gcongr
-          exact rpow_le_mul_pow_of_div_pow_eq hR ht h2t hγ hsq₁
+          calc t ^ γ ≤ (2 * t) ^ γ := Real.rpow_le_rpow ht.le (by linarith) hγ.le
+            _ ≤ R ^ γ * q₁ ^ j := h2t ▸ rpow_div_pow_le_mul_pow hR.le (by norm_num) hsq₁ j
       _ = q₁ ^ j * (K * R ^ γ * F / lam) := by ring
 
 /-- **Hölder decay at the boundary, with a right-hand side (De Giorgi).** Let `n ≥ 1` be the
@@ -1100,7 +1009,7 @@ theorem exists_ae_value_le_mul_rpow_mul_add_of_mul_measureReal_le_measureReal_ba
   filter_upwards [ae_restrict_of_ae_restrict_of_subset
     (inter_subset_inter_right _ (ball_subset_ball hρj)) hdisc] with x hx
   refine hx.trans ?_
-  have hpow : q ^ (j + 1) ≤ (ρ / R) ^ α := pow_succ_le_div_rpow_logb hq0 hq1 hρ hR hj2
+  have hpow : q ^ (j + 1) ≤ (ρ / R) ^ α := pow_succ_le_div_rpow_logb (by norm_num) hq0 hq1 hρ hR hj2
   have hB : 0 ≤ R ^ γ * F / lam := by positivity
   have hX : M + D * (K * R ^ γ * F / lam) ≤ max 1 (D * K) * (M + R ^ γ * F / lam) := by
     calc M + D * (K * R ^ γ * F / lam) = M + D * K * (R ^ γ * F / lam) := by ring
