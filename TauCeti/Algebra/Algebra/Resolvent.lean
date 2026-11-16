@@ -68,7 +68,7 @@ theorem Commute.resolvent_right {a b : A} (h : Commute b a) (r : R) :
     exact Commute.zero_right b
 
 /-- Unital algebra homomorphisms preserve resolvents on the resolvent set. -/
-theorem AlgHom.map_resolvent {F B : Type*} [Ring B] [Algebra R B] [FunLike F A B]
+theorem TauCeti.map_resolvent {F B : Type*} [Ring B] [Algebra R B] [FunLike F A B]
     [AlgHomClass F R A B] (φ : F) {a : A} {r : R} (hr : r ∈ resolventSet R a) :
     φ (resolvent a r) = resolvent (φ a) r := by
   have h' : IsUnit (algebraMap R B r - φ a) := AlgHom.mem_resolventSet_apply φ hr
@@ -76,3 +76,9 @@ theorem AlgHom.map_resolvent {F B : Type*} [Ring B] [Algebra R B] [FunLike F A B
   rw [resolvent, resolvent, Ring.mul_inverse_cancel _ h', ← map_one φ,
     ← Ring.mul_inverse_cancel _ (spectrum.mem_resolventSet_iff.mp hr), map_mul, map_sub,
     AlgHomClass.commutes]
+
+/-- Unital algebra homomorphisms preserve resolvents on the resolvent set. -/
+theorem AlgHom.map_resolvent {B : Type*} [Ring B] [Algebra R B] (φ : A →ₐ[R] B) {a : A} {r : R}
+    (hr : r ∈ resolventSet R a) :
+    φ (resolvent a r) = resolvent (φ a) r :=
+  TauCeti.map_resolvent φ hr

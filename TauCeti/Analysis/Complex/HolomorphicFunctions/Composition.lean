@@ -8,17 +8,17 @@ module
 public import TauCeti.Analysis.Complex.HolomorphicFunctions.Germ
 
 /-!
-# Composition of holomorphic functions and germs
+# Composition of holomorphic functions on open domains
 
 If `f` is holomorphic on an open set `U` and maps a subset `s ⊆ U` into an open set `V`, then
 `HolomorphicFunctions.preimageOpen f V` is an open subset `U' ≤ U` containing `s` that `extend f`
-maps into `V`. Composing `g : holomorphicFunctions V` with `f` on any such `U'` gives
-`HolomorphicFunctions.comp g f hU' hmaps : holomorphicFunctions U'`.
+maps into `V`. Right-composition by `f` on any open subset `U' ≤ U` mapped into `V` is a
+continuous unital `ℂ`-algebra homomorphism
+`HolomorphicFunctions.compRight f hU' hmaps : holomorphicFunctions V →ₐ[ℂ] holomorphicFunctions U'`.
 
-At the level of germs, if `f : holomorphicGerms s` has `spectrum ℂ f ⊆ t` (meaning all values of
-`f` on `s` lie in `t`), composing `g : holomorphicGerms t` with `f` produces a well-defined germ
-`holomorphicGerms.comp g f ht : holomorphicGerms s`, compatible with ambient representatives,
-open-domain composition, and pointwise evaluation.
+The bridge theorem `holomorphicGerms.compRight_toGerm` identifies `HolomorphicFunctions.compRight`
+with germ right-composition `holomorphicGerms.compRight` (defined in
+`TauCeti.Analysis.Complex.Germ.Algebra`).
 
 ## References
 
@@ -31,7 +31,7 @@ open Filter Set Topology TopologicalSpace
 
 namespace TauCeti.HolomorphicFunctions
 
-variable {s : Set ℂ} {U U' U'' V V' : Opens ℂ}
+variable {s : Set ℂ} {U U' U'' V V' W : Opens ℂ}
 
 /-- The open subset of `U` where `f` takes values in `V`. -/
 def preimageOpen (f : holomorphicFunctions U) (V : Opens ℂ) : Opens ℂ where
@@ -49,8 +49,7 @@ theorem mem_preimageOpen {f : holomorphicFunctions U} {V : Opens ℂ} {z : ℂ} 
     exact hV
   · rintro ⟨hz, hV⟩
     refine ⟨⟨z, hz⟩, ?_, rfl⟩
-    change f.val ⟨z, hz⟩ ∈ V
-    rwa [← extend_apply f ⟨z, hz⟩]
+    simpa only [mem_preimage, SetLike.mem_coe, extend_apply f ⟨z, hz⟩] using hV
 
 /-- The preimage open domain is contained in the source domain of `f`. -/
 theorem preimageOpen_le (f : holomorphicFunctions U) (V : Opens ℂ) : preimageOpen f V ≤ U :=
@@ -66,71 +65,168 @@ theorem subset_preimageOpen {f : holomorphicFunctions U} {V : Opens ℂ}
     (hsU : s ⊆ U) (hsV : MapsTo (extend f) s V) : s ⊆ preimageOpen f V :=
   fun _ hz => mem_preimageOpen.mpr ⟨hsU hz, hsV hz⟩
 
-/-- Compose `g : holomorphicFunctions V` with `f : holomorphicFunctions U` on an open
-subset `U' ≤ U` mapped into `V` by `extend f`. -/
-def comp (g : holomorphicFunctions V) (f : holomorphicFunctions U)
-    (hU' : U' ≤ U) (hmaps : MapsTo (extend f) U' V) : holomorphicFunctions U' :=
-  of U' (extend g ∘ extend f)
-    ((differentiableOn_extend g).comp ((differentiableOn_extend f).mono hU') hmaps)
+private def compMap (f : holomorphicFunctions U) (hU' : U' ≤ U)
+    (hmaps : MapsTo (extend f) U' V) : C(U', V) :=
+  ⟨fun z : U' => ⟨f.val (Set.inclusion hU' z),
+      SetLike.mem_coe.mp (extend_apply f (Set.inclusion hU' z) ▸ hmaps z.property)⟩,
+    (f.val.continuous.comp (continuous_inclusion hU')).subtype_mk _⟩
 
-/-- Pointwise evaluation of `comp g f hU' hmaps` on `U'`. -/
-@[simp]
-theorem comp_apply (g : holomorphicFunctions V) (f : holomorphicFunctions U)
-    (hU' : U' ≤ U) (hmaps : MapsTo (extend f) U' V) (z : U') :
-    (comp g f hU' hmaps).val z = extend g (extend f z) := by
-  rw [comp, of_apply]
-  rfl
+/-- Right-composition by `f : holomorphicFunctions U` on an open subset `U' ≤ U` mapped into `V`
+by `extend f` (sending `g ↦ g ∘ f`), as a unital `ℂ`-algebra homomorphism
+`holomorphicFunctions V →ₐ[ℂ] holomorphicFunctions U'`. -/
+def compRight (f : holomorphicFunctions U) (hU' : U' ≤ U)
+    (hmaps : MapsTo (extend f) U' V) :
+    holomorphicFunctions V →ₐ[ℂ] holomorphicFunctions U' :=
+  ((ContinuousMap.compRightAlgHom ℂ ℂ (compMap f hU' hmaps)).comp
+    (holomorphicFunctions V).val).codRestrict (holomorphicFunctions U') fun g =>
+      mem_holomorphicFunctions_iff.mpr
+        ⟨extend g ∘ extend f,
+          (differentiableOn_extend g).comp ((differentiableOn_extend f).mono hU') hmaps,
+          fun z => by
+            have hzV : extend f z ∈ V := SetLike.mem_coe.mp (hmaps z.property)
+            simp only [AlgHom.comp_apply, Subalgebra.val_apply, ContinuousMap.compRightAlgHom_apply,
+              ContinuousMap.comp_apply, compMap, Function.comp_apply]
+            rw [extend_apply g ⟨extend f z, hzV⟩]
+            congr 1
+            exact Subtype.ext (extend_apply f (Set.inclusion hU' z))⟩
 
-/-- Composition of restricted ambient holomorphic functions agrees with ambient composition. -/
+/-- Pointwise evaluation of `compRight f hU' hmaps g` on `U'`. -/
 @[simp]
-theorem comp_of {φ ψ : ℂ → ℂ} (hφ : DifferentiableOn ℂ φ V) (hψ : DifferentiableOn ℂ ψ U)
-    (hU' : U' ≤ U) (hmaps : MapsTo ψ U' V) :
-    comp (of V φ hφ) (of U ψ hψ) hU'
-      (show MapsTo (extend (of U ψ hψ)) U' V from fun z hz => by
-        rw [extend_apply _ ⟨z, hU' hz⟩, of_apply]
-        exact hmaps hz) =
-      of U' (φ ∘ ψ) (hφ.comp (hψ.mono hU') hmaps) := by
+theorem compRight_apply (f : holomorphicFunctions U) (hU' : U' ≤ U)
+    (hmaps : MapsTo (extend f) U' V) (g : holomorphicFunctions V) (z : U') :
+    (compRight f hU' hmaps g).val z = extend g (extend f z) := by
+  have hzV : extend f z ∈ V := SetLike.mem_coe.mp (hmaps z.property)
+  rw [extend_apply g ⟨extend f z, hzV⟩, compRight, AlgHom.coe_codRestrict,
+    AlgHom.comp_apply, Subalgebra.val_apply, ContinuousMap.compRightAlgHom_apply,
+    ContinuousMap.comp_apply]
+  exact congrArg g.val (Subtype.ext (extend_apply f (Set.inclusion hU' z)).symm)
+
+/-- Extending `compRight f hU' hmaps g` agrees with `extend g (extend f z)` on `U'`. -/
+@[simp]
+theorem extend_compRight (f : holomorphicFunctions U) (hU' : U' ≤ U)
+    (hmaps : MapsTo (extend f) U' V) (g : holomorphicFunctions V) {z : ℂ} (hz : z ∈ U') :
+    extend (compRight f hU' hmaps g) z = extend g (extend f z) := by
+  rw [extend_apply _ ⟨z, hz⟩, compRight_apply]
+
+/-- Right-composition on holomorphic functions is continuous for the compact-open topology. -/
+@[continuity]
+theorem continuous_compRight (f : holomorphicFunctions U) (hU' : U' ≤ U)
+    (hmaps : MapsTo (extend f) U' V) : Continuous (compRight f hU' hmaps) := by
+  unfold compRight
+  exact ((ContinuousMap.compRightAlgHom_continuous ℂ ℂ (compMap f hU' hmaps)).comp
+    continuous_subtype_val).subtype_mk _
+
+/-- Right-composition of restricted ambient holomorphic functions agrees with ambient
+composition. -/
+@[simp]
+theorem compRight_of {φ ψ : ℂ → ℂ} (hφ : DifferentiableOn ℂ φ V) (hψ : DifferentiableOn ℂ ψ U)
+    (hU' : U' ≤ U) (hmaps : MapsTo (extend (of U ψ hψ)) U' V) :
+    compRight (of U ψ hψ) hU' hmaps (of V φ hφ) =
+      of U' (φ ∘ ψ) (hφ.comp (hψ.mono hU') fun z hz => by
+        simpa only [extend_of hψ (hU' hz)] using hmaps hz) := by
   apply Subtype.ext
   ext z
-  have hzV : ψ z ∈ V := hmaps z.property
-  rw [comp_apply, of_apply, Function.comp_apply, extend_apply _ ⟨(z : ℂ), hU' z.property⟩,
-    of_apply, extend_apply _ ⟨ψ z, hzV⟩, of_apply]
+  have hzV : ψ z ∈ V := by
+    simpa only [← SetLike.mem_coe, extend_of hψ (hU' z.property)] using hmaps z.property
+  rw [compRight_apply, of_apply, Function.comp_apply, extend_of hψ (hU' z.property),
+    extend_of hφ hzV]
 
-/-- Shrinking the domain of a composite restricts the composite. -/
+/-- Right-composing the coordinate function with `f` gives the restriction of `f`. -/
 @[simp]
-theorem comp_mono (g : holomorphicFunctions V) (f : holomorphicFunctions U)
-    (hU' : U' ≤ U) (hmaps : MapsTo (extend f) U' V) (hU'' : U'' ≤ U') :
-    restrict hU'' (comp g f hU' hmaps) =
-      comp g f (hU''.trans hU') (hmaps.mono_left hU'') := by
+theorem compRight_id (f : holomorphicFunctions U) (hU' : U' ≤ U)
+    (hmaps : MapsTo (extend f) U' V) :
+    compRight f hU' hmaps (of V id differentiableOn_id) = restrict hU' f := by
   apply Subtype.ext
   ext z
-  rw [restrict_apply, comp_apply, comp_apply]
+  rw [compRight_apply, restrict_apply,
+    extend_of differentiableOn_id (SetLike.mem_coe.mp (hmaps z.property)),
+    id_eq, extend_apply f (Set.inclusion hU' z)]
 
-/-- Composing with a restricted outer function leaves the composite unchanged. -/
+/-- Right-composition by the coordinate function is restriction. -/
 @[simp]
-theorem comp_restrict_left (g : holomorphicFunctions V) (f : holomorphicFunctions U)
-    (hV' : V' ≤ V) (hU' : U' ≤ U) (hmaps : MapsTo (extend f) U' V') :
-    comp (restrict hV' g) f hU' hmaps = comp g f hU' (hmaps.mono_right hV') := by
-  apply Subtype.ext
-  ext z
-  have hzV' : extend f z ∈ V' := hmaps z.property
-  rw [comp_apply, comp_apply, extend_apply _ ⟨extend f z, hzV'⟩, restrict_apply,
-    extend_apply g ⟨extend f z, hV' hzV'⟩]
+theorem compRight_of_id (hU' : U' ≤ U)
+    (hmaps : MapsTo (extend (of U id differentiableOn_id)) U' V) :
+    compRight (of U id differentiableOn_id) hU' hmaps =
+      restrict (fun z hz => by
+        simpa only [← SetLike.mem_coe, extend_of differentiableOn_id (hU' hz), id_eq] using
+          hmaps hz) := by
+  ext g z
+  have hzV : (z : ℂ) ∈ V := by
+    simpa only [← SetLike.mem_coe, extend_of differentiableOn_id (hU' z.property), id_eq] using
+      hmaps z.property
+  rw [compRight_apply, restrict_apply, extend_of differentiableOn_id (hU' z.property),
+    id_eq, extend_apply g ⟨z, hzV⟩]
 
-/-- Composing with a restricted inner function leaves the composite unchanged. -/
+/-- Shrinking the target domain after right-composition shrinks the domain of right-composition. -/
 @[simp]
-theorem comp_restrict_right (g : holomorphicFunctions V) (f : holomorphicFunctions U)
-    (hU₁ : U' ≤ U) (hU₂ : U'' ≤ U') (hmaps : MapsTo (extend (restrict hU₁ f)) U'' V) :
-    comp g (restrict hU₁ f) hU₂ hmaps =
-      comp g f (hU₂.trans hU₁)
-        (show MapsTo (extend f) U'' V from fun z hz => by
-          have hz' := hmaps hz
-          rw [extend_apply _ ⟨z, hU₂ hz⟩, restrict_apply] at hz'
-          simpa only [extend_apply f ⟨z, hU₁ (hU₂ hz)⟩] using hz') := by
-  apply Subtype.ext
-  ext z
-  rw [comp_apply, comp_apply, extend_apply _ ⟨(z : ℂ), hU₂ z.property⟩, restrict_apply,
-    extend_apply f ⟨(z : ℂ), hU₁ (hU₂ z.property)⟩]
+theorem restrict_comp_compRight (f : holomorphicFunctions U) (hU' : U' ≤ U)
+    (hmaps : MapsTo (extend f) U' V) (hU'' : U'' ≤ U') :
+    (restrict hU'').comp (compRight f hU' hmaps) =
+      compRight f (hU''.trans hU') (hmaps.mono_left (SetLike.coe_subset_coe.mpr hU'')) := by
+  ext g z
+  rw [AlgHom.comp_apply, restrict_apply, compRight_apply, compRight_apply]
+
+/-- Applied form of `restrict_comp_compRight`. -/
+@[simp]
+theorem restrict_compRight (f : holomorphicFunctions U) (hU' : U' ≤ U)
+    (hmaps : MapsTo (extend f) U' V) (hU'' : U'' ≤ U') (g : holomorphicFunctions V) :
+    restrict hU'' (compRight f hU' hmaps g) =
+      compRight f (hU''.trans hU') (hmaps.mono_left (SetLike.coe_subset_coe.mpr hU'')) g :=
+  DFunLike.congr_fun (restrict_comp_compRight f hU' hmaps hU'') g
+
+/-- Right-composition after restriction widens the codomain of `f`. -/
+@[simp]
+theorem compRight_comp_restrict (f : holomorphicFunctions U) (hV' : V' ≤ V) (hU' : U' ≤ U)
+    (hmaps : MapsTo (extend f) U' V') :
+    (compRight f hU' hmaps).comp (restrict hV') =
+      compRight f hU' (hmaps.mono_right (SetLike.coe_subset_coe.mpr hV')) := by
+  ext g z
+  rw [AlgHom.comp_apply, compRight_apply, compRight_apply,
+    extend_restrict hV' g (SetLike.mem_coe.mp (hmaps z.property))]
+
+/-- Applied form of `compRight_comp_restrict`. -/
+@[simp]
+theorem compRight_apply_restrict (f : holomorphicFunctions U) (hV' : V' ≤ V) (hU' : U' ≤ U)
+    (hmaps : MapsTo (extend f) U' V') (g : holomorphicFunctions V) :
+    compRight f hU' hmaps (restrict hV' g) =
+      compRight f hU' (hmaps.mono_right (SetLike.coe_subset_coe.mpr hV')) g :=
+  DFunLike.congr_fun (compRight_comp_restrict f hV' hU' hmaps) g
+
+/-- Right-composition by a restricted inner function agrees with right-composition by the
+original function on the smaller domain. -/
+@[simp]
+theorem compRight_restrict (f : holomorphicFunctions U) (hU₁ : U' ≤ U) (hU₂ : U'' ≤ U')
+    (hmaps : MapsTo (extend (restrict hU₁ f)) U'' V) :
+    compRight (restrict hU₁ f) hU₂ hmaps =
+      compRight f (hU₂.trans hU₁)
+        (hmaps.congr fun _ hz => extend_restrict hU₁ f (hU₂ hz)) := by
+  ext g z
+  rw [compRight_apply, compRight_apply, extend_restrict hU₁ f (hU₂ z.property)]
+
+/-- Associativity of open-domain right-composition as algebra homomorphisms. -/
+theorem compRight_comp_compRight (f : holomorphicFunctions U) (hU' : U' ≤ U)
+    (hmaps₁ : MapsTo (extend f) U' V') (g : holomorphicFunctions V) (hV' : V' ≤ V)
+    (hmaps₂ : MapsTo (extend g) V' W) :
+    (compRight f hU' hmaps₁).comp (compRight g hV' hmaps₂) =
+      compRight (compRight f hU' (hmaps₁.mono_right (SetLike.coe_subset_coe.mpr hV')) g) le_rfl
+        ((hmaps₂.comp hmaps₁).congr fun _ hz =>
+          (extend_compRight f hU' (hmaps₁.mono_right (SetLike.coe_subset_coe.mpr hV')) g
+            hz).symm) := by
+  ext h z
+  rw [AlgHom.comp_apply, compRight_apply, compRight_apply,
+    extend_compRight g hV' hmaps₂ h (SetLike.mem_coe.mp (hmaps₁ z.property)),
+    extend_compRight f hU' (hmaps₁.mono_right (SetLike.coe_subset_coe.mpr hV')) g z.property]
+
+/-- Associativity of open-domain right-composition on elements. -/
+theorem compRight_compRight (f : holomorphicFunctions U) (hU' : U' ≤ U)
+    (hmaps₁ : MapsTo (extend f) U' V') (g : holomorphicFunctions V) (hV' : V' ≤ V)
+    (hmaps₂ : MapsTo (extend g) V' W) (h : holomorphicFunctions W) :
+    compRight f hU' hmaps₁ (compRight g hV' hmaps₂ h) =
+      compRight (compRight f hU' (hmaps₁.mono_right (SetLike.coe_subset_coe.mpr hV')) g) le_rfl
+        ((hmaps₂.comp hmaps₁).congr fun _ hz =>
+          (extend_compRight f hU' (hmaps₁.mono_right (SetLike.coe_subset_coe.mpr hV')) g
+            hz).symm) h :=
+  DFunLike.congr_fun (compRight_comp_compRight f hU' hmaps₁ g hV' hmaps₂) h
 
 end TauCeti.HolomorphicFunctions
 
@@ -138,87 +234,31 @@ namespace TauCeti.holomorphicGerms
 
 variable {s t : Set ℂ}
 
-/-- If the spectrum of a germ `f` near `s` is contained in `t`, every value of `f` on `s`
-belongs to `t`. -/
-theorem eval_mem_of_spectrum_subset {f : holomorphicGerms s} (ht : spectrum ℂ f ⊆ t)
-    {x : ℂ} (hx : x ∈ s) : eval x hx f ∈ t :=
-  ht ((spectrum_eq f).symm ▸ ⟨x, hx, rfl⟩)
-
-private theorem exists_comp_value (g : holomorphicGerms t) (f : holomorphicGerms s)
-    (ht : spectrum ℂ f ⊆ t) :
-    ∃ h : holomorphicGerms s,
-      ∀ (φ ψ : ℂ → ℂ) (hφ : AnalyticOnNhd ℂ φ t) (hψ : AnalyticOnNhd ℂ ψ s)
-        (_ : ofFun φ hφ = g) (hf : ofFun ψ hψ = f),
-          ofFun (φ ∘ ψ) (fun x hx => by
-            have hx_t : ψ x ∈ t := by
-              have hmem := eval_mem_of_spectrum_subset ht hx
-              rwa [← hf, eval_ofFun] at hmem
-            exact (hφ (ψ x) hx_t).comp (hψ x hx)) = h := by
-  obtain ⟨φ₀, hφ₀, rfl⟩ := exists_ofFun_eq g
-  obtain ⟨ψ₀, hψ₀, rfl⟩ := exists_ofFun_eq f
-  have hmaps₀ : MapsTo ψ₀ s t := fun x hx => by
-    simpa only [eval_ofFun] using eval_mem_of_spectrum_subset ht hx
-  refine ⟨ofFun (φ₀ ∘ ψ₀) (hφ₀.comp hψ₀ hmaps₀), fun φ ψ hφ hψ hg hf => ?_⟩
-  apply (ofFun_eq_iff _ _).mpr
-  obtain ⟨V, hVopen, htV, hφeq⟩ := eventually_nhdsSet_iff_exists.mp ((ofFun_eq_iff hφ hφ₀).mp hg)
-  apply eventually_nhdsSet_iff_forall.mpr
-  intro x hx
-  have hψeq : ψ =ᶠ[𝓝 x] ψ₀ := ((ofFun_eq_iff hψ hψ₀).mp hf).filter_mono (nhds_le_nhdsSet hx)
-  have hψ₀V : ∀ᶠ z in 𝓝 x, ψ₀ z ∈ V :=
-    (hψ₀ x hx).continuousAt.eventually (hVopen.mem_nhds (htV (hmaps₀ hx)))
-  filter_upwards [hψeq, hψ₀V] with z hz₁ hz₂
-  simp only [Function.comp_apply, hz₁, hφeq _ hz₂]
-
-/-- Compose a holomorphic germ `g` near `t` with a holomorphic germ `f` near `s` when
-`spectrum ℂ f ⊆ t` (that is, every value of `f` on `s` belongs to `t`). -/
-def comp (g : holomorphicGerms t) (f : holomorphicGerms s) (ht : spectrum ℂ f ⊆ t) :
-    holomorphicGerms s :=
-  Classical.choose (exists_comp_value g f ht)
-
-/-- Composing ambient holomorphic representatives gives the germ of their function composite. -/
-@[simp]
-theorem comp_ofFun {φ ψ : ℂ → ℂ} (hφ : AnalyticOnNhd ℂ φ t) (hψ : AnalyticOnNhd ℂ ψ s)
-    (ht : spectrum ℂ (ofFun ψ hψ) ⊆ t) :
-    comp (ofFun φ hφ) (ofFun ψ hψ) ht =
-      ofFun (φ ∘ ψ) (hφ.comp hψ (mapsTo_iff_image_subset.mpr ((spectrum_ofFun ψ hψ) ▸ ht))) :=
-  (Classical.choose_spec (exists_comp_value (ofFun φ hφ) (ofFun ψ hψ) ht)
-    φ ψ hφ hψ rfl rfl).symm
-
-/-- Germ composition agrees with open-domain composition on any compatible open subset. -/
-theorem comp_toGerm {U U' V : Opens ℂ} (hs : s ⊆ U) (ht : t ⊆ V)
-    (g : holomorphicFunctions V) (f : holomorphicFunctions U)
+/-- Germ right-composition agrees with open-domain right-composition on any compatible open
+subset. -/
+theorem compRight_toGerm {U U' V : Opens ℂ} (ht : t ⊆ V)
+    (f : holomorphicFunctions U) (g : holomorphicFunctions V)
     (hU' : U' ≤ U) (hs' : s ⊆ U') (hmaps : MapsTo (HolomorphicFunctions.extend f) U' V)
-    (ht_spec : spectrum ℂ (HolomorphicFunctions.toGerm hs f) ⊆ t) :
-    comp (HolomorphicFunctions.toGerm ht g) (HolomorphicFunctions.toGerm hs f) ht_spec =
-      HolomorphicFunctions.toGerm hs' (HolomorphicFunctions.comp g f hU' hmaps) := by
-  have hf_eq : HolomorphicFunctions.toGerm hs f =
-      ofFun (HolomorphicFunctions.extend f) (HolomorphicFunctions.analyticOnNhd_extend hs f) :=
-    HolomorphicFunctions.toGerm_eq_ofFun hs f _ _ fun z =>
+    (ht_spec : spectrum ℂ (HolomorphicFunctions.toGerm (hs'.trans hU') f) ⊆ t) :
+    compRight (HolomorphicFunctions.toGerm (hs'.trans hU') f) ht_spec
+      (HolomorphicFunctions.toGerm ht g) =
+      HolomorphicFunctions.toGerm hs' (HolomorphicFunctions.compRight f hU' hmaps g) := by
+  have hf_eq : HolomorphicFunctions.toGerm (hs'.trans hU') f =
+      ofFun (HolomorphicFunctions.extend f)
+        (HolomorphicFunctions.analyticOnNhd_extend (hs'.trans hU') f) :=
+    HolomorphicFunctions.toGerm_eq_ofFun (hs'.trans hU') f _ _ fun z =>
       (HolomorphicFunctions.extend_apply f z).symm
   have hg_eq : HolomorphicFunctions.toGerm ht g =
       ofFun (HolomorphicFunctions.extend g) (HolomorphicFunctions.analyticOnNhd_extend ht g) :=
     HolomorphicFunctions.toGerm_eq_ofFun ht g _ _ fun z =>
       (HolomorphicFunctions.extend_apply g z).symm
-  have ht_spec' : spectrum ℂ
-      (ofFun (HolomorphicFunctions.extend f)
-        (HolomorphicFunctions.analyticOnNhd_extend hs f)) ⊆ t :=
-    hf_eq ▸ ht_spec
-  have hcongr : comp (HolomorphicFunctions.toGerm ht g) (HolomorphicFunctions.toGerm hs f) ht_spec =
-      comp (ofFun (HolomorphicFunctions.extend g) (HolomorphicFunctions.analyticOnNhd_extend ht g))
-        (ofFun (HolomorphicFunctions.extend f) (HolomorphicFunctions.analyticOnNhd_extend hs f))
-        ht_spec' := by
-    congr 1
-  rw [hcongr, comp_ofFun]
+  have hcongr : ∀ {f₁ f₂ : holomorphicGerms s} (hf : f₁ = f₂) {g₁ g₂ : holomorphicGerms t}
+      (_ : g₁ = g₂) (h₁ : spectrum ℂ f₁ ⊆ t),
+      compRight f₁ h₁ g₁ = compRight f₂ (hf ▸ h₁) g₂ := by
+    rintro _ _ rfl _ _ rfl _
+    rfl
+  rw [hcongr hf_eq hg_eq ht_spec, compRight_ofFun]
   exact (HolomorphicFunctions.toGerm_eq_ofFun hs' _ _ _ fun z =>
-    HolomorphicFunctions.comp_apply g f hU' hmaps z).symm
-
-/-- Evaluating a composite germ evaluates the outer germ at the value of the inner germ. -/
-@[simp]
-theorem eval_comp (g : holomorphicGerms t) (f : holomorphicGerms s)
-    (ht : spectrum ℂ f ⊆ t) (x : ℂ) (hx : x ∈ s) :
-    eval x hx (comp g f ht) = eval (eval x hx f) (eval_mem_of_spectrum_subset ht hx) g := by
-  obtain ⟨φ, hφ, rfl⟩ := exists_ofFun_eq g
-  obtain ⟨ψ, hψ, rfl⟩ := exists_ofFun_eq f
-  simp only [comp_ofFun, eval_ofFun, Function.comp_apply]
+    HolomorphicFunctions.compRight_apply f hU' hmaps g z).symm
 
 end TauCeti.holomorphicGerms

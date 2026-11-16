@@ -5,6 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Algebra.Algebra.Spectrum.Basic
+public import Mathlib.Analysis.Calculus.Deriv.Polynomial
 public import TauCeti.Analysis.Complex.HolomorphicFunctions.Basic
 public import TauCeti.Analysis.Contour.Cycle.Residue
 import TauCeti.Analysis.Calculus.ContDiff.PiecewiseC1On.AbsolutelyContinuous
@@ -15,15 +17,22 @@ import TauCeti.MeasureTheory.Integral.IntervalIntegral.AbsolutelyContinuousFun
 
 For an open set `V : Opens ℂ` and a pole `w ∉ V`, `HolomorphicFunctions.cauchyKernel V w hw` is the
 holomorphic function `z ↦ (w - z)⁻¹` on `V`, i.e. the inverse of `w - id` in
-`holomorphicFunctions V`.
+`holomorphicFunctions V`. Any unital `ℂ`-algebra homomorphism out of `holomorphicFunctions V`
+sending `id` to `b` agrees with polynomial evaluation `Polynomial.aeval b`, evaluates rational
+functions `p / q` with `q` nonvanishing on `V` as `p(b) * Ring.inverse (q(b))`, forces
+`spectrum ℂ b ⊆ V`, and sends `cauchyKernel V w hw` to `resolvent b w`.
 
 Given `f : holomorphicFunctions U` and a null-homologous cycle `Γ` in `U` avoiding `V` that winds
 once around every point of `V`, partitioning the parameter intervals of the curves in the support of
 `Γ` produces Riemann–Stieltjes sums `HolomorphicFunctions.cauchyIntegralRiemannSum f Γ V hdisj n`,
-each an explicit `ℂ`-linear combination of Cauchy kernels with poles on `Cycle.trace Γ`, that
-converge to `restrict hVU f` in the compact-open topology on `holomorphicFunctions V`. Any two
-continuous algebra homomorphisms out of `holomorphicFunctions V` that agree on `id` therefore agree
-on `restrict hVU f`, yielding uniqueness of the holomorphic functional calculus.
+each lying in the `ℂ`-linear span of the Cauchy kernels with poles on `Cycle.trace Γ`, that
+converge to `restrict hVU f` in the compact-open topology on `holomorphicFunctions V`. Thus
+`map_cauchyIntegralRiemannSum_eq` and `tendsto_cauchyIntegralRiemannSum` reduce agreement on
+`restrict hVU f` for continuous `ℂ`-linear maps (in particular, continuous unital `ℂ`-algebra
+homomorphisms) into a Hausdorff (`T2Space`) topological `ℂ`-vector space or `ℂ`-algebra (such as a
+complex Banach algebra) to agreement on Cauchy kernels; uniqueness of the holomorphic functional
+calculus is proved downstream in
+`TauCeti.Analysis.Normed.Algebra.HolomorphicFunctionalCalculus.Uniqueness`.
 
 ## References
 
@@ -75,11 +84,132 @@ theorem cauchyKernel_mul_sub_id (V : Opens ℂ) (w : ℂ) (hw : w ∉ (V : Set �
       (algebraMap ℂ (holomorphicFunctions V) w - of V id differentiableOn_id) = 1 := by
   rw [mul_comm, sub_id_mul_cauchyKernel]
 
-/-- For `w ∉ V`, `w - id` is a unit in `holomorphicFunctions V` with inverse
-`cauchyKernel V w hw`. -/
+/-- For `w ∉ V`, `w - id` is a unit in `holomorphicFunctions V` (see `sub_id_mul_cauchyKernel`
+and `cauchyKernel_mul_sub_id` for its inverse). -/
 theorem isUnit_sub_id_of_notMem (V : Opens ℂ) {w : ℂ} (hw : w ∉ (V : Set ℂ)) :
     IsUnit (algebraMap ℂ (holomorphicFunctions V) w - of V id differentiableOn_id) :=
   ⟨⟨_, cauchyKernel V w hw, sub_id_mul_cauchyKernel V w hw, cauchyKernel_mul_sub_id V w hw⟩, rfl⟩
+
+/-! ### Algebraic evaluation of polynomials, rational functions, and Cauchy kernels -/
+
+section Semiring
+
+variable {B F : Type*} [Semiring B] [Algebra ℂ B]
+  [FunLike F (holomorphicFunctions V) B] [AlgHomClass F ℂ (holomorphicFunctions V) B]
+
+/-- Any unital `ℂ`-algebra homomorphism out of `holomorphicFunctions V` sending `id` to `b`
+agrees with polynomial evaluation `Polynomial.aeval b`. -/
+theorem map_of_eval_polynomial (Φ : F) {b : B}
+    (hid : Φ (of V id differentiableOn_id) = b) (p : Polynomial ℂ) :
+    Φ (of V (fun z => p.eval z) p.differentiable.differentiableOn) = Polynomial.aeval b p := by
+  induction p using Polynomial.induction_on' with
+  | add p q ihp ihq =>
+    have hadd : of V (fun z => (p + q).eval z) (p + q).differentiable.differentiableOn =
+        of V (fun z => p.eval z) p.differentiable.differentiableOn +
+          of V (fun z => q.eval z) q.differentiable.differentiableOn := by
+      apply Subtype.ext
+      ext z
+      simp
+    rw [hadd, map_add, ihp, ihq, map_add]
+  | monomial n c =>
+    have hmon : of V (fun z => (Polynomial.monomial n c).eval z)
+        (Polynomial.monomial n c).differentiable.differentiableOn =
+        c • (of V id differentiableOn_id) ^ n := by
+      apply Subtype.ext
+      ext z
+      simp [Polynomial.eval_monomial]
+    rw [hmon, map_smul, map_pow, hid, Polynomial.aeval_monomial, Algebra.smul_def]
+
+/-- If a unital `ℂ`-algebra homomorphism out of `holomorphicFunctions V` sends `id` to `b` and a
+polynomial `q` does not vanish on `V`, then `Polynomial.aeval b q` is a unit. -/
+theorem isUnit_aeval_of_map_id (Φ : F) {b : B}
+    (hid : Φ (of V id differentiableOn_id) = b) (q : Polynomial ℂ)
+    (hq : ∀ z ∈ (V : Set ℂ), q.eval z ≠ 0) :
+    IsUnit (Polynomial.aeval b q) := by
+  let qV := of V (fun z => q.eval z) q.differentiable.differentiableOn
+  let qInv := of V (fun z => (q.eval z)⁻¹) (q.differentiable.differentiableOn.inv hq)
+  have hmul₁ : qV * qInv = 1 := by
+    apply Subtype.ext
+    ext z
+    simpa [qV, qInv] using mul_inv_cancel₀ (hq z z.property)
+  have hmul₂ : qInv * qV = 1 := by rw [mul_comm, hmul₁]
+  have hu : IsUnit qV := ⟨⟨qV, qInv, hmul₁, hmul₂⟩, rfl⟩
+  simpa only [qV, map_of_eval_polynomial Φ hid q] using hu.map Φ
+
+/-- Any unital `ℂ`-algebra homomorphism out of `holomorphicFunctions V` sending `id` to `b`
+evaluates `p / q` as `Polynomial.aeval b p * Ring.inverse (Polynomial.aeval b q)` whenever `q`
+does not vanish on `V`. -/
+theorem map_of_div_polynomial (Φ : F) {b : B}
+    (hid : Φ (of V id differentiableOn_id) = b) (p q : Polynomial ℂ)
+    (hq : ∀ z ∈ (V : Set ℂ), q.eval z ≠ 0) :
+    Φ (of V (fun z => p.eval z / q.eval z)
+        (p.differentiable.differentiableOn.div q.differentiable.differentiableOn hq)) =
+      Polynomial.aeval b p * Ring.inverse (Polynomial.aeval b q) := by
+  let qV := of V (fun z => q.eval z) q.differentiable.differentiableOn
+  let qInv := of V (fun z => (q.eval z)⁻¹) (q.differentiable.differentiableOn.inv hq)
+  have hmul : qV * qInv = 1 := by
+    apply Subtype.ext
+    ext z
+    simpa [qV, qInv] using mul_inv_cancel₀ (hq z z.property)
+  have hunit : IsUnit (Polynomial.aeval b q) := isUnit_aeval_of_map_id Φ hid q hq
+  have hinv : Φ qInv = Ring.inverse (Polynomial.aeval b q) := by
+    refine hunit.mul_right_inj.mp ?_
+    rw [Ring.mul_inverse_cancel _ hunit, ← map_of_eval_polynomial Φ hid q, ← map_mul, hmul, map_one]
+  have hdiv : of V (fun z => p.eval z / q.eval z)
+      (p.differentiable.differentiableOn.div q.differentiable.differentiableOn hq) =
+      of V (fun z => p.eval z) p.differentiable.differentiableOn * qInv := by
+    apply Subtype.ext
+    ext z
+    simp [qInv, div_eq_mul_inv]
+  rw [hdiv, map_mul, map_of_eval_polynomial Φ hid p, hinv]
+
+end Semiring
+
+section Ring
+
+variable {B F : Type*} [Ring B] [Algebra ℂ B]
+  [FunLike F (holomorphicFunctions V) B] [AlgHomClass F ℂ (holomorphicFunctions V) B]
+
+/-- Any unital `ℂ`-algebra homomorphism out of `holomorphicFunctions V` sending `id` to `b`
+forces every point `w ∉ V` into `resolventSet ℂ b`. -/
+theorem mem_resolventSet_of_map_id_of_notMem (Φ : F) {b : B}
+    (hid : Φ (of V id differentiableOn_id) = b) {w : ℂ} (hw : w ∉ (V : Set ℂ)) :
+    w ∈ resolventSet ℂ b := by
+  have hunit : IsUnit (Φ (algebraMap ℂ (holomorphicFunctions V) w -
+      of V id differentiableOn_id)) :=
+    (isUnit_sub_id_of_notMem V hw).map Φ
+  rwa [map_sub Φ, AlgHomClass.commutes, hid] at hunit
+
+/-- Any unital `ℂ`-algebra homomorphism out of `holomorphicFunctions V` sending `id` to `b`
+forces `spectrum ℂ b ⊆ V`. -/
+theorem spectrum_subset_of_map_id (Φ : F) {b : B}
+    (hid : Φ (of V id differentiableOn_id) = b) :
+    spectrum ℂ b ⊆ V :=
+  fun _ hz => by_contra fun hV =>
+    spectrum.notMem_iff.mpr (mem_resolventSet_of_map_id_of_notMem Φ hid hV) hz
+
+/-- Any unital `ℂ`-algebra homomorphism out of `holomorphicFunctions V` sending `id` to `b`
+sends `cauchyKernel V w hw` to `resolvent b w`. -/
+theorem map_cauchyKernel_eq_resolvent (Φ : F) {b : B}
+    (hid : Φ (of V id differentiableOn_id) = b) {w : ℂ} (hw : w ∉ (V : Set ℂ)) :
+    Φ (cauchyKernel V w hw) = resolvent b w := by
+  let p : Polynomial ℂ := 1
+  let q : Polynomial ℂ := Polynomial.C w - Polynomial.X
+  have hq : ∀ z ∈ (V : Set ℂ), q.eval z ≠ 0 := fun z hz => by
+    simpa only [q, Polynomial.eval_sub, Polynomial.eval_C, Polynomial.eval_X] using
+      sub_ne_zero.mpr fun h : w = z => hw (h ▸ hz)
+  have hker : cauchyKernel V w hw =
+      of V (fun z => p.eval z / q.eval z)
+        (p.differentiable.differentiableOn.div q.differentiable.differentiableOn hq) := by
+    apply Subtype.ext
+    ext z
+    simp [p, q]
+  rw [hker, map_of_div_polynomial Φ hid p q hq, resolvent]
+  simp [p, q]
+
+end Ring
+
+/-! ### Riemann–Stieltjes sums of Cauchy integrals -/
 
 private def curveNode (γ : Contour.PiecewiseC1ClosedCurve) (n j : ℕ) : ℝ :=
   γ.a + (j : ℝ) / (n + 1 : ℝ) * (γ.b - γ.a)
@@ -262,7 +392,7 @@ private theorem tendsto_curveRiemannSum {g : ℂ → ℂ} {γ : Contour.Piecewis
     Tendsto (curveRiemannSum g V γ hγV) atTop (𝓝 (curveCauchyIntegral g V γ hg hγV)) := by
   rw [tendsto_iff_tendstoLocallyUniformlyOn]
   exact (tendstoLocallyUniformlyOn_curveRiemannSum hg hγV).congr_right fun z hz => by
-    rw [extend_apply _ ⟨z, hz⟩, curveCauchyIntegral, of_apply]
+    rw [curveCauchyIntegral, extend_of _ hz]
 
 /-- The `n`-th Riemann–Stieltjes sum of `(2πi)⁻¹ ∫_Γ extend f w / (w - ·) dw` in
 `holomorphicFunctions V`, formed by partitioning each generator curve of `Γ` into `n + 1` equal
@@ -275,10 +405,29 @@ def cauchyIntegralRiemannSum (f : holomorphicFunctions U) (Γ : Contour.Cycle) (
         (fun t ht hzV => disjoint_left.mp hdisj hzV
           (Contour.Cycle.mem_trace_iff.mpr ⟨γ.val, γ.property, t, ht, rfl⟩)) n
 
-/-- Two `ℂ`-algebra homomorphisms out of `holomorphicFunctions V` that agree on every Cauchy kernel
-with pole on `Cycle.trace Γ` agree on every `cauchyIntegralRiemannSum` along `Γ`. -/
-theorem algHom_cauchyIntegralRiemannSum_eq {A : Type*} [Semiring A] [Algebra ℂ A]
-    (Φ₁ Φ₂ : holomorphicFunctions V →ₐ[ℂ] A) (f : holomorphicFunctions U)
+/-- Every `cauchyIntegralRiemannSum` lies in the `ℂ`-linear span of the Cauchy kernels with poles
+on `Cycle.trace Γ`. -/
+theorem cauchyIntegralRiemannSum_mem_span (f : holomorphicFunctions U) (Γ : Contour.Cycle)
+    (V : Opens ℂ) (hdisj : Disjoint (V : Set ℂ) (Contour.Cycle.trace Γ)) (n : ℕ) :
+    cauchyIntegralRiemannSum f Γ V hdisj n ∈
+      Submodule.span ℂ
+        {k : holomorphicFunctions V | ∃ (w : ℂ) (hw : w ∈ Contour.Cycle.trace Γ),
+          k = cauchyKernel V w (disjoint_right.mp hdisj hw)} := by
+  rw [cauchyIntegralRiemannSum]
+  refine Submodule.smul_mem _ _ (Submodule.sum_mem _ fun γ _ => Submodule.smul_mem _ _ ?_)
+  rw [curveRiemannSum]
+  refine Submodule.sum_mem _ fun j _ => Submodule.smul_mem _ _ (Submodule.subset_span ?_)
+  exact ⟨γ.val (curveNode γ.val n j.val),
+    Contour.Cycle.mem_trace_iff.mpr
+      ⟨γ.val, γ.property, _, curveNode_mem_uIcc γ.val n j.isLt.le, rfl⟩,
+    rfl⟩
+
+/-- Two `ℂ`-linear maps out of `holomorphicFunctions V` that agree on every Cauchy kernel with
+pole on `Cycle.trace Γ` agree on every `cauchyIntegralRiemannSum` along `Γ`. -/
+theorem map_cauchyIntegralRiemannSum_eq {E F₁ F₂ : Type*} [AddCommMonoid E] [Module ℂ E]
+    [FunLike F₁ (holomorphicFunctions V) E] [LinearMapClass F₁ ℂ (holomorphicFunctions V) E]
+    [FunLike F₂ (holomorphicFunctions V) E] [LinearMapClass F₂ ℂ (holomorphicFunctions V) E]
+    (Φ₁ : F₁) (Φ₂ : F₂) (f : holomorphicFunctions U)
     (Γ : Contour.Cycle) (hdisj : Disjoint (V : Set ℂ) (Contour.Cycle.trace Γ))
     (hker : ∀ (w : ℂ) (hw : w ∈ Contour.Cycle.trace Γ),
       Φ₁ (cauchyKernel V w (disjoint_right.mp hdisj hw)) =
@@ -286,17 +435,14 @@ theorem algHom_cauchyIntegralRiemannSum_eq {A : Type*} [Semiring A] [Algebra ℂ
     (n : ℕ) :
     Φ₁ (cauchyIntegralRiemannSum f Γ V hdisj n) =
       Φ₂ (cauchyIntegralRiemannSum f Γ V hdisj n) := by
-  rw [cauchyIntegralRiemannSum, map_smul, map_smul, map_sum, map_sum]
-  congr 1
-  refine Finset.sum_congr rfl fun γ _ => ?_
-  rw [map_smul, map_smul]
-  congr 1
-  rw [curveRiemannSum, map_sum, map_sum]
-  refine Finset.sum_congr rfl fun j _ => ?_
-  rw [map_smul, map_smul]
-  congr 1
-  exact hker _ (Contour.Cycle.mem_trace_iff.mpr
-    ⟨γ.val, γ.property, _, curveNode_mem_uIcc γ.val n j.isLt.le, rfl⟩)
+  refine Submodule.span_induction ?_ ?_ ?_ ?_ (cauchyIntegralRiemannSum_mem_span f Γ V hdisj n)
+  · rintro _ ⟨w, hw, rfl⟩
+    exact hker w hw
+  · rw [map_zero, map_zero]
+  · intro x y _ _ hx hy
+    rw [map_add, map_add, hx, hy]
+  · intro c x _ hx
+    rw [map_smul, map_smul, hx]
 
 /-- If `Γ` is a null-homologous cycle in `U` avoiding an open subset `V ≤ U` and winding once
 around every point of `V`, the Riemann–Stieltjes sums `cauchyIntegralRiemannSum f Γ V hdisj n`
@@ -335,7 +481,12 @@ theorem tendsto_cauchyIntegralRiemannSum (f : holomorphicFunctions U) {Γ : Cont
     (tendsto_finsetSum _ fun γ _ =>
       (tendsto_subtype_rng.mp (tendsto_curveRiemannSum (hcont_f γ) (hγV γ))).const_smul _
       ).const_smul _
-  convert hsum using 2
+  suffices hlim :
+      (2 * π * I)⁻¹ • ∑ γ ∈ (FreeAbelianGroup.support Γ).attach,
+        (FreeAbelianGroup.coeff γ.val Γ : ℂ) •
+          (curveCauchyIntegral (extend f) V γ.val (hcont_f γ) (hγV γ)).val =
+        (restrict hVU f).val by
+    rwa [← hlim]
   ext z
   have hz_notMem : (z : ℂ) ∉ Contour.Cycle.trace Γ := disjoint_left.mp hdisj z.property
   have hcauchy := Contour.Cycle.cauchyIntegralFormula_nullHomologous U.isOpen
