@@ -253,6 +253,7 @@ theorem comp_prodMap_one_sub (hw : IsSmoothBasedHomotopy I γ₁ γ₂ w) :
 
 /-- The path in the loop space of a smooth based homotopy run backwards is the reverse of its
 path. -/
+@[simp]
 theorem toPath_comp_prodMap_one_sub (hw : IsSmoothBasedHomotopy I γ₁ γ₂ w) :
     hw.comp_prodMap_one_sub.toPath = hw.toPath.symm :=
   Path.ext <| funext fun s ↦ Path.ext <| funext fun t ↦ by
@@ -261,6 +262,7 @@ theorem toPath_comp_prodMap_one_sub (hw : IsSmoothBasedHomotopy I γ₁ γ₂ w)
 
 /-- The homotopy class of a smooth based homotopy run backwards is the inverse of its homotopy
 class. -/
+@[simp]
 theorem homotopyClass_comp_prodMap_one_sub (hw : IsSmoothBasedHomotopy I γ₁ γ₂ w) :
     hw.comp_prodMap_one_sub.homotopyClass = inv hw.homotopyClass := by
   rw [homotopyClass_def, homotopyClass_def, toPath_comp_prodMap_one_sub, ← Groupoid.inv_eq_inv]
