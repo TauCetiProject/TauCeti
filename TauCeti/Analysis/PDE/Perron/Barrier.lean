@@ -22,7 +22,9 @@ point admitting a barrier is called *regular*.
 
 If every boundary point is regular, the Perron solution of continuous boundary data is
 therefore continuous on `closure Ω` and equal to `g` on `frontier Ω`, and so solves the Dirichlet
-problem `Δu = 0` in `Ω`, `u = g` on `frontier Ω`.
+problem `Δu = 0` in `Ω`, `u = g` on `frontier Ω`. It is then the only harmonic function in `Ω`
+that tends to `g` at every boundary point, by the comparison principle applied to the extension of
+such a function by its boundary limits.
 
 ## Exterior sphere condition
 
@@ -44,6 +46,11 @@ condition at each boundary point.
   solution of continuous boundary data is continuous on `closure Ω`.
 * `TauCeti.exists_harmonicOnNhd_continuousOn_closure_eqOn_frontier`: **the Dirichlet problem**
   is solvable when every boundary point admits a barrier.
+* `TauCeti.eqOn_perronSolution_of_tendsto` and
+  `TauCeti.eqOn_closure_perronSolution_of_continuousOn`: when every boundary point admits a
+  barrier, the Perron solution is the only harmonic function in `Ω` attaining the data as
+  boundary limits, in particular the only solution of the Dirichlet problem continuous on
+  `closure Ω`.
 * `TauCeti.isBarrier_newtonianKernel_sub`: the exterior sphere barrier in `ℝⁿ`, `n ≠ 2`.
 * `TauCeti.isBarrier_log_norm_sub`: the logarithmic exterior sphere barrier in two dimensions.
 * `TauCeti.exists_harmonicOnNhd_continuousOn_closure_eqOn_frontier_of_exterior_sphere`: the
@@ -238,6 +245,69 @@ theorem exists_harmonicOnNhd_continuousOn_closure_eqOn_frontier (hΩ : IsOpen Ω
     fun ξ hξ ↦ ?_⟩
   obtain ⟨w, hw⟩ := hreg ξ hξ
   exact perronSolution_eq_of_isBarrier hΩ hb hgb hw (hg ξ hξ) (frontier_subset_closure hξ)
+
+variable [Nontrivial E] in
+/-- **Uniqueness for the Dirichlet problem with boundary limits.** Let `Ω` be a bounded open set
+every boundary point of which admits a barrier, and let `u` be harmonic in `Ω` with
+`u x → g ξ` as `x → ξ` within `Ω`, for every `ξ ∈ frontier Ω`. Then `u` is the Perron solution of
+`g` on `Ω`. Neither the continuity of `g` on `frontier Ω` nor the boundedness of `u` is assumed:
+both follow from the boundary limits. -/
+theorem eqOn_perronSolution_of_tendsto (hΩ : IsOpen Ω) (hb : Bornology.IsBounded Ω)
+    (hreg : ∀ ξ ∈ frontier Ω, ∃ w, IsBarrier Ω ξ w) {u : E → ℝ} (hu : HarmonicOnNhd u Ω)
+    (hlim : ∀ ξ ∈ frontier Ω, Tendsto u (𝓝[Ω] ξ) (𝓝 (g ξ))) :
+    EqOn u (perronSolution Ω g) Ω := by
+  -- Extend `u` to `closure Ω` by its boundary limits; the extension is continuous there.
+  set ū := extendFrom Ω u
+  have hū : ContinuousOn ū (closure Ω) := continuousOn_extendFrom subset_rfl fun x hx ↦ by
+    by_cases hxΩ : x ∈ Ω
+    · exact ⟨u x, (hu x hxΩ).1.continuousAt.continuousWithinAt⟩
+    · exact ⟨g x, hlim x (hΩ.frontier_eq ▸ ⟨hx, hxΩ⟩)⟩
+  have hūΩ : EqOn ū u Ω := extendFrom_extends hu.continuousOn
+  have hūg (ξ : E) (hξ : ξ ∈ frontier Ω) : ū ξ = g ξ :=
+    extendFrom_eq (frontier_subset_closure hξ) (hlim ξ hξ)
+  -- So `g` is continuous on `frontier Ω`, and the Perron solution solves the Dirichlet problem.
+  have hg : ContinuousOn g (frontier Ω) :=
+    (hū.mono frontier_subset_closure).congr fun ξ hξ ↦ (hūg ξ hξ).symm
+  have hgb : Bornology.IsBounded (g '' frontier Ω) :=
+    ((hb.isCompact_closure.of_isClosed_subset isClosed_frontier
+      frontier_subset_closure).image_of_continuousOn hg).isBounded
+  have hP := harmonicOnNhd_perronSolution hΩ hb hgb.bddAbove (perronFamily_nonempty hgb.bddBelow)
+  have hPc := continuousOn_perronSolution hΩ hb hreg hg
+  have hPg (ξ : E) (hξ : ξ ∈ frontier Ω) : perronSolution Ω g ξ = ū ξ := by
+    obtain ⟨w, hw⟩ := hreg ξ hξ
+    rw [hūg ξ hξ]
+    exact perronSolution_eq_of_isBarrier hΩ hb hgb hw (hg ξ hξ) (frontier_subset_closure hξ)
+  -- Both are harmonic in `Ω`, continuous on `closure Ω` and equal on `frontier Ω`.
+  intro x hx
+  have h₁ := (hu.subharmonicOn.congr hΩ hūΩ).le_of_le_frontier hΩ hb hū hP hPc
+    (fun ξ hξ ↦ (hPg ξ hξ).ge) x (subset_closure hx)
+  have h₂ := (hu.neg.subharmonicOn.congr hΩ fun y hy ↦ congrArg Neg.neg (hūΩ hy)).le_of_le_frontier
+    hΩ hb hū.neg hP.neg hPc.neg (fun ξ hξ ↦ neg_le_neg (hPg ξ hξ).le) x (subset_closure hx)
+  rw [← hūΩ hx]
+  exact le_antisymm h₁ (neg_le_neg_iff.1 h₂)
+
+variable [Nontrivial E] in
+/-- When every boundary point of the bounded open set `Ω` admits a barrier, a function harmonic in
+`Ω`, continuous on `closure Ω` and equal to `g` on `frontier Ω` is the Perron solution of `g` on
+`closure Ω`. -/
+theorem eqOn_closure_perronSolution_of_continuousOn (hΩ : IsOpen Ω) (hb : Bornology.IsBounded Ω)
+    (hreg : ∀ ξ ∈ frontier Ω, ∃ w, IsBarrier Ω ξ w) {u : E → ℝ} (hu : HarmonicOnNhd u Ω)
+    (huc : ContinuousOn u (closure Ω)) (hug : EqOn u g (frontier Ω)) :
+    EqOn u (perronSolution Ω g) (closure Ω) := by
+  have hlim (ξ : E) (hξ : ξ ∈ frontier Ω) : Tendsto u (𝓝[Ω] ξ) (𝓝 (g ξ)) :=
+    hug hξ ▸ ((huc ξ (frontier_subset_closure hξ)).mono subset_closure)
+  intro x hx
+  by_cases hxΩ : x ∈ Ω
+  · exact eqOn_perronSolution_of_tendsto hΩ hb hreg hu hlim hxΩ
+  -- At a boundary point both functions take the value `g x`.
+  have hxf : x ∈ frontier Ω := hΩ.frontier_eq ▸ ⟨hx, hxΩ⟩
+  have hg : ContinuousOn g (frontier Ω) :=
+    (huc.mono frontier_subset_closure).congr fun ξ hξ ↦ (hug hξ).symm
+  have hgb : Bornology.IsBounded (g '' frontier Ω) :=
+    ((hb.isCompact_closure.of_isClosed_subset isClosed_frontier
+      frontier_subset_closure).image_of_continuousOn hg).isBounded
+  obtain ⟨w, hw⟩ := hreg x hxf
+  rw [hug hxf, perronSolution_eq_of_isBarrier hΩ hb hgb hw (hg x hxf) hx]
 
 /-! ### The exterior sphere condition -/
 
