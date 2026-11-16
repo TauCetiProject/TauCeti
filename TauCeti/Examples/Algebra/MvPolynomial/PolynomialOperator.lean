@@ -14,8 +14,6 @@ In two variables `x = X 0` and `y = X 1`, the raising operator is `E = x ∂_y`,
 operator is `F = y ∂_x`, and `H = x ∂_x - y ∂_y`. The values below fix these conventions in low
 degree: `E` raises the `x`-end of a weight string and `F` lowers towards the `y`-end, both kill
 constants, and the total operators on a tensor product act on both factors by the Leibniz rule.
-Interchanging `E` and `F`, rescaling one of them, or letting a total operator act on only one
-factor each fails one of these values.
 
 In bidegree `(1, 1)` the total raising operator kills `x ⊗ x` and `x ⊗ y - y ⊗ x`, sends `y ⊗ y`
 to `x ⊗ y + y ⊗ x`, and sends the symmetric tensor `x ⊗ y + y ⊗ x` to `2 (x ⊗ x)`.
@@ -45,18 +43,21 @@ example :
 example :
     polynomialOperator R (0 : Fin 2) 1 (X 0 * X 1) = X 0 ^ 2 ∧
       polynomialOperator R (1 : Fin 2) 0 (X 0 * X 1) = X 1 ^ 2 := by
+  have h01 : (0 : Fin 2) ≠ 1 := by decide
   constructor
-  · simpa using polynomialOperator_zero_one_X_pow_mul_X_pow R 1 0
-  · simpa using polynomialOperator_one_zero_X_pow_mul_X_pow R 0 1
+  · simpa using polynomialOperator_X_pow_mul_X_pow_succ R h01 1 0
+  · simpa [mul_comm] using polynomialOperator_X_pow_mul_X_pow_succ R h01.symm 1 0
 
 /-- `H (x y) = 0` and `H (x²) = 2 x²`: the weights of `x y` and `x²` are `0` and `2`. -/
 example :
     (polynomialOperator R (0 : Fin 2) 0 - polynomialOperator R (1 : Fin 2) 1) (X 0 * X 1) = 0 ∧
       (polynomialOperator R (0 : Fin 2) 0 - polynomialOperator R (1 : Fin 2) 1) (X 0 ^ 2) =
         2 • X 0 ^ 2 := by
+  have h01 : (0 : Fin 2) ≠ 1 := by decide
   constructor
-  · simpa using polynomialOperator_sub_X_pow_mul_X_pow R 1 1
-  · simpa [two_smul] using polynomialOperator_sub_X_pow_mul_X_pow R 2 0
+  · simpa using polynomialOperator_self_sub_polynomialOperator_self_X_pow_mul_X_pow R h01 1 1
+  · simpa [two_smul] using
+      polynomialOperator_self_sub_polynomialOperator_self_X_pow_mul_X_pow R h01 2 0
 
 /-- The lowering operator `y ∂_x` sends `x²` to `2 x y`: used as a raising operator it would move
 the top of the degree-two string downwards. -/
