@@ -47,6 +47,28 @@ theorem ContinuousOn.memLp_top_restrict_of_subset_isCompact {f : X → E} {K s :
   refine memLp_top_of_bound_eNorm (hf.aestronglyMeasurable_of_subset_isCompact hK hs hsK) C ?_
   filter_upwards [ae_restrict_mem hs] with x hx using eNorm_le_coe.2 <| hC ⟨x, hsK hx, rfl⟩
 
+omit [OpensMeasurableSpace X] in
+/-- **The essential supremum dominates a value at a point of continuity.** If `f` is continuous
+on an open set `U` and the measure charges every nonempty open set, then `‖f x‖ₑ ≤ ‖f‖_{L^∞}` for
+every `x ∈ U`. -/
+theorem ContinuousOn.enorm_le_eLpNorm_top {μ : Measure X} [μ.IsOpenPosMeasure] {f : X → E}
+    {U : Set X} (hf : ContinuousOn f U) (hU : IsOpen U) {x : X} (hx : x ∈ U) :
+    ‖f x‖ₑ ≤ eLpNorm f ∞ μ := by
+  by_cases hm : AEStronglyMeasurable f μ
+  swap
+  · rw [eLpNorm_of_not_aestronglyMeasurable hm]
+    exact le_top
+  by_contra h
+  push Not at h
+  -- Near `x`, `‖f‖ₑ` exceeds the essential supremum on an open set, which has positive measure.
+  have hV : IsOpen (U ∩ f ⁻¹' {y | eLpNorm f ∞ μ < ‖y‖ₑ}) :=
+    hf.isOpen_inter_preimage hU (isOpen_lt continuous_const continuous_eNorm)
+  have hae : ∀ᵐ y ∂μ, ‖f y‖ₑ ≤ eLpNorm f ∞ μ := by
+    rw [eLpNorm_exponent_top hm]
+    exact eNorm_ae_le_eLpNormEssSup f μ
+  have h0 : μ {y | eLpNorm f ∞ μ < ‖f y‖ₑ} = 0 := by simpa only [ae_iff, not_le] using hae
+  exact (hV.measure_pos μ ⟨x, hx, h⟩).ne' (measure_mono_null inter_subset_right h0)
+
 section CLMComp
 
 variable {𝕜 F G H : Type*} [NontriviallyNormedField 𝕜] [NormedAddCommGroup F] [NormedSpace 𝕜 F]

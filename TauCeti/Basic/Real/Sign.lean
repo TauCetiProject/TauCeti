@@ -12,7 +12,8 @@ public import Mathlib.Basic.Real.Sign
 # Differences of signs as interval indicators
 
 For `a < b`, the function `t ↦ (sign (b - t) - sign (a - t)) / 2` is the indicator of the open
-interval `(a, b)` with half weight at each endpoint (`Real.sign_sub_sub_sign_sub_div_two`).
+interval `(a, b)` with half weight at each endpoint (`Real.sign_sub_sub_sign_sub_div_two`). The
+sign itself is bounded by one in absolute value (`Real.abs_sign_le_one`).
 -/
 
 public section
@@ -20,6 +21,10 @@ public section
 open Set
 
 namespace Real
+
+/-- The real sign function is bounded by one in absolute value. -/
+theorem abs_sign_le_one (r : ℝ) : |sign r| ≤ 1 := by
+  rcases sign_apply_eq r with h | h | h <;> simp [h]
 
 /-- For `a < b`, half the difference `sign (b - t) - sign (a - t)` is the indicator of `(a, b)`
 with half weight at the endpoints `a` and `b`. -/
