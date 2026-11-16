@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.ModelTheory.Infinitary.LanguageMap
 public import TauCeti.ModelTheory.Infinitary.Operations
 public import TauCeti.ModelTheory.Infinitary.Reindex
 public import TauCeti.ModelTheory.Infinitary.Substitution
@@ -38,9 +39,10 @@ analogue of the finitary fact that a formula only sees the variables it mentions
 * `FirstOrder.Language.BoundedFormulaInf.countable_freeVarSupport`: over a countable carrier the
   support is countable.
 * `FirstOrder.Language.BoundedFormulaInf.freeVarSupport_mapBound`,
-  `FirstOrder.Language.BoundedFormulaInf.freeVarSupport_castLE` and
-  `FirstOrder.Language.BoundedFormulaInf.freeVarSupport_reindex`: relabelling bound slots,
-  weakening and carrier transport keep the support.
+  `FirstOrder.Language.BoundedFormulaInf.freeVarSupport_castLE`,
+  `FirstOrder.Language.BoundedFormulaInf.freeVarSupport_reindex` and
+  `FirstOrder.Language.LHom.freeVarSupport_onBoundedFormulaInf`: relabelling bound slots,
+  weakening, carrier transport and language maps keep the support.
 * `TauCeti.BoundedFormulaInf.freeVarSupport_subst` and
   `TauCeti.BoundedFormulaInf.freeVarSupport_relabel`: the support after substitution and
   free-variable relabelling.
@@ -55,7 +57,7 @@ analogue of the finitary fact that a formula only sees the variables it mentions
 
 public section
 
-universe u v u' uι uκ uβ w
+universe u v u₁ v₁ u' uι uκ uβ w
 
 namespace FirstOrder
 
@@ -185,6 +187,14 @@ theorem freeVarSupport_exs (φ : L.BoundedFormulaInf ι α n) :
   induction n with
   | zero => rw [exs_zero]
   | succ n ih => rw [exs_succ, ih, freeVarSupport_ex]
+
+/-- Existentially closing the last `k` bound-variable slots keeps the support. -/
+@[simp]
+theorem freeVarSupport_exsLast {k : ℕ} (φ : L.BoundedFormulaInf ι α (n + k)) :
+    (exsLast φ).freeVarSupport = φ.freeVarSupport := by
+  induction k with
+  | zero => rw [exsLast_zero]
+  | succ k ih => rw [exsLast_succ, ih, freeVarSupport_ex]
 
 /-! ### Bound-variable relabelling, weakening and carrier transport -/
 
@@ -333,6 +343,26 @@ theorem freeVarSupport_toInf [DecidableEq α] {ι : Type uι} {n : ℕ} (φ : L.
   | all φ ih => simp [freeVarFinset, ih]
 
 end BoundedFormula
+
+namespace LHom
+
+variable {L' : Language.{u₁, v₁}} {ι : Type uι} {n : ℕ}
+
+/-- Translating an infinitary formula along a language map preserves its free-variable support. -/
+@[simp]
+theorem freeVarSupport_onBoundedFormulaInf (g : L →ᴸ L') (φ : L.BoundedFormulaInf ι α n) :
+    (g.onBoundedFormulaInf φ).freeVarSupport = φ.freeVarSupport := by
+  classical
+  induction φ with
+  | falsum => simp
+  | equal t₁ t₂ => simp
+  | rel R ts => simp
+  | imp φ ψ ihφ ihψ => simp [ihφ, ihψ]
+  | all φ ih => simp [ih]
+  | iSup φs ih => simp [ih]
+  | iInf φs ih => simp [ih]
+
+end LHom
 
 end Language
 

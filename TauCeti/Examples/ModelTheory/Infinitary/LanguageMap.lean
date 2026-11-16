@@ -5,7 +5,10 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+import TauCeti.ModelTheory.Infinitary.ConstantAbstraction
 import TauCeti.ModelTheory.Infinitary.LanguageMap
+import TauCeti.ModelTheory.Infinitary.SubstBounds
+import TauCeti.ModelTheory.Infinitary.ToFormula
 
 /-!
 # Regression examples: language maps on infinitary formulas
@@ -19,10 +22,16 @@ module, through public statements only:
 * a relation symbol mapped by a language map is read in the target structure, with no expansion
   hypothesis;
 * a language map commutes with embedding a finitary formula, weakening it and transporting it to
-  another carrier, all at once.
+  another carrier, all at once;
+* a language map commutes with free-variable substitution, free-variable relabelling, opening
+  bound positions (`toFormula`), universal/existential closures and bound-position instantiation,
+  and preserves `freeVarSupport` without decidable equality on free variables;
+* lifting a language map or language equivalence by `addConstants` commutes with
+  `constantsVarsEquiv` and `abstractConst` and preserves `constantSupport` across distinct
+  language universes.
 -/
 
-universe u v w
+universe u v u' v' w
 
 open FirstOrder FirstOrder.Language
 
@@ -68,4 +77,35 @@ example {L L' : Language.{u, v}} (g : L →ᴸ L') {ι κ : Type*} {α : Type*} 
     (φ : L.BoundedFormula α m) (h : m ≤ n) (c : TauCeti.IndexCoding ι κ) :
     g.onBoundedFormulaInf (((φ.toInf : L.BoundedFormulaInf ι α m).castLE h).reindex c) =
       (((g.onBoundedFormula φ).toInf : L'.BoundedFormulaInf ι α m).castLE h).reindex c := by
+  simp
+
+-- Translating across distinct language universes commutes with free-variable substitution,
+-- free-variable relabelling into bound slots, universal closure and opening bound positions.
+example {L : Language.{u, v}} {L' : Language.{u', v'}} (g : L →ᴸ L')
+    {ι α β γ : Type*} {m n : ℕ} (φ : L.BoundedFormulaInf ι α n) (σ : α → L.Term β)
+    (ρ : β → γ ⊕ Fin m) :
+    g.onBoundedFormulaInf ((TauCeti.BoundedFormulaInf.relabel ρ
+      (TauCeti.BoundedFormulaInf.subst φ σ)).toFormula) =
+      (TauCeti.BoundedFormulaInf.relabel ρ
+        (TauCeti.BoundedFormulaInf.subst (g.onBoundedFormulaInf φ)
+          fun a => g.onTerm (σ a))).toFormula := by
+  simp
+
+-- Translating commutes with single-slot instantiation and preserves free-variable support with
+-- no `DecidableEq` assumption on the free-variable index type.
+example {L : Language.{u, v}} {L' : Language.{u', v'}} (g : L →ᴸ L')
+    {ι α : Type*} (φ : L.BoundedFormulaInf ι α 1) (t : L.Term (α ⊕ Fin 0)) :
+    (g.onBoundedFormulaInf φ).freeVarSupport = φ.freeVarSupport ∧
+      g.onBoundedFormulaInf (φ.inst t) = (g.onBoundedFormulaInf φ).inst (g.onTerm t) := by
+  simp
+
+-- Lifting a language equivalence by `LEquiv.addConstants` commutes with single-constant
+-- abstraction followed by existential quantification, and preserves the constant support.
+example {L : Language.{u, v}} {L' : Language.{u', v'}} (e : L ≃ᴸ L')
+    {ι α γ : Type*} [DecidableEq γ] (c : γ) (φ : L[[γ]].FormulaInf ι α) :
+    (e.addConstants γ).onBoundedFormulaInf (BoundedFormulaInf.abstractConst c φ).ex =
+        (BoundedFormulaInf.abstractConst c ((e.addConstants γ).onBoundedFormulaInf φ)).ex ∧
+      ((e.addConstants γ).onBoundedFormulaInf
+        (BoundedFormulaInf.abstractConst c φ)).constantSupport =
+        φ.constantSupport \ {c} := by
   simp

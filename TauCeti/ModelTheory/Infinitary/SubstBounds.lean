@@ -46,8 +46,10 @@ and more generally instantiates the `n` bound positions of a formula at a tuple 
 * `FirstOrder.Language.SentenceInf.realize_inst_of_realize_all` and
   `FirstOrder.Language.SentenceInf.realize_inst_of_realize_equal`: a universal sentence implies its
   instances, and equal closed terms can be exchanged in an instance.
-* `FirstOrder.Language.LHom.onBoundedFormulaInf_substBounds`: language maps commute with bound
-  substitution.
+* `FirstOrder.Language.LHom.onTerm_liftSubst`,
+  `FirstOrder.Language.LHom.onBoundedFormulaInf_substBounds` and
+  `FirstOrder.Language.LHom.onBoundedFormulaInf_inst`: language maps commute with lifting bound
+  substitutions, bound substitution and single-slot instantiation.
 * `FirstOrder.Language.BoundedFormulaInf.relationsIn_substBounds`,
   `FirstOrder.Language.BoundedFormulaInf.functionsIn_subset_functionsIn_substBounds` and
   `FirstOrder.Language.BoundedFormulaInf.functionsIn_substBounds_subset`: bound substitution keeps
@@ -461,6 +463,15 @@ variable {L : Language.{u, v}} {L' : Language.{u', v'}} {ι : Type uι} {α : Ty
 
 open Term BoundedFormulaInf
 
+/-- Lifting a bound substitution past a quantifier commutes with a language map. -/
+@[simp]
+theorem onTerm_liftSubst (g : L →ᴸ L') {m k : ℕ} (σ : Fin m → L.Term (α ⊕ Fin k))
+    (i : Fin (m + 1)) :
+    g.onTerm (liftSubst σ i) = liftSubst (fun j => g.onTerm (σ j)) i := by
+  induction i using Fin.lastCases with
+  | last => simp
+  | cast i => simp
+
 /-- **Language maps commute with bound substitution**, acting on the substituted terms. -/
 @[simp]
 theorem onBoundedFormulaInf_substBounds (g : L →ᴸ L') : ∀ {m k : ℕ}
@@ -472,21 +483,22 @@ theorem onBoundedFormulaInf_substBounds (g : L →ᴸ L') : ∀ {m k : ℕ}
         Sum.elim (var ∘ Sum.inl) fun i => g.onTerm (σ i) := by
     funext a
     cases a <;> rfl
-  have hlift {m k : ℕ} (σ : Fin m → L.Term (α ⊕ Fin k)) :
-      (fun i => g.onTerm (liftSubst σ i)) = liftSubst fun i => g.onTerm (σ i) := by
-    funext i
-    induction i using Fin.lastCases with
-    | last => simp
-    | cast i => simp
   intro m k σ φ
   induction φ generalizing k with
   | falsum => simp
   | equal t₁ t₂ => simp [hatom]
   | rel R ts => simp [hatom]
   | imp φ ψ ihφ ihψ => simp [ihφ, ihψ]
-  | all φ ih => simp only [substBounds_all, onBoundedFormulaInf_all, ih, hlift]
+  | all φ ih => simp [ih]
   | iSup φs ih => simp [ih]
   | iInf φs ih => simp [ih]
+
+/-- Language maps commute with instantiating the single bound position of a formula at a term. -/
+@[simp]
+theorem onBoundedFormulaInf_inst (g : L →ᴸ L') (φ : L.BoundedFormulaInf ι α 1)
+    (t : L.Term (α ⊕ Fin 0)) :
+    g.onBoundedFormulaInf (φ.inst t) = (g.onBoundedFormulaInf φ).inst (g.onTerm t) := by
+  rw [inst_def, inst_def, onBoundedFormulaInf_substBounds]
 
 end LHom
 

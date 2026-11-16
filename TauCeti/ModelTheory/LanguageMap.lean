@@ -16,6 +16,16 @@ is an expansion along the inner map `g`. Together they say that an `L''`-structu
 `L`-structure along `h.comp g` exactly when it expands, along `h`, some `L'`-structure that expands
 the `L`-structure along `g`; the `L'`-structure can be taken to be the reduct.
 
+Lifting a language map `g : L →ᴸ L'` to constant expansions via
+`g.addConstants γ : L[[γ]] →ᴸ L'[[γ]]` is functorial, forms a naturality square with
+`lhomWithConstants`, preserves injectivity, and lifts language equivalences
+(`FirstOrder.Language.LEquiv.addConstants`).
+
+## Main definitions
+
+* `FirstOrder.Language.LEquiv.addConstants`: lift a language equivalence `L ≃ᴸ L'` to
+  `L[[γ]] ≃ᴸ L'[[γ]]`.
+
 ## Main results
 
 * `FirstOrder.Language.LHom.comp_isExpansionOn`: expansions along `g` and along `h` compose to an
@@ -29,6 +39,10 @@ the `L`-structure along `g`; the `L'`-structure can be taken to be the reduct.
 * `FirstOrder.Language.LHom.mem_range_sumInl_onFunction_of_mem_range_sumMap` and
   `FirstOrder.Language.LHom.mem_range_sumInl_onRelation_of_mem_range_sumMap`: the symbols of
   `L.sum (L₁.sum L₂)` shared by the images of `L.sum L₁` and `L.sum L₂` come from `L`.
+* `FirstOrder.Language.LHom.id_addConstants`, `FirstOrder.Language.LHom.comp_addConstants`,
+  `FirstOrder.Language.LHom.addConstants_comp_lhomWithConstants` and
+  `FirstOrder.Language.LHom.Injective.addConstants`: functoriality, naturality and injectivity
+  preservation of `LHom.addConstants`.
 
 Adjoining constants to an algebraic language gives an algebraic language
 (`FirstOrder.Language.isAlgebraic_withConstants`).
@@ -235,5 +249,125 @@ theorem sumElim_fst_sigmaFunctionsWithConstantsEquiv (s : Σ n, L[[A]].Functions
   rcases s with ⟨_ | _, f | f⟩ <;> first | rfl | exact isEmptyElim f
 
 end WithConstantsSymbols
+
+section AddConstants
+
+variable {L : Language.{u, v}} {L' : Language.{u', v'}} {L'' : Language.{u'', v''}} {γ : Type w}
+
+namespace LHom
+
+/-- Lifting the identity language map to `L[[γ]]` gives the identity language map. -/
+@[simp]
+theorem id_addConstants (γ : Type w) : (LHom.id L).addConstants γ = LHom.id L[[γ]] := by
+  ext _ (_ | _) <;> rfl
+
+/-- Lifting a composite language map to constant expansions is the composite of the lifts. -/
+@[simp]
+theorem comp_addConstants (γ : Type w) (h : L' →ᴸ L'') (g : L →ᴸ L') :
+    (h.comp g).addConstants γ = (h.addConstants γ).comp (g.addConstants γ) := by
+  ext _ (_ | _) <;> rfl
+
+/-- `LHom.addConstants` forms a naturality square with `lhomWithConstants`. -/
+@[simp]
+theorem addConstants_comp_lhomWithConstants (γ : Type w) (g : L →ᴸ L') :
+    (g.addConstants γ).comp (L.lhomWithConstants γ) = (L'.lhomWithConstants γ).comp g :=
+  sumMap_comp_inl _ _
+
+/-- `LHom.addConstants` acts as the base map on function symbols from the base language. -/
+@[simp]
+theorem addConstants_onFunction_inl {n : ℕ} (g : L →ᴸ L') (f : L.Functions n) :
+    (g.addConstants γ).onFunction (Sum.inl f : L[[γ]].Functions n) = Sum.inl (g.onFunction f) :=
+  (rfl)
+
+/-- `LHom.addConstants` fixes added constant symbols in the right summand. -/
+@[simp]
+theorem addConstants_onFunction_inr (g : L →ᴸ L') (c : γ) :
+    (g.addConstants γ).onFunction (Sum.inr c : L[[γ]].Functions 0) = Sum.inr c :=
+  (rfl)
+
+/-- `LHom.addConstants` sends each added constant `L.con c` to `L'.con c`. -/
+@[simp]
+theorem addConstants_onFunction_con (g : L →ᴸ L') (c : γ) :
+    (g.addConstants γ).onFunction (L.con c) = L'.con c :=
+  (rfl)
+
+/-- `LHom.addConstants` acts as the base map on relation symbols from the base language. -/
+@[simp]
+theorem addConstants_onRelation_inl {n : ℕ} (g : L →ᴸ L') (R : L.Relations n) :
+    (g.addConstants γ).onRelation (Sum.inl R : L[[γ]].Relations n) = Sum.inl (g.onRelation R) :=
+  (rfl)
+
+/-- Eliminating the empty right relation summand commutes with `LHom.addConstants`. -/
+@[simp]
+theorem sumEmpty_addConstants_onRelation {n : ℕ} (g : L →ᴸ L') (R : L[[γ]].Relations n) :
+    (_root_.Equiv.sumEmpty _ _) ((g.addConstants γ).onRelation R) =
+      g.onRelation ((_root_.Equiv.sumEmpty _ _) R) := by
+  cases R with
+  | inl R => rfl
+  | inr R => exact R.elim
+
+/-- Lifting an injective language map by `LHom.addConstants` preserves injectivity. -/
+theorem Injective.addConstants {g : L →ᴸ L'} (hg : g.Injective) (γ : Type w) :
+    (g.addConstants γ).Injective where
+  onFunction {n} f₁ f₂ h := by
+    rcases f₁ with f₁ | c₁ <;> rcases f₂ with f₂ | c₂
+    · exact congrArg Sum.inl (hg.onFunction (Sum.inl_injective h))
+    · cases h
+    · cases h
+    · cases n with
+      | zero => exact congrArg Sum.inr (Sum.inr_injective h)
+      | succ _ => exact isEmptyElim c₁
+  onRelation {_} R₁ R₂ h := by
+    rcases R₁ with R₁ | R₁ <;> rcases R₂ with R₂ | R₂
+    · exact congrArg Sum.inl (hg.onRelation (Sum.inl_injective h))
+    · exact R₂.elim
+    · exact R₁.elim
+    · exact R₁.elim
+
+end LHom
+
+namespace LEquiv
+
+/-- Lift a language equivalence `L ≃ᴸ L'` to an equivalence `L[[γ]] ≃ᴸ L'[[γ]]` fixing the added
+constants indexed by `γ`. -/
+def addConstants (γ : Type w) (e : L ≃ᴸ L') : L[[γ]] ≃ᴸ L'[[γ]] where
+  toLHom := e.toLHom.addConstants γ
+  invLHom := e.invLHom.addConstants γ
+  left_inv := by rw [← LHom.comp_addConstants, e.left_inv, LHom.id_addConstants]
+  right_inv := by rw [← LHom.comp_addConstants, e.right_inv, LHom.id_addConstants]
+
+/-- The forward homomorphism of `LEquiv.addConstants` is `LHom.addConstants` of the forward map. -/
+@[simp]
+theorem addConstants_toLHom (γ : Type w) (e : L ≃ᴸ L') :
+    (e.addConstants γ).toLHom = e.toLHom.addConstants γ :=
+  (rfl)
+
+/-- The inverse homomorphism of `LEquiv.addConstants` is `LHom.addConstants` of the inverse map. -/
+@[simp]
+theorem addConstants_invLHom (γ : Type w) (e : L ≃ᴸ L') :
+    (e.addConstants γ).invLHom = e.invLHom.addConstants γ :=
+  (rfl)
+
+/-- Lifting the reflexive language equivalence to `L[[γ]]` gives the reflexive equivalence. -/
+@[simp]
+theorem refl_addConstants (γ : Type w) :
+    (LEquiv.refl L).addConstants γ = LEquiv.refl L[[γ]] := by
+  simp [addConstants, LEquiv.refl]
+
+/-- Symmetry commutes with `LEquiv.addConstants`. -/
+@[simp]
+theorem symm_addConstants (γ : Type w) (e : L ≃ᴸ L') :
+    (e.addConstants γ).symm = e.symm.addConstants γ :=
+  (rfl)
+
+/-- Composition of language equivalences commutes with `LEquiv.addConstants`. -/
+@[simp]
+theorem trans_addConstants (γ : Type w) (e₁ : L ≃ᴸ L') (e₂ : L' ≃ᴸ L'') :
+    (e₁.trans e₂).addConstants γ = (e₁.addConstants γ).trans (e₂.addConstants γ) := by
+  simp [addConstants, LEquiv.trans]
+
+end LEquiv
+
+end AddConstants
 
 end FirstOrder.Language

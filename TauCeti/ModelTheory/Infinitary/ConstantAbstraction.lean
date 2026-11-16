@@ -28,7 +28,9 @@ variable universes. In an expansion along `lhomWithConstants`, abstraction prese
 when the new free variables or bound slot are assigned the interpretations of the corresponding
 constants, while preserving occurring relation and non-constant function symbols and removing `c`
 from the constant support. Instantiating the abstracted slot at a term substitutes that term for
-the constant (`realize_inst_abstractConst`).
+the constant (`realize_inst_abstractConst`), and lifting a language map `g : L →ᴸ L'` to
+`g.addConstants γ : L[[γ]] →ᴸ L'[[γ]]` commutes with `constantsVarsEquiv`, its inverse and
+`abstractConst`.
 
 The construction of `constantsVarsEquiv` follows Mathlib's `BoundedFormula.constantsVarsEquiv`,
 reusing `Term.constantsVarsEquivLeft` on atoms. The infinitary conjunction and disjunction cases
@@ -42,7 +44,7 @@ through `constantsVarsEquiv` and `TauCeti.BoundedFormulaInf.relabel`.
 
 public section
 
-universe u v uι uα uγ w
+universe u v u' v' uι uα uγ w
 
 namespace FirstOrder.Language.BoundedFormulaInf
 
@@ -679,4 +681,49 @@ theorem realize_inst_abstractConst [DecidableEq γ] {M : Type w} [L.Structure M]
     (Function.update e c (@Term.realize _ M (@withConstantsStructure L M _ γ
       (constantsOn.structure e)) _ (Sum.elim v default) t)))) φ v).symm
 
+/-! ### Commutation with `LHom.addConstants` -/
+
+/-- Abstracting constants in an infinitary formula commutes with lifting a language map by
+`LHom.addConstants`. -/
+@[simp]
+theorem constantsVarsEquiv_addConstants_onBoundedFormulaInf
+    {L' : FirstOrder.Language.{u', v'}} (g : L →ᴸ L')
+    (φ : L[[γ]].BoundedFormulaInf ι α n) :
+    constantsVarsEquiv ((g.addConstants γ).onBoundedFormulaInf φ) =
+      g.onBoundedFormulaInf (constantsVarsEquiv φ) := by
+  induction φ with
+  | falsum => simp
+  | equal t₁ t₂ => simp
+  | rel R ts => simp
+  | imp φ ψ ihφ ihψ => simp [ihφ, ihψ]
+  | all φ ih => simp [ih]
+  | iSup φs ih => simp [ih]
+  | iInf φs ih => simp [ih]
+
 end FirstOrder.Language.BoundedFormulaInf
+
+namespace FirstOrder.Language.LHom
+
+variable {L : FirstOrder.Language.{u, v}} {L' : FirstOrder.Language.{u', v'}}
+  {ι : Type uι} {α : Type uα} {γ : Type uγ} {n : ℕ}
+
+/-- Restoring constants in an infinitary formula commutes with lifting a language map by
+`LHom.addConstants`. -/
+@[simp]
+theorem addConstants_onBoundedFormulaInf_constantsVarsEquiv_symm (g : L →ᴸ L')
+    (φ : L.BoundedFormulaInf ι (γ ⊕ α) n) :
+    (g.addConstants γ).onBoundedFormulaInf (BoundedFormulaInf.constantsVarsEquiv.symm φ) =
+      BoundedFormulaInf.constantsVarsEquiv.symm (g.onBoundedFormulaInf φ) := by
+  apply BoundedFormulaInf.constantsVarsEquiv.injective
+  simp
+
+/-- Single-constant abstraction into the outermost bound slot commutes with lifting a language
+map by `LHom.addConstants`. -/
+@[simp]
+theorem addConstants_onBoundedFormulaInf_abstractConst [DecidableEq γ] (g : L →ᴸ L') (c : γ)
+    (φ : L[[γ]].BoundedFormulaInf ι α n) :
+    (g.addConstants γ).onBoundedFormulaInf (BoundedFormulaInf.abstractConst c φ) =
+      BoundedFormulaInf.abstractConst c ((g.addConstants γ).onBoundedFormulaInf φ) := by
+  simp [BoundedFormulaInf.abstractConst_def]
+
+end FirstOrder.Language.LHom

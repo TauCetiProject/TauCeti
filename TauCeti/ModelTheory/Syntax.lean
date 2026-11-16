@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.ModelTheory.Syntax
+public import TauCeti.ModelTheory.LanguageMap
 
 /-!
 # First-order terms under relabelling, substitution and language maps
@@ -15,7 +16,9 @@ that come from the left summand `α`. This file characterizes it through the ful
 `Term.varFinset`, and computes it after `Term.relabel` and `Term.subst`. It also records that a
 language map commutes with relabelling the variables of a term, and a language map that is
 injective on function symbols acts injectively on terms. Constructor equations for
-`BoundedFormula.constantsVarsEquiv` describe abstraction of constants in finitary formulas.
+`BoundedFormula.constantsVarsEquiv` describe abstraction of constants in finitary formulas, and
+lifting a language map via `LHom.addConstants` commutes with exchanging constants and variables in
+terms and finitary formulas.
 
 ## Main results
 
@@ -27,11 +30,21 @@ injective on function symbols acts injectively on terms. Constructor equations f
   is a variable.
 * `FirstOrder.Language.Term.exists_eq_var_inr_of_isRelational`: in a relational language, a term
   over `α ⊕ β` with `α` empty is a variable `Sum.inr b`.
-* `FirstOrder.Language.LHom.onTerm_relabel`: a language map commutes with relabelling the
-  variables of a term.
+* `FirstOrder.Language.LHom.onTerm_relabel`, `FirstOrder.Language.LHom.onTerm_constantsTerm`,
+  `FirstOrder.Language.LHom.varFinset_onTerm` and
+  `FirstOrder.Language.LHom.varFinsetLeft_onTerm`: language maps commute with variable
+  relabelling and constant terms and preserve variable sets of terms.
+* `FirstOrder.Language.LHom.onBoundedFormula_relabel` and
+  `FirstOrder.Language.LHom.onBoundedFormula_toFormula`: language maps commute with free-variable
+  relabelling and opening bound positions of finitary formulas.
 * `FirstOrder.Language.LHom.onTerm_injective`: a language map that is injective on function
   symbols acts injectively on terms; `FirstOrder.Language.LHom.Injective.onTerm_injective`
   specializes it to injective language maps.
+* `FirstOrder.Language.Term.constantsToVars_addConstants_onTerm`,
+  `FirstOrder.Language.LHom.addConstants_onTerm_varsToConstants` and
+  `FirstOrder.Language.BoundedFormula.constantsVarsEquiv_addConstants_onBoundedFormula`:
+  `LHom.addConstants` commutes with exchanging constants and variables in terms and finitary
+  formulas.
 -/
 
 public section
@@ -95,7 +108,7 @@ end Term
 
 namespace LHom
 
-variable {L L' : Language}
+variable {L : Language} {L' : Language}
 
 /-- A language map commutes with relabelling the variables of a term. -/
 @[simp]
@@ -104,6 +117,61 @@ theorem onTerm_relabel {β γ : Type*} (g : L →ᴸ L') (h : β → γ) (t : L.
   induction t with
   | var => rfl
   | func f ts ih => simp [Term.relabel, ih]
+
+/-- A language map sends the term of a constant symbol to the term of its image. -/
+@[simp]
+theorem onTerm_constantsTerm {β : Type*} (g : L →ᴸ L') (c : L.Constants) :
+    g.onTerm (c.term : L.Term β) = Constants.term (g.onFunction c) := by
+  simp [Constants.term, onTerm, Subsingleton.elim (fun _ : Fin 0 => _) default]
+
+/-- Mapping a term along a language homomorphism preserves its finite set of variables. -/
+@[simp]
+theorem varFinset_onTerm {β : Type*} [DecidableEq β] (g : L →ᴸ L') (t : L.Term β) :
+    (g.onTerm t).varFinset = t.varFinset := by
+  induction t with
+  | var => rfl
+  | func _ _ ih => simp [onTerm, Term.varFinset, ih]
+
+/-- Mapping a term over `β ⊕ γ` along a language homomorphism preserves its left variables. -/
+@[simp]
+theorem varFinsetLeft_onTerm {β γ : Type*} [DecidableEq β] (g : L →ᴸ L')
+    (t : L.Term (β ⊕ γ)) :
+    (g.onTerm t).varFinsetLeft = t.varFinsetLeft := by
+  induction t with
+  | var x => cases x <;> rfl
+  | func _ _ ih => simp [onTerm, Term.varFinsetLeft, ih]
+
+/-- A language map commutes with relabelling the free variables of a finitary bounded formula. -/
+@[simp]
+theorem onBoundedFormula_relabel {α β : Type*} {m n : ℕ} (g : L →ᴸ L') (f : α → β ⊕ Fin m)
+    (φ : L.BoundedFormula α n) :
+    g.onBoundedFormula (φ.relabel f) = (g.onBoundedFormula φ).relabel f := by
+  induction φ with
+  | falsum => rfl
+  | equal t₁ t₂ => simp [BoundedFormula.relabel, BoundedFormula.mapTermRel, Term.bdEqual]
+  | rel R ts =>
+    simp [BoundedFormula.relabel, BoundedFormula.mapTermRel, Relations.boundedFormula,
+      Function.comp_def]
+  | imp φ ψ ihφ ihψ => simp [ihφ, ihψ]
+  | all φ ih => simp [ih]
+
+/-- Opening the in-scope bound positions of a finitary formula commutes with a language map. -/
+@[simp]
+theorem onBoundedFormula_toFormula {α : Type*} {n : ℕ} (g : L →ᴸ L')
+    (φ : L.BoundedFormula α n) :
+    g.onBoundedFormula φ.toFormula = (g.onBoundedFormula φ).toFormula := by
+  induction φ with
+  | falsum => rfl
+  | equal t₁ t₂ => simp [Term.equal, Term.bdEqual]
+  | rel R ts => simp [Relations.formula, Relations.boundedFormula, Function.comp_def]
+  | imp φ ψ ihφ ihψ => simp [ihφ, ihψ]
+  | all φ ih => simp [BoundedFormula.toFormula, ih]
+
+/-- `LHom.onFormula` form of `FirstOrder.Language.LHom.onBoundedFormula_toFormula`. -/
+@[simp]
+theorem onFormula_toFormula {α : Type*} {n : ℕ} (g : L →ᴸ L') (φ : L.BoundedFormula α n) :
+    g.onFormula φ.toFormula = (g.onBoundedFormula φ).toFormula :=
+  g.onBoundedFormula_toFormula φ
 
 /-- A language map that is injective on function symbols acts injectively on terms; terms
 mention no relation symbols, so nothing is assumed about those. -/
@@ -161,6 +229,105 @@ theorem constantsVarsEquiv_all (φ : L[[γ]].BoundedFormula α (n + 1)) :
     constantsVarsEquiv φ.all = (constantsVarsEquiv φ).all := (rfl)
 
 end BoundedFormula
+
+namespace Term
+
+variable {L : Language} {L' : Language} {α β γ : Type*}
+
+/-- Abstracting constants out of a term commutes with lifting a language map by
+`LHom.addConstants`. -/
+@[simp]
+theorem constantsToVars_addConstants_onTerm (g : L →ᴸ L') (t : L[[γ]].Term α) :
+    ((g.addConstants γ).onTerm t).constantsToVars = g.onTerm t.constantsToVars := by
+  induction t with
+  | var _ => rfl
+  | @func n f ts ih =>
+    cases n with
+    | zero =>
+      rcases f with f | c
+      · simp [constantsToVars, LHom.onTerm, ih]
+      · rfl
+    | succ n =>
+      rcases f with f | c
+      · simp [constantsToVars, LHom.onTerm, ih]
+      · exact isEmptyElim c
+
+/-- `Term.constantsVarsEquiv` form of `constantsToVars_addConstants_onTerm`. -/
+theorem constantsVarsEquiv_addConstants_onTerm (g : L →ᴸ L') (t : L[[γ]].Term α) :
+    constantsVarsEquiv ((g.addConstants γ).onTerm t) = g.onTerm (constantsVarsEquiv t) := by
+  simp
+
+/-- `Term.constantsVarsEquivLeft` commutes with lifting a language map by `LHom.addConstants`. -/
+theorem constantsVarsEquivLeft_addConstants_onTerm (g : L →ᴸ L') (t : L[[γ]].Term (α ⊕ β)) :
+    constantsVarsEquivLeft ((g.addConstants γ).onTerm t) =
+      g.onTerm (constantsVarsEquivLeft t) := by
+  simp
+
+end Term
+
+namespace BoundedFormula
+
+variable {L : Language} {L' : Language} {α γ : Type*} {n : ℕ}
+
+/-- Abstracting constants in a finitary formula commutes with lifting a language map by
+`LHom.addConstants`. -/
+@[simp]
+theorem constantsVarsEquiv_addConstants_onBoundedFormula
+    (g : L →ᴸ L') (φ : L[[γ]].BoundedFormula α n) :
+    constantsVarsEquiv ((g.addConstants γ).onBoundedFormula φ) =
+      g.onBoundedFormula (constantsVarsEquiv φ) := by
+  induction φ with
+  | falsum => rfl
+  | equal t₁ t₂ => simp [Term.bdEqual]
+  | rel R ts => simp [LHom.onBoundedFormula, Relations.boundedFormula, Function.comp_def]
+  | imp φ ψ ihφ ihψ => simp [ihφ, ihψ]
+  | all φ ih => simp [ih]
+
+end BoundedFormula
+
+namespace LHom
+
+variable {L : Language} {L' : Language} {α β γ : Type*}
+
+/-- `LHom.addConstants` sends the constant term `(L.con c).term` to `(L'.con c).term`. -/
+theorem addConstants_onTerm_con (g : L →ᴸ L') (c : γ) :
+    (g.addConstants γ).onTerm ((L.con c).term : L[[γ]].Term α) = (L'.con c).term := by
+  simp
+
+/-- `Term.constantsVarsEquiv.symm` commutes with lifting a language map by `LHom.addConstants`. -/
+theorem addConstants_onTerm_constantsVarsEquiv_symm (g : L →ᴸ L') (t : L.Term (γ ⊕ α)) :
+    (g.addConstants γ).onTerm (Term.constantsVarsEquiv.symm t) =
+      Term.constantsVarsEquiv.symm (g.onTerm t) := by
+  apply Term.constantsVarsEquiv.injective
+  rw [Term.constantsVarsEquiv_addConstants_onTerm, Term.constantsVarsEquiv.apply_symm_apply,
+    Term.constantsVarsEquiv.apply_symm_apply]
+
+/-- Restoring constants in a term commutes with lifting a language map by `LHom.addConstants`. -/
+@[simp]
+theorem addConstants_onTerm_varsToConstants (g : L →ᴸ L') (t : L.Term (γ ⊕ α)) :
+    (g.addConstants γ).onTerm t.varsToConstants = (g.onTerm t).varsToConstants := by
+  simpa only [Term.constantsVarsEquiv_symm_apply] using
+    addConstants_onTerm_constantsVarsEquiv_symm g t
+
+/-- `Term.constantsVarsEquivLeft.symm` commutes with lifting a language map by
+`LHom.addConstants`. -/
+theorem addConstants_onTerm_constantsVarsEquivLeft_symm (g : L →ᴸ L')
+    (t : L.Term ((γ ⊕ α) ⊕ β)) :
+    (g.addConstants γ).onTerm (Term.constantsVarsEquivLeft.symm t) =
+      Term.constantsVarsEquivLeft.symm (g.onTerm t) := by
+  simp
+
+/-- Restoring constants in a finitary formula commutes with lifting a language map by
+`LHom.addConstants`. -/
+@[simp]
+theorem addConstants_onBoundedFormula_constantsVarsEquiv_symm {n : ℕ} (g : L →ᴸ L')
+    (φ : L.BoundedFormula (γ ⊕ α) n) :
+    (g.addConstants γ).onBoundedFormula (BoundedFormula.constantsVarsEquiv.symm φ) =
+      BoundedFormula.constantsVarsEquiv.symm (g.onBoundedFormula φ) := by
+  apply BoundedFormula.constantsVarsEquiv.injective
+  simp
+
+end LHom
 
 end Language
 
