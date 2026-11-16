@@ -14,6 +14,7 @@ import TauCeti.Analysis.Calculus.ContinuousLinearMapInverse
 import TauCeti.Analysis.Calculus.IteratedFDeriv.Bilinear
 import TauCeti.Analysis.Calculus.IteratedFDeriv.CompContinuousLinearEquiv
 import TauCeti.Analysis.Calculus.IteratedFDeriv.ContinuousLinearMapInverse
+import TauCeti.Analysis.SpecialFunctions.Pow.Real
 import TauCeti.Topology.Algebra.Module.ContinuousLinearMap.Invertible
 
 /-!
@@ -38,6 +39,11 @@ sector of spectral parameters, as used for contour integrals, lies in a slightly
 
 ## Main results
 
+* `TauCeti.parameterWeight_rpow_le_one_add_norm_sq_rpow`,
+  `TauCeti.parameterWeight_rpow_le_one_add_sqrt_rpow`,
+  `TauCeti.parameterWeight_rpow_le_mul_one_add_norm_sq_rpow`: the weight dominates
+  `⟨ξ⟩ = (1 + ‖ξ‖²) ^ (1 / 2)` and `1 + ‖z‖ ^ (1 / 2)`, and at a fixed spectral parameter it is at
+  most a multiple of `⟨ξ⟩`;
 * `TauCeti.ParameterSymbol.inclusion`: the order inclusions, and the complex vector space
   structure of each class;
 * `TauCeti.ParameterSymbol.comp`: the pointwise composition of symbols of orders `m'` and `m` has
@@ -119,6 +125,54 @@ theorem norm_le_parameterWeight_sq (ξ : CoordinateSpace n) (z : ℂ) :
     linarith
   calc ‖z‖ = Real.sqrt ‖z‖ ^ 2 := (Real.sq_sqrt (norm_nonneg z)).symm
     _ ≤ parameterWeight ξ z ^ 2 := pow_le_pow_left₀ (Real.sqrt_nonneg _) h 2
+
+/-- `⟨ξ⟩² = 1 + ‖ξ‖²` is at most the square of the parameter weight. -/
+theorem one_add_norm_sq_le_parameterWeight_sq (ξ : CoordinateSpace n) (z : ℂ) :
+    1 + ‖ξ‖ ^ 2 ≤ parameterWeight ξ z ^ 2 := by
+  have := Real.sqrt_nonneg ‖z‖
+  have := norm_nonneg ξ
+  rw [parameterWeight_def]
+  nlinarith
+
+/-- For a nonpositive exponent the parameter weight is dominated by the frequency weight:
+`w ^ r ≤ ⟨ξ⟩ ^ r`. -/
+theorem parameterWeight_rpow_le_one_add_norm_sq_rpow (ξ : CoordinateSpace n) (z : ℂ) {r : ℝ}
+    (hr : r ≤ 0) : parameterWeight ξ z ^ r ≤ (1 + ‖ξ‖ ^ 2) ^ (r / 2) := by
+  calc parameterWeight ξ z ^ r = (parameterWeight ξ z ^ 2) ^ (r / 2) :=
+        (Real.sq_rpow_div_two (parameterWeight_pos ξ z).le r).symm
+    _ ≤ (1 + ‖ξ‖ ^ 2) ^ (r / 2) :=
+        Real.rpow_le_rpow_of_nonpos (by positivity) (one_add_norm_sq_le_parameterWeight_sq ξ z)
+          (by linarith)
+
+/-- For a nonpositive exponent the parameter weight is dominated by the weight of the spectral
+parameter: `w ^ r ≤ (1 + ‖z‖ ^ (1 / 2)) ^ r`. -/
+theorem parameterWeight_rpow_le_one_add_sqrt_rpow (ξ : CoordinateSpace n) (z : ℂ) {r : ℝ}
+    (hr : r ≤ 0) : parameterWeight ξ z ^ r ≤ (1 + Real.sqrt ‖z‖) ^ r := by
+  refine Real.rpow_le_rpow_of_nonpos (by positivity) ?_ hr
+  rw [parameterWeight_def]
+  linarith [norm_nonneg ξ]
+
+/-- At a fixed spectral parameter `z` the parameter weight is comparable to the frequency weight:
+`w ^ r ≤ (3 (1 + ‖z‖)) ^ (|r| / 2) ⟨ξ⟩ ^ r` for every real `r`. -/
+theorem parameterWeight_rpow_le_mul_one_add_norm_sq_rpow (ξ : CoordinateSpace n) (z : ℂ)
+    (r : ℝ) :
+    parameterWeight ξ z ^ r ≤ (3 * (1 + ‖z‖)) ^ (|r| / 2) * (1 + ‖ξ‖ ^ 2) ^ (r / 2) := by
+  have hz : 1 ≤ 3 * (1 + ‖z‖) := by linarith [norm_nonneg z]
+  rcases le_total r 0 with hr | hr
+  · exact (parameterWeight_rpow_le_one_add_norm_sq_rpow ξ z hr).trans
+      (le_mul_of_one_le_left (by positivity) (Real.one_le_rpow hz (by positivity)))
+  · have hsq : parameterWeight ξ z ^ 2 ≤ 3 * (1 + ‖z‖) * (1 + ‖ξ‖ ^ 2) := by
+      have := Real.sq_sqrt (norm_nonneg z)
+      have := Real.sqrt_nonneg ‖z‖
+      rw [parameterWeight_def]
+      nlinarith [sq_nonneg (1 - ‖ξ‖), sq_nonneg (1 - Real.sqrt ‖z‖),
+        sq_nonneg (‖ξ‖ - Real.sqrt ‖z‖), norm_nonneg ξ, mul_nonneg (norm_nonneg z)
+          (sq_nonneg ‖ξ‖)]
+    calc parameterWeight ξ z ^ r = (parameterWeight ξ z ^ 2) ^ (r / 2) :=
+          (Real.sq_rpow_div_two (parameterWeight_pos ξ z).le r).symm
+      _ ≤ (3 * (1 + ‖z‖) * (1 + ‖ξ‖ ^ 2)) ^ (r / 2) :=
+          Real.rpow_le_rpow (by positivity) hsq (by linarith)
+      _ = _ := by rw [abs_of_nonneg hr, Real.mul_rpow (by positivity) (by positivity)]
 
 variable (n) in
 /-- The anisotropic dilation `((y, η), μ) ↦ ((y, t η), t² μ)` of the position, frequency and
