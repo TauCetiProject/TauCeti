@@ -211,6 +211,17 @@ theorem isCompact_closure_range_of_forall_eq_add_integral [ProperSpace E] {d : X
 
 end Family
 
+/-- The primitive `x ↦ ∫ t in a..x, f t` of a `C^k` function `f` on `ℝ` is `C^(k+1)`. Its
+derivative is `f` (`Continuous.deriv_integral`). -/
+theorem _root_.ContDiff.contDiff_add_one_integral {k : ℕ∞} (hf : ContDiff ℝ k f) (a : ℝ) :
+    ContDiff ℝ (k + 1) (fun x ↦ ∫ t in a..x, f t) := by
+  by_cases hE : CompleteSpace E
+  swap
+  · simpa [intervalIntegral, integral_of_not_completeSpace hE] using contDiff_const
+  exact contDiff_succ_iff_deriv.2 ⟨fun x ↦
+    (hf.continuous.integral_hasStrictDerivAt a x).hasDerivAt.differentiableAt, by simp,
+    by rwa [funext (hf.continuous.deriv_integral f a)]⟩
+
 variable [CompleteSpace E]
 
 /-- A continuous integrand on a closed interval has a globally continuous primitive
@@ -235,13 +246,6 @@ theorem exists_continuous_primitive_Icc (hf : ContinuousOn f (Icc a b)) :
         _root_.intervalIntegral.integral_interval_sub_left
           (hg.intervalIntegrable a y) (hg.intervalIntegrable a x)
       _ = _ := _root_.intervalIntegral.integral_congr (hgf.mono (uIcc_subset_Icc hx hy))
-
-/-- The primitive `x ↦ ∫ t in a..x, f t` of a `C^k` function `f` on `ℝ` is `C^(k+1)`. Its
-derivative is `f` (`Continuous.deriv_integral`). -/
-theorem _root_.ContDiff.contDiff_add_one_integral {k : ℕ∞} (hf : ContDiff ℝ k f) (a : ℝ) :
-    ContDiff ℝ (k + 1) (fun x ↦ ∫ t in a..x, f t) :=
-  contDiff_succ_iff_deriv.2 ⟨fun x ↦ (hf.continuous.integral_hasStrictDerivAt a x).hasDerivAt
-    |>.differentiableAt, by simp, by rwa [funext (hf.continuous.deriv_integral f a)]⟩
 
 omit [CompleteSpace E] in
 /-- **Integration by parts against a primitive.** For `a ≤ b`, `f` integrable on `[a, b]` and a
