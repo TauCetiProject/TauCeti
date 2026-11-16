@@ -70,12 +70,6 @@ theorem coe_stableSymmetricProj_stableEsymm (n d : ℕ) :
     (stableSymmetricProj R n d (stableEsymm R n) : MvPolynomial (Fin d) R) = esymm (Fin d) R n := by
   rw [stableEsymm, coe_stableSymmetricProj_stableSchur, schurPoly_ones]
 
-/-- **The Schur function of the one-column partition is the elementary symmetric function**,
-`s_(1ⁿ) = e_n`. -/
-@[simp]
-theorem stableSchur_ones (n : ℕ) : stableSchur R (Nat.Partition.ones n) = stableEsymm R n :=
-  (rfl)
-
 /-- `e_0` is the unit of the symmetric functions. -/
 @[simp]
 theorem stableEsymm_zero : stableEsymm R 0 = stableSymmetricOne R :=
@@ -99,16 +93,6 @@ homogeneous symmetric polynomial. -/
 theorem coe_stableSymmetricProj_stableHsymm (n d : ℕ) :
     (stableSymmetricProj R n d (stableHsymm R n) : MvPolynomial (Fin d) R) = hsymm (Fin d) R n := by
   rw [stableHsymm, stableSymmetricProj_mk]
-
-/-- **The Schur function of the one-row partition is the complete homogeneous symmetric
-function**, `s_(n) = h_n`. -/
-@[simp]
-theorem stableSchur_indiscrete (n : ℕ) :
-    stableSchur R (Nat.Partition.indiscrete n) = stableHsymm R n :=
-  stableSymmetricSubmodule_ext fun d => Subtype.ext <| by
-    classical
-    rw [coe_stableSymmetricProj_stableSchur, schurPoly_indiscrete,
-      coe_stableSymmetricProj_stableHsymm]
 
 /-- `h_0` is the unit of the symmetric functions. -/
 @[simp]
@@ -155,13 +139,11 @@ theorem coe_stableSymmetricProj_stablePsumPart {n : ℕ} (μ : n.Partition) (d :
 
 /-- The power-sum product of the (unique, empty) partition of `0` is the unit of the symmetric
 functions. -/
-@[simp]
 theorem stablePsumPart_zero (μ : Nat.Partition 0) : stablePsumPart R μ = stableSymmetricOne R := by
   rw [Subsingleton.elim μ (.indiscrete 0)]
   exact stableSymmetricSubmodule_ext fun d => Subtype.ext <| by simp
 
 /-- The power-sum product of the one-row partition `(n)` is the power sum `p_n`. -/
-@[simp]
 theorem stablePsumPart_indiscrete {n : ℕ} (hn : n ≠ 0) :
     stablePsumPart R (Nat.Partition.indiscrete n) = stablePsum R hn :=
   stableSymmetricSubmodule_ext fun d => Subtype.ext <| by simp [hn]
@@ -231,9 +213,32 @@ end CommSemiring
 
 section CommRing
 
-namespace SymmetricFunction
-
 variable (R : Type*) [CommRing R]
+
+/-- The Schur coordinates of the elementary symmetric function: `e_n = s_(1ⁿ)` is the basis
+vector of index `(1ⁿ)`. -/
+@[simp]
+theorem stableSchurBasis_repr_stableEsymm (n : ℕ) :
+    (stableSchurBasis R n).repr (stableEsymm R n) = Finsupp.single (Nat.Partition.ones n) 1 := by
+  rw [← stableSchur_ones, stableSchurBasis_repr_stableSchur]
+
+/-- The Schur coordinates of the complete homogeneous symmetric function: `h_n = s_(n)` is the
+basis vector of index `(n)`. -/
+@[simp]
+theorem stableSchurBasis_repr_stableHsymm (n : ℕ) :
+    (stableSchurBasis R n).repr (stableHsymm R n) =
+      Finsupp.single (Nat.Partition.indiscrete n) 1 := by
+  rw [← stableSchur_indiscrete, stableSchurBasis_repr_stableSchur]
+
+/-- The Schur coordinates of the unit of the symmetric functions: `1 = s_∅` is the basis vector
+of the empty partition. -/
+@[simp]
+theorem stableSchurBasis_repr_stableSymmetricOne :
+    (stableSchurBasis R 0).repr (stableSymmetricOne R) =
+      Finsupp.single (Nat.Partition.indiscrete 0) 1 := by
+  rw [← stableHsymm_zero, stableSchurBasis_repr_stableHsymm]
+
+namespace SymmetricFunction
 
 /-- **The elementary symmetric functions are algebraically independent.** -/
 theorem esymmAlgHom_injective : Function.Injective (esymmAlgHom R) := by
