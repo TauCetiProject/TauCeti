@@ -57,7 +57,7 @@ top row `μ` and weight `γ - λ` (`TauCeti.Hive.fixedIntegerHiveEquivGTPatternO
 * `TauCeti.Hive.exists_fixedIntegerHive_eq_gtCompletion_iff`: a pattern of top row `μ` and weight
   `γ - λ` is the difference pattern of a hive with boundary `(λ, μ, γ*)` iff its completion
   satisfies the third family.
-* `TauCeti.Hive.gtCompletionConcave_of_gap`, `TauCeti.Hive.hiveCount_eq_card_gtPattern_of_gap`:
+* `TauCeti.Hive.gtCompletionConcave_of_gap`, `TauCeti.Hive.hiveCount_eq_natCard_gtPattern_of_gap`:
   under the uniform input gap the third family is automatic, and the hive count is a count of
   Gelfand-Tsetlin patterns.
 
@@ -484,7 +484,7 @@ theorem fixedIntegerHiveEquivGTPatternOfGap_symm_apply_apply (lam μ γ : Domina
 
 /-- Under the uniform input gap, the hive count of `(λ, μ, γ*)` is the number of Gelfand-Tsetlin
 patterns with top row `μ` and weight `γ - λ`. -/
-theorem hiveCount_eq_card_gtPattern_of_gap (lam μ γ : DominantWeight (n + 1))
+theorem hiveCount_eq_natCard_gtPattern_of_gap (lam μ γ : DominantWeight (n + 1))
     (hGap : ∀ r : Fin n, μ.1 0 - μ.1 (Fin.last n) ≤ lam.1 r.castSucc - lam.1 r.succ) :
     hiveCount (productBoundary lam μ γ) =
       Nat.card {P : GTPattern (n + 1) // P.topRow = μ.1 ∧ P.weight = γ.1 - lam.1} := by
