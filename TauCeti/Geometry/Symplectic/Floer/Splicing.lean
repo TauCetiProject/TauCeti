@@ -27,8 +27,8 @@ operator is what makes the operator onto with a uniformly bounded right inverse.
 on `s`, with a common symbol `σ : E →L[ℝ] F` in the `s` direction (`σ = 1` for the linearized Floer
 operator `∂s + J ∂t + C`, `σ = -1` for its formal adjoint). Suppose that
 
-* `P₁` and `P₂` satisfy the injectivity estimate `‖ξ‖²_{W^{1,2}} ≤ C ‖P_i ξ‖²_{L²}` on sections of
-  compact support, of period one in `t`;
+* `P₁` and `P₂` satisfy the injectivity estimate `‖ξ‖²_{W^{1,2}} ≤ C ‖P_i ξ‖²_{L²}` on `C²`
+  sections of period one in `t` vanishing outside a strip `(a, b) × ℝ`;
 * on the half-cylinder `s ≤ T` the operator `P` is `ε`-close to `P₁`, and on `s ≥ -T` it is
   `ε`-close to `P₂`, in the sense `‖P ξ - P_i ξ‖ ≤ ε (‖∂t ξ‖ + ‖ξ‖)` pointwise;
 * the neck is long and the comparison is good: `64 C ‖σ‖² ≤ T²` and `8 C ε² ≤ 1`.
