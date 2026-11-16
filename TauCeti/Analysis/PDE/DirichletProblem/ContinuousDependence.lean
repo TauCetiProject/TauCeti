@@ -37,7 +37,8 @@ equation `-∂ᵢ(Aⁱʲ(x, u) ∂ⱼu) = ℓ` continuous, as needed for a Schau
 * `TauCeti.PDE.abs_energyFormH1_sub_energyFormH1_le`: `|B(u, v) - B'(u, v)| ≤ (Λ + β + γ) ‖u‖ ‖v‖`
   when the coefficient differences are bounded by `Λ, β, γ`.
 * `TauCeti.PDE.norm_sub_le_of_sub_sub_mem_w1p0Submodule_of_forall_energyFormH1_eq`: the stability
-  estimate for data in `H⁻¹(Ω)` and boundary values in `H¹(Ω)`.
+  estimate for data in `H⁻¹(Ω)` and boundary values in `H¹(Ω)`, from the two-problem energy
+  estimate `TauCeti.PDE.norm_sub_sub_le_of_sub_sub_mem_w1p0Submodule_of_forall_energyFormH1_eq`.
 * `TauCeti.PDE.norm_sub_le_of_forall_energyFormH1_eq`: its case of zero boundary values, for
   solutions in `H¹₀(Ω)`.
 * `TauCeti.PDE.norm_sub_le_of_isWeakSolutionDirichlet`: for a common right-hand side
@@ -105,7 +106,8 @@ and `D ≥ 0` bounds the functional `B(u', ·) - B'(u', ·)` on `H¹₀(Ω)`, th
 
 `‖u - u'‖ ≤ ‖h‖ + (‖ℓ - ℓ'‖ + N + D) / C`.
 
-One may take `N = ‖B‖ ‖h‖` with `‖B‖ = ‖energyFormH1L hcoeff‖`, and when the coefficient
+One may take `N = ‖B‖ ‖h‖` with `‖B‖ = ‖energyFormH1L hcoeff‖`
+(`TauCeti.PDE.abs_energyFormH1_le_norm_energyFormH1L_mul`), and when the coefficient
 differences are bounded by `Λ`, `β` and `γ` almost everywhere one may take `D = (Λ + β + γ) ‖u'‖`
 (`TauCeti.PDE.abs_energyFormH1_sub_energyFormH1_le`). The second energy form need not be
 coercive. -/
@@ -123,36 +125,12 @@ theorem norm_sub_le_of_sub_sub_mem_w1p0Submodule_of_forall_energyFormH1_eq
     (hu : ∀ v : W1p0 mu Omega 2, energyFormH1 a b c u (v : W1p mu Omega 2) = ℓ v)
     (hu' : ∀ v : W1p0 mu Omega 2, energyFormH1 a' b' c' u' (v : W1p mu Omega 2) = ℓ' v) :
     ‖u - u'‖ ≤ ‖h‖ + (‖ℓ - ℓ'‖ + N + D) / C := by
-  -- `C x² ≤ K x` with `0 ≤ x` and `0 ≤ K` gives `x ≤ K / C`; it is applied to `x = ‖w‖` below.
-  have hdiv : ∀ x K : ℝ, 0 ≤ x → 0 ≤ K → C * x ^ 2 ≤ K * x → x ≤ K / C := fun x K hx hK hxK =>
-    (le_div_iff₀ hC).2 (by nlinarith only [hxK, hC, hK, hx])
-  -- Test both equations against `w = u - u' - h ∈ H¹₀(Ω)`:
-  -- `B(w, w) = (ℓ - ℓ') w - (B(u', w) - B'(u', w)) - B(h, w)`.
-  obtain ⟨w, hwu⟩ : ∃ w : W1p0 mu Omega 2, (w : W1p mu Omega 2) = u - u' - h :=
-    ⟨⟨u - u' - h, (ClosedSubmodule.mem_toSubmodule_iff _ _).2 huh⟩, rfl⟩
-  have hw : energyFormH1 a b c (w : W1p mu Omega 2) w =
-      (ℓ - ℓ') w - (energyFormH1 a b c u' w - energyFormH1 a' b' c' u' w) -
-        energyFormH1 a b c h w := by
-    rw [congrArg (fun z => energyFormH1 a b c z (w : W1p mu Omega 2)) hwu,
-      energyFormH1_sub_left hcoeff, energyFormH1_sub_left hcoeff, sub_apply, ← hu w, ← hu' w]
-    ring
-  have hkey : C * ‖w‖ ^ 2 ≤ (‖ℓ - ℓ'‖ + N + D) * ‖w‖ := by
-    have h₁ := hlower w
-    rw [hw] at h₁
-    linarith [(le_abs_self _).trans ((ℓ - ℓ').le_opNorm w), neg_abs_le
-      (energyFormH1 a b c u' w - energyFormH1 a' b' c' u' w), hD w,
-      neg_abs_le (energyFormH1 a b c h w), hN w]
-  -- `‖w‖ ≤ (‖ℓ - ℓ'‖ + N + D) / C`, and `u - u' = w + h`.
-  have hnorm : ‖(w : W1p mu Omega 2)‖ = ‖w‖ := Submodule.norm_coe w
-  have hw0 : 0 ≤ ‖w‖ := by
-    rw [← hnorm]
-    exact norm_nonneg _
-  have hK0 : 0 ≤ ‖ℓ - ℓ'‖ + N + D := add_nonneg (add_nonneg ((ℓ - ℓ').opNorm_nonneg) hN0) hD0
-  have hwK := hdiv _ _ hw0 hK0 hkey
-  calc ‖u - u'‖ = ‖(w : W1p mu Omega 2) + h‖ := by rw [hwu, sub_add_cancel]
-    _ ≤ ‖(w : W1p mu Omega 2)‖ + ‖h‖ := norm_add_le _ _
-    _ = ‖w‖ + ‖h‖ := by rw [hnorm]
-    _ ≤ ‖h‖ + (‖ℓ - ℓ'‖ + N + D) / C := by linarith only [hwK]
+  -- `u - u' = (u - u' - h) + h`, and the first summand is bounded by the two-problem estimate.
+  calc ‖u - u'‖ = ‖u - u' - h + h‖ := by rw [sub_add_cancel]
+    _ ≤ ‖u - u' - h‖ + ‖h‖ := norm_add_le _ _
+    _ ≤ ‖h‖ + (‖ℓ - ℓ'‖ + N + D) / C := by
+      linarith only [norm_sub_sub_le_of_sub_sub_mem_w1p0Submodule_of_forall_energyFormH1_eq hcoeff
+        hC hlower hN0 hN hD0 hD huh hu hu']
 
 /-- **Stability of the Dirichlet problem under perturbation of the coefficients and the data.**
 Let `u ∈ H¹₀(Ω)` satisfy `B(u, v) = ℓ(v)` for every `v ∈ H¹₀(Ω)`, where `B` is the energy form of
@@ -278,8 +256,8 @@ theorem tendsto_of_sub_mem_w1p0Submodule_of_forall_energyFormH1_eq {α : Type*} 
   -- The functional `B(g - g' i, ·)` has norm at most `‖B‖ ‖g - g' i‖`.
   have hN (w : W1p0 mu Omega 2) :
       |energyFormH1 a b c (g - g' i) (w : W1p mu Omega 2)| ≤ M * ‖g - g' i‖ * ‖w‖ := by
-    rw [← energyFormH1L_apply hcoeff, ← Submodule.norm_coe w]
-    exact (Real.norm_eq_abs _).symm.trans_le ((energyFormH1L hcoeff).le_opNorm₂ _ _)
+    rw [← Submodule.norm_coe w]
+    exact abs_energyFormH1_le_norm_energyFormH1L_mul hcoeff _ _
   have hN0 : 0 ≤ M * ‖g - g' i‖ := mul_nonneg (energyFormH1L hcoeff).opNorm_nonneg (norm_nonneg _)
   have hD (w : W1p0 mu Omega 2) : |energyFormH1 a b c (u' i) (w : W1p mu Omega 2) -
       energyFormH1 (a' i) (b' i) (c' i) (u' i) (w : W1p mu Omega 2)| ≤

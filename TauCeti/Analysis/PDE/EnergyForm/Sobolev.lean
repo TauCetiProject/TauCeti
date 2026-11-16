@@ -102,7 +102,8 @@ estimates do not see the boundary.
   almost everywhere symmetric principal coefficient.
 * `TauCeti.PDE.energyFormH1L` and `TauCeti.PDE.energyFormH1L0`: the energy form bundled as a
   continuous bilinear map on `H¹(Ω)` and on `H¹₀(Ω)`, built from
-  `TauCeti.PDE.energyFormLpVariable`.
+  `TauCeti.PDE.energyFormLpVariable`, and
+  `TauCeti.PDE.abs_energyFormH1_le_norm_energyFormH1L_mul`: `|B(u, v)| ≤ ‖B‖ ‖u‖ ‖v‖`.
 * `TauCeti.PDE.energyFormH1L0_comm`: symmetry of the bundled `H¹₀` energy form, from symmetry of
   the energy form at the functions of `H¹₀(Ω)`.
 * `TauCeti.PDE.energyFormH1_principal_eq_setIntegral_sub` and
@@ -704,6 +705,15 @@ theorem energyFormH1L_apply
   apply integral_congr_ae
   filter_upwards [jetLpL_apply_ae u, jetLpL_apply_ae v] with x hu hv
   rw [hu, hv]
+
+/-- The Sobolev energy form is bounded by the norm of its bundled continuous bilinear form:
+`|B(u, v)| ≤ ‖B‖ ‖u‖ ‖v‖` on `H¹(Ω)`. -/
+theorem abs_energyFormH1_le_norm_energyFormH1L_mul
+    (hcoeff : MemLp (fun x => energyIntegrand (a x) (b x) (c x)) ⊤ (mu.restrict Omega))
+    (u v : W1p mu Omega 2) :
+    |energyFormH1 a b c u v| ≤ ‖energyFormH1L hcoeff‖ * ‖u‖ * ‖v‖ := by
+  rw [← energyFormH1L_apply hcoeff, ← Real.norm_eq_abs]
+  exact (energyFormH1L hcoeff).le_opNorm₂ u v
 
 /-- Additivity of the Sobolev energy form in its left argument. -/
 theorem energyFormH1_add_left
