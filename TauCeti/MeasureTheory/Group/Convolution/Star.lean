@@ -23,9 +23,11 @@ two operations on `Lᵖ(G, μ)`:
    shows immediately that the modular involution `f ↦ J (star f)` (`x ↦ c(x) • star (f x⁻¹)`)
    reverses `L¹` convolution (`MeasureTheory.Lp.modularInversion_star_convolutionL`).
 2. **Scaling the measure and changing regular Haar normalization:** Under `Lp.smulMeasureₗᵢ`
-   (`c • μ` to `μ` for `c : ℝ≥0`, `c ≠ 0`) and `Lp.haarMeasureCongrₗᵢ` (between any two regular
-   left Haar measures `μ` and `ν`), left translation, right translation, modular inversion, and
-   `Lp.convolutionL` are intertwined equivariantly across all exponents `1 ≤ p < ∞`.
+   (`c • μ` to `μ` for `c : ℝ≥0`, `c ≠ 0`), left translation (for all `1 ≤ p`) and
+   `Lp.convolutionL` (for `1 ≤ p < ∞`) are intertwined equivariantly. Under
+   `Lp.haarMeasureCongrₗᵢ` (between any two regular left Haar measures `μ` and `ν`), left
+   translation, right translation, and modular inversion (for all `1 ≤ p`), as well as
+   `Lp.convolutionL` (for `1 ≤ p < ∞`), are intertwined equivariantly.
 
 ## Main results
 

@@ -16,9 +16,8 @@ public import TauCeti.Topology.ApproximateUnit
 Let `G` be a locally compact group equipped with a regular left Haar measure `μ` (without assuming
 σ-compactness or second countability) and let `𝕜` be an `RCLike` scalar field (`ℝ` or `ℂ`). Using
 the shrinking continuous peak kernels `μ.approximateIdentity U` indexed by open neighborhoods
-`U : TopologicalSpace.OpenNhdsOf (1 : G)` along `Filter.atBot`, this file constructs a canonical
-chosen net approximate identity `L1GroupAlgebra.approximateIdentity 𝕜 μ` on
-`TauCeti.L1GroupAlgebra 𝕜 μ`:
+`U : TopologicalSpace.OpenNhdsOf (1 : G)` along `Filter.atBot`, this file constructs the chosen
+net approximate identity `L1GroupAlgebra.approximateIdentity 𝕜 μ` on `TauCeti.L1GroupAlgebra 𝕜 μ`:
 
 * **Regularity and unit norm (`L¹ ∩ L²`):** Each `approximateIdentity 𝕜 μ U` is represented almost
   everywhere by the continuous compactly supported function `x ↦ (μ.approximateIdentity U x : 𝕜)`,
