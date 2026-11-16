@@ -55,7 +55,8 @@ The sum of the lower bounds bounds the support of the product
 (`HahnSeries.add_le_of_mem_support_mul`), and for powers `HahnSeries.nsmul_le_of_mem_support_pow`
 and `HahnSeries.coeff_pow_nsmul_of_forall_le` give the corresponding bound and coefficient.
 `HahnSeries.zero_le_orderTop_single` and `HahnSeries.zero_le_orderTop_one` record that monomials
-of nonnegative exponent, and in particular the constant `1`, have nonnegative order.
+of nonnegative exponent, and in particular the constant `1`, have nonnegative order, and
+`HahnSeries.leadingCoeff_prod` extends `HahnSeries.leadingCoeff_mul` to finite products.
 -/
 
 public section
@@ -183,6 +184,21 @@ theorem zero_le_orderTop_one [One R] : 0 ≤ (1 : HahnSeries Γ R).orderTop :=
   zero_le_orderTop_single le_rfl 1
 
 end OrderTop
+
+section LeadingCoeff
+
+variable {Γ R : Type*} [AddCommMonoid Γ] [LinearOrder Γ] [IsOrderedCancelAddMonoid Γ]
+  [CommSemiring R] [NoZeroDivisors R]
+
+/-- Over a commutative semiring with no zero divisors, the leading coefficient of a finite product
+of Hahn series is the product of the leading coefficients. -/
+theorem leadingCoeff_prod {ι : Type*} (s : Finset ι) (f : ι → HahnSeries Γ R) :
+    (∏ i ∈ s, f i).leadingCoeff = ∏ i ∈ s, (f i).leadingCoeff := by
+  induction s using Finset.cons_induction with
+  | empty => simp
+  | cons a t hat ih => rw [Finset.prod_cons, Finset.prod_cons, leadingCoeff_mul, ih]
+
+end LeadingCoeff
 
 variable {Γ R : Type*} [AddCommMonoid Γ] [PartialOrder Γ] [IsOrderedCancelAddMonoid Γ]
 

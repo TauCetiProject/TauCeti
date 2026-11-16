@@ -10,11 +10,11 @@ public import TauCeti.NumberTheory.ModularForms.LevelOne.WeaklyHolomorphic
 import Mathlib.FieldTheory.Galois.Basic
 import Mathlib.RingTheory.IntegralClosure.IntegrallyClosed
 import Mathlib.RingTheory.IntegralClosure.IsIntegralClosure.Basic
-import Mathlib.RingTheory.Polynomial.IsIntegral
 import Mathlib.RingTheory.RootsOfUnity.Complex
 import Mathlib.RingTheory.RootsOfUnity.PrimitiveRoots
 import TauCeti.NumberTheory.Cyclotomic.Adjoin
 import TauCeti.RingTheory.HahnSeries.Map
+import TauCeti.RingTheory.HahnSeries.Multiplication
 
 /-!
 # The classical modular polynomial over `ℤ` and integrality of CM `j`-values
@@ -209,7 +209,8 @@ theorem meromorphicAt_cuspFunction_toGLReal_smul {n : ℕ} [NeZero n] {f : ℍ �
       fun τ ↦ f ((⟨((d : ℕ) : ℝ)⁻¹, inv_pos.mpr (Nat.cast_pos.mpr d.pos)⟩ : {y : ℝ // 0 < y}) •
         ((b : ℝ) +ᵥ ((⟨((a : ℕ) : ℝ), Nat.cast_pos.mpr a.pos⟩ : {y : ℝ // 0 < y}) • τ))) :=
     funext fun τ ↦ congrArg f (toGLReal_smul_eq_posReal_vadd_smul hA τ)
-  rw [hEq, show (n : ℝ) = (a : ℕ) * ((d : ℕ) : ℝ) by exact_mod_cast hprod.symm]
+  have hn_real : (n : ℝ) = (a : ℕ) * ((d : ℕ) : ℝ) := by exact_mod_cast hprod.symm
+  rw [hEq, hn_real]
   exact (meromorphicAt_cuspFunction_pnat_mul_iff
     (periodic_pnat_smul_of_periodic hψ₂_per a) a).mpr hψ₃_mer
 
@@ -258,113 +259,14 @@ theorem laurentQExpansion_toGLReal_smul {n : ℕ} [NeZero n] {f : ℍ → ℂ}
     push_cast
     field_simp [Nat.cast_ne_zero.mpr (NeZero.ne n), Nat.cast_ne_zero.mpr d.ne_zero]
     rw [← hprodC]; ring
-  rw [hEq, show (n : ℝ) = (a : ℕ) * ((d : ℕ) : ℝ) by exact_mod_cast hprod.symm,
+  have hn_real : (n : ℝ) = (a : ℕ) * ((d : ℕ) : ℝ) := by exact_mod_cast hprod.symm
+  rw [hEq, hn_real,
     laurentQExpansion_pnat_mul (periodic_pnat_smul_of_periodic hψ₂_per a) hψ₃_mer a,
     laurentQExpansion_pnat_smul hd_real hψ₂_per hψ₂_mer a,
     laurentQExpansion_vadd hd_real hψ₁_per b, hψ₁_q,
     LaurentSeries.expand_expand (R := ℂ), hu]
   apply congrArg (fun k : ℕ+ ↦ LaurentSeries.expand ℂ k _)
   exact PNat.eq (by rw [PNat.mul_coe]; simp [sq, a, Nat.toPNat])
-
-private theorem coeff_X_sub_C_mul {R : Type*} [CommRing R] (y : R) (P : R[X]) :
-    ∀ k : ℕ, ((X - C y) * P).coeff k =
-      (if k = 0 then 0 else P.coeff (k - 1)) - y * P.coeff k
-  | 0 => by simp [sub_mul]
-  | k + 1 => by simp [sub_mul, coeff_X_mul]
-
-private theorem meromorphicAt_cuspFunction_coeff_prod_X_sub_C {ι : Type*} {h : ℝ}
-    (s : Finset ι) {g : ι → ℍ → ℂ}
-    (hg : ∀ i ∈ s, MeromorphicAt (cuspFunction h (g i)) 0) :
-    ∀ k : ℕ, MeromorphicAt (cuspFunction h fun τ ↦ (∏ i ∈ s, (X - C (g i τ))).coeff k) 0 := by
-  induction s using Finset.cons_induction with
-  | empty =>
-    intro k
-    simpa only [Finset.prod_empty] using
-      meromorphicAt_cuspFunction_const (h := h) ((1 : ℂ[X]).coeff k)
-  | cons a t hat ih =>
-    intro k
-    have hEq : (fun τ ↦ (∏ i ∈ Finset.cons a t hat, (X - C (g i τ))).coeff k) =
-        (fun τ ↦ if k = 0 then 0 else (∏ i ∈ t, (X - C (g i τ))).coeff (k - 1)) -
-          g a * fun τ ↦ (∏ i ∈ t, (X - C (g i τ))).coeff k := by
-      funext τ
-      simp [Finset.prod_cons, coeff_X_sub_C_mul]
-    rw [hEq]
-    have hleft : MeromorphicAt
-        (cuspFunction h fun τ ↦
-          if k = 0 then (0 : ℂ) else (∏ i ∈ t, (X - C (g i τ))).coeff (k - 1)) 0 := by
-      rcases eq_or_ne k 0 with rfl | hk
-      · simp
-      · simpa [hk] using ih (fun i hi ↦ hg i (Finset.mem_cons_of_mem hi)) (k - 1)
-    exact meromorphicAt_cuspFunction_sub hleft
-      (meromorphicAt_cuspFunction_mul (hg a (Finset.mem_cons_self a t))
-        (ih (fun i hi ↦ hg i (Finset.mem_cons_of_mem hi)) k))
-
-private theorem laurentQExpansion_coeff_prod_X_sub_C {ι : Type*} {h : ℝ}
-    (s : Finset ι) {g : ι → ℍ → ℂ}
-    (hg : ∀ i ∈ s, MeromorphicAt (cuspFunction h (g i)) 0) :
-    ∀ k : ℕ, laurentQExpansion h (fun τ ↦ (∏ i ∈ s, (X - C (g i τ))).coeff k) =
-      (∏ i ∈ s, (X - C (laurentQExpansion h (g i)))).coeff k := by
-  induction s using Finset.cons_induction with
-  | empty =>
-    intro k
-    simp only [Finset.prod_empty, laurentQExpansion_const, Polynomial.coeff_one]
-    rcases eq_or_ne k 0 with rfl | hk
-    · simp
-    · simp [hk]
-  | cons a t hat ih =>
-    intro k
-    have hgt : ∀ i ∈ t, MeromorphicAt (cuspFunction h (g i)) 0 :=
-      fun i hi ↦ hg i (Finset.mem_cons_of_mem hi)
-    have hmer := meromorphicAt_cuspFunction_coeff_prod_X_sub_C t hgt
-    have hEq : (fun τ ↦ (∏ i ∈ Finset.cons a t hat, (X - C (g i τ))).coeff k) =
-        (fun τ ↦ if k = 0 then 0 else (∏ i ∈ t, (X - C (g i τ))).coeff (k - 1)) -
-          g a * fun τ ↦ (∏ i ∈ t, (X - C (g i τ))).coeff k := by
-      funext τ
-      simp [Finset.prod_cons, coeff_X_sub_C_mul]
-    have hleft_mer : MeromorphicAt
-        (cuspFunction h fun τ ↦
-          if k = 0 then (0 : ℂ) else (∏ i ∈ t, (X - C (g i τ))).coeff (k - 1)) 0 := by
-      rcases eq_or_ne k 0 with rfl | hk
-      · simp
-      · simpa [hk] using hmer (k - 1)
-    have hleft_q : laurentQExpansion h
-        (fun τ ↦ if k = 0 then (0 : ℂ) else (∏ i ∈ t, (X - C (g i τ))).coeff (k - 1)) =
-        if k = 0 then 0
-        else (∏ i ∈ t, (X - C (laurentQExpansion h (g i)))).coeff (k - 1) := by
-      rcases eq_or_ne k 0 with rfl | hk
-      · simp
-      · simpa [hk] using ih hgt (k - 1)
-    rw [hEq, Finset.prod_cons, coeff_X_sub_C_mul,
-      laurentQExpansion_sub hleft_mer
-        (meromorphicAt_cuspFunction_mul (hg a (Finset.mem_cons_self a t)) (hmer k)),
-      laurentQExpansion_mul (hg a (Finset.mem_cons_self a t)) (hmer k), hleft_q, ih hgt k]
-
-private theorem meromorphicAt_cuspFunction_prod {ι : Type*} {h : ℝ}
-    (s : Finset ι) {g : ι → ℍ → ℂ}
-    (hg : ∀ i ∈ s, MeromorphicAt (cuspFunction h (g i)) 0) :
-    MeromorphicAt (cuspFunction h fun τ ↦ ∏ i ∈ s, g i τ) 0 := by
-  induction s using Finset.cons_induction with
-  | empty => simp
-  | cons a t hat ih =>
-    have hEq : (fun τ ↦ ∏ i ∈ Finset.cons a t hat, g i τ) = g a * fun τ ↦ ∏ i ∈ t, g i τ :=
-      funext fun τ ↦ Finset.prod_cons hat
-    rw [hEq]
-    exact meromorphicAt_cuspFunction_mul (hg a (Finset.mem_cons_self a t))
-      (ih fun i hi ↦ hg i (Finset.mem_cons_of_mem hi))
-
-private theorem laurentQExpansion_prod {ι : Type*} {h : ℝ}
-    (s : Finset ι) {g : ι → ℍ → ℂ}
-    (hg : ∀ i ∈ s, MeromorphicAt (cuspFunction h (g i)) 0) :
-    laurentQExpansion h (fun τ ↦ ∏ i ∈ s, g i τ) = ∏ i ∈ s, laurentQExpansion h (g i) := by
-  induction s using Finset.cons_induction with
-  | empty => simp
-  | cons a t hat ih =>
-    have hgt : ∀ i ∈ t, MeromorphicAt (cuspFunction h (g i)) 0 :=
-      fun i hi ↦ hg i (Finset.mem_cons_of_mem hi)
-    have hEq : (fun τ ↦ ∏ i ∈ Finset.cons a t hat, g i τ) = g a * fun τ ↦ ∏ i ∈ t, g i τ :=
-      funext fun τ ↦ Finset.prod_cons hat
-    rw [hEq, Finset.prod_cons, laurentQExpansion_mul (hg a (Finset.mem_cons_self a t))
-      (meromorphicAt_cuspFunction_prod t hgt), ih hgt]
 
 end TauCeti.UpperHalfPlane
 
@@ -376,45 +278,6 @@ open FixedDetMatrices
 
 section GaloisDescent
 
-private theorem cyclicIsogenyPolynomial_T_smul (n : ℕ) [NeZero n] {f : ℍ → ℂ}
-    (hfper : Function.Periodic (f ∘ ofComplex) 1) (τ : ℍ) :
-    cyclicIsogenyPolynomial n f (ModularGroup.T • τ) = cyclicIsogenyPolynomial n f τ := by
-  classical
-  have hn : (n : ℤ) ≠ 0 := NeZero.ne (n : ℤ)
-  have hSL (g : SL(2, ℤ)) (z : ℍ) : Matrix.SpecialLinearGroup.mapGL ℝ g • z = g • z :=
-    (MulAction.compHom_smul_def _ _ _).symm
-  have hperm {A : FixedDetMatrix (Fin 2) ℤ n} (hA : A ∈ primitiveReps (n : ℤ)) :
-      X - C (f (toGLReal hn A • ModularGroup.T • τ)) =
-        X - C (f (toGLReal hn (repsRightMul hn ModularGroup.T⁻¹ A) • τ)) := by
-    have hA' := (mem_primitiveReps.mp hA).1
-    have hB := repsRightMul_mem_reps hn ModularGroup.T⁻¹ A
-    set γ := repsRightMulFactor hn ModularGroup.T⁻¹ A
-    have hγ10 : γ 1 0 = 0 := by
-      have h10 : (repsRightMul hn ModularGroup.T⁻¹ A).1 1 0 = 0 := hB.1
-      rw [repsRightMul_def, FixedDetMatrices.smul_coe, val_traceFormulaMatrixRight, inv_inv] at h10
-      simp_rw [Matrix.mul_apply, Fin.sum_univ_two] at h10
-      simp only [ModularGroup.coe_T, hA'.1, Matrix.of_apply, Matrix.cons_val', Matrix.cons_val_zero,
-        Matrix.cons_val_one, Matrix.empty_val', Matrix.cons_val_fin_one, mul_one, mul_zero,
-        add_zero] at h10
-      exact (mul_eq_zero.mp h10).resolve_right hA'.2.1.ne'
-    obtain ⟨m, hm⟩ := ModularGroup.exists_eq_T_zpow_of_c_eq_zero hγ10
-    have heq : toGLReal hn A • ModularGroup.T • τ =
-        ModularGroup.T ^ (-m) • (toGLReal hn (repsRightMul hn ModularGroup.T⁻¹ A) • τ) := by
-      have hmul := congrArg (· • τ) (toGLReal_repsRightMul hn ModularGroup.T⁻¹ A)
-      rw [inv_inv, mul_smul, mul_smul, hSL, hSL, hm] at hmul
-      rw [hmul, _root_.zpow_neg, inv_smul_smul]
-    have hper_m (z : ℍ) : f (ModularGroup.T ^ (-m) • z) = f z := by
-      have hz := hfper.int_mul (-m) z
-      rw [Function.comp_apply, Function.comp_apply, mul_one,
-        ← ModularGroup.coe_T_zpow_smul_eq, ofComplex_apply, ofComplex_apply] at hz
-      exact hz
-    rw [heq, hper_m]
-  rw [cyclicIsogenyPolynomial_def, cyclicIsogenyPolynomial_def,
-    Finset.prod_congr rfl fun A hA ↦ hperm hA,
-    ← Finset.prod_image (f := fun A ↦ X - C (f (toGLReal hn A • τ)))
-      (repsRightMul_injOn_primitiveReps hn ModularGroup.T⁻¹),
-    image_repsRightMul_primitiveReps]
-
 /-- For a `1`-periodic function `f` whose cusp function is meromorphic at `0`, every coefficient of
 `cyclicIsogenyPolynomial n f` has a cusp function meromorphic at `0`. -/
 theorem meromorphicAt_cuspFunction_coeff_cyclicIsogenyPolynomial (n : ℕ) [NeZero n] {f : ℍ → ℂ}
@@ -425,7 +288,7 @@ theorem meromorphicAt_cuspFunction_coeff_cyclicIsogenyPolynomial (n : ℕ) [NeZe
       ((fun τ : ℍ ↦ (cyclicIsogenyPolynomial n f τ).coeff k) ∘ ofComplex) 1 :=
     UpperHalfPlane.periodic_comp_ofComplex fun τ ↦ by
       rw [← modular_T_smul]
-      exact congrArg (fun P ↦ P.coeff k) (cyclicIsogenyPolynomial_T_smul n hfper τ)
+      exact congrArg (fun P ↦ P.coeff k) (cyclicIsogenyPolynomial_T_smul (n := n) hfper τ)
   have hmer_n : MeromorphicAt
       (cuspFunction n fun τ ↦ (cyclicIsogenyPolynomial n f τ).coeff k) 0 := by
     simp only [cyclicIsogenyPolynomial_def]
@@ -456,10 +319,8 @@ private theorem permRep_mem_primitiveReps {n : ℕ} [NeZero n] (u : (ZMod n)ˣ)
   have hEq : (permRep u A).1 = !![A.1 0 0, (c * A.1 0 1) % A.1 1 1; 0, A.1 1 1] := by
     simp [permRep, h₁₀, c]
   refine mem_primitiveReps.mpr ⟨?_, ?_⟩
-  · refine ⟨by rw [hEq]; rfl, by rw [hEq]; exact h₀₀,
-      by rw [hEq]; exact Int.emod_nonneg _ hd.ne', ?_⟩
-    change |(permRep u A).1 0 1| < |(permRep u A).1 1 1|
-    rw [hEq]
+  · rw [reps, Set.mem_ofPred_eq, hEq]
+    refine ⟨rfl, h₀₀, Int.emod_nonneg _ hd.ne', ?_⟩
     simpa [abs_of_nonneg (Int.emod_nonneg (c * A.1 0 1) hd.ne'), abs_of_pos hd] using
       Int.emod_lt_of_pos (c * A.1 0 1) hd
   · have hcc' : (n : ℤ) ∣ 1 - c * c' := by
@@ -531,44 +392,25 @@ private theorem isPrimitiveRoot_cycZeta (n : ℕ) [NeZero n] :
 private def cycUnit (n : ℕ) [NeZero n] : (cycField n)ˣ :=
   Units.mk0 (cycZeta n) ((isPrimitiveRoot_cycZeta n).ne_zero (NeZero.ne n))
 
+private theorem orderOf_cycUnit (n : ℕ) [NeZero n] : orderOf (cycUnit n) = n := by
+  rw [← orderOf_units, cycUnit, Units.val_mk0, ← (isPrimitiveRoot_cycZeta n).eq_orderOf]
+
 private theorem cycUnit_zpow_eq_pow_emod (n : ℕ) [NeZero n] (s : ℤ) :
     ((cycUnit n ^ s : (cycField n)ˣ) : cycField n) =
       cycZeta n ^ (s % (n : ℤ)).toNat := by
-  have hpow1 : cycUnit n ^ (n : ℤ) = 1 := by
-    rw [_root_.zpow_natCast]
-    exact Units.ext (isPrimitiveRoot_cycZeta n).pow_eq_one
-  have hnonneg : 0 ≤ s % (n : ℤ) := Int.emod_nonneg s (NeZero.ne (n : ℤ))
-  have hs : s = (n : ℤ) * (s / (n : ℤ)) + ((s % (n : ℤ)).toNat : ℤ) := by
-    rw [Int.toNat_of_nonneg hnonneg, add_comm, Int.emod_add_mul_ediv]
-  conv_lhs => rw [hs]
-  rw [_root_.zpow_add, _root_.zpow_mul, hpow1, _root_.one_zpow, one_mul, _root_.zpow_natCast,
-    Units.val_pow_eq_pow_val]
-  rfl
+  conv_lhs =>
+    rw [← zpow_mod_orderOf, orderOf_cycUnit,
+      ← Int.toNat_of_nonneg (Int.emod_nonneg s (NeZero.ne (n : ℤ)))]
+  rw [_root_.zpow_natCast, Units.val_pow_eq_pow_val, cycUnit, Units.val_mk0]
 
 private theorem aut_apply_cycUnit_zpow {n : ℕ} [NeZero n] (σ : cycField n ≃ₐ[ℚ] cycField n)
     (s : ℤ) :
     σ ((cycUnit n ^ s : (cycField n)ˣ) : cycField n) =
       ((cycUnit n ^ ((((isPrimitiveRoot_cycZeta n).autToPow ℚ σ : ZMod n).val : ℤ) * s) :
         (cycField n)ˣ) : cycField n) := by
-  set c : ℕ := ((isPrimitiveRoot_cycZeta n).autToPow ℚ σ : ZMod n).val
-  have hpow1 : cycUnit n ^ (n : ℤ) = 1 := by
-    rw [_root_.zpow_natCast]
-    exact Units.ext (isPrimitiveRoot_cycZeta n).pow_eq_one
-  have hnonneg : 0 ≤ s % (n : ℤ) := Int.emod_nonneg s (NeZero.ne (n : ℤ))
-  set k : ℕ := (s % (n : ℤ)).toNat
-  have hk : (k : ℤ) = s % (n : ℤ) := Int.toNat_of_nonneg hnonneg
-  rw [cycUnit_zpow_eq_pow_emod, map_pow, ← (isPrimitiveRoot_cycZeta n).autToPow_spec ℚ σ,
-    ← pow_mul]
-  have hval : cycZeta n ^ (c * k) =
-      ((cycUnit n ^ ((c * k : ℕ) : ℤ) : (cycField n)ˣ) : cycField n) := by
-    rw [_root_.zpow_natCast, Units.val_pow_eq_pow_val]; rfl
-  rw [hval]
-  apply congrArg Units.val
-  have hEq : (c : ℤ) * s = (n : ℤ) * ((c : ℤ) * (s / (n : ℤ))) + ((c * k : ℕ) : ℤ) := by
-    push_cast
-    rw [hk]
-    linear_combination -(c : ℤ) * Int.emod_add_mul_ediv s (n : ℤ)
-  rw [hEq, _root_.zpow_add, _root_.zpow_mul, hpow1, _root_.one_zpow, one_mul]
+  rw [Units.val_zpow_eq_zpow_val, Units.val_zpow_eq_zpow_val, cycUnit, Units.val_mk0,
+    map_zpow₀, ← (isPrimitiveRoot_cycZeta n).autToPow_spec ℚ σ,
+    ← _root_.zpow_natCast, ← _root_.zpow_mul]
 
 private def factorSeriesAux (n : ℕ) [NeZero n] (jZ : LaurentSeries ℤ)
     (a b : ℕ) : LaurentSeries (cycField n) :=
@@ -622,11 +464,10 @@ private theorem map_val_factorSeries {n : ℕ} [NeZero n] {jZ : LaurentSeries �
 private theorem isIntegral_coeff_factorSeries (n : ℕ) [NeZero n] (jZ : LaurentSeries ℤ)
     (M : Matrix (Fin 2) (Fin 2) ℤ) (m : ℤ) :
     IsIntegral ℤ ((factorSeries n jZ M).coeff m) := by
+  rw [factorSeries, factorSeriesAux]
   set a := (M 0 0).natAbs
   set b := (M 0 1).natAbs
   set d : ℕ+ := (max (a ^ 2) 1).toPNat (by positivity)
-  change IsIntegral ℤ ((factorSeriesAux n jZ a b).coeff m)
-  rw [factorSeriesAux]
   by_cases hm : ((d : ℕ) : ℤ) ∣ m
   · obtain ⟨r, rfl⟩ := hm
     rw [LaurentSeries.coeff_expand_mul (R := cycField n) d,
@@ -654,17 +495,20 @@ private theorem isIntegral_coeff_prod_factorSeries {n : ℕ} [NeZero n] (jZ : La
     · simp [hk, isIntegral_zero]
   | cons a t hat ih =>
     intro k m
-    rw [Finset.prod_cons, UpperHalfPlane.coeff_X_sub_C_mul, HahnSeries.coeff_sub]
-    have hleft : IsIntegral ℤ
-        ((if k = 0 then (0 : LaurentSeries (cycField n))
-          else (∏ i ∈ t, (X - C (factorSeries n jZ i.1))).coeff (k - 1)).coeff m) := by
-      rcases eq_or_ne k 0 with rfl | hk
-      · simp [isIntegral_zero]
-      · simpa [hk] using ih (k - 1) m
-    refine hleft.sub ?_
-    rw [HahnSeries.coeff_mul]
-    exact IsIntegral.sum _ fun p _ ↦
-      (isIntegral_coeff_factorSeries n jZ a.1 p.1).mul (ih k p.2)
+    have hmul : ∀ j, IsIntegral ℤ
+        ((factorSeries n jZ a.1 * (∏ i ∈ t, (X - C (factorSeries n jZ i.1))).coeff j).coeff m) :=
+      fun j ↦ by
+        rw [HahnSeries.coeff_mul]
+        exact IsIntegral.sum _ fun p _ ↦
+          (isIntegral_coeff_factorSeries n jZ a.1 p.1).mul (ih j p.2)
+    rcases k with _ | k
+    · rw [Finset.prod_cons, Polynomial.mul_coeff_zero, Polynomial.coeff_sub,
+        Polynomial.coeff_X_zero, Polynomial.coeff_C_zero, zero_sub, HahnSeries.coeff_mul]
+      exact IsIntegral.sum _ fun p _ ↦ by
+        rw [HahnSeries.coeff_neg]
+        exact (isIntegral_coeff_factorSeries n jZ a.1 p.1).neg.mul (ih 0 p.2)
+    · rw [Finset.prod_cons, Polynomial.coeff_X_sub_C_mul, HahnSeries.coeff_sub]
+      exact (ih k m).sub (hmul (k + 1))
 
 private theorem map_aut_factorSeriesAux {n : ℕ} [NeZero n] (jZ : LaurentSeries ℤ)
     (σ : cycField n ≃ₐ[ℚ] cycField n) (a b b' : ℕ) {q : ℤ}
@@ -688,12 +532,8 @@ private theorem map_aut_factorSeriesAux {n : ℕ} [NeZero n] (jZ : LaurentSeries
     rw [← _root_.zpow_natCast, ← _root_.zpow_mul, ← _root_.zpow_natCast, ← _root_.zpow_mul,
       aut_apply_cycUnit_zpow]
     apply congrArg Units.val
-    have hpow1 : cycUnit n ^ (n : ℤ) = 1 := by
-      rw [_root_.zpow_natCast]; exact Units.ext (isPrimitiveRoot_cycZeta n).pow_eq_one
-    have hEq : (((isPrimitiveRoot_cycZeta n).autToPow ℚ σ : ZMod n).val : ℤ) *
-        (((a * b : ℕ) : ℤ) * r) = (n : ℤ) * (q * r) + (((a * b' : ℕ) : ℤ) * r) := by
-      linear_combination r * hcong
-    rw [hEq, _root_.zpow_add, _root_.zpow_mul, hpow1, _root_.one_zpow, one_mul]
+    rw [zpow_eq_zpow_iff_modEq, orderOf_cycUnit, Int.modEq_iff_dvd]
+    exact ⟨-q * r, by linear_combination -r * hcong⟩
   · rw [HahnSeries.coeff_mapRingHom,
       LaurentSeries.coeff_expand_of_not_dvd (R := cycField n) d _ hm,
       LaurentSeries.coeff_expand_of_not_dvd (R := cycField n) d _ hm, map_zero]
@@ -755,7 +595,7 @@ private theorem laurentQExpansion_n_coeff_cyclicIsogenyPolynomial_j_mem_range (n
       let ⟨z, hz⟩ := exists_laurentQExpansion_j_coeff_eq_intCast g
       ⟨z, hz.symm⟩
   set ΦK : (LaurentSeries (cycField n))[X] :=
-    ∏ A ∈ primitiveReps (n : ℤ), (X - C (factorSeries n jZ A.1))
+    ∏ A ∈ primitiveReps (n : ℤ), (X - C (factorSeries n jZ A.1)) with hΦK_def
   have hΦ_map : ΦK.map (HahnSeries.mapRingHom (cycField n).val.toRingHom) =
       ∏ A ∈ primitiveReps (n : ℤ),
         (X - C (UpperHalfPlane.laurentQExpansion n
@@ -786,8 +626,7 @@ private theorem laurentQExpansion_n_coeff_cyclicIsogenyPolynomial_j_mem_range (n
   have hint_q : IsIntegral ℤ q := by
     refine isIntegral_ratCast_iff (K := cycField n).mp ?_
     have hint := isIntegral_coeff_prod_factorSeries jZ (primitiveReps (n : ℤ)) k m
-    rwa [show ∏ A ∈ primitiveReps (n : ℤ), (X - C (factorSeries n jZ A.1)) = ΦK from rfl, ← hq]
-      at hint
+    rwa [← hΦK_def, ← hq] at hint
   obtain ⟨z, rfl⟩ := IsIntegrallyClosed.isIntegral_iff.mp hint_q
   refine ⟨z, ?_⟩
   rw [hcoeffC, ← hq]
@@ -959,22 +798,6 @@ private theorem leadingCoeff_laurentQExpansion_j :
     (UpperHalfPlane.laurentQExpansion 1 j).leadingCoeff = 1 := by
   simpa using Polynomial.leadingCoeff_laurentQExpansion_aeval_j (X : ℤ[X])
 
-private theorem leadingCoeff_rescale {R : Type*} [CommRing R] (u : Rˣ) (f : R⸨X⸩) :
-    (TauCeti.LaurentSeries.rescale u f).leadingCoeff = ↑(u ^ f.order) * f.leadingCoeff := by
-  rcases eq_or_ne f 0 with rfl | hf
-  · simp
-  have hresc : TauCeti.LaurentSeries.rescale u f =
-      HahnSeries.twistEquiv (zpowersHom Rˣ u) f := by
-    ext; simp
-  have huf : TauCeti.LaurentSeries.rescale u f ≠ 0 := fun h0 ↦
-    hf ((TauCeti.LaurentSeries.rescale u).injective (h0.trans (map_zero _).symm))
-  have hord : (TauCeti.LaurentSeries.rescale u f).order = f.order :=
-    WithTop.coe_injective (by
-      rw [HahnSeries.order_eq_orderTop_of_ne_zero huf,
-        HahnSeries.order_eq_orderTop_of_ne_zero hf, hresc, HahnSeries.orderTop_twistEquiv])
-  rw [HahnSeries.leadingCoeff_eq, HahnSeries.leadingCoeff_eq, hord,
-    TauCeti.LaurentSeries.coeff_rescale]
-
 private theorem orderTop_and_norm_leadingCoeff_smul_j {n : ℕ} [NeZero n]
     {A : FixedDetMatrix (Fin 2) ℤ n} (hA : A ∈ reps (n : ℤ)) :
     (UpperHalfPlane.laurentQExpansion n
@@ -1001,10 +824,7 @@ private theorem orderTop_and_norm_leadingCoeff_smul_j {n : ℕ} [NeZero n]
   have hj_ordTop : (UpperHalfPlane.laurentQExpansion 1 j).orderTop = ((-1 : ℤ) : WithTop ℤ) :=
     orderTop_laurentQExpansion_j
   refine ⟨?_, ?_⟩
-  · have hresc : TauCeti.LaurentSeries.rescale u (UpperHalfPlane.laurentQExpansion 1 j) =
-        HahnSeries.twistEquiv (zpowersHom ℂˣ u) (UpperHalfPlane.laurentQExpansion 1 j) := by
-      ext; simp
-    rw [hL₂, LaurentSeries.orderTop_expand (R := ℂ), hresc, HahnSeries.orderTop_twistEquiv,
+  · rw [hL₂, LaurentSeries.orderTop_expand (R := ℂ), TauCeti.LaurentSeries.orderTop_rescale,
       hj_ordTop, ← WithTop.coe_nsmul]
     exact WithTop.coe_eq_coe.mpr (by simp [Nat.toPNat])
   · have hj_ord : (UpperHalfPlane.laurentQExpansion 1 j).order = -1 := by
@@ -1012,9 +832,9 @@ private theorem orderTop_and_norm_leadingCoeff_smul_j {n : ℕ} [NeZero n]
         rw [← HahnSeries.orderTop_ne_top, hj_ordTop]; exact WithTop.coe_ne_top
       exact WithTop.coe_injective (by
         rw [HahnSeries.order_eq_orderTop_of_ne_zero hj_ne, hj_ordTop])
-    rw [hL₂, LaurentSeries.leadingCoeff_expand (R := ℂ), leadingCoeff_rescale, hj_ord,
-      leadingCoeff_laurentQExpansion_j, mul_one, _root_.zpow_neg_one, Units.val_inv_eq_inv_val,
-      norm_inv, hu_norm, inv_one]
+    rw [hL₂, LaurentSeries.leadingCoeff_expand (R := ℂ), TauCeti.LaurentSeries.leadingCoeff_rescale,
+      hj_ord, leadingCoeff_laurentQExpansion_j, mul_one, _root_.zpow_neg_one,
+      Units.val_inv_eq_inv_val, norm_inv, hu_norm, inv_one]
 
 private theorem norm_leadingCoeff_factor_diag {n : ℕ} [NeZero n] (hn : ¬ IsSquare n)
     {A : FixedDetMatrix (Fin 2) ℤ n} (hA : A ∈ primitiveReps (n : ℤ)) :
@@ -1022,7 +842,7 @@ private theorem norm_leadingCoeff_factor_diag {n : ℕ} [NeZero n] (hn : ¬ IsSq
         UpperHalfPlane.laurentQExpansion n
           (fun τ ↦ j (toGLReal (NeZero.ne (n : ℤ)) A • τ))).leadingCoeff‖ = 1 := by
   have hA_rep := (mem_primitiveReps.mp hA).1
-  set a : ℕ := (A.1 0 0).natAbs
+  set a : ℕ := (A.1 0 0).natAbs with ha_def
   have hprod : a * (A.1 1 1).natAbs = n := by
     simpa [Int.natAbs_mul, a] using
       congrArg Int.natAbs (apply_zero_zero_mul_apply_one_one hA_rep.1)
@@ -1030,7 +850,8 @@ private theorem norm_leadingCoeff_factor_diag {n : ℕ} [NeZero n] (hn : ¬ IsSq
     have : a * a = a * (A.1 1 1).natAbs := by linarith [sq a]
     rw [← hprod, ← this]⟩
   set L₁ := UpperHalfPlane.laurentQExpansion n j
-  set L₂ := UpperHalfPlane.laurentQExpansion n (fun τ ↦ j (toGLReal (NeZero.ne (n : ℤ)) A • τ))
+  set L₂ := UpperHalfPlane.laurentQExpansion n
+    (fun τ ↦ j (toGLReal (NeZero.ne (n : ℤ)) A • τ)) with hL₂_def
   have hL₁ : L₁ =
       LaurentSeries.expand ℂ (n.toPNat (NeZero.pos n)) (UpperHalfPlane.laurentQExpansion 1 j) := by
     simpa [mul_one, Nat.toPNat, L₁] using
@@ -1044,7 +865,7 @@ private theorem norm_leadingCoeff_factor_diag {n : ℕ} [NeZero n] (hn : ¬ IsSq
   have hlc₁ : L₁.leadingCoeff = 1 := by
     rw [hL₁, LaurentSeries.leadingCoeff_expand (R := ℂ), leadingCoeff_laurentQExpansion_j]
   obtain ⟨hord₂, hlc₂⟩ := orderTop_and_norm_leadingCoeff_smul_j hA_rep
-  change L₂.orderTop = ((-((a ^ 2 : ℕ) : ℤ) : ℤ) : WithTop ℤ) at hord₂
+  rw [← hL₂_def, ← ha_def] at hord₂
   rw [sub_eq_add_neg]
   rcases lt_or_gt_of_ne hne with hlt | hgt
   · have hord_lt : L₁.orderTop < (-L₂).orderTop := by
@@ -1053,12 +874,6 @@ private theorem norm_leadingCoeff_factor_diag {n : ℕ} [NeZero n] (hn : ¬ IsSq
   · have hord_gt : (-L₂).orderTop < L₁.orderTop := by
       rw [HahnSeries.orderTop_neg, hord₁, hord₂, WithTop.coe_lt_coe]; omega
     rw [HahnSeries.leadingCoeff_add_eq_right hord_gt, HahnSeries.leadingCoeff_neg, norm_neg, hlc₂]
-
-private theorem leadingCoeff_prod {ι : Type*} (s : Finset ι) (F : ι → ℂ⸨X⸩) :
-    (∏ i ∈ s, F i).leadingCoeff = ∏ i ∈ s, (F i).leadingCoeff := by
-  induction s using Finset.cons_induction with
-  | empty => simp [HahnSeries.leadingCoeff_one]
-  | cons a t hat ih => rw [Finset.prod_cons, Finset.prod_cons, HahnSeries.leadingCoeff_mul, ih]
 
 /-- **Kronecker's leading-coefficient theorem for `Φ_n(X, X)`.** When `n` is not a square, the
 leading coefficient of `modularPolynomialDiag n` is a unit in `ℤ` (that is, `±1`). -/
@@ -1095,7 +910,7 @@ theorem isUnit_leadingCoeff_modularPolynomialDiag {n : ℕ} [NeZero n] (hn : ¬ 
     simp
   have hq_rhs : ‖(UpperHalfPlane.laurentQExpansion n fun τ ↦ aeval (j τ) P).leadingCoeff‖ = 1 := by
     rw [hEq_fun, UpperHalfPlane.laurentQExpansion_prod (primitiveReps (n : ℤ)) hmer_fac,
-      leadingCoeff_prod, norm_prod]
+      HahnSeries.leadingCoeff_prod, norm_prod]
     refine Finset.prod_eq_one fun A hA ↦ ?_
     have hsub : (fun τ : ℍ ↦ j τ - j (toGLReal (NeZero.ne (n : ℤ)) A • τ)) =
         j - fun τ ↦ j (toGLReal (NeZero.ne (n : ℤ)) A • τ) := rfl

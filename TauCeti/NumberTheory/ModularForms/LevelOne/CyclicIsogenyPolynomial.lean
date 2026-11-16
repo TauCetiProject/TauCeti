@@ -54,7 +54,8 @@ permutation.
 ## Main results
 
 * `TauCeti.ModularForm.cyclicIsogenyPolynomial_smul`: for `SL(2, ℤ)`-invariant `f`, the
-  polynomial takes the same value at `γ τ` as at `τ`.
+  polynomial takes the same value at `γ τ` as at `τ`; for `1`-periodic `f`,
+  `TauCeti.ModularForm.cyclicIsogenyPolynomial_T_smul` gives invariance under `ModularGroup.T`.
 * `TauCeti.ModularForm.roots_cyclicIsogenyPolynomial`: its roots are the values `f(A τ)` over
   the representatives, and `TauCeti.ModularForm.isRoot_cyclicIsogenyPolynomial`: for invariant
   `f`, `f(A τ)` is a root for every primitive `A` of determinant `n`; in particular
@@ -136,6 +137,47 @@ theorem cyclicIsogenyPolynomial_smul {f : ℍ → ℂ} (hf : ∀ (γ : SL(2, ℤ
     Finset.prod_congr rfl fun A _ ↦ hperm A,
     ← Finset.prod_image (f := fun A ↦ X - C (f (toGLReal hn A • τ)))
       (repsRightMul_injOn_primitiveReps hn γ⁻¹), image_repsRightMul_primitiveReps]
+
+/-- **Periodicity of the cyclic-isogeny polynomial**: for a `1`-periodic function `f`,
+`cyclicIsogenyPolynomial n f` is invariant under `ModularGroup.T`. -/
+theorem cyclicIsogenyPolynomial_T_smul {f : ℍ → ℂ}
+    (hfper : Function.Periodic (f ∘ ofComplex) 1) (τ : ℍ) :
+    cyclicIsogenyPolynomial n f (ModularGroup.T • τ) = cyclicIsogenyPolynomial n f τ := by
+  classical
+  have hn : (n : ℤ) ≠ 0 := NeZero.ne (n : ℤ)
+  have hSL (g : SL(2, ℤ)) (z : ℍ) : SpecialLinearGroup.mapGL ℝ g • z = g • z :=
+    (MulAction.compHom_smul_def _ _ _).symm
+  have hperm {A : FixedDetMatrix (Fin 2) ℤ n} (hA : A ∈ primitiveReps (n : ℤ)) :
+      X - C (f (toGLReal hn A • ModularGroup.T • τ)) =
+        X - C (f (toGLReal hn (repsRightMul hn ModularGroup.T⁻¹ A) • τ)) := by
+    have hA' := (mem_primitiveReps.mp hA).1
+    have hB := repsRightMul_mem_reps hn ModularGroup.T⁻¹ A
+    set γ := repsRightMulFactor hn ModularGroup.T⁻¹ A
+    have hγ10 : γ 1 0 = 0 := by
+      have h10 : (repsRightMul hn ModularGroup.T⁻¹ A).1 1 0 = 0 := hB.1
+      rw [repsRightMul_def, FixedDetMatrices.smul_coe, val_traceFormulaMatrixRight, inv_inv] at h10
+      simp_rw [Matrix.mul_apply, Fin.sum_univ_two] at h10
+      simp only [ModularGroup.coe_T, hA'.1, Matrix.of_apply, Matrix.cons_val', Matrix.cons_val_zero,
+        Matrix.cons_val_one, Matrix.empty_val', Matrix.cons_val_fin_one, mul_one, mul_zero,
+        add_zero] at h10
+      exact (mul_eq_zero.mp h10).resolve_right hA'.2.1.ne'
+    obtain ⟨m, hm⟩ := ModularGroup.exists_eq_T_zpow_of_c_eq_zero hγ10
+    have heq : toGLReal hn A • ModularGroup.T • τ =
+        ModularGroup.T ^ (-m) • (toGLReal hn (repsRightMul hn ModularGroup.T⁻¹ A) • τ) := by
+      have hmul := congrArg (· • τ) (toGLReal_repsRightMul hn ModularGroup.T⁻¹ A)
+      rw [inv_inv, mul_smul, mul_smul, hSL, hSL, hm] at hmul
+      rw [hmul, _root_.zpow_neg, inv_smul_smul]
+    have hper_m (z : ℍ) : f (ModularGroup.T ^ (-m) • z) = f z := by
+      have hz := hfper.int_mul (-m) z
+      rw [Function.comp_apply, Function.comp_apply, mul_one,
+        ← ModularGroup.coe_T_zpow_smul_eq, ofComplex_apply, ofComplex_apply] at hz
+      exact hz
+    rw [heq, hper_m]
+  rw [cyclicIsogenyPolynomial_def, cyclicIsogenyPolynomial_def,
+    Finset.prod_congr rfl fun A hA ↦ hperm hA,
+    ← Finset.prod_image (f := fun A ↦ X - C (f (toGLReal hn A • τ)))
+      (repsRightMul_injOn_primitiveReps hn ModularGroup.T⁻¹),
+    image_repsRightMul_primitiveReps]
 
 /-- For an `SL(2, ℤ)`-invariant `f`, the value `f(A τ)` at **every** primitive integral matrix `A`
 of determinant `n` is a root of the polynomial over the cyclic `n`-isogenies at `τ`. -/
