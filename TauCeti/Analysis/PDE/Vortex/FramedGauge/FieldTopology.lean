@@ -23,7 +23,7 @@ continuous fields of `A_m^s` therefore represent its classes exactly once. They 
 `TauCeti.Vortex.SobolevFieldSpace f m s`, and this file gives it the topology of `A_m^s` as an
 affine Hilbert space: a field `x` is recorded by the four coordinates of `x - x_m` in `H^s(ℂ)`
 (`TauCeti.Vortex.SobolevFieldSpace.subRef`), each the complexification of a real coordinate
-function, and the topology is the one induced by this map. For `s > 1` this map is injective
+function, and the topology is the one induced by this map. For `s ≥ 0` this map is injective
 (`TauCeti.Vortex.SobolevFieldSpace.isEmbedding_subRef`) and the space is Hausdorff
 (`TauCeti.Vortex.SobolevFieldSpace.t2Space`).
 
@@ -161,12 +161,11 @@ theorem coeFn_toLp_inclusion_subRef (h : 0 ≤ s) (x : SobolevFieldSpace f m s) 
   rw [← hux, toLp_inclusion_toBesselPotentialSpace h _ rfl]
   exact hae
 
-/-- For `s > 1`, a continuous field of `A_m^s` is determined by the coordinates of `x - x_m` in
+/-- For `s ≥ 0`, a continuous field of `A_m^s` is determined by the coordinates of `x - x_m` in
 `H^s(ℂ)`. -/
-theorem subRef_injective (hs : 1 < s) :
+theorem subRef_injective (h : 0 ≤ s) :
     Function.Injective (subRef : SobolevFieldSpace f m s → Fin 4 → H^{s}(ℂ)) := by
   intro x y hxy
-  have h : 0 ≤ s := zero_le_one.trans hs.le
   ext z j
   -- The complexified coordinates of `x - x_m` and `y - x_m` agree almost everywhere, and they are
   -- continuous, so they agree everywhere.
@@ -182,11 +181,11 @@ of `x - x_m` in `H^s(ℂ)`, that is, by the distance `‖x - y‖_{H^s}`. -/
 instance : TopologicalSpace (SobolevFieldSpace f m s) :=
   TopologicalSpace.induced subRef inferInstance
 
-/-- The topology of `SobolevFieldSpace` is induced by the coordinates `subRef`; for `s > 1` it is
+/-- The topology of `SobolevFieldSpace` is induced by the coordinates `subRef`; for `s ≥ 0` it is
 an embedding. -/
-theorem isEmbedding_subRef (hs : 1 < s) :
+theorem isEmbedding_subRef (h : 0 ≤ s) :
     IsEmbedding (subRef : SobolevFieldSpace f m s → Fin 4 → H^{s}(ℂ)) :=
-  ⟨⟨rfl⟩, subRef_injective hs⟩
+  ⟨⟨rfl⟩, subRef_injective h⟩
 
 /-- The coordinates `subRef` are continuous. -/
 theorem continuous_subRef : Continuous (subRef : SobolevFieldSpace f m s → Fin 4 → H^{s}(ℂ)) :=
@@ -199,9 +198,9 @@ theorem tendsto_iff {ι : Type*} {l : Filter ι} {xs : ι → SobolevFieldSpace 
   rw [nhds_induced, tendsto_comap_iff, tendsto_pi_nhds]
   simp only [Function.comp_apply]
 
-/-- For `s > 1`, the topology of `A_m^s` on its continuous fields is Hausdorff. -/
-theorem t2Space (hs : 1 < s) : T2Space (SobolevFieldSpace f m s) :=
-  (isEmbedding_subRef hs).t2Space
+/-- For `s ≥ 0`, the topology of `A_m^s` on its continuous fields is Hausdorff. -/
+theorem t2Space (h : 0 ≤ s) : T2Space (SobolevFieldSpace f m s) :=
+  (isEmbedding_subRef h).t2Space
 
 /-- **Convergence in `A_m^s`, `s > 1`, implies uniform convergence of the fields.** -/
 theorem tendstoUniformly_of_tendsto (hs : 1 < s) {ι : Type*} {l : Filter ι}
