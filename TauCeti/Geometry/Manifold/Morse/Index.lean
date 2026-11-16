@@ -37,8 +37,9 @@ manifold, the index vanishes without a nondegeneracy assumption.
   function.
 * `TauCeti.manifoldMorseIndex_modelSpace`: comparison with `TauCeti.morseIndex` on a normed
   vector space.
-* `TauCeti.manifoldMorseIndex_eq_zero_of_isLocalMin`: the index vanishes at a local minimum
-  of a `C²` function on a boundaryless manifold.
+* `TauCeti.manifoldMorseIndex_const` and `TauCeti.manifoldMorseIndex_eq_zero_of_isLocalMin`: the
+  index vanishes for a constant function and at a local minimum of a `C²` function on a boundaryless
+  manifold.
 * `TauCeti.manifoldMorseIndex_transContinuousLinearEquiv`: invariance under an equivalent choice
   of model space.
 * `TauCeti.manifoldMorseIndex_neg_add_manifoldMorseIndex_eq_finrank`: the complementary-index
@@ -107,6 +108,11 @@ theorem manifoldMorseIndex_modelSpace {V : Type*} [NormedAddCommGroup V] [Normed
     manifoldMorseIndex (modelWithCornersSelf ℝ V) g v = morseIndex g v := by
   simp only [manifoldMorseIndex, extChartAt_model_space_eq_id, PartialEquiv.refl_symm,
     PartialEquiv.refl_coe, Function.comp_id, id_eq]
+
+/-- A constant function has zero Hessian, hence Morse index `0` at every point. -/
+@[simp]
+theorem manifoldMorseIndex_const (c : ℝ) (x : M) : manifoldMorseIndex I (fun _ : M ↦ c) x = 0 := by
+  simp [manifoldMorseIndex_def, Function.comp_def]
 
 /-- The manifold Morse index is at most the dimension of the model space. -/
 theorem manifoldMorseIndex_le_finrank :
