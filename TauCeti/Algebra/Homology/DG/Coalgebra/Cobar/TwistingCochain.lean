@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.Homology.DG.Coalgebra.Cobar
+public import TauCeti.Algebra.Homology.DG.Algebra.Augmentation
 public import TauCeti.Algebra.Homology.DG.Algebra.Hom.Basic
 public import TauCeti.Algebra.Homology.DG.Algebra.KoszulTwist
 
@@ -26,7 +27,9 @@ With the differential of `cobarDifferential`, the universal twisting cochain is 
 the inclusion of desuspended generators. Thus a twisting cochain `τ` extends uniquely to
 the DG algebra map taking `s⁻¹ c` to `-τ c`. We prove the full chain-map equation on the
 tensor algebra, not just its restriction to generators. No conilpotence hypothesis is needed
-for this direction of the bar--cobar adjunction.
+for this direction of the bar--cobar adjunction. In particular, the zero twisting cochain to the
+ground ring induces the canonical augmentation `IsNonCounitalDGCoalgebra.cobarAugmentation` of
+`ΩC`, killing every desuspended generator.
 
 ## References
 
@@ -79,6 +82,18 @@ private theorem quadratic_neg (τ : C →ₗ[R] A) (w : C ⊗[R] C) :
   induction w using TensorProduct.inductionOn with
   | tmul x y => simp
   | add x y hx hy => simp only [map_add, hx, hy]
+
+/-- The zero linear map is a twisting cochain for any graded coalgebra and target algebra with
+differentials. -/
+theorem isTwistingCochain_zero :
+    IsTwistingCochain G Δ dC 𝒜 dA 0 where
+  isHomogeneous := LinearMap.isHomogeneous_def.mpr fun _ _ _ ↦ by
+    simp only [LinearMap.zero_apply, Submodule.zero_mem]
+  equation c := by
+    simp only [LinearMap.zero_apply, map_zero, zero_add, LinearMap.zero_comp]
+    induction Δ c using TensorProduct.inductionOn with
+    | tmul x y => simp
+    | add x y hx hy => rw [map_add, map_add, hx, hy, add_zero]
 
 variable [GradedAlgebra 𝒜]
 
@@ -258,6 +273,39 @@ theorem cobarTwistingCochainEquiv_comp (φ : DGAlgHom hC.isDGAlgebra_cobarDiffer
   simp
 
 end Naturality
+
+section Augmentation
+
+variable {hA : IsDGAlgebra 𝒜 dA}
+
+include hC in
+/-- The canonical augmentation of the cobar DG algebra `ΩC`, sending every desuspended generator
+to zero and acting as the identity on the ground ring. -/
+noncomputable def cobarAugmentation :
+    DGAlgAugmentation hC.isDGAlgebra_cobarDifferential :=
+  hC.cobarLift (isDGAlgebra_trivialGrading R) 0 isTwistingCochain_zero
+
+/-- The canonical augmentation of the cobar DG algebra vanishes on every desuspended generator. -/
+@[simp]
+theorem cobarAugmentation_ι (c : C) :
+    hC.cobarAugmentation (ι R c) = 0 := by
+  simp [cobarAugmentation]
+
+/-- A DG algebra morphism out of the cobar construction commutes with augmentations if and only if
+it sends every desuspended generator into the target augmentation ideal. -/
+theorem comp_eq_cobarAugmentation_iff (e : DGAlgAugmentation hA)
+    (φ : DGAlgHom hC.isDGAlgebra_cobarDifferential hA) :
+    e.comp φ = hC.cobarAugmentation ↔ ∀ c, e (φ (ι R c)) = 0 := by
+  constructor
+  · intro h c
+    have hc := DFunLike.congr_fun h (ι R c)
+    simpa only [DGAlgHom.comp_apply, cobarAugmentation_ι] using hc
+  · intro h
+    apply hC.cobarHom_ext (isDGAlgebra_trivialGrading R)
+    intro c
+    simp only [DGAlgHom.comp_apply, cobarAugmentation_ι, h c]
+
+end Augmentation
 
 end IsNonCounitalDGCoalgebra
 

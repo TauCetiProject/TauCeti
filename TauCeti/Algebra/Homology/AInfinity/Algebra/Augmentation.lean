@@ -235,6 +235,32 @@ theorem reducedPart_coe (ε : 𝒜.Augmentation) (x : ε.augmentationIdeal) :
   apply Subtype.ext
   rw [coe_reducedPart, (mem_augmentationIdeal ε).mp x.property, zero_smul, sub_zero]
 
+/-- The reduced-part projection annihilates the strict unit. -/
+@[simp]
+theorem reducedPart_unit (ε : 𝒜.Augmentation) : ε.reducedPart ε.unit = 0 := by
+  apply Subtype.ext
+  rw [coe_reducedPart, ε.map_unit, one_smul, sub_self, Submodule.coe_zero]
+
+/-- The reduced-part projection retracts the inclusion of the augmentation ideal. -/
+@[simp]
+theorem reducedPart_comp_subtype (ε : 𝒜.Augmentation) :
+    ε.reducedPart ∘ₗ ε.augmentationIdeal.subtype = LinearMap.id := by
+  ext x
+  exact congrArg Subtype.val (ε.reducedPart_coe x)
+
+/-- The reduced-part projection is homogeneous of degree zero. -/
+theorem isHomogeneous_reducedPart (ε : 𝒜.Augmentation) :
+    LinearMap.IsHomogeneous ε.reducedPart 𝒜.grading.piece ε.reducedGrading.piece 0 := by
+  rw [LinearMap.isHomogeneous_def]
+  intro p x hx
+  rw [add_zero, reducedGrading_piece, Submodule.mem_comap, Submodule.subtype_apply,
+    coe_reducedPart]
+  by_cases hp : p = 0
+  · subst p
+    exact Submodule.sub_mem _ hx (Submodule.smul_mem _ _ ε.isStrictUnit.degree_zero)
+  · rw [ε.map_of_mem_ne_zero p x hx hp, zero_smul, sub_zero]
+    exact hx
+
 private theorem coe_evalNat_reducedOperation (ε : 𝒜.Augmentation) (n : ℕ)
     (x : ℕ → ε.augmentationIdeal) :
     ((MultilinearMap.evalNat (ε.reducedOperation n) x : ε.augmentationIdeal) : A) =
@@ -366,6 +392,22 @@ theorem splitLinearEquiv_symm_apply (ε : 𝒜.Augmentation)
   · simp [hx]
   · rw [coe_reducedPart]
     simp [hx]
+
+/-- The reduced-part projection intertwines the differential with that of the reduced `A∞`
+algebra. -/
+theorem reducedPart_differential (ε : 𝒜.Augmentation) (x : A) :
+    ε.reducedPart (𝒜.differential x) = ε.reducedAlgebra.differential (ε.reducedPart x) := by
+  have hx : x = ε x • ε.unit + (ε.reducedPart x : A) := by
+    rw [coe_reducedPart, add_sub_cancel]
+  have hd : 𝒜.differential x = (ε.reducedAlgebra.differential (ε.reducedPart x) : A) := by
+    conv_lhs => rw [hx]
+    rw [map_add, map_smul, ε.isStrictUnit.differential_eq_zero, smul_zero, zero_add,
+      differential_apply, differential_apply, reducedAlgebra_m, coe_reducedOperation]
+    congr 1
+    funext i
+    fin_cases i
+    rfl
+  rw [hd, ε.reducedPart_coe]
 
 end Augmentation
 
