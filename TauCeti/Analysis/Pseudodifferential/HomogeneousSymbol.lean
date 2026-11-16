@@ -13,6 +13,7 @@ public import Mathlib.Analysis.SpecialFunctions.Pow.Real
 public import TauCeti.Analysis.Calculus.CoordinateDeriv
 public import TauCeti.Analysis.InnerProductSpace.Adjoint
 public import TauCeti.Analysis.Pseudodifferential.Frequency.Cutoff
+import Mathlib.Analysis.Calculus.BumpFunction.InnerProduct
 import TauCeti.Analysis.Calculus.ContDiff.Bounds
 import TauCeti.Analysis.Calculus.FDeriv.Prod
 import TauCeti.Analysis.Calculus.IteratedFDeriv.Homogeneous
@@ -49,17 +50,22 @@ The file develops:
   `‖a (x, ξ)‖ ≤ C ‖ξ‖ ^ m`, for a proper (for instance finite-dimensional) frequency space;
   applied to the iterated derivatives above it bounds the mixed derivatives on `ℝⁿ × ℝⁿ`:
   `‖∂ₓ^α ∂_ξ^β a (x, ξ)‖ ≤ C ‖ξ‖ ^ (m - |β|)` at every nonzero frequency
-  (`HomogeneousSymbol.exists_norm_mixedDeriv_le`); for positive degree it makes a homogeneous
-  symbol, with its value `0` at the zero frequency, continuous on all of `X × E`
-  (`HomogeneousSymbol.continuous_coefficient`);
+  (`HomogeneousSymbol.exists_norm_mixedDeriv_le`), and these mixed derivatives are homogeneous of
+  degree `m - |β|` (`HomogeneousSymbol.mixedDeriv_coefficient_smul_frequency`) and additive in `a`
+  (`HomogeneousSymbol.mixedDeriv_coefficient_add`); for positive degree
+  the growth bound makes a homogeneous symbol, with its value `0` at the zero frequency,
+  continuous on all of `X × E` (`HomogeneousSymbol.continuous_coefficient`);
 * the homogeneity of all higher derivatives: the derivative of `a` in `j` position directions
   and `l` frequency directions is homogeneous of degree `m - l`
   (`HomogeneousSymbol.iteratedFDeriv_coefficient_smul_frequency_append`), and on a proper
   frequency space it is bounded by `C ‖ξ‖ ^ (m - l)` for positions in a compact set
   (`HomogeneousSymbol.exists_norm_iteratedFDeriv_le`);
 * smoothness of the cut-off term `χ(ξ) • a(x, ξ)` on the whole space, for a frequency cutoff
-  `χ` (`HomogeneousSymbol.contDiff_smul_coefficient`). On a proper frequency space it satisfies
-  the symbol estimates of order `m`, with the weight `⟨ξ⟩ ^ (m - l) = (1 + ‖ξ‖ ^ 2) ^ ((m - l) / 2)`
+  `χ` (`HomogeneousSymbol.contDiff_smul_coefficient`), and near every nonzero frequency a
+  homogeneous symbol agrees with such a smooth function
+  (`HomogeneousSymbol.exists_contDiff_eventuallyEq_coefficient`). On a proper frequency space the
+  cut-off term satisfies the symbol estimates of order `m`, with the weight
+  `⟨ξ⟩ ^ (m - l) = (1 + ‖ξ‖ ^ 2) ^ ((m - l) / 2)`
   (`HomogeneousSymbol.exists_norm_iteratedFDeriv_smul_coefficient_le`), and changing the cutoff
   changes it by a smoothing term, whose derivatives are bounded by every power of `⟨ξ⟩`
   (`HomogeneousSymbol.exists_norm_iteratedFDeriv_sub_smul_coefficient_le`);
@@ -790,6 +796,31 @@ theorem contDiff_smul_coefficient (χ : FrequencyCutoff E) :
     simp [hq]
   · exact ((χ.contDiff.comp contDiff_snd).contDiffAt).smul (a.contDiffAt_coefficient h)
 
+/-- **Smooth local representatives.** Near the points with a fixed nonzero frequency `ξ₀`, a
+homogeneous symbol agrees with a smooth function on the whole space: its product with a frequency
+cutoff dilated to equal `1` near `ξ₀` and `0` near the zero frequency. -/
+theorem exists_contDiff_eventuallyEq_coefficient [HasContDiffBump E] {ξ₀ : E} (hξ₀ : ξ₀ ≠ 0) :
+    ∃ f : X × E → V →L[ℂ] W, ContDiff ℝ ∞ f ∧ ∀ x, f =ᶠ[𝓝 (x, ξ₀)] a.coefficient := by
+  let χ : FrequencyCutoff E := default
+  refine ⟨fun p ↦ χ ((‖ξ₀‖ / 4)⁻¹ • p.2) • a.coefficient p, ?_, fun x ↦ ?_⟩
+  · rw [contDiff_iff_contDiffAt]
+    intro p
+    rcases eq_or_ne p.2 0 with h | h
+    · -- Near the zero frequency the dilated cutoff, hence the product, vanishes identically.
+      refine (contDiffAt_const (c := (0 : V →L[ℂ] W))).congr_of_eventuallyEq ?_
+      exact χ.comp_inv_smul_snd_smul_eventuallyEq_zero _ a.coefficient (by simp [h])
+    · exact ((χ.contDiff_comp_inv_smul_snd _).contDiffAt).smul (a.contDiffAt_coefficient h)
+  · -- Near `ξ₀` the dilated frequency has norm greater than `2`, where the cutoff equals `1`.
+    have hn : 0 < ‖ξ₀‖ := norm_pos_iff.2 hξ₀
+    have h2 : 2 < ‖(‖ξ₀‖ / 4)⁻¹ • ξ₀‖ := by
+      rw [norm_smul, Real.norm_of_nonneg (by positivity), inv_div, div_mul_cancel₀ _ hn.ne']
+      norm_num
+    have hc : Continuous fun q : X × E ↦ (‖ξ₀‖ / 4)⁻¹ • q.2 := continuous_snd.const_smul _
+    filter_upwards [(χ.eventuallyEq_one_of_two_lt_norm h2).comp_tendsto hc.continuousAt]
+      with q hq
+    simp only [Function.comp_apply, Pi.one_apply] at hq
+    simp only [hq, one_smul]
+
 end Growth
 
 /-! ### Growth of the mixed derivatives -/
@@ -835,6 +866,17 @@ private theorem coefficient_iterSpatialDeriv (a : HomogeneousSymbol (CoordinateS
   | cons j js ih =>
     rw [iterSpatialDeriv, coefficient_spatialDeriv _ _, coordinateDeriv_cons, funext ih]
 
+/-- At a nonzero frequency, the iterated derivatives `∂_x^α ∂_ξ^β a` as homogeneous symbols
+compute the mixed derivative of the coefficient. -/
+private theorem coefficient_iterSpatialDeriv_iterFrequencyDeriv
+    (a : HomogeneousSymbol (CoordinateSpace n) (CoordinateSpace n) V W m) (α β : List (Fin n))
+    (x : CoordinateSpace n) {ξ : CoordinateSpace n} (hξ : ξ ≠ 0) :
+    (iterSpatialDeriv (iterFrequencyDeriv a β) α).coefficient (x, ξ) =
+      mixedDeriv α β a.coefficient x ξ := by
+  rw [coefficient_iterSpatialDeriv _ _ _, mixedDeriv_def]
+  exact congrArg (coordinateDeriv α · x)
+    (funext fun y => coefficient_iterFrequencyDeriv a β y hξ)
+
 /-- **Growth of the mixed derivatives of a homogeneous symbol.** On a compact set of positions,
 the mixed derivatives of a homogeneous symbol of degree `m` satisfy
 `‖∂_x^α ∂_ξ^β a(x, ξ)‖ ≤ C ‖ξ‖ ^ (m - |β|)` at every nonzero frequency. -/
@@ -845,12 +887,30 @@ theorem exists_norm_mixedDeriv_le
       ‖mixedDeriv α β a.coefficient x ξ‖ ≤ C * ‖ξ‖ ^ (m - β.length) := by
   obtain ⟨C, hC, hCK⟩ := (iterSpatialDeriv (iterFrequencyDeriv a β) α).exists_norm_coefficient_le hK
   refine ⟨C, hC, fun x hx ξ hξ => ?_⟩
-  have h : (iterSpatialDeriv (iterFrequencyDeriv a β) α).coefficient (x, ξ) =
-      mixedDeriv α β a.coefficient x ξ := by
-    rw [coefficient_iterSpatialDeriv _ _ _, mixedDeriv_def]
-    exact congrArg (coordinateDeriv α · x)
-      (funext fun y => coefficient_iterFrequencyDeriv a β y hξ)
-  exact h ▸ hCK x hx ξ
+  exact coefficient_iterSpatialDeriv_iterFrequencyDeriv a α β x hξ ▸ hCK x hx ξ
+
+/-- **Homogeneity of the mixed derivatives.** The mixed derivative `∂_x^α ∂_ξ^β a` of a
+homogeneous symbol of degree `m` is positively homogeneous of degree `m - |β|` in the frequency,
+away from the zero frequency. -/
+theorem mixedDeriv_coefficient_smul_frequency
+    (a : HomogeneousSymbol (CoordinateSpace n) (CoordinateSpace n) V W m) (α β : List (Fin n))
+    (x : CoordinateSpace n) {ξ : CoordinateSpace n} (hξ : ξ ≠ 0) {t : ℝ} (ht : 0 < t) :
+    mixedDeriv α β a.coefficient x (t • ξ) =
+      t ^ (m - β.length) • mixedDeriv α β a.coefficient x ξ := by
+  rw [← coefficient_iterSpatialDeriv_iterFrequencyDeriv a α β x (smul_ne_zero ht.ne' hξ),
+    ← coefficient_iterSpatialDeriv_iterFrequencyDeriv a α β x hξ]
+  exact (iterSpatialDeriv (iterFrequencyDeriv a β) α).homogeneous x ξ t ht
+
+/-- At a nonzero frequency, the mixed derivatives of homogeneous symbols are additive. -/
+theorem mixedDeriv_coefficient_add
+    (a b : HomogeneousSymbol (CoordinateSpace n) (CoordinateSpace n) V W m) (α β : List (Fin n))
+    (x : CoordinateSpace n) {ξ : CoordinateSpace n} (hξ : ξ ≠ 0) :
+    mixedDeriv α β (a + b).coefficient x ξ =
+      mixedDeriv α β a.coefficient x ξ + mixedDeriv α β b.coefficient x ξ := by
+  obtain ⟨f, hf, hfa⟩ := a.exists_contDiff_eventuallyEq_coefficient hξ
+  obtain ⟨g, hg, hgb⟩ := b.exists_contDiff_eventuallyEq_coefficient hξ
+  rw [← (hfa x).mixedDeriv_eq, ← (hgb x).mixedDeriv_eq, ← mixedDeriv_add hf hg, coefficient_add]
+  exact ((hfa x).add (hgb x)).mixedDeriv_eq α β |>.symm
 
 end MixedDeriv
 
