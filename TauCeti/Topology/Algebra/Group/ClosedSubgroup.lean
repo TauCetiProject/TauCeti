@@ -35,7 +35,8 @@ minimal such subgroup below any given one.
   of topological groups.
 * `ContinuousMulEquiv.subgroupMap`: a subgroup is topologically isomorphic to its image under an
   isomorphism of topological groups.
-* `ContinuousMulEquiv.quotientCongr`: the induced isomorphism of quotient topological groups.
+* `ContinuousMulEquiv.quotientCongr`: the induced isomorphism of quotient topological groups, with
+  its additive form `ContinuousAddEquiv.quotientCongr`.
 
 ## Main results
 
@@ -144,6 +145,16 @@ theorem coe_subgroupMap_symm_apply (e : G ≃ₜ* H) (K : Subgroup G)
     (h : K.map ((e : G ≃* H) : G →* H)) : ((e.subgroupMap K).symm h : G) = e.symm h :=
   (rfl)
 
+/-- `QuotientAddGroup.congr` sends the class of an element to the class of its image. This is the
+additive form of `QuotientGroup.congr_mk`, which Mathlib states only for groups. -/
+theorem _root_.QuotientAddGroup.congr_mk {G H : Type*} [AddGroup G] [AddGroup H]
+    (G' : AddSubgroup G) (H' : AddSubgroup H) [G'.Normal] [H'.Normal] (e : G ≃+ H)
+    (he : G'.map (e : G →+ H) = H') (x : G) :
+    QuotientAddGroup.congr G' H' e he (x : G ⧸ G') = (e x : H ⧸ H') :=
+  rfl
+
+attribute [to_additive existing] QuotientGroup.congr_mk
+
 /-- A topological group isomorphism carrying a normal subgroup onto a normal subgroup induces an
 isomorphism of the quotient topological groups.  This is `QuotientGroup.congr` together with the
 continuity of both directions, which follows from the quotient-map property of the two projections.
@@ -151,6 +162,9 @@ continuity of both directions, which follows from the quotient-map property of t
 For a normal closed subgroup `N : ClosedSubgroup G` the hypothesis holds by `rfl` on the
 transported subgroup, so `e.quotientCongr N (e.closedSubgroupOrderIso N) rfl` is the induced
 isomorphism `G ⧸ N.toSubgroup ≃ₜ* H ⧸ (e.closedSubgroupOrderIso N).toSubgroup`. -/
+@[to_additive /-- A topological additive group isomorphism carrying a normal subgroup onto a
+normal subgroup induces an isomorphism of the quotient topological additive groups. This is
+`QuotientAddGroup.congr` together with the continuity of both directions. -/]
 def quotientCongr (e : G ≃ₜ* H) (N : Subgroup G) (M : Subgroup H)
     [N.Normal] [M.Normal] (he : N.map e.toMulEquiv.toMonoidHom = M) : G ⧸ N ≃ₜ* H ⧸ M :=
   ContinuousMulEquiv.mk (QuotientGroup.congr N M e.toMulEquiv he)
@@ -163,7 +177,8 @@ def quotientCongr (e : G ≃ₜ* H) (N : Subgroup G) (M : Subgroup H)
           ((Subgroup.map_symm_eq_iff_map_eq _).mpr he) h).symm)
 
 /-- The quotient isomorphism sends the class of an element to the class of its image. -/
-@[simp]
+@[to_additive (attr := simp) /-- The quotient isomorphism sends the class of an element to the
+class of its image. -/]
 theorem quotientCongr_mk (e : G ≃ₜ* H) (N : Subgroup G) (M : Subgroup H)
     [N.Normal] [M.Normal] (he : N.map e.toMulEquiv.toMonoidHom = M) (g : G) :
     e.quotientCongr N M he (g : G ⧸ N) = (e g : H ⧸ M) :=
@@ -171,7 +186,8 @@ theorem quotientCongr_mk (e : G ≃ₜ* H) (N : Subgroup G) (M : Subgroup H)
 
 /-- The inverse quotient isomorphism sends the class of an element to the class of its inverse
 image. -/
-@[simp]
+@[to_additive (attr := simp) /-- The inverse quotient isomorphism sends the class of an element
+to the class of its inverse image. -/]
 theorem quotientCongr_symm_mk (e : G ≃ₜ* H) (N : Subgroup G)
     (M : Subgroup H) [N.Normal] [M.Normal] (he : N.map e.toMulEquiv.toMonoidHom = M) (h : H) :
     (e.quotientCongr N M he).symm (h : H ⧸ M) = (e.symm h : G ⧸ N) :=

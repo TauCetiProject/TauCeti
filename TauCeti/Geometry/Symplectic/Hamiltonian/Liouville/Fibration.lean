@@ -131,7 +131,9 @@ theorem exists_coordinates (h : hσ.IsLagrangianTorusFibration J π) (b : B) :
   have hreg (y : M) (hy : y ∈ π ⁻¹' {b}) :
       IsRegularPoint I 𝓘(ℝ, Fin (finrank ℝ F) → ℝ) (κ ∘ π) y := by
     rw [mem_preimage, mem_singleton_iff] at hy
-    have hκπ : κ ∘ π = (e : F →L[ℝ] Fin (finrank ℝ F) → ℝ) ∘ (κ₀ ∘ π) := rfl
+    -- `κ` is `e ∘ κ₀` by its definition above.
+    have hκπ : κ ∘ π = (e : F →L[ℝ] Fin (finrank ℝ F) → ℝ) ∘ (κ₀ ∘ π) :=
+      congrArg (· ∘ (κ₀ ∘ π)) (ContinuousLinearEquiv.coe_coe e).symm
     rw [hκπ]
     refine isRegularPoint_iff_surjective_mvfderiv.2 (mvfderiv_comp_surjective ?_ _ e.surjective)
     -- `d(κ₀ ∘ π)_y = dκ₀_b ∘ dπ_y`, and `dκ₀_b` is the identity.

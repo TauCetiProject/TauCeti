@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Geometry.Symplectic.Hamiltonian.Liouville.Fibration
 public import TauCeti.Geometry.Symplectic.Hamiltonian.LiouvilleArnold.Torus
+public import TauCeti.Topology.Algebra.Group.ClosedSubgroup
 
 /-!
 # The period lattice of a regular Lagrangian torus fibration
@@ -354,19 +355,23 @@ theorem fiberAction_eq_fiberAction_iff {α β : F →L[ℝ] ℝ} (x : π ⁻¹' 
 /-- The dual coordinates map the period lattice onto the stabilizer of a point of the fibre for the
 coordinate flow action. -/
 private theorem map_dualCoord_periodLattice (x : π ⁻¹' {b}) :
-    (h.periodLattice hσc b).map (h.dualCoord b).toLinearEquiv.toAddEquiv.toAddMonoidHom =
+    (h.periodLattice hσc b).map (h.dualCoord b).toContinuousAddEquiv.toAddEquiv.toAddMonoidHom =
       h.coordStabilizer hσc b x := by
   ext v
   rw [AddSubgroup.mem_map_equiv, h.mem_periodLattice_iff_mem_coordStabilizer hσc b x]
   exact iff_of_eq (congrArg (· ∈ _) ((h.dualCoord b).apply_symm_apply v))
 
+/-- The stabilizer of a point of the fibre for the coordinate flow action is discrete. -/
+private theorem discreteTopology_coordStabilizer (x : π ⁻¹' {b}) :
+    DiscreteTopology (h.coordStabilizer hσc b x) :=
+  (⟨hσc, hσ⟩ : σ.IsSymplectic).discreteTopology_hamiltonianFlowStabilizer
+    (h.contMDiff_coord_comp b) (h.poissonBracket_coord_comp b)
+    (h.isCompleteVectorField_coord_comp b) (h.isRegularPoint_coord_comp b x.2)
+
 /-- **The period lattice is discrete.** -/
 instance discreteTopology_periodLattice : DiscreteTopology (h.periodLattice hσc b) := by
   obtain ⟨x⟩ := (h.isConnected_preimage_singleton b).nonempty.to_subtype
-  have : DiscreteTopology (h.coordStabilizer hσc b x) :=
-    (⟨hσc, hσ⟩ : σ.IsSymplectic).discreteTopology_hamiltonianFlowStabilizer
-      (h.contMDiff_coord_comp b) (h.poissonBracket_coord_comp b)
-      (h.isCompleteVectorField_coord_comp b) (h.isRegularPoint_coord_comp b x.2)
+  have := h.discreteTopology_coordStabilizer hσc b x
   -- The dual coordinates embed the period lattice into the discrete stabilizer of `x`.
   exact DiscreteTopology.of_continuous_injective
     (f := fun α : h.periodLattice hσc b ↦ (⟨h.dualCoord b α,
@@ -380,10 +385,7 @@ over `b`, which is homeomorphic to `T*_b B / Λ_b` (`quotientPeriodLatticeHomeom
 dimension `dim B`. -/
 instance isZLattice_periodLattice : IsZLattice ℝ (h.periodLattice hσc b).toIntSubmodule := by
   obtain ⟨x⟩ := (h.isConnected_preimage_singleton b).nonempty.to_subtype
-  have : DiscreteTopology (h.coordStabilizer hσc b x) :=
-    (⟨hσc, hσ⟩ : σ.IsSymplectic).discreteTopology_hamiltonianFlowStabilizer
-      (h.contMDiff_coord_comp b) (h.poissonBracket_coord_comp b)
-      (h.isCompleteVectorField_coord_comp b) (h.isRegularPoint_coord_comp b x.2)
+  have := h.discreteTopology_coordStabilizer hσc b x
   have : IsZLattice ℝ (h.coordStabilizer hσc b x).toIntSubmodule :=
     (⟨hσc, hσ⟩ : σ.IsSymplectic).isZLattice_hamiltonianFlowStabilizer
       (h.contMDiff_coord_comp b) (h.poissonBracket_coord_comp b)
@@ -405,21 +407,6 @@ theorem finrank_periodLattice :
 
 /-! ### The fibre as the torus `T*_b B / Λ_b` -/
 
-/-- The dual coordinates descend to a homeomorphism from `T*_b B / Λ_b` onto the quotient of `ℝⁿ`
-by the stabilizer of a point of the fibre for the coordinate flow action. -/
-private def quotientDualCoord (x : π ⁻¹' {b}) :
-    (F →L[ℝ] ℝ) ⧸ h.periodLattice hσc b ≃ₜ (Fin (finrank ℝ F) → ℝ) ⧸ h.coordStabilizer hσc b x :=
-  ⟨QuotientAddGroup.congr _ _ (h.dualCoord b).toLinearEquiv.toAddEquiv
-      (h.map_dualCoord_periodLattice hσc b x),
-    (continuous_quotient_mk'.comp (h.dualCoord b).continuous).quotient_lift _,
-    (continuous_quotient_mk'.comp (h.dualCoord b).symm.continuous).quotient_lift _⟩
-
--- This is the additive form of `QuotientGroup.congr_mk`, which Mathlib states only for groups,
--- also proved by `rfl`.
-private theorem quotientDualCoord_mk (x : π ⁻¹' {b}) (α : F →L[ℝ] ℝ) :
-    h.quotientDualCoord hσc b x α = (h.dualCoord b α : (Fin (finrank ℝ F) → ℝ) ⧸ _) :=
-  rfl
-
 /-- **The fibre over `b` is the torus `T*_b B / Λ_b`.** For a point `x` of the fibre, the orbit
 map `α ↦ fiberAction α x` of the action of `T*_b B` descends to a homeomorphism from the quotient of
 `T*_b B` by the period lattice onto the fibre over `b`. It is the quotient of the dual coordinates,
@@ -427,7 +414,8 @@ followed by the identification of the quotient of `ℝⁿ` by the stabilizer of 
 flow action with the connected component of `x` in its level, which is the fibre. -/
 def quotientPeriodLatticeHomeomorph (x : π ⁻¹' {b}) :
     (F →L[ℝ] ℝ) ⧸ h.periodLattice hσc b ≃ₜ π ⁻¹' {b} :=
-  (h.quotientDualCoord hσc b x).trans <|
+  (Homeomorph.ofClass ((h.dualCoord b).toContinuousAddEquiv.quotientCongr _ _
+      (h.map_dualCoord_periodLattice hσc b x))).trans <|
     ((⟨hσc, hσ⟩ : σ.IsSymplectic).quotientHamiltonianFlowStabilizerHomeomorph
       (h.contMDiff_coord_comp b) (h.poissonBracket_coord_comp b)
       (h.isCompleteVectorField_coord_comp b) (h.two_mul_card_eq x)
@@ -440,7 +428,8 @@ theorem quotientPeriodLatticeHomeomorph_mk (x : π ⁻¹' {b}) (α : F →L[ℝ]
     h.quotientPeriodLatticeHomeomorph hσc b x α = h.fiberAction hσc b α x :=
   Subtype.ext <| by
     rw [quotientPeriodLatticeHomeomorph, Homeomorph.trans_apply, Homeomorph.trans_apply,
-      quotientDualCoord_mk, coe_fiberAction, coordAction]
+      Homeomorph.coe_ofClass, ContinuousAddEquiv.quotientCongr_mk,
+      ContinuousLinearEquiv.toContinuousAddEquiv_coe, coe_fiberAction, coordAction]
     -- `Homeomorph.setCongr` does not change the underlying point.
     exact IsSymplectic.coe_quotientHamiltonianFlowStabilizerHomeomorph_mk _ _ _ _ _ _ _
 
