@@ -392,6 +392,17 @@ theorem dartWord_of_mem_tree (hT : ∀ e ∈ T, Γ.rev e ∈ T) {e : Γ.E} (he :
     dartWord O T e = 1 :=
   dartWord_of_notMem (fun h => h.2 he) (fun h => h.2 (hT e he))
 
+/-- A dart weight compatible with reversal at `e` is recovered from the coordinate of `e`, as soon
+as `e` or its reverse lies in `O \ T` or the weight of `e` is trivial. -/
+theorem freeGroupLift_dartWord {wt : Γ.E → H} {e : Γ.E} (hwt : wt (Γ.rev e) = (wt e)⁻¹)
+    (he : e ∈ O \ T ∨ Γ.rev e ∈ O \ T ∨ wt e = 1) :
+    FreeGroup.lift (fun x : ↥(O \ T) => wt x.1) (dartWord O T e) = wt e := by
+  by_cases h₁ : e ∈ O \ T
+  · simp [dartWord_of_mem h₁]
+  by_cases h₂ : Γ.rev e ∈ O \ T
+  · simp [dartWord_of_rev_mem h₁ h₂, hwt]
+  simp [dartWord_of_notMem h₁ h₂, (he.resolve_left h₁).resolve_left h₂]
+
 /-- The darts of a set `S` that contains no dart together with its reverse, and meets neither `T`
 nor its reverse, freely generate a subgroup of `π₁(𝔸, T)`. -/
 theorem freeGroupLift_edge_injective {S : Set Γ.E} (hS : ∀ e ∈ S, Γ.rev e ∉ S)
@@ -409,7 +420,7 @@ theorem freeGroupLift_edge_injective {S : Set Γ.E} (hS : ∀ e ∈ S, Γ.rev e 
 
 /-- The generator of a dart is trivial in `π₁(𝔸, T)` if and only if the dart or its reverse lies
 in `T`. -/
-theorem edge_eq_one_iff {e : Γ.E} : (edge T e : π₁Tree 𝔸 T) = 1 ↔ e ∈ T ∨ Γ.rev e ∈ T := by
+@[simp] theorem edge_eq_one_iff {e : Γ.E} : (edge T e : π₁Tree 𝔸 T) = 1 ↔ e ∈ T ∨ Γ.rev e ∈ T := by
   refine ⟨fun h => ?_, fun h => h.elim edge_eq_one edge_eq_one_of_rev_mem⟩
   by_contra! he
   -- The dart `e` alone freely generates a subgroup.
@@ -422,22 +433,16 @@ theorem edge_eq_one_iff {e : Γ.E} : (edge T e : π₁Tree 𝔸 T) = 1 ↔ e ∈
 /-- In `π₁(𝔸, ∅)`, where no relation `e = 1` is imposed, the generator of every dart is
 nontrivial. -/
 theorem edge_empty_ne_one (e : Γ.E) : (edge ∅ e : π₁Tree 𝔸 ∅) ≠ 1 := by
-  simp [edge_eq_one_iff]
+  simp
 
 /-- Read back in `π₁(𝔸, T)`, the dart word of `e` is `e`, as soon as `O` contains a dart of every
 geometric edge. -/
-private theorem lift_dartWord (hO : ∀ e, e ∈ O ∨ Γ.rev e ∈ O) (e : Γ.E) :
-    FreeGroup.lift (fun x : ↥(O \ T) => (edge T x.1 : π₁Tree 𝔸 T)) (dartWord O T e) = edge T e := by
-  by_cases he : e ∈ O \ T
-  · simp [dartWord_of_mem he]
-  by_cases hr : Γ.rev e ∈ O \ T
-  · simp [dartWord_of_rev_mem he hr]
-  have h1 : (edge T e : π₁Tree 𝔸 T) = 1 := by
-    rcases hO e with h | h
-    · exact edge_eq_one (by simpa [h] using he)
-    · have hrT : Γ.rev e ∈ T := by simpa [h] using hr
-      simpa using edge_eq_one (𝔸 := 𝔸) hrT
-  simp [dartWord_of_notMem he hr, h1]
+private theorem freeGroupLift_edge_dartWord (hO : ∀ e, e ∈ O ∨ Γ.rev e ∈ O) (e : Γ.E) :
+    FreeGroup.lift (fun x : ↥(O \ T) => (edge T x.1 : π₁Tree 𝔸 T)) (dartWord O T e) = edge T e :=
+  freeGroupLift_dartWord (edge_rev e) <| by
+    have := hO e
+    simp only [Set.mem_sdiff, edge_eq_one_iff]
+    tauto
 
 variable (𝔸 T O) in
 /-- The homomorphism from the free product of the vertex groups and of the free group on the
@@ -477,7 +482,7 @@ theorem ofCoprod_surjective (hO : ∀ e, e ∈ O ∨ Γ.rev e ∈ O) :
       (Monoid.Coprod.map (.id _) (FreeGroup.lift (dartWord O T))) = mk := by
     ext
     · simp [of]
-    · simpa [edge] using lift_dartWord hO _
+    · simpa [edge] using freeGroupLift_edge_dartWord hO _
   intro x
   obtain ⟨r, rfl⟩ := mk_surjective x
   exact ⟨_, DFunLike.congr_fun h r⟩
@@ -499,7 +504,7 @@ noncomputable def equivCoprodFreeGroup [∀ y, Subsingleton (𝔸.edgeGroup y)]
       (fun e => by simp [dartWord_rev (hO.rev_notMem_of_mem _)])
       (fun _ c => by simp [Subsingleton.elim c 1]))
     (ofCoprod 𝔸 T O)
-    (by ext <;> simp [lift_dartWord hO.mem_or_rev_mem])
+    (by ext <;> simp [freeGroupLift_edge_dartWord hO.mem_or_rev_mem])
     (by ext <;> simp)
 
 @[simp] theorem equivCoprodFreeGroup_of [∀ y, Subsingleton (𝔸.edgeGroup y)]
@@ -556,7 +561,7 @@ noncomputable def equivFreeGroup (hO : Γ.IsOrientation O)
       (fun _ _ => by simp))
     (FreeGroup.lift fun x => edge T x.1)
     (hom_ext (fun v => MonoidHom.ext fun a => by simp [Subsingleton.elim a 1]) fun e => by
-      simpa using lift_dartWord hO.mem_or_rev_mem e)
+      simpa using freeGroupLift_edge_dartWord hO.mem_or_rev_mem e)
     (FreeGroup.ext_hom _ _ fun x => by simp)
 
 /-- The free-group coordinate of a dart generator is the signed coordinate of the dart. -/
