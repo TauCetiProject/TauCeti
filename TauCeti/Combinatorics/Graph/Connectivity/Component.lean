@@ -35,8 +35,6 @@ elementary order API, follow Peter Nelson and Jun Kwon's Mathlib proposal
 * `Graph.connectedComponentOf G x hx` is the connected component containing the vertex `x`.
 * `Graph.connectedComponentEquiv` identifies these subgraphs with the connected components of
   `G.toSimpleGraph`.
-* `Graph.connected_ofSimpleGraph_iff` identifies native connectedness of
-  `Graph.ofSimpleGraph G` with connectedness of `G`.
 * `Graph.componentCount G` counts the components via `Nat.card`, so it is `0` if there are
   infinitely many; it is exact whenever there are finitely many components.
 * `Graph.ConnectedComponent.mapOfLE` maps native components along a subgraph inclusion.
@@ -415,7 +413,7 @@ theorem connected_iff_toSimpleGraph_connected : G.Connected ↔ G.toSimpleGraph.
       ⟨hy, SimpleGraph.ConnectedComponent.sound (hG ⟨y, hy⟩ vx)⟩
 
 /-- A simple graph is connected exactly when it is connected as a multigraph. This includes the
-empty graph, which is disconnected in both representations. -/
+case where the vertex type `α` is empty, when neither representation is connected. -/
 @[simp]
 theorem connected_ofSimpleGraph_iff (H : SimpleGraph α) :
     (Graph.ofSimpleGraph H).Connected ↔ H.Connected :=
