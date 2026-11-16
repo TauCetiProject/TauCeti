@@ -423,8 +423,7 @@ private theorem shuffle_splice_tensorTaylor_of_fits (hB : IsDGAlgebra ℬ dB) (a
     (fun j ↦ dA (p + j)) (fun j ↦ dB' (p + j)) (fun i _ ↦ ha _ (by omega))
     fun i _ ↦ hb _ (by omega)
   have hl := ReducedTensorWords.letter_of_tprod R A hd (fun j ↦ a (p + j))
-  beta_reduce at hF hl
-  simp only
+  beta_reduce at hF hl ⊢
   rw [hF, hl, ReducedTensorWords.splice_smul, ReducedTensorWords.splice_add,
     ReducedTensorWords.splice_smul, map_smul, map_smul, map_add, map_add, map_smul, map_smul,
     shuffle_reducedInclusion_splice 𝒜 ℬ a b dA dB' hd ha hb
