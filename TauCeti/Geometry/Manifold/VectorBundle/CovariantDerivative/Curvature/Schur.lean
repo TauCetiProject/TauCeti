@@ -21,7 +21,7 @@ function `κ` is then locally constant, hence constant when `M` is connected.
 
 Schur's theorem is derived from the Ricci tensor. Under the constant-curvature form the Ricci
 tensor is `(n - 1) κ g`, and Einstein's constancy theorem
-(`CovariantDerivative.mfderiv_eq_zero_of_ricciTensor_eq_smul_inner`) makes `(n - 1) κ` locally
+(`CovariantDerivative.hasMFDerivAt_zero_of_ricciTensor_eq_smul_inner`) makes `(n - 1) κ` locally
 constant when `n ≠ 2`; since `n - 1 ≠ 0` for `n ≥ 3`, `κ` is locally constant. In dimension two
 every tangent space has a single two-plane, so the curvature is pointwise isotropic for every
 metric, and the conclusion fails for any surface whose Gaussian curvature is not constant.
@@ -78,11 +78,11 @@ theorem mfderiv_eq_zero_of_curvatureTensor_eq_smul_inner_sub
   have hn : ((Module.finrank ℝ E : ℝ) - 1) ≠ 0 := by
     have : (3 : ℝ) ≤ Module.finrank ℝ E := by exact_mod_cast hdim
     linarith
-  have h := mfderiv_eq_zero_of_ricciTensor_eq_smul_inner hcov ht (by omega)
+  have h := (hasMFDerivAt_zero_of_ricciTensor_eq_smul_inner hcov ht (by omega)
     (a := ((Module.finrank ℝ E : ℝ) - 1) • κ) (x := x)
     (hκ.mono fun y hy ↦ by
       rw [cov.ricciTensor_eq_of_curvatureTensor_eq_smul_inner_sub y (κ y) hy]
-      rw [Pi.smul_apply, smul_eq_mul, TauCeti.finrank_tangentSpace (I := I) (𝕜 := ℝ) y])
+      rw [Pi.smul_apply, smul_eq_mul, TauCeti.finrank_tangentSpace (I := I) (𝕜 := ℝ) y])).mfderiv
   rw [(hκx.hasMFDerivAt.const_smul _).mfderiv] at h
   exact (smul_eq_zero.1 h).resolve_left hn
 
