@@ -23,52 +23,31 @@ import TauCeti.Algebra.Category.ModuleCat.Colimits
 # Sequential homotopy colimits and the Milnor exact sequence
 
 In a pretriangulated category `T` with countable coproducts, a sequential *Milnor homotopy
-colimit* of a sequence `X : ℕ ⥤ T` (`X₀ → X₁ → X₂ → ⋯`) is the cone `M` of the
-*sequence–difference map* `1 - s : ∐ X.obj ⟶ ∐ X.obj`
-(`CategoryTheory.Functor.sequenceDifference`), which is the dual of
-`CategoryTheory.Functor.towerDifference` and fits into a distinguished triangle
+colimit* of `X : ℕ ⥤ T` (`X₀ → X₁ → ⋯`) is the cone `M` of the *sequence–difference map*
+`1 - s : ∐ X.obj ⟶ ∐ X.obj` (`CategoryTheory.Functor.sequenceDifference`), fitting into a
+distinguished triangle `∐ X.obj ──1 - s──▶ ∐ X.obj ──ψ──▶ M ──δ──▶ (∐ X.obj)⟦1⟧`.
 
-```
-∐ X.obj ──1 - s──▶ ∐ X.obj ──ψ──▶ M ──δ──▶ (∐ X.obj)⟦1⟧.
-```
-
-This file establishes the two fundamental mapping properties of a Milnor homotopy colimit
-triangle (Neeman, Lemma 1.7.1; Schwede, *Symmetric spectra*, Chapter II, Lemma 5.6):
-
-1. **Mapping out of a compact object:** If `A` is compact for coproducts
-   (`TauCeti.IsCompactForCoproducts A`), every morphism `A ⟶ M` factors through some stage
-   `X.obj N` (`TauCeti.exists_factor_of_milnorTriangle`), a morphism `A ⟶ X.obj n` vanishes in `M`
-   if and only if it is killed by some transition `X.obj n ⟶ X.obj m`
-   (`TauCeti.comp_milnorTriangle_eq_zero_iff`), and `Hom(A, M)` is the colimit of the sequence
-   `n ↦ Hom(A, X.obj n)` in `AddCommGrpCat` (`TauCeti.isColimitMapCoconeOfMilnorTriangle`).
-   Injectivity of the shifted difference map reduces directly to
-   `ModuleCat.telescopeDiff_injective`.
-2. **The generic Milnor exact sequence:** For any ring `R` and any contravariant homological
-   functor `F : Tᵒᵖ ⥤ ModuleCat.{v} R` that takes countable coproducts to products
-   (`[PreservesLimitsOfShape (Discrete ℕ) F]`), there is a natural short exact sequence
-
-   ```
-   0 ⟶ lim¹ F((Xₙ)⟦1⟧) ⟶ F(M) ⟶ lim F(Xₙ) ⟶ 0
-   ```
-
-   expressed directly in terms of `TauCeti.ModuleTower.lim` and `TauCeti.ModuleTower.limOne`
-   (`TauCeti.milnorLimOneToObj_injective`, `TauCeti.exact_milnorLimOneToObj_milnorObjToLim`,
-   `TauCeti.milnorObjToLim_surjective`, `TauCeti.milnorObjToLim_naturality`,
-   `TauCeti.milnorLimOneToObj_naturality`). For an abelian-group-valued contravariant homological
-   functor `E : Tᵒᵖ ⥤ AddCommGrpCat.{v}`, the surjectivity onto compatible families is provided
-   directly as `TauCeti.exists_lift_of_milnorTriangle`.
+We establish its two fundamental mapping properties (Neeman, Lemma 1.7.1; Schwede, Chapter II,
+Lemma 5.6):
+1. **Mapping out of a compact object:** for `A` compact (`TauCeti.IsCompactForCoproducts A`),
+   every morphism `A ⟶ M` factors through some `X.obj N` (`exists_factor_of_milnorTriangle`),
+   a morphism `A ⟶ X.obj n` vanishes in `M` iff killed by some transition
+   (`comp_milnorTriangle_eq_zero_iff`), and `Hom(A, M)` is the colimit of `n ↦ Hom(A, X.obj n)`
+   in `AddCommGrpCat` (`isColimitMapCoconeOfMilnorTriangle`).
+2. **The generic Milnor exact sequence:** for any ring `R` and contravariant homological functor
+   `F : Tᵒᵖ ⥤ ModuleCat.{v} R` taking countable coproducts to products, there is a natural short
+   exact sequence `0 ⟶ lim¹ F((Xₙ)⟦1⟧) ⟶ F(M) ⟶ lim F(Xₙ) ⟶ 0`, plus the corresponding lifting
+   theorem `TauCeti.exists_lift_of_milnorTriangle` for `AddCommGrpCat`-valued functors.
 
 ## Main definitions
 
-* `CategoryTheory.Functor.sequenceDifference`: the difference map `1 - s : ∐ X.obj ⟶ ∐ X.obj`
-  of a sequence `X : ℕ ⥤ T`.
+* `CategoryTheory.Functor.sequenceDifference`: the difference map `1 - s : ∐ X.obj ⟶ ∐ X.obj`.
 * `CategoryTheory.Functor.coconeOfSequenceDifference`: a cocone over `X` from a morphism out of
   `∐ X.obj` annihilating `X.sequenceDifference`.
-* `TauCeti.cofanOpToPiLinearEquiv`, `TauCeti.cofanOpToPiAddEquiv`: the coordinate equivalences
-  for contravariant functors sending a coproduct to a concrete product.
+* `TauCeti.cofanOpToPiLinearEquiv`, `TauCeti.cofanOpToPiAddEquiv`: coordinate equivalences for
+  contravariant functors sending a coproduct to a concrete product.
 * `TauCeti.coconeOfMilnorTriangle`: the canonical cocone `X ⟶ M` attached to a Milnor triangle.
-* `TauCeti.milnorObjToLim`, `TauCeti.milnorLimOneToObj`: the two maps of the Milnor exact
-  sequence.
+* `TauCeti.milnorObjToLim`, `TauCeti.milnorLimOneToObj`: the two maps of the Milnor sequence.
 
 ## Main results
 
@@ -145,8 +124,7 @@ def coconeOfSequenceDifference {Y : T} (ψ : (∐ X.obj) ⟶ Y)
 @[simp]
 lemma coconeOfSequenceDifference_ι_app {Y : T} (ψ : (∐ X.obj) ⟶ Y)
     (w : X.sequenceDifference ≫ ψ = 0) (n : ℕ) :
-    (coconeOfSequenceDifference ψ w).ι.app n = Sigma.ι X.obj n ≫ ψ :=
-  (rfl)
+    (coconeOfSequenceDifference ψ w).ι.app n = Sigma.ι X.obj n ≫ ψ := (rfl)
 
 /-- If `X.sequenceDifference ≫ ψ = 0`, then the components `Sigma.ι X.obj n ≫ ψ` are
 compatible with every composite transition `Xₙ ⟶ Xₘ` (`n ≤ m`). -/
@@ -187,17 +165,13 @@ canonical `ℤ`-module structure. -/
 private def addCommGrpToIntMod : AddCommGrpCat.{w} ⥤ ModuleCat.{w} ℤ where
   obj A := ModuleCat.of ℤ A
   map f := ModuleCat.ofHom f.hom.toIntLinearMap
-  map_id _ := rfl
-  map_comp _ _ := rfl
 
-private instance : addCommGrpToIntMod.{w}.IsEquivalence := by
-  have e : addCommGrpToIntMod.{w} ⋙ forget₂ (ModuleCat.{w} ℤ) AddCommGrpCat.{w} ≅
-      𝟭 AddCommGrpCat.{w} :=
+private instance : addCommGrpToIntMod.{w}.IsEquivalence :=
+  have e : 𝟭 AddCommGrpCat.{w} ≅
+      addCommGrpToIntMod.{w} ⋙ forget₂ (ModuleCat.{w} ℤ) AddCommGrpCat.{w} :=
     NatIso.ofComponents (fun _ ↦ Iso.refl _) fun _ ↦ rfl
-  have : (addCommGrpToIntMod.{w} ⋙
-      forget₂ (ModuleCat.{w} ℤ) AddCommGrpCat.{w}).IsEquivalence :=
-    (Functor.isEquivalence_iff_of_iso e).2 inferInstance
-  exact Functor.isEquivalence_of_comp_right addCommGrpToIntMod.{w}
+  have := (Functor.isEquivalence_iff_of_iso e).1 inferInstance
+  Functor.isEquivalence_of_comp_right addCommGrpToIntMod.{w}
     (forget₂ (ModuleCat.{w} ℤ) AddCommGrpCat.{w})
 
 /-- A contravariant `ModuleCat R`-valued functor preserving `J`-indexed products identifies its
@@ -220,13 +194,11 @@ def cofanOpToPiLinearEquiv {R : Type uR} [Ring R] {J : Type w} {f : J → T} {c 
 theorem cofanOpToPiLinearEquiv_apply {R : Type uR} [Ring R] {J : Type w} {f : J → T} {c : Cofan f}
     (hc : IsColimit c) (F : Tᵒᵖ ⥤ ModuleCat.{max w v} R)
     [PreservesLimitsOfShape (Discrete J) F] (x : F.obj (op c.pt)) (j : J) :
-    cofanOpToPiLinearEquiv hc F x j = F.map (c.inj j).op x := by
-  let hFan : IsLimit (Fan.mk (F.obj (op c.pt)) fun j ↦ F.map (c.inj j).op) :=
-    (isLimitMapConeFanMkEquiv F (fun j ↦ op (f j)) (fun j ↦ (c.inj j).op)).1
-      (isLimitOfPreserves F (Cofan.IsColimit.op hc))
-  have hproj := hFan.conePointUniqueUpToIso_hom_comp
-    (ModuleCat.productConeIsLimit fun j ↦ F.obj (op (f j))) ⟨j⟩
-  exact congrArg (fun φ : F.obj (op c.pt) ⟶ F.obj (op (f j)) ↦ φ x) hproj
+    cofanOpToPiLinearEquiv hc F x j = F.map (c.inj j).op x :=
+  congrArg (fun φ : F.obj (op c.pt) ⟶ F.obj (op (f j)) ↦ φ x) <|
+    ((isLimitMapConeFanMkEquiv F (fun j ↦ op (f j)) (fun j ↦ (c.inj j).op)).1
+      (isLimitOfPreserves F (Cofan.IsColimit.op hc))).conePointUniqueUpToIso_hom_comp
+        (ModuleCat.productConeIsLimit fun j ↦ F.obj (op (f j))) ⟨j⟩
 
 @[simp]
 theorem map_inj_cofanOpToPiLinearEquiv_symm {R : Type uR} [Ring R] {J : Type w} {f : J → T}
@@ -241,8 +213,7 @@ value on any colimit cofan `c` over `f : J → T` with the concrete product
 def cofanOpToPiAddEquiv {J : Type w} {f : J → T} {c : Cofan f} (hc : IsColimit c)
     (E : Tᵒᵖ ⥤ AddCommGrpCat.{max w v}) [PreservesLimitsOfShape (Discrete J) E] :
     E.obj (op c.pt) ≃+ ∀ j, E.obj (op (f j)) :=
-  have : PreservesLimitsOfShape (Discrete J) (E ⋙ addCommGrpToIntMod) :=
-    comp_preservesLimitsOfShape E addCommGrpToIntMod
+  have := comp_preservesLimitsOfShape (J := Discrete J) E addCommGrpToIntMod
   (cofanOpToPiLinearEquiv hc (E ⋙ addCommGrpToIntMod)).toAddEquiv
 
 @[simp]
@@ -250,8 +221,7 @@ theorem cofanOpToPiAddEquiv_apply {J : Type w} {f : J → T} {c : Cofan f} (hc :
     (E : Tᵒᵖ ⥤ AddCommGrpCat.{max w v}) [PreservesLimitsOfShape (Discrete J) E]
     (x : E.obj (op c.pt)) (j : J) :
     cofanOpToPiAddEquiv hc E x j = E.map (c.inj j).op x :=
-  have : PreservesLimitsOfShape (Discrete J) (E ⋙ addCommGrpToIntMod) :=
-    comp_preservesLimitsOfShape E addCommGrpToIntMod
+  have := comp_preservesLimitsOfShape (J := Discrete J) E addCommGrpToIntMod
   cofanOpToPiLinearEquiv_apply hc (E ⋙ addCommGrpToIntMod) x j
 
 @[simp]
@@ -268,41 +238,25 @@ section CompactMapping
 variable {T : Type u} [Category.{v} T] [Preadditive T]
 
 private def coyonedaToHom (A : T) (X : ℕ ⥤ T) (k : ℕ) :
-    ↑((X ⋙ preadditiveCoyonedaObj A).obj k) →+ (A ⟶ X.obj k) where
+    ↑((X ⋙ preadditiveCoyonedaObj A).obj k) ≃+ (A ⟶ X.obj k) where
   toFun := id
-  map_zero' := rfl
-  map_add' _ _ := rfl
-
-private def homToCoyoneda (A : T) (X : ℕ ⥤ T) (k : ℕ) :
-    (A ⟶ X.obj k) →+ ↑((X ⋙ preadditiveCoyonedaObj A).obj k) where
-  toFun := id
-  map_zero' := rfl
+  invFun := id
+  left_inv _ := rfl
+  right_inv _ := rfl
   map_add' _ _ := rfl
 
 /-- Additive equivalence identifying `⨁ n, ↑((X ⋙ preadditiveCoyonedaObj A).obj n)` with
 `⨁ n, (A ⟶ X.obj n)`. -/
 private def seqDirectSumEquiv (A : T) (X : ℕ ⥤ T) :
-    (⨁ n, ↑((X ⋙ preadditiveCoyonedaObj A).obj n)) ≃+ (⨁ n, (A ⟶ X.obj n)) where
-  toFun := DirectSum.map (coyonedaToHom A X)
-  invFun := DirectSum.map (homToCoyoneda A X)
-  left_inv a := by
-    induction a using DirectSum.induction_on with
-    | zero => rw [map_zero, map_zero]
-    | of n g => rw [DirectSum.map_of, DirectSum.map_of]; rfl
-    | add a b ha hb => rw [map_add, map_add, ha, hb]
-  right_inv a := by
-    induction a using DirectSum.induction_on with
-    | zero => rw [map_zero, map_zero]
-    | of n g => rw [DirectSum.map_of, DirectSum.map_of]; rfl
-    | add a b ha hb => rw [map_add, map_add, ha, hb]
-  map_add' := map_add _
+    (⨁ n, ↑((X ⋙ preadditiveCoyonedaObj A).obj n)) ≃+ (⨁ n, (A ⟶ X.obj n)) :=
+  DFinsupp.mapRange.addEquiv (coyonedaToHom A X)
 
 private theorem seqDirectSumEquiv_of (A : T) (X : ℕ ⥤ T) (n : ℕ)
     (g : ↑((X ⋙ preadditiveCoyonedaObj A).obj n)) :
     seqDirectSumEquiv A X
         (DirectSum.of (fun k ↦ ↑((X ⋙ preadditiveCoyonedaObj A).obj k)) n g) =
       DirectSum.of (fun k ↦ A ⟶ X.obj k) n (coyonedaToHom A X n g) :=
-  DirectSum.map_of (coyonedaToHom A X) n g
+  DFinsupp.mapRange_single (f := fun k ↦ coyonedaToHom A X k) (hf := fun _ ↦ rfl) (i := n)
 
 /-- Under `coprodComparisonAddHom` and `seqDirectSumEquiv`, postcomposition with
 `X.sequenceDifference` agrees with `ModuleCat.telescopeDiff` on `X ⋙ preadditiveCoyonedaObj A`. -/
@@ -329,28 +283,27 @@ private theorem coprodComparisonAddHom_telescopeDiff (A : T) (X : ℕ ⥤ T) [Ha
 `X.sequenceDifference : (∐ X.obj) ⟶ (∐ X.obj)` is injective on `A ⟶ ∐ X.obj`. -/
 theorem injective_comp_sequenceDifference {A : T} (hA : IsCompactForCoproducts A) (X : ℕ ⥤ T)
     [HasCoproduct X.obj] :
-    Function.Injective (fun g : A ⟶ ∐ X.obj ↦ g ≫ X.sequenceDifference) := by
-  intro g₁ g₂ hg
+    Function.Injective (fun g : A ⟶ ∐ X.obj ↦ g ≫ X.sequenceDifference) := fun g₁ g₂ hg ↦ by
   dsimp only at hg
   obtain ⟨a₁', rfl⟩ := (hA.bijective_coprodComparisonAddHom X.obj).2 g₁
   obtain ⟨a₂', rfl⟩ := (hA.bijective_coprodComparisonAddHom X.obj).2 g₂
   obtain ⟨a₁, rfl⟩ := (seqDirectSumEquiv A X).surjective a₁'
   obtain ⟨a₂, rfl⟩ := (seqDirectSumEquiv A X).surjective a₂'
   rw [← coprodComparisonAddHom_telescopeDiff, ← coprodComparisonAddHom_telescopeDiff] at hg
-  have ha := ModuleCat.telescopeDiff_injective (X ⋙ preadditiveCoyonedaObj A)
-    ((seqDirectSumEquiv A X).injective ((hA.bijective_coprodComparisonAddHom X.obj).1 hg))
-  exact congrArg (fun z ↦ coprodComparisonAddHom A X.obj (seqDirectSumEquiv A X z)) ha
+  exact congrArg (fun z ↦ coprodComparisonAddHom A X.obj (seqDirectSumEquiv A X z)) <|
+    ModuleCat.telescopeDiff_injective (X ⋙ preadditiveCoyonedaObj A)
+      ((seqDirectSumEquiv A X).injective ((hA.bijective_coprodComparisonAddHom X.obj).1 hg))
 
 /-- Evaluate a morphism `A ⟶ ∐ X.obj` out of a compact object `A` against the legs of a cocone
 over `X ⋙ preadditiveCoyoneda.obj (op A)`. -/
 private def evalCoconeOfCompact {X : ℕ ⥤ T} [HasCoproduct X.obj] {A : T}
     (hA : IsCompactForCoproducts A) (s : Cocone (X ⋙ preadditiveCoyoneda.obj (op A))) :
     (A ⟶ ∐ X.obj) →+ s.pt :=
-  let leg (k : ℕ) : (A ⟶ X.obj k) →+ s.pt :=
-    { toFun := fun f ↦ (s.ι.app k).hom f
-      map_zero' := map_zero (s.ι.app k).hom
-      map_add' := map_add (s.ι.app k).hom }
-  (DirectSum.toAddMonoid leg).comp (hA.homCoprodEquiv X.obj).symm.toAddMonoidHom
+  (DirectSum.toAddMonoid fun k ↦
+    ({ toFun := fun f ↦ (s.ι.app k).hom f
+       map_zero' := map_zero (s.ι.app k).hom
+       map_add' := map_add (s.ι.app k).hom } : (A ⟶ X.obj k) →+ s.pt)).comp
+    (hA.homCoprodEquiv X.obj).symm.toAddMonoidHom
 
 private theorem evalCoconeOfCompact_comp_ι {X : ℕ ⥤ T} [HasCoproduct X.obj] {A : T}
     (hA : IsCompactForCoproducts A) (s : Cocone (X ⋙ preadditiveCoyoneda.obj (op A)))
@@ -365,21 +318,16 @@ private theorem evalCoconeOfCompact_comp_sequenceDifference {X : ℕ ⥤ T} [Has
     {A : T} (hA : IsCompactForCoproducts A) (s : Cocone (X ⋙ preadditiveCoyoneda.obj (op A)))
     (v : A ⟶ ∐ X.obj) :
     evalCoconeOfCompact hA s (v ≫ X.sequenceDifference) = 0 := by
-  obtain ⟨a', rfl⟩ := (hA.bijective_coprodComparisonAddHom X.obj).2 v
-  obtain ⟨a, rfl⟩ := (seqDirectSumEquiv A X).surjective a'
-  rw [← coprodComparisonAddHom_telescopeDiff, ← hA.homCoprodEquiv_apply X.obj]
-  dsimp only [evalCoconeOfCompact]
-  rw [AddMonoidHom.comp_apply, AddEquiv.coe_toAddMonoidHom, AddEquiv.symm_apply_apply]
+  obtain ⟨a, rfl⟩ := (hA.bijective_coprodComparisonAddHom X.obj).2 v
   induction a using DirectSum.induction_on with
   | zero => simp
   | of n h =>
-    rw [← DirectSum.lof_eq_of (End A)ᵐᵒᵖ, ModuleCat.telescopeDiff_lof, map_sub, map_sub,
-      DirectSum.lof_eq_of, DirectSum.lof_eq_of, seqDirectSumEquiv_of, seqDirectSumEquiv_of,
-      DirectSum.toAddMonoid_of, DirectSum.toAddMonoid_of]
+    rw [coprodComparisonAddHom_of, Category.assoc, X.ι_sequenceDifference, Preadditive.comp_sub,
+      ← Category.assoc, map_sub, evalCoconeOfCompact_comp_ι, evalCoconeOfCompact_comp_ι]
     have hw := congrArg (fun φ : (preadditiveCoyoneda.obj (op A)).obj (X.obj n) ⟶ s.pt ↦ φ h)
       (s.w (homOfLE (n.le_add_right 1)))
     exact sub_eq_zero.2 hw.symm
-  | add a b ha hb => simp only [map_add, ha, hb, add_zero]
+  | add a b ha hb => simp [Preadditive.add_comp, ha, hb]
 
 section Shift
 
@@ -390,31 +338,17 @@ variable [HasShift T ℤ] [∀ n : ℤ, (shiftFunctor T n).Additive]
 theorem injective_comp_shift_sequenceDifference {A : T} (hA : IsCompactForCoproducts A)
     (X : ℕ ⥤ T) [HasCoproduct X.obj] :
     Function.Injective (fun g : A ⟶ (∐ X.obj)⟦(1 : ℤ)⟧ ↦
-      g ≫ (X.sequenceDifference)⟦(1 : ℤ)⟧') := by
-  intro g₁ g₂ hg
+      g ≫ (X.sequenceDifference)⟦(1 : ℤ)⟧') := fun g₁ g₂ hg ↦ by
   dsimp only at hg
   let ε := (shiftFunctorCompIsoId T (1 : ℤ) (-1 : ℤ) (add_neg_cancel 1)).hom
-  let d := X.sequenceDifference
-  have hnat :
-      (d⟦(1 : ℤ)⟧')⟦(-1 : ℤ)⟧' ≫ ε.app (∐ X.obj) = ε.app (∐ X.obj) ≫ d :=
-    ε.naturality d
-  have h1 : (g₁⟦(-1 : ℤ)⟧' ≫ ε.app (∐ X.obj)) ≫ d =
-      (g₂⟦(-1 : ℤ)⟧' ≫ ε.app (∐ X.obj)) ≫ d := by
-    calc
-      (g₁⟦(-1 : ℤ)⟧' ≫ ε.app (∐ X.obj)) ≫ d
-          = g₁⟦(-1 : ℤ)⟧' ≫
-              (d⟦(1 : ℤ)⟧')⟦(-1 : ℤ)⟧' ≫ ε.app (∐ X.obj) := by
-            rw [Category.assoc, hnat]
-      _ = (g₁ ≫ d⟦(1 : ℤ)⟧')⟦(-1 : ℤ)⟧' ≫ ε.app (∐ X.obj) := by
-            rw [← Category.assoc, ← Functor.map_comp]
-      _ = (g₂ ≫ d⟦(1 : ℤ)⟧')⟦(-1 : ℤ)⟧' ≫ ε.app (∐ X.obj) := by rw [hg]
-      _ = g₂⟦(-1 : ℤ)⟧' ≫
-            (d⟦(1 : ℤ)⟧')⟦(-1 : ℤ)⟧' ≫ ε.app (∐ X.obj) := by
-            rw [Functor.map_comp, Category.assoc]
-      _ = (g₂⟦(-1 : ℤ)⟧' ≫ ε.app (∐ X.obj)) ≫ d := by
-            rw [hnat, ← Category.assoc]
-  have h2 := injective_comp_sequenceDifference (hA.shift (-1 : ℤ)) X h1
-  exact (shiftFunctor T (-1 : ℤ)).map_injective ((cancel_mono (ε.app (∐ X.obj))).1 h2)
+  have hnat : ((X.sequenceDifference)⟦(1 : ℤ)⟧')⟦(-1 : ℤ)⟧' ≫ ε.app (∐ X.obj) =
+      ε.app (∐ X.obj) ≫ X.sequenceDifference := ε.naturality _
+  have h1 : (g₁⟦(-1 : ℤ)⟧' ≫ ε.app (∐ X.obj)) ≫ X.sequenceDifference =
+      (g₂⟦(-1 : ℤ)⟧' ≫ ε.app (∐ X.obj)) ≫ X.sequenceDifference := by
+    rw [Category.assoc, ← hnat, ← Functor.map_comp_assoc, hg, Functor.map_comp_assoc, hnat,
+      ← Category.assoc]
+  exact (shiftFunctor T (-1 : ℤ)).map_injective
+    ((cancel_mono (ε.app (∐ X.obj))).1 (injective_comp_sequenceDifference (hA.shift (-1 : ℤ)) X h1))
 
 end Shift
 
@@ -434,21 +368,13 @@ theorem surjective_comp_of_milnorTriangle {X : ℕ ⥤ T} [HasCoproduct X.obj] {
     {ψ : (∐ X.obj) ⟶ M} {δ : M ⟶ (∐ X.obj)⟦(1 : ℤ)⟧}
     (ht : Triangle.mk X.sequenceDifference ψ δ ∈ distTriang T)
     {A : T} (hA : IsCompactForCoproducts A) :
-    Function.Surjective (fun g : A ⟶ ∐ X.obj ↦ g ≫ ψ) := by
-  intro f
-  have hrot := rot_of_distTriang _ ht
-  have hrot2 := rot_of_distTriang _ hrot
-  have hzero : (f ≫ δ) ≫ (X.sequenceDifference)⟦(1 : ℤ)⟧' = 0 := by
-    have hcomp : δ ≫ (-(X.sequenceDifference)⟦(1 : ℤ)⟧') = 0 :=
-      comp_distTriang_mor_zero₁₂ _ hrot2
-    have hf : f ≫ δ ≫ (-(X.sequenceDifference)⟦(1 : ℤ)⟧') = 0 := by
-      rw [hcomp, comp_zero]
-    simpa [Preadditive.comp_neg, neg_eq_zero, Category.assoc] using hf
-  have hfδ : f ≫ δ = 0 :=
-    injective_comp_shift_sequenceDifference hA X (by simpa using hzero)
+    Function.Surjective (fun g : A ⟶ ∐ X.obj ↦ g ≫ ψ) := fun f ↦ by
+  have hfδ : f ≫ δ = 0 := injective_comp_shift_sequenceDifference hA X <| by
+    dsimp only
+    rw [Category.assoc, show δ ≫ (X.sequenceDifference)⟦(1 : ℤ)⟧' = 0 from
+      comp_distTriang_mor_zero₃₁ _ ht, comp_zero, zero_comp]
   have hex := (ShortComplex.ab_exact_iff _).1
-    ((preadditiveCoyoneda.obj (op A)).map_distinguished_exact _ hrot)
-  dsimp only [ShortComplex.map, shortComplexOfDistTriangle, Triangle.rotate] at hex
+    ((preadditiveCoyoneda.obj (op A)).map_distinguished_exact _ (rot_of_distTriang _ ht))
   exact hex f hfδ
 
 /-- **Factoring out of a compact object into a Milnor homotopy colimit:** every morphism from a
@@ -462,23 +388,13 @@ theorem exists_factor_of_milnorTriangle {X : ℕ ⥤ T} [HasCoproduct X.obj] {M 
   obtain ⟨u, rfl⟩ := surjective_comp_of_milnorTriangle ht hA g
   obtain ⟨s, h, rfl⟩ := hA.exists_finset_sum_comp_ι X.obj u
   have hψ : X.sequenceDifference ≫ ψ = 0 := comp_distTriang_mor_zero₁₂ _ ht
-  let N : ℕ := s.sup id
-  refine ⟨N, ∑ n ∈ s.attach,
-      h n.1 ≫ X.map (homOfLE (Finset.le_sup (f := id) n.2 : n.1 ≤ N)), ?_⟩
+  refine ⟨s.sup id, ∑ n ∈ s.attach,
+      h n.1 ≫ X.map (homOfLE (Finset.le_sup (f := id) n.2)), ?_⟩
   dsimp only
-  rw [Preadditive.sum_comp, Preadditive.sum_comp]
-  symm
-  calc
-    ∑ n ∈ s.attach,
-        (h n.1 ≫ X.map (homOfLE (Finset.le_sup (f := id) n.2 : n.1 ≤ N))) ≫
-          Sigma.ι X.obj N ≫ ψ
-        = ∑ n ∈ s.attach, h n.1 ≫ Sigma.ι X.obj n.1 ≫ ψ := by
-          refine Finset.sum_congr rfl fun n _ ↦ ?_
-          rw [Category.assoc, X.map_homOfLE_comp_ι_of_sequenceDifference_comp_eq_zero hψ]
-    _ = ∑ n ∈ s, h n ≫ Sigma.ι X.obj n ≫ ψ :=
-          Finset.sum_attach s (fun n ↦ h n ≫ Sigma.ι X.obj n ≫ ψ)
-    _ = ∑ n ∈ s, (h n ≫ Sigma.ι X.obj n) ≫ ψ := by
-          simp only [Category.assoc]
+  rw [Preadditive.sum_comp, Preadditive.sum_comp, ← Finset.sum_attach s]
+  refine Finset.sum_congr rfl fun n _ ↦ ?_
+  rw [Category.assoc, Category.assoc,
+    X.map_homOfLE_comp_ι_of_sequenceDifference_comp_eq_zero hψ]
 
 /-- **Kernel criterion for morphisms out of a compact object into a Milnor homotopy colimit:**
 a morphism `h : A ⟶ X.obj n` from a compact object `A` vanishes in the Milnor homotopy colimit `M`
@@ -496,22 +412,20 @@ theorem comp_milnorTriangle_eq_zero_iff {X : ℕ ⥤ T} [HasCoproduct X.obj] {M 
       ← Category.assoc, hm, zero_comp]⟩
   have hex := (ShortComplex.ab_exact_iff _).1
     ((preadditiveCoyoneda.obj (op A)).map_distinguished_exact _ ht)
-  dsimp only [ShortComplex.map, shortComplexOfDistTriangle] at hex
-  obtain ⟨v, hv⟩ :=
+  obtain ⟨(v : A ⟶ ∐ X.obj), hv⟩ :=
     hex (h ≫ Sigma.ι X.obj n) ((Category.assoc h (Sigma.ι X.obj n) ψ).trans hzero)
-  let v' : A ⟶ ∐ X.obj := v
   let β : ℕ → Type v := fun k ↦ ↑((X ⋙ preadditiveCoyonedaObj A).obj k)
-  let a : ⨁ k, β k := (seqDirectSumEquiv A X).symm ((hA.homCoprodEquiv X.obj).symm v')
+  let a : ⨁ k, β k := (seqDirectSumEquiv A X).symm ((hA.homCoprodEquiv X.obj).symm v)
   let h' : β n := h
   have hdiff : ModuleCat.telescopeDiff (X ⋙ preadditiveCoyonedaObj A) a =
       DirectSum.of β n h' := by
     apply (seqDirectSumEquiv A X).injective
     apply (hA.bijective_coprodComparisonAddHom X.obj).1
-    rw [coprodComparisonAddHom_telescopeDiff, seqDirectSumEquiv_of, coprodComparisonAddHom_of]
-    have ha : coprodComparisonAddHom A X.obj (seqDirectSumEquiv A X a) = v' := by
-      dsimp only [a]
-      rw [AddEquiv.apply_symm_apply, ← hA.homCoprodEquiv_apply, AddEquiv.apply_symm_apply]
-    exact (congrArg (· ≫ X.sequenceDifference) ha).trans hv
+    rw [coprodComparisonAddHom_telescopeDiff, seqDirectSumEquiv_of, coprodComparisonAddHom_of,
+      show coprodComparisonAddHom A X.obj (seqDirectSumEquiv A X a) = v by
+        dsimp only [a]
+        rw [AddEquiv.apply_symm_apply, ← hA.homCoprodEquiv_apply, AddEquiv.apply_symm_apply]]
+    exact hv
   have hlt (k : ℕ) (hk : k < n) : a k = 0 := by
     induction k with
     | zero => simpa [DirectSum.of_eq_of_ne _ _ _ hk.ne] using congr($hdiff 0)
@@ -525,19 +439,16 @@ theorem comp_milnorTriangle_eq_zero_iff {X : ℕ ⥤ T} [HasCoproduct X.obj] {M 
       a m = (X ⋙ preadditiveCoyonedaObj A).map (homOfLE hnm) h' := by
     induction m, hnm using Nat.le_induction with
     | base =>
-      rw [Subsingleton.elim (homOfLE _) (𝟙 n), CategoryTheory.Functor.map_id]
-      exact han
+      rw [Subsingleton.elim (homOfLE _) (𝟙 n), CategoryTheory.Functor.map_id]; exact han
     | succ m hnm ih =>
       have h1 := congr($hdiff (m + 1))
       simp only [ModuleCat.telescopeDiff_apply_succ,
         DirectSum.of_eq_of_ne (β := β) n (m + 1) h' (by omega), sub_eq_zero, ih] at h1
-      rw [← CategoryTheory.comp_apply, ← Functor.map_comp] at h1
-      exact h1
+      rwa [← CategoryTheory.comp_apply, ← Functor.map_comp] at h1
   let m : ℕ := max n (a.support.sup id + 1)
-  refine ⟨m, le_max_left _ _, (hge m (le_max_left _ _)).symm.trans <|
-    DFinsupp.notMem_support_iff.1 fun hm ↦ ?_⟩
-  have hle : m ≤ a.support.sup id := Finset.le_sup (f := id) hm
-  omega
+  exact ⟨m, le_max_left _ _, (hge m (le_max_left _ _)).symm.trans <|
+    DFinsupp.notMem_support_iff.1 fun hm ↦ by
+      have : m ≤ a.support.sup id := Finset.le_sup (f := id) hm; omega⟩
 
 /-- For a compact object `A`, `Hom(A, -)` sends any Milnor homotopy colimit triangle to a colimit
 cocone in `AddCommGrpCat`. -/
@@ -551,40 +462,31 @@ def isColimitMapCoconeOfMilnorTriangle {X : ℕ ⥤ T} [HasCoproduct X.obj] {M :
   let lift (g : A ⟶ M) : A ⟶ ∐ X.obj := (hsurj g).choose
   have hlift (g : A ⟶ M) : lift g ≫ ψ = g := (hsurj g).choose_spec
   have hex := (ShortComplex.ab_exact_iff _).1 (F.map_distinguished_exact _ ht)
-  dsimp only [ShortComplex.map, shortComplexOfDistTriangle] at hex
-  have heval_wd (s : Cocone (X ⋙ F)) {u₁ u₂ : A ⟶ ∐ X.obj}
-      (h : u₁ ≫ ψ = u₂ ≫ ψ) :
+  have heval_wd (s : Cocone (X ⋙ F)) {u₁ u₂ : A ⟶ ∐ X.obj} (h : u₁ ≫ ψ = u₂ ≫ ψ) :
       evalCoconeOfCompact hA s u₁ = evalCoconeOfCompact hA s u₂ := by
-    have hsub : F.map ψ (u₁ - u₂) = 0 :=
-      (Preadditive.sub_comp u₁ u₂ ψ).trans (sub_eq_zero.2 h)
-    obtain ⟨v, hv⟩ := hex (u₁ - u₂) hsub
-    have h0 : evalCoconeOfCompact hA s (u₁ - u₂) = 0 :=
-      (congrArg (evalCoconeOfCompact hA s) hv.symm).trans
-        (evalCoconeOfCompact_comp_sequenceDifference hA s v)
-    exact sub_eq_zero.1 (by simpa [map_sub] using h0)
-  refine
-    { desc := fun s ↦ AddCommGrpCat.ofHom
-        { toFun := fun (g : A ⟶ M) ↦ evalCoconeOfCompact hA s (lift g)
-          map_zero' :=
-            (heval_wd s (u₂ := 0) ((hlift 0).trans zero_comp.symm)).trans (map_zero _)
-          map_add' := fun (g₁ g₂ : A ⟶ M) ↦
-            (heval_wd s (u₂ := lift g₁ + lift g₂)
-              ((hlift (g₁ + g₂)).trans
-                ((Preadditive.add_comp _ _ _ (lift g₁) (lift g₂) ψ).trans
-                  (congrArg₂ (· + ·) (hlift g₁) (hlift g₂))).symm)).trans (map_add _ _ _) }
-      fac := fun s n ↦ by
-        ext (h : A ⟶ X.obj n)
-        exact (heval_wd s (u₂ := h ≫ Sigma.ι X.obj n)
-          ((hlift _).trans (Category.assoc h (Sigma.ι X.obj n) ψ).symm)).trans
-            (evalCoconeOfCompact_comp_ι hA s n h)
+    obtain ⟨(v : A ⟶ ∐ X.obj), hv⟩ :=
+      hex (u₁ - u₂) ((Preadditive.sub_comp u₁ u₂ ψ).trans (sub_eq_zero.2 h))
+    have hv' : v ≫ X.sequenceDifference = u₁ - u₂ := hv
+    exact sub_eq_zero.1 <| by
+      rw [← map_sub, ← hv', evalCoconeOfCompact_comp_sequenceDifference]
+  have hfac (s : Cocone (X ⋙ F)) (n : ℕ) (h : A ⟶ X.obj n) :
+      evalCoconeOfCompact hA s (lift (h ≫ Sigma.ι X.obj n ≫ ψ)) = (s.ι.app n).hom h :=
+    (heval_wd s (u₂ := h ≫ Sigma.ι X.obj n)
+      ((hlift _).trans (Category.assoc h (Sigma.ι X.obj n) ψ).symm)).trans
+        (evalCoconeOfCompact_comp_ι hA s n h)
+  let descHom (s : Cocone (X ⋙ F)) : (A ⟶ M) →+ s.pt :=
+    { toFun := fun g ↦ evalCoconeOfCompact hA s (lift g)
+      map_zero' := (heval_wd s (u₂ := 0) ((hlift 0).trans zero_comp.symm)).trans (map_zero _)
+      map_add' := fun g₁ g₂ ↦
+        (heval_wd s (u₂ := lift g₁ + lift g₂) <| by
+          rw [hlift, Preadditive.add_comp, hlift, hlift]).trans (map_add _ _ _) }
+  exact
+    { desc := fun s ↦ AddCommGrpCat.ofHom (descHom s)
+      fac := fun s n ↦ by ext (h : A ⟶ X.obj n); exact hfac s n h
       uniq := fun s m hm ↦ by
         ext (g : A ⟶ M)
         obtain ⟨N, h, rfl⟩ := exists_factor_of_milnorTriangle ht hA g
-        have hmN := congrArg (fun φ : F.obj (X.obj N) ⟶ s.pt ↦ φ h) (hm N)
-        have hfac := (heval_wd s (u₂ := h ≫ Sigma.ι X.obj N)
-          ((hlift _).trans (Category.assoc h (Sigma.ι X.obj N) ψ).symm)).trans
-            (evalCoconeOfCompact_comp_ι hA s N h)
-        exact hmN.trans hfac.symm }
+        exact (congrArg (fun φ : F.obj (X.obj N) ⟶ s.pt ↦ φ h) (hm N)).trans (hfac s N h).symm }
 
 end CompactMapping
 
@@ -641,13 +543,8 @@ theorem milnorObjToLim_naturality {Y : ℕ ⥤ T} [HasCoproduct Y.obj] {M' : T}
   ext n u
   simp only [LinearMap.comp_apply, ModuleTower.limπ_apply, coe_milnorObjToLim_apply,
     ModuleTower.coe_limMap_apply, ModuleTower.productMap_apply, Functor.whiskerRight_app,
-    NatTrans.op_app]
-  rw [← CategoryTheory.comp_apply, ← CategoryTheory.comp_apply, ← F.map_comp, ← F.map_comp,
-    ← op_comp, ← op_comp]
-  have h23 : ψ ≫ φ.hom₃ = φ.hom₂ ≫ ψ' := φ.comm₂
-  have hcomm : Sigma.ι X.obj n ≫ ψ ≫ φ.hom₃ = α.app n ≫ Sigma.ι Y.obj n ≫ ψ' := by
-    rw [h23, hφ₂, Sigma.ι_map_assoc]
-  rw [Category.assoc, hcomm, ← Category.assoc]
+    NatTrans.op_app, ← CategoryTheory.comp_apply, ← F.map_comp, ← op_comp, Category.assoc]
+  rw [show ψ ≫ φ.hom₃ = φ.hom₂ ≫ ψ' from φ.comm₂, hφ₂, Sigma.ι_map_assoc]
 
 variable [F.IsHomological] [PreservesLimitsOfShape (Discrete ℕ) F]
 
@@ -657,12 +554,10 @@ private theorem cofanOpToPiLinearEquiv_map_sequenceDifference (X : ℕ ⥤ T) [H
       ModuleTower.shift (X.op ⋙ F)
         (cofanOpToPiLinearEquiv (coproductIsCoproduct X.obj) F x) := by
   funext n
-  rw [cofanOpToPiLinearEquiv_apply, ModuleTower.shift_apply, cofanOpToPiLinearEquiv_apply,
-    cofanOpToPiLinearEquiv_apply, ModuleTower.transition_def, Functor.comp_map, Functor.op_map,
-    Quiver.Hom.unop_op]
-  dsimp only [Cofan.inj, Cofan.mk_ι_app]
-  rw [← CategoryTheory.comp_apply, ← CategoryTheory.comp_apply, ← F.map_comp, ← op_comp,
-    X.ι_sequenceDifference, op_sub, F.map_sub, ← F.map_comp, ← op_comp]
+  simp only [cofanOpToPiLinearEquiv_apply, ModuleTower.shift_apply, ModuleTower.transition_def,
+    Functor.comp_map, Functor.op_map, Quiver.Hom.unop_op, Cofan.inj, Cofan.mk_ι_app,
+    ← CategoryTheory.comp_apply, ← F.map_comp, ← op_comp, X.ι_sequenceDifference, op_sub,
+    F.map_sub]
   rfl
 
 private theorem cofanOpToPiLinearEquiv_map_shift_sequenceDifference (X : ℕ ⥤ T)
@@ -672,32 +567,26 @@ private theorem cofanOpToPiLinearEquiv_map_shift_sequenceDifference (X : ℕ ⥤
       ModuleTower.shift ((X ⋙ shiftFunctor T (1 : ℤ)).op ⋙ F)
         (cofanOpToPiLinearEquiv (isColimit_shiftedCoproductCofan X) F y) := by
   funext n
-  rw [cofanOpToPiLinearEquiv_apply, ModuleTower.shift_apply, cofanOpToPiLinearEquiv_apply,
-    cofanOpToPiLinearEquiv_apply, ModuleTower.transition_def, Functor.comp_map, Functor.op_map,
-    Quiver.Hom.unop_op, Functor.comp_map]
-  dsimp only [shiftedCoproductCofan, Cofan.inj, Cofan.mk_ι_app]
-  rw [← CategoryTheory.comp_apply, ← CategoryTheory.comp_apply, ← F.map_comp, ← op_comp,
-    ← (shiftFunctor T (1 : ℤ)).map_comp, X.ι_sequenceDifference,
-    (shiftFunctor T (1 : ℤ)).map_sub, (shiftFunctor T (1 : ℤ)).map_comp, op_sub, F.map_sub,
-    ← F.map_comp, ← op_comp]
+  simp only [cofanOpToPiLinearEquiv_apply, ModuleTower.shift_apply, ModuleTower.transition_def,
+    Functor.comp_map, Functor.op_map, Quiver.Hom.unop_op, shiftedCoproductCofan, Cofan.inj,
+    Cofan.mk_ι_app, ← CategoryTheory.comp_apply, ← F.map_comp, ← op_comp]
+  rw [← (shiftFunctor T (1 : ℤ)).map_comp, X.ι_sequenceDifference,
+    (shiftFunctor T (1 : ℤ)).map_sub, (shiftFunctor T (1 : ℤ)).map_comp, op_sub, F.map_sub]
   rfl
 
 /-- The restriction map `F(M) →ₗ[R] lim F(Xₙ)` of the Milnor sequence is surjective. -/
 theorem milnorObjToLim_surjective (ht : Triangle.mk X.sequenceDifference ψ δ ∈ distTriang T) :
-    Function.Surjective (milnorObjToLim F ht) := by
-  intro ⟨x, hx⟩
+    Function.Surjective (milnorObjToLim F ht) := fun ⟨x, hx⟩ ↦ by
   let e := cofanOpToPiLinearEquiv (coproductIsCoproduct X.obj) F
-  have hzero : F.map X.sequenceDifference.op (e.symm x) = 0 := by
-    apply e.injective
+  have hzero : F.map X.sequenceDifference.op (e.symm x) = 0 := e.injective <| by
     rw [cofanOpToPiLinearEquiv_map_sequenceDifference, LinearEquiv.apply_symm_apply, map_zero]
-    rw [ModuleTower.lim_eq_ker] at hx
-    exact LinearMap.mem_ker.1 hx
+    exact LinearMap.mem_ker.1 (ModuleTower.lim_eq_ker (X.op ⋙ F) ▸ hx)
   have hex := (ShortComplex.moduleCat_exact_iff _).1 (F.map_distinguished_op_exact _ ht)
   dsimp only [ShortComplex.op, ShortComplex.map, shortComplexOfDistTriangle] at hex
   obtain ⟨u, hu⟩ := hex (e.symm x) hzero
-  have hu' : F.map ψ.op u = e.symm x := hu
   refine ⟨u, Subtype.ext <| funext fun n ↦ ?_⟩
-  rw [coe_milnorObjToLim_apply, op_comp, F.map_comp, CategoryTheory.comp_apply, hu']
+  rw [coe_milnorObjToLim_apply, op_comp, F.map_comp, CategoryTheory.comp_apply,
+    show F.map ψ.op u = e.symm x from hu]
   exact map_inj_cofanOpToPiLinearEquiv_symm (coproductIsCoproduct X.obj) F x n
 
 /-- The connecting map `lim¹ F((Xₙ)⟦1⟧) →ₗ[R] F(M)` of the Milnor exact sequence, induced
@@ -708,16 +597,14 @@ def milnorLimOneToObj (ht : Triangle.mk X.sequenceDifference ψ δ ∈ distTrian
   Submodule.liftQ (LinearMap.range (ModuleTower.shift ((X ⋙ shiftFunctor T (1 : ℤ)).op ⋙ F)))
     ((F.map δ.op).hom ∘ₗ e₁.symm.toLinearMap) <| by
     rintro _ ⟨y, rfl⟩
-    rw [LinearMap.mem_ker, LinearMap.comp_apply, LinearEquiv.coe_toLinearMap]
     have hshift : e₁.symm (ModuleTower.shift ((X ⋙ shiftFunctor T (1 : ℤ)).op ⋙ F) y) =
-        F.map ((X.sequenceDifference)⟦(1 : ℤ)⟧').op (e₁.symm y) := by
-      apply e₁.injective
+        F.map ((X.sequenceDifference)⟦(1 : ℤ)⟧').op (e₁.symm y) := e₁.injective <| by
       rw [LinearEquiv.apply_symm_apply, cofanOpToPiLinearEquiv_map_shift_sequenceDifference,
         LinearEquiv.apply_symm_apply]
-    have hδd : δ ≫ (X.sequenceDifference)⟦(1 : ℤ)⟧' = 0 :=
-      comp_distTriang_mor_zero₃₁ _ ht
-    rw [hshift, ← CategoryTheory.comp_apply, ← F.map_comp, ← op_comp, hδd, op_zero,
-      F.map_zero]
+    rw [LinearMap.mem_ker, LinearMap.comp_apply, LinearEquiv.coe_toLinearMap, hshift,
+      ← CategoryTheory.comp_apply, ← F.map_comp, ← op_comp,
+      show δ ≫ (X.sequenceDifference)⟦(1 : ℤ)⟧' = 0 from comp_distTriang_mor_zero₃₁ _ ht,
+      op_zero, F.map_zero]
     rfl
 
 @[simp]
@@ -727,12 +614,9 @@ theorem milnorLimOneToObj_mk_map (ht : Triangle.mk X.sequenceDifference ψ δ �
         (Submodule.Quotient.mk fun n ↦ F.map ((Sigma.ι X.obj n)⟦(1 : ℤ)⟧').op y) =
       F.map δ.op y := by
   let e₁ := cofanOpToPiLinearEquiv (isColimit_shiftedCoproductCofan X) F
-  have hy : (fun n ↦ F.map ((Sigma.ι X.obj n)⟦(1 : ℤ)⟧').op y) = e₁ y :=
-    funext fun n ↦ (cofanOpToPiLinearEquiv_apply (isColimit_shiftedCoproductCofan X) F y n).symm
-  rw [hy]
-  dsimp only [milnorLimOneToObj]
-  rw [Submodule.liftQ_apply, LinearMap.comp_apply, LinearEquiv.coe_toLinearMap,
-    LinearEquiv.symm_apply_apply]
+  rw [show (fun n ↦ F.map ((Sigma.ι X.obj n)⟦(1 : ℤ)⟧').op y) = e₁ y from
+    funext fun n ↦ (cofanOpToPiLinearEquiv_apply (isColimit_shiftedCoproductCofan X) F y n).symm]
+  exact congrArg (F.map δ.op) (e₁.symm_apply_apply y)
 
 /-- The connecting map `lim¹ F((Xₙ)⟦1⟧) →ₗ[R] F(M)` of the Milnor sequence is
 injective. -/
@@ -742,31 +626,28 @@ theorem milnorLimOneToObj_injective (ht : Triangle.mk X.sequenceDifference ψ δ
   refine (injective_iff_map_eq_zero _).2 fun z hz ↦ ?_
   obtain ⟨x, rfl⟩ := Submodule.Quotient.mk_surjective _ z
   rw [Submodule.Quotient.mk_eq_zero]
-  have hrot2 := rot_of_distTriang _ (rot_of_distTriang _ ht)
-  have hex2 := (ShortComplex.moduleCat_exact_iff _).1 (F.map_distinguished_op_exact _ hrot2)
+  have hex2 := (ShortComplex.moduleCat_exact_iff _).1
+    (F.map_distinguished_op_exact _ (rot_of_distTriang _ (rot_of_distTriang _ ht)))
   dsimp only [ShortComplex.op, ShortComplex.map, shortComplexOfDistTriangle,
     Triangle.rotate] at hex2
   obtain ⟨w, hw⟩ := hex2 (e₁.symm x) hz
   have hw0 : F.map (-(X.sequenceDifference)⟦(1 : ℤ)⟧').op w = e₁.symm x := hw
-  refine ⟨-e₁ w, ?_⟩
-  rw [map_neg, ← cofanOpToPiLinearEquiv_map_shift_sequenceDifference]
   have hw' : F.map ((X.sequenceDifference)⟦(1 : ℤ)⟧').op (-w) = e₁.symm x := by
     simpa [op_neg, F.map_neg] using hw0
-  rw [← map_neg e₁, ← map_neg (F.map ((X.sequenceDifference)⟦(1 : ℤ)⟧').op).hom, hw',
+  refine ⟨-e₁ w, ?_⟩
+  rw [map_neg, ← cofanOpToPiLinearEquiv_map_shift_sequenceDifference, ← map_neg e₁,
+    ← map_neg (F.map ((X.sequenceDifference)⟦(1 : ℤ)⟧').op).hom, hw',
     LinearEquiv.apply_symm_apply]
 
 /-- Exactness at the middle term of the Milnor sequence
 `0 → lim¹ F((Xₙ)⟦1⟧) → F(M) → lim F(Xₙ) → 0`. -/
 theorem exact_milnorLimOneToObj_milnorObjToLim
     (ht : Triangle.mk X.sequenceDifference ψ δ ∈ distTriang T) :
-    Function.Exact (milnorLimOneToObj F ht) (milnorObjToLim F ht) := by
+    Function.Exact (milnorLimOneToObj F ht) (milnorObjToLim F ht) := fun u ↦ by
   let e := cofanOpToPiLinearEquiv (coproductIsCoproduct X.obj) F
   let e₁ := cofanOpToPiLinearEquiv (isColimit_shiftedCoproductCofan X) F
-  intro u
-  constructor
-  · intro hu
-    have hψ : F.map ψ.op u = 0 := by
-      apply e.injective
+  refine ⟨fun hu ↦ ?_, ?_⟩
+  · have hψ : F.map ψ.op u = 0 := e.injective <| by
       rw [map_zero]
       funext n
       have hcoord := congrArg
@@ -775,25 +656,19 @@ theorem exact_milnorLimOneToObj_milnorObjToLim
       dsimp only [e]
       rw [cofanOpToPiLinearEquiv_apply]
       exact hcoord
-    have hrot := rot_of_distTriang _ ht
-    have hex := (ShortComplex.moduleCat_exact_iff _).1 (F.map_distinguished_op_exact _ hrot)
+    have hex := (ShortComplex.moduleCat_exact_iff _).1
+      (F.map_distinguished_op_exact _ (rot_of_distTriang _ ht))
     dsimp only [ShortComplex.op, ShortComplex.map, shortComplexOfDistTriangle,
       Triangle.rotate] at hex
     obtain ⟨y, hy⟩ := hex u hψ
-    refine ⟨Submodule.Quotient.mk (e₁ y), ?_⟩
-    dsimp only [milnorLimOneToObj]
-    rw [Submodule.liftQ_apply, LinearMap.comp_apply, LinearEquiv.coe_toLinearMap,
-      LinearEquiv.symm_apply_apply]
-    exact hy
+    exact ⟨Submodule.Quotient.mk (e₁ y), (congrArg (F.map δ.op) (e₁.symm_apply_apply y)).trans hy⟩
   · rintro ⟨z, rfl⟩
     obtain ⟨x, rfl⟩ := Submodule.Quotient.mk_surjective _ z
     ext n
-    rw [ModuleTower.limπ_apply, ModuleTower.limπ_apply, coe_milnorObjToLim_apply]
-    dsimp only [milnorLimOneToObj]
-    have hψδ : ψ ≫ δ = 0 := comp_distTriang_mor_zero₂₃ _ ht
-    rw [Submodule.liftQ_apply, LinearMap.comp_apply, LinearEquiv.coe_toLinearMap,
-      ← CategoryTheory.comp_apply, ← F.map_comp, ← op_comp, Category.assoc, hψδ, comp_zero,
-      op_zero, F.map_zero]
+    simp only [ModuleTower.limπ_apply, coe_milnorObjToLim_apply, milnorLimOneToObj,
+      Submodule.liftQ_apply, LinearMap.comp_apply, LinearEquiv.coe_toLinearMap,
+      ← CategoryTheory.comp_apply, ← F.map_comp, ← op_comp, Category.assoc,
+      show ψ ≫ δ = 0 from comp_distTriang_mor_zero₂₃ _ ht, comp_zero, op_zero, F.map_zero]
     rfl
 
 /-- When `lim¹ F((Xₙ)⟦1⟧)` vanishes, the Milnor restriction map `F(M) →ₗ[R] lim F(Xₙ)`
@@ -827,26 +702,18 @@ theorem milnorLimOneToObj_naturality {Y : ℕ ⥤ T} [HasCoproduct Y.obj] {M' : 
       ModuleTower.productMap
           (Functor.whiskerRight
             (NatTrans.op (Functor.whiskerRight α (shiftFunctor T (1 : ℤ)))) F) (eY y) =
-        fun n ↦ F.map ((Sigma.ι X.obj n)⟦(1 : ℤ)⟧').op
-          (F.map (φ.hom₁⟦(1 : ℤ)⟧').op y) := by
+        fun n ↦ F.map ((Sigma.ι X.obj n)⟦(1 : ℤ)⟧').op (F.map (φ.hom₁⟦(1 : ℤ)⟧').op y) := by
     funext n
-    rw [ModuleTower.productMap_apply, Functor.whiskerRight_app, NatTrans.op_app,
-      Functor.whiskerRight_app]
-    dsimp only [eY]
-    rw [cofanOpToPiLinearEquiv_apply]
-    dsimp only [shiftedCoproductCofan, Cofan.inj, Cofan.mk_ι_app]
-    rw [← CategoryTheory.comp_apply, ← CategoryTheory.comp_apply, ← F.map_comp,
-      ← F.map_comp, ← op_comp, ← op_comp, ← (shiftFunctor T (1 : ℤ)).map_comp,
+    simp only [eY, ModuleTower.productMap_apply, Functor.whiskerRight_app, NatTrans.op_app,
+      cofanOpToPiLinearEquiv_apply, shiftedCoproductCofan, Cofan.inj, Cofan.mk_ι_app,
+      ← CategoryTheory.comp_apply, ← F.map_comp, ← op_comp,
       ← (shiftFunctor T (1 : ℤ)).map_comp, hφ₁, Sigma.ι_map]
   simp only [LinearMap.comp_apply, Submodule.mkQ_apply, ModuleTower.limOneMap_mk, hprod,
     milnorLimOneToObj_mk_map]
-  have hL : milnorLimOneToObj F htY (Submodule.Quotient.mk (eY y)) = F.map δ'.op y := by
-    have heY : eY y = fun n ↦ F.map ((Sigma.ι Y.obj n)⟦(1 : ℤ)⟧').op y :=
-      funext fun n ↦ cofanOpToPiLinearEquiv_apply (isColimit_shiftedCoproductCofan Y) F y n
-    rw [heY, milnorLimOneToObj_mk_map]
-  have hcomm : δ ≫ φ.hom₁⟦(1 : ℤ)⟧' = φ.hom₃ ≫ δ' := φ.comm₃
+  have hL : milnorLimOneToObj F htY (Submodule.Quotient.mk (eY y)) = F.map δ'.op y :=
+    congrArg (F.map δ'.op) (eY.symm_apply_apply y)
   rw [hL, ← CategoryTheory.comp_apply, ← CategoryTheory.comp_apply, ← F.map_comp,
-    ← F.map_comp, ← op_comp, ← op_comp, hcomm]
+    ← F.map_comp, ← op_comp, ← op_comp, show δ ≫ φ.hom₁⟦(1 : ℤ)⟧' = φ.hom₃ ≫ δ' from φ.comm₃]
 
 end ModuleValued
 
@@ -864,8 +731,7 @@ theorem exists_lift_of_milnorTriangle {X : ℕ ⥤ T} [HasCoproduct X.obj] {M : 
     (x : ∀ n, E.obj (op (X.obj n)))
     (hx : ∀ n, E.map (X.map (homOfLE (Nat.le_add_right n 1))).op (x (n + 1)) = x n) :
     ∃ u : E.obj (op M), ∀ n, E.map (Sigma.ι X.obj n ≫ ψ).op u = x n := by
-  have : PreservesLimitsOfShape (Discrete ℕ) (E ⋙ addCommGrpToIntMod) :=
-    comp_preservesLimitsOfShape E addCommGrpToIntMod
+  have := comp_preservesLimitsOfShape (J := Discrete ℕ) E addCommGrpToIntMod
   have : (E ⋙ addCommGrpToIntMod).IsHomological :=
     { map_zero := fun _ _ ↦ ModuleCat.hom_ext <| LinearMap.ext fun _ ↦ by
         simp [addCommGrpToIntMod]; rfl
@@ -873,13 +739,10 @@ theorem exists_lift_of_milnorTriangle {X : ℕ ⥤ T} [HasCoproduct X.obj] {M : 
         (ShortComplex.ab_exact_iff _).1 (E.map_distinguished_exact s hs) }
   obtain ⟨u, hu⟩ := milnorObjToLim_surjective (E ⋙ addCommGrpToIntMod) ht
     ⟨x, (ModuleTower.mem_lim (X.op ⋙ E ⋙ addCommGrpToIntMod)).2 fun n ↦ by
-      rw [ModuleTower.transition_def]
-      exact hx n⟩
-  refine ⟨u, fun n ↦ ?_⟩
-  have hn :=
-    congrArg (fun v : ModuleTower.lim (X.op ⋙ (E ⋙ addCommGrpToIntMod)) ↦ v.1 n) hu
-  rw [coe_milnorObjToLim_apply] at hn
-  exact hn
+      rw [ModuleTower.transition_def]; exact hx n⟩
+  exact ⟨u, fun n ↦
+    (coe_milnorObjToLim_apply _ ht u n).symm.trans <|
+      congrArg (fun v : ModuleTower.lim (X.op ⋙ (E ⋙ addCommGrpToIntMod)) ↦ v.1 n) hu⟩
 
 end AddCommGrpValued
 

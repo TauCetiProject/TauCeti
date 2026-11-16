@@ -34,37 +34,30 @@ namespace AddCommGrpCat
 variable {J : Type w} (f : J → AddCommGrpCat.{max w u}) [DecidableEq J]
 
 /-- The coproduct cofan on a family of abelian groups given by their external direct sum. -/
-@[expose]
-def coproductCocone : Cofan f :=
+@[expose] def coproductCocone : Cofan f :=
   Cofan.mk (of (⨁ j, f j)) fun j ↦ ofHom (DirectSum.of (fun j ↦ f j) j)
 
 @[simp]
-theorem coproductCocone_pt : (coproductCocone f).pt = of (⨁ j, f j) :=
-  (rfl)
+theorem coproductCocone_pt : (coproductCocone f).pt = of (⨁ j, f j) := rfl
 
 @[simp]
 theorem coproductCocone_inj (j : J) :
-    (coproductCocone f).inj j = ofHom (DirectSum.of (fun j ↦ f j) j) :=
-  (rfl)
+    (coproductCocone f).inj j = ofHom (DirectSum.of (fun j ↦ f j) j) := rfl
 
 /-- The external direct sum, with its canonical summand inclusions `DirectSum.of`, is a coproduct
 in `AddCommGrpCat`. -/
 def coproductCoconeIsColimit : IsColimit (coproductCocone f) :=
   Cofan.IsColimit.mk _ (fun s ↦ ofHom (DirectSum.toAddMonoid fun j ↦ (s.inj j).hom))
-    (fun s j ↦ by
-      ext x
-      exact DirectSum.toAddMonoid_of (fun j ↦ (s.inj j).hom) j x)
+    (fun s j ↦ by ext x; exact DirectSum.toAddMonoid_of (fun j ↦ (s.inj j).hom) j x)
     (fun s m h ↦ by
       dsimp only [coproductCocone, Cofan.mk_pt] at m h ⊢
-      refine hom_ext (DirectSum.addHom_ext fun j x ↦ ?_)
-      have hj := congrArg (fun φ : f j ⟶ s.pt ↦ φ x) (h j)
-      simpa [Cofan.inj] using hj)
+      exact hom_ext <| DirectSum.addHom_ext fun j x ↦ by
+        simpa [Cofan.inj] using congrArg (fun φ : f j ⟶ s.pt ↦ φ x) (h j))
 
 @[simp]
 theorem coproductCoconeIsColimit_desc (s : Cofan f) :
     (coproductCoconeIsColimit f).desc s =
-      ofHom (DirectSum.toAddMonoid fun j ↦ (s.ι.app ⟨j⟩).hom) :=
-  (rfl)
+      ofHom (DirectSum.toAddMonoid fun j ↦ (s.ι.app ⟨j⟩).hom) := (rfl)
 
 variable [HasCoproduct f]
 
