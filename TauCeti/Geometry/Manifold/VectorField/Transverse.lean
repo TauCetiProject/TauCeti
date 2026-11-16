@@ -6,6 +6,9 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.Manifold.RegularValue.Level
+import Mathlib.Analysis.LocallyConvex.SeparatingDual
+import Mathlib.LinearAlgebra.Dual.Lemmas
+import TauCeti.Geometry.Manifold.MFDeriv.Chart.Subspace
 import TauCeti.Geometry.Manifold.Morse.CriticalPoints
 
 /-!
@@ -35,6 +38,11 @@ is exactly the level `f⁻¹(c)` when `df(Z) > 0` along it
 (`TauCeti.frontier_setOf_le_eq_of_mvfderiv_pos`). This identifies the boundary of a domain whose
 boundary is crossed outwards by a vector field, as for Liouville domains.
 
+Conversely, every nonzero tangent vector is transverse to some hypersurface through its base point
+(`TauCeti.exists_hypersurface_notMem_range_mfderiv`): in a chart, take an affine hyperplane through
+the point not containing the vector. Flowing a vector field out of such a hypersurface is the usual
+way to build coordinates adapted to the field, as in the Reeb normal form of a contact form.
+
 ## Main definitions
 
 * `TauCeti.IsTransverseAlong`: `Z (ι s)` is outside the range of `dι_s` for every `s`.
@@ -45,6 +53,8 @@ boundary is crossed outwards by a vector field, as for Liouville domains.
   the nonvanishing of `df(Z)` on the level.
 * `TauCeti.frontier_setOf_le_eq_of_mvfderiv_pos`: the frontier of a sublevel set whose level is
   crossed outwards by a vector field is the level.
+* `TauCeti.exists_hypersurface_notMem_range_mfderiv`: a nonzero tangent vector is transverse to a
+  hypersurface through its base point.
 
 ## References
 
@@ -55,7 +65,7 @@ boundary is crossed outwards by a vector field, as for Liouville domains.
 public section
 
 open Filter Module Set
-open scoped Manifold Topology
+open scoped ContDiff Manifold Topology
 
 namespace TauCeti
 
@@ -110,6 +120,39 @@ theorem frontier_setOf_le_eq_of_mvfderiv_pos {Z : (x : M) → TangentSpace I x} 
     (mem_closure_setOf_lt_of_mvfderiv_pos (hpos x hx))⟩
 
 end Crossing
+
+/-! ### A hypersurface transverse to a tangent vector -/
+
+section Hypersurface
+
+variable [I.Boundaryless] [FiniteDimensional ℝ E] {n : ℕ∞} [IsManifold I n M]
+
+/-- **A hypersurface transverse to a tangent vector.** Every nonzero tangent vector `v` at a point
+`x₀` of a finite-dimensional boundaryless `C^n` manifold, `1 ≤ n`, is transverse to a `C^n`
+hypersurface through `x₀`: there are a hyperplane `K` of the model space and a `C^n` map
+`ι : K → M` with `ι 0 = x₀`, injective differential at `0`, and `v` outside the range of that
+differential. -/
+theorem exists_hypersurface_notMem_range_mfderiv (hn : 1 ≤ n) {x₀ : M} {v : TangentSpace I x₀}
+    (hv : v ≠ 0) :
+    ∃ (K : Submodule ℝ E) (ι : K → M), ContMDiff 𝓘(ℝ, K) I n ι ∧ ι 0 = x₀ ∧
+      Function.Injective (mfderiv 𝓘(ℝ, K) I ι 0) ∧ v ∉ (mfderiv 𝓘(ℝ, K) I ι 0).range ∧
+      finrank ℝ K + 1 = finrank ℝ E := by
+  -- The hyperplane: the kernel of a continuous linear form that does not vanish on `v`.
+  obtain ⟨ℓ, hℓ⟩ : ∃ ℓ : StrongDual ℝ E, ℓ v ≠ 0 := SeparatingDual.exists_ne_zero hv
+  set K := LinearMap.ker (ℓ : E →ₗ[ℝ] ℝ)
+  have hdim : finrank ℝ K + 1 = finrank ℝ E :=
+    Module.Dual.finrank_ker_add_one_of_ne_zero fun h ↦
+      hℓ (by rw [← ContinuousLinearMap.coe_coe, h]; rfl)
+  obtain ⟨ι, hι, hι₀, hdι⟩ := exists_contMDiff_mfderiv_apply_eq_coe (I := I) hn K x₀
+  refine ⟨K, ι, hι, hι₀, fun w w' h ↦ Subtype.ext ((hdι w).symm.trans (h.trans (hdι w'))), ?_,
+    hdim⟩
+  rintro ⟨w, hw⟩
+  -- A tangent vector of `K` at `0` is an element of `K`, which `ℓ` kills.
+  let k : K := w
+  have hkv : (k : E) = v := (hdι k).symm.trans (hι₀ ▸ hw)
+  exact hℓ (by rw [← hkv]; exact k.2)
+
+end Hypersurface
 
 variable {f : M → ℝ} {c : ℝ} [I.Boundaryless] [FiniteDimensional ℝ E] [IsManifold I 1 M]
   (hf : ∀ x, f x = c → ContMDiffAt I 𝓘(ℝ) 1 f x) (hreg : IsRegularValue I 𝓘(ℝ) f c)

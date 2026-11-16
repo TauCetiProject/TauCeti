@@ -637,6 +637,13 @@ theorem mextDeriv_eq_bilinFormAt [IsManifold I 2 M] (α : SmoothForm I M ℝ 1) 
     mextDeriv α.1 x ![v, w] = (mextDerivₗ I 1 α).bilinFormAt x v w := by
   rw [bilinFormAt_apply, SmoothBundleForm.eval₂_apply, mextDerivₗ_apply]
 
+/-- If the bilinear form of `dα` is nondegenerate at `x`, then a tangent vector `v` at `x` with
+`dα(v, w) = 0` for every `w` vanishes. -/
+theorem eq_zero_of_forall_mextDeriv_eq_zero [IsManifold I 2 M] {α : SmoothForm I M ℝ 1} {x : M}
+    (h : ((mextDerivₗ I 1 α).bilinFormAt x).Nondegenerate) {v : TangentSpace I x}
+    (hv : ∀ w, mextDeriv α.1 x ![v, w] = 0) : v = 0 :=
+  h.1 v fun w ↦ (mextDeriv_eq_bilinFormAt α x v w).symm.trans (hv w)
+
 end SmoothForm
 
 /-- A coordinate form supported compactly inside the chart extends with the same regularity
