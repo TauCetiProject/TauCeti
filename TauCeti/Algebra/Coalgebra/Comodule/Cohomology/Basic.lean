@@ -156,9 +156,10 @@ private theorem lastComul_comp_rTensor (f : X →ₗ[R] Y) :
 private theorem lastComul_comp_lastComul :
     lastComul R H (X ⊗[R] H) ∘ₗ lastComul R H X =
       (lastComul R H X).rTensor H ∘ₗ lastComul R H X := by
-  obtain ⟨Ψ, hΨ⟩ : ∃ Ψ : X ⊗[R] (H ⊗[R] (H ⊗[R] H)) →ₗ[R] ((X ⊗[R] H) ⊗[R] H) ⊗[R] H,
-      Ψ = (TensorProduct.assoc R (X ⊗[R] H) H H).symm.toLinearMap ∘ₗ
-        (TensorProduct.assoc R X H (H ⊗[R] H)).symm.toLinearMap := ⟨_, rfl⟩
+  set Ψ : X ⊗[R] (H ⊗[R] (H ⊗[R] H)) →ₗ[R] ((X ⊗[R] H) ⊗[R] H) ⊗[R] H :=
+    (TensorProduct.assoc R (X ⊗[R] H) H H).symm.toLinearMap ∘ₗ
+      (TensorProduct.assoc R X H (H ⊗[R] H)).symm.toLinearMap with hΨ
+  clear_value Ψ
   have h₁ : lastComul R H (X ⊗[R] H) ∘ₗ (TensorProduct.assoc R X H H).symm.toLinearMap =
       Ψ ∘ₗ ((reducedComul R H).lTensor H).lTensor X := by
     refine TensorProduct.ext_threefold' fun x a b ↦ ?_
@@ -217,8 +218,7 @@ theorem coface_last_apply (n : ℕ) (x : cochains R H M n) :
     coface R H M n (Fin.last (n + 1)) x = (x ⊗ₜ[R] (1 : H) : cochains R H M (n + 1)) := by
   cases n
   · exact LinearMap.congr_fun (Fin.lastCases_last (motive := fun _ ↦ M →ₗ[R] M ⊗[R] H)) x
-  · rw [coface, Fin.lastCases_last]
-    rfl
+  · rw [coface, Fin.lastCases_last, LinearMap.flip_apply, TensorProduct.mk_apply]
 
 /-- In degree `n + 1`, the coface `δₙ₊₁` comultiplies the last factor of `H`. -/
 @[simp]
@@ -226,8 +226,8 @@ theorem coface_succ_castSucc_last_apply (n : ℕ) (x : cochains R H M n) (h : H)
     coface R H M (n + 1) (Fin.last (n + 1)).castSucc (x ⊗ₜ h) =
       ((TensorProduct.assoc R (cochains R H M n) H H).symm (x ⊗ₜ Coalgebra.comul h) :
         cochains R H M (n + 2)) := by
-  rw [coface, Fin.lastCases_castSucc, Fin.lastCases_last]
-  rfl
+  rw [coface, Fin.lastCases_castSucc, Fin.lastCases_last, LinearMap.comp_apply,
+    LinearMap.lTensor_tmul, LinearEquiv.coe_coe]
 
 /-- In degree `n + 1`, the cofaces `δ₀, …, δₙ` act on all but the last factor. -/
 @[simp]
@@ -238,6 +238,16 @@ theorem coface_succ_castSucc_castSucc (n : ℕ) (i : Fin (n + 1)) :
 /-- The differential `d = ∑ᵢ (-1)ⁱ δᵢ : Cⁿ(H, M) → Cⁿ⁺¹(H, M)` of the Hochschild complex. -/
 noncomputable def d (n : ℕ) : cochains R H M n →ₗ[R] cochains R H M (n + 1) :=
   ∑ i : Fin (n + 2), ((-1 : R) ^ (i : ℕ)) • coface R H M n i
+
+/-- The differential is the alternating sum of the cofaces. -/
+theorem d_eq_sum (n : ℕ) : d R H M n = ∑ i : Fin (n + 2), ((-1 : R) ^ (i : ℕ)) • coface R H M n i :=
+  (rfl)
+
+/-- The differential is the alternating sum of the cofaces, evaluated at a cochain. -/
+theorem d_apply (n : ℕ) (x : cochains R H M n) :
+    d R H M n x = ∑ i : Fin (n + 2), ((-1 : R) ^ (i : ℕ)) • coface R H M n i x := by
+  rw [d_eq_sum, LinearMap.sum_apply]
+  simp only [LinearMap.smul_apply]
 
 /-- The differential in degree zero is `m ↦ ρ m - m ⊗ 1`. -/
 theorem d_zero :
@@ -273,6 +283,24 @@ private theorem d_succ_eq (n : ℕ) :
     rw [d_succ_tmul]
     simp [lastComul_tmul]
 
+/-- If `f = g ⊗ id + s • E` and `f' = f ⊗ id + (-s) • E`, where `E` is the reduced comultiplication
+of the last factor, then `f' ∘ f = (f ∘ g) ⊗ id`: the cross terms cancel by naturality of `E`, and
+the terms `E ∘ E` by its coassociativity. -/
+private theorem rTensor_add_neg_smul_lastComul_comp {X : Type*} [AddCommGroup X] [Module R X]
+    (g : X →ₗ[R] X ⊗[R] H) (f : X ⊗[R] H →ₗ[R] (X ⊗[R] H) ⊗[R] H) (s : R)
+    (hf : f = g.rTensor H + s • lastComul R H X) :
+    (f.rTensor H + (-s) • lastComul R H (X ⊗[R] H)) ∘ₗ f = (f ∘ₗ g).rTensor H := by
+  have hnat := lastComul_comp_rTensor R H g
+  have hcoassoc := lastComul_comp_lastComul R H (X := X)
+  conv_lhs => rw [hf]
+  simp only [LinearMap.rTensor_add, LinearMap.rTensor_smul, LinearMap.add_comp,
+    LinearMap.comp_add, LinearMap.smul_comp, LinearMap.comp_smul, ← LinearMap.rTensor_comp,
+    hnat, hcoassoc]
+  rw [hf]
+  simp only [LinearMap.add_comp, LinearMap.smul_comp, LinearMap.rTensor_add,
+    LinearMap.rTensor_smul, LinearMap.rTensor_comp]
+  module
+
 /-- The differential squares to zero. -/
 theorem d_comp_d (n : ℕ) : d R H M (n + 1) ∘ₗ d R H M n = 0 := by
   induction n with
@@ -282,17 +310,8 @@ theorem d_comp_d (n : ℕ) : d R H M (n + 1) ∘ₗ d R H M n = 0 := by
     simp [LinearMap.rTensor_sub, Algebra.TensorProduct.one_def]
     abel
   | succ n ih =>
-    -- Write `d = d ⊗ id + s • E` in degrees `n + 1` and `n + 2`, with `s = (-1)ⁿ⁺¹`, and expand.
-    have e₁ := d_succ_eq R H M n
-    have e₂ := d_succ_eq R H M (n + 1)
-    have hnat := lastComul_comp_rTensor R H (d R H M n)
-    have hcoassoc := lastComul_comp_lastComul R H (X := cochains R H M n)
-    rw [e₂, LinearMap.add_comp, LinearMap.smul_comp]
-    conv_lhs => rw [e₁]
-    rw [LinearMap.comp_add, LinearMap.comp_smul, LinearMap.comp_add, LinearMap.comp_smul,
-      ← LinearMap.rTensor_comp, ← e₁, ih, LinearMap.rTensor_zero, e₁, LinearMap.rTensor_add,
-      LinearMap.rTensor_smul, LinearMap.add_comp, LinearMap.smul_comp, hnat, hcoassoc, pow_succ]
-    module
+    rw [d_succ_eq R H M (n + 1), pow_succ, mul_neg_one,
+      rTensor_add_neg_smul_lastComul_comp R H _ _ _ (d_succ_eq R H M n), ih, LinearMap.rTensor_zero]
 
 /-- The differential squares to zero, evaluated at a cochain. -/
 @[simp]
@@ -330,34 +349,17 @@ theorem ker_d_zero :
   rw [LinearMap.mem_ker, d_zero_apply, sub_eq_zero, Subcomodule.mem_toSubmodule,
     mem_fixedSubcomodule]
 
-private theorem d_zero_one_hom_apply (m : M) :
-    ((cochainComplex R H M).d 0 (0 + 1)).hom m = d R H M 0 m := by
-  rw [cochainComplex_d_succ]
-  -- `ModuleCat.hom_ofHom`, up to the identification of `(cochainComplex R H M).X 0` with `M`.
-  rfl
-
-private theorem d_zero_one_hom_eq_zero_iff (m : M) :
-    ((cochainComplex R H M).d 0 (0 + 1)).hom m = 0 ↔ m ∈ (fixedSubcomodule R H M).toSubmodule := by
-  rw [d_zero_one_hom_apply, Subcomodule.mem_toSubmodule, mem_fixedSubcomodule, ← sub_eq_zero,
-    ← d_zero_apply]
-  -- The two sides differ only in presenting `M ⊗ H` as `(cochainComplex R H M).X 1`.
-  exact Iff.rfl
-
-/-- The kernel of the differential `M → M ⊗ H` of the complex is the module of invariants. -/
+/-- The kernel of the differential `M → M ⊗ H` of the complex is the module of invariants. The
+kernels agree since `(cochainComplex R H M).d 0 1` is `ModuleCat.ofHom (d R H M 0)`
+(`cochainComplex_d_succ`). -/
 private noncomputable def kernelEquivFixed :
-    LinearMap.ker ((cochainComplex R H M).d 0 (0 + 1)).hom ≃ₗ[R]
-      (fixedSubcomodule R H M).toSubmodule where
-  toFun x := ⟨x.1, (d_zero_one_hom_eq_zero_iff R H M x.1).1 (LinearMap.mem_ker.1 x.2)⟩
-  invFun y := ⟨y.1, LinearMap.mem_ker.2 ((d_zero_one_hom_eq_zero_iff R H M y.1).2 y.2)⟩
-  map_add' _ _ := rfl
-  map_smul' _ _ := rfl
-  left_inv _ := rfl
-  right_inv _ := rfl
+    LinearMap.ker ((cochainComplex R H M).d 0 (0 + 1)).hom ≃ₗ[R] fixedSubcomodule R H M :=
+  LinearEquiv.ofEq _ _ (ker_d_zero R H M)
 
 /-- The degree-zero cohomology of the Hochschild complex is the module of invariants
 `Mᴴ = {m | ρ m = m ⊗ 1}`. -/
 noncomputable def cohomologyZeroIso :
-    cohomology R H M 0 ≅ ModuleCat.of R (fixedSubcomodule R H M).toSubmodule :=
+    cohomology R H M 0 ≅ ModuleCat.of R (fixedSubcomodule R H M) :=
   (cochainComplex R H M).isoHomologyπ₀.symm ≪≫
     Limits.IsLimit.conePointUniqueUpToIso
       ((cochainComplex R H M).cyclesIsKernel 0 (0 + 1) (by simp))
@@ -366,6 +368,7 @@ noncomputable def cohomologyZeroIso :
 
 /-- A degree-zero cocycle, viewed in cohomology, is sent by `cohomologyZeroIso` to itself as an
 invariant vector. -/
+@[simp]
 theorem coe_cohomologyZeroIso_hom_homologyπ (x : (cochainComplex R H M).cycles 0) :
     ((cohomologyZeroIso R H M).hom.hom (((cochainComplex R H M).homologyπ 0).hom x) : M) =
       ((cochainComplex R H M).iCycles 0).hom x := by
@@ -415,13 +418,13 @@ theorem cochainsMap_id (n : ℕ) : cochainsMap (Hom.id R H M) n = LinearMap.id :
     rw [cochainsMap, ih, LinearMap.rTensor_id]
 
 /-- The map induced on cochains by a composite is the composite of the induced maps. -/
+@[simp]
 theorem cochainsMap_comp (g : Hom R H N P) (f : Hom R H M N) (n : ℕ) :
     cochainsMap (g.comp f) n = cochainsMap g n ∘ₗ cochainsMap f n := by
   induction n with
   | zero => rfl
   | succ n ih =>
-    rw [cochainsMap, ih, LinearMap.rTensor_comp]
-    rfl
+    simp only [cochainsMap, ih, LinearMap.rTensor_comp]
 
 /-- The map induced by a comodule morphism commutes with the Hochschild differential. -/
 theorem d_comp_cochainsMap (f : Hom R H M N) (n : ℕ) :
@@ -458,31 +461,34 @@ theorem cochainComplexMap_f (f : Hom R H M N) (n : ℕ) :
 /-- The identity comodule morphism induces the identity cochain map. -/
 @[simp]
 theorem cochainComplexMap_id : cochainComplexMap (Hom.id R H M) = 𝟙 _ := by
-  ext n : 2
-  simp
-  rfl
+  ext n : 1
+  rw [cochainComplexMap_f, cochainsMap_id, HomologicalComplex.id_f]
+  exact ModuleCat.ofHom_id
 
 /-- The cochain map induced by a composite is the composite of the induced cochain maps. -/
+@[simp]
 theorem cochainComplexMap_comp (g : Hom R H N P) (f : Hom R H M N) :
     cochainComplexMap (g.comp f) = cochainComplexMap f ≫ cochainComplexMap g := by
-  ext n : 2
-  simp [cochainsMap_comp]
-  rfl
+  ext n : 1
+  rw [cochainComplexMap_f, cochainsMap_comp, HomologicalComplex.comp_f, cochainComplexMap_f,
+    cochainComplexMap_f]
+  exact ModuleCat.ofHom_comp _ _
 
 /-- The identification of degree-zero cohomology with the invariants is natural in the
 coefficients: a comodule morphism acts on invariant vectors by restriction. -/
 theorem homologyMap_comp_cohomologyZeroIso_hom (f : Hom R H M N) :
     HomologicalComplex.homologyMap (cochainComplexMap f) 0 ≫ (cohomologyZeroIso R H N).hom =
-      (cohomologyZeroIso R H M).hom ≫ ModuleCat.ofHom
-        (f.toLinearMap.restrict fun _ hm ↦ Subcomodule.mem_toSubmodule.2
-          (f.mem_fixedSubcomodule (Subcomodule.mem_toSubmodule.1 hm))) := by
+      (cohomologyZeroIso R H M).hom ≫ ModuleCat.ofHom f.fixedMap := by
   rw [← cancel_epi ((cochainComplex R H M).homologyπ 0),
     HomologicalComplex.homologyπ_naturality_assoc]
   ext x
   have hx := congr(ModuleCat.Hom.hom $(HomologicalComplex.cyclesMap_i (cochainComplexMap f) 0) x)
-  simp only [ModuleCat.hom_comp, LinearMap.comp_apply] at hx
-  exact (coe_cohomologyZeroIso_hom_homologyπ R H N _).trans
-    (hx.trans (congrArg f (coe_cohomologyZeroIso_hom_homologyπ R H M x).symm))
+  simp only [ModuleCat.hom_comp, LinearMap.comp_apply] at hx ⊢
+  rw [coe_cohomologyZeroIso_hom_homologyπ, ModuleCat.hom_ofHom, Hom.fixedMap_apply,
+    coe_cohomologyZeroIso_hom_homologyπ]
+  -- `hx`, with `(cochainComplexMap f).f 0` unfolded to `f` (`cochainComplexMap_f`,
+  -- `cochainsMap_zero_apply`) up to the identification of `(cochainComplex R H M).X 0` with `M`.
+  exact hx
 
 end Functoriality
 
