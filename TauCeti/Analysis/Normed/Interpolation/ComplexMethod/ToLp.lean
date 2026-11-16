@@ -8,7 +8,9 @@ module
 public import TauCeti.Analysis.Normed.Interpolation.ComplexMethod.Basic
 public import TauCeti.Analysis.Normed.Interpolation.Lebesgue
 import Mathlib.Analysis.Complex.Hadamard
+import TauCeti.Analysis.SpecialFunctions.Pow.Real
 import TauCeti.Data.ENNReal.InterpolatedExponent
+import TauCeti.MeasureTheory.Function.Holder
 import TauCeti.MeasureTheory.Function.Lp.Duality
 import TauCeti.MeasureTheory.Function.LpSeminorm.CompareExp
 
@@ -133,70 +135,13 @@ end Pairing
 
 /-! ### Exponents -/
 
-/-- The slopes of the exponent `α`: if `s = (1 - θ) s₀ + θ s₁` with `s₀, s₁ ≥ 0` and
-`0 < θ < 1`, and `κ = (s₁ - s₀) / s`, then `s₀ = (1 - θ κ) s` and `s₁ = (1 + (1 - θ) κ) s`, with
-both factors nonnegative. When `s = 0`, both `s₀` and `s₁` vanish and `κ = 0`. -/
-private theorem exponent_facts {s₀ s₁ θ : ℝ} (hs₀ : 0 ≤ s₀) (hs₁ : 0 ≤ s₁)
-    (hθ : θ ∈ Ioo (0 : ℝ) 1) :
-    0 ≤ 1 - θ * ((s₁ - s₀) / ((1 - θ) * s₀ + θ * s₁)) ∧
-      0 ≤ 1 + (1 - θ) * ((s₁ - s₀) / ((1 - θ) * s₀ + θ * s₁)) ∧
-      (1 - θ * ((s₁ - s₀) / ((1 - θ) * s₀ + θ * s₁))) * ((1 - θ) * s₀ + θ * s₁) = s₀ ∧
-      (1 + (1 - θ) * ((s₁ - s₀) / ((1 - θ) * s₀ + θ * s₁))) * ((1 - θ) * s₀ + θ * s₁) = s₁ := by
-  obtain ⟨hθ₀, hθ₁⟩ := hθ
-  set s := (1 - θ) * s₀ + θ * s₁
-  rcases (show 0 ≤ s by positivity).eq_or_lt with hs | hs
-  · have h₀ : s₀ = 0 := by nlinarith
-    have h₁ : s₁ = 0 := by nlinarith
-    simp [← hs, h₀, h₁]
-  · have e₀ : (1 - θ * ((s₁ - s₀) / s)) * s = s₀ := by
-      field_simp
-      ring
-    have e₁ : (1 + (1 - θ) * ((s₁ - s₀) / s)) * s = s₁ := by
-      field_simp
-      ring
-    refine ⟨?_, ?_, e₀, e₁⟩
-    · rw [← div_eq_of_eq_mul hs.ne' e₀.symm]
-      positivity
-    · rw [← div_eq_of_eq_mul hs.ne' e₁.symm]
-      positivity
-
-/-- For `1 / p = (1 - θ) / p₀ + θ / p₁` and `0 < θ < 1`, the conjugate exponents satisfy
-`1 / p₀' = (1 - θ κ) / p'` and `1 / p₁' = (1 + (1 - θ) κ) / p'` for some slope `κ`, with both
-factors nonnegative. -/
-private theorem exists_slope {p₀ p₁ p : ℝ≥0∞} (hp₀ : 1 ≤ p₀) (hp₁ : 1 ≤ p₁) {θ : ℝ}
-    (hθ : θ ∈ Ioo (0 : ℝ) 1)
-    (hp : p⁻¹ = ENNReal.ofReal (1 - θ) * p₀⁻¹ + ENNReal.ofReal θ * p₁⁻¹) :
-    ∃ κ : ℝ, 0 ≤ 1 - θ * κ ∧ 0 ≤ 1 + (1 - θ) * κ ∧
-      p₀.conjExponent⁻¹ = ENNReal.ofReal (1 - θ * κ) * p.conjExponent⁻¹ ∧
-      p₁.conjExponent⁻¹ = ENNReal.ofReal (1 + (1 - θ) * κ) * p.conjExponent⁻¹ := by
-  have hθ' : θ ∈ Icc (0 : ℝ) 1 := Ioo_subset_Icc_self hθ
-  have : p₀.HolderConjugate p₀.conjExponent := .conjExponent hp₀
-  have : p₁.HolderConjugate p₁.conjExponent := .conjExponent hp₁
-  have hc₀ : p₀.conjExponent ≠ 0 :=
-    (zero_lt_one.trans_le (ENNReal.HolderConjugate.one_le p₀.conjExponent p₀)).ne'
-  have hc₁ : p₁.conjExponent ≠ 0 :=
-    (zero_lt_one.trans_le (ENNReal.HolderConjugate.one_le p₁.conjExponent p₁)).ne'
-  -- Work with the reciprocals `s₀, s₁` of the conjugate exponents.
-  set s₀ := (p₀.conjExponent⁻¹).toReal
-  set s₁ := (p₁.conjExponent⁻¹).toReal
-  have hq : p.conjExponent⁻¹ = ENNReal.ofReal ((1 - θ) * s₀ + θ * s₁) :=
-    inv_eq_ofReal_of_inv_eq hc₀ hc₁ hθ' (inv_conjExponent_eq_of_inv_eq hp₀ hp₁ hθ' hp)
-  obtain ⟨hβ₀, hβ₁, e₀, e₁⟩ :=
-    exponent_facts (s₀ := s₀) (s₁ := s₁) ENNReal.toReal_nonneg ENNReal.toReal_nonneg hθ
-  refine ⟨_, hβ₀, hβ₁, ?_, ?_⟩
-  · rw [hq, ← ENNReal.ofReal_mul hβ₀, e₀, ENNReal.ofReal_toReal (ENNReal.inv_ne_top.2 hc₀)]
-  · rw [hq, ← ENNReal.ofReal_mul hβ₁, e₁, ENNReal.ofReal_toReal (ENNReal.inv_ne_top.2 hc₁)]
-
-/-- The interpolation of the boundary bounds: if `(1 - θ) β₀ + θ β₁ = 1`, then
-`(a N ^ β₀) ^ (1 - θ) (a N ^ β₁) ^ θ = a N` for `a, N ≥ 0`. -/
+/-- The interpolation of the boundary bounds: the exponents `βⱼ = 1 + (j - θ) κ` satisfy
+`(1 - θ) β₀ + θ β₁ = 1`, so `(a N ^ β₀) ^ (1 - θ) (a N ^ β₁) ^ θ = a N` for `a, N ≥ 0`. -/
 private theorem rpow_mul_rpow_interp {a N θ κ : ℝ} (ha : 0 ≤ a) (hN : 0 ≤ N) :
-    (a * N ^ (1 - θ * κ)) ^ (1 - θ) * (a * N ^ (1 + (1 - θ) * κ)) ^ θ = a * N := by
-  have hsum : (1 - θ * κ) * (1 - θ) + (1 + (1 - θ) * κ) * θ = 1 := by ring
-  rw [Real.mul_rpow ha (Real.rpow_nonneg hN _), Real.mul_rpow ha (Real.rpow_nonneg hN _),
-    ← Real.rpow_mul hN, ← Real.rpow_mul hN, mul_mul_mul_comm,
-    ← Real.rpow_add' ha (by rw [sub_add_cancel]; exact one_ne_zero),
-    ← Real.rpow_add' hN (by rw [hsum]; exact one_ne_zero), sub_add_cancel, hsum, Real.rpow_one,
-    Real.rpow_one]
+    (a * N ^ (1 + (0 - θ) * κ)) ^ (1 - θ) * (a * N ^ (1 + (1 - θ) * κ)) ^ θ = a * N := by
+  have hsum : (1 + (0 - θ) * κ) * (1 - θ) + (1 + (1 - θ) * κ) * θ = 1 := by ring
+  rw [Real.mul_rpow_one_sub_mul_mul_rpow ha, ← Real.rpow_mul hN, ← Real.rpow_mul hN,
+    ← Real.rpow_add' hN (by rw [hsum]; exact one_ne_zero), hsum, Real.rpow_one]
 
 /-! ### The analytic family -/
 
@@ -326,13 +271,12 @@ section ThreeLines
 variable {p₀ p₁ : ℝ≥0∞} [Fact (1 ≤ p₀)] [Fact (1 ≤ p₁)] {θ κ : ℝ}
 
 /-- **The three-lines bound for the pairing.** Let `g` be an integrable simple function and `F` an
-admissible function for the Lebesgue couple with boundary traces `g'`. If the exponents satisfy
-`1 / p₀' = β₀ / q` and `1 / p₁' = β₁ / q` for the conjugate exponents `pⱼ'`, with
-`β₀ = 1 - θ κ`, `β₁ = 1 + (1 - θ) κ` nonnegative, then `‖∫ ⟪g, F θ⟫‖ ≤ ‖g'‖ ‖g‖_q`. -/
+admissible function for the Lebesgue couple with boundary traces `g'`. If the factors
+`β t = 1 + (t - θ) κ` are nonnegative and `β t / q = (1 - t) / p₀' + t / p₁'` for `0 ≤ t ≤ 1`, where
+`pⱼ'` are the conjugate exponents, then `‖∫ ⟪g, F θ⟫‖ ≤ ‖g'‖ ‖g‖_q`. -/
 private theorem norm_integral_inner_le_of_isStripFunction {q : ℝ≥0∞} (hθ : θ ∈ Ioo (0 : ℝ) 1)
-    (hβ₀ : 0 ≤ 1 - θ * κ) (hβ₁ : 0 ≤ 1 + (1 - θ) * κ)
-    (hq₀ : p₀.conjExponent⁻¹ = ENNReal.ofReal (1 - θ * κ) * q⁻¹)
-    (hq₁ : p₁.conjExponent⁻¹ = ENNReal.ofReal (1 + (1 - θ) * κ) * q⁻¹)
+    (hκ : ∀ t ∈ Icc (0 : ℝ) 1, 0 ≤ 1 + (t - θ) * κ ∧ ENNReal.ofReal (1 + (t - θ) * κ) * q⁻¹ =
+      ENNReal.ofReal (1 - t) * p₀.conjExponent⁻¹ + ENNReal.ofReal t * p₁.conjExponent⁻¹)
     {g : SimpleFunc α E} (hg : Integrable g μ) (hgq : eLpNorm g q μ ≠ ∞)
     {F : ℂ → (lebesgue ℂ E μ p₀ p₁).SumSpace} {g' : C₀(ℝ, Lp E p₀ μ) × C₀(ℝ, Lp E p₁ μ)}
     (hF : (lebesgue ℂ E μ p₀ p₁).IsStripFunction F g') :
@@ -347,21 +291,25 @@ private theorem norm_integral_inner_le_of_isStripFunction {q : ℝ≥0∞} (hθ 
     ((lebesgue ℂ E μ p₀ p₁).sumSpaceEmbed.le_opNorm _).trans
       (mul_le_mul_of_nonneg_left (hM z hz) (norm_nonneg _))
   -- On the boundary lines, `F` takes values in `L^{p₀}` and `L^{p₁}` of norm at most `‖g'‖`.
+  obtain ⟨hβ₀, hq₀⟩ := hκ 0 ⟨le_rfl, zero_le_one⟩
+  obtain ⟨hβ₁, hq₁⟩ := hκ 1 ⟨zero_le_one, le_rfl⟩
   have ha (z : ℂ) (hz : z ∈ re ⁻¹' {0}) : ‖pairingFamily hg θ κ F' z‖ ≤
-      ‖g'‖ * (eLpNorm g q μ).toReal ^ (1 - θ * κ) := by
+      ‖g'‖ * (eLpNorm g q μ).toReal ^ (1 + (0 - θ) * κ) := by
+    have hz : z.re = 0 := by simpa using hz
     have hFz : F z = (lebesgue ℂ E μ p₀ p₁).fstToSum (g'.1 z.im) := by
-      conv_lhs => rw [← re_add_im z, show z.re = 0 from hz, ofReal_zero, zero_add]
+      conv_lhs => rw [← re_add_im z, hz, ofReal_zero, zero_add]
       exact hF.apply_mul_I z.im
-    refine norm_pairingFamily_le hg hgq hβ₀ hq₀ (by rw [show z.re = 0 from hz]; ring)
+    refine norm_pairingFamily_le hg hgq hβ₀ (by rw [hq₀]; simp) (by rw [hz])
       ((ZeroAtInftyContinuousMap.norm_coe_le_norm g'.1 z.im).trans (norm_fst_le g')) ?_
     simp only [F']
     rw [hFz, sumSpaceEmbed_fstToSum, lebesgue_embed₀]
   have hb (z : ℂ) (hz : z ∈ re ⁻¹' {1}) : ‖pairingFamily hg θ κ F' z‖ ≤
       ‖g'‖ * (eLpNorm g q μ).toReal ^ (1 + (1 - θ) * κ) := by
+    have hz : z.re = 1 := by simpa using hz
     have hFz : F z = (lebesgue ℂ E μ p₀ p₁).sndToSum (g'.2 z.im) := by
-      conv_lhs => rw [← re_add_im z, show z.re = 1 from hz, ofReal_one]
+      conv_lhs => rw [← re_add_im z, hz, ofReal_one]
       exact hF.apply_one_add_mul_I z.im
-    refine norm_pairingFamily_le hg hgq hβ₁ hq₁ (by rw [show z.re = 1 from hz])
+    refine norm_pairingFamily_le hg hgq hβ₁ (by rw [hq₁]; simp) (by rw [hz])
       ((ZeroAtInftyContinuousMap.norm_coe_le_norm g'.2 z.im).trans (norm_snd_le g')) ?_
     simp only [F']
     rw [hFz, sumSpaceEmbed_sndToSum, lebesgue_embed₁]
@@ -383,9 +331,8 @@ variable {p₀ p₁ p : ℝ≥0∞} [Fact (1 ≤ p₀)] [Fact (1 ≤ p₁)] {θ 
 /-- The pairing of `u ∈ [L^{p₀}, L^{p₁}]_θ` with an integrable simple function `g` is bounded by
 `‖u‖_θ ‖g‖_q`, under the exponent relations of `norm_integral_inner_le_of_isStripFunction`. -/
 private theorem norm_integral_inner_le {q : ℝ≥0∞} {κ : ℝ} (hθ : θ ∈ Ioo (0 : ℝ) 1)
-    (hβ₀ : 0 ≤ 1 - θ * κ) (hβ₁ : 0 ≤ 1 + (1 - θ) * κ)
-    (hq₀ : p₀.conjExponent⁻¹ = ENNReal.ofReal (1 - θ * κ) * q⁻¹)
-    (hq₁ : p₁.conjExponent⁻¹ = ENNReal.ofReal (1 + (1 - θ) * κ) * q⁻¹)
+    (hκ : ∀ t ∈ Icc (0 : ℝ) 1, 0 ≤ 1 + (t - θ) * κ ∧ ENNReal.ofReal (1 + (t - θ) * κ) * q⁻¹ =
+      ENNReal.ofReal (1 - t) * p₀.conjExponent⁻¹ + ENNReal.ofReal t * p₁.conjExponent⁻¹)
     {g : SimpleFunc α E} (hg : Integrable g μ) (hgq : eLpNorm g q μ ≠ ∞)
     (u : (lebesgue ℂ E μ p₀ p₁).ComplexMethodSpace θ) :
     ‖∫ x, ⟪g x, L1AddLinfty.toAEEqFun ℂ
@@ -399,7 +346,7 @@ private theorem norm_integral_inner_le {q : ℝ≥0∞} {κ : ℝ} (hθ : θ ∈
     (lt_add_of_pos_right (‖u‖) (show 0 < ε / (N + 1) by positivity))
   have hθF : toSum u = (lebesgue ℂ E μ p₀ p₁).stripFunction g' θ := by
     rw [← hu, toSum_mk, stripEval_apply]
-  have h3 := norm_integral_inner_le_of_isStripFunction hθ hβ₀ hβ₁ hq₀ hq₁ hg hgq
+  have h3 := norm_integral_inner_le_of_isStripFunction hθ hκ hg hgq
     ((lebesgue ℂ E μ p₀ p₁).isStripFunction_stripFunction g')
   rw [← hθF] at h3
   have hεN : ε / (N + 1) * N < ε := by
@@ -418,15 +365,20 @@ theorem eLpNorm_toAEEqFun_le [SigmaFinite μ] (hθ : θ ∈ Ioo (0 : ℝ) 1)
     (u : (lebesgue ℂ E μ p₀ p₁).ComplexMethodSpace θ) :
     eLpNorm (L1AddLinfty.toAEEqFun ℂ ((lebesgue ℂ E μ p₀ p₁).sumSpaceEmbed (toSum u))) p μ ≤
       ENNReal.ofReal ‖u‖ := by
-  have hp₁ : 1 ≤ p := one_le_of_inv_eq Fact.out Fact.out (Ioo_subset_Icc_self hθ) hp
+  have hθ' : θ ∈ Icc (0 : ℝ) 1 := Ioo_subset_Icc_self hθ
+  have hp₁ : 1 ≤ p := one_le_of_inv_eq Fact.out Fact.out hθ' hp
   have : p.HolderConjugate p.conjExponent := .conjExponent hp₁
-  obtain ⟨κ, hβ₀, hβ₁, hq₀, hq₁⟩ := exists_slope Fact.out Fact.out hθ hp
+  -- The conjugate exponents interpolate along the strip with some slope `κ`.
+  obtain ⟨κ, hκ⟩ := exists_slope_of_inv_eq
+    (ENNReal.HolderConjugate.conjExponent (Fact.out : 1 ≤ p₀)).symm.ne_zero
+    (ENNReal.HolderConjugate.conjExponent (Fact.out : 1 ≤ p₁)).symm.ne_zero hθ
+    (inv_conjExponent_eq_of_inv_eq Fact.out Fact.out hθ' hp)
   -- By duality it suffices to bound the pairings with integrable simple functions.
   refine (AEEqFun.aestronglyMeasurable _).eLpNorm_le_of_forall_enorm_integral_inner_simpleFunc_le
     (𝕜 := ℂ) (q' := p.conjExponent) hp_top fun g hg => ?_
   have hgq : eLpNorm g p.conjExponent μ ≠ ∞ := (SimpleFunc.memLp_of_finite_measure_preimage _
     (SimpleFunc.finMeasSupp_iff.1 (SimpleFunc.integrable_iff_finMeasSupp.1 hg))).eLpNorm_ne_top
-  have hbound := norm_integral_inner_le hθ hβ₀ hβ₁ hq₀ hq₁ hg hgq u
+  have hbound := norm_integral_inner_le hθ hκ hg hgq u
   -- Translate to extended norms, using `‖∫ ⟪h, g⟫‖ = ‖∫ ⟪g, h⟫‖`.
   rw [TauCeti.enorm_integral_inner_comm]
   generalize hN : (eLpNorm g p.conjExponent μ).toReal = N at hbound

@@ -73,8 +73,6 @@ is `∞` outside the almost everywhere strongly measurable functions.
 * `MeasureTheory.AEStronglyMeasurable.eLpNorm_le_of_forall_enorm_integral_inner_le`: the duality
   bound for `q < ∞` for inner product space valued functions, against bounded test functions of
   finite-measure support, without assuming `h ∈ L^q`.
-* `MeasureTheory.MemLp.integrable_inner_of_holderConjugate`: Hölder's inequality makes `⟪h, g⟫`
-  integrable for `h ∈ L^q` and `g ∈ L^{q'}`.
 * `MeasureTheory.MemLp.innerLpCLM`: integration against `G ∈ L^q`, `f ↦ ∫ ⟪G, f⟫`, as a
   continuous linear functional on `L^{q'}` of norm at most `‖G‖_q`.
 * `MeasureTheory.MemLp.eLpNorm_le_of_forall_enorm_integral_inner_le_of_ne_top`,
@@ -131,14 +129,6 @@ namespace MeasureTheory
 variable {α 𝕜 : Type*} {mα : MeasurableSpace α} {μ : Measure α} [RCLike 𝕜]
 
 open TauCeti
-
-/-- Hölder's inequality makes the pairing `x ↦ ⟪h x, g x⟫` integrable for `h ∈ L^q` and
-`g ∈ L^{q'}`. For `q = q' = 2` this is `MeasureTheory.MemLp.integrable_inner`. -/
-theorem MemLp.integrable_inner_of_holderConjugate {H : Type*} [NormedAddCommGroup H]
-    [InnerProductSpace 𝕜 H] {q q' : ℝ≥0∞} [q.HolderConjugate q'] {h g : α → H}
-    (hh : MemLp h q μ) (hg : MemLp g q' μ) : Integrable (fun x => ⟪h x, g x⟫_𝕜) μ :=
-  memLp_one_iff_integrable.1 <| hh.of_bilin (fun a b => ⟪a, b⟫_𝕜) 1 hg continuous_inner
-    (ae_of_all _ fun x => by simpa [← NNReal.coe_le_coe] using norm_inner_le_norm (h x) (g x))
 
 
 namespace MemLp
