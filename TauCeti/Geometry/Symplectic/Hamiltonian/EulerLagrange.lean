@@ -239,7 +239,7 @@ theorem snd_fderiv_linearLegendreMap_apply_eq_of_symplecticForm {L : E × E → 
   rw [hFL.fderiv, hE.fderiv, strongDualCotangentSymplecticForm_apply] at h
   have hslice : fderiv ℝ L x (b, 0) = fderiv ℝ (fun q ↦ L (q, x.2)) x.1 b := by
     rw [fderiv_slice_left hLd]
-    rfl
+    simp only [coe_comp, Function.comp_apply, inl_apply]
   simp only [ContinuousLinearMap.prod_apply, coe_fst', coe_snd', sub_apply, add_apply, comp_apply,
     map_zero, flip_apply, hslice, hX₁] at h
   rw [hFL.fderiv]

@@ -265,8 +265,8 @@ fibres through the tangent coordinate change from the chart at `v.proj` to itsel
 identity at `v.proj`. -/
 theorem extChartAt_tangent_self_snd (v : TangentBundle I M) :
     (extChartAt I.tangent v v).2 = v.2 := by
-  rw [extChartAt_coe, Function.comp_apply, ModelWithCorners.tangent, ModelWithCorners.prod_apply,
-    modelWithCornersSelf_coe, id, TangentBundle.coe_chartAt_snd]
+  simp only [extChartAt_coe, Function.comp_apply, modelWithCorners_prod_coe, Prod.map_snd,
+    modelWithCornersSelf_coe, id_eq, TangentBundle.coe_chartAt_snd]
   exact tangentCoordChange_self (mem_extChartAt_source v.proj)
 
 /-- The vector field with constant coordinates `u` in the trivialization of the tangent bundle at
