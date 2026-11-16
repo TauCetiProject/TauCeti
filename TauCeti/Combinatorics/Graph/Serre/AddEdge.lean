@@ -25,7 +25,8 @@ adjoined edge of `Γ.addEdge x y` gives back `Γ` (`SerreGraph.deleteEdgeAddEdge
 an edge from the source to the target of `d` to `Γ.deleteEdge d` gives back `Γ`
 (`SerreGraph.deleteEdgeSumEquiv`), compatibly with sources and reversals; these are isomorphisms
 of Serre graphs (`SerreGraph.deleteEdgeAddEdgeIso`, `SerreGraph.addEdgeDeleteEdgeIso`). Deleting an
-edge keeps a connected graph connected when the two ends of the edge stay joined
+edge whose two ends stay joined keeps any two joined vertices joined
+(`SerreGraph.nonempty_deleteEdge_path`), so it keeps a connected graph connected
 (`SerreGraph.Connected.deleteEdge`).
 
 These are the changes of one-skeleton made by cutting a face of a polygonal complex along a new
@@ -51,6 +52,8 @@ side, and by merging two faces along a common side.
 * `TauCeti.SerreGraph.card_addEdge_geomEdge`: the new graph has one more geometric edge.
 * `TauCeti.SerreGraph.card_deleteEdge_geomEdge_add_one`: deleting an edge removes one geometric
   edge.
+* `TauCeti.SerreGraph.nonempty_deleteEdge_path`: deleting an edge whose ends stay joined keeps two
+  joined vertices joined.
 * `TauCeti.SerreGraph.Connected.deleteEdge`: deleting an edge whose ends stay joined keeps a
   connected graph connected.
 -/
@@ -193,26 +196,26 @@ noncomputable def deleteEdgeGeomEdgeEquiv (d : Γ.E) :
   congrArg Subtype.val (GeomEdge.lift_toGeomEdge ..)
 
 variable {Γ} in
+/-- Two vertices joined by a path stay joined after deleting the edge of `d`, when the target of
+`d` is joined to its source by a path avoiding that edge. -/
+theorem nonempty_deleteEdge_path {d : Γ.E}
+    (hd : Nonempty ((Γ.deleteEdge d).Path (Γ.tgt d) (Γ.src d))) {a b : Γ.V} (p : Γ.Path a b) :
+    Nonempty ((Γ.deleteEdge d).Path a b) := by
+  refine nonempty_path_of_path (Γ := Γ) (Δ := Γ.deleteEdge d) id (fun e => ?_) p
+  by_cases he : Γ.toGeomEdge d = Γ.toGeomEdge e
+  · rcases Γ.toGeomEdge_eq_toGeomEdge_iff.1 he with rfl | rfl
+    · exact hd.map Quiver.Path.reverse
+    · rwa [src_rev, tgt_rev]
+  · exact ⟨((Γ.deleteEdge d).dart ⟨e, Ne.symm he⟩).toPath⟩
+
+variable {Γ} in
 /-- Deleting the edge of `d` from a preconnected graph leaves it preconnected when the target of
 `d` is joined to its source by a path avoiding that edge. -/
 theorem Preconnected.deleteEdge {d : Γ.E} (h : Γ.Preconnected)
     (hd : Nonempty ((Γ.deleteEdge d).Path (Γ.tgt d) (Γ.src d))) :
-    (Γ.deleteEdge d).Preconnected := by
-  obtain ⟨P⟩ := hd
-  refine (Γ.deleteEdge d).preconnected_iff.2 fun a b => ?_
-  obtain ⟨Q⟩ := Γ.preconnected_iff.1 h a b
-  induction Q with
-  | nil => exact ⟨.nil⟩
-  | cons _ e ih =>
-    obtain ⟨R⟩ := ih
-    obtain ⟨e, rfl, rfl⟩ := e
-    by_cases he : Γ.toGeomEdge d = Γ.toGeomEdge e
-    · rcases Γ.toGeomEdge_eq_toGeomEdge_iff.1 he with rfl | rfl
-      · exact ⟨R.comp P.reverse⟩
-      · rw [tgt_rev]
-        rw [src_rev] at R
-        exact ⟨R.comp P⟩
-    · exact ⟨R.cons ⟨⟨e, Ne.symm he⟩, rfl, rfl⟩⟩
+    (Γ.deleteEdge d).Preconnected :=
+  (Γ.deleteEdge d).preconnected_iff.2 fun a b =>
+    (Γ.preconnected_iff.1 h a b).elim (nonempty_deleteEdge_path hd)
 
 variable {Γ} in
 /-- Deleting the edge of `d` from a connected graph leaves it connected when the target of `d` is

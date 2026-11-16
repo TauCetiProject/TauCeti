@@ -117,7 +117,7 @@ abbrev mergeFacesSides : Option {g : C.Face // g ≠ g₁ ∧ g ≠ g₂} → �
   | some g => C.sides g.1
 
 /-- The merged face `X Y` has `sides g₁ + sides g₂ - 2` sides. -/
-@[simp] theorem mergeFacesSides_none :
+theorem mergeFacesSides_none :
     C.mergeFacesSides g₁ g₂ none = C.sides g₁ + C.sides g₂ - 2 :=
   (rfl)
 
@@ -606,7 +606,6 @@ theorem IsMergeable.nonempty_path_tgt_src :
 
 /-! ### Orientability -/
 
-variable {h} in
 /-- Merging two faces of an orientable complex gives an orientable complex: the merged face takes
 the common orientation of the two faces, which are oriented alike since they traverse `d` in
 opposite directions. -/
@@ -685,7 +684,7 @@ theorem IsOrientable.of_mergeFaces (hM : (C.mergeFaces h).IsOrientable) : C.IsOr
 
 /-- Merging two faces does not change orientability. -/
 @[simp] theorem isOrientable_mergeFaces_iff : (C.mergeFaces h).IsOrientable ↔ C.IsOrientable :=
-  ⟨IsOrientable.of_mergeFaces, fun hC => hC.mergeFaces⟩
+  ⟨IsOrientable.of_mergeFaces, fun hC => hC.mergeFaces h⟩
 
 /-! ### Merging the two faces of a split face -/
 

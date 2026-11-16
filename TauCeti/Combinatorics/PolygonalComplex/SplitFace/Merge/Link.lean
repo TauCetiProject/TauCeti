@@ -24,8 +24,10 @@ degrees, so a circle stays a circle and an interval stays an interval
 sides of `X` join the two ends of `d` in the merged complex
 (`PolygonalComplex.IsMergeable.nonempty_path_tgt_src`).
 
-A surface model therefore stays a surface model (`SurfaceModel.mergeFaces`), with the same Euler
-characteristic, the same orientability and the same boundary darts: the deleted edge is interior.
+A surface model therefore stays a surface model (`SurfaceModel.mergeFaces`), with the same boundary
+darts, since the deleted edge is interior. Its Euler characteristic and orientability are unchanged
+by `PolygonalComplex.eulerChar_mergeFaces` and `PolygonalComplex.isOrientable_mergeFaces_iff`, which
+apply to it directly.
 
 ## Main definitions
 
@@ -36,8 +38,6 @@ characteristic, the same orientability and the same boundary darts: the deleted 
 * `TauCeti.PolygonalComplex.HasSurfaceLink.mergeFaces`: a surface link stays a surface link.
 * `TauCeti.PolygonalComplex.IsMergeable.incoming_notMem_boundaryDarts`: the deleted edge is
   interior.
-* `TauCeti.SurfaceModel.eulerChar_mergeFaces`, `TauCeti.SurfaceModel.isOrientable_mergeFaces_iff`:
-  the Euler characteristic and orientability are unchanged.
 * `TauCeti.SurfaceModel.image_val_boundaryDarts_mergeFaces`: the boundary darts are unchanged.
 
 ## References
@@ -90,15 +90,6 @@ private theorem coe_outgoing_firstCorner_of_one_lt (h₁ : 1 < C.sides g₁) :
     ((C.mergeFaces h).outgoing (firstCorner h)).1 = C.outgoing ⟨g₁, ⟨0, C.sides_pos g₁⟩⟩ := by
   rw [coe_outgoing_mergeFaces, firstCorner,
     mergeFacesCornerOrigin_none_of_lt (by dsimp only; omega)]
-
-private theorem coe_outgoing_firstCorner_of_eq_one (h₁ : C.sides g₁ = 1) :
-    ((C.mergeFaces h).outgoing (firstCorner h)).1 =
-      C.outgoing (C.nextCorner ⟨g₂, ⟨0, C.sides_pos g₂⟩⟩) := by
-  have := h.two_lt_sides_add_sides
-  rw [coe_outgoing_mergeFaces, firstCorner,
-    mergeFacesCornerOrigin_none_of_not_lt (by dsimp only; omega),
-    C.nextCorner_mk_zero_of_one_lt (by omega)]
-  exact congrArg C.outgoing (Sigma.ext rfl (heq_of_eq (Fin.ext (by dsimp only; omega))))
 
 private theorem coe_incoming_firstCorner_of_one_lt (h₂ : 1 < C.sides g₂) :
     ((C.mergeFaces h).incoming (firstCorner h)).1 = C.incoming ⟨g₂, ⟨0, C.sides_pos g₂⟩⟩ := by
@@ -325,15 +316,12 @@ private theorem nonempty_vertexLink_path_mergeGerm (c : C.Corner) {v : C.graph.V
 /-- A vertex with finitely many corners in `C` has finitely many corners in the merged complex:
 they come from corners of `C` at the same vertex. -/
 instance {v : C.graph.V} [Finite (C.vertexLink v).E] :
-    Finite ((C.mergeFaces h).vertexLink v).E := by
-  have : Finite {c : C.Corner // C.cornerVertex c = v} :=
-    .of_injective (β := (C.vertexLink v).E) (fun c => (c, true)) fun _ _ h => congrArg Prod.fst h
-  have : Finite {c : (C.mergeFaces h).Corner // (C.mergeFaces h).cornerVertex c = v} :=
-    .of_injective (β := {c : C.Corner // C.cornerVertex c = v})
-      (fun c => ⟨C.mergeFacesCornerOrigin g₁ g₂ c.1,
-        (cornerVertex_mergeFaces h c.1).symm.trans c.2⟩)
-      fun c c' he => Subtype.ext (mergeFacesCornerOrigin_injective h.ne (congrArg Subtype.val he))
-  exact inferInstanceAs (Finite ({c : (C.mergeFaces h).Corner // _} × Bool))
+    Finite ((C.mergeFaces h).vertexLink v).E :=
+  .of_injective (β := (C.vertexLink v).E)
+    (fun d => (⟨C.mergeFacesCornerOrigin g₁ g₂ d.1.1,
+      (cornerVertex_mergeFaces h d.1.1).symm.trans d.1.2⟩, d.2))
+    fun _ _ he => Prod.ext (Subtype.ext (mergeFacesCornerOrigin_injective h.ne
+      (congrArg (·.1.1) he))) (congrArg (·.2) he)
 
 /-- Merging two faces keeps the surface links: a circle link stays a circle and an interval link
 stays an interval, since the merge only smooths out the germs `d` and `d⁻¹` of the link and the
@@ -389,17 +377,9 @@ abbrev mergeFaces : SurfaceModel.{u, v, w} where
   connected := S.connected.deleteEdge h.nonempty_path_tgt_src
   hasSurfaceLink v := (S.hasSurfaceLink v).mergeFaces h
 
-/-- Merging two faces of a surface model does not change its Euler characteristic. -/
-theorem eulerChar_mergeFaces : (S.mergeFaces h).eulerChar = S.eulerChar :=
-  S.toPolygonalComplex.eulerChar_mergeFaces h
-
-/-- Merging two faces of a surface model does not change its orientability. -/
-theorem isOrientable_mergeFaces_iff : (S.mergeFaces h).IsOrientable ↔ S.IsOrientable :=
-  S.toPolygonalComplex.isOrientable_mergeFaces_iff h
-
 /-- A remaining dart is a boundary dart of the merged model exactly when it is one of the original
 model. -/
-@[simp] theorem mem_boundaryDarts_mergeFaces_iff {e : (S.mergeFaces h).graph.E} :
+theorem mem_boundaryDarts_mergeFaces_iff {e : (S.mergeFaces h).graph.E} :
     e ∈ (S.mergeFaces h).boundaryDarts ↔ e.1 ∈ S.boundaryDarts := by
   rw [mem_boundaryDarts_iff, mem_boundaryDarts_iff]
   exact Eq.congr_left (congrArg₂ (· + ·) (PolygonalComplex.sideCount_mergeFaces h _)

@@ -342,22 +342,13 @@ theorem nonempty_vertexLink_path_of_path {D : PolygonalComplex.{u', v', w'}} {v 
         Nonempty ((D.vertexLink x).Path a b))
     {a b : (C.vertexLink v).V} (P : (C.vertexLink v).Path a b) {a' b' : (D.vertexLink x).V}
     (ha : a'.1 = φ a.1) (hb : b'.1 = φ b.1) : Nonempty ((D.vertexLink x).Path a' b') := by
-  induction P generalizing b' with
-  | nil =>
-    obtain rfl : a' = b' := Subtype.ext (ha.trans hb.symm)
-    exact ⟨.nil⟩
-  | cons _ e ih =>
-    rename_i c c' _
-    obtain ⟨Q⟩ := ih (b' := ⟨φ c.1, hφ c.1 c.2⟩) rfl
-    obtain ⟨⟨c₀, _ | _⟩, hs, ht⟩ := e
-    · obtain ⟨R⟩ := hc c₀.1 c₀.2 (a := b') (b := ⟨φ c.1, hφ c.1 c.2⟩)
-        (hb.trans (congrArg φ ((congrArg Subtype.val ht).symm.trans (C.vertexLink_src_true c₀))))
-        (congrArg φ ((congrArg Subtype.val hs).symm.trans (C.vertexLink_src_false c₀)))
-      exact ⟨Q.comp R.reverse⟩
-    · obtain ⟨R⟩ := hc c₀.1 c₀.2 (a := ⟨φ c.1, hφ c.1 c.2⟩) (b := b')
-        (congrArg φ ((congrArg Subtype.val hs).symm.trans (C.vertexLink_src_true c₀)))
-        (hb.trans (congrArg φ ((congrArg Subtype.val ht).symm.trans (C.vertexLink_src_false c₀))))
-      exact ⟨Q.comp R⟩
+  obtain rfl : a' = ⟨φ a.1, hφ a.1 a.2⟩ := Subtype.ext ha
+  obtain rfl : b' = ⟨φ b.1, hφ b.1 b.2⟩ := Subtype.ext hb
+  refine SerreGraph.nonempty_path_of_path (Γ := C.vertexLink v) (Δ := D.vertexLink x)
+    (fun a => ⟨φ a.1, hφ a.1 a.2⟩) (fun e => ?_) P
+  obtain ⟨c, _ | _⟩ := e
+  · exact (hc c.1 c.2 rfl rfl).map Quiver.Path.reverse
+  · exact hc c.1 c.2 rfl rfl
 
 /-- The degree of the germ `e` in the link of its source: the `Nat.card` of the link darts
 starting at `e`. A corner both of whose germs are `e` contributes two. As with `Nat.card`, this is
