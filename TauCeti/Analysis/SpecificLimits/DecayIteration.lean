@@ -284,11 +284,9 @@ theorem one_sub_mul_pow_mul_add_le_pow_succ_mul {δ q₁ M E A : ℝ} (j : ℕ)
 theorem rpow_div_pow_le_mul_pow {R b γ q : ℝ} (hR : 0 ≤ R) (hb : 0 < b) (hq : (b ^ γ)⁻¹ ≤ q)
     (j : ℕ) :
     (R / b ^ j) ^ γ ≤ R ^ γ * q ^ j := by
-  have hb' : ((b : ℝ) ^ j) ^ γ = (b ^ γ) ^ j := by
-    rw [← Real.rpow_natCast b j, ← Real.rpow_mul hb.le, mul_comm, Real.rpow_mul hb.le,
-      Real.rpow_natCast]
   calc (R / b ^ j) ^ γ = R ^ γ * ((b ^ γ)⁻¹) ^ j := by
-        rw [Real.div_rpow hR (by positivity), hb', inv_pow, div_eq_mul_inv]
+        rw [Real.div_rpow hR (by positivity), ← Real.rpow_pow_comm hb.le, inv_pow,
+          div_eq_mul_inv]
     _ ≤ R ^ γ * q ^ j := by gcongr
 
 /-- Passing from the radii `R / bʲ` to arbitrary radii: if `R / ρ < bʲ⁺¹` with `b > 1` and
@@ -299,8 +297,7 @@ theorem pow_succ_le_div_rpow_logb {b q ρ R : ℝ} {j : ℕ} (hb : 1 < b) (hq0 :
   have hb0 : 0 < b := one_pos.trans hb
   set α : ℝ := Real.logb b q⁻¹
   have hbα : (b ^ (j + 1)) ^ α = q⁻¹ ^ (j + 1) := by
-    rw [← Real.rpow_natCast b (j + 1), ← Real.rpow_mul hb0.le, mul_comm, Real.rpow_mul hb0.le,
-      Real.rpow_logb hb0 hb.ne' (inv_pos.2 hq0), Real.rpow_natCast]
+    rw [← Real.rpow_pow_comm hb0.le, Real.rpow_logb hb0 hb.ne' (inv_pos.2 hq0)]
   have hlt : (b ^ (j + 1))⁻¹ ≤ ρ / R := by
     rw [inv_le_comm₀ (by positivity) (by positivity), inv_div]
     exact hj.le
