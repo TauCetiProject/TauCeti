@@ -10,6 +10,7 @@ import Mathlib.Data.Rat.Lemmas
 import Mathlib.NumberTheory.Cyclotomic.PrimitiveRoots
 import Mathlib.NumberTheory.NumberField.Cyclotomic.Basic
 import Mathlib.RingTheory.Polynomial.Cyclotomic.Roots
+import TauCeti.NumberTheory.NumberField.Units.Dirichlet
 import TauCeti.NumberTheory.NumberField.Units.Torsion
 
 /-!
@@ -115,13 +116,8 @@ theorem indexRealUnits_eq_one_of_prime_pow (p a : ℕ) [hp : Fact p.Prime] (K : 
         (Polynomial.cyclotomic.irreducible_rat (pow_pos hp.out.pos a)), Nat.totient_eq_one_iff]
       have := pow_pos hp.out.pos a
       omega
-    have hrank : rank K = 0 := by
-      have h₁ := InfinitePlace.card_add_two_mul_card_eq_rank K
-      have h₂ := InfinitePlace.card_eq_nrRealPlaces_add_nrComplexPlaces K
-      rw [rank]
-      omega
-    rw [indexRealUnits, TauCeti.NumberField.Units.torsion_eq_top_of_rank_eq_zero hrank,
-      sup_top_eq, Subgroup.index_top]
+    rw [indexRealUnits, TauCeti.NumberField.Units.torsion_eq_top_of_rank_eq_zero
+      (rank_eq_zero_of_finrank_eq_one K hfin), sup_top_eq, Subgroup.index_top]
   · have := _root_.IsCyclotomicExtension.Rat.isCMField K (S := {p ^ a}) ⟨p ^ a, rfl, h⟩
     have ha : a ≠ 0 := by
       rintro rfl
