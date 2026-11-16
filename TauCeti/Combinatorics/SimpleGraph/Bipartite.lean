@@ -12,8 +12,11 @@ public import Mathlib.Logic.Equiv.Bool
 # Bipartite restrictions and two-colourings
 
 Restricting a graph to pairs between two sets is intersection with the corresponding
-restriction of the complete graph (`SimpleGraph.between_eq_inf_top_between`).
-Complete-graph cuts respect symmetric difference (`SimpleGraph.top_between_symmDiff`).
+restriction of the complete graph (`SimpleGraph.between_eq_inf_top_between`), and on a finite
+vertex type the same decomposition holds for `edgeFinset` (`SimpleGraph.edgeFinset_between`),
+with `(⊤ : SimpleGraph V).between S T` having `S.toFinset.card * T.toFinset.card` edges when `S`
+and `T` are disjoint (`SimpleGraph.card_edgeFinset_top_between`). Complete-graph cuts respect
+symmetric difference (`SimpleGraph.top_between_symmDiff`).
 
 A walk in a graph coloured by `Bool` has even length exactly when its endpoints have the same
 colour (`SimpleGraph.Coloring.even_length_iff_congr`). On a preconnected graph every two vertices
@@ -26,13 +29,18 @@ independent of the colouring up to exchanging the two classes.
 
 ## Main results
 
+* `SimpleGraph.edgeFinset_between`, `SimpleGraph.card_edgeFinset_top_between`: edge finset of
+  `G.between S T` and edge count of `(⊤ : SimpleGraph V).between S T` for disjoint `S` and `T`.
+* `SimpleGraph.card_edgeFinset_between`: the edges between disjoint finite sets `s` and `t` are
+  counted by the degrees from `s` into `t`; `SimpleGraph.card_edgeFinset_between_compl` is the
+  case of the cut of `s`.
 * `SimpleGraph.Coloring.eq_or_eq_recolorOfEquiv_boolNot`: on a preconnected graph, two
   `Bool`-colourings agree or differ by exchanging the colours.
 -/
 
 public section
 
-open scoped symmDiff
+open scoped symmDiff Finset
 
 namespace SimpleGraph
 
@@ -54,6 +62,83 @@ theorem top_between_symmDiff (S T : Set V) :
   simp only [between_adj, top_adj, Set.mem_compl_iff, symmDiff_def, Set.mem_union,
     Set.mem_sdiff, sup_adj, sdiff_adj]
   tauto
+
+section Finite
+
+variable [Fintype V] [DecidableEq V]
+
+/-- The edge finset of `G.between S T` is the intersection of `G.edgeFinset` with the edges of the
+complete graph between `S` and `T`. -/
+theorem edgeFinset_between (G : SimpleGraph V) [DecidableRel G.Adj] (S T : Set V)
+    [DecidablePred (· ∈ S)] [DecidablePred (· ∈ T)] :
+    (G.between S T).edgeFinset = G.edgeFinset ∩ ((⊤ : SimpleGraph V).between S T).edgeFinset := by
+  rw [edgeFinset_inj.mpr (between_eq_inf_top_between G S T), edgeFinset_inf]
+
+/-- For disjoint vertex sets `S` and `T`, the complete-graph restriction between `S` and `T` has
+`S.toFinset.card * T.toFinset.card` edges. -/
+theorem card_edgeFinset_top_between {S T : Set V} [DecidablePred (· ∈ S)] [DecidablePred (· ∈ T)]
+    (hST : Disjoint S T) :
+    ((⊤ : SimpleGraph V).between S T).edgeFinset.card = S.toFinset.card * T.toFinset.card := by
+  rw [← Finset.card_product]
+  symm
+  refine Finset.card_bij (fun (p : V × V) _ ↦ s(p.1, p.2)) ?_ ?_ ?_
+  · rintro ⟨u, v⟩ hp
+    rw [Finset.mem_product, Set.mem_toFinset, Set.mem_toFinset] at hp
+    rw [mem_edgeFinset, mem_edgeSet, between_adj, top_adj]
+    exact ⟨hST.ne_of_mem hp.1 hp.2, Or.inl hp⟩
+  · rintro ⟨u₁, v₁⟩ hp₁ ⟨u₂, v₂⟩ hp₂ h
+    rw [Finset.mem_product, Set.mem_toFinset, Set.mem_toFinset] at hp₁ hp₂
+    rcases Sym2.eq_iff.mp h with ⟨rfl, rfl⟩ | ⟨rfl, rfl⟩
+    · rfl
+    · exact False.elim (Set.disjoint_left.mp hST hp₁.1 hp₂.2)
+  · intro e he
+    induction e using Sym2.ind with
+    | _ u v =>
+      rw [mem_edgeFinset, mem_edgeSet, between_adj, top_adj] at he
+      rcases he.2 with ⟨hu, hv⟩ | ⟨hu, hv⟩
+      · exact ⟨(u, v), Finset.mem_product.mpr ⟨Set.mem_toFinset.mpr hu, Set.mem_toFinset.mpr hv⟩,
+          rfl⟩
+      · exact ⟨(v, u), Finset.mem_product.mpr ⟨Set.mem_toFinset.mpr hv, Set.mem_toFinset.mpr hu⟩,
+          Sym2.eq_swap⟩
+
+end Finite
+
+/-- The edges of `G` between disjoint finite sets `s` and `t` are counted by the degrees from `s`
+into `t`. -/
+theorem card_edgeFinset_between (G : SimpleGraph V) [DecidableRel G.Adj] {s t : Finset V}
+    [Fintype (G.between ↑s ↑t).edgeSet] (h : Disjoint s t) :
+    #(G.between ↑s ↑t).edgeFinset = ∑ v ∈ s, #{w ∈ t | G.Adj v w} := by
+  have hpairs : ∑ v ∈ s, #{w ∈ t | G.Adj v w} = #{p ∈ s ×ˢ t | G.Adj p.1 p.2} := by
+    simp only [Finset.card_filter, Finset.sum_product]
+  rw [hpairs]
+  symm
+  refine Finset.card_bij (fun p _ ↦ s(p.1, p.2)) ?_ ?_ ?_
+  · rintro ⟨a, b⟩ hp
+    simp only [Finset.mem_filter, Finset.mem_product] at hp
+    rw [mem_edgeFinset, mem_edgeSet, between_adj]
+    exact ⟨hp.2, Or.inl hp.1⟩
+  · rintro ⟨a, b⟩ hp ⟨a', b'⟩ hp' he
+    simp only [Finset.mem_filter, Finset.mem_product] at hp hp'
+    rcases Sym2.eq_iff.mp he with ⟨rfl, rfl⟩ | ⟨rfl, rfl⟩
+    · rfl
+    · exact absurd hp'.1.2 (Finset.disjoint_left.mp h hp.1.1)
+  · intro e he
+    induction e using Sym2.ind with
+    | _ a b =>
+      simp only [mem_edgeFinset, mem_edgeSet, between_adj, Finset.mem_coe] at he
+      obtain ⟨hab, ⟨ha, hb⟩ | ⟨ha, hb⟩⟩ := he
+      · exact ⟨(a, b), by simp [ha, hb, hab], rfl⟩
+      · exact ⟨(b, a), by simp [ha, hb, hab.symm], Sym2.eq_swap⟩
+
+/-- The edges of `G` across the cut of a finite set `s` are counted by the degrees from `s` into
+its complement. -/
+theorem card_edgeFinset_between_compl [Fintype V] [DecidableEq V] (G : SimpleGraph V)
+    [DecidableRel G.Adj] (s : Finset V) [Fintype (G.between ↑s (↑s)ᶜ).edgeSet] :
+    #(G.between ↑s (↑s)ᶜ).edgeFinset = ∑ v ∈ s, #{w ∈ sᶜ | G.Adj v w} := by
+  classical
+  rw [← card_edgeFinset_between G disjoint_compl_right]
+  congr! 2
+  rw [Finset.coe_compl]
 
 end SimpleGraph
 
