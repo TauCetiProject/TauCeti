@@ -29,6 +29,10 @@ complete: the formula is applied after embedding `V` into its completion.
 
 ## Main results
 
+* `ContinuousLinearMap.gramLeftInverse`: the Gram left inverse `(B† B)⁻¹ B†`, a left inverse of
+  `B` when `B† B` is invertible (`ContinuousLinearMap.gramLeftInverse_comp`), continuous and smooth
+  in `B` there (`ContinuousLinearMap.continuousAt_gramLeftInverse`,
+  `ContinuousLinearMap.contDiffAt_gramLeftInverse`).
 * `ContinuousLinearMap.starProjection_range_eq`: the formula `B (B† B)⁻¹ B†` for the orthogonal
   projection onto the range of `B`.
 * `ContinuousLinearMap.comp_adjoint_eq_starProjection_range`: for an isometry `B` it reduces to
@@ -59,11 +63,35 @@ section Adjoint
 
 variable [NormedAddCommGroup F] [InnerProductSpace 𝕜 F] [CompleteSpace F] [CompleteSpace V]
 
--- Internal factor of the Gram projection formula, shared by the continuity and smoothness proofs.
-private noncomputable def gramLeftInverse (A : F →L[𝕜] V) : V →L[𝕜] F :=
+/-- The Gram left inverse `(A† A)⁻¹ A†` of an operator `A`, where `Ring.inverse` is `0` when the
+Gram operator `A† A` is not invertible. When `A† A` is invertible (for instance, when `F` is
+finite-dimensional and `A` is injective), it is a left inverse of `A`
+(`ContinuousLinearMap.gramLeftInverse_comp`). -/
+noncomputable def gramLeftInverse (A : F →L[𝕜] V) : V →L[𝕜] F :=
   Ring.inverse (adjoint A ∘L A) ∘L adjoint A
 
-private theorem continuousAt_gramLeftInverse {A : F →L[𝕜] V}
+/-- The Gram left inverse is a left inverse of every operator with invertible Gram operator. -/
+theorem gramLeftInverse_comp {A : F →L[𝕜] V} (hA : IsUnit (adjoint A ∘L A)) :
+    gramLeftInverse A ∘L A = 1 := by
+  rw [gramLeftInverse, comp_assoc]
+  exact Ring.inverse_mul_cancel _ hA
+
+/-- The Gram left inverse recovers `v` from `A v` when the Gram operator of `A` is invertible. -/
+theorem gramLeftInverse_apply_apply {A : F →L[𝕜] V} (hA : IsUnit (adjoint A ∘L A)) (v : F) :
+    gramLeftInverse A (A v) = v :=
+  congr($(gramLeftInverse_comp hA) v)
+
+/-- The Gram left inverse of a surjective operator with invertible Gram operator is injective. -/
+theorem injective_gramLeftInverse {A : F →L[𝕜] V} (hA : IsUnit (adjoint A ∘L A))
+    (hsurj : Surjective A) : Injective (gramLeftInverse A) := by
+  intro v w h
+  obtain ⟨x, rfl⟩ := hsurj v
+  obtain ⟨y, rfl⟩ := hsurj w
+  rw [gramLeftInverse_apply_apply hA, gramLeftInverse_apply_apply hA] at h
+  rw [h]
+
+/-- The Gram left inverse is continuous at every operator with invertible Gram operator. -/
+theorem continuousAt_gramLeftInverse {A : F →L[𝕜] V}
     (hA : IsUnit (adjoint A ∘L A)) :
     ContinuousAt (gramLeftInverse : (F →L[𝕜] V) → V →L[𝕜] F) A := by
   have ha : ContinuousAt (adjoint : (F →L[𝕜] V) → V →L[𝕜] F) A :=
@@ -74,7 +102,9 @@ private theorem continuousAt_gramLeftInverse {A : F →L[𝕜] V}
   exact (hi.comp (f := fun B : F →L[𝕜] V ↦ adjoint B ∘L B)
     (ha.clm_comp continuousAt_id)).clm_comp ha
 
-private theorem contDiffAt_gramLeftInverse
+/-- The Gram left inverse depends smoothly, over `ℝ`, on the operator at every operator with
+invertible Gram operator. -/
+theorem contDiffAt_gramLeftInverse
     [NormedSpace ℝ F] [NormedSpace ℝ V]
     {A : F →L[𝕜] V} (hA : IsUnit (adjoint A ∘L A)) {n : WithTop ℕ∞} :
     ContDiffAt ℝ n (gramLeftInverse : (F →L[𝕜] V) → V →L[𝕜] F) A := by
