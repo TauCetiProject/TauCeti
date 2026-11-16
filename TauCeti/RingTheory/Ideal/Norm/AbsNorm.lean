@@ -27,8 +27,9 @@ have nonnegative product generate principal ideals with congruent absolute norms
   ideal is unchanged by transporting it along a ring isomorphism, in either direction.
 * `Ideal.absNorm_map_of_ringEquiv_eq_natCard`: the absolute norm of an ideal transported from an
   arbitrary commutative ring is the cardinality of the original quotient.
-* `Ideal.natCast_absNorm_ne_zero`: in a Dedekind domain with finite quotients, the absolute norm
-  of a nonzero ideal stays nonzero when cast into characteristic zero.
+* `Ideal.natCast_absNorm_ne_zero`, `IsDedekindDomain.HeightOneSpectrum.natCast_absNorm_ne_zero`:
+  in a Dedekind domain with finite quotients, the absolute norm of a nonzero ideal, in particular
+  of a height-one prime, stays nonzero when cast into characteristic zero.
 * `Ideal.natCast_notMem_of_coprime_absNorm`: a natural number prime to the absolute norm of a
   proper ideal does not lie in it.
 * `Int.absNorm_span_singleton`, `Int.absNorm_le_natAbs_of_dvd_span_singleton`: the absolute norm
@@ -91,6 +92,18 @@ theorem natCast_notMem_of_coprime_absNorm {I : Ideal R} (hI : I ≠ ⊤) {a : �
   simpa using I.add_mem (I.mul_mem_left u h) (I.mul_mem_left v (absNorm_mem I))
 
 end Ideal
+
+namespace IsDedekindDomain.HeightOneSpectrum
+
+/-- The absolute norm of a height-one prime of a Dedekind domain with finite quotients stays
+nonzero when cast into any `AddMonoidWithOne` of characteristic zero. This is
+`Ideal.natCast_absNorm_ne_zero` for `P.asIdeal`, stated for use with dot notation. -/
+theorem natCast_absNorm_ne_zero {R : Type*} [CommRing R] [IsDedekindDomain R]
+    [Ring.HasFiniteQuotients R] {α : Type*} [AddMonoidWithOne α] [CharZero α]
+    (P : HeightOneSpectrum R) : (Ideal.absNorm P.asIdeal : α) ≠ 0 :=
+  Ideal.natCast_absNorm_ne_zero P.ne_bot
+
+end IsDedekindDomain.HeightOneSpectrum
 
 namespace Int
 
