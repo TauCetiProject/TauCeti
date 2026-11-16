@@ -10,7 +10,7 @@ public import Mathlib.Topology.CWComplex.Classical.Finite
 public import TauCeti.Topology.VectorBundle.Contractible
 import Mathlib.Analysis.Convex.Contractible
 import TauCeti.Analysis.Normed.Module.Ball.Homeomorph
-import TauCeti.Analysis.Normed.Module.Ball.Retraction
+import TauCeti.Topology.CWComplex.Classical.OpenCells
 import TauCeti.Topology.FiberBundle.Separation
 import TauCeti.Topology.MetricSpace.Isometry.Basic
 import TauCeti.Topology.Separation.InvFunOn
@@ -86,6 +86,12 @@ universe u
 
 namespace TauCeti
 
+/-- The vectors of norm less than one miss the sphere bundle. -/
+private theorem disjoint_norm_lt_one_sphereBundle {B : Type u} {F : Type*} {E : B → Type u}
+    [∀ b, NormedAddCommGroup (E b)] :
+    Disjoint {v : TotalSpace F E | ‖v.2‖ < 1} (sphereBundle F E) :=
+  Set.disjoint_left.2 fun _ hv hv' ↦ (mem_ofPred_eq ▸ hv).ne (mem_sphereBundle.1 hv')
+
 variable {B : Type u} [TopologicalSpace B] {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F]
   {E : B → Type u} [∀ b, NormedAddCommGroup (E b)]
   [∀ b, InnerProductSpace ℝ (E b)] [TopologicalSpace (TotalSpace F E)] [FiberBundle F E]
@@ -119,17 +125,6 @@ private theorem norm_fibreCoord_eq_one_iff {z : Fin (Module.finrank ℝ F) → �
     ‖fibreCoord F z‖ = 1 ↔ ‖z‖ = 1 :=
   ContinuousLinearEquiv.norm_unitBallHomeomorph_eq_one_iff _
 
-/-- The characteristic map of a cell of `C`, precomposed with the radial retraction of
-`Fin m → ℝ` onto the closed unit ball: a continuous map on all of `Fin m → ℝ`. -/
-private def cellRetractMap {m : ℕ} (j : cell C m) : C(Fin m → ℝ, B) :=
-  ⟨fun y ↦ map m j (radialRetraction 1 y), (continuousOn m j).comp_continuous
-    (lipschitzWith_radialRetraction zero_le_one).continuous
-    fun y ↦ radialRetraction_mem_closedBall zero_le_one y⟩
-
-private theorem cellRetractMap_of_mem {m : ℕ} (j : cell C m) {y : Fin m → ℝ}
-    (hy : y ∈ closedBall 0 1) : cellRetractMap j y = map m j y := by
-  simp [cellRetractMap, radialRetraction_of_norm_le (mem_closedBall_zero_iff.1 hy)]
-
 /-- The splitting of the coordinates of an `n`-cell of the disc bundle into the coordinates of the
 cell of `C` and the fibre coordinates. -/
 private abbrev cellSplit {n : ℕ} (c : DiscCell F C n) :
@@ -158,16 +153,16 @@ private theorem mem_sphere_iff_cellSplit {n : ℕ} (c : DiscCell F C n) {x : Fin
 variable [FiniteDimensional ℝ F]
 
 variable (F E) in
-/-- A continuous orthonormal frame of `E` along `cellRetractMap j`. -/
+/-- A continuous orthonormal frame of `E` along `cellRetractMap m j`. -/
 private def cellFrame {m : ℕ} (j : cell C m) :
     C(Fin m → ℝ, OrthonormalFrameBundle ℝ F E (EuclideanSpace ℝ (Fin (Module.finrank ℝ F)))) :=
   (exists_orthonormalFrameBundle_lift_of_contractibleSpace F E finrank_euclideanSpace_fin
-    (cellRetractMap j)).choose
+    (cellRetractMap m j)).choose
 
 private theorem proj_cellFrame {m : ℕ} (j : cell C m) (y : Fin m → ℝ) :
-    (cellFrame F E j y).proj = cellRetractMap j y :=
+    (cellFrame F E j y).proj = cellRetractMap m j y :=
   (exists_orthonormalFrameBundle_lift_of_contractibleSpace F E finrank_euclideanSpace_fin
-    (cellRetractMap j)).choose_spec y
+    (cellRetractMap m j)).choose_spec y
 
 /-- The characteristic map of the cell of the disc bundle over the cell `c.2` of `C`: the base
 coordinates are read through the characteristic map of `c.2`, and the fibre coordinates through
@@ -186,7 +181,7 @@ private theorem proj_discCellFun {n : ℕ} (c : DiscCell F C n) {x : Fin n → �
     (hx : x ∈ closedBall 0 1) :
     (discCellFun (E := E) c x).proj = map c.1.1 c.2 (cellSplit c x).1 :=
   (proj_cellFrame c.2 _).trans
-    (cellRetractMap_of_mem c.2 ((mem_closedBall_iff_cellSplit c).1 hx).1)
+    (cellRetractMap_of_mem c.1.1 c.2 ((mem_closedBall_iff_cellSplit c).1 hx).1)
 
 private theorem norm_discCellFun {n : ℕ} (c : DiscCell F C n) (x : Fin n → ℝ) :
     ‖(discCellFun (E := E) c x).2‖ = ‖fibreCoord F (cellSplit c x).2‖ :=
@@ -198,7 +193,7 @@ private theorem exists_discCellFun_eq {n : ℕ} (c : DiscCell F C n) {y : Fin c.
     (hy : y ∈ closedBall 0 1) {v : TotalSpace F E} (hv : v.proj = map c.1.1 c.2 y) :
     ∃ z, ‖fibreCoord F z‖ = ‖v.2‖ ∧ discCellFun c ((cellSplit c).symm (y, z)) = v := by
   have hp : v.proj = (cellFrame F E c.2 y).proj := by
-    rw [proj_cellFrame, cellRetractMap_of_mem c.2 hy, hv]
+    rw [proj_cellFrame, cellRetractMap_of_mem c.1.1 c.2 hy, hv]
   -- Read `v` in the frame over `y`.
   obtain ⟨w, hw, hwv⟩ : ∃ w, ‖w‖ = ‖v.2‖ ∧
       (⟨(cellFrame F E c.2 y).proj, (cellFrame F E c.2 y).frame w⟩ : TotalSpace F E) = v := by
@@ -305,8 +300,8 @@ private def discCellMap {n : ℕ} (c : DiscCell F C n) : PartialEquiv (Fin n →
   (injOn_discCellFun c).toPartialEquiv _ _
 
 private theorem coe_discCellMap {n : ℕ} (c : DiscCell F C n) :
-    ⇑(discCellMap (E := E) c) = discCellFun c :=
-  (rfl)
+    ⇑(discCellMap (E := E) c) = discCellFun c := by
+  rw [discCellMap, InjOn.toPartialEquiv, BijOn.toPartialEquiv_apply]
 
 /-- Distinct cells of the disc bundle have disjoint open cells, since they lie over distinct open
 cells of `C`. -/
@@ -330,8 +325,7 @@ private theorem disjoint_discCellMap_base {n : ℕ} (c : DiscCell F C n) :
   rw [coe_discCellMap, image_ball_discCellFun]
   refine disjoint_union_right.2 ⟨Disjoint.mono inter_subset_left inter_subset_left ?_,
     Disjoint.mono inter_subset_right inter_subset_right ((disjointBase _ _).preimage _)⟩
-  exact Set.disjoint_left.2 fun (v : TotalSpace F E) hv hv' ↦
-    (hv : ‖v.2‖ < 1).ne (mem_sphereBundle.1 hv')
+  exact disjoint_norm_lt_one_sphereBundle
 
 /-- The boundary of a cell of the disc bundle lies in the base together with finitely many cells
 of smaller dimension: its part over the boundary of the cell of `C` lies over `D` or over finitely
@@ -390,8 +384,7 @@ private theorem continuousOn_symm_discCellMap {n : ℕ} (c : DiscCell F C n) :
     Disjoint.mono inter_subset_right inter_subset_right
       ((((disjoint_skeletonLT_openCell le_rfl).mono_left
         (cellFrontier_subset_skeletonLT c.1.1 c.2))).preimage _)⟩
-  exact Set.disjoint_left.2 fun (v : TotalSpace F E) hv hv' ↦
-    (hv' : ‖v.2‖ < 1).ne (mem_sphereBundle.1 hv)
+  exact disjoint_norm_lt_one_sphereBundle.symm
 
 /-- **The disc bundle over `C` has the weak topology.** A set `A` in the disc bundle over `C`
 which meets the part of the disc bundle over every closed cell of `C` and over `D` in a closed set
