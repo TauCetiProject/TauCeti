@@ -9,7 +9,6 @@ public import TauCeti.Topology.Spectral.WLocal
 import TauCeti.Topology.ConnectedComponents
 import TauCeti.Topology.Order.Sierpinski
 import TauCeti.Topology.Spectral.Limits.Basic
-import TauCeti.Topology.Spectral.ProConstructible
 import Mathlib.Topology.Compactification.OnePoint.Basic
 import Mathlib.Topology.Separation.Regular
 import Mathlib.Topology.UnitInterval
@@ -69,7 +68,7 @@ example : (((connectedComponentsClopensOrderIso Bool).symm
       ⟨{false}, isClopen_discrete _⟩ : Clopens (ConnectedComponents Bool)) :
       Set (ConnectedComponents Bool)) = {ConnectedComponents.mk false} ∧
     IsWLocalSpace (ℕ → Bool) := by
-  have : SpectralSpace Bool := spectralSpace_of_zeroDimensionalSpace Bool
+  have : TotallyDisconnectedSpace (ℕ → Bool) := Pi.totallyDisconnectedSpace
   exact ⟨by simp, .of_zeroDimensionalSpace (ℕ → Bool)⟩
 
 /-- The compact connected unit interval `[0, 1]` does not have split open covers because `0` and `1`

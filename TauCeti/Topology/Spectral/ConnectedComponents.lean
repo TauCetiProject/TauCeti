@@ -42,10 +42,9 @@ and spectrality of `ConnectedComponents X` follow via `TauCeti.connectedComponen
 * `TauCeti.totallySeparatedSpace_connectedComponents`, `TauCeti.t2Space_connectedComponents`:
   `ConnectedComponents X` is totally separated and Hausdorff when `X` is compact, quasi-sober,
   quasi-separated, and prespectral (in particular, when `X` is spectral), hence profinite.
-* `TauCeti.spectralSpace_connectedComponents`: `ConnectedComponents X` is spectral under the same
-  hypotheses.
-* `ConnectedComponents.isSpectralMap_coe`: when `X` is compact and `ConnectedComponents X` is
-  Hausdorff (in particular, when `X` is spectral),
+* `TauCeti.spectralSpace_connectedComponents`, `ConnectedComponents.isSpectralMap_coe`: when `X` is
+  compact and `ConnectedComponents X` is Hausdorff (in particular, when `X` is spectral or compact
+  Hausdorff), `ConnectedComponents X` is spectral and the quotient projection
   `ConnectedComponents.mk : X → ConnectedComponents X` is a spectral map.
 
 ## References
@@ -82,9 +81,8 @@ theorem connectedComponent_eq_iInter_isClopen_of_prespectralSpace (x : X) :
     stableUnderGeneralization_iInter _ fun s ↦ s.2.1.isOpen.stableUnderGeneralization
   refine isPreconnected_closed_iff.2 fun a b ha hb hcov ⟨y₁, hy₁⟩ ⟨y₂, hy₂⟩ ↦ ?_
   by_contra hne
-  have hab : Disjoint (Q ∩ a) (Q ∩ b) := disjoint_iff_inter_eq_empty.2 <| by
-    rw [not_nonempty_iff_eq_empty] at hne
-    grind
+  have hab : Disjoint (Q ∩ a) (Q ∩ b) :=
+    disjoint_left.2 fun z ⟨hzQ, hza⟩ ⟨_, hzb⟩ ↦ hne ⟨z, hzQ, hza, hzb⟩
   -- `Q ∩ b` inherits stability under generalization because `Q ∩ a` is closed (hence stable under
   -- specialization) and `Q = (Q ∩ a) ∪ (Q ∩ b)`.
   have hbg : StableUnderGeneralization (Q ∩ b) := by
@@ -136,12 +134,14 @@ instance totallySeparatedSpace_connectedComponents :
 instance t2Space_connectedComponents : T2Space (ConnectedComponents X) :=
   inferInstance
 
-/-- The space of connected components of a compact, quasi-sober, quasi-separated prespectral space
-(in particular, of any spectral space) is spectral. -/
-instance spectralSpace_connectedComponents : SpectralSpace (ConnectedComponents X) :=
-  spectralSpace_of_zeroDimensionalSpace (ConnectedComponents X)
-
 end Prespectral
+
+/-- When `X` is compact and `ConnectedComponents X` is Hausdorff (for instance, when `X` is
+spectral or compact Hausdorff), `ConnectedComponents X` is spectral. -/
+instance spectralSpace_connectedComponents (X : Type u) [TopologicalSpace X]
+    [CompactSpace X] [T2Space (ConnectedComponents X)] :
+    SpectralSpace (ConnectedComponents X) :=
+  spectralSpace_of_zeroDimensionalSpace (ConnectedComponents X)
 
 /-- When `X` is compact and `ConnectedComponents X` is Hausdorff (for instance, when `X` is
 spectral), the quotient projection `X → ConnectedComponents X` is a spectral map. -/

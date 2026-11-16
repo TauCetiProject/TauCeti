@@ -293,7 +293,8 @@ theorem openCoversSplit_iff (X : Type u) [TopologicalSpace X] [SpectralSpace X] 
     obtain ⟨y, -, hyuniq⟩ := h x
     obtain ⟨U, hU, hyU⟩ := mem_sUnion.1 (h𝒰c.symm ▸ mem_univ y)
     refine mem_sUnion.2 ⟨V ⟨U, hU⟩, ⟨⟨U, hU⟩, rfl⟩, fun ⟨z, hzU, hzx⟩ ↦ hzU ?_⟩
-    exact isClosed_connectedComponent.subset_of_forall_isClosed_singleton (h𝒰o U hU)
+    exact isClosed_connectedComponent.isCompact.subset_of_isClosed_of_forall_isClosed_singleton
+      isClosed_connectedComponent (h𝒰o U hU)
       (fun w hwc hwcl ↦ hyuniq w ⟨hwc, hwcl⟩ ▸ hyU) (ConnectedComponents.coe_eq_coe'.1 hzx)
   refine (OpenCoversSplit.of_zeroDimensionalSpace
       (ConnectedComponents X)).exists_isLocallyConstant_of_continuous

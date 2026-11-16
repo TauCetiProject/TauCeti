@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Topology.Irreducible
 public import Mathlib.Topology.Order
+import Mathlib.Topology.Order.UpperLowerSetTopology
 
 /-!
 # Closed points and irreducibility of the Sierpiński space
@@ -38,18 +39,13 @@ theorem isClosed_singleton_false : IsClosed ({False} : Set Prop) := by
 @[simp]
 theorem not_isClosed_singleton_true : ¬ IsClosed ({True} : Set Prop) := fun h ↦
   false_ne_true <| mem_singleton_iff.1 <| h.closure_eq ▸
-    mem_closure_iff_nhds.2 fun _ hU ↦ ⟨True, by simp_all⟩
+    (Topology.IsUpperSet.closure_singleton (a := True)).symm ▸ (bot_le : False ≤ True)
 
 /-- The Sierpiński space `Prop` is irreducible (and hence connected via
 `IrreducibleSpace.connectedSpace`), since `{True}` is dense. -/
 instance irreducibleSpace_prop : IrreducibleSpace Prop where
   toNonempty := inferInstance
-  isPreirreducible_univ := by
-    have hd : Dense ({True} : Set Prop) := fun p ↦ by
-      by_cases hp : p
-      · exact subset_closure (by simp [hp])
-      · exact mem_closure_iff_nhds.2 fun _ hU ↦ ⟨True, by simp_all⟩
-    simpa [hd.closure_eq] using (isPreirreducible_singleton (x := True)).closure
+  isPreirreducible_univ := by simpa using (isPreirreducible_singleton (x := True)).closure
 
 end TauCeti
 
