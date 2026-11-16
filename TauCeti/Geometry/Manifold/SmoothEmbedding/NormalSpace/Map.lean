@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.Manifold.SmoothEmbedding.NormalSpace.Basic
-public import Mathlib.Geometry.Manifold.LocalDiffeomorph
 import TauCeti.Geometry.Manifold.Immersion.Basic
 
 /-!
@@ -19,10 +18,14 @@ differential is surjective and the ambient differential is invertible. In partic
 equivalences identify intrinsic normal fibres in different submanifold coordinates, without
 choosing a metric or a complement.
 
-No differentiability of the base map is assumed: where the ambient map is differentiable, so is
-the base map (`TauCeti.SmoothEmbedding.mdifferentiableAt_of_eventuallyEq`), because the target
-embedding is an immersion and differentiability lifts through it
-(`IsDiffImmersionAt.mdifferentiableAt_iff_comp`); where it is not, its differential vanishes.
+`normalMap` and `normalBundleMap` assume differentiability of neither the base map nor the
+ambient map. Where the ambient map is differentiable, so is the base map
+(`TauCeti.SmoothEmbedding.mdifferentiableAt_of_eventuallyEq`), because the target embedding is an
+immersion and differentiability lifts through it
+(`IsDiffImmersionAt.mdifferentiableAt_iff_comp`). Where the ambient map is not differentiable, its
+differential vanishes, so the induced normal map is zero. The composition results
+(`normalMap_comp`, `normalBundleMap_comp`) and `map_tangentRange_mfderiv` assume the ambient maps
+differentiable.
 
 The square need only commute near the chosen base point. This local formulation allows the
 construction to be applied to coordinate maps and to their restrictions.
@@ -189,8 +192,8 @@ variable {E'' F'' H'' G'' M'' N'' : Type*}
   {r : ℕ∞ω} (q : SmoothEmbedding I'' J'' r M'' N'')
   {u' : M' → M''} {v' : N' → N''} {K'' : Type*}
 
-/-- Composing locally commuting squares composes their induced normal maps.
-The composite square is obtained from the two given germs. -/
+/-- Composing locally commuting squares whose ambient maps are differentiable at the base points
+composes their induced normal maps. The composite square is obtained from the two given germs. -/
 theorem normalMap_comp (hn : n ≠ 0) (hm : m ≠ 0) (hr : r ≠ 0)
     (hv : MDifferentiableAt J J' v (f x)) (hv' : MDifferentiableAt J' J'' v' (g (u x)))
     (h : v ∘ f =ᶠ[𝓝 x] g ∘ u) (h' : v' ∘ g =ᶠ[𝓝 (u x)] q ∘ u') :
@@ -212,7 +215,8 @@ theorem normalMap_comp (hn : n ≠ 0) (hm : m ≠ 0) (hr : r ≠ 0)
       (L (tangentSpaceCast J' (v (f x)) (g (u x)) (mfderiv J J' v (f x) w)))) hd using 1 <;>
     rfl
 
-/-- Composing commuting squares composes their induced maps on normal total spaces. -/
+/-- Composing commuting squares whose ambient maps are differentiable composes their induced maps
+on normal total spaces. -/
 theorem normalBundleMap_comp (hn : n ≠ 0) (hm : m ≠ 0) (hr : r ≠ 0)
     (hv : MDifferentiable J J' v) (hv' : MDifferentiable J' J'' v')
     (h : v ∘ f = g ∘ u) (h' : v' ∘ g = q ∘ u') :
@@ -230,8 +234,8 @@ theorem normalBundleMap_comp (hn : n ≠ 0) (hm : m ≠ 0) (hr : r ≠ 0)
 
 end Composition
 
-/-- If the base differential is surjective, the ambient differential carries the tangent
-range onto the target tangent range. -/
+/-- If the ambient map is differentiable at `f x` and the base differential is surjective, the
+ambient differential carries the tangent range onto the target tangent range. -/
 theorem map_tangentRange_mfderiv (hn : n ≠ 0) (hm : m ≠ 0)
     (hv : MDifferentiableAt J J' v (f x))
     (h : v ∘ f =ᶠ[𝓝 x] g ∘ u) (hsurj : Surjective (mfderiv I I' u x)) :
@@ -252,6 +256,10 @@ surjective and the ambient differential is invertible at the chosen point. -/
 def normalSpaceEquiv (hn : n ≠ 0) (hm : m ≠ 0) (hv : (mfderiv J J' v (f x)).IsInvertible)
     (hsurj : Surjective (mfderiv I I' u x)) (h : v ∘ f =ᶠ[𝓝 x] g ∘ u) :
     f.NormalSpace x hn ≃L[𝕜] g.NormalSpace (u x) hm :=
+  -- The range hypothesis `map_tangentRange_mfderiv` is stated for the linear map underlying
+  -- `tangentSpaceCast ∘L mfderiv`. It is the one underlying the equivalence below by definition,
+  -- since `ContinuousLinearEquiv.equivOfInverse'` applies `mfderiv` (see
+  -- `ContinuousLinearEquiv.equivOfInverse'_apply`) and the cast then follows it.
   f.normalSpaceEquivOfMapTangentRange g x (u x) hn hm
     ((ContinuousLinearEquiv.equivOfInverse' _ _ hv.self_comp_inverse hv.inverse_comp_self).trans
       (tangentSpaceCast J' (v (f x)) (g (u x))))
@@ -266,7 +274,8 @@ theorem normalSpaceEquiv_toContinuousLinearMap (hn : n ≠ 0) (hm : m ≠ 0)
   ext z
   obtain ⟨w, rfl⟩ := f.normalClass_surjective x hn z
   rw [ContinuousLinearEquiv.coe_apply, normalMap_normalClass]
-  exact f.normalSpaceEquivOfMapTangentRange_normalClass g x (u x) hn hm _ _ w
+  refine (f.normalSpaceEquivOfMapTangentRange_normalClass g x (u x) hn hm _ _ w).trans ?_
+  rw [ContinuousLinearEquiv.trans_apply, ContinuousLinearEquiv.equivOfInverse'_apply]
 
 /-- On representatives, the normal-fibre equivalence applies the ambient differential. -/
 @[simp]

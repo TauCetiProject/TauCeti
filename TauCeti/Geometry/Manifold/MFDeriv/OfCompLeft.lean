@@ -9,11 +9,11 @@ public import Mathlib.Geometry.Manifold.MFDeriv.Basic
 import Mathlib.Analysis.Calculus.FDeriv.OfCompLeft
 
 /-!
-# Lifting a manifold derivative through a map whose differential has a left inverse
+# Lifting a manifold derivative through a map with a continuous linear left inverse
 
-Let `φ : N → N'` have derivative `φ'` at `f x`, and let `L` be a left inverse of `φ'`. If `f` is
-continuous at `x` within `s` and `φ ∘ f` has derivative `h'` at `x` within `s`, then `f` has
-derivative `L ∘ h'` at `x` within `s`. This is the manifold version of Mathlib's
+Let `φ : N → N'` have derivative `φ'` at `f x`, and let `L` be a continuous linear left inverse of
+`φ'`. If `f` is continuous at `x` within `s` and `φ ∘ f` has derivative `h'` at `x` within `s`,
+then `f` has derivative `L ∘ h'` at `x` within `s`. This is the manifold version of Mathlib's
 `HasFDerivWithinAt.of_comp_of_leftInverse`, the easy half of the inverse function theorem, to which
 it reduces in the extended charts at `x`, `f x` and `φ (f x)`. Only the derivative of `φ` at the
 single point `f x` is used.
@@ -24,8 +24,8 @@ image under `φ`.
 ## Main results
 
 * `HasMFDerivWithinAt.of_comp_of_leftInverse`: a map that is continuous at `x` within `s` has
-  derivative `L ∘ h'` there, if its composite with `φ` has derivative `h'` and `L` is a left
-  inverse of the derivative of `φ` at the image point.
+  derivative `L ∘ h'` there, if its composite with `φ` has derivative `h'` and `L` is a continuous
+  linear left inverse of the derivative of `φ` at the image point.
 -/
 
 public section
@@ -42,10 +42,11 @@ variable {𝕜 : Type*} [NontriviallyNormedField 𝕜]
   {J' : ModelWithCorners 𝕜 F' G'} {N' : Type*} [TopologicalSpace N'] [ChartedSpace G' N']
   {f : M → N} {φ : N → N'} {s : Set M} {x : M}
 
-/-- **Lifting a derivative through a map whose differential has a left inverse.** If `φ` has
-derivative `φ'` at `f x`, `L` is a left inverse of `φ'`, `f` is continuous at `x` within `s`, and
-`φ ∘ f` has derivative `h'` at `x` within `s`, then `f` has derivative `L ∘ h'` at `x` within `s`.
-This is the manifold version of `HasFDerivWithinAt.of_comp_of_leftInverse`. -/
+/-- **Lifting a derivative through a map whose differential has a continuous linear left
+inverse.** If `φ` has derivative `φ'` at `f x`, `L` is a continuous linear left inverse of `φ'`,
+`f` is continuous at `x` within `s`, and `φ ∘ f` has derivative `h'` at `x` within `s`, then `f` has
+derivative `L ∘ h'` at `x` within `s`. This is the manifold version of
+`HasFDerivWithinAt.of_comp_of_leftInverse`. -/
 theorem HasMFDerivWithinAt.of_comp_of_leftInverse
     {φ' : TangentSpace J (f x) →L[𝕜] TangentSpace J' (φ (f x))}
     {h' : TangentSpace I x →L[𝕜] TangentSpace J' (φ (f x))}

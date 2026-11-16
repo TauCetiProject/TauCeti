@@ -23,8 +23,8 @@ finite-dimensional over a complete field, an injective differential has a contin
 
 The first result is the special case, for a curve and a map into a normed space, of
 `HasMFDerivWithinAt.of_comp_of_leftInverse`, which lifts a manifold derivative through any map
-whose differential has a left inverse; that lemma reads both maps in the extended charts and
-applies Mathlib's easy half of the inverse function theorem,
+whose differential has a continuous linear left inverse; that lemma reads both maps in the
+extended charts and applies Mathlib's easy half of the inverse function theorem,
 `HasFDerivWithinAt.of_comp_of_leftInverse`.
 
 This is the converse of the chain rule along a curve,
@@ -61,10 +61,10 @@ variable {𝕜 : Type*} [NontriviallyNormedField 𝕜]
   {F : Type*} [NormedAddCommGroup F] [NormedSpace 𝕜 F]
   {e : M → F} {γ : 𝕜 → M} {s : Set 𝕜} {t : 𝕜} {w : TangentSpace I (γ t)}
 
-/-- **Lifting a velocity through a map whose differential has a left inverse.** Let `e : M → F` be
-a map into a normed space whose differential at `γ t` has a continuous left inverse. If the curve
-`γ` is continuous at `t` within `s` and `e ∘ γ` has derivative `d e (γ t) w` at `t` within `s`,
-then `γ` has velocity `w` at `t` within `s`. -/
+/-- **Lifting a velocity through a map whose differential has a continuous left inverse.** Let
+`e : M → F` be a map into a normed space whose differential at `γ t` has a continuous left
+inverse. If the curve `γ` is continuous at `t` within `s` and `e ∘ γ` has derivative
+`d e (γ t) w` at `t` within `s`, then `γ` has velocity `w` at `t` within `s`. -/
 theorem ContinuousWithinAt.hasMFDerivWithinAt_of_hasDerivWithinAt_comp
     (hγ : ContinuousWithinAt γ s t) (he : (mvfderiv I e (γ t)).HasLeftInverse)
     (h : HasDerivWithinAt (e ∘ γ) (mvfderiv I e (γ t) w) s t) :
@@ -79,6 +79,10 @@ theorem ContinuousWithinAt.hasMFDerivWithinAt_of_hasDerivWithinAt_comp
     h.hasFDerivWithinAt.hasMFDerivWithinAt hL).congr_mfderiv ?_
   -- Both sides are linear in the parameter, so they agree once they agree at `1`.
   ext
+  -- The tangent space of `F` at `e (γ t)` and of `𝕜` at `t` are `F` and `𝕜` by definition, but
+  -- `simp` lemmas for composition and `toSpanSingleton` do not fire across these identifications.
+  -- `change` unfolds both composites at `1`, where `NormedSpace.fromTangentSpace` is the identity
+  -- on vectors, so that the goal becomes the left inverse property `hL w`.
   change L (NormedSpace.fromTangentSpace (e (γ t)) ((1 : 𝕜) • mvfderiv I e (γ t) w)) = (1 : 𝕜) • w
   rw [one_smul, one_smul]
   exact hL w
