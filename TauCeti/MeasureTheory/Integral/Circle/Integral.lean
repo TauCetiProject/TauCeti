@@ -30,13 +30,15 @@ any parameter interval `[a, a + 2π]`.
   `[-π, π]`.
 * `ContinuousOn.continuousOn_circleIntegral`: for `f` continuous on the closed disc
   `|z - c| ≤ R`, the map `r ↦ ∮ z in C(c, r), f z` is continuous on `[0, R]`.
-* `circleIntegral.norm_integral_sub_inv_smul_sub_le` and
-  `circleIntegral.norm_integral_sub_inv_smul_sub_le_sSup`: quantitative bounds on
-  `‖(∮ z in C(c, R), (z - c)⁻¹ • f z) - (2 * π * I) • f c‖` in terms of the oscillation of `f`
-  on the circle.
-* `ContinuousAt.tendsto_circleIntegral_sub_inv_smul_nhdsGT` and
-  `ContinuousOn.tendsto_circleIntegral_sub_inv_smul_nhdsGT`: as `R → 0⁺`, the Cauchy integral
-  `∮ z in C(c, R), (z - c)⁻¹ • f z` tends to `(2 * π * I) • f c` merely from continuity at `c`.
+* `TauCeti.norm_circleIntegral_sub_inv_smul_sub_le` and
+  `TauCeti.norm_circleIntegral_sub_inv_smul_sub_le_sSup`: quantitative bounds on
+  `‖(∮ z in C(c, R), (z - c)⁻¹ • f z) - (2 * π * I) • y‖` in terms of `‖f z - y‖` on the circle.
+* `TauCeti.tendsto_circleIntegral_sub_inv_smul_nhdsGT`,
+  `ContinuousAt.tendsto_circleIntegral_sub_inv_smul_nhdsGT`, and
+  `ContinuousOn.tendsto_circleIntegral_sub_inv_smul_nhdsGT`: for maps into a complete space, as
+  `R → 0⁺`, `∮ z in C(c, R), (z - c)⁻¹ • f z` tends to `(2 * π * I) • y` from a punctured limit
+  `f z → y` along `𝓝[≠] c` (or continuity at `c`) together with eventual circle-integrability on
+  small positive circles (automatic for `ContinuousOn` on a neighborhood of `c`).
 -/
 
 public section
@@ -100,26 +102,26 @@ theorem ContinuousOn.continuousOn_circleIntegral {f : ℂ → E} {c : ℂ} {R : 
   simp [hρ, hr.1, hr.2]
 
 /-- **Oscillation bound for the Cauchy integral over a circle.** For `R > 0`, if `f` is
-circle-integrable on `|z - c| = R` and `‖f z - f c‖ ≤ M` on that circle, then
-`∮ z in C(c, R), (z - c)⁻¹ • f z` differs from `(2 * π * I) • f c` by at most `2 * π * M`. No
+circle-integrable on `|z - c| = R` and `‖f z - y‖ ≤ M` on that circle, then
+`∮ z in C(c, R), (z - c)⁻¹ • f z` differs from `(2 * π * I) • y` by at most `2 * π * M`. No
 differentiability of `f` is assumed. -/
-theorem circleIntegral.norm_integral_sub_inv_smul_sub_le [CompleteSpace E] {f : ℂ → E} {c : ℂ}
-    {R M : ℝ} (hR : 0 < R) (hf : CircleIntegrable f c R)
-    (hM : ∀ z ∈ sphere c R, ‖f z - f c‖ ≤ M) :
-    ‖(∮ z in C(c, R), (z - c)⁻¹ • f z) - (2 * π * I : ℂ) • f c‖ ≤ 2 * π * M := by
+theorem TauCeti.norm_circleIntegral_sub_inv_smul_sub_le [CompleteSpace E] {f : ℂ → E} {c : ℂ}
+    {y : E} {R M : ℝ} (hR : 0 < R) (hf : CircleIntegrable f c R)
+    (hM : ∀ z ∈ sphere c R, ‖f z - y‖ ≤ M) :
+    ‖(∮ z in C(c, R), (z - c)⁻¹ • f z) - (2 * π * I : ℂ) • y‖ ≤ 2 * π * M := by
   have hc : c ∉ sphere c |R| := by simp [abs_of_pos hR, hR.ne]
   have hf' : CircleIntegrable (fun z ↦ (z - c)⁻¹ • f z) c R := by
     simpa only [zpow_neg_one] using hf.sub_zpow_smul (-1) hc
-  have hconst : CircleIntegrable (fun z ↦ (z - c)⁻¹ • f c) c R := by
-    simpa only [zpow_neg_one] using (circleIntegrable_const (f c) c R).sub_zpow_smul (-1) hc
-  have hsub : (∮ z in C(c, R), (z - c)⁻¹ • f z) - (2 * π * I : ℂ) • f c =
-      ∮ z in C(c, R), (z - c)⁻¹ • (f z - f c) := by
+  have hconst : CircleIntegrable (fun z ↦ (z - c)⁻¹ • y) c R := by
+    simpa only [zpow_neg_one] using (circleIntegrable_const y c R).sub_zpow_smul (-1) hc
+  have hsub : (∮ z in C(c, R), (z - c)⁻¹ • f z) - (2 * π * I : ℂ) • y =
+      ∮ z in C(c, R), (z - c)⁻¹ • (f z - y) := by
     rw [← circleIntegral.integral_sub_center_inv c hR.ne', ← circleIntegral.integral_smul_const,
       ← circleIntegral.integral_sub hf' hconst]
     simp only [smul_sub]
   rw [hsub]
   calc
-    ‖∮ z in C(c, R), (z - c)⁻¹ • (f z - f c)‖
+    ‖∮ z in C(c, R), (z - c)⁻¹ • (f z - y)‖
         ≤ 2 * π * R * (R⁻¹ * M) := by
           refine circleIntegral.norm_integral_le_of_norm_le_const hR.le fun z hz ↦ ?_
           rw [norm_smul, norm_inv, mem_sphere_iff_norm.mp hz]
@@ -128,16 +130,43 @@ theorem circleIntegral.norm_integral_sub_inv_smul_sub_le [CompleteSpace E] {f : 
           rw [mul_assoc, mul_inv_cancel_left₀ hR.ne']
 
 /-- **Supremum oscillation bound for the Cauchy integral over a circle.** For `R > 0` and `f`
-continuous on `sphere c R`, `‖(∮ z in C(c, R), (z - c)⁻¹ • f z) - (2 * π * I) • f c‖` is bounded
-by `2 * π` times the supremum of `‖f z - f c‖` over `sphere c R`. -/
-theorem circleIntegral.norm_integral_sub_inv_smul_sub_le_sSup [CompleteSpace E] {f : ℂ → E}
-    {c : ℂ} {R : ℝ} (hR : 0 < R) (hf : ContinuousOn f (sphere c R)) :
-    ‖(∮ z in C(c, R), (z - c)⁻¹ • f z) - (2 * π * I : ℂ) • f c‖ ≤
-      2 * π * sSup ((fun z ↦ ‖f z - f c‖) '' sphere c R) := by
-  have hbdd : BddAbove ((fun z ↦ ‖f z - f c‖) '' sphere c R) :=
+continuous on `sphere c R`, `‖(∮ z in C(c, R), (z - c)⁻¹ • f z) - (2 * π * I) • y‖` is bounded
+by `2 * π` times the supremum of `‖f z - y‖` over `sphere c R`. -/
+theorem TauCeti.norm_circleIntegral_sub_inv_smul_sub_le_sSup [CompleteSpace E] {f : ℂ → E}
+    {c : ℂ} {y : E} {R : ℝ} (hR : 0 < R) (hf : ContinuousOn f (sphere c R)) :
+    ‖(∮ z in C(c, R), (z - c)⁻¹ • f z) - (2 * π * I : ℂ) • y‖ ≤
+      2 * π * sSup ((fun z ↦ ‖f z - y‖) '' sphere c R) := by
+  have hbdd : BddAbove ((fun z ↦ ‖f z - y‖) '' sphere c R) :=
     ((isCompact_sphere c R).image_of_continuousOn (hf.sub continuousOn_const).norm).bddAbove
-  exact circleIntegral.norm_integral_sub_inv_smul_sub_le hR (hf.circleIntegrable hR.le)
+  exact TauCeti.norm_circleIntegral_sub_inv_smul_sub_le hR (hf.circleIntegrable hR.le)
     fun z hz ↦ le_csSup hbdd (mem_image_of_mem _ hz)
+
+/-- **Small-circle limit of the Cauchy integral from a punctured limit.** If `f z → y` along the
+punctured neighborhood `𝓝[≠] c` and `f` is circle-integrable on small positive circles centered at
+`c`, then `∮ z in C(c, R), (z - c)⁻¹ • f z → (2 * π * I) • y` as `R → 0⁺`. -/
+theorem TauCeti.tendsto_circleIntegral_sub_inv_smul_nhdsGT [CompleteSpace E] {f : ℂ → E} {c : ℂ}
+    {y : E} (hf : Tendsto f (𝓝[≠] c) (𝓝 y)) (hint : ∀ᶠ R in 𝓝[>] 0, CircleIntegrable f c R) :
+    Tendsto (fun R ↦ ∮ z in C(c, R), (z - c)⁻¹ • f z) (𝓝[>] 0)
+      (𝓝 ((2 * π * I : ℂ) • y)) := by
+  rw [Metric.tendsto_nhds]
+  intro ε hε
+  have hε' : 0 < ε / (4 * π) := div_pos hε (by positivity)
+  obtain ⟨δ, hδ, hdist⟩ := Metric.mem_nhdsWithin_iff.mp (hf (Metric.ball_mem_nhds y hε'))
+  filter_upwards [Ioo_mem_nhdsGT hδ, hint] with R hR hintR
+  rw [dist_eq_norm]
+  calc
+    ‖(∮ z in C(c, R), (z - c)⁻¹ • f z) - (2 * π * I : ℂ) • y‖
+        ≤ 2 * π * (ε / (4 * π)) :=
+          TauCeti.norm_circleIntegral_sub_inv_smul_sub_le hR.1 hintR fun z hz ↦ by
+            rw [← dist_eq_norm]
+            have hzne : z ≠ c := fun h ↦ hR.1.ne (by simpa [h] using mem_sphere.mp hz)
+            exact (mem_ball.mp (hdist ⟨mem_ball.mpr (by rw [mem_sphere.mp hz]; exact hR.2),
+              hzne⟩)).le
+    _ = ε / 2 := by
+          have hpi : π ≠ 0 := Real.pi_ne_zero
+          field_simp
+          ring
+    _ < ε := half_lt_self hε
 
 /-- **Small-circle limit of the Cauchy integral at a point of continuity.** If `f` is continuous
 at `c` and circle-integrable on small positive circles centered at `c`, then
@@ -145,24 +174,9 @@ at `c` and circle-integrable on small positive circles centered at `c`, then
 theorem ContinuousAt.tendsto_circleIntegral_sub_inv_smul_nhdsGT [CompleteSpace E] {f : ℂ → E}
     {c : ℂ} (hf : ContinuousAt f c) (hint : ∀ᶠ R in 𝓝[>] 0, CircleIntegrable f c R) :
     Tendsto (fun R ↦ ∮ z in C(c, R), (z - c)⁻¹ • f z) (𝓝[>] 0)
-      (𝓝 ((2 * π * I : ℂ) • f c)) := by
-  rw [Metric.tendsto_nhds]
-  intro ε hε
-  have hε' : 0 < ε / (4 * π) := div_pos hε (by positivity)
-  obtain ⟨δ, hδ, hdist⟩ := Metric.continuousAt_iff.mp hf (ε / (4 * π)) hε'
-  filter_upwards [Ioo_mem_nhdsGT hδ, hint] with R hR hintR
-  rw [dist_eq_norm]
-  calc
-    ‖(∮ z in C(c, R), (z - c)⁻¹ • f z) - (2 * π * I : ℂ) • f c‖
-        ≤ 2 * π * (ε / (4 * π)) :=
-          circleIntegral.norm_integral_sub_inv_smul_sub_le hR.1 hintR fun z hz ↦ by
-            rw [← dist_eq_norm]
-            exact (hdist (by rw [mem_sphere.mp hz]; exact hR.2)).le
-    _ = ε / 2 := by
-          have hpi : π ≠ 0 := Real.pi_ne_zero
-          field_simp
-          ring
-    _ < ε := half_lt_self hε
+      (𝓝 ((2 * π * I : ℂ) • f c)) :=
+  TauCeti.tendsto_circleIntegral_sub_inv_smul_nhdsGT
+    (hf.tendsto.mono_left nhdsWithin_le_nhds) hint
 
 /-- **Small-circle limit of the Cauchy integral for a map continuous near the center.** If `f` is
 continuous on a neighborhood of `c`, then `∮ z in C(c, R), (z - c)⁻¹ • f z → (2 * π * I) • f c`

@@ -23,7 +23,7 @@ negates its contour integral (`Cycle.integral_of_symm`), negates its winding num
 
 ## Main results
 
-* `TauCeti.Contour.PiecewiseC1ClosedCurve.ext_of_eqOn`, `coe_symm`, `symm_symm`, `image_symm`
+* `TauCeti.Contour.PiecewiseC1ClosedCurve.coe_symm`, `symm_symm`, `of_symm`, `image_symm`
 * `TauCeti.Contour.Cycle.trace_of_symm`, `isIn_of_symm_iff`, `integral_of_symm`,
   `windingNumber_of_symm`, `windingNumber_of_symm_eq_zero_iff`, `isNullHomologous_of_symm_iff`
 -/
@@ -38,24 +38,6 @@ open scoped Interval
 namespace TauCeti.Contour
 
 namespace PiecewiseC1ClosedCurve
-
-/-- Outside its parameter interval `uIcc γ.a γ.b`, the canonical extension of a bundled closed curve
-to `ℝ` vanishes. -/
-theorem coe_apply_of_notMem (γ : PiecewiseC1ClosedCurve) {t : ℝ}
-    (ht : t ∉ uIcc γ.a γ.b) : γ t = 0 :=
-  Function.extend_apply' _ _ _ fun ⟨s, hs⟩ ↦ ht (hs ▸ s.2)
-
-/-- Two bundled closed curves with equal initial and terminal parameters that agree on their
-parameter interval are equal. -/
-theorem ext_of_eqOn {γ₁ γ₂ : PiecewiseC1ClosedCurve} (ha : γ₁.a = γ₂.a) (hb : γ₁.b = γ₂.b)
-    (h : EqOn (γ₁ : ℝ → ℂ) (γ₂ : ℝ → ℂ) (uIcc γ₁.a γ₁.b)) : γ₁ = γ₂ := by
-  rcases γ₁ with ⟨a₁, b₁, f₁, _, _⟩
-  rcases γ₂ with ⟨a₂, b₂, f₂, _, _⟩
-  dsimp only at ha hb
-  subst ha hb
-  refine PiecewiseC1ClosedCurve.ext rfl rfl (heq_of_eq (funext fun t ↦ ?_))
-  have ht := h t.2
-  rwa [coe_apply, coe_apply] at ht
 
 /-- Reverse the orientation of a bundled closed piecewise-`C¹` curve by swapping its initial and
 terminal parameters. -/

@@ -13,6 +13,7 @@ import TauCeti.Analysis.Calculus.ContDiff.PiecewiseC1On.AbsolutelyContinuous
 import TauCeti.Analysis.Contour.Winding.AbsolutelyContinuous.Reparam
 import TauCeti.Analysis.Convex.Segment
 import TauCeti.MeasureTheory.Function.AbsolutelyContinuous.Reparam
+import Mathlib.MeasureTheory.Function.L1Space.Integrable
 
 /-!
 # Winding-weighted Green for contour cycles
@@ -20,6 +21,12 @@ import TauCeti.MeasureTheory.Function.AbsolutelyContinuous.Reparam
 The canonical support and integer coefficients of an existing contour cycle give its circulation.
 The area weight is the existing cycle winding number, set to zero on its null trace. Affine
 normalization of each generator handles both orientations and constant parameter intervals.
+
+As an immediate consequence (`TauCeti.Contour.Cycle.integrable_windingWeight`), the trace-zero
+winding weight of every contour cycle is globally integrable on `ℂ`, so its product with any map
+continuous on `tsupport C.windingWeight` is globally integrable
+(`TauCeti.Contour.Cycle.integrable_windingWeight_smul`,
+`TauCeti.Contour.Cycle.integrableOn_windingWeight_smul`).
 -/
 
 public section
@@ -120,5 +127,49 @@ theorem _root_.TauCeti.Contour.Cycle.green_winding (C : Contour.Cycle) {U : Set 
   · exact hi.congr (haeU.mono fun z hz ↦ congrArg (· * curl P Q z) hz)
   · rw [sum_integral_circulationFun_comp_lineMap C hP.continuousOn hQ.continuousOn htr] at heq
     exact heq.trans (integral_congr_ae (haeU.mono fun z hz ↦ congrArg (· * curl P Q z) hz))
+
+/-- The trace-zero real winding weight of any contour cycle is integrable on `ℂ`. -/
+theorem _root_.TauCeti.Contour.Cycle.integrable_windingWeight (C : Contour.Cycle) :
+    Integrable C.windingWeight := by
+  have hgreen := (C.green_winding (U := univ) (P := Function.const ℂ 0) (Q := Complex.reCLM)
+    isOpen_univ (Contour.Cycle.isIn_iff.mpr (subset_univ _))
+    contDiffOn_const Complex.reCLM.contDiff.contDiffOn C.isNullHomologous_univ).2.1
+  rw [integrableOn_univ] at hgreen
+  refine hgreen.congr (ae_of_all _ fun z ↦ ?_)
+  dsimp only
+  rw [curl, Complex.reCLM.hasFDerivAt.fderiv, fderiv_const]
+  simp
+
+/-- For any contour cycle `C` and any map `g : ℂ → E` continuous on `tsupport C.windingWeight`,
+`z ↦ C.windingWeight z • g z` is integrable on `ℂ`. -/
+theorem _root_.TauCeti.Contour.Cycle.integrable_windingWeight_smul {E : Type*}
+    [NormedAddCommGroup E] [NormedSpace ℝ E] (C : Contour.Cycle) {g : ℂ → E}
+    (hg : ContinuousOn g (tsupport C.windingWeight)) :
+    Integrable (fun z ↦ C.windingWeight z • g z) := by
+  set K := tsupport C.windingWeight
+  obtain ⟨M, hM⟩ := C.hasCompactSupport_windingWeight.exists_bound_of_continuousOn hg
+  have hKm : MeasurableSet K := C.hasCompactSupport_windingWeight.measurableSet
+  have hint : Integrable (fun z ↦ C.windingWeight z • K.indicator g z) :=
+    C.integrable_windingWeight.smul_bdd (max M 0)
+      ((aestronglyMeasurable_indicator_iff hKm).mpr (hg.aestronglyMeasurable hKm))
+      (ae_of_all _ fun z ↦ by
+        by_cases hz : z ∈ K
+        · rw [indicator_of_mem hz]; exact (hM z hz).trans (le_max_left _ _)
+        · rw [indicator_of_notMem hz, norm_zero]; exact le_max_right _ _)
+  have heq : (fun z ↦ C.windingWeight z • K.indicator g z) = fun z ↦ C.windingWeight z • g z := by
+    funext z
+    by_cases hz : z ∈ K
+    · rw [indicator_of_mem hz]
+    · rw [image_eq_zero_of_notMem_tsupport hz, zero_smul, zero_smul]
+  exact heq ▸ hint
+
+/-- If `C` lies in `U` and is null-homologous in `U`, then `C.windingWeight • g` is integrable on
+`U` for every map `g : ℂ → E` continuous on `U`. -/
+theorem _root_.TauCeti.Contour.Cycle.integrableOn_windingWeight_smul {E : Type*}
+    [NormedAddCommGroup E] [NormedSpace ℝ E] (C : Contour.Cycle) {U : Set ℂ} {g : ℂ → E}
+    (htrace : C.IsIn U) (hnull : C.IsNullHomologous U) (hg : ContinuousOn g U) :
+    IntegrableOn (fun z ↦ C.windingWeight z • g z) U :=
+  (C.integrable_windingWeight_smul
+    (hg.mono (C.tsupport_windingWeight_subset htrace hnull))).integrableOn
 
 end TauCeti.Green
