@@ -578,11 +578,7 @@ theorem exists_sublevel_union_negativeDiscBundle_deformation [T2Space M]
       (fun _ ↦ h) hfs (fun _ ↦ hc) Subsingleton.pairwise (fun _ ↦ hdim) fun _ ↦ g
   refine ⟨Θ (), hΘz (), hΘi (), hΘf (), ε₀, hε₀, fun ε hε hcomp hcrit ↦ ?_⟩
   obtain ⟨hD, hr⟩ := hmain ε hε hcomp (by rwa [iUnion_const])
-  have hU : ⋃ j, Θ j '' h.negativeDiscBundle hn P g.toRiemannianMetric ε =
-      Θ () '' h.negativeDiscBundle hn P g.toRiemannianMetric ε :=
-    Set.ext fun y ↦ ⟨fun hy ↦ by obtain ⟨⟨⟩, hy⟩ := mem_iUnion.1 hy; exact hy,
-      fun hy ↦ mem_iUnion.2 ⟨(), hy⟩⟩
-  rw [hU] at hr
+  rw [← iSup_eq_iUnion, iSup_unique] at hr
   exact ⟨hD (), hr⟩
 
 end IsNondegenerateCriticalSubmanifold
