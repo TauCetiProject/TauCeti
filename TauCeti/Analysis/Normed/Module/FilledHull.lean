@@ -59,6 +59,12 @@ regularity assumptions on `K`. The related frontier bound in
 * `TauCeti.compl_filledHull_eq_connectedComponentIn` and `TauCeti.isConnected_compl_filledHull`:
   outside its filled hull, the complement of a bounded set is a single component, in dimension at
   least two.
+* `TauCeti.filledHull_subset_interior_filledHull`: in dimension at least two, any subset of the
+  interior of `filledHull K` (for bounded `K`) has its entire filled hull inside that interior.
+* `IsCompact.filledHull_subset_ball`: if a compact set lies inside an open ball, so does its
+  filled hull.
+* `IsCompact.filledHull_eq_Icc_sInf_sSup` and `TauCeti.filledHull_pair`: in `ℝ`, the filled hull
+  of a nonempty compact set is `[sInf K, sSup K]`, and the filled hull of `{a, b}` is `uIcc a b`.
 -/
 
 public section
@@ -256,5 +262,64 @@ theorem isConnected_compl_filledHull (h : 1 < Module.rank ℝ E) (hK : IsBounded
   obtain ⟨x, hx⟩ := nonempty_compl_filledHull hK
   rw [compl_filledHull_eq_connectedComponentIn h hK hx]
   exact isConnected_connectedComponentIn_iff.mpr fun hxK => hx (subset_filledHull hxK)
+
+/-- If a set `L` lies in the interior of the filled hull of a bounded set `K` in a real normed
+space of dimension at least two, then its whole filled hull `filledHull L` lies in
+`interior (filledHull K)`. -/
+theorem filledHull_subset_interior_filledHull (h : 1 < Module.rank ℝ E) (hK : IsBounded K)
+    {L : Set E} (hL : L ⊆ interior (filledHull K)) :
+    filledHull L ⊆ interior (filledHull K) := by
+  have : Nontrivial E := rank_pos_iff_nontrivial.mp (zero_lt_one.trans h)
+  have hconn : IsConnected (interior (filledHull K))ᶜ := by
+    rw [← closure_compl]
+    exact (isConnected_compl_filledHull h hK).closure
+  have hunb : ¬ IsBounded (interior (filledHull K))ᶜ := fun hb =>
+    NormedSpace.unbounded_univ ℝ E <| by
+      simpa using ((isBounded_filledHull.mpr hK).subset interior_subset).union hb
+  intro x hx
+  by_contra hx'
+  have hsub : (interior (filledHull K))ᶜ ⊆ connectedComponentIn Lᶜ x :=
+    hconn.isPreconnected.subset_connectedComponentIn hx' (compl_subset_compl.mpr hL)
+  exact hunb ((mem_filledHull_iff.mp hx).subset hsub)
+
+/-- The filled hull of a compact subset of an open ball stays inside that open ball in any
+nontrivial real normed space. -/
+theorem _root_.IsCompact.filledHull_subset_ball [Nontrivial E] {c : E} {r : ℝ}
+    (hK : IsCompact K) (hKb : K ⊆ ball c r) : filledHull K ⊆ ball c r := by
+  rcases K.eq_empty_or_nonempty with rfl | hne
+  · simp
+  obtain ⟨x, hxK, hx⟩ := hK.exists_isMaxOn hne (continuous_id.dist continuous_const).continuousOn
+  have hsub : K ⊆ closedBall c (dist x c) := fun _ hy => hx hy
+  have hconv : closedConvexHull ℝ K ⊆ closedBall c (dist x c) :=
+    closedConvexHull_min hsub (convex_closedBall c _) isClosed_closedBall
+  exact (filledHull_subset_closedConvexHull hne).trans
+    (hconv.trans (closedBall_subset_ball (hKb hxK)))
+
+/-- The filled hull of a nonempty compact set of real numbers is the closed interval between its
+infimum and supremum. -/
+theorem _root_.IsCompact.filledHull_eq_Icc_sInf_sSup {K : Set ℝ} (hK : IsCompact K)
+    (hne : K.Nonempty) : filledHull K = Icc (sInf K) (sSup K) := by
+  have hinf : sInf K ∈ K := hK.isClosed.csInf_mem hne hK.bddBelow
+  have hsup : sSup K ∈ K := hK.isClosed.csSup_mem hne hK.bddAbove
+  have hsub : K ⊆ Icc (sInf K) (sSup K) := fun _ hx =>
+    ⟨csInf_le hK.bddBelow hx, le_csSup hK.bddAbove hx⟩
+  refine Subset.antisymm
+    ((filledHull_subset_closedConvexHull hne).trans
+      (closedConvexHull_min hsub (convex_Icc _ _) isClosed_Icc)) ?_
+  intro x hx
+  rcases hx.1.eq_or_lt with rfl | hlt1
+  · exact subset_filledHull hinf
+  rcases hx.2.eq_or_lt with rfl | hlt2
+  · exact subset_filledHull hsup
+  refine subset_filledHull_of_frontier_subset (isBounded_Ioo (sInf K) (sSup K)) ?_ ⟨hlt1, hlt2⟩
+  rw [frontier_Ioo (hlt1.trans hlt2)]
+  exact pair_subset hinf hsup
+
+/-- The filled hull of a pair of real numbers is the unordered closed interval between them. -/
+@[simp]
+theorem filledHull_pair (a b : ℝ) : filledHull ({a, b} : Set ℝ) = uIcc a b := by
+  have hK : IsCompact ({a, b} : Set ℝ) := isCompact_singleton.union isCompact_singleton
+  have h := hK.filledHull_eq_Icc_sInf_sSup (insert_nonempty a {b})
+  simpa [uIcc, csInf_pair, csSup_pair] using h
 
 end TauCeti

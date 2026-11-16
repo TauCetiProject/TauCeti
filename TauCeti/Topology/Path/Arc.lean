@@ -22,6 +22,9 @@ sphere is the pair of endpoints.
 * `Path.exists_homeomorph_range_closedBall`: the range of an injective path is homeomorphic to the
   closed unit ball of a one-dimensional real normed space, by a homeomorphism carrying the
   endpoints onto the unit sphere.
+* `Path.injective_symm_iff`: reversing a path preserves injectivity.
+* `Path.injective_trans`: concatenating two injective paths that meet only at their shared endpoint
+  yields an injective path.
 -/
 
 public section
@@ -75,6 +78,40 @@ theorem exists_homeomorph_range_closedBall {E : Type*} [NormedAddCommGroup E] [N
   have h0 : γ t = x ↔ t = 0 := (show γ t = x ↔ γ t = γ 0 by rw [Path.source]).trans hγ.eq_iff
   have h1 : γ t = y ↔ t = 1 := (show γ t = y ↔ γ t = γ 1 by rw [Path.target]).trans hγ.eq_iff
   rw [mem_insert_iff, mem_singleton_iff, h0, h1]
+
+omit [T2Space X] in
+/-- Reversing a path preserves injectivity. -/
+@[simp]
+theorem injective_symm_iff {γ : Path x y} : Injective γ.symm ↔ Injective γ := by
+  constructor
+  · intro h s t hst
+    have h' := h (a₁ := unitInterval.symm s) (a₂ := unitInterval.symm t) (by
+      simpa only [Path.symm_apply, Function.comp_apply, unitInterval.symm_symm] using hst)
+    exact unitInterval.symm_involutive.injective h'
+  · intro h s t hst
+    exact unitInterval.symm_involutive.injective (h hst)
+
+omit [T2Space X] in
+/-- Concatenating two injective paths whose ranges meet only at their shared endpoint gives an
+injective path. -/
+theorem injective_trans {z : X} {α : Path x y} {β : Path y z} (hα : Injective α)
+    (hβ : Injective β) (hmeet : range α ∩ range β = {y}) : Injective (α.trans β) := by
+  have haux {a b : unitInterval} (h : α a = β b) : b = 0 := by
+    have hmem : β b ∈ ({y} : Set X) := by
+      rw [← hmeet]
+      exact ⟨⟨a, h⟩, mem_range_self b⟩
+    exact hβ (by rw [mem_singleton_iff.mp hmem, Path.source])
+  intro s t hst
+  rw [Path.trans_apply, Path.trans_apply] at hst
+  split_ifs at hst with hs ht ht
+  · have h : (2 : ℝ) * s = 2 * t := congrArg Subtype.val (hα hst)
+    exact Subtype.ext (by linarith)
+  · have h2t : 2 * (t : ℝ) - 1 = 0 := congrArg Subtype.val (haux hst)
+    exact absurd (by linarith : (t : ℝ) ≤ 1 / 2) ht
+  · have h2s : 2 * (s : ℝ) - 1 = 0 := congrArg Subtype.val (haux hst.symm)
+    exact absurd (by linarith : (s : ℝ) ≤ 1 / 2) hs
+  · have h : 2 * (s : ℝ) - 1 = 2 * (t : ℝ) - 1 := congrArg Subtype.val (hβ hst)
+    exact Subtype.ext (by linarith)
 
 end Path
 

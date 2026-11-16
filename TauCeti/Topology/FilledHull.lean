@@ -9,7 +9,9 @@ public import Mathlib.Topology.Bornology.Basic
 public import Mathlib.Topology.Connected.Basic
 public import Mathlib.Topology.Connected.LocallyConnected
 public import Mathlib.Topology.Compactness.LocallyCompact
+public import Mathlib.Topology.Homeomorph.Defs
 public import Mathlib.Topology.Separation.Hausdorff
+import Mathlib.Topology.Homeomorph.Lemmas
 import TauCeti.Topology.Compactness.Compact
 import TauCeti.Topology.ConnectedComponents
 import TauCeti.Topology.Frontier
@@ -87,6 +89,8 @@ Carathéodory boundary correspondence in `TauCeti/Analysis/Complex/Conformal/Car
 * `TauCeti.exists_isCompact_finite_connectedComponents_compl` — in a preconnected, locally
   connected, locally compact Hausdorff space, every compact set has a compact neighbourhood whose
   complement has finitely many components, none of them with compact closure.
+* `Homeomorph.image_filledHull` — a boundedness-preserving homeomorphism commutes with
+  `TauCeti.filledHull`.
 -/
 
 public section
@@ -213,6 +217,20 @@ theorem subset_filledHull_of_frontier_subset (hSb : IsBounded S) (hfr : frontier
       ⟨x, mem_connectedComponentIn hxKc, hxi⟩ ⟨y, hy, hyi⟩
     exact connectedComponentIn_subset _ _ hz (hfr (frontier_interior_subset hzf))
   exact mem_filledHull_iff.mpr (hSb.subset (hcomp.trans interior_subset))
+
+/-- A homeomorphism preserving boundedness commutes with taking filled hulls. -/
+theorem _root_.Homeomorph.image_filledHull {F : Type*} [TopologicalSpace F] [Bornology F]
+    (e : E ≃ₜ F) (he : ∀ s : Set E, IsBounded (e '' s) ↔ IsBounded s) (K : Set E) :
+    e '' filledHull K = filledHull (e '' K) := by
+  ext y
+  obtain ⟨x, rfl⟩ := e.surjective y
+  rw [e.injective.mem_set_image, mem_filledHull_iff, mem_filledHull_iff]
+  by_cases hx : x ∈ K
+  · have h1 : e x ∉ (e '' K)ᶜ := fun h => h (mem_image_of_mem e hx)
+    have h2 : x ∉ Kᶜ := fun h => h hx
+    simp [connectedComponentIn_eq_empty h1, connectedComponentIn_eq_empty h2]
+  · have hxc : x ∈ Kᶜ := hx
+    rw [← e.image_compl, ← e.image_connectedComponentIn hxc, he]
 
 end TauCeti
 
