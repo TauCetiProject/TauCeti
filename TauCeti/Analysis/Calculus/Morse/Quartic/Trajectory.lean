@@ -179,9 +179,9 @@ theorem mem_Icc_of_mem_quarticConnectingSet (hy : y ∈ quarticConnectingSet p q
 theorem apply_eq_of_mem_quarticConnectingSet (hy : y ∈ quarticConnectingSet p q) {i : ι}
     (h : p i = q i) : y i = p i := by
   rcases (tendsto_quarticWellSumFlow_atBot_atTop_iff hy.1).1 hy.2 i with ⟨-, h0, hs⟩ | ⟨-, h1, -⟩
-  · have h' := sign_mul_self (y i)
-    rw [← hs, ← h, h0, zero_mul, eq_comm, abs_eq_zero] at h'
-    rw [h', h0]
+  · have hsign : SignType.sign (y i) = 0 := by
+      cases hs' : SignType.sign (y i) <;> simp_all
+    rw [sign_eq_zero_iff.1 hsign, h0]
   · exact h1.symm
 
 /-- A moving coordinate of a point on a trajectory in the cube satisfies
@@ -495,9 +495,14 @@ theorem finrank_quotient_span_one_add_one_add_morseIndex_quarticWellSum
       morseIndex quarticWellSum q = morseIndex quarticWellSum p := by
   obtain ⟨i, hi⟩ := Function.ne_iff.1 hne
   have : Nonempty {i // p i ≠ q i} := ⟨⟨i, hi⟩⟩
-  rw [← finrank_span_singleton (K := ℝ) (one_ne_zero : (1 : {i // p i ≠ q i} → ℝ) ≠ 0),
-    Submodule.finrank_quotient_add_finrank, finrank_fintype_fun_eq_card, ← Nat.card_eq_fintype_card,
-    ← ncard_setOf_ne_add_morseIndex_quarticWellSum hp hq hpq]
-  exact congrArg (· + _) (Nat.card_coe_set_eq {i | p i ≠ q i})
+  have hquot : finrank ℝ (({i // p i ≠ q i} → ℝ) ⧸ ℝ ∙ (1 : {i // p i ≠ q i} → ℝ)) + 1 =
+      Fintype.card {i // p i ≠ q i} := by
+    rw [← finrank_span_singleton (K := ℝ) (one_ne_zero : (1 : {i // p i ≠ q i} → ℝ) ≠ 0),
+      Submodule.finrank_quotient_add_finrank, finrank_fintype_fun_eq_card]
+  have hcard : Fintype.card {i // p i ≠ q i} = {i | p i ≠ q i}.ncard := by
+    rw [← Nat.card_eq_fintype_card]
+    exact Nat.card_coe_set_eq {i | p i ≠ q i}
+  have := ncard_setOf_ne_add_morseIndex_quarticWellSum hp hq hpq
+  omega
 
 end TauCeti
