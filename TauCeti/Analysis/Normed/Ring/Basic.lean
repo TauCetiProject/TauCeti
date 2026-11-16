@@ -12,6 +12,10 @@ public import Mathlib.Analysis.Normed.Ring.Basic
 
 This file records elementary consequences of the submultiplicativity of the norm, and an estimate
 for `‖w - 1‖` with `‖w‖ = 1` when the norm is multiplicative.
+
+Among the former are the estimates `‖e * a - c‖ ≤ ‖e‖ ‖a - b‖ + ‖e * b - c‖`
+(`TauCeti.norm_mul_sub_le_left`) and `‖a * e - c‖ ≤ ‖a - b‖ ‖e‖ + ‖b * e - c‖`
+(`TauCeti.norm_mul_sub_le_right`), which compare a product with `c` through the product with `b`.
 -/
 
 public section
@@ -26,6 +30,21 @@ theorem norm_mul_lt_one {K : Type*} [NonUnitalSeminormedRing K] (u v : K) (hu : 
     _ ≤ ‖u‖ := by
       simpa only [mul_one] using mul_le_mul_of_nonneg_left hv.le (norm_nonneg u)
     _ < 1 := hu
+
+/-- The distance from `e * a` to `c` exceeds the distance from `e * b` to `c` by at most
+`‖e‖ ‖a - b‖`: `‖e * a - c‖ ≤ ‖e‖ ‖a - b‖ + ‖e * b - c‖`. -/
+theorem norm_mul_sub_le_left {R : Type*} [NonUnitalSeminormedRing R] (e a b c : R) :
+    ‖e * a - c‖ ≤ ‖e‖ * ‖a - b‖ + ‖e * b - c‖ := by
+  rw [← sub_add_sub_cancel (e * a) (e * b) c, ← mul_sub]
+  exact (norm_add_le _ _).trans (add_le_add (norm_mul_le _ _) le_rfl)
+
+/-- The distance from `a * e` to `c` exceeds the distance from `b * e` to `c` by at most
+`‖a - b‖ ‖e‖`: `‖a * e - c‖ ≤ ‖a - b‖ ‖e‖ + ‖b * e - c‖`. This is the right-multiplication
+version of `TauCeti.norm_mul_sub_le_left`. -/
+theorem norm_mul_sub_le_right {R : Type*} [NonUnitalSeminormedRing R] (e a b c : R) :
+    ‖a * e - c‖ ≤ ‖a - b‖ * ‖e‖ + ‖b * e - c‖ := by
+  rw [← sub_add_sub_cancel (a * e) (b * e) c, ← sub_mul]
+  exact (norm_add_le _ _).trans (add_le_add (norm_mul_le _ _) le_rfl)
 
 /-- Consecutive powers stay in the open unit ball when the first factor is strictly inside
 and the second factor is in the closed unit ball. -/
