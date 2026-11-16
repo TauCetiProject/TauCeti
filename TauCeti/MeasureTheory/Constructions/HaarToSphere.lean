@@ -62,7 +62,7 @@ Public formalization references:
   integrable on a ball about `c` if and only if its radial integrand is integrable.
 * `LinearIsometryEquiv.map_toSphere`: a linear isometric equivalence carries the surface
   measure of `μ` to the surface measure of the image of `μ`.
-* `MeasureTheory.Measure.map_neg_toSphere`, `MeasureTheory.Measure.integral_coe_toSphere`:
+* `MeasureTheory.Measure.isNegInvariant_toSphere`, `MeasureTheory.Measure.integral_coe_toSphere`:
   the sphere measure is antipodally invariant and has barycentre zero.
 * `MeasureTheory.Measure.toSphere_singleton`: points are null in dimension at least two.
 
@@ -398,11 +398,13 @@ namespace MeasureTheory.Measure
 open Metric Set Module
 open scoped Pointwise
 
-variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
-  [MeasurableSpace E] [BorelSpace E] (μ : Measure E) [μ.IsAddHaarMeasure]
+variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
+  [MeasurableSpace E] [BorelSpace E] (μ : Measure E)
 
-/-- The sphere measure of a Haar measure is invariant under `x ↦ -x`. -/
-theorem map_neg_toSphere : μ.toSphere.map Neg.neg = μ.toSphere := by
+/-- The sphere measure of a negation-invariant measure is invariant under `x ↦ -x`. -/
+instance isNegInvariant_toSphere [μ.IsNegInvariant] : μ.toSphere.IsNegInvariant := by
+  constructor
+  rw [Measure.neg_def]
   have hneg :
       (Subtype.map (LinearIsometryEquiv.neg ℝ (E := E)) (fun x hx ↦ by simpa using hx) :
         sphere (0 : E) 1 → sphere (0 : E) 1) = Neg.neg := by
@@ -413,11 +415,12 @@ theorem map_neg_toSphere : μ.toSphere.map Neg.neg = μ.toSphere := by
   rw [hneg] at h
   simpa using h
 
-/-- The barycentre of the sphere measure is zero. -/
-theorem integral_coe_toSphere : ∫ x : sphere (0 : E) 1, (x : E) ∂μ.toSphere = 0 := by
-  have h := integral_map (μ := μ.toSphere) (φ := Neg.neg) continuous_neg.aemeasurable
-    (f := fun x : sphere (0 : E) 1 ↦ (x : E)) continuous_subtype_val.aestronglyMeasurable
-  rw [map_neg_toSphere] at h
+/-- The sphere measure of a negation-invariant measure has barycentre zero. -/
+theorem integral_coe_toSphere [μ.IsNegInvariant] :
+    ∫ x : sphere (0 : E) 1, (x : E) ∂μ.toSphere = 0 := by
+  have h := integral_map_equiv (μ := μ.toSphere)
+    (MeasurableEquiv.neg (sphere (0 : E) 1)) (fun x : sphere (0 : E) 1 ↦ (x : E))
+  simp only [MeasurableEquiv.neg_apply, Measure.map_neg_eq_self] at h
   simp only [coe_neg_sphere, integral_neg] at h
   have h2 : (2 : ℝ) • ∫ x : sphere (0 : E) 1, (x : E) ∂μ.toSphere = 0 := by
     rw [two_smul]
@@ -426,7 +429,8 @@ theorem integral_coe_toSphere : ∫ x : sphere (0 : E) 1, (x : E) ∂μ.toSphere
   exact (smul_eq_zero.1 h2).resolve_left two_ne_zero
 
 /-- In dimension at least two, the points of the sphere are null for the sphere measure. -/
-theorem toSphere_singleton (hE : 1 < finrank ℝ E) (p : sphere (0 : E) 1) :
+theorem toSphere_singleton [FiniteDimensional ℝ E] [μ.IsAddHaarMeasure]
+    (hE : 1 < finrank ℝ E) (p : sphere (0 : E) 1) :
     μ.toSphere {p} = 0 := by
   rw [μ.toSphere_apply' (measurableSet_singleton p), image_singleton]
   have hp : (p : E) ≠ 0 := ne_zero_of_mem_unit_sphere p

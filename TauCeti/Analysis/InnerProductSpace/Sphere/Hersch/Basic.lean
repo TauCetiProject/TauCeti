@@ -189,7 +189,7 @@ theorem norm_herschMap_le_one {a x : E} (ha : ‖a‖ ≤ 1) (hx : ‖x‖ = 1) 
 theorem herschMap_mem_sphere {a x : E} (ha : ‖a‖ < 1) (hx : x ∈ sphere (0 : E) 1) :
     herschMap a x ∈ sphere (0 : E) 1 := by
   rw [mem_sphere_zero_iff_norm] at hx ⊢
-  exact norm_herschMap ha.le hx (inner_ne_neg_one ha hx)
+  exact norm_herschMap ha.le hx (inner_ne_neg_one ha hx.le)
 
 /-- For `‖a‖ < 1`, Hersch's map is continuous on the unit sphere. -/
 @[fun_prop]
@@ -197,7 +197,7 @@ theorem continuous_herschMap_sphere {a : E} (ha : ‖a‖ < 1) :
     Continuous fun x : sphere (0 : E) 1 ↦ herschMap a x := by
   refine continuous_iff_continuousAt.2 fun x ↦ ?_
   exact (continuousAt_herschMap
-    (inner_ne_neg_one ha (mem_sphere_zero_iff_norm.1 x.2))).comp
+    (inner_ne_neg_one ha (mem_sphere_zero_iff_norm.1 x.2).le)).comp
     (f := fun y : sphere (0 : E) 1 ↦ (a, (y : E))) (by fun_prop)
 
 /-- For `‖a‖ < 1`, `T_a` is a homeomorphism of the unit sphere, with inverse `T_(-a)`. -/
@@ -207,10 +207,10 @@ noncomputable def herschHomeomorph {a : E} (ha : ‖a‖ < 1) :
   { toFun := fun x ↦ ⟨herschMap a x, herschMap_mem_sphere ha x.2⟩
     invFun := fun x ↦ ⟨herschMap (-a) x, herschMap_mem_sphere ha' x.2⟩
     left_inv := fun x ↦ Subtype.ext <| herschMap_neg_herschMap ha <|
-      inner_ne_neg_one ha (mem_sphere_zero_iff_norm.1 x.2)
+      inner_ne_neg_one ha (mem_sphere_zero_iff_norm.1 x.2).le
     right_inv := fun x ↦ Subtype.ext <| by
       simpa using herschMap_neg_herschMap ha'
-        (inner_ne_neg_one ha' (mem_sphere_zero_iff_norm.1 x.2))
+        (inner_ne_neg_one ha' (mem_sphere_zero_iff_norm.1 x.2).le)
     continuous_toFun := (continuous_herschMap_sphere ha).subtype_mk _
     continuous_invFun := (continuous_herschMap_sphere ha').subtype_mk _ }
 
@@ -226,9 +226,21 @@ theorem coe_herschHomeomorph_symm {a : E} (ha : ‖a‖ < 1) (x : sphere (0 : E)
   (rfl)
 
 @[fun_prop]
-theorem measurable_herschMap [MeasurableSpace E] [BorelSpace E] [SecondCountableTopology E]
+theorem measurable_herschMap [MeasurableSpace E] [BorelSpace E]
     (a : E) : Measurable (herschMap a) := by
-  unfold herschMap
-  fun_prop
+  classical
+  have hc : ContinuousOn (herschMap a) {x : E | ⟪a, x⟫ = -1}ᶜ := by
+    intro x hx
+    exact ((continuousAt_herschMap hx).comp
+      (f := fun y : E ↦ (a, y)) (by fun_prop)).continuousWithinAt
+  have heq : herschMap a =
+      {x : E | ⟪a, x⟫ = -1}.piecewise (fun _ ↦ 0) (herschMap a) := by
+    funext x
+    by_cases hx : ⟪a, x⟫ = -1
+    · simp [hx, herschMap_of_inner_eq_neg_one hx]
+    · simp [hx]
+  rw [heq]
+  exact continuousOn_const.measurable_piecewise hc
+    (isClosed_eq (by fun_prop) continuous_const).measurableSet
 
 end TauCeti

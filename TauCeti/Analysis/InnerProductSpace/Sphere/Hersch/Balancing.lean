@@ -14,10 +14,10 @@ import TauCeti.AlgebraicTopology.Singular.BrouwerFixedPoint
 
 Adapted from Giada Franz's local formalization of Hersch's balancing lemma.
 
-Let `(X, μ)` be a finite measure space and `Φ : X → E` a measurable map into the unit
-sphere of a finite-dimensional real inner product space whose fibres over the points of the
-sphere are null. Then some conformal map `T_a` of Hersch (`TauCeti.herschMap`), `‖a‖ < 1`,
-balances `Φ`: `∫ T_a ∘ Φ dμ = 0`.
+Let `(X, μ)` be a finite measure space and `Φ : X → E` an almost everywhere strongly measurable
+map into a finite-dimensional real inner product space, taking values almost everywhere on the
+unit sphere, whose fibres over its points are null. Then some conformal map `T_a` of Hersch
+(`TauCeti.herschMap`), `‖a‖ < 1`, balances `Φ`: `∫ T_a ∘ Φ dμ = 0`.
 
 For `μ = 0`, take `a = 0`. Otherwise the proof follows Hersch. The barycentre
 `G(a) = ∫ T_a ∘ Φ dμ` is continuous on the closed unit
@@ -53,19 +53,23 @@ namespace TauCeti
 variable {E X : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E]
   [MeasurableSpace X] {μ : Measure X} {Φ : X → E}
 
-/-- Off a null set, `⟪a, Φ q⟫ ≠ -1` for every `a` of the closed unit ball. -/
-private theorem ae_inner_ne_neg_one (hΦ : ∀ q, Φ q ∈ sphere (0 : E) 1)
+/-- For each fixed `a` in the closed unit ball, `⟪a, Φ q⟫ ≠ -1` almost everywhere. -/
+private theorem ae_inner_ne_neg_one (hΦ : ∀ᵐ q ∂μ, Φ q ∈ sphere (0 : E) 1)
     (hfib : ∀ v ∈ sphere (0 : E) 1, μ (Φ ⁻¹' {v}) = 0) {a : E} (ha : ‖a‖ ≤ 1) :
     ∀ᵐ q ∂μ, ⟪a, Φ q⟫ ≠ -1 := by
   rcases ha.lt_or_eq with ha | ha
-  · exact Eventually.of_forall fun q ↦ inner_ne_neg_one ha (mem_sphere_zero_iff_norm.1 (hΦ q))
-  · refine measure_mono_null (fun q hq ↦ ?_) (hfib (-a) (by simp [ha]))
-    exact (inner_eq_neg_one_iff_of_norm_eq_one (mem_sphere_zero_iff_norm.1 (hΦ q)) ha).1
-      (by rw [real_inner_comm]; exact not_not.1 hq)
+  · exact hΦ.mono fun q hq ↦ inner_ne_neg_one ha (mem_sphere_zero_iff_norm.1 hq).le
+  · have hnull : ∀ᵐ q ∂μ, Φ q ≠ -a := by
+      rw [ae_iff]
+      simpa only [not_not, Set.preimage, mem_singleton_iff] using hfib (-a) (by simp [ha])
+    filter_upwards [hΦ, hnull] with q hq hne
+    intro hinner
+    exact hne ((inner_eq_neg_one_iff_of_norm_eq_one (mem_sphere_zero_iff_norm.1 hq) ha).1
+      (by rwa [real_inner_comm]))
 
 /-- On the unit sphere, `∫ T_v ∘ Φ dμ = μ(X) v`. -/
 private theorem integral_herschMap_of_norm_eq_one [CompleteSpace E]
-    (hΦ : ∀ q, Φ q ∈ sphere (0 : E) 1)
+    (hΦ : ∀ᵐ q ∂μ, Φ q ∈ sphere (0 : E) 1)
     (hfib : ∀ v ∈ sphere (0 : E) 1, μ (Φ ⁻¹' {v}) = 0) {v : E} (hv : ‖v‖ = 1) :
     ∫ q, herschMap v (Φ q) ∂μ = μ.real univ • v := by
   rw [← integral_const]
@@ -73,29 +77,32 @@ private theorem integral_herschMap_of_norm_eq_one [CompleteSpace E]
   filter_upwards [ae_inner_ne_neg_one hΦ hfib hv.le] with q hq
   exact herschMap_of_norm_eq_one hv hq
 
-variable [FiniteDimensional ℝ E] [MeasurableSpace E] [BorelSpace E]
+variable [FiniteDimensional ℝ E]
 
 /-- The barycentre `a ↦ ∫ T_a ∘ Φ dμ` is continuous on the closed unit ball. -/
-private theorem continuousOn_integral_herschMap [IsFiniteMeasure μ] (hΦm : AEMeasurable Φ μ)
-    (hΦ : ∀ q, Φ q ∈ sphere (0 : E) 1) (hfib : ∀ v ∈ sphere (0 : E) 1, μ (Φ ⁻¹' {v}) = 0) :
+private theorem continuousOn_integral_herschMap [IsFiniteMeasure μ] (hΦm : AEStronglyMeasurable Φ μ)
+    (hΦ : ∀ᵐ q ∂μ, Φ q ∈ sphere (0 : E) 1) (hfib : ∀ v ∈ sphere (0 : E) 1, μ (Φ ⁻¹' {v}) = 0) :
     ContinuousOn (fun a ↦ ∫ q, herschMap a (Φ q) ∂μ) (closedBall (0 : E) 1) := by
+  let : MeasurableSpace E := borel E
+  have : BorelSpace E := ⟨rfl⟩
   intro a ha
   rw [mem_closedBall_zero_iff] at ha
   refine continuousWithinAt_of_dominated (bound := fun _ ↦ 1)
     (Eventually.of_forall fun b ↦
-      ((measurable_herschMap b).comp_aemeasurable hΦm).aestronglyMeasurable)
-    (eventually_nhdsWithin_of_forall fun b hb ↦ Eventually.of_forall fun q ↦
-      norm_herschMap_le_one (mem_closedBall_zero_iff.1 hb) (mem_sphere_zero_iff_norm.1 (hΦ q)))
+      ((measurable_herschMap b).comp_aemeasurable hΦm.aemeasurable).aestronglyMeasurable)
+    (eventually_nhdsWithin_of_forall fun b hb ↦ hΦ.mono fun q hq ↦
+      norm_herschMap_le_one (mem_closedBall_zero_iff.1 hb) (mem_sphere_zero_iff_norm.1 hq))
     (integrable_const 1) ?_
   filter_upwards [ae_inner_ne_neg_one hΦ hfib ha] with q hq
   exact (continuousAt_herschMap_left hq).continuousWithinAt
 
-/-- **Hersch's balancing lemma.** Let `μ` be a finite measure and `Φ` a measurable map
-into the unit sphere of a finite-dimensional real inner product space, whose fibres over the
-points of the sphere are null. Then there is `a` with `‖a‖ < 1` such that the composition of `Φ`
-with Hersch's conformal map `T_a` has barycentre zero: `∫ T_a ∘ Φ dμ = 0`. -/
+/-- **Hersch's balancing lemma.** Let `μ` be a finite measure and `Φ` an almost everywhere
+strongly measurable map into a finite-dimensional real inner product space, taking values on the
+unit sphere almost everywhere, whose fibres over its points are null. Then there is `a` with
+`‖a‖ < 1` such that the composition of `Φ` with Hersch's conformal map `T_a` has barycentre zero:
+`∫ T_a ∘ Φ dμ = 0`. -/
 theorem exists_integral_herschMap_eq_zero [IsFiniteMeasure μ]
-    (hΦm : AEMeasurable Φ μ) (hΦ : ∀ q, Φ q ∈ sphere (0 : E) 1)
+    (hΦm : AEStronglyMeasurable Φ μ) (hΦ : ∀ᵐ q ∂μ, Φ q ∈ sphere (0 : E) 1)
     (hfib : ∀ v ∈ sphere (0 : E) 1, μ (Φ ⁻¹' {v}) = 0) :
     ∃ a ∈ ball (0 : E) 1, ∫ q, herschMap a (Φ q) ∂μ = 0 := by
   by_cases hμ : μ = 0

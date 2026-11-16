@@ -8,7 +8,6 @@ module
 public import TauCeti.Analysis.InnerProductSpace.Sphere.Hersch.Stereographic
 import Mathlib.Analysis.InnerProductSpace.PiL2
 public import TauCeti.MeasureTheory.Constructions.HaarToSphere
-import Mathlib.MeasureTheory.Measure.Lebesgue.EqHaar
 
 /-!
 # Checks for Hersch's maps and the balancing lemma
@@ -18,18 +17,16 @@ Adapted from Giada Franz's local formalization of Hersch's balancing lemma.
 Model computations for `TauCeti.herschMap` and `TauCeti.exists_integral_herschMap_eq_zero`, in
 `ℝ³ = EuclideanSpace ℝ (Fin 3)` with basis `e₀, e₁, e₂` and `a = (3/5) e₂`.
 
-* Orthogonal points: for `x ⊥ a`, `T_a(x) = √(1 - ‖a‖²) x + a`, a unit vector for unit `x`;
-  `T_a(e₀) = (4/5) e₀ + (3/5) e₂`.
-* Fixed points: `T_a` fixes `±e₂`. Negative control: without the factor `(1 + ⟪a, x⟫)⁻¹` the
-  image of `-u` for `a = ρ u` has norm `1 - ρ`, which is `2/5` here, off the sphere.
-* Dilation factor: in stereographic coordinates from `-e₂`, `T_a` is the dilation by
-  `√((1 - 3/5) / (1 + 3/5)) = 1/2`.
-* Inverse: for `x ⊥ a`, `⟪-a, T_a(x)⟫ = -‖a‖²` and `T_(-a)(T_a(x)) = x`.
-* The lemma: the area measure `σ` of the unit sphere is invariant under `x ↦ -x`, so
-  `∫ x dσ = 0`, and its points are null in dimension at least two. For `Φ = T_b` the
-  hypotheses of the lemma hold, and `a = -b` balances. Negative control: for a Dirac mass
-  `δ_p`, `∫ T_a ∘ Φ dδ_p = T_a(Φ(p))` is a unit vector for every `a`, and the fibre of `Φ` over
-  `Φ(p)` has mass one.
+* `T_a(e₀) = (4/5) e₀ + (3/5) e₂`, while `T_a` fixes `±e₂`. Omitting the denominator
+  sends `-e₂` to a vector of norm `2/5`, off the sphere.
+* In stereographic coordinates from `-e₂`, `T_a` is dilation by `1/2`.
+* The inverse calculation gives `⟪-a, T_a(e₀)⟫ = -9/25` and `T_(-a)(T_a(e₀)) = e₀`.
+* For `Φ = T_b`, the balancing hypotheses hold for the sphere area measure and `a = -b`
+  balances. These checks use the general sphere-measure results from
+  `TauCeti.MeasureTheory.Constructions.HaarToSphere` and map identities from
+  `TauCeti.Analysis.InnerProductSpace.Sphere.Hersch.Basic`.
+* `TauCeti.norm_integral_herschMap_dirac` is the Dirac obstruction: if `Φ(p)` is on the sphere,
+  the integral against `δ_p` has norm one. The fibre over `Φ(p)` has mass one.
 -/
 
 public section
@@ -148,7 +145,7 @@ private theorem herschMap_balancing_hypotheses (hE : 1 < finrank ℝ E) {b : E} 
     (μ.toSphere_singleton hE ⟨herschMap (-b) v, herschMap_mem_sphere hb' hv⟩)
   apply Subtype.ext
   obtain rfl : herschMap b x = v := hx
-  exact (herschMap_neg_herschMap hb (inner_ne_neg_one hb (mem_sphere_zero_iff_norm.1 x.2))).symm
+  exact (herschMap_neg_herschMap hb (inner_ne_neg_one hb (mem_sphere_zero_iff_norm.1 x.2).le)).symm
 
 /-- **The balancing lemma for `Φ = T_b`.** On the unit sphere with its area measure, `a = -b`
 balances `T_b`: `∫ T_(-b) ∘ T_b dσ = ∫ x dσ = 0`. -/
@@ -156,7 +153,7 @@ private theorem integral_herschMap_neg_herschMap {b : E} (hb : ‖b‖ < 1) :
     ∫ x : sphere (0 : E) 1, herschMap (-b) (herschMap b x) ∂μ.toSphere = 0 := by
   refine (integral_congr_ae (Filter.Eventually.of_forall fun x ↦ ?_)).trans
     (μ.integral_coe_toSphere)
-  exact herschMap_neg_herschMap hb (inner_ne_neg_one hb (mem_sphere_zero_iff_norm.1 x.2))
+  exact herschMap_neg_herschMap hb (inner_ne_neg_one hb (mem_sphere_zero_iff_norm.1 x.2).le)
 
 end AreaMeasure
 
@@ -167,10 +164,10 @@ variable {E X : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [Complet
 
 /-- Negative control: for a Dirac mass, `∫ T_a ∘ Φ dδ_p = T_a(Φ(p))` is a unit vector for every
 `a` of the open unit ball, so no `a` balances `Φ`. -/
-theorem norm_integral_herschMap_dirac (hΦ : ∀ q, Φ q ∈ sphere (0 : E) 1) (p : X) {a : E}
+theorem norm_integral_herschMap_dirac (p : X) (hp : Φ p ∈ sphere (0 : E) 1) {a : E}
     (ha : ‖a‖ < 1) : ‖∫ q, herschMap a (Φ q) ∂Measure.dirac p‖ = 1 := by
   rw [integral_dirac]
-  exact mem_sphere_zero_iff_norm.1 (herschMap_mem_sphere ha (hΦ p))
+  exact mem_sphere_zero_iff_norm.1 (herschMap_mem_sphere ha hp)
 
 /-- The fibre hypothesis fails for a Dirac mass: the fibre over `Φ(p)` has mass one. -/
 example (p : X) : Measure.dirac p (Φ ⁻¹' {Φ p}) = 1 :=
