@@ -7,6 +7,7 @@ module
 
 public import TauCeti.AlgebraicTopology.Singular.LocalHomology.IsFundamentalClass
 public import TauCeti.AlgebraicTopology.Singular.LocalHomology.RelativeFundamentalClass
+import TauCeti.Algebra.Group.ZMultiples
 import TauCeti.AlgebraicTopology.Singular.Excision
 import TauCeti.AlgebraicTopology.Singular.Homotopy.Invariance
 import TauCeti.AlgebraicTopology.Singular.Triple
@@ -99,13 +100,13 @@ include hc
 
 private lemma apply_mem_collarSegment_iff {z : N} {s : Ico (0 : ℝ) 1} :
     c (z, s) ∈ collarSegment c y ↔ z = y ∧ (s : ℝ) ≤ 1 / 2 := by
-  rw [collarSegment, hc.isOpenEmbedding.injective.mem_set_image]
-  rfl
+  rw [collarSegment, hc.isOpenEmbedding.injective.mem_set_image, prodMk_mem_set_prod_eq,
+    mem_singleton_iff, mem_ofPred_eq]
 
 private lemma apply_mem_collarSlit_iff {z : N} {s : Ico (0 : ℝ) 1} :
     c (z, s) ∈ collarSlit c y ↔ ¬(z = y ∧ 1 / 2 ≤ (s : ℝ)) := by
-  rw [collarSlit, hc.isOpenEmbedding.injective.mem_set_image]
-  rfl
+  rw [collarSlit, hc.isOpenEmbedding.injective.mem_set_image, mem_compl_iff,
+    prodMk_mem_set_prod_eq, mem_singleton_iff, mem_ofPred_eq]
 
 private lemma collarSegment_subset : collarSegment c y ⊆ collarPart c 1 :=
   image_subset_iff.2 fun q _ ↦ (apply_mem_collarPart_iff hc.isOpenEmbedding.injective).2 q.2.2.2
@@ -118,8 +119,7 @@ private lemma isClosed_collarSegment [T2Space X] : IsClosed (collarSegment c y) 
     rw [Subtype.isCompact_iff]
     convert isCompact_Icc (a := (0 : ℝ)) (b := 1 / 2) using 1
     ext r
-    simp
-    grind
+    grind [Subtype.exists]
   exact ((isCompact_singleton.prod hK).image hc.isOpenEmbedding.continuous).isClosed
 
 private lemma isOpen_collarSlit [T2Space X] : IsOpen (collarSlit c y) := by
@@ -166,9 +166,8 @@ private lemma compl_singleton_subset_collarSlit_union :
   rw [mem_union, not_or, mem_compl_iff, not_not] at h
   obtain ⟨hxS, ⟨q, hq, rfl⟩⟩ := h
   rw [apply_mem_collarSlit_iff hc, not_not] at hxS
-  obtain ⟨hqy, hq⟩ := hq
-  refine hx (congrArg c (Prod.ext (hxS.1.trans hqy.symm |>.trans hqy) ?_))
-  exact Subtype.ext (le_antisymm hq hxS.2)
+  refine hx (mem_singleton_iff.2 (congrArg c (Prod.ext hxS.1 ?_)))
+  exact Subtype.ext (le_antisymm hq.2 hxS.2)
 
 /-- In the slit collar, a point outside the segment does not lie over `y`. -/
 private lemma collarCoord_fst_ne_of_mem_collarSlit {x : collarPart c 1}
@@ -371,6 +370,9 @@ private def slitDeformation : (slitRetractionSelf hc y).Homotopy (ContinuousMap.
   continuous_toFun := (continuous_subtype_val.comp
     ((hc.collarDeformation one_pos).continuous.comp (continuous_fst.prodMk
       ((continuous_subtype_val.comp continuous_snd).subtype_mk _)))).subtype_mk _
+  -- Both endpoint identities hold by unfolding: `slitRetractionSelf` is `slitRetraction`, the
+  -- composite of `collarRetraction 1` with the inclusion of the slit collar, and the endpoints of
+  -- `collarDeformation` are that retraction and the identity, read in the ambient space `X`.
   map_zero_left x := Subtype.ext (congrArg Subtype.val
     ((hc.collarDeformation one_pos).apply_zero ⟨x, collarSlit_subset hc y x.2⟩) :)
   map_one_left x := Subtype.ext (congrArg Subtype.val
@@ -584,15 +586,15 @@ theorem isFundamentalClass_singularHomologyδ_fundamentalClassRel {m : ℕ} (hm 
   have key := singularHomologyMap_boundaryPairMap_singularHomologyToLocalHomology hc hS y b
     hy.symm hp hm (o.fundamentalClassRel hn hι hιf hf)
   -- The image of `[X, ∂X]` at `p` generates, hence so do its images under the two isomorphisms.
-  have h := exists_zsmul_eq_map_of_surjective
+  have h := zmultiples_apply_eq_top_of_surjective
     (ConcreteCategory.bijective_of_isIso ((segmentTriple hc y).singularHomologyδ R n m hm)).2
-    ((isLocalOrientation_iff _ _ _).1
+    ((isLocalOrientation_iff_zmultiples_eq_top _ _ _).1
       (o.isLocalOrientation_localHomologyRestriction_fundamentalClassRel hn hι hιf hf hp))
   rw [← key] at h
-  have h' := exists_zsmul_eq_map_of_surjective (ConcreteCategory.bijective_of_isIso
+  have h' := zmultiples_apply_eq_top_of_surjective (ConcreteCategory.bijective_of_isIso
     (inv (TopPair.singularHomologyMap (boundaryPairMap c hc hS y b hy.symm) R m))).2 h
   rw [← ConcreteCategory.comp_apply, IsIso.hom_inv_id, ConcreteCategory.id_apply] at h'
-  exact (isLocalOrientation_iff _ _ _).2 h'
+  exact (isLocalOrientation_iff_zmultiples_eq_top _ _ _).2 h'
 
 end HomologicalOrientation
 

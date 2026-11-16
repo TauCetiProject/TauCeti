@@ -8,6 +8,7 @@ module
 public import TauCeti.AlgebraicTopology.Singular.LocalHomology.System
 public import Mathlib.Algebra.Category.ModuleCat.Abelian
 public import Mathlib.Algebra.Category.ModuleCat.Colimits
+import TauCeti.Algebra.Group.ZMultiples
 
 /-!
 # Local orientations from chart homology
@@ -17,11 +18,9 @@ local homology group in degree `n`. This file defines that generator condition a
 every point in a finite-dimensional charted space has local orientations. Integral coefficients
 are represented by the universe-lifted module `ULift ℤ`. The construction is the inverse image of
 `1` under the chart computation of local homology. The two generators of a fibre isomorphic to
-`ℤ` differ by sign; reversal and preservation by local homology isomorphisms are also proved, the
-latter because surjective additive maps preserve generators
-(`TauCeti.exists_zsmul_eq_map_of_surjective`), and isomorphisms of pairs
-`(M, M ∖ {x}) ≅ (N, N ∖ {y})` transport local orientations (`TauCeti.LocalOrientation.map`),
-compatibly with reversal, identities and composites.
+`ℤ` differ by sign; reversal and preservation by local homology isomorphisms are also proved, and
+isomorphisms of pairs `(M, M ∖ {x}) ≅ (N, N ∖ {y})` transport local orientations
+(`TauCeti.LocalOrientation.map`), compatibly with reversal, identities and composites.
 
 The local orientation is the generator of `Hₙ(M, M ∖ {x}; ℤ)` described in Hatcher's
 *Algebraic Topology*, Section 3.3.
@@ -50,6 +49,15 @@ theorem isLocalOrientation_iff {M : Type w} [TopologicalSpace M] (x : M) (d : �
     (z : localHomology (A := ModuleCat.{w} ℤ) (ModuleCat.of ℤ (ULift.{w} ℤ))
       ({x} : Set M) d) :
     IsLocalOrientation x d z ↔ ∀ y, ∃ c : ℤ, c • z = y := Iff.rfl
+
+/-- An element of local homology is a local orientation exactly when its `ℤ`-multiples are the
+whole group. -/
+theorem isLocalOrientation_iff_zmultiples_eq_top {M : Type w} [TopologicalSpace M] (x : M)
+    (d : ℕ) (z : localHomology (A := ModuleCat.{w} ℤ) (ModuleCat.of ℤ (ULift.{w} ℤ))
+      ({x} : Set M) d) :
+    IsLocalOrientation x d z ↔ AddSubgroup.zmultiples z = ⊤ := by
+  rw [AddSubgroup.eq_top_iff']
+  exact forall_congr' fun _ ↦ AddSubgroup.mem_zmultiples_iff.symm
 
 /-- The integral local homology group at `x` in degree `d`, with its local orientations. -/
 abbrev LocalOrientation (M : Type w) [TopologicalSpace M] (x : M) (d : ℕ) :=
@@ -95,15 +103,6 @@ lemma LocalOrientation.coe_neg {M : Type w} [TopologicalSpace M] {x : M} {d : �
       (ModuleCat.of ℤ (ULift.{w} ℤ)) ({x} : Set M) d) = -z.val :=
   (rfl)
 
-/-- A surjective additive map carries an element of which every element is an integral multiple to
-an element of which every element is an integral multiple. -/
-theorem exists_zsmul_eq_map_of_surjective {F A B : Type*} [AddGroup A] [AddGroup B]
-    [FunLike F A B] [AddMonoidHomClass F A B] {g : F} (hg : Function.Surjective g) {a : A}
-    (ha : ∀ z, ∃ c : ℤ, c • a = z) (z : B) : ∃ c : ℤ, c • g a = z := by
-  obtain ⟨w, rfl⟩ := hg z
-  obtain ⟨c, rfl⟩ := ha w
-  exact ⟨c, (map_zsmul g c a).symm⟩
-
 /-- An isomorphism of integral local homology groups preserves the generator condition. -/
 theorem IsLocalOrientation.map {M N : Type w} [TopologicalSpace M] [TopologicalSpace N]
     {x : M} {y : N} {d : ℕ}
@@ -112,7 +111,9 @@ theorem IsLocalOrientation.map {M N : Type w} [TopologicalSpace M] [TopologicalS
     (e : localHomology (A := ModuleCat.{w} ℤ) (ModuleCat.of ℤ (ULift.{w} ℤ)) ({x} : Set M) d ≅
       localHomology (A := ModuleCat.{w} ℤ) (ModuleCat.of ℤ (ULift.{w} ℤ)) ({y} : Set N) d) :
     IsLocalOrientation y d (e.hom z) :=
-  exists_zsmul_eq_map_of_surjective (ConcreteCategory.bijective_of_isIso e.hom).2 hz
+  (isLocalOrientation_iff_zmultiples_eq_top _ _ _).2 <|
+    zmultiples_apply_eq_top_of_surjective (ConcreteCategory.bijective_of_isIso e.hom).2
+      ((isLocalOrientation_iff_zmultiples_eq_top _ _ _).1 hz)
 
 /-- An isomorphism of pairs `(M, M ∖ {x}) ≅ (N, N ∖ {y})` carries local orientations at `x` to
 local orientations at `y`, through the isomorphism it induces on integral local homology. -/
