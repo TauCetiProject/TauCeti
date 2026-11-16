@@ -460,6 +460,20 @@ theorem joined_iff_mem_range_fibrationBoundary (hp : serreFibrations p) (y : p.f
     GenLoop.const_apply]
   exact ⟨Joined.symm, Joined.symm⟩
 
+/-- Mathlib's identification of `π_0` with the path components sends the class of a
+zero-dimensional generalized loop to the path component of its value. -/
+private theorem pi0EquivZerothHomotopy_mk {X : Type*} [TopologicalSpace X] {x : X}
+    (γ : Ω^ (Fin 0) X x) : HomotopyGroup.pi0EquivZerothHomotopy ⟦γ⟧ = ZerothHomotopy.mk (γ 0) :=
+  rfl
+
+/-- Mathlib's identification of a homotopy group indexed by a singleton with the fundamental
+group sends the class of a generalized loop to the class of the corresponding loop. -/
+private theorem homotopyGroupEquivFundamentalGroupOfUnique_mk_asHom {M X : Type*} [Unique M]
+    [TopologicalSpace X] {x : X} (γ : Ω^ M X x) :
+    (homotopyGroupEquivFundamentalGroupOfUnique M ⟦γ⟧).asHom =
+      Path.Homotopic.Quotient.mk (genLoopEquivOfUnique M γ) :=
+  rfl
+
 /-- **The boundary map `π_1(B, b) → π_0(F, e)` is the orbit map of the path component of `e`.**
 Read through the identifications of `π_1` with the fundamental group and of `π_0` with the path
 components, the boundary map sends a loop class `a` to the monodromy of `a` applied to the path
@@ -471,10 +485,9 @@ theorem fibrationBoundary_eq_fiberMonodromy (hp : serreFibrations p)
         (homotopyGroupEquivFundamentalGroupOfUnique (Option (Fin 0)) a).asHom (.mk e) := by
   induction a using Quotient.inductionOn with | h γ =>
   obtain ⟨G, hG⟩ := exists_isBoundaryLift hp e γ
-  rw [fibrationBoundary_mk hp hG]
-  -- At the only point of the cube `I^0`, the boundary lift is a lift of the loop from `e`. Both
-  -- identifications act on representatives, through `Quotient.congr`, so after the rewrite the
-  -- two sides are the path components of the end of that lift by definition.
+  rw [fibrationBoundary_mk hp hG, pi0EquivZerothHomotopy_mk,
+    homotopyGroupEquivFundamentalGroupOfUnique_mk_asHom]
+  -- At the only point of the cube `I^0`, the boundary lift is a lift of the loop from `e`.
   refine (HasHomotopyLiftingProperty.fiberMonodromy_mk _ _ (Γ := ⟨fun t ↦ G (t, 0), by fun_prop⟩)
     (funext fun t ↦ ?_) (hG.apply_zero 0) (hG.endLoop_apply_coe 0).symm).symm
   refine (hG.proj_apply (t, 0)).trans (congrArg γ (funext fun i ↦ ?_))
