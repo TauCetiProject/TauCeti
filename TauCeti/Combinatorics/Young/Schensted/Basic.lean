@@ -789,8 +789,8 @@ private theorem le_of_forall_getElem_le {y : α} {upper lower : List α} {j k : 
   have := h.getElem_lt j hj (by omega)
   exact absurd (hle j (by omega)) (not_le.mpr (hUj ▸ this))
 
-/-- If `x < y = upper[j]` and the entries of `upper` before column `j` are at most `x`, then the
-entry of `upper.set j x` in any column `k ≤ j` is less than `y`. -/
+/-- If `j` is a column of `upper`, `x < y`, and the entries of `upper` before column `j` are at
+most `x`, then the entry of `upper.set j x` in any column `k ≤ j` is less than `y`. -/
 private theorem getElem_set_lt_of_le {x y : α} {upper : List α} {j k : ℕ}
     (hj : j < upper.length) (hpre : ∀ (i : ℕ) (hi : i < j), upper[i] ≤ x) (hxy : x < y)
     (hk : k ≤ j) (hk' : k < (upper.set j x).length) : (upper.set j x)[k] < y := by
