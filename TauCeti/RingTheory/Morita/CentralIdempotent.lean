@@ -17,7 +17,8 @@ import Mathlib.LinearAlgebra.Contraction
 Let `k` be a commutative semiring, `A` a `k`-algebra, and `S` a finite projective `k`-module on
 which `A` acts onto the whole endomorphism algebra `End_k S`, with a central element `e ∈ A` that
 fixes `S` pointwise and annihilates the kernel of the action (`lsmul a = lsmul b → e * a = e * b`).
-Then `e` is automatically a central idempotent, the fixed-point locus
+Then `e` is automatically a central idempotent (`TauCeti.isIdempotentElem_of_smul_eq_self`), the
+fixed-point locus
 
 `TauCeti.centralFixedSubmodule M hc = {x : M | e • x = x}`
 
@@ -54,8 +55,6 @@ This is the situation of an odd-dimensional complexified Clifford algebra, which
 
 ## Main results
 
-* `TauCeti.isIdempotentElem_of_smul_eq_self`: `e` is idempotent whenever it fixes `S` and kills the
-  kernel of `lsmul`.
 * `TauCeti.sum_homOfDualOfCentral_coord_apply`: coordinate reconstruction of `e • x` in a finite
   basis of `S`.
 * `TauCeti.isotypicEval_injective_of_central` and
@@ -96,16 +95,6 @@ variable {k A S M N : Type*} [CommSemiring k] [Semiring A] [Algebra k A]
   [AddCommMonoid M] [Module k M] [Module A M] [IsScalarTower k A M]
   [AddCommMonoid N] [Module k N] [Module A N] [IsScalarTower k A N]
   {e : A}
-
-/-- An element `e ∈ A` that fixes `S` pointwise and kills the kernel of `lsmul` is automatically
-idempotent: `e` and `1` have the same image in `End_k S`, so `e * e = e * 1 = e`. -/
-theorem isIdempotentElem_of_smul_eq_self (heS : ∀ s : S, e • s = s)
-    (hker : ∀ a b : A, Algebra.lsmul k k S a = Algebra.lsmul k k S b → e * a = e * b) :
-    IsIdempotentElem e := by
-  have he1 : Algebra.lsmul k k S e = Algebra.lsmul k k S (1 : A) := by
-    ext s
-    simp [heS s]
-  simpa only [IsIdempotentElem, mul_one] using hker e 1 he1
 
 /-- Canonical lift of an endomorphism `f : End_k S` into `e * A`, defined as `e * a` for any chosen
 preimage `a` of `f`. Under `hker`, this element does not depend on the choice of `a`. -/

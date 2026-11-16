@@ -7,18 +7,13 @@ module
 
 public import TauCeti.LinearAlgebra.CliffordAlgebra.VolumeElement.Eigenspace
 public import TauCeti.RingTheory.Morita.CentralIdempotent
--- Private: simplicity of the even Clifford subalgebra, odd-even grading decomposition, and
--- anticommuting eigenspace equivalences are used only inside proofs.
-import Mathlib.Analysis.Complex.Polynomial.Basic
-import Mathlib.RingTheory.SimpleRing.Congr
-import Mathlib.RingTheory.SimpleRing.Matrix
+-- Private: simplicity of the even Clifford subalgebra, odd-even algebra splitting, and
+-- anticommuting eigenspace equivalences are used only inside proofs and non-exposed definitions.
 import TauCeti.Algebra.Module.LinearMap.SMul
-import TauCeti.LinearAlgebra.CliffordAlgebra.Dimension
-import TauCeti.LinearAlgebra.CliffordAlgebra.Grading
+import TauCeti.LinearAlgebra.CliffordAlgebra.CentralSimple.Even
+import TauCeti.LinearAlgebra.CliffordAlgebra.OddSplitting
 import TauCeti.LinearAlgebra.Dual.Lemmas
 import TauCeti.LinearAlgebra.Eigenspace.Anticommute
-import TauCeti.LinearAlgebra.QuadraticForm.BaseChange
-import TauCeti.RepresentationTheory.Spin.OddStructure
 
 /-!
 # The two multiplicity spaces and two-factor evaluation of an odd-dimensional Clifford module
@@ -401,6 +396,46 @@ private theorem complexVolume_mem_evenOdd_one :
   rw [involute_complexVolume, hn.neg_one_pow, neg_one_smul]
 
 omit hQ in
+private theorem complexVolume_mul_ι_mem_even (w : ℂ ⊗[ℝ] V) :
+    complexVolume Q o * ι (Q.baseChange ℂ) w ∈ even (Q.baseChange ℂ) := by
+  have h11 : (1 : ZMod 2) + 1 = 0 := rfl
+  rw [← Subalgebra.mem_toSubmodule, even_toSubmodule, ← h11]
+  exact SetLike.mul_mem_graded (complexVolume_mem_evenOdd_one Q o hn) (ι_mem_evenOdd_one _ w)
+
+omit hQ in
+private def complexVolumeMulIotaEven (w : ℂ ⊗[ℝ] V) : even (Q.baseChange ℂ) :=
+  ⟨complexVolume Q o * ι (Q.baseChange ℂ) w, complexVolume_mul_ι_mem_even Q o hn w⟩
+
+omit hQ in
+@[simp]
+private theorem coe_complexVolumeMulIotaEven (w : ℂ ⊗[ℝ] V) :
+    (complexVolumeMulIotaEven Q o hn w : CliffordAlgebra (Q.baseChange ℂ)) =
+      complexVolume Q o * ι (Q.baseChange ℂ) w :=
+  (rfl)
+
+omit hQ in
+private theorem complexVolumeMulIotaEven_smul {M : Type*} [AddCommGroup M]
+    [Module (CliffordAlgebra (Q.baseChange ℂ)) M] (w : ℂ ⊗[ℝ] V) (m : M) :
+    complexVolumeMulIotaEven Q o hn w • m =
+      (complexVolume Q o * ι (Q.baseChange ℂ) w) • m := by
+  rw [Subalgebra.smul_def, coe_complexVolumeMulIotaEven]
+
+omit hQ in
+private theorem coe_map_complex_smul_of_even
+    [IsScalarTower ℂ (CliffordAlgebra (Q.baseChange ℂ)) S] {μ : ℂ}
+    (g : S →ₗ[even (Q.baseChange ℂ)] oddVolumeSubmodule (E := E) Q o hn μ)
+    (c : ℂ) (s : S) :
+    (g (c • s) : E) = c • (g s : E) := by
+  rw [g.map_smul_of_tower, Submodule.coe_smul_of_tower]
+
+omit [Module ℂ S] hQ in
+private theorem coe_map_even_smul {μ : ℂ}
+    (g : S →ₗ[even (Q.baseChange ℂ)] oddVolumeSubmodule (E := E) Q o hn μ)
+    (u : even (Q.baseChange ℂ)) (s : S) :
+    (g (u • s) : E) = (u : CliffordAlgebra (Q.baseChange ℂ)) • (g s : E) := by
+  rw [g.map_smul, Submodule.coe_smul_of_tower, Subalgebra.smul_def]
+
+omit hQ in
 private theorem oddVolumeSubmodule_map_smul_of_even
     [IsScalarTower ℂ (CliffordAlgebra (Q.baseChange ℂ)) S] {μ : ℂ} (hμ : μ ≠ 0)
     (hω : ∀ s : S, complexVolume Q o • s = μ • s)
@@ -411,30 +446,18 @@ private theorem oddVolumeSubmodule_map_smul_of_even
   | algebraMap c =>
     simp [Algebra.algebraMap_eq_smul_one, smul_assoc]
   | ι w =>
-    have hev : complexVolume Q o * ι (Q.baseChange ℂ) w ∈ even (Q.baseChange ℂ) := by
-      have h11 : (1 : ZMod 2) + 1 = 0 := rfl
-      rw [← Subalgebra.mem_toSubmodule, even_toSubmodule, ← h11]
-      exact SetLike.mul_mem_graded (complexVolume_mem_evenOdd_one Q o hn) (ι_mem_evenOdd_one _ w)
-    let u : even (Q.baseChange ℂ) := ⟨_, hev⟩
-    have hu := congrArg Subtype.val (g.map_smul u s)
     have hcomm := complexVolume_mul_ι_of_odd (Q := Q) o hn w
     apply Subtype.ext
     apply smul_right_injective E hμ
     calc
       μ • (g (ι (Q.baseChange ℂ) w • s) : E) =
-          (g (μ • (ι (Q.baseChange ℂ) w • s)) : E) := by
-        have ht := congrArg Subtype.val
-          (g.map_smul (algebraMap ℂ ↥(even (Q.baseChange ℂ)) μ) (ι (Q.baseChange ℂ) w • s))
-        rw [Submodule.coe_smul_of_tower, Subalgebra.smul_def, Subalgebra.smul_def,
-          SubalgebraClass.coe_algebraMap, algebraMap_smul, algebraMap_smul] at ht
-        exact ht.symm
-      _ = (g (u • s) : E) := by
+          (g (μ • (ι (Q.baseChange ℂ) w • s)) : E) :=
+        (coe_map_complex_smul_of_even Q o hn g μ (ι (Q.baseChange ℂ) w • s)).symm
+      _ = (g (complexVolumeMulIotaEven Q o hn w • s) : E) := by
         congr 1
-        rw [Subalgebra.smul_def]
-        dsimp only [u]
-        rw [hcomm, mul_smul, hω, smul_comm]
+        rw [complexVolumeMulIotaEven_smul, hcomm, mul_smul, hω, smul_comm]
       _ = (complexVolume Q o * ι (Q.baseChange ℂ) w) • (g s : E) := by
-        rw [hu, Submodule.coe_smul_of_tower, Subalgebra.smul_def]
+        rw [coe_map_even_smul, coe_complexVolumeMulIotaEven]
       _ = μ • (ι (Q.baseChange ℂ) w • (g s : E)) := by
         rw [hcomm, mul_smul, (mem_oddVolumeSubmodule Q o hn μ (g s).1).mp (g s).2, smul_comm]
   | mul a b ha hb => rw [mul_smul, ha, hb, mul_smul]
@@ -487,14 +510,12 @@ theorem coe_oddVolumeSubmoduleRestrictEvenEquiv_symm_apply
 variable [IsScalarTower ℂ (CliffordAlgebra (Q.baseChange ℂ)) S]
 
 private theorem isSimpleRing_even_baseChange : IsSimpleRing ↥(even (Q.baseChange ℂ)) := by
-  obtain ⟨l, hV⟩ := hn
   have hQnd : Q.Nondegenerate :=
     QuadraticMap.Anisotropic.nondegenerate fun v hv ↦ by simpa [hQ] using hv
-  have hdim : finrank ℂ (ℂ ⊗[ℝ] V) = 2 * l + 1 := by
-    rw [Module.finrank_baseChange, Fact.out (p := finrank ℝ V = n), hV]
-  obtain ⟨e⟩ := nonempty_algEquiv_even_matrix_of_finrank_eq_two_mul_add_one
-    (QuadraticForm.Nondegenerate.baseChange (L := ℂ) hQnd) hdim
-  exact IsSimpleRing.of_ringEquiv e.symm.toRingEquiv inferInstance
+  refine TauCeti.CliffordAlgebra.isSimpleRing_even_of_odd_finrank
+    (QuadraticForm.Nondegenerate.baseChange (L := ℂ) hQnd) ?_
+  rw [Module.finrank_baseChange, Fact.out (p := finrank ℝ V = n)]
+  exact hn
 
 include o in
 private def oddSpinorSplitEquiv {μ : ℂ} (hμ : μ = 1 ∨ μ = -1) :
@@ -743,6 +764,20 @@ end SingleFactor
 
 /-! ### Two-factor odd evaluation over the full Clifford algebra -/
 
+omit hQ in
+private theorem complexVolume_smul_eq_one_smul {S : Type*} [AddCommGroup S] [Module ℂ S]
+    [Module (CliffordAlgebra (Q.baseChange ℂ)) S]
+    (hω : ∀ s : S, complexVolume Q o • s = s) (s : S) :
+    complexVolume Q o • s = (1 : ℂ) • s :=
+  (hω s).trans (one_smul ℂ s).symm
+
+omit hQ in
+private theorem complexVolume_smul_eq_neg_one_smul {S : Type*} [AddCommGroup S] [Module ℂ S]
+    [Module (CliffordAlgebra (Q.baseChange ℂ)) S]
+    (hω : ∀ s : S, complexVolume Q o • s = -s) (s : S) :
+    complexVolume Q o • s = (-1 : ℂ) • s :=
+  (hω s).trans (neg_one_smul ℂ s).symm
+
 section TwoFactor
 
 include hn
@@ -766,8 +801,8 @@ theorem bijective_lsmul_prod_of_odd :
     Function.Bijective
       ((Algebra.lsmul ℂ ℂ S₁).prod (Algebra.lsmul ℂ ℂ S₂) :
         CliffordAlgebra (Q.baseChange ℂ) →ₐ[ℂ] Module.End ℂ S₁ × Module.End ℂ S₂) := by
-  have hω₁' (s : S₁) : complexVolume Q o • s = (1 : ℂ) • s := by rw [one_smul]; exact hω₁ s
-  have hω₂' (s : S₂) : complexVolume Q o • s = (-1 : ℂ) • s := by rw [neg_one_smul]; exact hω₂ s
+  have hω₁' := complexVolume_smul_eq_one_smul Q o hω₁
+  have hω₂' := complexVolume_smul_eq_neg_one_smul Q o hω₂
   have hbij₁ := bijective_lsmul_even_of_surjective_lsmul Q o hn hQ hsurj₁ hω₁'
   have hbij₂ := bijective_lsmul_even_of_surjective_lsmul Q o hn hQ hsurj₂ hω₂'
   let split := oddSpinorSplitEquiv Q o hn hQ (Or.inl rfl : (1 : ℂ) = 1 ∨ (1 : ℂ) = -1)
@@ -820,22 +855,22 @@ theorem oddVolumeTwoFactorEquiv_apply
       isotypicEval ℂ x + isotypicEval ℂ y :=
   (rfl)
 
+-- Public theorem types cannot reference `private` helpers under `module`, so the three public
+-- inverse signatures spell out the `Prop` conversions as direct `Eq.trans` terms.
 /-- The inverse of `oddVolumeTwoFactorEquiv` projects onto `E⁺` and applies the inverse of
 `oddVolumeFactorEquiv` on the first factor, and similarly onto `E⁻` on the second factor. -/
 theorem oddVolumeTwoFactorEquiv_symm_apply (m : E) :
     (oddVolumeTwoFactorEquiv Q o hn hQ hsurj₁ hsurj₂ hω₁ hω₂).symm m =
-      ((oddVolumeFactorEquiv Q o hn hQ hsurj₁ (μ := 1)
-          (fun s ↦ by rw [one_smul]; exact hω₁ s)).symm
+      ((oddVolumeFactorEquiv Q o hn hQ hsurj₁
+          (fun s ↦ (hω₁ s).trans (one_smul ℂ s).symm)).symm
           ((oddVolumeDecomposition Q o hn hQ).symm m).1,
-       (oddVolumeFactorEquiv Q o hn hQ hsurj₂ (μ := -1)
-          (fun s ↦ by rw [neg_one_smul]; exact hω₂ s)).symm
+       (oddVolumeFactorEquiv Q o hn hQ hsurj₂
+          (fun s ↦ (hω₂ s).trans (neg_one_smul ℂ s).symm)).symm
           ((oddVolumeDecomposition Q o hn hQ).symm m).2) := by
   apply (oddVolumeTwoFactorEquiv Q o hn hQ hsurj₁ hsurj₂ hω₁ hω₂).injective
   rw [LinearEquiv.apply_symm_apply, oddVolumeTwoFactorEquiv_apply,
-    ← coe_oddVolumeFactorEquiv_apply Q o hn hQ hsurj₁ (μ := 1)
-      (fun s ↦ by rw [one_smul]; exact hω₁ s),
-    ← coe_oddVolumeFactorEquiv_apply Q o hn hQ hsurj₂ (μ := -1)
-      (fun s ↦ by rw [neg_one_smul]; exact hω₂ s),
+    ← coe_oddVolumeFactorEquiv_apply Q o hn hQ hsurj₁ (complexVolume_smul_eq_one_smul Q o hω₁),
+    ← coe_oddVolumeFactorEquiv_apply Q o hn hQ hsurj₂ (complexVolume_smul_eq_neg_one_smul Q o hω₂),
     LinearEquiv.apply_symm_apply, LinearEquiv.apply_symm_apply,
     ← oddVolumeDecomposition_apply Q o hn hQ, LinearEquiv.apply_symm_apply]
 
@@ -844,8 +879,8 @@ inverse of `oddVolumeFactorEquiv`. -/
 @[simp]
 theorem oddVolumeTwoFactorEquiv_symm_fst (m : E) :
     ((oddVolumeTwoFactorEquiv Q o hn hQ hsurj₁ hsurj₂ hω₁ hω₂).symm m).1 =
-      (oddVolumeFactorEquiv Q o hn hQ hsurj₁ (μ := 1)
-          (fun s ↦ by rw [one_smul]; exact hω₁ s)).symm
+      (oddVolumeFactorEquiv Q o hn hQ hsurj₁
+          (fun s ↦ (hω₁ s).trans (one_smul ℂ s).symm)).symm
         ((oddVolumeDecomposition Q o hn hQ).symm m).1 :=
   congrArg Prod.fst (oddVolumeTwoFactorEquiv_symm_apply Q o hn hQ hsurj₁ hsurj₂ hω₁ hω₂ m)
 
@@ -854,8 +889,8 @@ inverse of `oddVolumeFactorEquiv`. -/
 @[simp]
 theorem oddVolumeTwoFactorEquiv_symm_snd (m : E) :
     ((oddVolumeTwoFactorEquiv Q o hn hQ hsurj₁ hsurj₂ hω₁ hω₂).symm m).2 =
-      (oddVolumeFactorEquiv Q o hn hQ hsurj₂ (μ := -1)
-          (fun s ↦ by rw [neg_one_smul]; exact hω₂ s)).symm
+      (oddVolumeFactorEquiv Q o hn hQ hsurj₂
+          (fun s ↦ (hω₂ s).trans (neg_one_smul ℂ s).symm)).symm
         ((oddVolumeDecomposition Q o hn hQ).symm m).2 :=
   congrArg Prod.snd (oddVolumeTwoFactorEquiv_symm_apply Q o hn hQ hsurj₁ hsurj₂ hω₁ hω₂ m)
 
@@ -917,10 +952,10 @@ theorem finrank_eq_two_pow_mul_add_finrank_linearMap_of_odd [FiniteDimensional �
   have := _root_.Module.Finite.of_surjective_end _ hsurj₂
   rw [finrank_eq_add_finrank_mul_finrank_linearMap_of_bijective_prod
       (bijective_lsmul_prod_of_odd Q o hn hQ hsurj₁ hsurj₂ hω₁ hω₂),
-    finrank_eq_two_pow_of_odd_of_surjective_lsmul Q o hn hQ hsurj₁ (μ := 1)
-      (fun s ↦ by rw [one_smul]; exact hω₁ s),
-    finrank_eq_two_pow_of_odd_of_surjective_lsmul Q o hn hQ hsurj₂ (μ := -1)
-      (fun s ↦ by rw [neg_one_smul]; exact hω₂ s),
+    finrank_eq_two_pow_of_odd_of_surjective_lsmul Q o hn hQ hsurj₁
+      (complexVolume_smul_eq_one_smul Q o hω₁),
+    finrank_eq_two_pow_of_odd_of_surjective_lsmul Q o hn hQ hsurj₂
+      (complexVolume_smul_eq_neg_one_smul Q o hω₂),
     mul_add]
 
 end TwoFactor
@@ -1005,9 +1040,9 @@ theorem finrank_linearMap_odd_eq_of_anticommute
       finrank ℂ (S₂ →ₗ[CliffordAlgebra (Q.baseChange ℂ)] E) := by
   apply Nat.mul_left_cancel (Nat.two_pow_pos (n / 2))
   rw [← finrank_oddVolumeSubmodule_eq_two_pow_mul_finrank_linearMap (E := E) Q o hn hQ hsurj₁
-      (μ := 1) (fun s ↦ by rw [one_smul]; exact hω₁ s),
+      (complexVolume_smul_eq_one_smul Q o hω₁),
     ← finrank_oddVolumeSubmodule_eq_two_pow_mul_finrank_linearMap (E := E) Q o hn hQ hsurj₂
-      (μ := -1) (fun s ↦ by rw [neg_one_smul]; exact hω₂ s),
+      (complexVolume_smul_eq_neg_one_smul Q o hω₂),
     finrank_oddVolumeSubmodule_neg_of_anticommute Q o hn γ hγ 1]
 
 end OddGrading
