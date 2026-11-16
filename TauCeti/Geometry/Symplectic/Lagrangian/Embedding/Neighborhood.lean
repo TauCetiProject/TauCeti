@@ -15,8 +15,8 @@ public import TauCeti.Geometry.Symplectic.Manifold.RelativeMoser
 /-!
 # Weinstein's Lagrangian neighbourhood theorem
 
-Let `f : M → N` be a Lagrangian embedding of a compact manifold `M` into a symplectic manifold
-`(N, σ)`. **Weinstein's Lagrangian neighbourhood theorem**
+Let `f : M → N` be a Lagrangian embedding of a compact boundaryless manifold `M` into a symplectic
+manifold `(N, σ)`. **Weinstein's Lagrangian neighbourhood theorem**
 (`TauCeti.SmoothTwoForm.IsSymplectic.exists_diffeomorph_opens_cotangent_of_isLagrangianEmbedding`)
 says that a neighbourhood of `f(M)` in `N` is symplectomorphic to a neighbourhood of the zero
 section in the cotangent bundle `T*M`, with its canonical symplectic form `ω = -dλ`, by a map
@@ -115,12 +115,10 @@ private theorem SmoothEmbedding.exists_partialDiffeomorph_cotangent_mfderiv [Non
     rw [PartialDiffeomorph.trans_toPartialEquiv, OpenPartialHomeomorph.trans_toPartialEquiv]
     exact congrArg₂ PartialEquiv.trans (Diffeomorph.toPartialDiffeomorph_toPartialEquiv _) rfl
   have hΨ : ⇑Ψ = f.normalExp hn ∘ D.symm := by
-    rw [← hΦ, hΨe, PartialEquiv.coe_trans, Equiv.toPartialEquiv_apply]
-    rfl
+    rw [← hΦ, hΨe, PartialEquiv.coe_trans, Equiv.toPartialEquiv_apply, Diffeomorph.coe_toEquiv]
   refine ⟨Ψ, fun x ↦ ?_, fun x ↦ ?_, fun x ↦ ⟨(f.normalRepresentative x hn).toLinearMap ∘ₗ
     ((ι x).symm : _ →L[ℝ] _).toLinearMap, fun α ↦ ?_, fun v α ↦ ?_⟩⟩
-  · change _ ∈ Ψ.toPartialEquiv.source
-    rw [hΨe, PartialEquiv.trans_source, mem_inter_iff, mem_preimage, Equiv.toPartialEquiv_apply,
+  · rw [hΨe, PartialEquiv.trans_source, mem_inter_iff, mem_preimage, Equiv.toPartialEquiv_apply,
       Diffeomorph.coe_toEquiv, hDz]
     exact ⟨mem_univ _, hzero x⟩
   · rw [hΨ, Function.comp_apply, hDz, normalExp_zeroSection]
@@ -136,8 +134,8 @@ private theorem SmoothEmbedding.exists_partialDiffeomorph_cotangent_mfderiv [Non
     rw [hΨ, mfderiv_comp_apply_of_eq _ hexp (D.symm.contMDiff.mdifferentiableAt (by simp)) (hDz x),
       Bundle.mfderiv_zeroSection_zeroSectionTangentEquiv_symm _ hD x
         (D.symm.contMDiff.mdifferentiableAt (by simp)), mfderiv_normalExp_zeroSection_apply f hn
-        (by simp) hdim]
-    rfl
+        (by simp) hdim, LinearMap.comp_apply, ContinuousLinearMap.coe_coe,
+      ContinuousLinearMap.coe_coe]
 
 /-- Along the zero section, the tubular coordinates of
 `SmoothEmbedding.exists_partialDiffeomorph_cotangent_mfderiv` pull `σ` back to a form agreeing
@@ -182,11 +180,11 @@ private theorem SmoothEmbedding.exists_partialDiffeomorph_cotangent [Nonempty M]
     ← f.pairingCovector_apply_apply, hAα]
 
 /-- **Weinstein's Lagrangian neighbourhood theorem.** Let `f : M → N` be a Lagrangian embedding of
-a compact manifold `M` into a symplectic manifold `(N, σ)`, boundaryless, Hausdorff and second
-countable. Then there are an open neighbourhood `U₀` of the zero section of the cotangent bundle
-`T*M` and an open neighbourhood `U₁` of `f(M)`, with a diffeomorphism `φ : U₀ → U₁` sending the
-zero covector over each `x` to `f x` and pulling `σ` back to the canonical symplectic form
-`ω = -dλ` of `T*M`. -/
+a compact boundaryless manifold `M` into a symplectic manifold `(N, σ)`, boundaryless, Hausdorff
+and second countable. Then there are an open neighbourhood `U₀` of the zero section of the
+cotangent bundle `T*M` and an open neighbourhood `U₁` of `f(M)`, with a diffeomorphism
+`φ : U₀ → U₁` sending the zero covector over each `x` to `f x` and pulling `σ` back to the
+canonical symplectic form `ω = -dλ` of `T*M`. -/
 theorem SmoothTwoForm.IsSymplectic.exists_diffeomorph_opens_cotangent_of_isLagrangianEmbedding
     [CompactSpace M] [SecondCountableTopology N] (hσ : σ.IsSymplectic) {f : M → N}
     (hf : hσ.isNondegenerate.IsLagrangianEmbedding I f) :

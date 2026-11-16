@@ -394,8 +394,8 @@ theorem exists_diffeomorph_fix_embedding_eventually_mpullback_eq_of_mpullback_eq
     (subset_univ _)
   obtain ⟨βW, hβW, hdβW, hβW0⟩ := hprim (k := 1) (r := ⊤) le_top (σ₁ - σ₀).isSmoothForm
     ((SmoothForm.isClosed_def _).1 (h₁.sub h₀)) (by
-      rw [← SmoothForm.coe_mpullback _ f.contMDiff, map_sub, hpull, sub_self]
-      rfl)
+      rw [← SmoothForm.coe_mpullback _ f.contMDiff, map_sub, hpull, sub_self,
+        ZeroMemClass.coe_zero])
   -- Moser's argument runs on the open submanifold `W`, with the restricted forms.
   let res := SmoothForm.mpullback (I := I) (I' := I) (F := ℝ) (k := 2) (Subtype.val : W → M)
     contMDiff_subtype_val
@@ -628,9 +628,11 @@ theorem IsSymplectic.exists_diffeomorph_opens_of_isCoisotropicMap_of_eval₂_eq
   obtain ⟨A, ⟨hA, hfA⟩, hAΘ⟩ := (hasBasis_nhdsSet _).mem_iff.1 hΘ
   let U₀ : Opens M := ⟨Subtype.val '' A, U.isOpen.isOpenEmbedding_subtypeVal.isOpenMap A hA⟩
   let ι : U₀ → U := fun z ↦ ⟨z, Subtype.coe_image_subset (U : Set M) A z.2⟩
+  -- `ι` only changes the membership witness, so it commutes with the inclusions into `M`.
+  have hιval : Subtype.val ∘ ι = Subtype.val := funext fun _ ↦ rfl
   have hιA (z : U₀) : ι z ∈ A := by
     obtain ⟨a, ha, h⟩ := z.2
-    rwa [show ι z = a from Subtype.ext h.symm]
+    rwa [show ι z = a from Subtype.ext ((congrFun hιval z).trans h.symm)]
   have hι : ContMDiff I I ∞ ι := (TauCeti.ContMDiff.subtypeVal_comp_iff U ι).1 contMDiff_subtype_val
   -- The corrected map `Ψ ∘ Θ` on `U₀` pulls `σ` back to `θ`.
   let Φ : U₀ → N := (Ψ ∘ Subtype.val) ∘ Θ ∘ ι
@@ -642,7 +644,7 @@ theorem IsSymplectic.exists_diffeomorph_opens_of_isCoisotropicMap_of_eval₂_eq
       rw [SmoothForm.mpullback_mpullback, SmoothForm.mpullback_mpullback],
       show SmoothForm.mpullback (Subtype.val : U₀ → M) contMDiff_subtype_val θ =
         SmoothForm.mpullback ι hι (SmoothForm.mpullback _ contMDiff_subtype_val θ) by
-      rw [SmoothForm.mpullback_mpullback]; rfl]
+      simp only [SmoothForm.mpullback_mpullback, hιval]]
     refine Subtype.ext (funext fun z ↦ ContinuousAlternatingMap.ext fun v ↦ ?_)
     rw [SmoothForm.mpullback_apply ι hι, SmoothForm.mpullback_apply ι hι, hAΘ (hιA z)]
   have hinj : Function.Injective Φ := fun z z' h ↦ by
@@ -662,12 +664,10 @@ theorem IsSymplectic.exists_diffeomorph_opens_of_isCoisotropicMap_of_eval₂_eq
   refine ⟨U₀, hloc.image, hloc.diffeomorphOfInjective hinj, fun q ↦ ⟨hq q, ?_⟩, ?_⟩
   · rw [IsLocalDiffeomorph.coe_diffeomorphOfInjective_apply]
     simp only [Φ, Function.comp_apply]
-    rw [show ι ⟨f q, hq q⟩ = ⟨f q, hsrc q⟩ from rfl, hΘf]
+    rw [show ι ⟨f q, hq q⟩ = ⟨f q, hsrc q⟩ from Subtype.ext (congrFun hιval _), hΘf]
   · have hc : Subtype.val ∘ ⇑(hloc.diffeomorphOfInjective hinj) = Φ :=
       funext fun z ↦ IsLocalDiffeomorph.coe_diffeomorphOfInjective_apply hloc hinj z
-    rw [SmoothForm.mpullback_mpullback]
-    simp only [hc]
-    exact hΦσ
+    simpa only [SmoothForm.mpullback_mpullback, hc] using hΦσ
 
 end Coisotropic
 
