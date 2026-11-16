@@ -551,10 +551,9 @@ theorem det_unitaryLift (A : J.unitaryGroup Q) :
     exists_ne_zero_cliffordProjection_kahlerForm_apply_eq_self_forall_eq_smul hQ he h₀ h₂ hW
   obtain ⟨u, rfl⟩ := (positiveHalfSpinorsEquiv o ρ).symm.surjective u₀
   have hb := bivectorExterior_apply_of_cliffordProjection_apply_eq_self o ρ hu
-  have hW' : finrank ℂ (eigenspace (ρ (chirality Q o)) (-1)) = 2 := by
-    have hv : Q (e 0) ≠ 0 := by simp [hQ]
-    rw [← (halfSpinCliffordMulEquiv o ρ 1 hv).finrank_eq]
-    exact (positiveHalfSpinorsEquiv o ρ).finrank_eq.symm.trans hW
+  have hW' : finrank ℂ (eigenspace (ρ (chirality Q o)) (-1)) = 2 :=
+    (finrank_eigenspace_chirality_neg o ρ 1).trans
+      ((positiveHalfSpinorsEquiv o ρ).finrank_eq.symm.trans hW)
   have hV : finrank ℂ V = 2 := by
     have h := J.finrank_real_eq_two_mul_complexFinrank
     rw [J.complexFinrank_def, (Fact.out : finrank ℝ V = 4)] at h
