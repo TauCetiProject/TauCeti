@@ -101,6 +101,24 @@ theorem tamagawaNumber_smul (C : VariableChange F) :
   exact (tamagawaNumber_def (C • E) v).trans
     (tamagawaNumber_eq_index_of_isMinimal_smul E v (D * C) (by rw [mul_smul, hD])).symm
 
+/-- Equivalent valuations have the same valuation ring and therefore compute the same local
+Tamagawa number. -/
+theorem tamagawaNumber_congr {Γ₀' : Type*} [LinearOrderedCommGroupWithZero Γ₀']
+    {v' : Valuation F Γ₀'} [IsDiscreteValuationRing v'.valuationSubring] (h : v.IsEquiv v') :
+    E.tamagawaNumber v = E.tamagawaNumber v' := by
+  classical
+  have hA := (Valuation.isEquiv_iff_valuationSubring v v').1 h
+  obtain ⟨C, hC⟩ := E.exists_smul_eq_minimal v.valuationSubring
+  -- Abstract the valuation subring before substituting `hA`, so the `IsDiscreteValuationRing`
+  -- instance transports together with `IsMinimal`.
+  have hmin (B : ValuationSubring F) [IsDiscreteValuationRing B] (hB : v.valuationSubring = B) :
+      IsMinimal B (E.minimal v.valuationSubring) := by
+    subst hB; infer_instance
+  have : IsMinimal v'.valuationSubring (E.minimal v.valuationSubring) :=
+    hmin v'.valuationSubring hA
+  rw [tamagawaNumber_def, tamagawaNumber_eq_index_of_isMinimal_smul E v' C hC,
+    Affine.nonsingularReduction_congr v h]
+
 omit [E.IsElliptic] in
 /-- Good reduction contributes a factor of one. -/
 @[simp]

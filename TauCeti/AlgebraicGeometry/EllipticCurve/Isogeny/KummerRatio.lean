@@ -49,6 +49,13 @@ theorem kummerRatio_def [d : DecidableEq F] (φ : Isogeny W₁ W₂) :
   cases Subsingleton.elim d (Classical.typeDecidableEq F)
   rfl
 
+/-- Clearing the nonzero kernel order from the Kummer ratio recovers the cokernel index. -/
+theorem kummerRatio_mul_card_ker [DecidableEq F] (φ : Isogeny W₁ W₂) :
+    φ.kummerRatio * Nat.card (Hom.ofIsogeny φ).pointMapHom.ker =
+      (Hom.ofIsogeny φ).pointMapHom.range.index := by
+  have := (Hom.ofIsogeny φ).finite_ker_pointMapHom (Hom.ofIsogeny_ne_zero φ)
+  rw [kummerRatio_def, div_mul_cancel₀ _ (Nat.cast_ne_zero.mpr Nat.card_pos.ne')]
+
 /-- The Kummer ratio is positive exactly when the cokernel on rational points is finite. -/
 theorem kummerRatio_pos_iff [DecidableEq F] (φ : Isogeny W₁ W₂) :
     0 < φ.kummerRatio ↔ (Hom.ofIsogeny φ).pointMapHom.range.FiniteIndex := by
@@ -80,5 +87,27 @@ theorem kummerRatio_id (W : WeierstrassCurve.Affine F) [W.IsElliptic] :
   have hrange : (AddMonoidHom.id W.Point).range = ⊤ :=
     AddMonoidHom.range_eq_top.mpr Function.surjective_id
   simp [kummerRatio_def, ← Hom.id_def, Hom.id_pointMapHom, hrange]
+
+/-- An isogeny of degree one induces an isomorphism on `F`-rational points and therefore has Kummer
+ratio one. -/
+theorem kummerRatio_eq_one_of_degree_eq_one (φ : Isogeny W₁ W₂) (hφ : φ.degree = 1) :
+    φ.kummerRatio = 1 := by
+  classical
+  have hcomp₁ : (Hom.ofIsogeny φ.dual).pointMapHom.comp (Hom.ofIsogeny φ).pointMapHom =
+      AddMonoidHom.id W₁.Point := by
+    rw [← Hom.comp_pointMapHom, ofIsogeny_dual_comp_ofIsogeny, hφ, one_smul, Hom.id_pointMapHom]
+  have hcomp₂ : (Hom.ofIsogeny φ).pointMapHom.comp (Hom.ofIsogeny φ.dual).pointMapHom =
+      AddMonoidHom.id W₂.Point := by
+    rw [← Hom.comp_pointMapHom, ofIsogeny_comp_ofIsogeny_dual, hφ, one_smul, Hom.id_pointMapHom]
+  have hker : (Hom.ofIsogeny φ).pointMapHom.ker = ⊥ :=
+    (AddMonoidHom.ker_eq_bot_iff _).mpr fun P₁ P₂ hP ↦ by
+      have h₁ := DFunLike.congr_fun hcomp₁ P₁
+      have h₂ := DFunLike.congr_fun hcomp₁ P₂
+      simp only [AddMonoidHom.comp_apply, AddMonoidHom.id_apply] at h₁ h₂
+      rw [← h₁, hP, h₂]
+  have hrange : (Hom.ofIsogeny φ).pointMapHom.range = ⊤ :=
+    AddMonoidHom.range_eq_top.mpr fun Q ↦
+      ⟨(Hom.ofIsogeny φ.dual).pointMapHom Q, DFunLike.congr_fun hcomp₂ Q⟩
+  simp [kummerRatio_def, hker, hrange]
 
 end TauCeti.Isogeny

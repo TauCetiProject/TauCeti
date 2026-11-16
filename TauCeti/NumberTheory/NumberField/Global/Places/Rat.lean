@@ -9,6 +9,9 @@ public import Mathlib.NumberTheory.NumberField.Completion.FinitePlace
 public import Mathlib.NumberTheory.Ostrowski
 public import TauCeti.NumberTheory.NumberField.Ideal.IntegersRat
 import TauCeti.Analysis.AbsoluteValue.Equivalence
+import TauCeti.NumberTheory.NumberField.FinitePlace.Basic
+import TauCeti.NumberTheory.NumberField.Global.Places.Basic
+import TauCeti.RingTheory.DedekindDomain.AdicValuation.Transport
 
 /-!
 # Finite places of the rational numbers
@@ -24,7 +27,10 @@ the rational prime generating the place's maximal ideal then fixes the prime and
 The inverse dictionary uses `primesEquiv.symm` to supply the corresponding finite place.
 The local-value formulas `Rat.HeightOneSpectrum.finitePlace_mk_natGenerator` and
 `Rat.HeightOneSpectrum.finitePlace_mk_inv_natGenerator` evaluate a place at its generating prime
-and its inverse.
+and its inverse. For any Dedekind domain `R` integrally closed in `ℚ` with fraction field `ℚ`
+(such as `ℤ` or `𝓞 ℚ`), transporting the product formula for `ℚ` along `R ≃+* 𝓞 ℚ` gives
+`|x| · ∏ᶠ v, (#(R ⧸ v)) ^ log (v x) = 1` in `ℚ`
+(`Rat.HeightOneSpectrum.abs_mul_finprod_zpow_log_valuation`).
 
 ## References
 
@@ -55,6 +61,77 @@ the prime. -/
 theorem finitePlace_mk_inv_natGenerator :
     FinitePlace.mk v ((natGenerator v : ℚ)⁻¹) = natGenerator v := by
   rw [map_inv₀, finitePlace_mk_natGenerator, inv_inv]
+
+section ProductFormula
+
+variable {R : Type*} [CommRing R] [IsDedekindDomain R] [Algebra R ℚ] [IsFractionRing R ℚ]
+  [IsIntegralClosure R ℤ ℚ]
+
+/-- At a height-one prime `v` of an integral closure `R` of `ℤ` in `ℚ`, the rational factor
+`#(R ⧸ v) ^ log (v x)` casts to the normalized absolute value of `x` at the corresponding finite
+place of `ℚ`. -/
+private theorem ratCast_zpow_log_valuation_eq_normalizedAbsValue
+    (v : HeightOneSpectrum R) {x : ℚ} (hx : x ≠ 0) :
+    (((Nat.card (R ⧸ v.asIdeal) : ℚ) ^ WithZero.log (v.valuation ℚ x) : ℚ) : ℝ) =
+      TauCeti.GlobalNumberFields.normalizedAbsValue
+        (Sum.inl (HeightOneSpectrum.equivOfRingEquiv (NumberField.RingOfIntegers.equiv R).symm v))
+        x := by
+  let e : R ≃+* 𝓞 ℚ := (NumberField.RingOfIntegers.equiv R).symm
+  let w : HeightOneSpectrum (𝓞 ℚ) := HeightOneSpectrum.equivOfRingEquiv e v
+  have hvw : w.asIdeal = Ideal.map e v.asIdeal := HeightOneSpectrum.asIdeal_equivOfRingEquiv e v
+  have hcard : Nat.card (R ⧸ v.asIdeal) = w.asIdeal.absNorm := by
+    rw [Ideal.absNorm_of_ne_bot w.ne_bot, Submodule.cardQuot_apply]
+    exact Nat.card_congr (Ideal.quotientEquiv v.asIdeal w.asIdeal e hvw).toEquiv
+  have hval : w.valuation ℚ x = v.valuation ℚ x := by
+    have hσ : (IsFractionRing.ringEquivOfRingEquiv (K := ℚ) (L := ℚ) e).toRingHom =
+        RingHom.id ℚ := Subsingleton.elim _ _
+    have h := HeightOneSpectrum.valuation_ringEquivOfRingEquiv (K := ℚ) (K' := ℚ) e hvw x
+    simpa [RingHom.ext_iff.mp hσ x] using h
+  rw [TauCeti.GlobalNumberFields.normalizedAbsValue_inl, ← FinitePlace.norm_embedding,
+    ← FinitePlace.mk_apply, FinitePlace.apply_eq_absNorm_zpow _ hx, FinitePlace.maximalIdeal_mk,
+    hcard, hval]
+  push_cast
+  rfl
+
+/-- For a nonzero rational number `x`, the local normalized absolute value
+`#(R ⧸ v) ^ log (v x)` is `1` at all but finitely many height-one primes `v` of `R`. -/
+theorem hasFiniteMulSupport_zpow_log_valuation {x : ℚ} (hx : x ≠ 0) :
+    Function.HasFiniteMulSupport (fun v : HeightOneSpectrum R ↦
+      (Nat.card (R ⧸ v.asIdeal) : ℚ) ^ WithZero.log (v.valuation ℚ x)) := by
+  let f := HeightOneSpectrum.equivOfRingEquiv (NumberField.RingOfIntegers.equiv (K := ℚ) R).symm
+  have hsupp : Function.HasFiniteMulSupport (fun v : HeightOneSpectrum R ↦
+      TauCeti.GlobalNumberFields.normalizedAbsValue (Sum.inl (f v)) x) := by
+    have h := (TauCeti.GlobalNumberFields.hasFiniteMulSupport_adicAbv (K := ℚ) hx).preimage
+      f.injective.injOn
+    simpa [Function.HasFiniteMulSupport, TauCeti.GlobalNumberFields.normalizedAbsValue_inl,
+      Set.preimage, Function.mulSupport] using h
+  refine hsupp.subset fun v hv ↦ ?_
+  simp only [Function.mem_mulSupport, ne_eq] at hv ⊢
+  rw [← ratCast_zpow_log_valuation_eq_normalizedAbsValue v hx]
+  exact_mod_cast hv
+
+/-- **The product formula for `ℚ` over any integral closure `R` of `ℤ` in `ℚ`**: for every
+nonzero `x : ℚ`, `|x| · ∏ᶠ v : HeightOneSpectrum R, (#(R ⧸ v)) ^ log (v x) = 1`. -/
+theorem abs_mul_finprod_zpow_log_valuation {x : ℚ} (hx : x ≠ 0) :
+    |x| * ∏ᶠ v : HeightOneSpectrum R,
+        (Nat.card (R ⧸ v.asIdeal) : ℚ) ^ WithZero.log (v.valuation ℚ x) = 1 := by
+  let f := HeightOneSpectrum.equivOfRingEquiv (NumberField.RingOfIntegers.equiv (K := ℚ) R).symm
+  apply Rat.cast_injective (α := ℝ)
+  rw [Rat.cast_mul, Rat.cast_abs, Rat.cast_one,
+    ← Rat.coe_castHom, map_finprod (Rat.castHom ℝ)
+      (hasFiniteMulSupport_zpow_log_valuation (R := R) hx)]
+  have hcongr : (∏ᶠ v : HeightOneSpectrum R,
+      (Rat.castHom ℝ) ((Nat.card (R ⧸ v.asIdeal) : ℚ) ^ WithZero.log (v.valuation ℚ x))) =
+      ∏ᶠ v : HeightOneSpectrum R,
+        TauCeti.GlobalNumberFields.normalizedAbsValue (Sum.inl (f v)) x :=
+    finprod_congr fun v ↦ ratCast_zpow_log_valuation_eq_normalizedAbsValue v hx
+  rw [hcongr, finprod_comp_equiv (e := f) (f := fun w ↦
+      TauCeti.GlobalNumberFields.normalizedAbsValue (Sum.inl w) x),
+    TauCeti.GlobalNumberFields.finprod_normalizedAbsValue_inl (K := ℚ) hx,
+    Algebra.norm_self, MonoidHom.id_apply, Rat.coe_castHom, Rat.cast_inv, Rat.cast_abs]
+  exact mul_inv_cancel₀ (abs_ne_zero.mpr (by exact_mod_cast hx))
+
+end ProductFormula
 
 end Rat.HeightOneSpectrum
 
