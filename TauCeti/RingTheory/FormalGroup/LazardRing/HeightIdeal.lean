@@ -9,7 +9,6 @@ public import Mathlib.Data.ZMod.Basic
 public import TauCeti.RingTheory.FormalGroup.Height.Regular
 public import TauCeti.RingTheory.FormalGroup.LazardRing.Polynomial
 import Mathlib.Algebra.Field.ZMod
-import Mathlib.RingTheory.Polynomial.Basic
 import Mathlib.RingTheory.ZMod
 import TauCeti.RingTheory.FormalGroup.LazardRing.NSMul
 import TauCeti.RingTheory.MvPolynomial.Triangular

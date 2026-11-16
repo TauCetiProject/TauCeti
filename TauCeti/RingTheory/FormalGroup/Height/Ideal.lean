@@ -141,6 +141,7 @@ theorem map_heightIdeal (φ : R →+* S) (n : ℕ) :
   simp only [heightIdeal, Ideal.map_span, Set.image_image, coeff_nsmulSeries_map]
 
 /-- The supremum of the height ideals commutes with base change. -/
+@[simp]
 theorem map_iSup_heightIdeal (φ : R →+* S) :
     (⨆ n, F.heightIdeal p n).map φ = ⨆ n, (F.map φ).heightIdeal p n := by
   simp [Ideal.map_iSup]

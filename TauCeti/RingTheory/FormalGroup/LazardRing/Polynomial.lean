@@ -132,9 +132,14 @@ theorem mvPolynomialEquiv_symm_generator (n : ℕ+) :
     mvPolynomialEquiv.symm (generator n) = MvPolynomial.X n := by
   rw [AlgEquiv.symm_apply_eq, mvPolynomialEquiv_X]
 
+/-- The Lazard ring is an integral domain, transferred from `ℤ[x₁, x₂, …]` via Lazard's polynomial
+presentation (`TauCeti.LazardRing.mvPolynomialEquiv`). -/
 instance : IsDomain LazardRing :=
   mvPolynomialEquiv.symm.toMulEquiv.isDomain
 
+/-- The Lazard ring has characteristic zero, since the augmentation
+`TauCeti.LazardRing.augmentation` (corresponding to `MvPolynomial.constantCoeff` under Lazard's
+polynomial presentation `TauCeti.LazardRing.mvPolynomialEquiv`) splits `ℤ →+* LazardRing`. -/
 instance : CharZero LazardRing :=
   ⟨fun m n h ↦ Nat.cast_injective (R := ℤ) (by simpa using congrArg augmentation h)⟩
 
