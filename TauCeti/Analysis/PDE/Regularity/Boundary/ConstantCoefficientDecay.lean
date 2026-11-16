@@ -11,6 +11,7 @@ import TauCeti.Analysis.InnerProductSpace.Transvection
 import TauCeti.Analysis.InnerProductSpace.Reflection
 import TauCeti.Analysis.PDE.EnergyForm.ConstantCoefficient
 import TauCeti.Analysis.PDE.EnergyForm.Restriction
+import TauCeti.MeasureTheory.Function.Lp.Norm
 import TauCeti.MeasureTheory.Integral.Average
 
 /-!
@@ -314,16 +315,6 @@ end ShearMap
 /-! ### The weak equation in sheared coordinates -/
 
 omit [DecidableEq ι] in
-/-- On a subset of finite measure of `U`, the squared distance of the gradient of `u ∈ H¹(U)` from a
-constant vector is integrable. -/
-private theorem integrableOn_norm_gradient_sub_sq {U : Opens (EuclideanSpace ℝ ι)}
-    (u : W1p volume U 2) {S : Set (EuclideanSpace ℝ ι)} (hS : S ⊆ U) (hSfin : volume S ≠ ⊤)
-    (c : EuclideanSpace ℝ ι) : IntegrableOn (fun x => ‖W1p.gradient u x - c‖ ^ 2) S := by
-  have : IsFiniteMeasure (volume.restrict S) := isFiniteMeasure_restrict.2 hSfin
-  exact (((Lp.memLp (W1p.gradient u)).mono_measure (Measure.restrict_mono hS le_rfl)).sub
-    (memLp_const c)).integrable_norm_pow two_ne_zero
-
-omit [DecidableEq ι] in
 /-- A half-ball `B(z, r) ∩ H` has finite measure. -/
 private theorem volume_ball_inter_ne_top (z : EuclideanSpace ℝ ι) (r : ℝ)
     (H : Set (EuclideanSpace ℝ ι)) : volume (ball z r ∩ H) ≠ ⊤ :=
@@ -616,8 +607,8 @@ private theorem setIntegral_ball_inter_norm_gradient_sub_sq_le_of_comp_boundaryS
   have hP := measurePreserving_boundaryShear hs (c₀ := c₀)
   have hPe := P.measurableEmbedding
   have hgint : IntegrableOn (fun x => ‖W1p.gradient u x - t • ν‖ ^ 2) (ball z r ∩ H) :=
-    integrableOn_norm_gradient_sub_sq u (inter_subset_left.trans hball)
-      (volume_ball_inter_ne_top z r H) (t • ν)
+    (Lp.memLp (W1p.gradient u)).integrableOn_norm_sub_sq_of_subset
+      (inter_subset_left.trans hball) (volume_ball_inter_ne_top z r H) (t • ν)
   -- The shear maps `B(z, r / κ) ∩ H` into `B(z, r) ∩ H`.
   have hYP : ball z (r / κ) ∩ (H : Set (EuclideanSpace ℝ ι)) ⊆ P ⁻¹' (ball z r ∩ H) :=
     fun y hy => ⟨mapsTo_boundaryShear_ball hs hz hκ hL hy.1,
@@ -628,7 +619,8 @@ private theorem setIntegral_ball_inter_norm_gradient_sub_sq_le_of_comp_boundaryS
     rw [transvectionL_apply, real_inner_comm, hs, zero_smul, add_zero]
   calc _ ≤ ∫ y in ball z (r / κ) ∩ H, κ ^ 2 * ‖W1p.gradient u (P y) - t • ν‖ ^ 2 := by
         have hhint : IntegrableOn (fun y => ‖W1p.gradient h y - t • ν‖ ^ 2) (ball z (r / κ)) :=
-          integrableOn_norm_gradient_sub_sq h subset_rfl measure_ball_lt_top.ne (t • ν)
+          (Lp.memLp (W1p.gradient h)).integrableOn_norm_sub_sq_of_subset subset_rfl
+            measure_ball_lt_top.ne (t • ν)
         refine integral_mono_ae (hhint.mono_set inter_subset_left)
           ((hgPint.mono_set hYP).const_mul _) ?_
         filter_upwards [ae_restrict_of_ae_restrict_of_subset inter_subset_left hgrad] with y hy
@@ -665,10 +657,11 @@ private theorem setIntegral_ball_inter_norm_gradient_sub_sq_le_of_boundaryShear
   have hPe := P.measurableEmbedding
   have hgint : IntegrableOn (fun x => ‖W1p.gradient u x - transvectionL s (-ν) c‖ ^ 2)
       (ball z ρ ∩ H) :=
-    integrableOn_norm_gradient_sub_sq u (inter_subset_left.trans hρU)
-      (volume_ball_inter_ne_top z ρ H) _
+    (Lp.memLp (W1p.gradient u)).integrableOn_norm_sub_sq_of_subset
+      (inter_subset_left.trans hρU) (volume_ball_inter_ne_top z ρ H) _
   have hwint : IntegrableOn (fun y => ‖W1p.gradient w y - c‖ ^ 2) (ball z r) :=
-    integrableOn_norm_gradient_sub_sq w subset_rfl measure_ball_lt_top.ne c
+    (Lp.memLp (W1p.gradient w)).integrableOn_norm_sub_sq_of_subset subset_rfl
+      measure_ball_lt_top.ne c
   -- The preimage of `B(z, ρ) ∩ H` under the shear lies in `B(z, κ ρ) ∩ H`.
   have hpre : P ⁻¹' (ball z ρ ∩ H) ⊆ ball z (κ * ρ) ∩ H := fun y hy => by
     refine ⟨?_, by
@@ -871,8 +864,8 @@ theorem exists_setIntegral_ball_inter_norm_gradient_sq_le {lam Lam : ℝ} (hlam 
     positivity
   refine le_mul_div_pow_mul_of_le n (le_add_of_nonneg_right (div_nonneg hLam hlam.le)) hρ0 hρr hI
     (by positivity) (fun hsmall => ?_) (setIntegral_mono_set
-      (by simpa using (integrableOn_norm_gradient_sub_sq u (inter_subset_left.trans hball)
-        (volume_ball_inter_ne_top z r H) 0))
+      (by simpa using ((Lp.memLp (W1p.gradient u)).integrableOn_norm_sub_sq_of_subset
+        (inter_subset_left.trans hball) (volume_ball_inter_ne_top z r H) 0))
       (Filter.Eventually.of_forall fun _ => by positivity)
       (Filter.Eventually.of_forall (inter_subset_inter_left _ (ball_subset_ball hρr))))
   obtain ⟨B, M, w, hB, hB', hw, hT, -, -, hR⟩ :=
@@ -939,8 +932,8 @@ theorem exists_setIntegral_ball_inter_norm_gradient_sub_inner_setAverage_div_smu
         le_rfl)) ν
   refine le_mul_div_pow_mul_of_le (n + 2) (le_add_of_nonneg_right (div_nonneg hLam hlam.le)) hρ0
     hρr hI (by positivity) (fun hsmall => ?_) ((hmin t).trans (setIntegral_mono_set
-      (integrableOn_norm_gradient_sub_sq u (inter_subset_left.trans hball)
-        (volume_ball_inter_ne_top z r H) _)
+      ((Lp.memLp (W1p.gradient u)).integrableOn_norm_sub_sq_of_subset
+        (inter_subset_left.trans hball) (volume_ball_inter_ne_top z r H) _)
       (Filter.Eventually.of_forall fun _ => by positivity)
       (Filter.Eventually.of_forall (inter_subset_inter_left _ (ball_subset_ball hρr)))))
   obtain ⟨B, M, w, hB, hB', hw, hT, hM, hodd, hR⟩ :=

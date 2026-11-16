@@ -279,10 +279,9 @@ theorem gradient_normalReflection_of_forall_eq_neg {a : ℝ} {U : Set (WithLp 2 
 
 /-- The normal reflection in `{a} × E` maps every ball centred on that hyperplane into itself. -/
 theorem mapsTo_normalReflection_ball {a : ℝ} {x₀ : WithLp 2 (ℝ × E)} (hx₀ : x₀.fst = a) (r : ℝ) :
-    MapsTo (normalReflection E a) (Metric.ball x₀ r) (Metric.ball x₀ r) := fun x hx => by
-  rw [Metric.mem_ball, ← (normalReflection_eq_self_iff a x₀).2 hx₀,
-    (normalReflection E a).dist_map]
-  exact hx
+    MapsTo (normalReflection E a) (Metric.ball x₀ r) (Metric.ball x₀ r) :=
+  normalReflection_eq_hyperplaneReflection (E := E) a ▸
+    mapsTo_hyperplaneReflection_ball (by simpa [WithLp.prod_inner_apply] using hx₀) r
 
 variable [MeasurableSpace E] [BorelSpace E]
 

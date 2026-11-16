@@ -10,6 +10,7 @@ public import TauCeti.Analysis.Normed.Affine.Isometry.Basic
 public import TauCeti.Analysis.Sobolev.W1p.ChangeOfVariables
 import TauCeti.Analysis.Sobolev.W1p.Localization
 import TauCeti.Analysis.Sobolev.W1p.VanishingBoundary
+import TauCeti.MeasureTheory.Function.Lp.Norm
 import TauCeti.MeasureTheory.Measure.Haar.InnerProductSpace
 
 /-!
@@ -438,17 +439,16 @@ theorem W1p.setIntegral_norm_gradient_sub_compHyperplaneReflectionL_sub_smul_sq_
   obtain ⟨G, hG⟩ : ∃ G : E → ℝ,
       (H : Set E).indicator (fun y => ‖W1p.gradient u y - t • ν‖ ^ 2) = G := ⟨_, rfl⟩
   rw [hG] at hpt
-  have : IsFiniteMeasure (mu.restrict U) := isFiniteMeasure_restrict.2 hUfin
   have hGint : IntegrableOn G U mu := hG ▸
-    (((Lp.memLp (W1p.gradient u)).sub (memLp_const (t • ν))).integrable_norm_pow
-      two_ne_zero).indicator H.isOpen.measurableSet
+    ((Lp.memLp (W1p.gradient u)).integrableOn_norm_sub_sq_of_subset subset_rfl hUfin
+      (t • ν)).indicator H.isOpen.measurableSet
   have hρmp := measurePreserving_restrict_hyperplaneReflection (μ := mu) hU U.isOpen.measurableSet
   have hGρint : IntegrableOn (fun x => G (ρ x)) U mu :=
     (hρmp.integrable_comp_emb ρ.toHomeomorph.measurableEmbedding).2 hGint
   calc _ ≤ ∫ x in U, (G x + G (ρ x)) ∂mu :=
-        integral_mono_ae (((Lp.memLp (W1p.gradient (u - W1p.compHyperplaneReflectionL
-          ENNReal.ofNat_ne_top ν c hU u))).sub (memLp_const (t • ν))).integrable_norm_pow
-            two_ne_zero) (hGint.add hGρint) hpt
+        integral_mono_ae ((Lp.memLp (W1p.gradient (u - W1p.compHyperplaneReflectionL
+          ENNReal.ofNat_ne_top ν c hU u))).integrableOn_norm_sub_sq_of_subset subset_rfl hUfin
+            (t • ν)) (hGint.add hGρint) hpt
     _ = 2 * ∫ x in (U : Set E) ∩ H, ‖W1p.gradient u x - t • ν‖ ^ 2 ∂mu := by
         rw [integral_add hGint hGρint, hρmp.integral_comp ρ.toHomeomorph.measurableEmbedding G,
           ← hG, setIntegral_indicator H.isOpen.measurableSet]

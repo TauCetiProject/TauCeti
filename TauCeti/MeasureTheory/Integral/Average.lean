@@ -797,8 +797,7 @@ theorem setIntegral_norm_sub_inner_setAverage_div_smul_sq_le (hs : μ s ≠ ⊤)
       ∫ x in s, ‖f x - t • ν‖ ^ 2 ∂μ := by
   have : IsFiniteMeasure (μ.restrict s) := isFiniteMeasure_restrict.2 hs
   have hint : IntegrableOn f s μ := hf.integrable one_le_two
-  have hsq (c : F) : IntegrableOn (fun x ↦ ‖f x - c‖ ^ 2) s μ :=
-    (hf.sub (memLp_const c)).integrable_norm_pow two_ne_zero
+  have hsq := hf.integrableOn_norm_sub_sq_of_subset subset_rfl hs
   set m := ⨍ y in s, f y ∂μ
   rw [setIntegral_norm_sub_sq_eq_setIntegral_norm_sub_setAverage_sq_add hs hint
       (hsq ((⟪m, ν⟫_ℝ / ‖ν‖ ^ 2) • ν)),
