@@ -12,7 +12,6 @@ public import TauCeti.Analysis.InnerProductSpace.Variational.Spectrum
 public import TauCeti.Topology.Algebra.Module.LinearPMap.Resolvent.Inverse
 public import TauCeti.Topology.Algebra.Module.LinearPMap.Resolvent.Shift
 public import TauCeti.Topology.Algebra.Module.LinearPMap.Resolvent.Compact
-import TauCeti.Analysis.Normed.Operator.Compact.Orthonormal
 
 /-!
 # The operator of a form that is coercive after a shift
@@ -41,11 +40,12 @@ range and `Q` is symmetric:
 * `-c` is a resolvent point, with `(A + c)⁻¹ = S`, that is resolvent `-S` at `-c`
   (`IsCoercive.resolvent_formOperator_neg`), and the resolvent is compact when `J` is
   (`IsCoercive.hasCompactResolvent_formOperator`);
-* its eigenvectors for `μ` are the eigenvectors of `S` for `(μ + c)⁻¹`
-  (`IsCoercive.exists_formOperator_apply_eq_smul_iff`), so its eigenspaces are finite-dimensional
-  when `J` is compact (`IsCoercive.finiteDimensional_eigenspace_formSolutionOperator`);
-* when `J` is compact, `H` has a Hilbert basis of eigenvectors, with eigenvalues `κ - c > -c`
-  for the variational eigenvalues `κ` of `B`, only finitely many below any bound
+* for `μ + c ≠ 0`, its eigenvectors for `μ` are the eigenvectors of `S` for `(μ + c)⁻¹`
+  (`IsCoercive.exists_formOperator_apply_eq_smul_iff`); these nonzero eigenspaces of `S` are
+  finite-dimensional when `J` is compact
+  (`IsCoercive.finiteDimensional_eigenspace_formSolutionOperator`);
+* when `J` is compact, `H` has a Hilbert basis of eigenvectors with eigenvalues greater than
+  `-c`, only finitely many below any bound
   (`IsCoercive.exists_hilbertBasis_formOperator`).
 
 For `V = W¹,²₀(D)` and `H = L²(D)` this is the **Dirichlet realization** of the operator, and for
@@ -78,6 +78,25 @@ represented by `Q`: its graph consists of the pairs `(J u, f)` with `Q(u, v) = �
 every `v` (`IsCoercive.mem_graph_formOperator_iff`). -/
 def formOperator (hB : IsCoercive B) (J : V →L[ℝ] H) (c : ℝ) : H →ₗ.[ℝ] H :=
   subScalar (((hB.formSolutionOperator J : H →ₗ[ℝ] H).toPMap ⊤).inverse) c
+
+/-- The domain of the form operator is the range of its solution operator, for every shift. -/
+@[simp]
+theorem domain_formOperator (hB : IsCoercive B) (J : V →L[ℝ] H) (c : ℝ) :
+    (hB.formOperator J c).domain = LinearMap.range (hB.formSolutionOperator J : H →ₗ[ℝ] H) := by
+  ext x
+  rw [formOperator, subScalar_domain,
+    ContinuousLinearMap.mem_domain_inverse_toPMap_top_iff, LinearMap.mem_range]
+  simp only [ContinuousLinearMap.coe_coe]
+
+/-- On the image of the solution operator, the form operator sends `S f` to `f - c • S f`. -/
+theorem formOperator_apply_formSolutionOperator (hB : IsCoercive B) (hJ : DenseRange J) (f : H) :
+    hB.formOperator J c
+        ⟨hB.formSolutionOperator J f, by
+          rw [hB.domain_formOperator J c]
+          exact LinearMap.mem_range_self _ f⟩ =
+      f - c • hB.formSolutionOperator J f := by
+  simp only [formOperator, subScalar_apply,
+    ContinuousLinearMap.inverse_toPMap_top_apply _ (hB.formSolutionOperator_injective hJ)]
 
 /-- The graph of the form operator through the solution operator: `(x, f)` lies on it exactly when
 `S (f + c x) = x`. -/
@@ -147,10 +166,9 @@ theorem neg_mem_resolventSet_formOperator (hB : IsCoercive B) (hJ : DenseRange J
 operator `S` of the shifted form, that is `(A + c)⁻¹ = S`. -/
 theorem resolvent_formOperator_neg (hB : IsCoercive B) (hJ : DenseRange J) :
     (hB.formOperator J c).resolvent (-c) = -hB.formSolutionOperator J := by
-  rw [formOperator, TauCeti.LinearPMap.resolvent_subScalar (by
-      rw [neg_add_cancel]
-      exact ContinuousLinearMap.zero_mem_resolventSet_inverse_toPMap_top _
-        (hB.formSolutionOperator_injective hJ)), neg_add_cancel,
+  rw [formOperator, TauCeti.LinearPMap.resolvent_subScalar
+      (TauCeti.LinearPMap.mem_resolventSet_subScalar_iff.1
+        (hB.neg_mem_resolventSet_formOperator hJ)), neg_add_cancel,
     ContinuousLinearMap.resolvent_inverse_toPMap_top_zero _ (hB.formSolutionOperator_injective hJ)]
 
 /-- **The form operator has compact resolvent** when `J` is compact. -/
@@ -168,11 +186,7 @@ theorem exists_formOperator_apply_eq_smul_iff (hB : IsCoercive B) (hJ : DenseRan
       hB.formSolutionOperator J x = (μ + c)⁻¹ • x := by
   have hgraph : (∃ hx : x ∈ (hB.formOperator J c).domain,
       hB.formOperator J c ⟨x, hx⟩ = μ • x) ↔ (x, μ • x) ∈ (hB.formOperator J c).graph := by
-    rw [mem_graph_iff]
-    refine ⟨fun ⟨hx, h⟩ ↦ ⟨⟨x, hx⟩, rfl, h⟩, fun ⟨y, hy, h⟩ ↦ ?_⟩
-    simp only at hy
-    subst hy
-    exact ⟨y.2, h⟩
+    simp only [mem_graph_iff, Subtype.exists, exists_and_left, exists_eq_left]
   rw [hgraph, hB.mem_graph_formOperator_iff_formSolutionOperator hJ]
   simp only
   rw [← add_smul, _root_.map_smul]
@@ -201,43 +215,10 @@ theorem mem_domain_formOperator_iff (hB : IsCoercive B) (hJ : DenseRange J)
     rw [InnerProductSpace.toDual_symm_apply]
     exact (LinearMap.extendOfNorm_eq hJ hbound v).symm
 
-/-- On a variational eigenfunction `u` with eigenvalue `κ > 0`, the solution operator acts as
-`S (J u) = κ⁻¹ J u`. -/
-theorem formSolutionOperator_apply_eq_inv_smul (hB : IsCoercive B) {u : V} {κ : ℝ} (hκ : κ ≠ 0)
-    (heq : ∀ v, B u v = κ * ⟪J u, J v⟫_ℝ) :
-    hB.formSolutionOperator J (J u) = κ⁻¹ • J u := by
-  have hsol : κ⁻¹ • u = hB.formSolutionMap J (J u) :=
-    hB.eq_formSolutionMap J fun v ↦ by
-      rw [_root_.map_smul, _root_.smul_apply, heq, smul_eq_mul, ← mul_assoc, inv_mul_cancel₀ hκ,
-        one_mul]
-  rw [formSolutionOperator_apply, ← hsol, _root_.map_smul]
-
-/-- **Finitely many variational eigenvalues below any bound.** For a compact `J` and a Hilbert
-basis of `H` made of the images `J uₓ` of variational eigenfunctions with eigenvalues `κₓ > 0`,
-only finitely many `κₓ` lie below any given bound. -/
-theorem finite_setOf_le_of_hilbertBasis (hB : IsCoercive B) (hJc : IsCompactOperator J)
-    {s : Set H} (b : HilbertBasis s ℝ H) (hb : ⇑b = ((↑) : s → H)) {κ : s → ℝ}
-    (hκ : ∀ x, 0 < κ x) {u : s → V} (hJu : ∀ x, J (u x) = x)
-    (heq : ∀ x v, B (u x) v = κ x * ⟪J (u x), J v⟫_ℝ) (C : ℝ) : {x : s | κ x ≤ C}.Finite := by
-  rcases le_or_gt C 0 with hC | hC
-  · refine Set.finite_empty.subset fun x hx ↦ ?_
-    simp only [Set.mem_ofPred_eq] at hx
-    linarith [hκ x]
-  · have hS (x : s) : hB.formSolutionOperator J (x : H) = (κ x)⁻¹ • (x : H) := by
-      simpa [hJu] using hB.formSolutionOperator_apply_eq_inv_smul (hκ x).ne' (heq x)
-    have hfin := IsCompactOperator.finite_setOf_le_norm_of_orthonormal
-      (hB.isCompactOperator_formSolutionOperator hJc)
-      (T := (hB.formSolutionOperator J : H →ₗ[ℝ] H)) (v := ⇑b) (μ := fun x ↦ (κ x)⁻¹)
-      b.orthonormal (fun x ↦ by rw [hb]; exact hS x) (inv_pos.2 hC)
-    refine hfin.subset fun x hx ↦ ?_
-    simp only [Set.mem_ofPred_eq, Real.norm_eq_abs, abs_inv, abs_of_pos (hκ x)] at hx ⊢
-    exact inv_anti₀ (hκ x) hx
-
 /-- **The eigenvectors of the form operator.** If `B(u, v) = Q(u, v) + c ⟪J u, J v⟫` for a
 symmetric `Q`, and `J` is compact with dense range, then `H` has a Hilbert basis of eigenvectors
-of the form operator. Its eigenvalues are `κ - c`, for the variational eigenvalues `κ > 0` of
-`B`, so they are greater than `-c`, and only finitely many basis vectors have eigenvalue below
-any given bound. -/
+of the form operator. Its eigenvalues are greater than `-c`, and only finitely many basis
+vectors have eigenvalue below any given bound. -/
 theorem exists_hilbertBasis_formOperator [CompleteSpace H] (hB : IsCoercive B)
     (hJc : IsCompactOperator J) (hJ : DenseRange J)
     (hBQ : ∀ u v, B u v = Q u v + c * ⟪J u, J v⟫_ℝ) (hsymm : ∀ u v, Q u v = Q v u) :
@@ -253,7 +234,8 @@ theorem exists_hilbertBasis_formOperator [CompleteSpace H] (hB : IsCoercive B)
   refine ⟨s, b, fun x ↦ κ x - c, hb, fun x ↦ by linarith [hκ x], fun x ↦ ?_, fun C ↦ ?_⟩
   · refine (hB.exists_formOperator_apply_eq_smul_iff hJ (by simpa using (hκ x).ne')).2 ?_
     simpa [hJu] using hB.formSolutionOperator_apply_eq_inv_smul (hκ x).ne' (heq x)
-  · exact (hB.finite_setOf_le_of_hilbertBasis hJc b hb hκ hJu heq (C + c)).subset
+  · exact (hB.finite_setOf_le_of_orthonormal hJc b.orthonormal hκ
+      (fun x ↦ by rw [hb]; exact hJu x) heq (C + c)).subset
       fun x hx ↦ by simp only [Set.mem_ofPred_eq] at hx ⊢; linarith
 
 variable [CompleteSpace H]
@@ -272,11 +254,14 @@ theorem isSelfAdjoint_formOperator (hB : IsCoercive B) (hJ : DenseRange J)
   have heq : hB.formOperator J c =
       (((-c) • (1 : H →L[ℝ] H) : H →L[ℝ] H) : H →ₗ[ℝ] H) +ᵥ
         ((hB.formSolutionOperator J : H →ₗ[ℝ] H).toPMap ⊤).inverse := by
+    have hcoe : (((-c) • (1 : H →L[ℝ] H) : H →L[ℝ] H) : H →ₗ[ℝ] H) =
+        -c • LinearMap.id := by
+      simp only [ContinuousLinearMap.toLinearMap_smul, ContinuousLinearMap.toLinearMap_one,
+        Module.End.one_eq_id]
+    rw [hcoe]
+    -- Use the public evaluation API: the imported scalar-shift definition is opaque.
     refine LinearPMap.ext (by simp [formOperator]) fun x hf hg ↦ ?_
-    rw [LinearPMap.vadd_apply]
-    simp only [formOperator, subScalar_apply, neg_smul]
-    rw [sub_eq_neg_add]
-    congr 1
+    simp [formOperator, subScalar_apply, LinearPMap.vadd_apply, sub_eq_neg_add]
   rw [heq]
   exact LinearPMap.isSelfAdjoint_perturb_bounded hS hT
 
