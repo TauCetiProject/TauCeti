@@ -40,6 +40,8 @@ parallel notion of Hölder continuity.
   at most `max 1 (K ^ α)`.
 * `TauCeti.HolderSpace.compLeftL`: postcomposition with a continuous linear map `g`, of operator
   norm at most `‖g‖`, and norm-preserving when `g` is a linear isometry.
+* `TauCeti.HolderSpace.ofHolderOnWith`: promotes a `HolderOnWith` map (`0 < α`) on a compact set
+  to `HolderSpace`.
 
 ## References
 
@@ -642,6 +644,35 @@ theorem norm_compLeftL_linearIsometry (e : Y →ₗᵢ[ℝ] Y') (f : HolderSpace
   simp only [HolderWith, Function.comp_apply, LinearIsometry.edist_map]
 
 end compLeft
+
+section ofHolderOnWith
+
+/-- Promote an `α`-Hölder map (`0 < α`) on a compact set `s : Set X` to an element of
+`HolderSpace α s Y`. -/
+def ofHolderOnWith (hα : 0 < α) {s : Set X} (hs : IsCompact s) {K : ℝ≥0} {f : X → Y}
+    (hf : HolderOnWith K α f s) : HolderSpace α s Y :=
+  haveI : CompactSpace s := isCompact_iff_compactSpace.mp hs
+  ofBoundedContinuousFunction
+    (BoundedContinuousFunction.mkOfCompact
+      ⟨fun x : s ↦ f x, (hf.continuousOn hα).comp_continuous continuous_subtype_val fun x ↦ x.2⟩)
+    (HolderWith.memHolder (C := K) fun x y ↦ by
+      simpa [BoundedContinuousFunction.mkOfCompact_apply, Subtype.edist_eq] using
+        hf x x.2 y y.2)
+
+@[simp]
+theorem ofHolderOnWith_apply (hα : 0 < α) {s : Set X} (hs : IsCompact s) {K : ℝ≥0} {f : X → Y}
+    (hf : HolderOnWith K α f s) (x : s) :
+    ofHolderOnWith hα hs hf x = f x := (rfl)
+
+/-- If `f` is bounded in norm by `M` (`0 ≤ M`) and `α`-Hölder with constant `K` on a compact set
+`s`, then `‖ofHolderOnWith hα hs hf‖ ≤ M + K`. -/
+theorem norm_ofHolderOnWith_le (hα : 0 < α) {s : Set X} (hs : IsCompact s) {M : ℝ} {K : ℝ≥0}
+    {f : X → Y} (hM0 : 0 ≤ M) (hM : ∀ x ∈ s, ‖f x‖ ≤ M) (hf : HolderOnWith K α f s) :
+    ‖ofHolderOnWith hα hs hf‖ ≤ M + K :=
+  norm_le_of_norm_le_of_holderWith hM0 (fun x ↦ by simpa using hM x x.2) fun x y ↦ by
+    simpa [Subtype.edist_eq] using hf x x.2 y y.2
+
+end ofHolderOnWith
 
 end HolderSpace
 

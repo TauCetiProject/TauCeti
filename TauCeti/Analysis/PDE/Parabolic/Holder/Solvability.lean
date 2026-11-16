@@ -9,7 +9,7 @@ public import TauCeti.Analysis.PDE.Parabolic.Holder.CauchyProblem
 import TauCeti.Analysis.Matrix.QuadraticBounds
 
 /-!
-# The initial-data isomorphism of the parabolic Cauchy problem
+# The initial-data and terminal-data isomorphisms of parabolic problems
 
 On `ℝⁿ = EuclideanSpace ℝ ι` and a time slab `ℝⁿ × [0, T]`, let
 
@@ -26,13 +26,20 @@ uniformly over coefficients with a fixed ellipticity constant and a fixed bound 
 norms and over horizons `T ≤ T₀`, and it depends Lipschitz continuously on the coefficients in
 operator norm.
 
+Time reversal `(x, τ) ↦ (x, t₁ - τ)` transports the backward parabolic terminal-value problem
+`P_back u = ∂ₜu + aⁱʲ ∂ᵢ∂ⱼu + bⁱ ∂ᵢu + c u = f`, `u(·, t₁) = g` on an arbitrary slab
+`ℝⁿ × [t₀, t₁]` (`t₀ < t₁`) onto the forward problem on `ℝⁿ × [0, t₁ - t₀]`, yielding the
+corresponding terminal-data Banach isomorphism `euclideanTerminalDataCLE`, uniform Schauder bound,
+and Lipschitz dependence on the coefficients.
+
 ## The argument
 
 The uniform bound is the global Schauder estimate
 (`TauCeti.ParabolicC2HolderSpace.exists_norm_le_euclideanParabolicOperatorL`). The resolvent
 identity `e⁻¹ - e'⁻¹ = e⁻¹ (e' - e) e'⁻¹` together with the Lipschitz dependence of `P` on its
 coefficients (`TauCeti.ParabolicC2HolderSpace.norm_euclideanParabolicOperatorL_sub_le`) gives the
-Lipschitz dependence of the solution operator.
+Lipschitz dependence of the solution operator, and time reversal (`timeReverseLIE`,
+`slabTimeReverse`) transfers both bounds to `euclideanTerminalDataCLE`.
 
 ## Main declarations
 
@@ -46,6 +53,13 @@ All declarations are in the `TauCeti.ParabolicC2HolderSpace` namespace.
 * `exists_norm_euclideanInitialDataCLE_symm_le`: the uniform bound on the solution operators.
 * `exists_norm_euclideanInitialDataCLE_symm_sub_le`: their Lipschitz dependence on the
   coefficients.
+* `euclideanTerminalDataCLE`: the backward terminal-data isomorphism `u ↦ (P_back u, u(·, t₁))` on
+  `ℝⁿ × [t₀, t₁]`, with `euclideanTerminalDataCLE_apply`,
+  `euclideanBackwardParabolicOperatorL_euclideanTerminalDataCLE_symm_apply`,
+  `spatialTrace_euclideanTerminalDataCLE_symm_apply`,
+  `euclideanTerminalDataCLE_symm_apply_slabMk_right`,
+  `exists_norm_euclideanTerminalDataCLE_symm_le`, and
+  `exists_norm_euclideanTerminalDataCLE_symm_sub_le`.
 
 ## References
 
@@ -242,5 +256,300 @@ theorem exists_norm_euclideanInitialDataCLE_symm_sub_le (hα₀ : 0 < α) (hα�
           (mul_le_mul_of_nonneg_left (ContinuousLinearMap.opNorm_comp_le _ _) (norm_nonneg _))
     _ ≤ C * (24 * δ * C) := by gcongr
     _ = 24 * C ^ 2 * δ := by ring
+
+/-! ### The terminal-data isomorphism of the backward problem on `[t₀, t₁]` -/
+
+section TerminalData
+
+private def slabDuration {t₀ t₁ : ℝ} (ht : t₀ < t₁) : ℝ≥0 :=
+  ⟨t₁ - t₀, sub_nonneg.2 ht.le⟩
+
+private theorem coe_slabDuration {t₀ t₁ : ℝ} (ht : t₀ < t₁) :
+    (slabDuration ht : ℝ) = t₁ - t₀ :=
+  rfl
+
+private theorem slabDuration_pos {t₀ t₁ : ℝ} (ht : t₀ < t₁) :
+    (0 : ℝ) < slabDuration ht :=
+  (sub_self t₁).symm ▸ (coe_slabDuration ht) ▸ sub_lt_sub_left ht t₁
+
+private def timeReverseHolderCLE {E F : Type*} [MetricSpace E] [NormedAddCommGroup F]
+    [NormedSpace ℝ F] {t₀ t₁ : ℝ} (ht : t₀ < t₁) :
+    HolderSpace α (slab (E := E) t₀ t₁) F ≃L[ℝ]
+      HolderSpace α (slab (E := E) 0 (slabDuration ht)) F :=
+  ContinuousLinearEquiv.equivOfInverse
+    (HolderSpace.compLipschitzL _
+      (slabTimeReverse (a' := 0) (b' := (slabDuration ht : ℝ)) t₁
+        (sub_self t₁).symm (coe_slabDuration ht)).isometry.lipschitzWith)
+    (HolderSpace.compLipschitzL _
+      (slabTimeReverse (a' := 0) (b' := (slabDuration ht : ℝ)) t₁
+        (sub_self t₁).symm (coe_slabDuration ht)).symm.isometry.lipschitzWith)
+    (fun f ↦ by
+      ext p
+      rw [HolderSpace.compLipschitzL_apply, HolderSpace.compLipschitzL_apply,
+        IsometryEquiv.apply_symm_apply])
+    (fun g ↦ by
+      ext q
+      rw [HolderSpace.compLipschitzL_apply, HolderSpace.compLipschitzL_apply,
+        IsometryEquiv.symm_apply_apply])
+
+@[simp]
+private theorem timeReverseHolderCLE_apply {E F : Type*} [MetricSpace E] [NormedAddCommGroup F]
+    [NormedSpace ℝ F] {t₀ t₁ : ℝ} (ht : t₀ < t₁)
+    (f : HolderSpace α (slab (E := E) t₀ t₁) F)
+    (q : slab (E := E) 0 (slabDuration ht)) :
+    timeReverseHolderCLE ht f q =
+      f (slabTimeReverse (a' := 0) (b' := (slabDuration ht : ℝ)) t₁
+        (sub_self t₁).symm (coe_slabDuration ht) q) :=
+  HolderSpace.compLipschitzL_apply _ _ _
+
+private theorem norm_timeReverseHolderCLE_le_one {E F : Type*} [MetricSpace E]
+    [NormedAddCommGroup F] [NormedSpace ℝ F] {t₀ t₁ : ℝ} (ht : t₀ < t₁) :
+    ‖(timeReverseHolderCLE (α := α) (E := E) (F := F) ht).toContinuousLinearMap‖ ≤ 1 :=
+  HolderSpace.norm_compLipschitzL_le_one _
+
+private theorem norm_timeReverseHolderCLE_apply_le {E F : Type*} [MetricSpace E]
+    [NormedAddCommGroup F] [NormedSpace ℝ F] {t₀ t₁ : ℝ} (ht : t₀ < t₁)
+    (f : HolderSpace α (slab (E := E) t₀ t₁) F) :
+    ‖timeReverseHolderCLE ht f‖ ≤ ‖f‖ := by
+  simpa using (timeReverseHolderCLE ht).toContinuousLinearMap.le_of_opNorm_le
+    (norm_timeReverseHolderCLE_le_one ht) f
+
+private def terminalDataBridgeCLE {E F : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
+    [NormedAddCommGroup F] [NormedSpace ℝ F] {t₀ t₁ : ℝ} (ht : t₀ < t₁) :
+    (HolderSpace α (slab (E := E) t₀ t₁) F × CkHolderSpace 2 α E F) ≃L[ℝ]
+      (HolderSpace α (slab (E := E) 0 (slabDuration ht)) F × CkHolderSpace 2 α E F) :=
+  ((timeReverseHolderCLE ht).trans (ContinuousLinearEquiv.neg ℝ)).prodCongr
+    (ContinuousLinearEquiv.refl ℝ _)
+
+private theorem norm_terminalDataBridgeCLE_le_one {E F : Type*} [NormedAddCommGroup E]
+    [NormedSpace ℝ E] [NormedAddCommGroup F] [NormedSpace ℝ F] {t₀ t₁ : ℝ} (ht : t₀ < t₁) :
+    ‖(terminalDataBridgeCLE (α := α) (E := E) (F := F) ht).toContinuousLinearMap‖ ≤ 1 := by
+  refine ContinuousLinearMap.opNorm_le_bound _ zero_le_one fun d ↦ ?_
+  rw [one_mul, Prod.norm_def, Prod.norm_def]
+  have h₁ : ‖(terminalDataBridgeCLE ht d).1‖ ≤ ‖d.1‖ := by
+    simpa [terminalDataBridgeCLE] using norm_timeReverseHolderCLE_apply_le ht d.1
+  have h₂ : ‖(terminalDataBridgeCLE ht d).2‖ ≤ ‖d.2‖ := by
+    simp [terminalDataBridgeCLE]
+  exact max_le (h₁.trans (le_max_left _ _)) (h₂.trans (le_max_right _ _))
+
+private theorem ellipticity_timeReverseHolderCLE {t₀ t₁ : ℝ} (ht : t₀ < t₁)
+    {a : ι → ι → HolderSpace α (slab (E := EuclideanSpace ℝ ι) t₀ t₁) ℝ} {lam : ℝ}
+    (ha : ∀ p (ξ : EuclideanSpace ℝ ι),
+      lam * ‖ξ‖ ^ 2 ≤ (Matrix.of fun i j ↦ a i j p).toQuadraticForm' ξ)
+    (q : slab (E := EuclideanSpace ℝ ι) 0 (slabDuration ht)) (ξ : EuclideanSpace ℝ ι) :
+    lam * ‖ξ‖ ^ 2 ≤
+      (Matrix.of fun i j ↦ timeReverseHolderCLE ht (a i j) q).toQuadraticForm' ξ := by
+  simpa using ha _ ξ
+
+/-- **The terminal-data isomorphism.** For `0 < α < 1`, `t₀ < t₁`, and coefficients `aⁱʲ`, `bⁱ`, `c`
+in `C_b^{α,α/2}(ℝⁿ × [t₀, t₁])` with `a` uniformly elliptic (`λ ‖ξ‖² ≤ ξᵀ a ξ`, `0 < λ`), the map
+`u ↦ (∂ₜu + aⁱʲ ∂ᵢ∂ⱼu + bⁱ ∂ᵢu + c u, u(·, t₁))` as an isomorphism of Banach spaces from
+`C_b^{2+α,1+α/2}(ℝⁿ × [t₀, t₁])` onto `C_b^{α,α/2}(ℝⁿ × [t₀, t₁]) × C_b^{2,α}(ℝⁿ)`. -/
+def euclideanTerminalDataCLE {t₀ t₁ : ℝ} (hα₀ : 0 < α) (hα₁ : α < 1) (ht : t₀ < t₁)
+    (a : ι → ι → HolderSpace α (slab (E := EuclideanSpace ℝ ι) t₀ t₁) ℝ)
+    (b : ι → HolderSpace α (slab (E := EuclideanSpace ℝ ι) t₀ t₁) ℝ)
+    (c : HolderSpace α (slab (E := EuclideanSpace ℝ ι) t₀ t₁) ℝ)
+    (ha : ∃ lam : ℝ, 0 < lam ∧ ∀ p (ξ : EuclideanSpace ℝ ι),
+      lam * ‖ξ‖ ^ 2 ≤ (Matrix.of fun i j ↦ a i j p).toQuadraticForm' ξ) :
+    ParabolicC2HolderSpace α (EuclideanSpace ℝ ι) ℝ ht ≃L[ℝ]
+      HolderSpace α (slab (E := EuclideanSpace ℝ ι) t₀ t₁) ℝ ×
+        CkHolderSpace 2 α (EuclideanSpace ℝ ι) ℝ :=
+  (timeReverseLIE (α := α) (E := EuclideanSpace ℝ ι) (F := ℝ) (hab := ht)
+      (a' := 0) (b' := (slabDuration ht : ℝ)) t₁ (sub_self t₁).symm
+      (coe_slabDuration ht)).toContinuousLinearEquiv.trans <|
+    (euclideanInitialDataCLE hα₀ hα₁ (slabDuration_pos ht)
+      (fun i j ↦ timeReverseHolderCLE ht (a i j))
+      (fun i ↦ timeReverseHolderCLE ht (b i))
+      (timeReverseHolderCLE ht c)
+      (ha.elim fun lam h ↦ ⟨lam, h.1, ellipticity_timeReverseHolderCLE ht h.2⟩)).trans
+      (terminalDataBridgeCLE ht).symm
+
+/-- The terminal-data isomorphism sends `u` to its backward forcing `P_back u` and its terminal
+trace `u(·, t₁)`. -/
+@[simp]
+theorem euclideanTerminalDataCLE_apply {t₀ t₁ : ℝ} {hα₀ : 0 < α} {hα₁ : α < 1} {ht : t₀ < t₁}
+    {a : ι → ι → HolderSpace α (slab (E := EuclideanSpace ℝ ι) t₀ t₁) ℝ}
+    {b : ι → HolderSpace α (slab (E := EuclideanSpace ℝ ι) t₀ t₁) ℝ}
+    {c : HolderSpace α (slab (E := EuclideanSpace ℝ ι) t₀ t₁) ℝ}
+    {ha : ∃ lam : ℝ, 0 < lam ∧ ∀ p (ξ : EuclideanSpace ℝ ι),
+      lam * ‖ξ‖ ^ 2 ≤ (Matrix.of fun i j ↦ a i j p).toQuadraticForm' ξ}
+    (u : ParabolicC2HolderSpace α (EuclideanSpace ℝ ι) ℝ ht) :
+    euclideanTerminalDataCLE hα₀ hα₁ ht a b c ha u =
+      (euclideanBackwardParabolicOperatorL hα₁.le a b c u,
+        u.spatialTrace ⟨t₁, right_mem_Icc.2 ht.le⟩) := by
+  apply (terminalDataBridgeCLE ht).injective
+  simp only [euclideanTerminalDataCLE, ContinuousLinearEquiv.trans_apply,
+    ContinuousLinearEquiv.apply_symm_apply, euclideanInitialDataCLE_apply,
+    LinearIsometryEquiv.coe_toContinuousLinearEquiv, spatialTrace_timeReverseLIE_left,
+    terminalDataBridgeCLE, ContinuousLinearEquiv.prodCongr_apply, ContinuousLinearEquiv.neg_apply,
+    ContinuousLinearEquiv.refl_apply]
+  congr 1
+  exact euclideanParabolicOperatorL_timeReverseLIE hα₁.le u
+
+section TerminalDataCLE
+
+variable {t₀ t₁ : ℝ} {hα₀ : 0 < α} {hα₁ : α < 1} {ht : t₀ < t₁}
+  {a : ι → ι → HolderSpace α (slab (E := EuclideanSpace ℝ ι) t₀ t₁) ℝ}
+  {b : ι → HolderSpace α (slab (E := EuclideanSpace ℝ ι) t₀ t₁) ℝ}
+  {c : HolderSpace α (slab (E := EuclideanSpace ℝ ι) t₀ t₁) ℝ}
+  {ha : ∃ lam : ℝ, 0 < lam ∧ ∀ p (ξ : EuclideanSpace ℝ ι),
+    lam * ‖ξ‖ ^ 2 ≤ (Matrix.of fun i j ↦ a i j p).toQuadraticForm' ξ}
+
+/-- The solution of the terminal-value problem with forcing `f` and terminal datum `g` has
+backward forcing `f`. -/
+@[simp]
+theorem euclideanBackwardParabolicOperatorL_euclideanTerminalDataCLE_symm_apply
+    (d : HolderSpace α (slab (E := EuclideanSpace ℝ ι) t₀ t₁) ℝ ×
+      CkHolderSpace 2 α (EuclideanSpace ℝ ι) ℝ) :
+    euclideanBackwardParabolicOperatorL hα₁.le a b c
+      ((euclideanTerminalDataCLE hα₀ hα₁ ht a b c ha).symm d) = d.1 := by
+  have h := (euclideanTerminalDataCLE hα₀ hα₁ ht a b c ha).apply_symm_apply d
+  rw [euclideanTerminalDataCLE_apply] at h
+  exact congrArg Prod.fst h
+
+/-- The solution of the terminal-value problem with forcing `f` and terminal datum `g` has
+terminal trace `g`. -/
+@[simp]
+theorem spatialTrace_euclideanTerminalDataCLE_symm_apply
+    (d : HolderSpace α (slab (E := EuclideanSpace ℝ ι) t₀ t₁) ℝ ×
+      CkHolderSpace 2 α (EuclideanSpace ℝ ι) ℝ) :
+    ((euclideanTerminalDataCLE hα₀ hα₁ ht a b c ha).symm d).spatialTrace
+      ⟨t₁, right_mem_Icc.2 ht.le⟩ = d.2 := by
+  have h := (euclideanTerminalDataCLE hα₀ hα₁ ht a b c ha).apply_symm_apply d
+  rw [euclideanTerminalDataCLE_apply] at h
+  exact congrArg Prod.snd h
+
+/-- The solution of the terminal-value problem with terminal datum `g` takes the value `g x` at
+`(x, t₁)`. -/
+@[simp]
+theorem euclideanTerminalDataCLE_symm_apply_slabMk_right
+    (d : HolderSpace α (slab (E := EuclideanSpace ℝ ι) t₀ t₁) ℝ ×
+      CkHolderSpace 2 α (EuclideanSpace ℝ ι) ℝ) (x : EuclideanSpace ℝ ι) :
+    (euclideanTerminalDataCLE hα₀ hα₁ ht a b c ha).symm d
+      (slabMk x ⟨t₁, right_mem_Icc.2 ht.le⟩) = d.2 x := by
+  rw [← spatialTrace_apply, spatialTrace_euclideanTerminalDataCLE_symm_apply]
+
+end TerminalDataCLE
+
+private def timeReverseSymmL {E F : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
+    [NormedAddCommGroup F] [NormedSpace ℝ F] {t₀ t₁ : ℝ} (ht : t₀ < t₁) :
+    ParabolicC2HolderSpace α E F (slabDuration_pos ht) →L[ℝ] ParabolicC2HolderSpace α E F ht :=
+  (timeReverseLIE (α := α) (E := E) (F := F) (hab := ht)
+    (a' := 0) (b' := (slabDuration ht : ℝ)) t₁ (sub_self t₁).symm
+    (coe_slabDuration ht)).symm.toContinuousLinearEquiv.toContinuousLinearMap
+
+private theorem norm_timeReverseSymmL_le_one {E F : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
+    [NormedAddCommGroup F] [NormedSpace ℝ F] {t₀ t₁ : ℝ} (ht : t₀ < t₁) :
+    ‖timeReverseSymmL (α := α) (E := E) (F := F) ht‖ ≤ 1 :=
+  (timeReverseLIE (α := α) (E := E) (F := F) (hab := ht)
+    (a' := 0) (b' := (slabDuration ht : ℝ)) t₁ (sub_self t₁).symm
+    (coe_slabDuration ht)).symm.toLinearIsometry.norm_toContinuousLinearMap_le
+
+/-- **The Schauder estimate for the backward terminal-value problem.** For `0 < α < 1`, an
+ellipticity constant `λ > 0`, a bound `K` on the Hölder norms of the coefficients, and a horizon
+bound `T₀`, the inverse terminal-data operators on `ℝⁿ × [t₀, t₁]` (`t₁ - t₀ ≤ T₀`) are bounded
+uniformly in operator norm. -/
+theorem exists_norm_euclideanTerminalDataCLE_symm_le (hα₀ : 0 < α) (hα₁ : α < 1) {lam : ℝ}
+    (hlam : 0 < lam) (K T₀ : ℝ≥0) :
+    ∃ C : ℝ, 0 ≤ C ∧ ∀ {t₀ t₁ : ℝ} (ht : t₀ < t₁), t₁ - t₀ ≤ T₀ →
+      ∀ (a : ι → ι → HolderSpace α (slab (E := EuclideanSpace ℝ ι) t₀ t₁) ℝ)
+        (b : ι → HolderSpace α (slab (E := EuclideanSpace ℝ ι) t₀ t₁) ℝ)
+        (c : HolderSpace α (slab (E := EuclideanSpace ℝ ι) t₀ t₁) ℝ)
+        (ha : ∀ p (ξ : EuclideanSpace ℝ ι),
+          lam * ‖ξ‖ ^ 2 ≤ (Matrix.of fun i j ↦ a i j p).toQuadraticForm' ξ),
+        (∀ i j, ‖a i j‖ ≤ K) → (∀ i, ‖b i‖ ≤ K) → ‖c‖ ≤ K →
+        ‖(euclideanTerminalDataCLE hα₀ hα₁ ht a b c ⟨lam, hlam, ha⟩).symm.toContinuousLinearMap‖ ≤
+          C := by
+  obtain ⟨C, hC, hest⟩ := exists_norm_euclideanInitialDataCLE_symm_le (ι := ι) hα₀ hα₁ hlam K T₀
+  refine ⟨C, hC, fun {t₀ t₁} ht hT₀ a b c ha hak hbk hck ↦ ?_⟩
+  let eInit := (euclideanInitialDataCLE hα₀ hα₁ (slabDuration_pos ht)
+    (fun i j ↦ timeReverseHolderCLE ht (a i j))
+    (fun i ↦ timeReverseHolderCLE ht (b i))
+    (timeReverseHolderCLE ht c)
+    ⟨lam, hlam, ellipticity_timeReverseHolderCLE ht ha⟩).symm.toContinuousLinearMap
+  have hInit : ‖eInit‖ ≤ C := hest (slabDuration ht) (slabDuration_pos ht)
+    (by exact_mod_cast hT₀) _ _ _ (ellipticity_timeReverseHolderCLE ht ha)
+    (fun i j ↦ (norm_timeReverseHolderCLE_apply_le ht _).trans (hak i j))
+    (fun i ↦ (norm_timeReverseHolderCLE_apply_le ht _).trans (hbk i))
+    ((norm_timeReverseHolderCLE_apply_le ht _).trans hck)
+  have hcomp :
+      (euclideanTerminalDataCLE hα₀ hα₁ ht a b c ⟨lam, hlam, ha⟩).symm.toContinuousLinearMap =
+      timeReverseSymmL ht ∘L eInit ∘L (terminalDataBridgeCLE ht).toContinuousLinearMap := rfl
+  rw [hcomp]
+  exact (ContinuousLinearMap.opNorm_comp_le _ _).trans <|
+    (mul_le_mul (norm_timeReverseSymmL_le_one ht)
+      ((ContinuousLinearMap.opNorm_comp_le _ _).trans
+        (mul_le_mul hInit (norm_terminalDataBridgeCLE_le_one ht) (norm_nonneg _) hC))
+      (norm_nonneg _) zero_le_one).trans_eq (by ring)
+
+/-- **Lipschitz dependence of the backward terminal-value solution operator on the coefficients.**
+Under the uniform bounds of `exists_norm_euclideanTerminalDataCLE_symm_le`, the inverse
+terminal-data operators for `(a, b, c)` and `(a', b', c')` on `ℝⁿ × [t₀, t₁]` differ in operator
+norm by at most `C (∑ᵢⱼ ‖aⁱʲ - a'ⁱʲ‖ + ∑ᵢ ‖bⁱ - b'ⁱ‖ + ‖c - c'‖)`. -/
+theorem exists_norm_euclideanTerminalDataCLE_symm_sub_le (hα₀ : 0 < α) (hα₁ : α < 1) {lam : ℝ}
+    (hlam : 0 < lam) (K T₀ : ℝ≥0) :
+    ∃ C : ℝ, 0 ≤ C ∧ ∀ {t₀ t₁ : ℝ} (ht : t₀ < t₁), t₁ - t₀ ≤ T₀ →
+      ∀ (a a' : ι → ι → HolderSpace α (slab (E := EuclideanSpace ℝ ι) t₀ t₁) ℝ)
+        (b b' : ι → HolderSpace α (slab (E := EuclideanSpace ℝ ι) t₀ t₁) ℝ)
+        (c c' : HolderSpace α (slab (E := EuclideanSpace ℝ ι) t₀ t₁) ℝ)
+        (ha : ∀ p (ξ : EuclideanSpace ℝ ι),
+          lam * ‖ξ‖ ^ 2 ≤ (Matrix.of fun i j ↦ a i j p).toQuadraticForm' ξ)
+        (ha' : ∀ p (ξ : EuclideanSpace ℝ ι),
+          lam * ‖ξ‖ ^ 2 ≤ (Matrix.of fun i j ↦ a' i j p).toQuadraticForm' ξ),
+        (∀ i j, ‖a i j‖ ≤ K) → (∀ i, ‖b i‖ ≤ K) → ‖c‖ ≤ K →
+        (∀ i j, ‖a' i j‖ ≤ K) → (∀ i, ‖b' i‖ ≤ K) → ‖c'‖ ≤ K →
+        ‖(euclideanTerminalDataCLE hα₀ hα₁ ht a b c ⟨lam, hlam, ha⟩).symm.toContinuousLinearMap -
+          (euclideanTerminalDataCLE hα₀ hα₁ ht a' b' c'
+            ⟨lam, hlam, ha'⟩).symm.toContinuousLinearMap‖ ≤
+          C * (∑ i, ∑ j, ‖a i j - a' i j‖ + ∑ i, ‖b i - b' i‖ + ‖c - c'‖) := by
+  obtain ⟨C, hC, hest⟩ :=
+    exists_norm_euclideanInitialDataCLE_symm_sub_le (ι := ι) hα₀ hα₁ hlam K T₀
+  refine ⟨C, hC, fun {t₀ t₁} ht hT₀ a a' b b' c c' ha ha' hak hbk hck hak' hbk' hck' ↦ ?_⟩
+  have h0 := hest (slabDuration ht) (slabDuration_pos ht) (by exact_mod_cast hT₀)
+    (fun i j ↦ timeReverseHolderCLE ht (a i j)) (fun i j ↦ timeReverseHolderCLE ht (a' i j))
+    (fun i ↦ timeReverseHolderCLE ht (b i)) (fun i ↦ timeReverseHolderCLE ht (b' i))
+    (timeReverseHolderCLE ht c) (timeReverseHolderCLE ht c')
+    (ellipticity_timeReverseHolderCLE ht ha) (ellipticity_timeReverseHolderCLE ht ha')
+    (fun i j ↦ (norm_timeReverseHolderCLE_apply_le ht _).trans (hak i j))
+    (fun i ↦ (norm_timeReverseHolderCLE_apply_le ht _).trans (hbk i))
+    ((norm_timeReverseHolderCLE_apply_le ht _).trans hck)
+    (fun i j ↦ (norm_timeReverseHolderCLE_apply_le ht _).trans (hak' i j))
+    (fun i ↦ (norm_timeReverseHolderCLE_apply_le ht _).trans (hbk' i))
+    ((norm_timeReverseHolderCLE_apply_le ht _).trans hck')
+  set eInit := (euclideanInitialDataCLE hα₀ hα₁ (slabDuration_pos ht)
+    (fun i j ↦ timeReverseHolderCLE ht (a i j))
+    (fun i ↦ timeReverseHolderCLE ht (b i)) (timeReverseHolderCLE ht c)
+    ⟨lam, hlam, ellipticity_timeReverseHolderCLE ht ha⟩).symm.toContinuousLinearMap
+  set eInit' := (euclideanInitialDataCLE hα₀ hα₁ (slabDuration_pos ht)
+    (fun i j ↦ timeReverseHolderCLE ht (a' i j))
+    (fun i ↦ timeReverseHolderCLE ht (b' i)) (timeReverseHolderCLE ht c')
+    ⟨lam, hlam, ellipticity_timeReverseHolderCLE ht ha'⟩).symm.toContinuousLinearMap
+  have hsub :
+      (euclideanTerminalDataCLE hα₀ hα₁ ht a b c ⟨lam, hlam, ha⟩).symm.toContinuousLinearMap -
+        (euclideanTerminalDataCLE hα₀ hα₁ ht a' b' c'
+          ⟨lam, hlam, ha'⟩).symm.toContinuousLinearMap =
+      timeReverseSymmL ht ∘L (eInit - eInit') ∘L
+        (terminalDataBridgeCLE ht).toContinuousLinearMap :=
+    ContinuousLinearMap.ext fun d ↦ by
+      rw [_root_.sub_apply, ContinuousLinearMap.comp_apply, ContinuousLinearMap.comp_apply,
+        _root_.sub_apply, map_sub]
+      exact congrArg₂ HSub.hSub rfl rfl
+  have hInitSub : ‖eInit - eInit'‖ ≤
+      C * (∑ i, ∑ j, ‖a i j - a' i j‖ + ∑ i, ‖b i - b' i‖ + ‖c - c'‖) := by
+    refine le_trans h0 (mul_le_mul_of_nonneg_left (add_le_add (add_le_add ?_ ?_) ?_) hC)
+    · exact Finset.sum_le_sum fun i _ ↦ Finset.sum_le_sum fun j _ ↦ by
+        rw [← map_sub]; exact norm_timeReverseHolderCLE_apply_le ht _
+    · exact Finset.sum_le_sum fun i _ ↦ by
+        rw [← map_sub]; exact norm_timeReverseHolderCLE_apply_le ht _
+    · rw [← map_sub]; exact norm_timeReverseHolderCLE_apply_le ht _
+  rw [hsub]
+  exact (ContinuousLinearMap.opNorm_comp_le _ _).trans <|
+    (mul_le_mul (norm_timeReverseSymmL_le_one ht)
+      ((ContinuousLinearMap.opNorm_comp_le _ _).trans
+        (mul_le_mul hInitSub (norm_terminalDataBridgeCLE_le_one ht) (norm_nonneg _)
+          (by positivity)))
+      (norm_nonneg _) zero_le_one).trans_eq (by ring)
+
+end TerminalData
 
 end TauCeti.ParabolicC2HolderSpace

@@ -8,6 +8,7 @@ module
 public import TauCeti.Analysis.PDE.Parabolic.Holder.Trace
 import TauCeti.Probability.Finance.LogSpot
 import TauCeti.Analysis.SpecialFunctions.Log.Deriv
+import TauCeti.Topology.Order.Interval
 
 /-!
 # Prices reconstructed from bounded weighted log-spot maps
@@ -20,13 +21,14 @@ of the first and second spot derivatives and of the within-slab time derivative 
 `(0, ∞) × [a, b]`, with explicit linear-growth bounds for both the price and its dollar
 delta `s C_s` as well as their combined exposure `|C| + |s C_s|`.
 
-Before maturity (`t ∈ [a, b)`), the within-slab time derivative agrees with the right-sided
-derivative within `[a, ∞)`, and on the open horizon (`t ∈ (a, b)`) with the ordinary time
-derivative. The pricing-operator identity transports the backward equation for the bounded
-map to the financial pricing equation in each of these derivative conventions. This is a
-change-of-variables result, not an existence or stochastic replication theorem. In
-particular, no ellipticity or moment hypotheses are needed here. Terminal data are
-transported pointwise, without a smoothness claim at zero spot.
+Before maturity (`t ∈ [a, b)`), the within-slab time derivative agrees with the time
+derivative within `[a, ∞)` (the right derivative at `t = a`), and on the open horizon
+(`t ∈ (a, b)`) with the ordinary time derivative. The pricing-operator identity transports
+the backward equation for the bounded map to the financial pricing equation in each of
+these derivative conventions. This is a change-of-variables result, not an existence or
+stochastic replication theorem. In particular, no ellipticity or moment hypotheses are
+needed here. Terminal data are transported pointwise, without a smoothness claim at zero
+spot.
 
 ## References
 
@@ -53,6 +55,37 @@ def weightedLogSpotPrice (u : ParabolicC2HolderSpace α ℝ ℝ hab) (s t : ℝ)
 /-- Reconstruction in terms of the canonical time extension at any time. -/
 theorem weightedLogSpotPrice_def (u : ParabolicC2HolderSpace α ℝ ℝ hab) (s t : ℝ) :
     weightedLogSpotPrice u s t = (1 + s) * timeExtension hab.le u (log s) t := (rfl)
+
+@[simp]
+theorem weightedLogSpotPrice_zero :
+    weightedLogSpotPrice (0 : ParabolicC2HolderSpace α ℝ ℝ hab) = 0 := by
+  ext s t
+  simp [weightedLogSpotPrice_def, timeExtension_def]
+
+@[simp]
+theorem weightedLogSpotPrice_add (u v : ParabolicC2HolderSpace α ℝ ℝ hab) :
+    weightedLogSpotPrice (u + v) = weightedLogSpotPrice u + weightedLogSpotPrice v := by
+  ext s t
+  simp [weightedLogSpotPrice_def, timeExtension_def, mul_add]
+
+@[simp]
+theorem weightedLogSpotPrice_sub (u v : ParabolicC2HolderSpace α ℝ ℝ hab) :
+    weightedLogSpotPrice (u - v) = weightedLogSpotPrice u - weightedLogSpotPrice v := by
+  ext s t
+  simp [weightedLogSpotPrice_def, timeExtension_def, mul_sub]
+
+@[simp]
+theorem weightedLogSpotPrice_neg (u : ParabolicC2HolderSpace α ℝ ℝ hab) :
+    weightedLogSpotPrice (-u) = -weightedLogSpotPrice u := by
+  ext s t
+  simp [weightedLogSpotPrice_def, timeExtension_def]
+
+@[simp]
+theorem weightedLogSpotPrice_smul (c : ℝ) (u : ParabolicC2HolderSpace α ℝ ℝ hab) :
+    weightedLogSpotPrice (c • u) = c • weightedLogSpotPrice u := by
+  ext s t
+  simp [weightedLogSpotPrice_def, timeExtension_def]
+  ring
 
 /-- Reconstruction at a time in the closed slab. -/
 @[simp]
@@ -258,7 +291,7 @@ private theorem weightedLogSpotPrice_eq_projIcc (u : ParabolicC2HolderSpace α �
   rw [weightedLogSpotPrice_def, timeExtension_def, weightedLogSpotPrice_of_mem]
 
 /-- The spot derivative of the reconstructed price is jointly continuous at positive spot,
-uniformly across all times (including the slab endpoints). -/
+for all times (including the slab endpoints). -/
 theorem continuousOn_deriv_weightedLogSpotPrice_spot (u : ParabolicC2HolderSpace α ℝ ℝ hab) :
     ContinuousOn (fun p : ℝ × ℝ ↦ deriv (fun x ↦ weightedLogSpotPrice u x p.2) p.1)
       (Ioi 0 ×ˢ (univ : Set ℝ)) := by
@@ -279,7 +312,7 @@ theorem continuousOn_deriv_weightedLogSpotPrice_spot (u : ParabolicC2HolderSpace
   rw [weightedLogSpotPrice_eq_projIcc u t, deriv_weightedLogSpotPrice_spot u hs]
 
 /-- The second spot derivative of the reconstructed price is jointly continuous at positive spot,
-uniformly across all times (including the slab endpoints). -/
+for all times (including the slab endpoints). -/
 theorem continuousOn_deriv_deriv_weightedLogSpotPrice_spot
     (u : ParabolicC2HolderSpace α ℝ ℝ hab) :
     ContinuousOn (fun p : ℝ × ℝ ↦ deriv (deriv fun x ↦ weightedLogSpotPrice u x p.2) p.1)
@@ -320,12 +353,6 @@ theorem continuousOn_derivWithin_weightedLogSpotPrice_time
   rintro ⟨s, t⟩ ⟨_, ht⟩
   dsimp only
   rw [derivWithin_weightedLogSpotPrice_time u s ⟨t, ht⟩, projIcc_of_mem hab.le ht]
-
-private theorem Icc_eventuallyEq_Ici {t : ℝ} (ht : t < b) :
-    (Icc a b : Set ℝ) =ᶠ[𝓝 t] Ici a := by
-  rw [eventuallyEqSet_iff]
-  filter_upwards [Iio_mem_nhds ht] with x (hx : x < b)
-  exact ⟨fun h ↦ h.1, fun h ↦ ⟨h, hx.le⟩⟩
 
 /-- Strictly before maturity (`t ∈ [a, b)`), the reconstructed price has a time derivative within
 `[a, ∞)` given by the recorded time-derivative field, including the right derivative at `t = a`. -/

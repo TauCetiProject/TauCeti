@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Analysis.PDE.Parabolic.Holder.Weight
 public import TauCeti.Analysis.PDE.Parabolic.Holder.Backward
+public import TauCeti.Probability.Finance.WeightedLogSpot
 import TauCeti.Probability.Finance.LogSpot
 import TauCeti.Analysis.PDE.MaximumPrinciple.Parabolic.WholeLine
 
@@ -152,6 +153,114 @@ theorem weightedLogSpotPricingOperatorL_apply (v : ParabolicC2HolderSpace α ℝ
           spatialFDerivL v p 1 -
         r p * (1 - sigmoid (p : ParabolicSpaceTime ℝ).space) * v p) := by
   simp [weightedLogSpotPricingOperatorL, sub_eq_add_neg]
+
+private theorem norm_apply_one_le : ‖apply ℝ ℝ (1 : ℝ)‖ ≤ 1 :=
+  opNorm_le_bound _ zero_le_one fun L ↦ by simpa using L.le_opNorm (1 : ℝ)
+
+private theorem norm_apply_one_comp_apply_one_le :
+    ‖(apply ℝ ℝ (1 : ℝ)).comp (apply ℝ (ℝ →L[ℝ] ℝ) (1 : ℝ))‖ ≤ 1 := by
+  have h₂ : ‖apply ℝ (ℝ →L[ℝ] ℝ) (1 : ℝ)‖ ≤ 1 :=
+    opNorm_le_bound _ zero_le_one fun L ↦ by simpa using L.le_opNorm (1 : ℝ)
+  exact (opNorm_comp_le _ _).trans
+    ((mul_le_mul norm_apply_one_le h₂ (norm_nonneg _) zero_le_one).trans_eq (one_mul 1))
+
+/-- Norm bound on `weightedLogSpotFirstOrderCoeff`: `‖B_w‖ ≤ 5 ‖a‖ + ‖r‖`. -/
+theorem norm_weightedLogSpotFirstOrderCoeff_le :
+    ‖weightedLogSpotFirstOrderCoeff hα a r‖ ≤ 5 * ‖a‖ + ‖r‖ := by
+  have hA : ‖(lsmul ℝ ℝ).compHolder₂ a
+      (HolderSpace.const ((apply ℝ ℝ (1 : ℝ)).comp (apply ℝ (ℝ →L[ℝ] ℝ) (1 : ℝ))))‖ ≤ ‖a‖ :=
+    (norm_lsmul_compHolder₂_const_le a _).trans
+      (mul_le_of_le_one_right (norm_nonneg a) norm_apply_one_comp_apply_one_le)
+  have hB : ‖(lsmul ℝ ℝ).compHolder₂ (r - a) (HolderSpace.const (apply ℝ ℝ (1 : ℝ)))‖ ≤
+      ‖r‖ + ‖a‖ :=
+    ((norm_lsmul_compHolder₂_const_le (r - a) _).trans
+      (mul_le_of_le_one_right (norm_nonneg _) norm_apply_one_le)).trans (norm_sub_le r a)
+  have hℓ := norm_logOneAddExpGrad_le hα
+  have hw := norm_weightFirstOrderCoeff_le
+    (A := (lsmul ℝ ℝ).compHolder₂ a
+      (HolderSpace.const ((apply ℝ ℝ (1 : ℝ)).comp (apply ℝ (ℝ →L[ℝ] ℝ) (1 : ℝ)))))
+    (B := (lsmul ℝ ℝ).compHolder₂ (r - a) (HolderSpace.const (apply ℝ ℝ (1 : ℝ))))
+    (ℓ := logOneAddExpGrad hα)
+  rw [weightedLogSpotFirstOrderCoeff]
+  nlinarith [norm_nonneg a, norm_nonneg (logOneAddExpGrad hα),
+    norm_nonneg ((lsmul ℝ ℝ).compHolder₂ a
+      (HolderSpace.const ((apply ℝ ℝ (1 : ℝ)).comp (apply ℝ (ℝ →L[ℝ] ℝ) (1 : ℝ)))))]
+
+/-- Norm bound on `weightedLogSpotZerothOrderCoeff`: `‖C_w‖ ≤ 3 ‖r‖`. -/
+theorem norm_weightedLogSpotZerothOrderCoeff_le :
+    ‖weightedLogSpotZerothOrderCoeff hα r‖ ≤ 3 * ‖r‖ := by
+  have hid : ‖(HolderSpace.const (ContinuousLinearMap.id ℝ ℝ) :
+      HolderSpace α (slab (E := ℝ) t₀ t₁) (ℝ →L[ℝ] ℝ))‖ ≤ 1 :=
+    (HolderSpace.norm_const_le _).trans ContinuousLinearMap.norm_id_le
+  have hsig₀ : ‖HolderSpace.compSlabSpaceL (a := t₀) (b := t₁) (logOneAddExpGrad hα)‖ ≤
+      ‖logOneAddExpGrad hα‖ := by
+    simpa using (HolderSpace.compSlabSpaceL (a := t₀) (b := t₁)).le_of_opNorm_le
+      HolderSpace.norm_compSlabSpaceL_le_one (logOneAddExpGrad hα)
+  have hsig : ‖HolderSpace.compSlabSpaceL (a := t₀) (b := t₁) (logOneAddExpGrad hα)‖ ≤ 2 :=
+    hsig₀.trans (norm_logOneAddExpGrad_le hα)
+  have hsub : ‖HolderSpace.const (ContinuousLinearMap.id ℝ ℝ) -
+      HolderSpace.compSlabSpaceL (a := t₀) (b := t₁) (logOneAddExpGrad hα)‖ ≤ 3 :=
+    (norm_sub_le _ _).trans (by linarith)
+  rw [weightedLogSpotZerothOrderCoeff]
+  refine (norm_compHolder₂_apply_le _ (-r) _).trans ?_
+  rw [norm_neg]
+  have hlsmul : ‖(lsmul ℝ ℝ : ℝ →L[ℝ] (ℝ →L[ℝ] ℝ) →L[ℝ] (ℝ →L[ℝ] ℝ))‖ * ‖r‖ ≤ ‖r‖ :=
+    mul_le_of_le_one_left (norm_nonneg r) opNorm_lsmul_le
+  exact (mul_le_mul hlsmul hsub (norm_nonneg _) (norm_nonneg r)).trans_eq (mul_comm _ _)
+
+/-- **Operator-norm bound for `weightedLogSpotPricingOperatorL`.** -/
+theorem norm_weightedLogSpotPricingOperatorL_le :
+    ‖weightedLogSpotPricingOperatorL (ht := ht) hα a r‖ ≤ 1 + 121 * ‖a‖ + 96 * ‖r‖ := by
+  rw [weightedLogSpotPricingOperatorL_def]
+  have hA : ‖(lsmul ℝ ℝ).compHolder₂ a
+      (HolderSpace.const ((apply ℝ ℝ (1 : ℝ)).comp (apply ℝ (ℝ →L[ℝ] ℝ) (1 : ℝ))))‖ ≤ ‖a‖ :=
+    (norm_lsmul_compHolder₂_const_le a _).trans
+      (mul_le_of_le_one_right (norm_nonneg a) norm_apply_one_comp_apply_one_le)
+  have hB := norm_weightedLogSpotFirstOrderCoeff_le hα a r
+  have hC := norm_weightedLogSpotZerothOrderCoeff_le hα r
+  have hP := norm_backwardParabolicOperatorL_le (ht := ht) hα
+    (A := (lsmul ℝ ℝ).compHolder₂ a
+      (HolderSpace.const ((apply ℝ ℝ (1 : ℝ)).comp (apply ℝ (ℝ →L[ℝ] ℝ) (1 : ℝ)))))
+    (B := weightedLogSpotFirstOrderCoeff hα a r)
+    (C := weightedLogSpotZerothOrderCoeff hα r)
+  linarith
+
+/-- **Lipschitz dependence of `weightedLogSpotPricingOperatorL` on `(a, r)`.** -/
+theorem norm_weightedLogSpotPricingOperatorL_sub_le
+    {a' r' : HolderSpace α (slab (E := ℝ) t₀ t₁) ℝ} :
+    ‖weightedLogSpotPricingOperatorL (ht := ht) hα a r -
+        weightedLogSpotPricingOperatorL (ht := ht) hα a' r'‖ ≤
+      121 * ‖a - a'‖ + 96 * ‖r - r'‖ := by
+  let c₂ : HolderSpace α (slab (E := ℝ) t₀ t₁) ((ℝ →L[ℝ] ℝ →L[ℝ] ℝ) →L[ℝ] ℝ) :=
+    HolderSpace.const ((apply ℝ ℝ (1 : ℝ)).comp (apply ℝ (ℝ →L[ℝ] ℝ) (1 : ℝ)))
+  have hAsub : (lsmul ℝ ℝ).compHolder₂ a c₂ - (lsmul ℝ ℝ).compHolder₂ a' c₂ =
+      (lsmul ℝ ℝ).compHolder₂ (a - a') c₂ := by
+    ext p H
+    simp [c₂]
+  have hBsub : weightedLogSpotFirstOrderCoeff hα a r - weightedLogSpotFirstOrderCoeff hα a' r' =
+      weightedLogSpotFirstOrderCoeff hα (a - a') (r - r') := by
+    ext p D
+    simp
+    ring
+  have hCsub : weightedLogSpotZerothOrderCoeff hα r - weightedLogSpotZerothOrderCoeff hα r' =
+      weightedLogSpotZerothOrderCoeff hα (r - r') := by
+    refine HolderSpace.ext fun p ↦ ContinuousLinearMap.ext fun v ↦ ?_
+    simp
+    ring
+  have hP := norm_backwardParabolicOperatorL_sub_le (ht := ht) hα
+    (A := (lsmul ℝ ℝ).compHolder₂ a c₂) (A' := (lsmul ℝ ℝ).compHolder₂ a' c₂)
+    (B := weightedLogSpotFirstOrderCoeff hα a r)
+    (B' := weightedLogSpotFirstOrderCoeff hα a' r')
+    (C := weightedLogSpotZerothOrderCoeff hα r)
+    (C' := weightedLogSpotZerothOrderCoeff hα r')
+  rw [weightedLogSpotPricingOperatorL_def, weightedLogSpotPricingOperatorL_def]
+  rw [hAsub, hBsub, hCsub] at hP
+  have hA : ‖(lsmul ℝ ℝ).compHolder₂ (a - a') c₂‖ ≤ ‖a - a'‖ :=
+    (norm_lsmul_compHolder₂_const_le (a - a') _).trans
+      (mul_le_of_le_one_right (norm_nonneg _) norm_apply_one_comp_apply_one_le)
+  have hB := norm_weightedLogSpotFirstOrderCoeff_le hα (a - a') (r - r')
+  have hC := norm_weightedLogSpotZerothOrderCoeff_le hα (r - r')
+  linarith
 
 /-- The bounded weighted operator is the classical backward log-spot pricing operator
 on `(1 + exp y) v`, divided by the weight. Within time derivatives include the endpoints. -/
@@ -390,6 +499,57 @@ theorem injective_weightedLogSpotPricingOperatorL_prod_spatialTraceL (ha : ∀ p
   exact eq_of_weightedLogSpotPricingOperatorL_eq hα ha h.1 fun y ↦ by
     simpa [spatialTraceL_apply, spatialTrace_apply] using
       congrArg (fun f : CkHolderSpace 2 α ℝ ℝ ↦ f y) h.2
+
+/-- The classical spot pricing operator applied to `weightedLogSpotPrice u` at `(s, t)` equals
+`(1 + s)` times `weightedLogSpotPricingOperatorL` at `(log s, t)`. -/
+theorem pde_weightedLogSpotPrice_eq_mul_weightedLogSpotPricingOperatorL
+    (u : ParabolicC2HolderSpace α ℝ ℝ ht) {s : ℝ} (hs : 0 < s) (t : Icc t₀ t₁)
+    {σ₀ r₀ : ℝ} (ha : a (slabMk (log s) t) = σ₀ ^ 2 / 2)
+    (hr : r (slabMk (log s) t) = r₀) :
+    derivWithin (weightedLogSpotPrice u s) (Icc t₀ t₁) t +
+        σ₀ ^ 2 * s ^ 2 / 2 * deriv (deriv fun x ↦ weightedLogSpotPrice u x t) s +
+        r₀ * (s * deriv (fun x ↦ weightedLogSpotPrice u x t) s - weightedLogSpotPrice u s t) =
+      (1 + s) * weightedLogSpotPricingOperatorL hα a r u (slabMk (log s) t) := by
+  rw [pde_weightedLogSpotPrice u hs t σ₀ r₀, weightedLogSpotPricingOperatorL_apply]
+  simp only [space_slabMk, ha, hr, Real.sigmoid_log hs]
+  have hs1 : (1 + s) ≠ 0 := by positivity
+  have hs1' : (s + 1) ≠ 0 := by positivity
+  field_simp
+  ring
+
+/-- Pre-maturity (`t ∈ [t₀, t₁)`) version of
+`pde_weightedLogSpotPrice_eq_mul_weightedLogSpotPricingOperatorL`, with time derivative within
+`[t₀, ∞)`. -/
+theorem pde_weightedLogSpotPrice_Ici_eq_mul_weightedLogSpotPricingOperatorL
+    (u : ParabolicC2HolderSpace α ℝ ℝ ht) {s t : ℝ} (hs : 0 < s) (ht' : t ∈ Ico t₀ t₁)
+    {σ₀ r₀ : ℝ} (ha : a (slabMk (log s) ⟨t, Ico_subset_Icc_self ht'⟩) = σ₀ ^ 2 / 2)
+    (hr : r (slabMk (log s) ⟨t, Ico_subset_Icc_self ht'⟩) = r₀) :
+    derivWithin (weightedLogSpotPrice u s) (Ici t₀) t +
+        σ₀ ^ 2 * s ^ 2 / 2 * deriv (deriv fun x ↦ weightedLogSpotPrice u x t) s +
+        r₀ * (s * deriv (fun x ↦ weightedLogSpotPrice u x t) s - weightedLogSpotPrice u s t) =
+      (1 + s) * weightedLogSpotPricingOperatorL hα a r u
+        (slabMk (log s) ⟨t, Ico_subset_Icc_self ht'⟩) := by
+  rw [derivWithin_Ici_weightedLogSpotPrice_time u s ht',
+    ← derivWithin_weightedLogSpotPrice_time u s ⟨t, Ico_subset_Icc_self ht'⟩]
+  exact pde_weightedLogSpotPrice_eq_mul_weightedLogSpotPricingOperatorL hα u hs
+    ⟨t, Ico_subset_Icc_self ht'⟩ ha hr
+
+/-- Open-horizon (`t ∈ (t₀, t₁)`) version of
+`pde_weightedLogSpotPrice_eq_mul_weightedLogSpotPricingOperatorL`, with ordinary time
+derivative. -/
+theorem pde_weightedLogSpotPrice_Ioo_eq_mul_weightedLogSpotPricingOperatorL
+    (u : ParabolicC2HolderSpace α ℝ ℝ ht) {s t : ℝ} (hs : 0 < s) (ht' : t ∈ Ioo t₀ t₁)
+    {σ₀ r₀ : ℝ} (ha : a (slabMk (log s) ⟨t, Ioo_subset_Icc_self ht'⟩) = σ₀ ^ 2 / 2)
+    (hr : r (slabMk (log s) ⟨t, Ioo_subset_Icc_self ht'⟩) = r₀) :
+    deriv (weightedLogSpotPrice u s) t +
+        σ₀ ^ 2 * s ^ 2 / 2 * deriv (deriv fun x ↦ weightedLogSpotPrice u x t) s +
+        r₀ * (s * deriv (fun x ↦ weightedLogSpotPrice u x t) s - weightedLogSpotPrice u s t) =
+      (1 + s) * weightedLogSpotPricingOperatorL hα a r u
+        (slabMk (log s) ⟨t, Ioo_subset_Icc_self ht'⟩) := by
+  rw [deriv_weightedLogSpotPrice_time u s ht',
+    ← derivWithin_weightedLogSpotPrice_time u s ⟨t, Ioo_subset_Icc_self ht'⟩]
+  exact pde_weightedLogSpotPrice_eq_mul_weightedLogSpotPricingOperatorL hα u hs
+    ⟨t, Ioo_subset_Icc_self ht'⟩ ha hr
 
 end TerminalValue
 
