@@ -16,8 +16,8 @@ is strictly monotone on a neighbourhood of `a`, and *strictly antitone at `a`*
 (`TauCeti.StrictAntiAt f a`) when it is strictly antitone on one.
 
 A function cannot be both on a set with two points
-(`Set.Nontrivial.not_strictMonoOn_and_strictAntiOn`), so it cannot be both at a point of a densely
-ordered space without maximum. On a densely ordered conditionally complete linear order, a
+(`Set.Nontrivial.not_strictMonoOn_and_strictAntiOn`), so it cannot be both at a point that is not
+isolated. On a densely ordered conditionally complete linear order, a
 function continuous and injective near `a` is one of the two at `a`, by
 `ContinuousOn.strictMonoOn_of_injOn_Icc'`. If `g = h ∘ τ` near `a`, and each of `τ` at `a` and
 `h` at `τ a` is strictly monotone or strictly antitone, then `g` is strictly monotone at `a`
@@ -180,18 +180,18 @@ theorem strictMonoAt_or_strictAntiAt [ConditionallyCompleteLinearOrder α] [Topo
   exact ((hc.mono hsub).strictMonoOn_of_injOn_Icc' (hbc.1.trans hbc.2) (hi.mono hsub)).imp
     (·.strictMonoAt hI) (·.strictAntiAt hI)
 
-/-- A function is not both strictly monotone and strictly antitone at a point of a densely
-ordered space without maximum. -/
-theorem not_strictMonoAt_and_strictAntiAt [LinearOrder α] [TopologicalSpace α] [OrderTopology α]
-    [DenselyOrdered α] [NoMaxOrder α] [Preorder β] {f : α → β} {a : α} :
-    ¬(StrictMonoAt f a ∧ StrictAntiAt f a) := by
+/-- A function is not both strictly monotone and strictly antitone at a point that is not
+isolated. -/
+theorem not_strictMonoAt_and_strictAntiAt [LinearOrder α] [TopologicalSpace α] [Preorder β]
+    {f : α → β} {a : α} [(𝓝[≠] a).NeBot] : ¬(StrictMonoAt f a ∧ StrictAntiAt f a) := by
   rintro ⟨hm, ha⟩
   obtain ⟨s, hs, hm⟩ := strictMonoAt_iff.1 hm
   obtain ⟨t, ht, ha⟩ := strictAntiAt_iff.1 ha
-  obtain ⟨u, hau, hsub⟩ := exists_Ico_subset_of_mem_nhds (inter_mem hs ht) (exists_gt a)
-  obtain ⟨x, hax, hxu⟩ := exists_between hau
-  have hst : (s ∩ t).Nontrivial :=
-    ⟨a, hsub ⟨le_rfl, hau⟩, x, hsub ⟨hax.le, hxu⟩, hax.ne⟩
+  -- A point of `s ∩ t` other than `a` makes `s ∩ t` nontrivial.
+  have hst' : s ∩ t ∩ {a}ᶜ ∈ 𝓝[≠] a :=
+    inter_mem (mem_nhdsWithin_of_mem_nhds (inter_mem hs ht)) self_mem_nhdsWithin
+  obtain ⟨x, hx, hxa⟩ := Filter.nonempty_of_mem hst'
+  have hst : (s ∩ t).Nontrivial := ⟨a, mem_of_mem_nhds (inter_mem hs ht), x, hx, Ne.symm hxa⟩
   exact hst.not_strictMonoOn_and_strictAntiOn
     ⟨hm.mono inter_subset_left, ha.mono inter_subset_right⟩
 
@@ -199,9 +199,8 @@ theorem not_strictMonoAt_and_strictAntiAt [LinearOrder α] [TopologicalSpace α]
 are each strictly monotone or strictly antitone, then `g` is strictly monotone at `a` exactly when
 `h` and `τ` have the same direction. -/
 theorem strictMonoAt_iff_of_eventuallyEq_comp [LinearOrder α] [TopologicalSpace α]
-    [OrderTopology α] [DenselyOrdered α] [NoMaxOrder α] [LinearOrder β] [TopologicalSpace β]
-    [OrderTopology β] [DenselyOrdered β] [NoMaxOrder β] [Preorder γ] {g : α → γ} {h : β → γ}
-    {τ : α → β} {a : α} (hg : g =ᶠ[𝓝 a] h ∘ τ) (hτc : ContinuousAt τ a)
+    [LinearOrder β] [TopologicalSpace β] [Preorder γ] {g : α → γ} {h : β → γ} {τ : α → β} {a : α}
+    [(𝓝[≠] a).NeBot] [(𝓝[≠] τ a).NeBot] (hg : g =ᶠ[𝓝 a] h ∘ τ) (hτc : ContinuousAt τ a)
     (hτ : StrictMonoAt τ a ∨ StrictAntiAt τ a) (hh : StrictMonoAt h (τ a) ∨ StrictAntiAt h (τ a)) :
     StrictMonoAt g a ↔ (StrictMonoAt h (τ a) ↔ StrictMonoAt τ a) := by
   rw [hg.strictMonoAt_iff]
