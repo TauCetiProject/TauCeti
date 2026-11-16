@@ -125,6 +125,7 @@ theorem IsSeparated.pow_right {l : LyndonLength G Λ} {u v : G} (h : l.IsSeparat
 
 /-- For a free Lyndon length function, an element is separated from its inverse only when it is
 the identity. -/
+@[simp]
 theorem IsFree.isSeparated_self_inv_iff {l : LyndonLength G Λ} (hl : l.IsFree) {u : G} :
     l.IsSeparated u u⁻¹ ↔ u = 1 := by
   refine ⟨fun ⟨r, hr⟩ => by_contra fun hu => ?_, fun h => h ▸ isSeparated_one_left l _⟩
@@ -138,6 +139,7 @@ theorem IsFree.isSeparated_self_inv_iff {l : LyndonLength G Λ} (hl : l.IsFree) 
 
 /-- For a free Lyndon length function, the inverse of an element is separated from the element
 only when the element is the identity. -/
+@[simp]
 theorem IsFree.isSeparated_inv_self_iff {l : LyndonLength G Λ} (hl : l.IsFree) {u : G} :
     l.IsSeparated u⁻¹ u ↔ u = 1 := by
   simpa using hl.isSeparated_self_inv_iff (u := u⁻¹)
