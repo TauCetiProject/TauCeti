@@ -52,7 +52,9 @@ length-function axioms in their inversion-count spelling.
   root need not be simple, because the strong exchange condition does not require it to be.
 * `TauCeti.ncard_inversions_ofIdx_mul_lt_iff` and
   `TauCeti.lt_ncard_inversions_ofIdx_mul_iff`: the same criteria for left multiplication, read off
-  the inverse element.
+  the inverse element, together with the exact step formulas
+  `TauCeti.ncard_inversions_ofIdx_mul_of_notMem` and `TauCeti.ncard_inversions_ofIdx_mul_of_mem`
+  for left multiplication by a simple reflection.
 
 ## References
 
@@ -227,5 +229,23 @@ theorem lt_ncard_inversions_ofIdx_mul_iff (w : P.weylGroup) {i : ι} (hi : b.IsP
       i ∉ inversions P b w⁻¹ := by
   rw [ncard_inversions_ofIdx_mul, ← ncard_inversions_inv P b w,
     lt_ncard_inversions_mul_ofIdx_iff P b w⁻¹ hi]
+
+/-- Left multiplication by a simple reflection whose simple root is **not** an inversion of `w⁻¹`
+raises the number of inversions by one. -/
+theorem ncard_inversions_ofIdx_mul_of_notMem (w : P.weylGroup) {i : ι} (hi : i ∈ b.support)
+    (hiw : i ∉ inversions P b w⁻¹) :
+    (inversions P b (RootPairing.weylGroup.ofIdx P i * w)).ncard =
+      (inversions P b w).ncard + 1 := by
+  rw [ncard_inversions_ofIdx_mul, ncard_inversions_mul_ofIdx_of_notMem P w⁻¹ b hi hiw,
+    ncard_inversions_inv]
+
+/-- Left multiplication by a simple reflection whose simple root is already an inversion of `w⁻¹`
+lowers the number of inversions by one. -/
+theorem ncard_inversions_ofIdx_mul_of_mem (w : P.weylGroup) {i : ι} (hi : i ∈ b.support)
+    (hiw : i ∈ inversions P b w⁻¹) :
+    (inversions P b (RootPairing.weylGroup.ofIdx P i * w)).ncard + 1 =
+      (inversions P b w).ncard := by
+  rw [ncard_inversions_ofIdx_mul, ncard_inversions_mul_ofIdx_of_mem P w⁻¹ b hi hiw,
+    ncard_inversions_inv]
 
 end TauCeti

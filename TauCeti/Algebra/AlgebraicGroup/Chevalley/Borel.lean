@@ -8,6 +8,7 @@ module
 public import TauCeti.Algebra.AlgebraicGroup.Chevalley.Opposite
 public import TauCeti.Algebra.AlgebraicGroup.Chevalley.Weyl.Basic
 public import TauCeti.Algebra.Group.Subgroup.Pointwise
+import TauCeti.Algebra.AlgebraicGroup.Chevalley.Torus.Weyl
 
 /-!
 # The positive-root and torus subgroup of a Chevalley datum
@@ -122,55 +123,46 @@ theorem map_borelSubgroup_le {B : Type w} [CommRing B] (f : A →+* B) :
       D.range_torusPoints_le_borelSubgroup B
         ⟨fun i => Units.map f.toMonoidHom (s i), rfl⟩
 
+/-- Conjugating an actual torus point by the inverse of a Weyl-subgroup element remains in the
+Borel-type subgroup over every commutative ring. -/
+theorem inv_mul_torusPoints_mul_mem_borelSubgroup (n : D.weylSubgroup A) (s : Fin t.rank → Aˣ) :
+    (n : D.points A)⁻¹ * D.torusPoints A s * (n : D.points A) ∈ D.borelSubgroup A :=
+  D.range_torusPoints_le_borelSubgroup A
+    (by
+      simpa only [inv_inv] using
+        (Subgroup.mem_normalizer_iff.mp
+          (D.weylSubgroup_le_normalizer_range_torusPoints A (inv_mem n.2)) _).mp ⟨s, rfl⟩)
+
+/-- The positive point subgroup meets the opposite Borel-type subgroup `U⁻ ⊔ T` trivially over
+every commutative ring. -/
+@[simp]
+theorem positivePoints_inf_negativePoints_sup_range_torusPoints_eq_bot :
+    D.positivePoints A ⊓ (D.negativePoints A ⊔ (D.torusPoints A).range) = ⊥ := by
+  apply Subgroup.map_injective (D.pointsToLatticeHom_injective A)
+  rw [Subgroup.map_inf _ _ _ (D.pointsToLatticeHom_injective A), Subgroup.map_sup,
+    D.map_positivePoints_pointsToLatticeHom A, D.map_negativePoints_pointsToLatticeHom A,
+    MonoidHom.map_range, D.pointsToLatticeHom_comp_torusPoints A, Subgroup.map_bot]
+  exact D.positiveSubgroup_inf_negativeSubgroup_sup_range_kostantTorusPoints_eq_bot A
+
 /-- The positive point subgroup meets the actual character-lattice torus trivially over every
 commutative ring. -/
 @[simp]
 theorem positivePoints_inf_range_torusPoints_eq_bot :
-    D.positivePoints A ⊓ (D.torusPoints A).range = ⊥ := by
-  apply eq_bot_iff.mpr
-  rintro g ⟨hu, s, rfl⟩
-  obtain ⟨v, hv, hvu⟩ := D.mem_positivePoints_iff.mp hu
-  let m := Units.map (LinearMap.toMatrixAlgEquiv (D.basis.baseChange A)).toMonoidHom
-  have hm : Function.Injective m :=
-    Units.map_injective (LinearMap.toMatrixAlgEquiv (D.basis.baseChange A)).injective
-  have hvEq : v = kostantTorusPoints D.lattice D.basis D.coordinateWeight
-      (CommAlgCat.of ℤ A) s := by
-    apply hm
-    simp only [m, MulEquiv.toMonoidHom_eq_coe, basisMatrix_kostantTorusPoints, hvu,
-      D.coe_torusPoints, kostantTorusMatrix_apply]
-  have hvbot : v ∈ (⊥ : Subgroup _) := by
-    rw [← D.positiveSubgroup_inf_negativeSubgroup_sup_range_kostantTorusPoints_eq_bot A]
-    exact ⟨hv, hvEq ▸ Subgroup.mem_sup_right ⟨s, rfl⟩⟩
-  apply Subgroup.mem_bot.mpr
-  apply Subtype.ext
-  exact hvu.symm.trans ((congrArg m (Subgroup.mem_bot.mp hvbot)).trans m.map_one)
+    D.positivePoints A ⊓ (D.torusPoints A).range = ⊥ :=
+  eq_bot_iff.mpr <| (inf_le_inf_left _ le_sup_right).trans
+    (D.positivePoints_inf_negativePoints_sup_range_torusPoints_eq_bot A).le
 
 /-- The negative point subgroup meets the positive Borel-type subgroup trivially over every
 commutative ring. -/
 @[simp]
 theorem negativePoints_inf_borelSubgroup_eq_bot :
     D.negativePoints A ⊓ D.borelSubgroup A = ⊥ := by
-  apply eq_bot_iff.mpr
-  rintro g ⟨hneg, hbor⟩
-  obtain ⟨w, hw, hwg⟩ := D.mem_negativePoints_iff.mp hneg
-  obtain ⟨u, hu, s, rfl⟩ := (D.mem_borelSubgroup_iff A).mp hbor
-  obtain ⟨v, hv, hvu⟩ := D.mem_positivePoints_iff.mp hu
-  let m := Units.map (LinearMap.toMatrixAlgEquiv (D.basis.baseChange A)).toMonoidHom
-  have hm : Function.Injective m :=
-    Units.map_injective (LinearMap.toMatrixAlgEquiv (D.basis.baseChange A)).injective
-  have hwEq : w = v * kostantTorusPoints D.lattice D.basis D.coordinateWeight
-      (CommAlgCat.of ℤ A) s := by
-    apply hm
-    simp only [m, MulEquiv.toMonoidHom_eq_coe, map_mul, Subgroup.coe_mul,
-      basisMatrix_kostantTorusPoints, hwg, hvu, D.coe_torusPoints, kostantTorusMatrix_apply]
-  have hwbot : w ∈ (⊥ : Subgroup _) := by
-    rw [← D.negativeSubgroup_inf_positiveSubgroup_sup_range_kostantTorusPoints_eq_bot A]
-    refine ⟨hw, ?_⟩
-    rw [hwEq]
-    exact Subgroup.mul_mem _ (Subgroup.mem_sup_left hv) (Subgroup.mem_sup_right ⟨s, rfl⟩)
-  apply Subgroup.mem_bot.mpr
-  apply Subtype.ext
-  exact hwg.symm.trans ((congrArg m (Subgroup.mem_bot.mp hwbot)).trans m.map_one)
+  apply Subgroup.map_injective (D.pointsToLatticeHom_injective A)
+  rw [D.borelSubgroup_def, Subgroup.map_inf _ _ _ (D.pointsToLatticeHom_injective A),
+    Subgroup.map_sup, D.map_negativePoints_pointsToLatticeHom A,
+    D.map_positivePoints_pointsToLatticeHom A, MonoidHom.map_range,
+    D.pointsToLatticeHom_comp_torusPoints A, Subgroup.map_bot]
+  exact D.negativeSubgroup_inf_positiveSubgroup_sup_range_kostantTorusPoints_eq_bot A
 
 /-- A negative root element belongs to the positive Borel-type subgroup exactly when it is
 the identity. This does not assume that the root parameter is injective. -/

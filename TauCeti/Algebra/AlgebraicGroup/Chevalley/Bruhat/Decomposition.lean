@@ -10,6 +10,7 @@ public import TauCeti.GroupTheory.TitsSystem.Bruhat.Basic
 import TauCeti.Algebra.AlgebraicGroup.Chevalley.Positive.Parabolic
 import TauCeti.Algebra.AlgebraicGroup.Chevalley.Weyl.Root
 import TauCeti.Algebra.Group.Subgroup.Map
+import TauCeti.GroupTheory.DoubleCoset.Map
 import TauCeti.GroupTheory.TitsSystem.Bruhat.Length
 import TauCeti.GroupTheory.TitsSystem.Bruhat.Uniqueness
 import TauCeti.LinearAlgebra.RootSystem.Inversions.Length
@@ -70,25 +71,36 @@ theorem inversionPositivePoints_def (w : (t.simplyConnectedRootDatum ht).weylGro
         (D.rootSubgroupPoints γ A).range :=
   (rfl)
 
+/-- A subgroup contains `inversionPositivePoints A w` exactly when it contains every root subgroup
+indexed by an inversion of `w⁻¹`. -/
+theorem inversionPositivePoints_le_iff {w : (t.simplyConnectedRootDatum ht).weylGroup}
+    {P : Subgroup (D.points A)} :
+    D.inversionPositivePoints A w ≤ P ↔
+      ∀ γ ∈ inversions (t.simplyConnectedRootDatum ht) (t.simplyConnectedBase ht) w⁻¹,
+        ∀ u, D.rootSubgroupPoints γ A u ∈ P := by
+  rw [D.inversionPositivePoints_def, iSup₂_le_iff]
+  simp only [IsConcreteLE.le_iff, MonoidHom.mem_range, forall_exists_index,
+    forall_apply_eq_imp_iff]
+
 /-- Every root subgroup in `inversionPositivePoints A w` is positive, so `inversionPositivePoints`
 lies inside `positivePoints`. -/
 theorem inversionPositivePoints_le_positivePoints
     (w : (t.simplyConnectedRootDatum ht).weylGroup) :
-    D.inversionPositivePoints A w ≤ D.positivePoints A := by
-  rw [D.inversionPositivePoints_def, iSup₂_le_iff]
-  rintro γ hγ _ ⟨u, rfl⟩
-  refine D.rootSubgroupPoints_mem_positivePoints A ?_ u
-  rw [t.posRoots_rationalRootSystem ht, mem_posRoots]
-  exact ((mem_inversions _ _ _ _).mp hγ).1
+    D.inversionPositivePoints A w ≤ D.positivePoints A :=
+  (D.inversionPositivePoints_le_iff A).mpr fun _ hγ u =>
+    D.rootSubgroupPoints_mem_positivePoints A
+      (by
+        rw [t.posRoots_rationalRootSystem ht, mem_posRoots]
+        exact ((mem_inversions _ _ _ _).mp hγ).1) u
 
 /-- Each generator `x_γ(u)` with `γ ∈ inversions ... w⁻¹` lies in `inversionPositivePoints A w`. -/
+@[simp]
 theorem rootSubgroupPoints_mem_inversionPositivePoints
     {w : (t.simplyConnectedRootDatum ht).weylGroup} {γ : Fin t.numRoots}
     (hγ : γ ∈ inversions (t.simplyConnectedRootDatum ht) (t.simplyConnectedBase ht) w⁻¹)
     (u : Multiplicative A) :
-    D.rootSubgroupPoints γ A u ∈ D.inversionPositivePoints A w := by
-  rw [D.inversionPositivePoints_def]
-  exact le_iSup₂ (f := fun δ _ => (D.rootSubgroupPoints δ A).range) γ hγ ⟨u, rfl⟩
+    D.rootSubgroupPoints γ A u ∈ D.inversionPositivePoints A w :=
+  (D.inversionPositivePoints_le_iff A).mp le_rfl γ hγ u
 
 /-- At the identity Weyl element, `inversionPositivePoints` is trivial. -/
 @[simp]
@@ -98,7 +110,8 @@ theorem inversionPositivePoints_one : D.inversionPositivePoints A 1 = ⊥ := by
 
 /-- Over every commutative ring `A` and every point `n : D.points A`, the subgroup
 `U(A) ⊓ n U⁻(A) n⁻¹` meets the conjugated Borel subgroup `n B(A) n⁻¹` trivially. -/
-theorem disjoint_positivePoints_inf_map_conj_negativePoints_borelSubgroup (n : D.points A) :
+theorem disjoint_positivePoints_inf_map_conj_negativePoints_map_conj_borelSubgroup
+    (n : D.points A) :
     Disjoint
       (D.positivePoints A ⊓ (D.negativePoints A).map (MulAut.conj n).toMonoidHom)
       ((D.borelSubgroup A).map (MulAut.conj n).toMonoidHom) := by
@@ -109,13 +122,14 @@ theorem disjoint_positivePoints_inf_map_conj_negativePoints_borelSubgroup (n : D
 
 /-- Over every commutative ring `A` and every point `n : D.points A`, the multiplication map
 `(u, b) ↦ u * n * b` is injective on `(U(A) ⊓ n U⁻(A) n⁻¹) × B(A)`. -/
-theorem mul_borelSubgroup_injective (n : D.points A) :
+theorem positivePoints_inf_map_conj_negativePoints_mul_mul_borelSubgroup_injective
+    (n : D.points A) :
     Function.Injective
       (fun p : ↥(D.positivePoints A ⊓ (D.negativePoints A).map (MulAut.conj n).toMonoidHom) ×
           ↥(D.borelSubgroup A) =>
         (p.1 : D.points A) * n * (p.2 : D.points A)) :=
   Subgroup.mul_mul_injective_of_disjoint _ _
-    (D.disjoint_positivePoints_inf_map_conj_negativePoints_borelSubgroup A n)
+    (D.disjoint_positivePoints_inf_map_conj_negativePoints_map_conj_borelSubgroup A n)
 
 end CommRing
 
@@ -157,22 +171,13 @@ theorem coe_mem_bruhatCell_iff (g : D.extendedElementarySubgroup K)
 theorem bruhatCell_weylProjection (n : D.weylSubgroup K) :
     D.bruhatCell K (D.weylProjection K n) =
       DoubleCoset.doubleCoset (n : D.points K) (D.borelSubgroup K) (D.borelSubgroup K) := by
-  let nN : (D.titsSystem K).subgroupN :=
-    ⟨⟨n.1, D.weylSubgroup_le_extendedElementarySubgroup K n.2⟩, by
-      rw [D.titsSystem_subgroupN K]; exact n.2⟩
+  let nN : (D.titsSystem K).subgroupN := (D.titsSystemSubgroupNEquiv K).symm n
   have hsymm : (D.titsSystemWeylGroupEquiv K).symm (D.weylProjection K n) = QuotientGroup.mk nN :=
-    (D.titsSystemWeylGroupEquiv K).symm_apply_eq.mpr (D.titsSystemWeylGroupEquiv_mk K nN).symm
-  ext z
-  rw [D.bruhatCell_def K, hsymm, (D.titsSystem K).bruhatCell_mk, D.titsSystem_subgroupB K]
-  refine ⟨fun ⟨_, hg, h⟩ => h ▸
-    (D.mem_doubleCoset_subgroupOf_extendedElementarySubgroup_iff K).mp hg, fun hz => ?_⟩
-  obtain ⟨b₁, hb₁, b₂, hb₂, rfl⟩ := DoubleCoset.mem_doubleCoset.mp hz
-  refine ⟨⟨b₁ * (n : D.points K) * b₂, mul_mem (mul_mem
-      (D.borelSubgroup_le_extendedElementarySubgroup K hb₁)
-      (D.weylSubgroup_le_extendedElementarySubgroup K n.2))
-      (D.borelSubgroup_le_extendedElementarySubgroup K hb₂)⟩, ?_, rfl⟩
-  exact (D.mem_doubleCoset_subgroupOf_extendedElementarySubgroup_iff K).mpr
-    (DoubleCoset.mem_doubleCoset.mpr ⟨b₁, hb₁, b₂, hb₂, rfl⟩)
+    (D.titsSystemWeylGroupEquiv K).symm_apply_eq.mpr
+      (by rw [D.titsSystemWeylGroupEquiv_mk K nN, MulEquiv.apply_symm_apply])
+  have hB := D.borelSubgroup_le_extendedElementarySubgroup K
+  rw [D.bruhatCell_def K, hsymm, (D.titsSystem K).bruhatCell_mk, D.titsSystem_subgroupB K,
+    DoubleCoset.image_doubleCoset_subgroupOf hB hB, D.coe_titsSystemSubgroupNEquiv_symm K n]
 
 /-- The Bruhat cell at `1` is the Borel-type subgroup `B(K)`. -/
 @[simp]
@@ -244,8 +249,7 @@ theorem bruhatCell_simple_mul_eq_of_notMem_inversions (i : Fin t.rank)
         (RootPairing.weylGroup.ofIdx (t.simplyConnectedRootDatum ht) (t.simpleIndex ht i) * w) := by
   let _ := t.isReduced_simplyConnectedRootDatum ht
   have hipos : (t.simplyConnectedBase ht).IsPos (t.simpleIndex ht i) :=
-    (t.simplyConnectedBase ht).isPos_of_mem_support
-      (t.support_rationalBase ht ▸ simpleIndex_mem_support i)
+    (t.simplyConnectedBase ht).isPos_of_mem_support (by simp)
   have hlt : (D.titsSystem K).simpleGenerators.wordLength
       ((D.titsSystemWeylGroupEquiv K).symm w) <
       (D.titsSystem K).simpleGenerators.wordLength
@@ -253,8 +257,7 @@ theorem bruhatCell_simple_mul_eq_of_notMem_inversions (i : Fin t.rank)
     rw [← D.titsSystemWeylGroupEquiv_symm_ofIdx K i, ← map_mul,
       D.wordLength_titsSystemWeylGroupEquiv_symm K, D.wordLength_titsSystemWeylGroupEquiv_symm K]
     exact (lt_ncard_inversions_ofIdx_mul_iff _ _ w hipos).mpr hi
-  change (D.extendedElementarySubgroup K).subtype '' _ *
-      (D.extendedElementarySubgroup K).subtype '' _ = (D.extendedElementarySubgroup K).subtype '' _
+  simp only [D.bruhatCell_def K, ← Subgroup.coe_subtype]
   rw [← Set.image_mul, D.titsSystemWeylGroupEquiv_symm_ofIdx K i,
     (D.titsSystem K).bruhatCell_mul_eq_of_wordLength_le (D.titsSystemSimple_mem_simple K i) hlt.le,
     map_mul, D.titsSystemWeylGroupEquiv_symm_ofIdx K i]
@@ -274,8 +277,7 @@ theorem bruhatCell_simple_mul_eq_union_of_mem_inversions (i : Fin t.rank)
         D.bruhatCell K w := by
   let _ := t.isReduced_simplyConnectedRootDatum ht
   have hipos : (t.simplyConnectedBase ht).IsPos (t.simpleIndex ht i) :=
-    (t.simplyConnectedBase ht).isPos_of_mem_support
-      (t.support_rationalBase ht ▸ simpleIndex_mem_support i)
+    (t.simplyConnectedBase ht).isPos_of_mem_support (by simp)
   have hlt : (D.titsSystem K).simpleGenerators.wordLength
       (D.titsSystemSimple K i * (D.titsSystemWeylGroupEquiv K).symm w) <
       (D.titsSystem K).simpleGenerators.wordLength
@@ -283,9 +285,7 @@ theorem bruhatCell_simple_mul_eq_union_of_mem_inversions (i : Fin t.rank)
     rw [← D.titsSystemWeylGroupEquiv_symm_ofIdx K i, ← map_mul,
       D.wordLength_titsSystemWeylGroupEquiv_symm K, D.wordLength_titsSystemWeylGroupEquiv_symm K]
     exact (ncard_inversions_ofIdx_mul_lt_iff _ _ w hipos).mpr hi
-  change (D.extendedElementarySubgroup K).subtype '' _ *
-      (D.extendedElementarySubgroup K).subtype '' _ =
-    (D.extendedElementarySubgroup K).subtype '' _ ∪ (D.extendedElementarySubgroup K).subtype '' _
+  simp only [D.bruhatCell_def K, ← Subgroup.coe_subtype]
   rw [← Set.image_mul, ← Set.image_union, D.titsSystemWeylGroupEquiv_symm_ofIdx K i,
     (D.titsSystem K).bruhatCell_mul_eq_union_of_wordLength_lt
       (D.titsSystemSimple_mem_simple K i) hlt,
@@ -298,18 +298,14 @@ conjugated into `negativePoints K` by `n⁻¹`. -/
 theorem inversionPositivePoints_le_map_conj_negativePoints (n : D.weylSubgroup K) :
     D.inversionPositivePoints K (D.weylProjection K n) ≤
       (D.negativePoints K).map (MulAut.conj (n : D.points K)).toMonoidHom := by
-  rw [D.inversionPositivePoints_def, iSup₂_le_iff]
-  rintro γ hγ _ ⟨u, rfl⟩
+  refine (D.inversionPositivePoints_le_iff K).mpr fun γ hγ u => ?_
   have hneg : (t.simplyConnectedRootDatum ht).weylGroupToPerm (D.weylProjection K n)⁻¹ γ ∈
       negRoots (t.rationalRootSystem ht) (t.rationalBase ht) := by
     rw [← not_mem_posRoots_iff_mem_negRoots, t.posRoots_rationalRootSystem ht, mem_posRoots]
     exact ((mem_inversions _ _ _ _).mp hγ).2
   rw [Subgroup.mem_map_equiv, MulAut.conj_symm_apply]
-  have himg : MulAut.conj ((n⁻¹ : D.weylSubgroup K) : D.points K) (D.rootSubgroupPoints γ K u) ∈
-      (D.rootSubgroupPoints γ K).range.map
-        (MulAut.conj ((n⁻¹ : D.weylSubgroup K) : D.points K)).toMonoidHom := ⟨_, ⟨u, rfl⟩, rfl⟩
-  rw [D.map_range_rootSubgroupPoints_conj, map_inv] at himg
-  rcases himg with ⟨v, hv⟩
+  obtain ⟨v, hv⟩ := D.conj_rootSubgroupPoints_mem_range K n⁻¹ γ u
+  rw [(D.weylProjection K).map_inv] at hv
   have hmem := D.rootSubgroupPoints_mem_negativePoints K hneg v
   rw [hv] at hmem
   simpa only [MulAut.conj_apply, Subgroup.coe_inv, inv_inv] using hmem
@@ -325,36 +321,81 @@ private theorem map_conj_weylElement_inversionPositivePoints_le (i : Fin t.rank)
   let _ := t.isReduced_simplyConnectedRootDatum ht
   let P := t.simplyConnectedRootDatum ht
   let b := t.simplyConnectedBase ht
-  let _ := P.indexNeg
-  let ni : D.weylSubgroup K :=
-    ⟨D.weylElement (t.simpleIndex ht i) K 1, D.weylElement_mem_weylSubgroup K i⟩
-  rw [D.inversionPositivePoints_def, Subgroup.map_iSup]
-  refine iSup_le fun γ => ?_
-  rw [Subgroup.map_iSup]
-  refine iSup_le fun hγ => ?_
-  change (D.rootSubgroupPoints γ K).range.map (MulAut.conj (ni : D.points K)).toMonoidHom ≤
-    D.inversionPositivePoints K w
-  rw [D.map_range_rootSubgroupPoints_conj, D.weylProjection_weylElement K i]
+  rw [Subgroup.map_le_iff_le_comap, D.inversionPositivePoints_le_iff K]
+  intro γ hγ u
   have hγpos : γ ∈ posRoots P b := (mem_posRoots P b γ).mpr ((mem_inversions P b _ γ).mp hγ).1
   have hγne : γ ≠ t.simpleIndex ht i := by
     rintro rfl
-    have hnotpos := ((mem_inversions P b _ _).mp hγ).2
     rw [mul_inv_rev, RootPairing.weylGroup.ofIdx_inv_eq,
-      RootPairing.weylGroupToPerm_mul_ofIdx_apply, ← RootPairing.indexNeg_neg,
-      RootPairing.weylGroupToPerm_neg, RootPairing.Base.IsPos.neg_iff_not, not_not] at hnotpos
-    exact ((mem_inversions P b _ _).mp hi).2 hnotpos
-  have hisupp : t.simpleIndex ht i ∈ b.support :=
-    t.support_rationalBase ht ▸ simpleIndex_mem_support i
-  have hrefl_inv : P.weylGroupToPerm (RootPairing.weylGroup.ofIdx P (t.simpleIndex ht i)) γ ∈
-      inversions P b w⁻¹ := by
-    rw [RootPairing.weylGroupToPerm_ofIdx_apply, mem_inversions]
+      mem_inversions_mul_ofIdx_iff_not_mem P w⁻¹ b (b.isPos_of_mem_support (by simp [b]))] at hγ
+    exact hγ hi
+  have hrefl_inv : P.reflectionPerm (t.simpleIndex ht i) γ ∈ inversions P b w⁻¹ := by
+    rw [mem_inversions]
     refine ⟨(mem_posRoots P b _).mp
-      ((bijOn_reflectionPerm_posRoots_diff_singleton P b hisupp).mapsTo ⟨hγpos, hγne⟩).1, ?_⟩
+      ((bijOn_reflectionPerm_posRoots_diff_singleton P b (by simp [b])).mapsTo ⟨hγpos, hγne⟩).1, ?_⟩
     have hneg := ((mem_inversions P b _ γ).mp hγ).2
     rwa [mul_inv_rev, RootPairing.weylGroup.ofIdx_inv_eq,
       RootPairing.weylGroupToPerm_mul_ofIdx_apply] at hneg
-  rintro _ ⟨u, rfl⟩
-  exact D.rootSubgroupPoints_mem_inversionPositivePoints K hrefl_inv u
+  rw [Subgroup.mem_comap, MulEquiv.coe_toMonoidHom, MulAut.conj_apply, ← ofAdd_toAdd u,
+    D.weylElement_conj_rootSubgroupPoints]
+  exact D.rootSubgroupPoints_mem_inversionPositivePoints K hrefl_inv _
+
+/-- Single-reflection reduction step for the sharpened Bruhat normal form: when `αᵢ` is an
+inversion of `w⁻¹`, lifting a factorization at `nᵢ⁻¹ * n` back along `nᵢ` via punctured-positive
+factorization produces a factorization at `n`. -/
+private theorem exists_mem_inversionPositivePoints_mul_borelSubgroup_step (i : Fin t.rank)
+    (n : D.weylSubgroup K)
+    (hi : t.simpleIndex ht i ∈
+      inversions (t.simplyConnectedRootDatum ht) (t.simplyConnectedBase ht)
+        (D.weylProjection K n)⁻¹)
+    {u₁ : D.points K} (hu₁ : u₁ ∈ D.positivePoints K)
+    (ih : ∀ {q' : D.points K}, q' ∈ D.positivePoints K →
+      ∃ uv ∈ D.inversionPositivePoints K
+        (D.weylProjection K
+          (⟨D.weylElement (t.simpleIndex ht i) K 1, D.weylElement_mem_weylSubgroup K i⟩⁻¹ * n)),
+      ∃ b ∈ D.borelSubgroup K,
+        uv * ((⟨D.weylElement (t.simpleIndex ht i) K 1,
+          D.weylElement_mem_weylSubgroup K i⟩⁻¹ * n : D.weylSubgroup K) : D.points K) * b =
+          q' * ((⟨D.weylElement (t.simpleIndex ht i) K 1,
+            D.weylElement_mem_weylSubgroup K i⟩⁻¹ * n : D.weylSubgroup K) : D.points K)) :
+    ∃ u ∈ D.inversionPositivePoints K (D.weylProjection K n),
+      ∃ b ∈ D.borelSubgroup K, u * (n : D.points K) * b = u₁ * (n : D.points K) := by
+  let ni : D.weylSubgroup K :=
+    ⟨D.weylElement (t.simpleIndex ht i) K 1, D.weylElement_mem_weylSubgroup K i⟩
+  let nv : D.weylSubgroup K := ni⁻¹ * n
+  have hnv_proj : D.weylProjection K nv =
+      RootPairing.weylGroup.ofIdx (t.simplyConnectedRootDatum ht) (t.simpleIndex ht i) *
+        D.weylProjection K n := by
+    simp only [nv, ni, map_mul, map_inv, D.weylProjection_weylElement K i,
+      RootPairing.weylGroup.ofIdx_inv_eq]
+  -- Factor `u₁ = xᵢ(a) * q` with `q` punctured-positive, then conjugate `q` past `nᵢ`.
+  obtain ⟨a, q, hq, hfac⟩ :=
+    (D.mem_positivePoints_iff_exists_mul_puncturedPositivePoints i K).mp hu₁
+  let q' : D.points K := (ni : D.points K)⁻¹ * q * (ni : D.points K)
+  have hq'_pos : q' ∈ D.positivePoints K :=
+    D.puncturedPositivePoints_le_positivePoints i K
+      ((Subgroup.mem_normalizer_iff.mp
+        (inv_mem (D.weylElement_mem_normalizer_puncturedPositivePoints i K 1)) q).mp hq)
+  obtain ⟨uv, huv, b, hb, huvb⟩ := ih hq'_pos
+  have hconj_uv : (ni : D.points K) * uv * (ni : D.points K)⁻¹ ∈
+      D.inversionPositivePoints K (D.weylProjection K n) :=
+    D.map_conj_weylElement_inversionPositivePoints_le K i hi
+      ⟨uv, hnv_proj ▸ huv, rfl⟩
+  refine ⟨D.rootSubgroupPoints (t.simpleIndex ht i) K a *
+      ((ni : D.points K) * uv * (ni : D.points K)⁻¹),
+    mul_mem (D.rootSubgroupPoints_mem_inversionPositivePoints K hi a) hconj_uv, b, hb, ?_⟩
+  have hn_eq : (ni : D.points K) * (nv : D.points K) = (n : D.points K) := by
+    simp only [nv, Subgroup.coe_mul, Subgroup.coe_inv]; group
+  calc
+    D.rootSubgroupPoints (t.simpleIndex ht i) K a *
+        ((ni : D.points K) * uv * (ni : D.points K)⁻¹) * (n : D.points K) * b
+      = D.rootSubgroupPoints (t.simpleIndex ht i) K a * (ni : D.points K) *
+          (uv * (nv : D.points K) * b) := by rw [← hn_eq]; group
+    _ = D.rootSubgroupPoints (t.simpleIndex ht i) K a * (ni : D.points K) *
+          (q' * (nv : D.points K)) := by rw [huvb]
+    _ = (D.rootSubgroupPoints (t.simpleIndex ht i) K a * q) *
+          ((ni : D.points K) * (nv : D.points K)) := by simp only [q']; group
+    _ = u₁ * (n : D.points K) := by rw [hfac, hn_eq]
 
 private theorem exists_mem_inversionPositivePoints_mul_borelSubgroup_of_mem_positivePoints
     (n : D.weylSubgroup K) {u₁ : D.points K} (hu₁ : u₁ ∈ D.positivePoints K) :
@@ -363,6 +404,7 @@ private theorem exists_mem_inversionPositivePoints_mul_borelSubgroup_of_mem_posi
   let _ := t.isReduced_simplyConnectedRootDatum ht
   let P := t.simplyConnectedRootDatum ht
   let b₀ := t.simplyConnectedBase ht
+  -- Induct on the inversion count `m` of `w = D.weylProjection K n`.
   suffices h : ∀ m : ℕ, ∀ (n : D.weylSubgroup K),
       (inversions P b₀ (D.weylProjection K n)).ncard = m →
       ∀ {u₁ : D.points K}, u₁ ∈ D.positivePoints K →
@@ -372,6 +414,7 @@ private theorem exists_mem_inversionPositivePoints_mul_borelSubgroup_of_mem_posi
   intro m
   induction m with
   | zero =>
+    -- When `w = 1`, `n ∈ T(K) ≤ B(K)`, so `u₁ * n = 1 * n * (n⁻¹ u₁ n)` absorbs into `B(K)`.
     intro n hm u₁ hu₁
     have hproj : D.weylProjection K n = 1 :=
       eq_one_of_inversions_eq_empty ((Set.ncard_eq_zero (Set.toFinite _)).mp hm)
@@ -382,6 +425,7 @@ private theorem exists_mem_inversionPositivePoints_mul_borelSubgroup_of_mem_posi
       (n : D.points K)⁻¹ * u₁ * (n : D.points K),
       mul_mem (mul_mem (inv_mem hnB) (D.positivePoints_le_borelSubgroup K hu₁)) hnB, by group⟩
   | succ m ih =>
+    -- Pick a simple left descent `sᵢ` for `w`, lowering the inversion count of `nᵢ⁻¹ n` to `m`.
     intro n hm u₁ hu₁
     have hw_ne : D.weylProjection K n ≠ 1 := fun hw1 =>
       Nat.succ_ne_zero m (by rw [hw1, ncard_inversions_one] at hm; exact hm.symm)
@@ -391,45 +435,17 @@ private theorem exists_mem_inversionPositivePoints_mul_borelSubgroup_of_mem_posi
     obtain ⟨i, rfl⟩ := exists_simpleIndex_eq_of_mem_support hγsupp
     let ni : D.weylSubgroup K :=
       ⟨D.weylElement (t.simpleIndex ht i) K 1, D.weylElement_mem_weylSubgroup K i⟩
-    let nv : D.weylSubgroup K := ni⁻¹ * n
-    have hnv_proj : D.weylProjection K nv =
-        RootPairing.weylGroup.ofIdx P (t.simpleIndex ht i) * D.weylProjection K n := by
-      simp only [nv, ni, P, map_mul, map_inv, D.weylProjection_weylElement K i,
-        RootPairing.weylGroup.ofIdx_inv_eq]
-    have hisupp : t.simpleIndex ht i ∈ b₀.support :=
-      t.support_rationalBase ht ▸ simpleIndex_mem_support i
-    have hnv_len : (inversions P b₀ (D.weylProjection K nv)).ncard = m := by
-      have h1 := ncard_inversions_ofIdx_mul P b₀ (D.weylProjection K n) (t.simpleIndex ht i)
-      have h2 := ncard_inversions_mul_ofIdx_of_mem P (D.weylProjection K n)⁻¹ b₀ hisupp hγinv
-      have h3 := ncard_inversions_inv P b₀ (D.weylProjection K n)
-      rw [hnv_proj]; omega
-    obtain ⟨a, q, hq, hfac⟩ :=
-      (D.mem_positivePoints_iff_exists_mul_puncturedPositivePoints i K).mp hu₁
-    let q' : D.points K := (ni : D.points K)⁻¹ * q * (ni : D.points K)
-    have hq'_pos : q' ∈ D.positivePoints K :=
-      D.puncturedPositivePoints_le_positivePoints i K
-        ((Subgroup.mem_normalizer_iff.mp
-          (inv_mem (D.weylElement_mem_normalizer_puncturedPositivePoints i K)) q).mp hq)
-    obtain ⟨uv, huv, b, hb, huvb⟩ := ih nv hnv_len hq'_pos
-    have hconj_uv : (ni : D.points K) * uv * (ni : D.points K)⁻¹ ∈
-        D.inversionPositivePoints K (D.weylProjection K n) :=
-      D.map_conj_weylElement_inversionPositivePoints_le K i hγinv
-        ⟨uv, hnv_proj ▸ huv, rfl⟩
-    refine ⟨D.rootSubgroupPoints (t.simpleIndex ht i) K a *
-        ((ni : D.points K) * uv * (ni : D.points K)⁻¹),
-      mul_mem (D.rootSubgroupPoints_mem_inversionPositivePoints K hγinv a) hconj_uv, b, hb, ?_⟩
-    have hn_eq : (ni : D.points K) * (nv : D.points K) = (n : D.points K) := by
-      simp only [nv, Subgroup.coe_mul, Subgroup.coe_inv]; group
-    calc
-      D.rootSubgroupPoints (t.simpleIndex ht i) K a *
-          ((ni : D.points K) * uv * (ni : D.points K)⁻¹) * (n : D.points K) * b
-        = D.rootSubgroupPoints (t.simpleIndex ht i) K a * (ni : D.points K) *
-            (uv * (nv : D.points K) * b) := by rw [← hn_eq]; group
-      _ = D.rootSubgroupPoints (t.simpleIndex ht i) K a * (ni : D.points K) *
-            (q' * (nv : D.points K)) := by rw [huvb]
-      _ = (D.rootSubgroupPoints (t.simpleIndex ht i) K a * q) *
-            ((ni : D.points K) * (nv : D.points K)) := by simp only [q']; group
-      _ = u₁ * (n : D.points K) := by rw [hfac, hn_eq]
+    have hnv_len : (inversions P b₀ (D.weylProjection K (ni⁻¹ * n))).ncard = m := by
+      have hproj : D.weylProjection K (ni⁻¹ * n) =
+          RootPairing.weylGroup.ofIdx P (t.simpleIndex ht i) * D.weylProjection K n := by
+        simp only [ni, P, map_mul, map_inv, D.weylProjection_weylElement K i,
+          RootPairing.weylGroup.ofIdx_inv_eq]
+      have hdrop :=
+        ncard_inversions_ofIdx_mul_of_mem P b₀ (D.weylProjection K n) (by simp [b₀]) hγinv
+      rw [hproj]
+      omega
+    exact D.exists_mem_inversionPositivePoints_mul_borelSubgroup_step K i n hγinv hu₁
+      (ih (ni⁻¹ * n) hnv_len)
 
 /-- For every `n : D.weylSubgroup K` and every `g` in the `B(K)`-double coset of `n`, there exist
 `u ∈ D.inversionPositivePoints K (D.weylProjection K n)` and `b ∈ D.borelSubgroup K` with
@@ -443,12 +459,8 @@ theorem exists_mem_inversionPositivePoints_mul_mem_borelSubgroup (n : D.weylSubg
   obtain ⟨u₁, hu₁, s, hus⟩ := (D.mem_borelSubgroup_iff K).mp hb₁
   obtain ⟨u, hu, b, hb, hub⟩ :=
     D.exists_mem_inversionPositivePoints_mul_borelSubgroup_of_mem_positivePoints K n hu₁
-  have htn : (n : D.points K)⁻¹ * D.torusPoints K s * (n : D.points K) ∈ D.borelSubgroup K :=
-    D.range_torusPoints_le_borelSubgroup K
-      ((Subgroup.mem_normalizer_iff.mp
-        (D.weylSubgroup_le_normalizer_range_torusPoints K (inv_mem n.2)) _).mp ⟨s, rfl⟩)
   refine ⟨u, hu, b * ((n : D.points K)⁻¹ * D.torusPoints K s * (n : D.points K)) * b₂,
-    mul_mem (mul_mem hb htn) hb₂, ?_⟩
+    mul_mem (mul_mem hb (D.inv_mul_torusPoints_mul_mem_borelSubgroup K n s)) hb₂, ?_⟩
   calc
     u * (n : D.points K) * (b * ((n : D.points K)⁻¹ * D.torusPoints K s * (n : D.points K)) * b₂)
       = (u * (n : D.points K) * b) *
@@ -462,7 +474,6 @@ theorem exists_mem_inversionPositivePoints_mul_mem_borelSubgroup (n : D.weylSubg
 `n : D.weylSubgroup K`, the root-generated subgroup
 `D.inversionPositivePoints K (D.weylProjection K n)` coincides with
 `U(K) ⊓ n U⁻(K) n⁻¹`. -/
-@[simp]
 theorem inversionPositivePoints_weylProjection_eq (n : D.weylSubgroup K) :
     D.inversionPositivePoints K (D.weylProjection K n) =
       D.positivePoints K ⊓ (D.negativePoints K).map (MulAut.conj (n : D.points K)).toMonoidHom := by
@@ -475,7 +486,8 @@ theorem inversionPositivePoints_weylProjection_eq (n : D.weylSubgroup K) :
     D.exists_mem_inversionPositivePoints_mul_mem_borelSubgroup K n (g := u * (n : D.points K))
       (DoubleCoset.mem_doubleCoset.mpr ⟨u, D.positivePoints_le_borelSubgroup K hu.1,
         1, (D.borelSubgroup K).one_mem, by group⟩)
-  have hinj := D.mul_borelSubgroup_injective K (n : D.points K)
+  have hinj := D.positivePoints_inf_map_conj_negativePoints_mul_mul_borelSubgroup_injective K
+    (n : D.points K)
     (a₁ := (⟨u', hle hu'⟩, ⟨b, hb⟩)) (a₂ := (⟨u, hu⟩, ⟨1, (D.borelSubgroup K).one_mem⟩))
     (by simpa only [Subgroup.coe_one, mul_one] using hub)
   have hu_eq : u' = u := congrArg (fun p => (p.1 : D.points K)) hinj
@@ -494,7 +506,8 @@ theorem existsUnique_mem_inversionPositivePoints_mul_mem_borelSubgroup
   obtain ⟨u, hu, b, hb, hub⟩ := D.exists_mem_inversionPositivePoints_mul_mem_borelSubgroup K n hg
   have hle := (D.inversionPositivePoints_weylProjection_eq K n).le
   refine ⟨(⟨u, hu⟩, ⟨b, hb⟩), hub, fun ⟨⟨u', hu'⟩, ⟨b', hb'⟩⟩ hub' => ?_⟩
-  have heq := D.mul_borelSubgroup_injective K (n : D.points K)
+  have heq := D.positivePoints_inf_map_conj_negativePoints_mul_mul_borelSubgroup_injective K
+    (n : D.points K)
     (a₁ := (⟨u', hle hu'⟩, ⟨b', hb'⟩)) (a₂ := (⟨u, hle hu⟩, ⟨b, hb⟩)) (hub'.trans hub.symm)
   exact Prod.ext (Subtype.ext (congrArg (fun p => (p.1 : D.points K)) heq))
     (Subtype.ext (congrArg (fun p => (p.2 : D.points K)) heq))
