@@ -9,6 +9,7 @@ public import Mathlib.Geometry.Manifold.Diffeomorph
 public import TauCeti.Analysis.Pseudodifferential.Symbol.Classical
 public import TauCeti.Analysis.Pseudodifferential.Symbol.Frequency
 import TauCeti.Analysis.Calculus.ContDiff.Adjoint
+import TauCeti.Analysis.Normed.Operator.CompactFamily
 import TauCeti.Analysis.SpecialFunctions.JapaneseBracket.Peetre
 import TauCeti.Geometry.Manifold.Diffeomorph.InnerProductSpace
 
@@ -229,24 +230,6 @@ private theorem apply_apply_eq_self_of_comp_eq_id
     Linv y (L y ξ) = ξ := by
   rw [← ContinuousLinearMap.comp_apply, hLL, ContinuousLinearMap.id_apply]
 
-/-- On a compact set of points `y`, `‖L y ξ‖` and `‖ξ‖` are comparable uniformly in `y`: the norms
-of `L` and of its left inverse are bounded there. -/
-private theorem exists_norm_apply_le_and_norm_le (hL : Continuous L) (hLinv : Continuous Linv)
-    (hLL : ∀ y, (Linv y).comp (L y) = ContinuousLinearMap.id ℝ _)
-    {K : Set (CoordinateSpace n)} (hK : IsCompact K) :
-    ∃ c, 1 ≤ c ∧ ∀ y ∈ K, ∀ ξ, ‖L y ξ‖ ≤ c * ‖ξ‖ ∧ ‖ξ‖ ≤ c * ‖L y ξ‖ := by
-  obtain ⟨A, hA⟩ := hK.exists_bound_of_continuousOn hL.norm.continuousOn
-  obtain ⟨B, hB⟩ := hK.exists_bound_of_continuousOn hLinv.norm.continuousOn
-  refine ⟨max 1 (max A B), le_max_left _ _, fun y hy ξ ↦ ⟨?_, ?_⟩⟩
-  · have hAy : ‖L y‖ ≤ max 1 (max A B) :=
-      (by simpa using hA _ hy : ‖L y‖ ≤ A).trans ((le_max_left A B).trans (le_max_right 1 _))
-    exact ((L y).le_opNorm ξ).trans (mul_le_mul_of_nonneg_right hAy (norm_nonneg _))
-  · have hBy : ‖Linv y‖ ≤ max 1 (max A B) :=
-      (by simpa using hB _ hy : ‖Linv y‖ ≤ B).trans ((le_max_right A B).trans (le_max_right 1 _))
-    calc ‖ξ‖ = ‖Linv y (L y ξ)‖ := by rw [apply_apply_eq_self_of_comp_eq_id hLL]
-      _ ≤ ‖Linv y‖ * ‖L y ξ‖ := (Linv y).le_opNorm _
-      _ ≤ max 1 (max A B) * ‖L y ξ‖ := mul_le_mul_of_nonneg_right hBy (norm_nonneg _)
-
 private theorem coordinateDeriv_coreCoeff_fst (hL : ContDiff ℝ ∞ L) (hLinv : ContDiff ℝ ∞ Linv)
     (hLL : ∀ y, (Linv y).comp (L y) = ContinuousLinearMap.id ℝ _) (a : Symbol n V W m)
     (j : Fin n) (x ξ : CoordinateSpace n) :
@@ -291,7 +274,8 @@ private theorem exists_norm_coreCoeff_le (hL : ContDiff ℝ ∞ L) (hLinv : Cont
   have hK' := hK.image κ.continuous
   obtain ⟨C, hC0, hC⟩ := a.exists_bound_coefficient _ hK'
   obtain ⟨c, hc, hcK⟩ :=
-    exists_norm_apply_le_and_norm_le hL.continuous hLinv.continuous hLL hK'
+    hK'.exists_norm_apply_le_and_norm_le hL.continuous.continuousOn hLinv.continuous.continuousOn
+      fun y _ ↦ hLL y
   refine ⟨C * c ^ |m|, by positivity, fun x hx ξ ↦ ?_⟩
   have hy : κ x ∈ κ '' K := Set.mem_image_of_mem _ hx
   obtain ⟨h₁, h₂⟩ := hcK _ hy ξ
@@ -478,10 +462,10 @@ private theorem isSmoothing_pullback_cutoffSymbol_sub (χ : FrequencyCutoff (Coo
     (Symbol.pullback κ (cutoffSymbol χ h) -
       cutoffSymbol χ (HomogeneousSymbol.pullback κ h)).IsSmoothing := by
   refine Symbol.isSmoothing_of_forall_isCompact_coefficient_eq_zero fun K hK ↦ ?_
-  obtain ⟨c, hc, hcK⟩ := Symbol.exists_norm_apply_le_and_norm_le
-    (κ.contDiff_adjoint_fderiv_symm (m := 0) (by simp)).continuous
-    (κ.contDiff_adjoint_fderiv_comp_symm (m := 0) (by simp)).continuous
-    (κ.adjoint_fderiv_comp_adjoint_fderiv_symm (by simp)) (hK.image κ.continuous)
+  obtain ⟨c, hc, hcK⟩ := (hK.image κ.continuous).exists_norm_apply_le_and_norm_le
+    (κ.contDiff_adjoint_fderiv_symm (m := 0) (by simp)).continuous.continuousOn
+    (κ.contDiff_adjoint_fderiv_comp_symm (m := 0) (by simp)).continuous.continuousOn
+    fun y _ ↦ κ.adjoint_fderiv_comp_adjoint_fderiv_symm (by simp) y
   refine ⟨2 * c, fun x hx ξ hξ ↦ ?_⟩
   set η := ContinuousLinearMap.adjoint (fderiv ℝ κ.symm (κ x)) ξ
   have hξη : ‖ξ‖ ≤ c * ‖η‖ := (hcK _ (Set.mem_image_of_mem _ hx) ξ).2
