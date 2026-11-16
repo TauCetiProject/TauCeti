@@ -259,6 +259,14 @@ theorem toPath_comp_prodMap_one_sub (hw : IsSmoothBasedHomotopy I γ₁ γ₂ w)
     simp only [toPath_apply, Path.symm_apply, Function.comp_apply, Prod.map_apply, id_eq,
       unitInterval.coe_symm_eq]
 
+/-- The homotopy class of a smooth based homotopy run backwards is the inverse of its homotopy
+class. -/
+theorem homotopyClass_comp_prodMap_one_sub (hw : IsSmoothBasedHomotopy I γ₁ γ₂ w) :
+    hw.comp_prodMap_one_sub.homotopyClass = inv hw.homotopyClass := by
+  rw [homotopyClass_def, homotopyClass_def, toPath_comp_prodMap_one_sub, ← Groupoid.inv_eq_inv]
+  -- In the fundamental groupoid, `Groupoid.inv ⟦P⟧` is `⟦P.symm⟧` by definition.
+  rfl
+
 /-- The concatenation of the paths in the loop space of two smooth based homotopies `w` and `v`,
 reparametrized by `concatReparamI`, is the path of their concatenation `rectangleTrans w v`. -/
 private theorem trans_reparam_apply (hw : IsSmoothBasedHomotopy I γ₁ γ₂ w)
