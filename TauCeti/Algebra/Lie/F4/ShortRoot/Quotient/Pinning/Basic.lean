@@ -261,6 +261,33 @@ theorem f4SpecialIsogenyIndexEquiv_f4SignedSimpleRootIndex
       f4SpecialIsogenyIndex_add_twentyFour, f4SpecialIsogenyIndex_castAdd,
       lengthPermF4_apply]
 
+/-- If the special-isogeny images of three roots satisfy `γ' = β' + α'`, with `α'` the image of the
+signed simple root `k`, then the ideal first-order column of the reversed label sends the
+short-root basis vector at `β'` to the one at `γ'`. -/
+theorem f4ShortRootIdealFirstColumn_eq_basis_of_specialMap_add
+    (k : Fin 4 ⊕ Fin 4) (iβ iγ : F4ShortRootIndex)
+    (hadd : f4SimplyConnectedRootDatum.root iγ.1 =
+      f4SimplyConnectedRootDatum.root iβ.1 +
+        f4SimplyConnectedRootDatum.root
+          (f4SpecialIsogenyIndexEquiv (f4SignedSimpleRootIndex k))) :
+    f4ShortRootIdealFirstColumn (isogenyReverse k)
+        (f4ShortRootWeightIndexEquiv.symm (Sum.inl iβ)) =
+      f4ShortRootLieIdealBasis (f4ShortRootWeightIndexEquiv.symm (Sum.inl iγ)) := by
+  simp only [f4ShortRootIdealFirstColumn_apply]
+  apply Subtype.ext
+  have hsigned : f4SignedSimpleRootIndex (isogenyReverse k) =
+      f4SpecialIsogenyIndexEquiv (f4SignedSimpleRootIndex k) :=
+    (f4SpecialIsogenyIndexEquiv_f4SignedSimpleRootIndex k).symm
+  have hedge := f4ShortRootAdjoint_rootVector_of_add_eq_short
+    (f4SpecialIsogenyIndexEquiv (f4SignedSimpleRootIndex k)) iβ.1 iγ.1
+    iβ.property iγ.property hadd
+  have hbracket := (coe_f4ShortRootAdjoint_apply _ _).symm.trans (congrArg Subtype.val hedge)
+  have hsignedBracket := congrArg
+    (fun δ => ⁅f4ModularRootVector δ,
+      (f4ShortRootLieIdealBasis (f4ShortRootWeightIndexEquiv.symm (Sum.inl iβ)) :
+        f4ModularChevalleyLieAlgebra)⁆) hsigned
+  exact (coe_f4ShortRootSignedSimpleAdjoint_apply _ _).trans (hsignedBracket.trans hbracket)
+
 /-- The special root permutation also reverses the opposite signed-simple indices. -/
 theorem f4SpecialIsogenyIndexEquiv_opposite_f4SignedSimpleRootIndex
     (k : Fin 4 ⊕ Fin 4) :
