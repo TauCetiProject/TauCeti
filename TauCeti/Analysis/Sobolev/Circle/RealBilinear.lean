@@ -306,16 +306,20 @@ private theorem addConvolutionExists_asym (hr : 0 ≤ r) (ht : 0 ≤ t) (B : G �
 
 end CoeffConvolution
 
-private theorem summable_and_tsum_weight_mul_norm_coeff_le (htr : t + 1 / 2 < r)
-    (a : CircleSobolev r G) :
-    Summable (fun n ↦ weight t n * ‖a.coeff n‖) ∧
-      ∑' n, weight t n * ‖a.coeff n‖ ≤ √(∑' n, weight (-(2 * (r - t))) n) * ‖a‖ := by
+/-- Bound the `weight t`-weighted `ℓ¹` sum of `a : H^r` (`t + 1/2 < r`) in `ℝ≥0∞`. -/
+private theorem tsum_ofReal_weight_mul_enorm_coeff_le (htr : t + 1 / 2 < r)
+    (a : CircleSobolev r G) : ∑' n, ENNReal.ofReal (weight t n) * ‖a.coeff n‖ₑ ≤
+      ENNReal.ofReal √(∑' n, weight (-(2 * (r - t))) n) * ‖a‖ₑ := by
   have hrt : 1 / 2 < r - t := by linarith
   let a' := weightEquiv r (r - t) G a
-  have hcoeff (n : ℤ) : ‖a'.coeff n‖ = weight t n * ‖a.coeff n‖ := by
-    rw [coeff_weightEquiv, sub_sub_cancel, norm_smul, norm_weight]
-  exact ⟨(summable_norm_coeff hrt a').congr hcoeff, by
-    simpa only [← hcoeff, LinearIsometryEquiv.norm_map, a'] using tsum_norm_coeff_le hrt a'⟩
+  have hterm (n : ℤ) :
+      ENNReal.ofReal (weight t n) * ‖a.coeff n‖ₑ = ENNReal.ofReal ‖a'.coeff n‖ := by
+    rw [coeff_weightEquiv, sub_sub_cancel, norm_smul, norm_weight,
+      ENNReal.ofReal_mul (weight_nonneg t n), ofReal_norm]
+  simp_rw [hterm, ← ENNReal.ofReal_tsum_of_nonneg (fun _ ↦ norm_nonneg _)
+    (summable_norm_coeff hrt a'), ← ofReal_norm, ← ENNReal.ofReal_mul (Real.sqrt_nonneg _)]
+  exact ENNReal.ofReal_le_ofReal
+    (by simpa only [LinearIsometryEquiv.norm_map, a'] using tsum_norm_coeff_le hrt a')
 
 private theorem tsum_mul_addRingConvolution_sq_le {ω α β : ℤ → ℝ≥0∞} {C : ℝ≥0∞}
     (hω : ∀ m k, ω (m + k) ≤ C * (ω m + ω k)) (h1ω : ∀ n, 1 ≤ ω n) :
@@ -337,19 +341,54 @@ private theorem tsum_mul_addRingConvolution_sq_le {ω α β : ℤ → ℝ≥0∞
   have hβ_le : ∑' k, β k ^ 2 ≤ ∑' k, (ω k * β k) ^ 2 :=
     _root_.tsum_le_tsum fun k ↦ pow_le_pow_left' (le_mul_of_one_le_left' (h1ω k)) 2
   calc ∑' n, (ω n * (α ⋆ᵣ₊ β) n) ^ 2
-      ≤ ∑' n, 2 * C ^ 2 *
-          (((fun m ↦ ω m * α m) ⋆ᵣ₊ β) n ^ 2 + (α ⋆ᵣ₊ fun k ↦ ω k * β k) n ^ 2) :=
+      ≤ ∑' n, 2 * C ^ 2 * (((fun m ↦ ω m * α m) ⋆ᵣ₊ β) n ^ 2 +
+          (α ⋆ᵣ₊ fun k ↦ ω k * β k) n ^ 2) :=
         _root_.tsum_le_tsum fun n ↦ by grw [hpt n, mul_pow, hsq]; exact le_of_eq (by ring)
-    _ ≤ 2 * C ^ 2 *
-          (((∑' m, ω m * α m) ^ 2 * ∑' k, β k ^ 2) +
-            (∑' m, α m) ^ 2 * ∑' k, (ω k * β k) ^ 2) := by
+    _ ≤ 2 * C ^ 2 * (((∑' m, ω m * α m) ^ 2 * ∑' k, β k ^ 2) +
+          (∑' m, α m) ^ 2 * ∑' k, (ω k * β k) ^ 2) := by
         rw [ENNReal.tsum_mul_left, _root_.tsum_add]
         gcongr <;> exact tsum_addRingConvolution_sq_le' _ _
     _ ≤ 4 * C ^ 2 * ((∑' m, ω m * α m) ^ 2 * ∑' k, (ω k * β k) ^ 2) := by
-        have hadd : (∑' m, ω m * α m) ^ 2 * (∑' k, β k ^ 2) +
-            (∑' m, α m) ^ 2 * ∑' k, (ω k * β k) ^ 2 ≤
-            2 * ((∑' m, ω m * α m) ^ 2 * ∑' k, (ω k * β k) ^ 2) := by rw [two_mul]; gcongr
-        grw [hadd]; exact le_of_eq (by ring)
+        grw [hβ_le, hα_le]; exact le_of_eq (by ring)
+
+/-- Convert a real weighted square `(weight t n * ‖v‖) ^ 2` into `ℝ≥0∞`. -/
+private theorem ofReal_sq_weight_mul_norm {X : Type*} [SeminormedAddCommGroup X] (t : ℝ) (n : ℤ)
+    (v : X) : ENNReal.ofReal ((weight t n * ‖v‖) ^ 2) =
+      (ENNReal.ofReal (weight t n) * ‖v‖ₑ) ^ 2 := by
+  rw [ENNReal.ofReal_pow (mul_nonneg (weight_nonneg t n) (norm_nonneg v)),
+    ENNReal.ofReal_mul (weight_nonneg t n), ofReal_norm]
+
+/-- Factor `ENNReal.ofReal` across the squared asymmetric Sobolev product bound. -/
+private theorem ofReal_sq_two_rpow_add_one_mul_norm {K : ℝ} (hK : 0 ≤ K) (B : G →L[ℝ] E' →L[ℝ] F)
+    (a : CircleSobolev r G) (b : CircleSobolev t E') :
+    ENNReal.ofReal ((2 ^ (t + 1) * K * ‖B‖ * ‖a‖ * ‖b‖) ^ 2) =
+      4 * ENNReal.ofReal (2 ^ t) ^ 2 * ‖B‖ₑ ^ 2 * (ENNReal.ofReal K * ‖a‖ₑ) ^ 2 * ‖b‖ₑ ^ 2 := by
+  rw [Real.rpow_add two_pos, Real.rpow_one]
+  simp (discharger := positivity) only [ENNReal.ofReal_pow, ENNReal.ofReal_mul,
+    ENNReal.ofReal_ofNat, ofReal_norm]
+  rw [eNorm_eq_nnNorm B, ENNReal.coe_nnreal_eq ‖B‖₊, coe_nnNorm B]; ring
+
+/-- Unconditional `ℝ≥0∞` asymmetric weighted `ℓ²` bound for discrete bilinear convolution on `ℤ`. -/
+private theorem tsum_sq_ofReal_weight_mul_enorm_addConvolution_asym_le (ht : 0 ≤ t)
+    (B : G →L[ℝ] E' →L[ℝ] F) (f : ℤ → G) (g : ℤ → E') :
+    ∑' n : ℤ, (ENNReal.ofReal (weight t n) * ‖(f ⋆₊[B.toLinearMap₁₂] g) n‖ₑ) ^ 2 ≤
+      4 * ENNReal.ofReal (2 ^ t) ^ 2 * ‖B‖ₑ ^ 2 *
+        (∑' m, ENNReal.ofReal (weight t m) * ‖f m‖ₑ) ^ 2 *
+        ∑' k, (ENNReal.ofReal (weight t k) * ‖g k‖ₑ) ^ 2 := by
+  set ω : ℤ → ℝ≥0∞ := fun n ↦ ENNReal.ofReal (weight t n)
+  have hω (m k : ℤ) : ω (m + k) ≤ ENNReal.ofReal (2 ^ t) * (ω m + ω k) := by
+    simp only [ω, weight_def, ← Int.norm_eq_abs]
+    rw [← ENNReal.ofReal_add (by positivity) (by positivity), ← ENNReal.ofReal_mul (by positivity)]
+    exact ENNReal.ofReal_le_ofReal (one_add_norm_add_rpow_le ht m k)
+  have h1ω (n : ℤ) : 1 ≤ ω n := by simpa [ω] using ENNReal.ofReal_le_ofReal (one_le_weight ht n)
+  calc ∑' n : ℤ, (ω n * ‖(f ⋆₊[B.toLinearMap₁₂] g) n‖ₑ) ^ 2
+      ≤ ‖B‖ₑ ^ 2 * ∑' n, (ω n * ((‖f ·‖ₑ) ⋆ᵣ₊ (‖g ·‖ₑ)) n) ^ 2 := by
+        rw [← ENNReal.tsum_mul_left]; refine _root_.tsum_le_tsum fun n ↦ ?_
+        rw [← mul_pow, mul_left_comm]; gcongr; exact enorm_addConvolution_le B f g n
+    _ ≤ ‖B‖ₑ ^ 2 * (4 * ENNReal.ofReal (2 ^ t) ^ 2 *
+          ((∑' m, ω m * ‖f m‖ₑ) ^ 2 * ∑' k, (ω k * ‖g k‖ₑ) ^ 2)) := by
+        gcongr; exact tsum_mul_addRingConvolution_sq_le hω h1ω
+    _ = _ := by ring
 
 private theorem ofReal_tsum_sq_weight_mul_norm_addConvolution_asym_le (ht : 0 ≤ t)
     (htr : t + 1 / 2 < r) (B : G →L[ℝ] E' →L[ℝ] F) (a : CircleSobolev r G)
@@ -357,54 +396,16 @@ private theorem ofReal_tsum_sq_weight_mul_norm_addConvolution_asym_le (ht : 0 �
     ∑' n : ℤ, ENNReal.ofReal ((weight t n * ‖(a.coeff ⋆₊[B.toLinearMap₁₂] b.coeff) n‖) ^ 2) ≤
       ENNReal.ofReal
         ((2 ^ (t + 1) * √(∑' n, weight (-(2 * (r - t))) n) * ‖B‖ * ‖a‖ * ‖b‖) ^ 2) := by
-  set ω : ℤ → ℝ≥0∞ := fun n ↦ ENNReal.ofReal (weight t n)
-  set α : ℤ → ℝ≥0∞ := fun n ↦ ‖a.coeff n‖ₑ
-  set β : ℤ → ℝ≥0∞ := fun n ↦ ‖b.coeff n‖ₑ
-  have hω (m k : ℤ) : ω (m + k) ≤ ENNReal.ofReal (2 ^ t) * (ω m + ω k) := by
-    simp only [ω, weight_def, ← Int.norm_eq_abs]
-    rw [← ENNReal.ofReal_add (by positivity) (by positivity), ← ENNReal.ofReal_mul (by positivity)]
-    exact ENNReal.ofReal_le_ofReal (one_add_norm_add_rpow_le ht m k)
-  have h1ω (n : ℤ) : (1 : ℝ≥0∞) ≤ ω n := by
-    simpa [ω] using ENNReal.ofReal_le_ofReal (one_le_weight ht n)
-  obtain ⟨ha_sum, ha_le⟩ := summable_and_tsum_weight_mul_norm_coeff_le htr a
-  have hsum_nn : 0 ≤ ∑' m, weight t m * ‖a.coeff m‖ :=
-    tsum_nonneg fun m ↦ mul_nonneg (weight_nonneg t m) (norm_nonneg _)
-  have hωα_eq : ∑' m, ω m * α m = ENNReal.ofReal (∑' m, weight t m * ‖a.coeff m‖) := by
-    rw [ENNReal.ofReal_tsum_of_nonneg (fun m ↦ mul_nonneg (weight_nonneg t m) (norm_nonneg _))
-      ha_sum]
-    exact tsum_congr fun m ↦ by simp [ω, α, ENNReal.ofReal_mul (weight_nonneg t m), ofReal_norm]
-  have hωβ_eq : ∑' k, (ω k * β k) ^ 2 = ENNReal.ofReal (‖b‖ ^ 2) := by
-    rw [← (hasSum_sq_weight_mul_norm_coeff b).tsum_eq,
-      ENNReal.ofReal_tsum_of_nonneg (fun _ ↦ sq_nonneg _)
-        (hasSum_sq_weight_mul_norm_coeff b).summable]
-    exact tsum_congr fun k ↦ by
-      simp [ω, β, ENNReal.ofReal_pow (mul_nonneg (weight_nonneg t k) (norm_nonneg _)),
-        ENNReal.ofReal_mul (weight_nonneg t k), ofReal_norm]
-  have hreal : ‖B‖ ^ 2 * (4 * (2 ^ t) ^ 2 * ((∑' m, weight t m * ‖a.coeff m‖) ^ 2 * ‖b‖ ^ 2)) ≤
-      (2 ^ (t + 1) * √(∑' n, weight (-(2 * (r - t))) n) * ‖B‖ * ‖a‖ * ‖b‖) ^ 2 := by
-    have h2t : (4 : ℝ) * (2 ^ t) ^ 2 = (2 ^ (t + 1)) ^ 2 := by
-      rw [Real.rpow_add two_pos, Real.rpow_one]; ring
-    calc ‖B‖ ^ 2 * (4 * (2 ^ t) ^ 2 * ((∑' m, weight t m * ‖a.coeff m‖) ^ 2 * ‖b‖ ^ 2))
-        ≤ ‖B‖ ^ 2 * ((2 ^ (t + 1)) ^ 2 *
-            ((√(∑' n, weight (-(2 * (r - t))) n) * ‖a‖) ^ 2 * ‖b‖ ^ 2)) := by rw [h2t]; gcongr
-      _ = _ := by ring
-  have hofReal := ENNReal.ofReal_le_ofReal hreal
-  rw [ENNReal.ofReal_mul (by positivity), ENNReal.ofReal_mul (by positivity),
-    ENNReal.ofReal_mul (by positivity), ENNReal.ofReal_mul (by positivity),
-    ENNReal.ofReal_pow (norm_nonneg B), ofReal_norm, ENNReal.ofReal_ofNat 4,
-    ENNReal.ofReal_pow (by positivity), ENNReal.ofReal_pow hsum_nn, ← hωα_eq, ← hωβ_eq] at hofReal
-  calc ∑' n : ℤ, ENNReal.ofReal ((weight t n * ‖(a.coeff ⋆₊[B.toLinearMap₁₂] b.coeff) n‖) ^ 2)
-      = ∑' n : ℤ, (ω n * ‖(a.coeff ⋆₊[B.toLinearMap₁₂] b.coeff) n‖ₑ) ^ 2 :=
-        tsum_congr fun n ↦ by
-          simp [ω, ENNReal.ofReal_pow (mul_nonneg (weight_nonneg t n) (norm_nonneg _)),
-            ENNReal.ofReal_mul (weight_nonneg t n), ofReal_norm]
-    _ ≤ ‖B‖ₑ ^ 2 * ∑' n, (ω n * (α ⋆ᵣ₊ β) n) ^ 2 := by
-        rw [← ENNReal.tsum_mul_left]; refine _root_.tsum_le_tsum fun n ↦ ?_
-        rw [← mul_pow, mul_left_comm]; gcongr; exact enorm_addConvolution_le B a.coeff b.coeff n
-    _ ≤ ‖B‖ₑ ^ 2 * (4 * ENNReal.ofReal (2 ^ t) ^ 2 *
-          ((∑' m, ω m * α m) ^ 2 * ∑' k, (ω k * β k) ^ 2)) := by
-        gcongr; exact tsum_mul_addRingConvolution_sq_le hω h1ω
-    _ ≤ _ := hofReal
+  -- Identify the weighted `ℓ²` coefficient sum of `b : H^t` with `‖b‖ₑ ^ 2` and combine bounds.
+  have hb_eq : ∑' k, (ENNReal.ofReal (weight t k) * ‖b.coeff k‖ₑ) ^ 2 = ‖b‖ₑ ^ 2 := by
+    simp_rw [← ofReal_sq_weight_mul_norm, ← ENNReal.ofReal_tsum_of_nonneg (fun _ ↦ sq_nonneg _)
+      (hasSum_sq_weight_mul_norm_coeff b).summable, (hasSum_sq_weight_mul_norm_coeff b).tsum_eq,
+      ENNReal.ofReal_pow (norm_nonneg b), ofReal_norm]
+  simp_rw [ofReal_sq_weight_mul_norm,
+    ofReal_sq_two_rpow_add_one_mul_norm (Real.sqrt_nonneg _) B a b]
+  refine (tsum_sq_ofReal_weight_mul_enorm_addConvolution_asym_le ht B a.coeff b.coeff).trans ?_
+  have := tsum_ofReal_weight_mul_enorm_coeff_le htr a
+  rw [hb_eq]; gcongr
 
 private theorem memℓp_asym (ht : 0 ≤ t) (htr : t + 1 / 2 < r) (B : G →L[ℝ] E' →L[ℝ] F)
     (a : CircleSobolev r G) (b : CircleSobolev t E') :
