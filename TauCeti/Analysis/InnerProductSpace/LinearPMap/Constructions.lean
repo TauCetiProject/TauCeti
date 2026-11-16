@@ -178,6 +178,30 @@ theorem dense_unitaryConj_domain (U : H ≃ₗᵢ[𝕜] H') (A : H →ₗ.[𝕜]
     simpa only [SetLike.mem_coe] using (map_mem_unitaryConj_domain U A ⟨w, hw⟩)
   exact Dense.mono himg ((U.toHomeomorph.isDenseEmbedding).dense_image.mpr hdenseA)
 
+/-- Conjugating by the identity linear isometry leaves a partial map unchanged. -/
+@[simp]
+theorem unitaryConj_refl (A : H →ₗ.[𝕜] H) :
+    unitaryConj (LinearIsometryEquiv.refl 𝕜 H) A = A :=
+  LinearPMap.ext rfl fun _ _ _ ↦ rfl
+
+/-- Conjugating by `U` and then by `V` is conjugating by `U.trans V`. -/
+theorem unitaryConj_trans {H'' : Type*} [NormedAddCommGroup H''] [InnerProductSpace 𝕜 H'']
+    (U : H ≃ₗᵢ[𝕜] H') (V : H' ≃ₗᵢ[𝕜] H'') (A : H →ₗ.[𝕜] H) :
+    unitaryConj V (unitaryConj U A) = unitaryConj (U.trans V) A :=
+  LinearPMap.ext rfl fun _ _ _ ↦ rfl
+
+/-- Conjugating by `U` and then by `U.symm` recovers the original operator. -/
+@[simp]
+theorem unitaryConj_unitaryConj_symm (U : H ≃ₗᵢ[𝕜] H') (A : H →ₗ.[𝕜] H) :
+    unitaryConj U.symm (unitaryConj U A) = A := by
+  rw [unitaryConj_trans, LinearIsometryEquiv.self_trans_symm, unitaryConj_refl]
+
+/-- Conjugating by `U.symm` and then by `U` recovers the original operator. -/
+@[simp]
+theorem unitaryConj_symm_unitaryConj (U : H' ≃ₗᵢ[𝕜] H) (A : H →ₗ.[𝕜] H) :
+    unitaryConj U (unitaryConj U.symm A) = A := by
+  simpa using unitaryConj_unitaryConj_symm U.symm A
+
 section UnitaryConjSelfAdjoint
 
 variable [CompleteSpace H] [CompleteSpace H']
