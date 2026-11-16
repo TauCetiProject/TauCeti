@@ -23,6 +23,8 @@ also covers empty products, odd degrees, and singular positive-semidefinite cova
   abstract Wick--Isserlis formula for linear observables of a Gaussian measure.
 * `TauCeti.Probability.integral_prod_sub_multivariateGaussian_eq_sum_perfectMatching`
   specializes the formula to coordinates of a multivariate Gaussian measure.
+* `TauCeti.Probability.integral_prod_multivariateGaussian_eq_sum_perfectMatching` is the
+  centered case, stated for raw coordinate products.
 * `ProbabilityTheory.HasLaw.integral_prod_sub_multivariateGaussian_eq_sum_perfectMatching`
   transfers the coordinate formula to a random vector with that law.
 
@@ -123,6 +125,16 @@ theorem integral_prod_sub_multivariateGaussian_eq_sum_perfectMatching
     covariance_eval_multivariateGaussian hS (f i) (f j)
   simp only [EuclideanSpace.coe_proj, hcov] at h
   exact h
+
+/-- The Wick--Isserlis formula for raw coordinates of a centered multivariate Gaussian
+measure. -/
+theorem integral_prod_multivariateGaussian_eq_sum_perfectMatching
+    {S : Matrix κ κ ℝ} (hS : S.PosSemidef) (f : ι → κ) :
+    (∫ x, ∏ i, x (f i) ∂multivariateGaussian 0 S) =
+      ∑ D : PerfectMatching ι, ∏ e ∈ D.edgeFinset,
+        Sym2.lift ⟨fun i j ↦ S (f i) (f j),
+          fun i j ↦ by simpa using hS.isHermitian.apply (f j) (f i)⟩ e := by
+  simpa using integral_prod_sub_multivariateGaussian_eq_sum_perfectMatching 0 hS f
 
 end TauCeti.Probability
 
