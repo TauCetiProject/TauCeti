@@ -58,9 +58,8 @@ namespace CovariantDerivative
 open TauCeti TauCeti.Manifold
 
 variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
-  {H : Type*} [TopologicalSpace H] {I : ModelWithCorners ℝ E H}
+  {H : Type*} [TopologicalSpace H] {I : ModelWithCorners ℝ E H} [I.Boundaryless]
   {M : Type*} [TopologicalSpace M] [ChartedSpace H M] [T2Space M] [IsManifold I 2 M]
-  [BoundarylessManifold I M]
   {X : ℝ → Π x : M, TangentSpace I x} {s t : ℝ} {x : M}
 
 /-- **The variational equation of a time-dependent flow.** Let `X` be a jointly `C²`
