@@ -42,8 +42,10 @@ The constants depend only on `n`, `μ` and `t`. Together with the upper density 
 `TauCeti.eventually_perimeter_ball_le`, they say that near a point of the reduced boundary both
 `s` and its complement fill a definite proportion of every small ball, and the perimeter measure of
 the ball is comparable to `r ^ (n - 1)`. These are the estimates behind the compactness of the
-blow-ups of `s` at points of `∂*s` in De Giorgi's structure theorem. As a first consequence, the
-reduced boundary lies in the essential boundary
+blow-ups of `s` at points of `∂*s` in De Giorgi's structure theorem. In dimension `n ≥ 2` they give
+the inclusion `∂*s ⊆ ∂ᵉs`, while the `n ≤ 1` case comes from
+`TauCeti.reducedBoundary_subset_essentialBoundary_of_finrank_le_one`; combined, the reduced
+boundary lies in the essential boundary in every dimension
 (`TauCeti.reducedBoundary_subset_essentialBoundary`).
 
 Write `m(ρ) = μ(s ∩ ball x ρ)`. Cutting `s` by the ball of radius `ρ` adds at most `m'(ρ)` to its

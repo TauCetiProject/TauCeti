@@ -10,22 +10,24 @@ public import TauCeti.MeasureTheory.Covering.EssentialBoundary
 import TauCeti.Analysis.BoundedVariation.Hyperplane
 import TauCeti.Analysis.BoundedVariation.Isometry
 import TauCeti.Analysis.BoundedVariation.Real
+import TauCeti.Analysis.InnerProductSpace.HalfSpace
 import TauCeti.MeasureTheory.Measure.Haar.HalfSpace
 
 /-!
 # The reduced and essential boundaries in dimension at most one
 
 In a real inner product space `E` of dimension at most one carrying an additive Haar measure `μ`,
-a set `s` of locally finite perimeter in an open set `Ω` is locally constant or a single step
-around every point `x ∈ Ω`: on a sufficiently small ball `ball x r ⊆ Ω`, the punctured ball
-`ball x r \ {x}` has perimeter strictly smaller than the Haar scalar factor of `μ`, so on each of
-the two open half-intervals meeting at `x` either `s` or its complement is null
+a set `s` of locally finite perimeter in an open set `Ω` agrees `μ`-almost everywhere locally with
+a constant (`∅` or `univ`) or a single step around every point `x ∈ Ω`: on a sufficiently small
+ball `ball x r ⊆ Ω`, the punctured ball `ball x r \ {x}` has perimeter strictly smaller than the
+Haar scalar factor of `μ`, so on each of the two open half-intervals meeting at `x` either `s` or
+its complement is null
 (`TauCeti.Real.measure_inter_Ioo_eq_zero_or_sdiff_eq_zero_of_perimeter_lt_one`).
 
-Consequently, around each `x ∈ Ω` the set `s` agrees `μ`-almost everywhere on `ball x r` with `∅`,
-`univ`, or a half-line `{y | ⟪y, ν⟫ < ⟪x, ν⟫}` (`‖ν‖ = 1`). In the first two cases `s` has
-perimeter zero in `ball x r` and density `0` or `1` at `x`, so `x` belongs neither to `∂*s` nor to
-`∂ᵉs`. In the third case `|Dχ_s|` charges `{x}` (hence `x ∈ ∂*s` by
+Consequently, around each `x ∈ Ω` there is `r > 0` with `ball x r ⊆ Ω` on which `s` agrees
+`μ`-almost everywhere with `∅`, `univ`, or a half-line `{y | ⟪y, ν⟫ < ⟪x, ν⟫}` (`‖ν‖ = 1`). In the
+first two cases `s` has perimeter zero in `ball x r` and density `0` or `1` at `x`, so `x` belongs
+neither to `∂*s` nor to `∂ᵉs`. In the third case `|Dχ_s|` charges `{x}` (hence `x ∈ ∂*s` by
 `TauCeti.ae_mem_reducedBoundary`) and `s` has density `1 / 2` at `x` (hence `x ∈ ∂ᵉs`). Thus:
 
 * every point of `∂*s` has density `1 / 2`
@@ -50,20 +52,6 @@ namespace TauCeti
 
 open MeasureTheory TopologicalSpace Set Filter Metric Module
 open scoped ENNReal NNReal Topology RealInnerProductSpace
-
-section SmulMeasure
-
-variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteDimensional ℝ E]
-  [MeasurableSpace E] {μ : Measure E} {Ω : Opens E} {s : Set E}
-
-/-- Scaling the reference measure by `c : ℝ≥0` scales the perimeter by `c`. -/
-private theorem perimeter_smul_nnreal_measure (c : ℝ≥0) :
-    perimeter (c • μ) Ω s = (c : ℝ≥0∞) * perimeter μ Ω s := by
-  simp only [perimeter_def, totalVariationOn_def, integral_smul_nnreal_measure,
-    NNReal.smul_def, smul_eq_mul]
-  simp_rw [ENNReal.ofReal_mul c.coe_nonneg, ENNReal.ofReal_coe_nnreal, ENNReal.mul_iSup]
-
-end SmulMeasure
 
 variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteDimensional ℝ E]
   [MeasurableSpace E] [BorelSpace E] {μ : Measure E} [μ.IsAddHaarMeasure] {Ω : Opens E}
@@ -172,42 +160,43 @@ private theorem ae_eq_empty_or_univ_or_setOf_inner_lt_of_halves (e : E ≃ₗᵢ
     (hR : μ (s ∩ (ball x r ∩ {y | e x < e y})) = 0 ∨ μ ((ball x r ∩ {y | e x < e y}) \ s) = 0) :
     s =ᵐ[μ.restrict (ball x r)] (∅ : Set E) ∨ s =ᵐ[μ.restrict (ball x r)] univ ∨
       ∃ ν : E, ‖ν‖ = 1 ∧ s =ᵐ[μ.restrict (ball x r)] {y | ⟪y, ν⟫ < ⟪x, ν⟫} := by
-  set u : E := e.symm 1
-  have hu1 : ‖u‖ = 1 := by simp [u]
-  have : Nontrivial E := ⟨⟨u, 0, norm_ne_zero_iff.1 (hu1 ▸ one_ne_zero)⟩⟩
-  have hinner (y : E) : ⟪y, u⟫ = e y := by simp [u, ← e.inner_map_map]
-  have hnull {A : Set E} (h₁ : μ (A ∩ (ball x r ∩ {y | e y < e x})) = 0)
-      (h₂ : μ (A ∩ (ball x r ∩ {y | e x < e y})) = 0) : μ (A ∩ ball x r) = 0 := by
+  have : Nontrivial E := ⟨⟨e.symm 1, 0, norm_ne_zero_iff.1 (by simp)⟩⟩
+  have hnull (f : E ≃ₗᵢ[ℝ] ℝ) {A : Set E}
+      (h₁ : μ (A ∩ (ball x r ∩ {y | f y < f x})) = 0)
+      (h₂ : μ (A ∩ (ball x r ∩ {y | f x < f y})) = 0) :
+      μ.restrict (ball x r) A = 0 := by
+    rw [Measure.restrict_apply' measurableSet_ball]
     have hsub : A ∩ ball x r ⊆
-        A ∩ (ball x r ∩ {y | e y < e x}) ∪ A ∩ (ball x r ∩ {y | e x < e y}) ∪ {x} :=
-      fun y ⟨hyA, hyB⟩ => (lt_trichotomy (e y) (e x)).elim (fun h => .inl (.inl ⟨hyA, hyB, h⟩))
-        fun h => h.elim (fun heq => .inr (e.injective heq)) fun hgt => .inl (.inr ⟨hyA, hyB, hgt⟩)
+        A ∩ (ball x r ∩ {y | f y < f x}) ∪ A ∩ (ball x r ∩ {y | f x < f y}) ∪ {x} :=
+      fun y ⟨hyA, hyB⟩ => (lt_trichotomy (f y) (f x)).elim (fun h => .inl (.inl ⟨hyA, hyB, h⟩))
+        fun h => h.elim (fun heq => .inr (f.injective heq)) fun hgt => .inl (.inr ⟨hyA, hyB, hgt⟩)
     exact measure_mono_null hsub (measure_union_null (measure_union_null h₁ h₂)
       (measure_singleton x))
+  have hstep (f : E ≃ₗᵢ[ℝ] ℝ)
+      (hlt : μ ((ball x r ∩ {y | f y < f x}) \ s) = 0)
+      (hgt : μ (s ∩ (ball x r ∩ {y | f x < f y})) = 0) :
+      ∃ ν : E, ‖ν‖ = 1 ∧ s =ᵐ[μ.restrict (ball x r)] {y | ⟪y, ν⟫ < ⟪x, ν⟫} := by
+    have hinner (y : E) : ⟪y, f.symm 1⟫ = f y := by simp [← f.inner_map_map]
+    refine ⟨f.symm 1, by simp, ae_eq_set.2 ⟨?_, ?_⟩⟩
+    · refine hnull f ?_ ?_
+      · refine measure_mono_null ?_ measure_empty
+        exact fun _ ⟨⟨_, hy⟩, _, h⟩ => hy (by simpa [hinner] using h)
+      · refine measure_mono_null ?_ hgt
+        exact fun _ ⟨hy, hyB⟩ => ⟨hy.1, hyB⟩
+    · refine hnull f ?_ ?_
+      · refine measure_mono_null ?_ hlt
+        exact fun _ ⟨hy, hyB⟩ => ⟨hyB, hy.2⟩
+      · refine measure_mono_null ?_ measure_empty
+        exact fun _ ⟨⟨hy, _⟩, _, h⟩ => lt_asymm (by simpa [hinner] using hy) h
   rcases hL with hL0 | hL1 <;> rcases hR with hR0 | hR1
-  · exact .inl (ae_eq_empty.2 ((Measure.restrict_apply' measurableSet_ball).trans (hnull hL0 hR0)))
-  · refine .inr (.inr ⟨-u, by simp [hu1], ae_eq_set.2 ⟨?_, ?_⟩⟩)
-    · rw [Measure.restrict_apply' measurableSet_ball]
-      refine hnull (by refine measure_mono_null ?_ hL0; exact fun _ ⟨hy, hyB⟩ => ⟨hy.1, hyB⟩)
-        (by refine measure_mono_null ?_ (measure_empty (μ := μ))
-            exact fun _ ⟨hy, _, hgt⟩ => hy.2 (by simp [hinner, hgt]))
-    · rw [Measure.restrict_apply' measurableSet_ball]
-      refine hnull (by refine measure_mono_null ?_ (measure_empty (μ := μ))
-                       exact fun _ ⟨hy, _, hlt⟩ => lt_asymm hlt (by simpa [hinner] using hy.1))
-        (by refine measure_mono_null ?_ hR1; exact fun _ ⟨hy, hyB⟩ => ⟨hyB, hy.2⟩)
-  · refine .inr (.inr ⟨u, hu1, ae_eq_set.2 ⟨?_, ?_⟩⟩)
-    · rw [Measure.restrict_apply' measurableSet_ball]
-      refine hnull (by refine measure_mono_null ?_ (measure_empty (μ := μ))
-                       exact fun _ ⟨hy, _, hlt⟩ => hy.2 (by simp [hinner, hlt]))
-        (by refine measure_mono_null ?_ hR0; exact fun _ ⟨hy, hyB⟩ => ⟨hy.1, hyB⟩)
-    · rw [Measure.restrict_apply' measurableSet_ball]
-      refine hnull (by refine measure_mono_null ?_ hL1; exact fun _ ⟨hy, hyB⟩ => ⟨hyB, hy.2⟩)
-        (by refine measure_mono_null ?_ (measure_empty (μ := μ))
-            exact fun _ ⟨hy, _, hgt⟩ => lt_asymm (by simpa [hinner] using hy.1) hgt)
-  · refine .inr (.inl (ae_eq_univ.2 ?_))
-    rw [Measure.restrict_apply' measurableSet_ball]
-    exact hnull (by simpa [sdiff_eq_compl_inter, inter_comm] using hL1)
-      (by simpa [sdiff_eq_compl_inter, inter_comm] using hR1)
+  · exact .inl (ae_eq_empty.2 (hnull e hL0 hR0))
+  · refine .inr (.inr (hstep (e.trans (LinearIsometryEquiv.neg ℝ)) ?_ ?_))
+    · simpa [neg_lt_neg_iff] using hR1
+    · simpa [neg_lt_neg_iff] using hL0
+  · exact .inr (.inr (hstep e hL1 hR0))
+  · exact .inr (.inl (ae_eq_univ.2 (hnull e
+      (by simpa [sdiff_eq_compl_inter, inter_comm] using hL1)
+      (by simpa [sdiff_eq_compl_inter, inter_comm] using hR1))))
 
 /-- **Local classification in dimension one.** Around every `x ∈ Ω`, a set `s` of locally finite
 perimeter in `Ω` agrees `μ`-almost everywhere on some `ball x r ⊆ Ω` (`r > 0`) with `∅`, `univ`, or
@@ -236,25 +225,6 @@ private theorem exists_ae_eq_empty_or_univ_or_setOf_inner_lt_of_finrank_eq_one
       using hR
   exact ⟨r, hr, hrΩ, ae_eq_empty_or_univ_or_setOf_inner_lt_of_halves e hL hR'⟩
 
-omit [MeasurableSpace E] [BorelSpace E] in
-/-- In dimension one, removing `x` from `ball x r` splits it into the two open half-balls bounded
-by `{y | ⟪y, ν⟫ = ⟪x, ν⟫}` (`ν ≠ 0`). -/
-private theorem ball_sdiff_singleton_eq_union_of_finrank_eq_one (hn : finrank ℝ E = 1) {r : ℝ}
-    {ν : E} (hν0 : ν ≠ 0) :
-    ball x r \ {x} = (ball x r ∩ {y | ⟪y, ν⟫ < ⟪x, ν⟫}) ∪ (ball x r ∩ {y | ⟪x, ν⟫ < ⟪y, ν⟫}) := by
-  have : Fact (finrank ℝ E = 0 + 1) := ⟨hn⟩
-  have : Subsingleton (ℝ ∙ ν)ᗮ :=
-    (Module.finrank_zero_iff (R := ℝ)).1 (Submodule.finrank_orthogonal_span_singleton hν0)
-  ext y
-  simp only [Set.mem_sdiff, mem_union, mem_inter_iff, mem_ofPred_eq, mem_singleton_iff]
-  refine ⟨fun ⟨hyB, hyx⟩ => ?_, fun h => h.elim
-    (fun ⟨hyB, hlt⟩ => ⟨hyB, fun hy => lt_irrefl _ (hy ▸ hlt)⟩)
-    fun ⟨hyB, hgt⟩ => ⟨hyB, fun hy => lt_irrefl _ (hy ▸ hgt)⟩⟩
-  refine (lt_or_gt_of_ne fun heq => hyx ?_).imp (fun h => ⟨hyB, h⟩) fun h => ⟨hyB, h⟩
-  have h0 : (⟨y - x, Submodule.mem_orthogonal_singleton_iff_inner_left.2
-      (by rw [inner_sub_left, heq, sub_self])⟩ : (ℝ ∙ ν)ᗮ) = 0 := Subsingleton.elim _ _
-  exact sub_eq_zero.1 (congrArg Subtype.val h0)
-
 /-- In dimension one, if a set `s` of locally finite perimeter in `Ω` agrees `μ`-almost everywhere
 on `ball x r ⊆ Ω` (`r > 0`) with a half-line `{y | ⟪y, ν⟫ < ⟪x, ν⟫}` (`‖ν‖ = 1`), then `|Dχ_s|`
 charges `{x}`, so `x ∈ ∂*s` by `TauCeti.ae_mem_reducedBoundary`. -/
@@ -272,7 +242,7 @@ private theorem mem_reducedBoundary_of_ae_eq_setOf_inner_lt_of_finrank_eq_one
     isOpen_ball.inter (isOpen_lt continuous_const (by fun_prop))⟩
   let U : Opens E := ⟨ball x r \ {x}, isOpen_ball.sdiff isClosed_singleton⟩
   have hUeq : U = U₁ ⊔ U₂ :=
-    Opens.ext (ball_sdiff_singleton_eq_union_of_finrank_eq_one hn hν0)
+    Opens.ext (sdiff_singleton_eq_union_setOf_inner_lt_of_finrank_eq_one hn hν0 (ball x r) x)
   have hsH' {A : Set E} : s =ᵐ[μ.restrict (ball x r ∩ A)] H :=
     hsH.filter_mono (ae_mono (Measure.restrict_mono inter_subset_left le_rfl))
   have hPU : perimeter μ U s = 0 := le_antisymm (by
@@ -289,10 +259,17 @@ private theorem mem_reducedBoundary_of_ae_eq_setOf_inner_lt_of_finrank_eq_one
     (variationMeasure_preimage_coe hu hfin (U := U) (sdiff_subset.trans hrΩ)).trans
       (perimeter_def.symm.trans hPU)
   have hlamB : variationMeasure μ Ω (s.indicator 1) (((↑) : Ω → E) ⁻¹' ball x r) ≠ 0 := by
-    rw [show ball x r = ((⟨ball x r, isOpen_ball⟩ : Opens E) : Set E) from rfl,
-      variationMeasure_preimage_coe hu hfin (U := ⟨ball x r, isOpen_ball⟩) hrΩ, ← perimeter_def,
-      perimeter_congr_ae hsH, Measure.isAddLeftInvariant_eq_smul μ volume,
-      perimeter_smul_nnreal_measure, perimeter_ball_setOf_inner_lt hν x hr, hn]
+    have hval : variationMeasure μ Ω (s.indicator 1) (((↑) : Ω → E) ⁻¹' ball x r) =
+        perimeter μ ⟨ball x r, isOpen_ball⟩ s := by
+      simpa only [Opens.coe_mk, ← perimeter_def] using
+        variationMeasure_preimage_coe hu hfin (U := ⟨ball x r, isOpen_ball⟩) hrΩ
+    have hper : perimeter μ ⟨ball x r, isOpen_ball⟩ s =
+        (Measure.addHaarScalarFactor μ volume : ℝ≥0∞) *
+          perimeter volume ⟨ball x r, isOpen_ball⟩ {y | ⟪y, ν⟫ < ⟪x, ν⟫} := by
+      rw [perimeter_congr_ae (Ω := ⟨ball x r, isOpen_ball⟩) hsH]
+      conv_lhs => rw [Measure.isAddLeftInvariant_eq_smul μ volume]
+      exact perimeter_smul_nnreal_measure _
+    rw [hval, hper, perimeter_ball_setOf_inner_lt hν x hr, hn]
     exact mul_ne_zero (ENNReal.coe_ne_zero.2
         (Measure.addHaarScalarFactor_pos_of_isAddHaarMeasure μ volume).ne')
       (mul_ne_zero (by simp) (measure_ball_pos volume _ one_pos).ne')
@@ -317,11 +294,7 @@ theorem hasDensityAt_of_mem_reducedBoundary_of_finrank_eq_one (hn : finrank ℝ 
   · exact (perimeter_ball_ne_zero hx hr (by rw [perimeter_congr_ae he, perimeter_empty])).elim
   · exact (perimeter_ball_ne_zero hx hr (by rw [perimeter_congr_ae hu', perimeter_univ])).elim
   · have hν0 : ν ≠ 0 := norm_ne_zero_iff.1 (hν ▸ one_ne_zero)
-    have hsb : (s ∩ ball x r : Set E) =ᵐ[μ] ({y | ⟪y, ν⟫ < ⟪x, ν⟫} ∩ ball x r) :=
-      eventuallyEqSet_iff.2 ((ae_restrict_iff' measurableSet_ball).1 (eventuallyEqSet_iff.1 hsH)
-        |>.mono fun _ hy => and_congr_left hy)
-    rw [← hasDensityAt_inter_of_mem_nhds (ball_mem_nhds x hr), hasDensityAt_congr_ae hsb,
-      hasDensityAt_inter_of_mem_nhds (ball_mem_nhds x hr)]
+    rw [hasDensityAt_congr_ae_of_mem_nhds (ball_mem_nhds x hr) hsH]
     exact hasDensityAt_setOf_inner_lt hν0 rfl
 
 /-- **The reduced boundary lies in the essential boundary in dimension at most one.** -/
@@ -355,33 +328,15 @@ theorem reducedBoundary_eq_inter_essentialBoundary_of_finrank_le_one (hn : finra
     obtain ⟨r, hr, hrΩ, hcases⟩ :=
       exists_ae_eq_empty_or_univ_or_setOf_inner_lt_of_finrank_eq_one h1 hu hfin hxΩ
     rcases hcases with he | hu' | ⟨ν, hν, hsH⟩
-    · have hsb : (s ∩ ball x r : Set E) =ᵐ[μ] ∅ :=
-        ae_eq_empty.2 (by rwa [← Measure.restrict_apply' measurableSet_ball, ← ae_eq_empty])
-      have hd0 : HasDensityAt μ s x 0 :=
-        (hasDensityAt_inter_of_mem_nhds (ball_mem_nhds x hr)).1
-          ((hasDensityAt_congr_ae hsb).2 hasDensityAt_empty)
+    · have hd0 : HasDensityAt μ s x 0 :=
+        (hasDensityAt_congr_ae_of_mem_nhds (ball_mem_nhds x hr) he).2 hasDensityAt_empty
       exact ((mem_essentialBoundary.1 hxeb).2 (mem_essentialExterior.2 hd0)).elim
-    · have hsb : (s ∩ ball x r : Set E) =ᵐ[μ] ball x r :=
-        eventuallyEqSet_iff.2 (((ae_restrict_iff' measurableSet_ball).1
-          (eventuallyEqSet_iff.1 hu')).mono fun _ hy =>
-            ⟨fun h => h.2, fun hyB => ⟨(hy hyB).2 trivial, hyB⟩⟩)
-      have hd1 : HasDensityAt μ s x 1 :=
-        (hasDensityAt_inter_of_mem_nhds (ball_mem_nhds x hr)).1
-          ((hasDensityAt_congr_ae hsb).2 (mem_essentialInterior.1
-            (interior_subset_essentialInterior (μ := μ) (s := ball x r)
-              (by rw [isOpen_ball.interior_eq]; exact mem_ball_self hr))))
+    · have hd1 : HasDensityAt μ s x 1 :=
+        (hasDensityAt_congr_ae_of_mem_nhds (ball_mem_nhds x hr) hu').2
+          (hasDensityAt_univ (eventually_measure_closedBall_ne_zero_ne_top μ x))
       exact ((mem_essentialBoundary.1 hxeb).1 (mem_essentialInterior.2 hd1)).elim
     · exact mem_reducedBoundary_of_ae_eq_setOf_inner_lt_of_finrank_eq_one h1 hu hfin hxΩ hr hrΩ
         hν hsH
-
-/-- In dimension at most one, for a set `s` of locally finite perimeter in the whole space,
-`∂*s = ∂ᵉs` literally as sets. -/
-theorem reducedBoundary_top_eq_essentialBoundary_of_finrank_le_one (hn : finrank ℝ E ≤ 1)
-    (hu : LocallyIntegrableOn (s.indicator (1 : E → ℝ)) (⊤ : Opens E) μ)
-    (hfin : ∀ K, IsCompact K → K ⊆ (⊤ : Opens E) →
-      ∃ U : Opens E, K ⊆ (U : Set E) ∧ totalVariationOn μ U (s.indicator 1) ≠ ∞) :
-    reducedBoundary μ ⊤ s = essentialBoundary μ s := by
-  simpa using reducedBoundary_eq_inter_essentialBoundary_of_finrank_le_one hn hu hfin
 
 end TauCeti
 

@@ -378,8 +378,7 @@ theorem perimeter_le_two_iff {s : Set ℝ} (hs : NullMeasurableSet s) (hfin : vo
 
 /-- **Local constancy below unit perimeter.** If a set `s ⊆ ℝ` is null-measurable on `(a, b)` and
 has perimeter strictly less than `1` in `(a, b)`, then either `s ∩ (a, b)` or `(a, b) \ s` has
-measure zero: otherwise Lebesgue points of `s` in `(a, b)` and of its complement in `(a, b)` would
-contribute at least `1` to the variation on `(a, b)`. -/
+measure zero. -/
 theorem measure_inter_Ioo_eq_zero_or_sdiff_eq_zero_of_perimeter_lt_one {a b : ℝ} {s : Set ℝ}
     (hs : NullMeasurableSet s (volume.restrict (Ioo a b)))
     (hP : perimeter volume ⟨Ioo a b, isOpen_Ioo⟩ s < 1) :
@@ -398,6 +397,8 @@ theorem measure_inter_Ioo_eq_zero_or_sdiff_eq_zero_of_perimeter_lt_one {a b : �
     have hdiff : Ioo a b \ (s ∩ Ioo a b) = Ioo a b \ s := by ext y; simp
     rw [← hdiff]
     exact measure_congr ((Filter.EventuallyEqSet.refl _ (Ioo a b)).diff hst)
+  -- Otherwise Lebesgue points of `t` and of its complement in `(a, b)` contribute at least `1`
+  -- to the total variation on `(a, b)`.
   by_contra! hne
   have hae := IsUnifLocDoublingMeasure.ae_tendsto_average_closedBall_norm_sub volume
     (f := t.indicator (1 : ℝ → ℝ)) ((locallyIntegrable_const 1).indicator ht)

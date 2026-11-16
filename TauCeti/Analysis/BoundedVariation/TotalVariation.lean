@@ -52,8 +52,9 @@ For `u` not locally integrable on `Ω` the integrals in the supremum may be Math
   `TauCeti.totalVariationOn_sup_of_disjoint`: countable subadditivity in the open set, by a smooth
   partition of unity, and additivity on disjoint open sets. These make the total variation the
   restriction to open sets of a measure (`TauCeti.variationMeasure`).
-* `TauCeti.totalVariationOn_neg`, `TauCeti.totalVariationOn_smul` and
-  `TauCeti.totalVariationOn_add_le`: the total variation is a seminorm.
+* `TauCeti.totalVariationOn_neg`, `TauCeti.totalVariationOn_smul`,
+  `TauCeti.totalVariationOn_smul_nnreal_measure` and `TauCeti.totalVariationOn_add_le`: the total
+  variation is a seminorm and scales linearly with the reference measure.
 * `TauCeti.totalVariationOn_add_const` and `TauCeti.totalVariationOn_const`: against an additive
   Haar measure, constants have no variation.
 * `TauCeti.totalVariationOn_le_liminf_of_tendsto_integral` and
@@ -283,6 +284,13 @@ theorem totalVariationOn_smul (c : ℝ) :
   · rw [abs_of_nonneg hc, totalVariationOn_smul_of_nonneg hc]
   · rw [abs_of_nonpos hc, ← totalVariationOn_smul_of_nonneg (neg_nonneg.mpr hc), neg_smul,
       totalVariationOn_neg]
+
+/-- Scaling the reference measure by `c : ℝ≥0` scales the total variation by `c`. -/
+@[simp]
+theorem totalVariationOn_smul_nnreal_measure (c : ℝ≥0) :
+    totalVariationOn (c • μ) Ω u = (c : ℝ≥0∞) * totalVariationOn μ Ω u := by
+  simp only [totalVariationOn_def, integral_smul_nnreal_measure, NNReal.smul_def, smul_eq_mul]
+  simp_rw [ENNReal.ofReal_mul c.coe_nonneg, ENNReal.ofReal_coe_nnreal, ENNReal.mul_iSup]
 
 /-- A test vector field bounded by `c` pairs to at most `c |Du|(Ω)`. -/
 theorem ofReal_abs_integral_le_ofReal_mul_totalVariationOn (φ : 𝓓(Ω, E)) {c : ℝ}

@@ -31,8 +31,8 @@ diameter `ρ` meeting `A` at `x` lies in `closedBall x ρ`, so here a factor `2 
 particular `μ` vanishes on the `μH[d]`-null subsets of `A`.
 
 As a consequence, an outer regular measure `μ` has `d`-density zero at `μH[d]`-almost every point
-of any `μ`-null set (`TauCeti.ae_tendsto_measure_closedBall_div_of_measure_eq_zero`), and a
-null-measurable set `A` of finite `d`-dimensional Hausdorff measure has upper density zero at
+of any `μ`-null set (`MeasureTheory.Measure.ae_tendsto_measure_closedBall_div_of_measure_eq_zero`),
+and a null-measurable set `A` of finite `d`-dimensional Hausdorff measure has upper density zero at
 almost every point outside it:
 `μH[d] (A ∩ closedBall x r) / (2 r) ^ d → 0` as `r → 0⁺` for `μH[d]`-almost every `x ∉ A`.
 
@@ -49,8 +49,8 @@ place of `(2 r) ^ k`, are in `TauCeti.Geometry.Euclidean.Volume.Measure`.
 * `MeasureTheory.Measure.measure_le_mul_hausdorffMeasure`: a measure with
   `μ (closedBall x r) ≤ c (2 r) ^ d` for all small `r` at every point `x` of `A`, where
   `c ≠ 0, ∞`, is at most `2 ^ d c • μH[d]` on `A`.
-* `TauCeti.ae_tendsto_measure_closedBall_div_of_measure_eq_zero`: an outer regular measure has
-  `d`-density zero at `μH[d]`-almost every point of a null set.
+* `MeasureTheory.Measure.ae_tendsto_measure_closedBall_div_of_measure_eq_zero`: an outer regular
+  measure has `d`-density zero at `μH[d]`-almost every point of a null set.
 * `TauCeti.ae_tendsto_hausdorffMeasure_inter_closedBall_div`: zero density outside a
   null-measurable set of finite Hausdorff measure.
 
@@ -275,6 +275,29 @@ theorem measure_le_mul_hausdorffMeasure (μ : Measure X) {d : ℝ} {c : ℝ≥0�
   gcongr
   exact fun x hx => hx.1
 
+/-- **Zero density on a null set.** An outer regular measure `μ` has `d`-density zero, for `d ≥ 0`,
+at `μH[d]`-almost every point of any `μ`-null set `A` (no measurability of `A` is needed):
+`μ (closedBall x r) / (2 r) ^ d → 0` as `r → 0⁺` for `μH[d]`-almost every `x ∈ A`. -/
+theorem ae_tendsto_measure_closedBall_div_of_measure_eq_zero (μ : Measure X) [μ.OuterRegular]
+    {d : ℝ} (hd : 0 ≤ d) {A : Set X} (hA : μ A = 0) :
+    ∀ᵐ x ∂μH[d], x ∈ A → Tendsto (fun r => μ (closedBall x r) /
+      ENNReal.ofReal (2 * r) ^ d) (𝓝[>] 0) (𝓝 0) := by
+  have hnull (n : ℕ) : μH[d] {x | x ∈ A ∧ ∃ᶠ r in 𝓝[>] 0,
+      (n : ℝ≥0∞)⁻¹ * ENNReal.ofReal (2 * r) ^ d ≤ μ (closedBall x r)} = 0 := by
+    set B := {x | x ∈ A ∧ ∃ᶠ r in 𝓝[>] 0,
+      (n : ℝ≥0∞)⁻¹ * ENNReal.ofReal (2 * r) ^ d ≤ μ (closedBall x r)}
+    have hc : (n : ℝ≥0∞)⁻¹ ≠ 0 := by simp
+    have hle := (μ.mul_hausdorffMeasure_le_measure hd (A := B) fun _ hx => hx.2).trans
+      (measure_mono_null (s := B) (fun _ hx => hx.1) hA).le
+    simpa [hc] using nonpos_iff_eq_zero.1 hle
+  filter_upwards [ae_all_iff.2 fun n => measure_eq_zero_iff_ae_notMem.1 (hnull n)] with x hx hxA
+  refine ENNReal.tendsto_nhds_zero.2 fun ε hε => ?_
+  obtain ⟨n, hn⟩ := ENNReal.exists_inv_nat_lt hε.ne'
+  have hxn := hx n
+  simp only [hxA, true_and, not_frequently, not_le] at hxn
+  filter_upwards [hxn] with r hr
+  exact ENNReal.div_le_of_le_mul (hr.le.trans (by gcongr))
+
 end MeasureTheory.Measure
 
 namespace TauCeti
@@ -328,29 +351,6 @@ theorem ae_tendsto_hausdorffMeasure_inter_closedBall_div {d : ℝ} (hd : 0 ≤ d
   simp only [not_and, not_frequently, not_le] at this
   filter_upwards [this fun hxA₀ => hxA (hA₀A hxA₀)] with r hr
   rw [hball]
-  exact ENNReal.div_le_of_le_mul (hr.le.trans (by gcongr))
-
-/-- **Zero density on a null set.** An outer regular measure `μ` has `d`-density zero, for `d ≥ 0`,
-at `μH[d]`-almost every point of any `μ`-null set `A` (no measurability of `A` is needed):
-`μ (closedBall x r) / (2 r) ^ d → 0` as `r → 0⁺` for `μH[d]`-almost every `x ∈ A`. -/
-theorem ae_tendsto_measure_closedBall_div_of_measure_eq_zero (μ : Measure X) [μ.OuterRegular]
-    {d : ℝ} (hd : 0 ≤ d) {A : Set X} (hA : μ A = 0) :
-    ∀ᵐ x ∂μH[d], x ∈ A → Tendsto (fun r => μ (closedBall x r) /
-      ENNReal.ofReal (2 * r) ^ d) (𝓝[>] 0) (𝓝 0) := by
-  have hnull (n : ℕ) : μH[d] {x | x ∈ A ∧ ∃ᶠ r in 𝓝[>] 0,
-      (n : ℝ≥0∞)⁻¹ * ENNReal.ofReal (2 * r) ^ d ≤ μ (closedBall x r)} = 0 := by
-    set B := {x | x ∈ A ∧ ∃ᶠ r in 𝓝[>] 0,
-      (n : ℝ≥0∞)⁻¹ * ENNReal.ofReal (2 * r) ^ d ≤ μ (closedBall x r)}
-    have hc : (n : ℝ≥0∞)⁻¹ ≠ 0 := by simp
-    have hle := (μ.mul_hausdorffMeasure_le_measure hd (A := B) fun _ hx => hx.2).trans
-      (measure_mono_null (s := B) (fun _ hx => hx.1) hA).le
-    simpa [hc] using nonpos_iff_eq_zero.1 hle
-  filter_upwards [ae_all_iff.2 fun n => measure_eq_zero_iff_ae_notMem.1 (hnull n)] with x hx hxA
-  refine ENNReal.tendsto_nhds_zero.2 fun ε hε => ?_
-  obtain ⟨n, hn⟩ := ENNReal.exists_inv_nat_lt hε.ne'
-  have hxn := hx n
-  simp only [hxA, true_and, not_frequently, not_le] at hxn
-  filter_upwards [hxn] with r hr
   exact ENNReal.div_le_of_le_mul (hr.le.trans (by gcongr))
 
 end TauCeti
