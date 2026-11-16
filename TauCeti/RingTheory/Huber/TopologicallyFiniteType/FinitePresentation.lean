@@ -59,7 +59,7 @@ presentation (`TauCeti.Huber.isAdmissibleAlgebra_iff_flat`).
   map (`TauCeti.Huber.isOpenQuotientMap_of_surjective_restrictedMvPowerSeriesCompletion`), so `A`
   is strictly topologically of finite type over `O`.
 * `TauCeti.Huber.IsTopologicallyFinitePresentation.finitePresentation_quotient`: for a finitely
-  generated ideal of definition `I` of a complete adic ring `O`, the reduction `A ⧸ I·A` is a
+  generated ideal of definition `I` of `O`, the reduction `A ⧸ I·A` is a
   finitely presented `O ⧸ I`-algebra; in particular every `A ⧸ ϖᵐA` is finitely presented over
   `O ⧸ ϖᵐ` (`TauCeti.Huber.IsTopologicallyFinitePresentation.finitePresentation_quotient_pow`).
 * `TauCeti.Huber.isAdmissibleAlgebra_iff_flat`: over a `ϖ`-adically separated valuation ring, an

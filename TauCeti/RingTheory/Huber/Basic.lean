@@ -63,8 +63,10 @@ Huber ring is nonarchimedean, which is exactly the hypothesis under which
   multiplies a given element into a given open subring.
 * `TauCeti.Huber.IsTateRing.of_continuous`: a continuous homomorphism out of a Tate ring makes a
   Huber target Tate.
-* `TauCeti.Huber.IsPowerBounded.map_of_isPseudoUniformizer`: out of a topological ring with a
-  pseudouniformiser, any ring homomorphism continuous at zero preserves power-boundedness.
+* `TauCeti.Huber.IsBounded.image_of_isPseudoUniformizer` and
+  `TauCeti.Huber.IsPowerBounded.map_of_isPseudoUniformizer`: out of a topological monoid with zero
+  admitting a pseudouniformiser, any morphism continuous at zero preserves boundedness and
+  power-boundedness.
 * `TauCeti.Huber.IsHuberRing.toNonarchimedeanRing`: a Huber ring is nonarchimedean.
 * `TauCeti.Huber.IsHuberRing.isCountablyGenerated_nhds_zero`: its neighbourhoods of zero are
   countably generated. With the previous bullet these are exactly the two hypotheses Henkel's open
@@ -215,26 +217,38 @@ theorem IsPseudoUniformizer.map {A B F : Type*} [MonoidWithZero A] [TopologicalS
     IsPseudoUniformizer (φ a) :=
   isPseudoUniformizer_iff.mpr ⟨ha.isUnit.map φ, ha.isTopologicallyNilpotent.map hφ⟩
 
-/-- **Out of a topological ring with a pseudouniformiser, any ring homomorphism continuous at zero
-preserves power-boundedness.** -/
-theorem IsPowerBounded.map_of_isPseudoUniformizer {A B F : Type*} [Ring A] [TopologicalSpace A]
-    [Ring B] [TopologicalSpace B] [IsTopologicalRing B] [FunLike F A B] [RingHomClass F A B]
-    {ϖ : A} (hϖ : IsPseudoUniformizer ϖ) {φ : F} (hφ : ContinuousAt φ 0) {a : A}
-    (ha : IsPowerBounded a) : IsPowerBounded (φ a) := by
-  refine isPowerBounded_iff.mpr (isBounded_iff.mpr fun U hU ↦ ?_)
+/-- **Out of a topological monoid with zero admitting a pseudouniformiser, any morphism continuous
+at zero sends bounded sets to bounded sets.** -/
+theorem IsBounded.image_of_isPseudoUniformizer {A B F : Type*} [MonoidWithZero A]
+    [TopologicalSpace A] [MonoidWithZero B] [TopologicalSpace B] [ContinuousMul B]
+    [FunLike F A B] [MonoidWithZeroHomClass F A B] {ϖ : A} (hϖ : IsPseudoUniformizer ϖ)
+    {φ : F} (hφ : ContinuousAt φ 0) {S : Set A} (hS : IsBounded S) :
+    IsBounded (φ '' S) := by
+  refine isBounded_iff.mpr fun U hU ↦ ?_
   obtain ⟨W₁, hW₁, W₂, hW₂, hW⟩ := Filter.mem_prod_iff.mp
     ((by simpa [nhds_prod_eq] using (continuous_mul (M := B)).tendsto ((0 : B), (0 : B)) :
       Filter.Tendsto (fun p : B × B ↦ p.1 * p.2) (𝓝 0 ×ˢ 𝓝 0) (𝓝 0)) hU)
-  obtain ⟨m, hm⟩ := (isPowerBounded_iff.mp ha).exists_pow_mul_subset hϖ.isTopologicallyNilpotent
-    (hφ (map_zero φ ▸ hW₂))
+  obtain ⟨m, hm⟩ := hS.exists_pow_mul_subset hϖ.isTopologicallyNilpotent (hφ (map_zero φ ▸ hW₂))
   obtain ⟨u, hu⟩ := hϖ.isUnit.pow m
-  let v : Bˣ := Units.map (φ : A →* B) u
+  let v : Bˣ := Units.map (MonoidHom.ofClass φ) u
   refine ⟨(· * (↑v⁻¹ : B)) ⁻¹' W₁,
     (continuous_id.mul continuous_const).continuousAt.preimage_mem_nhds (by simpa using hW₁), ?_⟩
-  rintro _ ⟨s, hs, _, ⟨n, rfl⟩, rfl⟩
-  have hmem₂ : (v : B) * φ a ^ n ∈ W₂ := by
-    simpa [v, hu, ← map_pow, ← map_mul] using hm (Set.mul_mem_mul (Set.mem_singleton _) ⟨n, rfl⟩)
-  simpa [mul_assoc] using hW (Set.mk_mem_prod hs hmem₂)
+  rintro _ ⟨b, hb, _, ⟨s, hs, rfl⟩, rfl⟩
+  have hmem₂ : (v : B) * φ s ∈ W₂ := by
+    simpa [v, hu, ← map_pow, ← map_mul] using hm (Set.mul_mem_mul (Set.mem_singleton _) hs)
+  simpa [mul_assoc] using hW (Set.mk_mem_prod hb hmem₂)
+
+/-- **Out of a topological monoid with zero admitting a pseudouniformiser, any morphism continuous
+at zero preserves power-boundedness.** -/
+theorem IsPowerBounded.map_of_isPseudoUniformizer {A B F : Type*} [MonoidWithZero A]
+    [TopologicalSpace A] [MonoidWithZero B] [TopologicalSpace B] [ContinuousMul B]
+    [FunLike F A B] [MonoidWithZeroHomClass F A B] {ϖ : A} (hϖ : IsPseudoUniformizer ϖ)
+    {φ : F} (hφ : ContinuousAt φ 0) {a : A} (ha : IsPowerBounded a) :
+    IsPowerBounded (φ a) := by
+  refine isPowerBounded_iff.mpr
+    (((isPowerBounded_iff.mp ha).image_of_isPseudoUniformizer hϖ hφ).subset ?_)
+  rintro _ ⟨n, rfl⟩
+  exact ⟨a ^ n, ⟨n, rfl⟩, map_pow φ a n⟩
 
 /-- A *Tate ring* is a Huber ring containing a pseudouniformiser, that is, a topologically
 nilpotent unit. -/

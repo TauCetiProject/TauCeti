@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.RingTheory.AdicRing.CompletedTensorProduct
+public import TauCeti.RingTheory.AdicRing.Basic
 public import TauCeti.RingTheory.Huber.Restricted.GaussNorm
 public import TauCeti.RingTheory.Huber.Restricted.Reduction
 public import TauCeti.RingTheory.Huber.WeightedEval.Completion
@@ -17,62 +17,31 @@ import TauCeti.Topology.Algebra.Nonarchimedean.LinearTopology
 /-!
 # Coefficient maps, evaluation, and adic reductions under the Gauss comparison
 
-The unit-radius Gauss comparison identifies the Huber and normed restricted-series carriers.
-This file splits into two layers:
+The unit-radius Gauss comparison identifies the Huber and normed restricted-series carriers:
 
-1. **Cross-carrier Huber-vs.-Gauss comparisons (`TauCeti.Huber`)**, proved both before and after
-   uniform completion (with completeness of the source ring needed only for the completed Huber
-   side): coefficient maps, norm-bounded, power-bounded, and linear-target evaluations, open-ideal
-   polynomial reductions, and order-`m` polynomial quotient presentations
-   `R⟨X⟩ ⧸ (I · R⟨X⟩)ᵐ ≃ₐ[R] (R ⧸ Iᵐ)[X]`.
-2. **Properties on the Gauss-normed restricted-series carrier (`TauCeti.MvPowerSeries`)**: over an
-   `I`-adic normed ring (`I` finitely generated), `R⟨X₁, …, Xₖ⟩` carries the `(I · R⟨X⟩)`-adic
-   topology with polynomial quotients `(R ⧸ Iᵐ)[X₁, …, Xₖ]`; when `R` is complete, `R⟨X₁, …, Xₖ⟩`
-   is canonically homeomorphic as an `R`-algebra to the `(I · R[X])`-adic completion of
-   `MvPolynomial (Fin k) R` and is noetherian whenever `R` is noetherian; and over adic normed
-   rings `R` and `S`, `R⟨X₁, …, Xₖ⟩` is an `IsAdicRing` whose completed tensor product
-   `R⟨X₁, …, Xₖ⟩ ⊗̂_R S` is topologically isomorphic as an `R`-algebra to `S⟨X₁, …, Xₖ⟩`.
+1. **Cross-carrier comparisons (`TauCeti.Huber`)**, before and after completion (completeness of the
+   source ring is needed only on the completed Huber side): continuous and bounded coefficient maps,
+   norm-bounded, power-bounded, and linear-target evaluations, open-ideal reductions, polynomial
+   quotients modulo `(I·R⟨X⟩)ᵐ` (`m : ℕ`), and `(I·R[X])`-adic inverse-limit presentations.
+2. **Gauss-normed carrier (`TauCeti.MvPowerSeries`)**: over an `I`-adic normed ring (`I.FG`),
+   `R⟨X₁, …, Xₖ⟩` has the `(I·R⟨X⟩)`-adic topology with quotients `(R ⧸ Iᵐ)[X]` (`m : ℕ`); when `R`
+   is complete, `R⟨X⟩ ≃ₐ[R] AdicCompletion (I.map C) R[X]` (homeomorphic) and `R⟨X⟩` is noetherian
+   if `R` is; over an `IsAdicRing`, `R⟨X⟩` is an `IsAdicRing` (completed-tensor base change is in
+   `TauCeti.RingTheory.AdicRing.CompletedTensorProduct.GaussNorm`).
 
-## Main definitions
+## Main definitions and results
 
-* `TauCeti.MvPowerSeries.quotientIsRestrictedEquivMvPolynomialQuotient` and
-  `TauCeti.MvPowerSeries.quotientPowIsRestrictedEquivMvPolynomialQuotient`: the `R`-algebra
-  equivalences `R⟨X⟩ ⧸ (I · R⟨X⟩) ≃ₐ[R] (R ⧸ I)[X]` and
-  `R⟨X⟩ ⧸ (I · R⟨X⟩)ᵐ ≃ₐ[R] (R ⧸ Iᵐ)[X]` (`m ≠ 0`) on the Gauss-normed carrier.
-* `TauCeti.MvPowerSeries.isRestrictedSubringEquivAdicCompletion`: over a complete `I`-adic normed
-  ring `R` with `I` finitely generated, the topological `R`-algebra isomorphism from `R⟨X⟩` to the
-  `(I · R[X])`-adic completion of `MvPolynomial (Fin k) R`.
-* `TauCeti.MvPowerSeries.isAdicRing_isRestricted_subring` and
-  `TauCeti.MvPowerSeries.completedTensorRestrictedGaussEquiv`: the `IsAdicRing` instance on
-  `R⟨X₁, …, Xₖ⟩` and the topological `R`-algebra base-change isomorphism
-  `R⟨X₁, …, Xₖ⟩ ⊗̂_R S ≃ₐ[R] S⟨X₁, …, Xₖ⟩` over adic normed rings.
-
-## Main results
-
-* `restrictedMvPowerSeriesGaussEquiv_weightedMap` and
-  `restrictedMvPowerSeriesCompletionGaussEquiv_weightedMapCompletion`: coefficient-map naturality.
-* `weightedEvalHom_eq_restrictedEval₂OfBound`,
-  `weightedEvalHomCompletion_eq_restrictedEval₂OfBound`,
-  `weightedEvalHom_eq_restrictedLift`, `weightedEvalHomCompletion_eq_restrictedLift`,
-  `weightedEvalHom_eq_restrictedLiftLinear`, and
-  `weightedEvalHomCompletion_eq_restrictedLiftLinear`: Huber evaluation agrees with norm-bounded,
-  power-bounded, and linear-topology evaluation on the Gauss-normed carrier.
-* `restrictedReduction_eq_restrictedIdealReduction`,
-  `restrictedCompletionReduction_eq_restrictedIdealReduction`,
-  `quotientPowRestrictedEquiv_eq_quotientPowIsRestrictedEquiv`, and
-  `quotientPowRestrictedCompletionEquiv_eq_quotientPowIsRestrictedEquiv`: Huber open-ideal
-  reductions and order-`m` polynomial quotient equivalences agree with their Gauss-normed
-  counterparts.
-* `isAdic_map_algebraMap_isRestricted_subring` and
-  `isNoetherianRing_isRestricted_subring_of_isAdic`: the Gauss-norm topology on `R⟨X⟩` over an
-  `I`-adic normed ring (`I` finitely generated) is `(I · R⟨X⟩)`-adic, and `R⟨X⟩` is noetherian
-  when `R` is complete and noetherian.
-* `coe_completedTensorRestrictedGaussEquiv_inl`,
-  `completedTensorRestrictedGaussEquiv_inl`,
-  `completedTensorRestrictedGaussEquiv_inl_of_norm_le`, and
-  `completedTensorRestrictedGaussEquiv_inr`: completed-tensor base change acts unconditionally on
-  `R⟨X⟩` by coefficientwise application of `algebraMap R S` (agreeing with `restrictedMap` when
-  `algebraMap R S` is norm-bounded) and on `S` as `algebraMap`.
+* `TauCeti.MvPowerSeries.quotientIsRestrictedEquivMvPolynomialQuotient`,
+  `TauCeti.MvPowerSeries.quotientPowIsRestrictedEquivMvPolynomialQuotient`,
+  `TauCeti.MvPowerSeries.isRestrictedSubringEquivAdicCompletion`, and
+  `TauCeti.MvPowerSeries.isAdicRing_isRestricted_subring`.
+* `restrictedMvPowerSeriesGaussEquiv_weightedMap_of_continuous`,
+  `restrictedMvPowerSeriesCompletionGaussEquiv_weightedMapCompletion_of_continuous`,
+  `weightedEvalHom_eq_restrictedLift`, `weightedEvalHom_eq_restrictedLiftLinear`,
+  `restrictedReduction_eq_restrictedIdealReduction`,
+  `quotientPowRestrictedEquiv_eq_quotientPowIsRestrictedEquiv`,
+  `isAdic_map_algebraMap_isRestricted_subring`, and
+  `isNoetherianRing_isRestricted_subring_of_isAdic`.
 
 ## References
 
@@ -92,41 +61,61 @@ variable {k : ℕ} {R S : Type*} [NormedCommRing R] [IsUltrametricDist R]
 
 section Coefficients
 
-variable (hφc : Continuous φ) (hφ : ∀ r, ‖φ r‖ ≤ C * ‖r‖)
+/-- The Gauss comparison commutes with continuous coefficient maps. -/
+theorem restrictedMvPowerSeriesGaussEquiv_weightedMap_of_continuous (hφc : Continuous φ)
+    (f : weightedRestrictedSubring (fun _ : Fin k ↦ ({1} : Set R)) isWeightFamily_one_weight) :
+    restrictedMvPowerSeriesGaussEquiv
+        (weightedMap hφc isWeightFamily_one_weight isWeightFamily_one_weight (by simp) f) =
+      restrictedMapOfContinuous hφc (restrictedMvPowerSeriesGaussEquiv f) := by
+  apply Subtype.ext
+  simp only [coe_restrictedMvPowerSeriesGaussEquiv, coe_weightedMap, coe_restrictedMapOfContinuous]
 
 /-- The Gauss comparison commutes with bounded coefficient maps. -/
 theorem restrictedMvPowerSeriesGaussEquiv_weightedMap
+    (hφc : Continuous φ) (hφ : ∀ r, ‖φ r‖ ≤ C * ‖r‖)
     (f : weightedRestrictedSubring (fun _ : Fin k ↦ ({1} : Set R))
       isWeightFamily_one_weight) :
     restrictedMvPowerSeriesGaussEquiv
         (weightedMap hφc isWeightFamily_one_weight isWeightFamily_one_weight (by simp) f) =
       restrictedMap φ hφ (restrictedMvPowerSeriesGaussEquiv f) := by
-  apply Subtype.ext
-  simp only [coe_restrictedMvPowerSeriesGaussEquiv, coe_weightedMap, coe_restrictedMap]
+  rw [restrictedMvPowerSeriesGaussEquiv_weightedMap_of_continuous hφc,
+    restrictedMapOfContinuous_eq_restrictedMap hφc hφ]
 
 variable [CompleteSpace R] [CompleteSpace S]
+
+/-- The completed Gauss comparison commutes with the continuous coefficient map on completions,
+without requiring a Lipschitz norm bound on `φ`. -/
+theorem restrictedMvPowerSeriesCompletionGaussEquiv_weightedMapCompletion_of_continuous
+    (hφc : Continuous φ) (f : restrictedMvPowerSeriesCompletion k R) :
+    restrictedMvPowerSeriesCompletionGaussEquiv
+        (weightedMapCompletion hφc isWeightFamily_one_weight isWeightFamily_one_weight
+          (by simp) f) =
+      restrictedMapOfContinuous hφc (restrictedMvPowerSeriesCompletionGaussEquiv f) := by
+  refine UniformSpace.Completion.induction_on f (isClosed_eq
+    (continuous_restrictedMvPowerSeriesCompletionGaussEquiv.comp
+      (continuous_weightedMapCompletion _ _ _ _))
+    ((continuous_restrictedMapOfContinuous hφc).comp
+      continuous_restrictedMvPowerSeriesCompletionGaussEquiv)) ?_
+  intro g
+  simp only [weightedMapCompletion_coe, restrictedMvPowerSeriesCompletionGaussEquiv_coe,
+    restrictedMvPowerSeriesGaussEquiv_weightedMap_of_continuous hφc]
 
 /-- The completed Gauss comparison commutes with the continuous coefficient map on completions.
 Thus completing the topological coefficient map does not change the normed coefficient map. -/
 theorem restrictedMvPowerSeriesCompletionGaussEquiv_weightedMapCompletion
+    (hφc : Continuous φ) (hφ : ∀ r, ‖φ r‖ ≤ C * ‖r‖)
     (f : restrictedMvPowerSeriesCompletion k R) :
     restrictedMvPowerSeriesCompletionGaussEquiv
         (weightedMapCompletion hφc isWeightFamily_one_weight isWeightFamily_one_weight
           (by simp) f) =
       restrictedMap φ hφ (restrictedMvPowerSeriesCompletionGaussEquiv f) := by
-  refine UniformSpace.Completion.induction_on f (isClosed_eq
-    (continuous_restrictedMvPowerSeriesCompletionGaussEquiv.comp
-      (continuous_weightedMapCompletion _ _ _ _))
-    ((continuous_restrictedMap φ hφ).comp
-      continuous_restrictedMvPowerSeriesCompletionGaussEquiv)) ?_
-  intro g
-  simp only [weightedMapCompletion_coe, restrictedMvPowerSeriesCompletionGaussEquiv_coe,
-    restrictedMvPowerSeriesGaussEquiv_weightedMap hφc hφ]
+  rw [restrictedMvPowerSeriesCompletionGaussEquiv_weightedMapCompletion_of_continuous hφc,
+    restrictedMapOfContinuous_eq_restrictedMap hφc hφ]
 
-include hφ in
 /-- A bounded coefficient map on Huber completions has the same bound in the compared Gauss
 norms. No norm on the topological completion is chosen independently of the comparison. -/
 theorem norm_restrictedMvPowerSeriesCompletionGaussEquiv_weightedMapCompletion_le
+    (hφc : Continuous φ) (hφ : ∀ r, ‖φ r‖ ≤ C * ‖r‖)
     (f : restrictedMvPowerSeriesCompletion k R) :
     ‖restrictedMvPowerSeriesCompletionGaussEquiv
         (weightedMapCompletion hφc isWeightFamily_one_weight isWeightFamily_one_weight
@@ -191,66 +180,59 @@ theorem norm_weightedEvalHomCompletion_le (f : restrictedMvPowerSeriesCompletion
 
 end Evaluation
 
+local notation:max "WSub" k:max R:max =>
+  weightedRestrictedSubring (fun _ : Fin k ↦ ({1} : Set R)) isWeightFamily_one_weight
+local notation:max "WComp" k:max R:max => restrictedMvPowerSeriesCompletion k R
+
 section Reduction
 
-/-- Huber open-ideal polynomial reduction and normed open-ideal reduction agree across the Gauss
-comparison. -/
+/-- Huber and normed open-ideal polynomial reductions agree across the Gauss comparison. -/
 theorem restrictedReduction_eq_restrictedIdealReduction {J : Ideal R} (hJ : IsOpen (J : Set R))
-    (f : weightedRestrictedSubring (fun _ : Fin k ↦ ({1} : Set R)) isWeightFamily_one_weight) :
-    Ideal.restrictedReduction J hJ f =
-      restrictedIdealReduction J hJ (restrictedMvPowerSeriesGaussEquiv f) := by
-  ext ν
-  simp
+    (f : WSub k R) : Ideal.restrictedReduction J hJ f =
+      J.restrictedIdealReduction hJ (restrictedMvPowerSeriesGaussEquiv f) := by ext ν; simp
 
-/-- Over a complete coefficient ring, completed Huber polynomial reduction agrees with normed
-open-ideal reduction across `restrictedMvPowerSeriesCompletionGaussEquiv`. -/
+/-- Over a complete ring, completed Huber reduction agrees with `restrictedIdealReduction`. -/
 theorem restrictedCompletionReduction_eq_restrictedIdealReduction [CompleteSpace R]
-    {J : Ideal R} (hJ : IsOpen (J : Set R)) (x : restrictedMvPowerSeriesCompletion k R) :
+    {J : Ideal R} (hJ : IsOpen (J : Set R)) (x : WComp k R) :
     Ideal.restrictedCompletionReduction J hJ x =
-      restrictedIdealReduction J hJ (restrictedMvPowerSeriesCompletionGaussEquiv x) := by
+      J.restrictedIdealReduction hJ (restrictedMvPowerSeriesCompletionGaussEquiv x) := by
   conv_lhs => rw [← restrictedMvPowerSeriesCompletionGaussEquiv.symm_apply_apply x]
   rw [restrictedMvPowerSeriesCompletionGaussEquiv_symm_apply,
-    Ideal.restrictedCompletionReduction_coe,
-    restrictedReduction_eq_restrictedIdealReduction hJ, RingEquiv.apply_symm_apply]
+    Ideal.restrictedCompletionReduction_coe, restrictedReduction_eq_restrictedIdealReduction hJ,
+    RingEquiv.apply_symm_apply]
 
 end Reduction
 
 section PowerBoundedAndLinearEvaluation
 
-/-- Topological evaluation into a complete Hausdorff nonarchimedean ring agrees with
-`restrictedLift` across the Gauss comparison. -/
+/-- Topological evaluation agrees with `restrictedLift` across the Gauss comparison. -/
 theorem weightedEvalHom_eq_restrictedLift {B : Type*} [CommRing B] [UniformSpace B]
     [IsUniformAddGroup B] [NonarchimedeanRing B] [CompleteSpace B] [T3Space B]
     {ψ : R →+* B} (hψ : Continuous ψ) {b : Fin k → B} (hb : ∀ i, IsPowerBounded (b i))
-    (hb' : IsWeightBounded ψ (fun _ : Fin k ↦ ({1} : Set R)) b)
-    (f : weightedRestrictedSubring (fun _ : Fin k ↦ ({1} : Set R)) isWeightFamily_one_weight) :
+    (hb' : IsWeightBounded ψ (fun _ : Fin k ↦ ({1} : Set R)) b) (f : WSub k R) :
     weightedEvalHom isWeightFamily_one_weight hψ.continuousAt hb' f =
       restrictedLift hψ hb (restrictedMvPowerSeriesGaussEquiv f) := by
   rw [restrictedLift_apply, RingEquiv.symm_apply_apply]
 
-/-- Completed topological evaluation into a complete Hausdorff nonarchimedean ring agrees with
-`restrictedLift` across the completed Gauss comparison. -/
+/-- Completed topological evaluation agrees with `restrictedLift` across the completed Gauss
+comparison. -/
 theorem weightedEvalHomCompletion_eq_restrictedLift [CompleteSpace R] {B : Type*} [CommRing B]
     [UniformSpace B] [IsUniformAddGroup B] [NonarchimedeanRing B] [CompleteSpace B] [T3Space B]
     {ψ : R →+* B} (hψ : Continuous ψ) {b : Fin k → B} (hb : ∀ i, IsPowerBounded (b i))
-    (hb' : IsWeightBounded ψ (fun _ : Fin k ↦ ({1} : Set R)) b)
-    (x : restrictedMvPowerSeriesCompletion k R) :
+    (hb' : IsWeightBounded ψ (fun _ : Fin k ↦ ({1} : Set R)) b) (x : WComp k R) :
     weightedEvalHomCompletion isWeightFamily_one_weight hψ.continuousAt hb' x =
       restrictedLift hψ hb (restrictedMvPowerSeriesCompletionGaussEquiv x) := by
   refine UniformSpace.Completion.induction_on x (isClosed_eq
-    (continuous_weightedEvalHomCompletion _ hψ.continuousAt hb')
-    ((continuous_restrictedLift hψ hb).comp
-      continuous_restrictedMvPowerSeriesCompletionGaussEquiv)) fun f ↦ ?_
+    (continuous_weightedEvalHomCompletion _ hψ.continuousAt hb') ((continuous_restrictedLift hψ hb)
+      |>.comp continuous_restrictedMvPowerSeriesCompletionGaussEquiv)) fun f ↦ ?_
   rw [weightedEvalHomCompletion_coe, restrictedMvPowerSeriesCompletionGaussEquiv_coe,
     weightedEvalHom_eq_restrictedLift hψ hb hb']
 
-/-- Topological evaluation into a complete Hausdorff linearly topologized ring agrees with
-`restrictedLiftLinear` across the Gauss comparison. -/
+/-- Topological evaluation into a linearly topologized ring agrees with `restrictedLiftLinear`. -/
 theorem weightedEvalHom_eq_restrictedLiftLinear {B : Type*} [CommRing B] [UniformSpace B]
     [IsUniformAddGroup B] [NonarchimedeanRing B] [IsLinearTopology B B]
     [CompleteSpace B] [T2Space B] {ψ : R →+* B} (hψ : Continuous ψ) (b : Fin k → B)
-    (hb : IsWeightBounded ψ (fun _ : Fin k ↦ ({1} : Set R)) b)
-    (f : weightedRestrictedSubring (fun _ : Fin k ↦ ({1} : Set R)) isWeightFamily_one_weight) :
+    (hb : IsWeightBounded ψ (fun _ : Fin k ↦ ({1} : Set R)) b) (f : WSub k R) :
     weightedEvalHom isWeightFamily_one_weight hψ.continuousAt hb f =
       restrictedLiftLinear hψ b (restrictedMvPowerSeriesGaussEquiv f) := by
   have := IsLinearTopology.isTopologicalRing (R := B)
@@ -258,14 +240,12 @@ theorem weightedEvalHom_eq_restrictedLiftLinear {B : Type*} [CommRing B] [Unifor
   rw [restrictedLiftLinear_eq_restrictedLift hψ hbPB]
   exact weightedEvalHom_eq_restrictedLift hψ hbPB hb f
 
-/-- Completed topological evaluation into a complete Hausdorff linearly topologized ring agrees
-with `restrictedLiftLinear` across the completed Gauss comparison. -/
-theorem weightedEvalHomCompletion_eq_restrictedLiftLinear [CompleteSpace R]
-    {B : Type*} [CommRing B] [UniformSpace B] [IsUniformAddGroup B]
-    [NonarchimedeanRing B] [IsLinearTopology B B] [CompleteSpace B] [T2Space B]
-    {ψ : R →+* B} (hψ : Continuous ψ) (b : Fin k → B)
-    (hb : IsWeightBounded ψ (fun _ : Fin k ↦ ({1} : Set R)) b)
-    (x : restrictedMvPowerSeriesCompletion k R) :
+/-- Completed topological evaluation into a linearly topologized ring agrees with
+`restrictedLiftLinear`. -/
+theorem weightedEvalHomCompletion_eq_restrictedLiftLinear [CompleteSpace R] {B : Type*} [CommRing B]
+    [UniformSpace B] [IsUniformAddGroup B] [NonarchimedeanRing B] [IsLinearTopology B B]
+    [CompleteSpace B] [T2Space B] {ψ : R →+* B} (hψ : Continuous ψ) (b : Fin k → B)
+    (hb : IsWeightBounded ψ (fun _ : Fin k ↦ ({1} : Set R)) b) (x : WComp k R) :
     weightedEvalHomCompletion isWeightFamily_one_weight hψ.continuousAt hb x =
       restrictedLiftLinear hψ b (restrictedMvPowerSeriesCompletionGaussEquiv x) := by
   have := IsLinearTopology.isTopologicalRing (R := B)
@@ -284,31 +264,31 @@ open _root_.MvPowerSeries TauCeti.Huber Topology
 variable {k : ℕ} {R S : Type*} [NormedCommRing R] [IsUltrametricDist R]
   [NormedCommRing S] [IsUltrametricDist S] {C : ℝ}
 
-section EvalReduction
+local notation:max "Tate" k':max R':max => IsRestricted.subring (R := R') (fun _ : Fin k' ↦ 1)
 
-/-- Reducing `restrictedLift` modulo an open ideal `J` of the target agrees with polynomial
-evaluation of `restrictedIdealReduction` modulo `I`. -/
+/-- Reducing `restrictedLift` modulo an open ideal `J` agrees with polynomial evaluation of
+`restrictedIdealReduction` modulo `I`. -/
 theorem mk_restrictedLift_eq_eval₂_restrictedIdealReduction {B : Type*} [CommRing B]
     [UniformSpace B] [IsUniformAddGroup B] [NonarchimedeanRing B] [CompleteSpace B] [T3Space B]
     {ψ : R →+* B} (hψ : Continuous ψ) {b : Fin k → B} (hb : ∀ i, IsPowerBounded (b i))
     {I : Ideal R} {J : Ideal B} (hI : IsOpen (I : Set R)) (hJ : IsOpen (J : Set B))
-    (hIJ : I ≤ J.comap ψ) (g : IsRestricted.subring (R := R) (fun _ : Fin k ↦ 1)) :
+    (hIJ : I ≤ J.comap ψ) (g : Tate k R) :
     Ideal.Quotient.mk J (restrictedLift hψ hb g) =
-      (restrictedIdealReduction I hI g).eval₂ (Ideal.quotientMap J ψ hIJ)
+      (I.restrictedIdealReduction hI g).eval₂ (Ideal.quotientMap J ψ hIJ)
         (fun i ↦ Ideal.Quotient.mk J (b i)) := by
   rw [restrictedLift_apply,
     mk_weightedEvalHom_eq_eval₂_restrictedReduction hψ.continuousAt _ hI hJ hIJ,
     restrictedReduction_eq_restrictedIdealReduction hI, RingEquiv.apply_symm_apply]
 
-/-- Reducing `restrictedLiftLinear` modulo an open ideal `J` of a linearly topologized target ring
-agrees with polynomial evaluation of `restrictedIdealReduction` modulo `I`. -/
+/-- Reducing `restrictedLiftLinear` modulo an open ideal `J` agrees with polynomial evaluation of
+`restrictedIdealReduction` modulo `I`. -/
 theorem mk_restrictedLiftLinear_eq_eval₂_restrictedIdealReduction {B : Type*} [CommRing B]
     [UniformSpace B] [IsUniformAddGroup B] [IsLinearTopology B B] [CompleteSpace B] [T2Space B]
     {ψ : R →+* B} (hψ : Continuous ψ) (b : Fin k → B)
     {I : Ideal R} {J : Ideal B} (hI : IsOpen (I : Set R)) (hJ : IsOpen (J : Set B))
-    (hIJ : I ≤ J.comap ψ) (g : IsRestricted.subring (R := R) (fun _ : Fin k ↦ 1)) :
+    (hIJ : I ≤ J.comap ψ) (g : Tate k R) :
     Ideal.Quotient.mk J (restrictedLiftLinear hψ b g) =
-      (restrictedIdealReduction I hI g).eval₂ (Ideal.quotientMap J ψ hIJ)
+      (I.restrictedIdealReduction hI g).eval₂ (Ideal.quotientMap J ψ hIJ)
         (fun i ↦ Ideal.Quotient.mk J (b i)) := by
   have := IsLinearTopology.isTopologicalRing (R := B)
   have := IsLinearTopology.nonarchimedeanRing B
@@ -317,17 +297,13 @@ theorem mk_restrictedLiftLinear_eq_eval₂_restrictedIdealReduction {B : Type*} 
   rw [restrictedLiftLinear_eq_restrictedLift hψ hb]
   exact mk_restrictedLift_eq_eval₂_restrictedIdealReduction hψ hb hI hJ hIJ g
 
-end EvalReduction
-
 section Adic
 
 variable {I : Ideal R}
 
-/-- **Adic topology of Gauss-normed restricted series.** If `R` has the `I`-adic topology for a
-finitely generated ideal `I`, then `R⟨X₁, …, Xₖ⟩` under the Gauss norm has the `(I · R⟨X⟩)`-adic
-topology. -/
+/-- **Adic topology of Gauss-normed restricted series** over an `I`-adic normed ring (`I.FG`). -/
 theorem isAdic_map_algebraMap_isRestricted_subring (hI : IsAdic I) (hfg : I.FG) :
-    IsAdic (I.map (algebraMap R (IsRestricted.subring (R := R) (fun _ : Fin k ↦ 1)))) := by
+    IsAdic (I.map (algebraMap R (Tate k R))) := by
   let e := restrictedMvPowerSeriesGaussEquiv (n := k) (R := R)
   have hInd : IsInducing e.symm :=
     (Homeomorph.mk e.symm.toEquiv continuous_restrictedMvPowerSeriesGaussEquiv_symm
@@ -337,98 +313,123 @@ theorem isAdic_map_algebraMap_isRestricted_subring (hI : IsAdic I) (hfg : I.FG) 
   exact congrArg (Ideal.map · I)
     (RingHom.ext fun _ ↦ by simp [e, algebraMap_weightedRestrictedSubring])
 
-/-- Membership in the extension of a finitely generated ideal of definition `I` to `R⟨X₁, …, Xₖ⟩`
-is coefficientwise. -/
+/-- Membership in `I · R⟨X⟩` for a finitely generated ideal of definition `I` is coefficientwise. -/
 theorem mem_map_algebraMap_isRestricted_subring_iff_of_isAdic (hI : IsAdic I) (hfg : I.FG)
-    (g : IsRestricted.subring (R := R) (fun _ : Fin k ↦ 1)) :
-    g ∈ I.map (algebraMap R (IsRestricted.subring (R := R) (fun _ : Fin k ↦ 1))) ↔
-      ∀ ν, coeff ν (g : MvPowerSeries (Fin k) R) ∈ I := by
+    (g : Tate k R) :
+    g ∈ I.map (algebraMap R (Tate k R)) ↔ ∀ ν, coeff ν (g : MvPowerSeries (Fin k) R) ∈ I := by
   let e := restrictedMvPowerSeriesGaussEquiv (n := k) (R := R)
-  have hmap : I.map (algebraMap R (IsRestricted.subring (R := R) (fun _ : Fin k ↦ 1))) =
+  have hmap : I.map (algebraMap R (Tate k R)) =
       (I.map (weightedC _ isWeightFamily_one_weight)).map e := by
     conv_rhs => rw [← Ideal.map_coe, Ideal.map_map]
     exact congrArg (Ideal.map · I)
       (RingHom.ext fun r ↦ (restrictedMvPowerSeriesGaussEquiv_weightedC r).symm)
-  rw [hmap, ← Ideal.symm_apply_mem_of_equiv_iff, mem_map_weightedC_iff_of_isAdic hI hfg]
-  simp [e]
+  rw [hmap, ← Ideal.symm_apply_mem_of_equiv_iff, mem_map_weightedC_iff_of_isAdic hI hfg]; simp [e]
 
 /-- Reduction of `R⟨X₁, …, Xₖ⟩` modulo a finitely generated ideal of definition `I` has kernel
 `I · R⟨X⟩`. -/
 theorem ker_restrictedIdealReduction (hI : IsAdic I) (hfg : I.FG) :
-    RingHom.ker (restrictedIdealReduction (σ := Fin k) I (pow_one I ▸ hI.isOpen_pow 1)) =
-      I.map (algebraMap R (IsRestricted.subring (R := R) (fun _ : Fin k ↦ 1))) := by
-  ext g
-  rw [RingHom.mem_ker, restrictedIdealReduction_eq_zero_iff,
+    RingHom.ker (I.restrictedIdealReduction (σ := Fin k) (pow_one I ▸ hI.isOpen_pow 1)) =
+      I.map (algebraMap R (Tate k R)) := by
+  ext g; rw [RingHom.mem_ker, Ideal.restrictedIdealReduction_eq_zero_iff,
     mem_map_algebraMap_isRestricted_subring_iff_of_isAdic hI hfg]
 
-/-- Reduction of `R⟨X₁, …, Xₖ⟩` modulo `I ^ m` (`m ≠ 0`) for a finitely generated ideal of
-definition `I` has kernel `(I · R⟨X⟩) ^ m`. -/
-theorem ker_restrictedIdealReduction_pow (hI : IsAdic I) (hfg : I.FG) {m : ℕ} (hm : m ≠ 0) :
-    RingHom.ker (restrictedIdealReduction (σ := Fin k) (I ^ m) (hI.isOpen_pow m)) =
-      I.map (algebraMap R (IsRestricted.subring (R := R) (fun _ : Fin k ↦ 1))) ^ m :=
-  Ideal.map_pow (algebraMap R (IsRestricted.subring (R := R) (fun _ : Fin k ↦ 1))) I m ▸
-    ker_restrictedIdealReduction (is_ideal_adic_pow hI (Nat.pos_of_ne_zero hm)) hfg.pow
+/-- Reduction of `R⟨X₁, …, Xₖ⟩` modulo `I ^ m` (`I` adic and finitely generated) has kernel
+`(I · R⟨X⟩) ^ m`. -/
+theorem ker_restrictedIdealReduction_pow (hI : IsAdic I) (hfg : I.FG) (m : ℕ) :
+    RingHom.ker ((I ^ m).restrictedIdealReduction (σ := Fin k) (hI.isOpen_pow m)) =
+      I.map (algebraMap R (Tate k R)) ^ m := by
+  rcases eq_or_ne m 0 with rfl | hm
+  · ext g; simp [Ideal.restrictedIdealReduction_eq_zero_iff]
+  · exact Ideal.map_pow (algebraMap R (Tate k R)) I m ▸
+      ker_restrictedIdealReduction (is_ideal_adic_pow hI (Nat.pos_of_ne_zero hm)) hfg.pow
 
 /-- Infinitesimal reduction modulo `I · R⟨X⟩` on Gauss-normed restricted series. -/
 noncomputable def quotientIsRestrictedEquivMvPolynomialQuotient (hI : IsAdic I) (hfg : I.FG) :
-    (IsRestricted.subring (R := R) (fun _ : Fin k ↦ 1) ⧸
-      I.map (algebraMap R (IsRestricted.subring (R := R) (fun _ : Fin k ↦ 1)))) ≃ₐ[R]
-      MvPolynomial (Fin k) (R ⧸ I) := by
+    (Tate k R ⧸ I.map (algebraMap R (Tate k R))) ≃ₐ[R] MvPolynomial (Fin k) (R ⧸ I) := by
   let hopen : IsOpen (I : Set R) := pow_one I ▸ hI.isOpen_pow 1
   let e := (Ideal.quotEquivOfEq (ker_restrictedIdealReduction (k := k) hI hfg).symm).trans
-    ((restrictedIdealReduction I hopen).quotientKerEquivOfSurjective
-      (restrictedIdealReduction_surjective I hopen))
+    ((I.restrictedIdealReduction hopen).quotientKerEquivOfSurjective
+      (I.restrictedIdealReduction_surjective hopen))
   refine AlgEquiv.ofRingEquiv (f := e) fun r ↦ ?_
   rw [← Ideal.Quotient.mk_algebraMap]; simp [e, -Ideal.Quotient.mk_algebraMap]
 
-/-- On a represented series, `quotientIsRestrictedEquivMvPolynomialQuotient` computes
-`restrictedIdealReduction` modulo `I`. -/
-@[simp]
-theorem quotientIsRestrictedEquivMvPolynomialQuotient_mk (hI : IsAdic I) (hfg : I.FG)
-    (g : IsRestricted.subring (R := R) (fun _ : Fin k ↦ 1)) :
+/-- On a represented series, `quotientIsRestrictedEquivMvPolynomialQuotient` computes reduction. -/
+@[simp] theorem quotientIsRestrictedEquivMvPolynomialQuotient_mk (hI : IsAdic I) (hfg : I.FG)
+    (g : Tate k R) :
     quotientIsRestrictedEquivMvPolynomialQuotient hI hfg (Ideal.Quotient.mk _ g) =
-      restrictedIdealReduction I (pow_one I ▸ hI.isOpen_pow 1) g := by
+      I.restrictedIdealReduction (pow_one I ▸ hI.isOpen_pow 1) g := by
   simp [quotientIsRestrictedEquivMvPolynomialQuotient]
 
-/-- **Infinitesimal thickening on Gauss-normed restricted series**: for `m ≠ 0`, reducing modulo
-`(I · R⟨X⟩) ^ m` gives `(R ⧸ I ^ m)[X₁, …, Xₖ]`. -/
-noncomputable def quotientPowIsRestrictedEquivMvPolynomialQuotient
-    (hI : IsAdic I) (hfg : I.FG) {m : ℕ} (hm : m ≠ 0) :
-    (IsRestricted.subring (R := R) (fun _ : Fin k ↦ 1) ⧸
-      I.map (algebraMap R (IsRestricted.subring (R := R) (fun _ : Fin k ↦ 1))) ^ m) ≃ₐ[R]
-      MvPolynomial (Fin k) (R ⧸ I ^ m) :=
-  (Ideal.quotientEquivAlgOfEq R (Ideal.map_pow _ I m).symm).trans
-    (quotientIsRestrictedEquivMvPolynomialQuotient
-      (is_ideal_adic_pow hI (Nat.pos_of_ne_zero hm)) hfg.pow)
+/-- `quotientIsRestrictedEquivMvPolynomialQuotient.symm` lifts a reduced polynomial. -/
+@[simp] theorem quotientIsRestrictedEquivMvPolynomialQuotient_symm_map_mk (hI : IsAdic I)
+    (hfg : I.FG) (p : MvPolynomial (Fin k) R) :
+    (quotientIsRestrictedEquivMvPolynomialQuotient hI hfg).symm
+        (MvPolynomial.map (Ideal.Quotient.mk I) p) =
+      Ideal.Quotient.mk _ (polynomialToRestricted (fun _ : Fin k ↦ 1) p) := by
+  rw [AlgEquiv.symm_apply_eq]; simp
 
-/-- On a represented series, `quotientPowIsRestrictedEquivMvPolynomialQuotient` computes
-`restrictedIdealReduction` modulo `I ^ m`. -/
-@[simp]
-theorem quotientPowIsRestrictedEquivMvPolynomialQuotient_mk
-    (hI : IsAdic I) (hfg : I.FG) {m : ℕ} (hm : m ≠ 0)
-    (g : IsRestricted.subring (R := R) (fun _ : Fin k ↦ 1)) :
-    quotientPowIsRestrictedEquivMvPolynomialQuotient hI hfg hm (Ideal.Quotient.mk _ g) =
-      restrictedIdealReduction (I ^ m) (hI.isOpen_pow m) g := by
+/-- `quotientIsRestrictedEquivMvPolynomialQuotient.symm` sends `X i` to the class of `X i`. -/
+@[simp] theorem quotientIsRestrictedEquivMvPolynomialQuotient_symm_X (hI : IsAdic I) (hfg : I.FG)
+    (i : Fin k) : (quotientIsRestrictedEquivMvPolynomialQuotient hI hfg).symm (MvPolynomial.X i) =
+      Ideal.Quotient.mk _ ⟨X i, isRestricted_X _ i⟩ := by rw [AlgEquiv.symm_apply_eq]; simp
+
+/-- `quotientIsRestrictedEquivMvPolynomialQuotient.symm` sends `C (mk I r)` to scalars. -/
+@[simp] theorem quotientIsRestrictedEquivMvPolynomialQuotient_symm_C_mk (hI : IsAdic I)
+    (hfg : I.FG) (r : R) : (quotientIsRestrictedEquivMvPolynomialQuotient (k := k) hI hfg).symm
+      (MvPolynomial.C (Ideal.Quotient.mk I r)) = algebraMap R _ r := by
+  rw [AlgEquiv.symm_apply_eq, ← Ideal.Quotient.mk_algebraMap]; simp [-Ideal.Quotient.mk_algebraMap]
+
+/-- **Infinitesimal thickening on Gauss-normed restricted series** modulo `(I · R⟨X⟩) ^ m`. -/
+noncomputable def quotientPowIsRestrictedEquivMvPolynomialQuotient
+    (hI : IsAdic I) (hfg : I.FG) (m : ℕ) :
+    (Tate k R ⧸ I.map (algebraMap R (Tate k R)) ^ m) ≃ₐ[R] MvPolynomial (Fin k) (R ⧸ I ^ m) := by
+  let e := (Ideal.quotEquivOfEq (ker_restrictedIdealReduction_pow (k := k) hI hfg m).symm).trans
+    (((I ^ m).restrictedIdealReduction (hI.isOpen_pow m)).quotientKerEquivOfSurjective
+      ((I ^ m).restrictedIdealReduction_surjective (hI.isOpen_pow m)))
+  refine AlgEquiv.ofRingEquiv (f := e) fun r ↦ ?_
+  rw [← Ideal.Quotient.mk_algebraMap]; simp [e, -Ideal.Quotient.mk_algebraMap]
+
+/-- `quotientPowIsRestrictedEquivMvPolynomialQuotient` computes reduction modulo `I ^ m`. -/
+@[simp] theorem quotientPowIsRestrictedEquivMvPolynomialQuotient_mk
+    (hI : IsAdic I) (hfg : I.FG) (m : ℕ) (g : Tate k R) :
+    quotientPowIsRestrictedEquivMvPolynomialQuotient hI hfg m (Ideal.Quotient.mk _ g) =
+      (I ^ m).restrictedIdealReduction (hI.isOpen_pow m) g := by
   simp [quotientPowIsRestrictedEquivMvPolynomialQuotient]
+
+/-- `quotientPowIsRestrictedEquivMvPolynomialQuotient.symm` lifts `map (mk (I ^ m)) p`. -/
+@[simp] theorem quotientPowIsRestrictedEquivMvPolynomialQuotient_symm_map_mk
+    (hI : IsAdic I) (hfg : I.FG) (m : ℕ) (p : MvPolynomial (Fin k) R) :
+    (quotientPowIsRestrictedEquivMvPolynomialQuotient hI hfg m).symm
+        (MvPolynomial.map (Ideal.Quotient.mk (I ^ m)) p) =
+      Ideal.Quotient.mk _ (polynomialToRestricted (fun _ : Fin k ↦ 1) p) := by
+  rw [AlgEquiv.symm_apply_eq]; simp
+
+/-- `quotientPowIsRestrictedEquivMvPolynomialQuotient.symm` sends `X i` to the class of `X i`. -/
+@[simp] theorem quotientPowIsRestrictedEquivMvPolynomialQuotient_symm_X (hI : IsAdic I) (hfg : I.FG)
+    (m : ℕ) (i : Fin k) :
+    (quotientPowIsRestrictedEquivMvPolynomialQuotient hI hfg m).symm (MvPolynomial.X i) =
+      Ideal.Quotient.mk _ ⟨X i, isRestricted_X _ i⟩ := by rw [AlgEquiv.symm_apply_eq]; simp
+
+/-- `quotientPowIsRestrictedEquivMvPolynomialQuotient.symm` sends `C (mk (I ^ m) r)` to scalars. -/
+@[simp] theorem quotientPowIsRestrictedEquivMvPolynomialQuotient_symm_C_mk (hI : IsAdic I)
+    (hfg : I.FG) (m : ℕ) (r : R) :
+    (quotientPowIsRestrictedEquivMvPolynomialQuotient (k := k) hI hfg m).symm
+        (MvPolynomial.C (Ideal.Quotient.mk (I ^ m) r)) = algebraMap R _ r := by
+  rw [AlgEquiv.symm_apply_eq, ← Ideal.Quotient.mk_algebraMap]; simp [-Ideal.Quotient.mk_algebraMap]
 
 section CompleteAdic
 
 variable [CompleteSpace R]
 
 /-- **Inverse-limit presentation of `R⟨X₁, …, Xₖ⟩` over a complete adic normed ring**
-(EGA I, Ch. 0, §7.5.1). Over a complete ultrametric normed commutative ring `R` with finitely
-generated ideal of definition `I`, the Gauss-normed restricted-series algebra `R⟨X₁, …, Xₖ⟩` is
-isomorphic as an `R`-algebra to the `(I · R[X])`-adic completion of `MvPolynomial (Fin k) R`. -/
+(EGA I, Ch. 0, §7.5.1). -/
 noncomputable def isRestrictedSubringEquivAdicCompletion (hI : IsAdic I) (hfg : I.FG) :
-    IsRestricted.subring (R := R) (fun _ : Fin k ↦ 1) ≃ₐ[R]
-      AdicCompletion (I.map (MvPolynomial.C (σ := Fin k))) (MvPolynomial (Fin k) R) :=
+    Tate k R ≃ₐ[R] AdicCompletion (I.map (MvPolynomial.C (σ := Fin k))) (MvPolynomial (Fin k) R) :=
   (restrictedMvPowerSeriesCompletionGaussAlgEquiv (n := k) (R := R)).symm.trans
     (restrictedMvPowerSeriesCompletionEquivAdicCompletion hI hfg)
 
-/-- On an embedded polynomial, `isRestrictedSubringEquivAdicCompletion` agrees with the canonical
-`algebraMap` into the adic completion of `MvPolynomial (Fin k) R`. -/
-@[simp]
-theorem isRestrictedSubringEquivAdicCompletion_polynomialToRestricted
+/-- On embedded polynomials, `isRestrictedSubringEquivAdicCompletion` is `algebraMap`. -/
+@[simp] theorem isRestrictedSubringEquivAdicCompletion_polynomialToRestricted
     (hI : IsAdic I) (hfg : I.FG) (p : MvPolynomial (Fin k) R) :
     isRestrictedSubringEquivAdicCompletion hI hfg (polynomialToRestricted (fun _ : Fin k ↦ 1) p) =
       algebraMap (MvPolynomial (Fin k) R) _ p := by
@@ -438,21 +439,24 @@ theorem isRestrictedSubringEquivAdicCompletion_polynomialToRestricted
     ← restrictedMvPowerSeriesGaussEquiv_weightedPolynomialHom, RingEquiv.symm_apply_apply,
     restrictedMvPowerSeriesCompletionEquivAdicCompletion_weightedPolynomialHom]
 
-/-- The inverse of `isRestrictedSubringEquivAdicCompletion` sends an embedded polynomial in
-`AdicCompletion` to `polynomialToRestricted`. -/
-@[simp]
-theorem isRestrictedSubringEquivAdicCompletion_symm_algebraMap
+/-- `isRestrictedSubringEquivAdicCompletion` sends `X i` to `algebraMap _ _ (X i)`. -/
+@[simp] theorem isRestrictedSubringEquivAdicCompletion_X (hI : IsAdic I) (hfg : I.FG) (i : Fin k) :
+    isRestrictedSubringEquivAdicCompletion hI hfg ⟨X i, isRestricted_X _ i⟩ =
+      algebraMap (MvPolynomial (Fin k) R) _ (MvPolynomial.X i) := by
+  rw [← polynomialToRestricted_X, isRestrictedSubringEquivAdicCompletion_polynomialToRestricted]
+
+/-- `isRestrictedSubringEquivAdicCompletion.symm` sends embedded polynomials to
+`polynomialToRestricted`. -/
+@[simp] theorem isRestrictedSubringEquivAdicCompletion_symm_algebraMap
     (hI : IsAdic I) (hfg : I.FG) (p : MvPolynomial (Fin k) R) :
-    (isRestrictedSubringEquivAdicCompletion hI hfg).symm
-        (algebraMap (MvPolynomial (Fin k) R) _ p) =
+    (isRestrictedSubringEquivAdicCompletion hI hfg).symm (algebraMap (MvPolynomial (Fin k) R) _ p) =
       polynomialToRestricted (fun _ : Fin k ↦ 1) p := by
   rw [AlgEquiv.symm_apply_eq, isRestrictedSubringEquivAdicCompletion_polynomialToRestricted]
 
-/-- `isRestrictedSubringEquivAdicCompletion` is a homeomorphism when `AdicCompletion` carries the
-adic topology of the extended ideal. -/
+/-- `isRestrictedSubringEquivAdicCompletion` is a homeomorphism for the adic topology on
+`AdicCompletion`. -/
 theorem isHomeomorph_isRestrictedSubringEquivAdicCompletion (hI : IsAdic I) (hfg : I.FG) :
-    @IsHomeomorph _ _ _
-      ((I.map (MvPolynomial.C (σ := Fin k))).map (algebraMap _ _)).adicTopology
+    @IsHomeomorph _ _ _ ((I.map (MvPolynomial.C (σ := Fin k))).map (algebraMap _ _)).adicTopology
       (isRestrictedSubringEquivAdicCompletion (k := k) hI hfg) := by
   let _ : TopologicalSpace (AdicCompletion
       (I.map (MvPolynomial.C (σ := Fin k))) (MvPolynomial (Fin k) R)) :=
@@ -463,220 +467,34 @@ theorem isHomeomorph_isRestrictedSubringEquivAdicCompletion (hI : IsAdic I) (hfg
      by simpa [e1] using continuous_restrictedMvPowerSeriesCompletionGaussEquiv⟩
   exact (isHomeomorph_restrictedMvPowerSeriesCompletionEquivAdicCompletion (k := k) hI hfg).comp h1
 
-/-- Under `isRestrictedSubringEquivAdicCompletion`, the `m`-th inverse-limit projection (`m ≠ 0`)
-identifies with polynomial reduction modulo `I ^ m` via
-`MvPolynomial.quotientEquivQuotientMvPolynomial`. -/
-theorem evalₐ_isRestrictedSubringEquivAdicCompletion
-    (hI : IsAdic I) (hfg : I.FG) {m : ℕ} (hm : m ≠ 0)
-    (g : IsRestricted.subring (R := R) (fun _ : Fin k ↦ 1)) :
+/-- Under `isRestrictedSubringEquivAdicCompletion`, `evalₐ _ m` computes polynomial reduction modulo
+`I ^ m`. -/
+theorem evalₐ_isRestrictedSubringEquivAdicCompletion (hI : IsAdic I) (hfg : I.FG) (m : ℕ)
+    (g : Tate k R) :
     AdicCompletion.evalₐ _ m (isRestrictedSubringEquivAdicCompletion hI hfg g) =
       Ideal.quotEquivOfEq (Ideal.map_pow (MvPolynomial.C (σ := Fin k)) I m)
         (MvPolynomial.quotientEquivQuotientMvPolynomial (I ^ m)
-          (restrictedIdealReduction (I ^ m) (hI.isOpen_pow m) g)) := by
+          ((I ^ m).restrictedIdealReduction (hI.isOpen_pow m) g)) := by
   simp only [isRestrictedSubringEquivAdicCompletion, AlgEquiv.trans_apply,
-    evalₐ_restrictedMvPowerSeriesCompletionEquivAdicCompletion hI hfg hm,
+    evalₐ_restrictedMvPowerSeriesCompletionEquivAdicCompletion hI hfg m,
     coe_restrictedMvPowerSeriesCompletionGaussAlgEquiv_symm,
     restrictedCompletionReduction_eq_restrictedIdealReduction, RingEquiv.apply_symm_apply]
 
-/-- **Noetherianity of Gauss-normed restricted power series.** Over a complete noetherian
-ultrametric normed commutative ring `R` whose topology is `I`-adic, the Gauss-normed
-restricted-series ring `R⟨X₁, …, Xₖ⟩` is noetherian. -/
+/-- **Noetherianity of `R⟨X₁, …, Xₖ⟩`** over a complete noetherian `I`-adic normed ring `R`. -/
 theorem isNoetherianRing_isRestricted_subring_of_isAdic [IsNoetherianRing R] (hI : IsAdic I) :
-    IsNoetherianRing (IsRestricted.subring (R := R) (fun _ : Fin k ↦ 1)) :=
+    IsNoetherianRing (Tate k R) :=
   have := isNoetherianRing_restrictedMvPowerSeriesCompletion_of_isAdic k hI
   isNoetherianRing_of_ringEquiv _ (restrictedMvPowerSeriesCompletionGaussEquiv (n := k) (R := R))
 
 end CompleteAdic
 
-end Adic
-
-section CompletedTensor
-
-/-- Over an adic ultrametric normed commutative ring `R`, the Gauss-normed restricted-series ring
-`R⟨X₁, …, Xₖ⟩` is an adic ring of finite ideal type. -/
-instance isAdicRing_isRestricted_subring [IsAdicRing R] :
-    IsAdicRing (IsRestricted.subring (R := R) (fun _ : Fin k ↦ 1)) := by
+/-- Over an adic ultrametric normed commutative ring `R`, `R⟨X₁, …, Xₖ⟩` is an `IsAdicRing`. -/
+instance isAdicRing_isRestricted_subring [IsAdicRing R] : IsAdicRing (Tate k R) := by
   obtain ⟨hfg, hI, -⟩ := IsAdicRing.ideal_spec R
   have hJ := isAdic_map_algebraMap_isRestricted_subring (k := k) hI hfg
   exact ⟨_, hfg.map _, hJ, hJ.isAdicComplete_iff.mpr ⟨inferInstance, inferInstance⟩⟩
 
-variable [IsAdicRing R] [IsAdicRing S] [Algebra R S] [ContinuousSMul R S]
-
-private noncomputable def coeffMapAlgHom :
-    IsRestricted.subring (R := R) (fun _ : Fin k ↦ 1) →ₐ[R]
-      IsRestricted.subring (R := S) (fun _ : Fin k ↦ 1) :=
-  { (restrictedMvPowerSeriesGaussEquiv (n := k) (R := S)).toRingHom.comp
-      ((weightedMap (continuous_algebraMap R S) isWeightFamily_one_weight
-        isWeightFamily_one_weight (fun _ ↦ by simp)).comp
-        (restrictedMvPowerSeriesGaussEquiv (n := k) (R := R)).symm.toRingHom) with
-    commutes' r := Subtype.ext (by simp [coe_algebraMap_isRestrictedSubring_apply]) }
-
-omit [IsAdicRing R] [IsAdicRing S] in
-private theorem continuous_coeffMapAlgHom :
-    Continuous (coeffMapAlgHom (k := k) (R := R) (S := S)) :=
-  continuous_restrictedMvPowerSeriesGaussEquiv.comp
-    ((continuous_weightedMap _ _ _ _).comp continuous_restrictedMvPowerSeriesGaussEquiv_symm)
-
-omit [IsUltrametricDist R] [IsAdicRing R] [IsAdicRing S] [ContinuousSMul R S] in
-private theorem continuous_toAlgHom_isRestrictedSubring :
-    Continuous (IsScalarTower.toAlgHom R S (IsRestricted.subring (R := S) (fun _ : Fin k ↦ 1))) :=
-  isometry_algebraMap_isRestrictedSubring.continuous
-
-private noncomputable def toCompletedTensorGauss :
-    AdicRing.CompletedTensorProduct R (IsRestricted.subring (R := R) (fun _ : Fin k ↦ 1)) S →ₐ[R]
-      IsRestricted.subring (R := S) (fun _ : Fin k ↦ 1) :=
-  AdicRing.CompletedTensorProduct.lift (coeffMapAlgHom (k := k) (R := R) (S := S))
-    (IsScalarTower.toAlgHom R S (IsRestricted.subring (R := S) (fun _ : Fin k ↦ 1)))
-    continuous_coeffMapAlgHom continuous_toAlgHom_isRestrictedSubring
-
-omit [ContinuousSMul R S] in
-private theorem ofCompletedTensorGauss_commutes (r : R) :
-    restrictedLiftLinear (AdicRing.CompletedTensorProduct.continuous_inr R
-        (IsRestricted.subring (R := R) (fun _ : Fin k ↦ 1)) S)
-      (fun i ↦ AdicRing.CompletedTensorProduct.inl R _ S
-        ⟨X i, IsRestricted.mem_subring.mpr (isRestricted_X _ i)⟩)
-      (algebraMap R (IsRestricted.subring (R := S) (fun _ : Fin k ↦ 1)) r) =
-      algebraMap R (AdicRing.CompletedTensorProduct R
-        (IsRestricted.subring (R := R) (fun _ : Fin k ↦ 1)) S) r := by
-  rw [IsScalarTower.algebraMap_apply R S, restrictedLiftLinear_algebraMap]
-  exact (AdicRing.CompletedTensorProduct.inr R _ S).commutes r
-
-private noncomputable def ofCompletedTensorGauss :
-    IsRestricted.subring (R := S) (fun _ : Fin k ↦ 1) →ₐ[R]
-      AdicRing.CompletedTensorProduct R (IsRestricted.subring (R := R) (fun _ : Fin k ↦ 1)) S :=
-  { restrictedLiftLinear (AdicRing.CompletedTensorProduct.continuous_inr R
-        (IsRestricted.subring (R := R) (fun _ : Fin k ↦ 1)) S)
-      (fun i ↦ AdicRing.CompletedTensorProduct.inl R _ S
-        ⟨X i, IsRestricted.mem_subring.mpr (isRestricted_X _ i)⟩) with
-    commutes' := ofCompletedTensorGauss_commutes }
-
-omit [ContinuousSMul R S] in
-@[simp]
-private theorem coe_ofCompletedTensorGauss :
-    ⇑(ofCompletedTensorGauss (k := k) (R := R) (S := S)) =
-      ⇑(restrictedLiftLinear (AdicRing.CompletedTensorProduct.continuous_inr R
-          (IsRestricted.subring (R := R) (fun _ : Fin k ↦ 1)) S)
-        (fun i ↦ AdicRing.CompletedTensorProduct.inl R _ S
-          ⟨X i, IsRestricted.mem_subring.mpr (isRestricted_X _ i)⟩)) := rfl
-
-private theorem continuous_toCompletedTensorGauss :
-    Continuous (toCompletedTensorGauss (k := k) (R := R) (S := S)) :=
-  AdicRing.CompletedTensorProduct.continuous_lift ..
-
-omit [ContinuousSMul R S] in
-private theorem continuous_ofCompletedTensorGauss :
-    Continuous (ofCompletedTensorGauss (k := k) (R := R) (S := S)) :=
-  continuous_restrictedLiftLinear ..
-
-private theorem toCompletedTensorGauss_comp_ofCompletedTensorGauss :
-    (toCompletedTensorGauss (k := k) (R := R) (S := S)).comp
-      (ofCompletedTensorGauss (k := k) (R := R) (S := S)) = AlgHom.id R _ := by
-  refine AlgHom.toRingHom_injective <| isRestricted_subring_ringHom_ext_of_continuous
-    (continuous_toCompletedTensorGauss.comp continuous_ofCompletedTensorGauss) continuous_id
-    (fun _ ↦ by simp [toCompletedTensorGauss]) (fun i ↦ ?_)
-  simp only [AlgHom.comp_toRingHom, RingHom.comp_apply, RingHom.coe_coe,
-    AlgHom.id_toRingHom, RingHom.id_apply, coe_ofCompletedTensorGauss]
-  have hX := restrictedLiftLinear_X (AdicRing.CompletedTensorProduct.continuous_inr R
-    (IsRestricted.subring (R := R) (fun _ : Fin k ↦ 1)) S)
-    (fun j ↦ AdicRing.CompletedTensorProduct.inl R _ S
-      ⟨X j, IsRestricted.mem_subring.mpr (isRestricted_X _ j)⟩) i
-  rw [hX, toCompletedTensorGauss, AdicRing.CompletedTensorProduct.lift_inl]
-  exact Subtype.ext (by simp [coeffMapAlgHom])
-
-private theorem ofCompletedTensorGauss_comp_toCompletedTensorGauss :
-    (ofCompletedTensorGauss (k := k) (R := R) (S := S)).comp
-      (toCompletedTensorGauss (k := k) (R := R) (S := S)) = AlgHom.id R _ := by
-  refine AdicRing.CompletedTensorProduct.algHom_ext
-    (continuous_ofCompletedTensorGauss.comp continuous_toCompletedTensorGauss) continuous_id
-    (AlgHom.toRingHom_injective ?_) (AlgHom.ext fun _ ↦ by simp [toCompletedTensorGauss])
-  refine isRestricted_subring_ringHom_ext_of_continuous
-    ((continuous_ofCompletedTensorGauss.comp continuous_toCompletedTensorGauss).comp
-      (AdicRing.CompletedTensorProduct.continuous_inl ..))
-    (AdicRing.CompletedTensorProduct.continuous_inl ..)
-    (fun _ ↦ by
-      simp only [AlgHom.comp_toRingHom, RingHom.comp_apply, RingHom.coe_coe, AlgHom.commutes])
-    (fun i ↦ ?_)
-  simp only [AlgHom.comp_toRingHom, RingHom.comp_apply, RingHom.coe_coe,
-    toCompletedTensorGauss, AdicRing.CompletedTensorProduct.lift_inl, coe_ofCompletedTensorGauss]
-  have hX : coeffMapAlgHom (k := k) (R := R) (S := S) ⟨X i, isRestricted_X _ i⟩ =
-      ⟨X i, isRestricted_X _ i⟩ := Subtype.ext (by simp [coeffMapAlgHom])
-  rw [hX]
-  exact restrictedLiftLinear_X _ _ i
-
-/-- **Completed-tensor base change on Gauss-normed restricted series.** Over adic ultrametric normed
-commutative rings `R` and `S` connected by a continuous `R`-algebra structure, the completed tensor
-product `R⟨X₁, …, Xₖ⟩ ⊗̂_R S` is isomorphic as an `R`-algebra to `S⟨X₁, …, Xₖ⟩`. -/
-noncomputable def completedTensorRestrictedGaussEquiv :
-    AdicRing.CompletedTensorProduct R (IsRestricted.subring (R := R) (fun _ : Fin k ↦ 1)) S ≃ₐ[R]
-      IsRestricted.subring (R := S) (fun _ : Fin k ↦ 1) :=
-  AlgEquiv.ofAlgHom (toCompletedTensorGauss (k := k) (R := R) (S := S))
-    (ofCompletedTensorGauss (k := k) (R := R) (S := S))
-    toCompletedTensorGauss_comp_ofCompletedTensorGauss
-    ofCompletedTensorGauss_comp_toCompletedTensorGauss
-
-/-- `completedTensorRestrictedGaussEquiv` is a homeomorphism of topological `R`-algebras. -/
-theorem isHomeomorph_completedTensorRestrictedGaussEquiv :
-    IsHomeomorph (completedTensorRestrictedGaussEquiv (k := k) (R := R) (S := S)) :=
-  (completedTensorRestrictedGaussEquiv (k := k) (R := R) (S := S)).toEquiv.isHomeomorph_iff.mpr
-    ⟨continuous_toCompletedTensorGauss, continuous_ofCompletedTensorGauss⟩
-
-/-- Unconditionally on `R⟨X₁, …, Xₖ⟩`, `completedTensorRestrictedGaussEquiv` transports `g` along
-`weightedMap (continuous_algebraMap R S)` across `restrictedMvPowerSeriesGaussEquiv`. -/
-@[simp]
-theorem completedTensorRestrictedGaussEquiv_inl
-    (g : IsRestricted.subring (R := R) (fun _ : Fin k ↦ 1)) :
-    completedTensorRestrictedGaussEquiv (k := k) (R := R) (S := S)
-        (AdicRing.CompletedTensorProduct.inl R _ S g) =
-      restrictedMvPowerSeriesGaussEquiv
-        (weightedMap (continuous_algebraMap R S) isWeightFamily_one_weight
-          isWeightFamily_one_weight (by simp) (restrictedMvPowerSeriesGaussEquiv.symm g)) := by
-  simp [completedTensorRestrictedGaussEquiv, toCompletedTensorGauss, coeffMapAlgHom]
-
-/-- As a formal power series, `completedTensorRestrictedGaussEquiv` acts on `inl g` by mapping
-coefficients along `algebraMap R S` (without requiring a Lipschitz norm bound). -/
-theorem coe_completedTensorRestrictedGaussEquiv_inl
-    (g : IsRestricted.subring (R := R) (fun _ : Fin k ↦ 1)) :
-    (completedTensorRestrictedGaussEquiv (k := k) (R := R) (S := S)
-        (AdicRing.CompletedTensorProduct.inl R _ S g) : MvPowerSeries (Fin k) S) =
-      MvPowerSeries.map (algebraMap R S) g := by simp
-
-/-- When `algebraMap R S` satisfies a norm bound, `completedTensorRestrictedGaussEquiv` acts on
-`inl g` as `restrictedMap (algebraMap R S)`. -/
-theorem completedTensorRestrictedGaussEquiv_inl_of_norm_le (hφ : ∀ r, ‖algebraMap R S r‖ ≤ C * ‖r‖)
-    (g : IsRestricted.subring (R := R) (fun _ : Fin k ↦ 1)) :
-    completedTensorRestrictedGaussEquiv (k := k) (R := R) (S := S)
-        (AdicRing.CompletedTensorProduct.inl R _ S g) =
-      restrictedMap (algebraMap R S) hφ g :=
-  Subtype.ext <| (coe_completedTensorRestrictedGaussEquiv_inl g).trans (coe_restrictedMap ..).symm
-
-/-- On `S`, `completedTensorRestrictedGaussEquiv` is the constant-series embedding `algebraMap`. -/
-@[simp]
-theorem completedTensorRestrictedGaussEquiv_inr (s : S) :
-    completedTensorRestrictedGaussEquiv (k := k) (R := R) (S := S)
-        (AdicRing.CompletedTensorProduct.inr R
-          (IsRestricted.subring (R := R) (fun _ : Fin k ↦ 1)) S s) =
-      algebraMap S (IsRestricted.subring (R := S) (fun _ : Fin k ↦ 1)) s := by
-  simp [completedTensorRestrictedGaussEquiv, toCompletedTensorGauss]
-
-/-- The inverse of `completedTensorRestrictedGaussEquiv` sends a constant series `s` to `inr s`. -/
-@[simp]
-theorem completedTensorRestrictedGaussEquiv_symm_algebraMap (s : S) :
-    (completedTensorRestrictedGaussEquiv (k := k) (R := R) (S := S)).symm
-        (algebraMap S (IsRestricted.subring (R := S) (fun _ : Fin k ↦ 1)) s) =
-      AdicRing.CompletedTensorProduct.inr R
-        (IsRestricted.subring (R := R) (fun _ : Fin k ↦ 1)) S s := by
-  rw [AlgEquiv.symm_apply_eq, completedTensorRestrictedGaussEquiv_inr]
-
-/-- The inverse of `completedTensorRestrictedGaussEquiv` sends each coordinate `Xᵢ` to `inl Xᵢ`. -/
-@[simp]
-theorem completedTensorRestrictedGaussEquiv_symm_X (i : Fin k) :
-    (completedTensorRestrictedGaussEquiv (k := k) (R := R) (S := S)).symm
-        ⟨MvPowerSeries.X i, isRestricted_X _ i⟩ =
-      AdicRing.CompletedTensorProduct.inl R (IsRestricted.subring (R := R) (fun _ : Fin k ↦ 1)) S
-        ⟨MvPowerSeries.X i, isRestricted_X _ i⟩ := by
-  rw [AlgEquiv.symm_apply_eq]; exact Subtype.ext (by simp)
-
-end CompletedTensor
+end Adic
 
 end TauCeti.MvPowerSeries
 
@@ -686,24 +504,55 @@ open _root_.MvPowerSeries TauCeti.MvPowerSeries
 
 variable {k : ℕ} {R : Type*} [NormedCommRing R] [IsUltrametricDist R] {I : Ideal R}
 
-/-- The order-`m` polynomial quotient equivalences on Huber and Gauss-normed restricted series
-commute with the Gauss comparison. -/
-theorem quotientPowRestrictedEquiv_eq_quotientPowIsRestrictedEquiv
-    (hI : IsAdic I) (hfg : I.FG) {m : ℕ} (hm : m ≠ 0)
-    (f : weightedRestrictedSubring (fun _ : Fin k ↦ ({1} : Set R)) isWeightFamily_one_weight) :
-    quotientPowRestrictedEquivMvPolynomialQuotient hI hfg hm (Ideal.Quotient.mk _ f) =
-      quotientPowIsRestrictedEquivMvPolynomialQuotient hI hfg hm
+local notation:max "WSub" k:max R:max =>
+  weightedRestrictedSubring (fun _ : Fin k ↦ ({1} : Set R)) isWeightFamily_one_weight
+local notation:max "WComp" k:max R:max => restrictedMvPowerSeriesCompletion k R
+
+/-- Unpowered polynomial quotient equivalences on Huber and Gauss series agree. -/
+theorem quotientRestrictedEquiv_eq_quotientIsRestrictedEquiv (hI : IsAdic I) (hfg : I.FG)
+    (f : WSub k R) : quotientRestrictedEquivMvPolynomialQuotient hI hfg (Ideal.Quotient.mk _ f) =
+      quotientIsRestrictedEquivMvPolynomialQuotient hI hfg
         (Ideal.Quotient.mk _ (restrictedMvPowerSeriesGaussEquiv f)) := by
   simp [restrictedReduction_eq_restrictedIdealReduction]
 
-/-- Over a complete `I`-adic normed ring, the order-`m` polynomial quotient equivalence on the
-completed Huber carrier agrees with that on Gauss-normed restricted series. -/
-theorem quotientPowRestrictedCompletionEquiv_eq_quotientPowIsRestrictedEquiv [CompleteSpace R]
-    (hI : IsAdic I) (hfg : I.FG) {m : ℕ} (hm : m ≠ 0)
-    (x : restrictedMvPowerSeriesCompletion k R) :
-    quotientPowRestrictedCompletionEquivMvPolynomialQuotient hI hfg hm (Ideal.Quotient.mk _ x) =
-      quotientPowIsRestrictedEquivMvPolynomialQuotient hI hfg hm
+/-- Completed Huber and Gauss unpowered polynomial quotient equivalences agree. -/
+theorem quotientRestrictedCompletionEquiv_eq_quotientIsRestrictedEquiv [CompleteSpace R]
+    (hI : IsAdic I) (hfg : I.FG) (x : WComp k R) :
+    quotientRestrictedCompletionEquivMvPolynomialQuotient hI hfg (Ideal.Quotient.mk _ x) =
+      quotientIsRestrictedEquivMvPolynomialQuotient hI hfg
         (Ideal.Quotient.mk _ (restrictedMvPowerSeriesCompletionGaussEquiv x)) := by
   simp [restrictedCompletionReduction_eq_restrictedIdealReduction]
 
+/-- Order-`m` polynomial quotient equivalences on Huber and Gauss series agree. -/
+theorem quotientPowRestrictedEquiv_eq_quotientPowIsRestrictedEquiv (hI : IsAdic I) (hfg : I.FG)
+    (m : ℕ) (f : WSub k R) :
+    quotientPowRestrictedEquivMvPolynomialQuotient hI hfg m (Ideal.Quotient.mk _ f) =
+      quotientPowIsRestrictedEquivMvPolynomialQuotient hI hfg m
+        (Ideal.Quotient.mk _ (restrictedMvPowerSeriesGaussEquiv f)) := by
+  simp [restrictedReduction_eq_restrictedIdealReduction]
+
+/-- Completed Huber and Gauss order-`m` polynomial quotient equivalences agree. -/
+theorem quotientPowRestrictedCompletionEquiv_eq_quotientPowIsRestrictedEquiv [CompleteSpace R]
+    (hI : IsAdic I) (hfg : I.FG) (m : ℕ) (x : WComp k R) :
+    quotientPowRestrictedCompletionEquivMvPolynomialQuotient hI hfg m (Ideal.Quotient.mk _ x) =
+      quotientPowIsRestrictedEquivMvPolynomialQuotient hI hfg m
+        (Ideal.Quotient.mk _ (restrictedMvPowerSeriesCompletionGaussEquiv x)) := by
+  simp [restrictedCompletionReduction_eq_restrictedIdealReduction]
+
+/-- `isRestrictedSubringEquivAdicCompletion` commutes with the completed Gauss comparison. -/
+theorem isRestrictedSubringEquivAdicCompletion_restrictedMvPowerSeriesCompletionGaussEquiv
+    [CompleteSpace R] (hI : IsAdic I) (hfg : I.FG) (x : WComp k R) :
+    isRestrictedSubringEquivAdicCompletion hI hfg (restrictedMvPowerSeriesCompletionGaussEquiv x) =
+      restrictedMvPowerSeriesCompletionEquivAdicCompletion hI hfg x := by
+  simp [isRestrictedSubringEquivAdicCompletion]
+
+/-- Composing `restrictedMvPowerSeriesCompletionGaussAlgEquiv` with the normed adic-limit comparison
+recovers `restrictedMvPowerSeriesCompletionEquivAdicCompletion`. -/
+@[simp]
+theorem restrictedMvPowerSeriesCompletionGaussAlgEquiv_trans_isRestrictedSubringEquivAdicCompletion
+    [CompleteSpace R] (hI : IsAdic I) (hfg : I.FG) :
+    (restrictedMvPowerSeriesCompletionGaussAlgEquiv (n := k) (R := R)).trans
+      (isRestrictedSubringEquivAdicCompletion hI hfg) =
+      restrictedMvPowerSeriesCompletionEquivAdicCompletion hI hfg :=
+  AlgEquiv.ext fun x ↦ by simp [isRestrictedSubringEquivAdicCompletion]
 end TauCeti.Huber
