@@ -82,6 +82,10 @@ theorem adjoint_halfWavePropagator (t : ℝ) :
     ContinuousLinearMap.adjoint (halfWavePropagator (E := E) F t) = halfWavePropagator F (-t) :=
   adjoint_phasePropagator _ t
 
+/-- `W₊(t)` is a contraction on `L²`. -/
+theorem norm_halfWavePropagator_le (t : ℝ) : ‖halfWavePropagator (E := E) F t‖ ≤ 1 :=
+  norm_phasePropagator_le _ t
+
 /-- `W₊(t)` commutes with every `L²` Fourier multiplier. -/
 theorem halfWavePropagator_comp_fourierMultiplierCLM (t : ℝ) (m : Lp ℂ ∞ (volume : Measure E)) :
     halfWavePropagator F t ∘L Lp.fourierMultiplierCLM F m =

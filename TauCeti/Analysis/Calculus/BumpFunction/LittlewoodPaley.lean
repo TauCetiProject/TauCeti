@@ -576,12 +576,8 @@ theorem abs_inhomogeneousLittlewoodPaley_le_one (j : ℕ) (ξ : E) :
   rcases j with _ | j
   · rw [inhomogeneousLittlewoodPaley_zero, abs_of_nonneg φ.nonneg]
     exact φ.le_one
-  · rw [inhomogeneousLittlewoodPaley_succ_apply]
-    have := φ.nonneg (x := ((2 : ℝ) ^ (j + 1))⁻¹ • ξ)
-    have := φ.le_one (x := ((2 : ℝ) ^ (j + 1))⁻¹ • ξ)
-    have := φ.nonneg (x := ((2 : ℝ) ^ j)⁻¹ • ξ)
-    have := φ.le_one (x := ((2 : ℝ) ^ j)⁻¹ • ξ)
-    exact abs_sub_le_iff.2 ⟨by linarith, by linarith⟩
+  · rw [inhomogeneousLittlewoodPaley_succ]
+    exact φ.abs_littlewoodPaley_le_one _ ξ
 
 /-- **Bounded overlap.** There is `L`, depending only on `φ`, such that at every `ξ` at most `L`
 pieces of the partition are nonzero, over any finite set of indices. -/

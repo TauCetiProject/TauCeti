@@ -113,7 +113,7 @@ theorem exists_eLpNorm_halfWavePropagator_fourierMultiplierCLM_littlewoodPaley_l
   have hB : 0 ≤ B := by positivity
   have hT : ‖(halfWavePropagator ℂ t).comp (Lp.fourierMultiplierCLM ℂ m)‖ ≤ ((1 : ℝ≥0) : ℝ) :=
     (ContinuousLinearMap.opNorm_comp_le _ _).trans <|
-      (mul_le_mul (norm_phasePropagator_le _ t) (φ.norm_fourierMultiplierCLM_littlewoodPaley_le hm)
+      (mul_le_mul (norm_halfWavePropagator_le t) (φ.norm_fourierMultiplierCLM_littlewoodPaley_le hm)
         (norm_nonneg _) zero_le_one).trans_eq (by simp)
   have h₀ : ∀ g : Lp ℂ 2 (volume : Measure E), Integrable g →
       eLpNorm ((halfWavePropagator ℂ t).comp (Lp.fourierMultiplierCLM ℂ m) g) ∞ volume ≤
