@@ -121,7 +121,7 @@ polynomial in the Morse inequalities.
   `TauCeti.IsMorse.criticalCount_neg`.
 * `TauCeti.IsMorse.morseIndexNegEquiv`: for `i + k = dim M`, the critical points of index `k` for
   `-f` are those of index `i` for `f`, by
-  `TauCeti.IsMorse.manifoldMorseIndex_neg_add_manifoldMorseIndex`.
+  `TauCeti.IsMorse.manifoldMorseIndex_neg_add_manifoldMorseIndex_eq_finrank`.
 * `TauCeti.criticalCount_zero_ne_zero` and `TauCeti.IsMorse.criticalCount_finrank_ne_zero`: on a
   nonempty compact manifold the minimum is a critical point of index `0` and, for a Morse function,
   the maximum is one of index the dimension.
@@ -1216,7 +1216,7 @@ theorem IsMorse.setOf_neg_band_eq (hf : IsMorse I f) (a b : ℝ) (i : ℕ) :
 
 /-- At a critical point of a Morse function `f`, the Morse indices of `-f` and `f` add up to the
 dimension of `M`. -/
-theorem IsMorse.manifoldMorseIndex_neg_add_manifoldMorseIndex (hf : IsMorse I f)
+theorem IsMorse.manifoldMorseIndex_neg_add_manifoldMorseIndex_eq_finrank (hf : IsMorse I f)
     (hx : x ∈ criticalPoints I f) :
     manifoldMorseIndex I (-f) x + manifoldMorseIndex I f x = Module.finrank ℝ E :=
   (hf.isManifoldNondegenerateCriticalPoint_of_mem_criticalPoints
@@ -1229,7 +1229,7 @@ noncomputable def IsMorse.morseIndexNegEquiv (hf : IsMorse I f) {i k : ℕ}
     {q : criticalPoints I (-f) // manifoldMorseIndex I (-f) q = k} ≃
       {p : criticalPoints I f // manifoldMorseIndex I f p = i} :=
   (Set.equivOfEq (criticalPoints_neg (I := I) (f := f))).subtypeEquiv fun q ↦ by
-    have := hf.manifoldMorseIndex_neg_add_manifoldMorseIndex (by simpa using q.2)
+    have := hf.manifoldMorseIndex_neg_add_manifoldMorseIndex_eq_finrank (by simpa using q.2)
     simp only [Set.equivOfEq_apply]
     omega
 

@@ -214,7 +214,7 @@ theorem morseCochainToNegChain_eq_zero {i k : ℕ} (hik : i + k ≠ finrank ℝ 
   ext a q
   rw [morseCochainToNegChain_apply]
   split_ifs with hq
-  · have := hf.manifoldMorseIndex_neg_add_manifoldMorseIndex (by simpa using q.1.2)
+  · have := hf.manifoldMorseIndex_neg_add_manifoldMorseIndex_eq_finrank (by simpa using q.1.2)
     exact absurd (by rw [← this, q.2, hq, add_comm]) hik
   · rfl
 
@@ -255,7 +255,7 @@ theorem morseCochainToNegChain_d_comp (i k : ℕ)
   split_ifs with hqi
   · -- `q` has index `i + 1` for `f`, so the degrees `i` and `k + 1` are complementary.
     have hik : i + (k + 1) = finrank ℝ E := by
-      have := hf.manifoldMorseIndex_neg_add_manifoldMorseIndex (by simpa using q.1.2)
+      have := hf.manifoldMorseIndex_neg_add_manifoldMorseIndex_eq_finrank (by simpa using q.1.2)
       have := q.2
       omega
     refine (congrArg ULift.down (ModuleCat.comp_apply _ _ _)).trans ?_
