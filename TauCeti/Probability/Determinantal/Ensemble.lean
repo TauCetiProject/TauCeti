@@ -7,8 +7,8 @@ module
 
 public import TauCeti.MeasureTheory.Integral.Determinant.Andreief
 public import TauCeti.MeasureTheory.Integral.Kernel.FiniteRank
-public import Mathlib.MeasureTheory.Measure.WithDensityFinite
 import TauCeti.MeasureTheory.Measure.WithDensity
+import TauCeti.Probability.Density
 import Mathlib.Analysis.Matrix.MeasurableSpace
 
 /-!
@@ -75,17 +75,17 @@ theorem determinantalDensity_eq_zero_of_eq (φ : ι → E → 𝕜) {x : ι → 
   simp [determinantalDensity, hd]
 
 /-- The density can be read from the kernel, independently of the choice of generators. -/
-theorem determinantalDensity_eq_det_finiteRankKernel (φ : ι → E → 𝕜) (x : ι → E) :
+theorem determinantalDensity_eq_re_det_finiteRankKernel_div_factorial (φ : ι → E → 𝕜) (x : ι → E) :
     determinantalDensity φ x =
       RCLike.re (det (Matrix.of fun i j ↦ finiteRankKernel φ (x i) (x j))) /
         (Fintype.card ι).factorial := by
-  rw [det_finiteRankKernel, RCLike.ofReal_re]
-  rfl
+  rw [determinantalDensity_def, det_finiteRankKernel, RCLike.ofReal_re]
 
 /-- The density is invariant under relabelling particles. -/
+@[simp]
 theorem determinantalDensity_comp_perm (φ : ι → E → 𝕜) (σ : Equiv.Perm ι) (x : ι → E) :
     determinantalDensity φ (x ∘ σ) = determinantalDensity φ x := by
-  simp only [determinantalDensity_eq_det_finiteRankKernel, Function.comp_apply]
+  simp only [determinantalDensity_eq_re_det_finiteRankKernel_div_factorial, Function.comp_apply]
   have h := Matrix.det_submatrix_equiv_self σ
     (Matrix.of fun i j ↦ finiteRankKernel φ (x i) (x j))
   simpa only [Matrix.submatrix, Matrix.of_apply] using
@@ -94,6 +94,17 @@ theorem determinantalDensity_comp_perm (φ : ι → E → 𝕜) (σ : Equiv.Perm
 section Measure
 
 variable [MeasurableSpace E] {μ : Measure E} [SigmaFinite μ] {φ : ι → E → 𝕜}
+
+/-- Almost everywhere measurable generators give an almost everywhere measurable density. -/
+theorem aemeasurable_determinantalDensity (hφ : ∀ i, AEMeasurable (φ i) μ) :
+    AEMeasurable (determinantalDensity φ) (Measure.pi fun _ ↦ μ) := by
+  have h : ∀ᵐ x : ι → E ∂Measure.pi (fun _ ↦ μ),
+      ∀ i j, φ i (x j) = (hφ i).mk (φ i) (x j) :=
+    Filter.eventually_all.2 fun i ↦ Filter.eventually_all.2 fun j ↦
+      (Measure.tendsto_eval_ae_ae (μ := fun _ : ι ↦ μ) (i := j)).eventually (hφ i).ae_eq_mk
+  refine (measurable_determinantalDensity fun i ↦ (hφ i).measurable_mk).aemeasurable.congr ?_
+  filter_upwards [h] with x hx
+  simp only [determinantalDensity_def, hx]
 
 /-- The labelled ensemble measure. Orthonormal square-integrable generators make it a
 probability measure; without orthonormality this definition is still the same density. -/
@@ -117,7 +128,8 @@ omit [SigmaFinite μ] in
 theorem determinantalEnsemble_eq_of_finiteRankKernel_eq {ψ : ι → E → 𝕜}
     (h : ∀ x y, finiteRankKernel φ x y = finiteRankKernel ψ x y) :
     determinantalEnsemble μ φ = determinantalEnsemble μ ψ := by
-  simp_rw [determinantalEnsemble_def, determinantalDensity_eq_det_finiteRankKernel, h]
+  simp_rw [determinantalEnsemble_def,
+    determinantalDensity_eq_re_det_finiteRankKernel_div_factorial, h]
 
 /-- The real determinantal density is integrable. -/
 theorem integrable_determinantalDensity (hφ : ∀ i, MemLp (φ i) 2 μ) :
@@ -126,10 +138,10 @@ theorem integrable_determinantalDensity (hφ : ∀ i, MemLp (φ i) 2 μ) :
 
 /-- The labelled ensemble has distinct particles almost surely, even when the reference
 measure has atoms. Coincident coordinates force the density to vanish. -/
-theorem ae_injective_determinantalEnsemble (hφ : ∀ i, MemLp (φ i) 2 μ) :
+theorem ae_injective_determinantalEnsemble (hφ : ∀ i, AEMeasurable (φ i) μ) :
     ∀ᵐ x ∂determinantalEnsemble μ φ, Function.Injective x := by
   rw [determinantalEnsemble_def, ae_withDensity_iff'
-    (integrable_determinantalDensity hφ).aestronglyMeasurable.aemeasurable.ennreal_ofReal]
+    (aemeasurable_determinantalDensity hφ).ennreal_ofReal]
   filter_upwards [] with x hx
   intro i j hij
   by_contra hne
@@ -178,23 +190,21 @@ theorem isProbabilityMeasure_determinantalEnsemble (hφ : ∀ i, MemLp (φ i) 2 
 
 /-- Integration against an ensemble is integration against its explicit real density. -/
 theorem integral_determinantalEnsemble {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F]
-    (hφ : ∀ i, MemLp (φ i) 2 μ) (f : (ι → E) → F) :
+    (hφ : ∀ i, AEMeasurable (φ i) μ) (f : (ι → E) → F) :
     ∫ x, f x ∂determinantalEnsemble μ φ =
       ∫ x, determinantalDensity φ x • f x ∂Measure.pi (fun _ ↦ μ) := by
-  rw [determinantalEnsemble_def, integral_withDensity_eq_integral_toReal_smul₀
-    (integrable_determinantalDensity hφ).aestronglyMeasurable.aemeasurable.ennreal_ofReal
-    (.of_forall fun _ ↦ ENNReal.ofReal_lt_top)]
-  simp only [ENNReal.toReal_ofReal (determinantalDensity_nonneg _ _)]
+  rw [determinantalEnsemble_def]
+  exact Probability.integral_withDensity_ofReal (aemeasurable_determinantalDensity hφ)
+    (.of_forall (determinantalDensity_nonneg φ)) f
 
 /-- Integrability for the ensemble is integrability after multiplication by its density. -/
 theorem integrable_determinantalEnsemble_iff {F : Type*} [NormedAddCommGroup F]
-    [NormedSpace ℝ F] (hφ : ∀ i, MemLp (φ i) 2 μ) {f : (ι → E) → F} :
+    [NormedSpace ℝ F] (hφ : ∀ i, AEMeasurable (φ i) μ) {f : (ι → E) → F} :
     Integrable f (determinantalEnsemble μ φ) ↔
       Integrable (fun x ↦ determinantalDensity φ x • f x) (Measure.pi fun _ ↦ μ) := by
-  rw [determinantalEnsemble_def, integrable_withDensity_iff_integrable_smul₀'
-    (integrable_determinantalDensity hφ).aestronglyMeasurable.aemeasurable.ennreal_ofReal
-    (.of_forall fun _ ↦ ENNReal.ofReal_lt_top)]
-  simp only [ENNReal.toReal_ofReal (determinantalDensity_nonneg _ _)]
+  rw [determinantalEnsemble_def]
+  exact Probability.integrable_withDensity_ofReal_iff (aemeasurable_determinantalDensity hφ)
+    (.of_forall (determinantalDensity_nonneg φ))
 
 omit [MeasurableSpace E] in
 private theorem density_mul_prod (φ : ι → E → 𝕜) (u : E → 𝕜) (x : ι → E) :
@@ -207,7 +217,7 @@ private theorem density_mul_prod (φ : ι → E → 𝕜) (u : E → 𝕜) (x : 
 
 /-- Multiplicative statistics are integrable whenever all their weighted pairwise products
 are integrable. Bounded measurable multipliers satisfy this condition for `L²` generators. -/
-theorem integrable_prod_determinantalEnsemble (hφ : ∀ i, MemLp (φ i) 2 μ) {u : E → 𝕜}
+theorem integrable_prod_determinantalEnsemble (hφ : ∀ i, AEMeasurable (φ i) μ) {u : E → 𝕜}
     (hu : ∀ i j, Integrable (fun x ↦ φ i x * (u x * star (φ j x))) μ) :
     Integrable (fun x : ι → E ↦ ∏ j, u (x j)) (determinantalEnsemble μ φ) := by
   rw [integrable_determinantalEnsemble_iff hφ]
@@ -217,7 +227,7 @@ theorem integrable_prod_determinantalEnsemble (hφ : ∀ i, MemLp (φ i) 2 μ) {
 /-- **The multiplicative generating functional** of a finite determinantal ensemble.
 The multiplier need not be positive, real, or bounded: weighted pairwise integrability suffices.
 For an orthonormal family and `u = 1 + g`, the right side is `det (I + [∫ φᵢ g φⱼ*])`. -/
-theorem integral_prod_determinantalEnsemble (hφ : ∀ i, MemLp (φ i) 2 μ) {u : E → 𝕜}
+theorem integral_prod_determinantalEnsemble (hφ : ∀ i, AEMeasurable (φ i) μ) {u : E → 𝕜}
     (hu : ∀ i j, Integrable (fun x ↦ φ i x * (u x * star (φ j x))) μ) :
     ∫ x : ι → E, ∏ j, u (x j) ∂determinantalEnsemble μ φ =
       det (Matrix.of fun i j ↦ ∫ x, φ i x * (u x * star (φ j x)) ∂μ) := by
@@ -240,7 +250,7 @@ theorem integral_prod_one_add_determinantalEnsemble (hφ : ∀ i, MemLp (φ i) 2
   have hint (i j : ι) : Integrable (fun x ↦ φ i x * ((1 + g x) * star (φ j x))) μ := by
     simp_rw [hsplit]
     exact (hi i j).add (hg i j)
-  rw [integral_prod_determinantalEnsemble hφ hint]
+  rw [integral_prod_determinantalEnsemble (fun i ↦ (hφ i).aemeasurable) hint]
   congr 1
   ext i j
   simp only [Matrix.of_apply, hsplit, integral_add (hi i j) (hg i j), horth,

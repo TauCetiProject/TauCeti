@@ -30,6 +30,7 @@ public section
 noncomputable section
 
 open MeasureTheory Matrix Finset
+open scoped ENNReal
 
 namespace TauCeti
 
@@ -61,13 +62,21 @@ theorem im_finiteRankKernel_self (φ : ι → E → 𝕜) (x : E) :
     RCLike.im (finiteRankKernel φ x x) = 0 := by
   simp [finiteRankKernel, RCLike.mul_conj]
 
+/-- An evaluation matrix of a finite rank kernel is the product of the transposed
+function-evaluation matrix with its conjugate transpose. -/
+theorem matrix_finiteRankKernel_eq_mul_conjTranspose {κ : Type*}
+    (φ : ι → E → 𝕜) (x : κ → E) :
+    (Matrix.of fun i j ↦ finiteRankKernel φ (x i) (x j)) =
+      (Matrix.of fun i j ↦ φ i (x j))ᵀ * (Matrix.of fun i j ↦ φ i (x j))ᵀᴴ := by
+  ext i j
+  simp [finiteRankKernel_def, Matrix.mul_apply]
+
 /-- Every finite evaluation matrix of a Gram kernel is positive semidefinite. -/
 theorem posSemidef_finiteRankKernel [PartialOrder 𝕜] [StarOrderedRing 𝕜]
     {κ : Type*} (φ : ι → E → 𝕜) (x : κ → E) :
     (Matrix.of fun i j ↦ finiteRankKernel φ (x i) (x j)).PosSemidef := by
-  convert Matrix.posSemidef_self_mul_conjTranspose (Matrix.of fun j i ↦ φ i (x j)) using 1
-  ext i j
-  simp [finiteRankKernel, Matrix.mul_apply]
+  rw [matrix_finiteRankKernel_eq_mul_conjTranspose]
+  exact Matrix.posSemidef_self_mul_conjTranspose _
 
 /-- A full-size kernel determinant is the squared norm of the evaluation determinant.
 This identifies the joint density expressed using the functions with the density expressed
@@ -75,14 +84,8 @@ using their kernel. -/
 theorem det_finiteRankKernel [DecidableEq ι] (φ : ι → E → 𝕜) (x : ι → E) :
     det (Matrix.of fun i j ↦ finiteRankKernel φ (x i) (x j)) =
       (‖det (Matrix.of fun i j ↦ φ i (x j))‖ ^ 2 : ℝ) := by
-  have hm : (Matrix.of fun i j ↦ finiteRankKernel φ (x i) (x j)) =
-      (Matrix.of fun i j ↦ φ j (x i)) * (Matrix.of fun i j ↦ φ j (x i))ᴴ := by
-    ext i j
-    simp [finiteRankKernel, Matrix.mul_apply]
-  have ht : det (Matrix.of fun i j ↦ φ j (x i)) =
-      det (Matrix.of fun i j ↦ φ i (x j)) :=
-    Matrix.det_transpose (Matrix.of fun i j ↦ φ i (x j))
-  rw [hm, Matrix.det_mul, Matrix.det_conjTranspose, ht]
+  rw [matrix_finiteRankKernel_eq_mul_conjTranspose, Matrix.det_mul,
+    Matrix.det_conjTranspose, Matrix.det_transpose]
   simpa only [starRingEnd_apply, RCLike.ofReal_pow] using
     RCLike.mul_conj (det (Matrix.of fun i j ↦ φ i (x j)))
 
@@ -108,20 +111,20 @@ theorem integrable_finiteRankKernel_self (hφ : ∀ i, MemLp (φ i) 2 μ) :
     Integrable (fun x ↦ finiteRankKernel φ x x) μ := by
   exact integrable_finsetSum _ fun i _ ↦ (hφ i).integrable_mul (hφ i).star
 
-/-- The integrated diagonal of an orthonormal kernel is the rank, including rank zero. -/
-theorem integral_finiteRankKernel_self [DecidableEq ι] (hφ : ∀ i, MemLp (φ i) 2 μ)
-    (horth : ∀ i j, ∫ x, φ i x * star (φ j x) ∂μ = if i = j then 1 else 0) :
+/-- The integrated diagonal of a kernel with unit-norm generators is the size of the family. -/
+theorem integral_finiteRankKernel_self (hφ : ∀ i, MemLp (φ i) 2 μ)
+    (hnorm : ∀ i, ∫ x, φ i x * star (φ i x) ∂μ = 1) :
     ∫ x, finiteRankKernel φ x x ∂μ = Fintype.card ι := by
   simp only [finiteRankKernel]
   have hi (i : ι) : Integrable (fun x ↦ φ i x * star (φ i x)) μ :=
     (hφ i).integrable_mul (hφ i).star
   rw [integral_finsetSum _ fun i _ ↦ hi i]
-  simp_rw [horth]
+  simp_rw [hnorm]
   simp
 
-/-- Every section of a finite rank kernel is square-integrable when its generators are. -/
-theorem memLp_finiteRankKernel (hφ : ∀ i, MemLp (φ i) 2 μ) (x : E) :
-    MemLp (finiteRankKernel φ x) 2 μ := by
+/-- Every section of a finite rank kernel belongs to `Lᵖ` when its generators do. -/
+theorem memLp_finiteRankKernel {p : ℝ≥0∞} (hφ : ∀ i, MemLp (φ i) p μ) (x : E) :
+    MemLp (finiteRankKernel φ x) p μ := by
   exact memLp_finsetSum _ fun i _ ↦ (hφ i).star.const_mul (φ i x)
 
 /-- The integral projection fixes each member of the orthonormal family. -/
@@ -162,7 +165,7 @@ theorem integral_finiteRankKernel_mul [DecidableEq ι] (hφ : ∀ i, MemLp (φ i
   simp_rw [heq]
   rw [integral_finsetSum _ fun i _ ↦ hint i]
   simp_rw [integral_mul_const, integral_finiteRankKernel_mul_generator hφ horth]
-  rfl
+  rw [finiteRankKernel_def]
 
 end Measure
 

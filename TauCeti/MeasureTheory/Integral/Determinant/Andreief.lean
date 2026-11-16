@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.MeasureTheory.Integral.Pi
-public import Mathlib.MeasureTheory.Function.L2Space
 public import TauCeti.LinearAlgebra.Matrix.Determinant.WeightedStar
 
 /-!
@@ -30,22 +29,31 @@ open MeasureTheory Matrix Equiv Finset
 
 namespace MeasureTheory
 
-variable {ι E 𝕜 : Type*} [Fintype ι] [DecidableEq ι] [MeasurableSpace E] [RCLike 𝕜]
+variable {ι E 𝕜 : Type*} [Fintype ι] [DecidableEq ι] [MeasurableSpace E]
   {μ : Measure E} [SigmaFinite μ] {f g : ι → E → 𝕜}
 
+private theorem integrable_prod_mul_det [NormedCommRing 𝕜]
+    (hfg : ∀ i j, Integrable (fun x ↦ f i x * g j x) μ) (σ : Perm ι) :
+    Integrable (fun x : ι → E ↦ (∏ j, f (σ j) (x j)) *
+      det (Matrix.of fun i j ↦ g i (x j))) (Measure.pi fun _ ↦ μ) := by
+  simp only [det_apply', Matrix.of_apply, mul_sum]
+  apply integrable_finsetSum
+  intro τ _
+  simpa only [prod_mul_distrib, mul_assoc, mul_left_comm, mul_comm] using
+    (Integrable.fintype_prod (fun j ↦ hfg (σ j) (τ j))).const_mul (Perm.sign τ : 𝕜)
+
 /-- Pairwise integrability makes the product of two evaluation determinants integrable. -/
-theorem integrable_det_mul_det
+theorem integrable_det_mul_det [NormedCommRing 𝕜]
     (hfg : ∀ i j, Integrable (fun x ↦ f i x * g j x) μ) :
     Integrable (fun x : ι → E ↦ det (Matrix.of fun i j ↦ f i (x j)) *
       det (Matrix.of fun i j ↦ g i (x j))) (Measure.pi fun _ ↦ μ) := by
-  simp only [det_apply', Matrix.of_apply, sum_mul, mul_sum]
-  apply integrable_finsetSum
-  intro σ _
-  apply integrable_finsetSum
-  intro τ _
-  have h := Integrable.fintype_prod (fun i ↦ hfg (τ i) (σ i))
-  simpa only [prod_mul_distrib, mul_assoc, mul_left_comm, mul_comm] using
-    h.const_mul ((Perm.sign σ : 𝕜) * (Perm.sign τ : 𝕜))
+  conv =>
+    enter [1, x, 1]
+    rw [det_apply']
+  simp only [Matrix.of_apply, sum_mul, mul_assoc]
+  exact integrable_finsetSum _ fun σ _ ↦ (integrable_prod_mul_det hfg σ).const_mul _
+
+variable [RCLike 𝕜]
 
 private theorem integral_prod_mul_det
     (hfg : ∀ i j, Integrable (fun x ↦ f i x * g j x) μ) (σ : Perm ι) :
@@ -79,20 +87,14 @@ theorem integral_det_mul_det
           det (Matrix.of fun i j ↦ g i (x j)) ∂Measure.pi (fun _ ↦ μ)) =
           det (Matrix.of fun i j ↦ ∫ x, f i x * g j x ∂μ) := by
       rw [integral_prod_mul_det hfg σ]
-      have hp := det_permute' σ (Matrix.of fun i j ↦ ∫ x, f j x * g i x ∂μ)
-      simp only [Matrix.submatrix, Matrix.of_apply, id_eq] at hp
-      rw [hp, ← mul_assoc, ← Int.cast_mul, ← Units.val_mul, Int.units_mul_self,
-        Units.val_one, Int.cast_one, one_mul]
-      exact det_transpose (Matrix.of fun i j ↦ ∫ x, f i x * g j x ∂μ)
+      have hp := det_permute' σ (Matrix.of fun i j ↦ ∫ x, f i x * g j x ∂μ)ᵀ
+      simp only [Matrix.submatrix, Matrix.transpose_apply, Matrix.of_apply, id_eq] at hp
+      rw [hp, det_transpose, ← mul_assoc, ← Int.cast_mul]
+      simp
     simp only [mul_assoc, integral_const_mul, hσ, sum_const, card_univ,
       Fintype.card_perm, nsmul_eq_mul]
   · intro σ _
-    have hsum := integrable_finsetSum (s := univ) (fun τ _ ↦
-      (Integrable.fintype_prod (fun j ↦ hfg (σ j) (τ j))).const_mul
-        ((Perm.sign σ : 𝕜) * (Perm.sign τ : 𝕜)))
-    simpa only [det_apply', Matrix.of_apply, mul_sum, prod_mul_distrib, mul_assoc,
-      mul_left_comm, mul_comm]
-      using hsum
+    simpa only [mul_assoc] using (integrable_prod_mul_det hfg σ).const_mul (Perm.sign σ : 𝕜)
 
 section Hermitian
 

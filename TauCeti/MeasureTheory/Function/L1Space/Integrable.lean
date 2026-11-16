@@ -34,25 +34,25 @@ integrable (`MeasureTheory.not_integrable_of_measure_singleton_eq_top`). A multi
 a set containing the support of an integrable function keeps it integrable
 (`MeasureTheory.Integrable.smul_of_support_subset`).
 Multiplication by a finite product of factors constant on a measurable set and equal to one
-off it preserves integrability (`MeasureTheory.Integrable.mul_prod_piecewise_const`).
+off it preserves integrability (`MeasureTheory.Integrable.mul_prod_mulIndicator_const`).
 -/
 
 public section
 
 namespace MeasureTheory
 
-open Classical in
 /-- Multiplication by a finite product of constant measurable-window factors preserves
 integrability, without requiring a finite reference measure or disjoint windows. -/
-theorem Integrable.mul_prod_piecewise_const {X κ 𝕜 : Type*} [MeasurableSpace X]
+theorem Integrable.mul_prod_mulIndicator_const {X κ 𝕜 : Type*} [MeasurableSpace X]
     [NormedCommRing 𝕜] {μ : Measure X} {f : X → 𝕜} (hf : Integrable f μ)
-    (s : Finset κ) {B : κ → Set X} (hB : ∀ k ∈ s, MeasurableSet (B k)) (z : κ → 𝕜) :
-    Integrable (fun x ↦ f x * ∏ k ∈ s, if x ∈ B k then z k else 1) μ := by
+    (s : Finset κ) {B : κ → Set X} (hB : ∀ k ∈ s, NullMeasurableSet (B k) μ) (z : κ → 𝕜) :
+    Integrable (fun x ↦ f x * ∏ k ∈ s, (B k).mulIndicator (fun _ ↦ z k) x) μ := by
+  classical
   induction s using Finset.induction_on with
   | empty => simpa using hf
   | @insert k s hk ih =>
     have hi := ih (fun j hj ↦ hB j (Finset.mem_insert_of_mem hj))
-    have hp := Integrable.piecewise (hB k (Finset.mem_insert_self k s)).nullMeasurableSet
+    have hp := Integrable.piecewise (hB k (Finset.mem_insert_self k s))
       (hi.mul_const (z k)).integrableOn hi.integrableOn
     refine hp.congr (.of_forall fun x ↦ ?_)
     by_cases hx : x ∈ B k <;> simp [hx, Finset.prod_insert hk, mul_right_comm, mul_assoc]
