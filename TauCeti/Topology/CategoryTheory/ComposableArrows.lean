@@ -22,6 +22,13 @@ without discarding any isotropy arrows.
 Composition is required to be continuous on the subspace of pairs with matching endpoints.
 No topology on individual hom types and no new category or groupoid carrier is used.
 
+Beyond the recursive fiber-product identification, recording all arrows `i ⟶ j` embeds
+`ComposableArrows C n` into a finite product of copies of `Quiver.Total C`
+(`CategoryTheory.ComposableArrows.isEmbedding_totalArrows`). Consequently, `ComposableArrows C n`
+automatically inherits `T1Space`, `T2Space`, `RegularSpace`, `T3Space`, `FirstCountableTopology`,
+and `SecondCountableTopology` from `Quiver.Total C`, with no hypotheses on `C` or its structure
+maps.
+
 ## References
 
 * G. Segal, *Classifying spaces and spectral sequences*, Section 2.
@@ -35,6 +42,46 @@ open CategoryTheory Topology
 universe v u
 
 namespace CategoryTheory.ComposableArrows
+
+section Inheritance
+
+variable {C : Type u} [Category.{v} C] [TopologicalSpace (Quiver.Total C)]
+
+/-- Recording every arrow `F.totalArrow i j hij` embeds `ComposableArrows C n` into the finite
+product of total-arrow spaces indexed by pairs `i ≤ j`. -/
+theorem isEmbedding_totalArrows {n : ℕ} :
+    IsEmbedding fun F : ComposableArrows C n ↦
+      fun p : {p : Fin (n + 1) × Fin (n + 1) // p.1 ≤ p.2} ↦ F.totalArrow p.1.1 p.1.2 p.2 := by
+  refine ⟨⟨?_⟩, fun F G h ↦ ext_of_totalArrow fun i j hij ↦ congrFun h ⟨(i, j), hij⟩⟩
+  rw [Pi.topologicalSpace, induced_iInf]
+  simp only [instTopologicalSpace, induced_compose, Function.comp_def]
+  exact le_antisymm
+    (le_iInf fun ⟨⟨i, j⟩, hij⟩ ↦ iInf_le_of_le i (iInf_le_of_le j (iInf_le _ hij)))
+    (le_iInf fun i ↦ le_iInf fun j ↦ le_iInf fun hij ↦
+      iInf_le _ (⟨(i, j), hij⟩ : {p : Fin (n + 1) × Fin (n + 1) // p.1 ≤ p.2}))
+
+instance instT1Space [T1Space (Quiver.Total C)] {n : ℕ} : T1Space (ComposableArrows C n) :=
+  isEmbedding_totalArrows.t1Space
+
+instance instT2Space [T2Space (Quiver.Total C)] {n : ℕ} : T2Space (ComposableArrows C n) :=
+  isEmbedding_totalArrows.t2Space
+
+instance instRegularSpace [RegularSpace (Quiver.Total C)] {n : ℕ} :
+    RegularSpace (ComposableArrows C n) :=
+  isEmbedding_totalArrows.isInducing.regularSpace
+
+instance instT3Space [T3Space (Quiver.Total C)] {n : ℕ} : T3Space (ComposableArrows C n) :=
+  isEmbedding_totalArrows.t3Space
+
+instance instFirstCountableTopology [FirstCountableTopology (Quiver.Total C)] {n : ℕ} :
+    FirstCountableTopology (ComposableArrows C n) :=
+  isEmbedding_totalArrows.isInducing.firstCountableTopology
+
+instance instSecondCountableTopology [SecondCountableTopology (Quiver.Total C)] {n : ℕ} :
+    SecondCountableTopology (ComposableArrows C n) :=
+  isEmbedding_totalArrows.isInducing.secondCountableTopology
+
+end Inheritance
 
 variable {C : Type u} [Category.{v} C] [TopologicalSpace C]
   [TopologicalSpace (Quiver.Total C)]
