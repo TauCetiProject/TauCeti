@@ -10,6 +10,8 @@ public import Mathlib.Analysis.SpecialFunctions.Gamma.BohrMollerup
 public import Mathlib.Analysis.Convex.Deriv
 public import Mathlib.Analysis.Complex.RealDeriv
 public import Mathlib.Analysis.Complex.ExponentialBounds
+import Mathlib.Topology.Instances.Nat
+import TauCeti.Analysis.SpecialFunctions.Gamma.Order
 
 /-!
 # Real digamma and its bounds on the positive real axis
@@ -29,6 +31,9 @@ derivative of real Gamma, and relates it to Mathlib's `Complex.digamma`.
 * `Real.digamma_le_log_le`: for `x > 0`, `ψ(x) ≤ log x ≤ ψ(x + 1)`.
 * `Real.monotoneOn_digamma`: digamma is monotone on the positive real axis, being the derivative
   of the convex function `log ∘ Gamma`.
+* `Real.differentiableAt_digamma`, `Real.deriv_digamma_apply_add_nat`, `Real.deriv_digamma_nonneg`:
+  at every regular real point digamma is differentiable, its derivative satisfies the shifted
+  recurrence `ψ'(x + n) = ψ'(x) - ∑_{k < n} 1 / (x + k)²`, and it is nonnegative.
 * `Real.digamma_one_half`, `Real.digamma_three_halves`, `Real.digamma_one_half_neg`,
   `Real.digamma_three_halves_pos`: the values `ψ(1/2) = -γ - 2 log 2 < 0` and
   `ψ(3/2) = 2 - γ - 2 log 2 > 0`.
@@ -170,6 +175,54 @@ theorem monotoneOn_digamma : MonotoneOn digamma (Ioi 0) := by
     digamma_eq_deriv_log_Gamma (Complex.real_ne_neg_nat_of_pos hx)
   exact (convexOn_log_Gamma.monotoneOn_deriv fun x hx ↦
     differentiableAt_log_Gamma (Complex.real_ne_neg_nat_of_pos hx)).congr hd.symm
+
+/-- Real digamma is differentiable at every regular real point. -/
+theorem differentiableAt_digamma {x : ℝ} (hx : ∀ m : ℕ, x ≠ -(m : ℝ)) :
+    DifferentiableAt ℝ digamma x := by
+  have hc := Complex.ofReal_ne_neg_nat hx
+  have hG := Complex.analyticAt_Gamma hc
+  have hd : DifferentiableAt ℂ Complex.digamma x := by
+    rw [Complex.digamma_def]
+    exact hG.deriv.differentiableAt.div hG.differentiableAt (Complex.Gamma_ne_zero hc)
+  simpa [Complex.digamma_ofReal] using hd.hasDerivAt.real_of_complex.differentiableAt
+
+/-- Near a regular real point every point is regular: the poles of Gamma are isolated. -/
+private theorem eventually_ne_neg_nat {x : ℝ} (hx : ∀ m : ℕ, x ≠ -(m : ℝ)) :
+    ∀ᶠ y in 𝓝 x, ∀ m : ℕ, y ≠ -(m : ℝ) := by
+  have hcl : IsClosed (Set.range fun m : ℕ => -(m : ℝ)) := by
+    have := (Homeomorph.neg ℝ).isClosedMap _ Nat.isClosedEmbedding_coe_real.isClosed_range
+    rwa [← Set.range_comp] at this
+  filter_upwards [hcl.isOpen_compl.mem_nhds fun ⟨m, hm⟩ => hx m hm.symm] with y hy m hm
+  exact hy ⟨m, hm.symm⟩
+
+/-- The derivative of the digamma recurrence: `ψ'(x + n) = ψ'(x) - ∑_{k < n} 1 / (x + k)²` at
+every regular real point. -/
+theorem deriv_digamma_apply_add_nat {x : ℝ} (hx : ∀ m : ℕ, x ≠ -(m : ℝ)) (n : ℕ) :
+    deriv digamma (x + n) = deriv digamma x - ∑ k ∈ Finset.range n, ((x + k) ^ 2)⁻¹ := by
+  have hxn : ∀ m : ℕ, x + n ≠ -(m : ℝ) := fun m h => hx (m + n) (by push_cast; linarith)
+  have hk : ∀ k ∈ Finset.range n, x + k ≠ 0 := fun k _ h => hx k (by linarith)
+  have h := ((differentiableAt_digamma hx).hasDerivAt.add (HasDerivAt.fun_sum
+    (u := Finset.range n) fun (k : ℕ) hk' =>
+      ((hasDerivAt_id x).add_const (k : ℝ)).inv (hk k hk'))).unique
+    (((differentiableAt_digamma hxn).hasDerivAt.comp_add_const x (n : ℝ)).congr_of_eventuallyEq
+      (by
+        filter_upwards [eventually_ne_neg_nat hx] with y hy
+        simp only [Pi.add_apply, Pi.inv_apply, id]
+        exact (digamma_apply_add_nat hy n).symm))
+  simp only [id, div_eq_mul_inv, neg_one_mul, Finset.sum_neg_distrib] at h
+  linarith
+
+/-- The derivative of real digamma is nonnegative at every regular real point. -/
+theorem deriv_digamma_nonneg {x : ℝ} (hx : ∀ m : ℕ, x ≠ -(m : ℝ)) : 0 ≤ deriv digamma x := by
+  obtain ⟨n, hn⟩ := exists_nat_gt (-x)
+  have hpos : 0 < x + n := by linarith
+  have h := deriv_digamma_apply_add_nat hx n
+  have hmono : 0 ≤ deriv digamma (x + n) := by
+    rw [← derivWithin_of_isOpen isOpen_Ioi (Set.mem_Ioi.2 hpos)]
+    exact monotoneOn_digamma.derivWithin_nonneg
+  have hsum : 0 ≤ ∑ k ∈ Finset.range n, ((x + k) ^ 2)⁻¹ :=
+    Finset.sum_nonneg fun k _ => by positivity
+  linarith
 
 /-- The value `ψ(1/2) = -γ - 2 log 2`. -/
 theorem digamma_one_half : digamma (1 / 2) = -eulerMascheroniConstant - 2 * log 2 := by
