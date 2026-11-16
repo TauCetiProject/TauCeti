@@ -110,12 +110,6 @@ private def kummerLaplaceMajorantConst (c : ℕ) (d : ℂ) (α η : ℝ) : ℝ :
   Real.exp (π * |d.im|) * (Real.cos (α / 2)) ^ min 0 d.re *
     (((c + ⌈d.re⌉₊)! : ℝ) * Real.exp η / η ^ (c + ⌈d.re⌉₊))
 
-private theorem abs_neg_arg_div_two_le_pi_div_two (z : ℂ) : |-(z.arg / 2)| ≤ π / 2 :=
-  (abs_neg _).trans_le (abs_arg_div_two_le_pi_div_two z)
-
-private theorem abs_neg_arg_div_two_lt_pi (z : ℂ) : |-(z.arg / 2)| < π :=
-  (abs_neg_arg_div_two_le_pi_div_two z).trans_lt (half_lt_self Real.pi_pos)
-
 private theorem norm_kummerLaplaceRayIntegrand_le (c : ℕ) (d : ℂ) {z : ℂ} {α θ η r : ℝ}
     (hα : α < π) (hθ : |θ| ≤ α) (hη : 0 < η) (hre : 2 * η ≤ (z * cexp (θ * I)).re)
     (hr : 0 ≤ r) :
@@ -202,13 +196,15 @@ theorem integrableOn_exp_neg_mul_mul_pow_mul_one_add_cpow_Ioi (c : ℕ) (d : ℂ
 
 private theorem continuousOn_kummerLaplaceRayIntegrand_neg_arg_div_two (c : ℕ) (d w z : ℂ) :
     ContinuousOn (kummerLaplaceRayIntegrand c d w (-(z.arg / 2))) (Ici 0) :=
-  continuousOn_kummerLaplaceRayIntegrand c d w (abs_neg_arg_div_two_lt_pi z)
+  continuousOn_kummerLaplaceRayIntegrand c d w
+    (((abs_neg _).trans_le (abs_arg_div_two_le_pi_div_two z)).trans_lt (half_lt_self Real.pi_pos))
 
 private theorem integrableOn_kummerLaplaceRayIntegrand_neg_arg_div_two (c : ℕ) (d : ℂ) {z : ℂ}
     (hz : z ∈ slitPlane) :
     IntegrableOn (kummerLaplaceRayIntegrand c d z (-(z.arg / 2))) (Ioi 0) :=
   integrableOn_exp_neg_mul_mul_exp_mul_I_mul_pow_mul_one_add_cpow_Ioi c d
-    (abs_neg_arg_div_two_lt_pi z) (re_mul_exp_neg_arg_div_two_mul_I_pos hz)
+    (((abs_neg _).trans_le (abs_arg_div_two_le_pi_div_two z)).trans_lt (half_lt_self Real.pi_pos))
+    (re_mul_exp_neg_arg_div_two_mul_I_pos hz)
 
 /-! ### Cauchy-Goursat ray independence -/
 
@@ -349,7 +345,8 @@ theorem kummerLaplace_eq_ray_integral (c : ℕ) (d : ℂ) {z : ℂ} (hz : z ∈ 
           cexp (-z * (r * cexp (θ * I))) * (r * cexp (θ * I)) ^ c *
             (1 + r * cexp (θ * I)) ^ d := by
   -- Express both ray integrals as horizontal integrals in logarithmic coordinates.
-  have hθ₀ : |-(z.arg / 2)| < π := abs_neg_arg_div_two_lt_pi z
+  have hθ₀ : |-(z.arg / 2)| < π :=
+    ((abs_neg _).trans_le (abs_arg_div_two_le_pi_div_two z)).trans_lt (half_lt_self Real.pi_pos)
   have hre₀ : 0 < (z * cexp ((-(z.arg / 2) : ℝ) * I)).re := re_mul_exp_neg_arg_div_two_mul_I_pos hz
   have hre : 0 < (z * cexp (θ * I)).re := by
     rw [re_mul_exp_ofReal_mul_I_eq_norm_mul_cos]
@@ -429,8 +426,8 @@ theorem kummerLaplace_zero_ofReal_eq_cpow_neg_mul_exp_mul_integral (a : ℂ) {x 
 theorem hasDerivAt_kummerLaplace (c : ℕ) (d : ℂ) {z : ℂ} (hz : z ∈ slitPlane) :
     HasDerivAt (kummerLaplace c d) (-kummerLaplace (c + 1) d z) z := by
   set θ₀ : ℝ := -(z.arg / 2)
-  have hθ₀ : |θ₀| ≤ π / 2 := abs_neg_arg_div_two_le_pi_div_two z
-  have hθ₀_lt : |θ₀| < π := abs_neg_arg_div_two_lt_pi z
+  have hθ₀ : |θ₀| ≤ π / 2 := (abs_neg _).trans_le (abs_arg_div_two_le_pi_div_two z)
+  have hθ₀_lt : |θ₀| < π := hθ₀.trans_lt (half_lt_self Real.pi_pos)
   have hre₀ : 0 < (z * cexp (θ₀ * I)).re := re_mul_exp_neg_arg_div_two_mul_I_pos hz
   set η := (z * cexp (θ₀ * I)).re / 4
   have hη : 0 < η := by dsimp only [η]; linarith
@@ -573,8 +570,8 @@ theorem differentiable_kummerLaplace_middle (c : ℕ) {z : ℂ} (hz : z ∈ slit
     Differentiable ℂ fun d => kummerLaplace c d z := by
   intro d₀
   set θ₀ : ℝ := -(z.arg / 2)
-  have hθ₀ : |θ₀| ≤ π / 2 := abs_neg_arg_div_two_le_pi_div_two z
-  have hθ₀_lt : |θ₀| < π := abs_neg_arg_div_two_lt_pi z
+  have hθ₀ : |θ₀| ≤ π / 2 := (abs_neg _).trans_le (abs_arg_div_two_le_pi_div_two z)
+  have hθ₀_lt : |θ₀| < π := hθ₀.trans_lt (half_lt_self Real.pi_pos)
   have hre₀ : 0 < (z * cexp (θ₀ * I)).re := re_mul_exp_neg_arg_div_two_mul_I_pos hz
   set η := (z * cexp (θ₀ * I)).re / 4
   have hη : 0 < η := by dsimp only [η]; linarith
@@ -630,7 +627,9 @@ theorem kummerLaplace_sub_kummerLaplace_sub_one (c : ℕ) (d : ℂ) {z : ℂ} (h
   rw [← integral_sub (integrableOn_kummerLaplaceRayIntegrand_neg_arg_div_two c d hz)
     (integrableOn_kummerLaplaceRayIntegrand_neg_arg_div_two c (d - 1) hz)]
   exact setIntegral_congr_fun measurableSet_Ioi fun r hr =>
-    kummerLaplaceRayIntegrand_sub_sub_one c d z (abs_neg_arg_div_two_lt_pi z) hr.out.le
+    kummerLaplaceRayIntegrand_sub_sub_one c d z
+      (((abs_neg _).trans_le (abs_arg_div_two_le_pi_div_two z)).trans_lt (half_lt_self Real.pi_pos))
+      hr.out.le
 
 private theorem tendsto_kummerLaplaceRayIntegrand_atTop (c : ℕ) (d : ℂ) {z : ℂ} {θ : ℝ}
     (hθ : |θ| < π) (hre : 0 < (z * cexp (θ * I)).re) :
@@ -672,7 +671,8 @@ private theorem hasDerivAt_kummerLaplaceRayIntegrand_zero (d z : ℂ) {θ r : �
 theorem mul_kummerLaplace_zero (d : ℂ) {z : ℂ} (hz : z ∈ slitPlane) :
     z * kummerLaplace 0 d z = 1 + d * kummerLaplace 0 (d - 1) z := by
   set θ₀ : ℝ := -(z.arg / 2)
-  have hθ₀ : |θ₀| < π := abs_neg_arg_div_two_lt_pi z
+  have hθ₀ : |θ₀| < π :=
+    ((abs_neg _).trans_le (abs_arg_div_two_le_pi_div_two z)).trans_lt (half_lt_self Real.pi_pos)
   have hint_0 := (integrableOn_kummerLaplaceRayIntegrand_neg_arg_div_two 0 d hz).const_mul (-z)
   have hint_d :=
     (integrableOn_kummerLaplaceRayIntegrand_neg_arg_div_two 0 (d - 1) hz).const_mul d

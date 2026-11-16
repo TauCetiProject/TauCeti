@@ -56,30 +56,22 @@ open scoped Nat Real Topology
 
 namespace Complex
 
-private theorem rpow_neg_quarter {x : ℝ} (hx : 0 ≤ x) :
-    x ^ (-1 / 4 : ℝ) = (x ^ (1 / 4 : ℝ))⁻¹ := by
-  rw [show (-1 / 4 : ℝ) = -(1 / 4 : ℝ) by ring, Real.rpow_neg hx]
-
-private theorem rpow_quarter_sq (k : ℕ) :
-    ((k : ℝ) ^ (1 / 4 : ℝ)) ^ 2 = Real.sqrt k := by
-  rw [← Real.rpow_natCast, ← Real.rpow_mul (Nat.cast_nonneg k), Real.sqrt_eq_rpow]; norm_num
-
-private def saddleU (k : ℕ) (v : ℝ) : ℝ := 1 + (k : ℝ) ^ (-1 / 4 : ℝ) * v
+private def saddleU (k : ℕ) (v : ℝ) : ℝ := 1 + ((k : ℝ) ^ (1 / 4 : ℝ))⁻¹ * v
 
 private def saddleY (σ : ℝ) (k : ℕ) (v : ℝ) : ℝ := saddleU k v + σ / Real.sqrt k
 
 private theorem saddle_u_pos {k : ℕ} (hk : 1 ≤ k) {v : ℝ} (hv : -(k : ℝ) ^ (1 / 4 : ℝ) < v) :
     0 < saddleU k v := by
   have hq : 0 < (k : ℝ) ^ (1 / 4 : ℝ) := Real.rpow_pos_of_pos (Nat.cast_pos.mpr hk) _
-  rw [saddleU, rpow_neg_quarter (Nat.cast_nonneg k)]
   have hdiv : -1 < v / (k : ℝ) ^ (1 / 4 : ℝ) := by rw [lt_div_iff₀ hq]; linarith
+  rw [saddleU]
   linarith [div_eq_inv_mul v ((k : ℝ) ^ (1 / 4 : ℝ))]
 
 private theorem tendsto_saddle_u (v : ℝ) :
     Tendsto (fun k : ℕ => saddleU k v) atTop (𝓝 1) := by
-  have ht : Tendsto (fun k : ℕ => (k : ℝ) ^ (-1 / 4 : ℝ)) atTop (𝓝 0) := by
-    rw [show (-1 / 4 : ℝ) = -(1 / 4 : ℝ) by ring]
-    exact (tendsto_rpow_neg_atTop (by norm_num : (0 : ℝ) < 1 / 4)).comp tendsto_natCast_atTop_atTop
+  have ht : Tendsto (fun k : ℕ => ((k : ℝ) ^ (1 / 4 : ℝ))⁻¹) atTop (𝓝 0) :=
+    tendsto_inv_atTop_zero.comp
+      ((tendsto_rpow_atTop (by norm_num : (0 : ℝ) < 1 / 4)).comp tendsto_natCast_atTop_atTop)
   simpa [saddleU] using tendsto_const_nhds.add (ht.mul_const v)
 
 private theorem kummerLaplace_eq_sqrt_integral (c : ℕ) (d : ℂ) {z : ℂ} (hz : z ≠ 0) :
@@ -162,8 +154,8 @@ private theorem kummerLaplace_saddle_pointwise (a : ℂ) {z : ℂ} (hz : z ∈ s
   have hsk_pos : 0 < Real.sqrt k := Real.sqrt_pos.mpr hk_pos
   have hu_pos : 0 < u := saddle_u_pos hk hv
   have hs_eq : s = Real.sqrt k * u := by
-    have hmul : Real.sqrt k * (k : ℝ) ^ (-1 / 4 : ℝ) = q₄ := by
-      rw [Real.sqrt_eq_rpow, ← Real.rpow_add hk_pos]; norm_num [q₄]
+    have hmul : Real.sqrt k * q₄⁻¹ = q₄ := by
+      rw [Real.sqrt_eq_rpow, ← Real.rpow_neg hk_pos.le, ← Real.rpow_add hk_pos]; norm_num [q₄]
     dsimp only [s, u, saddleU]; linear_combination -hmul * v
   have hs_pos : 0 < s := by rw [hs_eq]; positivity
   have hz0 : z ≠ 0 := slitPlane_ne_zero hz; have hζ0 : ζ ≠ 0 := cpow_ne_zero_iff.mpr (Or.inl hz0)
@@ -213,7 +205,7 @@ private theorem kummerLaplace_eq_saddle_integral (a : ℂ) {z : ℂ} (hz : z ∈
         ∫ v : ℝ, kummerLaplaceSaddleIntegrand a z k v := by
   have hq₄ : 0 < (k : ℝ) ^ (1 / 4 : ℝ) := Real.rpow_pos_of_pos (Nat.cast_pos.mpr hk) _
   have h0 : Real.sqrt k + (k : ℝ) ^ (1 / 4 : ℝ) * -(k : ℝ) ^ (1 / 4 : ℝ) = 0 := by
-    rw [mul_neg, ← sq, rpow_quarter_sq k, add_neg_cancel]
+    rw [mul_neg, ← Real.rpow_add (Nat.cast_pos.mpr hk), Real.sqrt_eq_rpow]; norm_num
   have hsub := (h0 ▸ TauCeti.integral_comp_add_mul_left_Ioi'
     (fun s : ℝ => cexp (-(z ^ (1 / 2 : ℂ)) * s) * ((s : ℂ) * (z ^ (1 / 2 : ℂ))⁻¹) ^ k *
       (1 + (s : ℂ) * (z ^ (1 / 2 : ℂ))⁻¹) ^ (a - 1 - k))
@@ -305,11 +297,10 @@ private theorem tendsto_saddle_quadratic_phase (z : ℂ) (v : ℝ) :
   have hsk_c : (Real.sqrt k : ℂ) ≠ 0 := ofReal_ne_zero.mpr (Real.sqrt_pos.mpr hk_pos).ne'
   have hu_ne : (u k : ℂ) ≠ 0 := ofReal_ne_zero.mpr hu0.ne'
   have hu_sub : ((u k : ℂ) - 1) ^ 2 = ((Real.sqrt k : ℂ))⁻¹ * (v : ℂ) ^ 2 := by
-    have hsq : ((k : ℝ) ^ (-1 / 4 : ℝ)) ^ 2 = (Real.sqrt k)⁻¹ := by
-      rw [rpow_neg_quarter hk_pos.le, inv_pow, rpow_quarter_sq k]
+    have hsq : (((k : ℝ) ^ (1 / 4 : ℝ))⁻¹) ^ 2 = (Real.sqrt k)⁻¹ := by
+      rw [inv_pow, ← Real.rpow_mul_natCast hk_pos.le, Real.sqrt_eq_rpow]; norm_num
     dsimp only [u, saddleU]; push_cast
-    rw [show 1 + (((k : ℝ) ^ (-1 / 4 : ℝ) : ℝ) : ℂ) * (v : ℂ) - 1 =
-      (((k : ℝ) ^ (-1 / 4 : ℝ) : ℝ) : ℂ) * (v : ℂ) by ring, mul_pow, ← ofReal_pow, hsq, ofReal_inv]
+    rw [add_sub_cancel_left, mul_pow, ← ofReal_inv, ← ofReal_pow, hsq, ofReal_inv]
   have hu_sub' : (Real.sqrt k : ℂ) * ((u k : ℂ) - 1) ^ 2 = (v : ℂ) ^ 2 := by
     rw [hu_sub, ← mul_assoc, mul_inv_cancel₀ hsk_c, one_mul]
   have hlt3 : logTaylor 3 (w k) = w k - (w k) ^ 2 / 2 := by
@@ -476,44 +467,6 @@ private theorem norm_kummerLaplaceSaddleCore_exp_bound (a : ℂ) {z : ℂ} (hz :
           (mul_le_mul_of_nonneg_left h1w_inv (by positivity)) (by positivity) (by positivity)
     _ = _ := by rw [hexp_comb]; ring
 
-private theorem saddle_poly_exp_le_of_le_two {σ : ℝ} (hσ : 0 < σ) (m : ℕ) {k : ℕ} (hk : 1 ≤ k)
-    {y : ℝ} (hy : 0 < y) (hy2 : y ≤ 2) :
-    ((y ^ m)⁻¹ + y ^ m) * Real.exp (-(Real.sqrt k * σ / 2) * ((y - 1) ^ 2 / y)) ≤
-      2 * max ((m ! : ℝ) / (σ / 8) ^ m) (2 ^ m) := by
-  have hsk1 : 1 ≤ Real.sqrt k := Real.one_le_sqrt.mpr (Nat.one_le_cast.mpr hk)
-  rcases le_or_gt y (1 / 2) with hy_half | hy_half
-  · have hym : (y ^ m)⁻¹ + y ^ m ≤ 2 * (y ^ m)⁻¹ := by
-      have h1 : y ^ m ≤ 1 := pow_le_one₀ hy.le (by linarith)
-      linarith [(one_le_inv₀ (pow_pos hy m)).mpr h1]
-    have hy_sq : 1 / 4 ≤ (y - 1) ^ 2 := by nlinarith
-    have hexp_y : Real.exp (-(Real.sqrt k * σ / 2) * ((y - 1) ^ 2 / y)) ≤
-        Real.exp (-((σ / 8) / y)) := Real.exp_le_exp.mpr <| by
-      rw [neg_mul, neg_le_neg_iff, mul_div_assoc']
-      refine div_le_div_of_nonneg_right ?_ hy.le
-      calc σ / 8 = (1 * σ / 2) * (1 / 4) := by ring
-        _ ≤ (Real.sqrt k * σ / 2) * (y - 1) ^ 2 := by gcongr
-    have hinv_le : (y ^ m)⁻¹ * Real.exp (-((σ / 8) / y)) ≤ (m ! : ℝ) / (σ / 8) ^ m := by
-      simpa [inv_pow, div_eq_mul_inv, neg_mul] using
-        TauCeti.pow_mul_exp_neg_mul_le (a := σ / 8) (t := y⁻¹) (by positivity) (by positivity) m
-    calc ((y ^ m)⁻¹ + y ^ m) * Real.exp (-(Real.sqrt k * σ / 2) * ((y - 1) ^ 2 / y))
-        ≤ (2 * (y ^ m)⁻¹) * Real.exp (-((σ / 8) / y)) :=
-          mul_le_mul hym hexp_y (by positivity) (by positivity)
-      _ ≤ 2 * ((m ! : ℝ) / (σ / 8) ^ m) := by linarith
-      _ ≤ 2 * max ((m ! : ℝ) / (σ / 8) ^ m) (2 ^ m) := by gcongr; exact le_max_left _ _
-  · have hym : (y ^ m)⁻¹ + y ^ m ≤ 2 * 2 ^ m := by
-      have h1 : (y ^ m)⁻¹ ≤ 2 ^ m := by
-        rw [← inv_pow]; exact pow_le_pow_left₀ (by positivity)
-          ((inv_le_comm₀ hy two_pos).mpr (by linarith)) m
-      linarith [pow_le_pow_left₀ hy.le hy2 m]
-    have hexp1 : Real.exp (-(Real.sqrt k * σ / 2) * ((y - 1) ^ 2 / y)) ≤ 1 :=
-      Real.exp_le_one_iff.mpr <| by
-        rw [neg_mul]
-        exact neg_nonpos.mpr (mul_nonneg (by positivity) (div_nonneg (sq_nonneg _) hy.le))
-    calc ((y ^ m)⁻¹ + y ^ m) * Real.exp (-(Real.sqrt k * σ / 2) * ((y - 1) ^ 2 / y))
-        ≤ (2 * 2 ^ m) * 1 := mul_le_mul hym hexp1 (by positivity) (by positivity)
-      _ ≤ 2 * max ((m ! : ℝ) / (σ / 8) ^ m) (2 ^ m) := by
-          rw [mul_one]; gcongr; exact le_max_right _ _
-
 private theorem saddle_exp_le_gaussian_of_le_two {σ : ℝ} (hσ : 0 < σ) {k : ℕ} (hk : 1 ≤ k)
     (hq₄ : max 1 (4 * σ) ≤ (k : ℝ) ^ (1 / 4 : ℝ)) {v : ℝ}
     (hv : -(k : ℝ) ^ (1 / 4 : ℝ) < v) (hy2 : saddleY σ k v ≤ 2) :
@@ -525,7 +478,8 @@ private theorem saddle_exp_le_gaussian_of_le_two {σ : ℝ} (hσ : 0 < σ) {k : 
   have hsk1 : 1 ≤ Real.sqrt k := Real.one_le_sqrt.mpr (Nat.one_le_cast.mpr hk)
   have hq1 : 1 ≤ q₄ := (le_max_left 1 (4 * σ)).trans hq₄
   have hqσ : 4 * σ ≤ q₄ := (le_max_right 1 (4 * σ)).trans hq₄
-  have hq_sq : q₄ ^ 2 = Real.sqrt k := rpow_quarter_sq k
+  have hq_sq : q₄ ^ 2 = Real.sqrt k := by
+    rw [← Real.rpow_mul_natCast hk_pos.le, Real.sqrt_eq_rpow]; norm_num
   have hu : 0 < saddleU k v := saddle_u_pos hk hv
   have hy : 0 < y := by dsimp only [y, saddleY]; positivity
   rw [← Real.exp_add]; refine Real.exp_le_exp.mpr ?_
@@ -536,7 +490,7 @@ private theorem saddle_exp_le_gaussian_of_le_two {σ : ℝ} (hσ : 0 < σ) {k : 
     have : -(σ / 16) * v ^ 2 ≥ -(σ / 16) := by nlinarith
     linarith
   · have hy_sub : y - 1 = q₄⁻¹ * (v + σ / q₄) := by
-      dsimp only [y, saddleY, saddleU]; rw [rpow_neg_quarter hk_pos.le, ← hq_sq]
+      dsimp only [y, saddleY, saddleU]; rw [← hq_sq]
       field_simp [(zero_lt_one.trans_le hq1).ne']; dsimp only [q₄]; ring
     have hv_shift : v ^ 2 / 4 ≤ (v + σ / q₄) ^ 2 := by
       have hδq : σ / q₄ ≤ 1 / 4 := by rw [div_le_div_iff₀ (by positivity) (by positivity)]; linarith
@@ -563,8 +517,14 @@ private theorem saddle_majorant_le_two {σ : ℝ} (hσ : 0 < σ) (m : ℕ) {k : 
       (2 * max ((m ! : ℝ) / (σ / 8) ^ m) (2 ^ m) * Real.exp (σ / 16)) *
         Real.exp (-(σ / 16) * v ^ 2) := by
   set y : ℝ := saddleY σ k v
+  have hsk1 : 1 ≤ Real.sqrt k := Real.one_le_sqrt.mpr (Nat.one_le_cast.mpr hk)
   have hu : 0 < saddleU k v := saddle_u_pos hk hv
   have hy : 0 < y := by dsimp only [y, saddleY]; positivity
+  have hpoly : ((y ^ m)⁻¹ + y ^ m) * Real.exp (-(Real.sqrt k * σ / 2) * ((y - 1) ^ 2 / y)) ≤
+      2 * max ((m ! : ℝ) / (σ / 8) ^ m) (2 ^ m) := by
+    refine (TauCeti.inv_pow_add_pow_mul_exp_neg_mul_sub_one_sq_div_le (by positivity) hy m).trans ?_
+    have hrate : σ / 8 ≤ Real.sqrt k * σ / 2 / 4 := by nlinarith
+    gcongr
   have hsplit : Real.exp (-Real.sqrt k * σ * ((y - 1) ^ 2 / y)) =
       Real.exp (-(Real.sqrt k * σ / 2) * ((y - 1) ^ 2 / y)) *
         Real.exp (-(Real.sqrt k * σ / 2) * ((y - 1) ^ 2 / y)) := by
@@ -574,8 +534,8 @@ private theorem saddle_majorant_le_two {σ : ℝ} (hσ : 0 < σ) (m : ℕ) {k : 
         Real.exp (-(Real.sqrt k * σ / 2) * ((y - 1) ^ 2 / y))
       ≤ (2 * max ((m ! : ℝ) / (σ / 8) ^ m) (2 ^ m)) *
           (Real.exp (σ / 16) * Real.exp (-(σ / 16) * v ^ 2)) :=
-        mul_le_mul (saddle_poly_exp_le_of_le_two hσ m hk hy hy2)
-          (saddle_exp_le_gaussian_of_le_two hσ hk hq₄ hv hy2) (by positivity) (by positivity)
+        mul_le_mul hpoly (saddle_exp_le_gaussian_of_le_two hσ hk hq₄ hv hy2)
+          (by positivity) (by positivity)
     _ = _ := by ring
 
 private theorem saddle_majorant_gt_two {σ : ℝ} (hσ : 0 < σ) (m : ℕ) {k : ℕ} (hk : 1 ≤ k)
@@ -590,7 +550,8 @@ private theorem saddle_majorant_gt_two {σ : ℝ} (hσ : 0 < σ) (m : ℕ) {k : 
   have hsk1 : 1 ≤ Real.sqrt k := Real.one_le_sqrt.mpr (Nat.one_le_cast.mpr hk)
   have hq1 : 1 ≤ q₄ := (le_max_left 1 (4 * σ)).trans hq₄
   have hqσ : 4 * σ ≤ q₄ := (le_max_right 1 (4 * σ)).trans hq₄
-  have hq_sq : q₄ ^ 2 = Real.sqrt k := rpow_quarter_sq k
+  have hq_sq : q₄ ^ 2 = Real.sqrt k := by
+    rw [← Real.rpow_mul_natCast hk_pos.le, Real.sqrt_eq_rpow]; norm_num
   have hy : 0 < y := by linarith
   have hδ_le : σ / Real.sqrt k ≤ 1 / 4 := by
     rw [← hq_sq, div_le_div_iff₀ (by positivity) (by positivity)]
@@ -598,8 +559,10 @@ private theorem saddle_majorant_gt_two {σ : ℝ} (hσ : 0 < σ) (m : ℕ) {k : 
       _ ≤ q₄ * q₄ := mul_le_mul_of_nonneg_left hq1 (by positivity)
       _ = 1 * q₄ ^ 2 := by ring
   have hv_pos : 0 < v := pos_of_mul_pos_right
-    (by dsimp only [y, saddleY, saddleU] at hy2; linarith)
-    (Real.rpow_nonneg hk_pos.le (-1 / 4 : ℝ))
+    (lt_of_add_lt_add_left (a := 1 + σ / Real.sqrt k) <| by
+      rw [add_zero, add_right_comm]
+      exact (by linarith only [hδ_le] : 1 + σ / Real.sqrt k < 2).trans hy2)
+    (inv_nonneg.mpr (zero_le_one.trans hq1))
   rw [indicator_of_mem (mem_Ioi.mpr hv_pos)]
   have hym : (y ^ m)⁻¹ + y ^ m ≤ 2 * y ^ m := by
     have h1 : 1 ≤ y ^ m := one_le_pow₀ (by linarith)
@@ -612,7 +575,7 @@ private theorem saddle_majorant_gt_two {σ : ℝ} (hσ : 0 < σ) (m : ℕ) {k : 
   have hvy : v ≤ Real.sqrt k * y := by
     have hq0 : q₄ ≠ 0 := (zero_lt_one.trans_le hq1).ne'
     have h1 : q₄ * v ≤ Real.sqrt k * y := by
-      dsimp only [y, saddleY, saddleU]; rw [← hq_sq, rpow_neg_quarter hk_pos.le]
+      dsimp only [y, saddleY, saddleU]; rw [← hq_sq]
       rw [show q₄ ^ 2 * (1 + q₄⁻¹ * v + σ / q₄ ^ 2) = q₄ ^ 2 + q₄ * v + σ by field_simp [hq0]]
       linarith [sq_nonneg q₄]
     linarith [le_mul_of_one_le_left hv_pos.le hq1]
