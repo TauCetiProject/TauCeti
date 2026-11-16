@@ -15,8 +15,9 @@ import Mathlib.Tactic.Ring
 /-!
 # Moved-point counts for Kozlov's staircase cochains
 
-On `K_{2t+1}` with vertices numbered `0, 1, …, 2t`, the staircase cochain `Sym3.stair` puts the
-transposition `t01` on the pairs `p < q` with `p` odd and `q` even and `1` elsewhere. Writing
+On `K_{2t+1}` with vertices numbered `0, 1, …, 2t`, the staircase cochain `Sym3.stair`, read on the
+positively oriented pairs `p < q` (as `Sym3.val` and `Cochain.ofLt` do), puts the transposition
+`t01` on the pairs with `p` odd and `q` even and `1` on the others. Writing
 `vᵢ = 2i - 1` and `y_j = 2j`, its `t01`-edges join `vᵢ` to `y_j` exactly when `i ≤ j`: this is
 Kozlov's staircase graph of the partition `(t, t - 1, …, 1)` with one isolated vertex `0`
 (`SimpleGraph.staircase 1 t` up to relabelling).
@@ -51,12 +52,14 @@ open Finset
 
 /-! ## Parity and the staircase -/
 
-/-- The staircase edge predicate on positions `p < q`: `p` odd and `q` even. -/
+/-- The staircase edge predicate: `p` is odd and `q` is even. It does not compare `p` and `q`; it is
+only read on pairs `p < q`. -/
 def stEdge (p q : ℕ) : Bool := decide (p % 2 = 1) && decide (q % 2 = 0)
 
-/-- **Kozlov's staircase cochain** on `K_k`: `t01` on the edges `p < q` with `p` odd and `q`
-even, the identity elsewhere. For `k = 2t + 1` this is the staircase of the partition
-`(t, …, 1)` with one loose vertex `0`. -/
+/-- **Kozlov's staircase cochain** on `K_k`, as a function read on positively oriented pairs
+`p < q` (`Sym3.val`, `Cochain.ofLt`): `t01` when `p` is odd and `q` is even, the identity
+otherwise. For `k = 2t + 1` this is the staircase of the partition `(t, …, 1)` with one loose
+vertex `0`. -/
 def stair (k : ℕ) : Fin k → Fin k → S3 := fun p q => if stEdge p.val q.val then t01 else 1
 
 /-- The sign of a permutation of three points, as a Boolean (`true` for a transposition). -/

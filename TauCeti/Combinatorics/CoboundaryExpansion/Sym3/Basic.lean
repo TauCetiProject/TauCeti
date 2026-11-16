@@ -272,11 +272,12 @@ private theorem rep_edge_le (α : Fin k → Fin k → S3) (γ : Fin (k * q) → 
   · simp only [hij, ↓reduceIte]
     exact Nat.zero_le _
 
-/-- Every gauge of the replication costs at least `q ^ 2` times a lower bound `D` for the seed:
-each section (one vertex per block) restricts the gauge to a gauge of the seed
-(`Finset.card_sq_nsmul_le_sum_of_forall_le_sum`), and pairs inside a block cost at least `0`. -/
+/-- If every gauge of `α` costs at least `D`, every gauge of the `q`-fold replication `rep q α`
+costs at least `q ^ 2 * D`. -/
 theorem cost_rep_ge (α : Fin k → Fin k → S3) (D : ℕ) (hD : ∀ β : Fin k → S3, D ≤ cost α β)
     (γ : Fin (k * q) → S3) : q ^ 2 * D ≤ cost (rep q α) γ := by
+  -- Each section (one vertex per block) restricts `γ` to a gauge of `α`
+  -- (`Finset.card_sq_nsmul_le_sum_of_forall_le_sum`); pairs inside a block cost at least `0`.
   set E := univ.filter fun e : Fin k × Fin k => e.1 < e.2
   set w : Fin k × Fin k → Fin q → Fin q → ℕ := fun e a b =>
     moved ((γ (vert q e.1 a))⁻¹ * α e.1 e.2 * γ (vert q e.2 b))

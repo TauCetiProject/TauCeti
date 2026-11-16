@@ -123,17 +123,17 @@ private theorem h1_complete_fin_le (k : ℕ) (hk : 3 ≤ k) :
 
 variable {V : Type*} [Fintype V] [LinearOrder V]
 
-/-- The permutation coboundary constant of the complete complex is `k/3` for every `k ≥ 3`,
-attained with values in `Sym(3)` (Beasley, Theorem 8, stated there for `k ≥ 4`; the same seeds
-cover `k = 3`). -/
+/-- The `Sym(3)` coboundary constant `h1 (complete V) (movedNorm (Fin 3))` of the complete complex
+equals `Fintype.card V / 3` whenever `3 ≤ Fintype.card V` (Beasley, Theorem 8, stated there for
+`k ≥ 4`). -/
 theorem h1_complete_movedNorm_fin_three (hV : 3 ≤ Fintype.card V) :
     h1 (complete V) (movedNorm (Fin 3)) = (Fintype.card V : ℝ) / 3 := by
   refine le_antisymm ?_ (card_div_three_le_h1_of_nontrivial hV _ isConjInvariant_movedNorm)
   rw [h1_complete_eq_of_card_eq isConjInvariant_movedNorm (Fintype.card_fin _).symm]
   exact h1_complete_fin_le _ hV
 
-/-- The same constant in the normalized convention:
-`(k choose 2) / (k choose 3) · k/3 = k/(k-2)` for every `k ≥ 3`. -/
+/-- The normalized `Sym(3)` coboundary constant `h1Norm (complete V) (movedNorm (Fin 3))` of the
+complete complex equals `k / (k - 2)` for `k = Fintype.card V ≥ 3`. -/
 theorem h1Norm_complete_movedNorm_fin_three (hV : 3 ≤ Fintype.card V) :
     h1Norm (complete V) (movedNorm (Fin 3)) = (Fintype.card V : ℝ) / (Fintype.card V - 2) := by
   have h : (Fintype.card V : ℝ) - 2 ≠ 0 := by
