@@ -227,6 +227,14 @@ theorem polarizedComplexMeasure_integral_right (P : ProjValMeasure X H)
   ext t
   by_cases ht : t ∈ B <;> simp [ht, BoundedBorelFunction.indicator_apply]
 
+/-- Every bounded Borel integral commutes with every spectral projection. -/
+private theorem integral_proj_apply (P : ProjValMeasure X H) (g : BoundedBorelFunction X)
+    (B : Set X) (hB : MeasurableSet B) (ξ : H) :
+    P.integral g (P.proj B hB ξ) = P.proj B hB (P.integral g ξ) := by
+  have hcomm : Commute (P.proj B hB) (P.integral g) :=
+    (P.forall_commute_integral_iff (P.proj B hB)).2 (fun C hC => P.proj_mul_comm B C hB hC) g
+  exact (ContinuousLinearMap.ext_iff.1 hcomm.eq ξ).symm
+
 /-- Applying a bounded Borel operator `P.integral g` to the left vector multiplies the polarized
 complex measure by the density `star g`. -/
 theorem polarizedComplexMeasure_integral_left (P : ProjValMeasure X H)
@@ -236,11 +244,13 @@ theorem polarizedComplexMeasure_integral_left (P : ProjValMeasure X H)
   have hswap : P.polarizedComplexMeasure (P.integral g ψ) ξ =
       P.polarizedComplexMeasure ψ (P.integral (star g) ξ) := by
     ext B hB
-    rw [P.polarizedComplexMeasure_apply _ _ B hB, P.polarizedComplexMeasure_apply _ _ B hB,
-      map_star, ContinuousLinearMap.star_eq_adjoint, ← P.integral_indicator hB,
-      ← mul_apply_eq_comp, ← ContinuousLinearMap.star_eq_adjoint, ← map_star, ← map_mul, mul_comm,
-      map_mul, mul_apply_eq_comp, map_star, ContinuousLinearMap.star_eq_adjoint,
-      ContinuousLinearMap.adjoint_inner_right]
+    rw [P.polarizedComplexMeasure_apply _ _ B hB, P.polarizedComplexMeasure_apply _ _ B hB]
+    calc ⟪P.integral g ψ, P.proj B hB ξ⟫_ℂ
+        = ⟪ψ, P.integral (star g) (P.proj B hB ξ)⟫_ℂ := by
+          rw [map_star, ContinuousLinearMap.star_eq_adjoint,
+            ContinuousLinearMap.adjoint_inner_right]
+      _ = ⟪ψ, P.proj B hB (P.integral (star g) ξ)⟫_ℂ := by
+          rw [P.integral_proj_apply]
   rw [hswap, P.polarizedComplexMeasure_integral_right]
   rfl
 

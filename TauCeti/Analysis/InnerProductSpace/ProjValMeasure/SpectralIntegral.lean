@@ -634,16 +634,9 @@ theorem hasCore_spectralIntegral (P : ProjValMeasure X H) {f : X → ℂ} (hf : 
 @[simp]
 theorem spectralIntegral_star_domain (P : ProjValMeasure X H) (f : X → ℂ) :
     (P.spectralIntegral (star f)).domain = (P.spectralIntegral f).domain := by
-  have hmem (g : X → ℂ) (x : H) (hx : MemLp g 2 (P.diag x)) : MemLp (star g) 2 (P.diag x) := by
-    have hsm : AEStronglyMeasurable (star g) (P.diag x) :=
-      Complex.conjCLE.continuous.comp_aestronglyMeasurable hx.aestronglyMeasurable
-    have heq : eLpNorm (star g) 2 (P.diag x) = eLpNorm g 2 (P.diag x) :=
-      eLpNorm_congr_norm_ae hsm hx.aestronglyMeasurable
-        (Eventually.of_forall fun t => norm_star (g t))
-    exact heq.trans_lt hx.eLpNorm_lt_top
   ext x
   simp only [mem_spectralIntegral_domain_iff_memLp]
-  exact ⟨fun hx => by simpa [star_star] using hmem (star f) x hx, hmem f x⟩
+  exact ⟨fun hx => by simpa [star_star] using hx.star, fun hx => hx.star⟩
 
 /-- `P.spectralIntegral (star f)` is a formal adjoint of `P.spectralIntegral f` for every
 `f : X → ℂ`. -/

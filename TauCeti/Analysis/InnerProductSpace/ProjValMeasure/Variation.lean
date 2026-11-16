@@ -188,27 +188,13 @@ private theorem simpleFunc_lintegral_variation_le (P : ProjValMeasure X H) (ψ �
     (s : SimpleFunc X ℝ≥0∞) :
     s.lintegral (P.polarizedComplexMeasure ψ ξ).variation ≤
       ‖ψ‖ₑ * (∫⁻ t, s t ^ 2 ∂(P.diag ξ)) ^ (1 / 2 : ℝ) := by
-  have hdisj : Set.PairwiseDisjoint (s.range : Set ℝ≥0∞) fun c => s ⁻¹' {c} :=
-    fun c₁ _ c₂ _ hne => Set.disjoint_left.2 fun x hx₁ hx₂ =>
-      hne ((Set.mem_singleton_iff.1 hx₁).symm.trans (Set.mem_singleton_iff.1 hx₂))
-  have hunion : ⋃ c ∈ s.range, s ⁻¹' {c} = Set.univ := by
-    ext x
-    simp
   have hψ : (∑ c ∈ s.range, P.diag ψ (s ⁻¹' {c})) ^ (1 / 2 : ℝ) = ‖ψ‖ₑ := by
-    rw [← measure_biUnion_finset hdisj (fun c _ => s.measurableSet_fiber c), hunion,
-      P.diag_univ, ← ENNReal.rpow_two, ← ENNReal.rpow_mul, mul_one_div_cancel two_ne_zero,
-      ENNReal.rpow_one]
+    rw [s.sum_range_measure_preimage_singleton, P.diag_univ, ← ENNReal.rpow_two,
+      ← ENNReal.rpow_mul, mul_one_div_cancel two_ne_zero, ENNReal.rpow_one]
   have hξ : ∑ c ∈ s.range, c ^ 2 * P.diag ξ (s ⁻¹' {c}) = ∫⁻ t, s t ^ 2 ∂(P.diag ξ) := by
-    calc ∑ c ∈ s.range, c ^ 2 * P.diag ξ (s ⁻¹' {c})
-        = ∑ c ∈ s.range, ∫⁻ t in s ⁻¹' {c}, s t ^ 2 ∂(P.diag ξ) := by
-          refine Finset.sum_congr rfl fun c _ => ?_
-          rw [← setLIntegral_const]
-          exact setLIntegral_congr_fun (s.measurableSet_fiber c) fun t ht => by
-            rw [Set.mem_preimage, Set.mem_singleton_iff] at ht
-            rw [ht]
-      _ = ∫⁻ t in ⋃ c ∈ s.range, s ⁻¹' {c}, s t ^ 2 ∂(P.diag ξ) :=
-          (lintegral_biUnion_finset hdisj (fun c _ => s.measurableSet_fiber c) _).symm
-      _ = ∫⁻ t, s t ^ 2 ∂(P.diag ξ) := by rw [hunion, Measure.restrict_univ]
+    rw [← SimpleFunc.map_lintegral (fun c => c ^ 2) s,
+      ← (s.map (fun c => c ^ 2)).lintegral_eq_lintegral]
+    rfl
   calc s.lintegral (P.polarizedComplexMeasure ψ ξ).variation
       = ∑ c ∈ s.range, c * (P.polarizedComplexMeasure ψ ξ).variation (s ⁻¹' {c}) := rfl
     _ ≤ ∑ c ∈ s.range, (P.diag ψ (s ⁻¹' {c})) ^ (1 / 2 : ℝ) *
