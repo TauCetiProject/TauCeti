@@ -34,6 +34,13 @@ the isomorphism by `(-1) ^ (ind f * ind g)`, where `ind = dim ker - dim coker`
 orientations of the determinant lines of Fredholm operators, and so of moduli spaces cut out by
 them, are compared for split operators.
 
+The direct sum isomorphism is natural: for commuting squares of isomorphisms `(e₁, e₂)` from `f`
+to `f'` and `(e₁', e₂')` from `g` to `g'`, transporting `det (f ⊕ g)` along `(e₁ × e₁', e₂ × e₂')`
+is the tensor product of the transports of `det f` and `det g`, with no sign
+(`LinearMap.detLineProdMapEquiv_detLineCongr_prodCongr`). So a symmetry acting separately on
+the summands of a split operator acts on its determinant line by the product of its actions on
+the determinant lines of the summands.
+
 ## Main declarations
 
 * `TauCeti.detLineProdEquiv`: `det U ⊗ det W ≃ det (U × W)`, with its value
@@ -44,6 +51,8 @@ them, are compared for split operators.
   `LinearMap.detLineProdMapEquiv_tmul`.
 * `LinearMap.detLineProdMapEquiv_detLineCongr_prodComm`: exchanging the summands costs
   `(-1) ^ (ind f * ind g)`.
+* `LinearMap.detLineProdMapEquiv_detLineCongr_prodCongr`: naturality under products of commuting
+  squares.
 
 ## References
 
@@ -130,6 +139,47 @@ theorem detLineCongr_prodComm_detLineProdEquiv (t : detLine K U ⊗[K] detLine K
           Units.smul_def, ← Int.cast_smul_eq_zsmul K]
         push_cast
         rw [mul_comm (finrank K W)]
+
+/-- `TauCeti.detLineProdEquiv` sends `a ⊗ b` to the exterior product of the images of `a` and `b`
+under the inclusions of `U` and `W` into `U × W`. -/
+private theorem coe_detLineProdEquiv_tmul_eq_map_mul_map (a : detLine K U) (b : detLine K W) :
+    (detLineProdEquiv K U W (a ⊗ₜ b) : ExteriorAlgebra K (U × W)) =
+      ExteriorAlgebra.map (LinearMap.inl K U W) (a : ExteriorAlgebra K U) *
+        ExteriorAlgebra.map (LinearMap.inr K U W) (b : ExteriorAlgebra K W) := by
+  have hb : b ∈ Submodule.span K (Set.range (exteriorPower.ιMulti K (finrank K W))) := by
+    rw [exteriorPower.ιMulti_span]; trivial
+  induction hb using Submodule.span_induction with
+  | zero => simp
+  | add b b' _ _ h h' => simp only [tmul_add, map_add, Submodule.coe_add, h, h', mul_add]
+  | smul r b _ h => simp only [tmul_smul, map_smul, Submodule.coe_smul, h, mul_smul_comm]
+  | mem _ hb =>
+    obtain ⟨w, rfl⟩ := hb
+    have hw : w = LinearMap.snd K U W ∘ (LinearMap.inr K U W ∘ w) := by
+      funext i
+      simp
+    have h := coe_detLineShortExactEquiv_tmul_eq_map_mul LinearMap.inl_injective
+      Function.Exact.inl_snd LinearMap.snd_surjective a (LinearMap.inr K U W ∘ w)
+    rw [← hw] at h
+    rw [detLineProdEquiv, h, exteriorPower.ιMulti_apply_coe, ExteriorAlgebra.map_apply_ιMulti]
+
+/-- Naturality of `TauCeti.detLineProdEquiv` under linear isomorphisms of both factors. -/
+private theorem detLineCongr_prodCongr_detLineProdEquiv_aux {U' W' : Type*} [AddCommGroup U']
+    [Module K U'] [AddCommGroup W'] [Module K W'] [FiniteDimensional K U'] [FiniteDimensional K W']
+    (e : U ≃ₗ[K] U') (e' : W ≃ₗ[K] W') (t : detLine K U ⊗[K] detLine K W) :
+    (e.prodCongr e').detLineCongr (detLineProdEquiv K U W t) =
+      detLineProdEquiv K U' W'
+        (TensorProduct.map e.detLineCongr.toLinearMap e'.detLineCongr.toLinearMap t) := by
+  induction t using TensorProduct.inductionOn with
+  | add s t hs ht => simp only [map_add, hs, ht]
+  | tmul a b =>
+    refine Subtype.ext ?_
+    rw [LinearEquiv.coe_detLineCongr, coe_detLineProdEquiv_tmul_eq_map_mul_map, map_tmul,
+      coe_detLineProdEquiv_tmul_eq_map_mul_map, LinearEquiv.coe_coe, LinearEquiv.coe_coe,
+      LinearEquiv.coe_detLineCongr, LinearEquiv.coe_detLineCongr, map_mul,
+      ← AlgHom.comp_apply, ← AlgHom.comp_apply, ← AlgHom.comp_apply, ← AlgHom.comp_apply,
+      ExteriorAlgebra.map_comp_map, ExteriorAlgebra.map_comp_map, ExteriorAlgebra.map_comp_map,
+      ExteriorAlgebra.map_comp_map]
+    congr 3 <;> ext <;> simp
 
 end Prod
 
@@ -380,5 +430,254 @@ theorem detLineProdMapEquiv_detLineCongr_prodComm (x : (f.prodMap g).detLine) :
     rw [← pow_add, ← pow_add, ← pow_add, show ∀ a b c d : ℕ,
         (a + b) * (c + d) + b * c = b * d + (d * a + a * c) + 2 * (b * c) by intros; ring,
       pow_add (-1 : K) _ (2 * _), pow_mul (-1 : K) 2, neg_one_sq, one_pow, mul_one]
+
+
+/-! ### Naturality of the direct sum isomorphism -/
+
+section Naturality
+
+variable {P Q P' Q' : Type*} [AddCommGroup P] [Module K P] [AddCommGroup Q] [Module K Q]
+  [AddCommGroup P'] [Module K P'] [AddCommGroup Q'] [Module K Q'] {f' : P →ₗ[K] Q}
+  {g' : P' →ₗ[K] Q'} [FiniteDimensional K (ker f')] [FiniteDimensional K (ker g')]
+  [FiniteDimensional K (Q ⧸ range f')] [FiniteDimensional K (Q' ⧸ range g')]
+  (e₁ : M ≃ₗ[K] P) (e₂ : N ≃ₗ[K] Q) (e₁' : M' ≃ₗ[K] P') (e₂' : N' ≃ₗ[K] Q')
+  (hf : f' ∘ₗ e₁.toLinearMap = e₂.toLinearMap ∘ₗ f)
+  (hg : g' ∘ₗ e₁'.toLinearMap = e₂'.toLinearMap ∘ₗ g)
+
+omit [FiniteDimensional K (N ⧸ range f)] [FiniteDimensional K (N' ⧸ range g)]
+  [FiniteDimensional K (Q ⧸ range f')] [FiniteDimensional K (Q' ⧸ range g')] in
+/-- Naturality of `detLineKerProdMap`: an isomorphism of kernels of the direct sums acting as
+`e₁ × e₁'` corresponds to the isomorphisms of the kernels of the summands. -/
+private theorem detLineKerProdMap_detLineCongr_prodCongr
+    (e : ker (f.prodMap g) ≃ₗ[K] ker (f'.prodMap g'))
+    (he : ∀ x, (e x : P × P') = e₁.prodCongr e₁' x) (β : TauCeti.detLine K (ker (f.prodMap g))) :
+    detLineKerProdMap f' g' (e.detLineCongr β) =
+      TensorProduct.map
+        (e₁.ofSubmodules _ _
+          (f.map_ker_eq_ker_of_comp_eq e₁.surjective e₂.injective hf)).detLineCongr.toLinearMap
+        (e₁'.ofSubmodules _ _
+          (g.map_ker_eq_ker_of_comp_eq e₁'.surjective e₂'.injective hg)).detLineCongr.toLinearMap
+        (detLineKerProdMap f g β) := by
+  obtain ⟨t, rfl⟩ := (detLineKerProdMap f g).symm.surjective β
+  rw [LinearEquiv.apply_symm_apply]
+  simp only [detLineKerProdMap, LinearEquiv.symm_trans_apply, LinearEquiv.symm_symm,
+    LinearEquiv.trans_apply, LinearEquiv.detLineCongr_symm, LinearEquiv.symm_apply_eq]
+  set κ := (LinearEquiv.ofEq _ _ (ker_prodMap f g)).trans (Submodule.prodEquiv (ker f) (ker g))
+  set κ' := (LinearEquiv.ofEq _ _ (ker_prodMap f' g')).trans
+    (Submodule.prodEquiv (ker f') (ker g'))
+  -- Read through `κ` and `κ'`, the isomorphism `e` is the product of the kernel isomorphisms.
+  have hκ : κ.symm.trans (e.trans κ') =
+      (e₁.ofSubmodules _ _ (f.map_ker_eq_ker_of_comp_eq e₁.surjective e₂.injective hf)).prodCongr
+        (e₁'.ofSubmodules _ _ (g.map_ker_eq_ker_of_comp_eq e₁'.surjective e₂'.injective hg)) := by
+    ext x <;> simp [κ, κ', he]
+  rw [← detLineCongr_prodCongr_detLineProdEquiv_aux, ← hκ]
+  simp only [LinearEquiv.detLineCongr_trans, LinearEquiv.trans_apply]
+
+omit [FiniteDimensional K (ker f)] [FiniteDimensional K (ker g)] [FiniteDimensional K (ker f')]
+  [FiniteDimensional K (ker g')] in
+/-- Naturality of `detLineCokerProdMap`: an isomorphism of cokernels of the direct sums induced by
+`e₂ × e₂'` corresponds to the isomorphisms of the cokernels of the summands. -/
+private theorem detLineCongr_detLineCokerProdMap_prodCongr
+    (e : ((N × N') ⧸ range (f.prodMap g)) ≃ₗ[K] ((Q × Q') ⧸ range (f'.prodMap g')))
+    (he : ∀ x, e ((range (f.prodMap g)).mkQ x) = (range (f'.prodMap g')).mkQ (e₂.prodCongr e₂' x))
+    (t : TauCeti.detLine K (N ⧸ range f) ⊗[K] TauCeti.detLine K (N' ⧸ range g)) :
+    e.detLineCongr (detLineCokerProdMap f g t) =
+      detLineCokerProdMap f' g' (TensorProduct.map
+        (Submodule.Quotient.equiv _ _ e₂
+          (f.map_range_eq_range_of_comp_eq e₁.surjective hf)).detLineCongr.toLinearMap
+        (Submodule.Quotient.equiv _ _ e₂'
+          (g.map_range_eq_range_of_comp_eq e₁'.surjective hg)).detLineCongr.toLinearMap t) := by
+  simp only [detLineCokerProdMap, LinearEquiv.trans_apply, LinearEquiv.detLineCongr_symm]
+  set κ := (Submodule.quotEquivOfEq _ _ (range_prodMap f g)).trans
+    (Submodule.quotientProdEquiv (range f) (range g))
+  set κ' := (Submodule.quotEquivOfEq _ _ (range_prodMap f' g')).trans
+    (Submodule.quotientProdEquiv (range f') (range g'))
+  have hκ (a : N) (b : N') : κ.symm ((range f).mkQ a, (range g).mkQ b) =
+      (range (f.prodMap g)).mkQ (a, b) := by
+    rw [LinearEquiv.symm_apply_eq]
+    simp [κ]
+  have hκ' (a : Q) (b : Q') : κ'.symm ((range f').mkQ a, (range g').mkQ b) =
+      (range (f'.prodMap g')).mkQ (a, b) := by
+    rw [LinearEquiv.symm_apply_eq]
+    simp [κ']
+  -- Read through `κ` and `κ'`, the isomorphism `e` is the product of the cokernel isomorphisms.
+  have hκe : κ.symm.trans e =
+      ((Submodule.Quotient.equiv _ _ e₂
+          (f.map_range_eq_range_of_comp_eq e₁.surjective hf)).prodCongr
+        (Submodule.Quotient.equiv _ _ e₂'
+          (g.map_range_eq_range_of_comp_eq e₁'.surjective hg))).trans κ'.symm := by
+    ext ⟨a, b⟩
+    induction a using Submodule.Quotient.induction_on
+    induction b using Submodule.Quotient.induction_on
+    simp only [LinearEquiv.trans_apply, LinearEquiv.prodCongr_apply]
+    rw [← Submodule.mkQ_apply, ← Submodule.mkQ_apply, hκ, he]
+    exact (hκ' _ _).symm
+  rw [← LinearEquiv.trans_apply, ← LinearEquiv.detLineCongr_trans, hκe]
+  simp only [LinearEquiv.detLineCongr_trans, LinearEquiv.trans_apply,
+    detLineCongr_prodCongr_detLineProdEquiv_aux]
+
+omit [FiniteDimensional K (ker f)] [FiniteDimensional K (ker g)] [FiniteDimensional K (ker f')]
+  [FiniteDimensional K (ker g')] in
+/-- The dual form of `detLineCongr_detLineCokerProdMap_prodCongr`: if an isomorphism `e` of the
+cokernels of the direct sums corresponds to isomorphisms `A` and `B` of the cokernel lines of the
+summands, then transporting a functional on the cokernel line along `e` corresponds to transporting
+its two dual factors along `A` and `B`. -/
+private theorem dualDistribEquiv_symm_dualMap_detLineCokerProdMap_of_forall
+    (e : ((N × N') ⧸ range (f.prodMap g)) ≃ₗ[K] ((Q × Q') ⧸ range (f'.prodMap g')))
+    (A : TauCeti.detLine K (N ⧸ range f) ≃ₗ[K] TauCeti.detLine K (Q ⧸ range f'))
+    (B : TauCeti.detLine K (N' ⧸ range g) ≃ₗ[K] TauCeti.detLine K (Q' ⧸ range g'))
+    (h : ∀ t, e.detLineCongr (detLineCokerProdMap f g t) =
+      detLineCokerProdMap f' g' (TensorProduct.map A.toLinearMap B.toLinearMap t))
+    (φ : Dual K (TauCeti.detLine K ((N × N') ⧸ range (f.prodMap g)))) :
+    (dualDistribEquiv K _ _).symm
+        ((detLineCokerProdMap f' g').dualMap (φ ∘ₗ e.detLineCongr.symm.toLinearMap)) =
+      TensorProduct.map A.symm.dualMap.toLinearMap B.symm.dualMap.toLinearMap
+        ((dualDistribEquiv K _ _).symm ((detLineCokerProdMap f g).dualMap φ)) := by
+  rw [LinearEquiv.symm_apply_eq]
+  refine LinearMap.ext fun t ↦ ?_
+  -- Pairing with the dual factors transported by `A` and `B` is pairing after `A⁻¹` and `B⁻¹`.
+  have hdd (ψ : Dual K (TauCeti.detLine K (N ⧸ range f)) ⊗[K]
+      Dual K (TauCeti.detLine K (N' ⧸ range g))) :
+      dualDistribEquiv K _ _ (TensorProduct.map A.symm.dualMap.toLinearMap
+        B.symm.dualMap.toLinearMap ψ) t =
+        dualDistribEquiv K _ _ ψ (TensorProduct.map A.symm.toLinearMap B.symm.toLinearMap t) := by
+    rw [← LinearEquiv.coe_coe (dualDistribEquiv K _ _),
+      ← LinearEquiv.coe_coe (dualDistribEquiv K _ _), toLinearMap_dualDistribEquiv]
+    induction ψ using TensorProduct.inductionOn with
+    | add ψ ψ' h h' => simp only [map_add, LinearMap.add_apply, h, h']
+    | tmul a b =>
+      induction t using TensorProduct.inductionOn with
+      | add t t' h h' => simp only [map_add, h, h']
+      | tmul s u => simp [dualDistrib_apply]
+  have hC := h (TensorProduct.map A.symm.toLinearMap B.symm.toLinearMap t)
+  rw [← LinearMap.comp_apply (TensorProduct.map _ _), ← TensorProduct.map_comp,
+    LinearEquiv.comp_coe, LinearEquiv.comp_coe, LinearEquiv.symm_trans_self,
+    LinearEquiv.symm_trans_self, LinearEquiv.refl_toLinearMap, LinearEquiv.refl_toLinearMap,
+    TensorProduct.map_id, LinearMap.id_apply] at hC
+  rw [hdd, LinearEquiv.apply_symm_apply]
+  simp only [LinearEquiv.dualMap_apply, LinearMap.comp_apply, LinearEquiv.coe_coe]
+  rw [← hC, LinearEquiv.symm_apply_apply]
+
+omit [FiniteDimensional K (ker f)] [FiniteDimensional K (N ⧸ range f)]
+  [FiniteDimensional K (ker f')] [FiniteDimensional K (ker g')]
+  [FiniteDimensional K (Q ⧸ range f')] [FiniteDimensional K (Q' ⧸ range g')] in
+/-- Transport of the determinant line of `f` along a commuting square is the tensor product of the
+transports of its kernel line and of its dual cokernel line. -/
+private theorem toLinearMap_detLineCongr :
+    (f.detLineCongr e₁ e₂ hf).toLinearMap = TensorProduct.map
+      (e₁.ofSubmodules _ _
+        (f.map_ker_eq_ker_of_comp_eq e₁.surjective e₂.injective hf)).detLineCongr.toLinearMap
+      (Submodule.Quotient.equiv _ _ e₂
+        (f.map_range_eq_range_of_comp_eq e₁.surjective hf)).detLineCongr.symm.dualMap.toLinearMap :=
+  TensorProduct.ext' fun _ _ ↦ by rw [LinearEquiv.coe_coe, detLineCongr_tmul, map_tmul]; rfl
+
+omit [FiniteDimensional K (ker f)] [FiniteDimensional K (N ⧸ range f)]
+  [FiniteDimensional K (ker g)] [FiniteDimensional K (N' ⧸ range g)]
+  [FiniteDimensional K (ker f')] [FiniteDimensional K (ker g')]
+  [FiniteDimensional K (Q ⧸ range f')] [FiniteDimensional K (Q' ⧸ range g')] in
+/-- `toLinearMap_detLineCongr` for `f` and `g` at once. -/
+private theorem map_map_eq_map_detLineCongr (y : (f.detLine ⊗[K] g.detLine)) :
+    TensorProduct.map
+        (TensorProduct.map
+          (e₁.ofSubmodules _ _
+            (f.map_ker_eq_ker_of_comp_eq e₁.surjective e₂.injective hf)).detLineCongr.toLinearMap
+          (Submodule.Quotient.equiv _ _ e₂
+            (f.map_range_eq_range_of_comp_eq
+              e₁.surjective hf)).detLineCongr.symm.dualMap.toLinearMap)
+        (TensorProduct.map
+          (e₁'.ofSubmodules _ _
+            (g.map_ker_eq_ker_of_comp_eq e₁'.surjective e₂'.injective hg)).detLineCongr.toLinearMap
+          (Submodule.Quotient.equiv _ _ e₂'
+            (g.map_range_eq_range_of_comp_eq
+              e₁'.surjective hg)).detLineCongr.symm.dualMap.toLinearMap)
+        y =
+      TensorProduct.map (f.detLineCongr e₁ e₂ hf).toLinearMap
+        (g.detLineCongr e₁' e₂' hg).toLinearMap
+        y := by
+  rw [toLinearMap_detLineCongr f e₁ e₂ hf, toLinearMap_detLineCongr g e₁' e₂' hg]
+
+/-- `tensorTensorTensorComm` intertwines a scalar multiple of `map α β a ⊗ map γ δ d` with the
+corresponding image of `(r • a) ⊗ d`. -/
+private theorem tensorTensorTensorComm_smul_map_tmul_map {A B C D A' B' C' D' : Type*}
+    [AddCommGroup A] [Module K A] [AddCommGroup B] [Module K B] [AddCommGroup C] [Module K C]
+    [AddCommGroup D] [Module K D] [AddCommGroup A'] [Module K A'] [AddCommGroup B'] [Module K B']
+    [AddCommGroup C'] [Module K C'] [AddCommGroup D'] [Module K D'] (r : K) (a : A ⊗[K] B)
+    (d : C ⊗[K] D) (α : A →ₗ[K] A') (β : B →ₗ[K] B') (γ : C →ₗ[K] C') (δ : D →ₗ[K] D') :
+    tensorTensorTensorComm K A' B' C' D'
+        ((r • TensorProduct.map α β a) ⊗ₜ TensorProduct.map γ δ d) =
+      TensorProduct.map (TensorProduct.map α γ) (TensorProduct.map β δ)
+        (tensorTensorTensorComm K A B C D ((r • a) ⊗ₜ d)) := by
+  rw [← map_smul, ← TensorProduct.map_tmul, ← LinearEquiv.coe_toLinearMap, ← LinearMap.comp_apply,
+    TensorProduct.tensorTensorTensorComm_comp_map]
+  rfl
+
+/-- Naturality of `LinearMap.detLineProdMapEquiv` for isomorphisms `k` of the kernels and `c` of the
+cokernels of the direct sums induced by `e₁ × e₁'` and `e₂ × e₂'`. -/
+private theorem detLineProdMapEquiv_detLineCongrKerCoker
+    (k : ker (f.prodMap g) ≃ₗ[K] ker (f'.prodMap g'))
+    (hk : ∀ x, (k x : P × P') = e₁.prodCongr e₁' x)
+    (c : ((N × N') ⧸ range (f.prodMap g)) ≃ₗ[K] ((Q × Q') ⧸ range (f'.prodMap g')))
+    (hc : ∀ x, c ((range (f.prodMap g)).mkQ x) = (range (f'.prodMap g')).mkQ (e₂.prodCongr e₂' x))
+    (x : (f.prodMap g).detLine) :
+    detLineProdMapEquiv f' g' (detLineCongrKerCoker k c x) =
+      TensorProduct.map (f.detLineCongr e₁ e₂ hf).toLinearMap
+        (g.detLineCongr e₁' e₂' hg).toLinearMap
+        (detLineProdMapEquiv f g x) := by
+  induction x using TensorProduct.inductionOn with
+  | add x x' h h' => simp only [map_add, h, h']
+  | tmul β φ =>
+    have hC := detLineCongr_detLineCokerProdMap_prodCongr f g e₁ e₂ e₁' e₂' hf hg c hc
+    have hD := dualDistribEquiv_symm_dualMap_detLineCokerProdMap_of_forall f g c _ _ hC φ
+    rw [detLineCongrKerCoker_tmul]
+    simp only [detLineProdMapEquiv, LinearEquiv.trans_apply, congr_tmul,
+      LinearEquiv.smulOfNeZero_apply, map_smul]
+    rw [detLineKerProdMap_detLineCongr_prodCongr f g e₁ e₂ e₁' e₂' hf hg k hk β]
+    refine (congrArg (fun z ↦ tensorTensorTensorComm K _ _ _ _ (_ ⊗ₜ z)) hD).trans ?_
+    -- The Koszul signs agree, the dimensions being preserved by the isomorphisms.
+    have hs : (-1 : K) ^ (finrank K (Q ⧸ range f') * finrank K (ker g')) =
+        (-1) ^ (finrank K (N ⧸ range f) * finrank K (ker g)) := by
+      rw [(e₁'.ofSubmodules _ _
+          (g.map_ker_eq_ker_of_comp_eq e₁'.surjective e₂'.injective hg)).finrank_eq,
+        (Submodule.Quotient.equiv _ _ e₂
+          (f.map_range_eq_range_of_comp_eq e₁.surjective hf)).finrank_eq]
+    refine (congrArg (fun r : K ↦ tensorTensorTensorComm K _ _ _ _ ((r • _) ⊗ₜ _)) hs).trans ?_
+    refine (tensorTensorTensorComm_smul_map_tmul_map _ _ _ _ _ _ _).trans ?_
+    exact map_map_eq_map_detLineCongr f g e₁ e₂ e₁' e₂' hf hg _
+
+/-- **Naturality of the direct sum isomorphism of determinant lines.** Commuting squares
+`(e₁, e₂)` from `f` to `f'` and `(e₁', e₂')` from `g` to `g'` give a commuting square
+`(e₁ × e₁', e₂ × e₂')` from `f.prodMap g` to `f'.prodMap g'`. Under
+`LinearMap.detLineProdMapEquiv`, the transport of `det (f.prodMap g)` along it is the tensor
+product of the transports of `det f` and `det g`, with no sign. -/
+theorem detLineProdMapEquiv_detLineCongr_prodCongr (x : (f.prodMap g).detLine) :
+    detLineProdMapEquiv f' g' ((f.prodMap g).detLineCongr (e₁.prodCongr e₁') (e₂.prodCongr e₂')
+        (by
+          rw [LinearEquiv.coe_prodCongr, LinearEquiv.coe_prodCongr, prodMap_comp, prodMap_comp,
+            hf, hg]) x) =
+      TensorProduct.map (f.detLineCongr e₁ e₂ hf).toLinearMap
+        (g.detLineCongr e₁' e₂' hg).toLinearMap
+        (detLineProdMapEquiv f g x) := by
+  have hsq : f'.prodMap g' ∘ₗ (e₁.prodCongr e₁').toLinearMap =
+      (e₂.prodCongr e₂').toLinearMap ∘ₗ f.prodMap g := by
+    rw [LinearEquiv.coe_prodCongr, LinearEquiv.coe_prodCongr, prodMap_comp, prodMap_comp, hf, hg]
+  -- `LinearMap.detLineCongr` is `LinearMap.detLineCongrKerCoker` of the induced isomorphisms.
+  have hx : (f.prodMap g).detLineCongr (e₁.prodCongr e₁') (e₂.prodCongr e₂') hsq x =
+      detLineCongrKerCoker ((e₁.prodCongr e₁').ofSubmodules _ _
+        ((f.prodMap g).map_ker_eq_ker_of_comp_eq (e₁.prodCongr e₁').surjective
+          (e₂.prodCongr e₂').injective hsq))
+        (Submodule.Quotient.equiv _ _ (e₂.prodCongr e₂')
+          ((f.prodMap g).map_range_eq_range_of_comp_eq (e₁.prodCongr e₁').surjective hsq)) x := by
+    induction x using TensorProduct.inductionOn with
+    | add x x' h h' => simp only [map_add, h, h']
+    | tmul β φ => rw [detLineCongr_tmul, detLineCongrKerCoker_tmul]
+  rw [hx]
+  exact detLineProdMapEquiv_detLineCongrKerCoker f g e₁ e₂ e₁' e₂' hf hg
+    ((e₁.prodCongr e₁').ofSubmodules _ _ ((f.prodMap g).map_ker_eq_ker_of_comp_eq
+      (e₁.prodCongr e₁').surjective (e₂.prodCongr e₂').injective hsq)) (fun _ ↦ rfl)
+    (Submodule.Quotient.equiv _ _ (e₂.prodCongr e₂')
+      ((f.prodMap g).map_range_eq_range_of_comp_eq (e₁.prodCongr e₁').surjective hsq))
+    (fun _ ↦ rfl) x
+
+end Naturality
 
 end LinearMap
