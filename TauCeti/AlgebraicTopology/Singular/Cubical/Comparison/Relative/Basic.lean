@@ -218,14 +218,10 @@ theorem exists_boundary_eq_sub_add_map_of_injective (P : TopPair.{u}) (n : ℕ)
         s - s' + NormalizedCubicalChain.map k P.map.hom n a := by
   set K := (normalizedCubicalChainComplex k).obj P.fst
   set π := cokernel.π ((normalizedCubicalChainComplex k).map P.map)
-  have hnext : (ComplexShape.down ℕ).next n = n - 1 := by
-    rcases n with _ | m
-    · exact ChainComplex.next_nat_zero
-    · exact ChainComplex.next_nat_succ m
   obtain ⟨w, hw⟩ : ∃ w : K.cycles n, K.iCycles n w =
       (normalizedCubicalChainComplexXEquiv P.fst n).symm
         (s - s' + NormalizedCubicalChain.map k P.map.hom n a) :=
-    ⟨_, K.iCycles_moduleCatCyclesMk n _ _ hnext hd⟩
+    ⟨_, K.iCycles_moduleCatCyclesMk n _ _ (ChainComplex.next_nat n) hd⟩
   -- The relative class of the cycle `w` is that of `s - s'`, which vanishes.
   have hπw : HomologicalComplex.cyclesMap π n w = r - r' := by
     refine (P.cubicalChainComplex k).moduleCat_iCycles_injective n ?_
@@ -310,7 +306,15 @@ theorem mem_range_normalizedCubicalChainComplex_map_f_iff (P : TopPair.{u}) {n :
       normalizedCubicalChainComplexXEquiv P.fst n c ∈
         NormalizedCubicalChain.supportedIn k (Set.range P.map) n := by
   rw [← NormalizedCubicalChain.range_map_eq_supportedIn_range k P.isEmbedding_map.isInducing n]
-  rfl
+  -- `normalizedCubicalChainComplexXEquiv` intertwines the two push-forwards along `P.map`.
+  constructor
+  · rintro ⟨a, rfl⟩
+    exact ⟨normalizedCubicalChainComplexXEquiv _ n a,
+      (normalizedCubicalChainComplexXEquiv_map_f_apply P.map n a).symm⟩
+  · rintro ⟨a, ha⟩
+    refine ⟨(normalizedCubicalChainComplexXEquiv _ n).symm a,
+      (normalizedCubicalChainComplexXEquiv _ n).injective ?_⟩
+    rw [normalizedCubicalChainComplexXEquiv_map_f_apply, LinearEquiv.apply_symm_apply, ha]
 
 /-- The map of relative chains induced by a map of pairs, on the class of a chain of the ambient
 space. -/

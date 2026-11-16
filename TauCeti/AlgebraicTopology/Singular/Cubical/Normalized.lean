@@ -42,7 +42,8 @@ inverse.
 * `TauCeti.CubicalChain.boundary_mem_degenerate`: the boundary of a degenerate chain is degenerate.
 * `TauCeti.CubicalChain.degenerate_zero`: there are no degenerate `0`-chains.
 * `TauCeti.NormalizedCubicalChain.boundary_boundary`: `∂ ∘ ∂ = 0` on normalized chains.
-* `TauCeti.NormalizedCubicalChain.map_boundary`: the boundary is natural.
+* `TauCeti.NormalizedCubicalChain.map_boundary` and
+  `TauCeti.NormalizedCubicalChain.map_boundary_apply`: the boundary is natural.
 * `TauCeti.NormalizedCubicalChain.map_injective`: injective continuous maps induce injective
   push-forwards, including all subspace inclusions.
 * `TauCeti.NormalizedCubicalChain.exists_comp_map_eq_id`: the push-forward along an injective
@@ -323,6 +324,11 @@ theorem map_comp (g : C(Y, Z)) (f : C(X, Y)) (n : ℕ) :
   exact Submodule.mapQ_comp _ _ _ _ _ (degenerate_le_comap_map R f n)
     (degenerate_le_comap_map R g n)
 
+/-- Push-forward is functorial, on elements. -/
+theorem map_comp_apply (g : C(Y, Z)) (f : C(X, Y)) {n : ℕ} (c : NormalizedCubicalChain X R n) :
+    map R (g.comp f) n c = map R g n (map R f n c) := by
+  rw [map_comp, LinearMap.comp_apply]
+
 /-- Normalization preserves injectivity of a map of spaces. No embedding hypothesis is needed. -/
 theorem map_injective (f : C(X, Y)) (hf : Function.Injective f) (n : ℕ) :
     Function.Injective (map R f n) := by
@@ -369,6 +375,11 @@ theorem map_boundary (f : C(X, Y)) (n : ℕ) :
   unfold map boundary
   rw [← Submodule.mapQ_comp, ← Submodule.mapQ_comp]
   simp only [CubicalChain.map_boundary]
+
+/-- The boundary is natural, on elements. -/
+theorem map_boundary_apply (f : C(X, Y)) {n : ℕ} (c : NormalizedCubicalChain X R (n + 1)) :
+    map R f n (boundary X R n c) = boundary Y R n (map R f (n + 1) c) := by
+  rw [← LinearMap.comp_apply, map_boundary, LinearMap.comp_apply]
 
 /-- Reindex normalized chains along an equality of dimensions. -/
 def cast {n m : ℕ} (h : n = m) : NormalizedCubicalChain X R n →ₗ[R] NormalizedCubicalChain X R m :=

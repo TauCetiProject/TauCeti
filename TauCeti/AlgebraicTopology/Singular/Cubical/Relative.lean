@@ -151,9 +151,8 @@ theorem map_mem_supportedIn_image_iff {Y : Type*} [TopologicalSpace Y] {ι : C(X
     hι.isInducing.comp Topology.IsInducing.subtypeVal
   rw [← hrange, ← range_map_eq_supportedIn_range R hind] at hc
   obtain ⟨c₀, hc₀⟩ := hc
-  obtain rfl : map R (ContinuousMap.subtypeVal A) n c₀ = c := map_injective R ι hι.injective n (by
-    rw [← LinearMap.comp_apply, ← map_comp]
-    exact hc₀)
+  obtain rfl : map R (ContinuousMap.subtypeVal A) n c₀ = c :=
+    map_injective R ι hι.injective n (by rw [← map_comp_apply, hc₀])
   exact map_subtypeVal_mem_supportedIn R c₀
 
 open Classical in

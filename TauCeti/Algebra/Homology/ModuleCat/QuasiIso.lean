@@ -29,6 +29,7 @@ quasi-isomorphism can be propagated along a filtration one generator degree at a
 
 ## Main results
 
+* `ChainComplex.next_nat`: the degree below `n` in a chain complex indexed by `ℕ` is `n - 1`.
 * `HomologicalComplex.moduleCat_epi_homologyMap_iff`: surjectivity on homology in one degree, on
   elements.
 * `HomologicalComplex.moduleCat_quasiIsoAt_iff`: quasi-isomorphisms in one degree, on elements.
@@ -41,6 +42,12 @@ quasi-isomorphism can be propagated along a filtration one generator degree at a
 public section
 
 open CategoryTheory
+
+/-- The degree below `n` in a chain complex indexed by `ℕ` is `n - 1`, also for `n = 0`. -/
+theorem ChainComplex.next_nat (n : ℕ) : (ComplexShape.down ℕ).next n = n - 1 := by
+  cases n with
+  | zero => exact ChainComplex.next_nat_zero
+  | succ k => exact ChainComplex.next_nat_succ k
 
 namespace HomologicalComplex
 
