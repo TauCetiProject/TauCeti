@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Algebra.Lie.UniversalEnveloping.PBW.Symmetrization.Equiv
+public import TauCeti.Algebra.Lie.UniversalEnveloping.PBW.Symmetrization.Injective
 import TauCeti.Algebra.BigOperators.Ring.List
 import TauCeti.LinearAlgebra.SymmetricAlgebra.Powers
 
@@ -33,16 +33,14 @@ when its symmetrization is central in `U(L)`. For the canonical map the injectiv
 freeness, so its centre criterion holds for every Lie algebra over a commutative `ℚ`-algebra in
 `Type`.
 
-The word computation behind the equivariance is that of
-`TauCeti.UniversalEnvelopingAlgebra.lie_ι_pbwSymmetrization_tprod`, carried out on the formula
-because that lemma is stated on `Sym[R]^n L` and so needs `R : Type`.
-
 ## Main definitions and results
 
 * `TauCeti.UniversalEnvelopingAlgebra.IsPBWSymmetrization`: the permutation-average formula.
 * `TauCeti.UniversalEnvelopingAlgebra.IsPBWSymmetrization.map_lie`: adjoint equivariance.
 * `TauCeti.UniversalEnvelopingAlgebra.IsPBWSymmetrization.mem_pbwFiltration_iff`: the two-sided
   filtration statement.
+* `TauCeti.UniversalEnvelopingAlgebra.pbwSymmetrization_lie_and_mem_pbwFiltration_iff`: both
+  properties together, for free `L`, in particular over every field of characteristic zero.
 * `TauCeti.UniversalEnvelopingAlgebra.IsPBWSymmetrization.injective`: injectivity for free `L`.
 * `TauCeti.UniversalEnvelopingAlgebra.IsPBWSymmetrization.mem_center_iff`: the centre criterion.
 * `TauCeti.UniversalEnvelopingAlgebra.pbwSymmetrizationMap_lie` and
@@ -232,7 +230,8 @@ theorem mem_pbwFiltration_iff [Module.Free R L] {k : ℕ} {p : SymmetricAlgebra 
     obtain ⟨q, hq, r, hr, rfl⟩ := hN
     have hr0 : r = 0 := by
       refine he.eq_zero_of_mem_pbwFiltrationPrevious hr ?_
-      rw [pbwFiltrationPrevious_succ, show e r = e (q + r) - e q by simp]
+      have hsub : e r = e (q + r) - e q := by rw [map_add, add_sub_cancel_left]
+      rw [pbwFiltrationPrevious_succ, hsub]
       exact sub_mem (pbwFiltration_mono R L (by omega) h) (he.mem_pbwFiltration hq)
     subst hr0
     rw [add_zero] at h ⊢
@@ -261,6 +260,16 @@ theorem mem_center_iff (he : IsPBWSymmetrization R L e) (hinj : Function.Injecti
     lie_eq_lieModuleDerivation, map_eq_zero_iff e hinj]
 
 end IsPBWSymmetrization
+
+/-- **Adjoint equivariance and two-sided filtration of PBW symmetrization**: for `L` free over `R`,
+in particular for every Lie algebra over a field of characteristic zero, a PBW symmetrization `e`
+satisfies `e ⁅x, p⁆ = ι x * e p - e p * ι x`, and a symmetric tensor has degree at most `n`
+exactly when its image lies in the `n`-th PBW filtration step. -/
+theorem pbwSymmetrization_lie_and_mem_pbwFiltration_iff [Module.Free R L]
+    {e : SymmetricAlgebra R L →ₗ[R] U} (he : IsPBWSymmetrization R L e) :
+    (∀ (x : L) (p : SymmetricAlgebra R L), e ⁅x, p⁆ = ι x * e p - e p * ι x) ∧
+      ∀ (n : ℕ) (p : SymmetricAlgebra R L), e p ∈ pbwFiltration R L n ↔ p ∈ F n :=
+  ⟨he.map_lie, fun _ _ ↦ he.mem_pbwFiltration_iff⟩
 
 end General
 
