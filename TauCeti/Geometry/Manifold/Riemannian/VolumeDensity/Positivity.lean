@@ -27,17 +27,16 @@ namespace TauCeti
 variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
   {H : Type*} [TopologicalSpace H] {I : ModelWithCorners ℝ E H}
   {M : Type*} [TopologicalSpace M] [ChartedSpace H M] [IsManifold I 1 M]
-  [MeasurableSpace M] [BorelSpace M] [T2Space M] [SigmaCompactSpace M]
+  [MeasurableSpace M] [BorelSpace M] [LindelofSpace M]
   [RiemannianBundle (fun x : M ↦ TangentSpace I x)]
   [IsContinuousRiemannianBundle E (fun x : M ↦ TangentSpace I x)]
 
-omit [T2Space M] in
 /-- A continuous function that is positive somewhere has positive integral against Riemannian
 volume. The statement uses the lower Lebesgue integral, so it remains informative when the function
 is not Bochner-integrable. -/
 theorem lintegral_riemannianVolume_pos {f : M → ℝ} (hf : Continuous f)
     (hpos : ∃ x, 0 < f x) :
-    0 < ∫⁻ x, ENNReal.ofReal (f x) ∂TauCeti.riemannianVolume I M := by
+    0 < ∫⁻ x, ENNReal.ofReal (f x) ∂riemannianVolume I M := by
   have hmeas : Measurable (fun x ↦ ENNReal.ofReal (f x)) :=
     ENNReal.measurable_ofReal.comp hf.measurable
   rw [lintegral_pos_iff_support hmeas]
@@ -45,7 +44,7 @@ theorem lintegral_riemannianVolume_pos {f : M → ℝ} (hf : Continuous f)
   let U : Set M := {y | 0 < f y}
   have hUopen : IsOpen U := isOpen_lt continuous_const hf
   have hUne : U.Nonempty := ⟨x, hx⟩
-  have hUpos : 0 < TauCeti.riemannianVolume I M U := hUopen.measure_pos _ hUne
+  have hUpos : 0 < riemannianVolume I M U := hUopen.measure_pos _ hUne
   refine hUpos.trans_le (measure_mono ?_)
   intro y hy
   exact (ENNReal.ofReal_pos.mpr hy).ne'

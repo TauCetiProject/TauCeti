@@ -68,7 +68,7 @@ theorem _root_.Units.isNormMulUnit_iff_norm_inv (u : Rˣ) :
   have hu0' : 0 < ‖(u : R)‖ := lt_of_le_of_ne (norm_nonneg _) hu0.symm
   constructor
   · intro hu
-    exact NormedRing.norm_units_inv_of_norm_mul hu0 hu.norm_mul
+    exact NormedRing.norm_units_inv_of_norm_mul hu.norm_mul
   · intro h
     refine (isNormMulUnit_iff _).mpr ⟨u.isUnit, fun x ↦ le_antisymm (norm_mul_le _ _) ?_⟩
     have hx : ‖x‖ ≤ ‖(u : R)‖⁻¹ * ‖(u : R) * x‖ := by

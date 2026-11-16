@@ -84,26 +84,22 @@ theorem _root_.Polynomial.X_sub_C_pow_dvd_ofFn_iff {R : Type*} [CommRing R] [Dec
   simp [← C_mul_X_pow_eq_monomial, coeff_X_add_C_pow]
 
 /-- If a basis `b` of the span of finitely many vectors `Qⱼ` is given, the polynomials
-`∑ⱼ (b.repr Qⱼ k) Tʲ`, one for each basis index `k`, are linearly independent: a relation among
-them is a linear form on the span vanishing on every `Qⱼ`. -/
-theorem linearIndependent_ofFn_repr {K : Type*} [CommRing K] [DecidableEq K] {W : Type*}
-    [AddCommGroup W] [Module K W] {r N : ℕ}
-    (Q : Fin N → W) (b : Module.Basis (Fin r) K (Submodule.span K (Set.range Q))) :
-    LinearIndependent K fun k : Fin r ↦
+`∑ⱼ (b.repr Qⱼ k) Tʲ`, one for each basis index `k`, are linearly independent. -/
+theorem linearIndependent_ofFn_repr {R : Type*} [CommSemiring R] [DecidableEq R] {M : Type*}
+    [AddCommMonoid M] [Module R M] {ι : Type*} {N : ℕ}
+    (Q : Fin N → M) (b : Module.Basis ι R (Submodule.span R (Set.range Q))) :
+    LinearIndependent R fun k : ι ↦
       ofFn N fun j ↦ b.repr ⟨Q j, Submodule.subset_span (Set.mem_range_self j)⟩ k := by
-  refine Fintype.linearIndependent_iff.2 fun a ha k ↦ ?_
-  set φ : Submodule.span K (Set.range Q) →ₗ[K] K := ∑ k, a k • b.coord k
-  have hφQ (j : Fin N) :
-      ∑ k, a k * b.repr ⟨Q j, Submodule.subset_span (Set.mem_range_self j)⟩ k = 0 := by
-    have hac : ∑ k, a k • (fun j ↦
-        b.repr ⟨Q j, Submodule.subset_span (Set.mem_range_self j)⟩ k) = 0 :=
-      injective_ofFn N (by simpa [map_sum] using ha)
-    simpa using congr_fun hac j
-  have hv : Submodule.span K (Set.range fun j : Fin N ↦
-      (⟨Q j, Submodule.subset_span (Set.mem_range_self j)⟩ : Submodule.span K (Set.range Q))) =
+  classical
+  have hv : Submodule.span R (Set.range fun j : Fin N ↦
+      (⟨Q j, Submodule.subset_span (Set.mem_range_self j)⟩ : Submodule.span R (Set.range Q))) =
       ⊤ :=
     (Submodule.span_range_subtype_eq_top_iff _ _).mpr rfl
-  have hφ : φ = 0 := LinearMap.ext_on_range hv fun j ↦ by simpa [φ, mul_comm] using hφQ j
-  simpa [φ, Finsupp.single_apply] using LinearMap.congr_fun hφ (b k)
+  -- Adapted from the proof of Mathlib's `Module.Basis.linearIndependent_coord`.
+  -- Two combinations with equal polynomials give linear forms on the span agreeing on every `Qⱼ`.
+  refine linearIndependent_iff'ₛ.2 fun s f g h i hi ↦ ?_
+  have hφ : ∑ k ∈ s, f k • b.coord k = ∑ k ∈ s, g k • b.coord k :=
+    LinearMap.ext_on_range hv fun j ↦ by simpa [mul_comm] using congr_fun congr(toFn N $h) j
+  simpa [hi, Finsupp.single_apply] using congr($hφ (b i))
 
 end TauCeti
