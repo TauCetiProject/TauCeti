@@ -107,13 +107,14 @@ variable {E G M : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [Topological
   {ω : SmoothTwoForm I M} {Ha Hb : Puncture → ℝ → M → ℝ} {q : Puncture} {L : ℝ}
 
 /-- Along a map continuous on the plumbed four-punctured sphere, the curvature of the plumbed
-perturbation of bounded Hamiltonians is integrable over the whole four-punctured sphere. -/
+perturbation of period-one `C¹` Hamiltonians on a manifold is integrable over the whole
+four-punctured sphere, for every neck length `L > 4`. It vanishes off the truncation `Σ_{L/2}`
+(`SmoothTwoForm.hamiltonianCurvature_plumbedPerturbation_eq_zero_of_notMem_plumbedTruncation`). -/
 theorem integrableOn_hamiltonianCurvature_plumbedPerturbation (ω : SmoothTwoForm I M)
     (hq : q ≠ inf) (hHa : ∀ r, Periodic (Ha r) 1) (hHb : ∀ r, Periodic (Hb r) 1)
     (hHas : ∀ r, ContMDiff (𝓘(ℝ, ℝ).prod I) 𝓘(ℝ, ℝ) 1 (uncurry (Ha r)))
     (hHbs : ∀ r, ContMDiff (𝓘(ℝ, ℝ).prod I) 𝓘(ℝ, ℝ) 1 (uncurry (Hb r)))
-    (hab : Hb q = Ha inf) (hL : 4 < L) {Ba Bb : Puncture → ℝ}
-    (hBa : ∀ r t x, |Ha r t x| ≤ Ba r) (hBb : ∀ r t x, |Hb r t x| ≤ Bb r) {u : ℝ × ℝ → M}
+    (hab : Hb q = Ha inf) (hL : 4 < L) {u : ℝ × ℝ → M}
     (hu : ContinuousOn u {z : ℝ × ℝ | (Complex.equivRealProdCLM.symm z ≠ 0 ∧
       Complex.equivRealProdCLM.symm z ≠ 1) ∧
       Complex.equivRealProdCLM.symm z ≠ q.plumbingMap L 1}) :
@@ -123,26 +124,11 @@ theorem integrableOn_hamiltonianCurvature_plumbedPerturbation (ω : SmoothTwoFor
         z (u z))
       {z : ℝ × ℝ | (Complex.equivRealProdCLM.symm z ≠ 0 ∧
         Complex.equivRealProdCLM.symm z ≠ 1) ∧
-        Complex.equivRealProdCLM.symm z ≠ q.plumbingMap L 1} := by
-  have hsub : {z : ℝ × ℝ | (Complex.equivRealProdCLM.symm z ≠ 0 ∧
-      Complex.equivRealProdCLM.symm z ≠ 1) ∧
-      Complex.equivRealProdCLM.symm z ≠ q.plumbingMap L 1} ⊆
-      ⋃ n : ℕ, Complex.equivRealProdCLM.symm ⁻¹' q.plumbedTruncation L (L / 2 + n) := by
-    intro z hz
-    have h : Complex.equivRealProdCLM.symm z ∈ ⋃ R, q.plumbedTruncation L R := by
-      rw [iUnion_plumbedTruncation hq (by linarith)]
-      exact hz
-    obtain ⟨R, hR⟩ := mem_iUnion.1 h
-    obtain ⟨n, hn⟩ := exists_nat_ge (R - L / 2)
-    exact mem_iUnion.2 ⟨n, plumbedTruncation_mono q L (by linarith) hR⟩
-  refine ⟨(aestronglyMeasurable_iUnion_iff.2 fun n ↦
-    (integrableOn_hamiltonianCurvature_plumbedTruncation ω hq hHa hHb hHas hHbs hab hL
-      (by linarith [n.cast_nonneg (α := ℝ)]) hu).aestronglyMeasurable).mono_set hsub, ?_⟩
-  refine (setLIntegral_le_lintegral _ _).trans_lt
-    ((ω.lintegral_enorm_hamiltonianCurvature_plumbedPerturbation_le hq hHa hHb hHas hHbs hab hL
-      hBa hBb u).trans_lt ?_)
-  exact ENNReal.add_lt_top.2 ⟨ENNReal.sum_lt_top.2 fun _ _ ↦ ENNReal.ofReal_lt_top,
-    ENNReal.sum_lt_top.2 fun _ _ ↦ ENNReal.ofReal_lt_top⟩
+        Complex.equivRealProdCLM.symm z ≠ q.plumbingMap L 1} :=
+  (integrableOn_hamiltonianCurvature_plumbedTruncation ω hq hHa hHb hHas hHbs hab hL le_rfl
+    hu).of_forall_sdiff_eq_zero (isOpen_plumbedSphere q L).measurableSet fun _ hz ↦
+      ω.hamiltonianCurvature_plumbedPerturbation_eq_zero_of_notMem_plumbedTruncation hq hHa hHb
+        hHas hHbs hab hL (by linarith) hz.1 hz.2 _
 
 /-- Along a map continuous on the plumbed four-punctured sphere, the loops of `u` along circles
 `c R` lying in the truncation `Σ_R` for every `R > 0` are continuous from some height on. -/
@@ -251,8 +237,8 @@ theorem IsNondegenerate.integral_floerEnergyDensity_plumbedPerturbation
     refine ((tendsto_setIntegral_plumbedTruncation hq hL₀ hA).add
       ((tendsto_finsetSum _ fun r hr ↦ ?_).add (tendsto_finsetSum _ fun r hr ↦ ?_))).sub
       (tendsto_setIntegral_plumbedTruncation hq hL₀
-        (integrableOn_hamiltonianCurvature_plumbedPerturbation ω hq hHa hHb hHas hHbs hab hL hBa
-          hBb hu.continuousOn))
+        (integrableOn_hamiltonianCurvature_plumbedPerturbation ω hq hHa hHb hHas hHbs hab hL
+          hu.continuousOn))
     · have hr := Finset.ne_of_mem_erase hr
       exact tendsto_intervalIntegral_comp_of_tendsto_of_norm_le (hHas r).continuous
         (eventually_continuousOn_plumbedLoop hq hL₀ hu.continuousOn

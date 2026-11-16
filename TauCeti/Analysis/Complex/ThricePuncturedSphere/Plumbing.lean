@@ -670,8 +670,10 @@ theorem measurableSet_preimage_plumbedTruncation (q : Puncture) (L R : ℝ) :
   (isCompact_preimage_plumbedTruncation q L R).isClosed.measurableSet
 
 /-- The truncations `Σ_R` of the plumbed sphere increase with the outer height `R`. -/
-theorem plumbedTruncation_mono (q : Puncture) (L : ℝ) : Monotone (q.plumbedTruncation L) :=
-  fun _ _ hRR' ↦ union_subset_union (inter_subset_inter_left _ (truncation_mono hRR'))
+theorem plumbedTruncation_mono (q : Puncture) (L : ℝ) : Monotone (q.plumbedTruncation L) := by
+  intro _ _ hRR'
+  rw [plumbedTruncation_def, plumbedTruncation_def]
+  exact union_subset_union (inter_subset_inter_left _ (truncation_mono hRR'))
     (image_mono (inter_subset_inter_left _ (truncation_mono hRR')))
 
 /-- The truncations `Σ_R` exhaust the plumbed four-punctured sphere `ℂ ∖ {0, 1, ψ_{q,L}(1)}`. -/
