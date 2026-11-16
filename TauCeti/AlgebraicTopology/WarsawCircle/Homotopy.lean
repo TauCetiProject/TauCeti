@@ -124,6 +124,19 @@ def homotopyRelOfEqOn {K : Type*} [TopologicalSpace K] [CompactSpace K]
       ext; dsimp; rw [hlift]; ring
     simp [hline]
 
+/-- Evaluation formula for `homotopyRelOfEqOn`: at `(s, k)`, it applies `ofHalfLine` to the
+straight-line interpolation between `liftOfHalfLine f₀ k` and `liftOfHalfLine f₁ k` in `[0, ∞)`. -/
+theorem homotopyRelOfEqOn_apply {K : Type*} [TopologicalSpace K] [CompactSpace K]
+    [LocallyPathConnectedSpace K] {f₀ f₁ : C(K, WarsawCircle)} {S : Set K}
+    (hS : S.EqOn f₀ f₁) (s : I) (k : K) :
+    homotopyRelOfEqOn hS (s, k) =
+      ofHalfLine
+        ⟨(1 - (s : ℝ)) * (liftOfHalfLine f₀ k : ℝ) + (s : ℝ) * (liftOfHalfLine f₁ k : ℝ),
+          mem_Ici.mpr (add_nonneg
+            (mul_nonneg (sub_nonneg.mpr s.2.2) (liftOfHalfLine f₀ k).2)
+            (mul_nonneg s.2.1 (liftOfHalfLine f₁ k).2))⟩ :=
+  (rfl)
+
 /-- Two continuous maps from a compact locally path-connected space into `WarsawCircle` agreeing on
 `S` are homotopic relative to `S`. -/
 theorem homotopicRel_of_eqOn {K : Type*} [TopologicalSpace K] [CompactSpace K]

@@ -711,20 +711,13 @@ private theorem clusterPt_fst_eq_zero_and_mem_oscillationOpen {K : Type*} [Topol
     (f k₀ : ℝ × ℝ).1 = 0 ∧ f k₀ ∈ oscillationOpen := by
   let φ : K → ℝ × ℝ := fun x ↦ (f x : ℝ × ℝ)
   have hφ : Continuous φ := continuous_subtype_val.comp f.continuous
-  have hk₀_x : (f k₀ : ℝ × ℝ).1 = 0 := by
-    refine eq_of_nhds_neBot (Filter.inf_neBot_iff.mpr fun U hU W hW ↦ ?_)
-    have hkU := clusterPt_iff_frequently.mp hk₀ ((Prod.fst ∘ φ) ⁻¹' U)
-      ((continuous_fst.comp hφ).continuousAt.preimage_mem_nhds hU)
-    rw [frequently_map] at hkU
-    obtain ⟨n, hnU, hnW⟩ := (hkU.and_eventually (hlim_x.eventually hW)).exists
-    exact ⟨(f (k n) : ℝ × ℝ).1, hnU, hnW⟩
-  have hk₀_sine : (f k₀ : ℝ × ℝ) ∈ warsawCircleSineCurve := by
-    rw [← isClosed_warsawCircleSineCurve.closure_eq, mem_closure_iff_nhds]
-    intro V hV
-    have hkV := clusterPt_iff_frequently.mp hk₀ (φ ⁻¹' V) (hφ.continuousAt.preimage_mem_nhds hV)
-    rw [frequently_map] at hkV
-    obtain ⟨n, hn⟩ := hkV.exists
-    exact ⟨f (k n), hn, hfk_sine n⟩
+  have hφ_cl : MapClusterPt (φ k₀) atTop (φ ∘ k) :=
+    MapClusterPt.continuousAt_comp hφ.continuousAt hk₀
+  have hk₀_x : (f k₀ : ℝ × ℝ).1 = 0 :=
+    eq_of_nhds_neBot
+      ((hφ_cl.continuousAt_comp continuous_fst.continuousAt).clusterPt.mono hlim_x).neBot
+  have hk₀_sine : (f k₀ : ℝ × ℝ) ∈ warsawCircleSineCurve :=
+    isClosed_warsawCircleSineCurve.mem_of_mapClusterPt hφ_cl (Eventually.of_forall hfk_sine)
   exact ⟨hk₀_x, mem_oscillationOpen_of_mem_warsawCircleSineCurve hk₀_sine (by simp [hk₀_x])⟩
 
 /-- For any continuous map from a compact locally path-connected space `K` to `WarsawCircle`, the
