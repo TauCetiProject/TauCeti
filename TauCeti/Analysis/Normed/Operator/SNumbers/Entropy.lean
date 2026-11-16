@@ -23,13 +23,13 @@ number `eₙ(T)` is the infimum of all radii `ε ≥ 0` for which the image `T(B
 ball can be covered by at most `2 ^ n` closed `ε`-balls in `F`. Indexing starts at zero, so
 `e₀(T)` measures the smallest single closed ball in `F` containing `T(B_E)`.
 
-In Pietsch's terminology (*Operator Ideals*, Chapter 12), entropy numbers are *pseudo-s-numbers*:
-they satisfy the norm, monotonicity, perturbation, and two-sided ideal laws together with the
-mixed-index additive and multiplicative inequalities
+Over `ℝ` or `ℂ`, in Pietsch's terminology (*Operator Ideals*, Chapter 12), entropy numbers are
+*pseudo-s-numbers*: they satisfy the norm, monotonicity, perturbation, and two-sided ideal laws
+together with the mixed-index additive and multiplicative inequalities
 `e_{m+n}(S + T) ≤ eₘ(S) + eₙ(T)` and `e_{m+n}(B ∘L S) ≤ eₘ(B) * eₙ(S)`,
 and they detect compactness (`IsCompactOperator T ↔ eₙ(T) → 0` when `F` is complete), yet they
 fail the finite-rank vanishing axiom because `eₙ(T) > 0` for every nonzero operator into a normed
-space (with the quantitative bound `‖T‖₊ / 2 ^ n ≤ eₙ(T)` over `ℝ` or `ℂ`).
+space (with the quantitative bound `‖T‖₊ / 2 ^ n ≤ eₙ(T)`).
 
 The hypotheses track the exact scalar-field and norm geometry each law needs:
 * Over any `NontriviallyNormedField 𝕜`, we establish the covering-number characterizations,
@@ -121,21 +121,11 @@ theorem entropyNumber_def (T : E →L[𝕜] F) (n : ℕ) :
           (T : E → F) '' closedBall 0 1 ⊆ ⋃ y ∈ (N : Set F), closedBall y ε},
         ε.1 := (rfl)
 
-/-- The singleton `{0}` covers `T '' closedBall 0 1` at radius `‖T‖₊`. -/
-private theorem isCover_image_closedBall_nnnorm (T : E →L[𝕜] F) :
-    IsCover ‖T‖₊ ((T : E → F) '' closedBall 0 1) ({0} : Finset F) := by
-  rw [isCover_iff_subset_iUnion_closedBall]
-  rintro _ ⟨x, hx, rfl⟩
-  simp only [Finset.coe_singleton, mem_singleton_iff, iUnion_iUnion_eq_left, mem_closedBall,
-    dist_zero_right, coe_nnNorm]
-  exact (T.le_opNorm x).trans
-    (mul_le_of_le_one_right (norm_nonneg T) (mem_closedBall_zero_iff.mp hx))
-
 private instance (T : E →L[𝕜] F) (n : ℕ) :
     Nonempty {ε : ℝ≥0 // ∃ N : Finset F, N.card ≤ 2 ^ n ∧
       (T : E → F) '' closedBall 0 1 ⊆ ⋃ y ∈ (N : Set F), closedBall y ε} :=
   ⟨⟨‖T‖₊, {0}, by simpa using Nat.one_le_two_pow,
-    T.isCover_image_closedBall_nnnorm.subset_iUnion_closedBall⟩⟩
+    by simpa using (T.lipschitzWith.mapsTo_closedBall 0 1).image_subset⟩⟩
 
 /-- Any covering of `T '' closedBall 0 1` by at most `2 ^ n` closed `ε`-balls bounds `eₙ(T)`. -/
 theorem entropyNumber_le_of_subset_biUnion (T : E →L[𝕜] F) {n : ℕ} {ε : ℝ≥0} {N : Finset F}
@@ -204,8 +194,10 @@ theorem entropyNumber_eq_iInf_externalCoveringNumber (T : E →L[𝕜] F) (n : �
       externalCoveringNumber ε ((T : E → F) '' closedBall 0 1) ≤ 2 ^ n := by
     rw [← Nat.cast_ofNat, ← Nat.cast_pow]
     exact externalCoveringNumber_le_natCast_iff.mpr ⟨N, hcard, hcov⟩
+  obtain ⟨N₀, hcard₀, hcov₀⟩ :=
+    exists_isCover_of_entropyNumber_lt (lt_add_one (T.entropyNumber n))
   have : Nonempty {ε : ℝ≥0 // externalCoveringNumber ε ((T : E → F) '' closedBall 0 1) ≤ 2 ^ n} :=
-    ⟨⟨‖T‖₊, hcov_le (by simpa using Nat.one_le_two_pow) T.isCover_image_closedBall_nnnorm⟩⟩
+    ⟨⟨_, hcov_le hcard₀ hcov₀⟩⟩
   refine le_antisymm ?_ ?_
   · refine le_ciInf fun ε ↦ T.entropyNumber_le_of_externalCoveringNumber_le ε.2
   · refine le_entropyNumber_iff_isCover.mpr fun ε N hcard hcov ↦ ?_
@@ -217,8 +209,8 @@ theorem entropyNumber_eq_iInf_externalCoveringNumber (T : E →L[𝕜] F) (n : �
 
 /-- Every entropy number is bounded above by the operator norm. -/
 theorem entropyNumber_le_nnnorm (T : E →L[𝕜] F) (n : ℕ) : T.entropyNumber n ≤ ‖T‖₊ :=
-  T.entropyNumber_le_of_isCover (by simpa using Nat.one_le_two_pow)
-    T.isCover_image_closedBall_nnnorm
+  T.entropyNumber_le_of_subset_biUnion (N := {0}) (by simpa using Nat.one_le_two_pow)
+    (by simpa using (T.lipschitzWith.mapsTo_closedBall 0 1).image_subset)
 
 /-- Entropy numbers form an antitone sequence. -/
 theorem antitone_entropyNumber (T : E →L[𝕜] F) : Antitone T.entropyNumber :=
@@ -747,8 +739,10 @@ namespace TauCeti.SNumbers
 
 variable {𝕜 : Type u} [NontriviallyNormedField 𝕜]
 
-/-- The family of dyadic entropy numbers on bounded operators between normed spaces. They form a
-pseudo-s-number family rather than an s-number sequence. -/
+/-- The family of dyadic entropy numbers on bounded operators between normed spaces. Over `ℝ` or
+`ℂ` (`RCLike 𝕜`) they form a pseudo-s-number family (with the two-sided ideal inequality holding
+more generally over any `DenselyNormedField 𝕜`), whereas over any nontrivially normed field they
+fail the finite-rank vanishing axiom (`not_isSNumberSequence_entropy`). -/
 noncomputable def entropy : SNumberFamily 𝕜 :=
   fun T ↦ T.entropyNumber
 
