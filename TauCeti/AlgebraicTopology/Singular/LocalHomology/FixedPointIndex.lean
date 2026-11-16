@@ -5,8 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Topology.ContinuousMap.Algebra
 public import TauCeti.AlgebraicTopology.Singular.LocalHomology.RegularValue
+public import TauCeti.Topology.ContinuousMap.Algebra
 import TauCeti.Analysis.Calculus.FDeriv.Equiv
 
 /-!
@@ -59,8 +59,6 @@ degenerate fixed point `0` of `x ↦ x + x³` on `ℝ`, where `det (1 - f') = 0`
 
 ## Main definitions
 
-* `ContinuousMap.displacement f`: the displacement `z ↦ z - f z` of `f : s → X`, whose zeros are
-  the fixed points of `f`.
 * `ContinuousMap.fixedPointIndex f`: the fixed-point index of `f : U → E`, which is `0` when the
   fixed set is not compact.
 * `ContinuousMap.localFixedPointIndex f x`: the local fixed-point index of `f` at `x`, which is
@@ -107,38 +105,6 @@ private def fixedPointOrientation : HomologicalOrientation E E (finrank ℝ E) :
 end TauCeti
 
 namespace ContinuousMap
-
-section Displacement
-
-variable {X S : Type*} [TopologicalSpace X] [AddGroup X] [IsTopologicalAddGroup X] [SetLike S X]
-  {s : S}
-
-/-- The **displacement** of a continuous map `f : s → X` on a subset `s` of a topological additive
-group: the map `z ↦ z - f z`, whose zeros are the fixed points of `f`
-(`ContinuousMap.preimage_displacement_zero`). -/
-def displacement (f : C(s, X)) : C(s, X) :=
-  subtypeVal (s : Set X) - f
-
-/-- The displacement of `f` sends `z` to `z - f z`. -/
-@[simp]
-theorem displacement_apply (f : C(s, X)) (z : s) : f.displacement z = z - f z :=
-  (rfl)
-
-/-- The zeros of the displacement `z ↦ z - f z` are the fixed points of `f`. -/
-theorem preimage_displacement_zero (f : C(s, X)) : f.displacement ⁻¹' {0} = {z | f z = z} := by
-  ext z
-  rw [mem_preimage, mem_singleton_iff, displacement_apply, sub_eq_zero, mem_ofPred_eq]
-  exact eq_comm
-
-/-- The displacement of the restriction of `f : U → X` to an open subset `V ⊆ U` is the
-restriction of the displacement of `f`. -/
-@[simp]
-theorem displacement_comp_inclusion {U V : Opens X} (hVU : V ≤ U) (f : C(U, X)) :
-    (f.comp (inclusion hVU)).displacement = f.displacement.comp (inclusion hVU) := by
-  ext z
-  simp [inclusion]
-
-end Displacement
 
 variable {E : Type} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
   {U : Opens E}
