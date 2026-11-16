@@ -123,8 +123,8 @@ private theorem sq_le_of_add_div_mul_nonpos {x y z La Lb c r K₁ : ℝ} (hr : 0
     have e₁ : 4 * c ^ 2 / r * (-(La / 2) + z ^ 2 - r / 4 * (1 - x ^ 2) * x ^ 2) =
         -(4 * c ^ 2 / r * La / 2) + 4 * c ^ 2 / r * z ^ 2 - c ^ 2 * (1 - x ^ 2) * x ^ 2 := by
       field_simp
-    have e₂ : c ^ 2 * (3 + 4 * K₁) / r = 3 * c ^ 2 / r + 4 * c ^ 2 / r * K₁ := by ring
-    nlinarith
+    rw [e₁] at hα
+    linear_combination hβ + hα + hmax / 2
   -- Dividing by `(r / 16) (2 x² + 3)` gives the bound.
   set w := max (1 - x ^ 2) 0
   have hw₀ : 0 ≤ w := le_max_right _ _
@@ -146,7 +146,7 @@ private theorem sq_le_of_add_div_mul_nonpos {x y z La Lb c r K₁ : ℝ} (hr : 0
     have h₂ : c ^ 2 * (3 + 4 * K₁) / r ≤ c ^ 2 * ((2 * x ^ 2 + 3) * (1 + 2 * K₁)) / r := by
       gcongr
       nlinarith [sq_nonneg x]
-    nlinarith
+    linear_combination h₁ + h₂
   exact le_of_mul_le_mul_left (hkey.trans hrhs) hpos
 
 variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
@@ -214,13 +214,12 @@ theorem norm_sq_le_div_mul_max_one_sub_add_div [CompactSpace M] {K₃ : ℝ} (hr
     · rw [max_eq_right h]; linarith [hC x₀]
     · rw [max_eq_left h]; linarith [div_nonneg hK₃ hr.le]
   have hw : 1 - ‖α y‖ ^ 2 ≤ max (1 - ‖α y‖ ^ 2) 0 := le_max_left _ _
-  have hconst : 4 * (1 + 2 * K₁) / r + K₃ / r = (4 + 8 * K₁ + K₃) / r := by ring
   -- Bounding `|β(y)|² + (4 c² / r) |α(y)|²` by its value at `x₀`.
   have h₁ : 4 * c ^ 2 / r * (max (1 - ‖α x₀‖ ^ 2) 0 + ‖α x₀‖ ^ 2) ≤
       4 * c ^ 2 / r * (1 + K₃ / r) :=
     mul_le_mul_of_nonneg_left hmax₀ hA
   have h₂ : 4 * c ^ 2 / r * (1 - ‖α y‖ ^ 2) ≤ 4 * c ^ 2 / r * max (1 - ‖α y‖ ^ 2) 0 :=
     mul_le_mul_of_nonneg_left hw hA
-  nlinarith
+  linear_combination hfy + hx + h₁ + h₂
 
 end TauCeti.SeibergWitten
