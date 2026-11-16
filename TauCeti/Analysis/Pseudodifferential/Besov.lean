@@ -8,7 +8,6 @@ module
 public import TauCeti.Analysis.FunctionalSpaces.BesovSpace.Little
 public import TauCeti.Analysis.Pseudodifferential.SchwartzMapping
 public import TauCeti.Analysis.Sobolev.BesselPotential.Besov
-import TauCeti.Analysis.Distribution.SchwartzSpace.Convolution
 import TauCeti.Analysis.Distribution.TemperateGrowth
 import TauCeti.Analysis.Distribution.TemperedDistribution.SmulLeft
 import TauCeti.Analysis.Fourier.FourierCharDeriv
@@ -292,18 +291,7 @@ private theorem HasCompactSpatialSupport.quantizeSchwartzValue_eq_integral_modul
 
 /-! ### Littlewood–Paley blocks of the superposition -/
 
-variable (φ : ContDiffBump (0 : CoordinateSpace n))
-
-/-- The Littlewood–Paley block `Δⱼ f` of a Schwartz function is the convolution of `f` with the
-kernel `𝓕⁻ ψⱼ`. -/
-private theorem fourierMultiplierCLM_inhomogeneousLittlewoodPaley_apply (j : ℕ)
-    (f : 𝓢(CoordinateSpace n, ℂ)) (x : CoordinateSpace n) :
-    SchwartzMap.fourierMultiplierCLM ℂ (fun ξ ↦ (φ.inhomogeneousLittlewoodPaley j ξ : ℂ)) f x =
-      ∫ y, 𝓕⁻ (φ.inhomogeneousLittlewoodPaleySchwartz j) (x - y) • f y := by
-  rw [← φ.coe_inhomogeneousLittlewoodPaleySchwartz]
-  exact SchwartzMap.fourierMultiplierCLM_apply_eq_integral _ f x
-
-variable {φ}
+variable {φ : ContDiffBump (0 : CoordinateSpace n)}
 
 /-- **The superposition formula for the blocks.** The Littlewood–Paley block `Δⱼ Op(a) u` is the
 superposition of the blocks of the modulated pieces. -/
@@ -330,7 +318,7 @@ private theorem HasCompactSpatialSupport.fourierMultiplierCLM_quantizeUniformCLM
             gcongr
             exact hC _ _
         _ = _ := by ring
-  rw [fourierMultiplierCLM_inhomogeneousLittlewoodPaley_apply]
+  rw [SchwartzMap.fourierMultiplierCLM_inhomogeneousLittlewoodPaley_apply_eq_integral]
   calc ∫ y, k (x - y) • quantizeUniformCLM a ha.isUniform u y
       = ∫ y, ∫ η, k (x - y) • modulatedPiece a u η y := by
         refine integral_congr_ae (.of_forall fun y ↦ ?_)
@@ -341,7 +329,7 @@ private theorem HasCompactSpatialSupport.fourierMultiplierCLM_quantizeUniformCLM
     _ = _ := by
         refine integral_congr_ae (.of_forall fun η ↦ ?_)
         beta_reduce
-        rw [fourierMultiplierCLM_inhomogeneousLittlewoodPaley_apply]
+        rw [SchwartzMap.fourierMultiplierCLM_inhomogeneousLittlewoodPaley_apply_eq_integral]
 
 /-- The blocks of the modulated pieces are jointly a.e. strongly measurable in the position and the
 frequency. -/
@@ -355,7 +343,7 @@ private theorem HasCompactSpatialSupport.aestronglyMeasurable_fourierMultiplierC
         (modulatedPiece a u η) x) = fun q ↦
       ∫ y, 𝓕⁻ (φ.inhomogeneousLittlewoodPaleySchwartz j) (q.1 - y) • modulatedPiece a u q.2 y := by
     funext q
-    exact fourierMultiplierCLM_inhomogeneousLittlewoodPaley_apply φ j _ q.1
+    exact SchwartzMap.fourierMultiplierCLM_inhomogeneousLittlewoodPaley_apply_eq_integral φ j _ q.1
   rw [h]
   exact (((𝓕⁻ (φ.inhomogeneousLittlewoodPaleySchwartz j)).continuous.comp
     (continuous_fst.fst.sub continuous_snd)).smul ((ha.continuous_modulatedPiece u).comp
@@ -522,7 +510,8 @@ be a scalar symbol of order `m` with compact spatial support, `s` real and `1 �
 quantization `Op(a)` extends from Schwartz functions to a bounded operator
 `b^s_{p,∞} → b^{s-m}_{p,∞}` between the little Besov spaces, the closures of the Schwartz functions
 in `B^s_{p,∞}` and `B^{s-m}_{p,∞}`. For `p = ∞` these are the little Hölder–Zygmund spaces. By
-density of the Schwartz functions such an operator is unique. -/
+density of the Schwartz functions such an operator is unique
+(`TauCeti.BesovSpace.continuousLinearMap_ext_littleBesov`). -/
 theorem HasCompactSpatialSupport.exists_quantizeLittleBesov (ha : a.HasCompactSpatialSupport)
     (φ : ContDiffBump (0 : CoordinateSpace n)) (s : ℝ) {p : ℝ≥0∞} [Fact (1 ≤ p)] :
     ∃ T : BesovSpace.littleBesov ℂ φ s p →L[ℂ] BesovSpace.littleBesov ℂ φ (s - m) p,
@@ -537,20 +526,18 @@ theorem HasCompactSpatialSupport.exists_quantizeLittleBesov (ha : a.HasCompactSp
     ((SchwartzMap.toBesovSpaceCLM ℂ φ (s - m) p ∞).comp
       (quantizeUniformCLM a ha.isUniform)).toLinearMap.codRestrict _
       fun u ↦ BesovSpace.toBesovSpaceCLM_mem_littleBesov _
-  -- The Schwartz functions are dense in the little Besov space, by definition.
+  have he (u : 𝓢(CoordinateSpace n, ℂ)) :
+      e u = ⟨_, BesovSpace.toBesovSpaceCLM_mem_littleBesov u⟩ :=
+    Subtype.ext (by simp [e, LinearMap.codRestrict_apply])
   have hdense : DenseRange e := by
-    refine Topology.IsInducing.subtypeVal.dense_iff.2 fun x ↦ ?_
-    have hx : (x : BesovSpace ℂ φ s p ∞) ∈
-        closure (Set.range (SchwartzMap.toBesovSpaceCLM ℂ φ s p ∞)) := by
-      rw [← BesovSpace.coe_littleBesov]
-      exact x.2
-    convert hx using 2
-    rw [← Set.range_comp]
-    rfl
-  have hnorm : ∃ C, ∀ u, ‖f u‖ ≤ C * ‖e u‖ := ⟨C, fun u ↦ hC u⟩
+    convert BesovSpace.denseRange_littleBesov ℂ φ s p using 1
+    exact funext he
+  have hnorm : ∃ C, ∀ u, ‖f u‖ ≤ C * ‖e u‖ :=
+    ⟨C, fun u ↦ by simpa [e, f, LinearMap.codRestrict_apply] using hC u⟩
   refine ⟨f.extendOfNorm e, fun u ↦ ?_⟩
-  have h := LinearMap.extendOfNorm_eq hdense hnorm u
-  exact congrArg Subtype.val h
+  rw [← he]
+  simpa [f, LinearMap.codRestrict_apply] using
+    congrArg Subtype.val (LinearMap.extendOfNorm_eq hdense hnorm u)
 
 end Symbol
 

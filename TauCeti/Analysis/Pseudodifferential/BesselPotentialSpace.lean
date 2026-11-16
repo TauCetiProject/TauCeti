@@ -8,6 +8,7 @@ module
 public import TauCeti.Analysis.Pseudodifferential.SchwartzMapping
 public import TauCeti.Analysis.Sobolev.BesselPotential.Schwartz
 import TauCeti.Analysis.Distribution.TemperateGrowth
+import TauCeti.Analysis.Fourier.FourierCharDeriv
 import TauCeti.Analysis.Fourier.MihlinHormander
 import TauCeti.Analysis.Pseudodifferential.Composition.Basic
 import TauCeti.Analysis.Pseudodifferential.Frequency.Multiplier
@@ -51,7 +52,7 @@ Peetre's inequality give Mihlin's condition `‖D^k N_η(ζ)‖ ≤ A_η / ‖ζ
 `A_η = C ⟨η⟩ ^ (-(n + 1))` integrable in `η`. The operator-valued Mihlin–Hörmander theorem
 (`TauCeti.exists_eLpNorm_fourierInv_apply_le_of_norm_iteratedFDeriv_le`) bounds each multiplier
 by `C A_η` on `Lᵖ`, and Minkowski's integral inequality
-(`TauCeti.eLpNorm_integral_le_lintegral_eLpNorm`) sums these bounds over `η`.
+(`TauCeti.eLpNorm_integral_le_lintegral_eLpNorm_of_ne_top`) sums these bounds over `η`.
 
 ## Main declarations
 
@@ -312,13 +313,13 @@ private theorem HasCompactSpatialSupport.exists_eLpNorm_quantizeSchwartzValue_sh
     rw [hTdef]
     exact funext (quantizeSchwartzValue_besselPotential_sharp_eq_integral hb w)
   have he : Continuous fun q : CoordinateSpace n × CoordinateSpace n ↦ (𝐞 ⟪q.2, q.1⟫ : ℂ) :=
-    continuous_subtype_val.comp (Real.continuous_fourierChar.comp (by fun_prop))
+    Real.continuous_fourierChar_inner.comp continuous_swap
   have hF := he.smul hcont
   rw [hsup]
   calc eLpNorm (fun x ↦ ∫ η, (𝐞 ⟪η, x⟫ : ℂ) • T η x) p volume
       ≤ ∫⁻ η, eLpNorm (fun x ↦ (𝐞 ⟪η, x⟫ : ℂ) • T η x) p volume :=
-        eLpNorm_integral_le_lintegral_eLpNorm (F := fun x η ↦ (𝐞 ⟪η, x⟫ : ℂ) • T η x)
-          hF.aestronglyMeasurable (fun η ↦ hF.comp (continuous_id.prodMk continuous_const)) hp.le
+        eLpNorm_integral_le_lintegral_eLpNorm_of_ne_top
+          (F := fun x η ↦ (𝐞 ⟪η, x⟫ : ℂ) • T η x) hF.aestronglyMeasurable hp.le hp_top
     _ = ∫⁻ η, eLpNorm (T η) p volume :=
         lintegral_congr fun η ↦ eLpNorm_congr_norm_ae
           (hF.comp (continuous_id.prodMk continuous_const)).aestronglyMeasurable

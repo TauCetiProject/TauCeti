@@ -26,9 +26,11 @@ costs exactly `m` derivatives on the whole Besov scale, including the Hölder–
 The reason is that `g(D)` commutes with the Littlewood–Paley blocks `Δⱼ`, and on the `j`-th block
 it acts like multiplication by `2^{jm}`: the cut-off symbol `Ψⱼ g` has a convolution kernel of
 `L¹` norm `O(2^{jm})`, so by Young's inequality
-`‖Δⱼ g(D) u‖_p ≤ C 2^{jm} ‖Δⱼ u‖_p`
-(`TemperedDistribution.exists_fourierMultiplierCLM_littlewoodPaleyBlock_eq_and_norm_le`). Weighting
-by `2^{j(s-m)}` turns the `B^s_{p,q}` norm of `u` into a bound for the `B^{s-m}_{p,q}` norm of
+`‖Δⱼ g(D) u‖_p ≤ C W 2^{jm} ‖Δⱼ u‖_p`
+(`TemperedDistribution.exists_fourierMultiplierCLM_littlewoodPaleyBlock_eq_and_norm_le`). Here `W`
+is a constant in the symbol estimates of the derivatives of `g` of order at most `dim E + 1`, and
+`C` does not depend on `g`, `W`, `p` or `q`, so the bound scales linearly with `W`. Weighting by
+`2^{j(s-m)}` turns the `B^s_{p,q}` norm of `u` into a bound for the `B^{s-m}_{p,q}` norm of
 `g(D) u`.
 
 The main example is the Bessel potential `J^t = (1 + ‖ξ‖ ^ 2) ^ (t / 2)(D)` of order `t`. Since
@@ -43,6 +45,9 @@ instance the mapping properties of operators of order `m` to those of order `0`.
 * `TauCeti.BesovSpace.fourierMultiplierCLM`: the bounded operator
   `g(D) : B^s_{p,q} → B^{s'}_{p,q}` for `s' = s - m`, with its tempered distribution
   `TauCeti.BesovSpace.toDistr_fourierMultiplierCLM`.
+* `TauCeti.BesovSpace.exists_toDistr_eq_fourierMultiplierCLM_and_norm_le`,
+  `TauCeti.BesovSpace.exists_norm_fourierMultiplierCLM_le`: the bound `C W` for the norm of
+  `g(D) : B^s_{p,q} → B^{s-m}_{p,q}`, with `C` independent of `g`, `W`, `p` and `q`.
 * `TemperedDistribution.MemBesov.besselPotential`,
   `TemperedDistribution.memBesov_besselPotential_iff`: `J^t u ∈ B^s_{p,q}` exactly when
   `u ∈ B^{t+s}_{p,q}`.

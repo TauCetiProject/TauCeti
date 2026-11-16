@@ -53,6 +53,9 @@ constant, depending on `N`, times `‖S_N u - g‖_p`.
   closed and complete (`TauCeti.BesovSpace.isClosed_littleBesov`), as a set it is
   `TauCeti.BesovSpace.coe_littleBesov`, and it is the smallest closed subspace containing the
   Schwartz functions (`TauCeti.BesovSpace.littleBesov_le`).
+* `TauCeti.BesovSpace.denseRange_littleBesov`: the Schwartz functions are dense in `b^s_{p,∞}`, so
+  continuous linear maps out of it are determined by their values on them
+  (`TauCeti.BesovSpace.continuousLinearMap_ext_littleBesov`).
 * `TauCeti.BesovSpace.mem_littleBesov_iff`: the characterisation by the blocks, assembled from
   `TauCeti.BesovSpace.tendsto_rpow_mul_norm_block_of_mem_littleBesov`,
   `TauCeti.BesovSpace.block_mem_closure_of_mem_littleBesov` and
@@ -124,6 +127,26 @@ theorem littleBesov_le {S : Submodule ℂ (BesovSpace F φ s p ∞)}
     (h : ∀ f : 𝓢(E, F), SchwartzMap.toBesovSpaceCLM F φ s p ∞ f ∈ S) :
     littleBesov F φ s p ≤ S :=
   Submodule.topologicalClosure_minimal _ (by rintro _ ⟨f, rfl⟩; exact h f) hS
+
+variable (F φ s p) in
+/-- **Schwartz functions are dense in the little Besov space** `b^s_{p,∞}`, by definition. -/
+theorem denseRange_littleBesov :
+    DenseRange fun f : 𝓢(E, F) ↦
+      (⟨SchwartzMap.toBesovSpaceCLM F φ s p ∞ f, toBesovSpaceCLM_mem_littleBesov f⟩ :
+        littleBesov F φ s p) := by
+  refine Topology.IsInducing.subtypeVal.dense_iff.2 fun u ↦ ?_
+  rw [← Set.range_comp]
+  simpa only [Function.comp_def, ← coe_littleBesov] using u.2
+
+/-- Continuous linear maps out of the little Besov space `b^s_{p,∞}` into a Hausdorff space are
+determined by their values on Schwartz functions. -/
+theorem continuousLinearMap_ext_littleBesov {G : Type*} [AddCommMonoid G] [Module ℂ G]
+    [TopologicalSpace G] [T2Space G] {T T' : littleBesov F φ s p →L[ℂ] G}
+    (h : ∀ f : 𝓢(E, F), T ⟨_, toBesovSpaceCLM_mem_littleBesov f⟩ =
+      T' ⟨_, toBesovSpaceCLM_mem_littleBesov f⟩) :
+    T = T' :=
+  ContinuousLinearMap.ext fun u ↦ congrFun
+    ((denseRange_littleBesov F φ s p).equalizer T.continuous T'.continuous (funext h)) u
 
 /-- **The weighted blocks of an element of `b^s_{p,∞}` vanish at high frequency:**
 `2^{js} ‖Δⱼ u‖_p → 0`. -/
