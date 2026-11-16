@@ -19,7 +19,9 @@ direction, Bessel's inequality makes the analysis map of an orthonormal family a
 
 The orthogonal projection onto the span of a finite orthonormal family is `x ↦ ∑ᵢ ⟪vᵢ, x⟫ vᵢ`,
 synthesis after analysis, that is, the frame operator of the family. So Bessel's inequality
-becomes an equality on the span: `‖P x‖² = ∑ᵢ ‖⟪vᵢ, x⟫‖²`.
+becomes an equality on the span: `‖P x‖² = ∑ᵢ ‖⟪vᵢ, x⟫‖²`. The same formula shows that the
+projection onto the span of a continuous family of orthonormal families depends continuously on
+the parameter (`Orthonormal.continuous_starProjection`).
 
 Combining an orthonormal family with the rows of a matrix `A` gives an orthonormal family exactly
 when `A * Aᴴ = 1` (`Orthonormal.orthonormal_sum_smul_iff`); for square matrices this
@@ -112,6 +114,21 @@ theorem starProjection_apply_eq_sum (hv : Orthonormal 𝕜 v) {U : Submodule �
     fun w hw ↦ ?_
   obtain ⟨c, rfl⟩ := (Submodule.mem_span_range_iff_exists_fun 𝕜).mp hw
   simp [inner_sum, inner_smul_right, inner_sub_left, hv.inner_left_fintype]
+
+omit [Fintype ι] in
+/-- The orthogonal projection onto the spans `U x` of a continuous family of finite orthonormal
+families `f x` depends continuously on `x`. -/
+theorem continuous_starProjection [Finite ι] {X : Type*} [TopologicalSpace X]
+    {f : X → ι → E} (hf : Continuous f) (ho : ∀ x, Orthonormal 𝕜 (f x))
+    {U : X → Submodule 𝕜 E} [∀ x, (U x).HasOrthogonalProjection]
+    (hU : ∀ x, Submodule.span 𝕜 (Set.range (f x)) = U x) :
+    Continuous fun x ↦ (U x).starProjection := by
+  have := Fintype.ofFinite ι
+  have h x : (U x).starProjection = ∑ i, (innerSL 𝕜 (f x i)).smulRight (f x i) := by
+    ext w
+    simp [(ho x).starProjection_apply_eq_sum (hU x)]
+  simp only [h]
+  fun_prop
 
 /-- The orthogonal projection onto the span `U` of a finite orthonormal family is its frame
 operator, synthesis after analysis. -/
