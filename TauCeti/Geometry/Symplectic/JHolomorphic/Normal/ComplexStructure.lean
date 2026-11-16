@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Geometry.Symplectic.JHolomorphic.Normal.Linearization
 public import TauCeti.Geometry.Symplectic.Manifold.Nijenhuis
+import TauCeti.Analysis.Calculus.FDeriv.ContinuousLinearMap
 
 /-!
 # The complex structure of the normal fibre and the normal Cauchy–Riemann operator
@@ -150,9 +151,6 @@ theorem normalCauchyRiemannLinearization_clm_apply_eq_add_nijenhuis {ξ : U → 
           ((K.nijenhuis (u x) : V →L[ℝ] V →L[ℝ] V) (fderiv ℝ u x v) (ξ x)) := by
   have hJ : DifferentiableAt ℝ J (u x) :=
     ((K.contDiff_toEndomorphism.differentiable (by simp)) (u x)).congr_of_eventuallyEq hK.symm
-  have hd (c : V) : fderiv ℝ (fun y ↦ J y c) (u x) = (fderiv ℝ J (u x)).flip c := by
-    rw [fderiv_clm_apply hJ (differentiableAt_const c)]
-    simp
   -- `TangentSpace 𝓘(ℝ, V) (u x)` is `V` by definition. Make this identification once at the
   -- tensor level, so that the rest of the proof uses the ordinary model-space instances.
   let NK : V →L[ℝ] V →L[ℝ] V := K.nijenhuis (u x)
@@ -162,8 +160,7 @@ theorem normalCauchyRiemannLinearization_clm_apply_eq_add_nijenhuis {ξ : U → 
         J (u x) (fderiv ℝ J (u x) (ξ x) (fderiv ℝ u x v)) -
         J (u x) (fderiv ℝ J (u x) (fderiv ℝ u x v) (ξ x)) := by
     have h := K.nijenhuis_eq_fderiv J (u x) hK (fderiv ℝ u x v) (ξ x)
-    rw [hd, hd] at h
-    simp only [flip_apply] at h
+    simp only [fderiv_clm_apply_const_apply hJ] at h
     exact h
   change _ = _ + Submodule.Quotient.mk (NK (fderiv ℝ u x v) (ξ x))
   rw [normalCauchyRiemannLinearization_clm_apply hu hξ hJ hhol, hN]
