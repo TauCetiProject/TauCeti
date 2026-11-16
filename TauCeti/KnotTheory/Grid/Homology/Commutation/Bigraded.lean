@@ -125,14 +125,6 @@ theorem simplyBlockedHomologyCommutationMap_mem_bigradedHatHomologyPiece_iff
     (hG.isHomogeneous_simplyBlockedHomologyCommutationCoefficientEquiv R C i) g y
   exact (hG.simplyBlockedHomologyCommutationCoefficientEquiv_apply R C i y) ▸ h
 
-/-- The pentagon comparison sends a homogeneous class to one of the same bidegree. -/
-theorem simplyBlockedHomologyCommutationMap_mem_bigradedHatHomologyPiece
-    {g : ℤ × ℤ} {y : (Base).obj (hG.simplyBlockedHomology R i)}
-    (hy : y ∈ (H).bigradedHatHomologyPiece R i g) :
-    hG.simplyBlockedHomologyCommutationMap R C i y ∈
-      (H').bigradedHatHomologyPiece R (σ i) g :=
-  (hG.simplyBlockedHomologyCommutationMap_mem_bigradedHatHomologyPiece_iff R C i).2 hy
-
 /-- Commutation induces a coefficient-linear equivalence on every homogeneous homology piece.
 It is the restriction of the specified pentagon comparison, not an arbitrarily chosen
 isomorphism between modules of the same dimension. -/

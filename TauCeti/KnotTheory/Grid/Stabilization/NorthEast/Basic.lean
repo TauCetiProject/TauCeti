@@ -69,10 +69,14 @@ namespace TauCeti
 
 namespace GridDiagram
 
-variable {n : ℕ} (G : GridDiagram n) (s : Fin n) (R : Type*) [CommRing R]
+variable {n : ℕ} (G : GridDiagram n) (s : Fin n) (R : Type*)
 
 local notation "A" => MvPolynomial (Fin n) R
 local notation "S" => MvPolynomial (Fin (n + 1)) R
+
+section Semiring
+
+variable [CommSemiring R]
 
 /-- **The chain map of the north-east `X`-stabilization.** On a chain `c` of
 `GC⁻(G.stabilizeX s.succ (G.X s).succ s)` it is the half-turn of the south-west stabilization
@@ -106,7 +110,9 @@ private theorem unblockedDifferential_stabilizeX_rotate_halfTurnRenameEquiv
   rw [← rotate_stabilizeX_succ]
   exact unblockedDifferential_rotate_halfTurnRenameEquiv _ R c
 
-variable [CharP R 2]
+end Semiring
+
+variable [CommRing R] [CharP R 2]
 
 /-- **`stabilizeXSuccChainMap` is a chain map**: it intertwines the unblocked differentials of
 the north-east stabilization `G.stabilizeX s.succ (G.X s).succ s` and of `G`. -/
@@ -183,7 +189,7 @@ theorem exists_sub_stabilizeXSuccChainMap_mem_range {c : GridChainMinus R n}
     ∃ z ∈ LinearMap.ker ((G.stabilizeX s.succ (G.X s).succ s).unblockedDifferential R),
       c - G.stabilizeXSuccChainMap s R z ∈ LinearMap.range (G.unblockedDifferential R) :=
   G.exists_sub_mem_range_of_surjective_unblockedHomologyMap _
-    (G.stabilizeXSuccChainMap s R) (G.stabilizeXSuccChainMap_unblockedDifferential s R)
+    (G.stabilizeXSuccChainMap s R) (fun _ hc => G.stabilizeXSuccChainMap_mem_ker s R hc)
     (G.stabilizeXSuccHomologyMap s R)
     (fun z _ => G.stabilizeXSuccHomologyMap_unblockedHomologyClass s R z)
     (G.stabilizeXSuccHomologyMap_bijective s R).2 hc

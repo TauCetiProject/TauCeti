@@ -9,6 +9,8 @@ public import Mathlib.Algebra.Category.ModuleCat.ChangeOfRings
 public import TauCeti.KnotTheory.Grid.Stabilization.SimplyBlocked.Basic
 public import TauCeti.KnotTheory.Grid.Homology.SimplyBlocked.Basic
 
+import TauCeti.Algebra.Category.ModuleCat.RestrictScalars
+
 /-!
 # Stabilization invariance of simply blocked grid homology
 
@@ -139,10 +141,9 @@ noncomputable def oneVariableSpecializationStabilizeXHomologyEquiv :
         (((G').simplyBlockedComplex R j).homology ()) ≃ₗ[R]
       (ModuleCat.restrictScalars (MvPolynomial.C : R →+* A)).obj
         ((G.simplyBlockedComplex R i).homology ()) :=
-  oneVariableSpecializationHomologyLinearEquivOfIntertwining
-    R j i (simplyBlockedStabilizeXRingHom s i R)
-    (G.simplyBlockedStabilizeXMap s i R)
-    (G.simplyBlockedStabilizeXMap_simplyBlockedDifferential s i R)
+  ModuleCat.restrictScalarsLinearEquivOfBijective
+    (MvPolynomial.C : R →+* S) (MvPolynomial.C : R →+* A)
+    (G.oneVariableSpecializationStabilizeXHomologyMap s i R)
     (simplyBlockedStabilizeXRingHom_C s i R)
     (G.oneVariableSpecializationStabilizeXHomologyMap_bijective s i R)
 
@@ -153,10 +154,9 @@ theorem oneVariableSpecializationStabilizeXHomologyEquiv_apply
       (((G').simplyBlockedComplex R j).homology ())) :
     G.oneVariableSpecializationStabilizeXHomologyEquiv s i R y =
       G.oneVariableSpecializationStabilizeXHomologyMap s i R y :=
-  oneVariableSpecializationHomologyLinearEquivOfIntertwining_apply
-    R j i (simplyBlockedStabilizeXRingHom s i R)
-    (G.simplyBlockedStabilizeXMap s i R)
-    (G.simplyBlockedStabilizeXMap_simplyBlockedDifferential s i R)
+  ModuleCat.restrictScalarsLinearEquivOfBijective_apply
+    (MvPolynomial.C : R →+* S) (MvPolynomial.C : R →+* A)
+    (G.oneVariableSpecializationStabilizeXHomologyMap s i R)
     (simplyBlockedStabilizeXRingHom_C s i R)
     (G.oneVariableSpecializationStabilizeXHomologyMap_bijective s i R) y
 

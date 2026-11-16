@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.KnotTheory.Grid.SimplyBlocked.Basic
-import TauCeti.KnotTheory.Grid.Homology.ExactSequence
 
 /-!
 # Specializing semilinear grid chain maps
@@ -14,8 +13,7 @@ import TauCeti.KnotTheory.Grid.Homology.ExactSequence
 Any column map `π` induces a ring homomorphism between the polynomial rings in the surviving
 variables, sending `X c` to zero when `π c = i`. This homomorphism commutes with blocking when
 `π j = i`. Under that condition, specializing a semilinear unblocked map along this coefficient
-map preserves its chain equation. If the unblocked map is both surjective on cycles modulo
-boundaries and reflects boundaries among cycles, its specialization has both properties.
+map preserves its chain equation.
 
 This extends single-grid specialization to semilinear maps along column maps `π`, including
 column-merging comparisons for south-west and north-east stabilization.
@@ -30,9 +28,6 @@ column-merging comparisons for south-west and north-east stabilization.
 * `TauCeti.simplyBlockedMapAlong_simplyBlockedSpecialization`: the specialized map descends the
   original map.
 * `TauCeti.simplyBlockedMapAlong_simplyBlockedDifferential`: the chain equation descends as well.
-* `TauCeti.exists_sub_simplyBlockedMapAlong_mem_range` and
-  `TauCeti.mem_range_of_simplyBlockedMapAlong_mem_range`: specialization preserves the
-  elementwise criteria for a quasi-isomorphism.
 
 ## References
 
@@ -74,21 +69,22 @@ theorem simplyBlockedRingHomAlong_specialization (hπ : π j = i)
     (p : MvPolynomial (Fin m) R) :
     simplyBlockedRingHomAlong R π i j (simplyBlockedRingHom R j p) =
       simplyBlockedRingHom R i (rename π p) := by
-  have h : ((killCompl (R := R) (f := (Subtype.val : {c : Fin n // c ≠ i} → Fin n))
-      Subtype.val_injective).comp ((rename π).comp (rename Subtype.val))).comp
-        (killCompl (f := (Subtype.val : {c : Fin m // c ≠ j} → Fin m))
-          Subtype.val_injective) =
-      (killCompl (f := (Subtype.val : {c : Fin n // c ≠ i} → Fin n))
-        Subtype.val_injective).comp (rename π) := by
-    ext c
-    by_cases hc : c = j
-    · subst c
-      simp [hπ]
-    · have hX : X c = rename Subtype.val
-          (X (R := R) (⟨c, hc⟩ : {c : Fin m // c ≠ j})) := by simp
-      simp only [AlgHom.comp_apply]
-      rw [hX, killCompl_rename_app]
-  exact DFunLike.congr_fun h p
+  have h : (simplyBlockedRingHomAlong R π i j).comp (simplyBlockedRingHom R j) =
+      (simplyBlockedRingHom R i).comp (rename π).toRingHom := by
+    apply MvPolynomial.ringHom_ext
+    · intro r
+      simp [simplyBlockedRingHomAlong]
+    · intro c
+      by_cases hc : c = j
+      · subst c
+        simp [hπ]
+      · have hX : X c = rename Subtype.val
+            (X (R := R) (⟨c, hc⟩ : {c : Fin m // c ≠ j})) := by simp
+        simp only [RingHom.comp_apply, simplyBlockedRingHom_apply]
+        rw [hX, killCompl_rename_app]
+        simp [simplyBlockedRingHomAlong]
+  simpa only [RingHom.comp_apply, AlgHom.toRingHom_eq_coe, AlgHom.coe_toRingHom] using
+    RingHom.congr_fun h p
 
 variable (f : GridChainMinus R m →ₛₗ[(rename (R := R) π).toRingHom] GridChainMinus R n)
 
@@ -113,14 +109,10 @@ theorem simplyBlockedMapAlong_apply_apply (c : GridChainHat R m j) (y : GridStat
     simplyBlockedMapAlong R π i j f c y = c.sum fun x p =>
       simplyBlockedRingHomAlong R π i j p *
         simplyBlockedRingHom R i (f (Finsupp.single x 1) y) := by
-  induction c using Finsupp.induction_linear with
-  | zero => rw [map_zero, Finsupp.zero_apply, Finsupp.sum_zero_index]
-  | add c d hc hd =>
-    rw [map_add, Finsupp.add_apply, hc, hd, Finsupp.sum_add_index'] <;> simp [add_mul]
-  | single x p =>
-    rw [simplyBlockedMapAlong_single, Finsupp.smul_apply, smul_eq_mul,
-      simplyBlockedSpecialization_apply, ← simplyBlockedRingHom_apply,
-      Finsupp.sum_single_index (by simp)]
+  simp only [simplyBlockedMapAlong, LinearMap.comp_apply, Finsupp.linearCombination_apply,
+    Finsupp.mapRange.linearMap_apply, Finsupp.sum_apply, Finsupp.smul_apply, smul_eq_mul,
+    simplyBlockedSpecialization_apply, simplyBlockedRingHom_apply]
+  exact Finsupp.sum_mapRange_index fun _ => zero_mul _
 
 /-- Specialization intertwines the unblocked map with its specialized map. -/
 theorem simplyBlockedMapAlong_simplyBlockedSpecialization (hπ : π j = i) (c : GridChainMinus R m) :
@@ -133,7 +125,7 @@ theorem simplyBlockedMapAlong_simplyBlockedSpecialization (hπ : π j = i) (c : 
     rw [simplyBlockedSpecialization_single, simplyBlockedMapAlong_single,
       ← simplyBlockedRingHom_apply, simplyBlockedRingHomAlong_specialization R π i j hπ,
       ← Finsupp.smul_single_one x p, map_smulₛₗ, map_smulₛₗ]
-    rfl
+    simp only [AlgHom.toRingHom_eq_coe, AlgHom.coe_toRingHom]
 
 variable (G : GridDiagram n) (G' : GridDiagram m)
 
@@ -150,60 +142,5 @@ theorem simplyBlockedMapAlong_simplyBlockedDifferential (hπ : π j = i)
     ← GridDiagram.simplyBlockedSpecialization_unblockedDifferential, hf]
 
 end Semiring
-
-section Ring
-
-variable [CommRing R] [CharP R 2] (π : Fin m → Fin n) (i : Fin n) (j : Fin m)
-  (f : GridChainMinus R m →ₛₗ[(rename (R := R) π).toRingHom] GridChainMinus R n)
-  (G : GridDiagram n) (G' : GridDiagram m) (hπ : π j = i)
-  (hf : ∀ c, f (G'.unblockedDifferential R c) = G.unblockedDifferential R (f c))
-  (hsur : ∀ c ∈ LinearMap.ker (G.unblockedDifferential R),
-    ∃ x ∈ LinearMap.ker (G'.unblockedDifferential R),
-      c - f x ∈ LinearMap.range (G.unblockedDifferential R))
-  (hinj : ∀ x ∈ LinearMap.ker (G'.unblockedDifferential R),
-    f x ∈ LinearMap.range (G.unblockedDifferential R) →
-      x ∈ LinearMap.range (G'.unblockedDifferential R))
-
-omit [CharP R 2] in
-include hπ in
-private theorem map_X_smul (c : GridChainMinus R m) :
-    f ((X j : MvPolynomial (Fin m) R) • c) =
-      (X i : MvPolynomial (Fin n) R) • f c := by
-  rw [map_smulₛₗ]
-  simp [hπ]
-
-include hπ hf hsur hinj
-
-/-- If `π j = i` and the unblocked chain map is both surjective on cycles modulo boundaries
-and reflects boundaries among cycles, every specialized cycle lifts modulo a boundary. -/
-theorem exists_sub_simplyBlockedMapAlong_mem_range {y : GridChainHat R n i}
-    (hy : y ∈ LinearMap.ker (G.simplyBlockedDifferential R i)) :
-    ∃ x ∈ LinearMap.ker (G'.simplyBlockedDifferential R j),
-      y - simplyBlockedMapAlong R π i j f x ∈
-        LinearMap.range (G.simplyBlockedDifferential R i) := by
-  exact AddMonoidHom.exists_mem_ker_sub_mem_range_of_exact
-    (simplyBlockedMapAlong R π i j f).toAddMonoidHom
-    (f₁ := f.toAddMonoidHom) (f := f.toAddMonoidHom)
-    (G'.isShortExactDifferential_X_smul_simplyBlockedSpecialization R j)
-    (G.isShortExactDifferential_X_smul_simplyBlockedSpecialization R i)
-    hf (map_X_smul R π i j f hπ)
-    (simplyBlockedMapAlong_simplyBlockedSpecialization R π i j f hπ) hsur hsur hinj hy
-
-/-- If `π j = i` and the unblocked chain map is both surjective on cycles modulo boundaries
-and reflects boundaries among cycles, its specialization reflects boundaries among cycles. -/
-theorem mem_range_of_simplyBlockedMapAlong_mem_range {x : GridChainHat R m j}
-    (hx : x ∈ LinearMap.ker (G'.simplyBlockedDifferential R j))
-    (h : simplyBlockedMapAlong R π i j f x ∈
-      LinearMap.range (G.simplyBlockedDifferential R i)) :
-    x ∈ LinearMap.range (G'.simplyBlockedDifferential R j) := by
-  exact AddMonoidHom.mem_range_of_map_mem_range_of_exact
-    (simplyBlockedMapAlong R π i j f).toAddMonoidHom
-    (f₁ := f.toAddMonoidHom) (f := f.toAddMonoidHom)
-    (G'.isShortExactDifferential_X_smul_simplyBlockedSpecialization R j)
-    (G.isShortExactDifferential_X_smul_simplyBlockedSpecialization R i)
-    hf hf (map_X_smul R π i j f hπ)
-    (simplyBlockedMapAlong_simplyBlockedSpecialization R π i j f hπ) hsur hinj hinj hx h
-
-end Ring
 
 end TauCeti

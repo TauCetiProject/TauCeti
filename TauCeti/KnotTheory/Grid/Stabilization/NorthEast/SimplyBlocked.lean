@@ -6,9 +6,12 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.KnotTheory.Grid.SimplyBlocked.Map
+import TauCeti.KnotTheory.Grid.Homology.ExactSequence
 public import TauCeti.KnotTheory.Grid.Stabilization.NorthEast.Grading
 public import TauCeti.KnotTheory.Grid.Homology.Series.SimplyBlocked
 import Mathlib.LinearAlgebra.Dimension.Finrank
+
+import TauCeti.Algebra.Category.ModuleCat.RestrictScalars
 
 /-!
 # North-east stabilization of one-variable-specialization homology
@@ -83,11 +86,15 @@ theorem simplyBlockedStabilizeXSuccRingHom_specialization (p : MvPolynomial (Fin
 
 end Semiring
 
-variable (G : GridDiagram n) [CommRing R]
+variable (G : GridDiagram n)
 
 local notation "j" => s.succ.succAbove i
 local notation "A" => MvPolynomial {c : Fin n // c ≠ i} R
 local notation "S" => MvPolynomial {c : Fin (n + 1) // c ≠ j} R
+
+section Semiring
+
+variable [CommSemiring R]
 
 /-- The stabilization comparison with the transported old `O`-marking blocked. Its image on a
 generator is the specialization of the unblocked stabilization comparison. -/
@@ -121,7 +128,9 @@ theorem simplyBlockedStabilizeXSuccMap_simplyBlockedSpecialization (c : GridChai
   simplyBlockedMapAlong_simplyBlockedSpecialization R s.predAbove i j (G.stabilizeXSuccChainMap s R)
     (by simp [Fin.predAbove_succ_succAbove]) c
 
-variable [CharP R 2]
+end Semiring
+
+variable [CommRing R] [CharP R 2]
 
 /-- Stabilization commutes with the simply blocked differentials. -/
 theorem simplyBlockedStabilizeXSuccMap_simplyBlockedDifferential (c : GridChainHat R (n + 1) j) :
@@ -243,10 +252,9 @@ noncomputable def oneVariableSpecializationStabilizeXSuccHomologyEquiv :
         (((G').simplyBlockedComplex R j).homology ()) ≃ₗ[R]
       (ModuleCat.restrictScalars (MvPolynomial.C : R →+* A)).obj
         ((G.simplyBlockedComplex R i).homology ()) :=
-  oneVariableSpecializationHomologyLinearEquivOfIntertwining
-    R j i (simplyBlockedStabilizeXSuccRingHom s i R)
-    (G.simplyBlockedStabilizeXSuccMap s i R)
-    (G.simplyBlockedStabilizeXSuccMap_simplyBlockedDifferential s i R)
+  ModuleCat.restrictScalarsLinearEquivOfBijective
+    (MvPolynomial.C : R →+* S) (MvPolynomial.C : R →+* A)
+    (G.oneVariableSpecializationStabilizeXSuccHomologyMap s i R)
     (simplyBlockedStabilizeXSuccRingHom_C s i R)
     (G.oneVariableSpecializationStabilizeXSuccHomologyMap_bijective s i R)
 
@@ -256,10 +264,9 @@ theorem oneVariableSpecializationStabilizeXSuccHomologyEquiv_apply
       (((G').simplyBlockedComplex R j).homology ())) :
     G.oneVariableSpecializationStabilizeXSuccHomologyEquiv s i R y =
       G.oneVariableSpecializationStabilizeXSuccHomologyMap s i R y :=
-  oneVariableSpecializationHomologyLinearEquivOfIntertwining_apply
-    R j i (simplyBlockedStabilizeXSuccRingHom s i R)
-    (G.simplyBlockedStabilizeXSuccMap s i R)
-    (G.simplyBlockedStabilizeXSuccMap_simplyBlockedDifferential s i R)
+  ModuleCat.restrictScalarsLinearEquivOfBijective_apply
+    (MvPolynomial.C : R →+* S) (MvPolynomial.C : R →+* A)
+    (G.oneVariableSpecializationStabilizeXSuccHomologyMap s i R)
     (simplyBlockedStabilizeXSuccRingHom_C s i R)
     (G.oneVariableSpecializationStabilizeXSuccHomologyMap_bijective s i R) y
 
@@ -368,17 +375,6 @@ theorem oneVariableSpecializationStabilizeXSuccHomologyMap_mem_bigradedHatHomolo
   rw [← GridDiagram.oneVariableSpecializationStabilizeXSuccHomologyEquiv_apply]
   exact G.oneVariableSpecializationStabilizeXSuccHomologyEquiv_mem_bigradedHatHomologyPiece_iff
     s i R g y
-
-/-- Every homogeneous class has a north-east image of the same bidegree. -/
-theorem oneVariableSpecializationStabilizeXSuccHomologyMap_mem_bigradedHatHomologyPiece
-    {g : ℤ × ℤ}
-    {y : (BaseS).obj (((G.stabilizeXSucc s).1.simplyBlockedComplex R j).homology ())}
-    (hy : y ∈ (G.stabilizeXSucc s).bigradedHatHomologyPiece R j g) :
-    (G.1.oneVariableSpecializationStabilizeXSuccHomologyMap s i R y :
-        (BaseA).obj ((G.1.simplyBlockedComplex R i).homology ())) ∈
-      G.bigradedHatHomologyPiece R i g :=
-  (G.oneVariableSpecializationStabilizeXSuccHomologyMap_mem_bigradedHatHomologyPiece_iff
-    s i R g y).2 hy
 
 /-- North-east `X`-stabilization identifies each homogeneous piece, blocking the transported old
 `O`-marking and preserving absolute `O`-Maslov and Alexander bidegrees. -/

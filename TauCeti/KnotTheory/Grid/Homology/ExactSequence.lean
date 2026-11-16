@@ -12,6 +12,7 @@ public import TauCeti.Algebra.Homology.Linear
 public import TauCeti.Algebra.Homology.SquareZero.ShortExact
 public import TauCeti.KnotTheory.Grid.Homology.SimplyBlocked.Basic
 public import TauCeti.KnotTheory.Grid.Homology.Unblocked
+public import TauCeti.KnotTheory.Grid.SimplyBlocked.Map
 
 /-!
 # The exact sequence relating unblocked and simply blocked grid homology
@@ -67,6 +68,9 @@ state the two exactness assertions that involve that action using it.
   `R[U]`-action on knot-grid unblocked homology. Exactness at the simply blocked homology
   (`exact_simplyBlockedHomologyMap_δ`) mentions no scalar action, so it needs no knot-facing
   restatement.
+* `TauCeti.exists_sub_simplyBlockedMapAlong_mem_range` and
+  `TauCeti.mem_range_of_simplyBlockedMapAlong_mem_range`: specialization preserves the
+  elementwise criteria for a quasi-isomorphism of semilinear chain maps along column maps.
 
 ## References
 
@@ -412,5 +416,64 @@ theorem exact_simplyBlockedHomologyδ_X_smul (hG : G.IsKnot) (i : Fin n) :
 end IsKnot
 
 end GridDiagram
+
+/-! ### Transfer of quasi-isomorphisms through specialization -/
+
+variable {n m : ℕ} (R : Type*)
+
+section Ring
+
+variable [CommRing R] [CharP R 2] (π : Fin m → Fin n) (i : Fin n) (j : Fin m)
+  (f : GridChainMinus R m →ₛₗ[(rename (R := R) π).toRingHom] GridChainMinus R n)
+  (G : GridDiagram n) (G' : GridDiagram m) (hπ : π j = i)
+  (hf : ∀ c, f (G'.unblockedDifferential R c) = G.unblockedDifferential R (f c))
+  (hsur : ∀ c ∈ LinearMap.ker (G.unblockedDifferential R),
+    ∃ x ∈ LinearMap.ker (G'.unblockedDifferential R),
+      c - f x ∈ LinearMap.range (G.unblockedDifferential R))
+  (hinj : ∀ x ∈ LinearMap.ker (G'.unblockedDifferential R),
+    f x ∈ LinearMap.range (G.unblockedDifferential R) →
+      x ∈ LinearMap.range (G'.unblockedDifferential R))
+
+omit [CharP R 2] in
+include hπ in
+private theorem map_X_smul (c : GridChainMinus R m) :
+    f ((X j : MvPolynomial (Fin m) R) • c) =
+      (X i : MvPolynomial (Fin n) R) • f c := by
+  rw [map_smulₛₗ]
+  simp [hπ]
+
+include hπ hf hsur hinj
+
+/-- If `π j = i` and the unblocked chain map is both surjective on cycles modulo boundaries
+and reflects boundaries among cycles, every specialized cycle lifts modulo a boundary. -/
+theorem exists_sub_simplyBlockedMapAlong_mem_range {y : GridChainHat R n i}
+    (hy : y ∈ LinearMap.ker (G.simplyBlockedDifferential R i)) :
+    ∃ x ∈ LinearMap.ker (G'.simplyBlockedDifferential R j),
+      y - simplyBlockedMapAlong R π i j f x ∈
+        LinearMap.range (G.simplyBlockedDifferential R i) := by
+  exact AddMonoidHom.exists_mem_ker_sub_mem_range_of_exact
+    (simplyBlockedMapAlong R π i j f).toAddMonoidHom
+    (f₁ := f.toAddMonoidHom) (f := f.toAddMonoidHom)
+    (G'.isShortExactDifferential_X_smul_simplyBlockedSpecialization R j)
+    (G.isShortExactDifferential_X_smul_simplyBlockedSpecialization R i)
+    hf (map_X_smul R π i j f hπ)
+    (simplyBlockedMapAlong_simplyBlockedSpecialization R π i j f hπ) hsur hsur hinj hy
+
+/-- If `π j = i` and the unblocked chain map is both surjective on cycles modulo boundaries
+and reflects boundaries among cycles, its specialization reflects boundaries among cycles. -/
+theorem mem_range_of_simplyBlockedMapAlong_mem_range {x : GridChainHat R m j}
+    (hx : x ∈ LinearMap.ker (G'.simplyBlockedDifferential R j))
+    (h : simplyBlockedMapAlong R π i j f x ∈
+      LinearMap.range (G.simplyBlockedDifferential R i)) :
+    x ∈ LinearMap.range (G'.simplyBlockedDifferential R j) := by
+  exact AddMonoidHom.mem_range_of_map_mem_range_of_exact
+    (simplyBlockedMapAlong R π i j f).toAddMonoidHom
+    (f₁ := f.toAddMonoidHom) (f := f.toAddMonoidHom)
+    (G'.isShortExactDifferential_X_smul_simplyBlockedSpecialization R j)
+    (G.isShortExactDifferential_X_smul_simplyBlockedSpecialization R i)
+    hf hf (map_X_smul R π i j f hπ)
+    (simplyBlockedMapAlong_simplyBlockedSpecialization R π i j f hπ) hsur hinj hinj hx h
+
+end Ring
 
 end TauCeti

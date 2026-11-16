@@ -210,9 +210,9 @@ variable {m : ℕ} (G' : GridDiagram m)
 
 /-- A class-compatible surjective map on unblocked homology lifts cycles modulo boundaries. -/
 theorem exists_sub_mem_range_of_surjective_unblockedHomologyMap
-    {𝓕 : Type*} [FunLike 𝓕 (GridChainMinus R m) (GridChainMinus R n)]
-    [ZeroHomClass 𝓕 (GridChainMinus R m) (GridChainMinus R n)] (f : 𝓕)
-    (hf : ∀ c, f (G'.unblockedDifferential R c) = G.unblockedDifferential R (f c))
+    (f : GridChainMinus R m → GridChainMinus R n)
+    (hf : ∀ z ∈ LinearMap.ker (G'.unblockedDifferential R),
+      f z ∈ LinearMap.ker (G.unblockedDifferential R))
     (F : G'.unblockedHomology R → G.unblockedHomology R)
     (hF : ∀ (z : LinearMap.ker (G'.unblockedDifferential R))
       (hz : f z ∈ LinearMap.ker (G.unblockedDifferential R)),
@@ -223,8 +223,7 @@ theorem exists_sub_mem_range_of_surjective_unblockedHomologyMap
       c - f z ∈ LinearMap.range (G.unblockedDifferential R) := by
   obtain ⟨y, hy⟩ := h (G.unblockedHomologyClass R ⟨c, hc⟩)
   obtain ⟨z, rfl⟩ := G'.unblockedHomologyClass_surjective R y
-  have hz : f z ∈ LinearMap.ker (G.unblockedDifferential R) := by
-    rw [LinearMap.mem_ker, ← hf, LinearMap.mem_ker.mp z.2, map_zero]
+  have hz : f z ∈ LinearMap.ker (G.unblockedDifferential R) := hf z z.2
   rw [hF z hz] at hy
   have he : G.unblockedHomologyClass R (⟨c, hc⟩ - ⟨f z, hz⟩) = 0 := by
     calc

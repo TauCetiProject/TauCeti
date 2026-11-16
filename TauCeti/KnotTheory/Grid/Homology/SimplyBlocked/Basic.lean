@@ -9,7 +9,6 @@ public import Mathlib.Algebra.Category.ModuleCat.ChangeOfRings
 public import TauCeti.Algebra.Homology.ModuleCat.Basic
 public import TauCeti.KnotTheory.Grid.Chain.Complex
 public import TauCeti.KnotTheory.Grid.Diagram.Components
-import TauCeti.Algebra.Category.ModuleCat.RestrictScalars
 import TauCeti.Algebra.Homology.SquareZero
 
 /-!
@@ -300,33 +299,6 @@ theorem oneVariableSpecializationHomologyMapOfIntertwining_bijective
       simplyBlockedChainEquiv_oneVariableSpecializationCyclesMapOfIntertwining,
       LinearEquiv.apply_symm_apply, ← neg_sub]
     exact neg_mem hxy
-
-/-- A bijective descended homology map is linear over the ground ring when the coefficient
-homomorphism preserves constants. -/
-noncomputable def oneVariableSpecializationHomologyLinearEquivOfIntertwining
-    (hσ : ∀ r, σ (MvPolynomial.C r) = MvPolynomial.C r)
-    (hf : Function.Bijective (oneVariableSpecializationHomologyMapOfIntertwining R i j σ f h)) :
-    (ModuleCat.restrictScalars (MvPolynomial.C : R →+* _)).obj
-        ((G.simplyBlockedComplex R i).homology ()) ≃ₗ[R]
-      (ModuleCat.restrictScalars (MvPolynomial.C : R →+* _)).obj
-        ((H.simplyBlockedComplex R j).homology ()) :=
-  ModuleCat.restrictScalarsLinearEquivOfBijective
-    (MvPolynomial.C : R →+* MvPolynomial {c : Fin n // c ≠ i} R)
-    (MvPolynomial.C : R →+* MvPolynomial {c : Fin m // c ≠ j} R)
-    (oneVariableSpecializationHomologyMapOfIntertwining R i j σ f h) hσ hf
-
-/-- The coefficient-linear packaging preserves the descended homology map. -/
-theorem oneVariableSpecializationHomologyLinearEquivOfIntertwining_apply
-    (hσ : ∀ r, σ (MvPolynomial.C r) = MvPolynomial.C r)
-    (hf : Function.Bijective (oneVariableSpecializationHomologyMapOfIntertwining R i j σ f h))
-    (y : (ModuleCat.restrictScalars (MvPolynomial.C : R →+* _)).obj
-      ((G.simplyBlockedComplex R i).homology ())) :
-    oneVariableSpecializationHomologyLinearEquivOfIntertwining R i j σ f h hσ hf y =
-      oneVariableSpecializationHomologyMapOfIntertwining R i j σ f h y :=
-  ModuleCat.restrictScalarsLinearEquivOfBijective_apply
-    (MvPolynomial.C : R →+* MvPolynomial {c : Fin n // c ≠ i} R)
-    (MvPolynomial.C : R →+* MvPolynomial {c : Fin m // c ≠ j} R)
-    (oneVariableSpecializationHomologyMapOfIntertwining R i j σ f h) hσ hf y
 
 end Intertwining
 

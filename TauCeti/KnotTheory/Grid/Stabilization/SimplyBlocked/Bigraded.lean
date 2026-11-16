@@ -84,6 +84,8 @@ theorem isHomogeneous_oneVariableSpecializationStabilizeXHomologyEquiv :
       (G.1.oneVariableSpecializationStabilizeXHomologyEquiv s i R).toLinearMap
       ((G.stabilizeX s).bigradedHatHomologyGrading R j).piece
       (G.bigradedHatHomologyGrading R i).piece 0 := by
+  -- Expose the stabilized grid before introducing cycles: `rw` below does not unfold the
+  -- semireducible wrapper when checking its dependent cycle carrier.
   dsimp only [stabilizeX]
   refine isHomogeneous_oneVariableSpecializationHomologyMap
     ⟨G.1.stabilizeX s.castSucc (G.1.X s).castSucc s, (G.stabilizeX s).property⟩ R j G i
@@ -134,15 +136,6 @@ theorem oneVariableSpecializationStabilizeXHomologyMap_mem_bigradedHatHomologyPi
     (G.1.oneVariableSpecializationStabilizeXHomologyEquiv s i R)
     (G.isHomogeneous_oneVariableSpecializationStabilizeXHomologyEquiv s i R) g y
   exact (G.1.oneVariableSpecializationStabilizeXHomologyEquiv_apply s i R y) ▸ h
-
-/-- Every homogeneous class maps under stabilization to a class of the same bidegree. -/
-theorem oneVariableSpecializationStabilizeXHomologyMap_mem_bigradedHatHomologyPiece {g : ℤ × ℤ}
-    {y : (BaseS).obj ((((G.stabilizeX s).1).simplyBlockedComplex R j).homology ())}
-    (hy : y ∈ (G.stabilizeX s).bigradedHatHomologyPiece R j g) :
-    (G.1.oneVariableSpecializationStabilizeXHomologyMap s i R y :
-        (BaseA).obj ((G.1.simplyBlockedComplex R i).homology ())) ∈
-      G.bigradedHatHomologyPiece R i g :=
-  (G.oneVariableSpecializationStabilizeXHomologyMap_mem_bigradedHatHomologyPiece_iff s i R g y).2 hy
 
 /-- The stabilization comparison identifies each homogeneous piece of the homology of the
 one-variable specialization with the piece of the same bidegree in the original grid. -/

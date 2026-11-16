@@ -7,6 +7,7 @@ module
 
 public import TauCeti.KnotTheory.Grid.Stabilization.Homology
 public import TauCeti.KnotTheory.Grid.SimplyBlocked.Map
+import TauCeti.KnotTheory.Grid.Homology.ExactSequence
 
 /-!
 # The simply blocked stabilization chain map
@@ -88,11 +89,15 @@ theorem simplyBlockedStabilizeXRingHom_specialization (p : MvPolynomial (Fin (n 
 
 end Semiring
 
-variable (G : GridDiagram n) [CommRing R]
+variable (G : GridDiagram n)
 
 local notation "j" => s.castSucc.succAbove i
 local notation "A" => MvPolynomial {c : Fin n // c ≠ i} R
 local notation "S" => MvPolynomial {c : Fin (n + 1) // c ≠ j} R
+
+section Semiring
+
+variable [CommSemiring R]
 
 /-- The stabilization comparison with the transported old `O`-marking blocked. Its image on a
 generator is the specialization of the unblocked stabilization comparison. -/
@@ -125,7 +130,9 @@ theorem simplyBlockedStabilizeXMap_simplyBlockedSpecialization (c : GridChainMin
   simplyBlockedMapAlong_simplyBlockedSpecialization R s.predAbove i j (G.stabilizeXChainMap s R)
     (by simp [Fin.predAbove_succAbove]) c
 
-variable [CharP R 2]
+end Semiring
+
+variable [CommRing R] [CharP R 2]
 
 /-- Stabilization commutes with the simply blocked differentials. -/
 theorem simplyBlockedStabilizeXMap_simplyBlockedDifferential (c : GridChainHat R (n + 1) j) :
