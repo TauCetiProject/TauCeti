@@ -97,7 +97,7 @@ private theorem norm_powSign_expo_le {a₀ a₁ θ : ℝ} (hθ : θ ∈ Set.Ioo 
       Real.exp ((1 + |thorinSlope a₀ a₁ θ|) * |Real.log ‖c‖|) := by
   refine (norm_powSign_le_exp _ _).trans (Real.exp_le_exp.2
     (mul_le_mul_of_nonneg_right ?_ (abs_nonneg _)))
-  have h := abs_re_thorinExponent_le a₀ a₁ (Set.Ioo_subset_Icc_self hθ) hz
+  have h := abs_re_thorinExponent_sub_one_le a₀ a₁ (Set.Ioo_subset_Icc_self hθ) hz
   calc _ = |((thorinExponent a₀ a₁ θ z).re - 1) + 1| := by rw [sub_add_cancel]
     _ ≤ |(thorinExponent a₀ a₁ θ z).re - 1| + |(1 : ℝ)| := abs_add_le _ _
     _ ≤ 1 + |thorinSlope a₀ a₁ θ| := by rw [abs_one]; linarith

@@ -13,9 +13,9 @@ public import TauCeti.MeasureTheory.Function.LpSeminorm.CompareExp
 
 For a simple function `u` with values in a complex normed space, the member
 `u.map (TauCeti.powSign w) = sgn(u) |u| ^ w` of Thorin's analytic family through `u` has pointwise
-norm `|u| ^ re w`. If `u` lies in the unit ball of `Lˢ`, it therefore lies in the unit ball of
-`Lᵗ` for `1 / t = re w / s` (`MeasureTheory.SimpleFunc.eLpNorm_map_powSign_le_one`). This is the
-boundary estimate of the analytic family in the Riesz–Thorin theorem and in the complex
+norm at most `|u| ^ re w`. If `u` lies in the unit ball of `Lˢ`, it therefore lies in the unit
+ball of `Lᵗ` for `1 / t = re w / s` (`MeasureTheory.SimpleFunc.eLpNorm_map_powSign_le_one`). This
+is the boundary estimate of the analytic family in the Riesz–Thorin theorem and in the complex
 interpolation of the Lebesgue couple.
 -/
 

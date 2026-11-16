@@ -15,9 +15,10 @@ import TauCeti.Data.ENNReal.InterpolatedExponent
 For a vector `c` in a complex normed space and `w ∈ ℂ`, `TauCeti.powSign w c = ‖c‖ ^ (w - 1) • c`
 is `sgn(c) |c| ^ w`: it keeps the direction of `c` and replaces its length by the complex power
 `‖c‖ ^ w`, with `powSign w 0 = 0`. It is entire in `w`, equals `c` at `w = 1`
-(`TauCeti.powSign_one`) and has norm `‖c‖ ^ re w` (`TauCeti.norm_powSign_le`). Applied pointwise to
-a function `f`, it gives Thorin's analytic family `sgn(f) |f| ^ w` through `f`, used to prove the
-Riesz–Thorin theorem and to compute the complex interpolation spaces of the Lebesgue couple.
+(`TauCeti.powSign_one`), and has norm `‖c‖ ^ re w` for `c ≠ 0` (`TauCeti.norm_powSign`) and at most
+`‖c‖ ^ re w` in general (`TauCeti.norm_powSign_le`). Applied pointwise to a function `f`, it gives
+Thorin's analytic family `sgn(f) |f| ^ w` through `f`, used to prove the Riesz–Thorin theorem and
+to compute the complex interpolation spaces of the Lebesgue couple.
 
 The exponent of that family is `TauCeti.thorinExponent a₀ a₁ θ z = 1 + (z - θ) (a₁ - a₀) / a`,
 where `a = (1 - θ) a₀ + θ a₁`: it equals `1` at `z = θ` (`TauCeti.thorinExponent_self`), so the
@@ -123,7 +124,7 @@ theorem re_thorinExponent_nonneg {a₀ a₁ θ : ℝ} (ha₀ : 0 ≤ a₀) (ha�
       positivity
     nlinarith
 
-theorem abs_re_thorinExponent_le (a₀ a₁ : ℝ) {θ : ℝ} (hθ : θ ∈ Set.Icc (0 : ℝ) 1) {z : ℂ}
+theorem abs_re_thorinExponent_sub_one_le (a₀ a₁ : ℝ) {θ : ℝ} (hθ : θ ∈ Set.Icc (0 : ℝ) 1) {z : ℂ}
     (hz : z.re ∈ Set.Icc (0 : ℝ) 1) :
     |(thorinExponent a₀ a₁ θ z).re - 1| ≤ |thorinSlope a₀ a₁ θ| := by
   rw [re_thorinExponent, add_sub_cancel_left, abs_mul]

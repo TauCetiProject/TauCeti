@@ -22,8 +22,9 @@ Lebesgue couple `TauCeti.CompatibleCouple.lebesgue`, with norm `‖f‖_θ ≤ �
 inclusion `Lᵖ ⊆ [L^{p₀}, L^{p₁}]_θ` of the identity `[L^{p₀}, L^{p₁}]_θ = Lᵖ` with equal norms
 (Bergh–Löfström, Theorem 5.1.1), the description of the complex method on the Lebesgue couple
 through which the interpolation of Bessel potential spaces and of operators between `Lᵖ` spaces
-is computed. The theorem holds for `p < ∞` and every `0 ≤ θ ≤ 1`; for `0 < θ < 1` the only infinite
-`p` is `p₀ = p₁ = ∞`, where the couple is `(L^∞, L^∞)` and the statement is immediate
+is computed. The theorem holds for every `0 ≤ θ ≤ 1` when `p < ∞` or `p₀ = p₁ = ∞`; in the latter
+case the couple is `(L^∞, L^∞)` and the statement is immediate. For `0 < θ < 1` the only infinite
+`p` is `p₀ = p₁ = ∞`, so no hypothesis on `p` is needed
 (`TauCeti.CompatibleCouple.exists_sumSpaceEmbed_toSum_eq_ofLp_and_norm_le_of_mem_Ioo`).
 
 The proof is Thorin's analytic family. For a simple function `f` with `‖f‖_p ≤ 1` and `δ > 0`,
@@ -47,8 +48,9 @@ treats the inclusion of `Lᵖ`.
 
 ## Main declarations
 
-* `TauCeti.CompatibleCouple.exists_sumSpaceEmbed_toSum_eq_ofLp_and_norm_le`: for `0 ≤ θ ≤ 1` and
-  `p < ∞`, every `f ∈ Lᵖ` lies in `[L^{p₀}, L^{p₁}]_θ` with `‖f‖_θ ≤ ‖f‖_p`.
+* `TauCeti.CompatibleCouple.exists_sumSpaceEmbed_toSum_eq_ofLp_and_norm_le`: for `0 ≤ θ ≤ 1`, and
+  `p < ∞` unless `p₀ = p₁ = ∞`, every `f ∈ Lᵖ` lies in `[L^{p₀}, L^{p₁}]_θ` with
+  `‖f‖_θ ≤ ‖f‖_p`.
 * `TauCeti.CompatibleCouple.exists_sumSpaceEmbed_toSum_eq_ofLp_and_norm_le_of_mem_Ioo`: the same
   for `0 < θ < 1` and every `p`.
 
@@ -112,7 +114,7 @@ private theorem norm_coeff_le {δ : ℝ} (hδ : 0 ≤ δ) (hθ : θ ∈ Icc 0 1)
       ≤ |((thorinExponent a₀ a₁ θ z).re - 1) * Real.log s| := le_abs_self _
     _ = |(thorinExponent a₀ a₁ θ z).re - 1| * |Real.log s| := abs_mul _ _
     _ ≤ |thorinSlope a₀ a₁ θ| * |Real.log s| :=
-        mul_le_mul_of_nonneg_right (abs_re_thorinExponent_le a₀ a₁ hθ hz) (abs_nonneg _)
+        mul_le_mul_of_nonneg_right (abs_re_thorinExponent_sub_one_le a₀ a₁ hθ hz) (abs_nonneg _)
 
 /-! ### Simple functions in the intersection -/
 
@@ -295,23 +297,30 @@ private theorem norm_ofInter_ofSimpleFuncₗ_le (hθ : θ ∈ Icc 0 1)
   simpa [norm_smul, hc, inv_mul_le_iff₀ hpos] using h
 
 /-- **`Lᵖ` lies in the complex interpolation space of the Lebesgue couple.** Let `0 ≤ θ ≤ 1`
-and `1 / p = (1 - θ) / p₀ + θ / p₁` with `p < ∞`. Every `f ∈ Lᵖ(μ; E)` is an element of
-`[L^{p₀}, L^{p₁}]_θ`, of norm at most `‖f‖_p`: there is `u ∈ [L^{p₀}, L^{p₁}]_θ` whose image in
-`L¹ + L^∞` is `f` and with `‖u‖_θ ≤ ‖f‖_p`. -/
+and `1 / p = (1 - θ) / p₀ + θ / p₁`, with `p < ∞` unless `p₀ = p₁ = ∞`. Every `f ∈ Lᵖ(μ; E)` is an
+element of `[L^{p₀}, L^{p₁}]_θ`, of norm at most `‖f‖_p`: there is `u ∈ [L^{p₀}, L^{p₁}]_θ` whose
+image in `L¹ + L^∞` is `f` and with `‖u‖_θ ≤ ‖f‖_p`. When `p₀ = p₁ = ∞`, `f` lies in the
+intersection. -/
 theorem exists_sumSpaceEmbed_toSum_eq_ofLp_and_norm_le [CompleteSpace E] (hθ : θ ∈ Icc 0 1)
-    (hp : p⁻¹ = ENNReal.ofReal (1 - θ) * p₀⁻¹ + ENNReal.ofReal θ * p₁⁻¹) (hp_top : p ≠ ∞)
-    (f : Lp E p μ) :
+    (hp : p⁻¹ = ENNReal.ofReal (1 - θ) * p₀⁻¹ + ENNReal.ofReal θ * p₁⁻¹)
+    (hp_top : p = ∞ → p₀ = ∞ ∧ p₁ = ∞) (f : Lp E p μ) :
     ∃ u : (lebesgue ℂ E μ p₀ p₁).ComplexMethodSpace θ,
       (lebesgue ℂ E μ p₀ p₁).sumSpaceEmbed (ComplexMethodSpace.toSum u) = L1AddLinfty.ofLp f ∧
         ‖u‖ ≤ ‖f‖ := by
+  by_cases hp_top' : p = ∞
+  · obtain ⟨rfl, rfl⟩ := hp_top hp_top'
+    subst hp_top'
+    refine ⟨ComplexMethodSpace.ofInter θ ⟨(f, f), mem_lebesgue_inter_iff.2 .rfl⟩, ?_,
+      (ComplexMethodSpace.norm_ofInter_le hθ _).trans (by simp)⟩
+    simp [ComplexMethodSpace.toSum_ofInter hθ]
   -- Extend the inclusion of the simple functions by continuity.
   set T₀ := (ComplexMethodSpace.ofInter (C := lebesgue ℂ E μ p₀ p₁) θ).toLinearMap ∘ₗ
-    ofSimpleFuncₗ p₀ p₁ hp_top
+    ofSimpleFuncₗ p₀ p₁ hp_top'
   let e : Lp.simpleFunc E p μ →ₗ[ℂ] Lp E p μ := (Lp.simpleFunc.coeToLp α E ℂ).toLinearMap
-  have hdense : DenseRange e := Lp.simpleFunc.denseRange hp_top
+  have hdense : DenseRange e := Lp.simpleFunc.denseRange hp_top'
   have hbound (g : Lp.simpleFunc E p μ) : ‖T₀ g‖ ≤ 1 * ‖e g‖ := by
     rw [one_mul]
-    exact norm_ofInter_ofSimpleFuncₗ_le hθ hp hp_top g
+    exact norm_ofInter_ofSimpleFuncₗ_le hθ hp hp_top' g
   refine ⟨T₀.extendOfNorm e f, ?_, by
     simpa using LinearMap.norm_extendOfNorm_apply_le hdense 1 hbound f⟩
   refine hdense.induction_on (p := fun f => (lebesgue ℂ E μ p₀ p₁).sumSpaceEmbed
@@ -320,25 +329,20 @@ theorem exists_sumSpaceEmbed_toSum_eq_ofLp_and_norm_le [CompleteSpace E] (hθ : 
   rw [LinearMap.extendOfNorm_eq hdense ⟨1, hbound⟩ g]
   simp only [T₀, LinearMap.coe_comp, ContinuousLinearMap.coe_coe, Function.comp_apply,
     ComplexMethodSpace.toSum_ofInter hθ, sumSpaceEmbed_fstToSum, lebesgue_embed₀]
-  exact L1AddLinfty.ofLp_eq_ofLp_iff.2 (coeFn_interFst_ofSimpleFunc hp_top g)
+  exact L1AddLinfty.ofLp_eq_ofLp_iff.2 (coeFn_interFst_ofSimpleFunc hp_top' g)
 
 /-- **`Lᵖ` lies in the complex interpolation space of the Lebesgue couple**, for `0 < θ < 1`.
 Let `1 / p = (1 - θ) / p₀ + θ / p₁`. Every `f ∈ Lᵖ(μ; E)` is an element of
-`[L^{p₀}, L^{p₁}]_θ`, of norm at most `‖f‖_p`. For `p < ∞` this is
-`TauCeti.CompatibleCouple.exists_sumSpaceEmbed_toSum_eq_ofLp_and_norm_le`; the only infinite `p`
-is `p₀ = p₁ = ∞`, where `f` lies in the intersection. -/
+`[L^{p₀}, L^{p₁}]_θ`, of norm at most `‖f‖_p`. This is
+`TauCeti.CompatibleCouple.exists_sumSpaceEmbed_toSum_eq_ofLp_and_norm_le`: for `0 < θ < 1` the
+only infinite `p` is `p₀ = p₁ = ∞`. -/
 theorem exists_sumSpaceEmbed_toSum_eq_ofLp_and_norm_le_of_mem_Ioo [CompleteSpace E]
     (hθ : θ ∈ Ioo 0 1) (hp : p⁻¹ = ENNReal.ofReal (1 - θ) * p₀⁻¹ + ENNReal.ofReal θ * p₁⁻¹)
     (f : Lp E p μ) :
     ∃ u : (lebesgue ℂ E μ p₀ p₁).ComplexMethodSpace θ,
       (lebesgue ℂ E μ p₀ p₁).sumSpaceEmbed (ComplexMethodSpace.toSum u) = L1AddLinfty.ofLp f ∧
-        ‖u‖ ≤ ‖f‖ := by
-  by_cases hp_top : p = ∞
-  · obtain ⟨rfl, rfl⟩ := (eq_top_iff_of_inv_eq hθ hp).1 hp_top
-    subst hp_top
-    refine ⟨ComplexMethodSpace.ofInter θ ⟨(f, f), mem_lebesgue_inter_iff.2 .rfl⟩, ?_,
-      (ComplexMethodSpace.norm_ofInter_le (Ioo_subset_Icc_self hθ) _).trans (by simp)⟩
-    simp [ComplexMethodSpace.toSum_ofInter (Ioo_subset_Icc_self hθ)]
-  · exact exists_sumSpaceEmbed_toSum_eq_ofLp_and_norm_le (Ioo_subset_Icc_self hθ) hp hp_top f
+        ‖u‖ ≤ ‖f‖ :=
+  exists_sumSpaceEmbed_toSum_eq_ofLp_and_norm_le (Ioo_subset_Icc_self hθ) hp
+    (eq_top_iff_of_inv_eq hθ hp).1 f
 
 end TauCeti.CompatibleCouple
