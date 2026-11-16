@@ -215,6 +215,16 @@ noncomputable def prodCongr (e : Equiv ρ ρ') (e' : Equiv σ σ') : Equiv (ρ.p
       (e.toIntertwiningMap.isIntertwining _ _ g v.1)
       (e'.toIntertwiningMap.isIntertwining _ _ g v.2)
 
+/-- The linear equivalence underlying a product equivalence is the product of its factors. -/
+@[simp]
+theorem toLinearEquiv_prodCongr (e : Equiv ρ ρ') (e' : Equiv σ σ') :
+    (e.prodCongr e').toLinearEquiv = e.toLinearEquiv.prodCongr e'.toLinearEquiv := (rfl)
+
+/-- Forgetting equivariance of a product equivalence gives the product linear map. -/
+@[simp]
+theorem toLinearMap_prodCongr (e : Equiv ρ ρ') (e' : Equiv σ σ') :
+    (e.prodCongr e').toLinearMap = e.toLinearMap.prodMap e'.toLinearMap := (rfl)
+
 /-- A product equivalence acts on the two coordinates separately. -/
 @[simp]
 theorem prodCongr_apply (e : Equiv ρ ρ') (e' : Equiv σ σ') (v : V × W) :

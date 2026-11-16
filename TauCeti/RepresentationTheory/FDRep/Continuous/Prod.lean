@@ -54,7 +54,7 @@ noncomputable def ofContRepresentationProdIso
 /-- Forgetting the continuous product comparison gives the finite-representation comparison,
 with the named object transports and the canonical biproduct comparison. -/
 @[simp]
-theorem ofContRepresentationProdIso_mapIso
+theorem ι_mapIso_ofContRepresentationProdIso
     (π : ContRepresentation 𝕜 G V) (ρ : ContRepresentation 𝕜 G W)
     (hπ : Continuous π) (hρ : Continuous ρ) :
     (FDRep.isContinuous 𝕜 G).ι.mapIso (ofContRepresentationProdIso π ρ hπ hρ) =

@@ -58,21 +58,21 @@ theorem equivariantIndex_prodMap (T : π₁ →ⁱL ρ₁) (S : π₂ →ⁱL ρ
       T.equivariantIndex
         (Eq.mp (congrArg ContinuousLinearMap.IsFredholm (toContinuousLinearMap_prodMap T S))
           hTS).of_prodMap_left
-        (continuous_of_continuous_prod_apply_left hπ)
-        (continuous_of_continuous_prod_apply_left hρ) +
+        (continuous_apply_of_continuous_prod_apply_left hπ)
+        (continuous_apply_of_continuous_prod_apply_left hρ) +
       S.equivariantIndex
         (Eq.mp (congrArg ContinuousLinearMap.IsFredholm (toContinuousLinearMap_prodMap T S))
           hTS).of_prodMap_right
-        (continuous_of_continuous_prod_apply_right hπ)
-        (continuous_of_continuous_prod_apply_right hρ) := by
+        (continuous_apply_of_continuous_prod_apply_right hπ)
+        (continuous_apply_of_continuous_prod_apply_right hρ) := by
   have hU := Eq.mp
     (congrArg ContinuousLinearMap.IsFredholm (toContinuousLinearMap_prodMap T S)) hTS
   have hT := hU.of_prodMap_left
   have hS := hU.of_prodMap_right
-  have hπ₁ := continuous_of_continuous_prod_apply_left hπ
-  have hπ₂ := continuous_of_continuous_prod_apply_right hπ
-  have hρ₁ := continuous_of_continuous_prod_apply_left hρ
-  have hρ₂ := continuous_of_continuous_prod_apply_right hρ
+  have hπ₁ := continuous_apply_of_continuous_prod_apply_left hπ
+  have hπ₂ := continuous_apply_of_continuous_prod_apply_right hπ
+  have hρ₁ := continuous_apply_of_continuous_prod_apply_left hρ
+  have hρ₂ := continuous_apply_of_continuous_prod_apply_right hρ
   have := hT.finite_ker
   have := hS.finite_ker
   have := hTS.finite_ker
