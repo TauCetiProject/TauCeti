@@ -63,7 +63,7 @@ theorem paraboloidGraph_apply_two (x : V₂) : paraboloidGraph x 2 = ‖x‖ ^ 2
   norm_num [EuclideanSpace.basisFun_apply]
 
 /-- The ambient coordinates of the Cartesian graph. -/
-theorem paraboloidGraph_def (x : V₂) :
+theorem paraboloidGraph_apply (x : V₂) :
     paraboloidGraph x = !₂[x 0, x 1, x 0 ^ 2 + x 1 ^ 2] := by
   ext i
   fin_cases i <;> simp [EuclideanSpace.real_norm_sq_eq, Fin.sum_univ_two]
