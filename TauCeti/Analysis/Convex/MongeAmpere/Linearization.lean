@@ -11,6 +11,7 @@ public import TauCeti.Analysis.Calculus.Gradient
 import TauCeti.Analysis.Calculus.FDeriv.Det.Basic
 import TauCeti.Analysis.Calculus.Morse.Linearization
 import TauCeti.LinearAlgebra.Matrix.Trace.NonsingularInverse
+import TauCeti.LinearAlgebra.Trace.Basic
 
 /-!
 # First variation of the classical Monge–Ampère equation
@@ -48,7 +49,6 @@ theorem trace_ringInverse_hessian_directional_eq {u f : E → ℝ} {x : E}
     (hu : ContDiffAt ℝ 3 u x) (heq : (fun y ↦ (fderiv ℝ (∇ u) y).det) =ᶠ[𝓝 x] f) (v : E) :
     LinearMap.trace ℝ E (Ring.inverse (fderiv ℝ (∇ u) x).toLinearMap *
       (fderiv ℝ (∇ fun y ↦ fderiv ℝ u y v) x).toLinearMap) = fderiv ℝ f x v / f x := by
-  classical
   by_cases hE : FiniteDimensional ℝ E
   · by_cases hne : (fderiv ℝ (∇ u) x).det = 0
     · have hnu : ¬ IsUnit (fderiv ℝ (∇ u) x).toLinearMap := by
@@ -81,13 +81,10 @@ theorem trace_ringInverse_hessian_directional_eq {u f : E → ℝ} {x : E}
     rw [LinearMap.trace_ringInverse_mul_eq_matrix_trace b, ← hlocal.eq_of_nhds, hJacobi, mul_comm,
       mul_div_cancel_right₀ _ hdet_ne]
     simp only [hM]
-  · have hB : ¬ ∃ s : Finset E, Nonempty (Module.Basis s ℝ E) := fun ⟨_, ⟨b⟩⟩ ↦
-      hE (Module.Finite.of_basis b)
-    have h1 : f =ᶠ[𝓝 x] fun _ ↦ (1 : ℝ) :=
-      heq.symm.trans (.of_forall fun y ↦ not_imp_comm.mp LinearMap.finite_of_det_ne_one hE)
-    rw [LinearMap.trace, dite_eq_right hB, LinearMap.zero_apply,
-      ((hasFDerivAt_const (1 : ℝ) x).congr_of_eventuallyEq h1).fderiv,
-      zero_apply, zero_div]
+  · have h1 : f =ᶠ[𝓝 x] fun _ ↦ (1 : ℝ) :=
+      heq.symm.trans (.of_forall fun y ↦ LinearMap.det_eq_one_of_not_module_finite hE _)
+    rw [LinearMap.trace_eq_zero_of_not_finite hE, LinearMap.zero_apply, h1.fderiv_eq,
+      fderiv_const_apply, zero_apply, zero_div]
 
 /-- The differentiated Monge–Ampère equation as a coordinate contraction, in the form used by
 nondivergence-form Schauder estimates. -/

@@ -35,7 +35,9 @@ limits (`TauCeti.hasWeakFDerivOn_of_tendsto_lintegral_enorm_sub`). The discs exh
 
 Consequences:
 
-* `∂ (T f) = B f` almost everywhere for compactly supported `C¹` data
+* `∂ (T f) = B f` almost everywhere whenever `T f` is `C¹`
+  (`TauCeti.wirtingerDeriv_cauchyTransform_ae_eq_beurlingLp_of_memLp`), in particular for
+  compactly supported `C¹` data
   (`HasCompactSupport.wirtingerDeriv_cauchyTransform_ae_eq_beurlingLp_of_contDiff_one`),
   extending the smooth case of `TauCeti.Analysis.Complex.Wirtinger.Beurling.Cauchy`;
 * the global bound `‖w ↦ wirtingerPartsCLM (B f w) (f w)‖_{Lᵖ(ℂ)} ≤ (‖B‖ + 1) ‖f‖_{Lᵖ}` for all
@@ -168,6 +170,23 @@ theorem hasWeakFDerivOn_cauchyTransform_of_memLp (hp : 1 < p) (hp_top : p ≠ (�
   push_cast
   linarith
 
+/-- **`∂ T = B` when `T f` is `C¹`.** For `1 < p < ∞` and `f ∈ Lᵖ(ℂ)` supported in a closed disc
+whose Cauchy transform `T f` is `C¹`, the Wirtinger derivative `∂ (T f)` agrees almost everywhere
+with the Beurling operator on `Lᵖ(ℂ)` applied to `f`: the classical derivative of `T f` is then
+its weak derivative (`TauCeti.hasWeakFDerivOn_cauchyTransform_of_memLp`). -/
+theorem wirtingerDeriv_cauchyTransform_ae_eq_beurlingLp_of_memLp (hp : 1 < p)
+    (hp_top : p ≠ (∞ : ℝ≥0∞)) {f : ℂ → F} (hf : MemLp f p volume) {c : ℂ} {r : ℝ}
+    (hs : support f ⊆ closedBall c r) (hT : ContDiff ℝ 1 (cauchyTransform f)) :
+    (fun w ↦ wirtingerDeriv (cauchyTransform f) w 1) =ᵐ[volume]
+      beurlingLp p hp hp_top (hf.toLp f) := by
+  have hcl := (hasWeakFDerivOn_cauchyTransform_of_memLp hp hp_top hf hs ⊤).ae_eq_fderiv
+    ((hT.continuous_fderiv one_ne_zero).locallyIntegrable.locallyIntegrableOn _)
+    fun x _ ↦ hT.differentiable one_ne_zero x
+  rw [Opens.coe_top, Measure.restrict_univ] at hcl
+  filter_upwards [hcl] with w hw
+  rw [fderiv_eq_wirtingerPartsCLM] at hw
+  exact (wirtingerPartsCLM_inj.1 hw).1.symm
+
 /-- **`∂ T = B` on compactly supported `C¹` data.** For `1 < p < ∞` and compactly supported `C¹`
 data `f`, the Wirtinger derivative `∂ (T f)` agrees almost everywhere with the Beurling operator
 on `Lᵖ(ℂ)` applied to `f`. -/
@@ -176,17 +195,9 @@ theorem _root_.HasCompactSupport.wirtingerDeriv_cauchyTransform_ae_eq_beurlingLp
     (hp_top : p ≠ (∞ : ℝ≥0∞)) :
     (fun w ↦ wirtingerDeriv (cauchyTransform f) w 1) =ᵐ[volume]
       beurlingLp p hp hp_top ((hf.continuous.memLp_of_hasCompactSupport hc).toLp f) := by
-  have hfm : MemLp f p volume := hf.continuous.memLp_of_hasCompactSupport hc
   obtain ⟨r, hr⟩ := hc.isCompact.isBounded.subset_closedBall (0 : ℂ)
-  have hT := hc.contDiff_cauchyTransform hf
-  have hcl := (hasWeakFDerivOn_cauchyTransform_of_memLp hp hp_top hfm
-    ((subset_tsupport f).trans hr) ⊤).ae_eq_fderiv
-      ((hT.continuous_fderiv one_ne_zero).locallyIntegrable.locallyIntegrableOn _)
-      fun x _ ↦ hT.differentiable one_ne_zero x
-  rw [Opens.coe_top, Measure.restrict_univ] at hcl
-  filter_upwards [hcl] with w hw
-  rw [fderiv_eq_wirtingerPartsCLM, hc.conjWirtingerDeriv_cauchyTransform hf] at hw
-  exact (wirtingerPartsCLM_inj.1 hw).1.symm
+  exact wirtingerDeriv_cauchyTransform_ae_eq_beurlingLp_of_memLp hp hp_top _
+    ((subset_tsupport f).trans hr) (hc.contDiff_cauchyTransform hf)
 
 /-- **The global derivative bound for the Cauchy transform of `Lᵖ` data.** The field
 `w ↦ wirtingerPartsCLM (B f w) (f w)`, that is `v ↦ v • B f + conj v • f`, has `Lᵖ(ℂ)` norm at most

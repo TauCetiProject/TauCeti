@@ -219,37 +219,31 @@ section Lp
 variable {G : Type*} [NormedAddCommGroup G] [InnerProductSpace ℂ G] [NormedSpace ℝ G]
   [IsScalarTower ℝ ℂ G] [FiniteDimensional ℂ G] {k : ℕ} {α : ℝ≥0} {c : ℂ} {r R : ℝ}
 
-/-- Completeness of `G` is not an extra hypothesis below: a finite-dimensional complex normed space
-is already complete, and Mathlib keeps `FiniteDimensional.completeSpace` out of the global instance
-set, so it is installed here as a local instance for `TauCeti.beurlingLp`. -/
-local instance : CompleteSpace G :=
-  FiniteDimensional.completeSpace ℂ G
-
 /-- **Agreement with the `Lᵖ` Beurling operator.** For data in the supported `C^{k,α}` space and
 `1 < p < ∞`, the value field of `TauCeti.beurlingCkCLM` agrees almost everywhere on the output
-disc with the Beurling operator on `Lᵖ(ℂ)` applied to the data. -/
+disc with the Beurling operator on `Lᵖ(ℂ)` applied to the data. The data lie in `Lᵖ(ℂ)` because
+they are continuous with compact support. Completeness of `G`, needed by `TauCeti.beurlingLp`, is
+not an extra hypothesis: the finite-dimensional space `G` is complete. -/
 theorem beurlingCkCLM_apply_fst_zero_ae_eq_beurlingLp (hα : 0 < α) (hα1 : α < 1) (hr : 0 ≤ r)
     (hR : 0 ≤ R) (f : supportedCkHolderSubmodule (E := ℂ) (F := G) k α (closedBall c r))
-    {p : ℝ≥0∞} [Fact (1 ≤ p)] (hp : 1 < p) (hp_top : p ≠ (∞ : ℝ≥0∞))
-    (hfp : MemLp (f : CkHolderSpace k α ℂ G) p volume) :
+    {p : ℝ≥0∞} [Fact (1 ≤ p)] (hp : 1 < p) (hp_top : p ≠ (∞ : ℝ≥0∞)) :
+    haveI : CompleteSpace G := FiniteDimensional.completeSpace ℂ G
     ∀ᵐ x ∂volume, ∀ hx : x ∈ closedBall c R,
       (beurlingCkCLM k hα hα1 hr hR f).1 0 ⟨x, hx⟩ (0 : Fin 0 → ℂ) =
-        beurlingLp p hp hp_top (hfp.toLp _) x := by
+        beurlingLp p hp hp_top (((f : CkHolderSpace k α ℂ G).contDiff.continuous
+          |>.memLp_of_hasCompactSupport (.of_support_subset_isCompact (isCompact_closedBall c r)
+            (support_subset_of_mem_supportedCkHolderSubmodule f.property))).toLp _) x := by
   -- The real action is uniquely determined by the compatible complex action.
   cases NormedSpace.restrictScalars_eq (𝕜 := ℝ) (𝕜' := ℂ) (E := G)
+  have : CompleteSpace G := FiniteDimensional.completeSpace ℂ G
   let u : CkHolderSpace k α ℂ G := f
   have hT : ContDiff ℝ 1 (cauchyTransform u) :=
     ((hasCompactSupport_source f).contDiff_cauchyTransform_of_holderWith_iteratedFDeriv hα hα1
       u.contDiff u.memHolder_iteratedFDeriv.holderWith).of_le (by norm_cast; omega)
-  have hcl := (hasWeakFDerivOn_cauchyTransform_of_memLp hp hp_top hfp
-    (support_subset_of_mem_supportedCkHolderSubmodule f.property) ⊤).ae_eq_fderiv
-      ((hT.continuous_fderiv one_ne_zero).locallyIntegrable.locallyIntegrableOn _)
-      fun x _ ↦ hT.differentiable one_ne_zero x
-  rw [TopologicalSpace.Opens.coe_top, Measure.restrict_univ] at hcl
-  filter_upwards [hcl] with x hx hxR
+  filter_upwards [wirtingerDeriv_cauchyTransform_ae_eq_beurlingLp_of_memLp hp hp_top _
+    (support_subset_of_mem_supportedCkHolderSubmodule f.property) hT] with x hx hxR
   rw [beurlingCkCLM_apply_fst_zero]
-  rw [fderiv_eq_wirtingerPartsCLM] at hx
-  exact (wirtingerPartsCLM_inj.1 hx).1.symm
+  exact hx
 
 end Lp
 
