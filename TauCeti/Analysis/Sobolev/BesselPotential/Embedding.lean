@@ -31,6 +31,9 @@ representative is `C^k`, its derivatives of order `j ≤ k` vanish at infinity, 
 
 `‖D^j u(x)‖ ≤ C ‖u‖_{H^s}` for all `x` and `j ≤ k`.
 
+In particular, for `2s > n`, convergence in `H^s` implies uniform convergence of the continuous
+representatives.
+
 A tempered distribution lying in `H^s` for every real `s` is therefore a smooth function. These
 whole-space statements hold for every real order and with values in a complex Hilbert space; for
 integer orders on an open set, without bounds, see `TauCeti.Wkp.exists_contDiffOn_ae_eq`. For the
@@ -105,6 +108,8 @@ spaces.
   of order `j`, `s > j + n / 2`, vanish at infinity.
 * `TemperedDistribution.exists_norm_iteratedFDeriv_le_mul_norm_toBesselPotentialSpace`: the bound
   `‖D^j u(x)‖ ≤ C ‖u‖_{H^s}` for `j ≤ k`, `s > k + n / 2`.
+* `TemperedDistribution.tendstoUniformly_of_tendsto_toBesselPotentialSpace`: convergence in
+  `H^s`, `2s > n`, implies uniform convergence of the continuous representatives.
 * `TemperedDistribution.contDiff_of_forall_memSobolev_of_ae_eq`,
   `TemperedDistribution.exists_contDiff_eq_integral_of_forall_memSobolev`: functions and tempered
   distributions lying in every `H^s` are smooth.
@@ -233,6 +238,15 @@ theorem exists_forall_ae_norm_le_mul_norm_toBesselPotentialSpace {s : ℝ}
   rw [integral_neg_eq_self (fun ξ => ‖(v : E → F) ξ‖)]
   exact hL1
 
+/-- If `u i → v` in `H^s`, then the `H^s` norms of the differences `u i - v` tend to zero. -/
+private theorem tendsto_norm_toBesselPotentialSpace_sub {s : ℝ} {ι : Type*} {l : Filter ι}
+    {u : ι → Lp F 2 (volume : Measure E)} {v : Lp F 2 (volume : Measure E)}
+    (hu : ∀ i, MemSobolev s 2 (u i : 𝓢'(E, F))) (hv : MemSobolev s 2 (v : 𝓢'(E, F)))
+    (h : Tendsto (fun i => (hu i).toBesselPotentialSpace) l (𝓝 hv.toBesselPotentialSpace)) :
+    Tendsto (fun i => ‖((hu i).toTemperedDistribution_sub hv).toBesselPotentialSpace‖) l (𝓝 0) := by
+  refine (tendsto_iff_norm_sub_tendsto_zero.1 h).congr fun i => ?_
+  simp only [Lp.toTemperedDistribution_sub, (hu i).toBesselPotentialSpace_sub hv]
+
 /-- **Convergence in `H^s` implies convergence almost everywhere, `s > n / 2`.** If `L²`
 functions `u n ∈ H^s` converge in `H^s` to an `L²` function `v ∈ H^s`, then `u n x → v x` for
 almost every `x`. -/
@@ -242,14 +256,9 @@ theorem ae_tendsto_of_tendsto_toBesselPotentialSpace {s : ℝ} (hs : finrank ℝ
     (h : Tendsto (fun n => (hu n).toBesselPotentialSpace) atTop (𝓝 hv.toBesselPotentialSpace)) :
     ∀ᵐ x ∂volume, Tendsto (fun n => u n x) atTop (𝓝 (v x)) := by
   obtain ⟨C, -, hC⟩ := exists_forall_ae_norm_le_mul_norm_toBesselPotentialSpace (F := F) hs
-  have hD (n : ℕ) : MemSobolev s 2 ((u n - v : Lp F 2 (volume : Measure E)) : 𝓢'(E, F)) := by
-    rw [Lp.toTemperedDistribution_sub]
-    exact (hu n).sub hv
+  have hD (n : ℕ) := (hu n).toTemperedDistribution_sub hv
   have hlim : Tendsto (fun n => C * ‖(hD n).toBesselPotentialSpace‖) atTop (𝓝 0) := by
-    have h' := (tendsto_iff_norm_sub_tendsto_zero.1 h).const_mul C
-    rw [mul_zero] at h'
-    refine h'.congr fun n => ?_
-    simp only [Lp.toTemperedDistribution_sub, (hu n).toBesselPotentialSpace_sub hv]
+    simpa only [mul_zero] using (tendsto_norm_toBesselPotentialSpace_sub hu hv h).const_mul C
   filter_upwards [ae_all_iff.2 fun n => hC (hD n), ae_all_iff.2 fun n => Lp.coeFn_sub (u n) v]
     with x hx hsub
   refine tendsto_iff_norm_sub_tendsto_zero.2 <|
@@ -538,6 +547,34 @@ theorem exists_norm_iteratedFDeriv_le_mul_norm_toBesselPotentialSpace {s : ℝ} 
   refine (hu.norm_iteratedFDeriv_fourierInv_le hsj hv x).trans ?_
   gcongr
   exact Finset.single_le_sum (fun i _ => hc i) (Finset.mem_range.2 (Nat.lt_succ_of_le hj))
+
+/-- **Convergence in `H^s` implies uniform convergence of continuous representatives**,
+`s > n / 2`.
+If `L²` functions `u i ∈ H^s` converge in `H^s` to an `L²` function `v ∈ H^s`, then continuous
+functions `g i` and `g₀` agreeing almost everywhere with `u i` and `v` converge uniformly. -/
+theorem tendstoUniformly_of_tendsto_toBesselPotentialSpace {s : ℝ} (hs : finrank ℝ E < 2 * s)
+    {ι : Type*} {l : Filter ι} {u : ι → Lp F 2 (volume : Measure E)}
+    {v : Lp F 2 (volume : Measure E)} (hu : ∀ i, MemSobolev s 2 (u i : 𝓢'(E, F)))
+    (hv : MemSobolev s 2 (v : 𝓢'(E, F)))
+    (h : Tendsto (fun i => (hu i).toBesselPotentialSpace) l (𝓝 hv.toBesselPotentialSpace))
+    {g : ι → E → F} {g₀ : E → F} (hg : ∀ i, Continuous (g i)) (hg₀ : Continuous g₀)
+    (hug : ∀ i, u i =ᵐ[volume] g i) (hvg : v =ᵐ[volume] g₀) :
+    TendstoUniformly g g₀ l := by
+  obtain ⟨C, -, hC⟩ :=
+    exists_norm_iteratedFDeriv_le_mul_norm_toBesselPotentialSpace (F := F) (k := 0) (by simpa)
+  have hD (i : ι) := (hu i).toTemperedDistribution_sub hv
+  have hlim : Tendsto (fun i => C * ‖(hD i).toBesselPotentialSpace‖) l (𝓝 0) := by
+    simpa only [mul_zero] using (tendsto_norm_toBesselPotentialSpace_sub hu hv h).const_mul C
+  rw [Metric.tendstoUniformly_iff]
+  intro ε hε
+  filter_upwards [(tendsto_order.1 hlim).2 ε hε] with i hi x
+  have hae : u i - v =ᵐ[volume] g i - g₀ := by
+    filter_upwards [Lp.coeFn_sub (u i) v, hug i, hvg] with y h₁ h₂ h₃
+    rw [h₁, Pi.sub_apply, Pi.sub_apply, h₂, h₃]
+  have hx := hC (hD i) ((hg i).sub hg₀) hae 0 le_rfl x
+  rw [norm_iteratedFDeriv_zero, Pi.sub_apply] at hx
+  rw [dist_eq_norm']
+  exact hx.trans_lt hi
 
 /-- **Continuous Sobolev functions have bounded derivatives.** The derivatives of order at most
 `k` of a continuous real function `f` in `H^s`, `s > dim E / 2 + k`, are bounded: those of its
