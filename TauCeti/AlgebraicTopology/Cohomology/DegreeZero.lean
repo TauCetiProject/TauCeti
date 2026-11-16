@@ -178,11 +178,12 @@ lemma singularCohomologyZeroOne_def :
         (X.constSingularCocycle k (𝟙 (𝟙_ (ModuleCat.{w} k)))) :=
   (rfl)
 
-/-- **The left unit law** for the cup product with the unit class. -/
+/-- **The left unit law** for the cup product with the unit class, with coefficients in any
+module `M`. -/
 @[simp]
-lemma singularCup_singularCohomologyZeroOne_left {q : ℕ} (h : 0 + q = q)
-    (b : X.singularCohomology (𝟙_ (ModuleCat.{w} k)) k (𝟙_ (ModuleCat.{w} k)) q) :
-    X.singularCup k (λ_ _).inv (λ_ _).hom 0 q q h (singularCohomologyZeroOne X) b = b :=
+lemma singularCup_singularCohomologyZeroOne_left {M : ModuleCat.{w} k} {q : ℕ} (h : 0 + q = q)
+    (b : X.singularCohomology (𝟙_ (ModuleCat.{w} k)) k M q) :
+    X.singularCup k (λ_ _).inv (λ_ M).hom 0 q q h (singularCohomologyZeroOne X) b = b :=
   X.singularCup_constSingularCocycle_left k (η := 𝟙 _) (by simp) (by simp) h b
 
 /-- **The right unit law** for the cup product with the unit class. -/
