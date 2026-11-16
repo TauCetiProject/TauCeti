@@ -43,6 +43,9 @@ factor, so `(1 + ‖c x‖ ^ 2) ^ r` satisfies the same bounds.
   complex Bessel weight `(1 + ‖x‖ ^ 2) ^ (s / 2)`, in the form of symbol estimates of order `s`.
 * `TauCeti.exists_norm_iteratedFDeriv_inner_mul_one_add_norm_sq_rpow_le`: the derivative bounds
   for `⟪x, v⟫ (1 + ‖x‖ ^ 2) ^ r`.
+* `TauCeti.exists_norm_iteratedFDeriv_inner_mul_one_add_norm_sq_rpow_le_of_le_neg_half`: for
+  `r ≤ -1 / 2`, `⟪x, v⟫ (1 + ‖x‖ ^ 2) ^ r` has bounded derivatives of every order; at `r = -1 / 2`
+  these are the derivatives of the Japanese bracket.
 * `TauCeti.exists_norm_iteratedFDeriv_one_add_norm_add_sq_rpow_le`: the derivative bounds for the
   translated bracket power `(1 + ‖x + y‖ ^ 2) ^ (s / 2)`, uniformly in the translation `y` up to
   the factor `⟨y⟩ ^ (|s| + k)` from Peetre's inequality.
@@ -386,6 +389,21 @@ theorem exists_norm_iteratedFDeriv_inner_mul_one_add_norm_sq_rpow_le (v : E) (r 
   exact (innerSL ℝ v).exists_norm_iteratedFDeriv_smul_le_one_add_norm_sq_rpow
     (contDiff_one_add_norm_sq_rpow r)
     fun i _ ↦ exists_norm_iteratedFDeriv_one_add_norm_sq_rpow_le r i
+
+/-- **Bounded derivatives of a linear function times a bracket power.** For `r ≤ -1 / 2`, the
+function `⟪x, v⟫ (1 + ‖x‖ ^ 2) ^ r` has bounded derivatives of every order. At `r = -1 / 2` it is
+the directional derivative of the Japanese bracket `(1 + ‖x‖ ^ 2) ^ (1 / 2)`. -/
+theorem exists_norm_iteratedFDeriv_inner_mul_one_add_norm_sq_rpow_le_of_le_neg_half (v : E)
+    {r : ℝ} (hr : r ≤ -(1 / 2)) (k : ℕ) :
+    ∃ C, ∀ x : E, ‖iteratedFDeriv ℝ k (fun x : E ↦ inner ℝ x v * (1 + ‖x‖ ^ 2) ^ r) x‖ ≤ C := by
+  obtain ⟨C, hC⟩ := exists_norm_iteratedFDeriv_inner_mul_one_add_norm_sq_rpow_le v r k
+  refine ⟨max C 0, fun x ↦ (hC x).trans ?_⟩
+  have h0 : 0 ≤ (1 + ‖x‖ ^ 2) ^ (r + 1 / 2 - k / 2 : ℝ) := by positivity
+  have h1 : (1 + ‖x‖ ^ 2) ^ (r + 1 / 2 - k / 2 : ℝ) ≤ 1 :=
+    Real.rpow_le_one_of_one_le_of_nonpos (by nlinarith [norm_nonneg x])
+      (by have : (0 : ℝ) ≤ k := k.cast_nonneg; linarith)
+  exact (mul_le_mul_of_nonneg_right (le_max_left C 0) h0).trans
+    (mul_le_of_le_one_right (le_max_right C 0) h1)
 
 /-- **Derivative bounds for a rescaled bracket power.** For `c ≠ 0`, every real `r` and every
 `k`, `‖D^k (1 + ‖c x‖ ^ 2) ^ r‖ ≤ C (1 + ‖x‖ ^ 2) ^ (r - k / 2)`. -/
