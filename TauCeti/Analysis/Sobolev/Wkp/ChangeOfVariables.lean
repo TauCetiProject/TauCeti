@@ -949,12 +949,10 @@ theorem IsChangeOfVariables.exists_w1p0_value_ae_eq_mul_value_compL {Omega O Ω'
   have hvO := W1p.restrictL_mem_w1p0Submodule_of_isCompact hχc hχs v.2 hv0
   have hvΩ' := W1p.compL_mem_w1p0Submodule_of_leftInvOn Φ hp hΦ.differentiableOn hΦ.injOn
     hΦ.mapsTo hΦ.norm_fderiv_le hΦ.pos hΦ.le_abs_det hΨ hΨmaps hΨΦ hvO
-  obtain ⟨M, hM, hψM, hgradM⟩ := (hψ.of_le (by simp)).exists_abs_le_and_norm_gradient_le hψc
-  refine ⟨⟨_, W1p.contDiffSMul_mem_w1p0Submodule hψ hM (fun x _ => hψM x) (fun x _ => hgradM x)
-    hvΩ'⟩, ?_⟩
+  obtain ⟨w, hw⟩ := W1p.exists_w1p0_value_ae_eq_mul_of_mem_w1p0Submodule hψ hψc hvΩ'
+  refine ⟨w, ?_⟩
   have hΩO : ((Omega ⊓ O : Opens E) : Set E) ⊆ Omega := fun x hx => hx.1
-  filter_upwards [W1p.value_contDiffSMul_ae (mu := mu) (p := p) hψ hM (fun x _ => hψM x)
-      (fun x _ => hgradM x) _,
+  filter_upwards [hw,
     W1p.value_compL_ae Φ hp hΦ.differentiableOn hΦ.injOn hΦ.mapsTo hΦ.norm_fderiv_le hΦ.pos
       hΦ.le_abs_det (W1p.restrictL inf_le_left (v : W1p mu Omega p)),
     W1p.value_compL_ae Φ hp hΦ.differentiableOn hΦ.injOn hΦ.mapsTo hΦ.norm_fderiv_le hΦ.pos
@@ -962,7 +960,7 @@ theorem IsChangeOfVariables.exists_w1p0_value_ae_eq_mul_value_compL {Omega O Ω'
     hΦ.ae_comp (W1p.value_restrictL_ae inf_le_left (v : W1p mu Omega p)),
     hΦ.ae_comp (W1p.value_restrictL_ae inf_le_left u),
     hΦ.ae_comp (ae_restrict_of_ae_restrict_of_subset hΩO hv)] with x h1 h2 h3 h4 h5 h6
-  rw [h1, smul_eq_mul, h2, h3, h4, h5, h6]
+  rw [h1, h2, h3, h4, h5, h6]
   by_cases hx : x ∈ tsupport ψ
   · rw [interior_subset (hχ1 ⟨x, hx, rfl⟩), one_mul]
   · rw [image_eq_zero_of_notMem_tsupport hx, zero_mul, zero_mul]

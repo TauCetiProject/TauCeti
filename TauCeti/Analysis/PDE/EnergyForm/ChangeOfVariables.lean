@@ -5,8 +5,10 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Analysis.PDE.EnergyForm.Restriction
 public import TauCeti.Analysis.PDE.EnergyForm.Sobolev
 public import TauCeti.Analysis.Sobolev.W1p.ChangeOfVariables
+public import TauCeti.Analysis.Sobolev.Wkp.ChangeOfVariables
 public import Mathlib.Analysis.CStarAlgebra.Matrix
 
 import Mathlib.Analysis.Calculus.ContDiff.RCLike
@@ -79,6 +81,12 @@ formulation transfers (`TauCeti.PDE.energyFormH1_compL_eq_setIntegral`).
   coefficients stay Lipschitz.
 * `TauCeti.PDE.memLp_pullbackDensity`, `TauCeti.PDE.memLp_pullbackDrift`: the transformed
   zeroth-order coefficient, right-hand side and drift stay in `Lᵖ`.
+* `TauCeti.PDE.exists_uniformlyEllipticOn_and_lipschitzOnWith_pullbackPrincipal`: for mutually
+  inverse changes of variables of order two with Jacobian determinants at least one in absolute
+  value, a uniformly elliptic Lipschitz principal coefficient stays so on compact convex pieces.
+* `TauCeti.PDE.exists_forall_energyFormH1_compL_restrictL_eq`: a weak solution, restricted to an
+  open subset and carried by a change of variables with an inverse, solves the transformed
+  equation, with bounded lower-order coefficients and square-integrable right-hand side.
 
 ## References
 
@@ -401,10 +409,10 @@ theorem exists_lipschitzOnWith_matrixBilinearForm_pullbackPrincipal
     rw [matrixBilinearForm_pullbackPrincipal_eq_bilinearComp a (hT z hz)]
     ext η ξ
     simp
-  refine ⟨Kg * max KJ (max (Ka * KΦ) (1 * KT)), fun x hx y hy => ?_⟩
-  dsimp only
-  rw [h x hx, h y hy]
-  exact hKg.comp hh hmapsh hx hy
+  exact ⟨_, fun x hx y hy => by
+    dsimp only
+    rw [h x hx, h y hy]
+    exact hKg.comp hh hmapsh hx hy⟩
 
 end Lipschitz
 
@@ -603,6 +611,93 @@ theorem memLp_pullbackDrift (hΦ : DifferentiableOn ℝ Φ U) (hmaps : MapsTo Φ
     exact norm_pullbackDrift_le hΦ hmaps hΨ hΦΨ hΨΦ b hx (hL x hx) (hΨL _ (hmaps hx))
 
 end Integrability
+
+/-! ### Mutually inverse changes of variables -/
+
+section Inverse
+
+open scoped NNReal
+
+variable {ι : Type*} [Fintype ι] [DecidableEq ι] {mu : Measure (EuclideanSpace ℝ ι)}
+  [mu.IsAddHaarMeasure] {U U' : Opens (EuclideanSpace ℝ ι)}
+  {Φ Ψ : EuclideanSpace ℝ ι → EuclideanSpace ℝ ι} {L L' : ℝ}
+
+/-- **Ellipticity and Lipschitz bounds under mutually inverse changes of variables.** Let `Φ` and
+`Ψ` be mutually inverse changes of variables of order two with Jacobian determinants at least one
+in absolute value, and let `Φ` map a nonempty subset `s` of a compact convex subset of its domain
+into `t`. If `a` is uniformly elliptic and Lipschitz on `t`, the pulled-back principal coefficient
+is uniformly elliptic and Lipschitz on `s`. -/
+theorem exists_uniformlyEllipticOn_and_lipschitzOnWith_pullbackPrincipal [Nonempty ι]
+    (hΦ : Wkp.IsChangeOfVariables 2 U' U Φ L 1)
+    (hΨ : Wkp.IsChangeOfVariables 2 U U' Ψ L' 1) (hΨΦ : LeftInvOn Ψ Φ U')
+    (hΦΨ : RightInvOn Ψ Φ U) {B s t : Set (EuclideanSpace ℝ ι)} (hB : IsCompact B)
+    (hBc : Convex ℝ B) (hBU : B ⊆ U') (hs : s ⊆ B) (hsne : s.Nonempty) (hmaps : MapsTo Φ s t)
+    {a : EuclideanSpace ℝ ι → Matrix ι ι ℝ} {lam Lam : ℝ} {K : ℝ≥0}
+    (ha : UniformlyEllipticOn t a lam Lam)
+    (hK : LipschitzOnWith K (fun y => matrixBilinearForm (a y)) t) :
+    ∃ (lam' Lam' : ℝ) (K' : ℝ≥0), UniformlyEllipticOn s (pullbackPrincipal Φ a) lam' Lam' ∧
+      LipschitzOnWith K' (fun x => matrixBilinearForm (pullbackPrincipal Φ a x)) s := by
+  have hcomp (x : EuclideanSpace ℝ ι) (hx : x ∈ s) :=
+    hΦ.fderiv_comp_fderiv_eq_id hΨ hΨΦ hΦΨ (hBU (hs hx))
+  have habs (x : EuclideanSpace ℝ ι) (hx : x ∈ s) : |(fderiv ℝ Φ x).det| = 1 :=
+    hΦ.abs_det_fderiv_eq_one hΨ hΨΦ hΦΨ (hBU (hs hx))
+  have hΨL (x : EuclideanSpace ℝ ι) (hx : x ∈ s) : ‖fderiv ℝ Ψ (Φ x)‖ ≤ L' :=
+    hΨ.norm_fderiv_le (k := 1) _ (hΦ.mapsTo (hBU (hs hx)))
+  -- Ellipticity: `DΦ` is bounded by `L`, and `DΨ(Φ x)` inverts it with norm at most `L'`.
+  have hellip := ha.pullbackPrincipal hmaps hsne (fun x hx => hΦ.norm_fderiv_le x (hBU (hs hx)))
+    (L' := L') (fun x hx v => by
+      calc ‖v‖ = ‖fderiv ℝ Ψ (Φ x) (fderiv ℝ Φ x v)‖ := by
+            rw [← ContinuousLinearMap.comp_apply, hcomp x hx, ContinuousLinearMap.id_apply]
+        _ ≤ ‖fderiv ℝ Ψ (Φ x)‖ * ‖fderiv ℝ Φ x v‖ := ContinuousLinearMap.le_opNorm _ _
+        _ ≤ L' * ‖fderiv ℝ Φ x v‖ := mul_le_mul_of_nonneg_right (hΨL x hx) (norm_nonneg _))
+    one_pos fun x hx => (habs x hx).ge
+  -- Lipschitz bound: `Φ` and `DΨ ∘ Φ` are `C¹` on `U'`, hence Lipschitz on `B`.
+  obtain ⟨KΦ, hKΦ⟩ := (hΦ.contDiffOn.mono hBU).exists_lipschitzOnWith (by norm_num) hBc hB
+  have hT : ContDiffOn ℝ 1 (fun x => fderiv ℝ Ψ (Φ x)) U' :=
+    (hΨ.contDiffOn.fderiv_of_isOpen U.isOpen (by norm_num)).comp
+      (hΦ.contDiffOn.of_le (by norm_num)) hΦ.mapsTo
+  obtain ⟨KT, hKT⟩ := (hT.mono hBU).exists_lipschitzOnWith one_ne_zero hBc hB
+  obtain ⟨K', hK'⟩ := exists_lipschitzOnWith_matrixBilinearForm_pullbackPrincipal (KJ := 0)
+    (J := 1) hmaps hcomp (hKΦ.mono hs) (hKT.mono hs) hΨL
+    ((LipschitzOnWith.zero_iff _).2 fun x hx y hy => by rw [habs x hx, habs y hy])
+    (fun x hx => (habs x hx).le) hK fun y hy => ha.opNorm_matrixBilinearForm_le hy
+  exact ⟨_, _, K', hellip, hK'⟩
+
+/-- **Restricting and transforming a weak solution.** Let `Φ` be a change of variables from `Ω'`
+into an open `D ⊆ Ω`, with inverse change of variables `Ψ` from `D` into `Ω'`. If `u ∈ H¹(Ω)` is a
+weak solution of `-∂ᵢ(aⁱʲ ∂ⱼu) + ⟨b, ∇u⟩ + c u = f` in `Ω` with `b, c ∈ L∞(Ω)` and
+`f ∈ L²(Ω)`, then `u ∘ Φ` is a weak solution in `Ω'` of the transformed equation, whose
+lower-order coefficients are bounded and whose right-hand side is in `L²(Ω')`. -/
+theorem exists_forall_energyFormH1_compL_restrictL_eq
+    {Omega D Ω' : Opens (EuclideanSpace ℝ ι)} {c₀ c₁ : ℝ} (hD : D ≤ Omega)
+    (hΦ : Wkp.IsChangeOfVariables 1 Ω' D Φ L c₀) (hΨ : Wkp.IsChangeOfVariables 1 D Ω' Ψ L' c₁)
+    (hΨΦ : LeftInvOn Ψ Φ Ω') (hΦΨ : RightInvOn Ψ Φ D) {a : EuclideanSpace ℝ ι → Matrix ι ι ℝ}
+    {b : EuclideanSpace ℝ ι → EuclideanSpace ℝ ι} {c : EuclideanSpace ℝ ι → ℝ}
+    (hb : MemLp b ⊤ (mu.restrict Omega)) (hc : MemLp c ⊤ (mu.restrict Omega))
+    {f : Lp ℝ 2 (mu.restrict Omega)} {u : W1p mu Omega 2}
+    (hu : ∀ v : W1p0 mu Omega 2, energyFormH1 a b c u (v : W1p mu Omega 2) =
+      ∫ x in Omega, f x * W1p.value (v : W1p mu Omega 2) x ∂mu) :
+    MemLp (pullbackDrift Φ b) ⊤ (mu.restrict Ω') ∧ MemLp (pullbackDensity Φ c) ⊤ (mu.restrict Ω') ∧
+      ∃ f' : Lp ℝ 2 (mu.restrict Ω'), ∀ v : W1p0 mu Ω' 2,
+        energyFormH1 (pullbackPrincipal Φ a) (pullbackDrift Φ b) (pullbackDensity Φ c)
+          (W1p.compL Φ ENNReal.ofNat_ne_top hΦ.differentiableOn hΦ.injOn hΦ.mapsTo
+            hΦ.norm_fderiv_le hΦ.pos hΦ.le_abs_det (W1p.restrictL hD u)) (v : W1p mu Ω' 2) =
+          ∫ x in Ω', f' x * W1p.value (v : W1p mu Ω' 2) x ∂mu := by
+  have hDΩ : (D : Set (EuclideanSpace ℝ ι)) ⊆ Omega := SetLike.coe_subset_coe.mpr hD
+  have hf' := memLp_pullbackDensity hΦ.differentiableOn hΦ.injOn hΦ.mapsTo hΦ.norm_fderiv_le
+    hΦ.pos hΦ.le_abs_det ((Lp.memLp f).mono_measure (Measure.restrict_mono_set mu hDΩ))
+  refine ⟨memLp_pullbackDrift hΦ.differentiableOn hΦ.mapsTo hΦ.norm_fderiv_le hΦ.pos
+      hΦ.le_abs_det hΨ.differentiableOn hΨ.norm_fderiv_le hΨΦ hΦΨ
+      (hb.mono_measure (Measure.restrict_mono_set mu hDΩ)),
+    memLp_pullbackDensity hΦ.differentiableOn hΦ.injOn hΦ.mapsTo hΦ.norm_fderiv_le hΦ.pos
+      hΦ.le_abs_det (hc.mono_measure (Measure.restrict_mono_set mu hDΩ)),
+    hf'.toLp _, fun v => ?_⟩
+  rw [energyFormH1_compL_eq_setIntegral hΦ.differentiableOn hΦ.injOn hΦ.mapsTo
+    hΦ.norm_fderiv_le hΦ.pos hΦ.le_abs_det hΨ.differentiableOn hΨ.mapsTo hΨ.norm_fderiv_le
+    hΨ.pos hΨ.le_abs_det hΨΦ hΦΨ (energyFormH1_restrictL_eq_setIntegral hD hu) v]
+  exact integral_congr_ae (hf'.coeFn_toLp.mono fun x hx => by simp only [hx])
+
+end Inverse
 
 end PDE
 

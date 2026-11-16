@@ -81,88 +81,6 @@ namespace PDE
 
 variable {ι : Type*} [Fintype ι] {mu : Measure (EuclideanSpace ℝ ι)} [mu.IsAddHaarMeasure]
 
-section Helpers
-
-variable {U U' : Opens (EuclideanSpace ℝ ι)} {Φ Ψ : EuclideanSpace ℝ ι → EuclideanSpace ℝ ι}
-  {L L' : ℝ}
-
-/-- **The principal coefficient on the flat side.** Let `Φ` and `Ψ` be mutually inverse changes of
-variables of order two with Jacobian determinants at least one in absolute value, and let `Φ` map
-a nonempty subset `s` of a compact convex subset of its domain into `t`. If `a` is uniformly
-elliptic and Lipschitz on `t`, the pulled-back principal coefficient is uniformly elliptic and
-Lipschitz on `s`. -/
-private theorem exists_uniformlyEllipticOn_and_lipschitzOnWith_pullbackPrincipal [DecidableEq ι]
-    [Nonempty ι] (hΦ : Wkp.IsChangeOfVariables 2 U' U Φ L 1)
-    (hΨ : Wkp.IsChangeOfVariables 2 U U' Ψ L' 1) (hΨΦ : LeftInvOn Ψ Φ U')
-    (hΦΨ : RightInvOn Ψ Φ U) {B s t : Set (EuclideanSpace ℝ ι)} (hB : IsCompact B)
-    (hBc : Convex ℝ B) (hBU : B ⊆ U') (hs : s ⊆ B) (hsne : s.Nonempty) (hmaps : MapsTo Φ s t)
-    {a : EuclideanSpace ℝ ι → Matrix ι ι ℝ} {lam Lam : ℝ} {K : ℝ≥0}
-    (ha : UniformlyEllipticOn t a lam Lam)
-    (hK : LipschitzOnWith K (fun y => matrixBilinearForm (a y)) t) :
-    ∃ (lam' Lam' : ℝ) (K' : ℝ≥0), UniformlyEllipticOn s (pullbackPrincipal Φ a) lam' Lam' ∧
-      LipschitzOnWith K' (fun x => matrixBilinearForm (pullbackPrincipal Φ a x)) s := by
-  have hcomp (x : EuclideanSpace ℝ ι) (hx : x ∈ s) :=
-    hΦ.fderiv_comp_fderiv_eq_id hΨ hΨΦ hΦΨ (hBU (hs hx))
-  have habs (x : EuclideanSpace ℝ ι) (hx : x ∈ s) : |(fderiv ℝ Φ x).det| = 1 :=
-    hΦ.abs_det_fderiv_eq_one hΨ hΨΦ hΦΨ (hBU (hs hx))
-  have hΨL (x : EuclideanSpace ℝ ι) (hx : x ∈ s) : ‖fderiv ℝ Ψ (Φ x)‖ ≤ L' :=
-    hΨ.norm_fderiv_le (k := 1) _ (hΦ.mapsTo (hBU (hs hx)))
-  -- Ellipticity: `DΦ` is bounded by `L`, and `DΨ(Φ x)` inverts it with norm at most `L'`.
-  have hellip := ha.pullbackPrincipal hmaps hsne (fun x hx => hΦ.norm_fderiv_le x (hBU (hs hx)))
-    (L' := L') (fun x hx v => by
-      calc ‖v‖ = ‖fderiv ℝ Ψ (Φ x) (fderiv ℝ Φ x v)‖ := by
-            rw [← ContinuousLinearMap.comp_apply, hcomp x hx, ContinuousLinearMap.id_apply]
-        _ ≤ ‖fderiv ℝ Ψ (Φ x)‖ * ‖fderiv ℝ Φ x v‖ := ContinuousLinearMap.le_opNorm _ _
-        _ ≤ L' * ‖fderiv ℝ Φ x v‖ := mul_le_mul_of_nonneg_right (hΨL x hx) (norm_nonneg _))
-    one_pos fun x hx => (habs x hx).ge
-  -- Lipschitz bound: `Φ` and `DΨ ∘ Φ` are `C¹` on `U'`, hence Lipschitz on `B`.
-  obtain ⟨KΦ, hKΦ⟩ := (hΦ.contDiffOn.mono hBU).exists_lipschitzOnWith (by norm_num) hBc hB
-  have hT : ContDiffOn ℝ 1 (fun x => fderiv ℝ Ψ (Φ x)) U' :=
-    (hΨ.contDiffOn.fderiv_of_isOpen U.isOpen (by norm_num)).comp
-      (hΦ.contDiffOn.of_le (by norm_num)) hΦ.mapsTo
-  obtain ⟨KT, hKT⟩ := (hT.mono hBU).exists_lipschitzOnWith one_ne_zero hBc hB
-  obtain ⟨K', hK'⟩ := exists_lipschitzOnWith_matrixBilinearForm_pullbackPrincipal (KJ := 0)
-    (J := 1) hmaps hcomp (hKΦ.mono hs) (hKT.mono hs) hΨL
-    ((LipschitzOnWith.zero_iff _).2 fun x hx y hy => by rw [habs x hx, habs y hy])
-    (fun x hx => (habs x hx).le) hK fun y hy => ha.opNorm_matrixBilinearForm_le hy
-  exact ⟨_, _, K', hellip, hK'⟩
-
-/-- **The equation on the flat side.** Let `Φ` be a change of variables from `Ω'` into an open
-`D ⊆ Ω`, with inverse change of variables `Ψ` from `D` into `Ω'`. If `u ∈ H¹(Ω)` is a weak
-solution of `-∂ᵢ(aⁱʲ ∂ⱼu) + ⟨b, ∇u⟩ + c u = f` in `Ω` with `b, c ∈ L∞(Ω)` and `f ∈ L²(Ω)`, then
-`u ∘ Φ` is a weak solution in `Ω'` of the transformed equation, whose lower-order coefficients are
-bounded and whose right-hand side is in `L²(Ω')`. -/
-private theorem exists_forall_energyFormH1_compL_restrictL_eq [DecidableEq ι]
-    {Omega D Ω' : Opens (EuclideanSpace ℝ ι)} {c₀ c₁ : ℝ} (hD : D ≤ Omega)
-    (hΦ : Wkp.IsChangeOfVariables 1 Ω' D Φ L c₀) (hΨ : Wkp.IsChangeOfVariables 1 D Ω' Ψ L' c₁)
-    (hΨΦ : LeftInvOn Ψ Φ Ω') (hΦΨ : RightInvOn Ψ Φ D) {a : EuclideanSpace ℝ ι → Matrix ι ι ℝ}
-    {b : EuclideanSpace ℝ ι → EuclideanSpace ℝ ι} {c : EuclideanSpace ℝ ι → ℝ}
-    (hb : MemLp b ⊤ (mu.restrict Omega)) (hc : MemLp c ⊤ (mu.restrict Omega))
-    {f : Lp ℝ 2 (mu.restrict Omega)} {u : W1p mu Omega 2}
-    (hu : ∀ v : W1p0 mu Omega 2, energyFormH1 a b c u (v : W1p mu Omega 2) =
-      ∫ x in Omega, f x * W1p.value (v : W1p mu Omega 2) x ∂mu) :
-    MemLp (pullbackDrift Φ b) ⊤ (mu.restrict Ω') ∧ MemLp (pullbackDensity Φ c) ⊤ (mu.restrict Ω') ∧
-      ∃ f' : Lp ℝ 2 (mu.restrict Ω'), ∀ v : W1p0 mu Ω' 2,
-        energyFormH1 (pullbackPrincipal Φ a) (pullbackDrift Φ b) (pullbackDensity Φ c)
-          (W1p.compL Φ ENNReal.ofNat_ne_top hΦ.differentiableOn hΦ.injOn hΦ.mapsTo
-            hΦ.norm_fderiv_le hΦ.pos hΦ.le_abs_det (W1p.restrictL hD u)) (v : W1p mu Ω' 2) =
-          ∫ x in Ω', f' x * W1p.value (v : W1p mu Ω' 2) x ∂mu := by
-  have hDΩ : (D : Set (EuclideanSpace ℝ ι)) ⊆ Omega := SetLike.coe_subset_coe.mpr hD
-  have hf' := memLp_pullbackDensity hΦ.differentiableOn hΦ.injOn hΦ.mapsTo hΦ.norm_fderiv_le
-    hΦ.pos hΦ.le_abs_det ((Lp.memLp f).mono_measure (Measure.restrict_mono_set mu hDΩ))
-  refine ⟨memLp_pullbackDrift hΦ.differentiableOn hΦ.mapsTo hΦ.norm_fderiv_le hΦ.pos
-      hΦ.le_abs_det hΨ.differentiableOn hΨ.norm_fderiv_le hΨΦ hΦΨ
-      (hb.mono_measure (Measure.restrict_mono_set mu hDΩ)),
-    memLp_pullbackDensity hΦ.differentiableOn hΦ.injOn hΦ.mapsTo hΦ.norm_fderiv_le hΦ.pos
-      hΦ.le_abs_det (hc.mono_measure (Measure.restrict_mono_set mu hDΩ)),
-    hf'.toLp _, fun v => ?_⟩
-  rw [energyFormH1_compL_eq_setIntegral hΦ.differentiableOn hΦ.injOn hΦ.mapsTo
-    hΦ.norm_fderiv_le hΦ.pos hΦ.le_abs_det hΨ.differentiableOn hΨ.mapsTo hΨ.norm_fderiv_le
-    hΨ.pos hΨ.le_abs_det hΨΦ hΦΨ (energyFormH1_restrictL_eq_setIntegral hD hu) v]
-  exact integral_congr_ae (hf'.coeFn_toLp.mono fun x hx => by simp only [hx])
-
-end Helpers
-
 section Local
 
 variable [DecidableEq ι] {Omega W : Opens (EuclideanSpace ℝ ι)}
@@ -375,11 +293,7 @@ theorem UniformlyEllipticOn.exists_lowerOrder_eq_of_contDiff_graph
       obtain ⟨V, hV, hw⟩ :=
         (ha.mono_set inter_subset_left).exists_lowerOrder_eq_restrictL_of_contDiff_graph
         (W := ⊤) hh₀ hr₀ hγ0 hγ hgraph trivial (hK.mono inter_subset_left) hb hc hu
-        fun ψ hψ hψc _ => by
-          obtain ⟨M, hM, hψM, hgradM⟩ := (hψ.of_le (by simp)).exists_abs_le_and_norm_gradient_le hψc
-          exact ⟨⟨_, W1p.contDiffSMul_mem_w1p0Submodule hψ hM (fun x _ => hψM x)
-            (fun x _ => hgradM x) hu0⟩, (W1p.value_contDiffSMul_ae hψ hM (fun x _ => hψM x)
-              (fun x _ => hgradM x) u).mono fun x hx => by rw [hx, smul_eq_mul]⟩
+        fun ψ hψ hψc _ => W1p.exists_w1p0_value_ae_eq_mul_of_mem_w1p0Submodule hψ hψc hu0
       exact ⟨V, hx₀ ▸ hV, hw⟩
   -- Finitely many such neighbourhoods cover the compact set `closure Ω`; glue.
   choose V hxV w hw using hloc
