@@ -52,6 +52,7 @@ theorem parameterStructure_apply (ζ : WithLp 2 (P × P)) :
     parameterStructure ζ = WithLp.toLp 2 (AlmostComplexStructure.product P ζ.ofLp) :=
   (rfl)
 
+@[simp]
 theorem parameterStructure_parameterStructure (ζ : WithLp 2 (P × P)) :
     parameterStructure (parameterStructure ζ) = -ζ := by
   rw [parameterStructure_apply, parameterStructure_apply, WithLp.ofLp_toLp,

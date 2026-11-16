@@ -319,8 +319,7 @@ private theorem parameterData {J : P → ℂ × V → V →L[ℝ] V} {X : P → 
   · rintro ⟨z, _⟩ ⟨hz, ⟨a, x⟩, ⟨ha, hx⟩, rfl⟩
     exact hCDKW (by simpa [parameterLift] using ⟨ha, hz, hx⟩)
   · rintro z hz _ ⟨⟨a, x⟩, ⟨ha, hx⟩, rfl⟩ ζ
-    simp [parameterLift, WithLp.ext_iff, Prod.ext_iff, parameterStructure_parameterStructure,
-      hJsq a ha z hz x hx]
+    simp [parameterLift, WithLp.ext_iff, Prod.ext_iff, hJsq a ha z hz x hx]
 
 /-- **The mean-value inequality over a compact parameter window.** Let `J_p` and `X_p` depend on
 a parameter `p` in a real inner product space `P`, jointly `C²` on an open set

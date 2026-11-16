@@ -359,7 +359,7 @@ theorem tendstoLocallyUniformlyOn_fderiv_of_floer_of_tendsto {J : P → ℂ × V
     (contDiffOn_parameterX hX) hΩ (u := u') (v := v') (fun y hy ↦ by simpa [v'] using hvW y hy)
     (fun n ↦ WithLp.contDiff_toLp.comp_contDiffOn (contDiffOn_const.prodMk (hu n)))
     (fun n y hy w ↦ by
-      simp [u', WithLp.ext_iff, Prod.ext_iff, parameterStructure_parameterStructure, hJsq n y hy])
+      simp [u', WithLp.ext_iff, Prod.ext_iff, hJsq n y hy])
     (fun n y hy ↦ by simp [u', WithLp.ext_iff, hCR n y hy])
     (fun C hC hCΩ ↦ by
       obtain ⟨M, hM⟩ := hbd C hC hCΩ

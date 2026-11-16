@@ -202,14 +202,11 @@ private theorem contDiff_and_tendstoLocallyUniformly_fderiv_rescale (ω : Symple
     refine ⟨h1, h2.congr_inseparable ((eventually_ge_atTop M).mono fun i hi _ _ ↦ ?_)⟩
     simp only [max_eq_left hi]
     rfl
-  have hUnion : (⋃ ρ : ℕ, ball (0 : ℂ) ρ) = univ :=
-    eq_univ_of_forall fun ζ ↦
-      mem_iUnion.2 ((exists_nat_gt ‖ζ‖).imp fun _ h ↦ mem_ball_zero_iff.2 h)
   have hge : ContDiff ℝ 1 (g ∘ e) := contDiff_iff_contDiffAt.2 fun ζ ↦ by
     obtain ⟨ρ, hρ⟩ := exists_nat_gt ‖ζ‖
     exact (hdisc ρ).1.contDiffAt (isOpen_ball.mem_nhds (mem_ball_zero_iff.2 hρ))
   have hdC : TendstoLocallyUniformly (fun i ↦ fderiv ℝ (v i ∘ e)) (fderiv ℝ (g ∘ e)) atTop := by
-    rw [← tendstoLocallyUniformlyOn_univ, ← hUnion]
+    rw [← tendstoLocallyUniformlyOn_univ, ← iUnion_ball_nat (0 : ℂ)]
     exact tendstoLocallyUniformlyOn_iUnion (fun _ ↦ isOpen_ball) fun ρ ↦ (hdisc ρ).2
   -- Back in the coordinates `ℝ × ℝ`.
   have hback (f : ℝ × ℝ → V) (w : ℝ × ℝ) :
@@ -238,8 +235,8 @@ their derivatives blow up along points `zᵢ → z₀ ∈ U`. There are a subseq
 * the rescaled maps `w ↦ u_{φ n}(cₙ + εₙ w)` converge to `v` locally uniformly on the plane,
   and so do their derivatives;
 * for every `δ > 0`, the symplectic area `∫ ω(∂_s v, ∂_t v)` of `v`, with the area density
-  truncated at zero, is at most the lower limit of the Floer energies of `u_{φ n}` over the disc
-  of radius `δ` about `z₀`. -/
+  truncated at zero, is at most the lower limit of the Floer energies of `u_{φ n}` over the
+  square `ball z₀ δ` (sup norm) of radius `δ` about `z₀`. -/
 theorem exists_rescale_tendstoLocallyUniformly_isJHolomorphicAt (ω : SymplecticForm V)
     (hU : IsOpen U) (hz₀ : z₀ ∈ U) (hK : IsCompact K)
     (hJ : ContDiffOn ℝ 1
