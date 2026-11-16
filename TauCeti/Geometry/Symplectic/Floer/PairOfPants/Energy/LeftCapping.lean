@@ -52,7 +52,8 @@ carries `K_c` to `K_0`
 the energy, area and curvature integrals. The datum `K_0` is `C¹` on `S × M` and
 cylindrical on all three ends of `S`: it is `H_1(t) dt` and `H_∞(t) dt` far out on the ends at `1`
 and `∞`, and it vanishes beyond the height `L` of the end at `0`, which lies in the pole disc of the
-plane. So the energy identity for data cylindrical on the ends
+plane (`TauCeti.Floer.cappedExchangePerturbation_zero_eq_smul_endAngularForm`). So the energy
+identity for data cylindrical on the ends
 (`SmoothTwoForm.IsNondegenerate.integral_floerEnergyDensity_of_eq_smul_endAngularForm`) applies to
 it, with the Hamiltonian `0` on the end at `0`. Its curvature along `u` is integrable: it is
 continuous on `S` (`SmoothTwoForm.IsNondegenerate.continuousOn_hamiltonianCurvature_comp`) and has
@@ -117,35 +118,6 @@ theorem perturbationPullback_exchangeMap_cappedExchangePerturbation (hL : 2 ≤ 
     rw [cappedExchangePerturbation_of_le_norm_sub hL hc₀ hc₁ (by simpa using hw),
       cappedExchangePerturbation_of_le_norm_sub hL le_rfl zero_le_one (by simpa using hw)]
     simp
-
-/-- **The capping datum at `0` is cylindrical on the three ends.** For `L > 4`, beyond the height
-`L` of each end `q` of `S`, the capping datum at `0` is `H_q(t) dt` for the Hamiltonians `H` with
-the end at `0` set to `0`: it is `H_1(t) dt` and `H_∞(t) dt` on the ends at `1` and `∞`, and it
-vanishes on the end at `0`, the capped one. -/
-private theorem cappedExchangePerturbation_zero_eq_smul_endAngularForm (hL : 4 < L)
-    (q : Puncture) (w : ℂ) (x : M) (hw : L ≤ q.endSign * (q.endCoord w).re) :
-    cappedExchangePerturbation H L 0 w x = update H zero 0 q (q.endCoord w).im x •
-      q.endAngularForm w := by
-  rcases eq_or_ne q zero with rfl | hq
-  · -- Beyond the height `L` of the end at `0` lies the pole disc of the plane.
-    rw [update_self, Pi.zero_apply, Pi.zero_apply, zero_smul]
-    rw [endSign_zero, one_mul] at hw
-    refine cappedExchangePerturbation_eq_zero (by linarith) le_rfl zero_le_one ?_ x
-    rcases eq_or_ne w zero.endCenter with rfl | hw₀
-    · rw [endCenter_zero, norm_zero]
-      positivity
-    · have h := (re_endCoord_le_iff (q := zero) (by decide) (r := L - 1) hw₀).not.1
-        (by linarith)
-      rw [endCenter_zero, sub_zero] at h
-      exact (not_le.1 h).le
-  · -- On the other ends the longitudinal coordinate of the end at `0` is nonpositive, where the
-    -- datum is the pair-of-pants datum.
-    have hre : (zero.endCoord w).re ≤ L / 2 := by
-      have h := endSign_mul_re_endCoord_nonpos (q := q) (r := zero) hq (w := w) (by linarith)
-      rw [endSign_zero, one_mul] at h
-      linarith
-    rw [cappedExchangePerturbation_of_re_endCoord_le hre, exchangePerturbation_zero,
-      pairOfPantsPerturbation_eq_smul_endAngularForm (by linarith), update_of_ne hq]
 
 end Floer
 

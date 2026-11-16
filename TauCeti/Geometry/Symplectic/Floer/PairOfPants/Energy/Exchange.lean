@@ -36,7 +36,9 @@ period-one `C¹` Hamiltonians `H_q` on a symplectic vector space and `R ≥ 2`, 
 `A_H` is the Hamiltonian action `TauCeti.SymplecticForm.hamiltonianAction`. For `c = 0` this is the
 energy identity of the pair of pants
 (`integral_floerEnergyDensity_pairOfPantsPerturbation_truncation_eq_sum_hamiltonianAction`).
-Since the curvature of `K_c` along `u` is that of `K_0` along `u ∘ Φ_c`, the curvature bound
+Since `K_c` is the pullback of `K_0` along `Φ_c`
+(`TauCeti.Floer.perturbationPullback_exchangeMap_exchangePerturbation`), the curvature of `K_c`
+along `u` is that of `K_0` along `u ∘ Φ_c`, and the curvature bound
 `TauCeti.SymplecticForm.abs_setIntegral_hamiltonianCurvature_pairOfPantsPerturbation_le` shows that
 the energy differs from the change of action by at most `B₀ + B₁ + B_∞` when `|H_q| ≤ B_q`
 (`SymplecticForm.abs_integral_floerEnergyDensity_exchangePerturbation_exchangeTruncation_sub_le`).
@@ -128,9 +130,11 @@ section Datum
 
 variable {M : Type*} {H : Puncture → ℝ → M → ℝ} {c : ℝ}
 
-/-- **The member `c` of the family is the pullback of the pair-of-pants datum along `Φ_c`.** -/
-private theorem perturbationPullback_exchangeMap (hc₀ : 0 ≤ c) (hc₁ : c ≤ 1) (v y : ℝ × ℝ)
-    (x : M) :
+/-- **The member `c` of the family is the pullback of the pair-of-pants datum along `Φ_c`.** For
+`0 ≤ c ≤ 1`, the pullback along `Φ_c` (`TauCeti.Floer.exchangeMap`) of the member `c` of the
+input-exchange family is the pair-of-pants datum, its member `0`. -/
+theorem perturbationPullback_exchangeMap_exchangePerturbation (hc₀ : 0 ≤ c) (hc₁ : c ≤ 1)
+    (v y : ℝ × ℝ) (x : M) :
     perturbationPullback (exchangeMap c)
         (fun z x ↦ exchangePerturbation H c (Complex.equivRealProdCLM.symm z) x 1)
         (fun z x ↦ exchangePerturbation H c (Complex.equivRealProdCLM.symm z) x Complex.I) v y x =
@@ -209,7 +213,7 @@ theorem IsNondegenerate.integral_floerEnergyDensity_exchangePerturbation_exchang
           (fun z x ↦ exchangePerturbation H c (Complex.equivRealProdCLM.symm z) x Complex.I)
           z (u z) := by
   have hK := contMDiffAt_exchangePerturbation_apply hH hHs c
-  have hp := perturbationPullback_exchangeMap (H := H) hc₀ hc₁
+  have hp := perturbationPullback_exchangeMap_exchangePerturbation (H := H) hc₀ hc₁
   -- The map `u ∘ Φ_c` is `C¹` on `S`, and the energy identity of the pair of pants applies to it.
   have hv := contMDiffOn_comp_exchangeMap hc₀ hc₁ hu
   have hs := measurableSet_preimage_truncation R
@@ -251,7 +255,7 @@ theorem
           ∫ t in (0 : ℝ)..1, H inf t (u (Complex.equivRealProdCLM
             (↑c + inf.cylindricalEndLift (↑(-R) + ↑t * Complex.I)))))| ≤ ∑ q, B q := by
   have hK := contMDiffAt_exchangePerturbation_apply hH hHs c
-  have hp := perturbationPullback_exchangeMap (H := H) hc₀ hc₁
+  have hp := perturbationPullback_exchangeMap_exchangePerturbation (H := H) hc₀ hc₁
   have hsub (a b d : ℝ) : a + b - d - a - b = -d := by ring
   have hs := measurableSet_preimage_truncation R
   have hsS := preimage_truncation_subset_thricePuncturedSphereReal R
@@ -347,7 +351,7 @@ theorem IsNondegenerate.integral_floerEnergyDensity_exchangePerturbation
           (fun z x ↦ exchangePerturbation H c (Complex.equivRealProdCLM.symm z) x Complex.I)
           z (u z) := by
   have hK := contMDiffAt_exchangePerturbation_apply hH hHs c
-  have hp := perturbationPullback_exchangeMap (H := H) hc₀ hc₁
+  have hp := perturbationPullback_exchangeMap_exchangePerturbation (H := H) hc₀ hc₁
   -- Transport everything along `Φ_c`, which maps `S` onto itself, to the map `u ∘ Φ_c` and the
   -- pair-of-pants datum.
   have hv := contMDiffOn_comp_exchangeMap hc₀ hc₁ hu
@@ -407,7 +411,7 @@ theorem IsNondegenerate.abs_integral_floerEnergyDensity_exchangePerturbation_sub
             (mfderiv 𝓘(ℝ, ℝ × ℝ) I u z stdComplexLineImag) : ℝ)) -
         ∑ q, q.endSign * ∫ t in (0 : ℝ)..1, H q t (x q t)| ≤ ∑ q, B q := by
   have hK := contMDiffAt_exchangePerturbation_apply hH hHs c
-  have hp := perturbationPullback_exchangeMap (H := H) hc₀ hc₁
+  have hp := perturbationPullback_exchangeMap_exchangePerturbation (H := H) hc₀ hc₁
   have hsub (a b d : ℝ) : a + b - d - a - b = -d := by ring
   rw [hω.integral_floerEnergyDensity_exchangePerturbation hH hHs hB hc₀ hc₁ hu hx hxinf hE hA,
     hsub, abs_neg, ← image_exchangeMap_thricePuncturedSphereReal hc₀ hc₁,
@@ -485,7 +489,7 @@ private theorem integral_floerEnergyDensity_exchangeTruncation_eq (ω : Symplect
     ω.constSmooth.integral_floerEnergyDensity_image_exchangeMap
       (SmoothTwoForm.contMDiffAt_exchangePerturbation_apply hH
         (fun q ↦ contMDiff_prod_modelWithCornersSelf_iff.2 (hHs q).contMDiff) c)
-      (perturbationPullback_exchangeMap hc₀ hc₁) hc₀ hc₁
+      (perturbationPullback_exchangeMap_exchangePerturbation hc₀ hc₁) hc₀ hc₁
       (contMDiffOn_iff_contDiffOn.mpr (hu.of_le one_le_two))
       (measurableSet_preimage_truncation R) (preimage_truncation_subset_thricePuncturedSphereReal R)
 
@@ -507,7 +511,7 @@ private theorem integral_hamiltonianCurvature_exchangePerturbation_eq (ω : Symp
     ω.constSmooth.integral_hamiltonianCurvature_image_exchangeMap
       (SmoothTwoForm.contMDiffAt_exchangePerturbation_apply hH
         (fun q ↦ contMDiff_prod_modelWithCornersSelf_iff.2 (hHs q).contMDiff) c)
-      (perturbationPullback_exchangeMap hc₀ hc₁) hc₀ hc₁ u
+      (perturbationPullback_exchangeMap_exchangePerturbation hc₀ hc₁) hc₀ hc₁ u
       isOpen_thricePuncturedSphereReal.measurableSet subset_rfl
 
 /-- **The energy identity of the input-exchange family.** Let `K_c` be the member `c ∈ [0, 1]`
