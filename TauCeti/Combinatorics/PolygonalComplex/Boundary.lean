@@ -11,6 +11,7 @@ public import TauCeti.Combinatorics.PolygonalComplex.SurfaceModel
 public import TauCeti.Combinatorics.Quiver.StronglyConnectedComponent
 
 import Mathlib.Data.List.NodupEquivFin
+import TauCeti.Combinatorics.Graph.Serre.Card
 
 /-!
 # The boundary graph of a polygonal surface model
@@ -278,7 +279,7 @@ theorem boundaryClass_eq_of_mem_darts {e : S.boundary.E}
   (c.boundaryClass_eq_mk_base he).trans c.mk_base
 
 /-- A boundary circuit of `b` traverses, in one of its two directions, exactly the edges of `b`. -/
-theorem mem_darts_or_rev_mem_darts_iff {e : S.boundary.E} :
+@[simp] theorem mem_darts_or_rev_mem_darts_iff {e : S.boundary.E} :
     e ∈ SerreGraph.Path.darts _ c.path ∨ S.boundary.rev e ∈ SerreGraph.Path.darts _ c.path ↔
       S.boundaryClass e = b := by
   refine ⟨?_, c.mem_darts_or_rev_mem_darts⟩
@@ -287,7 +288,7 @@ theorem mem_darts_or_rev_mem_darts_iff {e : S.boundary.E} :
   · rw [← boundaryClass_rev, c.boundaryClass_eq_of_mem_darts h]
 
 /-- The geometric edges traversed by a boundary circuit of `b` are the edges of `b`. -/
-theorem toGeomEdge_mem_map_darts_iff {e : S.boundary.E} :
+@[simp] theorem toGeomEdge_mem_map_darts_iff {e : S.boundary.E} :
     S.boundary.toGeomEdge e ∈ (SerreGraph.Path.darts _ c.path).map S.boundary.toGeomEdge ↔
       S.boundaryClass e = b :=
   (SerreGraph.toGeomEdge_mem_map_iff _).trans c.mem_darts_or_rev_mem_darts_iff
@@ -303,14 +304,16 @@ theorem rev_mem_darts_iff {e : S.boundary.E} (he : S.boundaryClass e = b) :
   ⟨fun hr hm => c.rev_notMem_darts hm hr, (c.mem_darts_or_rev_mem_darts he).resolve_left⟩
 
 /-- A boundary circuit traverses each edge at most once, in at most one of its two directions. -/
-theorem count_add_count_rev_le_one [DecidableEq S.boundary.E] (e : S.boundary.E) :
+theorem count_add_count_rev_le_one [BEq S.boundary.E] [LawfulBEq S.boundary.E]
+    (e : S.boundary.E) :
     (SerreGraph.Path.darts _ c.path).count e +
       (SerreGraph.Path.darts _ c.path).count (S.boundary.rev e) ≤ 1 :=
   SerreGraph.count_add_count_rev_le_one_of_nodup_map_toGeomEdge _ c.nodup_map_toGeomEdge_darts e
 
 /-- A boundary circuit of `b` traverses an edge exactly once, in one of its two directions,
 exactly when the edge lies in `b`. -/
-theorem count_add_count_rev_eq_one_iff [DecidableEq S.boundary.E] {e : S.boundary.E} :
+@[simp] theorem count_add_count_rev_eq_one_iff [BEq S.boundary.E] [LawfulBEq S.boundary.E]
+    {e : S.boundary.E} :
     (SerreGraph.Path.darts _ c.path).count e +
       (SerreGraph.Path.darts _ c.path).count (S.boundary.rev e) = 1 ↔ S.boundaryClass e = b :=
   (SerreGraph.count_add_count_rev_eq_one_iff_of_nodup_map_toGeomEdge _
@@ -318,8 +321,8 @@ theorem count_add_count_rev_eq_one_iff [DecidableEq S.boundary.E] {e : S.boundar
 
 /-- A boundary circuit of `b` traverses every edge of `b` exactly once, in one of its two
 directions. -/
-theorem count_add_count_rev_eq_one [DecidableEq S.boundary.E] {e : S.boundary.E}
-    (he : S.boundaryClass e = b) :
+theorem count_add_count_rev_eq_one [BEq S.boundary.E] [LawfulBEq S.boundary.E]
+    {e : S.boundary.E} (he : S.boundaryClass e = b) :
     (SerreGraph.Path.darts _ c.path).count e +
       (SerreGraph.Path.darts _ c.path).count (S.boundary.rev e) = 1 :=
   c.count_add_count_rev_eq_one_iff.2 he
@@ -337,7 +340,7 @@ number of boundary darts in `b`. -/
 theorem two_mul_length :
     2 * c.path.length = Nat.card {e : S.boundary.E // S.boundaryClass e = b} := by
   rw [← SerreGraph.Path.length_darts,
-    SerreGraph.two_mul_length_of_nodup_map_toGeomEdge c.nodup_map_toGeomEdge_darts]
+    SerreGraph.two_mul_length_of_nodup_map_toGeomEdge _ c.nodup_map_toGeomEdge_darts]
   exact Nat.card_congr (Equiv.subtypeEquivRight fun _ => c.mem_darts_or_rev_mem_darts_iff)
 
 /-- A boundary circuit is a nonempty path. -/
@@ -359,7 +362,7 @@ theorem nodup_map_src_darts : ((SerreGraph.Path.darts _ c.path).map S.boundary.s
   exact_mod_cast (S.card_boundary_src_fiber x).le
 
 /-- A boundary circuit of `b` visits exactly the boundary vertices of `b`. -/
-theorem mem_map_src_darts_iff {x : S.boundary.V} :
+@[simp] theorem mem_map_src_darts_iff {x : S.boundary.V} :
     x ∈ (SerreGraph.Path.darts _ c.path).map S.boundary.src ↔
       StronglyConnectedComponent.mk x = b := by
   rw [SerreGraph.Path.mem_map_src_darts_iff_nonempty_path c.darts_ne_nil fun e he =>

@@ -144,8 +144,9 @@ theorem rev_notMem_of_nodup_map_toGeomEdge {l : List Γ.E} (hl : (l.map Γ.toGeo
 
 /-- A list of darts with distinct geometric edges contains a dart and its reverse at most once
 altogether. -/
-theorem count_add_count_rev_le_one_of_nodup_map_toGeomEdge [DecidableEq Γ.E] {l : List Γ.E}
-    (hl : (l.map Γ.toGeomEdge).Nodup) (e : Γ.E) : l.count e + l.count (Γ.rev e) ≤ 1 := by
+theorem count_add_count_rev_le_one_of_nodup_map_toGeomEdge [BEq Γ.E] [LawfulBEq Γ.E]
+    {l : List Γ.E} (hl : (l.map Γ.toGeomEdge).Nodup) (e : Γ.E) :
+    l.count e + l.count (Γ.rev e) ≤ 1 := by
   by_cases hm : e ∈ l
   · rw [List.count_eq_one_of_mem hl.of_map hm,
       List.count_eq_zero_of_not_mem (Γ.rev_notMem_of_nodup_map_toGeomEdge hl hm)]
@@ -154,8 +155,8 @@ theorem count_add_count_rev_le_one_of_nodup_map_toGeomEdge [DecidableEq Γ.E] {l
 
 /-- A list of darts with distinct geometric edges contains a dart and its reverse exactly once
 altogether when it contains one of them. -/
-theorem count_add_count_rev_eq_one_iff_of_nodup_map_toGeomEdge [DecidableEq Γ.E] {l : List Γ.E}
-    (hl : (l.map Γ.toGeomEdge).Nodup) (e : Γ.E) :
+theorem count_add_count_rev_eq_one_iff_of_nodup_map_toGeomEdge [BEq Γ.E] [LawfulBEq Γ.E]
+    {l : List Γ.E} (hl : (l.map Γ.toGeomEdge).Nodup) (e : Γ.E) :
     l.count e + l.count (Γ.rev e) = 1 ↔ e ∈ l ∨ Γ.rev e ∈ l := by
   have := Γ.count_add_count_rev_le_one_of_nodup_map_toGeomEdge hl e
   rw [← List.count_pos_iff, ← List.count_pos_iff]
