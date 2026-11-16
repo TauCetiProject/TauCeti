@@ -58,6 +58,7 @@ In the namespace `TauCeti.AlmostComplexStructure`:
 
 * `inner_apply_left`: an orthogonal `J` is skew-adjoint.
 * `inner_kahlerForm_ιMulti`: `⟪ω, u ∧ w⟫ = ⟪J u, w⟫`.
+* `twoVectorContraction_kahlerForm`: the contraction by `ω` is `J`, `v ⌟ ω = J v`.
 * `inner_kahlerForm_self`: `⟪ω, ω⟫ = dim V / 2`, so `‖ω‖² = 2` in dimension four
   (`norm_kahlerForm_sq_eq_two`).
 * `norm_ιMulti_apply_sq`: `‖v ∧ J v‖² = ‖v‖⁴`.
@@ -178,6 +179,11 @@ theorem inner_kahlerForm_ιMulti (u w : V) :
     Finset.sum_sub_distrib, hsum]
   rw [inner_apply_left hJ w u, real_inner_comm w (J u)]
   ring
+
+/-- **The contraction by the Kähler two-vector is `J`**: `v ⌟ ω = J v`. -/
+@[simp]
+theorem twoVectorContraction_kahlerForm (v : V) : twoVectorContraction J.kahlerForm v = J v :=
+  ext_inner_right ℝ fun w ↦ by rw [inner_twoVectorContraction_apply, inner_kahlerForm_ιMulti hJ]
 
 /-- `⟪ω, ω⟫ = dim V / 2`: in a unitary frame `ω = e₁ ∧ e₂ + e₃ ∧ e₄ + ⋯` is a sum of
 `dim V / 2` orthonormal two-vectors. -/
