@@ -77,9 +77,10 @@ theorem tendsto_measure_notMem_nhds_iff_resolventTransform_of_subset_closure
     (isEmbedding_resolventTransform hDim hD).isInducing.tendsto_measure_notMem_nhds_iff
       P μs l μ
 
-/-- Bounded continuous test integrals converge in probability to those of `μ` if and only
-if resolvent transforms converge in probability on a determining set of nonreal points. This
-includes random measures on different sample spaces at each size and arbitrary filters. -/
+/-- Bounded continuous test integrals converge in probability to those of a deterministic
+probability measure `μ` if and only if resolvent transforms converge in probability to those
+of `μ` on a determining set of nonreal points whose closure contains the upper half-plane.
+This includes random measures on different sample spaces at each size and arbitrary filters. -/
 theorem tendsto_measure_integral_iff_resolventTransform_of_subset_closure
     {ι : Type*} {Ω : ι → Type*} [∀ i, MeasurableSpace (Ω i)]
     (P : (i : ι) → Measure (Ω i)) (μs : (i : ι) → Ω i → ProbabilityMeasure ℝ)
@@ -94,9 +95,10 @@ theorem tendsto_measure_integral_iff_resolventTransform_of_subset_closure
   exact (tendsto_measure_notMem_nhds_iff_integral P μs l μ).symm.trans
     (tendsto_measure_notMem_nhds_iff_resolventTransform_of_subset_closure P μs l μ hDim hD)
 
-/-- On a fixed measure space, weak convergence in probability tested by bounded continuous
-real functions is equivalent to convergence in measure of the resolvent transforms on a
-determining set of nonreal points whose closure contains the upper half-plane. -/
+/-- On a fixed measure space, bounded continuous real test integrals converge in measure to
+those of a deterministic probability measure `μ` if and only if resolvent transforms converge
+in measure to those of `μ` on a determining set of nonreal points whose closure contains the
+upper half-plane. -/
 theorem forall_tendstoInMeasure_integral_iff_resolventTransform_of_subset_closure
     {ι Ω : Type*} [MeasurableSpace Ω] (P : Measure Ω)
     (μs : ι → Ω → ProbabilityMeasure ℝ) (l : Filter ι) (μ : ProbabilityMeasure ℝ)
@@ -126,9 +128,10 @@ theorem tendsto_measure_notMem_nhds_iff_resolventTransform
       (fun _ hz ↦ hz.ne') subset_closure).isInducing.tendsto_measure_notMem_nhds_iff
       P μs l μ
 
-/-- Random real probability measures converge weakly in probability, tested against every
-real bounded continuous function, if and only if their resolvent transforms converge in
-probability at each point of the upper half-plane. The sample spaces may vary. -/
+/-- Random real probability measures converge weakly in probability to a deterministic
+probability measure `μ`, tested against every real bounded continuous function, if and only
+if their resolvent transforms converge in probability to that of `μ` at each point of the
+upper half-plane. The sample spaces may vary. -/
 theorem tendsto_measure_integral_iff_resolventTransform
     {ι : Type*} {Ω : ι → Type*} [∀ i, MeasurableSpace (Ω i)]
     (P : (i : ι) → Measure (Ω i)) (μs : (i : ι) → Ω i → ProbabilityMeasure ℝ)
@@ -141,8 +144,9 @@ theorem tendsto_measure_integral_iff_resolventTransform
   exact (tendsto_measure_notMem_nhds_iff_integral P μs l μ).symm.trans
     (tendsto_measure_notMem_nhds_iff_resolventTransform P μs l μ)
 
-/-- On a fixed space, convergence in measure of all bounded continuous test integrals is
-equivalent to convergence in measure of every upper-half-plane resolvent transform. -/
+/-- On a fixed measure space, all bounded continuous test integrals converge in measure to
+those of a deterministic probability measure `μ` if and only if each upper-half-plane
+resolvent transform converges in measure to that of `μ`. -/
 theorem forall_tendstoInMeasure_integral_iff_resolventTransform
     {ι Ω : Type*} [MeasurableSpace Ω] (P : Measure Ω)
     (μs : ι → Ω → ProbabilityMeasure ℝ) (l : Filter ι) (μ : ProbabilityMeasure ℝ) :

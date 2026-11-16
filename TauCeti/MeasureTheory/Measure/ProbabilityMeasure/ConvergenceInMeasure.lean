@@ -5,7 +5,7 @@ Authors: Codex
 -/
 module
 
-public import Mathlib.MeasureTheory.Measure.ProbabilityMeasure
+public import TauCeti.MeasureTheory.Measure.ProbabilityMeasure.Basic
 public import TauCeti.MeasureTheory.Function.ConvergenceInMeasure
 
 /-!
@@ -17,8 +17,8 @@ integral. The neighborhood formulation works without selecting a metric on proba
 measures, and allows the sample spaces and measures to vary with the index. It provides the
 common interface for other families of tests determining weak convergence.
 
-`MeasureTheory.ProbabilityMeasure.isInducing_integral_boundedContinuousFunction` identifies
-the weak topology with the topology induced by all bounded continuous real test integrals.
+The real-test-integral inducing theorem is provided by
+`TauCeti.MeasureTheory.Measure.ProbabilityMeasure.Basic`.
 
 The result uses outer measures, so it needs no measurability of the random measures or events.
 When the sample measures are probabilities, it expresses weak convergence in probability.
@@ -30,19 +30,6 @@ open Filter Topology
 open scoped Topology BoundedContinuousFunction
 
 namespace MeasureTheory.ProbabilityMeasure
-
-/-- Bounded continuous real test integrals induce the weak topology on probability measures. -/
-theorem isInducing_integral_boundedContinuousFunction
-    {X : Type*} [TopologicalSpace X] [MeasurableSpace X] [OpensMeasurableSpace X] :
-    IsInducing (fun ν : ProbabilityMeasure X ↦
-      fun f : X →ᵇ ℝ ↦ ∫ x, f x ∂(ν : Measure X)) := by
-  apply isInducing_iff_nhds.2
-  intro ν
-  apply le_antisymm
-  · exact (continuous_pi continuous_integral_boundedContinuousFunction).continuousAt.le_comap
-  · exact tendsto_iff_forall_integral_tendsto.2 fun f ↦
-      ((continuous_apply f).tendsto (fun g : X →ᵇ ℝ ↦ ∫ x, g x ∂(ν : Measure X))).comp
-        tendsto_comap
 
 /-- Convergence in measure to a deterministic law in the weak topology is equivalent to
 convergence in measure of each real bounded continuous test integral. The sample spaces may
