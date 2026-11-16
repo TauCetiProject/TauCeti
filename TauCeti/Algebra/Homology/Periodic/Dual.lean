@@ -38,9 +38,6 @@ count the same trajectories read in the opposite direction.
 * `HomologicalComplex.parityDual`: the dual of a two-periodic complex of modules.
 * `HomologicalComplex.parityDualBasis`: the dual bases of the dual of a based two-periodic
   complex.
-* `HomologicalComplex.ker_parityDual_d`, `HomologicalComplex.range_parityDual_d`: the kernel of a
-  differential of the dual is the annihilator of the image of the corresponding differential of
-  `C`, and over a field its image is the annihilator of the kernel.
 * `HomologicalComplex.exactAt_parityDual_iff`, `HomologicalComplex.acyclic_parityDual_iff`: over a
   field, the dual is exact, or acyclic, exactly when `C` is.
 -/
@@ -83,12 +80,6 @@ differential of `C` from degree `j` to degree `i`. -/
 theorem parityDual_d_hom (i j : ZMod 2) : (C.parityDual.d i j).hom = (C.d j i).hom.dualMap :=
   rfl
 
-/-- The kernel of a differential of the dual of a two-periodic complex is the annihilator of the
-image of the transposed differential. -/
-theorem ker_parityDual_d (i j : ZMod 2) :
-    LinearMap.ker (C.parityDual.d i j).hom = (LinearMap.range (C.d j i).hom).dualAnnihilator :=
-  LinearMap.ker_dualMap_eq_dualAnnihilator_range _
-
 variable {C} {n : ZMod 2 → ℕ}
 
 /-- The dual bases of the dual of a based two-periodic complex: in each degree, the dual basis of
@@ -110,19 +101,16 @@ section Field
 variable {K : Type u} [Field K]
   (C : HomologicalComplex (ModuleCat.{u} K) (ComplexShape.up (ZMod 2)))
 
-/-- Over a field, the image of a differential of the dual of a two-periodic complex is the
-annihilator of the kernel of the transposed differential. -/
-theorem range_parityDual_d (i j : ZMod 2) :
-    LinearMap.range (C.parityDual.d i j).hom = (LinearMap.ker (C.d j i).hom).dualAnnihilator :=
-  LinearMap.range_dualMap_eq_dualAnnihilator_ker _
-
 /-- Over a field, the dual of a two-periodic complex is exact in a degree exactly when the complex
 is. -/
 @[simp]
 theorem exactAt_parityDual_iff (j : ZMod 2) : C.parityDual.ExactAt j ↔ C.ExactAt j := by
-  rw [C.parityDual.exactAt_iff_range_eq_ker_zmod_two rfl, C.exactAt_iff_range_eq_ker_zmod_two rfl]
-  -- Both sides compare annihilators of the same two subspaces, which determine the subspaces.
-  exact (Eq.congr (C.range_parityDual_d _ _) (C.ker_parityDual_d _ _)).trans
+  rw [C.parityDual.exactAt_iff_range_eq_ker_zmod_two rfl, C.exactAt_iff_range_eq_ker_zmod_two rfl,
+    parityDual_d_hom, parityDual_d_hom]
+  -- The image and kernel of a transpose are the annihilators of the kernel and image of the
+  -- differential, and annihilators determine the subspaces.
+  exact (Eq.congr (LinearMap.range_dualMap_eq_dualAnnihilator_ker _)
+    (LinearMap.ker_dualMap_eq_dualAnnihilator_range _)).trans
     (Subspace.dualAnnihilator_inj.trans eq_comm)
 
 /-- Over a field, the dual of a two-periodic complex is acyclic exactly when the complex is. -/

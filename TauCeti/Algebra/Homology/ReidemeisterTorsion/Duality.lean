@@ -153,12 +153,15 @@ private theorem coe_dualBoundaryBasis (hjk : j + 1 = k) (hkj : k + 1 = j) (l) :
   simp [dualBoundaryBasis]
 
 /-- The dual vectors of the boundaries of `Cⱼ` lift the dual vectors of the lifts in `Cₖ` through
-the differential of the dual complex. -/
+the differential of the dual complex. The equation is stated in `Cₖ^*`, where the subtype
+coercion of `dualBoundaryBasis` lands, rather than in the object of the dual complex, so that
+`parityDual_d_hom` and `coe_dualBoundaryBasis` rewrite it. -/
 private theorem parityDual_d_dualBasis_inl (hjk : j + 1 = k) (hkj : k + 1 = j) (l) :
     @Eq (Module.Dual F (C.X k))
       ((C.parityDual.d j k).hom ((adaptedBasis c h hjk).dualBasis (.inl l)))
-      (dualBoundaryBasis c h hjk hkj l) :=
-  (dualMap_d_dualBasis_inl c h hjk hkj l).trans (coe_dualBoundaryBasis c h hjk hkj l).symm
+      (dualBoundaryBasis c h hjk hkj l) := by
+  rw [parityDual_d_hom, coe_dualBoundaryBasis]
+  exact dualMap_d_dualBasis_inl c h hjk hkj l
 
 end Adapted
 
@@ -202,7 +205,8 @@ private theorem torsionBracket_parityDual_mul_torsionBracket (hjk : j + 1 = k)
   have hED : Fin.append (e.dualBasis ∘ Sum.inl) (e.dualBasis ∘ Sum.inr) ∘ finCongr hn =
       E.dualBasis := by
     rw [Basis.dualBasis_reindex, Basis.coe_reindex_finSumFinEquiv_trans_finCongr _ hn]
-    rfl
+    ext l
+    simp [finCongr_apply]
   refine (congrArg₂ (· * ·) (torsionBracket_eq_det_append (parityDualBasis c) _ _ _ _ _ _
       (parityDual_d_dualBasis_inl c h hjk hkj) (hn.trans (add_comm p q)))
     (torsionBracket_eq_det_append c _ _ _ _ _ _ _ hn)).trans ?_
@@ -211,10 +215,10 @@ private theorem torsionBracket_parityDual_mul_torsionBracket (hjk : j + 1 = k)
   have key : (c j).dualBasis.det (Fin.append (fun l ↦ (dualBoundaryBasis c h hkj hjk l :
       Module.Dual F (C.X j))) (fun l ↦ e.dualBasis (.inl l)) ∘
         Fin.cast (hn.trans (add_comm p q))) * (c j).det E = (-1) ^ (p * q) := by
+    -- Exchange the two blocks, then compare the dual bases of `E` and `c j`.
     rw [hD, ← Basis.det_reindex, AlternatingMap.map_append_comm, Basis.det_reindex, hED,
-      Basis.det_dualBasis, smul_mul_assoc, Basis.det_mul_det, Basis.det_self, Units.smul_def,
-      zsmul_eq_mul, mul_one]
-    norm_num
+      Basis.det_dualBasis, smul_mul_assoc, Basis.det_mul_det, Basis.det_self]
+    simp [Units.smul_def]
   rw [hE]
   exact key
 
