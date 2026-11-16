@@ -57,9 +57,10 @@ cutoff `φ`, apply the identity to the frequency-dependent cutoff `Ψ = φ / p(�
 (Hörmander I, proof of Theorem 8.3.1), whose derivatives are `O((1 + ‖η‖) ^ (-M))`. Since the
 cutoff now depends on `η`, every estimate is made uniform over the cutoffs supported in a fixed
 compact set with bounded derivatives of some order: the polynomial growth of the localized Fourier
-transform (`Distribution.exists_forall_norm_localFourier_le`) and the rapid decay of `L(P T, Ψ)` on
-`Γ` (`Distribution.IsMicrolocallySmoothAt.exists_nhds_cone_forall_norm_iteratedFDeriv_le`). If
-every `L(T, φ)` is `O(B (1 + ‖η‖) ^ (k - j))` on `Γ` for the cutoffs `φ` whose derivatives are
+transform (`Distribution.exists_forall_norm_localFourier_le`) and the rapid decay of `L(P T, Ψ)`
+on `Γ`
+(`IsMicrolocallySmoothAt.exists_nhds_cone_forall_one_add_norm_pow_mul_norm_localFourier_le`).
+If every `L(T, φ)` is `O(B (1 + ‖η‖) ^ (k - j))` on `Γ` for the cutoffs `φ` whose derivatives are
 bounded by `B`, the identity shows that it is `O(B (1 + ‖η‖) ^ (k - j - 1))`, and induction on `j`
 gives rapid decay on `Γ`.
 
@@ -362,17 +363,6 @@ private theorem exists_le_norm_symbol {ι : Type*} {s : Finset ι} {b : ι → E
         rw [sub_le_iff_le_add]
         exact htop'.trans (norm_le_add_norm_add _ _)
 
-/-- A common bound for the derivatives of order at most `n` of finitely many smooth functions on a
-compact set. -/
-private theorem exists_forall_norm_iteratedFDeriv_le {ι F : Type*} [NormedAddCommGroup F]
-    [NormedSpace ℝ F] (s : Finset ι) {f : ι → E → F} (hf : ∀ i, ContDiff ℝ ∞ (f i)) {K : Set E}
-    (hK : IsCompact K) (n : ℕ) :
-    ∃ G, 0 ≤ G ∧ ∀ i ∈ s, ∀ j ≤ n, ∀ y ∈ K, ‖iteratedFDeriv ℝ j (f i) y‖ ≤ G := by
-  choose G hG0 hG using fun i ↦ ((hf i).of_le (m := n) (by exact_mod_cast le_top)).contDiffOn
-    |>.exists_nonneg_bound_iteratedFDeriv_of_isOpen isOpen_univ hK (subset_univ K)
-  exact ⟨∑ i ∈ s, G i, Finset.sum_nonneg fun i _ ↦ hG0 i, fun i hi j hj y hy ↦
-    (hG i j hj y hy).trans (Finset.single_le_sum (fun i _ ↦ hG0 i) hi)⟩
-
 /-- **The derivatives of the full symbol in the position.** For smooth coefficients and orders at
 most `M`, the derivatives of order at most `n` of `y ↦ p (y, η)` are `O((1 + ‖η‖) ^ M)` on a
 compact set, uniformly in `η`. -/
@@ -381,7 +371,8 @@ private theorem exists_norm_iteratedFDeriv_symbol_le {ι : Type*} {s : Finset ι
     (hk : ∀ i ∈ s, k i ≤ M) {K : Set E} (hK : IsCompact K) (n : ℕ) :
     ∃ A, 0 ≤ A ∧ ∀ y ∈ K, ∀ η, ∀ j ≤ n, ‖iteratedFDeriv ℝ j
       (fun z ↦ ∑ i ∈ s, b i z * ∏ l, (2 * π * I * ⟪m i l, η⟫ : ℂ)) y‖ ≤ A * (1 + ‖η‖) ^ M := by
-  obtain ⟨G, hG0, hG⟩ := exists_forall_norm_iteratedFDeriv_le s hb hK n
+  obtain ⟨G, hG0, hG⟩ := exists_forall_norm_iteratedFDeriv_le_of_isCompact s (n := n)
+    (fun i _ ↦ (hb i).of_le (by exact_mod_cast le_top)) hK
   refine ⟨∑ i ∈ s, G * ((2 * π) ^ k i * ∏ l, ‖m i l‖), by positivity, fun y hy η j hj ↦ ?_⟩
   have hw : 1 ≤ 1 + ‖η‖ := le_add_of_nonneg_right (norm_nonneg η)
   have hterm (i : ι) : (fun z ↦ b i z * ∏ l, (2 * π * I * ⟪m i l, η⟫ : ℂ)) =
@@ -401,104 +392,6 @@ private theorem exists_norm_iteratedFDeriv_symbol_le {ι : Type*} {s : Finset ι
         gcongr
         exact hk i hi
     _ = G * ((2 * π) ^ k i * ∏ l, ‖m i l‖) * (1 + ‖η‖) ^ M := by ring
-
-/-! ### Frequency-dependent cutoffs -/
-
-/-- **The reciprocal of the full symbol.** If `y ↦ p y` has derivatives of order at most `n` bounded
-by `A (1 + ‖η‖) ^ M` and `‖p y‖ ≥ c' (1 + ‖η‖) ^ M` at a point `y`, then the derivatives of order at
-most `n` of `y ↦ (p y)⁻¹` at `y` are bounded by `Q / (1 + ‖η‖) ^ M`, where `Q` depends only on `n`,
-`A` and `c'`. -/
-private theorem exists_norm_iteratedFDeriv_inv_le (n : ℕ) (M : ℕ) {A c' : ℝ} (hc' : 0 < c') :
-    ∃ Q, 0 ≤ Q ∧ ∀ (p : E → ℂ) (w : ℝ) (y : E), 1 ≤ w → ContDiff ℝ ∞ p →
-      (∀ j ≤ n, ‖iteratedFDeriv ℝ j p y‖ ≤ A * w ^ M) → c' * w ^ M ≤ ‖p y‖ →
-        ∀ j ≤ n, ‖iteratedFDeriv ℝ j (fun z ↦ (p z)⁻¹) y‖ ≤ Q / w ^ M := by
-  set ε := min c' 1
-  set C := max A 1
-  have hε : 0 < ε := lt_min hc' one_pos
-  refine ⟨(Nat.factorial n : ℝ) ^ 2 * C ^ n / ε ^ (n + 1), by positivity,
-    fun p w y hw hp hA hpy j hj ↦ ?_⟩
-  have hwM : 0 < w ^ M := pow_pos (zero_lt_one.trans_le hw) M
-  -- Normalize: `p = w ^ M p'` with `p'` of size one.
-  set p' : E → ℂ := fun z ↦ ((w ^ M : ℝ) : ℂ)⁻¹ • p z
-  have hwc : ((w ^ M : ℝ) : ℂ) ≠ 0 := by exact_mod_cast hwM.ne'
-  have hp' : ContDiff ℝ ∞ p' := hp.const_smul _
-  have hD (i : ℕ) : ‖iteratedFDeriv ℝ i p' y‖ = ‖iteratedFDeriv ℝ i p y‖ / w ^ M := by
-    rw [iteratedFDeriv_const_smul_apply' (hp.contDiffAt.of_le (by simp)), norm_smul,
-      norm_inv, Complex.norm_real, Real.norm_of_nonneg hwM.le, inv_mul_eq_div]
-  have hpy' : ε ≤ ‖p' y‖ := by
-    rw [norm_smul, norm_inv, Complex.norm_real, Real.norm_of_nonneg hwM.le, inv_mul_eq_div,
-      le_div_iff₀ hwM]
-    exact (mul_le_mul_of_nonneg_right (min_le_left _ _) hwM.le).trans (by linarith)
-  have hinv := norm_iteratedFDeriv_inv_comp_le (k := j) (hp'.of_le (by simp)) hε
-    (min_le_right _ _) hpy' (le_max_right A 1) fun i _ hi ↦ by
-      rw [hD i, div_le_iff₀ hwM]
-      exact (hA i (hi.trans hj)).trans (by gcongr; exact le_max_left _ _)
-  have hpy0 : p' y ≠ 0 := norm_pos_iff.1 (hε.trans_le hpy')
-  have hrec : (fun z ↦ (p z)⁻¹) = fun z ↦ ((w ^ M : ℝ) : ℂ)⁻¹ • p'⁻¹ z := by
-    ext z
-    simp only [p', Pi.inv_apply, smul_eq_mul, mul_inv, inv_inv]
-    field_simp
-  have hsmul := iteratedFDeriv_const_smul_apply' (a := ((w ^ M : ℝ) : ℂ)⁻¹)
-    ((hp'.contDiffAt.of_le (by simp)).inv hpy0 : ContDiffAt ℝ j (fun z ↦ (p' z)⁻¹) y)
-  rw [hrec, hsmul, norm_smul, norm_inv, Complex.norm_real, Real.norm_of_nonneg hwM.le,
-    inv_mul_eq_div]
-  gcongr
-  have hC : 1 ≤ C := le_max_right _ _
-  have hε1 : ε ≤ 1 := min_le_right _ _
-  calc ‖iteratedFDeriv ℝ j p'⁻¹ y‖ ≤ (Nat.factorial j : ℝ) ^ 2 * C ^ j / ε ^ (j + 1) := hinv
-    _ ≤ (Nat.factorial n : ℝ) ^ 2 * C ^ n / ε ^ (j + 1) := by gcongr
-    _ ≤ (Nat.factorial n : ℝ) ^ 2 * C ^ n / ε ^ (n + 1) :=
-        div_le_div_of_nonneg_left (by positivity) (by positivity)
-          (pow_le_pow_of_le_one hε.le hε1 (by omega))
-
-/-- **Dividing a cutoff by a symbol.** Let `φ` be a test function supported in `K`, and let `p` be
-smooth and nonvanishing on an open set `W ⊇ K`. Then `φ / p` is a test function `Ψ` supported in
-`K` with `p Ψ = φ`. If the derivatives of order at most `n` of `p⁻¹` are bounded by `Q ≥ 0` on `K`
-and those of `φ` by `B`, then those of `Ψ` are bounded by `2 ^ n Q B`. -/
-private theorem exists_testFunction_mul_eq (φ : 𝓓(Ω, ℂ)) {K W : Set E} (hW : IsOpen W)
-    (hKW : K ⊆ W) (hφK : tsupport φ ⊆ K) {p : E → ℂ} (hp : ContDiff ℝ ∞ p)
-    (hpW : ∀ y ∈ W, p y ≠ 0) {n : ℕ} {Q B : ℝ} (hQ0 : 0 ≤ Q)
-    (hQ : ∀ i ≤ n, ∀ y ∈ K, ‖iteratedFDeriv ℝ i (fun z ↦ (p z)⁻¹) y‖ ≤ Q)
-    (hB : ∀ i ≤ n, ∀ y, ‖iteratedFDeriv ℝ i φ y‖ ≤ B) :
-    ∃ Ψ : 𝓓(Ω, ℂ), tsupport Ψ ⊆ K ∧ (∀ y, p y * Ψ y = φ y) ∧
-      ∀ i ≤ n, ∀ y, ‖iteratedFDeriv ℝ i Ψ y‖ ≤ 2 ^ n * Q * B := by
-  have hinv : ContDiffOn ℝ ∞ (fun y ↦ (p y)⁻¹) W := hp.contDiffOn.inv hpW
-  have hcd : ContDiff ℝ ∞ (fun y ↦ (p y)⁻¹ * φ y) :=
-    (ContinuousLinearMap.mul ℝ ℂ).contDiff_of_tsupport_subset_right hinv φ.contDiff.contDiffOn
-      hW (hφK.trans hKW)
-  have hts : tsupport (fun y ↦ (p y)⁻¹ * φ y) ⊆ tsupport φ := tsupport_mul_subset_right
-  refine ⟨⟨fun y ↦ (p y)⁻¹ * φ y, hcd, φ.hasCompactSupport.mono' (subset_tsupport _ |>.trans hts),
-    hts.trans φ.tsupport_subset⟩, hts.trans hφK, fun y ↦ ?_, fun i hi y ↦ ?_⟩
-  · by_cases hy : y ∈ W
-    · exact mul_inv_cancel_left₀ (hpW y hy) (φ y)
-    · simp [image_eq_zero_of_notMem_tsupport fun h ↦ hy (hKW (hφK h))]
-  · refine (norm_iteratedFDeriv_mul_le_of_tsupport_subset hW hKW hinv φ.contDiff hφK
-      (by exact_mod_cast le_top) hQ0
-      (fun l hl z hz ↦ hQ l (hl.trans hi) z hz) (fun l hl z ↦ hB l (hl.trans hi) z) y).trans ?_
-    have hB0 : 0 ≤ B := (norm_nonneg _).trans (hB 0 (Nat.zero_le _) y)
-    gcongr
-    exact one_le_two
-
-/-- The derivatives of order at most `n` of a smooth multiple `a Ψ` of a test function supported in
-`K` are bounded by `2 ^ n G B`, if those of `a` are bounded by `G ≥ 0` on `K` and those of `Ψ` by
-`B`. -/
-private theorem norm_iteratedFDeriv_smulLeftCLM_le {a : E → ℝ} (ha : ContDiff ℝ ∞ a)
-    (Ψ : 𝓓(Ω, ℂ)) {K : Set E} (hΨK : tsupport Ψ ⊆ K) {n : ℕ} {G B : ℝ} (hG0 : 0 ≤ G)
-    (hG : ∀ l ≤ n, ∀ y ∈ K, ‖iteratedFDeriv ℝ l (fun z ↦ (a z : ℂ)) y‖ ≤ G)
-    (hB : ∀ l ≤ n, ∀ y, ‖iteratedFDeriv ℝ l Ψ y‖ ≤ B) :
-    ∀ l ≤ n, ∀ y, ‖iteratedFDeriv ℝ l (TestFunction.smulLeftCLM ha Ψ) y‖ ≤ 2 ^ n * G * B := by
-  intro l hl y
-  have hcoe : ⇑(TestFunction.smulLeftCLM ha Ψ) = fun z ↦ (a z : ℂ) * Ψ z := by
-    ext z
-    simp [Complex.real_smul]
-  rw [hcoe]
-  refine (norm_iteratedFDeriv_mul_le_of_tsupport_subset isOpen_univ (subset_univ K)
-    (ofRealCLM.contDiff.comp ha).contDiffOn Ψ.contDiff hΨK (by exact_mod_cast le_top) hG0
-    (fun l' hl' z hz ↦ hG l' (hl'.trans hl) z hz) (fun l' hl' z ↦ hB l' (hl'.trans hl) z)
-    y).trans ?_
-  have hB0 : 0 ≤ B := (norm_nonneg _).trans (hB 0 (Nat.zero_le _) y)
-  gcongr
-  exact one_le_two
 
 /-! ### Transfer of decay through derivatives -/
 
@@ -695,9 +588,9 @@ private theorem exists_localFourier_le_succ {ι : Type*} {s : Finset ι} {c : ι
   have hb : ∀ i, ContDiff ℝ ∞ fun y ↦ c i * (a i y : ℂ) :=
     fun i ↦ contDiff_const.mul (ofRealCLM.contDiff.comp (ha i))
   obtain ⟨A, -, hA⟩ := exists_norm_iteratedFDeriv_symbol_le hb hk hK n
-  obtain ⟨Q, hQ0, hQ⟩ := exists_norm_iteratedFDeriv_inv_le (E := E) n M (A := A) hc'
-  obtain ⟨G, hG0, hG⟩ := exists_forall_norm_iteratedFDeriv_le s
-    (fun i ↦ ofRealCLM.contDiff.comp (ha i)) hK n
+  obtain ⟨Q, hQ0, hQ⟩ := exists_norm_iteratedFDeriv_inv_le_div (E := E) (𝕜 := ℂ) n (A := A) hc'
+  obtain ⟨G, hG0, hG⟩ := exists_forall_norm_iteratedFDeriv_le_of_isCompact s (n := n)
+    (fun i _ ↦ (ofRealCLM.contDiff.comp (ha i)).of_le (by exact_mod_cast le_top)) hK
   choose Cd hCd0 hCd using fun i ↦ exists_localFourier_iteratedLineDerivOp_sub_le hC hT (m i)
   set S := ∑ i ∈ s, ‖c i‖ * Cd i
   have hS : 0 ≤ S := Finset.sum_nonneg fun i _ ↦ mul_nonneg (norm_nonneg _) (hCd0 i)
@@ -716,8 +609,9 @@ private theorem exists_localFourier_le_succ {ι : Type*} {s : Finset ι} {c : ι
   have hp' : ContDiff ℝ ∞ p := ContDiff.sum fun i _ ↦ (hb i).mul contDiff_const
   have hpW : ∀ y ∈ W, p y ≠ 0 := fun y hy ↦
     norm_pos_iff.1 ((mul_pos hc' (by positivity)).trans_le (hp y hy η hη hηR))
-  obtain ⟨Ψ, hΨK, hpΨ, hΨb⟩ := exists_testFunction_mul_eq φ hW hKW hφ hp' hpW (n := n)
-    (by positivity) (fun l hl z hz ↦ hQ p (1 + ‖η‖) z hw hp' (fun j hj ↦ hA z hz η j hj)
+  obtain ⟨Ψ, hΨK, hpΨ, hΨb⟩ := φ.exists_mul_eq_of_forall_ne_zero hW hKW hφ hp' hpW (n := n)
+    (by positivity) (fun l hl z hz ↦ hQ p ((1 + ‖η‖) ^ M) z (by positivity)
+      (hp'.of_le (by exact_mod_cast le_top)) (fun j hj ↦ hA z hz η j hj)
       (hp z (hKW hz) η hη hηR) l hl) hB
   rw [localFourier_eq_localFourier_sub_sum s c ha m T hpΨ]
   refine (mul_norm_sub_sum_le hw hk hCd0 hG0 hCP0 (Q := Q) (B := B)
@@ -755,14 +649,15 @@ theorem IsMicrolocallySmoothAt.of_sum_smul_smulLeftCLM_iteratedLineDerivOp {ι :
   obtain ⟨U₁, hU₁, Γ₁, hΓ₁, hξ₁, hcone₁, c₀, hc₀, hell⟩ :=
     exists_nhds_cone_le_norm_constCoeffPrincipalSymbol (fun i ↦ (hb i).continuous) hξ
   obtain ⟨U₂, hU₂, Γ₂, hΓ₂, hξ₂, hcone₂, hdecay⟩ :=
-    hP.exists_nhds_cone_forall_norm_iteratedFDeriv_le
+    hP.exists_nhds_cone_forall_one_add_norm_pow_mul_norm_localFourier_le
   -- Compact neighbourhoods `K ⊆ W = interior K'` of `x`, with `K' ⊆ U₁ ∩ U₂ ∩ Ω`.
   obtain ⟨K', hK'x, hK'sub, hK'c⟩ :=
     local_compact_nhds (inter_mem (inter_mem hU₁ hU₂) (Ω.isOpen.mem_nhds hx))
   obtain ⟨K, hKx, hKW, hKc⟩ := local_compact_nhds (interior_mem_nhds.2 hK'x)
   have hKΩ : K ⊆ Ω := hKW.trans (interior_subset.trans (hK'sub.trans inter_subset_right))
   -- On `W` the full symbol is elliptic at large frequencies in `Γ₁ ∩ Γ₂`.
-  obtain ⟨A, -, hA⟩ := exists_forall_norm_iteratedFDeriv_le s hb hK'c 0
+  obtain ⟨A, -, hA⟩ := exists_forall_norm_iteratedFDeriv_le_of_isCompact s (n := 0)
+    (fun i _ ↦ (hb i).of_le (by exact_mod_cast le_top)) hK'c
   obtain ⟨R, c', hc', hp⟩ := exists_le_norm_symbol (b := fun i y ↦ c i * (a i y : ℂ)) hk hc₀
     (U := interior K') (Γ := Γ₁ ∩ Γ₂) (A := A)
     (fun y hy i hi ↦ by simpa using hA i hi 0 le_rfl y (interior_subset hy))

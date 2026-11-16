@@ -173,14 +173,6 @@ theorem modulate_modulate (χ : 𝓓^{n}_{K}(E, F)) (w w' : E) :
   push_cast
   ring
 
-/-- A function supported in `K` whose derivatives of order at most `r` are bounded by `B`
-has `sup_{i ≤ r} N_i χ ≤ B`. -/
-theorem supSeminorm_le_of_forall_norm_iteratedFDeriv_le {χ : 𝓓_{K}(E, F)} {r : ℕ} {B : ℝ}
-    (hB : 0 ≤ B) (h : ∀ i ≤ r, ∀ x, ‖iteratedFDeriv ℝ i χ x‖ ≤ B) :
-    ContDiffMapSupportedIn.supSeminorm ℂ E F ⊤ K r χ ≤ B :=
-  Seminorm.finset_sup_apply_le hB fun i hi ↦
-    (ContDiffMapSupportedIn.seminorm_top_le_iff ℂ hB i χ).2 fun x _ ↦ h i (Finset.mem_Iic.1 hi) x
-
 /-- The `k`-th derivatives of a modulated cutoff grow at most polynomially in the frequency:
 `N_k (χ.modulate w) ≤ (sup_{i ≤ k} N_i χ) (1 + 2π ‖w‖) ^ k`. -/
 theorem seminorm_modulate_le (χ : 𝓓_{K}(E, F)) (w : E) (k : ℕ) :

@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Analysis.Distribution.TestFunction
 import Mathlib.Analysis.Calculus.FDeriv.Symmetric
+import TauCeti.Analysis.Calculus.IteratedFDeriv.FDerivApply
 public import Mathlib.Analysis.InnerProductSpace.Laplacian
 
 /-!
@@ -82,12 +83,9 @@ derivatives of order at most `r + 1` of `φ`. -/
 theorem norm_iteratedFDeriv_lineDerivOp_le (φ : 𝓓(Ω, F)) (v : E) {r : ℕ} {B : ℝ}
     (hB : ∀ i ≤ r + 1, ∀ y, ‖iteratedFDeriv ℝ i φ y‖ ≤ B) :
     ∀ i ≤ r, ∀ y, ‖iteratedFDeriv ℝ i (∂_{v} φ : 𝓓(Ω, F)) y‖ ≤ ‖v‖ * B := by
-  intro i hi y
   rw [funext (lineDerivOp_apply_eq_fderiv φ v)]
-  refine (norm_iteratedFDeriv_clm_apply_const
-    ((φ.contDiff.fderiv_right (m := ∞) (by simp)).contDiffAt) (by exact_mod_cast le_top)).trans ?_
-  rw [norm_iteratedFDeriv_fderiv]
-  exact mul_le_mul_of_nonneg_left (hB (i + 1) (by omega) y) (norm_nonneg v)
+  exact fun i hi y ↦ (φ.contDiff.norm_iteratedFDeriv_fderiv_apply_le_of_forall_le (by simp) hB v i
+    hi y).trans_eq (mul_comm _ _)
 
 /-- Scaling a first derivative of a test function on `Ω` by a function equal to `1` on `Ω` does not
 change it, since the derivative vanishes off `Ω`. -/

@@ -10,6 +10,7 @@ public import TauCeti.Analysis.Distribution.WaveFrontSet.Basic
 import TauCeti.Algebra.Module.ZLattice.Scaling
 import TauCeti.Analysis.Calculus.BumpFunction.Cutoff
 import TauCeti.Analysis.Distribution.Support
+import TauCeti.Analysis.Distribution.TestFunction.Frechet
 import TauCeti.Analysis.Distribution.TestFunction.PartitionOfUnity
 import TauCeti.Analysis.Normed.Module.Cone
 
@@ -60,9 +61,9 @@ decays rapidly, and the remaining terms are controlled by the rapid decay of `a_
 * `Distribution.IsMicrolocallySmoothAt.exists_nhds_cone`: at a point of microlocal smoothness
   there are a neighbourhood `U` of `x` and an open cone `Γ` around `ξ` such that every cutoff
   supported in `U` has localized Fourier transform rapidly decreasing on `Γ`;
-  `Distribution.IsMicrolocallySmoothAt.exists_nhds_cone_forall_norm_iteratedFDeriv_le` makes the
-  decay uniform over the cutoffs supported in `U` with bounded derivatives of some order, so that
-  it applies to cutoffs depending on the frequency.
+  `IsMicrolocallySmoothAt.exists_nhds_cone_forall_one_add_norm_pow_mul_norm_localFourier_le`
+  makes the decay uniform over the cutoffs supported in `U` with bounded derivatives of some order,
+  so that it applies to cutoffs depending on the frequency.
 * `Distribution.exists_isOpen_cone_forall_decay_of_isCompact`: the same holds uniformly over a
   compact set `K` of points of microlocal smoothness: there is an open `W ⊇ K` such that it holds
   for every cutoff supported in `W ∪ (dsupport T)ᶜ`, that is, whose support meets the support of
@@ -357,8 +358,8 @@ are a neighbourhood `U` of `x` and an open cone `Γ` containing `ξ` on which th
 `C`, every test function `φ` supported in `U` whose derivatives of order at most `r` are bounded by
 `B` satisfies `(1 + ‖η‖) ^ N ‖T (φ e_η)‖ ≤ C B` for `η ∈ Γ`. This is the form in which the decay
 applies to cutoffs that depend on the frequency `η` itself. -/
-theorem IsMicrolocallySmoothAt.exists_nhds_cone_forall_norm_iteratedFDeriv_le {T : 𝓓'(Ω, ℂ)}
-    {x ξ : E} (h : T.IsMicrolocallySmoothAt x ξ) :
+theorem IsMicrolocallySmoothAt.exists_nhds_cone_forall_one_add_norm_pow_mul_norm_localFourier_le
+    {T : 𝓓'(Ω, ℂ)} {x ξ : E} (h : T.IsMicrolocallySmoothAt x ξ) :
     ∃ U ∈ 𝓝 x, ∃ Γ : Set E, IsOpen Γ ∧ ξ ∈ Γ ∧ (∀ t : ℝ, 0 < t → ∀ η ∈ Γ, t • η ∈ Γ) ∧
       ∀ N : ℕ, ∃ (r : ℕ) (C : ℝ), 0 ≤ C ∧ ∀ φ : 𝓓(Ω, ℂ), tsupport φ ⊆ U → ∀ B : ℝ,
         (∀ i ≤ r, ∀ y, ‖iteratedFDeriv ℝ i φ y‖ ≤ B) →
