@@ -251,10 +251,8 @@ theorem ncard_eq_ncard_of_forall_exists_homeomorph_Ico [T2Space X]
     obtain ⟨γ, hγ0, hγc, hγi, hγe⟩ := exists_path_of_homeomorph_Ico hε e hex
     refine ⟨γ, ε / 2, half_pos hε, hγ0, hγc, hγi, fun s hs c hc hsc ↦ ?_⟩
     obtain ⟨t, ht0, hγt, hcomp⟩ := hγe s hs
-    obtain ⟨U, hU, hanti⟩ := strictAntiAt_iff.1 (he t ht0 c hc (hγt ▸ hsc))
-    obtain ⟨V, hV, hmono⟩ := strictMonoAt_iff.1 <| hcomp (fun y ↦ OrderDual.toDual (c y))
-      ((strictMonoOn_toDual_comp_iff.2 hanti).strictMonoAt hU)
-    exact (strictMonoOn_toDual_comp_iff.1 hmono).strictAntiAt hV
+    exact strictMonoAt_toDual_comp_iff.1 <| hcomp (OrderDual.toDual ∘ c)
+      (strictMonoAt_toDual_comp_iff.2 (he t ht0 c hc (hγt ▸ hsc)))
   · obtain ⟨N, -, ε, hε, e, hex, he⟩ := hBᵢ b hb
     obtain ⟨γ, hγ0, hγc, hγi, hγe⟩ := exists_path_of_homeomorph_Ico hε e hex
     refine ⟨γ, ε / 2, half_pos hε, hγ0, hγc, hγi, fun s hs c hc hsc ↦ ?_⟩

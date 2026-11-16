@@ -27,6 +27,8 @@ exactly when `h` and `τ` go in the same direction.
 
 * `TauCeti.strictMonoAt_iff`, `StrictMonoOn.strictMonoAt`: the definition, and how to obtain the
   predicate from monotonicity on a neighbourhood; likewise for `StrictAntiAt`.
+* `TauCeti.strictMonoAt_toDual_comp_iff`, `TauCeti.strictAntiAt_toDual_comp_iff`: reversing the
+  order of the codomain swaps the two predicates.
 * `Filter.EventuallyEq.strictMonoAt_iff`: functions equal near `a` have the same direction at `a`.
 * `TauCeti.StrictMonoAt.comp`: the composite of functions strictly monotone at the right points
   is strictly monotone; similarly with one or both strictly antitone.
@@ -38,7 +40,7 @@ exactly when `h` and `τ` go in the same direction.
 
 public section
 
-open Filter Set Topology
+open Filter OrderDual Set Topology
 
 namespace TauCeti
 
@@ -60,6 +62,18 @@ theorem strictMonoAt_iff {f : α → β} {a : α} : StrictMonoAt f a ↔ ∃ s �
 
 /-- Unfolds `StrictAntiAt`. -/
 theorem strictAntiAt_iff {f : α → β} {a : α} : StrictAntiAt f a ↔ ∃ s ∈ 𝓝 a, StrictAntiOn f s :=
+  Iff.rfl
+
+/-- `toDual ∘ f` is strictly monotone at `a` if and only if `f` is strictly antitone at `a`. -/
+@[simp]
+theorem strictMonoAt_toDual_comp_iff {f : α → β} {a : α} :
+    StrictMonoAt (toDual ∘ f : α → βᵒᵈ) a ↔ StrictAntiAt f a :=
+  Iff.rfl
+
+/-- `toDual ∘ f` is strictly antitone at `a` if and only if `f` is strictly monotone at `a`. -/
+@[simp]
+theorem strictAntiAt_toDual_comp_iff {f : α → β} {a : α} :
+    StrictAntiAt (toDual ∘ f : α → βᵒᵈ) a ↔ StrictMonoAt f a :=
   Iff.rfl
 
 /-- A function equal near `a` to one strictly monotone at `a` is strictly monotone at `a`. -/
