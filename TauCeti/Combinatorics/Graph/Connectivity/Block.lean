@@ -79,8 +79,7 @@ theorem IsLink.existsUnique_isBlock_superset_pair {e : β} {x y : α}
     ⟨fun h' ↦ hxy (congrArg Subtype.val h'), e, h⟩
   exact hadj.existsUnique_isBlock_superset_pair
 
-/-- A vertex lying in two distinct multigraph vertex blocks is a native cut vertex. This direction
-does not require finiteness. -/
+/-- A vertex lying in two distinct multigraph vertex blocks is a native cut vertex. -/
 theorem IsBlock.isCutVertex_of_ne {B C : Set V(G)} {v : V(G)} (hB : G.IsBlock B)
     (hC : G.IsBlock C) (hBC : B ≠ C) (hvB : v ∈ B) (hvC : v ∈ C) :
     G.IsCutVertex v := by

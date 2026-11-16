@@ -15,10 +15,7 @@ public import Mathlib.Combinatorics.SimpleGraph.Acyclic
 This file proves that the block--cut incidence graph `G.blockCutGraph` of a simple graph is a
 forest, and that its connected components correspond to those of `G`.
 
-* `SimpleGraph.blockCutGraph_isAcyclic`: the block--cut graph is acyclic.  This needs no
-  finiteness: an edge between a block `B` and a cut vertex `c` is a bridge, because a walk of the
-  block--cut graph from `c` back to `B` avoiding that edge would give a walk of `G` from another
-  block through `c` to `B` avoiding `c`, which `SimpleGraph.IsBlock.mem_support_of_ne` forbids.
+* `SimpleGraph.blockCutGraph_isAcyclic`: the block--cut graph is acyclic.
 * `SimpleGraph.blockCutVertexComponent`: each vertex of the block--cut graph determines a
   connected component of `G`, namely the component containing the block or the cut vertex.
 * `SimpleGraph.blockCutGraph_reachable_iff`: two vertices of the
@@ -125,7 +122,7 @@ theorem Walk.exists_walk_notMem_support_of_blockCutGraph {B C : G.BlockVertex}
   · exact hac
   · exact hbc
 
-/-- **The block--cut graph is a forest.** No finiteness is needed. -/
+/-- **The block--cut graph is a forest.** -/
 theorem blockCutGraph_isAcyclic : G.blockCutGraph.IsAcyclic := by
   classical
   -- Every edge joins a block `B` to a cut vertex `c ∈ B`; it suffices that it is a bridge.
