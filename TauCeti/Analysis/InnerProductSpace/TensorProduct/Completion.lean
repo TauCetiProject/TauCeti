@@ -144,17 +144,35 @@ def completionRightIsometry :
   (commIsometry 𝕜 E F).completion.trans <| (completionLeftIsometry 𝕜 F E).trans
     (commIsometry 𝕜 (Completion F) E).completion
 
+/-- On the algebraic tensor product, completing the left factor is
+`LinearIsometry.rTensor` of the inclusion `E → Ê`. -/
 @[simp]
+theorem completionLeftIsometry_coe (u : E ⊗[𝕜] F) :
+    completionLeftIsometry 𝕜 E F u =
+      ((Completion.toComplₗᵢ.rTensor F u : Completion E ⊗[𝕜] F) :
+        Completion (Completion E ⊗[𝕜] F)) :=
+  LinearIsometry.completionEquivOfDenseRange_coe _ _ u
+
 theorem completionLeftIsometry_coe_tmul (x : E) (y : F) :
     completionLeftIsometry 𝕜 E F (x ⊗ₜ[𝕜] y : E ⊗[𝕜] F) =
       ((x : Completion E) ⊗ₜ[𝕜] y : Completion E ⊗[𝕜] F) := by
-  simp [completionLeftIsometry]
+  simp
 
-@[simp]
 theorem completionRightIsometry_coe_tmul (x : E) (y : F) :
     completionRightIsometry 𝕜 E F (x ⊗ₜ[𝕜] y : E ⊗[𝕜] F) =
       (x ⊗ₜ[𝕜] (y : Completion F) : E ⊗[𝕜] Completion F) := by
   simp [completionRightIsometry]
+
+/-- On the algebraic tensor product, completing the right factor is
+`LinearIsometry.lTensor` of the inclusion `F → F̂`. -/
+@[simp]
+theorem completionRightIsometry_coe (u : E ⊗[𝕜] F) :
+    completionRightIsometry 𝕜 E F u =
+      ((Completion.toComplₗᵢ.lTensor E u : E ⊗[𝕜] Completion F) :
+        Completion (E ⊗[𝕜] Completion F)) := by
+  induction u using TensorProduct.inductionOn with
+  | tmul x y => simpa using completionRightIsometry_coe_tmul x y
+  | add u v hu hv => simp only [Completion.coe_add, map_add, hu, hv]
 
 @[simp]
 theorem completionLeftIsometry_symm_coe_tmul (x : E) (y : F) :
@@ -252,6 +270,56 @@ theorem eq_mapLCompletion_iff {f : E →L[𝕜] E'} {g : F →L[𝕜] F'}
       ∀ x y, T (x ⊗ₜ[𝕜] y : E ⊗[𝕜] F) = (f x ⊗ₜ[𝕜] g y : E' ⊗[𝕜] F') :=
   ⟨fun h x y ↦ h ▸ mapLCompletion_tmul f g x y,
     fun h ↦ completion_ext fun x y ↦ by rw [h, mapLCompletion_tmul]⟩
+
+@[simp]
+theorem mapLCompletion_add_left (f₁ f₂ : E →L[𝕜] E') (g : F →L[𝕜] F') :
+    mapLCompletion (f₁ + f₂) g = mapLCompletion f₁ g + mapLCompletion f₂ g :=
+  completion_ext fun _ _ ↦ by simp [add_tmul, Completion.coe_add]
+
+@[simp]
+theorem mapLCompletion_add_right (f : E →L[𝕜] E') (g₁ g₂ : F →L[𝕜] F') :
+    mapLCompletion f (g₁ + g₂) = mapLCompletion f g₁ + mapLCompletion f g₂ :=
+  completion_ext fun _ _ ↦ by simp [tmul_add, Completion.coe_add]
+
+@[simp]
+theorem mapLCompletion_smul_left (c : 𝕜) (f : E →L[𝕜] E') (g : F →L[𝕜] F') :
+    mapLCompletion (c • f) g = c • mapLCompletion f g :=
+  completion_ext fun _ _ ↦ by simp [← smul_tmul', Completion.coe_smul]
+
+@[simp]
+theorem mapLCompletion_smul_right (c : 𝕜) (f : E →L[𝕜] E') (g : F →L[𝕜] F') :
+    mapLCompletion f (c • g) = c • mapLCompletion f g :=
+  completion_ext fun _ _ ↦ by simp [tmul_smul, Completion.coe_smul]
+
+@[simp]
+theorem mapLCompletion_neg_left (f : E →L[𝕜] E') (g : F →L[𝕜] F') :
+    mapLCompletion (-f) g = -mapLCompletion f g :=
+  completion_ext fun _ _ ↦ by simp [neg_tmul, Completion.coe_neg]
+
+@[simp]
+theorem mapLCompletion_neg_right (f : E →L[𝕜] E') (g : F →L[𝕜] F') :
+    mapLCompletion f (-g) = -mapLCompletion f g :=
+  completion_ext fun _ _ ↦ by simp [tmul_neg, Completion.coe_neg]
+
+@[simp]
+theorem mapLCompletion_sub_left (f₁ f₂ : E →L[𝕜] E') (g : F →L[𝕜] F') :
+    mapLCompletion (f₁ - f₂) g = mapLCompletion f₁ g - mapLCompletion f₂ g :=
+  completion_ext fun _ _ ↦ by simp [sub_tmul, Completion.coe_sub]
+
+@[simp]
+theorem mapLCompletion_sub_right (f : E →L[𝕜] E') (g₁ g₂ : F →L[𝕜] F') :
+    mapLCompletion f (g₁ - g₂) = mapLCompletion f g₁ - mapLCompletion f g₂ :=
+  completion_ext fun _ _ ↦ by simp [tmul_sub, Completion.coe_sub]
+
+@[simp]
+theorem mapLCompletion_zero_left (g : F →L[𝕜] F') :
+    mapLCompletion (0 : E →L[𝕜] E') g = 0 :=
+  completion_ext fun _ _ ↦ by simp
+
+@[simp]
+theorem mapLCompletion_zero_right (f : E →L[𝕜] E') :
+    mapLCompletion f (0 : F →L[𝕜] F') = 0 :=
+  completion_ext fun _ _ ↦ by simp
 
 /-- The tensor product `f ⊗ g` has norm at most `‖f‖ * ‖g‖`. -/
 theorem norm_mapLCompletion_le (f : E →L[𝕜] E') (g : F →L[𝕜] F') :
@@ -568,24 +636,16 @@ amplifications: `(1 ⊗ f) ∘ flip = flip ∘ (f ⊗ 1)`. -/
 theorem lTensorCompletion_commIsometry_completion (f : E →L[𝕜] E') (u : Completion (E ⊗[𝕜] F)) :
     f.lTensorCompletion F ((commIsometry 𝕜 E F).completion u) =
       (commIsometry 𝕜 E' F).completion (f.rTensorCompletion F u) := by
-  induction u using Completion.induction_on with
-  | hp => exact isClosed_eq (by fun_prop) (by fun_prop)
-  | ih u =>
-    simp only [LinearIsometryEquiv.completion_apply_coe, rTensorCompletion_coe,
-      lTensorCompletion_coe]
-    exact congr(($(lTensor_comp_commIsometry (G := F) f) u : Completion (F ⊗[𝕜] E')))
+  rw [lTensorCompletion_eq_mapLCompletion, rTensorCompletion_eq_mapLCompletion]
+  exact mapLCompletion_commIsometry_completion f (.id 𝕜 F) u
 
 /-- The extension of the flip `E ⊗ F ≃ F ⊗ E` to the completions exchanges the two
 amplifications: `(g ⊗ 1) ∘ flip = flip ∘ (1 ⊗ g)`. -/
 theorem rTensorCompletion_commIsometry_completion (g : F →L[𝕜] F') (u : Completion (E ⊗[𝕜] F)) :
     g.rTensorCompletion E ((commIsometry 𝕜 E F).completion u) =
       (commIsometry 𝕜 E F').completion (g.lTensorCompletion E u) := by
-  induction u using Completion.induction_on with
-  | hp => exact isClosed_eq (by fun_prop) (by fun_prop)
-  | ih u =>
-    simp only [LinearIsometryEquiv.completion_apply_coe, rTensorCompletion_coe,
-      lTensorCompletion_coe]
-    exact congr(($(rTensor_comp_commIsometry (G := E) g) u : Completion (F' ⊗[𝕜] E)))
+  rw [rTensorCompletion_eq_mapLCompletion, lTensorCompletion_eq_mapLCompletion]
+  exact mapLCompletion_commIsometry_completion (.id 𝕜 E) g u
 
 section StarAlgHom
 
