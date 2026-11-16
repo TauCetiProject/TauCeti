@@ -84,6 +84,8 @@ constants are parameters, not hidden existential data.
   matrix has determinant at least `λⁿ`.
 * `TauCeti.PDE.uniformlyEllipticOn_const`: a constant matrix with a lower quadratic bound is
   uniformly elliptic.
+* `TauCeti.PDE.exists_uniformlyEllipticOn_of_continuousOn_posDef`: a continuous field of pointwise
+  positive-definite matrices on a compact set is uniformly elliptic there.
 * `TauCeti.PDE.continuousOn_of_continuousOn_matrixBilinearForm` and
   `TauCeti.PDE.continuous_of_continuous_matrixBilinearForm`: a coefficient field whose
   bilinear forms vary continuously is continuous.
@@ -959,6 +961,60 @@ lemma UniformlyEllipticOn.smul_add_one_sub_smul (ha : UniformlyEllipticOn Ω a l
           refine (abs_add_le _ _).trans_eq ?_
           rw [abs_mul, abs_mul, abs_of_nonneg (hχ x).1, abs_of_nonneg (sub_nonneg.2 (hχ x).2)]
       _ ≤ Lam * ‖η‖ * ‖ξ‖ := by linarith
+
+/-- A continuous field of pointwise positive-definite matrices on a compact set is uniformly
+elliptic there. -/
+theorem exists_uniformlyEllipticOn_of_continuousOn_posDef [TopologicalSpace X]
+    (hΩ : IsCompact Ω) (ha : ContinuousOn a Ω)
+    (hpos : ∀ x ∈ Ω, ∀ ξ : EuclideanSpace ℝ n, ξ ≠ 0 → 0 < (a x).toQuadraticForm' ξ) :
+    ∃ lam Lam, UniformlyEllipticOn Ω a lam Lam := by
+  classical
+  by_cases hne : Ω.Nonempty ∧ Nonempty n
+  · obtain ⟨hΩne, ⟨i₀⟩⟩ := hne
+    set S : Set (EuclideanSpace ℝ n) := Metric.sphere 0 1
+    have hSne : S.Nonempty := ⟨EuclideanSpace.single i₀ 1, by simp [S]⟩
+    have haB : ContinuousOn (fun x ↦ matrixBilinearForm (a x)) Ω :=
+      continuous_matrixBilinearForm.comp_continuousOn ha
+    set q : X × EuclideanSpace ℝ n → ℝ := fun p ↦ matrixBilinearForm (a p.1) p.2 p.2
+    have hcontQ : ContinuousOn q (Ω ×ˢ S) :=
+      ((haB.comp continuousOn_fst Set.mapsTo_fst_prod).clm_apply continuousOn_snd).clm_apply
+        continuousOn_snd
+    obtain ⟨⟨x₀, ξ₀⟩, ⟨hx₀, hξ₀⟩, hmin⟩ :=
+      (hΩ.prod (isCompact_sphere (0 : EuclideanSpace ℝ n) 1)).exists_isMinOn
+        (hΩne.prod hSne) hcontQ
+    have hlam : 0 < q (x₀, ξ₀) := by
+      simpa only [q, matrixBilinearForm_apply, Matrix.toQuadraticForm'_apply] using
+        hpos x₀ hx₀ ξ₀ fun h0 ↦ by simp [h0] at hξ₀
+    have hcontS : ContinuousOn (fun x ↦ ∑ i, ∑ j, |a x i j|) Ω :=
+      continuousOn_finsetSum _ fun i _ ↦ continuousOn_finsetSum _ fun j _ ↦
+        ((continuous_apply j).comp_continuousOn ((continuous_apply i).comp_continuousOn ha)).abs
+    obtain ⟨x₁, -, hmax⟩ := hΩ.exists_isMaxOn hΩne hcontS
+    set lam : ℝ := q (x₀, ξ₀)
+    set Lam : ℝ := max lam (∑ i, ∑ j, |a x₁ i j|)
+    refine ⟨lam, Lam, UniformlyEllipticOn.of_bounds hlam (le_max_left _ _)
+      (fun {x} hx ξ ↦ ?_) (fun {x} hx η ξ ↦ ?_)⟩
+    · by_cases hξ : ξ = 0
+      · simp [hξ]
+      · have hunit : (‖ξ‖⁻¹ • ξ) ∈ S := by
+          simp [S, norm_smul, inv_mul_cancel₀ (norm_ne_zero_iff.2 hξ)]
+        have hle : lam ≤ q (x, ‖ξ‖⁻¹ • ξ) := hmin ⟨hx, hunit⟩
+        have hscale : q (x, ‖ξ‖⁻¹ • ξ) = (a x).toQuadraticForm' ξ / ‖ξ‖ ^ 2 := by
+          simp only [q, matrixBilinearForm_apply, Matrix.toQuadraticForm'_apply,
+            WithLp.ofLp_smul, Matrix.mulVec_smul, dotProduct_smul, smul_dotProduct, smul_eq_mul]
+          ring
+        rwa [hscale, le_div_iff₀ (sq_pos_of_pos (norm_pos_iff.2 hξ))] at hle
+    · have h1 : |η ⬝ᵥ (a x *ᵥ ξ)| ≤ ‖matrixBilinearForm (a x)‖ * ‖η‖ * ‖ξ‖ := by
+        simpa only [matrixBilinearForm_apply, Real.norm_eq_abs] using
+          (matrixBilinearForm (a x)).le_opNorm₂ η ξ
+      have h2 : ‖matrixBilinearForm (a x)‖ ≤ Lam :=
+        (norm_matrixBilinearForm_le_sum_abs (a x)).trans ((hmax hx).trans (le_max_right _ _))
+      exact h1.trans (by gcongr)
+  · refine ⟨1, 1, UniformlyEllipticOn.of_bounds zero_lt_one le_rfl
+      (fun {x} hx ξ ↦ ?_) (fun {x} hx η ξ ↦ ?_)⟩
+    · have : IsEmpty n := not_nonempty_iff.1 fun hn ↦ hne ⟨⟨x, hx⟩, hn⟩
+      simp [Subsingleton.elim ξ 0]
+    · have : IsEmpty n := not_nonempty_iff.1 fun hn ↦ hne ⟨⟨x, hx⟩, hn⟩
+      simp [Subsingleton.elim η 0]
 
 /-! ### Gradient calculus and orthonormal expansion -/
 
