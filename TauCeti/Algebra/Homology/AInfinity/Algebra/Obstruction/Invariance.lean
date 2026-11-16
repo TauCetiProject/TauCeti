@@ -186,7 +186,8 @@ private theorem exists_hochschildDifferential_eq_obstruction_four_of_linearPart_
       module
     rw [← sub_eq_zero, ← one_smul R (_ - _), ← invOf_mul_self (2 : R), mul_smul, h₂, smul_zero]
   refine ⟨χ ∘ₗ lengthProj R A ⟨3, by norm_num⟩, ?_, ?_,
-    hochschildDifferential_comp_lengthProj_eq_obstruction hℋ hm (n := 2) hχ⟩
+    hochschildDifferential_comp_lengthProj_eq_obstruction hℋ hm (n := 2)
+      fun z ↦ hχ _ (lengthProj_mem_filtration R A ⟨4, by norm_num⟩ z)⟩
   · have hbr : LinearMap.IsHomogeneous (brace G ψ ψ 0) (gradedPiece G) G.piece 0 := by
       simpa only [add_zero] using isHomogeneous_brace hψ hψ
     simpa only [add_zero] using
@@ -314,11 +315,11 @@ private theorem exists_taylor_apply_eq_letter_succ (hℋ : ℋ.IsMinimal)
     rw [hφ₀def, LinearMap.comp_apply,
       lengthProj_apply_eq_zero_of_mem_filtration R A (n := ⟨e + 1, e.succ_pos⟩) e.lt_succ_self hz,
       map_zero]
-  -- `φ₀` is a Hochschild cocycle: this is the obstruction lemma for `ℋ` relative to itself, whose
-  -- obstruction vanishes.
+  -- `φ₀` is a Hochschild cocycle: its differential is the component of length `e + 2` of `δψ`,
+  -- which vanishes on the words of length at most `e + 2`.
   have hδφ₀ : ℋ.hochschildDifferential 0 φ₀ = 0 := by
-    rw [hφ₀def, hochschildDifferential_comp_lengthProj_eq_obstruction (𝒜 := ℋ) hℋ hm (n := e)
-      fun z hz ↦ by rw [sub_self, hδψ z hz], obstruction_def, sub_self, LinearMap.zero_comp]
+    rw [hφ₀def, hochschildDifferential_comp_lengthProj_eq hℋ hm]
+    exact LinearMap.ext fun z ↦ hδψ _ (lengthProj_mem_filtration R A ⟨e + 2, by omega⟩ z)
   -- The exponential of `χ = -φ₀` is an `A∞` automorphism of `ℋ`.
   set χ := (-1 : R) • φ₀ with hχdef
   have hχ : LinearMap.IsHomogeneous χ (gradedPiece G) G.piece 0 := by
@@ -373,11 +374,12 @@ private theorem exists_hochschildDifferential_eq_obstruction_of_linearPart_eq_id
       have hψ : LinearMap.IsHomogeneous ψ (gradedPiece (ℋ.grading.shift 1))
           (ℋ.grading.shift 1).piece 0 := g.isHomogeneous_taylor_sub_letter hG
       refine ⟨ψ ∘ₗ lengthProj R A ⟨e + 1, e.succ_pos⟩, ?_, ?_,
-        hochschildDifferential_comp_lengthProj_eq_obstruction hℋ hm fun z hz ↦ ?_⟩
+        hochschildDifferential_comp_lengthProj_eq_obstruction hℋ hm fun z ↦ ?_⟩
       · simpa only [add_zero] using hψ.comp (isHomogeneous_lengthProj _ _)
       · exact comp_lengthProj_comp_lengthProj R A _ _
       · rw [hψdef]
-        exact g.taylor_sub_taylor_apply_eq_hochschildDifferential hG (by omega) (by omega) hg h hz
+        exact g.taylor_sub_taylor_apply_eq_hochschildDifferential hG (k := e + 2) (by omega)
+          (by omega) hg h (lengthProj_mem_filtration R A ⟨e + 2, by omega⟩ z)
   | succ k ih =>
       intro e he hek g hg
       obtain ⟨g', hg'⟩ := exists_taylor_apply_eq_letter_succ hℋ hm hG he
