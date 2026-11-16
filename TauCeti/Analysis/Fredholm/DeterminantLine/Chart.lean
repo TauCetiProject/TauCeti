@@ -60,6 +60,10 @@ determinant of their `q'`-coordinates, up to a constant.
   kernel charts.
 * `ContinuousLinearMap.IsFredholm.exists_isOpen_kernelChart`: a Fredholm operator has a kernel
   chart valid on an open neighbourhood.
+* `ContinuousLinearMap.detLineChartEquiv_eq_detLineEquivOfBijective_smul`: the kernel chart of an
+  invertible operator with zero stabilization and coordinate spaces
+  (`ContinuousLinearMap.IsInvertible.prod_coprod_of_subsingleton`) reads the identification of its
+  determinant line with the scalars as one fixed identification.
 * `ContinuousLinearMap.eventually_detLineChartEquiv_symm_eq_smul`: over `ℝ`, the transition between
   two kernel charts valid at an operator is, nearby, a positive multiple of its value there.
 
@@ -127,6 +131,48 @@ theorem detLineChartEquiv_detLineStabilizationEquiv [FiniteDimensional 𝕜 T.ke
         (detLineStabilizationEquiv T D₂ (surjective_of_isInvertible_prod h) z) =
       LinearEquiv.rTensor _ (kerEquivOfProd _ q h).toLinearEquiv.symm.detLineCongr z := by
   simp [detLineChartEquiv]
+
+section Subsingleton
+
+variable [Subsingleton Λ] [Subsingleton G]
+
+/-- **The invertibility trivialization in a zero kernel chart.** For a bijective `T` and a kernel
+chart whose stabilization and coordinate spaces `Λ` and `G` are zero, the chart reads an element
+`z` of the determinant line as its value under `LinearMap.detLineEquivOfBijective` times the
+generator `1 ⊗ 1` of `det G ⊗ (det Λ)^*`, the empty exterior product tensored with the functional
+taking the value `1` on it. The generator does not depend on `T`, so the identifications of the
+determinant lines of invertible operators with the scalars form a continuous orientation. -/
+theorem detLineChartEquiv_eq_detLineEquivOfBijective_smul
+    (h : ((T.coprod D₂).prod q).IsInvertible) (hT : Function.Bijective T)
+    (z : (T : E →ₗ[𝕜] F).detLine) :
+    detLineChartEquiv T D₂ q h z = LinearMap.detLineEquivOfBijective hT z •
+      (exteriorPower.ιMulti 𝕜 _ 0 ⊗ₜ (TauCeti.detLineEquivOfFinrankEqZero
+        (finrank_zero_of_subsingleton (M := Λ))).toLinearMap :
+          TauCeti.detLine 𝕜 G ⊗[𝕜] Dual 𝕜 (TauCeti.detLine 𝕜 Λ)) := by
+  have := finiteDimensional_ker_of_isInvertible_prod_coprod h
+  have hΛ : finrank 𝕜 Λ = 0 := finrank_zero_of_subsingleton
+  have hker : finrank 𝕜 (LinearMap.ker (T : E →ₗ[𝕜] F)) = 0 :=
+    LinearMap.finrank_ker_eq_zero_of_injective hT.1
+  have hcoker : finrank 𝕜 (F ⧸ LinearMap.range (T : E →ₗ[𝕜] F)) = 0 :=
+    LinearMap.finrank_quotient_range_eq_zero_of_surjective hT.2
+  have hB : finrank 𝕜 (LinearMap.ker ((T.coprod D₂ : E × Λ →L[𝕜] F) : E × Λ →ₗ[𝕜] F)) = 0 :=
+    (kerEquivOfProd _ q h).toLinearEquiv.finrank_eq.symm.trans finrank_zero_of_subsingleton
+  have hsign : (-1 : 𝕜) ^ (finrank 𝕜 (F ⧸ (T : E →ₗ[𝕜] F).range) * finrank 𝕜 Λ) = 1 := by
+    simp [hΛ]
+  -- All the spaces of the exact sequence `0 → ker T → ker (T.coprod D₂) → Λ → coker T → 0` are
+  -- zero, so the inverse chart sends the generator to the element `1` under invertibility.
+  have hone : (detLineChartEquiv T D₂ q h).symm (exteriorPower.ιMulti 𝕜 _ 0 ⊗ₜ
+      (TauCeti.detLineEquivOfFinrankEqZero hΛ).toLinearMap) =
+        (LinearMap.detLineEquivOfBijective hT).symm 1 := by
+    simp only [detLineChartEquiv_symm_tmul, detLineStabilizationEquiv_apply, hsign, one_smul,
+      detLineCoprodEquiv_def, LinearEquiv.detLineCongr_ιMulti]
+    rw [TauCeti.detLineFourTermEquiv_ιMulti_tmul_of_finrank_eq_zero _ _ _ _ hker hB hΛ hcoker 0,
+      LinearMap.detLineEquivOfBijective_symm_one_eq_ιMulti_tmul]
+  rw [← LinearEquiv.eq_symm_apply, map_smul, hone]
+  apply (LinearMap.detLineEquivOfBijective hT).injective
+  simp
+
+end Subsingleton
 
 section Nested
 
