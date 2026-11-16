@@ -5,9 +5,6 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Analysis.CStarAlgebra.ContinuousFunctionalCalculus.Range
-public import Mathlib.Analysis.CStarAlgebra.ContinuousLinearMap
-public import Mathlib.Analysis.InnerProductSpace.StarOrder
 public import TauCeti.Analysis.OperatorIdeal.ApproximationNumber.Adjoint
 public import TauCeti.Analysis.OperatorIdeal.ApproximationNumber.Compact
 
@@ -33,8 +30,8 @@ approximation numbers.
 * `IsCompactOperator.star`: on a Hilbert space, `star T` is compact when `T` is.
 * `ContinuousLinearMap.isCompactOperator_star_iff`: `star T` is compact exactly when `T` is.
 * `IsCompactOperator.conjStarAlgEquiv`: conjugating by a unitary preserves compactness.
-* `ContinuousLinearMap.compactOperatorStarSubalgebra`: the closed nonunital `⋆`-subalgebra of
-  compact operators on a Hilbert space.
+* `TauCeti.compactOperatorStarSubalgebra`: the closed nonunital `⋆`-subalgebra of compact operators
+  on a Hilbert space.
 -/
 
 public section
@@ -89,6 +86,13 @@ theorem isCompactOperator_star_iff {T : E →L[𝕜] E} :
     IsCompactOperator ⇑(star T) ↔ IsCompactOperator T := by
   rw [star_eq_adjoint, isCompactOperator_adjoint_iff]
 
+end ContinuousLinearMap
+
+namespace TauCeti
+
+variable {𝕜 E : Type*} [RCLike 𝕜]
+  [NormedAddCommGroup E] [InnerProductSpace 𝕜 E] [CompleteSpace E]
+
 /-- The compact operators on a Hilbert space `E` form a nonunital `⋆`-subalgebra of `E →L[𝕜] E`. -/
 def compactOperatorStarSubalgebra (𝕜 E : Type*) [RCLike 𝕜]
     [NormedAddCommGroup E] [InnerProductSpace 𝕜 E] [CompleteSpace E] :
@@ -114,12 +118,4 @@ instance instIsClosedCompactOperatorStarSubalgebra :
     IsClosed (compactOperatorStarSubalgebra 𝕜 E : Set (E →L[𝕜] E)) :=
   isClosed_setOfPred_isCompactOperator
 
-/-- For a complex Hilbert space `H`, `compactOperatorStarSubalgebra ℂ H` is a `StarOrderedRing`
-under the Loewner order inherited from `H →L[ℂ] H`. -/
-noncomputable instance instStarOrderedRingCompactOperatorStarSubalgebra
-    {H : Type*} [NormedAddCommGroup H] [InnerProductSpace ℂ H] [CompleteSpace H] :
-    StarOrderedRing (compactOperatorStarSubalgebra ℂ H) :=
-  letI : StarModule ℝ (H →L[ℂ] H) := StarModule.complexToReal
-  Subtype.starOrderedRing (𝕜 := ℂ) (compactOperatorStarSubalgebra ℂ H)
-
-end ContinuousLinearMap
+end TauCeti
