@@ -359,18 +359,11 @@ private theorem finrank_intertwiningMap_prod_eq (hπu : π.IsUnitary) (hρu : ρ
   have := (hF x hx).finite_coker
   have := (hF y hy).finite_ker
   have := (hF y hy).finite_coker
-  -- `τ`, whose operators are automatically continuous in finite dimensions, as a continuous
-  -- representation.
-  let σ : ContRepresentation 𝕜 G V := .ofMonoidHom
-    { toFun g := LinearMap.toContinuousLinearMap (τ g)
-      map_one' := by ext; simp
-      map_mul' g h := by ext; simp }
-  have hσ : σ.toRepresentation = τ := by ext; simp [σ]
-  have h := hA.finrank_contIntertwiningMap_kerRepresentation_sub_cokerRepresentation_eq σ hπu
-    hρu hF hs hx hy
+  have h := hA.finrank_contIntertwiningMap_kerRepresentation_sub_cokerRepresentation_eq
+    τ.toContRepresentation hπu hρu hF hs hx hy
   simp only [← Representation.IntertwiningMap.prodEquiv.finrank_eq, Module.finrank_prod]
   simp only [ContRepresentation.intertwiningMapEquiv.finrank_eq] at h
-  rw [hσ] at h
+  rw [Representation.toContRepresentation_toRepresentation] at h
   omega
 
 /-- **Homotopy invariance of the equivariant index.** Along a family of intertwining maps between
