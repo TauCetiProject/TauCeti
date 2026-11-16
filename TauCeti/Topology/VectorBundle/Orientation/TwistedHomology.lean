@@ -25,7 +25,9 @@ whether `E` is orientable:
   a fibre
   (`VectorBundleOrientationCover.exists_monodromyRepresentation_signLocalSystem_eq_neg_one`),
   and `H₀(B; o(E)) ≅ R ⧸ 2R`
-  (`TauCeti.VectorBundleOrientationCover.twistedHomology₀EquivQuotientTwo`).
+  (`TauCeti.VectorBundleOrientationCover.twistedHomology₀EquivQuotientTwo`); this
+  identification sends the class of an element of any fibre to the residue of its value at
+  either orientation of that fibre.
 
 With integer coefficients and `B` locally path-connected, `H₀(B; o(E))` is therefore `ℤ` or
 `ℤ/2`, and it is isomorphic to `ℤ` exactly when `E` is orientable
@@ -78,7 +80,9 @@ namespace VectorBundleOrientationCover
 
 /-- **Zeroth homology of a non-orientable orientation system.** Over a connected, locally
 path-connected base, if `E` is not orientable, `H₀(B; o(E)) ≅ R ⧸ 2R`. It sends the class of an
-element of the fibre over `b` to the residue of its value at the orientation `o` of `E_b`. -/
+element of the fibre over any point `b'` to the residue of its value at either orientation of
+`E_b'`; the orientation `o` of `E_b` is only used in the construction
+(`twistedHomology₀EquivQuotientTwo_ιTwistedHomology₀`, `twistedHomology₀EquivQuotientTwo_eq`). -/
 def twistedHomology₀EquivQuotientTwo [ConnectedSpace B] [LocallyPathConnectedSpace B]
     (h : IsEmpty (VectorBundleOrientation F E ι)) {b : B} (o : Orientation ℝ (E b) ι) :
     twistedHomology.{u, uB, max uE uι u} (signLocalSystem F E R hι) 0 ≃ₗ[R]
@@ -92,7 +96,7 @@ def twistedHomology₀EquivQuotientTwo [ConnectedSpace B] [LocallyPathConnectedS
 /-- The identification of `H₀(B; o(E))` with `R ⧸ 2R` sends the class of an element of the fibre
 over `b` to the residue of its value at `o`. -/
 @[simp]
-theorem twistedHomology₀EquivQuotientTwo_ιTwistedHomology₀ [ConnectedSpace B]
+theorem twistedHomology₀EquivQuotientTwo_ιTwistedHomology₀_self [ConnectedSpace B]
     [LocallyPathConnectedSpace B] (h : IsEmpty (VectorBundleOrientation F E ι)) {b : B}
     (o : Orientation ℝ (E b) ι) (a : (signLocalSystem F E R hι).obj (FundamentalGroupoid.mk b)) :
     twistedHomology₀EquivQuotientTwo hι h o (ιTwistedHomology₀ (signLocalSystem F E R hι) b a) =
@@ -101,16 +105,65 @@ theorem twistedHomology₀EquivQuotientTwo_ιTwistedHomology₀ [ConnectedSpace 
   LocalCoefficientSystem.twistedHomology₀EquivQuotientTwo_ιTwistedHomology₀.{u, uB, max uE uι u}
     _ _ _ _ _ a
 
+/-- The identification of `H₀(B; o(E))` with `R ⧸ 2R` sends the class of an element of the fibre
+over any point `b'` to the residue of its value at any orientation `o'` of `E_b'`. -/
+theorem twistedHomology₀EquivQuotientTwo_ιTwistedHomology₀ [ConnectedSpace B]
+    [LocallyPathConnectedSpace B] (h : IsEmpty (VectorBundleOrientation F E ι)) {b b' : B}
+    (o : Orientation ℝ (E b) ι) (o' : Orientation ℝ (E b') ι)
+    (a : (signLocalSystem F E R hι).obj (FundamentalGroupoid.mk b')) :
+    twistedHomology₀EquivQuotientTwo hι h o (ιTwistedHomology₀ (signLocalSystem F E R hι) b' a) =
+      Ideal.Quotient.mk _ (signLocalSystemFiberEquiv hι o' a) := by
+  have : PathConnectedSpace B := PathConnectedSpace.of_locallyPathConnectedSpace
+  -- Transport `a` to `b` along a path `γ`. This changes its value by a sign, which vanishes
+  -- modulo `2`.
+  let γ : FundamentalGroupoid.mk b' ⟶ FundamentalGroupoid.mk b :=
+    Path.Homotopic.Quotient.mk (PathConnectedSpace.somePath b' b)
+  have hγ := LinearMap.congr_fun (congrArg ModuleCat.Hom.hom
+    (map_ιTwistedHomology₀.{u, uB, max uE uι u} (signLocalSystem F E R hι) γ)) a
+  simp only [ModuleCat.hom_comp, LinearMap.comp_apply] at hγ
+  rw [← hγ, twistedHomology₀EquivQuotientTwo_ιTwistedHomology₀_self,
+    signLocalSystemFiberEquiv_apply, signLocalSystemObjEquiv_map_apply]
+  -- The lift of `γ⁻¹` starting at `o` ends at `o'` or at `-o'`.
+  set e := (isCoveringMap_proj hι).monodromy (inv γ)
+    (⟨⟨b, o⟩, rfl⟩ : (proj ⁻¹' {b} : Set (VectorBundleOrientationCover F E ι)))
+  rcases eq_or_eq_deck hι (p := ⟨b', o'⟩) (q := e.1) e.2 with he | he
+  · rw [show e = ⟨⟨b', o'⟩, rfl⟩ from Subtype.ext he, ← signLocalSystemFiberEquiv_apply]
+  · rw [show e = ⟨⟨b', -o'⟩, rfl⟩ from Subtype.ext (he.trans (deck_apply _)),
+      ← signLocalSystemFiberEquiv_apply, signLocalSystemFiberEquiv_neg, Ideal.Quotient.eq]
+    exact Ideal.mem_span_singleton.2 ⟨-signLocalSystemFiberEquiv hι o' a, by ring⟩
+
 /-- The inverse identification sends the residue of `r` to the class of the element of the fibre
 over `b` whose value at `o` is `r`. -/
 @[simp]
-theorem twistedHomology₀EquivQuotientTwo_symm_mk [ConnectedSpace B]
+theorem twistedHomology₀EquivQuotientTwo_symm_mk_self [ConnectedSpace B]
     [LocallyPathConnectedSpace B] (h : IsEmpty (VectorBundleOrientation F E ι)) {b : B}
     (o : Orientation ℝ (E b) ι) (r : R) :
     (twistedHomology₀EquivQuotientTwo hι h o).symm (Ideal.Quotient.mk _ r) =
       ιTwistedHomology₀ (signLocalSystem F E R hι) b ((signLocalSystemFiberEquiv hι o).symm r) :=
   (LinearEquiv.symm_apply_eq _).2 (by
-    rw [twistedHomology₀EquivQuotientTwo_ιTwistedHomology₀, LinearEquiv.apply_symm_apply])
+    rw [twistedHomology₀EquivQuotientTwo_ιTwistedHomology₀_self, LinearEquiv.apply_symm_apply])
+
+/-- The inverse identification sends the residue of `r` to the class of the element of the fibre
+over any point `b'` whose value at any orientation `o'` of `E_b'` is `r`. -/
+theorem twistedHomology₀EquivQuotientTwo_symm_mk [ConnectedSpace B]
+    [LocallyPathConnectedSpace B] (h : IsEmpty (VectorBundleOrientation F E ι)) {b b' : B}
+    (o : Orientation ℝ (E b) ι) (o' : Orientation ℝ (E b') ι) (r : R) :
+    (twistedHomology₀EquivQuotientTwo hι h o).symm (Ideal.Quotient.mk _ r) =
+      ιTwistedHomology₀ (signLocalSystem F E R hι) b' ((signLocalSystemFiberEquiv hι o').symm r) :=
+  (LinearEquiv.symm_apply_eq _).2 (by
+    rw [twistedHomology₀EquivQuotientTwo_ιTwistedHomology₀ hι h o o',
+      LinearEquiv.apply_symm_apply])
+
+/-- The identification of `H₀(B; o(E))` with `R ⧸ 2R` does not depend on the point and orientation
+used to construct it. -/
+theorem twistedHomology₀EquivQuotientTwo_eq [ConnectedSpace B] [LocallyPathConnectedSpace B]
+    (h : IsEmpty (VectorBundleOrientation F E ι)) {b b' : B} (o : Orientation ℝ (E b) ι)
+    (o' : Orientation ℝ (E b') ι) :
+    twistedHomology₀EquivQuotientTwo (R := R) hι h o = twistedHomology₀EquivQuotientTwo hι h o' :=
+  LinearEquiv.symm_bijective.injective <| LinearEquiv.ext fun r ↦ by
+    obtain ⟨r, rfl⟩ := Ideal.Quotient.mk_surjective r
+    rw [twistedHomology₀EquivQuotientTwo_symm_mk hι h o o' r,
+      twistedHomology₀EquivQuotientTwo_symm_mk_self]
 
 end VectorBundleOrientationCover
 
