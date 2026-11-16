@@ -21,6 +21,8 @@ into `k` perfect matchings, colours by the matching indices, and restricts the c
 the original graph. The matching-partition and chromatic-number formulations are included as
 equivalent interfaces. Consequently the least number of colours is the largest number of edges at
 a vertex, which is zero for the empty graph; for a simple graph this is its maximum degree.
+For a finite bipartite simple graph the theorem is also stated through colourings of Mathlib's
+`SimpleGraph.lineGraph`.
 
 ## References
 
@@ -144,5 +146,34 @@ theorem chromaticNumber_lineGraph_eq_maxDegree (H : SimpleGraph α) [Fintype α]
       obtain ⟨x, hx⟩ := H.exists_maximal_degree_vertex
       rw [hx, ← Graph.incidenceCount_ofSimpleGraph]
       exact Graph.incidenceCount_le_chromaticNumber_lineGraph _ x
+
+/-- **Kőnig's edge-colouring theorem for simple graphs.** A finite bipartite simple graph admits a
+proper edge-colouring by `k` colours, that is a `k`-colouring of its line graph, exactly when its
+maximum degree is at most `k`. -/
+theorem colorable_lineGraph_iff_maxDegree_le (H : SimpleGraph α) [Fintype α]
+    [DecidableRel H.Adj] (hH : H.IsBipartite) :
+    H.lineGraph.Colorable k ↔ H.maxDegree ≤ k := by
+  classical
+  obtain ⟨c⟩ := hH
+  let L : Finset ↥(Graph.ofSimpleGraph H).vertexSet := ({x | c x = 0} : Finset α).subtype _
+  let R : Finset ↥(Graph.ofSimpleGraph H).vertexSet := ({x | c x = 1} : Finset α).subtype _
+  have hL : Subtype.val '' (L : Set ↥(Graph.ofSimpleGraph H).vertexSet) = {x | c x = 0} := by
+    ext x
+    simp [L]
+  have hR : Subtype.val '' (R : Set ↥(Graph.ofSimpleGraph H).vertexSet) = {x | c x = 1} := by
+    ext x
+    simp [R]
+  have hLR : (Graph.ofSimpleGraph H).IsBipartition L R := by
+    rw [isBipartition_ofSimpleGraph_iff, hL, hR]
+    refine ⟨⟨Set.disjoint_left.2 fun x hx0 hx1 ↦ ?_, fun x y hxy ↦ ?_⟩, ?_⟩
+    · simp_all
+    · have := c.valid hxy
+      simp only [Set.mem_ofPred_eq]
+      lia
+    · ext x
+      simp only [Set.mem_union, Set.mem_ofPred_eq, Set.mem_univ, iff_true]
+      lia
+  rw [← chromaticNumber_le_iff_colorable, chromaticNumber_lineGraph_eq_maxDegree H hLR,
+    Nat.cast_le]
 
 end SimpleGraph

@@ -39,6 +39,8 @@ bound. The converse bound for bipartite multigraphs is Kőnig's edge-colouring t
   graph.
 * `Graph.Iso.lineGraph`: isomorphic multigraphs have isomorphic line graphs.
 * `Graph.lineGraphOfSimpleGraphIso`: the line graph of `Graph.ofSimpleGraph H` is `H.lineGraph`.
+* `SimpleGraph.edgeColoringEquivOfSimpleGraph`: colourings of `H.lineGraph` are proper
+  edge-colourings of `Graph.ofSimpleGraph H`.
 * `Graph.EdgeColoring G C`: proper edge-colourings of `G` by `C`, with the constructor
   `Graph.EdgeColoring.mk` and the restriction `Graph.EdgeColoring.ofLE` to subgraphs, such as
   `G.deleteEdges F`.
@@ -242,3 +244,31 @@ theorem chromaticNumber_lineGraph_banana (u v : α) (F : Set β) :
     edgeSet_banana]
 
 end Graph
+
+namespace SimpleGraph
+
+variable {α : Type u} {C : Type w}
+
+/-- Colourings of the line graph of a simple graph `H` are equivalent to proper edge-colourings of
+the associated multigraph `Graph.ofSimpleGraph H`; both colour the edges of `H`, and the
+equivalence keeps the colour of every edge. -/
+def edgeColoringEquivOfSimpleGraph (H : SimpleGraph α) (C : Type w) :
+    H.lineGraph.Coloring C ≃ (Graph.ofSimpleGraph H).EdgeColoring C :=
+  coloringCongr (Graph.lineGraphOfSimpleGraphIso H).symm (Equiv.refl C)
+
+/-- Transporting a line-graph colouring to the multigraph keeps the colour of each edge. -/
+@[simp]
+theorem edgeColoringEquivOfSimpleGraph_apply (H : SimpleGraph α) (c : H.lineGraph.Coloring C)
+    (e : (Graph.ofSimpleGraph H).edgeSet) :
+    H.edgeColoringEquivOfSimpleGraph C c e = c (Graph.lineGraphOfSimpleGraphIso H e) :=
+  (rfl)
+
+/-- Transporting a multigraph edge-colouring to the line graph keeps the colour of each edge. -/
+@[simp]
+theorem edgeColoringEquivOfSimpleGraph_symm_apply (H : SimpleGraph α)
+    (c : (Graph.ofSimpleGraph H).EdgeColoring C) (e : H.edgeSet) :
+    (H.edgeColoringEquivOfSimpleGraph C).symm c e =
+      c ((Graph.lineGraphOfSimpleGraphIso H).symm e) :=
+  (rfl)
+
+end SimpleGraph
