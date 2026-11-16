@@ -21,11 +21,11 @@ The degree `100 = 2² * 5²` has no prime divisor occurring only once in the ord
 `44352000 = 2⁹ * 3² * 5³ * 7 * 11`, so the prime `11` is brought in through a suborbit instead.
 The stabilizer of `0` has a 22-point orbit, on which it acts doubly transitively
 (`TauCeti.Sporadic.HS.isMultiplyPretransitive_stabilizer_orbit`). By
-`TauCeti.natCard_orbit_stabilizer_dvd_natCard_stabilizer_of_normal`, the order of every nontrivial
-normal subgroup that does not act regularly is therefore divisible by `22`, and such a subgroup
-contains the element `a * b`, whose `11`-th power is `1`, because `11 ^ 2` does not divide the
-order of the model. That element normally generates the perfect group `HS`. Finally no normal
-subgroup acts regularly: a group of order `100` has a unique Sylow `5`-subgroup
+`TauCeti.MulAction.natCard_orbit_stabilizer_dvd_natCard_stabilizer_of_normal`, the order of every
+nontrivial normal subgroup that does not act regularly is therefore divisible by `22`, and such a
+subgroup contains the element `a * b`, whose `11`-th power is `1`, because `11 ^ 2` does not
+divide the order of the model. That element normally generates the perfect group `HS`. Finally
+no normal subgroup acts regularly: a group of order `100` has a unique Sylow `5`-subgroup
 (`TauCeti.stabilizer_ne_bot_of_forall_dvd_natCard_modEq_one`).
 
 This proves simplicity of the permutation model, not recognition of the abstract Higman--Sims

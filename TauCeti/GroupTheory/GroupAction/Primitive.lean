@@ -7,6 +7,8 @@ module
 
 public import Mathlib.GroupTheory.GroupAction.Primitive
 public import TauCeti.GroupTheory.GroupAction.FixingSubgroup
+import TauCeti.GroupTheory.GroupAction.ConjAct
+import TauCeti.GroupTheory.GroupAction.Transitive
 
 /-!
 # Point stabilizers, larger acting groups, and transitive normal subgroups in primitive actions
@@ -30,6 +32,12 @@ nontrivial normal subgroup transitive.  This is the first step of the simplicity
 `TauCeti.GroupTheory.GroupAction.Simple.Basic` and
 `TauCeti.GroupTheory.GroupAction.Simple.Stabilizer`.
 
+The fourth concerns the point stabilizer `N_x` of a normal subgroup `N` in a faithful primitive
+action on a finite set.  A nontrivial `N_x` has no fixed point other than `x`.  It is normal in
+the stabilizer `G_x` of `x` in the whole group, so on an orbit `O` of `G_x` on which `G_x` acts
+quasi-primitively it is either trivial or transitive; the first case is excluded by the
+fixed-point property, so `N_x` is transitive on `O` and the length of `O` divides its order.
+
 ## Main results
 
 * `MulAction.IsBlock.orbit_stabilizer_subset`,
@@ -46,13 +54,21 @@ nontrivial normal subgroup transitive.  This is the first step of the simplicity
   `TauCeti.MulAction.eq_top_of_characteristic_of_stabilizer_eq_bot`: in a quasi-primitive action,
   a subgroup acting regularly contains no nontrivial normal subgroup of the whole group other
   than itself, so a regular normal subgroup is characteristically simple.
-* `MulAction.stabilizer_smul_eq_conjNormal_smul`: for a normal subgroup `N`, the stabilizer of
-  `g • a` in `N` is the conjugate by `g` of the stabilizer of `a` in `N`.
 * `MulAction.IsBlock.setOf_stabilizer_eq_of_normal`: for a normal subgroup `N`, the points with a
   given stabilizer in `N` form a block.
 * `TauCeti.MulAction.fixedPoints_stabilizer_eq_singleton_of_normal`: in a faithful primitive
   action on a finite set, a nontrivial point stabilizer of a normal subgroup fixes exactly its
   base point.
+* `TauCeti.MulAction.isPretransitive_subgroupOf_stabilizer_orbit`: in a faithful primitive action
+  on a finite set, a normal subgroup with a nontrivial stabilizer of `x` meets the stabilizer of
+  `x` in a subgroup acting transitively on each of its quasi-primitive orbits.
+* `TauCeti.MulAction.natCard_orbit_stabilizer_dvd_natCard_stabilizer_of_normal`: the length of
+  such an orbit divides the order of the stabilizer of `x` in the normal subgroup.
+
+## References
+
+* J. D. Dixon and B. Mortimer, *Permutation Groups*, §1.5 and §1.6 (blocks, and normal subgroups
+  of primitive groups), and §3.2 (orbits of the point stabilizer).
 -/
 
 public section
@@ -85,15 +101,6 @@ theorem _root_.MulAction.IsBlock.orbit_inf_stabilizer_subset {H : Subgroup G}
   -- Use the orbit-relation bridge to compare the two subgroup action types.
   rw [← stabilizer_subgroupOf H a, ← orbitRel_apply, orbitRel_subgroupOf, inf_comm]
   exact orbitRel_apply.mpr hy
-
-/-- For a normal subgroup `N`, the stabilizer of `g • a` in `N` is the conjugate by `g` of the
-stabilizer of `a` in `N`. This is the form of `MulAction.stabilizer_smul_eq_stabilizer_map_conj`
-for the action of a normal subgroup. -/
-theorem _root_.MulAction.stabilizer_smul_eq_conjNormal_smul {N : Subgroup G} [N.Normal] (g : G)
-    (a : X) : stabilizer N (g • a) = (MulAut.conjNormal g : MulAut N) • stabilizer N a := by
-  ext n
-  simp [Subgroup.mem_pointwise_smul_iff_inv_smul_mem, Subgroup.smul_def, mul_smul,
-    inv_smul_eq_iff]
 
 /-- For a normal subgroup `N`, the points whose stabilizer in `N` is that of `a` form a block. -/
 theorem _root_.MulAction.IsBlock.setOf_stabilizer_eq_of_normal {N : Subgroup G} [N.Normal]
@@ -245,5 +252,53 @@ theorem fixedPoints_stabilizer_eq_singleton_of_normal [Finite X] {N : Subgroup G
     have hz : z ∈ {z : X | stabilizer N z = stabilizer N a} := hu ▸ Set.mem_univ z
     rw [Subgroup.smul_def, ← mem_stabilizer_iff, Set.mem_ofPred.mp hz]
     exact n.property
+
+/-- In a faithful primitive action on a finite set, let the stabilizer of `x` act
+quasi-primitively on its orbit `O` of `y`, and let `N` be a normal subgroup in which the
+stabilizer of `x` is nontrivial. Then the elements of `N` fixing `x` act transitively on `O`. -/
+theorem isPretransitive_subgroupOf_stabilizer_orbit [Finite X] {x : X} (y : X)
+    [IsQuasiPreprimitive (stabilizer G x) (orbit (stabilizer G x) y)]
+    {N : Subgroup G} [N.Normal] (hN : stabilizer N x ≠ ⊥) :
+    IsPretransitive (N.subgroupOf (stabilizer G x)) (orbit (stabilizer G x) y) := by
+  have hM : (N.subgroupOf (stabilizer G x)).Normal := Subgroup.Normal.subgroupOf ‹_› _
+  by_cases hyx : y = x
+  · -- The orbit of `x` under its own stabilizer is a single point.
+    subst hyx
+    have : Subsingleton (orbit (stabilizer G y) y) :=
+      (subsingleton_orbit_iff_mem_fixedPoints.mpr (mem_fixedPoints.mpr fun g ↦
+        (Subgroup.smul_def g y).trans (mem_stabilizer_iff.mp g.property))).coe_sort
+    infer_instance
+  -- Otherwise the elements of `N` fixing `x` would all fix `y`, a second fixed point.
+  refine IsQuasiPreprimitive.isPretransitive_of_normal fun hfix ↦ hyx ?_
+  have hmem : y ∈ fixedPoints (stabilizer N x) X := by
+    refine mem_fixedPoints.mpr fun n ↦ ?_
+    have hn : (n : G) ∈ stabilizer G x :=
+      mem_stabilizer_iff.mpr ((Subgroup.smul_def (n : N) x).symm.trans
+        (mem_stabilizer_iff.mp n.property))
+    have hy := mem_fixedPoints.mp
+      (hfix ▸ Set.mem_univ (⟨y, mem_orbit_self y⟩ : orbit (stabilizer G x) y))
+      ⟨⟨n, hn⟩, Subgroup.mem_subgroupOf.mpr (n : N).property⟩
+    rw [Subtype.ext_iff, Subgroup.smul_def, orbit.coe_smul, Subgroup.mk_smul] at hy
+    rw [Subgroup.smul_def, Subgroup.smul_def]
+    exact hy
+  rwa [fixedPoints_stabilizer_eq_singleton_of_normal x hN, Set.mem_singleton_iff] at hmem
+
+/-- In a faithful primitive action on a finite set, let the stabilizer of `x` act
+quasi-primitively on its orbit of `y`, and let `N` be a normal subgroup in which the stabilizer
+of `x` is nontrivial. Then the length of this orbit divides the order of the stabilizer of `x`
+in `N`. -/
+theorem natCard_orbit_stabilizer_dvd_natCard_stabilizer_of_normal [Finite X] {x : X} (y : X)
+    [IsQuasiPreprimitive (stabilizer G x) (orbit (stabilizer G x) y)]
+    {N : Subgroup G} [N.Normal] (hN : stabilizer N x ≠ ⊥) :
+    Nat.card (orbit (stabilizer G x) y) ∣ Nat.card (stabilizer N x) := by
+  have := isPretransitive_subgroupOf_stabilizer_orbit y hN
+  have : Nonempty (orbit (stabilizer G x) y) := (nonempty_orbit y).to_subtype
+  -- Both subgroups are copies of the intersection of `N` with the stabilizer of `x`.
+  have hcard : Nat.card (N.subgroupOf (stabilizer G x)) = Nat.card (stabilizer N x) := by
+    rw [← stabilizer_subgroupOf, ← Subgroup.inf_subgroupOf_right N,
+      ← Subgroup.inf_subgroupOf_left (stabilizer G x) N]
+    exact (Nat.card_congr (Subgroup.subgroupOfEquivOfLe inf_le_right).toEquiv).trans
+      (Nat.card_congr (Subgroup.subgroupOfEquivOfLe inf_le_left).toEquiv).symm
+  exact hcard ▸ natCard_dvd_natCard_of_isPretransitive (N.subgroupOf (stabilizer G x))
 
 end TauCeti.MulAction

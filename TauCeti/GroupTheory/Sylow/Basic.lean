@@ -30,8 +30,8 @@ to an element of any chosen Sylow subgroup for that prime.
 * `TauCeti.exists_mul_mul_inv_mem_zpowers_of_not_sq_dvd`: if `p ^ 2` does not divide the order of
   the group, some conjugate of an element of order `p` is a power of any other element of
   order `p`.
-* `Sylow.subsingleton_of_forall_dvd_natCard_modEq_one`: the Sylow `p`-subgroup is unique when no
-  divisor of the group order other than `1` is congruent to `1` modulo `p`.
+* `TauCeti.subsingleton_sylow_of_forall_dvd_natCard_modEq_one`: the Sylow `p`-subgroup is unique
+  when no divisor of the group order other than `1` is congruent to `1` modulo `p`.
 -/
 
 public section
@@ -83,17 +83,6 @@ theorem mul_card_sylow_dvd_card (hdvd : p ∣ Nat.card G) :
   rw [P.card_eq_index_normalizer, ← (Subgroup.normalizer (P : Set G)).index_mul_card, mul_comm]
   exact Nat.mul_dvd_mul_left _ hN
 
-/-- A group has a unique Sylow `p`-subgroup when `1` is the only divisor of its order congruent
-to `1` modulo `p`. The hypothesis forces the group to be finite, since every number divides
-`Nat.card G = 0`. -/
-theorem subsingleton_of_forall_dvd_natCard_modEq_one
-    (h : ∀ d, d ∣ Nat.card G → d ≡ 1 [MOD p] → d = 1) : Subsingleton (Sylow p G) := by
-  have : Finite G := Nat.finite_of_card_ne_zero fun h0 ↦
-    hp.out.ne_zero (Nat.succ_injective (h (p + 1) (h0 ▸ dvd_zero _) (by simp [Nat.ModEq])))
-  obtain ⟨P⟩ := (inferInstance : Nonempty (Sylow p G))
-  exact (Nat.card_eq_one_iff_unique.mp
-    (h _ (P.card_dvd_index.trans (Subgroup.index_dvd_card _)) (card_sylow_modEq_one p G))).1
-
 end Sylow
 
 namespace TauCeti
@@ -115,5 +104,16 @@ theorem exists_mul_mul_inv_mem_zpowers_of_not_sq_dvd (hsq : ¬ p ^ 2 ∣ Nat.car
   have hmem : (x : G) ∈ (Pg : Subgroup G) := x.property
   simp only [Pg, Sylow.coe_ofCard] at hmem
   exact ⟨y, hy ▸ hmem⟩
+
+/-- A group has a unique Sylow `p`-subgroup when `1` is the only divisor of its order congruent
+to `1` modulo `p`. The hypothesis forces the group to be finite, since every number divides
+`Nat.card G = 0`. -/
+theorem subsingleton_sylow_of_forall_dvd_natCard_modEq_one
+    (h : ∀ d, d ∣ Nat.card G → d ≡ 1 [MOD p] → d = 1) : Subsingleton (Sylow p G) := by
+  have : Finite G := Nat.finite_of_card_ne_zero fun h0 ↦
+    hp.out.ne_zero (Nat.succ_injective (h (p + 1) (h0 ▸ dvd_zero _) (by simp [Nat.ModEq])))
+  obtain ⟨P⟩ := (inferInstance : Nonempty (Sylow p G))
+  exact (Nat.card_eq_one_iff_unique.mp
+    (h _ (P.card_dvd_index.trans (Subgroup.index_dvd_card _)) (card_sylow_modEq_one p G))).1
 
 end TauCeti

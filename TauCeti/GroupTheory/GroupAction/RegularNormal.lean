@@ -55,7 +55,7 @@ theorem stabilizer_ne_bot_of_forall_dvd_natCard_modEq_one {q r : ℕ}
     rw [← Subgroup.index_bot, ← hx, index_stabilizer_of_transitive]
   have : Fact q.Prime := ⟨hq⟩
   have : Subsingleton (Sylow q N) :=
-    Sylow.subsingleton_of_forall_dvd_natCard_modEq_one (hcard ▸ hmod)
+    subsingleton_sylow_of_forall_dvd_natCard_modEq_one (hcard ▸ hmod)
   have : Finite N := Nat.finite_of_card_ne_zero fun h0 ↦
     hq.ne_zero (Nat.succ_injective (hmod (q + 1) (hcard ▸ h0 ▸ dvd_zero _) (by simp [Nat.ModEq])))
   obtain ⟨P⟩ := (inferInstance : Nonempty (Sylow q N))
