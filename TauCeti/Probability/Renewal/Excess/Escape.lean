@@ -9,6 +9,7 @@ public import TauCeti.Probability.Renewal.Excess.CountBound
 public import TauCeti.Probability.Renewal.InfiniteMean
 import TauCeti.Analysis.SpecificLimits.LatticeIncrements
 import TauCeti.MeasureTheory.Integral.Lebesgue.Support
+import TauCeti.Probability.Independence.Basic
 
 /-!
 # Excess escape from vanishing renewal increments and infinite mean
@@ -50,19 +51,10 @@ theorem tendsto_measureReal_renewalExcess_le_of_tendsto_renewalFunction_sub
     (hlim : Tendsto (fun t ↦ ((P.map (T 0)).renewalFunction (t + x)).toReal -
       ((P.map (T 0)).renewalFunction t).toReal) atTop (𝓝 0)) :
     Tendsto (fun t ↦ P.real {ω | renewalExcess T t ω ≤ x}) atTop (𝓝 0) := by
-  set T' : ℕ → Ω → ℝ≥0 := fun n ↦ (hid n).aemeasurable_fst.mk (T n)
-  have hT' (n : ℕ) : Measurable (T' n) := (hid n).aemeasurable_fst.measurable_mk
-  have hT'_ae (n : ℕ) : T n =ᵐ[P] T' n := (hid n).aemeasurable_fst.ae_eq_mk
-  have hindep' : iIndepFun T' P := hindep.congr hT'_ae
-  have hid' (n : ℕ) : IdentDistrib (T' n) (T' 0) P P :=
-    ⟨(hT' n).aemeasurable, (hT' 0).aemeasurable, by
-      rw [Measure.map_congr (hT'_ae n).symm, Measure.map_congr (hT'_ae 0).symm, (hid n).map_eq]⟩
-  have hmap : P.map (T' 0) = P.map (T 0) := Measure.map_congr (hT'_ae 0).symm
-  have hzero' : P {ω | T' 0 ω = 0} < 1 := by
-    have hset : {ω | T 0 ω = 0} =ᵐ[P] {ω | T' 0 ω = 0} := eventuallyEqSet_iff.2 <| by
-      filter_upwards [hT'_ae 0] with ω hω
-      simp [hω]
-    rwa [← measure_congr hset]
+  obtain ⟨T', hT', hT'_ae, hindep', hid', hT'_id⟩ :=
+    hindep.exists_measurable_ae_eq_of_identDistrib hid
+  have hzero' : P {ω | T' 0 ω = 0} < 1 :=
+    ((hT'_id 0).measure_mem_eq (measurableSet_singleton 0)).trans_lt hzero
   have heq (t : ℝ≥0) : P.real {ω | renewalExcess T t ω ≤ x} =
       P.real {ω | renewalExcess T' t ω ≤ x} :=
     measureReal_congr <| eventuallyEqSet_iff.2 <| by
@@ -70,7 +62,7 @@ theorem tendsto_measureReal_renewalExcess_le_of_tendsto_renewalFunction_sub
       simp [hω t]
   simp_rw [heq]
   exact squeeze_zero (fun _ ↦ measureReal_nonneg)
-    (fun t ↦ hmap ▸ measureReal_renewalExcess_le_le_renewalFunction_sub
+    (fun t ↦ (hT'_id 0).map_eq ▸ measureReal_renewalExcess_le_le_renewalFunction_sub
       hT' hindep' hid' hzero' t x) hlim
 
 /-- Vanishing successive renewal increments on one positive grid imply excess escape

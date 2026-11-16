@@ -112,14 +112,6 @@ theorem isProbabilityMeasure_equilibriumExcessLaw_of_measure_singleton_lt_one
   filter_upwards [hae] with u hu
   simpa using hu
 
-/-- For a probability interarrival law not concentrated at zero, the equilibrium
-excess-life measure is a probability measure precisely when the extended mean is finite. -/
-theorem isProbabilityMeasure_equilibriumExcessLaw_iff_of_measure_singleton_lt_one
-    (F : Measure ℝ≥0) [IsProbabilityMeasure F] (hzero : F {0} < 1) :
-    IsProbabilityMeasure F.equilibriumExcessLaw ↔ (∫⁻ u, (u : ℝ≥0∞) ∂F) ≠ ∞ :=
-  ⟨fun h => (F.isProbabilityMeasure_equilibriumExcessLaw_iff.1 h).2,
-    F.isProbabilityMeasure_equilibriumExcessLaw_of_measure_singleton_lt_one hzero⟩
-
 /-- For a nonlattice measure on `ℝ≥0` (in particular, a nonlattice probability interarrival
 law), the equilibrium excess-life measure is a probability measure (equivalently, has total
 mass one) precisely when the extended first moment is finite. -/

@@ -10,6 +10,7 @@ public import TauCeti.Probability.Renewal.Equilibrium
 public import TauCeti.Probability.Renewal.Excess.Escape
 public import TauCeti.Probability.Renewal.IntervalLimit
 public import TauCeti.MeasureTheory.Measure.ProbabilityMeasure.Cdf
+import TauCeti.Probability.Independence.Basic
 
 /-!
 # Limiting distribution of the excess life
@@ -62,19 +63,10 @@ theorem tendsto_measureReal_lt_renewalExcess_of_tendsto_measureReal_Ioc
     Tendsto (fun t ↦ P.real {ω | x < renewalExcess T t ω}) atTop
       (𝓝 ((P.map (T 0)).equilibriumExcessLaw.real (Ioi (x : ℝ)))) := by
   have := hindep.isProbabilityMeasure
-  set T' : ℕ → Ω → ℝ≥0 := fun n ↦ (hid n).aemeasurable_fst.mk (T n)
-  have hT' (n : ℕ) : Measurable (T' n) := (hid n).aemeasurable_fst.measurable_mk
-  have hT'_ae (n : ℕ) : T n =ᵐ[P] T' n := (hid n).aemeasurable_fst.ae_eq_mk
-  have hindep' : iIndepFun T' P := hindep.congr hT'_ae
-  have hid' (n : ℕ) : IdentDistrib (T' n) (T' 0) P P :=
-    ⟨(hT' n).aemeasurable, (hT' 0).aemeasurable, by
-      rw [Measure.map_congr (hT'_ae n).symm, Measure.map_congr (hT'_ae 0).symm, (hid n).map_eq]⟩
-  have hmap : P.map (T' 0) = P.map (T 0) := Measure.map_congr (hT'_ae 0).symm
-  have hzero' : P {ω | T' 0 ω = 0} < 1 := by
-    have hset : {ω | T 0 ω = 0} =ᵐ[P] {ω | T' 0 ω = 0} := eventuallyEqSet_iff.2 <| by
-      filter_upwards [hT'_ae 0] with ω hω
-      simp [hω]
-    rwa [← measure_congr hset]
+  obtain ⟨T', hT', hT'_ae, hindep', hid', hT'_id⟩ :=
+    hindep.exists_measurable_ae_eq_of_identDistrib hid
+  have hzero' : P {ω | T' 0 ω = 0} < 1 :=
+    ((hT'_id 0).measure_mem_eq (measurableSet_singleton 0)).trans_lt hzero
   have hF : (P.map (T 0)) {0} < 1 := by
     rwa [Measure.map_apply_of_aemeasurable (hid 0).aemeasurable_fst (measurableSet_singleton 0)]
   have htail : Antitone (fun u : ℝ≥0 ↦ (P.map (T 0)).real (Ioi (u + x))) :=
@@ -86,7 +78,8 @@ theorem tendsto_measureReal_lt_renewalExcess_of_tendsto_measureReal_Ioc
       eventuallyEqSet_iff.2 <| by
         filter_upwards [renewalExcess_congr_ae hT'_ae] with ω hω
         simp [hω t]
-    rw [measureReal_congr hset, measureReal_lt_renewalExcess hT' hindep' hid' hzero', hmap]
+    rw [measureReal_congr hset, measureReal_lt_renewalExcess hT' hindep' hid' hzero',
+      (hT'_id 0).map_eq]
   simp_rw [heq]
   rw [Measure.equilibriumExcessLaw_real_Ioi_eq_integral_tail_add]
   exact (P.map (T 0)).tendsto_renewalConv_of_tendsto_measureReal_Ioc hF hlim

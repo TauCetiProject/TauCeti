@@ -226,11 +226,9 @@ theorem tendsto_renewalConv_sub_dirac_of_tendsto_measureReal_Ioc
     simpa only [Function.comp_def, Real.toNNReal_coe, id_eq] using
       (hf.tendsto_zero_of_integrableOn_Ioi hint (fun x _ => h₀ x.toNNReal)).comp
         (NNReal.tendsto_coe_atTop.2 tendsto_id)
-  have hmeasure : μ.renewalMeasure - dirac 0 = μ ∗ μ.renewalMeasure := by
-    conv_lhs => rw [renewalMeasure_eq_dirac_add_conv, add_comm, Measure.add_sub_cancel]
   have he (t : ℝ≥0) : renewalConv h (μ.renewalMeasure - dirac 0) t =
       renewalConv h μ.renewalMeasure t - h t := by
-    rw [hmeasure]
+    rw [renewalMeasure_sub_dirac]
     have heq := renewalConv_renewalMeasure_eq_add_conv (μ := μ) hh.measurable
       (t := t) (C := h 0) (fun s _ => by
         rw [abs_of_nonneg (h₀ s)]

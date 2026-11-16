@@ -83,11 +83,8 @@ theorem tendsto_renewalConv_conv_renewalMeasure (hNL : ¬ F.IsLattice)
     (hint : IntegrableOn (fun x : ℝ => h x.toNNReal) (Ioi 0)) :
     Tendsto (renewalConv h (F ∗ F.renewalMeasure)) atTop
       (𝓝 (((∫⁻ x, (x : ℝ≥0∞) ∂F)⁻¹).toReal *
-        ∫ x in Ioi (0 : ℝ), h x.toNNReal)) := by
-  have hmeasure : F.renewalMeasure - dirac 0 = F ∗ F.renewalMeasure := by
-    conv_lhs => rw [renewalMeasure_eq_dirac_add_conv, add_comm, Measure.add_sub_cancel]
-  rw [← hmeasure]
-  exact F.tendsto_renewalConv_sub_dirac hNL hh h₀ hint
+        ∫ x in Ioi (0 : ℝ), h x.toNNReal)) :=
+  renewalMeasure_sub_dirac F ▸ F.tendsto_renewalConv_sub_dirac hNL hh h₀ hint
 
 /-- **Key renewal theorem.** For nonnegative decreasing integrable forcing and a
 nonlattice interarrival law, convolution against the full renewal measure converges

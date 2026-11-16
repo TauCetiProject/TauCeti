@@ -5,13 +5,19 @@ Authors: Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Probability.IdentDistrib
 public import Mathlib.Probability.Independence.Basic
 
 /-!
-# Independence of almost surely constant coordinates
+# Basic independence constructions
 
 A dependent family of random variables is independent if all but at most one coordinate are
-almost surely constant. No measurability assumption or restriction on the index type is needed.
+almost surely constant (`TauCeti.Probability.iIndepFun_of_ae_eq_const_outside_subsingleton`).
+No measurability assumption or restriction on the index type is needed.
+
+An independent, identically distributed family admits a measurable version agreeing almost
+everywhere at each index, preserving independence and identical distribution
+(`ProbabilityTheory.iIndepFun.exists_measurable_ae_eq_of_identDistrib`).
 -/
 
 public section
@@ -82,3 +88,23 @@ theorem iIndepFun_of_ae_eq_const_outside_subsingleton {f : ∀ i, Ω → β i} {
       exact (Finset.prod_eq_one fun i hi => by rw [hfull' i hi, measure_univ]).symm
 
 end TauCeti.Probability
+
+namespace ProbabilityTheory
+
+/-- Every independent, identically distributed family of random variables admits a measurable
+version agreeing almost everywhere at each index, preserving independence, identical distribution
+within the family, and identical distribution with each original coordinate. -/
+theorem iIndepFun.exists_measurable_ae_eq_of_identDistrib {Ω ι α : Type*}
+    [MeasurableSpace Ω] [MeasurableSpace α] {P : Measure Ω} {X : ι → Ω → α} {i₀ : ι}
+    (hindep : iIndepFun X P) (hid : ∀ i, IdentDistrib (X i) (X i₀) P P) :
+    ∃ X' : ι → Ω → α, (∀ i, Measurable (X' i)) ∧ (∀ i, X i =ᵐ[P] X' i) ∧
+      iIndepFun X' P ∧ (∀ i, IdentDistrib (X' i) (X' i₀) P P) ∧
+      ∀ i, IdentDistrib (X' i) (X i) P P := by
+  let X' : ι → Ω → α := fun i ↦ (hid i).aemeasurable_fst.mk (X i)
+  have hX'_ae (i : ι) : X i =ᵐ[P] X' i := (hid i).aemeasurable_fst.ae_eq_mk
+  refine ⟨X', fun i ↦ (hid i).aemeasurable_fst.measurable_mk, hX'_ae, hindep.congr hX'_ae,
+    fun i ↦ ((hid i).aemeasurable_fst.identDistrib_mk.symm.trans (hid i)).trans
+      (hid i₀).aemeasurable_fst.identDistrib_mk,
+    fun i ↦ (hid i).aemeasurable_fst.identDistrib_mk.symm⟩
+
+end ProbabilityTheory
