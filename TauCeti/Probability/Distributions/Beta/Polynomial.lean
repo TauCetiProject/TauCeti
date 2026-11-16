@@ -21,7 +21,7 @@ The left summand of the variable type indexes coordinates, and the right summand
 residual square roots. This allows polynomial matrix constructions involving both kinds of
 factors to be integrated without manually collecting exponents.
 
-The scalar integration is supplied by
+The finite-product monomial integration is supplied by
 `integral_prod_pow_mul_one_sub_sq_rpow_map_centered_betaMeasure`.
 -/
 
@@ -60,9 +60,10 @@ theorem integrable_eval_sumElim_sqrt_one_sub_sq_pi_centered_betaMeasure (a : ι 
   simp only [MvPolynomial.eval_sum]
   exact integrable_finsetSum _ fun n _ ↦ integrable_eval_sumElim_sqrt_one_sub_sq_monomial a ha n _
 
-/-- Expand a polynomial in independent centered symmetric Beta coordinates and their residual
-square roots into a finite sum of Beta products. Odd coordinate exponents contribute zero;
-residual square-root exponents contribute half their natural degree to the second Beta shape. -/
+/-- The expectation of a polynomial in independent centered symmetric Beta coordinates and their
+residual square roots equals a finite sum of coefficient-weighted products of Beta quotients.
+Odd coordinate exponents contribute zero; residual square-root exponents contribute half their
+natural degree to the second Beta shape. -/
 theorem integral_eval_sumElim_sqrt_one_sub_sq_pi_centered_betaMeasure (a : ι → ℝ)
     (ha : ∀ i, 0 < a i) (P : MvPolynomial (ι ⊕ ι) ℝ) :
     ∫ z : ι → ℝ,

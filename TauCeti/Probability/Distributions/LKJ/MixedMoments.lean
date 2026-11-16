@@ -19,10 +19,11 @@ belongs to every `Lᵖ`, including `L∞`, because positive-semidefiniteness and
 every matrix entry in absolute value by one. The result includes repeated symmetric entries,
 diagonal powers, the empty matrix, and nonpositive shapes, where `lkjMeasure` is the zero measure.
 
-Expanding the partial-correlation Gram matrix as a polynomial in independent centered-Beta
-coordinates and their residual square roots gives an exact finite Beta-product formula for
-every natural mixed entry moment. Odd coordinate exponents vanish. This uses the independent
-coordinate law `map_coe_lkjMeasure`; entries in a Cholesky row are not generally independent.
+At positive shape `η > 0`, expanding the partial-correlation Gram matrix as a polynomial in
+independent centered-Beta coordinates and their residual square roots gives an exact finite
+Beta-product formula for every natural mixed entry moment. Odd coordinate exponents vanish.
+This uses the independent coordinate law `map_coe_lkjMeasure`; entries in a Cholesky row are
+not generally independent.
 
 ## References
 
