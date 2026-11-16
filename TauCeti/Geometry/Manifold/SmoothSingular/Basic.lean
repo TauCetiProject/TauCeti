@@ -420,6 +420,16 @@ theorem smoothSingularSubcomplexMap_comp {E'' H'' : Type*} [NormedAddCommGroup E
   ext k σ
   rfl
 
+/-- A constant map at `y` induces the constant map of smooth singular subcomplexes at the smooth
+`0`-simplex of `y`. -/
+@[simp]
+theorem smoothSingularSubcomplexMap_const (y : N) (hφ : ContMDiff I J ∞ fun _ : M ↦ y) :
+    smoothSingularSubcomplexMap (fun _ ↦ y) hφ =
+      SSet.const ((SmoothSimplex.equiv₀ J N).symm y) := by
+  -- Both sides send every smooth simplex to the constant singular simplex at `y`.
+  ext k σ
+  rfl
+
 /-- The image of a smooth simplex under a smooth map, read on `Δᵖ`, is the composite. -/
 theorem SmoothSimplex.toContinuousMap_smoothSingularSubcomplexMap_app {p : ℕ}
     (hφ : ContMDiff I J ∞ φ) (σ : SmoothSimplex I M p) :

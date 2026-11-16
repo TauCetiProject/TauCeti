@@ -195,6 +195,13 @@ def smoothSingularChainHomotopy :
       (SSet.chainComplexMap (smoothSingularSubcomplexMap g hg) R) :=
   (smoothSingularSubcomplexHomotopy hf hg H hF hFH).chainComplexMap R
 
+/-- The smooth prism operator is the chain homotopy induced by the simplicial homotopy of smooth
+singular subcomplexes. -/
+theorem smoothSingularChainHomotopy_def :
+    smoothSingularChainHomotopy hf hg H hF hFH R =
+      (smoothSingularSubcomplexHomotopy hf hg H hF hFH).chainComplexMap R :=
+  (rfl)
+
 include hF hFH in
 /-- **Homotopy invariance of smooth singular homology.** Maps that are homotopic through a homotopy
 which is the restriction of a smooth map `ℝ × M → N` induce the same map on smooth singular
@@ -241,6 +248,17 @@ def smoothSingularChainHomotopyOfContMDiff
   (smoothSingularSubcomplexHomotopyOfContMDiff hf hg hF h₀ h₁).chainComplexMap R
 
 omit hf hg in
+/-- The smooth prism operator of a jointly smooth family is the chain homotopy induced by its
+homotopy of smooth singular subcomplexes. -/
+theorem smoothSingularChainHomotopyOfContMDiff_def
+    (hf : ContMDiff I J ∞ f) (hg : ContMDiff I J ∞ g)
+    (hF : ContMDiff (𝓘(ℝ).prod I) J ∞ F)
+    (h₀ : ∀ x, F (0, x) = f x) (h₁ : ∀ x, F (1, x) = g x) :
+    smoothSingularChainHomotopyOfContMDiff R hf hg hF h₀ h₁ =
+      (smoothSingularSubcomplexHomotopyOfContMDiff hf hg hF h₀ h₁).chainComplexMap R :=
+  (rfl)
+
+omit hf hg in
 /-- Smooth maps `f` and `g` joined by a smooth map `F : ℝ × M → N`, with `F (0, ·) = f` and
 `F (1, ·) = g`, induce the same map on smooth singular homology. -/
 theorem homologyMap_smoothSingularSubcomplexMap_eq_of_contMDiff [CategoryWithHomology C]
@@ -256,46 +274,6 @@ variable {C : Type*} [Category C] [Preadditive C] [HasCoproducts.{u} C] (R : C)
 
 /-! ### Smoothly contractible manifolds -/
 
-variable (I) in
-/-- The point `c` of `M`, read on the singular simplices of a point: every such simplex is
-constant, so smooth in `M`. -/
-private def smoothSingularSubcomplexOfPoint (c : M) :
-    TopCat.toSSet.obj (TopCat.of PUnit.{u + 1}) ⟶ (smoothSingularSubcomplex I M : SSet) :=
-  SSet.Subcomplex.lift (TopCat.toSSet.map (TopCat.ofHom (ContinuousMap.const _ c))) (by
-    rintro k _ ⟨σ, rfl⟩
-    rw [mem_smoothSingularSubcomplex_iff]
-    exact contMDiffOnSubset_const I ∞ c)
-
-@[reassoc (attr := simp)]
-private theorem smoothSingularSubcomplexOfPoint_ι (c : M) :
-    smoothSingularSubcomplexOfPoint I c ≫ (smoothSingularSubcomplex I M).ι =
-      TopCat.toSSet.map (TopCat.ofHom (ContinuousMap.const _ c)) :=
-  SSet.Subcomplex.lift_ι _ _
-
-variable (M) in
-/-- The map `M → pt` to a point, as a map of topological spaces. -/
-private abbrev toPoint : TopCat.of M ⟶ TopCat.of PUnit.{u + 1} :=
-  TopCat.ofHom (ContinuousMap.const M PUnit.unit)
-
-/-- The constant map `c`, read on singular simplices, factors through the singular simplicial set
-of a point. -/
-private theorem toPoint_comp_const (c : M) :
-    toPoint M ≫
-        (TopCat.ofHom (ContinuousMap.const PUnit.{u + 1} c) : TopCat.of PUnit ⟶ TopCat.of M) =
-      TopCat.ofHom ⟨fun _ ↦ c, continuous_const⟩ := by
-  ext
-  rfl
-
-/-- Mapping a smooth simplex to a point and reading the result in `M` at `c` is the map of smooth
-singular subcomplexes induced by the constant map `c`. -/
-private theorem ι_toPoint_smoothSingularSubcomplexOfPoint (c : M) :
-    (smoothSingularSubcomplex I M).ι ≫ TopCat.toSSet.map (toPoint M) ≫
-        smoothSingularSubcomplexOfPoint I c =
-      smoothSingularSubcomplexMap (fun _ ↦ c) (contMDiff_const : ContMDiff I I ∞ _) := by
-  rw [← cancel_mono (smoothSingularSubcomplex I M).ι, smoothSingularSubcomplexMap_ι,
-    Category.assoc, Category.assoc, smoothSingularSubcomplexOfPoint_ι, ← Functor.map_comp,
-    toPoint_comp_const]
-
 /-- **A smoothly contractible manifold has the smooth singular homology of a point.** If a smooth
 map `F : ℝ × M → M` joins the identity `F (0, ·) = id` to a constant map `F (1, ·) = c`, then the
 smooth singular homology of `M` vanishes in every positive degree. -/
@@ -303,18 +281,19 @@ theorem isZero_homology_smoothSingularSubcomplex_of_contMDiff [CategoryWithHomol
     {F : ℝ × M → M} (hF : ContMDiff (𝓘(ℝ).prod I) I ∞ F) (c : M) (h₀ : ∀ x, F (0, x) = x)
     (h₁ : ∀ x, F (1, x) = c) {n : ℕ} (hn : n ≠ 0) :
     IsZero ((smoothSingularSubcomplex I M : SSet).homology R n) := by
-  -- The constant map factors through the singular simplicial set of a point.
+  -- The constant map factors through the singular simplicial set of a point (`SSet.comp_const`).
   have hpt : IsZero ((TopCat.toSSet.obj (TopCat.of PUnit.{u + 1})).homology R n) :=
     AlgebraicTopology.isZero_singularHomologyFunctor_of_totallyDisconnectedSpace C n R _ hn
+  let y := (SmoothSimplex.equiv₀ I M).symm c
   have hid : SSet.homologyMap (smoothSingularSubcomplexMap id (contMDiff_id (I := I))) R n =
-      SSet.homologyMap (((smoothSingularSubcomplex I M).ι ≫ TopCat.toSSet.map (toPoint M)) ≫
-        smoothSingularSubcomplexOfPoint I c) R n := by
-    rw [Category.assoc, ι_toPoint_smoothSingularSubcomplexOfPoint]
+      SSet.homologyMap (SSet.const ((TopCat.of PUnit.{u + 1}).toSSetObj₀Equiv.symm PUnit.unit) ≫
+        SSet.const y) R n := by
+    rw [SSet.comp_const, ← smoothSingularSubcomplexMap_const c (contMDiff_const (I := I) (I' := I))]
     exact homologyMap_smoothSingularSubcomplexMap_eq_of_contMDiff R contMDiff_id contMDiff_const hF
       h₀ h₁ n
   rw [smoothSingularSubcomplexMap_id, SSet.homologyMap_id, SSet.homologyMap_comp] at hid
   rw [IsZero.iff_id_eq_zero, hid,
-    hpt.eq_of_src (SSet.homologyMap (smoothSingularSubcomplexOfPoint I c) R n) 0, comp_zero]
+    hpt.eq_of_src (SSet.homologyMap (SSet.const y) R n) 0, comp_zero]
 
 /-- **Smooth singular chains of a smoothly contractible manifold.** If a smooth map
 `F : ℝ × M → M` joins the identity `F (0, ·) = id` to a constant map `F (1, ·) = c`, then the
@@ -327,14 +306,13 @@ def smoothSingularChainHomotopyEquivOfContMDiff {F : ℝ × M → M}
     HomotopyEquiv ((smoothSingularSubcomplex I M : SSet).chainComplex R)
       ((TopCat.toSSet.obj (TopCat.of M)).chainComplex R) where
   hom := SSet.chainComplexMap (smoothSingularSubcomplex I M).ι R
-  inv := SSet.chainComplexMap
-    (TopCat.toSSet.map (toPoint M) ≫ smoothSingularSubcomplexOfPoint I c) R
+  inv := SSet.chainComplexMap (SSet.const ((SmoothSimplex.equiv₀ I M).symm c)) R
   homotopyHomInvId := by
     -- The composite on smooth chains is induced by the constant map `c`, and the smooth prism
     -- operator of `F` joins it to the identity.
     refine (Homotopy.ofEq ?_).trans ((smoothSingularChainHomotopyOfContMDiff R
       contMDiff_id contMDiff_const hF h₀ h₁).symm.trans (Homotopy.ofEq ?_))
-    · rw [← Functor.map_comp, ι_toPoint_smoothSingularSubcomplexOfPoint]
+    · rw [← Functor.map_comp, SSet.comp_const, smoothSingularSubcomplexMap_const]
     · rw [smoothSingularSubcomplexMap_id]
       exact ((SSet.chainComplexFunctor C).obj R).map_id _
   homotopyInvHomId := by
@@ -345,8 +323,11 @@ def smoothSingularChainHomotopyEquivOfContMDiff {F : ℝ × M → M}
       ContinuousMap.Homotopy.ofReal hF.continuous h₀ h₁
     refine (Homotopy.ofEq ?_).trans
       ((H.toSSet.chainComplexMap R).symm.trans (Homotopy.ofEq ?_))
-    · rw [← Functor.map_comp, Category.assoc, smoothSingularSubcomplexOfPoint_ι,
-        ← Functor.map_comp, toPoint_comp_const]
+    · rw [← Functor.map_comp, SSet.const_comp, Subfunctor.ι_app, TypeCat.ofHom_apply,
+        SmoothSimplex.coe_equiv₀_symm]
+      -- The singular map of a constant map is `SSet.const` by definition
+      -- (`TopCat.toSSet_map_const`).
+      rfl
     · -- `TopCat.ofHom_id` is stated for `ContinuousMap.id`, which is `⟨id, continuous_id⟩`.
       rw [show (TopCat.ofHom ⟨id, continuous_id⟩ : TopCat.of M ⟶ TopCat.of M) = 𝟙 _ from
         TopCat.ofHom_id, TopCat.toSSet.map_id]
