@@ -92,6 +92,10 @@ apply to all three ends.
   `TauCeti.Floer.det_fderiv_positiveEndChart_pos`, `TauCeti.Floer.injOn_positiveEndChart`,
   `TauCeti.Floer.positiveEndChart_add_one`: the positive end chart is holomorphic, orientation
   preserving, injective on the band `ℝ × (0, 1)` and `1`-periodic in `t`.
+* `TauCeti.Floer.positiveEndChart_endSign_mul_endCoord`,
+  `TauCeti.Floer.exists_endCoord_positiveEndChart`: the signed end coordinates
+  `(±Re ζ_q, ±Im ζ_q)` invert the positive end chart, up to an integer shift of the angular
+  coordinate.
 * `TauCeti.Floer.perturbationPullback_positiveEndChart_stdComplexLineReal_of_le`,
   `TauCeti.Floer.perturbationPullback_positiveEndChart_stdComplexLineImag_of_le`: where a
   perturbation is `H_q(t) dt` on the end `q`, its pullback along the positive end chart is
@@ -692,6 +696,30 @@ theorem positiveEndChart_mem_thricePuncturedSphereReal {q : Puncture} {z : ℝ �
     (hz : 0 < z.1) : positiveEndChart q z ∈ thricePuncturedSphereReal := by
   refine endChart_mem_thricePuncturedSphereReal ?_
   simpa [← mul_assoc] using hz
+
+/-- The positive end chart inverts the signed end coordinates `(±Re ζ_q, ±Im ζ_q)` at every point
+`z` other than the center of the end `q`. -/
+theorem positiveEndChart_endSign_mul_endCoord {q : Puncture} {z : ℝ × ℝ}
+    (hw : Complex.equivRealProdCLM.symm z ≠ q.endCenter) :
+    positiveEndChart q (q.endSign * (q.endCoord (Complex.equivRealProdCLM.symm z)).re,
+      q.endSign * (q.endCoord (Complex.equivRealProdCLM.symm z)).im) = z := by
+  rw [positiveEndChart_mk, endSign_mul_endSign_mul, endSign_mul_endSign_mul, endChart_mk,
+    Complex.re_add_im, q.cylindricalEndLift_endCoord hw, ContinuousLinearEquiv.apply_symm_apply]
+
+/-- The signed end coordinates of the image of `y` under the positive end chart are `y`, up to an
+integer shift of the angular coordinate. -/
+theorem exists_endCoord_positiveEndChart (q : Puncture) (y : ℝ × ℝ) :
+    ∃ k : ℤ,
+      q.endSign * (q.endCoord (Complex.equivRealProdCLM.symm (positiveEndChart q y))).re = y.1 ∧
+      q.endSign * (q.endCoord (Complex.equivRealProdCLM.symm (positiveEndChart q y))).im =
+        y.2 + k := by
+  obtain ⟨s, t⟩ := y
+  obtain ⟨k, hk⟩ :=
+    q.exists_endCoord_cylindricalEndLift (↑(q.endSign * s) + ↑(q.endSign * t) * Complex.I)
+  rw [positiveEndChart_mk, endChart_mk, ContinuousLinearEquiv.symm_apply_apply, hk]
+  rcases q.endSign_eq_one_or_eq_neg_one with h | h
+  · exact ⟨k, by simp [h]⟩
+  · exact ⟨-k, by simp [h, add_comm]⟩
 
 /-- The positive end chart is injective on the open band `ℝ × (0, 1)`. -/
 theorem injOn_positiveEndChart (q : Puncture) :
