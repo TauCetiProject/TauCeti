@@ -12,7 +12,7 @@ public import TauCeti.Geometry.Manifold.Riemannian.Laplacian
 
 The Laplace–Beltrami operator is a differential operator, so its value at a point depends only
 on the germ of the function there. It vanishes off the topological support of a function, and two
-`C²` functions which agree near a point have the same Laplacian at that point.
+functions which agree near a point and are `C²` there have the same Laplacian at that point.
 
 ## Main results
 
@@ -44,12 +44,19 @@ theorem laplaceBeltrami_eq_zero_of_notMem_tsupport {f : M → ℝ} {x : M}
   exact mgradient_eq_zero_iff.2 <|
     (notMem_tsupport_iff_eventuallyEq.1 h).mvfderiv_eq.trans mvfderiv_zero
 
-/-- Two `C²` functions which agree near a point have the same Laplace–Beltrami operator there. -/
-theorem laplaceBeltrami_congr_of_eventuallyEq {f g : M → ℝ} (hf : ContMDiff I 𝓘(ℝ) 2 f)
-    (hg : ContMDiff I 𝓘(ℝ) 2 g) {x : M} (h : f =ᶠ[𝓝 x] g) :
+/-- Two functions which agree near a point and are `C²` there have the same Laplace–Beltrami
+operator at that point. -/
+theorem laplaceBeltrami_congr_of_eventuallyEq {f g : M → ℝ} {x : M}
+    (hf : ContMDiffAt I 𝓘(ℝ) 2 f x) (hg : ContMDiffAt I 𝓘(ℝ) 2 g x) (h : f =ᶠ[𝓝 x] g) :
     laplaceBeltrami I f x = laplaceBeltrami I g x := by
-  have h0 := laplaceBeltrami_eq_zero_of_notMem_tsupport I
-    (notMem_tsupport_iff_eventuallyEq.2 h.sub_eq)
-  rwa [laplaceBeltrami_sub I hf hg, sub_eq_zero] at h0
+  have : IsManifold I (1 + 1) M := by rw [one_add_one_eq_two]; infer_instance
+  rw [← one_add_one_eq_two] at hf hg
+  have hcov : CovariantDerivative.leviCivitaConnection I M (mgradient I f) x =
+      CovariantDerivative.leviCivitaConnection I M (mgradient I g) x :=
+    (CovariantDerivative.leviCivitaConnection I M).isCovariantDerivativeOn.congr_of_eventuallyEq
+      ((contMDiffAt_mgradient (n := 1) hf).mdifferentiableAt (by simp))
+      ((contMDiffAt_mgradient (n := 1) hg).mdifferentiableAt (by simp)) Filter.univ_mem
+      (h.eventuallyEq_nhds.mono fun y hy ↦ by rw [mgradient_def, hy.mvfderiv_eq, ← mgradient_def])
+  rw [laplaceBeltrami_def, laplaceBeltrami_def, divergence_def, divergence_def, hcov]
 
 end TauCeti.Manifold
