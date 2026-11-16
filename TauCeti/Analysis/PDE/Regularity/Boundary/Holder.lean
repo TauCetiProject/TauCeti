@@ -177,6 +177,21 @@ theorem exists_holderOnWith_preciseRepresentative_sub_compHyperplaneReflectionL 
     hhol (beta := 0) hν hH hU ha ham aestronglyMeasurable_const (fun _ _ => by simp) hu0 hu hR hRK
       (by simp)⟩
 
+omit [DecidableEq ι] in
+/-- The real-valued bound on an odd reflection: for `f ∈ Lᵖ(U ∩ H)` and a continuous
+norm-preserving `L`, `‖1_H f - L (1_H f ∘ ρ)‖_{Lᵖ(U)} ≤ 2 ‖f‖_{Lᵖ(U ∩ H)}`. -/
+private theorem toReal_eLpNorm_indicator_sub_indicator_comp_hyperplaneReflection_le
+    {E : Type*} [NormedAddCommGroup E] (L : E → E) (hLc : Continuous L) (hL : ∀ y, ‖L y‖ = ‖y‖)
+    {U H : Opens (EuclideanSpace ℝ ι)} {ν : EuclideanSpace ℝ ι} {c₀ : ℝ}
+    (hU : MapsTo (hyperplaneReflection ν c₀) U U) {f : EuclideanSpace ℝ ι → E} {p : ENNReal}
+    (hp : 1 ≤ p) (hf : MemLp f p (mu.restrict (U ⊓ H))) :
+    (eLpNorm (fun x => (H : Set (EuclideanSpace ℝ ι)).indicator f x -
+      L ((H : Set (EuclideanSpace ℝ ι)).indicator f (hyperplaneReflection ν c₀ x))) p
+        (mu.restrict U)).toReal ≤ 2 * (eLpNorm f p (mu.restrict (U ⊓ H))).toReal :=
+  (ENNReal.toReal_mono (ENNReal.mul_ne_top ENNReal.ofNat_ne_top hf.eLpNorm_ne_top)
+    (eLpNorm_indicator_sub_indicator_comp_hyperplaneReflection_le L hLc hL hp
+      H.isOpen.measurableSet U.isOpen.measurableSet hU)).trans_eq (by simp)
+
 /-- **De Giorgi's theorem with a right-hand side up to a flat boundary.** Let `n ≥ 1` be the
 dimension and let `r > 1` with `r > n/2`. There are `α ∈ (0, 1]` and `C > 0`, depending only on
 `λ`, `Λ`, `n`, `r` and the normalization of the additive Haar measure `mu`, such that the following
@@ -225,14 +240,12 @@ theorem exists_holderOnWith_preciseRepresentative_sub_compHyperplaneReflectionL_
   set g : EuclideanSpace ℝ ι → ℝ := fun x => (H : Set (EuclideanSpace ℝ ι)).indicator f x -
     (H : Set (EuclideanSpace ℝ ι)).indicator f (hyperplaneReflection ν c₀ x)
   have hg : MemLp g r (mu.restrict U) :=
-    memLp_indicator_sub_indicator_comp_hyperplaneReflection H.isOpen.measurableSet
-      U.isOpen.measurableSet hU hfr
+    memLp_indicator_sub_indicator_comp_hyperplaneReflection id continuous_id (fun _ => rfl)
+      H.isOpen.measurableSet U.isOpen.measurableSet hU hfr
   have hgf : (eLpNorm g r (mu.restrict U)).toReal ≤
-      2 * (eLpNorm f r (mu.restrict (U ⊓ H))).toReal := by
-    rw [← ENNReal.toReal_ofNat, ← ENNReal.toReal_mul]
-    exact ENNReal.toReal_mono (ENNReal.mul_ne_top ENNReal.ofNat_ne_top hfr.eLpNorm_ne_top)
-      (eLpNorm_indicator_sub_indicator_comp_hyperplaneReflection_le
-        (by exact_mod_cast hr.le) H.isOpen.measurableSet U.isOpen.measurableSet hU)
+      2 * (eLpNorm f r (mu.restrict (U ⊓ H))).toReal :=
+    toReal_eLpNorm_indicator_sub_indicator_comp_hyperplaneReflection_le id continuous_id
+      (fun _ => rfl) hU (by exact_mod_cast hr.le) hfr
   have hw : ∀ v : W1p0 mu U 2, energyFormH1 (reflectPrincipal ν c₀ a) 0 0
       (u - W1p.compHyperplaneReflectionL ENNReal.ofNat_ne_top ν c₀ hU u) (v : W1p mu U 2) =
         ∫ x in U, g x * W1p.value (v : W1p mu U 2) x ∂mu := fun v => by
@@ -323,14 +336,14 @@ theorem exists_holderOnWith_preciseRepresentative_sub_compHyperplaneReflectionL_
     (H : Set (EuclideanSpace ℝ ι)).indicator F x - (ℝ ∙ ν)ᗮ.reflection
       ((H : Set (EuclideanSpace ℝ ι)).indicator F (hyperplaneReflection ν c₀ x))
   have hG : MemLp G q (mu.restrict U) :=
-    memLp_indicator_sub_linearIsometry_indicator_comp_hyperplaneReflection
-      (ℝ ∙ ν)ᗮ.reflection.toLinearIsometry H.isOpen.measurableSet U.isOpen.measurableSet hU hFq
+    memLp_indicator_sub_indicator_comp_hyperplaneReflection (ℝ ∙ ν)ᗮ.reflection
+      (ℝ ∙ ν)ᗮ.reflection.continuous (ℝ ∙ ν)ᗮ.reflection.norm_map H.isOpen.measurableSet
+      U.isOpen.measurableSet hU hFq
   have hGF : (eLpNorm G q (mu.restrict U)).toReal ≤
       2 * (eLpNorm F q (mu.restrict (U ⊓ H))).toReal :=
-    (ENNReal.toReal_mono (ENNReal.mul_ne_top ENNReal.ofNat_ne_top hFq.eLpNorm_ne_top)
-      (eLpNorm_indicator_sub_linearIsometry_indicator_comp_hyperplaneReflection_le
-        (ℝ ∙ ν)ᗮ.reflection.toLinearIsometry (by exact_mod_cast (by linarith : (1 : ℝ) ≤ q))
-        H.isOpen.measurableSet U.isOpen.measurableSet hU)).trans_eq (by simp)
+    toReal_eLpNorm_indicator_sub_indicator_comp_hyperplaneReflection_le (ℝ ∙ ν)ᗮ.reflection
+      (ℝ ∙ ν)ᗮ.reflection.continuous (ℝ ∙ ν)ᗮ.reflection.norm_map hU
+      (by exact_mod_cast (by linarith : (1 : ℝ) ≤ q)) hFq
   have hw : ∀ v : W1p0 mu U 2, energyFormH1 (reflectPrincipal ν c₀ a) 0 0
       (u - W1p.compHyperplaneReflectionL ENNReal.ofNat_ne_top ν c₀ hU u) (v : W1p mu U 2) =
         -∫ x in U, ⟪G x, W1p.gradient (v : W1p mu U 2) x⟫_ℝ ∂mu := fun v => by
@@ -409,22 +422,21 @@ theorem
     (H : Set (EuclideanSpace ℝ ι)).indicator F x - (ℝ ∙ ν)ᗮ.reflection
       ((H : Set (EuclideanSpace ℝ ι)).indicator F (hyperplaneReflection ν c₀ x))
   have hg : MemLp g r (mu.restrict U) :=
-    memLp_indicator_sub_indicator_comp_hyperplaneReflection H.isOpen.measurableSet
-      U.isOpen.measurableSet hU hfr
+    memLp_indicator_sub_indicator_comp_hyperplaneReflection id continuous_id (fun _ => rfl)
+      H.isOpen.measurableSet U.isOpen.measurableSet hU hfr
   have hgf : (eLpNorm g r (mu.restrict U)).toReal ≤
       2 * (eLpNorm f r (mu.restrict (U ⊓ H))).toReal :=
-    (ENNReal.toReal_mono (ENNReal.mul_ne_top ENNReal.ofNat_ne_top hfr.eLpNorm_ne_top)
-      (eLpNorm_indicator_sub_indicator_comp_hyperplaneReflection_le (by exact_mod_cast hr.le)
-        H.isOpen.measurableSet U.isOpen.measurableSet hU)).trans_eq (by simp)
+    toReal_eLpNorm_indicator_sub_indicator_comp_hyperplaneReflection_le id continuous_id
+      (fun _ => rfl) hU (by exact_mod_cast hr.le) hfr
   have hG : MemLp G q (mu.restrict U) :=
-    memLp_indicator_sub_linearIsometry_indicator_comp_hyperplaneReflection
-      (ℝ ∙ ν)ᗮ.reflection.toLinearIsometry H.isOpen.measurableSet U.isOpen.measurableSet hU hFq
+    memLp_indicator_sub_indicator_comp_hyperplaneReflection (ℝ ∙ ν)ᗮ.reflection
+      (ℝ ∙ ν)ᗮ.reflection.continuous (ℝ ∙ ν)ᗮ.reflection.norm_map H.isOpen.measurableSet
+      U.isOpen.measurableSet hU hFq
   have hGF : (eLpNorm G q (mu.restrict U)).toReal ≤
       2 * (eLpNorm F q (mu.restrict (U ⊓ H))).toReal :=
-    (ENNReal.toReal_mono (ENNReal.mul_ne_top ENNReal.ofNat_ne_top hFq.eLpNorm_ne_top)
-      (eLpNorm_indicator_sub_linearIsometry_indicator_comp_hyperplaneReflection_le
-        (ℝ ∙ ν)ᗮ.reflection.toLinearIsometry (by exact_mod_cast (by linarith : (1 : ℝ) ≤ q))
-        H.isOpen.measurableSet U.isOpen.measurableSet hU)).trans_eq (by simp)
+    toReal_eLpNorm_indicator_sub_indicator_comp_hyperplaneReflection_le (ℝ ∙ ν)ᗮ.reflection
+      (ℝ ∙ ν)ᗮ.reflection.continuous (ℝ ∙ ν)ᗮ.reflection.norm_map hU
+      (by exact_mod_cast (by linarith : (1 : ℝ) ≤ q)) hFq
   have hw : ∀ v : W1p0 mu U 2, energyFormH1 (reflectPrincipal ν c₀ a) 0 0
       (u - W1p.compHyperplaneReflectionL ENNReal.ofNat_ne_top ν c₀ hU u) (v : W1p mu U 2) =
         ∫ x in U, g x * W1p.value (v : W1p mu U 2) x ∂mu -

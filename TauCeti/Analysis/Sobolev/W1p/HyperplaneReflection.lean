@@ -399,10 +399,8 @@ theorem W1p0.setIntegral_inner_gradient_restrictSubCompHyperplaneReflectionL (hp
       inter_comm]
     exact hG
   have hv : MemLp v p (mu.restrict U) := Lp.memLp _
-  have hRvρ : MemLp (fun x => R (v (ρ x))) p (mu.restrict U) := by
-    have hvρ := hv.comp_measurePreserving hρ
-    exact hvρ.congr_norm (R.continuous.comp_aestronglyMeasurable hvρ.aestronglyMeasurable)
-      (ae_of_all _ fun x => (R.norm_map _).symm)
+  have hRvρ : MemLp (fun x => R (v (ρ x))) p (mu.restrict U) :=
+    (hv.comp_measurePreserving hρ).continuousLinearMap_comp R.toContinuousLinearMap
   -- Hölder's inequality: the inner product of an `L^q` and an `Lᵖ` field is integrable.
   have hint : ∀ {a b : E → E}, MemLp a q (mu.restrict U) → MemLp b p (mu.restrict U) →
       Integrable (fun x => ⟪a x, b x⟫_ℝ) (mu.restrict U) := fun ha hb =>
@@ -429,10 +427,8 @@ theorem W1p0.setIntegral_inner_gradient_restrictSubCompHyperplaneReflectionL (hp
           ← integral_sub (hint hg hv) (hint hg hRvρ)]
         simp_rw [inner_sub_right]
     _ = ∫ x in U, ⟪g x - R (g (ρ x)), v x⟫_ℝ ∂mu := by
-        have hRgρ : MemLp (fun x => R (g (ρ x))) q (mu.restrict U) := by
-          have hgρ := hg.comp_measurePreserving hρ
-          exact hgρ.congr_norm (R.continuous.comp_aestronglyMeasurable hgρ.aestronglyMeasurable)
-            (ae_of_all _ fun x => (R.norm_map _).symm)
+        have hRgρ : MemLp (fun x => R (g (ρ x))) q (mu.restrict U) :=
+          (hg.comp_measurePreserving hρ).continuousLinearMap_comp R.toContinuousLinearMap
         rw [← integral_sub (hint hg hv) (hint hRgρ hv)]
         simp_rw [inner_sub_left]
 

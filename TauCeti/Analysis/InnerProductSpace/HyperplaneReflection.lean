@@ -56,12 +56,10 @@ normal vector and an offset.
   the hyperplane and to `G ∘ f ∘ ρ` below it is measurable when `f` is measurable above it.
 * `TauCeti.memLp_indicator_sub_indicator_comp_hyperplaneReflection` and
   `TauCeti.eLpNorm_indicator_sub_indicator_comp_hyperplaneReflection_le`: the odd reflection
-  `x ↦ 1_H f x - 1_H f (ρ x)` of a function `f` given on one side `H` of the hyperplane lies in
-  `Lᵖ` with at most twice the norm of `f`.
-* `TauCeti.memLp_indicator_sub_linearIsometry_indicator_comp_hyperplaneReflection` and
-  `TauCeti.eLpNorm_indicator_sub_linearIsometry_indicator_comp_hyperplaneReflection_le`: the same
-  for the twisted odd reflection `x ↦ 1_H f x - L (1_H f (ρ x))` by a linear isometry `L`, which
-  for the linear part of `ρ` is the odd reflection of a vector field.
+  `x ↦ 1_H f x - L (1_H f (ρ x))` of a function `f` given on one side `H` of the hyperplane,
+  twisted by a continuous norm-preserving map `L`, lies in `Lᵖ` with at most twice the norm of `f`.
+  For `L = id` this is the odd reflection of a function, and for `L` the linear part of `ρ` the
+  odd reflection of a vector field.
 -/
 
 public section
@@ -276,54 +274,15 @@ variable [FiniteDimensional ℝ F] [MeasurableSpace F] [BorelSpace F] {μ : Meas
   {f : F → E} {p : ENNReal}
 
 /-- **The odd reflection of an `Lᵖ` function.** Let `U` be a measurable set mapped into itself by
-the hyperplane reflection `ρ` and let `H` be measurable. If `f ∈ Lᵖ(U ∩ H)`, then the odd
-reflection `x ↦ 1_H f x - 1_H f (ρ x)` lies in `Lᵖ(U)`. When `H` and `ρ H` are disjoint, for
-instance when `H` is an open half-space bounded by the hyperplane, it equals `f` on `H` and
-`-f ∘ ρ` on `ρ H`. -/
-theorem memLp_indicator_sub_indicator_comp_hyperplaneReflection (hHm : MeasurableSet H)
-    (hUm : MeasurableSet U) (hU : Set.MapsTo (hyperplaneReflection ν c) U U)
-    (hf : MemLp f p (μ.restrict (U ∩ H))) :
-    MemLp (fun x => H.indicator f x - H.indicator f (hyperplaneReflection ν c x)) p
-      (μ.restrict U) := by
-  have hg : MemLp (H.indicator f) p (μ.restrict U) := by
-    rw [memLp_indicator_iff_restrict hHm.nullMeasurableSet, Measure.restrict_restrict hHm,
-      Set.inter_comm]
-    exact hf
-  exact hg.sub (hg.comp_measurePreserving (measurePreserving_restrict_hyperplaneReflection hU hUm))
-
-/-- **The norm of the odd reflection.** Let `U` be a measurable set mapped into itself by the
-hyperplane reflection `ρ`, let `H` be measurable and let `1 ≤ p`. The odd reflection
-`x ↦ 1_H f x - 1_H f (ρ x)` of a function `f` has `Lᵖ(U)` norm at most `2 ‖f‖_{Lᵖ(U ∩ H)}`. -/
-theorem eLpNorm_indicator_sub_indicator_comp_hyperplaneReflection_le (hp : 1 ≤ p)
-    (hHm : MeasurableSet H) (hUm : MeasurableSet U)
-    (hU : Set.MapsTo (hyperplaneReflection ν c) U U) :
-    eLpNorm (fun x => H.indicator f x - H.indicator f (hyperplaneReflection ν c x)) p
-      (μ.restrict U) ≤ 2 * eLpNorm f p (μ.restrict (U ∩ H)) := by
-  by_cases hf : AEStronglyMeasurable f (μ.restrict (U ∩ H))
-  swap
-  · simp [eLpNorm_of_not_aestronglyMeasurable hf]
-  have hρ := measurePreserving_restrict_hyperplaneReflection (μ := μ) hU hUm
-  have hg : AEStronglyMeasurable (H.indicator f) (μ.restrict U) := by
-    rw [aestronglyMeasurable_indicator_iff hHm, Measure.restrict_restrict hHm, Set.inter_comm]
-    exact hf
-  have hnorm : eLpNorm (H.indicator f) p (μ.restrict U) = eLpNorm f p (μ.restrict (U ∩ H)) := by
-    rw [eLpNorm_indicator_eq_eLpNorm_restrict hHm.nullMeasurableSet,
-      Measure.restrict_restrict hHm, Set.inter_comm]
-  calc eLpNorm (fun x => H.indicator f x - H.indicator f (hyperplaneReflection ν c x)) p
-        (μ.restrict U)
-      ≤ eLpNorm (H.indicator f) p (μ.restrict U) +
-          eLpNorm (H.indicator f ∘ hyperplaneReflection ν c) p (μ.restrict U) :=
-        eLpNorm_sub_le hp
-    _ = 2 * eLpNorm f p (μ.restrict (U ∩ H)) := by
-        rw [eLpNorm_comp_measurePreserving hg hρ, hnorm, two_mul]
-
-/-- **The twisted odd reflection of an `Lᵖ` function.** Let `U` be a measurable set mapped into
-itself by the hyperplane reflection `ρ`, let `H` be measurable and let `L` be a linear isometry.
-If `f ∈ Lᵖ(U ∩ H)`, then `x ↦ 1_H f x - L (1_H f (ρ x))` lies in `Lᵖ(U)`. For a vector field `f`
-and `L` the linear part of `ρ`, this is the odd reflection of a vector field: it carries the
-divergence datum of an equation on `U ∩ H` to that of the oddly reflected equation on `U`. -/
-theorem memLp_indicator_sub_linearIsometry_indicator_comp_hyperplaneReflection
-    [NormedSpace ℝ E] (L : E →ₗᵢ[ℝ] E) (hHm : MeasurableSet H) (hUm : MeasurableSet U)
+the hyperplane reflection `ρ`, let `H` be measurable and let `L` be a continuous map preserving
+the norm. If `f ∈ Lᵖ(U ∩ H)`, then the odd reflection `x ↦ 1_H f x - L (1_H f (ρ x))` lies in
+`Lᵖ(U)`. When `H` and `ρ H` are disjoint, for instance when `H` is an open half-space bounded by
+the hyperplane, it equals `f` on `H` and `-L ∘ f ∘ ρ` on `ρ H`. For `L = id` this is the odd
+reflection of a function; for a vector field `f` and `L` the linear part of `ρ` it is the odd
+reflection of a vector field, which carries the divergence datum of an equation on `U ∩ H` to that
+of the oddly reflected equation on `U`. -/
+theorem memLp_indicator_sub_indicator_comp_hyperplaneReflection (L : E → E)
+    (hLc : Continuous L) (hL : ∀ y, ‖L y‖ = ‖y‖) (hHm : MeasurableSet H) (hUm : MeasurableSet U)
     (hU : Set.MapsTo (hyperplaneReflection ν c) U U) (hf : MemLp f p (μ.restrict (U ∩ H))) :
     MemLp (fun x => H.indicator f x - L (H.indicator f (hyperplaneReflection ν c x))) p
       (μ.restrict U) := by
@@ -332,14 +291,15 @@ theorem memLp_indicator_sub_linearIsometry_indicator_comp_hyperplaneReflection
       Set.inter_comm]
     exact hf
   have hgρ := hg.comp_measurePreserving (measurePreserving_restrict_hyperplaneReflection hU hUm)
-  exact hg.sub (hgρ.congr_norm (L.continuous.comp_aestronglyMeasurable hgρ.aestronglyMeasurable)
-    (ae_of_all _ fun x => (L.norm_map _).symm))
+  exact hg.sub (hgρ.congr_norm (hLc.comp_aestronglyMeasurable hgρ.aestronglyMeasurable)
+    (ae_of_all _ fun x => (hL _).symm))
 
-/-- **The norm of the twisted odd reflection.** Let `U` be a measurable set mapped into itself by
-the hyperplane reflection `ρ`, let `H` be measurable, let `L` be a linear isometry and let
-`1 ≤ p`. Then `x ↦ 1_H f x - L (1_H f (ρ x))` has `Lᵖ(U)` norm at most `2 ‖f‖_{Lᵖ(U ∩ H)}`. -/
-theorem eLpNorm_indicator_sub_linearIsometry_indicator_comp_hyperplaneReflection_le
-    [NormedSpace ℝ E] (L : E →ₗᵢ[ℝ] E) (hp : 1 ≤ p) (hHm : MeasurableSet H)
+/-- **The norm of the odd reflection.** Let `U` be a measurable set mapped into itself by the
+hyperplane reflection `ρ`, let `H` be measurable, let `L` be a continuous map preserving the norm
+and let `1 ≤ p`. The odd reflection `x ↦ 1_H f x - L (1_H f (ρ x))` of a function `f` has `Lᵖ(U)`
+norm at most `2 ‖f‖_{Lᵖ(U ∩ H)}`. -/
+theorem eLpNorm_indicator_sub_indicator_comp_hyperplaneReflection_le (L : E → E)
+    (hLc : Continuous L) (hL : ∀ y, ‖L y‖ = ‖y‖) (hp : 1 ≤ p) (hHm : MeasurableSet H)
     (hUm : MeasurableSet U) (hU : Set.MapsTo (hyperplaneReflection ν c) U U) :
     eLpNorm (fun x => H.indicator f x - L (H.indicator f (hyperplaneReflection ν c x))) p
       (μ.restrict U) ≤ 2 * eLpNorm f p (μ.restrict (U ∩ H)) := by
@@ -362,9 +322,8 @@ theorem eLpNorm_indicator_sub_linearIsometry_indicator_comp_hyperplaneReflection
         have hgρ : AEStronglyMeasurable (H.indicator f ∘ hyperplaneReflection ν c)
             (μ.restrict U) := hg.comp_measurePreserving hρ
         rw [eLpNorm_congr_norm_ae (f := fun x => L (H.indicator f (hyperplaneReflection ν c x)))
-          (L.continuous.comp_aestronglyMeasurable hgρ) hgρ
-          (ae_of_all _ fun x => L.norm_map _), eLpNorm_comp_measurePreserving hg hρ, hnorm,
-          two_mul]
+          (hLc.comp_aestronglyMeasurable hgρ) hgρ (ae_of_all _ fun x => hL _),
+          eLpNorm_comp_measurePreserving hg hρ, hnorm, two_mul]
 
 end OddReflection
 
