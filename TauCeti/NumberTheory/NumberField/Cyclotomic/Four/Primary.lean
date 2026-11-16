@@ -231,29 +231,14 @@ theorem IsPrimaryGaussian.natCast_absNorm_sub_one_div_four (hx : IsPrimaryGaussi
     exact absurd hcop (by norm_num)
   omega
 
-/-- For primary `a + b i`, the norm `N((a + b i) 𝓞 K)` has remainder `1` modulo `8` when
-`a ≡ 1 (mod 4)` and `5` modulo `8` when `a ≡ 3 (mod 4)`. -/
-private theorem IsPrimaryGaussian.absNorm_span_singleton_add_mul_mod_eight
-    {ζ : K} {hζ : IsPrimitiveRoot ζ 4} {a b : ℤ}
-    (hx : IsPrimaryGaussian ((a : 𝓞 K) + (b : 𝓞 K) * hζ.toInteger)) :
-    Ideal.absNorm (Ideal.span {(a : 𝓞 K) + (b : 𝓞 K) * hζ.toInteger}) % 8 =
-      if a % 4 = 1 then 1 else 5 := by
-  have hN : (Ideal.absNorm (Ideal.span {(a : 𝓞 K) + (b : 𝓞 K) * hζ.toInteger}) : ℤ) =
-      a ^ 2 + b ^ 2 := by
-    rw [RingOfIntegers.natCast_absNorm_span_singleton_of_four,
-      hζ.norm_intCast_add_intCast_mul_toInteger_of_four]
-  rcases (hζ.isPrimaryGaussian_add_mul_iff).mp hx with ⟨ha, hb⟩ | ⟨ha, hb⟩ <;>
-    simp only [Int.ModEq] at ha hb
-  · rw [ite_eq_left (by omega)]
-    obtain ⟨k, rfl⟩ : ∃ k, a = 4 * k + 1 := ⟨a / 4, by omega⟩
-    obtain ⟨l, rfl⟩ : ∃ l, b = 4 * l := ⟨b / 4, by omega⟩
-    have hmod : ((4 * k + 1) ^ 2 + (4 * l) ^ 2) % 8 = 1 := by ring_nf; omega
-    omega
-  · rw [ite_eq_right (by omega)]
-    obtain ⟨k, rfl⟩ : ∃ k, a = 4 * k + 3 := ⟨a / 4, by omega⟩
-    obtain ⟨l, rfl⟩ : ∃ l, b = 4 * l + 2 := ⟨b / 4, by omega⟩
-    have hmod : ((4 * k + 3) ^ 2 + (4 * l + 2) ^ 2) % 8 = 5 := by ring_nf; omega
-    omega
+/-- Every primary element of `𝓞 K = ℤ[i]` generates an ideal of norm congruent to `1` or `5`
+modulo `8`. -/
+theorem IsPrimaryGaussian.absNorm_span_singleton_modEq_one_or_five (hx : IsPrimaryGaussian x) :
+    Ideal.absNorm (Ideal.span {x}) ≡ 1 [MOD 8] ∨
+      Ideal.absNorm (Ideal.span {x}) ≡ 5 [MOD 8] := by
+  have h := absNorm_modEq_one hx.absNorm_span_singleton_coprime_four
+  simp only [Nat.ModEq] at h ⊢
+  omega
 
 /-- A primary Gaussian integer `a + b i` generates an ideal of norm congruent to `1` modulo `8`
 if and only if `a ≡ 1 (mod 4)`. -/
@@ -262,9 +247,12 @@ theorem IsPrimaryGaussian.absNorm_span_singleton_add_mul_modEq_one_iff
     (hx : IsPrimaryGaussian ((a : 𝓞 K) + (b : 𝓞 K) * hζ.toInteger)) :
     Ideal.absNorm (Ideal.span {(a : 𝓞 K) + (b : 𝓞 K) * hζ.toInteger}) ≡ 1 [MOD 8] ↔
       a ≡ 1 [ZMOD 4] := by
-  have h := hx.absNorm_span_singleton_add_mul_mod_eight
-  simp only [Nat.ModEq, Int.ModEq]
-  split_ifs at h <;> omega
+  have h4 := absNorm_modEq_one hx.absNorm_span_singleton_coprime_four
+  have hdiv := hx.norm_sub_one_div_four
+  rw [← hx.natCast_absNorm_sub_one_div_four] at hdiv
+  have hprim := hζ.isPrimaryGaussian_add_mul_iff.mp hx
+  simp only [Nat.ModEq, Int.ModEq] at h4 hdiv hprim ⊢
+  omega
 
 /-- A primary Gaussian integer `a + b i` generates an ideal of norm congruent to `5` modulo `8`
 if and only if `a ≡ 3 (mod 4)`. -/
@@ -273,21 +261,11 @@ theorem IsPrimaryGaussian.absNorm_span_singleton_add_mul_modEq_five_iff
     (hx : IsPrimaryGaussian ((a : 𝓞 K) + (b : 𝓞 K) * hζ.toInteger)) :
     Ideal.absNorm (Ideal.span {(a : 𝓞 K) + (b : 𝓞 K) * hζ.toInteger}) ≡ 5 [MOD 8] ↔
       a ≡ 3 [ZMOD 4] := by
-  have h := hx.absNorm_span_singleton_add_mul_mod_eight
-  have hprim := (hζ.isPrimaryGaussian_add_mul_iff).mp hx
-  simp only [Nat.ModEq, Int.ModEq] at hprim ⊢
-  split_ifs at h <;> omega
-
-/-- Every primary element of `𝓞 K = ℤ[i]` generates an ideal of norm congruent to `1` or `5`
-modulo `8`. -/
-theorem IsPrimaryGaussian.absNorm_span_singleton_modEq_one_or_five (hx : IsPrimaryGaussian x) :
-    Ideal.absNorm (Ideal.span {x}) ≡ 1 [MOD 8] ∨
-      Ideal.absNorm (Ideal.span {x}) ≡ 5 [MOD 8] := by
-  have hζ := IsCyclotomicExtension.zeta_spec 4 ℚ K
-  obtain ⟨a, b, rfl⟩ := hζ.exists_intCast_add_intCast_mul_toInteger_eq (by decide) x
-  have h := hx.absNorm_span_singleton_add_mul_mod_eight
-  simp only [Nat.ModEq]
-  split_ifs at h <;> omega
+  have h8 := hx.absNorm_span_singleton_modEq_one_or_five
+  have h1 := hx.absNorm_span_singleton_add_mul_modEq_one_iff
+  have hprim := hζ.isPrimaryGaussian_add_mul_iff.mp hx
+  simp only [Nat.ModEq, Int.ModEq] at h8 h1 hprim ⊢
+  omega
 
 /-- A rational integer is primary exactly when it is congruent to `1` modulo `4`. -/
 @[simp]
