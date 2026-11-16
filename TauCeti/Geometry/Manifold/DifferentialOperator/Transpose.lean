@@ -40,8 +40,11 @@ transpose of a commutator `[D, a]` is `-[D', a]`, so the `m`-fold commutators of
 times those of `D`.
 
 On a finite-dimensional real vector space `E` with an additive Haar measure, every differential
-operator has a formal transpose: writing it as a coordinate expression `∑_α c_α ∂^α`, its transpose
-is `∑_α (-1) ^ |α| ∂^α ∘ c_α`. For instance the transpose of `a ∂ᵥ` is `-a ∂ᵥ - (∂ᵥ a)`, where
+operator of order at most `m` has a formal transpose of order at most `m`. The proof writes the
+operator as a coordinate expression `∑_α c_α ∂^α` and uses that multiplication operators and the
+derivatives `∂ᵥ` have formal transposes, which then exist for sums and compositions; no closed-form
+coordinate formula for the transpose is stated here. The first-order case is made explicit: the
+transpose of `a ∂ᵥ` is `-a ∂ᵥ - (∂ᵥ a)`, where
 `(∂ᵥ a)` is multiplication by the derivative of `a`, so this zeroth-order term is not seen by the
 principal symbol.
 
