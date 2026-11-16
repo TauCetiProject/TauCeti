@@ -22,9 +22,10 @@ Concrete checks for `TauCeti.Algebra.FrameAlgebra.universalFrameEquiv`,
   over `ℚ` (as `2` has `2`-adic valuation `1`, hence no rational cube root), and becomes finite
   split over its frame algebra `FrameAlgebra ℚ S (Fin 3)`, which is a finite étale
   `Equiv.Perm (Fin 3)`-torsor over `ℚ` of dimension `6`.
-* Over a ring `A` with an idempotent `e`, the finite étale algebra `A × (A ⧸ (1 - e))` has
-  non-constant rank (`2` on `D(e)` and `1` outside `D(e)`) and is totally split after base change
-  to a finite étale torsor over `A`.
+* Over a ring `A` with an idempotent `e`, the finite étale algebra `A × (A ⧸ (1 - e))` has stalk
+  rank `2` on `D(e)` and `1` outside `D(e)` (so its rank can vary, and is nonconstant when `e` is
+  a nontrivial idempotent), and is totally split after base change to a finite étale torsor over
+  `A`.
 * Local-ring, universe-polymorphic, and zero-ring edge cases.
 -/
 
