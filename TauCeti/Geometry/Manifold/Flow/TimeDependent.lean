@@ -31,7 +31,7 @@ solve the equation and are the unique solutions through `x` at time `s`, and the
 composition law holds wherever its terms are defined. A time-dependent field vanishing outside a
 compact subset of `M` at all times has a complete suspension, and then every time map is a `C^n`
 diffeomorphism of `M`, with inverse the time map in the opposite direction. The points from which
-the flow is defined over a compact set of times form an open set.
+the flow is defined for every pair of times in a compact set form an open set.
 
 Compactly supported time-dependent fields are the input to the isotopy extension theorem: the
 velocity of a moving compact submanifold, extended to a compactly supported field on the ambient
@@ -58,7 +58,7 @@ the initial position of the submanifold to the later ones.
 * `TauCeti.isOpen_timeDependentFlowDomain` and `TauCeti.contMDiffOn_timeDependentFlowOf`: the
   domain is open and the flow is jointly `C^n` on it.
 * `TauCeti.isOpen_setOf_forall_mem_timeDependentFlowDomain`: the points from which the flow is
-  defined at every time of a compact set form an open set.
+  defined for every pair of times in a compact set form an open set.
 * `TauCeti.hasMFDerivAt_timeDependentFlowOf`: the curves of the flow solve `γ' u = X u (γ u)`.
 * `TauCeti.timeDependentFlowOf_eq_of_hasMFDerivAt`: every solution on an open interval is a curve
   of the flow.
@@ -361,19 +361,19 @@ theorem timeDependentFlowOf_trans_of_mem {r : ℝ} (hrs : ((r, s), x) ∈ timeDe
   refine ⟨hmem, ?_⟩
   rw [timeDependentFlowOf_def (s := r) (t := t), ← heq, hpt, timeDependentFlowOf_def]
 
-/-- In finite dimensions, the domain of the time-dependent flow of a `C¹` field is open. -/
-theorem isOpen_timeDependentFlowDomain [FiniteDimensional ℝ E] :
+/-- On a complete model space, the domain of the time-dependent flow of a `C¹` field is open. -/
+theorem isOpen_timeDependentFlowDomain [CompleteSpace E] :
     IsOpen (timeDependentFlowDomain X) :=
   (isOpen_flowDomain (contMDiff_timeDependentSuspensionField hX)).preimage (by fun_prop)
 
-/-- In finite dimensions, the points from which the time-dependent flow of a `C¹` field starting
-at time `s` is defined up to every time of a compact set `T` form an open set. -/
-theorem isOpen_setOf_forall_mem_timeDependentFlowDomain [FiniteDimensional ℝ E] {T : Set ℝ}
-    (hT : IsCompact T) (s : ℝ) :
-    IsOpen {x | ∀ t ∈ T, ((s, t), x) ∈ timeDependentFlowDomain X} :=
-  isOpen_iff_mem_nhds.2 fun _ hx ↦ hT.eventually_forall_of_forall_eventually fun t ht ↦
-    (by fun_prop : Continuous fun p : M × ℝ ↦ ((s, p.2), p.1)).continuousAt.preimage_mem_nhds
-      ((isOpen_timeDependentFlowDomain hX).mem_nhds (hx t ht))
+/-- On a complete model space, the points from which the time-dependent flow of a `C¹` field is
+defined for every pair `(s, t)` of initial and final times in a compact set `K` form an open set. -/
+theorem isOpen_setOf_forall_mem_timeDependentFlowDomain [CompleteSpace E] {K : Set (ℝ × ℝ)}
+    (hK : IsCompact K) :
+    IsOpen {x | ∀ p ∈ K, (p, x) ∈ timeDependentFlowDomain X} :=
+  isOpen_iff_mem_nhds.2 fun _ hx ↦ hK.eventually_forall_of_forall_eventually fun p hp ↦
+    continuous_swap.continuousAt.preimage_mem_nhds
+      ((isOpen_timeDependentFlowDomain hX).mem_nhds (hx p hp))
 
 end Flow
 

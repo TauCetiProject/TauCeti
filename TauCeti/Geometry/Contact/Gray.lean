@@ -282,6 +282,13 @@ theorem grayPartialDiffeomorph_symm_apply (s t : ℝ) (x : M) :
       timeDependentFlowOf α.grayVectorField t s x :=
   timeDependentFlowPartialDiffeomorph_symm_apply _ _ s t x
 
+/-- The inverse of Gray's partial isotopy from `s` to `t` is Gray's partial isotopy from `t`
+to `s`. -/
+@[simp]
+theorem grayPartialDiffeomorph_symm (s t : ℝ) :
+    (grayPartialDiffeomorph hc s t).symm = grayPartialDiffeomorph hc t s :=
+  timeDependentFlowPartialDiffeomorph_symm _ _ s t
+
 /-- A point lies in the source of Gray's partial isotopy from `s` to `t` exactly when the flow of
 the Gray vector field from `(s, x)` is defined up to time `t`. -/
 @[simp]
@@ -382,8 +389,9 @@ theorem exists_partialDiffeomorph_mpullback_eq_smul {K : Set M}
 /-- **Relative Gray stability.** Let `α_t` be a smooth family of contact forms on a manifold without
 boundary, not necessarily compact, and let `K` be a set of points at which the contact hyperplane
 `ker α_t` is the same for all times. For an initial time `s` and a compact set of times `T`, such as
-`[0, 1]`, there is an open neighbourhood `V` of `K` on which the Gray flow `φ_{s,t}` is defined for
-every `t ∈ T` and pulls `α_t` back to a positive multiple of `α_s`. The flow fixes every point of
+`[0, 1]`, there is an open neighbourhood `V` of `K` contained in the source of Gray's partial
+isotopy `φ_{s,t}` (`TauCeti.SmoothForm.grayPartialDiffeomorph`) for every `t ∈ T`, on which
+`φ_{s,t}` pulls `α_t` back to a positive multiple of `α_s`. Each `φ_{s,t}` fixes every point of
 `K` (`TauCeti.SmoothForm.grayPartialDiffeomorph_apply_eq_self`), so this is an isotopy of
 germs of coorientation-preserving contactomorphisms along `K`, from `ker α_s` to `ker α_t`. -/
 theorem exists_isOpen_superset_forall_mpullback_eq_smul {K : Set M}
@@ -391,22 +399,18 @@ theorem exists_isOpen_superset_forall_mpullback_eq_smul {K : Set M}
       (mpullback (Prod.mk u) (contMDiff_const.prodMk contMDiff_id) α).kerDistribution x =
         (mpullback (Prod.mk 0) (contMDiff_const.prodMk contMDiff_id) α).kerDistribution x)
     {T : Set ℝ} (hT : IsCompact T) (s : ℝ) :
-    ∃ V : Set M, IsOpen V ∧ K ⊆ V ∧ ∀ t ∈ T, ∀ x ∈ V,
-      ((s, t), x) ∈ timeDependentFlowDomain α.grayVectorField ∧ ∃ c : ℝ, 0 < c ∧
-        TauCeti.mpullback I I (timeDependentFlowOf α.grayVectorField s t)
+    ∃ V : Set M, IsOpen V ∧ K ⊆ V ∧ ∀ t ∈ T, V ⊆ (grayPartialDiffeomorph hc s t).source ∧
+      ∀ x ∈ V, ∃ c : ℝ, 0 < c ∧
+        TauCeti.mpullback I I (grayPartialDiffeomorph hc s t)
             (mpullback (Prod.mk t) (contMDiff_const.prodMk contMDiff_id) α).1 x =
           c • (mpullback (Prod.mk s) (contMDiff_const.prodMk contMDiff_id) α).1 x := by
-  refine ⟨_, isOpen_setOf_forall_mem_timeDependentFlowDomain
-      ((contMDiff_grayVectorField hc).of_le (by simp)) hT s, ?_, ?_⟩
-  · intro x hx t _
-    exact (mem_grayPartialDiffeomorph_source_iff hc).1
-      (mem_grayPartialDiffeomorph_source hc (hK x hx) s t)
-  · intro t ht x hx
-    refine ⟨hx t ht,
-      Real.exp (∫ u in s..t, α.grayRate (u, timeDependentFlowOf α.grayVectorField s u x)),
-      Real.exp_pos _, ?_⟩
-    simpa only [coe_grayPartialDiffeomorph] using mpullback_grayPartialDiffeomorph_apply hc
-      ((mem_grayPartialDiffeomorph_source_iff hc).2 (hx t ht))
+  have hV : IsOpen {x | ∀ t ∈ T, x ∈ (grayPartialDiffeomorph hc s t).source} := by
+    simpa only [Set.forall_mem_image, mem_grayPartialDiffeomorph_source_iff] using
+      isOpen_setOf_forall_mem_timeDependentFlowDomain
+        ((contMDiff_grayVectorField hc).of_le (by simp)) (hT.image (Continuous.prodMk_right s))
+  exact ⟨_, hV, fun x hx t _ ↦ mem_grayPartialDiffeomorph_source hc (hK x hx) s t,
+    fun t ht ↦ ⟨fun _ hx ↦ hx t ht,
+      fun _ hx ↦ ⟨_, Real.exp_pos _, mpullback_grayPartialDiffeomorph_apply hc (hx t ht)⟩⟩⟩
 
 end Relative
 
