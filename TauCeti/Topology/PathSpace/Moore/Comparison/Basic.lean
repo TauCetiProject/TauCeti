@@ -195,6 +195,12 @@ maps, so they are homotopies over `X × X`. -/
 def PreservesEndpoints (f : C(MoorePath X, MoorePath X)) : Prop :=
   ∀ γ, (f γ).source = γ.source ∧ (f γ).target = γ.target
 
+/-- A self-map of the Moore paths preserves the end points if and only if it fixes the source and
+the target of every Moore path. -/
+theorem preservesEndpoints_iff {f : C(MoorePath X, MoorePath X)} :
+    PreservesEndpoints f ↔ ∀ γ, (f γ).source = γ.source ∧ (f γ).target = γ.target :=
+  Iff.rfl
+
 /-- Appending the constant path of length one at the target, as a continuous self-map of the
 Moore paths. -/
 private def appendOne : C(MoorePath X, MoorePath X) :=
