@@ -489,19 +489,25 @@ theorem map_mk (f : A →ₙₐ[𝕜] B) (hf : Continuous f) {n : ℕ}
         continuousCyclicCochainsMap_mem_continuousCyclicCocycles f hf φ.2⟩ :=
   desc_mk _ _ _
 
-/-- The identity homomorphism induces the identity on continuous cyclic cohomology. The
-continuity proof is a hypothesis so that the lemma applies to whichever proof appears. -/
+/-- The identity homomorphism induces the identity on continuous cyclic cohomology. -/
 @[simp]
-theorem map_id (h : Continuous (NonUnitalAlgHom.id 𝕜 A)) (n : ℕ) :
-    map M (NonUnitalAlgHom.id 𝕜 A) h n = ContinuousLinearMap.id 𝕜 _ :=
+theorem map_id (n : ℕ) :
+    -- `continuous_id` is stated for `id`; the `show` fixes the continuity hypothesis at the coerced
+    -- function of the identity homomorphism, which is defeq to `id`, so that the term has exactly
+    -- the type `map` expects and `rw [map_mk]` below matches `map M _ hf n` syntactically.
+    map M (NonUnitalAlgHom.id 𝕜 A) (show Continuous (NonUnitalAlgHom.id 𝕜 A) from continuous_id) n =
+      ContinuousLinearMap.id 𝕜 _ :=
   hom_ext fun φ ↦ by
     rw [map_mk, ContinuousLinearMap.id_apply]
     exact congrArg _ (Subtype.ext (LinearMap.congr_fun (continuousCyclicCochainsMap_id M n) φ.1))
 
 /-- Continuous cyclic cohomology is contravariantly functorial. -/
 theorem map_comp (f : A →ₙₐ[𝕜] B) (hf : Continuous f) (g : B →ₙₐ[𝕜] C) (hg : Continuous g)
-    (hgf : Continuous (g.comp f)) (n : ℕ) :
-    map M (g.comp f) hgf n = (map M f hf n).comp (map M g hg n) :=
+    (n : ℕ) :
+    -- `hg.comp hf` is continuity of `⇑g ∘ ⇑f`; the `show` restates it at `⇑(g.comp f)` (defeq), the
+    -- form `map` expects, so that `rw [map_mk]` matches `map M (g.comp f) _ n` below.
+    map M (g.comp f) (show Continuous (g.comp f) from hg.comp hf) n =
+      (map M f hf n).comp (map M g hg n) :=
   hom_ext fun φ ↦ by
     rw [ContinuousLinearMap.comp_apply, map_mk, map_mk, map_mk]
     exact congrArg _ (Subtype.ext (LinearMap.congr_fun (continuousCyclicCochainsMap_comp M
