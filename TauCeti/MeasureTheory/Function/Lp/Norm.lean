@@ -311,7 +311,7 @@ theorem Lp.integral_abs_norm_sq_sub_le {alpha F : Type*} [MeasurableSpace alpha]
       rw [Real.rpow_two, hx, Real.norm_of_nonneg hvx]
     rw [hsq, ← Real.sqrt_eq_rpow, Real.sqrt_sq (norm_nonneg _)]
     have hle : ‖hv.toLp v‖ ≤ 1 * ‖f‖ + 1 * ‖g‖ :=
-      TauCeti.Lp.norm_le_add_of_ae_norm_le zero_le_one zero_le_one
+      Lp.norm_le_add_of_ae_norm_le zero_le_one zero_le_one
         (hv.coeFn_toLp.mono fun x hx ↦ by
           have hvx : 0 ≤ v x := by positivity
           simp [hx, Real.norm_of_nonneg hvx, v])
