@@ -32,8 +32,9 @@ diffeomorphism `Φ` of `M` which fixes every point of `f(Q)`, moves only the poi
 set, and pulls `σ₁` back to `σ₀` on a neighbourhood of `f(Q)`. Restricted to such a neighbourhood
 `U`, it is a diffeomorphism from `U` onto the open set `Φ(U)` which fixes `f(Q)` pointwise and
 carries `σ₀` on `U` to `σ₁` on `Φ(U)`
-(`TauCeti.SmoothTwoForm.exists_diffeomorph_opens_of_eq_along`). Only the agreement of the full
-ambient forms along `f(Q)` is used; agreement of their pullbacks to `Q` is a weaker condition.
+(`TauCeti.SmoothTwoForm.exists_diffeomorph_opens_of_eq_along`). These two theorems assume
+agreement of the full ambient forms along `f(Q)`; they are special cases of a general form, below,
+which assumes only equal pullbacks to `Q` and a nondegenerate path.
 
 The proof is Moser's argument relative to a compact set
 (`TauCeti.SmoothTwoForm.exists_diffeomorph_fix_eventually_mpullback_eq_of_mextDeriv_eq_sub`).
