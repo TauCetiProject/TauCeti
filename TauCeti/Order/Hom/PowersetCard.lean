@@ -37,13 +37,13 @@ enumeration is `a ↦ k + a`, an index lies in it exactly when it is at least `k
 `p`-subset meets the first `k` indices.
 
 The shuffle of two disjoint fixed-cardinality subsets lists the increasing enumeration of the first
-followed by that of the second, and mapping along an order embedding or order isomorphism commutes
-with increasing enumerations and preserves shuffle permutations and shuffle signs. The shuffle of
-a singleton `{i}` with `s.erase i` lists `i` first and then `s.erase i`, and in the presentation
-`Fin (n + 1)` it is the inverse cycle moving the position of `i` in `s` to the front. For an
-`r`-subset `T` of `Fin m`, the shuffle sorting `T` followed by its complement `Tᶜ` has sign
-`(-1) ^ (∑ i ∈ T, i - r * (r - 1) / 2)`, so the product of the shuffle signs of two `r`-subsets
-`S` and `T` is `(-1) ^ (∑ i ∈ S, i + ∑ j ∈ T, j)`.
+followed by that of the second. Mapping along an order embedding (or order isomorphism) commutes
+with increasing enumerations and preserves shuffle permutations, while an order isomorphism also
+preserves shuffle signs. The shuffle of a singleton `{i}` with `s.erase i` lists `i` first and then
+`s.erase i`, and in the presentation `Fin (n + 1)` it is the inverse cycle moving the position of
+`i` in `s` to the front. For an `r`-subset `T` of `Fin m`, the shuffle sorting `T` followed by its
+complement `Tᶜ` has sign `(-1) ^ (∑ i ∈ T, i - r * (r - 1) / 2)`, so the product of the shuffle
+signs of two `r`-subsets `S` and `T` is `(-1) ^ (∑ i ∈ S, i + ∑ j ∈ T, j)`.
 -/
 
 public section
