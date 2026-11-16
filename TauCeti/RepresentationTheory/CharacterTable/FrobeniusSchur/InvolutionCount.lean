@@ -6,8 +6,9 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.Group.SquareRoot
-public import TauCeti.RepresentationTheory.CharacterTable.FrobeniusSchur.Trichotomy
+public import TauCeti.RepresentationTheory.CharacterTable.FrobeniusSchur.Basic
 public import TauCeti.RepresentationTheory.CharacterTable.Table
+import TauCeti.RepresentationTheory.CharacterTable.FrobeniusSchur.Trichotomy
 
 /-!
 # The Frobenius-Schur involution count
@@ -216,9 +217,9 @@ theorem frobeniusSchurIndicatorRow_eq_inv_mul_sum_characterTable
   simp
 
 variable {G} in
-/-- **The row indicator takes only the values `1`, `0` and `-1`** in characteristic zero, by the
-Frobenius-Schur trichotomy applied to a representation affording the row. -/
-theorem frobeniusSchurIndicatorRow_eq_one_or_eq_zero_or_eq_neg_one [CharZero k]
+/-- **The row indicator takes only the values `1`, `0` and `-1`** for a finite group over an
+algebraically closed field in which `|G|` is invertible, without assuming characteristic zero. -/
+theorem frobeniusSchurIndicatorRow_eq_one_or_eq_zero_or_eq_neg_one
     (i : Fin (Nat.card (ConjClasses G))) :
     frobeniusSchurIndicatorRow k i = 1 ∨ frobeniusSchurIndicatorRow k i = 0 ∨
       frobeniusSchurIndicatorRow k i = -1 := by
