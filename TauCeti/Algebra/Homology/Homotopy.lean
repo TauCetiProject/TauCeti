@@ -362,8 +362,8 @@ lemma nonempty_homotopy_mkHomToSingle_zero_iff (K : CochainComplex C ℤ) {i j :
 
 open HomComplex in
 /-- **Null-homotopic chain maps from an object in one degree**: a chain map `χ` from `X` placed
-in degree `p` to `K` is null-homotopic if and only if its component `X ⟶ Kᵖ` factors through the
-differential `Kᵠ ⟶ Kᵖ`, where `q + 1 = p`. -/
+in degree `p` to `K` is null-homotopic if and only if its component `X ⟶ K^p` factors through the
+differential `K^q ⟶ K^p`, where `q + 1 = p`. -/
 lemma nonempty_homotopy_zero_iff_of_single (K : CochainComplex C ℤ) {X : C} {p q : ℤ}
     (hqp : q + 1 = p) (χ : (singleFunctor C p).obj X ⟶ K) :
     Nonempty (Homotopy χ 0) ↔

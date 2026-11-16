@@ -156,7 +156,7 @@ theorem subresultant_natDegree_sub_one_eq_sturmSubresultantFactor_mul
   have hrec : c = -(a % b) := by
     rw [eq_neg_mod_of_getElem?_sturmSeq ha hb hc, neg_mod]
   rw [subresultant_eq_sturmSubresultantFactor_mul hp ha hb (by omega),
-    subresultant_natDegree_sub_one (natDegree_le_ite_of_getElem?_sturmSeq hp ha) (by omega) hba,
+    subresultant_natDegree_sub_one (natDegree_le_ite_of_getElem?_sturmSeq hp ha) hba,
     hrec]
   simp [mul_assoc]
 

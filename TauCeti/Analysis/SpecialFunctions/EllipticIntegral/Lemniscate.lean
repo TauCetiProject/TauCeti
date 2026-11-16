@@ -8,7 +8,7 @@ module
 public import Mathlib.Probability.Distributions.Beta
 public import TauCeti.Analysis.SpecialFunctions.EllipticIntegral.ImaginaryModulus
 import TauCeti.Analysis.SpecialFunctions.Integrals.Trigonometric.Basic
-import TauCeti.Analysis.SpecialFunctions.Beta
+import TauCeti.Analysis.SpecialFunctions.Beta.Basic
 
 /-!
 # The lemniscate constant

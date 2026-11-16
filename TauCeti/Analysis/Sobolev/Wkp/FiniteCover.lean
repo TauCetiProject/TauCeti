@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Analysis.Normed.Operator.Compact.Pi
 public import TauCeti.Analysis.Sobolev.Wkp.Restriction
 import TauCeti.Analysis.Sobolev.Wkp.Gluing
 
@@ -22,7 +23,9 @@ families, for every order `k` and every `1 ≤ p ≤ ∞`, with no boundary regu
 the sup norm on the product, the equivalence has norm at most one and its inverse has norm at most
 the number of sets in the cover. In other words, the finite-cover norm `∑ᵢ ‖u|_{V i}‖` is
 equivalent to the Sobolev norm on `Ω` (`TauCeti.Wkp.norm_le_sum_norm_restrictL`), which is the
-local form of the equivalence of finite-chart norms on a compact manifold.
+local form of the equivalence of finite-chart norms on a compact manifold. In particular, a map
+into `W^{k,p}(Ω)` is a compact operator as soon as its restrictions to the members of a finite
+open cover are (`TauCeti.Wkp.isCompactOperator_of_restrictL`).
 
 Injectivity is `TauCeti.Wkp.ext_of_restrictL_eq`; surjectivity and the bound on the inverse come
 from the gluing theorem `TauCeti.Wkp.exists_glue_of_restrictL_eq`.
@@ -35,6 +38,8 @@ from the gluing theorem `TauCeti.Wkp.exists_glue_of_restrictL_eq`.
 * `TauCeti.Wkp.norm_le_sum_norm_restrictL`: `‖u‖ ≤ ∑ᵢ ‖u|_{V i}‖` for a finite open cover.
 * `TauCeti.Wkp.restrictCompatibleEquiv`: `W^{k,p}(Ω) ≃L[ℝ]` compatible families over a finite
   open cover.
+* `TauCeti.Wkp.isCompactOperator_of_restrictL`: compactness of maps into `W^{k,p}(Ω)` is local on
+  a finite open cover.
 
 ## References
 
@@ -220,5 +225,21 @@ theorem norm_restrictCompatibleEquiv_symm_le [Fintype ι] {V : ι → Opens E}
   have h := norm_le_card_mul_norm_restrictCompatibleL hle hcov k
     ((restrictCompatibleEquiv hle hcov k).symm w)
   rwa [← restrictCompatibleEquiv_apply hle hcov, ContinuousLinearEquiv.apply_symm_apply] at h
+
+/-- **Compactness is local on a finite open cover.** If finitely many open sets `V i ⊆ Ω` cover
+`Ω`, a map into `W^{k,p}(Ω)` is a compact operator as soon as its restrictions to all `V i` are. -/
+theorem isCompactOperator_of_restrictL [Finite ι] {X : Type*} [TopologicalSpace X]
+    [AddCommMonoid X] {V : ι → Opens E} (hle : ∀ i, V i ≤ Omega)
+    (hcov : Omega ≤ ⨆ i, V i) {k : ℕ} {f : X → Wkp mu Omega p k}
+    (hf : ∀ i, IsCompactOperator fun x ↦ restrictL (hle i) k (f x)) : IsCompactOperator f := by
+  have := Fintype.ofFinite ι
+  have h := ((IsCompactOperator.pi hf).codRestrict
+    (fun x ↦ restrictL_mem_compatibleFamilies hle k (f x))
+    (isClosed_compatibleFamilies V k)).clm_comp
+      (restrictCompatibleEquiv hle hcov k).symm.toContinuousLinearMap
+  convert h using 1
+  funext x
+  rw [Function.comp_apply, ContinuousLinearEquiv.coe_coe, ContinuousLinearEquiv.eq_symm_apply]
+  exact Subtype.ext (funext fun i ↦ restrictCompatibleEquiv_apply_coe hle hcov k (f x) i)
 
 end TauCeti.Wkp

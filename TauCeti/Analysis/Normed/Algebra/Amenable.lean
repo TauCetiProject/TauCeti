@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+import Mathlib.Analysis.Normed.Operator.BoundedLinearMaps
 public import TauCeti.Analysis.Normed.Algebra.ApproximateDiagonal
 public import TauCeti.Analysis.Normed.Algebra.HochschildCohomology.Complex
 public import TauCeti.Analysis.Normed.Module.Dual.Bimodule

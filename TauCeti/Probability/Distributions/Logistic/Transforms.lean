@@ -6,7 +6,7 @@ Authors: Codex
 module
 
 public import TauCeti.Probability.Distributions.Logistic.Basic
-public import TauCeti.Analysis.SpecialFunctions.Beta
+public import TauCeti.Analysis.SpecialFunctions.Beta.Basic
 public import TauCeti.Analysis.SpecialFunctions.Sigmoid
 public import TauCeti.Probability.Moments.ComplexMGF
 public import Mathlib.Analysis.SpecialFunctions.Gamma.Beta

@@ -5,8 +5,13 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.AlgebraicGeometry.EllipticCurve.GaloisCohomology.Finiteness
-public import TauCeti.AlgebraicGeometry.EllipticCurve.GaloisCohomology.FixingSubgroup
+public import Mathlib.NumberTheory.NumberField.Basic
+public import Mathlib.RingTheory.DedekindDomain.AdicValuation.Completion
+public import TauCeti.AlgebraicGeometry.EllipticCurve.GaloisCohomology.Selmer.Basic
+-- Proof-only: the finiteness of the Selmer group over the division field.
+import TauCeti.AlgebraicGeometry.EllipticCurve.GaloisCohomology.Finiteness
+-- Proof-only: restriction to fixing subgroups.
+import TauCeti.AlgebraicGeometry.EllipticCurve.GaloisCohomology.FixingSubgroup
 -- Proof-only: good reduction outside a finite set of primes.
 import TauCeti.AlgebraicGeometry.EllipticCurve.MinimalModel.AlmostEverywhere
 -- Proof-only: the canonical scalar towers between completions of number fields.
@@ -17,7 +22,10 @@ import TauCeti.NumberTheory.NumberField.LocalGlobal.Completion
 
 For an elliptic curve `W` over a number field `K` and a nonzero natural number `m`, the
 `m`-Selmer group of `W` is finite (Silverman X.4.2). Here the local conditions are taken at the
-completions of `K` at its finite places.
+completions of `K` at its finite places. Imposing the conditions at fewer places gives a larger
+group (`WeierstrassCurve.selmerGroup_le_comp`), so this group contains the one with conditions at
+every place, including the infinite ones, and its finiteness implies that of the latter
+(`WeierstrassCurve.finite_selmerGroup_place`).
 
 The proof passes to the division field `L = K(E[m])`. Restriction to `L` has finite kernel, and
 the local condition over each completion `L_w` lies over the condition at the completion `K_v`
@@ -53,7 +61,9 @@ private def completionSeparableClosureEmbeddings (F : Type*) [Field F] [NumberFi
 
 /-- **The `m`-Selmer group of an elliptic curve over a number field is finite** (Silverman
 X.4.2). The local conditions are the images of the Kummer maps over the completions at all finite
-places. The conclusion holds for every nonzero natural number `m`. -/
+places, so this group contains the one with conditions at every place
+(`WeierstrassCurve.selmerGroup_le_comp`). The conclusion holds for every nonzero natural number
+`m`. -/
 theorem finite_selmerGroup [W.IsElliptic] (m : ℕ) [NeZero m]
     (τ : ∀ v : HeightOneSpectrum (𝓞 K),
       SeparableClosure K →ₐ[K] SeparableClosure (v.adicCompletion K)) :
