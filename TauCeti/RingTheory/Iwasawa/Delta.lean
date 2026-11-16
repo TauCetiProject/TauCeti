@@ -117,6 +117,33 @@ theorem finite_deltaSubmodule [Fact p.Prime] [IsNoetherianRing O]
   apply hF.finite_of_isTorsionBy
   simpa using hkill
 
+/-- The delta submodule of a binary product is the product of the delta submodules. -/
+theorem deltaSubmodule_prod (N : Type*) [AddCommGroup N] [Module O⟦X⟧ N] :
+    deltaSubmodule p O (M × N) = (deltaSubmodule p O M).prod (deltaSubmodule p O N) := by
+  ext ⟨x, y⟩
+  simp only [mem_deltaSubmodule, Submodule.mem_prod, Prod.smul_mk, Prod.mk_eq_zero]
+  refine ⟨fun ⟨n, hx, hy⟩ ↦ ⟨⟨n, hx⟩, ⟨n, hy⟩⟩, fun ⟨⟨m, hm⟩, ⟨n, hn⟩⟩ ↦ ⟨max m n, ?_, ?_⟩⟩
+  · exact (mem_torsionBy_iff _ _).mp
+      (monotone_torsionBy_one_add_X_pow_sub_one p O M (le_max_left m n) hm)
+  · exact (mem_torsionBy_iff _ _).mp
+      (monotone_torsionBy_one_add_X_pow_sub_one p O N (le_max_right m n) hn)
+
+/-- The delta submodule of a finite product of modules is the product of their delta submodules. -/
+theorem deltaSubmodule_pi {ι : Type*} [Finite ι] (F : ι → Type*) [∀ i, AddCommGroup (F i)]
+    [∀ i, Module O⟦X⟧ (F i)] :
+    deltaSubmodule p O (∀ i, F i) = Submodule.pi Set.univ fun i ↦ deltaSubmodule p O (F i) := by
+  classical
+  have := Fintype.ofFinite ι
+  ext f
+  simp only [mem_deltaSubmodule, Submodule.mem_pi, Set.mem_univ, forall_true_left, funext_iff,
+    Pi.smul_apply, Pi.zero_apply]
+  refine ⟨fun ⟨n, hn⟩ i ↦ ⟨n, hn i⟩, fun hf ↦ ?_⟩
+  choose n hn using hf
+  refine ⟨Finset.univ.sup n, fun i ↦ ?_⟩
+  exact (mem_torsionBy_iff _ _).mp
+    (monotone_torsionBy_one_add_X_pow_sub_one p O (F i)
+      (Finset.le_sup (f := n) (Finset.mem_univ i)) (hn i))
+
 end TauCeti.Iwasawa
 
 namespace LinearMap

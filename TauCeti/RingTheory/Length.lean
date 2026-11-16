@@ -11,9 +11,11 @@ public import Mathlib.RingTheory.Length
 public import Mathlib.RingTheory.LocalRing.Length
 public import Mathlib.RingTheory.Localization.AtPrime.Basic
 public import Mathlib.RingTheory.OrderOfVanishing.Basic
+public import Mathlib.SetTheory.Cardinal.Finite
 -- Proof-only: `QuotSMulTop` supplies the transport used to prove `length_quotient_lsmul_congr`;
 -- no statement in this file mentions it.
 import Mathlib.Algebra.Module.LocalizedModule.Submodule
+import Mathlib.LinearAlgebra.Quotient.Card
 import Mathlib.RingTheory.Ideal.Quotient.Noetherian
 import Mathlib.RingTheory.LocalRing.Length
 import Mathlib.RingTheory.LocalRing.ResidueField.Ideal
@@ -102,6 +104,8 @@ applies to the quotients appearing here without any further appeal to defeq.
 * `LinearEquiv.length_localizedModule_comap`: for a ring isomorphism `σ : A → B` and a
   `σ`-semilinear equivalence `N ≃ M`, the localizations `N_{σ⁻¹ 𝔮}` and `M_𝔮` have the same length,
   for every prime `𝔮` of `B`.
+* `IsFiniteLength.natCard_eq_natCard_residueField_pow_length`: a finite-length module `M` over a
+  commutative local ring `R` has cardinality `#κ(R) ^ ℓ_R(M)`.
 -/
 
 public section
@@ -692,3 +696,43 @@ theorem finrank_eq_length_mul_finrank_residueField (k B M : Type*) [Field k] [Co
   simpa [Module.length_eq_rank, Module.finrank] using congr($(h).toNat)
 
 end TauCeti
+
+namespace IsFiniteLength
+
+/-- **Cardinality of a finite-length module over a local ring.** If `M` has finite length over a
+commutative local ring `R`, then `#M = #κ(R) ^ ℓ_R(M)`, where `κ(R)` is the residue field of `R`.
+No finiteness assumption on `κ(R)` or `M` is required: when `κ(R)` is infinite and `M` is
+nontrivial, both sides are `0`. -/
+theorem natCard_eq_natCard_residueField_pow_length {R M : Type*} [CommRing R] [IsLocalRing R]
+    [AddCommGroup M] [Module R M] (hM : IsFiniteLength R M) :
+    Nat.card M = Nat.card (IsLocalRing.ResidueField R) ^ (Module.length R M).toNat := by
+  obtain ⟨s, hhead, hlast⟩ := isFiniteLength_iff_exists_compositionSeries.mp hM
+  have hstep : ∀ k (hk : k < s.length + 1),
+      Nat.card (s ⟨k, hk⟩) = Nat.card (IsLocalRing.ResidueField R) ^ k := by
+    intro k
+    induction k with
+    | zero =>
+      intro hk
+      have hbot : s ⟨0, hk⟩ = ⊥ := hhead
+      rw [hbot, pow_zero]
+      exact Nat.card_unique
+    | succ k ih =>
+      intro hk
+      have hcov : s ⟨k, by omega⟩ ⋖ s ⟨k + 1, hk⟩ := s.step ⟨k, by omega⟩
+      let S : Submodule R (s ⟨k + 1, hk⟩) := (s ⟨k, by omega⟩).comap (s ⟨k + 1, hk⟩).subtype
+      have hsimple : IsSimpleModule R (s ⟨k + 1, hk⟩ ⧸ S) :=
+        (covBy_iff_quot_is_simple hcov.le).mp hcov
+      obtain ⟨I, hI, ⟨e⟩⟩ := isSimpleModule_iff_quot_maximal.mp hsimple
+      rw [IsLocalRing.eq_maximalIdeal hI] at e
+      have hcardS : Nat.card S = Nat.card (s ⟨k, by omega⟩) :=
+        Nat.card_congr (Submodule.comapSubtypeEquivOfLe hcov.le).toEquiv
+      rw [S.card_eq_card_quotient_mul_card, hcardS, ih (by omega), Nat.card_congr e.toEquiv,
+        pow_succ]
+      rfl
+  have hlen := Module.length_compositionSeries s hhead hlast
+  rw [← hlen, ENat.toNat_natCast, ← hstep s.length (Nat.lt_succ_self _)]
+  have htop : s ⟨s.length, Nat.lt_succ_self _⟩ = ⊤ := hlast
+  rw [htop]
+  exact (Nat.card_congr Submodule.topEquiv.toEquiv).symm
+
+end IsFiniteLength

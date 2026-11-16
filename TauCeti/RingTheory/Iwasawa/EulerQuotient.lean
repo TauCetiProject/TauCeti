@@ -65,11 +65,13 @@ is multiplicative in the ideal, so the horizontal blocks together contribute
 ## Main results
 
 * `TauCeti.Iwasawa.torsionBy_elementary_eq_bot`,
-  `TauCeti.Iwasawa.resultant_ne_zero_of_finite_quotSMulTop_elementary` and
+  `TauCeti.Iwasawa.resultant_ne_zero_of_finite_quotSMulTop_elementary`,
+  `TauCeti.Iwasawa.finite_quotSMulTop_elementary_iff` and
   `TauCeti.Iwasawa.natCard_quotSMulTop_elementary`: the kernel and the cokernel of multiplication
   by `G` on an elementary module.
-* `TauCeti.Iwasawa.resultant_charPoly_ne_zero_of_finite_quotSMulTop`: if `M ⧸ GM` is finite, then
-  `Res(F_M, G) ≠ 0`.
+* `TauCeti.Iwasawa.resultant_charPoly_ne_zero_of_finite_quotSMulTop` and
+  `TauCeti.Iwasawa.finite_quotSMulTop_iff_resultant_charPoly_ne_zero`: `M ⧸ GM` is finite iff
+  `Res(F_M, G) ≠ 0` (for a torsion module and `G` nonzero modulo the maximal ideal).
 * `TauCeti.Iwasawa.finite_torsionBy_of_finite_quotSMulTop`: if `M ⧸ GM` is finite, then so is
   `M[G]`.
 * `TauCeti.Iwasawa.natCard_quotSMulTop_div_natCard_torsionBy`: the Euler quotient
@@ -172,6 +174,39 @@ theorem natCard_quotSMulTop_elementary {ϖ : O} (hϖ : Irreducible ϖ) {a b : �
     rw [H.natCard_quotSMulTop (hnorm ▸ hres j (Finset.mem_univ j)), hnorm,
       Ideal.absNorm_eq_natCard]
 
+/-- **Finiteness of the cokernel on a torsion elementary module.** Over a complete discrete
+valuation ring with finite residue field, a polynomial `G` with nonzero reduction modulo the
+maximal ideal has finite cokernel on `∏ᵢ O⟦X⟧ ⧸ (ϖ ^ mᵢ) × ∏ⱼ O⟦X⟧ ⧸ (Fⱼ ^ nⱼ)` if and only if
+`Res(∏ⱼ Fⱼ ^ nⱼ, G) ≠ 0`. -/
+theorem finite_quotSMulTop_elementary_iff [Finite (ResidueField O)] {ϖ : O} (hϖ : Irreducible ϖ)
+    {a b : ℕ} (m : Fin a → ℕ) {F : Fin b → O[X]}
+    (hF : ∀ j, (F j).IsDistinguishedAt (maximalIdeal O)) (n : Fin b → ℕ)
+    (hG : G.map (residue O) ≠ 0) :
+    Finite (QuotSMulTop (G : O⟦X⟧) (Elementary O ϖ 0 m F n)) ↔
+      (∏ j, F j ^ n j).resultant G ≠ 0 := by
+  refine ⟨resultant_ne_zero_of_finite_quotSMulTop_elementary 0 m hF n, fun hres ↦ ?_⟩
+  rw [Polynomial.resultant_prod_left_of_monic _ fun j _ ↦ (hF j).monic.pow _,
+    Finset.prod_ne_zero_iff] at hres
+  have hG' : ((G : O⟦X⟧).map (residue O)) ≠ 0 := by
+    rw [← Polynomial.polynomial_map_coe, Ne, Polynomial.coe_eq_zero_iff]
+    exact hG
+  obtain ⟨P, h, HG⟩ := PowerSeries.exists_isWeierstrassFactorization hG'
+  refine Nat.finite_of_card_ne_zero ?_
+  rw [natCard_quotSMulTop_prod, natCard_quotSMulTop_prod, natCard_quotSMulTop_pi,
+    natCard_quotSMulTop_pi, natCard_quotSMulTop_pi, Finset.univ_eq_empty, Finset.prod_empty,
+    one_mul]
+  refine mul_ne_zero (Finset.prod_ne_zero_iff.2 fun i _ ↦ ?_)
+    (Finset.prod_ne_zero_iff.2 fun j _ ↦ ?_)
+  · rw [natCard_quotSMulTop_quotient_span_C_pow hϖ HG (m i)]
+    exact pow_ne_zero _ Nat.card_pos.ne'
+  · have H := ((hF j).pow (n j)).isWeierstrassFactorizationAt
+    have : Finite (QuotSMulTop (G : O⟦X⟧)
+        (O⟦X⟧ ⧸ Ideal.span {((F j ^ n j : O[X]) : O⟦X⟧)})) :=
+      (H.finite_quotSMulTop_iff _).2 <| by
+        rw [H.norm_mk_coe_eq_resultant]
+        exact hres j (Finset.mem_univ j)
+    exact Nat.card_pos.ne'
+
 end Elementary
 
 section Module
@@ -189,6 +224,19 @@ theorem resultant_charPoly_ne_zero_of_finite_quotSMulTop
   exact resultant_ne_zero_of_finite_quotSMulTop_elementary r m (fun j ↦ (hFn j).1) n
     ((hf.finite_quotSMulTop_iff TauCeti.PowerSeries.ringKrullDim_of_isDiscreteValuationRing _).1
       hfin)
+
+/-- **Resultant finiteness criterion.** For a finitely generated torsion `O⟦X⟧`-module `M` and a
+polynomial `G` with nonzero reduction modulo the maximal ideal, `M ⧸ GM` is finite if and only if
+`Res(F_M, G) ≠ 0`. -/
+theorem finite_quotSMulTop_iff_resultant_charPoly_ne_zero (hM : Module.IsTorsion O⟦X⟧ M)
+    (hG : G.map (residue O) ≠ 0) :
+    Finite (QuotSMulTop (G : O⟦X⟧) M) ↔ (charPoly O M).resultant G ≠ 0 := by
+  obtain ⟨ϖ, hϖ⟩ := IsDiscreteValuationRing.exists_irreducible O
+  obtain ⟨a, b, m, F, n, -, hFn, f, hf⟩ :=
+    exists_isPseudoIsomorphism_elementary_of_isTorsion (M := M) hϖ hM
+  rw [hf.finite_quotSMulTop_iff TauCeti.PowerSeries.ringKrullDim_of_isDiscreteValuationRing _,
+    hf.charPoly_eq_prod hϖ (fun j ↦ (hFn j).1) fun j ↦ (hFn j).2.1]
+  exact finite_quotSMulTop_elementary_iff hϖ m (fun j ↦ (hFn j).1) n hG
 
 /-- **Finite invariants.** Let `G` be a monic polynomial. If `M ⧸ GM` is finite, then so is
 `M[G]`. -/

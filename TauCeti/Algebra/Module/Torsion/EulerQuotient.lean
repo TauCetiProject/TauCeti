@@ -55,10 +55,13 @@ need not agree.
 * `TauCeti.natCard_quotSMulTop_mul_natCard_torsionBy_of_exact_of_finite_left` and
   `TauCeti.natCard_quotSMulTop_mul_natCard_torsionBy_of_exact_of_finite_right`: a finite outer
   term of a short exact sequence may be discarded.
-* `TauCeti.finite_torsionBy_iff_of_finite_ker_of_finite_coker`,
+* `TauCeti.finite_iff_of_finite_ker_of_finite_coker`, `TauCeti.finite_ker_torsionByMap`,
+  `TauCeti.finite_coker_torsionByMap`, `TauCeti.finite_smul_top_iff_of_finite_ker_of_finite_coker`,
+  `TauCeti.finite_torsionBy_iff_of_finite_ker_of_finite_coker`,
   `TauCeti.finite_quotSMulTop_iff_of_finite_ker_of_finite_coker` and
   `TauCeti.natCard_quotSMulTop_div_natCard_torsionBy_eq_of_finite_ker_of_finite_coker`: a linear
-  map with finite kernel and cokernel preserves the finiteness of `M[r]` and of `M ⧸ rM`, and the
+  map with finite kernel and cokernel preserves finiteness of the module, of `rM`, of `M[r]`, and
+  of `M ⧸ rM`, induces a map with finite kernel and cokernel on `r`-torsion, and preserves the
   Euler quotient.
 
 ## References
@@ -301,6 +304,105 @@ theorem natCard_quotSMulTop_div_natCard_torsionBy_eq_of_finite_ker_of_finite_cok
     rw [Nat.card_eq_zero_of_infinite (α := torsionBy R M r),
       Nat.card_eq_zero_of_infinite (α := torsionBy R N r), Nat.cast_zero, div_zero, div_zero]
 
+/-- If `φ : M → N` has finite kernel and cokernel, then its restriction `M[r] → N[r]` to the
+`r`-torsion has finite cokernel. -/
+theorem finite_coker_torsionByMap :
+    Finite (torsionBy R N r ⧸ LinearMap.range (torsionByMap r φ)) := by
+  -- Factor `φ = ι ∘ π` through `range φ`; both induced maps on `r`-torsion have finite cokernel.
+  let f₁ := torsionByMap r φ.rangeRestrict
+  let f₂ := torsionByMap r (LinearMap.range φ).subtype
+  have hcomp : torsionByMap r φ = f₂ ∘ₗ f₁ := by
+    rw [← torsionByMap_comp]; rfl
+  have : Finite (torsionBy R (LinearMap.range φ) r ⧸ LinearMap.range f₁) := by
+    let δ := torsionByδ r φ.exact_subtype_rangeRestrict (LinearMap.ker φ).injective_subtype
+      φ.surjective_rangeRestrict
+    have : Finite (QuotSMulTop r (LinearMap.ker φ)) := Finite.of_surjective _ (mkQ_surjective _)
+    have hker : LinearMap.ker δ = LinearMap.range f₁ :=
+      (exact_torsionByMap_torsionByδ (r := r) φ.exact_subtype_rangeRestrict
+        (LinearMap.ker φ).injective_subtype φ.surjective_rangeRestrict).linearMap_ker_eq
+    exact Finite.of_equiv _
+      (Submodule.quotEquivOfEq _ _ hker.symm ≪≫ₗ δ.quotKerEquivRange).symm.toEquiv
+  have : Finite (torsionBy R N r ⧸ LinearMap.range f₂) := by
+    let g := torsionByMap r (LinearMap.range φ).mkQ
+    have hker : LinearMap.ker g = LinearMap.range f₂ :=
+      (exact_torsionByMap (r := r) (LinearMap.exact_subtype_mkQ (LinearMap.range φ))
+        (LinearMap.range φ).injective_subtype).linearMap_ker_eq
+    exact Finite.of_equiv _
+      (Submodule.quotEquivOfEq _ _ hker.symm ≪≫ₗ g.quotKerEquivRange).symm.toEquiv
+  rw [hcomp]
+  exact (LinearMap.exact_cokerToCokerComp_factor f₁ f₂).finite
+
 end FiniteKerCoker
+
+end TauCeti
+
+namespace TauCeti
+
+/-- A linear map with finite kernel and cokernel preserves finiteness of the ambient module:
+`M` is finite iff `N` is. -/
+theorem finite_iff_of_finite_ker_of_finite_coker {R M N : Type*} [Ring R]
+    [AddCommGroup M] [Module R M] [AddCommGroup N] [Module R N] (φ : M →ₗ[R] N)
+    [Finite (LinearMap.ker φ)] [Finite (N ⧸ LinearMap.range φ)] :
+    Finite M ↔ Finite N :=
+  ⟨fun _ ↦
+    have : Finite (LinearMap.range φ) := Finite.of_surjective _ φ.surjective_rangeRestrict
+    (LinearMap.exact_subtype_mkQ (LinearMap.range φ)).finite,
+  fun _ ↦
+    have : Finite (LinearMap.range φ) := Finite.of_injective _ (LinearMap.range φ).injective_subtype
+    φ.exact_subtype_rangeRestrict.finite⟩
+
+/-- If `φ : M → N` has finite kernel, then its restriction `M[r] → N[r]` to the `r`-torsion has
+finite kernel. -/
+theorem finite_ker_torsionByMap {R M N : Type*} [CommSemiring R] (r : R)
+    [AddCommMonoid M] [Module R M] [AddCommMonoid N] [Module R N] (φ : M →ₗ[R] N)
+    [Finite (LinearMap.ker φ)] :
+    Finite (LinearMap.ker (torsionByMap r φ)) := by
+  refine Finite.of_injective
+    (fun x : LinearMap.ker (torsionByMap r φ) ↦ (⟨x.1.1, ?_⟩ : LinearMap.ker φ))
+    fun _ _ h ↦ Subtype.ext (Subtype.ext (Subtype.mk.inj h))
+  rw [LinearMap.mem_ker]
+  have hx : (torsionByMap r φ x.1 : N) = 0 := congrArg Subtype.val (LinearMap.mem_ker.mp x.2)
+  rwa [coe_torsionByMap_apply] at hx
+
+/-- A linear map with finite kernel and cokernel preserves the finiteness of `rM = r • ⊤`:
+`r • ⊤` is finite in `M` iff `r • ⊤` is finite in `N`. -/
+theorem finite_smul_top_iff_of_finite_ker_of_finite_coker {R M N : Type*} [CommRing R] (r : R)
+    [AddCommGroup M] [Module R M] [AddCommGroup N] [Module R N] (φ : M →ₗ[R] N)
+    [Finite (LinearMap.ker φ)] [Finite (N ⧸ LinearMap.range φ)] :
+    Finite ↥(r • (⊤ : Submodule R M)) ↔ Finite ↥(r • (⊤ : Submodule R N)) := by
+  let SM : Submodule R M := r • ⊤
+  let SN : Submodule R N := r • ⊤
+  let φ' : SM →ₗ[R] SN :=
+    φ.restrict fun x hx ↦ by
+      rw [show SM = r • ⊤ from rfl, pointwise_smul_def, Submodule.mem_map] at hx
+      rw [show SN = r • ⊤ from rfl, pointwise_smul_def, Submodule.mem_map]
+      rcases hx with ⟨m, -, rfl⟩
+      exact ⟨φ m, trivial, (φ.map_smul r m).symm⟩
+  have : Finite (LinearMap.ker φ') :=
+    Finite.of_injective
+      (fun x : LinearMap.ker φ' ↦
+        (⟨x.1.1, LinearMap.mem_ker.mpr (congrArg Subtype.val (LinearMap.mem_ker.mp x.2))⟩ :
+          LinearMap.ker φ))
+      fun _ _ h ↦ Subtype.ext (Subtype.ext (Subtype.mk.inj h))
+  let toSmul : N →ₗ[R] SN :=
+    (DistribSMul.toLinearMap R N r).codRestrict SN fun n ↦ by
+      rw [show SN = r • ⊤ from rfl, pointwise_smul_def, Submodule.mem_map]
+      exact ⟨n, trivial, rfl⟩
+  let q : (N ⧸ LinearMap.range φ) →ₗ[R] (SN ⧸ LinearMap.range φ') :=
+    (LinearMap.range φ).liftQ ((LinearMap.range φ').mkQ ∘ₗ toSmul) fun n hn ↦ by
+      rcases hn with ⟨m, rfl⟩
+      rw [LinearMap.mem_ker, LinearMap.comp_apply, Submodule.mkQ_apply,
+        Submodule.Quotient.mk_eq_zero]
+      refine ⟨⟨r • m, ?_⟩, Subtype.ext ?_⟩
+      · rw [show SM = r • ⊤ from rfl, pointwise_smul_def, Submodule.mem_map]
+        exact ⟨m, trivial, rfl⟩
+      · simp [φ', toSmul]
+  have hq : Function.Surjective q := fun y ↦ by
+    obtain ⟨⟨z, hz⟩, rfl⟩ := Submodule.Quotient.mk_surjective _ y
+    rw [show SN = r • ⊤ from rfl, pointwise_smul_def, Submodule.mem_map] at hz
+    rcases hz with ⟨n, -, rfl⟩
+    exact ⟨Submodule.Quotient.mk n, rfl⟩
+  have : Finite (SN ⧸ LinearMap.range φ') := Finite.of_surjective q hq
+  exact finite_iff_of_finite_ker_of_finite_coker φ'
 
 end TauCeti
