@@ -93,18 +93,27 @@ section Smooth
 variable [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteDimensional ℝ E]
   {Ω : Opens E} {χ : 𝓓(Ω, ℝ)}
 
+/-- The test function `ψ (e_η ∘ Φ)`: a test function times the Fourier atom `e_η` of `E'` pulled
+back along a smooth map `Φ`. -/
+private def pullbackAtom {Φ : E → E'} (hΦ : ContDiff ℝ ∞ Φ) (ψ : 𝓓(Ω, ℂ)) (η : E') : 𝓓(Ω, ℂ) :=
+  bilinLeftCLM (ContinuousLinearMap.mul ℝ ℂ) ((TauCeti.contDiff_fourierAtom η).comp hΦ) ψ
+
+omit [FiniteDimensional ℝ E'] [FiniteDimensional ℝ E] in
+private theorem pullbackAtom_apply {Φ : E → E'} (hΦ : ContDiff ℝ ∞ Φ) (ψ : 𝓓(Ω, ℂ)) (η : E')
+    (x : E) : pullbackAtom hΦ ψ η x = ψ x * TauCeti.fourierAtom η (Φ x) :=
+  rfl
+
 /-- The pairing `T (ψ (e_η ∘ Φ))` of `T` with a test function times the Fourier atom `e_η` of `E'`
 pulled back along a smooth map `Φ`. For `Φ` the identity it is the localized Fourier transform. -/
 private def pullbackFourier (T : 𝓓'(Ω, ℂ)) {Φ : E → E'} (hΦ : ContDiff ℝ ∞ Φ) (ψ : 𝓓(Ω, ℂ))
     (η : E') : ℂ :=
-  T.complexPairing (bilinLeftCLM (ContinuousLinearMap.mul ℝ ℂ)
-    ((TauCeti.contDiff_fourierAtom η).comp hΦ) ψ)
+  T.complexPairing (pullbackAtom hΦ ψ η)
 
 omit [FiniteDimensional ℝ E'] [FiniteDimensional ℝ E] in
 private theorem pullbackFourier_add (T : 𝓓'(Ω, ℂ)) {Φ : E → E'} (hΦ : ContDiff ℝ ∞ Φ)
     (ψ ψ' : 𝓓(Ω, ℂ)) (η : E') :
     pullbackFourier T hΦ (ψ + ψ') η = pullbackFourier T hΦ ψ η + pullbackFourier T hΦ ψ' η := by
-  simp only [pullbackFourier, map_add]
+  simp only [pullbackFourier, pullbackAtom, map_add]
 
 omit [FiniteDimensional ℝ E'] in
 private theorem pullbackFourier_eq_zero_of_disjoint {T : 𝓓'(Ω, ℂ)} {Φ : E → E'}
@@ -123,7 +132,7 @@ private theorem localFourier_cutoffPushforwardCLM_eq_pullbackFourier {Φ : E →
   rw [localFourier_def, complexPairing_cutoffPushforwardCLM, pullbackFourier]
   congr 1
   ext x
-  simp [bilinLeftCLM_apply, mul_assoc]
+  simp [pullbackAtom_apply, mul_assoc]
 
 /-- Near a point `x₀` at which `(DΦ x₀)ᵀ η` is a nonzero point of an open cone `Γ`, the
 transposed differentials map a whole open cone `Γ'` around `η` into `Γ`, with
@@ -183,7 +192,7 @@ private theorem mul_add_le_norm_add {Γ : Set E} {c a : ℝ} (hc : 0 < c) (hc1 :
   · have h3 : c * ‖ζ‖ < ‖m + ζ‖ := by
       by_contra! h3
       refine h (hball ?_)
-      rwa [mem_closedBall, dist_eq_norm, ← norm_neg, neg_sub, sub_neg_eq_add, add_comm]
+      simpa [mem_closedBall, dist_comm, dist_eq_norm, add_comm] using h3
     nlinarith [mul_le_mul_of_nonneg_left hv hc.le]
   · have h4 : a * ‖m‖ ≤ a * ‖m + ζ‖ := by nlinarith
     have h5 : ‖m‖ ≤ ‖m + ζ‖ := le_of_mul_le_mul_left h4 ha
@@ -193,8 +202,7 @@ private theorem mul_add_le_norm_add {Γ : Set E} {c a : ℝ} (hc : 0 < c) (hc1 :
 of `E'` pulled back along `Φ`. -/
 private def pullbackCoeff [MeasurableSpace E] [BorelSpace E] {Φ : E → E'} (hΦ : ContDiff ℝ ∞ Φ)
     (ψ : 𝓓(Ω, ℂ)) (η : E') (m : E) : ℂ :=
-  𝓕 (bilinLeftCLM (ContinuousLinearMap.mul ℝ ℂ) ((TauCeti.contDiff_fourierAtom η).comp hΦ) ψ :
-    E → ℂ) m
+  𝓕 (pullbackAtom hΦ ψ η : E → ℂ) m
 
 omit [FiniteDimensional ℝ E'] in
 /-- The Fourier coefficients of `ψ (e_η ∘ Φ)` are oscillatory integrals of `ψ` with the phase
@@ -214,8 +222,8 @@ private theorem pullbackCoeff_eq_integral [MeasurableSpace E] [BorelSpace E]
     field_simp
     ring
   rw [he, AddChar.map_add_eq_mul]
-  simp only [Circle.smul_def, bilinLeftCLM_apply, comp_apply, TauCeti.fourierAtom_eq_fourierChar,
-    ContinuousLinearMap.mul_apply', smul_eq_mul, Circle.coe_mul]
+  simp only [Circle.smul_def, pullbackAtom_apply, TauCeti.fourierAtom_eq_fourierChar,
+    smul_eq_mul, Circle.coe_mul]
   ring
 
 /-- The phase `x ↦ -(⟪θ₁, x⟫ + ⟪θ₂, Φ x⟫)` has nonzero derivative at `x` as soon as its gradient
@@ -359,10 +367,7 @@ private theorem one_add_pow_mul_mul_le {nv nm F L a B C₁ C₂ C₃ : ℝ} {N k
           gcongr
           exact hF.trans hFB
   · refine le_trans ?_ (le_max_right _ _)
-    have hC₂ : 0 ≤ C₂ := by
-      by_contra! h
-      have : C₂ * (1 + nm) ^ k < 0 := mul_neg_of_neg_of_pos h (by positivity)
-      linarith
+    have hC₂ : 0 ≤ C₂ := nonneg_of_mul_nonneg_left (hL.trans hLC) (by positivity)
     have h1 : (1 + nv) ^ N * (1 + nm) ^ k * (1 + nm) ^ r ≤ (1 + (nm + nv)) ^ (N + k + r) := by
       rw [pow_add, pow_add]
       gcongr <;> linarith
@@ -442,9 +447,8 @@ private theorem exists_nhds_cone_pullbackFourier {Φ : E → E'} (hΦ : ContDiff
       hgeom x (closedBall_subset_closedBall (by linarith) hx) v hv) (N + k + r)
   refine ⟨‖c₀‖ * max ((∫ x, ‖ψ x‖) * CA * (1 + 2 * a) ^ N) (C₁ * CB) *
     ∑' m : L, ((1 + ‖(m : E)‖) ^ r)⁻¹, fun v hv => ?_⟩
-  have hsum := (hexp _ fun x hx => hφ1.self_of_nhdsSet x
-    (hψK (tsupport_bilinLeftCLM_subset (ContinuousLinearMap.mul ℝ ℂ)
-      ((TauCeti.contDiff_fourierAtom v).comp hΦ) ψ hx))).const_smul ((1 + ‖v‖) ^ N)
+  have hsum := (hexp (pullbackAtom hΦ ψ v) fun x hx => hφ1.self_of_nhdsSet x
+    (hψK (tsupport_bilinLeftCLM_subset _ _ ψ hx))).const_smul ((1 + ‖v‖) ^ N)
   have h := hsum.norm_le_of_bounded (hw.hasSum.mul_left (‖c₀‖ *
     max ((∫ x, ‖ψ x‖) * CA * (1 + 2 * a) ^ N) (C₁ * CB))) fun m =>
       norm_one_add_pow_smul_mul_le hΦ T φ ψ c₀ ha hCA hpoly v m (hCB v hv m)
