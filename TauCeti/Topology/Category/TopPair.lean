@@ -46,6 +46,12 @@ The product `TopPair.prodRight P Y = (X × Y, A × Y)` of a pair `P = (X, A)` wi
 the embedding `P.map ▷ Y`. For the pair of a subset `A ⊆ X` it is the pair of the preimage of `A`
 under the first projection (`TopPair.ofSubsetProdRightIso`).
 
+For pairs `P = (X, A)` and `Q = (Y, B)`, `TopPair.prodSubspace P Q` is the subspace
+`A × Y ∪ X × B` of `X × Y`, with the inclusions `TopPair.prodSubspaceInl` of `A × Y` and
+`TopPair.prodSubspaceInr` of `X × B`. The inclusions form the excision map of pairs
+`TopPair.prodExcisionMap : (A × Y, A × B) ⟶ (A × Y ∪ X × B, X × B)`, and the identity of `X × Y`
+is a map of pairs `TopPair.prodLeftToProdSubspace : (X × Y, X × B) ⟶ (X × Y, A × Y ∪ X × B)`.
+
 For subsets `A ⊆ X` and `B ⊆ Y`, the preimages `A × Y` and `X × B` of `A` and `B` under the
 projections of `X × Y` form the pair `(X × Y, A × Y ∪ X × B)` of a product of pairs. Each is open
 in the union when `A`, respectively `B`, is open
@@ -480,6 +486,73 @@ lemma ofSubsetProdRightIso_inv_fst_apply {X : TopCat.{u}} (A : Set X) (Y : TopCa
     (x : X × Y) : Hom.fst (ofSubsetProdRightIso A Y).inv x = x := (rfl)
 
 end prodRight
+
+section prodSubspace
+
+open MonoidalCategory Topology
+
+variable (P Q : TopPair.{u})
+
+/-- The subspace `A × Y ∪ X × B` of the product `X × Y` of the ambient spaces of two pairs
+`P = (X, A)` and `Q = (Y, B)`: the union of the preimages of `A` and of `B` under the two
+projections. -/
+abbrev prodSubspace : Set ↑(P.fst ⊗ Q.fst : TopCat.{u}) :=
+  CartesianMonoidalCategory.fst P.fst Q.fst ⁻¹' Set.range P.map ∪
+    CartesianMonoidalCategory.snd P.fst Q.fst ⁻¹' Set.range Q.map
+
+/-- The inclusion `A × Y ⟶ A × Y ∪ X × B`. -/
+@[expose]
+def prodSubspaceInl : P.snd ⊗ Q.fst ⟶ TopCat.of (P.prodSubspace Q) :=
+  TopCat.ofHom ⟨fun x ↦ ⟨(P.map x.1, x.2), Or.inl ⟨x.1, rfl⟩⟩, by fun_prop⟩
+
+/-- The inclusion `X × B ⟶ A × Y ∪ X × B`. -/
+@[expose]
+def prodSubspaceInr : P.fst ⊗ Q.snd ⟶ TopCat.of (P.prodSubspace Q) :=
+  TopCat.ofHom ⟨fun x ↦ ⟨(x.1, Q.map x.2), Or.inr ⟨x.2, rfl⟩⟩, by fun_prop⟩
+
+@[simp]
+theorem coe_prodSubspaceInl_apply (x : ↑(P.snd ⊗ Q.fst : TopCat.{u})) :
+    (P.prodSubspaceInl Q x : ↑(P.fst ⊗ Q.fst : TopCat.{u})) = (P.map x.1, x.2) :=
+  (rfl)
+
+@[simp]
+theorem coe_prodSubspaceInr_apply (x : ↑(P.fst ⊗ Q.snd : TopCat.{u})) :
+    (P.prodSubspaceInr Q x : ↑(P.fst ⊗ Q.fst : TopCat.{u})) = (x.1, Q.map x.2) :=
+  (rfl)
+
+theorem isEmbedding_prodSubspaceInl : IsEmbedding (P.prodSubspaceInl Q) :=
+  IsEmbedding.subtypeVal.of_comp_iff.1 (P.isEmbedding_map.prodMap (IsEmbedding.id (X := Q.fst)))
+
+theorem isEmbedding_prodSubspaceInr : IsEmbedding (P.prodSubspaceInr Q) :=
+  IsEmbedding.subtypeVal.of_comp_iff.1 ((IsEmbedding.id (X := P.fst)).prodMap Q.isEmbedding_map)
+
+/-- The pair `(A × Y ∪ X × B, X × B)`, the target of the excision map of the product pair. -/
+abbrev prodExcisionPair : TopPair.{u} :=
+  TopPair.of (P.prodSubspaceInr Q) (P.isEmbedding_prodSubspaceInr Q)
+
+/-- The **excision map** `(A × Y, A × B) ⟶ (A × Y ∪ X × B, X × B)` of the product pair, given by
+the inclusions. -/
+@[expose]
+def prodExcisionMap : Q.prodLeft P.snd ⟶ P.prodExcisionPair Q :=
+  TopPair.ofHom (P.prodSubspaceInl Q) (P.map ▷ Q.snd) (by ext; rfl)
+
+/-- The map of pairs `(X × Y, X × B) ⟶ (X × Y, A × Y ∪ X × B)` given by the identity of `X × Y`. -/
+@[expose]
+def prodLeftToProdSubspace : Q.prodLeft P.fst ⟶ ofSubset (P.prodSubspace Q) :=
+  TopPair.ofHom (𝟙 _) (P.prodSubspaceInr Q) (by ext; rfl)
+
+/-- The map of pairs `(A × Y ∪ X × B, X × B) ⟶ (X × Y, X × B)` given by the inclusion. -/
+@[expose]
+def prodExcisionPairToProdLeft : P.prodExcisionPair Q ⟶ Q.prodLeft P.fst :=
+  TopPair.ofHom (ofSubset (P.prodSubspace Q)).map (𝟙 _) (by ext; rfl)
+
+/-- The excision map followed by the inclusion is the inclusion of pairs
+`(A × Y, A × B) ⟶ (X × Y, X × B)`. -/
+theorem prodExcisionMap_comp_prodExcisionPairToProdLeft :
+    P.prodExcisionMap Q ≫ P.prodExcisionPairToProdLeft Q = prodLeftMap (𝟙 Q) P.map :=
+  hom_ext_of_fst _ (by ext; rfl)
+
+end prodSubspace
 
 end TopPair
 
