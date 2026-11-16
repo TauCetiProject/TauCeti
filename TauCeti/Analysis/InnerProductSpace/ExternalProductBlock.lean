@@ -68,8 +68,13 @@ restrictions of `P` and `Q` to pairs of finite-dimensional eigenspaces of `P†P
   is `(ker A ⊗ ker B) ⊕ (ker A† ⊗ ker B†)`.
 * `ContinuousLinearMap.kerExternalProductBlockEquiv`: the corresponding linear equivalence, and
   `ContinuousLinearMap.finrank_ker_externalProductBlock` for its dimension.
+* `ContinuousLinearMap.kerExternalProductBlockAdjointNegEquiv` and
+  `ContinuousLinearMap.finrank_ker_externalProductBlock_adjoint_neg`: the kernel of the formal
+  adjoint `externalProductBlock A† (-B)` is `(ker A† ⊗ ker B) × (ker A ⊗ ker B†)`.
 * `finrank_ker_externalProductBlock_sub_finrank_ker_externalProductBlock_adjoint_neg`, in the
-  `ContinuousLinearMap` namespace: the product formula for the index.
+  `ContinuousLinearMap` namespace: the difference of the kernel dimensions of the block and of its
+  formal adjoint is `(dim ker A - dim ker A†) (dim ker B - dim ker B†)`, which is the product
+  formula for the index when the tensor products are complete and the block has closed range.
 * `ContinuousLinearMap.norm_externalProductBlock_le`: `‖externalProductBlock A B‖ ≤ 2 (‖A‖ + ‖B‖)`.
   Together with `ContinuousLinearMap.externalProductBlock_add` and
   `ContinuousLinearMap.externalProductBlock_ofReal_smul`, this makes the block a bounded real-linear
@@ -284,10 +289,49 @@ theorem finrank_ker_externalProductBlock (A : V₀ →L[𝕜] V₁) (B : W₀ �
   rw [(kerExternalProductBlockEquiv A B).finrank_eq, Module.finrank_prod,
     Module.finrank_tensorProduct, Module.finrank_tensorProduct]
 
-/-- **The product formula for the index.** The kernels of the external product block and of its
-formal adjoint `externalProductBlock A† (-B)` have dimensions whose difference is the product of
-`dim ker A - dim ker A†` and `dim ker B - dim ker B†`. When the tensor products are complete, this
-formal adjoint is the adjoint (`ContinuousLinearMap.adjoint_externalProductBlock`). -/
+/-- The kernel of the formal adjoint `externalProductBlock A† (-B)` of the external product
+block, identified with `(ker A† ⊗ ker B) × (ker A ⊗ ker B†)` through the inclusions of the kernels
+(`ContinuousLinearMap.coe_kerExternalProductBlockAdjointNegEquiv_symm_apply`). -/
+noncomputable def kerExternalProductBlockAdjointNegEquiv (A : V₀ →L[𝕜] V₁) (B : W₀ →L[𝕜] W₁) :
+    (externalProductBlock A.adjoint (-B)).ker ≃ₗ[𝕜]
+      (A.adjoint.ker ⊗[𝕜] B.ker) × (A.ker ⊗[𝕜] B.adjoint.ker) :=
+  kerExternalProductBlockEquiv A.adjoint (-B) ≪≫ₗ
+    ((TensorProduct.congr (.refl 𝕜 _) (.ofEq _ _ (by ext; simp))).prodCongr
+      (TensorProduct.congr (.ofEq _ _ (by rw [adjoint_adjoint])) (.ofEq _ _ (by ext; simp))))
+
+/-- `kerExternalProductBlockAdjointNegEquiv` sends a pair of tensors of kernel vectors to the pair
+of the corresponding tensors in the source of `externalProductBlock A† (-B)`. -/
+@[simp]
+theorem coe_kerExternalProductBlockAdjointNegEquiv_symm_apply (A : V₀ →L[𝕜] V₁)
+    (B : W₀ →L[𝕜] W₁) (p : (A.adjoint.ker ⊗[𝕜] B.ker) × (A.ker ⊗[𝕜] B.adjoint.ker)) :
+    ((kerExternalProductBlockAdjointNegEquiv A B).symm p :
+        WithLp 2 ((V₁ ⊗[𝕜] W₀) × (V₀ ⊗[𝕜] W₁))) =
+      WithLp.toLp 2 (TensorProduct.map A.adjoint.ker.subtype B.ker.subtype p.1,
+        TensorProduct.map A.ker.subtype B.adjoint.ker.subtype p.2) := by
+  simp only [kerExternalProductBlockAdjointNegEquiv, LinearEquiv.trans_symm,
+    LinearEquiv.trans_apply, LinearEquiv.prodCongr_symm, LinearEquiv.prodCongr_apply,
+    coe_kerExternalProductBlockEquiv_symm_apply, TensorProduct.congr_symm]
+  simp only [← LinearEquiv.coe_coe, TensorProduct.toLinearMap_congr, TensorProduct.map_map]
+  -- Each `subtype ∘ₗ (LinearEquiv.ofEq _ _ _).symm` is the inclusion `subtype` by definition.
+  rfl
+
+/-- The dimension of the kernel of the formal adjoint `externalProductBlock A† (-B)` of the
+external product block is `dim ker A† · dim ker B + dim ker A · dim ker B†`. -/
+theorem finrank_ker_externalProductBlock_adjoint_neg (A : V₀ →L[𝕜] V₁) (B : W₀ →L[𝕜] W₁)
+    [FiniteDimensional 𝕜 A.ker] [FiniteDimensional 𝕜 B.ker] [FiniteDimensional 𝕜 A.adjoint.ker]
+    [FiniteDimensional 𝕜 B.adjoint.ker] :
+    Module.finrank 𝕜 (externalProductBlock A.adjoint (-B)).ker =
+      Module.finrank 𝕜 A.adjoint.ker * Module.finrank 𝕜 B.ker +
+        Module.finrank 𝕜 A.ker * Module.finrank 𝕜 B.adjoint.ker := by
+  rw [(kerExternalProductBlockAdjointNegEquiv A B).finrank_eq, Module.finrank_prod,
+    Module.finrank_tensorProduct, Module.finrank_tensorProduct]
+
+/-- **Kernel-dimension form of the product index formula.** The kernels of the external product
+block and of its formal adjoint `externalProductBlock A† (-B)` have dimensions whose difference is
+the product of `dim ker A - dim ker A†` and `dim ker B - dim ker B†`. When the tensor products are
+complete, this formal adjoint is the adjoint (`ContinuousLinearMap.adjoint_externalProductBlock`);
+if moreover the block has closed range, its adjoint's kernel is `(range D)ᗮ ≅ coker D`, and the
+left side is the index of `D = externalProductBlock A B`. -/
 theorem finrank_ker_externalProductBlock_sub_finrank_ker_externalProductBlock_adjoint_neg
     (A : V₀ →L[𝕜] V₁) (B : W₀ →L[𝕜] W₁)
     [FiniteDimensional 𝕜 A.ker] [FiniteDimensional 𝕜 B.ker] [FiniteDimensional 𝕜 A.adjoint.ker]
@@ -296,12 +340,7 @@ theorem finrank_ker_externalProductBlock_sub_finrank_ker_externalProductBlock_ad
         Module.finrank 𝕜 (externalProductBlock A.adjoint (-B)).ker =
       ((Module.finrank 𝕜 A.ker : ℤ) - Module.finrank 𝕜 A.adjoint.ker) *
         ((Module.finrank 𝕜 B.ker : ℤ) - Module.finrank 𝕜 B.adjoint.ker) := by
-  have hB : (-B).ker = B.ker := by ext; simp
-  have hB' : (-B).adjoint.ker = B.adjoint.ker := by ext; simp
-  have : FiniteDimensional 𝕜 (-B).ker := hB ▸ inferInstance
-  have : FiniteDimensional 𝕜 (-B).adjoint.ker := hB' ▸ inferInstance
-  have : FiniteDimensional 𝕜 A.adjoint.adjoint.ker := by rw [adjoint_adjoint]; infer_instance
-  rw [finrank_ker_externalProductBlock, finrank_ker_externalProductBlock, adjoint_adjoint, hB, hB']
+  rw [finrank_ker_externalProductBlock, finrank_ker_externalProductBlock_adjoint_neg]
   push_cast
   ring
 
