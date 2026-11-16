@@ -8,6 +8,7 @@ module
 public import Mathlib.Analysis.Calculus.AddTorsor.AffineMap
 public import Mathlib.Geometry.Manifold.ContMDiff.NormedSpace
 public import TauCeti.Analysis.Convex.Segment
+import TauCeti.Logic.Function.Extend
 
 /-!
 # Smoothness of maps into an open submanifold
@@ -162,21 +163,14 @@ theorem ContMDiff.extend_prodMap_subtypeVal_one
     by_cases hx : x ∈ U
     · exact ((Subtype.val_injective.prodMap Function.injective_id).extend_apply g 1
         (⟨x, hx⟩, y)).trans (Subtype.val_injective.extend_apply g' 1 ⟨(x, y), hx, trivial⟩).symm
-    · rw [Function.extend_apply' _ _ _ fun ⟨q, hq⟩ ↦
-          hx ((show (q.1 : M) = x from congrArg Prod.fst hq) ▸ q.1.2),
-        Function.extend_apply' _ _ _ fun ⟨v, hv⟩ ↦
-          hx ((show v.1.1 = x from congrArg Prod.fst hv) ▸ v.2.1)]
+    · rw [Function.extend_prodMap_subtypeVal_eq g 1 y fun hxU ↦ (hx hxU).elim,
+        Function.extend_subtypeVal_eq g' 1 fun hxy ↦ (hx hxy.1).elim]
   rw [hext]
   refine hg'.extend_one_of_mulTSupport_subset (Subset.trans (b := s ×ˢ univ)
-    (closure_minimal (fun r hr ↦ ⟨?_, trivial⟩) (hs.prod isClosed_univ))
+    (closure_minimal (fun ⟨x, y⟩ hr ↦ ⟨?_, trivial⟩) (hs.prod isClosed_univ))
     (prod_mono hsU Subset.rfl))
   by_contra hxs
-  refine hr ?_
-  by_cases hxU : r.1 ∈ U
-  · exact (Subtype.val_injective.extend_apply g' 1 ⟨r, hxU, trivial⟩).trans
-      (hsupp ⟨r.1, hxU⟩ hxs r.2)
-  · exact Function.extend_apply' _ _ _ fun ⟨v, hv⟩ ↦
-      hxU ((show v.1.1 = r.1 from congrArg Prod.fst hv) ▸ v.2.1)
+  exact hr (hext ▸ Function.extend_prodMap_subtypeVal_eq g 1 y fun hxU ↦ hsupp ⟨x, hxU⟩ hxs y)
 
 end Extend
 
