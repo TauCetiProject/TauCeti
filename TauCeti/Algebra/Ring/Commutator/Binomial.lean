@@ -49,8 +49,8 @@ theorem pow_mul_pow_eq_sum_smul {S A : Type*} [CommSemiring S] [Semiring A] [Alg
   rw [pow_mul_pow_eq_pow_mul_add_nsmul_pow hxy (Algebra.commute_algebraMap_left h y),
     ← map_nsmul, add_comm, (Algebra.commute_algebraMap_left _ x).add_pow, mul_sum]
   refine sum_congr rfl fun n _ ↦ ?_
-  rw [← map_pow, ← map_natCast (algebraMap S A), ← Algebra.commutes,
-    ← mul_assoc (algebraMap S A _), ← map_mul, ← Algebra.smul_def, mul_smul_comm, nsmul_eq_mul]
+  simp only [← map_pow, mul_assoc, ← Algebra.smul_def, ← nsmul_eq_mul', ← Nat.cast_smul_eq_nsmul S,
+    mul_smul_comm, smul_smul, smul_pow]
   congr 1
   ring
 

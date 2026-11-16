@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Algebra.MvPolynomial.PDeriv
 public import Mathlib.RingTheory.MvPolynomial.Basic
+import Mathlib.Algebra.MvPolynomial.Coeff
 import TauCeti.Algebra.Ring.Commutator.Binomial
 
 /-!
@@ -46,7 +47,7 @@ factorial is divided, so everything holds over an arbitrary commutative semiring
   turns the ordered product into the multiplication of the algebra.
 
 Associativity, `TauCeti.affineStar_assoc`, is proved in
-`TauCeti.Algebra.Lie.UniversalEnveloping.Rees.AffineLine`, through the Poincaré–Birkhoff–Witt
+`TauCeti.Algebra.Lie.UniversalEnveloping.PBW.AffineLine`, through the Poincaré–Birkhoff–Witt
 basis of the enveloping algebra of `[x, y] = y`.
 
 ## References
@@ -78,19 +79,11 @@ noncomputable def affineStar (h : S) :
   (basisMonomials (Fin 2) S).constr S fun s ↦
     (basisMonomials (Fin 2) S).constr S fun t ↦ affineStarTerm h s t
 
-/-- A monomial in two variables is a scalar multiple of the ordered monomial
-`X 1 ^ s 1 * X 0 ^ s 0`. -/
-theorem _root_.MvPolynomial.monomial_eq_smul_X_one_pow_mul_X_zero_pow (s : Fin 2 →₀ ℕ) (a : S) :
-    monomial s a = a • (X 1 ^ s 1 * X 0 ^ s 0 : MvPolynomial (Fin 2) S) := by
-  rw [monomial_eq, Finsupp.prod_fintype _ _ (fun _ ↦ pow_zero _), Fin.prod_univ_two, C_mul',
-    mul_comm]
-
 /-- The ordered monomial `X 1 ^ a * X 0 ^ b` as a monomial with coefficient `1`. -/
 theorem _root_.MvPolynomial.X_one_pow_mul_X_zero_pow_eq_monomial (a b : ℕ) :
     (X 1 ^ a * X 0 ^ b : MvPolynomial (Fin 2) S) =
       monomial (Finsupp.single 1 a + Finsupp.single 0 b) 1 := by
-  rw [monomial_eq_smul_X_one_pow_mul_X_zero_pow, one_smul]
-  simp
+  simp [monomial_fin_two, mul_comm]
 
 /-- **The ordered product of two ordered monomials.** -/
 theorem affineStar_X_pow_mul_X_pow (h : S) (a b c d : ℕ) :
@@ -109,8 +102,26 @@ theorem _root_.MvPolynomial.induction_on_X_pow_mul_X_pow {P : MvPolynomial (Fin 
     (p : MvPolynomial (Fin 2) S) (smul : ∀ (a : S) p, P p → P (a • p))
     (add : ∀ p q, P p → P q → P (p + q)) (X_pow : ∀ a b : ℕ, P (X 1 ^ a * X 0 ^ b)) : P p := by
   induction p using MvPolynomial.induction_on' with
-  | monomial s a => rw [monomial_eq_smul_X_one_pow_mul_X_zero_pow]; exact smul _ _ (X_pow _ _)
+  | monomial s a =>
+      rw [monomial_fin_two, mul_assoc, mul_comm (X 0 ^ _), ← smul_eq_C_mul]
+      exact smul _ _ (X_pow _ _)
   | add p q hp hq => exact add p q hp hq
+
+/-- Two linear maps out of polynomials in two variables agree once they agree on the ordered
+monomials `X 1 ^ a * X 0 ^ b`. -/
+theorem _root_.MvPolynomial.linearMap_ext_X_pow_mul_X_pow {M : Type*} [AddCommMonoid M]
+    [Module S M] {f g : MvPolynomial (Fin 2) S →ₗ[S] M}
+    (h : ∀ a b : ℕ, f (X 1 ^ a * X 0 ^ b) = g (X 1 ^ a * X 0 ^ b)) : f = g :=
+  (basisMonomials (Fin 2) S).ext fun s ↦ by
+    simpa [coe_basisMonomials, monomial_fin_two, mul_comm] using h (s 1) (s 0)
+
+/-- Two bilinear maps out of polynomials in two variables agree once they agree on pairs of
+ordered monomials `X 1 ^ a * X 0 ^ b`, `X 1 ^ c * X 0 ^ d`. -/
+theorem _root_.MvPolynomial.linearMap_ext₂_X_pow_mul_X_pow {M : Type*} [AddCommMonoid M]
+    [Module S M] {f g : MvPolynomial (Fin 2) S →ₗ[S] MvPolynomial (Fin 2) S →ₗ[S] M}
+    (h : ∀ a b c d : ℕ, f (X 1 ^ a * X 0 ^ b) (X 1 ^ c * X 0 ^ d) =
+      g (X 1 ^ a * X 0 ^ b) (X 1 ^ c * X 0 ^ d)) : f = g :=
+  linearMap_ext_X_pow_mul_X_pow fun a b ↦ linearMap_ext_X_pow_mul_X_pow fun c d ↦ h a b c d
 
 /-- The constant `1` is a left unit for the ordered product. -/
 @[simp]
@@ -169,35 +180,22 @@ with parameter `ε` is the commutative product plus `ε` times `(∂ₓ p) y (�
 theorem affineStar_eq_mul_add_of_mul_self_eq_zero {ε : S} (hε : ε * ε = 0)
     (p q : MvPolynomial (Fin 2) S) :
     affineStar ε p q = p * q + C ε * (pderiv 0 p * X 1 * pderiv 1 q) := by
-  induction p using MvPolynomial.induction_on_X_pow_mul_X_pow with
-  | smul a p hp =>
-      rw [map_smul, LinearMap.smul_apply, hp]
-      simp only [smul_eq_C_mul, Derivation.leibniz, pderiv_C, smul_eq_mul]
-      ring
-  | add p p' hp hp' =>
-      simp only [map_add, LinearMap.add_apply, hp, hp']
-      ring
-  | X_pow a b =>
-      induction q using MvPolynomial.induction_on_X_pow_mul_X_pow with
-      | smul c q hq =>
-          rw [map_smul, hq]
-          simp only [smul_eq_C_mul, Derivation.leibniz, pderiv_C, smul_eq_mul]
-          ring
-      | add q q' hq hq' =>
-          simp only [map_add, hq, hq']
-          ring
-      | X_pow c d =>
-          rw [affineStar_X_pow_mul_X_pow_of_mul_self_eq_zero hε]
-          have h10 : (1 : Fin 2) ≠ 0 := by decide
-          simp only [Derivation.leibniz, Derivation.leibniz_pow, pderiv_X_self, pderiv_X_of_ne h10,
-            pderiv_X_of_ne h10.symm, smul_eq_mul, mul_one, nsmul_eq_mul]
-          rcases b with _ | b
-          · simp [pow_add, mul_assoc]
-          rcases c with _ | c
-          · simp [pow_add, mul_assoc]
-          simp only [map_mul, map_natCast, show b + 1 + d - 1 = b + d by omega,
-            Nat.add_sub_cancel]
-          ring
+  have key : affineStar ε = LinearMap.mul S _ + ε • (LinearMap.mul S _).compl₁₂
+      (LinearMap.mulRight S (X 1) ∘ₗ (pderiv 0).toLinearMap) (pderiv 1).toLinearMap := by
+    refine linearMap_ext₂_X_pow_mul_X_pow fun a b c d ↦ ?_
+    rw [affineStar_X_pow_mul_X_pow_of_mul_self_eq_zero hε]
+    have h10 : (1 : Fin 2) ≠ 0 := by decide
+    simp only [LinearMap.add_apply, LinearMap.smul_apply, LinearMap.compl₁₂_apply,
+      LinearMap.comp_apply, LinearMap.mulRight_apply, LinearMap.mul_apply', Derivation.coeFn_coe,
+      Derivation.leibniz, Derivation.leibniz_pow, pderiv_X_self, pderiv_X_of_ne h10,
+      pderiv_X_of_ne h10.symm, smul_eq_mul, mul_one, nsmul_eq_mul, smul_eq_C_mul]
+    rcases b with _ | b
+    · simp [pow_add, mul_assoc]
+    rcases c with _ | c
+    · simp [pow_add, mul_assoc]
+    simp only [map_mul, map_natCast, show b + 1 + d - 1 = b + d by omega, Nat.add_sub_cancel]
+    ring
+  simpa [smul_eq_C_mul] using LinearMap.congr_fun₂ key p q
 
 /-- **At parameter zero the ordered product is the commutative product.** -/
 theorem affineStar_zero :
@@ -233,7 +231,8 @@ theorem orderedEval_X_pow_mul_X_pow (x y : A) (a b : ℕ) :
 @[simp]
 theorem orderedEval_monomial (x y : A) (s : Fin 2 →₀ ℕ) (a : S) :
     orderedEval x y (monomial s a) = a • (y ^ s 1 * x ^ s 0) := by
-  rw [monomial_eq_smul_X_one_pow_mul_X_zero_pow, map_smul, orderedEval_X_pow_mul_X_pow]
+  rw [monomial_fin_two, mul_assoc, mul_comm (X 0 ^ _), ← smul_eq_C_mul, map_smul,
+    orderedEval_X_pow_mul_X_pow]
 
 @[simp]
 theorem orderedEval_one (x y : A) : orderedEval x y (1 : MvPolynomial (Fin 2) S) = 1 := by
@@ -253,22 +252,17 @@ multiplication of the algebra. -/
 theorem orderedEval_affineStar {x y : A} {h : S} (hxy : x * y = y * (x + algebraMap S A h))
     (p q : MvPolynomial (Fin 2) S) :
     orderedEval x y (affineStar h p q) = orderedEval x y p * orderedEval x y q := by
-  induction p using MvPolynomial.induction_on_X_pow_mul_X_pow with
-  | smul a p hp => simp only [map_smul, LinearMap.smul_apply, hp, smul_mul_assoc]
-  | add p p' hp hp' => simp only [map_add, LinearMap.add_apply, hp, hp', add_mul]
-  | X_pow a b =>
-      induction q using MvPolynomial.induction_on_X_pow_mul_X_pow with
-      | smul c q hq => simp only [map_smul, hq, mul_smul_comm]
-      | add q q' hq hq' => simp only [map_add, hq, hq', mul_add]
-      | X_pow c d =>
-          rw [affineStar_X_pow_mul_X_pow, orderedEval_X_pow_mul_X_pow, orderedEval_X_pow_mul_X_pow,
-            mul_assoc, ← mul_assoc (x ^ b), Associative.pow_mul_pow_eq_sum_smul hxy, sum_mul,
-            mul_sum, map_sum]
-          refine sum_congr rfl fun n hn ↦ ?_
-          rw [← smul_eq_C_mul, map_smul, orderedEval_X_pow_mul_X_pow, smul_mul_assoc,
-            mul_smul_comm, Nat.sub_add_comm (Nat.lt_succ_iff.mp (mem_range.mp hn)), pow_add,
-            pow_add]
-          simp only [mul_assoc]
+  have key : (affineStar h).compr₂ (orderedEval x y) =
+      (LinearMap.mul S A).compl₁₂ (orderedEval x y) (orderedEval x y) := by
+    refine linearMap_ext₂_X_pow_mul_X_pow fun a b c d ↦ ?_
+    simp only [LinearMap.compr₂_apply, LinearMap.compl₁₂_apply, LinearMap.mul_apply',
+      affineStar_X_pow_mul_X_pow, orderedEval_X_pow_mul_X_pow, mul_assoc, ← mul_assoc (x ^ b),
+      Associative.pow_mul_pow_eq_sum_smul hxy, sum_mul, mul_sum, map_sum]
+    refine sum_congr rfl fun n hn ↦ ?_
+    rw [Nat.sub_add_comm (Nat.lt_succ_iff.mp (mem_range.mp hn)), ← smul_eq_C_mul, map_smul,
+      orderedEval_X_pow_mul_X_pow]
+    simp [pow_add, mul_assoc]
+  exact LinearMap.congr_fun₂ key p q
 
 end OrderedEval
 
