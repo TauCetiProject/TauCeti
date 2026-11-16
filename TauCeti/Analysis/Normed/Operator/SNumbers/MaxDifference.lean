@@ -9,7 +9,6 @@ public import Mathlib.Analysis.Complex.Exponential
 public import Mathlib.Topology.Algebra.Module.Determinant
 public import TauCeti.Analysis.Normed.Operator.SNumbers.Hilbert
 import TauCeti.Analysis.InnerProductSpace.PiL2
-import TauCeti.Analysis.Normed.Lp.PiLp
 import TauCeti.Analysis.OperatorIdeal.ApproximationNumber.EckartYoung
 import TauCeti.LinearAlgebra.Matrix.CornerMinor
 import TauCeti.Topology.Algebra.Module.Determinant
@@ -28,23 +27,17 @@ The determinant quantities satisfy two complementary recursions that bridge the 
 sequence (the approximation numbers `aₙ = singularValue`) and the Hilbert numbers `hₙ`:
 
 1. **Lower recursion** (`ContinuousLinearMap.pow_div_mul_singularValue_mul_detNumber_le`):
-   `(kᵏ / (k + 1)ᵏ⁺¹) aₖ(T) Δₖ(T) ≤ Δₖ₊₁(T)` (with `0⁰ = 1`). Given a `k`-dimensional compression
-   `(A, B)` for `Δₖ(T)` with invertible `S = B T A`, the operator `R = T A S⁻¹ B T` has rank at
-   most `k`, so `aₖ(T) ≤ ‖T - R‖₊`. Extending `A` by any unit vector `x` and `B` by a norming
-   functional of `(T - R) x` with weights `√(k / (k + 1))` and `√(1 / (k + 1))` gives contractions
-   `(A', B')` on `ℓ₂ᵏ⁺¹` whose bordered matrix has Schur complement scalar
-   `(1 / (k + 1)) ‖(T - R) x‖` against the corner minor `(k / (k + 1))ᵏ det S`.
+   `(kᵏ / (k + 1)ᵏ⁺¹) aₖ(T) Δₖ(T) ≤ Δₖ₊₁(T)` (with `0⁰ = 1`).
 2. **Upper recursion** (`ContinuousLinearMap.detNumber_succ_le`):
-   `Δₙ₊₁(T) ≤ hₙ(T) Δₙ(T)`. For a compression `S = B T A` on `ℓ₂ⁿ⁺¹`, `‖det S‖₊` is the product of
-   its `n + 1` singular values: the smallest is `aₙ(S) ≤ hₙ(T)` via isometric inclusion into `ℓ₂`,
-   and the product of the first `n` singular values is the determinant norm of a diagonal `ℓ₂ⁿ`
-   compression obtained from the singular-value diagonalization of `S`.
+   `Δₙ₊₁(T) ≤ hₙ(T) Δₙ(T)`.
 
-Comparing the two recursions and cancelling `Δₙ(T) > 0` when `aₙ(T) > 0` gives the sharp maximal
-difference bound `aₙ(T) ≤ ((n + 1)ⁿ⁺¹ / nⁿ) hₙ(T)`
-(`ContinuousLinearMap.singularValue_le_pow_div_pow_mul_hilbertNumber`), and hence Pietsch's maximal
+Together these recursions characterize positivity of `Δₙ₊₁(T)` by `0 < aₙ(T)`
+(`ContinuousLinearMap.detNumber_succ_pos_iff`) and yield the sharp maximal difference bound
+`aₙ(T) ≤ ((n + 1)ⁿ⁺¹ / nⁿ) hₙ(T)`
+(`ContinuousLinearMap.singularValue_le_pow_div_pow_mul_hilbertNumber`), Pietsch's maximal
 difference bound `aₙ(T) ≤ e (n + 1) hₙ(T)`
-(`ContinuousLinearMap.singularValue_le_exp_mul_hilbertNumber`).
+(`ContinuousLinearMap.singularValue_le_exp_mul_hilbertNumber`), and the vanishing equivalence
+`hₙ(T) = 0 ↔ aₙ(T) = 0` (`ContinuousLinearMap.hilbertNumber_eq_zero_iff`).
 
 ## Main declarations
 
@@ -73,6 +66,7 @@ difference bound `aₙ(T) ≤ e (n + 1) hₙ(T)`
   Bull. Lond. Math. Soc. 41 (2009), 332–340.
 * M. Ullrich, *Inequalities between s-numbers*, Adv. Oper. Theory 9 (2024), art. 82.
 * M. Ullrich, *Maximal differences of s-numbers*, arXiv:2608.05024 (2026).
+* M. Ullrich, *Formalizing s-numbers of operators in Lean*, arXiv:2603.22592 (2026).
 * M. Ullrich, Lean-SNumbers (Apache-2.0), <https://github.com/mario-ullrich/Lean-SNumbers>,
   `SNumbers/MaxDifference.lean` and `BasicResults/Determinant.lean`: an earlier Lean formalization
   of the determinant quantities and maximal difference inequality.
@@ -267,6 +261,7 @@ theorem detNumber_one (T : E →L[𝕜] F) : T.detNumber 1 = ‖T‖₊ := by
     _ = T.detNumber 1 * ‖x‖₊ := by simp
 
 /-- **Homogeneity.** `Δₙ(c • T) = ‖c‖₊ ^ n * Δₙ(T)`. -/
+@[simp]
 theorem detNumber_smul (c : 𝕜) (T : E →L[𝕜] F) (n : ℕ) :
     (c • T).detNumber n = ‖c‖₊ ^ n * T.detNumber n := by
   have hle (d : 𝕜) (S : E →L[𝕜] F) : (d • S).detNumber n ≤ ‖d‖₊ ^ n * S.detNumber n :=
@@ -359,13 +354,12 @@ private noncomputable def projInit (k : ℕ) :
     EuclideanSpace 𝕜 (Fin (k + 1)) →L[𝕜] EuclideanSpace 𝕜 (Fin k) :=
   (inclInit (𝕜 := 𝕜) k).adjoint
 
-private theorem projInit_apply {k : ℕ} (z : EuclideanSpace 𝕜 (Fin (k + 1))) (j : Fin k) :
-    projInit k z j = z j.castSucc := by
-  simp [projInit, inclInit]; rfl
-
 private theorem norm_projInit_sq_add_norm_last_sq {k : ℕ} (z : EuclideanSpace 𝕜 (Fin (k + 1))) :
     ‖projInit k z‖ ^ 2 + ‖z (Fin.last k)‖ ^ 2 = ‖z‖ ^ 2 := by
-  simp only [EuclideanSpace.norm_sq_eq, projInit_apply, Fin.sum_univ_castSucc]
+  rw [EuclideanSpace.norm_sq_eq, EuclideanSpace.norm_sq_eq, Fin.sum_univ_castSucc]
+  simp only [projInit, inclInit, EuclideanSpace.adjoint_piLpExtendByZero_castLEEmb_apply,
+    EuclideanSpace.take_apply]
+  rfl
 
 /-- Bordered right factor `z ↦ a • A (z_init) + (b * z_last) • x` on `ℓ₂ᵏ⁺¹`. -/
 private noncomputable def extendRight {k : ℕ} (A : EuclideanSpace 𝕜 (Fin k) →L[𝕜] E) (x : E)
@@ -398,7 +392,9 @@ private theorem extendRight_single_castSucc {k : ℕ} (A : EuclideanSpace 𝕜 (
       (a : 𝕜) • A (EuclideanSpace.single j 1) := by
   have hp : projInit k (EuclideanSpace.single j.castSucc (1 : 𝕜)) = EuclideanSpace.single j 1 := by
     ext m
-    simp [projInit_apply, PiLp.single_apply, Fin.castSucc_inj]
+    rw [projInit, inclInit, EuclideanSpace.adjoint_piLpExtendByZero_castLEEmb_apply,
+      EuclideanSpace.take_apply]
+    simp [PiLp.single_apply, Fin.ext_iff]
   rw [extendRight, add_apply, smul_apply, comp_apply, hp]
   simp [(Fin.castSucc_lt_last j).ne']
 
@@ -407,7 +403,9 @@ private theorem extendRight_single_last {k : ℕ} (A : EuclideanSpace 𝕜 (Fin 
     extendRight A x a b (EuclideanSpace.single (Fin.last k) 1) = (b : 𝕜) • x := by
   have hp : projInit k (EuclideanSpace.single (Fin.last k) (1 : 𝕜)) = 0 := by
     ext m
-    simp [projInit_apply, (Fin.castSucc_lt_last m).ne]
+    rw [projInit, inclInit, EuclideanSpace.adjoint_piLpExtendByZero_castLEEmb_apply,
+      EuclideanSpace.take_apply]
+    simp [Fin.ext_iff, m.isLt.ne]
   rw [extendRight, add_apply, smul_apply, comp_apply, hp]
   simp
 
@@ -421,7 +419,7 @@ private theorem extendLeft_apply_castSucc {k : ℕ} (B : F →L[𝕜] EuclideanS
     (φ : StrongDual 𝕜 F) (a b : ℝ) (y : F) (i : Fin k) :
     extendLeft B φ a b y i.castSucc = (a : 𝕜) * B y i := by
   have h1 : inclInit k (B y) i.castSucc = B y i :=
-    LinearIsometry.piLpExtendByZero_apply_apply (Fin.castLEEmb (Nat.le_succ k)) (B y) i
+    EuclideanSpace.piLpExtendByZero_castLEEmb_apply_castLE (Nat.le_succ k) (B y) i
   simp [extendLeft, h1, (Fin.castSucc_lt_last i).ne, RCLike.real_smul_eq_coe_mul]
 
 private theorem extendLeft_apply_last {k : ℕ} (B : F →L[𝕜] EuclideanSpace 𝕜 (Fin k))
@@ -545,9 +543,22 @@ private theorem exists_comp_eq_id_of_det_ne_zero {k : ℕ}
   obtain ⟨uS, huS⟩ := (LinearMap.isUnit_iff_isUnit_det S.toLinearMap).mpr hdet.isUnit
   refine ⟨(↑uS⁻¹ : EuclideanSpace 𝕜 (Fin k) →ₗ[𝕜] EuclideanSpace 𝕜 (Fin k)).toContinuousLinearMap,
     fun y ↦ ?_⟩
-  change S.toLinearMap ((↑uS⁻¹ : EuclideanSpace 𝕜 (Fin k) →ₗ[𝕜] EuclideanSpace 𝕜 (Fin k)) y) = y
-  rw [← mul_apply_eq_comp, ← huS, Units.mul_inv]
-  rfl
+  rw [LinearMap.coe_toContinuousLinearMap', ← ContinuousLinearMap.coe_coe,
+    ← mul_apply_eq_comp, ← huS, Units.mul_inv, one_apply_eq_self]
+
+omit [NormedSpace 𝕜 F] in
+/-- Scalar and `ℝ≥0`-norm normalization for the bordered Schur-complement determinant product with
+weights `a² = k / (k + 1)` and `b² = 1 / (k + 1)`. -/
+private theorem nnnorm_ofReal_sq_mul_norm_mul_pow {k : ℕ} {a b : ℝ}
+    (ha : a ^ 2 = (k : ℝ) / ((k : ℝ) + 1)) (hb : b ^ 2 = 1 / ((k : ℝ) + 1))
+    (v : F) (d : 𝕜) :
+    ‖(((b ^ 2 : ℝ) : 𝕜) * (‖v‖ : 𝕜)) * (((a ^ 2 : ℝ) : 𝕜) ^ k * d)‖₊ =
+      ((k : ℝ≥0) ^ k / ((k : ℝ≥0) + 1) ^ (k + 1)) * ‖v‖₊ * ‖d‖₊ := by
+  ext
+  simp only [nnNorm_mul, nnNorm_pow, NNReal.coe_mul, NNReal.coe_div, NNReal.coe_pow,
+    NNReal.coe_add, NNReal.coe_natCast, NNReal.coe_one, coe_nnNorm, RCLike.norm_ofReal,
+    abs_of_nonneg (sq_nonneg a), abs_of_nonneg (sq_nonneg b), abs_norm]
+  rw [ha, hb, div_pow, mul_mul_mul_comm, div_mul_div_comm, one_mul, pow_succ', ← mul_assoc]
 
 /-- Single-compression step for the lower recursion when `k ≥ 1` and `det (B T A) ≠ 0`. -/
 private theorem le_detNumber_succ_of_det_ne_zero {k : ℕ} (hk : 0 < k) (T : E →L[𝕜] F)
@@ -580,16 +591,10 @@ private theorem le_detNumber_succ_of_det_ne_zero {k : ℕ} (hk : 0 < k) (T : E �
   let u : EuclideanSpace 𝕜 (Fin k) := S_inv (B (T x))
   have hdet' := det_extendLeft_comp_extendRight (b := b) T A B x φ (hS_inv (B (T x))) ha_pos.ne'
   have hRx : T x - T (A u) = (T - R) x := by simp only [R, u, sub_apply, comp_apply]
-  have hc_real : (1 / ((k : ℝ) + 1)) * ((k : ℝ) / ((k : ℝ) + 1)) ^ k = (c : ℝ) := by
-    rw [NNReal.coe_div, NNReal.coe_pow, NNReal.coe_pow, NNReal.coe_add, NNReal.coe_natCast,
-      NNReal.coe_one, div_pow, div_mul_div_comm, one_mul, pow_succ']
   have hnnorm : ‖(extendLeft B φ a b ∘L T ∘L extendRight A x a b).det‖₊ =
       ‖(T - R) x‖₊ * (c * ‖S.det‖₊) := by
-    ext
-    rw [coe_nnNorm, NNReal.coe_mul, NNReal.coe_mul, coe_nnNorm, coe_nnNorm, hdet', hRx, hφx,
-      norm_mul, norm_mul, norm_mul, norm_pow, RCLike.norm_ofReal, RCLike.norm_ofReal,
-      RCLike.norm_ofReal, abs_of_nonneg (sq_nonneg b), abs_of_nonneg (norm_nonneg _),
-      abs_of_nonneg (sq_nonneg a), hb_sq, ha_sq, mul_mul_mul_comm, hc_real, mul_left_comm]
+    rw [hdet', hRx, hφx, nnnorm_ofReal_sq_mul_norm_mul_pow ha_sq hb_sq]
+    ring
   exact hnnorm ▸ T.nnnorm_det_comp_comp_le_detNumber_of_norm_le_one
     (norm_extendRight_le_one ha_pos.le (Real.sqrt_nonneg _) hab hA (NNReal.coe_le_coe.mpr hx.le))
     (norm_extendLeft_le_one hab hB hφ)
@@ -607,6 +612,48 @@ theorem pow_div_mul_singularValue_mul_detNumber_le (T : E →L[𝕜] F) (k : ℕ
   · simp [hdet]
   · exact le_detNumber_succ_of_det_ne_zero hk T p.2.1 p.2.2 hdet
 
+omit [SeminormedAddCommGroup E] [NormedSpace 𝕜 E]
+    [SeminormedAddCommGroup F] [NormedSpace 𝕜 F] in
+/-- Compressing a singular-value diagonalization `S = U ∘ D ∘ V` on `ℓ₂ⁿ⁺¹` to the first `n`
+coordinates yields the diagonal matrix of the first `n` singular values of `S`. -/
+private theorem toMatrix_projInit_comp_inclInit_eq_diagonal {n : ℕ}
+    (S : EuclideanSpace 𝕜 (Fin (n + 1)) →L[𝕜] EuclideanSpace 𝕜 (Fin (n + 1)))
+    (U V : EuclideanSpace 𝕜 (Fin (n + 1)) ≃ₗᵢ[𝕜] EuclideanSpace 𝕜 (Fin (n + 1)))
+    (hUV : S.toLinearMap = U.toLinearMap ∘ₗ
+      Matrix.toLin (EuclideanSpace.basisFun (Fin (n + 1)) 𝕜).toBasis
+        (EuclideanSpace.basisFun (Fin (n + 1)) 𝕜).toBasis
+        (Matrix.diagonal fun i ↦ (S.toLinearMap.singularValues i : 𝕜)) ∘ₗ
+      V.toLinearMap) :
+    LinearMap.toMatrix (EuclideanSpace.basisFun (Fin n) 𝕜).toBasis
+        (EuclideanSpace.basisFun (Fin n) 𝕜).toBasis
+        (projInit n ∘L U.symm.toLinearIsometry.toContinuousLinearMap ∘L S ∘L
+          V.symm.toLinearIsometry.toContinuousLinearMap ∘L inclInit n).toLinearMap =
+      Matrix.diagonal fun j : Fin n ↦ (S.toLinearMap.singularValues j.castSucc : 𝕜) := by
+  let e₁ := EuclideanSpace.basisFun (Fin (n + 1)) 𝕜
+  ext i j
+  have hJ_apply :
+      inclInit n (EuclideanSpace.single j (1 : 𝕜)) = EuclideanSpace.single j.castSucc (1 : 𝕜) :=
+    LinearIsometry.piLpExtendByZero_apply_single (Fin.castLEEmb (Nat.le_succ n)) j (1 : 𝕜)
+  have hS_apply : S (V.symm (e₁ j.castSucc)) =
+      U ((S.toLinearMap.singularValues j.castSucc : 𝕜) • e₁ j.castSucc) := by
+    rw [← ContinuousLinearMap.coe_coe]
+    nth_rw 1 [hUV]
+    simp [e₁, -EuclideanSpace.basisFun_apply, Matrix.toLin_diagonal_apply_self]
+  have he₁ : EuclideanSpace.single j.castSucc (1 : 𝕜) = e₁ j.castSucc :=
+    (EuclideanSpace.basisFun_apply (Fin (n + 1)) 𝕜 j.castSucc).symm
+  -- `Fin.castLE (Nat.le_succ n)` and `Fin.castSucc` are definitionally the same embedding,
+  -- recorded explicitly so `Fin.castSucc_inj` applies.
+  have hcast : Fin.castLE (Nat.le_succ n) i = i.castSucc := rfl
+  refine (toMatrix_basisFun_apply _ i j).trans ?_
+  simp only [comp_apply, LinearIsometry.coe_toContinuousLinearMap,
+    LinearIsometryEquiv.coe_toLinearIsometry]
+  rw [hJ_apply, he₁, hS_apply, U.symm_apply_apply, map_smul, PiLp.smul_apply,
+    projInit, inclInit, EuclideanSpace.adjoint_piLpExtendByZero_castLEEmb_apply,
+    EuclideanSpace.take_apply, hcast]
+  simp only [Matrix.diagonal_apply, e₁, EuclideanSpace.basisFun_apply, PiLp.single_apply,
+    Fin.castSucc_inj, smul_eq_mul]
+  split_ifs with h <;> simp [h]
+
 /-- The product of the first `n` singular values of an `ℓ₂ⁿ⁺¹` contraction compression of `T` is
 at most `Δₙ(T)`. -/
 private theorem prod_castSucc_singularValue_le_detNumber {n : ℕ} (T : E →L[𝕜] F)
@@ -615,8 +662,8 @@ private theorem prod_castSucc_singularValue_le_detNumber {n : ℕ} (T : E →L[�
     ∏ j : Fin n, (B ∘L T ∘L A).singularValue j.castSucc ≤ T.detNumber n := by
   set S := B ∘L T ∘L A
   let e₀ := EuclideanSpace.basisFun (Fin n) 𝕜
-  let e₁ := EuclideanSpace.basisFun (Fin (n + 1)) 𝕜
-  obtain ⟨U, V, hUV⟩ := S.toLinearMap.exists_linearIsometryEquiv_eq_comp_toLin_diagonal_comp e₁
+  obtain ⟨U, V, hUV⟩ := S.toLinearMap.exists_linearIsometryEquiv_eq_comp_toLin_diagonal_comp
+    (EuclideanSpace.basisFun (Fin (n + 1)) 𝕜)
   let A₀ : EuclideanSpace 𝕜 (Fin n) →L[𝕜] E :=
     A ∘L V.symm.toLinearIsometry.toContinuousLinearMap ∘L inclInit n
   let B₀ : F →L[𝕜] EuclideanSpace 𝕜 (Fin n) :=
@@ -627,28 +674,13 @@ private theorem prod_castSucc_singularValue_le_detNumber {n : ℕ} (T : E →L[�
     (norm_comp_le_one V.symm.toLinearIsometry.norm_toContinuousLinearMap_le hJ)
   have hB₀ : ‖B₀‖ ≤ 1 := norm_comp_le_one hP
     (norm_comp_le_one U.symm.toLinearIsometry.norm_toContinuousLinearMap_le hB)
-  have hmat : LinearMap.toMatrix e₀.toBasis e₀.toBasis (B₀ ∘L T ∘L A₀).toLinearMap =
-      Matrix.diagonal fun j : Fin n ↦ (S.toLinearMap.singularValues j.castSucc : 𝕜) := by
-    ext i j
-    have hJ_apply :
-        inclInit n (EuclideanSpace.single j (1 : 𝕜)) = EuclideanSpace.single j.castSucc (1 : 𝕜) :=
-      LinearIsometry.piLpExtendByZero_apply_single (Fin.castLEEmb (Nat.le_succ n)) j (1 : 𝕜)
-    have hS_apply : S (V.symm (e₁ j.castSucc)) =
-        U ((S.toLinearMap.singularValues j.castSucc : 𝕜) • e₁ j.castSucc) := by
-      change S.toLinearMap (V.symm (e₁ j.castSucc)) = _
-      nth_rw 1 [hUV]
-      simp [Matrix.toLin_diagonal_apply_self]
-    refine (toMatrix_basisFun_apply (B₀ ∘L T ∘L A₀) i j).trans ?_
-    simp only [Matrix.diagonal_apply]
-    change projInit n (U.symm (S (V.symm (inclInit n (EuclideanSpace.single j (1 : 𝕜)))))) i = _
-    rw [hJ_apply, show EuclideanSpace.single j.castSucc (1 : 𝕜) = e₁ j.castSucc from
-      (EuclideanSpace.basisFun_apply (Fin (n + 1)) 𝕜 j.castSucc).symm, hS_apply,
-      U.symm_apply_apply, map_smul, PiLp.smul_apply, projInit_apply]
-    simp only [e₁, EuclideanSpace.basisFun_apply, PiLp.single_apply, Fin.castSucc_inj, smul_eq_mul]
-    split_ifs with h <;> simp [h]
+  have hcomp : B₀ ∘L T ∘L A₀ = projInit n ∘L U.symm.toLinearIsometry.toContinuousLinearMap ∘L S ∘L
+      V.symm.toLinearIsometry.toContinuousLinearMap ∘L inclInit n := by
+    simp only [A₀, B₀, S, comp_assoc]
   have hdet : ‖(B₀ ∘L T ∘L A₀).det‖₊ = ∏ j : Fin n, S.singularValue j.castSucc := by
     ext
-    rw [ContinuousLinearMap.det, ← LinearMap.det_toMatrix e₀.toBasis, hmat, Matrix.det_diagonal,
+    rw [ContinuousLinearMap.det, ← LinearMap.det_toMatrix e₀.toBasis, hcomp,
+      toMatrix_projInit_comp_inclInit_eq_diagonal S U V hUV, Matrix.det_diagonal,
       coe_nnNorm, NNReal.coe_prod, norm_prod]
     refine Finset.prod_congr rfl fun j _ ↦ ?_
     rw [RCLike.norm_ofReal, abs_of_nonneg (S.toLinearMap.singularValues_nonneg _),

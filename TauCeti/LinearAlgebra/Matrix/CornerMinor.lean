@@ -265,19 +265,20 @@ theorem det_eq_sub_sum_mul_det_submatrix_castSucc_of_col
       (M.submatrix Fin.castSucc Fin.castSucc).det := by
   set s := M (Fin.last n) (Fin.last n) - ∑ j : Fin n, M (Fin.last n) j.castSucc * w j
   let c : Fin (n + 1) → R := Fin.snoc w 0
+  -- `c` is a `let` binding, so record its last coordinate explicitly for `rw`.
+  have hc_last : c (Fin.last n) = 0 := Fin.snoc_last _ _
   have hcol : (fun u ↦ M u (Fin.last n)) =
       (fun u ↦ ∑ i : Fin (n + 1), c i • M u i) +
         s • (Pi.single (Fin.last n) 1 : Fin (n + 1) → R) := by
     funext u
-    rw [Pi.add_apply, Fin.sum_univ_castSucc, show c (Fin.last n) = 0 from Fin.snoc_last _ _,
-      zero_smul, add_zero]
+    rw [Pi.add_apply, Fin.sum_univ_castSucc, hc_last, zero_smul, add_zero]
     rcases eq_or_ne u (Fin.last n) with rfl | hu
     · simp [s, c, mul_comm]
     · obtain ⟨i, rfl⟩ := Fin.eq_castSucc_of_ne_last hu
       simp [hw i, c, mul_comm]
   conv_lhs => rw [← updateCol_eq_self M (Fin.last n), hcol]
-  rw [det_updateCol_add, det_updateCol_sum, show c (Fin.last n) = 0 from Fin.snoc_last _ _,
-    zero_smul, zero_add, det_updateCol_smul, det_updateCol_last_single]
+  rw [det_updateCol_add, det_updateCol_sum, hc_last, zero_smul, zero_add, det_updateCol_smul,
+    det_updateCol_last_single]
 
 /-- **Bordered determinant along the last row.** If the off-corner entries of the last row of `M`
 are a linear combination `∑ i, w i * M i.castSucc j.castSucc` of the preceding rows, then `M.det`

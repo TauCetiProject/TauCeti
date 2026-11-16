@@ -8,6 +8,7 @@ module
 public import Mathlib.Topology.Algebra.Module.Determinant
 public import TauCeti.Analysis.InnerProductSpace.SingularValues
 public import TauCeti.Analysis.OperatorIdeal.ApproximationNumber.MinMax
+import Mathlib.Analysis.InnerProductSpace.NormDet
 
 /-!
 # The Eckart–Young theorem: approximation numbers are singular values
@@ -103,18 +104,9 @@ dimension both sides equal `1`. -/
 theorem norm_det_eq_prod_singularValue (T : E →L[𝕜] E) :
     ‖T.det‖ = ∏ i ∈ Finset.range (finrank 𝕜 E), (T.singularValue i : ℝ) := by
   by_cases hE : FiniteDimensional 𝕜 E
-  · set A : E →ₗ[𝕜] E := (T : E →ₗ[𝕜] E)
-    simp_rw [T.singularValue_eq_linearMap_singularValues]
-    rw [← sq_eq_sq₀ (norm_nonneg _) (Finset.prod_nonneg fun i _ ↦ A.singularValues_nonneg i),
-      ← RCLike.ofReal_inj (K := 𝕜), ← Finset.prod_pow, ← Fin.prod_univ_eq_prod_range]
-    have hdet : ((‖A.det‖ ^ 2 : ℝ) : 𝕜) = (LinearMap.adjoint A ∘ₗ A).det := by
-      rw [LinearMap.det_comp, LinearMap.det_adjoint, RCLike.star_def, RCLike.conj_mul,
-        RCLike.ofReal_pow]
-    rw [ContinuousLinearMap.det, hdet,
-      A.isSymmetric_adjoint_comp_self.det_eq_prod_eigenvalues (hn := rfl)]
-    push_cast
-    refine Finset.prod_congr rfl fun i _ ↦ ?_
-    rw [← A.sq_singularValues_fin rfl, RCLike.ofReal_pow]
+  · simp_rw [T.singularValue_eq_linearMap_singularValues]
+    rw [ContinuousLinearMap.det, ← (T : E →ₗ[𝕜] E).normDet_eq_norm_det,
+      (T : E →ₗ[𝕜] E).normDet_eq_prod_singularValues]
   · have hnb : ¬ ∃ s : Finset E, Nonempty (Basis s 𝕜 E) := by
       rintro ⟨s, ⟨b⟩⟩
       exact hE (Module.Finite.of_basis b)
