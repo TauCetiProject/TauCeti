@@ -171,10 +171,7 @@ theorem isItoIntegral_simpleGains {τ : ℕ → ℝ≥0} {n : ℕ} {a : ℕ → 
   isStronglyPredictable := Finance.isStronglyPredictable_simpleHolding ha
   ae_continuous := by
     filter_upwards [hW] with ω hω
-    simp only [Finance.simpleGains_def]
-    exact continuous_finsetSum _ fun j _ ↦ continuous_const.mul
-      ((hω.comp (continuous_const.min continuous_id)).sub
-        (hω.comp (continuous_const.min continuous_id)))
+    exact Finance.continuous_simpleGains hω
   exists_approx t := ⟨fun _ ↦ n, fun _ ↦ τ, fun _ ↦ a, fun _ ↦ hτ, fun _ ↦ ha,
     fun ε hε ↦ by simp [hε.ne'], fun ε hε ↦ by simp [hε.ne']⟩
 

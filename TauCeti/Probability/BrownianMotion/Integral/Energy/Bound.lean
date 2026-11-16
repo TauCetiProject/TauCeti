@@ -290,31 +290,6 @@ theorem IsFilteredPreBrownianReal.tendstoInMeasure_sum_mul_sub_of_energy
     (fun δ hδ ↦ tendsto_measure_lt_of_tendstoInMeasure henergy hδ) fun δ hδ k ↦
       hW.measure_abs_sum_mul_sub_ge_le (hgrid k) (hheight k) hε hδ.le
 
-/-- A height discarded once its interval starts after `t` is known at the clipped left
-endpoint. -/
-private theorem stronglyMeasurable_ite_le (ha : ∀ i < n, StronglyMeasurable[ℱ (τ i)] (a i))
-    (t : ℝ≥0) {i : ℕ} (hi : i < n) :
-    StronglyMeasurable[ℱ (min (τ i) t)] (if τ i ≤ t then a i else 0) := by
-  by_cases hit : τ i ≤ t
-  · rw [min_eq_left hit]
-    simpa only [hit, ↓reduceIte] using ha i hi
-  · simpa only [hit, ↓reduceIte] using stronglyMeasurable_zero
-
-/-- Clipping a grid at `t` and discarding the intervals starting after `t` keeps the gains
-at `t`. -/
-private theorem sum_ite_le_mul_sub_min (hτ : MonotoneOn τ (Iic n)) (t : ℝ≥0) (ω : Ω) :
-    ∑ i ∈ range n, (if τ i ≤ t then a i else 0) ω *
-        (W (min (τ (i + 1)) t) ω - W (min (τ i) t) ω) =
-      Finance.simpleGains τ n a W t ω := by
-  rw [Finance.simpleGains_def]
-  refine sum_congr rfl fun i hi ↦ ?_
-  by_cases hit : τ i ≤ t
-  · simp only [hit, ↓reduceIte]
-  · have h0 : min (τ i) t = t := min_eq_right (not_le.mp hit).le
-    have h1 : min (τ (i + 1)) t = t := min_eq_right ((not_le.mp hit).le.trans
-      (hτ (mem_range.mp hi).le (mem_range.mp hi) (Nat.le_succ i)))
-    simp only [hit, ↓reduceIte, Pi.zero_apply, h0, h1, sub_self, mul_zero]
-
 /-- Clipping a grid at `t` and discarding the intervals starting after `t` turns the
 elementary energy into the lower square energy of the holding on `(0,t]`. -/
 private theorem ofReal_elementaryEnergy_min_ite (hτ : MonotoneOn τ (Iic n)) (t : ℝ≥0)
@@ -362,10 +337,11 @@ theorem IsFilteredPreBrownianReal.measure_abs_simpleGains_ge_le
     P {ω | ε ≤ |Finance.simpleGains τ n a W t ω|}
         = P {ω | ε ≤ |∑ i ∈ range n, (if τ i ≤ t then a i else 0) ω *
             (W (min (τ (i + 1)) t) ω - W (min (τ i) t) ω)|} := by
-      simp only [sum_ite_le_mul_sub_min hτ]
+      simp only [Finance.simpleGains_eq_sum_ite_le hτ]
     _ ≤ ENNReal.ofReal (δ / ε ^ 2) + P {ω | δ < elementaryEnergy (fun i ↦ min (τ i) t)
           (fun i ↦ if τ i ≤ t then a i else 0) n ω} :=
-      hW.measure_abs_sum_mul_sub_ge_le hτ' (fun i hi ↦ stronglyMeasurable_ite_le ha t hi) hε hδ
+      hW.measure_abs_sum_mul_sub_ge_le hτ'
+        (fun i hi ↦ Finance.stronglyMeasurable_ite_le_min ha t hi) hε hδ
     _ ≤ _ := add_le_add le_rfl (measure_mono fun ω hω ↦ by
       simp only [mem_ofPred_eq] at hω ⊢
       rw [← ofReal_elementaryEnergy_min_ite hτ t ω]
@@ -437,10 +413,7 @@ private theorem measure_exists_abs_simpleGains_energyCutoff_gt_le
   have hQ := submartingale_sq_simpleGains_energyCutoff hW hτ ha δ
   have hXcont : ∀ᵐ ω ∂P, Continuous (fun t ↦ X t ω) := by
     filter_upwards [hcont] with ω hω
-    simp only [X, Finance.simpleGains_def]
-    exact continuous_finsetSum _ fun i _ ↦ continuous_const.mul
-      ((hω.comp (continuous_const.min continuous_id)).sub
-        (hω.comp (continuous_const.min continuous_id)))
+    exact Finance.continuous_simpleGains hω
   have hsecond : ∫ ω, X (τ n) ω ^ 2 ∂P ≤ δ := by
     simpa only [X, Finance.simpleGains_apply_eq_sum hτ (le_refl n)] using
       integral_sq_sum_mul_sub_energyCutoff_le hW hτ ha hδ
