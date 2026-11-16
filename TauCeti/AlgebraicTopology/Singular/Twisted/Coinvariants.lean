@@ -99,7 +99,7 @@ def twistedHomology₀IsoCoinvariants :
     (isColimitCoinvariantsCocone L x)
 
 /-- At the basepoint, the homology-to-coinvariants comparison is the monodromy quotient map. -/
-@[reassoc (attr := simp)]
+@[reassoc (attr := simp), elementwise (attr := simp)]
 lemma ιTwistedHomology₀_isoCoinvariants_hom :
     ιTwistedHomology₀ L x ≫ (twistedHomology₀IsoCoinvariants L x).hom =
       ModuleCat.ofHom (Representation.Coinvariants.mk (monodromyRepresentation L x)) := by
