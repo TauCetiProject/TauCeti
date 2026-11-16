@@ -324,10 +324,10 @@ theorem norm_sum_signed_haarBasis_real_le_of_two_le {p : ℝ≥0∞} [Fact (1 �
 /-! ### `L²` orthogonality and unimodular multipliers -/
 
 /-- **Parseval's identity for finite Haar sums in `L²([0, 1]; 𝕜)`.** -/
-theorem norm_sq_sum_haarBasis_two (𝕜 : Type*) [RCLike 𝕜] (c : ℕ → 𝕜) (N : ℕ) :
-    ‖∑ k ∈ Finset.range N, c k • haarBasis 𝕜 2 ENNReal.ofNat_ne_top k‖ ^ 2 =
-      ∑ k ∈ Finset.range N, ‖c k‖ ^ 2 * ∫ x, haarFun k x ^ 2 := by
-  have horth : (Finset.range N : Set ℕ).Pairwise fun j k =>
+theorem norm_sq_sum_haarBasis_two (𝕜 : Type*) [RCLike 𝕜] (c : ℕ → 𝕜) (A : Finset ℕ) :
+    ‖∑ k ∈ A, c k • haarBasis 𝕜 2 ENNReal.ofNat_ne_top k‖ ^ 2 =
+      ∑ k ∈ A, ‖c k‖ ^ 2 * ∫ x, haarFun k x ^ 2 := by
+  have horth : (A : Set ℕ).Pairwise fun j k =>
       ⟪c j • haarBasis 𝕜 2 ENNReal.ofNat_ne_top j,
         c k • haarBasis 𝕜 2 ENNReal.ofNat_ne_top k⟫_𝕜 = 0 := by
     intro j _ k _ hjk
@@ -354,15 +354,16 @@ theorem norm_sq_sum_haarBasis_two (𝕜 : Type*) [RCLike 𝕜] (c : ℕ → 𝕜
   filter_upwards [coeFn_haarBasis (𝕜 := 𝕜) (p := 2) ENNReal.ofNat_ne_top k] with x hx
   rw [hx, RCLike.norm_ofReal, sq_abs]
 
-/-- Unimodular Haar multipliers (`‖u k‖ = 1`, in particular real signs `±1`) are `L²` isometries. -/
+/-- Unimodular Haar multipliers (`‖u k‖ = 1` for `k ∈ A`, in particular real signs `±1`) are
+`L²` isometries. -/
 theorem norm_sum_unimodular_haarBasis_two (𝕜 : Type*) [RCLike 𝕜]
-    (c : ℕ → 𝕜) {u : ℕ → 𝕜} (hu : ∀ k, ‖u k‖ = 1) (N : ℕ) :
-    ‖∑ k ∈ Finset.range N, (u k * c k) • haarBasis 𝕜 2 ENNReal.ofNat_ne_top k‖ =
-      ‖∑ k ∈ Finset.range N, c k • haarBasis 𝕜 2 ENNReal.ofNat_ne_top k‖ := by
+    (c : ℕ → 𝕜) {u : ℕ → 𝕜} (A : Finset ℕ) (hu : ∀ k ∈ A, ‖u k‖ = 1) :
+    ‖∑ k ∈ A, (u k * c k) • haarBasis 𝕜 2 ENNReal.ofNat_ne_top k‖ =
+      ‖∑ k ∈ A, c k • haarBasis 𝕜 2 ENNReal.ofNat_ne_top k‖ := by
   refine sq_eq_sq₀ (norm_nonneg _) (norm_nonneg _) |>.1 ?_
   rw [norm_sq_sum_haarBasis_two, norm_sq_sum_haarBasis_two]
-  refine Finset.sum_congr rfl fun k _ => ?_
-  rw [norm_mul, hu k, one_mul]
+  refine Finset.sum_congr rfl fun k hk => ?_
+  rw [norm_mul, hu k hk, one_mul]
 
 /-! ### Hölder duality for `1 < p ≤ 2` -/
 
@@ -758,8 +759,8 @@ theorem nnNormProjBound_haarUnconditionalBasis_two :
     refine (haarBasis 𝕜 2 ENNReal.ofNat_ne_top).norm_proj_finset_le_of_range_signed zero_le_one
       (fun N δ hδ g => ?_) A
     simp only [smul_smul, one_mul]
-    rw [norm_sum_unimodular_haarBasis_two 𝕜 _
-      (fun k => by rw [RCLike.norm_ofReal, hδ k]) N, ← SchauderBasis.proj_apply, haarBasis_proj]
+    rw [norm_sum_unimodular_haarBasis_two 𝕜 _ (Finset.range N)
+      (fun k _ => by rw [RCLike.norm_ofReal, hδ k]), ← SchauderBasis.proj_apply, haarBasis_proj]
     simpa using (dyadicProj 𝕜 2 N).le_of_opNorm_le (norm_dyadicProj_le 𝕜 2 N) g
   · have hproj : 1 ≤ ‖b.proj (Finset.range 1)‖ := by
       have hb0 : 0 < ‖b 0‖ := norm_pos_iff.2 fun h0 => by
