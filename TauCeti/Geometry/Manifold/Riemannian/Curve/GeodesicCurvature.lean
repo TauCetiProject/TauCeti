@@ -8,6 +8,7 @@ module
 public import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.AlongCurve.Acceleration
 public import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.LeviCivita.Basic
 import Mathlib.Analysis.InnerProductSpace.Projection.FiniteDimensional
+import TauCeti.Geometry.Manifold.Riemannian.Basic
 import TauCeti.Geometry.Manifold.Riemannian.Curve.Speed
 import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.AlongCurve.Metric
 
@@ -36,6 +37,7 @@ spanned by `γ'` and `n`, which gives the two structure equations of the moving 
 * `TauCeti.Manifold.geodesicCurvature`: the signed geodesic curvature of a curve relative to a
   field of tangent vectors along it, unfolded by `TauCeti.Manifold.geodesicCurvature_def`.
 * `TauCeti.Manifold.geodesicCurvature_neg`: reversing the normal reverses the sign.
+* `Filter.EventuallyEq.geodesicCurvature_eq`: germ invariance for arbitrary normal fields.
 * `TauCeti.Manifold.geodesicCurvature_eq_inner_of_norm_curveVelocity_eq_one`: at a parameter of
   unit speed, `k_g = ⟪D_t γ', n⟫`.
 * `TauCeti.Manifold.inner_alongCurve_curveVelocity_eq_neg_geodesicCurvature_mul`: for a field `n`
@@ -86,6 +88,17 @@ theorem geodesicCurvature_def (γ : ℝ → M) (n : ∀ r, TangentSpace I (γ r)
 theorem geodesicCurvature_congr_normal {n₁ n₂ : ∀ r, TangentSpace I (γ r)}
     (hn : n₁ t = n₂ t) : geodesicCurvature γ n₁ t = geodesicCurvature γ n₂ t := by
   rw [geodesicCurvature_def, geodesicCurvature_def, hn]
+
+/-- Curves agreeing near a parameter have equal geodesic curvature there when their chosen
+normal vectors agree at that parameter. The vectors are compared in the model space. -/
+theorem _root_.Filter.EventuallyEq.geodesicCurvature_eq
+    {η : ℝ → M} {n₁ : ∀ r, TangentSpace I (γ r)} {n₂ : ∀ r, TangentSpace I (η r)}
+    (h : γ =ᶠ[𝓝 t] η) (hn : (n₁ t : E) = n₂ t) :
+    geodesicCurvature γ n₁ t = geodesicCurvature η n₂ t := by
+  rw [geodesicCurvature_def, geodesicCurvature_def,
+    TauCeti.inner_tangentSpace_congr h.self_of_nhds
+      (h.acceleration_eq (leviCivitaConnection I M)) hn,
+    TauCeti.norm_tangentSpace_congr h.self_of_nhds h.curveVelocity_eq]
 
 /-- Reversing the normal field reverses the sign of the geodesic curvature. -/
 @[to_fun (attr := simp) geodesicCurvature_fun_neg]

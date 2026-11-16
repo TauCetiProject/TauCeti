@@ -31,6 +31,8 @@ continuity, germ-invariance and periodicity results are in the sibling `Oriented
 ## Main results
 
 * `TauCeti.Manifold.geodesicCurvature_comp`: invariance relative to a transported normal field.
+* `TauCeti.Manifold.geodesicCurvature_comp_add_const` and
+  `Function.Periodic.geodesicCurvature`: translation and periodicity for arbitrary normal fields.
 * `TauCeti.Manifold.geodesicCurvature_orientedUnitNormal_comp`: the sign law for a general
   reparametrization, including at zero derivative.
 * `TauCeti.Manifold.geodesicCurvature_orientedUnitNormal_comp_const_sub`: reflecting a curve
@@ -121,17 +123,6 @@ theorem geodesicCurvature_orientedUnitNormal_comp_of_deriv_neg (o : Orientation 
     (differentiableAt_of_deriv_ne_zero hφ₀.ne) hφ']
   simp [hφ₀]
 
-/-- Reflecting the parameter via `r ↦ γ (d - r)` negates signed geodesic curvature relative to
-the oriented unit normal, without any regularity assumption on the original curve. -/
-theorem geodesicCurvature_orientedUnitNormal_comp_const_sub
-    (o : Orientation I M (Fin 2)) (γ : ℝ → M) (d t : ℝ) :
-    geodesicCurvature (fun r ↦ γ (d - r))
-      (orientedUnitNormal o (fun r ↦ γ (d - r))) t =
-        -geodesicCurvature γ (orientedUnitNormal o γ) (d - t) := by
-  rw [geodesicCurvature_def, geodesicCurvature_def, acceleration_comp_const_sub,
-    curveVelocity_comp_const_sub, orientedUnitNormal_comp_const_sub,
-    norm_neg, inner_neg_right, neg_div]
-
 /-- Reflecting the parameter `r ↦ d - r` preserves geodesic curvature relative to the
 transported normal field `r ↦ n (d - r)`.
 The normal need not be orthogonal to the velocity, and no regularity is assumed. -/
@@ -142,9 +133,43 @@ theorem geodesicCurvature_comp_const_sub (γ : ℝ → M)
   rw [geodesicCurvature_def, geodesicCurvature_def, acceleration_comp_const_sub,
     curveVelocity_comp_const_sub, norm_neg]
 
+/-- Translating the parameter translates geodesic curvature relative to a transported normal
+field. No regularity or orthogonality is assumed. -/
+theorem geodesicCurvature_comp_add_const (γ : ℝ → M)
+    (n : ∀ r, TangentSpace I (γ r)) (a t : ℝ) :
+    geodesicCurvature (fun r ↦ γ (r + a)) (fun r ↦ n (r + a)) t =
+      geodesicCurvature γ n (t + a) := by
+  rw [geodesicCurvature_def, geodesicCurvature_def, acceleration_comp_add_const,
+    curveVelocity_comp_add_right]
+
+/-- Geodesic curvature of a periodic curve with a periodic normal field has the same period.
+Normal vectors are compared in the model space, and no regularity is assumed. -/
+theorem _root_.Function.Periodic.geodesicCurvature {a : ℝ}
+    {n : ∀ r, TangentSpace I (γ r)} (hper : Function.Periodic γ a)
+    (hn : ∀ t, (n (t + a) : E) = n t) : Function.Periodic (geodesicCurvature γ n) a := by
+  intro t
+  have h : (fun r ↦ γ (r + a)) =ᶠ[𝓝 t] γ := Filter.Eventually.of_forall hper
+  exact (geodesicCurvature_comp_add_const γ n a t).symm.trans (h.geodesicCurvature_eq (hn t))
+
+/-- Reflecting the parameter via `r ↦ γ (d - r)` negates signed geodesic curvature relative to
+the oriented unit normal, without any regularity assumption on the original curve. -/
+theorem geodesicCurvature_orientedUnitNormal_comp_const_sub
+    (o : Orientation I M (Fin 2)) (γ : ℝ → M) (d t : ℝ) :
+    geodesicCurvature (fun r ↦ γ (d - r))
+      (orientedUnitNormal o (fun r ↦ γ (d - r))) t =
+        -geodesicCurvature γ (orientedUnitNormal o γ) (d - t) := by
+  calc
+    _ = geodesicCurvature (fun r ↦ γ (d - r))
+        (fun r ↦ -orientedUnitNormal o γ (d - r)) t :=
+      geodesicCurvature_congr_normal (orientedUnitNormal_comp_const_sub o γ d t)
+    _ = -geodesicCurvature γ (orientedUnitNormal o γ) (d - t) := by
+      rw [geodesicCurvature_fun_neg, geodesicCurvature_comp_const_sub]
+
 variable (o : Orientation I M (Fin 2))
 
-/-- The signed geodesic-curvature density pulls back by the derivative of a change of parameter.
+/-- On an oriented surface, the geodesic-curvature density relative to the oriented unit normal
+pulls back by the derivative of a change of parameter. The curve is `C²` at the image parameter,
+and both the parameter change and its derivative are differentiable at the tested parameter.
 This formula applies to either sign of the derivative, including zero. -/
 theorem geodesicCurvature_orientedUnitNormal_mul_norm_curveVelocity_comp
     (hγ : ContMDiffAt 𝓘(ℝ) I 2 γ (φ t))

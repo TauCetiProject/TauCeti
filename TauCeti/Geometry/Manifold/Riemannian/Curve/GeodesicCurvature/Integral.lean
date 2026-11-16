@@ -14,15 +14,18 @@ import Mathlib.MeasureTheory.Integral.IntervalIntegral.IntegrationByParts
 /-!
 # Total signed geodesic curvature
 
-The integral of geodesic curvature times speed is invariant under changes of parameter with
-transported endpoints. Reflection negates it, giving cancellation along a common boundary arc.
+On an oriented surface, the integral of geodesic curvature relative to `orientedUnitNormal`
+times speed is invariant under changes of parameter with transported endpoints, for a regular
+`C²` curve and a differentiable parameter change whose derivative is differentiable on the interval.
+Reflection negates this integral, giving cancellation along a common boundary arc.
 Curves agreeing on the open interval have equal integrals regardless of their endpoint values.
 
 ## Main results
 
 * `Set.EqOn.integral_geodesicCurvature_orientedUnitNormal_mul_norm_curveVelocity_eq`:
   equality on an open interval suffices for equality of total geodesic curvature.
-* Reflection negates total signed geodesic curvature, without regularity assumptions.
+* `integral_geodesicCurvature_orientedUnitNormal_mul_norm_curveVelocity_comp_const_sub`:
+  reflection negates total signed geodesic curvature, without regularity assumptions.
 * `TauCeti.Manifold.integral_geodesicCurvature_orientedUnitNormal_mul_norm_curveVelocity_comp`:
   change of variables, including changes with critical points.
 
@@ -78,9 +81,10 @@ theorem integral_geodesicCurvature_orientedUnitNormal_mul_norm_curveVelocity_com
     intervalIntegral.integral_comp_sub_left
       (fun r ↦ geodesicCurvature γ (orientedUnitNormal o γ) r * ‖curveVelocity I γ r‖) d]
 
-/-- A change of parameter preserves the interval integral of signed geodesic curvature times
-speed, with the endpoints transported by the change of parameter. The derivative may have either
-sign or vanish. The curve must be regular and `C²` along the image of the interval. -/
+/-- On an oriented surface, a change of parameter preserves the interval integral of geodesic
+curvature relative to the oriented unit normal times speed, with transported endpoints.
+The curve must be regular and `C²` along the image of the interval, and both `φ` and `deriv φ`
+must be differentiable on `Set.uIcc a b`. The derivative may have either sign or vanish. -/
 theorem integral_geodesicCurvature_orientedUnitNormal_mul_norm_curveVelocity_comp
     {a b : ℝ}
     (hγ : ∀ r ∈ φ '' Set.uIcc a b, ContMDiffAt 𝓘(ℝ) I 2 γ r)

@@ -126,6 +126,14 @@ theorem _root_.Filter.EventuallyEq.orientedUnitNormal_eq
     orientedUnitNormal o γ t = orientedUnitNormal o η t := by
   rw [orientedUnitNormal_apply, orientedUnitNormal_apply, h.self_of_nhds, h.curveVelocity_eq]
 
+/-- A periodic curve has periodic oriented unit normals, compared in the model space.
+No regularity is assumed. -/
+theorem _root_.Function.Periodic.orientedUnitNormal
+    {γ : ℝ → M} {a : ℝ} (hper : Function.Periodic γ a) (o : Orientation I M (Fin 2)) :
+    ∀ t, (orientedUnitNormal o γ (t + a) : E) = orientedUnitNormal o γ t := by
+  intro t
+  rw [orientedUnitNormal_apply, orientedUnitNormal_apply, hper t, hper.curveVelocity_add]
+
 /-- A reparametrization with positive derivative at `t` does not change the oriented unit normal
 at `t`. -/
 theorem orientedUnitNormal_comp_of_deriv_pos (o : Orientation I M (Fin 2)) {γ : ℝ → M} {φ : ℝ → ℝ}
