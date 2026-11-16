@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Topology.Sets.Opens
 public import TauCeti.MeasureTheory.Group.Conjugation
 
 /-!
@@ -27,23 +28,51 @@ into the corresponding statement about its inverse-translate.
 
 ## Main definitions
 
-* `TauCeti.invLpₗᵢ`: precomposition with inversion, as a linear isometric equivalence of `Lp E p μ`.
+* `TauCeti.invLpₗᵢ` (`TauCeti.negLpₗᵢ`): precomposition with inversion (negation), as a linear
+  isometric equivalence of `Lp E p μ`.
 
 ## Main statements
 
-* `TauCeti.invLpₗᵢ_apply`: it is precomposition with `Inv.inv`.
-* `TauCeti.coeFn_invLpₗᵢ`: it is represented by `g ↦ f g⁻¹`.
-* `TauCeti.invLpₗᵢ_invLpₗᵢ`: it is an involution.
+* `TauCeti.invLpₗᵢ_apply` (`TauCeti.negLpₗᵢ_apply`): it is precomposition with `Inv.inv`
+  (`Neg.neg`).
+* `TauCeti.coeFn_invLpₗᵢ` (`TauCeti.coeFn_negLpₗᵢ`): it is represented by `g ↦ f g⁻¹`
+  (`g ↦ f (-g)`).
+* `TauCeti.invLpₗᵢ_invLpₗᵢ`, `TauCeti.invLpₗᵢ_symm`, `TauCeti.invLpₗᵢ_trans_self` (and their
+  additive counterparts `negLpₗᵢ_*`): it is an involutive linear isometry equivalence.
 * `TauCeti.invLpₗᵢ_mem_classFunctionLp` and `TauCeti.invLpₗᵢ_mem_classFunctionLp_iff`: it preserves
   the class functions, because inversion commutes with conjugation, and being an involution it
   reflects them too.
-* `TauCeti.invLpₗᵢ_toLp`: on a continuous function it is precomposition with inversion.
+* `TauCeti.invLpₗᵢ_toLp` (`TauCeti.negLpₗᵢ_toLp`): on a continuous function it is precomposition
+  with inversion (negation).
 -/
 
 public section
 
 open MeasureTheory
 open scoped ENNReal
+
+namespace MeasureTheory.Measure
+
+/-- Restricting an inversion-invariant measure to `Set.univ` remains inversion-invariant. -/
+@[to_additive
+/-- Restricting a negation-invariant measure to `Set.univ` remains negation-invariant. -/]
+instance isInvInvariant_restrict_univ {G : Type*} [MeasurableSpace G] [Inv G] {μ : Measure G}
+    [μ.IsInvInvariant] : (μ.restrict Set.univ).IsInvInvariant := by
+  rw [Measure.restrict_univ]
+  infer_instance
+
+/-- Restricting an inversion-invariant measure to the top open set `⊤` remains
+inversion-invariant. -/
+@[to_additive
+/-- Restricting a negation-invariant measure to the top open set `⊤` remains
+negation-invariant. -/]
+instance isInvInvariant_restrict_top {G : Type*} [TopologicalSpace G] [MeasurableSpace G] [Inv G]
+    {μ : Measure G} [μ.IsInvInvariant] :
+    (μ.restrict ((⊤ : TopologicalSpace.Opens G) : Set G)).IsInvInvariant := by
+  rw [TopologicalSpace.Opens.coe_top, Measure.restrict_univ]
+  infer_instance
+
+end MeasureTheory.Measure
 
 namespace TauCeti
 
@@ -57,6 +86,9 @@ variable [InvolutiveInv G] [MeasurableInv G] [μ.IsInvInvariant]
 
 /-- **Precomposition with inversion on `Lp`**, for a measure invariant under inversion. It is a
 linear isometric equivalence because `g ↦ g⁻¹` preserves `μ` and is its own inverse. -/
+@[to_additive (dont_translate := 𝕜 E)
+/-- **Precomposition with negation on `Lp`**, for a measure invariant under negation. It is a
+linear isometric equivalence because `g ↦ -g` preserves `μ` and is its own inverse. -/]
 noncomputable def invLpₗᵢ : Lp E p μ ≃ₗᵢ[𝕜] Lp E p μ :=
   Lp.compMeasurePreservingₗᵢEquiv 𝕜 (Measure.measurePreserving_inv μ)
     (Measure.measurePreserving_inv μ) (.of_eq (funext inv_inv))
@@ -68,18 +100,28 @@ variable {𝕜}
 Not a `simp` lemma: unfolding to `Lp.compMeasurePreserving` dissolves the abstraction, and it
 would take `TauCeti.invLpₗᵢ_invLpₗᵢ` out of simp normal form (the `simpNF` linter rejects the
 pair). Use it to rewrite by hand where the underlying precomposition is wanted. -/
+@[to_additive (dont_translate := 𝕜 E)
+/-- The negation equivalence is precomposition with `Neg.neg`.
+
+Not a `simp` lemma: unfolding to `Lp.compMeasurePreserving` dissolves the abstraction, and it
+would take `TauCeti.negLpₗᵢ_negLpₗᵢ` out of simp normal form. Use it to rewrite by hand where
+the underlying precomposition is wanted. -/]
 theorem invLpₗᵢ_apply (f : Lp E p μ) :
     invLpₗᵢ 𝕜 f = Lp.compMeasurePreserving Inv.inv (Measure.measurePreserving_inv μ) f :=
   Lp.compMeasurePreservingₗᵢEquiv_apply 𝕜 _ _ _ f
 
 /-- The inverse-translate of a class of functions is represented by `g ↦ f g⁻¹`. -/
+@[to_additive (dont_translate := 𝕜 E)
+/-- The reflected class of functions is represented by `g ↦ f (-g)`. -/]
 theorem coeFn_invLpₗᵢ (f : Lp E p μ) : invLpₗᵢ 𝕜 f =ᵐ[μ] fun g ↦ f g⁻¹ :=
   Lp.coeFn_compMeasurePreservingₗᵢEquiv 𝕜 (Measure.measurePreserving_inv μ)
     (Measure.measurePreserving_inv μ) _ f
 
 /-- **Inverting twice is the identity.**  The two precompositions compose to precomposition with
 `g ↦ (g⁻¹)⁻¹`, which is the identity on the nose. -/
-@[simp]
+@[to_additive (dont_translate := 𝕜 E)
+/-- **Negating twice is the identity.**  The two precompositions compose to precomposition with
+`g ↦ -(-g)`, which is the identity on the nose. -/, simp]
 theorem invLpₗᵢ_invLpₗᵢ (f : Lp E p μ) : invLpₗᵢ 𝕜 (invLpₗᵢ 𝕜 f) = f := by
   simpa only [invLpₗᵢ_apply] using
     Lp.leftInverse_compMeasurePreserving (E := E) (p := p)
@@ -87,10 +129,19 @@ theorem invLpₗᵢ_invLpₗᵢ (f : Lp E p μ) : invLpₗᵢ 𝕜 (invLpₗᵢ 
     (.of_eq (funext inv_inv)) f
 
 /-- The inversion equivalence is its own inverse: it is an equivalence and an involution. -/
-@[simp]
+@[to_additive (dont_translate := 𝕜 E)
+/-- The negation equivalence is its own inverse: it is an equivalence and an involution. -/, simp]
 theorem invLpₗᵢ_symm : (invLpₗᵢ 𝕜 (E := E) (p := p) (μ := μ)).symm = invLpₗᵢ 𝕜 := by
   refine LinearIsometryEquiv.ext fun f ↦ ?_
   rw [LinearIsometryEquiv.symm_apply_eq, invLpₗᵢ_invLpₗᵢ]
+
+/-- Composing the inversion equivalence with itself gives the identity equivalence. -/
+@[to_additive (dont_translate := 𝕜 E)
+/-- Composing the negation equivalence with itself gives the identity equivalence. -/, simp]
+theorem invLpₗᵢ_trans_self :
+    (invLpₗᵢ 𝕜 (E := E) (p := p) (μ := μ)).trans (invLpₗᵢ 𝕜) =
+      LinearIsometryEquiv.refl 𝕜 (Lp E p μ) :=
+  LinearIsometryEquiv.ext fun f ↦ invLpₗᵢ_invLpₗᵢ f
 
 end Involution
 
@@ -143,6 +194,8 @@ variable [InvolutiveInv G] [MeasurableInv G] [μ.IsInvInvariant] [TopologicalSpa
   [IsFiniteMeasure μ]
 
 /-- **On a continuous function, inversion on `Lp` is precomposition with inversion.** -/
+@[to_additive (dont_translate := 𝕜 E)
+/-- **On a continuous function, negation on `Lp` is precomposition with negation.** -/]
 theorem invLpₗᵢ_toLp (F : C(G, E)) :
     invLpₗᵢ 𝕜 (ContinuousMap.toLp p μ 𝕜 F) =
       ContinuousMap.toLp p μ 𝕜 (F.comp ⟨Inv.inv, continuous_inv⟩) := by

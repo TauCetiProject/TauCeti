@@ -11,6 +11,7 @@ public import Mathlib.MeasureTheory.Function.Holder
 
 import TauCeti.Analysis.Normed.Lp.ProdLp
 import TauCeti.MeasureTheory.Function.LocallyIntegrable
+import TauCeti.MeasureTheory.Function.Lp.Basic
 import TauCeti.MeasureTheory.Function.Lp.Norm
 
 /-!
@@ -50,6 +51,9 @@ whose exponent is two whatever `p` is.  That is what makes the squared-norm iden
   components, and the bound `‖x‖ + ‖Du‖_p ≤ √2 ‖(x, Du)‖`.
 * `TauCeti.WeakDerivStep.restrictBaseL`: restriction of the selected field to an open subdomain,
   with its exact and almost-everywhere characteristic equations.
+* `TauCeti.WeakDerivStep.postcompBaseL`: postcomposing the selected field with a continuous linear
+  map `T : F →L[ℝ] G`, landing in `W^{1,p}(Ω; G)`, with its projection, norm, zero, composition,
+  and directional-derivative lemmas.
 * `TauCeti.WeakDerivStep.norm_prev_sq_eq_integral`,
   `TauCeti.WeakDerivStep.norm_weakFDeriv_sq_eq_integral`: on the line, the squared norms of a
   `W^{1,2}` path and of its weak derivative are the integrals of `‖φ‖²` and `‖φ'‖²` for a `C¹`
@@ -412,6 +416,141 @@ theorem norm_prev_add_norm_weakFDeriv_le
   nlinarith [sq_nonneg (‖prev base u‖ - ‖weakFDeriv base u‖)]
 
 end SeminormedModule
+
+/-! ### Postcomposition of the codomain -/
+
+section Postcomp
+
+variable [AddCommGroup X] [Module ℝ X] [TopologicalSpace X]
+  {G : Type*} [NormedAddCommGroup G] [NormedSpace ℝ G] [CompleteSpace G]
+
+/-- Postcomposing the field of a weak-derivative graph element with a continuous linear map
+`T : F →L[ℝ] G` preserves weak differentiability on `Omega`. -/
+theorem hasWeakFDerivOn_postcompBase [IsLocallyFiniteMeasure (mu.restrict Omega)]
+    (base : X →L[ℝ] Lp F p (mu.restrict Omega)) (T : F →L[ℝ] G)
+    (u : WeakDerivStep mu Omega p base) :
+    HasWeakFDerivOn mu Omega
+      (ContinuousLinearMap.id ℝ (Lp G p (mu.restrict Omega)) (T.compLp (base (prev base u))))
+      ((ContinuousLinearMap.compL ℝ E F G T).compLp (weakFDeriv base u)) := by
+  refine (((hasWeakFDerivOn_base_prev base u).clm_comp T).congr_ae
+    (Filter.EventuallyEq.symm (T.coeFn_compLp (base (prev base u))))).congr_ae_deriv ?_
+  filter_upwards [(ContinuousLinearMap.compL ℝ E F G T).coeFn_compLp (weakFDeriv base u)] with x hx
+  rw [hx, ContinuousLinearMap.compL_apply]
+
+/-- Postcompose the `F`-valued field of a `WeakDerivStep` with `T : F →L[ℝ] G`, landing in the
+first-order Sobolev space over `Lp G p (mu.restrict Omega)`. -/
+def postcompBaseL [IsLocallyFiniteMeasure (mu.restrict Omega)]
+    (base : X →L[ℝ] Lp F p (mu.restrict Omega)) (T : F →L[ℝ] G) :
+    WeakDerivStep mu Omega p base →L[ℝ]
+      WeakDerivStep mu Omega p (ContinuousLinearMap.id ℝ (Lp G p (mu.restrict Omega))) :=
+  ((WithLp.prodContinuousLinearEquiv 2 ℝ _ _).symm.toContinuousLinearMap.comp
+      (((T.compLpL p (mu.restrict Omega)).comp (base.comp (prevL base))).prod
+        (((ContinuousLinearMap.compL ℝ E F G T).compLpL p (mu.restrict Omega)).comp
+          (weakFDerivL base)))).codRestrict _ fun u ↦
+    (mem_weakDerivStepSubmodule_iff_hasWeakFDerivOn _ _).2 (hasWeakFDerivOn_postcompBase base T u)
+
+/-- The base field of `postcompBaseL base T u` is `T` postcomposed with `base (prev base u)`. -/
+@[simp]
+theorem prev_postcompBaseL [IsLocallyFiniteMeasure (mu.restrict Omega)]
+    (base : X →L[ℝ] Lp F p (mu.restrict Omega)) (T : F →L[ℝ] G)
+    (u : WeakDerivStep mu Omega p base) :
+    prev (ContinuousLinearMap.id ℝ (Lp G p (mu.restrict Omega))) (postcompBaseL base T u) =
+      T.compLp (base (prev base u)) := by
+  rw [prev_coe]
+  rfl
+
+/-- The weak derivative of `postcompBaseL base T u` is `compL T` postcomposed with
+`weakFDeriv base u`. -/
+@[simp]
+theorem weakFDeriv_postcompBaseL [IsLocallyFiniteMeasure (mu.restrict Omega)]
+    (base : X →L[ℝ] Lp F p (mu.restrict Omega)) (T : F →L[ℝ] G)
+    (u : WeakDerivStep mu Omega p base) :
+    weakFDeriv (ContinuousLinearMap.id ℝ (Lp G p (mu.restrict Omega))) (postcompBaseL base T u) =
+      (ContinuousLinearMap.compL ℝ E F G T).compLp (weakFDeriv base u) := by
+  rw [weakFDeriv_coe]
+  rfl
+
+/-- Postcomposing with the zero map gives the zero operator on `WeakDerivStep`. -/
+@[simp]
+theorem postcompBaseL_zero [IsLocallyFiniteMeasure (mu.restrict Omega)]
+    (base : X →L[ℝ] Lp F p (mu.restrict Omega)) :
+    postcompBaseL base (0 : F →L[ℝ] G) = 0 := by
+  ext1 u
+  refine ext_prev_weakFDeriv ?_ ?_
+  · rw [prev_postcompBaseL, zero_apply, prev_zero, ← zero_smul ℝ (0 : F →L[ℝ] G),
+      ContinuousLinearMap.smul_compLp, zero_smul]
+  · rw [weakFDeriv_postcompBaseL, zero_apply, map_zero, ← weakFDerivL_apply _ 0, map_zero,
+      ← zero_smul ℝ (0 : (E →L[ℝ] F) →L[ℝ] (E →L[ℝ] G)), ContinuousLinearMap.smul_compLp,
+      zero_smul]
+
+/-- Postcomposing sequentially with `T₂` and `T₁` agrees with postcomposing with `T₁ ∘L T₂`. -/
+theorem postcompBaseL_comp [IsLocallyFiniteMeasure (mu.restrict Omega)]
+    {K : Type*} [NormedAddCommGroup K] [NormedSpace ℝ K] [CompleteSpace K]
+    (base : X →L[ℝ] Lp F p (mu.restrict Omega)) (T₁ : G →L[ℝ] K) (T₂ : F →L[ℝ] G) :
+    (postcompBaseL (ContinuousLinearMap.id ℝ (Lp G p (mu.restrict Omega))) T₁).comp
+        (postcompBaseL base T₂) =
+      postcompBaseL base (T₁.comp T₂) := by
+  ext1 u
+  refine ext_prev_weakFDeriv ?_ ?_
+  · simp [ContinuousLinearMap.comp_compLp]
+  · rw [ContinuousLinearMap.comp_apply, weakFDeriv_postcompBaseL, weakFDeriv_postcompBaseL,
+      weakFDeriv_postcompBaseL, ← ContinuousLinearMap.comp_compLp]
+    congr 1
+
+/-- Evaluating the weak derivative of `postcompBaseL base T u` in a direction `v : E` agrees with
+applying `T` to the weak derivative of `u` evaluated in direction `v`. -/
+theorem compLp_apply_weakFDeriv_postcompBaseL [IsLocallyFiniteMeasure (mu.restrict Omega)]
+    (base : X →L[ℝ] Lp F p (mu.restrict Omega)) (T : F →L[ℝ] G) (v : E)
+    (u : WeakDerivStep mu Omega p base) :
+    (ContinuousLinearMap.apply ℝ G v).compLp
+        (weakFDeriv (ContinuousLinearMap.id ℝ (Lp G p (mu.restrict Omega)))
+          (postcompBaseL base T u)) =
+      T.compLp ((ContinuousLinearMap.apply ℝ F v).compLp (weakFDeriv base u)) := by
+  rw [weakFDeriv_postcompBaseL, ← ContinuousLinearMap.comp_compLp,
+    ← ContinuousLinearMap.comp_compLp]
+  congr 1
+
+end Postcomp
+
+section PostcompNorm
+
+variable [SeminormedAddCommGroup X] [NormedSpace ℝ X]
+  {G : Type*} [NormedAddCommGroup G] [NormedSpace ℝ G] [CompleteSpace G]
+
+/-- Operator-norm bound for codomain postcomposition:
+`‖postcompBaseL base T‖ ≤ ‖T‖ * max ‖base‖ 1`. -/
+theorem norm_postcompBaseL_le [IsLocallyFiniteMeasure (mu.restrict Omega)]
+    (base : X →L[ℝ] Lp F p (mu.restrict Omega)) (T : F →L[ℝ] G) :
+    ‖postcompBaseL base T‖ ≤ ‖T‖ * max ‖base‖ 1 := by
+  refine ContinuousLinearMap.opNorm_le_bound _ (by positivity) fun u ↦ ?_
+  refine le_of_pow_le_pow_left₀ two_ne_zero (by positivity) ?_
+  rw [norm_sq_eq_norm_prev_sq_add_norm_weakFDeriv_sq, prev_postcompBaseL, weakFDeriv_postcompBaseL]
+  have h1 : ‖T.compLp (base (prev base u))‖ ≤ ‖T‖ * max ‖base‖ 1 * ‖prev base u‖ := by
+    calc ‖T.compLp (base (prev base u))‖
+        ≤ ‖T‖ * ‖base (prev base u)‖ :=
+          ((T.compLpL p (mu.restrict Omega)).le_opNorm _).trans
+            (mul_le_mul_of_nonneg_right T.norm_compLpL_le (norm_nonneg _))
+      _ ≤ ‖T‖ * (‖base‖ * ‖prev base u‖) := by gcongr; exact base.le_opNorm _
+      _ ≤ ‖T‖ * (max ‖base‖ 1 * ‖prev base u‖) := by gcongr; exact le_max_left _ _
+      _ = ‖T‖ * max ‖base‖ 1 * ‖prev base u‖ := by ring
+  have h2 : ‖(ContinuousLinearMap.compL ℝ E F G T).compLp (weakFDeriv base u)‖ ≤
+      ‖T‖ * max ‖base‖ 1 * ‖weakFDeriv base u‖ := by
+    have hcomp : ‖ContinuousLinearMap.compL ℝ E F G T‖ ≤ ‖T‖ :=
+      ContinuousLinearMap.opNorm_le_bound _ (norm_nonneg T) fun L ↦ T.opNorm_comp_le L
+    calc ‖(ContinuousLinearMap.compL ℝ E F G T).compLp (weakFDeriv base u)‖
+        ≤ ‖ContinuousLinearMap.compL ℝ E F G T‖ * ‖weakFDeriv base u‖ :=
+          (((ContinuousLinearMap.compL ℝ E F G T).compLpL p (mu.restrict Omega)).le_opNorm
+            _).trans (mul_le_mul_of_nonneg_right
+              (ContinuousLinearMap.compL ℝ E F G T).norm_compLpL_le (norm_nonneg _))
+      _ ≤ ‖T‖ * ‖weakFDeriv base u‖ := mul_le_mul_of_nonneg_right hcomp (norm_nonneg _)
+      _ = ‖T‖ * 1 * ‖weakFDeriv base u‖ := by ring
+      _ ≤ ‖T‖ * max ‖base‖ 1 * ‖weakFDeriv base u‖ := by gcongr; exact le_max_right _ _
+  have h1sq := pow_le_pow_left₀ (norm_nonneg _) h1 2
+  have h2sq := pow_le_pow_left₀ (norm_nonneg _) h2 2
+  rw [mul_pow, mul_pow, norm_sq_eq_norm_prev_sq_add_norm_weakFDeriv_sq]
+  nlinarith
+
+end PostcompNorm
 
 section UniformModule
 

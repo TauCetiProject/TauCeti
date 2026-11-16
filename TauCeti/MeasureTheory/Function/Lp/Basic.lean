@@ -17,7 +17,8 @@ class of a finite sum of `Lᵖ` functions with the sum of their `Lp` classes, fo
 witness on the sum.
 
 Mathlib composes `f : Lp E p μ` with `L : E →SL[σ] F` both as an element `L.compLp f` and through
-the bundled continuous semilinear map `L.compLpL p μ`; this file also records that the two agree.
+the bundled continuous semilinear map `L.compLpL p μ`; this file records that the two agree and
+that postcomposition is functorial and respects negation and subtraction.
 
 ## Main declarations
 
@@ -25,6 +26,12 @@ the bundled continuous semilinear map `L.compLpL p μ`; this file also records t
 * `MeasureTheory.MemLp.toLp_finsetSum`:
   `hsum.toLp (fun x ↦ ∑ i ∈ s, f i x) = ∑ i ∈ s, (hf i).toLp (f i)`.
 * `ContinuousLinearMap.compLpL_apply`: the bundled composition applied to `f` is `L.compLp f`.
+* `ContinuousLinearMap.id_compLp`, `ContinuousLinearMap.comp_compLp`,
+  `ContinuousLinearMap.id_compLpL`, `ContinuousLinearMap.comp_compLpL`: functoriality of
+  postcomposition on `Lᵖ`.
+* `ContinuousLinearMap.neg_compLp`, `ContinuousLinearMap.sub_compLp`,
+  `ContinuousLinearMap.neg_compLpL`, `ContinuousLinearMap.sub_compLpL`: compatibility with negation
+  and subtraction.
 -/
 
 public section
@@ -65,5 +72,61 @@ variable {α E F 𝕜 𝕜' : Type*} {_ : MeasurableSpace α} {μ : Measure α} 
 theorem compLpL_apply [Fact (1 ≤ p)] (L : E →SL[σ] F) (f : Lp E p μ) :
     L.compLpL p μ f = L.compLp f :=
   rfl
+
+/-- Postcomposing an `Lᵖ` class with the identity map leaves it unchanged. -/
+@[simp]
+theorem id_compLp (f : Lp E p μ) :
+    (ContinuousLinearMap.id 𝕜 E).compLp f = f :=
+  Subtype.ext (AEEqFun.comp_id f.1)
+
+/-- Postcomposition on `Lᵖ` is functorial in the continuous semilinear map. -/
+theorem comp_compLp {𝕜'' G : Type*} [NontriviallyNormedField 𝕜'']
+    [NormedAddCommGroup G] [NormedSpace 𝕜'' G]
+    {σ₂₃ : 𝕜' →+* 𝕜''} {σ₁₃ : 𝕜 →+* 𝕜''} [RingHomIsometric σ₂₃] [RingHomIsometric σ₁₃]
+    [RingHomCompTriple σ σ₂₃ σ₁₃]
+    (L₁ : F →SL[σ₂₃] G) (L₂ : E →SL[σ] F) (f : Lp E p μ) :
+    (L₁.comp L₂).compLp f = L₁.compLp (L₂.compLp f) :=
+  Subtype.ext (AEEqFun.comp_comp L₁ L₂ L₁.continuous L₂.continuous f.1).symm
+
+/-- Postcomposing an `Lᵖ` class with `-L` negates `L.compLp f`. -/
+@[simp]
+theorem neg_compLp (L : E →SL[σ] F) (f : Lp E p μ) :
+    (-L).compLp f = -L.compLp f := by
+  simpa only [neg_one_smul] using smul_compLp (-1 : 𝕜') L f
+
+/-- Postcomposing an `Lᵖ` class with `L - L'` subtracts the postcompositions. -/
+theorem sub_compLp (L L' : E →SL[σ] F) (f : Lp E p μ) :
+    (L - L').compLp f = L.compLp f - L'.compLp f := by
+  rw [sub_eq_add_neg, add_compLp, neg_compLp, sub_eq_add_neg]
+
+/-- The bundled postcomposition by the identity is the identity on `Lᵖ`. -/
+@[simp]
+theorem id_compLpL [Fact (1 ≤ p)] :
+    (ContinuousLinearMap.id 𝕜 E).compLpL p μ = ContinuousLinearMap.id 𝕜 (Lp E p μ) := by
+  ext1 f
+  exact id_compLp f
+
+/-- Bundled postcomposition on `Lᵖ` is functorial in the continuous semilinear map. -/
+theorem comp_compLpL [Fact (1 ≤ p)] {𝕜'' G : Type*} [NontriviallyNormedField 𝕜'']
+    [NormedAddCommGroup G] [NormedSpace 𝕜'' G]
+    {σ₂₃ : 𝕜' →+* 𝕜''} {σ₁₃ : 𝕜 →+* 𝕜''} [RingHomIsometric σ₂₃] [RingHomIsometric σ₁₃]
+    [RingHomCompTriple σ σ₂₃ σ₁₃]
+    (L₁ : F →SL[σ₂₃] G) (L₂ : E →SL[σ] F) :
+    (L₁.comp L₂).compLpL p μ = (L₁.compLpL p μ).comp (L₂.compLpL p μ) := by
+  ext1 f
+  exact comp_compLp L₁ L₂ f
+
+/-- Bundled postcomposition respects negation of continuous semilinear maps. -/
+@[simp]
+theorem neg_compLpL [Fact (1 ≤ p)] (L : E →SL[σ] F) :
+    (-L).compLpL p μ = -L.compLpL p μ := by
+  ext1 f
+  exact neg_compLp L f
+
+/-- Bundled postcomposition respects subtraction of continuous semilinear maps. -/
+theorem sub_compLpL [Fact (1 ≤ p)] (L L' : E →SL[σ] F) :
+    (L - L').compLpL p μ = L.compLpL p μ - L'.compLpL p μ := by
+  ext1 f
+  exact sub_compLp L L' f
 
 end ContinuousLinearMap

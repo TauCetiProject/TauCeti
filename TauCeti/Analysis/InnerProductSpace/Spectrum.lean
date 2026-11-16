@@ -8,11 +8,13 @@ module
 public import Mathlib.Algebra.Algebra.StrictPositivity
 public import Mathlib.Analysis.InnerProductSpace.Positive
 public import Mathlib.Analysis.InnerProductSpace.Spectrum
+public import Mathlib.Topology.Algebra.Module.ContinuousLinearMap.Invertible
 public import TauCeti.Analysis.InnerProductSpace.HilbertBasis.Basic
 public import TauCeti.Analysis.InnerProductSpace.BasisSpan
 public import TauCeti.Data.Fin.Tuple.Sort
 public import TauCeti.LinearAlgebra.Eigenspace.Anticommute
 import Mathlib.LinearAlgebra.Eigenspace.ContinuousLinearMap
+import Mathlib.Topology.Bases
 import TauCeti.Analysis.InnerProductSpace.CourantFischer
 
 /-!
@@ -45,10 +47,16 @@ complex structure anticommutes with the shape operator of a complex submanifold,
 eigenvalues are antisymmetric, so the positive and negative spectral subspaces have equal
 dimension.
 
-No separability is assumed anywhere: the basis is indexed by a set of vectors of `E`, exactly as
-in Mathlib's `exists_hilbertBasis`, and the eigenvalue `0` may well carry an infinite-dimensional
-eigenspace.  When `T` is injective that eigenspace is trivial and every basis vector has a
-nonzero eigenvalue, which is the form the eigenvalue problem of an elliptic operator uses.
+No separability is assumed anywhere for the spectral decompositions: the basis is indexed by a set
+of vectors of `E`, exactly as in Mathlib's `exists_hilbertBasis`, and the eigenvalue `0` may well
+carry an infinite-dimensional eigenspace.  When `T` is injective that eigenspace is trivial and
+every basis vector has a nonzero eigenvalue, which is the form the eigenvalue problem of an
+elliptic operator uses. For an invertible operator `A : D →L[𝕜] E` symmetric with respect to an
+injective compact operator `ι : D →L[𝕜] E`, applying this theorem to the compact symmetric
+resolvent `ι ∘ A⁻¹` yields a Hilbert basis of `E` in the image of `ι` consisting of eigenvectors of
+`A` with real eigenvalues uniformly bounded away from `0`. On a separable inner product space,
+eigenvectors for distinct eigenvalues of any operator `A` symmetric with respect to an injection
+`ι` are mutually orthogonal, so the set of eigenvalues is countable.
 
 ## Main declarations
 
@@ -59,6 +67,12 @@ nonzero eigenvalue, which is the form the eigenvalue problem of an elliptic oper
   specialization of the preceding result.
 * `ContinuousLinearMap.exists_hilbertBasis_forall_hasEigenvector_ne_zero`: for an injective compact
   symmetric operator, every vector of that basis has a nonzero eigenvalue.
+* `ContinuousLinearMap.exists_hilbertBasis_of_isCompactOperator`: for an invertible operator
+  `A : D →L[𝕜] E` symmetric with respect to an injective compact map `ι : D →L[𝕜] E`, a Hilbert
+  basis of `E` of eigenvectors of `A` with real eigenvalues uniformly bounded away from `0`.
+* `ContinuousLinearMap.countable_setOf_exists_ne_zero_apply_eq_smul`: on a separable inner product
+  space, the set of eigenvalues of an operator `A : D →L[𝕜] E` symmetric with respect to an
+  injective map `ι : D →L[𝕜] E` is countable.
 * `ContinuousLinearMap.hasSum_smul_repr_of_apply_eq_smul`: an operator diagonal in a Hilbert
   basis is the sum of its eigencomponents, the spectral expansion such a basis is for.
 * `LinearMap.IsSymmetric.inner_sub_apply_of_apply_eq_smul_of_apply_eq_smul`: the cross term of
@@ -198,6 +212,114 @@ theorem exists_hilbertBasis_forall_hasEigenvector_ne_zero (hT : IsCompactOperato
   exists_hilbertBasis_forall_hasEigenvector_ne_zero_of_dense_eigenspaces
     hT'.orthogonalFamily_eigenspaces
     (ContinuousLinearMap.orthogonalComplement_iSup_eigenspaces_eq_bot hT hT') hker
+
+/-- **Compact-resolvent eigenbasis.** Let `ι : D →L[𝕜] E` be an injective compact linear map into
+a Hilbert space `E`, and let `A : D →L[𝕜] E` be an invertible operator symmetric with respect to
+`ι` (`⟪A x, ι y⟫ = ⟪ι x, A y⟫`). Then `E` admits a Hilbert basis `b` of eigenvectors of `A` in
+the range of `ι` (`ι (a i) = b i` and `A (a i) = lam i • b i`) with real eigenvalues uniformly
+bounded away from `0`: `c ≤ |lam i|` for a positive constant `c`. -/
+theorem exists_hilbertBasis_of_isCompactOperator
+    {D : Type*} [NormedAddCommGroup D] [NormedSpace 𝕜 D]
+    {ι A : D →L[𝕜] E} (hιc : IsCompactOperator ι) (hιi : Function.Injective ι)
+    (hsym : ∀ x y : D, ⟪A x, ι y⟫_𝕜 = ⟪ι x, A y⟫_𝕜) (hA : A.IsInvertible) :
+    ∃ (s : Set E) (b : HilbertBasis s 𝕜 E) (a : s → D) (lam : s → ℝ) (c : ℝ),
+      0 < c ∧ (∀ i, ι (a i) = b i) ∧ (∀ i, c ≤ |lam i|) ∧
+        (∀ i, A (a i) = (lam i : 𝕜) • b i) := by
+  obtain ⟨e, he⟩ := hA
+  set R : E →L[𝕜] D := e.symm.toContinuousLinearMap
+  set K : E →L[𝕜] E := ι.comp R
+  have hAR (x : E) : A (R x) = x := by
+    rw [← he]
+    exact e.apply_symm_apply x
+  have hKc : IsCompactOperator K := hιc.comp_clm R
+  have hKs : (K : E →ₗ[𝕜] E).IsSymmetric := fun x y ↦ by
+    have h := hsym (R x) (R y)
+    rw [hAR, hAR] at h
+    simpa only [coe_coe, K, comp_apply] using h.symm
+  have hKi : LinearMap.ker (K : E →ₗ[𝕜] E) = ⊥ := by
+    refine LinearMap.ker_eq_bot'.2 fun x hx ↦ ?_
+    have hRx : R x = 0 := hιi (by simpa only [coe_coe, K, comp_apply, map_zero] using hx)
+    rw [← hAR x, hRx, map_zero]
+  obtain ⟨s, b, nu, hb, hnu0, hev⟩ :=
+    exists_hilbertBasis_forall_hasEigenvector_ne_zero hKc hKs hKi
+  have hreal (i : s) : ((RCLike.re (nu i) : ℝ) : 𝕜) = nu i :=
+    RCLike.conj_eq_iff_re.mp
+      (hKs.conj_eigenvalue_eq_self (hasEigenvalue_of_hasEigenvector (hev i)))
+  have hre0 (i : s) : RCLike.re (nu i) ≠ 0 := by
+    intro h0
+    exact hnu0 i (by rw [← hreal i, h0, RCLike.ofReal_zero])
+  refine ⟨s, b, fun i ↦ (((RCLike.re (nu i))⁻¹ : ℝ) : 𝕜) • R i, fun i ↦ (RCLike.re (nu i))⁻¹,
+    (‖K‖ + 1)⁻¹, by positivity, fun i ↦ ?_, fun i ↦ ?_, fun i ↦ ?_⟩
+  · have hKi' : K i = nu i • (i : E) := (hev i).apply_eq_smul
+    have hinv : (((RCLike.re (nu i))⁻¹ : ℝ) : 𝕜) = (nu i)⁻¹ := by
+      rw [RCLike.ofReal_inv, hreal i]
+    rw [map_smul, hinv, show ι (R i) = K i from rfl, hKi', smul_smul,
+      inv_mul_cancel₀ (hnu0 i), one_smul, hb]
+  · have hKi' : K i = nu i • (i : E) := (hev i).apply_eq_smul
+    have hn : ‖(i : E)‖ = 1 := by
+      rw [← hb]
+      exact b.orthonormal.1 i
+    have hnorm : ‖nu i‖ = |RCLike.re (nu i)| := by
+      conv_lhs => rw [← hreal i]
+      exact RCLike.norm_ofReal _
+    have hle : |RCLike.re (nu i)| ≤ ‖K‖ := by
+      simpa only [hKi', norm_smul, hn, mul_one, hnorm] using K.le_opNorm (i : E)
+    rw [abs_inv]
+    exact inv_anti₀ (abs_pos.2 (hre0 i)) (by linarith)
+  · rw [map_smul, hAR, hb]
+
+omit [CompleteSpace E] in
+/-- **Countability of eigenvalues of a symmetric operator on a separable space.** If `ι : D →L[𝕜] E`
+is injective into a separable inner product space `E` and `A : D →L[𝕜] E` is symmetric with respect
+to `ι`, then the set of eigenvalues `λ` (scalars with `A x = λ • ι x` for some `x ≠ 0`) is
+countable. -/
+theorem countable_setOf_exists_ne_zero_apply_eq_smul
+    {D : Type*} [NormedAddCommGroup D] [NormedSpace 𝕜 D]
+    [TopologicalSpace.SeparableSpace E] {ι A : D →L[𝕜] E} (hιi : Function.Injective ι)
+    (hsym : ∀ x y : D, ⟪A x, ι y⟫_𝕜 = ⟪ι x, A y⟫_𝕜) :
+    {lam : 𝕜 | ∃ x : D, x ≠ 0 ∧ A x = lam • ι x}.Countable := by
+  classical
+  set S : Set 𝕜 := {lam : 𝕜 | ∃ x : D, x ≠ 0 ∧ A x = lam • ι x}
+  choose x hx0 hxA using fun lam : S ↦ lam.2
+  have hι0 (lam : S) : ι (x lam) ≠ 0 := by
+    intro h0
+    exact hx0 lam (hιi (h0.trans (map_zero ι).symm))
+  have hconj (lam : S) : starRingEnd 𝕜 (lam : 𝕜) = (lam : 𝕜) := by
+    have h1 : ⟪A (x lam), ι (x lam)⟫_𝕜 = ⟪ι (x lam), A (x lam)⟫_𝕜 := hsym _ _
+    rw [hxA lam, inner_smul_left, inner_smul_right] at h1
+    exact mul_right_cancel₀ (inner_self_ne_zero.2 (hι0 lam)) h1
+  let u : S → E := fun lam ↦ (‖ι (x lam)‖ : 𝕜)⁻¹ • ι (x lam)
+  have hunorm (lam : S) : ‖u lam‖ = 1 := by
+    simp only [u, norm_smul, norm_inv, RCLike.norm_ofReal, abs_of_nonneg (norm_nonneg _),
+      inv_mul_cancel₀ (norm_ne_zero_iff.2 (hι0 lam))]
+  have huorth : Pairwise fun a b : S ↦ ⟪u a, u b⟫_𝕜 = 0 := by
+    intro a b hab
+    have h1 : ⟪A (x a), ι (x b)⟫_𝕜 = ⟪ι (x a), A (x b)⟫_𝕜 := hsym _ _
+    rw [hxA a, hxA b, inner_smul_left, inner_smul_right, hconj a] at h1
+    have hsub : ((a : 𝕜) - (b : 𝕜)) * ⟪ι (x a), ι (x b)⟫_𝕜 = 0 := by
+      rw [sub_mul]
+      exact sub_eq_zero.2 h1
+    have h0 : ⟪ι (x a), ι (x b)⟫_𝕜 = 0 :=
+      (mul_eq_zero.1 hsub).resolve_left (sub_ne_zero.2 (Subtype.coe_injective.ne hab))
+    simp only [u, inner_smul_left, inner_smul_right, h0, mul_zero]
+  have hdisj : Pairwise (Function.onFun Disjoint fun lam : S ↦ Metric.ball (u lam) (1 / 2)) := by
+    intro a b hab
+    rw [Function.onFun, Set.disjoint_left]
+    intro y hya hyb
+    have hdist : dist (u a) (u b) < 1 := by
+      calc dist (u a) (u b) ≤ dist (u a) y + dist y (u b) := dist_triangle _ _ _
+        _ < 1 / 2 + 1 / 2 := add_lt_add (Metric.mem_ball'.1 hya) (Metric.mem_ball.1 hyb)
+        _ = 1 := by norm_num
+    have hsq : ‖u a - u b‖ ^ 2 = 2 := by
+      rw [norm_sub_sq (𝕜 := 𝕜) (u a) (u b), hunorm a, hunorm b, huorth hab, map_zero]
+      norm_num
+    have hge : 1 ≤ dist (u a) (u b) := by
+      rw [dist_eq_norm]
+      nlinarith [norm_nonneg (u a - u b)]
+    linarith
+  exact Set.countable_coe_iff.1
+    (hdisj.countable_of_isOpen_disjoint (fun _ ↦ Metric.isOpen_ball)
+      (fun lam ↦ ⟨u lam, Metric.mem_ball_self (by positivity)⟩))
 
 omit [CompleteSpace E] in
 /-- **The spectral expansion of an operator diagonal in a Hilbert basis.**  Applying `T` term by

@@ -85,6 +85,12 @@ bounds.
   bounded by `C` multiplies its norm by at most `C`.
 * `MeasureTheory.MemLp.eLpNorm_rpow_toReal_eq_enorm_integral`: for `0 < q < ∞`, the `q`-th power of
   the `L^q` norm of `f` is the norm of the integral of `‖f‖ ^ q`.
+* `LinearIsometry.norm_compLp`: postcomposing an `Lᵖ` class with a semilinear isometry preserves
+  its `Lᵖ` norm.
+* `ContinuousLinearMap.norm_compLp_apply_one`: evaluating an `Lᵖ` class of maps `𝕜 →L[𝕜] H` at
+  `1 : 𝕜` preserves its `Lᵖ` norm.
+* `ContinuousLinearMap.norm_compLp_toSpanSingleton`: postcomposing a scalar `Lᵖ` class `f` with
+  `toSpanSingleton 𝕜 v` gives `Lᵖ` norm `‖f‖ * ‖v‖`.
 -/
 
 public section
@@ -508,3 +514,57 @@ theorem MemLp.eLpNorm_rpow_toReal_eq_enorm_integral {V : Type*} [NormedAddCommGr
 end IntegralRpow
 
 end MeasureTheory
+
+section CompLp
+
+open MeasureTheory
+open scoped ENNReal
+
+variable {α 𝕜 𝕜' E F : Type*} [MeasurableSpace α] {μ : Measure α} {p : ℝ≥0∞}
+  [NontriviallyNormedField 𝕜] [NontriviallyNormedField 𝕜'] {σ : 𝕜 →+* 𝕜'} [RingHomIsometric σ]
+  [NormedAddCommGroup E] [NormedSpace 𝕜 E] [NormedAddCommGroup F] [NormedSpace 𝕜' F]
+
+/-- Postcomposing an `Lᵖ` class with a semilinear isometry preserves its `Lᵖ` norm. -/
+@[simp]
+theorem LinearIsometry.norm_compLp (L : E →ₛₗᵢ[σ] F) (f : Lp E p μ) :
+    ‖L.toContinuousLinearMap.compLp f‖ = ‖f‖ := by
+  rw [Lp.norm_def, Lp.norm_def]
+  congr 1
+  refine eLpNorm_congr_norm_ae (Lp.aestronglyMeasurable _) (Lp.aestronglyMeasurable _) ?_
+  filter_upwards [L.toContinuousLinearMap.coeFn_compLp f] with x hx
+  rw [hx]
+  exact L.norm_map (f x)
+
+/-- Evaluating an `Lᵖ` class of continuous linear maps `𝕜 →L[𝕜] E` at `1 : 𝕜` preserves its
+`Lᵖ` norm, since evaluation at `1` is the inverse of `ContinuousLinearMap.toSpanSingletonLIE`. -/
+@[simp]
+theorem ContinuousLinearMap.norm_compLp_apply_one (w : Lp (𝕜 →L[𝕜] E) p μ) :
+    ‖(ContinuousLinearMap.apply 𝕜 E (1 : 𝕜)).compLp w‖ = ‖w‖ := by
+  have heq : ContinuousLinearMap.apply 𝕜 E (1 : 𝕜) =
+      (ContinuousLinearMap.toSpanSingletonLIE 𝕜 E).symm.toLinearIsometry.toContinuousLinearMap := by
+    ext L
+    simp
+  rw [heq]
+  exact (ContinuousLinearMap.toSpanSingletonLIE 𝕜 E).symm.toLinearIsometry.norm_compLp w
+
+/-- Postcomposing a scalar `Lᵖ` class `f` with `toSpanSingleton 𝕜 v` (`x ↦ f x • v`) gives `Lᵖ`
+norm `‖f‖ * ‖v‖`. -/
+@[simp]
+theorem ContinuousLinearMap.norm_compLp_toSpanSingleton (v : E) (f : Lp 𝕜 p μ) :
+    ‖(ContinuousLinearMap.toSpanSingleton 𝕜 v).compLp f‖ = ‖f‖ * ‖v‖ := by
+  have he : eLpNorm ((ContinuousLinearMap.toSpanSingleton 𝕜 v).compLp f) p μ =
+      ‖v‖ₑ * eLpNorm f p μ := by
+    calc eLpNorm ((ContinuousLinearMap.toSpanSingleton 𝕜 v).compLp f) p μ
+        = eLpNorm (‖v‖ • fun x ↦ ‖f x‖) p μ := by
+          refine eLpNorm_congr_norm_ae (Lp.aestronglyMeasurable _)
+            ((Lp.aestronglyMeasurable f).norm.const_smul ‖v‖) ?_
+          filter_upwards [(ContinuousLinearMap.toSpanSingleton 𝕜 v).coeFn_compLp f] with x hx
+          rw [hx, ContinuousLinearMap.toSpanSingleton_apply, Pi.smul_apply, smul_eq_mul,
+            norm_smul, Real.norm_of_nonneg (mul_nonneg (norm_nonneg v) (norm_nonneg (f x))),
+            mul_comm]
+      _ = ‖‖v‖‖ₑ * eLpNorm (fun x ↦ ‖f x‖) p μ := eLpNorm_const_smul ‖v‖ (fun x ↦ ‖f x‖) p μ
+      _ = ‖v‖ₑ * eLpNorm f p μ := by
+          rw [eNorm_norm, eLpNorm_norm f (Lp.aestronglyMeasurable f)]
+  rw [Lp.norm_def, Lp.norm_def, he, ENNReal.toReal_mul, toReal_eNorm, mul_comm]
+
+end CompLp

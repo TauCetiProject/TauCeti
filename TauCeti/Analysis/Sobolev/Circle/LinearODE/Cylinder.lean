@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Analysis.ODE.EvolutionOperator.Invertible
 public import TauCeti.Analysis.Sobolev.Circle.LinearODE.Eigenbasis
+import TauCeti.Analysis.Normed.Operator.LinearIsometryEquiv.SMul
 
 /-!
 # Invertibility of the stationary Floer cylinder operator
@@ -27,13 +28,10 @@ operator
 
 realized by `WeakDerivStep.stationaryEvolutionOperator ι (I • loopOperator T S)`:
 
-* **Algebraic lemmas for `A = I • L_S`**: `CircleSobolev.isInvertible_I_smul_loopOperator_iff`,
-  `CircleSobolev.norm_inverse_I_smul_loopOperator`, and
-  `CircleSobolev.I_smul_loopOperator_sub_smul_const_I_id` (identifying the shifted loop
-  `S - δ • J₀` with the exponentially weighted operator `A - δ • ι`).
 * **Pythagorean energy identity**:
-  `CircleSobolev.norm_weakFDeriv_sq_add_norm_compLpL_sq_eq_I_smul_loopOperator` proves
-  `‖∂s u‖² + ‖A u‖² = ‖(∂s + A) u‖²` at every nondegenerate infinitesimally symplectic loop.
+  `CircleSobolev.norm_weakFDeriv_sq_add_norm_compLp_sq_eq_I_smul_loopOperator` proves
+  `‖∂s u‖² + ‖A u‖² = ‖(∂s + A) u‖²` for every continuous infinitesimally symplectic loop `S`
+  (without assuming nondegeneracy).
 * **Invertibility and sharp inverse bound**:
   `CircleSobolev.isInvertible_stationaryEvolutionOperator_I_smul_loopOperator`,
   `CircleSobolev.isInvertible_stationaryEvolutionOperator_I_smul_loopOperator_of_forall_eq_zero`,
@@ -46,7 +44,8 @@ realized by `WeakDerivStep.stationaryEvolutionOperator ι (I • loopOperator T 
   `CircleSobolev.exists_pos_isInvertible_stationaryEvolutionOperator_I_smul_loopOperator_sub_smul`
   gives a common positive radius `ε` and uniform inverse norm bound `C` for
   `∂s + J₀ (∂t - (S p - δ • J p))` over `p ∈ K` and `|δ| ≤ ε`, covering both loop perturbations
-  and exponentially weighted cylinder operators (`J p = const J₀`).
+  and exponentially weighted cylinder operators (`J p = const J₀`, via
+  `I_smul_loopOperator_sub_smul_const_I_id`).
 
 ## References
 
@@ -65,84 +64,62 @@ open Complex MeasureTheory TopologicalSpace TauCeti.WeakDerivStep
 
 namespace TauCeti.CircleSobolev
 
-section NormedSpace
-
-variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℂ E] [FiniteDimensional ℂ E]
-  (T : ℝ) [Fact (0 < T)]
-
-/-- Multiplication by `I` on `CircleSobolev 0 E` as a real linear isometry equivalence. -/
-private def smulILinearIsometryEquiv : CircleSobolev 0 E ≃ₗᵢ[ℝ] CircleSobolev 0 E where
-  toFun x := I • x
-  invFun x := (-I) • x
-  map_add' x y := smul_add I x y
-  map_smul' c x := by rw [RingHom.id_apply, smul_comm]
-  left_inv x := by dsimp only; rw [smul_smul]; simp
-  right_inv x := by dsimp only; rw [smul_smul]; simp
-  norm_map' x := by change ‖I • x‖ = ‖x‖; rw [norm_smul, Complex.norm_I, one_mul]
-
-private theorem I_smul_loopOperator_eq_comp (S : C(AddCircle T, E →L[ℝ] E)) :
-    I • loopOperator T S =
-      (smulILinearIsometryEquiv (E := E)).toContinuousLinearEquiv.toContinuousLinearMap.comp
-        (loopOperator T S) := by
-  ext a
-  rfl
-
-/-- Multiplication by `J₀ = I` is a real linear isometry of `H⁰(E)`, so `I • loopOperator T S`
-is invertible if and only if `loopOperator T S` is invertible. -/
-theorem isInvertible_I_smul_loopOperator_iff (S : C(AddCircle T, E →L[ℝ] E)) :
-    (I • loopOperator T S).IsInvertible ↔ (loopOperator T S).IsInvertible := by
-  rw [I_smul_loopOperator_eq_comp, ContinuousLinearMap.isInvertible_equiv_comp]
-
-/-- `(I • loopOperator T S).inverse` and `(loopOperator T S).inverse` have the same operator
-norm. -/
-theorem norm_inverse_I_smul_loopOperator (S : C(AddCircle T, E →L[ℝ] E)) :
-    ‖(I • loopOperator T S).inverse‖ = ‖(loopOperator T S).inverse‖ := by
-  rw [I_smul_loopOperator_eq_comp, ContinuousLinearMap.inverse_equiv_comp]
-  exact ContinuousLinearMap.opNorm_comp_linearIsometryEquiv
-    (loopOperator T S).inverse (smulILinearIsometryEquiv (E := E)).symm
-
-/-- Shifting the coefficient loop by `δ • J₀` shifts the asymptotic operator `A = I • L_S` by
-`-δ • ι`, matching exponentially weighted cylinder operators `∂s + A - δ ι`. -/
-theorem I_smul_loopOperator_sub_smul_const_I_id (S : C(AddCircle T, E →L[ℝ] E)) (δ : ℝ) :
-    I • loopOperator T (S - δ • ContinuousMap.const _ (I • ContinuousLinearMap.id ℝ E)) =
-      I • loopOperator T S - δ • (inclusion (E := E) zero_le_one).restrictScalars ℝ := by
-  have := FiniteDimensional.completeSpace ℂ E
-  ext a : 1
-  rw [smul_apply, loopOperator_sub, add_apply, mulLoop_smul, smul_apply, mulLoop_const_smul_id,
-    smul_add, smul_comm I δ, smul_smul, I_mul_I, neg_one_smul, smul_neg, sub_apply, smul_apply,
-    smul_apply, ContinuousLinearMap.coe_restrictScalars', sub_eq_add_neg]
-
-end NormedSpace
-
 section InnerProductSpace
 
 variable {F : Type*} [NormedAddCommGroup F] [InnerProductSpace ℂ F] [FiniteDimensional ℂ F]
   (T : ℝ) [Fact (0 < T)]
 
 /-- **Pythagorean energy identity for the stationary Floer cylinder operator.**
-At a nondegenerate infinitesimally symplectic loop `S`, every
+At any continuous infinitesimally symplectic loop `S` (not necessarily nondegenerate), every
 `u ∈ L²(ℝ; H¹(F)) ∩ W^{1,2}(ℝ; H⁰(F))` satisfies `‖∂s u‖² + ‖A u‖² = ‖(∂s + A) u‖²`
 where `A = I • loopOperator T S`. -/
-theorem norm_weakFDeriv_sq_add_norm_compLpL_sq_eq_I_smul_loopOperator
+theorem norm_weakFDeriv_sq_add_norm_compLp_sq_eq_I_smul_loopOperator
     (S : C(AddCircle T, F →L[ℝ] F))
     (hS : ∀ t v w, (inner ℂ (S t v) w).im + (inner ℂ v (S t w)).im = 0)
-    (hL : (loopOperator T S).IsInvertible)
     (u : WeakDerivStep volume ⊤ 2
       (((inclusion (E := F) zero_le_one).restrictScalars ℝ).compLpL 2
         (volume.restrict ((⊤ : Opens ℝ) : Set ℝ)))) :
     ‖weakFDeriv (((inclusion (E := F) zero_le_one).restrictScalars ℝ).compLpL 2
         (volume.restrict ((⊤ : Opens ℝ) : Set ℝ))) u‖ ^ 2 +
-      ‖(I • loopOperator T S).compLpL 2 (volume.restrict ((⊤ : Opens ℝ) : Set ℝ))
+      ‖(I • loopOperator T S).compLp
         (prev (((inclusion (E := F) zero_le_one).restrictScalars ℝ).compLpL 2
           (volume.restrict ((⊤ : Opens ℝ) : Set ℝ))) u)‖ ^ 2 =
       ‖stationaryEvolutionOperator (mu := volume) (Omega := ⊤) (p := 2)
         ((inclusion (E := F) zero_le_one).restrictScalars ℝ) (I • loopOperator T S) u‖ ^ 2 := by
   have := FiniteDimensional.completeSpace ℂ F
-  exact norm_weakFDeriv_sq_add_norm_compLpL_sq_eq_of_isCompactOperator
-    (isCompactOperator_inclusion (E := F) zero_lt_one)
-    (inclusion_injective (E := F) zero_le_one)
-    (fun a b ↦ real_inner_I_smul_loopOperator_comm T S hS a b)
-    ((isInvertible_I_smul_loopOperator_iff T S).mpr hL) u
+  obtain ⟨δ, hδ⟩ := exists_isInvertible_loopOperator_sub_smul_const_I_id T S hS
+  set S' : C(AddCircle T, F →L[ℝ] F) :=
+    S - δ • ContinuousMap.const _ (I • ContinuousLinearMap.id ℝ F) with hS'_def
+  have hS' : ∀ t v w, (inner ℂ (S' t v) w).im + (inner ℂ v (S' t w)).im = 0 := by
+    intro t v w
+    have hI : (inner ℂ (I • v) w).im + (inner ℂ v (I • w)).im = 0 := by
+      rw [inner_smul_left, inner_smul_right, Complex.conj_I]
+      simp [Complex.mul_im]
+    have hsub : S' t v = S t v - (δ : ℂ) • (I • v) := by
+      simp [hS'_def, Complex.coe_smul]
+    have hsub' : S' t w = S t w - (δ : ℂ) • (I • w) := by
+      simp [hS'_def, Complex.coe_smul]
+    rw [hsub, hsub', inner_sub_left, inner_sub_right, inner_smul_left, inner_smul_right]
+    simp only [Complex.conj_ofReal, Complex.sub_im, Complex.mul_im, Complex.ofReal_re,
+      Complex.ofReal_im, zero_mul, add_zero]
+    calc (inner ℂ (S t v) w).im - δ * (inner ℂ (I • v) w).im +
+          ((inner ℂ v (S t w)).im - δ * (inner ℂ v (I • w)).im)
+        = ((inner ℂ (S t v) w).im + (inner ℂ v (S t w)).im) -
+          δ * ((inner ℂ (I • v) w).im + (inner ℂ v (I • w)).im) := by ring
+      _ = 0 := by rw [hS t v w, hI, mul_zero, sub_zero]
+  obtain ⟨s, b, a, lam, _, _, hprop⟩ :=
+    exists_hilbertBasis_I_smul_loopOperator_eq_smul T S' hS' hδ
+  have haι : ∀ i : s, ((inclusion (E := F) zero_le_one).restrictScalars ℝ) (a i) = b i :=
+    fun i ↦ (hprop i).1
+  have haA : ∀ i : s, (I • loopOperator T S) (a i) = (lam i + δ) • b i := by
+    intro i
+    have hshift := congrArg (fun L ↦ L (a i)) (I_smul_loopOperator_sub_smul_const_I_id T S δ)
+    have hAi : (I • loopOperator T S) (a i) - δ • b i = lam i • b i := by
+      simpa only [← hS'_def, sub_apply, smul_apply, ContinuousLinearMap.coe_restrictScalars',
+        (hprop i).1] using hshift.symm.trans (hprop i).2.2
+    rw [add_smul, ← hAi, sub_add_cancel]
+  exact norm_weakFDeriv_sq_add_norm_compLp_sq_eq_of_hilbertBasis b a (fun i ↦ lam i + δ)
+    (fun x y ↦ real_inner_I_smul_loopOperator_comm T S hS x y) haι haA u
 
 /-- **Invertibility of the stationary Floer cylinder operator `∂s + J₀ (∂t - S_t)`.**
 If `S` is a continuous loop of infinitesimally symplectic real-linear maps on `F` and
@@ -160,7 +137,7 @@ theorem isInvertible_stationaryEvolutionOperator_I_smul_loopOperator
     (isCompactOperator_inclusion (E := F) zero_lt_one)
     (inclusion_injective (E := F) zero_le_one)
     (fun a b ↦ real_inner_I_smul_loopOperator_comm T S hS a b)
-    ((isInvertible_I_smul_loopOperator_iff T S).mpr hL)
+    ((ContinuousLinearMap.isInvertible_smul_iff I_ne_zero).mpr hL)
 
 /-- **Invertibility of `∂s + J₀ (∂t - S_t)` at a nondegenerate periodic orbit.**
 If `S` is infinitesimally symplectic and `ζ' = S ζ` has no nonzero `T`-periodic solution, then
@@ -190,7 +167,7 @@ theorem isInvertible_stationaryEvolutionOperator_neg_I_smul_loopOperator
     (isCompactOperator_inclusion (E := F) zero_lt_one)
     (inclusion_injective (E := F) zero_le_one)
     (fun a b ↦ real_inner_I_smul_loopOperator_comm T S hS a b)
-    ((isInvertible_I_smul_loopOperator_iff T S).mpr hL)
+    ((ContinuousLinearMap.isInvertible_smul_iff I_ne_zero).mpr hL)
 
 /-- **Sharp inverse norm bound for the stationary Floer cylinder operator.**
 At a nondegenerate infinitesimally symplectic loop `S`, the inverse of `∂s + I • loopOperator T S`
@@ -203,12 +180,12 @@ theorem norm_inverse_stationaryEvolutionOperator_I_smul_loopOperator_le
       ((inclusion (E := F) zero_le_one).restrictScalars ℝ) (I • loopOperator T S)).inverse‖ ≤
       max ‖(loopOperator T S).inverse‖ 1 := by
   have := FiniteDimensional.completeSpace ℂ F
-  simpa only [norm_inverse_I_smul_loopOperator] using
+  simpa only [ContinuousLinearMap.norm_inverse_smul, norm_I, inv_one, one_mul] using
     norm_inverse_stationaryEvolutionOperator_le_of_isCompactOperator
       (isCompactOperator_inclusion (E := F) zero_lt_one)
       (inclusion_injective (E := F) zero_le_one)
       (fun a b ↦ real_inner_I_smul_loopOperator_comm T S hS a b)
-      ((isInvertible_I_smul_loopOperator_iff T S).mpr hL)
+      ((ContinuousLinearMap.isInvertible_smul_iff I_ne_zero).mpr hL)
 
 /-- **Uniform cylinder invertibility on a compact family with small loop perturbations.**
 On a compact parameter set `K` where `S p` and `J p` vary continuously and each `S p` is
@@ -243,11 +220,10 @@ theorem exists_pos_isInvertible_stationaryEvolutionOperator_I_smul_loopOperator_
       hJcont
   obtain ⟨ε, hε, C, hC, hbound⟩ :=
     exists_pos_isInvertible_stationaryEvolutionOperator_sub_smul_norm_inverse_le
-      ((inclusion (E := F) zero_le_one).restrictScalars ℝ)
-      (isCompactOperator_inclusion (E := F) zero_lt_one)
-      (inclusion_injective (E := F) zero_le_one) hK A B hAcont hBcont
-      (fun p hp a b ↦ real_inner_I_smul_loopOperator_comm T (S p) (hS p hp) a b)
-      (fun p hp ↦ (isInvertible_I_smul_loopOperator_iff T (S p)).mpr (hinv p hp))
+      (mu := volume) (Omega := ⊤) (p := 2)
+      ((inclusion (E := F) zero_le_one).restrictScalars ℝ) hK A B hAcont hBcont
+      (fun p hp ↦ isInvertible_stationaryEvolutionOperator_I_smul_loopOperator T (S p) (hS p hp)
+        (hinv p hp))
   refine ⟨ε, hε, C, hC, fun p hp δ hδ ↦ ?_⟩
   simpa only [hAB p δ] using hbound p hp δ hδ
 

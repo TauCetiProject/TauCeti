@@ -53,8 +53,9 @@ comparing weak and classical derivatives
 ## Main statements
 
 * `TauCeti.CircleSobolev.mulLoop_sub`, `TauCeti.CircleSobolev.mulLoop_smul`,
-  `TauCeti.CircleSobolev.loopOperator_sub`: the zero-order term and `L_S` depend linearly on the
-  coefficient loop `S`.
+  `TauCeti.CircleSobolev.loopOperator_sub`,
+  `TauCeti.CircleSobolev.I_smul_loopOperator_sub_smul_const_I_id`: the zero-order term, `L_S`, and
+  spectral shifts of `I • L_S` depend linearly on the coefficient loop `S`.
 * `TauCeti.CircleSobolev.mulLoop_const_smul_id`: multiplication by a constant complex scalar loop
   is multiplication by that scalar.
 * `TauCeti.CircleSobolev.isCompactOperator_mulLoop`: the zero-order term is compact.
@@ -173,6 +174,16 @@ theorem loopOperator_sub (S₁ S₂ : C(AddCircle T, E →L[ℝ] E)) :
     loopOperator T (S₁ - S₂) = loopOperator T S₁ + mulLoop T (by norm_num) S₂ := by
   rw [loopOperator, loopOperator, mulLoop_sub]
   abel
+
+/-- Shifting the coefficient loop by `δ • J₀` shifts the asymptotic operator `A = I • L_S` by
+`-δ • ι`, matching exponentially weighted cylinder operators `∂s + A - δ ι`. -/
+theorem I_smul_loopOperator_sub_smul_const_I_id (S : C(AddCircle T, E →L[ℝ] E)) (δ : ℝ) :
+    I • loopOperator T (S - δ • ContinuousMap.const _ (I • ContinuousLinearMap.id ℝ E)) =
+      I • loopOperator T S - δ • (inclusion (E := E) zero_le_one).restrictScalars ℝ := by
+  ext a : 1
+  rw [smul_apply, loopOperator_sub, add_apply, mulLoop_smul, smul_apply, mulLoop_const_smul_id,
+    smul_add, smul_comm I δ, smul_smul, I_mul_I, neg_one_smul, smul_neg, sub_apply, smul_apply,
+    smul_apply, ContinuousLinearMap.coe_restrictScalars', sub_eq_add_neg]
 
 /-- The periodic first-order operator depends continuously in operator norm on its
 coefficient loop, with the uniform norm on coefficients. -/

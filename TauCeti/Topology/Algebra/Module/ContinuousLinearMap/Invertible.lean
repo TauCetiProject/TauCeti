@@ -21,11 +21,13 @@ without completeness or continuity of the original family, and are useful when d
 inverse families. The difference of two inverses satisfies the resolvent identity, which
 controls variation of inverse operators by variation of the original operators.
 
-Over a semifield, multiplying a map by a nonzero scalar `c` preserves invertibility, and the inverse
-of `c • f` is `c⁻¹ • f.inverse`; this is how the inverse of a positively homogeneous family of
-maps is seen to be homogeneous of the opposite degree. Scaling the identity by a nonzero scalar `c`
-from a group with zero acting on the space, such as complex multiplication on `ℂ` viewed as a
-real-linear map, is invertible (`ContinuousLinearMap.isUnit_smul_id_of_ne_zero`).
+Multiplying a continuous linear map by a nonzero commuting scalar `c` from a group with zero
+preserves invertibility (`ContinuousLinearMap.isInvertible_smul_iff`), and the inverse of `c • f`
+applies `f.inverse` after scaling by `c⁻¹` (`ContinuousLinearMap.inverse_smul_apply`); over a
+semifield this becomes `(c • f).inverse = c⁻¹ • f.inverse`, showing that the inverse of a
+positively homogeneous family of maps is homogeneous of the opposite degree. Scaling the identity
+by a nonzero scalar `c` from a group with zero acting on the space, such as complex multiplication
+on `ℂ` viewed as a real-linear map, is invertible (`ContinuousLinearMap.isUnit_smul_id_of_ne_zero`).
 
 An endomorphism is invertible exactly when it is a unit of the endomorphism ring
 (`ContinuousLinearMap.isInvertible_iff_isUnit`).
@@ -125,32 +127,40 @@ theorem IsInvertible.eventually_of_tendsto_inverse {A : ι → E →L[𝕜] F} {
 
 section Smul
 
-variable {𝕜 M M₂ : Type*} [Semifield 𝕜]
-  [TopologicalSpace M] [AddCommMonoid M] [Module 𝕜 M] [ContinuousConstSMul 𝕜 M]
-  [TopologicalSpace M₂] [AddCommMonoid M₂] [Module 𝕜 M₂] [ContinuousConstSMul 𝕜 M₂]
+variable {R S M M₂ : Type*} [Semiring R] [GroupWithZero S]
+  [TopologicalSpace M] [AddCommMonoid M] [Module R M]
+  [TopologicalSpace M₂] [AddCommMonoid M₂] [Module R M₂]
+  [DistribMulAction S M₂] [SMulCommClass R S M₂] [ContinuousConstSMul S M₂]
 
-omit [ContinuousConstSMul 𝕜 M] in
-/-- Multiplying a continuous linear map by a nonzero scalar does not change its
+/-- Multiplying a continuous linear map by a nonzero commuting scalar does not change its
 invertibility. -/
 @[simp]
-theorem isInvertible_smul_iff {c : 𝕜} (hc : c ≠ 0) {f : M →L[𝕜] M₂} :
+theorem isInvertible_smul_iff {c : S} (hc : c ≠ 0) {f : M →L[R] M₂} :
     (c • f).IsInvertible ↔ f.IsInvertible := by
+  have := SMulCommClass.symm R S M₂
   rw [smul_eq_smulLeft_comp hc, isInvertible_equiv_comp]
+
+/-- For a nonzero commuting scalar `c`, the inverse of `c • f` applies `f.inverse` after scaling
+by `c⁻¹`. This holds whether or not `f` is invertible. -/
+theorem inverse_smul_apply {c : S} (hc : c ≠ 0) (f : M →L[R] M₂) (y : M₂) :
+    (c • f).inverse y = f.inverse (c⁻¹ • y) := by
+  have := SMulCommClass.symm R S M₂
+  rw [smul_eq_smulLeft_comp hc, inverse_equiv_comp, comp_apply, ContinuousLinearEquiv.coe_coe,
+    (ContinuousLinearEquiv.symm_apply_eq _ (y := c⁻¹ • y)).2 (by simp [smul_smul, hc])]
 
 /-- The inverse of `c • f` is `c⁻¹ • f.inverse`. This holds for every scalar: both sides vanish
 when `c = 0` or when `f` is not invertible. -/
-theorem inverse_smul (c : 𝕜) (f : M →L[𝕜] M₂) : (c • f).inverse = c⁻¹ • f.inverse := by
+theorem inverse_smul {𝕜 : Type*} [Semifield 𝕜] [Module 𝕜 M] [ContinuousConstSMul 𝕜 M]
+    [Module 𝕜 M₂] [ContinuousConstSMul 𝕜 M₂] (c : 𝕜) (f : M →L[𝕜] M₂) :
+    (c • f).inverse = c⁻¹ • f.inverse := by
   rcases eq_or_ne c 0 with rfl | hc
   · -- `zero_smul` is unavailable here: `M →L[𝕜] M₂` is a `𝕜`-module only under
     -- `ContinuousAdd M₂`, which these lemmas do not assume.
     have h0 : (0 : 𝕜) • f = 0 := by ext; simp
     ext y
     simp [h0]
-  rw [smul_eq_smulLeft_comp hc, inverse_equiv_comp]
   ext y
-  rw [comp_apply, ContinuousLinearEquiv.coe_coe,
-    (ContinuousLinearEquiv.symm_apply_eq _ (y := c⁻¹ • y)).2 (by simp [smul_smul, hc]),
-    map_smul, smul_apply]
+  rw [inverse_smul_apply hc, map_smul, smul_apply]
 
 end Smul
 
