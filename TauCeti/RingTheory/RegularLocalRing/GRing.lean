@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.RingTheory.RegularLocalRing.RegularAlgebraMap
+public import TauCeti.RingTheory.RegularLocalRing.RegularAlgebraMap.Basic
 import TauCeti.Algebra.DualNumber.Basic
 import Mathlib.RingTheory.AdicCompletion.Completeness
 import Mathlib.RingTheory.AdicCompletion.Noetherian
