@@ -10,8 +10,6 @@ public import TauCeti.AlgebraicTopology.SimplicialSet.Pointed.TrivialFibration
 public import TauCeti.AlgebraicTopology.Spectra.Cotensor
 public import TauCeti.AlgebraicTopology.Spectra.LevelFactorization
 
-import Mathlib.CategoryTheory.Monoidal.Closed.Braided
-
 /-!
 # Simplicial pullback-hom and pushout-product lifting for symmetric spectra
 

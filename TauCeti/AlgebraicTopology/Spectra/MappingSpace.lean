@@ -305,9 +305,6 @@ noncomputable abbrev mappingSpaceFunctor :
 instance (X : SymmetricSpectrum) : (levelSmash X).IsLeftAdjoint :=
   (levelSmashMappingSpaceAdjunction X).isLeftAdjoint
 
-instance (X : SymmetricSpectrum) : (mappingSpace X).IsRightAdjoint :=
-  (levelSmashMappingSpaceAdjunction X).isRightAdjoint
-
 instance (X : SymmetricSpectrum) : (levelSmashFunctor.obj X).IsLeftAdjoint :=
   (levelSmashMappingSpaceAdjunction X).isLeftAdjoint
 
@@ -353,6 +350,23 @@ lemma mappingSpaceFunctor_map_app {X X' : SymmetricSpectrum} (f : X ⟶ X')
     (mappingSpaceFunctor.map f.op).app Y = (evaluation 0).map ((MonoidalClosed.pre f).app Y) :=
   congrArg (fun g ↦ g.natTrans.app (FiniteBijection.mk 0))
     (Mod.pre_app_hom_eq_ihomPre_app f Y).symm
+
+/-- For any symmetric spectrum `Y`, the contravariant mapping-space functor `X ↦ Map(X, Y)` sends
+colimits of symmetric spectra to limits of pointed simplicial sets, as level zero of the internal
+function spectrum `Hom_S(-, Y)`. -/
+instance (Y : SymmetricSpectrum) (J : Type*) [Category* J] :
+    Limits.PreservesLimitsOfShape J (mappingSpaceFunctor.flip.obj Y) :=
+  have : (evaluation 0).IsRightAdjoint := (freeEvaluationAdjunction 0).isRightAdjoint
+  -- `MonoidalClosed.internalHom` on `SymmetricSpectrum` is `Mod.internalHom`, whose underlying
+  -- symmetric sequence is `Mod.ihom`, so level zero agrees definitionally with
+  -- `mappingSpaceFunctor`.
+  let e : MonoidalClosed.internalHom.flip.obj Y ⋙ evaluation 0 ≅
+      mappingSpaceFunctor.flip.obj Y :=
+    NatIso.ofComponents (fun _ ↦ Iso.refl _) fun {_ _} f ↦
+      (Category.comp_id ((evaluation 0).map ((MonoidalClosed.pre f.unop).app Y))).trans
+        ((mappingSpaceFunctor_map_app f.unop Y).symm.trans
+          (Category.id_comp ((mappingSpaceFunctor.map f).app Y)).symm)
+  Limits.preservesLimitsOfShape_of_natIso e
 
 /-- Postcomposing the vertex classified by `X' ⟶ Y` with `Map(f, Y)` classifies `X ⟶ X' ⟶ Y`. -/
 @[reassoc]

@@ -461,11 +461,4 @@ instance (E : SymmetricSpectrum) (J : Type*) [Category* J] :
     (levelSmashMappingSpaceAdjunction X).isLeftAdjoint
   levelSmashCotensorAdjunction₂.preservesLimitsOfShape_flip_obj J E
 
-/-- For any symmetric spectrum `Y`, the contravariant mapping-space functor `X ↦ Map(X, Y)` sends
-colimits of symmetric spectra to limits of pointed simplicial sets; this uses that `- ∧ K` is a
-left adjoint (`levelSmashCotensorAdjunction`). -/
-instance (Y : SymmetricSpectrum) (J : Type*) [Category* J] :
-    Limits.PreservesLimitsOfShape J (mappingSpaceFunctor.flip.obj Y) :=
-  levelSmashMappingSpaceAdjunction₂.preservesLimitsOfShape_flip_obj J Y
-
 end TauCeti.SymmetricSpectrum
