@@ -191,6 +191,15 @@ noncomputable def coordBoxCurrent (I : Fin k ↪ Fin n) (x : EuclideanSpace ℝ 
   boxCurrent 0 r ⊤ ∘L pullbackCLM (coordPlaneMap I x) (coordPlaneMap I x).contDiff.contDiffOn
     (fun _ hK _ ↦ isCompact_inter_preimage_coordPlaneMap I x hK)
 
+/-- `[[x; I, r]]` is the pushforward of the box current `[[0, r]]` of `ℝᵏ` along the coordinate
+plane map `TauCeti.coordPlaneMap I x`. -/
+theorem coordBoxCurrent_def (I : Fin k ↪ Fin n) (x : EuclideanSpace ℝ (Fin n))
+    (r : Fin k → ℝ) (Ω : Opens (EuclideanSpace ℝ (Fin n))) :
+    coordBoxCurrent I x r Ω =
+      boxCurrent 0 r ⊤ ∘L pullbackCLM (coordPlaneMap I x) (coordPlaneMap I x).contDiff.contDiffOn
+        (fun _ hK _ ↦ isCompact_inter_preimage_coordPlaneMap I x hK) :=
+  (rfl)
+
 /-- `[[x; I, r]]` integrates the coefficient of a test form on `e_{I 0}, …, e_{I (k-1)}` over the
 box. -/
 theorem coordBoxCurrent_apply (I : Fin k ↪ Fin n) (x : EuclideanSpace ℝ (Fin n))
