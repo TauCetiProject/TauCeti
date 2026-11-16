@@ -92,6 +92,8 @@ families of operators.
 * `TauCeti.Symbol.rpow_mul_norm_fourier_apply_le` and
   `TauCeti.Symbol.HasCompactSpatialSupport.exists_eLpNorm_smul_fourier_quantizeSchwartzValue_le`:
   the pointwise kernel bound, and the Sobolev estimate on Schwartz functions, on the Fourier side.
+* `TauCeti.lintegral_ofReal_mul_one_add_norm_sub_rpow`: the row and column integrals of the
+  convolution kernel `B (1 + ‖ξ - ζ‖) ^ (-r)`, `r > n`, for Schur's test.
 * `TauCeti.Symbol.quantizeSobolev`: the bounded operator `H^s → H^{s - m}`, with
   `TauCeti.Symbol.toDistr_quantizeSobolev_toBesselPotentialSpaceCLM_apply` and
   `TauCeti.Symbol.HasCompactSpatialSupport.quantizeSobolev_toBesselPotentialSpaceCLM` identifying
@@ -143,6 +145,24 @@ open scoped ENNReal NNReal SchwartzMap BesselPotentialSpace RealInnerProductSpac
   LineDeriv
 
 namespace TauCeti
+
+/-- **The row and column integrals of a convolution kernel.** For `r > n` and `B ≥ 0`, the kernel
+`B (1 + ‖ξ - ζ‖) ^ (-r)` on `ℝⁿ` has every row integral and every column integral equal to
+`B ∫ (1 + ‖η‖) ^ (-r) dη`; these are the bounds that Schur's test asks of it. -/
+theorem lintegral_ofReal_mul_one_add_norm_sub_rpow {n : ℕ} {B r : ℝ} (hB : 0 ≤ B)
+    (hr : (n : ℝ) < r) :
+    (∀ ξ : CoordinateSpace n, ∫⁻ ζ, ENNReal.ofReal (B * (1 + ‖ξ - ζ‖) ^ (-r)) =
+        ENNReal.ofReal (B * ∫ η : CoordinateSpace n, (1 + ‖η‖) ^ (-r))) ∧
+      ∀ ζ : CoordinateSpace n, ∫⁻ ξ, ENNReal.ofReal (B * (1 + ‖ξ - ζ‖) ^ (-r)) =
+        ENNReal.ofReal (B * ∫ η : CoordinateSpace n, (1 + ‖η‖) ^ (-r)) := by
+  set k : CoordinateSpace n → ℝ := fun η ↦ B * (1 + ‖η‖) ^ (-r)
+  have hint : ∫⁻ η, ENNReal.ofReal (k η) =
+      ENNReal.ofReal (B * ∫ η : CoordinateSpace n, (1 + ‖η‖) ^ (-r)) := by
+    rw [← integral_const_mul, ← ofReal_integral_eq_lintegral_ofReal
+      ((integrable_one_add_norm (by rwa [finrank_euclideanSpace, Fintype.card_fin])).const_mul B)
+      (.of_forall fun η ↦ mul_nonneg hB (by positivity))]
+  exact ⟨fun ξ ↦ (lintegral_sub_left_eq_self (fun η ↦ ENNReal.ofReal (k η)) ξ).trans hint,
+    fun ζ ↦ (lintegral_sub_right_eq_self (fun η ↦ ENNReal.ofReal (k η)) ζ).trans hint⟩
 
 namespace Symbol
 
@@ -587,8 +607,7 @@ theorem rpow_mul_norm_fourier_apply_le {s C₀ : ℝ} {N : ℕ} (hC₀ : 0 ≤ C
     rw [← Real.rpow_natCast, ← Real.rpow_neg ht.le, ← Real.rpow_add ht]
     ring_nf
   have hw : (1 + ‖ζ‖ ^ 2) ^ ((s - m) / 2) * (1 + ‖ζ‖ ^ 2) ^ (m / 2) = (1 + ‖ζ‖ ^ 2) ^ (s / 2) := by
-    rw [← Real.rpow_add (by positivity)]
-    ring_nf
+    rw [← one_add_norm_sq_rpow_add, sub_add_cancel]
   calc (1 + ‖ξ‖ ^ 2) ^ ((s - m) / 2) * ‖A v‖
       ≤ (2 ^ (|s - m| / 2) * (1 + ‖ξ - ζ‖ ^ 2) ^ (|s - m| / 2) * (1 + ‖ζ‖ ^ 2) ^ ((s - m) / 2)) *
           ((C₀ * ((2 * π) ^ |m| * (1 + ‖ζ‖ ^ 2) ^ (m / 2)) * (t ^ N)⁻¹) * ‖v‖) := by
@@ -657,11 +676,6 @@ private theorem HasCompactSpatialSupport.eLpNorm_smul_fourier_quantizeSchwartzVa
         eLpNorm (fun ξ ↦ (((1 + ‖ξ‖ ^ 2) ^ (s / 2) : ℝ) : ℂ) • 𝓕 u ξ) 2 volume := by
   set N : ℕ := ⌈|s - m|⌉₊ + n + 1
   set k : CoordinateSpace n → ℝ := fun η ↦ (1 + ‖η‖) ^ (-((N : ℝ) - |s - m|))
-  have hk_int : Integrable k := integrable_one_add_norm (by
-    rw [finrank_euclideanSpace, Fintype.card_fin]
-    have := Nat.le_ceil |s - m|
-    push_cast [N]
-    linarith)
   set B := 2 ^ (|s - m| / 2) * C₀ * (2 * π) ^ |m|
   have hB : 0 ≤ B := by positivity
   set A := ENNReal.ofReal (B * ∫ η, k η)
@@ -672,9 +686,10 @@ private theorem HasCompactSpatialSupport.eLpNorm_smul_fourier_quantizeSchwartzVa
   -- The pointwise bound by the kernel `B k(ξ - ζ)` acting on `⟨ζ⟩ ^ s ‖𝓕 u ζ‖`.
   have hpt := ha.enorm_smul_fourier_quantizeSchwartzValue_le (s := s) hC₀ hdecay u
   -- Schur's test for the kernel `B k(ξ - ζ)`, whose row and column integrals are `A`.
-  have hint : ∫⁻ η, ENNReal.ofReal (B * k η) = A := by
-    rw [← ofReal_integral_eq_lintegral_ofReal (hk_int.const_mul B)
-      (.of_forall fun η ↦ mul_nonneg hB (Real.rpow_nonneg (by positivity) _)), integral_const_mul]
+  obtain ⟨hrow, hcol⟩ := lintegral_ofReal_mul_one_add_norm_sub_rpow hB (r := N - |s - m|) (by
+    have := Nat.le_ceil |s - m|
+    push_cast [N]
+    linarith)
   have hkcont : Continuous k :=
     (continuous_const.add continuous_norm).rpow_const fun x ↦
       Or.inl (add_pos_of_pos_of_nonneg one_pos (norm_nonneg x)).ne'
@@ -689,11 +704,8 @@ private theorem HasCompactSpatialSupport.eLpNorm_smul_fourier_quantizeSchwartzVa
       (fun ζ : CoordinateSpace n ↦ (((1 + ‖ζ‖ ^ 2) ^ (s / 2) : ℝ) : ℂ) • 𝓕 u ζ) :=
     ((hw s).smul (𝓕 u).continuous).aestronglyMeasurable
   have hschur := TauCeti.eLpNorm_lintegral_mul_le hkmeas hgmeas.eNorm
-    (p := 2) one_le_two (A := A) (B := A)
-    (.of_forall fun x ↦ (lintegral_sub_left_eq_self (fun η ↦ ENNReal.ofReal (B * k η)) x).trans
-      hint |>.le)
-    (.of_forall fun y ↦ (lintegral_sub_right_eq_self (fun η ↦ ENNReal.ofReal (B * k η)) y).trans
-      hint |>.le)
+    (p := 2) one_le_two (A := A) (B := A) (.of_forall fun ξ ↦ (hrow ξ).le)
+    (.of_forall fun ζ ↦ (hcol ζ).le)
   calc _ ≤ eLpNorm (fun ξ ↦ ∫⁻ ζ, ENNReal.ofReal (B * k (ξ - ζ)) *
           ‖(((1 + ‖ζ‖ ^ 2) ^ (s / 2) : ℝ) : ℂ) • 𝓕 u ζ‖ₑ) 2 volume :=
         eLpNorm_mono_eNorm ((hw (s - m)).smul

@@ -149,7 +149,7 @@ private theorem HasCompactSpatialSupport.exists_rpow_mul_norm_fourier_apply_le
   · gcongr
     exact le_mul_of_one_le_right hB₀ hD
   · -- Away from `ξ`, the weight `⟨ζ⟩ ^ (s - t)` is absorbed by the decay in `ξ - ζ`.
-    have hw := one_add_norm_sq_rpow_le_of_mul_norm_lt_norm_sub hc hξζ (s - t)
+    have hw := one_add_norm_sq_rpow_le_of_mul_norm_le_norm_sub hc hξζ.le (s - t)
     have hst :
         (1 + ‖ζ‖ ^ 2) ^ (s / 2) = (1 + ‖ζ‖ ^ 2) ^ ((s - t) / 2) * (1 + ‖ζ‖ ^ 2) ^ (t / 2) := by
       rw [← one_add_norm_sq_rpow_add, sub_add_cancel]
@@ -175,20 +175,6 @@ private theorem HasCompactSpatialSupport.exists_norm_fourierKernel_le
     (by positivity : 0 ≤ (1 + ‖ζ‖ ^ 2) ^ (-t / 2)))).trans_eq ?_
   linear_combination (B * (1 + ‖ξ - ζ‖) ^ (-r) * ‖v‖) * one_add_norm_sq_rpow_neg_mul_rpow ζ t
 
-/-- The kernel `B (1 + ‖ξ - ζ‖) ^ (-r)`, `r > n`, has bounded row and column integrals. -/
-private theorem exists_lintegral_ofReal_mul_one_add_norm_sub_rpow_le {B r : ℝ} (hB : 0 ≤ B)
-    (hr : (n : ℝ) < r) :
-    ∃ A : ℝ≥0, (∀ ξ : CoordinateSpace n, ∫⁻ ζ, ENNReal.ofReal (B * (1 + ‖ξ - ζ‖) ^ (-r)) ≤ A) ∧
-      ∀ ζ : CoordinateSpace n, ∫⁻ ξ, ENNReal.ofReal (B * (1 + ‖ξ - ζ‖) ^ (-r)) ≤ A := by
-  set k : CoordinateSpace n → ℝ := fun η ↦ B * (1 + ‖η‖) ^ (-r)
-  have hk : Integrable k := (integrable_one_add_norm (by
-    rwa [finrank_euclideanSpace, Fintype.card_fin])).const_mul B
-  have hint : ∫⁻ η, ENNReal.ofReal (k η) = ((∫ η, k η).toNNReal : ℝ≥0∞) :=
-    (ofReal_integral_eq_lintegral_ofReal hk (.of_forall fun η ↦ mul_nonneg hB (by positivity))).symm
-  exact ⟨(∫ η, k η).toNNReal,
-    fun ξ ↦ ((lintegral_sub_left_eq_self (fun η ↦ ENNReal.ofReal (k η)) ξ).trans hint).le,
-    fun ζ ↦ ((lintegral_sub_right_eq_self (fun η ↦ ENNReal.ofReal (k η)) ζ).trans hint).le⟩
-
 omit [CompleteSpace V] [CompleteSpace W] in
 /-- The row and column integrals of the weighted kernel are bounded. -/
 private theorem HasCompactSpatialSupport.exists_lintegral_enorm_fourierKernel_le
@@ -196,13 +182,13 @@ private theorem HasCompactSpatialSupport.exists_lintegral_enorm_fourierKernel_le
     ∃ A : ℝ≥0, (∀ ξ, ∫⁻ ζ, ‖a.fourierKernel t ξ ζ‖ₑ ≤ A) ∧
       ∀ ζ, ∫⁻ ξ, ‖a.fourierKernel t ξ ζ‖ₑ ≤ A := by
   obtain ⟨B, r, hB, hr, hK⟩ := ha.exists_norm_fourierKernel_le t
-  obtain ⟨A, hrow, hcol⟩ := exists_lintegral_ofReal_mul_one_add_norm_sub_rpow_le (n := n) hB hr
+  obtain ⟨hrow, hcol⟩ := lintegral_ofReal_mul_one_add_norm_sub_rpow (n := n) hB hr
   have hle (ξ ζ : CoordinateSpace n) :
       ‖a.fourierKernel t ξ ζ‖ₑ ≤ ENNReal.ofReal (B * (1 + ‖ξ - ζ‖) ^ (-r)) := by
     rw [← ofReal_norm]
     exact ENNReal.ofReal_le_ofReal (hK ξ ζ)
-  exact ⟨A, fun ξ ↦ (lintegral_mono (hle ξ)).trans (hrow ξ),
-    fun ζ ↦ (lintegral_mono (hle · ζ)).trans (hcol ζ)⟩
+  exact ⟨_, fun ξ ↦ (lintegral_mono (hle ξ)).trans (hrow ξ).le,
+    fun ζ ↦ (lintegral_mono (hle · ζ)).trans (hcol ζ).le⟩
 
 /-- The convolution formula for a Schwartz function `v`: the integral operator of the weighted
 kernel sends `⟨ζ⟩ ^ t 𝓕 v` to `⟨ξ⟩ ^ (t - m) 𝓕 (Op(a) v)`. -/
@@ -331,12 +317,12 @@ the `L²` norm, by Schur's test. -/
 private theorem eLpNorm_lintegral_ofReal_mul_lt_top {B r : ℝ} (hB : 0 ≤ B) (hr : (n : ℝ) < r)
     {g : CoordinateSpace n → ℝ≥0∞} (hg : eLpNorm g 2 volume < ⊤) :
     eLpNorm (fun ξ ↦ ∫⁻ ζ, ENNReal.ofReal (B * (1 + ‖ξ - ζ‖) ^ (-r)) * g ζ) 2 volume < ⊤ := by
-  obtain ⟨A, hrow, hcol⟩ := exists_lintegral_ofReal_mul_one_add_norm_sub_rpow_le (n := n) hB hr
+  obtain ⟨hrow, hcol⟩ := lintegral_ofReal_mul_one_add_norm_sub_rpow (n := n) hB hr
   have hk : AEMeasurable (uncurry fun ξ ζ : CoordinateSpace n ↦
       ENNReal.ofReal (B * (1 + ‖ξ - ζ‖) ^ (-r))) (volume.prod volume) := by
     fun_prop
   exact (memLp_lintegral_mul hk (memLp_iff.2 hg) one_le_two
-    (.of_forall hrow) (.of_forall hcol)).eLpNorm_lt_top
+    (.of_forall fun ξ ↦ (hrow ξ).le) (.of_forall fun ζ ↦ (hcol ζ).le)).eLpNorm_lt_top
 
 /-- **Microlocal Sobolev mapping.** Let `a` be a symbol of order `m` with compact spatial support
 and `u ∈ H^t`. If `⟨ζ⟩ ^ s 𝓕 u` is square integrable on a measurable set of frequencies `Γ`, and
