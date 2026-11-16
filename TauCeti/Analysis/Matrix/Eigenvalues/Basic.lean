@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.CStarAlgebra.Matrix
+public import Mathlib.Analysis.Matrix.Order
 public import Mathlib.Analysis.Matrix.PosDef
 public import TauCeti.Analysis.InnerProductSpace.CourantFischer
 public import TauCeti.Analysis.Matrix.EntrywiseOpNorm
@@ -39,11 +40,12 @@ The perturbation estimate combines the operator Weyl inequality in
 
 Weyl's additive inequalities `λₖ(A + B) ≤ λᵢ(A) + λⱼ(B)` for `i + j ≤ k`, and their lower
 counterpart, are the matrix forms of the operator inequalities in
-`TauCeti.Analysis.InnerProductSpace.CourantFischer`. A Hermitian matrix of rank at most `r` has
-at most `r` positive eigenvalues, so a perturbation `A - B` of rank at most `r` gives the rank
-interlacing `λ_{i+r}(A) ≤ λᵢ(B)`. Consequently the numbers of eigenvalues of `A` and `B` in
-`(-∞, t]`, counted with multiplicity, differ by at most `rank (A - B)` for every `t`. Divided by
-the size, this is the uniform bound on the difference of the distribution functions of the
+`TauCeti.Analysis.InnerProductSpace.CourantFischer`. In particular, sorted eigenvalues are
+monotone in the Loewner order (`Matrix.IsHermitian.eigenvalues₀_mono`). A Hermitian matrix of rank
+at most `r` has at most `r` positive eigenvalues, so a perturbation `A - B` of rank at most `r`
+gives the rank interlacing `λ_{i+r}(A) ≤ λᵢ(B)`. Consequently the numbers of eigenvalues of `A` and
+`B` in `(-∞, t]`, counted with multiplicity, differ by at most `rank (A - B)` for every `t`. Divided
+by the size, this is the uniform bound on the difference of the distribution functions of the
 empirical spectral measures that drives truncation arguments for random matrices.
 
 ## References
@@ -228,6 +230,23 @@ theorem IsHermitian.le_eigenvalues₀_add (hA : A.IsHermitian) (hB : B.IsHermiti
     (isSymmetric_toEuclideanLin_iff.mpr (hA.add hB))] at h
   -- The matrix enumeration is defined using the symmetric Euclidean operator.
   simpa only [Matrix.IsHermitian.eigenvalues₀] using h
+
+open scoped MatrixOrder in
+/-- **Loewner monotonicity of sorted eigenvalues.** If `A ≤ B` in the Loewner order for Hermitian
+matrices `A` and `B`, then every sorted eigenvalue of `A` is at most the corresponding sorted
+eigenvalue of `B`. -/
+theorem IsHermitian.eigenvalues₀_mono (hA : A.IsHermitian) (hB : B.IsHermitian)
+    (hle : A ≤ B) (k : Fin (Fintype.card ι)) :
+    hA.eigenvalues₀ k ≤ hB.eigenvalues₀ k := by
+  obtain ⟨C, rfl⟩ : ∃ C, B = A + C := ⟨B - A, (add_sub_cancel A B).symm⟩
+  have hC : C.PosSemidef := by simpa [add_sub_cancel_left] using le_iff.1 hle
+  let last : Fin (Fintype.card ι) := ⟨Fintype.card ι - 1, Nat.sub_lt (Nat.pos_of_ne_zero
+    (by have := k.isLt; omega)) one_pos⟩
+  have hle' := hA.le_eigenvalues₀_add hC.isHermitian (i := k) (j := last) (k := k)
+    (by dsimp [last]; have := k.isLt; omega)
+  have h0 : 0 ≤ hC.isHermitian.eigenvalues₀ last := hC.eigenvalues₀_nonneg last
+  -- Both sides enumerate the eigenvalues of `A + C`; only the Hermitian proofs differ.
+  exact (le_add_of_nonneg_right h0).trans hle'
 
 /-- A Hermitian matrix of rank at most `r` has at most `r` positive eigenvalues: its sorted
 eigenvalues are nonpositive from index `r` on. -/

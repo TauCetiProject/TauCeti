@@ -11,6 +11,7 @@ public import TauCeti.Analysis.Matrix.L2OpNorm
 public import TauCeti.Analysis.SpecialFunctions.ContinuousFunctionalCalculus.ExpLog
 import Mathlib.Analysis.CStarAlgebra.ContinuousFunctionalCalculus.Commute
 import Mathlib.Analysis.Normed.Algebra.MatrixExponential
+import Mathlib.Analysis.SpecialFunctions.ContinuousFunctionalCalculus.ExpLog.Order
 
 /-!
 # The logarithm and real powers of positive definite matrices
@@ -39,6 +40,8 @@ topology is the native matrix topology.
 * `Matrix.IsHermitian.commute_exp_iff`: a matrix commutes with the exponential of a Hermitian
   matrix exactly when it commutes with the matrix.
 * `Matrix.PosDef.cfc_log_inv`: `log P⁻¹ = -log P` for positive definite `P`.
+* `Matrix.PosDef.cfc_log_le_cfc_log`: the matrix logarithm is operator monotone on positive
+  definite matrices over any `RCLike` field.
 * `Matrix.PosDef.rpow_eq_exp_smul_cfc_log`: `P ^ s = exp (s • log P)` for positive definite `P`.
 * `Matrix.contDiffOn_cfc_log`, `Matrix.contDiffOn_rpow`, `Matrix.contDiffOn_sqrt`: the logarithm,
   every real power and the square root are `C^n` on the positive definite matrices.
@@ -103,6 +106,69 @@ theorem PosDef.cfc_log_inv {P : Matrix n n 𝕜} (hP : P.PosDef) :
       ((P.finite_real_spectrum.image _).continuousOn _) (P.finite_real_spectrum.continuousOn _)
       hP.1.isSelfAdjoint, ← cfc_neg]
   exact cfc_congr fun x _ ↦ Real.log_inv x
+
+/-- **Operator monotonicity of the matrix logarithm.** For positive definite matrices `A ≤ B` over
+any `RCLike` field `𝕜`, `cfc Real.log A ≤ cfc Real.log B` in the Loewner order. -/
+theorem PosDef.cfc_log_le_cfc_log {A B : Matrix n n 𝕜} (hA : A.PosDef) (hle : A ≤ B) :
+    cfc Real.log A ≤ cfc Real.log B := by
+  -- Transfer `CFC.log_le_log` from `Matrix n n ℂ` along entrywise `RCLike.map 𝕜 ℂ`.
+  let Φ : Matrix n n 𝕜 →⋆ₐ[ℝ] Matrix n n ℂ :=
+    { toFun := fun M ↦ M.map (RCLike.map 𝕜 ℂ)
+      map_one' := by
+        ext i j; by_cases hij : i = j <;> simp [Matrix.one_apply, hij]
+      map_mul' := fun M N ↦ by
+        ext i j
+        simp only [map_apply, Matrix.mul_apply, map_sum]
+        refine Finset.sum_congr rfl fun k _ ↦ ?_
+        apply Complex.ext <;> simp
+      map_zero' := by ext; simp
+      map_add' := fun M N ↦ by
+        ext i j; apply Complex.ext <;> simp
+      commutes' := fun r ↦ by
+        ext i j; by_cases hij : i = j <;> simp [Algebra.algebraMap_eq_smul_one, hij]
+      map_star' := fun M ↦ by
+        ext i j; apply Complex.ext <;> simp [star_eq_conjTranspose] }
+  have hΦ_cont : Continuous Φ :=
+    continuous_pi fun _ ↦ continuous_pi fun _ ↦
+      (RCLike.map 𝕜 ℂ).continuous.comp (continuous_apply _ |>.comp (continuous_apply _))
+  have hΦ_psd {M : Matrix n n 𝕜} (hM : M.PosSemidef) : (Φ M).PosSemidef := by
+    have hsq : CFC.sqrt M * CFC.sqrt M = M := CFC.sqrt_mul_sqrt_self M hM.nonneg
+    have hself : (CFC.sqrt M)ᴴ = CFC.sqrt M := (CFC.sqrt_nonneg M).isSelfAdjoint
+    have hΦself : (Φ (CFC.sqrt M))ᴴ = Φ (CFC.sqrt M) := by
+      rw [← star_eq_conjTranspose, ← map_star, star_eq_conjTranspose, hself]
+    have hmul : Φ M = (Φ (CFC.sqrt M))ᴴ * Φ (CFC.sqrt M) := by
+      rw [hΦself, ← map_mul, hsq]
+    rw [hmul]
+    exact posSemidef_conjTranspose_mul_self _
+  have hΦA : IsStrictlyPositive (Φ A) :=
+    ⟨(hΦ_psd hA.posSemidef).nonneg, hA.isUnit.map Φ.toRingHom⟩
+  have hΦle : Φ A ≤ Φ B := by
+    rw [le_iff, ← map_sub]
+    exact hΦ_psd (le_iff.1 hle)
+  have hB_sa : IsSelfAdjoint B := (hA.posSemidef.nonneg.trans hle).isSelfAdjoint
+  have hlog : CFC.log (Φ A) ≤ CFC.log (Φ B) := CFC.log_le_log hΦle hΦA
+  unfold CFC.log at hlog
+  rw [← StarAlgHom.map_cfc Φ Real.log A (A.finite_real_spectrum.continuousOn _) hΦ_cont
+      hA.1.isSelfAdjoint (hA.1.isSelfAdjoint.map Φ),
+    ← StarAlgHom.map_cfc Φ Real.log B (B.finite_real_spectrum.continuousOn _) hΦ_cont
+      hB_sa (hB_sa.map Φ),
+    le_iff, ← map_sub] at hlog
+  rw [le_iff]
+  have hdiff_herm : (cfc Real.log B - cfc Real.log A).IsHermitian :=
+    (IsSelfAdjoint.isHermitian (cfc_predicate Real.log B)).sub
+      (IsSelfAdjoint.isHermitian (cfc_predicate Real.log A))
+  refine posSemidef_iff_dotProduct_mulVec.2 ⟨hdiff_herm, fun x ↦ ?_⟩
+  let y : n → ℂ := fun i ↦ RCLike.map 𝕜 ℂ (x i)
+  have hy := (posSemidef_iff_dotProduct_mulVec.1 hlog).2 y
+  have hquad : star y ⬝ᵥ Φ (cfc Real.log B - cfc Real.log A) *ᵥ y =
+      RCLike.map 𝕜 ℂ (star x ⬝ᵥ (cfc Real.log B - cfc Real.log A) *ᵥ x) := by
+    simp only [dotProduct, mulVec, map_sum, y, Φ, StarAlgHom.coe_mk', AlgHom.coe_mk,
+      RingHom.coe_mk, MonoidHom.coe_mk, OneHom.coe_mk, map_apply, Pi.star_apply,
+      RCLike.star_def, Finset.mul_sum]
+    refine Finset.sum_congr rfl fun i _ ↦ Finset.sum_congr rfl fun j _ ↦ ?_
+    apply Complex.ext <;> simp
+  rw [hquad, Complex.nonneg_iff] at hy
+  exact RCLike.nonneg_iff.2 ⟨by simpa using hy.1, by simpa using hy.2.symm⟩
 
 /-- **Smoothness of the matrix logarithm.** The logarithm is `C^n` on the positive definite
 matrices for every `n : ℕ∞ω`, including `n = ω`, over either the real or the complex scalars. -/
