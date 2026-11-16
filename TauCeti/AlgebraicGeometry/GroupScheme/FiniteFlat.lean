@@ -95,26 +95,18 @@ with `s ≫ G.structureMap = 𝟙 S`. -/
 def Section {S : Scheme.{u}} (G : FiniteFlatCommGroupScheme S) :=
   {s : S ⟶ G.carrier // s ≫ G.structureMap = 𝟙 S}
 
-/-- A homomorphism of finite locally free commutative group schemes. The wrapper keeps the
-category operations distinct from those on the underlying group objects. -/
-@[ext]
-structure Hom {S : Scheme.{u}} (G H : FiniteFlatCommGroupScheme S) where
-  /-- The underlying group-object homomorphism. -/
-  hom : Grp.mk G.toOver ⟶ Grp.mk H.toOver
-
-/-- Finite locally free commutative group schemes form a category with their group-scheme
-homomorphisms as morphisms. -/
-noncomputable instance {S : Scheme.{u}} : Category (FiniteFlatCommGroupScheme S) where
-  Hom := Hom
-  id G := ⟨𝟙 (Grp.mk G.toOver)⟩
-  comp f g := ⟨f.hom ≫ g.hom⟩
+/-- Finite locally free commutative group schemes form the category induced from their
+underlying group objects. -/
+noncomputable instance {S : Scheme.{u}} : Category (FiniteFlatCommGroupScheme S) :=
+  inferInstanceAs <| Category (InducedCategory (Grp (Over S))
+    fun G : FiniteFlatCommGroupScheme S => Grp.mk G.toOver)
 
 /-- Bundle a group-object homomorphism as a homomorphism of finite locally free group schemes.
 Exposed so rebundling functors can compute their round trips on morphisms. -/
-@[expose, simps]
-def homMk {S : Scheme.{u}} {G H : FiniteFlatCommGroupScheme S}
+@[expose, simps!]
+noncomputable def homMk {S : Scheme.{u}} {G H : FiniteFlatCommGroupScheme S}
     (f : Grp.mk G.toOver ⟶ Grp.mk H.toOver) : G ⟶ H :=
-  ⟨f⟩
+  InducedCategory.homMk f
 
 /-- Rebundling the underlying group-object homomorphism recovers the original homomorphism. -/
 @[simp]
@@ -139,7 +131,7 @@ theorem homMk_comp_homMk {S : Scheme.{u}} {G H K : FiniteFlatCommGroupScheme S}
 @[ext]
 theorem hom_ext {S : Scheme.{u}} {G H : FiniteFlatCommGroupScheme S} (f g : G ⟶ H)
     (h : f.hom = g.hom) : f = g :=
-  Hom.ext h
+  InducedCategory.hom_ext h
 
 /-- The identity homomorphism has the identity as its underlying group-object map. -/
 @[simp]
@@ -155,11 +147,8 @@ theorem comp_hom {S : Scheme.{u}} {G H K : FiniteFlatCommGroupScheme S}
 
 /-- Bundle an isomorphism of the underlying group objects. -/
 noncomputable def isoMk {S : Scheme.{u}} {G H : FiniteFlatCommGroupScheme S}
-    (e : Grp.mk G.toOver ≅ Grp.mk H.toOver) : G ≅ H where
-  hom := homMk e.hom
-  inv := homMk e.inv
-  hom_inv_id := hom_ext _ _ e.hom_inv_id
-  inv_hom_id := hom_ext _ _ e.inv_hom_id
+    (e : Grp.mk G.toOver ≅ Grp.mk H.toOver) : G ≅ H :=
+  InducedCategory.isoMk e
 
 /-- The forward map of a bundled isomorphism is its bundled forward map. -/
 @[simp]
@@ -177,9 +166,8 @@ theorem isoMk_inv {S : Scheme.{u}} {G H : FiniteFlatCommGroupScheme S}
 locally free commutative group scheme. The object map is exposed so that its morphisms are the
 underlying group-object homomorphisms without transports. -/
 @[expose, implicit_reducible]
-noncomputable def toGrp (S : Scheme.{u}) : FiniteFlatCommGroupScheme S ⥤ Grp (Over S) where
-  obj G := Grp.mk G.toOver
-  map f := f.hom
+noncomputable def toGrp (S : Scheme.{u}) : FiniteFlatCommGroupScheme S ⥤ Grp (Over S) :=
+  inducedFunctor fun G : FiniteFlatCommGroupScheme S => Grp.mk G.toOver
 
 /-- The forgetful functor retains the underlying group object. -/
 @[simp]
@@ -195,8 +183,8 @@ theorem toGrp_map {S : Scheme.{u}} {G H : FiniteFlatCommGroupScheme S} (f : G �
 
 /-- Forgetting finite local freeness and commutativity does not change group-scheme
 homomorphisms. -/
-noncomputable def fullyFaithfulToGrp (S : Scheme.{u}) : (toGrp S).FullyFaithful where
-  preimage f := homMk f
+noncomputable def fullyFaithfulToGrp (S : Scheme.{u}) : (toGrp S).FullyFaithful :=
+  fullyFaithfulInducedFunctor _
 
 instance {S : Scheme.{u}} : (toGrp S).Full := (fullyFaithfulToGrp S).full
 
@@ -238,9 +226,8 @@ theorem inv_hom {S : Scheme.{u}} {G H : FiniteFlatCommGroupScheme S} (f : G ⟶ 
 /-- Equality transport of group schemes induces equality transport of their group objects. -/
 @[simp]
 theorem eqToHom_hom {S : Scheme.{u}} {G H : FiniteFlatCommGroupScheme S} (h : G = H) :
-    (eqToHom h).hom = eqToHom (by subst h; rfl) := by
-  subst h
-  rfl
+    (eqToHom h).hom = eqToHom (by subst h; rfl) :=
+  InducedCategory.eqToHom_hom h
 
 /-- The underlying maps of an isomorphism cancel in the forward direction. -/
 @[reassoc (attr := simp)]

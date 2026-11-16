@@ -117,6 +117,7 @@ theorem fromAffine_obj_structureMap (G : FiniteLocallyFreeCommAffineGroupSchemeC
   (rfl)
 
 /-- Forgetting the affine bundling retains the scheme over the base. -/
+@[simp↓]
 theorem fromAffine_obj_toOver (G : FiniteLocallyFreeCommAffineGroupSchemeCat R) :
     ((fromAffine R).obj G).toOver = G.obj.obj.X :=
   (rfl)
