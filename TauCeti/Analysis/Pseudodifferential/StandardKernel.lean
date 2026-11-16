@@ -129,10 +129,8 @@ private theorem IsUniform.exists_integral_norm_mul_norm_coefficient_littlewoodPa
     ∃ M, 0 ≤ M ∧ ∀ (j : ℕ) (x : CoordinateSpace n),
       ∫ ξ, ‖ξ‖ * ‖(a.littlewoodPaleyPiece φ j).coefficient (x, ξ)‖ ≤
         M * ((2 : ℝ) ^ j) ^ (m + n + 1) := by
-  obtain ⟨C₀, hC₀, h₀⟩ := ha.exists_integral_norm_mixedDeriv_littlewoodPaleyPiece_le φ [] []
+  obtain ⟨C₀, hC₀, h₀⟩ := ha.exists_integral_norm_coefficient_littlewoodPaleyPiece_le φ
   refine ⟨φ.rOut * C₀, mul_nonneg φ.rOut_pos.le hC₀, fun j x ↦ ?_⟩
-  have h := h₀ j x
-  simp only [mixedDeriv_nil_nil, List.length_nil, Nat.cast_zero, sub_zero] at h
   have hR : 0 ≤ (2 : ℝ) ^ j * φ.rOut := mul_nonneg (by positivity) φ.rOut_pos.le
   calc ∫ ξ, ‖ξ‖ * ‖(a.littlewoodPaleyPiece φ j).coefficient (x, ξ)‖
       ≤ ∫ ξ, 2 ^ j * φ.rOut * ‖(a.littlewoodPaleyPiece φ j).coefficient (x, ξ)‖ :=
@@ -141,7 +139,7 @@ private theorem IsUniform.exists_integral_norm_mul_norm_coefficient_littlewoodPa
           (norm_mul_norm_coefficient_littlewoodPaleyPiece_le φ a j x)
     _ = 2 ^ j * φ.rOut * ∫ ξ, ‖(a.littlewoodPaleyPiece φ j).coefficient (x, ξ)‖ :=
         integral_const_mul _ _
-    _ ≤ 2 ^ j * φ.rOut * (C₀ * ((2 : ℝ) ^ j) ^ (m + n)) := mul_le_mul_of_nonneg_left h hR
+    _ ≤ 2 ^ j * φ.rOut * (C₀ * ((2 : ℝ) ^ j) ^ (m + n)) := mul_le_mul_of_nonneg_left (h₀ j x) hR
     _ = φ.rOut * C₀ * ((2 : ℝ) ^ j) ^ (m + n + 1) := by
         rw [Real.rpow_add_one (by positivity)]
         ring
@@ -156,7 +154,7 @@ theorem IsUniform.exists_norm_quantizationKernel_littlewoodPaleyPiece_le {a : Sy
     ∃ C, 0 ≤ C ∧ ∀ (j : ℕ) (x y : CoordinateSpace n),
       ‖quantizationKernel (a.littlewoodPaleyPiece φ j).coefficient x y‖ ≤
         C * ((2 : ℝ) ^ j) ^ (m + n) * (1 + 2 ^ j * ‖x - y‖) ^ (-(N : ℝ)) := by
-  obtain ⟨C₀, hC₀, h₀⟩ := ha.exists_integral_norm_mixedDeriv_littlewoodPaleyPiece_le φ [] []
+  obtain ⟨C₀, hC₀, h₀⟩ := ha.exists_integral_norm_coefficient_littlewoodPaleyPiece_le φ
   choose C hC0 hC using fun i : Fin n ↦
     ha.exists_integral_norm_mixedDeriv_littlewoodPaleyPiece_le φ [] (List.replicate N i)
   set A := C₀ + ∑ i, C i
@@ -171,18 +169,18 @@ theorem IsUniform.exists_norm_quantizationKernel_littlewoodPaleyPiece_le {a : Sy
   set t : ℝ := 2 ^ j
   have ht : 0 < t := by positivity
   have h₀' : ∫ ξ, ‖b.coefficient (x, ξ)‖ ≤ A * t ^ (m + n) := by
-    have h := h₀ j x
-    simp only [mixedDeriv_nil_nil, List.length_nil, Nat.cast_zero, sub_zero] at h
     rw [hb]
-    exact h.trans (mul_le_mul_of_nonneg_right hC₀A (by positivity))
+    exact (h₀ j x).trans (mul_le_mul_of_nonneg_right hC₀A (by positivity))
   have hN' (i : Fin n) : ∫ ξ, ‖mixedDeriv [] (List.replicate N i) b.coefficient x ξ‖ ≤
       A * t ^ (m + n) * t⁻¹ ^ N := by
+    have hpow : t ^ (m - N + n) = t ^ (m + n) * t⁻¹ ^ N := by
+      rw [show m - N + n = (m + n) - N by ring, Real.rpow_sub_natCast ht.ne', inv_pow,
+        div_eq_mul_inv]
     rw [hb]
     refine (hC i j x).trans ?_
-    rw [List.length_replicate, show m - N + n = (m + n) + -(N : ℝ) by ring, Real.rpow_add ht,
-      Real.rpow_neg ht.le, Real.rpow_natCast, inv_pow, ← mul_assoc]
-    exact mul_le_mul_of_nonneg_right (mul_le_mul_of_nonneg_right (hCA i) (by positivity))
-      (by positivity)
+    rw [List.length_replicate, hpow, ← mul_assoc]
+    gcongr
+    exact hCA i
   have key := b.one_add_norm_div_pow_mul_norm_quantizationKernel_le (by linarith) (inv_pos.2 ht) N
     h₀' hN' y
   rw [div_inv_eq_mul, hb, mul_comm ‖x - y‖] at key
