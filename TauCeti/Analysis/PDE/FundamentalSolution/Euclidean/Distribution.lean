@@ -29,7 +29,7 @@ their local integrability is the input for the distributional identity `-Δ Gₙ
 
 * `TauCeti.locallyIntegrable_newtonianKernel`: local integrability of `Gₙ`.
 * `TauCeti.newtonianKernelDistribution`: the distribution induced by `Gₙ` on all of Euclidean
-  space in dimensions `n ≥ 3`.
+  space in dimensions `n ≠ 0, 2`.
 * `TauCeti.newtonianKernelDistribution_apply`: its test-function pairing.
 -/
 
@@ -180,18 +180,19 @@ theorem locallyIntegrable_fderiv_newtonianKernel (n : ℕ) :
       exact hg.aestronglyMeasurable.congr hfg.symm
 
 /-- The distribution induced by the Newtonian kernel on all of Euclidean space in dimensions
-`n ≥ 3`.  The dimension hypothesis reserves this name for the higher-dimensional fundamental
-solution, since the totalized kernel formula is defined in every dimension. -/
-noncomputable def newtonianKernelDistribution (n : ℕ) (_hn : 3 ≤ n) :
+`n ≠ 0, 2`, where it is the fundamental solution of `-Δ`.  The dimension hypotheses reserve this
+name for the fundamental solution, since the totalized kernel formula is defined in every
+dimension but is `0` in dimensions zero and two. -/
+noncomputable def newtonianKernelDistribution (n : ℕ) (_hn : n ≠ 2) (_hn0 : n ≠ 0) :
     𝓓'((⊤ : Opens (EuclideanSpace ℝ (Fin n))), ℝ) :=
   Distribution.ofFun (⊤ : Opens (EuclideanSpace ℝ (Fin n)))
     (newtonianKernel n) volume ⊤
 
 /-- Evaluation of the Newtonian-kernel distribution on a smooth compactly supported
 test function. -/
-@[simp] theorem newtonianKernelDistribution_apply (n : ℕ) (hn : 3 ≤ n)
+@[simp] theorem newtonianKernelDistribution_apply (n : ℕ) (hn : n ≠ 2) (hn0 : n ≠ 0)
     (φ : 𝓓((⊤ : Opens (EuclideanSpace ℝ (Fin n))), ℝ)) :
-    newtonianKernelDistribution n hn φ =
+    newtonianKernelDistribution n hn hn0 φ =
       ∫ x, φ x • newtonianKernel n x := by
   rw [newtonianKernelDistribution, Distribution.ofFun_apply]
   exact (locallyIntegrable_newtonianKernel n).locallyIntegrableOn _
