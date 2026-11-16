@@ -189,9 +189,7 @@ private theorem trajectorySign_eq_neg_of_comparison_eq_smul
   have hdet : LinearMap.det (B : (ℝ × ({i // φq.weight i < 0} → ℝ)) →ₗ[ℝ] _) < 0 := by
     have hB : (B : (ℝ × ({i // φq.weight i < 0} → ℝ)) →ₗ[ℝ] _) = a • LinearMap.id :=
       LinearMap.ext fun w ↦ by simp [B]
-    rw [hB, LinearMap.det_smul, LinearMap.det_id, mul_one, ← hcard, Fintype.card_fin, hpq, hq,
-      zero_add, pow_one]
-    exact ha
+    simpa [hB, LinearMap.det_smul, ← hcard, hpq, hq] using ha
   have hmap : Orientation.map _ e₂ op = Orientation.map _ e₁ (-op) := by
     rw [he, Orientation.map_trans,
       ((Orientation.map _ e₁ op).map_eq_neg_iff_det_neg B hcard).2 hdet, Orientation.map_neg]

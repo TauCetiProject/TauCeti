@@ -406,7 +406,7 @@ private theorem mfderiv_toChart_comp_flow_neg_add {y : M} {T s : ℝ}
   have h := hX.coord_mfderiv_toChart_comp_flow_add hφ (T := -T) (s := -s) hT.1
     (fun t ht ↦ hT.2 t (by rw [uIcc_of_ge (by linarith)] at ht; exact ht.2)) w
   rw [show -s + -T = -(T + s) by ring, hw, map_smul, φ.linearFlow_smul,
-    φ.linearFlow_neg_coord_negativeExtend, smul_smul, ← Real.exp_add, ← map_smul] at h
+    φ.linearFlow_coord_negativeExtend, smul_smul, ← Real.exp_add, ← map_smul] at h
   refine φ.coord.injective (h.trans ?_)
   congr 3
   ring
@@ -513,23 +513,17 @@ private theorem toChart_symm_negativeExtend_mem_unstableSet {c : {i // φ.weight
       φ.toChart.target) :
     φ.toChart.symm (φ.negativeExtend c) ∈ hX.flow.unstableSet x := by
   set z := φ.coord (φ.negativeExtend c)
-  have hlin (t : ℝ) : φ.linearFlow t z = Real.exp t • z := by
-    simpa using φ.linearFlow_neg_coord_negativeExtend (-t) c
   rw [Flow.mem_unstableSet]
   have hflow : ∀ᶠ t in atBot, φ.toChart.symm (φ.coord.symm (Real.exp t • z)) =
       hX.flow t (φ.toChart.symm (φ.negativeExtend c)) := by
     filter_upwards [eventually_le_atBot 0] with t ht
     rw [← LinearEquiv.symm_apply_apply φ.coord (φ.negativeExtend c),
       flow_toChart_symm_of_forall_mem_uIcc hX φ hφ fun s hs ↦
-        hmem s (by rw [uIcc_of_ge ht] at hs; exact hs.2), hlin]
+        hmem s (by rw [uIcc_of_ge ht] at hs; exact hs.2), φ.linearFlow_coord_negativeExtend]
   refine Tendsto.congr' hflow ?_
   have hexp : Tendsto (fun t : ℝ ↦ Real.exp t • z) atBot (𝓝 0) := by
     simpa using Real.tendsto_exp_atBot.smul_const z
-  have hlim : Tendsto (fun t : ℝ ↦ φ.toChart.symm (φ.coord.symm (Real.exp t • z))) atBot
-      (𝓝 (φ.toChart.symm (φ.coord.symm 0))) :=
-    (φ.toChart.continuousAt_symm (by simpa using φ.toChart.map_source φ.mem_source)).tendsto.comp
-      (((φ.coord.symm.toLinearMap.continuous_of_finiteDimensional).tendsto 0).comp hexp)
-  rwa [φ.toChart_symm_coord_symm_zero] at hlim
+  exact φ.tendsto_toChart_symm_coord_symm_nhds_zero.comp hexp
 
 /-- At a point of the unstable axis whose linear backward orbit stays in the chart, the unstable
 frame of the coordinates is the velocity: in the chart, the frame is read through
@@ -586,10 +580,7 @@ theorem eventually_mem_unstableSet_and_unstableFrame_eq :
   have hmem (t : ℝ) (ht : t ≤ 0) :
       φ.coord.symm (φ.linearFlow t (φ.coord (φ.negativeExtend c))) ∈ φ.toChart.target := by
     refine hrT _ ?_
-    have hlin : φ.linearFlow t (φ.coord (φ.negativeExtend c)) =
-        Real.exp t • φ.coord (φ.negativeExtend c) := by
-      simpa using φ.linearFlow_neg_coord_negativeExtend (-t) c
-    rw [hlin, norm_smul, Real.norm_of_nonneg (Real.exp_pos _).le]
+    rw [φ.linearFlow_coord_negativeExtend, norm_smul, Real.norm_of_nonneg (Real.exp_pos _).le]
     exact (mul_le_of_le_one_left (norm_nonneg _) (Real.exp_le_one_iff.2 ht)).trans_lt hc
   exact ⟨by simpa using hmem 0 le_rfl, toChart_symm_negativeExtend_mem_unstableSet hφ hmem,
     unstableFrame_toChart_symm_negativeExtend hφ hmem⟩
