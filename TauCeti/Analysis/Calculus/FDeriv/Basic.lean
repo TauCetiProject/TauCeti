@@ -20,8 +20,9 @@ The derivative `fderiv 𝕜 f` is totalized: it is `0` where `f` is not differen
 nonzero derivative certifies differentiability, as `differentiableAt_of_deriv_ne_zero` does for
 functions of one variable. Likewise, two differentiable independent linear combinations of two
 scalar functions recover both functions as differentiable. Conversely, a real-valued function with
-a uniform positive lower bound on its symmetric second difference quotients along some direction is
-not differentiable at that point.
+a positive linear lower bound on its symmetric second differences
+`u (x + t • v) + u (x - t • v) - 2 * u x` for small `t > 0` along some direction is not
+differentiable at that point.
 
 ## Main results
 

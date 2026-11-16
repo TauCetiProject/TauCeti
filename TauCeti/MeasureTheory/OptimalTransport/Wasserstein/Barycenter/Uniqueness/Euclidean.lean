@@ -13,21 +13,21 @@ public import TauCeti.MeasureTheory.OptimalTransport.Wasserstein.Barycenter.Uniq
 
 On a finite-dimensional real inner product space, Brenier's theorem
 (`TauCeti.IsOptimalCoupling.exists_eq_graphPlan_of_isCCRegular`) shows that every optimal
-plan for the cost `edist ^ 2` out of a law absolutely continuous with respect to an additive Haar
-measure, such as Lebesgue measure on `ℝⁿ`, into a law at finite `W₂` distance from it, is induced
-by a map. Between laws of `P₂(E)` the distance is always finite, so this is the hypothesis of the
-general uniqueness result `TauCeti.WassersteinSpace.subsingleton_frechetBarycenters`. It gives the
-uniqueness half of Agueh and Carlier's theorem for finitely many input laws, one of them
-absolutely continuous with a positive weight, and its population version, for laws `P` giving
-positive mass to absolutely continuous measures.
+plan for the cost `edist ^ 2` out of a `c - c`-regular law (in particular, a law absolutely
+continuous with respect to an additive Haar measure such as Lebesgue measure on `ℝⁿ`), into a law
+at finite `W₂` distance from it, is induced by a map. Between laws of `P₂(E)` the distance is
+always finite, so this is the hypothesis of the general uniqueness result
+`TauCeti.WassersteinSpace.subsingleton_frechetBarycenters`. It gives the uniqueness half of Agueh
+and Carlier's theorem for finitely many input laws, one of them `c - c`-regular with a positive
+weight, and its population version, for laws `P` giving positive mass to `c - c`-regular measures.
 
 ## Main statements
 
 * `TauCeti.WassersteinSpace.subsingleton_frechetBarycenters_two` and
   `TauCeti.WassersteinSpace.subsingleton_frechetBarycenters_two_sum_smul_dirac` — there is at most
   one quadratic Wasserstein barycenter when the law of the input laws gives positive mass to
-  absolutely continuous laws, in particular for finitely many input laws one of which is
-  absolutely continuous and has a positive weight.
+  `c - c`-regular laws, in particular for finitely many input laws one of which is `c - c`-regular
+  and has a positive weight.
 
 ## References
 
@@ -49,35 +49,36 @@ open scoped ENNReal NNReal
 namespace TauCeti
 
 variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteDimensional ℝ E]
-  [MeasurableSpace E] [BorelSpace E] {ρ : Measure E} [ρ.IsAddHaarMeasure]
+  [MeasurableSpace E] [BorelSpace E]
 
 namespace WassersteinSpace
 
 /-- **Uniqueness of quadratic Wasserstein barycenters.** On a finite-dimensional real inner
-product space, a law `P` on `P₂(E)` that gives positive mass to the laws absolutely continuous
-with respect to an additive Haar measure has at most one quadratic Fréchet barycenter in
-`P₂(E)`. -/
+product space, a law `P` on `P₂(E)` that gives positive mass to `c - c`-regular laws (in
+particular, laws absolutely continuous with respect to an additive Haar measure) has at most one
+quadratic Fréchet barycenter in `P₂(E)`. -/
 theorem subsingleton_frechetBarycenters_two {P : Measure (WassersteinSpace 2 E)}
-    (hP : P {m : WassersteinSpace 2 E | ((m : ProbabilityMeasure E) : Measure E) ≪ ρ} ≠ 0) :
+    (hP : P {m : WassersteinSpace 2 E |
+      IsCCRegular ((m : ProbabilityMeasure E) : Measure E)} ≠ 0) :
     (frechetBarycenters 2 P).Subsingleton := by
   refine subsingleton_frechetBarycenters ENNReal.ofNat_ne_top fun h ↦
     hP (measure_mono_null ?_ h)
-  intro m (hm : _ ≪ ρ) ν π hπ
+  intro m (hm : IsCCRegular _) ν π hπ
   rw [ENNReal.toReal_ofNat] at hπ
-  obtain ⟨T, hT, hπT⟩ := hπ.exists_eq_graphPlan_of_isCCRegular
-    (isCCRegular_of_absolutelyContinuous hm) (wassersteinEDist_ne_top measurable_edist m ν)
+  obtain ⟨T, hT, hπT⟩ := hπ.exists_eq_graphPlan_of_isCCRegular hm
+    (wassersteinEDist_ne_top measurable_edist m ν)
   exact ⟨T, hT.aemeasurable, hπT⟩
 
 /-- **Uniqueness of quadratic Wasserstein barycenters of finitely many laws** (Agueh–Carlier). On
 a finite-dimensional real inner product space, if one of finitely many laws `μ i` of `P₂(E)` is
-absolutely continuous with respect to an additive Haar measure and has a nonzero weight, then the
-law `∑ i, w i • δ_{μ i}` has at most one quadratic Fréchet barycenter in `P₂(E)`. -/
+`c - c`-regular and has a nonzero weight, then the law `∑ i, w i • δ_{μ i}` has at most one
+quadratic Fréchet barycenter in `P₂(E)`. -/
 theorem subsingleton_frechetBarycenters_two_sum_smul_dirac {ι : Type*} [Fintype ι]
     {w : ι → ℝ≥0} {μ : ι → WassersteinSpace 2 E} {j : ι} (hj : w j ≠ 0)
-    (hμj : ((μ j : ProbabilityMeasure E) : Measure E) ≪ ρ) :
+    (hμj : IsCCRegular ((μ j : ProbabilityMeasure E) : Measure E)) :
     (frechetBarycenters 2 (∑ i, w i • Measure.dirac (μ i))).Subsingleton := by
-  set S := {m : WassersteinSpace 2 E | ((m : ProbabilityMeasure E) : Measure E) ≪ ρ}
-  refine subsingleton_frechetBarycenters_two (ρ := ρ) (ne_of_gt ?_)
+  set S := {m : WassersteinSpace 2 E | IsCCRegular ((m : ProbabilityMeasure E) : Measure E)}
+  refine subsingleton_frechetBarycenters_two (ne_of_gt ?_)
   have hjS : μ j ∈ S := by simpa only [S, Set.mem_ofPred_eq] using hμj
   calc (0 : ℝ≥0∞) < w j := ENNReal.coe_pos.2 (pos_iff_ne_zero.2 hj)
     _ = (w j • Measure.dirac (μ j)) S := by simp [Measure.dirac_apply_of_mem hjS]

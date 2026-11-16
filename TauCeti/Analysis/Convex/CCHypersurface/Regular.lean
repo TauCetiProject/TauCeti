@@ -33,7 +33,7 @@ Brenier's theorem (`TauCeti/MeasureTheory/OptimalTransport/Brenier.lean`, `Regul
   `TauCeti.isCCRegular_of_isAddHaarMeasure`, `TauCeti.isCCRegular_of_absolutelyContinuous`,
   `TauCeti.isCCRegular_iff_forall_convexOn_ae_differentiableAt`,
   `TauCeti.IsCCRegular.ae_eventually_ne_top_and_differentiableAt_toReal` — sufficient conditions,
-  Zajíček characterization, and Rademacher-type differentiability on effective domains.
+  Zajíček characterization, and almost-everywhere differentiability on effective domains.
 
 ## References
 
@@ -139,9 +139,10 @@ theorem isCCRegular_sum_iff {ι : Type*} [Countable ι] {μ : ι → Measure E} 
 /-- In a nontrivial real inner product space, a `c - c`-regular measure assigns measure zero to
 every singleton. -/
 theorem IsCCRegular.measure_singleton [Nontrivial E] (hμ : IsCCRegular μ) (x : E) : μ {x} = 0 := by
-  obtain ⟨v, hv⟩ := exists_ne (0 : E)
-  have he : ‖‖v‖⁻¹ • v‖ = 1 := by simp [norm_smul, inv_mul_cancel₀ (norm_ne_zero_iff.2 hv)]
-  exact measure_mono_null (singleton_subset_iff.2 rfl) (hμ (isCCHypersurface_setOf_inner_eq he _))
+  obtain ⟨e, he⟩ := exists_norm_eq E (zero_le_one (α := ℝ))
+  exact measure_mono_null (t := {y | inner ℝ y e = inner ℝ x e})
+    (singleton_subset_iff.2 (mem_ofPred_eq.mpr rfl))
+    (hμ (isCCHypersurface_setOf_inner_eq he (inner ℝ x e)))
 
 /-- In a nontrivial real inner product space, every `c - c`-regular measure has null singletons. -/
 theorem IsCCRegular.nullSingletonClass [Nontrivial E] (hμ : IsCCRegular μ) : NullSingletonClass μ :=
@@ -164,12 +165,13 @@ theorem isCCRegular_iff_nullSingletonClass (hd : Module.finrank ℝ E = 1) :
 @[simp]
 theorem isCCRegular_map_add_left_iff [BorelSpace E] (v : E) :
     IsCCRegular (μ.map (v + ·)) ↔ IsCCRegular μ := by
+  have hpre (t : Set E) : (v + ·) ⁻¹' t = (-v) +ᵥ t := by
+    ext x; simp [mem_vadd_set_iff_neg_vadd_mem]
   refine ⟨fun h s hs => ?_, fun h s hs => ?_⟩
   · have hvs := hs.vadd v
-    simpa [Measure.map_apply (continuous_const_add v).measurable hvs.measurableSet,
-      show (v + ·) ⁻¹' (v +ᵥ s) = s by ext x; simp [mem_vadd_set_iff_neg_vadd_mem]] using h hvs
-  · rw [Measure.map_apply (continuous_const_add v).measurable hs.measurableSet,
-      show (v + ·) ⁻¹' s = (-v) +ᵥ s by ext x; simp [mem_vadd_set_iff_neg_vadd_mem]]
+    simpa [Measure.map_apply (continuous_const_add v).measurable hvs.measurableSet, hpre]
+      using h hvs
+  · rw [Measure.map_apply (continuous_const_add v).measurable hs.measurableSet, hpre]
     exact h (hs.vadd (-v))
 
 /-- Right translation preserves `c - c`-regularity of Borel measures. -/
@@ -187,9 +189,7 @@ theorem isCCRegular_map_continuousLinearEquiv_iff {F : Type*} [NormedAddCommGrou
   · have hLs := hs.image_continuousLinearEquiv L
     simpa [Measure.map_apply L.continuous.measurable hLs.measurableSet,
       L.injective.preimage_image s] using h hLs
-  · rw [Measure.map_apply L.continuous.measurable hs.measurableSet,
-      show L ⁻¹' s = L.symm '' s from Set.ext fun x => ⟨fun hx => ⟨L x, hx, L.symm_apply_apply x⟩,
-        fun ⟨_, hy, hyx⟩ => by rwa [mem_preimage, ← hyx, L.apply_symm_apply]⟩]
+  · rw [Measure.map_apply L.continuous.measurable hs.measurableSet, ← L.image_symm_eq_preimage]
     exact h (hs.image_continuousLinearEquiv L.symm)
 
 /-- Pushforward by a linear isometric equivalence preserves `c - c`-regularity. -/
@@ -230,10 +230,11 @@ theorem isCCRegular_iff_forall_convexOn_ae_differentiableAt {μ : Measure E} :
       ⟨{s}, countable_singleton s, by simpa, by simp⟩
     measure_mono_null hsub (ae_iff.1 (h u hu))⟩
 
-/-- **Rademacher's theorem for convex functions against a `c - c`-regular measure.** For any
-extended-real `u : E → EReal` with convex real epigraph and any `c - c`-regular `μ`, at `μ`-a.e.
-`x` with `u x ≠ ⊤`, `u ≠ ⊤` near `x` and `u.toReal` is differentiable at `x` (needing no `u x ≠ ⊥`
-hypothesis, unlike `TauCeti.ae_eventually_ne_top_and_differentiableAt_toReal`). -/
+/-- **Almost-everywhere differentiability of extended-real convex functions against a
+`c - c`-regular measure.** By Zajíček's covering theorems, for any extended-real `u : E → EReal`
+with convex real epigraph and any `c - c`-regular `μ`, at `μ`-a.e. `x` with `u x ≠ ⊤`, `u ≠ ⊤` near
+`x` and `u.toReal` is differentiable at `x` (needing no `u x ≠ ⊥` hypothesis, unlike
+`TauCeti.ae_eventually_ne_top_and_differentiableAt_toReal`). -/
 theorem IsCCRegular.ae_eventually_ne_top_and_differentiableAt_toReal {μ : Measure E}
     (hμ : IsCCRegular μ) {u : E → EReal} (hconv : Convex ℝ {p : E × ℝ | u p.1 ≤ p.2}) :
     ∀ᵐ x ∂μ, u x ≠ ⊤ →

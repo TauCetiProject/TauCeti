@@ -67,8 +67,8 @@ the value `⊥` at some point `z₀`, then `f x = ⊥` at every interior point `
 `{z | f z ≠ ⊤}`. -/
 theorem eq_bot_of_mem_interior_of_eq_bot {V : Type*} [AddCommGroup V] [Module ℝ V]
     [TopologicalSpace V] [ContinuousAdd V] [ContinuousSMul ℝ V] {f : V → EReal}
-    (hf : Convex ℝ {p : V × ℝ | f p.1 ≤ p.2}) {z₀ x : V}
-    (hz₀ : f z₀ = ⊥) (hx : x ∈ interior {z | f z ≠ ⊤}) : f x = ⊥ := by
+    (hf : Convex ℝ {p : V × ℝ | f p.1 ≤ p.2}) {x z₀ : V}
+    (hx : x ∈ interior {z | f z ≠ ⊤}) (hz₀ : f z₀ = ⊥) : f x = ⊥ := by
   obtain ⟨δ, hδ, hδB⟩ := Metric.mem_nhds_iff.1 <|
     ((show Continuous fun t : ℝ => x + t • (x - z₀) by fun_prop).continuousAt (x := (0 : ℝ)))
       |>.preimage_mem_nhds (isOpen_interior.mem_nhds (by simpa using hx))

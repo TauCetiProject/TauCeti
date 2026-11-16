@@ -62,8 +62,9 @@ diffeomorphisms.
 * `LinearIsometryEquiv.eq_extendOrthogonalComplement_iff`: a linear isometry equals the
   extension if and only if it agrees with it on the unit vector and its orthogonal complement.
 * `TauCeti.orthogonalProjectionOnto_add_inner_smul`,
-  `TauCeti.orthogonalProjectionOnto_coe_add_smul`, and `TauCeti.setOf_inner_eq_eq_range`:
-  orthogonal decomposition along a unit vector and parametric graphs over `(𝕜 ∙ e)ᗮ`.
+  `TauCeti.orthogonalProjectionOnto_coe_add_smul`, `TauCeti.setOf_inner_eq_eq_range`, and
+  `TauCeti.vadd_setOf_inner_eq`: orthogonal decomposition along a unit vector and parametric
+  graphs and translations over `(𝕜 ∙ e)ᗮ`.
 * `ContDiff.linearIsometryEquiv_symm_apply`: the inverses along a smooth family of linear
   isometries of a finite-dimensional space form a smooth family.
 -/
@@ -324,9 +325,21 @@ theorem setOf_inner_eq_eq_range {𝕜 F : Type*} [RCLike 𝕜] [NormedAddCommGro
   ext x; simp only [Set.mem_ofPred_eq, Set.mem_range]
   refine ⟨fun hx => ⟨_, hx ▸ orthogonalProjectionOnto_add_inner_smul he x⟩, ?_⟩
   rintro ⟨y, rfl⟩
-  rw [orthogonalProjectionOnto_coe_add_smul, inner_add_right,
-    Submodule.mem_orthogonal_singleton_iff_inner_right.mp y.2, zero_add, inner_smul_right,
-    inner_self_eq_norm_sq_to_K, he, RCLike.ofReal_one, one_pow, mul_one]
+  simp [inner_add_right, inner_smul_right,
+    Submodule.mem_orthogonal_singleton_iff_inner_right.mp y.2, he]
+
+open scoped Pointwise in
+/-- Translating a graph `{x | ⟪e, x⟫_𝕜 = φ (P x)}` over `(𝕜 ∙ e)ᗮ` by `v` translates the base
+coordinate by `P v` and adds `⟪e, v⟫_𝕜` to the height. -/
+theorem vadd_setOf_inner_eq {𝕜 F : Type*} [RCLike 𝕜] [NormedAddCommGroup F]
+    [InnerProductSpace 𝕜 F] (e v : F) (φ : (𝕜 ∙ e)ᗮ → 𝕜) :
+    v +ᵥ {x : F | inner 𝕜 e x = φ ((𝕜 ∙ e)ᗮ.orthogonalProjectionOnto x)} =
+      {x : F | inner 𝕜 e x =
+        φ ((𝕜 ∙ e)ᗮ.orthogonalProjectionOnto x - (𝕜 ∙ e)ᗮ.orthogonalProjectionOnto v) +
+          inner 𝕜 e v} := by
+  ext x
+  simp only [Set.mem_vadd_set_iff_neg_vadd_mem, vadd_eq_add, neg_add_eq_sub, Set.mem_ofPred_eq,
+    map_sub, inner_sub_right, sub_eq_iff_eq_add]
 
 end TauCeti
 

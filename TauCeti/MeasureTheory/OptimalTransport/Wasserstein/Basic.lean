@@ -941,6 +941,12 @@ theorem lintegral_edist_sq_eq_ofReal_integral {π : Measure (E × E)}
   refine lintegral_congr fun z ↦ ?_
   rw [edist_dist, dist_eq_norm, ENNReal.ofReal_pow (norm_nonneg _)]
 
+/-- On a seminormed additive group, if the identity lies in `L^p(ν)` then `ν` has finite
+`p`-moment (taking `0` as basepoint). -/
+theorem hasFiniteMoment_of_memLp_id {ν : Measure E} (h : MemLp id p ν) :
+    HasFiniteMoment p ν :=
+  ⟨0, by simpa [eDist_eq_eNorm_sub] using h.eNorm⟩
+
 variable [OpensMeasurableSpace E] [SecondCountableTopology E]
 
 /-- On a seminormed additive group, a finite measure with finite `p`-moment has the identity in
@@ -950,14 +956,6 @@ theorem HasFiniteMoment.memLp_id {ν : Measure E} [IsFiniteMeasure ν] (h : HasF
   (memLp_congr_eNorm aestronglyMeasurable_id measurable_edist_right.aestronglyMeasurable
     (.of_forall fun x ↦ by simp [eDist_eq_eNorm_sub])).2
     (h.memLp (x := 0) measurable_edist_right.aestronglyMeasurable)
-
-/-- On a seminormed additive group, if the identity lies in `L^p(ν)` then `ν` has finite
-`p`-moment (taking `0` as basepoint). -/
-theorem hasFiniteMoment_of_memLp_id {ν : Measure E} (h : MemLp id p ν) :
-    HasFiniteMoment p ν :=
-  hasFiniteMoment_def.2 ⟨0, (memLp_congr_eNorm aestronglyMeasurable_id
-    measurable_edist_right.aestronglyMeasurable
-    (.of_forall fun x ↦ by simp [eDist_eq_eNorm_sub])).1 h⟩
 
 /-- On a seminormed additive group, a finite measure has finite `p`-moment if and only if the
 identity lies in `L^p`. -/

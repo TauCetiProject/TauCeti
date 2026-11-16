@@ -25,6 +25,7 @@ import Mathlib.MeasureTheory.Measure.Lebesgue.Basic
 import TauCeti.Analysis.Calculus.FDeriv.Basic
 import TauCeti.Analysis.Convex.SubgradientImage
 import TauCeti.Analysis.InnerProductSpace.LinearIsometry
+import TauCeti.Analysis.InnerProductSpace.Projection.Basic
 import TauCeti.MeasureTheory.Measure.Haar.NormedSpace
 
 /-!
@@ -181,14 +182,6 @@ theorem IsLipschitzHypersurface.isClosed {s : Set E} (hs : IsLipschitzHypersurfa
 theorem IsLipschitzHypersurface.measurableSet [MeasurableSpace E] [OpensMeasurableSpace E]
     {s : Set E} (hs : IsLipschitzHypersurface s) : MeasurableSet s := hs.isClosed.measurableSet
 
-private theorem vadd_setOf_inner_eq (e v : E) (w : ↥(ℝ ∙ e)ᗮ → ℝ) :
-    v +ᵥ {x : E | inner ℝ x e = w ((ℝ ∙ e)ᗮ.orthogonalProjectionOnto x)} =
-      {x : E | inner ℝ x e =
-        w ((ℝ ∙ e)ᗮ.orthogonalProjectionOnto x - (ℝ ∙ e)ᗮ.orthogonalProjectionOnto v) +
-          inner ℝ v e} := by
-  ext x; simp only [mem_vadd_set_iff_neg_vadd_mem, vadd_eq_add, neg_add_eq_sub, mem_ofPred_eq,
-    map_sub, inner_sub_left]; exact ⟨fun h => by linarith, fun h => by linarith⟩
-
 /-- Translates of `c - c` hypersurfaces are `c - c` hypersurfaces. -/
 theorem IsCCHypersurface.vadd {s : Set E} (hs : IsCCHypersurface s) (v : E) :
     IsCCHypersurface (v +ᵥ s) := by
@@ -197,7 +190,8 @@ theorem IsCCHypersurface.vadd {s : Set E} (hs : IsCCHypersurface s) (v : E) :
     simpa [Function.comp_def, sub_eq_add_neg] using hw.translate_left (-v₀)
   exact ⟨e, he, fun y => f (y - v₀) + inner ℝ v e, fun y => g (y - v₀), by fun_prop, by fun_prop,
     (hsub hf).add_const _, hsub hg,
-    by simpa [v₀, sub_add_eq_add_sub] using vadd_setOf_inner_eq e v (fun y => f y - g y)⟩
+    by simpa [v₀, real_inner_comm e, sub_add_eq_add_sub] using
+      vadd_setOf_inner_eq (𝕜 := ℝ) e v (fun y => f y - g y)⟩
 
 /-- A translate `v +ᵥ s` is a `c - c` hypersurface if and only if `s` is. -/
 @[simp]
@@ -211,7 +205,7 @@ theorem IsLipschitzHypersurface.vadd {s : Set E} (hs : IsLipschitzHypersurface s
   let ⟨e, he, K, h, hh, hs'⟩ := hs; let v₀ := (ℝ ∙ e)ᗮ.orthogonalProjectionOnto v
   hs' ▸ ⟨e, he, K, fun y => h (y - v₀) + inner ℝ v e,
     ((hh.comp (LipschitzWith.id.sub (.const v₀))).add (.const _)).weaken (by simp),
-    vadd_setOf_inner_eq e v h⟩
+    by simpa [v₀, real_inner_comm e] using vadd_setOf_inner_eq (𝕜 := ℝ) e v h⟩
 
 /-- A translate `v +ᵥ s` is a Lipschitz hypersurface if and only if `s` is. -/
 @[simp]
@@ -242,12 +236,10 @@ private theorem image_continuousLinearEquiv_setOf_inner_eq {F : Type*}
     simpa [B, map_add, map_smul, orthogonalProjectionOnto_orthogonalComplement_singleton_eq_zero]
       using (congrArg (ℝ ∙ e)ᗮ.orthogonalProjectionOnto hd).symm
   have hi : c * inner ℝ (L.symm z) e = ℓ ((ℝ ∙ e')ᗮ.orthogonalProjectionOnto z) + inner ℝ z e' := by
-    have h := congrArg (inner ℝ · e) hd
-    simp only [inner_add_left, real_inner_smul_left, real_inner_self_eq_norm_sq, he, one_pow,
-      mul_one] at h
-    rw [← h, mul_add]; simp only [ℓ, FunLike.coe_smul, Pi.smul_apply,
-      ContinuousLinearMap.comp_apply, innerSL_apply_apply, Submodule.subtypeL_apply,
-      ContinuousLinearEquiv.coe_coe, real_inner_comm e, smul_eq_mul]; field_simp [hc.ne']
+    have h : inner ℝ (L.symm ((ℝ ∙ e')ᗮ.orthogonalProjectionOnto z)) e + inner ℝ z e' * c⁻¹ =
+        inner ℝ (L.symm z) e := by
+      simpa [inner_add_left, real_inner_smul_left, he] using congrArg (inner ℝ · e) hd
+    rw [← h, mul_add]; simp [ℓ, real_inner_comm e]; field_simp [hc.ne']
   simp only [mem_image, mem_ofPred_eq]
   refine ⟨?_, fun hz => ⟨L.symm z, mul_left_cancel₀ hc.ne' (by rw [hproj]; linarith),
     L.apply_symm_apply z⟩⟩
@@ -329,9 +321,8 @@ private theorem exists_linearIsometryEquiv_of_unit [FiniteDimensional ℝ E] {e 
       (ψ : ↥(ℝ ∙ e)ᗮ ≃ₗᵢ[ℝ] EuclideanSpace ℝ (Fin (Module.finrank ℝ E - 1))),
       (∀ x, (Φ x).fst = ψ ((ℝ ∙ e)ᗮ.orthogonalProjectionOnto x)) ∧
       (∀ x, (Φ x).snd = inner ℝ x e) := by
-  have hdim : Module.finrank ℝ ↥(ℝ ∙ e)ᗮ = Module.finrank ℝ E - 1 := by
-    have h1 := Submodule.finrank_add_finrank_orthogonal (ℝ ∙ e)
-    rw [finrank_span_singleton (fun h => by simp [h] at he)] at h1; omega
+  have hdim : Module.finrank ℝ ↥(ℝ ∙ e)ᗮ = Module.finrank ℝ E - 1 :=
+    Submodule.finrank_orthogonal_span_singleton_eq_finrank_sub_one (fun h => by simp [h] at he)
   let ψ : ↥(ℝ ∙ e)ᗮ ≃ₗᵢ[ℝ] EuclideanSpace ℝ (Fin (Module.finrank ℝ E - 1)) :=
     (stdOrthonormalBasis ℝ ↥(ℝ ∙ e)ᗮ).repr.trans (.piLpCongrLeft 2 ℝ ℝ (finCongr hdim))
   let Φ := (orthogonalLineIsometry e he).symm.trans (ψ.withLpProdCongr 2 (.refl ℝ ℝ))
@@ -403,33 +394,27 @@ theorem isLipschitzHypersurface_iff_exists_linearIsometryEquiv [FiniteDimensiona
     exact ⟨e, he, K, h ∘ ψ, by simpa using hh.comp ψ.lipschitzWith,
       by rw [hs]; ext x; simp [hfst, hsnd]⟩
 
-private theorem orthogonal_span_singleton_eq_bot_of_finrank_eq_one
-    (hdim : Module.finrank ℝ E = 1) {e : E} (he : ‖e‖ = 1) : (ℝ ∙ e)ᗮ = ⊥ := by
-  have : FiniteDimensional ℝ E := .of_finrank_eq_succ hdim
-  have h1 := Submodule.finrank_add_finrank_orthogonal (ℝ ∙ e)
-  rw [finrank_span_singleton (fun h => by simp [h] at he), hdim] at h1
-  exact Submodule.finrank_eq_zero.1 (by omega)
-
 private theorem range_eq_singleton_of_finrank_eq_one (hdim : Module.finrank ℝ E = 1) {e : E}
     (he : ‖e‖ = 1) (φ : ↥(ℝ ∙ e)ᗮ → ℝ) :
     (range fun y : ↥(ℝ ∙ e)ᗮ => (y : E) + φ y • e) = {φ 0 • e} := by
-  have horth := orthogonal_span_singleton_eq_bot_of_finrank_eq_one hdim he
+  have horth := Submodule.orthogonal_span_singleton_eq_bot_of_finrank_eq_one hdim (v := e)
+    (fun h => by simp [h] at he)
   ext z; refine ⟨?_, by rintro rfl; exact ⟨0, by simp⟩⟩
   rintro ⟨y, rfl⟩; simp [show y = 0 from Subtype.ext ((Submodule.mem_bot ℝ).1 (horth ▸ y.2))]
 
 private theorem exists_unit_singleton_eq_setOf_inner_eq (hdim : Module.finrank ℝ E = 1) (x : E) :
     ∃ (e : E) (_ : ‖e‖ = 1), {x} = {z : E | inner ℝ z e = inner ℝ x e} := by
   have : Nontrivial E := Module.nontrivial_of_finrank_eq_succ hdim
-  obtain ⟨v, hv⟩ := exists_ne (0 : E); let e : E := ‖v‖⁻¹ • v
-  have he : ‖e‖ = 1 := by simp [e, norm_smul, inv_mul_cancel₀ (norm_ne_zero_iff.2 hv)]
-  have horth := orthogonal_span_singleton_eq_bot_of_finrank_eq_one hdim he
+  obtain ⟨e, he⟩ := exists_norm_eq E (zero_le_one (α := ℝ))
+  have horth := Submodule.orthogonal_span_singleton_eq_bot_of_finrank_eq_one hdim (v := e)
+    (fun h => by simp [h] at he)
   have hrep (w : E) : inner ℝ w e • e = w := by
     have h := orthogonalProjectionOnto_add_inner_smul (𝕜 := ℝ) he w
     have h0 := (Submodule.mem_bot ℝ).1 (show ((ℝ ∙ e)ᗮ.orthogonalProjectionOnto w : E) ∈ ⊥ by
       rw [← horth]; exact Subtype.prop _)
     simpa only [h0, zero_add, real_inner_comm] using h
   exact ⟨e, he, Set.ext fun z => ⟨by rintro rfl; simp, fun h =>
-    mem_singleton_iff.2 (by rw [← hrep z, ← hrep x, show inner ℝ z e = inner ℝ x e from h])⟩⟩
+    mem_singleton_iff.2 (by rw [← hrep z, ← hrep x, mem_ofPred_eq.mp h])⟩⟩
 
 /-- **Dimension-one characterization of `c - c` hypersurfaces.** In a one-dimensional real inner
 product space, the `c - c` hypersurfaces are precisely the singletons. -/
@@ -522,45 +507,21 @@ private theorem exists_convexOn_eq_toReal_sub_mul_inner {u : E → EReal} {e : E
   obtain ⟨x₀, hx₀S⟩ := hS; have : Nonempty S := ⟨⟨x₀, hx₀S⟩⟩
   have hM : 0 ≤ M := (norm_nonneg _).trans (hα ⟨x₀, hx₀S⟩).2.1
   let P := (ℝ ∙ e)ᗮ.orthogonalProjectionOnto
-  let g : S → ↥(ℝ ∙ e)ᗮ → ℝ := fun x₁ y =>
-    (u x₁).toReal - c * inner ℝ (x₁ : E) e + inner ℝ (P (α x₁)) (y - P x₁)
-  have hgle (x₁ x₂ : S) : g x₁ (P x₂) ≤ (u x₂).toReal - c * inner ℝ (x₂ : E) e := by
-    obtain ⟨h1b, h1t, h1le⟩ := (mem_subdifferential_iff (innerₗ E)).1 (hα x₁).1
-    obtain ⟨h2b, h2t, -⟩ := (mem_subdifferential_iff (innerₗ E)).1 (hα x₂).1
-    have hsubg : (u x₁).toReal + inner ℝ ((x₂ : E) - x₁) (α x₁) ≤ (u x₂).toReal := by
-      have h := h1le x₂
-      rw [← EReal.coe_toReal h1t h1b, ← EReal.coe_toReal h2t h2b, ← EReal.coe_add,
-        EReal.coe_le_coe_iff] at h; simpa only [innerₗ_apply_apply] using h
-    have hdec : inner ℝ ((x₂ : E) - x₁) (α x₁) =
-        inner ℝ (P (α x₁)) (P x₂ - P x₁) + c * inner ℝ ((x₂ : E) - x₁) e := by
-      have hαeq := orthogonalProjectionOnto_add_inner_smul (𝕜 := ℝ) he (α x₁)
-      rw [real_inner_comm, (hα x₁).2.2] at hαeq; nth_rw 1 [← hαeq]
-      rw [inner_add_right, real_inner_smul_right, ← inner_orthogonalProjectionOnto_eq_of_mem_right,
-        map_sub, real_inner_comm (P (α x₁))]
-    dsimp only [g]; simp only [inner_sub_left] at hdec hsubg; linarith
-  have hlip (x₁ : S) (y₁ y₂ : ↥(ℝ ∙ e)ᗮ) : g x₁ y₁ ≤ g x₁ y₂ + M * dist y₁ y₂ := by
-    have hsplit : g x₁ y₁ = g x₁ y₂ + inner ℝ (P (α x₁)) (y₁ - y₂) := by
-      simp only [g, inner_sub_right]; ring
-    have hcs := (real_inner_le_norm (P (α x₁)) (y₁ - y₂)).trans <| mul_le_mul_of_nonneg_right
-      ((norm_orthogonalProjectionOnto_apply_le _ _).trans (hα x₁).2.1) (norm_nonneg _)
-    rw [← dist_eq_norm] at hcs; linarith
-  have hbdd (y : ↥(ℝ ∙ e)ᗮ) : BddAbove (range fun x₁ : S => g x₁ y) :=
-    ⟨(u x₀).toReal - c * inner ℝ x₀ e + M * dist y (P x₀), forall_mem_range.2 fun x₁ =>
-      (hlip x₁ y (P x₀)).trans (add_le_add (hgle x₁ ⟨x₀, hx₀S⟩) le_rfl)⟩
-  let F : ↥(ℝ ∙ e)ᗮ → ℝ := fun y => ⨆ x₁ : S, g x₁ y
-  have hstep (y₁ y₂ : ↥(ℝ ∙ e)ᗮ) : F y₁ - F y₂ ≤ M * dist y₁ y₂ := sub_le_iff_le_add'.2 <| ciSup_le
-    fun x₁ => (hlip x₁ y₁ y₂).trans (add_le_add (le_ciSup (hbdd y₂) x₁) le_rfl)
-  refine ⟨F, (lipschitzWith_iff_dist_le_mul (K := ⟨M, hM⟩).2 fun a b => (Real.dist_eq _ _).trans_le
-    (abs_sub_le_iff.2 ⟨hstep a b, dist_comm a b ▸ hstep b a⟩)).continuous,
-    ⟨convex_univ, fun y₁ _ y₂ _ a b ha hb hab => ciSup_le fun x₁ => ?_⟩,
-    fun x => le_antisymm (ciSup_le fun x₁ => hgle x₁ x)
-      (by simpa only [g, sub_self, inner_zero_right, add_zero] using le_ciSup (hbdd (P x)) x)⟩
-  have haff : g x₁ (a • y₁ + b • y₂) = a * g x₁ y₁ + b * g x₁ y₂ := by
-    simp only [g, inner_sub_right, inner_add_right, real_inner_smul_right]
-    linear_combination ((u x₁).toReal - c * inner ℝ (x₁ : E) e -
-      inner ℝ (P (α x₁)) (P x₁)) * hab.symm
-  exact haff.le.trans (add_le_add (mul_le_mul_of_nonneg_left (le_ciSup (hbdd y₁) x₁) ha)
-    (mul_le_mul_of_nonneg_left (le_ciSup (hbdd y₂) x₁) hb))
+  obtain ⟨F, hconv, hlip, hF⟩ := exists_convexOn_lipschitzWith_apply_eq
+    (x := fun x : S => P x) (p := fun x : S => P (α x))
+    (a := fun x : S => (u x).toReal - c * inner ℝ (x : E) e) (L := ⟨M, hM⟩)
+    (fun x => (norm_orthogonalProjectionOnto_apply_le _ _).trans (hα x).2.1) fun x₁ x₂ => by
+      have hsubg : (u x₁).toReal + inner ℝ ((x₂ : E) - x₁) (α x₁) ≤ (u x₂).toReal := by
+        simpa only [innerₗ_apply_apply] using toReal_add_le_toReal_of_mem_subdifferential
+          (innerₗ E) (hα x₁).1 (ne_top_of_mem_subdifferential (innerₗ E) (hα x₂).1)
+      have hdec : inner ℝ ((x₂ : E) - x₁) (α x₁) =
+          inner ℝ (P x₂ - P x₁) (P (α x₁)) + c * inner ℝ ((x₂ : E) - x₁) e := by
+        have hαeq := orthogonalProjectionOnto_add_inner_smul (𝕜 := ℝ) he (α x₁)
+        rw [real_inner_comm, (hα x₁).2.2] at hαeq; nth_rw 1 [← hαeq]
+        rw [inner_add_right, real_inner_smul_right,
+          ← inner_orthogonalProjectionOnto_eq_of_mem_right, map_sub]
+      simp only [inner_sub_left] at hdec hsubg ⊢; linarith
+  exact ⟨F, hlip.continuous, hconv, hF⟩
 
 /-- **Single-slice subdifferential separation lies in a `c - c` hypersurface.** In any real inner
 product space `E`, for any `u : E → EReal`, unit vector `e`, `a < b`, and `M : ℝ`, the set of
@@ -682,8 +643,9 @@ theorem _root_.Convex.exists_countable_isCCHypersurface_cover_frontier {K : Set 
         (u := fun z => (u z : EReal)) (by simpa using convexOn_iff_convex_epigraph_ite.1 hu)
     refine ⟨C, hC, hs, fun x hx => hsub ⟨by simp, ?_⟩⟩; simp only [EReal.toReal_coe]
     have hg1 : gauge K₀ (x - z₀) = 1 := (gauge_eq_one_iff_mem_frontier hK₀ hnhds).2 <| by
-      rw [show frontier K₀ = (z₀ + ·) ⁻¹' frontier K from
-        ((Homeomorph.addLeft z₀).preimage_frontier K).symm]; simpa [add_sub_cancel] using hx
+      dsimp only [K₀]
+      rw [← Homeomorph.coe_addLeft z₀, ← (Homeomorph.addLeft z₀).preimage_frontier]
+      simpa [add_sub_cancel] using hx
     refine not_differentiableAt_of_add_sub_two_mul_ge (v := x - z₀) zero_lt_one zero_lt_one
       fun t ht => ?_
     have hmul (s : ℝ) (hs : 0 ≤ 1 + s) : gauge K₀ (x + s • (x - z₀) - z₀) = 1 + s := by
@@ -792,15 +754,16 @@ theorem IsCCHypersurface.exists_convexOn_lipschitzWith_add_sub_two_mul_eq {s : S
   refine ⟨max Lf (Lg + 1), e, he, ψ, hconv₀.add_const (-max (f' 0) (g' 0)), by simp [ψ, P],
     (hlip₀.sub (.const _)).weaken (by simp), fun x hx t ht => ?_⟩
   have hin (s : ℝ) : inner ℝ (x + s • e) e = inner ℝ x e + s := by
-    rw [inner_add_left, real_inner_smul_left, real_inner_self_eq_norm_sq, he, one_pow, mul_one]
-  simp only [ψ, map_add, map_sub, map_smul,
-    show P e = 0 from orthogonalProjectionOnto_orthogonalComplement_singleton_eq_zero e,
-    smul_zero, add_zero, sub_zero, hin t, show inner ℝ (x - t • e) e = inner ℝ x e - t by
-      simpa [sub_eq_add_neg, neg_smul] using hin (-t)]
-  rw [show g' (P x) + (inner ℝ x e + t) = f' (P x) + t by linarith [heq_on x hx],
-    show g' (P x) + (inner ℝ x e - t) = f' (P x) - t by linarith [heq_on x hx], heq_on x hx,
-    max_eq_right (by linarith : f' (P x) ≤ f' (P x) + t),
-    max_eq_left (by linarith : f' (P x) - t ≤ f' (P x)), max_self]; ring
+    simp [inner_add_left, real_inner_smul_left, he]
+  have hin_sub : inner ℝ (x - t • e) e = inner ℝ x e - t := by
+    simpa [sub_eq_add_neg, neg_smul] using hin (-t)
+  simp only [ψ, P, map_add, map_sub, map_smul,
+    orthogonalProjectionOnto_orthogonalComplement_singleton_eq_zero,
+    smul_zero, add_zero, sub_zero, hin t, hin_sub]
+  rw [← add_assoc, ← add_sub_assoc (g' _), heq_on x hx,
+    max_eq_right (le_add_of_nonneg_right ht),
+    max_eq_left (sub_le_self _ ht), max_self]
+  ring
 
 /-- **Borel measurable subgradient splitting along a `c - c` hypersurface.** Given a `c - c`
 hypersurface `s ⊆ E` and `R : ℝ`, there exist `K : ℝ≥0`, a `K`-Lipschitz convex `ψ : E → ℝ`, and
@@ -836,8 +799,8 @@ theorem IsCCHypersurface.exists_convexOn_lipschitzWith_measurable_forall_add_inn
     (measurable_subtype_coe.comp (hGf_meas.comp P.measurable))
     ((measurable_subtype_coe.comp (hGg_meas.comp P.measurable)).add measurable_const) hsub₁ hsub₂
   refine ⟨max Lf (Lg + 1), _, T₁, T₂, hconv, hlip, hT₁m, hT₂m, hT₁, hT₂,
-    fun x => norm_le_of_forall_add_inner_le_of_lipschitzWith hlip (hT₁ x),
-    fun x => norm_le_of_forall_add_inner_le_of_lipschitzWith hlip (hT₂ x), fun x hx hEq => ?_⟩
+    fun x => hlip.norm_le_of_forall_add_inner_le (hT₁ x),
+    fun x => hlip.norm_le_of_forall_add_inner_le (hT₂ x), fun x hx hEq => ?_⟩
   obtain ⟨h₁, h₂⟩ := hTeq x (heq_on x hx).symm
   have hin₁ : inner ℝ (T₁ x) e = 0 :=
     h₁ ▸ Submodule.mem_orthogonal_singleton_iff_inner_left.mp (Gf (P x)).2
@@ -903,9 +866,8 @@ theorem exists_convexOn_subset_not_differentiableAt_iff_nat [Nontrivial E] {A : 
   refine ⟨fun ⟨C, hC, hs, hA⟩ => ?_, fun ⟨s, hs, hA⟩ =>
     ⟨range s, countable_range s, forall_mem_range.2 hs, sUnion_range s ▸ hA⟩⟩
   rcases C.eq_empty_or_nonempty with rfl | hCne
-  · obtain ⟨v, hv⟩ := exists_ne (0 : E)
-    have he : ‖‖v‖⁻¹ • v‖ = 1 := by simp [norm_smul, inv_mul_cancel₀ (norm_ne_zero_iff.2 hv)]
-    exact ⟨fun _ => {x | inner ℝ x (‖v‖⁻¹ • v) = 0},
+  · obtain ⟨e, he⟩ := exists_norm_eq E (zero_le_one (α := ℝ))
+    exact ⟨fun _ => {x | inner ℝ x e = 0},
       fun _ => isCCHypersurface_setOf_inner_eq he 0, hA.trans (by simp)⟩
   · obtain ⟨s, rfl⟩ := hC.exists_eq_range hCne
     exact ⟨s, forall_mem_range.1 hs, sUnion_range s ▸ hA⟩

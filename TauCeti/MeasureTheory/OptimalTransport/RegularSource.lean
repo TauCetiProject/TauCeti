@@ -16,16 +16,13 @@ law `μ` on a finite-dimensional real inner product space `E` is **`c - c`-regul
 (`TauCeti.IsCCRegular μ`), strictly generalizing absolute continuity with respect to additive Haar
 measure (e.g. atomless singular measures on `ℝ`, or product Cantor measures on `ℝ²`).
 
-This module proves strict convexity of the quadratic transport cost in the target for
-`c - c`-regular sources, and the converse / sharp characterization of Gangbo–McCann (1996) and
+This module proves the converse / sharp characterization of Gangbo–McCann (1996) and
 Ambrosio–Gigli (2013, Theorem 1.26): a `P₂` probability law `μ` is `c - c`-regular iff for every
 `P₂` target `ν`, every quadratic optimal coupling is induced by a transport map (note uniqueness
 *alone* holds trivially for Dirac masses).
 
 ## Main statements
 
-* `TauCeti.IsCCRegular.transportCost_smul_add_smul_lt` — strict convexity of the quadratic transport
-  cost in the target for a `c - c`-regular source.
 * `TauCeti.exists_memLp_isOptimalCoupling_forall_ne_graphPlan_of_not_isCCRegular`,
   `TauCeti.isCCRegular_iff_forall_memLp_isOptimalCoupling_exists_eq_graphPlan`, and its existence
   and uniqueness counterpart — **Ambrosio–Gigli Theorem 1.26** in `MemLp` form.
@@ -52,76 +49,6 @@ open Filter MeasureTheory Metric ProbabilityTheory Set
 open scoped ENNReal NNReal Topology Gradient RealInnerProductSpace
 
 namespace TauCeti
-
-section StrictConvexity
-
-variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteDimensional ℝ E]
-  [MeasurableSpace E] [BorelSpace E] {μ : Measure E}
-
-/-- **Strict convexity of the quadratic transport cost in the target for `c - c`-regular sources.**
-Whenever `μ` is a `c - c`-regular probability measure and `ν₀ ≠ ν₁` have finite quadratic transport
-cost from `μ`, any nontrivial convex combination `a • ν₀ + b • ν₁` (`a, b ≠ 0`, `a + b = 1`) has
-strictly smaller transport cost than the convex combination of the two costs. -/
-theorem IsCCRegular.transportCost_smul_add_smul_lt [IsProbabilityMeasure μ] (hμ : IsCCRegular μ)
-    {ν₀ ν₁ : Measure E} {a b : ℝ≥0∞} (hab : a + b = 1) (ha : a ≠ 0) (hb : b ≠ 0)
-    (hfin₀ : transportCost (fun z : E × E => ENNReal.ofReal (‖z.1 - z.2‖ ^ 2 / 2)) μ ν₀ ≠ ∞)
-    (hfin₁ : transportCost (fun z : E × E => ENNReal.ofReal (‖z.1 - z.2‖ ^ 2 / 2)) μ ν₁ ≠ ∞)
-    (hne : ν₀ ≠ ν₁) :
-    transportCost (fun z : E × E => ENNReal.ofReal (‖z.1 - z.2‖ ^ 2 / 2)) μ (a • ν₀ + b • ν₁) <
-      a * transportCost (fun z : E × E => ENNReal.ofReal (‖z.1 - z.2‖ ^ 2 / 2)) μ ν₀ +
-        b * transportCost (fun z : E × E => ENNReal.ofReal (‖z.1 - z.2‖ ^ 2 / 2)) μ ν₁ := by
-  let c : E × E → ℝ≥0∞ := fun z => ENNReal.ofReal (‖z.1 - z.2‖ ^ 2 / 2)
-  have hc := (continuous_ofReal_norm_sub_sq_div_two (F := E)).lowerSemicontinuous
-  have := isProbabilityMeasure_right_of_transportCost_ne_top hfin₀
-  have := isProbabilityMeasure_right_of_transportCost_ne_top hfin₁
-  obtain ⟨π₀, hπ₀⟩ := exists_isOptimalCoupling μ ν₀ hc
-  obtain ⟨π₁, hπ₁⟩ := exists_isOptimalCoupling μ ν₁ hc
-  have hatop : a ≠ ∞ := ne_top_of_le_ne_top ENNReal.one_ne_top (hab ▸ le_self_add)
-  have hbtop : b ≠ ∞ := ne_top_of_le_ne_top ENNReal.one_ne_top (hab ▸ le_add_self)
-  have hfin_mix : transportCost c μ (a • ν₀ + b • ν₁) ≠ ∞ :=
-    ne_top_of_le_ne_top (ENNReal.add_ne_top.2
-      ⟨ENNReal.mul_ne_top hatop hfin₀, ENNReal.mul_ne_top hbtop hfin₁⟩) <| by
-      simpa only [← add_smul, hab, one_smul, transportCost_smul hatop, transportCost_smul hbtop]
-        using transportCost_add_le c (a • μ) (b • μ) (a • ν₀) (b • ν₁)
-  exact TauCeti.transportCost_smul_add_smul_lt hab ha hb hπ₀ hπ₁ (fun π hπ =>
-    let ⟨_, _, _, _, _, hgraph⟩ := hπ.exists_eq_graphPlan_gradient hμ hfin_mix
-    ⟨_, (measurable_gradient _).aemeasurable, hgraph⟩) hne
-
-end StrictConvexity
-
-private theorem mem_subdifferential_norm_sq_div_two_add {E : Type*} [NormedAddCommGroup E]
-    [InnerProductSpace ℝ E] {ψ : E → ℝ} {T : E → E}
-    (hT : ∀ x z, ψ x + inner ℝ (z - x) (T x) ≤ ψ z) (x : E) :
-    x + T x ∈ subdifferential (innerₗ E) (fun z => ((‖z‖ ^ 2 / 2 + ψ z : ℝ) : EReal)) x := by
-  refine (mem_subdifferential_iff _).2 ⟨EReal.coe_ne_bot _, EReal.coe_ne_top _, fun z => ?_⟩
-  rw [innerₗ_apply_apply, ← EReal.coe_add, EReal.coe_le_coe_iff, inner_add_right, inner_sub_left,
-    real_inner_self_eq_norm_sq]
-  have hsq : 0 ≤ ‖z - x‖ ^ 2 := sq_nonneg _; rw [norm_sub_sq_real] at hsq; linarith [hT x z]
-
-private theorem ne_graphPlan_of_smul_graphPlan_add {E : Type*} [MeasurableSpace E]
-    [MeasurableEq E] {μ : Measure E} [IsProbabilityMeasure μ] {B : Set E}
-    (hμB : μ B ≠ 0) {S₁ S₂ : E → E} (hS₁ : Measurable S₁) (hS₂ : Measurable S₂)
-    (hBne : ∀ x ∈ B, S₁ x ≠ S₂ x) (T : E → E) :
-    (2⁻¹ : ℝ≥0∞) • graphPlan S₁ μ + (2⁻¹ : ℝ≥0∞) • graphPlan S₂ μ ≠ graphPlan T μ := fun hEq => by
-  obtain ⟨T', μ', hT', hT'eq⟩ : ∃ (T' : E → E) (μ' : Measure E),
-      AEMeasurable T' μ' ∧ graphPlan T μ = graphPlan T' μ' := by
-    by_cases hT : AEMeasurable T μ
-    · exact ⟨T, μ, hT, rfl⟩
-    · have : Nonempty E := nonempty_of_isProbabilityMeasure μ
-      let z₀ : E × E := Classical.ofNonempty
-      refine ⟨fun _ => z₀.2, Measure.dirac z₀.1, measurable_const.aemeasurable, ?_⟩
-      rw [graphPlan_def, Measure.map_of_not_aemeasurable_of_ne_zero
-        (fun h => hT (by simpa [Function.comp_def] using measurable_snd.comp_aemeasurable h))
-        (IsProbabilityMeasure.ne_zero μ), graphPlan_dirac measurable_const.aemeasurable]
-  have heq {S : E → E} (hS : Measurable S) (hle : (2⁻¹ : ℝ≥0∞) • graphPlan S μ ≤ graphPlan T μ) :
-      graphPlan S μ = graphPlan T' μ := by
-    simpa [fst_graphPlan hS.aemeasurable] using eq_graphPlan_of_absolutelyContinuous hT' <|
-      (Measure.absolutelyContinuous_smul (ENNReal.inv_ne_zero.2 ENNReal.ofNat_ne_top)).trans <|
-        Measure.absolutelyContinuous_of_le (hle.trans_eq hT'eq)
-  have hae : S₁ =ᵐ[μ] S₂ := (graphPlan_eq_graphPlan_iff hS₁.aemeasurable hS₂.aemeasurable).1 <|
-    (heq hS₁ ((Measure.le_add_right le_rfl).trans_eq hEq)).trans
-      (heq hS₂ ((Measure.le_add_left le_rfl).trans_eq hEq)).symm
-  exact hμB (measure_mono_null (fun x hx => hBne x hx) (ae_iff.1 hae))
 
 section SharpCharacterization
 
@@ -162,14 +89,21 @@ theorem exists_memLp_isOptimalCoupling_forall_ne_graphPlan_of_not_isCCRegular {�
     rwa [← add_smul, ENNReal.inv_two_add_inv_two, one_smul] at h
   have hsub {T : E → E} (hTm : Measurable T) (hTs : ∀ x z, ψ x + inner ℝ (z - x) (T x) ≤ ψ z) :
       ∀ᵐ z ∂(2⁻¹ : ℝ≥0∞) • graphPlan (fun x => x + T x) μ,
-        z.2 ∈ subdifferential (innerₗ E) (fun w => ((‖w‖ ^ 2 / 2 + ψ w : ℝ) : EReal)) z.1 :=
+        z.2 ∈ subdifferential (innerₗ E)
+          (fun w => ((‖w‖ ^ 2 / 2 : ℝ) : EReal) + (ψ w : EReal)) z.1 :=
     Measure.ae_smul_measure ((ae_snd_eq_graphPlan (measurable_id.add hTm).aemeasurable).mono
-      fun z hz => hz ▸ mem_subdifferential_norm_sq_div_two_add hTs z.1) _
+      fun z hz => hz ▸ mem_subdifferential_add (innerₗ E)
+        (mem_subdifferential_norm_sq_div_two z.1)
+        ((mem_subdifferential_coe_iff (innerₗ E) ψ).2 fun w => by
+          simpa only [innerₗ_apply_apply] using hTs z.1 w)) _
   exact ⟨ν, ⟨by simp [ν, smul_eq_mul, ENNReal.inv_two_add_inv_two]⟩, hν2, _,
     hπ.isOptimalCoupling_of_ae_mem_subdifferential hμ2 hν2
       (ae_add_measure_iff.2 ⟨hsub hT₁m hT₁s, hsub hT₂m hT₂s⟩),
-    ne_graphPlan_of_smul_graphPlan_add hμB hS₁m hS₂m
-      (fun x hx hEq => hTne x hx (add_left_cancel hEq))⟩
+    smul_graphPlan_add_smul_graphPlan_ne_graphPlan (ENNReal.inv_ne_zero.2 ENNReal.ofNat_ne_top)
+      (ENNReal.inv_ne_zero.2 ENNReal.ofNat_ne_top) hS₁m.aemeasurable hS₂m.aemeasurable
+      (fun hae => hμB (measure_mono_null (t := {x | ¬ S₁ x = S₂ x})
+        (fun x hx => mem_ofPred_eq.mpr fun hEq => hTne x hx (add_left_cancel hEq))
+        (ae_iff.1 hae)))⟩
 
 /-- **Ambrosio–Gigli Theorem 1.26 (determinism of all optimal plans).** Let `μ` be a probability
 measure with `MemLp id 2 μ` on a finite-dimensional real inner product space `E`. Then `μ` is

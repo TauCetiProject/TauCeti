@@ -60,6 +60,8 @@ semicontinuous at points of differentiability, again with no convexity assumptio
   nearby and differentiable, every subgradient is close to the gradient.
 * `ConvexOn.inner_gradient_sub_le` — a real convex function lies above its tangent plane at
   any point of differentiability.
+* `TauCeti.mem_subdifferential_norm_sq_div_two` — `x` is a subgradient of `z ↦ ‖z‖ ^ 2 / 2` at `x`
+  on any real inner product space.
 * `TauCeti.hasGradientAt_toReal_of_continuousAt_subgradient` — a continuous local selection
   of subgradients is the gradient, without a convexity assumption.
 
@@ -165,6 +167,22 @@ theorem mem_subdifferential_of_hasFDerivAt (hf : Convex ℝ {p : E × ℝ | f p.
   linarith
 
 end Normed
+
+section SeminormedInnerProduct
+
+variable {E : Type*} [SeminormedAddCommGroup E] [InnerProductSpace ℝ E]
+
+/-- At every point `x` of a real inner product space, `x` is a subgradient of the quadratic
+function `z ↦ ‖z‖ ^ 2 / 2`. -/
+theorem mem_subdifferential_norm_sq_div_two (x : E) :
+    x ∈ subdifferential (innerₗ E) (fun z => ((‖z‖ ^ 2 / 2 : ℝ) : EReal)) x :=
+  (mem_subdifferential_coe_iff (innerₗ E) fun z => ‖z‖ ^ 2 / 2).2 fun z => by
+    simp only [innerₗ_apply_apply, inner_sub_left, real_inner_self_eq_norm_sq]
+    have hsq : 0 ≤ ‖z - x‖ ^ 2 := sq_nonneg _
+    rw [norm_sub_sq_real] at hsq
+    linarith
+
+end SeminormedInnerProduct
 
 section InnerProduct
 

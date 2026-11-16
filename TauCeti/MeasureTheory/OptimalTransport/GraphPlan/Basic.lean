@@ -66,6 +66,8 @@ with measurable singletons.
   induces a given deterministic plan;
 * `TauCeti.eq_graphPlan_of_absolutelyContinuous` — a plan absolutely continuous with respect to
   the graph plan of `T` is itself a graph plan of `T`;
+* `TauCeti.smul_graphPlan_add_smul_graphPlan_ne_graphPlan` — a nontrivial positive combination of
+  graph plans of a.e.-distinct maps is never a graph plan;
 * `TauCeti.comp_ae_eq_id_of_map_swap_graphPlan_eq` — when the coordinate swap of the graph plan
   of `T` is the graph plan of `R`, the maps are two-sided inverses almost everywhere;
 * `TauCeti.ae_eq_comp_of_map_prodMk_eq_graphPlan` — a pair `(U, t)` of random variables whose
@@ -414,6 +416,37 @@ theorem eq_graphPlan_of_absolutelyContinuous (hT : AEMeasurable T μ)
   have hfst : π.fst ≪ (graphPlan T μ).fst := h.map measurable_fst
   rw [fst_graphPlan hT] at hfst
   exact eq_graphPlan_of_ae_snd_eq (hT.mono_ac hfst) (h.ae_le (ae_snd_eq_graphPlan hT))
+
+/-- **A nontrivial positive combination of two distinct graph plans is never a graph plan.** If
+`S₁` and `S₂` are `μ`-a.e. measurable maps that do not agree `μ`-almost everywhere, and `a, b ≠ 0`
+in `ℝ≥0∞`, then `a • graphPlan S₁ μ + b • graphPlan S₂ μ` is not equal to `graphPlan T μ` for any
+map `T : X → Y` (measurable or not). -/
+theorem smul_graphPlan_add_smul_graphPlan_ne_graphPlan {S₁ S₂ : X → Y} {a b : ℝ≥0∞}
+    (ha : a ≠ 0) (hb : b ≠ 0) (hS₁ : AEMeasurable S₁ μ) (hS₂ : AEMeasurable S₂ μ)
+    (hne : ¬ S₁ =ᵐ[μ] S₂) (T : X → Y) :
+    a • graphPlan S₁ μ + b • graphPlan S₂ μ ≠ graphPlan T μ := fun hEq => by
+  have hμ0 : μ ≠ 0 := fun h0 => hne (by simp [h0, Filter.EventuallyEq])
+  obtain ⟨T', μ', hT', hT'eq⟩ : ∃ (T' : X → Y) (μ' : Measure X),
+      AEMeasurable T' μ' ∧ graphPlan T μ = graphPlan T' μ' := by
+    by_cases hT : AEMeasurable T μ
+    · exact ⟨T, μ, hT, rfl⟩
+    · have hnot : ¬ AEMeasurable (fun x ↦ (x, T x)) μ := fun h ↦
+        hT (by simpa [Function.comp_def] using measurable_snd.comp_aemeasurable h)
+      have : Nonempty (X × Y) := Measure.nonempty_of_not_aemeasurable hnot
+      let z₀ : X × Y := Classical.ofNonempty
+      refine ⟨fun _ ↦ z₀.2, Measure.dirac z₀.1, measurable_const.aemeasurable, ?_⟩
+      rw [graphPlan_def, Measure.map_of_not_aemeasurable_of_ne_zero hnot hμ0,
+        graphPlan_def, Measure.map_dirac' (f := fun x : X ↦ (x, z₀.2))
+          (measurable_id.prodMk measurable_const)]
+  have heq {S : X → Y} {c : ℝ≥0∞} (hc : c ≠ 0) (hS : AEMeasurable S μ)
+      (hle : c • graphPlan S μ ≤ graphPlan T μ) :
+      graphPlan S μ = graphPlan T' μ := by
+    simpa [fst_graphPlan hS] using eq_graphPlan_of_absolutelyContinuous hT' <|
+      (Measure.absolutelyContinuous_smul hc).trans <|
+        Measure.absolutelyContinuous_of_le (hle.trans_eq hT'eq)
+  exact hne <| (graphPlan_eq_graphPlan_iff hS₁ hS₂).1 <|
+    (heq ha hS₁ ((Measure.le_add_right le_rfl).trans_eq hEq)).trans
+      (heq hb hS₂ ((Measure.le_add_left le_rfl).trans_eq hEq)).symm
 
 /-- **Inverse graph plans come from inverse maps.** If exchanging the coordinates of the graph
 plan of `T : X → Y` over `μ` gives the graph plan of `R : Y → X` over `ν`, then `R ∘ T = id`

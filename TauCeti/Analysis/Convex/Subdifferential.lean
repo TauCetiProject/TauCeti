@@ -45,6 +45,8 @@ convex.
   `TauCeti.toReal_add_le_toReal_of_mem_subdifferential`;
 * `TauCeti.mem_subdifferential_ite_iff` — for a real function extended by `⊤` off `Ω`, a
   subgradient at a point of `Ω` is a `y` satisfying the subgradient inequality on `Ω`;
+* `TauCeti.mem_subdifferential_add` — the sum of subgradients of `f` and `g` at `x` is a
+  subgradient of `f + g` at `x`;
 * `TauCeti.mem_subdifferential_add_affine_iff` and `TauCeti.subgradientImage_add_affine` —
   adding the affine function `z ↦ B z q + c` translates subdifferentials and subgradient images
   by `q`, and `TauCeti.convex_epigraph_add_affine_iff` — it preserves convexity of the real
@@ -184,6 +186,27 @@ theorem toReal_add_le_toReal_of_mem_subdifferential (h : y ∈ subdifferential B
     (hx' : f x' ≠ ⊤) : (f x).toReal + B (x' - x) y ≤ (f x').toReal :=
   (mem_subdifferential_iff_forall_toReal_add_le B (apply_ne_bot_of_mem_subdifferential B h)
     (ne_top_of_mem_subdifferential B h)).1 h x' hx'
+
+/-- **Subdifferential sum inclusion.** If `y₁` is a subgradient of `f` at `x` and `y₂` is a
+subgradient of `g` at `x`, then `y₁ + y₂` is a subgradient of `z ↦ f z + g z` at `x`. -/
+theorem mem_subdifferential_add {g : E → EReal} {y₁ y₂ : F}
+    (h₁ : y₁ ∈ subdifferential B f x) (h₂ : y₂ ∈ subdifferential B g x) :
+    y₁ + y₂ ∈ subdifferential B (fun z => f z + g z) x := by
+  rw [mem_subdifferential_iff] at h₁ h₂ ⊢
+  have hfx : f x = ((f x).toReal : EReal) := (EReal.coe_toReal h₁.2.1 h₁.1).symm
+  have hgx : g x = ((g x).toReal : EReal) := (EReal.coe_toReal h₂.2.1 h₂.1).symm
+  refine ⟨by rw [hfx, hgx, ← EReal.coe_add]; exact EReal.coe_ne_bot _,
+    by rw [hfx, hgx, ← EReal.coe_add]; exact EReal.coe_ne_top _, fun z => ?_⟩
+  have h1 := h₁.2.2 z
+  have h2 := h₂.2.2 z
+  rw [hfx] at h1 ⊢
+  rw [hgx] at h2 ⊢
+  rw [map_add, ← EReal.coe_add, ← EReal.coe_add]
+  rw [← EReal.coe_add] at h1 h2
+  have heq : (f x).toReal + (g x).toReal + (B (z - x) y₁ + B (z - x) y₂) =
+      ((f x).toReal + B (z - x) y₁) + ((g x).toReal + B (z - x) y₂) := by ring
+  rw [heq, EReal.coe_add]
+  exact add_le_add h1 h2
 
 /-- **Subgradients are monotone.** If `y₁ ∈ ∂f(x₁)` and `y₂ ∈ ∂f(x₂)`, then
 `B (x₂ - x₁) y₁ ≤ B (x₂ - x₁) y₂`; for the inner product this is the monotonicity
