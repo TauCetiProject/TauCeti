@@ -93,31 +93,18 @@ theorem cliffordProdBaseChange_ι (x : M₁ × M₂) :
 theorem cliffordProdBaseChange_map_inl (a : CliffordAlgebra Q₁) :
     ρ₁.cliffordProdBaseChange γ hγ hγρ ρ₂ (map (QuadraticMap.Isometry.inl Q₁ Q₂) a) =
       (ρ₁ a).rTensor F := by
-  induction a using CliffordAlgebra.induction with
-  | algebraMap r =>
-    rw [AlgHom.commutes, AlgHom.commutes, AlgHom.commutes]
-    simp only [Algebra.algebraMap_eq_smul_one, Module.End.one_eq_id]
-    rw [← IsScalarTower.algebraMap_smul A r, ← IsScalarTower.algebraMap_smul A r,
-      LinearMap.rTensor_smul, LinearMap.rTensor_id]
-  | ι v => simp
-  | mul a b ha hb => rw [map_mul, map_mul, ha, hb, map_mul, LinearMap.rTensor_mul]
-  | add a b ha hb => rw [map_add, map_add, ha, hb, map_add, LinearMap.rTensor_add]
-
-private theorem cliffordProdBaseChange_map_inr_of_mem_pow {k : ℕ} {b : CliffordAlgebra Q₂}
-    (hb : b ∈ LinearMap.range (ι Q₂) ^ k) :
-    ρ₁.cliffordProdBaseChange γ hγ hγρ ρ₂ (map (QuadraticMap.Isometry.inr Q₁ Q₂) b) =
-      TensorProduct.map (γ ^ k) (ρ₂ b) := by
-  induction hb using Submodule.pow_induction_on_left' with
-  | algebraMap r =>
-    rw [AlgHom.commutes, AlgHom.commutes, AlgHom.commutes, pow_zero]
-    simp only [Algebra.algebraMap_eq_smul_one]
-    rw [← IsScalarTower.algebraMap_smul A r, ← IsScalarTower.algebraMap_smul A r,
-      TensorProduct.map_smul_right, TensorProduct.map_one]
-  | add x y _ _ _ hx hy => rw [map_add, map_add, hx, hy, map_add ρ₂, TensorProduct.map_add_right]
-  | mem_mul m hm _ x _ hx =>
-    obtain ⟨w, rfl⟩ := hm
-    simp only [map_mul, hx, map_apply_ι, QuadraticMap.Isometry.inr_apply, cliffordProdBaseChange_ι,
-      map_zero, LinearMap.rTensor_zero, zero_add, ← TensorProduct.map_mul, pow_succ']
+  have hinl : map (QuadraticForm.baseChangeProd (A := A) Q₁ Q₂).toIsometry
+      (map ((QuadraticMap.Isometry.inl Q₁ Q₂).baseChange A) (ofBaseChangeAux A Q₁ a)) =
+      map (QuadraticMap.Isometry.inl (Q₁.baseChange A) (Q₂.baseChange A))
+        (ofBaseChangeAux A Q₁ a) := by
+    rw [← AlgHom.comp_apply, map_comp_map]
+    refine AlgHom.congr_fun (congrArg map ?_) _
+    apply QuadraticMap.Isometry.ext
+    intro x
+    induction x using TensorProduct.inductionOn with
+    | tmul r v => simp
+    | add x y hx hy => simp [map_add, hx, hy]
+  simp [cliffordProdBaseChange, equivOfIsometry_apply, hinl]
 
 include hγ in
 /-- **Homogeneous elements of the second summand act through the grading**: an element `b` of
@@ -126,12 +113,20 @@ theorem cliffordProdBaseChange_map_inr_of_mem_evenOdd {j : ZMod 2} {b : Clifford
     (hb : b ∈ evenOdd Q₂ j) :
     ρ₁.cliffordProdBaseChange γ hγ hγρ ρ₂ (map (QuadraticMap.Isometry.inr Q₁ Q₂) b) =
       TensorProduct.map (γ ^ j.val) (ρ₂ b) := by
-  induction b, hb using evenOdd_induction with
-  | range_ι_pow v hv => exact cliffordProdBaseChange_map_inr_of_mem_pow ρ₁ γ hγ hγρ ρ₂ hv
-  | add x y _ _ hx hy => rw [map_add, map_add, hx, hy, map_add ρ₂, TensorProduct.map_add_right]
-  | ι_mul_ι_mul m₁ m₂ x _ hx =>
-    simp only [map_mul, hx, map_apply_ι, QuadraticMap.Isometry.inr_apply, cliffordProdBaseChange_ι,
-      map_zero, LinearMap.rTensor_zero, zero_add, ← TensorProduct.map_mul, hγ, one_mul]
+  have hinr : map (QuadraticForm.baseChangeProd (A := A) Q₁ Q₂).toIsometry
+      (map ((QuadraticMap.Isometry.inr Q₁ Q₂).baseChange A) (ofBaseChangeAux A Q₂ b)) =
+      map (QuadraticMap.Isometry.inr (Q₁.baseChange A) (Q₂.baseChange A))
+        (ofBaseChangeAux A Q₂ b) := by
+    rw [← AlgHom.comp_apply, map_comp_map]
+    refine AlgHom.congr_fun (congrArg map ?_) _
+    apply QuadraticMap.Isometry.ext
+    intro x
+    induction x using TensorProduct.inductionOn with
+    | tmul r w => simp
+    | add x y hx hy => simp [map_add, hx, hy]
+  simp [cliffordProdBaseChange, equivOfIsometry_apply, hinr,
+    cliffordProdTensor_map_inr_of_mem_evenOdd _ _ _ _ _
+      (ofBaseChangeAux_mem_evenOdd (A := A) hb)]
 
 /-- **The tensor product of graded actions is graded**: if `γ₂` is an `A`-linear grading operator
 of `F` anticommuting with every `c₂(w)`, then `γ ⊗ γ₂` anticommutes with every generator of
@@ -140,9 +135,8 @@ theorem map_mul_cliffordProdBaseChange_ι (γ₂ : Module.End A F)
     (hγ₂ρ : ∀ w, γ₂ * ρ₂ (ι Q₂ w) = -(ρ₂ (ι Q₂ w) * γ₂)) (x : M₁ × M₂) :
     TensorProduct.map γ γ₂ * ρ₁.cliffordProdBaseChange γ hγ hγρ ρ₂ (ι (Q₁.prod Q₂) x) =
       -(ρ₁.cliffordProdBaseChange γ hγ hγρ ρ₂ (ι (Q₁.prod Q₂) x) * TensorProduct.map γ γ₂) := by
-  rw [eq_neg_iff_add_eq_zero, cliffordProdBaseChange_ι, LinearMap.rTensor, ← Module.End.one_eq_id]
-  simp only [mul_add, add_mul, ← TensorProduct.map_mul, mul_one, one_mul]
-  rw [add_add_add_comm, ← TensorProduct.map_add_left, ← TensorProduct.map_add_right, hγρ, hγ₂ρ]
-  simp
+  simpa [cliffordProdTensor_ι] using map_mul_cliffordProdTensor_ι
+    (liftBaseChange A Q₁ ρ₁) γ hγ (mul_liftBaseChange_ι_eq_neg ρ₁ γ hγρ)
+    (liftBaseChange A Q₂ ρ₂) γ₂ (mul_liftBaseChange_ι_eq_neg ρ₂ γ₂ hγ₂ρ) (1 ⊗ₜ x.1, 1 ⊗ₜ x.2)
 
 end AlgHom

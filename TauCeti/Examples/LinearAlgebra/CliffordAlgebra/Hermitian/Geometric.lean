@@ -8,6 +8,7 @@ module
 public import Mathlib.LinearAlgebra.CliffordAlgebra.Equivs
 public import TauCeti.LinearAlgebra.CliffordAlgebra.Hermitian.Geometric
 public import TauCeti.LinearAlgebra.CliffordAlgebra.RealForm.Pauli
+import TauCeti.LinearAlgebra.Matrix.ToLin
 
 /-!
 # Concrete low-dimensional models and negative controls for `AlgHom.IsGeometricClifford`
@@ -22,13 +23,15 @@ together with counterexamples showing that the two clauses of `AlgHom.IsGeometri
   `EuclideanSpace ℂ (Fin 2)` via `v ↦ i (v₁ σ₂ + v₀ σ₃)` (`e₀ ↦ i σ₃`, `e₁ ↦ i σ₂`, bivector
   `c(e₀) c(e₁) = i σ₁`, chirality `Γ = -σ₁`), built from
   `TauCeti.realCliffordZeroTwoEquivQuaternion` and `Quaternion.toComplexMatrix`.
-* `AlgHom.not_isGeometricClifford_zero_of_norm_ne_zero` and `TauCeti.zeroRealLineClifford`: on
-  `CliffordAlgebra (0 : QuadraticForm ℝ ℝ)` acting trivially on `ℂ`, every generator acts
-  skew-Hermitianly (`0`), yet `IsGeometricClifford` fails because `Q 1 = 0 ≠ -‖(1 : ℝ)‖²`.
-* `TauCeti.nonSkewRealLineClifford`: on `ℝ` with `Q r = -‖r‖²`, sending `1 : ℝ` to the non-normal
-  square root `Matrix.toEuclideanLin !![0, 2; -2⁻¹, 0]` of `-1` on `EuclideanSpace ℂ (Fin 2)`
-  satisfies `Q r = -‖r‖²` everywhere, yet fails `IsGeometricClifford` because `1` does not act
-  skew-Hermitianly.
+* `TauCeti.zeroRealLineClifford` (`TauCeti.not_isGeometricClifford_zeroRealLineClifford`): on
+  `CliffordAlgebra (0 : QuadraticForm ℝ ℝ)` acting trivially on `ℂ`, every generator acts as `0`
+  (`TauCeti.zeroRealLineClifford_ι`, hence skew-Hermitianly), yet `IsGeometricClifford` fails
+  because `Q 1 = 0 ≠ -‖(1 : ℝ)‖²`.
+* `TauCeti.nonSkewRealLineClifford` (`TauCeti.not_isGeometricClifford_nonSkewRealLineClifford`): on
+  `ℝ` with `Q r = -‖r‖²`, sending `1 : ℝ` to the non-normal square root
+  `Matrix.toEuclideanLin !![0, 2; -2⁻¹, 0]` of `-1` on `EuclideanSpace ℂ (Fin 2)` satisfies
+  `Q r = -‖r‖²` (`isGeometricClifford_realLineGeometricClifford.map_eq_neg_norm_sq`), yet fails
+  `IsGeometricClifford` because `1` does not act skew-Hermitianly.
 -/
 
 public section
@@ -36,6 +39,7 @@ public section
 noncomputable section
 
 open CliffordAlgebra Module
+open scoped Matrix
 
 namespace TauCeti
 
@@ -126,13 +130,9 @@ theorem pauliPlaneClifford_ι (v : EuclideanSpace ℝ (Fin 2)) :
     pauliPlaneClifford
         (ι (-LinearMap.BilinMap.toQuadraticMap (innerₗ (EuclideanSpace ℝ (Fin 2)))) v) =
       Matrix.toEuclideanLin (Complex.I • pauli ![0, v 1, v 0]) := by
-  rw [pauliPlaneClifford, AlgHom.comp_apply, AlgHom.comp_apply, AlgHom.comp_apply,
-    AlgHom.restrictScalars_apply, AlgEquiv.coe_toAlgHom, StarAlgHom.coe_toAlgHom,
-    AlgEquiv.coe_toAlgHom, map_apply_ι, euclideanPlaneToRealCliffordZeroTwo_apply,
+  simp [pauliPlaneClifford, -realCliffordZeroTwoEquivQuaternion_ι,
     toComplexMatrix_realCliffordZeroTwoEquivQuaternion_ι,
-    Matrix.toEuclideanLin_eq_toLin_orthonormal]
-  ext w
-  simp [Matrix.toLinAlgEquiv_apply, Matrix.toLin_apply]
+    Matrix.toLinAlgEquiv_eq_toLin, ← Matrix.toEuclideanLin_eq_toLin_orthonormal]
 
 /-- The first standard basis vector `e₀` acts as `i σ₃`. -/
 theorem pauliPlaneClifford_ι_single_zero :
@@ -169,17 +169,13 @@ theorem pauliPlaneClifford_ι_single_zero_mul_ι_single_one :
         (ι (-LinearMap.BilinMap.toQuadraticMap (innerₗ (EuclideanSpace ℝ (Fin 2))))
           (EuclideanSpace.single 1 1)) =
       Complex.I • Matrix.toEuclideanLin (pauli ![1, 0, 0]) := by
-  have hs0 : euclideanPlaneToRealCliffordZeroTwo (EuclideanSpace.single 0 1) = Pi.single 0 1 := by
-    simp
-  have hs1 : euclideanPlaneToRealCliffordZeroTwo (EuclideanSpace.single 1 1) = Pi.single 1 1 := by
-    simp
-  rw [← map_mul, pauliPlaneClifford, AlgHom.comp_apply, AlgHom.comp_apply, AlgHom.comp_apply,
-    AlgHom.restrictScalars_apply, AlgEquiv.coe_toAlgHom, StarAlgHom.coe_toAlgHom,
-    AlgEquiv.coe_toAlgHom, map_mul, map_apply_ι, map_apply_ι, hs0, hs1,
-    toComplexMatrix_realCliffordZeroTwoEquivQuaternion_ι_mul_ι, map_smul,
-    Matrix.toEuclideanLin_eq_toLin_orthonormal]
-  ext w
-  simp [Matrix.toLinAlgEquiv_apply, Matrix.toLin_apply]
+  have hcross : (![0, 0, (1 : ℝ)] ⨯₃ ![0, 1, 0]) = -![1, 0, 0] := by
+    ext i
+    fin_cases i <;> simp [cross_apply]
+  rw [pauliPlaneClifford_ι_single_zero, pauliPlaneClifford_ι_single_one, smul_mul_smul_comm,
+    Complex.I_mul_I, Matrix.toEuclideanLin_eq_toLin_orthonormal, Module.End.mul_eq_comp,
+    ← Matrix.toLin_mul, pauli_mul_pauli, hcross, pauli.map_neg]
+  simp [dotProduct, Fin.sum_univ_three]
 
 /-- **The Pauli negative-plane model satisfies `AlgHom.IsGeometricClifford`.** -/
 theorem isGeometricClifford_pauliPlaneClifford : pauliPlaneClifford.IsGeometricClifford := by
@@ -213,22 +209,6 @@ end TauCeti
 
 /-! ### Clause-independence negative controls -/
 
-namespace AlgHom
-
-/-- **Negative control for the metric-form clause**: on any seminormed real module containing a
-vector of nonzero norm, no real algebra map out of the exterior algebra `CliffordAlgebra 0`
-satisfies `AlgHom.IsGeometricClifford`. -/
-theorem not_isGeometricClifford_zero_of_norm_ne_zero
-    {V S : Type*} [SeminormedAddCommGroup V] [Module ℝ V]
-    [SeminormedAddCommGroup S] [InnerProductSpace ℂ S]
-    {v : V} (hv : ‖v‖ ≠ 0) (ρ : CliffordAlgebra (0 : QuadraticForm ℝ V) →ₐ[ℝ] Module.End ℂ S) :
-    ¬ ρ.IsGeometricClifford := fun hρ ↦ by
-  have h := hρ.map_eq_neg_norm_sq v
-  have h0 : ‖v‖ = 0 := by simpa using h.symm
-  exact hv h0
-
-end AlgHom
-
 namespace TauCeti
 
 /-- Trivial generator action of `CliffordAlgebra (0 : QuadraticForm ℝ ℝ)` on `ℂ`, sending every real
@@ -241,17 +221,13 @@ def zeroRealLineClifford : CliffordAlgebra (0 : QuadraticForm ℝ ℝ) →ₐ[�
 theorem zeroRealLineClifford_ι (r : ℝ) : zeroRealLineClifford (ι 0 r) = 0 :=
   lift_ι_apply _ _ r
 
-/-- Every generator of `TauCeti.zeroRealLineClifford` is skew-Hermitian, yet
-`TauCeti.zeroRealLineClifford` fails `AlgHom.IsGeometricClifford` because `Q = 0` violates
-`Q r = -‖r‖²`. -/
-theorem inner_zeroRealLineClifford_ι_and_not_isGeometricClifford :
-    (∀ (r : ℝ) (x y : ℂ),
-        inner ℂ (zeroRealLineClifford (ι 0 r) x) y =
-          -inner ℂ x (zeroRealLineClifford (ι 0 r) y)) ∧
-      ¬ zeroRealLineClifford.IsGeometricClifford :=
-  ⟨fun _ _ _ ↦ by simp,
-    zeroRealLineClifford.not_isGeometricClifford_zero_of_norm_ne_zero
-      (norm_ne_zero_iff.mpr (one_ne_zero : (1 : ℝ) ≠ 0))⟩
+/-- Although every generator of `TauCeti.zeroRealLineClifford` acts skew-Hermitianly (`0` by
+`TauCeti.zeroRealLineClifford_ι`), `TauCeti.zeroRealLineClifford` fails `AlgHom.IsGeometricClifford`
+because `Q = 0` violates `Q r = -‖r‖²`. -/
+theorem not_isGeometricClifford_zeroRealLineClifford :
+    ¬ zeroRealLineClifford.IsGeometricClifford :=
+  zeroRealLineClifford.not_isGeometricClifford_zero_of_norm_ne_zero
+    (norm_ne_zero_iff.mpr (one_ne_zero : (1 : ℝ) ≠ 0))
 
 /-- Non-unitary `2 × 2` square root `!![0, 2; -2⁻¹, 0]` of `-1`. -/
 private def nonSkewSqrtNegOne : Matrix (Fin 2) (Fin 2) ℂ :=
@@ -277,22 +253,16 @@ def nonSkewRealLineClifford :
 theorem nonSkewRealLineClifford_ι (r : ℝ) :
     nonSkewRealLineClifford (ι (-LinearMap.BilinMap.toQuadraticMap (innerₗ ℝ)) r) =
       r • Matrix.toEuclideanLin !![0, 2; -(2 : ℂ)⁻¹, 0] := by
-  have hlI : (Complex.lift ⟨nonSkewSqrtNegOne, nonSkewSqrtNegOne_mul_self⟩) Complex.I =
-      nonSkewSqrtNegOne :=
-    Complex.liftAux_apply_I nonSkewSqrtNegOne nonSkewSqrtNegOne_mul_self
-  rw [nonSkewRealLineClifford, AlgHom.comp_apply, AlgHom.comp_apply, AlgHom.comp_apply,
-    map_apply_ι, realLineToComplexIsometry_apply, CliffordAlgebraComplex.toComplex_ι, map_smul,
-    hlI, map_smul, AlgHom.restrictScalars_apply, AlgEquiv.coe_toAlgHom,
-    Matrix.toEuclideanLin_eq_toLin_orthonormal, nonSkewSqrtNegOne]
-  ext w
-  simp [Matrix.toLinAlgEquiv_apply, Matrix.toLin_apply]
+  rw [← algebraMap_smul ℂ r, ← map_smul]
+  simp [nonSkewRealLineClifford, nonSkewSqrtNegOne, Matrix.toLinAlgEquiv_eq_toLin,
+    ← Matrix.toEuclideanLin_eq_toLin_orthonormal]
 
-/-- **Independence of the skew-Hermitian clause**: `TauCeti.nonSkewRealLineClifford` has metric
-form `Q r = -‖r‖²` for every `r : ℝ`, yet fails `AlgHom.IsGeometricClifford`. -/
-theorem map_eq_neg_norm_sq_and_not_isGeometricClifford_nonSkewRealLineClifford :
-    (∀ r : ℝ, (-LinearMap.BilinMap.toQuadraticMap (innerₗ ℝ)) r = -‖r‖ ^ 2) ∧
-      ¬ nonSkewRealLineClifford.IsGeometricClifford := by
-  refine ⟨fun r ↦ by simp [LinearMap.BilinMap.toQuadraticMap_apply, sq], fun hρ ↦ ?_⟩
+/-- **Independence of the skew-Hermitian clause**: although its quadratic form satisfies
+`Q r = -‖r‖²` (`isGeometricClifford_realLineGeometricClifford.map_eq_neg_norm_sq`),
+`TauCeti.nonSkewRealLineClifford` fails `AlgHom.IsGeometricClifford` because `1` does not act
+skew-Hermitianly. -/
+theorem not_isGeometricClifford_nonSkewRealLineClifford :
+    ¬ nonSkewRealLineClifford.IsGeometricClifford := fun hρ ↦ by
   have hadj := hρ.adjoint_map_ι 1
   rw [nonSkewRealLineClifford_ι, one_smul,
     ← Matrix.toEuclideanLin_conjTranspose_eq_adjoint, ← map_neg] at hadj

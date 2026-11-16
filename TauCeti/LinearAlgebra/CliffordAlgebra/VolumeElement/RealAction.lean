@@ -7,10 +7,11 @@ module
 
 public import TauCeti.LinearAlgebra.CliffordAlgebra.BaseChange
 public import TauCeti.LinearAlgebra.CliffordAlgebra.VolumeElement.Eigenspace
--- Private: orthogonality of orthonormal frames for `Q v = -‖v‖²` and eigenspace transport along
--- intertwiners are used only inside proofs.
+-- Private: orthogonality of orthonormal frames for `Q v = -‖v‖²`, eigenspace transport along
+-- intertwiners, and projection congruence are used only inside proofs.
 import TauCeti.LinearAlgebra.CliffordAlgebra.OrthonormalBasis
 import TauCeti.LinearAlgebra.Eigenspace.Transport
+import TauCeti.LinearAlgebra.Projection
 
 /-!
 # The chirality operator of a real Clifford algebra action on a complex module
@@ -282,14 +283,6 @@ private theorem lsmul_compBaseChangeModule (a : CliffordAlgebra (Q.baseChange �
 
 end BaseChangeModule
 
-private theorem projection_congr_end {S : Type*} [AddCommGroup S] [Module ℂ S]
-    {f g : Module.End ℂ S} (hfg : f = g) {μ₁ μ₂ : ℂ}
-    (hf : IsCompl (f.eigenspace μ₁) (f.eigenspace μ₂))
-    (hg : IsCompl (g.eigenspace μ₁) (g.eigenspace μ₂)) :
-    Submodule.projection _ _ hf = Submodule.projection _ _ hg := by
-  subst hfg
-  rfl
-
 section Module
 
 variable {V S : Type*} [NormedAddCommGroup V] [InnerProductSpace ℝ V] [FiniteDimensional ℝ V]
@@ -469,7 +462,9 @@ theorem projection_eigenspace_liftBaseChange_complexVolume_apply (ψ : S) :
       (2 : ℂ)⁻¹ • (ψ + liftBaseChange ℂ Q ρ (complexVolume Q o) ψ) := by
   let := compBaseChangeModule ρ
   have := compBaseChangeScalarTower ρ
-  have hp := projection_congr_end (lsmul_compBaseChangeModule ρ (complexVolume Q o)).symm
+  have hfg := (lsmul_compBaseChangeModule ρ (complexVolume Q o)).symm
+  have hp := Submodule.projection_congr
+    (congrArg (Module.End.eigenspace · 1) hfg) (congrArg (Module.End.eigenspace · (-1)) hfg)
     (isCompl_eigenspace_liftBaseChange_complexVolume ρ o hQ)
     (isCompl_eigenspace_complexVolume (Q := Q) (E := S) o hQ)
   rw [LinearMap.congr_fun hp ψ, projection_eigenspace_complexVolume_apply (Q := Q) (E := S) o hQ,
@@ -482,7 +477,9 @@ theorem projection_eigenspace_liftBaseChange_complexVolume_neg_one_apply (ψ : S
       (2 : ℂ)⁻¹ • (ψ - liftBaseChange ℂ Q ρ (complexVolume Q o) ψ) := by
   let := compBaseChangeModule ρ
   have := compBaseChangeScalarTower ρ
-  have hp := projection_congr_end (lsmul_compBaseChangeModule ρ (complexVolume Q o)).symm
+  have hfg := (lsmul_compBaseChangeModule ρ (complexVolume Q o)).symm
+  have hp := Submodule.projection_congr
+    (congrArg (Module.End.eigenspace · (-1)) hfg) (congrArg (Module.End.eigenspace · 1) hfg)
     (isCompl_eigenspace_liftBaseChange_complexVolume ρ o hQ).symm
     (isCompl_eigenspace_complexVolume (Q := Q) (E := S) o hQ).symm
   rw [LinearMap.congr_fun hp ψ,

@@ -9,8 +9,11 @@ public import Mathlib.Analysis.InnerProductSpace.TensorProduct
 public import Mathlib.Analysis.SpecialFunctions.Trigonometric.Basic
 public import TauCeti.LinearAlgebra.CliffordAlgebra.Hermitian.Basic
 public import TauCeti.LinearAlgebra.CliffordAlgebra.Hermitian.Complex
-public import TauCeti.LinearAlgebra.CliffordAlgebra.VolumeElement.Prod
--- Private: real orthonormal-plane identities and spinor-metric existence are used only in proofs.
+public import TauCeti.LinearAlgebra.CliffordAlgebra.Prod.Complex
+public import TauCeti.LinearAlgebra.CliffordAlgebra.VolumeElement.RealAction
+-- Private: L² product norm identity, real orthonormal-plane identities, and spinor-metric
+-- existence are used only in proofs.
+import Mathlib.Analysis.InnerProductSpace.ProdL2
 import TauCeti.LinearAlgebra.CliffordAlgebra.Hermitian.Spinor
 import TauCeti.LinearAlgebra.CliffordAlgebra.OrthonormalBasis
 
@@ -49,8 +52,9 @@ counterexamples are collected in
 ## Main results
 
 * `AlgHom.isGeometricClifford_iff`, `AlgHom.isGeometricClifford_iff_inner`,
-  `AlgHom.isGeometricClifford_iff_adjoint`: inner-product and finite-dimensional adjoint
-  characterizations of `IsGeometricClifford`.
+  `AlgHom.isGeometricClifford_iff_adjoint`,
+  `AlgHom.not_isGeometricClifford_zero_of_norm_ne_zero`: characterizations of `IsGeometricClifford`
+  and obstruction for the zero quadratic form on nonzero-norm modules.
 * `AlgHom.IsGeometricClifford.map_ι_mul_map_ι_add_swap`,
   `AlgHom.IsGeometricClifford.map_ι_apply_map_ι_apply_add_swap`: the polarized Euclidean Clifford
   relation `c(v) c(w) + c(w) c(v) = -2 ⟪v, w⟫_ℝ • 1`.
@@ -171,6 +175,16 @@ theorem norm_map_ι_apply_of_norm_eq_one {u : V} (hu : ‖u‖ = 1) (ψ : S) :
   rw [hρ.norm_map_ι_apply, hu, one_mul]
 
 end IsGeometricClifford
+
+/-- **Negative control for the metric-form clause**: on any seminormed real module containing a
+vector of nonzero norm, no real algebra map out of the exterior algebra `CliffordAlgebra 0`
+satisfies `AlgHom.IsGeometricClifford`. -/
+theorem not_isGeometricClifford_zero_of_norm_ne_zero {v : V} (hv : ‖v‖ ≠ 0)
+    (ρ : CliffordAlgebra (0 : QuadraticForm ℝ V) →ₐ[ℝ] Module.End ℂ S) :
+    ¬ ρ.IsGeometricClifford := fun hρ ↦ by
+  have h := hρ.map_eq_neg_norm_sq v
+  have h0 : ‖v‖ = 0 := by simpa using h.symm
+  exact hv h0
 
 end Seminormed
 

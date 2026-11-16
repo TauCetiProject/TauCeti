@@ -48,6 +48,8 @@ computation every matrix model of a Lie algebra performs on its root vectors.
   term by the block-diagonal sum of the idempotent matrices of its outer terms.
 * `LinearMap.toMatrix_mulVec_eq_repr`: the coordinate vector of `φ (∑ j, x j • v j)` is the
   matrix of `φ` applied to `x`.
+* `Matrix.toLinAlgEquiv_eq_toLin`: `Matrix.toLinAlgEquiv b` agrees on every matrix with
+  `Matrix.toLin b b`.
 * `Matrix.linearIndependent_row_one`: over any semiring, the rows of an identity matrix are
   linearly independent.
 * `Algebra.toLin_leftMulMatrix`: the linear map of the left multiplication matrix of `x` is left
@@ -214,6 +216,13 @@ theorem toMatrix_mulVec_eq_repr {R V M ι κ : Type*} [CommSemiring R] [AddCommM
 end LinearMap
 
 namespace Matrix
+
+/-- `Matrix.toLinAlgEquiv` agrees on every matrix with `Matrix.toLin` in the same basis. -/
+theorem toLinAlgEquiv_eq_toLin {R M n : Type*} [CommSemiring R] [AddCommMonoid M] [Module R M]
+    [Fintype n] [DecidableEq n] (b : Module.Basis n R M) (A : Matrix n n R) :
+    Matrix.toLinAlgEquiv b A = Matrix.toLin b b A := by
+  ext v
+  rw [toLinAlgEquiv_apply, toLin_apply]
 
 /-- The rows of an identity matrix are linearly independent: they are the standard basis
 vectors `Pi.single i 1`. -/
