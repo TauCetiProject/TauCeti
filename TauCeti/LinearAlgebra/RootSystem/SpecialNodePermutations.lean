@@ -169,31 +169,6 @@ the two to be equinumerous. A valid simply-laced type is ruled out by
 `TauCeti.DynkinType.IsSpecialNodePerm.not_isSimplyLaced`, and each proof below exhibits two nodes
 of one kind whose images would have to be the single node of the other kind. -/
 
-/-- A permutation of `Fin r` cannot send both of the nodes `0` and `1` to the node `n - 1`. -/
-private theorem false_of_val_add_one_eq {r n : ℕ} (σ : Equiv.Perm (Fin r)) (h₁ : 1 < r)
-    (h : ∀ (m : ℕ) (hm : m < r), m < 2 → ((σ ⟨m, hm⟩ : ℕ)) + 1 = n) : False := by
-  have h₀ : 0 < r := Nat.zero_lt_of_lt h₁
-  have e₀ := h 0 h₀ (by omega)
-  have e₁ := h 1 h₁ (by omega)
-  simpa using congrArg Fin.val (σ.injective (Fin.eq_of_val_eq (by omega) : σ ⟨0, h₀⟩ = σ ⟨1, h₁⟩))
-
-/-- `Bₙ` has no special node permutation once `3 ≤ n`: its nodes `0` and `1` are then both long,
-while its only short node is the last one, so the two would have the same image. -/
-theorem not_isSpecialNodePerm_B {n : ℕ} (hn : 3 ≤ n) (σ : Equiv.Perm (Fin (B n).rank)) :
-    ¬ (B n).IsSpecialNodePerm σ := by
-  intro h
-  have hrank : (B n).rank = n := rank_B n
-  -- A long node has a short image, and the only short node of `Bₙ` is the last one.
-  have key : ∀ (m : ℕ) (hm : m < (B n).rank), m + 1 < n → ((σ ⟨m, hm⟩ : ℕ)) + 1 = n := by
-    intro m hm hi
-    have hlong : (B n).IsLongSimpleRoot ⟨m, hm⟩ := by simpa using hi
-    have hshort : ¬ (B n).IsLongSimpleRoot (σ ⟨m, hm⟩) := fun hc =>
-      (h.isLongSimpleRoot_apply ⟨m, hm⟩).mp hc hlong
-    simp only [isLongSimpleRoot_B, not_lt] at hshort
-    have := (σ ⟨m, hm⟩).isLt
-    omega
-  exact false_of_val_add_one_eq σ (by omega) fun m hm hm₂ => key m hm (by omega)
-
 /-- `Cₙ` has no special node permutation once `3 ≤ n`: its nodes `0` and `1` are then both short,
 while its only long node is the last one, so the two would have the same image. -/
 theorem not_isSpecialNodePerm_C {n : ℕ} (hn : 3 ≤ n) (σ : Equiv.Perm (Fin (C n).rank)) :
@@ -205,7 +180,29 @@ theorem not_isSpecialNodePerm_C {n : ℕ} (hn : 3 ≤ n) (σ : Equiv.Perm (Fin (
     intro m hm hi
     have hshort : ¬ (C n).IsLongSimpleRoot ⟨m, hm⟩ := by simpa using hi
     simpa using (h.isLongSimpleRoot_apply ⟨m, hm⟩).mpr hshort
-  exact false_of_val_add_one_eq σ (by omega) fun m hm hm₂ => key m hm (by omega)
+  have hpos₀ : 0 < (C n).rank := by omega
+  have hpos₁ : 1 < (C n).rank := by omega
+  have h₀ := key 0 hpos₀ (by omega)
+  have h₁ := key 1 hpos₁ (by omega)
+  have hσ : σ ⟨0, hpos₀⟩ = σ ⟨1, hpos₁⟩ := Fin.eq_of_val_eq (by omega)
+  simpa using congrArg Fin.val (σ.injective hσ)
+
+/-- `Bₙ` has no special node permutation once `3 ≤ n`: a special node permutation of `Bₙ` is one of
+the dual diagram `Cₙ`, which has none. -/
+theorem not_isSpecialNodePerm_B {n : ℕ} (hn : 3 ≤ n) (σ : Equiv.Perm (Fin (B n).rank)) :
+    ¬ (B n).IsSpecialNodePerm σ := fun h =>
+  not_isSpecialNodePerm_C hn σ
+    ⟨fun i =>
+      (isLongSimpleRoot_C_iff_not_isLongSimpleRoot_B n (σ i)).trans
+        ((not_congr (h.isLongSimpleRoot_apply i)).trans
+          (not_congr (isLongSimpleRoot_C_iff_not_isLongSimpleRoot_B n i)).symm),
+    fun i j => by
+      have hT (a b : Fin n) : CartanMatrix.C n a b = CartanMatrix.B n b a := by
+        rw [← CartanMatrix.B_transpose, Matrix.transpose_apply]
+      have e := h.cartanMatrix_apply j i
+      rw [cartanMatrix_B] at e
+      exact (congrFun₂ (cartanMatrix_C n) (σ i) (σ j)).trans
+        ((hT _ _).trans (e.trans ((hT j i).symm.trans (congrFun₂ (cartanMatrix_C n) j i).symm)))⟩
 
 /-- **A valid Dynkin type admits a special node permutation exactly when it is `B₂`, `F₄` or
 `G₂`.**
