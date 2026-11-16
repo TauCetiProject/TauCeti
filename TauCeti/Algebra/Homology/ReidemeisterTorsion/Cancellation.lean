@@ -87,13 +87,8 @@ the image under `φ` of the image of the differential of `D`. -/
 private theorem range_d_eq (k k' : ZMod 2) :
     LinearMap.range (C.d k k').hom =
       F ∙ (C.d k k').hom (c k 0) ⊔ (LinearMap.range (D.d k k').hom).map (φ.f k').hom := by
-  have hC : LinearMap.range (C.d k k').hom =
-      Submodule.span F (Set.range ((C.d k k').hom ∘ c k)) := by
-    rw [LinearMap.range_eq_map, ← (c k).span_eq, Submodule.map_span, ← Set.range_comp]
-  have hD : LinearMap.range (D.d k k').hom =
-      Submodule.span F (Set.range ((D.d k k').hom ∘ e k)) := by
-    rw [LinearMap.range_eq_map, ← (e k).span_eq, Submodule.map_span, ← Set.range_comp]
-  rw [hC, hD, Submodule.map_span, ← Set.range_comp, ← Submodule.span_insert, ← Fin.range_cons]
+  rw [(c k).range_eq_span_comp, (e k).range_eq_span_comp, Submodule.map_span, ← Set.range_comp,
+    ← Submodule.span_insert, ← Fin.range_cons]
   congr 2
   ext l
   induction l using Fin.cases <;> simp [hc, Hom.comm_apply]
@@ -103,7 +98,7 @@ private theorem notMem_range_f (k : ZMod 2) : c k 0 ∉ LinearMap.range (φ.f k)
   have h := (c k).linearIndependent
   rw [← Fin.cons_self_tail ⇑(c k), linearIndependent_finCons] at h
   have hr : LinearMap.range (φ.f k).hom = Submodule.span F (Set.range (Fin.tail ⇑(c k))) := by
-    rw [LinearMap.range_eq_map, ← (e k).span_eq, Submodule.map_span, ← Set.range_comp]
+    rw [(e k).range_eq_span_comp]
     congr 2
     ext l
     simp [Fin.tail, hc]
@@ -396,10 +391,8 @@ theorem toMatrix_d_eq_of_cancel :
   refine Matrix.ext fun r k ↦ ?_
   have hφe : (φ.f i).hom (e i k) = c i k.succ + t k • c i 0 := by rw [ht]; abel
   have h := repr_eq_of_cancel hφ' ha ((D.d i i').hom (e i k)) r
-  have hcomm : (φ.f i').hom ((D.d i i').hom (e i k)) = (C.d i i').hom ((φ.f i).hom (e i k)) := by
-    have := congr($(φ.comm i i').hom (e i k))
-    rw [ModuleCat.hom_comp, ModuleCat.hom_comp, LinearMap.comp_apply, LinearMap.comp_apply] at this
-    exact this.symm
+  have hcomm : (φ.f i').hom ((D.d i i').hom (e i k)) = (C.d i i').hom ((φ.f i).hom (e i k)) :=
+    (Hom.comm_apply φ i i' _).symm
   rw [hcomm, hφe] at h
   simp only [LinearMap.toMatrix_apply, Matrix.of_apply, h, map_add, map_smul, Finsupp.add_apply,
     Finsupp.smul_apply, smul_eq_mul]
