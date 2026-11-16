@@ -499,6 +499,30 @@ theorem card_storedClasses_le_passportSize (h : r.IsValidFor P) :
 
 end IsValidFor
 
+/-- Validity of a row for a passport depends on the reference subgroup only through its conjugacy
+class. -/
+@[simp]
+theorem isValidFor_conjugate_iff (P : PassportSpec n) (τ : Perm (Fin n)) :
+    r.IsValidFor (P.conjugate τ) ↔ r.IsValidFor P := by
+  constructor <;> intro h
+  · exact { h with
+      hasPassport s hs := (h.hasPassport s hs).imp fun _ hP ↦ by simpa using hP
+      lambdas_eq := by simpa using h.lambdas_eq }
+  · exact { h with
+      hasPassport s hs := (h.hasPassport s hs).imp fun _ hP ↦ by simpa using hP
+      lambdas_eq := by simpa using h.lambdas_eq }
+
+variable {r} in
+/-- A row valid for one passport of a connected triple is valid for every passport of that triple:
+the two passports differ by conjugating the reference subgroup. -/
+theorem IsValidFor.of_hasPassport {P P' : PassportSpec n} {t : ConnectedTriple n}
+    (h : r.IsValidFor P) (hP : PassportSpec.HasPassport t P)
+    (hP' : PassportSpec.HasPassport t P') : r.IsValidFor P' := by
+  obtain ⟨a, rfl⟩ := (t.hasPassport_iff_exists_conjugate_passportOf P).mp hP
+  obtain ⟨b, rfl⟩ := (t.hasPassport_iff_exists_conjugate_passportOf P').mp hP'
+  rw [isValidFor_conjugate_iff] at h ⊢
+  exact h
+
 variable {r} in
 /-- A row storing a single triple `s`, written by its single cycle-notation entry, with orbit size
 one, is valid for every passport of `s` once its stored degree, partitions and genus are those
