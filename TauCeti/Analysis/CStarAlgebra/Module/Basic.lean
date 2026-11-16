@@ -32,10 +32,15 @@ Riesz theorem.
 
 ## Main declarations
 
-* `CStarModule.inner_polarization`: the polarization identity expressing `⟪x, y⟫_A` through the
-  inner products `⟪z, z⟫_A`.
+* `CStarModule.inner_zero_left'`, `CStarModule.inner_zero_right'`, `CStarModule.inner_neg_left'`,
+  `CStarModule.inner_neg_right'`: zero and negation inner-product identities without
+  `[StarModule ℂ A]`.
+* `CStarModule.inner_polarization`, `CStarModule.inner_map_polarization`: polarization identities
+  expressing `⟪x, y⟫_A` and `⟪x, T y⟫_A` through diagonal inner products.
 * `CStarModule.ext_inner_left`, `CStarModule.ext_inner_right`: vectors are determined by their
   inner products against all vectors.
+* `CStarModule.eq_iff_forall_inner_self`, `CStarModule.eq_zero_iff_forall_inner_self`: `ℂ`-linear
+  endomorphisms are determined by their diagonal inner products `⟪x, T x⟫_A`.
 * `CStarModule.isGreatest_norm_inner`: norm recovery, `‖x‖` is the largest value of
   `‖⟪y, x⟫_A‖` over the closed unit ball.
 * `CStarModule.norm_smul_le`: `‖a x‖ ≤ ‖a‖ ‖x‖`.
@@ -84,6 +89,51 @@ lemma unop_inner_op_smul_right (a : A) (x y : E) :
 
 end Right
 
+section NoStarModule
+
+variable [NonUnitalRing A] [StarRing A] [Module ℂ A] [PartialOrder A] [Norm A]
+  [AddCommGroup E] [Module ℂ E] [SMul A E] [Norm E] [CStarModule A E]
+
+/-- Left zero inner product `⟪0, y⟫_A = 0`, without requiring `[StarModule ℂ A]` (compare
+Mathlib's `CStarModule.inner_zero_left`). -/
+@[simp]
+theorem inner_zero_left' {y : E} : inner A (0 : E) y = 0 := by
+  simpa using inner_add_left (A := A) (x := (0 : E)) (y := 0) (z := y)
+
+/-- Right zero inner product `⟪x, 0⟫_A = 0`, without requiring `[StarModule ℂ A]` (compare
+Mathlib's `CStarModule.inner_zero_right`). -/
+@[simp]
+theorem inner_zero_right' {x : E} : inner A x (0 : E) = 0 := by
+  simpa using inner_add_right (A := A) (x := x) (y := (0 : E)) (z := 0)
+
+/-- Left negation inner product `⟪-x, y⟫_A = -⟪x, y⟫_A`, without requiring `[StarModule ℂ A]`
+(compare Mathlib's `CStarModule.inner_neg_left`). -/
+@[simp]
+theorem inner_neg_left' {x y : E} : inner A (-x) y = -inner A x y :=
+  eq_neg_of_add_eq_zero_left <| by
+    rw [← inner_add_left, neg_add_cancel, inner_zero_left']
+
+/-- Right negation inner product `⟪x, -y⟫_A = -⟪x, y⟫_A`, without requiring `[StarModule ℂ A]`
+(compare Mathlib's `CStarModule.inner_neg_right`). -/
+@[simp]
+theorem inner_neg_right' {x y : E} : inner A x (-y) = -inner A x y :=
+  eq_neg_of_add_eq_zero_left <| by
+    rw [← inner_add_right, neg_add_cancel, inner_zero_right']
+
+/-- Vectors are determined by their inner products against all vectors in the first slot. -/
+theorem ext_inner_left {x y : E} (h : ∀ z, inner A z x = inner A z y) : x = y := by
+  apply sub_eq_zero.mp
+  apply (inner_self (A := A)).mp
+  rw [sub_eq_add_neg, inner_add_right, inner_neg_right', h, add_neg_cancel]
+
+/-- Vectors are determined by their inner products against all vectors in the second slot. -/
+theorem ext_inner_right {x y : E} (h : ∀ z, inner A x z = inner A y z) : x = y := by
+  apply ext_inner_left (A := A)
+  intro z
+  simpa using congrArg star (h z)
+
+end NoStarModule
+
 variable [NonUnitalRing A] [StarRing A] [Module ℂ A] [StarModule ℂ A] [PartialOrder A] [Norm A]
   [AddCommGroup E] [Module ℂ E] [SMul A E] [Norm E] [CStarModule A E]
 
@@ -98,17 +148,35 @@ lemma inner_polarization (x y : E) :
     smul_sub, smul_neg, smul_smul, neg_smul, I_mul_I]
   module
 
-/-- Vectors are determined by their inner products against all vectors in the first slot. -/
-theorem ext_inner_left {x y : E} (h : ∀ z, inner A z x = inner A z y) : x = y := by
-  apply sub_eq_zero.mp
-  apply (inner_self (A := A)).mp
-  simp [inner_sub_right, h]
+/-- Polarization identity for a `ℂ`-linear endomorphism of a Hilbert C⋆-module: `⟪x, T y⟫_A` is
+determined by the diagonal inner products `⟪z, T z⟫_A`. -/
+theorem inner_map_polarization {𝓕 : Type*} [FunLike 𝓕 E E] [LinearMapClass 𝓕 ℂ E E]
+    (T : 𝓕) (x y : E) :
+    inner A x (T y) = (4 : ℂ)⁻¹ •
+      (inner A (x + y) (T (x + y)) - inner A (x - y) (T (x - y)) -
+        I • inner A (x + I • y) (T (x + I • y)) +
+        I • inner A (x - I • y) (T (x - I • y))) := by
+  simp only [map_add, map_sub, map_smul, inner_add_left, inner_add_right, inner_sub_left,
+    inner_sub_right, inner_smul_left_complex, inner_smul_right_complex,
+    Complex.star_def, conj_I, smul_add, smul_sub, smul_neg, smul_smul, neg_smul, I_mul_I]
+  module
 
-/-- Vectors are determined by their inner products against all vectors in the second slot. -/
-theorem ext_inner_right {x y : E} (h : ∀ z, inner A x z = inner A y z) : x = y := by
-  apply ext_inner_left (A := A)
-  intro z
-  simpa using congrArg star (h z)
+/-- Over `ℂ`, two `ℂ`-linear endomorphisms of a Hilbert C⋆-module are equal if and only if they
+have equal diagonal module inner products `⟪x, T x⟫_A = ⟪x, S x⟫_A` for all `x`. -/
+theorem eq_iff_forall_inner_self {𝓕 : Type*} [FunLike 𝓕 E E] [LinearMapClass 𝓕 ℂ E E]
+    {T S : 𝓕} :
+    T = S ↔ ∀ x : E, inner A x (T x) = inner A x (S x) := by
+  refine ⟨fun h x => h ▸ rfl, fun h => DFunLike.ext T S fun y => ?_⟩
+  refine ext_inner_left (A := A) fun x => ?_
+  rw [inner_map_polarization T, inner_map_polarization S]
+  simp only [h]
+
+/-- Over `ℂ`, a `ℂ`-linear endomorphism of a Hilbert C⋆-module vanishes if and only if all of its
+diagonal module inner products `⟪x, T x⟫_A` vanish. -/
+theorem eq_zero_iff_forall_inner_self (T : E →ₗ[ℂ] E) :
+    T = 0 ↔ ∀ x : E, inner A x (T x) = 0 := by
+  simpa [inner_zero_right] using
+    eq_iff_forall_inner_self (A := A) (T := T) (S := (0 : E →ₗ[ℂ] E))
 
 end Algebraic
 

@@ -20,9 +20,10 @@ this file develops the normed, C⋆-algebraic, order, and spectral theory of
   equivalence `AdjointableMap.adjointₗᵢ`, and `‖T.adjoint.comp T‖ = ‖T‖ ^ 2`.
 * On complete modules, `AdjointableMap A E F` is complete, plain adjoint pairs upgrade to bundled
   adjointable maps (`AdjointableMap.ofAdjointPair`, `AdjointableMap.exists_coe_eq_iff`), and
-  `AdjointableMap A E E` is a unital C⋆-algebra with its spectral `PartialOrder` and
-  `StarOrderedRing` instances (paralleling `DoubleCentralizer` in
-  `Mathlib.Analysis.CStarAlgebra.Multiplier`).
+  `AdjointableMap A E E` is a unital C⋆-algebra (paralleling `DoubleCentralizer` in
+  `Mathlib.Analysis.CStarAlgebra.Multiplier`) equipped with its spectral `PartialOrder` and
+  `StarOrderedRing` instances (paralleling `CStarMatrix` in
+  `Mathlib.Analysis.CStarAlgebra.CStarMatrix`).
 * Positivity is characterized by `0 ≤ T ↔ ∀ x, 0 ≤ ⟪x, T x⟫_A` (`AdjointableMap.nonneg_iff`), and
   every rectangular operator `T` has a positive modulus `T.abs = CFC.sqrt (T.adjoint.comp T)`.
 * Adjointable orthogonal projections (`IsStarProjection P`) are characterized by
@@ -37,6 +38,8 @@ this file develops the normed, C⋆-algebraic, order, and spectral theory of
 * Iain Raeburn and Dana P. Williams, *Morita Equivalence and Continuous-Trace C⋆-Algebras*,
   Chapter 2 (Definitions 2.16–2.17, Lemma 2.18, Proposition 2.21).
 * Bruce Blackadar, *Operator Algebras*, Section II.7.1.
+* The proof of `AdjointableMap.nonneg_iff` adapts `CStarMatrix.nonneg_iff_forall_sum_nonneg` from
+  `TauCeti.Analysis.CStarAlgebra.CStarMatrix`.
 -/
 
 public section
@@ -61,29 +64,33 @@ variable {A E F G : Type*}
 `E →L[ℂ] F`. -/
 noncomputable instance instNormedAddCommGroup : NormedAddCommGroup (AdjointableMap A E F) :=
   fast_instance% NormedAddCommGroup.induced (AdjointableMap A E F) (E →L[ℂ] F)
-    ({ toFun := toContinuousLinearMap
-       map_zero' := toContinuousLinearMap_zero
-       map_add' := toContinuousLinearMap_add } : AdjointableMap A E F →+ (E →L[ℂ] F))
-    toContinuousLinearMap_injective
+    toContinuousLinearMapAddMonoidHom fun _ _ h =>
+      toContinuousLinearMap_injective <| by
+        simpa only [toContinuousLinearMapAddMonoidHom_apply] using h
 
 @[simp]
 theorem norm_toContinuousLinearMap (T : AdjointableMap A E F) :
-    ‖T.toContinuousLinearMap‖ = ‖T‖ := (rfl)
+    ‖T.toContinuousLinearMap‖ = ‖T‖ := by
+  rw [← toContinuousLinearMapAddMonoidHom_apply]; rfl
 
 @[simp]
 theorem nnNorm_toContinuousLinearMap (T : AdjointableMap A E F) :
-    ‖T.toContinuousLinearMap‖₊ = ‖T‖₊ := (rfl)
+    ‖T.toContinuousLinearMap‖₊ = ‖T‖₊ :=
+  Subtype.ext (norm_toContinuousLinearMap T)
 
 theorem isometry_toContinuousLinearMap :
     Isometry (toContinuousLinearMap : AdjointableMap A E F → E →L[ℂ] F) :=
-  fun _ _ => rfl
+  Isometry.of_dist_eq fun T S => by
+    rw [dist_eq_norm, dist_eq_norm, ← toContinuousLinearMap_sub, norm_toContinuousLinearMap]
 
-theorem le_opNorm (T : AdjointableMap A E F) (x : E) : ‖T x‖ ≤ ‖T‖ * ‖x‖ :=
-  T.toContinuousLinearMap.le_opNorm x
+theorem le_opNorm (T : AdjointableMap A E F) (x : E) : ‖T x‖ ≤ ‖T‖ * ‖x‖ := by
+  rw [← norm_toContinuousLinearMap]
+  exact T.toContinuousLinearMap.le_opNorm x
 
 theorem opNorm_le_bound (T : AdjointableMap A E F) {M : ℝ} (hMp : 0 ≤ M)
-    (hM : ∀ x, ‖T x‖ ≤ M * ‖x‖) : ‖T‖ ≤ M :=
-  T.toContinuousLinearMap.opNorm_le_bound hMp hM
+    (hM : ∀ x, ‖T x‖ ≤ M * ‖x‖) : ‖T‖ ≤ M := by
+  rw [← norm_toContinuousLinearMap]
+  exact T.toContinuousLinearMap.opNorm_le_bound hMp hM
 
 theorem opNorm_comp_le (S : AdjointableMap A F G) (T : AdjointableMap A E F) :
     ‖S.comp T‖ ≤ ‖S‖ * ‖T‖ := by
@@ -95,13 +102,13 @@ noncomputable instance instNormedRing : NormedRing (AdjointableMap A E E) where
   norm_mul_le := opNorm_comp_le
 
 instance applyIsBoundedSMul : IsBoundedSMul (AdjointableMap A E E) E :=
-  IsBoundedSMul.of_norm_smul_le le_opNorm
+  IsBoundedSMul.of_norm_smul_le fun T x => by rw [AdjointableMap.smul_def]; exact T.le_opNorm x
 
 /-- The pair embedding `(T, T*)` into `(E →L[ℂ] F) × (F →L[ℂ] E)`. -/
-def toProdContinuousLinearMap (T : AdjointableMap A E F) : (E →L[ℂ] F) × (F →L[ℂ] E) :=
+private def toProdContinuousLinearMap (T : AdjointableMap A E F) : (E →L[ℂ] F) × (F →L[ℂ] E) :=
   (T.toContinuousLinearMap, T.adjointContinuousLinearMap)
 
-theorem range_toProdContinuousLinearMap :
+private theorem range_toProdContinuousLinearMap :
     Set.range (toProdContinuousLinearMap : AdjointableMap A E F → (E →L[ℂ] F) × (F →L[ℂ] E)) =
       { p | ∀ x y, inner A (p.1 x) y = inner A x (p.2 y) } := by
   ext p
@@ -118,7 +125,9 @@ variable {A E F G : Type*}
   [NormedAddCommGroup G] [NormedSpace ℂ G] [SMul A G] [CStarModule A G]
 
 noncomputable instance instNormedSpaceComplex : NormedSpace ℂ (AdjointableMap A E F) where
-  norm_smul_le c T := norm_smul_le c T.toContinuousLinearMap
+  norm_smul_le c T := by
+    simpa only [← norm_toContinuousLinearMap, toContinuousLinearMap_smul] using
+      norm_smul_le c T.toContinuousLinearMap
 
 /-- The forgetful linear isometry `AdjointableMap A E F →ₗᵢ[ℂ] (E →L[ℂ] F)`. -/
 noncomputable def toContinuousLinearMapₗᵢ : AdjointableMap A E F →ₗᵢ[ℂ] (E →L[ℂ] F) where
@@ -148,7 +157,9 @@ theorem compL_apply (S : AdjointableMap A F G) (T : AdjointableMap A E F) :
     compL S T = S.comp T := (rfl)
 
 noncomputable instance instNormedAlgebraComplex : NormedAlgebra ℂ (AdjointableMap A E E) where
-  norm_smul_le c T := norm_smul_le c T.toContinuousLinearMap
+  norm_smul_le c T := by
+    simpa only [← norm_toContinuousLinearMap, toContinuousLinearMap_smul] using
+      norm_smul_le c T.toContinuousLinearMap
 
 end NormedSpace
 
@@ -160,8 +171,9 @@ variable {A E F : Type*} [NonUnitalCStarAlgebra A] [PartialOrder A] [StarOrdered
 
 /-- An adjointable operator and its adjoint have equal operator norms: `‖T*‖ = ‖T‖`. -/
 @[simp]
-theorem norm_adjoint (T : AdjointableMap A E F) : ‖T.adjoint‖ = ‖T‖ :=
-  T.isAdjointPair.norm_eq_cstarModule
+theorem norm_adjoint (T : AdjointableMap A E F) : ‖T.adjoint‖ = ‖T‖ := by
+  simpa only [norm_toContinuousLinearMap] using
+    T.isAdjointPair_toContinuousLinearMap.norm_eq_cstarModule
 
 @[simp]
 theorem nnNorm_adjoint (T : AdjointableMap A E F) : ‖T.adjoint‖₊ = ‖T‖₊ :=
@@ -187,21 +199,21 @@ theorem adjointₗᵢ_symm_apply (S : AdjointableMap A F E) :
 theorem norm_adjoint_comp_self (T : AdjointableMap A E F) :
     ‖T.adjoint.comp T‖ = ‖T‖ ^ 2 := by
   simpa only [← norm_toContinuousLinearMap, toContinuousLinearMap_comp] using
-    T.isAdjointPair.norm_adjoint_comp_self_cstarModule
+    T.isAdjointPair_toContinuousLinearMap.norm_adjoint_comp_self_cstarModule
 
 /-- The dual C⋆-identity for rectangular adjointable operators: `‖T ∘ T*‖ = ‖T‖ ^ 2`. -/
 @[simp]
-theorem norm_comp_adjoint_self (T : AdjointableMap A E F) :
+theorem norm_self_comp_adjoint (T : AdjointableMap A E F) :
     ‖T.comp T.adjoint‖ = ‖T‖ ^ 2 := by
   simpa only [adjoint_adjoint, norm_adjoint] using norm_adjoint_comp_self T.adjoint
 
-theorem isometry_toProdContinuousLinearMap :
+private theorem isometry_toProdContinuousLinearMap :
     Isometry (toProdContinuousLinearMap : AdjointableMap A E F → (E →L[ℂ] F) × (F →L[ℂ] E)) := by
   refine Isometry.of_dist_eq fun T S => ?_
   rw [dist_eq_norm, dist_eq_norm, Prod.norm_def]
-  simp only [toProdContinuousLinearMap, Prod.fst_sub, Prod.snd_sub, ← toContinuousLinearMap_sub,
-    ← toContinuousLinearMap_adjoint, ← adjoint_sub, norm_toContinuousLinearMap, norm_adjoint,
-    max_self]
+  simp only [toProdContinuousLinearMap, Prod.fst_sub, Prod.snd_sub,
+    adjointContinuousLinearMap_eq_toContinuousLinearMap_adjoint, ← toContinuousLinearMap_sub,
+    ← adjoint_sub, norm_toContinuousLinearMap, norm_adjoint, max_self]
 
 instance instCompleteSpace [CompleteSpace E] [CompleteSpace F] :
     CompleteSpace (AdjointableMap A E F) := by
@@ -303,7 +315,8 @@ instance instStarOrderedRing [CompleteSpace E] :
 /-- Positivity in the C⋆-algebra `AdjointableMap A E E` is characterized by positivity of the
 module inner products `⟪x, T x⟫_A` in `A` (Lance, Lemma 4.1; Raeburn–Williams, Proposition 2.21).
 Self-adjointness is not assumed on the right-hand side: over `ℂ` it follows automatically from
-`0 ≤ ⟪x, T x⟫_A`. -/
+`0 ≤ ⟪x, T x⟫_A`. The proof adapts `CStarMatrix.nonneg_iff_forall_sum_nonneg` from
+`TauCeti.Analysis.CStarAlgebra.CStarMatrix`. -/
 theorem nonneg_iff [CompleteSpace E] {T : AdjointableMap A E E} :
     0 ≤ T ↔ ∀ x : E, 0 ≤ inner A x (T x) := by
   refine ⟨fun hT x => ?_, fun h => ?_⟩
@@ -322,16 +335,18 @@ theorem nonneg_iff [CompleteSpace E] {T : AdjointableMap A E E} :
     have hRN : R * N = 0 := by
       ext x
       have hx := h (N x)
-      rw [← mul_apply, hTN, neg_apply, CStarModule.inner_neg_right, mul_assoc, mul_apply,
-        star_apply, ← R.inner_map_left, ← mul_apply, Left.nonneg_neg_iff] at hx
-      exact (CStarModule.inner_self (A := A)).mp
-        (le_antisymm hx CStarModule.inner_self_nonneg)
+      rw [← mul_apply, hTN] at hx
+      have hx : inner A (R (N x)) (R (N x)) ≤ 0 := by
+        simpa [← R.inner_map_left] using hx
+      rw [mul_apply, zero_apply]
+      exact (CStarModule.inner_self (A := A)).mp (le_antisymm hx CStarModule.inner_self_nonneg)
     rw [← star_mul_self_eq_zero, hN.isSelfAdjoint.star_eq]
     calc N * N = star R * (R * N) := by rw [← mul_assoc, ← hR]
       _ = 0 := by rw [hRN, mul_zero]
 
 /-- For a complete Hilbert C⋆-module `E` and any `S : AdjointableMap A E F`, `S* ∘ S` is positive
 in `AdjointableMap A E E`, even when `F` is not assumed complete. -/
+@[simp]
 theorem adjoint_comp_self_nonneg [CompleteSpace E] (S : AdjointableMap A E F) :
     0 ≤ S.adjoint.comp S :=
   nonneg_iff.mpr fun x => by
@@ -340,7 +355,8 @@ theorem adjoint_comp_self_nonneg [CompleteSpace E] (S : AdjointableMap A E F) :
 
 /-- For a complete Hilbert C⋆-module `F` and any `S : AdjointableMap A E F`, `S ∘ S*` is positive
 in `AdjointableMap A F F`. -/
-theorem comp_adjoint_self_nonneg [CompleteSpace F] (S : AdjointableMap A E F) :
+@[simp]
+theorem self_comp_adjoint_nonneg [CompleteSpace F] (S : AdjointableMap A E F) :
     0 ≤ S.comp S.adjoint := by
   simpa only [adjoint_adjoint] using adjoint_comp_self_nonneg S.adjoint
 
@@ -385,7 +401,8 @@ theorem abs_mul_abs [CompleteSpace E] (T : AdjointableMap A E F) :
     T.abs * T.abs = T.adjoint.comp T :=
   CFC.sqrt_mul_sqrt_self _ (adjoint_comp_self_nonneg T)
 
-/-- The modulus preserves module inner products: `⟪|T| x, |T| y⟫_A = ⟪T x, T y⟫_A`. -/
+/-- The modulus induces the same module inner products as `T`: `⟪|T| x, |T| y⟫_A = ⟪T x, T y⟫_A`.
+-/
 @[simp]
 theorem inner_abs_abs [CompleteSpace E] (T : AdjointableMap A E F) (x y : E) :
     inner A (T.abs x) (T.abs y) = inner A (T x) (T y) := by
@@ -443,12 +460,10 @@ theorem isStarProjection_iff_forall_inner {P : AdjointableMap A E E} :
     exact ext_inner_right fun x y => by
       rw [mul_apply, P.inner_map_left, ← star_def, hsa.star_eq, ← h x y]
 
-theorem inner_map_self_eq_of_isStarProjection {P : AdjointableMap A E E}
-    (hP : IsStarProjection P) (x : E) :
-    inner A (P x) (P x) = inner A x (P x) := by
-  calc inner A (P x) (P x) = inner A (P x) x := (isStarProjection_iff_forall_inner.mp hP x x).symm
-    _ = inner A x (P.adjoint x) := P.inner_map_left x x
-    _ = inner A x (P x) := by rw [← star_def, hP.isSelfAdjoint.star_eq]
+theorem inner_map_map_eq_inner_map_right_of_isStarProjection {P : AdjointableMap A E E}
+    (hP : IsStarProjection P) (x y : E) :
+    inner A (P x) (P y) = inner A x (P y) := by
+  rw [P.inner_map_left, ← star_def, hP.isSelfAdjoint.star_eq, ← mul_apply, hP.isIdempotentElem.eq]
 
 theorem inner_map_one_sub_eq_zero_of_isStarProjection {P : AdjointableMap A E E}
     (hP : IsStarProjection P) (x y : E) :
@@ -457,26 +472,32 @@ theorem inner_map_one_sub_eq_zero_of_isStarProjection {P : AdjointableMap A E E}
       = inner A x ((P.adjoint * (1 - P)) y) := by rw [P.inner_map_left, mul_apply]
     _ = inner A x ((P * (1 - P)) y) := by rw [← star_def, hP.isSelfAdjoint.star_eq]
     _ = inner A x ((0 : AdjointableMap A E E) y) := by rw [hP.mul_one_sub_self]
-    _ = 0 := by
-      simpa using CStarModule.inner_add_right (A := A) (x := x) (y := (0 : E)) (z := 0)
+    _ = 0 := by rw [zero_apply, CStarModule.inner_zero_right']
 
 /-- Orthogonal decomposition of the module inner product under an adjointable projection `P`:
-`⟪P x, P x⟫_A + ⟪(1 - P) x, (1 - P) x⟫_A = ⟪x, x⟫_A`. -/
-theorem inner_self_eq_add_of_isStarProjection {P : AdjointableMap A E E}
-    (hP : IsStarProjection P) (x : E) :
-    inner A (P x) (P x) + inner A ((1 - P) x) ((1 - P) x) = inner A x x := by
-  rw [inner_map_self_eq_of_isStarProjection hP x,
-    inner_map_self_eq_of_isStarProjection hP.one_sub x, ← CStarModule.inner_add_right,
-    ← add_apply, add_sub_cancel, one_apply]
+`⟪P x, P y⟫_A + ⟪(1 - P) x, (1 - P) y⟫_A = ⟪x, y⟫_A`. -/
+theorem inner_map_add_inner_one_sub_eq_inner_of_isStarProjection {P : AdjointableMap A E E}
+    (hP : IsStarProjection P) (x y : E) :
+    inner A (P x) (P y) + inner A ((1 - P) x) ((1 - P) y) = inner A x y := by
+  rw [inner_map_map_eq_inner_map_right_of_isStarProjection hP x y,
+    inner_map_map_eq_inner_map_right_of_isStarProjection hP.one_sub x y,
+    ← CStarModule.inner_add_right, ← add_apply, add_sub_cancel, one_apply]
+
+theorem comp_eq_right_iff_range_subset_of_isIdempotentElem
+    {F : Type*} [NormedAddCommGroup F] [NormedSpace ℂ F] [SMul A F] [CStarModule A F]
+    {P : AdjointableMap A F E} {Q : AdjointableMap A E E} (hQ : IsIdempotentElem Q) :
+    Q.comp P = P ↔ Set.range P ⊆ Set.range Q := by
+  refine ⟨fun h => ?_, fun h => ext fun x => ?_⟩
+  · rintro _ ⟨x, rfl⟩
+    exact ⟨P x, by rw [← comp_apply, h]⟩
+  · obtain ⟨z, hz⟩ := h ⟨x, rfl⟩
+    rw [comp_apply, ← hz, ← mul_apply, hQ.eq]
 
 theorem mul_eq_right_iff_range_subset_of_isIdempotentElem {P Q : AdjointableMap A E E}
     (hQ : IsIdempotentElem Q) :
     Q * P = P ↔ Set.range P ⊆ Set.range Q := by
-  refine ⟨fun h => ?_, fun h => ext fun x => ?_⟩
-  · rintro _ ⟨x, rfl⟩
-    exact ⟨P x, by rw [← mul_apply, h]⟩
-  · obtain ⟨z, hz⟩ := h ⟨x, rfl⟩
-    rw [mul_apply, ← hz, ← mul_apply, hQ.eq]
+  rw [mul_def]
+  exact comp_eq_right_iff_range_subset_of_isIdempotentElem hQ
 
 /-- Two adjointable orthogonal projections with the same range are equal. -/
 theorem eq_of_isStarProjection_of_range_eq {P Q : AdjointableMap A E E}
@@ -492,7 +513,7 @@ theorem eq_of_isStarProjection_of_range_eq {P Q : AdjointableMap A E E}
     _ = P * Q := by rw [hP.isSelfAdjoint.star_eq, hQ.isSelfAdjoint.star_eq]
     _ = Q := hPQ
 
-theorem isStarProjection_eq_iff_range_eq {P Q : AdjointableMap A E E}
+theorem eq_iff_range_eq_of_isStarProjection {P Q : AdjointableMap A E E}
     (hP : IsStarProjection P) (hQ : IsStarProjection Q) :
     P = Q ↔ Set.range P = Set.range Q :=
   ⟨fun h => h ▸ rfl, eq_of_isStarProjection_of_range_eq hP hQ⟩
@@ -506,7 +527,7 @@ variable {A E : Type*} [NonUnitalCStarAlgebra A] [PartialOrder A] [StarOrderedRi
 
 /-- On a complete Hilbert C⋆-module, the spectral order on adjointable orthogonal projections agrees
 with range inclusion. -/
-theorem isStarProjection_le_iff_range_subset {P Q : AdjointableMap A E E}
+theorem le_iff_range_subset_of_isStarProjection {P Q : AdjointableMap A E E}
     (hP : IsStarProjection P) (hQ : IsStarProjection Q) :
     P ≤ Q ↔ Set.range P ⊆ Set.range Q :=
   (hP.le_iff_mul_eq_right hQ).trans
@@ -552,7 +573,7 @@ theorem isometry_of_adjoint_comp_self_eq_id {T : AdjointableMap A E F}
 
 /-- For an adjointable isometry `T` (`T* ∘ T = id`), the range projection `T ∘ T*` is an orthogonal
 projection in `AdjointableMap A F F`. -/
-theorem isStarProjection_comp_adjoint_self {T : AdjointableMap A E F}
+theorem isStarProjection_self_comp_adjoint_of_adjoint_comp_self_eq_id {T : AdjointableMap A E F}
     (hT : T.adjoint.comp T = .id) : IsStarProjection (T.comp T.adjoint) := by
   refine ⟨?_, ?_⟩
   · rw [IsIdempotentElem, mul_def, comp_assoc, ← comp_assoc T.adjoint T T.adjoint, hT, id_comp]
@@ -569,7 +590,7 @@ variable {A E F : Type*}
 
 /-- Over `ℂ`, an adjointable operator `T` satisfies `T* ∘ T = id` if and only if it preserves
 diagonal module inner products `⟪T x, T x⟫_A = ⟪x, x⟫_A` for all `x : E`. -/
-theorem adjoint_comp_self_eq_id_iff_diag {T : AdjointableMap A E F} :
+theorem adjoint_comp_self_eq_id_iff_forall_inner_self {T : AdjointableMap A E F} :
     T.adjoint.comp T = .id ↔ ∀ x : E, inner A (T x) (T x) = inner A x x := by
   rw [eq_iff_forall_inner_self]
   exact forall_congr' fun x => by rw [comp_apply, ← T.inner_map_left, id_apply]

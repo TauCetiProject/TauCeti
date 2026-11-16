@@ -21,7 +21,7 @@ boundedness assumptions.
 On normed Hilbert C⋆-modules, Hilbert-module unitaries correspond canonically to invertible
 adjointable operators whose inverse is their adjoint (`T* ∘ T = id` and `T ∘ T* = id`), and on a
 single module `E` they form a group canonically isomorphic to `unitary (AdjointableMap A E E)`
-(Lance, Theorem 3.5; Raeburn–Williams, Lemma 2.18). Every Hilbert-module unitary `U : E ≅ F` also
+(Lance, Chapter 3; Raeburn–Williams, Lemma 2.18). Every Hilbert-module unitary `U : E ≅ F` also
 induces a unital `⋆`-algebra isomorphism `AdjointableMap A E E ≃⋆ₐ[ℂ] AdjointableMap A F F` by
 conjugation `T ↦ U ∘ T ∘ U*`.
 
@@ -33,10 +33,10 @@ conjugation `T ↦ U ∘ T ∘ U*`.
   surjective inner-product-preserving function `E → F`.
 * `TauCeti.CStarModuleUnitary.equivAdjointableMap`: equivalence between `CStarModuleUnitary A E F`
   and `{ T : AdjointableMap A E F // T.adjoint.comp T = .id ∧ T.comp T.adjoint = .id }`.
-* `TauCeti.AdjointableMap.isUnitary_iff`,
-  `TauCeti.AdjointableMap.exists_inverse_eq_adjoint_iff`,
-  `TauCeti.AdjointableMap.exists_adjointableMap_unitary_iff`: equivalence between surjective
-  inner-product-preserving maps and invertible adjointable maps whose inverse is their adjoint.
+* `TauCeti.AdjointableMap.adjoint_comp_self_and_self_comp_adjoint_eq_id_iff`,
+  `TauCeti.AdjointableMap.exists_coe_eq_and_adjoint_comp_self_and_self_comp_adjoint_eq_id_iff`:
+  equivalence between surjective inner-product-preserving maps and invertible adjointable maps
+  whose inverse is their adjoint.
 * `TauCeti.AdjointableMap.mem_unitary_iff`, `TauCeti.CStarModuleUnitary.mulEquivUnitary`:
   identification of `CStarModuleUnitary A E E` with `unitary (AdjointableMap A E E)`.
 * `TauCeti.CStarModuleUnitary.conj`: conjugation `⋆`-algebra equivalence
@@ -44,7 +44,7 @@ conjugation `T ↦ U ∘ T ∘ U*`.
 
 ## References
 
-* E. Christopher Lance, *Hilbert C⋆-Modules: A Toolkit for Operator Algebraists*, Theorem 3.5.
+* E. Christopher Lance, *Hilbert C⋆-Modules: A Toolkit for Operator Algebraists*, Chapter 3.
 * Iain Raeburn and Dana P. Williams, *Morita Equivalence and Continuous-Trace C⋆-Algebras*,
   Lemma 2.18.
 -/
@@ -61,9 +61,8 @@ Compatibility with the `A`-action and norm preservation follow automatically; mo
 surjective inner-product-preserving function `E → F` upgrades to a `CStarModuleUnitary` via
 `CStarModuleUnitary.ofSurjective`. -/
 structure CStarModuleUnitary (A E F : Type*)
-    [NonUnitalRing A] [StarRing A] [Module ℂ A] [PartialOrder A] [Norm A]
-    [AddCommGroup E] [Module ℂ E] [SMul A E] [Norm E] [CStarModule A E]
-    [AddCommGroup F] [Module ℂ F] [SMul A F] [Norm F] [CStarModule A F]
+    [AddCommMonoid E] [Module ℂ E] [Inner A E]
+    [AddCommMonoid F] [Module ℂ F] [Inner A F]
     extends E ≃ₗ[ℂ] F where
   /-- A Hilbert-module unitary preserves the `A`-valued inner product. -/
   inner_map_map' (x y : E) : inner A (toLinearEquiv x) (toLinearEquiv y) = inner A x y
@@ -73,9 +72,8 @@ namespace CStarModuleUnitary
 section Algebraic
 
 variable {A E F : Type*}
-  [NonUnitalRing A] [StarRing A] [Module ℂ A] [PartialOrder A] [Norm A]
-  [AddCommGroup E] [Module ℂ E] [SMul A E] [Norm E] [CStarModule A E]
-  [AddCommGroup F] [Module ℂ F] [SMul A F] [Norm F] [CStarModule A F]
+  [AddCommMonoid E] [Module ℂ E] [Inner A E]
+  [AddCommMonoid F] [Module ℂ F] [Inner A F]
 
 theorem toLinearEquiv_injective :
     Function.Injective (toLinearEquiv : CStarModuleUnitary A E F → (E ≃ₗ[ℂ] F)) := by
@@ -99,6 +97,16 @@ theorem coe_toLinearEquiv (U : CStarModuleUnitary A E F) : ⇑U.toLinearEquiv = 
 theorem toLinearEquiv_apply (U : CStarModuleUnitary A E F) (x : E) :
     U.toLinearEquiv x = U x := (rfl)
 
+@[simp]
+theorem coe_mk (e : E ≃ₗ[ℂ] F)
+    (h : ∀ x y : E, inner A (e x) (e y) = inner A x y) :
+    ⇑(mk e h : CStarModuleUnitary A E F) = ⇑e := (rfl)
+
+@[simp]
+theorem toLinearEquiv_mk (e : E ≃ₗ[ℂ] F)
+    (h : ∀ x y : E, inner A (e x) (e y) = inner A x y) :
+    (mk e h : CStarModuleUnitary A E F).toLinearEquiv = e := (rfl)
+
 @[ext]
 theorem ext {U V : CStarModuleUnitary A E F} (h : ∀ x, U x = V x) : U = V :=
   DFunLike.ext U V h
@@ -107,12 +115,6 @@ theorem ext {U V : CStarModuleUnitary A E F} (h : ∀ x, U x = V x) : U = V :=
 theorem inner_map_map (U : CStarModuleUnitary A E F) (x y : E) :
     inner A (U x) (U y) = inner A x y :=
   U.inner_map_map' x y
-
-/-- Every Hilbert-module unitary preserves the module norm: `‖U x‖ = ‖x‖`. -/
-@[simp]
-theorem norm_map (U : CStarModuleUnitary A E F) (x : E) : ‖U x‖ = ‖x‖ := by
-  rw [CStarModule.norm_eq_sqrt_norm_inner_self (A := A) (U x),
-    CStarModule.norm_eq_sqrt_norm_inner_self (A := A) x, U.inner_map_map]
 
 /-- The inverse Hilbert-module unitary `F ≅ E`. -/
 def symm (U : CStarModuleUnitary A E F) : CStarModuleUnitary A F E where
@@ -125,6 +127,10 @@ def symm (U : CStarModuleUnitary A E F) : CStarModuleUnitary A F E where
 @[simp]
 theorem toLinearEquiv_symm (U : CStarModuleUnitary A E F) :
     U.symm.toLinearEquiv = U.toLinearEquiv.symm := (rfl)
+
+@[simp]
+theorem coe_symm_toLinearEquiv (U : CStarModuleUnitary A E F) :
+    ⇑U.toLinearEquiv.symm = ⇑U.symm := (rfl)
 
 @[simp]
 theorem toLinearEquiv_symm_apply (U : CStarModuleUnitary A E F) (y : F) :
@@ -151,63 +157,13 @@ theorem inner_map_right (U : CStarModuleUnitary A E F) (y : F) (x : E) :
     inner A y (U x) = inner A (U.symm y) x :=
   (U.symm.inner_map_left y x).symm
 
-/-- Every Hilbert-module unitary commutes with the `A`-action. -/
-@[simp]
-theorem map_smul_coeff (U : CStarModuleUnitary A E F) (a : A) (x : E) :
-    U (a • x) = a • U x :=
-  (CStarModule.isAdjointable_def.mpr ⟨U.symm, U.inner_map_left⟩).map_smul_coeff a x
-
-/-- Construct a `CStarModuleUnitary` from a plain surjective function `f : E → F` preserving the
-`A`-valued inner product (Lance, Theorem 3.5). Injectivity, `ℂ`-linearity, and `A`-linearity follow
-automatically from nondegeneracy of the module inner product. -/
-noncomputable def ofSurjective {f : E → F} (hf_surj : Function.Surjective f)
-    (hf_inner : ∀ x y : E, inner A (f x) (f y) = inner A x y) :
-    CStarModuleUnitary A E F := by
-  have hext : ∀ {u v : F}, (∀ w : E, inner A (f w) u = inner A (f w) v) → u = v := by
-    intro u v huv
-    obtain ⟨w, hw⟩ := hf_surj (u - v)
-    have hadd := CStarModule.inner_add_right (A := A) (x := f w) (y := u - v) (z := v)
-    rw [sub_add_cancel, huv w, ← hw] at hadd
-    have hfw : f w = 0 :=
-      (CStarModule.inner_self (A := A)).mp (add_right_cancel (hadd.symm.trans (zero_add _).symm))
-    exact sub_eq_zero.mp (hw.symm.trans hfw)
-  have hinj : Function.Injective f := by
-    intro x₁ x₂ hx
-    apply sub_eq_zero.mp
-    apply (CStarModule.inner_self (A := A)).mp
-    have hadd := CStarModule.inner_add_right (A := A) (x := x₁ - x₂) (y := x₁ - x₂) (z := x₂)
-    rw [sub_add_cancel, ← hf_inner (x₁ - x₂) x₁, hx, hf_inner (x₁ - x₂) x₂] at hadd
-    exact add_right_cancel (hadd.symm.trans (zero_add _).symm)
-  have hadd : ∀ x₁ x₂ : E, f (x₁ + x₂) = f x₁ + f x₂ := fun x₁ x₂ =>
-    hext fun w => by
-      rw [hf_inner, CStarModule.inner_add_right, CStarModule.inner_add_right, hf_inner, hf_inner]
-  have hsmul : ∀ (c : ℂ) (x : E), f (c • x) = c • f x := fun c x =>
-    hext fun w => by
-      rw [hf_inner, CStarModule.inner_smul_right_complex, CStarModule.inner_smul_right_complex,
-        hf_inner]
-  exact
-    { toLinearEquiv := LinearEquiv.ofBijective
-        { toFun := f, map_add' := hadd, map_smul' := hsmul } ⟨hinj, hf_surj⟩
-      inner_map_map' := hf_inner }
-
-@[simp]
-theorem ofSurjective_apply {f : E → F} (hf_surj : Function.Surjective f)
-    (hf_inner : ∀ x y : E, inner A (f x) (f y) = inner A x y) (x : E) :
-    ofSurjective hf_surj hf_inner x = f x := (rfl)
-
-@[simp]
-theorem coe_ofSurjective {f : E → F} (hf_surj : Function.Surjective f)
-    (hf_inner : ∀ x y : E, inner A (f x) (f y) = inner A x y) :
-    ⇑(ofSurjective hf_surj hf_inner) = f := (rfl)
-
 end Algebraic
 
 section Right
 
 variable {B E F : Type*}
-  [NonUnitalSeminormedRing B] [StarRing B] [Module ℂ B] [PartialOrder B]
-  [AddCommGroup E] [Module ℂ E] [SMul Bᵐᵒᵖ E] [Norm E] [CStarModule Bᵐᵒᵖ E]
-  [AddCommGroup F] [Module ℂ F] [SMul Bᵐᵒᵖ F] [Norm F] [CStarModule Bᵐᵒᵖ F]
+  [AddCommMonoid E] [Module ℂ E] [Inner Bᵐᵒᵖ E]
+  [AddCommMonoid F] [Module ℂ F] [Inner Bᵐᵒᵖ F]
 
 theorem unop_inner_map_map (U : CStarModuleUnitary Bᵐᵒᵖ E F) (x y : E) :
     unop (inner Bᵐᵒᵖ (U x) (U y)) = unop (inner Bᵐᵒᵖ x y) :=
@@ -218,11 +174,10 @@ end Right
 section ReflTrans
 
 variable {A E F G H : Type*}
-  [NonUnitalRing A] [StarRing A] [Module ℂ A] [PartialOrder A] [Norm A]
-  [AddCommGroup E] [Module ℂ E] [SMul A E] [Norm E] [CStarModule A E]
-  [AddCommGroup F] [Module ℂ F] [SMul A F] [Norm F] [CStarModule A F]
-  [AddCommGroup G] [Module ℂ G] [SMul A G] [Norm G] [CStarModule A G]
-  [AddCommGroup H] [Module ℂ H] [SMul A H] [Norm H] [CStarModule A H]
+  [AddCommMonoid E] [Module ℂ E] [Inner A E]
+  [AddCommMonoid F] [Module ℂ F] [Inner A F]
+  [AddCommMonoid G] [Module ℂ G] [Inner A G]
+  [AddCommMonoid H] [Module ℂ H] [Inner A H]
 
 /-- The identity Hilbert-module unitary on `E`. -/
 def refl : CStarModuleUnitary A E E where
@@ -230,7 +185,7 @@ def refl : CStarModuleUnitary A E E where
   inner_map_map' _ _ := rfl
 
 @[simp]
-theorem refl_toLinearEquiv : (refl : CStarModuleUnitary A E E).toLinearEquiv = .refl ℂ E := (rfl)
+theorem toLinearEquiv_refl : (refl : CStarModuleUnitary A E E).toLinearEquiv = .refl ℂ E := (rfl)
 
 @[simp]
 theorem refl_apply (x : E) : (refl : CStarModuleUnitary A E E) x = x := (rfl)
@@ -242,7 +197,7 @@ def trans (U : CStarModuleUnitary A E F) (V : CStarModuleUnitary A F G) :
   inner_map_map' x y := (V.inner_map_map (U x) (U y)).trans (U.inner_map_map x y)
 
 @[simp]
-theorem trans_toLinearEquiv (U : CStarModuleUnitary A E F) (V : CStarModuleUnitary A F G) :
+theorem toLinearEquiv_trans (U : CStarModuleUnitary A E F) (V : CStarModuleUnitary A F G) :
     (U.trans V).toLinearEquiv = U.toLinearEquiv.trans V.toLinearEquiv := (rfl)
 
 @[simp]
@@ -257,6 +212,10 @@ theorem trans_refl (U : CStarModuleUnitary A E F) : U.trans refl = U := ext fun 
 
 @[simp]
 theorem refl_trans (U : CStarModuleUnitary A E F) : refl.trans U = U := ext fun _ => rfl
+
+@[simp]
+theorem symm_trans (U : CStarModuleUnitary A E F) (V : CStarModuleUnitary A F G) :
+    (U.trans V).symm = V.symm.trans U.symm := ext fun _ => rfl
 
 @[simp]
 theorem self_trans_symm (U : CStarModuleUnitary A E F) :
@@ -296,15 +255,70 @@ theorem inv_apply (U : CStarModuleUnitary A E E) (x : E) : U⁻¹ x = U.symm x :
 
 end ReflTrans
 
-/-! ### Equivalence with unitary adjointable operators -/
+section CStarModuleNorm
 
-section Normed
+variable {A E F : Type*}
+  [NonUnitalSemiring A] [StarRing A] [Module ℂ A] [PartialOrder A] [Norm A]
+  [AddCommGroup E] [Module ℂ E] [SMul A E] [Norm E] [CStarModule A E]
+  [AddCommGroup F] [Module ℂ F] [SMul A F] [Norm F] [CStarModule A F]
 
-variable {A E F G : Type*}
+/-- Every Hilbert-module unitary preserves the module norm: `‖U x‖ = ‖x‖`. -/
+@[simp]
+theorem norm_map (U : CStarModuleUnitary A E F) (x : E) : ‖U x‖ = ‖x‖ := by
+  rw [CStarModule.norm_eq_sqrt_norm_inner_self (A := A) (U x),
+    CStarModule.norm_eq_sqrt_norm_inner_self (A := A) x, U.inner_map_map]
+
+end CStarModuleNorm
+
+section CStarModuleRing
+
+variable {A E F : Type*}
   [NonUnitalRing A] [StarRing A] [Module ℂ A] [PartialOrder A] [Norm A]
-  [NormedAddCommGroup E] [NormedSpace ℂ E] [SMul A E] [CStarModule A E]
-  [NormedAddCommGroup F] [NormedSpace ℂ F] [SMul A F] [CStarModule A F]
-  [NormedAddCommGroup G] [NormedSpace ℂ G] [SMul A G] [CStarModule A G]
+  [AddCommGroup E] [Module ℂ E] [SMul A E] [Norm E] [CStarModule A E]
+  [AddCommGroup F] [Module ℂ F] [SMul A F] [Norm F] [CStarModule A F]
+
+/-- Every Hilbert-module unitary commutes with the `A`-action. -/
+@[simp]
+theorem map_smul_coeff (U : CStarModuleUnitary A E F) (a : A) (x : E) :
+    U (a • x) = a • U x :=
+  (CStarModule.isAdjointable_def.mpr ⟨U.symm, U.inner_map_left⟩).map_smul_coeff a x
+
+/-- Construct a `CStarModuleUnitary` from a plain surjective function `f : E → F` preserving the
+`A`-valued inner product (Lance, Chapter 3). Injectivity, `ℂ`-linearity, and `A`-linearity follow
+automatically from nondegeneracy of the module inner product. -/
+noncomputable def ofSurjective {f : E → F} (hf_surj : Function.Surjective f)
+    (hf_inner : ∀ x y : E, inner A (f x) (f y) = inner A x y) :
+    CStarModuleUnitary A E F :=
+  have hadj : CStarModule.IsAdjointable A f :=
+    CStarModule.isAdjointable_def.mpr ⟨Function.surjInv hf_surj, fun x y => by
+      rw [← hf_inner x (Function.surjInv hf_surj y), Function.surjInv_eq hf_surj]⟩
+  { toFun := f
+    invFun := Function.surjInv hf_surj
+    left_inv x := CStarModule.ext_inner_left (A := A) fun z => by
+      rw [← hf_inner z (Function.surjInv hf_surj (f x)), Function.surjInv_eq hf_surj, hf_inner]
+    right_inv := Function.surjInv_eq hf_surj
+    map_add' := hadj.map_add
+    map_smul' := hadj.map_smul
+    inner_map_map' := hf_inner }
+
+@[simp]
+theorem ofSurjective_apply {f : E → F} (hf_surj : Function.Surjective f)
+    (hf_inner : ∀ x y : E, inner A (f x) (f y) = inner A x y) (x : E) :
+    ofSurjective hf_surj hf_inner x = f x := (rfl)
+
+@[simp]
+theorem coe_ofSurjective {f : E → F} (hf_surj : Function.Surjective f)
+    (hf_inner : ∀ x y : E, inner A (f x) (f y) = inner A x y) :
+    ⇑(ofSurjective hf_surj hf_inner) = f := (rfl)
+
+end CStarModuleRing
+
+section Seminormed
+
+variable {A E F : Type*}
+  [NonUnitalSemiring A] [StarRing A] [Module ℂ A] [PartialOrder A] [Norm A]
+  [SeminormedAddCommGroup E] [Module ℂ E] [SMul A E] [CStarModule A E]
+  [SeminormedAddCommGroup F] [Module ℂ F] [SMul A F] [CStarModule A F]
 
 /-- Forget the `A`-inner-product structure to obtain a `ℂ`-linear isometric equivalence
 `E ≃ₗᵢ[ℂ] F`. -/
@@ -319,27 +333,43 @@ theorem toLinearIsometryEquiv_apply (U : CStarModuleUnitary A E F) (x : E) :
 theorem toLinearIsometryEquiv_symm_apply (U : CStarModuleUnitary A E F) (y : F) :
     U.toLinearIsometryEquiv.symm y = U.symm y := (rfl)
 
+end Seminormed
+
+/-! ### Equivalence with unitary adjointable operators -/
+
+section Normed
+
+variable {A E F G : Type*}
+  [NonUnitalRing A] [StarRing A] [Module ℂ A] [PartialOrder A] [Norm A]
+  [NormedAddCommGroup E] [NormedSpace ℂ E] [SMul A E] [CStarModule A E]
+  [NormedAddCommGroup F] [NormedSpace ℂ F] [SMul A F] [CStarModule A F]
+  [NormedAddCommGroup G] [NormedSpace ℂ G] [SMul A G] [CStarModule A G]
+
 /-- View a Hilbert-module unitary `U : CStarModuleUnitary A E F` as an adjointable operator
 `AdjointableMap A E F`, with adjoint `U.symm`. -/
 def toAdjointableMap (U : CStarModuleUnitary A E F) : AdjointableMap A E F where
   toContinuousLinearMap := U.toLinearIsometryEquiv.toContinuousLinearEquiv.toContinuousLinearMap
   adjointContinuousLinearMap :=
     U.symm.toLinearIsometryEquiv.toContinuousLinearEquiv.toContinuousLinearMap
-  inner_map_eq' := U.inner_map_left
+  inner_map_eq' x y := by simpa using U.inner_map_left x y
 
 @[simp]
 theorem toAdjointableMap_apply (U : CStarModuleUnitary A E F) (x : E) :
-    U.toAdjointableMap x = U x := (rfl)
+    U.toAdjointableMap x = U x := by
+  rw [← AdjointableMap.toContinuousLinearMap_apply]
+  simp [toAdjointableMap]
 
 @[simp]
 theorem coe_toAdjointableMap (U : CStarModuleUnitary A E F) :
-    ⇑U.toAdjointableMap = ⇑U := (rfl)
+    ⇑U.toAdjointableMap = ⇑U :=
+  funext U.toAdjointableMap_apply
 
 @[simp]
 theorem adjoint_toAdjointableMap (U : CStarModuleUnitary A E F) :
     U.toAdjointableMap.adjoint = U.symm.toAdjointableMap :=
-  AdjointableMap.toContinuousLinearMap_injective <| by
-    rw [AdjointableMap.toContinuousLinearMap_adjoint]; rfl
+  AdjointableMap.ext_inner_left fun x y => by
+    rw [← U.toAdjointableMap.inner_map_left, toAdjointableMap_apply, toAdjointableMap_apply,
+      U.inner_map_left]
 
 theorem adjoint_comp_toAdjointableMap (U : CStarModuleUnitary A E F) :
     U.toAdjointableMap.adjoint.comp U.toAdjointableMap = .id := by ext x; simp
@@ -362,6 +392,11 @@ theorem toAdjointableMap_one :
 @[simp]
 theorem toAdjointableMap_mul (U V : CStarModuleUnitary A E E) :
     (U * V).toAdjointableMap = U.toAdjointableMap * V.toAdjointableMap := by ext x; simp
+
+@[simp]
+theorem toAdjointableMap_inv (U : CStarModuleUnitary A E E) :
+    (U⁻¹).toAdjointableMap = U.symm.toAdjointableMap := by
+  rw [inv_def]
 
 /-- Construct a `CStarModuleUnitary A E F` from an adjointable operator `T` whose adjoint is its
 two-sided inverse (`T* ∘ T = id` and `T ∘ T* = id`). -/
@@ -408,9 +443,15 @@ theorem equivAdjointableMap_symm_apply
 /-- Group isomorphism between `CStarModuleUnitary A E E` and the unitary group
 `unitary (AdjointableMap A E E)`. -/
 def mulEquivUnitary : CStarModuleUnitary A E E ≃* unitary (AdjointableMap A E E) where
-  toFun U := ⟨U.toAdjointableMap, Unitary.mem_iff.mpr
-    ⟨U.adjoint_comp_toAdjointableMap, U.toAdjointableMap_comp_adjoint⟩⟩
-  invFun T := ofAdjointableMap T.1 (Unitary.mem_iff.mp T.2).1 (Unitary.mem_iff.mp T.2).2
+  toFun U := ⟨U.toAdjointableMap, by
+    rw [Unitary.mem_iff, AdjointableMap.star_def, AdjointableMap.mul_def,
+      AdjointableMap.mul_def, AdjointableMap.one_def]
+    exact ⟨U.adjoint_comp_toAdjointableMap, U.toAdjointableMap_comp_adjoint⟩⟩
+  invFun T :=
+    have hT : T.1.adjoint.comp T.1 = .id ∧ T.1.comp T.1.adjoint = .id := by
+      simpa only [Unitary.mem_iff, AdjointableMap.star_def, AdjointableMap.mul_def,
+        AdjointableMap.one_def] using T.2
+    ofAdjointableMap T.1 hT.1 hT.2
   left_inv U := by ext x; simp
   right_inv T := by ext x; simp
   map_mul' U V := by ext x; simp
@@ -418,6 +459,10 @@ def mulEquivUnitary : CStarModuleUnitary A E E ≃* unitary (AdjointableMap A E 
 @[simp]
 theorem coe_mulEquivUnitary (U : CStarModuleUnitary A E E) :
     (mulEquivUnitary U : AdjointableMap A E E) = U.toAdjointableMap := (rfl)
+
+@[simp]
+theorem mulEquivUnitary_symm_apply (u : unitary (AdjointableMap A E E)) (x : E) :
+    mulEquivUnitary.symm u x = (u : AdjointableMap A E E) x := (rfl)
 
 end Normed
 
@@ -441,12 +486,12 @@ def conj (U : CStarModuleUnitary A E F) :
   map_smul' c T := by ext y; simp
   map_star' T := by ext y; simp [AdjointableMap.star_def, AdjointableMap.comp_assoc]
 
-theorem conj_def (U : CStarModuleUnitary A E F) (T : AdjointableMap A E E) :
+theorem conj_apply (U : CStarModuleUnitary A E F) (T : AdjointableMap A E E) :
     U.conj T = (U.toAdjointableMap.comp T).comp U.symm.toAdjointableMap := (rfl)
 
 @[simp]
-theorem conj_apply (U : CStarModuleUnitary A E F) (T : AdjointableMap A E E) (y : F) :
-    U.conj T y = U (T (U.symm y)) := by simp [conj_def]
+theorem conj_apply_apply (U : CStarModuleUnitary A E F) (T : AdjointableMap A E E) (y : F) :
+    U.conj T y = U (T (U.symm y)) := by simp [conj_apply]
 
 @[simp]
 theorem conj_symm (U : CStarModuleUnitary A E F) : U.conj.symm = U.symm.conj :=
@@ -463,49 +508,41 @@ variable {A E F : Type*}
   [NormedAddCommGroup E] [NormedSpace ℂ E] [SMul A E] [CStarModule A E]
   [NormedAddCommGroup F] [NormedSpace ℂ F] [SMul A F] [CStarModule A F]
 
-/-- An adjointable operator `T : AdjointableMap A E F` is a surjective inner-product-preserving
-module map if and only if its adjoint is its two-sided inverse (`T* ∘ T = id` and `T ∘ T* = id`;
-Lance, Theorem 3.5). -/
-theorem isUnitary_iff {T : AdjointableMap A E F} :
-    (Function.Surjective T ∧ ∀ x y : E, inner A (T x) (T y) = inner A x y) ↔
-      T.adjoint.comp T = .id ∧ T.comp T.adjoint = .id := by
-  refine ⟨fun ⟨hsurj, hinner⟩ => ?_, fun ⟨h₁, h₂⟩ => ?_⟩
+/-- An adjointable operator `T : AdjointableMap A E F` has its adjoint as its two-sided inverse
+(`T* ∘ T = id` and `T ∘ T* = id`) if and only if it is surjective and preserves the `A`-valued
+inner product (Lance, Chapter 3). -/
+theorem adjoint_comp_self_and_self_comp_adjoint_eq_id_iff {T : AdjointableMap A E F} :
+    T.adjoint.comp T = .id ∧ T.comp T.adjoint = .id ↔
+      Function.Surjective T ∧ ∀ x y : E, inner A (T x) (T y) = inner A x y := by
+  refine ⟨fun ⟨h₁, h₂⟩ => ?_, fun ⟨hsurj, hinner⟩ => ?_⟩
+  · exact ⟨fun y => ⟨T.adjoint y, by simpa using congrArg (· y) h₂⟩,
+      adjoint_comp_self_eq_id_iff.mp h₁⟩
   · let U := CStarModuleUnitary.ofSurjective hsurj hinner
     have hTU : T = U.toAdjointableMap := by ext x; simp [U]
     rw [hTU]
     exact ⟨U.adjoint_comp_toAdjointableMap, U.toAdjointableMap_comp_adjoint⟩
-  · exact ⟨fun y => ⟨T.adjoint y, by simpa using congrArg (· y) h₂⟩,
-      adjoint_comp_self_eq_id_iff.mp h₁⟩
 
-/-- An adjointable operator `T : AdjointableMap A E F` is a surjective inner-product-preserving
-module map if and only if it admits a two-sided inverse in `AdjointableMap` equal to its adjoint. -/
-theorem exists_inverse_eq_adjoint_iff {T : AdjointableMap A E F} :
-    (Function.Surjective T ∧ ∀ x y : E, inner A (T x) (T y) = inner A x y) ↔
-      ∃ S : AdjointableMap A F E, S.comp T = .id ∧ T.comp S = .id ∧ S = T.adjoint := by
-  rw [isUnitary_iff]
-  exact ⟨fun ⟨h₁, h₂⟩ => ⟨T.adjoint, h₁, h₂, rfl⟩,
-    by rintro ⟨S, h₁, h₂, rfl⟩; exact ⟨h₁, h₂⟩⟩
-
-/-- A plain function `f : E → F` between normed Hilbert C⋆-modules is surjective and preserves the
-`A`-valued inner product if and only if it is the underlying map of an invertible adjointable
-operator whose inverse is its adjoint. -/
-theorem exists_adjointableMap_unitary_iff {f : E → F} :
-    (Function.Surjective f ∧ ∀ x y : E, inner A (f x) (f y) = inner A x y) ↔
-      ∃ T : AdjointableMap A E F, ⇑T = f ∧ T.adjoint.comp T = .id ∧ T.comp T.adjoint = .id := by
-  refine ⟨fun ⟨hsurj, hinner⟩ => ?_, ?_⟩
+/-- A plain function `f : E → F` between normed Hilbert C⋆-modules is the underlying map of an
+invertible adjointable operator whose inverse is its adjoint if and only if `f` is surjective and
+preserves the `A`-valued inner product. -/
+theorem exists_coe_eq_and_adjoint_comp_self_and_self_comp_adjoint_eq_id_iff {f : E → F} :
+    (∃ T : AdjointableMap A E F, ⇑T = f ∧ T.adjoint.comp T = .id ∧ T.comp T.adjoint = .id) ↔
+      Function.Surjective f ∧ ∀ x y : E, inner A (f x) (f y) = inner A x y := by
+  refine ⟨?_, fun ⟨hsurj, hinner⟩ => ?_⟩
+  · rintro ⟨T, rfl, h₁, h₂⟩
+    exact adjoint_comp_self_and_self_comp_adjoint_eq_id_iff.mp ⟨h₁, h₂⟩
   · let U := CStarModuleUnitary.ofSurjective hsurj hinner
     exact ⟨U.toAdjointableMap, by ext x; simp [U], U.adjoint_comp_toAdjointableMap,
       U.toAdjointableMap_comp_adjoint⟩
-  · rintro ⟨T, rfl, h₁, h₂⟩
-    exact isUnitary_iff.mpr ⟨h₁, h₂⟩
 
 /-- An adjointable endomorphism `U : AdjointableMap A E E` belongs to
 `unitary (AdjointableMap A E E)` if and only if it is surjective and preserves the `A`-valued
 inner product. -/
 theorem mem_unitary_iff {U : AdjointableMap A E E} :
     U ∈ unitary (AdjointableMap A E E) ↔
-      Function.Surjective U ∧ ∀ x y : E, inner A (U x) (U y) = inner A x y :=
-  Unitary.mem_iff.trans isUnitary_iff.symm
+      Function.Surjective U ∧ ∀ x y : E, inner A (U x) (U y) = inner A x y := by
+  rw [Unitary.mem_iff, star_def, mul_def, mul_def, one_def,
+    adjoint_comp_self_and_self_comp_adjoint_eq_id_iff]
 
 end AdjointableMap
 
