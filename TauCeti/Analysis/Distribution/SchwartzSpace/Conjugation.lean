@@ -37,6 +37,8 @@ Bessel-potential spaces `H^{s,p}`.
 * `SchwartzMap.conjCLM`: complex conjugation of scalar Schwartz functions.
 * `SchwartzMap.fourier_conjPostcompCLM_apply`, `SchwartzMap.fourierInv_conjPostcompCLM_apply`:
   `𝓕 (L ∘ f) = L ∘ 𝓕⁻ f` and `𝓕⁻ (L ∘ f) = L ∘ 𝓕 f`.
+* `SchwartzMap.conjCLM_fourier`, `SchwartzMap.conjCLM_fourierInv`: `conj (𝓕 φ) = 𝓕⁻ (conj φ)` and
+  `conj (𝓕⁻ φ) = 𝓕 (conj φ)`.
 * `SchwartzMap.fourierMultiplierCLM_conjPostcompCLM`: the multiplier with symbol `g` applied to
   `L ∘ f` is `L` applied to the multiplier with symbol `conj (g (-ξ))`;
   `SchwartzMap.fourierMultiplierCLM_conjCLM` is the case of complex conjugation.
@@ -91,6 +93,7 @@ theorem conjCLM_conjCLM (φ : 𝓢(E, ℂ)) : conjCLM E (conjCLM E φ) = φ := b
 
 /-- Postcomposition with two conjugate-linear maps is postcomposition with their complex-linear
 composite. -/
+@[simp]
 theorem conjPostcompCLM_conjPostcompCLM {H : Type*} [NormedAddCommGroup H] [NormedSpace ℂ H]
     (L' : G →L⋆[ℂ] H) (L : F →L⋆[ℂ] G) (f : 𝓢(E, F)) :
     conjPostcompCLM L' (conjPostcompCLM L f) = postcompCLM (L'.comp L) f := by
@@ -132,11 +135,11 @@ theorem fourier_conjPostcompCLM_apply (L : F →L⋆[ℂ] G) (f : 𝓢(E, F)) (x
 @[simp]
 theorem fourierInv_conjPostcompCLM_apply (L : F →L⋆[ℂ] G) (f : 𝓢(E, F)) (x : E) :
     𝓕⁻ (conjPostcompCLM L f) x = L (𝓕 f x) := by
-  rw [fourier_coe, fourierInv_coe, Real.fourier_eq, Real.fourierInv_eq]
-  simp only [conjPostcompCLM_apply]
-  rw [integral_circle_smul_conj L f _ (by fun_prop)]
-  congr 2 with v
-  rw [← AddChar.map_neg_eq_inv]
+  -- `L ∘ f = L ∘ 𝓕⁻ (𝓕 f) = 𝓕 (L ∘ 𝓕 f)`.
+  have h : conjPostcompCLM L f = 𝓕 (conjPostcompCLM L (𝓕 f)) := by
+    ext y
+    rw [fourier_conjPostcompCLM_apply, fourierInv_fourier_eq, conjPostcompCLM_apply]
+  rw [h, fourierInv_fourier_eq, conjPostcompCLM_apply]
 
 /-- **Conjugation of Fourier multipliers.** A conjugate-linear map `L` conjugates and reflects the
 symbol of a Fourier multiplier: `T_g (L ∘ f) = L ∘ T_{g'} f` with `g'(ξ) = conj (g (-ξ))`. -/
@@ -167,6 +170,18 @@ theorem fourier_conjCLM_apply (φ : 𝓢(E, ℂ)) (x : E) : 𝓕 (conjCLM E φ) 
 @[simp]
 theorem fourierInv_conjCLM_apply (φ : 𝓢(E, ℂ)) (x : E) : 𝓕⁻ (conjCLM E φ) x = conj (𝓕 φ x) :=
   fourierInv_conjPostcompCLM_apply _ φ x
+
+/-- The conjugate of a Fourier transform is the inverse Fourier transform of the conjugate:
+`conj (𝓕 φ) = 𝓕⁻ (conj φ)`. -/
+theorem conjCLM_fourier (φ : 𝓢(E, ℂ)) : conjCLM E (𝓕 φ) = 𝓕⁻ (conjCLM E φ) := by
+  ext x
+  simp
+
+/-- The conjugate of an inverse Fourier transform is the Fourier transform of the conjugate:
+`conj (𝓕⁻ φ) = 𝓕 (conj φ)`. -/
+theorem conjCLM_fourierInv (φ : 𝓢(E, ℂ)) : conjCLM E (𝓕⁻ φ) = 𝓕 (conjCLM E φ) := by
+  ext x
+  simp
 
 /-- Complex conjugation of scalar Schwartz functions conjugates and reflects the symbol of a
 Fourier multiplier: `T_g (conj φ) = conj (T_{g'} φ)` with `g'(ξ) = conj (g (-ξ))`. -/

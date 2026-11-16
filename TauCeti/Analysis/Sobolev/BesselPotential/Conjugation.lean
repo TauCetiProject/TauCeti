@@ -69,7 +69,7 @@ def conjPostcomp (L : F →L⋆[ℂ] G) : H^{s, p}(E, F) →L⋆[ℂ] H^{s, p}(E
           toLp := L.compLp f.toLp
           bessel_toDistr_eq_toLp := by
             rw [besselPotential_conjPostcompCLM, f.bessel_toDistr_eq_toLp,
-              conjPostcompCLM_toTemperedDistribution] }
+              conjPostcompCLM_toTemperedDistribution_eq] }
       map_add' f g := ext (map_add (conjPostcompCLM L) f.toDistr g.toDistr)
       map_smul' c f := ext (map_smulₛₗ (conjPostcompCLM L) c f.toDistr) }
     ‖L‖ fun f ↦ by
@@ -106,10 +106,12 @@ theorem norm_conjPostcomp_apply (L : F →L⋆[ℂ] G) (hL : ∀ x, ‖L x‖ = 
     ((L.coeFn_compLp f.toLp).mono fun x hx ↦ by rw [hx, hL])
 
 /-- Two conjugations compose to the complex-linear operator induced by the composite. -/
+@[simp]
 theorem conjPostcomp_conjPostcomp {H : Type*} [NormedAddCommGroup H] [NormedSpace ℂ H]
     [CompleteSpace H] (L' : G →L⋆[ℂ] H) (L : F →L⋆[ℂ] G) (f : H^{s, p}(E, F)) :
     conjPostcomp E s p L' (conjPostcomp E s p L f) = postcomp E s p (L'.comp L) f := by
   ext φ
+  rw [toDistr_conjPostcomp_apply, toDistr_conjPostcomp_apply, toDistr_postcomp_apply]
   simp
 
 variable (E s p) in
@@ -151,4 +153,4 @@ theorem SchwartzMap.toBesselPotentialSpaceCLM_conjPostcompCLM {s : ℝ} {p : ℝ
       BesselPotentialSpace.conjPostcomp E s p L (toBesselPotentialSpaceCLM s p u) := by
   ext1
   rw [toDistr_toBesselPotentialSpaceCLM, BesselPotentialSpace.toDistr_conjPostcomp,
-    toDistr_toBesselPotentialSpaceCLM, conjPostcompCLM_toTemperedDistributionCLM]
+    toDistr_toBesselPotentialSpaceCLM, conjPostcompCLM_toTemperedDistributionCLM_eq]

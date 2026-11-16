@@ -18,10 +18,10 @@ A continuous conjugate-linear map `L : F →L⋆[ℂ] G` acts on `F`-valued temp
 
 (`TemperedDistribution.conjPostcompCLM`). The conjugation of the test function makes `L u` again
 complex-linear in `φ`, and it is what makes this action extend `f ↦ L ∘ f` from functions: for a
-Schwartz function or an `Lᵖ` function `f`,
-`L (∫ conj φ • f) = ∫ φ • L ∘ f` (`TemperedDistribution.conjPostcompCLM_toTemperedDistributionCLM`,
-`TemperedDistribution.conjPostcompCLM_toTemperedDistribution`). For `L = conj` on `ℂ` this is the
-complex conjugate `conj (u (conj φ))` of a scalar distribution.
+Schwartz function or an `Lᵖ` function `f`, `L (∫ conj φ • f) = ∫ φ • L ∘ f`
+(`TemperedDistribution.conjPostcompCLM_toTemperedDistributionCLM_eq`,
+`TemperedDistribution.conjPostcompCLM_toTemperedDistribution_eq`). For `L = conj` on `ℂ` this is
+the complex conjugate `conj (u (conj φ))` of a scalar distribution.
 
 As on Schwartz functions, `L` exchanges the Fourier transform and its inverse, and it conjugates and
 reflects the symbol of a Fourier multiplier,
@@ -35,8 +35,8 @@ the Bessel-potential spaces `H^{s,p}` for every real `s`, including negative ord
 
 * `TemperedDistribution.conjPostcompCLM`: the action `u ↦ (φ ↦ L (u (conj φ)))` of a continuous
   conjugate-linear map on tempered distributions.
-* `TemperedDistribution.conjPostcompCLM_toTemperedDistributionCLM`,
-  `TemperedDistribution.conjPostcompCLM_toTemperedDistribution`: it extends `f ↦ L ∘ f` from
+* `TemperedDistribution.conjPostcompCLM_toTemperedDistributionCLM_eq`,
+  `TemperedDistribution.conjPostcompCLM_toTemperedDistribution_eq`: it extends `f ↦ L ∘ f` from
   Schwartz functions and from `Lᵖ` functions.
 * `TemperedDistribution.fourier_conjPostcompCLM`, `TemperedDistribution.fourierInv_conjPostcompCLM`:
   `𝓕 (L u) = L (𝓕⁻ u)` and `𝓕⁻ (L u) = L (𝓕 u)`.
@@ -71,6 +71,16 @@ theorem conjPostcompCLM_apply_apply (L : F →L⋆[ℂ] G) (u : 𝓢'(E, F)) (φ
     conjPostcompCLM L u φ = L (u (SchwartzMap.conjCLM E φ)) :=
   (rfl)
 
+/-- Two conjugate-linear maps act on tempered distributions as their complex-linear composite. -/
+@[simp]
+theorem conjPostcompCLM_conjPostcompCLM {H : Type*} [NormedAddCommGroup H] [NormedSpace ℂ H]
+    (L' : G →L⋆[ℂ] H) (L : F →L⋆[ℂ] G) (u : 𝓢'(E, F)) :
+    conjPostcompCLM L' (conjPostcompCLM L u) =
+      PointwiseConvergenceCLM.postcomp _ (L'.comp L) u := by
+  ext φ
+  simp only [conjPostcompCLM_apply_apply, SchwartzMap.conjCLM_conjCLM]
+  rfl
+
 end NormedSpace
 
 variable [InnerProductSpace ℝ E] [FiniteDimensional ℝ E] [MeasurableSpace E] [BorelSpace E]
@@ -80,7 +90,7 @@ section Embedding
 variable [CompleteSpace F] [CompleteSpace G]
 
 /-- On a Schwartz function `f`, the action of a conjugate-linear map `L` is `f ↦ L ∘ f`. -/
-theorem conjPostcompCLM_toTemperedDistributionCLM (L : F →L⋆[ℂ] G) (f : 𝓢(E, F)) :
+theorem conjPostcompCLM_toTemperedDistributionCLM_eq (L : F →L⋆[ℂ] G) (f : 𝓢(E, F)) :
     conjPostcompCLM L (f : 𝓢'(E, F)) = (SchwartzMap.conjPostcompCLM L f : 𝓢'(E, G)) := by
   ext φ
   have hφf : Integrable (fun x ↦ SchwartzMap.conjCLM E φ x • f x) :=
@@ -92,7 +102,7 @@ theorem conjPostcompCLM_toTemperedDistributionCLM (L : F →L⋆[ℂ] G) (f : �
 
 omit [FiniteDimensional ℝ E] in
 /-- On an `Lᵖ` function `f`, the action of a conjugate-linear map `L` is `f ↦ L ∘ f`. -/
-theorem conjPostcompCLM_toTemperedDistribution {μ : Measure E} [μ.HasTemperateGrowth]
+theorem conjPostcompCLM_toTemperedDistribution_eq {μ : Measure E} [μ.HasTemperateGrowth]
     {p : ENNReal} [hp : Fact (1 ≤ p)] (L : F →L⋆[ℂ] G) (f : Lp F p μ) :
     conjPostcompCLM L (f : 𝓢'(E, F)) = ((L.compLp f : Lp G p μ) : 𝓢'(E, G)) := by
   ext φ
@@ -112,23 +122,19 @@ section Fourier
 
 /-- A conjugate-linear map exchanges the Fourier transform and its inverse on tempered
 distributions: `𝓕 (L u) = L (𝓕⁻ u)`. -/
+@[simp]
 theorem fourier_conjPostcompCLM (L : F →L⋆[ℂ] G) (u : 𝓢'(E, F)) :
     𝓕 (conjPostcompCLM L u) = conjPostcompCLM L (𝓕⁻ u) := by
   ext φ
-  have h : SchwartzMap.conjCLM E (𝓕 φ) = 𝓕⁻ (SchwartzMap.conjCLM E φ) := by
-    ext x
-    simp
-  simp [fourier_apply, fourierInv_apply, h]
+  simp [fourier_apply, fourierInv_apply, SchwartzMap.conjCLM_fourier]
 
 /-- A conjugate-linear map exchanges the inverse Fourier transform and the Fourier transform on
 tempered distributions: `𝓕⁻ (L u) = L (𝓕 u)`. -/
+@[simp]
 theorem fourierInv_conjPostcompCLM (L : F →L⋆[ℂ] G) (u : 𝓢'(E, F)) :
     𝓕⁻ (conjPostcompCLM L u) = conjPostcompCLM L (𝓕 u) := by
   ext φ
-  have h : SchwartzMap.conjCLM E (𝓕⁻ φ) = 𝓕 (SchwartzMap.conjCLM E φ) := by
-    ext x
-    simp
-  simp [fourier_apply, fourierInv_apply, h]
+  simp [fourier_apply, fourierInv_apply, SchwartzMap.conjCLM_fourierInv]
 
 /-- **Conjugation of Fourier multipliers.** A conjugate-linear map `L` conjugates and reflects the
 symbol of a Fourier multiplier on tempered distributions: `T_g (L u) = L (T_{g'} u)` with
@@ -147,12 +153,14 @@ theorem fourierMultiplierCLM_conjPostcompCLM (L : F →L⋆[ℂ] G) {g : E → �
   rw [fourierMultiplierCLM_apply_apply, conjPostcompCLM_apply_apply, conjPostcompCLM_apply_apply,
     fourierMultiplierCLM_apply_apply, SchwartzMap.fourier_smulLeftCLM_fourierInv_eq hg,
     SchwartzMap.fourier_smulLeftCLM_fourierInv_eq hg'']
-  have h := SchwartzMap.fourierMultiplierCLM_conjCLM hg' φ
-  simp only [Complex.conj_conj] at h
-  simp only [neg_neg, ← h]
+  have h : SchwartzMap.conjCLM E (SchwartzMap.fourierMultiplierCLM ℂ (fun ξ ↦ g (-ξ)) φ) =
+      SchwartzMap.fourierMultiplierCLM ℂ (fun ξ ↦ conj (g (-(-ξ)))) (SchwartzMap.conjCLM E φ) := by
+    simpa using (SchwartzMap.fourierMultiplierCLM_conjCLM hg' φ).symm
+  rw [h]
 
 /-- **The Bessel potential commutes with conjugate-linear maps.** Its symbol `⟨ξ⟩ ^ s` is real and
 even, so `J^s (L u) = L (J^s u)` for every real order `s`. -/
+@[simp]
 theorem besselPotential_conjPostcompCLM (L : F →L⋆[ℂ] G) (s : ℝ) (u : 𝓢'(E, F)) :
     besselPotential E G s (conjPostcompCLM L u) = conjPostcompCLM L (besselPotential E F s u) := by
   simp only [besselPotential]
