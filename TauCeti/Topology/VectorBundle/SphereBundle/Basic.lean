@@ -128,6 +128,38 @@ theorem sphereBundleProj_apply (v : sphereBundle F E) :
     sphereBundleProj F E v = (v : TotalSpace F E).proj :=
   (rfl)
 
+/-- The inclusion `S(E_b) → S(E)` of the unit sphere of the fibre over `b` into the unit sphere
+bundle. -/
+def sphereBundleFiberIncl (b : B) : C(Metric.sphere (0 : E b) 1, sphereBundle F E) where
+  toFun x := ⟨⟨b, x⟩, mem_sphereBundle.2 (mem_sphere_zero_iff_norm.1 x.2)⟩
+  continuous_toFun :=
+    ((FiberBundle.continuous_totalSpaceMk F E b).comp continuous_subtype_val).subtype_mk _
+
+@[simp]
+theorem coe_sphereBundleFiberIncl_apply (b : B) (x : Metric.sphere (0 : E b) 1) :
+    (sphereBundleFiberIncl F E b x : TotalSpace F E) = ⟨b, x⟩ :=
+  (rfl)
+
+/-- The sphere of the fibre over `b` lies over `b`. -/
+theorem sphereBundleProj_sphereBundleFiberIncl (b : B) (x : Metric.sphere (0 : E b) 1) :
+    sphereBundleProj F E (sphereBundleFiberIncl F E b x) = b :=
+  (rfl)
+
+/-- The sphere of the fibre over `b` is exactly the fibre over `b` of the sphere bundle. -/
+theorem range_sphereBundleFiberIncl (b : B) :
+    range (sphereBundleFiberIncl F E b) = sphereBundleProj F E ⁻¹' {b} := by
+  refine Subset.antisymm (range_subset_iff.2 fun x ↦ rfl) fun v hv ↦ ?_
+  obtain ⟨⟨b', x⟩, hx⟩ := v
+  obtain rfl : b' = b := hv
+  exact ⟨⟨x, mem_sphere_zero_iff_norm.2 hx⟩, rfl⟩
+
+/-- The inclusion of the sphere of the fibre over `b` into the sphere bundle is an embedding. -/
+theorem isEmbedding_sphereBundleFiberIncl (b : B) :
+    Topology.IsEmbedding (sphereBundleFiberIncl F E b) :=
+  ⟨.of_comp (sphereBundleFiberIncl F E b).continuous continuous_subtype_val
+      ((FiberBundle.totalSpaceMk_isInducing F E b).comp .subtypeVal),
+    fun _ _ h ↦ Subtype.ext (TotalSpace.mk_inj.1 (congrArg Subtype.val h))⟩
+
 end Proj
 
 variable {B : Type w} [TopologicalSpace B] (F : Type*) [NormedAddCommGroup F] [NormedSpace ℝ F]
