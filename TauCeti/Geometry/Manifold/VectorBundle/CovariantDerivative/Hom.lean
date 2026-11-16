@@ -188,6 +188,30 @@ theorem hom_eq_of_apply {A : Π x : M, V x →L[𝕜] W x} {x : M}
   · simpa using hom_apply covV covV hA (mdifferentiableAt_extend I F u) v
   · simp [hom_eq_zero_of_not_mdifferentiableAt covV covV hA]
 
+section Iterated
+
+variable [FiniteDimensional 𝕜 G] [ContMDiffVectorBundle 1 G W I]
+  {G' : Type*} [NormedAddCommGroup G'] [NormedSpace 𝕜 G']
+  {U : M → Type*} [TopologicalSpace (TotalSpace G' U)]
+  [∀ x, AddCommGroup (U x)] [∀ x, Module 𝕜 (U x)]
+  [∀ x, TopologicalSpace (U x)] [∀ x, IsTopologicalAddGroup (U x)]
+  [∀ x, ContinuousSMul 𝕜 (U x)] [FiberBundle G' U] [VectorBundle 𝕜 G' U]
+  (covU : CovariantDerivative I G' U)
+
+/-- Evaluation of the connection induced on the iterated Hom bundle `Hom(V, Hom(W, U))`, the
+bundle of bilinear maps `V × W → U`, on a differentiable section and two differentiable inputs:
+`(∇_v A)(s, r) = ∇_v (A(s, r)) - A(∇_v s, r) - A(s, ∇_v r)`. -/
+theorem hom_hom_apply {A : Π x : M, V x →L[𝕜] W x →L[𝕜] U x} {s : Π x : M, V x}
+    {r : Π x : M, W x} {x : M}
+    (hA : MDiffAt (fun y ↦ TotalSpace.mk' (F →L[𝕜] G →L[𝕜] G')
+      (E := fun z ↦ V z →L[𝕜] W z →L[𝕜] U z) y (A y)) x)
+    (hs : MDiffAt (T% s) x) (hr : MDiffAt (T% r) x) (v : TangentSpace I x) :
+    covV.hom (covW.hom covU) A x v (s x) (r x) =
+      covU (fun y ↦ A y (s y) (r y)) x v - A x (covV s x v) (r x) - A x (s x) (covW r x v) := by
+  rw [hom_apply _ _ hA hs, sub_apply, hom_apply _ _ (hA.clm_bundle_apply hs) hr, sub_right_comm]
+
+end Iterated
+
 end General
 
 section Smooth
