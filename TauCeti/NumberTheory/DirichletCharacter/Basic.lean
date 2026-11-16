@@ -69,6 +69,8 @@ case the descent uses is `d = L N / p` with `p ∣ N` coprime to `L`, where the 
 * `DirichletCharacter.ext_of_level_four`, `DirichletCharacter.ext_of_level_eight`: a character of
   level four is determined by its value at `3`, and one of level eight by its values at `3`
   and `5`.
+* `DirichletCharacter.subsingleton_of_le_two`: at the levels `1` and `2` there is only one
+  character.
 * `DirichletCharacter.sum_mul_eq_zero_of_forall_units`: coefficient extraction by orthogonality; a
   combination of symmetrised character sums that vanishes on every pair of units has vanishing
   coefficients against every pair of character multiplicities.
@@ -174,6 +176,15 @@ theorem ext_of_level_eight {R : Type*} [CommMonoidWithZero R]
   · exact h3
   · exact h5
   · rw [map_mul, map_mul, h3, h5]
+
+/-- At the levels `1` and `2` there is only one Dirichlet character, since `(ℤ/nℤ)ˣ` is trivial
+there. -/
+theorem subsingleton_of_le_two {R : Type*} [CommMonoidWithZero R] {n : ℕ} [NeZero n] (hn : n ≤ 2) :
+    Subsingleton (DirichletCharacter R n) := by
+  have : Subsingleton (ZMod n)ˣ := by
+    obtain rfl | rfl : n = 1 ∨ n = 2 := by have := NeZero.ne n; omega
+    all_goals infer_instance
+  exact ⟨fun χ ψ ↦ MulChar.ext fun u ↦ by rw [Subsingleton.elim u 1]; simp⟩
 
 /-- **Character separation within a coset.** If `χ` does not factor through `d ∣ N`, then every
 unit `u` has a partner `u'` with the same reduction modulo `d` but a different character value —
