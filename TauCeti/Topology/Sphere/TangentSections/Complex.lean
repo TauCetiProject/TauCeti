@@ -11,6 +11,8 @@ public import Mathlib.LinearAlgebra.UnitaryGroup
 public import TauCeti.LinearAlgebra.TensorProduct.Balanced.Extension
 public import TauCeti.Topology.Sphere.TangentSections.Basic
 
+import Mathlib.Algebra.Star.Pi
+
 /-!
 # Balanced complexification and explicit unitary trivialization of sphere tangent sections
 
@@ -355,13 +357,13 @@ theorem sphereComplexFrameSnd_mem_tangentSections :
 @[simp]
 theorem star_sphereComplexFrameFst_dotProduct_self :
     star sphereComplexFrameFst ⬝ᵥ sphereComplexFrameFst = 1 := by
-  have h : star sphereComplexFrameFst ⬝ᵥ sphereComplexFrameFst =
-      sphereComplexNormInvComplex ^ 2 *
-        (star sphereComplexUnnormVec ⬝ᵥ sphereComplexUnnormVec) := by
-    simp only [sphereComplexFrameFst_def, dotProduct, Fin.sum_univ_three, Pi.star_apply,
-      Pi.smul_apply, smul_eq_mul, star_mul', star_sphereComplexNormInvComplex]
-    ring
-  rw [h, star_sphereComplexUnnormVec_dotProduct_self, sphereComplexNormInvComplex_sq_mul]
+  -- Supply `StarMul.toStarModule` directly so search skips `ContinuousMap.instStarModule`.
+  have := StarMul.toStarModule (R := C(sphere (0 : EuclideanSpace ℝ (Fin 3)) 1, ℂ))
+  rw [sphereComplexFrameFst_def, star_smul, star_sphereComplexNormInvComplex,
+    smul_dotProduct sphereComplexNormInvComplex (star sphereComplexUnnormVec),
+    dotProduct_smul sphereComplexNormInvComplex (star sphereComplexUnnormVec),
+    star_sphereComplexUnnormVec_dotProduct_self, smul_eq_mul, smul_eq_mul, ← mul_assoc, ← sq,
+    sphereComplexNormInvComplex_sq_mul]
 
 @[simp]
 theorem star_sphereComplexFrameFst_dotProduct_snd :
@@ -496,13 +498,8 @@ def tangentSectionsSphereTwoComplexEquiv :
     simp only [RingHom.id_apply, SetLike.val_smul, Pi.add_apply, Pi.smul_apply, smul_eq_mul]
     ring
   left_inv c := by
-    have hlin (u : Fin 3 → C(sphere (0 : EuclideanSpace ℝ (Fin 3)) 1, ℂ)) :
-        u ⬝ᵥ (c 0 • sphereComplexFrameFst + c 1 • sphereComplexFrameSnd) =
-          c 0 * (u ⬝ᵥ sphereComplexFrameFst) + c 1 * (u ⬝ᵥ sphereComplexFrameSnd) := by
-      simp only [dotProduct, Fin.sum_univ_three, Pi.add_apply, Pi.smul_apply, smul_eq_mul]
-      ring
     ext j
-    fin_cases j <;> simp [hlin]
+    fin_cases j <;> simp
   right_inv z :=
     Subtype.ext (sphereComplexFrame_reconstruct_of_mem_tangentSections z.2)
 
@@ -527,22 +524,14 @@ theorem star_tangentSectionsSphereTwoComplexEquiv_dotProduct
     (c d : Fin 2 → C(sphere (0 : EuclideanSpace ℝ (Fin 3)) 1, ℂ)) :
     star (tangentSectionsSphereTwoComplexEquiv c : Fin 3 → _) ⬝ᵥ
       (tangentSectionsSphereTwoComplexEquiv d : Fin 3 → _) = star c ⬝ᵥ d := by
-  have hexpand :
-      star (c 0 • sphereComplexFrameFst + c 1 • sphereComplexFrameSnd) ⬝ᵥ
-        (d 0 • sphereComplexFrameFst + d 1 • sphereComplexFrameSnd) =
-        star (c 0) * d 0 * (star sphereComplexFrameFst ⬝ᵥ sphereComplexFrameFst) +
-          star (c 0) * d 1 * (star sphereComplexFrameFst ⬝ᵥ sphereComplexFrameSnd) +
-          star (c 1) * d 0 * (star sphereComplexFrameSnd ⬝ᵥ sphereComplexFrameFst) +
-          star (c 1) * d 1 * (star sphereComplexFrameSnd ⬝ᵥ sphereComplexFrameSnd) := by
-    simp only [dotProduct, Fin.sum_univ_three, Pi.star_apply, Pi.add_apply, Pi.smul_apply,
-      smul_eq_mul, star_add, star_mul']
-    ring
-  rw [coe_tangentSectionsSphereTwoComplexEquiv_apply,
-    coe_tangentSectionsSphereTwoComplexEquiv_apply, hexpand]
-  simp only [star_sphereComplexFrameFst_dotProduct_self,
+  -- Supply `StarMul.toStarModule` directly so search skips `ContinuousMap.instStarModule`.
+  have := StarMul.toStarModule (R := C(sphere (0 : EuclideanSpace ℝ (Fin 3)) 1, ℂ))
+  simp only [coe_tangentSectionsSphereTwoComplexEquiv_apply, star_add, star_smul, add_dotProduct,
+    dotProduct_add, smul_dotProduct, dotProduct_smul, star_sphereComplexFrameFst_dotProduct_self,
     star_sphereComplexFrameFst_dotProduct_snd, star_sphereComplexFrameSnd_dotProduct_fst,
-    star_sphereComplexFrameSnd_dotProduct_self, mul_one, mul_zero, add_zero]
-  simp [dotProduct, Fin.sum_univ_two]
+    star_sphereComplexFrameSnd_dotProduct_self, smul_eq_mul, mul_one, mul_zero, add_zero, zero_add]
+  simp only [dotProduct, Fin.sum_univ_two, Pi.star_apply]
+  ring
 
 /-- The explicit `C(S², ℂ)`-basis `(sphereComplexFrameFst, sphereComplexFrameSnd)` of
 `tangentSections (Fin 3) ℂ`. -/
