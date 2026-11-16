@@ -872,20 +872,14 @@ theorem dieudonneDet_unitsMap_mapMatrix {E : Type*} [DivisionRing E] (f : D →+
     dieudonneDet (Units.map (f.mapMatrix (m := n) : Matrix n n D →* Matrix n n E) g) =
       Group.Abelianization.map (Units.map (f : D →* E)) (dieudonneDet g) := by
   obtain ⟨e, he, d, rfl⟩ := TauCeti.exists_mem_elementarySubgroup_mul_diagGL g
-  have hle : TauCeti.elementarySubgroup n D ≤
-      (TauCeti.elementarySubgroup n E).comap
-        (Units.map (f.mapMatrix (m := n) : Matrix n n D →* Matrix n n E)) := by
-    refine TauCeti.elementarySubgroup_le_iff.2 fun i j hij c ↦ ?_
-    rw [Subgroup.mem_comap]
-    convert TauCeti.transvectionUnit_mem_elementarySubgroup hij (f c)
-    ext a b
-    simp [TauCeti.coe_transvectionUnit_eq_one_add_single, Matrix.single_apply, Matrix.one_apply,
-      apply_ite f]
+  have hfe : Units.map (f.mapMatrix (m := n) : Matrix n n D →* Matrix n n E) e ∈
+      TauCeti.elementarySubgroup n E :=
+    f.map_elementarySubgroup_le ⟨e, he, rfl⟩
   have hmap_diag :
       Units.map (f.mapMatrix (m := n) : Matrix n n D →* Matrix n n E) (TauCeti.diagGL d) =
         TauCeti.diagGL (fun i ↦ Units.map (f : D →* E) (d i)) := by
     ext a b; simp [Matrix.diagonal_apply, apply_ite f]
-  rw [map_mul, map_mul, map_mul, dieudonneDet_of_mem_elementarySubgroup (hle he),
+  rw [map_mul, map_mul, map_mul, dieudonneDet_of_mem_elementarySubgroup hfe,
     dieudonneDet_of_mem_elementarySubgroup he, one_mul, one_mul, hmap_diag,
     dieudonneDet_diagGL, dieudonneDet_diagGL, map_prod]
   simp
