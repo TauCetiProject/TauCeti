@@ -113,13 +113,13 @@ theorem exists_poissonBracket_eventuallyEq_zero_mvfderiv_eq_one {ι : Type*} [Fi
   have hDw : D w ∉ S.map D.toLinearMap := fun ⟨v, hv, hvw⟩ ↦ hw (hD hvw ▸ hv)
   obtain ⟨f, hfw, hfS⟩ := Submodule.exists_dual_map_eq_bot_of_notMem hDw inferInstance
   set ℓ : E →L[ℝ] ℝ := (f (D w))⁻¹ • LinearMap.toContinuousLinearMap f with hℓ
+  have hℓ_apply (v : E) : ℓ v = (f (D w))⁻¹ * f v := by simp [hℓ]
   have hℓu (i : ι) : ℓ (u i) = 0 := by
     have h := Submodule.mem_map_of_mem (f := f) <| Submodule.mem_map_of_mem (f := D.toLinearMap)
       (Submodule.subset_span (mem_range_self i) : σ.hamiltonianVectorField (F · i) x ∈ S)
     rw [hfS, Submodule.mem_bot] at h
-    rw [← heu x hxe i, ← mvfderiv_apply_eq_mfderiv_apply, hℓ, smul_apply,
-      LinearMap.coe_toContinuousLinearMap']
-    exact smul_eq_zero_of_right _ h
+    rw [← heu x hxe i, ← mvfderiv_apply_eq_mfderiv_apply, hℓ_apply]
+    exact mul_eq_zero_of_right _ h
   -- The function `g = ℓ ∘ e` near `x`, extended to a smooth function on `M`.
   obtain ⟨g, hg⟩ := ContMDiffOn.exists_contMDiffMap_eventuallyEq (n := ⊤)
     ((ℓ.contMDiff (n := ∞)).comp_contMDiffOn (e.contMDiffOn_extend he))
@@ -132,8 +132,7 @@ theorem exists_poissonBracket_eventuallyEq_zero_mvfderiv_eq_one {ι : Type*} [Fi
   · filter_upwards [hdg, e.open_source.mem_nhds hxe] with y hy hye
     rw [hn.poissonBracket_eq_neg_mvfderiv, hy, mvfderiv_apply_eq_mfderiv_apply, heu y hye i,
       hℓu i, neg_zero]
-  · rw [hdg.self_of_nhds, hℓ, smul_apply, LinearMap.coe_toContinuousLinearMap', smul_eq_mul,
-      inv_mul_cancel₀ hfw]
+  · rw [hdg.self_of_nhds, hℓ_apply, inv_mul_cancel₀ hfw]
 
 /-- **Extending an involutive family by one function.** On a symplectic manifold of dimension
 `2n`, let `F₁, …, F_k` be smooth functions which pairwise Poisson-commute near `x` and have
@@ -153,12 +152,13 @@ theorem exists_isRegularPoint_snoc {k : ℕ} {F : M → Fin k → ℝ}
     hσ.exists_poissonBracket_eventuallyEq_zero_mvfderiv_eq_one hF hcomm hreg hwS
   exact ⟨g, hg, hgF, hreg.snoc (hg.mdifferentiableAt (by simp)) hwK (hgw ▸ one_ne_zero)⟩
 
-/-- **Extending an involutive family to `n` functions.** On a symplectic manifold of dimension
-`2n`, let `F₁, …, F_k` be smooth functions which pairwise Poisson-commute near `x` and have
-independent differentials at `x`; necessarily `k ≤ n`. Then they are the first `k` of `n` smooth
-functions `G₁, …, G_n` which pairwise Poisson-commute near `x` and have independent differentials
-at `x`. -/
-theorem exists_isRegularPoint_castLE {n k : ℕ} (hn : 2 * n = finrank ℝ E) (hkn : k ≤ n)
+/-- **Extending an involutive family to `n` functions.** On a symplectic manifold `M`, let
+`F₁, …, F_k` be smooth functions which pairwise Poisson-commute near `x` and have independent
+differentials at `x`. Then for any `n` with `k ≤ n` and `2n ≤ dim M` they are the first `k` of `n`
+smooth functions `G₁, …, G_n` which pairwise Poisson-commute near `x` and have independent
+differentials at `x`. When `dim M = 2n` the hypothesis `k ≤ n` always holds
+(`TauCeti.SmoothTwoForm.IsNondegenerate.two_mul_card_le_finrank`). -/
+theorem exists_isRegularPoint_castLE {n k : ℕ} (hn : 2 * n ≤ finrank ℝ E) (hkn : k ≤ n)
     {F : M → Fin k → ℝ} (hF : ContMDiff I 𝓘(ℝ, Fin k → ℝ) ∞ F)
     (hcomm : ∀ i j, σ.poissonBracket (F · i) (F · j) =ᶠ[𝓝 x] fun _ ↦ 0)
     (hreg : IsRegularPoint I 𝓘(ℝ, Fin k → ℝ) F x) :
@@ -173,12 +173,7 @@ theorem exists_isRegularPoint_castLE {n k : ℕ} (hn : 2 * n = finrank ℝ E) (h
   | succ d ih =>
     -- Append one function `g`, then extend the `k + 1` functions by induction.
     obtain ⟨g, hg, hgF, hreg'⟩ := hσ.exists_isRegularPoint_snoc hF hcomm hreg (by omega)
-    have hF' : ContMDiff I 𝓘(ℝ, Fin (k + 1) → ℝ) ∞
-        fun y ↦ Fin.snoc (α := fun _ ↦ ℝ) (F y) (g y) :=
-      contMDiff_pi_module_iff.2 fun i ↦ by
-        induction i using Fin.lastCases with
-        | last => simpa using hg
-        | cast j => simpa using contMDiff_pi_module_iff.1 hF j
+    have hF' := hF.finSnoc hg
     have hcomm' (i j : Fin (k + 1)) :
         σ.poissonBracket (fun y ↦ Fin.snoc (α := fun _ ↦ ℝ) (F y) (g y) i)
           (fun y ↦ Fin.snoc (α := fun _ ↦ ℝ) (F y) (g y) j) =ᶠ[𝓝 x] fun _ ↦ 0 := by
