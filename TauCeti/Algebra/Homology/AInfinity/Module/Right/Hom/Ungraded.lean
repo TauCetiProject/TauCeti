@@ -9,6 +9,7 @@ public import TauCeti.Algebra.Homology.AInfinity.Module.Right.Ungraded
 import Mathlib.Algebra.BigOperators.Intervals
 import Mathlib.LinearAlgebra.Multilinear.TensorProduct
 import Mathlib.Tactic.LinearCombination
+import TauCeti.Algebra.BigOperators.Finset.Range
 
 /-!
 # Morphisms of ungraded `A∞` right modules
@@ -27,7 +28,7 @@ algebra `A` with a linear map `d`, with operations `m_{n+1}` and `m'_{n+1}`. A *
 relations of an `A∞` morphism, as in Lipshitz, Ozsváth and Thurston (§2.1): every Koszul sign
 is `1`. Their length-zero case says that `f₁` is a chain map for `m₁` and `m'₁`. These are the
 morphisms of type `A` modules of bordered Heegaard Floer homology, which induce chain maps of box
-tensor products (`TauCeti.LowDimTopology.Bordered.TypeA`). Tau Ceti's morphisms of graded `A∞`
+tensor products (`TauCeti.LowDimTopology.Bordered.TypeA.Basic`). Tau Ceti's morphisms of graded `A∞`
 modules (`TauCeti.AInfinityRightModuleHom`) do not apply here, since the modules are ungraded.
 
 * **Mapping cones.** The relations of a morphism make the operations
@@ -66,6 +67,8 @@ modules (`TauCeti.AInfinityRightModuleHom`) do not apply here, since the modules
 * `TauCeti.UngradedAInfinityRightModuleHom.comp_id`,
   `TauCeti.UngradedAInfinityRightModuleHom.id_comp` and
   `TauCeti.UngradedAInfinityRightModuleHom.comp_assoc`: the identity and associativity laws.
+* `TauCeti.UngradedAInfinityRightModuleHom.ofLinearMap_comp_ofLinearMap`: the composite of strict
+  morphisms is strict.
 * `TauCeti.UngradedAInfinityRightModuleHom.comp_map_eq_zero`: the components of a composite of
   morphisms with bounded components are bounded.
 
@@ -388,15 +391,6 @@ private theorem sum_comp_seg
   rw [h]
   rfl
 
-/-- Reindex a double sum over `k ≤ s ≤ n`, by `k` and `s - k`, as a sum over `k ≤ n` and
-`k' ≤ n - k`. -/
-private theorem sum_range_sum_range_sub {Q : Type*} [AddCommMonoid Q] (n : ℕ) (φ : ℕ → ℕ → Q) :
-    ∑ s ∈ range (n + 1), ∑ k ∈ range (s + 1), φ k (s - k) =
-      ∑ k ∈ range (n + 1), ∑ k' ∈ range (n - k + 1), φ k k' := by
-  rw [sum_range_diag_flip]
-  refine sum_congr rfl fun k hk => ?_
-  rw [show n + 1 - k = n - k + 1 by have := mem_range.mp hk; omega]
-
 /-- The term of a composite of arity `n` for the split of the inputs after the `i`-th:
 `(a₁, …, aₙ) ↦ G (aᵢ₊₁, …, aₙ) ∘ F (a₁, …, aᵢ)`, for `i + j = n`. -/
 private noncomputable def compTerm {i j n : ℕ} (h : i + j = n)
@@ -412,7 +406,11 @@ private theorem compTerm_apply {i j n : ℕ} (h : i + j = n)
     (m : M) :
     compTerm h G F a m = G (fun l => a ⟨i + l, by omega⟩) (F (fun l => a ⟨l, by omega⟩) m) := by
   simp only [compTerm, MultilinearMap.domDomCongr_apply, LinearMap.compMultilinearMap_apply,
-    MultilinearMap.domCoprod_apply, TensorProduct.lift.tmul, LinearMap.llcomp_apply]
+    MultilinearMap.domCoprod_apply, TensorProduct.lift.tmul, LinearMap.llcomp_apply,
+    Equiv.trans_apply, Equiv.sumComm_apply, Sum.swap_inl, Sum.swap_inr, finSumFinEquiv_apply_left,
+    finSumFinEquiv_apply_right, finCongr_apply]
+  -- `Fin.cast h (Fin.natAdd i l)` and `Fin.cast h (Fin.castAdd j l)` are `⟨i + l, _⟩` and
+  -- `⟨l, _⟩` by definition.
   rfl
 
 variable {M'' : Type*} [AddCommGroup M''] [Module R M''] {Mm : UngradedAInfinityRightModule d M}
@@ -456,15 +454,9 @@ private theorem sum_segOp_compMap_act (b : ℕ → A) (n : ℕ) (m : M) :
     ∑ k ∈ range (n + 1), segOp (compMap g f) b k (n - k) (segOp Mm.act b 0 k m) =
       ∑ s ∈ range (n + 1), segOp g.map b s (n - s)
         (∑ k ∈ range (s + 1), segOp f.map b k (s - k) (segOp Mm.act b 0 k m)) := by
-  calc _ = ∑ k ∈ range (n + 1), ∑ k' ∈ range (n - k + 1), segOp g.map b (k + k') (n - (k + k'))
-        (segOp f.map b k k' (segOp Mm.act b 0 k m)) := by
-        simp only [segOp_compMap, Nat.sub_sub]
-    _ = _ := by
-      rw [← sum_range_sum_range_sub]
-      refine sum_congr rfl fun s _ => ?_
-      rw [map_sum]
-      refine sum_congr rfl fun k hk => ?_
-      rw [Nat.add_sub_cancel' (Nat.lt_succ_iff.mp (mem_range.mp hk))]
+  simp only [segOp_compMap, map_sum, Nat.sub_sub]
+  rw [sum_range_succ_sum_range_succ_comm]
+  simp only [Nat.add_sub_cancel_left]
 
 /-- The terms of the relation of a composite in which the composite is followed by an operation
 of `M''` are those of the relations of `g` following `f`. -/
@@ -472,15 +464,9 @@ private theorem sum_act_segOp_compMap (b : ℕ → A) (n : ℕ) (m : M) :
     ∑ k ∈ range (n + 1), segOp Mm''.act b k (n - k) (segOp (compMap g f) b 0 k m) =
       ∑ s ∈ range (n + 1), ∑ k ∈ range (n - s + 1), segOp Mm''.act b (s + k) (n - s - k)
         (segOp g.map b s k (segOp f.map b 0 s m)) := by
-  calc _ = ∑ s ∈ range (n + 1), ∑ k ∈ range (s + 1), segOp Mm''.act b (k + (s - k))
-        (n - (k + (s - k))) (segOp g.map b k (s - k) (segOp f.map b 0 k m)) := by
-        simp only [segOp_compMap, zero_add, map_sum]
-        refine sum_congr rfl fun s _ => sum_congr rfl fun k hk => ?_
-        rw [Nat.add_sub_cancel' (Nat.lt_succ_iff.mp (mem_range.mp hk))]
-    _ = _ := by
-      rw [sum_range_sum_range_sub n fun k k' => segOp Mm''.act b (k + k') (n - (k + k'))
-        (segOp g.map b k k' (segOp f.map b 0 k m))]
-      simp only [Nat.sub_sub]
+  simp only [segOp_compMap, zero_add, map_sum]
+  rw [sum_range_succ_sum_range_succ_comm]
+  simp only [Nat.add_sub_cancel_left, Nat.sub_sub]
 
 /-- The terms with an operation of `M'` between `f` and `g`, which occur both in the relations of
 `f` followed by `g` and in those of `g` following `f`. -/
@@ -489,16 +475,9 @@ private theorem sum_segOp_act_segOp (b : ℕ → A) (n : ℕ) (m : M) :
         (∑ k ∈ range (s + 1), segOp Mm'.act b k (s - k) (segOp f.map b 0 k m)) =
       ∑ s ∈ range (n + 1), ∑ k ∈ range (n - s + 1), segOp g.map b (s + k) (n - s - k)
         (segOp Mm'.act b s k (segOp f.map b 0 s m)) := by
-  calc _ = ∑ s ∈ range (n + 1), ∑ k ∈ range (s + 1), segOp g.map b (k + (s - k))
-        (n - (k + (s - k))) (segOp Mm'.act b k (s - k) (segOp f.map b 0 k m)) := by
-        refine sum_congr rfl fun s _ => ?_
-        rw [map_sum]
-        refine sum_congr rfl fun k hk => ?_
-        rw [Nat.add_sub_cancel' (Nat.lt_succ_iff.mp (mem_range.mp hk))]
-    _ = _ := by
-      rw [sum_range_sum_range_sub n fun k k' => segOp g.map b (k + k') (n - (k + k'))
-        (segOp Mm'.act b k k' (segOp f.map b 0 k m))]
-      simp only [Nat.sub_sub]
+  simp only [map_sum]
+  rw [sum_range_succ_sum_range_succ_comm]
+  simp only [Nat.add_sub_cancel_left, Nat.sub_sub]
 
 /-- The differential terms of a composite split into those of `f` and those of `g`. -/
 private theorem sum_segOp_compMap_update (b : ℕ → A) (n : ℕ) (m : M) :
@@ -646,6 +625,19 @@ theorem id_comp [CharP R 2] : (id Mm'').comp g = g := by
     rw [hj]
     simp [segOp]
 
+/-- The composite of strict morphisms is the strict morphism of the composite linear map. -/
+@[simp]
+theorem ofLinearMap_comp_ofLinearMap [CharP R 2] (L : M →ₗ[R] M') (L' : M' →ₗ[R] M'')
+    (hL : ∀ n a m, L (Mm.act n a m) = Mm'.act n a (L m))
+    (hL' : ∀ n a m, L' (Mm'.act n a m) = Mm''.act n a (L' m)) :
+    (ofLinearMap Mm' Mm'' L' hL').comp (ofLinearMap Mm Mm' L hL) =
+      ofLinearMap Mm Mm'' (L' ∘ₗ L) fun n a m => by simp only [LinearMap.comp_apply, hL, hL'] := by
+  ext n a m
+  obtain ⟨b, rfl⟩ := exists_eq_seg a
+  refine (segOp_comp _ _ b 0 n m).trans ?_
+  rw [sum_range_succ', sum_eq_zero fun k _ => by simp [segOp], zero_add]
+  cases n <;> simp [segOp]
+
 /-- Composition of morphisms is associative. -/
 @[simp]
 theorem comp_assoc [CharP R 2] {Q : Type*} [AddCommGroup Q] [Module R Q]
@@ -655,10 +647,8 @@ theorem comp_assoc [CharP R 2] {Q : Type*} [AddCommGroup Q] [Module R Q]
   obtain ⟨b, rfl⟩ := exists_eq_seg a
   refine (segOp_comp _ f b 0 n m).trans (Eq.trans ?_ (segOp_comp h _ b 0 n m).symm)
   simp only [segOp_comp, zero_add, map_sum, Nat.sub_sub]
-  rw [← sum_range_sum_range_sub n fun s k => segOp h.map b (s + k) (n - (s + k))
-    (segOp g.map b s k (segOp f.map b 0 s m))]
-  refine sum_congr rfl fun u _ => sum_congr rfl fun s hs => ?_
-  rw [Nat.add_sub_cancel' (Nat.lt_succ_iff.mp (mem_range.mp hs))]
+  rw [sum_range_succ_sum_range_succ_comm]
+  simp only [Nat.add_sub_cancel_left]
 
 end Comp
 

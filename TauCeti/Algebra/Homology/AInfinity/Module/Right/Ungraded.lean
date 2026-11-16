@@ -83,7 +83,7 @@ Two constructions are developed, together with strict units.
   `TauCeti.UngradedAInfinityRightModule.IsStrictlyUnital.act_one_matrix_twistedDifferential_apply`.
 
 Twisting the matrix module by the coefficient matrix of a type `D` structure gives the box tensor
-product of bordered Heegaard Floer homology; see `TauCeti.LowDimTopology.Bordered.TypeA`.
+product of bordered Heegaard Floer homology; see `TauCeti.LowDimTopology.Bordered.TypeA.Basic`.
 
 ## Main definitions
 

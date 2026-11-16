@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.LowDimTopology.Bordered.TypeA
+public import TauCeti.LowDimTopology.Bordered.TypeA.Basic
 import Mathlib.Algebra.BigOperators.Intervals
 import TauCeti.Algebra.BigOperators.Fin
 
@@ -88,11 +88,8 @@ private theorem typeABoxMapOfHom_eq_sum_pathMap (N : TypeDStructure d ι X)
     (hK : ∀ n, K ≤ n → (f.cone.matrixAct X n fun _ => N.coeff) = 0) :
     N.typeABoxMapOfHom f = ∑ n ∈ range K, pathMap N f n := by
   refine LinearMap.ext fun φ => funext fun z => ?_
-  rw [typeABoxMapOfHom_apply, typeABoxDifferential_def,
-    UngradedAInfinityRightModule.twistedDifferential_eq_sum _
-      (by simpa only [UngradedAInfinityRightModule.matrix_act] using hK)]
-  simp [pathMap, Prod.snd_sum]
-  rfl
+  rw [typeABoxMapOfHom_apply_eq_sum N f hK φ z, LinearMap.sum_apply, Finset.sum_apply]
+  exact sum_congr rfl fun n _ => (pathMap_apply N f n φ z).symm
 
 /-- **The paths of a composite.** `P^{g ∘ f}_n = ∑_{k ≤ n} P^g_{n-k} ∘ P^f_k`: a path of length
 `n` is a path of length `k` followed by one of length `n - k`. -/
