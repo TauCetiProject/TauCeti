@@ -1227,19 +1227,11 @@ are the critical points of index `i` for `f`. -/
 noncomputable def IsMorse.morseIndexNegEquiv (hf : IsMorse I f) {i k : ℕ}
     (hik : i + k = Module.finrank ℝ E) :
     {q : criticalPoints I (-f) // manifoldMorseIndex I (-f) q = k} ≃
-      {p : criticalPoints I f // manifoldMorseIndex I f p = i} where
-  toFun q := ⟨Set.equivOfEq (criticalPoints_neg (I := I) (f := f)) q.1, by
-    have := hf.manifoldMorseIndex_neg_add_manifoldMorseIndex (by simpa using q.1.2)
-    have := q.2
+      {p : criticalPoints I f // manifoldMorseIndex I f p = i} :=
+  (Set.equivOfEq (criticalPoints_neg (I := I) (f := f))).subtypeEquiv fun q ↦ by
+    have := hf.manifoldMorseIndex_neg_add_manifoldMorseIndex (by simpa using q.2)
     simp only [Set.equivOfEq_apply]
-    omega⟩
-  invFun p := ⟨(Set.equivOfEq (criticalPoints_neg (I := I) (f := f))).symm p.1, by
-    have := hf.manifoldMorseIndex_neg_add_manifoldMorseIndex p.1.2
-    have := p.2
-    simp only [Set.equivOfEq_symm_apply]
-    omega⟩
-  left_inv q := by ext; rfl
-  right_inv p := by ext; rfl
+    omega
 
 /-- The critical point of index `i` for `f` corresponding to a critical point of index `k` for `-f`
 is the same critical point. -/
