@@ -10,6 +10,8 @@ public import Mathlib.Analysis.CStarAlgebra.Module.Defs
 public import Mathlib.Analysis.SpecialFunctions.ContinuousFunctionalCalculus.Rpow.Isometric
 public import TauCeti.Analysis.SpecialFunctions.ContinuousFunctionalCalculus.Sqrt
 
+import TauCeti.Analysis.CStarAlgebra.ContinuousFunctionalCalculus.Order
+
 /-!
 # Basic norm estimates for Hilbert C⋆-modules
 
@@ -43,13 +45,13 @@ Riesz theorem.
 * `CStarModule.isGreatest_norm_inner`: norm recovery, `‖x‖` is the largest value of
   `‖⟪y, x⟫_A‖` over the closed unit ball.
 * `CStarModule.norm_smul_le`: `‖a x‖ ≤ ‖a‖ ‖x‖`.
-* `CStarModule.inner_map_map_self_le_of_norm_le`, `CStarModule.inner_apply_apply_self_le`:
+* `CStarModule.inner_map_map_self_le_of_norm_le`, `CStarModule.inner_map_map_self_le`:
   Paschke's inequality `⟪T x, T x⟫_A ≤ ‖T‖ ^ 2 • ⟪x, x⟫_A` for bounded module-linear maps.
 * `CStarModule.tendsto_smul`: the action is essential, `e x → x` along an approximate unit.
 * `CStarModule.star_unop_inner_mul_unop_inner_le`: the Cauchy–Schwarz inequality
   `⟨x, y⟩_A⋆ ⟨x, y⟩_A ≤ ‖x‖² ⟨y, y⟩_A` for right modules.
 * `CStarModule.isGreatest_norm_unop_inner`, `CStarModule.norm_op_smul_le`,
-  `CStarModule.unop_inner_map_map_self_le_of_norm_le`, `CStarModule.unop_inner_apply_apply_self_le`,
+  `CStarModule.unop_inner_map_map_self_le_of_norm_le`, `CStarModule.unop_inner_map_map_self_le`,
   `CStarModule.tendsto_op_smul`: norm recovery, `‖x a‖ ≤ ‖x‖ ‖a‖`, Paschke's inequality, and
   essentiality of the action for right modules.
 
@@ -155,6 +157,13 @@ def induced (g : M →ₗ[ℂ] E) (hg : Function.Injective g)
   norm_eq_sqrt_norm_inner_self x :=
     (hnorm x).trans (norm_eq_sqrt_norm_inner_self (A := A) (x := g x))
 
+/-- The inner product of the pullback `CStarModule.induced` structure is the pullback along `g`. -/
+@[simp]
+theorem induced_inner (g : M →ₗ[ℂ] E) (hg : Function.Injective g)
+    (hA : ∀ (a : A) (x : M), g (a • x) = a • g x)
+    (hnorm : ∀ x : M, ‖x‖ = ‖g x‖) (x y : M) :
+    @inner A M (induced g hg hA hnorm).toInner x y = inner A (g x) (g y) := (rfl)
+
 end Induced
 
 /-- Any `A`-submodule of a `CStarModule` over a unital coefficient ring inherits a `CStarModule`
@@ -252,53 +261,6 @@ private lemma unitization_mul_inr_inner_mul_star (v : E) (z : Unitization ℂ A)
       mul_comm z.fst (star z.fst)]
     abel
 
-/-- In a unital C⋆-algebra, if `0 ≤ a`, `0 ≤ b`, `0 ≤ K`, and
-`‖z * b * star z‖ ≤ K * ‖z * a * star z‖` for every `z`, then `b ≤ K • a`. -/
-private lemma le_smul_of_norm_conjugate_le {B : Type*} [CStarAlgebra B] [PartialOrder B]
-    [StarOrderedRing B] {a b : B} {K : ℝ} (ha : 0 ≤ a) (hb : 0 ≤ b) (hK : 0 ≤ K)
-    (hnorm : ∀ z : B, ‖z * b * star z‖ ≤ K * ‖z * a * star z‖) :
-    b ≤ K • a := by
-  have hε_bound : ∀ ε : ℝ, 0 < ε → b ≤ K • a + (K * ε) • (1 : B) := by
-    intro ε hε
-    set d : B := a + algebraMap ℝ B ε
-    have hd : IsStrictlyPositive d :=
-      IsStrictlyPositive.nonneg_add ha (isStrictlyPositive_algebraMap hε)
-    have hq : IsStrictlyPositive (CFC.sqrt d) := IsStrictlyPositive.sqrt d hd
-    set q : B := CFC.sqrt d
-    have hq_sa : star q = q := hq.isSelfAdjoint.star_eq
-    have hq_sq : q * q = d := CFC.sqrt_mul_sqrt_self d hd.nonneg
-    set s : B := Ring.inverse q
-    have hqs : q * s = 1 := Ring.mul_inverse_cancel q hq.isUnit
-    have hsq : s * q = 1 := Ring.inverse_mul_cancel q hq.isUnit
-    have hs_sa : star s = s := hq.ringInverse.isSelfAdjoint.star_eq
-    have hsa_le_one : s * a * star s ≤ 1 := by
-      calc s * a * star s ≤ s * d * star s :=
-            star_right_conjugate_le_conjugate
-              (le_add_of_nonneg_right (algebraMap_nonneg B hε.le)) s
-        _ = (s * q) * (q * s) := by rw [hs_sa, ← hq_sq]; noncomm_ring
-        _ = 1 := by rw [hsq, hqs, mul_one]
-    have hsa_norm : ‖s * a * star s‖ ≤ 1 :=
-      (CStarAlgebra.norm_le_one_iff_of_nonneg _ (star_right_conjugate_nonneg ha s)).mpr
-        hsa_le_one
-    have hsb_le : s * b * star s ≤ algebraMap ℝ B K := by
-      rw [← CStarAlgebra.norm_le_iff_le_algebraMap _ hK (star_right_conjugate_nonneg hb s)]
-      exact (hnorm s).trans (mul_le_of_le_one_right hK hsa_norm)
-    calc b = (q * s) * b * (s * q) := by rw [hqs, hsq, one_mul, mul_one]
-      _ = q * (s * b * star s) * star q := by rw [hq_sa, hs_sa]; noncomm_ring
-      _ ≤ q * algebraMap ℝ B K * star q := star_right_conjugate_le_conjugate hsb_le q
-      _ = K • d := by
-            rw [hq_sa, Algebra.algebraMap_eq_smul_one, mul_smul_comm, mul_one, smul_mul_assoc,
-              hq_sq]
-      _ = K • a + (K * ε) • (1 : B) := by
-            rw [smul_add, Algebra.algebraMap_eq_smul_one, smul_smul]
-  have : (𝓝[>] (0 : ℝ)).NeBot := nhdsWithin_Ioi_neBot le_rfl
-  have hcont : Continuous (fun ε : ℝ ↦ K • a + (K * ε) • (1 : B)) := by fun_prop
-  have htendsto :
-      Tendsto (fun ε : ℝ ↦ K • a + (K * ε) • (1 : B)) (𝓝[>] 0) (𝓝 (K • a)) := by
-    simpa using (hcont.tendsto 0).mono_left nhdsWithin_le_nhds
-  refine le_of_tendsto_of_tendsto tendsto_const_nhds htendsto ?_
-  filter_upwards [self_mem_nhdsWithin] with ε hε using hε_bound ε hε
-
 /-- **Paschke's inequality** (Paschke, Proposition 2.6; Lance, Theorem 2.8): if a complex-linear
 map `T : E →ₗ[ℂ] F` between Hilbert C⋆-modules commutes with the coefficient action and satisfies
 `‖T y‖ ≤ C * ‖y‖` for all `y`, then `⟪T x, T x⟫_A ≤ C ^ 2 • ⟪x, x⟫_A` in the C⋆-algebra order.
@@ -309,7 +271,7 @@ theorem inner_map_map_self_le_of_norm_le [AddCommGroup F] [Module ℂ F] [SMul A
     inner A (T x) (T x) ≤ C ^ 2 • inner A x x := by
   -- Pass to the unitization `Unitization ℂ A` so strictly positive shifts are invertible.
   rw [← Unitization.inr_le_inr_iff, Unitization.inr_smul]
-  refine le_smul_of_norm_conjugate_le
+  refine CStarAlgebra.le_smul_of_norm_conjugate_le
     (Unitization.inr_nonneg_iff.mpr inner_self_nonneg)
     (Unitization.inr_nonneg_iff.mpr inner_self_nonneg)
     (sq_nonneg C) fun z ↦ ?_
@@ -415,14 +377,14 @@ variable [SeminormedAddCommGroup E] [NormedSpace ℂ E] [SeminormedAddCommGroup 
 
 /-- Paschke's inequality for a bounded complex-linear map `T : E →L[ℂ] F` commuting with the
 coefficient action: `⟪T x, T x⟫_A ≤ ‖T‖ ^ 2 • ⟪x, x⟫_A`. -/
-theorem inner_apply_apply_self_le [SMul A E] [CStarModule A E] [SMul A F] [CStarModule A F]
+theorem inner_map_map_self_le [SMul A E] [CStarModule A E] [SMul A F] [CStarModule A F]
     (T : E →L[ℂ] F) (hT : ∀ (a : A) (y : E), T (a • y) = a • T y) (x : E) :
     inner A (T x) (T x) ≤ ‖T‖ ^ 2 • inner A x x :=
   inner_map_map_self_le_of_norm_le T.toLinearMap hT T.le_opNorm x
 
 /-- Paschke's inequality for a bounded complex-linear map `T : E →L[ℂ] F` commuting with the
 right `A`-action: `⟨T x, T x⟩_A ≤ ‖T‖ ^ 2 • ⟨x, x⟩_A`. -/
-theorem unop_inner_apply_apply_self_le [SMul Aᵐᵒᵖ E] [CStarModule Aᵐᵒᵖ E] [SMul Aᵐᵒᵖ F]
+theorem unop_inner_map_map_self_le [SMul Aᵐᵒᵖ E] [CStarModule Aᵐᵒᵖ E] [SMul Aᵐᵒᵖ F]
     [CStarModule Aᵐᵒᵖ F] (T : E →L[ℂ] F)
     (hT : ∀ (a : A) (y : E), T (op a • y) = op a • T y) (x : E) :
     unop (inner Aᵐᵒᵖ (T x) (T x)) ≤ ‖T‖ ^ 2 • unop (inner Aᵐᵒᵖ x x) :=

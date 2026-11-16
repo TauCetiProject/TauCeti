@@ -26,6 +26,7 @@ for the comparison between finite frames and projections.
 ## Main declarations
 
 * `CStarMatrix.gram`: the Gram matrix of a finite family in a right Hilbert C⋆-module.
+* `CStarMatrix.isSelfAdjoint_gram`: Gram matrices are self-adjoint (purely algebraically).
 * `CStarMatrix.sum_star_mul_gram_mul`: the quadratic forms of a Gram matrix are inner products.
 * `CStarMatrix.gram_nonneg`: Gram matrices are positive.
 
@@ -55,8 +56,15 @@ lemma gram_apply [Inner Aᵐᵒᵖ E] (x : n → E) (i j : n) :
 
 section Algebraic
 
-variable [NonUnitalSeminormedRing A] [StarRing A] [Module ℂ A] [StarModule ℂ A] [PartialOrder A]
+variable [NonUnitalSeminormedRing A] [StarRing A] [Module ℂ A] [PartialOrder A]
   [AddCommGroup E] [Module ℂ E] [SMul Aᵐᵒᵖ E] [Norm E] [CStarModule Aᵐᵒᵖ E]
+
+/-- Every Gram matrix is self-adjoint, by the conjugate symmetry of the module inner product. -/
+theorem isSelfAdjoint_gram (x : n → E) : IsSelfAdjoint (gram A x) := by
+  ext i j
+  simp [CStarMatrix.star_apply, gram_apply, ← unop_star, CStarModule.star_inner]
+
+variable [StarModule ℂ A]
 
 /-- The quadratic forms of a Gram matrix are the inner products of the corresponding right
 linear combinations. This only uses the algebraic `CStarModule` axioms, so the coefficients need

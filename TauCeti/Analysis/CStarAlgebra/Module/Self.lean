@@ -33,7 +33,7 @@ left self-module of `Aᵐᵒᵖ` transported along `MulOpposite.op : A → Aᵐ�
   (`CStarModule.topologicalClosure_span_range_unop_inner_mulOpposite`): `A` is full as a right
   Hilbert module over itself.
 * `WithCStarModule.piOpLinearEquiv`: the right `A`-linear equivalence
-  `(ι → Aᵐᵒᵖ) ≃ₗ[Aᵐᵒᵖ] C⋆ᵐᵒᵈ(Aᵐᵒᵖ, ι → A)`.
+  `C⋆ᵐᵒᵈ(Aᵐᵒᵖ, ι → A) ≃ₗ[Aᵐᵒᵖ] (ι → Aᵐᵒᵖ)`.
 
 ## References
 
@@ -49,20 +49,22 @@ open scoped WithCStarModule
 
 namespace WithCStarModule
 
-/-- Right `A`-linear identification between `(ι → Aᵐᵒᵖ)` and the module synonym
-`C⋆ᵐᵒᵈ(Aᵐᵒᵖ, ι → A)`. -/
+/-- Right `A`-linear identification between the module synonym `C⋆ᵐᵒᵈ(Aᵐᵒᵖ, ι → A)` and
+`(ι → Aᵐᵒᵖ)`. -/
 def piOpLinearEquiv (A ι : Type*) [Ring A] :
-    (ι → Aᵐᵒᵖ) ≃ₗ[Aᵐᵒᵖ] C⋆ᵐᵒᵈ(Aᵐᵒᵖ, ι → A) :=
-  LinearEquiv.piCongrRight (fun _ ↦ (MulOpposite.opLinearEquiv Aᵐᵒᵖ).symm) ≪≫ₗ
-    (WithCStarModule.linearEquiv Aᵐᵒᵖ Aᵐᵒᵖ (ι → A)).symm
+    C⋆ᵐᵒᵈ(Aᵐᵒᵖ, ι → A) ≃ₗ[Aᵐᵒᵖ] (ι → Aᵐᵒᵖ) :=
+  WithCStarModule.linearEquiv Aᵐᵒᵖ Aᵐᵒᵖ (ι → A) ≪≫ₗ
+    LinearEquiv.piCongrRight (fun _ ↦ MulOpposite.opLinearEquiv Aᵐᵒᵖ)
 
 @[simp]
-theorem piOpLinearEquiv_apply {A ι : Type*} [Ring A] (v : ι → Aᵐᵒᵖ) (i : ι) :
-    piOpLinearEquiv A ι v i = unop (v i) := (rfl)
+theorem piOpLinearEquiv_apply {A ι : Type*} [Ring A] (w : C⋆ᵐᵒᵈ(Aᵐᵒᵖ, ι → A)) (i : ι) :
+    piOpLinearEquiv A ι w i = op (w i) := by
+  simp [piOpLinearEquiv]
 
 @[simp]
-theorem piOpLinearEquiv_symm_apply {A ι : Type*} [Ring A] (w : C⋆ᵐᵒᵈ(Aᵐᵒᵖ, ι → A)) (i : ι) :
-    (piOpLinearEquiv A ι).symm w i = op (w i) := (rfl)
+theorem piOpLinearEquiv_symm_apply {A ι : Type*} [Ring A] (v : ι → Aᵐᵒᵖ) (i : ι) :
+    (piOpLinearEquiv A ι).symm v i = unop (v i) := by
+  simp [piOpLinearEquiv]
 
 end WithCStarModule
 

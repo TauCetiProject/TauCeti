@@ -172,7 +172,7 @@ noncomputable def opSMulCLM (A : Type*) [NonUnitalCStarAlgebra A] [PartialOrder 
 
 @[simp]
 theorem opSMulCLM_apply [SMul Aᵐᵒᵖ E] [CStarModule Aᵐᵒᵖ E] (x : E) (a : A) :
-    opSMulCLM A x a = MulOpposite.op a • x := (rfl)
+    opSMulCLM A x a = MulOpposite.op a • x := by simp [opSMulCLM]
 
 /-- The operator norm of `a ↦ MulOpposite.op a • x` is at most `‖x‖`. -/
 theorem norm_opSMulCLM_le [SMul Aᵐᵒᵖ E] [CStarModule Aᵐᵒᵖ E] (x : E) :

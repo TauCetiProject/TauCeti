@@ -5,10 +5,9 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Topology.Algebra.Module.ContinuousLinearMap.Idempotent
 public import Mathlib.LinearAlgebra.Matrix.ToLin
-public import TauCeti.Analysis.CStarAlgebra.CStarMatrix
 public import TauCeti.Analysis.CStarAlgebra.Module.AdjointPair
+public import TauCeti.Analysis.CStarAlgebra.Module.Gram
 public import TauCeti.Analysis.CStarAlgebra.Module.Self
 
 import Mathlib.Topology.Instances.Matrix
@@ -32,8 +31,8 @@ finite free right Hilbert `A`-modules.
 * `CStarMatrix.mulVecLinearMap`: over a unital ring `A`, left matrix-vector multiplication bundled
   additively in the matrix as
   `CStarMatrix m n A →ₗ[ℤ] C⋆ᵐᵒᵈ(Aᵐᵒᵖ, n → A) →ₗ[Aᵐᵒᵖ] C⋆ᵐᵒᵈ(Aᵐᵒᵖ, m → A)`.
-* `CStarMatrix.algebraMap_le_iff_forall_sum_le`: quadratic-form criterion for scalar lower bounds
-  `algebraMap ℝ (CStarMatrix n n A) r ≤ M`.
+* `CStarMatrix.gram_mulVecCLM_single_one`: the Gram matrix of the columns `j ↦ mulVecCLM M (e j)`
+  of `M` is `M.conjTranspose * M`.
 
 ## References
 
@@ -51,31 +50,38 @@ section NonUnital
 
 variable {l m n A : Type*} [Fintype n] [NonUnitalCStarAlgebra A]
 
+private noncomputable def mulVecCLMAux (M : CStarMatrix m n A) :
+    C⋆ᵐᵒᵈ(Aᵐᵒᵖ, n → A) →L[ℂ] C⋆ᵐᵒᵈ(Aᵐᵒᵖ, m → A) where
+  toFun v := (WithCStarModule.equiv Aᵐᵒᵖ (m → A)).symm (ofMatrix.symm M *ᵥ v)
+  map_add' v w := by ext i; simp [Matrix.mulVec, dotProduct, mul_add, Finset.sum_add_distrib]
+  map_smul' c v := by ext i; simp [Matrix.mulVec, dotProduct, mul_smul_comm, Finset.smul_sum]
+  cont :=
+    (WithCStarModule.equivL ℂ (A := Aᵐᵒᵖ) (E := m → A)).symm.continuous.comp <|
+      (continuous_const.matrix_mulVec continuous_id).comp
+        (WithCStarModule.equivL ℂ (A := Aᵐᵒᵖ) (E := n → A)).continuous
+
+private theorem mulVecCLMAux_apply (M : CStarMatrix m n A) (v : C⋆ᵐᵒᵈ(Aᵐᵒᵖ, n → A)) :
+    mulVecCLMAux M v = (WithCStarModule.equiv Aᵐᵒᵖ (m → A)).symm (ofMatrix.symm M *ᵥ v) := rfl
+
 /-- Left multiplication by a `CStarMatrix m n A` on column vectors in `C⋆ᵐᵒᵈ(Aᵐᵒᵖ, n → A)`, bundled
 complex-linearly in the matrix as a continuous complex-linear map. Unlike `CStarMatrix.toCLM`,
 which acts by `Matrix.vecMul` on the left module `C⋆ᵐᵒᵈ(A, m → A)`, this acts by `Matrix.mulVec`
 and commutes with the right `A`-action (`CStarMatrix.mulVecCLM_op_smul`). -/
 noncomputable def mulVecCLM :
     CStarMatrix m n A →ₗ[ℂ] C⋆ᵐᵒᵈ(Aᵐᵒᵖ, n → A) →L[ℂ] C⋆ᵐᵒᵈ(Aᵐᵒᵖ, m → A) where
-  toFun M :=
-    (WithCStarModule.equivL ℂ (A := Aᵐᵒᵖ) (E := m → A)).symm.toContinuousLinearMap.comp <|
-      (ContinuousLinearMap.mk (Matrix.mulVecBilin ℂ ℂ (ofMatrix.symm M))
-        (continuous_const.matrix_mulVec continuous_id)).comp
-        (WithCStarModule.equivL ℂ (A := Aᵐᵒᵖ) (E := n → A)).toContinuousLinearMap
-  map_add' M₁ M₂ :=
-    ContinuousLinearMap.ext fun v ↦
-      congrArg (WithCStarModule.equiv Aᵐᵒᵖ (m → A)).symm
-        (Matrix.add_mulVec (ofMatrix.symm M₁) (ofMatrix.symm M₂) v)
-  map_smul' c M :=
-    ContinuousLinearMap.ext fun v ↦
-      congrArg (WithCStarModule.equiv Aᵐᵒᵖ (m → A)).symm
-        (Matrix.smul_mulVec c (ofMatrix.symm M) v)
+  toFun := mulVecCLMAux
+  map_add' _ _ := by
+    ext v i; simp [mulVecCLMAux_apply, Matrix.mulVec, dotProduct, add_mul, Finset.sum_add_distrib]
+  map_smul' _ _ := by
+    ext v i; simp [mulVecCLMAux_apply, Matrix.mulVec, dotProduct, smul_mul_assoc, Finset.smul_sum]
 
 theorem mulVecCLM_apply (M : CStarMatrix m n A) (v : C⋆ᵐᵒᵈ(Aᵐᵒᵖ, n → A)) :
-    mulVecCLM M v = (WithCStarModule.equiv Aᵐᵒᵖ (m → A)).symm (ofMatrix.symm M *ᵥ v) := (rfl)
+    mulVecCLM M v = (WithCStarModule.equiv Aᵐᵒᵖ (m → A)).symm (ofMatrix.symm M *ᵥ v) := by
+  simp [mulVecCLM, mulVecCLMAux_apply]
 
 @[simp] theorem mulVecCLM_apply_apply (M : CStarMatrix m n A) (v : C⋆ᵐᵒᵈ(Aᵐᵒᵖ, n → A)) (i : m) :
-    mulVecCLM M v i = ∑ j, M i j * v j := (rfl)
+    mulVecCLM M v i = ∑ j, M i j * v j := by
+  simp [mulVecCLM_apply, Matrix.mulVec, dotProduct]
 
 /-- `mulVecCLM M` commutes with the right `A`-action on column vectors. -/
 theorem mulVecCLM_op_smul (M : CStarMatrix m n A) (a : A) (v : C⋆ᵐᵒᵈ(Aᵐᵒᵖ, n → A)) :
@@ -83,15 +89,17 @@ theorem mulVecCLM_op_smul (M : CStarMatrix m n A) (a : A) (v : C⋆ᵐᵒᵈ(A�
   ext i; simp [MulOpposite.smul_eq_mul_unop, Finset.sum_mul, mul_assoc]
 
 @[simp] theorem mulVecCLM_comp_mulVecCLM [Fintype m] (M : CStarMatrix l m A)
-    (N : CStarMatrix m n A) : (mulVecCLM M).comp (mulVecCLM N) = mulVecCLM (M * N) :=
-  ContinuousLinearMap.ext fun v ↦ congrArg (WithCStarModule.equiv Aᵐᵒᵖ (l → A)).symm
-    (Matrix.mulVec_mulVec v (ofMatrix.symm M) (ofMatrix.symm N))
+    (N : CStarMatrix m n A) : (mulVecCLM M).comp (mulVecCLM N) = mulVecCLM (M * N) := by
+  ext v i
+  simp only [ContinuousLinearMap.comp_apply, mulVecCLM_apply_apply, CStarMatrix.mul_apply,
+    Finset.mul_sum, Finset.sum_mul, mul_assoc]
+  exact Finset.sum_comm
 
 @[simp] theorem mulVecCLM_mulVecCLM [Fintype m] (M : CStarMatrix l m A) (N : CStarMatrix m n A)
     (v : C⋆ᵐᵒᵈ(Aᵐᵒᵖ, n → A)) : mulVecCLM M (mulVecCLM N v) = mulVecCLM (M * N) v :=
   congrFun (congrArg DFunLike.coe (mulVecCLM_comp_mulVecCLM M N)) v
 
-theorem isIdempotentElem_mulVecCLM {p : CStarMatrix n n A} (hp : IsIdempotentElem p) :
+theorem _root_.IsIdempotentElem.mulVecCLM {p : CStarMatrix n n A} (hp : IsIdempotentElem p) :
     IsIdempotentElem (mulVecCLM p) := by
   rw [IsIdempotentElem, ContinuousLinearMap.mul_def, mulVecCLM_comp_mulVecCLM, hp.eq]
 
@@ -134,20 +142,25 @@ def mulVecLinearMap [Ring A] :
   map_smul' _ _ := by
     ext v i; simp [Matrix.mulVec, dotProduct, zsmul_eq_mul, mul_assoc, Finset.mul_sum]
 
-@[simp] theorem coe_mulVecLinearMap [CStarAlgebra A] (M : CStarMatrix m n A) :
-    ⇑(mulVecLinearMap M) = ⇑(mulVecCLM M) := (rfl)
-
 theorem mulVecLinearMap_apply [Ring A] (M : CStarMatrix m n A) (v : C⋆ᵐᵒᵈ(Aᵐᵒᵖ, n → A)) :
-    mulVecLinearMap M v = (WithCStarModule.equiv Aᵐᵒᵖ (m → A)).symm (ofMatrix.symm M *ᵥ v) := (rfl)
+    mulVecLinearMap M v = (WithCStarModule.equiv Aᵐᵒᵖ (m → A)).symm (ofMatrix.symm M *ᵥ v) := by
+  ext i; simp [mulVecLinearMap, Matrix.mulVec, dotProduct]
 
 @[simp] theorem mulVecLinearMap_apply_apply [Ring A] (M : CStarMatrix m n A)
-    (v : C⋆ᵐᵒᵈ(Aᵐᵒᵖ, n → A)) (i : m) : mulVecLinearMap M v i = ∑ j, M i j * v j := (rfl)
+    (v : C⋆ᵐᵒᵈ(Aᵐᵒᵖ, n → A)) (i : m) : mulVecLinearMap M v i = ∑ j, M i j * v j := by
+  simp [mulVecLinearMap, Matrix.mulVec, dotProduct]
+
+@[simp] theorem coe_mulVecLinearMap [CStarAlgebra A] (M : CStarMatrix m n A) :
+    ⇑(mulVecLinearMap M) = ⇑(mulVecCLM M) := by
+  funext v; ext i; simp
 
 @[simp] theorem mulVecLinearMap_comp_mulVecLinearMap [Fintype m] [Ring A] (M : CStarMatrix l m A)
     (N : CStarMatrix m n A) :
-    (mulVecLinearMap M).comp (mulVecLinearMap N) = mulVecLinearMap (M * N) :=
-  LinearMap.ext fun v ↦ congrArg (WithCStarModule.equiv Aᵐᵒᵖ (l → A)).symm
-    (Matrix.mulVec_mulVec v (ofMatrix.symm M) (ofMatrix.symm N))
+    (mulVecLinearMap M).comp (mulVecLinearMap N) = mulVecLinearMap (M * N) := by
+  ext v i
+  simp only [LinearMap.comp_apply, mulVecLinearMap_apply_apply, CStarMatrix.mul_apply,
+    Finset.mul_sum, Finset.sum_mul, mul_assoc]
+  exact Finset.sum_comm
 
 @[simp] theorem mulVecLinearMap_mulVecLinearMap [Fintype m] [Ring A] (M : CStarMatrix l m A)
     (N : CStarMatrix m n A) (v : C⋆ᵐᵒᵈ(Aᵐᵒᵖ, n → A)) :
@@ -155,32 +168,28 @@ theorem mulVecLinearMap_apply [Ring A] (M : CStarMatrix m n A) (v : C⋆ᵐᵒ�
   LinearMap.congr_fun (mulVecLinearMap_comp_mulVecLinearMap M N) v
 
 @[simp] theorem mulVecLinearMap_one [DecidableEq n] [Ring A] :
-    mulVecLinearMap (1 : CStarMatrix n n A) = LinearMap.id :=
-  LinearMap.ext fun v ↦ congrArg (WithCStarModule.equiv Aᵐᵒᵖ (n → A)).symm (Matrix.one_mulVec v)
+    mulVecLinearMap (1 : CStarMatrix n n A) = LinearMap.id := by
+  ext v i; simpa [CStarMatrix.one_apply] using Fintype.sum_ite_eq i (fun j ↦ v j)
 
 @[simp] theorem mulVecCLM_one [DecidableEq n] [CStarAlgebra A] :
     mulVecCLM (1 : CStarMatrix n n A) = .id ℂ _ := by
   ext v
   rw [ContinuousLinearMap.id_apply, ← coe_mulVecLinearMap, mulVecLinearMap_one, LinearMap.id_apply]
 
-theorem isIdempotentElem_mulVecLinearMap [Ring A] {p : CStarMatrix n n A}
+theorem _root_.IsIdempotentElem.mulVecLinearMap [Ring A] {p : CStarMatrix n n A}
     (hp : IsIdempotentElem p) : IsIdempotentElem (mulVecLinearMap p) := by
   rw [IsIdempotentElem, Module.End.mul_eq_comp, mulVecLinearMap_comp_mulVecLinearMap, hp.eq]
 
-/-- Over a unital C⋆-algebra, a matrix `M : CStarMatrix n n A` satisfies
-`algebraMap ℝ (CStarMatrix n n A) r ≤ M` if and only if every finite quadratic form
-`∑ i, ∑ j, star (a i) * M i j * a j` dominates `r • ∑ i, star (a i) * a i`. -/
-theorem algebraMap_le_iff_forall_sum_le [DecidableEq n] [CStarAlgebra A] [PartialOrder A]
-    [StarOrderedRing A] {r : ℝ} {M : CStarMatrix n n A} :
-    algebraMap ℝ (CStarMatrix n n A) r ≤ M ↔
-      ∀ a : n → A, r • ∑ i, star (a i) * a i ≤ ∑ i, ∑ j, star (a i) * M i j * a j := by
-  rw [← sub_nonneg, Algebra.algebraMap_eq_smul_one, nonneg_iff_forall_sum_nonneg]
-  refine forall_congr' fun a ↦ ?_
-  have hone :
-      ∑ i, ∑ j, star (a i) * (r • (1 : CStarMatrix n n A)) i j * a j =
-        r • ∑ i, star (a i) * a i := by
-    simp [one_apply, ite_mul, mul_ite, ← Finset.smul_sum]
-  simp_rw [sub_apply, mul_sub, sub_mul, Finset.sum_sub_distrib, hone, sub_nonneg]
+/-- Over a unital C⋆-algebra, the Gram matrix of the columns `j ↦ mulVecCLM M (e j)` of a matrix
+`M : CStarMatrix m n A` is `M.conjTranspose * M`. -/
+theorem gram_mulVecCLM_single_one [Fintype m] [DecidableEq n] [CStarAlgebra A] [PartialOrder A]
+    [StarOrderedRing A] (M : CStarMatrix m n A) :
+    gram A (fun j ↦ mulVecCLM M
+      ((WithCStarModule.equiv Aᵐᵒᵖ (n → A)).symm (Pi.single j (1 : A)))) =
+      M.conjTranspose * M := by
+  ext i j
+  simp [gram_apply, WithCStarModule.pi_inner, Finset.unop_sum, mulVecCLM_apply_apply,
+    mul_apply, conjTranspose_apply, Pi.single_apply]
 
 end Unital
 
