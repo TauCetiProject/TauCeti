@@ -13,6 +13,8 @@ public import TauCeti.NumberTheory.LocalField.Kummer
 public import TauCeti.RepresentationTheory.Homological.ContCohomology.Finiteness
 public import Mathlib.RingTheory.RootsOfUnity.AlgebraicallyClosed
 public import Mathlib.Topology.Algebra.ClopenNhdofOne
+import TauCeti.RepresentationTheory.Homological.ContCohomology.ContinuousMulEquiv
+import TauCeti.RepresentationTheory.Homological.ContCohomology.NatCardComparison
 
 /-!
 # Finiteness of `H⁰` and `H¹` of a finite Galois module over a local field
@@ -47,6 +49,8 @@ file does not treat degree two.
   prime-order coefficients in degrees at least two over local fields containing roots of unity.
 * `TauCeti.ClassFieldTheory.finite_continuousCohomology_of_le_one`: `Hⁱ(G_F, A)` is finite for
   `i ≤ 1` and every finite smooth discrete `A : GalRep n F`, `n` invertible in `F`.
+* `TauCeti.ClassFieldTheory.finite_H1_of_nsmul_eq_zero`: unbundled `H1 (AbsoluteGaloisGroup F) M` is
+  finite for every finite discrete `G_F`-module `M` killed by `n` with `(n : F) ≠ 0`.
 
 ## References
 
@@ -168,5 +172,29 @@ theorem finite_continuousCohomology_of_le_one (hn : (n : F) ≠ 0) (A : GalRep n
     Finite (continuousCohomology i A) := by
   exact finite_continuousCohomology_of_prime_ge_two hn A hA i
     fun _ _ _ _ _ _ _ _ _ _ _ _ _ hj₀ hj ↦ by omega
+
+/-- Unbundled degree-one Galois cohomology of a finite discrete `G_F`-module killed by `n` is
+finite over any nonarchimedean local field `F` in which `n` is nonzero. -/
+theorem finite_H1_of_nsmul_eq_zero (hn : (n : F) ≠ 0) (M : Type u) [AddCommGroup M]
+    [TopologicalSpace M] [DiscreteTopology M] [DistribMulAction (AbsoluteGaloisGroup F) M]
+    [ContinuousSMul (AbsoluteGaloisGroup F) M] [Finite M] (hM : ∀ x : M, n • x = 0) :
+    Finite (H1 (AbsoluteGaloisGroup F) M) := by
+  let _ := AddCommGroup.zmodModule hM
+  let A := ofDiscreteModule (ZMod n) (AbsoluteGaloisGroup F) M
+  let r := absoluteGaloisGroupRestrictEquiv F
+  let X : GalRep n F :=
+    TopRep.res ((r : Field.absoluteGaloisGroup F →ₜ* AbsoluteGaloisGroup F) :
+      Field.absoluteGaloisGroup F →* AbsoluteGaloisGroup F) A
+  have hX : IsSmoothDiscrete (ZMod n) X :=
+    (ofDiscreteModule_isSmoothDiscrete _ _ _).res r.continuous
+  have hA : IsSmoothDiscrete (ZMod n) A := ofDiscreteModule_isSmoothDiscrete _ _ _
+  have : Finite X.V := ‹Finite M›
+  have : Finite (continuousCohomology 1 X) :=
+    finite_continuousCohomology_of_le_one hn X hX le_rfl
+  -- Supply the discrete topology and action continuity explicitly on the bundled carrier.
+  have hc₁ := @TopRep.natCard_H1_eq_natCard_continuousCohomology
+    _ _ _ _ _ _ _ A hA.discreteTopology hA.continuousSMul
+  exact Nat.finite_of_card_ne_zero
+    ((hc₁.trans (r.natCard_continuousCohomology_res A 1).symm) ▸ Nat.card_pos.ne')
 
 end TauCeti.ClassFieldTheory

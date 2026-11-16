@@ -43,7 +43,8 @@ The case `n = p` prime is the linear algebra of the `𝔽_p`-vector space `M`.
 * `TauCeti.forall_eq_zero_and_exists_eq_of_bijective_flip`: a pairing `M × M' → ZMod n`, `M`
   finite and killed by `n`, one of whose adjoints `M' → (M →+ ZMod n)` is bijective, is perfect;
   `TauCeti.forall_eq_zero_and_exists_eq_of_bijective_flip_of_addEquiv` reads it through additive
-  equivalences.
+  equivalences, and `AddMonoidHom.bijective_flip_of_bijective_zmod` deduces bijectivity of `e.flip`
+  from bijectivity of `e : M →+ N →+ ZMod n`.
 -/
 
 public section
@@ -153,6 +154,18 @@ theorem forall_eq_zero_and_exists_eq_of_bijective_flip_of_addEquiv {X Y X₀ Y�
     rw [← eY.apply_symm_apply y, h, hx, AddMonoidHom.comp_apply, AddEquiv.coe_toAddMonoidHom]
 
 end TauCeti
+
+/-- For a biadditive pairing `M × N → ZMod n` with `N` finite and killed by `n ≠ 0`, bijectivity
+of the left adjoint `M → (N →+ ZMod n)` implies bijectivity of the right adjoint
+`N → (M →+ ZMod n)`. -/
+theorem AddMonoidHom.bijective_flip_of_bijective_zmod {N : Type*} [AddCommGroup N] [Finite N]
+    (e : M →+ N →+ ZMod n) (he : Function.Bijective e) (hN : ∀ y : N, n • y = 0) :
+    Function.Bijective e.flip := by
+  obtain ⟨hsep, hrep⟩ := TauCeti.forall_eq_zero_and_exists_eq_of_bijective_flip hN e.flip he
+  refine ⟨(injective_iff_map_eq_zero e.flip).2 fun y hy ↦ hsep y fun x ↦ ?_, fun φ ↦ ?_⟩
+  · exact DFunLike.congr_fun hy x
+  · obtain ⟨y, hy⟩ := hrep φ
+    exact ⟨y, AddMonoidHom.ext hy⟩
 
 /-- For `e : N ≃+ ZMod n` with `n ≠ 0`, an additive commutative group killed by `n` has as many
 additive homomorphisms to `N` as elements. -/

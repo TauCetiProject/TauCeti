@@ -21,6 +21,12 @@ General lemmas about `ValuativeRel` that Mathlib does not yet provide.
 * `TauCeti.ValuativeRel.not_vle_zero_of_isUnit` : If `f` is a unit, then `¬ f ≤ᵥ 0`.
 * `TauCeti.ValuativeRel.vle_of_vle_inv_mul` and
   `TauCeti.ValuativeRel.vle_of_inv_mul_vle` : cancel a unit in valuation comparisons.
+* `TauCeti.ValuativeRel.vle_iff_div_mem_integer` and
+  `TauCeti.ValuativeRel.map_vle_map_iff_of_mem_integer_iff` : read `≤ᵥ` on a field via division
+  into the valuation subring, and deduce `≤ᵥ`-compatibility of a field homomorphism from
+  compatibility on valuation subrings.
+* `RingEquiv.symm_vle_iff_vle` : if a ring isomorphism preserves and reflects `≤ᵥ`, so does its
+  inverse.
 * `TauCeti.natCast_ne_zero_of_isUnit` and `TauCeti.two_ne_zero_of_isUnit_two`: an integer
   that is a unit in the ring of integers is nonzero in the ambient ring.
 * `TauCeti.valuativeExtension_self`: every valuative commutative semiring is a valuative extension
@@ -68,6 +74,25 @@ theorem vle_of_inv_mul_vle {A : Type*} [Semiring A] [ValuativeRel A] (ϖ : Aˣ) 
     (h : (ϖ⁻¹ : Aˣ) * t ≤ᵥ 1) : t ≤ᵥ (ϖ : A) := by
   have h' := ValuativeRel.mul_vle_mul_right h ϖ
   rwa [mul_one, ← mul_assoc, Units.mul_inv, one_mul] at h'
+
+/-- On a field equipped with a valuative relation, `x ≤ᵥ y` for `y ≠ 0` is membership of `x / y`
+in the valuation subring. -/
+theorem vle_iff_div_mem_integer {F : Type*} [Field F] [ValuativeRel F] {x y : F} (hy : y ≠ 0) :
+    x ≤ᵥ y ↔ x / y ∈ (ValuativeRel.valuation F).integer := by
+  rw [Valuation.mem_integer_iff, ← (ValuativeRel.valuation F).vle_one_iff,
+    ValuativeRel.div_vle_one_iff hy]
+
+/-- A ring homomorphism between fields equipped with valuative relations preserves and reflects
+`≤ᵥ` whenever preimage of the target valuation subring is the source valuation subring. -/
+theorem map_vle_map_iff_of_mem_integer_iff {F L H : Type*} [Field F] [ValuativeRel F]
+    [Field L] [ValuativeRel L] [FunLike H F L] [RingHomClass H F L] (f : H)
+    (hf : ∀ x, f x ∈ (ValuativeRel.valuation L).integer ↔ x ∈ (ValuativeRel.valuation F).integer)
+    (a b : F) : f a ≤ᵥ f b ↔ a ≤ᵥ b := by
+  have hinj : Function.Injective f := (f : F →+* L).injective
+  rcases eq_or_ne b 0 with rfl | hb
+  · rw [map_zero, ValuativeRel.vle_zero_iff, ValuativeRel.vle_zero_iff, map_eq_zero_iff f hinj]
+  · have hfb : f b ≠ 0 := (map_ne_zero_iff f hinj).mpr hb
+    rw [vle_iff_div_mem_integer hfb, vle_iff_div_mem_integer hb, ← map_div₀, hf]
 
 end TauCeti.ValuativeRel
 
@@ -163,3 +188,9 @@ theorem natCast_eq_zero_iff_ringChar_eq_ringChar_residueField_and_dvd {K : Type*
   exact ⟨rfl, hdvd⟩
 
 end TauCeti
+
+/-- If a ring isomorphism preserves and reflects `≤ᵥ`, so does its inverse. -/
+theorem RingEquiv.symm_vle_iff_vle {A B : Type*} [Semiring A] [ValuativeRel A]
+    [Semiring B] [ValuativeRel B] (e : A ≃+* B) (he : ∀ a b, e a ≤ᵥ e b ↔ a ≤ᵥ b) (a b : B) :
+    e.symm a ≤ᵥ e.symm b ↔ a ≤ᵥ b := by
+  rw [← he, e.apply_symm_apply, e.apply_symm_apply]
