@@ -79,9 +79,10 @@ exponential convergence of the loops, the full derivative of `u` then converges 
 the derivative `(σ, τ) ↦ τ X_{H_t}(x(t))` of the stationary cylinder over `x`
 (`TauCeti.SymplecticForm.exists_pos_eventually_norm_fderiv_sub_smulRight_le_exp`).
 
-**Convergence at isolated nondegenerate orbits.** None of these results assumes that the loops
-converge. If the derivative of `u` is bounded and the `1`-periodic orbits in a compact set
-containing the image of `u` are isolated, the loops converge to a single orbit
+**Convergence at isolated nondegenerate orbits.** Each of these results assumes that the loops
+converge. The assumption can be dropped: if the derivative of `u` is bounded and the `1`-periodic
+orbits in a compact set containing the image of `u` are isolated, the loops converge to a single
+orbit
 (`TauCeti.exists_periodic_hasDerivAt_tendstoUniformly_atTop`), and on a cylindrical end the
 derivative is bounded (`TauCeti.SymplecticForm.exists_forall_norm_fderiv_le_of_floer`). So a
 finite-energy cylindrical end all of whose orbits in that compact set are isolated and nondegenerate

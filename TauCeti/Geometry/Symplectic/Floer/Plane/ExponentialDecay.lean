@@ -8,8 +8,6 @@ module
 public import TauCeti.Geometry.Symplectic.Floer.ExponentialDecay
 public import TauCeti.Geometry.Symplectic.Floer.Plane.Orbit
 import TauCeti.Algebra.Ring.Periodic
-import TauCeti.Dynamics.Flow.Periodic.Basic
-import TauCeti.Geometry.Symplectic.Floer.PairOfPants.End.ExponentialDecay
 
 /-!
 # Exponential convergence at the end of a PSS plane
@@ -41,18 +39,25 @@ the multiplicative PSS comparison.
 **The positive plane.** On the positive plane `ε = 1` the end, read through the end lift, is a
 finite-energy Floer half-cylinder for the cylindrical datum `H(t) dt`
 (`TauCeti.SymplecticForm.exists_halfCylinder_comp_realChart_positive`), and the cylindrical
-structure is `J_t` there, since the angular coordinate of `φ(s + i t)` is `t` up to an integer.
-Nondegenerate orbits are isolated, and a finite-energy cylindrical half-cylinder whose orbits are
-isolated and nondegenerate converges exponentially in `C¹` to the stationary cylinder over one of
-them (`TauCeti.SymplecticForm.exists_pos_eventually_norm_sub_add_norm_fderiv_sub_smulRight_le_exp`).
+structure is `J_t` there, since the angular coordinate of `φ(s + i t)` is `t` up to an integer
+(`TauCeti.Floer.PSSPlane.apply_im_endCoord_cylindricalEndLift`). Nondegenerate orbits are isolated
+(`TauCeti.SymplecticForm.exists_pos_forall_eq_of_isNondegenerateFixedPt`) and their linearized
+return maps fix no nonzero vector
+(`TauCeti.SymplecticForm.eq_zero_of_dysonSeriesLeft_apply_eq_self`), and a finite-energy
+cylindrical half-cylinder whose orbits are isolated and nondegenerate converges exponentially in
+`C¹` to the stationary cylinder over one of them
+(`TauCeti.SymplecticForm.exists_pos_eventually_norm_sub_add_norm_fderiv_sub_smulRight_le_exp`).
 
 **The negative plane.** The negative plane given by `H` is the positive plane given by the
 reversed Hamiltonian `-H(-t)` (`TauCeti.Floer.PSSPlane.perturbation_negative`), whose angular
-coordinate is the negative of that of the negative plane, so the cylindrical structure becomes
-`J_{-t}`. Reversing time turns orbits of `-H(-t)` into orbits of `H`; it preserves isolation, and
+coordinate is the negative of that of the negative plane
+(`TauCeti.Floer.PSSPlane.im_endCoord_negative`), so the cylindrical structure becomes `J_{-t}`.
+Reversing time turns orbits of `-H(-t)` into orbits of `H`
+(`TauCeti.SymplecticForm.hasDerivAt_comp_neg_of_hasDerivAt_hamiltonianVectorField_reverse`); it
+preserves isolation
+(`TauCeti.SymplecticForm.exists_pos_forall_eq_of_isNondegenerateFixedPt_reverse`) and
 nondegeneracy of the linearized return map
-(`TauCeti.SymplecticForm.eq_zero_of_dysonSeriesLeft_positiveEndHamiltonian_apply_eq_self`, at the
-output end of the pair of pants, whose end Hamiltonian is the same reversal). The loops of the
+(`TauCeti.SymplecticForm.eq_zero_of_dysonSeriesLeft_reverse_apply_eq_self`). The loops of the
 negative plane are those of the positive plane traversed backwards
 (`TauCeti.Floer.PSSPlane.cylindricalEndLift_negative_endSign_mul`), and its end lift is that of the
 positive plane after the reflection `z ↦ -z`, which changes the sign of both the derivative of `u`
@@ -86,105 +91,6 @@ open scoped Topology NNReal Manifold
 namespace TauCeti.SymplecticForm
 
 open Floer Floer.PSSPlane
-
-section NormedSpace
-
-variable {V : Type*} [NormedAddCommGroup V] [NormedSpace ℝ V] [FiniteDimensional ℝ V]
-  {ω : SymplecticForm V} {H : ℝ → V → ℝ}
-
-omit [NormedAddCommGroup V] [NormedSpace ℝ V] [FiniteDimensional ℝ V] in
-/-- A family of period one in the angular coordinate takes the same value at the angular
-coordinate of the image of a cylinder point under the end lift as at the angular coordinate of the
-point itself. -/
-private theorem apply_im_endCoord_cylindricalEndLift {α : Type*} {f : ℝ → α} (hf : Periodic f 1)
-    (p : PSSPlane) (z : ℂ) : f (p.endCoord (p.cylindricalEndLift z)).im = f z.im := by
-  obtain ⟨k, hk⟩ := p.exists_endCoord_cylindricalEndLift z
-  rw [hk]
-  simpa using hf.int_mul k z.im
-
-/-- A one-periodic orbit of `H` starting at a nondegenerate fixed point of the time-one map is
-isolated among the one-periodic orbits of `H`. -/
-private theorem exists_pos_forall_eq_of_isNondegenerateFixedPt {L : ℝ≥0}
-    (hL : LipschitzWith L (ω.timeDependentHamiltonianSuspension H)) {x : ℝ → V}
-    (hx : ∀ t, HasDerivAt x (ω.hamiltonianVectorField (H t) (x t)) t)
-    (hnd : IsNondegenerateFixedPt 𝓘(ℝ, V) (ω.timeDependentHamiltonianFlow H hL 0 1) (x 0)) :
-    ∃ ε > 0, ∀ y : ℝ → V, Periodic y 1 →
-      (∀ t, HasDerivAt y (ω.hamiltonianVectorField (H t) (y t)) t) →
-      dist (y 0) (x 0) < ε → y = x := by
-  have hiso := hnd.eventually_not_isFixedPt
-  rw [timeDependentHamiltonianFlow_eq, ← zero_add (1 : ℝ)] at hiso
-  obtain ⟨ε, hε, h⟩ := exists_pos_forall_periodic_eq_of_eventually_not_isFixedPt _ hx hiso
-  exact ⟨ε, hε, fun y hyper hy hyx ↦ h y hy hyper hyx⟩
-
-/-- Reversing time, `t ↦ x(-t)`, turns a one-periodic orbit `x` of the reversed Hamiltonian
-`-H(-t)` into a one-periodic orbit of `H`. -/
-private theorem periodic_hasDerivAt_comp_neg {x : ℝ → V} (hxper : Periodic x 1)
-    (hx : ∀ t, HasDerivAt x (ω.hamiltonianVectorField (fun y ↦ -H (-t) y) (x t)) t) :
-    Periodic (fun t ↦ x (-t)) 1 ∧
-      ∀ t, HasDerivAt (fun t ↦ x (-t)) (ω.hamiltonianVectorField (H t) (x (-t))) t :=
-  ⟨hxper.comp_neg, fun t ↦ ω.hasDerivAt_comp_neg_of_hasDerivAt_hamiltonianVectorField_neg
-    (by simpa only [neg_neg, Pi.neg_def] using hx (-t))⟩
-
-/-- A one-periodic orbit `x` of the reversed Hamiltonian `-H(-t)`, such that `x(0)` is a
-nondegenerate fixed point of the time-one map of `H`, is isolated among the one-periodic orbits of
-`-H(-t)`. -/
-private theorem exists_pos_forall_eq_of_isNondegenerateFixedPt_reverse {L : ℝ≥0}
-    (hL : LipschitzWith L (ω.timeDependentHamiltonianSuspension H)) {x : ℝ → V}
-    (hxper : Periodic x 1)
-    (hx : ∀ t, HasDerivAt x (ω.hamiltonianVectorField (fun y ↦ -H (-t) y) (x t)) t)
-    (hnd : IsNondegenerateFixedPt 𝓘(ℝ, V) (ω.timeDependentHamiltonianFlow H hL 0 1) (x 0)) :
-    ∃ ε > 0, ∀ y : ℝ → V, Periodic y 1 →
-      (∀ t, HasDerivAt y (ω.hamiltonianVectorField (fun z ↦ -H (-t) z) (y t)) t) →
-      dist (y 0) (x 0) < ε → y = x := by
-  obtain ⟨-, hx'⟩ := periodic_hasDerivAt_comp_neg hxper hx
-  obtain ⟨ε, hε, h⟩ := exists_pos_forall_eq_of_isNondegenerateFixedPt hL hx'
-    (by simpa only [neg_zero] using hnd)
-  refine ⟨ε, hε, fun y hyper hy hyx ↦ funext fun t ↦ ?_⟩
-  obtain ⟨hyper', hy'⟩ := periodic_hasDerivAt_comp_neg hyper hy
-  have hxy := congrFun (h _ hyper' hy' (by simpa only [neg_zero] using hyx)) (-t)
-  simpa only [neg_neg] using hxy
-
-/-- The linearized return map of `H` along a one-periodic orbit starting at a nondegenerate fixed
-point of the time-one map has no nonzero fixed vector. -/
-private theorem eq_zero_of_dysonSeriesLeft_apply_eq_self {L : ℝ≥0}
-    (hL : LipschitzWith L (ω.timeDependentHamiltonianSuspension H))
-    (hHs : ContDiff ℝ 2 (uncurry H)) {x : ℝ → V}
-    (hx : ∀ t, HasDerivAt x (ω.hamiltonianVectorField (H t) (x t)) t)
-    (hnd : IsNondegenerateFixedPt 𝓘(ℝ, V) (ω.timeDependentHamiltonianFlow H hL 0 1) (x 0))
-    {v : V}
-    (hv : dysonSeriesLeft (fun t ↦ fderiv ℝ (ω.hamiltonianVectorField (H t)) (x t)) 1 v = v) :
-    v = 0 := by
-  refine hnd.eq_zero_of_mfderiv_apply_eq ?_
-  have hD := (ω.differentiable_timeDependentHamiltonianFlow hL hHs 0 1 (x 0)).hasFDerivAt
-  rw [hD.hasMFDerivAt.mfderiv,
-    ω.fderiv_timeDependentHamiltonianFlow_eq_dysonSeriesLeft hL hHs hx 0 1]
-  simp only [zero_add, sub_zero]
-  exact hv
-
-/-- The linearized return map of the reversed Hamiltonian `-H(-t)` along a one-periodic orbit `x`
-of it, such that `x(0)` is a nondegenerate fixed point of the time-one map of `H`, has no nonzero
-fixed vector. This is nondegeneracy at the output end of the pair of pants, whose end Hamiltonian
-in the positive end chart is the same reversal of `H`. -/
-private theorem eq_zero_of_dysonSeriesLeft_reverse_apply_eq_self {L : ℝ≥0}
-    (hL : LipschitzWith L (ω.timeDependentHamiltonianSuspension H))
-    (hHs : ContDiff ℝ 2 (uncurry H)) (hH : Periodic H 1) {x : ℝ → V} (hxper : Periodic x 1)
-    (hx : ∀ t, HasDerivAt x (ω.hamiltonianVectorField (fun y ↦ -H (-t) y) (x t)) t)
-    (hnd : IsNondegenerateFixedPt 𝓘(ℝ, V) (ω.timeDependentHamiltonianFlow H hL 0 1) (x 0))
-    {v : V} (hv : dysonSeriesLeft
-      (fun t ↦ fderiv ℝ (ω.hamiltonianVectorField (fun y ↦ -H (-t) y)) (x t)) 1 v = v) :
-    v = 0 := by
-  obtain ⟨hxper', hx'⟩ := periodic_hasDerivAt_comp_neg hxper hx
-  refine eq_zero_of_dysonSeriesLeft_positiveEndHamiltonian_apply_eq_self
-    (H := fun _ ↦ H) (q := ThricePuncturedSphere.Puncture.inf) hL hHs hH hx' hxper'
-    (by simpa only [neg_zero] using hnd) ?_
-  convert hv using 4 with t
-  have hG : positiveEndHamiltonian (fun _ ↦ H) ThricePuncturedSphere.Puncture.inf t =
-      fun y ↦ -H (-t) y := by
-    funext y
-    simp [positiveEndHamiltonian_apply]
-  simp only [hG, ThricePuncturedSphere.Puncture.endSign_inf, neg_one_mul, neg_neg]
-
-end NormedSpace
 
 section InnerProductSpace
 
@@ -280,13 +186,6 @@ private theorem norm_fderiv_comp_realChart_negative_sub_smulRight (u : ℝ × �
   congr 1
   ext <;> simp [add_comm]
 
-omit [NormedAddCommGroup V] [InnerProductSpace ℝ V] [FiniteDimensional ℝ V] in
-/-- The angular coordinate of the negative plane is the negative of that of the positive plane. -/
-private theorem im_endCoord_negative (w : ℂ) :
-    (negative.endCoord w).im = -(positive.endCoord w).im := by
-  simp only [im_endCoord, endSign_negative, endSign_positive]
-  ring
-
 /-- **Exponential `C¹` convergence at the end of a PSS plane.** Let `𝔎` be the perturbation of a
 PSS plane `p` given by a period-one `C³` Hamiltonian `H` whose suspended Hamiltonian vector field
 is globally Lipschitz, and let `ε = p.endSign`. Let `u` be `C³` on a part `‖w‖ > r` of the end, with
@@ -338,9 +237,10 @@ theorem exists_pos_eventually_norm_sub_add_norm_fderiv_sub_le_exp_pssPlanePertur
   · obtain ⟨x, hxper, hx, κ, hκ, A, h⟩ :=
       exists_pos_eventually_norm_sub_add_norm_fderiv_sub_le_exp_positive hH hHs hu hK huK hfloer
         hE hW hJq hJqper hKW hJqt hJ
-        (fun x _ hx hxK ↦ exists_pos_forall_eq_of_isNondegenerateFixedPt hL hx (hnd x ‹_› hx hxK))
+        (fun x hxper hx hxK ↦
+          ω.exists_pos_forall_eq_of_isNondegenerateFixedPt hL hx (hnd x hxper hx hxK))
         fun x hxper hx hxK _ hv ↦
-          eq_zero_of_dysonSeriesLeft_apply_eq_self hL hHs2 hx (hnd x hxper hx hxK) hv
+          ω.eq_zero_of_dysonSeriesLeft_apply_eq_self hL hHs2 hx (hnd x hxper hx hxK) hv
     refine ⟨x, hxper, hx, κ, hκ, A, h.mono fun s hs t ↦ ?_⟩
     rw [← realChart_cylindricalEndLift_endSign_mul, endSign_positive, one_mul]
     exact hs t
@@ -354,8 +254,8 @@ theorem exists_pos_eventually_norm_sub_add_norm_fderiv_sub_le_exp_pssPlanePertur
       (hx : ∀ t, HasDerivAt x (ω.hamiltonianVectorField (fun y ↦ -H (-t) y) (x t)) t)
       (hxK : ∀ t, x t ∈ K) :
       IsNondegenerateFixedPt 𝓘(ℝ, V) (ω.timeDependentHamiltonianFlow H hL 0 1) (x 0) := by
-    simpa only [neg_zero] using hnd (fun t ↦ x (-t)) (periodic_hasDerivAt_comp_neg hxper hx).1
-      (periodic_hasDerivAt_comp_neg hxper hx).2 fun t ↦ hxK (-t)
+    simpa only [neg_zero] using hnd (fun t ↦ x (-t)) hxper.comp_neg
+      (ω.hasDerivAt_comp_neg_of_hasDerivAt_hamiltonianVectorField_reverse hx) fun t ↦ hxK (-t)
   obtain ⟨x, hxper, hx, κ, hκ, A, h⟩ :=
     exists_pos_eventually_norm_sub_add_norm_fderiv_sub_le_exp_positive (W := W')
       (H := fun t y ↦ -H (-t) y) (Jq := fun t ↦ Jq (-t)) (hH.comp_neg.comp Neg.neg)
@@ -365,12 +265,12 @@ theorem exists_pos_eventually_norm_sub_add_norm_fderiv_sub_le_exp_pssPlanePertur
         fun q hq ↦ hq)
       hJqper.comp_neg (fun q hq ↦ hKW ⟨mem_univ _, hq.2⟩) (fun t ↦ hJqt (-t))
       (fun z hz ↦ by rw [hJ z hz, im_endCoord_negative])
-      (fun x hxper hx hxK ↦ exists_pos_forall_eq_of_isNondegenerateFixedPt_reverse hL hxper hx
+      (fun x hxper hx hxK ↦ ω.exists_pos_forall_eq_of_isNondegenerateFixedPt_reverse hL hx
         (hndrev x hxper hx hxK))
-      fun x hxper hx hxK _ hv ↦ eq_zero_of_dysonSeriesLeft_reverse_apply_eq_self hL hHs2 hH hxper
+      fun x hxper hx hxK _ hv ↦ ω.eq_zero_of_dysonSeriesLeft_reverse_apply_eq_self hL hHs2 hH hxper
         hx (hndrev x hxper hx hxK) hv
-  obtain ⟨hxper', hx'⟩ := periodic_hasDerivAt_comp_neg hxper hx
-  refine ⟨_, hxper', hx', κ, hκ, A, h.mono fun s hs t ↦ ?_⟩
+  refine ⟨_, hxper.comp_neg, ω.hasDerivAt_comp_neg_of_hasDerivAt_hamiltonianVectorField_reverse hx,
+    κ, hκ, A, h.mono fun s hs t ↦ ?_⟩
   rw [norm_fderiv_comp_realChart_negative_sub_smulRight, cylindricalEndLift_negative_endSign_mul,
     ← realChart_cylindricalEndLift_endSign_mul, endSign_positive, one_mul]
   exact hs (-t)
