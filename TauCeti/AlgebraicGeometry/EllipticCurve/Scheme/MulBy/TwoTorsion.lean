@@ -60,8 +60,7 @@ theorem comp_projModelMulBy_two_eq_projModelZero_iff {P : Spec (.of R) ⟶ W.pro
   have h1 : P ≫ W.projModelMulBy 1 = P := by
     rw [comp_projModelMulBy_eq_homMk_zpow_left hP 1, zpow_one]
     rfl
-  rw [show (2 : ℤ) = 1 + 1 by norm_num, comp_projModelMulBy_add_one_eq_projModelZero_iff hP 1, h1,
-    eq_comm]
+  rw [← one_add_one_eq_two, comp_projModelMulBy_add_one_eq_projModelZero_iff hP 1, h1, eq_comm]
 
 /-- **Points killed by `2`.** Let `W` be an elliptic Weierstrass curve over a commutative ring `R`
 and `(x, y)` a solution of its affine equation over `R`. The point `[x : y : 1]` of the projective

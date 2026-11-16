@@ -46,8 +46,9 @@ Mazur's representability theorem for affine rigid moduli problems (KM 4.7.0).
   `Ell/B`.
 * `TauCeti.AlgebraicGeometry.ModuliProblem.LegendreData`: Legendre structures on an object of
   `Ell/B`.
-* `TauCeti.AlgebraicGeometry.ModuliProblem.legendre B`: the Legendre moduli problem over `Ell/B`,
-  with forgetful morphism `ModuliProblem.legendreToGammaNaiveTwo B` to `[Γ(2)]`.
+* `TauCeti.AlgebraicGeometry.ModuliProblem.legendre B`: the Legendre moduli problem over `Ell/B`
+  (`ModuliProblem.legendreEquiv`), with forgetful morphism
+  `ModuliProblem.legendreToGammaNaiveTwo B` to `[Γ(2)]`.
 * `TauCeti.AlgebraicGeometry.ModuliProblem.legendreRepresentableBy B`: representability of
   `ModuliProblem.legendre B` by `EllObj.universalLegendre B`.
 
@@ -55,6 +56,9 @@ Mazur's representability theorem for affine rigid moduli problems (KM 4.7.0).
 
 * `TauCeti.AlgebraicGeometry.EllObj.existsUnique_hom_universalLegendre`: the universal property of
   `EllObj.universalLegendre B` in `Ell/B`.
+* `TauCeti.AlgebraicGeometry.ModuliProblem.legendreEquiv_legendreRepresentableBy_homEquiv`: the
+  Legendre structure attached to an arrow `k : X ⟶ EllObj.universalLegendre B` is the pullback of
+  `ModuliProblem.universalLegendreData B` along `k`.
 * `TauCeti.AlgebraicGeometry.ModuliProblem.isRigid_legendre`: `ModuliProblem.legendre B` is rigid.
 
 ## References
@@ -272,17 +276,20 @@ noncomputable def LegendreData.pullback {X Y : EllObj B} (f : X ⟶ Y) (d : Lege
     rw [d.adaptedXCoord_eq_one, map_one] at hx
     exact hx.symm
 
+/-- The underlying naive `[Γ(2)]`-structure of `d.pullback f` is the pullback of `d.level`. -/
 @[simp]
 theorem LegendreData.pullback_level {X Y : EllObj B} (f : X ⟶ Y) (d : LegendreData Y) :
     (d.pullback f).level = (gammaNaive B 2).map f.op d.level :=
   (rfl)
 
+/-- The invariant differential of `d.pullback f` is the pullback of `d.differential`. -/
 @[simp]
 theorem LegendreData.pullback_differential {X Y : EllObj B} (f : X ⟶ Y) (d : LegendreData Y) :
     (d.pullback f).differential =
       Y.curve.invariantDifferentialPullback f.isPullback f.zero_total d.differential :=
   (rfl)
 
+/-- Pulling back a `LegendreData` along the identity arrow is the identity. -/
 @[simp]
 theorem LegendreData.pullback_id {X : EllObj B} (d : LegendreData X) :
     d.pullback (𝟙 X) = d := by
@@ -293,6 +300,7 @@ theorem LegendreData.pullback_id {X : EllObj B} (d : LegendreData X) :
       _ _ (IsPullback.id_horiz X.curve.structureMap) (by simp) d.differential).trans
       (X.curve.invariantDifferentialPullback_id d.differential)
 
+/-- Pulling back a `LegendreData` along a composition is the composition of pullbacks. -/
 theorem LegendreData.pullback_comp {X Y Z : EllObj B} (f : X ⟶ Y) (g : Y ⟶ Z)
     (d : LegendreData Z) :
     d.pullback (f ≫ g) = (d.pullback g).pullback f := by
@@ -304,35 +312,44 @@ theorem LegendreData.pullback_comp {X Y Z : EllObj B} (f : X ⟶ Y) (g : Y ⟶ Z
 variable (B)
 
 /-- **The Legendre moduli problem** over `Ell/B` (Katz–Mazur 4.6.2), assigning to an object `X` of
-`Ell/B` the type `LegendreData X` of Legendre structures on `X` and pulling back structures along
-arrows of `Ell/B` via `LegendreData.pullback`. -/
-@[expose]
+`Ell/B` the type `LegendreData X` of Legendre structures on `X` (`legendreEquiv`) and pulling back
+structures along arrows of `Ell/B` via `LegendreData.pullback` (`legendreEquiv_map`). -/
 noncomputable def legendre : ModuliProblem B where
   obj X := LegendreData X.unop
   map f := TypeCat.ofHom (LegendreData.pullback f.unop)
   map_id _ := ConcreteCategory.hom_ext _ _ fun d ↦ d.pullback_id
   map_comp f g := ConcreteCategory.hom_ext _ _ fun d ↦ d.pullback_comp g.unop f.unop
 
+variable {B}
+
+/-- The Legendre structures on an object `X` of `Ell/B` are the terms of `LegendreData X`. -/
+noncomputable def legendreEquiv (X : EllObj B) :
+    (legendre B).obj (op X) ≃ LegendreData X :=
+  Equiv.refl _
+
+/-- The pullback of a Legendre structure along an arrow `f` of `Ell/B` is
+`LegendreData.pullback f`. -/
 @[simp]
-theorem legendre_obj (X : EllObj B) : (legendre B).obj (op X) = LegendreData X :=
+theorem legendreEquiv_map {X Y : EllObj B} (f : X ⟶ Y) (α : (legendre B).obj (op Y)) :
+    legendreEquiv X ((legendre B).map f.op α) = (legendreEquiv Y α).pullback f :=
   (rfl)
 
-@[simp]
-theorem legendre_map_apply {X Y : EllObj B} (f : X ⟶ Y) (d : LegendreData Y) :
-    (legendre B).map f.op d = d.pullback f :=
-  (rfl)
-
+variable (B) in
 /-- The forgetful morphism of moduli problems `legendre B ⟶ gammaNaive B 2` retaining the
 underlying naive `[Γ(2)]`-structure. -/
 noncomputable def legendreToGammaNaiveTwo : legendre B ⟶ gammaNaive B 2 where
   app _ := TypeCat.ofHom LegendreData.level
 
+/-- `legendreToGammaNaiveTwo B` sends a Legendre structure to its underlying naive
+`[Γ(2)]`-structure. -/
 @[simp]
-theorem legendreToGammaNaiveTwo_app_apply (X : EllObj B) (d : LegendreData X) :
-    (legendreToGammaNaiveTwo B).app (op X) d = d.level :=
+theorem legendreToGammaNaiveTwo_app_apply (X : EllObj B) (α : (legendre B).obj (op X)) :
+    (legendreToGammaNaiveTwo B).app (op X) α = (legendreEquiv X α).level :=
   (rfl)
 
 /-! ### Representability and rigidity of `legendre B` -/
+
+variable (B)
 
 -- The universal naive `[Γ(2)]`-structure on `universalLegendre B`.
 private noncomputable def universalLegendreLevel :
@@ -435,7 +452,8 @@ private theorem bijective_pullback_universalLegendreData (X : EllObj B) :
 
 private theorem bijective_map_universalLegendreData (X : EllObj B) :
     Function.Bijective fun k : X ⟶ universalLegendre B ↦
-      (legendre B).map k.op (universalLegendreData B) :=
+      (legendre B).map k.op
+        ((legendreEquiv (universalLegendre B)).symm (universalLegendreData B)) :=
   bijective_pullback_universalLegendreData X
 
 variable (B)
@@ -443,21 +461,32 @@ variable (B)
 /-- **The universal Legendre curve is a fine moduli scheme for Legendre structures** (Katz–Mazur
 4.6.2). The Legendre moduli problem `legendre B` over `Ell/B` is represented by
 `EllObj.universalLegendre B` over `B × Spec ℤ[1/2][λ, 1/λ(λ - 1)]`, by pulling back
-`universalLegendreData B`. -/
+`universalLegendreData B` (`legendreEquiv_legendreRepresentableBy_homEquiv`). -/
 noncomputable def legendreRepresentableBy :
     (legendre B).RepresentableBy (universalLegendre B) where
   homEquiv := Equiv.ofBijective _ (bijective_map_universalLegendreData _)
   homEquiv_comp f k := by
     rw [Equiv.ofBijective_apply, Equiv.ofBijective_apply, op_comp]
-    exact (legendre B).map_comp_apply k.op f.op (universalLegendreData B)
+    exact (legendre B).map_comp_apply k.op f.op
+      ((legendreEquiv (universalLegendre B)).symm (universalLegendreData B))
 
 variable {B}
+
+/-- The Legendre structure attached to an arrow `k : X ⟶ EllObj.universalLegendre B` is the
+pullback of `universalLegendreData B` along `k`. -/
+@[simp]
+theorem legendreEquiv_legendreRepresentableBy_homEquiv {X : EllObj B}
+    (k : X ⟶ universalLegendre B) :
+    legendreEquiv X ((legendreRepresentableBy B).homEquiv k) =
+      (universalLegendreData B).pullback k :=
+  (rfl)
 
 /-- The naive `[Γ(2)]`-structure of `(legendreRepresentableBy B).homEquiv k` sends `(1, 0)` to the
 pullback along `k` of `firstPointHom`. -/
 theorem naiveLevelEquiv_legendreRepresentableBy_homEquiv_fst {X : EllObj B}
     (k : X ⟶ universalLegendre B) :
-    (naiveLevelEquiv X (((legendreRepresentableBy B).homEquiv k).level)).1 (.ofAdd (1, 0)) =
+    (naiveLevelEquiv X (legendreEquiv X ((legendreRepresentableBy B).homEquiv k)).level).1
+        (.ofAdd (1, 0)) =
       EllipticCurveGeom.pointsPullback k.isPullback k.zero_total
         (prodCurvePoint B firstPointHom) :=
   naiveLevelEquiv_pullback_universalLegendreData_fst k
@@ -466,16 +495,17 @@ theorem naiveLevelEquiv_legendreRepresentableBy_homEquiv_fst {X : EllObj B}
 pullback along `k` of `secondPointHom`. -/
 theorem naiveLevelEquiv_legendreRepresentableBy_homEquiv_snd {X : EllObj B}
     (k : X ⟶ universalLegendre B) :
-    (naiveLevelEquiv X (((legendreRepresentableBy B).homEquiv k).level)).1 (.ofAdd (0, 1)) =
+    (naiveLevelEquiv X (legendreEquiv X ((legendreRepresentableBy B).homEquiv k)).level).1
+        (.ofAdd (0, 1)) =
       EllipticCurveGeom.pointsPullback k.isPullback k.zero_total
         (prodCurvePoint B secondPointHom) :=
   naiveLevelEquiv_pullback_universalLegendreData_snd k
 
 /-- The invariant differential of `(legendreRepresentableBy B).homEquiv k` is the pullback along
 `k` of `prodCurveDifferential B curveGeomDifferential`. -/
-theorem legendreRepresentableBy_homEquiv_differential {X : EllObj B}
+theorem legendreEquiv_legendreRepresentableBy_homEquiv_differential {X : EllObj B}
     (k : X ⟶ universalLegendre B) :
-    ((legendreRepresentableBy B).homEquiv k).differential =
+    (legendreEquiv X ((legendreRepresentableBy B).homEquiv k)).differential =
       (universalLegendre B).curve.invariantDifferentialPullback k.isPullback k.zero_total
         (prodCurveDifferential B curveGeomDifferential) :=
   (rfl)

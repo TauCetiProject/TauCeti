@@ -7,7 +7,6 @@ module
 
 public import Mathlib.AlgebraicGeometry.AffineSpace
 public import TauCeti.AlgebraicGeometry.EffectiveCartierDivisor.Conormal
-public import TauCeti.AlgebraicGeometry.EffectiveCartierDivisor.Section
 public import TauCeti.AlgebraicGeometry.EllipticCurve.Scheme.Geom.BaseChange.Basic
 public import TauCeti.AlgebraicGeometry.EllipticCurve.Scheme.Geom.Glue
 public import TauCeti.AlgebraicGeometry.EllipticCurve.Scheme.OfWeierstrass

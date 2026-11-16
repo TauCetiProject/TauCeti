@@ -13,9 +13,9 @@ public import TauCeti.AlgebraicGeometry.LineBundle.Endomorphisms
 # The conormal sheaf of a section of a smooth relative curve
 
 Let `s : S ⟶ X` be a morphism of schemes, with kernel ideal sheaf `s.ker`. Its **conormal sheaf**
-`s.conormalSheaf` is the pullback `s^* s.ker.sheaf` on `S`, whose sections on affine opens compute
-`I / I²`. When `s` is a section of a separated morphism `π : X ⟶ S` that is smooth of relative
-dimension one, `s.ker` is an effective Cartier divisor on `X`
+`s.conormalSheaf` is the pullback `s^* s.ker.sheaf` on `S` (computing `I / I²` on affine opens when
+`s` is a closed immersion). When `s` is a section of a separated morphism `π : X ⟶ S` that is smooth
+of relative dimension one, `s.ker` is an effective Cartier divisor on `X`
 (`Scheme.Hom.isRelativeEffectiveCartier_ker_of_smoothOfRelativeDimension`), so `s.conormalSheaf` is
 an invertible sheaf on `S` (`Scheme.Hom.isInvertible_conormalSheaf`).
 
@@ -36,8 +36,6 @@ bundle `ω_{E/S}` of invariant differentials (Katz–Mazur, 2.1.6), and global b
 
 * `Scheme.IdealSheafData.pullbackSheafHom_id` and `Scheme.IdealSheafData.pullbackSheafHom_comp`:
   functoriality of the ideal-sheaf pullback comparison;
-* `Scheme.Modules.unitSmulIso`: rescaling a trivialization `𝟙_ X.Modules ≅ M` by a global unit
-  `u : Γ(X, ⊤)ˣ`, a free and transitive action (`existsUnique_unitSmulIso_eq`);
 * `Scheme.Hom.conormalSheaf`: the conormal sheaf `s^* s.ker.sheaf` of `s : S ⟶ X`, invertible for a
   section of a separated smooth relative curve (`Scheme.Hom.isInvertible_conormalSheaf`);
 * `Scheme.Hom.conormalPullbackHom`: the comparison `f^* s.conormalSheaf ⟶ s'.conormalSheaf`, with
@@ -61,56 +59,6 @@ universe u
 namespace AlgebraicGeometry
 
 noncomputable section
-
-namespace Scheme.Modules
-
-variable {X : Scheme.{u}} {M : X.Modules}
-
-/-- Rescale a global trivialization `ω : 𝟙_ X.Modules ≅ M` by a global unit `u : Γ(X, ⊤)ˣ`. -/
-def unitSmulIso (u : Γ(X, ⊤)ˣ) (ω : 𝟙_ X.Modules ≅ M) : 𝟙_ X.Modules ≅ M :=
-  (unitsGlobalSectionsMulEquivAut (𝟙_ X.Modules) u).asIso ≪≫ ω
-
-@[simp]
-lemma unitSmulIso_hom (u : Γ(X, ⊤)ˣ) (ω : 𝟙_ X.Modules ≅ M) :
-    (unitSmulIso u ω).hom = globalSectionsSmul (𝟙_ X.Modules) u ≫ ω.hom := by
-  simp [unitSmulIso]
-
-lemma unitSmulIso_hom_eq_comp_globalSectionsSmul (u : Γ(X, ⊤)ˣ) (ω : 𝟙_ X.Modules ≅ M) :
-    (unitSmulIso u ω).hom = ω.hom ≫ globalSectionsSmul M u := by
-  rw [unitSmulIso_hom, globalSectionsSmul_naturality]
-
-@[simp]
-lemma unitSmulIso_one (ω : 𝟙_ X.Modules ≅ M) : unitSmulIso 1 ω = ω := by
-  ext1
-  rw [unitSmulIso_hom, Units.val_one, globalSectionsSmul_one, Category.id_comp]
-
-lemma unitSmulIso_mul (u v : Γ(X, ⊤)ˣ) (ω : 𝟙_ X.Modules ≅ M) :
-    unitSmulIso (u * v) ω = unitSmulIso u (unitSmulIso v ω) := by
-  ext1
-  rw [unitSmulIso_hom, unitSmulIso_hom, unitSmulIso_hom, Units.val_mul,
-    mul_comm (u : Γ(X, ⊤)) v, globalSectionsSmul_mul, Category.assoc]
-
-@[simp]
-lemma unitSmulIso_inj (u v : Γ(X, ⊤)ˣ) (ω : 𝟙_ X.Modules ≅ M) :
-    unitSmulIso u ω = unitSmulIso v ω ↔ u = v := by
-  refine ⟨fun h ↦ ?_, fun h ↦ h ▸ rfl⟩
-  have hhom : globalSectionsSmul (𝟙_ X.Modules) u = globalSectionsSmul (𝟙_ X.Modules) v := by
-    have := congrArg Iso.hom h
-    rwa [unitSmulIso_hom, unitSmulIso_hom, cancel_mono] at this
-  exact Units.ext ((globalSectionsAction_injective (𝟙_ X.Modules)) (by simpa using hhom))
-
-/-- Any two trivializations `ω₁, ω₂ : 𝟙_ X.Modules ≅ M` differ by a unique global unit
-`u : Γ(X, ⊤)ˣ`. -/
-theorem existsUnique_unitSmulIso_eq (ω₁ ω₂ : 𝟙_ X.Modules ≅ M) :
-    ∃! u : Γ(X, ⊤)ˣ, unitSmulIso u ω₂ = ω₁ := by
-  let α : Aut (𝟙_ X.Modules) := .of (ω₁ ≪≫ ω₂.symm)
-  have hu : unitSmulIso ((unitsGlobalSectionsMulEquivAut (𝟙_ X.Modules)).symm α) ω₂ = ω₁ := by
-    ext1
-    rw [unitSmulIso_hom, globalSectionsSmul_unitsGlobalSectionsMulEquivAut_symm]
-    simp [α]
-  exact ⟨_, hu, fun u hu' ↦ (unitSmulIso_inj _ _ ω₂).mp (hu'.trans hu.symm)⟩
-
-end Scheme.Modules
 
 namespace Scheme.IdealSheafData
 

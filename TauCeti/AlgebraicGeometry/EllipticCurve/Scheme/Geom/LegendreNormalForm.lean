@@ -257,6 +257,55 @@ theorem secondPointHom_left :
         (toEllipticCurveGeomIso UniversalLegendre.curveULift).inv :=
   (rfl)
 
+/-- `firstPointHom` misses the zero section of `curveGeom` at every point of the base. -/
+theorem firstPointHom_left_ne_zero (s) : firstPointHom.{u}.left s ≠ curveGeom.zero s := fun hs ↦
+  UniversalLegendre.firstPoint_ne_projModelZero s <| by
+    have h := congrArg (toEllipticCurveGeomIso UniversalLegendre.curveULift).hom hs
+    simpa only [← Scheme.Hom.comp_apply, firstPointHom_left, Category.assoc, Iso.inv_hom_id,
+      Category.comp_id, zero_toEllipticCurveGeomIso_hom] using h
+
+/-- `secondPointHom` misses the zero section of `curveGeom` at every point of the base. -/
+theorem secondPointHom_left_ne_zero (s) : secondPointHom.{u}.left s ≠ curveGeom.zero s := fun hs ↦
+  UniversalLegendre.secondPoint_ne_projModelZero s <| by
+    have h := congrArg (toEllipticCurveGeomIso UniversalLegendre.curveULift).hom hs
+    simpa only [← Scheme.Hom.comp_apply, secondPointHom_left, Category.assoc, Iso.inv_hom_id,
+      Category.comp_id, zero_toEllipticCurveGeomIso_hom] using h
+
+/-- The `curveGeomDifferential`-adapted `x`-coordinate of `(firstPointHom, secondPointHom)` on
+`curveGeom` equals `1`. -/
+@[simp]
+theorem adaptedXCoord_curveGeom :
+    curveGeom.{u}.adaptedXCoord (Over.w firstPointHom) (Over.w secondPointHom)
+      firstPointHom_left_ne_zero secondPointHom_left_ne_zero curveGeomDifferential = 1 := by
+  have hcongr {W : WeierstrassCurve (ULift.{u} UniversalLegendre.Ring)} [W.IsElliptic]
+      {P₁ P₂ Q₁ Q₂ : Spec (.of (ULift.{u} UniversalLegendre.Ring)) ⟶ W.projModel}
+      (eP : P₁ = P₂) (eQ : Q₁ = Q₂) (hP₁) (hQ₁) (hP₁₀) (hQ₁₀) (hP₂) (hQ₂) (hP₂₀) (hQ₂₀) (ω) :
+      W.projModelAdaptedXCoord (P := P₁) (Q := Q₁) hP₁ hQ₁ hP₁₀ hQ₁₀ ω =
+        W.projModelAdaptedXCoord (P := P₂) (Q := Q₂) hP₂ hQ₂ hP₂₀ hQ₂₀ ω := by
+    subst eP eQ
+    rfl
+  rw [UniversalLegendre.curveULift.adaptedXCoord_toEllipticCurveGeom]
+  have hω : Scheme.Hom.conormalBasisPullback
+      (f := 𝟙 (Spec (.of (ULift.{u} UniversalLegendre.Ring))))
+      (g := (toEllipticCurveGeomIso UniversalLegendre.curveULift).inv)
+      UniversalLegendre.curveULift.toEllipticCurveGeom.zero_comp
+      UniversalLegendre.curveULift.projModelZero_projModelOver
+      (IsPullback.of_horiz_isIso
+        ⟨by rw [toEllipticCurveGeomIso_inv_structureMap, Category.comp_id]⟩)
+      (by rw [projModelZero_toEllipticCurveGeomIso_inv, Category.id_comp])
+      curveGeomDifferential = UniversalLegendre.curveULift.weierstrassDifferential := by
+    rw [curveGeomDifferential, toEllipticCurveGeomDifferential_def,
+      Scheme.Hom.conormalBasisPullback_comp,
+      Scheme.Hom.conormalBasisPullback_congr
+        UniversalLegendre.curveULift.projModelZero_projModelOver
+        UniversalLegendre.curveULift.projModelZero_projModelOver
+        (Category.id_comp _) (Iso.inv_hom_id _) _ _ (.of_horiz_isIso ⟨by simp⟩) (by simp)]
+    simp
+  rw [hω, hcongr (by simp) (by simp) _ _ _ _ UniversalLegendre.firstPoint_projModelOver
+    UniversalLegendre.secondPoint_projModelOver UniversalLegendre.firstPoint_ne_projModelZero
+    UniversalLegendre.secondPoint_ne_projModelZero,
+    UniversalLegendre.projModelAdaptedXCoord_weierstrassDifferential, map_one]
+
 end TauCeti.AlgebraicGeometry.UniversalLegendre
 
 namespace TauCeti.AlgebraicGeometry
@@ -800,28 +849,16 @@ theorem exists_legendreNormalForm_iff (ω : E.InvariantDifferential) :
   have hQ₀ := hne hgQ h₀ secondPoint_ne_projModelZero
   refine ⟨hP₀, hQ₀, h₂ hP hgP firstPoint_projModelMulBy_two,
     h₂ hQ hgQ secondPoint_projModelMulBy_two, hne hgQ hgP secondPoint_ne_firstPoint, ?_⟩
-  obtain ⟨A⟩ := E.localModel
-  refine (E.eq_adaptedXCoord_of_atlas hP hQ hP₀ hQ₀ ω A fun i ↦ ?_).symm
-  obtain ⟨hc_sq, hc_0, hc_P, hc_Q, hc_ω⟩ :=
-    isLegendre_chart hP hQ ω (A.chart i) ⟨hg, h₀, hgP, hgQ, hgω⟩
-  obtain ⟨φ, hφ⟩ := Spec.map_surjective (((A.chart i).baseIso.inv ≫ (A.chart i).baseMap) ≫ f)
-  have hφ' : Spec.map (CommRingCat.ofHom φ.hom) =
-      ((A.chart i).baseIso.inv ≫ (A.chart i).baseMap) ≫ f := by
-    rw [CommRingCat.ofHom_hom, hφ]
-  obtain ⟨e, he, he₀, heP, heQ, heω, -⟩ := exists_iso_of_isLegendre
-    ((A.chart i).modelPoint_projModelOver hP) ((A.chart i).modelPoint_projModelOver hQ)
-    ((A.chart i).modelDifferential ω)
-    (show IsLegendre _ _ _ _ _ (Spec.map (CommRingCat.ofHom φ.hom)) _ by
-      rw [hφ']; exact ⟨hc_sq, hc_0, hc_P, hc_Q, hc_ω⟩)
-  obtain ⟨_, _, _, _, _, hc_one⟩ := (exists_iso_legendreNormalForm_iff
-    ((A.chart i).modelPoint_projModelOver hP) ((A.chart i).modelPoint_projModelOver hQ)
-    ((A.chart i).modelDifferential ω)).mp
-      ⟨φ.hom paramULift, inferInstance, e, he, he₀, heP, heQ, heω⟩
-  have hc_one' : (A.chart i).equation.projModelAdaptedXCoord
-      ((A.chart i).modelPoint_projModelOver hP) ((A.chart i).modelPoint_projModelOver hQ)
-      ((A.chart i).modelPoint_apply_ne hP hP₀) ((A.chart i).modelPoint_apply_ne hQ hQ₀)
-      ((A.chart i).modelDifferential ω) = 1 := hc_one
-  rw [hc_one', map_one, map_one, map_one]
+  obtain ⟨hg', h₀', hgP', hgQ', hgω'⟩ :=
+    (isLegendre_curveGeom_iff E ω (P := P) (Q := Q) (f := f)
+      (g := g ≫ (toEllipticCurveGeomIso curveULift).inv)).mpr
+      (by rw [Category.assoc, Iso.inv_hom_id, Category.comp_id]; exact ⟨hg, h₀, hgP, hgQ, hgω⟩)
+  have hx := curveGeom.appTop_adaptedXCoord_of_isPullback hg' h₀'
+    (Over.w firstPointHom) (Over.w secondPointHom)
+    firstPointHom_left_ne_zero secondPointHom_left_ne_zero hP hQ hP₀ hQ₀ hgP' hgQ'
+    curveGeomDifferential
+  rw [adaptedXCoord_curveGeom, map_one, hgω'] at hx
+  exact hx.symm
 
 section CurveGeom
 
@@ -880,14 +917,6 @@ private theorem basisHom_conditions :
       by rw [zero_toEllipticCurveGeomIso_hom, Category.id_comp], by simp, by simp,
       (toEllipticCurveGeomDifferential_def curveULift).symm⟩
 
-/-- `firstPointHom` misses the zero section of `curveGeom` at every point of the base. -/
-theorem firstPointHom_left_ne_zero (s) : firstPointHom.{u}.left s ≠ curveGeom.zero s :=
-  basisHom_conditions.choose s
-
-/-- `secondPointHom` misses the zero section of `curveGeom` at every point of the base. -/
-theorem secondPointHom_left_ne_zero (s) : secondPointHom.{u}.left s ≠ curveGeom.zero s :=
-  basisHom_conditions.choose_spec.choose s
-
 /-- `firstPointHom` is killed by `2` on `curveGeom`. -/
 @[reassoc]
 theorem firstPointHom_left_comp_mulBy_two_left :
@@ -904,14 +933,6 @@ theorem secondPointHom_left_comp_mulBy_two_left :
 theorem secondPointHom_left_ne_firstPointHom_left (s) :
     secondPointHom.{u}.left s ≠ firstPointHom.{u}.left s :=
   basisHom_conditions.choose_spec.choose_spec.2.2.1 s
-
-/-- The `curveGeomDifferential`-adapted `x`-coordinate of `(firstPointHom, secondPointHom)` on
-`curveGeom` equals `1`. -/
-@[simp]
-theorem adaptedXCoord_curveGeom :
-    curveGeom.{u}.adaptedXCoord (Over.w firstPointHom) (Over.w secondPointHom)
-      firstPointHom_left_ne_zero secondPointHom_left_ne_zero curveGeomDifferential = 1 :=
-  basisHom_conditions.choose_spec.choose_spec.2.2.2
 
 end UniversalLegendre
 

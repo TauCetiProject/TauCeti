@@ -147,7 +147,7 @@ theorem zmodProdMonoidHomEquiv_symm_apply {G : Type*} [CommGroup G]
 /-- **Injectivity on `(ℤ/2ℤ)²`.** A homomorphism `ψ : (ℤ/2ℤ)² →* G` is injective exactly when
 `(1, 0)`, `(0, 1)` and `(1, 1)` are not in its kernel: these are the three nonzero elements of
 `(ℤ/2ℤ)²`. -/
-theorem injective_zmod_two_prod_iff {G : Type*} [Group G]
+theorem injective_zmod_two_prod_iff {G : Type*} [MulOneClass G]
     (ψ : Multiplicative (ZMod 2 × ZMod 2) →* G) :
     Function.Injective ψ ↔
       ψ (.ofAdd (1, 0)) ≠ 1 ∧ ψ (.ofAdd (0, 1)) ≠ 1 ∧ ψ (.ofAdd (1, 1)) ≠ 1 := by

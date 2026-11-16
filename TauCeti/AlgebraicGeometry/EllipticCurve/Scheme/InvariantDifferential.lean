@@ -475,11 +475,14 @@ theorem eq_weierstrassDifferentialScalar_iff {u : Rˣ}
     ((Scheme.Modules.unitSmulIso_inj _ _ W.weierstrassDifferential).mp
       (h.trans (W.unitSmulIso_weierstrassDifferentialScalar ω).symm))
 
+/-- The canonical Weierstrass differential has scalar `1` relative to itself. -/
 @[simp]
 theorem weierstrassDifferentialScalar_weierstrassDifferential :
     W.weierstrassDifferentialScalar W.weierstrassDifferential = 1 :=
   (eq_weierstrassDifferentialScalar_iff.mpr (by simp)).symm
 
+/-- Rescaling a conormal basis `ω` by a unit `u : Rˣ` multiplies its Weierstrass differential scalar
+by `u`. -/
 @[simp]
 theorem weierstrassDifferentialScalar_unitSmulIso (u : Rˣ)
     (ω : 𝟙_ (Spec (.of R)).Modules ≅ W.projModelZero.conormalSheaf) :
@@ -491,6 +494,8 @@ theorem weierstrassDifferentialScalar_unitSmulIso (u : Rˣ)
   rw [eq_weierstrassDifferentialScalar_iff, map_mul, Scheme.Modules.unitSmulIso_mul,
     W.unitSmulIso_weierstrassDifferentialScalar]
 
+/-- Pulling back a conormal basis `ω` along the base change induced by `φ : R →+* R'` maps its
+Weierstrass differential scalar along `φ`. -/
 @[simp]
 theorem weierstrassDifferentialScalar_conormalBasisPullback_projModelBaseChange
     (φ : R →+* R') (ω : 𝟙_ (Spec (.of R)).Modules ≅ W.projModelZero.conormalSheaf) :
@@ -508,6 +513,8 @@ theorem weierstrassDifferentialScalar_conormalBasisPullback_projModelBaseChange
   ext1
   exact (SpecMap_appTop_ΓSpecIso_inv φ (W.weierstrassDifferentialScalar ω : R)).symm
 
+/-- Under a Weierstrass change of variables `C : VariableChange R`, the Weierstrass differential
+scalar of the pulled-back conormal basis is multiplied by `C.u⁻¹`. -/
 theorem weierstrassDifferentialScalar_conormalBasisPullback_projModelVariableChangeIso_hom
     (C : VariableChange R) (ω : 𝟙_ (Spec (.of R)).Modules ≅ W.projModelZero.conormalSheaf) :
     (C • W).weierstrassDifferentialScalar
