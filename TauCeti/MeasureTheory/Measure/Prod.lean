@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.MeasureTheory.Group.Arithmetic
+public import Mathlib.MeasureTheory.Constructions.Pi
 public import Mathlib.MeasureTheory.Measure.Prod
 public import Mathlib.MeasureTheory.Measure.Real
 public import Mathlib.MeasureTheory.Measure.WithDensity
@@ -38,6 +39,10 @@ If the pushforward of a product `(μ.map Z).prod ρ` along `(z, t) ↦ (z, f z t
 It also records that almost every section of an almost-everywhere measurable function on a
 product `μ.prod ν` is almost-everywhere measurable (`AEMeasurable.prodMk_left`), the counterpart of
 Mathlib's `MeasureTheory.AEStronglyMeasurable.prodMk_left`.
+For a countable first factor with measurable singletons, the converse is characterized by
+`MeasureTheory.Measure.aemeasurable_uncurry_prod_iff`. Mapping an indexed family over a product
+then gives a measure bind (`MeasureTheory.Measure.map_uncurry_prod_eq_bind_map`), with evaluation
+specializations for function-valued and product laws.
 
 Finally, for a measurable map `f` into an additive group, the law of `f z.1 - f z.2` under
 `μ.prod μ` is symmetric (`MeasureTheory.Measure.map_neg_map_sub_prod_self`): swapping the two
@@ -353,3 +358,59 @@ theorem AEMeasurable.prodMk_left {α β γ : Type*} [MeasurableSpace α] [Measur
     ∀ᵐ x ∂μ, AEMeasurable (fun y ↦ f (x, y)) ν := by
   filter_upwards [MeasureTheory.Measure.ae_ae_of_ae_prod hf.ae_eq_mk] with x hx
   exact ⟨_, hf.measurable_mk.comp measurable_prodMk_left, hx⟩
+
+namespace MeasureTheory.Measure
+
+variable {I A B : Type*} [MeasurableSpace I] [MeasurableSpace A] [MeasurableSpace B]
+
+/-- An indexed family over a countable measurable space is a.e. measurable for a product measure
+exactly when every component carried by the first measure is a.e. measurable. -/
+theorem aemeasurable_uncurry_prod_iff [Countable I] [MeasurableSingletonClass I]
+    (μ : Measure I) (ρ : Measure A) [SFinite ρ] {f : I → A → B} :
+    AEMeasurable (Function.uncurry f) (μ.prod ρ) ↔
+      ∀ i, μ {i} ≠ 0 → AEMeasurable (f i) ρ := by
+  constructor
+  · intro hf
+    exact ae_iff_of_countable.1 hf.prodMk_left
+  · intro hf
+    rw [← Measure.sum_smul_dirac μ, Measure.prod_sum_left]
+    apply AEMeasurable.sum_measure
+    intro i
+    rw [Measure.prod_smul_left]
+    by_cases hi : μ {i} = 0
+    · simp [hi]
+    · apply AEMeasurable.smul_measure
+      rw [Measure.dirac_prod, (measurableEmbedding_prodMk_left i).aemeasurable_map_iff]
+      simpa only [Function.comp_def, Function.uncurry_apply_pair] using hf i hi
+
+/-- Mapping a product measure by an almost-everywhere measurable indexed family gives the bind of
+the component pushforwards. -/
+theorem map_uncurry_prod_eq_bind_map (μ : Measure I) (ρ : Measure A) [SFinite ρ]
+    {f : I → A → B} (hf : AEMeasurable (Function.uncurry f) (μ.prod ρ)) :
+    (μ.prod ρ).map (Function.uncurry f) = μ.bind (fun i ↦ ρ.map (f i)) := by
+  rw [Measure.prod_eq_of_sfinite] at hf ⊢
+  rw [Measure.map_bind Measurable.map_prodMk_left.aemeasurable hf]
+  apply Measure.bind_congr_right
+  filter_upwards [Measurable.map_prodMk_left.aemeasurable.ae_of_bind hf] with i hi
+  rw [hi.map_map_of_aemeasurable measurable_prodMk_left.aemeasurable]
+  simp only [Function.comp_def, Function.uncurry_apply_pair]
+
+/-- Mapping a product by evaluation gives the bind of the coordinate pushforwards. -/
+theorem map_eval_prod_eq_bind_map [Countable I] [MeasurableSingletonClass I]
+    (μ : Measure I) (ρ : Measure (I → B)) [SFinite ρ] :
+    (μ.prod ρ).map (fun z ↦ z.2 z.1) = μ.bind (fun i ↦ ρ.map (Function.eval i)) := by
+  simpa only [Function.uncurry_def, Function.eval] using
+    map_uncurry_prod_eq_bind_map μ ρ
+      ((aemeasurable_uncurry_prod_iff μ ρ).2 fun i _ ↦
+        (measurable_pi_apply i).aemeasurable)
+
+/-- Mapping a mixing law times a finite product probability law by evaluation gives the bind of
+the component laws. -/
+theorem map_eval_prod_pi_eq_bind [Fintype I] [MeasurableSingletonClass I]
+    (μ : Measure I) (K : I → Measure B) [∀ i, IsProbabilityMeasure (K i)] :
+    (μ.prod (Measure.pi K)).map (fun z ↦ z.2 z.1) = μ.bind K := by
+  rw [map_eval_prod_eq_bind_map]
+  apply Measure.bind_congr_right
+  exact ae_of_all _ fun i ↦ (measurePreserving_eval K i).map_eq
+
+end MeasureTheory.Measure
