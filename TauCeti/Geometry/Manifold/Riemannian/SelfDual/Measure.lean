@@ -12,9 +12,10 @@ import TauCeti.Geometry.Manifold.Riemannian.FormMetric
 /-!
 # Self-dual energies against the Riemannian measure
 
-On an oriented Riemannian manifold of dimension `k + k` with `k` even, the energy identities of
-`TauCeti.Geometry.Manifold.Riemannian.SelfDual.Basic` are stated for integrals of top forms
-`∫_M f vol`. This file restates them against the Riemannian volume measure, through
+On an oriented Riemannian manifold of dimension `k + k` with `k` even,
+`TauCeti.Geometry.Manifold.Riemannian.SelfDual.Basic` states its energy identities for integrals
+of top forms `∫_M f vol`. This file restates one of them, the Chern–Weil identity
+`∫ |α|² = 2 ∫ |α⁺|² - ∫_M α ∧ α`, against the Riemannian volume measure, through
 `TauCeti.integralTopForm_smul_riemannianVolumeForm`.
 
 ## Main results
