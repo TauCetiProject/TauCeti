@@ -184,8 +184,9 @@ theorem op_map_smul_eq_add (hM : IsDGRightModule h ℳ dM) (a : A) (x : M) :
     rw [InternalGrading.koszulTwist_ofDecomposition_apply_of_mem ℳ hx,
       InternalGrading.koszulTwist_ofDecomposition_apply_of_mem ℳ (hM.isHomogeneous.map_mem hx),
       one_mul, one_mul, smul_comm (op a) _ x, smul_comm (op a) _ (dM x), map_smul,
-      hM.op_map_smul_eq_negOnePow_smul_sub hx a, Int.negOnePow_succ, Units.val_neg, Int.cast_neg,
-      neg_smul, ← sub_eq_add_neg, ← smul_sub, Units.smul_def, Int.cast_smul_eq_zsmul]
+      hM.op_map_smul_eq_negOnePow_smul_sub hx a]
+    simp only [Int.negOnePow_succ, Units.val_neg, Int.cast_neg, neg_smul, Units.smul_def,
+      Int.cast_smul_eq_zsmul, sub_eq_add_neg, smul_add, smul_neg]
 
 end IsDGRightModule
 

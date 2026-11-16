@@ -14,9 +14,10 @@ public import TauCeti.Topology.PathSpace.Moore.Comparison.Basic
 
 For points `a` and `b` of a space `B`, a DG local system `𝓕` at `a` changes basepoint to `b` by
 tensoring with the chain bimodule of Moore paths from `a` to `b`,
-`𝓕 ↦ 𝓕 ⊗_{C_*(Ω_a B)} C_*(P_{a→b} B)` (`TauCeti.DGLocalSystem.basepointChange`). When `a` and `b`
-are joined by a path, this ordinary tensor product preserves and reflects quasi-isomorphisms
-(`TauCeti.isQuasiIso_tensorBimoduleMap_pathChainBimodule_iff`).
+`𝓕 ↦ 𝓕 ⊗_{C_*(Ω_a B)} C_*(P_{a→b} B)` (`TauCeti.DGLocalSystem.basepointChange`, in
+`TauCeti.AlgebraicTopology.DGLocalSystem.Path.BasepointChange`). When `a` and `b` are joined by a
+path, this ordinary tensor product preserves and reflects quasi-isomorphisms
+(`TauCeti.DGLocalSystem.isQuasiIso_basepointChange_map_iff`).
 
 On a space with a chosen basepoint `b_c` in each path component `c`, a DG local system is a family
 `(𝓕_c)` of DG local systems at the chosen basepoints (`TauCeti.DGLocalSystemFamily`). Along a map
@@ -27,12 +28,14 @@ component `f(c')` of `B`, which contains both `f(b'_{c'})` and its own chosen ba
 from `b_{f(c')}` to `f(b'_{c'})`, and then restricts scalars along
 `C_*(Ωf) : C_*(Ω_{b'_{c'}} B') → C_*(Ω_{f(b'_{c'})} B)`. Unlike the strict pullback
 `TauCeti.DGLocalSystemFamily.pullback`, it needs no compatibility of `f` with the chosen
-basepoints. It preserves and reflects componentwise quasi-isomorphisms. For `f` the identity, it
-changes the chosen basepoints of a space (`TauCeti.DGLocalSystemFamily.changeBasepoints`).
+basepoints. It preserves componentwise quasi-isomorphisms, and reflects them at the path
+components of `B` met by `f`; so when `f` is surjective on path components it reflects them
+everywhere. For `f` the identity, it changes the chosen basepoints of a space
+(`TauCeti.DGLocalSystemFamily.changeBasepoints`), which therefore preserves and reflects
+componentwise quasi-isomorphisms.
 
 ## Main definitions
 
-* `TauCeti.DGLocalSystem.basepointChange R a b`: basepoint change from `a` to `b`.
 * `TauCeti.DGLocalSystemFamily.pullbackBasepointChange R f β'`: the pullback of DG local systems
   on spaces with chosen basepoints along an arbitrary map.
 * `TauCeti.DGLocalSystemFamily.changeBasepoints R β β'`: the change between two choices of
@@ -65,19 +68,6 @@ open CategoryTheory
 namespace TauCeti
 
 universe u u' w v
-
-namespace DGLocalSystem
-
-variable {B : Type u} [TopologicalSpace B] (R : Type w) [CommRing R]
-
-/-- **Basepoint change** of DG local systems from `a` to `b`: the tensor product
-`𝓕 ↦ 𝓕 ⊗_{C_*(Ω_a B)} C_*(P_{a→b} B)` with the chain bimodule of Moore paths from `a` to `b`. On
-morphisms it is `φ ↦ φ ⊗ 1`, so `TauCeti.isQuasiIso_tensorBimoduleMap_pathChainBimodule_iff` says
-that along a Moore path it preserves and reflects quasi-isomorphisms. -/
-abbrev basepointChange (a b : B) : DGLocalSystem.{v} B a R ⥤ DGLocalSystem.{max v u w} B b R :=
-  DGRightModuleCat.tensorBimoduleFunctor.flip.obj (pathChainBimodule B a b R)
-
-end DGLocalSystem
 
 namespace DGLocalSystemFamily
 
@@ -132,11 +122,11 @@ theorem isQuasiIso_pullbackBasepointChange_map_app_iff (f : C(B', B))
     DGRightModuleCat.IsQuasiIso ((pullbackBasepointChange R f β').map φ c') ↔
       DGRightModuleCat.IsQuasiIso (φ (ZerothHomotopy.mk (f (β'.point c')))) :=
   (DGRightModuleCat.isQuasiIso_restrictScalars_map_iff _ _).trans
-    (isQuasiIso_tensorBimoduleMap_pathChainBimodule_iff
+    (DGLocalSystem.isQuasiIso_basepointChange_map_iff
       -- The chosen basepoint lies in the path component of `f (b'_{c'})`; read a path joining
       -- them as a Moore path.
       (let γ := (Quotient.exact (β.mk_point (ZerothHomotopy.mk (f (β'.point c'))))).somePath
-       ⟨⟨γ.toMoorePath, γ.source_toMoorePath, γ.target_toMoorePath⟩⟩))
+       ⟨⟨γ.toMoorePath, γ.source_toMoorePath, γ.target_toMoorePath⟩⟩) _)
 
 /-- **The pullback of a morphism of families is a componentwise quasi-isomorphism** exactly when
 the morphism is a quasi-isomorphism at every path component of `B` met by `f`. -/

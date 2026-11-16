@@ -21,8 +21,9 @@ preserves quasi-isomorphisms (`TauCeti.isQuasiIso_tensorBimoduleMap_pathChainBim
 basepoint change needs no resolution of the local system: the ordinary tensor product already
 computes the derived one.
 
-When no Moore path joins `a` to `b`, the path chains vanish and there is nothing to prove.
-Otherwise, `C_*(P_{a→b} B)` is a homotopy retract of the free module of rank one as a
+For preservation, when no Moore path joins `a` to `b`, the path chains vanish and there is nothing
+to prove; reflection needs a Moore path from `a` to `b`, since without one `f ⊗ 1` is a map between
+zero modules. Otherwise, `C_*(P_{a→b} B)` is a homotopy retract of the free module of rank one as a
 **left** module over `C_*(Ω_a B)`. Fix a Moore path `δ` from `a` to `b`. Appending its reversal,
 `P_{a→b} B → Ω_a B`, commutes with the loops at `a` acting in front, so on chains it is a map
 `ρ` of left modules into `C_*(Ω_a B)` (`TauCeti.pathChainToLoopChain_smul`). Acting on the
@@ -46,6 +47,8 @@ reflects quasi-isomorphisms
 ## Main definitions
 
 * `TauCeti.pathChainToLoopChain`: appending the reversal of `δ`, on chains.
+* `TauCeti.DGLocalSystem.basepointChange R a b`: basepoint change from `a` to `b`, the functor
+  `𝓕 ↦ 𝓕 ⊗_{C_*(Ω_a B)} C_*(P_{a→b} B)`.
 * `TauCeti.tensorPathChainAct`, `TauCeti.tensorPathChainPoint`,
   `TauCeti.tensorPathChainHomotopy`: the map `m ⊗ c ↦ m · ρ(c)` from `M ⊗ C_*(P_{a→b} B)` to `M`,
   the map `m ↦ m ⊗ [δ]` back and the homotopy between their composite and the identity, which
@@ -62,7 +65,8 @@ reflects quasi-isomorphisms
   quasi-isomorphisms.
 * `TauCeti.exists_tensorPathChainAct_tensorPathChainPoint`: the composite of `m ↦ m ⊗ [δ]` and
   `m ⊗ c ↦ m · ρ(c)` is homotopic to the identity.
-* `TauCeti.isQuasiIso_tensorBimoduleMap_pathChainBimodule_iff`: along a path, basepoint change
+* `TauCeti.isQuasiIso_tensorBimoduleMap_pathChainBimodule_iff`,
+  `TauCeti.DGLocalSystem.isQuasiIso_basepointChange_map_iff`: along a path, basepoint change
   preserves and reflects quasi-isomorphisms.
 
 ## References
@@ -191,19 +195,14 @@ theorem exists_pathChainToLoopChain_pathChainPoint_eq_one_add (δ : MoorePathBet
   obtain ⟨H⟩ := (MoorePathBetween.loopAppendHomotopyEquiv δ).left_inv
   refine ⟨-cubicalChainLof (MooreLoopSpace B a) R 1 (NormalizedCubicalChain.prism R H 0
     (NormalizedCubicalChain.ofCube _ R (SingularCube.point 1))), ?_⟩
-  have h1 : (1 : loopChainAlgebra B a R) =
-      cubicalChainLof (MooreLoopSpace B a) R 0 (NormalizedCubicalChain.ofCube _ R
-        (SingularCube.point 1)) := by
-    rw [DirectSum.lof_eq_of, ← NormalizedCubicalChain.one_def]
-    rfl
   have hpt : ((MoorePathBetween.loopAppendHomotopyEquiv δ).invFun.comp
       (MoorePathBetween.loopAppendHomotopyEquiv δ).toFun).comp (SingularCube.point 1) =
       (MoorePathBetween.loopAppendHomotopyEquiv δ).symm.toFun.comp (SingularCube.point δ) :=
     ContinuousMap.ext fun _ ↦ by
       simp [SingularCube.point_apply]
-  rw [map_neg, cubicalChainDifferential_lof_succ, NormalizedCubicalChain.boundary_prism_zero,
-    NormalizedCubicalChain.map_id, LinearMap.id_apply, NormalizedCubicalChain.map_ofCube, hpt,
-    map_sub, ← h1, neg_sub, add_sub_cancel, pathChainPoint, pathChainToLoopChain_lof,
+  rw [map_neg, cubicalChainDifferential_lof_succ, NormalizedCubicalChain.boundary_prism_zero]
+  simp only [NormalizedCubicalChain.map_ofCube, hpt]
+  simp [pathChainPoint, one_eq_cubicalChainLof, NormalizedCubicalChain.one_def,
     NormalizedCubicalChain.map_ofCube]
 
 section BasepointChange
@@ -446,5 +445,39 @@ theorem isQuasiIso_tensorBimoduleMap_pathChainBimodule_iff
     isQuasiIso_tensorBimoduleMap_pathChainBimodule⟩
 
 end BasepointChange
+
+namespace DGLocalSystem
+
+variable (R a b) in
+/-- **Basepoint change** of DG local systems from `a` to `b`: the tensor product
+`𝓕 ↦ 𝓕 ⊗_{C_*(Ω_a B)} C_*(P_{a→b} B)` with the chain bimodule of Moore paths from `a` to `b`. On
+morphisms it is `φ ↦ φ ⊗ 1` (`TauCeti.DGLocalSystem.basepointChange_map`), so along a Moore path
+it preserves and reflects quasi-isomorphisms
+(`TauCeti.DGLocalSystem.isQuasiIso_basepointChange_map_iff`). -/
+@[expose] def basepointChange : DGLocalSystem.{v} B a R ⥤ DGLocalSystem.{max v u w} B b R :=
+  DGRightModuleCat.tensorBimoduleFunctor.flip.obj (pathChainBimodule B a b R)
+
+/-- Basepoint change sends `𝓕` to `𝓕 ⊗_{C_*(Ω_a B)} C_*(P_{a→b} B)`. -/
+@[simp]
+theorem basepointChange_obj (M : DGLocalSystem.{v} B a R) :
+    (basepointChange R a b).obj M =
+      DGRightModuleCat.tensorBimoduleObj M (pathChainBimodule B a b R) :=
+  (rfl)
+
+/-- Basepoint change sends `φ` to `φ ⊗ 1`. -/
+@[simp]
+theorem basepointChange_map {M N : DGLocalSystem.{v} B a R} (φ : M ⟶ N) :
+    (basepointChange R a b).map φ =
+      DGRightModuleCat.tensorBimoduleMap φ (𝟙 (pathChainBimodule B a b R)) :=
+  (rfl)
+
+/-- **Along a Moore path, basepoint change preserves and reflects quasi-isomorphisms.** -/
+theorem isQuasiIso_basepointChange_map_iff (hab : Nonempty (MoorePathBetween B a b))
+    {M N : DGLocalSystem.{v} B a R} (φ : M ⟶ N) :
+    DGRightModuleCat.IsQuasiIso ((basepointChange R a b).map φ) ↔
+      DGRightModuleCat.IsQuasiIso φ :=
+  isQuasiIso_tensorBimoduleMap_pathChainBimodule_iff hab
+
+end DGLocalSystem
 
 end TauCeti

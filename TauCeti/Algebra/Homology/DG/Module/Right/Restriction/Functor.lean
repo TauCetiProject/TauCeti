@@ -17,7 +17,9 @@ of right DG modules. Restriction along the identity is naturally isomorphic to t
 functor, and restriction along a composite is naturally isomorphic to successive restriction.
 These comparisons identify the carrier wrappers introduced by restriction, and preserve both the
 internal grading and the differential. They provide the ordinary categorical restriction side
-of extension/restriction of scalars.
+of extension/restriction of scalars. Restriction changes neither the underlying complexes nor the
+underlying chain maps, so it preserves and reflects quasi-isomorphisms
+(`TauCeti.DGRightModuleCat.isQuasiIso_restrictScalars_map_iff`).
 
 The construction follows the change-of-rings interface of Mathlib's
 `ModuleCat.restrictScalarsId` and `ModuleCat.restrictScalarsComp`, with the additional grading and
@@ -99,6 +101,7 @@ theorem restrictScalarsEquiv_differential (f : DGAlgHom hA hB)
 
 /-- **Restriction of scalars preserves and reflects quasi-isomorphisms**: it changes neither the
 underlying complexes nor the underlying chain maps. -/
+@[simp]
 theorem isQuasiIso_restrictScalars_map_iff (f : DGAlgHom hA hB)
     {M N : DGRightModuleCat.{uR, uB, uM} hB} (g : M ⟶ N) :
     IsQuasiIso ((restrictScalars f).map g) ↔ IsQuasiIso g := by
