@@ -9,6 +9,7 @@ public import Mathlib.RingTheory.Regular.RegularSequence
 public import TauCeti.RingTheory.FormalGroup.Height.Basic
 public import TauCeti.RingTheory.FormalGroup.NSMul.BaseChange
 import TauCeti.RingTheory.Ideal.Quotient.Coprime
+import TauCeti.RingTheory.QuotSMulTop
 
 /-!
 # The height ideals of a formal group law
@@ -24,13 +25,15 @@ is zero when the height of `F` is at least `n`, and the unit ideal otherwise
 
 For commutative `F` these are Landweber's ideals `I_n = (v₀, v₁, …, v_(n-1))`: `I₀ = 0`, `I₁ = (p)`,
 and `I_(n+1) = I_n + (v_n)`, where `v_n` is the coefficient of `X^(pⁿ)` in `[p]_F`
-(`FormalGroup.heightIdeal_succ`). Only the class of `v_n` modulo `I_n` matters
-(`FormalGroup.heightIdeal_succ_eq_sup_of_sub_mem`). The proof works over `R ⧸ (I_n + (v_n))`: there
+(`FormalGroup.heightIdeal_succ`). Only the class of `v_n` modulo `I_n` up to a unit factor matters
+(`FormalGroup.heightIdeal_succ_eq_sup_of_sub_mul_mem`,
+`FormalGroup.heightIdeal_succ_eq_sup_of_sub_mem`). The proof works over `R ⧸ (I_n + (v_n))`: there
 `p = 0`, so the `p`-series of a commutative formal group law is either zero or has order a power
 of `p` (`FormalGroup.exists_order_nsmulSeries_eq_pow`), and order greater than `pⁿ` then forces
-order at least `p^(n+1)`. Consequently, whenever the height ideals `I₀ < I₁ < … < I_n` are strictly
-increasing, with `I₀, …, I_(n-1)` prime and `I_n ≠ ⊤`, any sequence of lifts of `v₀, …, v_(n-1)`
-modulo `I₀, …, I_(n-1)` is a regular sequence on `R` generating `I_n`
+order at least `p^(n+1)`. Consequently, any sequence of lifts of `v₀, …, v_(n-1)` modulo
+`I₀, …, I_(n-1)` generates `I_n` (`FormalGroup.ofList_ofFn_eq_heightIdeal_of_sub_mem`), and
+whenever the height ideals `I₀ < I₁ < … < I_n` are strictly increasing with `I₀, …, I_(n-1)` prime
+and `I_n ≠ ⊤`, any such sequence is a regular sequence on `R`
 (`FormalGroup.isRegular_ofFn_of_sub_mem_heightIdeal`).
 
 The height ideals do not depend on the coordinate: isomorphic formal group laws have the same
@@ -43,10 +46,12 @@ of the Hopf algebroid in `TauCeti.RingTheory.FormalGroup.CoordinateChange.HopfAl
 Through Quillen's identification of `L` with `MU_*`, these are the ideals `I_(p,n)` in the
 hypothesis of Landweber's exact functor theorem.
 
-The class of `v_n` modulo `I_n` does not depend on the coordinate either. Modulo `I_n(F) + I_n(G)`
-both `p`-series begin in degree `pⁿ`, so a homomorphism `F → G` with linear coefficient `u`
-relates their coefficients `a` and `b` of `X^(pⁿ)` by `b u^(pⁿ) ≡ u a`
-(`TauCeti.FormalGroupHom.coeff_nsmulSeries_mul_coeff_one_pow_sub_mem_heightIdeal`), and a strict
+The class of `v_n` modulo `I_n` transforms by a unit power under coordinate change. Modulo
+`I_n(F) + I_n(G)` both `p`-series begin in degree `pⁿ`, so a homomorphism `F → G` with linear
+coefficient `u` relates their coefficients `a` and `b` of `X^(pⁿ)` by `b u^(pⁿ) ≡ u a`
+(`TauCeti.FormalGroupHom.coeff_nsmulSeries_mul_coeff_one_pow_sub_mem_heightIdeal`), an arbitrary
+isomorphism rescales `v_n` modulo `I_n` by `(u⁻¹)^(pⁿ) u`
+(`TauCeti.FormalGroupIso.coeff_nsmulSeries_sub_unit_mul_mem_heightIdeal`), and a strict
 isomorphism preserves the class of `v_n`
 (`TauCeti.FormalGroupIso.coeff_nsmulSeries_sub_mem_heightIdeal_of_isStrict`). Over `L` this is the
 congruence `η_R(v_n) ≡ η_L(v_n)` modulo `I_n`
@@ -70,20 +75,22 @@ of `v_n` modulo `I_n`.
 * `FormalGroup.map_heightIdeal`: the height ideals commute with base change.
 * `TauCeti.FormalGroupIso.heightIdeal_eq`: isomorphic formal group laws have the same height
   ideals.
-* `TauCeti.FormalGroupIso.coeff_nsmulSeries_sub_mem_heightIdeal_of_isStrict`: strictly isomorphic
-  formal group laws have the same coefficient `v_n` modulo `I_n`.
+* `TauCeti.FormalGroupIso.coeff_nsmulSeries_sub_unit_mul_mem_heightIdeal` and
+  `TauCeti.FormalGroupIso.coeff_nsmulSeries_sub_mem_heightIdeal_of_isStrict`: isomorphisms rescale
+  `v_n` modulo `I_n` by a unit, and strict isomorphisms preserve it.
 * `FormalGroup.heightIdeal_𝔾ₘ_eq_top` and `FormalGroup.heightIdeal_𝔾ₐ`: `I_n(𝔾ₘ)` is the unit
   ideal for `n ≥ 2`, while `I_n(𝔾ₐ) = (p)` for `n ≥ 1`.
 * `FormalGroup.heightIdeal_succ`: `I_(n+1) = I_n + (v_n)` for commutative `F`.
 * `FormalGroup.heightIdeal_one`: `I₁ = (p)` for commutative `F`.
 * `FormalGroup.heightIdeal_eq_span`: `I_n = (v₀, …, v_(n-1))` for commutative `F`.
-* `FormalGroup.ofList_ofFn_eq_heightIdeal_of_sub_mem` and
-  `FormalGroup.isRegular_ofFn_of_sub_mem_heightIdeal`: lifts of `v₀, …, v_(n-1)` generate `I_n`,
-  and form a regular sequence when `I₀ < … < I_n ≠ ⊤` with `I₀, …, I_(n-1)` prime.
-* `FormalGroup.isWeaklyRegular_ofFn_iff_of_sub_mem_heightIdeal` and
-  `TauCeti.FormalGroupIso.isWeaklyRegular_ofFn_coeff_nsmulSeries_iff_of_isStrict`: weak regularity
-  on any `R`-module `M` is independent of the choice of lifts modulo `I₀, …, I_(n-1)` and of the
-  strict coordinate.
+* `FormalGroup.ofList_ofFn_eq_heightIdeal_of_sub_mul_mem`,
+  `FormalGroup.ofList_ofFn_eq_heightIdeal_of_sub_mem`, and
+  `FormalGroup.isRegular_ofFn_of_sub_mem_heightIdeal`: lifts (up to units) of `v₀, …, v_(n-1)`
+  generate `I_n`, and form a regular sequence when `I₀ < … < I_n ≠ ⊤` with `I₀, …, I_(n-1)` prime.
+* `FormalGroup.isWeaklyRegular_ofFn_iff_of_sub_mul_mem_heightIdeal` and
+  `TauCeti.FormalGroupIso.isWeaklyRegular_ofFn_coeff_nsmulSeries_iff`: weak regularity (and
+  regularity) on any `R`-module `M` is independent of unit-scaled lifts modulo `I₀, …, I_(n-1)` and
+  of the coordinate (for any isomorphism of formal group laws).
 * `FormalGroup.heightIdeal_eq_bot_iff_le_height`: over a field of characteristic `p`, `I_n = 0`
   exactly when `F` has height at least `n`.
 * `FormalGroup.heightIdeal_eq_top_iff_forall_height_lt`: positive-index height ideals are the
@@ -193,6 +200,23 @@ theorem TauCeti.FormalGroupHom.coeff_nsmulSeries_mul_coeff_one_pow_sub_mem_heigh
     (f.map (Ideal.Quotient.mk I)).coeff_nsmulSeries_mul_coeff_one_pow_of_le_order p
       (hle F le_sup_left) (hle G le_sup_right)
 
+/-- **Coordinate scaling of `v_n` modulo `I_n`.** Under an arbitrary isomorphism `e` of formal group
+laws from `F` to `G` with linear coefficient unit `u`, the coefficient of `X^(pⁿ)` in `[p]_G` agrees
+with `(u⁻¹)^(pⁿ) u` times that of `[p]_F` modulo `I_n(F) = I_n(G)`. -/
+theorem TauCeti.FormalGroupIso.coeff_nsmulSeries_sub_unit_mul_mem_heightIdeal
+    {R : Type*} [CommRing R] {F G : FormalGroup R} (e : FormalGroupIso F G) (p n : ℕ) :
+    PowerSeries.coeff (p ^ n) (G.nsmulSeries p) -
+        ↑(e.isUnit_coeff_one.unit⁻¹ ^ p ^ n * e.isUnit_coeff_one.unit) *
+          PowerSeries.coeff (p ^ n) (F.nsmulSeries p) ∈
+      F.heightIdeal p n := by
+  set u : Rˣ := e.isUnit_coeff_one.unit
+  have hu : (u : R) = PowerSeries.coeff 1 e.toHom.toPowerSeries := IsUnit.unit_spec _
+  have h := e.toHom.coeff_nsmulSeries_mul_coeff_one_pow_sub_mem_heightIdeal p n
+  rw [← hu, ← e.heightIdeal_eq, sup_idem] at h
+  convert Ideal.mul_mem_left _ ((u⁻¹ : Rˣ) ^ p ^ n : R) h using 1
+  rw [Units.val_mul, Units.val_pow_eq_pow_val, mul_sub, ← mul_assoc,
+    mul_right_comm _ _ ((u : R) ^ _), ← mul_pow, Units.inv_mul, one_pow, one_mul, mul_assoc]
+
 /-- **Coordinate independence of `v_n` modulo `I_n`.** If `e` is a strict isomorphism of formal
 group laws from `F` to `G`, then the coefficients of `X^(pⁿ)` in `[p]_F` and `[p]_G` agree modulo
 the height ideal `I_n(F) = I_n(G)`. -/
@@ -280,19 +304,26 @@ theorem isUnit_mk_coeff_nsmulSeries_iff (hp : p.Prime) (n : ℕ) :
       (PowerSeries.coeff (p ^ n) (F.nsmulSeries p))) ↔ F.heightIdeal p (n + 1) = ⊤ := by
   rw [Ideal.Quotient.isUnit_mk_iff, F.heightIdeal_succ hp, sup_comm]
 
+/-- The recursion `I_(n+1) = I_n + (v_n)` holds for every lift `v` of a unit multiple `c * v_n`
+modulo `I_n`. -/
+theorem heightIdeal_succ_eq_sup_of_sub_mul_mem (hp : p.Prime) {n : ℕ} {c v : R} (hc : IsUnit c)
+    (hv : v - c * PowerSeries.coeff (p ^ n) (F.nsmulSeries p) ∈ F.heightIdeal p n) :
+    F.heightIdeal p (n + 1) = F.heightIdeal p n ⊔ Ideal.span {v} := by
+  rw [F.heightIdeal_succ hp, ← Ideal.span_singleton_mul_left_unit hc]
+  refine le_antisymm (sup_le le_sup_left ?_) (sup_le le_sup_left ?_) <;>
+    rw [Ideal.span_singleton_le_iff_mem]
+  · exact sub_sub_cancel v (c * PowerSeries.coeff (p ^ n) (F.nsmulSeries p)) ▸
+      Ideal.sub_mem _ (Ideal.mem_sup_right (Ideal.mem_span_singleton_self v))
+        (Ideal.mem_sup_left hv)
+  · exact sub_add_cancel v (c * PowerSeries.coeff (p ^ n) (F.nsmulSeries p)) ▸
+      Ideal.add_mem _ (Ideal.mem_sup_left hv)
+        (Ideal.mem_sup_right (Ideal.mem_span_singleton_self _))
+
 /-- The recursion `I_(n+1) = I_n + (v_n)` holds for every lift `v` of `v_n` modulo `I_n`. -/
 theorem heightIdeal_succ_eq_sup_of_sub_mem (hp : p.Prime) {n : ℕ} {v : R}
     (hv : v - PowerSeries.coeff (p ^ n) (F.nsmulSeries p) ∈ F.heightIdeal p n) :
-    F.heightIdeal p (n + 1) = F.heightIdeal p n ⊔ Ideal.span {v} := by
-  rw [F.heightIdeal_succ hp]
-  refine le_antisymm (sup_le le_sup_left ?_) (sup_le le_sup_left ?_) <;>
-    rw [Ideal.span_singleton_le_iff_mem]
-  · exact sub_sub_cancel v (PowerSeries.coeff (p ^ n) (F.nsmulSeries p)) ▸
-      Ideal.sub_mem _ (Ideal.mem_sup_right (Ideal.mem_span_singleton_self v))
-        (Ideal.mem_sup_left hv)
-  · exact sub_add_cancel v (PowerSeries.coeff (p ^ n) (F.nsmulSeries p)) ▸
-      Ideal.add_mem _ (Ideal.mem_sup_left hv)
-        (Ideal.mem_sup_right (Ideal.mem_span_singleton_self _))
+    F.heightIdeal p (n + 1) = F.heightIdeal p n ⊔ Ideal.span {v} :=
+  F.heightIdeal_succ_eq_sup_of_sub_mul_mem hp isUnit_one (by simpa using hv)
 
 /-- The first height ideal is generated by `p`. -/
 theorem heightIdeal_one (hp : p.Prime) : F.heightIdeal p 1 = Ideal.span {(p : R)} := by
@@ -310,11 +341,12 @@ theorem heightIdeal_eq_span (hp : p.Prime) (n : ℕ) :
       ext; simp
     rw [F.heightIdeal_succ hp, ih, hI, Set.image_insert_eq, Ideal.span_insert, sup_comm]
 
-/-- For a sequence `v` of lifts of `v₀, …, v_(n-1)` modulo `I₀, …, I_(n-1)`, the first `k` entries
-generate `I_k(F)`. -/
-theorem ofList_take_ofFn_eq_heightIdeal_of_sub_mem (hp : p.Prime) {n : ℕ} {v : Fin n → R}
+/-- For a sequence `v` of unit-scaled lifts of `v₀, …, v_(n-1)` modulo `I₀, …, I_(n-1)`, the first
+`k` entries generate `I_k(F)`. -/
+theorem ofList_take_ofFn_eq_heightIdeal_of_sub_mul_mem (hp : p.Prime) {n : ℕ} {c v : Fin n → R}
+    (hc : ∀ i, IsUnit (c i))
     (hv : ∀ i : Fin n,
-      v i - PowerSeries.coeff (p ^ (i : ℕ)) (F.nsmulSeries p) ∈ F.heightIdeal p i)
+      v i - c i * PowerSeries.coeff (p ^ (i : ℕ)) (F.nsmulSeries p) ∈ F.heightIdeal p i)
     {k : ℕ} (hk : k ≤ n) :
     Ideal.ofList ((List.ofFn v).take k) = F.heightIdeal p k := by
   induction k with
@@ -324,14 +356,35 @@ theorem ofList_take_ofFn_eq_heightIdeal_of_sub_mem (hp : p.Prime) {n : ℕ} {v :
         (List.ofFn v).take (k + 1) = (List.ofFn v).take k ++ [v ⟨k, Nat.lt_of_succ_le hk⟩] := by
       simp [List.take_add_one, Nat.lt_of_succ_le hk]
     rw [htake, Ideal.ofList_append, Ideal.ofList_singleton, ih (Nat.le_of_succ_le hk),
-      F.heightIdeal_succ_eq_sup_of_sub_mem hp (hv ⟨k, Nat.lt_of_succ_le hk⟩)]
+      F.heightIdeal_succ_eq_sup_of_sub_mul_mem hp (hc _) (hv ⟨k, Nat.lt_of_succ_le hk⟩)]
+
+/-- For a sequence `v` of lifts of `v₀, …, v_(n-1)` modulo `I₀, …, I_(n-1)`, the first `k` entries
+generate `I_k(F)`. -/
+theorem ofList_take_ofFn_eq_heightIdeal_of_sub_mem (hp : p.Prime) {n : ℕ} {v : Fin n → R}
+    (hv : ∀ i : Fin n,
+      v i - PowerSeries.coeff (p ^ (i : ℕ)) (F.nsmulSeries p) ∈ F.heightIdeal p i)
+    {k : ℕ} (hk : k ≤ n) :
+    Ideal.ofList ((List.ofFn v).take k) = F.heightIdeal p k :=
+  F.ofList_take_ofFn_eq_heightIdeal_of_sub_mul_mem hp (c := fun _ ↦ 1) (fun _ ↦ isUnit_one)
+    (by simpa using hv) hk
+
+/-- Any sequence `v` of unit-scaled lifts of `v₀, …, v_(n-1)` modulo `I₀, …, I_(n-1)` generates
+`I_n(F)`. -/
+theorem ofList_ofFn_eq_heightIdeal_of_sub_mul_mem (hp : p.Prime) {n : ℕ} {c v : Fin n → R}
+    (hc : ∀ i, IsUnit (c i))
+    (hv : ∀ i : Fin n,
+      v i - c i * PowerSeries.coeff (p ^ (i : ℕ)) (F.nsmulSeries p) ∈ F.heightIdeal p i) :
+    Ideal.ofList (List.ofFn v) = F.heightIdeal p n := by
+  simpa [List.take_of_length_le] using
+    F.ofList_take_ofFn_eq_heightIdeal_of_sub_mul_mem hp hc hv le_rfl
 
 /-- Any sequence `v` of lifts of `v₀, …, v_(n-1)` modulo `I₀, …, I_(n-1)` generates `I_n(F)`. -/
 theorem ofList_ofFn_eq_heightIdeal_of_sub_mem (hp : p.Prime) {n : ℕ} {v : Fin n → R}
     (hv : ∀ i : Fin n,
       v i - PowerSeries.coeff (p ^ (i : ℕ)) (F.nsmulSeries p) ∈ F.heightIdeal p i) :
-    Ideal.ofList (List.ofFn v) = F.heightIdeal p n := by
-  simpa [List.take_of_length_le] using F.ofList_take_ofFn_eq_heightIdeal_of_sub_mem hp hv le_rfl
+    Ideal.ofList (List.ofFn v) = F.heightIdeal p n :=
+  F.ofList_ofFn_eq_heightIdeal_of_sub_mul_mem hp (c := fun _ ↦ 1) (fun _ ↦ isUnit_one)
+    (by simpa using hv)
 
 /-- The list `[v₀, …, v_(n-1)]` of `p`-series coefficients generates `I_n(F)`. -/
 theorem ofList_ofFn_coeff_nsmulSeries_eq_heightIdeal (hp : p.Prime) (n : ℕ) :
@@ -401,18 +454,24 @@ theorem isRegular_ofFn_coeff_nsmulSeries (hp : p.Prime) {n : ℕ}
       (List.ofFn fun i : Fin n ↦ PowerSeries.coeff (p ^ (i : ℕ)) (F.nsmulSeries p)) :=
   F.isRegular_ofFn_of_sub_mem_heightIdeal hp hprime hlt hne fun _ ↦ by simp
 
-omit [F.IsComm] in
-private theorem isSMulRegular_quotient_smul_top_congr {M : Type*} [AddCommGroup M] [Module R M]
-    {I : Ideal R} {r s : R} (hrs : r - s ∈ I) :
-    IsSMulRegular (M ⧸ (I • ⊤ : Submodule R M)) r ↔
-      IsSMulRegular (M ⧸ (I • ⊤ : Submodule R M)) s := by
-  have heq : (r • · : M ⧸ (I • ⊤ : Submodule R M) → _) = (s • ·) := by
-    ext q
-    obtain ⟨m, rfl⟩ := Submodule.Quotient.mk_surjective _ q
-    rw [← Submodule.Quotient.mk_smul, ← Submodule.Quotient.mk_smul, Submodule.Quotient.eq,
-      ← sub_smul]
-    exact Submodule.smul_mem_smul hrs trivial
-  rw [IsSMulRegular, IsSMulRegular, heq]
+/-- **Unit-scaled lift invariance of weak regularity on modules.** For any `R`-module `M`, a
+sequence `v₀, …, v_(n-1)` congruent to unit multiples of `[X] [p]_F(X), …, [X^(p^(n-1))] [p]_F(X)`
+modulo `I₀(F), …, I_(n-1)(F)` is weakly regular on `M` if and only if the `p`-series coefficients
+themselves are weakly regular on `M`. -/
+theorem isWeaklyRegular_ofFn_iff_of_sub_mul_mem_heightIdeal (hp : p.Prime) (M : Type*)
+    [AddCommGroup M] [Module R M] {n : ℕ} {c v : Fin n → R} (hc : ∀ i, IsUnit (c i))
+    (hv : ∀ i : Fin n,
+      v i - c i * PowerSeries.coeff (p ^ (i : ℕ)) (F.nsmulSeries p) ∈ F.heightIdeal p i) :
+    RingTheory.Sequence.IsWeaklyRegular M (List.ofFn v) ↔
+      RingTheory.Sequence.IsWeaklyRegular M
+        (List.ofFn fun i : Fin n ↦ PowerSeries.coeff (p ^ (i : ℕ)) (F.nsmulSeries p)) := by
+  rw [RingTheory.Sequence.isWeaklyRegular_iff, RingTheory.Sequence.isWeaklyRegular_iff]
+  simp only [List.length_ofFn, List.getElem_ofFn]
+  refine forall₂_congr fun i hi ↦ ?_
+  rw [F.ofList_take_ofFn_eq_heightIdeal_of_sub_mul_mem hp hc hv hi.le,
+    F.ofList_take_ofFn_eq_heightIdeal_of_sub_mem hp (fun _ ↦ by simp) hi.le,
+    isSMulRegular_quotient_smul_top_congr (hv ⟨i, hi⟩), IsSMulRegular.mul_iff]
+  exact and_iff_right ((hc ⟨i, hi⟩).isSMulRegular _)
 
 /-- **Lift invariance of weak regularity on modules.** For any `R`-module `M`, a sequence of lifts
 `v₀, …, v_(n-1)` modulo `I₀(F), …, I_(n-1)(F)` is weakly regular on `M` if and only if the
@@ -423,13 +482,25 @@ theorem isWeaklyRegular_ofFn_iff_of_sub_mem_heightIdeal (hp : p.Prime) (M : Type
       v i - PowerSeries.coeff (p ^ (i : ℕ)) (F.nsmulSeries p) ∈ F.heightIdeal p i) :
     RingTheory.Sequence.IsWeaklyRegular M (List.ofFn v) ↔
       RingTheory.Sequence.IsWeaklyRegular M
+        (List.ofFn fun i : Fin n ↦ PowerSeries.coeff (p ^ (i : ℕ)) (F.nsmulSeries p)) :=
+  F.isWeaklyRegular_ofFn_iff_of_sub_mul_mem_heightIdeal hp M (c := fun _ ↦ 1)
+    (fun _ ↦ isUnit_one) (by simpa using hv)
+
+/-- **Unit-scaled lift invariance of regularity on modules.** For any `R`-module `M`, a sequence
+`v₀, …, v_(n-1)` congruent to unit multiples of `[X] [p]_F(X), …, [X^(p^(n-1))] [p]_F(X)` modulo
+`I₀(F), …, I_(n-1)(F)` is regular on `M` if and only if the `p`-series coefficients themselves are
+regular on `M`. -/
+theorem isRegular_ofFn_iff_of_sub_mul_mem_heightIdeal (hp : p.Prime) (M : Type*)
+    [AddCommGroup M] [Module R M] {n : ℕ} {c v : Fin n → R} (hc : ∀ i, IsUnit (c i))
+    (hv : ∀ i : Fin n,
+      v i - c i * PowerSeries.coeff (p ^ (i : ℕ)) (F.nsmulSeries p) ∈ F.heightIdeal p i) :
+    RingTheory.Sequence.IsRegular M (List.ofFn v) ↔
+      RingTheory.Sequence.IsRegular M
         (List.ofFn fun i : Fin n ↦ PowerSeries.coeff (p ^ (i : ℕ)) (F.nsmulSeries p)) := by
-  rw [RingTheory.Sequence.isWeaklyRegular_iff, RingTheory.Sequence.isWeaklyRegular_iff]
-  simp only [List.length_ofFn, List.getElem_ofFn]
-  refine forall₂_congr fun i hi ↦ ?_
-  rw [F.ofList_take_ofFn_eq_heightIdeal_of_sub_mem hp hv hi.le,
-    F.ofList_take_ofFn_eq_heightIdeal_of_sub_mem hp (fun _ ↦ by simp) hi.le]
-  exact isSMulRegular_quotient_smul_top_congr (hv ⟨i, hi⟩)
+  rw [RingTheory.Sequence.isRegular_iff, RingTheory.Sequence.isRegular_iff,
+    F.isWeaklyRegular_ofFn_iff_of_sub_mul_mem_heightIdeal hp M hc hv,
+    F.ofList_ofFn_eq_heightIdeal_of_sub_mul_mem hp hc hv,
+    F.ofList_ofFn_coeff_nsmulSeries_eq_heightIdeal hp n]
 
 /-- **Lift invariance of regularity on modules.** For any `R`-module `M`, a sequence of lifts
 `v₀, …, v_(n-1)` modulo `I₀(F), …, I_(n-1)(F)` is regular on `M` if and only if the `p`-series
@@ -440,11 +511,9 @@ theorem isRegular_ofFn_iff_of_sub_mem_heightIdeal (hp : p.Prime) (M : Type*)
       v i - PowerSeries.coeff (p ^ (i : ℕ)) (F.nsmulSeries p) ∈ F.heightIdeal p i) :
     RingTheory.Sequence.IsRegular M (List.ofFn v) ↔
       RingTheory.Sequence.IsRegular M
-        (List.ofFn fun i : Fin n ↦ PowerSeries.coeff (p ^ (i : ℕ)) (F.nsmulSeries p)) := by
-  rw [RingTheory.Sequence.isRegular_iff, RingTheory.Sequence.isRegular_iff,
-    F.isWeaklyRegular_ofFn_iff_of_sub_mem_heightIdeal hp M hv,
-    F.ofList_ofFn_eq_heightIdeal_of_sub_mem hp hv,
-    F.ofList_ofFn_coeff_nsmulSeries_eq_heightIdeal hp n]
+        (List.ofFn fun i : Fin n ↦ PowerSeries.coeff (p ^ (i : ℕ)) (F.nsmulSeries p)) :=
+  F.isRegular_ofFn_iff_of_sub_mul_mem_heightIdeal hp M (c := fun _ ↦ 1)
+    (fun _ ↦ isUnit_one) (by simpa using hv)
 
 omit [F.IsComm] in
 /-- The height ideals of a formal group law are finitely generated. -/
@@ -453,33 +522,33 @@ theorem heightIdeal_fg (n : ℕ) : (F.heightIdeal p n).FG :=
 
 end FormalGroup
 
-/-- **Coordinate invariance of Landweber weak regularity on modules.** A strict isomorphism from a
-commutative formal group law `F` to `G` preserves weak regularity of the `p`-series coefficients
-`v₀, …, v_(n-1)` on any `R`-module `M`. -/
-theorem TauCeti.FormalGroupIso.isWeaklyRegular_ofFn_coeff_nsmulSeries_iff_of_isStrict
+/-- **Coordinate invariance of Landweber weak regularity on modules.** Any isomorphism from a
+commutative formal group law `F` to `G` (not necessarily strict) preserves weak regularity of the
+`p`-series coefficients `v₀, …, v_(n-1)` on any `R`-module `M`. -/
+theorem TauCeti.FormalGroupIso.isWeaklyRegular_ofFn_coeff_nsmulSeries_iff
     {R : Type*} [CommRing R] {F G : FormalGroup R} [F.IsComm]
-    (e : FormalGroupIso F G) [e.IsStrict] {p : ℕ} (hp : p.Prime) (M : Type*)
+    (e : FormalGroupIso F G) {p : ℕ} (hp : p.Prime) (M : Type*)
     [AddCommGroup M] [Module R M] (n : ℕ) :
     RingTheory.Sequence.IsWeaklyRegular M
       (List.ofFn fun i : Fin n ↦ PowerSeries.coeff (p ^ (i : ℕ)) (G.nsmulSeries p)) ↔
     RingTheory.Sequence.IsWeaklyRegular M
       (List.ofFn fun i : Fin n ↦ PowerSeries.coeff (p ^ (i : ℕ)) (F.nsmulSeries p)) :=
-  F.isWeaklyRegular_ofFn_iff_of_sub_mem_heightIdeal hp M fun i ↦
-    e.coeff_nsmulSeries_sub_mem_heightIdeal_of_isStrict p i
+  F.isWeaklyRegular_ofFn_iff_of_sub_mul_mem_heightIdeal hp M (fun _ ↦ Units.isUnit _) fun i ↦
+    e.coeff_nsmulSeries_sub_unit_mul_mem_heightIdeal p i
 
-/-- **Coordinate invariance of Landweber regularity on modules.** A strict isomorphism from a
-commutative formal group law `F` to `G` preserves regularity of the `p`-series coefficients
-`v₀, …, v_(n-1)` on any `R`-module `M`. -/
-theorem TauCeti.FormalGroupIso.isRegular_ofFn_coeff_nsmulSeries_iff_of_isStrict
+/-- **Coordinate invariance of Landweber regularity on modules.** Any isomorphism from a
+commutative formal group law `F` to `G` (not necessarily strict) preserves regularity of the
+`p`-series coefficients `v₀, …, v_(n-1)` on any `R`-module `M`. -/
+theorem TauCeti.FormalGroupIso.isRegular_ofFn_coeff_nsmulSeries_iff
     {R : Type*} [CommRing R] {F G : FormalGroup R} [F.IsComm]
-    (e : FormalGroupIso F G) [e.IsStrict] {p : ℕ} (hp : p.Prime) (M : Type*)
+    (e : FormalGroupIso F G) {p : ℕ} (hp : p.Prime) (M : Type*)
     [AddCommGroup M] [Module R M] (n : ℕ) :
     RingTheory.Sequence.IsRegular M
       (List.ofFn fun i : Fin n ↦ PowerSeries.coeff (p ^ (i : ℕ)) (G.nsmulSeries p)) ↔
     RingTheory.Sequence.IsRegular M
       (List.ofFn fun i : Fin n ↦ PowerSeries.coeff (p ^ (i : ℕ)) (F.nsmulSeries p)) :=
-  F.isRegular_ofFn_iff_of_sub_mem_heightIdeal hp M fun i ↦
-    e.coeff_nsmulSeries_sub_mem_heightIdeal_of_isStrict p i
+  F.isRegular_ofFn_iff_of_sub_mul_mem_heightIdeal hp M (fun _ ↦ Units.isUnit _) fun i ↦
+    e.coeff_nsmulSeries_sub_unit_mul_mem_heightIdeal p i
 
 namespace FormalGroup
 

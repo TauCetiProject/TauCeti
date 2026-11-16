@@ -105,6 +105,7 @@ theorem bijective_aeval_of_vars_sub_smul_X_lt {f : σ → MvPolynomial σ R} {c 
     dsimp only [g]
     rw [WellFoundedLT.fix_eq]
     congr 2
+    rw [aeval_eq_eval₂Hom, aeval_eq_eval₂Hom]
     exact eval₂Hom_congr' rfl (fun j hj _ ↦ by simp [hvars i j hj]) rfl
   have hgf : (aeval (R := R) g).comp (aeval (R := R) f) = AlgHom.id R (MvPolynomial σ R) := by
     refine algHom_ext fun i ↦ ?_
@@ -121,8 +122,9 @@ theorem bijective_aeval_of_vars_sub_smul_X_lt {f : σ → MvPolynomial σ R} {c 
     | ind i ih =>
       have hrem : aeval (R := R) f (aeval (R := R) g (f i - c i • X i)) = f i - c i • X i := by
         rw [comp_aeval_apply]
-        refine (eval₂Hom_congr' rfl (fun j hj _ ↦ ih j (hvars i j hj)) rfl).trans ?_
-        exact aeval_X_left_apply _
+        conv_rhs => rw [← aeval_X_left_apply (R := R) (f i - c i • X i)]
+        rw [aeval_eq_eval₂Hom, aeval_eq_eval₂Hom]
+        exact eval₂Hom_congr' rfl (fun j hj _ ↦ ih j (hvars i j hj)) rfl
       rw [hg i, map_smul, map_sub, aeval_X, hrem, sub_sub_cancel, smul_smul,
         (hc i).val_inv_mul, one_smul]
   exact Function.bijective_iff_has_inverse.mpr

@@ -13,10 +13,12 @@ public import TauCeti.RingTheory.FormalGroup.Height.Ideal
 public import TauCeti.RingTheory.FormalGroup.LazardRing.NSMul
 public import TauCeti.RingTheory.FormalGroup.LazardRing.Polynomial
 -- Proof-only: quotient-ring equivalences, tensor products of polynomial rings and quotients,
--- prime ideals in localizations, and triangular polynomial automorphisms.
+-- flat base change of regular sequences, prime ideals in localizations, and triangular polynomial
+-- automorphisms.
 import Mathlib.Algebra.Field.ZMod
 import Mathlib.Data.ZMod.QuotientRing
 import Mathlib.RingTheory.Localization.Ideal
+import Mathlib.RingTheory.Regular.Flat
 import Mathlib.RingTheory.TensorProduct.MvPolynomial
 import Mathlib.RingTheory.TensorProduct.Quotient
 import TauCeti.Algebra.MvPolynomial.Variables
@@ -25,39 +27,55 @@ import TauCeti.RingTheory.MvPolynomial.Ideal
 /-!
 # Landweber's generators, quotient presentations, and regularity of the height ideals
 
-Let `L` be the Lazard ring and `p` a prime. By Lazard's theorem `L ≃ ℤ[x₁, x₂, …]` with `xₙ` in
-degree `2n` (`TauCeti.LazardRing.mvPolynomialEquiv`), and by the first-order computation of the
-`p`-series (`TauCeti.LazardRing.coeff_prime_pow_nsmulSeries_sub_smul_generator_mem_sq`), for
-`n + 1 = pʲ` with `j ≥ 1` the coefficient `vⱼ = [X^(pʲ)] [p]_F(X)` satisfies
+In chromatic homotopy theory and the algebraic geometry of formal groups, the invariant ideals of
+the Lazard ring `L ≅ MU_*` at a prime `p` are governed by the height ideals
+`I_n = (p, v₁, …, v_(n-1))` of the universal formal group law. Their primality and the regularity
+of the generating sequence `p, v₁, …, v_(n-1)` form the core algebraic input to Landweber's
+invariant prime ideal and filtration theorems for `(MU_*, MU_* MU)`-comodules, as well as to
+Landweber's exact functor theorem, where regularity of `p, v₁, …, v_(n-1)` is the exactness
+condition and shows in particular that `L`, flat `L`-algebras (such as `L[b₁, b₂, …]`), and the
+`p`-localization `L_(p) = MU_(p)*` are Landweber exact.
+
+First, for every `p : ℕ`, homogeneity of the coefficients of `[p]_F(X)` immediately implies that
+all height ideals `I_n` and their union `I_∞ = ⨆ n, I_n` are homogeneous ideals of `L`
+(`TauCeti.LazardRing.isHomogeneous_heightIdeal`,
+`TauCeti.LazardRing.isHomogeneous_iSup_heightIdeal`).
+
+Now let `p` be prime. By Lazard's theorem `L ≃ ℤ[x₁, x₂, …]` with `xₙ` in degree `2n`
+(`TauCeti.LazardRing.mvPolynomialEquiv`), and by the first-order computation of the `p`-series
+(`TauCeti.LazardRing.coeff_prime_pow_nsmulSeries_sub_smul_generator_mem_sq`), for `n + 1 = pʲ` with
+`j ≥ 1` the coefficient `vⱼ = [X^(pʲ)] [p]_F(X)` satisfies
 
   `vⱼ ≡ (p^n - 1) • xₙ  (mod I²)`,
 
 where `I` is the augmentation ideal of `L`. Setting `x'ₙ = vⱼ` when `n + 1 = pʲ` and `x'ₙ = xₙ`
 otherwise (`TauCeti.LazardRing.landweberGenerator`), each `x'ₙ` is homogeneous of degree `2n` and
 differs from `cₙ • X n` in `ℤ[x₁, x₂, …]` by a polynomial involving only variables `X k` with
-`k < n` (`TauCeti.LazardRing.vars_mvPolynomialEquiv_symm_sub_smul_X_lt`), where `cₙ = p^n - 1` for
-`n + 1 = pʲ` and `cₙ = 1` otherwise.
+`k < n` (`TauCeti.LazardRing.lt_of_mem_vars_mvPolynomialEquiv_symm_sub_smul_X`), where
+`cₙ = p^n - 1` for `n + 1 = pʲ` and `cₙ = 1` otherwise.
 
 Over any commutative ring `R` in which `p^(pʲ - 1) - 1` is a unit for every `j ≥ 1` — in particular
-over the `p`-local integers `ℤ_(p)` and over any ring of characteristic `p` — this triangular
-substitution is an automorphism of `R[x₁, x₂, …]`
+over any local ring in which `p` is not a unit (such as `ℤ_(p)`) and over any ring in which
+`(p : R) = 0` — this triangular substitution is an automorphism of `R[x₁, x₂, …]`
 (`MvPolynomial.bijective_aeval_of_vars_sub_smul_X_lt`), so `R ⊗[ℤ] L` is the polynomial algebra
 `R[x'₁, x'₂, …]` (`TauCeti.LazardRing.landweberMvPolynomialEquivTensor`).
 
 Specializing to `R = ZMod p` identifies `L ⧸ I₁ = L ⧸ (p)` with `(ZMod p)[x'₁, x'₂, …]` sending
 `x'ₖ` to `X k` (`TauCeti.LazardRing.quotientHeightIdealOneEquiv`). Since `I_n = (p, v₁, …, v_(n-1))`
 for `n ≥ 1`, passing to the quotient kills precisely the variables `X k` with `k + 1 = pʲ` for
-`1 ≤ j < n`, giving polynomial ring presentations of `L ⧸ I_n` for all `n ≥ 1` and of `L ⧸ I_∞` for
-`I_∞ = ⨆ n, I_n` (`TauCeti.LazardRing.quotientHeightIdealEquiv`,
+`1 ≤ j < n`, giving polynomial ring presentations of `L ⧸ I_n` for all `n ≥ 1` and of `L ⧸ I_∞`
+(`TauCeti.LazardRing.quotientHeightIdealEquiv`,
 `TauCeti.LazardRing.quotientISupHeightIdealEquiv`).
 
-From these presentations it follows that:
-* all height ideals `I_n` (`n ≥ 0`) and their union `I_∞` are homogeneous prime ideals of `L`;
+Since `I₀ = 0` is prime because `L` is an integral domain, and the polynomial quotients `L ⧸ I_n`
+(`n ≥ 1`) and `L ⧸ I_∞` over `ZMod p` are integral domains, these presentations imply that:
+* all height ideals `I_n` (`n ≥ 0`) and their union `I_∞` are prime ideals of `L`;
 * `v_n ∉ I_n`, so the chain `0 = I₀ < I₁ < I₂ < … < I_∞ < L` is strictly increasing;
 * for every `n`, the sequence `p, v₁, …, v_(n-1)` — as well as any sequence of lifts modulo
-  `I₀, …, I_(n-1)`, and the `p`-series coefficients in any strict coordinate — is a regular sequence
-  on `L`, and remains regular in any localization of `L` disjoint from `I_n` (in particular in the
-  `p`-localization `L_(p) = MU_(p)*`).
+  `I₀, …, I_(n-1)`, and the `p`-series coefficients in any isomorphic coordinate — is a regular
+  sequence on `L`, remains weakly regular in any flat `L`-algebra `S` (and regular whenever
+  `I_n S ≠ ⊤`), and in particular is regular in any localization of `L` disjoint from `I_n` (such as
+  the `p`-localization `L_(p) = MU_(p)*`).
 
 ## Main definitions
 
@@ -81,13 +99,17 @@ From these presentations it follows that:
 * `TauCeti.LazardRing.coeff_nsmulSeries_notMem_heightIdeal`,
   `TauCeti.LazardRing.heightIdeal_strictMono`, and `TauCeti.LazardRing.heightIdeal_lt_iSup`:
   `v_n ∉ I_n` and `I₀ < I₁ < I₂ < … < ⨆ m, I_m`.
-* `TauCeti.LazardRing.isRegular_ofFn_of_sub_mem_heightIdeal` and
-  `TauCeti.LazardRing.isRegular_ofFn_coeff_nsmulSeries`: `p, v₁, …, v_(n-1)` (and any choice of
-  lifts modulo the preceding height ideals, or in any strict coordinate) is a regular sequence on
-  `L`.
-* `TauCeti.LazardRing.isRegular_ofFn_of_sub_mem_heightIdeal_of_isLocalization`: regularity of lifts
-  of `p, v₁, …, v_(n-1)` in any localization of `L` disjoint from `I_n`, together with
-  `TauCeti.LazardRing.disjoint_map_primeCompl_iSup_heightIdeal` covering `p`-localization.
+* `TauCeti.LazardRing.isRegular_ofFn_of_sub_mem_heightIdeal`,
+  `TauCeti.LazardRing.isRegular_ofFn_coeff_nsmulSeries`, and
+  `TauCeti.LazardRing.isRegular_ofFn_coeff_nsmulSeries_of_iso`: `p, v₁, …, v_(n-1)` (and any choice
+  of lifts modulo the preceding height ideals, or in any isomorphic coordinate) is a regular
+  sequence on `L`.
+* `TauCeti.LazardRing.isWeaklyRegular_ofFn_of_sub_mem_heightIdeal_of_flat`,
+  `TauCeti.LazardRing.isRegular_ofFn_of_sub_mem_heightIdeal_of_flat`, and
+  `TauCeti.LazardRing.isRegular_ofFn_of_sub_mem_heightIdeal_of_isLocalization`: weak regularity and
+  regularity of lifts of `p, v₁, …, v_(n-1)` in flat `L`-algebras and localizations disjoint from
+  `I_n`, together with `TauCeti.LazardRing.disjoint_algebraMapSubmonoid_primeCompl_iSup_heightIdeal`
+  covering `p`-localization.
 
 ## References
 
@@ -222,7 +244,7 @@ private theorem bijective_aeval_map_landweberGenerator {p : ℕ} (hp : p.Prime) 
             landweberDiagCoeff p n • MvPolynomial.X n) := by
       simp [Algebra.smul_def]
     rw [hsub] at hk
-    exact vars_mvPolynomialEquiv_symm_sub_smul_X_lt (landweberGenerator_mem_grading p n)
+    exact lt_of_mem_vars_mvPolynomialEquiv_symm_sub_smul_X (landweberGenerator_mem_grading p n)
       (landweberGenerator_sub_smul_generator_mem_sq hp n) (MvPolynomial.vars_map _ _ hk)
 
 /-- **Landweber's polynomial presentation after base change.** Over any commutative ring `R` in
@@ -243,10 +265,8 @@ def landweberMvPolynomialEquivTensor {p : ℕ} (hp : p.Prime) {R : Type*} [CommR
             MvPolynomial.map (Int.castRingHom R)
               (mvPolynomialEquiv.symm (landweberGenerator p n)) :=
         MvPolynomial.algHom_ext fun n ↦ by simp [e]
-      rw [← Function.Bijective.of_comp_iff' e.bijective]
-      change Function.Bijective
-        (e.toAlgHom.comp (MvPolynomial.aeval fun n : ℕ+ ↦ (1 : R) ⊗ₜ[ℤ] landweberGenerator p n))
-      rw [hcomp]
+      rw [← Function.Bijective.of_comp_iff' e.bijective, ← AlgEquiv.coe_toAlgHom,
+        ← AlgHom.coe_comp, hcomp]
       exact bijective_aeval_map_landweberGenerator hp hu
 
 /-- `TauCeti.LazardRing.landweberMvPolynomialEquivTensor` is evaluation at
@@ -275,33 +295,43 @@ theorem landweberMvPolynomialEquivTensor_symm_tmul_landweberGenerator {p : ℕ} 
       MvPolynomial.X n := by
   rw [AlgEquiv.symm_apply_eq, landweberMvPolynomialEquivTensor_X]
 
-variable {p : ℕ} (hp : p.Prime)
-include hp
-
-/-- Over any commutative ring of characteristic `p`, `p ^ (p ^ j - 1) - 1 = -1` is a unit for all
-`j ≠ 0`. -/
-theorem isUnit_pow_sub_one_of_charP (R : Type*) [CommRing R] [CharP R p] {j : ℕ} (hj : j ≠ 0) :
+/-- Over any ring `R` in which `(p : R) = 0` with `1 < p`, `p ^ (p ^ j - 1) - 1 = -1` is a unit for
+every `j ≠ 0`. -/
+theorem isUnit_pow_sub_one_of_natCast_eq_zero {p : ℕ} (hp : 1 < p) {R : Type*} [Ring R]
+    (hp0 : (p : R) = 0) {j : ℕ} (hj : j ≠ 0) :
     IsUnit ((p : R) ^ (p ^ j - 1) - 1) := by
-  have hlt : 1 < p ^ j := Nat.one_lt_pow hj hp.one_lt
-  have hne : p ^ j - 1 ≠ 0 := by omega
-  rw [CharP.cast_eq_zero R p, zero_pow hne, zero_sub]
+  have hne : p ^ j - 1 ≠ 0 := Nat.sub_ne_zero_of_lt (Nat.one_lt_pow hj hp)
+  rw [hp0, zero_pow hne, zero_sub]
   exact isUnit_one.neg
 
-/-- Over any localization `R` of `ℤ` at the prime ideal `(p)` (such as `ℤ_(p)`),
+/-- Over any ring of characteristic `p > 1`, `p ^ (p ^ j - 1) - 1 = -1` is a unit for all
+`j ≠ 0`. -/
+theorem isUnit_pow_sub_one_of_charP {p : ℕ} (hp : 1 < p) (R : Type*) [Ring R] [CharP R p]
+    {j : ℕ} (hj : j ≠ 0) :
+    IsUnit ((p : R) ^ (p ^ j - 1) - 1) :=
+  isUnit_pow_sub_one_of_natCast_eq_zero hp (CharP.cast_eq_zero R p) hj
+
+/-- Over any local ring `R` in which `(p : R)` is not a unit (with `1 < p`, e.g. `ℤ_(p)`, `ℤ_p`,
+`W(k)`, or `ZMod (p ^ k)`), `p ^ (p ^ j - 1) - 1` is a unit for every `j ≠ 0`. -/
+theorem isUnit_pow_sub_one_of_isLocalRing {p : ℕ} (hp : 1 < p) {R : Type*} [Ring R]
+    [IsLocalRing R] (hpu : ¬ IsUnit (p : R)) {j : ℕ} (hj : j ≠ 0) :
+    IsUnit ((p : R) ^ (p ^ j - 1) - 1) := by
+  have hne : p ^ j - 1 ≠ 0 := Nat.sub_ne_zero_of_lt (Nat.one_lt_pow hj hp)
+  rw [← neg_sub]
+  exact (IsLocalRing.isUnit_one_sub_self_of_mem_nonunits _
+    (mem_nonunits_iff.mpr ((isUnit_pow_iff hne).not.mpr hpu))).neg
+
+/-- Over any localization `R` of `ℤ` at a prime ideal `(p)` with `1 < p` (such as `ℤ_(p)`),
 `p ^ (p ^ j - 1) - 1` is a unit for every `j ≠ 0`. -/
-theorem isUnit_pow_sub_one_of_isLocalizationAtPrime (R : Type*) [CommRing R]
+theorem isUnit_pow_sub_one_of_isLocalizationAtPrime {p : ℕ} (hp : 1 < p) (R : Type*) [CommRing R]
     [(Ideal.span {(p : ℤ)}).IsPrime] [IsLocalization.AtPrime R (Ideal.span {(p : ℤ)})]
     {j : ℕ} (hj : j ≠ 0) :
     IsUnit ((p : R) ^ (p ^ j - 1) - 1) := by
-  have hlt : 1 < p ^ j := Nat.one_lt_pow hj hp.one_lt
-  have hne : p ^ j - 1 ≠ 0 := by omega
-  have hmem : ((p : ℤ) ^ (p ^ j - 1) - 1) ∈ (Ideal.span {(p : ℤ)}).primeCompl := by
-    rw [Ideal.mem_primeCompl_iff, Ideal.mem_span_singleton]
-    intro hdvd
-    have hp_pow : (p : ℤ) ∣ (p : ℤ) ^ (p ^ j - 1) := dvd_pow_self _ hne
-    have hp_one : (p : ℤ) ∣ 1 := by simpa using dvd_sub hp_pow hdvd
-    exact hp.not_dvd_one (Int.ofNat_dvd.mp hp_one)
-  simpa using IsLocalization.map_units R ⟨(p : ℤ) ^ (p ^ j - 1) - 1, hmem⟩
+  have : IsLocalRing R := IsLocalization.AtPrime.isLocalRing R (Ideal.span {(p : ℤ)})
+  refine isUnit_pow_sub_one_of_isLocalRing hp (fun hpu ↦ ?_) hj
+  rw [← map_natCast (algebraMap ℤ R),
+    IsLocalization.AtPrime.isUnit_to_map_iff R (Ideal.span {(p : ℤ)})] at hpu
+  exact hpu (Ideal.subset_span rfl)
 
 end BaseChange
 
@@ -323,8 +353,8 @@ def quotientHeightIdealOneEquiv :
       (Ideal.span {(p : ℤ)})).toRingEquiv.trans <|
       (Algebra.TensorProduct.congr (Int.quotientSpanNatEquivZMod p).toIntAlgEquiv
         (AlgEquiv.refl : LazardRing ≃ₐ[ℤ] LazardRing)).toRingEquiv.trans
-        (landweberMvPolynomialEquivTensor hp
-          (R := ZMod p) fun _ hj ↦ isUnit_pow_sub_one_of_charP hp (ZMod p) hj).symm.toRingEquiv
+        (landweberMvPolynomialEquivTensor hp (R := ZMod p) fun _ hj ↦
+          isUnit_pow_sub_one_of_charP hp.one_lt (ZMod p) hj).symm.toRingEquiv
 
 /-- `TauCeti.LazardRing.quotientHeightIdealOneEquiv` sends the class of `landweberGenerator p k` to
 `X k`. -/
@@ -396,8 +426,7 @@ theorem quotientHeightIdealEquiv_mk_landweberGenerator_of_forall_ne {n : ℕ} (h
   have hk' : k ∉ {m : ℕ+ | ∃ j < n, (m : ℕ) + 1 = p ^ j} := by
     rintro ⟨j, hj, hkj⟩
     exact hk j hj hkj
-  simp [quotientHeightIdealEquiv, DoubleQuot.quotQuotMk, hk']
-  rfl
+  simp [quotientHeightIdealEquiv, DoubleQuot.quotQuotMk, hk', Equiv.subtypeEquivRight_apply]
 
 /-- The inverse of `TauCeti.LazardRing.quotientHeightIdealEquiv` sends `X k` to the class of
 `landweberGenerator p k.1`. -/
@@ -450,8 +479,7 @@ theorem quotientISupHeightIdealEquiv_mk_landweberGenerator_of_forall_ne {k : ℕ
   have hk' : k ∉ {m : ℕ+ | ∃ j, (m : ℕ) + 1 = p ^ j} := by
     rintro ⟨j, hkj⟩
     exact hk j hkj
-  simp [quotientISupHeightIdealEquiv, DoubleQuot.quotQuotMk, hk']
-  rfl
+  simp [quotientISupHeightIdealEquiv, DoubleQuot.quotQuotMk, hk', Equiv.subtypeEquivRight_apply]
 
 /-- `TauCeti.LazardRing.quotientISupHeightIdealEquiv` sends the class of Lazard's generator `xₖ`,
 for `k + 1` not a power of `p`, to `X ⟨k, hk⟩`. -/
@@ -549,27 +577,6 @@ theorem heightIdeal_lt_iSup (n : ℕ) :
     formalGroup.heightIdeal p n < ⨆ m, formalGroup.heightIdeal p m :=
   (heightIdeal_lt_succ hp n).trans_le (le_iSup (formalGroup.heightIdeal p) (n + 1))
 
-/-- Landweber's generator `x'ₖ` lies in `I_n` if and only if `k + 1 = p ^ j` for some `j < n`. -/
-@[simp]
-theorem landweberGenerator_mem_heightIdeal_iff {n : ℕ} {k : ℕ+} :
-    landweberGenerator p k ∈ formalGroup.heightIdeal p n ↔ ∃ j < n, (k : ℕ) + 1 = p ^ j := by
-  refine ⟨fun hmem ↦ ?_, fun ⟨j, hj, hkj⟩ ↦ ?_⟩
-  · by_cases hex : ∃ j, (k : ℕ) + 1 = p ^ j
-    · obtain ⟨j, hkj⟩ := hex
-      refine ⟨j, lt_of_not_ge fun hnj ↦ coeff_nsmulSeries_notMem_heightIdeal hp j ?_, hkj⟩
-      rw [← landweberGenerator_of_add_one_eq_pow hkj]
-      exact formalGroup.heightIdeal_mono hnj hmem
-    · let : Fact p.Prime := ⟨hp⟩
-      have hk : ∀ j, (k : ℕ) + 1 ≠ p ^ j := fun j hj ↦ hex ⟨j, hj⟩
-      let idx : {m : ℕ+ // ∀ j, (m : ℕ) + 1 ≠ p ^ j} := ⟨k, hk⟩
-      have h0 : Ideal.Quotient.mk (⨆ m, formalGroup.heightIdeal p m) (landweberGenerator p k) = 0 :=
-        Ideal.Quotient.eq_zero_iff_mem.mpr (Ideal.mem_iSup_of_mem n hmem)
-      have hX : (MvPolynomial.X idx : MvPolynomial _ (ZMod p)) = 0 := by
-        rw [← quotientISupHeightIdealEquiv_mk_landweberGenerator_of_forall_ne hp hk, h0, map_zero]
-      exact (MvPolynomial.X_ne_zero idx hX).elim
-  · rw [landweberGenerator_of_add_one_eq_pow hkj]
-    exact formalGroup.coeff_nsmulSeries_mem_heightIdeal (Nat.pow_lt_pow_right hp.one_lt hj)
-
 /-- Landweber's generator `x'ₖ` lies in `I_∞ = ⨆ n, I_n` if and only if `k + 1` is a power of
 `p`. -/
 @[simp]
@@ -585,8 +592,23 @@ theorem landweberGenerator_mem_iSup_heightIdeal_iff {k : ℕ+} :
     have hX : (MvPolynomial.X idx : MvPolynomial _ (ZMod p)) = 0 := by
       rw [← quotientISupHeightIdealEquiv_mk_landweberGenerator_of_forall_ne hp hk, h0, map_zero]
     exact MvPolynomial.X_ne_zero idx hX
-  · exact Ideal.mem_iSup_of_mem (j + 1)
-      ((landweberGenerator_mem_heightIdeal_iff hp).mpr ⟨j, j.lt_succ_self, hkj⟩)
+  · refine Ideal.mem_iSup_of_mem (j + 1) ?_
+    rw [landweberGenerator_of_add_one_eq_pow hkj]
+    exact formalGroup.coeff_nsmulSeries_mem_heightIdeal
+      (Nat.pow_lt_pow_right hp.one_lt j.lt_succ_self)
+
+/-- Landweber's generator `x'ₖ` lies in `I_n` if and only if `k + 1 = p ^ j` for some `j < n`. -/
+@[simp]
+theorem landweberGenerator_mem_heightIdeal_iff {n : ℕ} {k : ℕ+} :
+    landweberGenerator p k ∈ formalGroup.heightIdeal p n ↔ ∃ j < n, (k : ℕ) + 1 = p ^ j := by
+  refine ⟨fun hmem ↦ ?_, fun ⟨j, hj, hkj⟩ ↦ ?_⟩
+  · obtain ⟨j, hkj⟩ := (landweberGenerator_mem_iSup_heightIdeal_iff hp).mp
+      (Ideal.mem_iSup_of_mem n hmem)
+    refine ⟨j, lt_of_not_ge fun hnj ↦ coeff_nsmulSeries_notMem_heightIdeal hp j ?_, hkj⟩
+    rw [← landweberGenerator_of_add_one_eq_pow hkj]
+    exact formalGroup.heightIdeal_mono hnj hmem
+  · rw [landweberGenerator_of_add_one_eq_pow hkj]
+    exact formalGroup.coeff_nsmulSeries_mem_heightIdeal (Nat.pow_lt_pow_right hp.one_lt hj)
 
 /-- An integer lies in `I_∞ = ⨆ n, I_n` if and only if it is divisible by `p`. -/
 @[simp]
@@ -598,6 +620,7 @@ theorem intCast_mem_iSup_heightIdeal_iff {k : ℤ} :
     CharP.intCast_eq_zero_iff _ p]
 
 /-- For `n ≥ 1`, an integer lies in `I_n` if and only if it is divisible by `p`. -/
+@[simp]
 theorem intCast_mem_heightIdeal_iff {n : ℕ} (hn : 1 ≤ n) {k : ℤ} :
     (k : LazardRing) ∈ formalGroup.heightIdeal p n ↔ (p : ℤ) ∣ k := by
   refine ⟨fun hk ↦ (intCast_mem_iSup_heightIdeal_iff hp).mp (Ideal.mem_iSup_of_mem n hk), ?_⟩
@@ -608,7 +631,7 @@ theorem intCast_mem_heightIdeal_iff {n : ℕ} (hn : 1 ≤ n) {k : ℤ} :
 
 end PrimeAndOrder
 
-/-! ### Regular sequences in `L` and its localizations -/
+/-! ### Regular sequences in `L`, flat `L`-algebras, and localizations -/
 
 section RegularSequence
 
@@ -650,15 +673,69 @@ theorem isRegular_ofFn_coeff_nsmulSeries (n : ℕ) :
   isRegular_ofFn_of_sub_mem_heightIdeal hp fun _ ↦ by simp
 
 /-- **Coordinate independence of regularity.** For any formal group law `G` over the Lazard ring
-strictly isomorphic to the universal law (such as `φ • formalGroup` for a strict coordinate `φ`),
-its `p`-series coefficients `p, v₁(G), …, v_(n-1)(G)` form a regular sequence on `LazardRing`
-generating `I_n`. -/
-theorem isRegular_ofFn_coeff_nsmulSeries_of_isStrict {G : FormalGroup LazardRing}
-    (e : FormalGroupIso formalGroup G) [e.IsStrict] (n : ℕ) :
+isomorphic to the universal law (not necessarily strictly), its `p`-series coefficients
+`v₀(G), …, v_(n-1)(G)` form a regular sequence on `LazardRing`. -/
+theorem isRegular_ofFn_coeff_nsmulSeries_of_iso {G : FormalGroup LazardRing}
+    (e : FormalGroupIso formalGroup G) (n : ℕ) :
     RingTheory.Sequence.IsRegular LazardRing
       (List.ofFn fun i : Fin n ↦ PowerSeries.coeff (p ^ (i : ℕ)) (G.nsmulSeries p)) :=
-  isRegular_ofFn_of_sub_mem_heightIdeal hp fun i ↦
-    e.coeff_nsmulSeries_sub_mem_heightIdeal_of_isStrict p i
+  (e.isRegular_ofFn_coeff_nsmulSeries_iff hp LazardRing n).mpr
+    (isRegular_ofFn_coeff_nsmulSeries hp n)
+
+section Flat
+
+variable (S : Type*) [CommRing S] [Algebra LazardRing S] [Module.Flat LazardRing S]
+
+/-- In any flat `LazardRing`-algebra `S`, the images of `p, v₁, …, v_(n-1)` form a weakly regular
+sequence on `S`. -/
+theorem isWeaklyRegular_ofFn_algebraMap_coeff_nsmulSeries_of_flat (n : ℕ) :
+    RingTheory.Sequence.IsWeaklyRegular S
+      (List.ofFn fun i : Fin n ↦
+        algebraMap LazardRing S (PowerSeries.coeff (p ^ (i : ℕ)) (formalGroup.nsmulSeries p))) := by
+  simpa only [List.map_ofFn, Function.comp_def] using
+    (isRegular_ofFn_coeff_nsmulSeries hp n).1.of_flat (S := S)
+
+/-- **Weak regularity of `p, v₁, …, v_(n-1)` in flat `LazardRing`-algebras.** In any flat
+`LazardRing`-algebra `S` (such as `L[b₁, b₂, …]`, `R ⊗[ℤ] L` for flat `R`, or any localization of
+`L`), any sequence of lifts of `p, v₁, …, v_(n-1)` modulo `I₀ S, …, I_(n-1) S` is weakly regular on
+`S`. -/
+theorem isWeaklyRegular_ofFn_of_sub_mem_heightIdeal_of_flat {n : ℕ} {v : Fin n → S}
+    (hv : ∀ i : Fin n,
+      v i - PowerSeries.coeff (p ^ (i : ℕ))
+        ((formalGroup.map (algebraMap LazardRing S)).nsmulSeries p) ∈
+          (formalGroup.map (algebraMap LazardRing S)).heightIdeal p i) :
+    RingTheory.Sequence.IsWeaklyRegular S (List.ofFn v) := by
+  rw [(formalGroup.map (algebraMap LazardRing S)).isWeaklyRegular_ofFn_iff_of_sub_mem_heightIdeal
+    hp S hv]
+  simpa only [FormalGroup.coeff_nsmulSeries_map] using
+    isWeaklyRegular_ofFn_algebraMap_coeff_nsmulSeries_of_flat hp S n
+
+/-- **Regularity of `p, v₁, …, v_(n-1)` in flat `LazardRing`-algebras.** In any flat
+`LazardRing`-algebra `S` with `I_n S ≠ ⊤`, any sequence of lifts of `p, v₁, …, v_(n-1)` modulo
+`I₀ S, …, I_(n-1) S` is a regular sequence on `S`. -/
+theorem isRegular_ofFn_of_sub_mem_heightIdeal_of_flat {n : ℕ}
+    (hne : (formalGroup.map (algebraMap LazardRing S)).heightIdeal p n ≠ ⊤) {v : Fin n → S}
+    (hv : ∀ i : Fin n,
+      v i - PowerSeries.coeff (p ^ (i : ℕ))
+        ((formalGroup.map (algebraMap LazardRing S)).nsmulSeries p) ∈
+          (formalGroup.map (algebraMap LazardRing S)).heightIdeal p i) :
+    RingTheory.Sequence.IsRegular S (List.ofFn v) :=
+  ⟨isWeaklyRegular_ofFn_of_sub_mem_heightIdeal_of_flat hp S hv, by
+    rw [(formalGroup.map (algebraMap LazardRing S)).ofList_ofFn_eq_heightIdeal_of_sub_mem hp hv,
+      Ideal.smul_eq_mul, Ideal.mul_top]
+    exact hne.symm⟩
+
+/-- In any flat `LazardRing`-algebra `S` with `I_n S ≠ ⊤`, the images of `p, v₁, …, v_(n-1)` form a
+regular sequence on `S`. -/
+theorem isRegular_ofFn_algebraMap_coeff_nsmulSeries_of_flat {n : ℕ}
+    (hne : (formalGroup.map (algebraMap LazardRing S)).heightIdeal p n ≠ ⊤) :
+    RingTheory.Sequence.IsRegular S
+      (List.ofFn fun i : Fin n ↦
+        algebraMap LazardRing S (PowerSeries.coeff (p ^ (i : ℕ)) (formalGroup.nsmulSeries p))) :=
+  isRegular_ofFn_of_sub_mem_heightIdeal_of_flat hp S hne fun _ ↦ by
+    simp [FormalGroup.coeff_nsmulSeries_map]
+
+end Flat
 
 section Localization
 
@@ -667,7 +744,7 @@ variable (M : Submonoid LazardRing) (S : Type*) [CommRing S] [Algebra LazardRing
 
 /-- In any localization `S = M⁻¹ L` with `M` disjoint from `I_n`, the extended height ideal
 `I_n S` is prime. -/
-theorem isPrime_map_heightIdeal_of_disjoint {n : ℕ}
+theorem isPrime_heightIdeal_map_of_disjoint {n : ℕ}
     (hd : Disjoint (M : Set LazardRing) (formalGroup.heightIdeal p n)) :
     ((formalGroup.map (algebraMap LazardRing S)).heightIdeal p n).IsPrime := by
   rw [← formalGroup.map_heightIdeal]
@@ -675,17 +752,17 @@ theorem isPrime_map_heightIdeal_of_disjoint {n : ℕ}
 
 /-- In any localization `S = M⁻¹ L` with `M` disjoint from `I_(n+1)`, the extended height ideals
 satisfy `I_n S < I_(n+1) S`. -/
-theorem map_heightIdeal_lt_succ_of_disjoint {n : ℕ}
+theorem heightIdeal_map_lt_succ_of_disjoint {n : ℕ}
     (hd : Disjoint (M : Set LazardRing) (formalGroup.heightIdeal p (n + 1))) :
     (formalGroup.map (algebraMap LazardRing S)).heightIdeal p n <
       (formalGroup.map (algebraMap LazardRing S)).heightIdeal p (n + 1) := by
   have hd_n : Disjoint (M : Set LazardRing) (formalGroup.heightIdeal p n) :=
     hd.mono_right (formalGroup.heightIdeal_mono n.le_succ)
   rw [← formalGroup.map_heightIdeal, ← formalGroup.map_heightIdeal]
-  exact (IsLocalization.orderIsoOfPrime M S).symm.strictMono
-    (a := ⟨formalGroup.heightIdeal p n, isPrime_heightIdeal hp n, hd_n⟩)
-    (b := ⟨formalGroup.heightIdeal p (n + 1), isPrime_heightIdeal hp (n + 1), hd⟩)
-    (heightIdeal_lt_succ hp n)
+  refine lt_of_le_of_ne (Ideal.map_mono (formalGroup.heightIdeal_mono n.le_succ)) fun h ↦
+    (heightIdeal_lt_succ hp n).ne ?_
+  rw [← IsLocalization.under_map_of_isPrime_disjoint M S (isPrime_heightIdeal hp n) hd_n,
+    ← IsLocalization.under_map_of_isPrime_disjoint M S (isPrime_heightIdeal hp (n + 1)) hd, h]
 
 /-- **Regularity of `p, v₁, …, v_(n-1)` in localizations of the Lazard ring.** In any localization
 `S = M⁻¹ L` with `M` disjoint from `I_n` (including `L_(p)` and `L_(I_m)` for `m ≥ n`), any sequence
@@ -696,13 +773,10 @@ theorem isRegular_ofFn_of_sub_mem_heightIdeal_of_isLocalization {n : ℕ}
       v i - PowerSeries.coeff (p ^ (i : ℕ))
         ((formalGroup.map (algebraMap LazardRing S)).nsmulSeries p) ∈
           (formalGroup.map (algebraMap LazardRing S)).heightIdeal p i) :
-    RingTheory.Sequence.IsRegular S (List.ofFn v) := by
-  refine (formalGroup.map (algebraMap LazardRing S)).isRegular_ofFn_of_sub_mem_heightIdeal hp
-    (fun i hi ↦ isPrime_map_heightIdeal_of_disjoint hp M S
-      (hd.mono_right (formalGroup.heightIdeal_mono hi.le)))
-    (fun i hi ↦ map_heightIdeal_lt_succ_of_disjoint hp M S
-      (hd.mono_right (formalGroup.heightIdeal_mono (Nat.succ_le_of_lt hi))))
-    (isPrime_map_heightIdeal_of_disjoint hp M S hd).ne_top hv
+    RingTheory.Sequence.IsRegular S (List.ofFn v) :=
+  have : Module.Flat LazardRing S := IsLocalization.flat S M
+  isRegular_ofFn_of_sub_mem_heightIdeal_of_flat hp S
+    (isPrime_heightIdeal_map_of_disjoint hp M S hd).ne_top hv
 
 /-- In any localization `S = M⁻¹ L` with `M` disjoint from `I_n`, the images of `p, v₁, …, v_(n-1)`
 form a regular sequence on `S`. -/
@@ -711,22 +785,23 @@ theorem isRegular_ofFn_algebraMap_coeff_nsmulSeries_of_isLocalization {n : ℕ}
     RingTheory.Sequence.IsRegular S
       (List.ofFn fun i : Fin n ↦
         algebraMap LazardRing S (PowerSeries.coeff (p ^ (i : ℕ)) (formalGroup.nsmulSeries p))) :=
-  isRegular_ofFn_of_sub_mem_heightIdeal_of_isLocalization hp M S hd fun i ↦ by
+  isRegular_ofFn_of_sub_mem_heightIdeal_of_isLocalization hp M S hd fun _ ↦ by
     simp [FormalGroup.coeff_nsmulSeries_map]
 
 end Localization
 
-/-- The submonoid of integers prime to `p`, viewed inside the Lazard ring, is disjoint from the
-union `I_∞ = ⨆ n, I_n` of all height ideals (and hence from each `I_n`), so the localization results
-apply to the `p`-local Lazard ring `L_(p) = MU_(p)*`. -/
-theorem disjoint_map_primeCompl_iSup_heightIdeal [(Ideal.span {(p : ℤ)}).IsPrime] :
+/-- The submonoid of integers prime to `p`, viewed inside the Lazard ring via
+`Algebra.algebraMapSubmonoid`, is disjoint from the union `I_∞ = ⨆ n, I_n` of all height ideals
+(and hence from each `I_n`), so the localization results apply to the `p`-local Lazard ring
+`L_(p) = MU_(p)*`. -/
+theorem disjoint_algebraMapSubmonoid_primeCompl_iSup_heightIdeal
+    [(Ideal.span {(p : ℤ)}).IsPrime] :
     Disjoint
-      ((Submonoid.map (Int.castRingHom LazardRing) (Ideal.span {(p : ℤ)}).primeCompl :
-        Submonoid LazardRing) : Set LazardRing)
+      (Algebra.algebraMapSubmonoid LazardRing (Ideal.span {(p : ℤ)}).primeCompl : Set LazardRing)
       ((⨆ n, formalGroup.heightIdeal p n : Ideal LazardRing) : Set LazardRing) := by
   rw [Set.disjoint_left]
   rintro _ ⟨k, hk, rfl⟩ hmem
-  change (k : LazardRing) ∈ ⨆ n, formalGroup.heightIdeal p n at hmem
+  simp only [SetLike.mem_coe, eq_intCast] at hmem
   exact hk (Ideal.mem_span_singleton.mpr ((intCast_mem_iSup_heightIdeal_iff hp).mp hmem))
 
 end RegularSequence

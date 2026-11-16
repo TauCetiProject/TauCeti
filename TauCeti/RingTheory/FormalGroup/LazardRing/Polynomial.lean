@@ -29,11 +29,11 @@ irrelevant ideal `⨁_{n > 0} Lₙ`, and the classes of the `xₙ` form a basis 
 (`TauCeti.GradedAlgebra.adjoin_eq_top_of_irrelevant_le`), homogeneous elements of positive degree
 whose classes generate `I ⧸ I²` generate `L` over `L₀ = ℤ`.
 
-The resulting isomorphism `ℤ[x₁, x₂, …] ≃ₐ[ℤ] L` is graded when `xₙ` is given degree `2n`, and
+The resulting isomorphism `ℤ[x₁, x₂, …] ≃ₐ[ℤ] L` is graded when `xₖ` is given degree `2k`, and
 identifies the augmentation ideal and its powers with the ideal of variables and its powers. In
-particular `L` is an integral domain of characteristic zero, and any homogeneous element of degree
-`2n` congruent to `c • xₙ` modulo `I²` corresponds to `c • X n` plus a polynomial in variables of
-index strictly below `n`.
+particular `L` is an integral domain, and any homogeneous element of degree `m` in `I²` involves
+only variables `X k` with `2k < m`, so a degree-`2n` element congruent to `c • xₙ` modulo `I²`
+corresponds to `c • X n` plus a polynomial in variables of index strictly below `n`.
 
 Since `L` is a polynomial ring, ring homomorphisms out of `L` lift along surjective ring
 homomorphisms (`MvPolynomial.exists_comp_eq_of_surjective`). By the universal property of `L`,
@@ -56,8 +56,10 @@ formal group law exist over every ring surjecting onto its coefficient ring.
   that are homogeneous of degree `n`, for `xₖ` of degree `2k`, onto `Lₙ`.
 * `TauCeti.LazardRing.mvPolynomialEquiv_mem_pow_augmentationIdeal_iff`: the isomorphism carries the
   powers of the ideal of variables onto the powers of the augmentation ideal.
-* `TauCeti.LazardRing.vars_mvPolynomialEquiv_symm_sub_smul_X_lt`: a degree-`2n` element congruent
-  to `c • xₙ` modulo `I²` differs from `c • X n` by a polynomial in variables below `n`.
+* `TauCeti.LazardRing.two_mul_lt_of_mem_vars_mvPolynomialEquiv_symm` and
+  `TauCeti.LazardRing.lt_of_mem_vars_mvPolynomialEquiv_symm_sub_smul_X`: homogeneous decomposable
+  elements in degree `m` involve only variables `X k` with `2k < m`, so lifts of `c • xₙ` modulo
+  `I²` in `L₂ₙ` differ from `c • X n` by polynomials in variables below `n`.
 * `TauCeti.LazardRing.exists_comp_eq_of_surjective`: a ring homomorphism `L →+* S` factors
   through any surjective ring homomorphism `R →+* S`.
 * `FormalGroup.exists_map_eq_of_surjective`: a commutative formal group law over `S` is the base
@@ -176,10 +178,6 @@ theorem mvPolynomialEquiv_mem_grading_iff {p : MvPolynomial ℕ+ ℤ} {n : ℕ} 
 instance : IsDomain LazardRing :=
   mvPolynomialEquiv.symm.toMulEquiv.isDomain (MvPolynomial ℕ+ ℤ)
 
-/-- The Lazard ring has characteristic zero. -/
-instance : CharZero LazardRing :=
-  augmentation.charZero
-
 /-- On `ℤ[x₁, x₂, …]`, the augmentation of the Lazard ring is the constant coefficient. -/
 @[simp]
 theorem augmentation_mvPolynomialEquiv (p : MvPolynomial ℕ+ ℤ) :
@@ -201,52 +199,34 @@ the `k`-th power of the augmentation ideal. -/
 @[simp]
 theorem mvPolynomialEquiv_mem_pow_augmentationIdeal_iff {p : MvPolynomial ℕ+ ℤ} {k : ℕ} :
     mvPolynomialEquiv p ∈ augmentationIdeal ^ k ↔ p ∈ MvPolynomial.idealOfVars ℕ+ ℤ ^ k := by
-  have hmap : (MvPolynomial.idealOfVars ℕ+ ℤ).map mvPolynomialEquiv = augmentationIdeal := by
-    ext y
-    rw [Ideal.mem_map_iff_of_surjective mvPolynomialEquiv mvPolynomialEquiv.surjective]
-    obtain ⟨q, rfl⟩ := mvPolynomialEquiv.surjective y
-    refine ⟨?_, fun hq ↦ ⟨q, mvPolynomialEquiv_mem_augmentationIdeal_iff.1 hq, rfl⟩⟩
-    rintro ⟨r, hr, hrq⟩
-    exact mvPolynomialEquiv_mem_augmentationIdeal_iff.2 (mvPolynomialEquiv.injective hrq ▸ hr)
-  rw [← hmap, ← Ideal.map_pow,
-    Ideal.mem_map_iff_of_surjective mvPolynomialEquiv mvPolynomialEquiv.surjective]
-  refine ⟨?_, fun hp ↦ ⟨p, hp, rfl⟩⟩
-  rintro ⟨q, hq, hqp⟩
-  exact mvPolynomialEquiv.injective hqp ▸ hq
+  have hcomap : augmentationIdeal.comap mvPolynomialEquiv.toRingEquiv =
+      MvPolynomial.idealOfVars ℕ+ ℤ :=
+    Ideal.ext fun _ ↦ mvPolynomialEquiv_mem_augmentationIdeal_iff
+  rw [← AlgEquiv.coe_toRingEquiv, ← Ideal.mem_comap (f := mvPolynomialEquiv.toRingEquiv),
+    ← Ideal.map_symm, Ideal.map_pow, Ideal.map_symm, hcomap]
+
+/-- Any homogeneous element `z ∈ Lₘ` in the square of the augmentation ideal involves only
+variables `X k` with `2k < m` under `mvPolynomialEquiv.symm`. -/
+theorem two_mul_lt_of_mem_vars_mvPolynomialEquiv_symm {m : ℕ} {z : LazardRing}
+    (hz : z ∈ grading m) (hz2 : z ∈ augmentationIdeal ^ 2) {k : ℕ+}
+    (hk : k ∈ (mvPolynomialEquiv.symm z).vars) : 2 * (k : ℕ) < m := by
+  have hhom : (mvPolynomialEquiv.symm z).IsWeightedHomogeneous (fun j : ℕ+ ↦ 2 * (j : ℕ)) m := by
+    rwa [← mvPolynomialEquiv_mem_grading_iff, AlgEquiv.apply_symm_apply]
+  have hdeg : mvPolynomialEquiv.symm z ∈ MvPolynomial.idealOfVars ℕ+ ℤ ^ 2 := by
+    rwa [← mvPolynomialEquiv_mem_pow_augmentationIdeal_iff, AlgEquiv.apply_symm_apply]
+  exact hhom.apply_lt_of_mem_sq_idealOfVars (fun j ↦ Nat.mul_pos Nat.zero_lt_two j.pos) hdeg hk
 
 /-- **Triangularity of homogeneous lifts of `c • xₙ`.** If `y ∈ L₂ₙ` satisfies
 `y ≡ c • xₙ (mod I²)`, then `mvPolynomialEquiv.symm y - c • X n` involves only variables `X k` with
-`k < n`: every monomial occurring in it has total degree at least `2` and weighted degree `2n`. -/
-theorem vars_mvPolynomialEquiv_symm_sub_smul_X_lt {n : ℕ+} {y : LazardRing} {c : ℤ}
+`k < n`. -/
+theorem lt_of_mem_vars_mvPolynomialEquiv_symm_sub_smul_X {n : ℕ+} {y : LazardRing} {c : ℤ}
     (hy : y ∈ grading (2 * (n : ℕ))) (hyc : y - c • generator n ∈ augmentationIdeal ^ 2)
     {k : ℕ+} (hk : k ∈ (mvPolynomialEquiv.symm y - c • MvPolynomial.X n).vars) : k < n := by
-  set q : MvPolynomial ℕ+ ℤ := mvPolynomialEquiv.symm y - c • MvPolynomial.X n
-  have hq_apply : mvPolynomialEquiv q = y - c • generator n := by simp [q]
-  have hq_hom : q.IsWeightedHomogeneous (fun j : ℕ+ ↦ 2 * (j : ℕ)) (2 * (n : ℕ)) := by
-    rw [← mvPolynomialEquiv_mem_grading_iff, hq_apply]
-    exact sub_mem hy (zsmul_mem (generator_mem_grading n) c)
-  have hq_deg : q ∈ MvPolynomial.idealOfVars ℕ+ ℤ ^ 2 := by
-    rwa [← mvPolynomialEquiv_mem_pow_augmentationIdeal_iff, hq_apply]
-  obtain ⟨d, hd, hdk⟩ := (MvPolynomial.mem_vars_iff_mem_support k).1 hk
-  have hd_deg : 2 ≤ d.degree := (MvPolynomial.mem_pow_idealOfVars_iff 2 q).1 hq_deg d hd
-  have hd_wt : d.weight (fun j : ℕ+ ↦ 2 * (j : ℕ)) = 2 * (n : ℕ) :=
-    hq_hom (MvPolynomial.mem_support_iff.1 hd)
-  have hdk_ne : d k ≠ 0 := Finsupp.mem_support_iff.1 hdk
-  have hsub_deg : (d - Finsupp.single k 1).degree + 1 = d.degree := by
-    rw [Finsupp.degree_eq_weight_one]
-    exact Finsupp.weight_sub_single_add (w := fun _ : ℕ+ ↦ 1) hdk_ne
-  have hsub_ne : d - Finsupp.single k 1 ≠ 0 := by
-    intro h0
-    rw [h0, map_zero, zero_add] at hsub_deg
-    omega
-  obtain ⟨j, hj⟩ := Finsupp.support_nonempty_iff.2 hsub_ne
-  have hpos : 0 < (d - Finsupp.single k 1).weight (fun j : ℕ+ ↦ 2 * (j : ℕ)) := by
-    refine lt_of_lt_of_le (show 0 < 2 * (j : ℕ) by positivity) ?_
-    exact Finsupp.le_weight_of_ne_zero (w := fun j : ℕ+ ↦ 2 * (j : ℕ)) (fun _ ↦ Nat.zero_le _)
-      (Finsupp.mem_support_iff.1 hj)
-  have hsub_wt := Finsupp.weight_sub_single_add (w := fun j : ℕ+ ↦ 2 * (j : ℕ)) hdk_ne
-  rw [hd_wt] at hsub_wt
-  exact (PNat.coe_lt_coe k n).1 (by omega)
+  have hsymm : mvPolynomialEquiv.symm (y - c • generator n) =
+      mvPolynomialEquiv.symm y - c • MvPolynomial.X n := by simp
+  have hlt := two_mul_lt_of_mem_vars_mvPolynomialEquiv_symm
+    (sub_mem hy (zsmul_mem (generator_mem_grading n) c)) hyc (hsymm ▸ hk)
+  exact (PNat.coe_lt_coe k n).1 (Nat.lt_of_mul_lt_mul_left hlt)
 
 /-- Ring homomorphisms out of the Lazard ring lift along surjective ring homomorphisms: every
 `g : L →+* S` factors as `f.comp g'` through any surjection `f : R →+* S`. -/
