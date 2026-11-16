@@ -5,19 +5,18 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.LinearAlgebra.Charpoly.ToMatrix
 public import TauCeti.LinearAlgebra.RootSystem.Coxeter.Element.Eigen
 import TauCeti.LinearAlgebra.Matrix.Cartan.Coxeter.Classical
+import TauCeti.RingTheory.Polynomial.Cyclotomic.Roots
+import TauCeti.RingTheory.RootsOfUnity.Complex.Exp
 
 /-!
 # Coxeter elements, characteristic polynomials, and eigenvalues of classical bases
 
 This file transports the matrix calculations of
 `TauCeti.LinearAlgebra.Matrix.Cartan.Coxeter.Classical` to arbitrary Coxeter elements
-`wordProd P b l` of bases of classical Cartan type (`Aₙ`, `Bₙ`, `Cₙ`, `Dₙ`), connects integer
-simple-root matrices (`RootPairing.Base.ActsBy`) to the weight-space representation
-`RootPairing.weylGroupRootRep` when the roots span, and computes the complex eigenvalue multisets —
-retaining multiplicity — for all classical and exceptional types:
+`wordProd P b l` of bases of classical Cartan type (`Aₙ`, `Bₙ`, `Cₙ`, `Dₙ`) and computes the
+complex eigenvalue multisets — retaining multiplicity — for all classical and exceptional types:
 
 | type | rank condition | `h` | exponents `e` |
 |---|---|---|---|
@@ -37,14 +36,8 @@ an eigenvalue of multiplicity `2`.
 
 ## Main results
 
-* `RootPairing.Base.ActsBy.toMatrix_weylGroupRootRep` and
-  `RootPairing.Base.ActsBy.charpoly_weylGroupRootRep`: when `[P.IsRootSystem]`, an integer matrix by
-  which `w` acts on the simple roots represents `P.weylGroupRootRep w` in `b.toWeightBasis` and
-  determines its characteristic polynomial.
-* `Polynomial.roots_sum_range_X_pow`, `Polynomial.roots_X_pow_add_one`, and
-  `Polynomial.roots_X_pow_add_one_mul_X_add_one`: root multisets of `∑ k < n + 1, X ^ k`,
-  `X ^ n + 1`, and `(X ^ (n - 1) + 1) * (X + 1)` over any integral domain with a primitive root of
-  unity.
+* `TauCeti.Coxeter.mem_aExponents`, `mem_bExponents`, `mem_cExponents`, `mem_dExponents`:
+  `@[simp]` membership characterizations of the classical exponent lists across all ranks.
 * `TauCeti.Coxeter.orderOf_wordProd_of_hasCartanType_A` (and `_B`, `_C`, `_D`) and
   `TauCeti.Coxeter.charpoly_of_hasCartanType_A_of_actsBy` (and `_B`, `_C`, `_D`): order and
   characteristic polynomial of every Coxeter element of a classical base.
@@ -63,115 +56,52 @@ public section
 
 open Matrix Polynomial RootPairing TauCeti
 
-/-! ### Simple-root matrices and the weight-space representation -/
-
-namespace RootPairing.Base
-
-variable {ι R M N : Type*} [CommRing R] [AddCommGroup M] [Module R M] [AddCommGroup N]
-  [Module R N] {P : RootPairing ι R M N}
-
-/-- When the roots span (`[P.IsRootSystem]`), an integer matrix `W` by which `w` acts on the simple
-roots is the matrix of `P.weylGroupRootRep w` in the basis `b.toWeightBasis`. -/
-theorem ActsBy.toMatrix_weylGroupRootRep [DecidableEq ι] [P.IsRootSystem] {b : P.Base}
-    {w : P.weylGroup} {W : Matrix b.support b.support ℤ} (hW : b.ActsBy w W) :
-    LinearMap.toMatrix b.toWeightBasis b.toWeightBasis (P.weylGroupRootRep w) =
-      W.map (Int.castRingHom R) := by
-  ext k j
-  have hj : P.weylGroupRootRep w (b.toWeightBasis j) =
-      ∑ l : b.support, (W l j : R) • b.toWeightBasis l := by
-    rw [b.toWeightBasis_apply, weylGroupRootRep, Representation.ofDistribMulAction_apply_apply,
-      actsBy_iff.mp hW j]
-    exact Finset.sum_congr rfl fun l _ => by
-      rw [b.toWeightBasis_apply, Int.cast_smul_eq_zsmul]
-  rw [LinearMap.toMatrix_apply, hj, map_sum]
-  simp [Finsupp.single_apply]
-
-/-- When the roots span a finite free module (`[P.IsRootSystem] [Module.Free R M]
-[Module.Finite R M]`), the characteristic polynomial of `P.weylGroupRootRep w` is the base-change of
-`W.charpoly`. -/
-theorem ActsBy.charpoly_weylGroupRootRep [P.IsRootSystem] [Module.Free R M] [Module.Finite R M]
-    {b : P.Base} {w : P.weylGroup} {W : Matrix b.support b.support ℤ} [DecidableEq ι]
-    (hW : b.ActsBy w W) :
-    (P.weylGroupRootRep w).charpoly = W.charpoly.map (Int.castRingHom R) := by
-  rw [← LinearMap.charpoly_toMatrix (P.weylGroupRootRep w) b.toWeightBasis,
-    hW.toMatrix_weylGroupRootRep, Matrix.charpoly_map]
-
-end RootPairing.Base
-
-/-! ### Root multisets of the classical characteristic polynomials -/
-
-namespace Polynomial
-
-/-- In an integral domain `K` with a primitive `(n + 1)`-th root of unity `ζ`, the root multiset of
-`∑ k ∈ Finset.range (n + 1), X ^ k` consists of `ζ ^ 1, ζ ^ 2, …, ζ ^ n`, each with multiplicity
-one. -/
-theorem roots_sum_range_X_pow {K : Type*} [CommRing K] [IsDomain K] {ζ : K} {n : ℕ}
-    (hζ : IsPrimitiveRoot ζ (n + 1)) :
-    (∑ k ∈ Finset.range (n + 1), (X : K[X]) ^ k).roots =
-      Multiset.ofList ((List.range n).map fun k => ζ ^ (k + 1)) := by
-  have hp : (∑ k ∈ Finset.range (n + 1), (X : K[X]) ^ k) * (X - C 1) = X ^ (n + 1) - C 1 := by
-    simpa only [C_1] using geom_sum_mul (X : K[X]) (n + 1)
-  have hroots : (∑ k ∈ Finset.range (n + 1), (X : K[X]) ^ k).roots + {1} =
-      (Multiset.range (n + 1)).map fun k => ζ ^ k * 1 := by
-    rw [← roots_X_sub_C, ← roots_mul (hp ▸ X_pow_sub_C_ne_zero (Nat.succ_pos n) 1), hp,
-      ← nthRoots, hζ.nthRoots_eq (one_pow (n + 1))]
-  rw [show Multiset.range (n + 1) = Multiset.range (1 + n) by rw [Nat.add_comm], Multiset.range_add,
-    show Multiset.range 1 = {0} from rfl, Multiset.map_add, Multiset.map_singleton, pow_zero,
-    one_mul, Multiset.map_map, add_comm] at hroots
-  rw [add_left_cancel hroots, ← Multiset.coe_range, Multiset.map_coe]
-  exact congrArg Multiset.ofList (List.map_congr_left fun k _ => by simp [Nat.add_comm])
-
-/-- In an integral domain `K` with a primitive `(2 * n)`-th root of unity `ζ` (`0 < n`), the root
-multiset of `X ^ n + 1` consists of the odd powers `ζ ^ 1, ζ ^ 3, …, ζ ^ (2n - 1)`, each with
-multiplicity one. -/
-theorem roots_X_pow_add_one {K : Type*} [CommRing K] [IsDomain K] {ζ : K} {n : ℕ} (hn : 0 < n)
-    (hζ : IsPrimitiveRoot ζ (2 * n)) :
-    ((X : K[X]) ^ n + 1).roots =
-      Multiset.ofList ((List.range n).map fun k => ζ ^ (2 * k + 1)) := by
-  have hneg : ζ ^ n = -1 :=
-    (Nat.mul_div_left 2 hn ▸ hζ.pow_of_dvd hn.ne' (dvd_mul_left n 2)).eq_neg_one_of_two_right
-  have hζ2 : IsPrimitiveRoot (ζ ^ 2) n := by
-    simpa [Nat.mul_div_cancel_left n two_pos] using hζ.pow_of_dvd two_ne_zero (dvd_mul_right 2 n)
-  have hx : (X : K[X]) ^ n + 1 = X ^ n - C (-1) := by simp [sub_neg_eq_add]
-  rw [hx, ← nthRoots, hζ2.nthRoots_eq hneg, ← Multiset.coe_range, Multiset.map_coe]
-  exact congrArg Multiset.ofList (List.map_congr_left fun k _ => by rw [← pow_mul, ← pow_succ])
-
-/-- In an integral domain `K` with a primitive `(2 * (n - 1))`-th root of unity `ζ` (`2 ≤ n`), the
-root multiset of `(X ^ (n - 1) + 1) * (X + 1)` consists of `ζ ^ (2k + 1)` (`k < n - 1`) together
-with `ζ ^ (n - 1) = -1` (so `-1` has multiplicity two when `n` is even). -/
-theorem roots_X_pow_add_one_mul_X_add_one {K : Type*} [CommRing K] [IsDomain K] {ζ : K} {n : ℕ}
-    (hn : 2 ≤ n) (hζ : IsPrimitiveRoot ζ (2 * (n - 1))) :
-    (((X : K[X]) ^ (n - 1) + 1) * (X + 1)).roots =
-      Multiset.ofList (((List.range (n - 1)).map (fun k => 2 * k + 1) ++ [n - 1]).map (ζ ^ ·)) := by
-  have hm : 0 < n - 1 := by omega
-  have hp1 : (X : K[X]) ^ (n - 1) + 1 ≠ 0 := by simpa using X_pow_add_C_ne_zero hm (1 : K)
-  have hp2 : (X : K[X]) + 1 ≠ 0 := by simpa using X_pow_add_C_ne_zero zero_lt_one (1 : K)
-  have hneg : ζ ^ (n - 1) = -1 :=
-    (Nat.mul_div_left 2 hm ▸ hζ.pow_of_dvd hm.ne' (dvd_mul_left (n - 1) 2)).eq_neg_one_of_two_right
-  have hx1 : (X + 1 : K[X]).roots = {ζ ^ (n - 1)} := by
-    rw [← C_1, roots_X_add_C, hneg]
-  rw [roots_mul (mul_ne_zero hp1 hp2), roots_X_pow_add_one hm hζ, hx1, List.map_append,
-    List.map_map, List.map_singleton]
-  rfl
-
-end Polynomial
-
 namespace TauCeti.Coxeter
 
 /-! ### Exponent lists of the classical families -/
 
 /-- The exponents `1, 2, …, n` of type `Aₙ`. -/
-@[expose] def aExponents (n : ℕ) : List ℕ := (List.range n).map (· + 1)
+def aExponents (n : ℕ) : List ℕ := (List.range n).map (· + 1)
+
+/-- `aExponents n` unfolds to `(List.range n).map (· + 1)`. -/
+theorem aExponents_def (n : ℕ) : aExponents n = (List.range n).map (· + 1) := (rfl)
 
 /-- The exponents `1, 3, …, 2n - 1` of type `Bₙ`. -/
-@[expose] def bExponents (n : ℕ) : List ℕ := (List.range n).map fun k => 2 * k + 1
+def bExponents (n : ℕ) : List ℕ := (List.range n).map fun k => 2 * k + 1
+
+/-- `bExponents n` unfolds to `(List.range n).map fun k => 2 * k + 1`. -/
+theorem bExponents_def (n : ℕ) : bExponents n = (List.range n).map fun k => 2 * k + 1 := (rfl)
 
 /-- The exponents `1, 3, …, 2n - 1` of type `Cₙ`. -/
-@[expose] def cExponents (n : ℕ) : List ℕ := bExponents n
+def cExponents (n : ℕ) : List ℕ := bExponents n
+
+/-- `cExponents n` unfolds to `bExponents n`. -/
+theorem cExponents_def (n : ℕ) : cExponents n = bExponents n := (rfl)
 
 /-- The exponents `1, 3, …, 2n - 3, n - 1` of type `Dₙ` (empty for `n = 0`). -/
-@[expose] def dExponents (n : ℕ) : List ℕ :=
+def dExponents (n : ℕ) : List ℕ :=
   if n = 0 then [] else (List.range (n - 1)).map (fun k => 2 * k + 1) ++ [n - 1]
+
+/-- `dExponents n` unfolds to its list definition. -/
+theorem dExponents_def (n : ℕ) :
+    dExponents n =
+      if n = 0 then [] else (List.range (n - 1)).map (fun k => 2 * k + 1) ++ [n - 1] := (rfl)
+
+/-- Type `A₀` has no exponents. -/
+@[simp] theorem aExponents_zero : aExponents 0 = [] := (rfl)
+
+/-- Type `B₀` has no exponents. -/
+@[simp] theorem bExponents_zero : bExponents 0 = [] := (rfl)
+
+/-- Type `C₀` has no exponents. -/
+@[simp] theorem cExponents_zero : cExponents 0 = [] := (rfl)
+
+/-- Type `D₀` has no exponents. -/
+@[simp] theorem dExponents_zero : dExponents 0 = [] := (rfl)
+
+/-- For positive rank `m + 1`, `dExponents (m + 1)` consists of `bExponents m` followed by `m`. -/
+theorem dExponents_succ (m : ℕ) : dExponents (m + 1) = bExponents m ++ [m] := by
+  simp [dExponents, bExponents]
 
 /-- Type `Aₙ` has `n` exponents. -/
 @[simp] theorem length_aExponents (n : ℕ) : (aExponents n).length = n := by simp [aExponents]
@@ -185,6 +115,36 @@ namespace TauCeti.Coxeter
 /-- Type `Dₙ` has `n` exponents (counted with multiplicity). -/
 @[simp] theorem length_dExponents (n : ℕ) : (dExponents n).length = n := by
   rcases n with _ | m <;> simp [dExponents]
+
+/-- A natural number belongs to `aExponents n` if and only if `1 ≤ e` and `e ≤ n`. -/
+@[simp]
+theorem mem_aExponents {e n : ℕ} : e ∈ aExponents n ↔ 1 ≤ e ∧ e ≤ n := by
+  simp only [aExponents, List.mem_map, List.mem_range]
+  exact ⟨fun ⟨k, _, hke⟩ => by omega, fun ⟨_, _⟩ => ⟨e - 1, by omega, by omega⟩⟩
+
+/-- A natural number belongs to `bExponents n` if and only if it is odd and strictly less than
+`2 * n`. -/
+@[simp]
+theorem mem_bExponents {e n : ℕ} : e ∈ bExponents n ↔ Odd e ∧ e < 2 * n := by
+  simp only [bExponents, List.mem_map, List.mem_range]
+  refine ⟨fun ⟨k, _, hke⟩ => ⟨⟨k, hke.symm⟩, by omega⟩, ?_⟩
+  rintro ⟨⟨k, rfl⟩, hlt⟩
+  exact ⟨k, by omega, rfl⟩
+
+/-- A natural number belongs to `cExponents n` if and only if it is odd and strictly less than
+`2 * n`. -/
+@[simp]
+theorem mem_cExponents {e n : ℕ} : e ∈ cExponents n ↔ Odd e ∧ e < 2 * n := by
+  rw [cExponents, mem_bExponents]
+
+/-- A natural number belongs to `dExponents n` if and only if it is an odd number strictly less
+than `2 * (n - 1)` or `n ≠ 0` and `e = n - 1`. -/
+@[simp]
+theorem mem_dExponents {e n : ℕ} :
+    e ∈ dExponents n ↔ (Odd e ∧ e < 2 * (n - 1)) ∨ (n ≠ 0 ∧ e = n - 1) := by
+  rcases n with _ | m
+  · simp [dExponents]
+  · simp [dExponents_succ, mem_bExponents]
 
 /-! ### Orders and characteristic polynomials of classical Coxeter elements -/
 
@@ -200,7 +160,7 @@ theorem orderOf_wordProd_of_hasCartanType_A [Finite ι] {n : ℕ} (hn : 0 < n)
     orderOf (wordProd P b l) = n + 1 :=
   (orderOf_wordProd_of_isOneDegenerateOrder_of_hasCartanType (t := .A n)
     (DynkinType.cartanMatrix_A n) (isOneDegenerateOrder_A n) (List.Perm.refl _) h hnd hall).trans
-    (orderOf_coxA hn)
+    ((congrArg orderOf (coxA_def n).symm).trans (orderOf_coxA hn))
 
 /-- **Every Coxeter element of a base of type `Bₙ` (`0 < n`) has order `2 * n`.** -/
 theorem orderOf_wordProd_of_hasCartanType_B [Finite ι] {n : ℕ} (hn : 0 < n)
@@ -208,7 +168,7 @@ theorem orderOf_wordProd_of_hasCartanType_B [Finite ι] {n : ℕ} (hn : 0 < n)
     orderOf (wordProd P b l) = 2 * n :=
   (orderOf_wordProd_of_isOneDegenerateOrder_of_hasCartanType (t := .B n)
     (DynkinType.cartanMatrix_B n) (isOneDegenerateOrder_B n) (List.Perm.refl _) h hnd hall).trans
-    (orderOf_coxB hn)
+    ((congrArg orderOf (coxB_def n).symm).trans (orderOf_coxB hn))
 
 /-- **Every Coxeter element of a base of type `Cₙ` (`0 < n`) has order `2 * n`.** -/
 theorem orderOf_wordProd_of_hasCartanType_C [Finite ι] {n : ℕ} (hn : 0 < n)
@@ -216,7 +176,7 @@ theorem orderOf_wordProd_of_hasCartanType_C [Finite ι] {n : ℕ} (hn : 0 < n)
     orderOf (wordProd P b l) = 2 * n :=
   (orderOf_wordProd_of_isOneDegenerateOrder_of_hasCartanType (t := .C n)
     (DynkinType.cartanMatrix_C n) (isOneDegenerateOrder_C n) (List.Perm.refl _) h hnd hall).trans
-    (orderOf_coxC hn)
+    ((congrArg orderOf (coxC_def n).symm).trans (orderOf_coxC hn))
 
 /-- **Every Coxeter element of a base of type `Dₙ` (`2 ≤ n`) has order `2 * (n - 1)`.** -/
 theorem orderOf_wordProd_of_hasCartanType_D [Finite ι] {n : ℕ} (hn : 2 ≤ n)
@@ -224,7 +184,7 @@ theorem orderOf_wordProd_of_hasCartanType_D [Finite ι] {n : ℕ} (hn : 2 ≤ n)
     orderOf (wordProd P b l) = 2 * (n - 1) :=
   (orderOf_wordProd_of_isOneDegenerateOrder_of_hasCartanType (t := .D n)
     (DynkinType.cartanMatrix_D n) (isOneDegenerateOrder_D n) (List.Perm.refl _) h hnd hall).trans
-    (orderOf_coxD hn)
+    ((congrArg orderOf (coxD_def n).symm).trans (orderOf_coxD hn))
 
 /-- **Every Coxeter element of a base of type `Aₙ`** has characteristic polynomial
 `∑ k ∈ Finset.range (n + 1), X ^ k` on the simple roots. -/
@@ -234,7 +194,7 @@ theorem charpoly_of_hasCartanType_A_of_actsBy [DecidableEq ι] {n : ℕ}
     W.charpoly = ∑ k ∈ Finset.range (n + 1), X ^ k :=
   (charpoly_of_isOneDegenerateOrder_of_hasCartanType_of_actsBy (t := .A n)
     (DynkinType.cartanMatrix_A n) (isOneDegenerateOrder_A n) (List.Perm.refl _) h hnd hall
-    hW).trans (charpoly_coxA n)
+    hW).trans ((congrArg Matrix.charpoly (coxA_def n).symm).trans (charpoly_coxA n))
 
 /-- **Every Coxeter element of a base of type `Bₙ` (`0 < n`)** has characteristic polynomial
 `X ^ n + 1` on the simple roots. -/
@@ -244,7 +204,7 @@ theorem charpoly_of_hasCartanType_B_of_actsBy [DecidableEq ι] {n : ℕ} (hn : 0
     W.charpoly = X ^ n + 1 :=
   (charpoly_of_isOneDegenerateOrder_of_hasCartanType_of_actsBy (t := .B n)
     (DynkinType.cartanMatrix_B n) (isOneDegenerateOrder_B n) (List.Perm.refl _) h hnd hall
-    hW).trans (charpoly_coxB hn)
+    hW).trans ((congrArg Matrix.charpoly (coxB_def n).symm).trans (charpoly_coxB hn))
 
 /-- **Every Coxeter element of a base of type `Cₙ` (`0 < n`)** has characteristic polynomial
 `X ^ n + 1` on the simple roots. -/
@@ -254,7 +214,7 @@ theorem charpoly_of_hasCartanType_C_of_actsBy [DecidableEq ι] {n : ℕ} (hn : 0
     W.charpoly = X ^ n + 1 :=
   (charpoly_of_isOneDegenerateOrder_of_hasCartanType_of_actsBy (t := .C n)
     (DynkinType.cartanMatrix_C n) (isOneDegenerateOrder_C n) (List.Perm.refl _) h hnd hall
-    hW).trans (charpoly_coxC hn)
+    hW).trans ((congrArg Matrix.charpoly (coxC_def n).symm).trans (charpoly_coxC hn))
 
 /-- **Every Coxeter element of a base of type `Dₙ` (`2 ≤ n`)** has characteristic polynomial
 `(X ^ (n - 1) + 1) * (X + 1)` on the simple roots. -/
@@ -264,18 +224,11 @@ theorem charpoly_of_hasCartanType_D_of_actsBy [DecidableEq ι] {n : ℕ} (hn : 2
     W.charpoly = (X ^ (n - 1) + 1) * (X + 1) :=
   (charpoly_of_isOneDegenerateOrder_of_hasCartanType_of_actsBy (t := .D n)
     (DynkinType.cartanMatrix_D n) (isOneDegenerateOrder_D n) (List.Perm.refl _) h hnd hall
-    hW).trans (charpoly_coxD hn)
+    hW).trans ((congrArg Matrix.charpoly (coxD_def n).symm).trans (charpoly_coxD hn))
 
 end ClassicalOrdersAndCharpoly
 
 /-! ### Complex eigenvalue multisets on simple roots and on the weight space -/
-
-private theorem exp_two_pi_I_div_pow (d : ℂ) (e : ℕ) :
-    (Complex.exp (2 * Real.pi * Complex.I / d)) ^ e =
-      Complex.exp (2 * Real.pi * Complex.I * ((e : ℂ) / d)) := by
-  rw [← Complex.exp_nat_mul]
-  congr 1
-  ring
 
 private theorem nodup_map_exp_of_lt {h : ℕ} (hh : 0 < h) {exps : List ℕ} (hnd : exps.Nodup)
     (hlt : ∀ e ∈ exps, e < h) :
@@ -351,11 +304,12 @@ theorem roots_charpoly_of_hasCartanType_D_of_actsBy {n : ℕ} (hn : 2 ≤ n)
     (W.map (Int.castRingHom ℂ)).charpoly.roots =
       Multiset.ofList (dExponents n |>.map fun e : ℕ =>
         Complex.exp (2 * Real.pi * Complex.I * (e / (2 * (n - 1 : ℂ))))) := by
+  have hn0 : n ≠ 0 := by omega
   have hmap : (W.map (Int.castRingHom ℂ)).charpoly = ((X : ℂ[X]) ^ (n - 1) + 1) * (X + 1) := by
     rw [Matrix.charpoly_map, charpoly_of_hasCartanType_D_of_actsBy hn h hnd hall hW]; simp
   rw [hmap, roots_X_pow_add_one_mul_X_add_one hn
     (Complex.isPrimitiveRoot_exp (2 * (n - 1)) (by omega))]
-  simp [dExponents, show n ≠ 0 by omega, List.map_map, Function.comp_def, exp_two_pi_I_div_pow,
+  simp [dExponents, hn0, List.map_map, Function.comp_def, exp_two_pi_I_div_pow,
     Nat.cast_sub (by omega : 1 ≤ n)]
 
 /-- **Complex eigenvalue multiset of a Coxeter element of type `E₆` on the simple roots.** -/

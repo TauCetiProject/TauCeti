@@ -11,6 +11,7 @@ public import TauCeti.LinearAlgebra.RootSystem.NumberOfRoots
 public import TauCeti.LinearAlgebra.RootSystem.Positive
 import TauCeti.LinearAlgebra.RootSystem.SimplyConnectedRootDatum.Coefficient
 import TauCeti.RingTheory.Polynomial.Cyclotomic.Exponents
+import TauCeti.RingTheory.RootsOfUnity.Complex.Exp
 
 /-!
 # The Coxeter number, exponents, root counts, and coprime-exponent Galois conjugacy
@@ -31,10 +32,10 @@ systems:
 * **Eigenvalues with multiplicity**: over `ℂ`, the root multiset of
   `(P.weylGroupRootRep (wordProd P b l)).charpoly` consists of `exp (2πi e / h)` as `e` runs over
   `(classifiedDynkinType b).exponents`.
-* **Galois conjugacy of coprime exponents**: because the Coxeter element acts integrally on the
-  simple roots and `1` is always an exponent, every residue `a < h` coprime to `h` occurs among the
-  exponents (`TauCeti.DynkinType.mem_exponents_of_coprime`), so `exp (2πi a / h)` is always a
-  Coxeter eigenvalue.
+* **Galois conjugacy of coprime exponents**: for every valid Dynkin type, every natural number
+  `a < h` coprime to `h` is an exponent (`TauCeti.DynkinType.mem_exponents_of_coprime`), so
+  `exp (2πi a / h)` is always a Coxeter eigenvalue
+  (`RootPairing.Base.mem_roots_charpoly_weylGroupRootRep_wordProd_of_coprime`).
 
 ## Main definitions
 
@@ -51,8 +52,7 @@ systems:
   `TauCeti.HasCartanType.natCard_eq_card_support_mul_orderOf_wordProd`: `|Φ| = t.numRoots = r * h`
   for any reduced crystallographic root pairing with a base of valid Cartan type `t`.
 * `TauCeti.DynkinType.mem_exponents_of_coprime`: every natural number `a < h` coprime to `h` is an
-  exponent of a valid `DynkinType`, proved uniformly from
-  `IsPrimitiveRoot.exists_eq_of_isRoot_of_map_eq_prod`.
+  exponent of a valid `DynkinType`.
 * `RootPairing.Base.orderOf_wordProd_eq_orderOf_wordProd`,
   `RootPairing.Base.natCard_eq_card_support_mul_orderOf_wordProd`, and
   `RootPairing.Base.roots_charpoly_weylGroupRootRep_wordProd`: unconditional theorems for any
@@ -77,7 +77,7 @@ namespace DynkinType
 
 /-- The **Coxeter number** `h` of a `DynkinType`: `n + 1` for `Aₙ`, `2n` for `Bₙ` and `Cₙ`,
 `2(n - 1)` for `Dₙ`, and `12, 18, 30, 12, 6` for `E₆, E₇, E₈, F₄, G₂`. -/
-@[expose] def coxeterNumber : DynkinType → ℕ
+def coxeterNumber : DynkinType → ℕ
   | .A n => n + 1
   | .B n | .C n => 2 * n
   | .D n => 2 * (n - 1)
@@ -88,23 +88,23 @@ namespace DynkinType
   | .G2 => 6
 
 /-- The Coxeter number of `Aₙ` is `n + 1`. -/
-@[simp] theorem coxeterNumber_A (n : ℕ) : (A n).coxeterNumber = n + 1 := rfl
+@[simp] theorem coxeterNumber_A (n : ℕ) : (A n).coxeterNumber = n + 1 := (rfl)
 /-- The Coxeter number of `Bₙ` is `2 * n`. -/
-@[simp] theorem coxeterNumber_B (n : ℕ) : (B n).coxeterNumber = 2 * n := rfl
+@[simp] theorem coxeterNumber_B (n : ℕ) : (B n).coxeterNumber = 2 * n := (rfl)
 /-- The Coxeter number of `Cₙ` is `2 * n`. -/
-@[simp] theorem coxeterNumber_C (n : ℕ) : (C n).coxeterNumber = 2 * n := rfl
+@[simp] theorem coxeterNumber_C (n : ℕ) : (C n).coxeterNumber = 2 * n := (rfl)
 /-- The Coxeter number of `Dₙ` is `2 * (n - 1)`. -/
-@[simp] theorem coxeterNumber_D (n : ℕ) : (D n).coxeterNumber = 2 * (n - 1) := rfl
+@[simp] theorem coxeterNumber_D (n : ℕ) : (D n).coxeterNumber = 2 * (n - 1) := (rfl)
 /-- The Coxeter number of `E₆` is `12`. -/
-@[simp] theorem coxeterNumber_E6 : E6.coxeterNumber = 12 := rfl
+@[simp] theorem coxeterNumber_E6 : E6.coxeterNumber = 12 := (rfl)
 /-- The Coxeter number of `E₇` is `18`. -/
-@[simp] theorem coxeterNumber_E7 : E7.coxeterNumber = 18 := rfl
+@[simp] theorem coxeterNumber_E7 : E7.coxeterNumber = 18 := (rfl)
 /-- The Coxeter number of `E₈` is `30`. -/
-@[simp] theorem coxeterNumber_E8 : E8.coxeterNumber = 30 := rfl
+@[simp] theorem coxeterNumber_E8 : E8.coxeterNumber = 30 := (rfl)
 /-- The Coxeter number of `F₄` is `12`. -/
-@[simp] theorem coxeterNumber_F4 : F4.coxeterNumber = 12 := rfl
+@[simp] theorem coxeterNumber_F4 : F4.coxeterNumber = 12 := (rfl)
 /-- The Coxeter number of `G₂` is `6`. -/
-@[simp] theorem coxeterNumber_G2 : G2.coxeterNumber = 6 := rfl
+@[simp] theorem coxeterNumber_G2 : G2.coxeterNumber = 6 := (rfl)
 
 /-- Every valid Dynkin type has Coxeter number at least `2`. -/
 theorem two_le_coxeterNumber {t : DynkinType} (ht : t.Valid) : 2 ≤ t.coxeterNumber := by
@@ -125,7 +125,7 @@ theorem numRoots_eq_rank_mul_coxeterNumber (t : DynkinType) :
 
 /-- The **exponents** `m₁, …, mᵣ` of a `DynkinType`, with multiplicity (so `n - 1` appears twice in
 even type `Dₙ`). -/
-@[expose] def exponents : DynkinType → List ℕ
+def exponents : DynkinType → List ℕ
   | .A n => Coxeter.aExponents n
   | .B n => Coxeter.bExponents n
   | .C n => Coxeter.cExponents n
@@ -137,23 +137,23 @@ even type `Dₙ`). -/
   | .G2 => Coxeter.g2Exponents
 
 /-- The exponents of `Aₙ` are `aExponents n = [1, 2, …, n]`. -/
-@[simp] theorem exponents_A (n : ℕ) : (A n).exponents = Coxeter.aExponents n := rfl
+@[simp] theorem exponents_A (n : ℕ) : (A n).exponents = Coxeter.aExponents n := (rfl)
 /-- The exponents of `Bₙ` are `bExponents n = [1, 3, …, 2n - 1]`. -/
-@[simp] theorem exponents_B (n : ℕ) : (B n).exponents = Coxeter.bExponents n := rfl
+@[simp] theorem exponents_B (n : ℕ) : (B n).exponents = Coxeter.bExponents n := (rfl)
 /-- The exponents of `Cₙ` are `cExponents n = [1, 3, …, 2n - 1]`. -/
-@[simp] theorem exponents_C (n : ℕ) : (C n).exponents = Coxeter.cExponents n := rfl
+@[simp] theorem exponents_C (n : ℕ) : (C n).exponents = Coxeter.cExponents n := (rfl)
 /-- The exponents of `Dₙ` are `dExponents n = [1, 3, …, 2n - 3, n - 1]`. -/
-@[simp] theorem exponents_D (n : ℕ) : (D n).exponents = Coxeter.dExponents n := rfl
+@[simp] theorem exponents_D (n : ℕ) : (D n).exponents = Coxeter.dExponents n := (rfl)
 /-- The exponents of `E₆` are `[1, 4, 5, 7, 8, 11]`. -/
-@[simp] theorem exponents_E6 : E6.exponents = Coxeter.e6Exponents := rfl
+@[simp] theorem exponents_E6 : E6.exponents = Coxeter.e6Exponents := (rfl)
 /-- The exponents of `E₇` are `[1, 5, 7, 9, 11, 13, 17]`. -/
-@[simp] theorem exponents_E7 : E7.exponents = Coxeter.e7Exponents := rfl
+@[simp] theorem exponents_E7 : E7.exponents = Coxeter.e7Exponents := (rfl)
 /-- The exponents of `E₈` are `[1, 7, 11, 13, 17, 19, 23, 29]`. -/
-@[simp] theorem exponents_E8 : E8.exponents = Coxeter.e8Exponents := rfl
+@[simp] theorem exponents_E8 : E8.exponents = Coxeter.e8Exponents := (rfl)
 /-- The exponents of `F₄` are `[1, 5, 7, 11]`. -/
-@[simp] theorem exponents_F4 : F4.exponents = Coxeter.f4Exponents := rfl
+@[simp] theorem exponents_F4 : F4.exponents = Coxeter.f4Exponents := (rfl)
 /-- The exponents of `G₂` are `[1, 5]`. -/
-@[simp] theorem exponents_G2 : G2.exponents = Coxeter.g2Exponents := rfl
+@[simp] theorem exponents_G2 : G2.exponents = Coxeter.g2Exponents := (rfl)
 
 /-- The number of exponents (counted with multiplicity) equals the rank. -/
 @[simp]
@@ -165,56 +165,43 @@ theorem length_exponents (t : DynkinType) : t.exponents.length = t.rank := by
 /-- `1` is an exponent of every valid Dynkin type. -/
 theorem one_mem_exponents {t : DynkinType} (ht : t.Valid) : 1 ∈ t.exponents := by
   cases t with
-  | A n => exact List.mem_map.mpr ⟨0, List.mem_range.mpr (valid_A.mp ht), rfl⟩
-  | B n =>
-    exact List.mem_map.mpr ⟨0, List.mem_range.mpr (lt_of_lt_of_le zero_lt_two (valid_B.mp ht)), rfl⟩
-  | C n => exact List.mem_map.mpr ⟨0, List.mem_range.mpr (by have := valid_C.mp ht; omega), rfl⟩
-  | D n =>
-    have hn := valid_D.mp ht
-    simp only [exponents_D, Coxeter.dExponents, show n ≠ 0 by omega, ↓reduceIte, List.mem_append,
-      List.mem_map, List.mem_range]
-    exact Or.inl ⟨0, by omega, rfl⟩
+  | A n | B n | C n | D n => simp at ht ⊢; omega
   | E6 | E7 | E8 | F4 | G2 => decide
 
 /-- Every exponent of a valid Dynkin type is positive. -/
 theorem pos_of_mem_exponents {t : DynkinType} (ht : t.Valid) {e : ℕ} (he : e ∈ t.exponents) :
     0 < e := by
   cases t with
-  | A n | B n | C n => obtain ⟨k, -, rfl⟩ := List.mem_map.mp he; omega
+  | A n => simp at he; omega
+  | B n | C n =>
+    simp only [exponents_B, exponents_C, Coxeter.mem_bExponents, Coxeter.mem_cExponents] at he
+    obtain ⟨k, rfl⟩ := he.1; omega
   | D n =>
     have hn := valid_D.mp ht
-    simp only [exponents_D, Coxeter.dExponents, show n ≠ 0 by omega, ↓reduceIte, List.mem_append,
-      List.mem_map, List.mem_singleton] at he
-    rcases he with ⟨k, -, rfl⟩ | rfl <;> omega
+    simp only [exponents_D, Coxeter.mem_dExponents] at he
+    rcases he with ⟨⟨k, rfl⟩, -⟩ | ⟨-, rfl⟩ <;> omega
   | E6 | E7 | E8 | F4 | G2 => revert e; decide
 
 /-- Every exponent of a valid Dynkin type is strictly less than the Coxeter number. -/
 theorem lt_coxeterNumber_of_mem_exponents {t : DynkinType} (ht : t.Valid) {e : ℕ}
     (he : e ∈ t.exponents) : e < t.coxeterNumber := by
   cases t with
-  | A n | B n | C n =>
-    obtain ⟨k, hk, rfl⟩ := List.mem_map.mp he
-    rw [List.mem_range] at hk; simp; omega
-  | D n =>
-    have hn := valid_D.mp ht
-    simp only [exponents_D, Coxeter.dExponents, show n ≠ 0 by omega, ↓reduceIte, List.mem_append,
-      List.mem_map, List.mem_range, List.mem_singleton, coxeterNumber_D] at he ⊢
-    rcases he with ⟨k, hk, rfl⟩ | rfl <;> omega
+  | A n | B n | C n | D n => simp at ht he ⊢; omega
   | E6 | E7 | E8 | F4 | G2 => revert e; decide
 
 private theorem two_mul_sum_aExponents (n : ℕ) : 2 * (Coxeter.aExponents n).sum = n * (n + 1) := by
   induction n with
-  | zero => rfl
+  | zero => simp
   | succ m ih =>
-    simp only [Coxeter.aExponents, List.range_succ, List.map_append, List.map_singleton,
+    simp only [Coxeter.aExponents_def, List.range_succ, List.map_append, List.map_singleton,
       List.sum_append, List.sum_singleton] at ih ⊢
     linarith
 
 private theorem sum_bExponents (n : ℕ) : (Coxeter.bExponents n).sum = n ^ 2 := by
   induction n with
-  | zero => rfl
+  | zero => simp
   | succ m ih =>
-    simp only [Coxeter.bExponents, List.range_succ, List.map_append, List.map_singleton,
+    simp only [Coxeter.bExponents_def, List.range_succ, List.map_append, List.map_singleton,
       List.sum_append, List.sum_singleton] at ih ⊢
     nlinarith
 
@@ -225,13 +212,13 @@ theorem two_mul_sum_exponents_eq_numRoots (t : DynkinType) :
   cases t with
   | A n => exact two_mul_sum_aExponents n
   | B n => simp [sum_bExponents]
-  | C n => simp [Coxeter.cExponents, sum_bExponents]
+  | C n => simp [Coxeter.cExponents_def, sum_bExponents]
   | D n =>
     rcases n with _ | m
-    · rfl
-    · simp only [exponents_D, Coxeter.dExponents, Nat.succ_ne_zero, ↓reduceIte,
-        Nat.add_sub_cancel, List.sum_append, List.sum_singleton, numRoots_D]
-      have hb := sum_bExponents m; simp only [Coxeter.bExponents] at hb; rw [hb]; ring
+    · simp
+    · simp only [exponents_D, Coxeter.dExponents_succ, List.sum_append, List.sum_singleton,
+        sum_bExponents, numRoots_D, Nat.add_sub_cancel]
+      ring
   | E6 | E7 | E8 | F4 | G2 => decide
 
 private theorem perm_range_sub (m : ℕ) : ((List.range m).map (m - 1 - ·)).Perm (List.range m) := by
@@ -243,12 +230,13 @@ private theorem perm_range_sub (m : ℕ) : ((List.range m).map (m - 1 - ·)).Per
   exact ⟨fun ⟨a, ha, hka⟩ => by omega, fun hk => ⟨m - 1 - k, by omega, by omega⟩⟩
 
 private theorem perm_map_two_mul_sub (m : ℕ) :
-    (((List.range m).map fun k => 2 * k + 1).map (2 * m - ·)).Perm
-      ((List.range m).map fun k => 2 * k + 1) := by
-  rw [List.map_map, show List.map ((fun x => 2 * m - x) ∘ fun k => 2 * k + 1) (List.range m) =
-      ((List.range m).map (m - 1 - ·)).map (fun k => 2 * k + 1) from by
-    rw [List.map_map]
-    exact List.map_congr_left fun k hk => by rw [List.mem_range] at hk; simp; omega]
+    ((Coxeter.bExponents m).map (2 * m - ·)).Perm (Coxeter.bExponents m) := by
+  rw [Coxeter.bExponents_def]
+  have hmap : ((List.range m).map fun k => 2 * k + 1).map (2 * m - ·) =
+      ((List.range m).map (m - 1 - ·)).map (fun k => 2 * k + 1) := by
+    rw [List.map_map, List.map_map]
+    exact List.map_congr_left fun k hk => by rw [List.mem_range] at hk; simp; omega
+  rw [hmap]
   exact (perm_range_sub m).map _
 
 /-- **Duality of exponents**: `e ↦ h - e` permutes `t.exponents` (preserving multiplicities). -/
@@ -256,18 +244,21 @@ theorem perm_map_sub_exponents (t : DynkinType) :
     (t.exponents.map (t.coxeterNumber - ·)).Perm t.exponents := by
   cases t with
   | A n =>
-    simp only [exponents_A, coxeterNumber_A, Coxeter.aExponents, List.map_map]
-    rw [show List.map ((fun x => n + 1 - x) ∘ (· + 1)) (List.range n) =
-        ((List.range n).map (n - 1 - ·)).map (· + 1) from by
-      rw [List.map_map]
-      exact List.map_congr_left fun k hk => by rw [List.mem_range] at hk; simp; omega]
+    simp only [exponents_A, coxeterNumber_A, Coxeter.aExponents_def]
+    have hmap : ((List.range n).map (· + 1)).map (n + 1 - ·) =
+        ((List.range n).map (n - 1 - ·)).map (· + 1) := by
+      rw [List.map_map, List.map_map]
+      exact List.map_congr_left fun k hk => by rw [List.mem_range] at hk; simp; omega
+    rw [hmap]
     exact (perm_range_sub n).map (· + 1)
-  | B n | C n => exact perm_map_two_mul_sub n
+  | B n => exact perm_map_two_mul_sub n
+  | C n => simpa [Coxeter.cExponents_def] using perm_map_two_mul_sub n
   | D n =>
     rcases n with _ | m
-    · simp [Coxeter.dExponents]
-    · simp only [exponents_D, coxeterNumber_D, Coxeter.dExponents, Nat.succ_ne_zero, ↓reduceIte,
-        Nat.add_sub_cancel, List.map_append, List.map_singleton, show 2 * m - m = m by omega]
+    · simp
+    · have hsub : 2 * m - m = m := by omega
+      simp only [exponents_D, coxeterNumber_D, Coxeter.dExponents_succ, Nat.add_sub_cancel,
+        List.map_append, List.map_singleton, hsub]
       exact (perm_map_two_mul_sub m).append_right [m]
   | E6 | E7 | E8 | F4 | G2 => decide
 
@@ -281,9 +272,8 @@ variable {ι R M N : Type*} [CommRing R] [AddCommGroup M] [Module R M] [AddCommG
   [Module R N] {P : RootPairing ι R M N}
 
 /-- **A reduced crystallographic finite root pairing over a characteristic-zero domain whose base
-has valid Cartan type `t` has `t.numRoots` roots.** No spanning hypothesis (`[P.IsRootSystem]`) is
-needed: the simple-root coefficient columns of `P` and of `t.simplyConnectedRootDatum ht` are
-generated by isomorphic column-reflection groups (`Matrix.comp_equiv_mem_orbit`). -/
+has valid Cartan type `t` has `t.numRoots` roots** (with no `[P.IsRootSystem]` spanning
+hypothesis). -/
 theorem HasCartanType.natCard_eq_numRoots [Finite ι] [CharZero R] [IsDomain R]
     [P.IsCrystallographic] [P.IsReduced] {b : P.Base} {t : DynkinType} (h : HasCartanType P b t)
     (ht : t.Valid) : Nat.card ι = t.numRoots := by
@@ -413,10 +403,8 @@ end HasCartanType
 
 /-! ### Galois conjugacy: every coprime residue `< h` is an exponent -/
 
-/-- **Every residue `a < h` coprime to the Coxeter number `h` is an exponent** of a valid
-`DynkinType`. Proved uniformly from the integrality of the Coxeter characteristic polynomial on the
-pinned simply connected root datum (`IsPrimitiveRoot.exists_eq_of_isRoot_of_map_eq_prod`) and the
-presence of the primitive root `ζ ^ 1` (`1 ∈ t.exponents`). -/
+/-- **Every natural number `a < h` coprime to the Coxeter number `h` is an exponent** of a valid
+`DynkinType`. -/
 theorem DynkinType.mem_exponents_of_coprime {t : DynkinType} (ht : t.Valid) {a : ℕ}
     (ha : a < t.coxeterNumber) (hcop : a.Coprime t.coxeterNumber) : a ∈ t.exponents := by
   let b₀ := t.simplyConnectedBase ht
@@ -427,11 +415,9 @@ theorem DynkinType.mem_exponents_of_coprime {t : DynkinType} (ht : t.Valid) {a :
     (fun i => Finset.mem_toList.mpr (Finset.mem_univ i)) (b₀.actsBy_wordProd l₀)
   set h := t.coxeterNumber
   have hh : 0 < h := t.coxeterNumber_pos ht
+  simp_rw [← exp_two_pi_I_div_pow (h : ℂ)] at hroots
   set ζ : ℂ := Complex.exp (2 * Real.pi * Complex.I / (h : ℂ))
   have hζ : IsPrimitiveRoot ζ h := Complex.isPrimitiveRoot_exp h hh.ne'
-  have hpow (e : ℕ) : ζ ^ e = Complex.exp (2 * Real.pi * Complex.I * ((e : ℂ) / (h : ℂ))) := by
-    rw [← Complex.exp_nat_mul]; congr 1; ring
-  simp_rw [← hpow] at hroots
   set p : ℚ[X] := W₀.charpoly.map (Int.castRingHom ℚ)
   have hp_map : p.map (algebraMap ℚ ℂ) = (W₀.map (Int.castRingHom ℂ)).charpoly := by
     rw [Polynomial.map_map,

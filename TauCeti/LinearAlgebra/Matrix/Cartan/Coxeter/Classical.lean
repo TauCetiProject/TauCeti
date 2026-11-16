@@ -77,16 +77,28 @@ namespace TauCeti.Coxeter
 /-! ### Coxeter elements of the classical Cartan matrices -/
 
 /-- The Coxeter element of `CartanMatrix.A n`. -/
-@[expose] def coxA (n : ℕ) : Matrix (Fin n) (Fin n) ℤ := coxeterElement (CartanMatrix.A n)
+def coxA (n : ℕ) : Matrix (Fin n) (Fin n) ℤ := coxeterElement (CartanMatrix.A n)
+
+/-- `coxA n` unfolds to `coxeterElement (CartanMatrix.A n)`. -/
+theorem coxA_def (n : ℕ) : coxA n = coxeterElement (CartanMatrix.A n) := (rfl)
 
 /-- The Coxeter element of `CartanMatrix.B n`. -/
-@[expose] def coxB (n : ℕ) : Matrix (Fin n) (Fin n) ℤ := coxeterElement (CartanMatrix.B n)
+def coxB (n : ℕ) : Matrix (Fin n) (Fin n) ℤ := coxeterElement (CartanMatrix.B n)
+
+/-- `coxB n` unfolds to `coxeterElement (CartanMatrix.B n)`. -/
+theorem coxB_def (n : ℕ) : coxB n = coxeterElement (CartanMatrix.B n) := (rfl)
 
 /-- The Coxeter element of `CartanMatrix.C n`. -/
-@[expose] def coxC (n : ℕ) : Matrix (Fin n) (Fin n) ℤ := coxeterElement (CartanMatrix.C n)
+def coxC (n : ℕ) : Matrix (Fin n) (Fin n) ℤ := coxeterElement (CartanMatrix.C n)
+
+/-- `coxC n` unfolds to `coxeterElement (CartanMatrix.C n)`. -/
+theorem coxC_def (n : ℕ) : coxC n = coxeterElement (CartanMatrix.C n) := (rfl)
 
 /-- The Coxeter element of `CartanMatrix.D n`. -/
-@[expose] def coxD (n : ℕ) : Matrix (Fin n) (Fin n) ℤ := coxeterElement (CartanMatrix.D n)
+def coxD (n : ℕ) : Matrix (Fin n) (Fin n) ℤ := coxeterElement (CartanMatrix.D n)
+
+/-- `coxD n` unfolds to `coxeterElement (CartanMatrix.D n)`. -/
+theorem coxD_def (n : ℕ) : coxD n = coxeterElement (CartanMatrix.D n) := (rfl)
 
 /-! ### One-degenerate orders of the classical diagrams -/
 
@@ -228,16 +240,29 @@ private theorem sumBasis_mul_diffBasis (m : ℕ) : sumBasis m * diffBasis m = 1 
         Fin.ext_iff, q']
       split_ifs <;> omega
     · intro p hp
-      simp [diffBasis, (Finset.mem_erase.mp (Finset.mem_erase.mp hp).2).1,
-        show p.val ≠ q.val + 1 from fun h => (Finset.mem_erase.mp hp).1 (Fin.ext h)]
+      have hpq : p ≠ q := (Finset.mem_erase.mp (Finset.mem_erase.mp hp).2).1
+      have hpq' : p.val ≠ q.val + 1 := fun h => (Finset.mem_erase.mp hp).1 (Fin.ext h)
+      simp [diffBasis, hpq, hpq']
   · rw [Finset.sum_eq_single q]
     · have _ := r.isLt
       simp only [sumBasis, diffBasis, Matrix.of_apply, Matrix.one_apply, ↓reduceIte, Fin.ext_iff]
       split_ifs <;> omega
-    · intro p _ hp; simp [diffBasis, hp, show p.val ≠ q.val + 1 by have := p.isLt; omega]
+    · intro p _ hp
+      have hpq' : p.val ≠ q.val + 1 := by have := p.isLt; omega
+      simp [diffBasis, hp, hpq']
     · exact fun h => absurd (Finset.mem_univ _) h
 
 /-! ### Cyclic and negacyclic shift matrices -/
+
+private theorem permMatrixHom_finRotate_mul_eq {m k : ℕ}
+    (U : Matrix (Fin (m + 1)) (Fin k) ℤ) (g : Fin m → Matrix (Fin k) (Fin k) ℤ)
+    (h : ∀ i : Fin m, permMatrixHom (BraidGroup.transposition (n := m + 1) i) * U = U * g i) :
+    permMatrixHom (finRotate (m + 1)) * U = U * ((List.finRange m).map g).prod := by
+  have hprod := list_prod_mul_eq_mul_list_prod (List.finRange m) U
+    (permMatrixHom (R := ℤ) ∘ BraidGroup.transposition (n := m + 1)) g (fun i _ => h i)
+  have hrot : (permCoxeterSystem (m + 1)).wordProd (List.finRange m) = finRotate (m + 1) :=
+    permCoxeterSystem_wordProd_finRange (n := m + 1)
+  rwa [← List.map_map, ← map_list_prod, ← permCoxeterSystem_wordProd (n := m + 1), hrot] at hprod
 
 private theorem toMatrix_lmapDomain {m : ℕ} (σ : Equiv.Perm (Fin m)) :
     LinearMap.toMatrix Finsupp.basisSingleOne Finsupp.basisSingleOne
@@ -281,7 +306,7 @@ private theorem negShift_pow_mulVec_single {n : ℕ} (hn : 0 < n) {k : ℕ} (hk 
       negShift_mulVec_single hn]
     have hq := q.isLt
     have hmod : ((q.val + k) % n + 1) % n = (q.val + (k + 1)) % n := by
-      rw [show q.val + (k + 1) = (q.val + k) + 1 by omega, ← Nat.mod_add_mod (q.val + k) n 1]
+      rw [← Nat.add_assoc, ← Nat.mod_add_mod (q.val + k) n 1]
     ext p
     simp only [Pi.smul_apply, Pi.single_apply, Fin.ext_iff, smul_eq_mul, hmod]
     by_cases h1 : q.val + k < n
@@ -411,13 +436,9 @@ private theorem list_prod_extReflA {n : ℕ} (L : List (Fin n)) :
 
 private theorem permMatrixHom_finRotate_mul_diffBasis (n : ℕ) :
     permMatrixHom (finRotate (n + 1)) * diffBasis (n + 1) =
-      diffBasis (n + 1) * ((List.finRange n).map extReflA).prod := by
-  have h := list_prod_mul_eq_mul_list_prod (List.finRange n) (diffBasis (n + 1))
-    (permMatrixHom (R := ℤ) ∘ BraidGroup.transposition (n := n + 1)) extReflA
-    (fun i _ => permMatrixHom_transposition_mul_diffBasis i)
-  rwa [← List.map_map, ← map_list_prod, ← permCoxeterSystem_wordProd (n := n + 1),
-    show (permCoxeterSystem (n + 1)).wordProd (List.finRange n) = finRotate (n + 1) from
-      permCoxeterSystem_wordProd_finRange] at h
+      diffBasis (n + 1) * ((List.finRange n).map extReflA).prod :=
+  permMatrixHom_finRotate_mul_eq (diffBasis (n + 1)) extReflA
+    permMatrixHom_transposition_mul_diffBasis
 
 /-- **Characteristic polynomial of the type `A` Coxeter element**: `1 + X + ⋯ + X ^ n` for every
 rank `n` (including `n = 0`). -/
@@ -465,14 +486,14 @@ theorem orderOf_coxA {n : ℕ} (hn : 0 < n) : orderOf (coxA n) = n + 1 := by
   have hSU : permMatrixHom (finRotate (n + 1)) * U = U * coxA n := by
     ext p j
     have hj := congrFun₂ hint p (finSumFinEquiv (Sum.inl j))
-    change
-      (permMatrixHom (R := ℤ) (finRotate (n + 1)) * diffBasis (n + 1)) p
-        (finSumFinEquiv (Sum.inl j)) = _
-    rw [hj, Matrix.mul_apply, Matrix.mul_apply, ← (finSumFinEquiv (m := n) (n := 1)).sum_comp]
-    simp_rw [show ∀ r : Fin n ⊕ Fin 1,
+    have hentry (r : Fin n ⊕ Fin 1) :
         ((List.finRange n).map extReflA).prod (finSumFinEquiv r) (finSumFinEquiv (Sum.inl j)) =
-          fromBlocks (coxA n) B 0 1 r (Sum.inl j) from fun r => congrFun₂ hB r (Sum.inl j)]
-    simp [U, Fintype.sum_sum_type, coxA, coxeterElement]
+          fromBlocks (coxA n) B 0 1 r (Sum.inl j) := by
+      simpa [coxA, coxeterElement] using congrFun₂ hB r (Sum.inl j)
+    simp only [U, Matrix.mul_apply, submatrix_apply, id_eq, Function.comp_apply] at hj ⊢
+    rw [hj, ← (finSumFinEquiv (m := n) (n := 1)).sum_comp]
+    simp_rw [hentry]
+    simp [Fintype.sum_sum_type]
   refine (orderOf_eq_iff (by omega)).mpr ⟨?_, fun m hm hpos hm1 => ?_⟩
   · have hpow := pow_mul_eq_mul_pow hSU (n + 1)
     have hrot : finRotate (n + 1) ^ (n + 1) = 1 := by
@@ -529,13 +550,9 @@ private theorem permMatrixHom_finRotate_mul_lastFlip (m : ℕ) :
 
 private theorem negShift_mul_diffBasis_eq_diffBasis_mul_coxB (m : ℕ) :
     negShift (m + 1) * diffBasis (m + 1) = diffBasis (m + 1) * coxB (m + 1) := by
-  have h1 := list_prod_mul_eq_mul_list_prod (List.finRange m) (diffBasis (m + 1))
-    (permMatrixHom (R := ℤ) ∘ BraidGroup.transposition (n := m + 1))
+  have h1 := permMatrixHom_finRotate_mul_eq (diffBasis (m + 1))
     (fun i => reflMatrix (CartanMatrix.B (m + 1)) i.castSucc)
-    (fun i _ => permMatrixHom_transposition_mul_diffBasis_B i)
-  rw [← List.map_map, ← map_list_prod, ← permCoxeterSystem_wordProd (n := m + 1),
-    show (permCoxeterSystem (m + 1)).wordProd (List.finRange m) = finRotate (m + 1) from
-      permCoxeterSystem_wordProd_finRange] at h1
+    permMatrixHom_transposition_mul_diffBasis_B
   rw [← permMatrixHom_finRotate_mul_lastFlip, mul_assoc, lastFlip_mul_diffBasis, ← mul_assoc, h1,
     mul_assoc, coxB, coxeterElement, List.finRange_succ_last, List.map_append, List.prod_append,
     List.map_singleton, List.prod_singleton, List.map_map]
@@ -638,7 +655,9 @@ private theorem basisD_apply (m : ℕ) (p q : Fin (m + 2)) :
   rcases lt_or_eq_of_le (Nat.lt_succ_iff.mp hq) with hqlt | hqlast
   · rw [Finset.sum_eq_single q]
     · simp only [diffBasis, Matrix.of_apply, ↓reduceIte, hqlt]; split_ifs <;> omega
-    · intro r _ hr; simp [hr, show ¬ (r.val = m ∧ q.val = m + 1) by omega]
+    · intro r _ hr
+      have hrm : ¬ (r.val = m ∧ q.val = m + 1) := by omega
+      simp [hr, hrm]
     · exact fun h => absurd (Finset.mem_univ _) h
   · let r0 : Fin (m + 2) := ⟨m, by omega⟩
     let r1 : Fin (m + 2) := ⟨m + 1, by omega⟩
@@ -650,8 +669,9 @@ private theorem basisD_apply (m : ℕ) (p q : Fin (m + 2)) :
     · intro r hr
       have hr0 : r ≠ r0 := (Finset.mem_erase.mp (Finset.mem_erase.mp hr).2).1
       have hr1 : r ≠ r1 := (Finset.mem_erase.mp hr).1
-      simp [show r ≠ q from fun h => hr1 (Fin.ext (by rw [h]; exact hqlast)),
-        show ¬ (r.val = m ∧ q.val = m + 1) from fun h => hr0 (Fin.ext h.1)]
+      have hrq : r ≠ q := fun h => hr1 (Fin.ext (h ▸ hqlast))
+      have hrm : ¬ (r.val = m ∧ q.val = m + 1) := fun h => hr0 (Fin.ext h.1)
+      simp [hrq, hrm]
 
 private theorem adjBasisD_mul_basisD (m : ℕ) : adjBasisD m * basisD m = (2 : ℤ) • 1 := by
   rw [adjBasisD, basisD, mul_assoc, ← mul_assoc (sumBasis (m + 2)), sumBasis_mul_diffBasis, one_mul]
@@ -665,8 +685,9 @@ private theorem adjBasisD_mul_basisD (m : ℕ) : adjBasisD m * basisD m = (2 : �
       Finset.sum_eq_zero]
     · clear hr01 hp0 hp; simp [Fin.ext_iff, Matrix.one_apply, r0, r1]; split_ifs <;> omega
     · intro r hr
-      simp [show r0 ≠ r from fun h => (Finset.mem_erase.mp (Finset.mem_erase.mp hr).2).1 h.symm,
-        show r.val ≠ m + 1 from fun h => (Finset.mem_erase.mp hr).1 (Fin.ext h)]
+      have hr0 : r0 ≠ r := fun h => (Finset.mem_erase.mp (Finset.mem_erase.mp hr).2).1 h.symm
+      have hr1 : r.val ≠ m + 1 := fun h => (Finset.mem_erase.mp hr).1 (Fin.ext h)
+      simp [hr0, hr1]
   · have hpm : p.val ≠ m := fun h => hp0 (Fin.ext h)
     clear hp0 hr01
     rw [Finset.sum_eq_single p]
@@ -723,10 +744,14 @@ private theorem forkFlip_mul_apply {m k : ℕ} (M : Matrix (Fin (m + 2)) (Fin k)
   · rw [Finset.sum_eq_single p (fun r _ hr => by simp [forkFlip, hp1, hr.symm])
       (fun h => absurd (Finset.mem_univ _) h)]; simp [forkFlip, hp1]
   · rw [Finset.sum_eq_single (Fin.last (m + 1))
-      (fun r _ hr => by simp [forkFlip, hp2, show r.val ≠ m + 1 from fun h => hr (Fin.ext h)])
+      (fun r _ hr => by
+        have hr' : r.val ≠ m + 1 := fun h => hr (Fin.ext h)
+        simp [forkFlip, hp2, hr'])
       (fun h => absurd (Finset.mem_univ _) h)]; simp [forkFlip, hp2]
   · rw [Finset.sum_eq_single (Fin.last m).castSucc
-      (fun r _ hr => by simp [forkFlip, hp1, hp2, show r.val ≠ m from fun h => hr (Fin.ext h)])
+      (fun r _ hr => by
+        have hr' : r.val ≠ m := fun h => hr (Fin.ext h)
+        simp [forkFlip, hp1, hp2, hr'])
       (fun h => absurd (Finset.mem_univ _) h)]; simp [forkFlip, hp1, hp2]
 
 private theorem forkFlip_mul_basisD (m : ℕ) :
@@ -741,7 +766,8 @@ private theorem forkFlip_mul_basisD (m : ℕ) :
   rw [hD]
   rcases eq_or_ne q.val (m + 1) with hq1 | hq1
   · simp [hq1, basisD_apply]; split_ifs <;> omega
-  · simp [hq1, show q.val < m + 1 by omega, basisD_apply, Fin.ext_iff]; split_ifs <;> omega
+  · have hqlt : q.val < m + 1 := by omega
+    simp [hq1, hqlt, basisD_apply, Fin.ext_iff]; split_ifs <;> omega
 
 /-- Block-diagonal model `fromBlocks (negShift (m + 1)) 0 0 (-1)` of `coxD (m + 2)`. -/
 private def modelD (m : ℕ) : Matrix (Fin (m + 2)) (Fin (m + 2)) ℤ :=
@@ -773,13 +799,9 @@ private theorem permMatrixHom_finRotate_mul_forkFlip (m : ℕ) :
 
 private theorem modelD_mul_basisD_eq_basisD_mul_coxD (m : ℕ) :
     modelD m * basisD m = basisD m * coxD (m + 2) := by
-  have h1 := list_prod_mul_eq_mul_list_prod (List.finRange (m + 1)) (basisD m)
-    (permMatrixHom (R := ℤ) ∘ BraidGroup.transposition (n := m + 2))
+  have h1 := permMatrixHom_finRotate_mul_eq (basisD m)
     (fun i => reflMatrix (CartanMatrix.D (m + 2)) i.castSucc)
-    (fun i _ => permMatrixHom_transposition_mul_basisD i)
-  rw [← List.map_map, ← map_list_prod, ← permCoxeterSystem_wordProd (n := m + 2),
-    show (permCoxeterSystem (m + 2)).wordProd (List.finRange (m + 1)) = finRotate (m + 2) from
-      permCoxeterSystem_wordProd_finRange] at h1
+    permMatrixHom_transposition_mul_basisD
   rw [← permMatrixHom_finRotate_mul_forkFlip, mul_assoc, forkFlip_mul_basisD, ← mul_assoc, h1,
     mul_assoc, coxD, coxeterElement, List.finRange_succ_last (n := m + 1), List.map_append,
     List.prod_append, List.map_singleton, List.prod_singleton, List.map_map]
@@ -792,7 +814,8 @@ theorem charpoly_coxD_zero : (coxD 0).charpoly = 1 := by simp
 `X + 1`. -/
 @[simp]
 theorem charpoly_coxD_one : (coxD 1).charpoly = X + 1 := by
-  rw [show coxD 1 = -1 by decide, Matrix.charpoly, Matrix.det_fin_one]
+  have h1 : coxD 1 = -1 := by decide
+  rw [h1, Matrix.charpoly, Matrix.det_fin_one]
   simp [sub_neg_eq_add]
 
 /-- **Characteristic polynomial of the type `D` Coxeter element** (`2 ≤ n`):
@@ -800,7 +823,8 @@ theorem charpoly_coxD_one : (coxD 1).charpoly = X + 1 := by
 theorem charpoly_coxD {n : ℕ} (hn : 2 ≤ n) :
     (coxD n).charpoly = (X ^ (n - 1) + 1) * (X + 1) := by
   obtain ⟨m, rfl⟩ : ∃ m, n = m + 2 := ⟨n - 2, by omega⟩
-  rw [show m + 2 - 1 = m + 1 by omega,
+  have hsub : m + 2 - 1 = m + 1 := rfl
+  rw [hsub,
     (intertwine_charpoly_and_orderOf two_ne_zero (adjBasisD_mul_basisD m)
       (modelD_mul_basisD_eq_basisD_mul_coxD m)).1,
     modelD, charpoly_reindex, charpoly_fromBlocks_zero₂₁, charpoly_negShift (Nat.succ_pos m)]
@@ -818,9 +842,10 @@ theorem orderOf_coxD_one : orderOf (coxD 1) = 2 :=
   (orderOf_eq_iff (by norm_num)).mpr ⟨by decide +kernel, by decide +kernel⟩
 
 private theorem orderOf_modelD (m : ℕ) : orderOf (modelD m) = 2 * (m + 1) := by
-  let heqv := (reindexAlgEquiv ℤ ℤ (finSumFinEquiv (m := m + 1) (n := 1))).toRingEquiv.toMulEquiv
-  change orderOf (heqv _) = _
-  rw [heqv.orderOf_eq]
+  let e := finSumFinEquiv (m := m + 1) (n := 1)
+  have hre : modelD m = (reindexAlgEquiv ℤ ℤ e).toRingEquiv.toMulEquiv
+      (fromBlocks (negShift (m + 1)) 0 0 (-1 : Matrix (Fin 1) (Fin 1) ℤ)) := rfl
+  rw [hre, MulEquiv.orderOf_eq]
   refine (orderOf_eq_iff (by omega)).mpr ⟨?_, fun k hk hpos hk1 => ?_⟩
   · rw [fromBlocks_diagonal_pow, ← orderOf_negShift (Nat.succ_pos m), pow_orderOf_eq_one,
       orderOf_negShift (Nat.succ_pos m), pow_mul, neg_one_sq, one_pow, fromBlocks_one]
@@ -834,7 +859,8 @@ private theorem orderOf_modelD (m : ℕ) : orderOf (modelD m) = 2 * (m + 1) := b
 `CartanMatrix.D n` has order `2 * (n - 1)`. -/
 theorem orderOf_coxD {n : ℕ} (hn : 2 ≤ n) : orderOf (coxD n) = 2 * (n - 1) := by
   obtain ⟨m, rfl⟩ : ∃ m, n = m + 2 := ⟨n - 2, by omega⟩
-  rw [show m + 2 - 1 = m + 1 by omega,
+  have hsub : m + 2 - 1 = m + 1 := rfl
+  rw [hsub,
     (intertwine_charpoly_and_orderOf two_ne_zero (adjBasisD_mul_basisD m)
       (modelD_mul_basisD_eq_basisD_mul_coxD m)).2, orderOf_modelD]
 
