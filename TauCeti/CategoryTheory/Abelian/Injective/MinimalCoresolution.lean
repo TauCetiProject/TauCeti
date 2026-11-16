@@ -247,15 +247,15 @@ section Tail
 variable {S : ComposableArrows C (n + 2)}
 
 /-- The tail of an injective coresolution is an injective coresolution. -/
-theorem IsInjectiveCoresolution.tail (hS : S.IsInjectiveCoresolution) :
-    hS.toIsCoresolution.tail.IsInjectiveCoresolution where
+theorem IsInjectiveCoresolution.isInjectiveCoresolution_tail (hS : S.IsInjectiveCoresolution) :
+    hS.tail.IsInjectiveCoresolution where
   toIsCoresolution := hS.toIsCoresolution.isCoresolution_tail
   injective i hi := hS.injective (i + 1) (by omega)
 
 /-- The tail of a minimal injective coresolution is a minimal injective coresolution. -/
-theorem IsMinimalInjectiveCoresolution.tail (hS : S.IsMinimalInjectiveCoresolution) :
-    hS.toIsCoresolution.tail.IsMinimalInjectiveCoresolution where
-  toIsInjectiveCoresolution := hS.toIsInjectiveCoresolution.tail
+theorem IsMinimalInjectiveCoresolution.isMinimalInjectiveCoresolution_tail
+    (hS : S.IsMinimalInjectiveCoresolution) : hS.tail.IsMinimalInjectiveCoresolution where
+  toIsInjectiveCoresolution := hS.toIsInjectiveCoresolution.isInjectiveCoresolution_tail
   isEssentialMono i hi := by
     have hS' := hS.toIsCoresolution
     match i, hi with
