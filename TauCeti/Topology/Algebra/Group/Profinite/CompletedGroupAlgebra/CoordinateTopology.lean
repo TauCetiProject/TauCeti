@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Topology.Algebra.Group.Profinite.CompletedGroupAlgebra.DyadicCoordinate
 public import TauCeti.Topology.Algebra.Module.ModuleTopology
+import TauCeti.Topology.Algebra.MonoidAlgebra.PowerSeries
 
 /-!
 # Topology of the power-series coordinates with finite group-ring coefficients
@@ -31,43 +32,6 @@ public section
 open scoped PowerSeries.WithPiTopology
 
 namespace TauCeti.completedGroupAlgebra
-
-section PowerSeriesCoeff
-
-/-- Extracting the `m`-coefficient series through `(MonoidAlgebra.powerSeriesAlgEquiv R R M).symm`
-is continuous for the module topology on `R[M]` and the coefficientwise topology on `R[M]⟦X⟧`. -/
-theorem continuous_coeff_powerSeriesAlgEquiv_symm {R M : Type*} [CommRing R] [TopologicalSpace R]
-    [IsTopologicalRing R] [Monoid M] [Finite M] [TopologicalSpace (MonoidAlgebra R M)]
-    [IsModuleTopology R (MonoidAlgebra R M)] (m : M) :
-    Continuous fun ψ : PowerSeries (MonoidAlgebra R M) ↦
-      ((MonoidAlgebra.powerSeriesAlgEquiv R R M).symm ψ).coeff m := by
-  refine continuous_iff_continuousAt.mpr fun ψ ↦
-    (PowerSeries.WithPiTopology.tendsto_iff_coeff_tendsto R _ _ _).mpr fun n ↦ ?_
-  let l : MonoidAlgebra R M →ₗ[R] R :=
-    (Finsupp.lapply m).comp (MonoidAlgebra.coeffLinearEquiv R).toLinearMap
-  simpa only [MonoidAlgebra.coeff_coeff_powerSeriesAlgEquiv_symm, ContinuousAt,
-    Function.comp_def, show ∀ a, l a = a.coeff m from fun _ ↦ rfl] using
-      ((IsModuleTopology.continuous_of_linearMap l).comp
-        (PowerSeries.WithPiTopology.continuous_coeff (MonoidAlgebra R M) n)).continuousAt
-
-/-- For a finite monoid `M` and a continuous `ε : R⟦X⟧ →ₐ[R] B` commuting with `η : M →* B`, the
-induced map `R[M]⟦X⟧ →ₐ[R] B` through `(powerSeriesAlgEquiv R R M).symm` is continuous. -/
-theorem continuous_liftNCAlgHom_powerSeriesAlgEquiv_symm {R M B : Type*} [CommRing R]
-    [TopologicalSpace R] [IsTopologicalRing R] [Monoid M] [Finite M]
-    [TopologicalSpace (MonoidAlgebra R M)] [IsModuleTopology R (MonoidAlgebra R M)]
-    [Semiring B] [Algebra R B] [TopologicalSpace B] [ContinuousAdd B] [ContinuousMul B]
-    {ε : PowerSeries R →ₐ[R] B} (hε : Continuous ε) (η : M →* B)
-    (h_comm : ∀ x y, Commute (ε x) (η y)) :
-    Continuous ((MonoidAlgebra.liftNCAlgHom ε η h_comm).comp
-      (MonoidAlgebra.powerSeriesAlgEquiv R R M).symm.toAlgHom) := by
-  have := Fintype.ofFinite M
-  exact (continuous_finsetSum (s := Finset.univ)
-    (f := fun m ψ ↦ ε (((MonoidAlgebra.powerSeriesAlgEquiv R R M).symm ψ).coeff m) * η m) fun m _ ↦
-      (hε.comp (continuous_coeff_powerSeriesAlgEquiv_symm m)).mul continuous_const).congr fun ψ ↦ by
-    simpa only [AlgHom.comp_apply, AlgEquiv.coe_toAlgHom] using
-      (MonoidAlgebra.liftNCAlgHom_powerSeriesAlgEquiv_symm_apply R R M ε η h_comm ψ).symm
-
-end PowerSeriesCoeff
 
 section Product
 

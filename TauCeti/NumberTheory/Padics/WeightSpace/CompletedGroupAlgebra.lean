@@ -101,24 +101,10 @@ theorem padicUnitsCoordinate_C_single_one (δ : (ZMod (p ^ padicUnitsDepth p))ˣ
     padicUnitsCoordinate p
         (PowerSeries.binomialSeries (MonoidAlgebra ℤ_[p] (ZMod (p ^ padicUnitsDepth p))ˣ) s) =
       completedGroupAlgebra.of ℤ_[p] ℤ_[p]ˣ ((unitsPrincipalLogEquiv p).symm (.ofAdd s)) := by
-  set C := (ZMod (p ^ padicUnitsDepth p))ˣ
-  let φ := PowerSeries.binomialSeries ℤ_[p] s
-  have hmap : PowerSeries.binomialSeries (MonoidAlgebra ℤ_[p] C) s =
-      PowerSeries.map (MonoidAlgebra.singleOneRingHom : ℤ_[p] →+* MonoidAlgebra ℤ_[p] C) φ := by
-    ext n; simp [φ, PowerSeries.binomialSeries_coeff, MonoidAlgebra.one_def]
-  have h1 : (MonoidAlgebra.powerSeriesAlgEquiv ℤ_[p] ℤ_[p] C).symm
-      (PowerSeries.map MonoidAlgebra.singleOneRingHom φ) = MonoidAlgebra.single 1 φ :=
-    (MonoidAlgebra.powerSeriesAlgEquiv ℤ_[p] ℤ_[p] C).symm_apply_eq.mpr
-      (by rw [MonoidAlgebra.coe_powerSeriesAlgEquiv, MonoidAlgebra.toPowerSeries_single_one])
-  rw [hmap, padicUnitsCoordinate, AlgEquiv.trans_apply,
-    completedGroupAlgebra.prodPowerSeriesCoordinate_def, AlgEquiv.trans_apply, AlgEquiv.trans_apply,
-    h1, show MonoidAlgebra.mapAlgEquiv ℤ_[p] C _ (MonoidAlgebra.single 1 φ) =
-      MonoidAlgebra.single 1 _ from MonoidAlgebra.mapAlgHom_single _ 1 φ,
-    completedGroupAlgebra.coe_monoidAlgebraProdEquiv,
-    completedGroupAlgebra.monoidAlgebraProdHom_single_one, AlgEquiv.coe_toAlgHom,
-    completedGroupAlgebra.powerSeriesCoordinate_binomialSeries,
-    IsProP.padicPow_ofAdd_one_padicInt, completedGroupAlgebra.map_of, MonoidHom.inr_apply,
-    completedGroupAlgebra.domCongr_of, padicIntUnitsEquivZModUnitsProd_symm_apply, map_one, one_mul]
+  rw [padicUnitsCoordinate, AlgEquiv.trans_apply,
+    completedGroupAlgebra.prodPowerSeriesCoordinate_binomialSeries,
+    IsProP.padicPow_ofAdd_one_padicInt, completedGroupAlgebra.domCongr_of,
+    padicIntUnitsEquivZModUnitsProd_symm_apply, map_one, one_mul]
 
 /-- **Expansion of group elements in weight coordinates.** The inverse of `padicUnitsCoordinate`
 sends `[x]` (`x ∈ ℤ_pˣ`) to `[x mod q] · (1 + X) ^ (log (x / ω(x mod q)) / q)`. -/

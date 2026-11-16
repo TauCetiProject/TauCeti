@@ -7,6 +7,7 @@ module
 
 public import TauCeti.NumberTheory.Padics.WeightSpace.CompletedGroupAlgebra
 public import TauCeti.NumberTheory.Padics.WeightSpace.GeneratorChange
+import TauCeti.Topology.Algebra.MonoidAlgebra.PowerSeries
 
 /-!
 # Universal characters and specialisation of `ℤ_p[[ℤ_pˣ]]`
@@ -61,8 +62,9 @@ private theorem liftPS_map_singleOne (φ : PowerSeries ℤ_[p]) :
     liftPS ε η (padicUnitsCoordinate p (PowerSeries.map MonoidAlgebra.singleOneRingHom φ)) =
       ε φ := by
   rw [liftPS, AlgHom.comp_apply, AlgHom.comp_apply, AlgEquiv.coe_toAlgHom, AlgEquiv.coe_toAlgHom,
-    (padicUnitsCoordinate p).symm_apply_apply, ← MonoidAlgebra.toPowerSeries_single_one ℤ_[p] ℤ_[p],
-    ← MonoidAlgebra.coe_powerSeriesAlgEquiv, AlgEquiv.symm_apply_apply]; simp
+    (padicUnitsCoordinate p).symm_apply_apply,
+    MonoidAlgebra.powerSeriesAlgEquiv_symm_map_singleOneRingHom]
+  simp
 
 private theorem liftPS_of (x : ℤ_[p]ˣ) :
     liftPS ε η (completedGroupAlgebra.of ℤ_[p] ℤ_[p]ˣ x) =
@@ -83,7 +85,7 @@ private theorem continuous_liftPS [TopologicalSpace B] [IsTopologicalRing B] (h�
   let : TopologicalSpace (MonoidAlgebra ℤ_[p] (ZMod (p ^ padicUnitsDepth p))ˣ) :=
     moduleTopology ℤ_[p] _
   have : IsModuleTopology ℤ_[p] (MonoidAlgebra ℤ_[p] (ZMod (p ^ padicUnitsDepth p))ˣ) := ⟨rfl⟩
-  exact (completedGroupAlgebra.continuous_liftNCAlgHom_powerSeriesAlgEquiv_symm hε
+  exact (continuous_liftNCAlgHom_powerSeriesAlgEquiv_symm hε
     ((Units.coeHom B).comp η) (fun _ _ ↦ Commute.all _ _)).comp
     (continuous_padicUnitsCoordinate_symm p)
 
@@ -389,7 +391,7 @@ theorem hasSum_normedSpecialize_padicUnitsCoordinateAt (κ : WeightSpace p R) (u
   have hL_eq : ⇑L₁ = ⇑L₂ :=
     (PowerSeries.WithPiTopology.denseRange_toPowerSeries (MonoidAlgebra ℤ_[p] Δ)).equalizer
       (κ.continuous_normedSpecialize.comp (continuous_padicUnitsCoordinateAt p u))
-      (completedGroupAlgebra.continuous_liftNCAlgHom_powerSeriesAlgEquiv_symm
+      (continuous_liftNCAlgHom_powerSeriesAlgEquiv_symm
         (continuous_padicPowerSeriesEval p (κ.tendsto_coordAt_pow u))
         ((Units.coeHom R).comp κ.finiteChar) (fun _ _ ↦ Commute.all _ _))
       (funext fun P ↦ by
@@ -444,34 +446,28 @@ end AdicNormed
 /-! ### Specialisation for ultrametric normed `ℚ_p`-algebras -/
 
 section NormedPadicAlgebra
-variable {K : Type*} [NormedCommRing K] [NormedAlgebra ℚ_[p] K]
-
-variable (p K) in
-@[instance_reducible] private noncomputable def padicAlg : Algebra ℤ_[p] K :=
-  Algebra.compHom K (algebraMap ℤ_[p] ℚ_[p])
-variable (p K) in
-private theorem padicBoundedSMul : letI := padicAlg p K; IsBoundedSMul ℤ_[p] K :=
-  letI := padicAlg p K; .of_norm_smul_le fun r x ↦ norm_smul_le (r : ℚ_[p]) x
-
-variable [IsUltrametricDist K] [CompleteSpace K]
+variable {K : Type*} [NormedCommRing K] [NormedAlgebra ℚ_[p] K] [IsUltrametricDist K]
+  [CompleteSpace K]
 
 /-- **Specialisation of `ℤ_p[[ℤ_pˣ]]` at a weight in a complete ultrametric normed commutative
 `ℚ_p`-algebra `K`**, bundled as a ring homomorphism without requiring `Algebra ℤ_[p] K`. -/
 noncomputable def specializeRingHom (κ : WeightSpace p K) :
     completedGroupAlgebra ℤ_[p] ℤ_[p]ˣ →+* K :=
-  letI := padicAlg p K; haveI := padicBoundedSMul p K; κ.normedSpecialize.toRingHom
+  letI := padicIntAlgebra p K; haveI := isBoundedSMul_padicIntAlgebra p K
+  κ.normedSpecialize.toRingHom
 
 theorem continuous_specializeRingHom (κ : WeightSpace p K) : Continuous κ.specializeRingHom :=
-  letI := padicAlg p K; haveI := padicBoundedSMul p K; κ.continuous_normedSpecialize
+  letI := padicIntAlgebra p K; haveI := isBoundedSMul_padicIntAlgebra p K
+  κ.continuous_normedSpecialize
 @[simp] theorem specializeRingHom_of (κ : WeightSpace p K) (x : ℤ_[p]ˣ) :
     κ.specializeRingHom (completedGroupAlgebra.of ℤ_[p] ℤ_[p]ˣ x) = κ x :=
-  letI := padicAlg p K; haveI := padicBoundedSMul p K; κ.normedSpecialize_of x
+  letI := padicIntAlgebra p K; haveI := isBoundedSMul_padicIntAlgebra p K; κ.normedSpecialize_of x
 @[simp] theorem specializeRingHom_algebraMap (κ : WeightSpace p K) (a : ℤ_[p]) :
     κ.specializeRingHom (algebraMap ℤ_[p] (completedGroupAlgebra ℤ_[p] ℤ_[p]ˣ) a) =
       padicIntAlgebraMap p K a := by
-  let _ := padicAlg p K; have _ := padicBoundedSMul p K
-  simp [specializeRingHom, padicAlg, AlgHom.commutes, Algebra.compHom_algebraMap_apply,
-    padicIntAlgebraMap_apply, PadicInt.algebraMap_eq_coe_ringHom]
+  let _ := padicIntAlgebra p K; have _ := isBoundedSMul_padicIntAlgebra p K
+  simp [specializeRingHom, AlgHom.commutes, algebraMap_padicIntAlgebra_apply,
+    padicIntAlgebraMap_apply]
 @[simp] theorem specializeRingHom_coord (κ : WeightSpace p K) :
     κ.specializeRingHom (completedGroupAlgebra.of ℤ_[p] ℤ_[p]ˣ (padicUnitsGenerator p) - 1) =
       κ.coord := by rw [map_sub, map_one, specializeRingHom_of, coord_def]
@@ -484,14 +480,13 @@ theorem hasSum_specializeRingHom_padicUnitsCoordinate (κ : WeightSpace p K)
     HasSum (fun n : ℕ ↦ MonoidAlgebra.liftNCRingHom (padicIntAlgebraMap p K)
         ((Units.coeHom K).comp κ.finiteChar) (fun _ _ ↦ Commute.all _ _) (F.coeff n) * κ.coord ^ n)
       (κ.specializeRingHom (padicUnitsCoordinate p F)) := by
-  let _ := padicAlg p K; have _ := padicBoundedSMul p K
+  let _ := padicIntAlgebra p K; have _ := isBoundedSMul_padicIntAlgebra p K
   refine (κ.hasSum_normedSpecialize_padicUnitsCoordinate F).congr_fun fun n ↦ congrArg (· * _) ?_
   induction F.coeff n using MonoidAlgebra.induction_linear with
   | zero => simp
   | add _ _ hx hy => simp [map_add, hx, hy]
   | single _ _ =>
-    simp [Algebra.smul_def, Algebra.compHom_algebraMap_apply, padicIntAlgebraMap_apply,
-      PadicInt.algebraMap_eq_coe_ringHom]
+    simp [Algebra.smul_def, algebraMap_padicIntAlgebra_apply, padicIntAlgebraMap_apply]
 @[simp] theorem ofContinuousRingHom_specializeRingHom (κ : WeightSpace p K) :
     ofContinuousRingHom κ.specializeRingHom κ.continuous_specializeRingHom = κ := by
   ext x; exact κ.specializeRingHom_of x
