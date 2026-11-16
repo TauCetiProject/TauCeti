@@ -32,13 +32,13 @@ open scoped NNReal
 
 namespace TauCeti.Probability
 
-/-- Affine transport commutes with Gaussian truncation on the preimage of a measurable event.
-This formulation also allows a zero slope and a zero variance. -/
-theorem map_affine_truncatedNormalMeasure_preimage (m : ℝ) (v : ℝ≥0) (a b : ℝ)
-    {s : Set ℝ} (hs : MeasurableSet s) :
+/-- Affine transport commutes with Gaussian truncation on the preimage of an arbitrary event,
+without requiring the event to be measurable. This formulation also allows a zero slope and a
+zero variance. -/
+theorem map_affine_truncatedNormalMeasure_preimage (m : ℝ) (v : ℝ≥0) (a b : ℝ) (s : Set ℝ) :
     (truncatedNormalMeasure m v ((fun x ↦ a + b * x) ⁻¹' s)).map (fun x ↦ a + b * x) =
       truncatedNormalMeasure (a + b * m) (NNReal.mk (b ^ 2) (sq_nonneg b) * v) s := by
-  rw [truncatedNormalMeasure_def, (gaussianReal m v).map_affine_cond_preimage a b hs,
+  rw [truncatedNormalMeasure_def, (gaussianReal m v).map_affine_cond_preimage a b s,
     gaussianReal_map_const_add_const_mul, truncatedNormalMeasure_def]
 
 /-- An invertible affine image of a truncated Gaussian transforms the underlying Gaussian's
