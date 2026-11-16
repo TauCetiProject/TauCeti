@@ -22,8 +22,10 @@ homotopy equivalent to `F({v})`, placed in degree `0`
 
 The contracting homotopy sends the summand `F(s)` to `± F(s ∪ {v})` through the inverse of the
 restriction, the cone with vertex `v`. The augmentation sends the summand `F({i})` to `F({v})`
-through `F({i}) ≅ F({i, v}) ⟶ F({v})`, and its section is the summand inclusion of `F({v})`
-(`CategoryTheory.Functor.orderedCechComplexι_orderedCechHomotopyEquivOfVertex_hom_f_zero`).
+through `F({i}) ≅ F({i, v}) ⟶ F({v})`, so it is the identity on the summand `F({v})`
+(`CategoryTheory.Functor.orderedCechComplexι_orderedCechHomotopyEquivOfVertex_hom_f_zero`). Its
+section is the summand inclusion of `F({v})`
+(`CategoryTheory.Functor.orderedCechHomotopyEquivOfVertex_inv_f_zero`).
 
 The argument adapts the cone of `TauCeti.freeCechHomotopyEquiv`
 (`TauCeti/Algebra/Homology/OrderedCech/Cover.lean`), where the vertex of the cone depends on the
@@ -330,6 +332,17 @@ lemma orderedCechComplexι_orderedCechHomotopyEquivOfVertex_hom_f_zero (v : ι)
   rw [← cancel_mono (HomologicalComplex.singleObjXSelf _ 0 _).hom, Iso.inv_hom_id, Category.assoc,
     ← single_of_card_eq F (card_singleton v)]
   exact (single_augmentation_f_zero F v hF (card_singleton v)).trans (toVertex_singleton F v hF)
+
+/-- The inverse of the homotopy equivalence `Functor.orderedCechHomotopyEquivOfVertex` is, in
+degree `0`, the inclusion of the summand `F({v})`. -/
+@[simp, reassoc]
+lemma orderedCechHomotopyEquivOfVertex_inv_f_zero (v : ι)
+    (hF : ∀ s : Finset ι, s.Nonempty → IsIso (F.map (homOfLE (subset_insert v s)).op)) :
+    (F.orderedCechHomotopyEquivOfVertex v hF).inv.f 0 =
+      F.orderedCechComplexι (p := 0) ⟨{v}, card_singleton v⟩ := by
+  rw [← single_of_card_eq F (card_singleton v)]
+  -- The inverse is `coneSection F v`, which is defined through `fromSingle₀Equiv`.
+  exact ChainComplex.fromSingle₀Equiv_symm_apply_f_zero _
 
 end Functor
 

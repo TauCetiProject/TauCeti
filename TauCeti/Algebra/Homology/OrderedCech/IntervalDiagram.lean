@@ -24,8 +24,9 @@ to every inclusion `s ≤ s' ≤ t' ≤ t` of intervals, functorially. A *flag* 
 
 `Tot A = ⨁ₚ ⨁_{s₀ < ⋯ < sₚ} A[s₀, sₚ][p]`
 
-whose differential is the internal differential plus the alternating sum `∑ₖ (-1)ᵏ` of the arrows
-of `A` to the flags with `sₖ` deleted. Implicit atlases glue local virtual chain complexes with
+whose differential is the alternating sum `∑ₖ (-1)ᵏ` of the arrows of `A` to the flags with `sₖ`
+deleted plus `(-1)ᵖ` times the internal differential, following the sign convention of Mathlib's
+total complexes. Implicit atlases glue local virtual chain complexes with
 this finite homotopy colimit over the subsets of an index set.
 
 The construction here proceeds in two steps.
@@ -422,7 +423,8 @@ variable {D : Type u} [Category.{v} D] [Preadditive D] [HasFiniteCoproducts D]
 /-- The *total* of an interval diagram `A` of chain complexes (Pardon, Definition A.7.2): in degree
 `n` it is the direct sum of the degree `q` terms of `A[s₀, sₚ]` over the flags `s₀ < ⋯ < sₚ` of
 `S` and the degrees with `p + q = n`. It is the total complex of the flag complex, a first-quadrant
-bicomplex whose column `p` collects the flags with `p + 1` vertices. -/
+bicomplex whose column `p` collects the flags with `p + 1` vertices, so on column `p` the
+differential is the alternating deletion sum plus `(-1)ᵖ` times the internal differential. -/
 abbrev total (A : IntervalDiagram S (ChainComplex D ℕ)) : ChainComplex D ℕ :=
   HomologicalComplex₂.total A.flagComplex (ComplexShape.down ℕ)
 
