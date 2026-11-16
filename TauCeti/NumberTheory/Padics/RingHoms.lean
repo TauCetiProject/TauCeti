@@ -38,6 +38,9 @@ to a `p`-adic exponent: `g ^ x.appr n` does not change when `n` grows past the o
 
 * `PadicInt.val_toZModPow_eq_appr`, `PadicInt.toZModPow_eq_natCast_appr`: `appr` computes the
   `ZMod (p ^ n)`-value of `toZModPow`, which is the class of the natural number `x.appr n`.
+* `PadicInt.isLocalHom_toZModPow`: for `n ≠ 0`, truncation modulo `p ^ n` is a local ring
+  homomorphism, so a `p`-adic integer is a unit exactly when its residue modulo `p ^ n` is
+  (`isUnit_map_iff`).
 * `PadicInt.continuous_toZModPow`, `PadicInt.continuous_toZMod`: truncation modulo `p ^ n` and
   reduction modulo `p` are continuous, `ZMod (p ^ n)` and `ZMod p` carrying the discrete
   topology.
@@ -51,8 +54,6 @@ to a `p`-adic exponent: `g ^ x.appr n` does not change when `n` grows past the o
   whose residue modulo `8` squares to `1`; `PadicInt.eight_dvd_sq_sub_one_of_isUnit`: so the
   square of a unit is `1` modulo `8`; `PadicInt.eight_dvd_sub_or_eight_dvd_sub_add_of_eq`: for
   `k ≥ 1`, a unit of the form `a x² + 2ᵏ b y²` is congruent to `a` or to `a + 2ᵏ b` modulo `8`.
-* `PadicInt.isUnit_of_toZModPow_three_prod_eq`: if a product of `2`-adic integers agrees modulo
-  `8` with a product of units, then every factor is a unit.
 * `PadicInt.not_isSquare_neg_three`: `-3` is not a square in `ℤ_[2]`.
 * `PadicInt.two_dvd_sq_sub_self`: every `2`-adic integer satisfies `x ^ 2 ≡ x` modulo `2`.
 * `PadicInt.toZModPow_eq_one_of_norm_sub_one_le`: a norm bound forcing a `p`-adic integer to
@@ -117,6 +118,13 @@ variable {p : ℕ} [hp : Fact p.Prime]
 /-- P-adic truncation is surjective, allowing semilinear submodule images along it. -/
 instance (n : ℕ) : RingHomSurjective (toZModPow (p := p) n) :=
   ⟨ZMod.ringHom_surjective _⟩
+
+/-- For `n ≠ 0`, truncation modulo `p ^ n` is a local ring homomorphism: a `p`-adic integer is a
+unit exactly when its residue modulo `p ^ n` is (`isUnit_map_iff`). At `n = 0` the target
+`ZMod (p ^ 0)` is the zero ring, where `p` maps to a unit, so `n ≠ 0` is needed. -/
+instance isLocalHom_toZModPow (n : ℕ) [NeZero n] : IsLocalHom (toZModPow (p := p) n) :=
+  have : Fact (1 < p ^ n) := ⟨Nat.one_lt_pow (NeZero.ne n) hp.out.one_lt⟩
+  .of_surjective _ (ZMod.ringHom_surjective _)
 
 /-- The residue field of `ℤ_p` is finite, being `ℤ/pℤ`. -/
 instance finite_residueField : Finite (IsLocalRing.ResidueField ℤ_[p]) :=
@@ -220,15 +228,6 @@ theorem isUnit_iff_toZModPow_three_mul_self {z : ℤ_[2]} :
     obtain ⟨w, rfl⟩ := not_isUnit_iff_dvd.mp h
     have key : ∀ a : ZMod (2 ^ 3), 2 * a * (2 * a) ≠ 1 := by decide
     exact key (toZModPow 3 w) (by simpa [map_ofNat] using hz)
-
-/-- A family of `ℤ_[2]` elements whose product agrees modulo `8` with a product of units consists of
-units. -/
-theorem isUnit_of_toZModPow_three_prod_eq {ι : Type*} [Fintype ι] {d v : ι → ℤ_[2]}
-    (hd : ∀ i, IsUnit (d i))
-    (hP : toZModPow 3 (∏ i, d i) = toZModPow 3 (∏ i, v i)) (i : ι) : IsUnit (v i) := by
-  refine (IsUnit.prod_univ_iff.mp ?_) i
-  rw [isUnit_iff_toZModPow_three_mul_self, ← hP, ← isUnit_iff_toZModPow_three_mul_self]
-  exact IsUnit.prod_univ_iff.mpr hd
 
 /-- The square of a unit of `ℤ_[2]` is `1` modulo `8`. -/
 theorem eight_dvd_sq_sub_one_of_isUnit {z : ℤ_[2]} (hz : IsUnit z) : (8 : ℤ_[2]) ∣ z ^ 2 - 1 := by
@@ -563,9 +562,9 @@ theorem unitsToZModPow_surjective (n : ℕ) :
   rcases Nat.eq_zero_or_pos n with rfl | hn
   · have : Subsingleton (ZMod (p ^ 0)) := by rw [pow_zero]; infer_instance
     exact fun u ↦ ⟨1, Subsingleton.elim _ _⟩
-  · have : Fact (1 < p ^ n) := ⟨Nat.one_lt_pow hn.ne' hp.out.one_lt⟩
+  · have : NeZero n := ⟨hn.ne'⟩
     exact IsLocalRing.surjective_units_map_of_local_ringHom _ (ZMod.ringHom_surjective _)
-      (IsLocalHom.of_surjective _ (ZMod.ringHom_surjective _))
+      inferInstance
 
 /-- Truncating modulo `p ^ n` and then reducing modulo `p ^ m`, for `p ^ m ∣ p ^ n`, is
 truncation modulo `p ^ m`. -/

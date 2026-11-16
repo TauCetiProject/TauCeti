@@ -190,8 +190,9 @@ private theorem exists_toZModPow_three_apply_self_eq_of_forall_ne {B : BilinForm
     ∃ j x y, PadicInt.toZModPow 3 (B x x) = PadicInt.toZModPow 3 (v j) ∧ IsUnit (B y y) ∧
       B x y = 0 := by
   have hr (i : Fin (m + 2)) := isUnit_iff_toZModPow_three_mul_self.mp (hbu i)
-  have hq (j : Fin (m + 2)) :=
-    isUnit_iff_toZModPow_three_mul_self.mp (PadicInt.isUnit_of_toZModPow_three_prod_eq hbu hP j)
+  have hv : ∀ j, IsUnit (v j) := by
+    simpa [isUnit_map_iff (PadicInt.toZModPow 3), hbu] using congrArg IsUnit hP
+  have hq (j : Fin (m + 2)) := isUnit_iff_toZModPow_three_mul_self.mp (hv j)
   -- Otherwise every `dᵢ` lies in `{y, 5y}` and every `vⱼ` in `{-y, -5y}`, where `y = d₀`.
   set y := PadicInt.toZModPow 3 (B (b 0) (b 0))
   have hdy (i : Fin (m + 2)) : PadicInt.toZModPow 3 (B (b i) (b i)) = y ∨
@@ -321,7 +322,8 @@ private theorem exists_basis_iIsOrtho_apply_self_eq_aux (n : ℕ) :
     exact ⟨b, hb, fun i ↦ i.elim0⟩
   | succ n ih =>
   intro M _ _ B b hb hbu v hP hS
-  have hv := PadicInt.isUnit_of_toZModPow_three_prod_eq hbu hP
+  have hv : ∀ i, IsUnit (v i) := by
+    simpa [isUnit_map_iff (PadicInt.toZModPow 3), hbu] using congrArg IsUnit hP
   rcases n with _ | m
   · exact exists_basis_iIsOrtho_apply_self_eq_of_card_eq_one hv hP
   -- Choose a vector representing some `vⱼ` with an odd complement, rescaled to represent `vⱼ`.
