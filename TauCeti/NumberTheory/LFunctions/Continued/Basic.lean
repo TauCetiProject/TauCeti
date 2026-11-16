@@ -106,8 +106,7 @@ theorem continuedL_dual_apply (s : ℂ) :
 
 private theorem analyticAt_conductorPower (s : ℂ) :
     AnalyticAt ℂ (fun z ↦ ((d.conductor : ℕ) : ℂ) ^ (-z / 2)) s :=
-  (((differentiable_id.neg.div_const 2).const_cpow
-    (Or.inl (Nat.cast_ne_zero.mpr d.conductor.ne_zero))).analyticAt s)
+  d.analyticAt_conductor_cpow (by fun_prop)
 
 variable {d}
 
@@ -140,8 +139,7 @@ theorem meromorphicAt_uncompletedProduct {s : ℂ} (hm : MeromorphicAt d.complet
 theorem meromorphicAt_uncompletedProduct_iff {s : ℂ} :
     MeromorphicAt d.uncompletedProduct s ↔ MeromorphicAt d.completed s := by
   refine ⟨fun hm ↦ ?_, meromorphicAt_uncompletedProduct⟩
-  have hN := ((differentiable_id.div_const (2 : ℂ)).const_cpow
-    (Or.inl (Nat.cast_ne_zero.mpr d.conductor.ne_zero))).analyticAt s
+  have hN := d.analyticAt_conductor_cpow (s := s) (g := fun z ↦ z / 2) (by fun_prop)
   have heq : d.completed =ᶠ[𝓝[≠] s]
       fun z ↦ ((d.conductor : ℕ) : ℂ) ^ (z / 2) * d.gammaFactor z *
         d.uncompletedProduct z := by
@@ -347,7 +345,7 @@ theorem HasDirichletAgreement.continuedL_eq_LSeries (hD : d.HasDirichletAgreemen
     (hm : Meromorphic d.completed) {s : ℂ} (hs : 1 < s.re) :
     d.continuedL s = LSeries d.coeff s := by
   apply continuedL_eq_of_eventuallyEq
-    (hD.analyticAt_LSeries hm.meromorphicOn hs).continuousAt
+    (hD.analyticAt_LSeries (hm s) hs).continuousAt
   filter_upwards [completed_eventuallyEq_mul_continuedL hm s, d.eventually_gammaFactor_ne_zero s,
     nhdsWithin_le_nhds (continuous_re.continuousAt.preimage_mem_nhds (Ioi_mem_nhds hs))]
     with z hz hzγ hzre
@@ -359,7 +357,7 @@ including at cancelled gamma poles, without any global meromorphy assumption. -/
 theorem HasDirichletAgreement.analyticAt_continuedL (hD : d.HasDirichletAgreement)
     {s : ℂ} (hs : 1 < s.re) : AnalyticAt ℂ d.continuedL s := by
   by_cases hm : Meromorphic d.completed
-  · apply (hD.analyticAt_LSeries hm.meromorphicOn hs).congr
+  · apply (hD.analyticAt_LSeries (hm s) hs).congr
     filter_upwards [continuous_re.continuousAt.preimage_mem_nhds (Ioi_mem_nhds hs)] with z hz
     exact (hD.continuedL_eq_LSeries hm hz).symm
   · rw [continuedL_of_not_meromorphic hm]

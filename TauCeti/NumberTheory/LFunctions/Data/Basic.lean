@@ -105,6 +105,13 @@ variable (d : AnalyticLFunctionData)
 theorem conductor_cpow_ne_zero (z : ℂ) : ((d.conductor : ℕ) : ℂ) ^ z ≠ 0 :=
   cpow_ne_zero_iff.mpr (Or.inl (Nat.cast_ne_zero.mpr d.conductor.ne_zero))
 
+/-- A complex power of the positive conductor is analytic wherever its exponent is analytic. -/
+@[fun_prop]
+theorem analyticAt_conductor_cpow {g : ℂ → ℂ} {s : ℂ} (hg : AnalyticAt ℂ g s) :
+    AnalyticAt ℂ (fun z ↦ ((d.conductor : ℕ) : ℂ) ^ g z) s := by
+  simp only [Complex.cpow_def_of_ne_zero (Nat.cast_ne_zero.mpr d.conductor.ne_zero)]
+  exact (analyticAt_const.mul hg).cexp
+
 /-- The **degree** `#μ + 2 #ν` of a card: a real gamma shift counts once and a complex gamma
 shift twice, as `Γ_ℂ(s) = Γ_ℝ(s) Γ_ℝ(s + 1)`. -/
 def degree : ℕ := d.gammaR.card + 2 * d.gammaC.card
