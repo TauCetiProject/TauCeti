@@ -507,6 +507,13 @@ theorem hasFDerivAt (f : CkHolderSpace (k + 1) α E F) (x : E) :
   rw [coe_fderivBCF]
   exact ((f.contDiff.differentiable (by simp)) x).hasFDerivAt
 
+/-- A bounded `C^{k+1,α}` map is Lipschitz, with the supremum norm of its first derivative field
+as Lipschitz constant. -/
+theorem lipschitzWith (f : CkHolderSpace (k + 1) α E F) :
+    LipschitzWith ‖f.iteratedFDeriv 1‖₊ f :=
+  lipschitzWith_of_nnNorm_fderiv_le (f.contDiff.differentiable (by simp))
+    f.norm_fderiv_le_iteratedFDeriv_one
+
 /-- The `i`-th derivative field, as a continuous linear map to bounded continuous fields. It is
 bounded by the `C^{k,α}` norm pointwise, by `CkHolderSpace.norm_iteratedFDeriv_le`. -/
 -- No operator-norm bound is stated: outside this file, without the local shortcut instances,
