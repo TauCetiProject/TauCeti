@@ -13,6 +13,7 @@ import Mathlib.Analysis.Normed.Operator.Extend
 import Mathlib.MeasureTheory.Function.AEEqOfIntegral
 import Mathlib.MeasureTheory.Function.SimpleFuncDenseLp
 import TauCeti.Analysis.Normed.Group.Completion
+import TauCeti.MeasureTheory.Function.Lp.Basic
 import TauCeti.MeasureTheory.Function.Lp.LocallyCompact
 import TauCeti.MeasureTheory.Function.StronglyMeasurable.InnerRegular
 
@@ -81,31 +82,6 @@ namespace TauCeti.CStarAction
 
 /-! ### Pointwise action and twisted left translation on `Lᵖ` -/
 
-private theorem comp_compLp {G E F K : Type*} [MeasurableSpace G] {μ : Measure G} {p : ℝ≥0∞}
-    [NormedAddCommGroup E] [NormedSpace ℂ E] [NormedAddCommGroup F]
-    [NormedSpace ℂ F] [NormedAddCommGroup K] [NormedSpace ℂ K]
-    (T : F →L[ℂ] K) (S : E →L[ℂ] F) (u : Lp E p μ) :
-    T.compLp (S.compLp u) = (T.comp S).compLp u := by
-  refine Lp.ext ?_
-  filter_upwards [T.coeFn_compLp (S.compLp u), S.coeFn_compLp u, (T.comp S).coeFn_compLp u]
-    with s h₁ h₂ h₃
-  simp [h₁, h₂, h₃]
-
-private theorem id_compLp {G E : Type*} [MeasurableSpace G] {μ : Measure G} {p : ℝ≥0∞}
-    [NormedAddCommGroup E] [NormedSpace ℂ E] (u : Lp E p μ) :
-    (ContinuousLinearMap.id ℂ E).compLp u = u := by
-  refine Lp.ext ?_
-  filter_upwards [(ContinuousLinearMap.id ℂ E).coeFn_compLp u] with s hs
-  simpa using hs
-
-private theorem compLpL_apply {G E F : Type*} [MeasurableSpace G] {μ : Measure G} {p : ℝ≥0∞}
-    [Fact (1 ≤ p)] [NormedAddCommGroup E] [NormedSpace ℂ E] [NormedAddCommGroup F]
-    [NormedSpace ℂ F] (T : E →L[ℂ] F) (u : Lp E p μ) :
-    T.compLpL p μ u = T.compLp u := by
-  refine Lp.ext ?_
-  filter_upwards [T.coeFn_compLpL u, T.coeFn_compLp u] with s h₁ h₂
-  rw [h₁, h₂]
-
 section ActionLp
 
 variable {G A : Type*} [Group G] [TopologicalSpace G] [NonUnitalCStarAlgebra A]
@@ -127,13 +103,14 @@ def actionLp : G →* (Lp A p μ ≃ₗᵢ[ℂ] Lp A p μ) := by
     { toFun r := LinearIsometryEquiv.ofBounds
         { toFun := (α.toContinuousLinearMap r).compLpₗ p μ
           invFun := (α.toContinuousLinearMap r⁻¹).compLpₗ p μ
-          left_inv u := by simp [comp_compLp, hcomp, hone, id_compLp]
-          right_inv u := by simp [comp_compLp, hcomp, hone, id_compLp]
+          left_inv u := by simp [← ContinuousLinearMap.comp_compLp, hcomp, hone]
+          right_inv u := by simp [← ContinuousLinearMap.comp_compLp, hcomp, hone]
           map_add' := map_add _
           map_smul' := map_smul _ }
         (hle r) (hle r⁻¹)
-      map_one' := by ext1 u; simp [LinearIsometryEquiv.ofBounds, hone, id_compLp]
-      map_mul' r t := by ext1 u; simp [LinearIsometryEquiv.ofBounds, comp_compLp, hcomp] }
+      map_one' := by ext1 u; simp [LinearIsometryEquiv.ofBounds, hone]
+      map_mul' r t := by
+        ext1 u; simp [LinearIsometryEquiv.ofBounds, ← ContinuousLinearMap.comp_compLp, hcomp] }
 
 variable {μ p}
 
@@ -415,10 +392,10 @@ theorem mul_compLp_convolutionLp (a : A) (h : Lp A 1 μ) (f : Lp A p μ) :
       α.convolutionLp μ p hp ((ContinuousLinearMap.mul ℂ A a).compLp h) f := by
   let L : Lp A p μ →L[ℂ] Lp A p μ := (ContinuousLinearMap.mul ℂ A a).compLpL p μ
   have hcomm := L.integral_comp_comm (α.integrable_mul_translateLp μ hp (L1.integrable_coeFn h) f)
-  rw [← compLpL_apply, convolutionLp_apply, ← hcomm, convolutionLp_apply]
+  rw [← ContinuousLinearMap.compLpL_apply, convolutionLp_apply, ← hcomm, convolutionLp_apply]
   refine integral_congr_ae ?_
   filter_upwards [(ContinuousLinearMap.mul ℂ A a).coeFn_compLp h] with y hy
-  rw [compLpL_apply, hy, comp_compLp]
+  rw [ContinuousLinearMap.compLpL_apply, hy, ← ContinuousLinearMap.comp_compLp]
   congr 1; ext b; simp [mul_assoc]
 
 /-- Twisted left translation commutes with twisted convolution:
@@ -781,26 +758,24 @@ theorem norm_mapLp_le (φ : Hom α β) : ‖φ.mapLp μ p‖ ≤ 1 := by
 /-- The identity equivariant homomorphism induces the identity on `Lp A p μ`. -/
 @[simp]
 theorem mapLp_id : (Hom.id α).mapLp μ p = ContinuousLinearMap.id ℂ (Lp A p μ) := by
-  ext1 u
-  rw [mapLp_eq_compLpL, compLpL_apply]
+  rw [mapLp_eq_compLpL]
   have hid : NonUnitalStarAlgHom.toContinuousLinearMap (Hom.id α) =
       ContinuousLinearMap.id ℂ A := by ext a; simp
-  rw [hid, id_compLp, ContinuousLinearMap.id_apply]
+  rw [hid, ContinuousLinearMap.id_compLpL]
 
 /-- `Hom.mapLp` preserves composition of equivariant homomorphisms. -/
 @[simp]
 theorem mapLp_comp (ψ : Hom β γ) (φ : Hom α β) :
     (ψ.comp φ).mapLp μ p = (ψ.mapLp μ p).comp (φ.mapLp μ p) := by
-  ext1 u
-  rw [ContinuousLinearMap.comp_apply, mapLp_eq_compLpL, mapLp_eq_compLpL, mapLp_eq_compLpL,
-    compLpL_apply, compLpL_apply, compLpL_apply, comp_compLp]
+  rw [mapLp_eq_compLpL, mapLp_eq_compLpL, mapLp_eq_compLpL, ← ContinuousLinearMap.comp_compLpL]
   congr 1; ext a; simp
 
 /-- `Hom.mapLp` intertwines the pointwise action `actionLp`. -/
 theorem mapLp_actionLp (φ : Hom α β) (r : G) (u : Lp A p μ) :
     φ.mapLp μ p (α.actionLp μ p r u) = β.actionLp μ p r (φ.mapLp μ p u) := by
-  rw [mapLp_eq_compLpL, actionLp_apply, actionLp_apply, compLpL_apply, compLpL_apply,
-    comp_compLp, comp_compLp]
+  rw [mapLp_eq_compLpL, actionLp_apply, actionLp_apply, ContinuousLinearMap.compLpL_apply,
+    ContinuousLinearMap.compLpL_apply, ← ContinuousLinearMap.comp_compLp,
+    ← ContinuousLinearMap.comp_compLp]
   congr 1; ext a; simp [NonUnitalStarAlgHom.toContinuousLinearMap_apply]
 
 /-- `Hom.mapLp` intertwines twisted left translation `translateLp`. -/
@@ -826,8 +801,9 @@ theorem mapLp_convolutionLp [IsTopologicalGroup G] [BorelSpace G] [μ.IsMulLeftI
     β.convolutionLp_apply]
   refine integral_congr_ae ?_
   filter_upwards [φ.coeFn_mapLp h] with y hy
-  rw [hy, ← φ.mapLp_translateLp y f, mapLp_eq_compLpL, compLpL_apply, comp_compLp, compLpL_apply,
-    comp_compLp]
+  rw [hy, ← φ.mapLp_translateLp y f, mapLp_eq_compLpL, ContinuousLinearMap.compLpL_apply,
+    ← ContinuousLinearMap.comp_compLp, ContinuousLinearMap.compLpL_apply,
+    ← ContinuousLinearMap.comp_compLp]
   congr 1; ext a; simp [NonUnitalStarAlgHom.toContinuousLinearMap_apply]
 
 end MapLp
