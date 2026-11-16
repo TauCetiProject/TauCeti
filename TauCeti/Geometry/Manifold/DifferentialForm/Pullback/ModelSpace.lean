@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.Manifold.DifferentialForm.Closed
-import TauCeti.Topology.OpenPartialHomeomorph.MulAction
+import TauCeti.Topology.OpenPartialHomeomorph.Basic
 
 /-!
 # Pulling forms back to open subsets of normed spaces
