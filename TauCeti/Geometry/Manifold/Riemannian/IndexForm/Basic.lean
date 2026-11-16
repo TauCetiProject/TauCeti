@@ -221,8 +221,8 @@ theorem indexForm_comm :
 fields are differentiable within the parameter set. -/
 @[to_fun indexFormIntegrandWithin_fun_add_left]
 theorem indexFormIntegrandWithin_add_left {t : ℝ}
-    (hV : DifferentiableWithinAt ℝ (sectionCoord (F := E) γ V (γ t)) s t)
-    (hV' : DifferentiableWithinAt ℝ (sectionCoord (F := E) γ V' (γ t)) s t) :
+    (hV : DifferentiableWithinAt ℝ (sectionCoord ℝ (F := E) γ V (γ t)) s t)
+    (hV' : DifferentiableWithinAt ℝ (sectionCoord ℝ (F := E) γ V' (γ t)) s t) :
     indexFormIntegrandWithin I γ (V + V') W s t =
       indexFormIntegrandWithin I γ V W s t + indexFormIntegrandWithin I γ V' W s t := by
   simp only [Pi.add_def, indexFormIntegrandWithin_def,
@@ -234,8 +234,8 @@ theorem indexFormIntegrandWithin_add_left {t : ℝ}
 fields are differentiable within the parameter set. -/
 @[to_fun indexFormIntegrandWithin_fun_add_right]
 theorem indexFormIntegrandWithin_add_right {t : ℝ}
-    (hW : DifferentiableWithinAt ℝ (sectionCoord (F := E) γ W (γ t)) s t)
-    (hW' : DifferentiableWithinAt ℝ (sectionCoord (F := E) γ W' (γ t)) s t) :
+    (hW : DifferentiableWithinAt ℝ (sectionCoord ℝ (F := E) γ W (γ t)) s t)
+    (hW' : DifferentiableWithinAt ℝ (sectionCoord ℝ (F := E) γ W' (γ t)) s t) :
     indexFormIntegrandWithin I γ V (W + W') s t =
       indexFormIntegrandWithin I γ V W s t + indexFormIntegrandWithin I γ V W' s t := by
   rw [indexFormIntegrandWithin_comm, indexFormIntegrandWithin_add_left hW hW',
@@ -387,8 +387,8 @@ theorem indexForm_symm : indexForm I γ V W b a = -indexForm I γ V W a b := by
 /-- The within-set integrand respects subtraction in its first field. -/
 @[to_fun indexFormIntegrandWithin_fun_sub_left]
 theorem indexFormIntegrandWithin_sub_left {t : ℝ}
-    (hV : DifferentiableWithinAt ℝ (sectionCoord (F := E) γ V (γ t)) s t)
-    (hV' : DifferentiableWithinAt ℝ (sectionCoord (F := E) γ V' (γ t)) s t) :
+    (hV : DifferentiableWithinAt ℝ (sectionCoord ℝ (F := E) γ V (γ t)) s t)
+    (hV' : DifferentiableWithinAt ℝ (sectionCoord ℝ (F := E) γ V' (γ t)) s t) :
     indexFormIntegrandWithin I γ (V - V') W s t =
       indexFormIntegrandWithin I γ V W s t - indexFormIntegrandWithin I γ V' W s t := by
   simp only [Pi.sub_def, indexFormIntegrandWithin_def,
@@ -399,8 +399,8 @@ theorem indexFormIntegrandWithin_sub_left {t : ℝ}
 /-- The within-set integrand respects subtraction in its second field. -/
 @[to_fun indexFormIntegrandWithin_fun_sub_right]
 theorem indexFormIntegrandWithin_sub_right {t : ℝ}
-    (hW : DifferentiableWithinAt ℝ (sectionCoord (F := E) γ W (γ t)) s t)
-    (hW' : DifferentiableWithinAt ℝ (sectionCoord (F := E) γ W' (γ t)) s t) :
+    (hW : DifferentiableWithinAt ℝ (sectionCoord ℝ (F := E) γ W (γ t)) s t)
+    (hW' : DifferentiableWithinAt ℝ (sectionCoord ℝ (F := E) γ W' (γ t)) s t) :
     indexFormIntegrandWithin I γ V (W - W') s t =
       indexFormIntegrandWithin I γ V W s t - indexFormIntegrandWithin I γ V W' s t := by
   rw [indexFormIntegrandWithin_comm, indexFormIntegrandWithin_sub_left hW hW',
@@ -410,7 +410,7 @@ theorem indexFormIntegrandWithin_sub_right {t : ℝ}
 @[to_fun indexFormIntegrandWithin_fun_sum_left]
 theorem indexFormIntegrandWithin_sum_left {ι : Type*} (A : Finset ι)
     (X : ι → ∀ r, TangentSpace I (γ r)) {t : ℝ}
-    (hX : ∀ i ∈ A, DifferentiableWithinAt ℝ (sectionCoord (F := E) γ (X i) (γ t)) s t) :
+    (hX : ∀ i ∈ A, DifferentiableWithinAt ℝ (sectionCoord ℝ (F := E) γ (X i) (γ t)) s t) :
     indexFormIntegrandWithin I γ (∑ i ∈ A, X i) W s t =
       ∑ i ∈ A, indexFormIntegrandWithin I γ (X i) W s t := by
   simp only [Finset.sum_fn, indexFormIntegrandWithin_def, alongCurveWithin_sum _ γ A X hX, map_sum,
@@ -420,7 +420,7 @@ theorem indexFormIntegrandWithin_sum_left {ι : Type*} (A : Finset ι)
 @[to_fun indexFormIntegrandWithin_fun_sum_right]
 theorem indexFormIntegrandWithin_sum_right {ι : Type*} (A : Finset ι)
     (X : ι → ∀ r, TangentSpace I (γ r)) {t : ℝ}
-    (hX : ∀ i ∈ A, DifferentiableWithinAt ℝ (sectionCoord (F := E) γ (X i) (γ t)) s t) :
+    (hX : ∀ i ∈ A, DifferentiableWithinAt ℝ (sectionCoord ℝ (F := E) γ (X i) (γ t)) s t) :
     indexFormIntegrandWithin I γ V (∑ i ∈ A, X i) s t =
       ∑ i ∈ A, indexFormIntegrandWithin I γ V (X i) s t := by
   simp_rw [indexFormIntegrandWithin_comm (V := V)]
@@ -429,8 +429,8 @@ theorem indexFormIntegrandWithin_sum_right {ι : Type*} (A : Finset ι)
 /-- The integrand respects addition in its left field at differentiable parameters. -/
 @[to_fun indexFormIntegrand_fun_add_left]
 theorem indexFormIntegrand_add_left {t : ℝ}
-    (hV : DifferentiableAt ℝ (sectionCoord (F := E) γ V (γ t)) t)
-    (hV' : DifferentiableAt ℝ (sectionCoord (F := E) γ V' (γ t)) t) :
+    (hV : DifferentiableAt ℝ (sectionCoord ℝ (F := E) γ V (γ t)) t)
+    (hV' : DifferentiableAt ℝ (sectionCoord ℝ (F := E) γ V' (γ t)) t) :
     indexFormIntegrand I γ (V + V') W t =
       indexFormIntegrand I γ V W t + indexFormIntegrand I γ V' W t := by
   simpa only [← indexFormIntegrandWithin_univ] using
@@ -439,8 +439,8 @@ theorem indexFormIntegrand_add_left {t : ℝ}
 /-- The integrand respects addition in its right field at differentiable parameters. -/
 @[to_fun indexFormIntegrand_fun_add_right]
 theorem indexFormIntegrand_add_right {t : ℝ}
-    (hW : DifferentiableAt ℝ (sectionCoord (F := E) γ W (γ t)) t)
-    (hW' : DifferentiableAt ℝ (sectionCoord (F := E) γ W' (γ t)) t) :
+    (hW : DifferentiableAt ℝ (sectionCoord ℝ (F := E) γ W (γ t)) t)
+    (hW' : DifferentiableAt ℝ (sectionCoord ℝ (F := E) γ W' (γ t)) t) :
     indexFormIntegrand I γ V (W + W') t =
       indexFormIntegrand I γ V W t + indexFormIntegrand I γ V W' t := by
   simpa only [← indexFormIntegrandWithin_univ] using
@@ -449,8 +449,8 @@ theorem indexFormIntegrand_add_right {t : ℝ}
 /-- The integrand respects subtraction in its left field at differentiable parameters. -/
 @[to_fun indexFormIntegrand_fun_sub_left]
 theorem indexFormIntegrand_sub_left {t : ℝ}
-    (hV : DifferentiableAt ℝ (sectionCoord (F := E) γ V (γ t)) t)
-    (hV' : DifferentiableAt ℝ (sectionCoord (F := E) γ V' (γ t)) t) :
+    (hV : DifferentiableAt ℝ (sectionCoord ℝ (F := E) γ V (γ t)) t)
+    (hV' : DifferentiableAt ℝ (sectionCoord ℝ (F := E) γ V' (γ t)) t) :
     indexFormIntegrand I γ (V - V') W t =
       indexFormIntegrand I γ V W t - indexFormIntegrand I γ V' W t := by
   simpa only [← indexFormIntegrandWithin_univ] using
@@ -459,8 +459,8 @@ theorem indexFormIntegrand_sub_left {t : ℝ}
 /-- The integrand respects subtraction in its right field at differentiable parameters. -/
 @[to_fun indexFormIntegrand_fun_sub_right]
 theorem indexFormIntegrand_sub_right {t : ℝ}
-    (hW : DifferentiableAt ℝ (sectionCoord (F := E) γ W (γ t)) t)
-    (hW' : DifferentiableAt ℝ (sectionCoord (F := E) γ W' (γ t)) t) :
+    (hW : DifferentiableAt ℝ (sectionCoord ℝ (F := E) γ W (γ t)) t)
+    (hW' : DifferentiableAt ℝ (sectionCoord ℝ (F := E) γ W' (γ t)) t) :
     indexFormIntegrand I γ V (W - W') t =
       indexFormIntegrand I γ V W t - indexFormIntegrand I γ V W' t := by
   simpa only [← indexFormIntegrandWithin_univ] using
@@ -470,7 +470,7 @@ theorem indexFormIntegrand_sub_right {t : ℝ}
 @[to_fun indexFormIntegrand_fun_sum_left]
 theorem indexFormIntegrand_sum_left {ι : Type*} (A : Finset ι)
     (X : ι → ∀ r, TangentSpace I (γ r)) {t : ℝ}
-    (hX : ∀ i ∈ A, DifferentiableAt ℝ (sectionCoord (F := E) γ (X i) (γ t)) t) :
+    (hX : ∀ i ∈ A, DifferentiableAt ℝ (sectionCoord ℝ (F := E) γ (X i) (γ t)) t) :
     indexFormIntegrand I γ (∑ i ∈ A, X i) W t =
       ∑ i ∈ A, indexFormIntegrand I γ (X i) W t := by
   simpa only [← indexFormIntegrandWithin_univ] using
@@ -480,7 +480,7 @@ theorem indexFormIntegrand_sum_left {ι : Type*} (A : Finset ι)
 @[to_fun indexFormIntegrand_fun_sum_right]
 theorem indexFormIntegrand_sum_right {ι : Type*} (A : Finset ι)
     (X : ι → ∀ r, TangentSpace I (γ r)) {t : ℝ}
-    (hX : ∀ i ∈ A, DifferentiableAt ℝ (sectionCoord (F := E) γ (X i) (γ t)) t) :
+    (hX : ∀ i ∈ A, DifferentiableAt ℝ (sectionCoord ℝ (F := E) γ (X i) (γ t)) t) :
     indexFormIntegrand I γ V (∑ i ∈ A, X i) t =
       ∑ i ∈ A, indexFormIntegrand I γ V (X i) t := by
   simpa only [← indexFormIntegrandWithin_univ] using
