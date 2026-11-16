@@ -114,11 +114,11 @@ end Multiplicity
 
 section Character
 
-/-- **The formal character of `(V(1) ⊗ V(1)) × V(0)`** is `e^{2} + 3 + e^{-2}`. -/
-theorem formalCharacter_one_tensor_one_prod_zero :
-    formalCharacter K (slTwoDiagonalCartan K) ((Sl2Std K 1 ⊗[K] Sl2Std K 1) × Sl2Std K 0) =
+/-- **The formal character of `V(1) ⊗ V(1)`** is `e^{2} + 2 + e^{-2}`. -/
+theorem formalCharacter_one_tensor_one :
+    formalCharacter K (slTwoDiagonalCartan K) (Sl2Std K 1 ⊗[K] Sl2Std K 1) =
       AddMonoidAlgebra.single (slTwoWeight (2 : K)) 1 +
-        AddMonoidAlgebra.single (slTwoWeight (0 : K)) 3 +
+        AddMonoidAlgebra.single (slTwoWeight (0 : K)) 2 +
           AddMonoidAlgebra.single (slTwoWeight (-2 : K)) 1 := by
   -- The Cartan acts on `V(1) ⊗ V(1)` by restricting the action of `sl₂`; this agrees with the
   -- tensor product of the restricted actions, which `formalCharacter_tensor` is stated for, only
@@ -127,12 +127,23 @@ theorem formalCharacter_one_tensor_one_prod_zero :
       formalCharacter K (slTwoDiagonalCartan K) (Sl2Std K 1) *
         formalCharacter K (slTwoDiagonalCartan K) (Sl2Std K 1) :=
     formalCharacter_tensor
-  rw [formalCharacter_prod, htensor, formalCharacter_eq_sum, formalCharacter_eq_sum,
-    show (3 : ℤ) = 1 + 1 + 1 by norm_num, AddMonoidAlgebra.single_add,
+  rw [htensor, formalCharacter_eq_sum, show (2 : ℤ) = 1 + 1 by norm_num,
     AddMonoidAlgebra.single_add]
   simp only [Fin.sum_univ_succ, Fin.sum_univ_zero, add_mul, mul_add, add_zero,
     AddMonoidAlgebra.single_mul_single, ← slTwoWeight_add, mul_one]
   norm_num only [Fin.val_zero, Fin.val_succ]
+  abel
+
+/-- **The formal character of `(V(1) ⊗ V(1)) × V(0)`** is `e^{2} + 3 + e^{-2}`. -/
+theorem formalCharacter_one_tensor_one_prod_zero :
+    formalCharacter K (slTwoDiagonalCartan K) ((Sl2Std K 1 ⊗[K] Sl2Std K 1) × Sl2Std K 0) =
+      AddMonoidAlgebra.single (slTwoWeight (2 : K)) 1 +
+        AddMonoidAlgebra.single (slTwoWeight (0 : K)) 3 +
+          AddMonoidAlgebra.single (slTwoWeight (-2 : K)) 1 := by
+  rw [formalCharacter_prod, formalCharacter_one_tensor_one, formalCharacter_eq_sum,
+    show (3 : ℤ) = 2 + 1 by norm_num, AddMonoidAlgebra.single_add]
+  simp only [Fin.sum_univ_succ, Fin.sum_univ_zero, add_zero]
+  norm_num only [Fin.val_zero]
   abel
 
 /-- **The character of `(V(1) ⊗ V(1)) × V(0)` is `ch V(2) + 2 ch V(0)`**, the Clebsch-Gordan
@@ -212,25 +223,6 @@ end IsotypicComponent
 /-! ### Equivalence read off characters -/
 
 section Equivalence
-
-/-- **The formal character of `V(1) ⊗ V(1)`** is `e^{2} + 2 + e^{-2}`. -/
-theorem formalCharacter_one_tensor_one :
-    formalCharacter K (slTwoDiagonalCartan K) (Sl2Std K 1 ⊗[K] Sl2Std K 1) =
-      AddMonoidAlgebra.single (slTwoWeight (2 : K)) 1 +
-        AddMonoidAlgebra.single (slTwoWeight (0 : K)) 2 +
-          AddMonoidAlgebra.single (slTwoWeight (-2 : K)) 1 := by
-  -- As in `formalCharacter_one_tensor_one_prod_zero`, the tensor-product step is elaborated
-  -- against the action restricted to the Cartan.
-  have htensor : formalCharacter K (slTwoDiagonalCartan K) (Sl2Std K 1 ⊗[K] Sl2Std K 1) =
-      formalCharacter K (slTwoDiagonalCartan K) (Sl2Std K 1) *
-        formalCharacter K (slTwoDiagonalCartan K) (Sl2Std K 1) :=
-    formalCharacter_tensor
-  rw [htensor, formalCharacter_eq_sum, show (2 : ℤ) = 1 + 1 by norm_num,
-    AddMonoidAlgebra.single_add]
-  simp only [Fin.sum_univ_succ, Fin.sum_univ_zero, add_mul, mul_add, add_zero,
-    AddMonoidAlgebra.single_mul_single, ← slTwoWeight_add, mul_one]
-  norm_num only [Fin.val_zero, Fin.val_succ]
-  abel
 
 /-- **`V(1) ⊗ V(1) ≃ V(2) × V(0)`, read off characters.** Both modules have the character
 `e^{2} + 2 + e^{-2}`, so they are equivalent because the formal character determines a
