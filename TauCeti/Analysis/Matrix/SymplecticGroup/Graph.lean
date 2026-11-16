@@ -26,7 +26,11 @@ multiplication by `i`. So in `ℂⁿ × ℂⁿ = ℂ^{n ⊕ n}` the graph is the
 matrix `Matrix.graphFrame A`, whose columns are the images of the real basis vectors. That matrix
 is invertible when `A` is symplectic (`Matrix.isUnit_det_graphFrame`), so the graphs
 of a loop `γ` of symplectic matrices form a loop of maximal totally real subspaces with a continuous
-frame (`TauCeti.GLSymplectic.graphLoop`).
+frame (`TauCeti.GLSymplectic.graphLoop`). The Gram matrix `Fᴴ F` of the graph frame `F` is
+`(1 + Aᵀ A) + i (J - Aᵀ J A)` (`Matrix.conjTranspose_graphFrame_mul_graphFrame`), so it is the real
+matrix `1 + Aᵀ A` when `A` is symplectic; this is the Lagrangian condition on the graph, read on
+the frame. For the realification of a complex matrix `U` the frame is `[[1, -i], [U, i U]]`
+(`Matrix.graphFrame_realify`).
 
 The main result is that **the Maslov index of the graph loop is twice the Maslov index of the
 loop**, `μ(Γ ∘ γ) = 2 μ(γ)` (`TauCeti.GLSymplectic.maslovIndex_graphLoop`). Here `μ(γ)` is the
@@ -155,6 +159,51 @@ theorem continuous_graphFrame : Continuous (graphFrame : Matrix (n ⊕ n) (n ⊕
     toBlocks₁₂, toBlocks₂₁, toBlocks₂₂, Matrix.of_apply] <;>
   fun_prop
 
+omit [Fintype n] in
+@[simp]
+theorem graphFrame_apply_inl_inl (A : Matrix (n ⊕ n) (n ⊕ n) ℝ) (i j : n) :
+    graphFrame A (.inl i) (.inl j) = (1 : Matrix n n ℂ) i j := by
+  simp [graphFrame]
+
+omit [Fintype n] in
+@[simp]
+theorem graphFrame_apply_inl_inr (A : Matrix (n ⊕ n) (n ⊕ n) ℝ) (i j : n) :
+    graphFrame A (.inl i) (.inr j) = -(Complex.I * (1 : Matrix n n ℂ) i j) := by
+  simp [graphFrame]
+
+omit [Fintype n] in
+@[simp]
+theorem graphFrame_apply_inr (A : Matrix (n ⊕ n) (n ⊕ n) ℝ) (i : n) (j : n ⊕ n) :
+    graphFrame A (.inr i) j = (A (.inl i) j : ℂ) + A (.inr i) j * Complex.I := by
+  rcases j with j | j <;>
+    simp [graphFrame, toBlocks₁₁, toBlocks₁₂, toBlocks₂₁, toBlocks₂₂, mul_comm]
+
+/-- The Gram matrix `Fᴴ F` of the graph frame `F` of a real matrix `A` is
+`(1 + Aᵀ A) + i (J - Aᵀ J A)`. Its imaginary part measures the failure of `A` to be symplectic. -/
+theorem conjTranspose_graphFrame_mul_graphFrame (A : Matrix (n ⊕ n) (n ⊕ n) ℝ) :
+    (graphFrame A)ᴴ * graphFrame A =
+      (1 + Aᵀ * A).map ((↑) : ℝ → ℂ) +
+        Complex.I • (J n ℝ - Aᵀ * J n ℝ * A).map ((↑) : ℝ → ℂ) := by
+  ext (i | i) (j | j) <;> apply Complex.ext <;> by_cases h : i = j <;>
+    simp [Matrix.mul_apply, Fintype.sum_sum_type, J, Matrix.one_apply, conjTranspose_apply,
+      Finset.sum_add_distrib, Finset.sum_neg_distrib, h, @eq_comm _ j i] <;> ring
+
+/-- The Gram matrix of the graph frame of a symplectic matrix `A` is the real matrix `1 + Aᵀ A`.
+-/
+theorem conjTranspose_graphFrame_mul_graphFrame_of_mem {A : Matrix (n ⊕ n) (n ⊕ n) ℝ}
+    (hA : A ∈ symplecticGroup n ℝ) :
+    (graphFrame A)ᴴ * graphFrame A = (1 + Aᵀ * A).map ((↑) : ℝ → ℂ) := by
+  have h : Aᵀ * J n ℝ * A = J n ℝ := by
+    simpa [SymplecticGroup.mem_iff] using SymplecticGroup.transpose_mem hA
+  rw [conjTranspose_graphFrame_mul_graphFrame, h, sub_self, Matrix.map_zero _ (by simp),
+    smul_zero, add_zero]
+
+omit [Fintype n] in
+/-- The graph frame of the realification of a complex matrix `U` is `[[1, -i], [U, i U]]`. -/
+theorem graphFrame_realify (U : Matrix n n ℂ) :
+    graphFrame U.realify = fromBlocks 1 (-(Complex.I • 1)) U (Complex.I • U) := by
+  ext (i | i) (j | j) <;> apply Complex.ext <;> simp [mul_comm]
+
 /-! ### The graph subspace -/
 
 /-- The **graph** of a real matrix `A` on `ℝ^{n ⊕ n}`, as a real subspace of
@@ -163,6 +212,11 @@ is, the set of `(conj (φ x), φ (A x))` (`Matrix.mem_graphSubspace_iff`). -/
 noncomputable def graphSubspace (A : Matrix (n ⊕ n) (n ⊕ n) ℝ) :
     Submodule ℝ (EuclideanSpace ℂ (n ⊕ n)) :=
   (graphFrame A).realImage
+
+/-- The graph of `A` is the real span of the columns of its graph frame. -/
+theorem graphSubspace_def (A : Matrix (n ⊕ n) (n ⊕ n) ℝ) :
+    graphSubspace A = (graphFrame A).realImage :=
+  (rfl)
 
 /-- A vector of `ℂⁿ × ℂⁿ = ℂ^{n ⊕ n}` lies on the graph of `A` exactly when it is
 `(conj (φ x), φ (A x))` for a real vector `x`, where `φ (x, y) = x + i y`. -/
