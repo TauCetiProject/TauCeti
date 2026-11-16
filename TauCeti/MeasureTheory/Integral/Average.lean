@@ -441,30 +441,6 @@ theorem ae_restrict_eq_setAverage_of_setLAverage_enorm_sub_setAverage_eq_zero
 
 end Oscillation
 
-section SquareIntegrable
-
-variable {X F : Type*} [MeasurableSpace X] {μ : Measure X} [NormedAddCommGroup F] {g : X → F}
-  {s : Set X}
-
-/-- **Jensen's inequality for the square of a mean.** The square of the mean of `‖g‖` over `s` is
-at most the mean of `‖g‖²`. If `μ s` is `0` or `∞`, both averages are `0`. -/
-theorem sq_setAverage_norm_le_setAverage_norm_sq (hg2 : IntegrableOn (fun x ↦ ‖g x‖ ^ 2) s μ) :
-    (⨍ x in s, ‖g x‖ ∂μ) ^ 2 ≤ ⨍ x in s, ‖g x‖ ^ 2 ∂μ := by
-  rcases eq_or_ne (μ s) 0 with hs0 | hs0
-  · simp [Measure.restrict_eq_zero.2 hs0]
-  rcases eq_or_ne (μ s) ⊤ with hs | hs
-  · simp [setAverage_eq, measureReal_def, hs]
-  have : IsFiniteMeasure (μ.restrict s) := isFiniteMeasure_restrict.2 hs
-  have hmeas : AEStronglyMeasurable (fun x ↦ ‖g x‖) (μ.restrict s) :=
-    (Real.continuous_sqrt.comp_aestronglyMeasurable hg2.aestronglyMeasurable).congr
-      (.of_forall fun x ↦ Real.sqrt_sq (norm_nonneg (g x)))
-  have hg : IntegrableOn (fun x ↦ ‖g x‖) s μ :=
-    ((memLp_two_iff_integrable_sq hmeas).2 hg2).integrable one_le_two
-  exact (Even.convexOn_pow even_two).map_set_average_le (continuous_pow 2).continuousOn
-    isClosed_univ hs0 hs (ae_of_all _ fun _ ↦ Set.mem_univ _) hg hg2
-
-end SquareIntegrable
-
 section LAverage
 
 variable {X : Type*} [MeasurableSpace X] {μ : Measure X}
@@ -564,6 +540,18 @@ theorem sq_setLAverage_enorm_le_ofReal_setAverage_norm_sq {E : Type*} [NormedAdd
   rw [h2]
   simpa only [ENNReal.rpow_two] using
     rpow_laverage_le_laverage_rpow (μ := μ.restrict s) (u := fun x => ‖h x‖ₑ) one_le_two
+
+/-- **Jensen's inequality for the square of a mean.** The square of the mean of `‖g‖` over `s` is
+at most the mean of `‖g‖²`. If `μ s` is `0` or `∞`, both averages are `0`. -/
+theorem sq_setAverage_norm_le_setAverage_norm_sq {E : Type*} [NormedAddCommGroup E]
+    {s : Set X} {g : X → E} (hg2 : IntegrableOn (fun x ↦ ‖g x‖ ^ 2) s μ) :
+    (⨍ x in s, ‖g x‖ ∂μ) ^ 2 ≤ ⨍ x in s, ‖g x‖ ^ 2 ∂μ := by
+  have h1 := pow_le_pow_left' (enorm_setAverage_le_setLAverage μ (fun x ↦ ‖g x‖) s) 2
+  simp only [eNorm_norm] at h1
+  have h := h1.trans (sq_setLAverage_enorm_le_ofReal_setAverage_norm_sq hg2)
+  have ha : 0 ≤ ⨍ x in s, ‖g x‖ ∂μ := integral_nonneg fun _ ↦ norm_nonneg _
+  simp only [Real.eNorm_of_nonneg ha, ← ENNReal.ofReal_pow ha] at h
+  exact (ENNReal.ofReal_le_ofReal_iff (integral_nonneg fun _ ↦ by positivity)).1 h
 
 end Jensen
 
