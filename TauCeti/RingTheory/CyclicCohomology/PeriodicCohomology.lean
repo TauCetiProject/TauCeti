@@ -47,7 +47,8 @@ sending the calibrated ground-ring class `[m! (a₀ ⋯ a_(2m)) • x]` in `HC^(
   `S^(j-i) : H^(n+2i)(Tot) → H^(n+2j)(Tot)` of the direct system.
 * `TauCeti.periodicCyclicCohomology`: periodic cyclic cohomology `HP^n(A; M)`, its direct limit.
 * `TauCeti.periodicCyclicCohomology.ι`: the canonical map `H^(n+2k)(Tot) → HP^n`.
-* `TauCeti.periodicCyclicCohomology.desc`: the universal property of the direct limit.
+* `TauCeti.periodicCyclicCohomology.desc`, `TauCeti.periodicCyclicCohomology.descLinear`: the
+  universal property of the direct limit.
 * `TauCeti.periodicCyclicCohomology.shiftIso`: the `2`-periodicity `HP^(n+2) ≅ HP^n`.
 * `TauCeti.cyclicCohomology.periodicTransition`: the transition maps
   `S^(j-i) : HC^(n+2i)(A; M) → HC^(n+2j)(A; M)` under Connes' operator `S`.
@@ -224,6 +225,31 @@ theorem ι_desc {n : ℕ} {P : ModuleCat R}
     (f := fun _ _ h ↦ (cyclicTotalHomologyPeriodicTransition R A M n h).hom)
     (fun k ↦ (g k).hom)
     (fun _ _ h y ↦ congrArg (fun f ↦ f.hom y) (map_comp_of_periodicity_comp g hg h)) x
+
+/-- The universe-polymorphic universal property of periodic cyclic cohomology for `R`-linear maps
+into a module in an arbitrary universe. -/
+def descLinear {n : ℕ} {N : Type*} [AddCommMonoid N] [Module R N]
+    (g : ∀ k, (cyclicTotalComplex R A M).homology (n + 2 * k) →ₗ[R] N)
+    (hg : ∀ k, g (k + 1) ∘ₗ (cyclicTotalHomologyPeriodicity R A M (n + 2 * k)).hom = g k) :
+    periodicCyclicCohomology R A M n →ₗ[R] N :=
+  Module.DirectLimit.lift R ℕ _ _ g fun i j h x ↦ by
+    induction j, h using Nat.le_induction with
+    | base => rw [cyclicTotalHomologyPeriodicTransition_self, ModuleCat.id_apply]
+    | succ j hij ih =>
+      rw [← cyclicTotalHomologyPeriodicTransition_comp R A M n hij (Nat.le_add_right j 1),
+        ModuleCat.comp_apply, cyclicTotalHomologyPeriodicTransition_succ,
+        ← LinearMap.comp_apply, hg, ih]
+
+/-- The linear map out of periodic cyclic cohomology induced by a compatible family restricts to
+the family on each stage. -/
+@[simp]
+theorem descLinear_ι {n : ℕ} {N : Type*} [AddCommMonoid N] [Module R N]
+    (g : ∀ k, (cyclicTotalComplex R A M).homology (n + 2 * k) →ₗ[R] N)
+    (hg : ∀ k, g (k + 1) ∘ₗ (cyclicTotalHomologyPeriodicity R A M (n + 2 * k)).hom = g k)
+    (k : ℕ) (x : (cyclicTotalComplex R A M).homology (n + 2 * k)) :
+    descLinear g hg (ι R A M n k x) = g k x :=
+  Module.DirectLimit.lift_of
+    (f := fun _ _ h ↦ (cyclicTotalHomologyPeriodicTransition R A M n h).hom) g _ x
 
 /-- The canonical map `H^m(Tot) → HP^n` from a degree `m` equal to `n + 2k`, through the
 identification of `H^m(Tot)` with the `k`-th stage. -/
