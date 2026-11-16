@@ -29,9 +29,9 @@ completeness, and scalar-norm bound on Hom spaces, assembling `NormedAddCommGrou
 Isometricity of the dagger (`‖dagger f‖ = ‖f‖`) is derived from submultiplicativity of
 composition and the C*-identity rather than assumed as an axiom. Pre- and post-composition bundle
 into a norm-contractive continuous bilinear map `compCLM`, whose specializations `leftCompCLM X f`
-and `rightCompCLM Z g` recover the exact morphism norms `‖f‖` and `‖g‖`. Continuous linear maps on
-Hom spaces—including left/right annihilators and intertwiner spaces—have closed Banach kernels,
-and identity, unitary, self-adjoint-idempotent, zero-object, and polarization formulas follow.
+and `rightCompCLM Z g` recover the exact morphism norms `‖f‖` and `‖g‖`. Left and right
+annihilators and intertwiner spaces are closed subspaces of Hom spaces, and identity, unitary,
+self-adjoint-idempotent, zero-object, and polarization formulas follow.
 
 ## References
 
@@ -261,7 +261,7 @@ theorem norm_comp_dagger_le_polarization (f g : X ⟶ Y) :
           ‖f + Complex.I • g‖ ^ 2 + ‖f - Complex.I • g‖ ^ 2 := by
         simp only [norm_comp_dagger_self, add_assoc]
 
-/-! ### Continuous bilinear composition and closed Hom-space kernels -/
+/-! ### Continuous bilinear composition, annihilators, and intertwiners -/
 
 /-- Categorical composition bundled as a continuous `ℂ`-bilinear map of norm at most `1`,
 built from `CategoryTheory.Linear.comp`. -/
@@ -339,12 +339,6 @@ theorem norm_rightCompCLM_le (X : C) (g : Y ⟶ Z) : ‖rightCompCLM X g‖ ≤ 
       ‖g‖ * ‖g‖ = ‖rightCompCLM Z g (dagger g)‖ := (norm_dagger_comp_self' g).symm
       _ ≤ ‖rightCompCLM Z g‖ * ‖dagger g‖ := (rightCompCLM Z g).le_opNorm (dagger g)
       _ = ‖rightCompCLM Z g‖ * ‖g‖ := by rw [norm_dagger]
-
-/-- Any continuous linear map out of a Hom space into a `T₁` topological module has closed kernel
-subspace, making that kernel a complete Banach subspace of `X ⟶ Y`. -/
-theorem isClosed_ker_hom {E : Type*} [TopologicalSpace E] [T1Space E] [AddCommMonoid E]
-    [Module ℂ E] (L : (X ⟶ Y) →L[ℂ] E) : IsClosed (L.ker : Set (X ⟶ Y)) :=
-  L.isClosed_ker
 
 /-- The right-annihilator `{g : Y ⟶ Z | f ≫ g = 0}` of `f : X ⟶ Y` is closed in `Y ⟶ Z`. -/
 theorem isClosed_rightAnnihilator (Z : C) (f : X ⟶ Y) :
