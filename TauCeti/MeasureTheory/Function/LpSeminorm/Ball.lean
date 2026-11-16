@@ -42,14 +42,18 @@ exact form of the bounded-overlap count.
   a global estimate.
 * `TauCeti.lpNorm_le_of_ae_lpNorm_restrict_ball_le_add`: the same for local estimates by two
   functions on concentric balls of radii `r` and `2 r`, with the explicit constant `2 ^ (d + 1)`.
+* `TauCeti.tendsto_iSup_eLpNorm_restrict_ball_zero_of_tendsto_measure` and
+  `TauCeti.tendsto_iSup_eLpNorm_restrict_ball_zero`: for `0 < p < ∞` and `eLpNorm f p μ ≠ ∞`,
+  the supremum over all centres `x` of `‖f‖_{Lᵖ(B(x, r))}` tends to `0` as the ball measure
+  (or radius, in a nontrivial finite-dimensional space) tends to `0`.
 -/
 
 public section
 
 namespace TauCeti
 
-open MeasureTheory Metric Module
-open scoped ENNReal
+open Filter MeasureTheory Metric Module
+open scoped ENNReal Topology
 
 variable {E : Type*} [NormedAddCommGroup E] [MeasurableSpace E] [BorelSpace E] [ProperSpace E]
   {μ : Measure E} [μ.IsAddHaarMeasure]
@@ -136,6 +140,30 @@ theorem eLpNorm_le_of_ae_eLpNorm_restrict_ball_le (hp0 : p ≠ 0) (hp : p ≠ �
         rw [ENNReal.mul_rpow_of_nonneg _ _ (inv_nonneg.2 hq.le), ← ENNReal.rpow_mul,
           mul_inv_cancel₀ hq.ne', ENNReal.rpow_one]
 
+omit [ProperSpace E] in
+/-- **Uniform vanishing of `Lᵖ` seminorms on shrinking balls.** For `0 < p < ∞` and `f` with finite
+`Lᵖ` seminorm, if the Haar measure of the centred balls `B(0, r i)` tends to `0`, then
+`sup_x ‖f‖_{Lᵖ(B(x, r i))} → 0` uniformly in the centre `x`. -/
+theorem tendsto_iSup_eLpNorm_restrict_ball_zero_of_tendsto_measure {ι : Type*} {l : Filter ι}
+    {r : ι → ℝ} (hp0 : p ≠ 0) (hp : p ≠ ∞) {f : E → F} (hf : eLpNorm f p μ ≠ ∞)
+    (hr : Tendsto (fun i => μ (ball (0 : E) (r i))) l (𝓝 0)) :
+    Tendsto (fun i => ⨆ x : E, eLpNorm f p (μ.restrict (ball x (r i)))) l (𝓝 0) := by
+  have hq : 0 < p.toReal := ENNReal.toReal_pos hp0 hp
+  have hfm : AEStronglyMeasurable f μ := aestronglyMeasurable_of_eLpNorm_ne_top hf
+  have hint : ∫⁻ x, ‖f x‖ₑ ^ p.toReal ∂μ ≠ ∞ := by
+    rw [eLpNorm_eq_lintegral_rpow_eNorm_toReal hp0 hp hfm] at hf
+    intro htop
+    exact hf (by rw [htop, ENNReal.top_rpow_of_pos (one_div_pos.2 hq)])
+  refine ENNReal.tendsto_nhds_zero.2 fun ε hε => ?_
+  have hεp : 0 < ε ^ p.toReal := ENNReal.rpow_pos_of_nonneg hε hq.le
+  obtain ⟨δ, hδ, hδint⟩ := exists_pos_setLIntegral_lt_of_measure_lt hint hεp.ne'
+  filter_upwards [hr.eventually (gt_mem_nhds hδ)] with i hi
+  refine iSup_le fun x => ?_
+  rw [eLpNorm_eq_lintegral_rpow_eNorm_toReal hp0 hp hfm.restrict, one_div,
+    ENNReal.rpow_inv_le_iff hq]
+  have hx : μ (ball x (r i)) < δ := by rwa [Measure.addHaar_ball_center]
+  exact (hδint (ball x (r i)) hx).le
+
 section FiniteDimensional
 
 variable [NormedSpace ℝ E] [FiniteDimensional ℝ E] {G₁ G₂ : Type*} [NormedAddCommGroup G₁]
@@ -207,6 +235,29 @@ theorem lpNorm_le_of_ae_lpNorm_restrict_ball_le_add (hp1 : 1 ≤ p) (hp : p ≠ 
       ≤ 2 ^ finrank ℝ E * (2 * (c₁ * lpNorm f₁ p μ + c₂ * lpNorm f₂ p μ)) :=
         mul_le_mul hpow (by gcongr) (mul_nonneg zero_le_two lpNorm_nonneg) (by positivity)
     _ = _ := by ring
+
+omit [ProperSpace E] in
+/-- **Uniform vanishing of `Lᵖ` seminorms on shrinking balls in positive dimension.** In a
+nontrivial finite-dimensional real normed space, for `0 < p < ∞` and `f` with finite `Lᵖ` seminorm,
+`sup_x ‖f‖_{Lᵖ(B(x, r i))} → 0` whenever `r i → 0`. -/
+theorem tendsto_iSup_eLpNorm_restrict_ball_zero [Nontrivial E] {ι : Type*} {l : Filter ι}
+    {r : ι → ℝ} (hp0 : p ≠ 0) (hp : p ≠ ∞) {f : E → F} (hf : eLpNorm f p μ ≠ ∞)
+    (hr : Tendsto r l (𝓝 0)) :
+    Tendsto (fun i => ⨆ x : E, eLpNorm f p (μ.restrict (ball x (r i)))) l (𝓝 0) := by
+  refine tendsto_iSup_eLpNorm_restrict_ball_zero_of_tendsto_measure hp0 hp hf ?_
+  have hpow : Tendsto (fun i => ENNReal.ofReal ((max (r i) 0) ^ finrank ℝ E) * μ (ball (0 : E) 1))
+      l (𝓝 0) := by
+    have h0 : Tendsto (fun i => (max (r i) 0) ^ finrank ℝ E) l (𝓝 0) := by
+      simpa [zero_pow finrank_pos.ne'] using
+        (hr.max (tendsto_const_nhds (x := (0 : ℝ)))).pow (finrank ℝ E)
+    have h1 := ENNReal.Tendsto.mul_const (ENNReal.continuous_ofReal.tendsto 0 |>.comp h0)
+      (Or.inr (measure_ball_lt_top (μ := μ) (x := (0 : E)) (r := 1)).ne)
+    simpa [Function.comp_def] using h1
+  refine tendsto_of_tendsto_of_tendsto_of_le_of_le tendsto_const_nhds hpow (fun _ => zero_le)
+    fun i => ?_
+  rcases le_or_gt (r i) 0 with hri | hri
+  · simp [ball_eq_empty.2 hri]
+  · rw [Measure.addHaar_ball_of_pos μ 0 hri, max_eq_left hri.le]
 
 end FiniteDimensional
 
