@@ -29,11 +29,11 @@ open sets `U` and `V` of its base, this is the sequence which glues classes of t
 construction of the Thom class by induction over trivializing open sets.
 
 The construction dualizes the one in homology. For a commutative square of pairs of simplicial
-sets whose squares of subobjects and of ambient simplicial sets are pushouts with monomorphic top
-maps, the relative Mayer–Vietoris short exact sequence of chain complexes is split in each degree:
-its last map has the section obtained from a section of the absolute sequence of the ambient
-simplicial sets, since relative chains are a retract of ambient chains
-(`SSetPair.isSplitEpi_mayerVietoris_g_f`). So applying `Hom(-, M)` keeps it short exact
+sets whose squares of subobjects and of ambient simplicial sets are pushouts and whose top map of
+ambient simplicial sets is a monomorphism, the relative Mayer–Vietoris short exact sequence of chain
+complexes is split in each degree: its last map has the section obtained from a section of the
+absolute sequence of the ambient simplicial sets, since relative chains are a retract of ambient
+chains (`SSetPair.isSplitEpi_mayerVietoris_g_f`). So applying `Hom(-, M)` keeps it short exact
 (`SSetPair.shortExact_mayerVietorisCochainShortComplex`), and its cohomology sequence is the long
 exact sequence `⋯ ⟶ Hⁿ(P₄) ⟶ Hⁿ(P₂) ⊞ Hⁿ(P₃) ⟶ Hⁿ(P₁) ⟶ Hⁿ⁺¹(P₄) ⟶ ⋯`. For the square of singular
 pairs of `(A ∩ B, C ∩ D)`, `(A, C)`, `(B, D)` and the singular simplices of `X` lying in `A` or in
@@ -179,8 +179,6 @@ subobjects), the relative cochain Mayer–Vietoris sequence is short exact. -/
 lemma shortExact_mayerVietorisCochainShortComplex :
     (mayerVietorisCochainShortComplex R k M
       (MorphismProperty.Arrow.Hom.ext sqL.w sqR.w)).ShortExact := by
-  -- `t.left` is mono since `t.left ≫ P₂.hom = P₁.hom ≫ t.right` is.
-  have : Mono t.left := mono_of_mono_fac (h := P₁.hom ≫ t.right) t.w
   have hS := shortExact_mayerVietoris R sqL sqR
   have (i : ℕ) : IsSplitMono ((biprod.lift (chainComplexMap t R) (-chainComplexMap l R)).f i) :=
     ((HomologicalComplex.shortExact_iff_degreewise_shortExact _).1 hS
@@ -372,8 +370,7 @@ lemma isIso_homologyMap_cochainComplexMap_smallSingularSubcomplexPairToUnion (U 
 
 variable {A B C D : Set X} (hCA : C ⊆ A) (hDB : D ⊆ B)
 
-attribute [local instance] TopPair.mono_toSSetPair_map_ofInclusionMap_inclusion_left
-  TopPair.mono_toSSetPair_map_ofInclusionMap_inclusion_right
+attribute [local instance] TopPair.mono_toSSetPair_map_ofInclusionMap_inclusion_right
 
 /-- The first map `Hⁿ(A ∪ B, C ∪ D) ⟶ Hⁿ(A, C) ⊞ Hⁿ(B, D)` of the Mayer–Vietoris sequence of the
 pairs `(A, C)` and `(B, D)` in singular cohomology, with components the restrictions `j_A^*` and

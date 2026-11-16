@@ -185,19 +185,13 @@ private lemma toSSetPair_map_ofSubsetMap_right {A B : Set X} (h : A ⊆ B) :
     (TopPair.toSSetPair.map (TopPair.ofSubsetMap (𝟙 X) h)).right = 𝟙 (toSSet.obj X) :=
   (congrArg toSSet.map (TopPair.ofSubsetMap_fst (𝟙 X) h)).trans (toSSet.map_id X)
 
-private lemma mono_toSSetPair_map_ofSubsetMap_left {A B : Set X} (h : A ⊆ B) :
-    Mono (TopPair.toSSetPair.map (TopPair.ofSubsetMap (𝟙 X) h)).left := by
-  rw [toSSetPair_map_ofSubsetMap_left]
-  exact Functor.map_mono _ _
-
 private lemma mono_toSSetPair_map_ofSubsetMap_right {A B : Set X} (h : A ⊆ B) :
     Mono (TopPair.toSSetPair.map (TopPair.ofSubsetMap (𝟙 X) h)).right := by
   refine ⟨fun g g' hgh ↦ ?_⟩
   rw [toSSetPair_map_ofSubsetMap_right] at hgh
   exact (Category.comp_id g).symm.trans (hgh.trans (Category.comp_id g'))
 
-attribute [local instance] mono_toSSetPair_map_ofSubsetMap_left
-  mono_toSSetPair_map_ofSubsetMap_right
+attribute [local instance] mono_toSSetPair_map_ofSubsetMap_right
 
 private lemma isPushout_left :
     IsPushout (TopPair.toSSetPair.map (TopPair.ofSubsetMap (𝟙 X) Set.inter_subset_left)).left
@@ -702,8 +696,7 @@ lemma inr_pairMayerVietorisFromBiprod (n : ℕ) :
 
 /-! #### The square of singular pairs -/
 
-attribute [local instance] TopPair.mono_toSSetPair_map_ofInclusionMap_inclusion_left
-  TopPair.mono_toSSetPair_map_ofInclusionMap_inclusion_right
+attribute [local instance] TopPair.mono_toSSetPair_map_ofInclusionMap_inclusion_right
 
 /-- The pair formed by the singular simplices of `X` lying in `A` or in `B` and those lying in `C`
 or in `D`. For `A` and `B` open in `A ∪ B` and `C` and `D` open in `C ∪ D`, the small-chain theorem
@@ -948,8 +941,7 @@ include hA hB hC hD in
 two pairs is an epimorphism. -/
 lemma epi_pairMayerVietorisFromBiprod_zero : Epi (pairMayerVietorisFromBiprod R hCA hDB 0) := by
   have := isIso_homologyMap_smallSingularPairToUnion R hCA hDB hA hB hC hD 0
-  have := SSetPair.epi_mayerVietorisFromBiprod_zero R (isPushout_toSmallSingularPair_left hCA hDB)
-    (isPushout_toSmallSingularPair_right hCA hDB)
+  have := SSetPair.epi_mayerVietorisFromBiprod_zero R (isPushout_toSmallSingularPair_right hCA hDB)
   rw [← mayerVietorisFromBiprod_comp_homologyMap_smallSingularPairToUnion]
   exact epi_comp _ _
 
