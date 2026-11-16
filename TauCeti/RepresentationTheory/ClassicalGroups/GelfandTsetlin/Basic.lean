@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Algebra.BigOperators.Finset.PartialSum
 public import TauCeti.RepresentationTheory.ClassicalGroups.DominantWeight
 public import Mathlib.Data.Int.Interval
 public import Mathlib.SetTheory.Cardinal.Finite
@@ -58,6 +59,7 @@ a dominant top row `λ₁ ≤ λ₀` is `λ₀ - λ₁ + 1`, the dimension of th
 * `TauCeti.GTPattern.entry_anti` and `TauCeti.GTPattern.topRow_antitone`: rows are weakly
   decreasing, so the top row is a dominant weight.
 * `TauCeti.GTPattern.sum_rowWeight`: the weight coordinates sum to the top-row sum.
+* `TauCeti.GTPattern.prefixSum_rowWeight`: the first `j` weight coordinates sum to row `j`.
 * `TauCeti.GTPattern.entry_nonneg`: a pattern with a nonnegative top row has nonnegative entries,
   so the polynomial patterns are cut out by the top row alone.
 * `TauCeti.GTPattern.abs_le_sum_abs`: every entry is bounded in absolute value by the sum of the
@@ -281,6 +283,15 @@ theorem abs_le_sum_abs (P : GTPattern n) (i j : ℕ) :
             (fun i' _ => hnn i') (Finset.mem_range.2 (by omega))
   · rw [P.entry_eq_zero (by omega), abs_zero]
     exact Finset.sum_nonneg fun i' _ => hnn i'
+
+/-- The first `j` row-weight coordinates add up to the sum of the `j` entries of row `j`. -/
+theorem prefixSum_rowWeight (P : GTPattern n) {j : ℕ} (hj : j ≤ n) :
+    prefixSum j P.rowWeight = ∑ k ∈ Finset.range j, P k j := by
+  induction j with
+  | zero => simp
+  | succ j ih =>
+    rw [prefixSum_succ hj, ih (by omega), rowWeight_apply]
+    exact add_sub_cancel _ _
 
 /-- There is exactly one empty pattern. -/
 instance : Unique (GTPattern 0) where

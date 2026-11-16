@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 import TauCeti.Algebra.BigOperators.Finset.PartialSum
-public import TauCeti.Combinatorics.Hive.Basic
+public import TauCeti.Combinatorics.Hive.Fibre
 public import TauCeti.RepresentationTheory.ClassicalGroups.GelfandTsetlin.AddMonoid
 
 /-!
@@ -19,8 +19,12 @@ boundary, and the pattern together with the first boundary reconstructs every hi
 Consequently the difference map is injective on hives with a fixed first boundary.
 
 The construction uses normalized hives and the native pattern's convention of zero
-entries outside `i < j ≤ n`. It is a directional comparison: the third rhombus family
-imposes an additional condition on the image, so no surjectivity onto all patterns is asserted.
+entries outside `i < j ≤ n`. The third rhombus family imposes an additional condition on the
+image, the predicate `GTCompletionConcave`: the completion of a pattern is a hive exactly when
+it satisfies this third family. This identifies the integer hives with boundary `(λ, μ, γ*)`
+with the patterns of top row `μ` and weight `γ - λ` whose completion satisfies the third family.
+When every adjacent gap of `λ` is at least `μ₀ - μₙ₋₁`, the third family holds automatically,
+so these hives correspond to all patterns of top row `μ` and weight `γ - λ`.
 
 ## Main results
 
@@ -32,6 +36,15 @@ imposes an additional condition on the image, so no surjectivity onto all patter
 * `gtCompletion_toGTPattern` and `toGTPattern_eq_of_coe_eq_gtCompletion` are the two
   inverse laws when the lattice function is a hive.
 * `sum_toGTPattern_sub_le` records the third rhombus family's necessary image condition.
+* `isRhombusConcave_gtCompletion_iff`: a completion is rhombus-concave iff it satisfies
+  `GTCompletionConcave`; `ofGTPattern` is the resulting hive.
+* `exists_fixedIntegerHive_eq_gtCompletion_iff` and `fixedIntegerHiveEquivGTPattern`: a pattern
+  of top row `μ` and weight `γ - λ` is the pattern of a hive with boundary `(λ, μ, γ*)` iff its
+  completion satisfies the third family, and the fixed-boundary fibre is equivalent to these
+  patterns.
+* `gtCompletionConcave_of_gap`, `fixedIntegerHiveEquivGTPatternOfGap` and
+  `hiveCount_eq_natCard_gtPattern_of_gap`: under the uniform input gap the third family is
+  automatic, and the hive count is a count of Gelfand–Tsetlin patterns.
 
 ## References
 
@@ -424,5 +437,209 @@ subtracted from the third-coordinate slope. -/
     gtCompletion (fun _ : Fin n => β) (GTPattern.const n m) = ⇑(affine n β (β + m)) := by
   have h := gtCompletion_toGTPattern (affine n β (β + m))
   simpa using h
+
+/-! ### The third rhombus family and the hive of a pattern -/
+
+/-- The completion of `lam` and `P` satisfies the third family of rhombus inequalities
+`c(i, j) + c(i+1, j+2) ≤ c(i, j+1) + c(i+1, j+1)` in the triangular chart, for `i ≤ j` and
+`j + 2 ≤ n`. The completion always satisfies the other two families, which are the interlacing
+inequalities of `P`, so this is its rhombus concavity (`isRhombusConcave_gtCompletion_iff`). -/
+def GTCompletionConcave (lam : Fin n → ℤ) (P : GTPattern n) : Prop :=
+  ∀ ⦃i j : ℕ⦄ (hij : i ≤ j) (hj : j + 2 ≤ n),
+    gtCompletion lam P (chart n i j hij (by omega)) +
+        gtCompletion lam P (chart n (i + 1) (j + 2) (by omega) hj) ≤
+      gtCompletion lam P (chart n i (j + 1) (by omega) (by omega)) +
+        gtCompletion lam P (chart n (i + 1) (j + 1) (by omega) (by omega))
+
+/-- The completion of any pattern satisfies the first two families of rhombus inequalities, its
+interlacing inequalities; so it is rhombus-concave iff it satisfies the third family. -/
+theorem isRhombusConcave_gtCompletion_iff (lam : Fin n → ℤ) (P : GTPattern n) :
+    IsRhombusConcave (gtCompletion lam P) ↔ GTCompletionConcave lam P := by
+  have hc : gtCompletion lam P = fun v : Vertex n =>
+      (∑ r : Fin n with r.val < n - v.x, lam r) + ∑ k ∈ Finset.range v.z, P k (n - v.x) := by
+    funext v
+    have := v.sum_eq
+    rw [gtCompletion_apply, show n - v.x = v.y + v.z by omega]
+  rw [hc]
+  refine (isRhombusConcave_chart_iff
+    (fun i j => (∑ r : Fin n with r.val < j, lam r) + ∑ k ∈ Finset.range i, P k j)).trans ?_
+  simp only [GTCompletionConcave, gtCompletion_chart]
+  refine ⟨fun h => h.2.2, fun h => ⟨fun i j hij hj => ?_, fun i j _ hj => ?_, h⟩⟩
+  · have := P.entry_le_entry_succ_row hij hj
+    simp only [Finset.sum_range_succ]
+    linarith
+  · have := P.entry_succ_succ_le_entry (i := i) hj
+    simp only [Finset.sum_range_succ]
+    linarith
+
+/-- The completion of the pattern of an integer hive with its first boundary satisfies the third
+family of rhombus inequalities. -/
+theorem gtCompletionConcave_toGTPattern (h : IntegerHive n) :
+    GTCompletionConcave (h.boundary 0) h.toGTPattern :=
+  (isRhombusConcave_gtCompletion_iff _ _).mp (by
+    rw [gtCompletion_toGTPattern]
+    exact h.isRhombusConcave)
+
+/-- The integer hive whose values are the completion of a boundary `lam` and a pattern `P`
+satisfying the third family of rhombus inequalities. -/
+def ofGTPattern (lam : Fin n → ℤ) (P : GTPattern n) (hP : GTCompletionConcave lam P) :
+    IntegerHive n :=
+  Hive.mk (gtCompletion lam P) (gtCompletion_cornerA lam P) fun hr =>
+    (isRhombusConcave_def _).mp ((isRhombusConcave_gtCompletion_iff lam P).mpr hP) hr
+
+/-- The values of the hive of a pattern are its completion. -/
+@[simp] theorem coe_ofGTPattern (lam : Fin n → ℤ) (P : GTPattern n)
+    (hP : GTCompletionConcave lam P) : ⇑(ofGTPattern lam P hP) = gtCompletion lam P :=
+  (rfl)
+
+/-- The pattern of the hive of a pattern is the pattern itself. -/
+@[simp] theorem toGTPattern_ofGTPattern (lam : Fin n → ℤ) (P : GTPattern n)
+    (hP : GTCompletionConcave lam P) : (ofGTPattern lam P hP).toGTPattern = P :=
+  toGTPattern_eq_of_coe_eq_gtCompletion (coe_ofGTPattern lam P hP)
+
+/-- An integer hive is the hive of its first boundary and its pattern. -/
+@[simp] theorem ofGTPattern_toGTPattern (h : IntegerHive n) :
+    ofGTPattern (h.boundary 0) h.toGTPattern h.gtCompletionConcave_toGTPattern = h :=
+  DFunLike.coe_injective (by rw [coe_ofGTPattern, gtCompletion_toGTPattern])
+
+/-- The clockwise boundary of the hive of a pattern is that of its completion. -/
+@[simp] theorem boundary_ofGTPattern (lam : Fin n → ℤ) (P : GTPattern n)
+    (hP : GTCompletionConcave lam P) :
+    (ofGTPattern lam P hP).boundary = boundaryLinear ℤ n ℤ (gtCompletion lam P) := by
+  rw [← boundaryLinear_coe ℤ, coe_ofGTPattern]
+
+/-! ### Fixed-boundary fibres as Gelfand–Tsetlin fibres -/
+
+section ProductBoundary
+
+/-- The hive of a pattern with top row `μ` and weight `γ - λ` has boundary `(λ, μ, γ*)`. -/
+theorem boundary_ofGTPattern_of_topRow_of_rowWeight {lam μ γ : DominantWeight n}
+    {P : GTPattern n} {hP : GTCompletionConcave lam.1 P}
+    (htop : P.topRow = μ.1) (hweight : P.rowWeight = γ.1 - lam.1) :
+    (ofGTPattern lam.1 P hP).boundary = productBoundary lam μ γ := by
+  rw [boundary_ofGTPattern]
+  exact boundaryLinear_gtCompletion_of_topRow_of_rowWeight htop hweight
+
+/-- A hive with boundary `(λ, μ, γ*)` is the completion of `λ` and its pattern. -/
+theorem gtCompletion_toGTPattern_of_productBoundary {lam μ γ : DominantWeight n}
+    {h : IntegerHive n} (hb : h.boundary = productBoundary lam μ γ) :
+    gtCompletion lam.1 h.toGTPattern = ⇑h := by
+  have := gtCompletion_toGTPattern h
+  rwa [hb, productBoundary_zero] at this
+
+variable (lam μ γ : DominantWeight n)
+
+/-- **Fixed-boundary hives are Gelfand–Tsetlin patterns.** The integer hives with clockwise
+boundary `(λ, μ, γ*)` correspond to the Gelfand–Tsetlin patterns with top row `μ` and weight
+`γ - λ` whose completion satisfies the third family of rhombus inequalities. The forward map is
+`toGTPattern`, the inverse the completion `ofGTPattern`. -/
+def fixedIntegerHiveEquivGTPattern :
+    FixedIntegerHive (productBoundary lam μ γ) ≃
+      {P : GTPattern n // P.topRow = μ.1 ∧ P.rowWeight = γ.1 - lam.1 ∧
+        GTCompletionConcave lam.1 P} where
+  toFun h := ⟨h.1.toGTPattern, topRow_toGTPattern_of_productBoundary h.2,
+    rowWeight_toGTPattern_of_productBoundary h.2, by
+      simpa only [h.2, productBoundary_zero] using h.1.gtCompletionConcave_toGTPattern⟩
+  invFun P := ⟨ofGTPattern lam.1 P.1 P.2.2.2,
+    boundary_ofGTPattern_of_topRow_of_rowWeight P.2.1 P.2.2.1⟩
+  left_inv h := Subtype.ext <| DFunLike.coe_injective <| by
+    rw [coe_ofGTPattern]
+    exact gtCompletion_toGTPattern_of_productBoundary h.2
+  right_inv P := Subtype.ext (toGTPattern_ofGTPattern lam.1 P.1 P.2.2.2)
+
+@[simp]
+theorem fixedIntegerHiveEquivGTPattern_apply_coe (h : FixedIntegerHive (productBoundary lam μ γ)) :
+    (fixedIntegerHiveEquivGTPattern lam μ γ h : GTPattern n) = h.1.toGTPattern := (rfl)
+
+/-- The inverse of the fixed-boundary equivalence is the completion of `λ` and the pattern. -/
+@[simp]
+theorem fixedIntegerHiveEquivGTPattern_symm_apply_apply
+    (P : {P : GTPattern n // P.topRow = μ.1 ∧ P.rowWeight = γ.1 - lam.1 ∧
+      GTCompletionConcave lam.1 P}) (v : Vertex n) :
+    ((fixedIntegerHiveEquivGTPattern lam μ γ).symm P).1 v = gtCompletion lam.1 P.1 v := (rfl)
+
+/-- **Reconstruction of a hive from its pattern.** A Gelfand–Tsetlin pattern with top row `μ` and
+weight `γ - λ` is the difference pattern of a hive with boundary `(λ, μ, γ*)`, namely of its
+completion, iff the completion satisfies the third family of rhombus inequalities. -/
+theorem exists_fixedIntegerHive_eq_gtCompletion_iff (P : GTPattern n) (htop : P.topRow = μ.1)
+    (hweight : P.rowWeight = γ.1 - lam.1) :
+    (∃ h : FixedIntegerHive (productBoundary lam μ γ), ⇑h.1 = gtCompletion lam.1 P) ↔
+      GTCompletionConcave lam.1 P :=
+  ⟨fun ⟨h, hv⟩ => (isRhombusConcave_gtCompletion_iff _ _).mp (hv ▸ h.1.isRhombusConcave),
+    fun hP => ⟨⟨ofGTPattern lam.1 P hP, boundary_ofGTPattern_of_topRow_of_rowWeight htop hweight⟩,
+      coe_ofGTPattern lam.1 P hP⟩⟩
+
+end ProductBoundary
+
+/-! ### The uniform input gap -/
+
+/-- **The uniform input gap makes the third family automatic.** If every adjacent gap
+`lamᵣ - lamᵣ₊₁` of the boundary `lam` is at least the spread `μ₀ - μₙ` of the top row `μ` of a
+pattern `P`, then the completion of `lam` and `P` satisfies the third family of rhombus
+inequalities. -/
+theorem gtCompletionConcave_of_gap (lam : Fin (n + 1) → ℤ) (P : GTPattern (n + 1))
+    (hGap : ∀ r : Fin n, P.topRow 0 - P.topRow (Fin.last n) ≤ lam r.castSucc - lam r.succ) :
+    GTCompletionConcave lam P := by
+  intro i j hij hj
+  simp only [gtCompletion_chart]
+  -- The boundary prefixes contribute `lam (j + 1) - lam j`.
+  have hl₁ := prefixSum_succ (by omega : j < n + 1) lam
+  have hl₂ : prefixSum (j + 2) lam = prefixSum (j + 1) lam + lam ⟨j + 1, by omega⟩ :=
+    prefixSum_succ (by omega) lam
+  rw [prefixSum_def, prefixSum_def] at hl₁ hl₂
+  -- The entries of row `j` are at most those of row `j + 1`.
+  have hA : ∑ k ∈ Finset.range i, P k j ≤ ∑ k ∈ Finset.range i, P k (j + 1) :=
+    Finset.sum_le_sum fun k hk =>
+      P.entry_le_entry_succ_row (by simp at hk; omega) (by omega)
+  -- The increase from row `j + 1` to row `j + 2` telescopes to the spread of row `j + 2`.
+  have hB : ∑ k ∈ Finset.range (i + 1), (P k (j + 2) - P k (j + 1)) ≤
+      ∑ k ∈ Finset.range (i + 1), (P k (j + 2) - P (k + 1) (j + 2)) :=
+    Finset.sum_le_sum fun k _ => sub_le_sub_left (P.entry_succ_succ_le_entry (by omega)) _
+  rw [Finset.sum_range_sub' (fun k => P k (j + 2))] at hB
+  have h₀ := (P.entry_mem_Icc (i := 0) (j := j + 2) (by omega) hj).2
+  have h₁ := (P.entry_mem_Icc (i := i + 1) (j := j + 2) (by omega) hj).1
+  have hlast : (⟨n + 1 - 1, by omega⟩ : Fin (n + 1)) = Fin.last n := Fin.ext (by simp)
+  rw [hlast] at h₁
+  have hg := hGap ⟨j, by omega⟩
+  simp only [Fin.castSucc_mk, Fin.succ_mk] at hg
+  simp only [Finset.sum_sub_distrib] at hB
+  simp only [Fin.zero_eta] at h₀
+  linarith
+
+/-- **Hives in the stable range are Gelfand–Tsetlin patterns.** Under the uniform input gap
+`λᵣ - λᵣ₊₁ ≥ μ₀ - μₙ`, the integer hives with boundary `(λ, μ, γ*)` correspond to all
+Gelfand–Tsetlin patterns with top row `μ` and weight `γ - λ`. -/
+def fixedIntegerHiveEquivGTPatternOfGap (lam μ γ : DominantWeight (n + 1))
+    (hGap : ∀ r : Fin n, μ.1 0 - μ.1 (Fin.last n) ≤ lam.1 r.castSucc - lam.1 r.succ) :
+    FixedIntegerHive (productBoundary lam μ γ) ≃
+      {P : GTPattern (n + 1) // P.topRow = μ.1 ∧ P.rowWeight = γ.1 - lam.1} :=
+  (fixedIntegerHiveEquivGTPattern lam μ γ).trans <| Equiv.subtypeEquivRight fun P =>
+    ⟨fun hP => ⟨hP.1, hP.2.1⟩, fun hP => ⟨hP.1, hP.2,
+      gtCompletionConcave_of_gap lam.1 P (by simpa only [hP.1] using hGap)⟩⟩
+
+@[simp]
+theorem fixedIntegerHiveEquivGTPatternOfGap_apply_coe (lam μ γ : DominantWeight (n + 1))
+    (hGap : ∀ r : Fin n, μ.1 0 - μ.1 (Fin.last n) ≤ lam.1 r.castSucc - lam.1 r.succ)
+    (h : FixedIntegerHive (productBoundary lam μ γ)) :
+    (fixedIntegerHiveEquivGTPatternOfGap lam μ γ hGap h : GTPattern (n + 1)) =
+      h.1.toGTPattern := (rfl)
+
+/-- The inverse of the stable-range equivalence is the completion of `λ` and the pattern. -/
+@[simp]
+theorem fixedIntegerHiveEquivGTPatternOfGap_symm_apply_apply (lam μ γ : DominantWeight (n + 1))
+    (hGap : ∀ r : Fin n, μ.1 0 - μ.1 (Fin.last n) ≤ lam.1 r.castSucc - lam.1 r.succ)
+    (P : {P : GTPattern (n + 1) // P.topRow = μ.1 ∧ P.rowWeight = γ.1 - lam.1})
+    (v : Vertex (n + 1)) :
+    ((fixedIntegerHiveEquivGTPatternOfGap lam μ γ hGap).symm P).1 v =
+      gtCompletion lam.1 P.1 v := (rfl)
+
+/-- Under the uniform input gap, the hive count of `(λ, μ, γ*)` is the number of Gelfand–Tsetlin
+patterns with top row `μ` and weight `γ - λ`. -/
+theorem hiveCount_eq_natCard_gtPattern_of_gap (lam μ γ : DominantWeight (n + 1))
+    (hGap : ∀ r : Fin n, μ.1 0 - μ.1 (Fin.last n) ≤ lam.1 r.castSucc - lam.1 r.succ) :
+    hiveCount (productBoundary lam μ γ) =
+      Nat.card {P : GTPattern (n + 1) // P.topRow = μ.1 ∧ P.rowWeight = γ.1 - lam.1} := by
+  rw [← natCard_fixedIntegerHive]
+  exact Nat.card_congr (fixedIntegerHiveEquivGTPatternOfGap lam μ γ hGap)
 
 end TauCeti.Hive
