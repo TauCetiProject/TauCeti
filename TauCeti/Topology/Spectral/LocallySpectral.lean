@@ -161,10 +161,7 @@ theorem IsLocallySpectralSpace.prod (hX : IsLocallySpectralSpace X)
   rintro ⟨x, y⟩
   obtain ⟨U, hUo, hxU, hUs⟩ := hX x
   obtain ⟨V, hVo, hyV, hVs⟩ := hY y
-  refine ⟨U ×ˢ V, hUo.prod hVo, ⟨hxU, hyV⟩, ?_⟩
-  let e := Homeomorph.Set.prod U V
-  have : CompactSpace (U ×ˢ V : Set (X × Y)) := e.symm.compactSpace
-  exact e.isOpenEmbedding.spectralSpace
+  exact ⟨U ×ˢ V, hUo.prod hVo, ⟨hxU, hyV⟩, spectralSpace_set_prod⟩
 
 /-- A map is **locally spectral** if it is continuous and every restriction between spectral open
 subspaces is a spectral map. This is a relative condition: no global compactness is imposed on

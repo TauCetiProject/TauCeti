@@ -38,7 +38,8 @@ space the constructible topology is totally separated, which makes compact subse
   in `WithConstructibleTopology X`.
 * `WithConstructibleTopology.instTotallySeparatedSpace`: the constructible topology of a T₀
   prespectral space is totally separated, hence Hausdorff and totally disconnected. On a spectral
-  space it is also compact (`compactSpace_withConstructibleTopology`), so it is profinite.
+  space it is also compact (`compactSpace_withConstructibleTopology`, or directly as
+  `TauCeti.compactSpace_constructibleTopology`), so it is profinite.
 
 ## References
 
@@ -160,3 +161,13 @@ instance WithConstructibleTopology.instTotallySeparatedSpace [PrespectralSpace X
   · obtain ⟨V, hVo, hVc, hyV, hxV⟩ :=
       PrespectralSpace.not_specializes_iff_exists_isOpen_isCompact.1 (hUo.not_specializes hx hy)
     exact ⟨_, (hVc.isClopen_preimage_ofTopology_of_isOpen hVo).compl, hxV, fun h ↦ h hyV⟩
+
+/-- A compact, quasi-sober, quasi-separated prespectral space (in particular, any spectral space)
+is compact in its constructible topology. -/
+theorem TauCeti.compactSpace_constructibleTopology [CompactSpace X] [QuasiSober X]
+    [PrespectralSpace X] [QuasiSeparatedSpace X] :
+    @CompactSpace X (constructibleTopology X) :=
+  @Function.Surjective.compactSpace (WithConstructibleTopology X) X _
+    (constructibleTopology X) WithTopology.ofTopology
+    (WithTopology.continuous_ofTopology _) inferInstance
+    (WithTopology.ofTopology_surjective _)

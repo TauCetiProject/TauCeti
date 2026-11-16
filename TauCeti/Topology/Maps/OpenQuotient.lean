@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Topology.Constructions
-public import Mathlib.Topology.Homeomorph.Defs
+public import Mathlib.Topology.Homeomorph.Lemmas
 public import Mathlib.Topology.Inseparable
 public import Mathlib.Topology.Maps.OpenQuotient
 public import TauCeti.Data.Setoid.Basic
@@ -72,17 +72,8 @@ namespace Setoid
 
 /-- Swapping coordinates is an involutive homeomorphism on `{q : X × X // r q.1 q.2}`. -/
 def swapHomeomorph (r : Setoid X) :
-    {q : X × X // r q.1 q.2} ≃ₜ {q : X × X // r q.1 q.2} where
-  toFun q := ⟨q.1.swap, r.symm q.2⟩
-  invFun q := ⟨q.1.swap, r.symm q.2⟩
-  left_inv _ := Subtype.ext (Prod.swap_swap _)
-  right_inv _ := Subtype.ext (Prod.swap_swap _)
-  continuous_toFun := (continuous_swap.comp continuous_subtype_val).subtype_mk _
-  continuous_invFun := (continuous_swap.comp continuous_subtype_val).subtype_mk _
-
-@[simp]
-theorem toEquiv_swapHomeomorph (r : Setoid X) : r.swapHomeomorph.toEquiv = r.swapEquiv :=
-  Equiv.ext fun q ↦ Subtype.ext (r.coe_swapEquiv q).symm
+    {q : X × X // r q.1 q.2} ≃ₜ {q : X × X // r q.1 q.2} :=
+  (Homeomorph.prodComm X X).subtype fun _ ↦ ⟨r.symm, r.symm⟩
 
 @[simp]
 theorem coe_swapHomeomorph (r : Setoid X) (q : {q : X × X // r q.1 q.2}) :
@@ -128,19 +119,14 @@ theorem generalizingMap_snd_iff_fst (r : Setoid X) :
       r.swapHomeomorph.isOpenEmbedding.generalizingMap.comp h,
     fun h ↦ r.swapHomeomorph.isOpenEmbedding.generalizingMap.comp h⟩
 
-/-- The canonical projection `Quotient.mk r : X → Quotient r` is a quotient map. -/
-theorem isQuotientMap_quotientMk (r : Setoid X) : IsQuotientMap (Quotient.mk r) :=
-  isQuotientMap_quot_mk
-
 /-- If the first projection from `{q : X × X // r q.1 q.2}` is open, then `Quotient.mk r` is an
 open map. -/
 theorem isOpenMap_quotientMk (r : Setoid X)
     (hs : IsOpenMap fun q : {q : X × X // r q.1 q.2} ↦ q.1.1) :
-    IsOpenMap (Quotient.mk r) := by
-  intro U hU
-  rw [← r.isQuotientMap_quotientMk.isOpen_preimage, r.preimage_image_quotientMk]
-  exact (r.isOpenMap_snd_iff_fst.mpr hs) _
-    (hU.preimage (continuous_fst.comp continuous_subtype_val))
+    IsOpenMap (Quotient.mk r) := fun U hU ↦
+  isQuotientMap_quot_mk.isOpen_preimage.mp <|
+    (r.preimage_image_quotientMk U).symm ▸ (r.isOpenMap_snd_iff_fst.mpr hs) _
+      (hU.preimage (continuous_fst.comp continuous_subtype_val))
 
 /-- If the first projection from `{q : X × X // r q.1 q.2}` is open, then `Quotient.mk r` is an
 open quotient map. -/

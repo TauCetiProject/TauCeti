@@ -19,7 +19,6 @@ This file records small generic additions to Mathlib's `Setoid` API.
   representative to the same representative in the larger quotient.
 * `Setoid.ofPred_rel_eq_iff`: two elements have the same class exactly when they are related.
 * `Setoid.map_of_le_surjective`: the quotient map induced by a setoid inequality is surjective.
-* `Setoid.swapEquiv`: the coordinate-swapping involution on `{q : α × α // r q.1 q.2}`.
 * `Setoid.preimage_image_quotientMk_eq_relPreimage` and `Setoid.preimage_image_quotientMk`: the
   saturation of a set described via `SetRel.preimage` and via the projections of the graph subtype.
 * `Setoid.preimage_image_quotientMk_setOfPred_rel`: every equivalence class `{y | r x y}` is
@@ -57,24 +56,6 @@ setoid is the image of the class of any of its representatives. -/
 theorem map_of_le_surjective {α : Type*} {s t : Setoid α} (h : s ≤ t) :
     Function.Surjective (map_of_le h) :=
   Quotient.map_surjective _ Function.surjective_id
-
-/-- Symmetry of `r` gives an involutive equivalence on the graph `{q : α × α // r q.1 q.2}` by
-swapping coordinates. -/
-def swapEquiv {α : Type*} (r : Setoid α) :
-    {q : α × α // r q.1 q.2} ≃ {q : α × α // r q.1 q.2} where
-  toFun q := ⟨q.1.swap, r.symm q.2⟩
-  invFun q := ⟨q.1.swap, r.symm q.2⟩
-  left_inv _ := Subtype.ext (Prod.swap_swap _)
-  right_inv _ := Subtype.ext (Prod.swap_swap _)
-
-@[simp]
-theorem coe_swapEquiv {α : Type*} (r : Setoid α) (q : {q : α × α // r q.1 q.2}) :
-    (r.swapEquiv q : α × α) = q.1.swap :=
-  (rfl)
-
-@[simp]
-theorem swapEquiv_symm {α : Type*} (r : Setoid α) : r.swapEquiv.symm = r.swapEquiv :=
-  (rfl)
 
 /-- The saturation `Quotient.mk r ⁻¹' (Quotient.mk r '' s)` of a set `s`, the set of points related
 to a point of `s`, is the preimage of `s` under the graph of `r`. -/

@@ -8,17 +8,16 @@ module
 public import TauCeti.Topology.Spectral.PatchCriterion
 public import TauCeti.Topology.Spectral.ProConstructible
 public import Mathlib.Topology.Category.TopCat.Limits.Basic
-import Mathlib.Topology.WithTopology
 
 /-!
 # Limits of spectral spaces
 
-Arbitrary and binary products of spectral spaces are spectral, and projections from
-pro-constructible subsets of binary products are spectral maps. Equalizers of spectral maps into a
-T₀ prespectral space are pro-constructible, so the compatible locus of a diagram of spectral spaces
-with spectral transition maps is spectral as well. Its coordinate projections are spectral.
-These results apply to arbitrary small diagrams, including cofiltered inverse systems and the
-empty diagram.
+Arbitrary and binary products of spectral spaces (and of spectral subspaces) are spectral, and
+projections from pro-constructible subsets of binary products are spectral maps. Equalizers of
+spectral maps into a T₀ prespectral space are pro-constructible, so the compatible locus of a
+diagram of spectral spaces with spectral transition maps is spectral as well. Its coordinate
+projections are spectral. These results apply to arbitrary small diagrams, including cofiltered
+inverse systems and the empty diagram.
 
 The product proof uses `TauCeti.spectralSpace_of_isClopen_generateFrom`: finite cylinders of
 compact opens are clopen for the compact product of the constructible topologies. Compatibility
@@ -44,13 +43,9 @@ instance spectralSpace_pi {ι : Type*} {X : ι → Type*} [t : ∀ i, Topologica
   have hT0 : T0Space (∀ i, X i) := inferInstance
   let t' : TopologicalSpace (∀ i, X i) :=
     @Pi.topologicalSpace ι X (fun i ↦ constructibleTopology (X i))
-  have hc : @CompactSpace (∀ i, X i) t' := by
-    have hcomp (i) : @CompactSpace (X i) (constructibleTopology (X i)) :=
-      @Function.Surjective.compactSpace (WithConstructibleTopology (X i)) (X i) _
-        (constructibleTopology (X i)) WithTopology.ofTopology
-        (WithTopology.continuous_ofTopology _) inferInstance
-        (WithTopology.ofTopology_surjective _)
-    exact @Pi.compactSpace ι X (fun i ↦ constructibleTopology (X i)) hcomp
+  have hc : @CompactSpace (∀ i, X i) t' :=
+    @Pi.compactSpace ι X (fun i ↦ constructibleTopology (X i)) fun _ ↦
+      compactSpace_constructibleTopology
   refine @spectralSpace_of_isClopen_generateFrom _ _ t' (@Pi.topologicalSpace ι X t) hgen hc ?_ hT0
   rintro U ⟨V, s, hV, rfl⟩
   rw [Set.pi_def]
@@ -68,25 +63,23 @@ instance spectralSpace_prod {X Y : Type*} [tX : TopologicalSpace X] [tY : Topolo
   have hT0 : T0Space (X × Y) := inferInstance
   let t' : TopologicalSpace (X × Y) :=
     @instTopologicalSpaceProd X Y (constructibleTopology X) (constructibleTopology Y)
-  have hc : @CompactSpace (X × Y) t' := by
-    have hcompX : @CompactSpace X (constructibleTopology X) :=
-      @Function.Surjective.compactSpace (WithConstructibleTopology X) X _
-        (constructibleTopology X) WithTopology.ofTopology
-        (WithTopology.continuous_ofTopology _) inferInstance
-        (WithTopology.ofTopology_surjective _)
-    have hcompY : @CompactSpace Y (constructibleTopology Y) :=
-      @Function.Surjective.compactSpace (WithConstructibleTopology Y) Y _
-        (constructibleTopology Y) WithTopology.ofTopology
-        (WithTopology.continuous_ofTopology _) inferInstance
-        (WithTopology.ofTopology_surjective _)
-    exact @instCompactSpaceProd X Y (constructibleTopology X) (constructibleTopology Y)
-      hcompX hcompY
+  have hc : @CompactSpace (X × Y) t' :=
+    @instCompactSpaceProd X Y (constructibleTopology X) (constructibleTopology Y)
+      compactSpace_constructibleTopology compactSpace_constructibleTopology
   refine @spectralSpace_of_isClopen_generateFrom _ _ t' (@instTopologicalSpaceProd X Y tX tY)
     hgen hc ?_ hT0
   rintro W ⟨U, ⟨hUo, hUc⟩, V, ⟨hVo, hVc⟩, rfl⟩
   exact @IsClopen.prod X Y (constructibleTopology X) (constructibleTopology Y) U V
     (hUc.isClopen_constructibleTopology_of_isOpen hUo)
     (hVc.isClopen_constructibleTopology_of_isOpen hVo)
+
+/-- The product `U ×ˢ V` of two spectral subspaces is spectral. -/
+theorem spectralSpace_set_prod {X Y : Type*} [TopologicalSpace X] [TopologicalSpace Y]
+    {U : Set X} {V : Set Y} [SpectralSpace U] [SpectralSpace V] :
+    SpectralSpace (U ×ˢ V : Set (X × Y)) := by
+  let e := Homeomorph.Set.prod U V
+  have : CompactSpace (U ×ˢ V : Set (X × Y)) := e.symm.compactSpace
+  exact e.isOpenEmbedding.spectralSpace
 
 /-- The first projection from a pro-constructible subset of a product of two spectral spaces is a
 spectral map. -/

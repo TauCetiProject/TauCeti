@@ -154,19 +154,8 @@ theorem isSpectralMap_prodMk_right [PrespectralSpace X] [PrespectralSpace Y] (x 
 /-- Pairing on the right with a fixed point `y : Y` gives a spectral map `X → X × Y` between
 prespectral spaces. -/
 theorem isSpectralMap_prodMk_left [PrespectralSpace X] [PrespectralSpace Y] (y : Y) :
-    IsSpectralMap (fun x : X ↦ (x, y)) := by
-  refine isSpectralMap_of_isTopologicalBasis
-    ((PrespectralSpace.isTopologicalBasis (X := X)).prod
-      (PrespectralSpace.isTopologicalBasis (X := Y)))
-    (.prodMk_left y) ?_
-  rintro _ ⟨A, ⟨-, hAc⟩, B, -, rfl⟩
-  by_cases hyB : y ∈ B
-  · convert hAc
-    ext x
-    simp [hyB]
-  · convert isCompact_empty
-    ext x
-    simp [hyB]
+    IsSpectralMap (fun x : X ↦ (x, y)) :=
+  (Homeomorph.prodComm Y X).isProperMap.isSpectralMap.comp (isSpectralMap_prodMk_right y)
 
 /-- **Spectrality transports along an embedding.** A subset of the target contained in the range
 of an embedding is spectral if and only if its preimage is: the embedding restricts to a

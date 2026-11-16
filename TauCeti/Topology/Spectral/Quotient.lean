@@ -10,7 +10,6 @@ public import TauCeti.Topology.Spectral.LocallyProConstructible
 import TauCeti.Topology.Sober
 import TauCeti.Topology.Spectral.Limits.Basic
 import TauCeti.Topology.Spectral.PatchCriterion
-import Mathlib.Topology.WithTopology
 
 /-!
 # Quotients of spectral and locally spectral spaces by pro-constructible equivalence relations
@@ -41,9 +40,10 @@ quasi-compact opens (`TauCeti.preimage_image_quotientMk_eq_sInter`).
 
 Globally on a spectral space `X`, if `{q : X × X | r q.1 q.2}` is pro-constructible, the first
 projection is generalizing, and `Quotient r` admits a topological basis whose preimages under
-`Quotient.mk r` are quasi-compact, then `Quotient r` is spectral (`TauCeti.spectralSpace_quotient`):
-the topology coinduced on `Quotient r` from the constructible topology of `X` is compact and makes
-each basis element clopen, so `TauCeti.spectralSpace_of_isClopen_generateFrom` applies.
+`Quotient.mk r` are quasi-compact, then `Quotient r` is spectral and `Quotient.mk r` is a
+generalizing spectral map (`TauCeti.spectralSpace_quotient`): the topology coinduced on
+`Quotient r` from the constructible topology of `X` is compact and makes each basis element clopen,
+so `TauCeti.spectralSpace_of_isClopen_generateFrom` applies.
 
 Finally, when the first projection from `{q : X × X // r q.1 q.2}` to `X` is an open map, it is
 automatically generalizing (`TauCeti.generalizingMap_fst_of_isOpenMap`). On a spectral space `X`
@@ -176,9 +176,8 @@ theorem generalizingMap_quotientMk (hX : IsLocallySpectralSpace X) {r : Setoid X
   have hcl : Quotient.mk r ⁻¹' (Quotient.mk r '' closure {z : X | r a z}) =
       closure {z : X | r a z} :=
     hO.preimage_image_quotientMk_closure hX hs (r.preimage_image_quotientMk_setOfPred_rel a)
-  have hclosed : IsClosed (Quotient.mk r '' closure {z : X | r a z}) := by
-    rw [← r.isQuotientMap_quotientMk.isClosed_preimage, hcl]
-    exact isClosed_closure
+  have hclosed : IsClosed (Quotient.mk r '' closure {z : X | r a z}) :=
+    isQuotientMap_quot_mk.isClosed_preimage.mp (hcl.symm ▸ isClosed_closure)
   have hy_img : Quotient.mk r y ∈ Quotient.mk r '' closure {z : X | r a z} :=
     specializes_iff_forall_closed.mp habar _ hclosed ⟨a, subset_closure (r.refl a), rfl⟩
   have hy_cl : y ∈ closure {z : X | r a z} := hcl ▸ hy_img
@@ -323,28 +322,26 @@ theorem exists_isOpen_preimage_image_quotientMk_subset_sInter (hX : IsLocallySpe
 `r : Setoid X` an equivalence relation whose graph `{q : X × X | r q.1 q.2}` is pro-constructible in
 `X × X` and whose first projection is generalizing. If `Quotient r` admits a topological basis `B`
 such that `Quotient.mk r ⁻¹' b` is quasi-compact for every `b ∈ B`, then `Quotient r` is a spectral
-space. -/
+space and `Quotient.mk r` is a generalizing spectral map. -/
 theorem spectralSpace_quotient [SpectralSpace X] {r : Setoid X}
     (hR : IsProConstructible {q : X × X | r q.1 q.2})
     (hs : GeneralizingMap fun q : {q : X × X // r q.1 q.2} ↦ q.1.1)
     {B : Set (Set (Quotient r))} (hB : IsTopologicalBasis B)
     (hpre : ∀ b ∈ B, IsCompact (Quotient.mk r ⁻¹' b)) :
-    SpectralSpace (Quotient r) := by
+    SpectralSpace (Quotient r) ∧ IsSpectralMap (Quotient.mk r) ∧
+      GeneralizingMap (Quotient.mk r) := by
   have hX : IsLocallySpectralSpace X := SpectralSpace.isLocallySpectralSpace
+  refine ⟨?_, isSpectralMap_of_isTopologicalBasis hB continuous_quot_mk hpre,
+    generalizingMap_quotientMk hX hR.isLocallyProConstructible hs⟩
   have hT0 : T0Space (Quotient r) := t0Space_quotient hX hR.isLocallyProConstructible hs
   have htB : instTopologicalSpaceQuotient (s := r) = generateFrom B := hB.eq_generateFrom
   have hopen (b : Set (Quotient r)) (hb : b ∈ B) : IsOpen (Quotient.mk r ⁻¹' b) :=
     (hB.isOpen hb).preimage continuous_quot_mk
   let t' : TopologicalSpace (Quotient r) := coinduced (Quotient.mk r) (constructibleTopology X)
-  have hcompX : @CompactSpace X (constructibleTopology X) :=
-    @Function.Surjective.compactSpace (WithConstructibleTopology X) X _
-      (constructibleTopology X) WithTopology.ofTopology
-      (WithTopology.continuous_ofTopology _) inferInstance
-      (WithTopology.ofTopology_surjective _)
   have hcomp : @CompactSpace (Quotient r) t' :=
     @Function.Surjective.compactSpace X (Quotient r) (constructibleTopology X) t'
       (Quotient.mk r) (@continuous_coinduced_rng X (Quotient r) (Quotient.mk r)
-        (constructibleTopology X)) hcompX Quotient.mk_surjective
+        (constructibleTopology X)) compactSpace_constructibleTopology Quotient.mk_surjective
   refine @spectralSpace_of_isClopen_generateFrom (Quotient r) B t'
     (instTopologicalSpaceQuotient (s := r)) htB hcomp ?_ hT0
   intro b hb
@@ -388,7 +385,7 @@ theorem spectralSpace_quotient_of_isOpenMap [SpectralSpace X] {r : Setoid X}
       IsTopologicalBasis (Set.image (Quotient.mk r) '' {W : Set X | IsOpen W ∧ IsCompact W}) :=
     (r.isOpenQuotientMap_quotientMk hs_open).isTopologicalBasis
       (PrespectralSpace.isTopologicalBasis (X := X))
-  refine spectralSpace_quotient hR hs_gen hB ?_
+  refine (spectralSpace_quotient hR hs_gen hB ?_).1
   rintro _ ⟨W, ⟨hWo, hWc⟩, rfl⟩
   exact hR.isSpectralMap_fst.isCompact_preimage_image_quotientMk hWo hWc
 
@@ -399,8 +396,7 @@ theorem IsLocallyProConstructible.isProConstructible_comap {r : Setoid X}
     [SpectralSpace W] :
     IsProConstructible {q : W × W | (r.comap (Subtype.val : W → X)) q.1 q.2} := by
   let eWW := Homeomorph.Set.prod W W
-  have : CompactSpace (W ×ˢ W : Set (X × X)) := eWW.symm.compactSpace
-  have : SpectralSpace (W ×ˢ W : Set (X × X)) := eWW.isOpenEmbedding.spectralSpace
+  have : SpectralSpace (W ×ˢ W : Set (X × X)) := spectralSpace_set_prod
   convert (hR.isProConstructible_preimage (hWo.prod hWo)).preimage
     eWW.symm.isProperMap.isSpectralMap using 1
   ext ⟨w₁, w₂⟩
@@ -471,9 +467,7 @@ theorem quasiSeparatedSpace_quotient_of_isOpenMap (hX : IsLocallySpectralSpace X
   refine QuasiSeparatedSpace.of_isTopologicalBasis hb fun W₁ W₂ ↦ ?_
   have := W₁.2.2
   have := W₂.2.2
-  let e := Homeomorph.Set.prod W₁.1 W₂.1
-  have : CompactSpace (W₁.1 ×ˢ W₂.1 : Set (X × X)) := e.symm.compactSpace
-  have : SpectralSpace (W₁.1 ×ˢ W₂.1 : Set (X × X)) := e.isOpenEmbedding.spectralSpace
+  have : SpectralSpace (W₁.1 ×ˢ W₂.1 : Set (X × X)) := spectralSpace_set_prod
   let P : Set (W₁.1 ×ˢ W₂.1 : Set (X × X)) := Subtype.val ⁻¹' {q : X × X | r q.1 q.2}
   have hPc : IsCompact P := (hR.isProConstructible_preimage (W₁.2.1.prod W₂.2.1)).isCompact
   have heq : b W₁ ∩ b W₂ =

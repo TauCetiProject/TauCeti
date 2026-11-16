@@ -304,8 +304,7 @@ theorem IsLocallyProConstructible.isLocallySpectralMap_fst {R : Set (X × Y)}
   have := hVs
   have := hWs
   let eVW := Homeomorph.Set.prod V W
-  have : CompactSpace (V ×ˢ W : Set (X × Y)) := eVW.symm.compactSpace
-  have : SpectralSpace (V ×ˢ W : Set (X × Y)) := eVW.isOpenEmbedding.spectralSpace
+  have : SpectralSpace (V ×ˢ W : Set (X × Y)) := spectralSpace_set_prod
   let P : Set (V ×ˢ W : Set (X × Y)) := Subtype.val ⁻¹' R
   have hP : IsProConstructible P := hR.isProConstructible_preimage (hVo.prod hWo)
   have : SpectralSpace P := hP.spectralSpace
@@ -353,16 +352,8 @@ theorem IsLocallyProConstructible.isLocallySpectralMap_snd {R : Set (X × Y)}
   let R' : Set (Y × X) := Prod.swap ⁻¹' R
   have hR' : IsLocallyProConstructible R' :=
     hR.preimage_of_isOpenEmbedding (Homeomorph.prodComm Y X).isOpenEmbedding
-  let e : R ≃ₜ R' :=
-    { toFun := fun q ↦ ⟨q.1.swap, by simp [R']⟩
-      invFun := fun q ↦ ⟨q.1.swap, q.2⟩
-      left_inv := fun q ↦ Subtype.ext (Prod.swap_swap q.1)
-      right_inv := fun q ↦ Subtype.ext (Prod.swap_swap q.1)
-      continuous_toFun := (continuous_swap.comp continuous_subtype_val).subtype_mk
-        fun q ↦ by simp [R']
-      continuous_invFun := (continuous_swap.comp continuous_subtype_val).subtype_mk
-        fun q ↦ q.2 }
-  have heq : (fun q : R ↦ q.1.2) = (fun q : R' ↦ q.1.1) ∘ e := (rfl)
+  let e : R ≃ₜ R' := (Homeomorph.prodComm X Y).subtype fun _ ↦ by simp [R']
+  have heq : (fun q : R ↦ q.1.2) = (fun q : R' ↦ q.1.1) ∘ e := rfl
   rw [heq, e.isLocallySpectralMap_comp_iff]
   exact hR'.isLocallySpectralMap_fst hX
 
@@ -377,8 +368,7 @@ theorem IsLocallyProConstructible.preimage_prodMk_right {R : Set (X × Y)}
   have := hUs
   have := hVs
   let eUV := Homeomorph.Set.prod U V
-  have : CompactSpace (U ×ˢ V : Set (X × Y)) := eUV.symm.compactSpace
-  have : SpectralSpace (U ×ˢ V : Set (X × Y)) := eUV.isOpenEmbedding.spectralSpace
+  have : SpectralSpace (U ×ˢ V : Set (X × Y)) := spectralSpace_set_prod
   have hg : IsSpectralMap (eUV.symm ∘ fun v : V ↦ ((⟨x, hxU⟩ : U), v)) :=
     eUV.symm.isProperMap.isSpectralMap.comp (isSpectralMap_prodMk_right (Y := V) (⟨x, hxU⟩ : U))
   convert (hR.isProConstructible_preimage (hUo.prod hVo)).preimage hg using 1
