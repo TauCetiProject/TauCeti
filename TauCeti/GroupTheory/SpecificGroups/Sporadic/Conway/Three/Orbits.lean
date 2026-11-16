@@ -90,17 +90,19 @@ private theorem basePoint_five : basePoint 5 = 5 := (rfl)
 
 /-! ### Words in the generators -/
 
-/- A word is encoded by its letters, least significant bit first, followed by a terminal 1-bit;
-the bit `0` stands for `a` and the bit `1` for `b`. The word is the product of its letters in
-that order, so its last letter acts first. -/
-private def word (w : ℕ) : Equiv.Perm (Fin 276) :=
-  (w.bits.dropLast.map fun t ↦ if t then b else a).prod
+/- A word in two permutations is encoded by its letters, least significant bit first, followed by
+a terminal 1-bit; the bit `0` stands for the first permutation and the bit `1` for the second. The
+word is the product of its letters in that order, so its last letter acts first. -/
+private def word (u v : Equiv.Perm (Fin 276)) (w : ℕ) : Equiv.Perm (Fin 276) :=
+  (w.bits.dropLast.map fun t ↦ if t then v else u).prod
 
-private theorem word_mem (w : ℕ) : word w ∈ Co3 := by
+private theorem word_mem {H : Subgroup (Equiv.Perm (Fin 276))}
+    {u v : Equiv.Perm (Fin 276)} (hu : u ∈ H) (hv : v ∈ H) (w : ℕ) :
+    word u v w ∈ H := by
   apply Subgroup.list_prod_mem
   intro g hg
   obtain ⟨t, _, rfl⟩ := List.mem_map.mp hg
-  cases t <;> simp [a_mem, b_mem]
+  cases t <;> simp [hu, hv]
 
 /-! ### Two-transitivity -/
 
@@ -143,7 +145,7 @@ private def pairWord (i : Fin 276) : ℕ :=
     |>.getD (i.val % 23) 1
 
 private theorem pairWord_spec : ∀ x : Fin 276, x ≠ 0 →
-    word (pairWord x) 0 = 0 ∧ word (pairWord x) 1 = x := by
+    word a b (pairWord x) 0 = 0 ∧ word a b (pairWord x) 1 = x := by
   decide +kernel
 
 /-- Any two distinct points are sent to `0` and `1` by some element of the model. -/
@@ -155,8 +157,8 @@ private theorem exists_apply_eq_zero_one {x y : Fin 276} (hxy : x ≠ y) :
   have hz : (g : Equiv.Perm (Fin 276)) y ≠ 0 :=
     hg ▸ (g : Equiv.Perm (Fin 276)).injective.ne hxy.symm
   obtain ⟨h0, h1⟩ := pairWord_spec _ hz
-  refine ⟨(word (pairWord ((g : Equiv.Perm (Fin 276)) y)))⁻¹ * g,
-    mul_mem (inv_mem (word_mem _)) g.2, ?_, ?_⟩
+  refine ⟨(word a b (pairWord ((g : Equiv.Perm (Fin 276)) y)))⁻¹ * g,
+    mul_mem (inv_mem (word_mem a_mem b_mem _)) g.2, ?_, ?_⟩
   · rw [Equiv.Perm.mul_apply, hg, Equiv.Perm.inv_eq_iff_eq, h0]
   · rw [Equiv.Perm.mul_apply, Equiv.Perm.inv_eq_iff_eq, h1]
 
@@ -549,7 +551,8 @@ private def tripleWord (i : Fin 276) : ℕ :=
     |>.getD (i.val % 23) 1
 
 private theorem tripleWord_spec : ∀ x : Fin 276, triangleParity (0, 1, x) = true →
-    word (tripleWord x) 0 = 0 ∧ word (tripleWord x) 1 = 1 ∧ word (tripleWord x) 2 = x := by
+    word a b (tripleWord x) 0 = 0 ∧ word a b (tripleWord x) 1 = 1 ∧
+      word a b (tripleWord x) 2 = x := by
   decide +kernel
 
 private theorem mem_orbit_stabilizerChain_two_iff (x : Fin 276) :
@@ -567,8 +570,9 @@ private theorem mem_orbit_stabilizerChain_two_iff (x : Fin 276) :
       Subgroup.smul_def] using h
   · intro hx
     obtain ⟨h0, h1, h2⟩ := tripleWord_spec x hx
-    have hmem : word (tripleWord x) ∈ Co3.stabilizerChain basePoint 2 := by
-      refine (Subgroup.mem_stabilizerChain_iff _ _).mpr ⟨word_mem _, fun j hj ↦ ?_⟩
+    have hmem : word a b (tripleWord x) ∈ Co3.stabilizerChain basePoint 2 := by
+      refine (Subgroup.mem_stabilizerChain_iff _ _).mpr
+        ⟨word_mem a_mem b_mem _, fun j hj ↦ ?_⟩
       interval_cases j
       · simpa only [basePoint_zero, Equiv.Perm.smul_def] using h0
       · simpa only [basePoint_one, Equiv.Perm.smul_def] using h1
@@ -658,29 +662,8 @@ private theorem adj_of_mem_stabilizerChain {k : ℕ} {g : Equiv.Perm (Fin 276)}
 
 /-! ### Words in the three-point stabilizer and remaining basic orbits -/
 
-private def letterPerm (u v : Equiv.Perm (Fin 276)) : ℕ → Equiv.Perm (Fin 276)
-  | 0 => u
-  | 1 => u⁻¹
-  | 2 => v
-  | _ => v⁻¹
-
-private def evalWord (u v : Equiv.Perm (Fin 276)) (w : List ℕ) : Equiv.Perm (Fin 276) :=
-  (w.map (letterPerm u v)).prod
-
-private theorem evalWord_mem {H : Subgroup (Equiv.Perm (Fin 276))}
-    {u v : Equiv.Perm (Fin 276)} (hu : u ∈ H) (hv : v ∈ H) (w : List ℕ) :
-    evalWord u v w ∈ H := by
-  apply Subgroup.list_prod_mem
-  intro g hg
-  obtain ⟨t, _, rfl⟩ := List.mem_map.mp hg
-  match t with
-  | 0 => exact hu
-  | 1 => exact inv_mem hu
-  | 2 => exact hv
-  | _ + 3 => exact inv_mem hv
-
 /- Two permutations fixing `0, 1, 2`, tabulated with inverses for fast kernel evaluation and
-certified equal to words in `{a, a⁻¹, b, b⁻¹}`. -/
+certified equal to words in `a` and `b`. -/
 private def stabGenA : Equiv.Perm (Fin 276) :=
   let f (i : Fin 276) : Fin 276 :=
     (#[#[0, 1, 2, 3, 223, 27, 38, 100, 139, 123, 206, 275,
@@ -802,17 +785,11 @@ private def stabGenB : Equiv.Perm (Fin 276) :=
     right_inv := by decide +kernel }
 
 private theorem stabGenA_apply :
-    ∀ x : Fin 276,
-      stabGenA x =
-        evalWord a b
-          [0, 2, 1, 2, 1, 2, 2, 0, 3, 0, 3, 0, 2, 0, 2, 0, 2, 1, 2, 0, 3, 1, 3, 1, 3, 0] x := by
+    ∀ x : Fin 276, stabGenA x = word a b 3192139406738 x := by
   decide +kernel
 
 private theorem stabGenB_apply :
-    ∀ x : Fin 276,
-      stabGenB x =
-        evalWord a b [1, 2, 0, 2, 1, 2, 1, 2, 0, 3, 1, 2, 1, 3, 0, 3, 1, 3, 1, 2, 2, 0, 2, 0, 3,
-          1, 2, 2, 0, 2, 1, 3, 1, 2, 0] x := by
+    ∀ x : Fin 276, stabGenB x = word a b 188222839641502868 x := by
   decide +kernel
 
 private theorem stabGen_fix :
@@ -822,7 +799,7 @@ private theorem stabGen_fix :
 
 private theorem stabGenA_mem : stabGenA ∈ Co3.stabilizerChain basePoint 3 := by
   obtain ⟨⟨h0, h1, h2⟩, _⟩ := stabGen_fix
-  have ha : stabGenA ∈ Co3 := Equiv.ext stabGenA_apply ▸ evalWord_mem a_mem b_mem _
+  have ha : stabGenA ∈ Co3 := Equiv.ext stabGenA_apply ▸ word_mem a_mem b_mem _
   refine (Subgroup.mem_stabilizerChain_iff _ _).mpr ⟨ha, fun j hj ↦ ?_⟩
   interval_cases j
   · simpa only [basePoint_zero, Equiv.Perm.smul_def] using h0
@@ -831,40 +808,34 @@ private theorem stabGenA_mem : stabGenA ∈ Co3.stabilizerChain basePoint 3 := b
 
 private theorem stabGenB_mem : stabGenB ∈ Co3.stabilizerChain basePoint 3 := by
   obtain ⟨_, ⟨h0, h1, h2⟩⟩ := stabGen_fix
-  have hb : stabGenB ∈ Co3 := Equiv.ext stabGenB_apply ▸ evalWord_mem a_mem b_mem _
+  have hb : stabGenB ∈ Co3 := Equiv.ext stabGenB_apply ▸ word_mem a_mem b_mem _
   refine (Subgroup.mem_stabilizerChain_iff _ _).mpr ⟨hb, fun j hj ↦ ?_⟩
   interval_cases j
   · simpa only [basePoint_zero, Equiv.Perm.smul_def] using h0
   · simpa only [basePoint_one, Equiv.Perm.smul_def] using h1
   · simpa only [basePoint_two, Equiv.Perm.smul_def] using h2
 
-private def stabWord (w : List ℕ) : Equiv.Perm (Fin 276) :=
-  evalWord stabGenA stabGenB w
-
-private theorem stabWord_mem_stabilizerChain_three (w : List ℕ) :
-    stabWord w ∈ Co3.stabilizerChain basePoint 3 :=
-  evalWord_mem stabGenA_mem stabGenB_mem w
-
-private theorem stabWord_mem_stabilizerChain_four {w : List ℕ} (h3 : stabWord w 3 = 3) :
-    stabWord w ∈ Co3.stabilizerChain basePoint 4 := by
+private theorem word_mem_stabilizerChain_four {w : ℕ}
+    (h3 : word stabGenA stabGenB w 3 = 3) :
+    word stabGenA stabGenB w ∈ Co3.stabilizerChain basePoint 4 := by
   rw [Co3.stabilizerChain_succ, Subgroup.mem_inf, mem_stabilizer_iff, basePoint_three,
     Equiv.Perm.smul_def]
-  exact ⟨stabWord_mem_stabilizerChain_three w, h3⟩
+  exact ⟨word_mem stabGenA_mem stabGenB_mem w, h3⟩
 
-private theorem stabWord_mem_stabilizerChain_five {w : List ℕ}
-    (h : stabWord w 3 = 3 ∧ stabWord w 4 = 4) :
-    stabWord w ∈ Co3.stabilizerChain basePoint 5 := by
+private theorem word_mem_stabilizerChain_five {w : ℕ}
+    (h : word stabGenA stabGenB w 3 = 3 ∧ word stabGenA stabGenB w 4 = 4) :
+    word stabGenA stabGenB w ∈ Co3.stabilizerChain basePoint 5 := by
   rw [Co3.stabilizerChain_succ, Subgroup.mem_inf, mem_stabilizer_iff, basePoint_four,
     Equiv.Perm.smul_def]
-  exact ⟨stabWord_mem_stabilizerChain_four h.1, h.2⟩
+  exact ⟨word_mem_stabilizerChain_four h.1, h.2⟩
 
 private theorem orbit_eq_of_invariant_and_words {H : Subgroup (Equiv.Perm (Fin 276))}
-    {p : Fin 276} {s : Finset (Fin 276)} {β : Type*} (inv : Fin 276 → β)
-    (ws : List (List ℕ))
+    {u v : Equiv.Perm (Fin 276)} {p : Fin 276} {s : Finset (Fin 276)} {β : Type*}
+    (inv : Fin 276 → β) (ws : List ℕ)
     (hinv : ∀ g ∈ H, inv (g p) = inv p)
     (hs : ∀ x : Fin 276, inv x = inv p → x ∈ s)
-    (hws_mem : ∀ w ∈ ws, stabWord w ∈ H)
-    (hws_cov : ∀ x ∈ s, x ∈ ws.map fun w ↦ stabWord w p) :
+    (hws_mem : ∀ w ∈ ws, word u v w ∈ H)
+    (hws_cov : ∀ x ∈ s, x ∈ ws.map fun w ↦ word u v w p) :
     orbit H p = (s : Set (Fin 276)) := by
   ext x
   simp only [Finset.mem_coe]
@@ -873,18 +844,12 @@ private theorem orbit_eq_of_invariant_and_words {H : Subgroup (Equiv.Perm (Fin 2
     exact hs _ (hinv g g.2)
   · intro hx
     obtain ⟨w, hw, rfl⟩ := List.mem_map.mp (hws_cov x hx)
-    exact mem_orbit_iff.mpr ⟨⟨stabWord w, hws_mem w hw⟩, rfl⟩
+    exact mem_orbit_iff.mpr ⟨⟨word u v w, hws_mem w hw⟩, rfl⟩
 
-private def fourthOrbitWords : List (List ℕ) :=
-  [[], [1, 2, 1, 2, 2], [1, 2, 0, 3], [3, 0, 3, 3], [0, 0, 3, 0, 3], [1, 3, 0, 0, 2],
-    [3, 3, 1, 2, 2], [0, 3, 1, 2], [3, 3], [1, 3, 3], [3, 0, 3, 1, 2], [2, 0, 3], [0, 2, 0, 2],
-    [3, 0, 3], [1, 2], [3, 1, 2], [0, 2, 0, 3], [0, 2, 0, 0, 2], [1, 2, 0, 2], [0, 2, 2, 2],
-    [1, 2, 2, 0, 0, 2], [0, 0, 2], [1, 3, 0, 3], [3, 3, 0, 3], [2, 1, 2, 0, 0, 2], [1, 2, 2, 2],
-    [3, 1, 2, 1, 2, 2], [1, 2, 0, 0, 2], [2, 2, 0, 3], [3, 0, 2, 0, 2], [0, 2], [3, 1, 2, 2],
-    [2, 2, 0, 2], [2, 2, 0, 0, 2, 2], [2, 0, 2, 2], [3], [2, 2, 2], [3, 3, 3], [2, 0, 2],
-    [3, 0, 3, 0, 3], [3, 0, 0, 2], [0, 3, 0, 3], [0, 3, 3], [2, 1, 2, 2], [0, 0, 2, 2],
-    [2, 0, 0, 2], [3, 0, 2, 2], [2], [2, 2, 0, 0, 2], [1, 2, 2], [2, 1, 2, 2, 2], [2, 2],
-    [2, 0, 0, 2, 2], [0, 3], [0, 3, 0, 2, 2], [0, 2, 2]]
+private def fourthOrbitWords : List ℕ :=
+  [1, 437, 118, 226, 463, 227, 100, 246, 63, 61, 460, 236, 26, 507, 24, 123, 409, 50, 58, 30,
+    231, 12, 493, 253, 401, 54, 218, 200, 452, 59, 6, 201, 27, 115, 29, 127, 15, 31, 13, 230,
+    237, 461, 126, 113, 28, 25, 102, 3, 51, 56, 109, 7, 57, 254, 204, 14]
 
 /-- The fourth basic orbit: the pointwise stabilizer of `0, 1, 2` moves `3` to 56 points. -/
 theorem orbit_stabilizerChain_three :
@@ -902,7 +867,7 @@ theorem orbit_stabilizerChain_three :
       simp only [h1, adj_of_mem_stabilizerChain hg 1 (by decide),
         adj_of_mem_stabilizerChain hg 2 (by decide)])
     (by decide +kernel)
-    (fun w _ ↦ stabWord_mem_stabilizerChain_three w)
+    (fun w _ ↦ word_mem stabGenA_mem stabGenB_mem w)
     (by decide +kernel)
 
 /-- The fourth basic orbit has length 56. -/
@@ -912,21 +877,13 @@ theorem ncard_orbit_stabilizerChain_three :
   rw [orbit_stabilizerChain_three, Set.ncard_coe_finset]
   decide +kernel
 
-private def fifthOrbitWords : List (List ℕ) :=
-  [[], [0, 0], [1, 3, 0, 3, 0, 2, 0, 0], [2, 0, 0, 3, 0, 0], [3, 3, 3, 1, 3, 1, 3, 3, 0],
-    [1, 2, 0, 0, 3, 0, 0], [2, 2, 0, 3, 3, 3, 0, 2, 0], [2, 0, 0, 2, 2, 0, 3, 3, 3],
-    [3, 1, 2, 1, 2, 1], [2, 0, 0, 3, 1], [3, 1, 2, 1, 2, 0, 0], [0, 3, 0, 3, 0, 2],
-    [0, 0, 2, 0, 0, 3, 0, 0], [3, 0, 3, 0, 0, 3, 0, 2, 1], [0, 2, 0, 0, 3, 0],
-    [3, 1, 2, 1, 2, 0], [3, 0, 3, 0, 2], [3, 0, 3, 0, 2, 0, 0], [3, 1, 2, 1, 2],
-    [0, 3, 1, 2, 1, 2, 1], [2, 2, 2, 1, 3, 3, 3, 1], [1, 2, 0, 2, 2, 2, 0, 3, 3, 0], [1],
-    [1, 3, 0, 3, 0, 2], [2, 2, 1, 3, 3, 3, 1, 3, 0], [0, 0, 3, 1, 2, 1, 2, 1], [2, 0, 0, 3, 0],
-    [0, 3, 0, 3, 0, 2, 0], [1, 2, 0, 0, 3, 1], [1, 3, 1, 2, 1, 2, 1], [0, 2, 0, 0, 3, 0, 0],
-    [0, 3, 1, 2, 1, 2, 0, 0], [2, 2, 0, 2, 1, 2, 2, 0, 2], [0], [0, 2, 2, 2, 1, 3, 3, 3, 0],
-    [2, 0, 2, 2, 2, 0, 3, 3, 0], [1, 3, 0, 3, 0, 2, 1], [0, 0, 3, 0, 3, 0, 2],
-    [0, 3, 1, 2, 1, 2, 0], [2, 2, 2, 0, 3, 3, 3, 1], [2, 2, 2, 0, 3, 3, 3],
-    [2, 2, 2, 0, 3, 3, 3, 0, 0], [3, 0, 3, 0, 2, 0], [3, 0, 3, 0, 2, 1], [2, 2, 2, 1, 3, 3, 3, 0]]
+private def fifthOrbitWords : List ℕ :=
+  [1, 4, 1782, 2553, 10038, 17747, 1403, 2009, 6822, 4601, 4815, 1947, 10212, 5019, 3058, 1494,
+    1964, 2427, 6395, 13644, 1006, 20076, 8, 982, 2283, 15661, 1529, 3486, 6116, 3411, 5106, 891,
+    2806, 2, 1998, 5081, 5976, 491, 2988, 2295, 503, 1271, 1743, 747, 999]
 
-private theorem fifthOrbitWords_fix : ∀ w ∈ fifthOrbitWords, stabWord w 3 = 3 := by
+private theorem fifthOrbitWords_fix :
+    ∀ w ∈ fifthOrbitWords, word stabGenA stabGenB w 3 = 3 := by
   decide +kernel
 
 /-- The fifth basic orbit: the pointwise stabilizer of `0, 1, 2, 3` moves `4` to 45 points. -/
@@ -940,7 +897,7 @@ theorem orbit_stabilizerChain_four :
       simp only [adj_of_mem_stabilizerChain hg 1 (by decide),
         adj_of_mem_stabilizerChain hg 2 (by decide), adj_of_mem_stabilizerChain hg 3 (by decide)])
     (by decide +kernel)
-    (fun w hw ↦ stabWord_mem_stabilizerChain_four (fifthOrbitWords_fix w hw))
+    (fun w hw ↦ word_mem_stabilizerChain_four (fifthOrbitWords_fix w hw))
     (by decide +kernel)
 
 /-- The fifth basic orbit has length 45. -/
@@ -965,17 +922,13 @@ private theorem commonDegFour_apply_of_mem_stabilizerChain {g : Equiv.Perm (Fin 
       adj_of_mem_stabilizerChain hg 4 (by decide), adj_apply_of_mem_stabilizerChain hg (by decide)]
   simpa only [commonDegFour, hf] using (TauCeti.card_filter_comp_perm f g true).symm
 
-private def sixthOrbitWords : List (List ℕ) :=
-  [[], [2, 0, 0, 2, 2, 0, 3, 3, 3, 0], [2, 0, 2, 2, 0, 2, 0, 3, 3],
-    [0, 2, 0, 3, 0, 3, 1, 3, 1, 2, 0], [1, 2, 1, 2, 2, 0, 3, 3, 0, 3, 0], [2, 0, 0, 3],
-    [1, 2, 1, 2, 2, 1, 3, 3, 0, 3, 0], [0, 2, 1, 3, 3, 0, 3, 0, 3, 3],
-    [2, 0, 2, 1, 3, 3, 0, 0, 3, 3, 0], [2, 2, 1, 3, 1, 3, 3, 1, 3],
-    [2, 2, 1, 2, 1, 2, 2, 0, 3, 1], [2, 2, 2, 0, 3, 3, 3, 0], [2, 2, 1, 3, 1, 3, 3, 0, 3],
-    [2, 1, 2, 1, 3, 3, 0, 0, 3, 3, 0], [0, 3, 0, 0, 2, 1, 3, 3, 0, 2, 0],
-    [2, 1, 2, 2, 0, 2, 0, 3, 3]]
+private def sixthOrbitWords : List ℕ :=
+  [1, 3033, 8109, 192858, 148939, 1017, 420947, 113578, 96945, 38441, 44260, 759, 9611, 24237,
+    76511, 32433]
 
 private theorem sixthOrbitWords_fix :
-    ∀ w ∈ sixthOrbitWords, stabWord w 3 = 3 ∧ stabWord w 4 = 4 := by
+    ∀ w ∈ sixthOrbitWords,
+      word stabGenA stabGenB w 3 = 3 ∧ word stabGenA stabGenB w 4 = 4 := by
   decide +kernel
 
 /-- The sixth basic orbit: the pointwise stabilizer of `0, 1, 2, 3, 4` moves `5` to 16 points. -/
@@ -991,7 +944,7 @@ theorem orbit_stabilizerChain_five :
         adj_of_mem_stabilizerChain hg 4 (by decide),
         commonDegFour_apply_of_mem_stabilizerChain hg])
     (by decide +kernel)
-    (fun w hw ↦ stabWord_mem_stabilizerChain_five (sixthOrbitWords_fix w hw))
+    (fun w hw ↦ word_mem_stabilizerChain_five (sixthOrbitWords_fix w hw))
     (by decide +kernel)
 
 /-- The sixth basic orbit has length 16. -/
