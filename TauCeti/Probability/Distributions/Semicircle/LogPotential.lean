@@ -163,7 +163,7 @@ variable {z : ℂ}
 private theorem integrable_log_sub {w : ℂ} (hw : 0 < w.im) :
     Integrable (fun y : ℝ ↦ Complex.log (w - y)) (semicircleReal 0 1) := by
   have h : IntegrableOn (fun y : ℝ ↦ Complex.log (w - y)) (Icc (-2) 2) (semicircleReal 0 1) :=
-    (continuous_log_sub_of_im_pos hw).continuousOn.integrableOn_compact isCompact_Icc
+    (continuous_log_sub_of_im_ne_zero hw.ne').continuousOn.integrableOn_compact isCompact_Icc
   have hrestrict : (semicircleReal 0 1).restrict (Icc (-2) 2) = semicircleReal 0 1 := by
     simpa using restrict_Icc_semicircleReal 0 1
   rwa [IntegrableOn, hrestrict] at h

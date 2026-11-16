@@ -6,26 +6,24 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.SpecialFunctions.Complex.Log
-import TauCeti.Analysis.Complex.UpperHalfPlane.Cpow
 
 /-!
 # Logarithmic kernels in the upper half-plane
 
-The logarithmic kernel is continuous in its real argument when its complex parameter is in the
-upper half-plane. A logarithmic bound also controls its approach to the real axis for bounded real
-arguments and imaginary offsets of magnitude at most one.
+The logarithmic kernel is continuous in its real argument when its complex parameter is nonreal.
+A logarithmic bound also controls its approach to the real axis for bounded real arguments and
+imaginary offsets of magnitude at most one.
 -/
 
 public section
 
 namespace TauCeti
 
-/-- The logarithmic kernel is continuous in its real argument for a point in the upper
-half-plane. -/
-theorem continuous_log_sub_of_im_pos {w : ℂ} (hw : 0 < w.im) :
+/-- The logarithmic kernel is continuous in its real argument for a nonreal point. -/
+theorem continuous_log_sub_of_im_ne_zero {w : ℂ} (hw : w.im ≠ 0) :
     Continuous fun y : ℝ ↦ Complex.log (w - y) :=
   (by fun_prop : Continuous fun y : ℝ ↦ w - (y : ℂ)).clog
-    (sub_ofReal_mem_slitPlane_of_im_pos hw)
+    (fun y ↦ by simp [Complex.slitPlane, hw])
 
 /-- A bound for the logarithmic kernel near the real axis on a bounded set. -/
 theorem norm_log_norm_add_mul_I_sub_le_of_ne_of_abs_le (x y ε R : ℝ) (hε : |ε| ≤ 1)
