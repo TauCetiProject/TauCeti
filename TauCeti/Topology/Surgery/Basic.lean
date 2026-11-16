@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.Normed.Group.Basic
-public import TauCeti.Topology.ContinuousMap.GlueClosedEmbeddings
+public import TauCeti.Topology.ContinuousMap.Glue.ClosedEmbeddings
 
 /-!
 # Surgery on a framed sphere
