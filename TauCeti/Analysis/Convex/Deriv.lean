@@ -10,7 +10,7 @@ import Mathlib.Analysis.Calculus.MeanValue
 import Mathlib.Analysis.Convex.Continuous
 
 /-!
-# Comparing right derivatives of convex functions
+# Derivatives and convexity on intervals
 
 For real convex functions on a set `I`, inequalities between slopes on adjacent intervals imply
 inequalities between their right derivatives at interior points. If the slopes interlace in

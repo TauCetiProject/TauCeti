@@ -57,18 +57,16 @@ count of the orbits, in which `{-x₀, x₀}` counts once, changes from `1` to `
 For `∂ₓ² F (0, 0) < 0`, respectively `∂ₓ³ F (0, 0) < 0`, the statements apply to `-F`, which has
 the same zeros and the opposite derivatives.
 
-These are the local models of the one-parameter bifurcations of pseudoholomorphic curves along a
-generic path of almost complex structures, after the finite-dimensional reduction of their normal
-deformation problem to a kernel and cokernel of dimension one
-(`ContinuousLinearMap.FredholmPackage.obstructionMap`). An ordinary curve, or a torus, is born or
-dies together with a partner of the opposite determinant sign through a fold. A torus `C` undergoes
-period doubling through a pitchfork: the reduced equation on the double cover of `C` is odd under
-the deck transformation, its trivial zero is the double cover of `C` itself, whose determinant sign
-for the deck-twisted normal operator changes, and the orbit `{-x₀, x₀}` is a single embedded torus
-in twice the class of `C`. The change in the
-signed count of orbits is the reason Taubes weights multiply covered tori by the four-twist series
-rather than by their determinant signs alone. The orientation of these reductions and the matching
-of the signs with the labels of `TauCeti.torusWeightSeries` are separate.
+These models motivate the file. In Taubes's analysis of a generic path of almost complex
+structures, a one-dimensional Lyapunov–Schmidt reduction of the normal deformation problem of a
+pseudoholomorphic curve, to a kernel and cokernel of dimension one
+(`ContinuousLinearMap.FredholmPackage.obstructionMap`), is expected to produce a fold at a birth or
+death of a pair of curves of opposite determinant signs, and an odd family, odd under the deck
+transformation of a double cover, at the period doubling of a torus. In the latter case the
+trivial zero corresponds to the double cover of the torus and the orbit `{-x₀, x₀}` to a single
+embedded torus in twice its class; the resulting change in the signed count of orbits is why
+Taubes weights multiply covered tori by a series rather than by their determinant signs alone.
+Nothing in this file proves these reductions.
 
 The proofs are elementary. Near `(0, 0)` the relevant derivative `∂ₓ² F` (for the fold) or
 `∂ₓ³ F` (for the pitchfork) is positive, so each slice `x ↦ F (x, t)` is strictly convex on

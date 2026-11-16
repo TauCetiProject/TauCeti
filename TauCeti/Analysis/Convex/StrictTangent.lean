@@ -21,7 +21,8 @@ For a strictly convex function of one real variable, the tangent at any point of
 the function is differentiable lies strictly below the graph at every other point of the domain
 (`StrictConvexOn.mul_sub_lt_sub_of_hasDerivAt`).
 
-The proof follows the [KLS formalization](https://github.com/human-ai-mathematics/kls-lean/blob/e60bc39b18ef691263c66e2dba8d64726f18060d/formalization/FunctionalInequalities/Analysis/Convex/ContactMeasure.lean#L993).
+The proof of `StrictConvexOn.fderiv_lt_sub_of_mem_closure` follows the
+[KLS formalization](https://github.com/human-ai-mathematics/kls-lean/blob/e60bc39b18ef691263c66e2dba8d64726f18060d/formalization/FunctionalInequalities/Analysis/Convex/ContactMeasure.lean#L993).
 -/
 
 public section

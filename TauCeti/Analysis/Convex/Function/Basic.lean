@@ -9,7 +9,7 @@ public import Mathlib.Analysis.Convex.Function
 import Mathlib.Analysis.Convex.Slope
 
 /-!
-# Convex functions under affine changes of variables
+# Strictly convex functions: affine pullback and level sets
 
 An injective affine pullback preserves strict convexity. This algebraic fact is used to
 restrict a strictly convex function to a line before applying the strict tangent inequality.
@@ -17,8 +17,8 @@ restrict a strictly convex function to a line before applying the strict tangent
 A strictly convex function of one variable takes each value at most twice
 (`StrictConvexOn.eq_or_eq_of_apply_eq`), since its slopes on adjacent intervals strictly increase.
 
-The lemma is extracted from the tangent argument adapted from the
-[KLS formalization](https://github.com/human-ai-mathematics/kls-lean/blob/e60bc39b18ef691263c66e2dba8d64726f18060d/formalization/FunctionalInequalities/Analysis/Convex/ContactMeasure.lean#L993).
+`StrictConvexOn.comp_affineMap_of_injective` is extracted from the tangent argument adapted
+from the [KLS formalization](https://github.com/human-ai-mathematics/kls-lean/blob/e60bc39b18ef691263c66e2dba8d64726f18060d/formalization/FunctionalInequalities/Analysis/Convex/ContactMeasure.lean#L993).
 -/
 
 public section
