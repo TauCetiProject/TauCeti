@@ -206,4 +206,27 @@ theorem mul_log_sub_mul_log_sub_le_sq_div {a u : ℝ} (ha : 0 < a) (hu : 0 ≤ u
   have hua : u / a * a = u := div_mul_cancel₀ u ha.ne'
   nlinarith [mul_le_mul_of_nonneg_left hlog (mul_nonneg hu.le ha.le)]
 
+/-- On `[0, ∞)`, `u * log u` is bounded below by `-1`. -/
+theorem neg_one_le_mul_log {u : ℝ} (hu : 0 ≤ u) : -1 ≤ u * log u := by
+  linarith [self_sub_one_le_mul_log hu]
+
+/-- Monotone domination of `|u * log u|` on `[0, ∞)`: if `0 ≤ u ≤ v`, then
+`|u * log u| ≤ 1 + |v * log v|`. -/
+theorem abs_mul_log_le_one_add_abs_mul_log {u v : ℝ} (hu : 0 ≤ u) (huv : u ≤ v) :
+    |u * log u| ≤ 1 + |v * log v| := by
+  rcases le_or_gt u 1 with hu1 | hu1
+  · have hnonpos : u * log u ≤ 0 := mul_log_nonpos hu hu1
+    have hlow : -1 ≤ u * log u := neg_one_le_mul_log hu
+    rw [abs_of_nonpos hnonpos]
+    linarith [abs_nonneg (v * log v)]
+  · have hv1 : 1 < v := hu1.trans_le huv
+    have hu_pos : 0 < u := zero_lt_one.trans hu1
+    have hulog : 0 ≤ u * log u := mul_log_nonneg hu1.le
+    have hvlog : 0 ≤ v * log v := mul_log_nonneg hv1.le
+    have hle : u * log u ≤ v * log v :=
+      mul_le_mul huv (log_le_log hu_pos huv) (log_nonneg hu1.le)
+        (zero_le_one.trans hv1.le)
+    rw [abs_of_nonneg hulog, abs_of_nonneg hvlog]
+    linarith
+
 end TauCeti

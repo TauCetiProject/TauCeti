@@ -46,6 +46,43 @@ end Coordinate
 
 namespace PiLp
 
+section Proj
+
+variable {𝕜 ι F : Type*} {E : ι → Type*} [NontriviallyNormedField 𝕜] [Fintype ι]
+  {p : ENNReal} [Fact (1 ≤ p)]
+
+/-- Precomposing a continuous linear map on coordinate `i` with `PiLp.proj p E i` preserves its
+operator norm. -/
+@[simp]
+theorem opNorm_comp_proj [∀ i, NormedAddCommGroup (E i)] [∀ i, NormedSpace 𝕜 (E i)]
+    [SeminormedAddCommGroup F] [NormedSpace 𝕜 F] {i : ι} (L : E i →L[𝕜] F) :
+    ‖L.comp (PiLp.proj p E i : PiLp p E →L[𝕜] E i)‖ = ‖L‖ := by
+  classical
+  let q := (PiLp.proj p E i : PiLp p E →L[𝕜] E i)
+  apply le_antisymm
+  · refine ContinuousLinearMap.opNorm_le_bound _ (norm_nonneg L) fun y ↦ ?_
+    simpa only [ContinuousLinearMap.comp_apply, q, PiLp.proj_apply] using
+      (L.le_opNorm (y i)).trans
+        (mul_le_mul_of_nonneg_left (PiLp.norm_apply_le y i) (norm_nonneg _))
+  · refine ContinuousLinearMap.opNorm_le_bound _ (norm_nonneg (L.comp q)) fun y ↦ ?_
+    simpa only [ContinuousLinearMap.comp_apply, q, PiLp.proj_apply,
+      PiLp.ofLp_single, Pi.single_eq_same, PiLp.norm_single] using
+      (L.comp q).le_opNorm (PiLp.single p i y)
+
+/-- Precomposing a differentiable function on coordinate `i` with `PiLp.proj p E i` preserves the
+operator norm of its Fréchet derivative. -/
+theorem norm_fderiv_comp_proj [∀ i, NormedAddCommGroup (E i)] [∀ i, NormedSpace 𝕜 (E i)]
+    [NormedAddCommGroup F] [NormedSpace 𝕜 F] {i : ι} {f : E i → F} {x : PiLp p E}
+    (hf : DifferentiableAt 𝕜 f (x i)) :
+    ‖fderiv 𝕜 (fun y : PiLp p E ↦ f ((PiLp.proj p E i : PiLp p E →L[𝕜] E i) y)) x‖ =
+      ‖fderiv 𝕜 f (x i)‖ := by
+  let q := (PiLp.proj p E i : PiLp p E →L[𝕜] E i)
+  have hderiv : fderiv 𝕜 (fun y : PiLp p E ↦ f (q y)) x = (fderiv 𝕜 f (x i)).comp q := by
+    simpa only [Function.comp_def] using (hf.hasFDerivAt.comp x q.hasFDerivAt).fderiv
+  rw [hderiv, opNorm_comp_proj]
+
+end Proj
+
 variable {ι : Type*} [Fintype ι] [DecidableEq ι] {E : ι → Type*}
   [∀ i, NormedAddCommGroup (E i)] [∀ i, InnerProductSpace ℝ (E i)]
   [∀ i, CompleteSpace (E i)]
