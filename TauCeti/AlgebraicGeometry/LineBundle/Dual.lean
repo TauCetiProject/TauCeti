@@ -84,13 +84,13 @@ def dualCongr {L K : InvertibleSheaf X} (e : L ≅ K) : dual L ≅ dual K :=
   ObjectProperty.isoMk _ (dualCongrIso e)
 
 @[simp]
-lemma dualCongr_hom_val {L K : InvertibleSheaf X} (e : L ≅ K) :
-    (dualCongr e).hom.hom.val = (dualCongrIso e).hom.val :=
+lemma dualCongr_hom_hom {L K : InvertibleSheaf X} (e : L ≅ K) :
+    (dualCongr e).hom.hom = (dualCongrIso e).hom :=
   (rfl)
 
 @[simp]
-lemma dualCongr_inv_val {L K : InvertibleSheaf X} (e : L ≅ K) :
-    (dualCongr e).inv.hom.val = (dualCongrIso e).inv.val :=
+lemma dualCongr_inv_hom {L K : InvertibleSheaf X} (e : L ≅ K) :
+    (dualCongr e).inv.hom = (dualCongrIso e).inv :=
   (rfl)
 
 /-- Evaluation of a line bundle against its internal-Hom dual, as an isomorphism of sheaves. -/
@@ -146,13 +146,13 @@ def tensorDualIso (L : InvertibleSheaf X) : tensorProduct L (dual L) ≅ trivial
   ObjectProperty.isoMk _ (tensorDualIsoSheaf L)
 
 @[simp]
-lemma tensorDualIso_hom_val (L : InvertibleSheaf X) :
-    (tensorDualIso L).hom.hom.val = (tensorDualIsoSheaf L).hom.val :=
+lemma tensorDualIso_hom_hom (L : InvertibleSheaf X) :
+    (tensorDualIso L).hom.hom = (tensorDualIsoSheaf L).hom :=
   (rfl)
 
 @[simp]
-lemma tensorDualIso_inv_val (L : InvertibleSheaf X) :
-    (tensorDualIso L).inv.hom.val = (tensorDualIsoSheaf L).inv.val :=
+lemma tensorDualIso_inv_hom (L : InvertibleSheaf X) :
+    (tensorDualIso L).inv.hom = (tensorDualIsoSheaf L).inv :=
   (rfl)
 
 end InvertibleSheaf
