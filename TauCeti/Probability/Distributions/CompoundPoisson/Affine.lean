@@ -23,7 +23,7 @@ additive scaling map, and composition of measure pushforwards.
 
 * `TauCeti.Probability.compoundPoissonMeasure_map_affine` — affine transport scales the jump
   measure and leaves translation as an outer pushforward;
-* `TauCeti.Probability.hasLaw_affine_compoundPoissonMeasure` — the corresponding random-variable
+* `ProbabilityTheory.HasLaw.affine_compoundPoissonMeasure` — the corresponding random-variable
   statement.
 -/
 
@@ -46,13 +46,19 @@ theorem compoundPoissonMeasure_map_affine (r : ℝ≥0) (μ : Measure ℝ) [SFin
   rw [← hscale, Measure.map_map (by fun_prop) (by fun_prop)]
   rfl
 
+end TauCeti.Probability
+
+namespace ProbabilityTheory.HasLaw
+
+open TauCeti.Probability
+
 /-- Affine transport of a compound Poisson random variable scales its jump law and leaves the
 translation as an outer pushforward. -/
-theorem hasLaw_affine_compoundPoissonMeasure {Ω : Type*} [MeasurableSpace Ω]
+theorem affine_compoundPoissonMeasure {Ω : Type*} [MeasurableSpace Ω]
     {P : Measure Ω} {X : Ω → ℝ} {r : ℝ≥0} {μ : Measure ℝ} [SFinite μ]
     {a b : ℝ} (hX : HasLaw X (compoundPoissonMeasure r μ) P) :
     HasLaw (fun ω ↦ a + b * X ω)
       ((compoundPoissonMeasure r (μ.map (fun x ↦ b * x))).map (fun x ↦ a + x)) P :=
   (HasLaw.mk (by fun_prop) (compoundPoissonMeasure_map_affine r μ a b)).fun_comp hX
 
-end TauCeti.Probability
+end ProbabilityTheory.HasLaw
