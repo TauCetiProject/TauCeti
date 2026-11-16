@@ -254,21 +254,44 @@ theorem isProZero_smulTower_iff (f : R) :
     rw [smulTower_transitionOfLE, Nat.add_sub_cancel_left]
     exact hk'
 
+end SMulTower
+
 /-- A levelwise injective comparison of towers is bijective on limits if its obstruction
-maps form an exact sequence into a scalar-multiplication tower annihilated by a uniform
-power of the scalar. The obstruction maps need not be surjective. -/
+maps are exact, transition by multiplication by a scalar, and their images are annihilated
+by a uniform power of that scalar. No annihilation assumption on the rest of the obstruction
+module, or surjectivity of the obstruction maps, is needed. -/
 theorem limMap_bijective_of_pow_smul_eq_zero
+    {Q : Type*} [AddCommMonoid Q] [Module R Q]
     {F G : ModuleTower.{v} R} (i : F ⟶ G) (f : R)
     (δ : ∀ n, G.obj (op n) →ₗ[R] Q)
     (hi : ∀ n, Function.Injective (i.app (op n)).hom)
     (hex : ∀ n, Function.Exact (i.app (op n)).hom (δ n))
     (hδ : ∀ n x, δ n (G.transition n x) = f • δ (n + 1) x)
-    (hQ : ∃ k : ℕ, ∀ x : Q, f ^ k • x = 0) :
-    Function.Bijective (limMap i) :=
-  limMap_bijective_of_isProZero i (toSmulTower f δ hδ) hi
-    (fun n ↦ by rw [toSmulTower_app_hom]; exact hex n) ((isProZero_smulTower_iff f).2 hQ)
-
-end SMulTower
+    (hQ : ∃ k : ℕ, ∀ n x, f ^ k • δ n x = 0) :
+    Function.Bijective (limMap i) := by
+  classical
+  refine ⟨limMap_injective hi, fun y ↦ ?_⟩
+  have hiter (j n : ℕ) :
+      δ n ((y : G.Product) n) = f ^ j • δ (n + j) ((y : G.Product) (n + j)) := by
+    induction j generalizing n with
+    | zero => simp
+    | succ j ih =>
+      rw [← G.transition_coe_lim_succ y n, hδ, ih (n + 1)]
+      rw [pow_succ', mul_smul]
+      exact congrArg (fun m ↦ f • f ^ j • δ m ((y : G.Product) m)) (by omega)
+  obtain ⟨k, hk⟩ := hQ
+  have hzero (n : ℕ) : δ n ((y : G.Product) n) = 0 := (hiter k n).trans (hk _ _)
+  choose x hx using fun n ↦ (hex n _).mp (hzero n)
+  have hxlim : x ∈ F.lim := by
+    apply F.mem_lim.mpr
+    intro n
+    apply hi n
+    rw [← LinearMap.comp_apply, app_comp_transition, LinearMap.comp_apply, hx, hx,
+      G.transition_coe_lim_succ]
+  refine ⟨⟨x, hxlim⟩, ?_⟩
+  apply lim_ext
+  intro n
+  simpa only [limπ_apply, coe_limMap_apply, productMap_apply] using hx n
 
 end ModuleTower
 

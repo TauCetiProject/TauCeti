@@ -634,7 +634,8 @@ power of the scalar. -/
 theorem smulTower_transitionOfLE_apply (f : R) {n m : ℕ} (h : n ≤ m) (x : M) :
     (smulTower M f).transitionOfLE h x = f ^ (m - n) • x := by
   rw [smulTower_transitionOfLE]
-  rfl
+  -- Scalar-action simp lemmas are stated on `M`, not the tower term's carrier.
+  exact LinearMap.smul_apply (f ^ (m - n)) (LinearMap.id : M →ₗ[R] M) x
 
 /-- Construct a morphism to the scalar-multiplication tower from levelwise linear maps
 that commute with the source transitions and multiplication by the scalar. -/
@@ -643,14 +644,13 @@ def toSmulTower {F : ModuleTower.{v} R} (f : R)
     (hd : ∀ n x, d n (F.transition n x) = f • d (n + 1) x) : F ⟶ smulTower M f :=
   NatTrans.ofOpSequence (fun n ↦ ModuleCat.ofHom (d n)) fun n ↦ by
     apply ModuleCat.hom_ext
-    -- Express categorical composition on the source's carriers using the transition API.
+    -- The carrier of a tower term is definitionally `M`, but the categorical composition
+    -- simp lemmas do not match across that identification. State the maps on `M` first.
     change d n ∘ₗ F.transition n = (smulTower M f).transition n ∘ₗ d (n + 1)
     rw [smulTower_transition]
-    -- State the identity on `M`, rather than on the carrier of a tower term.
-    have key : d n ∘ₗ F.transition n = (f • LinearMap.id : M →ₗ[R] M) ∘ₗ d (n + 1) := by
-      ext x
-      exact hd n x
-    exact key
+    ext x
+    -- The scalar-action simp lemmas also use `M`, rather than the tower term's carrier.
+    exact hd n x
 
 /-- The components of the morphism to a scalar-multiplication tower are the supplied maps. -/
 @[simp]
