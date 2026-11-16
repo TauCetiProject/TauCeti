@@ -6,9 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.Sobolev.Local.Basic
+public import TauCeti.Analysis.Sobolev.Local.EuclideanExamples
 public import TauCeti.Analysis.Sobolev.Local.Reflection
-import Mathlib.Analysis.Calculus.BumpFunction.InnerProduct
-import Mathlib.Analysis.Calculus.BumpFunction.Normed
 import Mathlib.Analysis.Calculus.Deriv.Abs
 import Mathlib.Analysis.Calculus.Deriv.Polynomial
 import Mathlib.Analysis.InnerProductSpace.Calculus
@@ -16,14 +15,11 @@ import Mathlib.Analysis.Complex.OperatorNorm
 import Mathlib.Analysis.Complex.ReImTopology
 import Mathlib.Analysis.SpecialFunctions.Sqrt
 import Mathlib.LinearAlgebra.Complex.FiniteDimensional
-import Mathlib.MeasureTheory.Integral.IntegralEqImproper
 import TauCeti.Analysis.InnerProductSpace.NormPow
 import TauCeti.Analysis.PDE.FundamentalSolution.Planar.DistributionalLaplacian
 import TauCeti.Analysis.SpecialFunctions.Integrability.Rpow
-import TauCeti.Analysis.Sobolev.Local.ChangeOfVariables
 import TauCeti.Analysis.Sobolev.Local.Coordinates
 import TauCeti.Analysis.Sobolev.Local.Holomorphic
-import TauCeti.Analysis.Sobolev.Local.Lipschitz
 import TauCeti.Analysis.Sobolev.WeakDeriv.Lipschitz
 import TauCeti.Analysis.Sobolev.WeakDeriv.NormRpow
 import TauCeti.Analysis.Sobolev.WeakDeriv.Removable
@@ -33,29 +29,27 @@ import TauCeti.MeasureTheory.Measure.Lebesgue.Complex
 /-!
 # Membership and non-membership examples for local Sobolev classes
 
-This file tests `TauCeti.MemWkpLoc` against explicit planar functions.
+This file tests `TauCeti.MemWkpLoc` against explicit planar functions; dimension-independent
+examples (the identity, norm, critical inverse-norm singularity, unit radial map, hyperplane jumps,
+and non-separable Banach targets) live in `TauCeti.Analysis.Sobolev.Local.EuclideanExamples`.
 
-* The identity of `ℂ` is in every local Sobolev class, although it is not globally `Lᵖ` for
-  `0 < p`.
-* The map `z ↦ ‖z‖` is in every local `W^{1,p}` class, as a Lipschitz map
-  (`LipschitzWith.memWkpLoc_one`).
 * Polynomials are in every local Sobolev class on every set, as holomorphic maps on the plane
   (`Differentiable.memWkpLoc`).
 * The map `z ↦ ‖z‖` is in the local class `W^{2,p}` exactly when `p < 2`, on every set whose
   interior contains the origin: away from the origin its second derivative has norm between
   `‖z‖⁻¹` and `2 ‖z‖⁻¹`, and `‖z‖ ^ (-p)` is integrable near the origin of the plane exactly when
   `p < 2`. For `p < 2` the weak second derivative across the origin is that of the unit radial
-  field `z / ‖z‖` (`TauCeti.hasWeakFDerivOn_norm_rpow_mul_inner`).
+  field `z / ‖z‖` (`TauCeti.memWkpLoc_one_unitRadial`).
 * The indicator of the half-plane `{z | 0 < z.re}` has no weak derivative on any open set
-  meeting the imaginary axis, so it is in every local `Lᵖ` class but in no local `W^{k,p}` class
-  of positive order there.
+  meeting the imaginary axis (specializing `TauCeti.not_hasWeakFDerivOn_indicator_pos`), so it is
+  in every local `Lᵖ` class but in no local `W^{k,p}` class of positive order there.
 * On the closed upper half-disc `D⁺ = ball 0 1 ∩ {z | 0 ≤ z.im}`, the map `z ↦ √z.im` is in the
   local class `W^{1,p}` exactly when `p < 2`, because the `Lᵖ` bounds reach the real axis. On the
   open half-disc it is in that class for every `p`, although it is continuous up to the axis.
-* The map `z ↦ ‖z‖⁻¹` and the components `Re z / ‖z‖²` and `Im z / ‖z‖²` of the gradient of
-  `log ‖z‖` are locally `Lᵖ` near the origin exactly when `p < 2`, and `log ‖z‖` is in the local
-  class `W^{1,p}` there exactly when `p < 2`. These are the exponents of the divergence-form
-  equation `Δ log ‖z‖ = ∂ₛ(Re z / ‖z‖²) + ∂ₜ(Im z / ‖z‖²)`
+* The components `Re z / ‖z‖²` and `Im z / ‖z‖²` of the gradient of `log ‖z‖` are locally `Lᵖ`
+  near the origin iff `p < 2`, and `log ‖z‖` is in the local class `W^{1,p}` there iff `p < 2`.
+  These are the exponents of the divergence-form equation
+  `Δ log ‖z‖ = ∂ₛ(Re z / ‖z‖²) + ∂ₜ(Im z / ‖z‖²)`
   (`TauCeti.integral_log_norm_mul_laplacian`).
 * The even reflection does not extend `u = Im z` from the upper half-disc to a local `W^{2,p}`
   map, for any exponent: it gives `|Im z|`, whose first derivative jumps across the real axis. The
@@ -77,18 +71,6 @@ open scoped Topology Distributions RealInnerProductSpace
 namespace TauCeti
 
 variable {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F] {p : ENNReal} {U : Set ℂ}
-
-/-! ### The identity and the norm -/
-
-/-- The identity of `ℂ` is in every local Sobolev class on every set, although for `0 < p` it is
-not in `Lᵖ` of the whole plane: the local class imposes no bound at infinity. -/
-theorem memWkpLoc_id (p : ENNReal) (U : Set ℂ) (k : ℕ) : MemWkpLoc p U k (fun z : ℂ => z) :=
-  (contDiff_id.contDiffOn : ContDiffOn ℝ k id ((⊤ : Opens ℂ) : Set ℂ)).memWkpLoc (subset_univ U)
-
-/-- The norm `z ↦ ‖z‖` is in the local class `W^{1,p}` on every set, for every exponent: its
-weak gradient `z / ‖z‖` is bounded. -/
-theorem memWkpLoc_one_norm : MemWkpLoc p U 1 (fun z : ℂ => ‖z‖) :=
-  lipschitzWith_one_norm.memWkpLoc_one
 
 /-! ### Polynomials -/
 
@@ -171,24 +153,6 @@ theorem not_memWkpLoc_two_norm (hp : 2 ≤ p) (h0 : (0 : ℂ) ∈ interior U) :
 
 /-! ### The norm is in `W^{2,p}` for `p < 2` -/
 
-/-- For `p < 2`, the coordinate `z ↦ ‖z‖⁻¹ ⟪z, e⟫` of the weak gradient `z / ‖z‖` of the norm is in
-the local class `W^{1,p}` on every set: it is bounded, and its weak derivative has size at most
-`2 ‖e‖ ‖z‖⁻¹`. -/
-private theorem memWkpLoc_one_norm_rpow_neg_one_mul_inner (hp : p < 2) (e : ℂ) :
-    MemWkpLoc p U 1 (fun z : ℂ => ‖z‖ ^ (-1 : ℝ) * ⟪z, e⟫) := by
-  refine memWkpLoc_succ_iff.2 ⟨memLpLoc_iff.2 fun K _ hK => ?_, _,
-    hasWeakFDerivOn_norm_rpow_mul_inner (by norm_num [Complex.finrank_real_complex]) e _,
-    memWkpLoc_zero_iff.2 (memLpLoc_iff.2 fun K _ hK => ?_)⟩
-  · have : IsFiniteMeasure (volume.restrict K) := ⟨by simpa using hK.measure_lt_top⟩
-    exact MemLp.of_bound (by fun_prop : Measurable _).aestronglyMeasurable ‖e‖
-      (Eventually.of_forall fun z => by simpa using abs_norm_rpow_mul_inner_le (-1) e z)
-  · have hker : MemLp (fun z : ℂ => ‖z‖⁻¹) p (volume.restrict K) :=
-      hK.isBounded.memLp_norm_inv_restrict (by simpa [Complex.finrank_real_complex] using hp)
-    refine (hker.const_mul ((1 + |(-1 : ℝ)|) * ‖e‖)).of_le
-      (by fun_prop : Measurable _).aestronglyMeasurable (Eventually.of_forall fun z => ?_)
-    rw [Real.norm_of_nonneg (by positivity), ← Real.rpow_neg_one]
-    exact norm_norm_rpow_smul_innerSL_add_le (-1) e z
-
 /-- The norm `z ↦ ‖z‖` is in the local class `W^{2,p}` on every set for `p < 2`: its second
 weak derivative has size `‖z‖⁻¹`, which is `Lᵖ` near the origin of the plane exactly when
 `p < 2`. -/
@@ -196,11 +160,16 @@ theorem memWkpLoc_two_norm (hp : p < 2) : MemWkpLoc p U 2 (fun z : ℂ => ‖z�
   have hD := hasWeakFDerivOn_norm_rpow (μ := volume) (s := 1)
     (by norm_num [Complex.finrank_real_complex]) (Opens.interior U)
   norm_num only [Real.rpow_one, one_mul] at hD
+  have hrad : MemWkpLoc p U 1 (fun z : ℂ => ‖z‖⁻¹ • z) :=
+    memWkpLoc_one_unitRadial (by simp [Complex.finrank_real_complex])
+      (by simpa [Complex.finrank_real_complex] using hp)
+  have hcoord :
+      ∀ e : ℂ, MemWkpLoc p U 1 (fun z : ℂ => ‖z‖ ^ (-1 : ℝ) * ⟪z, e⟫) := fun e => by
+    simpa only [innerSL_apply_apply, inner_smul_right, real_inner_comm, Real.rpow_neg_one] using
+      hrad.clm_comp (innerSL ℝ e)
   refine continuous_norm.continuousOn.memLpLoc.memWkpLoc_succ_of_hasWeakFDerivOn hD ?_ ?_
-  · simpa only [smul_apply, innerSL_apply_apply, smul_eq_mul] using
-      memWkpLoc_one_norm_rpow_neg_one_mul_inner (U := U) hp 1
-  · simpa only [smul_apply, innerSL_apply_apply, smul_eq_mul] using
-      memWkpLoc_one_norm_rpow_neg_one_mul_inner (U := U) hp Complex.I
+  · simpa only [smul_apply, innerSL_apply_apply, smul_eq_mul] using hcoord 1
+  · simpa only [smul_apply, innerSL_apply_apply, smul_eq_mul] using hcoord Complex.I
 
 /-- The norm `z ↦ ‖z‖` is in the local class `W^{2,p}` on a set whose interior contains the
 origin exactly when `p < 2`. -/
@@ -212,119 +181,28 @@ theorem memWkpLoc_two_norm_iff (h0 : (0 : ℂ) ∈ interior U) :
 
 /-- The indicator of the right half-plane is locally `Lᵖ` on every set, for every exponent. -/
 theorem memLpLoc_indicator_re_pos :
-    MemLpLoc p U ({z : ℂ | 0 < z.re}.indicator fun _ => (1 : ℝ)) := by
-  refine memLpLoc_iff.2 fun K _ hK => ?_
-  have : IsFiniteMeasure (volume.restrict K) := ⟨by simpa using hK.measure_lt_top⟩
-  exact memLp_indicator_const p
-    (measurableSet_lt measurable_const Complex.measurable_re).nullMeasurableSet 1
-    (Or.inr (measure_ne_top _ _))
+    MemLpLoc p U ({z : ℂ | 0 < z.re}.indicator fun _ => (1 : ℝ)) :=
+  memLpLoc_indicator_pos Complex.reCLM
 
 /-- The indicator of the right half-plane has no weak derivative on any open set meeting the
 imaginary axis: its distributional derivative is a measure carried by the axis. -/
 theorem not_hasWeakFDerivOn_indicator_re_pos {Ω : Opens ℂ} {z₀ : ℂ} (hz₀ : z₀ ∈ Ω)
     (hre : z₀.re = 0) (D : ℂ → ℂ →L[ℝ] ℝ) :
-    ¬ HasWeakFDerivOn volume Ω ({z : ℂ | 0 < z.re}.indicator fun _ => (1 : ℝ)) D := by
-  intro hD
-  set u : ℂ → ℝ := {z : ℂ | 0 < z.re}.indicator fun _ => (1 : ℝ) with hu
-  -- On each open half of `Ω` the indicator is constant, so `D` vanishes almost everywhere.
-  set Ωp : Opens ℂ := Ω ⊓ ⟨{z | 0 < z.re}, isOpen_lt continuous_const Complex.continuous_re⟩
-  set Ωn : Opens ℂ := Ω ⊓ ⟨{z | z.re < 0}, isOpen_lt Complex.continuous_re continuous_const⟩
-  have hconst : HasWeakFDerivOn volume Ωp (fun _ => (1 : ℝ)) 0 := hasWeakFDerivOn_iff.2 fun v => by
-    simpa using (hasWeakLineDerivOn_const (1 : ℝ) :
-      HasWeakLineDerivOn volume Ωp (fun _ => (1 : ℝ)) (fun _ => 0) v)
-  have hp : HasWeakFDerivOn volume Ωp u 0 := hconst.congr_ae <|
-    (ae_restrict_iff' Ωp.isOpen.measurableSet).2 <| Eventually.of_forall fun z hz => by
-      simp [hu, Set.indicator_of_mem (show z ∈ {z : ℂ | 0 < z.re} from hz.2)]
-  have hn : HasWeakFDerivOn volume Ωn u 0 := (hasWeakFDerivOn_zero (μ := volume)).congr_ae <|
-    (ae_restrict_iff' Ωn.isOpen.measurableSet).2 <| Eventually.of_forall fun z hz => by
-      have hz' : ¬ 0 < z.re := not_lt.2 (le_of_lt hz.2)
-      simp [hu, hz']
-  have hDp := (ae_restrict_iff' Ωp.isOpen.measurableSet).1 ((hD.mono inf_le_left).ae_eq hp)
-  have hDn := (ae_restrict_iff' Ωn.isOpen.measurableSet).1 ((hD.mono inf_le_left).ae_eq hn)
-  have hD0 : D =ᵐ[volume.restrict Ω] 0 := by
-    refine (ae_restrict_iff' Ω.isOpen.measurableSet).2 ?_
-    filter_upwards [hDp, hDn, measure_eq_zero_iff_ae_notMem.1 (Complex.volume_setOf_re_eq 0)]
-      with z hzp hzn hz0 hzΩ
-    rcases lt_or_gt_of_ne hz0 with h | h
-    · exact hzn ⟨hzΩ, h⟩
-    · exact hzp ⟨hzΩ, h⟩
-  have hline := (hD.congr_ae_deriv hD0).hasWeakLineDerivOn 1
-  -- Test against a product of bump functions centred at `z₀`.
-  obtain ⟨ε, hε, hball⟩ := Metric.isOpen_iff.1 Ω.isOpen z₀ hz₀
-  let a : ContDiffBump (0 : ℝ) := ⟨ε / 6, ε / 3, by positivity, by linarith⟩
-  let b : ContDiffBump z₀.im := ⟨ε / 6, ε / 3, by positivity, by linarith⟩
-  let f : ℂ → ℝ := ((a : ℝ → ℝ) ∘ Complex.re) * ((b : ℝ → ℝ) ∘ Complex.im)
-  have hfs : tsupport f ⊆ closedBall z₀ (2 * ε / 3) := by
-    intro z hz
-    have hzr : z ∈ Complex.re ⁻¹' tsupport a :=
-      tsupport_comp_subset_preimage (a : ℝ → ℝ) Complex.continuous_re (tsupport_mul_subset_left hz)
-    have hzi : z ∈ Complex.im ⁻¹' tsupport b :=
-      tsupport_comp_subset_preimage (b : ℝ → ℝ) Complex.continuous_im (tsupport_mul_subset_right hz)
-    rw [mem_preimage, a.tsupport_eq, mem_closedBall, Real.dist_eq, sub_zero] at hzr
-    rw [mem_preimage, b.tsupport_eq, mem_closedBall, Real.dist_eq] at hzi
-    rw [mem_closedBall, dist_eq_norm]
-    refine (Complex.norm_le_abs_re_add_abs_im _).trans ?_
-    simp only [Complex.sub_re, Complex.sub_im, hre, sub_zero]
-    simp only [a, b] at hzr hzi
-    linarith
-  have hfΩ : tsupport f ⊆ Ω := fun z hz =>
-    hball (closedBall_subset_ball (by linarith) (hfs hz))
-  let φ : 𝓓(Ω, ℝ) := ⟨f, (a.contDiff.comp Complex.reCLM.contDiff).mul
-      (b.contDiff.comp Complex.imCLM.contDiff),
-    (isCompact_closedBall z₀ _).of_isClosed_subset (isClosed_tsupport f) hfs, hfΩ⟩
-  have hφ : (φ : ℂ → ℝ) = f := TestFunction.coe_mk
-  have hkey := hline.integral_lineDeriv_smul_eq_neg_integral_smul φ
-  simp only [Pi.zero_apply, zero_apply, smul_zero, integral_zero, neg_zero] at hkey
-  -- Compute the pairing by Fubini.
-  have hda : ∀ x, HasDerivAt a (deriv a x) x := fun x =>
-    ((a.contDiff (n := 1)).differentiable one_ne_zero x).hasDerivAt
-  have hldf : ∀ z, lineDeriv ℝ (φ : ℂ → ℝ) z 1 = deriv a z.re * b z.im := by
-    intro z
-    refine HasLineDerivAt.lineDeriv
-      (?_ : HasDerivAt (fun t : ℝ => (φ : ℂ → ℝ) (z + t • (1 : ℂ))) _ 0)
-    have h := ((hda (z.re + 0)).comp_const_add z.re 0).mul_const (b z.im)
-    simp only [add_zero] at h
-    convert h using 1
-    funext t
-    simp [hφ, f]
-  have hint : ∫ z : ℂ, lineDeriv ℝ (φ : ℂ → ℝ) z 1 • u z =
-      ∫ q : ℝ × ℝ, (deriv a q.1 * (Ioi (0 : ℝ)).indicator 1 q.1) * b q.2 := by
-    rw [← Complex.volume_preserving_equiv_real_prod.integral_comp
-      Complex.measurableEquivRealProd.measurableEmbedding]
-    refine integral_congr_ae (Eventually.of_forall fun z => ?_)
-    simp only [hldf, smul_eq_mul, hu, Complex.measurableEquivRealProd]
-    by_cases hz : 0 < z.re <;> simp [Set.indicator, hz]
-  have hprod := integral_prod_mul (μ := (volume : Measure ℝ)) (ν := (volume : Measure ℝ))
-    (fun x => deriv a x * (Ioi (0 : ℝ)).indicator 1 x) (fun y => b y)
-  rw [hint, Measure.volume_eq_prod, hprod] at hkey
-  have hIoi : ∫ x : ℝ, deriv a x * (Ioi (0 : ℝ)).indicator 1 x = -1 := by
-    have hfun : (fun x : ℝ => deriv a x * (Ioi (0 : ℝ)).indicator 1 x) =
-        (Ioi (0 : ℝ)).indicator (deriv a) := by
-      funext x
-      by_cases hx : 0 < x <;> simp [Set.indicator, hx]
-    rw [hfun, integral_indicator measurableSet_Ioi]
-    have hdc : Continuous (deriv a) := (a.contDiff (n := 1)).continuous_deriv le_rfl
-    rw [integral_Ioi_of_hasDerivAt_of_tendsto (m := 0) a.continuous.continuousWithinAt
-      (fun x _ => hda x)
-      (hdc.integrable_of_hasCompactSupport a.hasCompactSupport.deriv).integrableOn ?_,
-      a.one_of_mem_closedBall (mem_closedBall_self (by simp only [a]; positivity))]
-    · simp
-    · refine tendsto_const_nhds.congr' ?_
-      filter_upwards [eventually_ge_atTop (ε / 3)] with x hx
-      refine (a.zero_of_le_dist ?_).symm
-      simp only [a, Real.dist_eq, sub_zero]
-      exact hx.trans (le_abs_self x)
-  rw [hIoi] at hkey
-  have hb := b.integral_pos (μ := volume)
-  linarith
+    ¬ HasWeakFDerivOn volume Ω ({z : ℂ | 0 < z.re}.indicator fun _ => (1 : ℝ)) D :=
+  not_hasWeakFDerivOn_indicator_pos (ℓ := Complex.reCLM)
+    (fun h => one_ne_zero (α := ℝ)
+      (by simpa using congrArg (fun L : ℂ →L[ℝ] ℝ => L 1) h))
+    hz₀ hre D
 
 /-- The indicator of the right half-plane is in no local Sobolev class of positive order on a
 set whose interior meets the imaginary axis, although it is locally `Lᵖ` there. -/
 theorem not_memWkpLoc_indicator_re_pos {k : ℕ} {z₀ : ℂ} (hz₀ : z₀ ∈ interior U)
     (hre : z₀.re = 0) :
-    ¬ MemWkpLoc p U (k + 1) ({z : ℂ | 0 < z.re}.indicator fun _ => (1 : ℝ)) := fun h => by
-  obtain ⟨-, D, hD, -⟩ := memWkpLoc_succ_iff.1 h
-  exact not_hasWeakFDerivOn_indicator_re_pos (Ω := Opens.interior U) hz₀ hre D hD
+    ¬ MemWkpLoc p U (k + 1) ({z : ℂ | 0 < z.re}.indicator fun _ => (1 : ℝ)) :=
+  not_memWkpLoc_indicator_pos (ℓ := Complex.reCLM)
+    (fun h => one_ne_zero (α := ℝ)
+      (by simpa using congrArg (fun L : ℂ →L[ℝ] ℝ => L 1) h))
+    hz₀ hre
 
 /-! ### A square-root profile on the half-disc -/
 
@@ -449,22 +327,14 @@ theorem memWkpLoc_sqrt_im_ball_inter_im_pos :
 
 /-! ### The logarithm of the norm and its gradient -/
 
-/-- **`‖z‖⁻¹` is locally `Lᵖ` near the origin exactly for `p < 2`.** -/
-theorem memLpLoc_norm_inv_iff (hU : U ∈ 𝓝 0) :
-    MemLpLoc p U (fun z : ℂ => ‖z‖⁻¹) ↔ p < 2 := by
-  refine ⟨fun h => ?_, fun h => memLpLoc_iff.2 fun K _ hK =>
-    hK.isBounded.memLp_norm_inv_restrict (by simpa [Complex.finrank_real_complex] using h)⟩
-  by_contra! hp2
-  obtain ⟨ε, hε, hεU⟩ := nhds_basis_closedBall.mem_iff.1 hU
-  exact not_memLp_norm_inv_closedBall hε (by simpa [Complex.finrank_real_complex] using hp2)
-    (memLpLoc_iff.1 h _ hεU (isCompact_closedBall 0 ε))
-
 /-- **The components of the gradient of `log ‖z‖` are locally `Lᵖ` near the origin exactly for
 `p < 2`.** These are `Re z / ‖z‖²` and `Im z / ‖z‖²`, the divergence-form data of `log ‖z‖`. -/
 theorem memLpLoc_re_div_and_im_div_iff (hU : U ∈ 𝓝 0) :
     (MemLpLoc p U (fun z : ℂ => z.re / ‖z‖ ^ 2) ∧ MemLpLoc p U fun z : ℂ => z.im / ‖z‖ ^ 2) ↔
       p < 2 := by
-  rw [← memLpLoc_norm_inv_iff hU]
+  have hinv : MemLpLoc p U (fun z : ℂ => ‖z‖⁻¹) ↔ p < 2 := by
+    simpa [Complex.finrank_real_complex] using memLpLoc_norm_inv_iff (p := p) hU
+  rw [← hinv]
   have hdiv (a : ℝ) (z : ℂ) (hz : |a| ≤ ‖z‖) :
       ‖a / ‖z‖ ^ 2‖ ≤ ‖‖z‖⁻¹‖ := by
     rcases eq_or_ne z 0 with rfl | hz0
@@ -510,7 +380,9 @@ theorem memWkpLoc_one_log_norm_iff {Ω : Opens ℂ} (h0 : (0 : ℂ) ∈ Ω) :
     · simp
     rw [← (hasFDerivAt_log_norm_of_ne hz).fderiv, norm_fderiv_log_norm_of_ne hz]
   simp only [memWkpLoc_succ_iff_of_isOpen, memWkpLoc_zero_iff]
-  rw [← memLpLoc_norm_inv_iff hU]
+  have hinv : MemLpLoc p (Ω : Set ℂ) (fun z : ℂ => ‖z‖⁻¹) ↔ p < 2 := by
+    simpa [Complex.finrank_real_complex] using memLpLoc_norm_inv_iff (p := p) hU
+  rw [← hinv]
   constructor
   · rintro ⟨-, D, hD, hDp⟩
     have hae := hD.ae_eq (hasWeakFDerivOn_log_norm Ω)

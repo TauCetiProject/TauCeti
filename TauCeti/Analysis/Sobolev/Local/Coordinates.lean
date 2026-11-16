@@ -43,16 +43,31 @@ open TauCeti MeasureTheory
 
 namespace Module.Basis
 
-variable {F G : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F]
-  [NormedAddCommGroup G] [NormedSpace ℝ G]
-  {p : ENNReal} {U : Set ℂ} {k : ℕ} {f : ℂ → F}
+variable {E F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F] {ι : Type*} [Finite ι]
+  {p : ENNReal}
 
-variable {ι : Type*} [Finite ι]
+/-- Local `Lᵖ` membership can be tested in any finite basis. No completeness of the
+codomain is needed. -/
+theorem memLpLoc_iff [TopologicalSpace E] [MeasureSpace E] {U : Set E} {f : E → F}
+    (b : Module.Basis ι ℝ F) :
+    MemLpLoc p U f ↔ ∀ i, MemLpLoc p U (fun z => b.repr (f z) i) := by
+  classical
+  let : Fintype ι := Fintype.ofFinite ι
+  let : FiniteDimensional ℝ F := b.finiteDimensional_of_finite
+  constructor
+  · intro h i
+    exact h.clm_comp ((ContinuousLinearMap.proj i).comp b.equivFunL.toContinuousLinearMap)
+  · intro h
+    have hs : MemLpLoc p U (fun z => ∑ i, b.repr (f z) i • b i) :=
+      MemLpLoc.sum Finset.univ fun i _ =>
+        (h i).clm_comp ((ContinuousLinearMap.id ℝ ℝ).smulRight (b i))
+    simpa only [b.sum_repr] using hs
 
 /-- Local Sobolev membership of every order can be tested in any finite basis.
 Scalar coordinate witnesses may be chosen independently; finite sums reconstruct the map
 in the same Sobolev class. -/
-theorem memWkpLoc_iff (b : Module.Basis ι ℝ F) :
+theorem memWkpLoc_iff [NormedAddCommGroup E] [NormedSpace ℝ E] [MeasureSpace E]
+    [OpensMeasurableSpace E] {U : Set E} {k : ℕ} {f : E → F} (b : Module.Basis ι ℝ F) :
     MemWkpLoc p U k f ↔ ∀ i, MemWkpLoc p U k (fun z => b.repr (f z) i) := by
   classical
   let : Fintype ι := Fintype.ofFinite ι
@@ -67,17 +82,12 @@ theorem memWkpLoc_iff (b : Module.Basis ι ℝ F) :
       exact (h i).clm_comp ((ContinuousLinearMap.id ℝ ℝ).smulRight (b i))
     simpa only [b.sum_repr] using hs
 
-/-- Local `Lᵖ` membership can be tested in any finite basis. No completeness of the
-codomain is needed. -/
-theorem memLpLoc_iff (b : Module.Basis ι ℝ F) :
-    MemLpLoc p U f ↔ ∀ i, MemLpLoc p U (fun z => b.repr (f z) i) := by
-  simpa only [memWkpLoc_zero_iff] using b.memWkpLoc_iff (p := p) (U := U) (k := 0) (f := f)
-
 /-- Real functions `v i` in `MemWkpLoc p U k`, one for each vector of a finite basis `b` of `F`,
-are the coordinates in `b` of a single function `ℂ → F` in `MemWkpLoc p U k`. -/
-theorem exists_memWkpLoc_repr_eq (b : Module.Basis ι ℝ F) {v : ι → ℂ → ℝ}
+are the coordinates in `b` of a single function `E → F` in `MemWkpLoc p U k`. -/
+theorem exists_memWkpLoc_repr_eq [NormedAddCommGroup E] [NormedSpace ℝ E] [MeasureSpace E]
+    [OpensMeasurableSpace E] {U : Set E} {k : ℕ} (b : Module.Basis ι ℝ F) {v : ι → E → ℝ}
     (hv : ∀ i, MemWkpLoc p U k (v i)) :
-    ∃ V : ℂ → F, MemWkpLoc p U k V ∧ ∀ i, (fun z => b.repr (V z) i) = v i := by
+    ∃ V : E → F, MemWkpLoc p U k V ∧ ∀ i, (fun z => b.repr (V z) i) = v i := by
   have := Fintype.ofFinite ι
   have hrepr : ∀ i, (fun z => b.repr (b.equivFun.symm fun j => v j z) i) = v i := fun i =>
     funext fun z => by rw [← b.equivFun_apply, b.equivFun.apply_symm_apply]
@@ -89,8 +99,11 @@ namespace Module.Basis
 
 open TopologicalSpace TauCeti.MeasureTheory
 
-variable {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F] {ι : Type*} [Fintype ι]
-  {p : ENNReal} {Ω : Opens ℂ} {f : ℂ → F}
+variable {E F : Type*} [PseudoMetricSpace E] [SecondCountableTopology E] [LocallyCompactSpace E]
+  [MeasureSpace E] [BorelSpace E] [IsUnifLocDoublingMeasure (volume : Measure E)]
+  [IsLocallyFiniteMeasure (volume : Measure E)] [(volume : Measure E).IsOpenPosMeasure]
+  [NormedAddCommGroup F] [NormedSpace ℝ F] {ι : Type*} [Fintype ι] {p : ENNReal}
+  {Ω : Opens E} {f : E → F}
 
 /-- On an open set `Ω`, the precise representative of a locally `Lᵖ` map, `1 ≤ p`, whose
 coordinates in a finite basis `b` have precise representatives continuous on `Ω`, is the
