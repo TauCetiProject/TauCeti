@@ -9,6 +9,7 @@ public import Mathlib.Algebra.Order.Antidiag.Pi
 public import Mathlib.Analysis.Analytic.Basic
 import Mathlib.Analysis.Analytic.Constructions
 import Mathlib.Analysis.Analytic.Uniqueness
+import TauCeti.Analysis.Analytic.InfiniteSum
 import TauCeti.Algebra.MvPolynomial.Funext
 
 /-!
@@ -40,6 +41,11 @@ coordinate by coordinate, as in transcendence proofs by auxiliary functions in s
 * `HasFPowerSeriesAt.mvCoeff_eq_zero_of_eventuallyEq_zero`: the identity theorem in coefficient
   form, so that the coefficients only depend on the function
   (`HasFPowerSeriesAt.mvCoeff_eq_of_eventuallyEq`).
+* `TauCeti.exists_hasFPowerSeriesOnBall_tsum`: conversely, if `∑ α, ‖c α‖ * r ^ (∑ i, α i)`
+  converges, then `z ↦ ∑' α, (∏ i, z i ^ α i) • c α` has a power series on the ball of radius `r`
+  about `0` whose multi-index coefficients are the `c α`.
+* `TauCeti.eq_zero_of_tsum_prod_pow_smul_eventuallyEq_zero`: the identity theorem for such
+  series: if the sum vanishes near `0`, every coefficient `c α` is zero.
 
 ## References
 
@@ -51,7 +57,7 @@ commit `1d51891b5b`, `Mathlib/NumberTheory/Transcendental/Baker/MultiIndex.lean`
 public section
 
 open Filter Finset Topology
-open scoped ENNReal
+open scoped ENNReal NNReal
 
 namespace FormalMultilinearSeries
 
@@ -261,3 +267,131 @@ theorem mvCoeff_eq_of_eventuallyEq {f g : (ι → 𝕜) → F}
     (hfg.mono fun y hy ↦ by simp [hy]) α
 
 end HasFPowerSeriesAt
+
+namespace TauCeti
+
+open FormalMultilinearSeries
+
+/-- A tuple of `k = ∑ i, α i` indices in which each `i` occurs exactly `α i` times: the first
+components of an enumeration of `Σ i, Fin (α i)`. -/
+private noncomputable def monomialTuple (α : ι → ℕ) {k : ℕ} (h : ∑ i, α i = k) : Fin k → ι :=
+  fun j ↦ ((Fintype.equivFinOfCardEq (α := Σ i, Fin (α i)) (by simpa using h)).symm j).1
+
+private theorem card_monomialTuple_eq (α : ι → ℕ) {k : ℕ} (h : ∑ i, α i = k) (i : ι)
+    [Fintype {j // monomialTuple α h j = i}] :
+    Fintype.card {j // monomialTuple α h j = i} = α i := by
+  classical
+  rw [← Fintype.card_fin (α i)]
+  exact Fintype.card_congr <|
+    ((Fintype.equivFinOfCardEq _).symm.subtypeEquiv fun _ ↦ Iff.rfl).trans (Equiv.sigmaSubtype i)
+
+/-- A power series of the monomial `z ↦ (∏ i, z i ^ α i) • v`. Its only nonzero term, in degree
+`∑ i, α i`, sends `m` to `(∏ j, m j (a j)) • v` for the tuple `a = monomialTuple α _`, which has
+coordinate counts `α`. The choice of `a` only matters off the diagonal. -/
+private noncomputable def monomialSeries (α : ι → ℕ) (v : F) :
+    FormalMultilinearSeries 𝕜 (ι → 𝕜) F := fun k ↦
+  if h : ∑ i, α i = k then
+    (ContinuousMultilinearMap.mkPiRing 𝕜 (Fin k) v).compContinuousLinearMap
+      fun j ↦ ContinuousLinearMap.proj (monomialTuple α h j)
+  else 0
+
+private theorem monomialSeries_of_ne (α : ι → ℕ) (v : F) {k : ℕ} (h : ∑ i, α i ≠ k) :
+    monomialSeries (𝕜 := 𝕜) α v k = 0 :=
+  dite_eq_right h
+
+private theorem monomialSeries_apply_diag (α : ι → ℕ) (v : F) (k : ℕ) (z : ι → 𝕜) :
+    monomialSeries α v k (fun _ ↦ z) = if ∑ i, α i = k then (∏ i, z i ^ α i) • v else 0 := by
+  classical
+  unfold monomialSeries
+  split_ifs with h
+  · simp only [ContinuousMultilinearMap.compContinuousLinearMap_apply,
+      ContinuousMultilinearMap.mkPiRing_apply, ContinuousLinearMap.proj_apply]
+    rw [← Fintype.prod_fiberwise' (monomialTuple α h) z]
+    simp only [prod_const, card_univ, card_monomialTuple_eq]
+  · rfl
+
+private theorem norm_monomialSeries_le (α : ι → ℕ) (v : F) (k : ℕ) :
+    ‖monomialSeries (𝕜 := 𝕜) α v k‖ ≤ ‖v‖ := by
+  unfold monomialSeries
+  split_ifs with h
+  · refine ContinuousMultilinearMap.opNorm_le_bound (norm_nonneg v) fun m ↦ ?_
+    simp only [ContinuousMultilinearMap.compContinuousLinearMap_apply,
+      ContinuousMultilinearMap.mkPiRing_apply, ContinuousLinearMap.proj_apply, norm_smul,
+      norm_prod]
+    rw [mul_comm]
+    gcongr with j
+    exact norm_le_pi_norm (m j) _
+  · simp
+
+private theorem hasFPowerSeriesOnBall_monomialSeries (α : ι → ℕ) (v : F) {r : ℝ≥0∞}
+    (hr : 0 < r) :
+    HasFPowerSeriesOnBall (fun z : ι → 𝕜 ↦ (∏ i, z i ^ α i) • v) (monomialSeries α v) 0 r where
+  r_le := by
+    rw [radius_eq_top_of_forall_image_add_eq_zero _ (∑ i, α i + 1)
+      fun m ↦ monomialSeries_of_ne α v (by omega)]
+    exact le_top
+  r_pos := hr
+  hasSum {y} _ := by
+    rw [zero_add]
+    convert hasSum_ite_eq (∑ i, α i) ((∏ i, y i ^ α i) • v) using 1
+    ext k
+    rw [monomialSeries_apply_diag]
+    exact if_congr eq_comm rfl rfl
+
+/-- **A normally convergent multi-index series has a power series**: if
+`∑ α, ‖c α‖ * r ^ (∑ i, α i)` converges, then `z ↦ ∑' α, (∏ i, z i ^ α i) • c α` has a power
+series on the ball of radius `r` about `0`, whose multi-index coefficients are the `c α`. This is
+the converse of `HasFPowerSeriesOnBall.hasSum_mvCoeff`. -/
+theorem exists_hasFPowerSeriesOnBall_tsum [CompleteSpace F] (c : (ι → ℕ) → F) {r : ℝ≥0}
+    (hr : 0 < r) (hsum : Summable fun α : ι → ℕ ↦ ‖c α‖ * (r : ℝ) ^ (∑ i, α i)) :
+    ∃ p : FormalMultilinearSeries 𝕜 (ι → 𝕜) F,
+      HasFPowerSeriesOnBall (fun z : ι → 𝕜 ↦ ∑' α : ι → ℕ, (∏ i, z i ^ α i) • c α) p 0 r ∧
+        ∀ α, p.mvCoeff α = c α := by
+  classical
+  -- Each monomial has a one-term power series, and these are summable degree by degree: the
+  -- weighted norms are bounded by `hsum`, transported to the graph of the total degree.
+  have hnorm : Summable fun kα : ℕ × (ι → ℕ) ↦
+      ‖monomialSeries (𝕜 := 𝕜) kα.2 (c kα.2) kα.1‖ * (r : ℝ) ^ kα.1 := by
+    let G : ℕ × (ι → ℕ) → ℝ := fun kα ↦
+      if ∑ i, kα.2 i = kα.1 then ‖c kα.2‖ * (r : ℝ) ^ kα.1 else 0
+    have hinj : Function.Injective fun α : ι → ℕ ↦ (∑ i, α i, α) :=
+      fun _ _ h ↦ (Prod.ext_iff.1 h).2
+    have hG : Summable G := (hinj.summable_iff fun kα hkα ↦
+      ite_eq_right fun h ↦ hkα ⟨kα.2, Prod.ext h rfl⟩).1
+        (by simpa [G, Function.comp_def] using hsum)
+    refine hG.of_nonneg_of_le (fun _ ↦ by positivity) fun ⟨k, α⟩ ↦ ?_
+    by_cases h : ∑ i, α i = k
+    · simp only [G, ite_eq_left h]
+      gcongr
+      exact norm_monomialSeries_le _ _ _
+    · simp [G, h, monomialSeries_of_ne _ _ h]
+  let p : FormalMultilinearSeries 𝕜 (ι → 𝕜) F := fun k ↦ ∑' α, monomialSeries α (c α) k
+  -- The degree-`k` term is `∑ α, (∏ i, z i ^ α i) • c α` over `α` of total degree `k`, so the
+  -- coefficients `c` and `mvCoeff` describe the same polynomial map, which determines them.
+  have hdeg (k : ℕ) (z : ι → 𝕜) :
+      p k (fun _ ↦ z) = ∑ α ∈ univ.piAntidiag k, (∏ i, z i ^ α i) • c α := by
+    have hp : p k = ∑ α ∈ univ.piAntidiag k, monomialSeries α (c α) k :=
+      tsum_eq_sum fun α hα ↦ monomialSeries_of_ne _ _ (by simpa [mem_piAntidiag] using hα)
+    rw [hp, sum_apply]
+    refine sum_congr rfl fun α hα ↦ ?_
+    rw [monomialSeries_apply_diag, ite_eq_left (mem_piAntidiag.1 hα).1]
+  refine ⟨p, hasFPowerSeriesOnBall_tsum hr
+    (fun α ↦ hasFPowerSeriesOnBall_monomialSeries α (c α) (by simpa using hr)) hnorm,
+    fun β ↦ sub_eq_zero.1 ?_⟩
+  refine eq_zero_of_forall_sum_prod_pow_smul_eq_zero (K := 𝕜) (c := fun α ↦ p.mvCoeff α - c α)
+    (s := univ.piAntidiag (∑ i, β i)) (fun z ↦ ?_) (mem_piAntidiag.2 ⟨rfl, fun i _ ↦ mem_univ i⟩)
+  simp only [smul_sub, sum_sub_distrib, ← apply_eq_sum_mvCoeff, hdeg, sub_self]
+
+/-- **The identity theorem for multi-index series**: if `∑ α, ‖c α‖ * r ^ (∑ i, α i)` converges
+for some `r > 0` and `z ↦ ∑' α, (∏ i, z i ^ α i) • c α` vanishes near `0`, then every
+coefficient `c α` is zero. -/
+theorem eq_zero_of_tsum_prod_pow_smul_eventuallyEq_zero [CompleteSpace F]
+    {c : (ι → ℕ) → F} {r : ℝ≥0} (hr : 0 < r)
+    (hsum : Summable fun α : ι → ℕ ↦ ‖c α‖ * (r : ℝ) ^ (∑ i, α i))
+    (h0 : (fun z : ι → 𝕜 ↦ ∑' α : ι → ℕ, (∏ i, z i ^ α i) • c α) =ᶠ[𝓝 0] 0) (α : ι → ℕ) :
+    c α = 0 := by
+  obtain ⟨p, hp, hc⟩ := exists_hasFPowerSeriesOnBall_tsum (𝕜 := 𝕜) c hr hsum
+  rw [← hc]
+  exact hp.hasFPowerSeriesAt.mvCoeff_eq_zero_of_eventuallyEq_zero h0 α
+
+end TauCeti
