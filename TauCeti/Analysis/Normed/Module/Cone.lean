@@ -114,11 +114,11 @@ theorem exists_pos_forall_mem_of_norm_lt_mul_norm [ProperSpace E] {F : Type*}
     (hker : ∀ η, η ≠ 0 → L η = 0 → η ∈ Γ) :
     ∃ c > 0, ∀ η, ‖L η‖ < c * ‖η‖ → η ∈ Γ := by
   set R := sphere (0 : E) 1 \ Γ
-  -- On the compact set `R` of unit vectors outside `Γ`, `u ↦ ‖L u‖` has a positive minimum.
   -- A positive `c` such that every unit vector `u` with `‖L u‖ < c` lies in `Γ`.
   obtain ⟨c, hc, hcΓ⟩ : ∃ c > 0, ∀ u ∈ sphere (0 : E) 1, ‖L u‖ < c → u ∈ Γ := by
     rcases R.eq_empty_or_nonempty with hR | hR
     · exact ⟨1, one_pos, fun u hu _ ↦ by_contra fun huΓ ↦ hR.subset ⟨hu, huΓ⟩⟩
+    -- On the compact set `R` of unit vectors outside `Γ`, `u ↦ ‖L u‖` has a positive minimum.
     obtain ⟨u₀, hu₀, hmin⟩ := ((isCompact_sphere 0 1).diff hΓ).exists_isMinOn hR
       L.continuous.norm.continuousOn
     have hu₀0 : L u₀ ≠ 0 := fun h0 ↦
@@ -127,9 +127,7 @@ theorem exists_pos_forall_mem_of_norm_lt_mul_norm [ProperSpace E] {F : Type*}
       by_contra fun huΓ ↦ not_le.2 hlt (hmin ⟨hu, huΓ⟩)⟩
   refine ⟨c, hc, fun η hη ↦ ?_⟩
   -- The direction of `η` is such a unit vector.
-  have hη0 : 0 < ‖η‖ := by
-    by_contra h
-    simp [norm_eq_zero.1 (le_antisymm (not_lt.1 h) (norm_nonneg η))] at hη
+  have hη0 : 0 < ‖η‖ := norm_pos_iff.2 fun h0 ↦ by simp [h0] at hη
   have hu : ‖η‖⁻¹ • η ∈ Γ := hcΓ _ (by simp [norm_smul, hη0.ne']) (by
     rw [map_smul, norm_smul, norm_inv, norm_norm, inv_mul_lt_iff₀ hη0]
     linarith)
