@@ -214,6 +214,35 @@ theorem geometricCharacterRepresentationMap_hom_apply
       exact Rep.hom_ofHom (additiveCharacterIntertwiningMap f)
     exact (congrArg (fun q ↦ q x) hhom).trans (additiveCharacterIntertwiningMap_apply f x)
 
+/-- If every Galois-equivariant homomorphism of geometric character groups is induced by a
+Hopf-algebra morphism, then so is every morphism of geometric-character representations. -/
+theorem geometricCharacterRepresentationMap_surjective_of_exists_geometricCharacterMap_eq
+    {H K : _root_.CommHopfAlgCat.{u} k}
+    (h : ∀ q : geometricCharacterGroup H →* geometricCharacterGroup K,
+      (∀ (sigma : Field.absoluteGaloisGroup k) x, q (sigma • x) = sigma • q x) →
+        ∃ g : H ⟶ K, geometricCharacterMap g = q) :
+    Function.Surjective (geometricCharacterRepresentationMap (H := H) (K := K)) := by
+  intro f
+  -- Normalize the representation carrier to the additive character group for scalar inference.
+  dsimp only [geometricCharacterRepresentation, Rep.ofMulDistribMulAction] at f
+  let q : geometricCharacterGroup H →* geometricCharacterGroup K :=
+    f.hom.toLinearMap.toAddMonoidHom.toMultiplicative
+  have hq (sigma : Field.absoluteGaloisGroup k) x : q (sigma • x) = sigma • q x := by
+    have hx := Representation.IntertwiningMap.isIntertwining _ _ f.hom sigma (Additive.ofMul x)
+    -- The multiplicative-action representation acts on the same additive type tag.
+    exact congrArg (Additive.toMul (α := geometricCharacterGroup K)) hx
+  obtain ⟨g, hg⟩ := h q hq
+  refine ⟨g, ?_⟩
+  apply Rep.hom_ext
+  apply Representation.IntertwiningMap.ext
+  apply LinearMap.ext
+  intro x
+  simp only [Representation.IntertwiningMap.toLinearMap_apply]
+  have hx := geometricCharacterRepresentationMap_hom_apply g x
+  apply (Additive.toMul (α := geometricCharacterGroup K)).injective
+  exact (congrArg Additive.toMul hx).trans
+    ((toMul_additiveCharacterMap g x).trans (DFunLike.congr_fun hg x.toMul))
+
 /-- Geometric character groups and their absolute-Galois actions are functorial in the
 coordinate Hopf algebra. -/
 noncomputable def geometricCharacterFunctor :

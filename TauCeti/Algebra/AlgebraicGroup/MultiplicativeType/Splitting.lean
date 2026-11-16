@@ -10,7 +10,6 @@ public import TauCeti.Algebra.HopfAlgebra.GroupLike.FiniteExtension
 public import TauCeti.Algebra.Bialgebra.GroupLike.PurelyInseparable
 public import TauCeti.Algebra.AlgebraicGroup.GroupAlgebra.Galois.Reconstruction
 public import Mathlib.FieldTheory.Galois.GaloisClosure
-import TauCeti.Algebra.AlgebraicGroup.CommHopfAlgCat.BaseChange
 import TauCeti.Algebra.AlgebraicGroup.DiagonalizableGroup.BaseChange
 
 /-!
@@ -38,23 +37,6 @@ namespace TauCeti.multiplicativeTypeCommHopfAlgProperty
 universe u
 
 variable {k : Type u} [Field k] {H : FiniteTypeCommHopfAlgCat.{u, u} k}
-
-/-- Every finite-type group of multiplicative type is diagonalizable over a finite algebraic
-extension. -/
-theorem exists_finiteDimensional_groupLikeSpanned_baseChange
-    (hH : multiplicativeTypeCommHopfAlgProperty k H) :
-    ∃ L : IntermediateField k (AlgebraicClosure k), FiniteDimensional k L ∧
-      DiagonalizableGroup.groupLikeSpannedProperty L
-        (FiniteTypeCommHopfAlgCat.baseChange (K := L) H) := by
-  let _ := CommHopfAlgCat.geometricCharacterGroup_fg_of_multiplicativeType H hH
-  have hspan := (Subcoalgebra.groupLikeSetSpan_eq_top_iff_span_eq_top
-    (R := AlgebraicClosure k)
-    (C := CommHopfAlgCat.baseChange (K := AlgebraicClosure k) H.obj)).mp
-      ((DiagonalizableGroup.groupLikeSpannedProperty_iff _ _).mp
-        ((multiplicativeTypeCommHopfAlgProperty_iff k H).mp hH))
-  obtain ⟨L, hL, hspanL⟩ := exists_finiteDimensional_span_groupLike_eq_top hspan
-  refine ⟨L, hL, (DiagonalizableGroup.groupLikeSpannedProperty_iff _ _).mpr ?_⟩
-  exact Subcoalgebra.groupLikeSetSpan_eq_top_iff_span_eq_top.mpr hspanL
 
 /-- Over the separable closure, a multiplicative-type coordinate algebra is spanned
 by its group-like elements, even when the ground field is imperfect. -/
@@ -116,12 +98,22 @@ theorem exists_finiteGalois_groupLikeSpanned_baseChange
   refine ⟨G, ⟨?_⟩⟩
   exact ((DiagonalizableGroup.baseChangeCoordinateRingIso E M G).symm ≪≫
     (FiniteTypeCommHopfAlgCat.baseChangeFunctor (K := M)).mapIso j) ≪≫
-    ObjectProperty.isoMk _ (CommHopfAlgCat.baseChangeTowerIso k M H.obj)
+    FiniteTypeCommHopfAlgCat.baseChangeTowerIso (E := E) k M H
+
+/-- Every finite-type group of multiplicative type is diagonalizable over a finite algebraic
+extension. -/
+theorem exists_finiteDimensional_groupLikeSpanned_baseChange
+    (hH : multiplicativeTypeCommHopfAlgProperty k H) :
+    ∃ L : IntermediateField k (AlgebraicClosure k), FiniteDimensional k L ∧
+      DiagonalizableGroup.groupLikeSpannedProperty L
+        (FiniteTypeCommHopfAlgCat.baseChange (K := L) H) :=
+  let ⟨L, hL⟩ := hH.exists_finiteGalois_groupLikeSpanned_baseChange
+  ⟨L, inferInstance, hL⟩
 
 /-- A finite-type group of multiplicative type is reconstructed from its characters over
 some finite Galois splitting field. The invariants use the simultaneous action on coefficients
 and characters, and the comparison preserves the Hopf algebra structure. -/
-theorem exists_finiteGalois_characterGroupAlgebraInvariantsEquiv
+theorem exists_finiteGalois_bialgEquiv_groupAlgebraInvariants
     (hH : multiplicativeTypeCommHopfAlgProperty k H) :
     ∃ L : FiniteGaloisIntermediateField k (AlgebraicClosure k),
       Nonempty (H ≃ₐc[k] GaloisDescent.groupAlgebraInvariants

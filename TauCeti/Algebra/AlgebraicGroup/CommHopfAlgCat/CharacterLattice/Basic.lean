@@ -45,6 +45,8 @@ It also identifies absolute Galois automorphisms with `k`-algebra automorphisms 
   `k`-algebra automorphism of `AlgebraicClosure k`.
 * `Field.absoluteGaloisGroup.smul_def`: the action on the algebraic closure is evaluation.
 * `Field.absoluteGaloisGroup.smul_tmul`: the action on a pure tensor acts on its scalar factor.
+* `Field.absoluteGaloisGroup.toAlgEquiv_symm_smul`: the action on group-like elements of an
+  algebra automorphism viewed as an absolute Galois automorphism.
 
 ## References
 
@@ -163,5 +165,13 @@ theorem smul_tmul {A : Type*} [Semiring A] [Algebra k A]
     (σ : Field.absoluteGaloisGroup k) (a : AlgebraicClosure k) (x : A) :
     σ • (a ⊗ₜ[k] x) = (σ • a) ⊗ₜ[k] x :=
   TauCeti.ScalarAut.smul_tmul (toAlgEquiv σ) a x
+
+/-- An algebra automorphism of the algebraic closure, viewed as an absolute Galois
+automorphism, acts on scalar-extended group-like elements by its scalar action. -/
+@[simp]
+theorem toAlgEquiv_symm_smul {A : Type*} [Semiring A] [Bialgebra k A]
+    (σ : AlgebraicClosure k ≃ₐ[k] AlgebraicClosure k)
+    (x : GroupLike (AlgebraicClosure k) (AlgebraicClosure k ⊗[k] A)) :
+    toAlgEquiv.symm σ • x = σ • x := rfl
 
 end Field.absoluteGaloisGroup
