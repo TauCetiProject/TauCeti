@@ -41,10 +41,7 @@ namespace TauCeti
 
 variable {G : Type*} [Group G]
 
-/-- **In a group of odd order the identity is the only element conjugate to its inverse.**
-
-If `h g h⁻¹ = g⁻¹`, then `h²` commutes with `g`; the order of `h` divides the order of the group,
-so it is odd and `h` is a power of `h²`. Hence `h` commutes with `g`, so `g = g⁻¹`. -/
+/-- **In a group of odd order the identity is the only element conjugate to its inverse.** -/
 theorem isConj_inv_iff_of_odd_card (hG : Odd (Nat.card G)) {g : G} :
     IsConj g g⁻¹ ↔ g = 1 := by
   refine ⟨fun hg => ?_, fun h => by simp [h]⟩
