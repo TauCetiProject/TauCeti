@@ -103,6 +103,9 @@ variable {X : Type*} [TopologicalSpace X] [ChartedSpace ℂ X]
 /-- The chart coordinate at `x`, centred so that it vanishes at `x`. -/
 def pointTwistCoord (x z : X) : ℂ := chartAt ℂ x z - chartAt ℂ x x
 
+theorem pointTwistCoord_apply (x z : X) : pointTwistCoord x z = chartAt ℂ x z - chartAt ℂ x x :=
+  (rfl)
+
 @[simp] theorem pointTwistCoord_self (x : X) : pointTwistCoord x x = 0 :=
   sub_self (chartAt ℂ x x)
 
@@ -492,6 +495,35 @@ theorem trivializationAt_pointTwistPoleMul {x z : X} {y : X}
   rw [signedPointTwistCore_localTriv_apply, signedPointTwistFactor_true, pointTwistPoleMul_apply,
     ← map_smul, Trivialization.coordChangeL_apply _ _ ⟨h₀, hz.1⟩]
 
+/-- In the chart of `E` at `x`, the leading coefficient at `x` reads the vector itself. -/
+theorem trivializationAt_pointTwistPoleMul_self (x : X) (w : F) :
+    (trivializationAt F E x ⟨x, pointTwistPoleMul F E x x w⟩).2 = w := by
+  classical
+  rw [pointTwistPoleMul_apply, decide_eq_true rfl, pointTwistFactor_self, one_smul]
+  exact congrArg Prod.snd
+    ((trivializationAt F E x).apply_mk_symm (mem_baseSet_trivializationAt F E x) w)
+
+variable (F E) in
+/-- The leading coefficient at `x` is injective. -/
+theorem pointTwistPoleMul_self_injective (x : X) :
+    Function.Injective (pointTwistPoleMul F E x x) := fun w w' h ↦ by
+  rw [← trivializationAt_pointTwistPoleMul_self (E := E) x w, h,
+    trivializationAt_pointTwistPoleMul_self]
+
+@[simp] theorem pointTwistPoleMul_self_eq_zero_iff {x : X} {w : F} :
+    pointTwistPoleMul F E x x w = 0 ↔ w = 0 :=
+  map_eq_zero_iff _ (pointTwistPoleMul_self_injective F E x)
+
+/-- Away from `x`, in any chart of `E` around `z`, the leading coefficient reads the centred chart
+coordinate times `pointTwistDiv`. -/
+theorem trivializationAt_pointTwistPoleMul_of_ne {x z y : X} (hzx : z ≠ x)
+    (hz : z ∈ (trivializationAt F E y).baseSet) (w : F) :
+    (trivializationAt F E y ⟨z, pointTwistPoleMul F E x z w⟩).2 =
+      pointTwistCoord x z • (trivializationAt F E y ⟨z, pointTwistDiv F E x z w⟩).2 := by
+  rw [pointTwistPoleMul_eq_smul_pointTwistDiv hzx,
+    ← (trivializationAt F E y).continuousLinearMapAt_apply_of_mem ℂ hz, map_smul,
+    (trivializationAt F E y).continuousLinearMapAt_apply_of_mem ℂ hz]
+
 theorem trivializationAt_pointTwistDiv {x z : X} {y : X}
     (hz : z ∈ (pointTwistCore F E x).baseSet (y, false)) (w : F) :
     (trivializationAt F E y ⟨z, pointTwistDiv F E x z w⟩).2 =
@@ -642,12 +674,8 @@ section of `E` and its leading coefficient. -/
   funext z
   by_cases h : z = x
   · subst h
-    have key (w : F) : (trivializationAt F E z ⟨z, pointTwistPoleMul F E z z w⟩).2 = w := by
-      rw [pointTwistPoleMul_apply, decide_eq_true rfl, pointTwistFactor_self, one_smul]
-      exact congrArg Prod.snd
-        ((trivializationAt F E z).apply_mk_symm (mem_baseSet_trivializationAt F E z) w)
     rw [pointTwistOfPole_self]
-    exact key (τ z)
+    exact trivializationAt_pointTwistPoleMul_self (F := F) z (τ z)
   · rw [pointTwistOfPole_of_ne F h]
     -- Without `F`, unification takes the model fibre to be the type of `τ z`, which is the
     -- point-twist fibre `(pointTwistCore F E x).Fiber z` rather than `F` itself.
