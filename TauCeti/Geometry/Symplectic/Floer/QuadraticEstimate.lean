@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Geometry.Symplectic.Floer.Linearization
+public import TauCeti.Geometry.Symplectic.Floer.Linearization.Basic
 import TauCeti.Analysis.Calculus.FDeriv.Remainder
 
 /-!
