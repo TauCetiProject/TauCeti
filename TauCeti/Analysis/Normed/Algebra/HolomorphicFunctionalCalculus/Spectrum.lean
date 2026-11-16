@@ -38,10 +38,12 @@ namespace TauCeti
 open HolomorphicFunctions
 
 /-- Fix the inherited additive group on `holomorphicFunctions U`. -/
-local instance (U : Opens ℂ) : AddCommGroup (holomorphicFunctions U) := inferInstance
+local instance instAddCommGroupHolomorphicCalculusSpectrum (U : Opens ℂ) :
+    AddCommGroup (holomorphicFunctions U) := inferInstance
 
 /-- Align the additive monoid projection of `holomorphicFunctions U`. -/
-local instance (U : Opens ℂ) : AddCommMonoid (holomorphicFunctions U) :=
+local instance instAddCommMonoidHolomorphicCalculusSpectrum (U : Opens ℂ) :
+    AddCommMonoid (holomorphicFunctions U) :=
   (inferInstance : AddCommGroup (holomorphicFunctions U)).toAddCommMonoid
 
 variable {A : Type*} [NormedRing A] [NormedAlgebra ℂ A] [CompleteSpace A]

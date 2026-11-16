@@ -82,10 +82,12 @@ namespace TauCeti
 open Contour HolomorphicFunctions
 
 /-- Fix the inherited additive group before forming linear spans of `holomorphicFunctions`. -/
-local instance (U : Opens ℂ) : AddCommGroup (holomorphicFunctions U) := inferInstance
+local instance instAddCommGroupHolomorphicCalculusUniqueness (U : Opens ℂ) :
+    AddCommGroup (holomorphicFunctions U) := inferInstance
 
 /-- Linear maps and spans use the additive monoid projection of the inherited additive group. -/
-local instance (U : Opens ℂ) : AddCommMonoid (holomorphicFunctions U) :=
+local instance instAddCommMonoidHolomorphicCalculusUniqueness (U : Opens ℂ) :
+    AddCommMonoid (holomorphicFunctions U) :=
   (inferInstance : AddCommGroup (holomorphicFunctions U)).toAddCommMonoid
 
 section Algebraic

@@ -42,10 +42,12 @@ namespace TauCeti.HolomorphicFunctions
 open Contour
 
 /-- Fix the inherited additive group before forming submodules of `holomorphicFunctions`. -/
-local instance (U : Opens ℂ) : AddCommGroup (holomorphicFunctions U) := inferInstance
+local instance instAddCommGroupCauchyRiemannSum (U : Opens ℂ) :
+    AddCommGroup (holomorphicFunctions U) := inferInstance
 
 /-- Linear spans use the additive monoid projection of the inherited additive group. -/
-local instance (U : Opens ℂ) : AddCommMonoid (holomorphicFunctions U) :=
+local instance instAddCommMonoidCauchyRiemannSum (U : Opens ℂ) :
+    AddCommMonoid (holomorphicFunctions U) :=
   (inferInstance : AddCommGroup (holomorphicFunctions U)).toAddCommMonoid
 
 section CauchyKernel
