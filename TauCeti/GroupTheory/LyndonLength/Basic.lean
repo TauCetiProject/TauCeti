@@ -66,8 +66,9 @@ seminorms in the sense of Mathlib's `GroupSeminormClass`, and `map_mul_le_add`, 
 * `TauCeti.LyndonLength.IsFree.comap`: restriction along an injective homomorphism preserves
   freeness. Conversely, by `TauCeti.LyndonLength.injective_of_isFree_comap`, a homomorphism along
   which the restriction is free is injective.
-* `TauCeti.LyndonLength.IsRegular.comap_of_bijective`: restriction along a bijective homomorphism
-  preserves regularity.
+* `TauCeti.LyndonLength.IsRegular.comap`,
+  `TauCeti.LyndonLength.isRegular_comap_iff_of_surjective`: restriction along a surjective
+  homomorphism preserves and reflects regularity.
 * `TauCeti.LyndonLength.isFree_zero_iff`: the zero length function is free only on the trivial
   group.
 * `TauCeti.LyndonLength.isRegular_zero`: the zero length function is regular.
@@ -351,17 +352,31 @@ theorem injective_of_isFree_comap {l : LyndonLength G Λ} {φ : H →* G} (h : (
     Function.Injective φ :=
   (injective_iff_map_eq_one φ).2 fun _ hg => h.eq_one_of_map_eq_zero (by simp [hg])
 
-/-- Pulling back a regular Lyndon length function along a bijective group homomorphism preserves
+/-- Pulling back a regular Lyndon length function along a surjective group homomorphism preserves
 regularity. -/
-theorem IsRegular.comap_of_bijective {l : LyndonLength G Λ} (hl : l.IsRegular) {φ : H →* G}
-    (hφ : Function.Bijective φ) : (l.comap φ).IsRegular := by
-  intro g f
-  obtain ⟨u, g₁, f₁, hg, hf, hlg, hlf, hlu⟩ := hl (φ g) (φ f)
-  obtain ⟨u', rfl⟩ := hφ.2 u
-  obtain ⟨g₁', rfl⟩ := hφ.2 g₁
-  obtain ⟨f₁', rfl⟩ := hφ.2 f₁
-  exact ⟨u', g₁', f₁', hφ.1 (by simpa using hg), hφ.1 (by simpa using hf), hlg, hlf,
-    by simpa using hlu⟩
+theorem IsRegular.comap {l : LyndonLength G Λ} (hl : l.IsRegular) {φ : H →* G}
+    (hφ : Function.Surjective φ) : (l.comap φ).IsRegular := by
+  refine (isRegular_iff _).2 fun g f => ?_
+  obtain ⟨u, g₁, f₁, hg, hf, hlg, hlf, hlu⟩ := (isRegular_iff _).1 hl (φ g) (φ f)
+  obtain ⟨u', rfl⟩ := hφ u
+  have hg₁ : φ (u'⁻¹ * g) = g₁ := by rw [map_mul, map_inv, hg, inv_mul_cancel_left]
+  have hf₁ : φ (u'⁻¹ * f) = f₁ := by rw [map_mul, map_inv, hf, inv_mul_cancel_left]
+  exact ⟨u', u'⁻¹ * g, u'⁻¹ * f, (mul_inv_cancel_left u' g).symm,
+    (mul_inv_cancel_left u' f).symm, by simpa only [comap_apply, hg₁] using hlg,
+    by simpa only [comap_apply, hf₁] using hlf,
+    by simpa only [comap_apply, gromovProduct_comap] using hlu⟩
+
+/-- Along a surjective group homomorphism, the pullback of a Lyndon length function is regular if
+and only if the original length function is regular. -/
+theorem isRegular_comap_iff_of_surjective {l : LyndonLength G Λ} {φ : H →* G}
+    (hφ : Function.Surjective φ) : (l.comap φ).IsRegular ↔ l.IsRegular := by
+  refine ⟨fun h => (isRegular_iff _).2 fun g f => ?_, fun hl => hl.comap hφ⟩
+  obtain ⟨g', rfl⟩ := hφ g
+  obtain ⟨f', rfl⟩ := hφ f
+  obtain ⟨u', g₁', f₁', hg', hf', hlg', hlf', hlu'⟩ := (isRegular_iff _).1 h g' f'
+  exact ⟨φ u', φ g₁', φ f₁', by rw [← map_mul, ← hg'], by rw [← map_mul, ← hf'],
+    by simpa only [comap_apply] using hlg', by simpa only [comap_apply] using hlf',
+    by simpa only [comap_apply, gromovProduct_comap] using hlu'⟩
 
 /-! ### Examples -/
 

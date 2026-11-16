@@ -36,10 +36,10 @@ isomorphic to `FreeGroup X` (`TauCeti.InfWord.equivFreeGroup`), matching word le
 * `TauCeti.InfWord.isCyclicallyReduced_ofList`, `TauCeti.InfWord.isCyclicallyReduced_toList`:
   compatibility of `InfWord.IsCyclicallyReduced` with `FreeGroup.IsCyclicallyReduced`.
 * `TauCeti.InfWord.CDR_int_eq`: `CDR ℤ X = {w | w.IsReduced}`.
-* `TauCeti.InfWord.exists_isMul_of_isReduced_int`, `TauCeti.InfWord.isMul_ofList_reduce`:
-  `u ∗ v` is defined for all reduced `ℤ`-words `u`, `v` and equals
-  `ofList (FreeGroup.reduce (u.toList ++ v.toList))`.
-* `TauCeti.InfWord.toWord_equivFreeGroup`, `TauCeti.InfWord.coe_equivFreeGroup_symm`,
+* `TauCeti.InfWord.exists_isMul_of_isReduced_int`, `TauCeti.InfWord.isMul_ofList_reduce`,
+  `TauCeti.InfWord.ReducedSubgroup.coe_mul_top`: `u ∗ v` is defined for all reduced `ℤ`-words `u`,
+  `v` and equals `ofList (FreeGroup.reduce (u.toList ++ v.toList))`.
+* `TauCeti.InfWord.toWord_equivFreeGroup`, `TauCeti.InfWord.coe_equivFreeGroup_symm_apply`,
   `TauCeti.InfWord.natCast_norm_equivFreeGroup`,
   `TauCeti.InfWord.comap_freeGroupNorm_equivFreeGroup`: `equivFreeGroup` matches reduced words and
   word length with `FreeGroup.toWord`, `FreeGroup.norm`, and `LyndonLength.freeGroupNorm`.
@@ -68,21 +68,9 @@ the sense of `FreeGroup.IsCyclicallyReduced`. -/
 @[simp]
 theorem isCyclicallyReduced_ofList {L : List (X × Bool)} :
     (ofList L).IsCyclicallyReduced ↔ FreeGroup.IsCyclicallyReduced L := by
-  rcases L with _ | ⟨x, L⟩
-  · simp
-  · rw [isCyclicallyReduced_iff, FreeGroup.isCyclicallyReduced_iff, isReduced_ofList]
-    refine and_congr_right fun _ => ?_
-    have hlast : (x :: L)[L.length]? = (x :: L).getLast? := by
-      rw [List.getLast?_eq_getElem?, List.length_cons, Nat.add_sub_cancel]
-    have hlen : ((x :: L).length : ℤ) = (L.length : ℤ) + 1 := by simp
-    have hpos : (0 : ℤ) < (L.length : ℤ) + 1 := by omega
-    simp only [length_ofList, hlen, Order.succ_eq_add_one, zero_add, hpos, forall_true_left,
-      letter_ofList_one, List.getElem?_cons_zero, letter_ofList_natCast_add_one, hlast,
-      List.getLast?_eq_some_getLast (List.cons_ne_nil x L), List.head?_cons, Option.mem_def,
-      Option.some.injEq, forall_eq', Option.map_some, ne_eq]
-    obtain ⟨a, s⟩ := (x :: L).getLast (List.cons_ne_nil x L)
-    obtain ⟨b, t⟩ := x
-    cases s <;> cases t <;> simp [eq_comm]
+  rw [isCyclicallyReduced_iff_isReduced_append_self, ← ofList_append, isReduced_ofList,
+    FreeGroup.isCyclicallyReduced_iff, FreeGroup.IsReduced, FreeGroup.IsReduced,
+    List.isChain_append, and_self_left]
 
 /-- A `ℤ`-word is cyclically reduced if and only if its list of letters is cyclically reduced. -/
 @[simp]
@@ -90,8 +78,8 @@ theorem isCyclicallyReduced_toList {w : InfWord ℤ X} :
     FreeGroup.IsCyclicallyReduced w.toList ↔ w.IsCyclicallyReduced := by
   rw [← isCyclicallyReduced_ofList, ofList_toList]
 
-/-- Over `Λ = ℤ`, Mathlib's `FreeGroup.reduceCyclically` and `conjugator` give the cyclic
-decomposition of any reduced word `w`. -/
+/-- Over `Λ = ℤ`, `FreeGroup.invRev (FreeGroup.reduceCyclically.conjugator w.toList)` and
+`FreeGroup.reduceCyclically w.toList` give a cyclic decomposition of any reduced word `w`. -/
 theorem isCyclicDecomposition_ofList_conjugator_reduceCyclically [DecidableEq X]
     {w : InfWord ℤ X} (hw : w.IsReduced) :
     IsCyclicDecomposition w
@@ -102,8 +90,9 @@ theorem isCyclicDecomposition_ofList_conjugator_reduceCyclically [DecidableEq X]
   rw [← ofList_invRev, FreeGroup.invRev_invRev, ← ofList_append, ← ofList_append,
     FreeGroup.reduceCyclically.conj_conjugator_reduceCyclically, ofList_toList]
 
-/-- By uniqueness of cyclic decompositions, the conjugator and cyclically reduced core of a
-`ℤ`-word coincide with `FreeGroup.reduceCyclically.conjugator` and `FreeGroup.reduceCyclically`. -/
+/-- In any cyclic decomposition `IsCyclicDecomposition w c v` of a `ℤ`-word `w`,
+`c = ofList (FreeGroup.invRev (FreeGroup.reduceCyclically.conjugator w.toList))` and
+`v = ofList (FreeGroup.reduceCyclically w.toList)`. -/
 theorem IsCyclicDecomposition.eq_ofList_conjugator_and_reduceCyclically [DecidableEq X]
     {w c v : InfWord ℤ X} (h : IsCyclicDecomposition w c v) :
     c = ofList (FreeGroup.invRev (FreeGroup.reduceCyclically.conjugator w.toList)) ∧
@@ -123,8 +112,8 @@ theorem mem_CDR_int_iff {w : InfWord ℤ X} : w ∈ CDR ℤ X ↔ w.IsReduced :=
 
 /-! ### Total multiplication on reduced `ℤ`-words and `⊤ : ReducedSubgroup ℤ X` -/
 
-/-- Over `Λ = ℤ`, the partial product `u ∗ v` is defined for every pair of reduced words `u`, `v`,
-since every nonempty bounded-above set of integers has a greatest element. -/
+/-- Over `Λ = ℤ`, the partial product `u ∗ v` is defined for every pair of reduced words
+`u`, `v`. -/
 theorem exists_isMul_of_isReduced_int {u v : InfWord ℤ X} (hu : u.IsReduced) (hv : v.IsReduced) :
     ∃ w, IsMul u v w :=
   (exists_isMul_iff hu hv).2 <|
@@ -181,7 +170,17 @@ theorem ReducedSubgroup.coe_top (X : Type*) :
   (rfl)
 
 instance ReducedSubgroup.instOrderTopInt : OrderTop (ReducedSubgroup ℤ X) where
-  le_top H _ hw := H.isReduced_of_mem hw
+  le_top H _ hw := mem_top.2 (H.isReduced_of_mem hw)
+
+instance ReducedSubgroup.instBoundedOrderInt : BoundedOrder (ReducedSubgroup ℤ X) where
+
+/-- In `⊤ : ReducedSubgroup ℤ X`, the product of `u` and `v` is the `ℤ`-word of
+`FreeGroup.reduce (u.toList ++ v.toList)`. -/
+theorem ReducedSubgroup.coe_mul_top [DecidableEq X] (u v : (⊤ : ReducedSubgroup ℤ X)) :
+    ((u * v : (⊤ : ReducedSubgroup ℤ X)) : InfWord ℤ X) =
+      ofList (FreeGroup.reduce ((u : InfWord ℤ X).toList ++ (v : InfWord ℤ X).toList)) :=
+  ReducedSubgroup.coe_mul_eq_iff.2
+    (isMul_ofList_reduce (ReducedSubgroup.isReduced_coe _ u) (ReducedSubgroup.isReduced_coe _ v))
 
 /-- Over `Λ = ℤ`, word length is a free Lyndon length function on every subgroup of reduced
 `ℤ`-words. -/
@@ -203,10 +202,12 @@ noncomputable def equivFreeGroup (X : Type*) :
          ((⊤ : ReducedSubgroup ℤ X).isMul_coe_mul u v).mk_toList_mul.symm } :
       (⊤ : ReducedSubgroup ℤ X) →* FreeGroup X)
     ⟨fun u v h => Subtype.ext <| toList_injective <|
-        (isReduced_toList.2 u.2).eq_of_mk_eq (isReduced_toList.2 v.2) h,
+        (isReduced_toList.2 (ReducedSubgroup.isReduced_coe _ u)).eq_of_mk_eq
+          (isReduced_toList.2 (ReducedSubgroup.isReduced_coe _ v)) h,
       fun g => by
         classical
-        exact ⟨⟨ofList g.toWord, isReduced_ofList.2 FreeGroup.isReduced_toWord⟩,
+        exact ⟨⟨ofList g.toWord,
+          ReducedSubgroup.mem_top.2 (isReduced_ofList.2 FreeGroup.isReduced_toWord)⟩,
           by simp [FreeGroup.mk_toWord]⟩⟩
 
 @[simp]
@@ -218,25 +219,23 @@ theorem equivFreeGroup_apply (u : (⊤ : ReducedSubgroup ℤ X)) :
 `u.toList`. -/
 theorem toWord_equivFreeGroup [DecidableEq X] (u : (⊤ : ReducedSubgroup ℤ X)) :
     (equivFreeGroup X u).toWord = (u : InfWord ℤ X).toList := by
-  rw [equivFreeGroup_apply, FreeGroup.toWord_mk, (isReduced_toList.2 u.2).reduce_eq]
+  rw [equivFreeGroup_apply, FreeGroup.toWord_mk,
+    (isReduced_toList.2 (ReducedSubgroup.isReduced_coe _ u)).reduce_eq]
 
 /-- The inverse of `equivFreeGroup` sends `g : FreeGroup X` to the reduced `ℤ`-word
 `ofList g.toWord`. -/
 @[simp]
-theorem coe_equivFreeGroup_symm [DecidableEq X] (g : FreeGroup X) :
+theorem coe_equivFreeGroup_symm_apply [DecidableEq X] (g : FreeGroup X) :
     ((equivFreeGroup X).symm g : InfWord ℤ X) = ofList g.toWord := by
   apply toList_injective
   rw [← toWord_equivFreeGroup, MulEquiv.apply_symm_apply, toList_ofList]
-
-theorem toList_coe_equivFreeGroup_symm [DecidableEq X] (g : FreeGroup X) :
-    ((equivFreeGroup X).symm g : InfWord ℤ X).toList = g.toWord := by
-  simp
 
 /-- `equivFreeGroup` identifies the word length of a reduced `ℤ`-word with `FreeGroup.norm`. -/
 theorem norm_equivFreeGroup [DecidableEq X] (u : (⊤ : ReducedSubgroup ℤ X)) :
     (equivFreeGroup X u).norm = (u : InfWord ℤ X).length.toNat := by
   rw [FreeGroup.norm, toWord_equivFreeGroup, length_toList]
 
+/-- `equivFreeGroup` preserves word length in `ℤ`. -/
 theorem natCast_norm_equivFreeGroup [DecidableEq X] (u : (⊤ : ReducedSubgroup ℤ X)) :
     ((equivFreeGroup X u).norm : ℤ) = (u : InfWord ℤ X).length := by
   rw [norm_equivFreeGroup, Int.toNat_of_nonneg (u : InfWord ℤ X).length_nonneg]
@@ -269,7 +268,7 @@ theorem ReducedSubgroup.isRegular_lyndonLength_top (X : Type*) :
     (⊤ : ReducedSubgroup ℤ X).lyndonLength.IsRegular := by
   classical
   rw [← comap_freeGroupNorm_equivFreeGroup]
-  exact LyndonLength.isRegular_freeGroupNorm.comap_of_bijective (equivFreeGroup X).bijective
+  exact LyndonLength.isRegular_freeGroupNorm.comap (equivFreeGroup X).surjective
 
 end InfWord
 
