@@ -214,7 +214,6 @@ theorem exists_riemannianEDist_le_mul_exp_neg_maximalIntegralCurve_neg_mgradient
   set R := (1 + sphereHeight v x) / (1 - sphereHeight v x)
   obtain ⟨K, hK0, hK⟩ := exists_riemannianEDist_le_mul_sqrt_maximalIntegralCurve_neg_mgradient
     (isManifoldNondegenerateCriticalPoint_sphereHeight_neg v)
-    Ici_subset_maximalIntegralCurveInterval_neg_mgradient_sphereHeight
     (tendsto_maximalIntegralCurve_neg_mgradient_sphereHeight hx)
     (contMDiff_sphereHeight (n := n) v)
   refine ⟨K * √(2 * R), ?_⟩
