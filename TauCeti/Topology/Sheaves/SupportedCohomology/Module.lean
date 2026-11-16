@@ -47,6 +47,15 @@ exact sequence of supports
 
 whose first map enlarges the support and whose second map is restriction to `W ∖ Z`.
 
+For an `Ext` class `α : Extⁿ(F, G)` between sheaves of `R`-modules, the Yoneda product defines a
+morphism `H_Sᵐ(-, F) ⟶ H_Sᵐ⁺ⁿ(-, G)` of supported cohomology presheaves
+(`CategoryTheory.Sheaf.supportedModuleHPresheafPostcomp`), compatible with open restriction,
+composition of `Ext` classes, and enlarging the closed support, and recovering
+`supportedModuleHPresheafFunctor` on `Ext.mk₀ f`. This is the `R`-linear counterpart of
+`CategoryTheory.Sheaf.supportedHPresheafPostcomp` and
+`CategoryTheory.Sheaf.isIso_supportedHPresheafPostcomp` in
+`TauCeti.Topology.Sheaves.SupportedCohomology`.
+
 ## Main declarations
 
 * `CategoryTheory.Sheaf.supportedSubmodule F S W`: the `R`-submodule `Γ_S(W, F)`;
@@ -73,7 +82,11 @@ whose first map enlarges the support and whose second map is restriction to `W �
   `H_Sⁿ(W ∖ Z, F) ⟶ H_Zⁿ⁺¹(W, F)` of the long exact sequence of supports, whose exactness is
   `CategoryTheory.Sheaf.exact_supportedModuleHPresheafMap_app_supportedModuleHPresheaf_map`,
   `CategoryTheory.Sheaf.exact_supportedModuleHPresheaf_map_supportedModuleHδ` and
-  `CategoryTheory.Sheaf.exact_supportedModuleHδ_supportedModuleHPresheafMap_app`.
+  `CategoryTheory.Sheaf.exact_supportedModuleHδ_supportedModuleHPresheafMap_app`;
+* `CategoryTheory.Sheaf.supportedModuleHPresheafPostcomp` and
+  `CategoryTheory.Sheaf.isIso_supportedModuleHPresheafPostcomp`: presheaf Yoneda postcomposition
+  by an `Ext` class, its compatibility with support enlargement and functoriality, and its
+  sectionwise bijectivity criterion for being an isomorphism.
 
 ## References
 
@@ -566,5 +579,129 @@ theorem exact_supportedModuleHδ_supportedModuleHPresheafMap_app (hZS : Z ≤ S)
     Function.Exact (F.supportedModuleHδ hZS W h)
       ((F.supportedModuleHPresheafMap hZS n₁).app (op W)) :=
   TauCeti.exact_precomp₃ (Closeds.supportedFreeModuleSheafSequence_shortExact R hZS W) F n₀ n₁ h
+
+end CategoryTheory.Sheaf
+
+/-! ### Yoneda postcomposition -/
+
+namespace CategoryTheory.Sheaf
+
+variable {R} (S : Closeds X)
+
+variable {S} in
+/-- Extensionality for morphisms between supported cohomology presheaves, exposing the
+`CategoryTheory.Sheaf.supportedModuleH` carrier directly. -/
+private lemma supportedModuleHPresheaf_hom_ext {S₁ S₂ : Closeds X}
+    {F G : Sheaf (Opens.grothendieckTopology X) (ModuleCat.{u} R)} {m k : ℕ}
+    {φ ψ : F.supportedModuleHPresheaf S₁ m ⟶ G.supportedModuleHPresheaf S₂ k}
+    (h : ∀ (W : (Opens X)ᵒᵖ) (x : F.supportedModuleH S₁ W.unop m), φ.app W x = ψ.app W x) :
+    φ = ψ := by
+  ext W x
+  exact h (op W) x
+
+/-- The morphism of presheaves `H_Sᵐ(-, F) ⟶ H_Sᵏ(-, G)` given by the Yoneda
+product with an `Ext` class `α : Extⁿ(F, G)`, where `m + n = k`. For
+`α = Ext.mk₀ f` this is the map induced by a morphism of sheaves `f : F ⟶ G`,
+and for the extension class of a short exact sequence it is the connecting
+morphism `CategoryTheory.Sheaf.supportedModuleHPresheafδ`. -/
+def supportedModuleHPresheafPostcomp
+    {F G : Sheaf (Opens.grothendieckTopology X) (ModuleCat.{u} R)} {m n k : ℕ}
+    (α : Ext.{u} F G n) (hk : m + n = k) :
+    F.supportedModuleHPresheaf S m ⟶ G.supportedModuleHPresheaf S k where
+  app W := ModuleCat.ofHom (Ext.postcompOfLinear α R
+    ((S.supportedFreeModuleSheafFunctor R).obj W.unop) hk)
+  naturality _ _ _ := by
+    ext x
+    exact Ext.comp_assoc _ x α (zero_add m) hk (by omega)
+
+/-- Evaluating `CategoryTheory.Sheaf.supportedModuleHPresheafPostcomp` on an open `W` computes the
+Yoneda product with `α`. -/
+@[simp]
+lemma supportedModuleHPresheafPostcomp_app_apply
+    {F G : Sheaf (Opens.grothendieckTopology X) (ModuleCat.{u} R)} {m n k : ℕ}
+    (α : Ext.{u} F G n) (hk : m + n = k) (W : (Opens X)ᵒᵖ)
+    (x : F.supportedModuleH S W.unop m) :
+    (supportedModuleHPresheafPostcomp S α hk).app W x = x.comp α hk :=
+  (rfl)
+
+/-- Yoneda postcomposition with the zero `Ext` class is the zero morphism of presheaves. -/
+@[simp]
+lemma supportedModuleHPresheafPostcomp_zero
+    (F G : Sheaf (Opens.grothendieckTopology X) (ModuleCat.{u} R)) {m n k : ℕ}
+    (hk : m + n = k) :
+    supportedModuleHPresheafPostcomp S (0 : Ext.{u} F G n) hk = 0 := by
+  refine supportedModuleHPresheaf_hom_ext fun W x ↦ ?_
+  rw [supportedModuleHPresheafPostcomp_app_apply, NatTrans.app_zero]
+  exact Ext.comp_zero x _ _ _ hk
+
+/-- For a degree-zero class `Ext.mk₀ f`, Yoneda postcomposition is the map of
+supported cohomology presheaves induced by `f`. -/
+@[simp]
+lemma supportedModuleHPresheafPostcomp_mk₀
+    {F G : Sheaf (Opens.grothendieckTopology X) (ModuleCat.{u} R)} (f : F ⟶ G) (n : ℕ) :
+    supportedModuleHPresheafPostcomp S (Ext.mk₀ f) (add_zero n) =
+      (supportedModuleHPresheafFunctor S n).map f :=
+  supportedModuleHPresheaf_hom_ext fun W x ↦
+    (supportedModuleHPresheafPostcomp_app_apply S (Ext.mk₀ f) (add_zero n) W x).trans
+      (supportedModuleHPresheafFunctor_map_app_apply S n f W x).symm
+
+/-- Successive Yoneda products with `α : Extⁿ(F, G)` and `β : Extⁿ'(G, H)` agree
+with the Yoneda product with `α.comp β : Extᵖ(F, H)`, where `n + n' = p`. -/
+@[reassoc]
+lemma supportedModuleHPresheafPostcomp_comp
+    {F G H : Sheaf (Opens.grothendieckTopology X) (ModuleCat.{u} R)} {m n n' k l p : ℕ}
+    (α : Ext.{u} F G n) (β : Ext.{u} G H n') (hk : m + n = k) (hl : k + n' = l)
+    (hp : n + n' = p) :
+    supportedModuleHPresheafPostcomp S α hk ≫ supportedModuleHPresheafPostcomp S β hl =
+      supportedModuleHPresheafPostcomp S (α.comp β hp) (by omega) := by
+  refine supportedModuleHPresheaf_hom_ext fun W x ↦ ?_
+  rw [NatTrans.comp_app,
+    ConcreteCategory.comp_apply ((supportedModuleHPresheafPostcomp S α hk).app W) _ x,
+    supportedModuleHPresheafPostcomp_app_apply, supportedModuleHPresheafPostcomp_app_apply,
+    supportedModuleHPresheafPostcomp_app_apply]
+  exact Ext.comp_assoc x α β hk hp (by omega)
+
+variable {S} in
+/-- Enlarging the support from `Z` to `S` commutes with Yoneda postcomposition. -/
+@[reassoc]
+lemma supportedModuleHPresheafMap_supportedModuleHPresheafPostcomp {Z : Closeds X}
+    (hZS : Z ≤ S) {F G : Sheaf (Opens.grothendieckTopology X) (ModuleCat.{u} R)}
+    {m n k : ℕ} (α : Ext.{u} F G n) (hk : m + n = k) :
+    F.supportedModuleHPresheafMap hZS m ≫ supportedModuleHPresheafPostcomp S α hk =
+      supportedModuleHPresheafPostcomp Z α hk ≫ G.supportedModuleHPresheafMap hZS k := by
+  refine supportedModuleHPresheaf_hom_ext fun W x ↦ ?_
+  rw [NatTrans.comp_app, NatTrans.comp_app,
+    ConcreteCategory.comp_apply ((F.supportedModuleHPresheafMap hZS m).app W) _ x,
+    ConcreteCategory.comp_apply ((supportedModuleHPresheafPostcomp Z α hk).app W) _ x,
+    supportedModuleHPresheafMap_app_apply, supportedModuleHPresheafPostcomp_app_apply,
+    supportedModuleHPresheafPostcomp_app_apply, supportedModuleHPresheafMap_app_apply]
+  exact Ext.comp_assoc _ x α (zero_add m) hk (by omega)
+
+variable {S} in
+/-- Enlarging the support from `Z` to `S` is natural in the coefficient sheaf. -/
+@[reassoc]
+lemma supportedModuleHPresheafMap_naturality {Z : Closeds X} (hZS : Z ≤ S)
+    {F G : Sheaf (Opens.grothendieckTopology X) (ModuleCat.{u} R)} (f : F ⟶ G) (n : ℕ) :
+    F.supportedModuleHPresheafMap hZS n ≫ (supportedModuleHPresheafFunctor S n).map f =
+      (supportedModuleHPresheafFunctor Z n).map f ≫ G.supportedModuleHPresheafMap hZS n := by
+  have h := supportedModuleHPresheafMap_supportedModuleHPresheafPostcomp
+    hZS (Ext.mk₀ f) (add_zero n)
+  simp only [supportedModuleHPresheafPostcomp_mk₀] at h
+  exact h
+
+/-- If the Yoneda products `H_Sᵐ(W, F) ⟶ H_Sᵏ(W, G)` with `α` are bijective for
+every open `W`, then `CategoryTheory.Sheaf.supportedModuleHPresheafPostcomp` is
+an isomorphism of presheaves. -/
+theorem isIso_supportedModuleHPresheafPostcomp
+    {F G : Sheaf (Opens.grothendieckTopology X) (ModuleCat.{u} R)} {m n k : ℕ}
+    (α : Ext.{u} F G n) (hk : m + n = k)
+    (h : ∀ W : Opens X, Function.Bijective
+      (α.postcomp ((S.supportedFreeModuleSheafFunctor R).obj W) hk)) :
+    IsIso (supportedModuleHPresheafPostcomp S α hk) := by
+  have (W : (Opens X)ᵒᵖ) : IsIso ((supportedModuleHPresheafPostcomp S α hk).app W) := by
+    rw [ConcreteCategory.isIso_iff_bijective,
+      funext (supportedModuleHPresheafPostcomp_app_apply S α hk W)]
+    exact h W.unop
+  exact NatIso.isIso_of_isIso_app _
 
 end CategoryTheory.Sheaf
