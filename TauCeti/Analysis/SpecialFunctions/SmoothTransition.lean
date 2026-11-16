@@ -80,8 +80,8 @@ one, supported near `+∞`, near `-∞` and on a bounded interval, with bounded 
   integrable on `closedBall a c⁻¹` is integrable.
 * `Real.smoothTransition.tendsto_indicator`: the smoothed superlevel functions
   `ψ ((n + 1) (f - t))` converge pointwise to the indicator of `{f > t}`.
-* `Real.smoothTransition.enorm_sub_indicator_le_one`: each of them differs from that indicator by
-  at most `1`.
+* `Real.smoothTransition.enorm_sub_indicator_le_one`: `ψ y` differs from the indicator of any set
+  by at most `1`.
 * `Real.smoothTransition.tendsto_integral_mul_deriv_mul_sub_smul`: at a Lebesgue point `a` of `u`
   with value `v`, `∫ c ψ'(c (y - a)) u y dy → v` as `c → ∞`.
 * `HasFDerivAt.smoothTransition` and `HasDerivAt.smoothTransition`: the chain rule for `ψ ∘ f`.
@@ -435,13 +435,13 @@ theorem tendsto_indicator {X : Type*} (f : X → ℝ) (t : ℝ) (x : X) :
   · simp
   · by_cases hxt : t < f x <;> simp [hxt]
 
-/-- The smoothed superlevel function `ψ (c (f - t))` differs from the indicator of the superlevel
-set `{f > t}` by at most `1`, since both take values in `[0, 1]`. -/
-theorem enorm_sub_indicator_le_one {X : Type*} (f : X → ℝ) (t c : ℝ) (x : X) :
-    ‖smoothTransition (c * (f x - t)) - {x | t < f x}.indicator 1 x‖ₑ ≤ 1 := by
+/-- `ψ y` differs from the value at `x` of the indicator of any set `s` by at most `1`, since both
+lie in `[0, 1]`. -/
+theorem enorm_sub_indicator_le_one {X : Type*} (y : ℝ) (s : Set X) (x : X) :
+    ‖smoothTransition y - s.indicator 1 x‖ₑ ≤ 1 := by
   rw [Real.eNorm_eq_ofReal_abs, ENNReal.ofReal_le_one]
   refine abs_sub_le_of_nonneg_of_le (nonneg _) (le_one _) ?_ ?_ <;>
-    by_cases hxt : t < f x <;> simp [hxt]
+    by_cases hxs : x ∈ s <;> simp [hxs]
 
 /-- `x + (1 - smoothTransition x)` is at least `x`. -/
 theorem le_add_one_sub (x : ℝ) : x ≤ x + (1 - smoothTransition x) := by

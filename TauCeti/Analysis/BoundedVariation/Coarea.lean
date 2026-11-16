@@ -247,7 +247,7 @@ private theorem perimeter_le_liminf_totalVariationOn_smoothTransition_comp
     (fun n => .of_forall fun x => ?_) (by simpa using hK.measure_lt_top.ne)
     (.of_forall fun x => ?_)
   · simpa using hlim
-  · exact Real.smoothTransition.enorm_sub_indicator_le_one u t _ x
+  · exact Real.smoothTransition.enorm_sub_indicator_le_one _ _ x
   · exact tendsto_iff_eNorm_sub_tendsto_zero.mp (Real.smoothTransition.tendsto_indicator u t x)
 
 /-- **The coarea formula for locally Lipschitz functions.** If `u` is locally Lipschitz on `Ω`,
