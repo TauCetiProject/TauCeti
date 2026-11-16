@@ -10,6 +10,7 @@ public import TauCeti.Geometry.Manifold.Complex.StructureSheaf.Weierstrass
 public import TauCeti.RingTheory.Polynomial.Rueckert
 
 import TauCeti.Analysis.Analytic.Uniqueness
+import TauCeti.Geometry.Manifold.Algebra.SMul
 import TauCeti.Geometry.Manifold.Complex.Analytic
 import TauCeti.Geometry.Manifold.Complex.StructureSheaf.Domain
 import TauCeti.Geometry.Manifold.Complex.StructureSheaf.StalkPullback
@@ -92,14 +93,15 @@ theorem exists_map_residue_verticalPowerSeries_holomorphicStalkEquiv_ne_zero
   obtain ⟨F, hF, hfF⟩ := exists_analyticAt_toFilterGerm_eq (x₀, w₀) f
   have hF0 : ¬F =ᶠ[𝓝 (x₀, w₀)] 0 := (eq_zero_iff_of_toFilterGerm_eq (hfF _ le_rfl)).not.1 hf
   obtain ⟨L, hord⟩ := hF.exists_continuousLinearEquiv_analyticOrderAt_add_sub_ne_top hF0
-  let e := (Diffeomorph.addLeft ℂ ω (x₀, w₀)).symm.trans
-    ((L.toContDiffDiffeomorph ω).trans (Diffeomorph.addLeft ℂ ω (x₀, w₀)))
-  have he : e (x₀, w₀) = (x₀, w₀) := by simp [e]
+  let t : (E × ℂ) ≃ₘ^ω⟮𝓘(ℂ, E × ℂ), 𝓘(ℂ, E × ℂ)⟯ (E × ℂ) :=
+    Diffeomorph.constVAdd 𝓘(ℂ, E × ℂ) ω (x₀, w₀)
+  let e := t.symm.trans ((L.toContDiffDiffeomorph ω).trans t)
+  have he : e (x₀, w₀) = (x₀, w₀) := by simp [e, t]
   refine ⟨e, he, (map_residue_verticalPowerSeries_ne_zero_iff
     (e.toFilterGerm_holomorphicStalkEquiv_of_eq
       (toFilterGerm_ringEquivCast he.symm (hfF _ le_rfl)))).2 ?_⟩
-  have he_apply (t : ℂ) : e (x₀, t) = (x₀, w₀) + L ((x₀, t) - (x₀, w₀)) := by
-    simp [e, sub_eq_neg_add]
+  have he_apply (z : ℂ) : e (x₀, z) = (x₀, w₀) + L ((x₀, z) - (x₀, w₀)) := by
+    simp [e, t, sub_eq_neg_add]
   rw [Function.comp_def]
   simp only [he_apply]
   exact hord
@@ -175,7 +177,8 @@ theorem stalk_induction {E : Type*} [NormedAddCommGroup E] [NormedSpace ℂ E]
   have hmodel (n : ℕ) : ∀ y : Fin n → ℂ,
       P ((holomorphicStructureSheaf 𝓘(ℂ, Fin n → ℂ) (Fin n → ℂ)).presheaf.stalk y) := by
     induction n with
-    | zero => exact fun y ↦ hequiv (evalEquiv 𝓘(ℂ, Fin 0 → ℂ) (Fin 0 → ℂ) y).symm hℂ
+    | zero =>
+      exact fun y ↦ hequiv (evalEquiv 𝓘(ℂ, Fin 0 → ℂ) (Fin 0 → ℂ) (isOpen_discrete {y})).symm hℂ
     | succ n ih =>
       intro y
       let e := (ContinuousLinearEquiv.ofFinrankEq (𝕜 := ℂ)

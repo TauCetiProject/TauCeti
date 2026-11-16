@@ -10,10 +10,9 @@ public import TauCeti.Geometry.Manifold.Diffeomorph.Basic
 /-!
 # Elementary diffeomorphisms of a normed space
 
-Left translation `x ↦ a + x` (`Diffeomorph.addLeft`, the smooth counterpart of `Equiv.addLeft` and
-`Homeomorph.addLeft`) and the reflection `x ↦ a - x` (`Diffeomorph.subLeft`, the smooth counterpart
-of `Equiv.subLeft`, its own inverse) are diffeomorphisms of a normed space `E` of any smoothness.
-On the real line, `Diffeomorph.subLeft 1` is the reflection `t ↦ 1 - t` exchanging `0` and `1`.
+The map `x ↦ a - x` of a normed space `E` is a diffeomorphism of `E`, of any smoothness, which is
+its own inverse (`Diffeomorph.subLeft`, the smooth counterpart of `Equiv.subLeft`). On the real
+line, `Diffeomorph.subLeft 1` is the reflection `t ↦ 1 - t` exchanging `0` and `1`.
 
 A continuous linear equivalence of normed spaces is a diffeomorphism of every smoothness
 (`ContinuousLinearEquiv.toContDiffDiffeomorph`), respecting identity and composition. Mathlib's
@@ -52,35 +51,6 @@ theorem fderiv_apply_fderiv_symm_apply (h : E ≃ₘ^n⟮𝓘(𝕜, E), 𝓘(�
   -- Reduce the canonical tangent-space identifications, which act as the identity.
   change fderiv 𝕜 h (h.symm x) (fderiv 𝕜 h.symm (h (h.symm x)) v) = v at hid
   simpa only [h.apply_symm_apply] using hid
-
-variable (𝕜 n) in
-/-- Left translation `x ↦ a + x` of a normed space, as a diffeomorphism (the smooth counterpart of
-`Equiv.addLeft` and `Homeomorph.addLeft`). -/
-def addLeft (a : E) : E ≃ₘ^n⟮𝓘(𝕜, E), 𝓘(𝕜, E)⟯ E where
-  toEquiv := Equiv.addLeft a
-  contMDiff_toFun := (contDiff_const.add contDiff_id).contMDiff
-  contMDiff_invFun := (contDiff_const.add contDiff_id).contMDiff
-
-/-- `Diffeomorph.addLeft 𝕜 n a` sends `x` to `a + x`. -/
-@[simp]
-theorem addLeft_apply (a x : E) : addLeft 𝕜 n a x = a + x :=
-  (rfl)
-
-/-- The inverse of `Diffeomorph.addLeft 𝕜 n a` is `Diffeomorph.addLeft 𝕜 n (-a)`. -/
-@[simp]
-theorem symm_addLeft (a : E) : (addLeft 𝕜 n a).symm = addLeft 𝕜 n (-a) :=
-  toEquiv_injective (Equiv.addLeft_symm a)
-
-/-- Translating by `0` is the identity diffeomorphism. -/
-@[simp]
-theorem addLeft_zero : addLeft 𝕜 n (0 : E) = Diffeomorph.refl 𝓘(𝕜, E) E n :=
-  ext zero_add
-
-/-- Composing two left translations adds their translation vectors. -/
-@[simp]
-theorem addLeft_trans_addLeft (a b : E) :
-    (addLeft 𝕜 n a).trans (addLeft 𝕜 n b) = addLeft 𝕜 n (b + a) :=
-  ext fun x ↦ (add_assoc b a x).symm
 
 variable (𝕜 n) in
 /-- The map `x ↦ a - x` of a normed space, as a diffeomorphism. It is its own inverse

@@ -167,74 +167,43 @@ prime. -/
 theorem isPrime_span_apply_iff {w : A[X]} (hw : w ∈ W) :
     (Ideal.span {φ w}).IsPrime ↔ (Ideal.span {w}).IsPrime := by
   rw [← Ideal.Quotient.isDomain_iff_prime, ← Ideal.Quotient.isDomain_iff_prime]
-  exact ⟨fun _ ↦ (h.quotientEquiv hw).toMulEquiv.isDomain _,
-    fun _ ↦ (h.quotientEquiv hw).symm.toMulEquiv.isDomain _⟩
-
-/-- The image of a prime member of `W` is prime. -/
-theorem prime_apply {w : A[X]} (hw : w ∈ W) (hp : Prime w) : Prime (φ w) := by
-  have hw0 : φ w ≠ 0 := (map_ne_zero_iff φ h.injective).mpr hp.ne_zero
-  rw [← Ideal.span_singleton_prime hw0, h.isPrime_span_apply_iff hw,
-    Ideal.span_singleton_prime hp.ne_zero]
-  exact hp
+  exact (MulEquiv.isDomain_iff (h.quotientEquiv hw).toMulEquiv).symm
 
 /-- For `w ∈ W`, the image `φ w` is prime in `B` if and only if `w` is prime in `A[X]`. -/
 theorem prime_apply_iff {w : A[X]} (hw : w ∈ W) :
     Prime (φ w) ↔ Prime w := by
-  refine ⟨fun hp ↦ ?_, h.prime_apply hw⟩
-  have hw0 : w ≠ 0 := (map_ne_zero_iff φ h.injective).mp hp.ne_zero
-  rwa [← Ideal.span_singleton_prime hw0, ← h.isPrime_span_apply_iff hw,
-    Ideal.span_singleton_prime hp.ne_zero]
+  rcases eq_or_ne w 0 with rfl | hw0
+  · simp
+  · rw [← Ideal.span_singleton_prime ((map_ne_zero_iff φ h.injective).mpr hw0),
+      ← Ideal.span_singleton_prime hw0, h.isPrime_span_apply_iff hw]
 
-private theorem eq_one_of_isUnit_apply {w : A[X]} (hw : w ∈ W) (hu : IsUnit (φ w)) : w = 1 :=
-  (h.monic hw).eq_one_of_isUnit <| isUnit_iff_dvd_one.mpr <|
-    (h.dvd_iff hw 1).mp (by simpa only [map_one] using isUnit_iff_dvd_one.mp hu)
-
-private theorem exists_mem_associated_of_dvd [NoZeroDivisors A] {w d : A[X]} (hw : w ∈ W)
-    (hdw : d ∣ w) : ∃ d' ∈ W, Associated d d' := by
+private theorem isUnit_of_dvd_of_isUnit_apply {w d : A[X]} (hw : w ∈ W) (hdw : d ∣ w)
+    (hu : IsUnit (φ d)) : IsUnit d := by
   obtain ⟨r, hwr⟩ := hdw
-  have h1 : C r.leadingCoeff * C d.leadingCoeff = 1 := by
-    rw [← C_mul, mul_comm, ← leadingCoeff_mul, ← hwr, (h.monic hw).leadingCoeff, C_1]
-  have hd' : (d * C r.leadingCoeff).Monic := by
-    rw [Monic, leadingCoeff_mul, leadingCoeff_C, ← leadingCoeff_mul, ← hwr,
-      (h.monic hw).leadingCoeff]
-  have hd'w : d * C r.leadingCoeff ∣ w :=
-    ⟨r * C d.leadingCoeff, by rw [mul_mul_mul_comm, h1, mul_one, hwr]⟩
-  exact ⟨d * C r.leadingCoeff, h.mem_of_dvd hw hd' hd'w, Units.mkOfMulEqOne _ _ h1, rfl⟩
+  obtain ⟨q, hrq⟩ := (h.dvd_iff hw r).mp (hu.dvd_mul_left.mp (by rw [← map_mul, ← hwr]))
+  have hw1 : w * (d * q) = w * 1 := by
+    rw [mul_one, ← mul_assoc, mul_comm w d, mul_assoc, ← hrq, ← hwr]
+  exact IsUnit.of_mul_eq_one q ((h.monic hw).isRegular.left hw1)
 
-/-- Over a coefficient ring `A` without zero divisors, if `φ w` is irreducible in `B` for `w ∈ W`,
-then `w` is irreducible in `A[X]`. -/
-theorem irreducible_of_irreducible_apply [NoZeroDivisors A] {w : A[X]} (hw : w ∈ W)
-    (hirr : Irreducible (φ w)) : Irreducible w := by
-  have hw1 : w ≠ 1 := by
-    rintro rfl
-    exact hirr.not_isUnit (by simp)
-  rw [irreducible_of_monic (h.monic hw) hw1]
-  intro f g hf hg hfg
-  have hmul : φ w = φ f * φ g := by rw [← map_mul, hfg]
-  exact (hirr.isUnit_or_isUnit hmul).imp
-    (h.eq_one_of_isUnit_apply (h.mem_of_dvd hw hf (hfg ▸ dvd_mul_right f g)))
-    (h.eq_one_of_isUnit_apply (h.mem_of_dvd hw hg (hfg ▸ dvd_mul_left g f)))
+/-- If `φ w` is irreducible in `B` for `w ∈ W`, then `w` is irreducible in `A[X]`. -/
+theorem irreducible_of_irreducible_apply {w : A[X]} (hw : w ∈ W)
+    (hirr : Irreducible (φ w)) : Irreducible w :=
+  ⟨fun hu ↦ hirr.not_isUnit (hu.map φ), fun f g hfg ↦
+    (hirr.isUnit_or_isUnit (by rw [hfg, map_mul])).imp
+      (h.isUnit_of_dvd_of_isUnit_apply hw ⟨g, hfg⟩)
+      (h.isUnit_of_dvd_of_isUnit_apply hw ⟨f, hfg.trans (mul_comm f g)⟩)⟩
 
-/-- Over a coefficient ring `A` without zero divisors, if `φ w` and `φ q` are relatively prime in
-`B` for `w ∈ W` and `q : A[X]`, then `w` and `q` are relatively prime in `A[X]`. -/
-theorem isRelPrime_of_isRelPrime_apply [NoZeroDivisors A] {w : A[X]} (hw : w ∈ W) {q : A[X]}
-    (hrel : IsRelPrime (φ w) (φ q)) : IsRelPrime w q := by
-  intro d hdw hdq
-  obtain ⟨d', hd'W, hdd'⟩ := h.exists_mem_associated_of_dvd hw hdw
-  have hd'1 := h.eq_one_of_isUnit_apply hd'W <|
-    hrel (map_dvd φ (hdd'.symm.dvd.trans hdw)) (map_dvd φ (hdd'.symm.dvd.trans hdq))
-  exact hdd'.isUnit_iff.mpr (hd'1 ▸ isUnit_one)
+/-- If `φ w` and `φ q` are relatively prime in `B` for `w ∈ W` and `q : A[X]`, then `w` and `q`
+are relatively prime in `A[X]`. -/
+theorem isRelPrime_of_isRelPrime_apply {w : A[X]} (hw : w ∈ W) {q : A[X]}
+    (hrel : IsRelPrime (φ w) (φ q)) : IsRelPrime w q :=
+  fun _ hdw hdq ↦ h.isUnit_of_dvd_of_isUnit_apply hw hdw (hrel (map_dvd φ hdw) (map_dvd φ hdq))
 
-/-- Over a coefficient ring `A` without zero divisors, if `φ w` is squarefree in `B` for `w ∈ W`,
-then `w` is squarefree in `A[X]`. -/
-theorem squarefree_of_squarefree_apply [NoZeroDivisors A] {w : A[X]} (hw : w ∈ W)
-    (hsq : Squarefree (φ w)) : Squarefree w := by
-  intro d hdw
-  obtain ⟨d', hd'W, hdd'⟩ := h.exists_mem_associated_of_dvd hw ((dvd_mul_left d d).trans hdw)
-  have hd'1 := h.eq_one_of_isUnit_apply hd'W <| hsq (φ d') <| by
-    rw [← map_mul]
-    exact map_dvd φ ((mul_dvd_mul hdd'.symm.dvd hdd'.symm.dvd).trans hdw)
-  exact hdd'.isUnit_iff.mpr (hd'1 ▸ isUnit_one)
+/-- If `φ w` is squarefree in `B` for `w ∈ W`, then `w` is squarefree in `A[X]`. -/
+theorem squarefree_of_squarefree_apply {w : A[X]} (hw : w ∈ W)
+    (hsq : Squarefree (φ w)) : Squarefree w :=
+  fun d hdw ↦ h.isUnit_of_dvd_of_isUnit_apply hw ((dvd_mul_left d d).trans hdw)
+    (hsq (φ d) (by simpa only [map_mul] using map_dvd φ hdw))
 
 @[elab_as_elim]
 private theorem mem_induction [NoZeroDivisors A] {P : A[X] → Prop} {w : A[X]} (hw : w ∈ W)
@@ -260,7 +229,7 @@ product of primes. -/
 theorem exists_prime_factors_apply [UniqueFactorizationMonoid A] {w : A[X]}
     (hw : w ∈ W) : ∃ f : Multiset B, (∀ b ∈ f, Prime b) ∧ Associated f.prod (φ w) := by
   refine h.mem_induction hw ⟨0, by simp, by simp⟩
-    (fun hw hirr ↦ ⟨{φ _}, by simpa using h.prime_apply hw hirr.prime, by simp⟩)
+    (fun hw hirr ↦ ⟨{φ _}, by simpa using (h.prime_apply_iff hw).mpr hirr.prime, by simp⟩)
     fun _ _ ⟨F, hF, hFf⟩ ⟨G, hG, hGg⟩ ↦
       ⟨F + G, fun b hb ↦ (Multiset.mem_add.mp hb).elim (hF b) (hG b), ?_⟩
   rw [Multiset.prod_add, map_mul]

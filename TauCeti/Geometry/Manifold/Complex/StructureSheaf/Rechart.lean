@@ -137,15 +137,13 @@ theorem holomorphicStalkEquiv_symm (e : X ≃ₘ^ω⟮I, J⟯ Y) (x : X) :
       (RingEquiv.cast (R := fun z ↦ (holomorphicStructureSheaf I X).presheaf.stalk z)
         (e.symm_apply_apply x).symm).trans (e.symm.holomorphicStalkEquiv (e x)) := by
   ext s
-  apply (e.holomorphicStalkEquiv x).injective
-  obtain ⟨f, -, hfs⟩ := exists_toFilterGerm_eq x s
-  apply toFilterGerm_nhds_injective x
-  rw [RingEquiv.apply_symm_apply, RingEquiv.trans_apply,
-    e.toFilterGerm_holomorphicStalkEquiv_of_eq
-      (e.symm.toFilterGerm_holomorphicStalkEquiv_of_eq
-        (toFilterGerm_ringEquivCast _ (hfs _ le_rfl))),
-    hfs _ le_rfl, Germ.coe_eq]
-  exact Eventually.of_forall fun z ↦ congrArg f (e.symm_apply_apply z).symm
+  rw [holomorphicStalkEquiv_symm_apply, RingEquiv.trans_apply, holomorphicStalkEquiv_apply]
+  have hcast {y : X} (hy : x = y) :
+      hy ▸ s =
+        RingEquiv.cast (R := fun z ↦ (holomorphicStructureSheaf I X).presheaf.stalk z) hy s := by
+    subst hy
+    rfl
+  rw [hcast]
 
 /-- If `s` is represented near `x` by `f`, then `(e.holomorphicStalkEquiv x).symm s` is represented
 near `e x` by `f ∘ e.symm`. -/
