@@ -132,15 +132,10 @@ theorem ker_constraintToCoker :
   rw [constraintToCoker, LinearMap.ker_comp,
     (LinearMap.exact_kerCompToKer_kerToCoker _ _).linearMap_ker_eq]
   ext g
-  rw [Submodule.mem_comap, LinearMap.mem_range, LinearMap.mem_range]
-  constructor
-  · rintro ⟨⟨x, _⟩, hxg⟩
-    have h := congrArg Subtype.val hxg
-    rw [LinearMap.coe_kerCompToKer_apply] at h
-    exact ⟨⟨x, congrArg Prod.fst h⟩, congrArg Prod.snd h⟩
-  · rintro ⟨⟨x, hx⟩, rfl⟩
-    exact ⟨⟨x, hx⟩, Subtype.ext ((LinearMap.coe_kerCompToKer_apply _ _ _).trans
-      (Prod.ext (LinearMap.mem_ker.mp hx) rfl))⟩
+  -- `coe_prod` would rewrite the operator inside the subtype of `ker (fst ∘ₗ D.prod L)` and
+  -- block `coe_kerCompToKer_apply`; for the same reason `codRestrict_apply` does not fire on the
+  -- corestriction of `inr`, so it is unfolded instead.
+  simp [Subtype.ext_iff, Prod.ext_iff, LinearMap.codRestrict, -ContinuousLinearMap.coe_prod]
 
 /-- Exactness of `ker D → G → (F × G) ⧸ range (D.prod L)` at the middle term. -/
 theorem exact_domRestrict_constraintToCoker :
@@ -159,8 +154,9 @@ noncomputable def cokerProdHom : ((F × G) ⧸ (D.prod L).range) →ₗ[𝕜] F 
 /-- The cokernel map sends the class of `(y, g)` to the class of `y`. -/
 theorem cokerProdHom_mk (y : F × G) :
     cokerProdHom D L (Submodule.Quotient.mk y) = Submodule.Quotient.mk y.1 := by
-  rw [cokerProdHom, LinearMap.comp_apply, LinearMap.cokerToCokerComp_mk, LinearEquiv.coe_coe,
-    Submodule.quotEquivOfEq_mk, LinearMap.fst_apply]
+  -- `coe_prod` would rewrite the operator in the type of the quotient class and block
+  -- `cokerToCokerComp_mk`.
+  simp [cokerProdHom, -ContinuousLinearMap.coe_prod]
 
 /-- Every obstruction for `D` is the image of an obstruction for the extended operator. -/
 theorem cokerProdHom_surjective : Function.Surjective (cokerProdHom D L) := by
