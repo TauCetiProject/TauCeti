@@ -546,11 +546,12 @@ def dualGraphContractTailIso (hm : {l | (m.point l).1 = v}.Subsingleton) :
     simp [DualGraph.ends_def]
   genus_vertexEquiv _ := rfl
   vertexEquiv_marking l := by
+    have := connectedSpace_gluedCurve_deleteComponent_of_tail htail
+    rw [Equiv.refl_apply, DualGraph.marking_contractTail, marking_dualGraph, marking_dualGraph]
     by_cases hl : (m.point l).1 = v
-    · simp only [hl, dite_true]
-      rw [Marking.point_contractTail_of_fst_eq htail m hm hl]
+    · rw [dite_eq_left hl, Marking.point_contractTail_of_fst_eq htail m hm hl]
       exact Subtype.ext (attachment_dualGraph_of_tail g m htail).symm
-    · simp only [hl, dite_false]
+    · rw [dite_eq_right hl]
       exact Subtype.ext (congrArg Sigma.fst
         (Marking.sigmaMap_point_contractTail_of_fst_ne htail m hm hl))
 
