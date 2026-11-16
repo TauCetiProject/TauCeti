@@ -10,6 +10,7 @@ public import TauCeti.Analysis.PDE.Vortex.Decay
 public import TauCeti.Analysis.PDE.Vortex.Symmetry
 import Mathlib.Analysis.Calculus.ContDiff.WithLp
 import Mathlib.Analysis.Calculus.FDeriv.WithLp
+import TauCeti.Analysis.SpecialFunctions.Exp.Shift
 import TauCeti.MeasureTheory.Integral.Exp.Decay
 
 /-!
@@ -22,7 +23,7 @@ its section has the sum of the two zero divisors
 (`TauCeti.Vortex.isZeroMultiplicity_sectionValue_productField`) and the end framing of degree
 `m + n` when `x` and `y` are framed in degrees `m` and `n`
 (`TauCeti.Vortex.tendsto_sectionValue_productField`). The vacuum field is its unit, and it is
-commutative, associative and translation equivariant.
+commutative, associative, and translation and rotation equivariant.
 
 The covariant derivative obeys the Leibniz rule
 `∇(α_x α_y) = (∇α_x) α_y + α_x ∇α_y` (`TauCeti.Vortex.covariantDerivative_productField`). Hence
@@ -30,8 +31,9 @@ the three defects of the vortex equation for the product are computed exactly fr
 factors (`TauCeti.Vortex.equation_productField_apply_zero`,
 `TauCeti.Vortex.equation_productField_one_add_two_mul_I`):
 
-* the `∂bar` defect is `∂bar α_x · α_y + α_x · ∂bar α_y`, so it vanishes when both factors are
-  holomorphic;
+* the `∂bar` defect is `∂bar_{a_x} α_x · α_y + α_x · ∂bar_{a_y} α_y`, so it vanishes when each
+  section is holomorphic for its own connection, that is, when `∂bar_{a_x} α_x = 0` and
+  `∂bar_{a_y} α_y = 0`;
 * the curvature defect is the sum of the two curvature defects plus
   `(1 - |α_x|²) (1 - |α_y|²) / 8`, because the curvatures add while
   `1 - |α_x α_y|² = (1 - |α_x|²) + (1 - |α_y|²) - (1 - |α_x|²) (1 - |α_y|²)`.
@@ -40,7 +42,7 @@ So the product of two vortices satisfies every equation except the curvature equ
 defect is exactly `(1 - |α_x|²) (1 - |α_y|²) / 8`
 (`TauCeti.Vortex.equation_productField_of_equation_eq_zero`). Both factors decay to the vacuum
 at the rate `exp (-c |z|)` for every `c < 1 / 2`
-(`TauCeti.Vortex.exists_one_sub_normSq_le_mul_exp`).
+(`TauCeti.Vortex.exists_nonneg_one_sub_normSq_le_mul_exp`).
 When the second vortex is moved away by the translation `z ↦ z + a`, the two defect factors are
 concentrated near points at distance `|a|`, and since `|z| + |z + a| ≥ |a|` their product is
 exponentially small in the separation: for every rate `c < 1 / 2` there are `K` and `δ > 0` with
@@ -48,13 +50,14 @@ exponentially small in the separation: for every rate `c < 1 / 2` there are `K` 
 `|E(z)| ≤ K exp (-c |a|) exp (-δ |z|)`
 
 for the defect `E` of `x ⊗ (y ∘ (· + a))`
-(`TauCeti.Vortex.exists_norm_equation_productField_translateField_le`), and every power of `|E|`
-is integrable with `∫ |E|ᵏ ≤ K exp (-k c |a|)`
+(`TauCeti.Vortex.exists_norm_equation_productField_translateField_le`), and every positive power
+of `|E|` is integrable with `∫ |E|ᵏ ≤ K exp (-k c |a|)`
 (`TauCeti.Vortex.exists_integrable_and_integral_norm_equation_productField_translateField_pow_le`).
 The product of two well-separated vortices is therefore an approximate vortex, whose zero divisor
 is the union of the two divisors and whose error is exponentially small in their separation in
-every `Lᵏ` norm. This is the approximate solution from which a vortex with a separated divisor
-is obtained by a right inverse of the linearized equation; that correction step is not done here.
+every `Lᵏ` norm with `k ≥ 1`. This is the approximate solution from which a vortex with a
+separated divisor is obtained by a right inverse of the linearized equation; that correction step
+is not done here.
 
 ## Main definitions
 
@@ -158,6 +161,13 @@ theorem translateField_productField (a : ℂ) (x y : ℂ → EuclideanSpace ℝ 
     translateField a (productField x y) = productField (translateField a x) (translateField a y) :=
   funext fun _ ↦ apply_eq_of_sectionValue_eq (by simp) (by simp) (by simp)
 
+/-- Rotations commute with the product of fields. -/
+@[simp]
+theorem rotateField_productField (u : Circle) (x y : ℂ → EuclideanSpace ℝ (Fin 4)) :
+    rotateField u (productField x y) = productField (rotateField u x) (rotateField u y) :=
+  funext fun _ ↦ apply_eq_of_sectionValue_eq (by simp; ring) (by simp; ring)
+    (by simp [sectionValue_rotateField])
+
 /-! ### Regularity -/
 
 /-- The product of two `Cⁿ` fields is a `Cⁿ` field. -/
@@ -174,6 +184,20 @@ theorem contDiff_productField {n : WithTop ℕ∞} (hx : ContDiff ℝ n x) (hy :
   · exact (reCLM.contDiff.comp hs).div_const 2
   · exact (imCLM.contDiff.comp hs).div_const 2
 
+/-- The first section coordinate of the product field, half the real part of `α_x α_y`, is
+differentiable where both sections are. -/
+theorem differentiableAt_productField_apply_two (hx : DifferentiableAt ℝ (sectionValue x) z)
+    (hy : DifferentiableAt ℝ (sectionValue y) z) :
+    DifferentiableAt ℝ (fun w ↦ productField x y w 2) z := by
+  simpa [div_eq_mul_inv] using (reCLM.differentiableAt.comp z (hx.mul hy)).mul_const (2⁻¹ : ℝ)
+
+/-- The second section coordinate of the product field, half the imaginary part of `α_x α_y`, is
+differentiable where both sections are. -/
+theorem differentiableAt_productField_apply_three (hx : DifferentiableAt ℝ (sectionValue x) z)
+    (hy : DifferentiableAt ℝ (sectionValue y) z) :
+    DifferentiableAt ℝ (fun w ↦ productField x y w 3) z := by
+  simpa [div_eq_mul_inv] using (imCLM.differentiableAt.comp z (hx.mul hy)).mul_const (2⁻¹ : ℝ)
+
 /-- The product of two fields differentiable at a point is differentiable there. -/
 theorem differentiableAt_productField (hx : DifferentiableAt ℝ x z)
     (hy : DifferentiableAt ℝ y z) : DifferentiableAt ℝ (productField x y) z := by
@@ -181,15 +205,14 @@ theorem differentiableAt_productField (hx : DifferentiableAt ℝ x z)
     (EuclideanSpace.proj (𝕜 := ℝ) i).differentiableAt.comp z hx
   have hyi (i : Fin 4) : DifferentiableAt ℝ (fun w ↦ y w i) z :=
     (EuclideanSpace.proj (𝕜 := ℝ) i).differentiableAt.comp z hy
-  have hs : DifferentiableAt ℝ (fun w ↦ sectionValue x w * sectionValue y w) z :=
-    (differentiableAt_sectionValue_of_differentiableAt hx).mul
-      (differentiableAt_sectionValue_of_differentiableAt hy)
+  have hsx := differentiableAt_sectionValue_of_differentiableAt hx
+  have hsy := differentiableAt_sectionValue_of_differentiableAt hy
   refine (differentiableAt_piLp 2).2 fun i ↦ ?_
   fin_cases i
   · exact (hxi 0).add (hyi 0)
   · exact (hxi 1).add (hyi 1)
-  · simpa [div_eq_mul_inv] using (reCLM.differentiableAt.comp z hs).mul_const (2⁻¹ : ℝ)
-  · simpa [div_eq_mul_inv] using (imCLM.differentiableAt.comp z hs).mul_const (2⁻¹ : ℝ)
+  · exact differentiableAt_productField_apply_two hsx hsy
+  · exact differentiableAt_productField_apply_three hsx hsy
 
 /-! ### The Leibniz rule and the vortex defects of a product -/
 
@@ -242,14 +265,9 @@ theorem equation_productField_one_add_two_mul_I (hx₂ : DifferentiableAt ℝ (f
         sectionValue x z * ((equation y z 1 : ℂ) + equation y z 2 * I) := by
   have hx := differentiableAt_sectionValue hx₂ hx₃
   have hy := differentiableAt_sectionValue hy₂ hy₃
-  -- The section coordinates of the product are differentiable, as half the real and imaginary
-  -- parts of `α_x α_y`.
-  have hs := hx.mul hy
-  have hp : DifferentiableAt ℝ (fun w ↦ productField x y w 2) z := by
-    simpa [div_eq_mul_inv] using (reCLM.differentiableAt.comp z hs).mul_const (2⁻¹ : ℝ)
-  have hq : DifferentiableAt ℝ (fun w ↦ productField x y w 3) z := by
-    simpa [div_eq_mul_inv] using (imCLM.differentiableAt.comp z hs).mul_const (2⁻¹ : ℝ)
-  have h := covariantDerivative_one_add_I_mul_covariantDerivative_I hp hq
+  have h := covariantDerivative_one_add_I_mul_covariantDerivative_I
+    (differentiableAt_productField_apply_two hx hy)
+    (differentiableAt_productField_apply_three hx hy)
   have h₁ := covariantDerivative_one_add_I_mul_covariantDerivative_I hx₂ hx₃
   have h₂ := covariantDerivative_one_add_I_mul_covariantDerivative_I hy₂ hy₃
   rw [covariantDerivative_productField hx hy, covariantDerivative_productField hx hy] at h
@@ -271,10 +289,8 @@ theorem equation_productField_of_equation_eq_zero (hx : DifferentiableAt ℝ x z
   have hx' (i : Fin 3) : equation x z i = 0 := by simp [hxz]
   have hy' (i : Fin 3) : equation y z i = 0 := by simp [hyz]
   simp only [hx', hy', ofReal_zero, zero_mul, add_zero, zero_add, mul_zero] at h₀ h₁₂
-  have h₁ := congrArg Complex.re h₁₂
-  have h₂ := congrArg Complex.im h₁₂
-  simp only [add_re, ofReal_re, mul_re, ofReal_im, I_re, mul_zero, I_im, mul_one, sub_self,
-    add_zero, zero_re, add_im, mul_im, zero_add, zero_im] at h₁ h₂
+  obtain ⟨h₁, h₂⟩ := Complex.ext_iff.1 h₁₂
+  simp at h₁ h₂
   ext i
   fin_cases i
   · simpa using h₀
@@ -313,38 +329,6 @@ theorem tendsto_sectionValue_productField {m n : ℕ} {c d : ℂ}
 
 /-! ### The separation estimate -/
 
-/-- The elementary inequality behind the separation estimate: since `|a| ≤ |z| + |z + a|`, for
-`0 ≤ c ≤ c'` the product `exp (-c' |z|) exp (-c' |z + a|)` is at most
-`exp (-c |a|) exp (-(c' - c) |z|)`. -/
-private theorem exp_mul_exp_le {c c' : ℝ} (hc : 0 ≤ c) (hcc' : c ≤ c') (a z : ℂ) :
-    Real.exp (-(c' * ‖z‖)) * Real.exp (-(c' * ‖z + a‖)) ≤
-      Real.exp (-(c * ‖a‖)) * Real.exp (-((c' - c) * ‖z‖)) := by
-  rw [← Real.exp_add, ← Real.exp_add, Real.exp_le_exp]
-  have ha : ‖a‖ ≤ ‖z‖ + ‖z + a‖ := by
-    simpa [add_comm] using norm_sub_le (z + a) z
-  nlinarith [norm_nonneg z, norm_nonneg (z + a), mul_le_mul_of_nonneg_left ha hc,
-    mul_le_mul_of_nonneg_right hcc' (norm_nonneg (z + a))]
-
-/-- The modulus defect `1 - |α|²` of a vortex with `|α| → 1` at infinity is nonnegative and, for
-`c < 1 / 2`, at most `K exp (-c |z|)` with `K ≥ 0`. -/
-private theorem exists_nonneg_one_sub_sq_norm_sectionValue_le (hx : ContDiff ℝ 2 x)
-    (hsol : ∀ z, equation x z = 0)
-    (hlim : Tendsto (fun z ↦ 4 * (x z 2 ^ 2 + x z 3 ^ 2)) (cocompact ℂ) (𝓝 1)) {c : ℝ}
-    (hc : c < 1 / 2) :
-    ∃ K, 0 ≤ K ∧ ∀ z, 0 ≤ 1 - ‖sectionValue x z‖ ^ 2 ∧
-      1 - ‖sectionValue x z‖ ^ 2 ≤ K * Real.exp (-(c * ‖z‖)) := by
-  have hp : ContDiff ℝ 2 fun w ↦ x w 2 := (contDiff_piLp 2).1 hx 2
-  have hq : ContDiff ℝ 2 fun w ↦ x w 3 := (contDiff_piLp 2).1 hx 3
-  obtain ⟨K, hK⟩ := exists_one_sub_normSq_le_mul_exp hp hq hsol hlim hc
-  have hnn (z : ℂ) : 0 ≤ 1 - ‖sectionValue x z‖ ^ 2 := by
-    rw [sq_norm_sectionValue]
-    linarith [normSq_le_one_of_tendsto hp hq hsol hlim z]
-  have hK' (z : ℂ) : 1 - ‖sectionValue x z‖ ^ 2 ≤ K * Real.exp (-(c * ‖z‖)) := by
-    rw [sq_norm_sectionValue]
-    exact hK z
-  refine ⟨K, ?_, fun z ↦ ⟨hnn z, hK' z⟩⟩
-  simpa using (hnn 0).trans (hK' 0)
-
 /-- **The separation estimate.** Let `x` and `y` be vortices on the plane with `|α| → 1` at
 infinity, and move `y` by the translation `z ↦ z + a`. For every rate `c < 1 / 2` there are
 constants `K` and `δ > 0`, independent of `a`, such that the defect of the product field
@@ -368,24 +352,25 @@ theorem exists_norm_equation_productField_translateField_le (hx : ContDiff ℝ 2
   have hc₀ : c₀ < 1 / 2 := max_lt hc (by norm_num)
   have hc₀c' : c₀ < c' := by linarith
   have hc'2 : c' < 1 / 2 := by linarith
-  obtain ⟨Kx, hKx, hx'⟩ :=
-    exists_nonneg_one_sub_sq_norm_sectionValue_le hx hxsol hxlim hc'2
-  obtain ⟨Ky, hKy, hy'⟩ :=
-    exists_nonneg_one_sub_sq_norm_sectionValue_le hy hysol hylim hc'2
+  obtain ⟨Kx, hKx, hx'⟩ := exists_nonneg_one_sub_normSq_le_mul_exp ((contDiff_piLp 2).1 hx 2)
+    ((contDiff_piLp 2).1 hx 3) hxsol hxlim hc'2
+  obtain ⟨Ky, hKy, hy'⟩ := exists_nonneg_one_sub_normSq_le_mul_exp ((contDiff_piLp 2).1 hy 2)
+    ((contDiff_piLp 2).1 hy 3) hysol hylim hc'2
   refine ⟨Kx * Ky / 8, c' - c₀, by linarith, fun a z ↦ ?_⟩
   have hdx : DifferentiableAt ℝ x z := (hx.differentiable (by norm_num)).differentiableAt
   have hya : ContDiff ℝ 2 (translateField a y) := contDiff_translateField a hy
   have hdy : DifferentiableAt ℝ (translateField a y) z :=
     (hya.differentiable (by norm_num)).differentiableAt
   rw [norm_equation_productField_of_equation_eq_zero hdx hdy (hxsol z)
-    (by rw [equation_translateField]; exact hysol _), sectionValue_translateField]
+    (by rw [equation_translateField]; exact hysol _), sectionValue_translateField,
+    sq_norm_sectionValue, sq_norm_sectionValue]
   obtain ⟨h₁, h₁'⟩ := hx' z
   obtain ⟨h₂, h₂'⟩ := hy' (z + a)
   rw [abs_of_nonneg (mul_nonneg h₁ h₂)]
-  have hexp := exp_mul_exp_le (le_max_right c 0) hc₀c'.le a z
+  have hexp := exp_neg_mul_norm_mul_exp_neg_mul_norm_add_le (le_max_right c 0) hc₀c'.le a z
   have hca : Real.exp (-(c₀ * ‖a‖)) ≤ Real.exp (-(c * ‖a‖)) :=
     Real.exp_le_exp.2 (neg_le_neg (mul_le_mul_of_nonneg_right (le_max_left c 0) (norm_nonneg a)))
-  calc (1 - ‖sectionValue x z‖ ^ 2) * (1 - ‖sectionValue y (z + a)‖ ^ 2) / 8
+  calc (1 - 4 * (x z 2 ^ 2 + x z 3 ^ 2)) * (1 - 4 * (y (z + a) 2 ^ 2 + y (z + a) 3 ^ 2)) / 8
       ≤ Kx * Real.exp (-(c' * ‖z‖)) * (Ky * Real.exp (-(c' * ‖z + a‖))) / 8 := by
         gcongr
     _ = Kx * Ky / 8 * (Real.exp (-(c' * ‖z‖)) * Real.exp (-(c' * ‖z + a‖))) := by ring
@@ -418,7 +403,8 @@ theorem exists_integrable_and_integral_norm_equation_productField_translateField
       K ^ k * Real.exp (-(c * ‖a‖)) ^ k * Real.exp (-((k * δ) * ‖z‖)) := by
     have hexp : Real.exp (-((k * δ) * ‖z‖)) = Real.exp (-(δ * ‖z‖)) ^ k := by
       rw [← Real.exp_nat_mul]
-      ring_nf
+      congr 1
+      ring
     rw [hexp, ← mul_pow, ← mul_pow]
     exact pow_le_pow_left₀ (norm_nonneg _) (hK a z) k
   have hya : ContDiff ℝ 2 (translateField a y) := contDiff_translateField a hy
