@@ -25,6 +25,8 @@ It also concatenates two finite blocks with the second block read in reverse ord
 blocks of equal length, laid out as the bottom and the top row of a rectangle and read
 counterclockwise around it, exchanging the two blocks reverses the concatenated order, and
 reversing each block is reversing the concatenated order followed by a rotation by one block.
+Finally, `TauCeti.pow_val_finRotate` records that for `x ^ n = 1` in a monoid, advancing an index
+`i : Fin n` by `finRotate n` multiplies `x ^ (i : ℕ)` on the left by `x`.
 -/
 
 public section
@@ -129,6 +131,19 @@ theorem finSumFinRevEquiv_map_rev {k n : ℕ} (h : k + k = n) (x : Fin k ⊕ Fin
     simp only [Sum.map_inr, finSumFinRevEquiv_inr_val, Fin.coe_finRotate_pow, Fin.val_rev]
     rw [Nat.mod_eq_of_lt (by omega)]
     omega
+
+/-- **Advancing an index by `finRotate n` multiplies a power of an `n`-th root of unity by the
+root.** If `x ^ n = 1` in a monoid, then `x ^ (finRotate n i : ℕ) = x * x ^ (i : ℕ)` for every
+`i : Fin n`: wraparound from `n - 1` to `0` uses `x * x ^ (n - 1) = x ^ n = 1`. -/
+@[to_additive /-- **Advancing an index by `finRotate n` adds an `n`-torsion element to its index
+multiple.** If `n • x = 0` in an additive monoid, then
+`(finRotate n i : ℕ) • x = x + (i : ℕ) • x` for every `i : Fin n`. -/]
+theorem pow_val_finRotate {M : Type*} [Monoid M] {n : ℕ} {x : M} (hx : x ^ n = 1) (i : Fin n) :
+    x ^ (finRotate n i : ℕ) = x * x ^ (i : ℕ) := by
+  rw [Fin.coe_finRotate_eq_ite]
+  split_ifs with hi
+  · rw [pow_zero, ← pow_succ', hi, hx]
+  · rw [pow_succ']
 
 end TauCeti
 

@@ -20,7 +20,9 @@ permutation matrices over a possibly noncommutative star semiring are unitary. A
 matrix whose conjugate transpose is a two-sided inverse.
 
 `Matrix.diagonal_update_one_mem_unitary_iff` says that a diagonal matrix with all diagonal entries
-`1` except one is unitary exactly when that entry is.
+`1` except one is unitary exactly when that entry is, and
+`Matrix.specialUnitaryGroup.mem_center_of_coe_eq_scalar` records that any special unitary matrix
+equal to a scalar matrix lies in the center of `specialUnitaryGroup`.
 -/
 
 public section
@@ -89,5 +91,19 @@ def permutationUnitary : Equiv.Perm n →* unitary (Matrix n n R) :=
 theorem coe_permutationUnitary (σ : Equiv.Perm n) :
     (permutationUnitary (R := R) σ : Matrix n n R) = σ⁻¹.permMatrix R :=
   (rfl)
+
+namespace specialUnitaryGroup
+
+/-- Any special unitary matrix equal to a scalar matrix lies in the center of the special unitary
+group. -/
+theorem mem_center_of_coe_eq_scalar {n α : Type*} [Fintype n] [DecidableEq n] [CommRing α]
+    [StarRing α] {g : specialUnitaryGroup n α} {c : α}
+    (hg : (g : Matrix n n α) = scalar n c) :
+    g ∈ Subgroup.center (specialUnitaryGroup n α) :=
+  Subgroup.mem_center_iff.mpr fun h => Subtype.ext <| by
+    rw [Submonoid.coe_mul, Submonoid.coe_mul, hg,
+      (scalar_commute c (Commute.all c) (h : Matrix n n α)).eq]
+
+end specialUnitaryGroup
 
 end Matrix

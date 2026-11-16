@@ -64,29 +64,6 @@ public section
 
 namespace Matrix.specialUnitaryGroup
 
-section CommRing
-
-variable {n : Type*} [Fintype n] [DecidableEq n] {α : Type*} [CommRing α] [StarRing α]
-
-/-- Any special unitary matrix equal to a scalar matrix lies in the center of the special unitary
-group. -/
-theorem mem_center_of_coe_eq_scalar {g : specialUnitaryGroup n α} {c : α}
-    (hg : (g : Matrix n n α) = scalar n c) :
-    g ∈ Subgroup.center (specialUnitaryGroup n α) :=
-  Subgroup.mem_center_iff.mpr fun h => Subtype.ext <| by
-    rw [Submonoid.coe_mul, Submonoid.coe_mul, hg,
-      (scalar_commute c (Commute.all c) (h : Matrix n n α)).eq]
-
-/-- An element of `SU(n, α)` whose image in `SL(n, α)` is central lies in the center of
-`SU(n, α)`. -/
-theorem comap_toSL_center_le :
-    (Subgroup.center (SpecialLinearGroup n α)).comap (toSL (n := n) (α := α)) ≤
-      Subgroup.center (specialUnitaryGroup n α) := fun g hg =>
-  Subgroup.mem_center_iff.mpr fun h => toSL_injective <| by
-    rw [map_mul, map_mul, Subgroup.mem_center_iff.mp hg (toSL h)]
-
-end CommRing
-
 section RCLike
 
 variable {n : Type*} [Fintype n] [DecidableEq n] {𝕜 : Type*} [RCLike 𝕜]

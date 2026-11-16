@@ -41,6 +41,8 @@ basis vector maps to the corresponding scalar multiple of the target basis vecto
   vanishing `(i, j)` entry wherever that diagonal matrix separates `i` from `j`.
 * `TauCeti.isDiag_of_commute_diagonal`: a matrix commuting with a diagonal matrix of pairwise
   distinct entries is itself diagonal.
+* `TauCeti.submatrix_mul_of_commute_diagonal`: restricting to an eigenspace `{i // t i = c}` of a
+  diagonal matrix commutes with left multiplication by any matrix commuting with `diagonal t`.
 * `Module.Basis.toMatrix_eq_diagonal_iff`: a linear map has a specified diagonal matrix in two
   bases exactly when it scales the corresponding basis vectors by the diagonal entries.
 -/
@@ -121,6 +123,25 @@ theorem apply_eq_zero_of_commute_diagonal {t : ι → k} {g : Matrix ι ι k}
 theorem isDiag_of_commute_diagonal {t : ι → k} (ht : Function.Injective t)
     {g : Matrix ι ι k} (hg : Commute (Matrix.diagonal t) g) : g.IsDiag :=
   fun _ _ hij => apply_eq_zero_of_commute_diagonal hg (ht.ne hij)
+
+/-- If a matrix `M` commutes with `diagonal t`, restricting to any eigenspace `{i : ι // t i = c}`
+commutes with left multiplication by `M` because all off-block entries of `M` vanish. -/
+theorem submatrix_mul_of_commute_diagonal {t : ι → k} {c : k} [DecidablePred fun i => t i = c]
+    {M : Matrix ι ι k} (hM : Commute (Matrix.diagonal t) M) {κ κ' : Type*} (N : Matrix ι κ k)
+    (f : κ' → κ) :
+    (M * N).submatrix (Subtype.val : {i : ι // t i = c} → ι) f =
+      M.submatrix (Subtype.val : {i : ι // t i = c} → ι)
+          (Subtype.val : {i : ι // t i = c} → ι) *
+        N.submatrix (Subtype.val : {i : ι // t i = c} → ι) f := by
+  ext a b
+  simp only [submatrix_apply, Matrix.mul_apply]
+  rw [← Finset.sum_subtype (Finset.univ.filter fun i : ι => t i = c) (by simp)
+    (fun i => M a.1 i * N i (f b))]
+  symm
+  refine Fintype.sum_subset fun i hi => ?_
+  simp only [Finset.mem_univ, Finset.mem_filter, true_and]
+  by_contra hne
+  exact hi (by rw [apply_eq_zero_of_commute_diagonal hM (a.2.trans_ne (Ne.symm hne)), zero_mul])
 
 end Commute
 

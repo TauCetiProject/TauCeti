@@ -15,7 +15,9 @@ public import Mathlib.Topology.Algebra.ConstMulAction
 public import Mathlib.Topology.Homeomorph.Quotient
 public import TauCeti.Analysis.Matrix.UnitaryGroup.SpecialUnitary
 public import TauCeti.Topology.Algebra.UnitaryGroup
+import Mathlib.Topology.Algebra.MulAction
 import TauCeti.LinearAlgebra.Matrix.Diagonal
+import TauCeti.LinearAlgebra.Matrix.UnitaryGroup.Basic
 
 /-!
 # Twisted `SU(r)` surface commutator relation moduli
@@ -159,10 +161,9 @@ theorem mem_relationSubMulAction_iff {r : ℕ} {ζ : ℂ} {g : ℕ}
 
 /-- Simultaneous conjugation action of `ConjAct (SU(r))` directly on `relationSet r ζ g`. -/
 noncomputable instance instMulActionConjActRelationSet (r : ℕ) (ζ : ℂ) (g : ℕ) :
-    MulAction (ConjAct (Matrix.specialUnitaryGroup (Fin r) ℂ)) (relationSet r ζ g) where
-  smul u x := ⟨u • x.1, conjAct_smul_mem_relationSet u x.2⟩
-  one_smul x := Subtype.ext (one_smul _ x.1)
-  mul_smul u v x := Subtype.ext (mul_smul u v x.1)
+    MulAction (ConjAct (Matrix.specialUnitaryGroup (Fin r) ℂ)) (relationSet r ζ g) :=
+  inferInstanceAs (MulAction (ConjAct (Matrix.specialUnitaryGroup (Fin r) ℂ))
+    (relationSubMulAction r ζ g))
 
 /-- Coercing `u • x` from `relationSet r ζ g` to the ambient tuple type agrees with `u • x.1`. -/
 @[simp]
@@ -176,14 +177,9 @@ theorem conjAct_smul_relationSet_coe {r : ℕ} {ζ : ℂ} {g : ℕ}
 /-- Each element of `ConjAct (SU(r))` acts continuously on `relationSet r ζ g`. -/
 instance instContinuousConstSMulConjActRelationSet (r : ℕ) (ζ : ℂ) (g : ℕ) :
     ContinuousConstSMul (ConjAct (Matrix.specialUnitaryGroup (Fin r) ℂ))
-      (relationSet r ζ g) where
-  continuous_const_smul _ := by
-    refine Continuous.subtype_mk (continuous_pi fun j => ?_) _
-    have hj : Continuous fun x : relationSet r ζ g => x.1 j :=
-      (continuous_apply j).comp continuous_subtype_val
-    exact Continuous.prodMk
-      ((continuous_const.mul (continuous_fst.comp hj)).mul continuous_const)
-      ((continuous_const.mul (continuous_snd.comp hj)).mul continuous_const)
+      (relationSet r ζ g) :=
+  inferInstanceAs (ContinuousConstSMul (ConjAct (Matrix.specialUnitaryGroup (Fin r) ℂ))
+    (relationSubMulAction r ζ g))
 
 /-- The conjugation moduli `R_g / SU(r)` of the twisted `SU(r)` surface relation: the quotient of
 `relationSet r ζ g` by the pullback of the simultaneous conjugation orbit relation, endowed with
@@ -229,9 +225,8 @@ noncomputable def relationModuliHomeomorphOrbitQuotient (r : ℕ) (ζ : ℂ) (g 
     relationModuli r ζ g ≃ₜ
       MulAction.orbitRel.Quotient (ConjAct (Matrix.specialUnitaryGroup (Fin r) ℂ))
         (relationSet r ζ g) :=
-  Homeomorph.Quotient.congrRight fun x y => by
-    simp only [Setoid.comap_rel, MulAction.orbitRel_apply, MulAction.mem_orbit_iff,
-      Subtype.ext_iff, conjAct_smul_relationSet_coe]
+  Homeomorph.Quotient.congrRight
+    (Setoid.ext_iff.mp (SubMulAction.orbitRel_of_subMul (relationSubMulAction r ζ g)).symm)
 
 /-- `relationModuliHomeomorphOrbitQuotient` sends `relationModuliMk x` to `Quotient.mk _ x`. -/
 @[simp]
@@ -327,39 +322,6 @@ instance instT2SpaceRelationModuli (r : ℕ) (ζ : ℂ) (g : ℕ) :
 
 /-! ### Centrality of stabilizers and the free `PSU(r)` action -/
 
-/-- Restricting the identity matrix to `{i : Fin r // p i}` yields the identity matrix. -/
-private theorem submatrix_subtype_one {r : ℕ} (p : Fin r → Prop) :
-    (1 : Matrix (Fin r) (Fin r) ℂ).submatrix (Subtype.val : {i : Fin r // p i} → Fin r)
-      (Subtype.val : {i : Fin r // p i} → Fin r) = 1 :=
-  submatrix_one _ Subtype.val_injective
-
-/-- Restricting `ζ • 1` to `{i : Fin r // p i}` yields `ζ • 1`. -/
-private theorem submatrix_subtype_smul_one {r : ℕ} (p : Fin r → Prop) (ζ : ℂ) :
-    (ζ • (1 : Matrix (Fin r) (Fin r) ℂ)).submatrix (Subtype.val : {i : Fin r // p i} → Fin r)
-      (Subtype.val : {i : Fin r // p i} → Fin r) = ζ • 1 :=
-  congrArg (ζ • ·) (submatrix_subtype_one p)
-
-/-- If a matrix `M` commutes with `diagonal d`, restricting to `{i // d i = c}` commutes with left
-multiplication by `M` because all off-block entries of `M` vanish. -/
-private theorem submatrix_mul_of_commute_diagonal {r : ℕ} {d : Fin r → ℂ} {c : ℂ}
-    {M : Matrix (Fin r) (Fin r) ℂ} (hM : Commute (diagonal d) M)
-    (N : Matrix (Fin r) (Fin r) ℂ) :
-    (M * N).submatrix (Subtype.val : {i : Fin r // d i = c} → Fin r)
-        (Subtype.val : {i : Fin r // d i = c} → Fin r) =
-      M.submatrix (Subtype.val : {i : Fin r // d i = c} → Fin r)
-          (Subtype.val : {i : Fin r // d i = c} → Fin r) *
-        N.submatrix (Subtype.val : {i : Fin r // d i = c} → Fin r)
-          (Subtype.val : {i : Fin r // d i = c} → Fin r) := by
-  ext a b
-  simp only [submatrix_apply, Matrix.mul_apply]
-  rw [← Finset.sum_subtype (Finset.univ.filter fun k : Fin r => d k = c) (by simp)
-    (fun k => M a.1 k * N k b.1)]
-  symm
-  refine Fintype.sum_subset fun k hk => ?_
-  simp only [Finset.mem_univ, Finset.mem_filter, true_and]
-  by_contra hne
-  exact hk (by simp [apply_eq_zero_of_commute_diagonal hM (a.2.trans_ne (Ne.symm hne))])
-
 /-- On any eigenspace `{i // d i = c}` of `diagonal d`, the block restriction of a commutator of
 two special unitary matrices commuting with `diagonal d` has determinant `1`. -/
 private theorem det_submatrix_commutator_eq_one {r : ℕ} {d : Fin r → ℂ} {c : ℂ}
@@ -392,7 +354,8 @@ private theorem det_submatrix_commutator_eq_one {r : ℕ} {d : Fin r → ℂ} {c
         _ = (G⁻¹ : Matrix.specialUnitaryGroup (Fin r) ℂ) * diagonal d := by
             rw [← hG.eq, Matrix.mul_assoc, Matrix.mul_assoc, h1, Matrix.mul_one]
     refine ⟨hGinv, ?_⟩
-    rw [← det_mul, ← submatrix_mul_of_commute_diagonal hG, h1, submatrix_subtype_one, det_one]
+    rw [← det_mul, ← submatrix_mul_of_commute_diagonal hG, h1,
+      submatrix_one _ Subtype.val_injective, det_one]
   obtain ⟨hAinv, hAdet⟩ := hinv_comm hA
   obtain ⟨_, hBdet⟩ := hinv_comm hB
   rw [commutatorElement_def, Submonoid.coe_mul, Submonoid.coe_mul, Submonoid.coe_mul,
@@ -412,7 +375,7 @@ private theorem det_submatrix_list_prod_eq_one {r : ℕ} {d : Fin r → ℂ} {c 
       (((L.prod : Matrix.specialUnitaryGroup (Fin r) ℂ) : Matrix (Fin r) (Fin r) ℂ).submatrix
         (Subtype.val : {i : Fin r // d i = c} → Fin r)
         (Subtype.val : {i : Fin r // d i = c} → Fin r)).det = 1
-  | [], _ => by simp [submatrix_subtype_one]
+  | [], _ => by simp [submatrix_one _ Subtype.val_injective]
   | M :: L, hL => by
     obtain ⟨hM_comm, hM_det⟩ := hL M List.mem_cons_self
     have ih := det_submatrix_list_prod_eq_one L fun N hN => hL N (List.mem_cons_of_mem M hN)
@@ -476,8 +439,8 @@ theorem relationSet_stabilizer_central {r : ℕ} {ζ : ℂ} (hζ : IsPrimitiveRo
         ⁅(x' j).1, (x' j).2⁆ := map_commutatorElement (MulAut.conj w).toMonoidHom _ _
     exact ⟨hcj ▸ hcomm_d hc, det_submatrix_commutator_eq_one (hcomm_d (hu j).1) (hcomm_d (hu j).2)⟩
   have hx' : x' ∈ relationSet r ζ g := conjAct_smul_mem_relationSet (ConjAct.toConjAct w) hx
-  rw [mem_relationSet_iff.mp hx', submatrix_subtype_smul_one, det_smul, det_one,
-    mul_one] at hdet1
+  rw [mem_relationSet_iff.mp hx', submatrix_smul, Pi.smul_apply, Pi.smul_apply,
+    submatrix_one _ Subtype.val_injective, det_smul, det_one, mul_one] at hdet1
   have hu'_center : u' ∈ Subgroup.center (Matrix.specialUnitaryGroup (Fin r) ℂ) :=
     Matrix.specialUnitaryGroup.mem_center_of_coe_eq_scalar
       (by rw [hw, scalar_apply]; exact congrArg diagonal (funext

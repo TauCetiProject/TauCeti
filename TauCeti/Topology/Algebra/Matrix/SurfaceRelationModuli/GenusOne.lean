@@ -5,21 +5,25 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Logic.Equiv.Fin.Rotate
 public import TauCeti.Analysis.Matrix.UnitaryGroup.Weyl
 public import TauCeti.Topology.Algebra.Matrix.SurfaceRelationModuli.Basic
+import TauCeti.Algebra.BigOperators.Fin
 import TauCeti.LinearAlgebra.Matrix.Diagonal
+import TauCeti.Logic.Equiv.Fin.Basic
 
 /-!
 # Genus-one twisted `SU(r)` surface commutator relation moduli
 
-This file classifies the genus-one (`g = 1`) twisted `SU(r)` commutator relation moduli
-`TauCeti.SpecialUnitary.relationModuli r ζ 1` in the coprime case `IsPrimitiveRoot ζ r`, proving
-existence via a rescaled clock-and-shift pair in `SU(r)` and uniqueness up to `SU(r)`-conjugation,
-and records genus-one consequences and non-coprime counterexamples.
+This file studies the genus-one (`g = 1`) twisted `SU(r)` commutator relation moduli
+`TauCeti.SpecialUnitary.relationModuli r ζ 1`, proving nonemptiness whenever `ζ ^ r = 1` via a
+rescaled clock-and-shift pair in `SU(r)`, uniqueness up to `SU(r)`-conjugation in the coprime case
+`IsPrimitiveRoot ζ r`, and genus-one consequences and non-coprime counterexamples.
 
 ## Main results
 
+* `TauCeti.SpecialUnitary.nonempty_relationSet_one` and
+  `TauCeti.SpecialUnitary.nonempty_relationModuli_one`: whenever `ζ ^ r = 1`, `relationSet r ζ 1`
+  and `relationModuli r ζ 1` are nonempty.
 * `TauCeti.SpecialUnitary.relationModuli_genus_one`: when `IsPrimitiveRoot ζ r`, the genus-one
   moduli `relationModuli r ζ 1` is nonempty and a subsingleton.
 * `TauCeti.SpecialUnitary.contractibleSpace_relationModuli_one` and
@@ -50,17 +54,6 @@ open scoped commutatorElement
 namespace TauCeti.SpecialUnitary
 
 /-! ### Genus-one existence, uniqueness, and simple connectivity -/
-
-/-- For `ζ ^ r = 1` and `1 ≤ r`, advancing the index in `Fin r` by `finRotate r` multiplies
-`ζ ^ (i : ℕ)` by `ζ`. -/
-private theorem pow_finRotate_eq {r : ℕ} (hr : 1 ≤ r) {ζ : ℂ} (hζ : ζ ^ r = 1) (i : Fin r) :
-    ζ ^ (finRotate r i : ℕ) = ζ * ζ ^ (i : ℕ) := by
-  have : NeZero r := ⟨by omega⟩
-  rw [finRotate_apply, Fin.val_add, Fin.val_one']
-  have hmod : ∀ m : ℕ, ζ ^ (m % r) = ζ ^ m := fun m => by
-    conv_rhs => rw [← Nat.div_add_mod m r]
-    rw [pow_add, pow_mul, hζ, one_pow, one_mul]
-  rw [hmod, pow_add, hmod, pow_one, mul_comm]
 
 /-- Rescaling two unitary matrices `U, V ∈ U(r)` by circle elements `c₁, c₂` into `SU(r)` preserves
 their matrix commutator. -/
@@ -95,15 +88,15 @@ private theorem commutator_circle_smul_eq {r : ℕ} {U V : unitaryGroup (Fin r) 
     ← Matrix.mul_assoc]
 
 /-- Clock-and-shift construction of a standard pair `(A, B)` in `SU(r)` with `⁅A, B⁆ = ζ • 1` when
-`1 ≤ r` and `ζ` is a primitive `r`-th root of unity. -/
-private theorem exists_clock_shift_pair {r : ℕ} (hr : 1 ≤ r) {ζ : ℂ} (hζ : IsPrimitiveRoot ζ r) :
+`1 ≤ r` and `ζ ^ r = 1`. -/
+private theorem exists_clock_shift_pair {r : ℕ} (hr : 1 ≤ r) {ζ : ℂ} (hζ : ζ ^ r = 1) :
     ∃ (A B : Matrix.specialUnitaryGroup (Fin r) ℂ) (c₁ c₂ : Circle),
       (A : Matrix (Fin r) (Fin r) ℂ) = diagonal (fun k : Fin r => ζ ^ (k : ℕ) * (c₁ : ℂ)) ∧
       (B : Matrix (Fin r) (Fin r) ℂ) =
         (c₂ : ℂ) • ((permutationUnitary (finRotate r) : unitaryGroup (Fin r) ℂ) :
           Matrix (Fin r) (Fin r) ℂ) ∧
       (↑⁅A, B⁆ : Matrix (Fin r) (Fin r) ℂ) = ζ • 1 := by
-  have hnorm : ‖ζ‖ = 1 := Complex.norm_eq_one_of_pow_eq_one hζ.pow_eq_one (by omega)
+  have hnorm : ‖ζ‖ = 1 := Complex.norm_eq_one_of_pow_eq_one hζ (by omega)
   let z : Fin r → Circle := fun k =>
     ⟨ζ ^ (k : ℕ), mem_sphere_zero_iff_norm.mpr (by rw [norm_pow, hnorm, one_pow])⟩
   let z' : Fin r → Circle := fun i => z (finRotate r i)
@@ -125,14 +118,14 @@ private theorem exists_clock_shift_pair {r : ℕ} (hr : 1 ≤ r) {ζ : ℂ} (hζ
         ζ • (DU : Matrix (Fin r) (Fin r) ℂ) := by
       dsimp only [DU, z']
       rw [coe_unitaryTorusHom, coe_unitaryTorusHom, ← diagonal_smul]
-      exact congrArg diagonal (funext fun i => pow_finRotate_eq hr hζ.pow_eq_one i)
+      exact congrArg diagonal (funext fun i => pow_val_finRotate hζ i)
     rw [← h1, h2, mul_smul_comm]
   obtain ⟨c₁, hc₁⟩ := exists_circle_smul_mem_specialUnitaryGroup DU
   obtain ⟨c₂, hc₂⟩ := exists_circle_smul_mem_specialUnitaryGroup QU
   let A : Matrix.specialUnitaryGroup (Fin r) ℂ := ⟨(c₁ : ℂ) • (DU : Matrix (Fin r) (Fin r) ℂ), hc₁⟩
   let B : Matrix.specialUnitaryGroup (Fin r) ℂ := ⟨(c₂ : ℂ) • (QU : Matrix (Fin r) (Fin r) ℂ), hc₂⟩
   refine ⟨A, B, c₁, c₂, ?_, rfl, ?_⟩
-  · change ((c₁ : ℂ) • (DU : Matrix (Fin r) (Fin r) ℂ)) = _
+  · dsimp only [A]
     rw [coe_unitaryTorusHom, ← diagonal_smul]
     exact congrArg diagonal (funext fun _ => mul_comm _ _)
   · calc (↑⁅A, B⁆ : Matrix (Fin r) (Fin r) ℂ)
@@ -148,6 +141,21 @@ private theorem exists_clock_shift_pair {r : ℕ} (hr : 1 ≤ r) {ζ : ℂ} (hζ
               (star (DU : Matrix (Fin r) (Fin r) ℂ))]
       _ = ζ • 1 := by
           rw [(Unitary.mem_iff.mp DU.2).2, Matrix.mul_one, (Unitary.mem_iff.mp QU.2).2]
+
+/-- Whenever `ζ ^ r = 1`, the genus-one twisted relation set `relationSet r ζ 1` is nonempty: for
+`1 ≤ r` it contains a rescaled clock-and-shift pair, while for `r = 0` every `0 × 0` matrix
+equation holds trivially. -/
+theorem nonempty_relationSet_one {r : ℕ} {ζ : ℂ} (hζ : ζ ^ r = 1) :
+    Nonempty (relationSet r ζ 1) := by
+  rcases Nat.eq_zero_or_pos r with rfl | hr
+  · exact ⟨⟨fun _ => (1, 1), mem_relationSet_one_iff.mpr (Subsingleton.elim _ _)⟩⟩
+  · obtain ⟨A₀, B₀, _, _, _, _, hrel₀⟩ := exists_clock_shift_pair hr hζ
+    exact ⟨⟨fun _ => (A₀, B₀), mem_relationSet_one_iff.mpr hrel₀⟩⟩
+
+/-- Whenever `ζ ^ r = 1`, the genus-one twisted moduli `relationModuli r ζ 1` is nonempty. -/
+theorem nonempty_relationModuli_one {r : ℕ} {ζ : ℂ} (hζ : ζ ^ r = 1) :
+    Nonempty (relationModuli r ζ 1) :=
+  (nonempty_relationSet_one hζ).map relationModuliMk
 
 /-- If `diagonal z * B₁ = ζ • (B₁ * diagonal z)` with `B₁ ∈ SU(r)`, `1 ≤ r`, and
 `IsPrimitiveRoot ζ r`, the diagonal entries `z` are a permutation of `ζ ^ k * μ` (`μ ≠ 0`). -/
@@ -239,50 +247,6 @@ private theorem exists_conj_first_eq_clock {r : ℕ} (hr : 1 ≤ r) {ζ : ℂ} (
           ← Submonoid.coe_mul, hconjU, coe_unitaryTorusHom]
         exact congrArg diagonal (funext hσ)
 
-/-- Telescoping prefix product on `Fin r` solving `δ k * (δ ((finRotate r).symm k))⁻¹ = η k` on
-the circle whenever `∏ j, η j = 1`. -/
-private theorem prefixProd_mul_finRotate_symm_inv {r : ℕ} (hr : 1 ≤ r) {η : Fin r → Circle}
-    (hη : ∏ j : Fin r, η j = 1) :
-    ∃ δ : Fin r → Circle, ∀ k : Fin r, δ k * (δ ((finRotate r).symm k))⁻¹ = η k := by
-  have : NeZero r := ⟨by omega⟩
-  let δ : Fin r → Circle := fun k => ∏ j ∈ Finset.Iic k, η j
-  refine ⟨δ, fun k => ?_⟩
-  rcases Nat.eq_zero_or_pos (k : ℕ) with hk0 | hkpos
-  · have hk_zero : k = ⟨0, hr⟩ := Fin.ext hk0
-    subst hk_zero
-    have hsymm : (finRotate r).symm ⟨0, hr⟩ = ⟨r - 1, by omega⟩ := by
-      apply (finRotate r).injective
-      rw [Equiv.apply_symm_apply, finRotate_apply, Fin.ext_iff, Fin.val_add, Fin.val_one']
-      simp [Nat.sub_add_cancel hr]
-    have hIic0 : Finset.Iic (⟨0, hr⟩ : Fin r) = {⟨0, hr⟩} := by
-      ext j
-      simp only [Finset.mem_Iic, Finset.mem_singleton, Fin.le_def, Fin.ext_iff]
-      omega
-    have hIic_last : Finset.Iic (⟨r - 1, by omega⟩ : Fin r) = Finset.univ := by
-      ext j
-      simp only [Finset.mem_Iic, Finset.mem_univ, iff_true, Fin.le_def]
-      omega
-    dsimp only [δ]
-    rw [hsymm, hIic0, hIic_last, Finset.prod_singleton, hη, inv_one, mul_one]
-  · let k' : Fin r := ⟨(k : ℕ) - 1, by omega⟩
-    have hrot : finRotate r k' = k := by
-      rw [finRotate_apply, Fin.ext_iff, Fin.val_add, Fin.val_one']
-      have hr2 : 1 < r := by omega
-      have h1 : 1 % r = 1 := Nat.mod_eq_of_lt hr2
-      have hk1 : ((k : ℕ) - 1) + 1 = (k : ℕ) := Nat.sub_add_cancel hkpos
-      dsimp only [k']
-      rw [h1, hk1, Nat.mod_eq_of_lt k.isLt]
-    have hsymm : (finRotate r).symm k = k' := (finRotate r).symm_apply_eq.mpr hrot.symm
-    have hIic : Finset.Iic k = insert k (Finset.Iic k') := by
-      ext j
-      simp only [Finset.mem_Iic, Finset.mem_insert, Fin.le_def, Fin.ext_iff, k']
-      omega
-    have hnotMem : k ∉ Finset.Iic k' := by
-      simp only [Finset.mem_Iic, Fin.le_def, k']
-      omega
-    dsimp only [δ]
-    rw [hsymm, hIic, Finset.prod_insert hnotMem, mul_inv_cancel_right]
-
 /-- If both `B₀` and `B` satisfy `⁅A₀, -⁆ = ζ • 1` in `SU(r)`, then `A₀` commutes with `B * B₀⁻¹`
 at the matrix level. -/
 private theorem commute_mul_inv_of_commutator_eq_smul_one {r : ℕ} {ζ : ℂ}
@@ -351,11 +315,11 @@ private theorem exists_torus_of_commutator_eq {r : ℕ} {ζ : ℂ} (hζ : IsPrim
   have hη_mat : ((C⁻¹ : Matrix.specialUnitaryGroup (Fin r) ℂ) : Matrix (Fin r) (Fin r) ℂ) =
       diagonal (fun j => (η j : ℂ)) := by
     simpa [coe_unitaryTorusHom] using (congrArg Subtype.val hη).symm
-  have hprod_coe : ((∏ j : Fin r, η j : Circle) : ℂ) = 1 := by
-    change Circle.coeHom (∏ j : Fin r, η j) = 1
+  have hprod_coe : Circle.coeHom (∏ j : Fin r, η j) = 1 := by
     rw [map_prod]
-    exact det_diagonal.symm.trans (hη_mat ▸ (mem_specialUnitaryGroup_iff.mp (C⁻¹).2).2)
-  exact ⟨η, Circle.coe_eq_one.mp hprod_coe, hη_mat⟩
+    simpa only [Circle.coeHom_apply] using
+      det_diagonal.symm.trans (hη_mat ▸ (mem_specialUnitaryGroup_iff.mp (C⁻¹).2).2)
+  exact ⟨η, (map_eq_one_iff Circle.coeHom Circle.coe_injective).mp hprod_coe, hη_mat⟩
 
 /-- Conjugating the rescaled cyclic shift `B₀ = c₂ • permutationUnitary (finRotate r)` by a
 rescaled diagonal matrix `D = α • unitaryTorusHom δ` multiplies `B₀` on the left by
@@ -399,7 +363,7 @@ private theorem conj_shift_eq_torus_mul {r : ℕ} {B₀ C : Matrix.specialUnitar
 
 /-- If `(A₀, B)` and `(A₀, B₀)` both solve `⁅A₀, -⁆ = ζ • 1` with the standard clock matrix `A₀`
 and shift matrix `B₀`, some diagonal element of `SU(r)` conjugates `(A₀, B)` to `(A₀, B₀)`. -/
-private theorem exists_diag_conj_second_eq {r : ℕ} (hr : 1 ≤ r) {ζ : ℂ}
+private theorem exists_diag_conj_second_eq {r : ℕ} {ζ : ℂ}
     (hζ : IsPrimitiveRoot ζ r) {A₀ B₀ B : Matrix.specialUnitaryGroup (Fin r) ℂ} {c₁ c₂ : Circle}
     (hA₀ : (A₀ : Matrix (Fin r) (Fin r) ℂ) = diagonal (fun k : Fin r => ζ ^ (k : ℕ) * (c₁ : ℂ)))
     (hB₀ : (B₀ : Matrix (Fin r) (Fin r) ℂ) =
@@ -411,7 +375,7 @@ private theorem exists_diag_conj_second_eq {r : ℕ} (hr : 1 ≤ r) {ζ : ℂ}
       D * A₀ * D⁻¹ = A₀ ∧ D * B * D⁻¹ = B₀ := by
   let C : Matrix.specialUnitaryGroup (Fin r) ℂ := B * B₀⁻¹
   obtain ⟨η, hη_prod, hη_mat⟩ := exists_torus_of_commutator_eq hζ hA₀ hrel₀ hrel
-  obtain ⟨δ, hδ⟩ := prefixProd_mul_finRotate_symm_inv hr hη_prod
+  obtain ⟨δ, hδ⟩ := exists_mul_inv_finRotate_symm_eq_iff.mpr hη_prod
   obtain ⟨α, hα⟩ := exists_circle_smul_mem_specialUnitaryGroup (unitaryTorusHom (Fin r) δ)
   let D : Matrix.specialUnitaryGroup (Fin r) ℂ :=
     ⟨(α : ℂ) • (unitaryTorusHom (Fin r) δ : Matrix (Fin r) (Fin r) ℂ), hα⟩
@@ -514,7 +478,7 @@ private theorem exists_conj_eq_clock_shift_pair {r : ℕ} (hr : 1 ≤ r) {ζ : �
       (x := fun _ : Fin 1 => (A₁, B₁)) (mem_relationSet_one_iff.mpr hrel₁)
     simpa only [mem_relationSet_one_iff, Pi.smul_apply, Prod.smul_mk, ConjAct.smul_def,
       ConjAct.ofConjAct_toConjAct, hA₂, hB₁_self] using h
-  obtain ⟨D, hDA₀, hDB₁⟩ := exists_diag_conj_second_eq hr hζ hA₀ hB₀ hrel₀ hrel₂
+  obtain ⟨D, hDA₀, hDB₁⟩ := exists_diag_conj_second_eq hζ hA₀ hB₀ hrel₀ hrel₂
   refine ⟨D * B₁ ^ m * u₁, ?_, ?_⟩
   · calc (D * B₁ ^ m * u₁) * A * (D * B₁ ^ m * u₁)⁻¹
         = D * (B₁ ^ m * A₁ * (B₁ ^ m)⁻¹) * D⁻¹ := by simp only [A₁, _root_.mul_inv_rev, mul_assoc]
@@ -528,14 +492,10 @@ unity, `relationModuli r ζ 1` is nonempty and a subsingleton. No positivity ass
 needed: for `r = 0`, `SU(0)` is trivial and `Matrix (Fin 0) (Fin 0) ℂ` is a subsingleton. -/
 theorem relationModuli_genus_one {r : ℕ} {ζ : ℂ} (hζ : IsPrimitiveRoot ζ r) :
     Nonempty (relationModuli r ζ 1) ∧ Subsingleton (relationModuli r ζ 1) := by
+  refine ⟨nonempty_relationModuli_one hζ.pow_eq_one, ?_⟩
   rcases Nat.eq_zero_or_pos r with rfl | hr
-  · have hx₀ : (fun _ : Fin 1 => (1, 1)) ∈ relationSet 0 ζ 1 :=
-      mem_relationSet_one_iff.mpr (Subsingleton.elim _ _)
-    have : Subsingleton (relationSet 0 ζ 1) :=
-      ⟨fun _ _ => Subtype.ext (funext fun _ => Prod.ext (Subsingleton.elim _ _)
-        (Subsingleton.elim _ _))⟩
-    exact ⟨⟨relationModuliMk ⟨_, hx₀⟩⟩, inferInstance⟩
-  obtain ⟨A₀, B₀, c₁, c₂, hA₀, hB₀, hrel₀⟩ := exists_clock_shift_pair hr hζ
+  · exact subsingleton_relationModuli_of_le_one (Nat.zero_le _) ζ 1
+  obtain ⟨A₀, B₀, c₁, c₂, hA₀, hB₀, hrel₀⟩ := exists_clock_shift_pair hr hζ.pow_eq_one
   let x₀ : relationSet r ζ 1 := ⟨fun _ => (A₀, B₀), mem_relationSet_one_iff.mpr hrel₀⟩
   have heq : ∀ x : relationSet r ζ 1, relationModuliMk x = relationModuliMk x₀ := fun x => by
     obtain ⟨w, hwA, hwB⟩ := exists_conj_eq_clock_shift_pair hr hζ hA₀ hB₀ hrel₀
@@ -552,7 +512,7 @@ theorem relationModuli_genus_one {r : ℕ} {ζ : ℂ} (hζ : IsPrimitiveRoot ζ 
       simp only [Pi.smul_apply, Prod.smul_snd, ConjAct.smul_def, ConjAct.ofConjAct_toConjAct,
         inv_inv, ← hwB]
       group
-  refine ⟨⟨relationModuliMk x₀⟩, ⟨fun q₁ q₂ => ?_⟩⟩
+  refine ⟨fun q₁ q₂ => ?_⟩
   obtain ⟨x₁, rfl⟩ := relationModuliMk_surjective r ζ 1 q₁
   obtain ⟨x₂, rfl⟩ := relationModuliMk_surjective r ζ 1 q₂
   exact (heq x₁).trans (heq x₂).symm

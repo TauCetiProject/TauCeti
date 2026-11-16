@@ -21,6 +21,10 @@ import TauCeti.Data.Fin.Basic
 
 Successive differences along a finite sequence sum to the difference of its endpoints,
 including the empty edge sequence. Reversing every difference reverses the endpoint difference.
+In a commutative group, the prefix products `δ k = ∏ j ≤ k, η j` solve the cyclic coboundary
+equation `δ k * (δ ((finRotate n).symm k))⁻¹ = η k` whenever `∏ j, η j = 1`
+(`TauCeti.prod_Iic_mul_inv_finRotate_symm`), characterizing solvability of that equation
+(`TauCeti.exists_mul_inv_finRotate_symm_eq_iff`).
 The equivalence omitting the last index also reindexes sums by the preceding indices, and a
 filtered product over `Fin (n + 1)` splits off its first index; when two such products agree and
 so do their first factors, the products over the remaining indices agree.
@@ -316,6 +320,49 @@ theorem sum_finSuccAboveEquiv_last {M : Type*} [AddCommMonoid M] (n : ℕ)
     ∑ i : Fin n, z ⟨i.castSucc, Fin.castSucc_ne_last i⟩ = ∑ j, z j := by
   simpa only [finSuccAboveEquiv_last_apply] using
     Equiv.sum_comp (finSuccAboveEquiv (Fin.last n)) z
+
+/-- When `∏ j, η j = 1` in a commutative group, the prefix products `δ k = ∏ j ≤ k, η j` on
+`Fin n` solve the cyclic coboundary equation `δ k * (δ ((finRotate n).symm k))⁻¹ = η k` (including
+wraparound at `0`). -/
+@[to_additive /-- When `∑ j, η j = 0` in an additive commutative group, the prefix sums
+`δ k = ∑ j ≤ k, η j` on `Fin n` solve the cyclic coboundary equation
+`δ k + -∑ j ∈ Finset.Iic ((finRotate n).symm k), η j = η k` (including wraparound at `0`). -/]
+theorem prod_Iic_mul_inv_finRotate_symm {G : Type*} [CommGroup G] {n : ℕ} {η : Fin n → G}
+    (hη : ∏ j, η j = 1) (k : Fin n) :
+    (∏ j ∈ Finset.Iic k, η j) * (∏ j ∈ Finset.Iic ((finRotate n).symm k), η j)⁻¹ = η k := by
+  cases n with
+  | zero => exact k.elim0
+  | succ m =>
+    cases k using Fin.cases with
+    | zero =>
+      rw [Fin.finRotate_symm_zero, ← bot_eq_zero, Finset.Iic_bot, ← Fin.top_eq_last,
+        Finset.Iic_top, Finset.prod_singleton, bot_eq_zero, hη, inv_one, mul_one]
+    | succ k =>
+      have hIic : Finset.Iic k.succ = insert k.succ (Finset.Iic k.castSucc) := by
+        ext j
+        simp only [Finset.mem_Iic, Finset.mem_insert, Fin.le_def, Fin.val_succ, Fin.val_castSucc,
+          Fin.ext_iff]
+        omega
+      have hnotMem : k.succ ∉ Finset.Iic k.castSucc := by
+        simp [Fin.le_def]
+      rw [Fin.finRotate_symm_succ, hIic, Finset.prod_insert hnotMem, mul_inv_cancel_right]
+
+/-- In a commutative group, the cyclic coboundary equation
+`δ k * (δ ((finRotate n).symm k))⁻¹ = η k` on `Fin n` has a solution `δ : Fin n → G` if and only
+if `∏ j, η j = 1`. -/
+@[to_additive /-- In an additive commutative group, the cyclic coboundary equation
+`δ k + -δ ((finRotate n).symm k) = η k` on `Fin n` has a solution `δ : Fin n → G` if and only if
+`∑ j, η j = 0`. -/]
+theorem exists_mul_inv_finRotate_symm_eq_iff {G : Type*} [CommGroup G] {n : ℕ}
+    {η : Fin n → G} :
+    (∃ δ : Fin n → G, ∀ k, δ k * (δ ((finRotate n).symm k))⁻¹ = η k) ↔ ∏ j, η j = 1 := by
+  refine ⟨fun ⟨δ, hδ⟩ => ?_, fun hη => ⟨fun k => ∏ j ∈ Finset.Iic k, η j,
+    prod_Iic_mul_inv_finRotate_symm hη⟩⟩
+  calc ∏ j, η j = ∏ j, (δ j * (δ ((finRotate n).symm j))⁻¹) :=
+        Finset.prod_congr rfl fun j _ => (hδ j).symm
+    _ = (∏ j, δ j) * (∏ j, δ ((finRotate n).symm j))⁻¹ := by
+        rw [Finset.prod_mul_distrib, Finset.prod_inv_distrib]
+    _ = 1 := by rw [Equiv.prod_comp (finRotate n).symm δ, mul_inv_cancel]
 
 end TauCeti
 

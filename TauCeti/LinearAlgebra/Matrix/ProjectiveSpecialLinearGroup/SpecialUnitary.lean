@@ -32,7 +32,9 @@ sphere.
 
 ## Main declarations
 
-* `Matrix.specialUnitaryGroup.toSL`: the inclusion `SU(n) → SL(n)`.
+* `Matrix.specialUnitaryGroup.toSL`: the inclusion `SU(n) → SL(n)`, with
+  `Matrix.specialUnitaryGroup.comap_toSL_center_le` showing that elements central in `SL(n)` are
+  central in `SU(n)`.
 * `Matrix.specialUnitaryGroup.toGL_toSL`: in `GL(n)`, it agrees with the unitary units.
 * `Matrix.specialUnitaryGroup.toPSL`: the homomorphism `SU(n) → PSL(n)`, whose range is `PSU(n)`.
 * `Matrix.specialUnitaryGroup.ker_toPSL`: its kernel is the preimage of the center of `SL(n)`.
@@ -79,6 +81,13 @@ theorem toGL_toSL (A : specialUnitaryGroup n α) :
 theorem toSL_injective : Function.Injective (toSL : specialUnitaryGroup n α →* _) :=
   fun A B h => Subtype.ext <| by
     simpa using congrArg (fun M : SpecialLinearGroup n α => (M : Matrix n n α)) h
+
+/-- An element of `SU(n, α)` whose image in `SL(n, α)` is central lies in the center of
+`SU(n, α)`. -/
+theorem comap_toSL_center_le :
+    (Subgroup.center (SpecialLinearGroup n α)).comap (toSL (n := n) (α := α)) ≤
+      Subgroup.center (specialUnitaryGroup n α) :=
+  Subgroup.comap_center_le_center toSL_injective
 
 /-- A matrix of the special linear group comes from the special unitary group exactly when it is
 unitary. -/
