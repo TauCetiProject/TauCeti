@@ -7,7 +7,6 @@ module
 
 public import Mathlib.GroupTheory.PGroup
 public import Mathlib.NumberTheory.Padics.ProperSpace
-public import Mathlib.Topology.Algebra.ContinuousMonoidHom
 public import Mathlib.Topology.Algebra.Group.Units
 public import Mathlib.Topology.MetricSpace.Ultra.TotallySeparated
 public import TauCeti.Analysis.Normed.Ring.Units
