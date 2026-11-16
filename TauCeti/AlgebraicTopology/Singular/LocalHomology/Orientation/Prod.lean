@@ -98,10 +98,12 @@ def prod (hE : finrank ℝ E = m + 1) (hF : finrank ℝ F = n + 1) (hd : m + 1 +
 /-- The product of the local orientations selected by `ω` and `ω'` is the local orientation
 selected by their product orientation. -/
 @[simp]
-theorem prod_localOrientation [FiniteDimensional ℝ E] [FiniteDimensional ℝ F]
-    (hE : finrank ℝ E = m + 1) (hF : finrank ℝ F = n + 1) (hd : m + 1 + (n + 1) = d + 1)
-    (ω : Orientation ℝ E (Fin (m + 1))) (ω' : Orientation ℝ F (Fin (n + 1))) :
+theorem prod_localOrientation (hE : finrank ℝ E = m + 1) (hF : finrank ℝ F = n + 1)
+    (hd : m + 1 + (n + 1) = d + 1) (ω : Orientation ℝ E (Fin (m + 1)))
+    (ω' : Orientation ℝ F (Fin (n + 1))) :
     prod hE hF hd (ω.localOrientation hE) (ω'.localOrientation hF) =
+      haveI := FiniteDimensional.of_finrank_eq_succ hE
+      haveI := FiniteDimensional.of_finrank_eq_succ hF
       (Orientation.reindex ℝ (E × F) (finCongr hd) (ω.prod ω' hE hF)).localOrientation
         (finrank_prod_eq_succ hE hF hd) := by
   rw [prod, Orientation.localOrientationEquiv_symm_localOrientation,
@@ -112,8 +114,6 @@ theorem prod_localOrientation [FiniteDimensional ℝ E] [FiniteDimensional ℝ F
 theorem prod_neg_left (hE : finrank ℝ E = m + 1) (hF : finrank ℝ F = n + 1)
     (hd : m + 1 + (n + 1) = d + 1) (z : LocalOrientation E 0 (m + 1))
     (z' : LocalOrientation F 0 (n + 1)) : prod hE hF hd (-z) z' = -prod hE hF hd z z' := by
-  have := FiniteDimensional.of_finrank_eq_succ hE
-  have := FiniteDimensional.of_finrank_eq_succ hF
   obtain ⟨ω, rfl⟩ := Orientation.localOrientation_surjective hE z
   obtain ⟨ω', rfl⟩ := Orientation.localOrientation_surjective hF z'
   simp only [← Orientation.localOrientation_neg, prod_localOrientation, Orientation.prod_neg_left,
@@ -124,8 +124,6 @@ theorem prod_neg_left (hE : finrank ℝ E = m + 1) (hF : finrank ℝ F = n + 1)
 theorem prod_neg_right (hE : finrank ℝ E = m + 1) (hF : finrank ℝ F = n + 1)
     (hd : m + 1 + (n + 1) = d + 1) (z : LocalOrientation E 0 (m + 1))
     (z' : LocalOrientation F 0 (n + 1)) : prod hE hF hd z (-z') = -prod hE hF hd z z' := by
-  have := FiniteDimensional.of_finrank_eq_succ hE
-  have := FiniteDimensional.of_finrank_eq_succ hF
   obtain ⟨ω, rfl⟩ := Orientation.localOrientation_surjective hE z
   obtain ⟨ω', rfl⟩ := Orientation.localOrientation_surjective hF z'
   simp only [← Orientation.localOrientation_neg, prod_localOrientation, Orientation.prod_neg_right,
