@@ -92,6 +92,8 @@ estimates do not see the boundary.
 
 * `TauCeti.PDE.jetField`: the value-gradient jet field of a Sobolev function.
 * `TauCeti.PDE.energyFormH1`: the divergence-form energy form on `H¹(Ω) = W^{1,2}(Ω)`.
+* `TauCeti.PDE.energyFormH1_eq_of_eqOn_of_ae_gradient_eq_zero`: the energy form only sees the
+  principal coefficients where `∇u` does not vanish.
 * `TauCeti.PDE.aestronglyMeasurable_energyFormH1`: for coefficients jointly measurable in a
   parameter and in space, the energy form is a.e. strongly measurable in the parameter.
 * `TauCeti.PDE.energyFormH1_zero_zero_eq_setIntegral`: the energy form with no lower-order
@@ -437,6 +439,21 @@ theorem energyFormH1_congr_ae {a a' : EuclideanSpace ℝ ι → Matrix ι ι ℝ
     (hc : c =ᵐ[mu.restrict Omega] c') (u v : W1p mu Omega 2) :
     energyFormH1 a b c u v = energyFormH1 a' b' c' u v :=
   energyFormIntegral_congr_ae _ _ _ _ _ _ ha hb hc .rfl .rfl
+
+/-- The energy form `a(u, v)` only sees the principal coefficients where `∇u` does not vanish: it
+is unchanged when `a` is replaced by a field agreeing with it on a set `s` outside of which `∇u = 0`
+almost everywhere on `Ω`, keeping the lower-order coefficients `b, c`. -/
+theorem energyFormH1_eq_of_eqOn_of_ae_gradient_eq_zero {a a' : EuclideanSpace ℝ ι → Matrix ι ι ℝ}
+    {s : Set (EuclideanSpace ℝ ι)} (ha : Set.EqOn a a' s)
+    (b : EuclideanSpace ℝ ι → EuclideanSpace ℝ ι) (c : EuclideanSpace ℝ ι → ℝ) {u : W1p mu Omega 2}
+    (hu : ∀ᵐ x ∂mu.restrict Omega, x ∉ s → W1p.gradient u x = 0) (v : W1p mu Omega 2) :
+    energyFormH1 a b c u v = energyFormH1 a' b c u v := by
+  rw [energyFormH1_def, energyFormH1_def]
+  refine integral_congr_ae ?_
+  filter_upwards [hu] with x hx
+  by_cases hxs : x ∈ s
+  · rw [ha hxs]
+  · simp [hx hxs]
 
 /-- The energy form on `H¹(Ω)` is homogeneous in the coefficient triple `(a, b, c)`. -/
 theorem energyFormH1_smul_coefficients (a : EuclideanSpace ℝ ι → Matrix ι ι ℝ)
