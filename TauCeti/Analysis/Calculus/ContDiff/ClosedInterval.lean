@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.Calculus.FDeriv.Extend
+public import Mathlib.MeasureTheory.Integral.IntervalIntegral.Basic
 public import Mathlib.Order.Interval.Set.ProjIcc
 public import TauCeti.Analysis.Calculus.IteratedDeriv.Within
 import Mathlib.MeasureTheory.Integral.IntervalIntegral.FundThmCalculus
@@ -48,7 +49,9 @@ on `[a, b]`, such as a Hölder bound, is a global modulus of continuity of `w''`
 
 The function `w` is obtained by integrating `h ∘ projIcc a b` twice, starting from `v a` and
 `v' a`; the fundamental theorem of calculus on `[a, b]` identifies the integrals with `v` and `v'`
-there.
+there. The first integration is the `C¹` statement
+`ContinuousOn.contDiff_and_deriv_const_add_integral_comp_projIcc`: for `g` continuous on `[a, b]`,
+`t ↦ c + ∫ s in a..t, g (projIcc a b s)` is `C¹` with derivative `g ∘ projIcc a b`.
 -/
 
 public section
@@ -152,6 +155,19 @@ theorem contDiffOn_Icc_iff_exists_continuous_jet {n : ℕ} :
   · rintro ⟨J, hzero, hc, hd⟩
     exact contDiffOn_Icc_of_continuous_jet hzero hc hd
 
+/-- **`C¹` extension by integration.** For `g` continuous on `[a, b]`, the function
+`t ↦ c + ∫ s in a..t, g (projIcc a b s)` is `C¹` on `ℝ`, with derivative the constant extension
+`g ∘ projIcc a b` of `g`. -/
+theorem _root_.ContinuousOn.contDiff_and_deriv_const_add_integral_comp_projIcc [CompleteSpace F]
+    (hg : ContinuousOn g (Icc a b)) (hab : a ≤ b) (c : F) :
+    ContDiff ℝ 1 (fun t => c + ∫ s in a..t, g (projIcc a b hab s)) ∧
+      deriv (fun t => c + ∫ s in a..t, g (projIcc a b hab s)) =
+        fun t => g (projIcc a b hab t) := by
+  have hgₑ := hg.comp_projIcc hab
+  exact ⟨contDiff_const.add (by
+    simpa using intervalIntegral.contDiff_primitive_of_contDiff (n := 0) (contDiff_zero.2 hgₑ) a),
+    funext fun t => ((hgₑ.integral_hasStrictDerivAt a t).hasDerivAt.const_add _).deriv⟩
+
 /-- **`C²` extension from a closed interval.** Let `v : ℝ → F` be `C¹`, and let `h` be continuous
 on `[a, b]` with `h t` the derivative of `v'` at every `t ∈ (a, b)`. Then there is a `C²` function
 `w` on `ℝ` with `w = v` and `w' = v'` on `[a, b]`, whose second derivative is
@@ -165,10 +181,7 @@ theorem exists_contDiff_two_eqOn_and_deriv_deriv_eq [CompleteSpace F] (hab : a �
   have hhₑ : Continuous hₑ := hh.comp_projIcc hab
   -- `w₂ = v' a + ∫ hₑ` is `C¹`, and is `v'` on `[a, b]`.
   set w₂ : ℝ → F := fun t => deriv v a + ∫ s in a..t, hₑ s with hw₂_def
-  have hw₂ : ContDiff ℝ 1 w₂ := contDiff_const.add (by
-    simpa using intervalIntegral.contDiff_primitive_of_contDiff (n := 0) (contDiff_zero.2 hhₑ) a)
-  have hdw₂ : deriv w₂ = hₑ := funext fun t =>
-    ((hhₑ.integral_hasStrictDerivAt a t).hasDerivAt.const_add _).deriv
+  obtain ⟨hw₂, hdw₂⟩ := hh.contDiff_and_deriv_const_add_integral_comp_projIcc hab (deriv v a)
   have hw₂v : ∀ t ∈ Icc a b, w₂ t = deriv v t := fun t ht => by
     have hint := intervalIntegral.integral_eq_sub_of_hasDerivAt_of_le (f' := hₑ) ht.1
       (hv.continuous_deriv le_rfl).continuousOn (fun s hs =>

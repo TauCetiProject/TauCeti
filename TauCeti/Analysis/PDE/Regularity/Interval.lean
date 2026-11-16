@@ -7,10 +7,7 @@ module
 
 public import Mathlib.Analysis.Calculus.ContDiff.Defs
 public import TauCeti.Analysis.Sobolev.W1p.Interval.Representative
-import Mathlib.Analysis.Calculus.Deriv.Add
-import Mathlib.Analysis.Calculus.ContDiff.Deriv
-import Mathlib.MeasureTheory.Integral.IntervalIntegral.FundThmCalculus
-import TauCeti.Analysis.Calculus.IntervalIntegral.ParametricPrimitive
+import TauCeti.Analysis.Calculus.ContDiff.ClosedInterval
 import TauCeti.Analysis.Calculus.LineDeriv.Basic
 import TauCeti.Analysis.Normed.Group.Real
 import TauCeti.Analysis.Sobolev.WeakDeriv.Interval
@@ -19,7 +16,6 @@ import TauCeti.MeasureTheory.Integral.Bochner.Set
 import TauCeti.MeasureTheory.Integral.IntervalIntegral.Primitive
 import TauCeti.Order.Filter.Basic
 import TauCeti.Topology.MetricSpace.Holder
-import TauCeti.Topology.Order.ProjIcc
 
 /-!
 # Global Hölder estimate for divergence-form equations on an interval
@@ -194,12 +190,11 @@ theorem exists_contDiff_eq_intervalRepresentativeL_and_deriv_eq (hx : x₀ < x�
       (TauCeti.intervalIntegral.continuousOn_primitive_interval_of_integrableOn_Ioo hf
         (left_mem_Icc.2 hx.le))).sub hF).div ha ha0
   set ĝ : ℝ → ℝ := fun t => g (projIcc x₀ x₁ hx.le t)
-  have hĝ : Continuous ĝ := hg.comp_projIcc hx.le
   set x₀' : Icc x₀ x₁ := ⟨x₀, left_mem_Icc.2 hx.le⟩
-  refine ⟨k, fun t => W1p.intervalRepresentativeL hx u x₀' + ∫ s in x₀..t, ĝ s, ?_, fun t => ?_,
+  obtain ⟨hw, hdw⟩ := hg.contDiff_and_deriv_const_add_integral_comp_projIcc hx.le
+    (W1p.intervalRepresentativeL hx u x₀')
+  refine ⟨k, fun t => W1p.intervalRepresentativeL hx u x₀' + ∫ s in x₀..t, ĝ s, hw, fun t => ?_,
     fun t ht => ?_⟩
-  · exact contDiff_const.add (by
-      simpa using intervalIntegral.contDiff_primitive_of_contDiff (n := 0) (contDiff_zero.2 hĝ) x₀)
   · -- On `(x₀, x₁)` the weak gradient is `g` almost everywhere, by the first integral.
     have hgrad : ∀ᵐ s ∂volume.restrict (Ioo x₀ t), W1p.gradient u s = ĝ s := by
       have hk' := (ae_restrict_iff' measurableSet_Ioo).1 hk
@@ -210,13 +205,14 @@ theorem exists_contDiff_eq_intervalRepresentativeL_and_deriv_eq (hx : x₀ < x�
       simp only [ĝ, g, projIcc_of_mem hx.le (Ioo_subset_Icc_self hs')]
       rw [eq_div_iff has, ← hs hs']
       ring
+    have hĝint : ∫ s in x₀..t, W1p.gradient u s = ∫ s in x₀..t, ĝ s := by
+      simp only [intervalIntegral.integral_of_le t.2.1, integral_Ioc_eq_integral_Ioo]
+      exact integral_congr_ae hgrad
     have hint := W1p.integral_gradient_eq_intervalRepresentativeL_sub hx u x₀' t
-    rw [intervalIntegral.integral_of_le t.2.1, integral_Ioc_eq_integral_Ioo,
-      integral_congr_ae hgrad, ← integral_Ioc_eq_integral_Ioo,
-      ← intervalIntegral.integral_of_le t.2.1] at hint
+    rw [hĝint] at hint
     simp only [hint, add_sub_cancel]
-  · rw [((hĝ.integral_hasStrictDerivAt x₀ t).hasDerivAt.const_add _).deriv]
-    simp only [ĝ, g, projIcc_of_mem hx.le ht]
+  · rw [hdw]
+    simp only [g, projIcc_of_mem hx.le ht]
 
 /-- **The constant of a first integral is bounded independently of the coefficient.** If
 `λ ≤ a ≤ M` almost everywhere on `(x₀, x₁)`, with `λ > 0`, and `G` is integrable there, then
