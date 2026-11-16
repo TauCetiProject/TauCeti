@@ -171,8 +171,8 @@ theorem norm_iteratedFDeriv_inv_comp_le {𝕜 : Type*} [RCLike 𝕜] {p : E → 
 are bounded by `A t` and `c t ≤ ‖p y‖` with `c > 0`, then the derivatives of order at most `n` of
 `p⁻¹` at `y` are bounded by `Q / t`, where `Q` depends only on `n`, `A` and `c`. This is how a
 cutoff is divided by an elliptic symbol of size `t = (1 + ‖η‖) ^ M`. -/
-theorem exists_norm_iteratedFDeriv_inv_le_div {𝕜 : Type*} [RCLike 𝕜] (n : ℕ) {A c : ℝ}
-    (hc : 0 < c) :
+theorem exists_norm_iteratedFDeriv_inv_le_div {𝕜 : Type*} [RCLike 𝕜] (n : ℕ)
+    (A : ℝ) {c : ℝ} (hc : 0 < c) :
     ∃ Q, 0 ≤ Q ∧ ∀ (p : E → 𝕜) (t : ℝ) (y : E), 0 < t → ContDiff ℝ n p →
       (∀ j ≤ n, ‖iteratedFDeriv ℝ j p y‖ ≤ A * t) → c * t ≤ ‖p y‖ →
         ∀ j ≤ n, ‖iteratedFDeriv ℝ j (fun z ↦ (p z)⁻¹) y‖ ≤ Q / t := by

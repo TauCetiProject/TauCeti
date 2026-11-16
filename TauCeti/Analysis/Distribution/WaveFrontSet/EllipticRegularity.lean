@@ -655,7 +655,7 @@ private theorem exists_localFourier_le_succ {ι : Type*} {s : Finset ι} {c : ι
   have hb : ∀ i, ContDiff ℝ ∞ fun y ↦ c i * (a i y : ℂ) :=
     fun i ↦ contDiff_const.mul (ofRealCLM.contDiff.comp (ha i))
   obtain ⟨A, -, hA⟩ := exists_norm_iteratedFDeriv_symbol_le hb hk hK n
-  obtain ⟨Q, hQ0, hQ⟩ := exists_norm_iteratedFDeriv_inv_le_div (E := E) (𝕜 := ℂ) n (A := A) hc'
+  obtain ⟨Q, hQ0, hQ⟩ := exists_norm_iteratedFDeriv_inv_le_div (E := E) (𝕜 := ℂ) n A hc'
   obtain ⟨G, hG0, hG⟩ := exists_forall_norm_iteratedFDeriv_le_of_isCompact s (n := n)
     (fun i _ ↦ (ofRealCLM.contDiff.comp (ha i)).of_le (by exact_mod_cast le_top)) hK
   choose Cd hCd0 hCd using fun i ↦ exists_localFourier_iteratedLineDerivOp_sub_le hC hT (m i)
