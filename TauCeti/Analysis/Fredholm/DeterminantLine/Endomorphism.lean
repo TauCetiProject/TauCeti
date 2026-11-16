@@ -118,14 +118,8 @@ private theorem isInvertible (A : V →L[ℝ] V) :
     subst hu
     refine Prod.ext rfl (Subtype.ext ?_)
     simpa using h.1
-  have hbij : Function.Bijective ((A.coprod (S V).subtypeL).prod (q (V := V))) := by
-    refine ⟨hinj, ?_⟩
-    have := LinearMap.injective_iff_surjective_of_finrank_eq_finrank (K := ℝ)
-      (f := (((A.coprod (S V).subtypeL).prod (q (V := V)) : V × S V →L[ℝ] V × G V) :
-        V × S V →ₗ[ℝ] V × G V)) ?_
-    · exact this.1 hinj
-    · simp [Module.finrank_prod, LinearMap.finrank_range_of_inj LinearMap.inl_injective]
-  exact ⟨(LinearEquiv.ofBijective _ hbij).toContinuousLinearEquiv, rfl⟩
+  exact ⟨(LinearMap.linearEquivOfInjective _ hinj (by simp [Module.finrank_prod,
+    LinearMap.finrank_range_of_inj LinearMap.inl_injective])).toContinuousLinearEquiv, rfl⟩
 
 variable (A : V →L[ℝ] V)
 
