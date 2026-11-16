@@ -24,7 +24,9 @@ distance is at most the square root of the number of coordinates times the sup d
 These estimates give inclusions between balls in the two metrics. The corresponding
 Cauchy–Schwarz estimate bounds the sum of coordinate norms by `√(card ι)` times the `L²` norm.
 The coordinate spaces may be different seminormed groups, or pseudometric spaces for the
-distance comparisons.
+distance comparisons. A squared-norm bound of `(k + 1) * t²` for a vector of `L²`
+also bounds the number of coordinates with norm exceeding a nonnegative `t` by `k`
+(`PiLp.card_filter_lt_norm_le`).
 
 Extending a vector of `Lᵖ(ι, E)` by zero along an embedding `f : ι ↪ ι'` places its coordinate `i`
 in the slot `f i`, and the vectors so obtained are those whose coordinates outside the range of
@@ -84,6 +86,27 @@ protected theorem norm_nonneg' [∀ i, SeminormedAddGroup (E i)] (x : PiLp p E) 
     exact Real.rpow_nonneg (Finset.sum_nonneg fun _ _ ↦ Real.rpow_nonneg (norm_nonneg _) _) _
 
 variable [∀ i, SeminormedAddCommGroup (E i)]
+
+/-- At most `k` coordinates have norm exceeding a nonnegative threshold `t` when the squared
+norm is at most `(k + 1) * t²`. -/
+theorem card_filter_lt_norm_le {x : PiLp 2 E} {k : ℕ} {t : ℝ}
+    (ht : 0 ≤ t) (hxt : ‖x‖ ^ 2 ≤ (k + 1 : ℝ) * t ^ 2) :
+    (Finset.univ.filter fun i ↦ t < ‖x i‖).card ≤ k := by
+  classical
+  by_contra h
+  let s := Finset.univ.filter fun i ↦ t < ‖x i‖
+  have hcard : k + 1 ≤ s.card := Nat.succ_le_of_lt (Nat.lt_of_not_ge h)
+  have hsum : (s.card : ℝ) * t ^ 2 < ∑ i ∈ s, ‖x i‖ ^ 2 := by
+    calc
+      _ = ∑ _i ∈ s, t ^ 2 := by simp
+      _ < _ := Finset.sum_lt_sum_of_nonempty (Finset.card_pos.mp (by omega)) fun i hi ↦
+        pow_lt_pow_left₀ ((Finset.mem_filter.mp hi).2) ht (by norm_num : 2 ≠ 0)
+  have htotal : ∑ i ∈ s, ‖x i‖ ^ 2 ≤ ‖x‖ ^ 2 := by
+    rw [PiLp.norm_sq_eq_of_L2]
+    exact Finset.sum_le_univ_sum_of_nonneg fun _ ↦ sq_nonneg _
+  have hcard' : (k + 1 : ℝ) ≤ s.card := by exact_mod_cast hcard
+  exact (mul_le_mul_of_nonneg_right hcard' (sq_nonneg t)).not_gt
+    (hsum.trans_le (htotal.trans hxt))
 
 /-- Taking coordinate norms preserves the finite `Lᵖ` norm. -/
 @[simp]
