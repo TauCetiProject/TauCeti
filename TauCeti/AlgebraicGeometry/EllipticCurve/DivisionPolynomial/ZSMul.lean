@@ -125,6 +125,9 @@ is the statement the Nagell–Lutz layer consumes.
   two-torsion, `addOrderOf P = 2 ↔ ψ₂(x, y) = 0`, read off from the doubling formula through
   `Affine.Point.some_add_self_eq_zero_iff`. Its contrapositive is what discharges the
   `addOrderOf ≠ 2` guard the Nagell–Lutz theorems carry.
+* `WeierstrassCurve.evalEval_ψ₂_eq_zero_iff_nsmul_eq_zero`,
+  `WeierstrassCurve.eval_Ψ₃_eq_zero_iff_nsmul_eq_zero`: `ψ₂` and `Ψ₃` vanish at a nonsingular
+  affine point exactly when `2 • P = 0`, respectively `3 • P = 0`.
 
 ## Provenance
 
@@ -1163,5 +1166,20 @@ theorem addOrderOf_eq_two_iff_evalEval_ψ₂_eq_zero [DecidableEq F] {x y : F}
   exact ⟨fun h ↦ h ▸ addOrderOf_nsmul_eq_zero _,
     fun h ↦ addOrderOf_eq_prime h (Affine.Point.some_ne_zero hns)⟩
 
+/-- **`ψ₂` vanishes exactly at the points killed by `2`.** This is
+`Affine.Point.some_add_self_eq_zero_iff` with `P + P` read as `2 • P`. -/
+theorem evalEval_ψ₂_eq_zero_iff_nsmul_eq_zero [DecidableEq F] {x y : F}
+    (hns : W.toAffine.Nonsingular x y) :
+    W.ψ₂.evalEval x y = 0 ↔ 2 • Affine.Point.some _ _ hns = 0 := by
+  rw [ψ₂, ← Affine.Point.some_add_self_eq_zero_iff hns, two_nsmul]
+
+/-- **`Ψ₃` vanishes exactly at the abscissae of the points killed by `3`.** This is
+`eval_ΨSq_eq_zero_iff_zsmul_eq_zero` at `n = 3`, where `ΨSq₃ = Ψ₃²`. -/
+theorem eval_Ψ₃_eq_zero_iff_nsmul_eq_zero [DecidableEq F] {x y : F}
+    (hns : W.toAffine.Nonsingular x y) :
+    W.Ψ₃.eval x = 0 ↔ 3 • Affine.Point.some _ _ hns = 0 := by
+  rw [← pow_eq_zero_iff two_ne_zero, ← Polynomial.eval_pow, ← ΨSq_three,
+    eval_ΨSq_eq_zero_iff_zsmul_eq_zero W hns, zsmul_fromAffine_eq_zero_iff_zsmul_eq_zero,
+    ofNat_zsmul]
 
 end WeierstrassCurve
