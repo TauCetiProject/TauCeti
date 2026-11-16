@@ -8,6 +8,7 @@ module
 public import Mathlib.Analysis.InnerProductSpace.Dual
 public import Mathlib.Topology.VectorBundle.FiniteDimensional
 public import TauCeti.Geometry.Manifold.VectorBundle.Riemannian.ChartGram
+import TauCeti.Analysis.InnerProductSpace.Dual
 import Mathlib.Geometry.Manifold.VectorBundle.ContMDiffSection
 
 /-!
@@ -101,9 +102,11 @@ theorem eq_rieszDual_iff_inner_eq {x : M} {v : TangentSpace I x}
 theorem rieszDual_eq_sum {x : M} (φ : TangentSpace I x →L[ℝ] ℝ) {ι : Type*} [Fintype ι]
     (b : OrthonormalBasis ι ℝ (TangentSpace I x)) :
     rieszDual (I := I) x φ = ∑ i, φ (b i) • b i := by
-  conv_lhs => rw [← b.sum_repr' (rieszDual x φ)]
-  refine Finset.sum_congr rfl fun i _ ↦ ?_
-  rw [real_inner_comm, inner_rieszDual]
+  let _ : FiniteDimensional ℝ (TangentSpace I x) :=
+    VectorBundle.finiteDimensional ℝ E (TangentSpace I) x
+  let _ := FiniteDimensional.completeSpace ℝ (TangentSpace I x)
+  refine (InnerProductSpace.toDual_symm_eq_sum φ b).trans ?_
+  simp only [conj_trivial]
 
 /-- The coordinate formula for the fibrewise Riesz dual in a chart-local frame. Its coefficient
 vector is the inverse Gram matrix applied to the evaluations of the covector on the frame. -/

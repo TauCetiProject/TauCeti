@@ -37,6 +37,7 @@ No inner product instance on the algebraic dual is installed.
 * `InnerProductSpace.apply_toDual_symm_eq_conj`: `β(α♯) = conj (α(β♯))`, writing `α♯` for
   `(toDual 𝕜 E).symm α`.
 * `InnerProductSpace.apply_toDual_symm_self`: `q(q♯) = ‖q‖²`.
+* `InnerProductSpace.toDual_symm_eq_sum`: `q♯ = ∑ᵢ conj (q(eᵢ)) eᵢ` in an orthonormal basis `eᵢ`.
 * `InnerProductSpace.toDualSymmL`: over `ℝ`, the inverse Riesz map `q ↦ q♯` as a continuous
   linear map.
 * `InnerProductSpace.isInvertible_of_apply_apply_eq_mul_inner`: over `ℝ`, a bilinear form that is
@@ -141,6 +142,13 @@ theorem apply_toDual_symm_eq_conj (α β : StrongDual 𝕜 E) :
 theorem apply_toDual_symm_self (q : StrongDual 𝕜 E) :
     q ((toDual 𝕜 E).symm q) = (‖q‖ : 𝕜) ^ 2 := by
   rw [← toDual_symm_apply, inner_self_eq_norm_sq_to_K, LinearIsometryEquiv.norm_map]
+
+/-- The Riesz representative in an orthonormal basis `eᵢ`: `q♯ = ∑ᵢ conj (q(eᵢ)) eᵢ`. -/
+theorem toDual_symm_eq_sum (q : StrongDual 𝕜 E) {ι : Type*} [Fintype ι]
+    (b : OrthonormalBasis ι 𝕜 E) :
+    (toDual 𝕜 E).symm q = ∑ i, starRingEnd 𝕜 (q (b i)) • b i := by
+  conv_lhs => rw [← b.sum_repr' ((toDual 𝕜 E).symm q)]
+  simp only [← inner_conj_symm (b _), toDual_symm_apply]
 
 section Real
 
