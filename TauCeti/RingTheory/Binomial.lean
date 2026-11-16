@@ -517,6 +517,11 @@ The identity combines them without division, which is the integral step needed i
 * `TauCeti.Ring.mul_weighted_choose_add_mul_choose`: a scalar-weighted Pascal identity.
 * `TauCeti.Ring.add_one_nsmul_multichoose_add_one`: the product recursion
   `(k + 1) (r multichoose (k + 1)) = (r multichoose k) (r + k)`.
+* `TauCeti.Ring.choose_neg_one` and `TauCeti.Ring.neg_one_pow_mul_choose_neg_succ`:
+  `(-1 choose i) = (-1)ⁱ` and `(-1)ⁱ (-k - 1 choose i) = ((k + i) choose k)`.
+* `TauCeti.Ring.sum_range_choose_add_one_smul` and
+  `TauCeti.Ring.sum_range_neg_one_pow_mul_choose_smul`: Pascal identities summed against a
+  sequence over `Finset.range (N + 1)`.
 
 ## References
 
@@ -617,6 +622,48 @@ theorem choose_neg_mem {G : Type*} [SetLike G R] [AddSubgroupClass G R]
     abel
   rw [hshift]
   exact choose_add_intCast_mem hr _
+
+/-- The binomial coefficients of `-1` are alternating signs: `(-1 choose i) = (-1)ⁱ`. -/
+theorem choose_neg_one (i : ℕ) : _root_.Ring.choose (-1 : R) i = (-1 : R) ^ i := by
+  rw [_root_.Ring.choose_neg', _root_.Ring.multichoose_one, Units.smul_def,
+    Int.coe_negOnePow_natCast, zsmul_eq_mul, Int.cast_pow, Int.cast_neg, Int.cast_one, mul_one]
+
+/-- Alternating signs convert negative-integer binomial coefficients into ordinary binomial
+coefficients: `(-1)ⁱ (-k - 1 choose i) = ((k + i) choose k)`. -/
+theorem neg_one_pow_mul_choose_neg_succ (k i : ℕ) :
+    (-1 : R) ^ i * _root_.Ring.choose (-(k : R) - 1) i = ((k + i).choose k : R) := by
+  rw [show -(k : R) - 1 = -((k + 1 : ℕ) : R) by push_cast; abel, _root_.Ring.choose_neg,
+    show ((k + 1 : ℕ) : R) + (i : R) - 1 = ((k + i : ℕ) : R) by push_cast; abel,
+    _root_.Ring.choose_natCast, Nat.choose_symm_add, Units.smul_def, Int.coe_negOnePow_natCast,
+    zsmul_eq_mul, Int.cast_pow, Int.cast_neg, Int.cast_one, ← mul_assoc, ← pow_add, ← two_mul,
+    pow_mul, neg_one_sq, one_pow, one_mul]
+
+/-- Pascal's identity summed over `Finset.range (N + 1)`:
+`∑_{i ≤ N} (m + 1 choose i) • u i` equals
+`∑_{i ≤ N} (m choose i) • u i + ∑_{i < N} (m choose i) • u (i + 1)`. -/
+theorem sum_range_choose_add_one_smul {M : Type*} [AddCommMonoid M] [Module R M]
+    (N : ℕ) (m : R) (u : ℕ → M) :
+    (∑ i ∈ range (N + 1), _root_.Ring.choose (m + 1) i • u i) =
+      (∑ i ∈ range (N + 1), _root_.Ring.choose m i • u i) +
+        ∑ i ∈ range N, _root_.Ring.choose m i • u (i + 1) := by
+  rw [sum_range_succ' _ N, sum_range_succ' _ N]
+  simp only [_root_.Ring.choose_zero_right, one_smul, _root_.Ring.choose_succ_succ, add_smul,
+    sum_add_distrib]; ac_rfl
+
+/-- Alternating-sign Pascal identity summed over `Finset.range (N + 1)`:
+`∑_{i ≤ N} (-1)ⁱ (n choose i) • u i =`
+`∑_{i < N} (-1)ⁱ (n choose i) • u (i + 1) + ∑_{i ≤ N} (-1)ⁱ (n + 1 choose i) • u i`. -/
+theorem sum_range_neg_one_pow_mul_choose_smul {M : Type*} [AddCommGroup M] [Module R M]
+    (N : ℕ) (n : R) (u : ℕ → M) :
+    (∑ i ∈ range (N + 1), ((-1 : R) ^ i * _root_.Ring.choose n i) • u i) =
+      (∑ i ∈ range N, ((-1 : R) ^ i * _root_.Ring.choose n i) • u (i + 1)) +
+        ∑ i ∈ range (N + 1), ((-1 : R) ^ i * _root_.Ring.choose (n + 1) i) • u i := by
+  rw [sum_range_succ' _ N, sum_range_succ' _ N]
+  simp only [pow_zero, _root_.Ring.choose_zero_right, one_mul, one_smul]
+  rw [← add_assoc, ← sum_add_distrib]; congr 1
+  exact sum_congr rfl fun i _ ↦ by
+    rw [← add_smul, _root_.Ring.choose_succ_succ, pow_succ, mul_add]
+    congr 1; simp only [mul_neg_one, neg_mul]; abel
 
 end Ring
 

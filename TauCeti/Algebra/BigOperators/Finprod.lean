@@ -45,6 +45,9 @@ left-regular element commutes with `finsum` even when the support is infinite.
   family has finite multiplicative support jointly in both variables.
 * `TauCeti.finprod_mem_eq_prod_filter_of_mulSupport_subset`: a product over `s` of a family
   supported in a finset `t` is the product over the elements of `t` that lie in `s`.
+* `TauCeti.finprod_eq_prod_range_of_one` and `TauCeti.finsum_eq_sum_range_of_zero`: a product
+  (resp. sum) over `ℕ` of a family that is `1` (resp. `0`) from `N` onwards equals the product
+  (resp. sum) over `Finset.range N`.
 * `TauCeti.finprod_div_add_one` and `TauCeti.finsum_sub_add_one`: a finitely supported
   telescoping product `∏ᶠ i : ℕ, f i / f (i + 1)` is `f 0`, and likewise for sums.
   `TauCeti.finprod_div_add_one_prod` and `TauCeti.finsum_sub_add_one_prod` telescope a family
@@ -202,6 +205,15 @@ theorem finprod_mem_eq_prod_filter_of_mulSupport_subset (f : α → M) (s : Set 
     ext x
     simp only [mem_inter_iff, Finset.coe_filter, mem_ofPred_eq]
     exact ⟨fun h ↦ ⟨⟨ht h.2, h.1⟩, h.2⟩, fun h ↦ ⟨h.1.2, h.2⟩⟩
+
+/-- A product over `ℕ` of a family that is `1` from `N` onwards equals the product over
+`Finset.range N`. -/
+@[to_additive /-- A sum over `ℕ` of a family that is `0` from `N` onwards equals the sum over
+`Finset.range N`. -/]
+theorem finprod_eq_prod_range_of_one {f : ℕ → M} {N : ℕ} (h : ∀ i, N ≤ i → f i = 1) :
+    ∏ᶠ i, f i = ∏ i ∈ Finset.range N, f i :=
+  finprod_eq_prod_of_mulSupport_subset f fun i hi ↦
+    Finset.mem_range.mpr (lt_of_not_ge fun hle ↦ hi (h i hle))
 
 /-- A finitely supported telescoping product over `ℕ` equals `f 0`: the factors
 `f i / f (i + 1)` multiply to `f 0`. This is the `finprod` analogue of `Finset.prod_range_div'`. -/

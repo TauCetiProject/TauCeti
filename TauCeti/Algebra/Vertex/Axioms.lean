@@ -35,17 +35,26 @@ uses divided powers of `T` instead, so the definition is meant for `ℚ`-algebra
 
 ## Main results
 
+* `TauCeti.FormalVertexAxioms.field_vacuum`: `Y(|0⟩, z) = VertexOperator.id R V`.
 * `TauCeti.FormalVertexAxioms.ext`: a formal vertex algebra is determined by its state–field map.
 * `TauCeti.FormalVertexAxioms.translation_apply`: `T a = a₍₋₂₎|0⟩`.
 * `TauCeti.FormalVertexAxioms.translation_ncoeff_apply`:
   `T (a₍ₙ₎ b) = (T a)₍ₙ₎ b + a₍ₙ₎ (T b)`.
+* `TauCeti.FormalVertexAxioms.field_pow_translation` and
+  `TauCeti.FormalVertexAxioms.factorial_smul_hasseDeriv_field`: iterated translation intertwines
+  with iterated derivatives and Hasse derivatives of fields.
 * `TauCeti.FormalVertexAxioms.factorial_smul_ncoeff_field_apply_vacuum`:
-  `k! • a₍₋ₖ₋₁₎|0⟩ = Tᵏ a`, and `TauCeti.FormalVertexAxioms.ncoeff_field_apply_vacuum_neg` its
-  form `a₍₋ₖ₋₁₎|0⟩ = Tᵏ a / k!` over `ℚ`, the creation identity `Y(a,z)|0⟩ = e^{zT} a`.
+  `k! • a₍₋ₖ₋₁₎|0⟩ = Tᵏ a`, and `TauCeti.FormalVertexAxioms.ncoeff_field_apply_vacuum_neg` /
+  `ncoeff_field_neg_succ_apply_vacuum` its forms `a₍₋ₖ₋₁₎|0⟩ = Tᵏ a / k!` over `ℚ`, the creation
+  identity `Y(a,z)|0⟩ = e^{zT} a`.
+* `TauCeti.FormalVertexAxioms.ncoeff_field_apply_eq_zero_of_isLocalOfOrder`: locality of order `N`
+  between `Y(a,z)` and `Y(b,z)` forces `a₍ᵢ₎ b = 0` for all `i ≥ N`.
 * `TauCeti.FormalVertexAxioms.eq_of_ncoeff_apply_vacuum_eq`: Goddard's uniqueness theorem, a field
   local to every `Y(a,z)` is determined by its values on the vacuum.
-* `TauCeti.FormalVertexAxioms.eq_field_of_ncoeff_apply_vacuum_eq`: such a field `B` with
-  `B(z)|0⟩ = Y(b,z)|0⟩` is `Y(b,z)`.
+* `TauCeti.FormalVertexAxioms.eq_field_of_ncoeff_apply_vacuum_eq`,
+  `TauCeti.FormalVertexAxioms.eq_field_of_lie_translation_ncoeff`: uniqueness characterizations of
+  `Y(b,z)`, and `TauCeti.FormalVertexAxioms.field_ncoeff_neg_succ_apply_vacuum`:
+  `Y(a₍₋ₖ₋₁₎|0⟩, z) = ∂_z^{(k)} Y(a, z)`.
 
 ## References
 
@@ -106,14 +115,17 @@ attribute [simp] translation_vacuum ncoeff_field_apply_vacuum_of_nonneg
 /-! ### The vacuum -/
 
 /-- The mode `|0⟩₍₋₁₎` of the vacuum is the identity. -/
-@[simp]
 theorem ncoeff_neg_one_field_vacuum : (A.field A.vacuum)[[-1]] = 1 := by
   simp [A.ncoeff_field_vacuum]
 
 /-- The modes `|0⟩₍ₙ₎` of the vacuum vanish for `n ≠ -1`. -/
-@[simp]
 theorem ncoeff_field_vacuum_of_ne {n : ℤ} (hn : n ≠ -1) : (A.field A.vacuum)[[n]] = 0 := by
   simp [A.ncoeff_field_vacuum, hn]
+
+/-- The field associated to the vacuum vector is the identity vertex operator. -/
+@[simp]
+theorem field_vacuum : A.field A.vacuum = VertexOperator.id R V :=
+  ext_ncoeff fun n ↦ by rw [A.ncoeff_field_vacuum, ncoeff_id]
 
 /-- The state–field map is injective: `a` is recovered as `a₍₋₁₎|0⟩`. -/
 theorem field_injective : Function.Injective A.field := by
@@ -127,6 +139,17 @@ theorem field_injective : Function.Injective A.field := by
 theorem ncoeff_field_translation (a : V) (n : ℤ) :
     (A.field (A.translation a))[[n]] = (-n) • (A.field a)[[n - 1]] := by
   rw [A.field_translation, ncoeff_derivative]
+
+/-- Iterated translation intertwines with iterated formal differentiation of fields. -/
+theorem field_pow_translation (a : V) (k : ℕ) :
+    A.field ((A.translation ^ k) a) = (derivative^[k]) (A.field a) := by
+  rw [FunLike.coe_pow_eq_iterate]
+  exact Function.Semiconj.iterate_right A.field_translation k a
+
+/-- Without division, `k!` times the `k`-th Hasse derivative of `Y(a, z)` is `Y(Tᵏ a, z)`. -/
+theorem factorial_smul_hasseDeriv_field (a : V) (k : ℕ) :
+    k.factorial • hasseDeriv k (A.field a) = A.field ((A.translation ^ k) a) := by
+  rw [factorial_smul_hasseDeriv, A.field_pow_translation]
 
 /-- Translation is a derivation of each mode: `T (a₍ₙ₎ b) = (T a)₍ₙ₎ b + a₍ₙ₎ (T b)`. -/
 theorem translation_ncoeff_apply (a b : V) (n : ℤ) :
@@ -165,6 +188,13 @@ theorem ncoeff_field_apply_vacuum_neg [Module ℚ V] (a : V) (k : ℕ) :
   rw [← A.factorial_smul_ncoeff_field_apply_vacuum, ← Nat.cast_smul_eq_nsmul ℚ,
     inv_smul_smul₀ (by exact_mod_cast k.factorial_ne_zero)]
 
+/-- The `ℚ`-algebra form of `FormalVertexAxioms.factorial_smul_ncoeff_field_apply_vacuum`
+(cf. `ncoeff_field_apply_vacuum_neg`), `a₍₋ₖ₋₁₎|0⟩ = (k!)⁻¹ • Tᵏ a`. -/
+theorem ncoeff_field_neg_succ_apply_vacuum [Algebra ℚ R] (a : V) (k : ℕ) :
+    ((A.field a)[[-(k : ℤ) - 1]]) A.vacuum =
+      algebraMap ℚ R (k.factorial : ℚ)⁻¹ • (A.translation ^ k) a := by
+  simpa using ncoeff_neg_succ_apply_of_lie A.translation_vacuum (A.lie_translation_ncoeff a) k
+
 /-! ### Extensionality -/
 
 /-- A formal vertex algebra is determined by its state–field map: the vacuum is the unique state
@@ -199,6 +229,13 @@ private theorem ncoeff_add_apply_eq_sum {B : VertexOperator R V} {a : V} {N : �
   · have hj : ij.2 ≠ 0 := fun hj ↦ hne (Prod.ext (by simpa [hj] using mem_antidiagonal.1 hij) hj)
     rw [A.ncoeff_field_apply_vacuum_of_nonneg a _ (by omega), map_zero, smul_zero, smul_zero]
 
+/-- If `Y(a, z)` and `Y(b, z)` are local of order `N`, then `a₍ᵢ₎ b = 0` for all `i ≥ N`. -/
+theorem ncoeff_field_apply_eq_zero_of_isLocalOfOrder {a b : V} {N : ℕ}
+    (h : (A.field a).IsLocalOfOrder (A.field b) N) {i : ℕ} (hi : N ≤ i) :
+    ((A.field a)[[(i : ℤ)]]) b = 0 := by
+  have hsum := A.ncoeff_add_apply_eq_sum (h.mono hi) 0; rw [zero_add] at hsum; rw [hsum]
+  exact sum_eq_zero fun ij _ ↦ by simp [A.ncoeff_field_apply_vacuum_of_nonneg]
+
 /-- **Goddard's uniqueness theorem.** Two fields that are local to every field `Y(a,z)` of a
 formal vertex algebra and agree on the vacuum are equal. -/
 theorem eq_of_ncoeff_apply_vacuum_eq {B C : VertexOperator R V}
@@ -219,6 +256,29 @@ theorem eq_field_of_ncoeff_apply_vacuum_eq {B : VertexOperator R V} {b : V}
     (hB : ∀ a, ∃ N, B.IsLocalOfOrder (A.field a) N)
     (h : ∀ n, (B[[n]]) A.vacuum = ((A.field b)[[n]]) A.vacuum) : B = A.field b :=
   A.eq_of_ncoeff_apply_vacuum_eq hB (A.exists_isLocalOfOrder b) h
+
+/-- When `V` has unique division by positive integers, a translation-covariant field `B` local to
+every `Y(c, z)` is uniquely determined by `b = B₍₋₁₎|0⟩` as `B = Y(b, z)`. -/
+theorem eq_field_of_lie_translation_ncoeff [HasUniqueDiv V] {B : VertexOperator R V} {b : V}
+    (hloc : ∀ c : V, ∃ N : ℕ, B.IsLocalOfOrder (A.field c) N)
+    (hcov : ∀ m : ℤ, ⁅A.translation, B[[m]]⁆ = (derivative B)[[m]])
+    (hb : (B[[-1]]) A.vacuum = b) : B = A.field b := by
+  refine A.eq_field_of_ncoeff_apply_vacuum_eq hloc fun n ↦ ?_
+  rcases le_or_gt 0 n with hn | hn
+  · rw [ncoeff_apply_eq_zero_of_lie_of_nonneg A.translation_vacuum hcov hn,
+      A.ncoeff_field_apply_vacuum_of_nonneg b n hn]
+  · obtain ⟨k, rfl⟩ : ∃ k : ℕ, n = -(k : ℤ) - 1 := ⟨(-n - 1).toNat, by omega⟩
+    exact (nsmul_right_inj k.factorial_ne_zero).mp <| by
+      rw [factorial_smul_ncoeff_neg_succ_apply_of_lie A.translation_vacuum hcov k, hb,
+        A.factorial_smul_ncoeff_field_apply_vacuum b k]
+
+/-- The field of `a₍₋ₖ₋₁₎|0⟩` is the `k`-th Hasse derivative of `Y(a, z)`. -/
+@[simp] theorem field_ncoeff_neg_succ_apply_vacuum [HasUniqueDiv V] (a : V) (k : ℕ) :
+    A.field (((A.field a)[[-(k : ℤ) - 1]]) A.vacuum) = hasseDeriv k (A.field a) :=
+  (A.eq_field_of_lie_translation_ncoeff
+    (fun c ↦ let ⟨N, hN⟩ := A.exists_isLocalOfOrder a c; ⟨N + k, hN.hasseDeriv_left k⟩)
+    (lie_ncoeff_hasseDeriv (A.lie_translation_ncoeff a) k)
+    (ncoeff_neg_one_hasseDeriv k (A.field a) ▸ rfl)).symm
 
 end FormalVertexAxioms
 
