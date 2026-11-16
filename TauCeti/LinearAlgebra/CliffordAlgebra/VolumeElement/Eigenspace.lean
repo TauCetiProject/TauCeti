@@ -63,7 +63,10 @@ orientation-reversing isometry exchanges the labels.
 
 ## Main results
 
-* `CliffordAlgebra.isCompl_eigenspace_complexVolume`: `E = E⁺ ⊕ E⁻`.
+* `CliffordAlgebra.isCompl_eigenspace_complexVolume`: `E = E⁺ ⊕ E⁻`, and
+  `AlgHom.isCompl_eigenspace_complexVolume`: the same for a representation
+  `ρ : Cℓ → End_ℂ(S)`, whose `Γ` acts by the involution `ρ(Γ)`
+  (`AlgHom.involutive_complexVolume`).
 * `CliffordAlgebra.projection_eigenspace_complexVolume_apply` and
   `CliffordAlgebra.projection_eigenspace_complexVolume_neg_one_apply`: the projections onto `E⁺`
   and `E⁻` are `½ (1 + Γ)` and `½ (1 - Γ)`.
@@ -342,3 +345,25 @@ theorem finrank_eigenspace_complexVolume_eq_mul_finrank_linearMap (hn0 : n ≠ 0
 end Form
 
 end CliffordAlgebra
+
+namespace AlgHom
+
+open CliffordAlgebra
+
+variable {V : Type*} [NormedAddCommGroup V] [InnerProductSpace ℝ V] [FiniteDimensional ℝ V]
+  {n : ℕ} [Fact (finrank ℝ V = n)] {Q : QuadraticForm ℝ V} {S : Type*} [AddCommGroup S]
+  [Module ℂ S] (ρ : CliffordAlgebra (Q.baseChange ℂ) →ₐ[ℂ] Module.End ℂ S)
+  (o : Orientation ℝ V (Fin n)) (hQ : ∀ v, Q v = -‖v‖ ^ 2)
+include hQ
+
+/-- For `Q v = -‖v‖²`, the element `Γ` acts as an involution in every representation. -/
+theorem involutive_complexVolume : Function.Involutive (ρ (complexVolume Q o)) := fun s ↦ by
+  rw [← mul_apply_eq_comp, map_complexVolume_mul_self o hQ ρ, one_apply_eq_self]
+
+/-- **The chirality decomposition of a representation**: for `Q v = -‖v‖²`, the `1`- and
+`-1`-eigenspaces of `ρ(Γ)` are complementary. -/
+theorem isCompl_eigenspace_complexVolume :
+    IsCompl ((ρ (complexVolume Q o)).eigenspace 1) ((ρ (complexVolume Q o)).eigenspace (-1)) :=
+  isCompl_eigenspace_one_neg_one two_ne_zero.isUnit (ρ.involutive_complexVolume o hQ)
+
+end AlgHom

@@ -51,6 +51,8 @@ continuous extension `LinearMap.extendOfNorm`.
 * `ProjValMeasure.integral_diag_eq_inner_integral`: diagonal matrix elements of the integral are
   integrals against the diagonal measures.
 * `ProjValMeasure.norm_integral_le`: a pointwise bound on the symbol bounds the operator norm.
+* `ProjValMeasure.norm_integral_diag_sub_le` and `ProjValMeasure.abs_integral_diag_sub_le`:
+  Lipschitz bounds for integrals against `P.diag` as a function of the vector.
 * `ProjValMeasure.norm_sq_integral_apply`: the vector norm identity
   `‖(∫ f dP) ξ‖ ^ 2 = ∫ ‖f x‖ ^ 2 d(P.diag ξ)(x)`.
 * `ProjValMeasure.integral_apply_eq_zero_iff`: `(∫ f dP) ξ = 0` iff `f = 0` almost everywhere
@@ -315,6 +317,50 @@ theorem norm_integral_le (P : ProjValMeasure X H) {f : BoundedBorelFunction X} {
     (hM : 0 ≤ M) (hf : ∀ x, ‖f x‖ ≤ M) : ‖P.integral f‖ ≤ M :=
   (NonUnitalStarAlgHom.norm_apply_le P.integral f).trans
     ((BoundedBorelFunction.norm_le hM).2 hf)
+
+/-- Perturbation bound for integrals against diagonal measures:
+`‖∫ f d(P.diag η) - ∫ f d(P.diag ξ)‖ ≤ ‖f‖ * (‖η‖ + ‖ξ‖) * ‖η - ξ‖`. -/
+theorem norm_integral_diag_sub_le (P : ProjValMeasure X H) (f : BoundedBorelFunction X)
+    (ξ η : H) :
+    ‖(∫ x, f x ∂(P.diag η)) - ∫ x, f x ∂(P.diag ξ)‖ ≤ ‖f‖ * (‖η‖ + ‖ξ‖) * ‖η - ξ‖ := by
+  have hnorm : ‖P.integral f‖ ≤ ‖f‖ := NonUnitalStarAlgHom.norm_apply_le P.integral f
+  have heq : (∫ x, f x ∂(P.diag η)) - ∫ x, f x ∂(P.diag ξ) =
+      ⟪η - ξ, P.integral f η⟫_ℂ + ⟪ξ, P.integral f (η - ξ)⟫_ℂ := by
+    rw [P.integral_diag_eq_inner_integral, P.integral_diag_eq_inner_integral,
+      inner_sub_left, map_sub, inner_sub_right]
+    ring
+  rw [heq]
+  calc ‖⟪η - ξ, P.integral f η⟫_ℂ + ⟪ξ, P.integral f (η - ξ)⟫_ℂ‖
+    _ ≤ ‖⟪η - ξ, P.integral f η⟫_ℂ‖ + ‖⟪ξ, P.integral f (η - ξ)⟫_ℂ‖ := norm_add_le _ _
+    _ ≤ ‖η - ξ‖ * ‖P.integral f η‖ + ‖ξ‖ * ‖P.integral f (η - ξ)‖ :=
+        add_le_add (norm_inner_le_norm _ _) (norm_inner_le_norm _ _)
+    _ ≤ ‖η - ξ‖ * (‖f‖ * ‖η‖) + ‖ξ‖ * (‖f‖ * ‖η - ξ‖) := by
+        gcongr
+        · exact ((P.integral f).le_opNorm η).trans
+            (mul_le_mul_of_nonneg_right hnorm (norm_nonneg _))
+        · exact ((P.integral f).le_opNorm (η - ξ)).trans
+            (mul_le_mul_of_nonneg_right hnorm (norm_nonneg _))
+    _ = ‖f‖ * (‖η‖ + ‖ξ‖) * ‖η - ξ‖ := by ring
+
+/-- Perturbation bound for integrals of bounded measurable real-valued functions against diagonal
+measures: `|∫ f d(P.diag η) - ∫ f d(P.diag ξ)| ≤ C * (‖η‖ + ‖ξ‖) * ‖η - ξ‖`. -/
+theorem abs_integral_diag_sub_le (P : ProjValMeasure X H) {f : X → ℝ} (hf : Measurable f)
+    {C : ℝ} (hC : 0 ≤ C) (hfC : ∀ x, |f x| ≤ C) (ξ η : H) :
+    |(∫ x, f x ∂(P.diag η)) - ∫ x, f x ∂(P.diag ξ)| ≤ C * (‖η‖ + ‖ξ‖) * ‖η - ξ‖ := by
+  let fB : BoundedBorelFunction X :=
+    BoundedBorelFunction.ofFunction (fun x ↦ (f x : ℂ))
+      (Complex.continuous_ofReal.measurable.comp hf)
+      ⟨C, hC, fun x ↦ by simpa [Complex.norm_real] using hfC x⟩
+  have hfB_norm : ‖fB‖ ≤ C :=
+    (BoundedBorelFunction.norm_le hC).mpr fun x ↦ by simpa [fB, Complex.norm_real] using hfC x
+  have heq : ‖(((∫ x, f x ∂(P.diag η)) - ∫ x, f x ∂(P.diag ξ) : ℝ) : ℂ)‖ =
+      ‖(∫ x, fB x ∂(P.diag η)) - ∫ x, fB x ∂(P.diag ξ)‖ := by
+    push_cast
+    rw [← integral_complex_ofReal, ← integral_complex_ofReal]
+    simp only [fB, BoundedBorelFunction.ofFunction_apply]
+  rw [← Real.norm_eq_abs, ← Complex.norm_real, heq]
+  refine (P.norm_integral_diag_sub_le fB ξ η).trans ?_
+  gcongr
 
 /-- **Vector norm identity** for the integral against a projection-valued measure:
 `‖(∫ f dP) ξ‖ ^ 2 = ∫ ‖f x‖ ^ 2 d(P.diag ξ)(x)`. -/
