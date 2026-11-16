@@ -74,23 +74,6 @@ namespace Floer
 variable {E F : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [NormedAddCommGroup F]
   [NormedSpace ℝ F]
 
-/-- The `W^{1,2}` energy density of a section splits over a sum: the density of `ξ₁ + ξ₂` is at
-most twice the sum of the densities of `ξ₁` and `ξ₂`. -/
-private theorem sobolev_add_le {ξ₁ ξ₂ : ℝ × ℝ → E} {z : ℝ × ℝ} (h₁ : DifferentiableAt ℝ ξ₁ z)
-    (h₂ : DifferentiableAt ℝ ξ₂ z) :
-    ‖fderiv ℝ (ξ₁ + ξ₂) z stdComplexLineReal‖ ^ 2 + ‖fderiv ℝ (ξ₁ + ξ₂) z stdComplexLineImag‖ ^ 2 +
-        ‖(ξ₁ + ξ₂) z‖ ^ 2 ≤
-      2 * (‖fderiv ℝ ξ₁ z stdComplexLineReal‖ ^ 2 + ‖fderiv ℝ ξ₁ z stdComplexLineImag‖ ^ 2 +
-          ‖ξ₁ z‖ ^ 2) +
-        2 * (‖fderiv ℝ ξ₂ z stdComplexLineReal‖ ^ 2 + ‖fderiv ℝ ξ₂ z stdComplexLineImag‖ ^ 2 +
-          ‖ξ₂ z‖ ^ 2) := by
-  have hsq (x y : E) : ‖x + y‖ ^ 2 ≤ 2 * (‖x‖ ^ 2 + ‖y‖ ^ 2) :=
-    (pow_le_pow_left₀ (norm_nonneg _) (norm_add_le x y) 2).trans add_sq_le
-  rw [fderiv_add h₁ h₂]
-  simp only [add_apply, Pi.add_apply]
-  linarith [hsq (fderiv ℝ ξ₁ z stdComplexLineReal) (fderiv ℝ ξ₂ z stdComplexLineReal),
-    hsq (fderiv ℝ ξ₁ z stdComplexLineImag) (fderiv ℝ ξ₂ z stdComplexLineImag), hsq (ξ₁ z) (ξ₂ z)]
-
 omit [NormedSpace ℝ F] in
 /-- **Absorbing a comparison error.** If the `W^{1,2}` energy of `η` is controlled by the `L²` norm
 of `g`, and `g` differs from `f` pointwise by at most `ε (‖∂t η‖ + ‖η‖)` with `8 C ε² ≤ 1`, then
@@ -266,18 +249,6 @@ private theorem setIntegral_sobolev_le_add_of_cutoff {ξ : ℝ × ℝ → E} (h�
     (hi₁.add hi₂) (measurableSet_Icc.prod measurableSet_Icc) fun z _ ↦ ?_
   have h := sobolev_add_le (hξ₁.differentiable two_ne_zero z) (hξ₂.differentiable two_ne_zero z)
   rwa [← hsum] at h
-
-/-- The `L²` norm of a `C¹` map over a rectangle is at most its `W^{1,2}` energy. -/
-private theorem setIntegral_norm_sq_le_sobolev {ξ : ℝ × ℝ → E} (hξ : ContDiff ℝ 1 ξ) (a b : ℝ) :
-    ∫ z in Icc a b ×ˢ Icc (0 : ℝ) 1, ‖ξ z‖ ^ 2 ≤
-      ∫ z in Icc a b ×ˢ Icc (0 : ℝ) 1, (‖fderiv ℝ ξ z stdComplexLineReal‖ ^ 2 +
-        ‖fderiv ℝ ξ z stdComplexLineImag‖ ^ 2 + ‖ξ z‖ ^ 2) :=
-  setIntegral_mono_on (Continuous.integrableOn_Icc_prod_Icc (by have := hξ.continuous; fun_prop))
-    (continuous_sobolev hξ).integrableOn_Icc_prod_Icc (measurableSet_Icc.prod measurableSet_Icc)
-    fun z _ ↦ by
-      have := sq_nonneg ‖fderiv ℝ ξ z stdComplexLineReal‖
-      have := sq_nonneg ‖fderiv ℝ ξ z stdComplexLineImag‖
-      linarith
 
 /-- **The uniform estimate for a spliced operator.** Let `P`, `P₁` and `P₂` be operators on maps
 `ℝ × ℝ → E` with the Leibniz rule `P (β ξ) = β P ξ + β' σ ξ` for cutoffs `β(s)`, sending `C²` maps

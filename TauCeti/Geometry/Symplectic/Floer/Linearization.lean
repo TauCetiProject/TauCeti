@@ -32,8 +32,7 @@ It is `∂s ξ + J(z, u z) ∂t ξ` plus a zeroth-order term `floerLinearization
 (`continuousAt_floerLinearizationCoeff`, `continuousOn_floerLinearizationCoeff`); so two
 linearized operators differ pointwise by the differences of their coefficients
 (`norm_floerLinearization_sub_floerLinearization_le`). Translating the data and the direction
-translates the operator (`floerLinearization_comp_add_right`). The `W^{1,2}` energy density
-`‖∂s ξ‖² + ‖∂t ξ‖² + ‖ξ‖²` of a `C¹` map is continuous (`TauCeti.Floer.continuous_sobolev`).
+translates the operator (`floerLinearization_comp_add_right`).
 The universal variation theorem identifies its direction field with the actual parameter derivative
 of the map, using equality of mixed derivatives rather than assuming it. The endomorphism field need
 not square to minus one for differentiation. For an almost complex structure the zero equation
@@ -416,17 +415,3 @@ theorem fderiv_floerOperator_apply (h : P) :
 end Families
 
 end TauCeti.SymplecticForm
-
-namespace TauCeti.Floer
-
-/-- The `W^{1,2}` energy density `‖∂s ξ‖² + ‖∂t ξ‖² + ‖ξ‖²` of a `C¹` map `ξ : ℝ × ℝ → E` is
-continuous. -/
-theorem continuous_sobolev {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
-    {ξ : ℝ × ℝ → E} (hξ : ContDiff ℝ 1 ξ) :
-    Continuous fun z ↦ ‖fderiv ℝ ξ z stdComplexLineReal‖ ^ 2 +
-      ‖fderiv ℝ ξ z stdComplexLineImag‖ ^ 2 + ‖ξ z‖ ^ 2 := by
-  have := hξ.continuous_fderiv one_ne_zero
-  have := hξ.continuous
-  fun_prop
-
-end TauCeti.Floer
