@@ -17,21 +17,22 @@ import TauCeti.Geometry.Manifold.DifferentialForm.Naturality
 import TauCeti.Geometry.Manifold.DifferentialForm.Regularity
 
 /-!
-# Gluing, reparametrization and Green's formula for integrals over rectangles
+# Gluing and reparametrization of integrals over rectangles
 
 This file develops the integral
 `∫_u φ = ∫_{a.1}^{b.1} ∫_{a.2}^{b.2} φ_{u(s, t)}(∂_s u, ∂_t u) dt ds`
-of a two-form `φ` over a map `u : ℝ × ℝ → M` (`TauCeti.rectangleIntegral`) along the first
+of a two-form `φ` over a map `u : ℝ × ℝ → M` (`TauCeti.rectangleIntegral`, defined in
+`TauCeti.Geometry.Manifold.DifferentialForm.Integration.Homotopy`) along the first
 coordinate `s`, the coordinate along which a cylinder `u` joins its boundary loops `u(a.1, ·)` and
 `u(b.1, ·)`. For a continuous form and a `C¹` map:
 
 * the integral is additive under subdivision of `[a.1, b.1]`
   (`TauCeti.rectangleIntegral_add_adjacent_fst`);
-* it is invariant under a `C¹` change `σ` of the first coordinate, between the image endpoints
-  (`TauCeti.rectangleIntegral_comp_prodMap`, stated for a `C¹` function `σ` in
-  `TauCeti.rectangleIntegral_comp_prodMap_of_contDiff`, with the affine case
-  `TauCeti.rectangleIntegral_comp_prodMap_affine`), and reversing the first coordinate changes
-  its sign (`TauCeti.rectangleIntegral_comp_prodMap_one_sub`).
+* specializing its invariance under a `C¹` change of the first coordinate, proved in
+  `Integration.Homotopy` (`TauCeti.rectangleIntegral_comp_prodMap` and
+  `TauCeti.rectangleIntegral_comp_prodMap_of_contDiff`), it is invariant under an affine change of
+  the first coordinate (`TauCeti.rectangleIntegral_comp_prodMap_affine`), and reversing the first
+  coordinate changes its sign (`TauCeti.rectangleIntegral_comp_prodMap_one_sub`).
 
 Two maps `u₁ u₂ : ℝ × ℝ → M` with `u₁(1, ·) = u₂(0, ·)` are glued into their concatenation
 `TauCeti.rectangleTrans u₁ u₂`, the curve concatenation `TauCeti.curveConcat` in the first
@@ -44,15 +45,21 @@ cylinder ending at the loop, and how two caps of the same loop are glued into a 
 integral is the difference of the integrals of the two caps
 (`TauCeti.rectangleIntegral_rectangleTrans_comp_prodMap_one_sub`).
 
-Finally, **Green's formula** (`TauCeti.rectangleIntegral_mextDeriv`): the integral of an exact
-two-form `dα` over a `C²` map `u` is the signed sum of the line integrals of `α` along the four
-edges of the rectangle. In particular the integral of `dα` over a cylinder is the difference of the
-line integrals of `α` along its two boundary loops.
+Finally, a two-form vanishes on spheres (`TauCeti.VanishesOnSpheres`) or on tori
+(`TauCeti.VanishesOnTori`) when its integral over every map of the square factoring through a
+sphere, respectively a torus, vanishes. Such a form has the same integral over any two caps of a
+loop (`TauCeti.VanishesOnSpheres.rectangleIntegral_eq`), respectively over any two cylinders
+between the same loops (`TauCeti.VanishesOnTori.rectangleIntegral_eq`). By Green's formula
+`TauCeti.rectangleIntegral_mextDeriv` from `Integration.Homotopy`, which expresses the integral of
+an exact two-form `dα` as the signed sum of the line integrals of `α` along the four edges of the
+rectangle, exact two-forms vanish on spheres and on tori.
 
 ## Main definitions
 
 * `TauCeti.rectangleTrans u₁ u₂`: the concatenation of two maps of the plane along the first
   coordinate.
+* `TauCeti.VanishesOnSpheres φ`, `TauCeti.VanishesOnTori φ`: the integral of `φ` vanishes over
+  every map of the square factoring through a sphere, respectively a torus.
 
 ## Main results
 
@@ -68,7 +75,10 @@ line integrals of `α` along its two boundary loops.
   cylinder.
 * `TauCeti.isSmoothCylinder_comp_prodMap_affine`: rescaling a smooth map, `1`-periodic in `t`,
   from `[a, b]` to `[0, 1]` in the first coordinate gives a smooth cylinder.
-* `TauCeti.rectangleIntegral_mextDeriv`: Green's formula for an exact form.
+* `TauCeti.VanishesOnSpheres.rectangleIntegral_eq`, `TauCeti.VanishesOnTori.rectangleIntegral_eq`:
+  independence of the cap and of the cylinder.
+* `TauCeti.vanishesOnSpheres_mextDeriv`, `TauCeti.vanishesOnTori_mextDeriv`: exact two-forms
+  vanish on spheres and on tori.
 
 ## References
 
