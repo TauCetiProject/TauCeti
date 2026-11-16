@@ -211,8 +211,9 @@ theorem isCompact_closure_range_of_forall_eq_add_integral [ProperSpace E] {d : X
 
 end Family
 
-/-- The primitive `x ↦ ∫ t in a..x, f t` of a `C^k` function `f` on `ℝ` is `C^(k+1)`. Its
-derivative is `f` (`Continuous.deriv_integral`). -/
+/-- The primitive `x ↦ ∫ t in a..x, f t` of a `C^k` function `f` on `ℝ` is `C^(k+1)`. When `E` is
+complete its derivative is `f` (`Continuous.deriv_integral`); otherwise the primitive is the
+constant `0`. -/
 theorem _root_.ContDiff.contDiff_add_one_integral {k : ℕ∞} (hf : ContDiff ℝ k f) (a : ℝ) :
     ContDiff ℝ (k + 1) (fun x ↦ ∫ t in a..x, f t) := by
   by_cases hE : CompleteSpace E
