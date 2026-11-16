@@ -206,6 +206,7 @@ instance (S : KnotCobordism K₀ K₁) : SecondCountableTopology S.carrier :=
   S.isSmoothEmbedding.isEmbedding.isInducing.secondCountableTopology
 
 /-- A knot cobordism from `K₀` to `K₁` is one between any knots with the same images. -/
+@[expose]
 def congrRange (S : KnotCobordism K₀ K₁) (h₀ : range K₀ = range K₀')
     (h₁ : range K₁ = range K₁') : KnotCobordism K₀' K₁' where
   carrier := S.carrier
@@ -226,14 +227,20 @@ theorem carrier_congrRange (S : KnotCobordism K₀ K₁) (h₀ : range K₀ = ra
     (h₁ : range K₁ = range K₁') : (S.congrRange h₀ h₁).carrier = S.carrier :=
   (rfl)
 
-/-- Transporting a knot cobordism to knots with the same images keeps its embedded surface. -/
+/-- Transporting a knot cobordism to knots with the same images keeps its embedding. -/
 @[simp]
+theorem toFun_congrRange (S : KnotCobordism K₀ K₁) (h₀ : range K₀ = range K₀')
+    (h₁ : range K₁ = range K₁') : (S.congrRange h₀ h₁).toFun = S.toFun :=
+  (rfl)
+
+/-- Transporting a knot cobordism to knots with the same images keeps its embedded surface. -/
 theorem range_toFun_congrRange (S : KnotCobordism K₀ K₁) (h₀ : range K₀ = range K₀')
     (h₁ : range K₁ = range K₁') : range (S.congrRange h₀ h₁).toFun = range S.toFun :=
   (rfl)
 
 /-- The **cobordism traced by a concordance**: the track `S¹ × ℝ → Sⁿ × ℝ` of a smooth concordance
 from `K₀` to `K₁` is a knot cobordism, its surface the cylinder `S¹ × ℝ`. -/
+@[expose]
 def ofConcordance (F : SmoothEmbedding.Concordance K₀ K₁) : KnotCobordism K₀ K₁ where
   carrier := Circle × ℝ
   toFun := F
@@ -254,8 +261,13 @@ theorem carrier_ofConcordance (F : SmoothEmbedding.Concordance K₀ K₁) :
     (ofConcordance F).carrier = (Circle × ℝ) :=
   (rfl)
 
-/-- The embedded surface of the cobordism traced by a concordance is the image of its track. -/
+/-- The embedding of the cobordism traced by a concordance is its track. -/
 @[simp]
+theorem toFun_ofConcordance (F : SmoothEmbedding.Concordance K₀ K₁) :
+    (ofConcordance F).toFun = F :=
+  (rfl)
+
+/-- The embedded surface of the cobordism traced by a concordance is the image of its track. -/
 theorem range_toFun_ofConcordance (F : SmoothEmbedding.Concordance K₀ K₁) :
     range (ofConcordance F).toFun = range F :=
   (rfl)
@@ -281,6 +293,7 @@ theorem genus_ofConcordance (F : SmoothEmbedding.Concordance K₀ K₁) :
 
 /-- The **reverse** of a knot cobordism from `K₀` to `K₁`: the same surface, with its heights
 reflected by `t ↦ 1 - t`, is a knot cobordism from `K₁` to `K₀`. -/
+@[expose]
 def symm (S : KnotCobordism K₀ K₁) : KnotCobordism K₁ K₀ where
   carrier := S.carrier
   toFun x := ((S.toFun x).1, 1 - (S.toFun x).2)
@@ -321,6 +334,17 @@ def symm (S : KnotCobordism K₀ K₁) : KnotCobordism K₁ K₀ where
 theorem carrier_symm (S : KnotCobordism K₀ K₁) : S.symm.carrier = S.carrier :=
   (rfl)
 
+/-- The reverse of a knot cobordism embeds the surface at the reflected heights. -/
+theorem toFun_symm (S : KnotCobordism K₀ K₁) :
+    S.symm.toFun = fun x ↦ ((S.toFun x).1, 1 - (S.toFun x).2) :=
+  (rfl)
+
+/-- The reverse of a knot cobordism embeds each point of the surface at the reflected height. -/
+@[simp]
+theorem toFun_symm_apply (S : KnotCobordism K₀ K₁) (x : S.carrier) :
+    S.symm.toFun x = ((S.toFun x).1, 1 - (S.toFun x).2) :=
+  (rfl)
+
 /-- The embedded surface of the reverse of a knot cobordism is its reflection in the level
 `1 / 2`. -/
 @[simp]
@@ -334,10 +358,17 @@ theorem range_toFun_symm (S : KnotCobordism K₀ K₁) :
 theorem genus_symm (S : KnotCobordism K₀ K₁) : S.symm.genus = S.genus :=
   (rfl)
 
+/-- Reversing a knot cobordism twice gives it back. -/
+@[simp]
+theorem symm_symm (S : KnotCobordism K₀ K₁) : S.symm.symm = S := by
+  cases S
+  simp only [symm, sub_sub_cancel]
+
 variable {F : Type*} [NormedAddCommGroup F] [InnerProductSpace ℝ F] [Fact (finrank ℝ F = n + 1)]
 
 /-- Transport of a knot cobordism along a diffeomorphism `Ψ : Sⁿ ≃ₘ Sⁿ` of the ambient spheres: the
 same surface, embedded by `Ψ × id`, is a knot cobordism between the transported knots. -/
+@[expose]
 def transDiffeomorph (S : KnotCobordism K₀ K₁)
     (Ψ : sphere (0 : E) 1 ≃ₘ^∞⟮𝓡 n, 𝓡 n⟯ sphere (0 : F) 1) :
     KnotCobordism (K₀.transDiffeomorph Ψ) (K₁.transDiffeomorph Ψ) where
@@ -367,6 +398,21 @@ def transDiffeomorph (S : KnotCobordism K₀ K₁)
 theorem carrier_transDiffeomorph (S : KnotCobordism K₀ K₁)
     (Ψ : sphere (0 : E) 1 ≃ₘ^∞⟮𝓡 n, 𝓡 n⟯ sphere (0 : F) 1) :
     (S.transDiffeomorph Ψ).carrier = S.carrier :=
+  (rfl)
+
+/-- Transporting a knot cobordism along an ambient diffeomorphism `Ψ` embeds the surface by
+`Ψ × id`. -/
+theorem toFun_transDiffeomorph (S : KnotCobordism K₀ K₁)
+    (Ψ : sphere (0 : E) 1 ≃ₘ^∞⟮𝓡 n, 𝓡 n⟯ sphere (0 : F) 1) :
+    (S.transDiffeomorph Ψ).toFun = fun x ↦ (Ψ (S.toFun x).1, (S.toFun x).2) :=
+  (rfl)
+
+/-- Transporting a knot cobordism along an ambient diffeomorphism `Ψ` embeds each point of the
+surface by `Ψ × id`. -/
+@[simp]
+theorem toFun_transDiffeomorph_apply (S : KnotCobordism K₀ K₁)
+    (Ψ : sphere (0 : E) 1 ≃ₘ^∞⟮𝓡 n, 𝓡 n⟯ sphere (0 : F) 1) (x : S.carrier) :
+    (S.transDiffeomorph Ψ).toFun x = (Ψ (S.toFun x).1, (S.toFun x).2) :=
   (rfl)
 
 /-- Transporting a knot cobordism along an ambient diffeomorphism `Ψ` moves its embedded surface by
@@ -823,6 +869,12 @@ same surface. It is the reverse of the composite of the reverse of `S` with the 
 def transKnotCobordism (C : SmoothEmbedding.Concordance K₀' K₀) (S : KnotCobordism K₀ K₁) :
     KnotCobordism K₀' K₁ :=
   (S.symm.transConcordance C.symm).symm
+
+/-- A concordance followed by a knot cobordism is the reverse of the composite of the reverse of
+the cobordism with the reverse of the concordance. -/
+theorem transKnotCobordism_def (C : SmoothEmbedding.Concordance K₀' K₀)
+    (S : KnotCobordism K₀ K₁) : C.transKnotCobordism S = (S.symm.transConcordance C.symm).symm :=
+  (rfl)
 
 /-- Composing a concordance with a knot cobordism keeps its surface. -/
 theorem carrier_transKnotCobordism (C : SmoothEmbedding.Concordance K₀' K₀)
