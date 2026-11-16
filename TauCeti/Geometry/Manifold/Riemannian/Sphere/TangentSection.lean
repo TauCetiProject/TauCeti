@@ -44,8 +44,9 @@ of the tangent bundle of `Sⁿ` is `C^m` (respectively continuous) if and only i
   `sphereTangentSection n w hw x` back to `w x`.
 * `TauCeti.norm_sphereTangentSection`, `TauCeti.sphereTangentSection_eq_zero_iff`: its round norm
   is `‖w x‖`, so it vanishes at `x` exactly when `w x = 0`.
-* `TauCeti.sphereTangentSection_mvfderiv_subtypeVal`: every section `V` is recovered from its
-  ambient image `x ↦ mvfderiv (𝓡 n) Subtype.val x (V x)`.
+* `TauCeti.eq_sphereTangentSection_iff`, `TauCeti.sphereTangentSection_mvfderiv_subtypeVal`: a
+  section equals `sphereTangentSection n w hw` if and only if its ambient image under `dι` is `w`,
+  so every section `V` is recovered from `x ↦ mvfderiv (𝓡 n) Subtype.val x (V x)`.
 * `TauCeti.contMDiff_sphereTangentSection_iff`, `TauCeti.continuous_sphereTangentSection_iff`:
   `sphereTangentSection n w hw` is `C^m` (respectively continuous) if and only if `w` is.
 * `TauCeti.contMDiff_section_sphere_iff`, `TauCeti.continuous_section_sphere_iff`: a section `V` of
@@ -82,20 +83,12 @@ section ImplicitDim
 
 variable {n : ℕ} [Fact (finrank ℝ E = n + 1)]
 
-/-- Defining formula for `TauCeti.sphereTangentSection` through `TauCeti.sphereTangentEquiv`. -/
-theorem sphereTangentSection_def (w : sphere (0 : E) 1 → E)
-    (hw : ∀ x : sphere (0 : E) 1, ⟪w x, (x : E)⟫ = 0) (x : sphere (0 : E) 1) :
-    sphereTangentSection n w hw x =
-      (sphereTangentEquiv (n := n) x).symm
-        ⟨w x, Submodule.mem_orthogonal_singleton_iff_inner_left.2 (hw x)⟩ :=
-  (rfl)
-
 /-- `TauCeti.sphereTangentEquiv` sends `TauCeti.sphereTangentSection n w hw x` to `w x` in
 `(x : E)ᗮ`. -/
 theorem coe_sphereTangentEquiv_sphereTangentSection (w : sphere (0 : E) 1 → E)
     (hw : ∀ x : sphere (0 : E) 1, ⟪w x, (x : E)⟫ = 0) (x : sphere (0 : E) 1) :
     (sphereTangentEquiv (n := n) x (sphereTangentSection n w hw x) : E) = w x := by
-  rw [sphereTangentSection_def, LinearIsometryEquiv.apply_symm_apply]
+  rw [sphereTangentSection, LinearIsometryEquiv.apply_symm_apply]
 
 /-- The manifold differential of the sphere inclusion sends `TauCeti.sphereTangentSection n w hw x`
 to `w x`. -/
@@ -106,7 +99,8 @@ theorem mfderiv_subtypeVal_sphereTangentSection (w : sphere (0 : E) 1 → E)
   rw [← coe_sphereTangentEquiv_apply, coe_sphereTangentEquiv_sphereTangentSection]
 
 /-- The vector-valued differential `mvfderiv` of the sphere inclusion sends
-`TauCeti.sphereTangentSection n w hw x` to `w x`. -/
+`TauCeti.sphereTangentSection n w hw x` to `w x`. Not `@[simp]`: `mvfderiv_apply_eq_mfderiv_apply`
+and `TauCeti.mfderiv_subtypeVal_sphereTangentSection` already simplify the left-hand side. -/
 theorem mvfderiv_subtypeVal_sphereTangentSection (w : sphere (0 : E) 1 → E)
     (hw : ∀ x : sphere (0 : E) 1, ⟪w x, (x : E)⟫ = 0) (x : sphere (0 : E) 1) :
     mvfderiv (𝓡 n) ((↑) : sphere (0 : E) 1 → E) x (sphereTangentSection n w hw x) = w x := by
@@ -125,12 +119,17 @@ theorem sphereTangentSection_eq_zero_iff (w : sphere (0 : E) 1 → E)
     sphereTangentSection n w hw x = 0 ↔ w x = 0 := by
   rw [← norm_eq_zero, norm_sphereTangentSection, norm_eq_zero]
 
-/-- The ambient vector `mvfderiv (𝓡 n) Subtype.val x v` of any tangent vector to `Sⁿ` is
-orthogonal to `(x : E)`. -/
-theorem inner_mvfderiv_subtypeVal_sphere_coe (x : sphere (0 : E) 1) (v : TangentSpace (𝓡 n) x) :
-    ⟪mvfderiv (𝓡 n) ((↑) : sphere (0 : E) 1 → E) x v, (x : E)⟫ = 0 := by
-  rw [real_inner_comm]
-  exact inner_coe_mvfderiv_subtypeVal_sphere x v
+/-- A section `V` of the tangent bundle of `Sⁿ` equals `TauCeti.sphereTangentSection n w hw` if
+and only if its ambient image under the differential of the inclusion is `w` everywhere. -/
+theorem eq_sphereTangentSection_iff
+    {V : (x : sphere (0 : E) 1) → TangentSpace (𝓡 n) x}
+    (w : sphere (0 : E) 1 → E)
+    (hw : ∀ x : sphere (0 : E) 1, ⟪w x, (x : E)⟫ = 0) :
+    V = sphereTangentSection n w hw ↔
+      ∀ x : sphere (0 : E) 1,
+        mvfderiv (𝓡 n) ((↑) : sphere (0 : E) 1 → E) x (V x) = w x := by
+  simp_rw [funext_iff, ← (injective_mvfderiv_subtypeVal_sphere _).eq_iff,
+    mvfderiv_subtypeVal_sphereTangentSection]
 
 /-- Every section of the tangent bundle of `Sⁿ` is recovered from its ambient image under the
 differential of the inclusion. -/
@@ -138,9 +137,8 @@ differential of the inclusion. -/
 theorem sphereTangentSection_mvfderiv_subtypeVal
     (V : (x : sphere (0 : E) 1) → TangentSpace (𝓡 n) x) :
     sphereTangentSection n (fun x ↦ mvfderiv (𝓡 n) ((↑) : sphere (0 : E) 1 → E) x (V x))
-      (fun x ↦ inner_mvfderiv_subtypeVal_sphere_coe x (V x)) = V := by
-  funext x
-  exact injective_mvfderiv_subtypeVal_sphere x (mvfderiv_subtypeVal_sphereTangentSection _ _ x)
+      (fun x ↦ (real_inner_comm _ _).trans (inner_coe_mvfderiv_subtypeVal_sphere x (V x))) = V :=
+  ((eq_sphereTangentSection_iff _ _).2 fun _ ↦ rfl).symm
 
 /-- `TauCeti.sphereTangentSection n w hw` is `C^m` into the tangent bundle of `Sⁿ` if and only if
 `w` is `C^m` into `E`, at every regularity `m : ℕ∞ω`. -/
@@ -160,18 +158,10 @@ theorem contMDiff_sphereTangentSection_iff {m : ℕ∞ω} (w : sphere (0 : E) 1 
         injective_mvfderiv_subtypeVal_sphere x <| by
           rw [mvfderiv_apply_eq_mfderiv_apply, mvfderiv_apply_eq_mfderiv_apply]
           exact hv
-    have hpair : ContMDiff (𝓡 n) 𝓘(ℝ, E).tangent m (fun y : sphere (0 : E) 1 ↦ ((y : E), w y)) :=
-      contMDiff_coe_sphere.prodMk h
-    rw [chartedSpaceSelf_prod] at hpair
-    have htot : ContMDiff (𝓡 n) 𝓘(ℝ, E).tangent m
-        (fun y : sphere (0 : E) 1 ↦
-          (⟨(y : E), mfderiv (𝓡 n) 𝓘(ℝ, E) ((↑) : sphere (0 : E) 1 → E) y
-            (sphereTangentSection n w hw y)⟩ : TangentBundle 𝓘(ℝ, E) E)) := by
-      refine (contMDiff_tangentBundleModelSpaceHomeomorph_symm.comp hpair).congr fun y ↦ ?_
-      simp only [tangentBundleModelSpaceHomeomorph_coe_symm, TotalSpace.toProd,
-        mfderiv_subtypeVal_sphereTangentSection]
-      rfl
-    exact (contMDiff_coe_sphere (m := ω) x).vectorField_of_mfderiv le_top hinj (htot x)
+    refine (contMDiff_coe_sphere (m := ω) x).vectorField_of_mfderiv le_top hinj ?_
+    refine Bundle.contMDiffAt_totalSpace_iff.2
+      ⟨contMDiff_coe_sphere x,
+        (h x).congr_of_eventuallyEq (.of_forall fun y ↦ by simp [mfld_simps])⟩
 
 /-- `TauCeti.sphereTangentSection n w hw` is a continuous section of the tangent bundle of `Sⁿ` if
 and only if `w` is continuous. -/

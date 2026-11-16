@@ -38,6 +38,8 @@ Thurston's eight model geometries.
 * `TauCeti.norm_tangentSpace_sphere`: the round norm of a tangent vector is the norm of its image
   in `E`.
 * `TauCeti.inner_coe_mvfderiv_subtypeVal_sphere`: tangent vectors are orthogonal to the radius.
+* `TauCeti.mvfderiv_subtypeVal_sphere_eq_zero_iff`: a tangent vector's image in `E` vanishes if and
+  only if the tangent vector vanishes.
 * `TauCeti.edist_le_riemannianEDist_sphere`: the chordal distance in `E` is at most the round
   distance.
 
@@ -146,6 +148,14 @@ theorem inner_coe_mvfderiv_subtypeVal_sphere (x : sphere (0 : E) 1)
   have h := (sphereTangentEquiv x v).2
   rw [Submodule.mem_orthogonal_singleton_iff_inner_right, coe_sphereTangentEquiv_apply] at h
   rwa [mvfderiv_apply_eq_mfderiv_apply]
+
+/-- The image of a tangent vector under the differential of the sphere inclusion vanishes if and
+only if the tangent vector vanishes. Not `@[simp]`: `mvfderiv_apply_eq_mfderiv_apply` rewrites the
+left-hand side. -/
+theorem mvfderiv_subtypeVal_sphere_eq_zero_iff (x : sphere (0 : E) 1)
+    (v : TangentSpace (𝓡 n) x) :
+    mvfderiv (𝓡 n) ((↑) : sphere (0 : E) 1 → E) x v = 0 ↔ v = 0 :=
+  map_eq_zero_iff _ (injective_mvfderiv_subtypeVal_sphere x)
 
 /-- **The chordal distance is at most the round distance.** The distance in `E` between two points
 of the unit sphere is at most their Riemannian distance for the round metric: the inclusion of the

@@ -7,7 +7,6 @@ module
 
 public import TauCeti.Geometry.Manifold.Degree.Global
 public import TauCeti.Geometry.Manifold.Orientation.Sphere
-public import TauCeti.Geometry.Manifold.Riemannian.Sphere.Basic
 public import Mathlib.Topology.Homotopy.Basic
 import Mathlib.Topology.Homotopy.Path
 import TauCeti.AlgebraicTopology.Sphere.Zero
@@ -46,15 +45,10 @@ homotopy from the identity to the antipodal map along great circles,
 The parity hypothesis is needed. In even dimension `n + 1` an orthogonal almost complex structure
 `J` (`TauCeti.AlmostComplexStructure.exists_forall_norm_apply_eq`), such as
 `(x₁, x₂, x₃, x₄, …) ↦ (-x₂, x₁, -x₄, x₃, …)`, satisfies `⟪J x, x⟫ = 0`
-(`TauCeti.AlmostComplexStructure.inner_apply_self`) and lifts through
-`TauCeti.sphereTangentSection` to a real-analytic unit-norm section of the tangent bundle of `Sⁿ`
-(`TauCeti.exists_contMDiff_section_norm_eq_one_of_odd`). Consequently `Sⁿ` carries a
-nowhere-vanishing tangent field — whether as a `C^m` section
-(`TauCeti.exists_contMDiff_section_ne_zero_iff_odd`), a continuous section
-(`TauCeti.exists_continuous_section_ne_zero_iff_odd`), a continuous sphere-domain map `Sⁿ → E`
-(`TauCeti.exists_continuous_inner_eq_zero_and_ne_zero_iff_odd`), or an ambient map `E → E`
-continuous on `Sⁿ` (`TauCeti.exists_continuousOn_inner_eq_zero_and_ne_zero_iff_odd`) — if and only
-if `n` is odd. On the unit circle of `ℂ` one such field is `z ↦ i z`.
+(`TauCeti.AlmostComplexStructure.inner_apply_self`) and is a nowhere-vanishing tangent field on
+`Sⁿ`; so `Sⁿ` carries one exactly when `n` is odd
+(`TauCeti.exists_continuousOn_inner_eq_zero_and_ne_zero_iff_odd`). On the unit circle of `ℂ` it is
+`z ↦ i z`.
 
 ## Main results
 
@@ -66,14 +60,8 @@ if `n` is odd. On the unit circle of `ℂ` one such field is `z ↦ i z`.
   even-dimensional unit sphere.
 * `TauCeti.exists_eq_zero_of_continuous_section`: a continuous section of the tangent bundle of an
   even-dimensional unit sphere vanishes somewhere.
-* `TauCeti.exists_contMDiff_section_norm_eq_one_of_odd`: an odd-dimensional unit sphere carries a
-  `C^m` unit-norm section of its tangent bundle at every regularity `m : ℕ∞ω`.
-* `TauCeti.exists_contMDiff_section_ne_zero_iff_odd`,
-  `TauCeti.exists_continuous_section_ne_zero_iff_odd`,
-  `TauCeti.exists_continuous_inner_eq_zero_and_ne_zero_iff_odd`,
-  `TauCeti.exists_continuousOn_inner_eq_zero_and_ne_zero_iff_odd`: the unit sphere `Sⁿ` carries a
-  nowhere-vanishing `C^m` or continuous tangent field (as a section, on `Sⁿ`, or ambiently on `E`)
-  exactly when `n` is odd.
+* `TauCeti.exists_continuousOn_inner_eq_zero_and_ne_zero_iff_odd`: the unit sphere `Sⁿ` carries a
+  nowhere-vanishing continuous tangent field exactly when `n` is odd.
 
 ## References
 
@@ -87,7 +75,7 @@ public section
 
 noncomputable section
 
-open Bundle Metric Module Set
+open Metric Module Set
 open scoped Manifold ContDiff InnerProductSpace
 
 namespace TauCeti
@@ -171,67 +159,9 @@ theorem exists_eq_zero_of_continuous_section (hn : Even n)
     (hV : Continuous fun x ↦ (⟨x, V x⟩ : TangentBundle (𝓡 n) (sphere (0 : E) 1))) :
     ∃ x, V x = 0 := by
   obtain ⟨x, hx⟩ := exists_eq_zero_of_continuous_of_inner_eq_zero (n := n) hn
-    (continuous_section_sphere_iff.1 hV)
-    (fun x ↦ inner_mvfderiv_subtypeVal_sphere_coe x (V x))
-  exact ⟨x, injective_mvfderiv_subtypeVal_sphere x (hx.trans (map_zero _).symm)⟩
-
-/-- **Unit tangent vector fields on odd-dimensional spheres.** On the unit sphere `Sⁿ` of a real
-inner product space `E` of dimension `n + 1`, with `n` odd, there exists a `C^m` section of the
-tangent bundle of `Sⁿ` of unit round norm everywhere, at every regularity `m : ℕ∞ω` (including
-real-analytic `m = ω`). One such section is the lift through `TauCeti.sphereTangentSection` of an
-orthogonal almost complex structure on `E`. -/
-theorem exists_contMDiff_section_norm_eq_one_of_odd {m : ℕ∞ω} (hn : Odd n) :
-    ∃ V : (x : sphere (0 : E) 1) → TangentSpace (𝓡 n) x,
-      ContMDiff (𝓡 n) (𝓡 n).tangent m
-        (fun x ↦ (⟨x, V x⟩ : TangentBundle (𝓡 n) (sphere (0 : E) 1))) ∧
-      ∀ x : sphere (0 : E) 1, ‖V x‖ = 1 := by
-  have : FiniteDimensional ℝ E := .of_fact_finrank_eq_succ n
-  obtain ⟨J, hJ⟩ := AlmostComplexStructure.exists_forall_norm_apply_eq (V := E)
-    (by rw [Fact.out (p := finrank ℝ E = n + 1)]; exact hn.add_one)
-  let L : E →ₗᵢ[ℝ] E := ⟨J.toLinearMap, hJ⟩
-  refine ⟨sphereTangentSection n (fun x ↦ L x)
-    (fun x ↦ J.inner_apply_self L.inner_map_map x), ?_, fun x ↦ ?_⟩
-  · rw [contMDiff_sphereTangentSection_iff]
-    exact (L.toContinuousLinearMap.contDiff.of_le le_top).contMDiff.comp contMDiff_coe_sphere
-  · rw [norm_sphereTangentSection, L.norm_map, norm_eq_of_mem_sphere x]
-
-/-- **Tangent fields on spheres, `C^m` section form.** The unit sphere `Sⁿ` of a real inner product
-space of dimension `n + 1` carries a nowhere-vanishing `C^m` section of its tangent bundle, at any
-regularity `m : ℕ∞ω`, if and only if `n` is odd. -/
-theorem exists_contMDiff_section_ne_zero_iff_odd {m : ℕ∞ω} :
-    (∃ V : (x : sphere (0 : E) 1) → TangentSpace (𝓡 n) x,
-      ContMDiff (𝓡 n) (𝓡 n).tangent m
-        (fun x ↦ (⟨x, V x⟩ : TangentBundle (𝓡 n) (sphere (0 : E) 1))) ∧
-      ∀ x : sphere (0 : E) 1, V x ≠ 0) ↔ Odd n := by
-  refine ⟨fun ⟨V, hV, hne⟩ ↦ Nat.not_even_iff_odd.1 fun hn ↦ ?_, fun hn ↦ ?_⟩
-  · obtain ⟨x, hx⟩ := exists_eq_zero_of_continuous_section hn hV.continuous
-    exact hne x hx
-  · obtain ⟨V, hV, hnorm⟩ := exists_contMDiff_section_norm_eq_one_of_odd (E := E) (m := m) hn
-    exact ⟨V, hV, fun x ↦ norm_ne_zero_iff.1 (by rw [hnorm x]; exact one_ne_zero)⟩
-
-/-- **Tangent fields on spheres, continuous section form.** The unit sphere `Sⁿ` of a real inner
-product space of dimension `n + 1` carries a nowhere-vanishing continuous section of its tangent
-bundle if and only if `n` is odd. -/
-theorem exists_continuous_section_ne_zero_iff_odd :
-    (∃ V : (x : sphere (0 : E) 1) → TangentSpace (𝓡 n) x,
-      Continuous (fun x ↦ (⟨x, V x⟩ : TangentBundle (𝓡 n) (sphere (0 : E) 1))) ∧
-      ∀ x : sphere (0 : E) 1, V x ≠ 0) ↔ Odd n := by
-  simp_rw [← contMDiff_zero_iff (I := 𝓡 n) (I' := (𝓡 n).tangent)]
-  exact exists_contMDiff_section_ne_zero_iff_odd (E := E) (n := n) (m := 0)
-
-/-- **Tangent fields on spheres, sphere-domain form.** The unit sphere `Sⁿ` of a real inner product
-space `E` of dimension `n + 1` carries a continuous map `v : Sⁿ → E` with `⟪v x, x⟫ = 0` and
-`v x ≠ 0` everywhere if and only if `n` is odd. -/
-theorem exists_continuous_inner_eq_zero_and_ne_zero_iff_odd :
-    (∃ v : sphere (0 : E) 1 → E, Continuous v ∧
-      ∀ x : sphere (0 : E) 1, ⟪v x, (x : E)⟫_ℝ = 0 ∧ v x ≠ 0) ↔ Odd n := by
-  rw [← exists_continuous_section_ne_zero_iff_odd (E := E) (n := n)]
-  refine ⟨fun ⟨v, hv, h⟩ ↦ ⟨sphereTangentSection n v fun x ↦ (h x).1,
-      (continuous_sphereTangentSection_iff v _).2 hv,
-      fun x ↦ (sphereTangentSection_eq_zero_iff v _ x).not.2 (h x).2⟩,
-    fun ⟨V, hV, hne⟩ ↦ ⟨fun x ↦ mvfderiv (𝓡 n) ((↑) : sphere (0 : E) 1 → E) x (V x),
-      continuous_section_sphere_iff.1 hV, fun x ↦ ⟨inner_mvfderiv_subtypeVal_sphere_coe x (V x),
-        fun h0 ↦ hne x (injective_mvfderiv_subtypeVal_sphere x (h0.trans (map_zero _).symm))⟩⟩⟩
+    (continuous_section_sphere_iff.1 hV) fun x ↦
+      (real_inner_comm _ _).trans (inner_coe_mvfderiv_subtypeVal_sphere x (V x))
+  exact ⟨x, (mvfderiv_subtypeVal_sphere_eq_zero_iff x (V x)).1 hx⟩
 
 /-- **Tangent fields on spheres.** The unit sphere `Sⁿ` of a real inner product space of dimension
 `n + 1` carries a nowhere-vanishing continuous tangent vector field exactly when `n` is odd. For odd
