@@ -284,15 +284,6 @@ theorem sum_X_pow_mul_expand_cartier (q : ℕ) (hq : q ≠ 0) (F : PowerSeries R
   · intro hnot
     exact (hnot (Finset.mem_range.mpr (Nat.mod_lt n hq'))).elim
 
-/-- At an actual residue `r`, the Cartier operator of modulus `q` sends `Xᵐ F(X^q)` to
-`X ^ (m / q) F(X)` when `m ≡ r [MOD q]`, and to zero otherwise. -/
-theorem cartier_X_pow_mul_expand (q r m : ℕ) (hq : q ≠ 0) (hr : r < q) (F : PowerSeries R) :
-    cartier R q r (X ^ m * expand q hq F) = if m % q = r then X ^ (m / q) * F else 0 := by
-  have hm : (X : R⟦X⟧) ^ m * expand q hq F = expand q hq (X ^ (m / q) * F) * X ^ (m % q) := by
-    simp [expand_X, ← pow_mul, mul_right_comm, ← pow_add, Nat.div_add_mod]
-  rw [hm, cartier_expand_mul q r hq hr]
-  simp [X_pow_eq, cartier_monomial _ _ _ hr]
-
 /-- The even part of `F(-X)` is the even part of `F`, evaluated at `X`. -/
 @[simp]
 theorem cartier_two_zero_rescale_neg_one (F : PowerSeries R) :

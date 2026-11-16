@@ -73,17 +73,13 @@ variable (R) in
 /-- The *Pontryagin series* of a power series `C = ∑ cᵢ Xⁱ` is `∑ₖ (-1)ᵏ c₂ₖ Xᵏ`. When `C` is
 the total Chern class of the complexification `E ⊗ ℂ` of a real vector bundle, its coefficients
 are the Pontryagin classes `pₖ(E) = (-1)ᵏ c₂ₖ(E ⊗ ℂ)`. -/
-noncomputable def pontryaginSeries : R⟦X⟧ →ₗ[R] R⟦X⟧ where
-  toFun C := rescale (-1) (cartier R 2 0 C)
-  map_add' C D := by simp
-  map_smul' a C := by
-    ext k
-    simp only [coeff_rescale, coeff_cartier, map_smul, smul_eq_mul, RingHom.id_apply]
-    ring
+noncomputable def pontryaginSeries : R⟦X⟧ →ₗ[R] R⟦X⟧ :=
+  (rescaleAlgHom (-1 : R)).toLinearMap ∘ₗ cartier R 2 0
 
 /-- The Pontryagin series is the even part of the series, evaluated at `-X`. -/
 theorem pontryaginSeries_apply (C : R⟦X⟧) :
-    pontryaginSeries R C = rescale (-1) (cartier R 2 0 C) := (rfl)
+    pontryaginSeries R C = rescale (-1) (cartier R 2 0 C) :=
+  RingHom.congr_fun (coe_rescaleAlgHom (-1 : R)) (cartier R 2 0 C)
 
 /-- The coefficients of the Pontryagin series: `pₖ = (-1)ᵏ c₂ₖ`. -/
 @[simp]
@@ -193,7 +189,7 @@ annihilated by `2`, then twice the difference between an even coefficient of `P 
 convolution of the even coefficients of `P` and `Q` vanishes. The difference itself need not
 vanish, so the even parts multiply cleanly once `2` is a non-zero-divisor (for instance after
 inverting `2`). -/
-theorem twice_even_product_correction_eq_zero (P Q : R⟦X⟧)
+theorem twice_even_product_correction_eq_zero {R : Type*} [Ring R] (P Q : R⟦X⟧)
     (hodd : ∀ j : ℕ, 2 * coeff (2 * j + 1) P = 0) (k : ℕ) :
     2 * (coeff (2 * k) (P * Q) -
       ∑ i ∈ Finset.range (k + 1), coeff (2 * i) P * coeff (2 * (k - i)) Q) = 0 := by
