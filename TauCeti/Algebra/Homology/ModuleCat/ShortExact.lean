@@ -29,7 +29,11 @@ boundary is a cycle of `S.X₁`, and its homology class is the image under the c
   `HomologicalComplex.Hom.boundaryMap_surjective`).
 
 These two short exact sequences decompose the boundaries of `S.X₂` in Milnor's multiplicativity
-formula for Reidemeister torsion with homology bases.
+formula for Reidemeister torsion with homology bases. From the long exact homology sequence,
+surjectivity of `Hᵢ(S.g)`, vanishing of `hS.δ i j hij`, and injectivity of `Hⱼ(S.f)` are all
+equivalent (`CategoryTheory.ShortComplex.ShortExact.homologyMap_g_surjective_iff_δ_eq_zero`,
+`CategoryTheory.ShortComplex.ShortExact.homologyMap_f_injective_iff_δ_eq_zero`,
+`CategoryTheory.ShortComplex.ShortExact.homologyMap_f_injective_iff_homologyMap_g_surjective`).
 
 For maps `φ : X ⟶ Y` and `ψ : Y ⟶ Z` of complexes of modules with `ψ` a monomorphism, the short
 exact sequence `cokernel φ ⟶ cokernel (φ ≫ ψ) ⟶ cokernel ψ`
@@ -43,6 +47,11 @@ homology, computed on classes of elements in `TauCeti.exists_δ_kernelCokernelSe
   `CategoryTheory.ShortComplex.ShortExact.comapRangeHomologyClass_surjective`: the homology class
   map from the preimage of the boundaries of `S.X₂` onto the image of the connecting map, with
   kernel the boundaries of `S.X₁`.
+* `CategoryTheory.ShortComplex.ShortExact.homologyMap_g_surjective_iff_δ_eq_zero`,
+  `CategoryTheory.ShortComplex.ShortExact.homologyMap_f_injective_iff_δ_eq_zero`,
+  `CategoryTheory.ShortComplex.ShortExact.homologyMap_f_injective_iff_homologyMap_g_surjective`:
+  equivalences between surjectivity of `Hᵢ(S.g)`, vanishing of `hS.δ i j hij`, and injectivity of
+  `Hⱼ(S.f)`.
 * `TauCeti.exists_δ_kernelCokernelSequence_L₃_eq`: the connecting map of
   `cokernel φ ⟶ cokernel (φ ≫ ψ) ⟶ cokernel ψ` on classes of elements.
 -/
@@ -135,6 +144,29 @@ theorem comapRangeHomologyClass_surjective {i j : ι} (hij : c.Rel i j) :
   obtain ⟨x₂, -, hx₂, -, -⟩ := hS.moduleCat_exists_d_eq_of_δ_eq i j hij x₃ z₁ hz₁.symm
   exact ⟨⟨(S.X₁.iCycles j).hom z₁, x₂, hx₂⟩,
     Subtype.ext ((hS.coe_comapRangeHomologyClass_iCycles hij z₁ ⟨x₂, hx₂⟩).trans hz₁)⟩
+
+/-- In a short exact sequence of complexes of modules, for `c.Rel i j`, the induced map `Hᵢ(S.g)`
+on homology is surjective if and only if the connecting morphism `hS.δ i j hij` vanishes. -/
+theorem homologyMap_g_surjective_iff_δ_eq_zero {i j : ι} (hij : c.Rel i j) :
+    Function.Surjective (HomologicalComplex.homologyMap S.g i).hom ↔ hS.δ i j hij = 0 := by
+  rw [← ModuleCat.epi_iff_surjective]
+  exact (hS.homology_exact₃ i j hij).epi_f_iff
+
+/-- In a short exact sequence of complexes of modules, for `c.Rel i j`, the induced map `Hⱼ(S.f)`
+on homology is injective if and only if the connecting morphism `hS.δ i j hij` vanishes. -/
+theorem homologyMap_f_injective_iff_δ_eq_zero {i j : ι} (hij : c.Rel i j) :
+    Function.Injective (HomologicalComplex.homologyMap S.f j).hom ↔ hS.δ i j hij = 0 := by
+  rw [← ModuleCat.mono_iff_injective]
+  exact (hS.homology_exact₁ i j hij).mono_g_iff
+
+include hS in
+/-- In a short exact sequence of complexes of modules, for `c.Rel i j`, the induced map `Hⱼ(S.f)`
+on homology is injective if and only if `Hᵢ(S.g)` is surjective. -/
+theorem homologyMap_f_injective_iff_homologyMap_g_surjective {i j : ι} (hij : c.Rel i j) :
+    Function.Injective (HomologicalComplex.homologyMap S.f j).hom ↔
+      Function.Surjective (HomologicalComplex.homologyMap S.g i).hom :=
+  (hS.homologyMap_f_injective_iff_δ_eq_zero hij).trans
+    (hS.homologyMap_g_surjective_iff_δ_eq_zero hij).symm
 
 end CategoryTheory.ShortComplex.ShortExact
 

@@ -8,6 +8,7 @@ module
 public import TauCeti.Algebra.Homology.ReidemeisterTorsion.Basic
 import Mathlib.Algebra.FiniteSupport.Basic
 import TauCeti.Algebra.BigOperators.Finprod
+import TauCeti.Algebra.Homology.ModuleCat.Finrank
 
 /-!
 # The torsion of a based chain complex with based homology
@@ -242,20 +243,6 @@ theorem reidemeisterTorsionWithHomology_of_not_finite (hn : ¬{i | n i ≠ 0}.Fi
   simp [reidemeisterTorsionWithHomology, hn]
 
 variable {C c h}
-
-/-- For a bounded based chain complex of vector spaces over a field, only finitely many homology
-bases are nonempty: homology vanishes in every degree where the complex vanishes. -/
-theorem finite_homology_of_finite (c : ∀ i, Basis (Fin (n i)) F (C.X i))
-    (h : ∀ i, Basis (Fin (m i)) F (C.homology i)) (hn : {i | n i ≠ 0}.Finite) :
-    {i | m i ≠ 0}.Finite :=
-  hn.subset fun i hi ↦ by
-    by_contra hn₀
-    simp only [Set.mem_ofPred_eq, not_not] at hn₀
-    have : IsEmpty (Fin (n i)) := by rw [hn₀]; infer_instance
-    have := (c i).repr.toEquiv.subsingleton
-    have hC : C.ExactAt i := .of_isZero (ModuleCat.isZero_of_subsingleton _)
-    have := ModuleCat.subsingleton_of_isZero hC.isZero_homology
-    exact hi (Nat.eq_zero_of_not_pos fun hm ↦ (h i).ne_zero ⟨0, hm⟩ (Subsingleton.elim _ _))
 
 section Bounded
 
