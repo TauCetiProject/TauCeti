@@ -20,8 +20,9 @@ category. This characterizes the abelian structure on the closed category of cur
 
 The graded forgetful functor preserves finite limits and colimits. Short exactness of a short
 complex of closed morphisms is therefore equivalent to injectivity, surjectivity, and exactness of
-the underlying right-linear maps (`shortExact_iff`). This ambient abelian category and its
-forgetful functor support the graded-split exact structure on curved modules.
+the underlying right-linear maps (`shortExact_iff`), and the kernel of an epimorphism yields a
+short exact sequence (`shortExact_kernelι`). This ambient abelian category and its forgetful
+functor support the graded-split exact structure on curved modules.
 
 ## References
 
@@ -85,5 +86,18 @@ theorem shortExact_iff
     have : Mono S.f := F.mono_of_mono_map ((GradedModuleCat.mono_iff_injective _).2 hf)
     have : Epi S.g := F.epi_of_epi_map ((GradedModuleCat.epi_iff_surjective _).2 hg)
     exact { exact := (S.exact_map_iff_of_faithful F).1 (GradedModuleCat.exact_iff.2 hex) }
+
+/-- For an epimorphism `g` in the closed category of curved right modules, the short complex
+`kernelObj g ⟶ Q ⟶ M` is short exact. -/
+theorem shortExact_kernelι {Q M : CurvedDGRightModuleCat.{u, u, u} h}
+    (g : ForgetEnrichment.of (CochainComplex (ModuleCat R) ℤ) Q ⟶
+      ForgetEnrichment.of (CochainComplex (ModuleCat R) ℤ) M) [Epi g] :
+    (ShortComplex.mk (kernelι g) g (kernelι_comp g)).ShortExact := by
+  let e : KernelFork.ofι (kernelι g) (kernelι_comp g) ≅ kernelCone g :=
+    Fork.ext (eqToIso (kernelCone_pt g).symm) (by simp)
+  have hlim : IsLimit (KernelFork.ofι (kernelι g) (kernelι_comp g)) :=
+    (IsLimit.equivIsoLimit e).symm (kernelIsLimit g)
+  have : Mono (kernelι g) := mono_of_isLimit_fork hlim
+  exact { exact := ShortComplex.exact_of_f_is_kernel _ hlim }
 
 end TauCeti.CurvedDGRightModuleCat

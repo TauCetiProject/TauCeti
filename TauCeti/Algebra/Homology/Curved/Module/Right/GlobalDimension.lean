@@ -43,8 +43,6 @@ The argument proceeds in two steps:
 
 ## Main results
 
-* `TauCeti.CurvedDGRightModuleCat.isZero_of_contraacyclic_of_gradedProjective`: every
-  contraacyclic graded-projective curved right module is contractible.
 * `TauCeti.CurvedDGRightModuleCat.absolutelyAcyclic_of_contraacyclic_of_hasProjectiveDimensionLT`:
   a contraacyclic curved right module whose underlying graded module has finite projective
   dimension is absolutely acyclic.
@@ -83,93 +81,7 @@ variable {R A : Type u} [CommRing R] [Ring A] [Algebra R A]
   {𝒜 : ℤ → Submodule R A} [GradedAlgebra 𝒜] {d : A →ₗ[R] A} {w : A}
   {h : IsCurvedDGAlgebra 𝒜 d w}
 
-/-! ### Exactness of kernels and direct sums in the closed category -/
-
-/-- For an epimorphism `g` in the closed category of curved right modules, the short complex
-`kernelObj g ⟶ Q ⟶ M` is short exact. -/
-theorem shortExact_kernelι {Q M : CurvedDGRightModuleCat.{u, u, u} h}
-    (g : ForgetEnrichment.of (CochainComplex (ModuleCat R) ℤ) Q ⟶
-      ForgetEnrichment.of (CochainComplex (ModuleCat R) ℤ) M) [Epi g] :
-    (ShortComplex.mk (kernelι g) g (kernelι_comp g)).ShortExact := by
-  refine shortExact_iff.mpr ⟨?_, ?_, ?_⟩
-  · rw [hom_kernelι]
-    exact Subtype.val_injective.comp (kernelEquiv g).injective
-  · exact (GradedModuleCat.epi_iff_surjective _).1 ((forgetDifferential (h := h)).map_epi g)
-  · intro x
-    refine ⟨fun hx ↦ ⟨(kernelEquiv g).symm ⟨x, hx⟩, ?_⟩, ?_⟩
-    · rw [hom_kernelι, LinearMap.comp_apply, LinearEquiv.coe_coe,
-        LinearEquiv.apply_symm_apply, Submodule.subtype_apply]
-    · rintro ⟨y, rfl⟩
-      rw [hom_kernelι, LinearMap.comp_apply, LinearEquiv.coe_coe, Submodule.subtype_apply]
-      exact (kernelEquiv g y).2
-
-/-- Direct sums of short exact sequences in the closed category of curved right modules are short
-exact. -/
-theorem shortExact_closedDirectSumMap {J : Type u}
-    {K L M : J → CurvedDGRightModuleCat.{u, u, u} h}
-    (f : ∀ j, ForgetEnrichment.of (CochainComplex (ModuleCat R) ℤ) (K j) ⟶
-      ForgetEnrichment.of (CochainComplex (ModuleCat R) ℤ) (L j))
-    (g : ∀ j, ForgetEnrichment.of (CochainComplex (ModuleCat R) ℤ) (L j) ⟶
-      ForgetEnrichment.of (CochainComplex (ModuleCat R) ℤ) (M j))
-    (hfg : ∀ j, f j ≫ g j = 0)
-    (hfg' : closedDirectSumMap f ≫ closedDirectSumMap g = 0)
-    (hS : ∀ j, (ShortComplex.mk (f j) (g j) (hfg j)).ShortExact) :
-    (ShortComplex.mk (closedDirectSumMap f) (closedDirectSumMap g) hfg').ShortExact := by
-  classical
-  have hSj : ∀ j, Function.Injective (closedHom (f j)) ∧
-      Function.Surjective (closedHom (g j)) ∧
-      Function.Exact (closedHom (f j)) (closedHom (g j)) :=
-    fun j ↦ shortExact_iff.mp (hS j)
-  refine shortExact_iff.mpr ⟨?_, ?_, ?_⟩
-  · intro (x : DirectSum J fun i ↦ K i) (y : DirectSum J fun i ↦ K i) hxy
-    dsimp only at hxy
-    refine DirectSum.ext fun j ↦ (hSj j).1 ?_
-    exact (closedHom_closedDirectSumMap_apply f x j).symm.trans
-      ((congrArg (fun z : DirectSum J fun i ↦ L i ↦ z j) hxy).trans
-        (closedHom_closedDirectSumMap_apply f y j))
-  · intro (y : DirectSum J fun i ↦ M i)
-    dsimp only
-    induction y using DirectSum.induction_on with
-    | zero => exact ⟨0, map_zero _⟩
-    | of j m =>
-      obtain ⟨l, rfl⟩ := (hSj j).2.1 m
-      refine ⟨DirectSum.lof Aᵐᵒᵖ J (fun i ↦ L i) j l, ?_⟩
-      rw [← closedHom_closedDirectSumι L j, ← LinearMap.comp_apply, ← closedHom_comp,
-        closedDirectSumι_map, closedHom_comp, LinearMap.comp_apply, closedHom_closedDirectSumι,
-        DirectSum.lof_eq_of]
-    | add y₁ y₂ hy₁ hy₂ =>
-      obtain ⟨x₁, rfl⟩ := hy₁
-      obtain ⟨x₂, rfl⟩ := hy₂
-      exact ⟨x₁ + x₂, map_add _ x₁ x₂⟩
-  · intro (y : DirectSum J fun i ↦ L i)
-    dsimp only
-    refine ⟨fun hy ↦ ?_, fun ⟨x, hx⟩ ↦ ?_⟩
-    · have hyj (j : J) : ∃ k : K j, closedHom (f j) k = y j := by
-        refine ((hSj j).2.2 (y j)).mp ?_
-        exact (closedHom_closedDirectSumMap_apply g y j).symm.trans
-          (by simpa only [DirectSum.zero_apply] using
-            congrArg (fun z : DirectSum J fun i ↦ M i ↦ z j) hy)
-      choose k hk using hyj
-      refine ⟨∑ j ∈ y.support, DirectSum.lof Aᵐᵒᵖ J (fun i ↦ K i) j (k j), ?_⟩
-      rw [map_sum]
-      conv_rhs => rw [← DirectSum.sum_support_of y]
-      refine Finset.sum_congr rfl fun j _ ↦ ?_
-      rw [← closedHom_closedDirectSumι K j, ← LinearMap.comp_apply, ← closedHom_comp,
-        closedDirectSumι_map, closedHom_comp, LinearMap.comp_apply, closedHom_closedDirectSumι,
-        hk j, DirectSum.lof_eq_of]
-    · subst hx
-      simpa only [closedHom_comp, LinearMap.comp_apply, closedHom_zero, LinearMap.zero_apply]
-        using congrArg (fun φ ↦ closedHom φ x) hfg'
-
 /-! ### Finite-length contractible resolutions -/
-
-/-- Every contraacyclic graded-projective object of the curved homotopy category is zero. -/
-theorem isZero_of_contraacyclic_of_gradedProjective
-    {X : DGHomotopyCategory R (CurvedDGRightModuleCat.{u, u, u} h)}
-    (hX : contraacyclic R h X) (hP : gradedProjective R h X) :
-    IsZero X :=
-  (IsZero.iff_id_eq_zero X).mpr
-    (contraacyclic_le_rightOrthogonal_gradedProjective R h X hX (𝟙 X) hP)
 
 /-- Auxiliary predicate expressing that a curved right module admits a closed resolution of length
 `m` by contractible curved right modules. -/

@@ -94,12 +94,6 @@ section Carrier
 variable (h : IsCurvedDGAlgebra 𝒜 d w)
   (V : GradedModuleCat.{uM} (InternalGrading.ofDecomposition 𝒜).opposite.piece)
 
-private theorem koszulTwist_one_eq_negOnePow_smul {V : GradedModuleCat.{uM}
-    (InternalGrading.ofDecomposition 𝒜).opposite.piece} {e : ℤ} {x : V}
-    (hx : x ∈ V.grading.piece e) :
-    V.grading.koszulTwist 1 x = e.negOnePow • x := by
-  rw [V.grading.koszulTwist_one_apply_of_mem hx, Int.cast_smul_eq_zsmul, Units.smul_def]
-
 private instance : Zero (FreeCarrier h V) := ⟨⟨0, 0⟩⟩
 private instance : Add (FreeCarrier h V) := ⟨fun x y ↦ ⟨x.fst + y.fst, x.snd + y.snd⟩⟩
 private instance : Neg (FreeCarrier h V) := ⟨fun x ↦ ⟨-x.fst, -x.snd⟩⟩
@@ -156,8 +150,9 @@ private theorem freeTwist_mul (a b : A) (v : V) :
     | @homogeneous q v =>
       rcases v with ⟨v, hv⟩
       have hbv : op b • v ∈ V.grading.piece (q + i) := op_smul_mem_of_mem_graded hb hv
-      rw [h.leibniz hb a, koszulTwist_one_eq_negOnePow_smul hv,
-        koszulTwist_one_eq_negOnePow_smul hbv, MulOpposite.op_add, add_smul, op_mul, mul_smul]
+      rw [h.leibniz hb a, V.grading.koszulTwist_one_eq_negOnePow_smul hv,
+        V.grading.koszulTwist_one_eq_negOnePow_smul hbv, MulOpposite.op_add, add_smul, op_mul,
+        mul_smul]
       congr 1
       rw [Units.smul_def i.negOnePow, MulOpposite.op_smul, ← Units.smul_def, smul_assoc,
         smul_comm (op (b * d a)) q.negOnePow, smul_smul, ← Int.negOnePow_add, add_comm i q,
@@ -267,7 +262,8 @@ private theorem isCurvedDGRightModule_freeCarrier :
       change op w • (op a • x.snd) =
         (op a • (op w • x.snd) - op (d a) • V.grading.koszulTwist 1 x.fst) +
           p.negOnePow • (op (d a) • x.fst - op (d (d a)) • V.grading.koszulTwist 1 x.snd)
-      rw [koszulTwist_one_eq_negOnePow_smul hx.1, koszulTwist_one_eq_negOnePow_smul hx.2, hsign,
+      rw [V.grading.koszulTwist_one_eq_negOnePow_smul hx.1,
+        V.grading.koszulTwist_one_eq_negOnePow_smul hx.2, hsign,
         Units.neg_smul, smul_neg, sub_neg_eq_add, smul_comm (op (d a)) p.negOnePow, smul_add,
         smul_comm (op (d (d a))) p.negOnePow, negOnePow_smul_negOnePow_smul,
         ← mul_smul, ← mul_smul, ← op_mul, ← op_mul, hc,
@@ -275,7 +271,7 @@ private theorem isCurvedDGRightModule_freeCarrier :
     · -- Unfold `freeDifferential` and the twisted `Aᵐᵒᵖ`-action on the second coordinate.
       change op a • x.fst - op (d a) • V.grading.koszulTwist 1 x.snd =
         op a • x.fst + p.negOnePow • (op (d a) • x.snd)
-      rw [koszulTwist_one_eq_negOnePow_smul hx.2, hsign, Units.neg_smul, smul_neg,
+      rw [V.grading.koszulTwist_one_eq_negOnePow_smul hx.2, hsign, Units.neg_smul, smul_neg,
         sub_neg_eq_add, smul_comm]
   sq_eq x := by
     refine FreeCarrier.ext ?_ rfl
@@ -438,7 +434,7 @@ def freeDesc (f : V ⟶ toGradedModuleCat M) :
       have hfv : f' v ∈ M.grading q := by
         simpa only [toGradedModuleCat_piece] using GradedModuleCat.map_mem f hv
       rw [f'.map_smul, M.isCurvedDGRightModule.leibniz hfv a,
-        koszulTwist_one_eq_negOnePow_smul hv]
+        V.grading.koszulTwist_one_eq_negOnePow_smul hv]
       simp_rw [Units.smul_def, smul_comm (op (d a)) (q.negOnePow : ℤ), map_zsmul, f'.map_smul,
         add_sub_cancel_right]
   refine closedHomOf
