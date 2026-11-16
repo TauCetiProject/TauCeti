@@ -233,6 +233,16 @@ theorem toMoorePath_map (f : C(X, Y)) (γ : MoorePathBetween X a b) :
     (map f γ).toMoorePath = γ.toMoorePath.map f :=
   (rfl)
 
+/-- The image of a path under the identity is the path. It is not a `simp` lemma: `simp` would
+first rewrite the endpoints `ContinuousMap.id X a` in the type of the left-hand side. -/
+theorem map_id (γ : MoorePathBetween X a b) : map (.id X) γ = γ :=
+  ext ((toMoorePath_map _ γ).trans (MoorePath.map_id _))
+
+/-- The image of a path under a composite is the image of the image. -/
+theorem map_comp {Z : Type*} [TopologicalSpace Z] (g : C(Y, Z)) (f : C(X, Y))
+    (γ : MoorePathBetween X a b) : map (g.comp f) γ = map g (map f γ) :=
+  ext ((toMoorePath_map _ γ).trans (MoorePath.map_map g f _).symm)
+
 /-- The image of a path commutes with the loops acting in front, through the induced map of
 Moore loop spaces. -/
 theorem map_smul (f : C(X, Y)) (ω : MooreLoopSpace X a) (γ : MoorePathBetween X a b) :
