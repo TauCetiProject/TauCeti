@@ -154,7 +154,7 @@ theorem comap_coe_borel_restrictedProduct
   rw [borel_restrictedProduct_eq_generateFrom_openBoxes hA]
   refine MeasurableSpace.generateFrom_le fun B hB ↦ ?_
   obtain ⟨C, hC, -, rfl⟩ := mem_openRestrictedProductBoxes.mp hB
-  refine ⟨Set.univ.pi C, ?_, preimage_coe_univ_pi A cofinite C⟩
+  refine ⟨Set.univ.pi C, ?_, preimage_restrictedProduct_coe_univ_pi A cofinite C⟩
   let _ : ∀ i, MeasurableSpace (R i) := fun i ↦ borel (R i)
   have : ∀ i, BorelSpace (R i) := fun _ ↦ ⟨rfl⟩
   rw [← BorelSpace.measurable_eq (α := ∀ i, R i)]
@@ -211,7 +211,7 @@ theorem measurableSet_restrictedProductBox {A C : ∀ i, Set (R i)}
   let hfin : {i | ¬ (IsOpen (A i) ∧ C i = A i)}.Finite := eventually_cofinite.mp (hA.and hCA)
   let F : Finset ι := hfin.toFinset
   have hopen : IsOpen {x : Πʳ i, [R i, A i] | ∀ i ∈ (F : Set ι)ᶜ, x i ∈ A i} := by
-    refine isOpen_forall_mem_restrictedProduct_of_forall_mem fun i hi ↦ ?_
+    refine isOpen_forall_mem_restrictedProduct fun i hi ↦ ?_
     by_contra hnot
     exact hi (Finset.mem_coe.mpr (hfin.mem_toFinset.mpr fun h ↦ hnot h.1))
   have heq : restrictedProductBox A cofinite C =
