@@ -113,6 +113,12 @@ theorem manifoldMorseIndex_le_finrank :
     manifoldMorseIndex I f x ≤ Module.finrank ℝ E :=
   morseIndex_le_finrank
 
+/-- On a manifold modelled on a zero-dimensional space every Morse index is zero. -/
+@[simp]
+theorem manifoldMorseIndex_eq_zero_of_subsingleton [Subsingleton E] :
+    manifoldMorseIndex I f x = 0 :=
+  Nat.le_zero.1 (manifoldMorseIndex_le_finrank.trans_eq Module.finrank_zero_of_subsingleton)
+
 /-- At a local minimum of a `C²` function on a boundaryless manifold, the preferred-chart Morse
 index is zero. No nondegeneracy assumption is needed. -/
 theorem manifoldMorseIndex_eq_zero_of_isLocalMin [I.Boundaryless]
