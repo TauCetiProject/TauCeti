@@ -23,7 +23,9 @@ with the actions of the automorphism groups on weight vectors and on root indice
 The statements are about two or three root pairings with unrelated index sets, weight spaces and
 coweight spaces; nothing here needs any finiteness, reducedness or crystallographic hypothesis.
 Laws about a single pairing are already available from the `Group (RootPairing.Equiv P P)`
-instance, so they are not restated here.
+instance, so they are not restated here. For a single pairing, the file records only how
+automorphisms act: on root indices and weights through their index permutation and weight map, and
+on the spans of the roots and of the coroots, each of which they preserve.
 
 ## Main definitions
 
@@ -44,6 +46,9 @@ instance, so they are not restated here.
   the index permutation of a conjugated automorphism are the conjugates of the originals.
 * `RootPairing.Equiv.smul_index_eq_indexEquiv`: an automorphism acts on root indices through its
   index permutation.
+* `RootPairing.Equiv.smul_rootSpan` and `RootPairing.Equiv.smul_corootSpan`: every automorphism
+  preserves the span of the roots, and every automorphism of the flipped pairing preserves the span
+  of the coroots, over any coefficient ring.
 * `RootPairing.Equiv.autCongr_smul` and `RootPairing.Equiv.autCongr_smul_index`: conjugation
   transports the actions on weight vectors and on root indices.
 * `RootPairing.Equiv.autCongr_id` and `RootPairing.Equiv.autCongr_comp`: conjugation is
@@ -111,6 +116,29 @@ theorem smul_index_eq_indexEquiv (g : Aut P) (i : ι) :
 /-- An automorphism acts on weights by its weight map. -/
 theorem smul_eq_weightEquiv (g : P.Aut) (x : M) : g • x = g.weightEquiv x :=
   rfl
+
+open Pointwise in
+/-- Every automorphism maps the span of the roots onto itself, since it permutes the roots. -/
+@[simp]
+theorem smul_rootSpan {S : Type*} [CommRing S] [Module S M]
+    [SMulCommClass P.Aut S M] (g : P.Aut) : g • P.rootSpan S = P.rootSpan S := by
+  rw [rootSpan, Submodule.smul_span, Set.smul_set_range]
+  simp only [← root_indexEquiv_eq_smul]
+  exact congrArg (Submodule.span S) (g.indexEquiv.surjective.range_comp P.root)
+
+open Pointwise in
+/-- Every automorphism maps the span of the roots onto itself, as a set. -/
+@[simp]
+theorem smul_coe_rootSpan {S : Type*} [CommRing S] [Module S M]
+    [SMulCommClass P.Aut S M] (g : P.Aut) : g • (P.rootSpan S : Set M) = P.rootSpan S := by
+  rw [← Submodule.coe_pointwise_smul, smul_rootSpan]
+
+open Pointwise in
+/-- Every automorphism of the flipped pairing maps the span of the coroots onto itself. -/
+@[simp]
+theorem smul_corootSpan {S : Type*} [CommRing S] [Module S N]
+    [SMulCommClass P.flip.Aut S N] (g : P.flip.Aut) : g • P.corootSpan S = P.corootSpan S :=
+  smul_rootSpan (P := P.flip) g
 
 noncomputable section Conjugation
 

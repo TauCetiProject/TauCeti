@@ -77,9 +77,9 @@ crystallographic (`RootPairing.isCrystallographic_of_le_dualLattice`). Dualizing
 the coweight action `RootPairing.Equiv.autFlip P g` of an automorphism carries the dual of `X₀`
 onto the dual of `g • X₀` (`RootPairing.autFlip_smul_dualLattice`). The reflection in a root
 lying in a lattice preserves that lattice when the coroot lies in its dual
-(`RootPairing.reflection_smul_eq_of_mem_dualLattice`). Every automorphism preserves the root and
-weight lattices (`RootPairing.Equiv.smul_rootSpan` and
-`RootPairing.Equiv.smul_coweightLattice_flip`).
+(`RootPairing.reflection_smul_eq_of_mem_dualLattice`). Since every automorphism preserves the
+root lattice (`RootPairing.Equiv.smul_rootSpan`), it also preserves its dual, the weight lattice
+(`RootPairing.Equiv.smul_coweightLattice_flip`).
 
 Over a linearly ordered ring the coroot lattice of a crystallographic pairing with finitely many
 roots contains no nonzero minuscule element, no nonzero `v` at which every root takes one of the
@@ -125,8 +125,8 @@ This is what makes the affine Weyl group `Q∨ ⋊ W` act freely on the alcoves.
   of a lattice onto the dual of its image.
 * `RootPairing.reflection_smul_eq_of_mem_dualLattice`: the reflection in a root of a lattice whose
   coroot lies in the dual lattice preserves the lattice.
-* `RootPairing.Equiv.smul_rootSpan` and `RootPairing.Equiv.smul_coweightLattice_flip`: every
-  automorphism preserves the root lattice and the weight lattice.
+* `RootPairing.Equiv.smul_coweightLattice_flip`: every automorphism preserves the weight
+  lattice.
 * `RootPairing.eq_zero_of_mem_corootSpan_of_forall_abs_root'_lt_two`: a minuscule element of the
   coroot lattice is zero.
 
@@ -454,29 +454,6 @@ theorem reflection_smul_eq_of_mem_dualLattice {X₀ : Submodule ℤ M} {i : ι}
   refine (Set.smul_set_subset_iff.mpr h).antisymm (Set.subset_smul_set_iff.mpr ?_)
   rw [Equiv.reflection_inv]
   exact Set.smul_set_subset_iff.mpr h
-
-open Pointwise in
-/-- Every automorphism maps the span of the roots onto itself, since it permutes the roots. -/
-@[simp]
-theorem Equiv.smul_rootSpan {S : Type*} [CommRing S] [Module S M]
-    [SMulCommClass P.Aut S M] (g : P.Aut) : g • P.rootSpan S = P.rootSpan S := by
-  rw [rootSpan, Submodule.smul_span, Set.smul_set_range]
-  simp only [← Equiv.root_indexEquiv_eq_smul]
-  exact congrArg (Submodule.span S) (g.indexEquiv.surjective.range_comp P.root)
-
-open Pointwise in
-/-- Every automorphism maps the span of the roots onto itself, as a set. -/
-@[simp]
-theorem Equiv.smul_coe_rootSpan {S : Type*} [CommRing S] [Module S M]
-    [SMulCommClass P.Aut S M] (g : P.Aut) : g • (P.rootSpan S : Set M) = P.rootSpan S := by
-  rw [← Submodule.coe_pointwise_smul, Equiv.smul_rootSpan]
-
-open Pointwise in
-/-- Every automorphism of the flipped pairing maps the span of the coroots onto itself. -/
-@[simp]
-theorem Equiv.smul_corootSpan {S : Type*} [CommRing S] [Module S N]
-    [SMulCommClass P.flip.Aut S N] (g : P.flip.Aut) : g • P.corootSpan S = P.corootSpan S :=
-  Equiv.smul_rootSpan (P := P.flip) g
 
 open Pointwise in
 /-- Every automorphism maps the weight lattice onto itself by preservation of the pairing. -/
