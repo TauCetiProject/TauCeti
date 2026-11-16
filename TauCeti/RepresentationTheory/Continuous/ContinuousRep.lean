@@ -66,6 +66,17 @@ The topology on a base change `B ⊗[A] M` is an instance argument together with
 `moduleTopology B (B ⊗[A] M)` or any topology known to coincide with it. Only finiteness of `M`
 is needed for the base-changed action to be continuous; projectivity plays no role here.
 
+When the target ring is `B = ℤ`, whatever `A` is, this runs into Mathlib's `ℤ`-module diamond on
+tensor products: written in a statement, `[IsModuleTopology ℤ (ℤ ⊗[A] M)]` elaborates with the
+additive group's `ℤ`-action, while `TauCeti.ContinuousRep.baseChange` asks for it with the tensor
+product's left action `TensorProduct.leftHasSMul`. The two actions agree, but not at instance
+transparency, so `ρ.baseChange ℤ` fails to synthesize the hypothesis, and so does every declaration
+here that extends scalars to `ℤ`, such as `baseChangeSelfIso` for `A = ℤ`. The same happens when
+the topology is given as `moduleTopology ℤ (ℤ ⊗[A] M)`. Installing `TensorProduct.leftHasSMul` as
+a local `SMul ℤ (ℤ ⊗[A] M)` instance before forming `moduleTopology ℤ (ℤ ⊗[A] M)` or stating
+`[IsModuleTopology ℤ (ℤ ⊗[A] M)]` avoids this. Extending scalars from `A = ℤ` to another ring,
+such as `ℚ`, does not meet this diamond.
+
 ## References
 
 * H. Darmon, F. Diamond and R. Taylor, *Fermat's Last Theorem*, §2.1.
