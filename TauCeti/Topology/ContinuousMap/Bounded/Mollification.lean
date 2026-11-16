@@ -61,6 +61,7 @@ def normedConvolutionBUC (ρ : ContDiffBump (0 : G)) (μ : Measure G) [μ.IsAddH
         f.val.continuous.locallyIntegrable f.val.norm_coe_le_norm).uniformContinuous⟩
 
 /-- The mollification of `f` by `ρ` evaluates to the convolution `ρ ⋆ f`. -/
+@[simp]
 theorem coe_normedConvolutionBUC (ρ : ContDiffBump (0 : G)) (μ : Measure G)
     [μ.IsAddHaarMeasure] (f : uniformContinuousSubmodule ℝ G F) :
     ((ρ.normedConvolutionBUC μ f).val : G → F) = ρ.normed μ ⋆[lsmul ℝ ℝ, μ] (f.val : G → F) :=

@@ -149,6 +149,7 @@ theorem laplacian_convolution_eq_neg_of_integral_laplacian_mul [μ.IsNegInvarian
 omit [MeasurableSpace E] [BorelSpace E] in
 /-- The Laplacian of the reflected translate `t ↦ ρ (y - t)` is the reflected translate of the
 Laplacian of `ρ`. -/
+@[simp]
 theorem laplacian_reflectTranslateTestFunction {Ω : TopologicalSpace.Opens E} (ρ : E → F)
     (y : E) (hρ : ContDiff ℝ ∞ ρ) (hρc : HasCompactSupport ρ)
     (hy : ∀ t ∈ tsupport ρ, y - t ∈ Ω) (t : E) :
