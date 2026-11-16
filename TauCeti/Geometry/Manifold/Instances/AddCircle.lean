@@ -609,6 +609,26 @@ theorem hasMFDerivAt_of_comp_coe_eq {g : AddCircle p → AddCircle q} {f : ℝ �
 
 end Lift
 
+/-- Every translation of `AddCircle p` has derivative the identity of `ℝ`. -/
+@[simp]
+theorem mfderiv_add_right (a x : AddCircle p) :
+    mfderiv 𝓘(ℝ) 𝓘(ℝ) (· + a) x = ContinuousLinearMap.id ℝ ℝ := by
+  obtain ⟨s, rfl⟩ := QuotientAddGroup.mk_surjective a
+  obtain ⟨t, rfl⟩ := QuotientAddGroup.mk_surjective x
+  exact (hasMFDerivAt_of_comp_coe_eq (g := (· + (s : AddCircle p))) (f := (· + s))
+    (funext fun u ↦ (coe_add p u s).symm)
+    ((hasFDerivAt_id t).add_const s)).mfderiv
+
+/-- Multiplication by an integer `k` on `AddCircle p` has derivative multiplication by `k`, with its
+sign, at every point. -/
+@[simp]
+theorem mfderiv_zsmul (k : ℤ) (x : AddCircle p) :
+    mfderiv 𝓘(ℝ) 𝓘(ℝ) (fun y : AddCircle p ↦ k • y) x = k • ContinuousLinearMap.id ℝ ℝ := by
+  obtain ⟨t, rfl⟩ := QuotientAddGroup.mk_surjective x
+  -- Multiplication by `k` lifts multiplication by `k` on `ℝ`.
+  exact (hasMFDerivAt_of_comp_coe_eq (funext fun u ↦ (QuotientAddGroup.mk_zsmul _ u k).symm)
+    ((hasFDerivAt_id t).const_smul k)).mfderiv
+
 end AddCircle
 
 /-! ### Functions on a circle lifting periodic functions -/
@@ -635,26 +655,6 @@ namespace AddCircle
 open TauCeti PeriodLine
 
 variable (p : ℝ) [Fact (0 < p)]
-
-/-- Every translation of `AddCircle p` has derivative the identity of `ℝ`. -/
-@[simp]
-theorem mfderiv_add_right (a x : AddCircle p) :
-    mfderiv 𝓘(ℝ) 𝓘(ℝ) (· + a) x = ContinuousLinearMap.id ℝ ℝ := by
-  obtain ⟨s, rfl⟩ := QuotientAddGroup.mk_surjective a
-  obtain ⟨t, rfl⟩ := QuotientAddGroup.mk_surjective x
-  exact (hasMFDerivAt_of_comp_coe_eq (g := (· + (s : AddCircle p))) (f := (· + s))
-    (funext fun u ↦ (coe_add p u s).symm)
-    ((hasFDerivAt_id t).add_const s)).mfderiv
-
-/-- Multiplication by an integer `k` on `AddCircle p` has derivative multiplication by `k`, with its
-sign, at every point. -/
-@[simp]
-theorem mfderiv_zsmul (k : ℤ) (x : AddCircle p) :
-    mfderiv 𝓘(ℝ) 𝓘(ℝ) (fun y : AddCircle p ↦ k • y) x = k • ContinuousLinearMap.id ℝ ℝ := by
-  obtain ⟨t, rfl⟩ := QuotientAddGroup.mk_surjective x
-  -- Multiplication by `k` lifts multiplication by `k` on `ℝ`.
-  exact (hasMFDerivAt_of_comp_coe_eq (funext fun u ↦ (QuotientAddGroup.mk_zsmul _ u k).symm)
-    ((hasFDerivAt_id t).const_smul k)).mfderiv
 
 /-! ### Rescaling the period -/
 

@@ -10,7 +10,7 @@ public import TauCeti.Geometry.Manifold.ContMDiffMap.Chart.Topology
 public import TauCeti.Geometry.Manifold.Instances.AddCircle
 import Mathlib.Analysis.Calculus.IteratedDeriv.Lemmas
 import TauCeti.Algebra.Ring.Periodic
-import TauCeti.Topology.UniformSpace.LocallyUniformConvergence
+import TauCeti.Topology.MetricSpace.Pseudo.Basic
 
 /-!
 # The weak Whitney topology on functions on a circle
@@ -80,8 +80,8 @@ theorem tendsto_addCircle_of_norm_iteratedDeriv_sub_le {ι : Type*} {l : Filter 
       (𝓝 ⟨hg.lift, hg.contMDiff_lift hgn⟩) := by
   refine tendsto_addCircle_of_tendstoLocallyUniformly fun m hm ↦ ?_
   simp only [coeFn_mk, Function.Periodic.lift_comp_coe]
-  refine (TauCeti.tendstoUniformly_of_dist_le (hb m hm)
-    ((h m hm).mono fun i hi t ↦ ?_)).tendstoLocallyUniformly
+  refine (tendstoUniformlyOn_univ.1 (TauCeti.tendstoUniformlyOn_of_dist_le (hb m hm)
+    ((h m hm).mono fun i hi t _ ↦ ?_))).tendstoLocallyUniformly
   rw [dist_eq_norm, ← iteratedFDeriv_sub_apply ((hfn i).contDiffAt.of_le hm)
     (hgn.contDiffAt.of_le hm), norm_iteratedFDeriv_eq_norm_iteratedDeriv]
   exact hi t
