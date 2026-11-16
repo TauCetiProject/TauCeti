@@ -22,12 +22,14 @@ the general change of basepoint for the constant path of length zero, along whic
 reversed path changes nothing. Since Moore concatenation is strictly unital, `ρ` is then linear for
 the loops at `a` acting on both sides (`TauCeti.pathChainToLoopChain_one_op_smul`), so the map is
 a morphism of DG local systems at `a`, and it is inverse to `m ↦ m ⊗ [1]`, tensoring with the
-`0`-chain of the constant path. For a general path `δ` from `a` to `b`, the map
-`m ⊗ c ↦ m · ρ_δ(c)` is only a homotopy retraction, and not linear over the loops at `b`.
+`0`-chain of the constant path. For a general path `δ` from `a` to `b`, the source
+`M ⊗ C_*(P_{a→b} B)` is a module over `C_*(Ω_b B)` while `M` is a module over `C_*(Ω_a B)`, so
+the map `m ⊗ c ↦ m · ρ_δ(c)` is only `R`-linear: it is the inclusion of the homotopy retract
+`M ⊗ C_*(P_{a→b} B)` into `M`, with `m ↦ m ⊗ [δ]` as the retraction back.
 
 This is the unit law for changes of basepoint. Composing the change along the paths from `a` to
-`b` with the change along the paths from `b` back to `a` gives a change along paths from `a` to
-itself, and this file identifies the latter with the identity.
+`b` with the change along the paths from `b` back to `a` is quasi-isomorphic to the change along
+the paths from `a` to itself, and this file identifies the latter with the identity.
 
 ## Main definitions
 
@@ -103,8 +105,7 @@ theorem pathChainToLoopChain_one_pathChainPoint :
         (SingularCube.point (MoorePathBetween.loopHomeomorph a 1)) = SingularCube.point 1 :=
     ContinuousMap.ext fun _ ↦ by simp [SingularCube.point_apply]
   rw [pathChainPoint_def, pathChainToLoopChain_one_lof, NormalizedCubicalChain.map_ofCube, h,
-    ← NormalizedCubicalChain.one_def, ← NormalizedCubicalChain.gOne_one, DirectSum.lof_eq_of,
-    DirectSum.one_def]
+    ← NormalizedCubicalChain.one_def, cubicalChainLof_one]
 
 /-- Acting on the `0`-chain of the constant path of length zero inverts `ρ`: the chain of loops
 `ρ(x)` acts on it by concatenation in front, which recovers `x`. -/
@@ -123,14 +124,6 @@ theorem pathChainToLoopChain_one_smul_pathChainPoint
 section Iso
 
 open BalancedTensorProduct DGRightModuleCat
-
--- Instance search finds a different, but definitionally equal, decomposition of the loop chain
--- algebra than the one recorded in a DG module over it.
-local instance (M : DGRightModuleCat.{w, max u w, v} (loopChain_isDGAlgebra B a R)) :
-    SetLike.GradedSMul
-      (InternalGrading.ofDecomposition (cubicalChainGrading (MooreLoopSpace B a) R)).opposite.piece
-      M.grading :=
-  M.gradedSMul
 
 /-- The right action of the loop chains on `M ⊗ C_*(P_{a→a} B)`, which instance search does not
 see through the carrier of the tensor product. -/
@@ -191,11 +184,8 @@ def tensorPathChainOneIso
       left_inv := tensorPathChainPoint_one_tensorPathChainAct M
       right_inv := tensorPathChainAct_one_tensorPathChainPoint M }
     (fun q z ↦ ⟨tensorPathChainAct_mem _, fun hz ↦ by
-      simp only [LinearEquiv.coe_mk, LinearMap.coe_mk, AddHom.coe_mk] at hz
-      rw [← tensorPathChainPoint_one_tensorPathChainAct M z, tensorPathChainPoint_apply]
-      simpa only [add_zero] using
-        tmul_mem_tensorBimoduleObj_grading (N := pathChainBimodule B a a R) hz
-          (pathChainPoint_mem _)⟩)
+      rw [← tensorPathChainPoint_one_tensorPathChainAct M z]
+      exact tensorPathChainPoint_mem _ hz⟩)
     (fun z ↦ differential_tensorPathChainAct _ z)
 
 variable {B a R}

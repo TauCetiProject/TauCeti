@@ -259,6 +259,13 @@ theorem tensorPathChainAct_mem {q : ℤ} {z : tensorBimoduleObj M (pathChainBimo
       exact SetLike.GradedSMul.smul_mem
         ((InternalGrading.op_mem_opposite_piece_iff _ _ _).2 hρ) hm) hz
 
+/-- The map `m ↦ m ⊗ [δ]` preserves the degree. -/
+theorem tensorPathChainPoint_mem {q : ℤ} {m : M} (hm : m ∈ M.grading q) :
+    tensorPathChainPoint M δ m ∈ (tensorBimoduleObj M (pathChainBimodule B a b R)).grading q := by
+  rw [tensorPathChainPoint_apply]
+  simpa only [add_zero] using
+    tmul_mem_tensorBimoduleObj_grading (N := pathChainBimodule B a b R) hm (pathChainPoint_mem δ)
+
 /-- Tensoring with the `0`-chain of `δ` commutes with the differentials. -/
 theorem differential_tensorPathChainPoint (m : M) :
     (tensorBimoduleObj M (pathChainBimodule B a b R)).differential (tensorPathChainPoint M δ m) =
