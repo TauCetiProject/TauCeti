@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Algebra.TemperleyLieb.MarkovTrace
 public import TauCeti.Algebra.TemperleyLieb.Star
+public import TauCeti.RingTheory.Ideal.Quotient.Star
 public import TauCeti.RingTheory.TraceFunctional.Star
 import Mathlib.Algebra.Star.LinearMap
 
@@ -19,9 +20,10 @@ this form by the loop parameter. This holds over any commutative star semiring, 
 or invertibility assumptions on the parameter.
 
 Together with `LinearMap.star_mem_traceRadical_iff` and `LinearMap.ker_traceSesqForm`, the adjoint
-identity shows that the trace radical is star-stable and is precisely the kernel of the Hermitian
-form. Positivity and the identification of that kernel with the zero-length vectors are separate
-questions.
+identity shows that the trace radical is star-stable
+(`TauCeti.TemperleyLieb.IsMarkovTrace.isStar_traceRadical`) and is precisely the kernel of the
+Hermitian form. Positivity and the identification of that kernel with the zero-length vectors are
+separate questions.
 
 ## References
 
@@ -83,6 +85,15 @@ end IsMarkovTrace
 end Semiring
 
 variable {R : Type*} [CommRing R] [StarRing R] {δ : R} [Fact (IsSelfAdjoint δ)]
+
+/-- At a self-adjoint loop parameter, the trace radical of any Markov trace is star-stable
+(`Ideal.IsStar`). Install this witness locally (for example `let _ := htr.isStar_traceRadical n`)
+to supply the `Ideal.IsStar` instance required by `Ideal.Quotient.instStarRing` on the
+trace-radical quotient. -/
+theorem IsMarkovTrace.isStar_traceRadical {tr : ∀ n : ℕ, TemperleyLieb R δ n →ₗ[R] R}
+    (htr : IsMarkovTrace R δ tr) (n : ℕ) :
+    ((tr n).traceRadical (htr.map_mul_comm n)).IsStar where
+  star_mem ha := ((tr n).star_mem_traceRadical_iff (htr.map_mul_comm n) (htr.map_star n)).mpr ha
 
 /-- The spin-model Markov trace preserves the analytic adjoint, even when its unit parameter
 is not self-adjoint: only the loop parameter must be self-adjoint. -/

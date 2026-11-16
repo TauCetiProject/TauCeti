@@ -387,11 +387,6 @@ theorem forall_neg_one_pow_mul_map_star_mul_self_nonneg_iff (htr : IsMarkovTrace
   refine forall_congr' fun n ↦ ?_
   rw [← Set.forall_mem_range (p := (0 ≤ ·)), hrange n, Set.forall_mem_range]
 
-/-- Positive real scaling preserves nonnegativity in the complex order. -/
-private theorem real_pos_mul_nonneg_iff {r : ℝ} (hr : 0 < r) {z : ℂ} :
-    0 ≤ (r : ℂ) * z ↔ 0 ≤ z := by
-  simp [Complex.nonneg_iff, mul_nonneg_iff_of_pos_left hr, hr.ne', eq_comm]
-
 /-- **Positivity of the normalized Markov trace at nonzero real loop parameters.** For real
 `δ ≠ 0`, the normalized Hermitian forms `(x, y) ↦ (δ ^ n)⁻¹ * tr n (x⋆ * y)` of a Markov trace are
 positive semidefinite on every number of strands exactly when `|δ| ∈ jonesLoopParameters`. -/
@@ -409,14 +404,14 @@ theorem forall_inv_pow_mul_map_star_mul_self_nonneg_iff (htr : IsMarkovTrace ℂ
       rw [inv_mul_cancel₀ hne, mul_assoc, ← mul_pow, neg_one_mul, ← Complex.ofReal_neg,
         ← Complex.ofReal_pow, ← Complex.ofReal_mul,
         inv_mul_cancel₀ (pow_ne_zero n (neg_ne_zero.mpr hδ)), Complex.ofReal_one]
-    rw [hinv, mul_assoc, real_pos_mul_nonneg_iff hr]
+    rw [hinv, mul_assoc, ← Complex.real_smul, smul_nonneg_iff_nonneg_of_pos_left hr]
   · rw [abs_of_pos hpos, ← htr.forall_map_star_mul_self_nonneg_iff hpos]
     refine forall_congr' fun n ↦ forall_congr' fun x ↦ ?_
     have hr : 0 < (δ ^ n)⁻¹ := inv_pos.mpr (pow_pos hpos n)
     have hinv : ((δ : ℂ) ^ n)⁻¹ = (((δ ^ n)⁻¹ : ℝ) : ℂ) := by
       push_cast
       rfl
-    rw [hinv, real_pos_mul_nonneg_iff hr]
+    rw [hinv, ← Complex.real_smul, smul_nonneg_iff_nonneg_of_pos_left hr]
 
 end IsMarkovTrace
 

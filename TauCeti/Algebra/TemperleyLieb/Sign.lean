@@ -7,7 +7,6 @@ module
 
 public import TauCeti.Algebra.TemperleyLieb.Trace.Radical
 public import TauCeti.Algebra.TemperleyLieb.Trace.Star
-public import TauCeti.RingTheory.Ideal.Quotient.Star
 
 /-!
 # The sign isomorphism on the Temperley–Lieb algebra
@@ -39,11 +38,16 @@ from `(-1) ^ (n + 2)` to `(-1) ^ (n + 1)`. By uniqueness of Markov traces
 at `-δ` satisfies `tr' n (signEquiv δ n x) = (-1) ^ n * tr n x`, and for the spin-model trace at
 `δ = -(q + q⁻¹)` this specializes to
 `markovTrace (-q) _ (signEquiv δ n x) = (-1) ^ n * markovTrace q hq x`. Multiplying by
-`Ring.inverse ((-δ) ^ n)` absorbs `(-1) ^ n`, so the normalized traces and normalized Hermitian
-forms are invariant under `signEquiv`. Consequently `signEquiv` maps the trace radical at `δ` onto
-the trace radical at `-δ` and descends to star-compatible algebra isomorphisms
+`Ring.inverse ((-δ) ^ n)` absorbs `(-1) ^ n`, so the `Ring.inverse`-normalized traces (and, over a
+star ring with self-adjoint `δ` and `-δ`, the normalized Hermitian forms) are invariant under
+`signEquiv`. Independently of invertibility of `δ`, because
+`tr' n (signEquiv δ n x) = (-1) ^ n * tr n x`, `signEquiv δ n` is surjective, and `(-1) ^ n` is a
+unit over every commutative ring, `signEquiv` maps the trace radical at `δ` onto the trace radical
+at `-δ` and descends to `R`-algebra isomorphisms
 `TauCeti.TemperleyLieb.IsMarkovTrace.quotientSignEquiv` on the algebraic Jones quotients,
-commuting with `quotientStrandIncl` and scaling `quotientTrace` by `(-1) ^ n`.
+commuting with `quotientStrandIncl` and scaling `quotientTrace` by `(-1) ^ n`; when `R` is a star
+ring with `δ` and `-δ` self-adjoint, `quotientSignEquiv` also intertwines the quotient star
+structures (`TauCeti.TemperleyLieb.IsMarkovTrace.quotientSignEquiv_star`).
 
 ## Main definitions
 
@@ -56,9 +60,8 @@ commuting with `quotientStrandIncl` and scaling `quotientTrace` by `(-1) ^ n`.
 
 ## Main results
 
-* `TauCeti.TemperleyLieb.eq_of_map_e_two`, `TauCeti.TemperleyLieb.two_mul_eq_zero_of_map_e_two`:
-  an algebra map on two strands sending the generator to the generator forces equal loop parameters
-  (hence `2 * δ = 0` from `δ` to `-δ`).
+* `TauCeti.TemperleyLieb.two_mul_eq_zero_of_map_e_two`: an algebra map on two strands from `δ` to
+  `-δ` sending the generator to the generator forces `2 * δ = 0`.
 * `TauCeti.TemperleyLieb.signEquiv_e`, `TauCeti.TemperleyLieb.signEquiv_symm_e`,
   `TauCeti.TemperleyLieb.eq_signEquiv_iff`: generator action and uniqueness of `signEquiv`.
 * `TauCeti.TemperleyLieb.signEquiv_strandIncl`, `TauCeti.TemperleyLieb.aug_signEquiv`,
@@ -94,22 +97,8 @@ namespace TauCeti.TemperleyLieb
 
 section TwoStrands
 
-/-- On two strands over any commutative semiring, an algebra homomorphism sending the generator to
-the generator forces the two loop parameters to agree: applying it to `e * e = δ₁ • e` yields
-`δ₁ • e = δ₂ • e`, and scalar multiples of the two-strand generator are read off by
-`TauCeti.TemperleyLieb.smul_left_injective_e_two`. -/
-theorem eq_of_map_e_two {R : Type*} [CommSemiring R] {δ₁ δ₂ : R}
-    (f : TemperleyLieb R δ₁ 2 →ₐ[R] TemperleyLieb R δ₂ 2) (i : Fin (2 - 1))
-    (hf : f (e δ₁ i) = e δ₂ i) : δ₁ = δ₂ := by
-  apply smul_left_injective_e_two (δ := δ₂) i
-  calc
-    δ₁ • e δ₂ i = f (δ₁ • e δ₁ i) := by rw [map_smul, hf]
-    _ = f (e δ₁ i * e δ₁ i) := by rw [e_mul_self]
-    _ = e δ₂ i * e δ₂ i := by rw [map_mul, hf]
-    _ = δ₂ • e δ₂ i := e_mul_self i
-
 /-- On two strands over a commutative ring, an algebra homomorphism from loop parameter `δ` to `-δ`
-fixing the generator exists only when `2 * δ = 0`. -/
+fixing the generator exists only when `2 * δ = 0` (`TauCeti.TemperleyLieb.eq_of_map_e_two`). -/
 theorem two_mul_eq_zero_of_map_e_two {R : Type*} [CommRing R] {δ : R}
     (f : TemperleyLieb R δ 2 →ₐ[R] TemperleyLieb R (-δ) 2) (i : Fin (2 - 1))
     (hf : f (e δ i) = e (-δ) i) : 2 * δ = 0 := by
@@ -586,14 +575,9 @@ theorem quotientTrace_quotientSignEquiv_symm (htr : IsMarkovTrace R δ tr)
   obtain ⟨x, rfl⟩ := Ideal.Quotient.mk_surjective x
   simp [htr.map_signEquiv_symm htr']
 
-/-- At a self-adjoint loop parameter, the trace radical of any Markov trace is star-stable
-(`Ideal.IsStar`), equipping the trace-radical quotient with `Ideal.Quotient.instStarRing`. -/
-theorem isStar_traceRadical [StarRing R] [Fact (IsSelfAdjoint δ)] (htr : IsMarkovTrace R δ tr)
-    (n : ℕ) : ((tr n).traceRadical (htr.map_mul_comm n)).IsStar where
-  star_mem ha := ((tr n).star_mem_traceRadical_iff (htr.map_mul_comm n) (htr.map_star n)).mpr ha
-
 /-- For self-adjoint `δ` and `-δ`, `quotientSignEquiv` preserves the quotient star structure on the
-trace-radical quotients. -/
+trace-radical quotients; install the `Ideal.IsStar` witnesses locally via
+`let _ := htr.isStar_traceRadical n` and `let _ := htr'.isStar_traceRadical n`. -/
 @[simp]
 theorem quotientSignEquiv_star [StarRing R] [Fact (IsSelfAdjoint δ)] [Fact (IsSelfAdjoint (-δ))]
     (htr : IsMarkovTrace R δ tr) (htr' : IsMarkovTrace R (-δ) tr') (n : ℕ)
@@ -605,7 +589,8 @@ theorem quotientSignEquiv_star [StarRing R] [Fact (IsSelfAdjoint δ)] [Fact (IsS
   simp
 
 /-- For self-adjoint `δ` and `-δ`, `(quotientSignEquiv _ _ _).symm` preserves the quotient star
-structure on the trace-radical quotients. -/
+structure on the trace-radical quotients; install the `Ideal.IsStar` witnesses locally via
+`let _ := htr.isStar_traceRadical n` and `let _ := htr'.isStar_traceRadical n`. -/
 @[simp]
 theorem quotientSignEquiv_symm_star [StarRing R] [Fact (IsSelfAdjoint δ)]
     [Fact (IsSelfAdjoint (-δ))] (htr : IsMarkovTrace R δ tr) (htr' : IsMarkovTrace R (-δ) tr')

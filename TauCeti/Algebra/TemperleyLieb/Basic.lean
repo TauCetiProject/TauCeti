@@ -77,7 +77,8 @@ two-strand case above is the part of it that the presentation alone can see.
 * `TauCeti.TemperleyLieb.crossing_mul_crossing_swap_eq_one` and
   `TauCeti.TemperleyLieb.crossing_braid`: a crossing is invertible and crossings satisfy the braid
   relation under their respective scalar hypotheses.
-* `TauCeti.TemperleyLieb.e_ne_zero_two`: non-degeneracy on two strands.
+* `TauCeti.TemperleyLieb.e_ne_zero_two` and `TauCeti.TemperleyLieb.eq_of_map_e_two`: non-degeneracy
+  and loop-parameter rigidity on two strands.
 
 ## References
 
@@ -335,6 +336,20 @@ theorem smul_left_injective_e_two (i : Fin (2 - 1)) :
   intro r s h
   have h' := congrArg (fun x ↦ twoStrandRep δ x 1 0) h
   simpa using h'
+
+/-- On two strands over any commutative semiring, an algebra homomorphism sending the generator to
+the generator forces the two loop parameters to agree: applying it to `e * e = δ₁ • e` yields
+`δ₁ • e = δ₂ • e`, and scalar multiples of the two-strand generator are read off by
+`TauCeti.TemperleyLieb.smul_left_injective_e_two`. -/
+theorem eq_of_map_e_two {δ₁ δ₂ : R}
+    (f : TemperleyLieb R δ₁ 2 →ₐ[R] TemperleyLieb R δ₂ 2) (i : Fin (2 - 1))
+    (hf : f (e δ₁ i) = e δ₂ i) : δ₁ = δ₂ := by
+  apply smul_left_injective_e_two (δ := δ₂) i
+  calc
+    δ₁ • e δ₂ i = f (δ₁ • e δ₁ i) := by rw [map_smul, hf]
+    _ = f (e δ₁ i * e δ₁ i) := by rw [e_mul_self]
+    _ = e δ₂ i * e δ₂ i := by rw [map_mul, hf]
+    _ = δ₂ • e δ₂ i := e_mul_self i
 
 end SmallCases
 
