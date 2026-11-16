@@ -240,7 +240,7 @@ noncomputable def rescaleEquiv (u : Rˣ) (hu : TauCeti.IsNormMulUnit (u : R))
           · rw [hu0, zero_mul] at hrs
             exact onOpenDisc_of_nonpos hrs.symm.le _
           · have hnorm : ‖((u⁻¹ : Rˣ) : R)‖ * R₀ ≤ S₀ := by
-              rw [TauCeti.NormedRing.norm_units_inv_of_norm_mul hu0 hu.norm_mul, ← hrs,
+              rw [TauCeti.NormedRing.norm_units_inv_of_norm_mul hu.norm_mul, ← hrs,
                 inv_mul_cancel_left₀ hu0]
             exact ((OnOpenDisc.mem_subring.mp f.2).mono hnorm).rescale⟩
       map_one' := Subtype.ext (map_one _)
@@ -473,7 +473,7 @@ noncomputable def rescaleUniformEquiv [Fact (0 < R₀)] [Fact (0 < S₀)] (u : R
     have hu0 : ‖(u : R)‖ ≠ 0 := fun h0 ↦
       (Fact.out : 0 < R₀).ne' (by simpa [h0] using hrs.symm)
     have hinv : ‖((u⁻¹ : Rˣ) : R)‖ * R₀ ≤ S₀ := by
-      rw [TauCeti.NormedRing.norm_units_inv_of_norm_mul hu0 hu.norm_mul, ← hrs,
+      rw [TauCeti.NormedRing.norm_units_inv_of_norm_mul hu.norm_mul, ← hrs,
         inv_mul_cancel_left₀ hu0]
     exact uniformContinuous_rescaleHom ((u⁻¹ : Rˣ) : R) hinv
 
