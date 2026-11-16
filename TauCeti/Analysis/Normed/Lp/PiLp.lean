@@ -30,6 +30,7 @@ coordinates of `Lᵖ(Fin n, E)`, for `k ≤ n`, places its coordinates in the sl
 vectors so obtained are those whose coordinates `j ≥ k` vanish.
 The finite sum against a zero-extended vector reduces to the sum over its original coordinates.
 Over an index type with at most one element, the `Lᵖ` norm is the norm of the coordinate.
+Reindexing the coordinates along the identity bijection is the identity.
 
 ## Source
 
@@ -261,3 +262,17 @@ theorem sum_mul_piLpExtendByZero (f : ι ↪ ι') (x : PiLp p fun _ : ι ↦ �
       piLpExtendByZero_apply_eq_zero hb]
 
 end LinearIsometry
+
+namespace LinearIsometryEquiv
+
+variable {p : ℝ≥0∞} [Fact (1 ≤ p)] {𝕜 E : Type*} [Semiring 𝕜] [SeminormedAddCommGroup E]
+  [Module 𝕜 E] {ι : Type*} [Fintype ι]
+
+/-- Reindexing the coordinates of `Lᵖ(ι, E)` along the identity of `ι` is the identity. -/
+@[simp]
+theorem piLpCongrLeft_refl :
+    piLpCongrLeft p 𝕜 E (Equiv.refl ι) = LinearIsometryEquiv.refl 𝕜 (PiLp p fun _ : ι ↦ E) := by
+  ext x i
+  simp [piLpCongrLeft_apply, Equiv.piCongrLeft'_refl]
+
+end LinearIsometryEquiv
