@@ -80,6 +80,10 @@ theorem norm_powSign_le_exp (w : ℂ) (c : E) :
 `a = (1 - θ) a₀ + θ a₁`. -/
 noncomputable def thorinSlope (a₀ a₁ θ : ℝ) : ℝ := (a₁ - a₀) / ((1 - θ) * a₀ + θ * a₁)
 
+theorem thorinSlope_def (a₀ a₁ θ : ℝ) :
+    thorinSlope a₀ a₁ θ = (a₁ - a₀) / ((1 - θ) * a₀ + θ * a₁) :=
+  (rfl)
+
 /-- The exponent `1 + (z - θ) (a₁ - a₀) / a` of Thorin's analytic family, where
 `a = (1 - θ) a₀ + θ a₁`. It equals `1` at `z = θ`, and if `a ≠ 0` its real part is `a₀ / a` on
 the line `re z = 0` and `a₁ / a` on the line `re z = 1`. If `a = 0` it is constantly `1`. -/

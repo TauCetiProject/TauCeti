@@ -10,7 +10,7 @@ public import TauCeti.Analysis.Normed.Interpolation.Lebesgue
 import Mathlib.Analysis.Normed.Operator.Extend
 import TauCeti.Data.ENNReal.InterpolatedExponent
 import TauCeti.MeasureTheory.Function.LpSeminorm.PowSign
-import TauCeti.MeasureTheory.Function.SimpleFunc.Basic
+import TauCeti.MeasureTheory.Function.SimpleFunc.Lp
 
 /-!
 # `Lᵖ` lies in the complex interpolation space of `(L^{p₀}, L^{p₁})`
@@ -138,20 +138,6 @@ private theorem coeFn_interSnd_simpleInter (f : SimpleFunc α E)
   rw [interSnd_apply]
   exact (SimpleFunc.memLp_of_finite_measure_preimage p₁ hf).coeFn_toLp
 
-/-- A combination of the pieces of `f` in `L^q`, with coefficients depending on the value, is
-the class of the weighted function `x ↦ a (f x) • f x`. -/
-private theorem coeFn_sum_smul_piece {q : ℝ≥0∞} (f : SimpleFunc α E) (a : E → ℂ)
-    (u : E → Lp E q μ) (hu : ∀ c, ⇑(u c) =ᵐ[μ] (SimpleFunc.const α c).restrict (f ⁻¹' {c})) :
-    ⇑(∑ c ∈ f.range, a c • u c) =ᵐ[μ] fun x => a (f x) • f x := by
-  have h : ∀ᵐ x ∂μ, ∀ c ∈ f.range,
-      (a c • u c) x = a c • (SimpleFunc.const α c).restrict (f ⁻¹' {c}) x :=
-    (eventually_all_finset f.range).2 fun c _ => by
-      filter_upwards [Lp.coeFn_smul (a c) (u c), hu c] with x h₁ h₂
-      rw [h₁, Pi.smul_apply, h₂]
-  filter_upwards [Lp.coeFn_finsetSum f.range (fun c => a c • u c), h] with x hx hx'
-  rw [hx, Finset.sum_apply, ← SimpleFunc.sum_smul_restrict_const_apply f a x]
-  exact Finset.sum_congr rfl hx'
-
 /-- The pieces of `f` sum to `f` in `L^{p₀}`. -/
 private theorem sum_interFst_simpleInter_piece (f : SimpleFunc α E)
     (hf : ∀ y, y ≠ 0 → μ (f ⁻¹' {y}) < ∞) :
@@ -160,8 +146,9 @@ private theorem sum_interFst_simpleInter_piece (f : SimpleFunc α E)
           (f.measure_preimage_restrict_const_lt_top c hf)) =
       (lebesgue ℂ E μ p₀ p₁).interFst (simpleInter p₀ p₁ f hf) := by
   refine Lp.ext ?_
-  have h := coeFn_sum_smul_piece f (fun _ => (1 : ℂ)) _ fun c => coeFn_interFst_simpleInter
-    (p₀ := p₀) (p₁ := p₁) _ (f.measure_preimage_restrict_const_lt_top c hf)
+  have h := Lp.coeFn_sum_smul_restrict_const f (fun _ => (1 : ℂ)) _ fun c =>
+    coeFn_interFst_simpleInter (p₀ := p₀) (p₁ := p₁) _
+      (f.measure_preimage_restrict_const_lt_top c hf)
   simp only [one_smul] at h
   exact h.trans (coeFn_interFst_simpleInter f hf).symm
 
@@ -181,7 +168,7 @@ private theorem norm_sum_coeff_smul_le {q : ℝ≥0∞} (hθ : θ ∈ Icc 0 1)
   have hq' : q⁻¹ = ENNReal.ofReal (thorinExponent (p₀⁻¹).toReal (p₁⁻¹).toReal θ z).re * p⁻¹ := by
     rw [ofReal_re_thorinExponent_mul_inv (zero_lt_one.trans_le Fact.out).ne'
       (zero_lt_one.trans_le Fact.out).ne' hθ hp (fun h => absurd h hp_top) hz, hq]
-  rw [Lp.norm_def, eLpNorm_congr_ae (coeFn_sum_smul_piece f _ u hu)]
+  rw [Lp.norm_def, eLpNorm_congr_ae (Lp.coeFn_sum_smul_restrict_const f _ u hu)]
   refine ENNReal.toReal_le_of_le_ofReal (Real.exp_pos δ).le ?_
   have heq : (fun x => coeff δ θ (p₀⁻¹).toReal (p₁⁻¹).toReal ‖f x‖ z • f x) =
       gaussian δ θ z • ⇑(f.map (powSign (thorinExponent (p₀⁻¹).toReal (p₁⁻¹).toReal θ z))) := by
