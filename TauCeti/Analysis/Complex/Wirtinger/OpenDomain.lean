@@ -11,13 +11,13 @@ import Mathlib.Analysis.Calculus.ContDiff.Operations
 import Mathlib.Analysis.Complex.CauchyIntegral
 import Mathlib.Analysis.SpecificLimits.Basic
 import Mathlib.LinearAlgebra.Complex.FiniteDimensional
-import Mathlib.Topology.MetricSpace.ProperSpace.Real
 import TauCeti.Analysis.Calculus.BumpFunction.Cutoff
 import TauCeti.Analysis.Calculus.IteratedFDeriv.Prod
 import TauCeti.Analysis.Calculus.SmoothSeries
 import TauCeti.Analysis.Complex.MixedDeriv
 import TauCeti.Analysis.Complex.Runge.FiniteRank
 import TauCeti.Analysis.Complex.UniformLimit
+import TauCeti.Analysis.Complex.Wirtinger.Holomorphic
 import TauCeti.Analysis.Complex.Wirtinger.Potential
 import TauCeti.Analysis.Normed.Module.Exhaustion
 
@@ -31,16 +31,22 @@ constructs a smooth map `u : P × Q → ℂ → F` on `s ×ˢ Ω`, holomorphic i
 `bar∂_z u = f` on all of `s ×ˢ Ω`, without shrinking either `s` or `Ω` and without assuming `Ω` is
 a disc or `s` is a product.
 
+This flat-space non-shrinking parameter solver is the local input glued via partitions of unity to
+solve `bar∂` with smooth manifold parameters
+(`TauCeti/Geometry/Manifold/Complex/DolbeaultParameter.lean`) and to eliminate one complex variable
+at a time on whole product domains.
+
 The construction follows the Mittag–Leffler / Runge exhaustion scheme:
 
 1. Exhaust `s` by compact sets `D j` and `Ω` by filled compact sets `C j`
-   (`IsOpen.exists_isFilledIn_compact_exhaustion`). Take smooth compactly supported cutoffs `ψ j`
-   equal to `1` near `C (j + 1)` and supported in `interior (C (j + 2))`, and form the telescoping
-   shell decomposition `χ 0 = ψ 0`, `χ (j + 1) = ψ (j + 1) - ψ j`.
-2. For each shell `j`, let `v j x w = cauchyTransform (fun z ↦ (χ j z : ℂ) • f x z) w`. Then
-   `v j` is jointly smooth on `s ×ˢ univ`, holomorphic in `q`, satisfies
-   `bar∂_z (v j x) = χ j • f x`, and for `j ≥ 1` is holomorphic in `w` off `tsupport (χ j)`
-   (in particular near `C j`).
+   (`IsOpen.exists_isFilledIn_compact_exhaustion`). Apply `TauCeti.exists_contDiff_shell_cutoffs`
+   to the shifted exhaustion `j ↦ C (j + 1)` to obtain smooth compactly supported shell cutoffs
+   `χ j` supported in `interior (C (j + 2))`, vanishing near `C j` for `j ≥ 1`, and summing to `1`
+   on `C (m + 1)`.
+2. For each shell `j`, solve `bar∂_z (v j x) = (χ j : ℂ) • f x` via
+   `TauCeti.exists_contDiffOn_conjWirtingerDeriv_apply_one_eq_smul_with_holomorphic_param`. Then
+   `v j` is jointly smooth on `s ×ˢ univ`, holomorphic in `q`, and for `j ≥ 1` holomorphic in `w`
+   off `tsupport (χ j)` (in particular near `C j`).
 3. For `j ≥ 1`, apply the finite-rank Runge approximation operator
    (`TauCeti.IsFilledIn.exists_norm_sub_sum_mul_smul_le`) on `C j ⊆ Ω` to approximate `v j` by a
    finite linear combination `a j x w = ∑ i, (c i * g i w) • v j x (ζ i)` with `g i` holomorphic on
@@ -48,12 +54,17 @@ The construction follows the Mittag–Leffler / Runge exhaustion scheme:
    applying the same finite-rank operator simultaneously shrinks all parameter derivatives
    `iteratedFDeriv ℝ k (fun x' ↦ (v j - a j) x' w) x` for `k ≤ j` to at most `2⁻ʲ` on `D j ×ˢ C j`,
    while preserving `q`-holomorphy and leaving `bar∂_z` unchanged on `Ω`.
-4. Set `u x w = ∑' j, (v j - a j) x w`. On any local box `ball x₀ ρ ×ˢ ball z₀ r` inside
+4. Put `u 0 = v 0` (i.e. `a 0 = 0`) and `u j = v j - a j` for `j ≥ 1`, and set
+   `U x w = ∑' j, u j x w`. On any local box `ball x₀ ρ ×ˢ ball z₀ r` inside
    `D (m + 1) ×ˢ interior (C (m + 1))`, the Cauchy bound
-   `TauCeti.norm_iteratedFDeriv_prod_le_of_differentiableOn` converts the parameter-only bounds on
-   the tail `j ≥ max (m + 1) k` into total `C^k` bounds `(1 + 2^k / r)^k * 2⁻ʲ`, so
-   `TauCeti.contDiffOn_tsum_of_eventually` gives joint smoothness on `s ×ˢ Ω`. Splitting at `m + 1`
-   shows both `bar∂_z u = f` and holomorphy in `q`.
+   `TauCeti.norm_iteratedFDeriv_le_of_differentiableOn_of_norm_iteratedFDeriv_prod_left_le`
+   converts the parameter-only bounds on the tail `j ≥ max (m + 1) k` into total `C^k` bounds
+   `(1 + 2^k / r)^k * 2⁻ʲ`, so `TauCeti.contDiffOn_tsum_of_eventually` gives joint smoothness on
+   `s ×ˢ Ω`. Splitting at `m + 1` shows both `bar∂_z U = f` and holomorphy in `q`.
+
+In the parameter-free case, a direct Mittag–Leffler exhaustion using `C^n` cut-off Cauchy
+transforms and Runge's theorem (`TauCeti.IsFilledIn.exists_differentiableOn_norm_sub_lt`) yields a
+`C^n` solution for every `n : ℕ∞` with `1 ≤ n`.
 
 ## Main results
 
@@ -61,8 +72,8 @@ The construction follows the Mittag–Leffler / Runge exhaustion scheme:
   solution of `bar∂_z u = f` on `s ×ˢ Ω`, preserving holomorphy in `q`.
 * `TauCeti.exists_contDiffOn_conjWirtingerDeriv_apply_one_eq_with_param`: specialization to purely
   smooth parameters `s ⊆ P`.
-* `TauCeti.exists_contDiffOn_conjWirtingerDeriv_apply_one_eq`: parameter-free global smooth
-  solution of `bar∂ u = f` on an arbitrary open set `Ω ⊆ ℂ`.
+* `TauCeti.exists_contDiffOn_conjWirtingerDeriv_apply_one_eq`: parameter-free global `C^n`
+  (`1 ≤ n`) solution of `bar∂ u = f` on an arbitrary open set `Ω ⊆ ℂ`.
 
 ## References
 
@@ -79,55 +90,6 @@ open scoped ContDiff
 universe uP uQ uF
 
 namespace TauCeti
-
-/-! ### Telescoping shell cutoffs along a compact exhaustion -/
-
-/-- Given a compact exhaustion `C` of an open set `Ω ⊆ ℂ` with `C j ⊆ interior (C (j + 1))`,
-construct smooth compactly supported shell cutoffs `χ j` supported in `Ω` that vanish near `C j`
-for `j ≥ 1` and satisfy `∑ j ∈ Finset.range (m + 1), χ j z = 1` on `C (m + 1)`. -/
-private theorem exists_shell_cutoffs {Ω : Set ℂ} {C : ℕ → Set ℂ}
-    (hC_cpt : ∀ j, IsCompact (C j)) (hC_step : ∀ j, C j ⊆ interior (C (j + 1)))
-    (hC_uni : ⋃ j, C j = Ω) :
-    ∃ χ : ℕ → ℂ → ℝ,
-      (∀ j, ContDiff ℝ ∞ (χ j)) ∧
-      (∀ j, HasCompactSupport (χ j)) ∧
-      (∀ j, tsupport (χ j) ⊆ Ω) ∧
-      (∀ j, 1 ≤ j → C j ⊆ (tsupport (χ j))ᶜ) ∧
-      (∀ m, ∀ z ∈ C (m + 1), ∑ j ∈ Finset.range (m + 1), χ j z = 1) := by
-  have hC_sub (j : ℕ) : C j ⊆ Ω := hC_uni ▸ subset_iUnion C j
-  choose ψ hψ_cd _ hψ_one hψ_cpt hψ_ts using fun n ↦
-    (hC_cpt (n + 1)).exists_contDiff_cutoff isOpen_interior (hC_step (n + 1))
-  let χ : ℕ → ℂ → ℝ := fun j ↦ match j with
-    | 0 => ψ 0
-    | k + 1 => ψ (k + 1) - ψ k
-  have htel (m : ℕ) (z : ℂ) : ∑ j ∈ Finset.range (m + 1), χ j z = ψ m z := by
-    induction m with
-    | zero => simp [χ]
-    | succ k ih =>
-      rw [Finset.sum_range_succ, ih]
-      simp [χ]
-  refine ⟨χ, fun j ↦ ?_, fun j ↦ ?_, fun j ↦ ?_, fun j hj z hz ↦ ?_, fun m z hz ↦ ?_⟩
-  · cases j with
-    | zero => exact hψ_cd 0
-    | succ k => exact (hψ_cd (k + 1)).sub (hψ_cd k)
-  · cases j with
-    | zero => exact hψ_cpt 0
-    | succ k => exact (hψ_cpt (k + 1)).sub (hψ_cpt k)
-  · cases j with
-    | zero => exact (hψ_ts 0).trans (interior_subset.trans (hC_sub 2))
-    | succ k =>
-      exact (tsupport_sub _ _).trans (union_subset
-        ((hψ_ts (k + 1)).trans (interior_subset.trans (hC_sub (k + 3))))
-        ((hψ_ts k).trans (interior_subset.trans (hC_sub (k + 2)))))
-  · obtain ⟨k, rfl⟩ := Nat.exists_eq_add_of_le' hj
-    rw [mem_compl_iff, notMem_tsupport_iff_eventuallyEq]
-    have h1 : ∀ᶠ w in 𝓝 z, ψ k w = 1 := mem_interior_iff_mem_nhds.1 (hψ_one k hz)
-    have h2 : ∀ᶠ w in 𝓝 z, ψ (k + 1) w = 1 :=
-      mem_interior_iff_mem_nhds.1 (hψ_one (k + 1) (interior_subset (hC_step (k + 1) hz)))
-    filter_upwards [h1, h2] with w hw1 hw2
-    simp [χ, hw1, hw2]
-  · rw [htel m z]
-    exact interior_subset (hψ_one m hz)
 
 /-! ### Finite-rank Runge correction of a single shell -/
 
@@ -362,8 +324,8 @@ private theorem contDiffOn_shell_series_box {s : Set (P × Q)} {Ω : Set ℂ}
   have hhol_j : ∀ x' ∈ ball x₀ ρ, DifferentiableOn ℂ (u j x') (interior (C (m + 1))) :=
     fun x' hx' ↦ (hu_hol j hj1 x' (hD_sub (m + 1) (hball_x hx'))).mono
       (interior_mono (hC_mono hjm))
-  exact norm_iteratedFDeriv_prod_le_of_differentiableOn k isOpen_ball isOpen_interior
-    (((hu_cd j).mono hCD).of_le (by simp)) hhol_j hp.1 hr hsub_z
+  exact norm_iteratedFDeriv_le_of_differentiableOn_of_norm_iteratedFDeriv_prod_left_le k
+    isOpen_ball isOpen_interior (((hu_cd j).mono hCD).of_le (by simp)) hhol_j hp.1 hr hsub_z
     fun l hl w hw ↦ hu_bd j hj1 l (hl.trans hjk) p.1 (hD_mono hjm (hball_x hp.1)) w
       (hC_mono hjm (interior_subset (hsub_z hw)))
 
@@ -406,12 +368,7 @@ private theorem conjWirtingerDeriv_shell_series {s : Set (P × Q)} {Ω : Set ℂ
       (contDiffAt_const.prodMk contDiffAt_id)).differentiableAt (by simp)
   have hfin_dbar : conjWirtingerDeriv (fun w ↦ ∑ j ∈ Finset.range (m + 1), u j x₀ w) z₀ 1 =
       f x₀ z₀ := by
-    have hfd := fderiv_fun_sum (u := Finset.range (m + 1)) fun j _ ↦ hfin_diff j
-    have hsum_dbar : conjWirtingerDeriv (fun w ↦ ∑ j ∈ Finset.range (m + 1), u j x₀ w) z₀ 1 =
-        ∑ j ∈ Finset.range (m + 1), conjWirtingerDeriv (u j x₀) z₀ 1 := by
-      simp only [conjWirtingerDeriv_apply, hfd, sum_apply, Finset.smul_sum,
-        ← Finset.sum_add_distrib]
-    rw [hsum_dbar]
+    rw [conjWirtingerDeriv_fun_sum fun j _ ↦ hfin_diff j, sum_apply]
     simp_rw [hu_dbar _ x₀ hx₀ z₀ hz₀, ← Finset.sum_smul, ← Complex.ofReal_sum,
       hχ_sum m z₀ (interior_subset (hball_C (mem_ball_self hr))), Complex.ofReal_one, one_smul]
   have htail_at : DifferentiableAt ℂ (fun w ↦ ∑' j, u (j + (m + 1)) x₀ w) z₀ :=
@@ -419,11 +376,7 @@ private theorem conjWirtingerDeriv_shell_series {s : Set (P × Q)} {Ω : Set ℂ
   have hadd := congrArg (fun L ↦ L 1) (conjWirtingerDeriv_add
     (DifferentiableAt.fun_sum (u := Finset.range (m + 1)) fun j _ ↦ hfin_diff j)
     (htail_at.restrictScalars ℝ))
-  have hUeq : conjWirtingerDeriv (fun w ↦ ∑' j, u j x₀ w) z₀ 1 =
-      conjWirtingerDeriv ((fun w ↦ ∑ j ∈ Finset.range (m + 1), u j x₀ w) +
-        (fun w ↦ ∑' j, u (j + (m + 1)) x₀ w)) z₀ 1 := by
-    simp only [conjWirtingerDeriv_apply, hsplit.fderiv_eq]
-  rw [hUeq]
+  rw [hsplit.conjWirtingerDeriv_eq]
   simpa [hfin_dbar, htail_at.conjWirtingerDeriv_eq_zero] using hadd
 
 /-- Holomorphy in `q ∈ Q` for the shell series `U x w = ∑' j, u j x w`: splitting at `m + 1` yields
@@ -497,8 +450,13 @@ theorem exists_contDiffOn_conjWirtingerDeriv_apply_one_eq_with_holomorphic_param
   have hC_mono : Monotone C := monotone_nat_of_le_succ fun j ↦ (hC_step j).trans interior_subset
   have hD_sub (j : ℕ) : D j ⊆ s := hD_uni ▸ subset_iUnion D j
   have hC_sub (j : ℕ) : C j ⊆ Ω := hC_uni ▸ subset_iUnion C j
-  obtain ⟨χ, hχ_cd, hχ_cpt, hχ_Ω, hχ_disj, hχ_sum⟩ :=
-    exists_shell_cutoffs hC_cpt hC_step hC_uni
+  obtain ⟨χ, hχ_cd, hχ_cpt, -, hχ_ts, hχ_disj', hχ_sum⟩ :=
+    exists_contDiff_shell_cutoffs (C := fun j ↦ C (j + 1)) (fun j ↦ hC_cpt (j + 1))
+      (fun j ↦ hC_step (j + 1))
+  have hχ_Ω (j : ℕ) : tsupport (χ j) ⊆ Ω := (hχ_ts j).trans (interior_subset.trans (hC_sub (j + 2)))
+  have hχ_disj (j : ℕ) (hj : 1 ≤ j) : C j ⊆ (tsupport (χ j))ᶜ := by
+    obtain ⟨k, rfl⟩ := Nat.exists_eq_add_of_le' hj
+    exact hχ_disj' k
   obtain ⟨u, hu_cd, hu_q, hu_dbar, hu_hol, hu_bd⟩ :=
     exists_shell_sequence hs hΩ hD_cpt hD_sub hC_cpt hC_sub hC_fill hχ_cd hχ_cpt hχ_Ω hχ_disj hf hfq
   refine ⟨fun x w ↦ ∑' j, u j x w, ?_, ?_, ?_⟩
@@ -545,21 +503,94 @@ theorem exists_contDiffOn_conjWirtingerDeriv_apply_one_eq_with_param
   exact hu'_cd.comp ((contDiff_fst.prodMk contDiff_const).prodMk contDiff_snd).contDiffOn
     fun _ hp ↦ ⟨⟨hp.1, mem_univ _⟩, hp.2⟩
 
-/-- **Global `bar∂` solver on an arbitrary open set in `ℂ`.** Every smooth function `f : ℂ → F` on
-an open set `Ω ⊆ ℂ` with values in a complex Banach space `F` satisfies `bar∂ u = f` on `Ω` for
-some smooth `u : ℂ → F` on `Ω`. -/
-theorem exists_contDiffOn_conjWirtingerDeriv_apply_one_eq
-    {Ω : Set ℂ} {f : ℂ → F} (hΩ : IsOpen Ω) (hf : ContDiffOn ℝ ∞ f Ω) :
-    ∃ u : ℂ → F,
-      ContDiffOn ℝ ∞ u Ω ∧ ∀ z ∈ Ω, conjWirtingerDeriv u z 1 = f z := by
-  let f' : (Fin 0 → ℝ) → ℂ → F := fun _ z ↦ f z
-  have hf' : ContDiffOn ℝ ∞ ↿f' ((univ : Set (Fin 0 → ℝ)) ×ˢ Ω) :=
-    hf.comp contDiffOn_snd fun _ hp ↦ hp.2
-  obtain ⟨u', hu'_cd, hu'_dbar⟩ :=
-    exists_contDiffOn_conjWirtingerDeriv_apply_one_eq_with_param isOpen_univ hΩ hf'
-  refine ⟨u' 0, ?_, fun z hz ↦ hu'_dbar 0 (mem_univ _) z hz⟩
-  exact hu'_cd.comp (contDiff_const.prodMk contDiff_id).contDiffOn fun z hz ↦ ⟨mem_univ _, hz⟩
-
 end GlobalSolver
+
+section ParameterFree
+
+variable {F : Type uF} [NormedAddCommGroup F] [NormedSpace ℂ F] [CompleteSpace F]
+
+/-- Telescoping step along an exhaustion `C` of `Ω ⊆ ℂ`: if consecutive differences
+`h (k + 1) - h k` are holomorphic on `interior (C (k + 1))` and approximated within `2⁻ᵏ` on `C k`
+by functions `g k` holomorphic on `Ω`, then on `interior (C m)` the corrected series
+`h 0 + ∑' k, (h (k + 1) - h k - g k)` equals `h m` plus a holomorphic function. -/
+private theorem exists_differentiableOn_eqOn_add_tsum_exhaustion {Ω : Set ℂ} {C : ℕ → Set ℂ}
+    {h g : ℕ → ℂ → F} (hC_mono : Monotone C) (hC_sub : ∀ j, C j ⊆ Ω)
+    (hg : ∀ k, DifferentiableOn ℂ (g k) Ω)
+    (hdiff : ∀ k, DifferentiableOn ℂ (h (k + 1) - h k) (interior (C (k + 1))))
+    (hg_lt : ∀ k, ∀ z ∈ C k, ‖(h (k + 1) - h k) z - g k z‖ < (1 / 2 : ℝ) ^ k) (m : ℕ) :
+    ∃ K : ℂ → F, DifferentiableOn ℂ K (interior (C m)) ∧
+      EqOn (fun z ↦ h 0 z + ∑' k, (h (k + 1) - h k - g k) z) (h m + K) (interior (C m)) := by
+  set e : ℕ → ℂ → F := fun k ↦ h (k + 1) - h k - g k
+  have he_le {k : ℕ} (hmk : m ≤ k) {z : ℂ} (hz : z ∈ interior (C m)) :
+      ‖e k z‖ ≤ (1 / 2 : ℝ) ^ k :=
+    (hg_lt k z (hC_mono hmk (interior_subset hz))).le
+  have hsumm : Summable fun k ↦ (1 / 2 : ℝ) ^ (k + m) :=
+    (summable_nat_add_iff m).2 summable_geometric_two
+  refine ⟨fun z ↦ ∑' k, e (k + m) z - ∑ k ∈ Finset.range m, g k z, ?_, fun z hz ↦ ?_⟩
+  · refine DifferentiableOn.sub ?_ (DifferentiableOn.fun_sum fun k _ ↦
+      (hg k).mono (interior_subset.trans (hC_sub m)))
+    refine (tendstoUniformlyOn_tsum hsumm fun k z hz ↦ he_le (Nat.le_add_left m k) hz)
+      |>.differentiableOn (.of_forall fun _ ↦ DifferentiableOn.fun_sum fun k _ ↦ ?_)
+      isOpen_interior
+    exact ((hdiff (k + m)).mono (interior_mono (hC_mono (by omega)))).sub
+      ((hg (k + m)).mono (interior_subset.trans (hC_sub m)))
+  · have hs : Summable fun k ↦ e k z := (summable_nat_add_iff m).1 <|
+      .of_norm_bounded hsumm fun k ↦ he_le (Nat.le_add_left m k) hz
+    have htel : ∑ k ∈ Finset.range m, e k z = h m z - h 0 z - ∑ k ∈ Finset.range m, g k z := by
+      simp only [e, Pi.sub_apply, Finset.sum_sub_distrib, Finset.sum_range_sub fun k ↦ h k z]
+    simp only [Pi.add_apply]
+    rw [← hs.sum_add_tsum_nat_add m, htel]
+    abel
+
+/-- **Global `bar∂` solver on an arbitrary open set in `ℂ`.** Every `C^n` function `f : ℂ → F`
+(`1 ≤ n`) on an open set `Ω ⊆ ℂ` with values in a complex Banach space `F` satisfies `bar∂ u = f`
+on `Ω` for some `C^n` function `u : ℂ → F` on `Ω`. -/
+theorem exists_contDiffOn_conjWirtingerDeriv_apply_one_eq
+    {n : ℕ∞} {Ω : Set ℂ} {f : ℂ → F} (hn : 1 ≤ n) (hΩ : IsOpen Ω) (hf : ContDiffOn ℝ n f Ω) :
+    ∃ u : ℂ → F,
+      ContDiffOn ℝ n u Ω ∧ ∀ z ∈ Ω, conjWirtingerDeriv u z 1 = f z := by
+  obtain ⟨C, hC_cpt, hC_step, hC_uni, hC_fill⟩ := hΩ.exists_isFilledIn_compact_exhaustion
+  have hC_mono : Monotone C := monotone_nat_of_le_succ fun j ↦ (hC_step j).trans interior_subset
+  have hC_sub (j : ℕ) : C j ⊆ Ω := hC_uni ▸ subset_iUnion C j
+  -- Local `C^n` solutions `h k` with `bar∂ (h k) = f` on `C (k + 1)`.
+  have hloc (k : ℕ) : ∃ h : ℂ → F, ContDiff ℝ n h ∧
+      ∀ z ∈ C (k + 1), conjWirtingerDeriv h z 1 = f z := by
+    obtain ⟨ψ, hψ_cd, -, hψ_one, hψ_cpt, hψ_ts⟩ :=
+      (hC_cpt (k + 1)).exists_contDiff_cutoff hΩ (hC_sub (k + 1))
+    obtain ⟨h, hh, hheq⟩ := exists_contDiff_conjWirtingerDeriv_apply_one_eq_of_hasCompactSupport
+      hn (hf.contDiff_smul_of_tsupport_subset hΩ
+        (hψ_cd.of_le (by exact_mod_cast le_top)).contDiffOn hψ_ts) hψ_cpt.smul_right
+    refine ⟨h, hh, fun z hz ↦ ?_⟩
+    have hψz : ψ z = 1 := by simpa using interior_subset (hψ_one hz)
+    simpa [hψz] using hheq z
+  choose h hh hh_eq using hloc
+  have hn0 : (n : WithTop ℕ∞) ≠ 0 := by exact_mod_cast (zero_lt_one.trans_le hn).ne'
+  have hd (k : ℕ) : Differentiable ℝ (h k) := (hh k).differentiable hn0
+  -- Consecutive differences `h (k + 1) - h k` are holomorphic on `interior (C (k + 1))`.
+  have hdiff (k : ℕ) : DifferentiableOn ℂ (h (k + 1) - h k) (interior (C (k + 1))) := fun z hz ↦ by
+    refine ((differentiableAt_iff_conjWirtingerDeriv_apply_one_eq_zero
+      ((hd (k + 1)).sub (hd k) z)).2 ?_).differentiableWithinAt
+    rw [conjWirtingerDeriv_sub (hd (k + 1) z) (hd k z), sub_apply,
+      hh_eq (k + 1) z (hC_mono (k + 1).le_succ (interior_subset hz)),
+      hh_eq k z (interior_subset hz), sub_self]
+  -- Runge corrections `g k` holomorphic on `Ω`, approximating `h (k + 1) - h k` within `2⁻ᵏ`.
+  have happrox (k : ℕ) : ∃ g : ℂ → F, DifferentiableOn ℂ g Ω ∧
+      ∀ z ∈ C k, ‖(h (k + 1) - h k) z - g z‖ < (1 / 2 : ℝ) ^ k :=
+    (hC_fill k).exists_differentiableOn_norm_sub_lt hΩ (hC_cpt k) (hC_sub k) isOpen_interior
+      (hC_step k) (hdiff k) (by positivity)
+  choose g hg hg_lt using happrox
+  set u : ℂ → F := fun z ↦ h 0 z + ∑' k, (h (k + 1) - h k - g k) z
+  have hglue := contDiffOn_and_conjWirtingerDeriv_eq_of_locally_eq_add (G := u) (n := n) (U := Ω)
+    (v := fun _ : Unit ↦ (1 : ℂ)) (f := fun _ ↦ f) (by exact_mod_cast hn) fun z hz ↦ by
+      obtain ⟨m, hm⟩ := mem_iUnion.1 (hC_uni.symm ▸ hz)
+      obtain ⟨K, hK, huK⟩ :=
+        exists_differentiableOn_eqOn_add_tsum_exhaustion hC_mono hC_sub hg hdiff hg_lt (m + 1)
+      exact ⟨interior (C (m + 1)), isOpen_interior, hC_step m hm, h (m + 1), K,
+        (hh (m + 1)).contDiffOn,
+        fun w hw _ ↦ hh_eq (m + 1) w (hC_mono (m + 1).le_succ (interior_subset hw)),
+        hK.contDiffOn isOpen_interior, huK⟩
+  exact ⟨u, hglue.1, fun z hz ↦ hglue.2 z hz ()⟩
+
+end ParameterFree
 
 end TauCeti

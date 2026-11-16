@@ -19,12 +19,13 @@ into any complex normed space, holomorphic on `V` and bounded by `M` there, sati
 
 `‖f w - ∑ i, (c i * g i w) • f (ζ i)‖ ≤ ε * M`  for all `w ∈ K`
 
-(`TauCeti.IsFilledIn.exists_norm_sub_sum_mul_smul_le`). Taking `V = interior L` for a compact
-collar `L ⊆ U ∩ Ω` with `K ⊆ interior L` specializes the estimate to
-`sup_K ‖f - A f‖ ≤ ε * sup_L ‖f‖` with `ζ i ∈ interior L \ K`. Because `ζ`, `c`, and `g` depend
-only on `K`, `V`, `Ω`, and `ε` — neither on `f` nor on the target space `F` — the resulting linear
-operator commutes with differentiation in external smooth parameters and preserves holomorphic
-dependence on external complex parameters.
+(`TauCeti.IsFilledIn.exists_norm_sub_sum_mul_smul_le`). Writing
+`A f w = ∑ i, (c i * g i w) • f (ζ i)` and taking `V = interior L` for a compact collar `L ⊆ U`
+with `K ⊆ interior L` inside an open neighbourhood `U ⊇ K` on which `f` is holomorphic specializes
+the estimate to `sup_K ‖f - A f‖ ≤ ε * sup_L ‖f‖` with `ζ i ∈ interior L \ K`. Because `ζ`, `c`,
+and `g` depend only on `K`, `V`, `Ω`, and `ε` — neither on `f` nor on the target space `F` — the
+resulting linear operator `A` commutes with differentiation in external smooth parameters and
+preserves holomorphic dependence on external complex parameters.
 
 The proof combines the discretized Cauchy–Pompeiu formula
 (`IsCompact.exists_norm_sub_sum_mul_sub_inv_smul_le`), which approximates `f` uniformly on `K` by

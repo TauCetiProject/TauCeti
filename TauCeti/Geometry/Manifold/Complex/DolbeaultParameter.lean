@@ -8,14 +8,12 @@ module
 public import Mathlib.Geometry.Manifold.ContMDiff.Defs
 public import Mathlib.Geometry.Manifold.IsManifold.Basic
 public import TauCeti.Analysis.Complex.Wirtinger.Basic
-import Mathlib.Geometry.Manifold.Algebra.Monoid
-import Mathlib.Geometry.Manifold.Algebra.SMul
 import Mathlib.Geometry.Manifold.ContMDiff.Atlas
 import Mathlib.Geometry.Manifold.ContMDiff.Constructions
 import Mathlib.Geometry.Manifold.ContMDiff.NormedSpace
-import Mathlib.Geometry.Manifold.PartitionOfUnity
-import Mathlib.Topology.MetricSpace.ProperSpace.Real
 import TauCeti.Analysis.Complex.Wirtinger.OpenDomain
+import TauCeti.Geometry.Manifold.ContMDiff.Prod
+import TauCeti.Geometry.Manifold.PartitionOfUnity.Basic
 
 /-!
 # Global mixed-parameter `bar∂` solver on smooth manifolds
@@ -26,6 +24,11 @@ sets, and let `F` be a complex Banach space. Given a smooth map `f : (P × E) ×
 which is holomorphic in the complex parameter `q ∈ E`, this file constructs a smooth map
 `u : (P × E) × ℂ → F` on `U ×ˢ Ω`, holomorphic in `q ∈ E`, satisfying `bar∂_z u = f` on all of
 `U ×ˢ Ω`.
+
+This mixed-parameter solver is designed for inductive Dolbeault–Grothendieck elimination of
+several complex variables on product domains: it solves `bar∂` in one complex coordinate `z ∈ ℂ`
+without shrinking the domain while simultaneously preserving smooth dependence on an auxiliary
+parameter manifold `P` and holomorphy in the remaining complex coordinates `E`.
 
 The proof works in each chart `extChartAt I i` of `P` via the flat-space solver
 `TauCeti.exists_contDiffOn_conjWirtingerDeriv_apply_one_eq_with_holomorphic_param`, and glues the
@@ -59,19 +62,6 @@ open Complex Filter Manifold Set Topology
 open scoped ContDiff
 
 namespace TauCeti
-
-/-- On a product `(A × B) × C` of real normed spaces, `ContMDiffOn` for the product of identity
-models agrees with `ContDiffOn ℝ`. -/
-private theorem contMDiffOn_prod_prod_iff_contDiffOn {A B C F : Type*}
-    [NormedAddCommGroup A] [NormedSpace ℝ A] [NormedAddCommGroup B] [NormedSpace ℝ B]
-    [NormedAddCommGroup C] [NormedSpace ℝ C] [NormedAddCommGroup F] [NormedSpace ℝ F]
-    {g : (A × B) × C → F} {s : Set ((A × B) × C)} :
-    ContMDiffOn ((𝓘(ℝ, A).prod 𝓘(ℝ, B)).prod 𝓘(ℝ, C)) 𝓘(ℝ, F) ∞ g s ↔ ContDiffOn ℝ ∞ g s := by
-  have h := contMDiffOn_iff_contDiffOn (𝕜 := ℝ) (E := (A × B) × C) (E' := F) (f := g) (s := s)
-    (n := ∞)
-  rw [modelWithCornersSelf_prod, ← chartedSpaceSelf_prod,
-    modelWithCornersSelf_prod, ← chartedSpaceSelf_prod] at h
-  exact h
 
 /-- Chartwise solver: on the chart domain `(U ∩ ((chartAt HP i).source ×ˢ univ)) ×ˢ Ω`, pull `f`
 back along `(extChartAt I i).symm`, solve in flat space `EP × E`, and push forward along
@@ -107,9 +97,12 @@ private theorem exists_chart_dbar_solution {EP HP P E F : Type*}
         (fun _ (hy : _ ∈ s ×ˢ Ω) ↦ hy.1.1.1)).prodMk
         (contMDiff_snd.comp contMDiff_fst).contMDiffOn).prodMk contMDiff_snd.contMDiffOn
     exact hf.comp hmap fun _ hy ↦ ⟨hy.1.2, hy.2⟩
+  have hfi_cd : ContDiffOn ℝ ∞ ↿fi (s ×ˢ Ω) :=
+    contMDiffOn_iff_contDiffOn.1 <| contMDiffOn_prod_modelWithCornersSelf_iff.1 <|
+      contMDiffOn_prod_prod_modelWithCornersSelf_iff.1 hfi_mdiff
   obtain ⟨w, hw_cd, hw_dbar, hw_q⟩ :=
-    exists_contDiffOn_conjWirtingerDeriv_apply_one_eq_with_holomorphic_param hs hΩ
-      (contMDiffOn_prod_prod_iff_contDiffOn.1 hfi_mdiff) fun x hx z hz ↦ hfq _ hx.2 z hz
+    exists_contDiffOn_conjWirtingerDeriv_apply_one_eq_with_holomorphic_param hs hΩ hfi_cd
+      fun x hx z hz ↦ hfq _ hx.2 z hz
   let v : (P × E) × ℂ → F := fun y ↦ w (e y.1.1, y.1.2) y.2
   have hmem {x : P × E} (hxU : x ∈ U) (hxS : x.1 ∈ (chartAt HP i).source) :
       (e x.1, x.2) ∈ s := by
@@ -125,58 +118,14 @@ private theorem exists_chart_dbar_solution {EP HP P E F : Type*}
         (contMDiff_fst.comp contMDiff_fst).contMDiffOn
         fun _ hy ↦ by simpa [extChartAt_source] using hy.1.2.1).prodMk
         (contMDiff_snd.comp contMDiff_fst).contMDiffOn).prodMk contMDiff_snd.contMDiffOn
-    exact (contMDiffOn_prod_prod_iff_contDiffOn.2 hw_cd).comp hmap
-      fun _ hy ↦ ⟨hmem hy.1.1 hy.1.2.1, hy.2⟩
+    have hw_md :
+        ContMDiffOn ((𝓘(ℝ, EP).prod 𝓘(ℝ, E)).prod 𝓘(ℝ, ℂ)) 𝓘(ℝ, F) ∞ ↿w (s ×ˢ Ω) :=
+      contMDiffOn_prod_prod_modelWithCornersSelf_iff.2 <|
+        contMDiffOn_prod_modelWithCornersSelf_iff.2 <| contMDiffOn_iff_contDiffOn.2 hw_cd
+    exact hw_md.comp hmap fun _ hy ↦ ⟨hmem hy.1.1 hy.1.2.1, hy.2⟩
   · have hxE : x.1 ∈ e.source := by simpa [e, extChartAt_source] using hxS
     simpa only [v, fi, e.left_inv hxE] using hw_dbar (e x.1, x.2) (hmem hxU hxS) z hz
   · exact hw_q (e x.1, x.2) (hmem hxU hxS) z hz
-
-/-- Gluing `bar∂_z` along a finite linear combination with real scalar weights summing to `1`. -/
-private theorem conjWirtingerDeriv_sum_smul {ι F : Type*} [NormedAddCommGroup F] [NormedSpace ℂ F]
-    {s : Finset ι} {c : ι → ℝ} {g : ι → ℂ → F} {z : ℂ} {y : F}
-    (hdiff : ∀ i ∈ s, DifferentiableAt ℝ (g i) z)
-    (hdbar : ∀ i ∈ s, conjWirtingerDeriv (g i) z 1 = y) (hsum : ∑ i ∈ s, c i = 1) :
-    conjWirtingerDeriv (fun w ↦ ∑ i ∈ s, c i • g i w) z 1 = y := by
-  have hfd : fderiv ℝ (fun w ↦ ∑ i ∈ s, c i • g i w) z =
-      ∑ i ∈ s, c i • fderiv ℝ (g i) z := by
-    have hterm {i : ι} (hi : i ∈ s) : DifferentiableAt ℝ (fun w ↦ c i • g i w) z :=
-      (hdiff i hi).const_smul (c i)
-    rw [fderiv_fun_sum fun i hi ↦ hterm hi]
-    exact Finset.sum_congr rfl fun i hi ↦ fderiv_const_smul (hdiff i hi) (c i)
-  have hsum_dbar : conjWirtingerDeriv (fun w ↦ ∑ i ∈ s, c i • g i w) z 1 =
-      ∑ i ∈ s, c i • conjWirtingerDeriv (g i) z 1 := by
-    simp only [conjWirtingerDeriv_apply, hfd, sum_apply, smul_apply, smul_add,
-      smul_comm Complex.I (c _), smul_comm (2 : ℂ)⁻¹ (c _), Finset.smul_sum,
-      ← Finset.sum_add_distrib]
-  rw [hsum_dbar, Finset.sum_congr rfl fun i hi ↦ by rw [hdbar i hi],
-    ← Finset.sum_smul, hsum, one_smul]
-
-/-- Local smoothness of a partition-of-unity sum `y ↦ ∑ᶠ i, ρ i y.1.1 • v i y` at `(x, z)`. -/
-private theorem contMDiffAt_finsum_smul {EP HP P E F ι : Type*}
-    [NormedAddCommGroup EP] [NormedSpace ℝ EP]
-    [TopologicalSpace HP] {I : ModelWithCorners ℝ EP HP}
-    [TopologicalSpace P] [ChartedSpace HP P]
-    [NormedAddCommGroup E] [NormedSpace ℝ E]
-    [NormedAddCommGroup F] [NormedSpace ℝ F]
-    {ρ : SmoothPartitionOfUnity ι I P univ} {v : ι → (P × E) × ℂ → F} {x : P × E} {z : ℂ}
-    (hv : ∀ i ∈ ρ.fintsupport x.1,
-      ContMDiffAt ((I.prod 𝓘(ℝ, E)).prod 𝓘(ℝ, ℂ)) 𝓘(ℝ, F) ∞ (v i) (x, z)) :
-    ContMDiffAt ((I.prod 𝓘(ℝ, E)).prod 𝓘(ℝ, ℂ)) 𝓘(ℝ, F) ∞
-      (fun y : (P × E) × ℂ ↦ ∑ᶠ i, ρ i y.1.1 • v i y) (x, z) := by
-  have hloc : (fun y : (P × E) × ℂ ↦ ∑ᶠ i, ρ i y.1.1 • v i y) =ᶠ[𝓝 (x, z)]
-      fun y ↦ ∑ i ∈ ρ.fintsupport x.1, ρ i y.1.1 • v i y := by
-    have hnhds : ∀ᶠ y : (P × E) × ℂ in 𝓝 (x, z), ρ.finsupport y.1.1 ⊆ ρ.fintsupport x.1 :=
-      ((continuous_fst.comp continuous_fst).continuousAt (x := (x, z))).eventually
-        (ρ.eventually_finsupport_subset x.1)
-    filter_upwards [hnhds] with y hy
-    refine finsum_eq_sum_of_support_subset _ fun i hi ↦ hy ?_
-    rw [ρ.mem_finsupport]
-    exact fun h0 ↦ hi (by simp [h0])
-  refine (ContMDiffAt.sum fun i hi ↦ ?_).congr_of_eventuallyEq hloc
-  have hρ_md : ContMDiffAt ((I.prod 𝓘(ℝ, E)).prod 𝓘(ℝ, ℂ)) 𝓘(ℝ, ℝ) ∞
-      (fun y ↦ ρ i y.1.1) (x, z) :=
-    ((ρ i).contMDiff.comp (contMDiff_fst.comp contMDiff_fst)).contMDiffAt
-  exact hρ_md.smul (hv i hi)
 
 /-- **Global mixed-parameter `bar∂` solver on a smooth manifold.** Let `P` be a smooth
 boundaryless Hausdorff σ-compact manifold modelled on a finite-dimensional real normed space `EP`,
@@ -214,20 +163,26 @@ theorem exists_contMDiffOn_conjWirtingerDeriv_apply_one_eq_with_holomorphic_para
     (ρ.sum_finsupport_smul_eq_finsum p fun i _ ↦ v i ((p, q), w)).symm
   refine ⟨u, ?_, ?_, ?_⟩
   · rintro ⟨x, z⟩ ⟨hxU, hz⟩
-    exact (contMDiffAt_finsum_smul (ρ := ρ) fun i hi ↦
-      hmdAt hxU (hρ_sub i ((ρ.mem_fintsupport_iff x.1 i).1 hi)) hz).contMDiffWithinAt
+    exact (ρ.contMDiffAt_finsum_comp (contMDiff_fst.comp contMDiff_fst).contMDiffAt
+      fun i hi ↦ hmdAt hxU (hρ_sub i hi) hz).contMDiffWithinAt
   · -- Solution of `bar∂_z u = f` on `U ×ˢ Ω`: `ρ i x.1` is independent of `z`.
     intro x hxU z hz
     have hsrc {i : P} (hi : i ∈ ρ.finsupport x.1) : x.1 ∈ (chartAt HP i).source :=
       hρ_sub i (subset_tsupport (ρ i) ((ρ.mem_finsupport x.1).1 hi))
     have hfun : (fun w ↦ u (x, w)) =
-        fun w ↦ ∑ i ∈ ρ.finsupport x.1, ρ i x.1 • v i (x, w) := funext fun w ↦ hfin_eq x.1 x.2 w
-    rw [hfun]
-    refine conjWirtingerDeriv_sum_smul (fun i hi ↦ ?_)
-      (fun i hi ↦ hv_dbar i x hxU (hsrc hi) z hz) (ρ.sum_finsupport x.1 (mem_univ x.1))
-    have hmd : ContMDiffAt 𝓘(ℝ, ℂ) 𝓘(ℝ, F) ∞ (fun w ↦ v i (x, w)) z :=
-      (hmdAt hxU (hsrc hi) hz).comp z (contMDiffAt_const.prodMk contMDiffAt_id)
-    exact (contMDiffAt_iff_contDiffAt.1 hmd).differentiableAt (by simp)
+        fun w ↦ ∑ i ∈ ρ.finsupport x.1, ((ρ i x.1 : ℂ) • fun w ↦ v i (x, w)) w := by
+      ext w
+      simpa only [Pi.smul_apply, Complex.coe_smul] using hfin_eq x.1 x.2 w
+    have hdiff {i : P} (hi : i ∈ ρ.finsupport x.1) :
+        DifferentiableAt ℝ ((ρ i x.1 : ℂ) • fun w ↦ v i (x, w)) z := by
+      have hmd : ContMDiffAt 𝓘(ℝ, ℂ) 𝓘(ℝ, F) ∞ (fun w ↦ v i (x, w)) z :=
+        (hmdAt hxU (hsrc hi) hz).comp z (contMDiffAt_const.prodMk contMDiffAt_id)
+      exact ((contMDiffAt_iff_contDiffAt.1 hmd).differentiableAt (by simp)).const_smul _
+    rw [hfun, conjWirtingerDeriv_fun_sum fun i hi ↦ hdiff hi, sum_apply,
+      Finset.sum_congr rfl fun i hi ↦ by
+        rw [conjWirtingerDeriv_const_smul, smul_apply, hv_dbar i x hxU (hsrc hi) z hz],
+      ← Finset.sum_smul, ← Complex.ofReal_sum, ρ.sum_finsupport x.1 (mem_univ x.1),
+      Complex.ofReal_one, one_smul]
   · -- Holomorphy in `q ∈ E`: `ρ i x.1` is independent of `q`.
     intro x hxU z hz
     have hfun : (fun q ↦ u ((x.1, q), z)) =

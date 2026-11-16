@@ -16,10 +16,11 @@ import Mathlib.Analysis.Normed.Module.Convex
 This file extends Mathlib's `Mathlib.Analysis.Calculus.SmoothSeries` in two directions.
 
 First, for a series `∑' i, f i` of `C^N` functions on an open set `s`, summable uniform bounds on
-`s` for all iterated derivatives through order `N` (possibly away from finitely many terms) imply
-that the sum is `C^N` on `s`, with iterated derivatives computed termwise
-(`TauCeti.iteratedFDeriv_tsum_apply_of_isOpen`, `TauCeti.contDiffOn_tsum`,
-`TauCeti.contDiffOn_tsum_of_eventually`).
+`s` for all iterated derivatives through order `N` across every index `i` imply both that the sum
+is `C^N` on `s` (`TauCeti.contDiffOn_tsum`) and that its iterated derivatives are computed termwise
+(`TauCeti.iteratedFDeriv_tsum_apply_of_isOpen`). When the summable derivative bounds hold only
+eventually (`Filter.cofinite`, i.e. away from finitely many terms), the sum is still `C^N` on `s`
+(`TauCeti.contDiffOn_tsum_of_eventually`).
 
 Second, if the derivatives of order `m ≤ k` of a sequence of functions `Gⱼ` are bounded by
 `B m * q ^ j` with `0 ≤ q < 1`, then `∑ⱼ Gⱼ` is `C^k`, its derivatives through order `k` are the
@@ -29,9 +30,11 @@ Mathlib's `contDiff_tsum` and `iteratedFDeriv_tsum` to geometric bounds.
 ## Main declarations
 
 * `TauCeti.iteratedFDeriv_tsum_apply_of_isOpen`: termwise iterated derivatives of a series on an
-  open set.
-* `TauCeti.contDiffOn_tsum`, `TauCeti.contDiffOn_tsum_of_eventually`: `C^N` regularity of a series
-  on an open set under (eventual) summable derivative bounds.
+  open set under full-index summable derivative bounds.
+* `TauCeti.contDiffOn_tsum`: `C^N` regularity of a series on an open set under full-index summable
+  derivative bounds.
+* `TauCeti.contDiffOn_tsum_of_eventually`: `C^N` regularity of a series on an open set under
+  eventual (`Filter.cofinite`) summable derivative bounds.
 * `TauCeti.contDiff_tsum_of_norm_iteratedFDeriv_le_geometric`: the sum is `C^k`.
 * `TauCeti.iteratedFDeriv_tsum_of_norm_iteratedFDeriv_le_geometric`: its derivatives through
   order `k` are the sums of the derivatives.
