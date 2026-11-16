@@ -24,7 +24,10 @@ multiplication by `i`. So in `ℂⁿ × ℂⁿ = ℂ^{n ⊕ n}` the graph is the
 (`Matrix.graphSubspace`, characterized by `Matrix.mem_graphSubspace_iff`). It is the image
 `Matrix.realImage` of the real points `TauCeti.realSubspace` of `ℂ^{n ⊕ n}` under the complex
 matrix `Matrix.graphFrame A`, whose columns are the images of the real basis vectors. That matrix
-is invertible when `A` is symplectic (`Matrix.isUnit_det_graphFrame`), so the graphs
+is invertible when `A` is symplectic (`Matrix.isUnit_det_graphFrame`). Its Gram matrix is
+`(1 + Aᵀ A) + i (J - Aᵀ J A)` (`Matrix.conjTranspose_graphFrame_mul_graphFrame`), so the graph of a
+symplectic matrix is Lagrangian for the symplectic form `Im ⟪·, ·⟫`
+(`Matrix.map_im_conjTranspose_graphFrame_mul_graphFrame`). The graphs
 of a loop `γ` of symplectic matrices form a loop of maximal totally real subspaces with a continuous
 frame (`TauCeti.GLSymplectic.graphLoop`).
 
@@ -135,6 +138,37 @@ private theorem graphCore_realify (U : Matrix n n ℂ) :
   apply Complex.ext <;>
     simp [graphCore, toBlocks₁₁, toBlocks₁₂, toBlocks₂₁, toBlocks₂₂, realify_apply_inl_inl,
       realify_apply_inl_inr, realify_apply_inr_inl, realify_apply_inr_inr] <;> ring
+
+/-- The **Gram matrix of the graph frame**: for real vectors `x`, `y`,
+`⟪F x, F y⟫ = ⟪x, y⟫ + ⟪A x, A y⟫ + i (ω(x, y) - ω(A x, A y))` with `ω(x, y) = xᵀ J y`, that is,
+`Fᴴ F = (1 + Aᵀ A) + i (J - Aᵀ J A)`. -/
+theorem conjTranspose_graphFrame_mul_graphFrame (A : Matrix (n ⊕ n) (n ⊕ n) ℝ) :
+    (graphFrame A)ᴴ * graphFrame A =
+      (1 + Aᵀ * A).map ((↑) : ℝ → ℂ) +
+        Complex.I • (J n ℝ - Aᵀ * J n ℝ * A).map ((↑) : ℝ → ℂ) := by
+  ext (i | i) (j | j) <;> apply Complex.ext <;> obtain rfl | h := eq_or_ne i j <;>
+  simp [graphFrame, Matrix.mul_apply, Fintype.sum_sum_type, J, Matrix.one_apply, toBlocks₁₁,
+    toBlocks₁₂, toBlocks₂₁, toBlocks₂₂, Complex.re_sum, Complex.im_sum, Finset.sum_add_distrib,
+    Finset.sum_neg_distrib, Ne.symm, *] <;>
+  ring
+
+/-- **The graph of a symplectic matrix is Lagrangian**: the Gram matrix of its graph frame is real,
+so the columns of the frame are pairwise orthogonal for the symplectic form `Im ⟪·, ·⟫`. -/
+theorem map_im_conjTranspose_graphFrame_mul_graphFrame {A : Matrix (n ⊕ n) (n ⊕ n) ℝ}
+    (hA : A ∈ symplecticGroup n ℝ) :
+    ((graphFrame A)ᴴ * graphFrame A).map Complex.im = 0 := by
+  rw [conjTranspose_graphFrame_mul_graphFrame, SymplecticGroup.mem_iff'.1 hA, sub_self]
+  ext i j
+  simp
+
+omit [Fintype n] in
+/-- The graph frame of the realification of a complex matrix `W` is `[[1, -i], [W, i W]]`. -/
+theorem graphFrame_realify (W : Matrix n n ℂ) :
+    graphFrame W.realify = fromBlocks 1 (-(Complex.I • 1)) W (Complex.I • W) := by
+  rw [graphFrame]
+  congr 1 <;> ext i j <;> apply Complex.ext <;>
+    simp [toBlocks₁₁, toBlocks₁₂, toBlocks₂₁, toBlocks₂₂, realify_apply_inl_inl,
+      realify_apply_inl_inr, realify_apply_inr_inl, realify_apply_inr_inr]
 
 /-- **The graph frame of a symplectic matrix is invertible.** -/
 theorem isUnit_det_graphFrame {A : Matrix (n ⊕ n) (n ⊕ n) ℝ} (hA : A ∈ symplecticGroup n ℝ) :

@@ -219,8 +219,8 @@ theorem isMIntegralCurve_constantContinuationField_and_tendsto_iff_of_le (hC : 0
     obtain rfl := hX.eq_of_mem_unstableSet_inter_stableSet hy
     exact ⟨rfl, τ, funext fun s ↦ by rw [hfix]⟩
   · rintro ⟨rfl, τ, rfl⟩
-    exact ⟨q, ⟨Flow.self_mem_unstableSet_iff.2 hfix, Flow.self_mem_stableSet_iff.2 hfix⟩, τ,
-      funext fun s ↦ by rw [hfix]⟩
+    exact ⟨q, hX.mem_unstableSet_inter_stableSet_self
+      (mem_criticalPoints_iff_mfderiv_eq_zero.1 hp), τ, funext fun s ↦ by rw [hfix]⟩
 
 end IsMorseSmale
 

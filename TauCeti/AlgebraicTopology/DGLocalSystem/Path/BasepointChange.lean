@@ -80,6 +80,15 @@ def pathChainToLoopChain (δ : MoorePathBetween B a b) :
 
 variable {R}
 
+/-- `pathChainToLoopChain` is the push-forward along appending the reversal of `δ`, read in the
+chain algebra of the loops at `a`. -/
+theorem pathChainToLoopChain_apply (δ : MoorePathBetween B a b)
+    (x : cubicalChainModule (MoorePathBetween B a b) (MooreLoopSpace B b) R) :
+    pathChainToLoopChain R δ x =
+      cubicalChainSumMap R (MoorePathBetween.loopAppendHomotopyEquiv δ).symm.toFun
+        (cubicalChainModuleEquiv _ _ R x) :=
+  (rfl)
+
 /-- On a homogeneous chain, `pathChainToLoopChain` is the push-forward of the chain. -/
 @[simp]
 theorem pathChainToLoopChain_lof (δ : MoorePathBetween B a b) {n : ℕ}
@@ -182,6 +191,19 @@ local instance (M : DGRightModuleCat.{w, max u w, v} (loopChain_isDGAlgebra B a 
       M.grading :=
   M.gradedSMul
 
+-- Transport the graded actions to the internal gradings used by balanced tensors.
+local instance (M : DGRightModuleCat.{w, max u w, v} (loopChain_isDGAlgebra B a R)) :
+    SetLike.GradedSMul
+      (InternalGrading.ofDecomposition (cubicalChainGrading (MooreLoopSpace B a) R)).opposite.piece
+      (InternalGrading.ofDecomposition M.grading).piece := by
+  rw [InternalGrading.ofDecomposition_piece]
+  exact M.gradedSMul
+
+local instance : SetLike.GradedSMul (cubicalChainGrading (MooreLoopSpace B a) R)
+    (InternalGrading.ofDecomposition (pathChainBimodule B a b R).grading).piece := by
+  rw [InternalGrading.ofDecomposition_piece]
+  infer_instance
+
 variable (M : DGRightModuleCat.{w, max u w, v} (loopChain_isDGAlgebra B a R))
   (δ : MoorePathBetween B a b)
 
@@ -229,6 +251,29 @@ theorem differential_tensorPathChainAct
     (LinearMap.ext fun x ↦ (pathChainToLoopChain_differential δ x).symm)) z
   simp only [LinearMap.comp_apply] at h h'
   rw [tensorPathChainAct, LinearMap.comp_apply, LinearMap.comp_apply, ← h, h']
+
+/-- The map `m ⊗ c ↦ m · ρ(c)` preserves the degree. -/
+theorem tensorPathChainAct_mem {q : ℤ} {z : tensorBimoduleObj M (pathChainBimodule B a b R)}
+    (hz : z ∈ (tensorBimoduleObj M (pathChainBimodule B a b R)).grading q) :
+    tensorPathChainAct M δ z ∈ M.grading q := by
+  simpa only [add_zero] using map_mem_of_tmul (𝒜 := cubicalChainGrading (MooreLoopSpace B a) R)
+    (InternalGrading.ofDecomposition M.grading)
+    (InternalGrading.ofDecomposition (pathChainBimodule B a b R).grading) M.grading
+    (tensorPathChainAct M δ) 0 (fun {p q m c} hm hc ↦ by
+      rw [InternalGrading.ofDecomposition_piece] at hm hc
+      have hρ := pathChainToLoopChain_mem δ hc
+      rw [← InternalGrading.ofDecomposition_piece (cubicalChainGrading (MooreLoopSpace B a) R)]
+        at hρ
+      rw [tensorPathChainAct_tmul, add_zero, add_comm]
+      exact SetLike.GradedSMul.smul_mem
+        ((InternalGrading.op_mem_opposite_piece_iff _ _ _).2 hρ) hm) hz
+
+/-- The map `m ↦ m ⊗ [δ]` preserves the degree. -/
+theorem tensorPathChainPoint_mem {q : ℤ} {m : M} (hm : m ∈ M.grading q) :
+    tensorPathChainPoint M δ m ∈ (tensorBimoduleObj M (pathChainBimodule B a b R)).grading q := by
+  rw [tensorPathChainPoint_apply]
+  simpa only [add_zero] using
+    tmul_mem_tensorBimoduleObj_grading (N := pathChainBimodule B a b R) hm (pathChainPoint_mem δ)
 
 /-- Tensoring with the `0`-chain of `δ` commutes with the differentials. -/
 theorem differential_tensorPathChainPoint (m : M) :
@@ -331,23 +376,8 @@ theorem isQuasiIso_tensorBimoduleMap_pathChainBimodule
   rcases isEmpty_or_nonempty (MoorePathBetween B a b) with hB | hB
   · -- Without Moore paths from `a` to `b`, there are no path chains, so both tensor products
     -- vanish.
-    have hc (c : cubicalChainModule (MoorePathBetween B a b) (MooreLoopSpace B b) R) : c = 0 := by
-      induction c using cubicalChainModule.induction_on with
-      | add c c' ih ih' => rw [ih, ih', add_zero]
-      | lof q c =>
-        induction c using NormalizedCubicalChain.induction_on with
-        | zero => exact map_zero _
-        | add c c' ih ih' => rw [map_add, ih, ih', add_zero]
-        | smul r c ih => rw [map_smul, ih, smul_zero]
-        | ofCube c => exact isEmptyElim (c 0)
-    have hz (L : DGRightModuleCat.{w, max u w, v} (loopChain_isDGAlgebra B a R))
-        (z : tensorBimoduleObj L (pathChainBimodule B a b R)) : z = 0 := by
-      induction z using BalancedTensorProduct.induction_on with
-      | ht m c => rw [hc c, tmul_zero]
-      | ha z z' ih ih' => rw [ih, ih', add_zero]
     rw [IsQuasiIso, DGRightModuleHom.isQuasiIso_iff_forall_exists]
-    exact fun x y _ _ ↦ ⟨0, 0, by rw [map_zero, hz M x],
-      by rw [map_zero, map_zero, add_zero, hz N y]⟩
+    exact fun _ _ _ _ ↦ ⟨0, 0, Subsingleton.elim _ _, Subsingleton.elim _ _⟩
   · obtain ⟨δ⟩ := hB
     exact DGRightModuleHom.isQuasiIso_of_homotopyRetract
       (tensorBimoduleMap f (𝟙 (pathChainBimodule B a b R))) (f.toLinearMap.restrictScalars R)
