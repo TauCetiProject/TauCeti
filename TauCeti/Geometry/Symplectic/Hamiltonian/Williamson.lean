@@ -171,9 +171,6 @@ theorem exists_isDarbouxBasis_eq_sum_smul_elliptic_of_posDef (hQ : Q.PosDef) :
     ∃ (n : ℕ) (b : Basis (Fin n × Fin 2) ℝ V) (ν : Fin n → ℝ), ω.IsDarbouxBasis b ∧
       (∀ k, 0 < ν k) ∧ Q = ∑ k, ν k • elliptic b k := by
   obtain ⟨n, b, ν, hb, hν, hA⟩ := ω.exists_isDarbouxBasis_hamiltonianEnd_apply_eq_of_posDef hQ
-  refine ⟨n, b, ν, hb, hν, ω.hamiltonianEnd_injective (b.ext fun ⟨j, a⟩ ↦ ?_)⟩
-  obtain rfl | rfl : a = 0 ∨ a = 1 := by omega
-  · rw [(hA j).1, hb.hamiltonianEnd_sum_smul_elliptic_apply_fst]
-  · rw [(hA j).2, hb.hamiltonianEnd_sum_smul_elliptic_apply_snd]
+  exact ⟨n, b, ν, hb, hν, hb.eq_sum_smul_elliptic_of_hamiltonianEnd_apply_eq hA⟩
 
 end TauCeti.SymplecticForm

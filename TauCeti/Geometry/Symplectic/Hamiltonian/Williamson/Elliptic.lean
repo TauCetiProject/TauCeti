@@ -161,13 +161,11 @@ theorem exists_isDarbouxBasis_span_eq_span_elliptic (h : ω.IsNondegenerateQuadr
       hJcomm _ <| (quadraticPoissonBracket_eq_zero_iff ω).1 <|
         h.quadraticPoissonBracket_eq_zero_of_mem_span (Submodule.subset_span ⟨i, rfl⟩) hP
   -- Each `A_{Q i}` rotates every plane `span(qₖ, pₖ)`, so `Q i = ∑ₖ -(Im cᵢₖ) Iₖ`.
-  have hQ (i : ι) : Q i = ∑ k, -(c i k).im • elliptic b k := by
-    refine ω.hamiltonianEnd_injective (b.ext fun ⟨k, a⟩ ↦ ?_)
-    have hre := hb.eq_zero_of_hamiltonianEnd_apply_eq (hc i k).1 (hc i k).2
-    obtain rfl | rfl : a = 0 ∨ a = 1 := by omega
-    · rw [(hc i k).1, hb.hamiltonianEnd_sum_smul_elliptic_apply_fst, hre, zero_smul, zero_add,
-        neg_neg]
-    · rw [(hc i k).2, hb.hamiltonianEnd_sum_smul_elliptic_apply_snd, hre, zero_smul, add_zero]
+  have hQ (i : ι) : Q i = ∑ k, -(c i k).im • elliptic b k :=
+    hb.eq_sum_smul_elliptic_of_hamiltonianEnd_apply_eq fun k ↦ by
+      rw [(hc i k).1, (hc i k).2, hb.eq_zero_of_hamiltonianEnd_apply_eq (hc i k).1 (hc i k).2,
+        zero_smul, zero_smul, zero_add, add_zero, neg_neg]
+      exact ⟨rfl, rfl⟩
   refine ⟨n, b, hb, le_antisymm (Submodule.span_le.2 ?_) (Submodule.span_le.2 ?_)⟩
   · rintro _ ⟨i, rfl⟩
     rw [hQ i]

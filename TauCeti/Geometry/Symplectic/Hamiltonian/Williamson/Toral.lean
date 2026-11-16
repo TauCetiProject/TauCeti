@@ -138,14 +138,13 @@ theorem mem_span_of_forall_quadraticPoissonBracket_eq_zero
     rw [← IsCartanSubalgebra.self_normalizing (H := lieSpan ℝ _ _), mem_normalizer_iff]
     intro y hy
     rw [← mem_toSubmodule, hspan] at hy
-    suffices ⁅ω.hamiltonianEndEquiv R, y⁆ = 0 by rw [this]; exact zero_mem _
-    induction hy using Submodule.span_induction with
-    | mem y hy =>
-      obtain ⟨i, rfl⟩ := hy
-      exact hlie (hR i)
-    | zero => exact lie_zero _
-    | add y z _ _ hy hz => rw [lie_add, hy, hz, add_zero]
-    | smul c y _ hy => rw [lie_smul, hy, smul_zero]
+    -- `⁅A_R, ·⁆` is linear and vanishes on the generators, hence on their span.
+    have hker := Submodule.span_le
+      (p := LinearMap.ker (LieAlgebra.ad ℝ _ (ω.hamiltonianEndEquiv R))) |>.2
+      (by rintro _ ⟨i, rfl⟩; exact LinearMap.mem_ker.2 (hlie (hR i))) hy
+    rw [LinearMap.mem_ker, LieAlgebra.ad_apply] at hker
+    rw [hker]
+    exact zero_mem _
   rw [← mem_toSubmodule, hspan, Set.range_comp' (g := ω.hamiltonianEndEquiv),
     ← LinearEquiv.coe_toLinearMap, ← Submodule.map_span] at hmem
   simpa using (Submodule.mem_map_equiv _).1 hmem
