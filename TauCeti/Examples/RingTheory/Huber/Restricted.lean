@@ -147,9 +147,11 @@ example :
       geom ∉ MvPowerSeries.IsRestricted.subring (R := ℤ_[p]) (fun _ : Fin 1 ↦ 1) ∧
       geom ∉ restrictedMvPowerSeriesSubring 1 ℤ_[p] := by
   intro geom
-  have hren : MvPowerSeries.renameEquiv ℤ_[p] finOneEquiv geom = PowerSeries.mk 1 :=
-    PowerSeries.ext fun n ↦
-      (PowerSeries.coeff_rename finOneEquiv geom n).trans (PowerSeries.coeff_mk n 1).symm
+  have hren : MvPowerSeries.renameEquiv ℤ_[p] finOneEquiv geom = PowerSeries.mk 1 := by
+    refine PowerSeries.ext fun n ↦ ?_
+    rw [MvPowerSeries.renameEquiv_apply, AlgHom.toRingHom_eq_coe, RingHom.toFun_eq_coe,
+      RingHom.coe_coe, PowerSeries.coeff_rename, MvPowerSeries.coeff_apply, PowerSeries.coeff_mk]
+    simp [geom]
   have hnotH : geom ∉ restrictedMvPowerSeriesSubring 1 ℤ_[p] := by
     rw [mem_restrictedMvPowerSeriesSubring, isRestricted_renameEquiv_finOne_iff, hren]
     exact TauCeti.PowerSeries.not_isRestricted_mk_one

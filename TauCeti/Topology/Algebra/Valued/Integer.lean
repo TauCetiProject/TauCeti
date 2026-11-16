@@ -17,9 +17,10 @@ import Mathlib.Analysis.Normed.Operator.NNNorm
 Let `K` be a nontrivially normed field with an ultrametric norm, with valuation ring `𝒪[K]` (the
 closed unit ball) and maximal ideal `𝓂[K]` (the open unit ball).
 
-For an arbitrary valued ring, its integer ring has a linear topology, and it is
-complete when the ring is complete. These instances support topological evaluation
-of power series with integral coefficients.
+For an arbitrary valued ring, its integer ring has a linear topology, and it is complete when the
+ring is complete. For any valued field `K`, the maximal ideal of its valuation ring `𝒪[K]` is the
+open unit valuation ball, hence open. These instances and facts support topological evaluation and
+reduction of power series with integral coefficients.
 
 Every `𝒪[K]`-linear map between finite products of copies of `K` is `K`-linear, since `K` is the
 fraction field of `𝒪[K]`; hence it is continuous and carries bounded sets to bounded sets. If the
@@ -34,8 +35,10 @@ are the coefficient maps along which reductions modulo the maximal ideal are fun
 
 * `Valued.instIsLinearTopologyInteger`: the integer ring of a valued ring has a linear topology.
 * `Valued.instCompleteSpaceInteger`: the integer ring of a complete valued ring is complete.
-* `Valued.integer.mem_maximalIdeal_iff` and `Valued.integer.isOpen_maximalIdeal`: the maximal
-  ideal of `𝒪[K]` is the open unit ball, hence open.
+* `Valued.integer.isOpen_maximalIdeal`: for any valued field `K`, the maximal ideal of `𝒪[K]` is
+  the open unit valuation ball, hence open.
+* `Valued.integer.mem_maximalIdeal_iff`: for a nonarchimedean normed field `K`, the maximal ideal
+  of `𝒪[K]` consists of elements of norm less than `1`.
 * `Valued.integer.residue_eq_residue_iff_norm_sub_lt_one`: elements of `𝒪[K]` have the same
   residue exactly when their difference has norm less than `1`.
 * `Valued.integer.exists_mem_maximalIdeal_coe_ne_zero`: the maximal ideal of `𝒪[K]` contains a
@@ -88,6 +91,18 @@ instance instCompleteSpaceInteger [CompleteSpace K] :
     CompleteSpace (Valued.v : Valuation K Γ₀).integer :=
   (isClosed_integer K).completeSpace_coe
 
+/-- The maximal ideal of the valuation ring of a valued field is open, being the preimage of the
+open unit valuation ball. -/
+theorem integer.isOpen_maximalIdeal {K Γ₀ : Type*} [Field K] [LinearOrderedCommGroupWithZero Γ₀]
+    [Valued K Γ₀] :
+    IsOpen ((IsLocalRing.maximalIdeal (Valued.integer K) : Ideal (Valued.integer K)) :
+      Set (Valued.integer K)) := by
+  convert (Valued.isOpen_ball K 1).preimage continuous_subtype_val
+  ext x
+  rw [SetLike.mem_coe, IsLocalRing.mem_maximalIdeal, mem_nonunits_iff,
+    Valuation.Integer.not_isUnit_iff_valuation_lt_one, Set.mem_preimage, Set.mem_ofPred_eq,
+    Valuation.restrict_lt_one_iff]
+
 end Valued
 
 section Integer
@@ -100,15 +115,6 @@ theorem Valued.integer.mem_maximalIdeal_iff {x : Valued.integer K} :
     x ∈ IsLocalRing.maximalIdeal (Valued.integer K) ↔ ‖x‖ < 1 := by
   rw [mem_maximalIdeal, mem_nonunits_iff, Valued.integer.isUnit_iff_norm_eq_one,
     (Valued.integer.norm_le_one x).lt_iff_ne]
-
-/-- The maximal ideal of the valuation ring of a nonarchimedean field is open, being the open unit
-ball. -/
-theorem Valued.integer.isOpen_maximalIdeal :
-    IsOpen ((IsLocalRing.maximalIdeal (Valued.integer K) : Ideal (Valued.integer K)) :
-      Set (Valued.integer K)) := by
-  convert Metric.isOpen_ball (x := (0 : Valued.integer K)) (ε := 1)
-  ext x
-  rw [SetLike.mem_coe, Valued.integer.mem_maximalIdeal_iff, Metric.mem_ball, dist_zero_right]
 
 /-- An element of the valuation ring of a nonarchimedean field has residue zero exactly when its
 norm is less than `1`. -/

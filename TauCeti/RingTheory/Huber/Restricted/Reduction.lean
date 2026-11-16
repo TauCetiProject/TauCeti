@@ -31,8 +31,8 @@ powers `Iᵐ` since each is again a finitely generated ideal of definition (`is_
 Together with adic completeness of `A⟨X⟩` for `I · A⟨X⟩`, these compatible polynomial reductions
 identify `A⟨X⟩` as the inverse limit of the polynomial rings `(A ⧸ Iⁿ⁺¹)[X₁, …, Xₖ]`
 (`liftCompatibleRestrictedReductionCompletion`,
-`existsUnique_ringHom_comp_restrictedReductionCompletion_pow_succ`, and
-`existsUnique_restrictedReductionCompletion_pow_succ`, constructed via
+`existsUnique_ringHom_restrictedReductionCompletion_pow_succ_comp_eq`, and
+`existsUnique_restrictedReductionCompletion_pow_succ_eq`, constructed via
 `IsAdicComplete.StrictMono.liftRingHom`).
 
 Polynomial reduction commutes with continuous coefficient homomorphisms (`weightedMap` and
@@ -197,16 +197,6 @@ theorem restrictedReductionCompletion_algebraMap (J : Ideal A) (hJ : IsOpen (J :
       MvPolynomial.C (Ideal.Quotient.mk J a) := by
   rw [algebraMap_completion_weightedRestrictedSubring_apply, restrictedReductionCompletion_coe,
     restrictedReduction_weightedC]
-
-/-- Completed reduction preserves each coordinate variable. -/
-theorem restrictedReductionCompletion_weightedX (J : Ideal A) (hJ : IsOpen (J : Set A))
-    (i : Fin k) :
-    J.restrictedReductionCompletion hJ
-        ((weightedX _ isWeightFamily_one_weight i :
-          weightedRestrictedSubring (fun _ : Fin k ↦ ({1} : Set A)) isWeightFamily_one_weight) :
-          restrictedMvPowerSeriesCompletion k A) =
-      MvPolynomial.X i := by
-  rw [restrictedReductionCompletion_coe, restrictedReduction_weightedX]
 
 /-- Completed polynomial reduction is surjective. -/
 theorem restrictedReductionCompletion_surjective (J : Ideal A) (hJ : IsOpen (J : Set A)) :
@@ -379,6 +369,38 @@ theorem quotientRestrictedEquivMvPolynomialQuotient_mk (hI : IsAdic I) (hfg : I.
       restrictedReduction I hI.isOpen f := by
   simp [quotientRestrictedEquivMvPolynomialQuotient]
 
+/-- The inverse of `quotientRestrictedEquivMvPolynomialQuotient` maps a polynomial reduction back
+to its quotient class. -/
+@[simp]
+theorem quotientRestrictedEquivMvPolynomialQuotient_symm_restrictedReduction
+    (hI : IsAdic I) (hfg : I.FG)
+    (f : weightedRestrictedSubring (fun _ : Fin k ↦ ({1} : Set A))
+      isWeightFamily_one_weight) :
+    (quotientRestrictedEquivMvPolynomialQuotient hI hfg).symm (restrictedReduction I hI.isOpen f) =
+      Ideal.Quotient.mk _ f := by
+  rw [← quotientRestrictedEquivMvPolynomialQuotient_mk hI hfg, AlgEquiv.symm_apply_apply]
+
+/-- The inverse of `quotientRestrictedEquivMvPolynomialQuotient` sends each polynomial variable
+`Xᵢ` to the class of `weightedX i`. -/
+@[simp]
+theorem quotientRestrictedEquivMvPolynomialQuotient_symm_X (hI : IsAdic I) (hfg : I.FG)
+    (i : Fin k) :
+    (quotientRestrictedEquivMvPolynomialQuotient hI hfg).symm (MvPolynomial.X i) =
+      Ideal.Quotient.mk _ (weightedX _ isWeightFamily_one_weight i) := by
+  rw [← Ideal.restrictedReduction_weightedX I hI.isOpen i,
+    quotientRestrictedEquivMvPolynomialQuotient_symm_restrictedReduction]
+
+/-- The inverse of `quotientRestrictedEquivMvPolynomialQuotient` sends a constant polynomial
+`C (a mod I)` to `algebraMap A _ a`. -/
+@[simp]
+theorem quotientRestrictedEquivMvPolynomialQuotient_symm_C_mk (hI : IsAdic I) (hfg : I.FG)
+    (a : A) :
+    (quotientRestrictedEquivMvPolynomialQuotient (k := k) hI hfg).symm
+        (MvPolynomial.C (Ideal.Quotient.mk I a)) =
+      algebraMap A _ a := by
+  simpa [MvPolynomial.algebraMap_apply, Ideal.Quotient.algebraMap_eq] using
+    (quotientRestrictedEquivMvPolynomialQuotient (k := k) hI hfg).symm.commutes a
+
 /-- For every exponent `m : ℕ`, the quotient of the restricted-series subring by the `m`-th power
 of the extended ideal is the polynomial algebra `(A ⧸ Iᵐ)[X₁, …, Xₖ]`. -/
 noncomputable def quotientRestrictedPowEquivMvPolynomialQuotient (hI : IsAdic I) (hfg : I.FG)
@@ -416,6 +438,38 @@ theorem quotientRestrictedPowEquivMvPolynomialQuotient_mk (hI : IsAdic I) (hfg :
       infer_instance
     exact Subsingleton.elim _ _
   · simp [quotientRestrictedPowEquivMvPolynomialQuotient, hm]
+
+/-- The inverse of `quotientRestrictedPowEquivMvPolynomialQuotient` maps a polynomial reduction
+modulo `Iᵐ` back to its quotient class. -/
+@[simp]
+theorem quotientRestrictedPowEquivMvPolynomialQuotient_symm_restrictedReduction
+    (hI : IsAdic I) (hfg : I.FG) (m : ℕ)
+    (f : weightedRestrictedSubring (fun _ : Fin k ↦ ({1} : Set A)) isWeightFamily_one_weight) :
+    (quotientRestrictedPowEquivMvPolynomialQuotient hI hfg m).symm
+        ((I ^ m).restrictedReduction (hI.isOpen_pow m) f) =
+      Ideal.Quotient.mk _ f := by
+  rw [← quotientRestrictedPowEquivMvPolynomialQuotient_mk hI hfg m, AlgEquiv.symm_apply_apply]
+
+/-- The inverse of `quotientRestrictedPowEquivMvPolynomialQuotient` sends each polynomial variable
+`Xᵢ` to the class of `weightedX i`. -/
+@[simp]
+theorem quotientRestrictedPowEquivMvPolynomialQuotient_symm_X (hI : IsAdic I) (hfg : I.FG)
+    (m : ℕ) (i : Fin k) :
+    (quotientRestrictedPowEquivMvPolynomialQuotient hI hfg m).symm (MvPolynomial.X i) =
+      Ideal.Quotient.mk _ (weightedX _ isWeightFamily_one_weight i) := by
+  rw [← Ideal.restrictedReduction_weightedX (I ^ m) (hI.isOpen_pow m) i,
+    quotientRestrictedPowEquivMvPolynomialQuotient_symm_restrictedReduction]
+
+/-- The inverse of `quotientRestrictedPowEquivMvPolynomialQuotient` sends a constant polynomial
+`C (a mod Iᵐ)` to `algebraMap A _ a`. -/
+@[simp]
+theorem quotientRestrictedPowEquivMvPolynomialQuotient_symm_C_mk (hI : IsAdic I) (hfg : I.FG)
+    (m : ℕ) (a : A) :
+    (quotientRestrictedPowEquivMvPolynomialQuotient (k := k) hI hfg m).symm
+        (MvPolynomial.C (Ideal.Quotient.mk (I ^ m) a)) =
+      algebraMap A _ a := by
+  simpa [MvPolynomial.algebraMap_apply, Ideal.Quotient.algebraMap_eq] using
+    (quotientRestrictedPowEquivMvPolynomialQuotient (k := k) hI hfg m).symm.commutes a
 
 /-- Reduction is compatible with passing to a larger open ideal. -/
 @[simp]
@@ -488,6 +542,41 @@ theorem quotientRestrictedCompletionEquivMvPolynomialQuotient_mk
       I.restrictedReductionCompletion hI.isOpen x := by
   simp [quotientRestrictedCompletionEquivMvPolynomialQuotient]
 
+/-- The inverse of `quotientRestrictedCompletionEquivMvPolynomialQuotient` maps a completed
+polynomial reduction back to its quotient class. -/
+@[simp]
+theorem quotientRestrictedCompletionEquivMvPolynomialQuotient_symm_restrictedReductionCompletion
+    (hI : IsAdic I) (hfg : I.FG) (x : restrictedMvPowerSeriesCompletion k A) :
+    (quotientRestrictedCompletionEquivMvPolynomialQuotient hI hfg).symm
+        (I.restrictedReductionCompletion hI.isOpen x) =
+      Ideal.Quotient.mk _ x := by
+  rw [← quotientRestrictedCompletionEquivMvPolynomialQuotient_mk hI hfg, AlgEquiv.symm_apply_apply]
+
+/-- The inverse of `quotientRestrictedCompletionEquivMvPolynomialQuotient` sends each polynomial
+variable `Xᵢ` to the class of the canonical image of `weightedX i`. -/
+@[simp]
+theorem quotientRestrictedCompletionEquivMvPolynomialQuotient_symm_X
+    (hI : IsAdic I) (hfg : I.FG) (i : Fin k) :
+    (quotientRestrictedCompletionEquivMvPolynomialQuotient hI hfg).symm (MvPolynomial.X i) =
+      Ideal.Quotient.mk _
+        ((weightedX _ isWeightFamily_one_weight i :
+          weightedRestrictedSubring (fun _ : Fin k ↦ ({1} : Set A)) isWeightFamily_one_weight) :
+          restrictedMvPowerSeriesCompletion k A) := by
+  rw [← Ideal.restrictedReduction_weightedX I hI.isOpen i,
+    ← Ideal.restrictedReductionCompletion_coe,
+    quotientRestrictedCompletionEquivMvPolynomialQuotient_symm_restrictedReductionCompletion]
+
+/-- The inverse of `quotientRestrictedCompletionEquivMvPolynomialQuotient` sends a constant
+polynomial `C (a mod I)` to `algebraMap A _ a`. -/
+@[simp]
+theorem quotientRestrictedCompletionEquivMvPolynomialQuotient_symm_C_mk
+    (hI : IsAdic I) (hfg : I.FG) (a : A) :
+    (quotientRestrictedCompletionEquivMvPolynomialQuotient (k := k) hI hfg).symm
+        (MvPolynomial.C (Ideal.Quotient.mk I a)) =
+      algebraMap A _ a := by
+  simpa [MvPolynomial.algebraMap_apply, Ideal.Quotient.algebraMap_eq] using
+    (quotientRestrictedCompletionEquivMvPolynomialQuotient (k := k) hI hfg).symm.commutes a
+
 /-- For every exponent `m : ℕ`, the quotient of `A⟨X₁, …, Xₖ⟩` by `(I · A⟨X⟩)ᵐ` is the polynomial
 algebra `(A ⧸ Iᵐ)[X₁, …, Xₖ]`. -/
 noncomputable def quotientRestrictedCompletionPowEquivMvPolynomialQuotient
@@ -524,6 +613,42 @@ theorem quotientRestrictedCompletionPowEquivMvPolynomialQuotient_mk
       infer_instance
     exact Subsingleton.elim _ _
   · simp [quotientRestrictedCompletionPowEquivMvPolynomialQuotient, hm]
+
+/-- The inverse of `quotientRestrictedCompletionPowEquivMvPolynomialQuotient` maps a completed
+polynomial reduction modulo `Iᵐ` back to its quotient class. -/
+@[simp]
+theorem quotientRestrictedCompletionPowEquivMvPolynomialQuotient_symm_restrictedReductionCompletion
+    (hI : IsAdic I) (hfg : I.FG) (m : ℕ) (x : restrictedMvPowerSeriesCompletion k A) :
+    (quotientRestrictedCompletionPowEquivMvPolynomialQuotient hI hfg m).symm
+        ((I ^ m).restrictedReductionCompletion (hI.isOpen_pow m) x) =
+      Ideal.Quotient.mk _ x := by
+  rw [← quotientRestrictedCompletionPowEquivMvPolynomialQuotient_mk hI hfg m,
+    AlgEquiv.symm_apply_apply]
+
+/-- The inverse of `quotientRestrictedCompletionPowEquivMvPolynomialQuotient` sends each polynomial
+variable `Xᵢ` to the class of the canonical image of `weightedX i`. -/
+@[simp]
+theorem quotientRestrictedCompletionPowEquivMvPolynomialQuotient_symm_X
+    (hI : IsAdic I) (hfg : I.FG) (m : ℕ) (i : Fin k) :
+    (quotientRestrictedCompletionPowEquivMvPolynomialQuotient hI hfg m).symm (MvPolynomial.X i) =
+      Ideal.Quotient.mk _
+        ((weightedX _ isWeightFamily_one_weight i :
+          weightedRestrictedSubring (fun _ : Fin k ↦ ({1} : Set A)) isWeightFamily_one_weight) :
+          restrictedMvPowerSeriesCompletion k A) := by
+  rw [← Ideal.restrictedReduction_weightedX (I ^ m) (hI.isOpen_pow m) i,
+    ← Ideal.restrictedReductionCompletion_coe,
+    quotientRestrictedCompletionPowEquivMvPolynomialQuotient_symm_restrictedReductionCompletion]
+
+/-- The inverse of `quotientRestrictedCompletionPowEquivMvPolynomialQuotient` sends a constant
+polynomial `C (a mod Iᵐ)` to `algebraMap A _ a`. -/
+@[simp]
+theorem quotientRestrictedCompletionPowEquivMvPolynomialQuotient_symm_C_mk
+    (hI : IsAdic I) (hfg : I.FG) (m : ℕ) (a : A) :
+    (quotientRestrictedCompletionPowEquivMvPolynomialQuotient (k := k) hI hfg m).symm
+        (MvPolynomial.C (Ideal.Quotient.mk (I ^ m) a)) =
+      algebraMap A _ a := by
+  simpa [MvPolynomial.algebraMap_apply, Ideal.Quotient.algebraMap_eq] using
+    (quotientRestrictedCompletionPowEquivMvPolynomialQuotient (k := k) hI hfg m).symm.commutes a
 
 section InverseLimit
 
@@ -644,7 +769,7 @@ theorem restrictedReductionCompletion_liftCompatibleRestrictedReductionCompletio
     hI hfg φ hφ n) d)
 
 /-- **Universal property of `A⟨X₁, …, Xₖ⟩` as the inverse limit of `(A ⧸ Iⁿ⁺¹)[X₁, …, Xₖ]`.** -/
-theorem existsUnique_ringHom_comp_restrictedReductionCompletion_pow_succ
+theorem existsUnique_ringHom_restrictedReductionCompletion_pow_succ_comp_eq
     (hI : IsAdic I) (hfg : I.FG) {D : Type*} [NonAssocSemiring D]
     (φ : ∀ n : ℕ, D →+* MvPolynomial (Fin k) (A ⧸ I ^ (n + 1)))
     (hφ : ∀ n : ℕ, (MvPolynomial.map (Ideal.Quotient.factorPowSucc I (n + 1))).comp
@@ -660,7 +785,7 @@ theorem existsUnique_ringHom_comp_restrictedReductionCompletion_pow_succ
 /-- **Elementwise inverse-limit description of `A⟨X₁, …, Xₖ⟩`.** Every compatible sequence of
 polynomials `pₙ ∈ (A ⧸ Iⁿ⁺¹)[X₁, …, Xₖ]` is the sequence of reductions of a unique element of
 `A⟨X₁, …, Xₖ⟩`. -/
-theorem existsUnique_restrictedReductionCompletion_pow_succ (hI : IsAdic I) (hfg : I.FG)
+theorem existsUnique_restrictedReductionCompletion_pow_succ_eq (hI : IsAdic I) (hfg : I.FG)
     (p : ∀ n : ℕ, MvPolynomial (Fin k) (A ⧸ I ^ (n + 1)))
     (hp : ∀ n : ℕ,
       MvPolynomial.map (Ideal.Quotient.factorPowSucc I (n + 1)) (p (n + 1)) = p n) :
@@ -696,14 +821,6 @@ theorem _root_.Ideal.restrictedReduction_restrictedMvPowerSeriesCompletionEquiv 
       J.restrictedReductionCompletion hJ x := by
   conv_rhs => rw [← (restrictedMvPowerSeriesCompletionEquiv k A).symm_apply_apply x]
   rw [restrictedMvPowerSeriesCompletionEquiv_symm_apply, Ideal.restrictedReductionCompletion_coe]
-
-/-- When the restricted-series subring is complete and Hausdorff, completed reduction agrees with
-`restrictedReduction` across `restrictedMvPowerSeriesCompletionAlgEquiv`. -/
-theorem _root_.Ideal.restrictedReductionCompletion_eq_restrictedReduction (J : Ideal A)
-    (hJ : IsOpen (J : Set A)) (x : restrictedMvPowerSeriesCompletion k A) :
-    J.restrictedReductionCompletion hJ x =
-      J.restrictedReduction hJ (restrictedMvPowerSeriesCompletionAlgEquiv k A x) := by
-  simp
 
 /-- When the restricted-series subring is complete and Hausdorff,
 `quotientRestrictedCompletionEquivMvPolynomialQuotient` agrees with transporting

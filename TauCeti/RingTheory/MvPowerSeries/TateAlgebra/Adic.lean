@@ -210,13 +210,15 @@ theorem isRestrictedSubringReduction_maximalIdeal_eq_restrictedReduction
     (hm : IsOpen ((IsLocalRing.maximalIdeal 𝒪[K] : Ideal 𝒪[K]) : Set 𝒪[K]))
     (f : IsRestricted.subring (R := 𝒪[K]) (fun _ : Fin k ↦ 1)) :
     (IsLocalRing.maximalIdeal 𝒪[K]).isRestrictedSubringReduction hm f =
-      restrictedReduction (restrictedIntegerEquiv f) :=
-  MvPolynomial.ext _ _ fun ν ↦
-    (Ideal.coeff_isRestrictedSubringReduction _ _ f ν).trans <|
-      (IsLocalRing.residue_def _).symm.trans <|
-        (congrArg (IsLocalRing.residue 𝒪[K])
-          (Subtype.ext (coeff_restrictedIntegerEquiv f ν).symm)).trans
-          (coeff_restrictedReduction (restrictedIntegerEquiv f) ν).symm
+      restrictedReduction (restrictedIntegerEquiv f) := by
+  -- `Valued.ResidueField K` (`IsLocalRing.ResidueField 𝒪[K]`) is definitionally
+  -- `𝒪[K] ⧸ IsLocalRing.maximalIdeal 𝒪[K]`, so `change` aligns the RHS type for
+  -- `coeff_restrictedReduction` and `rfl` closes the identical quotient terms after `simp`.
+  ext ν
+  change _ = (restrictedReduction (restrictedIntegerEquiv f)).coeff ν
+  rw [coeff_restrictedReduction]
+  simp [IsLocalRing.residue_def]
+  rfl
 
 end UnitBallBridge
 
@@ -269,6 +271,69 @@ theorem quotientIsRestrictedSubringEquivMvPolynomialQuotient_mk
       I.isRestrictedSubringReduction hI.isOpen f := by
   simp [quotientIsRestrictedSubringEquivMvPolynomialQuotient, Ideal.isRestrictedSubringReduction]
 
+/-- The inverse of `quotientIsRestrictedSubringEquivMvPolynomialQuotient` maps a polynomial
+reduction back to its quotient class. -/
+@[simp]
+theorem quotientIsRestrictedSubringEquivMvPolynomialQuotient_symm_isRestrictedSubringReduction
+    (hI : IsAdic I) (hfg : I.FG) (f : IsRestricted.subring (R := R) (fun _ : Fin k ↦ 1)) :
+    (quotientIsRestrictedSubringEquivMvPolynomialQuotient hI hfg).symm
+        (I.isRestrictedSubringReduction hI.isOpen f) =
+      Ideal.Quotient.mk _ f := by
+  rw [← quotientIsRestrictedSubringEquivMvPolynomialQuotient_mk hI hfg, AlgEquiv.symm_apply_apply]
+
+/-- The inverse of `quotientIsRestrictedSubringEquivMvPolynomialQuotient` sends each polynomial
+variable `Xᵢ` to the class of `X i`. -/
+@[simp]
+theorem quotientIsRestrictedSubringEquivMvPolynomialQuotient_symm_X
+    (hI : IsAdic I) (hfg : I.FG) (i : Fin k) :
+    (quotientIsRestrictedSubringEquivMvPolynomialQuotient hI hfg).symm (MvPolynomial.X i) =
+      Ideal.Quotient.mk _ ⟨X i, isRestricted_X _ i⟩ := by
+  rw [← Ideal.isRestrictedSubringReduction_X I hI.isOpen i,
+    quotientIsRestrictedSubringEquivMvPolynomialQuotient_symm_isRestrictedSubringReduction]
+
+/-- The inverse of `quotientIsRestrictedSubringEquivMvPolynomialQuotient` sends a constant
+polynomial `C (r mod I)` to `algebraMap R _ r`. -/
+@[simp]
+theorem quotientIsRestrictedSubringEquivMvPolynomialQuotient_symm_C_mk
+    (hI : IsAdic I) (hfg : I.FG) (r : R) :
+    (quotientIsRestrictedSubringEquivMvPolynomialQuotient (k := k) hI hfg).symm
+        (MvPolynomial.C (Ideal.Quotient.mk I r)) =
+      algebraMap R _ r := by
+  simpa [MvPolynomial.algebraMap_apply, Ideal.Quotient.algebraMap_eq] using
+    (quotientIsRestrictedSubringEquivMvPolynomialQuotient (k := k) hI hfg).symm.commutes r
+
+/-- `quotientIsRestrictedSubringEquivMvPolynomialQuotient` is the transport of
+`quotientRestrictedEquivMvPolynomialQuotient` across `restrictedMvPowerSeriesGaussAlgEquiv`. -/
+theorem quotientIsRestrictedSubringEquivMvPolynomialQuotient_eq_trans
+    (hI : IsAdic I) (hfg : I.FG) :
+    quotientIsRestrictedSubringEquivMvPolynomialQuotient (k := k) hI hfg =
+      (Ideal.quotientEquivAlg _ _ (restrictedMvPowerSeriesGaussAlgEquiv (n := k) (R := R)) (by
+        rw [Ideal.map_map, ← algebraMap_weightedRestrictedSubring]
+        exact congrArg (Ideal.map · I)
+          (restrictedMvPowerSeriesGaussAlgEquiv (n := k)
+            (R := R)).toAlgHom.comp_algebraMap.symm)).symm.trans
+        (quotientRestrictedEquivMvPolynomialQuotient hI hfg) := by
+  rfl
+
+/-- Reduction modulo a finitely generated ideal of definition `I` on `R⟨X₁, …, Xₖ⟩` has kernel
+`I · R⟨X₁, …, Xₖ⟩`. -/
+theorem _root_.Ideal.ker_isRestrictedSubringReduction (I : Ideal R) (hI : IsAdic I) (hfg : I.FG) :
+    RingHom.ker (I.isRestrictedSubringReduction (k := k) hI.isOpen) =
+      I.map (algebraMap R (IsRestricted.subring (R := R) (fun _ : Fin k ↦ 1))) := by
+  ext f
+  rw [RingHom.mem_ker, ← quotientIsRestrictedSubringEquivMvPolynomialQuotient_mk hI hfg,
+    map_eq_zero_iff _ (quotientIsRestrictedSubringEquivMvPolynomialQuotient hI hfg).injective,
+    Ideal.Quotient.eq_zero_iff_mem]
+
+/-- Membership in `I · R⟨X₁, …, Xₖ⟩` for a finitely generated ideal of definition `I` is
+coefficientwise membership in `I`. -/
+theorem mem_map_algebraMap_isRestricted_subring_iff_of_isAdic (hI : IsAdic I) (hfg : I.FG)
+    (f : IsRestricted.subring (R := R) (fun _ : Fin k ↦ 1)) :
+    f ∈ I.map (algebraMap R (IsRestricted.subring (R := R) (fun _ : Fin k ↦ 1))) ↔
+      ∀ ν, coeff ν (f : MvPowerSeries (Fin k) R) ∈ I := by
+  rw [← I.ker_isRestrictedSubringReduction hI hfg, RingHom.mem_ker, MvPolynomial.ext_iff]
+  simp [Ideal.Quotient.eq_zero_iff_mem]
+
 /-- For every `m : ℕ`, the quotient of `R⟨X₁, …, Xₖ⟩` by `(I · R⟨X⟩)ᵐ` is the polynomial algebra
 `(R ⧸ Iᵐ)[X₁, …, Xₖ]`. -/
 noncomputable def quotientIsRestrictedSubringPowEquivMvPolynomialQuotient
@@ -294,9 +359,108 @@ theorem quotientIsRestrictedSubringPowEquivMvPolynomialQuotient_mk
       (I ^ m).isRestrictedSubringReduction (hI.isOpen_pow m) f := by
   simp [quotientIsRestrictedSubringPowEquivMvPolynomialQuotient, Ideal.isRestrictedSubringReduction]
 
+/-- The inverse of `quotientIsRestrictedSubringPowEquivMvPolynomialQuotient` maps a polynomial
+reduction modulo `Iᵐ` back to its quotient class. -/
+@[simp]
+theorem quotientIsRestrictedSubringPowEquivMvPolynomialQuotient_symm_isRestrictedSubringReduction
+    (hI : IsAdic I) (hfg : I.FG) (m : ℕ) (f : IsRestricted.subring (R := R) (fun _ : Fin k ↦ 1)) :
+    (quotientIsRestrictedSubringPowEquivMvPolynomialQuotient hI hfg m).symm
+        ((I ^ m).isRestrictedSubringReduction (hI.isOpen_pow m) f) =
+      Ideal.Quotient.mk _ f := by
+  rw [← quotientIsRestrictedSubringPowEquivMvPolynomialQuotient_mk hI hfg m,
+    AlgEquiv.symm_apply_apply]
+
+/-- The inverse of `quotientIsRestrictedSubringPowEquivMvPolynomialQuotient` sends each polynomial
+variable `Xᵢ` to the class of `X i`. -/
+@[simp]
+theorem quotientIsRestrictedSubringPowEquivMvPolynomialQuotient_symm_X
+    (hI : IsAdic I) (hfg : I.FG) (m : ℕ) (i : Fin k) :
+    (quotientIsRestrictedSubringPowEquivMvPolynomialQuotient hI hfg m).symm (MvPolynomial.X i) =
+      Ideal.Quotient.mk _ ⟨X i, isRestricted_X _ i⟩ := by
+  rw [← Ideal.isRestrictedSubringReduction_X (I ^ m) (hI.isOpen_pow m) i,
+    quotientIsRestrictedSubringPowEquivMvPolynomialQuotient_symm_isRestrictedSubringReduction]
+
+/-- The inverse of `quotientIsRestrictedSubringPowEquivMvPolynomialQuotient` sends a constant
+polynomial `C (r mod Iᵐ)` to `algebraMap R _ r`. -/
+@[simp]
+theorem quotientIsRestrictedSubringPowEquivMvPolynomialQuotient_symm_C_mk
+    (hI : IsAdic I) (hfg : I.FG) (m : ℕ) (r : R) :
+    (quotientIsRestrictedSubringPowEquivMvPolynomialQuotient (k := k) hI hfg m).symm
+        (MvPolynomial.C (Ideal.Quotient.mk (I ^ m) r)) =
+      algebraMap R _ r := by
+  simpa [MvPolynomial.algebraMap_apply, Ideal.Quotient.algebraMap_eq] using
+    (quotientIsRestrictedSubringPowEquivMvPolynomialQuotient (k := k) hI hfg m).symm.commutes r
+
+/-- `quotientIsRestrictedSubringPowEquivMvPolynomialQuotient` is the transport of
+`quotientRestrictedPowEquivMvPolynomialQuotient` across `restrictedMvPowerSeriesGaussAlgEquiv`. -/
+theorem quotientIsRestrictedSubringPowEquivMvPolynomialQuotient_eq_trans
+    (hI : IsAdic I) (hfg : I.FG) (m : ℕ) :
+    quotientIsRestrictedSubringPowEquivMvPolynomialQuotient (k := k) hI hfg m =
+      (Ideal.quotientEquivAlg _ _ (restrictedMvPowerSeriesGaussAlgEquiv (n := k) (R := R)) (by
+        rw [← Ideal.map_pow, ← Ideal.map_pow, Ideal.map_map,
+          ← algebraMap_weightedRestrictedSubring]
+        exact congrArg (Ideal.map · (I ^ m))
+          (restrictedMvPowerSeriesGaussAlgEquiv (n := k)
+            (R := R)).toAlgHom.comp_algebraMap.symm)).symm.trans
+        (quotientRestrictedPowEquivMvPolynomialQuotient hI hfg m) := by
+  rfl
+
+/-- Ring homomorphisms into Gauss-normed `R⟨X₁, …, Xₖ⟩` are determined by their polynomial
+reductions modulo `Iⁿ⁺¹` for all `n : ℕ`. Neither completeness of `R` nor finite generation of `I`
+is required, since `R` is Hausdorff and reduction acts coefficientwise. -/
+theorem isRestrictedSubringReduction_pow_succ_ext (hI : IsAdic I)
+    {D : Type*} [NonAssocSemiring D]
+    {f g : D →+* IsRestricted.subring (R := R) (fun _ : Fin k ↦ 1)}
+    (h : ∀ n : ℕ, ((I ^ (n + 1)).isRestrictedSubringReduction (hI.isOpen_pow (n + 1))).comp f =
+      ((I ^ (n + 1)).isRestrictedSubringReduction (hI.isOpen_pow (n + 1))).comp g) :
+    f = g := by
+  have : IsHausdorff I R := hI.isHausdorff_iff.mpr inferInstance
+  refine RingHom.ext fun d ↦ Subtype.ext <| MvPowerSeries.ext <| congrFun <|
+    IsHausdorff.StrictMono.funext' I (fun _ _ hlt ↦ Nat.add_lt_add_right hlt 1)
+      (f := fun ν ↦ coeff ν (f d : MvPowerSeries (Fin k) R))
+      (g := fun ν ↦ coeff ν (g d : MvPowerSeries (Fin k) R)) fun n ν ↦ by
+        simpa only [RingHom.comp_apply, Ideal.coeff_isRestrictedSubringReduction] using
+          congrArg (fun p ↦ p.coeff ν) (congr($(h n) d))
+
 section Complete
 
 variable [CompleteSpace R]
+
+/-- Over a complete ultrametric normed ring `R`,
+`quotientIsRestrictedSubringEquivMvPolynomialQuotient` agrees with transporting
+`quotientRestrictedCompletionEquivMvPolynomialQuotient` across
+`restrictedMvPowerSeriesCompletionGaussAlgEquiv`. -/
+theorem quotientIsRestrictedSubringEquivMvPolynomialQuotient_eq_completion_trans
+    (hI : IsAdic I) (hfg : I.FG) :
+    quotientIsRestrictedSubringEquivMvPolynomialQuotient (k := k) hI hfg =
+      (Ideal.quotientEquivAlg _ _
+        (restrictedMvPowerSeriesCompletionGaussAlgEquiv (n := k) (R := R)) (by
+          rw [Ideal.map_map]
+          exact congrArg (Ideal.map · I)
+            (restrictedMvPowerSeriesCompletionGaussAlgEquiv (n := k)
+              (R := R)).toAlgHom.comp_algebraMap.symm)).symm.trans
+        (quotientRestrictedCompletionEquivMvPolynomialQuotient hI hfg) := by
+  ext x
+  obtain ⟨f, rfl⟩ := Ideal.Quotient.mk_surjective x
+  simp [← Ideal.isRestrictedSubringReduction_restrictedMvPowerSeriesCompletionGaussEquiv]
+
+/-- Over a complete ultrametric normed ring `R`,
+`quotientIsRestrictedSubringPowEquivMvPolynomialQuotient` agrees for every `m : ℕ` with
+transporting `quotientRestrictedCompletionPowEquivMvPolynomialQuotient` across
+`restrictedMvPowerSeriesCompletionGaussAlgEquiv`. -/
+theorem quotientIsRestrictedSubringPowEquivMvPolynomialQuotient_eq_completion_trans
+    (hI : IsAdic I) (hfg : I.FG) (m : ℕ) :
+    quotientIsRestrictedSubringPowEquivMvPolynomialQuotient (k := k) hI hfg m =
+      (Ideal.quotientEquivAlg _ _
+        (restrictedMvPowerSeriesCompletionGaussAlgEquiv (n := k) (R := R)) (by
+          rw [← Ideal.map_pow, ← Ideal.map_pow, Ideal.map_map]
+          exact congrArg (Ideal.map · (I ^ m))
+            (restrictedMvPowerSeriesCompletionGaussAlgEquiv (n := k)
+              (R := R)).toAlgHom.comp_algebraMap.symm)).symm.trans
+        (quotientRestrictedCompletionPowEquivMvPolynomialQuotient hI hfg m) := by
+  ext x
+  obtain ⟨f, rfl⟩ := Ideal.Quotient.mk_surjective x
+  simp [← Ideal.isRestrictedSubringReduction_restrictedMvPowerSeriesCompletionGaussEquiv]
 
 /-- Over a complete ultrametric normed ring `R` whose topology is `I`-adic for finitely generated
 `I`, `R⟨X₁, …, Xₖ⟩` is `(I · R⟨X⟩)`-adically complete and Hausdorff. -/
@@ -334,22 +498,6 @@ instance isStronglyNoetherian_isRestricted_subring_of_isAdicRing [IsAdicRing R]
     continuous_restrictedMvPowerSeriesCompletionGaussEquiv
     continuous_restrictedMvPowerSeriesCompletionGaussEquiv_symm).mp inferInstance
 
-/-- Over a complete ultrametric normed ring `R`, ring homomorphisms into Gauss-normed
-`R⟨X₁, …, Xₖ⟩` are determined by their polynomial reductions modulo `Iⁿ⁺¹` for all `n : ℕ`. -/
-theorem isRestrictedSubringReduction_pow_succ_ext (hI : IsAdic I) (hfg : I.FG)
-    {D : Type*} [NonAssocSemiring D]
-    {f g : D →+* IsRestricted.subring (R := R) (fun _ : Fin k ↦ 1)}
-    (h : ∀ n : ℕ, ((I ^ (n + 1)).isRestrictedSubringReduction (hI.isOpen_pow (n + 1))).comp f =
-      ((I ^ (n + 1)).isRestrictedSubringReduction (hI.isOpen_pow (n + 1))).comp g) :
-    f = g := by
-  let e := restrictedMvPowerSeriesCompletionGaussEquiv (n := k) (R := R)
-  have hext := restrictedReductionCompletion_pow_succ_ext hI hfg
-    (f := e.symm.toRingHom.comp f) (g := e.symm.toRingHom.comp g) fun n ↦ RingHom.ext fun d ↦ by
-      simpa only [e, RingHom.comp_apply, RingEquiv.toRingHom_eq_coe, RingHom.coe_coe,
-        ← Ideal.isRestrictedSubringReduction_restrictedMvPowerSeriesCompletionGaussEquiv _
-          (hI.isOpen_pow (n + 1)), RingEquiv.apply_symm_apply] using congr($(h n) d)
-  exact RingHom.ext fun d ↦ e.symm.injective congr($hext d)
-
 /-- **Inverse-limit lift into Gauss-normed `R⟨X₁, …, Xₖ⟩` over complete `R`.** A compatible family
 of ring homomorphisms `φₙ : D →+* (R ⧸ Iⁿ⁺¹)[X₁, …, Xₖ]` lifts to `D →+* R⟨X₁, …, Xₖ⟩`. -/
 noncomputable def liftCompatibleIsRestrictedSubringReduction (hI : IsAdic I) (hfg : I.FG)
@@ -360,6 +508,19 @@ noncomputable def liftCompatibleIsRestrictedSubringReduction (hI : IsAdic I) (hf
     D →+* IsRestricted.subring (R := R) (fun _ : Fin k ↦ 1) :=
   (restrictedMvPowerSeriesCompletionGaussEquiv (n := k) (R := R)).toRingHom.comp
     (liftCompatibleRestrictedReductionCompletion hI hfg φ hφ)
+
+/-- `liftCompatibleIsRestrictedSubringReduction` transports
+`liftCompatibleRestrictedReductionCompletion` along
+`restrictedMvPowerSeriesCompletionGaussEquiv`. -/
+theorem liftCompatibleIsRestrictedSubringReduction_eq_comp (hI : IsAdic I) (hfg : I.FG)
+    {D : Type*} [NonAssocSemiring D]
+    (φ : ∀ n : ℕ, D →+* MvPolynomial (Fin k) (R ⧸ I ^ (n + 1)))
+    (hφ : ∀ n : ℕ, (MvPolynomial.map (Ideal.Quotient.factorPowSucc I (n + 1))).comp
+      (φ (n + 1)) = φ n) :
+    liftCompatibleIsRestrictedSubringReduction hI hfg φ hφ =
+      (restrictedMvPowerSeriesCompletionGaussEquiv (n := k) (R := R)).toRingHom.comp
+        (liftCompatibleRestrictedReductionCompletion hI hfg φ hφ) := by
+  rfl
 
 /-- Reducing `liftCompatibleIsRestrictedSubringReduction` modulo `Iⁿ⁺¹` recovers `φ n`. -/
 @[simp]
@@ -391,7 +552,7 @@ theorem isRestrictedSubringReduction_liftCompatibleIsRestrictedSubringReduction
 
 /-- **Universal property of Gauss-normed `R⟨X₁, …, Xₖ⟩` over complete `R` as the inverse limit of
 `(R ⧸ Iⁿ⁺¹)[X₁, …, Xₖ]`.** -/
-theorem existsUnique_ringHom_comp_isRestrictedSubringReduction_pow_succ
+theorem existsUnique_ringHom_isRestrictedSubringReduction_pow_succ_comp_eq
     (hI : IsAdic I) (hfg : I.FG) {D : Type*} [NonAssocSemiring D]
     (φ : ∀ n : ℕ, D →+* MvPolynomial (Fin k) (R ⧸ I ^ (n + 1)))
     (hφ : ∀ n : ℕ, (MvPolynomial.map (Ideal.Quotient.factorPowSucc I (n + 1))).comp
@@ -400,21 +561,21 @@ theorem existsUnique_ringHom_comp_isRestrictedSubringReduction_pow_succ
       ((I ^ (n + 1)).isRestrictedSubringReduction (hI.isOpen_pow (n + 1))).comp ψ = φ n :=
   ⟨liftCompatibleIsRestrictedSubringReduction hI hfg φ hφ,
     isRestrictedSubringReduction_comp_liftCompatibleIsRestrictedSubringReduction hI hfg φ hφ,
-    fun _ hψ ↦ isRestrictedSubringReduction_pow_succ_ext hI hfg fun n ↦
+    fun _ hψ ↦ isRestrictedSubringReduction_pow_succ_ext hI fun n ↦
       (hψ n).trans (isRestrictedSubringReduction_comp_liftCompatibleIsRestrictedSubringReduction
         hI hfg φ hφ n).symm⟩
 
 /-- **Elementwise inverse-limit description of Gauss-normed `R⟨X₁, …, Xₖ⟩` over complete `R`.**
 Every compatible family of polynomials `pₙ ∈ (R ⧸ Iⁿ⁺¹)[X₁, …, Xₖ]` is the sequence of reductions of
 a unique restricted power series in `R⟨X₁, …, Xₖ⟩`. -/
-theorem existsUnique_isRestrictedSubringReduction_pow_succ (hI : IsAdic I) (hfg : I.FG)
+theorem existsUnique_isRestrictedSubringReduction_pow_succ_eq (hI : IsAdic I) (hfg : I.FG)
     (p : ∀ n : ℕ, MvPolynomial (Fin k) (R ⧸ I ^ (n + 1)))
     (hp : ∀ n : ℕ,
       MvPolynomial.map (Ideal.Quotient.factorPowSucc I (n + 1)) (p (n + 1)) = p n) :
     ∃! f : IsRestricted.subring (R := R) (fun _ : Fin k ↦ 1), ∀ n : ℕ,
       (I ^ (n + 1)).isRestrictedSubringReduction (hI.isOpen_pow (n + 1)) f = p n := by
   let e := restrictedMvPowerSeriesCompletionGaussEquiv (n := k) (R := R)
-  obtain ⟨x, hx, huniq⟩ := existsUnique_restrictedReductionCompletion_pow_succ hI hfg p hp
+  obtain ⟨x, hx, huniq⟩ := existsUnique_restrictedReductionCompletion_pow_succ_eq hI hfg p hp
   refine ⟨e x, fun n ↦
     (Ideal.isRestrictedSubringReduction_restrictedMvPowerSeriesCompletionGaussEquiv _ _ x).trans
       (hx n), fun f hf ↦ ?_⟩

@@ -90,7 +90,7 @@ specialisations are discharged with.
 * `TauCeti.Huber.isSMulRegular_restrictedMvPowerSeriesCompletion` : a scalar acting injectively
   on `A` acts injectively on `A⟨X₁,…,Xₖ⟩`.
 * `TauCeti.Huber.restrictedMvPowerSeriesCompletionFinZeroAlgEquiv` : at `k = 0`, the comparison
-  with `A` itself as an `A`-algebra equivalence.
+  with `A` itself as an `A`-algebra equivalence, continuous in both directions.
 
 ## Provenance
 
@@ -379,6 +379,15 @@ noncomputable def restrictedMvPowerSeriesCompletionFinZeroAlgEquiv :
     (AlgEquiv.ofRingEquiv
       (f := weightedRestrictedSubringFinZeroEquiv (fun _ : Fin 0 ↦ ({1} : Set A))) fun a ↦ by simp)
 
+/-- On any element of `A⟨⟩`, `restrictedMvPowerSeriesCompletionFinZeroAlgEquiv` composes the
+completion comparison with `weightedRestrictedSubringFinZeroEquiv`. -/
+theorem restrictedMvPowerSeriesCompletionFinZeroAlgEquiv_apply
+    (x : restrictedMvPowerSeriesCompletion 0 A) :
+    restrictedMvPowerSeriesCompletionFinZeroAlgEquiv A x =
+      weightedRestrictedSubringFinZeroEquiv (fun _ : Fin 0 ↦ ({1} : Set A))
+        (restrictedMvPowerSeriesCompletionEquiv 0 A x) := by
+  simp [restrictedMvPowerSeriesCompletionFinZeroAlgEquiv]
+
 /-- On the image of a zero-variable restricted series,
 `restrictedMvPowerSeriesCompletionFinZeroAlgEquiv` evaluates
 `weightedRestrictedSubringFinZeroEquiv`. -/
@@ -396,6 +405,30 @@ theorem restrictedMvPowerSeriesCompletionFinZeroAlgEquiv_symm_apply (a : A) :
     (restrictedMvPowerSeriesCompletionFinZeroAlgEquiv A).symm a =
       algebraMap A (restrictedMvPowerSeriesCompletion 0 A) a :=
   (restrictedMvPowerSeriesCompletionFinZeroAlgEquiv A).symm.commutes a
+
+/-- The zero-variable completion algebra equivalence `A⟨⟩ ≃ₐ[A] A` is continuous. -/
+theorem continuous_restrictedMvPowerSeriesCompletionFinZeroAlgEquiv :
+    Continuous (restrictedMvPowerSeriesCompletionFinZeroAlgEquiv A) := by
+  have h : ⇑(restrictedMvPowerSeriesCompletionFinZeroAlgEquiv A) =
+      ⇑(weightedRestrictedSubringFinZeroEquiv (fun _ : Fin 0 ↦ ({1} : Set A))) ∘
+        ⇑(restrictedMvPowerSeriesCompletionEquiv 0 A) :=
+    funext (restrictedMvPowerSeriesCompletionFinZeroAlgEquiv_apply (A := A))
+  rw [h]
+  exact (continuous_weightedRestrictedSubringFinZeroEquiv _).comp
+    (uniformContinuous_restrictedMvPowerSeriesCompletionEquiv (k := 0) (A := A)).continuous
+
+/-- The inverse of `restrictedMvPowerSeriesCompletionFinZeroAlgEquiv` is continuous. -/
+theorem continuous_restrictedMvPowerSeriesCompletionFinZeroAlgEquiv_symm :
+    Continuous (restrictedMvPowerSeriesCompletionFinZeroAlgEquiv A).symm := by
+  have h : ⇑(restrictedMvPowerSeriesCompletionFinZeroAlgEquiv A).symm =
+      ⇑(restrictedMvPowerSeriesCompletionEquiv 0 A).symm ∘
+        ⇑(weightedRestrictedSubringFinZeroEquiv (fun _ : Fin 0 ↦ ({1} : Set A))).symm := by
+    ext a
+    simp [restrictedMvPowerSeriesCompletionFinZeroAlgEquiv]
+  rw [h]
+  exact (uniformContinuous_restrictedMvPowerSeriesCompletionEquiv_symm
+    (k := 0) (A := A)).continuous.comp
+    (continuous_weightedRestrictedSubringFinZeroEquiv_symm _)
 
 end FinZero
 
