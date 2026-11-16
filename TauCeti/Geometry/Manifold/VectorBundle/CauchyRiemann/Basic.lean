@@ -213,7 +213,7 @@ theorem isZeroOneForm_dbarSMulRight (g : M → ℝ) (σ : Π x : M, V x) (x : M)
     simp [dbarSMulRight_apply, complexAntilinearPart_apply,
       -mvfderiv_apply_eq_mfderiv_apply]
   rw [isZeroOneForm_iff_isComplexAntilinear, h]
-  exact complexAntilinearPart_isComplexAntilinear (toEndomorphism_comp_toEndomorphism x)
+  exact isComplexAntilinear_complexAntilinearPart (toEndomorphism_comp_toEndomorphism x)
     Complex.toLinearMap_I_comp_toLinearMap_I _
 
 variable [∀ x, ContinuousSMul ℂ (V x)]
@@ -250,7 +250,7 @@ theorem toLinearMap_zeroOnePart {x : M} (η : TangentSpace I x →L[ℝ] V x) :
 theorem isZeroOneForm_zeroOnePart {x : M} (η : TangentSpace I x →L[ℝ] V x) :
     j.IsZeroOneForm (j.zeroOnePart η) := by
   rw [isZeroOneForm_iff_isComplexAntilinear, toLinearMap_zeroOnePart]
-  exact complexAntilinearPart_isComplexAntilinear (toEndomorphism_comp_toEndomorphism x)
+  exact isComplexAntilinear_complexAntilinearPart (toEndomorphism_comp_toEndomorphism x)
     Complex.toLinearMap_I_comp_toLinearMap_I _
 
 /-- A one-form is a `(0,1)`-form exactly when it is fixed by the `(0,1)`-projection. -/

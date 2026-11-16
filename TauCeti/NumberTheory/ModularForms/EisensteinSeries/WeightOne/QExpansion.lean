@@ -217,9 +217,7 @@ theorem qExpansion_charE1MF_coeff_of_isPrimitive [NeZero v] (huv : u * v ∣ N)
     (qExpansion 1 (charE1MF ψ φ huv)).coeff n =
       2 * (-2 * π * I) / v * gaussSum φ⁻¹ stdAddChar *
         DirichletCharacter.twistedDivisorSum 0 ψ φ n := by
-  have hφ' : (φ⁻¹).IsPrimitive := by
-    rw [DirichletCharacter.isPrimitive_def, DirichletCharacter.conductor_inv]
-    exact hφ
+  have hφ' : (φ⁻¹).IsPrimitive := hφ.inv
   rw [qExpansion_charE1MF_coeff ψ φ huv hpar]
   simp only [hn, ↓reduceIte]
   rw [DirichletCharacter.twistedDivisorSum_apply,
