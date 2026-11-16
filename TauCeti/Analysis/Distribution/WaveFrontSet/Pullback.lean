@@ -54,8 +54,9 @@ covector conormal to the subspace.
 * `Distribution.waveFrontAvoidsKer_adjoint_of_surjective`: the wave front condition holds for every
   distribution when `A` is surjective.
 * `Distribution.WaveFrontAvoidsKer.add`, `Distribution.WaveFrontAvoidsKer.smul`,
-  `Distribution.WaveFrontAvoidsKer.add_cutoff`: the condition is preserved by sums and scalar
-  multiples of distributions and by sums of cutoffs.
+  `Distribution.WaveFrontAvoidsKer.add_cutoff`, `Distribution.WaveFrontAvoidsKer.smul_cutoff`: the
+  condition is preserved by sums and scalar multiples of distributions and of cutoffs.
+* `Distribution.WaveFrontAvoidsKer.mono`: the condition passes to cutoffs with smaller support.
 * `Distribution.WaveFrontAvoidsKer.exists_pos_forall_decay`: under the condition, `T (φ e_η)`
   decays rapidly on `{η | ‖L η‖ < c ‖η‖}` for some `c > 0`.
 * `Distribution.integrable_localFourier_mul_fourier`: under the wave front condition, the integrand
@@ -63,7 +64,8 @@ covector conormal to the subspace.
 * `Distribution.cutoffPullback`: the pullback `A^* (φ T)`, a distribution on any open set of `E`,
   with its defining formula `Distribution.cutoffPullback_apply`.
 * `Distribution.cutoffPullback_add`, `Distribution.cutoffPullback_smul`: linearity in `T`.
-* `Distribution.cutoffPullback_add_cutoff`: additivity in the cutoff `φ`.
+* `Distribution.cutoffPullback_add_cutoff`, `Distribution.cutoffPullback_smul_cutoff`: linearity
+  in the cutoff `φ`.
 * `Distribution.cutoffPullback_apply_eq_integral`: if `T` is a function `f` smooth near the
   support of `φ`, then `A^* (φ T)` is the function `x ↦ φ (A x) f (A x)`.
 
@@ -142,6 +144,20 @@ theorem add_cutoff {T : 𝓓'(Ω', ℂ)} {φ φ' : 𝓓(Ω', ℂ)} (h : T.WaveFr
     (h' : T.WaveFrontAvoidsKer φ' L) : T.WaveFrontAvoidsKer (φ + φ') L := fun y hy ↦
   (tsupport_add φ φ' hy).elim (h y) (h' y)
 
+omit [FiniteDimensional ℝ E'] in
+/-- The wave front set of `T` avoids the kernel of `L` over the support of a cutoff `φ'` supported
+inside the support of `φ` when it does so over the support of `φ`. -/
+theorem mono {T : 𝓓'(Ω', ℂ)} {φ φ' : 𝓓(Ω', ℂ)} (h : T.WaveFrontAvoidsKer φ L)
+    (hφ : tsupport φ' ⊆ tsupport φ) : T.WaveFrontAvoidsKer φ' L := fun y hy ↦
+  h y (hφ hy)
+
+omit [FiniteDimensional ℝ E'] in
+/-- The wave front set of `T` avoids the kernel of `L` over the support of the cutoff `c • φ`
+when it does so over the support of `φ`. -/
+theorem smul_cutoff {T : 𝓓'(Ω', ℂ)} {φ : 𝓓(Ω', ℂ)} (c : ℂ) (h : T.WaveFrontAvoidsKer φ L) :
+    T.WaveFrontAvoidsKer (c • φ) L :=
+  h.mono (tsupport_smul_subset_right (fun _ ↦ c) φ)
+
 /-- **Decay near the kernel.** If the wave front set of `T` over the support of `φ` avoids the
 kernel of `L`, then the localized Fourier transform `T (φ e_η)` decays rapidly on a conic
 neighbourhood `{η | ‖L η‖ < c ‖η‖}` of that kernel. -/
@@ -203,14 +219,14 @@ private theorem mul_mul_pow_le {a b t s C₀ D K : ℝ} {k j : ℕ} (ha0 : 0 ≤
 /-- **The integrand is bounded uniformly in the test function.** Under the wave front condition
 there are an order `M` and a constant `B` such that, for every real function `ψ` smooth and
 supported in the compact set `K` whose first `M` derivatives are bounded by `C ≥ 0`, the integrand
-`T (φ e_η) 𝓕 ψ (-Aᵀ η)` is bounded by `B C (1 + ‖η‖) ^ (-(d + 1))`, with `d` the dimension of
-`E'`. -/
+`T (φ e_η) 𝓕 ψ (-Aᵀ η)` times `(1 + ‖η‖) ^ (d + 1)` is bounded by `B C`, with `d` the dimension
+of `E'`. -/
 private theorem exists_norm_mul_fourier_le {A : E →L[ℝ] E'} {T : 𝓓'(Ω', ℂ)}
     {φ : 𝓓(Ω', ℂ)} (h : T.WaveFrontAvoidsKer φ (A†)) {K : Set E} (hK : IsCompact K) :
     ∃ (M : ℕ) (B : ℝ), ∀ ψ : E → ℝ, ContDiff ℝ ∞ ψ → tsupport ψ ⊆ K → ∀ C, 0 ≤ C →
       (∀ p ≤ M, ∀ x, ‖iteratedFDeriv ℝ p ψ x‖ ≤ C) → ∀ η,
-        ‖T.localFourier φ η * 𝓕 (fun x ↦ (ψ x : ℂ)) (-(A†) η)‖ ≤
-          B * C * (1 + ‖η‖) ^ (-((Module.finrank ℝ E' : ℝ) + 1)) := by
+        ‖T.localFourier φ η * 𝓕 (fun x ↦ (ψ x : ℂ)) (-(A†) η)‖ *
+          (1 + ‖η‖) ^ (Module.finrank ℝ E' + 1) ≤ B * C := by
   set d := Module.finrank ℝ E'
   obtain ⟨c, hc, hdecay⟩ := h.exists_pos_forall_decay
   obtain ⟨C₁, hC₁⟩ := hdecay (d + 1)
@@ -226,11 +242,9 @@ private theorem exists_norm_mul_fourier_le {A : E →L[ℝ] E'} {T : 𝓓'(Ω', 
       ((tsupport_comp_subset (map_zero ofRealLI) ψ).trans hψK) (fun p hp x ↦ ?_) ζ
     rw [ofRealLI.norm_iteratedFDeriv_comp_left hψ.contDiffAt (by exact_mod_cast le_top)]
     exact hC p (hp.trans hj) x
-  have hpow : 0 < (1 + ‖η‖) ^ (d + 1) := by positivity
   have hF0 := hF 0 (Nat.zero_le _) (-(A†) η)
   rw [pow_zero, one_mul, pow_zero, one_mul] at hF0
-  rw [Real.rpow_neg (by positivity), ← Nat.cast_add_one, Real.rpow_natCast, ← div_eq_mul_inv,
-    le_div_iff₀ hpow, norm_mul]
+  rw [norm_mul]
   rcases lt_or_ge ‖(A†) η‖ (c * ‖η‖) with hlt | hge
   · -- Near the kernel of `Aᵀ`, `T (φ e_η)` decays rapidly.
     calc ‖T.localFourier φ η‖ * ‖𝓕 (fun x ↦ (ψ x : ℂ)) (-(A†) η)‖ * (1 + ‖η‖) ^ (d + 1)
@@ -255,6 +269,13 @@ private theorem exists_norm_mul_fourier_le {A : E →L[ℝ] E'} {T : 𝓓'(Ω', 
 
 variable [MeasurableSpace E'] [BorelSpace E']
 
+/-- The weight `(1 + ‖η‖) ^ (-(d + 1))`, with `d` the dimension of `E'`, is integrable. -/
+private theorem integrable_inv_one_add_norm_pow :
+    Integrable fun η : E' ↦ ((1 + ‖η‖) ^ (Module.finrank ℝ E' + 1))⁻¹ := by
+  refine (integrable_one_add_norm (r := (Module.finrank ℝ E' + 1 : ℕ)) (by simp)).congr
+    (Eventually.of_forall fun η ↦ ?_)
+  simp only [Real.rpow_neg (by positivity : 0 ≤ 1 + ‖η‖), Real.rpow_natCast]
+
 /-- **The integrand of the pullback is integrable.** Under the wave front condition, the integrand
 `T (φ e_η) 𝓕 ψ (-Aᵀ η)` defining the pullback `Distribution.cutoffPullback` is integrable for
 every real test function `ψ`. -/
@@ -263,22 +284,11 @@ theorem integrable_localFourier_mul_fourier {A : E →L[ℝ] E'} {T : 𝓓'(Ω',
     (ψ : 𝓓(Ω, ℝ)) :
     Integrable fun η ↦ T.localFourier φ η * 𝓕 (fun x ↦ (ψ x : ℂ)) (-(A†) η) := by
   obtain ⟨M, B, hB⟩ := exists_norm_mul_fourier_le h ψ.hasCompactSupport.isCompact
-  -- A common bound for the first `M` derivatives of `ψ`.
-  obtain ⟨C, hC⟩ : ∃ C, ∀ p ≤ M, ∀ x, ‖iteratedFDeriv ℝ p ψ x‖ ≤ C := by
-    choose C hC using fun p : Fin (M + 1) ↦
-      ((ψ.contDiff.continuous_iteratedFDeriv (m := (p : ℕ)) (by exact_mod_cast le_top)).norm
-        ).bounded_above_of_compact_support (ψ.hasCompactSupport.iteratedFDeriv (p : ℕ)).norm
-    refine ⟨∑ p, max (C p) 0, fun p hp x ↦ ?_⟩
-    have h1 := hC ⟨p, by omega⟩ x
-    rw [norm_norm] at h1
-    exact h1.trans ((le_max_left _ _).trans (Finset.single_le_sum (f := fun p ↦ max (C p) 0)
-      (fun _ _ ↦ le_max_right _ _) (Finset.mem_univ _)))
-  have hC0 : 0 ≤ C := (norm_nonneg _).trans (hC 0 (Nat.zero_le _) 0)
-  refine Integrable.mono' ((integrable_one_add_norm (by linarith)).const_mul (B * C)) ?_
-    (Eventually.of_forall (hB ψ ψ.contDiff subset_rfl C hC0 hC))
-  exact ((T.continuous_localFourier φ).mul
-    (ψ.integrable_ofReal.continuous_fourier.comp
-      (A†).continuous.neg)).aestronglyMeasurable
+  obtain ⟨C, hC0, hC⟩ := ψ.hasCompactSupport.exists_bound_iteratedFDeriv ψ.contDiff M
+  refine Integrable.mono' (integrable_inv_one_add_norm_pow.const_mul (B * C))
+    ((T.continuous_localFourier φ).mul (ψ.integrable_ofReal.continuous_fourier.comp
+      (A†).continuous.neg)).aestronglyMeasurable (Eventually.of_forall fun η ↦ ?_)
+  exact (le_mul_inv_iff₀ (by positivity)).2 (hB ψ ψ.contDiff subset_rfl C hC0 hC η)
 
 variable (A : E →L[ℝ] E') (T : 𝓓'(Ω', ℂ)) (φ : 𝓓(Ω', ℂ))
   (h : T.WaveFrontAvoidsKer φ (A†))
@@ -316,7 +326,7 @@ smooth function this is the pairing of `ψ` with `x ↦ φ (A x) T (A x)`
 def cutoffPullback : 𝓓'(Ω, ℂ) :=
   TestFunction.mkCLM ℝ (pullbackLM A T φ h) (map_add _) (map_smul _) fun K hK ↦ by
     obtain ⟨M, B, hB⟩ := exists_norm_mul_fourier_le h K.isCompact
-    set I := ∫ η : E', (1 + ‖η‖) ^ (-((Module.finrank ℝ E' : ℝ) + 1))
+    set I := ∫ η : E', ((1 + ‖η‖) ^ (Module.finrank ℝ E' + 1))⁻¹
     -- On test functions supported in `K`, the pairing is bounded by a seminorm of order `M`.
     refine (ContDiffMapSupportedIn.withSeminorms ..).continuous_of_isBounded
       (norm_withSeminorms ℝ ℂ) ((pullbackLM A T φ h).comp (ofSupportedInCLM ℝ hK).toLinearMap)
@@ -328,10 +338,9 @@ def cutoffPullback : 𝓓'(Ω, ℂ) :=
         (Seminorm.le_finset_sup_apply (Finset.mem_Iic.2 hp))
     simp only [Seminorm.comp_apply, coe_normSeminorm]
     calc ‖(pullbackLM A T φ h) (ofSupportedInCLM ℝ hK f)‖
-        ≤ ∫ η : E', B * S * (1 + ‖η‖) ^ (-((Module.finrank ℝ E' : ℝ) + 1)) :=
-          norm_integral_le_of_norm_le
-            ((integrable_one_add_norm (by linarith)).const_mul (B * S))
-            (Eventually.of_forall hbound)
+        ≤ ∫ η : E', B * S * ((1 + ‖η‖) ^ (Module.finrank ℝ E' + 1))⁻¹ :=
+          norm_integral_le_of_norm_le (integrable_inv_one_add_norm_pow.const_mul (B * S))
+            (Eventually.of_forall fun η ↦ (le_mul_inv_iff₀ (by positivity)).2 (hbound η))
       _ = B * I * S := by rw [integral_const_mul]; ring
       _ ≤ max B 0 * I * S := by gcongr; exact le_max_left _ _
 
@@ -371,6 +380,14 @@ theorem cutoffPullback_add_cutoff {φ' : 𝓓(Ω', ℂ)}
   simp only [add_apply, cutoffPullback_apply, localFourier_add_cutoff, add_mul]
   exact integral_add (integrable_localFourier_mul_fourier h ψ)
     (integrable_localFourier_mul_fourier h' ψ)
+
+/-- The pullback is complex-linear in the cutoff. -/
+theorem cutoffPullback_smul_cutoff (c : ℂ) :
+    (cutoffPullback A T (c • φ) (h.smul_cutoff c) : 𝓓'(Ω, ℂ)) =
+      c • cutoffPullback A T φ h := by
+  ext ψ
+  simp only [smul_apply, cutoffPullback_apply, localFourier_smul_cutoff, mul_assoc,
+    integral_const_mul, smul_eq_mul]
 
 /-- **The pullback of a smooth function.** If `T` coincides on an open set `U` containing the
 support of `φ` with a function `f` smooth on `U`, then `A^* (φ T)` is the function
