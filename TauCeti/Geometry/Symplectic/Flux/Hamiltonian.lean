@@ -32,11 +32,12 @@ A diffeotopy is **Hamiltonian** (`TauCeti.Diffeotopy.IsHamiltonian`) when every 
 `σ` and it has such a Hamiltonian. These are the smooth Hamiltonian isotopies of `(M, σ)`. The
 Hamiltonians compose as expected (`TauCeti.Diffeotopy.HasHamiltonian.trans`,
 `TauCeti.Diffeotopy.HasHamiltonian.symm`, `TauCeti.Diffeotopy.HasHamiltonian.transDiffeomorph`):
-for the pointwise composite `ψ_t ∘ φ_t` the function `(x, t) ↦ G (φ_t x, t) + F (x, t)` is a
-Hamiltonian, for the inverse `φ_t⁻¹` the function `(x, t) ↦ -F (φ_t⁻¹ x, t)`, and for the
-conjugate `f ∘ φ_t ∘ f⁻¹` by a diffeomorphism `f` the function `(y, t) ↦ F (f⁻¹ y, t)`, the last
-for the form `σ` with `F` a Hamiltonian for `f^* σ`. The flow of a complete Hamiltonian vector
-field `X_f` of a smooth function `f`, run for duration `a`, is Hamiltonian with Hamiltonian
+if every `ψ_t` preserves `σ`, then for the pointwise composite `ψ_t ∘ φ_t` the function
+`(x, t) ↦ G (φ_t x, t) + F (x, t)` is a Hamiltonian; if every `φ_t` preserves `σ`, then for the
+inverse `φ_t⁻¹` the function `(x, t) ↦ -F (φ_t⁻¹ x, t)` is one; and for the conjugate
+`f ∘ φ_t ∘ f⁻¹` by a diffeomorphism `f` the function `(y, t) ↦ F (f⁻¹ y, t)` is one for the form
+`σ` when `F` is a Hamiltonian for `f^* σ`. The flow of a complete Hamiltonian vector field `X_f`
+of a smooth function `f`, run for duration `a`, is Hamiltonian with Hamiltonian
 `(x, t) ↦ a f(x)` (`TauCeti.Diffeotopy.hasHamiltonian_globalFlowDiffeotopy`).
 
 The flux form of a diffeotopy with a Hamiltonian is exact
