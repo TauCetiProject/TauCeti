@@ -636,3 +636,21 @@ theorem reindexGL_transvectionUnit (e : n ≃ m) (hij : i ≠ j) (a : A) :
     submatrix_one_equiv]
 
 end Equiv
+
+namespace RingHom
+
+open TauCeti
+
+variable {A B n : Type*} [Ring A] [Ring B] [Fintype n] [DecidableEq n]
+
+/-- Applying a ring homomorphism entrywise to a transvection applies it to the coefficient.
+This holds for noncommutative rings as well. -/
+@[simp]
+theorem unitsMap_mapMatrix_transvectionUnit (f : A →+* B) {i j : n} (hij : i ≠ j) (a : A) :
+    Units.map (f.mapMatrix (m := n) : Matrix n n A →* Matrix n n B)
+      (transvectionUnit hij a) = transvectionUnit hij (f a) := by
+  ext r s
+  simp [Matrix.single_apply, Matrix.one_apply]
+  split_ifs <;> simp_all
+
+end RingHom
