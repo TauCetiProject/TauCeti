@@ -262,8 +262,8 @@ private theorem cubeVertexSplit_single (v : Fin 3 → ℤˣ) (c : k) :
     Module.Basis.constr_basis]
   simp [smul_single, mul_comm]
 
-/-- Sends `(e_j, 0)` to `u (v + (-v))` and `(0, e_j)` to `u (v - (-v))`, for `v` the endpoint
-`TauCeti.cubeBodyDiagonal j`; for `u = 1 / 2` it inverts `cubeVertexSplit`. -/
+/-- Sends `(e_j, 0)` to `u (e_v + e_{-v})` and `(0, e_j)` to `u (e_v - e_{-v})`, for `v` the
+endpoint `TauCeti.cubeBodyDiagonal j`; for `u = 1 / 2` it inverts `cubeVertexSplit`. -/
 private noncomputable def cubeVertexJoin (u : k) :
     MonoidAlgebra k (Fin 4) × MonoidAlgebra k (Fin 4) →ₗ[k] MonoidAlgebra k (Fin 3 → ℤˣ) :=
   ((MonoidAlgebra.basis _ k).constr k fun i ↦
@@ -356,7 +356,7 @@ theorem cubeVertexRepresentationDiagonalEquiv_single (h : IsUnit (2 : k)) (v : F
         single (cubeBodyDiagonalIndex v) ((((∏ i, v i : ℤˣ) : ℤ) : k) * c)) :=
   cubeVertexSplit_single v c
 
-/-- The inverse splitting sends `(c e_j, c' e_j)` to `½ ((c + c') v + (c - c') (-v))`, for `v`
+/-- The inverse splitting sends `(c e_j, c' e_j)` to `½ ((c + c') e_v + (c - c') e_{-v})`, for `v`
 the endpoint `TauCeti.cubeBodyDiagonal j` of the body diagonal `j`. -/
 @[simp]
 theorem cubeVertexRepresentationDiagonalEquiv_symm_single_single (h : IsUnit (2 : k))
@@ -366,8 +366,8 @@ theorem cubeVertexRepresentationDiagonalEquiv_symm_single_single (h : IsUnit (2 
         (single (cubeBodyDiagonal j) (c + c') + single (-cubeBodyDiagonal j) (c - c')) :=
   cubeVertexJoin_single_single _ j c c'
 
-/-- The inverse splitting sends the even basis vector `(c e_j, 0)` to `½ (c v + c (-v))`, for `v`
-the endpoint `TauCeti.cubeBodyDiagonal j` of the body diagonal `j`. -/
+/-- The inverse splitting sends the even basis vector `(c e_j, 0)` to `½ (c e_v + c e_{-v})`,
+for `v` the endpoint `TauCeti.cubeBodyDiagonal j` of the body diagonal `j`. -/
 @[simp]
 theorem cubeVertexRepresentationDiagonalEquiv_symm_single_zero (h : IsUnit (2 : k))
     (j : Fin 4) (c : k) :
@@ -375,7 +375,7 @@ theorem cubeVertexRepresentationDiagonalEquiv_symm_single_zero (h : IsUnit (2 : 
       Ring.inverse (2 : k) • (single (cubeBodyDiagonal j) c + single (-cubeBodyDiagonal j) c) := by
   simpa using cubeVertexRepresentationDiagonalEquiv_symm_single_single h j c 0
 
-/-- The inverse splitting sends the odd basis vector `(0, c e_j)` to `½ (c v - c (-v))`, for `v`
+/-- The inverse splitting sends the odd basis vector `(0, c e_j)` to `½ (c e_v - c e_{-v})`, for `v`
 the endpoint `TauCeti.cubeBodyDiagonal j` of the body diagonal `j`. -/
 @[simp]
 theorem cubeVertexRepresentationDiagonalEquiv_symm_zero_single (h : IsUnit (2 : k))
@@ -393,8 +393,8 @@ private theorem isUnit_card_fin_four (h : IsUnit (2 : k)) : IsUnit (Fintype.card
 `k[Fin 4]` of `TauCeti.cubeVertexRepresentationDiagonalEquiv` splits as the trivial line of the
 sum of the diagonals plus the standard representation on the sum-zero vectors, and the odd part
 `sgn ⊗ k[Fin 4]` as the sign line plus the sign-twisted standard representation, both through
-`TauCeti.ofMulActionEquivProdAugmentation`. In characteristic zero these four summands are
-irreducible and pairwise inequivalent. -/
+`TauCeti.ofMulActionEquivProdAugmentation`. Over a field of characteristic zero these four summands
+are irreducible and pairwise inequivalent. -/
 noncomputable def cubeVertexRepresentationEquiv (h : IsUnit (2 : k)) :
     (cubeVertexRepresentation k).Equiv
       ((Representation.trivial k (Perm (Fin 4)) k).prod
