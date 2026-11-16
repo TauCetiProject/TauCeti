@@ -84,13 +84,6 @@ variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
   {G : Type*} [Group G] [MulAction G M]
   {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F] {k : ℕ}
 
--- Cache the canonical alternating-map instances: instance search for the measure-theoretic
--- structure on spaces of alternating maps otherwise fails.
-private local instance {k : ℕ} : NormedAddCommGroup (E [⋀^Fin k]→L[ℝ] F) :=
-  ContinuousAlternatingMap.instNormedAddCommGroup
-private local instance {k : ℕ} : NormedSpace ℝ (E [⋀^Fin k]→L[ℝ] F) :=
-  ContinuousAlternatingMap.instNormedSpace
-
 /-- The pullback of `α` by the action of `a`, at `x`, read as an alternating map on the model
 vector space. -/
 private def pullbackSMulForm (α : SmoothForm I M F k) (a : G) (x : M) : E [⋀^Fin k]→L[ℝ] F :=
@@ -98,6 +91,21 @@ private def pullbackSMulForm (α : SmoothForm I M F k) (a : G) (x : M) : E [⋀^
   -- the value as an alternating map on `E`, so that it can be integrated in the fixed normed space
   -- `E [⋀^Fin k]→L[ℝ] F`, which carries the norm that the fibre `T_x M [⋀^Fin k]→L[ℝ] F` lacks.
   @id (E [⋀^Fin k]→L[ℝ] F) (mpullback I I (a • ·) α.1 x)
+
+omit [IsManifold I ∞ M] in
+/-- A point of the target of the extended chart at `x₀` is sent back into the chart domain. -/
+private theorem extChartAt_symm_mem_chart_source {x₀ : M} {z : E}
+    (hz : z ∈ (extChartAt I x₀).target) : (extChartAt I x₀).symm z ∈ (chartAt H x₀).source := by
+  simpa only [extChartAt_source] using (extChartAt I x₀).map_target hz
+
+variable (I) in
+/-- At a point `x` of the chart domain at `x₀`, the trivialization at `x₀` of the bundle of
+alternating maps, read on the model space, is a continuous linear automorphism of the fibre. -/
+private def trivializationAtEquiv (x₀ : M) {x : M} (hx : x ∈ (chartAt H x₀).source) :
+    (E [⋀^Fin k]→L[ℝ] F) ≃L[ℝ] (E [⋀^Fin k]→L[ℝ] F) :=
+  (trivializationAt (E [⋀^Fin k]→L[ℝ] F)
+    (fun y : M ↦ TangentSpace I y [⋀^Fin k]→L[ℝ] Trivial M F y) x₀).continuousLinearEquivAt ℝ x
+    (by simpa using hx)
 
 section Rough
 
@@ -121,13 +129,8 @@ private theorem trivializationAt_averageForm (α : SmoothForm I M F k) (x₀ : M
         ⟨x, averageForm μ α x⟩).2 =
       ∫ a, (trivializationAt (E [⋀^Fin k]→L[ℝ] F)
         (fun y : M ↦ TangentSpace I y [⋀^Fin k]→L[ℝ] Trivial M F y) x₀
-        ⟨x, mpullback I I (a • ·) α.1 x⟩).2 ∂μ := by
-  set e := trivializationAt (E [⋀^Fin k]→L[ℝ] F)
-    (fun y : M ↦ TangentSpace I y [⋀^Fin k]→L[ℝ] Trivial M F y) x₀
-  have hx' : x ∈ e.baseSet := by simpa [e] using hx
-  -- Read on the model space, the trivialization at `x` is a linear automorphism of the fibre.
-  let L : (E [⋀^Fin k]→L[ℝ] F) ≃L[ℝ] (E [⋀^Fin k]→L[ℝ] F) := e.continuousLinearEquivAt ℝ x hx'
-  exact (L.integral_comp_comm fun a ↦ pullbackSMulForm α a x).symm
+        ⟨x, mpullback I I (a • ·) α.1 x⟩).2 ∂μ :=
+  ((trivializationAtEquiv I x₀ hx).integral_comp_comm fun a ↦ pullbackSMulForm α a x).symm
 
 /-- Averaging the pullbacks is homogeneous. -/
 private theorem averageModel_smul (c : ℝ) (α : SmoothForm I M F k) (x : M) :
@@ -186,11 +189,7 @@ private theorem contMDiffAt_trivializationAt_mpullback_smul (α : SmoothForm I M
 /-- The pullbacks of a smooth form by the action depend continuously on the group element. -/
 private theorem continuous_pullbackSMulForm (α : SmoothForm I M F k) (x : M) :
     Continuous fun a : G ↦ pullbackSMulForm α a x := by
-  set e := trivializationAt (E [⋀^Fin k]→L[ℝ] F)
-    (fun y : M ↦ TangentSpace I y [⋀^Fin k]→L[ℝ] Trivial M F y) x
-  have hx : x ∈ e.baseSet := FiberBundle.mem_baseSet_trivializationAt' x
-  -- Read on the model space, the trivialization at `x` is a linear automorphism of the fibre.
-  let L : (E [⋀^Fin k]→L[ℝ] F) ≃L[ℝ] (E [⋀^Fin k]→L[ℝ] F) := e.continuousLinearEquivAt ℝ x hx
+  let L := trivializationAtEquiv (F := F) (k := k) I x (mem_chart_source H x)
   have h : Continuous fun a : G ↦ L (pullbackSMulForm α a x) :=
     continuous_iff_continuousAt.2 fun a ↦
       (contMDiffAt_trivializationAt_mpullback_smul J α x (p := (x, a))
@@ -230,14 +229,13 @@ private theorem contMDiffOn_inChartAt_mpullback_smul (α : SmoothForm I M F k) (
   have hopen : IsOpen ((extChartAt I x₀).target ×ˢ (univ : Set G)) :=
     (isOpen_extChartAt_target x₀).prod isOpen_univ
   intro p hp
-  have hsource : (extChartAt I x₀).symm p.1 ∈ (chartAt H x₀).source := by
-    simpa only [extChartAt_source] using (extChartAt I x₀).map_target hp.1
   have hsymm : ContMDiffAt (𝓘(ℝ, E).prod J) (I.prod J) ∞
       (fun q : E × G ↦ ((extChartAt I x₀).symm q.1, q.2)) p :=
     (((contMDiffOn_extChartAt_symm x₀).contMDiffAt
       ((isOpen_extChartAt_target x₀).mem_nhds hp.1)).comp p contMDiffAt_fst).prodMk
       contMDiffAt_snd
-  refine (((contMDiffAt_trivializationAt_mpullback_smul J α x₀ hsource).comp p hsymm).of_le
+  refine (((contMDiffAt_trivializationAt_mpullback_smul J α x₀
+    (extChartAt_symm_mem_chart_source hp.1)).comp p hsymm).of_le
     (by simp)).contMDiffWithinAt.congr_of_eventuallyEq ?_ ?_
   · filter_upwards [nhdsWithin_le_nhds (hopen.mem_nhds hp)] with q hq
     exact RoughForm.inChartAt_eq_trivializationAt _ x₀ hq.1
@@ -360,19 +358,18 @@ theorem mextDerivₗ_measureAverage (α : SmoothForm I M F k) :
   have hchart : RoughForm.inChartAt (F := F) (measureAverage J μ α).1 x =ᶠ[𝓝 (extChartAt I x x)]
       fun z ↦ ∫ a, (TauCeti.mpullback (F := F) I I (a • ·) α.1).inChartAt x z ∂μ := by
     filter_upwards [htarget] with z hz
-    have hsource : (extChartAt I x).symm z ∈ (chartAt H x).source := by
-      simpa only [extChartAt_source] using (extChartAt I x).map_target hz
     rw [RoughForm.inChartAt_eq_trivializationAt _ x hz, val_measureAverage]
-    refine (trivializationAt_averageForm μ α x hsource).trans ?_
+    refine (trivializationAt_averageForm μ α x
+      (extChartAt_symm_mem_chart_source hz)).trans ?_
     exact integral_congr_ae (Eventually.of_forall fun a ↦
       (RoughForm.inChartAt_eq_trivializationAt _ x hz).symm)
   have hpull (a : G) : TauCeti.mpullback (F := F) I I (a • ·) (mextDeriv α.1) =
       mextDeriv (TauCeti.mpullback (F := F) I I (a • ·) α.1) :=
     mpullback_mextDeriv ((contMDiff_smul_left J a).of_le (by simp))
       ((isSmoothBundleForm_def 1 α.1).mpr (α.contMDiff.of_le (by simp)))
-  rw [mextDerivₗ_apply, mextDeriv_def, I.range_eq_univ, extDerivWithin_univ,
-    hchart.extDeriv_eq, extDeriv_integral_of_contMDiffOn (isOpen_extChartAt_target x)
-      (mem_extChartAt_target x) (contMDiffOn_inChartAt_mpullback_smul J α x)]
+  rw [mextDerivₗ_apply, mextDeriv_eq_extDeriv_inChartAt, hchart.extDeriv_eq,
+    extDeriv_integral_of_contMDiffOn (isOpen_extChartAt_target x) (mem_extChartAt_target x)
+      (contMDiffOn_inChartAt_mpullback_smul J α x)]
   have key : (∫ a, extDeriv (fun z ↦ RoughForm.inChartAt (F := F)
         (TauCeti.mpullback (F := F) I I (a • ·) α.1) x z) (extChartAt I x x) ∂μ :
         E [⋀^Fin (k + 1)]→L[ℝ] F) =
@@ -381,7 +378,7 @@ theorem mextDerivₗ_measureAverage (α : SmoothForm I M F k) :
     refine integral_congr_ae (Eventually.of_forall fun a ↦ ?_)
     dsimp only
     unfold pullbackSMulForm
-    rw [mextDerivₗ_apply, hpull, mextDeriv_def, I.range_eq_univ, extDerivWithin_univ]
+    rw [mextDerivₗ_apply, hpull, mextDeriv_eq_extDeriv_inChartAt]
     -- The sides differ by the `@id` ascription in `pullbackSMulForm` and an eta-expansion.
     exact (id_eq _).symm
   rw [val_measureAverage]
