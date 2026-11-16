@@ -65,132 +65,68 @@ private theorem exists_stopped_dyadic_single
     have hsb : s ≤ b := le_min hst hsT
     have hbT : b ≤ T := min_le_right t T
     let N : ℕ := ⌊b * (2 : ℝ≥0) ^ k⌋₊ + 1
-    let p : ℕ → ℝ≥0 := fun j ↦
-      match j with
-      | 0 => s
-      | m + 1 => min b (max s ((m : ℝ≥0) / (2 : ℝ≥0) ^ k))
-    have hp_mono : Monotone p := by
-      intro i j hij
-      cases i with
-      | zero =>
-        cases j with
-        | zero => exact le_rfl
-        | succ m => exact le_min hsb (le_max_left _ _)
-      | succ m =>
-        cases j with
-        | zero => omega
-        | succ m' =>
-          have hm : m ≤ m' := Nat.le_of_succ_le_succ hij
-          refine min_le_min_left b (max_le_max_left s ?_)
-          exact div_le_div_of_nonneg_right (Nat.cast_le.mpr hm) (by positivity)
-    have hp_ge (j : ℕ) : s ≤ p j := hp_mono (Nat.zero_le j)
-    have hp_le (j : ℕ) : p j ≤ b := by
-      cases j with
-      | zero => exact hsb
-      | succ m => exact min_le_left _ _
-    have hp_end : p (N + 1) = b := by
+    let p (j : ℕ) : ℝ≥0 := min b (max s ((j : ℝ≥0) / (2 : ℝ≥0) ^ k))
+    have hp_mono : Monotone p := fun _ _ h ↦
+      min_le_min_left b (max_le_max_left s (div_le_div_of_nonneg_right (Nat.cast_le.mpr h)
+        (by positivity)))
+    have hp0 : p 0 = s := by simp [p, min_eq_right hsb]
+    have hp_ge (j : ℕ) : s ≤ p j := le_min hsb (le_max_left _ _)
+    have hp_le (j : ℕ) : p j ≤ b := min_le_left _ _
+    have hp_end : p N = b := by
       have hgt : b < (N : ℝ≥0) / (2 : ℝ≥0) ^ k := by
         rw [lt_div_iff₀ (by positivity)]
         simpa only [N, Nat.cast_add, Nat.cast_one] using Nat.lt_floor_add_one (b * (2 : ℝ≥0) ^ k)
-      simp only [p, min_eq_left (le_max_of_le_right hgt.le)]
+      exact min_eq_left (le_max_of_le_right hgt.le)
     -- No dyadic stopping value can fall strictly inside `(p j, p (j + 1))`.
     have hno_split (j : ℕ) (ω : Ω) (hgt : (p j : WithTop ℝ≥0) < σ ω) :
         (p (j + 1) : WithTop ℝ≥0) ≤ σ ω := by
       by_contra hnot
       have hlt : σ ω < (p (j + 1) : WithTop ℝ≥0) := lt_of_not_ge hnot
       cases hτω : τ ω with
-      | top =>
-        simp only [σ, hτω, dyadicCeilTime_top] at hlt
-        exact not_top_lt hlt
+      | top => simp only [σ, hτω, dyadicCeilTime_top] at hlt; exact not_top_lt hlt
       | coe v =>
         set r : ℕ := ⌈v * (2 : ℝ≥0) ^ k⌉₊
         have hσeq : σ ω = (↑((r : ℝ≥0) / (2 : ℝ≥0) ^ k) : WithTop ℝ≥0) := by
           simp only [σ, hτω, dyadicCeilTime_coe, r]
         rw [hσeq, WithTop.coe_lt_coe] at hgt hlt
-        cases j with
-        | zero =>
-          have hp1 : p 1 = s := by simp [p, hsb]
-          rw [hp1] at hlt
-          exact lt_asymm hgt hlt
-        | succ m =>
-          have hrb : (r : ℝ≥0) / (2 : ℝ≥0) ^ k < b := lt_of_lt_of_le hlt (hp_le (m + 2))
-          have hsr : s < (r : ℝ≥0) / (2 : ℝ≥0) ^ k := lt_of_le_of_lt (hp_ge (m + 1)) hgt
-          have h1 : (m : ℝ≥0) / (2 : ℝ≥0) ^ k < (r : ℝ≥0) / (2 : ℝ≥0) ^ k := by
-            have hpm : max s ((m : ℝ≥0) / (2 : ℝ≥0) ^ k) < (r : ℝ≥0) / (2 : ℝ≥0) ^ k := by
-              by_contra hge
-              have hle := le_of_not_gt hge
-              have hmin : (r : ℝ≥0) / (2 : ℝ≥0) ^ k ≤ p (m + 1) := le_min hrb.le hle
-              exact not_lt_of_ge hmin hgt
-            exact lt_of_le_of_lt (le_max_right _ _) hpm
-          have h2 : (r : ℝ≥0) / (2 : ℝ≥0) ^ k < ((m + 1 : ℕ) : ℝ≥0) / (2 : ℝ≥0) ^ k := by
-            have hlt' : (r : ℝ≥0) / (2 : ℝ≥0) ^ k <
-                max s (((m + 1 : ℕ) : ℝ≥0) / (2 : ℝ≥0) ^ k) :=
-              lt_of_lt_of_le hlt (min_le_right _ _)
-            rcases lt_max_iff.mp hlt' with hbad | hok
-            · exact (lt_asymm hsr hbad).elim
-            · exact hok
-          have hpow : (0 : ℝ≥0) < (2 : ℝ≥0) ^ k := by positivity
-          have hmr : m < r := Nat.cast_lt.mp ((div_lt_div_iff_of_pos_right hpow).mp h1)
-          have hrm : r < m + 1 := Nat.cast_lt.mp ((div_lt_div_iff_of_pos_right hpow).mp h2)
-          omega
+        have hrb : (r : ℝ≥0) / (2 : ℝ≥0) ^ k < b := lt_of_lt_of_le hlt (min_le_left _ _)
+        have hsr : s < (r : ℝ≥0) / (2 : ℝ≥0) ^ k := lt_of_le_of_lt (hp_ge j) hgt
+        have h1 : (j : ℝ≥0) / (2 : ℝ≥0) ^ k < (r : ℝ≥0) / (2 : ℝ≥0) ^ k :=
+          lt_of_le_of_lt (le_max_right _ _) ((min_lt_iff.mp hgt).resolve_left (not_lt_of_gt hrb))
+        have h2 : (r : ℝ≥0) / (2 : ℝ≥0) ^ k < ((j + 1 : ℕ) : ℝ≥0) / (2 : ℝ≥0) ^ k :=
+          (lt_max_iff.mp (lt_of_lt_of_le hlt (min_le_right _ _))).resolve_left (not_lt_of_gt hsr)
+        have hpow : (0 : ℝ≥0) < (2 : ℝ≥0) ^ k := by positivity
+        have := Nat.cast_lt.mp ((div_lt_div_iff_of_pos_right hpow).mp h1)
+        have := Nat.cast_lt.mp ((div_lt_div_iff_of_pos_right hpow).mp h2)
+        omega
     have hσ : IsStoppingTime ℱ σ := hτ.dyadicCeilTime k
     let ζ : ℕ → Ω → ℝ := fun j ω ↦ if (p j : WithTop ℝ≥0) < σ ω then ξ ω else 0
-    have hζ_meas (j : ℕ) (_ : j < N + 1) : StronglyMeasurable[ℱ (p j)] (ζ j) := by
-      have hset : MeasurableSet[ℱ (p j)] {ω | (p j : WithTop ℝ≥0) < σ ω} := by
-        have heq : {ω | (p j : WithTop ℝ≥0) < σ ω} = {ω | σ ω ≤ (p j : WithTop ℝ≥0)}ᶜ := by
-          ext ω
-          simp only [Set.mem_ofPred_eq, Set.mem_compl_iff, not_le]
-        rw [heq]
-        exact (hσ.measurableSet_le (p j)).compl
-      exact (hξ.mono (ℱ.mono (hp_ge j))).ite hset stronglyMeasurable_zero
-    have hζ_bdd (j : ℕ) (_ : j < N + 1) : ∃ C : ℝ, ∀ ω, |ζ j ω| ≤ C := by
-      obtain ⟨C, hC⟩ := hC
-      refine ⟨max C 0, fun ω ↦ ?_⟩
-      simp only [ζ]
-      split_ifs
-      · exact (hC ω).trans (le_max_left _ _)
-      · simp
-    let E : ElementaryIntegrand ℱ :=
-      ElementaryIntegrand.ofSimple (N + 1) p ζ (hp_mono.monotoneOn _) hζ_meas hζ_bdd
-    refine ⟨E, fun u huT ω ↦ ?_, fun X ω ↦ ?_⟩
-    · rw [ElementaryIntegrand.toProcess_ofSimple, Finance.simpleHolding_def]
+    have hζ_meas (j : ℕ) (_ : j < N) : StronglyMeasurable[ℱ (p j)] (ζ j) :=
+      (hξ.mono (ℱ.mono (hp_ge j))).ite
+        (by convert (hσ.measurableSet_le (p j)).compl using 1
+            ext ω; simp only [Set.mem_ofPred_eq, Set.mem_compl_iff, not_le])
+        stronglyMeasurable_zero
+    obtain ⟨C, hC⟩ := hC
+    have hζ_bdd (j : ℕ) (_ : j < N) : ∃ C' : ℝ, ∀ ω, |ζ j ω| ≤ C' :=
+      ⟨max C 0, fun ω ↦ by
+        dsimp only [ζ]; split_ifs
+        · exact (hC ω).trans (le_max_left _ _)
+        · simp⟩
+    refine ⟨ElementaryIntegrand.ofSimple N p ζ (hp_mono.monotoneOn _) hζ_meas hζ_bdd,
+      fun u huT ω ↦ ?_, fun X ω ↦ ?_⟩
+    · rw [ElementaryIntegrand.toProcess_ofSimple]
       by_cases hu : u ∈ Ioc s b
-      · have hex : ∃ j ∈ Finset.range (N + 1), u ∈ Ioc (p j) (p (j + 1)) := by
-          have hmem : u ∈ Ioc (p 0) (p (N + 1)) := by simpa only [p, hp_end] using hu
-          clear hno_split hζ_meas hζ_bdd E hu huT
-          suffices ∀ M : ℕ, u ∈ Ioc (p 0) (p M) →
-              ∃ j ∈ Finset.range M, u ∈ Ioc (p j) (p (j + 1)) from this (N + 1) hmem
-          intro M
-          induction M with
-          | zero => intro h; exact (not_lt_of_ge h.2 h.1).elim
-          | succ M ih =>
-            intro h
-            by_cases hM : u ≤ p M
-            · obtain ⟨j, hj, hju⟩ := ih ⟨h.1, hM⟩
-              exact ⟨j, Finset.mem_range.mpr (Nat.lt_succ_of_lt (Finset.mem_range.mp hj)), hju⟩
-            · exact ⟨M, Finset.mem_range.mpr (Nat.lt_succ_self M), lt_of_not_ge hM, h.2⟩
-        obtain ⟨j₀, hj₀, hju⟩ := hex
-        rw [Finset.sum_eq_single j₀]
-        · rw [indicator_of_mem hju]
-          have hut : u ∈ Ioc s t := ⟨hu.1, hu.2.trans (min_le_left t T)⟩
-          rw [indicator_of_mem hut]
-          have hiff : (p j₀ : WithTop ℝ≥0) < σ ω ↔ (u : WithTop ℝ≥0) ≤ σ ω := by
-            constructor
-            · intro hlt
-              exact (WithTop.coe_le_coe.mpr hju.2).trans (hno_split j₀ ω hlt)
-            · intro hle
-              exact lt_of_lt_of_le (WithTop.coe_lt_coe.mpr hju.1) hle
-          simp only [ζ, hiff]
-        · intro j _ hjne
-          refine indicator_of_notMem (fun hmem ↦ ?_) _
-          rcases lt_or_gt_of_ne hjne with hlt | hgt
-          · exact not_lt_of_ge (hmem.2.trans (hp_mono (Nat.succ_le_of_lt hlt))) hju.1
-          · exact not_lt_of_ge (hju.2.trans (hp_mono (Nat.succ_le_of_lt hgt))) hmem.1
-        · intro hbad; exact (hbad hj₀).elim
-      · have hut : u ∉ Ioc s t := fun h ↦ hu ⟨h.1, le_min h.2 huT⟩
-        rw [indicator_of_notMem hut, ite_self]
-        refine Finset.sum_eq_zero fun j _ ↦ indicator_of_notMem (fun hmem ↦ hu ?_) _
-        exact ⟨lt_of_le_of_lt (hp_ge j) hmem.1, hmem.2.trans (hp_le (j + 1))⟩
+      · obtain ⟨j₀, hj₀, hju⟩ :=
+          exists_lt_mem_Ioc_of_mem_Ioc (τ := p) (n := N) (by simpa only [hp0, hp_end] using hu)
+        rw [Finance.simpleHolding_of_mem_Ioc (hp_mono.monotoneOn _) hj₀ hju,
+          indicator_of_mem (s := Ioc s t) ⟨hu.1, hu.2.trans (min_le_left t T)⟩]
+        have hiff : (p j₀ : WithTop ℝ≥0) < σ ω ↔ (u : WithTop ℝ≥0) ≤ σ ω :=
+          ⟨fun h ↦ (WithTop.coe_le_coe.mpr hju.2).trans (hno_split j₀ ω h),
+            lt_of_lt_of_le (WithTop.coe_lt_coe.mpr hju.1)⟩
+        simp only [ζ, hiff]
+      · rw [Finance.simpleHolding_of_notMem_Ioc (hp_mono.monotoneOn _)
+            (by simpa only [hp0, hp_end] using hu),
+          indicator_of_notMem (fun h : u ∈ Ioc s t ↦ hu ⟨h.1, le_min h.2 huT⟩), ite_self]
     · rw [ElementaryIntegrand.integral_ofSimple, Finance.simpleGains_def]
       have hterm (j : ℕ) :
           ζ j ω * (X (min (p (j + 1)) T) ω - X (min (p j) T) ω) =
@@ -198,49 +134,38 @@ private theorem exists_stopped_dyadic_single
               X (min (p j : WithTop ℝ≥0) (σ ω)).untopA ω) := by
         rw [min_eq_left ((hp_le (j + 1)).trans hbT), min_eq_left ((hp_le j).trans hbT)]
         by_cases hgt : (p j : WithTop ℝ≥0) < σ ω
-        · have hge := hno_split j ω hgt
-          simp only [ζ, hgt, ite_true, min_eq_left hgt.le, min_eq_left hge,
+        · simp only [ζ, hgt, ite_true, min_eq_left hgt.le, min_eq_left (hno_split j ω hgt),
             WithTop.untopA_eq_untop WithTop.coe_ne_top, WithTop.untop_coe]
         · have hle : σ ω ≤ (p j : WithTop ℝ≥0) := le_of_not_gt hgt
-          have hle' : σ ω ≤ (p (j + 1) : WithTop ℝ≥0) :=
-            hle.trans (WithTop.coe_le_coe.mpr (hp_mono (Nat.le_succ j)))
+          have hle' := hle.trans (WithTop.coe_le_coe.mpr (hp_mono (Nat.le_succ j)))
           simp only [ζ, hgt, ite_false, zero_mul, min_eq_right hle, min_eq_right hle',
             sub_self, mul_zero]
       simp_rw [hterm, ← Finset.mul_sum, Finset.sum_range_sub (fun j ↦
-        X (min (p j : WithTop ℝ≥0) (σ ω)).untopA ω) (N + 1), hp_end]
+        X (min (p j : WithTop ℝ≥0) (σ ω)).untopA ω) N, hp0, hp_end]
+      have hcoe (x : ℝ≥0) :
+          ((min (x : WithTop ℝ≥0) (σ ω)).untopA : WithTop ℝ≥0) = min (x : WithTop ℝ≥0) (σ ω) := by
+        rw [WithTop.untopA_eq_untop (ne_of_lt (lt_of_le_of_lt (min_le_left _ _)
+          (WithTop.coe_lt_top x))), WithTop.coe_untop]
       have hmin_eq (r : ℝ≥0) (hrT : r ≤ T) :
-          min (min (T : WithTop ℝ≥0) (σ ω)).untopA r =
-            (min (r : WithTop ℝ≥0) (σ ω)).untopA := by
-        have hfin : min (T : WithTop ℝ≥0) (σ ω) ≠ ⊤ :=
-          ne_of_lt (lt_of_le_of_lt (min_le_left _ _) (WithTop.coe_lt_top T))
-        have hfinr : min (r : WithTop ℝ≥0) (σ ω) ≠ ⊤ :=
-          ne_of_lt (lt_of_le_of_lt (min_le_left _ _) (WithTop.coe_lt_top r))
+          min (min (T : WithTop ℝ≥0) (σ ω)).untopA r = (min (r : WithTop ℝ≥0) (σ ω)).untopA := by
         apply WithTop.coe_injective
-        rw [WithTop.coe_min, WithTop.untopA_eq_untop hfin, WithTop.coe_untop,
-          WithTop.untopA_eq_untop hfinr, WithTop.coe_untop,
-          min_comm (min (T : WithTop ℝ≥0) (σ ω)), ← min_assoc,
+        rw [WithTop.coe_min, hcoe T, hcoe r, min_comm (min (T : WithTop ℝ≥0) (σ ω)), ← min_assoc,
           min_eq_left (WithTop.coe_le_coe.mpr hrT)]
       have hmin_t : min (min (T : WithTop ℝ≥0) (σ ω)).untopA t =
           (min (b : WithTop ℝ≥0) (σ ω)).untopA := by
-        have hleT : (min (T : WithTop ℝ≥0) (σ ω)).untopA ≤ T :=
-          WithTop.untopA_le (min_le_left _ _)
-        calc
-          min (min (T : WithTop ℝ≥0) (σ ω)).untopA t
-              = min (min (T : WithTop ℝ≥0) (σ ω)).untopA (min t T) := by
-                rw [min_comm t T, ← min_assoc, min_eq_left hleT]
-          _ = (min (b : WithTop ℝ≥0) (σ ω)).untopA := hmin_eq b hbT
-      simp only [stoppedProcess, p, hmin_t, hmin_eq s hsT]
+        rw [← hmin_eq b hbT]; dsimp only [b]
+        rw [min_comm t T, ← min_assoc,
+          min_eq_left (WithTop.untopA_le (min_le_left (T : WithTop ℝ≥0) (σ ω)))]
+      simp only [stoppedProcess, hmin_t, hmin_eq s hsT]
   · -- When `T < s`, both sides vanish identically on `[0, T]`.
     have hTs : T < s := lt_of_not_ge hsT
     refine ⟨ElementaryIntegrand.zero ℱ, fun u huT ω ↦ ?_, fun X ω ↦ ?_⟩
-    · have hu : u ∉ Ioc s t := fun h ↦ not_lt_of_ge (huT.trans hTs.le) h.1
-      simp only [ElementaryIntegrand.toProcess_zero, indicator_of_notMem hu, ite_self]
-    · have hle : (min (T : WithTop ℝ≥0) (σ ω)).untopA ≤ T :=
-        WithTop.untopA_le (min_le_left _ _)
-      have hls : (min (T : WithTop ℝ≥0) (σ ω)).untopA ≤ s := hle.trans hTs.le
-      have hlt : (min (T : WithTop ℝ≥0) (σ ω)).untopA ≤ t := hls.trans hst
-      rw [ElementaryIntegrand.integral_zero, stoppedProcess, min_eq_left hlt, min_eq_left hls,
-        sub_self, mul_zero]
+    · simp only [ElementaryIntegrand.toProcess_zero,
+        indicator_of_notMem (fun h : u ∈ Ioc s t ↦ not_lt_of_ge (huT.trans hTs.le) h.1), ite_self]
+    · have hls : (min (T : WithTop ℝ≥0) (σ ω)).untopA ≤ s :=
+        (WithTop.untopA_le (min_le_left _ _)).trans hTs.le
+      rw [ElementaryIntegrand.integral_zero, stoppedProcess, min_eq_left (hls.trans hst),
+        min_eq_left hls, sub_self, mul_zero]
 
 /-- Stopping any `ElementaryIntegrand` at the dyadic stopping time `dyadicCeilTime k ∘ τ` at
 horizon `T` is realized exactly by another `ElementaryIntegrand`. -/
@@ -254,20 +179,15 @@ private theorem exists_stopped_dyadic
       ∀ (X : ℝ≥0 → Ω → ℝ) (ω : Ω), E.integral X T ω =
         stoppedProcess (K.integral X) σ T ω := by
   intro σ
-  have hex (i : Fin K.n) := exists_stopped_dyadic_single (K.mono i.castSucc_le_succ)
+  choose E hEP hEI using fun i : Fin K.n ↦ exists_stopped_dyadic_single (K.mono i.castSucc_le_succ)
     (K.stronglyMeasurable i) (K.bounded i) hτ k T
-  choose E hEP hEI using hex
   suffices ∀ s : Finset (Fin K.n), ∃ M : ElementaryIntegrand ℱ,
       (∀ u ≤ T, ∀ ω, M.toProcess u ω = ∑ i ∈ s, (E i).toProcess u ω) ∧
       ∀ (X : ℝ≥0 → Ω → ℝ) (ω : Ω), M.integral X T ω = ∑ i ∈ s, (E i).integral X T ω by
     obtain ⟨M, hMP, hMI⟩ := this Finset.univ
     refine ⟨M, fun u huT ω ↦ ?_, fun X ω ↦ ?_⟩
-    · rw [hMP u huT ω, K.toProcess_def]
-      simp_rw [hEP _ u huT ω]
-      split_ifs <;> simp
-    · rw [hMI X ω]
-      simp_rw [hEI _ X ω, stoppedProcess, K.integral_def]
-      rfl
+    · rw [hMP u huT ω, K.toProcess_def]; simp_rw [hEP _ u huT ω]; split_ifs <;> simp
+    · rw [hMI X ω]; simp_rw [hEI _ X ω, stoppedProcess, K.integral_def]; rfl
   intro s
   classical
   induction s using Finset.induction with
@@ -275,9 +195,8 @@ private theorem exists_stopped_dyadic
   | @insert a s ha ih =>
     obtain ⟨M, hMP, hMI⟩ := ih
     obtain ⟨M', hP', hI'⟩ := (E a).exists_add M
-    refine ⟨M', fun u huT ω ↦ ?_, fun X ω ↦ ?_⟩
-    · rw [hP', hMP u huT ω, Finset.sum_insert ha]
-    · rw [hI', hMI X ω, Finset.sum_insert ha]
+    exact ⟨M', fun u huT ω ↦ by rw [hP', hMP u huT ω, Finset.sum_insert ha],
+      fun X ω ↦ by rw [hI', hMI X ω, Finset.sum_insert ha]⟩
 
 /-- For a `BrownianIntegrable` integrand, stopping its Itô integral at any stopping time `τ`
 agrees almost surely at every horizon `T` with the L² Brownian integral of the cutoff integrand
@@ -301,52 +220,28 @@ theorem stoppedProcess_ae_eq_l2Integral
             if (t : WithTop ℝ≥0) ≤ dyadicCeilTime k (τ ω) then H t ω else 0)) := by
     let σ : Ω → WithTop ℝ≥0 := fun ω ↦ dyadicCeilTime k (τ ω)
     have hσ : IsStoppingTime ℱ σ := hτ.dyadicCeilTime k
-    have hex (n : ℕ) := exists_stopped_dyadic (K n) hτ k T
-    choose K' hK'P hK'I using hex
-    have hmeas_K' (n : ℕ) : AEStronglyMeasurable ((K' n).integral W T) P :=
-      (((K' n).stronglyAdapted_integral hW.adapted.stronglyAdapted T).mono
-        (ℱ.le T)).aestronglyMeasurable
+    choose K' hK'P hK'I using fun n ↦ exists_stopped_dyadic (K n) hτ k T
     have hlim_ae : TendstoInMeasure P (fun n ↦ (K' n).integral W T) atTop
         (stoppedProcess I σ T) := by
-      refine tendstoInMeasure_of_tendsto_ae hmeas_K' ?_
+      refine tendstoInMeasure_of_tendsto_ae (fun n ↦
+        (((K' n).stronglyAdapted_integral hW.adapted.stronglyAdapted T).mono
+          (ℱ.le T)).aestronglyMeasurable) ?_
       filter_upwards [hunif] with ω hω
-      have hu_mem : (min (T : WithTop ℝ≥0) (σ ω)).untopA ∈ Set.Iic T :=
-        Set.mem_Iic.mpr (WithTop.untopA_le (min_le_left _ _))
-      have hpt := (hω T).tendsto_at hu_mem
-      simpa only [hK'I, stoppedProcess] using hpt
+      simpa only [hK'I, stoppedProcess] using
+        (hω T).tendsto_at (Set.mem_Iic.mpr (WithTop.untopA_le (min_le_left _ _)))
     let Hσ : ℝ≥0 → Ω → ℝ := fun t ω ↦ if (t : WithTop ℝ≥0) ≤ σ ω then H t ω else 0
-    let Zσ : Ω → ℝ :=
-      hW.l2Integral T (((hH.ite_le hσ).memLp_predictableMeasure T).toLp (Function.uncurry Hσ))
-    have hlim_L2 : Tendsto (fun n ↦ eLpNorm (fun ω ↦ (K' n).integral W T ω - Zσ ω) 2 P)
-        atTop (𝓝 0) := by
+    have hlim_L2 : Tendsto (fun n ↦ eLpNorm (fun ω ↦ (K' n).integral W T ω -
+        hW.l2Integral T (((hH.ite_le hσ).memLp_predictableMeasure T).toLp (Function.uncurry Hσ)) ω)
+        2 P) atTop (𝓝 0) := by
       refine tendsto_of_tendsto_of_tendsto_of_le_of_le tendsto_const_nhds (hKlim T)
         (fun _ ↦ zero_le) fun n ↦ ?_
-      have hK'm := ((K' n).brownianIntegrable_toProcess (P := P)).memLp_predictableMeasure T
-      have hK'ae := hW.coeFn_l2Integral_elementaryIntegrand (K' n) T hK'm
-      have hsub : (fun ω ↦ (K' n).integral W T ω - Zσ ω) =ᵐ[P]
-          (hW.l2Integral T (hK'm.toLp (Function.uncurry (K' n).toProcess)) -
-            hW.l2Integral T
-              (((hH.ite_le hσ).memLp_predictableMeasure T).toLp (Function.uncurry Hσ)) :
-            Ω → ℝ) :=
-        hK'ae.symm.sub EventuallyEq.rfl
-      rw [eLpNorm_congr_ae hsub, ← Lp.edist_def, eDist_eq_eNorm_sub, ← map_sub,
-        LinearIsometry.eNorm_map, ← eDist_eq_eNorm_sub, Lp.edist_def]
-      have hpred : StronglyMeasurable[ℱ.predictable]
-          (Function.uncurry (K' n).toProcess - Function.uncurry Hσ) :=
-        (K' n).isStronglyPredictable_toProcess.sub (hH.ite_le hσ).isStronglyPredictable
-      rw [eLpNorm_congr_ae
-          (hK'm.coeFn_toLp.sub ((hH.ite_le hσ).memLp_predictableMeasure T).coeFn_toLp),
-        ℱ.predictableMeasure_def, eLpNorm_trim ℱ.predictable_le_prod hpred]
-      refine eLpNorm_mono_ae (hpred.mono ℱ.predictable_le_prod).aestronglyMeasurable ?_
-      have hae_le : ∀ᵐ p : ℝ≥0 × Ω ∂(timeMeasure T).prod P, p.1 ≤ T :=
-        (Measure.quasiMeasurePreserving_fst (μ := timeMeasure T) (ν := P)).ae
-          ((ae_mem_Ioc_timeMeasure T).mono fun _ h ↦ h.2)
-      filter_upwards [hae_le] with ⟨u, ω⟩ hu
-      dsimp only [Pi.sub_apply, Function.uncurry_apply_pair, Hσ]
-      rw [hK'P n u hu ω]
-      split_ifs
-      · exact le_rfl
-      · simp
+      rw [hW.eLpNorm_elementaryIntegrand_sub_l2Integral (K' n) (hH.ite_le hσ) T]
+      refine eLpNorm_mono_ae
+        ((((K' n).isStronglyPredictable_toProcess.sub (hH.ite_le hσ).isStronglyPredictable).mono
+          ℱ.predictable_le_prod).aestronglyMeasurable) ?_
+      filter_upwards [(Measure.quasiMeasurePreserving_fst (μ := timeMeasure T) (ν := P)).ae
+        ((ae_mem_Ioc_timeMeasure T).mono fun _ h ↦ h.2)] with ⟨u, ω⟩ hu
+      dsimp only [Hσ]; rw [hK'P n u hu ω]; split_ifs <;> simp
     exact tendstoInMeasure_ae_unique hlim_ae
       (tendstoInMeasure_of_tendsto_eLpNorm (p := 2) (by norm_num) hlim_L2)
   -- Step 2: let `k → ∞` using path continuity of `I` on the left and dominated convergence
@@ -356,57 +251,36 @@ theorem stoppedProcess_ae_eq_l2Integral
   let Hτ : ℝ≥0 → Ω → ℝ := fun t ω ↦ if (t : WithTop ℝ≥0) ≤ τ ω then H t ω else 0
   have hLHS : TendstoInMeasure P
       (fun k ↦ stoppedProcess I (fun ω ↦ dyadicCeilTime k (τ ω)) T) atTop
-      (stoppedProcess I τ T) := by
-    refine tendstoInMeasure_of_tendsto_ae
-      (fun k ↦ (Lp.aestronglyMeasurable _).congr (hdyad k).symm) ?_
-    filter_upwards [hI.ae_continuous] with ω hω
-    exact tendsto_stoppedProcess_dyadicCeilTime I τ T ω hω.continuousAt.continuousWithinAt
+      (stoppedProcess I τ T) :=
+    tendstoInMeasure_of_tendsto_ae (fun k ↦ (Lp.aestronglyMeasurable _).congr (hdyad k).symm)
+      (hI.ae_continuous.mono fun ω hω ↦
+        tendsto_stoppedProcess_dyadicCeilTime I τ T ω hω.continuousAt.continuousWithinAt)
   have hRHS_eLp : Tendsto (fun k ↦ eLpNorm
       (Function.uncurry (Hk k) - Function.uncurry Hτ) 2 ((timeMeasure T).prod P))
       atTop (𝓝 0) := by
-    have hH_mem : MemLp (Function.uncurry H) 2 ((timeMeasure T).prod P) := by
-      simpa only [NNReal.comap_volume_restrict_Ioc, ← timeMeasure_def] using hH.memLp T
     refine tendsto_eLpNorm_sub_of_ae_tendsto (C := 1) (by norm_num)
-      (Eventually.of_forall fun k ↦ by
+      (.of_forall fun k ↦ by
         simpa only [NNReal.comap_volume_restrict_Ioc, ← timeMeasure_def] using
           ((hH.ite_le (hτ.dyadicCeilTime k)).memLp T).aestronglyMeasurable)
-      hH_mem (Eventually.of_forall fun k ↦ Eventually.of_forall fun p ↦ by
-        dsimp only [Hk, Hτ, Function.uncurry]
-        split_ifs <;> simp) ?_
-    refine Eventually.of_forall fun p ↦ ?_
+      (by simpa only [NNReal.comap_volume_restrict_Ioc, ← timeMeasure_def] using hH.memLp T)
+      (.of_forall fun k ↦ .of_forall fun p ↦ by
+        dsimp only [Hk, Hτ, Function.uncurry]; split_ifs <;> simp)
+      (.of_forall fun p ↦ ?_)
     dsimp only [Hk, Hτ, Function.uncurry]
     by_cases hp : (p.1 : WithTop ℝ≥0) ≤ τ p.2
-    · refine tendsto_const_nhds.congr fun k ↦ ?_
-      have hle : (p.1 : WithTop ℝ≥0) ≤ dyadicCeilTime k (τ p.2) :=
-        hp.trans (le_dyadicCeilTime k (τ p.2))
-      simp only [hp, hle, ite_true]
-    · have hlt : τ p.2 < (p.1 : WithTop ℝ≥0) := lt_of_not_ge hp
-      refine tendsto_const_nhds.congr' ?_
-      filter_upwards [(tendsto_dyadicCeilTime (τ p.2)).eventually (eventually_lt_nhds hlt)]
-        with k hk
+    · exact tendsto_const_nhds.congr fun k ↦ by
+        simp only [hp, hp.trans (le_dyadicCeilTime k (τ p.2)), ite_true]
+    · refine tendsto_const_nhds.congr' ?_
+      filter_upwards [(tendsto_dyadicCeilTime (τ p.2)).eventually
+        (eventually_lt_nhds (lt_of_not_ge hp))] with k hk
       simp only [hp, not_le.mpr hk, ite_false]
-  let Zk (k : ℕ) : Lp ℝ 2 P :=
-    hW.l2Integral T (((hH.ite_le (hτ.dyadicCeilTime k)).memLp_predictableMeasure T).toLp
-      (Function.uncurry (Hk k)))
-  let Zτ : Lp ℝ 2 P :=
-    hW.l2Integral T (((hH.ite_le hτ).memLp_predictableMeasure T).toLp (Function.uncurry Hτ))
   have hRHS : TendstoInMeasure P
-      (fun k ↦ stoppedProcess I (fun ω ↦ dyadicCeilTime k (τ ω)) T) atTop Zτ := by
-    refine (tendstoInMeasure_of_tendsto_eLpNorm (p := 2) (by norm_num) (f := fun k ↦ (Zk k : Ω → ℝ))
-      (g := (Zτ : Ω → ℝ)) ?_).congr_left fun k ↦ (hdyad k).symm
-    have heq (k : ℕ) : eLpNorm ((Zk k : Ω → ℝ) - (Zτ : Ω → ℝ)) 2 P =
-        eLpNorm (Function.uncurry (Hk k) - Function.uncurry Hτ) 2 ((timeMeasure T).prod P) := by
-      rw [← Lp.edist_def, eDist_eq_eNorm_sub, ← map_sub, LinearIsometry.eNorm_map,
-        ← eDist_eq_eNorm_sub, Lp.edist_def]
-      have hpred : StronglyMeasurable[ℱ.predictable]
-          (Function.uncurry (Hk k) - Function.uncurry Hτ) :=
-        (hH.ite_le (hτ.dyadicCeilTime k)).isStronglyPredictable.sub
-          (hH.ite_le hτ).isStronglyPredictable
-      rw [eLpNorm_congr_ae
-          (((hH.ite_le (hτ.dyadicCeilTime k)).memLp_predictableMeasure T).coeFn_toLp.sub
-            ((hH.ite_le hτ).memLp_predictableMeasure T).coeFn_toLp),
-        ℱ.predictableMeasure_def, eLpNorm_trim ℱ.predictable_le_prod hpred]
-    exact hRHS_eLp.congr fun k ↦ (heq k).symm
+      (fun k ↦ stoppedProcess I (fun ω ↦ dyadicCeilTime k (τ ω)) T) atTop
+      (hW.l2Integral T (((hH.ite_le hτ).memLp_predictableMeasure T).toLp (Function.uncurry Hτ))) :=
+    (tendstoInMeasure_of_tendsto_eLpNorm (p := 2) (by norm_num)
+      (hRHS_eLp.congr fun k ↦
+        (hW.eLpNorm_l2Integral_sub (hH.ite_le (hτ.dyadicCeilTime k)) (hH.ite_le hτ) T).symm)
+    ).congr_left fun k ↦ (hdyad k).symm
   exact tendstoInMeasure_ae_unique hLHS hRHS
 
 /-- **Stopping compatibility for L² Brownian Itô integrals.** Stopping an Itô integral of a
@@ -422,11 +296,9 @@ theorem isItoIntegral_stoppedProcess_of_brownianIntegrable
       (stoppedProcess I τ) := by
   obtain ⟨J, hJito, -, -, -⟩ :=
     hW.exists_isItoIntegral_of_brownianIntegrable hcont (hH.ite_le hτ)
-  have hind : stoppedProcess I τ ≡ᵐ[P] J := by
-    refine indist_of_ae_eq_of_ae_continuous
-      (hI.ae_continuous.mono fun _ hω ↦ hω.stoppedProcess) hJito.ae_continuous fun T ↦ ?_
-    exact (hW.stoppedProcess_ae_eq_l2Integral hcont hH hI hτ T).trans
-      (hW.ae_eq_l2Integral_of_isItoIntegral (hH.ite_le hτ) hJito T).symm
-  exact hJito.congr_indist hind.symm
+  exact hJito.congr_indist (indist_of_ae_eq_of_ae_continuous
+    (hI.ae_continuous.mono fun _ hω ↦ hω.stoppedProcess) hJito.ae_continuous fun T ↦
+      (hW.stoppedProcess_ae_eq_l2Integral hcont hH hI hτ T).trans
+        (hW.ae_eq_l2Integral_of_isItoIntegral (hH.ite_le hτ) hJito T).symm).symm
 
 end TauCeti.Probability.IsFilteredPreBrownianReal
