@@ -12,12 +12,13 @@ public import TauCeti.AlgebraicTopology.Singular.BrouwerFixedPoint
 /-!
 # Hersch's conformal balancing lemma
 
-Let `(X, μ)` be a finite measure space with `μ ≠ 0` and `Φ : X → E` a measurable map into the unit
+Let `(X, μ)` be a finite measure space and `Φ : X → E` a measurable map into the unit
 sphere of a finite-dimensional real inner product space whose fibres over the points of the
 sphere are null. Then some conformal map `T_a` of Hersch (`TauCeti.herschMap`), `‖a‖ < 1`,
 balances `Φ`: `∫ T_a ∘ Φ dμ = 0`.
 
-The proof follows Hersch. The barycentre `G(a) = ∫ T_a ∘ Φ dμ` is continuous on the closed unit
+For `μ = 0`, take `a = 0`. Otherwise the proof follows Hersch. The barycentre
+`G(a) = ∫ T_a ∘ Φ dμ` is continuous on the closed unit
 ball by dominated convergence: `‖T_a‖ ≤ 1` there, and `a ↦ T_a(Φ q)` is continuous at `a₀`
 unless `⟪a₀, Φ q⟫ = -1`, which happens only for `‖a₀‖ = 1` and `Φ q = -a₀`, on a null set. On
 the unit sphere `T_v(x) = v` for almost every `x = Φ q`, so `G(v) = μ(X) v`. If `G` had no zero
@@ -86,7 +87,7 @@ private theorem continuousOn_integral_herschMap [IsFiniteMeasure μ] (hΦm : AEM
   filter_upwards [ae_inner_ne_neg_one hΦ hfib ha] with q hq
   exact (continuousAt_herschMap_left hq).continuousWithinAt
 
-/-- **Hersch's balancing lemma.** Let `μ` be a nonzero finite measure and `Φ` a measurable map
+/-- **Hersch's balancing lemma.** Let `μ` be a finite measure and `Φ` a measurable map
 into the unit sphere of a finite-dimensional real inner product space, whose fibres over the
 points of the sphere are null. Then there is `a` with `‖a‖ < 1` such that the composition of `Φ`
 with Hersch's conformal map `T_a` has barycentre zero: `∫ T_a ∘ Φ dμ = 0`. -/
