@@ -196,6 +196,7 @@ is zero. -/
 theorem contMDiffExtend_eq_zero {x : M} {v : V x} : contMDiffExtend I F v = 0 ↔ v = 0 := by
   rw [← contMDiffExtend_zero I F (x := x), contMDiffExtend_inj]
 
+variable (V) in
 /-- At the base point, `FiberBundle.contMDiffExtendL I F V x x` is the identity of the fibre
 over `x`. -/
 @[simp]
