@@ -7,10 +7,8 @@ module
 
 public import TauCeti.Probability.PointProcess.OccurrenceTime.Reconstruction
 public import TauCeti.Probability.RandomMeasure.Cumulative
-public import Mathlib.Topology.Order.Cadlag
 public import Mathlib.Data.NNRat.Defs
 import Mathlib.Data.NNRat.Encodable
-import Mathlib.MeasureTheory.Function.Floor
 
 /-!
 # Converting between counting paths and temporal point measures
@@ -301,6 +299,7 @@ theorem countPathMeasure_Iic {f : ℝ≥0 → ℕ} (hf : Monotone f) (hrc : IsRi
   countPathMeasure_Iic_of_continuousWithinAt hf (hrc t)
 
 /-- On a monotone right-continuous path, the atom at the origin equals the initial count `f 0`. -/
+@[simp]
 theorem countPathMeasure_singleton_zero {f : ℝ≥0 → ℕ} (hf : Monotone f)
     (hrc : IsRightContinuous f) :
     countPathMeasure f {0} = f 0 := by
@@ -316,6 +315,7 @@ theorem countPathMeasure_singleton_zero_eq_zero_iff {f : ℝ≥0 → ℕ} (hf : 
 
 /-- On a monotone right-continuous path, `countPathMeasure f` assigns mass `f t - f s` to
 `(s, t]` whenever `s ≤ t`. -/
+@[simp]
 theorem countPathMeasure_Ioc {f : ℝ≥0 → ℕ} (hf : Monotone f) (hrc : IsRightContinuous f)
     {s t : ℝ≥0} (hst : s ≤ t) :
     countPathMeasure f (Ioc s t) = ((f t - f s : ℕ) : ℝ≥0∞) := by
@@ -410,92 +410,15 @@ theorem occurrenceTime_eq_countJumpTime_of_measure_Iic_eq {μ : Measure ℝ≥0}
     μ.occurrenceTime = countJumpTime f := by
   rw [eq_countPathMeasure_of_measure_Iic_eq hf hrc hμ, occurrenceTime_countPathMeasure]
 
-/-! ### Forward count conversions from measures on the half-line -/
-
-/-- Mapping a measure on `ℝ≥0` to its floored cumulative counts on `[0, t]` is measurable into
-`ℝ≥0 → ℕ` with the product σ-algebra, without finiteness or integrality assumptions. -/
-theorem measurable_natFloor_measure_Iic :
-    Measurable fun (μ : Measure ℝ≥0) (t : ℝ≥0) ↦ ⌊(μ (Iic t)).toNNReal⌋₊ :=
-  measurable_pi_iff.2 fun _ ↦
-    (Measure.measurable_coe measurableSet_Iic).ennreal_toNNReal.nat_floor
-
-/-- Mapping a measure on `ℝ≥0` to its floored counts on `(0, t]` is measurable into `ℝ≥0 → ℕ`
-with the product σ-algebra, without finiteness or integrality assumptions. -/
-theorem measurable_natFloor_measure_Ioc :
-    Measurable fun (μ : Measure ℝ≥0) (t : ℝ≥0) ↦ ⌊(μ (Ioc 0 t)).toNNReal⌋₊ :=
-  measurable_pi_iff.2 fun _ ↦
-    (Measure.measurable_coe measurableSet_Ioc).ennreal_toNNReal.nat_floor
-
 end TauCeti.Probability
 
 open TauCeti.Probability
 
 namespace MeasureTheory.Measure
 
+/-! ### Reconstructing measures from cumulative count floors -/
+
 variable {μ : Measure ℝ≥0}
-
-/-- For a locally finite measure on `ℝ≥0`, the floored cumulative counts on `[0, t]` are
-monotone in `t`, without assuming integrality. -/
-theorem monotone_natFloor_Iic (μ : Measure ℝ≥0) [IsLocallyFiniteMeasure μ] :
-    Monotone fun t : ℝ≥0 ↦ ⌊(μ (Iic t)).toNNReal⌋₊ := by
-  intro s t hst
-  exact Nat.floor_mono
-    (ENNReal.toNNReal_mono (measure_Iic_lt_top (μ := μ)).ne (measure_mono (Iic_subset_Iic.2 hst)))
-
-/-- For a locally finite measure on `ℝ≥0`, the floored cumulative counts on `[0, t]` are
-right-continuous in `t`, without assuming integrality. -/
-theorem isRightContinuous_natFloor_Iic (μ : Measure ℝ≥0) [IsLocallyFiniteMeasure μ] :
-    IsRightContinuous fun t : ℝ≥0 ↦ ⌊(μ (Iic t)).toNNReal⌋₊ := by
-  intro t
-  let k := ⌊(μ (Iic t)).toNNReal⌋₊
-  have hk_lt : (μ (Iic t)).toNNReal < (k : ℝ≥0) + 1 := Nat.lt_floor_add_one _
-  have htend_enn : Tendsto (fun s : ℝ≥0 ↦ μ (Iic s)) (𝓝[>] t) (𝓝 (μ (Iic t))) :=
-    tendsto_measure_Iic_nhdsGT ⟨t + 1, lt_add_one t, (measure_Iic_lt_top (μ := μ)).ne⟩
-  have htend_nn : Tendsto (fun s : ℝ≥0 ↦ (μ (Iic s)).toNNReal)
-      (𝓝[>] t) (𝓝 (μ (Iic t)).toNNReal) :=
-    (ENNReal.tendsto_toNNReal (measure_Iic_lt_top (μ := μ)).ne).comp htend_enn
-  apply tendsto_const_nhds.congr'
-  filter_upwards [self_mem_nhdsWithin, htend_nn.eventually (isOpen_Iio.mem_nhds hk_lt)]
-    with s hts hs_lt
-  have hle : k ≤ ⌊(μ (Iic s)).toNNReal⌋₊ := μ.monotone_natFloor_Iic hts.le
-  have hlt : ⌊(μ (Iic s)).toNNReal⌋₊ < k + 1 :=
-    (Nat.floor_lt (zero_le (a := _))).2 (by simpa [Nat.cast_add, Nat.cast_one] using hs_lt)
-  omega
-
-/-- For a locally finite measure on `ℝ≥0`, the floored counts on `(0, t]` are monotone in `t`. -/
-theorem monotone_natFloor_Ioc (μ : Measure ℝ≥0) [IsLocallyFiniteMeasure μ] :
-    Monotone fun t : ℝ≥0 ↦ ⌊(μ (Ioc 0 t)).toNNReal⌋₊ := by
-  have : IsLocallyFiniteMeasure (μ.restrict (Ioi 0)) :=
-    isLocallyFiniteMeasure_of_le Measure.restrict_le_self
-  have hrest (t : ℝ≥0) : (μ.restrict (Ioi 0)) (Iic t) = μ (Ioc 0 t) := by
-    rw [Measure.restrict_apply measurableSet_Iic, inter_comm, Ioi_inter_Iic]
-  simpa only [hrest] using (μ.restrict (Ioi 0)).monotone_natFloor_Iic
-
-/-- For a locally finite measure on `ℝ≥0`, the floored counts on `(0, t]` are right-continuous
-in `t`. -/
-theorem isRightContinuous_natFloor_Ioc (μ : Measure ℝ≥0) [IsLocallyFiniteMeasure μ] :
-    IsRightContinuous fun t : ℝ≥0 ↦ ⌊(μ (Ioc 0 t)).toNNReal⌋₊ := by
-  have : IsLocallyFiniteMeasure (μ.restrict (Ioi 0)) :=
-    isLocallyFiniteMeasure_of_le Measure.restrict_le_self
-  have hrest (t : ℝ≥0) : (μ.restrict (Ioi 0)) (Iic t) = μ (Ioc 0 t) := by
-    rw [Measure.restrict_apply measurableSet_Iic, inter_comm, Ioi_inter_Iic]
-  simpa only [hrest] using (μ.restrict (Ioi 0)).isRightContinuous_natFloor_Iic
-
-/-- For a locally finite integer-valued measure on `ℝ≥0`, the natural floor of `μ (Iic t)` casts
-back to `μ (Iic t)`. -/
-theorem IsIntegerValued.natCast_natFloor_Iic [IsLocallyFiniteMeasure μ] (hμ : μ.IsIntegerValued)
-    (t : ℝ≥0) :
-    (⌊(μ (Iic t)).toNNReal⌋₊ : ℝ≥0∞) = μ (Iic t) := by
-  obtain ⟨n, hn⟩ := hμ.exists_eq_natCast measurableSet_Iic (measure_Iic_lt_top (μ := μ))
-  rw [hn, ENNReal.toNNReal_natCast, Nat.floor_natCast]
-
-/-- For a locally finite integer-valued measure on `ℝ≥0`, the natural floor of `μ (Ioc 0 t)` casts
-back to `μ (Ioc 0 t)`. -/
-theorem IsIntegerValued.natCast_natFloor_Ioc [IsLocallyFiniteMeasure μ] (hμ : μ.IsIntegerValued)
-    (t : ℝ≥0) :
-    (⌊(μ (Ioc 0 t)).toNNReal⌋₊ : ℝ≥0∞) = μ (Ioc 0 t) := by
-  obtain ⟨n, hn⟩ := hμ.exists_eq_natCast measurableSet_Ioc (measure_Ioc_lt_top (μ := μ))
-  rw [hn, ENNReal.toNNReal_natCast, Nat.floor_natCast]
 
 /-- Reconstructing a temporal measure from its cumulative natural-valued counts on `[0, t]`
 recovers any locally finite integer-valued measure, including any atom at zero. -/
@@ -517,6 +440,7 @@ theorem IsIntegerValued.countJumpTime_natFloor_Iic [IsLocallyFiniteMeasure μ]
 
 /-- Reconstructing a temporal measure from its natural-valued counts on `(0, t]` removes any atom
 at the origin and retains the restriction to `(0, ∞)`. -/
+@[simp]
 theorem IsIntegerValued.countPathMeasure_natFloor_Ioc [IsLocallyFiniteMeasure μ]
     (hμ : μ.IsIntegerValued) :
     countPathMeasure (fun t ↦ ⌊(μ (Ioc 0 t)).toNNReal⌋₊) = μ.restrict (Ioi 0) := by

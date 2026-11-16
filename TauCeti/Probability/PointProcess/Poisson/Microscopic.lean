@@ -53,7 +53,7 @@ variable {Ω : Type*} [MeasurableSpace Ω] {P : Measure Ω} {N : ℝ≥0 → Ω 
 
 /-! ### Simplicity of `countPathMeasure` from microscopic multiple-jump bounds -/
 
-/-- Stationary increment laws and `P(N h - N 0 ≥ 2) = o(h)` imply via equal-mesh subdivisions that
+/-- Stationary increment laws and `P(N h - N 0 ≥ 2) = o(h)` imply that
 `countPathMeasure (N · ω)` has singleton mass at most one simultaneously at all positive times,
 whenever sample paths are monotone and right-continuous on one event of full measure. Neither
 independent increments nor coordinate measurability is assumed. -/
@@ -164,9 +164,7 @@ For a natural-valued process measurable at nonnegative rational times whose path
 right-continuous on one event of full measure, the microscopic conditions characterize when
 `countPathMeasure (N · ω)` is a rate-`r` Poisson random measure whose realizations on one event of
 probability one are locally finite, put zero mass at the origin, and are simple
-(`∀ t, countPathMeasure (N · ω) {t} ≤ 1`). Simplicity in the sufficiency direction is obtained
-directly from the equal-mesh subdivision bound
-`ae_forall_countPathMeasure_singleton_le_one_of_small_time`. -/
+(`∀ t, countPathMeasure (N · ω) {t} ≤ 1`). -/
 theorem isPoissonRandomMeasure_and_ae_simple_countPathMeasure_iff_stationary_isLittleO {r : ℝ≥0}
     (hN : ∀ q : ℚ≥0, Measurable (N q))
     (hreg : ∀ᵐ ω ∂P, Monotone (N · ω) ∧ IsRightContinuous (N · ω)) :

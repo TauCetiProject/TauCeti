@@ -49,6 +49,10 @@ The rate may be zero, in which case the process vanishes almost surely at every 
 * `ProbabilityTheory.HasIndepIncrements.isFilteredPoissonProcess_natural`: conversely, a process
   with independent Poisson increments starting at `0` is a Poisson process relative to its
   natural filtration.
+* `TauCeti.Probability.isFilteredPoissonProcess_cast_iff`,
+  `TauCeti.Probability.isFilteredPoissonProcess_natural_cast_iff`: characterizations of when the
+  real cast of a pairwise almost surely nondecreasing natural-valued process is a filtered
+  Poisson process.
 
 ## References
 
@@ -259,3 +263,99 @@ theorem isFilteredPoissonProcess_natural (hN : HasIndepIncrements N P)
       (hN.indepFun_past_sub (fun t ↦ (hmeas t).measurable) h0 hst)).symm
 
 end ProbabilityTheory.HasIndepIncrements
+
+namespace TauCeti.Probability
+
+section NatCast
+
+variable {Ω : Type*} {mΩ : MeasurableSpace Ω} {P : Measure Ω} {N : ℝ≥0 → Ω → ℕ}
+
+/-- For a pairwise almost surely nondecreasing natural-valued process `N`, its real cast is a
+rate-`r` Poisson process relative to `ℱ` if and only if `N` is adapted to `ℱ`, starts at zero
+almost surely, and has `ℱ`-independent `poissonMeasure (r * (t - s))` increments. -/
+theorem isFilteredPoissonProcess_cast_iff
+    (ℱ : Filtration ℝ≥0 mΩ) {r : ℝ≥0}
+    (hmono : ∀ s t, s ≤ t → ∀ᵐ ω ∂P, N s ω ≤ N t ω) :
+    IsFilteredPoissonProcess ℱ r (fun t ω ↦ (N t ω : ℝ)) P ↔
+      Adapted ℱ N ∧ (∀ᵐ ω ∂P, N 0 ω = 0) ∧
+      (∀ s t, s ≤ t → HasLaw (fun ω ↦ N t ω - N s ω) (poissonMeasure (r * (t - s))) P) ∧
+      ∀ ⦃s t : ℝ≥0⦄, s ≤ t →
+        Indep (.comap (fun ω ↦ N t ω - N s ω) inferInstance) (ℱ s) P := by
+  have hemb : MeasurableEmbedding (Nat.cast : ℕ → ℝ) := .natCast
+  have hae {s t : ℝ≥0} (hst : s ≤ t) :
+      ((fun ω ↦ (N t ω : ℝ)) - fun ω ↦ (N s ω : ℝ)) =ᵐ[P]
+        fun ω ↦ ((N t ω - N s ω : ℕ) : ℝ) := by
+    filter_upwards [hmono s t hst] with ω hω
+    simp [Nat.cast_sub hω]
+  have hlaw_iff {X : Ω → ℕ} {c : ℝ≥0} :
+      HasLaw (fun ω ↦ (X ω : ℝ)) Po(ℝ, c) P ↔ HasLaw X (poissonMeasure c) P := by
+    refine ⟨fun h ↦ ?_, fun h ↦ (hasLaw_map Measurable.of_discrete.aemeasurable).fun_comp h⟩
+    have hx : AEMeasurable X P := hemb.aemeasurable_comp_iff.mp h.aemeasurable
+    refine ⟨hx, hemb.map_injective ?_⟩
+    rw [AEMeasurable.map_map_of_aemeasurable Measurable.of_discrete.aemeasurable hx]
+    exact h.map_eq
+  have hind_of_ae {m : MeasurableSpace Ω} {X Y : Ω → ℝ} (hXY : X =ᵐ[P] Y)
+      (h : Indep (.comap X inferInstance) m P) : Indep (.comap Y inferInstance) m P := by
+    have hi : @IndepFun Ω ℝ Ω mΩ inferInstance m X id P := by
+      simpa only [IndepFun_iff_Indep, MeasurableSpace.comap_id] using h
+    simpa only [IndepFun_iff_Indep, MeasurableSpace.comap_id] using hi.congr hXY .rfl
+  have hind_iff {s t : ℝ≥0} (hst : s ≤ t) :
+      Indep (.comap ((fun ω ↦ (N t ω : ℝ)) - fun ω ↦ (N s ω : ℝ)) inferInstance) (ℱ s) P ↔
+        Indep (.comap (fun ω ↦ N t ω - N s ω) inferInstance) (ℱ s) P := by
+    have hcomap : MeasurableSpace.comap (fun ω ↦ ((N t ω - N s ω : ℕ) : ℝ)) inferInstance =
+        MeasurableSpace.comap (fun ω ↦ N t ω - N s ω) inferInstance := by
+      rw [← Function.comp_def (Nat.cast : ℕ → ℝ), ← MeasurableSpace.comap_comp, hemb.comap_eq]
+    rw [← hcomap]
+    exact ⟨hind_of_ae (hae hst), hind_of_ae (hae hst).symm⟩
+  constructor
+  · intro h
+    exact ⟨fun t ↦ hemb.measurable_comp_iff.mp (h.adapted t),
+      h.eval_zero_ae_eq_zero.mono fun _ hω ↦ Nat.cast_eq_zero.1 hω,
+      fun s t hst ↦ hlaw_iff.1 ((h.hasLaw_sub hst).congr (hae hst).symm),
+      fun s t hst ↦ (hind_iff hst).1 (h.indep_sub hst)⟩
+  · rintro ⟨hadapt, h0, hlaw, hind⟩
+    exact ⟨fun t ↦ (Measurable.of_discrete.comp (hadapt t)).stronglyMeasurable,
+      h0.mono fun _ hω ↦ by simp [hω],
+      fun s t hst ↦ (hlaw_iff.2 (hlaw s t hst)).congr (hae hst),
+      fun s t hst ↦ (hind_iff hst).2 (hind hst)⟩
+
+/-- For a coordinatewise measurable, pairwise almost surely nondecreasing natural-valued process
+`N`, its real cast is a rate-`r` Poisson process relative to its natural filtration if and only if
+`N 0 = 0` almost surely and `N` has independent `poissonMeasure (r * (t - s))` increments. -/
+theorem isFilteredPoissonProcess_natural_cast_iff {r : ℝ≥0}
+    (hN : ∀ t, Measurable (N t))
+    (hmono : ∀ s t, s ≤ t → ∀ᵐ ω ∂P, N s ω ≤ N t ω) :
+    IsFilteredPoissonProcess
+        (Filtration.natural (fun t ω ↦ (N t ω : ℝ))
+          (fun t ↦ (Measurable.of_discrete.comp (hN t)).stronglyMeasurable))
+        r (fun t ω ↦ (N t ω : ℝ)) P ↔
+      (∀ᵐ ω ∂P, N 0 ω = 0) ∧ HasIndepIncrements N P ∧
+      ∀ s t, s ≤ t → HasLaw (fun ω ↦ N t ω - N s ω) (poissonMeasure (r * (t - s))) P := by
+  let hmeas : ∀ t, StronglyMeasurable (fun ω ↦ (N t ω : ℝ)) :=
+    fun t ↦ (Measurable.of_discrete.comp (hN t)).stronglyMeasurable
+  constructor
+  · intro h
+    let := h.isProbabilityMeasure
+    obtain ⟨hadapt, h0, hlaw, hind_sub⟩ :=
+      (isFilteredPoissonProcess_cast_iff (Filtration.natural _ hmeas) hmono).1 h
+    exact ⟨h0, hadapt.hasIndepIncrements hind_sub, hlaw⟩
+  · rintro ⟨h0, hind, hlaw⟩
+    let := hind.isProbabilityMeasure
+    have hind_real : HasIndepIncrements (fun t ω ↦ (N t ω : ℝ)) P := by
+      intro n t ht
+      have hcast := (hind n t ht).comp (fun _ ↦ (Nat.cast : ℕ → ℝ))
+        (fun _ ↦ Measurable.of_discrete)
+      refine hcast.congr fun i ↦ ?_
+      filter_upwards [hmono (t i.castSucc) (t i.succ) (ht i.castSucc_le_succ)] with ω hω
+      simp [Nat.cast_sub hω]
+    refine hind_real.isFilteredPoissonProcess_natural hmeas
+      (h0.mono fun _ hω ↦ by simp [hω]) fun s t hst ↦ ?_
+    have hae : ((fun ω ↦ (N t ω : ℝ)) - fun ω ↦ (N s ω : ℝ)) =ᵐ[P]
+        fun ω ↦ ((N t ω - N s ω : ℕ) : ℝ) := by
+      filter_upwards [hmono s t hst] with ω hω
+      simp [Nat.cast_sub hω]
+    exact ((hasLaw_map Measurable.of_discrete.aemeasurable).fun_comp (hlaw s t hst)).congr hae
+
+end NatCast
+
+end TauCeti.Probability

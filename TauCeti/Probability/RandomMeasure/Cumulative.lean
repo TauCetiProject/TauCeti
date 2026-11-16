@@ -8,7 +8,11 @@ module
 public import TauCeti.MeasureTheory.Measure.Measurability
 public import Mathlib.MeasureTheory.Constructions.BorelSpace.Order
 public import Mathlib.Topology.Instances.NNReal.Lemmas
+public import Mathlib.Topology.Order.Cadlag
 public import Mathlib.Probability.IdentDistrib
+import Mathlib.MeasureTheory.Function.Floor
+import TauCeti.MeasureTheory.Measure.Interval
+import TauCeti.MeasureTheory.Measure.Typeclasses.Finite
 
 /-!
 # Cumulative coordinates of random measures on the half-line
@@ -19,6 +23,11 @@ also generate its entire information sigma-algebra. Restricting a measure to `[0
 uses only cumulative masses at times at most `t`. Equality in law of the entire cumulative
 process characterizes equality in law of almost surely boundedly finite random measures,
 including realizations on different sample spaces.
+
+The floored cumulative-count maps `μ ↦ (t ↦ ⌊(μ (Iic t)).toNNReal⌋₊)` and
+`μ ↦ (t ↦ ⌊(μ (Ioc 0 t)).toNNReal⌋₊)` are measurable on all measures on `ℝ≥0`, and yield
+monotone right-continuous natural-valued paths for every locally finite measure without assuming
+integrality.
 
 These results allow a counting process to describe a random measure and its observed history
 without requiring finite total mass, simplicity, or the absence of an atom at zero.
@@ -31,8 +40,8 @@ without requiring finite total mass, simplicity, or the absence of an atom at ze
 
 public section
 
-open MeasureTheory Set
-open scoped NNReal ENNReal
+open Filter MeasureTheory Set
+open scoped NNReal ENNReal Topology
 
 namespace TauCeti.Probability
 
@@ -153,4 +162,71 @@ theorem identDistrib_measure_iff_Iic {Ω' : Type*} [MeasurableSpace Ω']
     rw [Measure.map_apply hM' hs, Measure.map_apply hN' hs, ← hleft, ← hright]
     exact h'.measure_preimage_eq hu
 
+/-! ### Floored cumulative counts of measures on the half-line -/
+
+/-- Mapping a measure on `ℝ≥0` to its floored cumulative counts on `[0, t]` is measurable into
+`ℝ≥0 → ℕ` with the product σ-algebra, without finiteness or integrality assumptions. -/
+theorem measurable_natFloor_measure_Iic :
+    Measurable fun (μ : Measure ℝ≥0) (t : ℝ≥0) ↦ ⌊(μ (Iic t)).toNNReal⌋₊ :=
+  measurable_pi_iff.2 fun _ ↦
+    (Measure.measurable_coe measurableSet_Iic).ennreal_toNNReal.nat_floor
+
+/-- Mapping a measure on `ℝ≥0` to its floored counts on `(0, t]` is measurable into `ℝ≥0 → ℕ`
+with the product σ-algebra, without finiteness or integrality assumptions. -/
+theorem measurable_natFloor_measure_Ioc :
+    Measurable fun (μ : Measure ℝ≥0) (t : ℝ≥0) ↦ ⌊(μ (Ioc 0 t)).toNNReal⌋₊ :=
+  measurable_pi_iff.2 fun _ ↦
+    (Measure.measurable_coe measurableSet_Ioc).ennreal_toNNReal.nat_floor
+
 end TauCeti.Probability
+
+namespace MeasureTheory.Measure
+
+/-- For a locally finite measure on `ℝ≥0`, the floored cumulative counts on `[0, t]` are
+monotone in `t`, without assuming integrality. -/
+theorem monotone_natFloor_Iic (μ : Measure ℝ≥0) [IsLocallyFiniteMeasure μ] :
+    Monotone fun t : ℝ≥0 ↦ ⌊(μ (Iic t)).toNNReal⌋₊ := by
+  intro s t hst
+  exact Nat.floor_mono
+    (ENNReal.toNNReal_mono (measure_Iic_lt_top (μ := μ)).ne (measure_mono (Iic_subset_Iic.2 hst)))
+
+/-- For a locally finite measure on `ℝ≥0`, the floored cumulative counts on `[0, t]` are
+right-continuous in `t`, without assuming integrality. -/
+theorem isRightContinuous_natFloor_Iic (μ : Measure ℝ≥0) [IsLocallyFiniteMeasure μ] :
+    IsRightContinuous fun t : ℝ≥0 ↦ ⌊(μ (Iic t)).toNNReal⌋₊ := by
+  intro t
+  let k := ⌊(μ (Iic t)).toNNReal⌋₊
+  have hk_lt : (μ (Iic t)).toNNReal < (k : ℝ≥0) + 1 := Nat.lt_floor_add_one _
+  have htend_enn : Tendsto (fun s : ℝ≥0 ↦ μ (Iic s)) (𝓝[>] t) (𝓝 (μ (Iic t))) :=
+    tendsto_measure_Iic_nhdsGT ⟨t + 1, lt_add_one t, (measure_Iic_lt_top (μ := μ)).ne⟩
+  have htend_nn : Tendsto (fun s : ℝ≥0 ↦ (μ (Iic s)).toNNReal)
+      (𝓝[>] t) (𝓝 (μ (Iic t)).toNNReal) :=
+    (ENNReal.tendsto_toNNReal (measure_Iic_lt_top (μ := μ)).ne).comp htend_enn
+  apply tendsto_const_nhds.congr'
+  filter_upwards [self_mem_nhdsWithin, htend_nn.eventually (isOpen_Iio.mem_nhds hk_lt)]
+    with s hts hs_lt
+  have hle : k ≤ ⌊(μ (Iic s)).toNNReal⌋₊ := μ.monotone_natFloor_Iic hts.le
+  have hlt : ⌊(μ (Iic s)).toNNReal⌋₊ < k + 1 :=
+    (Nat.floor_lt (zero_le (a := _))).2 (by simpa [Nat.cast_add, Nat.cast_one] using hs_lt)
+  omega
+
+/-- For a locally finite measure on `ℝ≥0`, the floored counts on `(0, t]` are monotone in `t`. -/
+theorem monotone_natFloor_Ioc (μ : Measure ℝ≥0) [IsLocallyFiniteMeasure μ] :
+    Monotone fun t : ℝ≥0 ↦ ⌊(μ (Ioc 0 t)).toNNReal⌋₊ := by
+  have : IsLocallyFiniteMeasure (μ.restrict (Ioi 0)) :=
+    isLocallyFiniteMeasure_of_le Measure.restrict_le_self
+  have hrest (t : ℝ≥0) : (μ.restrict (Ioi 0)) (Iic t) = μ (Ioc 0 t) := by
+    rw [Measure.restrict_apply measurableSet_Iic, inter_comm, Ioi_inter_Iic]
+  simpa only [hrest] using (μ.restrict (Ioi 0)).monotone_natFloor_Iic
+
+/-- For a locally finite measure on `ℝ≥0`, the floored counts on `(0, t]` are right-continuous
+in `t`. -/
+theorem isRightContinuous_natFloor_Ioc (μ : Measure ℝ≥0) [IsLocallyFiniteMeasure μ] :
+    IsRightContinuous fun t : ℝ≥0 ↦ ⌊(μ (Ioc 0 t)).toNNReal⌋₊ := by
+  have : IsLocallyFiniteMeasure (μ.restrict (Ioi 0)) :=
+    isLocallyFiniteMeasure_of_le Measure.restrict_le_self
+  have hrest (t : ℝ≥0) : (μ.restrict (Ioi 0)) (Iic t) = μ (Ioc 0 t) := by
+    rw [Measure.restrict_apply measurableSet_Iic, inter_comm, Ioi_inter_Iic]
+  simpa only [hrest] using (μ.restrict (Ioi 0)).isRightContinuous_natFloor_Iic
+
+end MeasureTheory.Measure
