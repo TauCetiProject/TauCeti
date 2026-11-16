@@ -7,7 +7,6 @@ module
 
 public import Mathlib.Algebra.Polynomial.BigOperators
 public import Mathlib.Algebra.Polynomial.Monic
-import Mathlib.Algebra.Polynomial.Roots
 import Mathlib.Tactic.Abel
 
 /-!
@@ -27,9 +26,7 @@ of geometric sums of mixed powers of equal-degree monic polynomials.
 
 A finite product of powers `(X - a i) ^ m i` of linear factors is monic of degree `∑ i, m i`, and
 a power of a linear factor splits off a product of linear factors over a multiset in which its
-root occurs often enough, and `∏_{a ∈ D} (X - a)` evaluates to `∏_{a ∈ D} (z - a)`. Over an
-integral domain, a nonzero multiple of `∏_{b ∈ E} (X - b)` is divisible by `(X - a)^k` exactly
-when `a` occurs at least `k` times in `E`.
+root occurs often enough, and `∏_{a ∈ D} (X - a)` evaluates to `∏_{a ∈ D} (z - a)`.
 
 It also records that the image of a finite product of polynomials under a ring homomorphism into a
 ring without zero divisors has degree the sum of the factors' degrees when each factor's image is
@@ -108,19 +105,6 @@ theorem eval_multiset_prod_X_sub_C (D : Multiset R) (z : R) :
   simp [eval_multiset_prod, Multiset.map_map]
 
 end ProdXSubCPow
-
-section Domain
-
-variable {R : Type*} [CommRing R] [IsDomain R] [DecidableEq R]
-
-/-- A nonzero multiple of `∏_{b ∈ E} (X - b)` is divisible by `(X - a)^k` exactly when `a` occurs
-at least `k` times in `E`. -/
-theorem X_sub_C_pow_dvd_smul_multiset_prod_iff {E : Multiset R} {a c : R} (hc : c ≠ 0)
-    {k : ℕ} : (X - C a) ^ k ∣ c • (E.map fun b ↦ X - C b).prod ↔ k ≤ E.count a := by
-  rw [← le_rootMultiplicity_iff (smul_ne_zero hc (monic_multisetProd_X_sub_C E).ne_zero),
-    ← count_roots, roots_smul_of_ne_zero _ hc, roots_multiset_prod_X_sub_C]
-
-end Domain
 
 variable {ι R : Type*} [CommSemiring R]
 

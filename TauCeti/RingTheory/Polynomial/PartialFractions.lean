@@ -9,7 +9,7 @@ public import Mathlib.Data.Multiset.Fintype
 public import Mathlib.LinearAlgebra.LinearIndependent.Defs
 public import Mathlib.RingTheory.Polynomial.DegreeLT
 import Mathlib.LinearAlgebra.FiniteDimensional.Lemmas
-import TauCeti.Algebra.Polynomial.BigOperators
+import TauCeti.Algebra.Polynomial.Roots
 import TauCeti.Data.Multiset.Fintype
 import TauCeti.RingTheory.Polynomial.DegreeLT
 
