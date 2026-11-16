@@ -204,11 +204,15 @@ variable {χ : α → F} {R : ℝ}
 private theorem sum_two_mul : ∑ _k : ZMod N, 2 * R = 2 * N * R := by
   rw [Finset.sum_const, Finset.card_univ, ZMod.card, nsmul_eq_mul]; ring
 
+private theorem norm_sub_le_two_mul_of_forall_norm_le (h : ∀ t, ‖χ t‖ ≤ R) (a b : α) :
+    ‖χ b - χ a‖ ≤ 2 * R :=
+  (norm_sub_le_of_le (h b) (h a)).trans_eq (two_mul R).symm
+
 /-- An `N`-gon inscribed in the closed ball of radius `R` has perimeter at most `2 N R`. -/
 theorem inscribedPerimeter_le_of_forall_norm_le (h : ∀ t, ‖χ t‖ ≤ R) (s : ZMod N → α) :
     inscribedPerimeter χ s ≤ 2 * N * R := by
   rw [inscribedPerimeter_def, ← sum_two_mul]
-  exact Finset.sum_le_sum fun k _ ↦ (norm_sub_le_of_le (h _) (h _)).trans_eq (two_mul R).symm
+  exact Finset.sum_le_sum fun k _ ↦ norm_sub_le_two_mul_of_forall_norm_le h _ _
 
 /-- In a strictly convex space, an `N`-gon inscribed in the sphere of radius `R` has the largest
 possible perimeter `2 N R` exactly when each of its sides is a diameter. -/
@@ -216,7 +220,7 @@ theorem inscribedPerimeter_eq_iff_of_forall_norm_eq [NormedSpace ℝ F] [StrictC
     (h : ∀ t, ‖χ t‖ = R) (s : ZMod N → α) :
     inscribedPerimeter χ s = 2 * N * R ↔ ∀ k, χ (s (k + 1)) = -χ (s k) := by
   have hle : ∀ k ∈ Finset.univ, ‖χ (s (k + 1)) - χ (s k)‖ ≤ 2 * R := fun k _ ↦
-    (norm_sub_le_of_le (h _).le (h _).le).trans_eq (two_mul R).symm
+    norm_sub_le_two_mul_of_forall_norm_le (fun t ↦ (h t).le) _ _
   rw [inscribedPerimeter_def, ← sum_two_mul, Finset.sum_eq_sum_iff_of_le hle]
   simp only [Finset.mem_univ, true_implies]
   refine forall_congr' fun k ↦ ⟨fun hk ↦ ?_, fun hk ↦ ?_⟩
@@ -229,10 +233,8 @@ theorem inscribedPerimeter_eq_iff_of_forall_norm_eq [NormedSpace ℝ F] [StrictC
 theorem inscribedPerimeter_three (χ : α → F) (s : ZMod 3 → α) :
     inscribedPerimeter χ s =
       ‖χ (s 1) - χ (s 0)‖ + ‖χ (s 2) - χ (s 1)‖ + ‖χ (s 0) - χ (s 2)‖ := by
-  rw [inscribedPerimeter_def, show (Finset.univ : Finset (ZMod 3)) = {0, 1, 2} by decide,
-    Finset.sum_insert (by decide), Finset.sum_pair (by decide),
-    show (0 : ZMod 3) + 1 = 1 by decide, show (1 : ZMod 3) + 1 = 2 by decide,
-    show (2 : ZMod 3) + 1 = 0 by decide, add_assoc]
+  rw [inscribedPerimeter_def, show (Finset.univ : Finset (ZMod 3)) = {0, 1, 2} by decide]
+  simp +decide [add_assoc, one_add_one_eq_two, show (2 : ZMod 3) + 1 = 0 by decide]
 
 variable [InnerProductSpace ℝ F]
 

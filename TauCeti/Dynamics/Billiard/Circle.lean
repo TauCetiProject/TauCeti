@@ -176,8 +176,9 @@ theorem areaForm_deriv_circle_sub (a b c : ℝ) :
 /-- The chord of the circle between `χ(a)` and `χ(b)` has length `2 R |sin((b - a) / 2 R)|`. -/
 theorem norm_circle_sub (a b : ℝ) :
     ‖circle hR b - circle hR a‖ = 2 * R * |Real.sin ((b - a) / (2 * R))| := by
-  rw [← dist_eq_norm, circle_apply, circle_apply, dist_circleMap_eq_two_mul_abs_sin, abs_of_pos hR,
-    ← sub_div, div_div, mul_comm R 2]
+  rw [← dist_eq_norm, circle_apply, circle_apply, dist_circleMap_eq_two_mul_abs_sin, abs_of_pos hR]
+  congr 3
+  field_simp
 
 /-- The unit tangents at `χ(a)` and `χ(b)` make the angle `(b - a) / R`. -/
 theorem inner_deriv_circle (a b : ℝ) :
@@ -264,10 +265,9 @@ theorem isPeriodicPt_billiardMap_circle_iff {n : ℕ}
     IsPeriodicPt (circle hR).billiardMap n x ↔ ∃ k : ℤ, n * Real.arccos x.2 = k * π := by
   obtain ⟨θ, v⟩ := x
   induction θ using QuotientAddGroup.induction_on with | H s => ?_
-  rw [IsPeriodicPt, IsFixedPt, iterate_billiardMap_circle_coe, Prod.mk.injEq, and_iff_left rfl,
-    AddCircle.coe_add, add_eq_left, AddCircle.coe_eq_zero_iff, period_circle]
+  simp only [IsPeriodicPt, IsFixedPt, iterate_billiardMap_circle_coe, Prod.mk.injEq, and_true,
+    AddCircle.coe_add, add_eq_left, AddCircle.coe_eq_zero_iff, period_circle, zsmul_eq_mul]
   refine exists_congr fun k ↦ ?_
-  rw [zsmul_eq_mul]
   constructor <;> intro h
   · have := hR.ne'
     field_simp at h ⊢
@@ -353,20 +353,21 @@ theorem hasFDerivAt_norm_circle_nextParam_sub {x : ℝ × ℝ} (hx : x.2 ∈ Ioo
 theorem inner_circle_chord_deriv_left {a b : ℝ} (hab : 0 < Real.sin ((b - a) / (2 * R))) :
     ⟪‖circle hR b - circle hR a‖⁻¹ • (circle hR b - circle hR a), deriv (circle hR) a⟫ =
       Real.cos ((b - a) / (2 * R)) := by
-  rw [real_inner_smul_left, inner_circle_sub_deriv, norm_circle_sub, abs_of_pos hab, sub_self,
-    zero_div, Real.sin_zero, sub_zero, show (b - a) / R = 2 * ((b - a) / (2 * R)) by field_simp,
-    Real.sin_two_mul]
+  rw [real_inner_smul_left, inner_circle_sub_deriv, norm_circle_sub, abs_of_pos hab,
+    show (b - a) / R = 2 * ((b - a) / (2 * R)) by field_simp, Real.sin_two_mul]
   field_simp
+  simp
 
 /-- On the circle, the unit vector along the chord from `χ(a)` to `χ(b)` makes the same angle
 `(b - a) / 2 R` with the tangent at `χ(b)` as with the tangent at `χ(a)`. -/
 theorem inner_circle_chord_deriv_right {a b : ℝ} (hab : 0 < Real.sin ((b - a) / (2 * R))) :
     ⟪‖circle hR b - circle hR a‖⁻¹ • (circle hR b - circle hR a), deriv (circle hR) b⟫ =
       Real.cos ((b - a) / (2 * R)) := by
-  rw [real_inner_smul_left, inner_circle_sub_deriv, norm_circle_sub, abs_of_pos hab, sub_self,
-    zero_div, Real.sin_zero, zero_sub, show (a - b) / R = -(2 * ((b - a) / (2 * R))) by
-      field_simp; ring, Real.sin_neg, neg_neg, Real.sin_two_mul]
+  rw [real_inner_smul_left, inner_circle_sub_deriv, norm_circle_sub, abs_of_pos hab,
+    show (a - b) / R = -(2 * ((b - a) / (2 * R))) by field_simp; ring, Real.sin_neg,
+    Real.sin_two_mul]
   field_simp
+  simp
 
 private theorem apply_zero_one_two {s : ZMod 3 → ℝ} {c : ℝ} (hs : ∀ k, s k = k.val * c) :
     s 0 = 0 ∧ s 1 = c ∧ s 2 = 2 * c := by
