@@ -46,8 +46,8 @@ Diagonal reflection extends the bound `|τ(G') - τ(G)| ≤ 1` from column cross
 cross-commutations and hence to every crossing change of grid knots
 (`GridLink.IsCrossingChange.natAbs_tau_sub_le_one`). Induction along walks in
 `GridLink.crossingChangeGraph` then shows that `|τ(L) - τ(L')|` is bounded by the crossing-change
-distance (`GridLink.IsKnot.natAbs_tau_sub_le_edist`), and specializing `L'` to the unknot over a
-field of characteristic two yields `|τ(L)| ≤ u(L)`
+distance (`GridLink.IsKnot.natAbs_tau_sub_le_edist`), and specializing `L'` to the unknot over any
+commutative ring of characteristic two yields `|τ(L)| ≤ u(L)`
 (`GridLink.IsKnot.natAbs_tau_le_unknottingNumber`).
 
 ## Main results
@@ -65,7 +65,7 @@ field of characteristic two yields `|τ(L)| ≤ u(L)`
 * `TauCeti.GridLink.IsKnot.natAbs_tau_sub_le_edist`: `|τ(L) - τ(L')|` is bounded by the extended
   distance in `crossingChangeGraph`.
 * `TauCeti.GridLink.IsKnot.natAbs_tau_le_unknottingNumber`: **the unknotting-number bound**
-  `|τ(L)| ≤ u(L)` over any field of characteristic two.
+  `|τ(L)| ≤ u(L)` over any commutative ring of characteristic two.
 
 ## References
 
@@ -249,10 +249,10 @@ theorem natAbs_tau_sub_le_edist {L L' : GridLink} (hL : L.IsKnot) (hL' : L'.IsKn
   rw [← Int.natAbs_neg, neg_sub]
   exact Nat.cast_le.mpr (hL.natAbs_tau_sub_le_length hL' K p)
 
-/-- **The unknotting-number bound for `τ`.** For every grid knot `L` and every field `K` of
-characteristic two, `|τ(L)| ≤ u(L)`. -/
+/-- **The unknotting-number bound for `τ`.** For every grid knot `L` and every commutative ring `K`
+of characteristic two, `|τ(L)| ≤ u(L)`. -/
 theorem natAbs_tau_le_unknottingNumber {L : GridLink} (hL : L.IsKnot)
-    (K : Type*) [Field K] [CharP K 2] :
+    (K : Type*) [CommRing K] [CharP K 2] :
     ((hL.tau K).natAbs : ℕ∞) ≤ L.unknottingNumber := by
   simpa only [unknottingNumber_def, tau_unknot, sub_zero] using
     hL.natAbs_tau_sub_le_edist isKnot_unknot K

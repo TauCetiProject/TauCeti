@@ -56,6 +56,9 @@ the winding numbers, following Euclid's algorithm on coprime `P` and `Q`, reduce
   `(q + 1, 2)` torus links differ by one crossing change.
 * `TauCeti.GridLink.unknottingNumber_toGridLink_torusLink_le`: **the upper bound of the Milnor
   conjecture**, the `(P, Q)` torus knot has unknotting number at most `(P - 1) (Q - 1) / 2`.
+* `TauCeti.GridLink.unknottingNumber_toGridLink_torusLink_eq_top_iff`: the standard `(p + 1, q + 1)`
+  torus link grid has infinite unknotting number if and only if `p + 1` and `q + 1` are not
+  coprime.
 * `TauCeti.GridLink.unknottingNumber_toGridLink_torusLink_mul_le`: the `(P, k P + 1)` torus knot
   has unknotting number at most `k (P choose 2)`.
 * `TauCeti.GridLink.unknottingNumber_toGridLink_torusLink_one_two_mul_le`: the `(2, 2k + 1)`
@@ -285,7 +288,7 @@ theorem isCrossingChange_toGridLink_torusLink_add_two_one (q : ℕ) :
 private theorem unknottingNumber_toGridLink_torusLink_add_le_of_le {p q : ℕ}
     (h : (torusLink p q).toGridLink.unknottingNumber ≤ (p * q / 2 : ℕ)) :
     (torusLink p (q + (p + 1))).toGridLink.unknottingNumber ≤ (p * (q + (p + 1)) / 2 : ℕ) := by
-  rw [Nat.mul_add_succ_div_two, Nat.cast_add]
+  rw [Nat.mul_add_succ_self_div_two_eq_succ_choose_two_add, Nat.cast_add]
   exact (unknottingNumber_toGridLink_torusLink_add_le p q).trans (by gcongr)
 
 /-- **The upper bound of the Milnor conjecture.** If `P = p + 1` and `Q = q + 1` are coprime, the
@@ -311,6 +314,17 @@ theorem unknottingNumber_toGridLink_torusLink_le (p q : ℕ) (h : (p + 1).Coprim
       simp [torusLink_zero_right]
     · rw [← unknottingNumber_toGridLink_torusLink_comm, Nat.mul_comm]
       exact key hpq (by omega) (Nat.Coprime.symm h)
+
+/-- The standard `(p + 1, q + 1)` torus link grid has infinite unknotting number if and only if
+`p + 1` and `q + 1` are not coprime (that is, it has more than one component). -/
+theorem unknottingNumber_toGridLink_torusLink_eq_top_iff (p q : ℕ) :
+    (torusLink p q).toGridLink.unknottingNumber = ⊤ ↔ ¬(p + 1).Coprime (q + 1) := by
+  refine ⟨fun htop hc => ?_, fun h => by_contra fun hne =>
+    h ((isKnot_torusLink_iff p q).mp ((isKnot_toGridLink _).mp
+      (isKnot_of_unknottingNumber_ne_top hne)))⟩
+  have hle := unknottingNumber_toGridLink_torusLink_le p q hc
+  rw [htop] at hle
+  exact (WithTop.coe_lt_top _).not_ge hle
 
 /-- The `(p + 1, k (p + 1) + 1)` torus knot, presented by its standard grid, has unknotting number
 at most `k ((p + 1) choose 2)`. This is the upper bound `u(T_{P,Q}) ≤ (P - 1) (Q - 1) / 2` of the

@@ -50,7 +50,7 @@ namespace TauCeti
 
 namespace GridDiagram
 
-variable {p q : ℕ} (h : (p + 1).Coprime (q + 1)) (K : Type*) [Field K] [CharP K 2]
+variable {p q : ℕ} (h : (p + 1).Coprime (q + 1)) (K : Type*) [CommRing K] [CharP K 2]
 
 /-- **`τ` of a torus knot grid**: on the standard grid of the `(p + 1, q + 1)` torus knot,
 `2 τ = -p q`. -/

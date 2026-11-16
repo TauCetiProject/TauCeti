@@ -18,7 +18,7 @@ moves. The computation rule `GridLink.IsKnot.tau_toGridLink` lets callers evalua
 chosen diagram without using the representative selected in the definition, and diagonal
 reflection preserves `τ` on grid knots (`GridLink.IsKnot.tau_transpose`).
 
-Over a field of characteristic two the unknot has `τ = 0`. The standard grid of the
+Over a commutative ring of characteristic two the unknot has `τ = 0`. The standard grid of the
 `(p + 1, q + 1)` torus knot, for coprime `p + 1` and `q + 1`, represents a grid knot with
 `2τ = -pq` and hence `τ = -(p * q / 2)` (`GridLink.tau_toGridLink_torusLink`). The negative sign
 follows the definition of `τ` as minus the maximal non-torsion Alexander degree, as in
@@ -74,7 +74,7 @@ end TauCeti.GridLink.IsKnot
 
 namespace TauCeti.GridLink
 
-variable (K : Type*) [Field K] [CharP K 2]
+variable (K : Type*) [CommRing K] [CharP K 2]
 
 /-- The unknot, as a grid knot independently of grid size, has `τ = 0`. -/
 @[simp]

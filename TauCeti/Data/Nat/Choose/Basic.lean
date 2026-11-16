@@ -31,7 +31,8 @@ the summation index. The weighted sum is again a single binomial coefficient,
 
 * `Nat.choose_two_add_mul_succ_div_two`: the sum of the second binomial coefficient and
   the triangular number is the corresponding square.
-* `Nat.mul_add_succ_div_two`: `p * (q + (p + 1)) / 2 = C(p + 1, 2) + p * q / 2`.
+* `Nat.mul_add_succ_self_div_two_eq_succ_choose_two_add`:
+  `p * (q + (p + 1)) / 2 = C(p + 1, 2) + p * q / 2`.
 * `Nat.add_choose_two`: the second binomial coefficient of a sum, with its cross term.
 * `Nat.pow_three_sub_self_eq_mul_choose_two`: `g³ - g = (2g + 2) · C(g, 2)`.
 * `Nat.even_choose_two_iff`, `Nat.neg_one_pow_choose_two`: `C(m, 2)` and `⌊m / 2⌋` have the same
@@ -78,7 +79,7 @@ theorem choose_two_add_mul_succ_div_two (N : ℕ) :
     ring
 
 /-- Adding `p + 1` to the second factor increases `p * q / 2` by `(p + 1).choose 2`. -/
-theorem mul_add_succ_div_two (p q : ℕ) :
+theorem mul_add_succ_self_div_two_eq_succ_choose_two_add (p q : ℕ) :
     p * (q + (p + 1)) / 2 = (p + 1).choose 2 + p * q / 2 := by
   obtain ⟨k, hk⟩ := (even_mul_succ_self p).two_dvd
   have hc : (p + 1).choose 2 = k := by
