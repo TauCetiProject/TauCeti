@@ -7,6 +7,8 @@ module
 
 public import TauCeti.Geometry.Symplectic.BottSamelson.Moment
 
+import TauCeti.LinearAlgebra.Dimension.Submodule
+
 /-!
 # The moment image of the word `121` Bott–Samelson variety
 
@@ -235,12 +237,8 @@ Bott–Samelson variety of the word `121` to the flag manifold of `ℂ³` is ont
 theorem exists_finrank_eq_one_le_initialPlane_le {P : Submodule ℂ (EuclideanSpace ℂ (Fin 3))}
     (hP : finrank ℂ P = 2) : ∃ L₁ : Submodule ℂ (EuclideanSpace ℂ (Fin 3)),
       finrank ℂ L₁ = 1 ∧ L₁ ≤ initialPlane ∧ L₁ ≤ P := by
-  have h := finrank_sup_add_finrank_inf_eq P initialPlane
-  have hle : finrank ℂ ↥(P ⊔ initialPlane) ≤ 3 := (Submodule.finrank_le _).trans (by simp)
-  rw [hP, finrank_initialPlane] at h
-  obtain ⟨v, hv, hv0⟩ := (Submodule.ne_bot_iff (P ⊓ initialPlane)).1 fun h' ↦ by
-    rw [h', finrank_bot] at h
-    omega
+  obtain ⟨v, hv, hv0⟩ := (Submodule.ne_bot_iff (P ⊓ initialPlane)).1
+    (Submodule.inf_ne_bot_of_finrank_lt (by simp [hP, finrank_initialPlane]))
   exact ⟨ℂ ∙ v, finrank_span_singleton hv0, (span_singleton_le_iff_mem _ _).2 (mem_inf.1 hv).2,
     (span_singleton_le_iff_mem _ _).2 (mem_inf.1 hv).1⟩
 
