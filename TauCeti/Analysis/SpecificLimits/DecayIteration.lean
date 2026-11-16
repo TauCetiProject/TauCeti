@@ -39,7 +39,7 @@ theorem and Campanato's characterization of Hölder continuity turn into Hölder
 * `TauCeti.exists_le_mul_rpow_of_essOsc_step`: the iteration lemma for an oscillation function with
   an additive inhomogeneity, turned into a bound `φ s ≤ C (s / R)^β (Q + R^γ F)`.
 * `TauCeti.one_sub_mul_pow_mul_add_le_pow_succ_mul`,
-  `TauCeti.rpow_div_pow_le_mul_pow` and `TauCeti.pow_le_div_rpow_logb`: the bookkeeping of
+  `TauCeti.div_pow_rpow_le_rpow_mul_pow` and `TauCeti.pow_le_div_rpow_logb`: the bookkeeping of
   a geometric iteration along the radii `R / bʲ`, in which the bound shrinks by `1 - δ` and an
   additive datum term `(R / bʲ)^γ` by `b^(-γ)` at each step, and the passage from the radii `R / bʲ`
   to a power `(ρ / R)^α` of an arbitrary radius.
@@ -281,7 +281,7 @@ theorem one_sub_mul_pow_mul_add_le_pow_succ_mul {δ q₁ M E A : ℝ} (j : ℕ)
 
 /-- A datum term along the radii `R / bʲ` decays geometrically: if `b^(-γ) ≤ q`, then
 `(R / bʲ)^γ ≤ R^γ qʲ`. -/
-theorem rpow_div_pow_le_mul_pow {R b γ q : ℝ} (hR : 0 ≤ R) (hb : 0 < b) (hq : (b ^ γ)⁻¹ ≤ q)
+theorem div_pow_rpow_le_rpow_mul_pow {R b γ q : ℝ} (hR : 0 ≤ R) (hb : 0 < b) (hq : (b ^ γ)⁻¹ ≤ q)
     (j : ℕ) :
     (R / b ^ j) ^ γ ≤ R ^ γ * q ^ j := by
   calc (R / b ^ j) ^ γ = R ^ γ * ((b ^ γ)⁻¹) ^ j := by

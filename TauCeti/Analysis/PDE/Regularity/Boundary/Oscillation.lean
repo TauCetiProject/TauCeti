@@ -10,6 +10,7 @@ public import TauCeti.Analysis.PDE.Regularity.Oscillation
 public import TauCeti.Analysis.Sobolev.W1p.Truncation
 import TauCeti.Analysis.PDE.MaximumPrinciple.GlobalBoundedness
 import TauCeti.Analysis.SpecificLimits.DecayIteration
+import TauCeti.MeasureTheory.Integral.Bochner.Basic
 
 /-!
 # De Giorgi's oscillation decay at the boundary
@@ -165,15 +166,6 @@ private theorem mul_indicator_le_matrixBilinearForm_gradient
       exact h.quadraticForm_nonneg hxO _
     · rw [indicator_of_notMem (s := {y | 0 < W1p.value u y}) hu, map_zero, zero_apply]
 
-/-- `∫ g ≤ ∫ h` when `g ≤ h` almost everywhere, `h` is integrable and `∫ h ≥ 0`, also when `g` is
-not integrable, since then `∫ g = 0`. -/
-private theorem integral_le_of_ae_le_of_integral_nonneg {α : Type*} [MeasurableSpace α]
-    {ν : Measure α} {g h : α → ℝ} (hgh : g ≤ᵐ[ν] h) (hh : Integrable h ν)
-    (h0 : 0 ≤ ∫ x, h x ∂ν) : ∫ x, g x ∂ν ≤ ∫ x, h x ∂ν := by
-  by_cases hg : Integrable g ν
-  · exact integral_mono_ae hg hh hgh
-  · rwa [integral_undef hg]
-
 /-- The cut-off step of the test-function argument: for `ε > 0`, the density `⟨a ∇u, ∇v⟩` of a
 subsolution `u` of `-∂ᵢ(aⁱʲ ∂ⱼu) ≤ f` with `u⁺ ∈ H¹₀(Ω)` against a nonnegative `v ∈ H¹(Ω)`, cut
 off to `{u⁺ > ε v}`, has integral at most `∫_Ω f⁺ v`. It is `ε⁻¹` times a lower bound for the
@@ -223,7 +215,8 @@ private theorem setIntegral_indicator_matrixBilinearForm_le
   have hfm : ∫ x in Omega, f x * W1p.value m x ∂mu ≤
       ε * ∫ x in Omega, max (f x) 0 * W1p.value v x ∂mu := by
     rw [← integral_const_mul]
-    refine integral_le_of_ae_le_of_integral_nonneg ?_ (hfv.const_mul ε) (integral_nonneg_of_ae ?_)
+    refine MeasureTheory.integral_le_of_ae_le_of_integral_nonneg ?_ (hfv.const_mul ε)
+      (integral_nonneg_of_ae ?_)
     · filter_upwards [hval, hm0] with x hx hx0
       calc f x * W1p.value m x ≤ max (f x) 0 * W1p.value m x :=
             mul_le_mul_of_nonneg_right (le_max_left _ _) hx0
@@ -904,7 +897,7 @@ private theorem ae_value_le_pow_mul_add_of_forall_ae_value_le {r : ℝ≥0} {θ 
         ≤ K * (R ^ γ * q₁ ^ j) * F / lam := by
           gcongr
           calc t ^ γ ≤ (2 * t) ^ γ := Real.rpow_le_rpow ht.le (by linarith) hγ.le
-            _ ≤ R ^ γ * q₁ ^ j := h2t ▸ rpow_div_pow_le_mul_pow hR.le (by norm_num) hsq₁ j
+            _ ≤ R ^ γ * q₁ ^ j := h2t ▸ div_pow_rpow_le_rpow_mul_pow hR.le (by norm_num) hsq₁ j
       _ = q₁ ^ j * (K * R ^ γ * F / lam) := by ring
 
 /-- **Hölder decay at the boundary, with a right-hand side (De Giorgi).** Let `n ≥ 1` be the
