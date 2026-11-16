@@ -67,8 +67,8 @@ theorem exists_jointImplicitFunction_of_eventually_differentiableAt {G : E₁ ×
     let ⟨e, _⟩ := hinv
     LinearEquiv.finiteDimensional e.toLinearEquiv
   have := FiniteDimensional.completeSpace ℂ F
-  have hGa : AnalyticAt ℂ G u := DifferentiableOn.analyticAt_of_finiteDimensional
-    (s := {x | DifferentiableAt ℂ G x}) (fun _ hx ↦ hx.differentiableWithinAt) hG
+  have hGa : AnalyticAt ℂ G u :=
+    analyticAt_iff_eventually_differentiableAt_of_finiteDimensional.2 hG
   have dfu := hGa.hasStrictFDerivAt
   exact ⟨dfu.jointImplicitFunctionOfProdDomain hinv,
     (dfu.analyticAt_jointImplicitFunctionOfProdDomain hinv hGa).eventually_analyticAt,
