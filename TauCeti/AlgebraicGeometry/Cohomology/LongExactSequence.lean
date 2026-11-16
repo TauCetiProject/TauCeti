@@ -110,6 +110,15 @@ lemma cohomologyZeroEquiv_cohomologyMap {M N : X.Modules} (f : M ⟶ N) (x : Coh
     rw [← hx]
     exact cohomologyZeroEquiv_naturality f x
 
+/-- The global-functions-linear cohomology map has the underlying additive cohomology map. -/
+@[simp]
+lemma _root_.AlgebraicGeometry.Scheme.Modules.coe_cohomologyMapLinear {M N : X.Modules}
+    (f : M ⟶ N) (n : ℕ) :
+    ⇑(cohomologyMapLinear f n) = ⇑(cohomologyMap f n) := by
+  funext x
+  rw [cohomologyMapLinear_apply, cohomologyFunctor_map]
+  exact AddCommGrpCat.ofHom_apply (cohomologyMap f n) x
+
 private lemma sections_ladder {M N : X.Modules} (f : M ⟶ N) :
     (f.app ⊤).hom.comp (cohomologyZeroEquiv M) =
       (cohomologyZeroEquiv N : Cohomology N 0 →+ Γ(N, ⊤)).comp (cohomologyMap f 0) := by

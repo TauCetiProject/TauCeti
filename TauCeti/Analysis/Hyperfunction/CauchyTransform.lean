@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.Distribution.ComplexPairing
+public import TauCeti.Analysis.Distribution.Restriction
 public import TauCeti.Analysis.Hyperfunction.OneDimensional
 public import TauCeti.Basic.Complex.OfRealSub
 import Mathlib.Analysis.Calculus.BumpFunction.InnerProduct
@@ -34,7 +35,9 @@ proves the facts about `C` that do not involve boundary values:
   `dsupport u ∩ tsupport χ`, so its hyperfunction class vanishes on `V`;
 * `C` depends only on the germ of `χ` along the support of `u`, so for compactly supported `u` it
   does not depend on the choice of a cutoff equal to one near the support;
-* `C` is complex-linear in `u`;
+* `C` is complex-linear in `u` and additive in `χ`;
+* `C` commutes with restriction of `u` to an open subset, and the extension by zero of `χ u` has
+  the same transform as `u` with cutoff `χ`;
 * for the Dirac distribution at `a`, `C(z) = (2πi)⁻¹ χ(a) / (a - z)`; in particular
   `C(z) = -(2πiz)⁻¹` for `δ₀` and `χ(0) = 1`.
 
@@ -71,8 +74,12 @@ across that point, and these local continuations glue (`TauCeti.Hyperfunction.th
 * `Distribution.cauchyTransform_mem_holomorphicSections`: it is a holomorphic section
   over `ℂ ∖ ℝ`.
 * `Distribution.cauchyTransform_congr`: independence of the cutoff near the support.
+* `Distribution.cauchyTransform_restrictCLM`, `Distribution.cauchyTransform_cutoffCLM`:
+  restriction and extension by zero.
 * `Distribution.cauchyTransform_mem_throughReal`: holomorphic extension across the real points
   off `dsupport u ∩ tsupport χ`.
+* `Distribution.cauchyTransform_sub_mem_throughReal`: cutoffs that agree near the points of `V`
+  in `dsupport u` give the same class in `O(ℂ ∖ ℝ) / O(W(V))`.
 * `Distribution.cauchyTransform_delta`: the transform of a Dirac distribution.
 
 ## References
@@ -334,6 +341,60 @@ theorem cauchyTransform_smul (c : ℂ) (u : 𝓓'(Ω, ℂ)) (χ : 𝓓(Ω, ℝ))
     ring
   · simp [cauchyTransform_of_im_eq_zero _ χ (not_not.1 hz)]
 
+/-- The Cauchy transform is additive in the cutoff. -/
+@[simp]
+theorem cauchyTransform_add_right (u : 𝓓'(Ω, ℂ)) (χ₁ χ₂ : 𝓓(Ω, ℝ)) :
+    cauchyTransform u (χ₁ + χ₂) = cauchyTransform u χ₁ + cauchyTransform u χ₂ := by
+  ext z
+  by_cases hz : z.im ≠ 0
+  · have hk : cauchyKernel (χ₁ + χ₂) 1 (notMem_image_ofReal_of_im_ne_zero hz) =
+        cauchyKernel χ₁ 1 (notMem_image_ofReal_of_im_ne_zero hz) +
+          cauchyKernel χ₂ 1 (notMem_image_ofReal_of_im_ne_zero hz) := by
+      ext t
+      simp [add_div]
+    simp [cauchyTransform_of_im_ne_zero _ _ hz, hk, mul_add]
+  · simp [cauchyTransform_of_im_eq_zero _ _ (not_not.1 hz)]
+
+/-- The Cauchy transform commutes with subtraction of cutoffs. -/
+@[simp]
+theorem cauchyTransform_sub_right (u : 𝓓'(Ω, ℂ)) (χ₁ χ₂ : 𝓓(Ω, ℝ)) :
+    cauchyTransform u (χ₁ - χ₂) = cauchyTransform u χ₁ - cauchyTransform u χ₂ := by
+  rw [eq_sub_iff_add_eq, ← cauchyTransform_add_right, sub_add_cancel]
+
+/-- **Restriction.** For a distribution `u` on `Ω` and a cutoff `χ` on `Ω' ⊆ Ω`, the Cauchy
+transform of the restriction `u|_{Ω'}` with cutoff `χ` is the Cauchy transform of `u` with the
+extension of `χ` by zero. -/
+@[simp]
+theorem cauchyTransform_restrictCLM {Ω' : Opens ℝ} (u : 𝓓'(Ω, ℂ)) (χ : 𝓓(Ω', ℝ)) :
+    cauchyTransform (restrictCLM u) χ = cauchyTransform u (monoCLM ℝ χ) := by
+  ext z
+  by_cases hz : z.im ≠ 0
+  · rw [cauchyTransform_of_im_ne_zero _ _ hz, cauchyTransform_of_im_ne_zero _ _ hz,
+      complexPairing_restrictCLM]
+    congr 2
+    ext t
+    by_cases h : Ω' ≤ Ω <;> simp [h]
+  · simp [cauchyTransform_of_im_eq_zero _ _ (not_not.1 hz)]
+
+/-- **Extension by zero.** Let `u` be a distribution and `χ` a cutoff on `Ω`. The distribution
+`φ ↦ u (χ φ)` on an open set `Ω'` (`Distribution.cutoffCLM`), such as the extension by zero of
+`χ u` to `ℝ`, has, with any cutoff `ρ` equal to one where `χ` does not vanish, the Cauchy transform
+of `u` with cutoff `χ`. -/
+theorem cauchyTransform_cutoffCLM {Ω' : Opens ℝ} (u : 𝓓'(Ω, ℂ)) (χ : 𝓓(Ω, ℝ))
+    {ρ : 𝓓(Ω', ℝ)} (hρ : EqOn ρ 1 (Function.support χ)) :
+    cauchyTransform (cutoffCLM χ.contDiff (inter_subset_left.trans χ.tsupport_subset) u) ρ =
+      cauchyTransform u χ := by
+  ext z
+  by_cases hz : z.im ≠ 0
+  · rw [cauchyTransform_of_im_ne_zero _ _ hz, cauchyTransform_of_im_ne_zero _ _ hz,
+      complexPairing_cutoffCLM]
+    congr 2
+    ext t
+    by_cases ht : χ t = 0
+    · simp [ht]
+    · simp [hρ ht, div_eq_mul_inv]
+  · simp [cauchyTransform_of_im_eq_zero _ _ (not_not.1 hz)]
+
 /-- The Cauchy transform of the Dirac distribution at `a` is `(2πi)⁻¹ χ(a) / (a - z)`. -/
 theorem cauchyTransform_delta (a : ℝ) (χ : 𝓓(Ω, ℝ)) {z : ℂ} (hz : z.im ≠ 0) :
     cauchyTransform (mapCLM ofRealCLM (delta a : 𝓓'(Ω, ℝ))) χ z =
@@ -383,7 +444,7 @@ private theorem exists_cauchyTransform_eq_and_notMem_tsupport (u : 𝓓'(Ω, ℂ
     Metric.isOpen_iff.1 isClosed_dsupport.isOpen_compl t₀ fun h ↦ ht₀ ⟨h, hχ⟩
   let β : ContDiffBump t₀ := ⟨r / 4, r / 2, by positivity, by linarith⟩
   have hβ : ContDiff ℝ (⊤ : ℕ∞) fun t ↦ 1 - β t := contDiff_const.sub β.contDiff
-  refine ⟨smulLeftCLM hβ χ, cauchyTransform_congr u ?_, ?_⟩
+  refine ⟨TestFunction.smulLeftCLM hβ χ, cauchyTransform_congr u ?_, ?_⟩
   · have hnhds : (closedBall t₀ (r / 2))ᶜ ∈ 𝓝ˢ (dsupport u) :=
       isClosed_closedBall.isOpen_compl.mem_nhdsSet.2 fun t ht htβ ↦
         hball (closedBall_subset_ball (by linarith) htβ) ht
@@ -409,5 +470,24 @@ theorem cauchyTransform_mem_throughReal (u : 𝓓'(Ω, ℂ)) (χ : 𝓓(Ω, ℝ)
   convert cauchyTransform_mem_throughReal_of_disjoint_tsupport u (χ' t)
     (U := ⟨(tsupport (χ' t))ᶜ, (isClosed_tsupport _).isOpen_compl⟩) disjoint_compl_left using 2
   exact (hχ' t).symm
+
+/-- Two cutoffs that agree near the points of `V` in the support of `u` give Cauchy transforms with
+the same class in `O(ℂ ∖ ℝ) / O(W(V))`. -/
+theorem cauchyTransform_sub_mem_throughReal (u : 𝓓'(Ω, ℂ)) {χ₁ χ₂ : 𝓓(Ω, ℝ)} {V : Opens ℝ}
+    (h : (χ₁ : ℝ → ℝ) =ᶠ[𝓝ˢ ((V : Set ℝ) ∩ dsupport u)] χ₂) :
+    (⟨cauchyTransform u χ₁, cauchyTransform_mem_holomorphicSections u χ₁⟩ :
+        holomorphicSections nonRealOpen) -
+      ⟨cauchyTransform u χ₂, cauchyTransform_mem_holomorphicSections u χ₂⟩ ∈ throughReal V := by
+  have hsub : (⟨cauchyTransform u χ₁, cauchyTransform_mem_holomorphicSections u χ₁⟩ :
+      holomorphicSections nonRealOpen) -
+        ⟨cauchyTransform u χ₂, cauchyTransform_mem_holomorphicSections u χ₂⟩ =
+      ⟨cauchyTransform u (χ₁ - χ₂), cauchyTransform_mem_holomorphicSections u (χ₁ - χ₂)⟩ :=
+    Subtype.ext (cauchyTransform_sub_right u χ₁ χ₂).symm
+  rw [hsub]
+  -- The difference of the cutoffs vanishes near every point of `V` in the support of `u`.
+  refine cauchyTransform_mem_throughReal u _ (disjoint_left.2 fun t htV ht ↦ ?_)
+  refine notMem_tsupport_iff_eventuallyEq.2 ?_ ht.2
+  filter_upwards [h.filter_mono (nhds_le_nhdsSet ⟨htV, ht.1⟩)] with s hs
+  simp [hs]
 
 end Distribution
