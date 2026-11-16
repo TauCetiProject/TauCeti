@@ -191,24 +191,16 @@ theorem norm_sq_smul_sub_mulLeft_nonneg (c : A) (a : n → A) :
   rw [nonneg_iff_forall_sum_nonneg]
   intro y
   let z : A := ∑ i, a i * y i
-  have hsum₁ :
-      ∑ i, ∑ j, star (y i) * (((‖c‖ ^ 2 : ℝ) : ℂ) • (star (a i) * a j)) * y j =
-        (‖c‖ ^ 2 : ℝ) • (star z * z) := by
-    simp only [z, ← Complex.coe_smul, mul_smul_comm, smul_mul_assoc, ← Finset.smul_sum,
-      star_sum, star_mul, Finset.sum_mul, Finset.mul_sum, mul_assoc]
-    rw [Finset.sum_comm]
-  have hsum₂ :
-      ∑ i, ∑ j, star (y i) * (star (c * a i) * (c * a j)) * y j =
-        star z * (star c * c) * z := by
-    simp only [z, star_sum, star_mul, Finset.sum_mul, Finset.mul_sum, mul_assoc]
-    rw [Finset.sum_comm]
-  have hident :
+  have hsum :
       ∑ i, ∑ j, star (y i) *
         (((‖c‖ ^ 2 : ℝ) : ℂ) • (star (a i) * a j) - star (c * a i) * (c * a j)) * y j =
         (‖c‖ ^ 2 : ℝ) • (star z * z) - star z * (star c * c) * z := by
-    simp_rw [mul_sub, sub_mul, Finset.sum_sub_distrib, hsum₁, hsum₂]
+    simp only [mul_sub, sub_mul, Finset.sum_sub_distrib, z, ← Complex.coe_smul, mul_smul_comm,
+      smul_mul_assoc, ← Finset.smul_sum, star_sum, star_mul, Finset.sum_mul, Finset.mul_sum,
+      mul_assoc]
+    congr 1 <;> rw [Finset.sum_comm]
   simp only [ofMatrix_apply, of_apply]
-  rw [hident, sub_nonneg, sq, ← CStarRing.norm_star_mul_self (x := c)]
+  rw [hsum, sub_nonneg, sq, ← CStarRing.norm_star_mul_self (x := c)]
   exact CStarAlgebra.star_left_conjugate_le_norm_smul z (star c * c)
 
 end Nonneg
@@ -225,8 +217,7 @@ quadratic forms `∑ i, ∑ j, ⟪ξ i, M i j (ξ j)⟫_ℂ` are nonnegative in 
 theorem nonneg_iff_forall_sum_inner_nonneg {M : CStarMatrix n n (H →L[ℂ] H)} :
     0 ≤ M ↔ ∀ ξ : n → H, 0 ≤ ∑ i, ∑ j, ⟪ξ i, M i j (ξ j)⟫_ℂ := by
   have hsum (X : n → (H →L[ℂ] H)) (v : H) :
-      ⟪v, (∑ i, ∑ j, star (X i) * M i j * X j) v⟫_ℂ =
-        ∑ i, ∑ j, ⟪X i v, M i j (X j v)⟫_ℂ := by
+      ⟪v, (∑ i, ∑ j, star (X i) * M i j * X j) v⟫_ℂ = ∑ i, ∑ j, ⟪X i v, M i j (X j v)⟫_ℂ := by
     simp only [FunLike.coe_sum, Finset.sum_apply, inner_sum, ContinuousLinearMap.mul_def,
       ContinuousLinearMap.comp_apply, ContinuousLinearMap.star_eq_adjoint,
       ContinuousLinearMap.adjoint_inner_right]
@@ -237,23 +228,19 @@ theorem nonneg_iff_forall_sum_inner_nonneg {M : CStarMatrix n n (H →L[ℂ] H)}
       set u : H := (‖v‖⁻¹ : ℝ) • v
       have hu : ‖u‖ = 1 := by simp [u, norm_smul, norm_eq_zero.not.mpr hv]
       let X : n → (H →L[ℂ] H) := fun i => (innerSL ℂ u).smulRight (ξ i)
-      have hXu (i : n) : X i u = ξ i := by simp [X, hu]
       have hpos := (ContinuousLinearMap.nonneg_iff_isPositive.mp (hM X)).inner_nonneg_right u
       rw [hsum X u] at hpos
-      simpa only [hXu] using hpos
+      simpa [X, hu] using hpos
     · simp only [not_exists, not_not] at hv
       simp [hv]
   · set T : H →L[ℂ] H := ∑ i, ∑ j, star (X i) * M i j * X j
     rw [ContinuousLinearMap.nonneg_iff_isPositive, ContinuousLinearMap.isPositive_iff_complex]
     intro v
-    have hz : 0 ≤ ⟪v, T v⟫_ℂ := by
-      rw [hsum]
-      exact hξ fun i => X i v
+    have hz : 0 ≤ ⟪v, T v⟫_ℂ := (hsum X v).symm ▸ hξ fun i => X i v
     obtain ⟨hre, him⟩ := Complex.nonneg_iff.mp hz
     have hTv : ⟪T v, v⟫_ℂ = ⟪v, T v⟫_ℂ :=
-      (inner_conj_symm (T v) v).symm.trans (IsSelfAdjoint.of_nonneg hz).star_eq
-    rw [hTv]
-    exact ⟨by apply Complex.ext <;> simp [← him], by simpa using hre⟩
+      (inner_conj_symm _ v).symm.trans (IsSelfAdjoint.of_nonneg hz).star_eq
+    exact hTv ▸ ⟨by apply Complex.ext <;> simp [← him], by simpa using hre⟩
 
 /-- Every vector quadratic form of a positive operator matrix in `CStarMatrix n n (H →L[ℂ] H)` is
 nonnegative in `ℂ`. -/
