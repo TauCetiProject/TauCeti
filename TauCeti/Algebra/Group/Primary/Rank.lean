@@ -5,11 +5,11 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.LinearAlgebra.Dimension.Constructions
-public import TauCeti.Algebra.Group.Primary.Generators
+public import TauCeti.Algebra.Group.Primary.Basic
 public import TauCeti.GroupTheory.PGroup
+public import TauCeti.GroupTheory.Rank
 public import TauCeti.LinearAlgebra.FreeModule.ModN
-import TauCeti.Algebra.Group.Primary.Basic
+import Mathlib.LinearAlgebra.Dimension.Constructions
 
 /-!
 # Generator rank of finite abelian `p`-groups
@@ -18,8 +18,7 @@ For a finite abelian `p`-group `G` (`IsAddPGroup p G` with `p` prime), the Fratt
 reduction identifies the minimal number of generators `AddGroup.rank G` with the `ZMod p`-dimension
 of `ModN G p = G / pG`. Because `ModN · p` distributes `ZMod p`-linearly over products
 (`ModN.prodLinearEquiv`, `ModN.piLinearEquiv`), generator rank is **additive** on products of finite
-abelian `p`-groups, whereas it takes the **maximum** on products of finite abelian groups of
-coprime orders (`AddGroup.rank_prod_eq_max_of_coprime_card`).
+abelian `p`-groups, and hence on `p`-primary components of binary products of finite abelian groups.
 
 ## Main definitions and statements
 
@@ -27,9 +26,6 @@ coprime orders (`AddGroup.rank_prod_eq_max_of_coprime_card`).
   abelian `p`-group `G`.
 * `IsAddPGroup.rank_prod`, `IsAddPGroup.rank_pi`: generator rank is additive on products of finite
   abelian `p`-groups.
-* `AddGroup.rank_zmod_prime_pow`, `AddGroup.rank_prod_zmod_prime_pow`,
-  `AddGroup.rank_pi_zmod_prime_pow`: generator ranks of prime-power cyclic groups and their
-  products.
 * `AddGroup.rank_primaryComponent_prod`: additivity of `l(A_p)` on binary products of finite
   abelian groups.
 
@@ -43,17 +39,18 @@ public section
 namespace IsAddPGroup
 
 /-- **Burnside basis theorem for finite abelian `p`-groups**: for prime `p`, the minimal number of
-generators `AddGroup.rank G` of a finite abelian `p`-group `G` equals `finrank (ZMod p) (ModN G p)`.
-Any lift of a generating set of `G / pG` generates `G` modulo `p • G`, hence modulo `p ^ k • G` for
-every `k`, and `p ^ k • G = 0` for large `k`. -/
+generators `AddGroup.rank G` of a finite abelian `p`-group `G` equals
+`finrank (ZMod p) (ModN G p)`. -/
 theorem rank_eq_finrank_modN {p : ℕ} (hp : p.Prime) {G : Type*} [AddCommGroup G] [Finite G]
     (hG : IsAddPGroup p G) :
     AddGroup.rank G = Module.finrank (ZMod p) (ModN G p) := by
   classical
   have : Fact p.Prime := ⟨hp⟩
-  have hsurj : Function.Surjective (ModN.mkQ p : G →+ ModN G p) := Submodule.mkQ_surjective _
+  have hsurj : Function.Surjective (ModN.mkQ (G := G) p) := ModN.mkQ_surjective p
   rw [← AddGroup.rank_eq_finrank_zmod (ModN G p)]
   refine le_antisymm ?_ (AddGroup.rank_le_of_surjective (ModN.mkQ p) hsurj)
+  -- Any lift of a generating set of `G / pG` generates `G` modulo `p • G`, hence modulo `p ^ k • G`
+  -- for every `k`, and `p ^ k • G = 0` for large `k`.
   obtain ⟨S, hScard, hS⟩ := AddGroup.rank_spec (ModN G p)
   let T : Finset G := S.image (Function.surjInv hsurj)
   let H : AddSubgroup G := AddSubgroup.closure (T : Set G)
@@ -64,6 +61,7 @@ theorem rank_eq_finrank_modN {p : ℕ} (hp : p.Prime) {G : Type*} [AddCommGroup 
   have hstep (g : G) : ∃ h ∈ H, ∃ g' : G, g = h + p • g' := by
     have hmem : ModN.mkQ p g ∈ H.map (ModN.mkQ p) := hmap ▸ trivial
     obtain ⟨h, hh, hgh⟩ := hmem
+    rw [ModN.mkQ_apply, ModN.mkQ_apply] at hgh
     have hsub : g - h ∈ LinearMap.range (LinearMap.lsmul ℤ G (p : ℤ)) :=
       (Submodule.Quotient.eq _).mp hgh.symm
     obtain ⟨g', hg'⟩ := hsub
@@ -114,29 +112,6 @@ end IsAddPGroup
 
 namespace AddGroup
 
-/-- For prime `p` and `k > 0`, `ZMod (p ^ k)` has generator rank `1`. -/
-theorem rank_zmod_prime_pow {p k : ℕ} (hp : p.Prime) (hk : 0 < k) :
-    AddGroup.rank (ZMod (p ^ k)) = 1 :=
-  AddGroup.rank_zmod_of_ne_one (Nat.one_lt_pow hk.ne' hp.one_lt).ne'
-
-/-- A binary product `ZMod (p ^ k₁) × ZMod (p ^ k₂)` of nontrivial `p`-power cyclic groups has
-generator rank `2`. -/
-theorem rank_prod_zmod_prime_pow {p k₁ k₂ : ℕ} (hp : p.Prime) (hk₁ : 0 < k₁) (hk₂ : 0 < k₂) :
-    AddGroup.rank (ZMod (p ^ k₁) × ZMod (p ^ k₂)) = 2 := by
-  have : NeZero (p ^ k₁) := ⟨pow_ne_zero _ hp.ne_zero⟩
-  have : NeZero (p ^ k₂) := ⟨pow_ne_zero _ hp.ne_zero⟩
-  rw [(IsAddPGroup.zmod_prime_pow p k₁).rank_prod hp (IsAddPGroup.zmod_prime_pow p k₂),
-    rank_zmod_prime_pow hp hk₁, rank_zmod_prime_pow hp hk₂]
-
-/-- A finite indexed product `∀ i, ZMod (p ^ k i)` of nontrivial `p`-power cyclic groups has
-generator rank `Fintype.card ι`. -/
-theorem rank_pi_zmod_prime_pow {p : ℕ} (hp : p.Prime) {ι : Type*} [Fintype ι] (k : ι → ℕ)
-    (hk : ∀ i, 0 < k i) :
-    AddGroup.rank (∀ i, ZMod (p ^ k i)) = Fintype.card ι := by
-  have : ∀ i, NeZero (p ^ k i) := fun _ ↦ ⟨pow_ne_zero _ hp.ne_zero⟩
-  rw [IsAddPGroup.rank_pi hp (fun i ↦ IsAddPGroup.zmod_prime_pow p (k i))]
-  simp_rw [rank_zmod_prime_pow hp (hk _), Finset.sum_const, Finset.card_univ, smul_eq_mul, mul_one]
-
 /-- On any binary product of finite abelian groups, the generator rank of the `p`-primary component
 is additive for prime `p`. -/
 theorem rank_primaryComponent_prod (A B : Type*) [AddCommGroup A] [AddCommGroup B]
@@ -147,34 +122,5 @@ theorem rank_primaryComponent_prod (A B : Type*) [AddCommGroup A] [AddCommGroup 
   rw [AddGroup.rank_congr (AddCommGroup.primaryComponentProdAddEquiv A B p),
     (AddCommGroup.primaryComponent.isAddPGroup A p).rank_prod hp
       (AddCommGroup.primaryComponent.isAddPGroup B p)]
-
-/-- For prime `p`, the elementary abelian group `ZMod p × ZMod p` has generator rank `2`. -/
-theorem rank_prod_zmod_prime {p : ℕ} (hp : p.Prime) :
-    AddGroup.rank (ZMod p × ZMod p) = 2 := by
-  have h := rank_prod_zmod_prime_pow hp Nat.one_pos Nat.one_pos
-  rwa [pow_one] at h
-
-/-- For distinct primes `p ≠ q`, `ZMod p × ZMod q` is cyclic of generator rank `1`. -/
-theorem rank_prod_zmod_prime_of_ne {p q : ℕ} (hp : p.Prime) (hq : q.Prime) (hpq : p ≠ q) :
-    AddGroup.rank (ZMod p × ZMod q) = 1 := by
-  have : NeZero p := ⟨hp.ne_zero⟩
-  have : NeZero q := ⟨hq.ne_zero⟩
-  have hcop : (Nat.card (ZMod p)).Coprime (Nat.card (ZMod q)) := by
-    simpa [Nat.card_zmod] using (Nat.coprime_primes hp hq).mpr hpq
-  rw [AddGroup.rank_prod_eq_max_of_coprime_card _ _ hcop,
-    AddGroup.rank_zmod_of_ne_one hp.ne_one, AddGroup.rank_zmod_of_ne_one hq.ne_one, max_self]
-
-/-- For distinct primes `p ≠ q`, `(ZMod p × ZMod p) × ZMod q` has generator rank `2` (`2` at `p`
-and `1` at `q`). -/
-theorem rank_prod_prod_zmod_prime_of_ne {p q : ℕ} (hp : p.Prime) (hq : q.Prime) (hpq : p ≠ q) :
-    AddGroup.rank ((ZMod p × ZMod p) × ZMod q) = 2 := by
-  have : NeZero p := ⟨hp.ne_zero⟩
-  have : NeZero q := ⟨hq.ne_zero⟩
-  have hcop : (Nat.card (ZMod p × ZMod p)).Coprime (Nat.card (ZMod q)) := by
-    rw [Nat.card_prod, Nat.card_zmod, Nat.card_zmod, ← sq]
-    exact ((Nat.coprime_primes hp hq).mpr hpq).pow_left 2
-  rw [AddGroup.rank_prod_eq_max_of_coprime_card _ _ hcop, rank_prod_zmod_prime hp,
-    AddGroup.rank_zmod_of_ne_one hq.ne_one]
-  rfl
 
 end AddGroup

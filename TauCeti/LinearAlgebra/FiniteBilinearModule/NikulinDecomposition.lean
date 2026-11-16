@@ -7,13 +7,13 @@ module
 
 public import TauCeti.Algebra.Group.Primary.Rank
 public import TauCeti.LinearAlgebra.FiniteBilinearModule.Decomposition
-public import TauCeti.LinearAlgebra.FiniteBilinearModule.Dyadic.GaussSum
 public import TauCeti.LinearAlgebra.FiniteBilinearModule.Dyadic.Relations
 public import TauCeti.LinearAlgebra.FiniteBilinearModule.Dyadic.SmallRelations
-public import TauCeti.LinearAlgebra.FiniteBilinearModule.OddCyclic.GaussSum
+public import TauCeti.LinearAlgebra.FiniteBilinearModule.GaussSum
 public import TauCeti.LinearAlgebra.FiniteBilinearModule.Primary.Component
 import Mathlib.Algebra.IsPrimePow
 import Mathlib.Data.Nat.Prime.Int
+import TauCeti.Algebra.Group.Primary.Generators
 import TauCeti.LinearAlgebra.QuadraticForm.Prod
 
 /-!
@@ -35,14 +35,14 @@ From any `D : NikulinDecomposition A`, one reads off:
   generators of prime `p`;
 * the group order `Nat.card A`, the `p`-primary order `Nat.card (A.primaryComponent p)`, and the
   Milgram Gauss-sum sign `A.gaussSign`;
-* the minimal `p`-adic realization determinant product, factored into a `p`-adic unit times
-  `Nat.card (A.primaryComponent p)`;
+* the product of Gram determinants of the standard minimal-rank `p`-adic lattices attached to the
+  generator labels, factored into a `p`-adic unit times `Nat.card (A.primaryComponent p)`;
 * the generator ranks `AddGroup.rank (A.primaryComponent p)` (additive across `p`-primary summands)
   and `AddGroup.rank A` (their maximum across primes).
 
 Because Nikulin's generators satisfy small-exponent and dyadic relations, decompositions into
-admissible generators are not unique; explicit distinct decompositions of `dyadicCyclic 1 1` and
-`(dyadicU k).prod (dyadicU k)` are recorded at the end of this file.
+admissible generators are not unique; explicit distinct decompositions of `dyadicCyclic 1 θ`
+(`θ` odd) and `(dyadicU k).prod (dyadicU k)` (`k > 0`) are recorded at the end of this file.
 
 ## Main definitions and results
 
@@ -53,14 +53,16 @@ admissible generators are not unique; explicit distinct decompositions of `dyadi
   list, with `primaryComponentOrthogonalSumNikulinGeneratorsIsometry` identifying its `p`-primary
   component with the filtered sublist.
 * `TauCeti.FiniteQuadraticModule.NikulinDecomposition`: bundled admissible generator decomposition,
-  with `NikulinDecomposition.ofIsNondegenerate` and `nonempty_nikulinDecomposition_iff`.
+  with `NikulinDecomposition.zero`, `NikulinDecomposition.singleton`,
+  `NikulinDecomposition.ofIsometry`, `NikulinDecomposition.prod`,
+  `NikulinDecomposition.ofIsNondegenerate`, and `nonempty_nikulinDecomposition_iff`.
 * `TauCeti.FiniteQuadraticModule.HasCyclicTwoSummand`: existence of an orthogonal summand
-  `q_θ^{(2)}(2)` with `θ` odd.
+  `q_θ^{(2)}(2)` with `θ` odd (the dyadic alternative in Nikulin, Theorem 1.10.1(4)).
 
 ## References
 
 * V. V. Nikulin, *Integral symmetric bilinear forms and some of their applications*,
-  Propositions 1.8.1–1.8.2 and §1.9.
+  Propositions 1.8.1–1.8.2, Theorem 1.9.1, and Theorem 1.10.1.
 * C. T. C. Wall, *Quadratic forms on finite groups, and related topics*, Topology 2 (1963),
   281–298.
 -/
@@ -154,8 +156,8 @@ theorem prime_prime : ∀ g : NikulinGenerator, g.prime.Prime
   | .dyadicV _ => Nat.prime_two
 
 /-- The formal generator rank assigned to a label: `1` for cyclic labels and `2` for `u` and `v`.
-When the label is admissible (`IsAdmissible`), this is the rank of the minimal `p`-adic lattice
-realizing `g.toFiniteQuadraticModule` and equals `AddGroup.rank g.toFiniteQuadraticModule`
+When the label is admissible (`IsAdmissible`), this is the rank of the standard minimal-rank
+`p`-adic lattice attached to the label `g` and equals `AddGroup.rank g.toFiniteQuadraticModule`
 (`NikulinGenerator.IsAdmissible.rank_toFiniteQuadraticModule`). -/
 def rank : NikulinGenerator → ℕ
   | .oddCyclic _ _ _ _ _ => 1
@@ -221,9 +223,12 @@ theorem toFiniteQuadraticModule_dyadicV (k : ℕ) :
 
 /-- The formal realization determinant expression assigned to a generator label: `θ · p^k` for
 `oddCyclic`, `θ · 2^k` for `dyadicCyclic`, `-4^k` for `dyadicU`, and `3 · 4^k` for `dyadicV`.
-When the label is admissible (`IsAdmissible`), this is the Gram determinant of the minimal
-`p`-adic lattice realizing `g.toFiniteQuadraticModule` (`2^k · U` for `u^{(2)}(2^k)` and
-`2^k · !![2, 1; 1, 2]` for `v^{(2)}(2^k)`). -/
+When the label is admissible (`IsAdmissible`), this is the Gram determinant of the standard
+minimal-rank `p`-adic lattice attached to the label `g` (`⟨θ · p^k⟩` for `oddCyclic`, `⟨θ · 2^k⟩`
+for `dyadicCyclic`, `2^k · U` for `dyadicU`, and `2^k · !![2, 1; 1, 2]` for `dyadicV`). The integer
+determinant depends on the chosen cyclic label `θ`, and for `dyadicCyclic 1 θ` the minimal `2`-adic
+realization is not unique up to isometry (`q_1^{(2)}(2) ≅ q_5^{(2)}(2)` admits both `⟨2⟩` and
+`⟨10⟩`). -/
 def realizationDet : NikulinGenerator → ℤ
   | .oddCyclic p k _ _ θ => θ * (p : ℤ) ^ k
   | .dyadicCyclic k _ θ => θ * 2 ^ k
@@ -251,7 +256,7 @@ theorem realizationDet_dyadicV (k : ℕ) : (dyadicV k).realizationDet = 3 * 4 ^ 
 /-- The formal cofactor of the group order in `realizationDet`: `θ` for cyclic labels, `-1` for
 `dyadicU`, and `3` for `dyadicV`. When the label is admissible (`IsAdmissible`), this integer is
 coprime to `g.prime` (`NikulinGenerator.IsAdmissible.isCoprime_prime_realizationUnit`), giving the
-`p`-adic unit part of the minimal realization determinant. -/
+`p`-adic unit part of the standard label-dependent minimal realization determinant. -/
 def realizationUnit : NikulinGenerator → ℤ
   | .oddCyclic _ _ _ _ θ => θ
   | .dyadicCyclic _ _ θ => θ
@@ -278,7 +283,7 @@ theorem realizationUnit_dyadicV (k : ℕ) : (dyadicV k).realizationUnit = 3 := b
 
 /-- The formal determinant expression `g.realizationDet` factors as `g.realizationUnit` times the
 order of `g.toFiniteQuadraticModule`. For admissible labels, this separates the `p`-adic unit part
-of the minimal realization determinant from the primary group order. -/
+of the standard label-dependent minimal realization determinant from the primary group order. -/
 theorem realizationDet_eq_realizationUnit_mul_natCard (g : NikulinGenerator) :
     g.realizationDet = g.realizationUnit * (Nat.card g.toFiniteQuadraticModule : ℤ) := by
   cases g with
@@ -310,17 +315,17 @@ theorem isAddPGroup_toFiniteQuadraticModule (g : NikulinGenerator) :
   cases g with
   | oddCyclic p k _ _ _ =>
       rw [prime_oddCyclic, toFiniteQuadraticModule_oddCyclic]
-      exact IsAddPGroup.zmod_prime_pow p k
+      exact IsAddPGroup.zmod_pow p k
   | dyadicCyclic k hk _ =>
       let _ : NeZero k := ⟨hk.ne'⟩
       rw [prime_dyadicCyclic, toFiniteQuadraticModule_dyadicCyclic]
-      exact IsAddPGroup.zmod_prime_pow 2 k
+      exact IsAddPGroup.zmod_pow 2 k
   | dyadicU k =>
       rw [prime_dyadicU, toFiniteQuadraticModule_dyadicU]
-      exact IsAddPGroup.prod (IsAddPGroup.zmod_prime_pow 2 k) (IsAddPGroup.zmod_prime_pow 2 k)
+      exact IsAddPGroup.prod (IsAddPGroup.zmod_pow 2 k) (IsAddPGroup.zmod_pow 2 k)
   | dyadicV k =>
       rw [prime_dyadicV, toFiniteQuadraticModule_dyadicV]
-      exact IsAddPGroup.prod (IsAddPGroup.zmod_prime_pow 2 k) (IsAddPGroup.zmod_prime_pow 2 k)
+      exact IsAddPGroup.prod (IsAddPGroup.zmod_pow 2 k) (IsAddPGroup.zmod_pow 2 k)
 
 /-- Admissibility is equivalent to nondegeneracy together with nontriviality of the associated
 finite quadratic module. -/
@@ -523,10 +528,9 @@ theorem isAddPGroup_orthogonalSumNikulinGenerators {p : ℕ} {gs : List NikulinG
         h g List.mem_cons_self ▸ g.isAddPGroup_toFiniteQuadraticModule
       exact IsAddPGroup.prod hg (ih fun g' hg' ↦ h g' (List.mem_cons_of_mem g hg'))
 
-/-- For a list of admissible `p`-primary generators (`p` prime), the generator rank `AddGroup.rank`
-of their orthogonal sum is the sum of their individual ranks (`1` for cyclic, `2` for `u` and
-`v`). -/
-theorem rank_orthogonalSumNikulinGenerators_of_prime {p : ℕ} (hp : p.Prime)
+/-- For a list of admissible `p`-primary generators, the generator rank `AddGroup.rank` of their
+orthogonal sum is the sum of their individual ranks (`1` for cyclic, `2` for `u` and `v`). -/
+theorem rank_orthogonalSumNikulinGenerators_of_prime {p : ℕ}
     {gs : List NikulinGenerator} (hadm : ∀ g ∈ gs, g.IsAdmissible)
     (hprime : ∀ g ∈ gs, g.prime = p) :
     AddGroup.rank (orthogonalSumNikulinGenerators gs) = (gs.map NikulinGenerator.rank).sum := by
@@ -534,6 +538,7 @@ theorem rank_orthogonalSumNikulinGenerators_of_prime {p : ℕ} (hp : p.Prime)
   | nil =>
       exact AddGroup.rank_eq_zero_iff.mpr inferInstance
   | cons g gs ih =>
+      have hp : p.Prime := hprime g List.mem_cons_self ▸ g.prime_prime
       have hgP : IsAddPGroup p g.toFiniteQuadraticModule :=
         hprime g List.mem_cons_self ▸ g.isAddPGroup_toFiniteQuadraticModule
       have hgsP : IsAddPGroup p (orthogonalSumNikulinGenerators gs) :=
@@ -572,7 +577,8 @@ noncomputable def primaryComponentOrthogonalSumNikulinGeneratorsIsometry {p : �
           (Isometry.ofEq (congrArg orthogonalSumNikulinGenerators hfilt.symm)))
       else
         have hsub : Subsingleton (g.toFiniteQuadraticModule.primaryComponent p) :=
-          subsingleton_primaryComponent_of_isAddPGroup_of_ne hp g.prime_prime (Ne.symm hgp)
+          subsingleton_primaryComponent_of_isAddPGroup_of_coprime
+            ((Nat.coprime_primes hp g.prime_prime).mpr (Ne.symm hgp))
             g.isAddPGroup_toFiniteQuadraticModule
         let _ : Unique (g.toFiniteQuadraticModule.primaryComponent p) :=
           @uniqueOfSubsingleton _ hsub 0
@@ -595,6 +601,72 @@ structure NikulinDecomposition (A : FiniteQuadraticModule.{u}) where
   /-- The module is isometric to the orthogonal sum of `generators`. -/
   isometry : A.Isometry (orthogonalSumNikulinGenerators generators)
 
+namespace NikulinDecomposition
+
+/-- The empty Nikulin decomposition of a trivial finite quadratic module. -/
+noncomputable def zero (A : FiniteQuadraticModule.{u}) [Subsingleton A] :
+    NikulinDecomposition A where
+  generators := []
+  admissible _ h := nomatch h
+  isometry := Isometry.ofSubsingleton
+
+/-- The empty Nikulin decomposition has empty generator list. -/
+@[simp]
+theorem zero_generators (A : FiniteQuadraticModule.{u}) [Subsingleton A] :
+    (zero A).generators = [] := by
+  rfl
+
+/-- The single-generator Nikulin decomposition of an admissible generator's module. -/
+noncomputable def singleton (g : NikulinGenerator) (hg : g.IsAdmissible) :
+    NikulinDecomposition g.toFiniteQuadraticModule where
+  generators := [g]
+  admissible g' hg' := by
+    rw [List.mem_singleton] at hg'
+    subst hg'
+    exact hg
+  isometry := singletonNikulinGeneratorIsometry g
+
+/-- The singleton Nikulin decomposition has generator list `[g]`. -/
+@[simp]
+theorem singleton_generators (g : NikulinGenerator) (hg : g.IsAdmissible) :
+    (singleton g hg).generators = [g] := by
+  rfl
+
+/-- Transport a `NikulinDecomposition` along an isometry. -/
+noncomputable def ofIsometry {A : FiniteQuadraticModule.{u}} {B : FiniteQuadraticModule.{v}}
+    (f : A.Isometry B) (D : NikulinDecomposition B) : NikulinDecomposition A where
+  generators := D.generators
+  admissible := D.admissible
+  isometry := f.trans D.isometry
+
+/-- Transporting a `NikulinDecomposition` along an isometry preserves its generator list. -/
+@[simp]
+theorem ofIsometry_generators {A : FiniteQuadraticModule.{u}} {B : FiniteQuadraticModule.{v}}
+    (f : A.Isometry B) (D : NikulinDecomposition B) :
+    (ofIsometry f D).generators = D.generators := by
+  rfl
+
+/-- Concatenate two Nikulin decompositions to decompose an orthogonal direct sum. -/
+noncomputable def prod {A : FiniteQuadraticModule.{u}} {B : FiniteQuadraticModule.{v}}
+    (DA : NikulinDecomposition A) (DB : NikulinDecomposition B) :
+    NikulinDecomposition (A.prod B) where
+  generators := DA.generators ++ DB.generators
+  admissible g hg := by
+    rcases List.mem_append.mp hg with hA | hB
+    · exact DA.admissible g hA
+    · exact DB.admissible g hB
+  isometry := (DA.isometry.prod DB.isometry).trans
+    (orthogonalSumNikulinGeneratorsAppendIsometry DA.generators DB.generators).symm
+
+/-- The product of two Nikulin decompositions concatenates their generator lists. -/
+@[simp]
+theorem prod_generators {A : FiniteQuadraticModule.{u}} {B : FiniteQuadraticModule.{v}}
+    (DA : NikulinDecomposition A) (DB : NikulinDecomposition B) :
+    (DA.prod DB).generators = DA.generators ++ DB.generators := by
+  rfl
+
+end NikulinDecomposition
+
 private noncomputable def piNikulinGeneratorsIsometry :
     ∀ {n : ℕ} (g : Fin n → NikulinGenerator),
       (pi fun i ↦ (g i).toFiniteQuadraticModule).Isometry
@@ -611,6 +683,15 @@ private noncomputable def piNikulinGeneratorsIsometry :
           (piNikulinGeneratorsIsometry fun i ↦ g i.succ)).trans
           (Isometry.ofEq
             (congrArg orthogonalSumNikulinGenerators (List.ofFn_succ (f := g)).symm)))
+
+private noncomputable def NikulinDecomposition.ofPi {n : ℕ} (g : Fin n → NikulinGenerator)
+    (hg : ∀ i, (g i).IsAdmissible) :
+    NikulinDecomposition (pi fun i ↦ (g i).toFiniteQuadraticModule) where
+  generators := List.ofFn g
+  admissible g' hg' := by
+    obtain ⟨i, rfl⟩ := List.mem_ofFn.mp hg'
+    exact hg i
+  isometry := piNikulinGeneratorsIsometry g
 
 private theorem exists_oddCyclic_nikulinGenerator {m : ℕ} (hm : Odd m) {θ : ℤ}
     (hmθ : IsPrimePow m ∧ IsCoprime (m : ℤ) θ) :
@@ -637,41 +718,16 @@ private theorem nonempty_nikulinDecomposition_of_isNondegenerate {A : FiniteQuad
     exists_isometry_prod_pi_generators A hA
   choose gOdd hgOddAdm hOddEq using
     fun i : Fin a ↦ exists_oddCyclic_nikulinGenerator (hm i) (hmθ i)
-  let gDyadicCyc : Fin b → NikulinGenerator :=
-    fun i ↦ .dyadicCyclic (k i + 1) (Nat.succ_pos (k i)) (η i)
-  let gU : Fin c → NikulinGenerator := fun i ↦ .dyadicU (ku i + 1)
-  let gV : Fin d → NikulinGenerator := fun i ↦ .dyadicV (kv i + 1)
-  let isoOdd : (pi fun i ↦ oddCyclic (m i) (hm i) (θ i)).Isometry
-      (orthogonalSumNikulinGenerators (List.ofFn gOdd)) :=
-    (QuadraticMap.IsometryEquiv.pi fun i ↦ Isometry.ofEq (hOddEq i)).trans
-      (piNikulinGeneratorsIsometry gOdd)
-  let isoCyc : (pi fun i ↦ dyadicCyclic (k i + 1) (η i)).Isometry
-      (orthogonalSumNikulinGenerators (List.ofFn gDyadicCyc)) :=
-    piNikulinGeneratorsIsometry gDyadicCyc
-  let isoU : (pi fun i ↦ dyadicU (ku i + 1)).Isometry
-      (orthogonalSumNikulinGenerators (List.ofFn gU)) :=
-    piNikulinGeneratorsIsometry gU
-  let isoV : (pi fun i ↦ dyadicV (kv i + 1)).Isometry
-      (orthogonalSumNikulinGenerators (List.ofFn gV)) :=
-    piNikulinGeneratorsIsometry gV
-  let gs := List.ofFn gOdd ++ (List.ofFn gDyadicCyc ++ (List.ofFn gU ++ List.ofFn gV))
-  refine ⟨{
-    generators := gs
-    admissible := ?_
-    isometry := e₀.symm.trans
-      ((isoOdd.prod (isoCyc.prod (isoU.prod isoV))).trans
-        (((QuadraticMap.IsometryEquiv.refl _).prod
-          (((QuadraticMap.IsometryEquiv.refl _).prod
-            (orthogonalSumNikulinGeneratorsAppendIsometry _ _).symm).trans
-            (orthogonalSumNikulinGeneratorsAppendIsometry _ _).symm)).trans
-          (orthogonalSumNikulinGeneratorsAppendIsometry _ _).symm)) }⟩
-  intro g hg
-  simp only [gs, List.mem_append, List.mem_ofFn] at hg
-  rcases hg with ⟨i, rfl⟩ | ⟨i, rfl⟩ | ⟨i, rfl⟩ | ⟨i, rfl⟩
-  · exact hgOddAdm i
-  · exact hη i
-  · exact Nat.succ_pos (ku i)
-  · exact Nat.succ_pos (kv i)
+  let dOdd : NikulinDecomposition (pi fun i ↦ oddCyclic (m i) (hm i) (θ i)) :=
+    .ofIsometry (QuadraticMap.IsometryEquiv.pi fun i ↦ Isometry.ofEq (hOddEq i))
+      (.ofPi gOdd hgOddAdm)
+  let dCyc : NikulinDecomposition (pi fun i ↦ dyadicCyclic (k i + 1) (η i)) :=
+    .ofPi (fun i ↦ .dyadicCyclic (k i + 1) (Nat.succ_pos (k i)) (η i)) hη
+  let dU : NikulinDecomposition (pi fun i ↦ dyadicU (ku i + 1)) :=
+    .ofPi (fun i ↦ .dyadicU (ku i + 1)) fun i ↦ Nat.succ_pos (ku i)
+  let dV : NikulinDecomposition (pi fun i ↦ dyadicV (kv i + 1)) :=
+    .ofPi (fun i ↦ .dyadicV (kv i + 1)) fun i ↦ Nat.succ_pos (kv i)
+  exact ⟨.ofIsometry e₀.symm (dOdd.prod (dCyc.prod (dU.prod dV)))⟩
 
 /-- **Every nondegenerate finite quadratic module admits an admissible Nikulin generator
 decomposition** (Nikulin, Proposition 1.8.1). -/
@@ -690,32 +746,6 @@ theorem nonempty_nikulinDecomposition_iff (A : FiniteQuadraticModule.{u}) :
 
 namespace NikulinDecomposition
 
-/-- The empty Nikulin decomposition of a trivial finite quadratic module. -/
-noncomputable def zero (A : FiniteQuadraticModule.{u}) [Subsingleton A] :
-    NikulinDecomposition A where
-  generators := []
-  admissible _ h := nomatch h
-  isometry := Isometry.ofSubsingleton
-
-/-- Transport a `NikulinDecomposition` along an isometry. -/
-noncomputable def ofIsometry {A : FiniteQuadraticModule.{u}} {B : FiniteQuadraticModule.{v}}
-    (f : A.Isometry B) (D : NikulinDecomposition B) : NikulinDecomposition A where
-  generators := D.generators
-  admissible := D.admissible
-  isometry := f.trans D.isometry
-
-/-- Concatenate two Nikulin decompositions to decompose an orthogonal direct sum. -/
-noncomputable def prod {A : FiniteQuadraticModule.{u}} {B : FiniteQuadraticModule.{v}}
-    (DA : NikulinDecomposition A) (DB : NikulinDecomposition B) :
-    NikulinDecomposition (A.prod B) where
-  generators := DA.generators ++ DB.generators
-  admissible g hg := by
-    rcases List.mem_append.mp hg with hA | hB
-    · exact DA.admissible g hA
-    · exact DB.admissible g hB
-  isometry := (DA.isometry.prod DB.isometry).trans
-    (orthogonalSumNikulinGeneratorsAppendIsometry DA.generators DB.generators).symm
-
 /-- Filtering a `NikulinDecomposition` to generators with `g.prime = p` yields a
 `NikulinDecomposition` of the `p`-primary component `A.primaryComponent p`. -/
 noncomputable def primaryComponent {A : FiniteQuadraticModule.{u}} (D : NikulinDecomposition A)
@@ -725,6 +755,7 @@ noncomputable def primaryComponent {A : FiniteQuadraticModule.{u}} (D : NikulinD
   isometry := (D.isometry.primaryComponent p).trans
     (primaryComponentOrthogonalSumNikulinGeneratorsIsometry hp D.generators)
 
+/-- The `p`-primary decomposition filters `D.generators` to those with `g.prime = p`. -/
 @[simp]
 theorem primaryComponent_generators {A : FiniteQuadraticModule.{u}} (D : NikulinDecomposition A)
     {p : ℕ} (hp : p.Prime) :
@@ -757,15 +788,9 @@ theorem prod_realizationDet_filter_eq {A : FiniteQuadraticModule.{u}} (D : Nikul
     ((D.generators.filter fun g ↦ g.prime = p).map NikulinGenerator.realizationDet).prod =
       ((D.generators.filter fun g ↦ g.prime = p).map NikulinGenerator.realizationUnit).prod *
         (Nat.card (A.primaryComponent p) : ℤ) := by
-  rw [D.natCard_primaryComponent_eq hp]
-  induction (D.generators.filter fun g ↦ g.prime = p) with
-  | nil =>
-      simp
-  | cons g gs ih =>
-      simp only [List.map_cons, List.prod_cons, Nat.cast_mul,
-        g.realizationDet_eq_realizationUnit_mul_natCard]
-      rw [ih]
-      ring
+  rw [D.natCard_primaryComponent_eq hp, Nat.cast_list_prod, List.map_map, ← List.prod_map_mul]
+  congr 1
+  exact List.map_congr_left fun g _ ↦ g.realizationDet_eq_realizationUnit_mul_natCard
 
 /-- The product of `realizationUnit` across the `p`-primary generators of `D` is coprime to `p`. -/
 theorem isCoprime_prod_realizationUnit_filter {A : FiniteQuadraticModule.{u}}
@@ -809,7 +834,7 @@ theorem rank_primaryComponent {A : FiniteQuadraticModule.{u}} (D : NikulinDecomp
     AddGroup.rank (A.primaryComponent p) =
       ((D.generators.filter fun g ↦ g.prime = p).map NikulinGenerator.rank).sum := by
   rw [AddGroup.rank_congr (D.primaryComponent hp).isometry.toLinearEquiv.toAddEquiv]
-  exact rank_orthogonalSumNikulinGenerators_of_prime hp (D.primaryComponent hp).admissible
+  exact rank_orthogonalSumNikulinGenerators_of_prime (D.primaryComponent hp).admissible
     fun g hg ↦ of_decide_eq_true (List.mem_filter.mp hg).2
 
 /-- **Total length `l(A)` from a Nikulin decomposition**: the minimal number of generators
@@ -827,11 +852,20 @@ end NikulinDecomposition
 
 /-! ## Cyclic order-two dyadic summands -/
 
-/-- **Nikulin's dyadic condition-(4) predicate**: `A` splits off a cyclic dyadic summand
-`q_θ^{(2)}(2)` for some odd integer `θ`. -/
+/-- Existence of a cyclic order-two dyadic orthogonal summand `q_θ^{(2)}(2)` (`θ` odd): this is
+the dyadic alternative in Nikulin, Theorem 1.10.1(4), and the obstruction to uniqueness of the
+minimal `2`-adic lattice realization in Nikulin, Theorem 1.9.1. -/
 def HasCyclicTwoSummand (A : FiniteQuadraticModule.{u}) : Prop :=
   ∃ (θ : ℤ) (A' : FiniteQuadraticModule.{0}),
     Odd θ ∧ Nonempty (A.Isometry ((dyadicCyclic 1 θ).prod A'))
+
+/-- Unfolding lemma for `HasCyclicTwoSummand`: `A` splits off a cyclic dyadic summand
+`q_θ^{(2)}(2)` for some odd integer `θ`. -/
+theorem hasCyclicTwoSummand_def (A : FiniteQuadraticModule.{u}) :
+    HasCyclicTwoSummand A ↔
+      ∃ (θ : ℤ) (A' : FiniteQuadraticModule.{0}),
+        Odd θ ∧ Nonempty (A.Isometry ((dyadicCyclic 1 θ).prod A')) :=
+  Iff.rfl
 
 /-- `HasCyclicTwoSummand` is invariant under quadratic isometry. -/
 theorem Isometry.hasCyclicTwoSummand_iff {A : FiniteQuadraticModule.{u}}
@@ -861,40 +895,52 @@ theorem NikulinDecomposition.hasCyclicTwoSummand_of_mem {A : FiniteQuadraticModu
 
 /-! ## Non-uniqueness of decompositions -/
 
-/-- Standard single-generator decomposition `[q_1^{(2)}(2)]` of `dyadicCyclic 1 1`. -/
-noncomputable def nikulinDecompositionDyadicCyclicOne :
-    NikulinDecomposition (dyadicCyclic 1 1) where
-  generators := [.dyadicCyclic 1 Nat.one_pos 1]
-  admissible g hg := by
-    rw [List.mem_singleton] at hg
-    subst hg
-    exact odd_one
-  isometry := singletonNikulinGeneratorIsometry (.dyadicCyclic 1 Nat.one_pos 1)
+/-- Standard single-generator decomposition `[q_θ^{(2)}(2)]` of `dyadicCyclic 1 θ` (`θ` odd). -/
+noncomputable def nikulinDecompositionDyadicCyclicOne {θ : ℤ} (hθ : Odd θ) :
+    NikulinDecomposition (dyadicCyclic 1 θ) :=
+  NikulinDecomposition.ofIsometry
+    (Isometry.ofEq (NikulinGenerator.toFiniteQuadraticModule_dyadicCyclic 1 Nat.one_pos θ).symm)
+    (NikulinDecomposition.singleton (.dyadicCyclic 1 Nat.one_pos θ)
+      ((NikulinGenerator.isAdmissible_dyadicCyclic 1 Nat.one_pos θ).mpr hθ))
 
-/-- Alternative single-generator decomposition `[q_5^{(2)}(2)]` of `dyadicCyclic 1 1` via Nikulin's
-relation `q_1^{(2)}(2) ≅ q_5^{(2)}(2)` (`dyadicCyclicOneIsometryFiveMul`). -/
-noncomputable def nikulinDecompositionDyadicCyclicOneFive :
-    NikulinDecomposition (dyadicCyclic 1 1) where
-  generators := [.dyadicCyclic 1 Nat.one_pos 5]
-  admissible g hg := by
-    rw [List.mem_singleton] at hg
-    subst hg
-    exact ⟨2, by ring⟩
-  isometry := (dyadicCyclicOneIsometryFiveMul 1).trans
-    (singletonNikulinGeneratorIsometry (.dyadicCyclic 1 Nat.one_pos 5))
+/-- The generator list of `nikulinDecompositionDyadicCyclicOne` is
+`[.dyadicCyclic 1 Nat.one_pos θ]`. -/
+@[simp]
+theorem nikulinDecompositionDyadicCyclicOne_generators {θ : ℤ} (hθ : Odd θ) :
+    (nikulinDecompositionDyadicCyclicOne hθ).generators = [.dyadicCyclic 1 Nat.one_pos θ] := by
+  simp [nikulinDecompositionDyadicCyclicOne]
+
+/-- Alternative single-generator decomposition `[q_{5θ}^{(2)}(2)]` of `dyadicCyclic 1 θ` (`θ` odd)
+via Nikulin's relation `q_θ^{(2)}(2) ≅ q_{5θ}^{(2)}(2)` (`dyadicCyclicOneIsometryFiveMul`). -/
+noncomputable def nikulinDecompositionDyadicCyclicOneFive {θ : ℤ} (hθ : Odd θ) :
+    NikulinDecomposition (dyadicCyclic 1 θ) :=
+  NikulinDecomposition.ofIsometry (dyadicCyclicOneIsometryFiveMul θ)
+    (nikulinDecompositionDyadicCyclicOne ((show Odd (5 : ℤ) from ⟨2, by ring⟩).mul hθ))
+
+/-- The generator list of `nikulinDecompositionDyadicCyclicOneFive` is
+`[.dyadicCyclic 1 Nat.one_pos (5 * θ)]`. -/
+@[simp]
+theorem nikulinDecompositionDyadicCyclicOneFive_generators {θ : ℤ} (hθ : Odd θ) :
+    (nikulinDecompositionDyadicCyclicOneFive hθ).generators =
+      [.dyadicCyclic 1 Nat.one_pos (5 * θ)] := by
+  simp [nikulinDecompositionDyadicCyclicOneFive]
 
 /-- Standard two-generator decomposition `[u^{(2)}(2^k), u^{(2)}(2^k)]` of
 `(dyadicU k).prod (dyadicU k)` (`k > 0`). -/
 noncomputable def nikulinDecompositionDyadicUProdSelf {k : ℕ} (hk : 0 < k) :
     NikulinDecomposition ((dyadicU k).prod (dyadicU k)) :=
   let U : NikulinDecomposition (dyadicU k) :=
-    { generators := [.dyadicU k]
-      admissible := fun g hg ↦ by
-        rw [List.mem_singleton] at hg
-        subst hg
-        exact hk
-      isometry := singletonNikulinGeneratorIsometry (.dyadicU k) }
+    NikulinDecomposition.ofIsometry
+      (Isometry.ofEq (NikulinGenerator.toFiniteQuadraticModule_dyadicU k).symm)
+      (NikulinDecomposition.singleton (.dyadicU k)
+        ((NikulinGenerator.isAdmissible_dyadicU k).mpr hk))
   U.prod U
+
+/-- The generator list of `nikulinDecompositionDyadicUProdSelf` is `[.dyadicU k, .dyadicU k]`. -/
+@[simp]
+theorem nikulinDecompositionDyadicUProdSelf_generators {k : ℕ} (hk : 0 < k) :
+    (nikulinDecompositionDyadicUProdSelf hk).generators = [.dyadicU k, .dyadicU k] := by
+  simp [nikulinDecompositionDyadicUProdSelf]
 
 /-- Alternative two-generator decomposition `[v^{(2)}(2^k), v^{(2)}(2^k)]` of
 `(dyadicU k).prod (dyadicU k)` (`k > 0`) via `u^{(2)}(2^k)^2 ≅ v^{(2)}(2^k)^2`
@@ -902,12 +948,17 @@ noncomputable def nikulinDecompositionDyadicUProdSelf {k : ℕ} (hk : 0 < k) :
 noncomputable def nikulinDecompositionDyadicUProdSelfAsV {k : ℕ} (hk : 0 < k) :
     NikulinDecomposition ((dyadicU k).prod (dyadicU k)) :=
   let V : NikulinDecomposition (dyadicV k) :=
-    { generators := [.dyadicV k]
-      admissible := fun g hg ↦ by
-        rw [List.mem_singleton] at hg
-        subst hg
-        exact hk
-      isometry := singletonNikulinGeneratorIsometry (.dyadicV k) }
+    NikulinDecomposition.ofIsometry
+      (Isometry.ofEq (NikulinGenerator.toFiniteQuadraticModule_dyadicV k).symm)
+      (NikulinDecomposition.singleton (.dyadicV k)
+        ((NikulinGenerator.isAdmissible_dyadicV k).mpr hk))
   NikulinDecomposition.ofIsometry (dyadicUProdSelfIsometryDyadicVProdSelf k) (V.prod V)
+
+/-- The generator list of `nikulinDecompositionDyadicUProdSelfAsV` is
+`[.dyadicV k, .dyadicV k]`. -/
+@[simp]
+theorem nikulinDecompositionDyadicUProdSelfAsV_generators {k : ℕ} (hk : 0 < k) :
+    (nikulinDecompositionDyadicUProdSelfAsV hk).generators = [.dyadicV k, .dyadicV k] := by
+  simp [nikulinDecompositionDyadicUProdSelfAsV]
 
 end TauCeti.FiniteQuadraticModule

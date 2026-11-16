@@ -26,7 +26,10 @@ reduce to that factor.
 Results are given for both Mathlib's `Submodule.spanFinrank` over `ℤ` and `AddGroup.rank`. By
 Mathlib's convention `Submodule.spanFinrank` is `0` for a group that is not finitely generated, so
 for such factors the `spanFinrank` statement holds by that convention only; the `AddGroup.rank`
-statements assume finitely generated factors (`AddGroup.FG`).
+statements assume finitely generated factors (`AddGroup.FG`). Combining this with
+`AddGroup.rank_pi_zmod_of_dvd` yields the closed formula `AddGroup.rank_prod_zmod` for the
+generator rank of `ZMod m × ZMod n` (and its prime-power specialization
+`AddGroup.rank_prod_zmod_prime_pow`).
 -/
 
 public section
@@ -204,5 +207,49 @@ theorem rank_prod_eq_max_of_coprime_card.{u, v} (M : Type u) (N : Type v)
   have : AddGroup.FG (ULift.{u} N) := .of_surjective eN.symm eN.symm.surjective
   rw [← AddGroup.rank_congr (eM.prodCongr eN), rank_prod_eq_max_of_coprime_card_aux hcop',
     AddGroup.rank_congr eM, AddGroup.rank_congr eN]
+
+/-- The generator rank of `ZMod m × ZMod n` is `0` if `m = 1` and `n = 1`, `1` if `m` and `n`
+are coprime and not both `1`, and `2` otherwise. -/
+theorem rank_prod_zmod (m n : ℕ) :
+    AddGroup.rank (ZMod m × ZMod n) =
+      if m = 1 ∧ n = 1 then 0 else if m.Coprime n then 1 else 2 := by
+  split_ifs with h1 hcop
+  · rcases h1 with ⟨rfl, rfl⟩
+    exact AddGroup.rank_eq_zero _
+  · have hcard : (Nat.card (ZMod m)).Coprime (Nat.card (ZMod n)) := by
+      simpa [Nat.card_zmod] using hcop
+    rw [rank_prod_eq_max_of_coprime_card (ZMod m) (ZMod n) hcard,
+      AddGroup.rank_zmod, AddGroup.rank_zmod]
+    split_ifs <;> simp_all
+  · have hgcd : Nat.gcd m n ≠ 1 := hcop
+    have hp : (if Nat.gcd m n = 0 then 2 else (Nat.gcd m n).minFac).Prime := by
+      split_ifs with h0
+      · exact Nat.prime_two
+      · exact Nat.minFac_prime hgcd
+    have hdvd_m : (if Nat.gcd m n = 0 then 2 else (Nat.gcd m n).minFac) ∣ m := by
+      split_ifs with h0
+      · rw [(Nat.gcd_eq_zero_iff.mp h0).1]
+        exact dvd_zero 2
+      · exact (Nat.minFac_dvd _).trans (Nat.gcd_dvd_left m n)
+    have hdvd_n : (if Nat.gcd m n = 0 then 2 else (Nat.gcd m n).minFac) ∣ n := by
+      split_ifs with h0
+      · rw [(Nat.gcd_eq_zero_iff.mp h0).2]
+        exact dvd_zero 2
+      · exact (Nat.minFac_dvd _).trans (Nat.gcd_dvd_right m n)
+    let e : (ZMod m × ZMod n) ≃+ ∀ b : Bool, ZMod (cond b m n) :=
+      { toFun := fun x b ↦ match b with | true => x.1 | false => x.2
+        invFun := fun f ↦ (f true, f false)
+        left_inv := fun ⟨_, _⟩ ↦ rfl
+        right_inv := fun f ↦ funext fun b ↦ by cases b <;> rfl
+        map_add' := fun _ _ ↦ funext fun b ↦ by cases b <;> rfl }
+    rw [AddGroup.rank_congr e, AddGroup.rank_pi_zmod_of_dvd hp (by rintro (_ | _) <;> assumption),
+      Fintype.card_bool]
+
+/-- For prime `p` and `k₁, k₂ > 0`, `ZMod (p ^ k₁) × ZMod (p ^ k₂)` has generator rank `2`. -/
+theorem rank_prod_zmod_prime_pow {p k₁ k₂ : ℕ} (hp : p.Prime) (hk₁ : 0 < k₁) (hk₂ : 0 < k₂) :
+    AddGroup.rank (ZMod (p ^ k₁) × ZMod (p ^ k₂)) = 2 := by
+  have hcop : ¬ (p ^ k₁).Coprime (p ^ k₂) :=
+    Nat.not_coprime_of_dvd_of_dvd hp.one_lt (dvd_pow_self p hk₁.ne') (dvd_pow_self p hk₂.ne')
+  simp [rank_prod_zmod, hp.ne_one, hk₁.ne', hcop]
 
 end AddGroup

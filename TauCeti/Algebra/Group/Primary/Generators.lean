@@ -68,14 +68,9 @@ theorem rank_eq_sup_primaryComponents (A : Type*) [AddCommGroup A] [Finite A] :
   rw [AddGroup.rank_eq_spanFinrank_top,
     TauCeti.AddCommGroup.spanFinrank_eq_sup_primaryComponents]
   simp_rw [← AddGroup.rank_eq_spanFinrank_top]
-  apply le_antisymm
-  · refine Finset.sup_le fun p _ ↦ ?_
-    exact Finset.le_sup (f := fun q ↦ AddGroup.rank (AddCommGroup.primaryComponent A q)) p.2
-  · refine Finset.sup_le fun p hp ↦ ?_
-    exact Finset.le_sup
-      (f := fun q : (Nat.card A).primeFactors ↦
-        AddGroup.rank (AddCommGroup.primaryComponent A q.1))
-      (Finset.mem_univ ⟨p, hp⟩)
+  rw [Finset.univ_eq_attach]
+  exact Finset.sup_attach (Nat.card A).primeFactors
+    (fun p ↦ AddGroup.rank (AddCommGroup.primaryComponent A p))
 
 /-- For any prime `p`, the generator rank of the `p`-primary component of a finite abelian group
 `A` is at most the generator rank of `A`. -/

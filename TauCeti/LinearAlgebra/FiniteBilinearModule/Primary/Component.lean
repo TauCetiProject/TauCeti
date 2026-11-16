@@ -186,30 +186,28 @@ theorem isAddPGroup_primaryComponent (A : FiniteBilinearModule.{u}) (n : ℕ) :
 components. -/
 def Isometry.primaryComponent {A : FiniteBilinearModule.{u}} {B : FiniteBilinearModule.{v}}
     (f : A.Isometry B) (n : ℕ) : (A.primaryComponent n).Isometry (B.primaryComponent n) where
-  toAddEquiv :=
-    { toFun := fun x ↦ ⟨f x.1, by
-        obtain ⟨k, hk⟩ := AddCommGroup.mem_primaryComponent.mp x.2
-        exact AddCommGroup.mem_primaryComponent.mpr ⟨k, by rw [← map_nsmul, hk, map_zero]⟩⟩
-      invFun := fun y ↦ ⟨f.symm y.1, by
-        obtain ⟨k, hk⟩ := AddCommGroup.mem_primaryComponent.mp y.2
-        exact AddCommGroup.mem_primaryComponent.mpr ⟨k, by rw [← map_nsmul, hk, map_zero]⟩⟩
-      left_inv := fun x ↦ Subtype.ext (f.symm_apply_apply x.1)
-      right_inv := fun y ↦ Subtype.ext (f.apply_symm_apply y.1)
-      map_add' := fun x y ↦ Subtype.ext (map_add f x.1 y.1) }
-  map_pairing' x y := f.map_pairing x.1 y.1
+  toAddEquiv := f.toAddEquiv.primaryComponent n
+  map_pairing' x y := by
+    rw [restrict_pairing, restrict_pairing]
+    simp [f.map_pairing]
 
+/-- Applying `FiniteBilinearModule.Isometry.primaryComponent f n` agrees with `f` on underlying
+elements. -/
 @[simp]
 theorem Isometry.coe_primaryComponent_apply {A : FiniteBilinearModule.{u}}
     {B : FiniteBilinearModule.{v}} (f : A.Isometry B) (n : ℕ) (x : A.primaryComponent n) :
     (f.primaryComponent n x : B) = f x.1 := by
-  rfl
+  rw [← Isometry.coe_toAddEquiv]
+  simp [Isometry.primaryComponent]
 
+/-- Applying `(FiniteBilinearModule.Isometry.primaryComponent f n).symm` agrees with `f.symm` on
+underlying elements. -/
 @[simp]
 theorem Isometry.coe_primaryComponent_symm_apply {A : FiniteBilinearModule.{u}}
     {B : FiniteBilinearModule.{v}} (f : A.Isometry B) (n : ℕ) (y : B.primaryComponent n) :
     ((f.primaryComponent n).symm y : A) = f.symm y.1 := by
   rw [← coe_toAddEquiv, symm_toAddEquiv]
-  rfl
+  simp [Isometry.primaryComponent, ← Isometry.symm_toAddEquiv]
 
 /-- The `n`-primary component of an orthogonal direct sum of finite bilinear modules splits as the
 orthogonal direct sum of their `n`-primary components. -/
@@ -219,24 +217,27 @@ def primaryComponentProdIsometry (A : FiniteBilinearModule.{u}) (B : FiniteBilin
       ((A.primaryComponent n).prod (B.primaryComponent n)) where
   toAddEquiv := AddCommGroup.primaryComponentProdAddEquiv A B n
   map_pairing' x y := by
-    rw [prod_pairing, restrict_pairing, restrict_pairing, restrict_pairing,
-      AddCommGroup.primaryComponentProdAddEquiv_apply_fst,
-      AddCommGroup.primaryComponentProdAddEquiv_apply_fst,
-      AddCommGroup.primaryComponentProdAddEquiv_apply_snd,
-      AddCommGroup.primaryComponentProdAddEquiv_apply_snd, prod_pairing]
+    rw [prod_pairing, restrict_pairing, restrict_pairing, restrict_pairing, prod_pairing]
+    simp
 
+/-- The first component of `FiniteBilinearModule.primaryComponentProdIsometry` preserves the
+underlying first coordinate. -/
 @[simp]
 theorem coe_primaryComponentProdIsometry_apply_fst (A : FiniteBilinearModule.{u})
     (B : FiniteBilinearModule.{v}) (n : ℕ) (x : (A.prod B).primaryComponent n) :
     ((primaryComponentProdIsometry A B n x).1 : A) = x.1.1 :=
-  AddCommGroup.primaryComponentProdAddEquiv_apply_fst A.carrier B.carrier n x
+  AddCommGroup.coe_primaryComponentProdAddEquiv_apply_fst A.carrier B.carrier n x
 
+/-- The second component of `FiniteBilinearModule.primaryComponentProdIsometry` preserves the
+underlying second coordinate. -/
 @[simp]
 theorem coe_primaryComponentProdIsometry_apply_snd (A : FiniteBilinearModule.{u})
     (B : FiniteBilinearModule.{v}) (n : ℕ) (x : (A.prod B).primaryComponent n) :
     ((primaryComponentProdIsometry A B n x).2 : B) = x.1.2 :=
-  AddCommGroup.primaryComponentProdAddEquiv_apply_snd A.carrier B.carrier n x
+  AddCommGroup.coe_primaryComponentProdAddEquiv_apply_snd A.carrier B.carrier n x
 
+/-- The inverse of `FiniteBilinearModule.primaryComponentProdIsometry` preserves underlying
+coordinates. -/
 @[simp]
 theorem coe_primaryComponentProdIsometry_symm_apply (A : FiniteBilinearModule.{u})
     (B : FiniteBilinearModule.{v}) (n : ℕ) (x : A.primaryComponent n) (y : B.primaryComponent n) :
@@ -248,36 +249,34 @@ theorem coe_primaryComponentProdIsometry_symm_apply (A : FiniteBilinearModule.{u
 canonically isometric to `A`. -/
 def primaryComponentIsometrySelfOfIsAddPGroup {A : FiniteBilinearModule.{u}} {n : ℕ}
     (hA : IsAddPGroup n A) : (A.primaryComponent n).Isometry A where
-  toAddEquiv :=
-    { toFun := Subtype.val
-      invFun := fun x ↦ ⟨x, AddCommGroup.mem_primaryComponent.mpr (hA x)⟩
-      left_inv := fun _ ↦ rfl
-      right_inv := fun _ ↦ rfl
-      map_add' := fun _ _ ↦ rfl }
-  map_pairing' _ _ := rfl
+  toAddEquiv := hA.primaryComponentEquiv
+  map_pairing' x y := by
+    rw [restrict_pairing]
+    simp
 
+/-- `FiniteBilinearModule.primaryComponentIsometrySelfOfIsAddPGroup` acts as the subtype
+coercion. -/
 @[simp]
 theorem primaryComponentIsometrySelfOfIsAddPGroup_apply {A : FiniteBilinearModule.{u}} {n : ℕ}
     (hA : IsAddPGroup n A) (x : A.primaryComponent n) :
-    primaryComponentIsometrySelfOfIsAddPGroup hA x = x.1 := by
-  rfl
+    primaryComponentIsometrySelfOfIsAddPGroup hA x = x.1 :=
+  hA.primaryComponentEquiv_apply x
 
+/-- The inverse of `FiniteBilinearModule.primaryComponentIsometrySelfOfIsAddPGroup` preserves
+underlying elements. -/
 @[simp]
 theorem coe_primaryComponentIsometrySelfOfIsAddPGroup_symm_apply {A : FiniteBilinearModule.{u}}
     {n : ℕ} (hA : IsAddPGroup n A) (x : A) :
     ((primaryComponentIsometrySelfOfIsAddPGroup hA).symm x : A) = x := by
   rw [← Isometry.coe_toAddEquiv, Isometry.symm_toAddEquiv]
-  rfl
+  exact hA.coe_primaryComponentEquiv_symm_apply x
 
-/-- For distinct primes `p ≠ q`, the `p`-primary component of a `q`-primary finite bilinear module
+/-- For coprime `p` and `q`, the `p`-primary component of a `q`-primary finite bilinear module
 is trivial. -/
-theorem subsingleton_primaryComponent_of_isAddPGroup_of_ne {A : FiniteBilinearModule.{u}}
-    {p q : ℕ} (hp : p.Prime) (hq : q.Prime) (hpq : p ≠ q) (hA : IsAddPGroup q A) :
-    Subsingleton (A.primaryComponent p) := by
-  refine subsingleton_of_forall_eq 0 fun ⟨x, hx⟩ ↦ Subtype.ext ?_
-  obtain ⟨m, hm⟩ := AddCommGroup.mem_primaryComponent.mp hx
-  obtain ⟨n, hn⟩ := hA x
-  exact eq_zero_of_coprime_nsmul_eq_zero (Nat.coprime_pow_primes m n hp hq hpq) hm hn
+theorem subsingleton_primaryComponent_of_isAddPGroup_of_coprime {A : FiniteBilinearModule.{u}}
+    {p q : ℕ} (hpq : p.Coprime q) (hA : IsAddPGroup q A) :
+    Subsingleton (A.primaryComponent p) :=
+  AddCommGroup.primaryComponent.subsingleton_of_isAddPGroup_of_coprime hA hpq
 
 end FiniteBilinearModule
 
@@ -295,38 +294,59 @@ theorem isAddPGroup_primaryComponent (A : FiniteQuadraticModule.{u}) (n : ℕ) :
     IsAddPGroup n (A.primaryComponent n) :=
   AddCommGroup.primaryComponent.isAddPGroup A n
 
+/-- Canonical additive equivalence identifying the carrier of `A.restrict H` with `H`. -/
+private def restrictAddEquiv (A : FiniteQuadraticModule.{u}) (H : AddSubgroup A) :
+    A.restrict H ≃+ H where
+  toFun x := x
+  invFun x := x
+  left_inv _ := rfl
+  right_inv _ := rfl
+  map_add' _ _ := rfl
+
+@[simp]
+private theorem coe_restrictAddEquiv_apply (A : FiniteQuadraticModule.{u}) (H : AddSubgroup A)
+    (x : A.restrict H) : (restrictAddEquiv A H x : A) = x.1 :=
+  rfl
+
+@[simp]
+private theorem coe_restrictAddEquiv_symm_apply (A : FiniteQuadraticModule.{u}) (H : AddSubgroup A)
+    (x : H) : ((restrictAddEquiv A H).symm x).1 = x.1 :=
+  rfl
+
+private theorem restrict_quadratic_apply (A : FiniteQuadraticModule.{u}) (H : AddSubgroup A)
+    (x : A.restrict H) :
+    (A.restrict H).quadratic x = A.quadratic (restrictAddEquiv A H x).1 :=
+  restrict_quadratic A H (restrictAddEquiv A H x)
+
 /-- An isometry of finite quadratic modules restricts to an isometry between their `n`-primary
 components. -/
 def Isometry.primaryComponent {A : FiniteQuadraticModule.{u}} {B : FiniteQuadraticModule.{v}}
     (f : A.Isometry B) (n : ℕ) : (A.primaryComponent n).Isometry (B.primaryComponent n) where
   toLinearEquiv :=
-    ({ toFun := fun x : AddCommGroup.primaryComponent A n ↦
-        (⟨f x.1, by
-          obtain ⟨k, hk⟩ := AddCommGroup.mem_primaryComponent.mp x.2
-          exact AddCommGroup.mem_primaryComponent.mpr
-            ⟨k, by rw [← map_nsmul, hk, map_zero]⟩⟩ : AddCommGroup.primaryComponent B n)
-       invFun := fun y : AddCommGroup.primaryComponent B n ↦
-        (⟨f.symm y.1, by
-          obtain ⟨k, hk⟩ := AddCommGroup.mem_primaryComponent.mp y.2
-          exact AddCommGroup.mem_primaryComponent.mpr
-            ⟨k, by rw [← map_nsmul, hk, map_zero]⟩⟩ : AddCommGroup.primaryComponent A n)
-       left_inv := fun x ↦ Subtype.ext (f.symm_apply_apply x.1)
-       right_inv := fun y ↦ Subtype.ext (f.apply_symm_apply y.1)
-       map_add' := fun x y ↦ Subtype.ext (map_add f x.1 y.1) } :
-      AddCommGroup.primaryComponent A n ≃+ AddCommGroup.primaryComponent B n).toIntLinearEquiv
-  map_app' x := f.map_app x.1
+    ((restrictAddEquiv A _).trans
+      ((f.toAddEquiv.primaryComponent n).trans (restrictAddEquiv B _).symm)).toIntLinearEquiv
+  map_app' x := by
+    rw [restrict_quadratic_apply, restrict_quadratic_apply]
+    simp [f.map_app]
 
+/-- Applying `FiniteQuadraticModule.Isometry.primaryComponent f n` agrees with `f` on underlying
+elements. -/
 @[simp]
-theorem Isometry.val_primaryComponent_apply {A : FiniteQuadraticModule.{u}}
+theorem Isometry.coe_primaryComponent_apply {A : FiniteQuadraticModule.{u}}
     {B : FiniteQuadraticModule.{v}} (f : A.Isometry B) (n : ℕ) (x : A.primaryComponent n) :
     (f.primaryComponent n x).1 = f x.1 := by
-  rfl
+  rw [← QuadraticMap.IsometryEquiv.coe_toLinearEquiv]
+  simp [Isometry.primaryComponent]
 
+/-- Applying `(FiniteQuadraticModule.Isometry.primaryComponent f n).symm` agrees with `f.symm` on
+underlying elements. -/
 @[simp]
-theorem Isometry.val_primaryComponent_symm_apply {A : FiniteQuadraticModule.{u}}
+theorem Isometry.coe_primaryComponent_symm_apply {A : FiniteQuadraticModule.{u}}
     {B : FiniteQuadraticModule.{v}} (f : A.Isometry B) (n : ℕ) (y : B.primaryComponent n) :
     ((f.primaryComponent n).symm y).1 = f.symm y.1 := by
-  rfl
+  rw [← QuadraticMap.IsometryEquiv.coe_toLinearEquiv,
+    ← QuadraticMap.IsometryEquiv.coe_symm_toLinearEquiv]
+  simp [Isometry.primaryComponent, AddEquiv.coe_symm_toIntLinearEquiv]
 
 /-- The `n`-primary component of an orthogonal direct sum of finite quadratic modules splits as the
 orthogonal direct sum of their `n`-primary components. -/
@@ -334,64 +354,84 @@ def primaryComponentProdIsometry (A : FiniteQuadraticModule.{u}) (B : FiniteQuad
     (n : ℕ) :
     ((A.prod B).primaryComponent n).Isometry
       ((A.primaryComponent n).prod (B.primaryComponent n)) where
-  toLinearEquiv := (AddCommGroup.primaryComponentProdAddEquiv A B n).toIntLinearEquiv
-  map_app' x :=
-    let x' : AddCommGroup.primaryComponent (A.carrier × B.carrier) n := x
-    congrArg₂ (· + ·)
-      (congrArg A.quadratic
-        (AddCommGroup.primaryComponentProdAddEquiv_apply_fst A.carrier B.carrier n x'))
-      (congrArg B.quadratic
-        (AddCommGroup.primaryComponentProdAddEquiv_apply_snd A.carrier B.carrier n x'))
+  toLinearEquiv :=
+    ((restrictAddEquiv (A.prod B) _).trans
+      ((AddCommGroup.primaryComponentProdAddEquiv A B n).trans
+        ((restrictAddEquiv A _).symm.prodCongr
+          (restrictAddEquiv B _).symm))).toIntLinearEquiv
+  map_app' x := by
+    rw [QuadraticMap.prod_apply, restrict_quadratic_apply, restrict_quadratic_apply,
+      restrict_quadratic_apply, QuadraticMap.prod_apply]
+    simp [AddEquiv.prodCongr, Equiv.prodCongr_apply]
 
+/-- The first component of `FiniteQuadraticModule.primaryComponentProdIsometry` preserves the
+underlying first coordinate. -/
 @[simp]
-theorem val_primaryComponentProdIsometry_apply_fst (A : FiniteQuadraticModule.{u})
+theorem coe_primaryComponentProdIsometry_apply_fst (A : FiniteQuadraticModule.{u})
     (B : FiniteQuadraticModule.{v}) (n : ℕ) (x : (A.prod B).primaryComponent n) :
-    ((primaryComponentProdIsometry A B n x).1).1 = x.1.1 :=
-  AddCommGroup.primaryComponentProdAddEquiv_apply_fst A.carrier B.carrier n x
+    ((primaryComponentProdIsometry A B n x).1).1 = x.1.1 := by
+  rw [← QuadraticMap.IsometryEquiv.coe_toLinearEquiv]
+  simpa [primaryComponentProdIsometry, AddEquiv.prodCongr, Equiv.prodCongr_apply] using
+    congrArg Prod.fst (coe_restrictAddEquiv_apply (A.prod B) _ x)
 
+/-- The second component of `FiniteQuadraticModule.primaryComponentProdIsometry` preserves the
+underlying second coordinate. -/
 @[simp]
-theorem val_primaryComponentProdIsometry_apply_snd (A : FiniteQuadraticModule.{u})
+theorem coe_primaryComponentProdIsometry_apply_snd (A : FiniteQuadraticModule.{u})
     (B : FiniteQuadraticModule.{v}) (n : ℕ) (x : (A.prod B).primaryComponent n) :
-    ((primaryComponentProdIsometry A B n x).2).1 = x.1.2 :=
-  AddCommGroup.primaryComponentProdAddEquiv_apply_snd A.carrier B.carrier n x
+    ((primaryComponentProdIsometry A B n x).2).1 = x.1.2 := by
+  rw [← QuadraticMap.IsometryEquiv.coe_toLinearEquiv]
+  simpa [primaryComponentProdIsometry, AddEquiv.prodCongr, Equiv.prodCongr_apply] using
+    congrArg Prod.snd (coe_restrictAddEquiv_apply (A.prod B) _ x)
 
+/-- The inverse of `FiniteQuadraticModule.primaryComponentProdIsometry` preserves underlying
+coordinates. -/
 @[simp]
-theorem val_primaryComponentProdIsometry_symm_apply (A : FiniteQuadraticModule.{u})
+theorem coe_primaryComponentProdIsometry_symm_apply (A : FiniteQuadraticModule.{u})
     (B : FiniteQuadraticModule.{v}) (n : ℕ) (x : A.primaryComponent n) (y : B.primaryComponent n) :
     ((primaryComponentProdIsometry A B n).symm (x, y)).1 = (x.1, y.1) := by
-  exact AddCommGroup.coe_primaryComponentProdAddEquiv_symm_apply A B n x y
+  rw [← QuadraticMap.IsometryEquiv.coe_toLinearEquiv,
+    ← QuadraticMap.IsometryEquiv.coe_symm_toLinearEquiv]
+  simpa [primaryComponentProdIsometry, AddEquiv.coe_symm_toIntLinearEquiv,
+    AddEquiv.prodCongr, Equiv.prodCongr_symm, Equiv.prodCongr_apply] using
+    coe_restrictAddEquiv_symm_apply (A.prod B) _
+      ((AddCommGroup.primaryComponentProdAddEquiv A B n).symm
+        (restrictAddEquiv A _ x, restrictAddEquiv B _ y))
 
 /-- If the underlying group of `A` is already `n`-primary torsion, its `n`-primary component is
 canonically isometric to `A`. -/
 def primaryComponentIsometrySelfOfIsAddPGroup {A : FiniteQuadraticModule.{u}} {n : ℕ}
     (hA : IsAddPGroup n A) : (A.primaryComponent n).Isometry A where
-  toLinearEquiv :=
-    ({ toFun := Subtype.val
-       invFun := fun x ↦ ⟨x, AddCommGroup.mem_primaryComponent.mpr (hA x)⟩
-       left_inv := fun _ ↦ rfl
-       right_inv := fun _ ↦ rfl
-       map_add' := fun _ _ ↦ rfl } :
-      AddCommGroup.primaryComponent A n ≃+ A).toIntLinearEquiv
-  map_app' _ := rfl
+  toLinearEquiv := ((restrictAddEquiv A _).trans hA.primaryComponentEquiv).toIntLinearEquiv
+  map_app' x := by
+    rw [restrict_quadratic_apply]
+    simp
 
+/-- `FiniteQuadraticModule.primaryComponentIsometrySelfOfIsAddPGroup` acts as the subtype
+coercion. -/
 @[simp]
 theorem primaryComponentIsometrySelfOfIsAddPGroup_apply {A : FiniteQuadraticModule.{u}} {n : ℕ}
     (hA : IsAddPGroup n A) (x : A.primaryComponent n) :
     primaryComponentIsometrySelfOfIsAddPGroup hA x = x.1 := by
-  rfl
+  rw [← QuadraticMap.IsometryEquiv.coe_toLinearEquiv]
+  simp [primaryComponentIsometrySelfOfIsAddPGroup]
 
+/-- The inverse of `FiniteQuadraticModule.primaryComponentIsometrySelfOfIsAddPGroup` preserves
+underlying elements. -/
 @[simp]
-theorem val_primaryComponentIsometrySelfOfIsAddPGroup_symm_apply {A : FiniteQuadraticModule.{u}}
+theorem coe_primaryComponentIsometrySelfOfIsAddPGroup_symm_apply {A : FiniteQuadraticModule.{u}}
     {n : ℕ} (hA : IsAddPGroup n A) (x : A) :
     ((primaryComponentIsometrySelfOfIsAddPGroup hA).symm x).1 = x := by
-  rfl
+  rw [← QuadraticMap.IsometryEquiv.coe_toLinearEquiv,
+    ← QuadraticMap.IsometryEquiv.coe_symm_toLinearEquiv]
+  simp [primaryComponentIsometrySelfOfIsAddPGroup, AddEquiv.coe_symm_toIntLinearEquiv]
 
-/-- For distinct primes `p ≠ q`, the `p`-primary component of a `q`-primary finite quadratic module
+/-- For coprime `p` and `q`, the `p`-primary component of a `q`-primary finite quadratic module
 is trivial. -/
-theorem subsingleton_primaryComponent_of_isAddPGroup_of_ne {A : FiniteQuadraticModule.{u}}
-    {p q : ℕ} (hp : p.Prime) (hq : q.Prime) (hpq : p ≠ q) (hA : IsAddPGroup q A) :
+theorem subsingleton_primaryComponent_of_isAddPGroup_of_coprime {A : FiniteQuadraticModule.{u}}
+    {p q : ℕ} (hpq : p.Coprime q) (hA : IsAddPGroup q A) :
     Subsingleton (A.primaryComponent p) :=
-  A.toFiniteBilinearModule.subsingleton_primaryComponent_of_isAddPGroup_of_ne hp hq hpq hA
+  A.toFiniteBilinearModule.subsingleton_primaryComponent_of_isAddPGroup_of_coprime hpq hA
 
 /-- The polar pairing of a nondegenerate finite quadratic module restricts nondegenerately to each
 prime-primary component. -/

@@ -59,7 +59,8 @@ noncomputable def elementaryTwoQuotientProdLinearEquiv (G H : Type*) [CommGroup 
     (p : G × H) :
     elementaryTwoQuotientProdLinearEquiv G H (elementaryTwoQuotientMk p) =
       (elementaryTwoQuotientMk p.1, elementaryTwoQuotientMk p.2) := by
-  simp only [elementaryTwoQuotientProdLinearEquiv, elementaryTwoQuotientMk_eq_mkQ]
+  simp only [elementaryTwoQuotientProdLinearEquiv, elementaryTwoQuotientMk_eq_mkQ,
+    ← ModN.mkQ_apply]
   exact ModN.prodLinearEquiv_mkQ (Additive G) (Additive H) 2 (Additive.ofMul p)
 
 /-- The inverse product equivalence sends a pair of classes to the class of the pair. -/
@@ -104,7 +105,7 @@ classes. -/
 @[simp] theorem elementaryTwoQuotientPiLinearEquiv_mk (g : ∀ i, G i) :
     elementaryTwoQuotientPiLinearEquiv G (elementaryTwoQuotientMk g) =
       fun i => elementaryTwoQuotientMk (g i) := by
-  simp only [elementaryTwoQuotientPiLinearEquiv, elementaryTwoQuotientMk_eq_mkQ]
+  simp only [elementaryTwoQuotientPiLinearEquiv, elementaryTwoQuotientMk_eq_mkQ, ← ModN.mkQ_apply]
   exact ModN.piLinearEquiv_mkQ (fun i ↦ Additive (G i)) 2 (Additive.ofMul g)
 
 /-- The inverse indexed-product equivalence sends a family of componentwise classes to the class

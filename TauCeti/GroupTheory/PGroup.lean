@@ -33,12 +33,13 @@ that a homomorphism into a pro-`p` group kills their intersection.
   homomorphism has `p`-power order.
 * `IsPGroup.prod`, `IsAddPGroup.prod`: a product of two `p`-groups is a `p`-group.
 * `IsPGroup.pi`, `IsAddPGroup.pi`: a finite product of `p`-groups is a `p`-group.
-* `IsAddPGroup.zmod_prime_pow`: `ZMod (p ^ k)` is an additive `p`-group.
+* `IsAddPGroup.zmod_pow`: `ZMod (p ^ k)` is an additive `p`-group.
 * `IsPGroup.of_subgroup_of_quotient`: an extension of a `p`-group by a `p`-group is a
   `p`-group.
 * `TauCeti.disjoint_of_not_dvd_natCard_of_isPGroup`: a `p`-group meets a subgroup of order prime
   to `p` trivially.
-* `IsPGroup.subsingleton_of_coprime`, `IsPGroup.subsingleton_of_ne`: a group that is a `p`-group
+* `IsPGroup.subsingleton_of_coprime`, `IsAddPGroup.subsingleton_of_coprime`,
+  `IsPGroup.subsingleton_of_ne`, `IsAddPGroup.subsingleton_of_ne`: a group that is a `p`-group
   and a `q`-group for coprime `p`, `q`, in particular for distinct primes, is trivial.
 * `IsPGroup.smul_zmod_eq_self`: a `p`-group acts trivially on the additive group `ZMod p`.
 * `MonoidHom.apply_eq_self_of_iterate_pow_eq_self`: an endomorphism of a group of order `p`
@@ -90,7 +91,7 @@ theorem _root_.IsPGroup.pi {ι : Type*} [Finite ι] {G : ι → Type*} [∀ i, G
   rw [Pi.pow_apply, hk, pow_mul, hn, one_pow, Pi.one_apply]
 
 /-- For any `p` and `k`, `ZMod (p ^ k)` is an additive `p`-group. -/
-theorem _root_.IsAddPGroup.zmod_prime_pow (p k : ℕ) : IsAddPGroup p (ZMod (p ^ k)) :=
+theorem _root_.IsAddPGroup.zmod_pow (p k : ℕ) : IsAddPGroup p (ZMod (p ^ k)) :=
   fun _ ↦ ⟨k, by simp⟩
 
 /-- An extension of a `p`-group by a `p`-group is a `p`-group: if a normal subgroup `N` of `G`
@@ -110,12 +111,17 @@ theorem disjoint_of_not_dvd_natCard_of_isPGroup [Fact p.Prime] {C Q : Subgroup G
     ((Fact.out : p.Prime).coprime_iff_not_dvd.mpr hC)).symm
 
 /-- A group that is a `p`-group and a `q`-group for coprime `p` and `q` is trivial. -/
+@[to_additive
+  /-- An additive group that is a `p`-group and a `q`-group for coprime `p` and `q` is trivial. -/]
 theorem _root_.IsPGroup.subsingleton_of_coprime {q : ℕ} (hp : IsPGroup p G) (hq : IsPGroup q G)
     (hpq : p.Coprime q) : Subsingleton G :=
   Subgroup.subsingleton_iff.mp <| subsingleton_of_bot_eq_top
     (disjoint_self.mp ((hp.to_subgroup ⊤).disjoint_of_coprime (hq.to_subgroup ⊤) hpq)).symm
 
 /-- **A group that is a `p`-group and a `q`-group for two distinct primes is trivial.** -/
+@[to_additive
+  /-- **An additive group that is a `p`-group and a `q`-group for two distinct primes is
+  trivial.** -/]
 theorem _root_.IsPGroup.subsingleton_of_ne {q : ℕ} [Fact p.Prime] [Fact q.Prime]
     (hp : IsPGroup p G) (hq : IsPGroup q G) (hpq : p ≠ q) : Subsingleton G :=
   hp.subsingleton_of_coprime hq ((Nat.coprime_primes Fact.out Fact.out).mpr hpq)
