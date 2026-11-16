@@ -14,7 +14,10 @@ public import Mathlib.AlgebraicTopology.SingularHomology.Basic
 This module relates the singular-chain functor to the chain map induced by a map of singular
 simplicial sets, and the singular homology functor to the simplicial homology map it induces.
 It records restriction along subspace inclusions (`TopCat.chainComplexMap_f_comp_subtypeVal`)
-without requiring the small-chain subdivision theory.
+without requiring the small-chain subdivision theory, functoriality `g_* ∘ f_* = (g ∘ f)_*` of
+singular homology in continuous maps (`TauCeti.homologyMap_comp_homologyMap`), and that a section
+`s` of a map `p` induces a section `p_* ∘ s_* = id` on homology
+(`TauCeti.homologyMap_comp_homologyMap_of_comp_eq_id`).
 It also records the degree-zero component of Mathlib's identification of the singular chains of
 a totally disconnected space with an alternating constant complex
 (`TauCeti.ιChainComplex_singularChainComplexFunctorIsoOfTotallyDisconnectedSpace_hom_f_zero`).
@@ -54,6 +57,26 @@ lemma singularHomologyFunctor_obj_map [CategoryWithHomology C] (n : ℕ) {X Y : 
     (f : X ⟶ Y) :
     ((AlgebraicTopology.singularHomologyFunctor C n).obj R).map f =
       SSet.homologyMap (TopCat.toSSet.map f) R n := rfl
+
+/-- Singular homology is functorial in continuous maps: `g_* ∘ f_* = (g ∘ f)_*`. -/
+@[reassoc, elementwise nosimp]
+theorem homologyMap_comp_homologyMap [CategoryWithHomology C] {X Y Z : Type w}
+    [TopologicalSpace X] [TopologicalSpace Y] [TopologicalSpace Z] (f : C(X, Y)) (g : C(Y, Z))
+    (n : ℕ) :
+    SSet.homologyMap (TopCat.toSSet.map (TopCat.ofHom f)) R n ≫
+        SSet.homologyMap (TopCat.toSSet.map (TopCat.ofHom g)) R n =
+      SSet.homologyMap (TopCat.toSSet.map (TopCat.ofHom (g.comp f))) R n := by
+  rw [← SSet.homologyMap_comp, ← CategoryTheory.Functor.map_comp, ← TopCat.ofHom_comp]
+
+/-- A section `s` of `p : E → M` induces a section on singular homology: `p_* ∘ s_* = id`. -/
+@[reassoc, elementwise]
+theorem homologyMap_comp_homologyMap_of_comp_eq_id [CategoryWithHomology C] {E M : Type w}
+    [TopologicalSpace E] [TopologicalSpace M] (p : C(E, M)) (s : C(M, E))
+    (hs : p.comp s = ContinuousMap.id M) (n : ℕ) :
+    SSet.homologyMap (TopCat.toSSet.map (TopCat.ofHom s)) R n ≫
+        SSet.homologyMap (TopCat.toSSet.map (TopCat.ofHom p)) R n = 𝟙 _ := by
+  rw [homologyMap_comp_homologyMap, hs, TopCat.ofHom_id, CategoryTheory.Functor.map_id,
+    SSet.homologyMap_id]
 
 /-- Mathlib's identification of the singular chains of a totally disconnected space with the
 alternating constant complex sends the summand of a singular vertex to the summand of the point
