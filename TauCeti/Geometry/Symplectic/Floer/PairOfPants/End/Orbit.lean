@@ -29,7 +29,9 @@ preserve the Floer equation and the energy, `u ∘ φ'_q` solves the Floer equat
 for `H'_q` beyond `T₀`
 (`TauCeti.SymplecticForm.isComplexLinearMap_perturbedFDeriv_comp_positiveEndChart`), and its
 energy over a half-cylinder `(a, ∞) × [0, 1]` with `a ≥ max T₀ 0` is at most the energy of `u`
-over `S` (`TauCeti.SymplecticForm.setLIntegral_floerEnergyDensity_comp_positiveEndChart_le`).
+over `S` (`TauCeti.SymplecticForm.setLIntegral_floerEnergyDensity_comp_positiveEndChart_le`), as
+is its energy over any measurable part of a band `(max T₀ 0, ∞) × (t₀, t₀ + 1)` of angular width
+one (`TauCeti.SymplecticForm.setLIntegral_floerEnergyDensity_comp_positiveEndChart_le_of_subset`).
 If the almost complex structure is cylindrical on the end, `J(φ_q(±s, t)) = J_q(t, u(φ_q(±s, t)))`,
 then in the positive end chart it is `J'_q(t, x) = J_q(±t, x)`
 (`TauCeti.Floer.eq_comp_positiveEndChart`,
@@ -253,6 +255,48 @@ theorem isComplexLinearMap_perturbedFDeriv_comp_positiveEndChart_of_cylindrical
     ((hu _ hmem).differentiableAt (isOpen_thricePuncturedSphereReal.mem_nhds hmem))
     (hfloer _ hmem)
 
+/-- **The energy of a part of an end of a Floer pair of pants.** Under the hypotheses of
+`TauCeti.SymplecticForm.isComplexLinearMap_perturbedFDeriv_comp_positiveEndChart`, the energy of
+`u ∘ φ'_q` for the end Hamiltonian `H'_q` over a measurable subset `s` of a band
+`(max T₀ 0, ∞) × (t₀, t₀ + 1)` of angular width one is at most the energy of `u` over `S`. -/
+theorem setLIntegral_floerEnergyDensity_comp_positiveEndChart_le_of_subset
+    (hKH : ∀ q w x, T₀ ≤ q.endSign * (q.endCoord w).re →
+      K w x = H q (q.endCoord w).im x • q.endAngularForm w)
+    (hH : ∀ q, Periodic (H q) 1) (hHd : ∀ q t, Differentiable ℝ (H q t)) {u : ℝ × ℝ → V}
+    (hu : DifferentiableOn ℝ u thricePuncturedSphereReal) (q : Puncture) {s : Set (ℝ × ℝ)}
+    (hs : MeasurableSet s) {t₀ : ℝ} (hst : s ⊆ Ioi (max T₀ 0) ×ˢ Ioo t₀ (t₀ + 1)) :
+    ∫⁻ z in s, ENNReal.ofReal (ω.floerEnergyDensity (fun _ _ ↦ 0)
+        (fun w ↦ positiveEndHamiltonian H q w.2) (u ∘ positiveEndChart q) z) ≤
+      ∫⁻ z in thricePuncturedSphereReal, ENNReal.ofReal (ω.floerEnergyDensity
+        (fun z x ↦ K (Complex.equivRealProdCLM.symm z) x 1)
+        (fun z x ↦ K (Complex.equivRealProdCLM.symm z) x Complex.I) u z) := by
+  set e : ℝ × ℝ → ℝ := ω.floerEnergyDensity (fun z x ↦ K (Complex.equivRealProdCLM.symm z) x 1)
+    (fun z x ↦ K (Complex.equivRealProdCLM.symm z) x Complex.I) u
+  -- On `s` the energy density is the Jacobian times the energy density of `u`.
+  have hdens : ∀ ζ ∈ s, ω.floerEnergyDensity (fun _ _ ↦ 0)
+      (fun w ↦ positiveEndHamiltonian H q w.2) (u ∘ positiveEndChart q) ζ =
+        |(fderiv ℝ (positiveEndChart q) ζ).det| * e (positiveEndChart q ζ) := by
+    intro ζ hζ
+    have hζ₀ : 0 < ζ.1 := (le_max_right _ _).trans_lt (hst hζ).1
+    have hζT : T₀ ≤ ζ.1 := (le_max_left _ _).trans (hst hζ).1.le
+    have hS := positiveEndChart_mem_thricePuncturedSphereReal (q := q) hζ₀
+    rw [floerEnergyDensity_def, perturbedFDeriv_comp_positiveEndChart_eq hKH hH hζT,
+      ← floerEnergyDensity_def, abs_of_pos (det_fderiv_positiveEndChart_pos q ζ)]
+    exact ω.floerEnergyDensity_perturbationPullback
+      (Ks := fun z x ↦ K (Complex.equivRealProdCLM.symm z) x 1)
+      (Kt := fun z x ↦ K (Complex.equivRealProdCLM.symm z) x Complex.I)
+      ((contDiff_positiveEndChart q 1).differentiable one_ne_zero ζ)
+      ((hu _ hS).differentiableAt (isOpen_thricePuncturedSphereReal.mem_nhds hS))
+      (differentiableAt_perturbation_positiveEndChart hKH hHd hζT 1 _)
+      (differentiableAt_perturbation_positiveEndChart hKH hHd hζT Complex.I _)
+  rw [← lintegral_ofReal_image_eq_lintegral_ofReal_of_eq_abs_det_mul hs
+    ((injOn_positiveEndChart q t₀).mono
+      (hst.trans (prod_mono (subset_univ _) subset_rfl)))
+    (fun ζ _ ↦ (contDiff_positiveEndChart q 1).differentiable one_ne_zero ζ) hdens]
+  refine lintegral_mono_set ?_
+  rintro _ ⟨ζ, hζ, rfl⟩
+  exact positiveEndChart_mem_thricePuncturedSphereReal ((le_max_right _ _).trans_lt (hst hζ).1)
+
 /-- **The energy of an end of a Floer pair of pants.** Under the hypotheses of
 `TauCeti.SymplecticForm.isComplexLinearMap_perturbedFDeriv_comp_positiveEndChart`, the energy of
 `u ∘ φ'_q` for the end Hamiltonian `H'_q` over the half-cylinder `(a, ∞) × [0, 1]`, for
@@ -268,37 +312,14 @@ theorem setLIntegral_floerEnergyDensity_comp_positiveEndChart_le
       ∫⁻ z in thricePuncturedSphereReal, ENNReal.ofReal (ω.floerEnergyDensity
         (fun z x ↦ K (Complex.equivRealProdCLM.symm z) x 1)
         (fun z x ↦ K (Complex.equivRealProdCLM.symm z) x Complex.I) u z) := by
-  set e : ℝ × ℝ → ℝ := ω.floerEnergyDensity (fun z x ↦ K (Complex.equivRealProdCLM.symm z) x 1)
-    (fun z x ↦ K (Complex.equivRealProdCLM.symm z) x Complex.I) u
-  set s : Set (ℝ × ℝ) := Ioi a ×ˢ Ioo 0 1
-  have hs : MeasurableSet s := measurableSet_Ioi.prod measurableSet_Ioo
   -- The closed band differs from the open one by a null set.
-  have hae : (Ioi a ×ˢ Icc (0 : ℝ) 1 : Set (ℝ × ℝ)) =ᵐ[volume] s := by
+  have hae : (Ioi a ×ˢ Icc (0 : ℝ) 1 : Set (ℝ × ℝ)) =ᵐ[volume] Ioi a ×ˢ Ioo 0 1 := by
     rw [Measure.volume_eq_prod]
     exact Measure.set_prod_ae_eq Filter.EventuallyEqSet.rfl Ioo_ae_eq_Icc.symm
-  -- On the open band the energy density is the Jacobian times the energy density of `u`.
-  have hdens : ∀ ζ ∈ s, ω.floerEnergyDensity (fun _ _ ↦ 0)
-      (fun w ↦ positiveEndHamiltonian H q w.2) (u ∘ positiveEndChart q) ζ =
-        |(fderiv ℝ (positiveEndChart q) ζ).det| * e (positiveEndChart q ζ) := by
-    intro ζ hζ
-    have hζ₀ : 0 < ζ.1 := ha₀.trans_lt hζ.1
-    have hζT : T₀ ≤ ζ.1 := haT.trans hζ.1.le
-    have hS := positiveEndChart_mem_thricePuncturedSphereReal (q := q) hζ₀
-    rw [floerEnergyDensity_def, perturbedFDeriv_comp_positiveEndChart_eq hKH hH hζT,
-      ← floerEnergyDensity_def, abs_of_pos (det_fderiv_positiveEndChart_pos q ζ)]
-    exact ω.floerEnergyDensity_perturbationPullback
-      (Ks := fun z x ↦ K (Complex.equivRealProdCLM.symm z) x 1)
-      (Kt := fun z x ↦ K (Complex.equivRealProdCLM.symm z) x Complex.I)
-      ((contDiff_positiveEndChart q 1).differentiable one_ne_zero ζ)
-      ((hu _ hS).differentiableAt (isOpen_thricePuncturedSphereReal.mem_nhds hS))
-      (differentiableAt_perturbation_positiveEndChart hKH hHd hζT 1 _)
-      (differentiableAt_perturbation_positiveEndChart hKH hHd hζT Complex.I _)
-  rw [setLIntegral_congr hae, ← lintegral_ofReal_image_eq_lintegral_ofReal_of_eq_abs_det_mul hs
-    ((injOn_positiveEndChart q).mono (prod_mono (subset_univ _) le_rfl))
-    (fun ζ _ ↦ (contDiff_positiveEndChart q 1).differentiable one_ne_zero ζ) hdens]
-  refine lintegral_mono_set ?_
-  rintro _ ⟨ζ, hζ, rfl⟩
-  exact positiveEndChart_mem_thricePuncturedSphereReal (ha₀.trans_lt hζ.1)
+  rw [setLIntegral_congr hae]
+  exact setLIntegral_floerEnergyDensity_comp_positiveEndChart_le_of_subset hKH hH hHd hu q
+    (measurableSet_Ioi.prod measurableSet_Ioo)
+    (prod_mono (Ioi_subset_Ioi (max_le haT ha₀)) (by rw [zero_add]))
 
 /-- **A cylindrical end of a finite-energy Floer pair of pants is a finite-energy Floer
 half-cylinder.** Let `K` be equal to `H_q(t) dt` beyond `T₀` on each end `q`, and let `u` be `Cⁿ`
