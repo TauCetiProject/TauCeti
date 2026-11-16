@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Analysis.Contour.Cauchy.PrincipalValue.Basic
 import TauCeti.Analysis.Contour.Curve.ExcisionMeasure
+import TauCeti.Analysis.Normed.Group.Basic
 import Mathlib.MeasureTheory.Integral.DominatedConvergence
 import TauCeti.Analysis.Calculus.Deriv.CountableLevels
 
@@ -242,7 +243,8 @@ theorem HasCauchyPVWith.of_integrable {γ : ℝ → ℂ} {a b : ℝ} {f : ℂ �
       (fun t => if ∃ s ∈ S, ‖γ t - s‖ ≤ ε then 0 else g t)
       (MeasureTheory.volume.restrict (Set.uIoc a b)) := fun ε =>
     (aestronglyMeasurable_indicator_excision (γ := γ) h_int.def'.aestronglyMeasurable
-      (fun t ht => by simp [_hg, deriv_zero_of_not_differentiableAt ht]) S ε).congr
+      (Filter.Eventually.of_forall fun t ht => by
+        simp [_hg, deriv_zero_of_not_differentiableAt fun hd => ht hd.continuousAt]) S ε).congr
       (Filter.Eventually.of_forall fun t => by
         dsimp only
         by_cases h : ∃ s ∈ S, ‖γ t - s‖ ≤ ε
@@ -685,7 +687,9 @@ private theorem truncatedIntegrand_union_integrable {γ : ℝ → ℂ} {a b : �
   rw [intervalIntegrable_iff] at h ⊢
   rw [truncatedIntegrand_union_eq_indicator]
   exact h.norm.mono' (aestronglyMeasurable_indicator_excision (γ := γ) h.aestronglyMeasurable
-    (fun t ht => by simp [truncatedIntegrand, deriv_zero_of_not_differentiableAt ht]) S' ε)
+    (Filter.Eventually.of_forall fun t ht => by
+      simp [truncatedIntegrand, deriv_zero_of_not_differentiableAt fun hd => ht hd.continuousAt])
+    S' ε)
     (Filter.Eventually.of_forall fun t => norm_indicator_le_norm_self _ _)
 
 /-- **Additivity.** The set-level principal value is additive: if `f₁` and `f₂` each have a
