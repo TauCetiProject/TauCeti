@@ -11,34 +11,25 @@ public import TauCeti.Algebra.Group.Action.TotalSpace
 /-!
 # Bundled fibres of an arbitrary map
 
-Mathlib's `FiberBundle` and Tau Ceti's `ContMDiffFiberBundle` classes are indexed over a dependent
-family `E : B → Type*` with total space `Bundle.TotalSpace F E`, whereas geometric constructions
-such as quotient projections, homogeneous spaces, and Ehresmann submersions begin from an unbundled
-map `f : E → B` on an already-given space `E`.
-
-This file introduces `TauCeti.ProjectionFiber F f : B → Type*`, the fibre of `f : E → B` over
-`b : B` tagged with a phantom model fibre parameter `F : Type*`. Including `F` in the carrier type
-lets both `ProjectionFiber F f b` and `Bundle.TotalSpace F (ProjectionFiber F f)` carry canonical
-global `TopologicalSpace` instances induced from `E` without typeclass diamonds, while
-`ProjectionFiber.totalSpaceHomeomorph` identifies `Bundle.TotalSpace F (ProjectionFiber F f)`
-homeomorphically with `E` over `B`. Any `Bundle.Trivialization F f` of the map `f` transports along
-this homeomorphism to a `Bundle.Trivialization F (π F (ProjectionFiber F f))` with definitionally
-identical base set and coordinate changes.
+Mathlib's `FiberBundle` and Tau Ceti's `ContMDiffFiberBundle` are indexed over a dependent family
+`E : B → Type*`, whereas geometric constructions begin from an unbundled map `f : E → B`. This file
+introduces `TauCeti.ProjectionFiber F f : B → Type*` (tagged with a phantom fibre type `F` so both
+the fibres and `TotalSpace F (ProjectionFiber F f)` carry canonical topologies induced from `E`
+without typeclass diamonds), identifies the total space homeomorphically with `E` over `B`, and
+transports `Bundle.Trivialization F f` along this homeomorphism preserving `baseSet` and
+`coordChange`.
 
 ## Main definitions and results
 
-* `TauCeti.ProjectionFiber F f b`: points `val : E` with `f val = b`, equipped with the subspace
-  topology from `E`.
-* `TauCeti.ProjectionFiber.totalSpaceEquiv`, `TauCeti.ProjectionFiber.totalSpaceHomeomorph`: the
-  canonical equivalence and homeomorphism `TotalSpace F (ProjectionFiber F f) ≃ₜ E` sending
-  `⟨b, y⟩` to `y.val` and `x : E` to `⟨f x, ⟨x, rfl⟩⟩`.
-* `TauCeti.ProjectionFiber.mulAction`: restricts a fibre-preserving `M`-action on `E` to each fibre
-  `ProjectionFiber F f b`, intertwining `ProjectionFiber.totalSpaceEquiv F f` with the induced
-  fibrewise action on `TotalSpace F (ProjectionFiber F f)`.
+* `TauCeti.ProjectionFiber F f b`: points `val : E` with `f val = b`, with subspace topology.
+* `TauCeti.ProjectionFiber.totalSpaceEquiv`, `TauCeti.ProjectionFiber.totalSpaceHomeomorph`:
+  `TotalSpace F (ProjectionFiber F f) ≃ₜ E` sending `⟨b, y⟩ ↦ y.val` and `x ↦ ⟨f x, ⟨x, rfl⟩⟩`.
+* `TauCeti.ProjectionFiber.mulAction`: fibrewise restriction of a fibre-preserving `M`-action on
+  `E`, intertwining `totalSpaceEquiv F f`.
 * `Bundle.Trivialization.projectionFiber`: transports `t : Trivialization F f` to a trivialization
   of `π F (ProjectionFiber F f)` with the same `baseSet` and `coordChange`.
-* `TauCeti.ProjectionFiber.fiberBundle`: packages a covering family `A : Set (Trivialization F f)`
-  of local trivializations of `f` into a `FiberBundle F (ProjectionFiber F f)` structure.
+* `TauCeti.ProjectionFiber.fiberBundle`, `fiberBundleOfExists`: packages covering trivializations
+  of `f` into `FiberBundle F (ProjectionFiber F f)`.
 -/
 
 public section
@@ -47,9 +38,9 @@ open Bundle Function Set Topology
 
 namespace TauCeti
 
-/-- The fibre of a map `f : E → B` over `b : B`, tagged with a model fibre type `F` so that both
-`ProjectionFiber F f b` and `Bundle.TotalSpace F (ProjectionFiber F f)` carry canonical subspace
-topologies induced from `E` without typeclass ambiguity. -/
+/-- The fibre of `f : E → B` over `b : B`, tagged with a phantom model fibre type `F` so both
+`ProjectionFiber F f b` and `TotalSpace F (ProjectionFiber F f)` carry canonical induced topologies
+without typeclass ambiguity. -/
 @[ext]
 structure ProjectionFiber (F : Type*) {E B : Type*} (f : E → B) (b : B) where
   /-- The underlying point in the domain `E`. -/
@@ -73,57 +64,45 @@ def equivSubtype (b : B) : ProjectionFiber F f b ≃ {x : E // f x = b} where
 /-- Coercing `equivSubtype F f b y` to `E` recovers `y.val`. -/
 @[simp]
 theorem coe_equivSubtype (b : B) (y : ProjectionFiber F f b) :
-    ((equivSubtype F f b y : {x : E // f x = b}) : E) = y.val :=
-  (rfl)
+    ((equivSubtype F f b y : {x : E // f x = b}) : E) = y.val := (rfl)
 
 /-- Applying `(equivSubtype F f b).symm` preserves the underlying point in `E`. -/
 @[simp]
 theorem val_equivSubtype_symm (b : B) (y : {x : E // f x = b}) :
-    ((equivSubtype F f b).symm y).val = y.1 :=
-  (rfl)
+    ((equivSubtype F f b).symm y).val = y.1 := (rfl)
 
-/-- The bundled total space `TotalSpace F (ProjectionFiber F f)` is canonically equivalent to the
-domain `E` via `⟨b, y⟩ ↦ y.val` and `x ↦ ⟨f x, ⟨x, rfl⟩⟩`. -/
+/-- The bundled total space `TotalSpace F (ProjectionFiber F f)` is canonically equivalent to `E`
+via `⟨b, y⟩ ↦ y.val` and `x ↦ ⟨f x, ⟨x, rfl⟩⟩`. -/
 def totalSpaceEquiv : TotalSpace F (ProjectionFiber F f) ≃ E where
   toFun p := p.2.val
   invFun x := ⟨f x, ⟨x, rfl⟩⟩
-  left_inv p := by
-    rcases p with ⟨b, x, rfl⟩
-    rfl
+  left_inv | ⟨_, _, rfl⟩ => rfl
   right_inv _ := rfl
 
 /-- `totalSpaceEquiv F f` sends a bundled point `p` to `p.2.val`. -/
 @[simp]
 theorem totalSpaceEquiv_apply (p : TotalSpace F (ProjectionFiber F f)) :
-    totalSpaceEquiv F f p = p.2.val :=
-  (rfl)
+    totalSpaceEquiv F f p = p.2.val := (rfl)
 
 /-- `totalSpaceEquiv F f` sends `⟨b, y⟩` to `y.val`. -/
 theorem totalSpaceEquiv_mk (b : B) (y : ProjectionFiber F f b) :
-    totalSpaceEquiv F f ⟨b, y⟩ = y.val :=
-  (rfl)
+    totalSpaceEquiv F f ⟨b, y⟩ = y.val := (rfl)
 
 /-- `(totalSpaceEquiv F f).symm` sends `x : E` to `⟨f x, ⟨x, rfl⟩⟩`. -/
 @[simp]
 theorem totalSpaceEquiv_symm_apply (x : E) :
-    (totalSpaceEquiv F f).symm x = ⟨f x, ⟨x, rfl⟩⟩ :=
-  (rfl)
+    (totalSpaceEquiv F f).symm x = ⟨f x, ⟨x, rfl⟩⟩ := (rfl)
 
 /-- The base projection of `(totalSpaceEquiv F f).symm x` is `f x`. -/
-theorem proj_totalSpaceEquiv_symm (x : E) :
-    ((totalSpaceEquiv F f).symm x).proj = f x :=
-  (rfl)
+theorem proj_totalSpaceEquiv_symm (x : E) : ((totalSpaceEquiv F f).symm x).proj = f x := (rfl)
 
 /-- The underlying domain point of `(totalSpaceEquiv F f).symm x` is `x`. -/
 @[simp]
-theorem val_snd_totalSpaceEquiv_symm (x : E) :
-    ((totalSpaceEquiv F f).symm x).2.val = x :=
-  (rfl)
+theorem val_snd_totalSpaceEquiv_symm (x : E) : ((totalSpaceEquiv F f).symm x).2.val = x := (rfl)
 
 /-- `totalSpaceEquiv F f` intertwines the bundle projection with `f`. -/
 theorem map_totalSpaceEquiv (p : TotalSpace F (ProjectionFiber F f)) :
-    f (totalSpaceEquiv F f p) = p.proj :=
-  p.2.map_val
+    f (totalSpaceEquiv F f p) = p.proj := p.2.map_val
 
 /-- Forgetful inclusion `ProjectionFiber.val` on each fibre is injective. -/
 theorem val_injective (b : B) : Injective (ProjectionFiber.val : ProjectionFiber F f b → E) :=
@@ -134,34 +113,30 @@ end SetTheory
 section MulAction
 
 variable (F : Type*) {M E B : Type*} [Monoid M] [MulAction M E] {f : E → B}
+  (hinv : ∀ (m : M) (x : E), f (m • x) = f x)
 
-/-- Restrict an `M`-action on `E` preserving the fibres of `f : E → B` to each bundled fibre
-`ProjectionFiber F f b`. Install locally via `letI := ProjectionFiber.mulAction F hinv`. -/
+/-- Restrict a fibre-preserving `M`-action on `E` to each bundled fibre `ProjectionFiber F f b`.
+Install locally via `letI := ProjectionFiber.mulAction F hinv`. -/
 @[instance_reducible]
-def mulAction (hinv : ∀ (m : M) (x : E), f (m • x) = f x) (b : B) :
-    MulAction M (ProjectionFiber F f b) where
+def mulAction (b : B) : MulAction M (ProjectionFiber F f b) where
   smul m y := ⟨m • y.val, (hinv m y.val).trans y.map_val⟩
   one_smul y := ProjectionFiber.ext (one_smul M y.val)
   mul_smul m₁ m₂ y := ProjectionFiber.ext (mul_smul m₁ m₂ y.val)
 
 /-- Fibrewise scalar multiplication acts on the underlying point in `E`. -/
 @[simp]
-theorem val_smul (hinv : ∀ (m : M) (x : E), f (m • x) = f x) {b : B} (m : M)
-    (y : ProjectionFiber F f b) :
-    (letI := mulAction F hinv; (m • y).val) = m • y.val :=
-  (rfl)
+theorem val_smul {b : B} (m : M) (y : ProjectionFiber F f b) :
+    (letI := mulAction F hinv; (m • y).val) = m • y.val := (rfl)
 
 /-- `totalSpaceEquiv F f` intertwines the fibrewise `M`-action on `TotalSpace` with the action on
 `E`. -/
-theorem totalSpaceEquiv_smul (hinv : ∀ (m : M) (x : E), f (m • x) = f x) (m : M)
-    (p : TotalSpace F (ProjectionFiber F f)) :
+theorem totalSpaceEquiv_smul (m : M) (p : TotalSpace F (ProjectionFiber F f)) :
     (letI := mulAction F hinv; totalSpaceEquiv F f (m • p)) =
-      m • totalSpaceEquiv F f p := by
-  simp
+      m • totalSpaceEquiv F f p := by simp
 
 /-- `(totalSpaceEquiv F f).symm` intertwines the `M`-action on `E` with the fibrewise action on
 `TotalSpace`. -/
-theorem totalSpaceEquiv_symm_smul (hinv : ∀ (m : M) (x : E), f (m • x) = f x) (m : M) (x : E) :
+theorem totalSpaceEquiv_symm_smul (m : M) (x : E) :
     (letI := mulAction F hinv; (totalSpaceEquiv F f).symm (m • x)) =
       (letI := mulAction F hinv; m • (totalSpaceEquiv F f).symm x) :=
   (totalSpaceEquiv F f).injective (by simp)
@@ -184,8 +159,7 @@ instance instTopologicalSpaceTotalSpace :
 
 /-- Inclusion of `ProjectionFiber F f b` into `E` is topology-inducing. -/
 theorem isInducing_val (b : B) :
-    IsInducing (ProjectionFiber.val : ProjectionFiber F f b → E) :=
-  ⟨rfl⟩
+    IsInducing (ProjectionFiber.val : ProjectionFiber F f b → E) := ⟨rfl⟩
 
 /-- Inclusion of `ProjectionFiber F f b` into `E` is a topological embedding. -/
 theorem isEmbedding_val (b : B) :
@@ -199,8 +173,7 @@ theorem continuous_val (b : B) :
   (isInducing_val F f b).continuous
 
 /-- `totalSpaceEquiv F f` is topology-inducing by construction. -/
-theorem isInducing_totalSpaceEquiv : IsInducing (totalSpaceEquiv F f) :=
-  ⟨rfl⟩
+theorem isInducing_totalSpaceEquiv : IsInducing (totalSpaceEquiv F f) := ⟨rfl⟩
 
 /-- `ProjectionFiber F f b` is homeomorphic to the topological subspace `{x : E // f x = b}`. -/
 def homeomorphSubtype (b : B) : ProjectionFiber F f b ≃ₜ {x : E // f x = b} :=
@@ -210,15 +183,14 @@ def homeomorphSubtype (b : B) : ProjectionFiber F f b ≃ₜ {x : E // f x = b} 
 /-- `homeomorphSubtype` has underlying map `equivSubtype`. -/
 @[simp]
 theorem coe_homeomorphSubtype (b : B) :
-    (homeomorphSubtype F f b : ProjectionFiber F f b → {x : E // f x = b}) = equivSubtype F f b :=
-  (rfl)
+    (homeomorphSubtype F f b : ProjectionFiber F f b → {x : E // f x = b}) =
+      equivSubtype F f b := (rfl)
 
 /-- `(homeomorphSubtype F f b).symm` has underlying map `(equivSubtype F f b).symm`. -/
 @[simp]
 theorem coe_homeomorphSubtype_symm (b : B) :
     ((homeomorphSubtype F f b).symm : {x : E // f x = b} → ProjectionFiber F f b) =
-      (equivSubtype F f b).symm :=
-  (rfl)
+      (equivSubtype F f b).symm := (rfl)
 
 /-- The canonical homeomorphism `TotalSpace F (ProjectionFiber F f) ≃ₜ E` over `B`. -/
 def totalSpaceHomeomorph : TotalSpace F (ProjectionFiber F f) ≃ₜ E :=
@@ -227,29 +199,25 @@ def totalSpaceHomeomorph : TotalSpace F (ProjectionFiber F f) ≃ₜ E :=
 /-- `totalSpaceHomeomorph` has underlying map `totalSpaceEquiv`. -/
 @[simp]
 theorem coe_totalSpaceHomeomorph :
-    (totalSpaceHomeomorph F f : TotalSpace F (ProjectionFiber F f) → E) = totalSpaceEquiv F f :=
-  (rfl)
+    (totalSpaceHomeomorph F f : TotalSpace F (ProjectionFiber F f) → E) =
+      totalSpaceEquiv F f := (rfl)
 
 /-- `(totalSpaceHomeomorph F f).symm` has underlying map `(totalSpaceEquiv F f).symm`. -/
 @[simp]
 theorem coe_totalSpaceHomeomorph_symm :
     ((totalSpaceHomeomorph F f).symm : E → TotalSpace F (ProjectionFiber F f)) =
-      (totalSpaceEquiv F f).symm :=
-  (rfl)
+      (totalSpaceEquiv F f).symm := (rfl)
 
-/-- Fibre inclusion `TotalSpace.mk b : ProjectionFiber F f b → TotalSpace F (ProjectionFiber F f)`
-is topology-inducing for every `b : B`. -/
+/-- Fibre inclusion `TotalSpace.mk b` is topology-inducing for every `b : B`. -/
 theorem isInducing_totalSpaceMk (b : B) :
     IsInducing (@TotalSpace.mk B F (ProjectionFiber F f) b) :=
   (isInducing_totalSpaceEquiv F f).of_comp_iff.mp (isInducing_val F f b)
 
 /-- If `f : E → B` is continuous, so is the bundle projection `π F (ProjectionFiber F f)`. -/
 theorem continuous_proj [TopologicalSpace B] {f : E → B} (hf : Continuous f) :
-    Continuous (π F (ProjectionFiber F f)) := by
-  have hcomp : π F (ProjectionFiber F f) = f ∘ totalSpaceHomeomorph F f :=
-    funext fun p ↦ p.2.map_val.symm
-  rw [hcomp]
-  exact hf.comp (totalSpaceHomeomorph F f).continuous
+    Continuous (π F (ProjectionFiber F f)) :=
+  (show π F (ProjectionFiber F f) = f ∘ totalSpaceHomeomorph F f from
+    funext fun p ↦ p.2.map_val.symm) ▸ hf.comp (totalSpaceHomeomorph F f).continuous
 
 end Topology
 
@@ -280,28 +248,24 @@ def projectionFiber (t : Trivialization F f) :
 @[simp]
 theorem projectionFiber_apply (t : Trivialization F f)
     (p : TotalSpace F (TauCeti.ProjectionFiber F f)) :
-    t.projectionFiber p = t (TauCeti.ProjectionFiber.totalSpaceEquiv F f p) :=
-  (rfl)
+    t.projectionFiber p = t (TauCeti.ProjectionFiber.totalSpaceEquiv F f p) := (rfl)
 
 /-- `t.projectionFiber` has the same `baseSet` as `t`. -/
 @[simp]
 theorem projectionFiber_baseSet (t : Trivialization F f) :
-    t.projectionFiber.baseSet = t.baseSet :=
-  (rfl)
+    t.projectionFiber.baseSet = t.baseSet := (rfl)
 
 /-- Partial-equivalence inverse of `t.projectionFiber`. -/
 @[simp]
 theorem projectionFiber_toPartialEquiv_symm_apply (t : Trivialization F f) (q : B × F) :
     t.projectionFiber.toPartialEquiv.symm q =
-      (TauCeti.ProjectionFiber.totalSpaceEquiv F f).symm (t.toPartialEquiv.symm q) :=
-  (rfl)
+      (TauCeti.ProjectionFiber.totalSpaceEquiv F f).symm (t.toPartialEquiv.symm q) := (rfl)
 
 /-- Partial-homeomorphism inverse of `t.projectionFiber`. -/
 @[simp]
 theorem projectionFiber_toOpenPartialHomeomorph_symm_apply (t : Trivialization F f) (q : B × F) :
     t.projectionFiber.toOpenPartialHomeomorph.symm q =
-      (TauCeti.ProjectionFiber.totalSpaceEquiv F f).symm (t.toOpenPartialHomeomorph.symm q) :=
-  (rfl)
+      (TauCeti.ProjectionFiber.totalSpaceEquiv F f).symm (t.toOpenPartialHomeomorph.symm q) := (rfl)
 
 /-- Transporting trivializations to `ProjectionFiber F f` preserves `coordChange`. -/
 @[simp]
@@ -335,24 +299,20 @@ noncomputable def fiberBundle (A : Set (Trivialization F f))
 theorem trivializationAtlas_fiberBundle (A : Set (Trivialization F f))
     (hA : ∀ b : B, ∃ t ∈ A, b ∈ t.baseSet) :
     (letI := fiberBundle A hA; trivializationAtlas F (ProjectionFiber F f)) =
-      Bundle.Trivialization.projectionFiber '' A :=
-  (rfl)
+      Bundle.Trivialization.projectionFiber '' A := (rfl)
 
 /-- Package pointwise existence of local trivializations of `f : E → B` into a
 `FiberBundle F (ProjectionFiber F f)` structure using the full trivialization atlas. -/
 @[instance_reducible]
 noncomputable def fiberBundleOfExists (h : ∀ b : B, ∃ t : Trivialization F f, b ∈ t.baseSet) :
     FiberBundle F (ProjectionFiber F f) :=
-  fiberBundle univ fun b ↦
-    let ⟨t, ht⟩ := h b
-    ⟨t, mem_univ t, ht⟩
+  fiberBundle univ fun b ↦ let ⟨t, ht⟩ := h b; ⟨t, mem_univ t, ht⟩
 
 /-- The trivialization atlas of `ProjectionFiber.fiberBundleOfExists h` is the range of
 `Bundle.Trivialization.projectionFiber`. -/
 theorem trivializationAtlas_fiberBundleOfExists
     (h : ∀ b : B, ∃ t : Trivialization F f, b ∈ t.baseSet) :
     (letI := fiberBundleOfExists h; trivializationAtlas F (ProjectionFiber F f)) =
-      range Bundle.Trivialization.projectionFiber :=
-  image_univ
+      range Bundle.Trivialization.projectionFiber := image_univ
 
 end TauCeti.ProjectionFiber
