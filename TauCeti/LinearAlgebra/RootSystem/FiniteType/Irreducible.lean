@@ -152,13 +152,13 @@ variable {K M N ι : Type*} [Field K] [CharZero K] [AddCommGroup M] [Module K M]
 
 omit [P.IsCrystallographic] [CharZero K] in
 /-- **A submodule invariant under the reflections in a family of roots whose coroots span, and
-containing none of these roots, is trivial.** Such a submodule lies in the kernel of each coroot of
-the family, hence in the kernel of every functional, by perfection of the pairing. -/
+containing none of these roots, is trivial.** Invariance is asked only under the reflections in the
+roots of the family, not under every reflection of `P`. -/
 theorem _root_.RootPairing.eq_bot_of_forall_root_not_mem_of_span_coroot_eq_top
-    [NeZero (2 : K)] {J : Type*} {e : J → ι}
-    (hcoroot : Submodule.span K (range (P.coroot ∘ e)) = ⊤) {q : Submodule K M}
+    [NeZero (2 : K)] {J : Type*} {e : J → ι} {q : Submodule K M}
     (hinv : ∀ j, q ∈ Module.End.invtSubmodule (P.reflection (e j)))
-    (h : ∀ j, P.root (e j) ∉ q) : q = ⊥ := by
+    (h : ∀ j, P.root (e j) ∉ q)
+    (hcoroot : Submodule.span K (range (P.coroot ∘ e)) = ⊤) : q = ⊥ := by
   refine eq_bot_iff.mpr fun x hx ↦ ?_
   have hker (j : J) : x ∈ LinearMap.ker (P.coroot' (e j)) :=
     (Submodule.mem_invtSubmodule_reflection_iff (P.flip.root_coroot_two (e j))
@@ -179,16 +179,11 @@ theorem _root_.RootPairing.eq_bot_of_forall_root_not_mem
     (hinv : ∀ i : b.support, q ∈ Module.End.invtSubmodule (P.reflection i))
     (h : ∀ i : b.support, P.root i ∉ q) : q = ⊥ :=
   RootPairing.eq_bot_of_forall_root_not_mem_of_span_coroot_eq_top
-    (e := ((↑) : b.support → ι))
-    (by rw [range_comp, Subtype.range_coe_subtype, Finset.setOfPred_mem, b.span_coroot_support,
-      RootPairing.corootSpan, RootPairing.IsRootSystem.span_coroot_eq_top]) hinv h
+    (e := ((↑) : b.support → ι)) hinv h (by simp [range_comp])
 
-/-- **A crystallographic root pairing is irreducible when a family of roots whose roots and
-coroots both span has connected diagram.** A nonzero reflection-invariant subspace contains a root
-of the family, since otherwise it would be trivial; membership then propagates along every edge of
-the diagram of the Cartan integers of the family, so the subspace contains the spanning roots.
-
-Characteristic zero ensures that a nonzero Cartan integer stays nonzero in the field. -/
+/-- **Over a field of characteristic zero, a crystallographic root pairing is irreducible when a
+family of roots whose roots and coroots both span has connected diagram** of Cartan integers.
+No base is needed: the family need not consist of simple roots. -/
 theorem _root_.RootPairing.isIrreducible_of_connected_diagramGraph_pairingIn
     {J : Type*} (e : J → ι)
     (hroot : Submodule.span K (range (P.root ∘ e)) = ⊤)
@@ -201,8 +196,8 @@ theorem _root_.RootPairing.isIrreducible_of_connected_diagramGraph_pairingIn
   intro q hinv hq
   have hsimple : ∃ j, P.root (e j) ∈ q := by
     by_contra! h
-    exact hq (RootPairing.eq_bot_of_forall_root_not_mem_of_span_coroot_eq_top hcoroot
-      (fun j ↦ hinv (e j)) h)
+    exact hq (RootPairing.eq_bot_of_forall_root_not_mem_of_span_coroot_eq_top
+      (fun j ↦ hinv (e j)) h hcoroot)
   obtain ⟨i, hi⟩ := hsimple
   -- adjacency in the diagram is nonvanishing of the Cartan integer, hence of the pairing
   have propagate {u v : J}
@@ -235,11 +230,7 @@ theorem _root_.RootPairing.isIrreducible_of_connected_diagramGraph_cartanMatrix
     [P.IsRootSystem] (b : P.Base)
     (hconn : (diagramGraph b.cartanMatrix).Connected) : P.IsIrreducible :=
   RootPairing.isIrreducible_of_connected_diagramGraph_pairingIn ((↑) : b.support → ι)
-    (by rw [range_comp, Subtype.range_coe_subtype, Finset.setOfPred_mem, b.span_root_support,
-      RootPairing.rootSpan, RootPairing.IsRootSystem.span_root_eq_top])
-    (by rw [range_comp, Subtype.range_coe_subtype, Finset.setOfPred_mem, b.span_coroot_support,
-      RootPairing.corootSpan, RootPairing.IsRootSystem.span_coroot_eq_top])
-    hconn
+    (by simp [range_comp]) (by simp [range_comp]) hconn
 
 end
 

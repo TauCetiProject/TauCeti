@@ -293,8 +293,9 @@ public theorem titsPolarForm_single_single (i j : Q) :
   · rw [ite_eq_right hij, ite_eq_right hij.symm]
     ring
 
-/-- The entries of the Gram matrix of the polarized Tits form: `2` on the diagonal minus the
-number of arrows between the two vertices, in both directions. -/
+/-- The entries of the Gram matrix `2I - (A + Aᵀ)` of the polarized Tits form, `A` the matrix of
+arrow counts: the diagonal entry at `i` is `2 - 2 * #(i ⟶ i)` and the off-diagonal entry at
+`(i, j)` is `-(#(i ⟶ j) + #(j ⟶ i))`. -/
 public theorem toMatrix_titsPolarForm_apply (i j : Q) :
     (titsPolarForm Q).toMatrix (Pi.basisFun ℤ Q) i j =
       (if i = j then (2 : ℤ) else 0) - (Fintype.card (i ⟶ j) + Fintype.card (j ⟶ i)) := by
