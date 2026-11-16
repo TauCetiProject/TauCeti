@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.AlgebraicGroup.Chevalley.Root.Subgroup
+public import TauCeti.Algebra.Lie.Presentation.Serre
 import TauCeti.Algebra.Lie.Presentation.Serre.SingleBond
 import TauCeti.LinearAlgebra.RootSystem.SimplyConnectedRootDatum.SerrePresentation
 
@@ -41,6 +42,23 @@ attribute [local instance 100] LieRing.ofAssociativeRing
 
 variable {t : DynkinType} {ht : t.Valid} (D : ChevalleyDatum t ht)
 
+open scoped _root_.Matrix in
+/-- The represented pinned Chevalley generators form a Serre system for the transposed pinned
+Cartan matrix, as the pinned generators themselves do
+(`TauCeti.DynkinType.isSerreSystem_lieBasis`). The bond corollaries apply the rational
+Serre-operator braid relations to this system. -/
+theorem isSerreSystem_representation :
+    IsSerreSystem ℚ t.cartanMatrixᵀ
+      (fun k => D.representation
+        (_root_.UniversalEnvelopingAlgebra.ι ℚ ((t.lieBasis ht).h k)))
+      (fun k => D.representation
+        (_root_.UniversalEnvelopingAlgebra.ι ℚ ((t.lieBasis ht).e k)))
+      (fun k => D.representation
+        (_root_.UniversalEnvelopingAlgebra.ι ℚ ((t.lieBasis ht).f k))) := by
+  simpa only [Function.comp_def, LieHom.comp_apply, AlgHom.toLieHom_apply] using
+    (t.isSerreSystem_lieBasis ht).map
+      (D.representation.toLieHom.comp (_root_.UniversalEnvelopingAlgebra.ι ℚ))
+
 /-- **Transport of word relations to the points.** If two words in the rational Weyl units of
 the represented simple root generators have equal products, then the same two words in the pinned
 simple Weyl representatives `nₖ(1)` have equal products over every commutative value ring. The
@@ -59,8 +77,12 @@ theorem weylElement_prod_eq_of_weylUnit_prod_eq (w₁ w₂ : List (Fin t.rank))
     (D.isNilpotent_representation_rootGenerator (.inr k))
   have hu : (w₁.map u).prod = (w₂.map u).prod := by
     simpa only [u, LieAlgebra.Basis.rootGenerator_inl, LieAlgebra.Basis.rootGenerator_inr] using
-      h (fun k => by simpa using D.isNilpotent_representation_rootGenerator (.inl k))
-        (fun k => by simpa using D.isNilpotent_representation_rootGenerator (.inr k))
+      h (fun k => by
+          simpa only [LieAlgebra.Basis.rootGenerator_inl] using
+            D.isNilpotent_representation_rootGenerator (.inl k))
+        (fun k => by
+          simpa only [LieAlgebra.Basis.rootGenerator_inr] using
+            D.isNilpotent_representation_rootGenerator (.inr k))
   let n := fun k => kostantWeylRestrict (t.lieBasis ht).rootGenerator (t.lieBasis ht).h
     D.representation D.lattice D.representation_mem_lattice
     (D.isNilpotent_representation_rootGenerator (.inl k))
@@ -115,10 +137,11 @@ theorem weylElement_braid_of_cartanMatrix_eq_neg_one (i j : Fin t.rank)
         D.weylElement (t.simpleIndex ht i) A 1 =
       D.weylElement (t.simpleIndex ht j) A 1 * D.weylElement (t.simpleIndex ht i) A 1 *
         D.weylElement (t.simpleIndex ht j) A 1 := by
-  simpa [mul_assoc] using D.weylElement_prod_eq_of_weylUnit_prod_eq [i, j, i] [j, i, j]
+  simpa only [List.map_cons, List.map_nil, List.prod_cons, List.prod_nil, mul_one, mul_assoc]
+    using D.weylElement_prod_eq_of_weylUnit_prod_eq [i, j, i] [j, i, j]
     (fun hE hF => by
-      simpa [mul_assoc] using ((t.isSerreSystem_lieBasis ht).map (D.representation.toLieHom.comp
-        (_root_.UniversalEnvelopingAlgebra.ι ℚ))).weylUnit_braid_of_cartan_eq_neg_one
+      simpa only [List.map_cons, List.map_nil, List.prod_cons, List.prod_nil, mul_one, mul_assoc]
+        using D.isSerreSystem_representation.weylUnit_braid_of_cartan_eq_neg_one
           (i := i) (j := j) (by simp) (by simp) hji hij (hE i) (hF i) (hE j) (hF j)) A
 
 end TauCeti.DynkinType.ChevalleyDatum

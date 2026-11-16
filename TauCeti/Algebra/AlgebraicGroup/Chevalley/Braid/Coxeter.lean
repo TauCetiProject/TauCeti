@@ -84,20 +84,25 @@ theorem weylWord_braidWord_eq (i j : Fin t.rank) (A : Type*) [CommRing A] :
     rcases (by rw [hij] at hmem; omega : t.cartanMatrix j i = -2 ∨ t.cartanMatrix j i = -3)
       with h | h
     · refine hword 4 (by simp [hij, h]) ?_
-      simpa [CoxeterSystem.alternatingWord, mul_assoc] using
+      simpa only [CoxeterSystem.alternatingWord, List.concat_eq_append, List.nil_append,
+        List.map_append, List.prod_append, List.map_singleton, List.prod_singleton, mul_assoc] using
         D.weylElement_braid_of_cartanMatrix_eq_neg_two i j h A
     · refine hword 6 (by simp [hij, h]) ?_
-      simpa [CoxeterSystem.alternatingWord, mul_assoc] using
+      simpa only [CoxeterSystem.alternatingWord, List.concat_eq_append, List.nil_append,
+        List.map_append, List.prod_append, List.map_singleton, List.prod_singleton, mul_assoc] using
         D.weylElement_braid_of_cartanMatrix_eq_neg_three i j h A
   -- Otherwise both entries are `0`, at orthogonal nodes, or both are `-1`, at a single bond.
   rcases (by omega : t.cartanMatrix i j = 0 ∨ t.cartanMatrix i j = -1) with h | h
   · refine hword 2 (by simp [h]) ?_
-    simpa [CoxeterSystem.alternatingWord] using (D.commute_weylElement_simpleIndex A i j h 1 1).eq
+    simpa only [CoxeterSystem.alternatingWord, List.concat_eq_append, List.nil_append,
+      List.map_append, List.prod_append, List.map_singleton, List.prod_singleton] using
+      (D.commute_weylElement_simpleIndex A i j h 1 1).eq
   · have h' : t.cartanMatrix j i = -1 := by
       have := (t.cartanMatrix_apply_eq_zero_iff_symm i j).not.mp (by omega)
       omega
     refine hword 3 (by simp [h, h']) ?_
-    simpa [CoxeterSystem.alternatingWord, mul_assoc] using
+    simpa only [CoxeterSystem.alternatingWord, List.concat_eq_append, List.nil_append,
+      List.map_append, List.prod_append, List.map_singleton, List.prod_singleton, mul_assoc] using
       (D.weylElement_braid_of_cartanMatrix_eq_neg_one i j h h' A).symm
 
 end TauCeti.DynkinType.ChevalleyDatum
