@@ -457,14 +457,15 @@ theorem exists_section_of_isClopen [PreconnectedSpace B] (hι : Fintype.card ι 
 
 /-- **Paths over a trivializing set stay in a sheet**: a path in the orientation double cover over
 the base set of the trivialization of the atlas at `b₀`, starting in the sheet read as `ω`, stays
-in that sheet, provided `ι` has cardinality the rank of the bundle. Over the base set the cover is
-the disjoint union of the two open sheets read as `ω` and as `-ω`. -/
+in that sheet, provided `ι` has cardinality the rank of the bundle. -/
 theorem mem_sheet_of_continuous (hι : Fintype.card ι = finrank ℝ F) (b₀ : B)
     (ω : Orientation ℝ F ι) {Γ : C(unitInterval, VectorBundleOrientationCover F E ι)}
     (hΓ : ∀ t, (Γ t).proj ∈ (trivializationAt F E b₀).baseSet)
     (h₀ : Γ 0 ∈ sheet (trivializationAt F E b₀) ω) (t : unitInterval) :
     Γ t ∈ sheet (trivializationAt F E b₀) ω := by
   set e := trivializationAt F E b₀
+  -- Over the base set the cover is the disjoint union of the open sheets read as `ω` and `-ω`,
+  -- so the preimage of the sheet read as `ω` is clopen.
   have hcompl : (Γ ⁻¹' sheet e ω)ᶜ = Γ ⁻¹' sheet e (-ω) := by
     ext u
     simp only [mem_compl_iff, mem_preimage, mem_sheet_iff]
