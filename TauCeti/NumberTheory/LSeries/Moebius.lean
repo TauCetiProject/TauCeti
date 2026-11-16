@@ -47,7 +47,7 @@ theorem LSeriesSummable_moebius_sq {s : ℂ} (hs : 1 < s.re) :
   exact (ArithmeticFunction.LSeriesSummable_moebius_iff.mpr hs).norm
 
 
-private theorem moebius_sq_prime_pow_sum (s : ℂ) (p : Nat.Primes) :
+private theorem moebius_sq_prime_pow_sum {s : ℂ} {p : Nat.Primes} :
     (∑' e : ℕ, _root_.LSeries.term (fun n ↦ (ArithmeticFunction.moebius n : ℂ) ^ 2)
       s (p.val ^ e)) = 1 + (p : ℂ) ^ (-s) := by
   rw [tsum_eq_sum (s := {0, 1})]
@@ -81,7 +81,7 @@ theorem LSeries_moebius_sq_eulerProduct_hasProd {s : ℂ} (hs : 1 < s.re) :
 
 /-- The Möbius-square series gives the Euler correction `ζ(s) = ζ(2s) L(μ²,s)`
 throughout the full complex half-plane `Re s > 1`. -/
-theorem riemannZeta_eq_mul_LSeries_moebius_sq (s : ℂ) (hs : 1 < s.re) :
+theorem riemannZeta_eq_mul_LSeries_moebius_sq {s : ℂ} (hs : 1 < s.re) :
     riemannZeta s = riemannZeta (2 * s) *
       _root_.LSeries (fun n ↦ (ArithmeticFunction.moebius n : ℂ) ^ 2) s := by
   have hs2 : 1 < (2 * s).re := by
