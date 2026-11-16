@@ -80,11 +80,11 @@ private theorem joinCorner_eq_firstCorner (h' : C.sides g₁ = 1 ∨ C.sides g�
     joinCorner h = firstCorner h := by
   rw [joinCorner, firstCorner]
   refine Sigma.ext rfl (heq_of_eq (Fin.ext ?_))
-  have hN : C.mergeFacesSides g₁ g₂ none = C.sides g₁ + C.sides g₂ - 2 := rfl
   dsimp only
   rcases h' with h' | h'
   · rw [h', Nat.sub_self, Nat.zero_mod]
-  · rw [hN, h', show C.sides g₁ + 1 - 2 = C.sides g₁ - 1 by omega, Nat.mod_self]
+  · rw [mergeFacesSides_none, h', show C.sides g₁ + 1 - 2 = C.sides g₁ - 1 by omega,
+      Nat.mod_self]
 
 private theorem coe_outgoing_firstCorner_of_one_lt (h₁ : 1 < C.sides g₁) :
     ((C.mergeFaces h).outgoing (firstCorner h)).1 = C.outgoing ⟨g₁, ⟨0, C.sides_pos g₁⟩⟩ := by
@@ -96,16 +96,14 @@ private theorem coe_outgoing_firstCorner_of_eq_one (h₁ : C.sides g₁ = 1) :
       C.outgoing (C.nextCorner ⟨g₂, ⟨0, C.sides_pos g₂⟩⟩) := by
   have := h.two_lt_sides_add_sides
   rw [coe_outgoing_mergeFaces, firstCorner,
-    mergeFacesCornerOrigin_none_of_not_lt (by dsimp only; omega), nextCorner_def]
-  refine congrArg C.outgoing (Sigma.ext rfl (heq_of_eq (Fin.ext ?_)))
-  have h0 := Fin.coe_finRotate_eq_ite (⟨0, C.sides_pos g₂⟩ : Fin (C.sides g₂))
-  dsimp only at h0 ⊢
-  split_ifs at h0 <;> omega
+    mergeFacesCornerOrigin_none_of_not_lt (by dsimp only; omega),
+    C.nextCorner_mk_zero_of_one_lt (by omega)]
+  exact congrArg C.outgoing (Sigma.ext rfl (heq_of_eq (Fin.ext (by dsimp only; omega))))
 
 private theorem coe_incoming_firstCorner_of_one_lt (h₂ : 1 < C.sides g₂) :
     ((C.mergeFaces h).incoming (firstCorner h)).1 = C.incoming ⟨g₂, ⟨0, C.sides_pos g₂⟩⟩ := by
   have := C.sides_pos g₁
-  have hN : C.mergeFacesSides g₁ g₂ none = C.sides g₁ + C.sides g₂ - 2 := rfl
+  have := C.mergeFacesSides_none g₁ g₂
   rw [firstCorner, (C.mergeFaces h).incoming_mk_zero none, ← outgoing_def _ ⟨_, _⟩,
     coe_outgoing_mergeFaces, mergeFacesCornerOrigin_none_of_not_lt (by dsimp only; omega),
     C.incoming_mk_zero g₂, ← outgoing_def _ ⟨_, _⟩]
@@ -115,7 +113,7 @@ private theorem coe_incoming_firstCorner_of_eq_one (h₂ : C.sides g₂ = 1) :
     ((C.mergeFaces h).incoming (firstCorner h)).1 =
       C.incoming (C.prevCorner ⟨g₁, ⟨0, C.sides_pos g₁⟩⟩) := by
   have := h.two_lt_sides_add_sides
-  have hN : C.mergeFacesSides g₁ g₂ none = C.sides g₁ + C.sides g₂ - 2 := rfl
+  have := C.mergeFacesSides_none g₁ g₂
   rw [firstCorner, (C.mergeFaces h).incoming_mk_zero none, ← outgoing_def _ ⟨_, _⟩,
     coe_outgoing_mergeFaces, mergeFacesCornerOrigin_none_of_lt (by dsimp only; omega),
     prevCorner_mk_zero,
@@ -132,11 +130,9 @@ private theorem coe_outgoing_joinCorner_of_one_lt (h₂ : 1 < C.sides g₂) :
       C.outgoing (C.nextCorner ⟨g₂, ⟨0, C.sides_pos g₂⟩⟩) := by
   have := C.sides_pos g₁
   rw [joinCorner_of_one_lt h h₂, coe_outgoing_mergeFaces,
-    mergeFacesCornerOrigin_none_of_not_lt (by dsimp only; omega), nextCorner_def]
-  refine congrArg C.outgoing (Sigma.ext rfl (heq_of_eq (Fin.ext ?_)))
-  have h0 := Fin.coe_finRotate_eq_ite (⟨0, C.sides_pos g₂⟩ : Fin (C.sides g₂))
-  dsimp only at h0 ⊢
-  split_ifs at h0 <;> omega
+    mergeFacesCornerOrigin_none_of_not_lt (by dsimp only; omega),
+    C.nextCorner_mk_zero_of_one_lt h₂]
+  exact congrArg C.outgoing (Sigma.ext rfl (heq_of_eq (Fin.ext (by dsimp only; omega))))
 
 private theorem coe_incoming_joinCorner_of_one_lt (h₁ : 1 < C.sides g₁) :
     ((C.mergeFaces h).incoming (joinCorner h)).1 =
@@ -154,13 +150,13 @@ private theorem coe_incoming_joinCorner_of_one_lt (h₁ : 1 < C.sides g₁) :
 private theorem cornerVertex_firstCorner : (C.mergeFaces h).cornerVertex (firstCorner h) =
     C.graph.tgt (C.incoming ⟨g₁, ⟨0, C.sides_pos g₁⟩⟩) := by
   rw [← src_outgoing, outgoing_def]
-  exact src_mergeFacesSide_zero h
+  exact src_side_mergeFaces_none_zero h
 
 private theorem cornerVertex_joinCorner : (C.mergeFaces h).cornerVertex (joinCorner h) =
     C.graph.src (C.incoming ⟨g₁, ⟨0, C.sides_pos g₁⟩⟩) := by
   rcases Nat.lt_or_ge 1 (C.sides g₂) with h₂ | h₂
   · rw [joinCorner_of_one_lt h h₂, ← src_outgoing, outgoing_def]
-    exact src_mergeFacesSide_sides_sub_one h h₂
+    exact src_side_mergeFaces_none_sides_sub_one h h₂
   · have h₂ : C.sides g₂ = 1 := by have := C.sides_pos g₂; omega
     rw [joinCorner_eq_firstCorner h (.inr h₂), cornerVertex_firstCorner,
       h.tgt_incoming_eq_src_incoming_of_sides_eq_one h₂]
@@ -326,36 +322,6 @@ private theorem nonempty_vertexLink_path_mergeGerm (c : C.Corner) {v : C.graph.V
   · exact nonempty_vertexLink_path_mergeGerm_of_prevCorner h h₁ h₂ (.inr h₂') ha hb
   exact nonempty_vertexLink_path_mergeGerm_of_ne h h₁ h₂ h₁' h₂' ha hb
 
-/-- A path in the link of a vertex of `C` gives a path between the corresponding germs in the link
-of the merged complex. -/
-private theorem nonempty_vertexLink_path_mergeFaces_of_path {v : C.graph.V}
-    {a b : (C.vertexLink v).V} (P : (C.vertexLink v).Path a b) :
-    Nonempty (((C.mergeFaces h).vertexLink v).Path
-      ⟨mergeGerm h a.1, (src_mergeGerm h a.1).trans a.2⟩
-      ⟨mergeGerm h b.1, (src_mergeGerm h b.1).trans b.2⟩) := by
-  induction P with
-  | nil => exact ⟨.nil⟩
-  | cons _ e ih =>
-    rename_i b' c' _
-    obtain ⟨Q⟩ := ih
-    obtain ⟨⟨c, _ | _⟩, hs, ht⟩ := e
-    · obtain ⟨R⟩ := nonempty_vertexLink_path_mergeGerm h c.1
-        (a := ⟨mergeGerm h c'.1, (src_mergeGerm h c'.1).trans c'.2⟩)
-        (b := ⟨mergeGerm h b'.1, (src_mergeGerm h b'.1).trans b'.2⟩)
-        (congrArg (mergeGerm h)
-          ((congrArg Subtype.val ht).symm.trans (C.vertexLink_src_true c)))
-        (congrArg (mergeGerm h)
-          ((congrArg Subtype.val hs).symm.trans (C.vertexLink_src_false c)))
-      exact ⟨Q.comp R.reverse⟩
-    · obtain ⟨R⟩ := nonempty_vertexLink_path_mergeGerm h c.1
-        (a := ⟨mergeGerm h b'.1, (src_mergeGerm h b'.1).trans b'.2⟩)
-        (b := ⟨mergeGerm h c'.1, (src_mergeGerm h c'.1).trans c'.2⟩)
-        (congrArg (mergeGerm h)
-          ((congrArg Subtype.val hs).symm.trans (C.vertexLink_src_true c)))
-        (congrArg (mergeGerm h)
-          ((congrArg Subtype.val ht).symm.trans (C.vertexLink_src_false c)))
-      exact ⟨Q.comp R⟩
-
 /-- A vertex with finitely many corners in `C` has finitely many corners in the merged complex:
 they come from corners of `C` at the same vertex. -/
 instance {v : C.graph.V} [Finite (C.vertexLink v).E] :
@@ -376,18 +342,14 @@ theorem HasSurfaceLink.mergeFaces {v : C.graph.V} (hv : C.HasSurfaceLink v) :
     (C.mergeFaces h).HasSurfaceLink v := by
   obtain ⟨hfin, hconn, hdeg⟩ := (C.hasSurfaceLink_iff v).1 hv
   obtain ⟨⟨a⟩, hpre⟩ := (C.vertexLink v).connected_iff.1 hconn
-  have hφ (b : ((C.mergeFaces h).vertexLink v).V) :
-      (⟨mergeGerm h b.1.1, (src_mergeGerm h b.1.1).trans b.2⟩ :
-        ((C.mergeFaces h).vertexLink v).V) = b :=
-    Subtype.ext (mergeGerm_of_ne h b.1.2)
   have hconn' : ((C.mergeFaces h).vertexLink v).Connected := by
     refine ((C.mergeFaces h).vertexLink v).connected_iff.2
       ⟨⟨⟨mergeGerm h a.1, (src_mergeGerm h a.1).trans a.2⟩⟩,
         ((C.mergeFaces h).vertexLink v).preconnected_iff.2 fun b b' => ?_⟩
     obtain ⟨P⟩ := (C.vertexLink v).preconnected_iff.1 hpre ⟨b.1.1, b.2⟩ ⟨b'.1.1, b'.2⟩
-    obtain ⟨Q⟩ := nonempty_vertexLink_path_mergeFaces_of_path h P
-    rw [hφ b, hφ b'] at Q
-    exact ⟨Q⟩
+    exact nonempty_vertexLink_path_of_path (mergeGerm h) (fun e he => (src_mergeGerm h e).trans he)
+      (fun c _ => nonempty_vertexLink_path_mergeGerm h c) P (mergeGerm_of_ne h b.1.2).symm
+      (mergeGerm_of_ne h b'.1.2).symm
   have hd (e : C.graph.E) (he : C.linkDegree e = 1) : C.graph.toGeomEdge e ≠
       C.graph.toGeomEdge (C.incoming ⟨g₁, ⟨0, C.sides_pos g₁⟩⟩) := fun hed => by
     rcases C.graph.toGeomEdge_eq_toGeomEdge_iff.1 hed.symm with rfl | rfl <;>

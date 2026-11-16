@@ -56,6 +56,8 @@ condition into the global statement that every edge lies on one or two face side
 
 * `TauCeti.PolygonalComplex.nonempty_path_cornerVertex`: the corners of a face are joined along its
   sides in the one-skeleton.
+* `TauCeti.PolygonalComplex.nonempty_vertexLink_path_of_path`: a map of germs that joins the images
+  of the two germs of every corner carries paths in a vertex link to paths in the target link.
 * `TauCeti.PolygonalComplex.linkDegree_eq_natCard_sum`: the degree of the germ `e` is the
   `Nat.card` of the face sides traversing `rev e` or `e`.
 * `TauCeti.PolygonalComplex.linkDegree_eq_sideCount_rev_add_sideCount`: when finitely many face
@@ -223,6 +225,12 @@ theorem prevCorner_mk_of_ne_zero {f : C.Face} {i j : Fin (C.sides f)} (hj : (j :
   rw [← h]
   exact C.prevCorner_nextCorner ⟨f, i⟩
 
+/-- The corner following the first corner of a face with at least two sides is its second
+corner. -/
+theorem nextCorner_mk_zero_of_one_lt {f : C.Face} (hf : 1 < C.sides f) :
+    C.nextCorner ⟨f, ⟨0, C.sides_pos f⟩⟩ = ⟨f, ⟨1, hf⟩⟩ :=
+  Sigma.ext rfl (heq_of_eq (Fin.ext (Fin.coe_finRotate_of_add_one_lt hf)))
+
 /-- A corner is its own successor exactly on a monogon. -/
 @[simp] theorem nextCorner_eq_self_iff {c : C.Corner} : C.nextCorner c = c ↔ C.sides c.1 = 1 := by
   obtain ⟨f, k⟩ := c
@@ -321,6 +329,35 @@ theorem nonempty_vertexLink_path_of_corner {x : C.graph.V} (c : C.Corner)
     {a b : (C.vertexLink x).V} (ha : a.1 = C.outgoing c)
     (hb : b.1 = C.graph.rev (C.incoming c)) : Nonempty ((C.vertexLink x).Path a b) :=
   C.nonempty_vertexLink_path ⟨c, by rw [← src_outgoing, ← ha]; exact a.2⟩ ha hb
+
+variable {C} in
+/-- Let `φ` send the germs of `C` at `v` to germs of `D` at `x`. If, for each corner of `C` at `v`,
+the images of its two germs are joined in the link of `x`, then `φ` carries paths in the link of
+`v` to paths in the link of `x`. -/
+theorem nonempty_vertexLink_path_of_path {D : PolygonalComplex.{u', v', w'}} {v : C.graph.V}
+    {x : D.graph.V} (φ : C.graph.E → D.graph.E)
+    (hφ : ∀ e, C.graph.src e = v → D.graph.src (φ e) = x)
+    (hc : ∀ c : C.Corner, C.cornerVertex c = v → ∀ {a b : (D.vertexLink x).V},
+      a.1 = φ (C.outgoing c) → b.1 = φ (C.graph.rev (C.incoming c)) →
+        Nonempty ((D.vertexLink x).Path a b))
+    {a b : (C.vertexLink v).V} (P : (C.vertexLink v).Path a b) {a' b' : (D.vertexLink x).V}
+    (ha : a'.1 = φ a.1) (hb : b'.1 = φ b.1) : Nonempty ((D.vertexLink x).Path a' b') := by
+  induction P generalizing b' with
+  | nil =>
+    obtain rfl : a' = b' := Subtype.ext (ha.trans hb.symm)
+    exact ⟨.nil⟩
+  | cons _ e ih =>
+    rename_i c c' _
+    obtain ⟨Q⟩ := ih (b' := ⟨φ c.1, hφ c.1 c.2⟩) rfl
+    obtain ⟨⟨c₀, _ | _⟩, hs, ht⟩ := e
+    · obtain ⟨R⟩ := hc c₀.1 c₀.2 (a := b') (b := ⟨φ c.1, hφ c.1 c.2⟩)
+        (hb.trans (congrArg φ ((congrArg Subtype.val ht).symm.trans (C.vertexLink_src_true c₀))))
+        (congrArg φ ((congrArg Subtype.val hs).symm.trans (C.vertexLink_src_false c₀)))
+      exact ⟨Q.comp R.reverse⟩
+    · obtain ⟨R⟩ := hc c₀.1 c₀.2 (a := ⟨φ c.1, hφ c.1 c.2⟩) (b := b')
+        (congrArg φ ((congrArg Subtype.val hs).symm.trans (C.vertexLink_src_true c₀)))
+        (hb.trans (congrArg φ ((congrArg Subtype.val ht).symm.trans (C.vertexLink_src_false c₀))))
+      exact ⟨Q.comp R⟩
 
 /-- The degree of the germ `e` in the link of its source: the `Nat.card` of the link darts
 starting at `e`. A corner both of whose germs are `e` contributes two. As with `Nat.card`, this is
