@@ -6,10 +6,12 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.MeasureTheory.Constructions.Pi
+public import Mathlib.MeasureTheory.Measure.Haar.InnerProductSpace
 public import Mathlib.MeasureTheory.Measure.Lebesgue.Basic
 public import Mathlib.MeasureTheory.Measure.WithDensity
 import Mathlib.Analysis.SpecialFunctions.Gamma.Basic
 import Mathlib.Analysis.SpecialFunctions.Integrals.Basic
+import TauCeti.MeasureTheory.Measure.Lebesgue.HalfSqRadius
 import TauCeti.MeasureTheory.Measure.WithDensity
 import TauCeti.Probability.Distributions.Gamma.PDF
 import TauCeti.Probability.Distributions.Sums
@@ -35,8 +37,14 @@ only depends on the sum, it can be removed after pushing forward, which turns th
 `s^(n-1) e^(-s) / (n-1)!` into `s^(n-1) / (n-1)!`. Positive weights are reduced to unit weights
 by the diagonal linear change of variables `x ↦ (a i * x i)_i`, of determinant `∏ i, a i`.
 
-When the weights are those of a circle acting linearly on `ℂ^ι`, composing with the pushforward of
-`TauCeti.map_volume_pi_half_sq_add_sq` computes the Duistermaat–Heckman measure of that action.
+Composing with the pushforward `TauCeti.map_volume_euclideanSpace_half_sq_add_sq` of Lebesgue
+measure by `(q, p) ↦ ((q_i² + p_i²) / 2)_i`, the map `(q, p) ↦ ∑ i, a i * (q_i² + p_i²) / 2` on
+`EuclideanSpace ℝ ι × EuclideanSpace ℝ ι` sends Lebesgue measure to `(2π)^n` times the measure
+above (`TauCeti.map_volume_sum_mul_half_sq_add_sq`), and the ellipsoid
+`{∑ i, a i * (q_i² + p_i²) / 2 ≤ c}` has volume `(2π c)^n / (n! ∏ i, a i)`
+(`TauCeti.volume_setOf_sum_mul_half_sq_add_sq_le`). Read on `ℂ^ι`, this map is the moment map of
+the circle acting by `z_i ↦ exp(-i a_i θ) z_i`, so this computes the Duistermaat–Heckman measure of
+that action.
 
 ## References
 
@@ -51,7 +59,7 @@ public section
 noncomputable section
 
 open MeasureTheory Set ProbabilityTheory
-open scoped ENNReal
+open scoped ENNReal Real
 
 namespace TauCeti
 
@@ -177,6 +185,55 @@ theorem volume_setOf_forall_nonneg_and_sum_mul_le {a : ι → ℝ} (ha : ∀ i, 
   congr 1
   push_cast
   field_simp
+  ring
+
+/-- **The Duistermaat–Heckman measure of a circle acting with positive weights.** Let the circle
+act on `ℂ^ι` by `z_i ↦ exp(-i a_i θ) z_i` with weights `a_i > 0`, with moment map
+`H = ∑_i a_i (q_i² + p_i²) / 2`. Then `H` pushes Lebesgue measure on `ℂ^ι`, for `ι` with `n ≥ 1`
+elements, to `(2π)^n` times the measure on `[0, ∞)` with the polynomial density
+`s^(n-1) / ((n-1)! ∏ i, a i)`. -/
+theorem map_volume_sum_mul_half_sq_add_sq [Nonempty ι] {a : ι → ℝ} (ha : ∀ i, 0 < a i) :
+    (volume : Measure (EuclideanSpace ℝ ι × EuclideanSpace ℝ ι)).map
+        (fun x ↦ ∑ i, a i * ((x.1 i ^ 2 + x.2 i ^ 2) / 2)) =
+      ENNReal.ofReal (2 * π) ^ Fintype.card ι •
+        (volume.restrict (Ici 0)).withDensity fun s ↦ ENNReal.ofReal
+          (s ^ (Fintype.card ι - 1) / ((Fintype.card ι - 1).factorial * ∏ i, a i)) := by
+  have hcomp : (fun x : EuclideanSpace ℝ ι × EuclideanSpace ℝ ι ↦
+      ∑ i, a i * ((x.1 i ^ 2 + x.2 i ^ 2) / 2)) =
+      (fun y : ι → ℝ ↦ ∑ i, a i * y i) ∘ fun x i ↦ (x.1 i ^ 2 + x.2 i ^ 2) / 2 :=
+    (rfl)
+  rw [hcomp, ← Measure.map_map (by fun_prop) (by fun_prop),
+    map_volume_euclideanSpace_half_sq_add_sq, Measure.map_smul,
+    map_volume_restrict_pi_Ici_sum_mul ha]
+  exact (by fun_prop : Measurable fun y : ι → ℝ ↦ ∑ i, a i * y i).aemeasurable
+
+/-- **The volume of a sublevel of the moment map of a circle acting with positive weights.** For
+weights `a_i > 0` and `c ≥ 0`, the ellipsoid `{∑_i a_i (q_i² + p_i²) / 2 ≤ c}` in `ℂ^ι` has
+Lebesgue measure `(2π c)^n / (n! ∏ i, a i)`, where `n` is the number of elements of `ι`. -/
+theorem volume_setOf_sum_mul_half_sq_add_sq_le {a : ι → ℝ} (ha : ∀ i, 0 < a i) {c : ℝ}
+    (hc : 0 ≤ c) :
+    volume {x : EuclideanSpace ℝ ι × EuclideanSpace ℝ ι |
+        ∑ i, a i * ((x.1 i ^ 2 + x.2 i ^ 2) / 2) ≤ c} =
+      ENNReal.ofReal ((2 * π * c) ^ Fintype.card ι /
+        ((Fintype.card ι).factorial * ∏ i, a i)) := by
+  have hh : Measurable fun x : EuclideanSpace ℝ ι × EuclideanSpace ℝ ι ↦
+      fun i ↦ (x.1 i ^ 2 + x.2 i ^ 2) / 2 := by fun_prop
+  have hS : MeasurableSet {y : ι → ℝ | ∑ i, a i * y i ≤ c} :=
+    measurableSet_le (by fun_prop) measurable_const
+  have hset : {y : ι → ℝ | ∑ i, a i * y i ≤ c} ∩ univ.pi (fun _ ↦ Ici 0) =
+      {y : ι → ℝ | (∀ i, 0 ≤ y i) ∧ ∑ i, a i * y i ≤ c} := by
+    ext y
+    simp only [mem_inter_iff, mem_ofPred_eq, mem_univ_pi, mem_Ici]
+    exact and_comm
+  have hpre : {x : EuclideanSpace ℝ ι × EuclideanSpace ℝ ι |
+      ∑ i, a i * ((x.1 i ^ 2 + x.2 i ^ 2) / 2) ≤ c} =
+      (fun x i ↦ (x.1 i ^ 2 + x.2 i ^ 2) / 2) ⁻¹' {y : ι → ℝ | ∑ i, a i * y i ≤ c} :=
+    (rfl)
+  -- Pass to the orthant coordinates `y_i = (q_i² + p_i²) / 2` and use the weighted simplex.
+  rw [hpre, ← Measure.map_apply hh hS, map_volume_euclideanSpace_half_sq_add_sq,
+    smul_apply, Measure.restrict_apply hS, hset, volume_setOf_forall_nonneg_and_sum_mul_le ha hc,
+    smul_eq_mul, ← ENNReal.ofReal_pow (by positivity), ← ENNReal.ofReal_mul (by positivity)]
+  congr 1
   ring
 
 end TauCeti
