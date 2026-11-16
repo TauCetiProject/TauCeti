@@ -62,6 +62,13 @@ noncomputable def extendPoint (H : Type v) [Semiring H] [_root_.HopfAlgebra R H]
     points (H := H) (CommAlgCat.of R R) →* points (H := H) A :=
   AlgHom.mapValue (Algebra.ofId R A)
 
+/-- Extension of a ground-ring-valued point is `AlgHom.mapValue` along the value algebra's
+structure map. -/
+theorem extendPoint_eq_mapValue (H : Type v) [Semiring H] [_root_.HopfAlgebra R H]
+    (A : CommAlgCat.{w} R) (g : points (H := H) (CommAlgCat.of R R)) :
+    extendPoint H A g = AlgHom.mapValue (H := H) (Algebra.ofId R A) g :=
+  (rfl)
+
 /-- Extension of a point is post-composition with the value algebra's structure map. -/
 theorem extendPoint_apply (H : Type v) [Semiring H] [_root_.HopfAlgebra R H]
     (A : CommAlgCat.{w} R) (g : points (H := H) (CommAlgCat.of R R)) :

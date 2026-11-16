@@ -143,8 +143,6 @@ section RepresentingScheme
 variable {k : Type u} [Field k] [IsAlgClosed k]
   {H : _root_.CommHopfAlgCat.{u} k} [Algebra.FiniteType k H]
 
-attribute [local instance] Comodule.exteriorPower
-
 /-- **Proper homogeneous quotient implies parabolic (Milne, Theorem 17.16).** Let `G` be a reduced
 affine group of finite type over an algebraically closed field `k`, and let `P` be a smooth closed
 subgroup cut out by `I`. If any scheme `X` over `Spec k` representing `G / P` is proper over
@@ -157,13 +155,8 @@ theorem isParabolicOverAlgClosed_of_isProper_fppfHomogeneousQuotientIso [_root_.
     (e : CommHopfAlgCat.fppfHomogeneousQuotient H I ≅ CommAlgCat.pointsSheaf X)
     [IsProper X.hom] :
     IsParabolicOverAlgClosed k (FiniteTypeCommHopfAlgCat.of k H) I := by
-  have := Algebra.FiniteType.isNoetherianRing k H
-  obtain ⟨V, n, hV, m₀, hm₀, hcoset⟩ :=
-    I.exists_finite_subcomodule_exteriorPower_coset_matrixCoefficient.{u, u, u}
-      (IsNoetherian.noetherian I.toIdeal)
-  let : Module.Finite k V := hV
-  let : AddCommGroup V := Module.addCommMonoidToAddCommGroup k
-  let e₀ := Comodule.fppfHomogeneousQuotientIsoPointsSheafProjectiveOrbit I m₀ hm₀ hcoset
+  obtain ⟨M, _, _, _, _, m₀, hm₀, hcoset, ⟨e₀⟩⟩ :=
+    I.exists_coset_matrixCoefficient_fppfHomogeneousQuotientIsoPointsSheaf
   have _ : IsProper (Comodule.projectiveOrbitToSpec (H := H) m₀ hm₀) :=
     (CommHopfAlgCat.isProper_hom_iff_of_fppfHomogeneousQuotientIso H I e e₀).mp inferInstance
   exact isParabolicOverAlgClosed_of_isProper_projectiveOrbitToSpec_of_coset I hI m₀ hm₀ hcoset

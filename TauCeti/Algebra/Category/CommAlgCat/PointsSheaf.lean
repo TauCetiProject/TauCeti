@@ -94,6 +94,9 @@ private noncomputable def pointsSheafFunctorIsoUliftYonedaComp :
         (Scheme.fppfTopology.over (Spec (CommRingCat.of R))) ⋙
           (algSpec (CommRingCat.of R)).sheafPushforwardContinuous (Type (u + 1))
             (fppfTopology R) (Scheme.fppfTopology.over (Spec (CommRingCat.of R))) :=
+  -- Both `pointsSheaf` and `pointsSheafFunctor` are `@[expose]`, and both sides have the exact
+  -- same underlying presheaf `((algSpec (CommRingCat.of R)).op ⋙ yoneda.obj X) ⋙ uliftFunctor`
+  -- and postcomposition map `x ↦ ULift.up (x.down ≫ f)` definitionally.
   NatIso.ofComponents
     (fun X ↦
       { hom := ⟨𝟙 (pointsSheaf X).obj⟩
@@ -190,19 +193,8 @@ theorem pointsSheafHomEquiv_symm_comp (α : pointsSheaf X ⟶ pointsSheaf Y)
 /-- Isomorphisms between schemes over `Spec R` are equivalent to isomorphisms between their affine
 fppf sheaves of points. -/
 noncomputable def pointsSheafIsoEquiv :
-    (X ≅ Y) ≃ (pointsSheaf X ≅ pointsSheaf Y) where
-  toFun e :=
-    { hom := pointsSheafHomEquiv e.hom
-      inv := pointsSheafHomEquiv e.inv
-      hom_inv_id := by rw [← pointsSheafHomEquiv_comp, e.hom_inv_id, pointsSheafHomEquiv_id]
-      inv_hom_id := by rw [← pointsSheafHomEquiv_comp, e.inv_hom_id, pointsSheafHomEquiv_id] }
-  invFun := (fullyFaithfulPointsSheafFunctor R).preimageIso
-  left_inv e := by
-    ext1
-    exact e.hom |> pointsSheafHomEquiv.symm_apply_apply
-  right_inv e := by
-    ext1
-    exact e.hom |> pointsSheafHomEquiv.apply_symm_apply
+    (X ≅ Y) ≃ (pointsSheaf X ≅ pointsSheaf Y) :=
+  (fullyFaithfulPointsSheafFunctor R).isoEquiv
 
 /-- The forward morphism of `pointsSheafIsoEquiv e` is `pointsSheafHomEquiv e.hom`. -/
 @[simp]

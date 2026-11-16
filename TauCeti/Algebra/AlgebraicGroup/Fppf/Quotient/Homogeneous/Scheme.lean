@@ -25,16 +25,19 @@ reducedness, normality, or finite-type hypotheses:
 * `CommHopfAlgCat.pointsPresheafToPointsSheafEquiv`: Yoneda equivalence between morphisms
   `Spec H ⟶ X` over `Spec R` and natural maps from `G` into `pointsSheaf X`.
 * `CommHopfAlgCat.fppfHomogeneousQuotientSchemeProjection`: the canonical scheme morphism
-  `Spec H ⟶ X` over `Spec R` corresponding to `G ⟶ G / N`.
+  `Spec H ⟶ X` over `Spec R` corresponding to `G ⟶ G / N`, which is right-invariant on affine
+  subgroup points (`CommHopfAlgCat.fppfHomogeneousQuotientSchemeProjection_invariant`) and
+  surjective (`CommHopfAlgCat.surjective_fppfHomogeneousQuotientSchemeProjection_left`).
 * `CommHopfAlgCat.fppfHomogeneousQuotientSchemeHomEquiv`: **universal property of `G / N` as a
   scheme** (Milne, Proposition 5.22): morphisms `X ⟶ Z` over `Spec R` are equivalent to `N`-right
   invariant morphisms `Spec H ⟶ Z` over `Spec R`.
 * `CommHopfAlgCat.fppfHomogeneousQuotientSchemeIso`: uniqueness of a representing scheme up to
-  canonical isomorphism over `Spec R`, together with transfer of any isomorphism-invariant
-  `MorphismProperty` (in particular `AlgebraicGeometry.IsProper`).
-* `CommHopfAlgCat.fppfHomogeneousQuotientSchemeMap`: the canonical scheme morphism `X ⟶ Y` over
-  `Spec R` induced by an inclusion of closed subgroups (`J ≤ I`), with identity and composition
-  laws.
+  canonical isomorphism over `Spec R` (with reflexivity, symmetry, and transitivity), together with
+  transfer of any isomorphism-invariant `MorphismProperty` (in particular
+  `AlgebraicGeometry.IsProper`).
+* `CommHopfAlgCat.fppfHomogeneousQuotientSchemeMap`: the canonical surjective scheme morphism
+  `X ⟶ Y` over `Spec R` induced by an inclusion of closed subgroups (`J ≤ I`), with identity and
+  composition laws.
 * `CommHopfAlgCat.fppfHomogeneousQuotientSchemeTranslation`: left-translation automorphisms of `X`
   by `R`-valued points of `G`, commuting with subgroup-induced projections.
 * `CommHopfAlgCat.fppfHomogeneousQuotientConjugateRepresentingIso`: transport of a representing
@@ -250,8 +253,21 @@ theorem fppfHomogeneousQuotientSchemeHomEquiv_apply (I : HopfIdeal R H)
   simp only [fppfHomogeneousQuotientSchemeHomEquiv, Equiv.trans_apply, Iso.homCongr_apply,
     Iso.symm_inv, Iso.refl_hom, Category.comp_id, fppfHomogeneousQuotientHomEquiv_apply,
     Equiv.subtypeEquiv_apply, ObjectProperty.FullSubcategory.comp_hom, ← Category.assoc,
-    pointsPresheafToPointsSheafEquiv_symm_comp]
-  rfl
+    pointsPresheafToPointsSheafEquiv_symm_comp, fppfHomogeneousQuotientSchemeProjection]
+
+/-- The canonical projection `Spec H ⟶ X` to a scheme representing `G / N` is invariant on affine
+points under right multiplication by the closed subgroup cut out by `I`. -/
+@[reassoc]
+theorem fppfHomogeneousQuotientSchemeProjection_invariant (I : HopfIdeal R H)
+    (e : fppfHomogeneousQuotient H I ≅ CommAlgCat.pointsSheaf X)
+    (A : CommAlgCat.{u} R) (g : HopfAlgebra.points (R := R) (H := H) A)
+    (n : quotientPointsSubgroup H I A) :
+    Spec.map (CommRingCat.ofHom ((g * n.val).ofConv : H →+* A)) ≫
+        (fppfHomogeneousQuotientSchemeProjection H I e).left =
+      Spec.map (CommRingCat.ofHom (g.ofConv : H →+* A)) ≫
+        (fppfHomogeneousQuotientSchemeProjection H I e).left := by
+  simpa only [fppfHomogeneousQuotientSchemeHomEquiv_apply, Category.comp_id] using
+    (fppfHomogeneousQuotientSchemeHomEquiv H I e X (𝟙 X)).property A g n
 
 /-- Restricting a descended morphism `X ⟶ Z` along `Spec H ⟶ X` recovers the original subgroup-
 invariant morphism `Spec H ⟶ Z`. -/
@@ -281,6 +297,90 @@ theorem fppfHomogeneousQuotientScheme_hom_ext (I : HopfIdeal R H)
   apply Subtype.ext
   simpa only [fppfHomogeneousQuotientSchemeHomEquiv_apply] using h
 
+/-- Any affine point `y : Spec K ⟶ X` over `Spec R` lifts at any point `x₀ : Spec K` to `Spec H`
+along a morphism `π : Spec H ⟶ X` that is fppf-locally surjective on affine points. -/
+private theorem exists_preimage_of_isLocallySurjective_pointsPresheafToPointsSheafEquiv
+    (π : Over.mk (Spec.map (CommRingCat.ofHom (algebraMap R H))) ⟶ X)
+    [Presheaf.IsLocallySurjective (CommAlgCat.fppfTopology R)
+      (pointsPresheafToPointsSheafEquiv H X π)]
+    (K : CommAlgCat.{u} R) (y : (algSpec (CommRingCat.of R)).obj (op K) ⟶ X)
+    (x₀ : ((algSpec (CommRingCat.of R)).obj (op K)).left) :
+    ∃ z : Spec (CommRingCat.of H), π.left z = y.left x₀ := by
+  let α := pointsPresheafToPointsSheafEquiv H X π
+  let y' : (CommAlgCat.pointsSheaf X).obj.obj (op (op K)) := ULift.up y
+  let S : Sieve (op K) := Presheaf.imageSieve α y'
+  have hmem : S ∈ CommAlgCat.fppfTopology R (op K) :=
+    Presheaf.imageSieve_mem (CommAlgCat.fppfTopology R) α y'
+  let _ : (algSpec (CommRingCat.of R)).Full :=
+    (algSpec.fullyFaithful (R := CommRingCat.of R)).full
+  let _ : (algSpec (CommRingCat.of R)).Faithful :=
+    (algSpec.fullyFaithful (R := CommRingCat.of R)).faithful
+  rw [CommAlgCat.fppfTopology_def, Functor.mem_inducedTopology_iff_of_isCoverDense,
+    GrothendieckTopology.mem_over_iff] at hmem
+  have hjs : _ ∈ Scheme.jointlySurjectivePrecoverage.toGrothendieck _ :=
+    Precoverage.toGrothendieck_mono
+      (fun _ _ h ↦ h.1 : Scheme.fppfPrecoverage ≤ Scheme.jointlySurjectivePrecoverage) _ hmem
+  rw [Precoverage.mem_toGrothendieck_iff_of_isStableUnderComposition] at hjs
+  obtain ⟨R₀, hR₀, hR₀S⟩ := hjs
+  obtain ⟨W, f, hfR, w, hw⟩ :=
+    (Presieve.mem_comap_jointlySurjectivePrecoverage_iff Scheme.forget).mp hR₀ x₀
+  have hfS := (Sieve.overEquiv_iff _ f).mp (hR₀S W f hfR)
+  obtain ⟨⟨B⟩, ⟨ψ⟩, h,
+    ⟨⟨(g : HopfAlgebra.points (R := R) (H := H) B)⟩, hg⟩, hfac⟩ := hfS
+  have hf_eq : f = h.left ≫ ((algSpec (CommRingCat.of R)).map ψ.op).left :=
+    congrArg CommaMorphism.left hfac
+  have hg_left :
+      Spec.map (CommRingCat.ofHom (g.ofConv : H →+* B)) ≫ π.left =
+        ((algSpec (CommRingCat.of R)).map ψ.op).left ≫ y.left :=
+    (pointsPresheafToPointsSheafEquiv_apply_app_down_left H X π (op (op B)) g).symm.trans
+      (congrArg (fun u ↦ u.down.left) hg)
+  have hb₀ : π.left (Spec.map (CommRingCat.ofHom (g.ofConv : H →+* B)) (h.left w)) =
+      y.left (((algSpec (CommRingCat.of R)).map ψ.op).left (h.left w)) :=
+    (Scheme.Hom.comp_apply _ _ _).symm.trans <|
+      (congrArg (fun m : Spec (CommRingCat.of B) ⟶ X.left ↦ m (h.left w)) hg_left).trans <|
+        Scheme.Hom.comp_apply _ _ _
+  have hfw : ((algSpec (CommRingCat.of R)).map ψ.op).left (h.left w) = x₀ := by
+    have hfw' : f w = ((algSpec (CommRingCat.of R)).map ψ.op).left (h.left w) := by
+      simpa only [Scheme.Hom.comp_apply] using congrArg (fun m ↦ m w) hf_eq
+    exact hfw'.symm.trans hw
+  exact ⟨Spec.map (CommRingCat.ofHom (g.ofConv : H →+* B)) (h.left w),
+    hb₀.trans (congrArg y.left hfw)⟩
+
+/-- A morphism `π : Spec H ⟶ X` over `Spec R` that is fppf-locally surjective on affine points is
+surjective on underlying topological spaces. -/
+private theorem surjective_left_of_isLocallySurjective_pointsPresheafToPointsSheafEquiv
+    (π : Over.mk (Spec.map (CommRingCat.ofHom (algebraMap R H))) ⟶ X)
+    [Presheaf.IsLocallySurjective (CommAlgCat.fppfTopology R)
+      (pointsPresheafToPointsSheafEquiv H X π)] :
+    Surjective π.left := by
+  rw [surjective_iff]
+  intro x
+  let κ : CommRingCat.{u} := X.left.residueField x
+  let i : Spec κ ⟶ X.left := X.left.fromSpecResidueField x
+  let φ₀ : CommRingCat.of R ⟶ κ := Spec.preimage (i ≫ X.hom)
+  let _ : Algebra R κ := φ₀.hom.toAlgebra
+  have hφ₀ : Spec.map (CommRingCat.ofHom (algebraMap R κ)) = i ≫ X.hom := Spec.map_preimage _
+  let K : CommAlgCat.{u} R := CommAlgCat.of R κ
+  let y : (algSpec (CommRingCat.of R)).obj (op K) ⟶ X := Over.homMk i hφ₀.symm
+  let x₀ : Spec κ := default
+  obtain ⟨z, hz⟩ :=
+    exists_preimage_of_isLocallySurjective_pointsPresheafToPointsSheafEquiv H π K y x₀
+  exact ⟨z, hz.trans (X.left.fromSpecResidueField_apply x x₀)⟩
+
+/-- **Surjectivity of the quotient projection.** Over any commutative ring `R`, the canonical
+projection `Spec H ⟶ X` onto any scheme `X` over `Spec R` representing `G / N` is surjective. -/
+theorem surjective_fppfHomogeneousQuotientSchemeProjection_left (I : HopfIdeal R H)
+    (eI : fppfHomogeneousQuotient H I ≅ CommAlgCat.pointsSheaf X) :
+    Surjective (fppfHomogeneousQuotientSchemeProjection H I eI).left := by
+  have _ : IsIso eI.hom.hom :=
+    inferInstanceAs (IsIso ((sheafToPresheaf _ _).mapIso eI).hom)
+  have _ : Presheaf.IsLocallySurjective (CommAlgCat.fppfTopology R)
+      (pointsPresheafToPointsSheafEquiv H X
+        (fppfHomogeneousQuotientSchemeProjection H I eI)) := by
+    rw [pointsPresheafToPointsSheafEquiv_fppfHomogeneousQuotientSchemeProjection]
+    infer_instance
+  exact surjective_left_of_isLocallySurjective_pointsPresheafToPointsSheafEquiv H _
+
 /-- **Uniqueness of representing schemes.** Any two schemes over `Spec R` representing the same
 fppf homogeneous quotient `G / N` are canonically isomorphic over `Spec R`. -/
 def fppfHomogeneousQuotientSchemeIso (I : HopfIdeal R H)
@@ -309,13 +409,9 @@ theorem fppfHomogeneousQuotientSchemeProjection_comp_iso_hom (I : HopfIdeal R H)
         (fppfHomogeneousQuotientSchemeIso H I e₁ e₂).hom =
       fppfHomogeneousQuotientSchemeProjection H I e₂ := by
   apply (pointsPresheafToPointsSheafEquiv H X').injective
-  rw [pointsPresheafToPointsSheafEquiv_comp,
-    pointsPresheafToPointsSheafEquiv_fppfHomogeneousQuotientSchemeProjection,
-    pointsPresheafToPointsSheafEquiv_fppfHomogeneousQuotientSchemeProjection,
-    pointsSheafHomEquiv_fppfHomogeneousQuotientSchemeIso_hom,
-    ObjectProperty.FullSubcategory.comp_hom, Category.assoc, ← Category.assoc e₁.hom.hom,
-    ← ObjectProperty.FullSubcategory.comp_hom, e₁.hom_inv_id,
-    ObjectProperty.FullSubcategory.id_hom, Category.id_comp]
+  have hcancel : e₁.hom.hom ≫ e₁.inv.hom = 𝟙 _ :=
+    ((sheafToPresheaf _ _).mapIso e₁).hom_inv_id
+  simp [reassoc_of% hcancel]
 
 /-- Comparing a representing scheme with itself gives the identity isomorphism. -/
 @[simp]
@@ -338,6 +434,19 @@ theorem fppfHomogeneousQuotientSchemeIso_symm (I : HopfIdeal R H)
   rw [fppfHomogeneousQuotientSchemeProjection_comp_iso_hom,
     ← fppfHomogeneousQuotientSchemeProjection_comp_iso_hom H I e₁ e₂, Category.assoc,
     Iso.symm_hom, Iso.hom_inv_id, Category.comp_id]
+
+/-- Canonical isomorphisms between schemes representing `G / N` compose transitively. -/
+@[simp]
+theorem fppfHomogeneousQuotientSchemeIso_trans (I : HopfIdeal R H)
+    (e₁ : fppfHomogeneousQuotient H I ≅ CommAlgCat.pointsSheaf X)
+    (e₂ : fppfHomogeneousQuotient H I ≅ CommAlgCat.pointsSheaf X')
+    (e₃ : fppfHomogeneousQuotient H I ≅ CommAlgCat.pointsSheaf Y) :
+    fppfHomogeneousQuotientSchemeIso H I e₁ e₂ ≪≫
+        fppfHomogeneousQuotientSchemeIso H I e₂ e₃ =
+      fppfHomogeneousQuotientSchemeIso H I e₁ e₃ := by
+  ext1
+  apply fppfHomogeneousQuotientScheme_hom_ext H I e₁
+  simp
 
 /-- Any isomorphism-invariant morphism property holds for one scheme representing `G / N` if and
 only if it holds for any other scheme representing `G / N`. -/
@@ -386,14 +495,25 @@ theorem fppfHomogeneousQuotientSchemeProjection_comp_map
         fppfHomogeneousQuotientSchemeMap H eI eJ hJI =
       fppfHomogeneousQuotientSchemeProjection H J eJ := by
   apply (pointsPresheafToPointsSheafEquiv H Y).injective
-  rw [pointsPresheafToPointsSheafEquiv_comp,
-    pointsPresheafToPointsSheafEquiv_fppfHomogeneousQuotientSchemeProjection,
-    pointsPresheafToPointsSheafEquiv_fppfHomogeneousQuotientSchemeProjection,
-    pointsSheafHomEquiv_fppfHomogeneousQuotientSchemeMap,
-    ObjectProperty.FullSubcategory.comp_hom, ObjectProperty.FullSubcategory.comp_hom,
-    Category.assoc, ← Category.assoc eI.hom.hom, ← ObjectProperty.FullSubcategory.comp_hom,
-    eI.hom_inv_id, ObjectProperty.FullSubcategory.id_hom, Category.id_comp,
-    fppfHomogeneousQuotientProjection_comp_map_assoc]
+  have hcancel : eI.hom.hom ≫ eI.inv.hom = 𝟙 _ :=
+    ((sheafToPresheaf _ _).mapIso eI).hom_inv_id
+  simp [reassoc_of% hcancel]
+
+/-- **Surjectivity of subgroup-induced quotient maps.** Over any commutative ring `R`, for an
+inclusion of closed subgroups `P ⊆ Q` (`J ≤ I`), the induced morphism `X ⟶ Y` between any schemes
+representing `G / P` and `G / Q` over `Spec R` is surjective. -/
+theorem surjective_fppfHomogeneousQuotientSchemeMap_left
+    (eI : fppfHomogeneousQuotient H I ≅ CommAlgCat.pointsSheaf X)
+    (eJ : fppfHomogeneousQuotient H J ≅ CommAlgCat.pointsSheaf Y)
+    (hJI : J ≤ I) :
+    Surjective (fppfHomogeneousQuotientSchemeMap H eI eJ hJI).left := by
+  have hsurj : Surjective
+      ((fppfHomogeneousQuotientSchemeProjection H I eI).left ≫
+        (fppfHomogeneousQuotientSchemeMap H eI eJ hJI).left) := by
+    rw [← Over.comp_left, fppfHomogeneousQuotientSchemeProjection_comp_map]
+    exact surjective_fppfHomogeneousQuotientSchemeProjection_left H J eJ
+  exact Surjective.of_comp (fppfHomogeneousQuotientSchemeProjection H I eI).left
+    (fppfHomogeneousQuotientSchemeMap H eI eJ hJI).left
 
 /-- `fppfHomogeneousQuotientSchemeMap` is characterized as the unique morphism `X ⟶ Y` over
 `Spec R` commuting with the canonical projections from `Spec H`. -/

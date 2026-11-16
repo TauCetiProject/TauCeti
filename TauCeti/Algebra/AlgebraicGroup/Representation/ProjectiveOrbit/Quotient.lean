@@ -9,6 +9,7 @@ public import TauCeti.Algebra.AlgebraicGroup.Representation.ProjectiveOrbit.Fibe
 public import TauCeti.Algebra.AlgebraicGroup.Representation.ProjectiveOrbit.Lifting
 public import TauCeti.Algebra.AlgebraicGroup.Representation.ProjectiveOrbit.LineFibers
 public import TauCeti.Algebra.AlgebraicGroup.Fppf.Quotient.Homogeneous.Basic
+import TauCeti.Algebra.AlgebraicGroup.Representation.ProjectiveOrbit.Points
 import TauCeti.AlgebraicGeometry.AffineGroupScheme.HopfSpec
 
 /-!
@@ -32,12 +33,18 @@ A locally bijective morphism of sheaves is an isomorphism.
 
 ## Main declarations
 
-* `Comodule.projectiveOrbitPointsSheaf`: the fppf sheaf of points of a projective orbit scheme.
+* `Comodule.projectiveOrbitPointsSheaf`: the fppf sheaf of points of a projective orbit scheme,
+  identified with `CommAlgCat.pointsSheaf` via `Comodule.projectiveOrbitPointsSheafIsoPointsSheaf`.
 * `Comodule.toProjectiveOrbitPoints`: the orbit map on points.
 * `Comodule.fppfHomogeneousQuotientToProjectiveOrbitPoints`: the orbit map descended to `G/N`.
-* `Comodule.fppfHomogeneousQuotientIsoProjectiveOrbitPoints`: **`G/N` is represented by the
+* `Comodule.fppfHomogeneousQuotientIsoProjectiveOrbitPoints` and
+  `Comodule.fppfHomogeneousQuotientIsoPointsSheafProjectiveOrbit`: **`G/N` is represented by the
   projective orbit scheme.**
-* `HopfIdeal.exists_fppfHomogeneousQuotient_iso_projectiveOrbitPoints`: every closed subgroup
+* `Comodule.mem_quotientPointsSubgroup_iff_projectiveOrbitMap_kernelPoint_eq`: when matrix
+  coefficients at `m` detect left cosets of `N`, rational points of `N` are the rational points
+  fixing `[m]` in the projective orbit.
+* `HopfIdeal.exists_coset_matrixCoefficient_fppfHomogeneousQuotientIsoPointsSheaf` and
+  `HopfIdeal.exists_fppfHomogeneousQuotient_iso_projectiveOrbitPoints`: every closed subgroup
   has a projective orbit representing its homogeneous quotient.
 
 ## References
@@ -47,7 +54,8 @@ A locally bijective morphism of sheaves is an isomorphism.
 
 public section
 
-open CategoryTheory AlgebraicGeometry Opposite
+open CategoryTheory AlgebraicGeometry Opposite WithConv
+open scoped TensorProduct
 
 namespace TauCeti.Comodule
 
@@ -73,6 +81,16 @@ theorem projectiveOrbitPointsSheaf_obj (m : M) (hm : Module.IsUnimodular k m) :
         yoneda.obj (Over.mk (projectiveOrbitToSpec (H := H) m hm))) ⋙
           uliftFunctor.{u + 1, u} :=
   (rfl)
+
+/-- Canonical isomorphism identifying `projectiveOrbitPointsSheaf` with `CommAlgCat.pointsSheaf` of
+the projective orbit scheme over `Spec k`. -/
+noncomputable def projectiveOrbitPointsSheafIsoPointsSheaf
+    (m : M) (hm : Module.IsUnimodular k m) :
+    projectiveOrbitPointsSheaf (H := H) m hm ≅
+      CommAlgCat.pointsSheaf (Over.mk (projectiveOrbitToSpec (H := H) m hm)) :=
+  -- Inside this module, `projectiveOrbitPointsSheaf` unfolds definitionally to
+  -- `CommAlgCat.pointsSheaf (Over.mk (projectiveOrbitToSpec m hm))`.
+  Iso.refl _
 
 /-- An algebra-valued group point followed by the orbit map lies over the base field. -/
 theorem SpecMap_toProjectiveOrbit_projectiveOrbitToSpec (m : M)
@@ -123,6 +141,18 @@ theorem toProjectiveOrbitPoints_app_apply (m : M) (hm : Module.IsUnimodular k m)
         ULift.up (Over.homMk
           (Spec.map (CommRingCat.ofHom g.ofConv.toRingHom) ≫ toProjectiveOrbit (H := H) m hm)
           (SpecMap_toProjectiveOrbit_projectiveOrbitToSpec m hm g.ofConv)) :=
+  (rfl)
+
+/-- Evaluating `projectiveOrbitPointsSheafIsoPointsSheaf` on `toProjectiveOrbitPoints` gives `Spec`
+of the group point followed by `toProjectiveOrbit` over `Spec k`. -/
+theorem projectiveOrbitPointsSheafIsoPointsSheaf_hom_app_toProjectiveOrbitPoints
+    (m : M) (hm : Module.IsUnimodular k m)
+    (A : ((CommAlgCat.{u} k)ᵒᵖ)ᵒᵖ) (g : HopfAlgebra.points (R := k) (H := H) A.unop.unop) :
+    dsimp% (projectiveOrbitPointsSheafIsoPointsSheaf (H := H) m hm).hom.hom.app A
+        ((toProjectiveOrbitPoints (H := H) m hm).app A (ULift.up g)) =
+      ULift.up (Over.homMk
+        (Spec.map (CommRingCat.ofHom g.ofConv.toRingHom) ≫ toProjectiveOrbit (H := H) m hm)
+        (SpecMap_toProjectiveOrbit_projectiveOrbitToSpec m hm g.ofConv)) :=
   (rfl)
 
 /-- Two algebra-valued group points have the same orbit point exactly when their matrix
@@ -221,7 +251,69 @@ theorem fppfHomogeneousQuotientIsoProjectiveOrbitPoints_hom [_root_.IsReduced H]
       fppfHomogeneousQuotientToProjectiveOrbitPoints I m hm hcoset :=
   (rfl)
 
+/-- **Projective orbit representation in `CommAlgCat.pointsSheaf` form.** When the matrix
+coefficients at `m` detect the left cosets of `I` and `H` is reduced, the fppf homogeneous quotient
+`G / N` is isomorphic to `CommAlgCat.pointsSheaf` of the projective orbit scheme over `Spec k`. -/
+noncomputable def fppfHomogeneousQuotientIsoPointsSheafProjectiveOrbit [_root_.IsReduced H] :
+    CommHopfAlgCat.fppfHomogeneousQuotient H I ≅
+      CommAlgCat.pointsSheaf (Over.mk (projectiveOrbitToSpec (H := H) m hm)) :=
+  fppfHomogeneousQuotientIsoProjectiveOrbitPoints I m hm hcoset ≪≫
+    projectiveOrbitPointsSheafIsoPointsSheaf (H := H) m hm
+
+/-- Forward morphism of `fppfHomogeneousQuotientIsoPointsSheafProjectiveOrbit`. -/
+@[simp]
+theorem fppfHomogeneousQuotientIsoPointsSheafProjectiveOrbit_hom [_root_.IsReduced H] :
+    (fppfHomogeneousQuotientIsoPointsSheafProjectiveOrbit I m hm hcoset).hom =
+      fppfHomogeneousQuotientToProjectiveOrbitPoints I m hm hcoset ≫
+        (projectiveOrbitPointsSheafIsoPointsSheaf (H := H) m hm).hom :=
+  (rfl)
+
 end Descent
+
+end TauCeti.Comodule
+
+namespace TauCeti.Comodule
+
+universe u
+
+variable {k : Type u} [Field k] {H : _root_.CommHopfAlgCat.{u} k}
+  {M : Type u} [AddCommGroup M] [Module k M] [Comodule k H M] [Module.Finite k M]
+
+/-- If the matrix coefficients at a unimodular vector `m` detect the left cosets of a closed
+subgroup `N`, then the rational points of `N` are precisely the rational points fixing the base
+point `[m]` of the projective orbit. -/
+theorem mem_quotientPointsSubgroup_iff_projectiveOrbitMap_kernelPoint_eq
+    (I : HopfIdeal k H) (m : M) (hm : Module.IsUnimodular k m)
+    (hcoset : ∀ (A : CommAlgCat.{u} k) (g h : HopfAlgebra.points (R := k) (H := H) A),
+      (QuotientGroup.mk g : HopfAlgebra.points (R := k) (H := H) A ⧸
+          CommHopfAlgCat.quotientPointsSubgroup H I A) = QuotientGroup.mk h ↔
+        ∃ c : Aˣ, ∀ φ : Module.Dual k M,
+          h.ofConv (matrixCoefficient (C := H) φ m) =
+            c * g.ofConv (matrixCoefficient (C := H) φ m))
+    (a : WithConv (H →ₐ[k] k)) :
+    a ∈ CommHopfAlgCat.quotientPointsSubgroup H I (CommAlgCat.of k k) ↔
+      projectiveOrbitMap (H := H) m hm (AlgHom.kernelPoint a.ofConv) =
+        projectiveOrbitMap (H := H) m hm (AlgHom.kernelPoint (Bialgebra.counitAlgHom k H)) := by
+  have h1 : (a ∈ CommHopfAlgCat.quotientPointsSubgroup H I (CommAlgCat.of k k)) ↔
+      (QuotientGroup.mk (1 : HopfAlgebra.points (R := k) (H := H) (CommAlgCat.of k k)) :
+        HopfAlgebra.points (R := k) (H := H) (CommAlgCat.of k k) ⧸
+          CommHopfAlgCat.quotientPointsSubgroup H I (CommAlgCat.of k k)) = QuotientGroup.mk a := by
+    rw [QuotientGroup.eq, inv_one, one_mul]
+  rw [h1, hcoset (CommAlgCat.of k k) 1 a]
+  -- Unpack `CommAlgCat.of k k` as `k` so `span_pointsAction_eq_iff_exists_units_matrixCoefficient`
+  -- matches the target type.
+  change (∃ c : kˣ, ∀ φ : Module.Dual k M,
+      a.ofConv (matrixCoefficient (C := H) φ m) =
+        c * (1 : WithConv (H →ₐ[k] k)).ofConv (matrixCoefficient (C := H) φ m)) ↔ _
+  have hact (g : WithConv (H →ₐ[k] k)) :
+      TensorProduct.lid k M (pointsAction M g ((1 : k) ⊗ₜ[k] m)) =
+        basePointsRepresentation M g m := by
+    rw [basePointsRepresentation_apply, ← pointsAction_toLinearMap, LinearEquiv.coe_toLinearMap]
+  rw [← span_pointsAction_eq_iff_exists_units_matrixCoefficient (R := k) (A := k) m hm 1 a,
+    ← (Submodule.map_injective_of_injective (TensorProduct.lid k M).injective).eq_iff]
+  simp only [Submodule.map_span, Set.image_singleton, LinearEquiv.coe_coe, hact]
+  rw [eq_comm, ← projectiveOrbitMap_kernelPoint_eq_iff_span_eq m hm m hm a 1, AlgHom.convOne_def]
+  simp [Algebra.ofId_self]
 
 end TauCeti.Comodule
 
@@ -234,6 +326,32 @@ variable {k : Type u} [Field k] [IsAlgClosed k] {H : _root_.CommHopfAlgCat.{u} k
 
 attribute [local instance] Comodule.exteriorPower
 
+/-- **Chevalley projective-orbit representation of a homogeneous quotient.** For every closed
+subgroup `N` (cut out by `I`) of a reduced affine group `G` of finite type over an algebraically
+closed field `k`, there exist a finite-dimensional representation `M` of `G` and a unimodular
+vector `m : M` whose matrix coefficients detect the left cosets of `N`, giving an isomorphism
+`fppfHomogeneousQuotient H I ≅ CommAlgCat.pointsSheaf (Over.mk (projectiveOrbitToSpec m hm))`. -/
+theorem exists_coset_matrixCoefficient_fppfHomogeneousQuotientIsoPointsSheaf
+    (I : HopfIdeal k H) :
+    ∃ (M : Type u) (_ : AddCommGroup M) (_ : Module k M) (_ : Comodule k H M)
+      (_ : Module.Finite k M) (m : M) (hm : Module.IsUnimodular k m),
+      (∀ (A : CommAlgCat.{u} k) (g h : HopfAlgebra.points (R := k) (H := H) A),
+        (QuotientGroup.mk g : HopfAlgebra.points (R := k) (H := H) A ⧸
+            CommHopfAlgCat.quotientPointsSubgroup H I A) = QuotientGroup.mk h ↔
+          ∃ c : Aˣ, ∀ φ : Module.Dual k M,
+            h.ofConv (Comodule.matrixCoefficient (C := H) φ m) =
+              c * g.ofConv (Comodule.matrixCoefficient (C := H) φ m)) ∧
+      Nonempty (CommHopfAlgCat.fppfHomogeneousQuotient H I ≅
+        CommAlgCat.pointsSheaf (Over.mk (Comodule.projectiveOrbitToSpec (H := H) m hm))) := by
+  have := Algebra.FiniteType.isNoetherianRing k H
+  obtain ⟨V, n, hV, m, hm, hcoset⟩ :=
+    I.exists_finite_subcomodule_exteriorPower_coset_matrixCoefficient.{u, u, u}
+      (IsNoetherian.noetherian I.toIdeal)
+  let : Module.Finite k V := hV
+  let : AddCommGroup V := Module.addCommMonoidToAddCommGroup k
+  exact ⟨⋀[k]^n V, inferInstance, inferInstance, inferInstance, inferInstance, m, hm,
+    hcoset, ⟨Comodule.fppfHomogeneousQuotientIsoPointsSheafProjectiveOrbit I m hm hcoset⟩⟩
+
 /-- **Homogeneous quotients are representable.** For every closed subgroup `N` of a reduced
 affine group `G` of finite type over an algebraically closed field, there are a
 finite-dimensional representation of `G` and a line in it whose projective orbit scheme
@@ -243,13 +361,9 @@ theorem exists_fppfHomogeneousQuotient_iso_projectiveOrbitPoints (I : HopfIdeal 
       (_ : Module.Finite k M) (m : M) (hm : Module.IsUnimodular k m),
       Nonempty (CommHopfAlgCat.fppfHomogeneousQuotient H I ≅
         Comodule.projectiveOrbitPointsSheaf (H := H) m hm) := by
-  have := Algebra.FiniteType.isNoetherianRing k H
-  obtain ⟨V, n, hV, m, hm, hcoset⟩ :=
-    I.exists_finite_subcomodule_exteriorPower_coset_matrixCoefficient.{u, u, u}
-      (IsNoetherian.noetherian I.toIdeal)
-  let : Module.Finite k V := hV
-  let : AddCommGroup V := Module.addCommMonoidToAddCommGroup k
-  exact ⟨⋀[k]^n V, inferInstance, inferInstance, inferInstance, inferInstance, m, hm,
+  obtain ⟨M, _, _, _, _, m, hm, hcoset, _⟩ :=
+    I.exists_coset_matrixCoefficient_fppfHomogeneousQuotientIsoPointsSheaf
+  exact ⟨M, inferInstance, inferInstance, inferInstance, inferInstance, m, hm,
     ⟨Comodule.fppfHomogeneousQuotientIsoProjectiveOrbitPoints I m hm hcoset⟩⟩
 
 end TauCeti.HopfIdeal

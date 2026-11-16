@@ -24,9 +24,12 @@ the homogeneous quotient by the stabilizer of the line. Flatness and that quotie
 comparison are separate results. No smoothness or reducedness hypothesis is imposed on
 the group; when the group is reduced, so is the orbit scheme.
 
-If the geometric orbit is closed, its inclusion is a closed immersion into projective space,
-so `Comodule.isProper_projectiveOrbitToSpec_of_isClosed` makes the orbit scheme proper over
-the base field, without reducedness or connectedness assumptions on the group.
+Properness of the orbit scheme over the base field is equivalent both to closedness of the
+geometric orbit (`Comodule.isProper_projectiveOrbitToSpec_iff_isClosed_range`, extending
+`Comodule.isProper_projectiveOrbitToSpec_of_isClosed`) and to its inclusion into projective space
+being a closed immersion
+(`Comodule.isProper_projectiveOrbitToSpec_iff_isClosedImmersion_projectiveOrbitι`), without
+reducedness, smoothness, or connectedness assumptions on the group.
 
 The construction combines `Comodule.isLocallyClosed_range_projectiveOrbitMap` with
 `Scheme.Hom.locallyClosedImage` and its factorization API.
@@ -158,6 +161,39 @@ theorem isProper_projectiveOrbitToSpec_of_isClosed
       simpa only [range_projectiveOrbitι] using hclosed)
   rw [projectiveOrbitToSpec_def]
   infer_instance
+
+/-- The locally closed immersion of a projective orbit scheme into projective space is a closed
+immersion if and only if the geometric orbit is closed in projective space. Neither reducedness nor
+connectedness of the group is needed. -/
+theorem isClosedImmersion_projectiveOrbitι_iff_isClosed_range
+    (m : M) (hm : Module.IsUnimodular k m) :
+    IsClosedImmersion (projectiveOrbitι (H := H) m hm) ↔
+      IsClosed (Set.range (projectiveOrbitMap (H := H) m hm)) := by
+  rw [IsClosedImmersion.iff_isPreimmersion, range_projectiveOrbitι, and_iff_right_iff_imp]
+  intro _
+  infer_instance
+
+/-- **Properness of a projective orbit scheme.** The projective orbit scheme of a line `[m]` is
+proper over `Spec k` if and only if the geometric orbit is closed in projective space. Neither
+reducedness, smoothness, nor connectedness of the group is needed. -/
+theorem isProper_projectiveOrbitToSpec_iff_isClosed_range
+    (m : M) (hm : Module.IsUnimodular k m) :
+    IsProper (projectiveOrbitToSpec (H := H) m hm) ↔
+      IsClosed (Set.range (projectiveOrbitMap (H := H) m hm)) := by
+  refine ⟨fun h ↦ ?_, isProper_projectiveOrbitToSpec_of_isClosed M m hm⟩
+  have _ : IsProper (projectiveOrbitι (H := H) m hm) := by
+    rwa [projectiveOrbitToSpec_def, IsProper.comp_iff] at h
+  simpa only [range_projectiveOrbitι] using
+    (projectiveOrbitι (H := H) m hm).isClosedMap.isClosed_range
+
+/-- The projective orbit scheme of a line `[m]` is proper over `Spec k` if and only if its
+inclusion into projective space is a closed immersion. -/
+theorem isProper_projectiveOrbitToSpec_iff_isClosedImmersion_projectiveOrbitι
+    (m : M) (hm : Module.IsUnimodular k m) :
+    IsProper (projectiveOrbitToSpec (H := H) m hm) ↔
+      IsClosedImmersion (projectiveOrbitι (H := H) m hm) :=
+  (isProper_projectiveOrbitToSpec_iff_isClosed_range (H := H) m hm).trans
+    (isClosedImmersion_projectiveOrbitι_iff_isClosed_range (H := H) m hm).symm
 
 /-- The orbit factorization is a morphism over the base field. -/
 @[reassoc (attr := simp)]
