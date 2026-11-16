@@ -44,6 +44,8 @@ transfer of its chart-`i` data restricted to `Q`
 * `TauCeti.FiniteBundleAtlas.value_transferL_ae`, `TauCeti.FiniteBundleAtlas.eq_transferL_iff`:
   the components of a transfer are those of the bundle coordinate change applied to the
   precomposed input values, and this characterizes the transfer.
+* `TauCeti.FiniteBundleAtlas.value_transferL_ae_congr`: the values of a transfer only depend on
+  the values of the input, whatever the order and the exponent.
 * `TauCeti.FiniteBundleAtlas.lowerOrder_transferL`: transfer commutes with forgetting the highest
   weak derivative.
 * `TauCeti.FiniteBundleAtlas.restrictL_eq_transferL`: chart data of a Sobolev section are
@@ -160,6 +162,25 @@ theorem eq_transferL_iff (hp : p ≠ ⊤) (i j : Fin A.n) {P Q : Opens E}
   refine ⟨fun hv m ↦ hv ▸ A.value_transferL_ae μ p k hp i j hPc hPD hPQ u m, fun hv ↦ ?_⟩
   funext m
   exact Wkp.ext k (Lp.ext ((hv m).trans (A.value_transferL_ae μ p k hp i j hPc hPD hPQ u m).symm))
+
+variable {μ k} in
+/-- The values of the transfer of a family of Sobolev functions on `Q` only depend on the values of
+the family almost everywhere on `Q`, whatever the order and the exponent. -/
+theorem value_transferL_ae_congr {i j : Fin A.n} {P Q : Opens E}
+    (hPc : IsCompact (closure (P : Set E))) (hPD : closure (P : Set E) ⊆ A.transferDomain i j)
+    (hPQ : MapsTo ((A.chart j).symm ≫ₕ A.chart i) P Q) {q r : ℝ≥0∞} [Fact (1 ≤ q)] [Fact (1 ≤ r)]
+    (hq : q ≠ ⊤) (hr : r ≠ ⊤) {k' : ℕ} (u : Fin (finrank ℝ F) → Wkp μ Q q k)
+    (v : Fin (finrank ℝ F) → Wkp μ Q r k')
+    (huv : ∀ l, (Wkp.value k (u l) : E → ℝ) =ᵐ[μ.restrict Q] Wkp.value k' (v l))
+    (m : Fin (finrank ℝ F)) :
+    (Wkp.value k (A.transferL μ q k hq i j hPc hPD hPQ u m) : E → ℝ) =ᵐ[μ.restrict P]
+      Wkp.value k' (A.transferL μ r k' hr i j hPc hPD hPQ v m) := by
+  obtain ⟨_, _, h⟩ := A.exists_isChangeOfVariables_chart_symm_trans k hPc hPD hPQ
+  filter_upwards [A.value_transferL_ae μ q k hq i j hPc hPD hPQ u m,
+    A.value_transferL_ae μ r k' hr i j hPc hPD hPQ v m,
+    h.ae_comp (ae_all_iff.2 huv)] with y hu hv hy
+  rw [hu, hv]
+  simp only [hy]
 
 /-- Transfer commutes with forgetting the highest weak derivative. -/
 theorem lowerOrder_transferL (hp : p ≠ ⊤) (i j : Fin A.n) {P Q : Opens E}
