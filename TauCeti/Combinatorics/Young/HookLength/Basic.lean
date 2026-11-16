@@ -41,7 +41,7 @@ for such a junk value carry the hypothesis `c ∈ μ` explicitly.
   cell to its right nor the cell below it lies in the diagram; for a cell of the diagram this says
   that it is a corner, which is `YoungDiagram.isCorner_iff_hookLength_eq_one`.
 * `YoungDiagram.abs_cellContent_sub_lt_card`: two cells of a diagram have contents differing by
-  less than the number of cells, a consequence of the hook of the corner `(0, 0)`.
+  less than the number of cells, a consequence of the hook of the cell `(0, 0)`.
 * `YoungDiagram.prod_hookLength_eq_factorial_of_colLen_le_one`: the hook lengths of a
   one-row diagram multiply to `μ.card !`.
 
@@ -199,7 +199,7 @@ theorem rowLen_zero_add_colLen_zero_le : μ.rowLen 0 + μ.colLen 0 ≤ μ.card +
     omega
 
 /-- Two cells of a Young diagram have contents differing by less than the number of cells: the
-difference is at most the hook length of the corner `(0, 0)` minus one. -/
+difference is at most the hook length of the cell `(0, 0)` minus one. -/
 theorem abs_cellContent_sub_lt_card (hc : c ∈ μ) {d : ℕ × ℕ} (hd : d ∈ μ) :
     |cellContent c - cellContent d| < μ.card := by
   have hc₁ : c.2 < μ.rowLen 0 :=

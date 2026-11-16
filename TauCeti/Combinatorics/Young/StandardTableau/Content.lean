@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Combinatorics.Young.StandardTableau.Basic
+import TauCeti.Combinatorics.Young.HookLength.Basic
 import TauCeti.Combinatorics.Young.StandardTableau.Order
 import TauCeti.GroupTheory.Perm.Fin
 
@@ -20,17 +21,24 @@ the simple transposition of `k` and `k + 1` acts through the *axial distance*
 
 * the axial distance is the difference of the contents of the cells carrying `k + 1` and `k`
   (`TauCeti.YoungTableau.axialDistance_eq_of_apply_eq`);
-* the label `0` sits in the corner `(0, 0)`, of content `0`
+* contents of labels differ by less than the number of cells
+  (`TauCeti.YoungTableau.abs_labelContent_sub_lt_card`), and transposing negates axial distances
+  (`TauCeti.YoungTableau.axialDistance_transpose`);
+* the label `0` of a standard tableau has content `0`
   (`TauCeti.StandardYoungTableau.labelContent_zero`);
 * two labels differing by at most two lie on different diagonals, so their contents differ
   (`TauCeti.StandardYoungTableau.labelContent_ne_of_lt_of_le_add_two`);
 * the axial distance `YoungTableau.axialDistance` of the labels `k` and `k + 1` of a standard
-  tableau is nonzero (`TauCeti.StandardYoungTableau.axialDistance_ne_zero`);
+  tableau is nonzero (`TauCeti.StandardYoungTableau.axialDistance_ne_zero`); it is `1` exactly
+  when the two labels lie in one row, and `-1` exactly when they lie in one column
+  (`TauCeti.StandardYoungTableau.axialDistance_eq_one_iff`,
+  `TauCeti.StandardYoungTableau.axialDistance_eq_neg_one_iff`);
 * exchanging the labels `k` and `k + 1` of a standard tableau gives a standard tableau as soon as
   the axial distance is not `1` or `-1`, that is, as soon as the two labels do not lie next to each
   other in one row or one column (`TauCeti.StandardYoungTableau.swap`); this changes the tableau
   (`TauCeti.StandardYoungTableau.swap_ne_self`) and negates the axial distance
-  (`TauCeti.YoungTableau.axialDistance_relabel_swap`).
+  (`TauCeti.YoungTableau.axialDistance_relabel_swap`); otherwise the exchange is not standard
+  (`TauCeti.StandardYoungTableau.exists_toTableau_eq_relabel_swap_iff`).
 
 ## References
 
@@ -62,6 +70,26 @@ theorem axialDistance_eq_of_apply_eq (t : YoungTableau μ) {k : ℕ} {hk : k + 1
     axialDistance t k hk = YoungDiagram.cellContent d - YoungDiagram.cellContent c := by
   rw [axialDistance_def, ← hc, ← hd, labelContent_apply, labelContent_apply]
 
+/-- Two labels of a tableau have contents differing by less than the number of cells. -/
+theorem abs_labelContent_sub_lt_card (t : YoungTableau μ) (a b : Fin μ.card) :
+    |labelContent t a - labelContent t b| < μ.card := by
+  rw [labelContent_def, labelContent_def]
+  exact YoungDiagram.abs_cellContent_sub_lt_card ((YoungDiagram.mem_cells _).mp (t.symm a).2)
+    ((YoungDiagram.mem_cells _).mp (t.symm b).2)
+
+/-- The axial distance of two labels is less than the number of cells in absolute value. -/
+theorem abs_axialDistance_lt_card (t : YoungTableau μ) (k : ℕ) (hk : k + 1 < μ.card) :
+    |axialDistance t k hk| < μ.card := by
+  rw [axialDistance_def]
+  exact abs_labelContent_sub_lt_card t _ _
+
+/-- Transposing a tableau negates its axial distances. -/
+@[simp]
+theorem axialDistance_transpose (t : YoungTableau μ) (k : ℕ) (hk : k + 1 < μ.transpose.card) :
+    axialDistance (transpose t) k hk = -axialDistance t k (by simpa using hk) := by
+  simp only [axialDistance_def, labelContent_transpose, Fin.cast_mk]
+  ring
+
 /-- Exchanging the labels `k` and `k + 1` negates their axial distance. -/
 @[simp]
 theorem axialDistance_relabel_swap (t : YoungTableau μ) (k : ℕ) (hk : k + 1 < μ.card) :
@@ -75,8 +103,11 @@ namespace StandardYoungTableau
 
 variable {μ : YoungDiagram} (T : StandardYoungTableau μ)
 
-/-- The label `0` of a standard Young tableau sits in the corner `(0, 0)`, of content `0`. -/
-theorem labelContent_zero (h : 0 < μ.card) : YoungTableau.labelContent T.toTableau ⟨0, h⟩ = 0 := by
+/-- The label `0` of a standard Young tableau has content `0`: it is carried by the cell
+`(0, 0)`. -/
+@[simp]
+theorem labelContent_mk_zero (h : 0 < μ.card) :
+    YoungTableau.labelContent T.toTableau ⟨0, h⟩ = 0 := by
   obtain ⟨⟨⟨i, j⟩, hc⟩, hcT⟩ := T.surjective ⟨0, h⟩
   have h₀ : (0, 0) ∈ μ := μ.up_left_mem (Nat.zero_le i) (Nat.zero_le j) hc
   rw [← hcT, ← toTableau_apply, YoungTableau.labelContent_apply, YoungDiagram.cellContent_mk]
@@ -84,6 +115,11 @@ theorem labelContent_zero (h : 0 < μ.card) : YoungTableau.labelContent T.toTabl
   have hlt := T.apply_lt_apply_of_mem h₀ hc (Nat.zero_le i) (Nat.zero_le j) (by omega)
   rw [hcT, Fin.lt_def] at hlt
   exact Nat.not_lt_zero _ hlt
+
+/-- The label `0` of a standard Young tableau has content `0`. -/
+@[simp]
+theorem labelContent_zero [NeZero μ.card] : YoungTableau.labelContent T.toTableau 0 = 0 :=
+  T.labelContent_mk_zero (Nat.pos_of_neZero _)
 
 /-- Labels of a standard Young tableau that differ by at most two have different contents. Two
 cells on one diagonal are separated in the product order by the two cells to the right of and
@@ -130,13 +166,67 @@ private theorem eq_add_one_of_row {i j₁ j₂ : ℕ} (hj : j₁ < j₂) (hcell 
 adjacent. -/
 private theorem eq_add_one_of_col {i₁ i₂ j : ℕ} (hi : i₁ < i₂) (hcell : (i₂, j) ∈ μ)
     (hcons : (T ⟨(i₂, j), hcell⟩ : ℕ) = T ⟨(i₁, j), μ.up_left_mem hi.le le_rfl hcell⟩ + 1) :
-    i₂ = i₁ + 1 := by
-  by_contra hne
-  have hlt : i₁ + 1 < i₂ := by omega
-  have h₁ := T.col_strict (Nat.lt_add_one i₁) (μ.up_left_mem hlt.le le_rfl hcell)
-  have h₂ := T.col_strict hlt hcell
-  rw [Fin.lt_def] at h₁ h₂
-  omega
+    i₂ = i₁ + 1 :=
+  T.transpose.eq_add_one_of_row hi (YoungDiagram.mem_transpose.mpr hcell) (by simpa using hcons)
+
+/-- The cells carrying consecutive labels `k` and `k + 1` of a standard tableau are adjacent in a
+row, adjacent in a column, or strictly below-left or strictly above-right of each other. -/
+private theorem cells_of_consecutive {k : ℕ} (hk : k + 1 < μ.card) {i₁ j₁ i₂ j₂ : ℕ}
+    (hc : (i₁, j₁) ∈ μ) (hd : (i₂, j₂) ∈ μ) (h₁ : T ⟨(i₁, j₁), hc⟩ = ⟨k, by omega⟩)
+    (h₂ : T ⟨(i₂, j₂), hd⟩ = ⟨k + 1, hk⟩) :
+    (i₂ = i₁ ∧ j₂ = j₁ + 1) ∨ (j₂ = j₁ ∧ i₂ = i₁ + 1) ∨ (i₁ < i₂ ∧ j₂ < j₁) ∨
+      (i₂ < i₁ ∧ j₁ < j₂) := by
+  -- the label `k + 1` cannot lie weakly above-left of the label `k`
+  have hnot : ¬(i₂ ≤ i₁ ∧ j₂ ≤ j₁) := fun ⟨hi, hj⟩ => by
+    have := T.apply_lt_apply_of_mem hd hc hi hj (by
+      by_contra h'
+      obtain ⟨rfl, rfl⟩ : i₂ = i₁ ∧ j₂ = j₁ := by omega
+      rw [h₁, Fin.mk.injEq] at h₂
+      omega)
+    rw [h₁, h₂, Fin.mk_lt_mk] at this
+    omega
+  rcases lt_trichotomy i₁ i₂ with hi | rfl | hi
+  · rcases lt_trichotomy j₁ j₂ with hj | rfl | hj
+    · -- the cell `(i₁, j₁ + 1)` would carry a label strictly between `k` and `k + 1`
+      have hr : (i₁, j₁ + 1) ∈ μ := μ.up_left_mem hi.le hj hd
+      have ha := T.apply_lt_apply_of_mem hc hr le_rfl (by omega) (by omega)
+      have hb := T.apply_lt_apply_of_mem hr hd hi.le hj (by omega)
+      simp only [h₁, h₂, Fin.lt_def] at ha hb
+      omega
+    · exact Or.inr (Or.inl ⟨rfl, T.eq_add_one_of_col hi hd (by rw [h₁, h₂])⟩)
+    · exact Or.inr (Or.inr (Or.inl ⟨hi, hj⟩))
+  · rcases lt_or_ge j₁ j₂ with hj | hj
+    · exact Or.inl ⟨rfl, T.eq_add_one_of_row hj hd (by rw [h₁, h₂])⟩
+    · exact absurd ⟨le_rfl, hj⟩ hnot
+  · rcases lt_or_ge j₁ j₂ with hj | hj
+    · exact Or.inr (Or.inr (Or.inr ⟨hi, hj⟩))
+    · exact absurd ⟨hi.le, hj⟩ hnot
+
+/-- The axial distance of the labels `k` and `k + 1` of a standard tableau is `1` exactly when
+they lie in one row. -/
+theorem axialDistance_eq_one_iff (k : ℕ) (hk : k + 1 < μ.card) :
+    YoungTableau.axialDistance T.toTableau k hk = 1 ↔
+      YoungTableau.rowIndex T.toTableau ⟨k + 1, hk⟩ =
+        YoungTableau.rowIndex T.toTableau ⟨k, by omega⟩ := by
+  obtain ⟨⟨⟨i₁, j₁⟩, hc⟩, h₁⟩ := T.surjective ⟨k, by omega⟩
+  obtain ⟨⟨⟨i₂, j₂⟩, hd⟩, h₂⟩ := T.surjective ⟨k + 1, hk⟩
+  rw [YoungTableau.axialDistance_eq_of_apply_eq T.toTableau h₁ h₂, ← h₁, ← h₂, ← toTableau_apply,
+    ← toTableau_apply, YoungTableau.rowIndex_apply, YoungTableau.rowIndex_apply]
+  simp only [YoungDiagram.cellContent_mk]
+  rcases T.cells_of_consecutive hk hc hd h₁ h₂ with h | h | h | h <;> omega
+
+/-- The axial distance of the labels `k` and `k + 1` of a standard tableau is `-1` exactly when
+they lie in one column. -/
+theorem axialDistance_eq_neg_one_iff (k : ℕ) (hk : k + 1 < μ.card) :
+    YoungTableau.axialDistance T.toTableau k hk = -1 ↔
+      YoungTableau.colIndex T.toTableau ⟨k + 1, hk⟩ =
+        YoungTableau.colIndex T.toTableau ⟨k, by omega⟩ := by
+  obtain ⟨⟨⟨i₁, j₁⟩, hc⟩, h₁⟩ := T.surjective ⟨k, by omega⟩
+  obtain ⟨⟨⟨i₂, j₂⟩, hd⟩, h₂⟩ := T.surjective ⟨k + 1, hk⟩
+  rw [YoungTableau.axialDistance_eq_of_apply_eq T.toTableau h₁ h₂, ← h₁, ← h₂, ← toTableau_apply,
+    ← toTableau_apply, YoungTableau.colIndex_apply, YoungTableau.colIndex_apply]
+  simp only [YoungDiagram.cellContent_mk]
+  rcases T.cells_of_consecutive hk hc hd h₁ h₂ with h | h | h | h <;> omega
 
 /-- Exchanging the labels `k` and `k + 1` of a standard Young tableau whose axial distance
 `content (k + 1) - content k` is neither `1` nor `-1`. These two labels then lie neither next to
@@ -166,12 +256,39 @@ theorem toTableau_swap (k : ℕ) (hk : k + 1 < μ.card) (h) :
       YoungTableau.relabel (Equiv.swap ⟨k, by omega⟩ ⟨k + 1, hk⟩) T.toTableau :=
   (rfl)
 
+/-- The label of a cell in `T.swap k hk h` is its label in `T` with `k` and `k + 1`
+exchanged. -/
+@[simp]
+theorem swap_apply (k : ℕ) (hk : k + 1 < μ.card) (h) (c : ↥μ.cells) :
+    T.swap k hk h c = Equiv.swap ⟨k, by omega⟩ ⟨k + 1, hk⟩ (T c) := by
+  rw [← toTableau_apply, toTableau_swap, YoungTableau.relabel_apply, toTableau_apply]
+
 /-- The axial distance of the labels `k` and `k + 1` of a standard tableau is nonzero. -/
 theorem axialDistance_ne_zero (k : ℕ) (hk : k + 1 < μ.card) :
     YoungTableau.axialDistance T.toTableau k hk ≠ 0 := by
   rw [YoungTableau.axialDistance_def, sub_ne_zero]
   exact (T.labelContent_ne_of_lt_of_le_add_two (Fin.mk_lt_mk.mpr (Nat.lt_add_one k))
     (by simp only; omega)).symm
+
+/-- Exchanging the labels `k` and `k + 1` of a standard tableau gives a standard tableau exactly
+when their axial distance is not `1` or `-1`. -/
+theorem exists_toTableau_eq_relabel_swap_iff (k : ℕ) (hk : k + 1 < μ.card) :
+    (∃ U : StandardYoungTableau μ,
+        U.toTableau = YoungTableau.relabel (Equiv.swap ⟨k, by omega⟩ ⟨k + 1, hk⟩) T.toTableau) ↔
+      |YoungTableau.axialDistance T.toTableau k hk| ≠ 1 := by
+  refine ⟨fun ⟨U, hU⟩ h => ?_, fun h => ⟨T.swap k hk h, rfl⟩⟩
+  obtain ⟨⟨⟨i₁, j₁⟩, hc⟩, h₁⟩ := T.surjective ⟨k, by omega⟩
+  obtain ⟨⟨⟨i₂, j₂⟩, hd⟩, h₂⟩ := T.surjective ⟨k + 1, hk⟩
+  rw [YoungTableau.axialDistance_eq_of_apply_eq T.toTableau h₁ h₂, YoungDiagram.cellContent_mk,
+    YoungDiagram.cellContent_mk, abs_eq zero_le_one] at h
+  -- the two labels are adjacent, `k` weakly above-left of `k + 1`, and `U` exchanges them
+  have hle : i₁ ≤ i₂ ∧ j₁ ≤ j₂ ∧ (i₁ < i₂ ∨ j₁ < j₂) := by
+    rcases T.cells_of_consecutive hk hc hd h₁ h₂ with h' | h' | h' | h' <;> omega
+  have hlt := U.apply_lt_apply_of_mem hc hd hle.1 hle.2.1 hle.2.2
+  rw [← toTableau_apply, ← toTableau_apply, hU, YoungTableau.relabel_apply,
+    YoungTableau.relabel_apply, toTableau_apply, toTableau_apply, h₁, h₂, Equiv.swap_apply_left,
+    Equiv.swap_apply_right, Fin.mk_lt_mk] at hlt
+  omega
 
 /-- Exchanging the labels `k` and `k + 1` changes the tableau. -/
 theorem swap_ne_self (k : ℕ) (hk : k + 1 < μ.card) (h) : T.swap k hk h ≠ T := by
@@ -184,11 +301,8 @@ theorem swap_ne_self (k : ℕ) (hk : k + 1 < μ.card) (h) : T.swap k hk h ≠ T 
 
 /-- Exchanging the labels `k` and `k + 1` twice returns the original tableau. -/
 @[simp]
-theorem swap_swap (k : ℕ) (hk : k + 1 < μ.card) (h h') : (T.swap k hk h).swap k hk h' = T := by
-  apply DFunLike.ext
-  intro c
-  simp only [← toTableau_apply, toTableau_swap, YoungTableau.relabel_relabel, Equiv.swap_mul_self,
-    YoungTableau.relabel_one]
+theorem swap_swap (k : ℕ) (hk : k + 1 < μ.card) (h h') : (T.swap k hk h).swap k hk h' = T :=
+  toTableau_injective (by simp)
 
 end StandardYoungTableau
 

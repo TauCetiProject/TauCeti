@@ -194,8 +194,6 @@ theorem StandardYoungTableau.rowIndex_injective (μ : YoungDiagram) :
     have hfix : σ x = x := by
       simpa using congrArg Subtype.val (StrictMono.apply_eq (x := ⟨x, rfl⟩) hmono)
     simpa using hfix
-  have htu : T.toTableau = U.toTableau := by rw [← hrel, hσ, relabel_one]
-  exact StandardYoungTableau.ext fun c => by
-    rw [← StandardYoungTableau.toTableau_apply, ← StandardYoungTableau.toTableau_apply, htu]
+  exact StandardYoungTableau.toTableau_injective (by rw [← hrel, hσ, relabel_one])
 
 end TauCeti

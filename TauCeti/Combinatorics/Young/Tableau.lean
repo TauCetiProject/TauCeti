@@ -522,6 +522,14 @@ theorem colIndex_transpose (t : YoungTableau μ) (k : Fin μ.transpose.card) :
   rw [rowIndex_def, colIndex_def, transpose_symm_apply,
     YoungDiagram.transposeCellsEquiv_symm_apply, Prod.snd_swap]
 
+/-- Transposing a tableau negates the content of each label. -/
+@[simp]
+theorem labelContent_transpose (t : YoungTableau μ) (k : Fin μ.transpose.card) :
+    labelContent (transpose t) k =
+      -labelContent t (Fin.cast (YoungDiagram.card_transpose μ) k) := by
+  rw [labelContent_def, labelContent_def, transpose_symm_apply,
+    YoungDiagram.transposeCellsEquiv_symm_apply, YoungDiagram.cellContent_swap]
+
 /-- Transposing a tableau twice gives back its labels: the cell `c` of `μᵗᵗ = μ` carries the
 label that `t` gives it. -/
 theorem transpose_transpose_apply_val (t : YoungTableau μ) (c : ↥μ.transpose.transpose.cells) :

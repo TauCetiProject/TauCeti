@@ -9,6 +9,7 @@ public import Mathlib.LinearAlgebra.Pi
 public import TauCeti.Algebra.TypeAHeckeAlgebra.JucysMurphy.Content
 public import TauCeti.Algebra.TypeAHeckeAlgebra.JucysMurphy.Finite
 public import TauCeti.Combinatorics.Young.StandardTableau.Content
+import TauCeti.LinearAlgebra.ExtendByZero
 
 /-!
 # Seminormal representations of the type-A Hecke algebra
@@ -33,9 +34,12 @@ Young's seminormal form of the symmetric group, with coefficients `1 / d` and `1
 construction needs the additive contents `[d]_Q`, `0 < d < n`, to be nonzero; this is implied by
 the split-semisimplicity criterion and includes `Q = 1` in characteristic zero.
 
-The vectors `v_U` diagonalize the Jucys–Murphy elements: `J_i v_U = Q ^ content i * v_U`, where
-`content i` is the column minus the row of the label `i` in `U`. Irreducibility of these modules
-and their comparison with other constructions of the Specht modules are not treated here.
+The vectors `v_U` diagonalize the Jucys–Murphy elements: the additive element `L_i` acts by
+`L_i v_U = [content i]_Q * v_U`, and the normalized element `J_i = 1 + (Q - 1) L_i` by
+`J_i v_U = Q ^ content i * v_U`, where `content i` is the column minus the row of the label `i`
+in `U`. The additive eigenvalues remain informative at `Q = 1`, where `J_i = 1`. Irreducibility
+of these modules and their comparison with other constructions of the Specht modules are not
+treated here.
 
 ## Main definitions
 
@@ -49,8 +53,10 @@ and their comparison with other constructions of the Specht modules are not trea
 * `TauCeti.TypeAHeckeAlgebra.seminormalRep_T_single_of_abs_ne_one` and
   `TauCeti.TypeAHeckeAlgebra.seminormalRep_T_single_of_abs_eq_one`: the action of a generator on
   a basis vector.
+* `TauCeti.TypeAHeckeAlgebra.seminormalRep_additiveJucysMurphy_single`: the basis vectors are
+  eigenvectors of the additive Jucys–Murphy elements, with eigenvalues `[content]_Q`.
 * `TauCeti.TypeAHeckeAlgebra.seminormalRep_jucysMurphy_single`: the basis vectors are
-  eigenvectors of the Jucys–Murphy elements, with eigenvalues `Q ^ content`.
+  eigenvectors of the normalized Jucys–Murphy elements, with eigenvalues `Q ^ content`.
 
 ## Implementation notes
 
@@ -102,7 +108,21 @@ exchanged tableau is not standard. -/
 def seminormalOffDiag (Q : K) (d : ℤ) : K :=
   if d < -1 then 1 else if 1 < d then Q + seminormalDiag Q d * seminormalDiag Q (-d) else 0
 
+theorem seminormalOffDiag_def (Q : K) (d : ℤ) : seminormalOffDiag Q d =
+    if d < -1 then 1 else if 1 < d then Q + seminormalDiag Q d * seminormalDiag Q (-d) else 0 :=
+  (rfl)
+
 variable {Q : K}
+
+/-- At axial distance `0` the diagonal coefficient is the junk value `0`, since `[0]_Q = 0`. -/
+@[simp]
+theorem seminormalDiag_zero : seminormalDiag Q 0 = 0 := by
+  simp [seminormalDiag]
+
+/-- At `Q = 1` the diagonal coefficient is Young's coefficient `1 / d`. -/
+@[simp]
+theorem seminormalDiag_one_left (d : ℤ) : seminormalDiag (1 : K) d = (d : K)⁻¹ := by
+  simp [seminormalDiag]
 
 /-- At axial distance `1`, the label `k + 1` immediately to the right of `k`, the diagonal
 coefficient is `Q`. -/
@@ -135,13 +155,18 @@ theorem seminormalDiag_add_seminormalDiag_neg (hQ : Q ≠ 0) {d : ℤ}
   field_simp
   linear_combination -h
 
-/-- The diagonal coefficients at opposite axial distances are related by
-`seminormalDiag Q d + seminormalDiag Q (-d) * Q ^ d = 0`; this makes the vector of a tableau an
-eigenvector of the Jucys–Murphy elements. -/
-private theorem seminormalDiag_add_seminormalDiag_neg_mul_zpow (hQ : Q ≠ 0) (d : ℤ) :
-    seminormalDiag Q d + seminormalDiag Q (-d) * Q ^ d = 0 := by
-  rw [seminormalDiag_neg hQ, seminormalDiag]
-  ring
+/-- The identity behind the additive Jucys–Murphy recursion, for a label of content `x` and an
+axial distance `d`; it reduces to the cocycle identity `[x + d]_Q = [x]_Q + Q ^ x [d]_Q`. This
+makes the vector of a tableau an eigenvector of the additive Jucys–Murphy elements. -/
+private theorem additiveContent_mul_seminormalDiag_add (hQ : Q ≠ 0) (x : ℤ) {d : ℤ}
+    (hd : additiveContent Q d ≠ 0) :
+    additiveContent Q x * seminormalDiag Q d + seminormalDiag Q (-d) * additiveContent Q (x + d) +
+      1 = 0 := by
+  have hx := sub_one_mul_additiveContent hQ x
+  have hd' := sub_one_mul_additiveContent hQ d
+  rw [seminormalDiag_neg hQ, seminormalDiag, additiveContent_add hQ x d]
+  field_simp
+  linear_combination -additiveContent Q x * hd' + additiveContent Q d * hx
 
 /-- The off-diagonal coefficient vanishes when the axial distance is at most `1` in absolute
 value. -/
@@ -149,6 +174,18 @@ theorem seminormalOffDiag_of_abs_le_one {d : ℤ} (hd : |d| ≤ 1) : seminormalO
   rw [abs_le] at hd
   simp only [seminormalOffDiag]
   split_ifs <;> first | rfl | omega
+
+@[simp]
+theorem seminormalOffDiag_zero : seminormalOffDiag Q 0 = 0 :=
+  seminormalOffDiag_of_abs_le_one (by simp)
+
+@[simp]
+theorem seminormalOffDiag_one : seminormalOffDiag Q 1 = 0 :=
+  seminormalOffDiag_of_abs_le_one (by simp)
+
+@[simp]
+theorem seminormalOffDiag_neg_one : seminormalOffDiag Q (-1) = 0 :=
+  seminormalOffDiag_of_abs_le_one (by simp)
 
 /-- The off-diagonal coefficient is `1` at axial distances below `-1`. -/
 theorem seminormalOffDiag_of_lt_neg_one {d : ℤ} (hd : d < -1) : seminormalOffDiag Q d = 1 := by
@@ -158,6 +195,22 @@ theorem seminormalOffDiag_of_lt_neg_one {d : ℤ} (hd : d < -1) : seminormalOffD
 theorem seminormalOffDiag_of_one_lt {d : ℤ} (hd : 1 < d) :
     seminormalOffDiag Q d = Q + seminormalDiag Q d * seminormalDiag Q (-d) := by
   rw [seminormalOffDiag, ite_eq_right (by omega), ite_eq_left hd]
+
+/-- The factored form `Q [d + 1]_Q [d - 1]_Q / [d]_Q ^ 2` of the product of the off-diagonal
+coefficients at opposite axial distances. At `Q = 1` it is `1 - 1 / d ^ 2`. -/
+theorem add_seminormalDiag_mul_seminormalDiag_neg (hQ : Q ≠ 0) {d : ℤ}
+    (hd : additiveContent Q d ≠ 0) :
+    Q + seminormalDiag Q d * seminormalDiag Q (-d) =
+      Q * additiveContent Q (d + 1) * additiveContent Q (d - 1) / additiveContent Q d ^ 2 := by
+  have h₁ := additiveContent_add_one Q d
+  have h₂ := additiveContent_add_one Q (d - 1)
+  rw [sub_add_cancel] at h₂
+  have h₃ := sub_one_mul_additiveContent hQ d
+  have h₄ : Q ^ d = Q ^ (d - 1) * Q := by rw [← zpow_add_one₀ hQ, sub_add_cancel]
+  rw [seminormalDiag_neg hQ, seminormalDiag, h₁, eq_div_iff (pow_ne_zero 2 hd)]
+  field_simp
+  linear_combination Q * (additiveContent Q d + Q ^ d) * h₂ - Q ^ d * h₃ -
+    (additiveContent Q d + Q ^ d) * h₄
 
 /-- The product of the off-diagonal coefficients at opposite axial distances is
 `Q + seminormalDiag Q d * seminormalDiag Q (-d)`, the value forced by the determinant `-Q` of
@@ -219,6 +272,8 @@ end Coefficients
 
 section Operators
 
+open Function.ExtendByZero
+
 variable {μ : YoungDiagram}
 
 /-- The transposition of the labels `k` and `k + 1`. -/
@@ -244,16 +299,6 @@ variable (K) in
 private noncomputable abbrev extendSYT : (StandardYoungTableau μ → K) →ₗ[K] YoungTableau μ → K :=
   Function.ExtendByZero.linearMap K K StandardYoungTableau.toTableau
 
-private theorem extendSYT_apply_toTableau (ψ : StandardYoungTableau μ → K)
-    (T : StandardYoungTableau μ) : extendSYT K ψ T.toTableau = ψ T := by
-  rw [Function.ExtendByZero.linearMap_apply,
-    StandardYoungTableau.toTableau_injective.extend_apply]
-
-private theorem extendSYT_apply_of_not_exists (ψ : StandardYoungTableau μ → K)
-    {u : YoungTableau μ} (hu : ¬∃ T : StandardYoungTableau μ, T.toTableau = u) :
-    extendSYT K ψ u = 0 := by
-  rw [Function.ExtendByZero.linearMap_apply, Function.extend_apply' _ _ _ hu, Pi.zero_apply]
-
 /-- The seminormal operator of `g = q T_k` on functions on the standard tableaux. -/
 private noncomputable def seminormalGen (Q : K) (k : ℕ) (hk : k + 1 < μ.card) :
     Module.End K (StandardYoungTableau μ → K) :=
@@ -273,9 +318,10 @@ private theorem extendSYT_seminormalGen (Q : K) (k : ℕ) (hk : k + 1 < μ.card)
   funext u
   by_cases hu : ∃ T : StandardYoungTableau μ, T.toTableau = u
   · obtain ⟨T, rfl⟩ := hu
-    rw [extendSYT_apply_toTableau, seminormalGen_apply]
-  rw [extendSYT_apply_of_not_exists _ hu, seminormalAux_apply, extendSYT_apply_of_not_exists _ hu,
-    mul_zero, zero_add]
+    rw [linearMap_apply_of_injective K StandardYoungTableau.toTableau_injective,
+      seminormalGen_apply]
+  rw [linearMap_apply_of_notMem_range K _ hu, seminormalAux_apply,
+    linearMap_apply_of_notMem_range K _ hu, mul_zero, zero_add]
   by_cases hsu : ∃ T : StandardYoungTableau μ, T.toTableau = relabel (labelSwap k hk) u
   · obtain ⟨T, hT⟩ := hsu
     have hu' : u = relabel (labelSwap k hk) T.toTableau := by
@@ -285,7 +331,7 @@ private theorem extendSYT_seminormalGen (Q : K) (k : ℕ) (hk : k + 1 < μ.card)
       exact hu ⟨T.swap k hk h, (T.toTableau_swap k hk h).trans hu'.symm⟩
     rw [hu', axialDistance_relabel_swap, seminormalOffDiag_of_abs_le_one (by rw [abs_neg, habs]),
       zero_mul]
-  · rw [extendSYT_apply_of_not_exists _ hsu, mul_zero]
+  · rw [linearMap_apply_of_notMem_range K _ hsu, mul_zero]
 
 variable {Q : K}
 
@@ -324,17 +370,8 @@ private theorem labelSwap_mul_comm {k l : ℕ} (hk : k + 1 < μ.card) (hl : l + 
 private theorem labelSwap_braid {k : ℕ} (hk : k + 1 + 1 < μ.card) :
     labelSwap k (by omega) * (labelSwap (k + 1) hk * labelSwap k (by omega)) =
       labelSwap (k + 1) hk * (labelSwap k (by omega) * labelSwap (k + 1) hk) := by
-  have hk₁ : k + 1 < μ.card := by omega
-  have h₁ : labelSwap k hk₁ * labelSwap (k + 1) hk =
-      Equiv.swap ⟨k, by omega⟩ ⟨k + 1 + 1, hk⟩ * labelSwap k hk₁ := by
-    rw [Equiv.mul_swap_eq_swap_mul, Equiv.swap_apply_right,
-      labelSwap_apply_of_ne hk₁ hk (by omega) (by omega)]
-  have h₂ : labelSwap (k + 1) hk * labelSwap k hk₁ =
-      Equiv.swap ⟨k, by omega⟩ ⟨k + 1 + 1, hk⟩ * labelSwap (k + 1) hk := by
-    rw [Equiv.mul_swap_eq_swap_mul, Equiv.swap_apply_left,
-      labelSwap_apply_of_ne hk (by omega) (by omega) (by omega)]
-  rw [← mul_assoc, ← mul_assoc, h₁, h₂, mul_assoc, mul_assoc, Equiv.swap_mul_self,
-    Equiv.swap_mul_self]
+  simp only [← mul_assoc]
+  exact swap_braid (by simp [Fin.ext_iff]) (by simp [Fin.ext_iff])
 
 /-- Distant seminormal operators commute. -/
 private theorem seminormalAux_comm_apply (Q : K) {k l : ℕ} (hk : k + 1 < μ.card)
@@ -406,38 +443,37 @@ private theorem seminormalAux_braid_apply (hQ : Q ≠ 0) {k : ℕ} (hk : k + 1 +
     φ (relabel (labelSwap k hk₁) t) * seminormalOffDiag Q (y - x) * hB₁ -
     φ (relabel (labelSwap (k + 1) hk) t) * seminormalOffDiag Q (z - y) * hB₂
 
-/-- Multiplication by `Q ^ labelContent t i` at the tableau `t`, the expected action of the
-Jucys–Murphy element of strand `i`. -/
+/-- Multiplication by the additive content `[labelContent t i]_Q` at the tableau `t`, the
+expected action of the additive Jucys–Murphy element of strand `i`. -/
 private def contentMul (Q : K) (i : Fin μ.card) : Module.End K (YoungTableau μ → K) :=
-  LinearMap.mulLeft K (fun t => Q ^ labelContent t i)
+  LinearMap.mulLeft K (fun t => additiveContent Q (labelContent t i))
 
 private theorem contentMul_apply (Q : K) (i : Fin μ.card) (φ : YoungTableau μ → K)
-    (t : YoungTableau μ) : contentMul Q i φ t = Q ^ labelContent t i * φ t := by
+    (t : YoungTableau μ) : contentMul Q i φ t = additiveContent Q (labelContent t i) * φ t := by
   simp [contentMul]
 
-/-- The Jucys–Murphy recursion `J_(k+1) = Q⁻¹ g_k J_k g_k` on a tableau vector: conjugating
-multiplication by `Q ^ content k` with the seminormal operator of `g_k` gives `Q` times the
-multiplication by `Q ^ content (k + 1)`. -/
+/-- The additive Jucys–Murphy recursion `Q L_(k+1) = g_k L_k g_k + g_k` on a tableau vector:
+conjugating multiplication by `[content k]_Q` with the seminormal operator of `g_k` and adding
+that operator gives `Q` times the multiplication by `[content (k + 1)]_Q`. -/
 private theorem seminormalAux_contentMul_seminormalAux_apply (hQ : Q ≠ 0) (k : ℕ)
     (hk : k + 1 < μ.card) (φ : YoungTableau μ → K) {t : YoungTableau μ}
     (hd : additiveContent Q (axialDistance t k hk) ≠ 0) :
-    seminormalAux Q k hk (contentMul Q ⟨k, by omega⟩ (seminormalAux Q k hk φ)) t =
-      Q * (Q ^ labelContent t ⟨k + 1, hk⟩ * φ t) := by
-  have hd0 := ne_zero_of_additiveContent_ne_zero hd
-  have hE := seminormalOffDiag_mul_seminormalOffDiag_neg (Q := Q) hd0
-  have hA := seminormalDiag_add_seminormalDiag_neg_mul_zpow hQ (axialDistance t k hk)
-  have hpow : Q ^ labelContent t ⟨k + 1, hk⟩ =
-      Q ^ labelContent t ⟨k, by omega⟩ * Q ^ axialDistance t k hk := by
-    rw [← zpow_add₀ hQ, axialDistance_def, add_sub_cancel]
+    seminormalAux Q k hk (contentMul Q ⟨k, by omega⟩ (seminormalAux Q k hk φ)) t +
+        seminormalAux Q k hk φ t =
+      Q * (additiveContent Q (labelContent t ⟨k + 1, hk⟩) * φ t) := by
+  have hE := seminormalOffDiag_mul_seminormalOffDiag_neg (Q := Q)
+    (ne_zero_of_additiveContent_ne_zero hd)
+  have hA := additiveContent_mul_seminormalDiag_add hQ (labelContent t ⟨k, by omega⟩) hd
+  have hy : labelContent t ⟨k + 1, hk⟩ = labelContent t ⟨k, by omega⟩ + axialDistance t k hk := by
+    rw [axialDistance_def, add_sub_cancel]
   have hc :
       labelContent (relabel (labelSwap k hk) t) ⟨k, by omega⟩ = labelContent t ⟨k + 1, hk⟩ := by
     rw [labelContent_relabel_labelSwap, Equiv.swap_apply_left]
   simp only [seminormalAux_apply, contentMul_apply, relabel_relabel, Equiv.swap_mul_self,
-    relabel_one, axialDistance_relabel_swap, hc, hpow]
-  linear_combination Q ^ labelContent t ⟨k, by omega⟩ *
-      (seminormalDiag Q (axialDistance t k hk) * φ t +
-        seminormalOffDiag Q (axialDistance t k hk) * φ (relabel (labelSwap k hk) t)) * hA +
-    Q ^ labelContent t ⟨k, by omega⟩ * Q ^ axialDistance t k hk * φ t * hE
+    relabel_one, axialDistance_relabel_swap, hc, hy]
+  linear_combination (seminormalDiag Q (axialDistance t k hk) * φ t +
+      seminormalOffDiag Q (axialDistance t k hk) * φ (relabel (labelSwap k hk) t)) * hA +
+    additiveContent Q (labelContent t ⟨k, by omega⟩ + axialDistance t k hk) * φ t * hE
 
 end Operators
 
@@ -445,20 +481,20 @@ end Operators
 
 section Representation
 
+open Function.ExtendByZero
+
 variable {μ : YoungDiagram} {Q : K}
 
-/-- Under the hypothesis on `Q`, the additive content of the difference of the contents of two
-labels of a standard tableau that differ by at most two is nonzero. -/
-private theorem additiveContent_labelContent_sub_ne_zero (hQ : Q ≠ 0)
+/-- Under the hypothesis of `TauCeti.TypeAHeckeAlgebra.seminormalRep` on `Q`, the additive
+content of the difference of the contents of two labels of a standard tableau that differ by at
+most two is nonzero. -/
+theorem additiveContent_labelContent_sub_ne_zero (hQ : Q ≠ 0)
     (hμ : ∀ d : ℕ, 0 < d → d < μ.card → additiveContent Q d ≠ 0) (T : StandardYoungTableau μ)
     {a b : Fin μ.card} (hab : a < b) (hba : (b : ℕ) ≤ a + 2) :
     additiveContent Q (labelContent T.toTableau b - labelContent T.toTableau a) ≠ 0 := by
   have hne : labelContent T.toTableau b - labelContent T.toTableau a ≠ 0 :=
     sub_ne_zero.mpr (T.labelContent_ne_of_lt_of_le_add_two hab hba).symm
-  have hlt : |labelContent T.toTableau b - labelContent T.toTableau a| < μ.card := by
-    rw [labelContent_def, labelContent_def]
-    exact YoungDiagram.abs_cellContent_sub_lt_card ((YoungDiagram.mem_cells _).mp
-      (T.toTableau.symm b).2) ((YoungDiagram.mem_cells _).mp (T.toTableau.symm a).2)
+  have hlt := abs_labelContent_sub_lt_card T.toTableau b a
   rw [abs_lt] at hlt
   rcases lt_or_gt_of_ne hne with h | h
   · obtain ⟨m, hm⟩ := Int.eq_ofNat_of_zero_le (neg_nonneg.mpr h.le)
@@ -469,7 +505,9 @@ private theorem additiveContent_labelContent_sub_ne_zero (hQ : Q ≠ 0)
     rw [hm]
     exact hμ m (by omega) (by omega)
 
-private theorem additiveContent_axialDistance_ne_zero (hQ : Q ≠ 0)
+/-- Under the hypothesis of `TauCeti.TypeAHeckeAlgebra.seminormalRep` on `Q`, the additive
+content of an axial distance of a standard tableau is nonzero. -/
+theorem additiveContent_axialDistance_ne_zero (hQ : Q ≠ 0)
     (hμ : ∀ d : ℕ, 0 < d → d < μ.card → additiveContent Q d ≠ 0) (T : StandardYoungTableau μ)
     (k : ℕ) (hk : k + 1 < μ.card) : additiveContent Q (axialDistance T.toTableau k hk) ≠ 0 := by
   rw [axialDistance_def]
@@ -484,7 +522,7 @@ private theorem seminormalGen_sq (hQ : Q ≠ 0)
   rw [seminormalGen_apply, extendSYT_seminormalGen,
     seminormalAux_sq_apply hQ k hk _ (additiveContent_axialDistance_ne_zero hQ hμ T k hk)]
   simp only [Pi.add_apply, Pi.smul_apply, smul_eq_mul, seminormalGen_apply,
-    extendSYT_apply_toTableau]
+    linearMap_apply_of_injective K StandardYoungTableau.toTableau_injective]
 
 private theorem seminormalGen_braid (hQ : Q ≠ 0)
     (hμ : ∀ d : ℕ, 0 < d → d < μ.card → additiveContent Q d ≠ 0) {k : ℕ}
@@ -508,11 +546,15 @@ private theorem seminormalGen_comm (Q : K) {k l : ℕ} (hk : k + 1 < μ.card) (h
   exact seminormalAux_comm_apply Q hk hl hkl _ _
 
 /-- **Hoefsmit's seminormal representation** of the Hecke algebra `H_n(q)`, `n = μ.card`, on the
-functions on the standard Young tableaux of shape `μ`. With `Q = q ^ 2` and `g_i = q T_i`, the
-generator `g_i` acts on a tableau vector through the axial distance `d` of the labels `i` and
-`i + 1`, by the coefficients `seminormalDiag Q d` and `seminormalOffDiag Q d`
-(`TauCeti.TypeAHeckeAlgebra.seminormalRep_T_apply`). The hypothesis that the additive contents
-`[d]_Q` with `0 < d < n` are nonzero makes every coefficient well defined. At `Q = 1` it says
+functions on the standard Young tableaux of shape `μ`. Let `Q = q ^ 2`, `g_i = q T_i`, and let
+`d` be the axial distance of the labels `i` and `i + 1` in a standard tableau `U`. The value of
+`g_i ψ` at `U` combines the values of `ψ` at `U` and at `U` with `i` and `i + 1` exchanged, by the
+coefficients `seminormalDiag Q d` and `seminormalOffDiag Q d`
+(`TauCeti.TypeAHeckeAlgebra.seminormalRep_T_apply`). Dually, `g_i` sends the vector of `U` to
+`seminormalDiag Q d` times itself plus `seminormalOffDiag Q (-d)` times the vector of the
+exchanged tableau (`TauCeti.TypeAHeckeAlgebra.seminormalRep_T_single_of_abs_ne_one`). The
+hypothesis that the additive contents `[d]_Q` with `0 < d < n` are nonzero makes every coefficient
+well defined. At `Q = 1` it says
 that the characteristic of `K` is zero or at least `n`; for `Q ≠ 1` it says that `Q` is not a
 root of unity of order less than `n`. It follows from the split-semisimplicity criterion
 `∏_(d=1)^n [d]_Q ≠ 0`. -/
@@ -558,10 +600,11 @@ theorem seminormalRep_T_apply (i : Fin (μ.card - 1)) (ψ : StandardYoungTableau
         else seminormalOffDiag ((q : K) ^ 2) (axialDistance U.toTableau i (by omega)) *
           ψ (U.swap i (by omega) h)) := by
   rw [seminormalRep_T, LinearMap.smul_apply, Pi.smul_apply, smul_eq_mul, seminormalGen_apply,
-    seminormalAux_apply, extendSYT_apply_toTableau]
+    seminormalAux_apply, linearMap_apply_of_injective K StandardYoungTableau.toTableau_injective]
   split_ifs with h
   · rw [seminormalOffDiag_of_abs_le_one h.le, zero_mul]
-  · rw [← StandardYoungTableau.toTableau_swap U i (by omega) h, extendSYT_apply_toTableau]
+  · rw [← StandardYoungTableau.toTableau_swap U i (by omega) h,
+      linearMap_apply_of_injective K StandardYoungTableau.toTableau_injective]
 
 /-- **The seminormal form on a basis vector**, when the labels `i` and `i + 1` of `U` do not lie
 next to each other in a row or a column: `T_i` sends the vector of `U` to a combination of the
@@ -620,11 +663,11 @@ theorem seminormalRep_T_single_of_abs_eq_one (i : Fin (μ.card - 1)) (U : Standa
       rw [StandardYoungTableau.toTableau_swap, axialDistance_relabel_swap, abs_neg] at h
       exact h' h
 
-/-- The Jucys–Murphy elements act on extensions by zero of tableau functions by the content
-multiplications; the induction behind `seminormalRep_jucysMurphy_apply`. -/
-private theorem extendSYT_seminormalRep_jucysMurphy (k : ℕ) (hk : k < μ.card)
+/-- The additive Jucys–Murphy elements act on extensions by zero of tableau functions by the
+content multiplications; the induction behind `seminormalRep_additiveJucysMurphy_apply`. -/
+private theorem extendSYT_seminormalRep_additiveJucysMurphy (k : ℕ) (hk : k < μ.card)
     (ψ : StandardYoungTableau μ → K) :
-    extendSYT K (seminormalRep q μ hμ (jucysMurphy q ⟨k, hk⟩) ψ) =
+    extendSYT K (seminormalRep q μ hμ (additiveJucysMurphy q ⟨k, hk⟩) ψ) =
       contentMul ((q : K) ^ 2) ⟨k, hk⟩ (extendSYT K ψ) := by
   have hq := q.ne_zero
   have hQ : (q : K) ^ 2 ≠ 0 := pow_ne_zero 2 hq
@@ -632,38 +675,68 @@ private theorem extendSYT_seminormalRep_jucysMurphy (k : ℕ) (hk : k < μ.card)
   | zero =>
     have : NeZero μ.card := ⟨by omega⟩
     have h0 : (⟨0, hk⟩ : Fin μ.card) = 0 := Fin.ext (Fin.val_zero _).symm
-    rw [h0, jucysMurphy_zero, map_one, one_apply_eq_self]
+    rw [h0, additiveJucysMurphy_zero, map_zero, LinearMap.zero_apply, map_zero]
     funext u
     by_cases hu : ∃ T : StandardYoungTableau μ, T.toTableau = u
     · obtain ⟨T, rfl⟩ := hu
-      rw [contentMul_apply, ← h0, T.labelContent_zero hk, zpow_zero, one_mul]
-    · rw [contentMul_apply, extendSYT_apply_of_not_exists _ hu, mul_zero]
+      rw [contentMul_apply, T.labelContent_zero, additiveContent_zero, zero_mul, Pi.zero_apply]
+    · rw [contentMul_apply, linearMap_apply_of_notMem_range K _ hu, mul_zero, Pi.zero_apply]
   | succ k ih =>
     funext u
     by_cases hu : ∃ T : StandardYoungTableau μ, T.toTableau = u
     · obtain ⟨T, rfl⟩ := hu
-      rw [jucysMurphy_succ k hk, map_mul, map_mul, mul_apply_eq_comp, mul_apply_eq_comp,
-        extendSYT_apply_toTableau, seminormalRep_T]
-      simp only [LinearMap.smul_apply, map_smul, Pi.smul_apply, smul_eq_mul, seminormalGen_apply,
-        ih, extendSYT_seminormalGen]
-      rw [seminormalAux_contentMul_seminormalAux_apply hQ k hk _
-        (additiveContent_axialDistance_ne_zero hQ hμ T k hk), contentMul_apply,
-        Units.val_inv_eq_inv_val]
+      have key := seminormalAux_contentMul_seminormalAux_apply hQ k hk (extendSYT K ψ)
+        (additiveContent_axialDistance_ne_zero hQ hμ T k hk)
+      rw [additiveJucysMurphy_succ k hk, map_add, map_mul, map_mul, map_smul, LinearMap.add_apply,
+        mul_apply_eq_comp, mul_apply_eq_comp,
+        linearMap_apply_of_injective K StandardYoungTableau.toTableau_injective, seminormalRep_T]
+      simp only [LinearMap.smul_apply, map_smul, Pi.add_apply, Pi.smul_apply, smul_eq_mul,
+        seminormalGen_apply, ih, extendSYT_seminormalGen]
+      rw [contentMul_apply, Units.val_inv_eq_inv_val]
       field_simp
-    · rw [contentMul_apply, extendSYT_apply_of_not_exists _ hu, extendSYT_apply_of_not_exists _ hu,
-        mul_zero]
+      linear_combination key
+    · rw [contentMul_apply, linearMap_apply_of_notMem_range K _ hu,
+        linearMap_apply_of_notMem_range K _ hu, mul_zero]
+
+/-- **The additive Jucys–Murphy eigenvalues of the seminormal basis.** The additive Jucys–Murphy
+element `L_i` acts on a function on the standard tableaux by multiplying its value at `U` by the
+additive content `[content i]_Q`, with `Q = q ^ 2` and `content i = column - row` of the cell
+carrying the label `i` in `U`. Unlike the normalized eigenvalues, these distinguish the tableaux
+also at `Q = 1`. -/
+theorem seminormalRep_additiveJucysMurphy_apply (i : Fin μ.card)
+    (ψ : StandardYoungTableau μ → K) (U : StandardYoungTableau μ) :
+    seminormalRep q μ hμ (additiveJucysMurphy q i) ψ U =
+      additiveContent ((q : K) ^ 2) (labelContent U.toTableau i) * ψ U := by
+  obtain ⟨k, hk⟩ := i
+  have h := congrFun (extendSYT_seminormalRep_additiveJucysMurphy (hμ := hμ) k hk ψ) U.toTableau
+  rwa [linearMap_apply_of_injective K StandardYoungTableau.toTableau_injective, contentMul_apply,
+    linearMap_apply_of_injective K StandardYoungTableau.toTableau_injective] at h
+
+/-- The vector of a standard tableau `U` is an eigenvector of the additive Jucys–Murphy element
+`L_i`, of eigenvalue `[content i]_Q`. -/
+theorem seminormalRep_additiveJucysMurphy_single (i : Fin μ.card) (U : StandardYoungTableau μ) :
+    seminormalRep q μ hμ (additiveJucysMurphy q i) (Pi.single U 1) =
+      additiveContent ((q : K) ^ 2) (labelContent U.toTableau i) • Pi.single U 1 := by
+  funext V
+  rw [seminormalRep_additiveJucysMurphy_apply, Pi.smul_apply, smul_eq_mul]
+  by_cases hV : V = U
+  · subst hV
+    rfl
+  · rw [Pi.single_eq_of_ne hV, mul_zero, mul_zero]
 
 /-- **The Jucys–Murphy eigenvalues of the seminormal basis.** The normalized Jucys–Murphy
-element `J_i` acts on a function on the standard tableaux by multiplying its value at `U` by
-`Q ^ content i`, with `Q = q ^ 2` and `content i = column - row` of the cell carrying the label
-`i` in `U`. -/
+element `J_i = 1 + (Q - 1) L_i` acts on a function on the standard tableaux by multiplying its
+value at `U` by `Q ^ content i`, with `Q = q ^ 2` and `content i = column - row` of the cell
+carrying the label `i` in `U`. -/
 theorem seminormalRep_jucysMurphy_apply (i : Fin μ.card) (ψ : StandardYoungTableau μ → K)
     (U : StandardYoungTableau μ) :
     seminormalRep q μ hμ (jucysMurphy q i) ψ U =
       ((q : K) ^ 2) ^ labelContent U.toTableau i * ψ U := by
-  obtain ⟨k, hk⟩ := i
-  have h := congrFun (extendSYT_seminormalRep_jucysMurphy (hμ := hμ) k hk ψ) U.toTableau
-  rwa [extendSYT_apply_toTableau, contentMul_apply, extendSYT_apply_toTableau] at h
+  have h := sub_one_mul_additiveContent (pow_ne_zero 2 q.ne_zero) (labelContent U.toTableau i)
+  rw [jucysMurphy_eq_one_add_smul_additiveJucysMurphy, map_add, map_one, map_smul,
+    LinearMap.add_apply, LinearMap.smul_apply, one_apply_eq_self, Pi.add_apply, Pi.smul_apply,
+    seminormalRep_additiveJucysMurphy_apply, smul_eq_mul]
+  linear_combination ψ U * h
 
 /-- The vector of a standard tableau `U` is an eigenvector of the Jucys–Murphy element `J_i`,
 of eigenvalue `Q ^ content i`. -/
