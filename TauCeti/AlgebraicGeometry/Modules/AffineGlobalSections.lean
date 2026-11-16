@@ -35,7 +35,8 @@ submodule containing every global section. Global sections are those on the affi
 `Spec Γ(X, ⊤) ⟶ X`, an isomorphism, and on a spectrum they are the inverse of the tilde
 equivalence (Stacks, Lemma 26.7.5, Tag 01I7).
 
-The file also records the base-ring action on affine global sections and extensionality of
+The file also identifies the global sections of a free module on `Spec R` with a direct sum of
+copies of `R`, and records the base-ring action on affine global sections and extensionality of
 sections by restriction to basic opens.
 -/
 
@@ -121,6 +122,13 @@ theorem exact_map_moduleSpecΓFunctor_of_isQuasicoherent
   exact (ShortComplex.exact_iff_of_epi_of_isIso_of_mono φ).2
     (((S.exact_iff_exact_image_ι).1 hS).map_of_mono_of_preservesKernel F
       inferInstance inferInstance)
+
+/-- Global sections of the free `𝒪_{Spec R}`-module on `ι` are isomorphic to `ι →₀ R`. -/
+noncomputable def moduleSpecΓFunctorFreeIso (ι : Type u) :
+    (moduleSpecΓFunctor (R := R)).obj (SheafOfModules.free (R := (Spec R).ringCatSheaf) ι) ≅
+      ModuleCat.of R (ι →₀ R) :=
+  ((moduleSpecΓFunctor (R := R)).mapIso (tildeFinsupp ι)).symm ≪≫
+    ((tilde.toTildeΓNatIso (R := R)).app (ModuleCat.of R (ι →₀ R))).symm
 
 variable {X : Scheme.{u}} {P Q : X.Modules}
 

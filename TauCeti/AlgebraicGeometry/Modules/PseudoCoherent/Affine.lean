@@ -21,16 +21,14 @@ pseudo-coherence of `Γ(F, U i)` on any cover of `X` by affine opens `U i`. On a
 `F` is pseudo-coherent if and only if `F` admits a global resolution by free `𝒪_X`-modules of
 finite rank (`AlgebraicGeometry.Scheme.Modules.HasFiniteFreeResolution`).
 
-To extract an algebraic resolution from a sheaf resolution on `Spec R`, we apply
-`TauCeti.AlgebraicGeometry.exact_map_moduleSpecΓFunctor_of_isQuasicoherent` degree-by-degree to a
-finite free resolution `P ⟶ F[0]` on `Spec R`, producing a coordinate resolution of `Γ(F, ⊤)` over
-`R`. On an arbitrary scheme `X` and an affine open `U`, any family of open subsets carrying finite
-free resolutions of `F` refines to a standard open cover of `U` by basic opens `X.basicOpen f`;
-the sections over each `X.basicOpen f` are pseudo-coherent by the spectrum calculation, and
-`TauCeti.Huber.IsPseudoCoherentOver.of_localizationSpan'` descends pseudo-coherence back to
-`Γ(F, U)`. Conversely, when `F|_U` is quasi-coherent and `Γ(F, U)` is pseudo-coherent over
-`Γ(X, U)`, the tilde functor carries a coordinate resolution of `Γ(F, U)` to a finite free
-resolution of `F|_U`.
+These characterizations reduce sheaf-level pseudo-coherence to purely algebraic module
+pseudo-coherence on affine charts: once `F` is known to be quasi-coherent, checking
+`F.IsPseudoCoherent` requires testing `TauCeti.Huber.IsPseudoCoherentOver` only on the modules of
+sections over an affine open cover, and conversely every affine open of a pseudo-coherent sheaf
+carries pseudo-coherent sections. On an affine scheme, the local definition automatically upgrades
+to a global finite free resolution, matching the correspondence `M ↦ M~` between pseudo-coherent
+`R`-modules and pseudo-coherent `𝒪_{Spec R}`-modules. The quasi-coherence hypothesis is essential
+in the affine-open criteria (see `TauCeti/Examples/AlgebraicGeometry/Modules/PseudoCoherent.lean`).
 
 ## Main results
 
@@ -66,20 +64,6 @@ section Spec
 
 variable {R : CommRingCat.{u}}
 
-/-- Global sections of a sheaf isomorphic to a finite free `𝒪_{Spec R}`-module are linearly
-equivalent to a finite coordinate module `Fin k → R`. -/
-private theorem exists_coordEquiv_moduleSpecΓ {F : (Spec R).Modules} {ι : Type u} [Finite ι]
-    (e : F ≅ SheafOfModules.free (R := (Spec R).ringCatSheaf) ι) :
-    ∃ k : ℕ, Nonempty ((Fin k → R) ≃ₗ[R] (moduleSpecΓFunctor (R := R)).obj F) := by
-  have := Fintype.ofFinite ι
-  let e_mod : (Fin (Fintype.card ι) → R) ≃ₗ[R] (ι →₀ R) :=
-    (Finsupp.linearEquivFunOnFinite R R (Fin (Fintype.card ι))).symm.trans
-      (Finsupp.domLCongr (Fintype.equivFin ι).symm)
-  let e_Γ : ModuleCat.of R (ι →₀ R) ≅ (moduleSpecΓFunctor (R := R)).obj F :=
-    (tilde.toTildeΓNatIso (R := R)).app (ModuleCat.of R (ι →₀ R)) ≪≫
-      (moduleSpecΓFunctor (R := R)).mapIso (tildeFinsupp ι ≪≫ e.symm)
-  exact ⟨Fintype.card ι, ⟨e_mod.trans e_Γ.toLinearEquiv⟩⟩
-
 /-- A sheaf on `Spec R` with a global finite free resolution has pseudo-coherent global sections
 over `R` (Stacks, Lemma 36.10.1, Tag 08E5). -/
 theorem HasFiniteFreeResolution.isPseudoCoherentOver_moduleSpecΓ {F : (Spec R).Modules}
@@ -93,7 +77,11 @@ theorem HasFiniteFreeResolution.isPseudoCoherentOver_moduleSpecΓ {F : (Spec R).
   let G := moduleSpecΓFunctor (R := R)
   have hcoord (n : ℕ) : ∃ k : ℕ, Nonempty ((Fin k → R) ≃ₗ[R] G.obj (P.X n)) := by
     obtain ⟨ι, _, ⟨e⟩⟩ := hP n
-    exact exists_coordEquiv_moduleSpecΓ e
+    have := Fintype.ofFinite ι
+    exact ⟨Fintype.card ι, ⟨((Finsupp.linearEquivFunOnFinite R R _).symm.trans
+      (Finsupp.domLCongr (Fintype.equivFin ι).symm)).trans
+      ((TauCeti.AlgebraicGeometry.moduleSpecΓFunctorFreeIso (R := R) ι).symm ≪≫
+        G.mapIso e.symm).toLinearEquiv⟩⟩
   choose k hk using hcoord
   let e (n : ℕ) : (Fin (k n) → R) ≃ₗ[R] G.obj (P.X n) := (hk n).some
   -- Transport the augmentation and differentials to finite coordinate modules.
