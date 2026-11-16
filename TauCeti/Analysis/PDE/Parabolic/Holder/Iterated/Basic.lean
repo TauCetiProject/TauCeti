@@ -472,6 +472,13 @@ theorem toBoundedContinuousFunction_mixedDerivHolderL (f : ParabolicCkHolderSpac
     ContinuousLinearMap.comp_apply, (isJetGraph_toJetL f).2.2.2 r m p, ite_eq_left h,
     mixedDerivL_apply']
 
+/-- The Hölder field of top order agrees pointwise with the field `D_t^r D_x^m u`. -/
+theorem mixedDerivHolderL_apply (f : ParabolicCkHolderSpace k α E F hab) {r m : ℕ}
+    (h : 2 * r + m = k) (p : slab (E := E) a b) :
+    mixedDerivHolderL r m f p = mixedDerivL r m f p := by
+  rw [← toBoundedContinuousFunction_mixedDerivHolderL f h,
+    HolderSpace.toBoundedContinuousFunction_apply]
+
 /-- The time slices of order `k - 1` are those of the field `D_t^r D_x^m u`. -/
 theorem timeSliceL_apply (f : ParabolicCkHolderSpace k α E F hab) {r m : ℕ}
     (h : 2 * r + m + 1 = k) (x : E) (t : Icc a b) :
@@ -589,10 +596,9 @@ theorem toFun_injective :
   · by_cases h : 2 * r + m = k
     · apply HolderSpace.ext
       intro p
-      have hf := DFunLike.congr_fun (toBoundedContinuousFunction_mixedDerivHolderL f h) p
-      have hg := DFunLike.congr_fun (toBoundedContinuousFunction_mixedDerivHolderL g h) p
-      rw [HolderSpace.toBoundedContinuousFunction_apply, mixedDerivHolderL,
-        ContinuousLinearMap.comp_apply] at hf hg
+      have hf := mixedDerivHolderL_apply f h p
+      have hg := mixedDerivHolderL_apply g h p
+      rw [mixedDerivHolderL, ContinuousLinearMap.comp_apply] at hf hg
       rw [hf, hg, hfield]
     · have hf := DFunLike.congr_fun
         (mixedDerivHolderL_of_ne (hab := hab) (α := α) (E := E) (F := F) h) f

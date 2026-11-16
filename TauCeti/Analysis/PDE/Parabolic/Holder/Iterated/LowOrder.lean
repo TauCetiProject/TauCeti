@@ -34,9 +34,13 @@ This file identifies the two families, preserving the underlying function. At or
 norm of `ParabolicCkHolderSpace` counts the supremum norm twice, once for the field and once in
 its Hölder norm. At order two it adds to the reduced norm the supremum norms of `D_x² u` and
 `∂ₜu`, already counted in their Hölder norms, and the uniform temporal `(1 + α) / 2`-Hölder norm
-of the gradient, which the top-order seminorms control
-(`TauCeti.ParabolicC2HolderSpace.toReal_timeEHolderNorm_spatialFDeriv_le`). So in both cases the
-norms are equivalent, with constants `1` and `2`, respectively `1` and `3`.
+of the gradient, whose temporal seminorm the Hölder norms of `D_x² u` and `∂ₜu` control
+(`TauCeti.ParabolicC2HolderSpace.toReal_timeEHolderNorm_spatialFDeriv_le`), its supremum part
+being `‖D_x u‖_∞`. So in both cases the norms are equivalent, with constants `1` and `2`,
+respectively `1` and `3`.
+
+The construction follows the whole-space comparison `TauCeti.CkHolderSpace.equivHolderSpace` and
+`TauCeti.CkHolderSpace.equivC2HolderSpace` in `TauCeti.Analysis.Holder.LowOrder`.
 
 ## Main declarations
 
@@ -49,7 +53,9 @@ norms are equivalent, with constants `1` and `2`, respectively `1` and `3`.
   `‖e f‖ ≤ ‖f‖ ≤ 3 ‖e f‖` and the gradient, Hessian and time derivative of `e f` read off from
   the fields of `f`
   (`TauCeti.ParabolicCkHolderSpace.spatialFDerivL_equivParabolicC2HolderSpace_apply` and its
-  companions).
+  companions), and conversely the fields of `e.symm g` read off from `g`
+  (`TauCeti.ParabolicCkHolderSpace.mixedDerivL_zero_one_equivParabolicC2HolderSpace_symm_apply`
+  and its companions).
 
 ## References
 
@@ -83,10 +89,7 @@ private def toHolderSpace (f : ParabolicCkHolderSpace 0 α E F hab) :
 
 private theorem toHolderSpace_apply (f : ParabolicCkHolderSpace 0 α E F hab)
     (p : slab (E := E) a b) : toHolderSpace f p = f p := by
-  have h := DFunLike.congr_fun (toBoundedContinuousFunction_mixedDerivHolderL f
-    (r := 0) (m := 0) rfl) p
-  rw [HolderSpace.toBoundedContinuousFunction_apply] at h
-  rw [toHolderSpace, HolderSpace.compLeftL_apply, h]
+  rw [toHolderSpace, HolderSpace.compLeftL_apply, mixedDerivHolderL_apply f (r := 0) (m := 0) rfl]
   simp
 
 /-- The fields of the order-zero map with value `u`: the value, read as a `0`-multilinear map,
@@ -176,6 +179,16 @@ function. -/
 theorem coe_equivHolderSpace_symm (g : HolderSpace α (slab (E := E) a b) F) :
     ⇑(equivHolderSpace (hab := hab) |>.symm g) = g :=
   coe_ofHolderSpace g
+
+/-- The field of the inverse identification with the parabolic Hölder space is the value, read as
+a `0`-multilinear map. -/
+@[simp]
+theorem mixedDerivL_equivHolderSpace_symm_apply (g : HolderSpace α (slab (E := E) a b) F)
+    (p : slab (E := E) a b) :
+    mixedDerivL 0 0 (equivHolderSpace (hab := hab) |>.symm g) p =
+      (continuousMultilinearCurryFin0 ℝ E F).symm (g p) := by
+  ext v
+  simp
 
 /-- The norm `‖D⁰u‖_∞ + ‖D⁰u‖_∞ + [D⁰u]_{α,par}` of an order-zero map is the supremum norm plus
 its norm in `HolderSpace`. -/
@@ -359,14 +372,11 @@ private theorem hasFDerivAt_valueOf (f : ParabolicCkHolderSpace 2 α E F hab) (t
 
 private theorem hasFDerivAt_gradientOf (f : ParabolicCkHolderSpace 2 α E F hab) (t : Icc a b)
     (x : E) : HasFDerivAt (fun y ↦ gradientOf f (slabMk y t)) (hessianOf f (slabMk x t)) x := by
-  have h := DFunLike.congr_fun (toBoundedContinuousFunction_mixedDerivHolderL f
-    (r := 0) (m := 2) rfl) (slabMk x t)
-  rw [HolderSpace.toBoundedContinuousFunction_apply] at h
   have hd := ((continuousMultilinearCurryFin1 ℝ E F).toLinearIsometry.toContinuousLinearMap
     |>.hasFDerivAt).comp x (hasFDerivAt_mixedDerivL f (r := 0) (m := 1) (by norm_num) t x)
   rw [← (continuousMultilinearCurryFin2 ℝ E F).symm_apply_apply
     (mixedDerivL 0 2 f (slabMk x t)), curryLeft_continuousMultilinearCurryFin2_symm] at hd
-  rw [HolderSpace.compLeftL_apply, h]
+  rw [HolderSpace.compLeftL_apply, mixedDerivHolderL_apply f (r := 0) (m := 2) rfl]
   convert hd using 1
   · -- Postcomposing with the currying isometry, as a bounded map or pointwise, agrees.
     rfl
@@ -375,9 +385,6 @@ private theorem hasFDerivAt_gradientOf (f : ParabolicCkHolderSpace 2 α E F hab)
 private theorem hasDerivWithinAt_valueOf (f : ParabolicCkHolderSpace 2 α E F hab) (x : E)
     (t : Icc a b) : HasDerivWithinAt (ParabolicC2HolderSpace.timeExtension hab.le (valueOf f) x)
       (timeDerivOf f (slabMk x t)) (Icc a b) t := by
-  have h := DFunLike.congr_fun (toBoundedContinuousFunction_mixedDerivHolderL f
-    (r := 1) (m := 0) rfl) (slabMk x t)
-  rw [HolderSpace.toBoundedContinuousFunction_apply] at h
   have he : ParabolicC2HolderSpace.timeExtension hab.le (valueOf f) x =
       (continuousMultilinearCurryFin0 ℝ E F) ∘
         ParabolicC2HolderSpace.timeExtension hab.le (mixedDerivL 0 0 f) x := by
@@ -385,7 +392,7 @@ private theorem hasDerivWithinAt_valueOf (f : ParabolicCkHolderSpace 2 α E F ha
     simp only [ParabolicC2HolderSpace.timeExtension_def,
       ContinuousLinearMap.compLeftContinuousBounded_apply, Function.comp_apply,
       LinearIsometry.coe_toContinuousLinearMap, LinearIsometryEquiv.coe_toLinearIsometry]
-  rw [he, HolderSpace.compLeftL_apply, h]
+  rw [he, HolderSpace.compLeftL_apply, mixedDerivHolderL_apply f (r := 1) (m := 0) rfl]
   exact HasFDerivAt.comp_hasDerivWithinAt (t : ℝ)
     (continuousMultilinearCurryFin0 ℝ E F).toLinearIsometry.toContinuousLinearMap.hasFDerivAt
     (hasDerivWithinAt_mixedDerivL f (r := 0) (m := 0) (by norm_num) x t)
@@ -542,6 +549,39 @@ theorem coe_equivParabolicC2HolderSpace_symm (g : ParabolicC2HolderSpace α E F 
     ⇑(equivParabolicC2HolderSpace.symm g) = g :=
   coe_ofParabolicC2HolderSpace g
 
+private theorem equivParabolicC2HolderSpace_symm_eq (g : ParabolicC2HolderSpace α E F hab) :
+    equivParabolicC2HolderSpace.symm g = ofParabolicC2HolderSpace g :=
+  (rfl)
+
+/-- The field `D_x u` of the inverse identification is the gradient, in uncurried form. -/
+@[simp]
+theorem mixedDerivL_zero_one_equivParabolicC2HolderSpace_symm_apply
+    (g : ParabolicC2HolderSpace α E F hab) (p : slab (E := E) a b) :
+    mixedDerivL 0 1 (equivParabolicC2HolderSpace.symm g) p =
+      (continuousMultilinearCurryFin1 ℝ E F).symm (ParabolicC2HolderSpace.spatialFDerivL g p) := by
+  rw [equivParabolicC2HolderSpace_symm_eq, mixedDerivL_ofParabolicC2HolderSpace g (by norm_num),
+    fieldsOf_zero_one_apply]
+
+/-- The field `D_x² u` of the inverse identification is the Hessian, in uncurried form. -/
+@[simp]
+theorem mixedDerivL_zero_two_equivParabolicC2HolderSpace_symm_apply
+    (g : ParabolicC2HolderSpace α E F hab) (p : slab (E := E) a b) :
+    mixedDerivL 0 2 (equivParabolicC2HolderSpace.symm g) p =
+      (continuousMultilinearCurryFin2 ℝ E F).symm
+        (ParabolicC2HolderSpace.spatialSecondFDerivL g p) := by
+  rw [equivParabolicC2HolderSpace_symm_eq, mixedDerivL_ofParabolicC2HolderSpace g (by norm_num),
+    coe_fieldsOf_zero_two, Function.comp_apply, HolderSpace.coe_toBoundedContinuousFunction]
+
+/-- The field `D_t u` of the inverse identification is the time derivative, read as a
+`0`-multilinear map. -/
+@[simp]
+theorem mixedDerivL_one_zero_equivParabolicC2HolderSpace_symm_apply
+    (g : ParabolicC2HolderSpace α E F hab) (p : slab (E := E) a b) :
+    mixedDerivL 1 0 (equivParabolicC2HolderSpace.symm g) p =
+      (continuousMultilinearCurryFin0 ℝ E F).symm (ParabolicC2HolderSpace.timeDerivL g p) := by
+  rw [equivParabolicC2HolderSpace_symm_eq, mixedDerivL_ofParabolicC2HolderSpace g (by norm_num),
+    coe_fieldsOf_one_zero, Function.comp_apply, HolderSpace.coe_toBoundedContinuousFunction]
+
 /-- The gradient of the identified map is the field `D_x u`, in curried form. -/
 @[simp]
 theorem spatialFDerivL_equivParabolicC2HolderSpace_apply (f : ParabolicCkHolderSpace 2 α E F hab)
@@ -558,11 +598,8 @@ theorem spatialSecondFDerivL_equivParabolicC2HolderSpace_apply
     (f : ParabolicCkHolderSpace 2 α E F hab) (p : slab (E := E) a b) :
     ParabolicC2HolderSpace.spatialSecondFDerivL (equivParabolicC2HolderSpace f) p =
       continuousMultilinearCurryFin2 ℝ E F (mixedDerivL 0 2 f p) := by
-  have h := DFunLike.congr_fun (toBoundedContinuousFunction_mixedDerivHolderL f
-    (r := 0) (m := 2) rfl) p
-  rw [HolderSpace.toBoundedContinuousFunction_apply] at h
   rw [equivParabolicC2HolderSpace_eq, spatialSecondFDerivL_toParabolicC2HolderSpace,
-    HolderSpace.compLeftL_apply, h]
+    HolderSpace.compLeftL_apply, mixedDerivHolderL_apply f (r := 0) (m := 2) rfl]
   simp
 
 /-- The time derivative of the identified map is the field `D_t u`, read as a value. -/
@@ -571,11 +608,8 @@ theorem timeDerivL_equivParabolicC2HolderSpace_apply (f : ParabolicCkHolderSpace
     (p : slab (E := E) a b) :
     ParabolicC2HolderSpace.timeDerivL (equivParabolicC2HolderSpace f) p =
       continuousMultilinearCurryFin0 ℝ E F (mixedDerivL 1 0 f p) := by
-  have h := DFunLike.congr_fun (toBoundedContinuousFunction_mixedDerivHolderL f
-    (r := 1) (m := 0) rfl) p
-  rw [HolderSpace.toBoundedContinuousFunction_apply] at h
   rw [equivParabolicC2HolderSpace_eq, timeDerivL_toParabolicC2HolderSpace,
-    HolderSpace.compLeftL_apply, h]
+    HolderSpace.compLeftL_apply, mixedDerivHolderL_apply f (r := 1) (m := 0) rfl]
   simp
 
 /-- The norm of `ParabolicC2HolderSpace` is at most the norm of `ParabolicCkHolderSpace`. -/
