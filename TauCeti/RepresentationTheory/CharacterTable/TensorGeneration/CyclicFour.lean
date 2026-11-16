@@ -63,14 +63,12 @@ open CategoryTheory Complex
 
 namespace TauCeti
 
-/-- `i`, as a unit of `ℂ`, is a primitive fourth root of unity. -/
-private theorem isPrimitiveRoot_mk0_I : IsPrimitiveRoot (Units.mk0 I I_ne_zero) 4 :=
-  IsPrimitiveRoot.coe_units_iff.mp isPrimitiveRoot_I
-
 /-- The character `χⱼ` of the cyclic group `C₄ = Multiplicative (ZMod 4)` sending the generator
 `ofAdd 1` to `i ^ j`: the shift by `j` of Mathlib's additive character `a ↦ i ^ a` of `ZMod 4`. -/
 noncomputable def cyclicFourChar (j : ZMod 4) : Multiplicative (ZMod 4) →* ℂˣ :=
-  AddChar.toMonoidHomMulEquiv ((AddChar.zmodChar 4 isPrimitiveRoot_mk0_I.pow_eq_one).mulShift j)
+  AddChar.toMonoidHomMulEquiv ((AddChar.zmodChar 4
+    ((IsPrimitiveRoot.coe_units_iff (ζ := Units.mk0 I I_ne_zero)).mp
+      isPrimitiveRoot_I).pow_eq_one).mulShift j)
 
 /-- The value of `χⱼ` at `ofAdd a` is `i ^ (j a)`, with exponents the representatives in
 `{0, 1, 2, 3}`. -/
@@ -93,7 +91,8 @@ theorem cyclicFourChar_add (j k : ZMod 4) :
 /-- `χⱼ` determines `j`. -/
 theorem cyclicFourChar_injective : Function.Injective cyclicFourChar :=
   AddChar.toMonoidHomMulEquiv.injective.comp (AddChar.to_mulShift_inj_of_isPrimitive
-    (AddChar.zmodChar_primitive_of_primitive_root 4 isPrimitiveRoot_mk0_I))
+    (AddChar.zmodChar_primitive_of_primitive_root 4
+      (IsPrimitiveRoot.coe_units_iff.mp isPrimitiveRoot_I)))
 
 /-- `χⱼ = χₖ` exactly when `j = k`. -/
 @[simp]
