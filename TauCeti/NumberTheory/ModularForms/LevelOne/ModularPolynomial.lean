@@ -376,9 +376,6 @@ open FixedDetMatrices
 
 section GaloisDescent
 
-private theorem periodic_j : Function.Periodic (j ∘ ofComplex) 1 :=
-  UpperHalfPlane.periodic_comp_ofComplex fun τ ↦ by rw [← modular_T_smul, j_smul_SL2Z]
-
 private theorem cyclicIsogenyPolynomial_T_smul (n : ℕ) [NeZero n] {f : ℍ → ℂ}
     (hfper : Function.Periodic (f ∘ ofComplex) 1) (τ : ℍ) :
     cyclicIsogenyPolynomial n f (ModularGroup.T • τ) = cyclicIsogenyPolynomial n f τ := by
@@ -619,8 +616,8 @@ private theorem map_val_factorSeries {n : ℕ} [NeZero n] {jZ : LaurentSeries �
     HahnSeries.mapRingHom (cycField n).val.toRingHom (factorSeries n jZ A.1) =
       UpperHalfPlane.laurentQExpansion n (fun τ ↦ j (toGLReal (NeZero.ne (n : ℤ)) A • τ)) :=
   (map_val_factorSeriesAux n jZ (Int.natAbs_pos.mpr hA.2.1.ne') (A.1 0 1).natAbs).trans
-    (by rw [UpperHalfPlane.laurentQExpansion_toGLReal_smul periodic_j meromorphicAt_cuspFunction_j
-          hA, hjZ])
+    (by rw [UpperHalfPlane.laurentQExpansion_toGLReal_smul periodic_j_comp_ofComplex
+          meromorphicAt_cuspFunction_j hA, hjZ])
 
 private theorem isIntegral_coeff_factorSeries (n : ℕ) [NeZero n] (jZ : LaurentSeries ℤ)
     (M : Matrix (Fin 2) (Fin 2) ℤ) (m : ℤ) :
@@ -772,8 +769,8 @@ private theorem laurentQExpansion_n_coeff_cyclicIsogenyPolynomial_j_mem_range (n
       (cycField n).val (((ΦK.coeff k).coeff m)) := by
     simp only [cyclicIsogenyPolynomial_def]
     rw [UpperHalfPlane.laurentQExpansion_coeff_prod_X_sub_C (primitiveReps (n : ℤ))
-        (fun A hA ↦ UpperHalfPlane.meromorphicAt_cuspFunction_toGLReal_smul periodic_j
-          meromorphicAt_cuspFunction_j (mem_primitiveReps.mp hA).1) k,
+        (fun A hA ↦ UpperHalfPlane.meromorphicAt_cuspFunction_toGLReal_smul
+          periodic_j_comp_ofComplex meromorphicAt_cuspFunction_j (mem_primitiveReps.mp hA).1) k,
       ← hΦ_map, Polynomial.coeff_map, HahnSeries.coeff_mapRingHom]
     rfl
   have hcyc : IsCyclotomicExtension {n} ℚ (cycField n) :=
@@ -808,8 +805,8 @@ theorem laurentQExpansion_coeff_cyclicIsogenyPolynomial_j_mem_range (n : ℕ) [N
     UpperHalfPlane.periodic_comp_ofComplex fun τ ↦ by
       rw [← modular_T_smul]
       exact congrArg (fun P ↦ P.coeff k) (cyclicIsogenyPolynomial_smul (n := n) j_smul_SL2Z _ τ)
-  have hmer := meromorphicAt_cuspFunction_coeff_cyclicIsogenyPolynomial n periodic_j
-    meromorphicAt_cuspFunction_j k
+  have hmer := meromorphicAt_cuspFunction_coeff_cyclicIsogenyPolynomial n
+    periodic_j_comp_ofComplex meromorphicAt_cuspFunction_j k
   have hexp : UpperHalfPlane.laurentQExpansion n
       (fun τ ↦ (cyclicIsogenyPolynomial n j τ).coeff k) =
       LaurentSeries.expand ℂ (n.toPNat (NeZero.pos n))
@@ -832,7 +829,7 @@ private theorem exists_aeval_j_eq_coeff_cyclicIsogenyPolynomial (n : ℕ) [NeZer
   exists_aeval_j_eq (mdifferentiable_coeff_cyclicIsogenyPolynomial j_mdifferentiable k)
     (fun γ τ ↦ congrArg (fun Q ↦ Q.coeff k)
       (cyclicIsogenyPolynomial_smul (n := n) j_smul_SL2Z γ τ))
-    (meromorphicAt_cuspFunction_coeff_cyclicIsogenyPolynomial n periodic_j
+    (meromorphicAt_cuspFunction_coeff_cyclicIsogenyPolynomial n periodic_j_comp_ofComplex
       meromorphicAt_cuspFunction_j k)
     fun m _ ↦ laurentQExpansion_coeff_cyclicIsogenyPolynomial_j_mem_range n k m
 
@@ -962,32 +959,19 @@ private theorem leadingCoeff_laurentQExpansion_j :
     (UpperHalfPlane.laurentQExpansion 1 j).leadingCoeff = 1 := by
   simpa using Polynomial.leadingCoeff_laurentQExpansion_aeval_j (X : ℤ[X])
 
-private theorem orderTop_rescale_le {R : Type*} [CommRing R] (u : Rˣ) (f : R⸨X⸩) :
-    (TauCeti.LaurentSeries.rescale u f).orderTop ≤ f.orderTop := by
-  rcases eq_or_ne f 0 with rfl | hf
-  · simp
-  rw [← HahnSeries.order_eq_orderTop_of_ne_zero hf]
-  refine HahnSeries.orderTop_le_of_coeff_ne_zero ?_
-  rw [TauCeti.LaurentSeries.coeff_rescale, ne_eq, Units.mul_right_eq_zero]
-  exact HahnSeries.coeff_order_eq_zero.not.mpr hf
-
-private theorem orderTop_rescale {R : Type*} [CommRing R] (u : Rˣ) (f : R⸨X⸩) :
-    (TauCeti.LaurentSeries.rescale u f).orderTop = f.orderTop := by
-  refine le_antisymm (orderTop_rescale_le u f) ?_
-  have hinv : TauCeti.LaurentSeries.rescale u⁻¹ (TauCeti.LaurentSeries.rescale u f) = f := by
-    rw [← AlgEquiv.mul_apply, ← map_mul, inv_mul_cancel, map_one, AlgEquiv.one_apply]
-  simpa [hinv] using orderTop_rescale_le u⁻¹ (TauCeti.LaurentSeries.rescale u f)
-
 private theorem leadingCoeff_rescale {R : Type*} [CommRing R] (u : Rˣ) (f : R⸨X⸩) :
     (TauCeti.LaurentSeries.rescale u f).leadingCoeff = ↑(u ^ f.order) * f.leadingCoeff := by
   rcases eq_or_ne f 0 with rfl | hf
   · simp
+  have hresc : TauCeti.LaurentSeries.rescale u f =
+      HahnSeries.twistEquiv (zpowersHom Rˣ u) f := by
+    ext; simp
   have huf : TauCeti.LaurentSeries.rescale u f ≠ 0 := fun h0 ↦
     hf ((TauCeti.LaurentSeries.rescale u).injective (h0.trans (map_zero _).symm))
   have hord : (TauCeti.LaurentSeries.rescale u f).order = f.order :=
     WithTop.coe_injective (by
       rw [HahnSeries.order_eq_orderTop_of_ne_zero huf,
-        HahnSeries.order_eq_orderTop_of_ne_zero hf, orderTop_rescale])
+        HahnSeries.order_eq_orderTop_of_ne_zero hf, hresc, HahnSeries.orderTop_twistEquiv])
   rw [HahnSeries.leadingCoeff_eq, HahnSeries.leadingCoeff_eq, hord,
     TauCeti.LaurentSeries.coeff_rescale]
 
@@ -1012,12 +996,16 @@ private theorem orderTop_and_norm_leadingCoeff_smul_j {n : ℕ} [NeZero n]
       (fun τ ↦ j (toGLReal (NeZero.ne (n : ℤ)) A • τ)) =
       LaurentSeries.expand ℂ ((a ^ 2).toPNat (pow_pos ha_pos 2))
         (TauCeti.LaurentSeries.rescale u (UpperHalfPlane.laurentQExpansion 1 j)) :=
-    UpperHalfPlane.laurentQExpansion_toGLReal_smul periodic_j meromorphicAt_cuspFunction_j hA
+    UpperHalfPlane.laurentQExpansion_toGLReal_smul periodic_j_comp_ofComplex
+      meromorphicAt_cuspFunction_j hA
   have hj_ordTop : (UpperHalfPlane.laurentQExpansion 1 j).orderTop = ((-1 : ℤ) : WithTop ℤ) :=
     orderTop_laurentQExpansion_j
   refine ⟨?_, ?_⟩
-  · rw [hL₂, LaurentSeries.orderTop_expand (R := ℂ), orderTop_rescale, hj_ordTop,
-      ← WithTop.coe_nsmul]
+  · have hresc : TauCeti.LaurentSeries.rescale u (UpperHalfPlane.laurentQExpansion 1 j) =
+        HahnSeries.twistEquiv (zpowersHom ℂˣ u) (UpperHalfPlane.laurentQExpansion 1 j) := by
+      ext; simp
+    rw [hL₂, LaurentSeries.orderTop_expand (R := ℂ), hresc, HahnSeries.orderTop_twistEquiv,
+      hj_ordTop, ← WithTop.coe_nsmul]
     exact WithTop.coe_eq_coe.mpr (by simp [Nat.toPNat])
   · have hj_ord : (UpperHalfPlane.laurentQExpansion 1 j).order = -1 := by
       have hj_ne : UpperHalfPlane.laurentQExpansion 1 j ≠ 0 := by
@@ -1046,8 +1034,8 @@ private theorem norm_leadingCoeff_factor_diag {n : ℕ} [NeZero n] (hn : ¬ IsSq
   have hL₁ : L₁ =
       LaurentSeries.expand ℂ (n.toPNat (NeZero.pos n)) (UpperHalfPlane.laurentQExpansion 1 j) := by
     simpa [mul_one, Nat.toPNat, L₁] using
-      UpperHalfPlane.laurentQExpansion_pnat_mul (h := 1) periodic_j meromorphicAt_cuspFunction_j
-        (n.toPNat (NeZero.pos n))
+      UpperHalfPlane.laurentQExpansion_pnat_mul (h := 1) periodic_j_comp_ofComplex
+        meromorphicAt_cuspFunction_j (n.toPNat (NeZero.pos n))
   have hj_ordTop : (UpperHalfPlane.laurentQExpansion 1 j).orderTop = ((-1 : ℤ) : WithTop ℤ) :=
     orderTop_laurentQExpansion_j
   have hord₁ : L₁.orderTop = ((-(n : ℤ) : ℤ) : WithTop ℤ) := by
@@ -1087,11 +1075,12 @@ theorem isUnit_leadingCoeff_modularPolynomialDiag {n : ℕ} [NeZero n] (hn : ¬ 
     exact Finset.prod_congr rfl fun A _ ↦ by simp
   have hj_mer_n : MeromorphicAt (cuspFunction n j) 0 := by
     simpa [mul_one, Nat.toPNat] using (UpperHalfPlane.meromorphicAt_cuspFunction_pnat_mul_iff
-      (h := 1) periodic_j (n.toPNat (NeZero.pos n))).mpr meromorphicAt_cuspFunction_j
+      (h := 1) periodic_j_comp_ofComplex (n.toPNat (NeZero.pos n))).mpr
+        meromorphicAt_cuspFunction_j
   have hmer_fac : ∀ A ∈ primitiveReps (n : ℤ),
       MeromorphicAt (cuspFunction n fun τ ↦ j τ - j (toGLReal (NeZero.ne (n : ℤ)) A • τ)) 0 :=
     fun A hA ↦ UpperHalfPlane.meromorphicAt_cuspFunction_sub hj_mer_n
-      (UpperHalfPlane.meromorphicAt_cuspFunction_toGLReal_smul periodic_j
+      (UpperHalfPlane.meromorphicAt_cuspFunction_toGLReal_smul periodic_j_comp_ofComplex
         meromorphicAt_cuspFunction_j (mem_primitiveReps.mp hA).1)
   have hq_lhs : (UpperHalfPlane.laurentQExpansion n fun τ ↦ aeval (j τ) P).leadingCoeff =
       (P.leadingCoeff : ℂ) := by
@@ -1111,7 +1100,7 @@ theorem isUnit_leadingCoeff_modularPolynomialDiag {n : ℕ} [NeZero n] (hn : ¬ 
     have hsub : (fun τ : ℍ ↦ j τ - j (toGLReal (NeZero.ne (n : ℤ)) A • τ)) =
         j - fun τ ↦ j (toGLReal (NeZero.ne (n : ℤ)) A • τ) := rfl
     rw [hsub, UpperHalfPlane.laurentQExpansion_sub hj_mer_n
-      (UpperHalfPlane.meromorphicAt_cuspFunction_toGLReal_smul periodic_j
+      (UpperHalfPlane.meromorphicAt_cuspFunction_toGLReal_smul periodic_j_comp_ofComplex
         meromorphicAt_cuspFunction_j (mem_primitiveReps.mp hA).1)]
     exact norm_leadingCoeff_factor_diag hn hA
   rw [hq_lhs, Complex.norm_intCast] at hq_rhs
