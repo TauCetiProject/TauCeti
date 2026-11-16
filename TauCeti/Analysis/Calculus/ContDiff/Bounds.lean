@@ -41,6 +41,8 @@ how symbol estimates are proved near the zero frequency, where no decay is neede
   most `n` of a `C^n` map are bounded by one constant.
 * `ContDiffOn.exists_nonneg_bound_iteratedFDeriv_of_isOpen`: the same for the derivatives of a
   map that is `C^n` on an open set, with a nonnegative constant.
+* `TauCeti.exists_forall_norm_iteratedFDeriv_le_of_isCompact`: one nonnegative constant bounds the
+  derivatives of order at most `n` of finitely many `C^n` maps on a compact set.
 * `HasCompactSupport.exists_bound_iteratedFDeriv_of_contDiff`: the derivatives of order at most `n`
   of a compactly supported `C^n` map are bounded by one constant.
 * `ContDiff.exists_forall_sum_fderiv_single_sq_le_of_hasCompactSupport_fderiv`: a `C¹` function on
@@ -57,7 +59,9 @@ how symbol estimates are proved near the zero frequency, where no decay is neede
 * `ContDiff.exists_norm_iteratedFDeriv_le_of_eq_of_lt_norm`: a smooth map which agrees outside a
   ball with a map of bounded order-`n` derivative has a bounded order-`n` derivative.
 * `ContinuousLinearMap.norm_iteratedFDeriv_le_two_pow_mul_of_bilinear`: the Leibniz bound for
-  `x ↦ B (f x) (g x)` when the derivatives of `f` and `g` have uniform bounds.
+  `x ↦ B (f x) (g x)` when the derivatives of `f` and `g` have uniform bounds;
+  `TauCeti.norm_iteratedFDeriv_mul_le_of_tsupport_subset` is the version for a product `f g`
+  where `f` is only controlled near the support of `g`.
 * `ContDiff.norm_iteratedFDeriv_comp_const_smul_le`: rescaling the variable by `c` with
   `1 ≤ ‖c‖` multiplies uniform derivative bounds of order at most `N` by at most `‖c‖ ^ N`.
 * `ContinuousLinearMap.isBigO_iteratedFDeriv_of_bilinear`: along any filter, if the derivatives of
@@ -368,5 +372,54 @@ theorem norm_iteratedFDeriv_comp_le_of_contDiffAt {n : ℕ} {f : E → F}
   · intro j hj₁ hj
     rw [iteratedFDerivWithin_of_isOpen j hU hxU]
     exact hD j hj₁ hj
+
+/-- On a compact set `K`, the derivatives of order at most `n` of finitely many `C^n` maps
+`f i`, `i ∈ s`, are bounded by a single nonnegative constant. -/
+theorem exists_forall_norm_iteratedFDeriv_le_of_isCompact {ι : Type*} (s : Finset ι)
+    {f : ι → E → F} {n : ℕ} (hf : ∀ i ∈ s, ContDiff 𝕜 n (f i)) {K : Set E} (hK : IsCompact K) :
+    ∃ C, 0 ≤ C ∧ ∀ i ∈ s, ∀ j ≤ n, ∀ y ∈ K, ‖iteratedFDeriv 𝕜 j (f i) y‖ ≤ C := by
+  have h (i : ι) : ∃ C, 0 ≤ C ∧ (i ∈ s → ∀ j ≤ n, ∀ y ∈ K, ‖iteratedFDeriv 𝕜 j (f i) y‖ ≤ C) := by
+    by_cases hi : i ∈ s
+    · obtain ⟨C, hC0, hC⟩ := (hf i hi).contDiffOn.exists_nonneg_bound_iteratedFDeriv_of_isOpen
+        isOpen_univ hK (subset_univ K)
+      exact ⟨C, hC0, fun _ ↦ hC⟩
+    · exact ⟨0, le_rfl, fun h ↦ absurd h hi⟩
+  choose C hC0 hC using h
+  exact ⟨∑ i ∈ s, C i, Finset.sum_nonneg fun i _ ↦ hC0 i, fun i hi j hj y hy ↦
+    (hC i hi j hj y hy).trans (Finset.single_le_sum (fun i _ ↦ hC0 i) hi)⟩
+
+/-- **Leibniz bound with uniform constants on a support.** Let `g` be `C^N` with topological
+support in `K`, and let `f` be `C^N` on an open set `W ⊇ K`. If the derivatives of order at most
+`n ≤ N` of `f` are bounded by `C ≥ 0` on `K` and those of `g` by `D` everywhere, then those of
+`f g` are bounded by `2 ^ n * C * D` everywhere; the values of `f` outside `W` do not matter. -/
+theorem norm_iteratedFDeriv_mul_le_of_tsupport_subset {A : Type*} [NormedRing A]
+    [NormedAlgebra 𝕜 A] {f g : E → A} {K W : Set E} (hW : IsOpen W) (hKW : K ⊆ W) {N : WithTop ℕ∞}
+    (hf : ContDiffOn 𝕜 N f W) (hg : ContDiff 𝕜 N g) (hgK : tsupport g ⊆ K) {n : ℕ}
+    (hn : n ≤ N) {C D : ℝ} (hC0 : 0 ≤ C)
+    (hfC : ∀ i ≤ n, ∀ y ∈ K, ‖iteratedFDeriv 𝕜 i f y‖ ≤ C)
+    (hgD : ∀ i ≤ n, ∀ y, ‖iteratedFDeriv 𝕜 i g y‖ ≤ D) (y : E) :
+    ‖iteratedFDeriv 𝕜 n (fun z ↦ f z * g z) y‖ ≤ 2 ^ n * C * D := by
+  by_cases hy : y ∈ tsupport g
+  · have hyW := hKW (hgK hy)
+    have h := norm_iteratedFDerivWithin_mul_le hf hg.contDiffOn hW.uniqueDiffOn hyW hn
+    simp_rw [iteratedFDerivWithin_of_isOpen _ hW hyW] at h
+    refine h.trans ?_
+    calc ∑ i ∈ Finset.range (n + 1), (n.choose i : ℝ) * ‖iteratedFDeriv 𝕜 i f y‖ *
+          ‖iteratedFDeriv 𝕜 (n - i) g y‖
+        ≤ ∑ i ∈ Finset.range (n + 1), (n.choose i : ℝ) * C * D := by
+          gcongr with i hi
+          · exact hfC i (Nat.lt_succ_iff.1 (Finset.mem_range.1 hi)) y (hgK hy)
+          · exact hgD _ (Nat.sub_le n i) y
+      _ = 2 ^ n * C * D := by
+          rw [← Finset.sum_mul, ← Finset.sum_mul]
+          congr 2
+          exact_mod_cast Nat.sum_range_choose n
+  · have h0 : (fun z ↦ f z * g z) =ᶠ[nhds y] 0 := by
+      filter_upwards [notMem_tsupport_iff_eventuallyEq.1 hy] with z hz
+      simp [hz]
+    rw [(h0.iteratedFDeriv (𝕜 := 𝕜) n).self_of_nhds, iteratedFDeriv_zero, Pi.zero_apply,
+      norm_zero]
+    have hD0 : 0 ≤ D := (norm_nonneg _).trans (hgD 0 (Nat.zero_le _) y)
+    positivity
 
 end TauCeti

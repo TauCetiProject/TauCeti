@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Analysis.Distribution.TestFunction
 import Mathlib.Analysis.Calculus.FDeriv.Symmetric
+import TauCeti.Analysis.Calculus.IteratedFDeriv.FDerivApply
 public import Mathlib.Analysis.InnerProductSpace.Laplacian
 
 /-!
@@ -27,6 +28,8 @@ a weak derivative be tested against `g φ` when `g` is only smooth inside `Ω`.
 * `TestFunction.lineDerivOp_apply`: `∂_{v} φ` is the classical directional derivative of `φ`.
 * `TestFunction.lineDerivOp_apply_eq_fderiv`: `∂_{v} φ x = Dφ(x) v`.
 * `TestFunction.tsupport_lineDerivOp_subset`: `∂_{v} φ` is supported in the support of `φ`.
+* `TestFunction.norm_iteratedFDeriv_lineDerivOp_le`: the derivatives of order at most `r` of
+  `∂_{v} φ` are bounded by `‖v‖` times a bound on those of order at most `r + 1` of `φ`.
 * `TestFunction.smul_fderiv_apply_eq_of_eqOn_one`: a first derivative of `φ` is unchanged by a
   factor equal to `1` on `Ω`.
 * `TestFunction.lineDerivOp_one_apply_eq_deriv`: on the real line, `∂_{1} φ` is the derivative
@@ -74,6 +77,15 @@ theorem tsupport_lineDerivOp_subset (φ : 𝓓(Ω, F)) (v : E) :
     tsupport (∂_{v} φ : 𝓓(Ω, F)) ⊆ tsupport φ := by
   rw [funext (lineDerivOp_apply_eq_fderiv φ v)]
   exact tsupport_fderiv_apply_subset ℝ v
+
+/-- The derivatives of order at most `r` of `∂_v φ` are bounded by `‖v‖` times a bound on the
+derivatives of order at most `r + 1` of `φ`. -/
+theorem norm_iteratedFDeriv_lineDerivOp_le (φ : 𝓓(Ω, F)) (v : E) {r : ℕ} {B : ℝ}
+    (hB : ∀ i ≤ r + 1, ∀ y, ‖iteratedFDeriv ℝ i φ y‖ ≤ B) :
+    ∀ i ≤ r, ∀ y, ‖iteratedFDeriv ℝ i (∂_{v} φ : 𝓓(Ω, F)) y‖ ≤ ‖v‖ * B := by
+  rw [funext (lineDerivOp_apply_eq_fderiv φ v)]
+  exact fun i hi y ↦ (φ.contDiff.norm_iteratedFDeriv_fderiv_apply_le_of_forall_le (by simp) hB v i
+    hi y).trans_eq (mul_comm _ _)
 
 /-- Scaling a first derivative of a test function on `Ω` by a function equal to `1` on `Ω` does not
 change it, since the derivative vanishes off `Ω`. -/
