@@ -31,6 +31,8 @@ indexed by.
   space, a compact subset of an open set `U` lies in an open set with compact closure inside `U`.
 * `TopologicalSpace.Opens.le_iSup_iff_subset_iUnion` : an open set lies below the supremum of a
   family of open sets exactly when their underlying sets cover it.
+* `TopologicalSpace.Opens.isEmpty_of_iSup_eq_top` : a space covered by an empty family of open
+  sets is empty.
 * `TopologicalSpace.Opens.sigmaCompactSpace_top` : the open subset `⊤` of a σ-compact space is
   σ-compact.
 * `TopologicalSpace.Opens.IsBasis.exists_finset_sup_le_of_isCompact` : a compact subset of an
@@ -93,6 +95,11 @@ sets cover it. -/
 theorem le_iSup_iff_subset_iUnion {ι : Sort*} {U : Opens X} {V : ι → Opens X} :
     U ≤ ⨆ i, V i ↔ (U : Set X) ⊆ ⋃ i, (V i : Set X) := by
   rw [← SetLike.coe_subset_coe, coe_iSup]
+
+/-- A space covered by an empty family of open sets is empty. -/
+theorem isEmpty_of_iSup_eq_top {ι : Sort*} [IsEmpty ι] {U : ι → Opens X}
+    (hcover : ⨆ i, U i = ⊤) : IsEmpty X :=
+  ⟨fun y ↦ (mem_iSup.1 (hcover.ge (mem_top y))).elim fun i _ ↦ isEmptyElim i⟩
 
 /-- The open subset `⊤` of a σ-compact space is σ-compact, being a closed subspace. -/
 instance sigmaCompactSpace_top [SigmaCompactSpace X] : SigmaCompactSpace (⊤ : Opens X) :=

@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Algebra.Category.ModuleCat.FilteredColimits
+public import TauCeti.Algebra.Category.ModuleCat.FilteredColimits
 public import Mathlib.Algebra.Homology.LocalCohomology
 public import Mathlib.Algebra.Module.Torsion.PrimaryComponent
 public import TauCeti.CategoryTheory.Abelian.Ext
@@ -136,11 +136,6 @@ private theorem range_degreeZeroCocone_ι_app (t : ℕᵒᵖᵒᵖ) :
       (Submodule.torsionBySet R M ((J ^ t.unop.unop : Ideal R) : Set R) : Set M) :=
   ((ConcreteCategory.bijective_of_isIso (extZeroIso _ M).hom).2.range_comp (evalOne M _)).trans
     (range_evalOne M _)
-
-/-- The forgetful functor of `R`-modules preserves colimits indexed by `ℕᵒᵖᵒᵖ`, which is
-filtered; the shape lives in `Type`, below the universe of `R`. -/
-private instance : PreservesFilteredColimitsOfSize.{0, 0} (forget (ModuleCat.{u} R)) :=
-  preservesFilteredColimitsOfSize_shrink.{0, u, 0, u} _
 
 /-- The colimit cocone defining local cohomology, evaluated at `M`, is a colimit cocone. -/
 private noncomputable def isColimitEvaluation :
