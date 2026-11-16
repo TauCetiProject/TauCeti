@@ -142,14 +142,19 @@ theorem exists_recoloring_abs_pairColorDensity_sub_le [Fintype κ] (S : PairColo
       exact Nat.mul_le_mul (card_le_card (mem_powerset.1 hs')) (card_le_card (mem_powerset.1 ht')))
     (a := ε ^ 3 * #s * #t)
     (mul_pos (mul_pos (pow_pos hε 3) hs0) ht0) (by
-      have ha_eq : ε ^ 3 * (#s : ℝ) * #t = ε ^ 3 * (#s * #t : ℕ) := by push_cast; ring
-      rw [ha_eq]; refine lt_of_le_of_lt (mul_le_mul_of_nonneg_right (mul_le_mul_of_nonneg_right
-        (by linarith only) (Nat.cast_nonneg _)) (exp_pos _).le) (two_mul_add_one_mul_exp_lt_one
-        (k := #s + #t) (by rw [Fintype.card_coe, card_product, card_powerset, card_powerset,
-          ← pow_add]) ?_)
-      rw [Nat.cast_add, Nat.cast_mul]; nlinarith only [Nat.one_le_cast (α := ℝ).2
-        (Fintype.card_pos (α := κ)), Nat.one_le_cast (α := ℝ).2 (Nat.cast_pos.1 hs0),
-        Nat.one_le_cast (α := ℝ).2 (Nat.cast_pos.1 ht0), mul_le_mul_of_nonneg_right hs ht0.le,
+      have ha_eq : ε ^ 3 * (#s : ℝ) * #t = ε ^ 3 * (#s * #t : ℕ) := by
+        push_cast
+        ring
+      rw [ha_eq]
+      refine lt_of_le_of_lt (mul_le_mul_of_nonneg_right (mul_le_mul_of_nonneg_right
+        (by linarith only) (Nat.cast_nonneg _)) (exp_pos _).le)
+        (two_mul_add_one_mul_exp_lt_one (k := #s + #t) (by
+          rw [Fintype.card_coe, card_product, card_powerset, card_powerset, ← pow_add]) ?_)
+      rw [Nat.cast_add, Nat.cast_mul]
+      nlinarith only [Nat.one_le_cast (α := ℝ).2 (Fintype.card_pos (α := κ)),
+        Nat.one_le_cast (α := ℝ).2 (Nat.cast_pos.1 hs0),
+        Nat.one_le_cast (α := ℝ).2 (Nat.cast_pos.1 ht0),
+        mul_le_mul_of_nonneg_right hs ht0.le,
         mul_le_mul_of_nonneg_right ht hs0.le])
   refine ⟨S.recolorProduct hst x, rfl, fun u v ↦ colorOfPair_recolorProduct_of_not_mem hst x, ?_⟩
   intro c s' hs' t' ht' hs's ht't
@@ -225,9 +230,10 @@ private theorem two_mul_rect_add_one_mul_exp_lt [Fintype κ] {η : ℝ}
       (Nat.cast_nonneg (Fintype.card κ) : (0 : ℝ) ≤ _)]
   have hs1 : (1 : ℝ) ≤ #s := Nat.one_le_cast.2 (Nat.cast_pos.1 hs0)
   have ht1 : (1 : ℝ) ≤ #t := Nat.one_le_cast.2 (Nat.cast_pos.1 ht0)
-  have hcast : ((2 ^ #s * 2 ^ #t + 1 : ℕ) : ℝ) = ((2 ^ #s * 2 ^ #t : ℕ) : ℝ) + 1 := by
-    push_cast; rfl
-  have ha_eq : η * (#s : ℝ) * #t = η * (#s * #t : ℕ) := by push_cast; ring
+  have hcast : ((2 ^ #s * 2 ^ #t + 1 : ℕ) : ℝ) = ((2 ^ #s * 2 ^ #t : ℕ) : ℝ) + 1 :=
+    Nat.cast_add_one _
+  have ha_eq : η * (#s : ℝ) * #t = η * (#s * #t : ℕ) := by
+    rw [Nat.cast_mul, mul_assoc]
   rw [hcast, ha_eq]
   refine two_mul_add_one_mul_exp_lt_one (k := #s + #t) (by rw [pow_add]) ?_
   rw [Nat.cast_add, Nat.cast_mul]

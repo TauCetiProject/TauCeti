@@ -139,7 +139,7 @@ theorem complexity_le :
 def ComplexityBounded (b : ℕ) : Prop :=
   C.complexity ≤ b
 
-variable {C} {a b : ℕ} in
+variable {C} {b : ℕ} in
 /-- Unfolded form of `TriadicComplex3.ComplexityBounded`. -/
 theorem complexityBounded_iff : C.ComplexityBounded b ↔ C.complexity ≤ b :=
   Iff.rfl

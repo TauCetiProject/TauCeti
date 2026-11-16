@@ -16,7 +16,8 @@ subtriad tests used in hypergraph regularity; restricting the three vertex cells
 special case, supplied by `Subpolyad3.ofSubcells`.
 
 Subpolyads are extensional in their three selected pair graphs and form a finite type, even
-without a finite pair palette. Their supports lie in the parent support. Nonempty finite
+without a finite pair palette, with cardinality `card_subpolyad3` (at most `2 ^ (3 * |V| ^ 2)`,
+`card_subpolyad3_le`). Their supports lie in the parent support. Nonempty finite
 intersections are formed coordinatewise and their supports are the intersections of the supports.
 The subcell constructor accepts arbitrary vertex sets and intersects with the parent pair supports,
 so no containment hypotheses are needed. `Subpolyad3.unionSupport` collects the supports
@@ -425,5 +426,37 @@ theorem unionSupport_restrict {κ' : Type*} {S' : PairSkeleton3 κ' V} {P' : Pol
   simp only [mem_unionSupport, support_restrict, mem_inter, exists_and_right]
 
 end Subpolyad3
+
+/-- The number of subpolyads of `P` is
+`2 ^ (#P.pairSupport₀₁ + #P.pairSupport₀₂ + #P.pairSupport₁₂)`, since a subpolyad independently
+selects a subset of each of the three pair supports of `P`. -/
+theorem card_subpolyad3 (P : Polyad3 S) :
+    Fintype.card (Subpolyad3 P) =
+      2 ^ (#P.pairSupport₀₁ + #P.pairSupport₀₂ + #P.pairSupport₁₂) := by
+  classical
+  let e : Subpolyad3 P ≃
+      ↥(P.pairSupport₀₁.powerset ×ˢ P.pairSupport₀₂.powerset ×ˢ P.pairSupport₁₂.powerset) :=
+    { toFun W := ⟨(W.pair₀₁, W.pair₀₂, W.pair₁₂), mem_product.2
+        ⟨mem_powerset.2 W.pair₀₁_sub, mem_product.2
+          ⟨mem_powerset.2 W.pair₀₂_sub, mem_powerset.2 W.pair₁₂_sub⟩⟩⟩
+      invFun q := ⟨q.1.1, q.1.2.1, q.1.2.2,
+        mem_powerset.1 (mem_product.1 q.2).1,
+        mem_powerset.1 (mem_product.1 (mem_product.1 q.2).2).1,
+        mem_powerset.1 (mem_product.1 (mem_product.1 q.2).2).2⟩
+      left_inv _ := rfl
+      right_inv _ := rfl }
+  rw [Fintype.card_congr e, Fintype.card_coe, card_product, card_product,
+    card_powerset, card_powerset, card_powerset, ← pow_add, ← pow_add, add_assoc]
+
+/-- Every polyad on `V` has at most `2 ^ (3 * |V| ^ 2)` subpolyads. -/
+theorem card_subpolyad3_le (P : Polyad3 S) :
+    Fintype.card (Subpolyad3 P) ≤ 2 ^ (3 * Fintype.card V ^ 2) := by
+  rw [card_subpolyad3]
+  have hpair (A : Finset {p : V × V // p.1 ≠ p.2}) : #A ≤ Fintype.card V ^ 2 :=
+    (card_le_univ A).trans ((Fintype.card_subtype_le _).trans_eq (by rw [Fintype.card_prod, sq]))
+  have := hpair P.pairSupport₀₁
+  have := hpair P.pairSupport₀₂
+  have := hpair P.pairSupport₁₂
+  exact Nat.pow_le_pow_right two_pos (by omega)
 
 end TauCeti
