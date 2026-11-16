@@ -53,9 +53,9 @@ large-parameter Seiberg–Witten solutions, with `h = (2r)^(-1/2)`, these are th
 coarse estimates on `1 - |α|²` and `∂bar_a α`.
 
 **Normal dilations.** Near a pseudoholomorphic curve, Taubes's analysis dilates the normal
-directions by a factor `a → 0` with `h / a → 0`. In a flat chart `ℂ_base × ℂ_normal` whose complex
-structure preserves the two factors this is the linear map `L(z, w) = (z, a w)`, which commutes
-with `J` and has `|det L| = a²`, and `‖L‖ ≤ 1` for `a ≤ 1` in the product norm.
+directions by a factor `λ → 0` with `h / λ → 0`. In a flat chart `ℂ_base × ℂ_normal` whose complex
+structure preserves the two factors this is the linear map `L(z, w) = (z, λ w)`, which commutes
+with `J` and has `|det L| = λ²`, and `‖L‖ ≤ 1` for `λ ≤ 1` in the product norm.
 The comparison holds for the pullbacks `L^* Θ` and `L^* i F_a` along any invertible linear map `L`
 commuting with `J`: the currents and `∂bar_a α` of the pulled-back pair `(L^* b, α ∘ L)` are the
 pullbacks of those of `(b, α)` (`TauCeti.SeibergWitten.cutoffCurrent_comp`,
@@ -70,9 +70,9 @@ same constant `C`. The integrals are over the image `L K`, a tube of volume
 `∫_{L K} |∂bar_a α|² ≤ D₂` give the bound
 `C (A₂ / c D₁ / |det L| + A₁ / √c ‖L‖ √(D₂ Vol K / |det L|))`
 (`exists_abs_integral_cutoffCurrent_add_extDeriv_compContinuousLinearMap_wedge_le_sqrt`).
-For the normal dilation and `D₁, D₂ = O(h²)` this is `O((h / a)² + h / a)`, with the `C²` norm of
+For the normal dilation and `D₁, D₂ = O(h²)` this is `O((h / λ)² + h / λ)`, with the `C²` norm of
 `ζ` entering through `A₂` and its `C¹` norm through `A₁`. Hence along a family with
-`h² / |det L| → 0`, in particular `h / a → 0`, the pairings of `L^* Θ` and of `L^* i F_a` with each
+`h² / |det L| → 0`, in particular `h / λ → 0`, the pairings of `L^* Θ` and of `L^* i F_a` with each
 fixed test form differ by a quantity tending to zero
 (`tendsto_integral_cutoffCurrent_add_extDeriv_compContinuousLinearMap_wedge`):
 the dilated cutoff current and the dilated curvature current of the original connection have the
@@ -314,9 +314,9 @@ image `L K` of the support of the test form `∫_{L K} |1 - |α|²| ≤ D₁` an
 
 `|∫ L^* (Θ - i F_a) ∧ ζ| ≤ C (A₂ / c D₁ / |det L| + A₁ / √c ‖L‖ √(D₂ Vol K / |det L|))`.
 
-For the dilation `(z, w) ↦ (z, a w)` of the normal factor of `ℂ_base × ℂ_normal` one has
-`|det L| = a²` and `‖L‖ ≤ 1` for `a ≤ 1` in the product norm, and Taubes's bounds
-`D₁, D₂ = O(h²)` on the tube make the right side `O((h / a)²) + O(h / a)`. -/
+For the dilation `(z, w) ↦ (z, λ w)` of the normal factor of `ℂ_base × ℂ_normal` one has
+`|det L| = λ²` and `‖L‖ ≤ 1` for `λ ≤ 1` in the product norm, and Taubes's bounds
+`D₁, D₂ = O(h²)` on the tube make the right side `O((h / λ)²) + O(h / λ)`. -/
 theorem exists_abs_integral_cutoffCurrent_add_extDeriv_compContinuousLinearMap_wedge_le_sqrt
     (e : Module.Basis (Fin (2 + n)) ℝ E) :
     ∃ C, 0 ≤ C ∧ ∀ ⦃χ : ℝ → ℝ⦄ ⦃b : E → E [⋀^Fin 1]→L[ℝ] ℝ⦄ ⦃α : E → ℂ⦄
@@ -345,18 +345,15 @@ theorem exists_abs_integral_cutoffCurrent_add_extDeriv_compContinuousLinearMap_w
     (continuous_covariantDBar J (hα.of_le one_le_two) hb.continuous).norm
   have : IsFiniteMeasure (μ.restrict S) := isFiniteMeasure_restrict.2 hS.measure_lt_top.ne
   obtain ⟨B, hB⟩ := hS.exists_bound_of_continuousOn hf.continuousOn
-  have hm : MemLp (fun y ↦ ‖covariantDBar J b α y‖) 2 (μ.restrict S) :=
-    MemLp.of_bound hf.aestronglyMeasurable B (ae_restrict_of_forall_mem hS.measurableSet hB)
-  have hCS := sq_integral_mul_le_integral_sq_mul_integral_sq hm (memLp_const (1 : ℝ))
-  simp only [mul_one, one_pow, integral_const, smul_eq_mul, measureReal_restrict_apply_univ]
-    at hCS
+  have hCS := sq_setIntegral_le_measureReal_mul_setIntegral_sq (μ := μ) hS.measure_lt_top.ne
+    (MemLp.of_bound hf.aestronglyMeasurable B (ae_restrict_of_forall_mem hS.measurableSet hB))
   have hvol : μ.real S = |L.det| * μ.real K := by
     simp [S, measureReal_def, Measure.addHaar_image_continuousLinearMap, ENNReal.toReal_mul,
       abs_nonneg]
   have hY : ∫ y in S, ‖covariantDBar J b α y‖ ∂μ ≤ √(D₂ * (|L.det| * μ.real K)) := by
     refine (le_abs_self _).trans (Real.abs_le_sqrt (hCS.trans ?_))
-    rw [← hvol]
-    exact mul_le_mul_of_nonneg_right hD₂ measureReal_nonneg
+    rw [← hvol, mul_comm D₂]
+    exact mul_le_mul_of_nonneg_left hD₂ measureReal_nonneg
   have hA₁0 : 0 ≤ A₁ := (norm_nonneg _).trans (hA₁ 0)
   have hA₂0 : 0 ≤ A₂ := (ContinuousLinearMap.opNorm_nonneg _).trans (hA₂ 0)
   -- `|det L|⁻¹ √(D₂ |det L| Vol K) = √(D₂ Vol K / |det L|)`.
@@ -369,17 +366,19 @@ theorem exists_abs_integral_cutoffCurrent_add_extDeriv_compContinuousLinearMap_w
       ≤ C * (A₂ / c * |L.det|⁻¹ * D₁ +
         A₁ / √c * ‖L‖ * |L.det|⁻¹ * √(D₂ * (|L.det| * μ.real K))) := by gcongr
     _ = _ := by
-        rw [mul_assoc (A₁ / √c * ‖L‖), hsq, div_eq_inv_mul D₁, ← mul_assoc]
+        rw [← hsq]
+        ring
 
 /-- **The dilated cutoff and curvature currents have the same weak limits.** Let `ζ` be a
 compactly supported `C²` test form and `χ` a `C¹` cutoff with `|χ| ≤ 1` vanishing below `c > 0`.
-Let `(bᵢ, αᵢ)` be pairs and `Lᵢ` invertible linear maps commuting with `J`, with `‖Lᵢ‖ ≤ B`.
+Let `(bᵢ, αᵢ)` be pairs, with connections `i bᵢ`, and `Lᵢ` invertible linear maps commuting
+with `J`, with `‖Lᵢ‖ ≤ B`.
 Suppose that on the images `Lᵢ (supp ζ)` the bounds `∫ |1 - |αᵢ|²| ≤ M hᵢ²` and
-`∫ |∂bar_a αᵢ|² ≤ M hᵢ²` hold and that `hᵢ² / |det Lᵢ| → 0`. Then
-`∫ Lᵢ^* (Θᵢ - i F_{aᵢ}) ∧ ζ → 0`: the pairings of the pullbacks of the cutoff currents and of the
+`∫ |∂bar_{i bᵢ} αᵢ|² ≤ M hᵢ²` hold and that `hᵢ² / |det Lᵢ| → 0`. Then
+`∫ Lᵢ^* (Θᵢ + d bᵢ) ∧ ζ → 0`: the pairings of the pullbacks of the cutoff currents and of the
 curvature currents with `ζ` differ by a quantity tending to zero. For the dilations
-`(z, w) ↦ (z, aᵢ w)` of the normal factor of `ℂ_base × ℂ_normal`, `|det Lᵢ| = aᵢ²` and the
-condition is `hᵢ / aᵢ → 0`. -/
+`(z, w) ↦ (z, λᵢ w)` of the normal factor of `ℂ_base × ℂ_normal`, `|det Lᵢ| = λᵢ²` and the
+condition is `hᵢ / λᵢ → 0`. -/
 theorem tendsto_integral_cutoffCurrent_add_extDeriv_compContinuousLinearMap_wedge
     {ι : Type*} {l : Filter ι} (e : Module.Basis (Fin (2 + n)) ℝ E) {χ : ℝ → ℝ} {c B M : ℝ}
     {ζ : E → E [⋀^Fin n]→L[ℝ] ℝ} {b : ι → E → E [⋀^Fin 1]→L[ℝ] ℝ} {α : ι → E → ℂ}
