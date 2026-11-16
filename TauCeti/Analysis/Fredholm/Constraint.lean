@@ -159,8 +159,8 @@ noncomputable def cokerProdHom : ((F × G) ⧸ (D.prod L).range) →ₗ[𝕜] F 
 /-- The cokernel map sends the class of `(y, g)` to the class of `y`. -/
 theorem cokerProdHom_mk (y : F × G) :
     cokerProdHom D L (Submodule.Quotient.mk y) = Submodule.Quotient.mk y.1 := by
-  rw [cokerProdHom, LinearMap.comp_apply, LinearMap.cokerToCokerComp_mk]
-  rfl
+  rw [cokerProdHom, LinearMap.comp_apply, LinearMap.cokerToCokerComp_mk, LinearEquiv.coe_coe,
+    Submodule.quotEquivOfEq_mk, LinearMap.fst_apply]
 
 /-- Every obstruction for `D` is the image of an obstruction for the extended operator. -/
 theorem cokerProdHom_surjective : Function.Surjective (cokerProdHom D L) := by
@@ -179,7 +179,8 @@ theorem ker_cokerProdHom :
   -- It remains to see that `inr` maps onto `ker fst`.
   rw [LinearMap.range_eq_top]
   rintro ⟨⟨y, g⟩, hy⟩
-  obtain rfl : y = 0 := hy
+  obtain rfl : y = 0 := LinearMap.mem_ker.mp hy
+  -- The corestriction of `inr` sends `g` to `(0, g)` by definition.
   exact ⟨g, rfl⟩
 
 /-- Exactness of `G → (F × G) ⧸ range (D.prod L) → F ⧸ range D` at the middle term. -/
