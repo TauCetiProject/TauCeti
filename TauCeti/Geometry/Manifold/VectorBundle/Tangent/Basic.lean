@@ -486,6 +486,51 @@ private theorem extChartAt_tangent_symm_trans_eq [IsManifold I 1 M] (z q : Tange
       tangentCoordChange I z.proj q.proj ((extChartAt I z.proj).symm a.1) a.2
     simpa only [hy] using hsecond
 
+/-- **Transition maps of the tangent bundle.** For a boundaryless model, a tangent vector `w` in
+the sources of the tangent charts at `w₀` and `w₁` has coordinates `(φ q, Dφ_q u)` in the chart at
+`w₁`, where `(q, u)` are its coordinates in the chart at `w₀` and `φ` is the change of base charts
+from `w₀.proj` to `w₁.proj`. -/
+theorem extChartAt_tangent_eq_fderiv [IsManifold I 1 M] [I.Boundaryless]
+    {w₀ w₁ w : TangentBundle I M} (h₀ : w ∈ (extChartAt I.tangent w₀).source)
+    (h₁ : w ∈ (extChartAt I.tangent w₁).source) :
+    extChartAt I.tangent w₁ w =
+      ((extChartAt I w₁.proj ∘ (extChartAt I w₀.proj).symm) (extChartAt I.tangent w₀ w).1,
+        fderiv 𝕜 (extChartAt I w₁.proj ∘ (extChartAt I w₀.proj).symm)
+          (extChartAt I.tangent w₀ w).1 (extChartAt I.tangent w₀ w).2) := by
+  set a := extChartAt I.tangent w₀ w
+  have haT : a ∈ (extChartAt I.tangent w₀).target := (extChartAt I.tangent w₀).map_source h₀
+  have ha : a ∈ ((extChartAt I.tangent w₀).symm ≫ extChartAt I.tangent w₁).source := by
+    rw [PartialEquiv.trans_source, PartialEquiv.symm_source]
+    refine ⟨haT, ?_⟩
+    rw [mem_preimage, (extChartAt I.tangent w₀).left_inv h₀]
+    exact h₁
+  have h := extChartAt_tangent_symm_trans_eq w₀ w₁ ha
+  rw [(extChartAt I.tangent w₀).left_inv h₀] at h
+  have ha₁ : a.1 ∈ (extChartAt I w₀.proj).target := by
+    rw [FiberBundle.extChartAt_target] at haT
+    exact haT.1.1
+  rw [h, tangentCoordChange_def, (extChartAt I w₀.proj).right_inv ha₁, I.range_eq_univ,
+    fderivWithin_univ]
+  -- The fibre coordinate change is the derivative applied to `a.2`, read in `E`.
+  rfl
+
+/-- **Changes of tangent-bundle charts, near a point.** For a boundaryless model, near the
+coordinates in the chart at `w₀` of a tangent vector `w` in the sources of the tangent charts at
+`w₀` and `w₁`, the inverse of the chart at `w₀` is the inverse of the chart at `w₁` precomposed with
+`(q, u) ↦ (φ q, Dφ_q u)`, where `φ` is the change of base charts from `w₀.proj` to `w₁.proj`. -/
+theorem extChartAt_tangent_symm_eventuallyEq [IsManifold I 1 M] [I.Boundaryless]
+    {w₀ w₁ w : TangentBundle I M} (h₀ : w ∈ (extChartAt I.tangent w₀).source)
+    (h₁ : w ∈ (extChartAt I.tangent w₁).source) :
+    (extChartAt I.tangent w₀).symm =ᶠ[𝓝 (extChartAt I.tangent w₀ w)] fun y ↦
+      (extChartAt I.tangent w₁).symm
+        ((extChartAt I w₁.proj ∘ (extChartAt I w₀.proj).symm) y.1,
+          fderiv 𝕜 (extChartAt I w₁.proj ∘ (extChartAt I w₀.proj).symm) y.1 y.2) := by
+  filter_upwards [extChartAt_target_mem_nhds' ((extChartAt I.tangent w₀).map_source h₀),
+    extChartAt_preimage_mem_nhds' h₀ (extChartAt_source_mem_nhds' h₁)] with y hy hy'
+  have hw := extChartAt_tangent_eq_fderiv ((extChartAt I.tangent w₀).map_target hy) hy'
+  rw [(extChartAt I.tangent w₀).right_inv hy] at hw
+  rw [← hw, (extChartAt I.tangent w₁).left_inv hy']
+
 private theorem tangentCoordChange_tangent_eventuallyEq [IsManifold I 1 M] {x x₀ : M}
     (hx₀ : x ∈ (extChartAt I x₀).source) (u : E) :
     ((extChartAt I.tangent (TotalSpace.mk' E x₀ 0) : TangentBundle I M → E × E) ∘

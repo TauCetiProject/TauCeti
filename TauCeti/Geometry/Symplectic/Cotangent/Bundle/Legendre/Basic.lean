@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.Symplectic.Cotangent.Bundle.Liouville
+public import TauCeti.Geometry.Symplectic.Hamiltonian.EulerLagrange
 import Mathlib.Geometry.Manifold.ContMDiffMFDeriv
 import TauCeti.Analysis.Calculus.Bilinear
 import TauCeti.Geometry.Manifold.LocalDiffeomorph.Basic
@@ -30,7 +31,8 @@ derivative**, or **Legendre map**, `FL : TM → T*M`
 
 the derivative at `v` of `L` restricted to the fibre `T_x M`. This needs no chart or connection,
 since only derivatives along a single fibre occur, and it covers the identity of `M`. In a bundle
-chart with coordinates `(q, v)` it is the partial derivative `(q, v) ↦ (q, ∂L/∂v)`, so it loses one
+chart with coordinates `(q, v)` it is the partial derivative `(q, v) ↦ (q, ∂L/∂v)` of the local
+Lagrangian `L ∘ (chart)⁻¹` (`TauCeti.extChartAt_legendreMap_extChartAt_symm`), so it loses one
 degree of smoothness: if `L` is `C^n` then `FL` is `C^m` whenever `m + 1 ≤ n`
 (`TauCeti.contMDiff_legendreMap`).
 
@@ -81,6 +83,8 @@ Riemannian metric (`TauCeti.isRegularLagrangian_mechanicalLagrangian`).
 
 * `TauCeti.legendreMap`: the fibre derivative `FL : TM → T*M` of a Lagrangian.
 * `TauCeti.contMDiff_legendreMap`: `FL` is `C^m` when `L` is `C^n` and `m + 1 ≤ n`.
+* `TauCeti.extChartAt_legendreMap_extChartAt_symm`: in a tangent-bundle chart, `FL` is the
+  Legendre map `TauCeti.linearLegendreMap` of the local Lagrangian.
 * `TauCeti.lagrangianEnergy`: the energy `E_L(v) = FL(v)(v) - L(v)`, with
   `TauCeti.contMDiff_lagrangianEnergy`.
 * `TauCeti.fiberHessian`, `TauCeti.IsRegularLagrangian`: the fibre Hessian of a Lagrangian, and
@@ -772,5 +776,63 @@ theorem isRegularLagrangian_mechanicalLagrangian [FiniteDimensional ℝ E]
     ContinuousLinearMap.isInvertible_of_pos (E := E) (hpos x)
 
 end Mechanical
+
+/-! ### The Legendre map in tangent-bundle charts -/
+
+section Chart
+
+variable {E H : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [TopologicalSpace H]
+  {I : ModelWithCorners ℝ E H} {M : Type*} [TopologicalSpace M] [ChartedSpace H M]
+  [IsManifold I 1 M]
+
+/-- **The Legendre map in a tangent-bundle chart.** Read in the tangent-bundle chart at `v` and the
+cotangent-bundle chart at `FL(v)`, the Legendre map is the Legendre map
+`(q, u) ↦ (q, ∂_u ℓ(q, u))` of the local Lagrangian `ℓ = L ∘ (chart at v)⁻¹`. -/
+theorem extChartAt_legendreMap_extChartAt_symm (L : TangentBundle I M → ℝ) (v : TangentBundle I M)
+    {y : E × E} (hy : y ∈ (extChartAt I.tangent v).target) :
+    extChartAt (I.prod 𝓘(ℝ, E →L[ℝ] ℝ)) (legendreMap L v)
+        (legendreMap L ((extChartAt I.tangent v).symm y)) =
+      linearLegendreMap (L ∘ (extChartAt I.tangent v).symm) y := by
+  set w := (extChartAt I.tangent v).symm y
+  set e := trivializationAt E (TangentSpace I) v.proj
+  have hy₁ : y.1 ∈ (extChartAt I v.proj).target := Bundle.fst_mem_extChartAt_target v hy
+  have hwproj : w.proj = (extChartAt I v.proj).symm y.1 := Bundle.proj_extChartAt_symm v hy
+  have hb : w.proj ∈ e.baseSet :=
+    hwproj ▸ TangentBundle.extChartAt_symm_mem_trivializationAt_baseSet hy₁
+  have hw2 : (e w).2 = y.2 := by
+    rw [← (extChartAt I.tangent v).right_inv hy, Bundle.extChartAt_apply_of_mem_baseSet v hb]
+  rw [CotangentBundle.extChartAt_apply]
+  refine Prod.ext ?_ ?_
+  · simp only [linearLegendreMap_fst, proj_legendreMap, hwproj]
+    exact (extChartAt I v.proj).right_inv hy₁
+  · -- The base point of `FL w` is that of `w`, by definition of the Legendre map.
+    refine (legendreMap_snd_comp_symmL L hb).trans ?_
+    rw [linearLegendreMap_snd, hw2]
+    congr 1
+    funext u
+    simp only [Function.comp_apply]
+    rw [Bundle.extChartAt_symm_apply_of_mem_baseSet v (hwproj ▸ hb), ← hwproj,
+      Trivialization.symmL_apply _ hb]
+
+/-- In the tangent-bundle chart at `v`, the pairing `FL(w)(w)` in the energy of a tangent vector
+`w` with coordinates `y` is `∂_u ℓ(y)(y.2)`, for the local Lagrangian `ℓ = L ∘ (chart at v)⁻¹`. -/
+theorem legendreMap_snd_extChartAt_symm (L : TangentBundle I M → ℝ)
+    (v : TangentBundle I M) {y : E × E} (hy : y ∈ (extChartAt I.tangent v).target) :
+    (legendreMap L ((extChartAt I.tangent v).symm y)).2 ((extChartAt I.tangent v).symm y).2 =
+      (linearLegendreMap (L ∘ (extChartAt I.tangent v).symm) y).2 y.2 := by
+  set w := (extChartAt I.tangent v).symm y
+  set e := trivializationAt E (TangentSpace I) v.proj
+  have hb : w.proj ∈ e.baseSet := Bundle.proj_extChartAt_symm v hy ▸
+    TangentBundle.extChartAt_symm_mem_trivializationAt_baseSet
+      (Bundle.fst_mem_extChartAt_target v hy)
+  have hw2 : (e w).2 = y.2 := by
+    rw [← (extChartAt I.tangent v).right_inv hy, Bundle.extChartAt_apply_of_mem_baseSet v hb]
+  have h := congrArg Prod.snd (extChartAt_legendreMap_extChartAt_symm L v hy)
+  rw [CotangentBundle.extChartAt_apply] at h
+  rw [← h, ← hw2]
+  exact congrArg (legendreMap L w).2
+    ((Trivialization.symmL_apply e hb _).trans (e.symm_proj_apply w hb)).symm
+
+end Chart
 
 end TauCeti
