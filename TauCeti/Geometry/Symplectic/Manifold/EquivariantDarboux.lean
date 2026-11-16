@@ -161,7 +161,7 @@ theorem IsSymplectic.exists_equivariant_darbouxChart {form : SmoothTwoForm I M}
   -- the origin.
   let η : E → E [⋀^Fin 2]→L[ℝ] ℝ := mpullback 𝓘(ℝ, E) I e.symm form.1
   have hηe {x : M} (hx : x ∈ e.source) : mpullback I 𝓘(ℝ, E) e η x = form.1 x :=
-    e.mpullback_mpullback_symm form.1 hx
+    e.mpullback_mpullback_symm_apply form.1 hx
       ((he.contMDiffAt (e.open_source.mem_nhds hx)).mdifferentiableAt (by simp))
       ((hes.contMDiffAt (e.open_target.mem_nhds (e.map_source hx))).mdifferentiableAt (by simp))
   have hη0 (a b : TangentSpace I x₀) : η 0 ![a, b] = form.eval₂ x₀ a b := by
@@ -174,7 +174,7 @@ theorem IsSymplectic.exists_equivariant_darbouxChart {form : SmoothTwoForm I M}
     rfl
   have hηρ (g : G) {y : E} (hy : y ∈ e.target) :
       (η (ρ g y)).compContinuousLinearMap (ρ g) = η y := by
-    have h := e.mpullback_mpullback_symm_eq_mpullback_symm_of_intertwines
+    have h := e.mpullback_mpullback_symm_apply_of_intertwines
       (hes.mdifferentiableOn (by simp))
       (by simpa using congrArg Subtype.val (hG g)) (hequiv g) hy (ρ g).mdifferentiableAt
       ((ContMDiffSMul.contMDiff_const_smul (I := IG) (n := ∞) g).mdifferentiable (by simp) _)
