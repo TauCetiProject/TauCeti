@@ -48,7 +48,6 @@ open scoped ContDiff
 namespace TauCeti
 namespace LieAlgebroid
 section LinearPreAlgebroid
-
 variable {E H : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [TopologicalSpace H]
   {I : ModelWithCorners ℝ E H} {M : Type*} [TopologicalSpace M] [ChartedSpace H M]
   [IsManifold I ∞ M] {𝔤 : Type*} [LieRing 𝔤] [LieAlgebra ℝ 𝔤] [TopologicalSpace 𝔤]
@@ -63,20 +62,14 @@ def transformationAnchor :
   ⟨fun x ↦ LinearMap.toContinuousLinearMap (anchorLin x), by
     have : IsManifold I 1 M := .of_le (n := ∞) (by simp)
     rw [contMDiff_hom_bundle_iff]; let B := Module.finBasis ℝ 𝔤; let e := TrivialModel.equiv ℝ 𝔤
-    have hproj : ContMDiff (I.prod 𝓘(ℝ, TrivialModel ℝ 𝔤)) I ∞
-        (TotalSpace.proj (F := TrivialModel ℝ 𝔤) (E := Bundle.Trivial M 𝔤)) :=
-      contMDiff_proj (Bundle.Trivial M 𝔤)
-    have hsnd : ContMDiff (I.prod 𝓘(ℝ, TrivialModel ℝ 𝔤)) 𝓘(ℝ, TrivialModel ℝ 𝔤) ∞
-        (fun p : TotalSpace (TrivialModel ℝ 𝔤) (Bundle.Trivial M 𝔤) ↦ e p.2) :=
-      (TrivialModel.contMDiff_mk_iff.1 contMDiff_id).2
-    have hcoord (i) : ContMDiff (I.prod 𝓘(ℝ, TrivialModel ℝ 𝔤)) 𝓘(ℝ, ℝ) ∞
-        (fun p : TotalSpace (TrivialModel ℝ 𝔤) (Bundle.Trivial M 𝔤) ↦ B.coord i p.2) :=
-      ((LinearMap.toContinuousLinearMap
-        ((B.coord i).comp e.symm.toLinearMap)).contMDiff.comp hsnd).congr fun _ ↦ by simp [e]
+    let hproj := contMDiff_proj (IB := I) (n := ∞) (F := TrivialModel ℝ 𝔤) (Bundle.Trivial M 𝔤)
+    let hsnd := (TrivialModel.contMDiff_mk_iff.1 (contMDiff_id (I := I.prod 𝓘(ℝ, TrivialModel ℝ 𝔤))
+      (M := TotalSpace (TrivialModel ℝ 𝔤) (Bundle.Trivial M 𝔤)) (n := ∞))).2
     refine (ContMDiff.sum_sectionAlong (V := TangentSpace I) (b := TotalSpace.proj) Finset.univ
       (fun i p ↦ B.coord i p.2 • α₀ (B i) p.proj) hproj fun i _ ↦
-        (hcoord i).smul_totalSpace ((α₀ (B i)).contMDiff.comp hproj)).congr
-          fun p ↦ congrArg (TotalSpace.mk' E p.proj) ?_
+        (((LinearMap.toContinuousLinearMap ((B.coord i).comp e.symm.toLinearMap)).contMDiff.comp
+          hsnd).congr fun _ ↦ by simp [e]).smul_totalSpace ((α₀ (B i)).contMDiff.comp hproj)).congr
+      fun p ↦ congrArg (TotalSpace.mk' E p.proj) ?_
     simp only [LinearMap.coe_toContinuousLinearMap']; conv_lhs => rw [← B.sum_repr p.2]
     rw [map_sum]; exact Finset.sum_congr rfl fun i _ ↦ by simp [anchorLin]⟩
 
@@ -140,13 +133,11 @@ theorem transformationBracket_smul_apply
 end LinearPreAlgebroid
 
 section Homomorphism
-
 variable {E H : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
   [TopologicalSpace H] {I : ModelWithCorners ℝ E H} {M : Type*} [TopologicalSpace M]
   [ChartedSpace H M] [IsManifold I ∞ M] {𝔤 : Type*} [LieRing 𝔤] [LieAlgebra ℝ 𝔤]
 
 section GeneralLieAlgebra
-
 variable (α : 𝔤 →ₗ⁅ℝ⁆ (tangent I M).Sections)
 
 private def toTangentLinearMap : 𝔤 →ₗ[ℝ] Cₛ^∞⟮I; E, (TangentSpace I : M → Type _)⟯ :=
@@ -161,11 +152,8 @@ def transformationIsotropy (x : M) : LieSubalgebra ℝ 𝔤 :=
   { LinearMap.ker
       ((ContMDiffSection.evalLinearMap I E ∞ (TangentSpace I) x).comp (toTangentLinearMap α)) with
     lie_mem' hξ hη := by
-      simp only [Submodule.mem_carrier, SetLike.mem_coe, LinearMap.mem_ker, LinearMap.comp_apply,
-        ContMDiffSection.evalLinearMap_apply, toTangentLinearMap, LinearEquiv.coe_coe,
-        LinearEquiv.restrictScalars_apply, LieHom.coe_toLinearMap] at hξ hη ⊢
-      rw [α.map_lie, sectionsEquiv_lie, tangent_bracket_apply]
-      exact mlieBracket_eq_zero_of_eq_zero hξ hη }
+      simpa [toTangentLinearMap] using mlieBracket_eq_zero_of_eq_zero
+        (by simpa [toTangentLinearMap] using hξ) (by simpa [toTangentLinearMap] using hη) }
 
 @[simp] theorem mem_transformationIsotropy_iff (x : M) {ξ : 𝔤} :
     ξ ∈ transformationIsotropy α x ↔ (tangent I M).sectionsEquiv (α ξ) x = 0 := by
@@ -186,8 +174,7 @@ variable [TopologicalSpace 𝔤] [IsTopologicalAddGroup 𝔤] [ContinuousSMul �
     (a b : Cₛ^∞⟮I; TrivialModel ℝ 𝔤, Bundle.Trivial M 𝔤⟯) (f : C^∞⟮I, M; ℝ⟯) :
     transformationBracket α₀ a (f • b) = f • transformationBracket α₀ a b +
       (tangent I M).anchorDeriv (transformationAnchorField α₀ a) f • b := by
-  ext x; rw [ContMDiffSection.coe_add, Pi.add_apply, ContMDiffSection.smul_apply,
-    ContMDiffSection.smul_apply, transformationBracket_smul_apply]; simp
+  ext x; simp [smul_add, smul_sub]; abel
 
 /-- Whenever `α₀` intertwines Lie brackets (without requiring `T2Space M`),
 `transformationAnchorField α₀` intertwines `transformationBracket α₀` with the tangent Lie
@@ -203,16 +190,15 @@ theorem transformationAnchorField_transformationBracket
   have hr {u v} (h : P u v) (g : C^∞⟮I, M; ℝ⟯) : P u (g • v) := by
     dsimp only [P] at h ⊢; rw [transformationBracket_smul_right, map_add, map_smul, map_smul,
       map_smul, (tangent I M).bracket_smul_right, h]
-  have hl {u v} (h : P u v) (f : C^∞⟮I, M; ℝ⟯) : P (f • u) v := by
-    dsimp only [P] at h ⊢; rw [transformationBracket_swap, map_neg,
-      hr (by dsimp only [P]; rw [transformationBracket_swap, map_neg, h,
-        (tangent I M).bracket_swap, neg_neg]) f, (tangent I M).bracket_swap, neg_neg]
+  have hswap {u v} (h : P u v) : P v u := by
+    dsimp only [P] at h ⊢; rw [transformationBracket_swap α₀ v u, map_neg, h,
+      (tangent I M).bracket_swap, neg_neg]
   let B := Module.finBasis ℝ 𝔤
   rw [ContMDiffSection.eq_sum_modelCoord_smul_modelConst B a,
     ContMDiffSection.eq_sum_modelCoord_smul_modelConst B b]
   simp only [map_sum, LinearMap.sum_apply]
   exact Finset.sum_congr rfl fun _ _ ↦ Finset.sum_congr rfl fun _ _ ↦
-    hl (hr (by dsimp only [P]; simp [hα]) _) _
+    hswap (hr (hswap (hr (by dsimp only [P]; simp [hα]) _)) _)
 
 /-- Whenever `α₀` intertwines Lie brackets (without requiring `T2Space M`),
 `transformationBracket α₀` satisfies the Jacobi identity. -/
@@ -238,19 +224,15 @@ theorem transformationBracket_jacobi {α₀ : 𝔤 →ₗ[ℝ] Cₛ^∞⟮I; E, 
     rw [hJ_swap₂₃ u w (f • v), hJ_smul₃ u w v f, hJ_swap₂₃ u v w]; ext x; simp
   have hJ_smul₁ (u v w) (f : C^∞⟮I, M; ℝ⟯) : J (f • u) v w = f • J u v w := by
     rw [hJ_swap₁₂ v (f • u) w, hJ_smul₂ v u w f, hJ_swap₁₂ u v w]; ext x; simp
-  let B := Module.finBasis ℝ 𝔤
-  have vanish {P : Cₛ^∞⟮I; TrivialModel ℝ 𝔤, Bundle.Trivial M 𝔤⟯ →
-      Cₛ^∞⟮I; TrivialModel ℝ 𝔤, Bundle.Trivial M 𝔤⟯}
-      (ha : ∀ x y, P (x + y) = P x + P y) (hs : ∀ (f : C^∞⟮I, M; ℝ⟯) x, P (f • x) = f • P x)
+  let B := Module.finBasis ℝ 𝔤; let S := Cₛ^∞⟮I; TrivialModel ℝ 𝔤, Bundle.Trivial M 𝔤⟯
+  have vanish {P : S → S} (ha : ∀ x y, P (x + y) = P x + P y)
+      (hs : ∀ (f : C^∞⟮I, M; ℝ⟯) x, P (f • x) = f • P x)
       (hB : ∀ i, P (ContMDiffSection.modelConst I M ∞ (B i)) = 0) (s) : P s = 0 := by
-    let P' : Cₛ^∞⟮I; TrivialModel ℝ 𝔤, Bundle.Trivial M 𝔤⟯ →ₗ[C^∞⟮I, M; ℝ⟯]
-        Cₛ^∞⟮I; TrivialModel ℝ 𝔤, Bundle.Trivial M 𝔤⟯ := ⟨⟨P, ha⟩, hs⟩
-    have hP' : P' s = 0 := by
-      rw [ContMDiffSection.eq_sum_modelCoord_smul_modelConst B s, map_sum]
-      exact Finset.sum_eq_zero fun i _ ↦ by
-        simp only [map_smul, P', LinearMap.coe_mk, AddHom.coe_mk, hB i]
-        ext x; simp
-    simpa only [P', LinearMap.coe_mk, AddHom.coe_mk] using hP'
+    let P' : S →ₗ[C^∞⟮I, M; ℝ⟯] S := ⟨⟨P, ha⟩, hs⟩
+    suffices P' s = 0 by simpa only [P', LinearMap.coe_mk, AddHom.coe_mk] using this
+    rw [ContMDiffSection.eq_sum_modelCoord_smul_modelConst B s, map_sum]
+    exact Finset.sum_eq_zero fun i _ ↦ by
+      simp only [map_smul, P', LinearMap.coe_mk, AddHom.coe_mk, hB i]; ext x; simp [S]
   have hJ₁ (ξ η : 𝔤) (w) :
       J (ContMDiffSection.modelConst I M ∞ ξ) (ContMDiffSection.modelConst I M ∞ η) w = 0 :=
     vanish (fun _ _ ↦ by simp only [J, map_add]; abel) (fun f x ↦ hJ_smul₃ _ _ x f)
@@ -282,7 +264,6 @@ theorem transformationBracket_jacobi_iff [T2Space M]
     (ContMDiffSection.modelConst I M ∞ η) x
 
 section LieHom
-
 variable (α : 𝔤 →ₗ⁅ℝ⁆ (tangent I M).Sections)
 
 /-- The **transformation** (or **action**) **Lie algebroid** `M ⋉ 𝔤` on `Bundle.Trivial M 𝔤`
@@ -319,14 +300,14 @@ def transformation : LieAlgebroid I (TrivialModel ℝ 𝔤) (Bundle.Trivial M �
 
 /-- Constant sections define a Lie algebra homomorphism `𝔤 →ₗ⁅ℝ⁆ (transformation α).Sections`. -/
 def transformationConst : 𝔤 →ₗ⁅ℝ⁆ (transformation α).Sections :=
-  ⟨⟨⟨fun ξ ↦ (transformation α).sectionsEquiv.symm (ContMDiffSection.modelConst I M ∞ ξ),
-    fun _ _ ↦ by simp only [map_add]⟩,
-    fun _ _ ↦ by dsimp only; rw [map_smul, LinearMapClass.map_smul_of_tower]; rfl⟩,
-    fun {_ _} ↦ (transformation α).sectionsEquiv.injective (by dsimp only; simp)⟩
+  { ((transformation α).sectionsEquiv.symm.restrictScalars ℝ).toLinearMap.comp
+      (ContMDiffSection.modelConst I M ∞) with
+    map_lie' {_ _} := (transformation α).sectionsEquiv.injective (by simp) }
 
 @[simp] theorem sectionsEquiv_transformationConst (ξ : 𝔤) :
     (transformation α).sectionsEquiv (transformationConst α ξ) =
-      ContMDiffSection.modelConst I M ∞ ξ := (transformation α).sectionsEquiv.apply_symm_apply _
+      ContMDiffSection.modelConst I M ∞ ξ := by
+  rw [← LieHom.coe_toLinearMap]; simp [transformationConst]
 
 theorem transformationConst_injective [Nonempty M] :
     Function.Injective (transformationConst α) := fun _ _ h ↦
@@ -370,24 +351,21 @@ variable {𝔥 : Type*} [LieRing 𝔥] [LieAlgebra ℝ 𝔥] [TopologicalSpace �
 /-- Pushforward of sections along a Lie algebra homomorphism `ψ : 𝔥 →ₗ⁅ℝ⁆ 𝔤`. -/
 def transformationMapLieHom :
     (transformation (α.comp ψ)).Sections →ₗ⁅ℝ⁆ (transformation α).Sections :=
-  ⟨⟨⟨fun s ↦ (transformation α).sectionsEquiv.symm
-      (ContMDiffSection.modelMap ψ.toLinearMap ((transformation (α.comp ψ)).sectionsEquiv s)),
-    fun _ _ ↦ by simp only [map_add]⟩,
-    fun _ _ ↦ (transformation α).sectionsEquiv.injective <| by
-      dsimp only; rw [LinearEquiv.apply_symm_apply, LinearMapClass.map_smul_of_tower,
-        LinearMapClass.map_smul_of_tower, LinearMapClass.map_smul_of_tower,
-        LinearEquiv.apply_symm_apply]; rfl⟩,
-    fun {_ _} ↦ (transformation α).sectionsEquiv.injective (by dsimp only; ext x; simp)⟩
-
-@[simp] theorem transformationMapLieHom_smul (f : C^∞⟮I, M; ℝ⟯)
-    (s : (transformation (α.comp ψ)).Sections) :
-    transformationMapLieHom α ψ (f • s) = f • transformationMapLieHom α ψ s :=
-  (transformation α).sectionsEquiv.injective <| by simp [transformationMapLieHom]
+  { (((transformation α).sectionsEquiv.symm.restrictScalars ℝ).toLinearMap.comp <|
+      ((ContMDiffSection.modelMap ψ.toLinearMap).restrictScalars ℝ).comp
+        ((transformation (α.comp ψ)).sectionsEquiv.restrictScalars ℝ).toLinearMap) with
+    map_lie' {_ _} := (transformation α).sectionsEquiv.injective (by ext x; simp) }
 
 @[simp] theorem sectionsEquiv_transformationMapLieHom_apply
     (s : (transformation (α.comp ψ)).Sections) (x : M) :
     (transformation α).sectionsEquiv (transformationMapLieHom α ψ s) x =
-      ψ ((transformation (α.comp ψ)).sectionsEquiv s x) := by simp [transformationMapLieHom]
+      ψ ((transformation (α.comp ψ)).sectionsEquiv s x) := by
+  rw [← LieHom.coe_toLinearMap]; simp [transformationMapLieHom]
+
+@[simp] theorem transformationMapLieHom_smul (f : C^∞⟮I, M; ℝ⟯)
+    (s : (transformation (α.comp ψ)).Sections) :
+    transformationMapLieHom α ψ (f • s) = f • transformationMapLieHom α ψ s :=
+  (transformation α).sectionsEquiv.injective (by ext x; simp)
 
 @[simp] theorem transformationMapLieHom_transformationConst (ξ : 𝔥) :
     transformationMapLieHom α ψ (transformationConst (α.comp ψ) ξ) =
@@ -396,11 +374,9 @@ def transformationMapLieHom :
 
 @[simp] theorem transformationMapLieHom_id :
     transformationMapLieHom α (LieHom.id : 𝔤 →ₗ⁅ℝ⁆ 𝔤) = LieHom.id :=
-  LieHom.ext fun s ↦ (transformation α).sectionsEquiv.injective <|
-    ContMDiffSection.ext fun x ↦
-      (sectionsEquiv_transformationMapLieHom_apply α LieHom.id s x).trans <|
-        (LieHom.id_apply _).trans <|
-          congrArg (fun t ↦ (transformation α).sectionsEquiv t x) (LieHom.id_apply s).symm
+  LieHom.ext fun s ↦ (transformation α).sectionsEquiv.injective <| ContMDiffSection.ext fun x ↦
+    (sectionsEquiv_transformationMapLieHom_apply α LieHom.id s x).trans <| (LieHom.id_apply _).trans
+      (congrArg (fun t ↦ (transformation α).sectionsEquiv t x) (LieHom.id_apply s).symm)
 
 theorem transformationMapLieHom_comp {𝔨 : Type*} [LieRing 𝔨] [LieAlgebra ℝ 𝔨]
     [TopologicalSpace 𝔨] [IsTopologicalAddGroup 𝔨] [ContinuousSMul ℝ 𝔨] [T2Space 𝔨]
@@ -424,7 +400,6 @@ variable {E' H' N : Type*} [NormedAddCommGroup E'] [NormedSpace ℝ E'] [FiniteD
   [IsManifold J ∞ N] {α_M : 𝔤 →ₗ⁅ℝ⁆ (tangent I M).Sections} {α_N : 𝔤 →ₗ⁅ℝ⁆ (tangent J N).Sections}
 
 section Pullback
-
 variable (φ : C^∞⟮J, N; I, M⟯)
   (hφ : ∀ (ξ : 𝔤) (y : N), mfderiv J I φ y ((tangent J N).sectionsEquiv (α_N ξ) y) =
     (tangent I M).sectionsEquiv (α_M ξ) (φ y))
@@ -458,8 +433,7 @@ end Pullback
       ((tangent I M).sectionsEquiv (α_M ξ) x) =
       (tangent I M).sectionsEquiv (α_M ξ) ((ContMDiffMap.id : C^∞⟮I, M; I, M⟯) x)) :
     transformationPullback (α_M := α_M) (α_N := α_M) ContMDiffMap.id hφ = LieHom.id := by
-  ext s; exact (transformation α_M).sectionsEquiv.injective
-    (by ext x; rw [sectionsEquiv_transformationPullback_apply]; rfl)
+  ext s; exact (transformation α_M).sectionsEquiv.injective (by ext x; simp; rfl)
 
 theorem transformationPullback_comp {E'' H'' P : Type*} [NormedAddCommGroup E'']
     [NormedSpace ℝ E''] [FiniteDimensional ℝ E''] [TopologicalSpace H'']
@@ -473,11 +447,9 @@ theorem transformationPullback_comp {E'' H'' P : Type*} [NormedAddCommGroup E'']
   ext s; exact (transformation α_P).sectionsEquiv.injective (by ext z; simp)
 
 end Homomorphism
-
 end LieAlgebroid
 
 namespace InfinitesimalAction
-
 variable {E H : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
   [TopologicalSpace H] {I : ModelWithCorners ℝ E H} {M : Type*} [TopologicalSpace M]
   [ChartedSpace H M] [IsManifold I ∞ M]
@@ -528,9 +500,7 @@ theorem lieAlgebroid_eq : act.lieAlgebroid = LieAlgebroid.transformation act.neg
 end InfinitesimalAction
 
 namespace LieAlgebroid
-
 section MulAction
-
 variable {EG HG E H : Type*} [NormedAddCommGroup EG] [NormedSpace ℝ EG] [FiniteDimensional ℝ EG]
   [TopologicalSpace HG] {J : ModelWithCorners ℝ EG HG} {G : Type*} [TopologicalSpace G]
   [ChartedSpace HG G] [Group G] [LieGroup J (minSmoothness ℝ 3) G] [NormedAddCommGroup E]
@@ -578,7 +548,6 @@ variable {E' H' N : Type*} [NormedAddCommGroup E'] [NormedSpace ℝ E'] [FiniteD
   [IsManifold I' ∞ N] [MulAction G N] [ContMDiffSMul J I' ∞ G N]
 
 section EquivariantPullback
-
 variable (φ : C^∞⟮I', N; I, M⟯) (hφ : ∀ (g : G) (y : N), φ (g • y) = g • φ y)
 
 /-- Smooth `G`-equivariant pullback of sections of `ofMulAction`. -/
@@ -617,8 +586,7 @@ end EquivariantPullback
     (hφ : ∀ (g : G) (x : M), (ContMDiffMap.id : C^∞⟮I, M; I, M⟯) (g • x) =
       g • (ContMDiffMap.id : C^∞⟮I, M; I, M⟯) x) :
     ofMulActionPullback (J := J) (ContMDiffMap.id : C^∞⟮I, M; I, M⟯) hφ = LieHom.id := by
-  ext s; exact (ofMulAction J G I M).sectionsEquiv.injective
-    (by ext x; rw [sectionsEquiv_ofMulActionPullback_apply]; rfl)
+  ext s; exact (ofMulAction J G I M).sectionsEquiv.injective (by ext x; simp; rfl)
 
 theorem ofMulActionPullback_comp {E'' H'' P : Type*} [NormedAddCommGroup E''] [NormedSpace ℝ E'']
     [FiniteDimensional ℝ E''] [TopologicalSpace H''] {I'' : ModelWithCorners ℝ E'' H''}
@@ -632,7 +600,6 @@ theorem ofMulActionPullback_comp {E'' H'' P : Type*} [NormedAddCommGroup E''] [N
 end MulAction
 
 section TranslationAction
-
 variable {V 𝔤 : Type*} [NormedAddCommGroup V] [NormedSpace ℝ V] [FiniteDimensional ℝ V]
   [LieRing 𝔤] [LieAlgebra ℝ 𝔤] [IsLieAbelian 𝔤] [TopologicalSpace 𝔤]
   [IsTopologicalAddGroup 𝔤] [ContinuousSMul ℝ 𝔤] [T2Space 𝔤] [FiniteDimensional ℝ 𝔤]
@@ -661,26 +628,27 @@ def translationSectionsLinearEquiv :
     (InfinitesimalAction.translation τ.toLinearMap).lieAlgebroid.Sections ≃ₗ[C^∞⟮𝓘(ℝ, V), V; ℝ⟯]
       (tangent 𝓘(ℝ, V) V).Sections :=
   let A := (InfinitesimalAction.translation τ.toLinearMap).lieAlgebroid
-  ⟨⟨⟨fun s ↦ (tangent 𝓘(ℝ, V) V).sectionsEquiv.symm (A.anchorField (A.sectionsEquiv s)),
-    fun _ _ ↦ by simp only [map_add]⟩,
-    fun _ _ ↦ by dsimp only; simp only [map_smul, RingHom.id_apply]⟩,
-    fun t ↦ A.sectionsEquiv.symm (translationInvSection τ ((tangent 𝓘(ℝ, V) V).sectionsEquiv t)),
-    fun _ ↦ A.sectionsEquiv.injective <| by
-      dsimp only; ext; simp only [LinearEquiv.apply_symm_apply, translationInvSection,
-        ContMDiffSection.coeFn_mk, anchorField_apply, A, fromTangentSpace_translation_anchor,
-        LinearEquiv.coe_toLinearMap, map_neg, neg_neg, τ.symm_apply_apply],
-    fun _ ↦ (tangent 𝓘(ℝ, V) V).sectionsEquiv.injective <| by
-      dsimp only; ext x; apply (NormedSpace.fromTangentSpace (𝕜 := ℝ) x).injective
-      simp only [LinearEquiv.apply_symm_apply, anchorField_apply, translationInvSection,
-        ContMDiffSection.coeFn_mk, A, fromTangentSpace_translation_anchor,
-        LinearEquiv.coe_toLinearMap, map_neg, neg_neg, τ.apply_symm_apply]⟩
+  { ((tangent 𝓘(ℝ, V) V).sectionsEquiv.symm.toLinearMap.comp
+      (A.anchorField.comp A.sectionsEquiv.toLinearMap)) with
+    invFun t := A.sectionsEquiv.symm (translationInvSection τ ((tangent 𝓘(ℝ, V) V).sectionsEquiv t))
+    left_inv _ := A.sectionsEquiv.injective <| by
+      ext; simp only [LinearMap.toFun_eq_coe, LinearMap.comp_apply, LinearEquiv.coe_toLinearMap,
+        LinearEquiv.apply_symm_apply, translationInvSection, ContMDiffSection.coeFn_mk,
+        anchorField_apply, A, fromTangentSpace_translation_anchor, map_neg, neg_neg,
+        τ.symm_apply_apply]
+    right_inv _ := (tangent 𝓘(ℝ, V) V).sectionsEquiv.injective <| by
+      ext x; apply (NormedSpace.fromTangentSpace (𝕜 := ℝ) x).injective
+      simp only [LinearMap.toFun_eq_coe, LinearMap.comp_apply, LinearEquiv.coe_toLinearMap,
+        LinearEquiv.apply_symm_apply, anchorField_apply, translationInvSection,
+        ContMDiffSection.coeFn_mk, A, fromTangentSpace_translation_anchor, map_neg, neg_neg,
+        τ.apply_symm_apply] }
 
 @[simp] theorem sectionsEquiv_translationSectionsLinearEquiv
     (s : (InfinitesimalAction.translation τ.toLinearMap).lieAlgebroid.Sections) :
     (tangent 𝓘(ℝ, V) V).sectionsEquiv (translationSectionsLinearEquiv τ s) =
       (InfinitesimalAction.translation τ.toLinearMap).lieAlgebroid.anchorField
-        ((InfinitesimalAction.translation τ.toLinearMap).lieAlgebroid.sectionsEquiv s) :=
-  (tangent 𝓘(ℝ, V) V).sectionsEquiv.apply_symm_apply _
+        ((InfinitesimalAction.translation τ.toLinearMap).lieAlgebroid.sectionsEquiv s) := by
+  simp [translationSectionsLinearEquiv]
 
 @[simp] theorem sectionsEquiv_translationSectionsLinearEquiv_symm_apply
     (t : (tangent 𝓘(ℝ, V) V).Sections) (x : V) :
@@ -704,8 +672,7 @@ def translationSectionsLieEquiv :
     map_lie' {_ _} := by simp [translationSectionsLinearEquiv_apply] }
 
 theorem coe_translationSectionsLieEquiv :
-    ⇑(translationSectionsLieEquiv τ) = translationSectionsLinearEquiv τ := by
-  ext s; rw [← LieEquiv.coe_toLinearEquiv]; rfl
+    ⇑(translationSectionsLieEquiv τ) = translationSectionsLinearEquiv τ := (rfl)
 
 theorem coe_translationSectionsLieEquiv_symm :
     ⇑(translationSectionsLieEquiv τ).symm = (translationSectionsLinearEquiv τ).symm := by
@@ -755,8 +722,7 @@ theorem not_transformationBracket_jacobi_toSectionLinearMap_affineLine :
             (transformationBracket InfinitesimalAction.affineLine.toSectionLinearMap a c) :=
   fun hjac ↦ by
     let act := InfinitesimalAction.affineLine
-    have hcoe (u) : ⇑(act.toSectionLinearMap u) = act u :=
-      funext (act.toSectionLinearMap_apply u)
+    have hcoe (u) : ⇑(act.toSectionLinearMap u) = act u := funext (act.toSectionLinearMap_apply u)
     have h0 := congrArg (fun s ↦ NormedSpace.fromTangentSpace (𝕜 := ℝ) (0 : ℝ) (s 0)) <|
       (transformationBracket_jacobi_iff act.toSectionLinearMap).1 hjac
         (LieAlgebra.AffineLine.dilation ℝ) (LieAlgebra.AffineLine.translation ℝ)
@@ -773,5 +739,4 @@ theorem not_transformationBracket_jacobi_toSectionLinearMap_affineLine :
     rw [h1] at h0; norm_num at h0
 
 end LieAlgebroid
-
 end TauCeti

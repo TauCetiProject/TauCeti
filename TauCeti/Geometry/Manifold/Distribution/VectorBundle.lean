@@ -214,14 +214,12 @@ theorem contMDiff_totalSpace_inclusion [IsManifold I (n + 1) M]
 
 /-- On a `C^(n+1)` manifold, a `C^n` map into the tangent bundle taking values in a `C^n`
 distribution `D` of rank `k` is `C^n` as a map into the total space of `D`. -/
-theorem contMDiffAt_totalSpace_mk [IsManifold I (n + 1) M]
-    {EM : Type*} [NormedAddCommGroup EM] [NormedSpace 𝕜 EM]
-    {HM : Type*} [TopologicalSpace HM] {J : ModelWithCorners 𝕜 EM HM}
-    {N : Type*} [TopologicalSpace N] [ChartedSpace HM N]
-    (hD : IsContMDiffDistribution I n k D) {b : N → M} {w : ∀ y, TangentSpace I (b y)} {y₀ : N}
-    (hw : ContMDiffAt J (I.prod 𝓘(𝕜, E)) n
-      (fun y ↦ (⟨b y, w y⟩ : TotalSpace E (TangentSpace I))) y₀)
-    (hmem : ∀ y, w y ∈ D (b y)) :
+theorem contMDiffAt_totalSpace_mk [IsManifold I (n + 1) M] {EM HM N : Type*}
+    [NormedAddCommGroup EM] [NormedSpace 𝕜 EM] [TopologicalSpace HM] {J : ModelWithCorners 𝕜 EM HM}
+    [TopologicalSpace N] [ChartedSpace HM N] (hD : IsContMDiffDistribution I n k D)
+    {b : N → M} {w : ∀ y, TangentSpace I (b y)} {y₀ : N}
+    (hw : ContMDiffAt J (I.prod 𝓘(𝕜, E)) n (fun y ↦ (⟨b y, w y⟩ : TotalSpace E (TangentSpace I)))
+      y₀) (hmem : ∀ y, w y ∈ D (b y)) :
     letI := hD.fiberBundle
     ContMDiffAt J (I.prod 𝓘(𝕜, Fin k → 𝕜)) n
       (fun y ↦ (⟨b y, ⟨w y, hmem y⟩⟩ : TotalSpace (Fin k → 𝕜) fun x ↦ D x)) y₀ :=
@@ -246,11 +244,9 @@ def inclusionHom : letI := hD.fiberBundle; letI := hD.vectorBundle
 def toTangentSection : letI := hD.fiberBundle; letI := hD.vectorBundle
     Cₛ^n⟮I; Fin k → 𝕜, fun x ↦ D x⟯ →ₗ[C^n⟮I, M; 𝕜⟯]
       Cₛ^n⟮I; E, (TangentSpace I : M → Type _)⟯ :=
-  let := hD.fiberBundle; let := hD.vectorBundle
-  ⟨(ContMDiffSection.mapLinearMap (fun x ↦ (D x).subtype)
-      hD.contMDiff_totalSpace_inclusion).toAddHom,
-    ContMDiffSection.mapLinearMap_smul_function (fun x ↦ (D x).subtype)
-      hD.contMDiff_totalSpace_inclusion⟩
+  let := hD.fiberBundle; let := hD.vectorBundle; have h := hD.contMDiff_totalSpace_inclusion
+  ⟨(ContMDiffSection.mapLinearMap (fun x ↦ (D x).subtype) h).toAddHom,
+    ContMDiffSection.mapLinearMap_smul_function (fun x ↦ (D x).subtype) h⟩
 
 @[simp] theorem toTangentSection_apply : letI := hD.fiberBundle; letI := hD.vectorBundle
     ∀ (a : Cₛ^n⟮I; Fin k → 𝕜, fun x ↦ D x⟯) (x : M),

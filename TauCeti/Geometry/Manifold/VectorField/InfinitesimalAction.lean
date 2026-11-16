@@ -158,21 +158,16 @@ theorem comp_apply (a : InfinitesimalAction 𝔤 I M) (f : 𝔥 →ₗ⁅ℝ⁆ 
 end comp
 
 section toSectionLinearMap
-
 variable (a : InfinitesimalAction 𝔤 I M)
 
 /-- An infinitesimal action viewed as an `ℝ`-linear map into smooth tangent sections. -/
 def toSectionLinearMap : 𝔤 →ₗ[ℝ] Cₛ^∞⟮I; E, (TangentSpace I : M → Type _)⟯ :=
   ⟨⟨fun ξ ↦ ⟨a ξ, a.contMDiff ξ⟩, fun _ _ ↦ by ext; simp⟩, fun _ _ ↦ by ext; simp⟩
 
-@[simp]
-theorem toSectionLinearMap_apply (ξ : 𝔤) (x : M) : a.toSectionLinearMap ξ x = a ξ x :=
-  (rfl)
+@[simp] theorem toSectionLinearMap_apply (ξ : 𝔤) (x : M) : a.toSectionLinearMap ξ x = a ξ x := (rfl)
 
-@[simp]
-theorem comp_toSectionLinearMap {𝔥 : Type*} [LieRing 𝔥] [LieAlgebra ℝ 𝔥] (ψ : 𝔥 →ₗ⁅ℝ⁆ 𝔤) :
-    (a.comp ψ).toSectionLinearMap = a.toSectionLinearMap.comp ψ.toLinearMap := by
-  ext; simp
+@[simp] theorem comp_toSectionLinearMap {𝔥 : Type*} [LieRing 𝔥] [LieAlgebra ℝ 𝔥] (ψ : 𝔥 →ₗ⁅ℝ⁆ 𝔤) :
+    (a.comp ψ).toSectionLinearMap = a.toSectionLinearMap.comp ψ.toLinearMap := by ext; simp
 
 end toSectionLinearMap
 
@@ -363,26 +358,24 @@ section affineLine
 def affineLine : InfinitesimalAction (LieAlgebra.AffineLine ℝ) 𝓘(ℝ, ℝ) ℝ :=
   let f (u : LieAlgebra.AffineLine ℝ) (x : ℝ) : ℝ := u.1 * x + u.2
   let V (u : LieAlgebra.AffineLine ℝ) : ∀ x : ℝ, TangentSpace 𝓘(ℝ, ℝ) x := f u
-  have hV (u : LieAlgebra.AffineLine ℝ) (x : ℝ) :
-      NormedSpace.fromTangentSpace (𝕜 := ℝ) x (V u x) = f u x :=
+  have hV (u x) : NormedSpace.fromTangentSpace (𝕜 := ℝ) x (V u x) = f u x :=
     NormedSpace.fromTangentSpace_apply x (V u x)
-  ⟨⟨⟨V, fun u v ↦ funext fun x ↦ (NormedSpace.fromTangentSpace (𝕜 := ℝ) x).injective <| by
-      rw [Pi.add_apply, map_add, hV, hV, hV]; simp only [f, Prod.fst_add, Prod.snd_add]; ring⟩,
-    fun c u ↦ funext fun x ↦ (NormedSpace.fromTangentSpace (𝕜 := ℝ) x).injective <| by
-      rw [Pi.smul_apply, map_smul, hV, hV]
-      simp only [RingHom.id_apply, smul_eq_mul, f, Prod.smul_fst, Prod.smul_snd]; ring⟩,
+  ⟨⟨⟨V, fun _ _ ↦ funext fun x ↦ (NormedSpace.fromTangentSpace (𝕜 := ℝ) x).injective <| by
+      simp only [Pi.add_apply, map_add, hV, f, Prod.fst_add, Prod.snd_add]; ring⟩,
+    fun _ _ ↦ funext fun x ↦ (NormedSpace.fromTangentSpace (𝕜 := ℝ) x).injective <| by
+      simp only [Pi.smul_apply, map_smul, hV, f, RingHom.id_apply, smul_eq_mul,
+        Prod.smul_fst, Prod.smul_snd]; ring⟩,
     fun _ ↦
       contMDiff_vectorSpace_iff_contDiff.2 ((contDiff_const.mul contDiff_id).add contDiff_const),
     fun u v ↦ funext fun x ↦ (NormedSpace.fromTangentSpace (𝕜 := ℝ) x).injective <| by
-      have hu (w : LieAlgebra.AffineLine ℝ) :
-          HasFDerivAt (f w) (w.1 • ContinuousLinearMap.id ℝ ℝ) x := by
+      have hu (w : LieAlgebra.AffineLine ℝ) : HasFDerivAt (f w) (w.1 • .id ℝ ℝ) x := by
         simpa [f] using ((hasFDerivAt_id x).const_mul w.1).add_const w.2
       have hmlie : NormedSpace.fromTangentSpace (𝕜 := ℝ) x (mlieBracket 𝓘(ℝ, ℝ) (V u) (V v) x) =
           lieBracket ℝ (f u) (f v) x :=
         (NormedSpace.fromTangentSpace_apply x _).trans (congrFun mlieBracket_eq_lieBracket x)
-      rw [LinearMap.coe_mk, AddHom.coe_mk, Pi.neg_apply, map_neg, hV, hmlie,
-        congrFun lieBracket_eq x, (hu u).fderiv, (hu v).fderiv]
-      simp only [f, LieAlgebra.AffineLine.fst_lie, LieAlgebra.AffineLine.snd_lie,
+      simp only [LinearMap.coe_mk, AddHom.coe_mk, Pi.neg_apply, map_neg, hV, hmlie,
+        congrFun lieBracket_eq x, (hu u).fderiv, (hu v).fderiv, f,
+        LieAlgebra.AffineLine.fst_lie, LieAlgebra.AffineLine.snd_lie,
         _root_.smul_apply, ContinuousLinearMap.id_apply, smul_eq_mul]; ring⟩
 
 @[simp] theorem affineLine_apply (u : LieAlgebra.AffineLine ℝ) (x : ℝ) :

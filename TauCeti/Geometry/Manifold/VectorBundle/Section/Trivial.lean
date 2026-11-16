@@ -94,16 +94,15 @@ theorem trivialConst_injective [Nonempty M] :
   obtain ⟨x₀⟩ := ‹Nonempty M›; simpa using congr($h x₀)
 
 section Basis
-
 variable [CompleteSpace 𝕜] [FiniteDimensional 𝕜 F] {ι : Type*} (b : Module.Basis ι 𝕜 F)
 
 /-- The `i`-th coordinate of a `C^n` section of `Bundle.Trivial M F` in a basis `b` of `F`. -/
 def trivialCoord (i : ι) : Cₛ^n⟮I; F, Bundle.Trivial M F⟯ →ₗ[C^n⟮I, M; 𝕜⟯] C^n⟮I, M; 𝕜⟯ :=
   ⟨⟨fun s ↦ ⟨fun x ↦ b.coord i (s x),
       (LinearMap.toContinuousLinearMap (b.coord i)).contMDiff.comp (trivialEquiv s).contMDiff⟩,
-    fun s t ↦ ContMDiffMap.ext fun x ↦ (b.coord i).map_add (s x) (t x)⟩,
-    fun f s ↦ ContMDiffMap.ext fun x ↦ (congrArg (b.coord i)
-      (ContMDiffSection.smul_apply f s x)).trans ((b.coord i).map_smul (f x) (s x))⟩
+    fun _ _ ↦ ContMDiffMap.ext fun _ ↦ (b.coord i).map_add _ _⟩,
+    fun f s ↦ ContMDiffMap.ext fun x ↦
+      (congrArg _ (ContMDiffSection.smul_apply f s x)).trans ((b.coord i).map_smul _ _)⟩
 
 @[simp] theorem trivialCoord_apply (i : ι) (s : Cₛ^n⟮I; F, Bundle.Trivial M F⟯) (x : M) :
     trivialCoord b i s x = b.coord i (s x) := (rfl)
@@ -115,15 +114,12 @@ def trivialCoord (i : ι) : Cₛ^n⟮I; F, Bundle.Trivial M F⟯ →ₗ[C^n⟮I,
 /-- Every `C^n` section of `Bundle.Trivial M F` expands in a finite basis of constant sections. -/
 theorem eq_sum_trivialCoord_smul_trivialConst [Fintype ι] (s : Cₛ^n⟮I; F, Bundle.Trivial M F⟯) :
     s = ∑ i, trivialCoord b i s • trivialConst I M n (b i) := by
-  ext x; have hsum := map_sum (evalLinearMap I F n (Bundle.Trivial M F) x)
-    (fun i ↦ trivialCoord b i s • trivialConst I M n (b i)) Finset.univ
-  rw [evalLinearMap_apply] at hsum
-  exact (by simp [evalLinearMap_apply, Module.Basis.coord_apply] : s x = _).trans hsum.symm
+  ext x; conv_rhs => rw [← evalLinearMap_apply, map_sum]
+  simp [evalLinearMap_apply, Module.Basis.coord_apply]
 
 end Basis
 
 section TrivialModel
-
 variable {𝕜 E H : Type*} [NontriviallyNormedField 𝕜] [CompleteSpace 𝕜] [NormedAddCommGroup E]
   [NormedSpace 𝕜 E] [TopologicalSpace H] {I : ModelWithCorners 𝕜 E H} {M : Type*}
   [TopologicalSpace M] [ChartedSpace H M] {W : Type*} [AddCommGroup W] [Module 𝕜 W]
@@ -136,9 +132,9 @@ def modelEquiv : Cₛ^n⟮I; TrivialModel 𝕜 W, Bundle.Trivial M W⟯ ≃ₗ[C
     C^n⟮I, M; 𝓘(𝕜, TrivialModel 𝕜 W), TrivialModel 𝕜 W⟯ :=
   ⟨⟨⟨fun s ↦ ⟨fun x ↦ TrivialModel.equiv 𝕜 W (s x),
       (TrivialModel.contMDiff_mk_iff.1 s.contMDiff).2⟩,
-    fun s t ↦ ContMDiffMap.ext fun x ↦ (TrivialModel.equiv 𝕜 W).map_add (s x) (t x)⟩,
-    fun f s ↦ ContMDiffMap.ext fun x ↦ (congrArg (TrivialModel.equiv 𝕜 W)
-      (ContMDiffSection.smul_apply f s x)).trans ((TrivialModel.equiv 𝕜 W).map_smul (f x) (s x))⟩,
+    fun _ _ ↦ ContMDiffMap.ext fun _ ↦ (TrivialModel.equiv 𝕜 W).map_add _ _⟩,
+    fun f s ↦ ContMDiffMap.ext fun x ↦ (congrArg _ (ContMDiffSection.smul_apply f s x)).trans
+      ((TrivialModel.equiv 𝕜 W).map_smul _ _)⟩,
     fun f ↦ ⟨fun x ↦ (TrivialModel.equiv 𝕜 W).symm (f x),
       TrivialModel.contMDiff_mk_iff.2 ⟨contMDiff_id, by simpa using f.contMDiff⟩⟩,
     fun _ ↦ by ext x; simp, fun _ ↦ by ext x; simp⟩
@@ -168,7 +164,6 @@ theorem modelConst_injective [Nonempty M] :
   obtain ⟨x₀⟩ := ‹Nonempty M›; simpa using congr($h x₀)
 
 section PullbackMap
-
 variable {E' H' N E'' H'' P W' W'' : Type*} [NormedAddCommGroup E'] [NormedSpace 𝕜 E']
   [TopologicalSpace H'] {J : ModelWithCorners 𝕜 E' H'} [TopologicalSpace N] [ChartedSpace H' N]
   [NormedAddCommGroup E''] [NormedSpace 𝕜 E''] [TopologicalSpace H'']
@@ -199,7 +194,7 @@ def modelPullback (φ : C^n⟮J, N; I, M⟯) :
 @[simp] theorem modelPullback_id :
     modelPullback (ContMDiffMap.id : C^n⟮I, M; I, M⟯) =
       LinearMap.id (R := 𝕜) (M := Cₛ^n⟮I; TrivialModel 𝕜 W, Bundle.Trivial M W⟯) := by
-  ext s x; rw [modelPullback_apply]; rfl
+  ext s x; rw [LinearMap.id_apply, modelPullback_apply]; rfl
 
 theorem modelPullback_comp (φ : C^n⟮J, N; I, M⟯) (ψ : C^n⟮K, P; J, N⟯) :
     modelPullback (W := W) (φ.comp ψ) = (modelPullback ψ).comp (modelPullback φ) := by ext s z; simp
@@ -211,11 +206,9 @@ def modelMap (L : W →ₗ[𝕜] W') :
   let L_mod : TrivialModel 𝕜 W →L[𝕜] TrivialModel 𝕜 W' := LinearMap.toContinuousLinearMap
     ((TrivialModel.equiv 𝕜 W').toLinearMap.comp (L.comp (TrivialModel.equiv 𝕜 W).symm.toLinearMap))
   let hid := TrivialModel.contMDiff_mk_iff.1 (contMDiff_id (I := I.prod _))
-  have hL : ContMDiff (I.prod 𝓘(𝕜, TrivialModel 𝕜 W)) (I.prod 𝓘(𝕜, TrivialModel 𝕜 W')) n
-      (fun p : TotalSpace (TrivialModel 𝕜 W) (Bundle.Trivial M W) ↦
-        (⟨p.proj, L p.2⟩ : TotalSpace (TrivialModel 𝕜 W') (Bundle.Trivial M W'))) :=
-    TrivialModel.contMDiff_mk_iff.2
-      ⟨hid.1, (L_mod.contMDiff.comp hid.2).congr fun _ ↦ by simp [L_mod]⟩
+  have hL := TrivialModel.contMDiff_mk_iff (f := fun p : TotalSpace (TrivialModel 𝕜 W)
+      (Bundle.Trivial M W) ↦ L p.2).2
+    ⟨hid.1, (L_mod.contMDiff.comp hid.2).congr fun _ ↦ by simp [L_mod]⟩
   ⟨(mapLinearMap (fun _ ↦ L) hL).toAddHom, mapLinearMap_smul_function (fun _ ↦ L) hL⟩
 
 @[simp] theorem modelMap_apply (L : W →ₗ[𝕜] W')
@@ -241,9 +234,9 @@ def modelCoord {ι : Type*} (b : Module.Basis ι 𝕜 W) (i : ι) :
   ⟨⟨fun s ↦ ⟨fun x ↦ b.coord i (s x), (LinearMap.toContinuousLinearMap
       ((b.coord i).comp (TrivialModel.equiv 𝕜 W).symm.toLinearMap)).contMDiff.comp
         (modelEquiv s).contMDiff |>.congr fun _ ↦ by simp⟩,
-    fun s t ↦ ContMDiffMap.ext fun x ↦ (b.coord i).map_add (s x) (t x)⟩,
-    fun f s ↦ ContMDiffMap.ext fun x ↦ (congrArg (b.coord i)
-      (ContMDiffSection.smul_apply f s x)).trans ((b.coord i).map_smul (f x) (s x))⟩
+    fun _ _ ↦ ContMDiffMap.ext fun _ ↦ (b.coord i).map_add _ _⟩,
+    fun f s ↦ ContMDiffMap.ext fun x ↦
+      (congrArg _ (ContMDiffSection.smul_apply f s x)).trans ((b.coord i).map_smul _ _)⟩
 
 @[simp] theorem modelCoord_apply {ι : Type*} (b : Module.Basis ι 𝕜 W) (i : ι)
     (s : Cₛ^n⟮I; TrivialModel 𝕜 W, Bundle.Trivial M W⟯) (x : M) :
@@ -258,10 +251,8 @@ def modelCoord {ι : Type*} (b : Module.Basis ι 𝕜 W) (i : ι) :
 theorem eq_sum_modelCoord_smul_modelConst {ι : Type*} [Fintype ι] (b : Module.Basis ι 𝕜 W)
     (s : Cₛ^n⟮I; TrivialModel 𝕜 W, Bundle.Trivial M W⟯) :
     s = ∑ i, modelCoord b i s • modelConst I M n (b i) := by
-  ext x; have hsum := map_sum (evalLinearMap I (TrivialModel 𝕜 W) n (Bundle.Trivial M W) x)
-    (fun i ↦ modelCoord b i s • modelConst I M n (b i)) Finset.univ
-  rw [evalLinearMap_apply] at hsum
-  exact (by simp [evalLinearMap_apply, Module.Basis.coord_apply] : s x = _).trans hsum.symm
+  ext x; conv_rhs => rw [← evalLinearMap_apply, map_sum]
+  simp [evalLinearMap_apply, Module.Basis.coord_apply]
 
 /-- Norm-independent directional derivative of a `C^n` section `s` of `Bundle.Trivial M W`. -/
 def modelDeriv (s : Cₛ^n⟮I; TrivialModel 𝕜 W, Bundle.Trivial M W⟯) (x : M) :
@@ -299,8 +290,8 @@ theorem modelEquiv_modelDeriv_apply (s : Cₛ^n⟮I; TrivialModel 𝕜 W, Bundle
     (s : Cₛ^n⟮I; TrivialModel 𝕜 W, Bundle.Trivial M W⟯) (x : M) :
     modelDeriv (c • s) x = c • modelDeriv s x := by
   ext v; apply (TrivialModel.equiv 𝕜 W).injective
-  have hcs : ⇑(modelEquiv (c • s)) = c • ⇑(modelEquiv s) := funext fun y ↦ by simp
-  rw [_root_.smul_apply, map_smul, modelEquiv_modelDeriv_apply, modelEquiv_modelDeriv_apply, hcs,
+  rw [_root_.smul_apply, map_smul, modelEquiv_modelDeriv_apply, modelEquiv_modelDeriv_apply,
+    (funext fun _ ↦ by simp : ⇑(modelEquiv (c • s)) = c • ⇑(modelEquiv s)),
     TauCeti.mvfderiv_const_smul_field, _root_.smul_apply]
 
 @[simp] theorem modelDeriv_smul (f : C^n⟮I, M; 𝕜⟯)
@@ -308,9 +299,8 @@ theorem modelEquiv_modelDeriv_apply (s : Cₛ^n⟮I; TrivialModel 𝕜 W, Bundle
     (hn : n ≠ 0 := by simp) :
     modelDeriv (f • s) x v = f x • modelDeriv s x v + mvfderiv I f x v • s x := by
   apply (TrivialModel.equiv 𝕜 W).injective
-  have hfs : ⇑(modelEquiv (f • s)) = (⇑f : M → 𝕜) • (⇑(modelEquiv s) : M → _) :=
-    funext fun y ↦ by
-      rw [modelEquiv_apply, ContMDiffSection.smul_apply, map_smul, Pi.smul_apply', modelEquiv_apply]
+  have hfs : ⇑(modelEquiv (f • s)) = (⇑f : M → 𝕜) • (⇑(modelEquiv s) : M → _) := funext fun y ↦ by
+    rw [modelEquiv_apply, ContMDiffSection.smul_apply, map_smul, Pi.smul_apply', modelEquiv_apply]
   rw [map_add, map_smul, map_smul, modelEquiv_modelDeriv_apply, modelEquiv_modelDeriv_apply,
     ← modelEquiv_apply, hfs, mvfderiv_smul (f.contMDiff.mdifferentiableAt hn)
       ((modelEquiv s).contMDiff.mdifferentiableAt hn)]
@@ -359,8 +349,8 @@ theorem modelDeriv_mlieBracket [CompleteSpace E] [IsManifold I 1 M]
     (hn : n ≠ 0 := by simp) :
     modelDeriv (modelPullback φ s) y v = modelDeriv s (φ y) (mfderiv J I φ y v) := by
   apply (TrivialModel.equiv 𝕜 W).injective
-  have hcomp : ⇑(modelEquiv (modelPullback φ s)) = ⇑(modelEquiv s) ∘ ⇑φ := funext fun _ ↦ by simp
-  rw [modelEquiv_modelDeriv_apply, modelEquiv_modelDeriv_apply, hcomp]
+  rw [modelEquiv_modelDeriv_apply, modelEquiv_modelDeriv_apply,
+    (funext fun _ ↦ by simp : ⇑(modelEquiv (modelPullback φ s)) = ⇑(modelEquiv s) ∘ ⇑φ)]
   exact mvfderiv_comp_apply y ((modelEquiv s).contMDiff.mdifferentiableAt hn)
     (φ.contMDiff.mdifferentiableAt hn) v
 
@@ -372,9 +362,8 @@ theorem modelDeriv_mlieBracket [CompleteSpace E] [IsManifold I 1 M]
   let L_mod : TrivialModel 𝕜 W →L[𝕜] TrivialModel 𝕜 W' := LinearMap.toContinuousLinearMap
     ((TrivialModel.equiv 𝕜 W').toLinearMap.comp (L.comp (TrivialModel.equiv 𝕜 W).symm.toLinearMap))
   apply (TrivialModel.equiv 𝕜 W').injective
-  have hcomp : ⇑(modelEquiv (modelMap L s)) = ⇑L_mod ∘ ⇑(modelEquiv s) := funext fun _ ↦ by
-    simp [L_mod]
-  rw [modelEquiv_modelDeriv_apply, hcomp,
+  rw [modelEquiv_modelDeriv_apply,
+    (funext fun _ ↦ by simp [L_mod] : ⇑(modelEquiv (modelMap L s)) = ⇑L_mod ∘ ⇑(modelEquiv s)),
     L_mod.mvfderiv_comp_apply ((modelEquiv s).contMDiff.mdifferentiableAt hn) v]
   exact (congrArg L_mod (modelEquiv_modelDeriv_apply s x v)).symm.trans (by simp [L_mod])
 
@@ -384,9 +373,8 @@ theorem modelDeriv_eq_mvfderiv {F : Type*} [NormedAddCommGroup F] [NormedSpace �
     [FiniteDimensional 𝕜 F] (s : Cₛ^n⟮I; TrivialModel 𝕜 F, Bundle.Trivial M F⟯) (x : M)
     (hn : n ≠ 0 := by simp) : modelDeriv s x = mvfderiv I s x := by
   let e := TrivialModel.equiv 𝕜 F
-  have hs : ⇑s = ⇑e.symm.toContinuousLinearMap ∘ ⇑(modelEquiv s) :=
-    funext fun y ↦ (e.symm_apply_apply (s y)).symm
-  ext v; conv_rhs => rw [hs]
+  ext v; conv_rhs => rw [(funext fun y ↦ (e.symm_apply_apply (s y)).symm :
+    ⇑s = ⇑e.symm.toContinuousLinearMap ∘ ⇑(modelEquiv s))]
   exact (e.symm.toContinuousLinearMap.mvfderiv_comp_apply
     ((modelEquiv s).contMDiff.mdifferentiableAt hn) v).symm
 

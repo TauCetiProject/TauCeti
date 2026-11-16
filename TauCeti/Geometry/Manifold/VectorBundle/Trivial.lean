@@ -62,13 +62,11 @@ theorem contMDiff_mk_iff {b : M → B} {f : M → F} :
   (forall_congr' fun _ ↦ contMDiffAt_mk_iff).trans forall_and
 
 end Bundle.Trivial
-
 end
 
 /-! ### Trivial bundles with finite-dimensional topological-module fibres -/
 
 noncomputable section
-
 namespace TauCeti
 
 /-- The coordinate normed space `Fin (Module.finrank 𝕜 W) → 𝕜` used as the model fibre of
@@ -77,9 +75,7 @@ def TrivialModel (𝕜 W : Type*) [DivisionRing 𝕜] [AddCommGroup W] [Module �
   Fin (Module.finrank 𝕜 W) → 𝕜
 
 namespace TrivialModel
-
 section Normed
-
 variable {𝕜 W : Type*} [NontriviallyNormedField 𝕜] [AddCommGroup W] [Module 𝕜 W]
 
 instance instNormedAddCommGroup : NormedAddCommGroup (TrivialModel 𝕜 W) :=
@@ -97,7 +93,6 @@ instance instCompleteSpace [CompleteSpace 𝕜] : CompleteSpace (TrivialModel �
 end Normed
 
 section FiberBundle
-
 variable {𝕜 B W : Type*} [NontriviallyNormedField 𝕜] [CompleteSpace 𝕜] [TopologicalSpace B]
   [AddCommGroup W] [Module 𝕜 W] [TopologicalSpace W] [IsTopologicalAddGroup W]
   [ContinuousSMul 𝕜 W] [T2Space W] [FiniteDimensional 𝕜 W]
@@ -150,10 +145,7 @@ instance instFiberBundle : FiberBundle (TrivialModel 𝕜 W) (Bundle.Trivial B W
   trivialization_mem_atlas' _ := mem_singleton _
   totalSpaceMk_isInducing' b := by
     have hcomp : TotalSpace.mk (F := TrivialModel 𝕜 W) (E := Bundle.Trivial B W) b =
-        (homeomorphProd 𝕜 B W).symm ∘ (fun y ↦ (b, y)) ∘ equiv 𝕜 W :=
-      funext fun w ↦ (congrArg (TotalSpace.mk (F := TrivialModel 𝕜 W) (E := Bundle.Trivial B W) b)
-        ((equiv 𝕜 W).symm_apply_apply w).symm).trans
-        (homeomorphProd_symm_apply (b, equiv 𝕜 W w)).symm
+        (homeomorphProd 𝕜 B W).symm ∘ (fun y ↦ (b, y)) ∘ equiv 𝕜 W := funext fun _ ↦ by simp
     rw [hcomp]; exact (homeomorphProd 𝕜 B W).symm.isInducing.comp
       ((Topology.isInducing_const_prod.2 .id).comp (equiv 𝕜 W).toHomeomorph.isInducing)
 
@@ -181,7 +173,7 @@ instance instVectorBundle : VectorBundle 𝕜 (TrivialModel 𝕜 W) (Bundle.Triv
   trivialization_linear' e _ := by obtain rfl := eq_trivialization e; infer_instance
   continuousOn_coordChange' e e' _ _ := by
     obtain rfl := eq_trivialization e; obtain rfl := eq_trivialization e'
-    simp only [trivialization_coordChangeL]; exact continuous_const.continuousOn
+    simp [trivialization_coordChangeL, continuous_const.continuousOn]
 
 @[simp] theorem trivialization_continuousLinearMapAt_apply (b : B) (w : W) :
     (trivialization 𝕜 B W).continuousLinearMapAt 𝕜 b w = equiv 𝕜 W w := by

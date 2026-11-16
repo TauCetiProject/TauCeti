@@ -85,8 +85,7 @@ theorem tangent_anchorDeriv_bracket
         (tangent I M).anchorDeriv Y ((tangent I M).anchorDeriv X f) := by
   have : IsManifold I (minSmoothness ℝ 2) M := .of_le (n := ∞) (by simp)
   have hZf (Z : Cₛ^∞⟮I; E, (TangentSpace I : M → Type _)⟯) :
-      ⇑((tangent I M).anchorDeriv Z f) = fun y ↦ mvfderiv I f y (Z y) :=
-    funext fun _ ↦ by rw [anchorDeriv_apply, tangent_anchor_apply]
+      ⇑((tangent I M).anchorDeriv Z f) = fun y ↦ mvfderiv I f y (Z y) := funext fun _ ↦ by simp
   ext x; simp only [anchorDeriv_apply, tangent_anchor_apply, tangent_bracket_apply,
     ContMDiffMap.coe_sub, Pi.sub_apply, hZf]
   exact _root_.mvfderiv_mlieBracket f.contMDiff.contMDiffAt (by simp)
@@ -104,15 +103,14 @@ variable (h : ∀ a b, A.anchorField (A.bracket a b) =
 /-- Given that `A.anchorField` intertwines `A.bracket` with the tangent bracket, the anchor applied
 to sections is a Lie algebra homomorphism `A.Sections →ₗ⁅ℝ⁆ (tangent I M).Sections`. -/
 def anchorLieHomOfBracket : A.Sections →ₗ⁅ℝ⁆ (tangent I M).Sections :=
-  ⟨⟨⟨fun s ↦ (tangent I M).sectionsEquiv.symm (A.anchorField (A.sectionsEquiv s)),
-    fun _ _ ↦ by simp only [map_add]⟩, fun _ _ ↦ by
-      dsimp only; rw [LinearMapClass.map_smul_of_tower, LinearMapClass.map_smul_of_tower,
-        LinearMapClass.map_smul_of_tower]; rfl⟩,
-    fun {_ _} ↦ (tangent I M).sectionsEquiv.injective (by dsimp only; simp [h])⟩
+  { (((tangent I M).sectionsEquiv.symm.restrictScalars ℝ).toLinearMap.comp <|
+      (A.anchorField.restrictScalars ℝ).comp (A.sectionsEquiv.restrictScalars ℝ).toLinearMap) with
+    map_lie' {_ _} := (tangent I M).sectionsEquiv.injective (by simp [h]) }
 
 @[simp] theorem sectionsEquiv_anchorLieHomOfBracket (s : A.Sections) :
     (tangent I M).sectionsEquiv (A.anchorLieHomOfBracket h s) =
-      A.anchorField (A.sectionsEquiv s) := (tangent I M).sectionsEquiv.apply_symm_apply _
+      A.anchorField (A.sectionsEquiv s) := by
+  rw [← LieHom.coe_toLinearMap]; simp [anchorLieHomOfBracket]
 
 @[simp] theorem anchorLieHomOfBracket_smul (f : C^∞⟮I, M; ℝ⟯) (s : A.Sections) :
     A.anchorLieHomOfBracket h (f • s) = f • A.anchorLieHomOfBracket h s :=

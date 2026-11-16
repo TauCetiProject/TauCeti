@@ -28,23 +28,19 @@ anchor is unique (`eq_of_anchor_eq_subtypeL`) and exists iff `D` is involutive
 -/
 
 public section
-
 noncomputable section
 
 open Bundle Filter Manifold Set VectorField
 open scoped ContDiff Topology
 
 namespace TauCeti.LieAlgebroid
-
 section Distribution
-
 variable {E H : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
   [TopologicalSpace H] {I : ModelWithCorners ℝ E H} {M : Type*} [TopologicalSpace M]
   [ChartedSpace H M] [IsManifold I ∞ M] {k : ℕ} {D : Π x : M, Submodule ℝ (TangentSpace I x)}
   (hD : IsContMDiffDistribution I ∞ k D)
 
 section Involutive
-
 variable (hinv : IsInvolutiveDistribution I D)
 
 private def ofDistributionBracketAux : letI := hD.fiberBundle; letI := hD.vectorBundle
@@ -59,42 +55,29 @@ private def ofDistributionBracketAux : letI := hD.fiberBundle; letI := hD.vector
         ((hD.toTangentSection b).contMDiff.mdifferentiable (by simp)).mdifferentiableOn
         (fun y _ ↦ by simp [(a y).2]) (fun y _ ↦ by simp [(b y).2]) (mem_univ x)
 
-private theorem toTangentSection_ofDistributionBracketAux :
-    letI := hD.fiberBundle; letI := hD.vectorBundle
-    haveI : IsManifold I (∞ + 1) M := .of_le (n := ∞) (by simp)
-    ∀ a b : Cₛ^∞⟮I; Fin k → ℝ, fun x ↦ D x⟯,
-      hD.toTangentSection (ofDistributionBracketAux hD hinv a b) =
-        (tangent I M).bracket (hD.toTangentSection a) (hD.toTangentSection b) :=
-  have : IsManifold I (∞ + 1) M := .of_le (n := ∞) (by simp)
-  let := hD.fiberBundle; let := hD.vectorBundle; fun _ _ ↦ hD.toTangentSection_mkSection _ _
-
 /-- A smooth involutive rank-`k` distribution `D ⊆ TM` is a Lie algebroid with subbundle inclusion
 anchor `x ↦ (D x).subtypeL` and restriction of the Lie bracket of vector fields. -/
 def ofDistribution : letI := hD.fiberBundle; letI := hD.vectorBundle
     LieAlgebroid I (Fin k → ℝ) (fun x ↦ D x) :=
   have : IsManifold I (∞ + 1) M := .of_le (n := ∞) (by simp)
   let := hD.fiberBundle; let := hD.vectorBundle
+  have h (a b) : hD.toTangentSection (ofDistributionBracketAux hD hinv a b) =
+      (tangent I M).bracket (hD.toTangentSection a) (hD.toTangentSection b) :=
+    hD.toTangentSection_mkSection _ _
   ⟨hD.inclusionHom, LinearMap.mk₂ ℝ (ofDistributionBracketAux hD hinv)
+      (fun _ _ _ ↦ hD.toTangentSection_injective <| by simp [h])
       (fun _ _ _ ↦ hD.toTangentSection_injective <| by
-        simp only [map_add, toTangentSection_ofDistributionBracketAux, LinearMap.add_apply])
+        simp [LinearMapClass.map_smul_of_tower hD.toTangentSection, h])
+      (fun _ _ _ ↦ hD.toTangentSection_injective <| by simp [h])
       (fun _ _ _ ↦ hD.toTangentSection_injective <| by
-        simp only [LinearMapClass.map_smul_of_tower hD.toTangentSection,
-          toTangentSection_ofDistributionBracketAux, map_smul, LinearMap.smul_apply])
-      (fun _ _ _ ↦ hD.toTangentSection_injective <| by
-        simp only [map_add, toTangentSection_ofDistributionBracketAux])
-      (fun _ _ _ ↦ hD.toTangentSection_injective <| by
-        simp only [LinearMapClass.map_smul_of_tower hD.toTangentSection,
-          toTangentSection_ofDistributionBracketAux, map_smul]),
-    fun _ ↦ hD.toTangentSection_injective <| by
-      simp only [LinearMap.mk₂_apply, toTangentSection_ofDistributionBracketAux,
-        (tangent I M).bracket_self, map_zero],
+        simp [LinearMapClass.map_smul_of_tower hD.toTangentSection, h]),
+    fun _ ↦ hD.toTangentSection_injective <| by simp [h, LieAlgebroid.bracket_self],
     fun _ _ _ ↦ hD.toTangentSection_injective <| by
-      simp only [LinearMap.mk₂_apply, map_add, toTangentSection_ofDistributionBracketAux]
-      exact (tangent I M).bracket_bracket _ _ _,
+      simp only [LinearMap.mk₂_apply, map_add, h]; exact (tangent I M).bracket_bracket _ _ _,
     fun a b f x ↦ Subtype.ext <| by
-      have h := congr($(toTangentSection_ofDistributionBracketAux hD hinv a (f • b)) x)
-      rw [hD.toTangentSection.map_smul, (tangent I M).bracket_smul_apply,
-        ← toTangentSection_ofDistributionBracketAux hD hinv a b] at h; simpa using h⟩
+      have hx := congr($(h a (f • b)) x)
+      rw [hD.toTangentSection.map_smul, (tangent I M).bracket_smul_apply, ← h a b] at hx
+      simpa using hx⟩
 
 theorem ofDistribution_anchor :
     (letI := hD.fiberBundle; letI := hD.vectorBundle; (ofDistribution hD hinv).anchor) =
@@ -120,7 +103,8 @@ theorem ofDistribution_anchor :
     ∀ a b : Cₛ^∞⟮I; Fin k → ℝ, fun x ↦ D x⟯,
       hD.toTangentSection ((ofDistribution hD hinv).bracket a b) =
         (tangent I M).bracket (hD.toTangentSection a) (hD.toTangentSection b) :=
-  toTangentSection_ofDistributionBracketAux hD hinv
+  have : IsManifold I (∞ + 1) M := .of_le (n := ∞) (by simp)
+  let := hD.fiberBundle; let := hD.vectorBundle; fun _ _ ↦ hD.toTangentSection_mkSection _ _
 
 @[simp] theorem coe_ofDistribution_bracket_apply : letI := hD.fiberBundle; letI := hD.vectorBundle
     ∀ (a b : Cₛ^∞⟮I; Fin k → ℝ, fun x ↦ D x⟯) (x : M),
@@ -188,9 +172,9 @@ theorem coe_bracket_eq_mlieBracket_of_anchor_eq_subtypeL :
         mlieBracket I (fun y ↦ (a y : TangentSpace I y)) (fun y ↦ (b y : TangentSpace I y)) x := by
   have : IsManifold I (∞ + 1) M := .of_le (n := ∞) (by simp)
   let := hD.fiberBundle; let := hD.vectorBundle; let := hD.contMDiffVectorBundle; intro A hA a b x
-  have ha : ⇑(A.anchorField a) = fun y ↦ (a y : TangentSpace I y) := funext fun y ↦ by simp [hA y]
-  have hb : ⇑(A.anchorField b) = fun y ↦ (b y : TangentSpace I y) := funext fun y ↦ by simp [hA y]
-  simpa [hA x, ha, hb] using A.anchor_bracket a b x
+  have hc (s : Cₛ^∞⟮I; Fin k → ℝ, fun x ↦ D x⟯) :
+      ⇑(A.anchorField s) = fun y ↦ (s y : TangentSpace I y) := funext fun y ↦ by simp [hA y]
+  simpa [hA x, hc] using A.anchor_bracket a b x
 
 /-- Over a Hausdorff base, at most one Lie algebroid structure on `D` has inclusion anchor. -/
 theorem eq_of_anchor_eq_subtypeL : letI := hD.fiberBundle; letI := hD.vectorBundle
@@ -212,17 +196,16 @@ theorem isInvolutiveDistribution_of_anchor_eq_subtypeL :
   let := hD.fiberBundle; let := hD.vectorBundle; let := hD.contMDiffVectorBundle; intro A hA
   refine (isInvolutiveDistribution_iff_distributionLeviForm_eq_zero hD (by simp)).2 fun x ↦ ?_
   ext u v
-  obtain ⟨sa, hax⟩ :=
-    ContMDiffSection.evalLinearMap_surjective (I := I) (F := Fin k → ℝ) (V := fun y ↦ D y) ∞ x u
-  obtain ⟨sb, hbx⟩ :=
-    ContMDiffSection.evalLinearMap_surjective (I := I) (F := Fin k → ℝ) (V := fun y ↦ D y) ∞ x v
+  have hex (w : D x) :=
+    ContMDiffSection.evalLinearMap_surjective (I := I) (F := Fin k → ℝ) (V := fun y ↦ D y) ∞ x w
+  obtain ⟨sa, hax⟩ := hex u; obtain ⟨sb, hbx⟩ := hex v
   have hmem (s : Cₛ^∞⟮I; Fin k → ℝ, fun y ↦ D y⟯) : ∀ᶠ y in 𝓝 x, hD.toTangentSection s y ∈ D y :=
     Eventually.of_forall fun y ↦ by rw [hD.toTangentSection_apply]; exact (s y).2
-  have hu : (⟨hD.toTangentSection sa x, (hmem sa).self_of_nhds⟩ : D x) = u :=
-    Subtype.ext (by simpa using congrArg Subtype.val hax)
-  have hv : (⟨hD.toTangentSection sb x, (hmem sb).self_of_nhds⟩ : D x) = v :=
-    Subtype.ext (by simpa using congrArg Subtype.val hbx)
-  rw [← hu, ← hv, LinearMap.zero_apply, LinearMap.zero_apply]
+  have hsub (s : Cₛ^∞⟮I; Fin k → ℝ, fun y ↦ D y⟯) :
+      (⟨hD.toTangentSection s x, (hmem s).self_of_nhds⟩ : D x) = s x :=
+    Subtype.ext (hD.toTangentSection_apply s x)
+  rw [← hax, ← hbx, ContMDiffSection.evalLinearMap_apply, ContMDiffSection.evalLinearMap_apply,
+    ← hsub sa, ← hsub sb, LinearMap.zero_apply, LinearMap.zero_apply]
   refine (distributionLeviForm_apply_eq_zero_iff hD (by simp)
     ((hD.toTangentSection sa).contMDiff.mdifferentiableAt (by simp))
     ((hD.toTangentSection sb).contMDiff.mdifferentiableAt (by simp)) (hmem sa) (hmem sb)).2 ?_
