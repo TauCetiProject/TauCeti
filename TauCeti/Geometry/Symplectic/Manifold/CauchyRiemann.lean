@@ -11,7 +11,7 @@ public import TauCeti.Geometry.Symplectic.Manifold.JHolomorphic
 # The half-normalized nonlinear Cauchy–Riemann section
 
 For almost complex manifolds `(M, j)` and `(N, J)`, `pseudoholomorphicSection j J u` is
-`∂̄_J u = (du + J ∘ du ∘ j) / 2`, a family of real continuous linear maps from `T_x M`
+`(du + J ∘ du ∘ j) / 2`, a family of real continuous linear maps from `T_x M`
 to `T_(u x) N`. It is complex antilinear in the source tangent vector. Its vanishing
 characterizes the existing derivative-level predicate `IsPseudoholomorphic`, provided the map
 is differentiable. No smoothness or elliptic regularity of the map is inferred.
