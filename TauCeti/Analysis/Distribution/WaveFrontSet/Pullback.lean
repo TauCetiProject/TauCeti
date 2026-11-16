@@ -278,7 +278,8 @@ theorem integrable_localFourier_mul_fourier {A : E →L[ℝ] E'} {T : 𝓓'(Ω',
     Integrable fun η ↦ T.localFourier φ η * 𝓕 (fun x ↦ (ψ x : ℂ)) (-(A†) η) := by
   obtain ⟨M, B, hB⟩ := exists_norm_mul_fourier_le h ψ.hasCompactSupport.isCompact
   obtain ⟨C, hC0, hC⟩ := ψ.hasCompactSupport.exists_bound_iteratedFDeriv ψ.contDiff M
-  refine Integrable.mono' (TauCeti.integrable_inv_one_add_norm_pow.const_mul (B * C))
+  refine Integrable.mono'
+    ((TauCeti.integrable_inv_one_add_norm_pow (Nat.lt_succ_self _)).const_mul (B * C))
     ((T.continuous_localFourier φ).mul (ψ.integrable_ofReal.continuous_fourier.comp
       (A†).continuous.neg)).aestronglyMeasurable (Eventually.of_forall fun η ↦ ?_)
   exact (le_mul_inv_iff₀ (by positivity)).2 (hB ψ ψ.contDiff subset_rfl C hC0 hC η)
@@ -332,7 +333,8 @@ def cutoffPullback : 𝓓'(Ω, ℂ) :=
     simp only [Seminorm.comp_apply, coe_normSeminorm]
     calc ‖(pullbackLM A T φ h) (ofSupportedInCLM ℝ hK f)‖
         ≤ ∫ η : E', B * S * ((1 + ‖η‖) ^ (Module.finrank ℝ E' + 1))⁻¹ :=
-          norm_integral_le_of_norm_le (TauCeti.integrable_inv_one_add_norm_pow.const_mul (B * S))
+          norm_integral_le_of_norm_le
+            ((TauCeti.integrable_inv_one_add_norm_pow (Nat.lt_succ_self _)).const_mul (B * S))
             (Eventually.of_forall fun η ↦ (le_mul_inv_iff₀ (by positivity)).2 (hbound η))
       _ = B * I * S := by rw [integral_const_mul]; ring
       _ ≤ max B 0 * I * S := by gcongr; exact le_max_left _ _
