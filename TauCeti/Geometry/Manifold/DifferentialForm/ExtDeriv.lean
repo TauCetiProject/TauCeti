@@ -161,6 +161,12 @@ theorem mextDeriv_def (φ : RoughForm I M F k) (x : M) :
     mextDeriv φ x = extDerivWithin (E := E) (φ.inChartAt x) (range I) (extChartAt I x x) := by
   rw [← mextDerivWithin_univ, mextDerivWithin_def, preimage_univ, univ_inter]
 
+/-- For a boundaryless model, the exterior derivative of a rough form at `x` is the flat exterior
+derivative of its coordinate expression in the chart at `x`. -/
+theorem mextDeriv_eq_extDeriv_inChartAt [I.Boundaryless] (φ : RoughForm I M F k) (x : M) :
+    mextDeriv φ x = extDeriv (E := E) (φ.inChartAt x) (extChartAt I x x) := by
+  rw [mextDeriv_def, I.range_eq_univ, extDerivWithin_univ]
+
 /-! ### Locality -/
 
 /-- The exterior derivative within a set does not change when the set is modified away from a
