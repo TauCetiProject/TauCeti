@@ -55,7 +55,9 @@ where `χ` is a cutoff function vanishing near `0` and equal to `1` above a thre
 * `Θ` and `χ(s) τ` are natural under pullback: for a map `f` that is `C²` at a point, the cutoff
   current of the pair `(f^* b, α ∘ f)` there is `f^* Θ` (`cutoffCurrent_comp`), so the integral
   of `Θ` over a smooth disc is the flux of the cutoff current of the pulled-back pair through a
-  disc in the plane;
+  disc in the plane. The covariant derivative is natural in the same way
+  (`covariantDeriv_comp`), and so is `∂bar_a α` along maps whose differential is complex linear
+  (`covariantDBar_comp`);
 * on a disc in the plane on whose boundary circle `χ(s) = 1`, the integral of `Θ` is the winding
   integral `∮ Im (α⁻¹ dα)` of `α`, with no contribution from `b`
   (`integral_cutoffCurrent_closedBall`). The flux of `i F_a` instead retains the boundary term
@@ -372,6 +374,17 @@ section Pullback
 
 variable {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F] {f : F → E}
 
+/-- **Naturality of the covariant derivative.** The covariant derivative of the pulled-back pair
+`(f^* b, α ∘ f)` at `y` is the covariant derivative of `(b, α)` at `f y` composed with
+`df_y`. -/
+theorem covariantDeriv_comp {y : F} (hα : DifferentiableAt ℝ α (f y))
+    (hf : DifferentiableAt ℝ f y) :
+    covariantDeriv (fun z ↦ (b (f z)).compContinuousLinearMap (fderiv ℝ f z)) (α ∘ f) y =
+      (covariantDeriv b α (f y)).comp (fderiv ℝ f y) := by
+  ext v
+  rw [covariantDeriv_apply, fderiv_comp y hα hf]
+  simp [Function.comp_def]
+
 /-- **Naturality of the cutoff phase form.** The cutoff phase form of the pulled-back pair
 `(f^* b, α ∘ f)` is the pullback by `f` of the cutoff phase form of `(b, α)`. -/
 theorem cutoffPhaseForm_comp {y : F} (hα : DifferentiableAt ℝ α (f y))
@@ -597,6 +610,19 @@ theorem covariantDBar_apply_apply (b : E → E [⋀^Fin 1]→L[ℝ] ℝ) (α : E
     (covariantDeriv b α x : E →ₗ[ℝ] ℂ)).apply v
   rw [← coe_covariantDBar_eq_complexAntilinearPart, DistribSMul.toLinearMap_apply] at h
   rw [h, smul_eq_mul, neg_mul]
+
+/-- **Naturality of `∂bar_a α`.** Let `f : F → E` be differentiable at `y` with `df_y`
+intertwining an almost complex structure `J'` on `F` with `J`. Then `∂bar_a α` of the pulled-back
+pair `(f^* b, α ∘ f)` for `J'` at `y` is `∂bar_a α` of `(b, α)` for `J` at `f y`, composed with
+`df_y`. -/
+theorem covariantDBar_comp {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F]
+    [FiniteDimensional ℝ F] (J' : AlmostComplexStructure F) {b : E → E [⋀^Fin 1]→L[ℝ] ℝ}
+    {f : F → E} {y : F} (hα : DifferentiableAt ℝ α (f y)) (hf : DifferentiableAt ℝ f y)
+    (hJ : ∀ v, fderiv ℝ f y (J' v) = J (fderiv ℝ f y v)) :
+    covariantDBar J' (fun z ↦ (b (f z)).compContinuousLinearMap (fderiv ℝ f z)) (α ∘ f) y =
+      (covariantDBar J b α (f y)).comp (fderiv ℝ f y) := by
+  ext v
+  simp [covariantDeriv_comp hα hf, hJ]
 
 /-- `∂_a α = ∇_a α - ∂bar_a α` is the complex-linear part `TauCeti.complexLinearPart` of
 `∇_a α`, for the structure `J` on `E` and multiplication by `I` on `ℂ`. -/
