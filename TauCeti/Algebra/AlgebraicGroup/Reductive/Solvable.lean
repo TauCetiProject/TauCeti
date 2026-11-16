@@ -5,13 +5,15 @@ Authors: Codex
 -/
 module
 
-public import TauCeti.Algebra.AlgebraicGroup.MultiplicativeType.LinearlyReductive
-public import TauCeti.Algebra.AlgebraicGroup.Solvable.Reductive
-import TauCeti.Algebra.AlgebraicGroup.DiagonalizableGroup.Commutative
+public import TauCeti.Algebra.AlgebraicGroup.LinearlyReductive
+public import TauCeti.Algebra.AlgebraicGroup.Reductive.Basic
+public import TauCeti.Algebra.AlgebraicGroup.Solvable.Basic
+public import TauCeti.Algebra.AlgebraicGroup.Torus.Basic
+import TauCeti.Algebra.AlgebraicGroup.MultiplicativeType.LinearlyReductive
 import TauCeti.Algebra.AlgebraicGroup.Reductive.AlgebraicallyClosed
 import TauCeti.Algebra.AlgebraicGroup.Representation.JordanDecomposition.Radical
+import TauCeti.Algebra.AlgebraicGroup.Solvable.Reductive
 import TauCeti.Algebra.AlgebraicGroup.Torus.AlgebraicallyClosed
-import TauCeti.Algebra.AlgebraicGroup.Unipotent.Radical.Reductive.Basic
 
 /-!
 # Solvable reductive groups are tori
