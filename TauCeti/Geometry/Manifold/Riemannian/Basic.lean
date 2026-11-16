@@ -45,6 +45,8 @@ differentiability criterion for maps whose tangent maps preserve inner products.
   norms of vectors in the tangent spaces at two equal points agree.
 * `TauCeti.mfderiv_mem_ball_of_apply_eq_self`: if `f` fixes `p` and its differential at `p`
   preserves the metric there, it maps every ball around the origin of `T_p M` into itself.
+* `Bundle.ContinuousRiemannianMetric.continuous_inner_const_vector`: on a real normed space, pairing
+  two constant coordinate vectors under a continuous Riemannian metric is continuous.
 -/
 
 public section
@@ -302,3 +304,25 @@ theorem mfderiv_mem_ball_of_apply_eq_self {f : M → M} {p : M} (hfp : f p = p)
   exact mem_ball_zero_iff.1 hw
 
 end TauCeti
+
+namespace Bundle.ContinuousRiemannianMetric
+
+/-- On a real normed space `F`, pairing two constant coordinate vectors under a continuous
+Riemannian metric gives a continuous real-valued function. -/
+theorem continuous_inner_const_vector {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F]
+    (g : ContinuousRiemannianMetric F (fun x : F ↦ TangentSpace 𝓘(ℝ, F) x)) (v w : F) :
+    Continuous fun x : F ↦
+      g.inner x ((NormedSpace.fromTangentSpace x).symm v)
+        ((NormedSpace.fromTangentSpace x).symm w) := by
+  let _ : RiemannianBundle (fun x : F ↦ TangentSpace 𝓘(ℝ, F) x) := ⟨g.toRiemannianMetric⟩
+  let _ : IsContinuousRiemannianBundle F (fun x : F ↦ TangentSpace 𝓘(ℝ, F) x) :=
+    Bundle.instIsContinuousRiemannianBundle g
+  have hv : CMDiff ∞ (T% fun x : F ↦ ((NormedSpace.fromTangentSpace x).symm v :
+      TangentSpace 𝓘(ℝ, F) x)) :=
+    (contMDiff_vectorSpace_iff_contDiff (n := ∞)).2 contDiff_const
+  have hw : CMDiff ∞ (T% fun x : F ↦ ((NormedSpace.fromTangentSpace x).symm w :
+      TangentSpace 𝓘(ℝ, F) x)) :=
+    (contMDiff_vectorSpace_iff_contDiff (n := ∞)).2 contDiff_const
+  exact hv.continuous.inner_bundle hw.continuous
+
+end Bundle.ContinuousRiemannianMetric

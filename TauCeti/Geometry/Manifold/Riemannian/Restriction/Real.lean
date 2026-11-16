@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.Manifold.Riemannian.Restriction.NormedSpace
+import TauCeti.Geometry.Manifold.Riemannian.Gradient.NormedSpace
 import TauCeti.Geometry.Manifold.Riemannian.Hessian.OneDimensional
 import TauCeti.Geometry.Manifold.VectorBundle.Tangent.Basic
 
@@ -22,6 +23,8 @@ These identities supply the radial terms in warped-product curvature formulas.
 
 * `TauCeti.Manifold.laplaceBeltrami_restrictOpenTangentSpace_real_eq_deriv_deriv`: the
   Laplace–Beltrami operator on an open subset of `ℝ` is `deriv (deriv f)`.
+* `TauCeti.Manifold.inner_restrictOpenTangentSpace_real`: the restricted Euclidean inner product on
+  an open subset of `ℝ` multiplies model-space tangent coordinates.
 * `TauCeti.Manifold.hessian_restrictOpenTangentSpace_real_eq_mul_deriv_deriv`: the scalar Hessian
   multiplies model-space tangent coordinates by `deriv (deriv f)`.
 * `TauCeti.Manifold.sq_norm_mgradient_restrictOpenTangentSpace_real_eq_sq_deriv`: the squared
@@ -55,13 +58,18 @@ theorem inner_restrictOpenTangentSpace_real
     (((riemannianMetricVectorSpace ℝ).ofLE (m := ∞) le_top).restrictOpenTangentSpace U).inner
         x v w =
       tangentSpaceCastModel 𝓘(ℝ) x v * tangentSpaceCastModel 𝓘(ℝ) x w := by
-  have h := ((riemannianMetricVectorSpace ℝ).ofLE (m := ∞) le_top).restrictOpenTangentSpace_inner
-    U x v w
-  rw [ContMDiffRiemannianMetric.ofLE_inner, tangentSpaceOpenEquiv_apply,
-    tangentSpaceOpenEquiv_apply] at h
-  exact h.trans <| by
-    change inner ℝ (tangentSpaceCastModel 𝓘(ℝ) x v) (tangentSpaceCastModel 𝓘(ℝ) x w) = _
-    simp [mul_comm]
+  have hcast (u : TangentSpace 𝓘(ℝ) x) :
+      NormedSpace.fromTangentSpace (x : ℝ) (tangentSpaceOpenEquiv x u) =
+        tangentSpaceCastModel 𝓘(ℝ) x u := by
+    rw [tangentSpaceOpenEquiv_apply]
+    -- `NormedSpace.fromTangentSpace` on `ℝ` and `tangentSpaceCastModel 𝓘(ℝ)` are both the identity
+    -- equivalence on `ℝ`.
+    rfl
+  rw [ContMDiffRiemannianMetric.restrictOpenTangentSpace_inner,
+    ContMDiffRiemannianMetric.ofLE_inner,
+    ← ContMDiffRiemannianMetric.inner_riemannianBundle (riemannianMetricVectorSpace ℝ),
+    inner_tangentSpace_vectorSpace, hcast, hcast]
+  simp [mul_comm]
 
 /-- The scalar Hessian for the restricted Euclidean metric on an open subset of
 `ℝ` is the product of the tangent coordinates times the ordinary second derivative. -/

@@ -11,14 +11,16 @@ public import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.Curvatu
 import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.Curvature.Bianchi
 
 /-!
-# Nonnegative sectional curvature of warped products over a curve
+# Sectional curvature bounds of warped products over a curve
 
-For a base of dimension at most one, a nonpositive product of the warping function
-and its Laplacian and a lower bound on the fibre curvature give nonnegative sectional
-curvature of the warped metric.
-The criterion controls every tangent plane, including planes neither vertical nor mixed.
-It uses the native Levi-Civita connection and includes dependent pairs, whose totalized
-sectional curvature is zero.
+For a base of dimension at most one, shearing along the horizontal factor reduces every tangent
+two-plane of a warped product `g_M + f² g_N` to one spanned by an arbitrary vector and a vertical
+vector, where both the Gram determinant (`IsWarpedProduct.det_gram_vertical_right`) and the
+curvature numerator (`IsWarpedProduct.inner_curvatureTensor_vertical_right`) split without cross
+terms. Consequently, common lower bounds, upper bounds, or values on the radial Laplacian term
+`-f Δf` and the fibre curvature term `R_N - |grad f|² Gram` transfer to every tangent two-plane,
+yielding in particular nonnegativity when `f Δf ≤ 0` and the fibre curvature dominates
+`|grad f|² det Gram`.
 
 The curvature formulas follow B. O'Neill, *Semi-Riemannian Geometry* (1983),
 Chapter 7, Proposition 42. They apply in particular to rotationally symmetric caps.
@@ -46,6 +48,25 @@ variable
   [IsContMDiffRiemannianBundle (I.prod J) ∞ (E × F)
     (fun p : M × N ↦ TangentSpace (I.prod J) p)]
   {f : M → ℝ}
+
+omit [FiniteDimensional ℝ E] [IsManifold I ∞ M] [T2Space M]
+  [IsContMDiffRiemannianBundle I ∞ E (fun x : M ↦ TangentSpace I x)]
+  [FiniteDimensional ℝ F] [IsManifold J ∞ N] [T2Space N]
+  [IsContMDiffRiemannianBundle J ∞ F (fun y : N ↦ TangentSpace J y)]
+  [IsContMDiffRiemannianBundle (I.prod J) ∞ (E × F)
+    (fun p : M × N ↦ TangentSpace (I.prod J) p)] in
+/-- The Gram determinant for one arbitrary vector `(u, v)` and one vertical vector `(0, w)` in a
+warped product splits into `f² ‖u‖² ‖w‖² + f⁴ det(Gram(v, w))`, with fibre norms and Gram
+determinant measured in the unscaled fibre metric. -/
+theorem IsWarpedProduct.det_gram_vertical_right
+    (h : IsWarpedProduct I J N f) (p : M × N) (u : TangentSpace I p.1)
+    (v w : TangentSpace J p.2) :
+    (Matrix.gram ℝ ![(tangentSpaceProdEquiv p).symm (u, v),
+      (tangentSpaceProdEquiv p).symm (0, w)]).det =
+      f p.1 ^ 2 * ‖u‖ ^ 2 * ‖w‖ ^ 2 + f p.1 ^ 4 * (Matrix.gram ℝ ![v, w]).det := by
+  simp only [Matrix.real_det_gram_fin_two, h.inner_eq, ContinuousLinearEquiv.apply_symm_apply,
+    inner_zero_right, zero_add, real_inner_self_eq_norm_sq]
+  ring
 
 /-- The curvature numerator for one arbitrary vector and one vertical vector. The
 horizontal and vertical contributions have no cross term. Fibre inner products and
@@ -93,6 +114,114 @@ theorem IsWarpedProduct.inner_curvatureTensor_vertical_right
     Matrix.real_det_gram_fin_two, real_inner_comm w v]
   ring
 
+omit [RiemannianBundle (fun x : M ↦ TangentSpace I x)]
+  [IsContMDiffRiemannianBundle I ∞ E (fun x : M ↦ TangentSpace I x)]
+  [RiemannianBundle (fun y : N ↦ TangentSpace J y)]
+  [IsContMDiffRiemannianBundle J ∞ F (fun y : N ↦ TangentSpace J y)] in
+private theorem exists_sectionalCurvature_eq_vertical_right_of_finrank_le_one
+    (hn : Module.finrank ℝ E ≤ 1) (p : M × N) (u v : TangentSpace (I.prod J) p) :
+    ∃ (a : TangentSpace (I.prod J) p) (w : TangentSpace J p.2),
+      (Matrix.gram ℝ ![a, (tangentSpaceProdEquiv p).symm (0, w)]).det =
+        (Matrix.gram ℝ ![u, v]).det ∧
+      (leviCivitaConnection (I.prod J) (M × N)).sectionalCurvature
+        (isMetricCompatible_leviCivitaConnection (I.prod J)) p u v =
+      (leviCivitaConnection (I.prod J) (M × N)).sectionalCurvature
+        (isMetricCompatible_leviCivitaConnection (I.prod J)) p a
+          ((tangentSpaceProdEquiv p).symm (0, w)) := by
+  let e := tangentSpaceProdEquiv (I := I) (J := J) p
+  by_cases hu : (e u).1 = 0
+  · have heq : u = e.symm (0, (e u).2) := by rw [← hu]; exact (e.symm_apply_apply u).symm
+    refine ⟨v, (e u).2, ?_, ?_⟩
+    · rw [← heq]
+      simp only [Matrix.real_det_gram_fin_two, real_inner_comm u v]
+      ring
+    · rw [← heq, IsMetricCompatible.sectionalCurvature_comm]
+  · have hn' : Module.finrank ℝ (TangentSpace I p.1) = 1 := by
+      have hpos := (Module.finrank_pos_iff_exists_ne_zero (R := ℝ)).2 ⟨(e u).1, hu⟩
+      have hle := (finrank_tangentSpace (I := I) p.1).le.trans hn
+      omega
+    obtain ⟨c, hc⟩ := (finrank_eq_one_iff_of_ne_zero' (e u).1 hu).1 hn' (e v).1
+    have heq : v + (-c) • u = e.symm (0, (e v).2 - c • (e u).2) := by
+      apply e.injective
+      simp [Prod.ext_iff, hc, sub_eq_add_neg]
+    refine ⟨u, (e v).2 - c • (e u).2, ?_, ?_⟩
+    · rw [← heq]
+      simp only [Matrix.real_det_gram_fin_two, inner_add_left, inner_add_right,
+        real_inner_smul_left, real_inner_smul_right, real_inner_comm v u]
+      ring
+    · rw [← heq, sectionalCurvature_add_smul_right]
+
+/-- Over a base of dimension at most one, common lower bounds `κ f² ≤ -f Δf` on the radial term and
+`(κ f² + |grad f|²) det(Gram(v, w)) ≤ ⟪R_N(v, w)w, v⟫` on the fibre curvature bound the sectional
+curvature of every tangent two-plane of the warped product from below by `κ`. -/
+theorem IsWarpedProduct.le_sectionalCurvature_of_finrank_le_one
+    (h : IsWarpedProduct I J N f) (hf : ContMDiff I 𝓘(ℝ) ∞ f)
+    (hn : Module.finrank ℝ E ≤ 1) (p : M × N) {κ : ℝ}
+    (hlap : κ * f p.1 ^ 2 ≤ -f p.1 * laplaceBeltrami I f p.1)
+    (hfibre : ∀ v w : TangentSpace J p.2,
+      (κ * f p.1 ^ 2 + ‖mgradient I f p.1‖ ^ 2) * (Matrix.gram ℝ ![v, w]).det ≤
+        inner ℝ ((leviCivitaConnection J N).curvatureTensor p.2 v w w) v)
+    {u v : TangentSpace (I.prod J) p} (huv : LinearIndependent ℝ ![u, v]) :
+    κ ≤ (leviCivitaConnection (I.prod J) (M × N)).sectionalCurvature
+      (isMetricCompatible_leviCivitaConnection (I.prod J)) p u v := by
+  obtain ⟨a, w, hdet, hsec⟩ :=
+    exists_sectionalCurvature_eq_vertical_right_of_finrank_le_one hn p u v
+  let e := tangentSpaceProdEquiv (I := I) (J := J) p
+  have ha : e.symm ((e a).1, (e a).2) = a := e.symm_apply_apply a
+  have hpos : 0 < (Matrix.gram ℝ ![a, e.symm (0, w)]).det := by
+    rw [hdet]; exact (Matrix.posDef_gram_of_linearIndependent huv).det_pos
+  have hnum := h.inner_curvatureTensor_vertical_right hf p (e a).1 (e a).2 w
+  have hgram := h.det_gram_vertical_right p (e a).1 (e a).2 w
+  rw [ha] at hnum hgram
+  rw [hsec, sectionalCurvature_apply, le_div_iff₀ hpos, hnum, hgram,
+    hessian_eq_laplaceBeltrami_mul_inner_of_finrank_le_one hn, real_inner_self_eq_norm_sq]
+  nlinarith [mul_le_mul_of_nonneg_right hlap (mul_nonneg (sq_nonneg ‖(e a).1‖) (sq_nonneg ‖w‖)),
+    mul_le_mul_of_nonneg_left (hfibre (e a).2 w) (sq_nonneg (f p.1))]
+
+/-- Over a base of dimension at most one, common upper bounds `-f Δf ≤ κ f²` on the radial term and
+`⟪R_N(v, w)w, v⟫ ≤ (κ f² + |grad f|²) det(Gram(v, w))` on the fibre curvature bound the sectional
+curvature of every tangent two-plane of the warped product from above by `κ`. -/
+theorem IsWarpedProduct.sectionalCurvature_le_of_finrank_le_one
+    (h : IsWarpedProduct I J N f) (hf : ContMDiff I 𝓘(ℝ) ∞ f)
+    (hn : Module.finrank ℝ E ≤ 1) (p : M × N) {κ : ℝ}
+    (hlap : -f p.1 * laplaceBeltrami I f p.1 ≤ κ * f p.1 ^ 2)
+    (hfibre : ∀ v w : TangentSpace J p.2,
+      inner ℝ ((leviCivitaConnection J N).curvatureTensor p.2 v w w) v ≤
+        (κ * f p.1 ^ 2 + ‖mgradient I f p.1‖ ^ 2) * (Matrix.gram ℝ ![v, w]).det)
+    {u v : TangentSpace (I.prod J) p} (huv : LinearIndependent ℝ ![u, v]) :
+    (leviCivitaConnection (I.prod J) (M × N)).sectionalCurvature
+      (isMetricCompatible_leviCivitaConnection (I.prod J)) p u v ≤ κ := by
+  obtain ⟨a, w, hdet, hsec⟩ :=
+    exists_sectionalCurvature_eq_vertical_right_of_finrank_le_one hn p u v
+  let e := tangentSpaceProdEquiv (I := I) (J := J) p
+  have ha : e.symm ((e a).1, (e a).2) = a := e.symm_apply_apply a
+  have hpos : 0 < (Matrix.gram ℝ ![a, e.symm (0, w)]).det := by
+    rw [hdet]; exact (Matrix.posDef_gram_of_linearIndependent huv).det_pos
+  have hnum := h.inner_curvatureTensor_vertical_right hf p (e a).1 (e a).2 w
+  have hgram := h.det_gram_vertical_right p (e a).1 (e a).2 w
+  rw [ha] at hnum hgram
+  rw [hsec, sectionalCurvature_apply, div_le_iff₀ hpos, hnum, hgram,
+    hessian_eq_laplaceBeltrami_mul_inner_of_finrank_le_one hn, real_inner_self_eq_norm_sq]
+  nlinarith [mul_le_mul_of_nonneg_right hlap (mul_nonneg (sq_nonneg ‖(e a).1‖) (sq_nonneg ‖w‖)),
+    mul_le_mul_of_nonneg_left (hfibre (e a).2 w) (sq_nonneg (f p.1))]
+
+/-- Over a base of dimension at most one, when `-f Δf = κ f²` and
+`⟪R_N(v, w)w, v⟫ = (κ f² + |grad f|²) det(Gram(v, w))` at `p`, every tangent two-plane of the warped
+product at `p` has sectional curvature `κ`. -/
+theorem IsWarpedProduct.hasSectionalCurvatureAt_of_finrank_le_one
+    (h : IsWarpedProduct I J N f) (hf : ContMDiff I 𝓘(ℝ) ∞ f)
+    (hn : Module.finrank ℝ E ≤ 1) (p : M × N) {κ : ℝ}
+    (hlap : -f p.1 * laplaceBeltrami I f p.1 = κ * f p.1 ^ 2)
+    (hfibre : ∀ v w : TangentSpace J p.2,
+      inner ℝ ((leviCivitaConnection J N).curvatureTensor p.2 v w w) v =
+        (κ * f p.1 ^ 2 + ‖mgradient I f p.1‖ ^ 2) * (Matrix.gram ℝ ![v, w]).det) :
+    (leviCivitaConnection (I.prod J) (M × N)).HasSectionalCurvatureAt
+      (isMetricCompatible_leviCivitaConnection (I.prod J)) p κ :=
+  ((leviCivitaConnection (I.prod J) (M × N)).hasSectionalCurvatureAt_iff _ p κ).2 fun _ _ huv ↦
+    le_antisymm
+      (h.sectionalCurvature_le_of_finrank_le_one hf hn p hlap.le (fun v w ↦ (hfibre v w).le) huv)
+      (h.le_sectionalCurvature_of_finrank_le_one hf hn p hlap.ge (fun v w ↦ (hfibre v w).ge) huv)
+
 /-- Over a base of dimension at most one, a warping function whose product with its
 Laplacian is nonpositive and fibre curvature numerator at least `|grad f|² det Gram` gives
 nonnegative sectional curvature on every plane of the warped product. The bound
@@ -107,34 +236,10 @@ theorem IsWarpedProduct.sectionalCurvature_nonneg_of_finrank_le_one
     (u v : TangentSpace (I.prod J) p) :
     0 ≤ (leviCivitaConnection (I.prod J) (M × N)).sectionalCurvature
       (isMetricCompatible_leviCivitaConnection (I.prod J)) p u v := by
-  let e := tangentSpaceProdEquiv (I := I) (J := J) p
-  let K := (leviCivitaConnection (I.prod J) (M × N)).sectionalCurvature
-    (isMetricCompatible_leviCivitaConnection (I.prod J)) p
-  have hver (a : TangentSpace (I.prod J) p) (w : TangentSpace J p.2) :
-      0 ≤ K a (e.symm (0, w)) := by
-    dsimp only [K]
-    have hnum := h.inner_curvatureTensor_vertical_right hf p (e a).1 (e a).2 w
-    rw [ContinuousLinearEquiv.symm_apply_apply] at hnum
-    rw [sectionalCurvature_apply, hnum]
-    apply div_nonneg _ (Matrix.posSemidef_gram ℝ _).det_nonneg
-    apply add_nonneg _ (mul_nonneg (sq_nonneg _) (sub_nonneg.2 (hfibre _ _)))
-    rw [hessian_eq_laplaceBeltrami_mul_inner_of_finrank_le_one hn]
-    rw [neg_mul, ← mul_assoc, ← neg_mul]
-    exact mul_nonneg (mul_nonneg (neg_nonneg.2 hlap)
-      (real_inner_self_nonneg (x := (e a).1))) (sq_nonneg _)
-  by_cases hu : (e u).1 = 0
-  · have heq : u = e.symm (0, (e u).2) := by rw [← hu]; exact (e.symm_apply_apply u).symm
-    rw [heq, IsMetricCompatible.sectionalCurvature_comm]
-    exact hver _ _
-  · have hn' : Module.finrank ℝ (TangentSpace I p.1) = 1 := by
-      have hpos := (Module.finrank_pos_iff_exists_ne_zero (R := ℝ)).2 ⟨(e u).1, hu⟩
-      have hle := (finrank_tangentSpace (I := I) p.1).le.trans hn
-      omega
-    obtain ⟨a, ha⟩ := (finrank_eq_one_iff_of_ne_zero' (e u).1 hu).1 hn' (e v).1
-    have heq : v + (-a) • u = e.symm (0, (e v).2 - a • (e u).2) := by
-      apply e.injective
-      simp [Prod.ext_iff, ha, sub_eq_add_neg]
-    rw [← sectionalCurvature_add_smul_right _ _ p u v (-a), heq]
-    exact hver _ _
+  by_cases huv : LinearIndependent ℝ ![u, v]
+  · refine h.le_sectionalCurvature_of_finrank_le_one hf hn p (by linarith) (fun a b ↦ ?_) huv
+    simpa using hfibre a b
+  · rw [sectionalCurvature_apply,
+      not_not.mp (Matrix.det_gram_ne_zero_iff_linearIndependent.not.mpr huv), div_zero]
 
 end TauCeti.Manifold

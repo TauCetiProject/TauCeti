@@ -5,30 +5,26 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Geometry.Manifold.Instances.Cylinder
 public import TauCeti.Geometry.Manifold.Riemannian.Sphere.WarpedProd
 public import TauCeti.Geometry.RicciFlow.StandardCap.Profile
-import Mathlib.Analysis.InnerProductSpace.Calculus
-import TauCeti.Geometry.Manifold.MFDeriv.NormedSpace
-import TauCeti.Geometry.Manifold.MFDeriv.Prod
 
 /-!
 # The standard cap away from its tip
 
 A standard cap profile `f` gives a smooth positive definite metric `dr² + f(r)² g_(Sⁿ)` on
-`(0, ∞) × Sⁿ` via the native warped-product construction, identified smoothly with `V ∖ {0}` by
-polar coordinates (`TauCeti.radialSphereDiffeomorph`). Scalar curvature is nonnegative, equals
+`(0, ∞) × Sⁿ` via the native warped-product construction. Scalar curvature is nonnegative, equals
 `n(n+1)/4` near the missing tip, and equals `n(n-1)/2` on the cylindrical end (`1` when `n = 2`).
 Sectional curvature of the punctured cap is developed in
 `TauCeti.Geometry.RicciFlow.StandardCap.SectionalCurvature`, and the global smooth extension across
-`0 ∈ V` in `TauCeti.Geometry.RicciFlow.StandardCap.Metric`.
+`0 ∈ V` (identified with `(0, ∞) × Sⁿ` via `TauCeti.radialSphereDiffeomorph`) in
+`TauCeti.Geometry.RicciFlow.StandardCap.Metric`.
 
 ## Main definitions and results
 
-* `TauCeti.standardCapRadialDomain`, `TauCeti.radialSphereDiffeomorph`,
-  `TauCeti.mvfderiv_radial_smul_coe_sphere_apply`: polar coordinates `(r, u) ↦ r • u` on
-  `(0, ∞) × Sⁿ` and its differential.
-* `TauCeti.IsStandardCapProfile.puncturedMetric`: the smooth warped metric `dr² + f(r)² g_(Sⁿ)`.
+* `TauCeti.standardCapRadialDomain`: the open radial half-line `(0, ∞)`.
+* `TauCeti.IsStandardCapProfile.puncturedMetric`,
+  `TauCeti.IsStandardCapProfile.puncturedMetric_def`: the smooth warped metric
+  `dr² + f(r)² g_(Sⁿ)`.
 * `TauCeti.IsStandardCapProfile.scalarCurvature_puncturedMetric`,
   `TauCeti.IsStandardCapProfile.scalarCurvature_puncturedMetric_nonneg`,
   `TauCeti.IsStandardCapProfile.exists_scalarCurvature_puncturedMetric_eq_round`,
@@ -52,94 +48,6 @@ open scoped ContDiff Manifold InnerProductSpace Topology
 /-- The open radial half-line used for punctured standard caps. -/
 abbrev TauCeti.standardCapRadialDomain : Opens ℝ := ⟨Ioi 0, isOpen_Ioi⟩
 
-namespace TauCeti
-
-section Polar
-
-variable (V : Type*) [NormedAddCommGroup V] [InnerProductSpace ℝ V] {n : ℕ}
-  [Fact (finrank ℝ V = n + 1)]
-
-/-- **Polar coordinates** `(r, u) ↦ r • u` as a smooth diffeomorphism from
-`standardCapRadialDomain × Sⁿ` onto the punctured space `V ∖ {0}`, with inverse
-`x ↦ (‖x‖, ‖x‖⁻¹ • x)`. -/
-def radialSphereDiffeomorph :
-    (standardCapRadialDomain × sphere (0 : V) 1) ≃ₘ⟮𝓘(ℝ).prod (𝓡 n), 𝓘(ℝ, V)⟯ puncturedSpace V where
-  toFun p := ⟨(p.1 : ℝ) • (p.2 : V),
-    mem_puncturedSpace.2 (smul_ne_zero p.1.property.ne' (ne_zero_of_mem_unit_sphere p.2))⟩
-  invFun x := (⟨‖(x : V)‖, norm_pos_iff.2 (mem_puncturedSpace.1 x.2)⟩,
-    ⟨‖(x : V)‖⁻¹ • (x : V), by
-      simp [norm_smul, inv_mul_cancel₀ (norm_ne_zero_iff.2 (mem_puncturedSpace.1 x.2))]⟩)
-  left_inv p := by
-    rcases p with ⟨r, u⟩
-    have hr : 0 < (r : ℝ) := r.property; have hu : ‖(u : V)‖ = 1 := norm_eq_of_mem_sphere u
-    exact Prod.ext (Subtype.ext (by simp [norm_smul, hu, abs_of_pos hr]))
-      (Subtype.ext (by simp [norm_smul, hu, abs_of_pos hr, smul_smul, inv_mul_cancel₀ hr.ne']))
-  right_inv x := Subtype.ext <| by
-    simp [smul_smul, mul_inv_cancel₀ (norm_ne_zero_iff.2 (mem_puncturedSpace.1 x.2))]
-  contMDiff_toFun :=
-    (ContMDiff.subtypeVal_comp_iff (puncturedSpace V) _).1 <|
-      (contMDiff_subtype_val.comp contMDiff_fst).smul (contMDiff_coe_sphere.comp contMDiff_snd)
-  contMDiff_invFun := by
-    refine ContMDiff.prodMk ?_ ?_
-    · refine (ContMDiff.subtypeVal_comp_iff standardCapRadialDomain _).1 fun x ↦ ?_
-      exact (contMDiffAt_subtype_iff (f := fun y : V ↦ ‖y‖)).2
-        (contDiffAt_norm ℝ (mem_puncturedSpace.1 x.2)).contMDiffAt
-    · refine ContMDiff.codRestrict_sphere (f := fun x : puncturedSpace V ↦ ‖(x : V)‖⁻¹ • (x : V))
-        (fun x ↦ (contMDiffAt_subtype_iff (f := fun y : V ↦ ‖y‖⁻¹ • y)).2 ?_) _
-      have hx : (x : V) ≠ 0 := mem_puncturedSpace.1 x.2
-      exact (((contDiffAt_norm ℝ hx).inv (norm_ne_zero_iff.2 hx)).smul contDiffAt_id).contMDiffAt
-
-variable {V}
-
-@[simp] theorem coe_radialSphereDiffeomorph_apply (p : standardCapRadialDomain × sphere (0 : V) 1) :
-    (radialSphereDiffeomorph (n := n) V p : V) = (p.1 : ℝ) • (p.2 : V) := (rfl)
-
-@[simp] theorem radialSphereDiffeomorph_symm_apply_fst (x : puncturedSpace V) :
-    ((radialSphereDiffeomorph (n := n) V).symm x).1 =
-      ⟨‖(x : V)‖, norm_pos_iff.2 (mem_puncturedSpace.1 x.2)⟩ := (rfl)
-
-@[simp] theorem coe_radialSphereDiffeomorph_symm_apply_snd (x : puncturedSpace V) :
-    (((radialSphereDiffeomorph (n := n) V).symm x).2 : V) = ‖(x : V)‖⁻¹ • (x : V) := (rfl)
-
-/-- The differential of `(r, u) ↦ r • u` on `(0, ∞) × Sⁿ` sends `(a, w)` at `(r, u)` to
-`a • u + r • w`. -/
-theorem mvfderiv_radial_smul_coe_sphere_apply
-    (p : standardCapRadialDomain × sphere (0 : V) 1)
-    (v : TangentSpace (𝓘(ℝ).prod (𝓡 n)) p) :
-    mvfderiv (𝓘(ℝ).prod (𝓡 n))
-        (fun q : standardCapRadialDomain × sphere (0 : V) 1 ↦ (q.1 : ℝ) • (q.2 : V)) p v =
-      (tangentSpaceCastModel 𝓘(ℝ) p.1 (tangentSpaceProdEquiv p v).1) • (p.2 : V) +
-        (p.1 : ℝ) • mvfderiv (𝓡 n) ((↑) : sphere (0 : V) 1 → V) p.2
-          (tangentSpaceProdEquiv p v).2 := by
-  have hd₁ : MDifferentiableAt (𝓘(ℝ).prod (𝓡 n)) 𝓘(ℝ)
-      (fun q : standardCapRadialDomain × sphere (0 : V) 1 ↦ (q.1 : ℝ)) p :=
-    (contMDiff_subtype_val.mdifferentiable one_ne_zero p.1).comp p mdifferentiableAt_fst
-  have hd₂ : MDifferentiableAt (𝓘(ℝ).prod (𝓡 n)) 𝓘(ℝ, V)
-      (fun q : standardCapRadialDomain × sphere (0 : V) 1 ↦ (q.2 : V)) p :=
-    ((contMDiff_coe_sphere (E := V) (n := n) (m := 1) p.2).mdifferentiableAt one_ne_zero).comp p
-      mdifferentiableAt_snd
-  have hsub : mvfderiv 𝓘(ℝ) Subtype.val p.1 (tangentSpaceProdEquiv p v).1 =
-      tangentSpaceCastModel 𝓘(ℝ) p.1 (tangentSpaceProdEquiv p v).1 := by
-    rw [mvfderiv_subtype_val_apply]
-    rfl
-  have h₁ : mvfderiv (𝓘(ℝ).prod (𝓡 n))
-      (fun q : standardCapRadialDomain × sphere (0 : V) 1 ↦ (q.1 : ℝ)) p v =
-      tangentSpaceCastModel 𝓘(ℝ) p.1 (tangentSpaceProdEquiv p v).1 := by
-    rw [← hsub, tangentSpaceProdEquiv_apply]
-    exact mvfderiv_comp_fst_apply Subtype.val p v
-  have h₂ : mvfderiv (𝓘(ℝ).prod (𝓡 n))
-      (fun q : standardCapRadialDomain × sphere (0 : V) 1 ↦ (q.2 : V)) p v =
-      mvfderiv (𝓡 n) ((↑) : sphere (0 : V) 1 → V) p.2 (tangentSpaceProdEquiv p v).2 := by
-    rw [tangentSpaceProdEquiv_apply]
-    exact mvfderiv_comp_snd_apply _ p v
-  rw [mvfderiv_fun_smul hd₁ hd₂]
-  simp only [_root_.add_apply, _root_.smul_apply, ContinuousLinearMap.smulRight_apply, h₁, h₂]
-  exact add_comm _ _
-
-end Polar
-
-end TauCeti
-
 namespace TauCeti.IsStandardCapProfile
 
 variable {f : ℝ → ℝ} (hf : TauCeti.IsStandardCapProfile f)
@@ -158,6 +66,16 @@ def puncturedMetric :
       (fun r ↦ (hf.apply_pos r.property).ne')
       ((sphereRoundMetric (E := V)).ofLE (m := ∞) le_top)
 
+/-- Explicit warped-product definition of `hf.puncturedMetric V`. -/
+theorem puncturedMetric_def :
+    hf.puncturedMetric (n := n) V =
+      (((riemannianMetricVectorSpace ℝ).ofLE (m := ∞) le_top).restrictOpenTangentSpace
+        standardCapRadialDomain).warpedProdTangentSpace (fun r ↦ f r)
+        (hf.contDiff.contMDiff.comp contMDiff_subtype_val)
+        (fun r ↦ (hf.apply_pos r.property).ne')
+        ((sphereRoundMetric (E := V) (n := n)).ofLE (m := ∞) le_top) :=
+  (rfl)
+
 variable {V}
 
 /-- The punctured metric is the orthogonal sum of the radial metric and the
@@ -172,7 +90,7 @@ theorem puncturedMetric_inner
           (tangentSpaceProdEquiv p w).1 +
       f p.1 ^ 2 * ((sphereRoundMetric (E := V)).ofLE (m := ∞) le_top).inner p.2
         (tangentSpaceProdEquiv p v).2 (tangentSpaceProdEquiv p w).2 := by
-  rw [puncturedMetric, ContMDiffRiemannianMetric.warpedProdTangentSpace_inner]
+  rw [puncturedMetric_def, ContMDiffRiemannianMetric.warpedProdTangentSpace_inner]
 
 /-- Scalar curvature of the punctured standard cap, using ordinary radial derivatives.
 For a two-dimensional sphere fibre the two terms are
@@ -182,7 +100,7 @@ theorem scalarCurvature_puncturedMetric
     (hf.puncturedMetric (n := n) V).scalarCurvature p =
       (n : ℝ) * (n - 1) * (1 - deriv f p.1 ^ 2) / f p.1 ^ 2 -
         2 * n * deriv (deriv f) p.1 / f p.1 := by
-  rw [puncturedMetric]
+  rw [puncturedMetric_def]
   exact scalarCurvature_warpedProdTangentSpace_real_sphere standardCapRadialDomain
     (hf.contDiff.contMDiff.comp contMDiff_subtype_val)
     (fun r ↦ (hf.apply_pos r.property).ne') p
@@ -231,15 +149,14 @@ theorem exists_scalarCurvature_puncturedMetric_eq_round :
     ∃ r₀ > 0, ∀ p : standardCapRadialDomain × Metric.sphere (0 : V) 1,
       (p.1 : ℝ) < r₀ →
       (hf.puncturedMetric (n := n) V).scalarCurvature p = (n : ℝ) * (n + 1) / 4 := by
-  obtain ⟨r₀, hr₀, h⟩ := hf.exists_eq_two_mul_sin_and_deriv
+  obtain ⟨r₀, hr₀, h⟩ := hf.exists_neg_deriv_deriv_div_eq_and_one_sub_deriv_sq_div_sq_eq
   refine ⟨r₀, hr₀, fun p hp ↦ ?_⟩
-  obtain ⟨hf0, hd, hdd⟩ := h p.1 (by rwa [abs_of_pos p.1.property])
-  have hsin : sin ((p.1 : ℝ) / 2) ≠ 0 := by
-    intro h0; exact (hf.apply_pos p.1.property).ne' (by rw [hf0, h0, mul_zero])
-  have htrig : 1 - cos ((p.1 : ℝ) / 2) ^ 2 = sin ((p.1 : ℝ) / 2) ^ 2 := by
-    nlinarith [sin_sq_add_cos_sq ((p.1 : ℝ) / 2)]
-  rw [hf.scalarCurvature_puncturedMetric, hf0, hd, hdd, htrig]
-  field_simp
+  obtain ⟨hmix, hvert⟩ := h p.1 p.1.property.ne' (by rwa [abs_of_pos p.1.property])
+  have h1 : (n : ℝ) * (n - 1) * (1 - deriv f p.1 ^ 2) / f p.1 ^ 2 =
+      (n : ℝ) * (n - 1) * ((1 - deriv f p.1 ^ 2) / f p.1 ^ 2) := by ring
+  have h2 : -(2 * (n : ℝ) * deriv (deriv f) p.1 / f p.1) =
+      2 * (n : ℝ) * (-deriv (deriv f) p.1 / f p.1) := by ring
+  rw [hf.scalarCurvature_puncturedMetric, sub_eq_add_neg, h1, h2, hvert, hmix]
   ring
 
 end TauCeti.IsStandardCapProfile
