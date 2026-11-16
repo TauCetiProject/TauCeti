@@ -58,7 +58,7 @@ theorem natDegree_toPolynomial_le (H : ExchangePolynomial R) :
 @[simp] theorem natDegree_toPolynomial [Nontrivial R] (H : ExchangePolynomial R) :
     H.toPolynomial.natDegree = H.degree := by
   apply natDegree_eq_of_le_of_coeff_ne_zero (natDegree_toPolynomial_le H)
-  simpa using H.isUnit_coeff_degree.ne_zero
+  simp
 
 /-- Polynomial realization has degree bounded by the specified exchange degree. -/
 theorem degree_toPolynomial_le (H : ExchangePolynomial R) :
@@ -82,7 +82,7 @@ theorem degree_toPolynomial_le (H : ExchangePolynomial R) :
 @[simp] theorem toPolynomial_ne_zero [Nontrivial R] (H : ExchangePolynomial R) :
     H.toPolynomial ≠ 0 := by
   apply leadingCoeff_ne_zero.mp
-  simpa using H.isUnit_coeff_degree.ne_zero
+  simp
 
 /-- Exchange polynomial realization is faithful over nontrivial coefficient semirings. -/
 theorem toPolynomial_injective [Nontrivial R] :

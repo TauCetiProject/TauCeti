@@ -57,6 +57,15 @@ variable {K L M : Type*} [CommMonoidWithZero K] [CommMonoidWithZero L]
 @[simp] theorem degree_ne_zero (H : ExchangePolynomial K) : H.degree ≠ 0 :=
   H.degree_pos.ne'
 
+/-- Over a nontrivial coefficient monoid the unit constant coefficient is nonzero. -/
+@[simp] theorem coeff_zero_ne_zero [Nontrivial K] (H : ExchangePolynomial K) : H.coeff 0 ≠ 0 :=
+  H.isUnit_coeff_zero.ne_zero
+
+/-- Over a nontrivial coefficient monoid the unit highest coefficient is nonzero. -/
+@[simp] theorem coeff_degree_ne_zero [Nontrivial K] (H : ExchangePolynomial K) :
+    H.coeff H.degree ≠ 0 :=
+  H.isUnit_coeff_degree.ne_zero
+
 /-- Exchange polynomials are determined by their degrees and coefficients through those degrees. -/
 @[ext]
 theorem ext {H G : ExchangePolynomial K} (hd : H.degree = G.degree)
