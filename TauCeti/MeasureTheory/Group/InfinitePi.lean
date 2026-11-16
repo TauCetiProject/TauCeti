@@ -44,7 +44,7 @@ variable {ι : Type*} {G : ι → Type*} [∀ i, MeasurableSpace (G i)]
 instance infinitePi.isMulLeftInvariant [∀ i, Mul (G i)] [∀ i, MeasurableMul (G i)]
     [∀ i, IsMulLeftInvariant (μ i)] : IsMulLeftInvariant (Measure.infinitePi μ) := by
   refine ⟨fun g ↦ ?_⟩
-  change (Measure.infinitePi μ).map (fun x i ↦ g i * x i) = Measure.infinitePi μ
+  simp_rw [Pi.mul_def]
   rw [Measure.infinitePi_map_pi _ fun i ↦ measurable_const_mul (g i)]
   simp_rw [map_mul_left_eq_self]
 
@@ -54,7 +54,7 @@ right-invariant. -/]
 instance infinitePi.isMulRightInvariant [∀ i, Mul (G i)] [∀ i, MeasurableMul (G i)]
     [∀ i, IsMulRightInvariant (μ i)] : IsMulRightInvariant (Measure.infinitePi μ) := by
   refine ⟨fun g ↦ ?_⟩
-  change (Measure.infinitePi μ).map (fun x i ↦ x i * g i) = Measure.infinitePi μ
+  simp_rw [Pi.mul_def]
   rw [Measure.infinitePi_map_pi _ fun i ↦ measurable_mul_const (g i)]
   simp_rw [map_mul_right_eq_self]
 
@@ -64,8 +64,8 @@ negation-invariant. -/]
 instance infinitePi.isInvInvariant [∀ i, Inv (G i)] [∀ i, MeasurableInv (G i)]
     [∀ i, IsInvInvariant (μ i)] : IsInvInvariant (Measure.infinitePi μ) := by
   refine ⟨?_⟩
-  change (Measure.infinitePi μ).map (fun x i ↦ (x i)⁻¹) = Measure.infinitePi μ
-  rw [Measure.infinitePi_map_pi _ fun _ ↦ measurable_inv]
+  have hinv : (Inv.inv : (∀ i, G i) → ∀ i, G i) = fun x i ↦ (x i)⁻¹ := funext Pi.inv_def
+  rw [Measure.inv_def, hinv, Measure.infinitePi_map_pi _ fun _ ↦ measurable_inv]
   simp_rw [← inv_def, inv_eq_self]
 
 end MeasureTheory.Measure

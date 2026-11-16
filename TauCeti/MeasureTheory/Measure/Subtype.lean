@@ -22,10 +22,10 @@ is a topological group in its own right and `μ.comap (↑)` is a Haar measure o
 This file records the basic functoriality, finiteness, σ-finiteness, and inner-regularity properties
 of `μ.comap (↑)`:
 
-* For any measurable map `f`, `(μ.comap f) (f ⁻¹' v) ≤ μ v` with no measurability assumption on `v`
-  or injectivity assumption on `f` (`MeasureTheory.Measure.comap_preimage_le`).
 * For `s ⊆ t` with `t` measurable, pulling back from `α` to `t` and then along
   `Set.inclusion hst` to `s` recovers the direct pullback to `s`.
+* For a measurable set `s`, `μ.comap ((↑) : s → α)` is a probability measure if and only if
+  `μ s = 1` (`MeasureTheory.Measure.isProbabilityMeasure_comap_subtype_iff`).
 * Local finiteness and finiteness on compact sets pass from `μ` to `μ.comap (Subtype.val)` for
   every subtype `Subtype p`, with no measurability or separation assumptions; in particular, if `s`
   is σ-compact and `μ` is finite on compacts, `μ.comap ((↑) : s → α)` is σ-finite
@@ -37,8 +37,6 @@ of `μ.comap (↑)`:
 
 * `MeasurableSet.measurableEmbedding_inclusion`: `Set.inclusion hst : s → t` is a measurable
   embedding when `s` is measurable in `α`.
-* `MeasureTheory.Measure.comap_preimage_le`: `(μ.comap f) (f ⁻¹' v) ≤ μ v` for measurable `f`, and
-  consequently `Measurable.sigmaFinite_comap`.
 * `MeasureTheory.Measure.isProbabilityMeasure_comap_subtype_iff`: `μ.comap ((↑) : s → α)` is a
   probability measure on a measurable set `s` if and only if `μ s = 1`.
 * `MeasureTheory.Measure.comap_inclusion_comap_subtype_coe`: compatibility of `Measure.comap` along
@@ -67,24 +65,7 @@ namespace MeasureTheory.Measure
 
 section Measurable
 
-variable {α β : Type*} [MeasurableSpace α] [MeasurableSpace β]
-
-/-- For any measurable map `f`, the pullback measure of `f ⁻¹' v` is bounded by `μ v`, with no
-measurability assumption on `v` or injectivity assumption on `f`. -/
-theorem comap_preimage_le {f : α → β} (hf : Measurable f) (μ : Measure β) (v : Set β) :
-    (μ.comap f) (f ⁻¹' v) ≤ μ v := by
-  have hT : MeasurableSet (f ⁻¹' toMeasurable μ v) := hf (measurableSet_toMeasurable μ v)
-  exact (measure_mono (preimage_mono (subset_toMeasurable μ v))).trans <|
-    ((comap_apply_le f μ hT.nullMeasurableSet).trans
-      (measure_mono (image_preimage_subset f _))).trans_eq (measure_toMeasurable v)
-
-/-- Pulling a σ-finite measure back along a measurable map gives a σ-finite measure. -/
-theorem _root_.Measurable.sigmaFinite_comap {f : α → β} (hf : Measurable f) (μ : Measure β)
-    [SigmaFinite μ] : SigmaFinite (μ.comap f) :=
-  ⟨⟨{ set n := f ⁻¹' spanningSets μ n
-      set_mem _ := trivial
-      finite n := (comap_preimage_le hf μ _).trans_lt (measure_spanningSets_lt_top μ n)
-      spanning := by rw [← preimage_iUnion, iUnion_spanningSets, preimage_univ] }⟩⟩
+variable {α : Type*} [MeasurableSpace α]
 
 /-- For a measurable subset `s`, the pullback `μ.comap ((↑) : s → α)` is a probability measure if
 and only if `μ s = 1`. -/

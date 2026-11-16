@@ -16,6 +16,8 @@ public import TauCeti.Topology.Algebra.RestrictedProduct.Away.Stage
 public import TauCeti.Topology.Algebra.RestrictedProduct.TopologicalSpace
 import Mathlib.MeasureTheory.Group.Prod
 import Mathlib.MeasureTheory.Integral.Prod
+import TauCeti.MeasureTheory.Measure.Comap
+import TauCeti.Topology.Algebra.Group.Subgroup
 
 /-!
 # Restricted products of Haar measures
@@ -82,11 +84,6 @@ public section
 
 open Filter Function MeasureTheory Set TopologicalSpace Topology
 open scoped ENNReal NNReal RestrictedProduct
-
-@[to_additive]
-private instance instSecondCountableTopologySubgroup {H : Type*} [Group H] [TopologicalSpace H]
-    [SecondCountableTopology H] (U : Subgroup H) : SecondCountableTopology U :=
-  Subtype.secondCountableTopology (U : Set H)
 
 namespace TauCeti
 
@@ -304,10 +301,10 @@ private theorem restrictedHaar_refBox_S₀ (hB : ∀ᶠ i in Filter.cofinite, Is
     (measure_restrictedHaarRefBox_pos B hS₀ Measure.haar).ne'
   have htop : (Measure.haar : Measure (Πʳ i, [G i, B i])) (restrictedHaarRefBox B hS₀) ≠ ∞ :=
     hK.measure_lt_top.ne
-  change ((restrictedHaarRefMass _ μ /
-      ((Measure.haar : Measure (Πʳ i, [G i, B i])) (restrictedHaarRefBox B hS₀)).toNNReal : ℝ≥0) :
-        ℝ≥0∞) * (Measure.haar : Measure (Πʳ i, [G i, B i])) (restrictedHaarRefBox B hS₀) = _
-  rw [ENNReal.coe_div (ENNReal.toNNReal_ne_zero.2 ⟨hpos, htop⟩), ENNReal.coe_toNNReal htop,
+  unfold restrictedHaar
+  dsimp only
+  rw [smul_apply, nnreal_smul_coe_apply,
+    ENNReal.coe_div (ENNReal.toNNReal_ne_zero.2 ⟨hpos, htop⟩), ENNReal.coe_toNNReal htop,
     ENNReal.div_mul_cancel hpos htop, coe_restrictedHaarRefMass]
 
 variable [Countable ι] [∀ i, SecondCountableTopology (G i)] [∀ i, BorelSpace (G i)]
@@ -345,7 +342,7 @@ private theorem comap_stageEmbedding_restrictedHaar_of_subset {T : Set ι} (hT :
   have _ : ((restrictedHaar B hB μ hμ).comap (stageEmbedding T hT B)).IsMulLeftInvariant :=
     isMulLeftInvariant_comap _ (stageEmbedding T hT B)
   set E : Set ((∀ i : T, G i.1) × (∀ j : {i // i ∉ T}, B j.1)) :=
-    stageEmbedding T hT B ⁻¹' {x | ∀ i, x i ∈ restrictedHaarRefSet B S₀ i}
+    stageEmbedding T hT B ⁻¹' {x | ∀ i, x i ∈ restrictedHaarRefSet B S₀ i} with hE_def
   have himg : stageEmbedding T hT B '' E = restrictedHaarRefBox B hS₀ := by
     rw [restrictedHaarRefBox_eq, image_preimage_eq_iff, range_stageEmbedding]
     intro x hx i hiT
@@ -357,7 +354,7 @@ private theorem comap_stageEmbedding_restrictedHaar_of_subset {T : Set ι} (hT :
   have hprodE : ((Measure.pi fun i : T ↦ μ i.1).prod
       (Measure.infinitePi fun j : {i // i ∉ T} ↦ (μ j.1).comap ((↑) : B j.1 → G j.1))) E =
       restrictedHaarRefMass S₀ μ := by
-    rw [show E = _ from preimage_stageEmbedding_restrictedHaarRefSet B hT hsub,
+    rw [hE_def, preimage_stageEmbedding_restrictedHaarRefSet B hT hsub,
       prod_prod, pi_pi, measure_univ, mul_one]
     exact prod_measure_restrictedHaarRefSet B hsub μ fun i _ hi ↦ not_not.1 fun hm ↦ hi (Or.inr hm)
   have hne0 : (restrictedHaarRefMass S₀ μ : ℝ≥0∞) ≠ 0 :=
@@ -415,7 +412,9 @@ theorem comap_stageEmbedding_restrictedHaar {S : Set ι} (hS : S.Finite) [Fintyp
       intro x hx i hiT
       have hiS : i ∉ S := fun hs ↦ hiT (Or.inl hs)
       simpa [restrictedHaarRefSet, hiS] using hx i
-    rw [hembS.comap_apply, show stageEmbedding S hS B '' ES = _ from restrictedHaarRefBox_eq B hS,
+    rw [hembS.comap_apply]
+    dsimp only [ES]
+    rw [← restrictedHaarRefBox, restrictedHaarRefBox_eq B hS,
       ← image_preimage_eq_of_subset hsubT, ← hembT.comap_apply,
       comap_stageEmbedding_restrictedHaar_of_subset B hT hB μ hμ subset_union_right,
       preimage_stageEmbedding_restrictedHaarRefSet B hT subset_union_left,
@@ -601,11 +600,7 @@ theorem setIntegral_stage_fst_restrictedHaar {E : Type*} [NormedAddCommGroup E] 
       f (fun i : S ↦ stageEmbedding S hS B p i.1)) = fun p ↦ f p.1 := by
     ext ⟨y, z⟩
     simp
-  have h1 : (fun q : (∀ j : {i // i ∉ S}, B j.1) × (∀ i : S, G i.1) ↦ f q.swap.1) =
-      fun q ↦ (1 : ℝ) • f q.2 := by
-    ext
-    simp
-  rw [hcomp, ← integral_prod_swap, h1, integral_prod_smul (fun _ ↦ (1 : ℝ)) f]
+  rw [hcomp, integral_fun_fst]
   simp
 
 /-- **The box formula for the restricted Haar measure.** Every box `{x | ∀ i, x i ∈ C i}` with
@@ -715,9 +710,9 @@ theorem restrictedHaar_eq_smul_of_eq_away
       HasFiniteMulSupport fun i ↦ ν i (C i) :=
     (Set.Finite.union hCB hν).subset fun i hi ↦ by
       by_contra h
-      exact hi (by
-        dsimp only
-        rw [show C i = B i from not_not.1 (h ∘ Or.inl), not_not.1 (h ∘ Or.inr)])
+      have hCi : C i = B i := not_not.1 (h ∘ Or.inl)
+      have hνi : ν i (B i) = 1 := not_not.1 (h ∘ Or.inr)
+      exact hi (by dsimp only; rw [hCi, hνi])
   rw [← mul_finprod_cond_ne i₀ (hsupp μ hμ), ← mul_finprod_cond_ne i₀ (hsupp μ' hμ'), hi₀,
     smul_apply, nnreal_smul_coe_apply, mul_assoc]
   congr 2

@@ -6,21 +6,32 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.MeasureTheory.Measure.Comap
+public import Mathlib.MeasureTheory.Measure.Typeclasses.SFinite
 
 import Mathlib.MeasureTheory.Measure.QuasiMeasurePreserving
 
 /-!
-# Composing pullbacks of measures along a measurable embedding
+# Pullbacks of measures
 
-Pulling a measure back along a measurable embedding `g` and then along an arbitrary map `f` is the
-same as pulling it back along `g ∘ f`. Mathlib's `MeasureTheory.Measure.comap_comap` needs a
-measurable-image hypothesis on `f`; strengthening `g` to a measurable embedding removes every
-hypothesis on `f`, which allows iterated pullbacks along maps such as arbitrary subtype inclusions.
+This file records general properties of `MeasureTheory.Measure.comap`:
+
+* Pulling a measure back along a measurable embedding `g` and then along an arbitrary map `f` is
+  the same as pulling it back along `g ∘ f` (`MeasurableEmbedding.comap_comap`). Mathlib's
+  `MeasureTheory.Measure.comap_comap` needs a measurable-image hypothesis on `f`; strengthening `g`
+  to a measurable embedding removes every hypothesis on `f`, which allows iterated pullbacks along
+  maps such as arbitrary subtype inclusions.
+* For any measurable map `f`, `(μ.comap f) (f ⁻¹' v) ≤ μ v` with no measurability assumption on `v`
+  or injectivity assumption on `f` (`MeasureTheory.Measure.comap_preimage_le`), and consequently
+  pulling a σ-finite measure back along a measurable map gives a σ-finite measure
+  (`Measurable.sigmaFinite_comap`).
 
 ## Main declarations
 
 * `MeasurableEmbedding.comap_comap`: `(μ.comap g).comap f = μ.comap (g ∘ f)` for a measurable
   embedding `g` and any `f`.
+* `MeasureTheory.Measure.comap_preimage_le`: `(μ.comap f) (f ⁻¹' v) ≤ μ v` for measurable `f`.
+* `Measurable.sigmaFinite_comap`: σ-finiteness of `μ.comap f` for a measurable map `f` and
+  σ-finite `μ`.
 -/
 
 public section
@@ -60,3 +71,26 @@ theorem comap_comap (hg : MeasurableEmbedding g) (f : α → β) (μ : Measure �
     rwa [image_comp]
 
 end MeasurableEmbedding
+
+namespace MeasureTheory.Measure
+
+variable {α β : Type*} [MeasurableSpace α] [MeasurableSpace β]
+
+/-- For any measurable map `f`, the pullback measure of `f ⁻¹' v` is bounded by `μ v`, with no
+measurability assumption on `v` or injectivity assumption on `f`. -/
+theorem comap_preimage_le {f : α → β} (hf : Measurable f) (μ : Measure β) (v : Set β) :
+    (μ.comap f) (f ⁻¹' v) ≤ μ v := by
+  have hT : MeasurableSet (f ⁻¹' toMeasurable μ v) := hf (measurableSet_toMeasurable μ v)
+  exact (measure_mono (preimage_mono (subset_toMeasurable μ v))).trans <|
+    ((comap_apply_le f μ hT.nullMeasurableSet).trans
+      (measure_mono (image_preimage_subset f _))).trans_eq (measure_toMeasurable v)
+
+/-- Pulling a σ-finite measure back along a measurable map gives a σ-finite measure. -/
+theorem _root_.Measurable.sigmaFinite_comap {f : α → β} (hf : Measurable f) (μ : Measure β)
+    [SigmaFinite μ] : SigmaFinite (μ.comap f) :=
+  ⟨⟨{ set n := f ⁻¹' spanningSets μ n
+      set_mem _ := trivial
+      finite n := (comap_preimage_le hf μ _).trans_lt (measure_spanningSets_lt_top μ n)
+      spanning := by rw [← preimage_iUnion, iUnion_spanningSets, preimage_univ] }⟩⟩
+
+end MeasureTheory.Measure

@@ -8,6 +8,7 @@ module
 import TauCeti.NumberTheory.LocalField.Topology
 import TauCeti.RingTheory.DedekindDomain.AdicValuation.ValuativeRel
 public import TauCeti.RingTheory.DedekindDomain.FiniteAdeleRing.Basic
+public import TauCeti.RingTheory.DedekindDomain.HeightOneSpectrum
 
 /-!
 # Local compactness and second countability of finite adele rings
@@ -16,8 +17,8 @@ The finite adele ring of a Dedekind domain with finite residue fields is locally
 completion is a nonarchimedean local field, and its integer ring is compact and open; local
 compactness then follows from the theorem for restricted products. Moreover, the finite adele ring
 is second countable whenever the height-one prime spectrum is countable (in particular when `R` is
-countable, since every ideal of a Noetherian ring is finitely generated), and is σ-compact when `R`
-is countable.
+countable, via `TauCeti.RingTheory.DedekindDomain.HeightOneSpectrum`), and is σ-compact when `R` is
+countable.
 
 The finite-residue-field hypothesis is stated directly, rather than specialized to rings of
 integers, so this applies to every Dedekind domain for which the same local compactness argument is
@@ -25,10 +26,6 @@ valid.
 
 ## Main results
 
-* `IsDedekindDomain.HeightOneSpectrum.instNeZeroAsIdeal`: the underlying ideal of a height-one
-  prime is nonzero (so `[Ring.HasFiniteQuotients R]` supplies `Finite (R ⧸ v.asIdeal)`).
-* `IsDedekindDomain.HeightOneSpectrum.instCountable`: a countable Noetherian commutative ring has
-  countably many height-one primes.
 * `IsDedekindDomain.FiniteAdeleRing.instLocallyCompactSpace`: the finite adele ring is locally
   compact when all residue fields are finite.
 * `IsDedekindDomain.FiniteAdeleRing.instSecondCountableTopology`: the finite adele ring is second
@@ -46,31 +43,7 @@ noncomputable section
 
 open IsDedekindDomain
 
-namespace IsDedekindDomain
-
-/-- Every height-one prime ideal is nonzero (`⊥ = 0` in `Ideal R`), so `Ring.HasFiniteQuotients`
-synthesizes `Finite (R ⧸ v.asIdeal)` automatically (for instance for `ℤ` and `𝓞 K`). -/
-instance HeightOneSpectrum.instNeZeroAsIdeal {R : Type*} [CommRing R] (v : HeightOneSpectrum R) :
-    NeZero v.asIdeal :=
-  ⟨v.ne_bot⟩
-
-/-- A countable Noetherian commutative ring has countably many height-one primes, since every ideal
-is finitely generated and hence determined by a finite generating subset. -/
-instance HeightOneSpectrum.instCountable (R : Type*) [CommRing R] [IsNoetherianRing R]
-    [Countable R] : Countable (HeightOneSpectrum R) :=
-  let s (v : HeightOneSpectrum R) : Set R :=
-    (Submodule.fg_def.mp (IsNoetherian.noetherian v.asIdeal)).choose
-  have hs_fin (v : HeightOneSpectrum R) : (s v).Finite :=
-    (Submodule.fg_def.mp (IsNoetherian.noetherian v.asIdeal)).choose_spec.1
-  have hs_span (v : HeightOneSpectrum R) : Submodule.span R (s v) = v.asIdeal :=
-    (Submodule.fg_def.mp (IsNoetherian.noetherian v.asIdeal)).choose_spec.2
-  letI := Classical.decEq R
-  Function.Injective.countable (f := fun v : HeightOneSpectrum R ↦ (hs_fin v).toFinset) fun v w h ↦
-    HeightOneSpectrum.ext <| by
-      have hset : s v = s w := by simpa using congrArg (↑· : Finset R → Set R) h
-      rw [← hs_span v, ← hs_span w, hset]
-
-namespace FiniteAdeleRing
+namespace IsDedekindDomain.FiniteAdeleRing
 
 variable (R : Type*) [CommRing R] [IsDedekindDomain R]
 variable (K : Type*) [Field K] [Algebra R K] [IsFractionRing R K]
@@ -121,6 +94,4 @@ instance instSigmaCompactSpace [Countable R] [∀ v : HeightOneSpectrum R, Finit
   exact isSigmaCompact_iUnion_of_isCompact _ fun b ↦
     isCompact_integralAdeles.image (continuous_id.mul continuous_const)
 
-end FiniteAdeleRing
-
-end IsDedekindDomain
+end IsDedekindDomain.FiniteAdeleRing

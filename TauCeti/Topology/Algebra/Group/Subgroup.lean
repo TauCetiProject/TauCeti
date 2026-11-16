@@ -95,6 +95,8 @@ series of a profinite group.
   subgroup containing the commutators of a topological generating set contains the closure of
   the commutator subgroup.
 * `Subgroup.instCompactSpace_of_isClosed`: a closed subgroup of a compact group is compact.
+* `Subgroup.instSecondCountableTopology`: a subgroup of a group with a second-countable topology is
+  second countable; the additive version is `AddSubgroup.instSecondCountableTopology`.
 * `Subgroup.isClosed_of_weaklyLocallyCompactSpace`: a weakly locally compact subgroup of a
   `T0` topological group is closed; the additive version is
   `AddSubgroup.isClosed_of_weaklyLocallyCompactSpace`.
@@ -292,6 +294,14 @@ omit [IsTopologicalGroup G] in
 instance instCompactSpace_of_isClosed [CompactSpace G] (N : Subgroup G) [IsClosed (N : Set G)] :
     CompactSpace N :=
   (IsClosed.isClosedEmbedding_subtypeVal ‹_›).compactSpace
+
+omit [IsTopologicalGroup G] in
+/-- A subgroup of a group with a second-countable topology is second countable. -/
+@[to_additive /-- An additive subgroup of an additive group with a second-countable topology is
+second countable. -/]
+instance instSecondCountableTopology [SecondCountableTopology G] (H : Subgroup G) :
+    SecondCountableTopology H :=
+  TopologicalSpace.Subtype.secondCountableTopology (H : Set G)
 
 omit [IsTopologicalGroup G] in
 /-- In a group with continuous multiplication, the join of two compact subgroups `H` and `N`
