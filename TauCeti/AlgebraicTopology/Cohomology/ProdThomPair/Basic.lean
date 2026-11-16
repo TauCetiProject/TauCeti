@@ -38,8 +38,9 @@ Mayer–Vietoris over unions of trivializing open sets: the vanishing below the 
 restriction to the two pieces injective in degree `r`, and the determination by fibres makes local
 Thom classes agree on overlaps.
 
-In every degree, the cohomology of the punctured product bundle `B × (F ∖ {0})` contains that of
-the base: pulling back along the projection is injective, since the projection has a section
+When `F` has a nonzero vector (positive rank), the cohomology of the punctured product bundle
+`B × (F ∖ {0})` contains that of the base in every degree: pulling back along the projection is
+injective, since the projection has a section
 (`TauCeti.leftInverse_singularCohomologyMap_prodThomPairPuncturedSection` and
 `TauCeti.injective_singularCohomologyMap_prodThomPairPuncturedProj`). The cohomology of the total
 space `B × F` is that of the base when `F` is contractible
@@ -63,7 +64,8 @@ the Thom pair in degrees at least the rank
 * `TauCeti.leftInverse_singularCohomologyMap_prodThomPairPuncturedSection`,
   `TauCeti.injective_singularCohomologyMap_prodThomPairPuncturedProj` and
   `TauCeti.exists_singularCohomologyMap_prodThomPairProj_eq`: the cohomology of the base injects
-  into that of `B × (F ∖ {0})` and is all of that of `B × F` for contractible `F`.
+  into that of `B × (F ∖ {0})` when `F` has a nonzero vector, and is all of that of `B × F` for
+  contractible `F`.
 * `TauCeti.bijective_prodThomPair_singularCohomologyδ_comp_inr`: for contractible `E` with a
   nonzero vector and a decomposition `D` of `Hⁿ(B × (E ∖ {0}))` whose first factor is `π^*`,
   `c ↦ δ (D (0, c))` is a bijection onto `Hⁿ⁺¹(B × E, B × (E ∖ {0}))`.
