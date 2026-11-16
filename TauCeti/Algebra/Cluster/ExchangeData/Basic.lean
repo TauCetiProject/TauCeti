@@ -297,12 +297,6 @@ theorem mutation_mutation_trivial (d : ExchangeData R row) (k : K) :
 
 /-! ### Zero columns and binary data -/
 
-theorem mutation_column_eq_zero_iff (c : CoefficientSystem 𝕂 R) (d : ExchangeData 𝕂 row)
-    (k j : K) :
-    (∀ i, (d.mutation c k).exchange.matrix i j = 0) ↔ ∀ i, d.exchange.matrix i j = 0 := by
-  simpa only [mutation_exchange, ExchangeMatrix.mutation_matrix] using
-    matrixMutation_column_eq_zero_iff (row := row) (B := d.exchange.matrix) (j := j) k
-
 @[simp]
 theorem valueAtOne_mutation_self (c : CoefficientSystem 𝕂 R) (d : ExchangeData 𝕂 row) (k : K) :
     (d.mutation c k).valueAtOne c k = d.valueAtOne c k := by
