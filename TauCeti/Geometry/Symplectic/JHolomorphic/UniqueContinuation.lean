@@ -39,7 +39,7 @@ isomorphism `Ψ : ℂⁿ → E` turns `J(x₀)` into multiplication by `i`
 `∂ₛη + i ∂ₜη = Ψ⁻¹ (J(x₀) (J(u) - J(x₀)) ∂ₛu)`.
 
 As `J` is Lipschitz near `x₀`, the right-hand side is bounded by a multiple of `‖∂ₛu‖ ‖η‖`, so
-it equals `-C η` for the rank-one coefficient `C` sending `η(z)` to it
+it equals `-C η` for the rank-one coefficient `C` sending `η(z)` to minus the right-hand side
 (`TauCeti.rankOneDivNormSq`), which is measurable and locally bounded. Carleman's similarity
 principle for the constant structure `i` (`TauCeti.hasSimilarityFactorizationAt_of_contDiffOn`)
 then factors `η` near each of its zeros, and the zero structure of such factorizations
