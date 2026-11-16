@@ -209,13 +209,22 @@ private def stabSubgroup (x : X) : Subgroup (L ≃ₐ[K] L) where
   carrier := {σ | D.iso σ (conjRingEquiv (σ : L ≃+* L) X x) = x}
   one_mem' := D.iso_one_conjRingEquiv x
   mul_mem' {σ τ} hσ hτ := by
-    change D.iso (σ * τ) (conjRingEquiv _ X x) = x
+    rw [Set.mem_ofPred_eq] at hσ hτ ⊢
     rw [D.iso_mul, hτ, hσ]
   inv_mem' {σ} hσ := by
-    change D.iso σ⁻¹ (conjRingEquiv _ X x) = x
+    rw [Set.mem_ofPred_eq] at hσ ⊢
     have h := D.iso_mul σ⁻¹ σ x
     rw [inv_mul_cancel, D.iso_one_conjRingEquiv, hσ] at h
     exact h.symm
+
+@[simp]
+private theorem mem_stabSubgroup {x : X} {σ : L ≃ₐ[K] L} :
+    σ ∈ D.stabSubgroup x ↔ D.iso σ (conjRingEquiv (σ : L ≃+* L) X x) = x :=
+  Iff.rfl
+
+private theorem mem_stabSubgroup_iff_ringEquiv {x : X} {σ : L ≃ₐ[K] L} :
+    σ ∈ D.stabSubgroup x ↔ D.ringEquiv σ x = x :=
+  Iff.rfl
 
 private theorem isLocallyConstant_iff_isOpen_stabSubgroup (x : X) :
     (IsLocallyConstant fun σ : L ≃ₐ[K] L ↦ D.iso σ (conjRingEquiv (σ : L ≃+* L) X x)) ↔
@@ -228,13 +237,11 @@ private theorem isLocallyConstant_iff_isOpen_stabSubgroup (x : X) :
   · have hpre : ((fun σ : L ≃ₐ[K] L ↦ D.iso σ (conjRingEquiv (σ : L ≃+* L) X x)) ⁻¹'
         {D.iso τ (conjRingEquiv (τ : L ≃+* L) X x)}) =
         (fun σ : L ≃ₐ[K] L ↦ τ⁻¹ * σ) ⁻¹' (D.stabSubgroup x : Set (L ≃ₐ[K] L)) := by
-      refine Set.ext fun σ ↦ ⟨fun hσ ↦ ?_, fun hσ ↦ ?_⟩
-      · change D.iso (τ⁻¹ * σ) (conjRingEquiv _ X x) = x
-        change D.iso σ (conjRingEquiv _ X x) = D.iso τ (conjRingEquiv _ X x) at hσ
-        rw [D.iso_mul, hσ, ← D.iso_mul, inv_mul_cancel, D.iso_one_conjRingEquiv]
-      · change D.iso σ (conjRingEquiv _ X x) = D.iso τ (conjRingEquiv _ X x)
-        change D.iso (τ⁻¹ * σ) (conjRingEquiv _ X x) = x at hσ
-        have h' := D.iso_mul τ (τ⁻¹ * σ) x
+      ext σ
+      simp only [Set.mem_preimage, Set.mem_singleton_iff, SetLike.mem_coe, mem_stabSubgroup]
+      refine ⟨fun hσ ↦ ?_, fun hσ ↦ ?_⟩
+      · rw [D.iso_mul, hσ, ← D.iso_mul, inv_mul_cancel, D.iso_one_conjRingEquiv]
+      · have h' := D.iso_mul τ (τ⁻¹ * σ) x
         rwa [mul_inv_cancel_left, hσ] at h'
     rw [hpre]
     exact h.preimage (continuous_const.mul continuous_id)
@@ -273,38 +280,40 @@ theorem isContinuous_iff_isLocallyConstant :
 private def openStabilizerSubfield [Algebra.IsAlgebraic K L] : IntermediateField L X where
   carrier := {x : X | IsOpen (D.stabSubgroup x : Set (L ≃ₐ[K] L))}
   algebraMap_mem' c := by
-    change IsOpen (D.stabSubgroup (algebraMap L X c) : Set (L ≃ₐ[K] L))
+    rw [Set.mem_ofPred_eq]
     have heq : (D.stabSubgroup (algebraMap L X c) : Set (L ≃ₐ[K] L)) =
         MulAction.stabilizer (L ≃ₐ[K] L) c := by
       ext σ
-      change D.ringEquiv σ (algebraMap L X c) = algebraMap L X c ↔ σ c = c
-      rw [D.ringEquiv_algebraMap, (algebraMap L X).injective.eq_iff]
+      rw [SetLike.mem_coe, D.mem_stabSubgroup_iff_ringEquiv, SetLike.mem_coe,
+        MulAction.mem_stabilizer_iff, AlgEquiv.smul_def, D.ringEquiv_algebraMap,
+        (algebraMap L X).injective.eq_iff]
     rw [heq]
     exact stabilizer_isOpen_of_isIntegral c
   add_mem' {x y} hx hy :=
     Subgroup.isOpen_mono (H₁ := D.stabSubgroup x ⊓ D.stabSubgroup y)
-      (fun σ ⟨h₁, h₂⟩ ↦ by
-        change D.ringEquiv σ (x + y) = x + y
-        rw [map_add]
-        exact congrArg₂ (· + ·) h₁ h₂)
+      (H₂ := D.stabSubgroup (x + y))
+      (fun σ hσ ↦ by
+        rcases Subgroup.mem_inf.mp hσ with ⟨h₁, h₂⟩
+        rw [D.mem_stabSubgroup_iff_ringEquiv] at h₁ h₂ ⊢
+        rw [map_add, h₁, h₂])
       (hx.inter hy)
   zero_mem' :=
     Subgroup.isOpen_mono (H₁ := ⊤) (fun σ _ ↦ map_zero (D.ringEquiv σ)) isOpen_univ
   mul_mem' {x y} hx hy :=
     Subgroup.isOpen_mono (H₁ := D.stabSubgroup x ⊓ D.stabSubgroup y)
-      (fun σ ⟨h₁, h₂⟩ ↦ by
-        change D.ringEquiv σ (x * y) = x * y
-        rw [map_mul]
-        exact congrArg₂ (· * ·) h₁ h₂)
+      (H₂ := D.stabSubgroup (x * y))
+      (fun σ hσ ↦ by
+        rcases Subgroup.mem_inf.mp hσ with ⟨h₁, h₂⟩
+        rw [D.mem_stabSubgroup_iff_ringEquiv] at h₁ h₂ ⊢
+        rw [map_mul, h₁, h₂])
       (hx.inter hy)
   one_mem' :=
     Subgroup.isOpen_mono (H₁ := ⊤) (fun σ _ ↦ map_one (D.ringEquiv σ)) isOpen_univ
   inv_mem' {x} hx :=
-    Subgroup.isOpen_mono (H₁ := D.stabSubgroup x)
+    Subgroup.isOpen_mono (H₁ := D.stabSubgroup x) (H₂ := D.stabSubgroup x⁻¹)
       (fun σ h ↦ by
-        change D.ringEquiv σ x⁻¹ = x⁻¹
-        rw [map_inv₀]
-        exact congrArg Inv.inv h)
+        rw [D.mem_stabSubgroup_iff_ringEquiv] at h ⊢
+        rw [map_inv₀, h])
       hx
 
 /-- Over an algebraic extension `L / K`, a descent datum is continuous as soon as the stabilizers
@@ -386,19 +395,18 @@ theorem isContinuous_iff_exists_openSubgroup_fixes_embedding
   let Fσ : IntermediateField E₀ M₀.pair :=
     { carrier := {z : M₀.pair | D.ringEquiv σ (M₀.embedding z) = M₀.embedding z}
       algebraMap_mem' c := by
-        change D.ringEquiv σ (M₀.embedding (algebraMap E₀ M₀.pair c)) = _
-        rw [M₀.embedding_algebraMap, D.ringEquiv_algebraMap, IntermediateField.algebraMap_apply,
-          (mem_fixingSubgroup_iff E₀ σ).mp hσE c c.2]
+        rw [Set.mem_ofPred_eq, M₀.embedding_algebraMap, D.ringEquiv_algebraMap,
+          IntermediateField.algebraMap_apply, (mem_fixingSubgroup_iff E₀ σ).mp hσE c c.2]
       add_mem' {a b} ha hb := by
-        change D.ringEquiv σ (M₀.embedding (a + b)) = M₀.embedding (a + b)
+        rw [Set.mem_ofPred_eq] at ha hb ⊢
         rw [map_add, map_add, ha, hb]
       zero_mem' := by simp
       mul_mem' {a b} ha hb := by
-        change D.ringEquiv σ (M₀.embedding (a * b)) = M₀.embedding (a * b)
+        rw [Set.mem_ofPred_eq] at ha hb ⊢
         rw [map_mul, map_mul, ha, hb]
       one_mem' := by simp
       inv_mem' {a} ha := by
-        change D.ringEquiv σ (M₀.embedding a⁻¹) = M₀.embedding a⁻¹
+        rw [Set.mem_ofPred_eq] at ha ⊢
         rw [map_inv₀, map_inv₀, ha] }
   have hFσ : Fσ = ⊤ := eq_top_iff.mpr (hS ▸ adjoin_le_iff.mpr hσS)
   exact (hFσ.symm ▸ mem_top : y ∈ Fσ)
@@ -502,8 +510,7 @@ noncomputable def descend : AlgebraicBelyiPair K :=
   letI := ratFuncAlgebraOfTranscendental D.transcendental_gen
   haveI := isScalarTower_ratFuncAlgebraOfTranscendental D.transcendental_gen
   haveI := GaloisDescent.finiteDimensional_ratFunc_fixedField_of_isOpen
-    D.semilinearAction_algebraMap (IsContinuous.isOpen_semilinearAction D)
-    X.isAlgebraicBelyiPair.isIntegrallyClosedIn D.algebraMap_gen
+    D.semilinearAction_algebraMap (IsContinuous.isOpen_semilinearAction D) D.algebraMap_gen
   { carrier := fixedField D.semilinearAction.range
     isAlgebraicBelyiPair := (GaloisDescent.isAlgebraicBelyiPair_fixedField_iff_of_isOpen
       D.semilinearAction_algebraMap (IsContinuous.isOpen_semilinearAction D)
@@ -555,8 +562,7 @@ theorem finrank_descend :
   have := isScalarTower_ratFuncAlgebraOfTranscendental D.transcendental_gen
   -- Elaborated without the expected type, whose instances are the fields of `descend`.
   have h := GaloisDescent.finrank_ratFunc_fixedField_of_isOpen D.semilinearAction_algebraMap
-    (IsContinuous.isOpen_semilinearAction D) X.isAlgebraicBelyiPair.isIntegrallyClosedIn
-    D.algebraMap_gen
+    (IsContinuous.isOpen_semilinearAction D) D.algebraMap_gen
   exact h
 
 /-- The **base-change isomorphism** of a continuous descent datum: extending the scalars of the
