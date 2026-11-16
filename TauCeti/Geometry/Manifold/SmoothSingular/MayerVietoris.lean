@@ -6,13 +6,12 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.Homology.HomologySequenceLemmas
-public import Mathlib.AlgebraicTopology.SimplicialSet.SubcomplexColimits
 public import TauCeti.Algebra.Homology.HomologicalComplex.Biprod
-public import TauCeti.AlgebraicTopology.SimplicialSet.Homology.MayerVietoris
+public import TauCeti.AlgebraicTopology.Singular.MayerVietoris.Basic
 public import TauCeti.AlgebraicTopology.Singular.Subdivision.Small.Subcomplex
-public import TauCeti.Data.Set.Lattice
+public import TauCeti.CategoryTheory.Subfunctor.Basic
 public import TauCeti.Geometry.Manifold.SmoothSingular.Subdivision
-public import TauCeti.Topology.Sets.FinTwo
+public import TauCeti.Order.CompleteLattice.MulticoequalizerDiagram
 
 /-!
 # The Mayer–Vietoris step of the comparison of smooth and singular chains
@@ -27,8 +26,9 @@ smooth with singular homology; the disjoint-union hypothesis is
 
 Write `W = U ∪ V` and `S` for the smooth singular simplices of `W`. Inside the singular simplicial
 set of `W`, the simplices lying in `U ∩ V`, in `U` and in `V` and the simplices lying in `U` or in
-`V` form a bicartesian square of subcomplexes, and intersecting it with `S` gives the bicartesian
-square of the corresponding smooth simplices. Its corners are the smooth simplices of `U ∩ V`, of
+`V` form a bicartesian square of subcomplexes (`TopCat.bicartSq_range_toSSet_map_inclusion`), and
+intersecting it with `S` gives the bicartesian square of the corresponding smooth simplices
+(`Lattice.BicartSq.inf_left`). Its corners are the smooth simplices of `U ∩ V`, of
 `U` and of `V`: a singular simplex of `W` lying in `U` is smooth exactly when it is smooth as a
 simplex of `U` (`TauCeti.range_smoothSingularSubcomplexMap_inclusion_ι`). The inclusion of the
 smooth square into the singular square is a map of Mayer–Vietoris short exact sequences of chain
@@ -118,41 +118,6 @@ end Inclusion
 
 section MayerVietoris
 
-/-- A singular simplex of an open set `W` comes from the open subset `X ≤ W` exactly when its image
-lies in `X`. -/
-private theorem mem_range_toSSet_map_inclusion_iff {X W : Opens M} (hX : X ≤ W)
-    (k : SimplexCategoryᵒᵖ) (σ : (TopCat.toSSet.obj (TopCat.of W)).obj k) :
-    σ ∈ (SSet.Subcomplex.range (TopCat.toSSet.map
-        (TopCat.ofHom ⟨Opens.inclusion hX, continuous_inclusion hX⟩))).obj k ↔
-      Set.range ((TopCat.of W).toSSetObjEquiv k σ) ⊆ {x | (x : M) ∈ X} := by
-  rw [Subfunctor.range_obj,
-    IsInducing.mem_range_toSSet_map_app_iff (IsEmbedding.inclusion hX).isInducing k σ]
-  exact Iff.of_eq (congrArg _ (Set.range_inclusion hX))
-
-/-- The singular simplices of `U ∪ V` lying in `U ∩ V`, in `U`, in `V`, and in `U` or in `V` form
-a bicartesian square of subcomplexes. -/
-private theorem bicartSq_range_toSSet_map_inclusion (U V : Opens M) :
-    SSet.Subcomplex.BicartSq
-      (SSet.Subcomplex.range (TopCat.toSSet.map (TopCat.ofHom
-        ⟨Opens.inclusion (inf_le_left.trans le_sup_left : U ⊓ V ≤ U ⊔ V),
-          continuous_inclusion (inf_le_left.trans le_sup_left : U ⊓ V ≤ U ⊔ V)⟩)))
-      (SSet.Subcomplex.range (TopCat.toSSet.map (TopCat.ofHom
-        ⟨Opens.inclusion (le_sup_left : U ≤ U ⊔ V),
-          continuous_inclusion (le_sup_left : U ≤ U ⊔ V)⟩)))
-      (SSet.Subcomplex.range (TopCat.toSSet.map (TopCat.ofHom
-        ⟨Opens.inclusion (le_sup_right : V ≤ U ⊔ V),
-          continuous_inclusion (le_sup_right : V ≤ U ⊔ V)⟩)))
-      ((TopCat.of ↥(U ⊔ V)).smallSingularSubcomplex
-        ![{x | (x : M) ∈ U}, {x | (x : M) ∈ V}]) := by
-  refine ⟨?_, ?_⟩
-  · ext k σ
-    simp only [Subfunctor.max_obj, Set.mem_union, mem_range_toSSet_map_inclusion_iff,
-      TopCat.mem_smallSingularSubcomplex_iff, Fin.exists_fin_two, Matrix.cons_val_zero,
-      Matrix.cons_val_one]
-  · ext k σ
-    simp only [Subfunctor.min_obj, Set.mem_inter_iff, mem_range_toSSet_map_inclusion_iff]
-    exact Set.subset_inter_iff.symm
-
 variable (I) {C : Type v} [Category.{w} C] [Abelian C] [HasCoproducts.{u} C] (R : C)
 
 /-- **The Mayer–Vietoris step of the comparison of smooth and singular chains.** If the inclusion
@@ -164,15 +129,9 @@ theorem quasiIso_chainComplexMap_smoothSingularSubcomplex_ι_sup (U V : Opens M)
     (hUV : QuasiIso (SSet.chainComplexMap (smoothSingularSubcomplex I ↥(U ⊓ V)).ι R)) :
     QuasiIso (SSet.chainComplexMap (smoothSingularSubcomplex I ↥(U ⊔ V)).ι R) := by
   let S := smoothSingularSubcomplex I ↥(U ⊔ V)
-  have sq₂ := bicartSq_range_toSSet_map_inclusion U V
+  have sq₂ := TopCat.bicartSq_range_toSSet_map_inclusion U V
   -- Intersecting the square of singular simplices with `S` gives the square of smooth simplices.
-  have hS {A B C D : (TopCat.toSSet.obj (TopCat.of ↥(U ⊔ V))).Subcomplex}
-      (sq : SSet.Subcomplex.BicartSq A B C D) :
-      SSet.Subcomplex.BicartSq (S ⊓ A) (S ⊓ B) (S ⊓ C) (S ⊓ D) := by
-    refine ⟨?_, ?_⟩ <;> [rw [← sq.sup_eq]; rw [← sq.inf_eq]] <;> ext k σ <;>
-      simp only [Subfunctor.max_obj, Subfunctor.min_obj, Set.mem_union, Set.mem_inter_iff] <;>
-      tauto
-  have sq₁ := hS sq₂
+  have sq₁ : SSet.Subcomplex.BicartSq _ _ _ _ := sq₂.inf_left S
   have hc {A B C D : (TopCat.toSSet.obj (TopCat.of ↥(U ⊔ V))).Subcomplex} (h₁ : A ≤ B)
       (h₂ : B ≤ D) (h₃ : A ≤ C) (h₄ : C ≤ D) :
       SSet.Subcomplex.homOfLE h₁ ≫ SSet.Subcomplex.homOfLE h₂ =
