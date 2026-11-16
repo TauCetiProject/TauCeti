@@ -8,6 +8,7 @@ module
 public import TauCeti.Analysis.Normed.Operator.SNumbers.Basic
 public import TauCeti.Analysis.Normed.Module.Quotient
 public import Mathlib.Analysis.Normed.Module.FiniteDimension
+import TauCeti.Analysis.Normed.Operator.Basic
 
 /-!
 # Kolmogorov numbers
@@ -17,9 +18,9 @@ quotient projections by subspaces of dimension at most `n`. The quotient seminor
 even when the subspace is not closed. This definition works over every nontrivially normed
 field; its closed-unit-ball interpretation requires a densely normed field.
 
-We prove the norm, monotonicity, perturbation, ideal and rank laws. Over a complete scalar
-field, finite-dimensional subspaces are closed, and the Kolmogorov numbers form a strict
-s-number sequence. No completeness of the domain or codomain is needed.
+We prove the norm, monotonicity, perturbation, ideal, metric-quotient invariance, and rank laws.
+Over a complete scalar field, finite-dimensional subspaces are closed, and the Kolmogorov numbers
+form a strict s-number sequence. No completeness of the domain or codomain is needed.
 
 ## References
 
@@ -130,6 +131,25 @@ theorem kolmogorovNumber_comp_le_right (T : F →L[𝕜] G) (A : E →L[𝕜] F)
   rw [kolmogorovNumber_def T, NNReal.iInf_mul]
   refine le_ciInf fun V ↦ ((T ∘L A).kolmogorovNumber_le V.2).trans ?_
   simpa only [comp_assoc] using opNNNorm_comp_le (V.1.mkQL ∘L T) A
+
+/-- Kolmogorov numbers do not decrease under precomposition with an operator that lifts open balls
+around the origin to open balls of the same radius. -/
+theorem kolmogorovNumber_le_kolmogorovNumber_comp (T : F →L[𝕜] G) {Q : E →L[𝕜] F}
+    (hQ : ∀ r, Metric.ball (0 : F) r ⊆ Q '' Metric.ball 0 r) (n : ℕ) :
+    T.kolmogorovNumber n ≤ (T ∘L Q).kolmogorovNumber n :=
+  le_kolmogorovNumber_iff.mpr fun V hV ↦ (T.kolmogorovNumber_le hV).trans <| by
+    rw [← comp_assoc]
+    exact (V.mkQL ∘L T).le_opNNNorm_comp_of_ball_subset hQ
+
+/-- **Metric-quotient invariance of Kolmogorov numbers.** Precomposing with a contraction that
+lifts open balls around the origin to open balls of the same radius preserves every Kolmogorov
+number. -/
+theorem kolmogorovNumber_comp_eq_of_ball_subset (T : F →L[𝕜] G) {Q : E →L[𝕜] F}
+    (hQ₁ : ‖Q‖ ≤ 1) (hQ : ∀ r, Metric.ball (0 : F) r ⊆ Q '' Metric.ball 0 r) (n : ℕ) :
+    (T ∘L Q).kolmogorovNumber n = T.kolmogorovNumber n :=
+  le_antisymm
+    ((T.kolmogorovNumber_comp_le_right Q n).trans (mul_le_of_le_one_right' (mod_cast hQ₁)))
+    (T.kolmogorovNumber_le_kolmogorovNumber_comp hQ n)
 
 /-- Postcomposition scales Kolmogorov numbers by at most the operator norm. -/
 theorem kolmogorovNumber_comp_le_left (B : F →L[𝕜] G) (T : E →L[𝕜] F) (n : ℕ) :

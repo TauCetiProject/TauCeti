@@ -49,6 +49,8 @@ nontrivially normed fields. In the nonarchimedean setting, the analogous univers
 * `lp.norm_linearCombination`: over a nontrivially normed field, `‖linearCombination 𝕜 e‖ = ‖e‖`.
 * `lp.linearCombination_injective` and `lp.linearCombination_surjective`: bijectivity of the
   correspondence between bounded families and continuous linear maps out of `ℓ¹`.
+* `ContinuousLinearMap.opNorm_le_of_lp_single`: operator-norm bound for maps out of `ℓ¹` from
+  bounds on the unit coordinate vectors.
 
 ## References
 
@@ -59,6 +61,39 @@ nontrivially normed fields. In the nonarchimedean setting, the analogous univers
 public section
 
 open scoped ENNReal NNReal
+
+namespace ContinuousLinearMap
+
+variable {𝕜 𝕜₂ ι M : Type*} [NontriviallyNormedField 𝕜] [NontriviallyNormedField 𝕜₂]
+  {σ : 𝕜 →+* 𝕜₂} [RingHomIsometric σ] [DecidableEq ι]
+
+/-- The values of any continuous semilinear map out of `ℓᵖ` (`1 ≤ p`) on the unit coordinate vectors
+form a bounded (`ℓ∞`) family. -/
+theorem memℓp_infty_apply_lp_single {p : ℝ≥0∞} [Fact (1 ≤ p)]
+    [NormedAddCommGroup M] [NormedSpace 𝕜₂ M] (u : lp (fun _ : ι ↦ 𝕜) p →SL[σ] M) :
+    Memℓp (fun i ↦ u (lp.single p i 1)) ∞ := by
+  refine memℓp_infty ⟨‖u‖, ?_⟩
+  rintro _ ⟨i, rfl⟩
+  simpa [lp.norm_single (zero_lt_one.trans_le (Fact.out : 1 ≤ p))] using
+    u.le_opNorm (lp.single p i (1 : 𝕜))
+
+/-- A continuous semilinear map out of `ℓ¹` into a seminormed space has operator norm at most `C`
+whenever `0 ≤ C` and its values on the unit coordinate vectors have norm at most `C`. -/
+theorem opNorm_le_of_lp_single [SeminormedAddCommGroup M] [NormedSpace 𝕜₂ M]
+    (u : lp (fun _ : ι ↦ 𝕜) 1 →SL[σ] M) {C : ℝ} (hC : 0 ≤ C)
+    (hu : ∀ i, ‖u (lp.single 1 i 1)‖ ≤ C) : ‖u‖ ≤ C := by
+  refine u.opNorm_le_bound hC fun a ↦ ?_
+  have hsum : HasSum (fun i ↦ σ (a i) • u (lp.single 1 i 1)) (u a) := by
+    convert (lp.hasSum_single ENNReal.one_ne_top a).mapL u using 1
+    ext i
+    rw [← u.map_smulₛₗ, ← lp.single_smul, smul_eq_mul, mul_one]
+  refine hsum.norm_le_of_bounded ((lp.hasSum_norm_one a).mul_left C) fun i ↦ ?_
+  calc ‖σ (a i) • u (lp.single 1 i 1)‖
+      = ‖a i‖ * ‖u (lp.single 1 i 1)‖ := by rw [norm_smul, RingHomIsometric.norm_map]
+    _ ≤ ‖a i‖ * C := mul_le_mul_of_nonneg_left (hu i) (norm_nonneg _)
+    _ = C * ‖a i‖ := mul_comm _ _
+
+end ContinuousLinearMap
 
 namespace lp
 
@@ -137,7 +172,7 @@ theorem eq_linearCombination_iff [DecidableEq ι] {e : lp (fun _ : ι ↦ M) ∞
 
 /-- Pairing the single-coordinate family `lp.single ∞ i m` with `a` gives `a i • m`. -/
 @[simp]
-theorem linearCombination_lpSingle [DecidableEq ι] (i : ι) (m : M) (a : lp (fun _ : ι ↦ R) 1) :
+theorem linearCombination_single_index [DecidableEq ι] (i : ι) (m : M) (a : lp (fun _ : ι ↦ R) 1) :
     linearCombination R (lp.single ∞ i m) a = a i • m := by
   rw [linearCombination_apply, tsum_eq_single i fun j hj ↦ by simp [hj], lp.single_apply_self]
 
@@ -150,7 +185,7 @@ theorem norm_linearCombination_apply_le (e : lp (fun _ : ι ↦ M) ∞) (a : lp 
 @[simp]
 theorem linearCombination_zero : linearCombination R (0 : lp (fun _ : ι ↦ M) ∞) = 0 := by
   classical
-  exact (eq_linearCombination_iff.mpr fun _ ↦ rfl).symm
+  exact (eq_linearCombination_iff.mpr fun _ ↦ by simp).symm
 
 /-- The linear combination map is additive in the bounded family. -/
 theorem linearCombination_add (e f : lp (fun _ : ι ↦ M) ∞) :
@@ -171,6 +206,14 @@ theorem linearCombination_sub (e f : lp (fun _ : ι ↦ M) ∞) :
   classical
   exact (eq_linearCombination_iff.mpr fun i ↦ by simp).symm
 
+/-- The linear combination map commutes with any bounded scalar action on the target module that
+commutes with the `R`-action. -/
+theorem linearCombination_smul {S : Type*} [NormedRing S] [Module S M] [IsBoundedSMul S M]
+    [SMulCommClass R S M] (c : S) (e : lp (fun _ : ι ↦ M) ∞) :
+    linearCombination R (c • e) = c • linearCombination R e := by
+  classical
+  exact (eq_linearCombination_iff.mpr fun i ↦ by simp).symm
+
 /-- A bounded family is uniquely determined by its linear combination map. -/
 theorem linearCombination_injective :
     Function.Injective
@@ -184,18 +227,11 @@ end Construction
 
 section CommRing
 
-variable {ι R M : Type*} [NormedCommRing R]
-
-/-- Over a commutative normed ring, the linear combination map is homogeneous in the family. -/
-theorem linearCombination_smul [NormedAddCommGroup M] [Module R M] [IsBoundedSMul R M]
-    [CompleteSpace M] (c : R) (e : lp (fun _ : ι ↦ M) ∞) :
-    linearCombination R (c • e) = c • linearCombination R e := by
-  classical
-  exact (eq_linearCombination_iff.mpr fun i ↦ by simp).symm
+variable {ι R : Type*} [NormedCommRing R] [CompleteSpace R]
 
 /-- For scalar-valued families over a complete commutative normed ring, the linear combination map
 is the series pairing `∑' i, b i * a i`. -/
-theorem linearCombination_eq_tsum_mul [CompleteSpace R] (b : lp (fun _ : ι ↦ R) ∞)
+theorem linearCombination_eq_tsum_mul (b : lp (fun _ : ι ↦ R) ∞)
     (a : lp (fun _ : ι ↦ R) 1) :
     linearCombination R b a = ∑' i, b i * a i := by
   simp_rw [linearCombination_apply, smul_eq_mul, mul_comm]
@@ -205,23 +241,7 @@ end CommRing
 section Field
 
 variable {𝕜 ι M : Type*} [NontriviallyNormedField 𝕜] [NormedAddCommGroup M] [NormedSpace 𝕜 M]
-
-/-- The values of any continuous linear map out of `ℓᵖ` (`1 ≤ p`) on the unit coordinate vectors
-form a bounded family, bounded in norm by the operator norm. -/
-theorem memℓp_infty_apply_single [DecidableEq ι] {p : ℝ≥0∞} [Fact (1 ≤ p)]
-    (u : lp (fun _ : ι ↦ 𝕜) p →L[𝕜] M) :
-    Memℓp (fun i ↦ u (lp.single p i 1)) ∞ := by
-  refine memℓp_infty ⟨‖u‖, ?_⟩
-  rintro _ ⟨i, rfl⟩
-  simpa [lp.norm_single (zero_lt_one.trans_le (Fact.out : 1 ≤ p))] using
-    u.le_opNorm (lp.single p i (1 : 𝕜))
-
-variable [CompleteSpace M]
-
-/-- The operator norm of `linearCombination 𝕜 e` is at most `‖e‖`. -/
-theorem norm_linearCombination_le (e : lp (fun _ : ι ↦ M) ∞) :
-    ‖linearCombination 𝕜 e‖ ≤ ‖e‖ :=
-  ContinuousLinearMap.opNorm_le_bound _ (norm_nonneg e) (norm_linearCombination_apply_le e)
+  [CompleteSpace M]
 
 /-- **Operator norm of a linear combination map**: over a nontrivially normed field, the operator
 norm of `linearCombination 𝕜 e` equals the `ℓ∞` norm `‖e‖` of the family. -/
@@ -229,7 +249,8 @@ norm of `linearCombination 𝕜 e` equals the `ℓ∞` norm `‖e‖` of the fam
 theorem norm_linearCombination (e : lp (fun _ : ι ↦ M) ∞) :
     ‖linearCombination 𝕜 e‖ = ‖e‖ := by
   classical
-  refine le_antisymm (norm_linearCombination_le e)
+  refine le_antisymm
+    (ContinuousLinearMap.opNorm_le_bound _ (norm_nonneg e) (norm_linearCombination_apply_le e))
     (lp.norm_le_of_forall_le (norm_nonneg _) fun i ↦ ?_)
   simpa [lp.norm_single zero_lt_one] using
     (linearCombination 𝕜 e).le_opNorm (lp.single 1 i (1 : 𝕜))
@@ -243,7 +264,7 @@ theorem nnNorm_linearCombination (e : lp (fun _ : ι ↦ M) ∞) :
 /-- Every continuous linear map out of `ℓ¹` is the linear combination map of its values at the unit
 coordinate vectors. -/
 theorem linearCombination_self [DecidableEq ι] (u : lp (fun _ : ι ↦ 𝕜) 1 →L[𝕜] M) :
-    linearCombination 𝕜 ⟨fun i ↦ u (lp.single 1 i 1), memℓp_infty_apply_single u⟩ = u :=
+    linearCombination 𝕜 ⟨fun i ↦ u (lp.single 1 i 1), u.memℓp_infty_apply_lp_single⟩ = u :=
   (eq_linearCombination_iff.mpr fun _ ↦ rfl).symm
 
 /-- Over a nontrivially normed field, every continuous linear map from `ℓ¹` into a Banach space is

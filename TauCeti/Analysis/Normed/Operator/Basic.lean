@@ -12,6 +12,7 @@ public import Mathlib.Topology.Algebra.Module.ContinuousLinearMap.Invertible
 import Mathlib.Analysis.Normed.Module.FiniteDimension
 import Mathlib.Analysis.Normed.Operator.NNNorm
 import Mathlib.LinearAlgebra.Pi
+import TauCeti.Analysis.Normed.Group.BallSphere
 
 /-!
 # Basic facts about bounded operators
@@ -83,7 +84,9 @@ A continuous bilinear map satisfies a Young-type bound
 
 A **metric quotient map**, an operator `q` with `‖q‖ ≤ 1` lifting every vector of norm less than
 `r` to a vector of norm less than `r`, maps each open ball about `0` onto the open ball of the same
-radius (`ContinuousLinearMap.image_ball_eq_ball`).
+radius (`ContinuousLinearMap.image_ball_eq_ball`), and precomposing with it preserves the operator
+norm (`ContinuousLinearMap.opNorm_comp_of_ball_subset`); the lower bound holds without the
+contraction hypothesis (`ContinuousLinearMap.le_opNorm_comp_of_ball_subset`).
 
 Finite real products also admit coordinate-basis estimates and continuous linear equivalences
 obtained by replacing one coordinate. The coordinate arguments are adapted from
@@ -462,18 +465,67 @@ end Net
 section MetricQuotient
 
 variable {𝕜 𝕜₂ E F : Type*} [NontriviallyNormedField 𝕜] [NontriviallyNormedField 𝕜₂]
-  {σ₁₂ : 𝕜 →+* 𝕜₂} [RingHomIsometric σ₁₂] [SeminormedAddCommGroup E] [NormedSpace 𝕜 E]
+  {σ₁₂ : 𝕜 →+* 𝕜₂} [SeminormedAddCommGroup E] [NormedSpace 𝕜 E]
   [SeminormedAddCommGroup F] [NormedSpace 𝕜₂ F]
 
 /-- A **metric quotient map** maps each open ball onto the open ball of the same radius: if
 `‖q‖ ≤ 1` and `q` lifts every vector of norm less than `r` to a vector of norm less than `r`,
 then `q` maps each open ball about `0` onto the open ball of the same radius. -/
-theorem image_ball_eq_ball {q : E →SL[σ₁₂] F} (h₁ : ‖q‖ ≤ 1)
+theorem image_ball_eq_ball [RingHomIsometric σ₁₂] {q : E →SL[σ₁₂] F} (h₁ : ‖q‖ ≤ 1)
     (h : ∀ r, Metric.ball (0 : F) r ⊆ q '' Metric.ball 0 r) (r : ℝ) :
     q '' Metric.ball 0 r = Metric.ball 0 r := by
   refine subset_antisymm ?_ (h r)
   have h' : ‖q‖₊ ≤ 1 := by rwa [← NNReal.coe_le_one, coe_nnNorm]
   simpa using ((q.lipschitzWith.weaken h').mapsTo_ball one_ne_zero 0 r).image_subset
+
+variable {𝕜₃ G : Type*} [NontriviallyNormedField 𝕜₃] [SeminormedAddCommGroup G] [NormedSpace 𝕜₃ G]
+  {σ₂₃ : 𝕜₂ →+* 𝕜₃} {σ₁₃ : 𝕜 →+* 𝕜₃} [RingHomIsometric σ₁₃]
+  [RingHomCompTriple σ₁₂ σ₂₃ σ₁₃]
+
+/-- Precomposing with a continuous semilinear map that lifts open balls around the origin to open
+balls of the same radius does not decrease the operator norm. -/
+theorem le_opNorm_comp_of_ball_subset (T : F →SL[σ₂₃] G) {q : E →SL[σ₁₂] F}
+    (hq : ∀ r, Metric.ball (0 : F) r ⊆ q '' Metric.ball 0 r) :
+    ‖T‖ ≤ ‖T.comp q‖ :=
+  T.opNorm_le_bound (norm_nonneg _) fun y ↦
+    le_of_forall_pos_le_add fun δ hδ ↦ by
+      have hdenom : 0 < ‖T.comp q‖ + 1 := add_pos_of_nonneg_of_pos (norm_nonneg _) one_pos
+      obtain ⟨x, rfl, hx⟩ := TauCeti.exists_apply_eq_norm_lt_add hq y (div_pos hδ hdenom)
+      calc ‖T (q x)‖ = ‖(T.comp q) x‖ := by rw [comp_apply]
+        _ ≤ ‖T.comp q‖ * ‖x‖ := (T.comp q).le_opNorm x
+        _ ≤ ‖T.comp q‖ * (‖q x‖ + δ / (‖T.comp q‖ + 1)) :=
+            mul_le_mul_of_nonneg_left hx.le (norm_nonneg _)
+        _ = ‖T.comp q‖ * ‖q x‖ + ‖T.comp q‖ * (δ / (‖T.comp q‖ + 1)) := mul_add _ _ _
+        _ ≤ ‖T.comp q‖ * ‖q x‖ + (‖T.comp q‖ + 1) * (δ / (‖T.comp q‖ + 1)) := by
+            gcongr
+            exact le_add_of_nonneg_right zero_le_one
+        _ = ‖T.comp q‖ * ‖q x‖ + δ := by rw [mul_div_cancel₀ _ hdenom.ne']
+
+/-- Precomposing with a continuous semilinear map that lifts open balls around the origin to open
+balls of the same radius does not decrease the nonnegative operator norm. -/
+theorem le_opNNNorm_comp_of_ball_subset [RingHomIsometric σ₂₃] (T : F →SL[σ₂₃] G)
+    {q : E →SL[σ₁₂] F} (hq : ∀ r, Metric.ball (0 : F) r ⊆ q '' Metric.ball 0 r) :
+    ‖T‖₊ ≤ ‖T.comp q‖₊ := by
+  exact_mod_cast T.le_opNorm_comp_of_ball_subset hq
+
+/-- **Metric-quotient invariance of the operator norm.** Precomposing with a contraction that lifts
+open balls around the origin to open balls of the same radius preserves the operator norm. -/
+theorem opNorm_comp_of_ball_subset [RingHomIsometric σ₁₂] [RingHomIsometric σ₂₃]
+    (T : F →SL[σ₂₃] G) {q : E →SL[σ₁₂] F}
+    (hq₁ : ‖q‖ ≤ 1) (hq : ∀ r, Metric.ball (0 : F) r ⊆ q '' Metric.ball 0 r) :
+    ‖T.comp q‖ = ‖T‖ :=
+  le_antisymm ((T.opNorm_comp_le q).trans (mul_le_of_le_one_right (norm_nonneg T) hq₁))
+    (T.le_opNorm_comp_of_ball_subset hq)
+
+/-- **Metric-quotient invariance of the nonnegative operator norm.** Precomposing with a contraction
+that lifts open balls around the origin to open balls of the same radius preserves the nonnegative
+operator norm. -/
+theorem opNNNorm_comp_of_ball_subset [RingHomIsometric σ₁₂] [RingHomIsometric σ₂₃]
+    (T : F →SL[σ₂₃] G) {q : E →SL[σ₁₂] F}
+    (hq₁ : ‖q‖₊ ≤ 1) (hq : ∀ r, Metric.ball (0 : F) r ⊆ q '' Metric.ball 0 r) :
+    ‖T.comp q‖₊ = ‖T‖₊ :=
+  le_antisymm ((T.opNNNorm_comp_le q).trans (mul_le_of_le_one_right' hq₁))
+    (T.le_opNNNorm_comp_of_ball_subset hq)
 
 end MetricQuotient
 

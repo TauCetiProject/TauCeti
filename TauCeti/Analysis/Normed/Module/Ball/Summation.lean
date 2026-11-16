@@ -155,18 +155,25 @@ theorem norm_unitClosedBallSummation_le : ‖unitClosedBallSummation 𝕜 E‖ �
 theorem nnNorm_unitClosedBallSummation_le : ‖unitClosedBallSummation 𝕜 E‖₊ ≤ 1 :=
   mod_cast norm_unitClosedBallSummation_le 𝕜 E
 
+private theorem exists_unitClosedBallSummation_eq_of_norm_le {x : E} {c : 𝕜} (hc : c ≠ 0)
+    (hxc : ‖x‖ ≤ ‖c‖) :
+    ∃ a : lp (fun _ : Metric.closedBall (0 : E) 1 ↦ 𝕜) 1,
+      unitClosedBallSummation 𝕜 E a = x ∧ ‖a‖ = ‖c‖ := by
+  classical
+  have hy : c⁻¹ • x ∈ Metric.closedBall (0 : E) 1 := by
+    rw [mem_closedBall_zero_iff, norm_smul, norm_inv]
+    exact (inv_mul_le_iff₀ (norm_pos_iff.mpr hc)).mpr (by simpa only [mul_one] using hxc)
+  exact ⟨lp.single 1 ⟨c⁻¹ • x, hy⟩ c,
+    by simp [smul_inv_smul₀ hc], by rw [lp.norm_single zero_lt_one]⟩
+
 /-- Over any nontrivially normed field, `unitClosedBallSummation 𝕜 E` is surjective. -/
 theorem unitClosedBallSummation_surjective :
     Function.Surjective (unitClosedBallSummation 𝕜 E) := by
-  classical
   intro x
   obtain ⟨c, hc⟩ := NormedField.exists_lt_norm 𝕜 ‖x‖
-  have hcpos : 0 < ‖c‖ := (norm_nonneg x).trans_lt hc
-  have hc0 : c ≠ 0 := norm_pos_iff.mp hcpos
-  have hy : c⁻¹ • x ∈ Metric.closedBall (0 : E) 1 := by
-    rw [mem_closedBall_zero_iff, norm_smul, norm_inv]
-    exact (inv_mul_le_iff₀ hcpos).mpr (by simpa using hc.le)
-  exact ⟨lp.single 1 ⟨c⁻¹ • x, hy⟩ c, by simp [smul_inv_smul₀ hc0]⟩
+  have hc0 : c ≠ 0 := norm_pos_iff.mp ((norm_nonneg x).trans_lt hc)
+  obtain ⟨a, ha, -⟩ := exists_unitClosedBallSummation_eq_of_norm_le 𝕜 E hc0 hc.le
+  exact ⟨a, ha⟩
 
 end NontriviallyNormedField
 
@@ -178,21 +185,8 @@ include 𝕜 in
 /-- Over a densely normed field, the closed unit ball of a nontrivial normed space has `ℓ∞` norm
 `1`. -/
 theorem norm_unitClosedBallFamily [Nontrivial E] : ‖unitClosedBallFamily E‖ = 1 := by
-  refine le_antisymm (norm_unitClosedBallFamily_le E) (le_of_forall_lt fun r hr ↦ ?_)
-  rcases lt_or_ge r 0 with hr0 | hr0
-  · exact hr0.trans_le (norm_nonneg _)
-  obtain ⟨x, hx⟩ := exists_ne (0 : E)
-  have hxpos : 0 < ‖x‖ := norm_pos_iff.mpr hx
-  obtain ⟨c, hrc, hc1⟩ := NormedField.exists_lt_norm_lt 𝕜 (div_nonneg hr0 hxpos.le)
-    (div_lt_div_of_pos_right hr hxpos)
-  have hcx_gt : r < ‖c • x‖ := by
-    rw [norm_smul]
-    exact (div_lt_iff₀ hxpos).mp hrc
-  have hcx_le : ‖c • x‖ ≤ 1 := by
-    rw [norm_smul]
-    exact ((lt_div_iff₀ hxpos).mp hc1).le
-  let y : Metric.closedBall (0 : E) 1 := ⟨c • x, mem_closedBall_zero_iff.mpr hcx_le⟩
-  exact hcx_gt.trans_le (lp.norm_apply_le_norm ENNReal.top_ne_zero (unitClosedBallFamily E) y)
+  simpa [lp.norm_eq_ciSup, ← sSup_range, ← Set.image_eq_range] using
+    (ContinuousLinearMap.id 𝕜 E).sSup_unitClosedBall_eq_norm
 
 variable [CompleteSpace E]
 
@@ -200,18 +194,11 @@ variable [CompleteSpace E]
 than `r` to an `ℓ¹` vector of norm less than `r`. -/
 theorem ball_subset_image_unitClosedBallSummation_ball (r : ℝ) :
     Metric.ball (0 : E) r ⊆ unitClosedBallSummation 𝕜 E '' Metric.ball 0 r := by
-  classical
   intro x hx
-  have hxr : ‖x‖ < r := mem_ball_zero_iff.mp hx
-  obtain ⟨c, hxc, hcr⟩ := NormedField.exists_lt_norm_lt 𝕜 (norm_nonneg x) hxr
-  have hcpos : 0 < ‖c‖ := (norm_nonneg x).trans_lt hxc
-  have hc0 : c ≠ 0 := norm_pos_iff.mp hcpos
-  have hy : c⁻¹ • x ∈ Metric.closedBall (0 : E) 1 := by
-    rw [mem_closedBall_zero_iff, norm_smul, norm_inv]
-    exact (inv_mul_le_iff₀ hcpos).mpr (by simpa using hxc.le)
-  refine ⟨lp.single 1 ⟨c⁻¹ • x, hy⟩ c, ?_, ?_⟩
-  · simpa [mem_ball_zero_iff, lp.norm_single zero_lt_one] using hcr
-  · simp [smul_inv_smul₀ hc0]
+  obtain ⟨c, hxc, hcr⟩ := NormedField.exists_lt_norm_lt 𝕜 (norm_nonneg x) (mem_ball_zero_iff.mp hx)
+  have hc0 : c ≠ 0 := norm_pos_iff.mp ((norm_nonneg x).trans_lt hxc)
+  obtain ⟨a, rfl, ha⟩ := exists_unitClosedBallSummation_eq_of_norm_le 𝕜 E hc0 hxc.le
+  exact ⟨a, mem_ball_zero_iff.mpr (ha.trans_lt hcr), rfl⟩
 
 /-- **Metric quotient property**: over a densely normed field, `unitClosedBallSummation 𝕜 E` maps
 each open ball around the origin onto the open ball of the same radius. -/
@@ -249,11 +236,9 @@ variable {𝕜 𝕜₂ E F : Type*} [DenselyNormedField 𝕜] [NontriviallyNorme
 /-- Precomposition with `TauCeti.unitClosedBallSummation 𝕜 E` preserves the operator norm. -/
 @[simp]
 theorem norm_comp_unitClosedBallSummation (T : E →SL[σ] F) :
-    ‖T.comp (TauCeti.unitClosedBallSummation 𝕜 E)‖ = ‖T‖ := by
-  rw [← (T.comp (TauCeti.unitClosedBallSummation 𝕜 E)).sSup_unit_ball_eq_norm,
-    ← T.sSup_unit_ball_eq_norm, ← TauCeti.image_unitClosedBallSummation_ball 𝕜 E 1,
-    Set.image_image]
-  rfl
+    ‖T.comp (TauCeti.unitClosedBallSummation 𝕜 E)‖ = ‖T‖ :=
+  T.opNorm_comp_of_ball_subset (TauCeti.norm_unitClosedBallSummation_le 𝕜 E)
+    (TauCeti.ball_subset_image_unitClosedBallSummation_ball 𝕜 E)
 
 /-- Precomposition with `TauCeti.unitClosedBallSummation 𝕜 E` preserves the nonnegative operator
 norm. -/
