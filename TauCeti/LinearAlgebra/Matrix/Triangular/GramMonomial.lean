@@ -48,6 +48,18 @@ private def mulTransposeExpansionIndex {n : ι × ι → ℕ} (c : mulTransposeE
     (a : (Σ ij, Fin (n ij)) × Fin 2) : ι × ι :=
   (if a.2 = 0 then a.1.1.1 else a.1.1.2, c a.1.1 a.1.2)
 
+@[simp]
+private theorem mulTransposeExpansionIndex_zero {n : ι × ι → ℕ}
+    (c : mulTransposeExpansionChoice n) (a : Σ ij, Fin (n ij)) :
+    mulTransposeExpansionIndex c (a, 0) = (a.1.1, (c a.1 a.2 : ι)) := by
+  simp [mulTransposeExpansionIndex]
+
+@[simp]
+private theorem mulTransposeExpansionIndex_one {n : ι × ι → ℕ}
+    (c : mulTransposeExpansionChoice n) (a : Σ ij, Fin (n ij)) :
+    mulTransposeExpansionIndex c (a, 1) = (a.1.2, (c a.1 a.2 : ι)) := by
+  simp [mulTransposeExpansionIndex]
+
 private theorem mulTransposeExpansionIndex_snd_le {n : ι × ι → ℕ}
     (c : mulTransposeExpansionChoice n) (a : (Σ ij, Fin (n ij)) × Fin 2) :
     (mulTransposeExpansionIndex c a).2 ≤ (mulTransposeExpansionIndex c a).1 := by
@@ -74,8 +86,8 @@ theorem mulTransposeExpansionPower_eq_sum [Fintype ι] {n : ι × ι → ℕ}
   rw [mulTransposeExpansionPower, Function.occCount_eq_sum, Fintype.sum_prod_type,
     Fintype.sum_sigma]
   refine Fintype.sum_congr _ _ fun ij ↦ Fintype.sum_congr _ _ fun r ↦ ?_
-  rw [Fin.sum_univ_two]
-  rfl
+  simp only [Fin.sum_univ_two, mulTransposeExpansionIndex_zero,
+    mulTransposeExpansionIndex_one]
 
 /-- The multi-index vanishes above the diagonal. -/
 @[simp]
@@ -102,8 +114,8 @@ private theorem prod_apply_mul_apply_eq_prod_pow [Fintype ι] {M : Type*} [CommM
   rw [Fintype.prod_prod_type]
   apply Finset.prod_congr rfl
   intro ij _
-  rw [Fin.prod_univ_two]
-  rfl
+  simp only [Fin.prod_univ_two, mulTransposeExpansionIndex_zero,
+    mulTransposeExpansionIndex_one]
 
 end TauCeti
 
