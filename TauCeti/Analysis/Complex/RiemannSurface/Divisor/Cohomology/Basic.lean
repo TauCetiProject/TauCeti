@@ -27,6 +27,12 @@ in the exactness statements. Consequently finiteness of the first cohomology is 
 adding a point; when it is finite, adding a point raises `h⁰ - h¹` by one. These are the
 point-twist steps in the Euler-characteristic calculation for divisor sheaves.
 
+The cohomology of `O(0)` is that of the holomorphic structure sheaf
+(`TauCeti.RiemannSurface.divisorCechCohomologyZeroIso`). Since every divisor is reached from `0`
+by point twists, finiteness of `H¹(O(D))` does not depend on `D`
+(`TauCeti.RiemannSurface.finiteDimensional_divisorCechCohomology_one_iff`), so it holds for every
+divisor once it holds for the structure sheaf.
+
 ## References
 
 * O. Forster, *Lectures on Riemann Surfaces*, GTM 81, §16.
@@ -93,6 +99,38 @@ theorem pointTwistCohomologyMap_def (n : ℕ) :
         (divisorSheafMapOfLE (WeilDivisor.le_add_ofPoint D x)).hom).hom := (rfl)
 
 variable [IsManifold 𝓘(ℂ) 1 X]
+
+variable (X) in
+/-- The Čech cohomology of the divisor sheaf `𝒪(0)` is that of the structure sheaf, through the
+identification `𝒪(0) ≅ 𝒪` of sheaves. -/
+def divisorCechCohomologyZeroIso (n : ℕ) :
+    divisorCechCohomology (0 : WeilDivisor X) n ≅
+      (cechCohomology (TopCat.of X) (ModuleCat.{0} ℂ) n).obj
+        (holomorphicStructureSheafModules 𝓘(ℂ) X).obj :=
+  (cechCohomology (TopCat.of X) (ModuleCat.{0} ℂ) n).mapIso
+    ((sheafToPresheaf _ _).mapIso (divisorSheafZeroIso X))
+
+/-- The isomorphism `Hⁿ(X, 𝒪(0)) ≅ Hⁿ(X, 𝒪)` is the map on cohomology induced by `𝒪(0) ≅ 𝒪`. -/
+@[simp]
+theorem divisorCechCohomologyZeroIso_hom (n : ℕ) :
+    (divisorCechCohomologyZeroIso X n).hom =
+      (cechCohomology (TopCat.of X) (ModuleCat.{0} ℂ) n).map (divisorSheafZeroIso X).hom.hom :=
+  (rfl)
+
+/-- The inverse of `Hⁿ(X, 𝒪(0)) ≅ Hⁿ(X, 𝒪)` is the map on cohomology induced by `𝒪 ≅ 𝒪(0)`. -/
+@[simp]
+theorem divisorCechCohomologyZeroIso_inv (n : ℕ) :
+    (divisorCechCohomologyZeroIso X n).inv =
+      (cechCohomology (TopCat.of X) (ModuleCat.{0} ℂ) n).map (divisorSheafZeroIso X).inv.hom :=
+  (rfl)
+
+/-- `Hⁿ(X, 𝒪(0))` is finite-dimensional exactly when `Hⁿ(X, 𝒪)` is. -/
+theorem finiteDimensional_divisorCechCohomology_zero_iff (n : ℕ) :
+    FiniteDimensional ℂ (divisorCechCohomology (0 : WeilDivisor X) n) ↔
+      FiniteDimensional ℂ ((cechCohomology (TopCat.of X) (ModuleCat.{0} ℂ) n).obj
+        (holomorphicStructureSheafModules 𝓘(ℂ) X).obj) :=
+  ⟨fun _ ↦ (divisorCechCohomologyZeroIso X n).toLinearEquiv.finiteDimensional,
+    fun _ ↦ (divisorCechCohomologyZeroIso X n).toLinearEquiv.symm.finiteDimensional⟩
 
 open Classical in
 private theorem displayedPointTwist_shortExact :
@@ -214,6 +252,24 @@ theorem finiteDimensional_divisorCechCohomology_one_add_point_iff :
   · intro h
     exact FiniteDimensional.of_surjective (pointTwistCohomologyMap D x 1)
       (pointTwistCohomologyMap_one_surjective D x)
+
+/-- **Finiteness of `H¹(X, 𝒪(D))` does not depend on `D`.** No finiteness is asserted for any
+divisor. -/
+theorem finiteDimensional_divisorCechCohomology_one_iff (D E : WeilDivisor X) :
+    FiniteDimensional ℂ (divisorCechCohomology D 1) ↔
+      FiniteDimensional ℂ (divisorCechCohomology E 1) := by
+  suffices h : ∀ D : WeilDivisor X, FiniteDimensional ℂ (divisorCechCohomology D 1) ↔
+      FiniteDimensional ℂ (divisorCechCohomology (0 : WeilDivisor X) 1) from (h D).trans (h E).symm
+  exact WeilDivisor.induction_add_ofPoint Iff.rfl fun D x ↦ by
+    rw [finiteDimensional_divisorCechCohomology_one_add_point_iff]
+
+/-- If `H¹(X, 𝒪)` is finite-dimensional, then so is `H¹(X, 𝒪(D))` for every divisor `D`. -/
+instance finiteDimensional_divisorCechCohomology_one
+    [FiniteDimensional ℂ ((cechCohomology (TopCat.of X) (ModuleCat.{0} ℂ) 1).obj
+      (holomorphicStructureSheafModules 𝓘(ℂ) X).obj)]
+    (D : WeilDivisor X) : FiniteDimensional ℂ (divisorCechCohomology D 1) :=
+  (finiteDimensional_divisorCechCohomology_one_iff D 0).mpr
+    ((finiteDimensional_divisorCechCohomology_zero_iff 1).mpr inferInstance)
 
 /-- The point-twist step of the Euler characteristic calculation: once the first cohomology
 is finite-dimensional, adding a point raises `h⁰ - h¹` by one. The analytic finiteness theorem

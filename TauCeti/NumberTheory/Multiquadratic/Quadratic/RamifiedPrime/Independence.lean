@@ -7,10 +7,10 @@ module
 
 public import TauCeti.NumberTheory.Multiquadratic.Quadratic.RamifiedPrime.Product
 public import TauCeti.NumberTheory.NumberField.Quadratic.RingOfIntegers
-public import TauCeti.NumberTheory.ClassGroup.ElementaryTwoQuotient
-import TauCeti.Algebra.Group.Subgroup.TwoTorsionClosure
-import Mathlib.RingTheory.Ideal.Norm.AbsNorm
+public import TauCeti.RingTheory.ClassGroup.ElementaryTwoQuotient
 import Mathlib.NumberTheory.NumberField.ClassNumber
+import Mathlib.RingTheory.Ideal.Norm.AbsNorm
+import TauCeti.Algebra.Group.Subgroup.TwoTorsionClosure
 
 /-!
 # The ramified primes of an imaginary quadratic field span exactly `2 ^ (t - 1)` classes
@@ -364,14 +364,14 @@ theorem card_sub_one_le_twoRank
     (hprime : ∀ p ∈ s, (Q p : Ideal (𝓞 K)).IsPrime)
     (hover : ∀ p ∈ s, (Q p : Ideal (𝓞 K)).LiesOver (Ideal.span {(p : ℤ)}))
     (hs : d.natAbs.primeFactors ⊆ s) :
-    s.card - 1 ≤ TauCeti.ClassGroup.twoRank (𝓞 K) := by
+    s.card - 1 ≤ ClassGroup.twoRank (𝓞 K) := by
   have hfin : Module.finrank ℚ K = 2 := NumberField.finrank_rat_eq_two hmin hgen
   have hsq : ∀ p ∈ s, ClassGroup.mk0 (Q p) ^ 2 = 1 := fun p hp => by
     have := hprime p hp
     have := hover p hp
     exact NumberField.classGroupMk0_sq_eq_one_of_mem_ramifiedPrimes hfin (hram p hp)
       (Q p : Ideal (𝓞 K))
-  rw [TauCeti.ClassGroup.twoRank_def, ← TauCeti.twoRank_def]
+  rw [ClassGroup.twoRank_def, ← TauCeti.twoRank_def]
   refine TauCeti.le_twoRank_of_card_eq_two_pow (ClassGroup (𝓞 K)) (fun x hx => ?_)
     (natCard_closure_image_classGroupMk0_eq Q hmin hgen hsf hd hram hprime hover hs)
   induction hx using Subgroup.closure_induction with
@@ -390,7 +390,7 @@ is `finrank_candidateGenusField_over_candidateGenusFieldBase_eq_two_pow_ncard_ra
 theorem ncard_ramifiedPrimes_sub_one_le_twoRank
     (hmin : minpoly ℤ θ = X ^ 2 - C d) (hgen : Algebra.adjoin ℚ {(θ : K)} = ⊤)
     (hsf : Squarefree d) (hd : d < -1) :
-    (ramifiedPrimes K).ncard - 1 ≤ TauCeti.ClassGroup.twoRank (𝓞 K) := by
+    (ramifiedPrimes K).ncard - 1 ≤ ClassGroup.twoRank (𝓞 K) := by
   classical
   have hfinite := NumberField.finite_ramifiedPrimes (K := K)
   have hram : ∀ p ∈ hfinite.toFinset, p ∈ ramifiedPrimes K := fun p hp =>

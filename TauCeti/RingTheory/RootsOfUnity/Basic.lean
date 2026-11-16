@@ -45,6 +45,8 @@ Finally, for `n ∣ m` it records the power map from the `m`-th to the `n`-th ro
 
 * `TauCeti.eq_one_of_pow_eq_one_of_sub_one_mem`: in a commutative ring without zero divisors, a
   root of unity that is congruent to `1` modulo an ideal not containing its order is `1`.
+* `TauCeti.mul_sub_one_ne_zero_of_pow_eq_one`: if `ζ ^ n = 1` and `y ^ n ≠ 1`, then `ζ * y - 1 ≠ 0`,
+  which supplies the nonzero denominators in root averaging.
 * `TauCeti.subsingleton_rootsOfUnity_prime_pow`: in a reduced commutative ring of exponential
   characteristic `p`, the group of `pʲ`-th roots of unity is trivial.
 * `TauCeti.card_rootsOfUnity_two`: in a domain in which `2 ≠ 0`, the group `μ₂ = {±1}` has two

@@ -306,7 +306,11 @@ noncomputable def primitiveCentralIdempotent [_fd : FiniteDimensional k V] [_ac 
     [_inv : Invertible (Nat.card G : k)] [_irr : ρ.IsIrreducible] : k[G] :=
   ((Nat.card G : k)⁻¹ * ρ.character 1) • characterSum ρ
 
-variable [FiniteDimensional k V] [FiniteDimensional k W] [IsAlgClosed k]
+variable [FiniteDimensional k V]
+
+section FiniteDimensionalRight
+
+variable [FiniteDimensional k W] [IsAlgClosed k]
 variable [Invertible (Nat.card G : k)] [ρ.IsIrreducible] [σ.IsIrreducible]
 
 /-- The coefficients of the primitive central idempotent.
@@ -392,7 +396,12 @@ theorem centralCharacter_primitiveCentralIdempotentCenter_self :
   rw [centralCharacter_primitiveCentralIdempotentCenter,
     ite_eq_left ⟨_root_.Representation.Equiv.refl ρ⟩]
 
-omit [FiniteDimensional k W] in
+end FiniteDimensionalRight
+
+section Action
+
+variable [IsAlgClosed k] [Invertible (Nat.card G : k)] [ρ.IsIrreducible] [σ.IsIrreducible]
+
 open scoped Classical in
 /-- **`e_ρ` is the Wedderburn projector onto the block of `ρ`**: it acts as the identity on `ρ`
 itself and as zero on every irreducible representation not isomorphic to `ρ`. -/
@@ -403,6 +412,13 @@ theorem asAlgebraHom_primitiveCentralIdempotent :
   rw [← primitiveCentralIdempotentCenter_coe ρ, asAlgebraHom_center σ,
     centralCharacter_primitiveCentralIdempotentCenter ρ σ]
   split <;> simp
+
+end Action
+
+section Orthogonality
+
+variable [FiniteDimensional k W] [IsAlgClosed k]
+variable [Invertible (Nat.card G : k)] [ρ.IsIrreducible] [σ.IsIrreducible]
 
 open scoped Classical in
 /-- **The primitive central idempotents are orthogonal**: `e_ρ e_σ` is `e_σ` when `ρ` and `σ` are
@@ -436,6 +452,8 @@ theorem primitiveCentralIdempotent_ne_zero : primitiveCentralIdempotent ρ ≠ 0
   have hcard : ((Nat.card G : k))⁻¹ ≠ 0 := inv_ne_zero (Invertible.ne_zero _)
   have hdeg := (ρ.isUnit_char_one).ne_zero
   exact mul_ne_zero (mul_ne_zero hcard hdeg) hdeg hcoeff
+
+end Orthogonality
 
 end Idempotent
 
