@@ -274,12 +274,8 @@ theorem UniformlyEllipticOn.setIntegral_norm_gradient_sub_sq_le
     refine (norm_toEuclideanCLM_apply_le _ _).trans_eq ?_
     rw [matrixBilinearForm_sub, norm_sub_rev (matrixBilinearForm A)]
   have hθm : AEStronglyMeasurable
-      (fun x => ‖matrixBilinearForm (a x) - matrixBilinearForm A‖) (mu.restrict B) := by
-    have h : Continuous fun M : Matrix ι ι ℝ => matrixBilinearForm (M - A) :=
-      continuous_matrixBilinearForm.comp (continuous_sub_right A)
-    simpa only [matrixBilinearForm_sub] using
-      (Continuous.norm (E := EuclideanSpace ℝ ι →L[ℝ] EuclideanSpace ℝ ι →L[ℝ] ℝ)
-        h).comp_aestronglyMeasurable ha
+      (fun x => ‖matrixBilinearForm (a x) - matrixBilinearForm A‖) (mu.restrict B) :=
+    aestronglyMeasurable_norm_matrixBilinearForm_sub ha A
   have hθb : ∀ᵐ x ∂mu.restrict B, ‖θ x ^ 2‖ ≤ ε ^ 2 := by
     filter_upwards [ae_restrict_mem hBm] with x hxB
     rw [Real.norm_of_nonneg (sq_nonneg _)]
