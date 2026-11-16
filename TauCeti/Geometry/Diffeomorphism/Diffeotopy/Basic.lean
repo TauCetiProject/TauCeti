@@ -8,6 +8,7 @@ module
 public import Mathlib.Geometry.Manifold.Instances.Icc
 public import TauCeti.Geometry.Diffeomorphism.Group
 public import TauCeti.Topology.Homotopy.Isotopy.Basic
+import TauCeti.Geometry.Manifold.MFDeriv.Prod
 
 /-!
 # Smooth ambient isotopies
@@ -319,6 +320,24 @@ theorem trans_apply (Ψ : Diffeotopy J n M) (p : I × M) :
 theorem cylinderMap_trans (Ψ : Diffeotopy J n M) :
     (Φ.trans Ψ).cylinderMap = Ψ.cylinderMap ∘ fun p ↦ (Φ.cylinderMap p, p.2) :=
   funext fun p ↦ by simp
+
+/-- The level-preserving motion `(x, t) ↦ (Φ (t, x), t)` of a `C^n` diffeotopy is `C^n`. -/
+theorem contMDiff_cylinderMap_prodMk_snd :
+    ContMDiff (J.prod (𝓡∂ 1)) (J.prod (𝓡∂ 1)) n fun p : M × I ↦ (Φ.cylinderMap p, p.2) :=
+  Φ.contMDiff_cylinderMap.prodMk contMDiff_snd
+
+/-- The level-preserving motion `(x, t) ↦ (Φ (t, x), t)` of a `C^n` diffeotopy, `1 ≤ n`, acts on
+tangent vectors by `w ↦ (dΦ w, w₂)`. -/
+theorem mfderiv_cylinderMap_prodMk_snd (hn : 1 ≤ n) (p : M × I)
+    (w : TangentSpace (J.prod (𝓡∂ 1)) p) :
+    mfderiv (J.prod (𝓡∂ 1)) (J.prod (𝓡∂ 1)) (fun q ↦ (Φ.cylinderMap q, q.2)) p w =
+      (mfderiv (J.prod (𝓡∂ 1)) J Φ.cylinderMap p w, w.2) := by
+  rw [mfderiv_prodMk (Φ.contMDiff_cylinderMap.mdifferentiableAt
+      (zero_lt_one.trans_le (by exact_mod_cast hn)).ne') mdifferentiableAt_snd]
+  -- `mfderiv_prodMk` returns a map into `TangentSpace J _ × TangentSpace (𝓡∂ 1) _`, the tangent
+  -- space of the product only up to unfolding `TangentSpace`, so `ContinuousLinearMap.prod_apply`
+  -- is applied by `exact` rather than rewritten.
+  exact (ContinuousLinearMap.prod_apply _ _ w).trans (congrArg (Prod.mk _) (mfderiv_snd_apply p w))
 
 /-- The time slice of a composite diffeotopy is the composite of its time slices. -/
 @[simp]
