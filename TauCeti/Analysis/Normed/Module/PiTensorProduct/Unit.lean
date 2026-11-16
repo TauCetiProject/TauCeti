@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Analysis.Normed.Module.PiTensorProduct.UniversalProperty
+public import TauCeti.Analysis.Normed.Module.PiTensorProduct.Projective.Completion
 
 /-!
 # Scalar units for locally convex projective tensor products
@@ -18,8 +18,9 @@ of a scalar and a vector to their scalar product, and their inverses insert the 
 The factors use the native finite-family construction, indexed by `Fin 2`. They have a common
 universe because `PiTensorProduct` takes a family of types in one universe. The completed
 identification preserves the caller's compatible additive uniformity on the target. The algebraic
-construction uses `ProjectiveTensorProduct.liftEquiv`, and the completed construction extends
-this continuous linear equivalence through `ContinuousLinearMap.fromCompletion`.
+construction uses `ProjectiveTensorProduct.lift` with a constant-one seminorm bound, and the
+completed construction extends this continuous linear equivalence through
+`ContinuousLinearMap.fromCompletion`.
 
 ## References
 
@@ -60,7 +61,11 @@ vector space. -/
 abbrev ScalarUnitIndices (σ : Type v) : Fin 2 → Type v :=
   fun i => match i.val with | 0 => PUnit | _ + 1 => σ
 
-variable {𝕜 E : Type u} [NontriviallyNormedField 𝕜] [AddCommGroup E] [Module 𝕜 E]
+instance {σ : Type v} [Countable σ] : ∀ i, Countable (ScalarUnitIndices σ i)
+  | ⟨0, _⟩ => inferInstance
+  | ⟨_ + 1, _⟩ => inferInstance
+
+variable {𝕜 E : Type u} [NormedField 𝕜] [AddCommGroup E] [Module 𝕜 E]
 variable {σ : Type v} (p : SeminormFamily 𝕜 E σ)
 
 /-- The norm seminorm on the scalar factor together with the given seminorms on the vector
@@ -75,9 +80,10 @@ def scalarUnitSeminorms :
 
 @[simp] theorem scalarUnitSeminorms_one : scalarUnitSeminorms p 1 = p := (rfl)
 
-/-- Tensoring a seminorm-bounded linear map with the scalar identity gives bounds on both
-scalar-unit factors, without any topological assumptions. -/
-theorem isBounded_scalarUnitSeminorms_cons {F : Type u} [AddCommGroup F] [Module 𝕜 F]
+/-- Pairing the scalar identity with a seminorm-bounded linear map gives a bounded map
+on each scalar-unit factor, without any topological assumptions. -/
+theorem isBounded_scalarUnitSeminorms_cons {p : SeminormFamily 𝕜 E σ}
+    {F : Type u} [AddCommGroup F] [Module 𝕜 F]
     {τ : Type w} {q : SeminormFamily 𝕜 F τ} {f : E →ₗ[𝕜] F}
     (hf : Seminorm.IsBounded p q f) :
     ∀ i, Seminorm.IsBounded (scalarUnitSeminorms p i) (scalarUnitSeminorms q i)
@@ -102,8 +108,8 @@ theorem withSeminorms_scalarUnitSeminorms : ∀ i, WithSeminorms (scalarUnitSemi
   · exact (norm_withSeminorms 𝕜 𝕜).congr_equiv (Equiv.ofUnique PUnit.{v + 1} Unit)
   · exact hp
 
-private def scalarUnitAction [ContinuousSMul 𝕜 E] :
-    ContinuousMultilinearMap 𝕜 (ScalarUnitFactors 𝕜 E) E where
+private def scalarUnitAction :
+    MultilinearMap (RingHom.id 𝕜) (ScalarUnitFactors 𝕜 E) E where
   toFun x := x 0 • x 1
   map_update_add' := by
     intro _ m i x y
@@ -111,22 +117,25 @@ private def scalarUnitAction [ContinuousSMul 𝕜 E] :
   map_update_smul' := by
     intro _ m i c x
     fin_cases i <;> simp [smul_smul, mul_comm]
-  cont := (continuous_apply 0).smul (continuous_apply 1)
 
-private theorem scalarUnitAction_apply [ContinuousSMul 𝕜 E]
+omit [TopologicalSpace E] in
+private theorem scalarUnitAction_apply
     (x : ∀ i, ScalarUnitFactors 𝕜 E i) : scalarUnitAction x = x 0 • x 1 := (rfl)
 
 namespace ProjectiveTensorProduct
 
 private noncomputable def scalarUnitInsert :
     E →L[𝕜] ProjectiveTensorProduct (scalarUnitSeminorms p) :=
-  let t := continuousTprod (scalarUnitSeminorms p) (withSeminorms_scalarUnitSeminorms p hp)
+  let t : ContinuousMultilinearMap 𝕜 (ScalarUnitFactors 𝕜 E)
+      (ProjectiveTensorProduct (scalarUnitSeminorms p)) :=
+    ⟨tprod (scalarUnitSeminorms p),
+      continuous_tprod (scalarUnitSeminorms p) (withSeminorms_scalarUnitSeminorms p hp)⟩
   t.toContinuousLinearMap (Fin.cons 1 fun _ => (0 : E)) 1
 
 private theorem scalarUnitInsert_apply (x : E) :
     scalarUnitInsert p hp x = tprod (scalarUnitSeminorms p) (Fin.cons 1 fun _ => x) := by
-  simp only [scalarUnitInsert, ContinuousMultilinearMap.toContinuousLinearMap_apply,
-    continuousTprod_apply]
+  change tprod (scalarUnitSeminorms p)
+    (Function.update (Fin.cons 1 (fun _ => (0 : E))) 1 x) = _
   congr 1
   ext i
   fin_cases i <;> simp
@@ -139,14 +148,19 @@ private theorem scalarUnitInsert_smul (a : 𝕜) (x : E) :
 
 private noncomputable def scalarUnitProj :
     ProjectiveTensorProduct (scalarUnitSeminorms p) →L[𝕜] E :=
-  letI := hp.isTopologicalAddGroup
-  letI := hp.continuousSMul
-  liftEquiv (scalarUnitSeminorms p) (withSeminorms_scalarUnitSeminorms p hp)
-    p hp scalarUnitAction
+  ⟨lift (scalarUnitSeminorms p) scalarUnitAction,
+    continuous_lift (scalarUnitSeminorms p) p hp scalarUnitAction (by
+      intro j
+      refine ⟨Fin.cons {PUnit.unit} (fun _ => {j}), 1, ?_⟩
+      intro x
+      simp [scalarUnitAction_apply, Fin.prod_univ_two, map_smul_eq_mul,
+        scalarUnitSeminorms])⟩
 
 private theorem scalarUnitProj_tprod (x : ∀ i, ScalarUnitFactors 𝕜 E i) :
     scalarUnitProj p hp (tprod (scalarUnitSeminorms p) x) = x 0 • x 1 := by
-  simp only [scalarUnitProj, tprod_apply, liftEquiv_tprod, scalarUnitAction_apply]
+  rw [tprod_apply]
+  change lift (scalarUnitSeminorms p) scalarUnitAction ⟨⨂ₜ[𝕜] i, x i⟩ = _
+  rw [lift_tprod, scalarUnitAction_apply]
 
 private theorem scalarUnitProj_comp_insert :
     (scalarUnitProj p hp).comp (scalarUnitInsert p hp) = ContinuousLinearMap.id 𝕜 E := by
@@ -189,6 +203,66 @@ noncomputable def lid : ProjectiveTensorProduct (scalarUnitSeminorms p) ≃L[�
   simp only [lid]
   rw [ContinuousLinearEquiv.symm_equivOfInverse', ContinuousLinearEquiv.equivOfInverse'_apply]
   simpa only [tprod_apply] using scalarUnitInsert_apply p hp x
+
+/-- The scalar-unit identification commutes with the algebraic tensor map of the scalar
+identity and any linear map. No boundedness or separation hypothesis is required. -/
+theorem lid_map {F : Type u} [AddCommGroup F] [Module 𝕜 F] [TopologicalSpace F]
+    {τ : Type w} (q : SeminormFamily 𝕜 F τ) (hq : WithSeminorms q)
+    (f : E →ₗ[𝕜] F) (z : ProjectiveTensorProduct (scalarUnitSeminorms p)) :
+    lid q hq (map (scalarUnitSeminorms p) (scalarUnitSeminorms q)
+      (Fin.cons LinearMap.id (fun _ => f)) z) = f (lid p hp z) := by
+  have h : (lid q hq).toLinearMap.comp
+      (map (scalarUnitSeminorms p) (scalarUnitSeminorms q)
+        (Fin.cons LinearMap.id (fun _ => f))) = f.comp (lid p hp).toLinearMap := by
+    apply linearMap_ext (scalarUnitSeminorms p)
+    intro x
+    change lid q hq (map (scalarUnitSeminorms p) (scalarUnitSeminorms q)
+      (Fin.cons LinearMap.id (fun _ => f)) (tprod (scalarUnitSeminorms p) x)) =
+        f (lid p hp (tprod (scalarUnitSeminorms p) x))
+    simp only [tprod_apply, map_tprod, lid_tprod, Fin.cons_zero, Fin.cons_one,
+      LinearMap.id_apply]
+    exact (f.map_smul (x 0) (x 1)).symm
+  exact LinearMap.congr_fun h z
+
+/-- The scalar-unit identification preserves every factor seminorm with constant one,
+including seminorms outside the family defining the topology. -/
+theorem projectiveSeminormOf_eq_lid (q : Seminorm 𝕜 E)
+    (z : ProjectiveTensorProduct (scalarUnitSeminorms p)) :
+    PiTensorProduct.projectiveSeminormOf
+      (Fin.cons (normSeminorm 𝕜 𝕜) (fun _ => q)) z.toPiTensorProduct = q (lid p hp z) := by
+  have hbound := PiTensorProduct.seminorm_lift_le
+    (Fin.cons (normSeminorm 𝕜 𝕜) (fun _ => q)) q scalarUnitAction
+    (C := 1) zero_le_one (by
+      intro x
+      simp [scalarUnitAction_apply, Fin.prod_univ_two, map_smul_eq_mul])
+  have hnorm (x : E) : PiTensorProduct.projectiveSeminormOf
+      (Fin.cons (normSeminorm 𝕜 𝕜) (fun _ => q))
+      (⨂ₜ[𝕜] i, (Fin.cons 1 (fun _ => x) : ∀ i, ScalarUnitFactors 𝕜 E i) i) = q x := by
+    apply le_antisymm
+    · simpa [Fin.prod_univ_two] using PiTensorProduct.projectiveSeminormOf_tprod_le
+        (Fin.cons (normSeminorm 𝕜 𝕜) (fun _ => q))
+        (Fin.cons 1 (fun _ => x) : ∀ i, ScalarUnitFactors 𝕜 E i)
+    · simpa [scalarUnitAction_apply] using
+        hbound (⨂ₜ[𝕜] i, (Fin.cons 1 (fun _ => x) : ∀ i, ScalarUnitFactors 𝕜 E i) i)
+  have hz := (lid p hp).symm_apply_apply z
+  rw [lid_symm_apply p hp] at hz
+  rw [← hz]
+  simpa only [lid_tprod, Fin.cons_zero, Fin.cons_one, one_smul] using hnorm (lid p hp z)
+
+/-- Selecting the scalar norm and a finite family of vector seminorms gives exactly the
+corresponding supremum seminorm after the scalar-unit identification. -/
+theorem seminormFamily_cons (t : Finset σ)
+    (z : ProjectiveTensorProduct (scalarUnitSeminorms p)) :
+    seminormFamily (scalarUnitSeminorms p) (Fin.cons {PUnit.unit} (fun _ => t)) z =
+      t.sup p (lid p hp z) := by
+  rw [seminormFamily_apply]
+  have h : (fun i => ((Fin.cons {PUnit.unit} (fun _ => t) :
+      ∀ i, Finset (ScalarUnitIndices σ i)) i).sup (scalarUnitSeminorms p i)) =
+      Fin.cons (normSeminorm 𝕜 𝕜) (fun _ => t.sup p) := by
+    funext i
+    fin_cases i <;> simp [scalarUnitSeminorms]
+  rw [h]
+  exact projectiveSeminormOf_eq_lid p hp (t.sup p) z
 
 end ProjectiveTensorProduct
 
