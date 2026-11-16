@@ -223,9 +223,9 @@ private theorem ungradedStasheffComp_boxAct {dM : M →ₗ[R] M} (hM : IsUngrade
       fun y => dM (P.boxAct dM n a φ y) := by
     rw [Finset.sum_eq_single (Fin.last n) (fun k _ hk => ite_eq_right (by
       have := Fin.val_lt_last hk; omega)) (by simp),
-      ite_eq_left (by rw [Fin.val_last, Nat.sub_self]), boxAct_apply, boxAct_apply,
-      P.coeff_eq_of_eq (b := fun l => a ⟨l, l.isLt.trans_le (Fin.last n).is_le⟩) (Fin.val_last n)
-        fun l => congrArg a (Fin.ext rfl), Fin.val_last]
+      ite_eq_left (by simp), boxAct_apply, boxAct_apply, P.coeff_eq_of_eq (Fin.val_last n),
+      Fin.val_last]
+    exact fun l => congrArg a (Fin.ext (by simp))
   -- Only the first composite has `m₁` inside.
   have hfirst : ∑ k : Fin (n + 1),
       continuationMap R M (P.coeff (n - k) fun l => a ⟨k + l, lt_tsub_iff_left.mp l.isLt⟩)
@@ -233,8 +233,8 @@ private theorem ungradedStasheffComp_boxAct {dM : M →ₗ[R] M} (hM : IsUngrade
       continuationMap R M (P.coeff n a) (fun y => dM (φ y)) := by
     rw [Finset.sum_eq_single 0 (fun k _ hk => by
       rw [ite_eq_right (Fin.val_ne_zero_iff.mpr hk), map_zero]) (by simp),
-      ite_eq_left (Fin.val_zero _), P.coeff_eq_of_eq (n := n) (by simp) fun l =>
-        congrArg a (Fin.ext (by simp only [Fin.val_zero, zero_add]; rfl))]
+      ite_eq_left (Fin.val_zero _), P.coeff_eq_of_eq (n := n) (by simp)]
+    exact fun l => congrArg a (Fin.ext (by rw [Fin.val_cast]; simp))
   -- The Leibniz rule for `dM (ψ ⬝ δₙ)`.
   have hdM : (fun y => dM (P.boxAct dM n a φ y)) =
       continuationMap R M (P.coeff n a) (fun y => dM (φ y)) +
@@ -318,7 +318,7 @@ theorem boxCoeff_eq_sum {K : ℕ}
   rw [Function.mem_support] at hk
   simp only [coe_range, Set.mem_Iio]
   by_contra hlt
-  exact hk (by rw [hK k (not_lt.mp hlt)]; rfl)
+  exact hk (by simp only [hK k (not_lt.mp hlt), Matrix.zero_apply])
 
 /-- A coefficient of `δ¹_{k+1}` evaluated on a tensor lies in the summand of the idempotent of its
 source on the left and of its target on the right. -/
@@ -368,8 +368,8 @@ theorem boxModule_act_apply (hM : IsUngradedDGRightModule dB dM) (n : ℕ) (a : 
 theorem boxModule_act_eq_zero (hM : IsUngradedDGRightModule dB dM) {n : ℕ} (hn : n ≠ 0)
     (hP : P.coeff n = 0) : (P.boxModule hM).act n = 0 :=
   MultilinearMap.ext fun a => LinearMap.ext fun ψ => by
-    rw [boxModule_act_apply, hP, ite_eq_right hn, zero_add, zero_apply, continuationMap_zero]
-    rfl
+    simp only [boxModule_act_apply, hP, ite_eq_right hn, zero_add, zero_apply,
+      continuationMap_zero, LinearMap.zero_apply]
 
 /-- Evaluating the operations of `M ⊠ P` on a tensor: the differential of `M` on the empty tensor,
 and the action of `δ¹_{n+1}` evaluated on the tensor. -/
@@ -410,8 +410,7 @@ private theorem exists_bound (hM : IsUngradedDGRightModule dB dM)
   · refine ⟨K + 1, by omega, fun n hn => ?_, fun k hk x x' => by
       rw [hK k (by omega), map_zero, LinearMap.zero_apply]⟩
     rw [(P.boxModule hM).matrixAct_eq_zero_of_act_eq_zero X
-      (P.boxModule_act_eq_zero hM (by omega) (hK n (by omega)))]
-    rfl
+      (P.boxModule_act_eq_zero hM (by omega) (hK n (by omega))), zero_apply]
 
 /-- **Associativity of the box tensor product, on row vectors.** For a differential right
 `B`-module `(M, dM)`, a type `DA` bimodule `P = ^B P_A` and a type `D` structure `N` over
@@ -429,8 +428,9 @@ theorem typeABoxDifferential_boxModule_apply (hM : IsUngradedDGRightModule dB dM
   congr 1
   · -- Only the empty path from `z` to itself contributes the differential of `M`.
     rw [Finset.sum_eq_single 0 (fun n _ hn => Finset.sum_eq_zero fun x _ => by
-      rw [ite_eq_right fun h => hn h.1]; rfl) (by simp; omega),
-      Finset.sum_eq_single z (fun x _ hx => by rw [ite_eq_right fun h => hx h.2]; rfl)
+      rw [ite_eq_right fun h => hn h.1, Pi.zero_apply]) (by simp; omega),
+      Finset.sum_eq_single z (fun x _ hx => by
+        rw [ite_eq_right fun h => hx h.2, Pi.zero_apply])
         (by simp), ite_eq_left ⟨rfl, rfl⟩]
   · rw [continuationMap_apply (R := R) (M := M) (P.boxCoeff N), Fintype.sum_prod_type]
     have hL (k : ℕ) (x : X) :
@@ -560,8 +560,7 @@ private theorem identityCoeff_eq_zero {n : ℕ} (hn : n ≠ 1) :
 
 private theorem identityCoeff_apply_eq_zero {n : ℕ} (hn : n ≠ 1) (a : Fin n → A) :
     identityCoeff (R := R) ι n a = 0 := by
-  rw [identityCoeff_eq_zero hn]
-  rfl
+  rw [identityCoeff_eq_zero hn, zero_apply]
 
 /-- The relation of length two of the identity bimodule:
 `∑ u, ι s * a₀ * ι u * ι u * a₁ * ι t = ι s * a₀ * a₁ * ι t` cancels the product term. -/
@@ -634,17 +633,14 @@ noncomputable def identity (hd : IsUngradedDGAlgebra d) (hι : ∀ s, d (ι s) =
           add_zero, zero_add]
       have hupd : Function.update a 0 (d (a 0)) = fun _ => d (a 0) :=
         funext fun l => by rw [Fin.fin_one_eq_zero l, Function.update_self]
-      rw [hcomp 1 (by decide), hmap, ungradedStasheffDiff_def, Fin.sum_univ_one, hupd,
-        ungradedStasheffMul_succ,
-        Finset.sum_eq_zero fun l _ => identityCoeff_apply_eq_zero (by decide) _, zero_add, add_zero,
-        add_self_eq_zero_of_charTwo R]
+      simp only [hcomp 1 (by decide), hmap, ungradedStasheffDiff_def, Fin.sum_univ_one, hupd,
+        ungradedStasheffMul_succ, identityCoeff_apply_eq_zero (n := 0) (by decide),
+        Finset.sum_const_zero, zero_add, add_zero]
+      exact add_self_eq_zero_of_charTwo R _
     | 2 => exact identityCoeff_stasheff_two hιι hsum a
     | n + 3 =>
-      rw [hcomp (n + 3) (by omega), identityCoeff_apply_eq_zero (n := n + 3) (by omega),
-        ungradedStasheffDiff_def, ungradedStasheffMul_succ,
-        Finset.sum_eq_zero fun l _ => identityCoeff_apply_eq_zero (by omega) _,
-        Finset.sum_eq_zero fun l _ => identityCoeff_apply_eq_zero (by omega) _]
-      simp
+      simp [hcomp (n + 3) (by omega), ungradedStasheffDiff_def, ungradedStasheffMul_succ,
+        identityCoeff_apply_eq_zero]
 
 @[simp]
 theorem identity_idem (hd : IsUngradedDGAlgebra d) (hι : ∀ s, d (ι s) = 0)
@@ -679,9 +675,9 @@ theorem boxCoeff_identity (hd : IsUngradedDGAlgebra d) (hι : ∀ s, d (ι s) = 
   have hzero {k : ℕ} (hk : k ≠ 1) (t : PiTensorProduct R fun _ : Fin k => A) :
       PiTensorProduct.lift ((identity ι hd hι hιι hsum).coeff k) t = 0 := by
     rw [identity_coeff_eq_zero hd hι hιι hsum hk, map_zero, LinearMap.zero_apply]
-  rw [boxCoeff_eq_sum _ N (K := 2) fun k hk x x' => hzero (by omega) _, Finset.sum_range_succ,
-    Finset.sum_range_one, hzero (by decide), Matrix.zero_apply, zero_add, N.iteratedCoeff_one,
-    PiTensorProduct.lift.tprod, identity_coeff_one_apply]
+  simp only [boxCoeff_eq_sum _ N (K := 2) fun k hk x x' => hzero (by omega) _,
+    Finset.sum_range_succ, Finset.sum_range_zero, hzero zero_ne_one, Matrix.zero_apply, zero_add,
+    N.iteratedCoeff_one, PiTensorProduct.lift.tprod, identity_coeff_one_apply]
   -- `ι s * δ * ι t` with `δ = ι (idem x) * δ * ι (idem x')`.
   by_cases h₁ : p.1 = N.idem p.2
   · by_cases h₂ : q.1 = N.idem q.2
