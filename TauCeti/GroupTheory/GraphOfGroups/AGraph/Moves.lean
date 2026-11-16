@@ -198,9 +198,11 @@ theorem subgroup_conj : (B.conj g).subgroup = B.subgroup.map (MulAut.conj (MulEq
 /-- A conjugation move whose element `g_{u₀}` at the base vertex lies in the vertex group `B_{u₀}`
 preserves the represented subgroup; this covers the moves A0 admissible with respect to the base
 vertex, with `g_{u₀} = 1` (Kapovich, Weidmann and Myasnikov, Proposition 4.15 for the move A0). -/
-theorem subgroup_conj_of_mem (hg : g B.base ∈ B.grp B.base) : (B.conj g).subgroup = B.subgroup := by
+@[simp] theorem subgroup_conj_of_mem (hg : g B.base ∈ B.grp B.base) :
+    (B.conj g).subgroup = B.subgroup := by
   rw [subgroup_conj]
-  exact Subgroup.map_conj_eq_self_of_mem (B.cast_vertexHom_nil_mem_subgroup hg)
+  exact Subgroup.mem_normalizer_iff_map_conj_eq.mp
+    (Subgroup.le_normalizer (B.cast_vertexHom_nil_mem_subgroup hg))
 
 /-- A conjugation move preserves finiteness. -/
 @[simp] theorem isFinite_conj_iff : (B.conj g).IsFinite ↔ B.IsFinite := by
@@ -320,25 +322,25 @@ edge group as `[f]`. -/
   simp [mul_assoc]
 
 variable {B c} in
-/-- After a Bass–Serre move by a family taking the same value on a dart and on its reverse, the
-label `f_ω` of a dart `f` is `ω_[f](c_f) f_ω`. -/
-theorem labelω_bassSerre_of_rev (hc : ∀ f, c (B.graph.rev f) = MulEquiv.cast
+/-- After a Bass–Serre move by a family taking the same value on a dart `f` and on its reverse,
+the label `f_ω` of `f` is `ω_[f](c_f) f_ω`. -/
+theorem labelω_bassSerre_of_rev {f : B.graph.E} (hc : c (B.graph.rev f) = MulEquiv.cast
     (M := 𝔸.edgeGroup) ((congrArg Γ.toGeomEdge (B.typ.map_rev f)).trans (Γ.toGeomEdge_rev _)).symm
-      (c f)) (f : B.graph.E) :
+      (c f)) :
     (B.bassSerre c).labelω f = 𝔸.ω (B.typ.mapE f) (c f) * B.labelω f := by
-  rw [labelω_bassSerre, hc f]
+  rw [labelω_bassSerre, hc]
   simp only [MulEquiv.cast_apply, cast_cast, cast_eq]
 
 /-- A Bass–Serre move by a family taking the same value on a dart and on its reverse preserves the
 represented subgroup (Kapovich, Weidmann and Myasnikov, Proposition 4.15 for the move A1). -/
-theorem subgroup_bassSerre (hc : ∀ f, c (B.graph.rev f) = MulEquiv.cast (M := 𝔸.edgeGroup)
+@[simp] theorem subgroup_bassSerre (hc : ∀ f, c (B.graph.rev f) = MulEquiv.cast (M := 𝔸.edgeGroup)
     ((congrArg Γ.toGeomEdge (B.typ.map_rev f)).trans (Γ.toGeomEdge_rev _)).symm (c f)) :
     (B.bassSerre c).subgroup = B.subgroup := by
   -- Every `𝔹`-path reads homotopic `𝔸`-paths in `B` and in `B.bassSerre c`: the letter of a dart
   -- changes from `a, e, b` to `a α(c)⁻¹, e, ω(c) b`.
   have key : ∀ {y z : B.toGraphOfGroups.LetterVertex} (p : B.toGraphOfGroups.Path y z),
       Path.Homotopic ((B.bassSerre c).pathMap p) (B.pathMap p) := by
-    have hω := labelω_bassSerre_of_rev hc
+    have hω := fun e => labelω_bassSerre_of_rev (hc e)
     unfold bassSerre at hω ⊢
     intro y z p
     induction p with
@@ -398,7 +400,7 @@ theorem IsFolded.bassSerre (hB : B.IsFolded) (hc : ∀ f, c (B.graph.rev f) = Mu
     rw [mul_inv_eq_iff_eq_mul.1 h, map_mul, map_mul, map_inv]
     simp only [mul_assoc, bassSerre_typ]
   comap_eq f := by
-    rw [grpSrc_bassSerre, grpTgt_bassSerre, bassSerre_labelα, labelω_bassSerre_of_rev hc,
+    rw [grpSrc_bassSerre, grpTgt_bassSerre, bassSerre_labelα, labelω_bassSerre_of_rev (hc f),
       mul_inv_rev, inv_inv, ← Subgroup.map_conj_map_conj, ← Subgroup.map_conj_map_conj]
     simp only [bassSerre_typ]
     rw [Subgroup.comap_map_conj, Subgroup.comap_map_conj, hB.comap_eq f]
@@ -487,7 +489,8 @@ variable (a : ∀ f : B.graph.E, 𝔸.vertexGroup (Γ.src (B.typ.mapE f)))
 
 /-- A simple adjustment by elements of the vertex groups preserves the represented subgroup
 (Kapovich, Weidmann and Myasnikov, Proposition 4.15 for the move A2). -/
-theorem subgroup_adjust (ha : ∀ f, a f ∈ B.grpSrc f) : (B.adjust a).subgroup = B.subgroup := by
+@[simp] theorem subgroup_adjust (ha : ∀ f, a f ∈ B.grpSrc f) :
+    (B.adjust a).subgroup = B.subgroup := by
   -- `B.adjust a` is `B` with new labels, and `B` is `B.adjust a` with the old ones, so both
   -- inclusions come from `subgroup_map_conj_le_mk`, with `g = 1`, whose conjugation is trivial,
   -- and the elements `a_f` and `a_f⁻¹` of the vertex groups.
@@ -540,10 +543,11 @@ theorem IsFolded.adjust (hB : B.IsFolded) (ha : ∀ f, a f ∈ B.grpSrc f) :
       simp only [MulEquiv.cast_apply, cast_cast] at this ⊢
       exact B.cast_mem_grp (B.graph.src_rev f) this
     rw [grpSrc_adjust, grpTgt_adjust, adjust_labelα, labelω_adjust, mul_inv_rev,
-      ← Subgroup.map_conj_map_conj, ← Subgroup.map_conj_map_conj,
-      Subgroup.map_conj_eq_self_of_mem (inv_mem (ha f)),
-      Subgroup.map_conj_eq_self_of_mem (inv_mem h₂)]
-    exact hB.comap_eq f
+      ← Subgroup.map_conj_map_conj, ← Subgroup.map_conj_map_conj]
+    simpa only [adjust_typ, MulEquiv.toMonoidHom_eq_coe,
+      Subgroup.mem_normalizer_iff_map_conj_eq.mp (Subgroup.le_normalizer (inv_mem (ha f))),
+      Subgroup.mem_normalizer_iff_map_conj_eq.mp (Subgroup.le_normalizer (inv_mem h₂))]
+      using hB.comap_eq f
 
 /-- A simple adjustment by elements of the vertex groups preserves foldedness (Kapovich, Weidmann
 and Myasnikov, Lemma 4.16 (1)). -/
