@@ -61,6 +61,8 @@ L-function `Grossencharacter.lFunctionC` is the canonical meromorphic continuati
 
 * `TauCeti.LFunctions.Grossencharacter.ext`: a presentation is determined by its Hecke character.
 * `TauCeti.LFunctions.Grossencharacter.isAlgebraic`: the presented Hecke character is algebraic.
+* `TauCeti.LFunctions.Grossencharacter.norm_unitaryWeight_apply_of_isCoprimeTo`: the weight has
+  absolute value `1` on the ideals prime to the modulus.
 * `TauCeti.LFunctions.Grossencharacter.conductorExponent_le_exponent` and
   `TauCeti.LFunctions.Grossencharacter.finiteConductor_dvd_finitePart`: the finite conductor of
   the presented character divides the finite part of the modulus.
@@ -139,6 +141,22 @@ theorem unitaryWeight_apply_of_dvd (χ : Grossencharacter K 𝔪) {v : HeightOne
     (hv : v.asIdeal ∣ 𝔪.finitePart) : χ.unitaryWeight.1 v.asIdeal = 0 :=
   χ.unitaryWeight_eq_zero _ fun h ↦
     (Modulus.isCoprimeTo_iff.mp h).2 v ((𝔪.mem_support_iff v).mpr hv) dvd_rfl
+
+/-- **The weight of a presentation has absolute value `1` on the ideals prime to the modulus.**
+At a prime not dividing `𝔪` it is a value of a local component of the unitary part, so no such
+prime is a bad prime of the weight. -/
+theorem norm_unitaryWeight_apply_of_isCoprimeTo (χ : Grossencharacter K 𝔪) {I : Ideal (𝓞 K)}
+    (hI : 𝔪.IsCoprimeTo I) : ‖χ.unitaryWeight.1 I‖ = 1 := by
+  have hI' : Ideal.IsPrimeTo I (𝔪.support : Set (HeightOneSpectrum (𝓞 K))) :=
+    Ideal.isPrimeTo_iff.mpr ⟨(Modulus.isCoprimeTo_iff.mp hI).1, (Modulus.isCoprimeTo_iff.mp hI).2⟩
+  refine χ.unitaryWeight.norm_eq_one (Ideal.IsPrimeTo.mono (fun v hv ↦ ?_) hI')
+  by_contra hv𝔪
+  have : Finite (𝓞 K ⧸ v.asIdeal) := Ring.HasFiniteQuotients.finiteQuotient v.ne_bot
+  obtain ⟨u, hu⟩ := TauCeti.exists_isUniformizer (v.adicCompletion K)
+  have hu := v.isUniformizer_iff_valued_eq_exp_neg_one.mp hu
+  refine Units.ne_zero _ ((χ.unitaryWeight_apply v (fun h ↦ hv𝔪 ?_) u hu).symm.trans
+    (MultiplicativeIdealWeight.mem_badPrimes.mp hv))
+  exact (𝔪.mem_support_iff v).mpr h
 
 /-- **A presentation is determined by its Hecke character.** The infinity type is determined on
 the identity component (`AlgebraicInfinityType.agreesOnIdentityComponent_toContinuous_iff`), and
