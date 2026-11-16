@@ -16,36 +16,25 @@ admits a proper homotopy inverse `g : X → A` — with jointly proper homotopie
 there exist a proper retraction `r : X → A` fixing `A` pointwise and a proper homotopy relative to
 `A` from `id_X` to `incl ∘ r` (`TauCeti.properStrongDeformationRetract_of_inverse`).
 
-As in the classical proof (Hatcher, Proposition 0.19), the rectification proceeds in two stages,
-retaining joint properness on cylinders at every step:
-1. Extending the proper homotopy `g ∘ incl ≃ id_A` from `A` to `X` replaces `g` by a proper
-   retraction `r : X → A` properly homotopic to `g`
+Following Hatcher (Proposition 0.19) while retaining joint properness on cylinders at each step:
+1. Extending `g ∘ incl ≃ id_A` from `A` to `X` replaces `g` by a proper retraction `r : X → A`
+   properly homotopic to `g`
    (`TauCeti.HasProperHomotopyExtensionProperty.exists_proper_retraction_homotopic`).
-2. Concatenating the proper homotopy `id_X ≃ incl ∘ r` with its reverse postcomposed with `incl ∘ r`
-   yields a proper self-homotopy of `incl ∘ r` which retraces itself on `A`. Extending the tent
-   cutoff from the cylinder boundary `{0, 1} × X ∪ I × A` to `I × X` via
-   `TauCeti.HasProperHomotopyExtensionProperty.zero_one_prod_univ_union_univ_prod` makes the
-   homotopy stationary on `A` while preserving properness on `I × X`
+2. Concatenating `id_X ≃ incl ∘ r` with its reverse postcomposed with `incl ∘ r` retraces itself on
+   `A`, and extending the tent cutoff from `{0, 1} × X ∪ I × A` to `I × X` makes the homotopy
+   stationary on `A` while preserving properness
    (`TauCeti.HasProperHomotopyExtensionProperty.exists_proper_homotopyRel_of_retracing`).
-
-No separation or local compactness hypotheses are needed: closedness of `A` follows directly from
-properness of the subspace inclusion `Subtype.val : A → X`.
 
 ## Main declarations
 
-* `TauCeti.HasProperHomotopyExtensionProperty.exists_proper_retraction_homotopic`: a proper homotopy
-  left inverse of the inclusion of `A` is properly homotopic to a proper retraction onto `A`.
-* `TauCeti.HasProperHomotopyExtensionProperty.exists_proper_homotopyRel_of_retracing`: a proper
-  homotopy concatenated with a proper homotopy retracing it on a closed proper cofibration `A`
-  rectifies to a proper homotopy relative to `A`.
-* `TauCeti.HasProperHomotopyExtensionProperty.exists_proper_homotopyRel_of_retraction`: a retraction
-  onto a closed subset `A` with the proper homotopy extension property whose composite with the
-  inclusion is properly homotopic to `id_X` is properly homotopic to `id_X` relative to `A`.
-* `TauCeti.properStrongDeformationRetract_of_inverse`: **rectification of a proper homotopy inverse
-  of a proper cofibration inclusion to a proper strong deformation retraction.**
-* `TauCeti.HasProperHomotopyExtensionProperty.exists_proper_strong_deformation_retraction_iff`: a
-  subset with the proper homotopy extension property is a proper strong deformation retract if and
-  only if its inclusion is a proper homotopy equivalence.
+* `TauCeti.HasProperHomotopyExtensionProperty.exists_proper_retraction_homotopic`: rectifying a
+  proper homotopy left inverse of the inclusion to a proper retraction.
+* `TauCeti.HasProperHomotopyExtensionProperty.exists_proper_homotopyRel_of_retracing`,
+  `TauCeti.HasProperHomotopyExtensionProperty.exists_proper_homotopyRel_of_retraction`: rectifying
+  retracing proper homotopies and proper retractions relative to `A`.
+* `TauCeti.properStrongDeformationRetract_of_inverse`,
+  `TauCeti.HasProperHomotopyExtensionProperty.exists_proper_strong_deformation_retraction_iff`:
+  **proper strong deformation retraction characterization** for proper cofibrations.
 
 ## References
 
@@ -53,8 +42,6 @@ properness of the subspace inclusion `Subtype.val : A → X`.
   Compositio Math. 27 (1973), 1–23, Section 1.
 * A. Hatcher, [*Algebraic Topology*](https://pi.math.cornell.edu/~hatcher/AT/AT.pdf), Chapter 0,
   Proposition 0.19.
-* Parallel ordinary-homotopy rectification in
-  `TauCeti.Topology.Homotopy.Extension.DeformationRetract`.
 -/
 
 public section
@@ -78,29 +65,22 @@ private def retracingTime (u t : I) : I :=
 
 private lemma continuous_retracingTime :
     Continuous fun p : I × I ↦ retracingTime p.1 p.2 := by
-  unfold retracingTime
-  fun_prop
+  unfold retracingTime; fun_prop
 
-private lemma retracingTime_zero_right (u : I) : retracingTime u 0 = 0 := by
-  refine projIcc_of_le_left zero_le_one ?_
-  rw [Icc.coe_zero]
-  have hle : min (2 * (0 : ℝ)) (2 - 2 * 0) ≤ 2 * 0 := min_le_left _ _
-  linarith [u.2.1]
+private lemma retracingTime_zero_right (u : I) : retracingTime u 0 = 0 :=
+  projIcc_of_le_left zero_le_one <| by
+    rw [Icc.coe_zero]; linarith [min_le_left (2 * (0 : ℝ)) (2 - 2 * 0), u.2.1]
 
-private lemma retracingTime_one_right (u : I) : retracingTime u 1 = 0 := by
-  refine projIcc_of_le_left zero_le_one ?_
-  rw [Icc.coe_one]
-  have hle : min (2 * (1 : ℝ)) (2 - 2 * 1) ≤ 2 - 2 * 1 := min_le_right _ _
-  linarith [u.2.1]
+private lemma retracingTime_one_right (u : I) : retracingTime u 1 = 0 :=
+  projIcc_of_le_left zero_le_one <| by
+    rw [Icc.coe_one]; linarith [min_le_right (2 * (1 : ℝ)) (2 - 2 * 1), u.2.1]
 
-private lemma retracingTime_one_left (t : I) : retracingTime 1 t = 0 := by
-  refine projIcc_of_le_left zero_le_one ?_
-  rw [Icc.coe_one]
-  rcases le_total (t : ℝ) (1 / 2) with ht | ht
-  · have hle : min (2 * (t : ℝ)) (2 - 2 * t) ≤ 2 * t := min_le_left _ _
-    linarith
-  · have hle : min (2 * (t : ℝ)) (2 - 2 * t) ≤ 2 - 2 * t := min_le_right _ _
-    linarith
+private lemma retracingTime_one_left (t : I) : retracingTime 1 t = 0 :=
+  projIcc_of_le_left zero_le_one <| by
+    rw [Icc.coe_one]
+    rcases le_total (t : ℝ) (1 / 2) with ht | ht
+    · linarith [min_le_left (2 * (t : ℝ)) (2 - 2 * t)]
+    · linarith [min_le_right (2 * (t : ℝ)) (2 - 2 * t)]
 
 /-- At `u = 0` and any point where `G` retraces `F`, `F (retracingTime 0 t, x)` agrees with the
 concatenation `(F.trans G) (t, x)`. -/
@@ -115,8 +95,7 @@ private lemma apply_retracingTime_zero (F : f₀.Homotopy f₁) (G : f₁.Homoto
     exact projIcc_of_mem zero_le_one ⟨by linarith [t.2.1], by linarith⟩
   · dsimp only at ht
     rw [hretr, retracingTime, Icc.coe_zero, sub_zero, min_eq_right (by linarith)]
-    congr 2
-    ext
+    congr 2; ext
     rw [coe_projIcc, coe_symm_eq, min_eq_right (by linarith), max_eq_right (by linarith [t.2.2])]
     ring
 
@@ -133,98 +112,64 @@ private theorem exists_proper_retracing_boundary_homotopy (hA_closed : IsClosed 
       (∀ b : cylinderBoundary A, Φ (0, b) = (F.trans G) b.1) ∧
       (∀ x : X, Φ (1, ⟨(0, x), Or.inl ⟨Or.inl rfl, trivial⟩⟩) = f₀ x) ∧
       (∀ x : X, Φ (1, ⟨(1, x), Or.inl ⟨Or.inr rfl, trivial⟩⟩) = f₂ x) ∧
-      ∀ (t : I) {x : X} (hx : x ∈ A),
-        Φ (1, ⟨(t, x), Or.inr ⟨trivial, hx⟩⟩) = f₀ x := by
+      ∀ (t : I) {x : X} (hx : x ∈ A), Φ (1, ⟨(t, x), Or.inr ⟨trivial, hx⟩⟩) = f₀ x := by
   classical
   let B := cylinderBoundary A
+  have hB : IsClosed B :=
+    ((Set.toFinite _).isClosed.prod isClosed_univ).union (isClosed_univ.prod hA_closed)
+  have hπX : IsProperMap (fun q : I × B ↦ q.2.1.2) :=
+    (isProperMap_snd_of_compactSpace (X := I)).comp
+      (hB.isProperMap_subtypeVal.comp (isProperMap_snd_of_compactSpace (X := I)))
   let raw : I × B → Y := fun q ↦
     if q.2.1.2 ∈ A then F (retracingTime q.1 q.2.1.1, q.2.1.2)
-    else if q.2.1.1 = 0 then f₀ q.2.1.2
-    else f₂ q.2.1.2
-  -- Cover `I × B` by its closed side `I × (I × A)` and its two closed ends `I × ({0, 1} × X)`.
+    else if q.2.1.1 = 0 then f₀ q.2.1.2 else f₂ q.2.1.2
   let sSide : Set (I × B) := {q | q.2.1.2 ∈ A}
   let sLeft : Set (I × B) := {q | q.2.1.1 = 0}
   let sRight : Set (I × B) := {q | q.2.1.1 = 1}
   have hsSide : IsClosed sSide := hA_closed.preimage (by fun_prop)
-  have hsLeft : IsClosed sLeft :=
-    isClosed_eq (by fun_prop) (continuous_const : Continuous fun _ : I × B ↦ (0 : I))
-  have hsRight : IsClosed sRight :=
-    isClosed_eq (by fun_prop) (continuous_const : Continuous fun _ : I × B ↦ (1 : I))
-  have hcov : sSide ∪ (sLeft ∪ sRight) = univ := by
-    ext q
-    simp only [sSide, sLeft, sRight, mem_union, mem_ofPred_eq, mem_univ, iff_true]
-    rcases q.2.2 with ⟨h01, -⟩ | ⟨-, hx⟩
-    · exact Or.inr h01
-    · exact Or.inl hx
+  have hsLeft : IsClosed sLeft := isClosed_eq (by fun_prop) continuous_const
+  have hsRight : IsClosed sRight := isClosed_eq (by fun_prop) continuous_const
+  have hcov : sSide ∪ (sLeft ∪ sRight) = univ :=
+    Set.eq_univ_of_forall fun q ↦ q.2.2.elim (fun h ↦ .inr h.1) fun h ↦ .inl h.2
   have hraw : IsProperMap raw := by
     refine IsProperMap.of_union_isClosed hsSide (hsLeft.union hsRight) hcov ?_ ?_
-    · let e₀ : sSide ≃ₜ (I × I) × A :=
-        { toFun z := ((z.1.1, z.1.2.1.1), ⟨z.1.2.1.2, z.2⟩)
-          invFun p := ⟨(p.1.1, ⟨(p.1.2, p.2.1), Or.inr ⟨trivial, p.2.2⟩⟩), p.2.2⟩
-          left_inv _ := rfl
-          right_inv _ := rfl }
-      have hx_prop : IsProperMap (fun z : sSide ↦ z.1.2.1.2) :=
-        hA_closed.isProperMap_subtypeVal.comp
-          ((isProperMap_snd_of_compactSpace (X := I × I)).comp e₀.isProperMap)
-      let uv : C(sSide, I × I) := ⟨fun z ↦ (z.1.1, z.1.2.1.1), by fun_prop⟩
-      have hpair : IsProperMap (fun z : sSide ↦ (retracingTime z.1.1 z.1.2.1.1, z.1.2.1.2)) :=
-        hx_prop.prodMk_of_t2_left (continuous_retracingTime.comp uv.continuous)
-      convert hF.comp hpair using 1
-      funext z
+    · convert hF.comp ((hπX.comp hsSide.isProperMap_subtypeVal).prodMk_of_t2_left
+        (continuous_retracingTime.comp
+          (by fun_prop : Continuous fun z : sSide ↦ (z.1.1, z.1.2.1.1)))) using 1
+      ext z
       exact ite_eq_left z.2
-    · let sLeft' : Set ↑(sLeft ∪ sRight) := Subtype.val ⁻¹' sLeft
-      let sRight' : Set ↑(sLeft ∪ sRight) := Subtype.val ⁻¹' sRight
-      have hsLeft' : IsClosed sLeft' := hsLeft.preimage continuous_subtype_val
-      have hsRight' : IsClosed sRight' := hsRight.preimage continuous_subtype_val
-      have hcov' : sLeft' ∪ sRight' = univ := by
-        ext z
-        exact ⟨fun _ ↦ trivial, fun _ ↦ z.2⟩
-      refine IsProperMap.of_union_isClosed hsLeft' hsRight' hcov' ?_ ?_
-      · let e₁ : sLeft' ≃ₜ I × X :=
-          { toFun z := (z.1.1.1, z.1.1.2.1.2)
-            invFun p := ⟨⟨(p.1, ⟨(0, p.2), Or.inl ⟨Or.inl rfl, trivial⟩⟩), Or.inl rfl⟩, rfl⟩
-            left_inv z :=
-              Subtype.ext (Subtype.ext (Prod.ext rfl (Subtype.ext (Prod.ext z.2.symm rfl))))
-            right_inv _ := rfl }
-        convert (F.isProperMap_left hF).comp
-          ((isProperMap_snd_of_compactSpace (X := I)).comp e₁.isProperMap) using 1
+    · have hsL' : IsClosed (Subtype.val ⁻¹' sLeft : Set ↑(sLeft ∪ sRight)) :=
+        hsLeft.preimage continuous_subtype_val
+      have hsR' : IsClosed (Subtype.val ⁻¹' sRight : Set ↑(sLeft ∪ sRight)) :=
+        hsRight.preimage continuous_subtype_val
+      have hπLR : IsProperMap (fun z : ↑(sLeft ∪ sRight) ↦ z.1.2.1.2) :=
+        hπX.comp (hsLeft.union hsRight).isProperMap_subtypeVal
+      refine IsProperMap.of_union_isClosed hsL' hsR' (Set.eq_univ_of_forall Subtype.prop) ?_ ?_
+      · convert (F.isProperMap_left hF).comp (hπLR.comp hsL'.isProperMap_subtypeVal) using 1
         funext z
         have hz : z.1.1.2.1.1 = 0 := z.2
-        by_cases hx : z.1.1.2.1.2 ∈ A <;> simp [raw, e₁, hx, hz, retracingTime_zero_right]
-      · let e₂ : sRight' ≃ₜ I × X :=
-          { toFun z := (z.1.1.1, z.1.1.2.1.2)
-            invFun p := ⟨⟨(p.1, ⟨(1, p.2), Or.inl ⟨Or.inr rfl, trivial⟩⟩), Or.inr rfl⟩, rfl⟩
-            left_inv z :=
-              Subtype.ext (Subtype.ext (Prod.ext rfl (Subtype.ext (Prod.ext z.2.symm rfl))))
-            right_inv _ := rfl }
-        convert (G.isProperMap_right hG).comp
-          ((isProperMap_snd_of_compactSpace (X := I)).comp e₂.isProperMap) using 1
+        by_cases hx : z.1.1.2.1.2 ∈ A <;> simp [raw, hx, hz, retracingTime_zero_right]
+      · convert (G.isProperMap_right hG).comp (hπLR.comp hsR'.isProperMap_subtypeVal) using 1
         funext z
         have hz : z.1.1.2.1.1 = 1 := z.2
         by_cases hx : z.1.1.2.1.2 ∈ A
         · have hf₂₀ : f₂ z.1.1.2.1.2 = f₀ z.1.1.2.1.2 := by
             rw [← G.apply_one, hretr 1 _ hx, symm_one, F.apply_zero]
-          simp [raw, e₂, hx, hz, retracingTime_one_right, hf₂₀]
-        · simp [raw, e₂, hx, hz]
+          simp [raw, hx, hz, retracingTime_one_right, hf₂₀]
+        · simp [raw, hx, hz]
   refine ⟨⟨raw, hraw.continuous⟩, hraw, fun ⟨⟨t, x⟩, hb⟩ ↦ ?_, fun x ↦ ?_, fun x ↦ ?_,
-    fun t x hx ↦ ?_⟩
+    fun t x hx ↦ by simp [raw, hx, retracingTime_one_left]⟩
   · by_cases hx : x ∈ A
     · simpa [raw, hx] using apply_retracingTime_zero F G (fun s ↦ hretr s x hx) t
     · rcases hb with ⟨ht | ht, -⟩ | ⟨-, hxA⟩
-      · have ht' : t = 0 := ht
-        dsimp only [ContinuousMap.coe_mk, raw]
-        simp [hx, ht']
-      · have ht' : t = 1 := ht
-        dsimp only [ContinuousMap.coe_mk, raw]
-        simp [hx, ht']
+      · simp [raw, hx, show t = 0 from ht]
+      · simp [raw, hx, show t = 1 from ht]
       · exact (hx hxA).elim
   · by_cases hx : x ∈ A <;> simp [raw, hx, retracingTime_zero_right]
   · by_cases hx : x ∈ A
-    · have hf₂₀ : f₀ x = f₂ x := by
-        rw [← G.apply_one, hretr 1 x hx, symm_one, F.apply_zero]
+    · have hf₂₀ : f₀ x = f₂ x := by rw [← G.apply_one, hretr 1 x hx, symm_one, F.apply_zero]
       simpa [raw, hx, retracingTime_one_right] using hf₂₀
     · simp [raw, hx]
-  · simp [raw, hx, retracingTime_one_left]
 
 /-- **A proper homotopy which retraces itself on a closed proper cofibration can be made stationary
 on `A`.** Let `F : f₀.Homotopy f₁` and `G : f₁.Homotopy f₂` be proper homotopies such that, at every
@@ -240,14 +185,10 @@ theorem HasProperHomotopyExtensionProperty.exists_proper_homotopyRel_of_retracin
   obtain ⟨Ψ, hΨ, -, hΨ₁⟩ :=
     (hA.zero_one_prod_univ_union_univ_prod hA_closed).exists_extension
       (F.trans G).toContinuousMap (Homotopy.isProperMap_trans hF hG) Φ hΦ hΦ₀
-  let slice : C(I × X, I × (I × X)) := ⟨fun p ↦ (1, p), by fun_prop⟩
-  refine ⟨{ toContinuousMap := Ψ.comp slice
-            map_zero_left := fun x ↦ (hΨ₁ 1 ⟨(0, x), Or.inl ⟨Or.inl rfl, trivial⟩⟩).trans
-              (hΦ_left x)
-            map_one_left := fun x ↦ (hΨ₁ 1 ⟨(1, x), Or.inl ⟨Or.inr rfl, trivial⟩⟩).trans
-              (hΦ_right x)
-            prop' := fun t x hx ↦ (hΨ₁ 1 ⟨(t, x), Or.inr ⟨trivial, hx⟩⟩).trans
-              (hΦ_side t hx) },
+  refine ⟨{ toContinuousMap := Ψ.comp ⟨fun p ↦ (1, p), by fun_prop⟩
+            map_zero_left := fun x ↦ (hΨ₁ 1 ⟨(0, x), .inl ⟨.inl rfl, trivial⟩⟩).trans (hΦ_left x)
+            map_one_left := fun x ↦ (hΨ₁ 1 ⟨(1, x), .inl ⟨.inr rfl, trivial⟩⟩).trans (hΦ_right x)
+            prop' := fun t _ hx ↦ (hΨ₁ 1 ⟨(t, _), .inr ⟨trivial, hx⟩⟩).trans (hΦ_side t hx) },
     hΨ.comp (isProperMap_prodMk_left (1 : I))⟩
 
 end Retracing
@@ -263,14 +204,10 @@ theorem HasProperHomotopyExtensionProperty.exists_proper_retraction_homotopic
     (H : (g.comp (subtypeVal A)).Homotopy (ContinuousMap.id A)) (hH : IsProperMap H) :
     ∃ r : C(X, A), IsProperMap r ∧ (∀ a : A, r a = a) ∧ ∃ K : r.Homotopy g, IsProperMap K := by
   obtain ⟨G, hG, hG₀, hG₁⟩ := hA.exists_extension g hg H.toContinuousMap hH fun a ↦ H.apply_zero a
-  let r : C(X, A) := G.comp ⟨fun x ↦ (1, x), by fun_prop⟩
-  let G_hom : g.Homotopy r :=
-    { toContinuousMap := G
-      map_zero_left := hG₀
-      map_one_left := fun _ ↦ rfl }
-  refine ⟨r, hG.comp (isProperMap_prodMk_left (1 : I)), fun a ↦ ?_, G_hom.symm,
+  refine ⟨G.comp ⟨fun x ↦ (1, x), by fun_prop⟩, hG.comp (isProperMap_prodMk_left (1 : I)),
+    fun a ↦ (hG₁ 1 a).trans (H.apply_one a),
+    Homotopy.symm { toContinuousMap := G, map_zero_left := hG₀, map_one_left := fun _ ↦ rfl },
     Homotopy.isProperMap_symm hG⟩
-  exact (hG₁ 1 a).trans (H.apply_one a)
 
 /-- A retraction `r : X → A` onto a closed subset `A` with the proper homotopy extension property
 whose composite with the inclusion is properly homotopic to `id_X` is properly homotopic to `id_X`
@@ -281,15 +218,14 @@ theorem HasProperHomotopyExtensionProperty.exists_proper_homotopyRel_of_retracti
     (K : ((subtypeVal A).comp r).Homotopy (ContinuousMap.id X)) (hK : IsProperMap K) :
     ∃ H : (ContinuousMap.id X).HomotopyRel ((subtypeVal A).comp r) A, IsProperMap H := by
   let ir : C(X, X) := (subtypeVal A).comp r
-  have hir : IsProperMap ir := Homotopy.isProperMap_left hK
   let F : (ContinuousMap.id X).Homotopy ir := K.symm
   have hF : IsProperMap F := Homotopy.isProperMap_symm hK
   have hir_idem : ir.comp ir = ir := ContinuousMap.ext fun x ↦ congrArg Subtype.val (hr (r x))
   let G : ir.Homotopy ir := (F.symm.compContinuousMap ir).cast hir_idem (ContinuousMap.id_comp ir)
-  have hG : IsProperMap G :=
-    (Homotopy.isProperMap_cast_iff _ _).2
-      (Homotopy.isProperMap_compContinuousMap (Homotopy.isProperMap_symm hF) hir)
-  refine hA.exists_proper_homotopyRel_of_retracing hA_closed F G hF hG fun t x hx ↦ ?_
+  refine hA.exists_proper_homotopyRel_of_retracing hA_closed F G hF
+    ((Homotopy.isProperMap_cast_iff _ _).2
+      (Homotopy.isProperMap_compContinuousMap (Homotopy.isProperMap_symm hF)
+        (Homotopy.isProperMap_left hK))) fun t x hx ↦ ?_
   have hrx : ir x = x := congrArg Subtype.val (hr ⟨x, hx⟩)
   simp [G, F, hrx]
 
@@ -309,14 +245,10 @@ theorem properStrongDeformationRetract_of_inverse (A : Set X)
       ∃ H' : (ContinuousMap.id X).HomotopyRel ((subtypeVal A).comp r) A, IsProperMap H' := by
   have hA_closed : IsClosed A := by simpa only [Subtype.range_coe] using hincl.isClosed_range
   obtain ⟨r, hr_proper, hr, K_rg, hK_rg⟩ := hA.exists_proper_retraction_homotopic g hg H hH
-  have hincl' : IsProperMap (subtypeVal A) := hincl
-  let K_ir : ((subtypeVal A).comp r).Homotopy ((subtypeVal A).comp g) :=
-    (Homotopy.refl (subtypeVal A)).comp K_rg
-  have hK_ir : IsProperMap K_ir :=
-    Homotopy.isProperMap_comp (Homotopy.isProperMap_refl hincl') hK_rg
-  exact ⟨r, hr_proper, hr,
-    hA.exists_proper_homotopyRel_of_retraction hA_closed hr (K_ir.trans K)
-      (Homotopy.isProperMap_trans hK_ir hK)⟩
+  exact ⟨r, hr_proper, hr, hA.exists_proper_homotopyRel_of_retraction hA_closed hr
+    (((Homotopy.refl (subtypeVal A)).comp K_rg).trans K)
+    (Homotopy.isProperMap_trans
+      (Homotopy.isProperMap_comp (Homotopy.isProperMap_refl (f := subtypeVal A) hincl) hK_rg) hK)⟩
 
 /-- A subset with the proper homotopy extension property is a proper strong deformation retract of
 `X` if and only if its inclusion is a proper homotopy equivalence. -/
@@ -325,14 +257,12 @@ theorem HasProperHomotopyExtensionProperty.exists_proper_strong_deformation_retr
     (∃ r : C(X, A), IsProperMap r ∧ (∀ a : A, r (a : X) = a) ∧
       ∃ H : (ContinuousMap.id X).HomotopyRel ((subtypeVal A).comp r) A, IsProperMap H) ↔
       (subtypeVal A).HasProperHomotopyInverse := by
-  refine ⟨?_, fun hinv ↦ ?_⟩
-  · rintro ⟨r, hr_proper, hr, H, hH⟩
-    have hir : IsProperMap ((subtypeVal A).comp r) := Homotopy.isProperMap_right hH
-    have hincl : IsProperMap (subtypeVal A) := by
-      have hsurj : Function.Surjective r := fun a ↦ ⟨a, hr a⟩
-      exact isProperMap_of_comp_of_surj r.continuous (subtypeVal A).continuous hir hsurj
-    have hri : r.comp (subtypeVal A) = ContinuousMap.id A := ContinuousMap.ext hr
-    exact .intro hincl r hr_proper ((Homotopy.refl _).cast hri.symm rfl) H.toHomotopy.symm
+  refine ⟨fun ⟨r, hr_proper, hr, H, hH⟩ ↦ ?_, fun hinv ↦ ?_⟩
+  · have hincl : IsProperMap (subtypeVal A) :=
+      isProperMap_of_comp_of_surj r.continuous (subtypeVal A).continuous
+        (Homotopy.isProperMap_right hH) fun a ↦ ⟨a, hr a⟩
+    exact .intro hincl r hr_proper ((Homotopy.refl _).cast (ContinuousMap.ext hr).symm rfl)
+      H.toHomotopy.symm
       ((Homotopy.isProperMap_cast_iff _ _).2 (Homotopy.isProperMap_refl isProperMap_id))
       (Homotopy.isProperMap_symm hH)
   · obtain ⟨g, hg, H, K, hH, hK⟩ := hinv.exists_inverse

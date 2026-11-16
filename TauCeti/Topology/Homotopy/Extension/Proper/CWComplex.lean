@@ -14,42 +14,31 @@ import TauCeti.Topology.Homotopy.Extension.Ball
 /-!
 # Proper homotopy extension for strongly locally finite CW complexes
 
-For a subcomplex `E` of an arbitrary CW complex `C`, the ordinary homotopy extension property is
-proved by building a skeletal retraction `r : I × C → I × C` onto `{0} × C ∪ I × E` cell by cell.
-When `C` is infinite-dimensional, `r` need not be proper even if `C` is locally finite; Farrell,
-Taylor, and Wagoner show that **strong local finiteness**
-(`Topology.CWComplex.StronglyLocallyFinite`) is the condition that makes `r` proper.
+For a subcomplex `E` of an infinite-dimensional CW complex `C`, the cell-by-cell skeletal cylinder
+retraction `r : I × C → I × C` onto `{0} × C ∪ I × E` need not be proper under local finiteness
+alone; Farrell, Taylor, and Wagoner show that **strong local finiteness**
+(`Topology.CWComplex.StronglyLocallyFinite`) makes `r` proper.
 
-The key geometric observation is independent of any finiteness assumption: on any Hausdorff
-relative CW complex `(C, D)`, the skeletal cylinder retraction onto `{0} × C ∪ I × D` can be built
-so that its values on each closed `n`-cell lie in the union of the cell itself with the image of its
-boundary under the lower-skeleton retraction
-(`TauCeti.exists_retraction_cylinderExtensionDomain_base`). Consequently, `r` preserves every subset
-`S ⊆ X` that contains `closedCell n i` whenever it meets `openCell n i`—in particular, every
-subcomplex `F` of an ambient CW structure on `C`, whether or not `F` contains `E`.
-
-When `C` is covered by a locally finite family of finite subcomplexes `(F k)`, any compact subset
-`K ⊆ C` meets only finitely many `F k`. Because each `F k` is preserved by `r` and `C = ⋃ k, F k`,
-every point `(t, x)` mapped into `I × K` must already have `x` in that finite union of compact
-subcomplexes; hence `r⁻¹(I × K)` is a closed subset of a compact set, proving `IsProperMap r` and
-therefore `HasProperHomotopyExtensionProperty`
-(`Topology.RelCWComplex.Subcomplex.hasProperHomotopyExtensionProperty`).
+On any Hausdorff relative CW complex `(C, D)`, `r` can be built so that its values on each closed
+`n`-cell stay inside the cell together with the image of its boundary under the lower-skeleton
+retraction (`TauCeti.exists_retraction_cylinderExtensionDomain_base`), hence preserving every
+closed-cell-saturated subset `S ⊆ X` — in particular every subcomplex `F` of `C`. When `C` admits a
+locally finite cover by finite subcomplexes `(F k)`, any compact `K ⊆ C` meets only finitely many
+`F k`, so `r⁻¹(I × K)` is closed inside a finite union of compact cylinders `I × F k`, proving
+`IsProperMap r` (`Topology.RelCWComplex.Subcomplex.hasProperHomotopyExtensionProperty`).
 
 ## Main results
 
 * `TauCeti.exists_retraction_cylinderExtensionDomain_base`: skeletal cylinder retraction onto
   `{0} × C ∪ I × D` preserving every closed-cell-saturated subset of `X`.
-* `Topology.RelCWComplex.Subcomplex.hasProperHomotopyExtensionProperty`: **a subcomplex of a
-  strongly locally finite Hausdorff CW complex has the proper homotopy extension property.**
-* `Topology.RelCWComplex.Subcomplex.hasProperHomotopyExtensionProperty_of_finiteDimensional`: the
-  same for any finite-dimensional locally finite Hausdorff CW complex.
-* `Topology.RelCWComplex.Subcomplex.hasProperHomotopyExtensionProperty_univ`: specialization to CW
-  structures on `univ : Set X`.
-* `TauCeti.hasProperHomotopyExtensionProperty_skeletonLT`: every skeleton of a strongly locally
-  finite Hausdorff CW complex has the proper homotopy extension property.
+* `Topology.RelCWComplex.Subcomplex.hasProperHomotopyExtensionProperty`,
+  `Topology.RelCWComplex.Subcomplex.hasProperHomotopyExtensionProperty_of_finiteDimensional`,
+  `Topology.RelCWComplex.Subcomplex.hasProperHomotopyExtensionProperty_univ`,
+  `TauCeti.hasProperHomotopyExtensionProperty_skeletonLT`: **proper homotopy extension for
+  subcomplexes and skeletons** of strongly locally finite (or finite-dimensional locally finite)
+  Hausdorff CW complexes.
 * `Topology.RelCWComplex.Subcomplex.exists_proper_strong_deformation_retraction_iff`: a subcomplex
-  of a strongly locally finite Hausdorff CW complex is a proper strong deformation retract of `C` if
-  and only if its inclusion is a proper homotopy equivalence.
+  is a proper strong deformation retract of `C` iff its inclusion is a proper homotopy equivalence.
 
 ## References
 
@@ -57,8 +46,6 @@ therefore `HasProperHomotopyExtensionProperty`
   Compositio Math. 27 (1973), 1–23, Theorem 1.6.
 * D. H. Baues, A. Quintero, *Infinite Homotopy Theory*, Kluwer Academic Publishers (2001),
   Chapter I, Proposition 3.8.
-* Skeletal gluing infrastructure in `TauCeti.Topology.CWComplex.Classical.Skeleton.Induction` and
-  parallel ordinary-homotopy API in `TauCeti.Topology.Homotopy.Extension.CWComplex`.
 -/
 
 public section
@@ -103,23 +90,18 @@ private theorem exists_retraction_step (n : ℕ)
       continuous_fst.prodMk
         (((continuous_map_closedBall j).comp
           (continuous_subtype_val.comp continuous_snd)).subtype_mk _)⟩
-  have hext : ∀ j : cell C n, ∃ K : C(I × closedBall (0 : Fin n → ℝ) 1, I × C),
+  have hext (j : cell C n) : ∃ K : C(I × closedBall (0 : Fin n → ℝ) 1, I × C),
       (∀ y, K (0, y) = fCell j y) ∧
       (∀ t (y : closedBall (0 : Fin n → ℝ) 1) (hy : (y : Fin n → ℝ) ∈ sphere 0 1),
         K (t, y) = G (t, ⟨map n j y, cellFrontier_subset_skeletonLT n j ⟨y, hy, rfl⟩⟩)) ∧
-      ∀ p, K p ∈ range (fCell j) ∪ range (HCell j) := fun j ↦ by
-    -- Solve the ball extension problem with codomain `↥(range (fCell j) ∪ range (HCell j))` so
-    -- that all values of `K` stay inside the cell together with the image of its boundary.
-    let U : Set (I × C) := range (fCell j) ∪ range (HCell j)
+      ∀ p, K p ∈ range (fCell j) ∪ range (HCell j) := by
     obtain ⟨K', hK'₀, hK's⟩ := (hasHomotopyExtensionProperty_sphere_closedBall
       (E := Fin n → ℝ)).exists_extension_of_isClosed
-      (isClosed_sphere.preimage continuous_subtype_val) (Y := U)
-      ⟨fun w ↦ ⟨fCell j w, Or.inl (mem_range_self w)⟩, by fun_prop⟩
-      ⟨fun q ↦ ⟨HCell j q, Or.inr (mem_range_self q)⟩, by fun_prop⟩
-      fun a ↦ Subtype.ext (hG₀ _)
+      (isClosed_sphere.preimage continuous_subtype_val) (Y := ↥(range (fCell j) ∪ range (HCell j)))
+      ⟨fun w ↦ ⟨fCell j w, .inl (mem_range_self w)⟩, by fun_prop⟩
+      ⟨fun q ↦ ⟨HCell j q, .inr (mem_range_self q)⟩, by fun_prop⟩ fun _ ↦ Subtype.ext (hG₀ _)
     exact ⟨⟨fun p ↦ (K' p).1, continuous_subtype_val.comp K'.continuous⟩,
-      fun y ↦ congrArg Subtype.val (hK'₀ y),
-      fun t y hy ↦ congrArg Subtype.val (hK's t ⟨y, hy⟩),
+      fun y ↦ congrArg Subtype.val (hK'₀ y), fun t y hy ↦ congrArg Subtype.val (hK's t ⟨y, hy⟩),
       fun p ↦ (K' p).2⟩
   choose K hK₀ hKs hKr using hext
   obtain ⟨F, hFG, hFK⟩ := exists_continuousMap_prod_skeletonLT_succ G K hKs
@@ -129,27 +111,18 @@ private theorem exists_retraction_step (n : ℕ)
     · obtain rfl : x = ⟨map n j y, map_mem_skeletonLT_succ j hy.le⟩ := Subtype.ext hxy.symm
       exact (hFK j 0 ⟨y, mem_closedBall_zero_iff.2 hy.le⟩).trans (hK₀ j _)
   · obtain hx | ⟨j, y, hy, hxy⟩ := mem_skeletonLT_or_exists_map x.2
-    · rw [hFG t x hx]
-      exact hG_dom _
+    · exact hFG t x hx ▸ hG_dom _
     · obtain rfl : x = ⟨map n j y, map_mem_skeletonLT_succ j hy.le⟩ := Subtype.ext hxy.symm
       rw [hFK j t ⟨y, mem_closedBall_zero_iff.2 hy.le⟩]
-      rcases hKr j (t, ⟨y, mem_closedBall_zero_iff.2 hy.le⟩) with ⟨w, hw⟩ | ⟨q, hq⟩
-      · rw [← hw]
-        exact zero_mem_cylinderExtensionDomain _
-      · rw [← hq]
-        exact hG_dom _
+      exact (hKr j _).elim (fun ⟨_, hw⟩ ↦ hw ▸ zero_mem_cylinderExtensionDomain _)
+        fun ⟨_, hq⟩ ↦ hq ▸ hG_dom _
   · obtain hx | ⟨j, y, hy, hxy⟩ := mem_skeletonLT_or_exists_map x.2
-    · rw [hFG t x hx]
-      exact hGS t ⟨x, hx⟩ hxS
-    · have hxo : (x : X) ∈ openCell n j := ⟨y, mem_ball_zero_iff.2 hy, hxy⟩
-      have hclosedS : closedCell n j ⊆ S := hSn j ⟨x, hxo, hxS⟩
+    · exact hFG t x hx ▸ hGS t ⟨x, hx⟩ hxS
+    · have hclosedS : closedCell n j ⊆ S := hSn j ⟨x, ⟨y, mem_ball_zero_iff.2 hy, hxy⟩, hxS⟩
       obtain rfl : x = ⟨map n j y, map_mem_skeletonLT_succ j hy.le⟩ := Subtype.ext hxy.symm
       rw [hFK j t ⟨y, mem_closedBall_zero_iff.2 hy.le⟩]
-      rcases hKr j (t, ⟨y, mem_closedBall_zero_iff.2 hy.le⟩) with ⟨w, hw⟩ | ⟨q, hq⟩
-      · rw [← hw]
-        exact hclosedS ⟨w, w.2, rfl⟩
-      · rw [← hq]
-        exact hGS q.1 _ (hclosedS (cellFrontier_subset_closedCell n j ⟨q.2.1, q.2.2, rfl⟩))
+      exact (hKr j _).elim (fun ⟨w, hw⟩ ↦ hw ▸ hclosedS ⟨w, w.2, rfl⟩) fun ⟨q, hq⟩ ↦
+        hq ▸ hGS q.1 _ (hclosedS (cellFrontier_subset_closedCell n j ⟨q.2.1, q.2.2, rfl⟩))
 
 /-- Recursive sequence of skeletal cylinder retractions on `I × skeletonLT C (0 + j)`. -/
 private def retractionSeq : (j : ℕ) →
@@ -202,17 +175,13 @@ theorem exists_retraction_cylinderExtensionDomain_base :
     (fun j ↦ (retractionSeq (C := C) j).1) retractionSeq_succ_apply
   refine ⟨r, fun ⟨t, x⟩ ↦ ?_, fun ⟨t, x⟩ hp ↦ ?_, fun {S} hS t x hxS ↦ ?_⟩
   · obtain ⟨j, hj⟩ := exists_mem_skeletonLT_add 0 x.2
-    rw [hr_apply j t x hj]
-    exact (retractionSeq (C := C) j).2.2 (t, ⟨x, hj⟩)
+    exact hr_apply j t x hj ▸ (retractionSeq (C := C) j).2.2 (t, ⟨x, hj⟩)
   · rcases mem_cylinderExtensionDomain_iff.1 hp with rfl | hxD
     · obtain ⟨j, hj⟩ := exists_mem_skeletonLT_add 0 x.2
       exact (hr_apply j 0 x hj).trans ((retractionSeq (C := C) j).2.1 ⟨x, hj⟩)
-    · have hx0 : (x : X) ∈ (skeletonLT C ((0 + 0 : ℕ) : ℕ∞) : Set X) :=
-        (skeletonLT C _).base_subset hxD
-      exact hr_apply 0 t x hx0
+    · exact hr_apply 0 t x ((skeletonLT C ((0 + 0 : ℕ) : ℕ∞)).base_subset hxD)
   · obtain ⟨j, hj⟩ := exists_mem_skeletonLT_add 0 x.2
-    rw [hr_apply j t x hj]
-    exact retractionSeq_preserves hS j t ⟨x, hj⟩ hxS
+    exact hr_apply j t x hj ▸ retractionSeq_preserves hS j t ⟨x, hj⟩ hxS
 
 end RelativeRetraction
 
@@ -226,40 +195,31 @@ locally finite Hausdorff CW complex `C` has the proper homotopy extension proper
 theorem _root_.Topology.RelCWComplex.Subcomplex.hasProperHomotopyExtensionProperty
     [CWComplex.StronglyLocallyFinite C] (E : CWComplex.Subcomplex C) :
     HasProperHomotopyExtensionProperty (Subtype.val ⁻¹' (E : Set X) : Set C) := by
-  have hE_closed : IsClosed (Subtype.val ⁻¹' (E : Set X) : Set C) :=
-    E.closed.preimage continuous_subtype_val
-  rw [hasProperHomotopyExtensionProperty_iff_exists_retraction hE_closed]
+  rw [hasProperHomotopyExtensionProperty_iff_exists_retraction
+    (E.closed.preimage continuous_subtype_val)]
   obtain ⟨r, hr_dom, hr_fix, hr_sat⟩ :=
     @exists_retraction_cylinderExtensionDomain_base X _ _ C E E.relCWComplex
-  have hr_sub : ∀ (F : CWComplex.Subcomplex C) (t : I) (x : C),
-      (x : X) ∈ F → ((r (t, x)).2 : X) ∈ F := fun F ↦
-    hr_sat fun n i ⟨z, hzo, hzF⟩ ↦ by
+  have hr_sub (F : CWComplex.Subcomplex C) (t : I) (x : C) (hx : (x : X) ∈ F) :
+      ((r (t, x)).2 : X) ∈ F :=
+    hr_sat (fun n i ⟨z, hzo, hzF⟩ ↦ by
       rw [E.openCell_relCWComplex] at hzo
       rw [E.closedCell_relCWComplex]
-      exact F.closedCell_subset_of_mem ((F.mem_I_iff_of_mem_openCell hzo).2 hzF)
-  -- Check properness of `(r ·).2 : I × C → C` using compactly generated codomain `C` and the
-  -- locally finite cover of `C` by finite subcomplexes.
+      exact F.closedCell_subset_of_mem ((F.mem_I_iff_of_mem_openCell hzo).2 hzF)) t x hx
   have hsnd : IsProperMap fun p : I × C ↦ (r p).2 := by
     rw [isProperMap_iff_isCompact_preimage]
     refine ⟨r.continuous.snd, fun K hK ↦ ?_⟩
     obtain ⟨ι, F, hF_fin, hF_cov, hF_lf⟩ :=
       CWComplex.StronglyLocallyFinite.exists_locallyFinite_finite_subcomplex (C := C)
     have hfin := hF_lf.finite_nonempty_inter_compact hK
-    let L : Set C := ⋃ k ∈ hfin.toFinset, (Subtype.val ⁻¹' (F k : Set X) : Set C)
-    have hL_comp : IsCompact L := by
-      refine hfin.toFinset.isCompact_biUnion fun k _ ↦ ?_
-      have : CWComplex.Finite (F k : Set X) := hF_fin k
-      exact RelCWComplex.isClosed.isProperMap_subtypeVal.isCompact_preimage
-        CWComplex.isCompact_of_finite
+    have hL_comp : IsCompact (⋃ k ∈ hfin.toFinset, (Subtype.val ⁻¹' (F k : Set X) : Set C)) :=
+      hfin.toFinset.isCompact_biUnion fun k _ ↦ by
+        have := hF_fin k
+        exact RelCWComplex.isClosed.isProperMap_subtypeVal.isCompact_preimage
+          CWComplex.isCompact_of_finite
     refine (isCompact_univ.prod hL_comp).of_isClosed_subset
       (hK.isClosed.preimage r.continuous.snd) fun ⟨t, x⟩ hxK ↦ ⟨trivial, ?_⟩
-    have hx_cov : (x : X) ∈ ⋃ k, (F k : Set X) := by
-      rw [hF_cov]
-      exact x.2
-    obtain ⟨k, hxk⟩ := mem_iUnion.1 hx_cov
-    have hk_mem : k ∈ hfin.toFinset :=
-      hfin.mem_toFinset.2 ⟨(r (t, x)).2, hr_sub (F k) t x hxk, hxK⟩
-    exact mem_biUnion hk_mem hxk
+    obtain ⟨k, hxk⟩ := mem_iUnion.1 (hF_cov.symm.subset x.2)
+    exact mem_biUnion (x := k) (hfin.mem_toFinset.2 ⟨(r (t, x)).2, hr_sub (F k) t x hxk, hxK⟩) hxk
   exact ⟨r, hsnd.prodMk_of_t2_left r.continuous.fst, hr_dom, hr_fix⟩
 
 /-- On a finite-dimensional locally finite Hausdorff CW complex, every subcomplex has the proper
