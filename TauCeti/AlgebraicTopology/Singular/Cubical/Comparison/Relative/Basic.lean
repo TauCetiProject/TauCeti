@@ -67,6 +67,8 @@ relative homotopy invariance of cubical homology is transported from the simplic
   (`TopPair.isSplitMono_normalizedCubicalChainComplex_map_f`).
 * `TopPair.quasiIso_singularToCubicalRel`, `TopPair.quasiIso_cubicalToSingularRel`: the relative
   comparison maps are quasi-isomorphisms.
+* `TopPair.cubicalChainComplexMap_eq_zero_of_fac`: a map of pairs whose ambient map factors
+  through the target subspace induces the zero map on relative cubical chains.
 * `TopPair.homologyMap_cubicalChainComplexMap_eq`: on relative cubical homology, a map of pairs
   induces its relative singular homology map, conjugated by the comparison isomorphisms.
 * `TopPair.Homotopy.congr_homologyMap_cubicalChainComplexMap`: homotopic maps of pairs induce the
@@ -284,6 +286,13 @@ theorem cubicalChainComplexMap_id (P : TopPair.{u}) :
 theorem cubicalChainComplexMap_comp {P P' P'' : TopPair.{u}} (f : P ⟶ P') (g : P' ⟶ P'') :
     cubicalChainComplexMap k (f ≫ g) = cubicalChainComplexMap k f ≫ cubicalChainComplexMap k g :=
   coequalizer.hom_ext (by simp)
+
+/-- A map of pairs `f : (X, A) ⟶ (X', A')` whose map of ambient spaces factors through the
+subspace `A'` induces the zero map on relative cubical chains. -/
+theorem cubicalChainComplexMap_eq_zero_of_fac {P P' : TopPair.{u}} (f : P ⟶ P')
+    (g : P.fst ⟶ P'.snd) (hg : g ≫ P'.map = Hom.fst f) : cubicalChainComplexMap k f = 0 := by
+  rw [← cancel_epi (cokernel.π _), π_cubicalChainComplexMap, comp_zero, ← hg, Functor.map_comp,
+    Category.assoc, cokernel.condition, comp_zero]
 
 /-! ### Singular cubes as relative chains -/
 
