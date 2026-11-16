@@ -9,6 +9,7 @@ public import Mathlib.Algebra.Group.Subgroup.Defs
 public import Mathlib.Data.Int.GCD
 public import Mathlib.Data.Nat.Find
 public import Mathlib.Data.Nat.Prime.Defs
+public import Mathlib.RingTheory.Coprime.Basic
 
 /-!
 # Coprime exponents in a group
@@ -28,6 +29,9 @@ virtual characters induced from `p`-elementary subgroups.
 * `TauCeti.exists_zpow_mul_zpow_eq_of_coprime` and its additive form
   `TauCeti.exists_zsmul_add_zsmul_eq_of_coprime`: the factorization above, with coefficients
   independent of `y`.
+* `IsCoprime.eq_of_zpow_eq_zpow` and its additive form `IsCoprime.eq_of_zsmul_eq_zsmul`: for
+  coprime integers `p` and `q`, elements with the same `p`-th powers and the same `q`-th powers
+  are equal.
 * `Commute.pow_eq_pow_iff_of_coprime'` and its additive form
   `AddCommute.nsmul_eq_nsmul_iff_of_coprime'`: for coprime `m` and `n`, commuting elements `x`
   and `y` of a group satisfy `x ^ m = y ^ n` exactly when they are `v ^ n` and `v ^ m` for a
@@ -62,6 +66,18 @@ theorem exists_zpow_mul_zpow_eq_of_coprime {G : Type*} [Group G] {n m : ℕ}
           rw [zpow_add, zpow_mul, zpow_mul, zpow_natCast, zpow_natCast]
       _ = y ^ ((Nat.gcd n m : ℕ) : ℤ) := by rw [← Nat.gcd_eq_gcd_ab]
       _ = y := by rw [h.gcd_eq_one, zpow_natCast, pow_one]⟩
+
+/-- Two elements of a group with equal `p`-th powers and equal `q`-th powers are equal when the
+integers `p` and `q` are coprime. -/
+@[to_additive
+/-- Two elements of an additive group with equal `p`-multiples and equal `q`-multiples are equal
+when the integers `p` and `q` are coprime. -/]
+protected theorem _root_.IsCoprime.eq_of_zpow_eq_zpow {G : Type*} [Group G] {p q : ℤ}
+    (hpq : IsCoprime p q) {x y : G} (hp : x ^ p = y ^ p) (hq : x ^ q = y ^ q) : x = y := by
+  obtain ⟨u, v, huv⟩ := hpq
+  have key (z : G) : z = (z ^ p) ^ u * (z ^ q) ^ v := by
+    rw [← zpow_mul, ← zpow_mul, ← zpow_add, mul_comm p u, mul_comm q v, huv, zpow_one]
+  rw [key x, key y, hp, hq]
 
 /-- **Common roots for coprime exponents.** For coprime `m` and `n`, two commuting elements `x`
 and `y` of a group satisfy `x ^ m = y ^ n` exactly when they are the `n`-th and `m`-th powers of a
