@@ -32,6 +32,8 @@ all zero, one of largest valuation divides all the others in the valuation subri
 * `ValuationSubring.comap_eq_of_map_maximalIdeal_le`: a valuation subring `W` of `L` pulls back to
   a valuation subring `V` of `K` when `V` maps through a ring `S` into `W`, with its maximal ideal
   landing in an ideal of `S` that is sent into the nonunits of `W`.
+* `ValuationSubring.comap_surjective`: every valuation subring extends along any field
+  homomorphism.
 
 ## References
 
@@ -111,6 +113,20 @@ theorem comap_eq_of_map_maximalIdeal_le {S : Type*} [CommRing S]
   · simpa only [mem_comap, hg ⟨x, hx⟩] using hmem (ι ⟨x, hx⟩)
   · simpa only [mem_nonunits_comap, hg ⟨x, nonunits_subset hx⟩] using
       hnon _ (hQ (Ideal.mem_map_of_mem _ (coe_mem_nonunits_iff.mp hx)))
+
+/-- **Extension of valuation subrings.** Every valuation subring of a field extends along any
+field homomorphism `f : K →+* L`: a valuation subring of `L` dominating `f(V)` restricts to `V`. -/
+theorem comap_surjective (f : K →+* L) :
+    Function.Surjective (fun W : ValuationSubring L ↦ W.comap f) := fun V ↦ by
+  obtain ⟨W, hW, hloc⟩ := IsLocalRing.exists_factor_valuationRing (f.comp V.subtype)
+  refine ⟨W, (eq_of_le_of_nonunits_le (fun x hx ↦ hW ⟨x, hx⟩) fun x hx ↦ ?_).symm⟩
+  by_contra hnon
+  have ⟨hfx0, hinv⟩ : f x ≠ 0 ∧ (f x)⁻¹ ∈ W := by
+    simpa [mem_nonunits_comap, mem_nonunits_iff_or] using hnon
+  have hu : IsUnit ((f.comp V.subtype).codRestrict W.toSubring hW ⟨x, nonunits_subset hx⟩) :=
+    ⟨⟨⟨f x, hW ⟨x, nonunits_subset hx⟩⟩, ⟨(f x)⁻¹, hinv⟩,
+      Subtype.ext (mul_inv_cancel₀ hfx0), Subtype.ext (inv_mul_cancel₀ hfx0)⟩, rfl⟩
+  exact notMem_maximalIdeal.mpr (hloc.1 _ hu) (coe_mem_nonunits_iff.mp hx)
 
 end ValuationSubring
 

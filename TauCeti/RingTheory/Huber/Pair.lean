@@ -7,9 +7,11 @@ module
 
 public import Mathlib.FieldTheory.Perfect
 public import TauCeti.RingTheory.Huber.Basic
+public import TauCeti.Topology.Algebra.Nonarchimedean.Basic
 public import TauCeti.Topology.Algebra.Ring.Subring
 
 import TauCeti.RingTheory.Huber.RingOfDefinition
+import TauCeti.RingTheory.Huber.Subring
 import TauCeti.RingTheory.IntegralClosure.IntegrallyClosed
 
 /-!
@@ -40,6 +42,8 @@ than selected by a typeclass.
   contains a pseudouniformiser.
 * `TauCeti.Huber.IsRingOfIntegralElements.map`: an isomorphism of topological rings carries a
   ring of integral elements onto a ring of integral elements.
+* `TauCeti.Huber.IsRingOfIntegralElements.comap_subtype`: pulling a ring of integral elements back
+  to any subring gives a ring of integral elements of that subring.
 * `TauCeti.Huber.isRingOfIntegralElements_powerBoundedSubring`, `TauCeti.Huber.Pair.powerBounded`:
   `A⁺ = A°` is a ring of integral elements, the largest one.
 * `TauCeti.Huber.Pair.instPerfectRingPlus`: the plus ring of a Huber pair on a perfect ring is
@@ -159,6 +163,21 @@ theorem IsRingOfIntegralElements.map {B : Type*} [CommRing B] [TopologicalSpace 
   le_powerBoundedSubring := by
     rw [← map_powerBoundedSubring e he he']
     exact (Subring.gc_map_comap _).monotone_l h.le_powerBoundedSubring
+
+/-- Pulling a ring of integral elements back to any subring (in the subspace topology) yields a
+ring of integral elements of that subring. -/
+theorem IsRingOfIntegralElements.comap_subtype [NonarchimedeanRing A] {Aplus : Subring A}
+    (h : IsRingOfIntegralElements Aplus) (S : Subring A) :
+    IsRingOfIntegralElements (Aplus.comap S.subtype) where
+  isOpen := h.isOpen.preimage continuous_subtype_val
+  isIntegrallyClosedIn := by
+    refine Subring.isIntegrallyClosedIn_iff.mpr fun x hx ↦ ?_
+    have hx' : IsIntegral Aplus (x : A) :=
+      hx.map_of_comp_eq (S.subtype.restrict _ Aplus fun _ hy ↦ hy) S.subtype
+        (RingHom.ext fun _ ↦ rfl)
+    exact Subring.isIntegrallyClosedIn_iff.mp h.isIntegrallyClosedIn hx'
+  le_powerBoundedSubring := fun _ hx ↦
+    mem_powerBoundedSubring.mpr <| S.isPowerBounded_of_coe (h.isPowerBounded_of_mem hx)
 
 variable (A) [IsTopologicalRing A] in
 /-- A *Huber pair* `(A, A⁺)`: a Huber ring together with a ring of integral elements. Only the
