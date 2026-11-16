@@ -7,6 +7,7 @@ module
 
 public import TauCeti.RingTheory.FormalGroup.Curve.Arithmetic
 public import TauCeti.RingTheory.FormalGroup.Hazewinkel.Integral
+import Mathlib.RingTheory.PowerSeries.Expand
 import TauCeti.Algebra.Module.Rat
 import TauCeti.RingTheory.FormalGroup.NSMul.BaseChange
 import TauCeti.RingTheory.MvPowerSeries.Order
@@ -108,14 +109,15 @@ theorem hazewinkelFormalGroup_zero (p : ℕ) :
 @[simp]
 theorem hazewinkelIntegralFormalGroup_zero (p : ℕ) [Fact p.Prime] :
     hazewinkelIntegralFormalGroup p (0 : ℕ+ → R) = FormalGroup.𝔾ₐ := by
+  have hcompQ : (Int.castRingHom ℚ) ∘ (0 : ℕ+ → ℤ) = 0 := funext fun _ ↦ map_zero _
+  have hcompR : (Int.castRingHom R) ∘ (0 : ℕ+ → ℤ) = 0 := funext fun _ ↦ map_zero _
   have hZ : hazewinkelIntegralFormalGroup p (0 : ℕ+ → ℤ) = FormalGroup.𝔾ₐ :=
     FormalGroup.map_injective (f := Int.castRingHom ℚ) Int.cast_injective <| by
       dsimp only
-      rw [map_hazewinkelIntegralFormalGroup, show (Int.castRingHom ℚ) ∘ (0 : ℕ+ → ℤ) = 0 from
-        funext fun _ ↦ map_zero _, hazewinkelIntegralFormalGroup_eq_hazewinkelFormalGroup,
-        hazewinkelFormalGroup_zero, FormalGroup.map_𝔾ₐ]
-  rw [show (0 : ℕ+ → R) = (Int.castRingHom R) ∘ (0 : ℕ+ → ℤ) from funext fun _ ↦ (map_zero _).symm,
-    ← map_hazewinkelIntegralFormalGroup, hZ, FormalGroup.map_𝔾ₐ]
+      rw [map_hazewinkelIntegralFormalGroup, hcompQ,
+        hazewinkelIntegralFormalGroup_eq_hazewinkelFormalGroup, hazewinkelFormalGroup_zero,
+        FormalGroup.map_𝔾ₐ]
+  rw [← hcompR, ← map_hazewinkelIntegralFormalGroup, hZ, FormalGroup.map_𝔾ₐ]
 
 end Zero
 
@@ -153,57 +155,6 @@ theorem coeff_hazewinkelLog_congr {p : ℕ} {v w : ℕ+ → K} {N k : ℕ}
   · push Not at hpow
     rw [coeff_hazewinkelLog_eq_zero v hpow, coeff_hazewinkelLog_eq_zero w hpow]
 
-omit [Algebra ℚ K] in
-private theorem subst_inv_smul_𝔾ₐ_toPowerSeries (φ : FormalCoordinate K) :
-    φ.toPowerSeries.subst (φ⁻¹ • (FormalGroup.𝔾ₐ : FormalGroup K)).toPowerSeries =
-      φ.toPowerSeries.subst (X 0) + φ.toPowerSeries.subst (X 1) := by
-  have hX : MvPowerSeries.HasSubst
-      ![φ.toPowerSeries.subst (X 0 : MvPowerSeries (Fin 2) K),
-        φ.toPowerSeries.subst (X 1 : MvPowerSeries (Fin 2) K)] :=
-    hasSubst_of_constantCoeff_zero <| Fin.forall_fin_two.mpr
-      ⟨PowerSeries.constantCoeff_subst_eq_zero (constantCoeff_X 0) _ φ.constantCoeff_toPowerSeries,
-       PowerSeries.constantCoeff_subst_eq_zero (constantCoeff_X 1) _ φ.constantCoeff_toPowerSeries⟩
-  rw [FormalGroup.subst_toPowerSeries_eq_subst_smul_toPowerSeries, smul_inv_smul,
-    FormalGroup.𝔾ₐ_toPowerSeries, MvPowerSeries.subst_add hX, MvPowerSeries.subst_X hX,
-    MvPowerSeries.subst_X hX]; rfl
-
-omit [Algebra ℚ K] in
-private theorem le_order_inv_smul_𝔾ₐ_sub {f g : FormalCoordinate K} {M : ℕ}
-    (hfg : (M : ℕ∞) ≤ (f.toPowerSeries - g.toPowerSeries).order) :
-    (M : ℕ∞) ≤ ((f⁻¹ • (FormalGroup.𝔾ₐ : FormalGroup K)).toPowerSeries -
-      (g⁻¹ • (FormalGroup.𝔾ₐ : FormalGroup K)).toPowerSeries).order := by
-  set F := f⁻¹ • (FormalGroup.𝔾ₐ : FormalGroup K)
-  set G := g⁻¹ • (FormalGroup.𝔾ₐ : FormalGroup K)
-  have hsub (u : MvPowerSeries (Fin 2) K) (hu : constantCoeff u = 0) :
-      (M : ℕ∞) ≤ (f.toPowerSeries.subst u - g.toPowerSeries.subst u).order := by
-    rw [show f.toPowerSeries.subst u - g.toPowerSeries.subst u =
-        (f.toPowerSeries - g.toPowerSeries).subst u by
-      simpa only [PowerSeries.coe_substAlgHom] using
-        (map_sub (PowerSeries.substAlgHom (.of_constantCoeff_zero hu))
-          f.toPowerSeries g.toPowerSeries).symm]
-    exact hfg.trans (PowerSeries.le_order_subst_left hu)
-  have hord : (M : ℕ∞) ≤
-      (f.toPowerSeries.subst F.toPowerSeries - f.toPowerSeries.subst G.toPowerSeries).order := by
-    rw [show f.toPowerSeries.subst F.toPowerSeries - f.toPowerSeries.subst G.toPowerSeries =
-        (f.toPowerSeries.subst (X 0) - g.toPowerSeries.subst (X 0)) +
-          (f.toPowerSeries.subst (X 1) - g.toPowerSeries.subst (X 1)) -
-          (f.toPowerSeries.subst G.toPowerSeries - g.toPowerSeries.subst G.toPowerSeries) by
-      rw [subst_inv_smul_𝔾ₐ_toPowerSeries f, subst_inv_smul_𝔾ₐ_toPowerSeries g]; ring]
-    exact le_order_sub (le_order_add (hsub (X 0) (constantCoeff_X 0))
-      (hsub (X 1) (constantCoeff_X 1))) (hsub G.toPowerSeries G.zero_constantCoeff)
-  have hF₀ := PowerSeries.constantCoeff_subst_eq_zero F.zero_constantCoeff _
-    f.constantCoeff_toPowerSeries
-  have hG₀ := PowerSeries.constantCoeff_subst_eq_zero G.zero_constantCoeff _
-    f.constantCoeff_toPowerSeries
-  have hinv := MvPowerSeries.le_order_subst_sub_subst (H := f⁻¹.toPowerSeries) (k := 1)
-    (one_le_order_iff_constCoeff_eq_zero.mpr f⁻¹.constantCoeff_toPowerSeries)
-    (hasSubst_of_constantCoeff_zero fun _ : Unit ↦ hF₀)
-    (hasSubst_of_constantCoeff_zero fun _ : Unit ↦ hG₀)
-    (fun _ ↦ hF₀) (fun _ ↦ hG₀) (fun _ ↦ hord)
-  rwa [Nat.add_sub_cancel, ← PowerSeries.subst_def, ← PowerSeries.subst_def,
-    f.subst_inv_subst (.of_constantCoeff_zero F.zero_constantCoeff),
-    f.subst_inv_subst (.of_constantCoeff_zero G.zero_constantCoeff)] at hinv
-
 /-- Over a `ℚ`-algebra, the coefficients of `hazewinkelFormalGroup p v` in total degrees below
 `p^(N + 1)` depend only on `v₁, …, v_N`. -/
 theorem coeff_hazewinkelFormalGroup_congr {p : ℕ} {v w : ℕ+ → K} {N : ℕ}
@@ -215,49 +166,8 @@ theorem coeff_hazewinkelFormalGroup_congr {p : ℕ} {v w : ℕ+ → K} {N : ℕ}
     PowerSeries.nat_le_order _ _ fun k hk ↦ by
       rw [map_sub, coeff_hazewinkelLog_congr hv hk, sub_self]
   rw [hazewinkelFormalGroup_def, hazewinkelFormalGroup_def, ← sub_eq_zero, ← map_sub]
-  exact coeff_of_lt_order ((Nat.cast_lt.mpr hd).trans_le (le_order_inv_smul_𝔾ₐ_sub hlog))
-
-private theorem le_order_subst_pair_sub {F G : FormalGroup R} {M : ℕ}
-    (hFG : (M : ℕ∞) ≤ (F.toPowerSeries - G.toPowerSeries).order)
-    {a₁ a₂ b₁ b₂ : PowerSeries R}
-    (ha₁ : PowerSeries.constantCoeff a₁ = 0) (ha₂ : PowerSeries.constantCoeff a₂ = 0)
-    (hb₁ : PowerSeries.constantCoeff b₁ = 0) (hb₂ : PowerSeries.constantCoeff b₂ = 0)
-    (h₁ : (M : ℕ∞) ≤ MvPowerSeries.order (a₁ - b₁ : PowerSeries R))
-    (h₂ : (M : ℕ∞) ≤ MvPowerSeries.order (a₂ - b₂ : PowerSeries R)) :
-    (M : ℕ∞) ≤ MvPowerSeries.order
-      (subst ![a₁, a₂] F.toPowerSeries - subst ![b₁, b₂] G.toPowerSeries : PowerSeries R) := by
-  have ha := PowerSeries.hasSubst_pair ha₁ ha₂
-  have hb := PowerSeries.hasSubst_pair hb₁ hb₂
-  have ha' : ∀ i : Fin 2, constantCoeff (![a₁, a₂] i : PowerSeries R) = 0 :=
-    Fin.forall_fin_two.mpr ⟨by rwa [← PowerSeries.constantCoeff_eq],
-      by rwa [← PowerSeries.constantCoeff_eq]⟩
-  have hb' : ∀ i : Fin 2, constantCoeff (![b₁, b₂] i : PowerSeries R) = 0 :=
-    Fin.forall_fin_two.mpr ⟨by rwa [← PowerSeries.constantCoeff_eq],
-      by rwa [← PowerSeries.constantCoeff_eq]⟩
-  rw [show subst ![a₁, a₂] F.toPowerSeries - subst ![b₁, b₂] G.toPowerSeries =
-      subst ![a₁, a₂] (F.toPowerSeries - G.toPowerSeries) +
-        (subst ![a₁, a₂] G.toPowerSeries - subst ![b₁, b₂] G.toPowerSeries) by
-    rw [subst_sub ha]; ring]
-  refine le_order_add (le_order fun e he ↦ ?_) ?_
-  · rw [coeff_subst ha]
-    refine finsum_eq_zero_of_forall_eq_zero fun d ↦ ?_
-    rcases lt_or_ge d.degree M with hdM | hdM
-    · rw [coeff_of_lt_order ((Nat.cast_lt.mpr hdM).trans_le hFG), zero_smul]
-    · rw [coeff_of_lt_order (he.trans_le ((Nat.cast_le.mpr hdM).trans
-        (degree_le_order_prod_pow ha' d))), smul_zero]
-  · simpa only [Nat.add_sub_cancel] using MvPowerSeries.le_order_subst_sub_subst
-      (H := G.toPowerSeries) (k := 1) (one_le_order_iff_constCoeff_eq_zero.mpr G.zero_constantCoeff)
-      ha hb ha' hb' (Fin.forall_fin_two.mpr ⟨h₁, h₂⟩)
-
-private theorem le_order_nsmulSeries_sub {F G : FormalGroup R} {M : ℕ}
-    (hFG : (M : ℕ∞) ≤ (F.toPowerSeries - G.toPowerSeries).order) (m : ℕ) :
-    (M : ℕ∞) ≤ MvPowerSeries.order (F.nsmulSeries m - G.nsmulSeries m : PowerSeries R) := by
-  induction m with
-  | zero => simp
-  | succ m ih =>
-    rw [F.nsmulSeries_succ, G.nsmulSeries_succ]
-    exact le_order_subst_pair_sub hFG (F.constantCoeff_nsmulSeries m) PowerSeries.constantCoeff_X
-      (G.constantCoeff_nsmulSeries m) PowerSeries.constantCoeff_X ih (by simp)
+  exact coeff_of_lt_order ((Nat.cast_lt.mpr hd).trans_le
+    (FormalGroup.le_order_inv_smul_sub hlog (by simp)))
 
 /-- The coefficients of `hazewinkelIntegralFormalGroup p v` in total degrees below `p^(N + 1)`
 depend only on `v₁, …, v_N`. -/
@@ -296,8 +206,7 @@ theorem coeff_nsmulSeries_hazewinkelIntegralFormalGroup_congr (p : ℕ) [Fact p.
       rw [map_sub, coeff_hazewinkelIntegralFormalGroup_congr p hv (by exact_mod_cast hd), sub_self]
   rw [← sub_eq_zero, ← map_sub]
   refine PowerSeries.coeff_of_lt_order k ?_
-  rw [PowerSeries.order_eq_order]
-  exact (Nat.cast_lt.mpr hk).trans_le (le_order_nsmulSeries_sub hFG m)
+  exact (Nat.cast_lt.mpr hk).trans_le (FormalGroup.le_order_nsmulSeries_sub hFG m)
 
 end Truncation
 
@@ -320,8 +229,9 @@ theorem hazewinkelLogCoeff_eq_of_forall_lt {p : ℕ} {v : ℕ+ → K} (n : ℕ+)
     (hv : ∀ i < n, v i = 0) :
     hazewinkelLogCoeff p v n = (p : ℚ)⁻¹ • v n := by
   obtain ⟨m, hm⟩ := Nat.exists_eq_succ_of_ne_zero n.ne_zero
+  have hmn : m.succPNat = n := PNat.eq (by rw [Nat.succPNat_coe, ← hm])
   rw [hm, hazewinkelLogCoeff_succ, sum_eq_single 0]
-  · simp [show m.succPNat = n from PNat.eq (by rw [Nat.succPNat_coe, ← hm])]
+  · simp [hmn]
   · intro i hi hi0; rw [mem_range] at hi
     rw [hazewinkelLogCoeff_eq_zero_of_forall_lt (n := (n : ℕ)) hv (by omega) (by omega), zero_mul]
   · simp
@@ -371,8 +281,10 @@ theorem coeff_pow_nsmulSeries_hazewinkelFormalGroup_of_forall_lt {p : ℕ} [hp :
   have hpow : (p : K) ^ p ^ (n : ℕ) = (p : K) * (p : K) ^ (p ^ (n : ℕ) - 1) := by
     conv_lhs => rw [← Nat.sub_add_cancel hp1.le, pow_succ']
   have hmul : ((p : ℚ)⁻¹ • v n) * (p : K) ^ p ^ (n : ℕ) = (p : K) ^ (p ^ (n : ℕ) - 1) * v n := by
-    rw [hpow, show ((p : ℚ)⁻¹ • v n) * ((p : K) * (p : K) ^ (p ^ (n : ℕ) - 1)) =
-      (p : K) ^ (p ^ (n : ℕ) - 1) * ((p : K) * ((p : ℚ)⁻¹ • v n)) by ring, hcancel]
+    calc ((p : ℚ)⁻¹ • v n) * (p : K) ^ p ^ (n : ℕ)
+      _ = ((p : ℚ)⁻¹ • v n) * ((p : K) * (p : K) ^ (p ^ (n : ℕ) - 1)) := by rw [hpow]
+      _ = (p : K) ^ (p ^ (n : ℕ) - 1) * ((p : K) * ((p : ℚ)⁻¹ • v n)) := by ring
+      _ = (p : K) ^ (p ^ (n : ℕ) - 1) * v n := by rw [hcancel]
   rw [hmul, hcancel] at hkey; linear_combination hkey
 
 /-- If `v₁ = ⋯ = v_(n - 1) = 0`, then `[m]_(F_v)(X)` has no nonlinear terms below degree `pⁿ`. -/
@@ -403,12 +315,12 @@ theorem coeff_pow_nsmulSeries_hazewinkelIntegralFormalGroup_of_forall_lt (p : �
       coeff_pow_nsmulSeries_hazewinkelFormalGroup_of_forall_lt n
         (fun i hi ↦ by simp [killBelow, hi])]
     simp [killBelow]
+  have hcomp : (MvPolynomial.eval₂Hom (Int.castRingHom R) v) ∘ killBelow = v := funext fun i ↦ by
+    dsimp only [Function.comp_apply, killBelow]; split_ifs with hi
+    exacts [(map_zero _).trans (hv i hi).symm, MvPolynomial.eval₂Hom_X' _ _ _]
   have hmap := FormalGroup.coeff_nsmulSeries_map (hazewinkelIntegralFormalGroup p killBelow)
     (MvPolynomial.eval₂Hom (Int.castRingHom R) v) p (p ^ (n : ℕ))
-  rw [map_hazewinkelIntegralFormalGroup, show (MvPolynomial.eval₂Hom (Int.castRingHom R) v) ∘
-      killBelow = v from funext fun i ↦ by
-    dsimp only [Function.comp_apply, killBelow]; split_ifs with hi
-    exacts [(map_zero _).trans (hv i hi).symm, MvPolynomial.eval₂Hom_X' _ _ _]] at hmap
+  rw [map_hazewinkelIntegralFormalGroup, hcomp] at hmap
   rw [hmap, huniv, map_mul, map_sub, map_one, map_pow, map_natCast, MvPolynomial.eval₂Hom_X']
 
 /-- For any family `v : ℕ+ → R`, the nonlinear coefficients of `[m]_(F_v)(X)` below degree `pⁿ` lie
@@ -454,46 +366,40 @@ private theorem coeff_pow_subst_smul_X_pow_hazewinkelLog {p : ℕ} (hp : 1 < p) 
       if (j : ℕ) ≤ n then
         hazewinkelLogCoeff p v (n - (j : ℕ)) * v j ^ p ^ (n - (j : ℕ))
       else 0 := by
-  have hc₀ : constantCoeff (v j • (PowerSeries.X : PowerSeries K) ^ p ^ (j : ℕ)) = 0 := by
-    rw [← PowerSeries.constantCoeff_eq]
-    simp [zero_pow (pow_ne_zero (j : ℕ) (by omega : p ≠ 0))]
-  rw [← PowerSeries.coeff_coeToMvPowerSeries, PowerSeries.coeff_subst_eq_sum_range_degree hc₀]
-  have hterm (r : ℕ) : coeff (Finsupp.single () (p ^ n))
-      ((v j • (PowerSeries.X : PowerSeries K) ^ p ^ (j : ℕ)) ^ r) =
-      if p ^ n = p ^ (j : ℕ) * r then v j ^ r else 0 := by
-    rw [smul_pow, ← pow_mul, PowerSeries.coeff_coeToMvPowerSeries, PowerSeries.coeff_smul,
-      PowerSeries.coeff_X_pow, smul_eq_mul, mul_ite, mul_one, mul_zero]
-  simp_rw [hterm, smul_eq_mul, mul_ite, mul_zero]
+  have hq : p ^ (j : ℕ) ≠ 0 := pow_ne_zero (j : ℕ) (by omega)
+  have hsub : (hazewinkelLog p v).toPowerSeries.subst
+      (v j • (PowerSeries.X : PowerSeries K) ^ p ^ (j : ℕ)) =
+      PowerSeries.expand (p ^ (j : ℕ)) hq
+        (PowerSeries.rescale (v j) (hazewinkelLog p v).toPowerSeries) := by
+    rw [PowerSeries.rescale_eq_subst, PowerSeries.expand, PowerSeries.expand_subst _ hq
+      (.smul_X' _), ← PowerSeries.expand, PowerSeries.expand_smul, PowerSeries.expand_X]
+  rw [hsub]
   split_ifs with hjn
-  · rw [sum_eq_single (p ^ (n - (j : ℕ)))]
-    · rw [ite_eq_left (by rw [← pow_add, Nat.add_sub_of_le hjn]), coeff_hazewinkelLog_pow v hp]
-    · intro r _ hr
-      refine ite_eq_right fun heq ↦
-        hr (Nat.mul_left_cancel (pow_pos (by omega : 0 < p) (j : ℕ)) ?_).symm
-      rw [← pow_add, Nat.add_sub_of_le hjn, heq]
-    · intro hmem; exfalso; apply hmem
-      rw [mem_range, Finsupp.degree_single]
-      exact Nat.lt_succ_of_le (Nat.pow_le_pow_right (by omega) (Nat.sub_le n (j : ℕ)))
-  · refine sum_eq_zero fun r _ ↦ ite_eq_right fun heq ↦ ?_
-    rcases eq_or_ne r 0 with rfl | hr0
-    · exact absurd heq (pow_ne_zero n (by omega))
-    · exact absurd heq ((Nat.pow_lt_pow_right hp (not_le.mp hjn)).trans_le
-        (Nat.le_mul_of_pos_right _ (Nat.pos_of_ne_zero hr0))).ne
+  · have hpow : p ^ n = p ^ (j : ℕ) * p ^ (n - (j : ℕ)) := by
+      rw [← pow_add, Nat.add_sub_of_le hjn]
+    rw [hpow, PowerSeries.coeff_expand_mul, PowerSeries.coeff_rescale,
+      coeff_hazewinkelLog_pow v hp, mul_comm]
+  · refine PowerSeries.coeff_expand_of_not_dvd _ hq _ ?_
+    exact Nat.not_dvd_of_pos_of_lt (pow_pos (by omega) n)
+      (Nat.pow_lt_pow_right hp (not_le.mp hjn))
 
 private theorem coeff_subst_smul_X_pow_hazewinkelLog_eq_zero {p : ℕ} (hp : p ≠ 0) (v : ℕ+ → K)
     (j : ℕ+) {k : ℕ} (hk : ∀ n, p ^ n ≠ k) :
     PowerSeries.coeff k ((hazewinkelLog p v).toPowerSeries.subst
         (v j • (PowerSeries.X : PowerSeries K) ^ p ^ (j : ℕ))) = 0 := by
-  have hc₀ : constantCoeff (v j • (PowerSeries.X : PowerSeries K) ^ p ^ (j : ℕ)) = 0 := by
-    rw [← PowerSeries.constantCoeff_eq]; simp [zero_pow (pow_ne_zero (j : ℕ) hp)]
-  rw [← PowerSeries.coeff_coeToMvPowerSeries, PowerSeries.coeff_subst_eq_sum_range_degree hc₀]
-  refine sum_eq_zero fun r _ ↦ ?_
-  rw [smul_pow, ← pow_mul, PowerSeries.coeff_coeToMvPowerSeries, PowerSeries.coeff_smul,
-    PowerSeries.coeff_X_pow]
-  split_ifs with heq
-  · rw [coeff_hazewinkelLog_eq_zero v fun i hi ↦ hk ((j : ℕ) + i) (by rw [pow_add, hi, heq]),
-      zero_smul]
-  · simp
+  have hq : p ^ (j : ℕ) ≠ 0 := pow_ne_zero (j : ℕ) hp
+  have hsub : (hazewinkelLog p v).toPowerSeries.subst
+      (v j • (PowerSeries.X : PowerSeries K) ^ p ^ (j : ℕ)) =
+      PowerSeries.expand (p ^ (j : ℕ)) hq
+        (PowerSeries.rescale (v j) (hazewinkelLog p v).toPowerSeries) := by
+    rw [PowerSeries.rescale_eq_subst, PowerSeries.expand, PowerSeries.expand_subst _ hq
+      (.smul_X' _), ← PowerSeries.expand, PowerSeries.expand_smul, PowerSeries.expand_X]
+  rw [hsub, PowerSeries.coeff_expand]
+  split_ifs with hdvd
+  · obtain ⟨m, rfl⟩ := hdvd
+    rw [Nat.mul_div_cancel_left _ (Nat.pos_of_ne_zero hq), PowerSeries.coeff_rescale,
+      coeff_hazewinkelLog_eq_zero v fun i hi ↦ hk ((j : ℕ) + i) (by rw [pow_add, hi]), mul_zero]
+  · rfl
 
 private theorem sum_hazewinkelLogCoeff_mul_pow_of_support {p : ℕ} (hp : p ≠ 0) {v : ℕ+ → K}
     {s : Finset ℕ+} (hv : ∀ j ∉ s, v j = 0) (m : ℕ) :
@@ -511,8 +417,8 @@ private theorem sum_hazewinkelLogCoeff_mul_pow_of_support {p : ℕ} (hp : p ≠ 
   rw [hst₁, ← hst₂, sum_map, ← sum_range_reflect]
   refine sum_congr rfl fun i hi ↦ ?_
   rw [mem_range] at hi; dsimp only [Function.Embedding.coeFn_mk, g]
-  rw [Nat.add_sub_cancel, ite_eq_left (by simp),
-    show m + 1 - ((m - i).succPNat : ℕ) = i by simp; omega]
+  have hsub_eq : m + 1 - ((m - i).succPNat : ℕ) = i := by rw [Nat.succPNat_coe]; omega
+  rw [Nat.add_sub_cancel, ite_eq_left (by simp), hsub_eq]
 
 /-- Over a `ℚ`-algebra, when `v` vanishes outside a finite set `s`, Hazewinkel's logarithm
 satisfies `p f_v(X) - ∑_{j ∈ s} f_v(vⱼ X^(pʲ)) = p X`. -/
@@ -577,8 +483,8 @@ private theorem exists_coeff_eq_natCast_mul_of_subst_hazewinkelLog (p : ℕ) [hp
   have hsA (i : ℕ) : (p : MvPolynomial ℕ+ ℚ) * hazewinkelFunctionalCoeff p vsQ i ∈ ι.range := by
     rcases i with _ | i
     · simp
-    · rw [show i + 1 = (i.succPNat : ℕ) from rfl, hazewinkelFunctionalCoeff_pos, mul_smul_comm,
-        inv_natCast_smul_natCast_mul hp.out.ne_zero]
+    · rw [← Nat.succ_eq_add_one, ← Nat.succPNat_coe i, hazewinkelFunctionalCoeff_pos,
+        mul_smul_comm, inv_natCast_smul_natCast_mul hp.out.ne_zero]
       exact ⟨vs i.succPNat, rfl⟩
   have hσv (j : ℕ+) : σ (vsQ j) = vsQ j ^ p := by
     rcases hvs j with hj | hj <;> simp [vsQ, ι, σ, hj, zero_pow hp.out.ne_zero]
@@ -592,15 +498,6 @@ private theorem exists_coeff_eq_natCast_mul_of_subst_hazewinkelLog (p : ℕ) [hp
     (hazewinkelLog p vsQ).constantCoeff_toPowerSeries ⟨1, ι.range.one_mem, by simp⟩
     (by rwa [← PowerSeries.constantCoeff_eq])).mp hsubst (Finsupp.single () k)
   exact ⟨g, by rwa [← PowerSeries.coeff_coeToMvPowerSeries]⟩
-
-private theorem toPowerSeries_sum_monomialCurve_map {A B : Type*} [CommRing A] [CommRing B]
-    {F : FormalGroup A} {G : FormalGroup B} [F.IsComm] [G.IsComm]
-    (φ : A →+* B) (hFG : F.map φ = G) (s : Finset ℕ+) (e : ℕ+ → ℕ) (he : ∀ j, e j ≠ 0)
-    (u : ℕ+ → A) (v : ℕ+ → B) (huv : ∀ j, φ (u j) = v j) :
-    PowerSeries.map φ (∑ j ∈ s, F.monomialCurve (e j) (he j) (u j)).toPowerSeries =
-      (∑ j ∈ s, G.monomialCurve (e j) (he j) (v j)).toPowerSeries := by
-  subst hFG; simp_rw [← huv, ← FormalGroup.Curve.toPowerSeries_map, map_sum,
-    FormalGroup.map_monomialCurve]
 
 private theorem natCast_dvd_nsmulSeries_sub_universal (p : ℕ) [hp : Fact p.Prime] (s : Finset ℕ+) :
     let vs : ℕ+ → MvPolynomial ℕ+ ℤ := fun j ↦ if j ∈ s then MvPolynomial.X j else 0
@@ -671,7 +568,8 @@ theorem natCast_dvd_nsmulSeries_hazewinkelIntegralFormalGroup_sub_of_support (p 
     rw [map_hazewinkelIntegralFormalGroup, hcomp]
   have hdvd := map_dvd (PowerSeries.map ev) (natCast_dvd_nsmulSeries_sub_universal p s)
   rwa [map_natCast, map_sub, FormalGroup.map_nsmulSeries, hFG,
-    toPowerSeries_sum_monomialCurve_map ev hFG s _ _ vs v (congrFun hcomp)] at hdvd
+    FormalGroup.map_toPowerSeries_sum_monomialCurve ev hFG s _ _ vs v
+      fun j _ ↦ congrFun hcomp j] at hdvd
 
 /-- In characteristic `p`, if `v` vanishes outside `s`, then `[p]_(F_v)(X)` is equal to the
 formal-group sum `∑^F_{j ∈ s} (vⱼ X^(pʲ))`. -/
@@ -683,23 +581,6 @@ theorem nsmulSeries_hazewinkelIntegralFormalGroup_eq_of_support (p : ℕ) [hp : 
   have hdvd := natCast_dvd_nsmulSeries_hazewinkelIntegralFormalGroup_sub_of_support p hv
   rwa [← map_natCast PowerSeries.C, CharP.cast_eq_zero R p, map_zero, zero_dvd_iff,
     sub_eq_zero] at hdvd
-
-private theorem le_order_sum_curve_sub {ι : Type*} {F G : FormalGroup R} [F.IsComm] [G.IsComm]
-    {M : ℕ} (hFG : (M : ℕ∞) ≤ (F.toPowerSeries - G.toPowerSeries).order)
-    (I : Finset ι) (γ : ι → F.Curve) (δ : ι → G.Curve)
-    (hγδ : ∀ i ∈ I, (γ i).toPowerSeries = (δ i).toPowerSeries) :
-    (M : ℕ∞) ≤ MvPowerSeries.order
-      ((∑ i ∈ I, γ i).toPowerSeries - (∑ i ∈ I, δ i).toPowerSeries : PowerSeries R) := by
-  classical
-  induction I using Finset.induction_on with
-  | empty => simp
-  | @insert a J haJ ih =>
-    rw [sum_insert haJ, sum_insert haJ, FormalGroup.Curve.toPowerSeries_add,
-      FormalGroup.Curve.toPowerSeries_add]
-    exact le_order_subst_pair_sub hFG
-      (γ a).constantCoeff_toPowerSeries (∑ i ∈ J, γ i).constantCoeff_toPowerSeries
-      (δ a).constantCoeff_toPowerSeries (∑ i ∈ J, δ i).constantCoeff_toPowerSeries
-      (by simp [hγδ a (mem_insert_self a J)]) (ih fun i hi ↦ hγδ i (mem_insert_of_mem hi))
 
 /-- **Ravenel's modulo-`p` `[p]`-series formula (truncated).** For any family `v : ℕ+ → R` and any
 `N`, in every degree `k < p^(N + 1)` the prime `p` divides the difference between `[p]_(F_v)(X)`
@@ -726,8 +607,8 @@ theorem natCast_dvd_coeff_nsmulSeries_hazewinkelIntegralFormalGroup_sub (p : ℕ
         (p ^ (j : ℕ)) (pow_ne_zero _ hp.out.ne_zero) (v' j)).toPowerSeries := by
     rw [sum_map, ← sub_eq_zero, ← map_sub]
     refine PowerSeries.coeff_of_lt_order k ?_
-    rw [PowerSeries.order_eq_order]
-    refine (Nat.cast_lt.mpr hk).trans_le (le_order_sum_curve_sub hFG (range N) _ _ fun i hi ↦ ?_)
+    refine (Nat.cast_lt.mpr hk).trans_le
+      (FormalGroup.Curve.le_order_sum_sub hFG (range N) _ _ fun i hi ↦ ?_)
     rw [mem_range] at hi
     simp [Nat.succPNat_coe, hv_eq i.succPNat (by simp; omega)]
   rw [map_sub, coeff_nsmulSeries_hazewinkelIntegralFormalGroup_congr p hv_eq hk p, hsum, ← map_sub]

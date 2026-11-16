@@ -21,11 +21,12 @@ at `Pi.single h 1`. Over a `ℚ`-algebra `K`, its logarithm (`TauCeti.hondaLog p
 `f_(p, h)(X) = ∑_{k ≥ 0} p⁻ᵏ X^(p^(k h))`, satisfying `f_(p, h)(X) - p⁻¹ f_(p, h)(X^(p^h)) = X`.
 
 Over any commutative ring `R`, `[p]_(H_h)(X) ≡ X^(p^h) (mod p R⟦X⟧)`. In characteristic `p`,
-`[p^k]_(H_h)(X) = X^(p^(k h))`, `X^(p^k)` defines an endomorphism
-`TauCeti.hondaIterateFrobeniusEnd p h R k` whose `h`-th iterate is `[p]`, and over a field of
-characteristic `p`, `H_h` has height `h`, realizing every positive height
-(`FormalGroup.exists_height_eq`) and classifying height-`h` commutative formal group laws over
-separably closed fields (`FormalGroup.nonempty_formalGroupIso_hondaFormalGroup_iff`).
+`[p^k]_(H_h)(X) = X^(p^(k h))`, `X^(p^k)` defines the `k`-th iterated Frobenius endomorphism
+`TauCeti.hondaIterateFrobeniusEnd p h R k` (whose `h`-th iterate is `[p^k]`, and in particular
+`TauCeti.hondaFrobeniusEnd p h R` satisfies `S^h = [p]`), and over a field of characteristic `p`,
+`H_h` has height `h`, realizing every positive height (`FormalGroup.exists_height_eq`) and
+classifying height-`h` commutative formal group laws over separably closed fields
+(`FormalGroup.nonempty_formalGroupIso_hondaFormalGroup_iff`).
 
 ## Main definitions and results
 
@@ -80,10 +81,10 @@ private theorem sum_hazewinkelLogCoeff_single_mul_pow {p : ℕ} (hp : p ≠ 0) (
       if (h : ℕ) ≤ n + 1 then hazewinkelLogCoeff p (Pi.single h (1 : K)) (n + 1 - (h : ℕ))
       else 0 := by
   by_cases hge : (h : ℕ) ≤ n + 1
-  · rw [ite_eq_left hge, Finset.sum_eq_single (n + 1 - (h : ℕ))]
-    · rw [show (n - (n + 1 - (h : ℕ))).succPNat = h from
-        PNat.eq (by rw [Nat.succPNat_coe]; have := h.pos; omega), Pi.single_eq_same, one_pow,
-        mul_one]
+  · have hidx : (n - (n + 1 - (h : ℕ))).succPNat = h :=
+      PNat.eq (by rw [Nat.succPNat_coe]; have := h.pos; omega)
+    rw [ite_eq_left hge, Finset.sum_eq_single (n + 1 - (h : ℕ))]
+    · rw [hidx, Pi.single_eq_same, one_pow, mul_one]
     · intro i hi hine; rw [Finset.mem_range] at hi
       rw [Pi.single_eq_of_ne fun heq ↦ hine (by
         have := congrArg PNat.val heq; rw [Nat.succPNat_coe] at this; omega),
@@ -113,10 +114,11 @@ theorem hazewinkelLogCoeff_single_eq {p : ℕ} (hp : p ≠ 0) (h : ℕ+) (m : �
           conv_lhs => rw [← Nat.sub_add_cancel hge]
           exact Nat.dvd_add_self_right
         by_cases hdvd : (h : ℕ) ∣ n + 1
-        · rw [ite_eq_left hdvd, ite_eq_left (hdvd_iff.mp hdvd), smul_smul,
-            show (n + 1) / (h : ℕ) = (n + 1 - (h : ℕ)) / (h : ℕ) + 1 by
-              conv_lhs => rw [← Nat.sub_add_cancel hge]; rw [Nat.add_div_right _ h.pos],
-            pow_succ, mul_inv_rev]
+        · have hdiv : (n + 1) / (h : ℕ) = (n + 1 - (h : ℕ)) / (h : ℕ) + 1 := by
+            conv_lhs => rw [← Nat.sub_add_cancel hge]
+            rw [Nat.add_div_right _ h.pos]
+          rw [ite_eq_left hdvd, ite_eq_left (hdvd_iff.mp hdvd), smul_smul, hdiv, pow_succ,
+            mul_inv_rev]
         · rw [ite_eq_right hdvd, ite_eq_right (mt hdvd_iff.mpr hdvd), smul_zero]
 
 /-- For `p ≠ 0`, the `(k h)`-th Hazewinkel logarithm coefficient of `Pi.single h 1` is `p⁻ᵏ`. -/
@@ -167,12 +169,11 @@ theorem hondaLog_sub_inv_smul_expand {p : ℕ} (hp : 1 < p) (h : ℕ+) :
   · obtain ⟨_ | k, rfl⟩ := hpow
     · simp [hondaLog_def, PowerSeries.coeff_expand_of_not_dvd _ _ _
         (Nat.not_dvd_of_pos_of_lt one_pos (Nat.one_lt_pow h.ne_zero hp))]
-    · rw [ite_eq_right (Nat.one_lt_pow (Nat.mul_ne_zero k.succ_ne_zero h.ne_zero) hp).ne',
-        coeff_hondaLog_pow_mul hp,
-        show p ^ ((k + 1) * (h : ℕ)) = p ^ (h : ℕ) * p ^ (k * (h : ℕ)) by
-          rw [← pow_add, add_mul, one_mul, add_comm],
-        PowerSeries.coeff_expand_mul, coeff_hondaLog_pow_mul hp, smul_smul, pow_succ, mul_inv_rev,
-        sub_self]
+    · have hpow_eq : p ^ ((k + 1) * (h : ℕ)) = p ^ (h : ℕ) * p ^ (k * (h : ℕ)) := by
+        rw [← pow_add, add_mul, one_mul, add_comm]
+      rw [ite_eq_right (Nat.one_lt_pow (Nat.mul_ne_zero k.succ_ne_zero h.ne_zero) hp).ne',
+        coeff_hondaLog_pow_mul hp, hpow_eq, PowerSeries.coeff_expand_mul,
+        coeff_hondaLog_pow_mul hp, smul_smul, pow_succ, mul_inv_rev, sub_self]
   · push Not at hpow
     rw [ite_eq_right fun hm1 ↦ hpow 0 (by simp [hm1]), coeff_hondaLog_eq_zero hp h hpow]
     by_cases hdvd : p ^ (h : ℕ) ∣ m

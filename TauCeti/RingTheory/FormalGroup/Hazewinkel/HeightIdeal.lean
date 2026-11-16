@@ -23,17 +23,19 @@ nonlinear coefficients of `[p]_(F_v)(X)` below degree `pⁿ` lie in `(v₁, …,
 `I_n(F_v)` (`FormalGroup.heightIdeal`) satisfy `I_n(F_v) = (p, v₁, …, v_(n - 1))` for `n ≥ 1`,
 `coeff (pⁿ) [p]_(F_v) ≡ vₙ (mod I_n(F_v))`, and `⨆ n, I_n(F_v) = (p, v₁, v₂, …)`.
 
-Over a field of characteristic `p`, this characterizes the height of `F_v` in terms of `v`. Over
-`R[v₁, v₂, …]`, each `I_n(F_X)` (`n ≥ 1`) and `⨆ n, I_n(F_X)` is prime when `(p)` is prime in `R`,
-both `vₙ` and `coeff (pⁿ) [p]_(F_X)` are regular on `R[v₁, v₂, …] ⧸ I_n(F_X)`, and both
-`(p, v₁, …, vₙ)` and `(p, coeff p [p]_(F_X), …, coeff (pⁿ) [p]_(F_X))` are regular sequences when
-`p` is regular and non-unit on `R`. Pulling back to `TauCeti.LazardRing` shows that the universal
-height ideals are strictly increasing with proper union.
+Over a commutative ring of characteristic `p`, `I_n(F_v) = (v₁, …, v_(n - 1))`, and over a field
+of characteristic `p` this characterizes the height of `F_v` in terms of `v`. Over `R[v₁, v₂, …]`,
+each `I_n(F_X)` (`n ≥ 1`) and `⨆ n, I_n(F_X)` is prime when `(p)` is prime in `R`, both `vₙ` and
+`coeff (pⁿ) [p]_(F_X)` are regular on `R[v₁, v₂, …] ⧸ I_n(F_X)`, and
+`(p, coeff p [p]_(F_X), …, coeff (pⁿ) [p]_(F_X))` is a regular sequence when `p` is regular and
+non-unit on `R`. Pulling back to `TauCeti.LazardRing` shows that the universal height ideals are
+strictly increasing with proper union.
 
 ## Main results
 
-* `TauCeti.heightIdeal_hazewinkelIntegralFormalGroup`:
-  `I_n(F_v) = (p) ⊔ (v₁, …, v_(n - 1))` for `n ≥ 1`.
+* `TauCeti.heightIdeal_hazewinkelIntegralFormalGroup`,
+  `TauCeti.heightIdeal_hazewinkelIntegralFormalGroup_of_charP`:
+  `I_n(F_v) = (p) ⊔ (v₁, …, v_(n - 1))` for `n ≥ 1`, and `(v₁, …, v_(n - 1))` in characteristic `p`.
 * `TauCeti.coeff_pow_nsmulSeries_hazewinkelIntegralFormalGroup_sub_mem_heightIdeal`:
   `coeff (pⁿ) [p]_(F_v) - vₙ ∈ I_n(F_v)` for `n ≥ 1`.
 * `TauCeti.height_hazewinkelIntegralFormalGroup_eq_natCast_iff`,
@@ -41,7 +43,6 @@ height ideals are strictly increasing with proper union.
 * `TauCeti.isPrime_heightIdeal_hazewinkelIntegralFormalGroup_X`,
   `TauCeti.isPrime_heightIdeal_universalHazewinkelIntegralFormalGroup`
 * `TauCeti.isSMulRegular_X_quotient_heightIdeal_hazewinkelIntegralFormalGroup_X`,
-  `TauCeti.isRegular_natCast_cons_X_hazewinkelIntegralFormalGroup`,
   `TauCeti.isRegular_coeff_pow_nsmulSeries_hazewinkelIntegralFormalGroup_X`
 * `TauCeti.LazardRing.strictMono_heightIdeal_formalGroup`,
   `TauCeti.LazardRing.iSup_heightIdeal_formalGroup_ne_top`
@@ -86,8 +87,9 @@ theorem heightIdeal_hazewinkelIntegralFormalGroup (v : ℕ+ → R) {n : ℕ} (hn
   | zero => omega
   | succ m ih =>
     rcases m.eq_zero_or_pos with rfl | hm
-    · rw [(hazewinkelIntegralFormalGroup p v).heightIdeal_one hp.out,
-        show {i : ℕ+ | (i : ℕ) < 1} = ∅ by ext; simp, Set.image_empty, Ideal.span_empty, sup_bot_eq]
+    · have hempty : {i : ℕ+ | (i : ℕ) < 1} = ∅ := by ext; simp
+      rw [(hazewinkelIntegralFormalGroup p v).heightIdeal_one hp.out, hempty,
+        Set.image_empty, Ideal.span_empty, sup_bot_eq]
     · obtain ⟨k, rfl⟩ := Nat.exists_eq_succ_of_ne_zero hm.ne'
       let k' : ℕ+ := k.succPNat
       have hk' : (k' : ℕ) = k + 1 := Nat.succPNat_coe k
@@ -96,10 +98,11 @@ theorem heightIdeal_hazewinkelIntegralFormalGroup (v : ℕ+ → R) {n : ℕ} (hn
           (hazewinkelIntegralFormalGroup p v).heightIdeal p (k + 1) := by
         rw [ih k.succ_pos, ← neg_sub, Ideal.neg_mem_iff]
         simpa only [hk'] using coeff_pow_nsmulSeries_sub_mem_span_sup p v k'
+      have hset : {i : ℕ+ | (i : ℕ) < k + 2} = insert k' {i : ℕ+ | (i : ℕ) < k + 1} := by
+        ext i; simp only [Set.mem_ofPred_eq, Set.mem_insert_iff, ← PNat.coe_inj, hk']; omega
       rw [(hazewinkelIntegralFormalGroup p v).heightIdeal_succ_eq_sup_of_sub_mem hp.out hmem,
-        ih k.succ_pos, show {i : ℕ+ | (i : ℕ) < k + 2} = insert k' {i : ℕ+ | (i : ℕ) < k + 1} by
-          ext i; simp only [Set.mem_ofPred_eq, Set.mem_insert_iff, ← PNat.coe_inj, hk']; omega,
-        Set.image_insert_eq, Ideal.span_insert, sup_assoc, sup_comm (Ideal.span {v k'})]
+        ih k.succ_pos, hset, Set.image_insert_eq, Ideal.span_insert, sup_assoc,
+        sup_comm (Ideal.span {v k'})]
 
 /-- **Hazewinkel's generator `vₙ` modulo `I_n`.** For every `n ≥ 1`, the coefficient of `X^(pⁿ)` in
 `[p]_(F_v)(X)` agrees with `vₙ` modulo the `n`-th height ideal `I_n(F_v)`. -/
@@ -159,6 +162,16 @@ theorem coeff_pow_nsmulSeries_universalHazewinkelIntegralFormalGroup_sub_mem_hei
   rw [← hazewinkelIntegralFormalGroup_X]
   exact coeff_pow_nsmulSeries_hazewinkelIntegralFormalGroup_sub_mem_heightIdeal p _ n
 
+/-- Over a commutative ring of characteristic `p`, the `n`-th height ideal of `F_v` is generated
+by `v₁, …, v_(n - 1)` for every `n : ℕ`. -/
+theorem heightIdeal_hazewinkelIntegralFormalGroup_of_charP [CharP R p] (v : ℕ+ → R) (n : ℕ) :
+    (hazewinkelIntegralFormalGroup p v).heightIdeal p n =
+      Ideal.span (v '' {i : ℕ+ | (i : ℕ) < n}) := by
+  rcases n.eq_zero_or_pos with rfl | hn
+  · simp
+  · rw [heightIdeal_hazewinkelIntegralFormalGroup p v hn, CharP.cast_eq_zero R p,
+      Ideal.span_singleton_eq_bot.mpr rfl, bot_sup_eq]
+
 end Ring
 
 /-! ### Height over fields of characteristic `p` -/
@@ -166,16 +179,6 @@ end Ring
 section Field
 
 variable {K : Type*} [Field K] (p : ℕ) [Fact p.Prime] [CharP K p]
-
-/-- Over a field of characteristic `p`, the `n`-th height ideal of `F_v` is generated by
-`v₁, …, v_(n - 1)` for every `n : ℕ`. -/
-theorem heightIdeal_hazewinkelIntegralFormalGroup_of_charP (v : ℕ+ → K) (n : ℕ) :
-    (hazewinkelIntegralFormalGroup p v).heightIdeal p n =
-      Ideal.span (v '' {i : ℕ+ | (i : ℕ) < n}) := by
-  rcases n.eq_zero_or_pos with rfl | hn
-  · simp
-  · rw [heightIdeal_hazewinkelIntegralFormalGroup p v hn, CharP.cast_eq_zero K p,
-      Ideal.span_singleton_eq_bot.mpr rfl, bot_sup_eq]
 
 /-- Over a field of characteristic `p`, `hazewinkelIntegralFormalGroup p v` has height at least `n`
 if and only if `vᵢ = 0` for all `1 ≤ i < n`. -/
@@ -317,17 +320,19 @@ theorem strictMono_heightIdeal_hazewinkelIntegralFormalGroup_X {R : Type*} [Comm
     rw [Ideal.mem_bot, ← map_natCast MvPolynomial.C] at hmem
     exact hp0 (by simpa using congrArg MvPolynomial.constantCoeff hmem)
   · let m' : ℕ+ := m.succPNat
+    have hm' : (m' : ℕ) = m + 1 := Nat.succPNat_coe m
     have hin : (MvPolynomial.X m' : MvPolynomial ℕ+ R) ∈
         (hazewinkelIntegralFormalGroup p
           (MvPolynomial.X : ℕ+ → MvPolynomial ℕ+ R)).heightIdeal p (m + 2) := by
-      rw [show m + 2 = (m' : ℕ) + 1 from rfl, heightIdeal_hazewinkelIntegralFormalGroup_succ]
+      have hm2 : m + 2 = (m' : ℕ) + 1 := by rw [hm']
+      rw [hm2, heightIdeal_hazewinkelIntegralFormalGroup_succ]
       exact Ideal.mem_sup_right (Ideal.mem_span_singleton_self _)
     rw [← heq, heightIdeal_hazewinkelIntegralFormalGroup p _ m.succ_pos, span_natCast_eq_map_C,
       ← MvPolynomial.comap_map_quotient_mk_span_X_image, Ideal.mem_comap, MvPolynomial.map_X] at hin
     classical
     rw [MvPolynomial.span_X_image_eq_ker_aeval_ite_mem, RingHom.mem_ker, MvPolynomial.aeval_X]
       at hin
-    simp [show (m' : ℕ) = m + 1 from rfl] at hin
+    simp [hm'] at hin
 
 /-- For every commutative ring `R` and `n : ℕ+`, the generator `X n` is regular on the quotient
 `R[v₁, v₂, …] ⧸ I_n`. -/
@@ -359,18 +364,6 @@ theorem isSMulRegular_coeff_nsmulSeries_quotient_heightIdeal_hazewinkelIntegralF
   exact (isSMulRegular_quotient_iff_mem_of_smul_mem I (MvPolynomial.X n)).mp
     (isSMulRegular_X_quotient_heightIdeal_hazewinkelIntegralFormalGroup_X p R n) f hsub
 
-omit hp in
-/-- **Landweber's regular sequence of Hazewinkel generators.** If `(p : R)` is regular on `R` and
-`(p) ≠ ⊤` (for example `R = ℤ` or `R = ℤ_(p)`), then `(p, v₁, …, vₙ)` is a regular sequence on
-`R[v₁, v₂, …]`. -/
-theorem isRegular_natCast_cons_X_hazewinkelIntegralFormalGroup {R : Type*} [CommRing R]
-    (hpreg : IsSMulRegular R (p : R)) (hptop : Ideal.span {(p : R)} ≠ ⊤) (n : ℕ) :
-    RingTheory.Sequence.IsRegular (MvPolynomial ℕ+ R)
-      ((p : MvPolynomial ℕ+ R) ::
-        (List.range n).map fun i ↦ (MvPolynomial.X i.succPNat : MvPolynomial ℕ+ R)) := by
-  simpa only [map_natCast, List.map_map, Function.comp_def] using
-    MvPolynomial.isRegular_C_cons_map_X hpreg hptop (List.nodup_range.map Nat.succPNat_injective)
-
 /-- **Landweber's regular sequence of `[p]`-series coefficients.** If `(p : R)` is regular on `R`
 and `(p) ≠ ⊤`, then `(p, coeff p [p]_(F_X), …, coeff (pⁿ) [p]_(F_X))` is a regular sequence on
 `R[v₁, v₂, …]`. -/
@@ -382,11 +375,11 @@ theorem isRegular_coeff_pow_nsmulSeries_hazewinkelIntegralFormalGroup_X {R : Typ
           (MvPolynomial.X : ℕ+ → MvPolynomial ℕ+ R)).nsmulSeries p)) := by
   set F := hazewinkelIntegralFormalGroup p (MvPolynomial.X : ℕ+ → MvPolynomial ℕ+ R)
   set rs := (List.range (n + 1)).map fun i ↦ PowerSeries.coeff (p ^ i) (F.nsmulSeries p)
+  have htake (j : ℕ) (hj : j ≤ n + 1) : (List.range (n + 1)).take j = List.range j :=
+    List.ext_getElem (by simp; omega) fun i _ _ ↦ by simp
   have hspan (j : ℕ) (hj : j ≤ n + 1) : Ideal.ofList (rs.take j) = F.heightIdeal p j := by
     rw [F.heightIdeal_eq_span hp.out j, Ideal.ofList]
-    simp only [rs, ← List.map_take,
-      show (List.range (n + 1)).take j = List.range j from
-        List.ext_getElem (by simp; omega) fun i _ _ ↦ by simp]
+    simp only [rs, ← List.map_take, htake j hj]
     congr 1; ext x; simp [Set.mem_image]
   refine ⟨⟨fun j hj ↦ ?_⟩, ?_⟩
   · have hj' : j < n + 1 := by simpa [rs] using hj
@@ -395,9 +388,10 @@ theorem isRegular_coeff_pow_nsmulSeries_hazewinkelIntegralFormalGroup_X {R : Typ
     · rw [FormalGroup.heightIdeal_zero, isSMulRegular_quotient_iff_mem_of_smul_mem]
       simp only [rs, List.getElem_map, List.getElem_range, pow_zero, F.coeff_one_nsmulSeries]
       intro f hf; rw [Ideal.mem_bot] at hf ⊢
-      exact (by simpa only [map_natCast] using
-        (MvPolynomial.isSMulRegular_C_iff (σ := ℕ+) (r := (p : R))).mpr hpreg :
-        IsSMulRegular (MvPolynomial ℕ+ R) (p : MvPolynomial ℕ+ R)) (hf.trans (smul_zero _).symm)
+      have hreg : IsSMulRegular (MvPolynomial ℕ+ R) (p : MvPolynomial ℕ+ R) := by
+        simpa only [map_natCast] using
+          (MvPolynomial.isSMulRegular_C_iff (σ := ℕ+) (r := (p : R))).mpr hpreg
+      exact hreg (hf.trans (smul_zero _).symm)
     · simp only [rs, List.getElem_map, List.getElem_range]
       have hreg :=
         isSMulRegular_coeff_nsmulSeries_quotient_heightIdeal_hazewinkelIntegralFormalGroup_X
@@ -406,15 +400,6 @@ theorem isRegular_coeff_pow_nsmulSeries_hazewinkelIntegralFormalGroup_X {R : Typ
   · rw [Ideal.smul_eq_mul, Ideal.mul_top, ne_comm,
       ← List.take_of_length_le (i := n + 1) (l := rs) (by simp [rs]), hspan (n + 1) le_rfl]
     exact heightIdeal_hazewinkelIntegralFormalGroup_X_ne_top p hptop (n + 1)
-
-/-- Over `ℤ[v₁, v₂, …]`, `(p, v₁, …, vₙ)` is a regular sequence for every `n : ℕ`. -/
-theorem isRegular_natCast_cons_X_int (n : ℕ) :
-    RingTheory.Sequence.IsRegular (MvPolynomial ℕ+ ℤ)
-      ((p : MvPolynomial ℕ+ ℤ) ::
-        (List.range n).map fun i ↦ (MvPolynomial.X i.succPNat : MvPolynomial ℕ+ ℤ)) :=
-  isRegular_natCast_cons_X_hazewinkelIntegralFormalGroup p
-    (fun _ _ h ↦ mul_left_cancel₀ (Nat.cast_ne_zero.mpr hp.out.ne_zero) h)
-    (isPrime_span_natCast_int p).ne_top n
 
 /-- Over `ℤ[v₁, v₂, …]`, the `[p]`-series coefficients
 `(p, coeff p [p]_F, …, coeff (pⁿ) [p]_F)` of `universalHazewinkelIntegralFormalGroup p` form a

@@ -64,13 +64,21 @@ the logarithm of a formal group law over `ℤ_(p)[v₁, v₂, …]`. With `σ = 
   and only if `ψ` has coefficients in `A`.
 * `TauCeti.coeff_inv_smul_𝔾ₐ_toPowerSeries_mem`: **Hazewinkel's functional equation lemma**, the
   formal group law `f⁻¹(f(X) + f(Y))` has coefficients in `A`.
-* `TauCeti.SatisfiesFunctionalEquation.exists_coeff_subst_eq_pow_mul_iff`: for a solution
+* `TauCeti.SatisfiesFunctionalEquation.exists_coeff_subst_eq_pow_mul`,
+  `TauCeti.SatisfiesFunctionalEquation.exists_coeff_eq_pow_mul_of_subst`,
+  `TauCeti.SatisfiesFunctionalEquation.exists_coeff_subst_eq_pow_mul_iff`,
+  `TauCeti.SatisfiesFunctionalEquation.exists_coeff_subst_eq_mul_iff`: for a solution
   `f = b₁ X + ⋯` with `b₁` a unit of `A`, `ψ` of zero constant coefficient, and `k ≠ 0`, `f(ψ)` has
-  all coefficients in `p ^ k A` if and only if `ψ` does.
+  all coefficients in `p ^ k A` if and only if `ψ` does (the `p ^ k`-divisibility step for
+  Ravenel's modulo-`p` `[p]`-series formula, Ravenel Appendix A2.1, Lemma A2.1.25 / Theorem
+  A2.1.27).
 
 ## References
 
 * M. Hazewinkel, *Formal Groups and Applications*, Chapter I, §2 (the functional equation lemma).
+* D. C. Ravenel, *Complex Cobordism and Stable Homotopy Groups of Spheres*, Appendix A2.1
+  (Lemma A2.1.25 / Theorem A2.1.27, `p ^ k`-divisibility of substitutions into solutions of the
+  functional equation).
 -/
 
 public section
@@ -529,7 +537,8 @@ theorem SatisfiesFunctionalEquation.exists_coeff_eq_pow_mul_of_subst (hσ : Set.
   have hψ'₀ : constantCoeff ψ' = 0 := by
     rw [← coeff_zero_eq_constantCoeff_apply, hψ'c, coeff_zero_eq_constantCoeff_apply, hψ₀, ite_self]
   have hε : (D : ℕ∞) ≤ (ψ - ψ').order := le_order fun e he ↦ by
-    simp [hψ'c, show e.degree < D by exact_mod_cast he]
+    have he' : e.degree < D := by exact_mod_cast he
+    simp [hψ'c, he']
   have hdiff : coeff d (f.subst ψ) - coeff d (f.subst ψ') = PowerSeries.coeff 1 f * coeff d ψ := by
     rw [PowerSeries.coeff_subst_eq_sum_range_degree hψ₀,
       PowerSeries.coeff_subst_eq_sum_range_degree hψ'₀, ← Finset.sum_sub_distrib,
@@ -550,10 +559,11 @@ theorem SatisfiesFunctionalEquation.exists_coeff_eq_pow_mul_of_subst (hσ : Set.
         rw [hdiff, ← mul_assoc, hu₁, one_mul]
     _ = (p : K) ^ k * (u * (b - b')) := by rw [hb, hb']; ring
 
-/-- **`p ^ k`-divisibility of substitutions.** Let `f = b₁ X + ⋯` satisfy the functional equation
-with zero constant coefficient and `b₁` a unit of `A`. For a power series `ψ` of zero constant
-coefficient and `k ≠ 0`, every coefficient of `f(ψ)` lies in `p ^ k A` if and only if every
-coefficient of `ψ` lies in `p ^ k A`. -/
+/-- **`p ^ k`-divisibility of substitutions** (cf. Ravenel, Appendix A2.1, Lemma A2.1.25 /
+Theorem A2.1.27). Let `f = b₁ X + ⋯` satisfy the functional equation with zero constant coefficient
+and `b₁` a unit of `A`. For a power series `ψ` of zero constant coefficient and `k ≠ 0`, every
+coefficient of `f(ψ)` lies in `p ^ k A` if and only if every coefficient of `ψ` lies in
+`p ^ k A`. -/
 theorem SatisfiesFunctionalEquation.exists_coeff_subst_eq_pow_mul_iff (hσ : Set.MapsTo σ A A)
     (hs : ∀ i, (p : K) * s i ∈ A) {f : PowerSeries K} (hf₀ : PowerSeries.constantCoeff f = 0)
     (hf₁ : ∃ u ∈ A, u * PowerSeries.coeff 1 f = 1) (hf : SatisfiesFunctionalEquation p σ s A f)
