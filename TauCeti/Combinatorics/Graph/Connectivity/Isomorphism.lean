@@ -294,6 +294,34 @@ theorem connectedComponentEquiv_symm (f : Iso G H) :
   ext1 C
   simp [connectedComponentEquiv]
 
+/-- The inverse component equivalence sends the component of an actual vertex to the component of
+its preimage. -/
+@[simp]
+theorem connectedComponentEquiv_symm_connectedComponentOf (f : Iso G H) {y : α'}
+    (hy : y ∈ V(H)) :
+    f.connectedComponentEquiv.symm (H.connectedComponentOf y hy) =
+      G.connectedComponentOf (f.vertexEquiv.symm ⟨y, hy⟩)
+        (f.vertexEquiv.symm ⟨y, hy⟩).2 := by
+  simpa using f.symm.connectedComponentEquiv_connectedComponentOf hy
+
+/-- An actual vertex lies in the component pulled back along the isomorphism exactly when its
+image lies in the original component. -/
+@[simp]
+theorem vertexEquiv_symm_mem_vertexSet_connectedComponentEquiv_symm_iff (f : Iso G H)
+    (D : H.ConnectedComponent) (y : V(H)) :
+    (f.vertexEquiv.symm y : α) ∈ V((f.connectedComponentEquiv.symm D).1) ↔
+      (y : α') ∈ V(D.1) := by
+  simpa using f.symm.vertexEquiv_mem_vertexSet_connectedComponentEquiv_iff D y
+
+/-- An actual edge lies in the component pulled back along the isomorphism exactly when its image
+lies in the original component. -/
+@[simp]
+theorem edgeEquiv_symm_mem_edgeSet_connectedComponentEquiv_symm_iff (f : Iso G H)
+    (D : H.ConnectedComponent) (e : E(H)) :
+    (f.edgeEquiv.symm e : β) ∈ E((f.connectedComponentEquiv.symm D).1) ↔
+      (e : β') ∈ E(D.1) := by
+  simpa using f.symm.edgeEquiv_mem_edgeSet_connectedComponentEquiv_iff D e
+
 /-- Composing isomorphisms composes their equivalences of connected components. -/
 @[simp]
 theorem connectedComponentEquiv_trans {α'' β'' : Type*} {K : Graph α'' β''} (f : Iso G H)
