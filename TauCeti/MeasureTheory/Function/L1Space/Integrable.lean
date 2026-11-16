@@ -31,9 +31,12 @@ nonnegative both its extended `p`-th moment and the `p`-th power of its `eLpNorm
 (`MeasureTheory.MemLp.lintegral_ofReal_rpow_eq_ofReal_integral`,
 `MeasureTheory.MemLp.eLpNorm_rpow_eq_ofReal_integral`), converting `eLpNorm` bounds between almost
 everywhere nonnegative functions into Bochner `p`-th moment inequalities
-(`MeasureTheory.integral_rpow_le_mul_integral_rpow_of_eLpNorm_le`). Membership of the identity in
-`Lᵖ` gives integrability of its norm power even on a seminormed group, and on the real line
-positive-order `Lᵖ` membership is equivalent to integrability of the corresponding absolute power.
+(`MeasureTheory.integral_rpow_le_mul_integral_rpow_of_eLpNorm_le`). On a finite measure space, a
+lower natural absolute moment of a function in `L^q` is bounded by its `q`-th absolute moment plus
+the total measure (`MeasureTheory.MemLp.integral_norm_pow_le_add_measureReal_univ`). Membership of
+the identity in `Lᵖ` gives integrability of its norm power even on a seminormed group, and on the
+real line positive-order `Lᵖ` membership is equivalent to integrability of the corresponding
+absolute power.
 
 The pointwise supremum of finitely many integrable lattice-valued functions is integrable
 (`MeasureTheory.integrable_finset_sup'`). A function nonzero at an atom of infinite mass is not
@@ -172,6 +175,29 @@ theorem Integrable.smul_of_support_subset {α 𝕜 E : Type*} [NormedRing 𝕜]
     Integrable (fun x ↦ g x • f x) μ :=
   (hf.norm.const_mul K).mono' (hg.smul hf.1)
     (ae_of_all _ (TauCeti.norm_smul_le_mul_norm_of_support_subset hsupp hK))
+
+/-- On a finite measure space, a lower natural absolute moment `∫ x, ‖f x‖ ^ p ∂μ` (`p ≤ q`) of a
+function `f` in `L^q` is at most `(∫ x, ‖f x‖ ^ q ∂μ) + μ.real Set.univ`. -/
+theorem MemLp.integral_norm_pow_le_add_measureReal_univ {X E : Type*} [MeasurableSpace X]
+    [SeminormedAddCommGroup E] {μ : Measure X} [IsFiniteMeasure μ] {f : X → E} {p q : ℕ}
+    (hf : MemLp f q μ) (hpq : p ≤ q) :
+    ∫ x, ‖f x‖ ^ p ∂μ ≤ (∫ x, ‖f x‖ ^ q ∂μ) + μ.real Set.univ := by
+  have hfn : MemLp (fun x ↦ ‖f x‖) q μ :=
+    hf.of_le_eNorm hf.aestronglyMeasurable.norm (by simp)
+  have hfq : Integrable (fun x ↦ ‖f x‖ ^ q) μ := by
+    simpa only [norm_norm] using hfn.integrable_norm_pow'
+  have hfp : Integrable (fun x ↦ ‖f x‖ ^ p) μ := by
+    simpa only [norm_norm] using (hfn.mono_exponent (Nat.cast_le.mpr hpq)).integrable_norm_pow'
+  have hdom (x : X) : ‖f x‖ ^ p ≤ ‖f x‖ ^ q + 1 := by
+    rcases le_or_gt ‖f x‖ 1 with hx | hx
+    · exact (pow_le_one₀ (norm_nonneg _) hx).trans
+        (le_add_of_nonneg_left (pow_nonneg (norm_nonneg _) q))
+    · exact (pow_le_pow_right₀ hx.le hpq).trans (le_add_of_nonneg_right zero_le_one)
+  calc
+    ∫ x, ‖f x‖ ^ p ∂μ
+      ≤ ∫ x, (‖f x‖ ^ q + 1) ∂μ := integral_mono hfp (hfq.add (integrable_const 1)) hdom
+    _ = (∫ x, ‖f x‖ ^ q ∂μ) + μ.real Set.univ := by
+        rw [integral_add hfq (integrable_const 1), integral_const, smul_eq_mul, mul_one]
 
 end MeasureTheory
 

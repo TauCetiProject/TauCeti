@@ -10,6 +10,7 @@ public import TauCeti.Probability.RandomMatrix.SpectralMoment.Expected
 public import TauCeti.Probability.RandomMatrix.SpectralMoment.Variance
 import Mathlib.Analysis.PSeries
 import Mathlib.MeasureTheory.OuterMeasure.BorelCantelli
+import TauCeti.MeasureTheory.Function.L1Space.Integrable
 
 /-!
 # Moment convergence and the moment-method semicircle law for Wigner matrices
@@ -86,44 +87,20 @@ private theorem tendsto_integral_pow_spectralMeasure_wignerMatrix_array_of_two_m
         ∂((wignerMatrix (ξ n) (η n) (n + 1) ω).spectralMeasure
           (wignerMatrix_isHermitian (ξ n) (η n) ω (n + 1)) : Measure ℝ)) ∂P n)
       atTop (𝓝 (∫ x, x ^ k ∂semicircleReal 0 1)) := by
-  have hB : 0 ≤ B :=
-    (integral_nonneg fun ω ↦ pow_nonneg (norm_nonneg (η 0 0 ω)) (2 * k)).trans (hη 0 0)
   have hξpk (n : ℕ) (ij : StrictUpper) : MemLp (ξ n ij) k (P n) :=
     (hξp n ij).mono_exponent (by norm_cast; omega)
   have hηpk (n i : ℕ) : MemLp (η n i) k (P n) :=
     (hηp n i).mono_exponent (by norm_cast; omega)
-  have hdom {x : ℝ} (hx : 0 ≤ x) : x ^ k ≤ x ^ (2 * k) + 1 := by
-    rcases le_or_gt x 1 with hx1 | hx1
-    · exact (pow_le_one₀ hx hx1).trans (le_add_of_nonneg_left (pow_nonneg hx (2 * k)))
-    · exact (pow_le_pow_right₀ hx1.le (by omega)).trans (le_add_of_nonneg_right zero_le_one)
   have hξk (n : ℕ) (ij : StrictUpper) : ∫ ω, ‖ξ n ij ω‖ ^ k ∂P n ≤ B + 1 := by
-    rcases eq_or_ne k 0 with rfl | hk
-    · simp [hB]
-    · have h2k : 2 * k ≠ 0 := by omega
-      calc
-        ∫ ω, ‖ξ n ij ω‖ ^ k ∂P n
-          ≤ ∫ ω, ‖ξ n ij ω‖ ^ (2 * k) + 1 ∂P n :=
-            integral_mono ((hξpk n ij).integrable_norm_pow hk)
-              (((hξp n ij).integrable_norm_pow h2k).add (integrable_const 1))
-              fun ω ↦ hdom (norm_nonneg _)
-        _ = (∫ ω, ‖ξ n ij ω‖ ^ (2 * k) ∂P n) + 1 := by
-            rw [integral_add ((hξp n ij).integrable_norm_pow h2k) (integrable_const 1)]
-            simp
-        _ ≤ B + 1 := add_le_add_left (hξ n ij) 1
+    have h := (hξp n ij).integral_norm_pow_le_add_measureReal_univ
+      (Nat.le_mul_of_pos_left k two_pos)
+    rw [probReal_univ] at h
+    exact h.trans (add_le_add_left (hξ n ij) 1)
   have hηk (n i : ℕ) : ∫ ω, ‖η n i ω‖ ^ k ∂P n ≤ B + 1 := by
-    rcases eq_or_ne k 0 with rfl | hk
-    · simp [hB]
-    · have h2k : 2 * k ≠ 0 := by omega
-      calc
-        ∫ ω, ‖η n i ω‖ ^ k ∂P n
-          ≤ ∫ ω, ‖η n i ω‖ ^ (2 * k) + 1 ∂P n :=
-            integral_mono ((hηpk n i).integrable_norm_pow hk)
-              (((hηp n i).integrable_norm_pow h2k).add (integrable_const 1))
-              fun ω ↦ hdom (norm_nonneg _)
-        _ = (∫ ω, ‖η n i ω‖ ^ (2 * k) ∂P n) + 1 := by
-            rw [integral_add ((hηp n i).integrable_norm_pow h2k) (integrable_const 1)]
-            simp
-        _ ≤ B + 1 := add_le_add_left (hη n i) 1
+    have h := (hηp n i).integral_norm_pow_le_add_measureReal_univ
+      (Nat.le_mul_of_pos_left k two_pos)
+    rw [probReal_univ] at h
+    exact h.trans (add_le_add_left (hη n i) 1)
   exact tendsto_integral_pow_spectralMeasure_wignerMatrix_array k hindep hξzero hηzero hsecond
     hξpk hηpk hξk hηk
 

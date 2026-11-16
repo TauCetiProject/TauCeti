@@ -6,10 +6,10 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.Matrix.SpectralMeasure.Basic
-public import TauCeti.Combinatorics.TreeWalk.Pairing
+public import TauCeti.Combinatorics.TreeWalk.Leading
 public import TauCeti.Probability.Distributions.Semicircle.Moments
 public import TauCeti.Probability.RandomMatrix.MomentBounds
-import Mathlib.Data.Nat.Factorial.BigOperators
+import Mathlib.Analysis.SpecialFunctions.Choose
 
 /-!
 # Expected spectral moments of Wigner matrices
@@ -166,20 +166,9 @@ private theorem tendsto_inv_mul_integral_trace_pow_two_mul_wignerMatrix_of_tends
           (hindep n) (hξzero n) (hηzero n) (hsecond n) (hξp n) (hηp n) (hξ n) (hη n)) hlim0
     have hdesc : Tendsto (fun n : ℕ ↦ (n.descFactorial (m + 1) : ℝ) / (n : ℝ) ^ (m + 1))
         atTop (𝓝 1) := by
-      have hprod : Tendsto (fun n : ℕ ↦ ∏ i ∈ range (m + 1), (1 - (i : ℝ) / n))
-          atTop (𝓝 (∏ _i ∈ range (m + 1), (1 : ℝ))) :=
-        tendsto_finsetProd (range (m + 1)) fun i _ ↦ by
-          simpa using tendsto_const_nhds.sub
-            (tendsto_const_nhds.div_atTop (tendsto_natCast_atTop_atTop (R := ℝ)))
-      simp only [prod_const_one] at hprod
-      refine hprod.congr' ?_
-      filter_upwards [eventually_ge_atTop (m + 2)] with n hn
-      have hn0 : (n : ℝ) ≠ 0 := Nat.cast_ne_zero.mpr (by omega)
-      rw [Nat.descFactorial_eq_prod_range, Nat.cast_prod,
-        show (n : ℝ) ^ (m + 1) = ∏ _i ∈ range (m + 1), (n : ℝ) by simp, ← prod_div_distrib]
-      refine prod_congr rfl fun i hi ↦ ?_
-      have hin : i ≤ n := le_of_lt ((mem_range.mp hi).trans_le (by omega))
-      rw [Nat.cast_sub hin, sub_div, div_self hn0]
+      have hz : ∀ᶠ n : ℕ in atTop, (n : ℝ) ^ (m + 1) ≠ 0 :=
+        (eventually_ge_atTop 1).mono fun n hn ↦ by positivity
+      exact (Asymptotics.isEquivalent_iff_tendsto_one hz).mp (isEquivalent_descFactorial (m + 1))
     have hmain : Tendsto (fun n : ℕ ↦
         (((sz n).descFactorial (m + 1) : ℂ) / (sz n : ℂ) ^ (m + 1)) * (catalan m : ℂ))
         atTop (𝓝 (catalan m : ℂ)) := by

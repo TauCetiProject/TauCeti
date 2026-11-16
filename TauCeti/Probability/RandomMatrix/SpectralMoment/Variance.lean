@@ -354,7 +354,6 @@ theorem integral_norm_inv_mul_trace_pow_wignerMatrix_sub_sq_le [IsProbabilityMea
   rcases eq_or_ne k 0 with rfl | hk
   · suffices 0 ≤ 2 * B / (n : ℝ) ^ 2 by simpa
     positivity
-  have : Nonempty (Fin n) := Fin.pos_iff_nonempty.mp (Nat.pos_of_ne_zero hn)
   let S : Finset ((Fin k → Fin n) × (Fin k → Fin n)) :=
     {p | (∃ t₁ t₂, s(p.1 t₁, p.1 (finRotate k t₁)) = s(p.2 t₂, p.2 (finRotate k t₂))) ∧
       ∀ s : Fin k ⊕ Fin k, ∃ s' ≠ s,
@@ -375,7 +374,7 @@ theorem integral_norm_inv_mul_trace_pow_wignerMatrix_sub_sq_le [IsProbabilityMea
       by_contra fun hsing ↦ hp (walkCov_eq_zero_of_singleton_edge hindep hξm hηm hξzero hηzero
         p.1 p.2 hsing)⟩
   have hcardS : (#S : ℝ) ≤ (n : ℝ) ^ k * (k : ℝ) ^ (2 * k) := by
-    exact_mod_cast (card_filter_shared_edge_and_no_singleton_edge_le (α := Fin n) hk).trans_eq
+    exact_mod_cast (card_filter_shared_edge_and_no_singleton_edge_le (α := Fin n) k).trans_eq
       (by simp)
   have hn0 : (n : ℝ) ≠ 0 := Nat.cast_ne_zero.mpr hn
   rw [integral_norm_inv_mul_trace_pow_sub_sq_eq_re_sum_walkCov hk hξp hηp, hfilter]

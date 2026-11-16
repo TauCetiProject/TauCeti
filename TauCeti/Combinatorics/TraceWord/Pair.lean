@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Combinatorics.TraceWord.Counting
 public import TauCeti.Data.Fintype.SmallRange
+import TauCeti.Algebra.Order.BigOperators.Group.Finset
 
 /-!
 # Vertex and pair counts for coupled trace words
@@ -24,11 +25,11 @@ producing the `O(n⁻²)` variance bound for normalized traces.
 
 ## Main results
 
-* `TauCeti.card_image_union_le_of_shared_edge_of_no_singleton_edge`: two length-`k` (`k ≠ 0`)
-  cyclic words sharing an unordered edge whose combined steps have no singleton unordered edge
-  visit at most `k` distinct vertices together.
-* `TauCeti.card_filter_shared_edge_and_no_singleton_edge_le`: on a nonempty finite alphabet `α`,
-  at most `Fintype.card α ^ k * k ^ (2 * k)` such pairs of length-`k` words exist.
+* `TauCeti.card_image_union_le_of_shared_edge_of_no_singleton_edge`: two length-`k` cyclic words
+  sharing an unordered edge whose combined steps have no singleton unordered edge visit at most `k`
+  distinct vertices together.
+* `TauCeti.card_filter_shared_edge_and_no_singleton_edge_le`: on a finite alphabet `α`, at most
+  `Fintype.card α ^ k * k ^ (2 * k)` such pairs of length-`k` words exist.
 
 ## References
 
@@ -166,61 +167,9 @@ private theorem exists_path_union_of_shared_edge {m : ℕ} (w₁ w₂ : Fin (m +
         have h3 : j + 1 - m = j - m + 1 := by omega
         simpa [p, h1, h2, h3] using hs
 
-/-- If `e : Fin (m + 1) ⊕ Fin (m + 1) → Sym2 α` has no singleton fiber and agrees at `.inl t₁` and
-`.inr t₂`, then its image outside `{.inl t₁, .inr t₂}` has cardinality at most `m`. -/
-private theorem card_image_erase_pair_le {m : ℕ}
-    (e : Fin (m + 1) ⊕ Fin (m + 1) → Sym2 α) (t₁ t₂ : Fin (m + 1))
-    (hsh : e (.inl t₁) = e (.inr t₂))
-    (hno : ∀ s, ∃ s' ≠ s, e s' = e s) :
-    #((((univ : Finset (Fin (m + 1) ⊕ Fin (m + 1))).erase (.inl t₁)).erase (.inr t₂)).image e) ≤
-      m := by
-  let U : Finset (Fin (m + 1) ⊕ Fin (m + 1)) := (univ.erase (.inl t₁)).erase (.inr t₂)
-  let M : Finset (Sym2 α) := U.image e
-  change #M ≤ m
-  have hfib (a : Sym2 α) (ha : a ∈ univ.image e) : 2 ≤ #{s | e s = a} := by
-    obtain ⟨s, -, rfl⟩ := mem_image.mp ha
-    obtain ⟨s', hs', heq⟩ := hno s
-    exact one_lt_card.mpr ⟨s, by simp, s', mem_filter.mpr ⟨mem_univ _, heq⟩, hs'.symm⟩
-  let e₀ := e (.inl t₁)
-  have he₀ : e (.inr t₂) = e₀ := hsh.symm
-  by_cases hm₀ : e₀ ∈ M
-  · obtain ⟨s₃, hs₃, hs₃e⟩ := mem_image.mp hm₀
-    have hs₃₂ : s₃ ≠ .inr t₂ := (mem_erase.mp hs₃).1
-    have hs₃₁ : s₃ ≠ .inl t₁ := (mem_erase.mp (mem_erase.mp hs₃).2).1
-    have h3 : 3 ≤ #{s | e s = e₀} := by
-      have hsub : ({.inl t₁, .inr t₂, s₃} : Finset _) ⊆ ({s | e s = e₀} : Finset _) := by
-        intro s hs
-        simp only [mem_insert, mem_singleton] at hs
-        rcases hs with rfl | rfl | rfl <;> simp [e₀, he₀, hs₃e]
-      have hc3 : #({.inl t₁, .inr t₂, s₃} : Finset _) = 3 := by
-        simp [hs₃₁.symm, hs₃₂.symm]
-      exact hc3 ▸ card_le_card hsub
-    have hsum : 3 + 2 * #(M.erase e₀) ≤ 2 * (m + 1) := calc
-      3 + 2 * #(M.erase e₀)
-        = 3 + ∑ _a ∈ M.erase e₀, 2 := by simp [Nat.mul_comm]
-      _ ≤ #{s | e s = e₀} + ∑ a ∈ M.erase e₀, #{s | e s = a} :=
-        Nat.add_le_add h3 (sum_le_sum fun a ha ↦
-          hfib a (image_subset_image (subset_univ _) (mem_of_mem_erase ha)))
-      _ = ∑ a ∈ M, #{s | e s = a} := add_sum_erase M (fun a ↦ #{s | e s = a}) hm₀
-      _ ≤ ∑ a ∈ univ.image e, #{s | e s = a} :=
-        sum_le_sum_of_subset (image_subset_image (subset_univ _))
-      _ = 2 * (m + 1) := by
-        rw [← card_eq_sum_card_image e univ]
-        simp [Nat.two_mul]
-    have hcardM : #(M.erase e₀) + 1 = #M := card_erase_add_one hm₀
-    omega
-  · have hsubE : insert e₀ M ⊆ univ.image e :=
-      insert_subset (mem_image_of_mem e (mem_univ _)) (image_subset_image (subset_univ _))
-    have hcardE : 2 * #(univ.image e) ≤ 2 * (m + 1) := by
-      simpa [Nat.two_mul] using mul_card_image_le_card univ 2 hfib
-    have := card_le_card hsubE
-    rw [card_insert_of_notMem hm₀] at this
-    omega
-
-/-- Two cyclic words `w₁, w₂ : Fin k → α` (`k ≠ 0`) that share an unordered edge and whose
-combined `2 * k` steps have no singleton unordered edge visit at most `k` distinct vertices
-together. -/
-theorem card_image_union_le_of_shared_edge_of_no_singleton_edge {k : ℕ} (hk : k ≠ 0)
+/-- Two cyclic words `w₁, w₂ : Fin k → α` that share an unordered edge and whose combined `2 * k`
+steps have no singleton unordered edge visit at most `k` distinct vertices together. -/
+theorem card_image_union_le_of_shared_edge_of_no_singleton_edge {k : ℕ}
     (w₁ w₂ : Fin k → α)
     (hshare : ∃ t₁ t₂, s(w₁ t₁, w₁ (finRotate k t₁)) = s(w₂ t₂, w₂ (finRotate k t₂)))
     (hno : ∀ s : Fin k ⊕ Fin k, ∃ s' ≠ s,
@@ -229,8 +178,9 @@ theorem card_image_union_le_of_shared_edge_of_no_singleton_edge {k : ℕ} (hk : 
       Sum.elim (fun t ↦ s(w₁ t, w₁ (finRotate k t)))
         (fun t ↦ s(w₂ t, w₂ (finRotate k t))) s) :
     #(univ.image w₁ ∪ univ.image w₂) ≤ k := by
-  obtain ⟨m, rfl⟩ := Nat.exists_eq_succ_of_ne_zero hk
   obtain ⟨t₁, t₂, hsh⟩ := hshare
+  rcases k with _ | m
+  · exact t₁.elim0
   let e : Fin (m + 1) ⊕ Fin (m + 1) → Sym2 α :=
     Sum.elim (fun t ↦ s(w₁ t, w₁ (finRotate (m + 1) t)))
       (fun t ↦ s(w₂ t, w₂ (finRotate (m + 1) t)))
@@ -244,14 +194,23 @@ theorem card_image_union_le_of_shared_edge_of_no_singleton_edge {k : ℕ} (hk : 
     obtain ⟨j, hj, rfl⟩ := mem_image.mp ha
     obtain ⟨s, hsU, hs⟩ := hpedge j (mem_range.mp (mem_filter.mp hj).1)
     exact hs ▸ mem_image_of_mem e hsU
-  exact hpath.trans (Nat.add_le_add_right
-    ((card_le_card hsubM).trans (card_image_erase_pair_le e t₁ t₂ hsh hno)) 1)
+  have hfib (b : Sym2 α) (hb : b ∈ univ.image e) : 2 ≤ #{s | e s = b} := by
+    obtain ⟨s, -, rfl⟩ := mem_image.mp hb
+    obtain ⟨s', hs', heq⟩ := hno s
+    exact one_lt_card.mpr ⟨s, by simp, s', mem_filter.mpr ⟨mem_univ _, heq⟩, hs'.symm⟩
+  have hUcard : #(U.image e) ≤ m := by
+    have h2 := univ.two_mul_card_image_erase_erase_add_one_le_card
+      (mem_univ (.inl t₁)) (mem_univ (.inr t₂)) (by simp) hsh hfib
+    have huniv : #(univ : Finset (Fin (m + 1) ⊕ Fin (m + 1))) = 2 * (m + 1) := by
+      simp [Nat.two_mul]
+    dsimp only [U]
+    omega
+  exact hpath.trans (Nat.add_le_add_right ((card_le_card hsubM).trans hUcard) 1)
 
-/-- On a nonempty finite type `α`, at most `Fintype.card α ^ k * k ^ (2 * k)` pairs of length-`k`
-(`k ≠ 0`) cyclic words share an unordered edge and have no singleton unordered edge in their
-combined `2 * k` steps. -/
-theorem card_filter_shared_edge_and_no_singleton_edge_le [Fintype α] [Nonempty α] {k : ℕ}
-    (hk : k ≠ 0) :
+/-- On a finite type `α`, at most `Fintype.card α ^ k * k ^ (2 * k)` pairs of length-`k` cyclic
+words share an unordered edge and have no singleton unordered edge in their combined `2 * k`
+steps. -/
+theorem card_filter_shared_edge_and_no_singleton_edge_le [Fintype α] (k : ℕ) :
     #({p : (Fin k → α) × (Fin k → α) |
         (∃ t₁ t₂, s(p.1 t₁, p.1 (finRotate k t₁)) = s(p.2 t₂, p.2 (finRotate k t₂))) ∧
           ∀ s : Fin k ⊕ Fin k, ∃ s' ≠ s,
@@ -260,6 +219,9 @@ theorem card_filter_shared_edge_and_no_singleton_edge_le [Fintype α] [Nonempty 
             Sum.elim (fun t ↦ s(p.1 t, p.1 (finRotate k t)))
               (fun t ↦ s(p.2 t, p.2 (finRotate k t))) s} : Finset _) ≤
       Fintype.card α ^ k * k ^ (2 * k) := by
+  cases isEmpty_or_nonempty α
+  · rw [filter_eq_empty_iff.mpr fun p _ ⟨⟨t₁, _, _⟩, _⟩ ↦ isEmptyElim (p.1 t₁), card_empty]
+    exact Nat.zero_le _
   have hinj : Set.InjOn (fun p : (Fin k → α) × (Fin k → α) ↦ Sum.elim p.1 p.2)
       ↑({p : (Fin k → α) × (Fin k → α) |
         (∃ t₁ t₂, s(p.1 t₁, p.1 (finRotate k t₁)) = s(p.2 t₂, p.2 (finRotate k t₂))) ∧
@@ -288,7 +250,7 @@ theorem card_filter_shared_edge_and_no_singleton_edge_le [Fintype α] [Nonempty 
       simp only [mem_image, mem_univ, true_and, mem_union, Sum.exists, Sum.elim_inl, Sum.elim_inr]
     rw [mem_coe, mem_filter]
     exact ⟨mem_univ _, himg ▸ card_image_union_le_of_shared_edge_of_no_singleton_edge
-      hk p.1 p.2 hsh hno⟩
+      p.1 p.2 hsh hno⟩
   calc
     _ ≤ #({f : Fin k ⊕ Fin k → α | #(univ.image f) ≤ k} : Finset _) :=
       card_le_card_of_injOn _ hmaps hinj
