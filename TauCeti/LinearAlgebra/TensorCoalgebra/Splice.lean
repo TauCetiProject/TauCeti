@@ -108,6 +108,15 @@ theorem splice_eq_of_tprod_replaceBlock (x : ℕ → M) {n p d : ℕ} (hd : 0 < 
   · simp [h]
   · simp [h, show ¬ (j : ℕ) < p by omega, show (j : ℕ) ≠ p by omega]
 
+/-- A spliced word of a natural-indexed string of length `p + d + t`, collapsing the block of
+length `d` at `p`, is the word of length `p + 1 + t` of the string with the block replaced. -/
+theorem splice_eq_of_tprod_replaceBlock_add (x : ℕ → M) {p d t : ℕ} (hd : 0 < d) (e : M) :
+    splice R (fun i : Fin (p + d + t) ↦ x i) 0 (p + d + t) p d e =
+      of R M ⟨p + 1 + t, by omega⟩
+        (PiTensorProduct.tprod R fun j : Fin (p + 1 + t) ↦ replaceBlock x p d e j) := by
+  rw [splice_eq_of_tprod_replaceBlock R x hd (by omega) e]
+  exact of_tprod_congr R M _ (by omega) fun _ ↦ rfl
+
 /-- Collapsing an empty subblock is zero: a letter is never produced out of nothing. -/
 @[simp]
 theorem splice_zero_length {n : ℕ} (x : Fin n → M) (a b p : ℕ) (e : M) :

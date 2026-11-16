@@ -41,6 +41,8 @@ degrees. This grading is used by tensor products of differential graded objects.
   tensor of total degree `n` contains the degree-`n` piece.
 * `TauCeti.InternalGrading.shift_tensorProduct_piece`: shifting the first factor shifts the total
   grading.
+* `TauCeti.InternalGrading.span_range_tmul_piece_eq_top`: pure tensors of homogeneous elements
+  span the tensor product.
 * `TauCeti.InternalGrading.piTensorProduct_ext`: linear maps from a finite tensor product agree
   when they agree on pure tensors of homogeneous elements.
 * `TauCeti.LinearMap.IsHomogeneous.tensorProduct`: tensoring homogeneous maps adds their degrees.
@@ -175,6 +177,16 @@ theorem shift_tensorProduct_piece (G : InternalGrading R M ℤ) (H : InternalGra
     have hx' : x ∈ (G.shift c).piece (p - c) := by
       rwa [shift_piece, sub_add_cancel]
     simpa [show p - c + (d + c - p) = d by ring] using tmul_mem_tensorProduct (G.shift c) H hx' hy
+
+/-- Pure tensors of homogeneous elements span the tensor product of internally graded modules. -/
+theorem span_range_tmul_piece_eq_top (G : InternalGrading R M ℤ) (H : InternalGrading R N ℤ) :
+    Submodule.span R (Set.range fun z : Σ pq : ℤ × ℤ, G.piece pq.1 × H.piece pq.2 ↦
+      (z.2.1 : M) ⊗ₜ[R] (z.2.2 : N)) = ⊤ := by
+  refine top_unique ?_
+  rw [← TensorProduct.map₂_mk_top_top_eq_top, ← G.span_setOf_exists_mem_piece_eq_top R,
+    ← H.span_setOf_exists_mem_piece_eq_top R, Submodule.map₂_span_span, Submodule.span_le]
+  rintro _ ⟨x, ⟨p, hx⟩, y, ⟨q, hy⟩, rfl⟩
+  exact Submodule.subset_span ⟨⟨(p, q), ⟨x, hx⟩, ⟨y, hy⟩⟩, rfl⟩
 
 /-- Reassociating a triple tensor product preserves total degree. -/
 theorem isHomogeneous_assoc_symm {P : Type w'} [AddCommMonoid P] [Module R P]

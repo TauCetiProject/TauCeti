@@ -158,8 +158,7 @@ first `p` entries times the product of the `d` entries after them. -/
 theorem prod_ofFn_val_add (b : ℕ → M) (p d : ℕ) :
     (ofFn fun j : Fin (p + d) ↦ b j).prod =
       (ofFn fun j : Fin p ↦ b j).prod * (ofFn fun j : Fin d ↦ b (p + j)).prod := by
-  rw [ofFn_add, prod_append]
-  rfl
+  simp only [ofFn_add, prod_append, Fin.val_castLE, Fin.val_natAdd]
 
 end Nat
 

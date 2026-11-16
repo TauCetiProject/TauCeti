@@ -8,6 +8,7 @@ module
 public import TauCeti.Algebra.Homology.AInfinity.Algebra
 public import TauCeti.Algebra.Homology.DG.Algebra.Defs
 public import TauCeti.Algebra.Module.GradedModule.TensorProduct.Basic
+import TauCeti.Algebra.GradedMonoid
 import TauCeti.Algebra.Homology.AInfinity.Algebra.CoaugmentedBar
 import TauCeti.Data.List.ProdOfFn
 import TauCeti.LinearAlgebra.TensorAlgebra.Basic
@@ -243,7 +244,7 @@ private theorem lift_shuffleLetter_tprod (n : ℕ) (a : ℕ → A) (b : ℕ → 
       TensorAlgebra.lift_ι_apply, shuffleLetter_tmul, smul_mul_assoc, List.prod_ofFn_val_succ b]
     have hA : TensorAlgebra.ι R (a n) ∈ tensorAlgebraPiece (𝒜.grading.shift 1) (dA n) :=
       ι_mem_tensorAlgebraPiece _ (ha n (by omega))
-    have hB := list_prod_ofFn_val_mem_graded ℬ (n := n) b dB fun i hi ↦ hb i (by omega)
+    have hB := SetLike.list_prod_ofFn_val_mem_graded ℬ (n := n) b dB fun i hi ↦ hb i (by omega)
     have hmul := GradedTensorProduct.tmul_coe_mul_coe_tmul (R := R)
       (𝒜 := tensorAlgebraPiece (𝒜.grading.shift 1)) (ℬ := ℬ)
       (TensorAlgebra.tprod R A n (fun j : Fin n ↦ a j)) ⟨_, hB⟩ ⟨_, hA⟩ (b n)
@@ -281,23 +282,6 @@ section Differential
 
 variable (𝒜 : AInfinityAlgebra R A) (dB : B →ₗ[R] B)
 
-/-- A word of homogeneous letters lies in the piece of its total degree. -/
-private theorem reducedInclusion_of_tprod_mem {n : ℕ} (hn : 0 < n) (a : ℕ → A) (dA : ℕ → ℤ)
-    (ha : ∀ i < n, a i ∈ (𝒜.grading.shift 1).piece (dA i)) :
-    TensorWords.reducedInclusion R A (ReducedTensorWords.of R A ⟨n, hn⟩
-      (PiTensorProduct.tprod R fun j : Fin n ↦ a j)) ∈
-        (TensorWords.grading (𝒜.grading.shift 1)).piece (∑ i ∈ Finset.range n, dA i) := by
-  rw [TensorWords.reducedInclusion_of, TensorWords.grading_piece, ← Fin.sum_univ_eq_sum_range]
-  exact TensorWords.mem_gradedPiece_of_tprod _ _ (fun j : Fin n ↦ dA j) fun j ↦ ha j j.isLt
-
-/-- The coaugmented bar differential has degree one for the grading of words. -/
-private theorem isHomogeneous_coaugmentedBarDifferential_grading :
-    LinearMap.IsHomogeneous 𝒜.coaugmentedBarDifferential
-      (TensorWords.grading (𝒜.grading.shift 1)).piece
-      (TensorWords.grading (𝒜.grading.shift 1)).piece 1 := by
-  rw [TensorWords.grading_piece]
-  exact 𝒜.isHomogeneous_coaugmentedBarDifferential
-
 /-- The differential `D_A ⊗ 1 + τ ⊗ d_B` of `Tᶜ(sA) ⊗ B`, where `D_A` is the coaugmented bar
 differential of `A` and `τ` the Koszul twist of the suspended degree of words. -/
 private noncomputable def tensorBarDifferential :
@@ -315,7 +299,8 @@ private theorem tensorBarDifferential_tmul (w : TensorWords R A) (b : B) :
 the bar differential anticommutes with the Koszul twist because it has degree one. -/
 private theorem tensorBarDifferential_comp_self (hdB : dB ∘ₗ dB = 0) :
     tensorBarDifferential 𝒜 dB ∘ₗ tensorBarDifferential 𝒜 dB = 0 := by
-  have hD := isHomogeneous_coaugmentedBarDifferential_grading 𝒜
+  have hD := 𝒜.isHomogeneous_coaugmentedBarDifferential
+  rw [← TensorWords.grading_piece] at hD
   have hτD : (TensorWords.grading (𝒜.grading.shift 1)).koszulTwist 1 ∘ₗ
       𝒜.coaugmentedBarDifferential = (-1 : R) • (𝒜.coaugmentedBarDifferential ∘ₗ
         (TensorWords.grading (𝒜.grading.shift 1)).koszulTwist 1) := by
@@ -377,7 +362,8 @@ private theorem tensorTaylor_of_tprod {n : ℕ} (hn : 0 < n) (a : ℕ → A) (b 
             (ReducedTensorWords.letter R A
                 (ReducedTensorWords.of R A ⟨n, hn⟩ (PiTensorProduct.tprod R fun j : Fin n ↦ a j)) ⊗ₜ
               dB (List.ofFn fun j : Fin n ↦ b j).prod)) := by
-  have hmem := reducedInclusion_of_tprod_mem 𝒜 hn a dA ha
+  have hmem := TensorWords.reducedInclusion_of_tprod_mem_gradedPiece _ hn a dA ha
+  rw [← TensorWords.grading_piece] at hmem
   rw [tensorTaylor, LinearMap.comp_apply, LinearMap.comp_apply, LinearMap.comp_apply,
     shuffle_reducedInclusion_of_tprod 𝒜 ℬ hn a b dA dB' ha hb, map_smul, map_smul,
     tensorBarDifferential_tmul, InternalGrading.koszulTwist_apply_of_mem _ hmem, one_mul,
@@ -387,53 +373,6 @@ private theorem tensorTaylor_of_tprod {n : ℕ} (hn : 0 < n) (a : ℕ → A) (b 
     TensorProduct.map_tmul, TensorWords.reducedProjection_reducedInclusion, LinearMap.id_apply,
     negOnePowCast_eq_intCast]
   rw [← LinearMap.comp_apply (ReducedTensorWords.letter R A), letter_comp_barDifferential]
-
-/-- The graded Taylor expansion on a natural-indexed word of homogeneous letters. -/
-private theorem gradedCoderiv_of_tprod_nat {M : Type*} [AddCommGroup M] [Module R M]
-    (G : InternalGrading R M ℤ) (T : ReducedTensorWords R M →ₗ[R] M) {n : ℕ} (hn : 0 < n)
-    (x : ℕ → M) (𝒟 : ℕ → ℤ) (hx : ∀ i < n, x i ∈ G.piece (𝒟 i)) :
-    ReducedTensorWords.gradedCoderiv G T 1
-        (ReducedTensorWords.of R M ⟨n, hn⟩ (PiTensorProduct.tprod R fun j : Fin n ↦ x j)) =
-      ∑ p ∈ Finset.range n, ∑ d ∈ Finset.range (n + 1),
-        negOnePowCast R (∑ j ∈ Finset.range p, 𝒟 j) •
-          ReducedTensorWords.splice R (fun j : Fin n ↦ x j) 0 n p d
-            (T (ReducedTensorWords.subword R (fun j : Fin n ↦ x j) p d)) := by
-  rw [ReducedTensorWords.gradedCoderiv_of_tprod_of_homogeneous G T 1 hn _ (fun j ↦ 𝒟 j)
-    fun j ↦ hx j j.isLt]
-  refine Finset.sum_congr rfl fun p hp ↦ Finset.sum_congr rfl fun d _ ↦ ?_
-  rw [one_mul, ← negOnePowCast_eq_intCast,
-    Finset.sum_congr rfl fun j hj ↦ dite_eq_left (by rw [Finset.mem_range] at hp hj; omega)]
-
-/-- A letter of suspended degree `p` tensored with an element of degree `q` has suspended degree
-`p + q` in the tensor product. -/
-private theorem tmul_mem_shift_tensorProduct {a : A} {b : B} {p q : ℤ}
-    (ha : a ∈ (𝒜.grading.shift 1).piece p) (hb : b ∈ ℬ q) :
-    a ⊗ₜ b ∈ ((𝒜.grading.tensorProduct (InternalGrading.ofDecomposition ℬ)).shift 1).piece
-      (p + q) := by
-  rw [InternalGrading.shift_piece] at ha ⊢
-  have h := InternalGrading.tmul_mem_tensorProduct 𝒜.grading (InternalGrading.ofDecomposition ℬ)
-    ha (q := q) (by rwa [InternalGrading.ofDecomposition_piece])
-  rwa [show p + 1 + q = p + q + 1 by ring] at h
-
-/-- Replacing a block of a string of pure tensors by a pure tensor replaces the blocks of both
-factors. -/
-private theorem replaceBlock_tmul (a : ℕ → A) (b : ℕ → B) (p d : ℕ) (a' : A) (b' : B) (i : ℕ) :
-    replaceBlock (fun i ↦ a i ⊗ₜ[R] b i) p d (a' ⊗ₜ b') i =
-      replaceBlock a p d a' i ⊗ₜ replaceBlock b p d b' i := by
-  rcases lt_trichotomy i p with h | rfl | h
-  · rw [replaceBlock_of_lt _ _ _ _ h, replaceBlock_of_lt _ _ _ _ h, replaceBlock_of_lt _ _ _ _ h]
-  · rw [replaceBlock_self, replaceBlock_self, replaceBlock_self]
-  · rw [replaceBlock_of_gt _ _ _ _ h, replaceBlock_of_gt _ _ _ _ h, replaceBlock_of_gt _ _ _ _ h]
-
-/-- A spliced word of a natural-indexed string, as the word of the string with the block
-replaced, of length `p + 1 + t`. -/
-private theorem splice_eq_of_replaceBlock {M : Type*} [AddCommGroup M] [Module R M] (x : ℕ → M)
-    {p d t : ℕ} (hd : 0 < d) (e : M) :
-    ReducedTensorWords.splice R (fun i : Fin (p + d + t) ↦ x i) 0 (p + d + t) p d e =
-      ReducedTensorWords.of R M ⟨p + 1 + t, by omega⟩
-        (PiTensorProduct.tprod R fun j : Fin (p + 1 + t) ↦ replaceBlock x p d e j) := by
-  rw [ReducedTensorWords.splice_eq_of_tprod_replaceBlock R x hd (by omega) e]
-  exact ReducedTensorWords.of_tprod_congr R M _ (by omega) fun _ ↦ rfl
 
 /-- The signed shuffle of a word of pure tensors with a block collapsed to a pure tensor. -/
 private theorem shuffle_reducedInclusion_splice (a : ℕ → A) (b : ℕ → B) (dA dB' : ℕ → ℤ)
@@ -447,22 +386,12 @@ private theorem shuffle_reducedInclusion_splice (a : ℕ → A) (b : ℕ → B) 
         (TensorWords.reducedInclusion R A
             (ReducedTensorWords.splice R (fun j : Fin (p + d + t) ↦ a j) 0 (p + d + t) p d a') ⊗ₜ
           (List.ofFn fun j : Fin (p + 1 + t) ↦ replaceBlock b p d b' j).prod) := by
-  rw [splice_eq_of_replaceBlock (fun i ↦ a i ⊗ₜ[R] b i) hd, splice_eq_of_replaceBlock a hd]
-  simp only [replaceBlock_tmul]
+  rw [ReducedTensorWords.splice_eq_of_tprod_replaceBlock_add R (fun i ↦ a i ⊗ₜ[R] b i) hd,
+    ReducedTensorWords.splice_eq_of_tprod_replaceBlock_add R a hd]
+  simp only [← apply₂_replaceBlock (TensorProduct.tmul R) a b]
   exact shuffle_reducedInclusion_of_tprod 𝒜 ℬ _ _ _ _ _
     (fun i hi ↦ replaceBlock_mem _ ha ha' (by omega) (by omega))
     fun i hi ↦ replaceBlock_mem _ hb hb' (by omega) (by omega)
-
-/-- The Taylor map of `A` on a word of homogeneous letters has the total suspended degree plus
-one. -/
-private theorem taylor_of_tprod_mem {n : ℕ} (hn : 0 < n) (a : ℕ → A) (dA : ℕ → ℤ)
-    (ha : ∀ i < n, a i ∈ (𝒜.grading.shift 1).piece (dA i)) :
-    𝒜.taylor (ReducedTensorWords.of R A ⟨n, hn⟩ (PiTensorProduct.tprod R fun j : Fin n ↦ a j)) ∈
-      (𝒜.grading.shift 1).piece (∑ i ∈ Finset.range n, dA i + 1) := by
-  have h := ReducedTensorWords.mem_gradedPiece_of_tprod (𝒜.grading.shift 1) hn
-    (fun j : Fin n ↦ a j) (fun j ↦ dA j) fun j ↦ ha j j.isLt
-  rw [Fin.sum_univ_eq_sum_range (fun i ↦ dA i)] at h
-  exact (𝒜.taylor_isSuspension.isHomogeneous 𝒜.m_degree).map_mem h
 
 /-- The shuffled `(p, d)` term of the bar differential of the tensor product, for a block that
 fits: the shuffled term of the bar differential of `A`, and for `d = 1` also the `d_B` term of
@@ -500,7 +429,7 @@ private theorem shuffle_splice_tensorTaylor_of_fits (hB : IsDGAlgebra ℬ dB) (a
     ReducedTensorWords.splice_smul, map_smul, map_smul, map_add, map_add, map_smul, map_smul,
     shuffle_reducedInclusion_splice 𝒜 ℬ a b dA dB' hd ha hb
       (taylor_of_tprod_mem 𝒜 hd (fun j ↦ a (p + j)) (fun j ↦ dA (p + j)) fun i _ ↦ ha _ (by omega))
-      (list_prod_ofFn_val_mem_graded ℬ (n := d) (fun j ↦ b (p + j)) (fun j ↦ dB' (p + j))
+      (SetLike.list_prod_ofFn_val_mem_graded ℬ (n := d) (fun j ↦ b (p + j)) (fun j ↦ dB' (p + j))
         fun i _ ↦ hb _ (by omega)),
     prod_ofFn_replaceBlock b p d t]
   have hsplice := AInfinity.negOnePow_splice dA dB' p d t
@@ -509,7 +438,8 @@ private theorem shuffle_splice_tensorTaylor_of_fits (hB : IsDGAlgebra ℬ dB) (a
     have hP : (List.ofFn fun j : Fin 1 ↦ b (p + j)).prod = b p := by simp
     rw [ite_eq_left rfl, ite_eq_left rfl, add_zero, hP,
       shuffle_reducedInclusion_splice 𝒜 ℬ a b dA dB' hd ha hb (ha p (by omega))
-        (hB.map_mem (hb p (by omega))), splice_eq_of_replaceBlock a hd (a p), replaceBlock_one_self,
+        (hB.map_mem (hb p (by omega))),
+      ReducedTensorWords.splice_eq_of_tprod_replaceBlock_add R a hd (a p), replaceBlock_one_self,
       replaceBlock_one_self, replaceBlock_one b p]
     simp only [AInfinity.shuffleExp_one, Finset.sum_range_one, add_zero, negOnePowCast_zero,
       one_smul] at hsplice ⊢
@@ -568,15 +498,20 @@ private theorem shuffle_gradedCoderiv_of_tprod (hB : IsDGAlgebra ℬ dB) {n : �
       tensorBarDifferential 𝒜 dB (shuffle 𝒜 ℬ (TensorWords.reducedInclusion R (A ⊗[R] B)
         (ReducedTensorWords.of R (A ⊗[R] B) ⟨n, hn⟩
           (PiTensorProduct.tprod R fun j : Fin n ↦ a j ⊗ₜ b j)))) := by
-  have hmem := reducedInclusion_of_tprod_mem 𝒜 hn a dA ha
-  rw [gradedCoderiv_of_tprod_nat _ _ hn (fun j ↦ a j ⊗ₜ b j) (fun j ↦ dA j + dB' j)
-      fun i hi ↦ tmul_mem_shift_tensorProduct 𝒜 ℬ (ha i hi) (hb i hi),
+  have hmem := TensorWords.reducedInclusion_of_tprod_mem_gradedPiece _ hn a dA ha
+  rw [← TensorWords.grading_piece] at hmem
+  rw [ReducedTensorWords.gradedCoderiv_of_tprod_of_homogeneous_nat _ _ 1 hn (fun j ↦ a j ⊗ₜ b j)
+      (fun j ↦ dA j + dB' j) fun i hi ↦ by
+        rw [← InternalGrading.shift_tensorProduct_piece]
+        exact InternalGrading.tmul_mem_tensorProduct _ (InternalGrading.ofDecomposition ℬ)
+          (ha i hi) (by rw [InternalGrading.ofDecomposition_piece]; exact hb i hi),
     shuffle_reducedInclusion_of_tprod 𝒜 ℬ hn a b dA dB' ha hb, map_smul,
     tensorBarDifferential_tmul, ← LinearMap.comp_apply 𝒜.coaugmentedBarDifferential,
     coaugmentedBarDifferential_comp_reducedInclusion, LinearMap.comp_apply, barDifferential_def,
-    gradedCoderiv_of_tprod_nat _ _ hn a dA ha, InternalGrading.koszulTwist_apply_of_mem _ hmem,
+    ReducedTensorWords.gradedCoderiv_of_tprod_of_homogeneous_nat _ _ 1 hn a dA ha,
+    InternalGrading.koszulTwist_apply_of_mem _ hmem,
     hB.map_list_prod_ofFn b dB' hb]
-  simp only [map_sum, map_smul, negOnePow_smul_eq_negOnePowCast_smul (R := R)]
+  simp only [map_sum, map_smul, negOnePow_smul_eq_negOnePowCast_smul (R := R), one_mul]
   rw [Finset.sum_congr rfl fun p hp ↦ Finset.sum_congr rfl fun d _ ↦
     shuffle_splice_tensorTaylor 𝒜 ℬ dB hB a b dA dB' (d := d) hn (Finset.mem_range.1 hp) ha hb]
   simp only [← Finset.smul_sum, smul_add, Finset.sum_add_distrib]
@@ -584,23 +519,10 @@ private theorem shuffle_gradedCoderiv_of_tprod (hB : IsDGAlgebra ℬ dB) {n : �
   · simp only [← TensorProduct.smul_tmul', TensorProduct.sum_tmul]
   · rw [Finset.sum_congr rfl fun p _ ↦ Finset.sum_ite_eq' (Finset.range (n + 1)) 1 _]
     simp only [Finset.mem_range, show 1 < n + 1 by omega, ite_true, TensorProduct.tmul_sum,
-      TensorProduct.tmul_smul, TensorProduct.smul_tmul', smul_smul, one_mul,
-      ← negOnePowCast_eq_intCast, ← negOnePowCast_add]
+      TensorProduct.tmul_smul, TensorProduct.smul_tmul', smul_smul, ← negOnePowCast_eq_intCast,
+      ← negOnePowCast_add]
     refine Finset.sum_congr rfl fun k _ ↦ ?_
     rw [add_comm]
-
-/-- Pure tensors of homogeneous elements span the tensor product. -/
-private theorem span_range_tmul_homogeneous :
-    Submodule.span R (Set.range fun z : Σ pq : ℤ × ℤ, (𝒜.grading.shift 1).piece pq.1 × ℬ pq.2 ↦
-      (z.2.1 : A) ⊗ₜ[R] (z.2.2 : B)) = ⊤ := by
-  refine top_unique ?_
-  rw [← TensorProduct.map₂_mk_top_top_eq_top,
-    ← (𝒜.grading.shift 1).span_setOf_exists_mem_piece_eq_top R,
-    ← (InternalGrading.ofDecomposition ℬ).span_setOf_exists_mem_piece_eq_top R,
-    Submodule.map₂_span_span, Submodule.span_le]
-  rintro _ ⟨a, ⟨p, ha⟩, b, ⟨q, hb⟩, rfl⟩
-  exact Submodule.subset_span
-    ⟨⟨(p, q), ⟨a, ha⟩, ⟨b, by rwa [InternalGrading.ofDecomposition_piece] at hb⟩⟩, rfl⟩
 
 /-- **The shuffle intertwines the bar differentials**, as linear maps. -/
 private theorem shuffle_comp_gradedCoderiv (hB : IsDGAlgebra ℬ dB) :
@@ -611,7 +533,10 @@ private theorem shuffle_comp_gradedCoderiv (hB : IsDGAlgebra ℬ dB) :
       tensorBarDifferential 𝒜 dB ∘ₗ shuffle 𝒜 ℬ ∘ₗ TensorWords.reducedInclusion R (A ⊗[R] B) := by
   refine DirectSum.linearMap_ext R fun n ↦ PiTensorProduct.ext_of_span_eq_top
     (g := fun _ (z : Σ pq : ℤ × ℤ, (𝒜.grading.shift 1).piece pq.1 × ℬ pq.2) ↦
-      (z.2.1 : A) ⊗ₜ[R] (z.2.2 : B)) (fun _ ↦ span_range_tmul_homogeneous 𝒜 ℬ)
+      (z.2.1 : A) ⊗ₜ[R] (z.2.2 : B)) (fun _ ↦ by
+      have h := InternalGrading.span_range_tmul_piece_eq_top (𝒜.grading.shift 1)
+        (InternalGrading.ofDecomposition ℬ)
+      rwa [InternalGrading.ofDecomposition_piece] at h)
     fun z ↦ ?_
   let a : ℕ → A := fun i ↦ if h : i < n.1 then ((z ⟨i, h⟩).2.1 : A) else 0
   let b : ℕ → B := fun i ↦ if h : i < n.1 then ((z ⟨i, h⟩).2.2 : B) else 0
@@ -691,7 +616,8 @@ private theorem isHomogeneous_tensorTaylor (hB : IsDGAlgebra ℬ dB) :
     LinearMap.isHomogeneous_def.2 fun d w hw ↦ by
       rw [add_zero]
       exact TensorWords.mem_gradedPiece_of_reducedInclusion hw
-  have hD := isHomogeneous_coaugmentedBarDifferential_grading 𝒜
+  have hD := 𝒜.isHomogeneous_coaugmentedBarDifferential
+  rw [← TensorWords.grading_piece] at hD
   have hτ : LinearMap.IsHomogeneous ((TensorWords.grading (𝒜.grading.shift 1)).koszulTwist 1)
       (TensorWords.grading (𝒜.grading.shift 1)).piece
       (TensorWords.grading (𝒜.grading.shift 1)).piece 0 :=

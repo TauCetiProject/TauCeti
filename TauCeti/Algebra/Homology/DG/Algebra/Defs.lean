@@ -11,6 +11,7 @@ public import TauCeti.Algebra.DirectSum.Internal
 public import TauCeti.RingTheory.GradedAlgebra.Trivial
 import TauCeti.Algebra.Module.GradedModule.Internal
 import TauCeti.Data.List.ProdOfFn
+import TauCeti.Algebra.GradedMonoid
 
 /-!
 # Nonunital and unital differential graded algebras
@@ -56,9 +57,8 @@ its degree alone.
 * `TauCeti.IsDGAlgebra.map_one_eq_zero` and `TauCeti.IsDGAlgebra.map_algebraMap`: the differential
   annihilates the unit and, more generally, the image of the ground ring.
 * `TauCeti.IsDGAlgebra.neg`: the negative of a differential is a differential.
-* `TauCeti.list_prod_ofFn_val_mem_graded` and `TauCeti.IsDGAlgebra.map_list_prod_ofFn`: an ordered
-  product of homogeneous elements is homogeneous of the total degree, and the differential of it
-  is given by the graded Leibniz rule, one factor at a time.
+* `TauCeti.IsDGAlgebra.map_list_prod_ofFn`: the differential of an ordered product of homogeneous
+  elements is given by the graded Leibniz rule, one factor at a time.
 * `TauCeti.isNonUnitalDGAlgebra_zero` and `TauCeti.isDGAlgebra_zero`: a graded algebra with zero
   differential is a differential graded algebra.
 * `TauCeti.isDGAlgebra_trivialGrading`: in particular, the ground ring, trivially graded with zero
@@ -199,22 +199,6 @@ theorem map_algebraMap_of_leibniz
 
 end AlgebraLeibniz
 
-section GradedMonoid
-
-variable {ι S A : Type*} [AddCommMonoid ι] [Monoid A] [SetLike S A] (𝒜 : ι → S)
-  [SetLike.GradedMonoid 𝒜]
-
-/-- The product of the first `n` entries of a natural-indexed family of homogeneous elements is
-homogeneous of the sum of their degrees. -/
-theorem list_prod_ofFn_val_mem_graded {n : ℕ} (b : ℕ → A) (e : ℕ → ι)
-    (hb : ∀ i < n, b i ∈ 𝒜 (e i)) :
-    (List.ofFn fun j : Fin n ↦ b j).prod ∈ 𝒜 (∑ i ∈ Finset.range n, e i) := by
-  have h := SetLike.list_prod_ofFn_mem_graded (fun j : Fin n ↦ e j) (fun j : Fin n ↦ b j)
-    fun j ↦ hb j j.isLt
-  rwa [List.sum_ofFn, Fin.sum_univ_eq_sum_range (fun i ↦ e i)] at h
-
-end GradedMonoid
-
 section Unital
 
 variable {R A : Type*} [CommRing R] [Ring A] [Algebra R A] {𝒜 : ℤ → Submodule R A}
@@ -271,7 +255,7 @@ theorem map_list_prod_ofFn (h : IsDGAlgebra 𝒜 d) {n : ℕ} (b : ℕ → A) (e
   | zero => simp [h.map_one_eq_zero]
   | succ n ih =>
     rw [List.prod_ofFn_val_succ,
-      h.leibniz (list_prod_ofFn_val_mem_graded 𝒜 b e fun i hi ↦ hb i (by omega)),
+      h.leibniz (SetLike.list_prod_ofFn_val_mem_graded 𝒜 b e fun i hi ↦ hb i (by omega)),
       ih fun i hi ↦ hb i (by omega), Finset.sum_range_succ, Finset.sum_mul]
     congr 1
     · refine Finset.sum_congr rfl fun k hk ↦ ?_

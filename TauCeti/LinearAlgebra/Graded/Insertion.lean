@@ -232,6 +232,15 @@ theorem apply_replaceBlock {α β : Type*} (g : α → β) (x : ℕ → α) (p s
   simp only [replaceBlock]
   split_ifs <;> rfl
 
+/-- A function of two arguments applied entrywise to two families commutes with replacing the
+same block of entries in both. -/
+theorem apply₂_replaceBlock {α β γ : Type*} (g : α → β → γ) (x : ℕ → α) (y : ℕ → β) (p s : ℕ)
+    (v : α) (w : β) (i : ℕ) :
+    g (replaceBlock x p s v i) (replaceBlock y p s w i) =
+      replaceBlock (fun j ↦ g (x j) (y j)) p s (g v w) i := by
+  simp only [replaceBlock]
+  split_ifs <;> rfl
+
 /-- Replacing a block of one entry is updating that entry. -/
 theorem replaceBlock_one {α : Type*} (x : ℕ → α) (p : ℕ) (v : α) :
     replaceBlock x p 1 v = Function.update x p v := by
