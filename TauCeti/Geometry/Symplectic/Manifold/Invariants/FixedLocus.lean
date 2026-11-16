@@ -17,7 +17,7 @@ public import TauCeti.Geometry.Symplectic.ExistsCompatible
 Let a group `K` act on a Riemannian manifold `M` by smooth isometries preserving a nondegenerate
 two-form `σ`, for instance a symplectic form. No topology or Lie group structure on `K` is
 required. At a point `p` of `M`, the tangent vectors fixed by the differentials of all elements
-of the stabilizer of `p` (`TauCeti.fixedTangentSubspace K p`), which at a point of the fixed set
+of the stabilizer of `p` (`TauCeti.fixedTangentSubspace I K p`), which at a point of the fixed set
 `M^K` are the vectors fixed by all of `K`, are the invariant vectors of the tangent
 representation, so they form a symplectic subspace of `(T_p M, σ_p)`
 (`TauCeti.SmoothTwoForm.IsNondegenerate.isSymplectic_fixedTangentSubspace`): the differentials are
@@ -27,7 +27,7 @@ therefore preserves their fixed vectors. In particular this subspace has even di
 
 The fixed set is an embedded submanifold, possibly with components of different dimensions: the
 points `M^K_d` of `M^K` at which the fixed tangent subspace has dimension `d`
-(`TauCeti.fixedPointsOfFinrank K M d`) form a smooth embedded submanifold whose tangent spaces are
+(`TauCeti.fixedPointsOfFinrank I K M d`) form a smooth embedded submanifold whose tangent spaces are
 the fixed tangent subspaces, and every connected subset of `M^K` lies in one of them
 (`TauCeti.exists_isSmoothEmbedding_fixedPointsOfFinrank`,
 `TauCeti.subset_fixedPointsOfFinrank_of_isPreconnected`). Since these tangent spaces are
@@ -86,7 +86,7 @@ nondegenerate two-form `σ`, the tangent vectors at `p` fixed by the differentia
 of the stabilizer of `p` form a symplectic subspace of `(T_p M, σ_p)`. At a point of the fixed
 set these are the tangent vectors fixed by the differentials of all group elements. -/
 theorem IsNondegenerate.isSymplectic_fixedTangentSubspace (hσ : σ.IsNondegenerate) (p : M) :
-    (hσ.symplecticFormAt p).IsSymplectic (fixedTangentSubspace (I := I) K p) := by
+    (hσ.symplecticFormAt p).IsSymplectic (fixedTangentSubspace I K p) := by
   have hd (g : K) (_ : g ∈ stabilizer K p) :
       MDifferentiableAt I I (fun y : M ↦ g • y) p :=
     (contMDiff_const_smul (I := I) (n := ∞) g).mdifferentiableAt (by simp)
@@ -98,7 +98,7 @@ theorem IsNondegenerate.isSymplectic_fixedTangentSubspace (hσ : σ.IsNondegener
 a nondegenerate two-form, the tangent vectors at `p` fixed by the differentials of all elements of
 the stabilizer of `p` form a space of even dimension. -/
 theorem IsNondegenerate.even_finrank_fixedTangentSubspace (hσ : σ.IsNondegenerate) (p : M) :
-    Even (Module.finrank ℝ (fixedTangentSubspace (I := I) K p)) :=
+    Even (Module.finrank ℝ (fixedTangentSubspace I K p)) :=
   ((hσ.symplecticFormAt p).restrict _
     (hσ.isSymplectic_fixedTangentSubspace hK hσK p).nondegenerate_restrict).even_finrank
 
@@ -124,13 +124,13 @@ form a smooth manifold modelled on `L` whose inclusion into `M` is a symplectic 
 embedding, with tangent image the fixed tangent subspace at every point. -/
 theorem IsNondegenerate.exists_isSymplecticSubmanifoldEmbedding_fixedPointsOfFinrank
     (hσ : σ.IsNondegenerate) {d : ℕ} {L : Submodule ℝ E} (hL : Module.finrank ℝ L = d) :
-    ∃ C : ChartedSpace L (fixedPointsOfFinrank (I := 𝓘(ℝ, E)) K M d), letI := C
-      IsManifold 𝓘(ℝ, L) ∞ (fixedPointsOfFinrank (I := 𝓘(ℝ, E)) K M d) ∧
+    ∃ C : ChartedSpace L (fixedPointsOfFinrank 𝓘(ℝ, E) K M d), letI := C
+      IsManifold 𝓘(ℝ, L) ∞ (fixedPointsOfFinrank 𝓘(ℝ, E) K M d) ∧
       hσ.IsSymplecticSubmanifoldEmbedding 𝓘(ℝ, L)
-        (Subtype.val : fixedPointsOfFinrank (I := 𝓘(ℝ, E)) K M d → M) ∧
-      ∀ y : fixedPointsOfFinrank (I := 𝓘(ℝ, E)) K M d,
+        (Subtype.val : fixedPointsOfFinrank 𝓘(ℝ, E) K M d → M) ∧
+      ∀ y : fixedPointsOfFinrank 𝓘(ℝ, E) K M d,
         LinearMap.range (mfderiv 𝓘(ℝ, L) 𝓘(ℝ, E) Subtype.val y).toLinearMap =
-          fixedTangentSubspace (I := 𝓘(ℝ, E)) K (y : M) := by
+          fixedTangentSubspace 𝓘(ℝ, E) K (y : M) := by
   obtain ⟨C, hman, hemb, hrange⟩ := exists_isSmoothEmbedding_fixedPointsOfFinrank hK hL
   let := C
   refine ⟨C, hman, (isSymplecticSubmanifoldEmbedding_iff_of_isSmoothEmbedding hemb).2

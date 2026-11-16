@@ -15,23 +15,23 @@ differential at `p` of every element of the stabilizer of `p` form a subspace
 
 `V_p = {v ∈ T_p M | d(k •)_p v = v for every k ∈ stabilizer K p}`
 
-(`TauCeti.fixedTangentSubspace K p`) of `T_p M`. It is the space of invariant vectors of the
+(`TauCeti.fixedTangentSubspace I K p`) of `T_p M`. It is the space of invariant vectors of the
 tangent representation of the stabilizer whenever that representation is defined
 (`TauCeti.invariants_tangentRepresentation_eq_fixedTangentSubspace`). At a point of the common
 fixed set `M^K` the stabilizer is all of `K`, so `V_p` consists of the vectors fixed by the
 differential of every element of `K`.
 
 Grouping the points of `M^K` by the dimension of `V_p` gives the sets
-`M^K_d = {p ∈ M^K | dim V_p = d}` (`TauCeti.fixedPointsOfFinrank K M d`), which partition the fixed
-set. No metric, topology on `K` or smoothness of the action is needed for these definitions; for
-a group of isometries the sets `M^K_d` are embedded submanifolds
+`M^K_d = {p ∈ M^K | dim V_p = d}` (`TauCeti.fixedPointsOfFinrank I K M d`), which partition the
+fixed set. No metric, topology on `K` or smoothness of the action is needed for these
+definitions; for a group of isometries the sets `M^K_d` are embedded submanifolds
 (`TauCeti.exists_isSmoothEmbedding_fixedPointsOfFinrank`).
 
 ## Main definitions
 
-* `TauCeti.fixedTangentSubspace K p`: the tangent vectors at `p` fixed by the differential of
+* `TauCeti.fixedTangentSubspace I K p`: the tangent vectors at `p` fixed by the differential of
   every element of the stabilizer of `p`.
-* `TauCeti.fixedPointsOfFinrank K M d`: the points of `M^K` at which this subspace has dimension
+* `TauCeti.fixedPointsOfFinrank I K M d`: the points of `M^K` at which this subspace has dimension
   `d`.
 
 ## Main results
@@ -59,6 +59,7 @@ variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
   {H : Type*} [TopologicalSpace H] {I : ModelWithCorners ℝ E H} (K : Type*) [Group K]
   {M : Type*} [TopologicalSpace M] [ChartedSpace H M] [MulAction K M]
 
+variable (I) in
 /-- The tangent vectors at `p` fixed by the differential at `p` of the action of every element
 of the stabilizer of `p`; these are the invariant vectors of the tangent representation
 (`TauCeti.invariants_tangentRepresentation_eq_fixedTangentSubspace`). At a point of the fixed set
@@ -80,7 +81,7 @@ def fixedTangentSubspace (p : M) : Submodule ℝ (TangentSpace I p) where
 variable {K} in
 @[simp]
 theorem mem_fixedTangentSubspace {p : M} {v : TangentSpace I p} :
-    v ∈ fixedTangentSubspace (I := I) K p ↔ ∀ k ∈ stabilizer K p, mfderiv I I (k • ·) p v = v :=
+    v ∈ fixedTangentSubspace I K p ↔ ∀ k ∈ stabilizer K p, mfderiv I I (k • ·) p v = v :=
   Iff.rfl
 
 variable {K} in
@@ -88,7 +89,7 @@ variable {K} in
 consists of the tangent vectors fixed by the differential of every element of `K`. -/
 theorem mem_fixedTangentSubspace_iff_of_mem_fixedPoints {p : M} (hp : p ∈ MulAction.fixedPoints K M)
     {v : TangentSpace I p} :
-    v ∈ fixedTangentSubspace (I := I) K p ↔ ∀ k : K, mfderiv I I (k • ·) p v = v :=
+    v ∈ fixedTangentSubspace I K p ↔ ∀ k : K, mfderiv I I (k • ·) p v = v :=
   ⟨fun h k ↦ h k (hp k), fun h k _ ↦ h k⟩
 
 variable {K} in
@@ -96,39 +97,39 @@ variable {K} in
 the stabilizer. -/
 theorem invariants_tangentRepresentation_eq_fixedTangentSubspace {p : M}
     (hd : ∀ g ∈ stabilizer K p, MDifferentiableAt I I (fun y : M ↦ g • y) p) :
-    (tangentRepresentation hd).toRepresentation.invariants = fixedTangentSubspace (I := I) K p :=
+    (tangentRepresentation hd).toRepresentation.invariants = fixedTangentSubspace I K p :=
   Submodule.ext fun _ ↦ mem_invariants_tangentRepresentation_iff hd
 
-variable (M) in
+variable (I M) in
 /-- The points of the fixed set `M^K` at which the tangent vectors fixed by the differentials of
 all elements of `K` form a space of dimension `d`. -/
 def fixedPointsOfFinrank (d : ℕ) : Set M :=
-  {p | p ∈ MulAction.fixedPoints K M ∧ Module.finrank ℝ (fixedTangentSubspace (I := I) K p) = d}
+  {p | p ∈ MulAction.fixedPoints K M ∧ Module.finrank ℝ (fixedTangentSubspace I K p) = d}
 
 variable {K} in
 @[simp]
 theorem mem_fixedPointsOfFinrank {d : ℕ} {p : M} :
-    p ∈ fixedPointsOfFinrank (I := I) K M d ↔
-      p ∈ MulAction.fixedPoints K M ∧ Module.finrank ℝ (fixedTangentSubspace (I := I) K p) = d :=
+    p ∈ fixedPointsOfFinrank I K M d ↔
+      p ∈ MulAction.fixedPoints K M ∧ Module.finrank ℝ (fixedTangentSubspace I K p) = d :=
   Iff.rfl
 
 variable {K} in
 /-- Each part of the fixed set of a given dimension lies in the fixed set. -/
 theorem fixedPointsOfFinrank_subset_fixedPoints (d : ℕ) :
-    fixedPointsOfFinrank (I := I) K M d ⊆ MulAction.fixedPoints K M :=
+    fixedPointsOfFinrank I K M d ⊆ MulAction.fixedPoints K M :=
   fun _ hp ↦ hp.1
 
-variable (M) in
+variable (I M) in
 /-- The fixed set is the union of its parts of each dimension. -/
 theorem iUnion_fixedPointsOfFinrank :
-    ⋃ d, fixedPointsOfFinrank (I := I) K M d = MulAction.fixedPoints K M :=
+    ⋃ d, fixedPointsOfFinrank I K M d = MulAction.fixedPoints K M :=
   Subset.antisymm (iUnion_subset fixedPointsOfFinrank_subset_fixedPoints) fun _ hp ↦
     mem_iUnion.2 ⟨_, hp, rfl⟩
 
-variable (M) in
+variable (I M) in
 /-- The parts of the fixed set of different dimensions are disjoint. -/
 theorem pairwise_disjoint_fixedPointsOfFinrank :
-    Pairwise (Function.onFun Disjoint (fixedPointsOfFinrank (I := I) K M)) :=
+    Pairwise (Function.onFun Disjoint (fixedPointsOfFinrank I K M)) :=
   fun _ _ hde ↦ disjoint_left.2 fun _ hp hq ↦ hde (hp.2.symm.trans hq.2)
 
 end FixedTangentSubspace

@@ -19,7 +19,7 @@ logarithm at `p` is a smooth chart flattening `M^K` onto the subspace
 
 `V_p = {v ∈ T_p M | d(k •)_p v = v for every k ∈ K}`
 
-(`TauCeti.fixedTangentSubspace K p`, defined for any group action), by
+(`TauCeti.fixedTangentSubspace I K p`, defined for any group action), by
 `TauCeti.exists_isSliceChart_fixedPoints`. This file
 turns these slice charts into embedded submanifold structures.
 
@@ -30,7 +30,7 @@ turns these slice charts into embedded submanifold structures.
   (`TauCeti.finrank_fixedTangentSubspace_eq_of_mem_source`). So `z ↦ dim V_z` is locally constant
   on `M^K` (`TauCeti.isLocallyConstant_finrank_fixedTangentSubspace`), and every connected subset
   of `M^K` lies in one of the sets
-  `M^K_d = {p ∈ M^K | dim V_p = d}` (`TauCeti.fixedPointsOfFinrank K M d`)
+  `M^K_d = {p ∈ M^K | dim V_p = d}` (`TauCeti.fixedPointsOfFinrank I K M d`)
   (`TauCeti.subset_fixedPointsOfFinrank_of_isPreconnected`). Different components may have
   different dimensions.
 * **Submanifold structure.** For a subspace `L` of the model of dimension `d`, the set `M^K_d` is a
@@ -91,7 +91,7 @@ which is a chart of the maximal smooth atlas. -/
 private theorem exists_mem_maximalAtlas_isSliceChart {p : M}
     (hp : p ∈ MulAction.fixedPoints K M) :
     ∃ q : OpenPartialHomeomorph M E, q ∈ IsManifold.maximalAtlas 𝓘(ℝ, E) ∞ M ∧ p ∈ q.source ∧
-      IsSliceChart q (SetLike.coe (fixedTangentSubspace (I := 𝓘(ℝ, E)) K p))
+      IsSliceChart q (SetLike.coe (fixedTangentSubspace 𝓘(ℝ, E) K p))
         (MulAction.fixedPoints K M) := by
   obtain ⟨φ, hpφ, -, -, hφ⟩ := exists_isSliceChart_fixedPoints hK hp
   -- The chart takes values in `T_p M` with its Riemannian norm; the identity of the underlying
@@ -111,28 +111,28 @@ every fixed point `z` of its source the fixed tangent subspace has the same dime
 -/
 theorem finrank_fixedTangentSubspace_eq_of_mem_source {p z : M} {q : OpenPartialHomeomorph M E}
     (hq : q ∈ IsManifold.maximalAtlas 𝓘(ℝ, E) ∞ M)
-    (hs : IsSliceChart q (SetLike.coe (fixedTangentSubspace (I := 𝓘(ℝ, E)) K p))
+    (hs : IsSliceChart q (SetLike.coe (fixedTangentSubspace 𝓘(ℝ, E) K p))
       (MulAction.fixedPoints K M))
     (hz : z ∈ q.source) (hzK : z ∈ MulAction.fixedPoints K M) :
-    Module.finrank ℝ (fixedTangentSubspace (I := 𝓘(ℝ, E)) K z) =
-      Module.finrank ℝ (fixedTangentSubspace (I := 𝓘(ℝ, E)) K p) := by
+    Module.finrank ℝ (fixedTangentSubspace 𝓘(ℝ, E) K z) =
+      Module.finrank ℝ (fixedTangentSubspace 𝓘(ℝ, E) K p) := by
   obtain ⟨q', hq', hzq', hs'⟩ := exists_mem_maximalAtlas_isSliceChart hK hzK
   -- Both slice charts compute the dimension of the tangent space of the fixed set at `z`. The
   -- fixed tangent subspaces are closed in the topology of `T_p M`, which is that of `E`.
   have hp := hs.finrank_span_mtangentConeAt (E := E)
-    (L := fixedTangentSubspace (I := 𝓘(ℝ, E)) K p)
+    (L := fixedTangentSubspace 𝓘(ℝ, E) K p)
     (n := ∞) (by simp) hq
-    (by exact (fixedTangentSubspace (I := 𝓘(ℝ, E)) K p).isClosed_of_finiteDimensional) hz hzK
+    (by exact (fixedTangentSubspace 𝓘(ℝ, E) K p).isClosed_of_finiteDimensional) hz hzK
   have hz' := hs'.finrank_span_mtangentConeAt (E := E)
-    (L := fixedTangentSubspace (I := 𝓘(ℝ, E)) K z)
+    (L := fixedTangentSubspace 𝓘(ℝ, E) K z)
     (n := ∞) (by simp) hq'
-    (by exact (fixedTangentSubspace (I := 𝓘(ℝ, E)) K z).isClosed_of_finiteDimensional) hzq' hzK
+    (by exact (fixedTangentSubspace 𝓘(ℝ, E) K z).isClosed_of_finiteDimensional) hzq' hzK
   exact hz'.symm.trans hp
 
 /-- **The dimension of the fixed tangent subspace is locally constant on the fixed set.** -/
 theorem isLocallyConstant_finrank_fixedTangentSubspace :
     IsLocallyConstant fun z : MulAction.fixedPoints K M ↦
-      Module.finrank ℝ (fixedTangentSubspace (I := 𝓘(ℝ, E)) K (z : M)) := by
+      Module.finrank ℝ (fixedTangentSubspace 𝓘(ℝ, E) K (z : M)) := by
   refine (IsLocallyConstant.iff_eventually_eq _).2 fun p ↦ ?_
   obtain ⟨q, hq, hpq, hs⟩ := exists_mem_maximalAtlas_isSliceChart hK p.2
   filter_upwards [continuous_subtype_val.continuousAt.preimage_mem_nhds
@@ -141,7 +141,7 @@ theorem isLocallyConstant_finrank_fixedTangentSubspace :
 
 /-- Each part of the fixed set of a given dimension is open in the fixed set. -/
 theorem isOpen_preimage_val_fixedPointsOfFinrank (d : ℕ) :
-    IsOpen ((↑) ⁻¹' fixedPointsOfFinrank (I := 𝓘(ℝ, E)) K M d :
+    IsOpen ((↑) ⁻¹' fixedPointsOfFinrank 𝓘(ℝ, E) K M d :
       Set (MulAction.fixedPoints K M)) := by
   convert (isLocallyConstant_finrank_fixedTangentSubspace hK).isOpen_fiber d using 1
   ext z
@@ -153,8 +153,8 @@ subspace has the dimension it has at `p`; in particular so does the connected co
 in the fixed set. -/
 theorem subset_fixedPointsOfFinrank_of_isPreconnected {C : Set M} (hC : IsPreconnected C)
     (hCK : C ⊆ MulAction.fixedPoints K M) {p : M} (hp : p ∈ C) :
-    C ⊆ fixedPointsOfFinrank (I := 𝓘(ℝ, E)) K M
-      (Module.finrank ℝ (fixedTangentSubspace (I := 𝓘(ℝ, E)) K p)) := by
+    C ⊆ fixedPointsOfFinrank 𝓘(ℝ, E) K M
+      (Module.finrank ℝ (fixedTangentSubspace 𝓘(ℝ, E) K p)) := by
   intro z hz
   have hC' : IsPreconnected ((↑) ⁻¹' C : Set (MulAction.fixedPoints K M)) :=
     Topology.IsInducing.subtypeVal.isPreconnected_image.1 (by
@@ -169,18 +169,18 @@ dimension `d` form a smooth manifold modelled on `L`, whose inclusion into `M` i
 embedding with tangent image the fixed tangent subspace at every point. -/
 theorem exists_isSmoothEmbedding_fixedPointsOfFinrank {d : ℕ} {L : Submodule ℝ E}
     (hL : Module.finrank ℝ L = d) :
-    ∃ C : ChartedSpace L (fixedPointsOfFinrank (I := 𝓘(ℝ, E)) K M d), letI := C
-      IsManifold 𝓘(ℝ, L) ∞ (fixedPointsOfFinrank (I := 𝓘(ℝ, E)) K M d) ∧
+    ∃ C : ChartedSpace L (fixedPointsOfFinrank 𝓘(ℝ, E) K M d), letI := C
+      IsManifold 𝓘(ℝ, L) ∞ (fixedPointsOfFinrank 𝓘(ℝ, E) K M d) ∧
       IsSmoothEmbedding 𝓘(ℝ, L) 𝓘(ℝ, E) ∞
-        (Subtype.val : fixedPointsOfFinrank (I := 𝓘(ℝ, E)) K M d → M) ∧
-      ∀ y : fixedPointsOfFinrank (I := 𝓘(ℝ, E)) K M d,
+        (Subtype.val : fixedPointsOfFinrank 𝓘(ℝ, E) K M d → M) ∧
+      ∀ y : fixedPointsOfFinrank 𝓘(ℝ, E) K M d,
         LinearMap.range (mfderiv 𝓘(ℝ, L) 𝓘(ℝ, E) Subtype.val y).toLinearMap =
-          fixedTangentSubspace (I := 𝓘(ℝ, E)) K (y : M) := by
+          fixedTangentSubspace 𝓘(ℝ, E) K (y : M) := by
   obtain ⟨C, hman, hemb⟩ := exists_isSmoothEmbedding_of_finrankSubspaceCharts (L := L)
-    (n := ∞) (t := fixedPointsOfFinrank (I := 𝓘(ℝ, E)) K M d) fun y hy ↦ by
+    (n := ∞) (t := fixedPointsOfFinrank 𝓘(ℝ, E) K M d) fun y hy ↦ by
       obtain ⟨hyK, hyd⟩ := mem_fixedPointsOfFinrank.1 hy
       obtain ⟨q, hq, hyq, hs⟩ := exists_mem_maximalAtlas_isSliceChart hK hyK
-      refine ⟨q, fixedTangentSubspace (I := 𝓘(ℝ, E)) K y, hyq,
+      refine ⟨q, fixedTangentSubspace 𝓘(ℝ, E) K y, hyq,
         fun z hz ↦ (contMDiffOn_of_mem_maximalAtlas hq).contMDiffAt (q.open_source.mem_nhds hz),
         fun z hz ↦ (contMDiffOn_symm_of_mem_maximalAtlas hq).contMDiffAt
           (q.open_target.mem_nhds hz), fun z hz ↦ ?_, hyd.trans hL.symm⟩
@@ -192,11 +192,11 @@ theorem exists_isSmoothEmbedding_fixedPointsOfFinrank {d : ℕ} {L : Submodule �
   let := C
   refine ⟨C, hman, hemb, fun y ↦ ?_⟩
   have hle : LinearMap.range (mfderiv 𝓘(ℝ, L) 𝓘(ℝ, E) Subtype.val y).toLinearMap ≤
-      fixedTangentSubspace (I := 𝓘(ℝ, E)) K (y : M) := by
+      fixedTangentSubspace 𝓘(ℝ, E) K (y : M) := by
     rintro _ ⟨u, rfl⟩
     refine mem_fixedTangentSubspace.2 fun k _ ↦ ?_
     -- Every `k •` is the identity on the fixed set, so it fixes the tangent image of `val`.
-    have hcomp : ((k • ·) ∘ Subtype.val : fixedPointsOfFinrank (I := 𝓘(ℝ, E)) K M d → M) =
+    have hcomp : ((k • ·) ∘ Subtype.val : fixedPointsOfFinrank 𝓘(ℝ, E) K M d → M) =
         Subtype.val := funext fun z ↦ (mem_fixedPointsOfFinrank.1 z.2).1 k
     have h := mfderiv_comp y
       ((contMDiff_const_smul (I := 𝓘(ℝ, E)) (n := ∞) k).mdifferentiableAt (by simp))
