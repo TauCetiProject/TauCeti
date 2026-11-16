@@ -57,6 +57,11 @@ theorem weylWord_braidWord_eq (i j : Fin t.rank) (A : Type*) [CommRing A] :
         fun k => D.weylElement (t.simpleIndex ht k) A 1).prod := by
   rcases eq_or_ne i j with rfl | hne
   · rfl
+  -- Swapping `i` and `j` swaps the two braid words, so the case `t.cartanMatrix i j ≤ -2` is
+  -- the mirror image of the case `t.cartanMatrix j i ≤ -2` handled below.
+  wlog hij : -1 ≤ t.cartanMatrix i j generalizing i j
+  · have hji := t.cartanMatrix_eq_neg_one_of_cartanMatrix_le_neg_two j i (by omega)
+    exact (this j i hne.symm (by omega)).symm
   have hmem := t.cartanMatrix_mul_cartanMatrix_mem_of_ne hne
   simp only [Set.mem_insert_iff, Set.mem_singleton_iff] at hmem
   have hi := t.cartanMatrix_apply_le_zero_of_ne hne
@@ -84,16 +89,6 @@ theorem weylWord_braidWord_eq (i j : Fin t.rank) (A : Type*) [CommRing A] :
     · refine hword 6 (by simp [hij, h]) ?_
       simpa [CoxeterSystem.alternatingWord, mul_assoc] using
         D.weylElement_braid_of_cartanMatrix_eq_neg_three i j h A
-  by_cases hij : t.cartanMatrix i j ≤ -2
-  · have hji := t.cartanMatrix_eq_neg_one_of_cartanMatrix_le_neg_two j i hij
-    rcases (by rw [hji] at hmem; omega : t.cartanMatrix i j = -2 ∨ t.cartanMatrix i j = -3)
-      with h | h
-    · refine hword 4 (by simp [hji, h]) ?_
-      simpa [CoxeterSystem.alternatingWord, mul_assoc] using
-        (D.weylElement_braid_of_cartanMatrix_eq_neg_two j i h A).symm
-    · refine hword 6 (by simp [hji, h]) ?_
-      simpa [CoxeterSystem.alternatingWord, mul_assoc] using
-        (D.weylElement_braid_of_cartanMatrix_eq_neg_three j i h A).symm
   -- Otherwise both entries are `0`, at orthogonal nodes, or both are `-1`, at a single bond.
   rcases (by omega : t.cartanMatrix i j = 0 ∨ t.cartanMatrix i j = -1) with h | h
   · refine hword 2 (by simp [h]) ?_

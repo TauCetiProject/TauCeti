@@ -88,11 +88,16 @@ theorem weylElement_prod_eq_of_weylUnit_prod_eq (w₁ w₂ : List (Fin t.rank))
       (D.weylElement (t.simpleIndex ht k) A 1 : Matrix.GeneralLinearGroup (Fin D.dim) A) =
         g (n k) := by
     rw [D.coe_weylElement_simpleIndex_one k A]
+    -- `coe_weylElement_simpleIndex_one` is stated over `CommAlgCat.of ℤ A`, whose carrier is `A`
+    -- by definition, and with the `MulEquiv` form of the matrix realization; up to these
+    -- unfoldings both sides are `f` applied to a general linear group element.
     change f _ = f _
     congr 1
     apply Units.ext
     rw [kostantWeylGL_val, kostantWeylPoints_toLinearMap]
-    rfl
+    -- The underlying linear map of `LinearMap.GeneralLinearGroup.ofLinearEquiv e` is `e` by
+    -- definition, and `LinearEquiv.coe_baseChange` identifies that of `(n k).baseChange ℤ A`.
+    exact (LinearEquiv.coe_baseChange _ _ _ _ _).symm
   have hw (w : List (Fin t.rank)) :
       (((w.map fun k => D.weylElement (t.simpleIndex ht k) A 1).prod :
         D.points A) : Matrix.GeneralLinearGroup (Fin D.dim) A) = g (w.map n).prod := by

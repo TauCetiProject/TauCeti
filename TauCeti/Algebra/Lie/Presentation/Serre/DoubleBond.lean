@@ -160,9 +160,8 @@ theorem weylUnit_braid_of_cartan_eq_neg_two (hs : IsSerreSystem ℚ CM H E F)
       (neg_ne_zero.mpr hi) (neg_ne_zero.mpr hj) hFi.neg hEi.neg hFj.neg hEj.neg
     dsimp only at h
     simp only [ConjAct.toConjAct_mul, mul_smul] at h ⊢
-    rwa [hs.toConjAct_weylUnit_neg_swap_smul hii hEi hFi,
-      hs.toConjAct_weylUnit_neg_swap_smul hjj hEj hFj,
-      hs.toConjAct_weylUnit_neg_swap_smul hii hEi hFi, smul_neg, smul_neg, smul_neg, neg_inj] at h
+    simpa only [hs.toConjAct_weylUnit_neg_swap_smul hii hEi hFi,
+      hs.toConjAct_weylUnit_neg_swap_smul hjj hEj hFj, smul_neg, neg_inj] using h
   -- Exponentiating gives commutation with the Weyl unit itself, not merely equality
   -- of conjugation actions. This eliminates any possible central discrepancy.
   calc

@@ -40,23 +40,6 @@ open LieAlgebra
 attribute [local instance 100] LieRing.ofAssociativeRing
 attribute [local instance] HasUniqueDiv.of_module_rat
 
-section Degenerate
-
-variable {B R L : Type*} [CommRing R] [LieRing L] [LieAlgebra R L] [IsAddTorsionFree L]
-  {CM : Matrix B B ℤ} {H E F : B → L}
-
-/-- In a torsion-free Serre system, at a bond whose two Cartan entries are nonzero, a zero Cartan
-generator at the node `j` forces the raising and lowering generators at both nodes to vanish. -/
-theorem eq_zero_of_H_eq_zero_of_cartan_ne_zero (hs : IsSerreSystem R CM H E F) {i j : B}
-    (hij : CM i j ≠ 0) (hji : CM j i ≠ 0) (hj : H j = 0) :
-    E i = 0 ∧ F i = 0 ∧ E j = 0 ∧ F j = 0 := by
-  have hEi0 : E i = 0 := hs.E_eq_zero_of_H_eq_zero hj hji
-  have hi0 : H i = 0 := by rw [← hs.lie_E_F_self i, hEi0, zero_lie]
-  exact ⟨hEi0, hs.F_eq_zero_of_H_eq_zero hj hji, hs.E_eq_zero_of_H_eq_zero hi0 hij,
-    hs.F_eq_zero_of_H_eq_zero hi0 hij⟩
-
-end Degenerate
-
 variable {B A : Type*} [Ring A] [Algebra ℚ A]
   {CM : Matrix B B ℤ} {H E F : B → A}
 
