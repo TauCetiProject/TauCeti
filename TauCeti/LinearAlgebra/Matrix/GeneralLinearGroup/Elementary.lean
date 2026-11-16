@@ -653,9 +653,7 @@ private theorem mem_elementarySubgroup_sum_of_det_eq_one {m : Type*} [DecidableE
   set a := GeneralLinearGroup.mk'' A (by rw [hA]; exact isUnit_one)
   have ha : a ∈ elementarySubgroup m R :=
     hm a (Units.ext (by simp [a, GeneralLinearGroup.val_det_apply, hA]))
-  -- Mathlib has no coercion lemma for `GeneralLinearGroup.mk''`; this holds by unfolding
-  -- `mk''` and `nonsingInvUnit`, whose underlying matrix is `A` by definition.
-  have ha_coe : (a : Matrix m m R) = A := rfl
+  have ha_coe : (a : Matrix m m R) = A := GeneralLinearGroup.val_mk'' _ _
   have hblock : h * lowerBlockGL (-C) = fromBlocksGL (a, 1) :=
     Units.ext (by rw [hk, coe_fromBlocksGL, ha_coe, Units.val_one])
   have hblock_mem : fromBlocksGL (a, 1) ∈ elementarySubgroup (m ⊕ Fin 1) R :=
