@@ -7,6 +7,7 @@ module
 
 public import Mathlib.SetTheory.Cardinal.Finite
 import Mathlib.Basic.Denumerable
+import Mathlib.Data.Fintype.Card
 
 /-!
 # Finite and extended cardinalities
@@ -27,6 +28,9 @@ For countable types, equality of extended natural cardinalities also gives an eq
 including when both types are infinite.
 
 ## Main results
+
+* `Finite.eq_or_eq_of_card_le_two`: two distinct elements exhaust a finite type of
+  cardinality at most two.
 
 * `Nat.card_pi_eq_prod_of_card_eq_one`: `Nat.card (∀ i, X i) = ∏ i ∈ s, Nat.card (X i)` when every
   factor outside `s` has cardinality one.
@@ -113,3 +117,18 @@ theorem nonempty_equiv_of_enatCard_eq {α β : Type*} [Countable α] [Countable 
     exact nonempty_equiv_of_countable
 
 end TauCeti
+
+namespace Finite
+
+/-- Two distinct elements exhaust a finite type with at most two elements. -/
+theorem eq_or_eq_of_card_le_two {K : Type*} [Finite K] (hK : Nat.card K ≤ 2)
+    {i j : K} (hij : i ≠ j) (k : K) : k = i ∨ k = j := by
+  classical
+  let := Fintype.ofFinite K
+  by_contra hk
+  push Not at hk
+  have hlt := Fintype.two_lt_card_iff.mpr ⟨k, i, j, hk.1, hk.2, hij⟩
+  rw [← Nat.card_eq_fintype_card] at hlt
+  omega
+
+end Finite
