@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.NumberTheory.ArithmeticFunction.Misc
 public import Mathlib.NumberTheory.LSeries.Basic
 public import Mathlib.NumberTheory.LSeries.RiemannZeta
 import Mathlib.NumberTheory.EulerProduct.DirichletLSeries
@@ -117,5 +118,75 @@ theorem riemannZeta_pow_four_eq_mul_LSeries_divisor_sq {s : ℂ} (hs : 1 < s.re)
     linarith
   simpa only [mul_comm] using
     ((eq_div_iff (riemannZeta_ne_zero_of_one_lt_re hs2)).mp h.LSeries_eq).symm
+
+private theorem sigma_zero_sq_summable {s : ℂ} (hs : 1 < s.re) :
+    LSeriesSummable (fun n : ℕ ↦ (ArithmeticFunction.sigma 0 (n ^ 2) : ℂ)) s := by
+  let ε : ℝ := (s.re - 1) / 4
+  have hε : 0 < ε := by dsimp [ε]; linarith
+  obtain ⟨C, _, hbound⟩ := exists_pos_card_divisors_le_rpow hε
+  apply LSeriesSummable_of_le_const_mul_rpow (x := 1 + 2 * ε)
+    (by dsimp [ε]; linarith)
+  refine ⟨C, fun n _hn ↦ ?_⟩
+  rw [Complex.norm_natCast, ArithmeticFunction.sigma_zero_apply]
+  calc
+    ((n ^ 2).divisors.card : ℝ) ≤ C * ((n ^ 2 : ℕ) : ℝ) ^ ε := hbound (n ^ 2)
+    _ = C * (n : ℝ) ^ (1 + 2 * ε - 1) := by
+      rw [Nat.cast_pow, ← Real.rpow_natCast, ← Real.rpow_mul (Nat.cast_nonneg n)]
+      congr 2
+      push_cast
+      ring
+
+private theorem sigma_zero_sq_local {s : ℂ} (hs : 1 < s.re) (p : Nat.Primes) :
+    (∑' k : ℕ, _root_.LSeries.term (fun n : ℕ ↦ (ArithmeticFunction.sigma 0 (n ^ 2) : ℂ)) s
+      (p.val ^ k)) = (1 + (p : ℂ) ^ (-s)) / (1 - (p : ℂ) ^ (-s)) ^ 2 := by
+  have hx : ‖(p : ℂ) ^ (-s)‖ < 1 :=
+    (Complex.norm_prime_cpow_le_one_half p hs).trans_lt (by norm_num)
+  have hterm (k : ℕ) :
+      _root_.LSeries.term (fun n : ℕ ↦ (ArithmeticFunction.sigma 0 (n ^ 2) : ℂ)) s
+        (p.val ^ k) = (2 * (k : ℂ) + 1) * ((p : ℂ) ^ (-s)) ^ k := by
+    rw [TauCeti.LSeries.term_pow p p.prop.ne_zero k, ← pow_mul,
+      ArithmeticFunction.sigma_zero_apply_prime_pow p.prop]
+    push_cast
+    ring_nf
+  simpa only [hterm] using (hasSum_two_mul_add_one_mul_geometric_of_norm_lt_one hx).tsum_eq
+
+/-- The divisor count of `n²` has Dirichlet series `ζ(s)^3 / ζ(2s)` on `Re s > 1`,
+including absolute convergence. -/
+theorem LSeriesHasSum_sigma_zero_sq {s : ℂ} (hs : 1 < s.re) :
+    LSeriesHasSum (fun n : ℕ ↦ (ArithmeticFunction.sigma 0 (n ^ 2) : ℂ)) s
+      (riemannZeta s ^ 3 / riemannZeta (2 * s)) := by
+  let a : ℕ → ℂ := fun n ↦ (ArithmeticFunction.sigma 0 (n ^ 2) : ℂ)
+  have hsum : LSeriesSummable a s := sigma_zero_sq_summable hs
+  have hmul : ∀ {m n : ℕ}, m ≠ 0 → n ≠ 0 → m.Coprime n →
+      a (m * n) = a m * a n := by
+    intro m n _ _ hmn
+    simp only [a, mul_pow,
+      ArithmeticFunction.isMultiplicative_sigma.map_mul_of_coprime (hmn.pow 2 2), Nat.cast_mul]
+  have HP : HasProd (fun p : Nat.Primes ↦ ∑' k : ℕ, _root_.LSeries.term a s (p.val ^ k))
+      (_root_.LSeries a s) :=
+    EulerProduct.eulerProduct_hasProd (by simp [a])
+      (TauCeti.LSeries.term_mul_of_coprime hmul) hsum.norm (_root_.LSeries.term_zero a s)
+  have hs2 : 1 < (2 * s).re := by
+    simp only [Complex.mul_re, Complex.re_ofNat, Complex.im_ofNat, zero_mul, sub_zero]
+    linarith
+  have hfactor (p : Nat.Primes) :
+      (1 - (p : ℂ) ^ (-(2 * s)))⁻¹ * (∑' k : ℕ, _root_.LSeries.term a s (p.val ^ k)) =
+        ((1 - (p : ℂ) ^ (-s))⁻¹) ^ 3 := by
+    rw [sigma_zero_sq_local hs]
+    have hexp : (p : ℂ) ^ (-(2 * s)) = ((p : ℂ) ^ (-s)) ^ 2 := by
+      have hneg : -(2 * s) = -s + -s := by ring
+      rw [hneg, Complex.cpow_add _ _ (Nat.cast_ne_zero.mpr p.prop.ne_zero), pow_two]
+    have h1 := Complex.one_sub_prime_cpow_ne_zero p.prop hs
+    have h2 := Complex.one_sub_prime_cpow_ne_zero p.prop hs2
+    rw [hexp] at h2 ⊢
+    field_simp
+    ring
+  have H : HasProd (fun p : Nat.Primes ↦ ((1 - (p : ℂ) ^ (-s))⁻¹) ^ 3)
+      (riemannZeta (2 * s) * _root_.LSeries a s) := by
+    simpa only [hfactor] using (riemannZeta_eulerProduct_hasProd hs2).mul HP
+  have heq : _root_.LSeries a s = riemannZeta s ^ 3 / riemannZeta (2 * s) :=
+    (eq_div_iff (riemannZeta_ne_zero_of_one_lt_re hs2)).mpr
+      (by simpa only [mul_comm] using H.unique ((riemannZeta_eulerProduct_hasProd hs).pow 3))
+  exact heq ▸ hsum.LSeriesHasSum
 
 end TauCeti
