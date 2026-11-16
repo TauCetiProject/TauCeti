@@ -60,21 +60,6 @@ public noncomputable section
 open MeasureTheory
 open scoped ContDiff LineDeriv
 
-/-- The coordinates in a basis `b` of the directional derivative `x ↦ Dφ(x) v` of a function `φ` of
-temperate growth have temperate growth. These are the coefficients of the chain rule for
-composition with `φ`. -/
-theorem Function.HasTemperateGrowth.basis_repr_fderiv_apply {𝕜 E ι : Type*} [RCLike 𝕜]
-    [NormedAddCommGroup E] [NormedSpace ℝ E] [Finite ι] {φ : E → E}
-    (hφ : φ.HasTemperateGrowth) (b : Module.Basis ι ℝ E) (v : E) (i : ι) :
-    (fun x ↦ ((b.repr (_root_.fderiv ℝ φ x v) i : ℝ) : 𝕜)).HasTemperateGrowth := by
-  have h : (fun x ↦ ((b.repr (_root_.fderiv ℝ φ x v) i : ℝ) : 𝕜)) =
-      ((RCLike.ofRealCLM (K := 𝕜)).comp ((ContinuousLinearMap.proj i).comp
-        b.equivFunL.toContinuousLinearMap)) ∘ fun x ↦ _root_.fderiv ℝ φ x v := by
-    ext x
-    simp
-  rw [h]
-  exact (ContinuousLinearMap.hasTemperateGrowth _).comp (hφ.fderiv_apply v)
-
 namespace SchwartzMap
 
 variable (𝕜 : Type*) {E F : Type*} [RCLike 𝕜] [NormedAddCommGroup E] [NormedSpace ℝ E]

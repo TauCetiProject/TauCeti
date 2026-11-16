@@ -6,12 +6,14 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.Calculus.FDeriv.Defs
+public import Mathlib.Analysis.Normed.Operator.Basic
 public import Mathlib.Topology.Algebra.Module.ContinuousLinearMap.Invertible
 public import Mathlib.Topology.Algebra.Module.Determinant
 public import Mathlib.Topology.Compactness.Compact
 public import Mathlib.Topology.OpenPartialHomeomorph.Defs
 public import Mathlib.Topology.Sets.Opens
 
+import TauCeti.MeasureTheory.Measure.Haar.NormedSpace
 import TauCeti.Topology.Algebra.Module.Determinant
 
 import Mathlib.Analysis.Calculus.FDeriv.Comp
@@ -49,6 +51,8 @@ open set `U` and mapping it into an open set `V`, with an inverse `Ψ` different
 * `Equiv.det_fderiv_symm_mul_det_fderiv`: for a bijection `φ` differentiable at `φ⁻¹ y` with its
   inverse differentiable at `y`, the Jacobian determinants are reciprocal,
   `det Dφ⁻¹(y) · det Dφ(φ⁻¹ y) = 1`.
+* `Equiv.inv_pow_le_abs_det_fderiv`: if `‖Dφ⁻¹(φ x)‖ ≤ L`, then `|det Dφ(x)| ≥ L^{-n}` in
+  dimension `n`.
 * `ContinuousLinearEquiv.image_vanishingFDeriv_comp`: precomposition by a continuous linear
   equivalence preserves the image of the vanishing-derivative locus.
 
@@ -201,6 +205,22 @@ theorem det_fderiv_symm_mul_det_fderiv {y : E} (hφ : DifferentiableAt 𝕜 φ (
     fderiv_id, ContinuousLinearMap.det_id]
 
 end Equiv
+
+/-- **A lower bound for the Jacobian determinant.** If a bijection `φ` of a finite-dimensional real
+normed space is differentiable at `x`, its inverse is differentiable at `φ x`, and
+`‖Dφ⁻¹(φ x)‖ ≤ L`, then `|det Dφ(x)| ≥ L^{-n}` in dimension `n`. -/
+theorem Equiv.inv_pow_le_abs_det_fderiv {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
+    [FiniteDimensional ℝ E] (φ : E ≃ E) {x : E} (hφ : DifferentiableAt ℝ φ x)
+    (hψ : DifferentiableAt ℝ φ.symm (φ x)) {L : ℝ} (hL : ‖fderiv ℝ φ.symm (φ x)‖ ≤ L) :
+    (L ^ Module.finrank ℝ E)⁻¹ ≤ |(fderiv ℝ φ x).det| := by
+  have h := φ.det_fderiv_symm_mul_det_fderiv (y := φ x) (by rwa [φ.symm_apply_apply]) hψ
+  rw [φ.symm_apply_apply] at h
+  have hle : |(fderiv ℝ φ.symm (φ x)).det| ≤ L ^ Module.finrank ℝ E :=
+    (ContinuousLinearMap.abs_det_le_opNorm_pow _).trans (pow_le_pow_left₀ (norm_nonneg _) hL _)
+  have hpos : 0 < |(fderiv ℝ φ.symm (φ x)).det| := abs_pos.2 (left_ne_zero_of_mul_eq_one h)
+  rw [eq_inv_of_mul_eq_one_left (by rw [← abs_mul, mul_comm, h, abs_one] :
+    |(fderiv ℝ φ x).det| * |(fderiv ℝ φ.symm (φ x)).det| = 1)]
+  exact inv_anti₀ hpos hle
 
 /-- Precomposition by a continuous linear equivalence preserves the image of the locus where
 the totalized Fréchet derivative vanishes. No differentiability hypothesis is needed. -/

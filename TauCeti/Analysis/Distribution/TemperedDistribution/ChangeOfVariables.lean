@@ -150,8 +150,7 @@ theorem compCLM_lineDerivOp (b : Module.Basis ι ℝ E) (hφ : (φ : E → E).Ha
   refine Finset.sum_congr rfl fun i _ ↦ ?_
   have hc : (fun x ↦ ((b.repr (fderiv ℝ φ.symm x v) i : ℝ) : ℂ)).HasTemperateGrowth :=
     hψ.basis_repr_fderiv_apply b v i
-  rw [compCLM_smulLeftCLM hφ hψ hc, compCLM_compCLM_symm]
-  rfl
+  rw [compCLM_smulLeftCLM hφ hψ hc, compCLM_compCLM_symm, Function.comp_def]
 
 end TVS
 

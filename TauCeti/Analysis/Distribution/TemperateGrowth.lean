@@ -52,6 +52,8 @@ A measure of temperate growth is finite on compact sets.
 * `Function.hasTemperateGrowth_norm_sub_pow`: `y ↦ ‖x - y‖ ^ (2N)` has temperate growth.
 * `Function.HasTemperateGrowth.fderiv`: `Df` has temperate growth.
 * `Function.HasTemperateGrowth.fderiv_apply`: `x ↦ Df(x) v` has temperate growth.
+* `Function.HasTemperateGrowth.basis_repr_fderiv_apply`: so do the coordinates of `Df(x) v` in a
+  basis.
 * `Function.HasTemperateGrowth.prod`: finite products of functions of temperate growth.
 * `ContinuousLinearMap.hasTemperateGrowth_det`, `Function.HasTemperateGrowth.det_fderiv`: the
   determinant and the Jacobian determinant have temperate growth.
@@ -111,6 +113,20 @@ growth. -/
 theorem fderiv_apply (hf : f.HasTemperateGrowth) (v : E) :
     (fun x ↦ _root_.fderiv ℝ f x v).HasTemperateGrowth :=
   (ContinuousLinearMap.apply ℝ F v).hasTemperateGrowth.comp hf.fderiv
+
+/-- The coordinates in a basis `b` of the directional derivative `x ↦ Dφ(x) v` of a function `φ` of
+temperate growth have temperate growth. These are the coefficients of the chain rule for
+composition with `φ`. -/
+theorem basis_repr_fderiv_apply {𝕜 ι : Type*} [RCLike 𝕜] [Finite ι] {φ : E → E}
+    (hφ : φ.HasTemperateGrowth) (b : Module.Basis ι ℝ E) (v : E) (i : ι) :
+    (fun x ↦ ((b.repr (_root_.fderiv ℝ φ x v) i : ℝ) : 𝕜)).HasTemperateGrowth := by
+  have h : (fun x ↦ ((b.repr (_root_.fderiv ℝ φ x v) i : ℝ) : 𝕜)) =
+      ((RCLike.ofRealCLM (K := 𝕜)).comp ((ContinuousLinearMap.proj i).comp
+        b.equivFunL.toContinuousLinearMap)) ∘ fun x ↦ _root_.fderiv ℝ φ x v := by
+    ext x
+    simp
+  rw [h]
+  exact (ContinuousLinearMap.hasTemperateGrowth _).comp (hφ.fderiv_apply v)
 
 /-- A finite product of functions of temperate growth has temperate growth. -/
 theorem prod {ι R : Type*} [NormedCommRing R] [NormedAlgebra ℝ R] {f : ι → E → R}

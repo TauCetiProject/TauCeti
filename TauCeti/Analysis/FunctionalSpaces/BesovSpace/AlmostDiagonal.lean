@@ -34,7 +34,7 @@ the blocks above the diagonal the decay comes from smoothness: if the derivative
 a tempered distribution `T` along an orthonormal basis are `Lᵖ` functions of norm at most `A`,
 then the reverse Bernstein inequality on the `(j+1)`-st dyadic annulus bounds the block
 `Δ_{j+1} T` by a constant multiple of `2^{-jM} A`
-(`TauCeti.norm_littlewoodPaleyBlock_succ_le_of_iteratedLineDerivOp`).
+(`TauCeti.exists_norm_littlewoodPaleyBlock_succ_le_of_iteratedLineDerivOp`).
 
 ## References
 
@@ -51,14 +51,6 @@ open scoped ENNReal SchwartzMap LineDeriv FourierTransform
 
 variable {E F : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteDimensional ℝ E]
   [MeasurableSpace E] [BorelSpace E] [NormedAddCommGroup F] [NormedSpace ℂ F] [CompleteSpace F]
-
-omit [InnerProductSpace ℝ E] [FiniteDimensional ℝ E] [MeasurableSpace E] [BorelSpace E] in
-/-- The outer radius `2^{k+1} φ.rOut` of the `(k+1)`-st dyadic annulus is `B` times its inner
-radius `2^k φ.rIn`, for `B = 2 φ.rOut / φ.rIn`. -/
-theorem ContDiffBump.two_mul_rOut_div_rIn_mul (φ : ContDiffBump (0 : E)) (k : ℕ) :
-    2 * φ.rOut / φ.rIn * (2 ^ k * φ.rIn) = 2 ^ (k + 1) * φ.rOut := by
-  field_simp [φ.rIn_pos.ne']
-  ring
 
 namespace TauCeti
 

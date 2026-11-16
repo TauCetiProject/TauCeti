@@ -230,6 +230,14 @@ theorem eLpNorm_fourierInv_inhomogeneousLittlewoodPaley_ne_zero [Nontrivial E] (
   rw [hσ0, zero_apply] at this
   exact hξ.ne' (Complex.ofReal_eq_zero.1 this.symm)
 
+omit [InnerProductSpace ℝ E] [FiniteDimensional ℝ E] [MeasurableSpace E] [BorelSpace E] in
+/-- The outer radius `2^{k+1} φ.rOut` of the `(k+1)`-st dyadic annulus is `B` times its inner
+radius `2^k φ.rIn`, for `B = 2 φ.rOut / φ.rIn`. -/
+theorem two_mul_rOut_div_rIn_mul (k : ℕ) :
+    2 * φ.rOut / φ.rIn * (2 ^ k * φ.rIn) = 2 ^ (k + 1) * φ.rOut := by
+  field_simp [φ.rIn_pos.ne']
+  ring
+
 end ContDiffBump
 
 namespace TemperedDistribution
