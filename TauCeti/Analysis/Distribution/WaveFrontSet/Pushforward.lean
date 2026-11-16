@@ -8,7 +8,7 @@ module
 public import TauCeti.Analysis.Distribution.CutoffPushforward
 public import TauCeti.Analysis.Distribution.WaveFrontSet.Basic
 import TauCeti.Algebra.Module.ZLattice.Summable
-import TauCeti.Analysis.Calculus.BumpFunction.Cutoff
+import TauCeti.Analysis.Calculus.BumpFunction.FiniteDimension
 import TauCeti.Analysis.Distribution.TestFunction.PartitionOfUnity
 import TauCeti.Analysis.PositiveDefinite.FourierAtom
 import TauCeti.Analysis.Distribution.WaveFrontSet.Localization
@@ -378,6 +378,35 @@ private theorem one_add_pow_mul_mul_le {nv nm F L a B C₁ C₂ C₃ : ℝ} {N k
       _ ≤ C₂ * ((1 + (nm + nv)) ^ (N + k + r) * F) := by gcongr
       _ ≤ C₂ * C₃ := by gcongr
 
+omit [FiniteDimensional ℝ E'] in
+/-- The bound on one term `c₀ 𝓕(ψ (e_v ∘ Φ))(m) T (φ e_(-m))` of the expansion of
+`T (ψ (e_v ∘ Φ))`, weighted by `(1 + ‖v‖) ^ N`, in the two regimes of `one_add_pow_mul_mul_le`:
+either `-m` lies in the cone `Γ` in which `T (φ e_·)` decays and is comparable in size with `v`,
+or the Fourier coefficient of `ψ (e_v ∘ Φ)` decays rapidly in `‖m‖ + ‖v‖`. -/
+private theorem norm_one_add_pow_smul_mul_le [MeasurableSpace E] [BorelSpace E] {Φ : E → E'}
+    (hΦ : ContDiff ℝ ∞ Φ) (T : 𝓓'(Ω, ℂ)) (φ ψ : 𝓓(Ω, ℂ)) (c₀ : ℂ) {Γ : Set E}
+    {a CA CB C₁ : ℝ} {N k r : ℕ} (ha : 0 < a)
+    (hCA : ∀ ξ ∈ Γ, (1 + ‖ξ‖) ^ (N + r) * ‖T.localFourier φ ξ‖ ≤ CA)
+    (hpoly : ∀ ξ, ‖T.localFourier φ ξ‖ ≤ C₁ * (1 + ‖ξ‖) ^ k) (v : E') (m : E)
+    (hCB : (-m ∉ Γ ∨ ‖m‖ * (2 * a) < ‖v‖) → (1 + (‖m‖ + ‖v‖)) ^ (N + k + r) *
+      ‖𝓕 (bilinLeftCLM (ContinuousLinearMap.mul ℝ ℂ)
+        ((TauCeti.contDiff_fourierAtom v).comp hΦ) ψ : E → ℂ) m‖ ≤ CB) :
+    ‖(1 + ‖v‖) ^ N • (c₀ * 𝓕 (bilinLeftCLM (ContinuousLinearMap.mul ℝ ℂ)
+        ((TauCeti.contDiff_fourierAtom v).comp hΦ) ψ : E → ℂ) m * T.localFourier φ (-m))‖ ≤
+      ‖c₀‖ * max ((∫ x, ‖ψ x‖) * CA * (1 + 2 * a) ^ N) (C₁ * CB) * ((1 + ‖m‖) ^ r)⁻¹ := by
+  have hshape (x y z w u : ℝ) : x * (u * y * z) * w = u * (x * (y * z) * w) := by ring
+  rw [← div_eq_mul_inv, le_div_iff₀ (by positivity), norm_smul, norm_mul, norm_mul,
+    Real.norm_of_nonneg (by positivity), hshape]
+  gcongr
+  refine one_add_pow_mul_mul_le (k := k) (norm_nonneg _) (norm_nonneg _) (norm_nonneg _)
+    (norm_nonneg _) ha ?_
+  by_cases hA : -m ∈ Γ ∧ ‖v‖ ≤ ‖m‖ * (2 * a)
+  · exact Or.inl ⟨hA.2, norm_fourier_bilinLeftCLM_fourierAtom_comp_le hΦ ψ v m,
+      by simpa using hCA _ hA.1⟩
+  · refine Or.inr ⟨by simpa using hpoly (-m), hCB ?_⟩
+    by_contra! h
+    exact hA h
+
 /-- **Decay of the Fourier atoms pulled back along `Φ`, near a point.** If `T` is microlocally
 smooth at `(x₀, (DΦ x₀)ᵀ η)` and `(DΦ x₀)ᵀ η ≠ 0`, then there are a neighbourhood `V` of `x₀` and
 an open cone `Γ'` around `η` such that `v ↦ T (ψ (e_v ∘ Φ))` decays rapidly on `Γ'` for every test
@@ -424,23 +453,9 @@ private theorem exists_nhds_cone_pullbackFourier {Φ : E → E'} (hΦ : ContDiff
   have hsum := (hexp _ fun x hx => hφ1.self_of_nhdsSet x
     (hψK (tsupport_bilinLeftCLM_fourierAtom_comp_subset hΦ ψ v hx))).const_smul ((1 + ‖v‖) ^ N)
   have h := hsum.norm_le_of_bounded (hw.hasSum.mul_left (‖c₀‖ *
-    max ((∫ x, ‖ψ x‖) * CA * (1 + 2 * a) ^ N) (C₁ * CB))) fun m => ?_
-  · rwa [norm_smul, Real.norm_of_nonneg (by positivity)] at h
-  -- Each term is bounded in one of the two regimes of `one_add_pow_mul_mul_le`.
-  rw [← div_eq_mul_inv, le_div_iff₀ (by positivity), norm_smul, Real.norm_of_nonneg
-    (by positivity), norm_mul, norm_mul, mul_assoc ‖c₀‖, mul_left_comm, mul_assoc,
-    ← mul_assoc ((1 + ‖v‖) ^ N)]
-  rw [mul_assoc ((1 + ‖v‖) ^ N)]
-  gcongr
-  refine one_add_pow_mul_mul_le (k := k) (norm_nonneg _) (norm_nonneg _) (norm_nonneg _)
-    (norm_nonneg _)
-      ha ?_
-  by_cases hA : -(m : E) ∈ Γ ∧ ‖v‖ ≤ ‖(m : E)‖ * (2 * a)
-  · exact Or.inl ⟨hA.2, norm_fourier_bilinLeftCLM_fourierAtom_comp_le hΦ ψ v m,
-      by simpa using hCA _ hA.1⟩
-  · refine Or.inr ⟨by simpa using hpoly (-m), hCB v hv m ?_⟩
-    by_contra! h
-    exact hA h
+    max ((∫ x, ‖ψ x‖) * CA * (1 + 2 * a) ^ N) (C₁ * CB))) fun m =>
+      norm_one_add_pow_smul_mul_le hΦ T φ ψ c₀ ha hCA hpoly v m (hCB v hv m)
+  rwa [norm_smul, Real.norm_of_nonneg (by positivity)] at h
 
 /-- `Distribution.IsMicrolocallySmoothAt.cutoffPushforwardCLM` for a map `Φ` smooth on all
 of `E`. -/
@@ -487,16 +502,10 @@ theorem IsMicrolocallySmoothAt.cutoffPushforwardCLM {Φ : E → E'}
       ((fderiv ℝ Φ x)†) η ≠ 0 ∧ T.IsMicrolocallySmoothAt x (((fderiv ℝ Φ x)†) η)) :
     (Distribution.cutoffPushforwardCLM χ Φ hΦ T : 𝓓'(Ω', ℂ)).IsMicrolocallySmoothAt y η := by
   -- Replace `Φ` by a map smooth on all of `E` that agrees with it near `supp χ`.
-  obtain ⟨β, hβ, -, hβ1, -, hβs⟩ :=
-    χ.hasCompactSupport.exists_contDiff_cutoff Ω.isOpen χ.tsupport_subset
-  have hΦ' : ContDiff ℝ ∞ fun x => β x • Φ x :=
-    hΦ.contDiff_smul_of_tsupport_subset Ω.isOpen hβ.contDiffOn hβs
-  have heq (x : E) (hx : x ∈ tsupport χ) : (fun x => β x • Φ x) =ᶠ[𝓝 x] Φ :=
-    eventually_of_mem (isOpen_interior.mem_nhds (hβ1 hx)) fun z hz => by
-      have hβz : β z = 1 := interior_subset hz
-      simp [hβz]
+  obtain ⟨Φ', hΦ', -, -, -, heq⟩ :=
+    hΦ.exists_contDiff_eventuallyEq_on_isCompact χ.hasCompactSupport Ω.isOpen χ.tsupport_subset
   have hpush : (Distribution.cutoffPushforwardCLM χ Φ hΦ T : 𝓓'(Ω', ℂ)) =
-      Distribution.cutoffPushforwardCLM χ (fun x => β x • Φ x) hΦ'.contDiffOn T := by
+      Distribution.cutoffPushforwardCLM χ Φ' hΦ'.contDiffOn T := by
     ext f
     simp only [cutoffPushforwardCLM_apply]
     congr 1

@@ -13,9 +13,9 @@ public import Mathlib.MeasureTheory.Measure.Haar.Basic
 import Mathlib.Analysis.Calculus.ContDiff.Operations
 import Mathlib.Analysis.Calculus.LineDeriv.IntegrationByParts
 import Mathlib.Analysis.Fourier.FourierTransformDeriv
-import Mathlib.Analysis.SpecialFunctions.SmoothTransition
 import Mathlib.MeasureTheory.Integral.Bochner.Set
 import TauCeti.Analysis.Calculus.FDeriv.Prod
+import TauCeti.Analysis.SpecialFunctions.SmoothTransition
 
 /-!
 # Non-stationary phase for compact families of phases
@@ -72,23 +72,6 @@ namespace ParametricNonstationaryPhase
 variable {Θ E : Type*} [NormedAddCommGroup Θ] [NormedSpace ℝ Θ] [NormedAddCommGroup E]
   [NormedSpace ℝ E]
 
-/-- A smooth function equal to the identity on `[c, ∞)` and bounded below by `c / 2`. -/
-private theorem exists_contDiff_eq_self_of_le {c : ℝ} (hc : 0 < c) :
-    ∃ φ : ℝ → ℝ, ContDiff ℝ ∞ φ ∧ (∀ t, c / 2 ≤ φ t) ∧ ∀ t, c ≤ t → φ t = t := by
-  refine ⟨fun t ↦ c / 2 + Real.smoothTransition ((t - c / 2) / (c / 2)) * (t - c / 2),
-    contDiff_const.add ((Real.smoothTransition.contDiff.comp (by fun_prop)).mul (by fun_prop)),
-    fun t ↦ ?_, fun t ht ↦ ?_⟩
-  · dsimp only
-    rcases le_or_gt t (c / 2) with h | h
-    · rw [Real.smoothTransition.zero_of_nonpos (div_nonpos_of_nonpos_of_nonneg (by linarith)
-        (by linarith))]
-      simp
-    · have := Real.smoothTransition.nonneg ((t - c / 2) / (c / 2))
-      nlinarith
-  · dsimp only
-    rw [Real.smoothTransition.one_of_one_le ((le_div_iff₀ (by linarith)).2 (by linarith))]
-    ring
-
 /-- The transposed operator `ᵗL w = ∑ⱼ ∂ⱼ(aⱼ w)`, the derivatives taken in the second variable
 along the vectors `b j`. -/
 private noncomputable def transposeOp {ι : Type*} [Fintype ι] (a : ι → Θ × E → ℝ) (b : ι → E)
@@ -102,6 +85,13 @@ private theorem contDiff_transposeOp (ha : ∀ j, ContDiff ℝ ∞ (a j)) {w : �
   ContDiff.sum fun j _ ↦
     ((hw.mul (ofRealCLM.contDiff.comp (ha j))).fderiv_right le_rfl).clm_apply contDiff_const
 
+/-- The iterates `(ᵗL)ⁿ w` of a smooth `w` are smooth. -/
+private theorem contDiff_iterate_transposeOp (ha : ∀ j, ContDiff ℝ ∞ (a j)) {w : Θ × E → ℂ}
+    (hw : ContDiff ℝ ∞ w) (n : ℕ) : ContDiff ℝ ∞ ((transposeOp a b)^[n] w) := by
+  induction n with
+  | zero => exact hw
+  | succ n ih => rw [iterate_succ_apply']; exact contDiff_transposeOp ha ih
+
 /-- `ᵗL` preserves the vanishing outside a closed set `K` of the second variable. -/
 private theorem transposeOp_eq_zero {K : Set E} (hK : IsClosed K) {w : Θ × E → ℂ}
     (hw : ∀ p : Θ × E, p.2 ∉ K → w p = 0) (p : Θ × E) (hp : p.2 ∉ K) :
@@ -111,6 +101,14 @@ private theorem transposeOp_eq_zero {K : Set E} (hK : IsClosed K) {w : Θ × E �
   have hev : (fun q ↦ w q * (a j q : ℂ)) =ᶠ[nhds p] fun _ ↦ 0 :=
     Filter.eventually_of_mem (hopen.mem_nhds hp) fun q hq ↦ by simp [hw q hq]
   simp [hev.fderiv_eq]
+
+/-- The iterates `(ᵗL)ⁿ w` vanish outside `K` when `w` does. -/
+private theorem iterate_transposeOp_eq_zero {K : Set E} (hK : IsClosed K) {w : Θ × E → ℂ}
+    (hw : ∀ p : Θ × E, p.2 ∉ K → w p = 0) (n : ℕ) (p : Θ × E) (hp : p.2 ∉ K) :
+    (transposeOp a b)^[n] w p = 0 := by
+  induction n generalizing p with
+  | zero => exact hw p hp
+  | succ n ih => rw [iterate_succ_apply']; exact transposeOp_eq_zero hK ih p hp
 
 /-- The phase factor `x ↦ e(s G(θ, x))` is smooth. -/
 private theorem contDiff_fourierChar_mul {G : Θ × E → ℝ} (hG : ContDiff ℝ ∞ G) (θ : Θ) (s : ℝ) :
@@ -209,19 +207,12 @@ private theorem pow_mul_integral_eq {G : Θ × E → ℝ} (hG : ContDiff ℝ ∞
     (hw : ContDiff ℝ ∞ w) (hwK : ∀ p : Θ × E, p.2 ∉ K → w p = 0) (s : ℝ) (N : ℕ) :
     (2 * π * I * s) ^ N * ∫ x, 𝐞 (s * G (θ, x)) • w (θ, x) ∂μ =
       (-1) ^ N * ∫ x, 𝐞 (s * G (θ, x)) • (transposeOp a b)^[N] w (θ, x) ∂μ := by
-  have hsmooth (n : ℕ) : ContDiff ℝ ∞ ((transposeOp a b)^[n] w) := by
-    induction n with
-    | zero => exact hw
-    | succ n ih => rw [iterate_succ_apply']; exact contDiff_transposeOp ha ih
-  have hzero (n : ℕ) (p : Θ × E) (hp : p.2 ∉ K) : (transposeOp a b)^[n] w p = 0 := by
-    induction n generalizing p with
-    | zero => exact hwK p hp
-    | succ n ih => rw [iterate_succ_apply']; exact transposeOp_eq_zero hK.isClosed ih p hp
   induction N with
   | zero => simp
   | succ N ih =>
     rw [pow_succ, mul_comm _ (2 * π * I * s), mul_assoc, ih, mul_left_comm,
-      mul_integral_eq_neg_integral_transposeOp hG ha hK hθ (hsmooth N) (hzero N),
+      mul_integral_eq_neg_integral_transposeOp hG ha hK hθ (contDiff_iterate_transposeOp ha hw N)
+        (iterate_transposeOp_eq_zero hK.isClosed hwK N),
       iterate_succ_apply', pow_succ]
     ring
 
@@ -291,27 +282,19 @@ theorem exists_abs_pow_mul_norm_integral_fourierChar_smul_le {G : Θ × E → �
   have hwK : ∀ p : Θ × E, p.2 ∉ K → w p = 0 := fun p hp ↦
     image_eq_zero_of_notMem_tsupport (f := u) hp
   set b : Fin (Module.finrank ℝ E) → E := fun j ↦ Module.finBasis ℝ E j
-  have hW (n : ℕ) : ContDiff ℝ ∞ ((transposeOp a b)^[n] w) := by
-    induction n with
-    | zero => exact hw
-    | succ n ih => rw [iterate_succ_apply']; exact contDiff_transposeOp ha ih
-  have hWK (n : ℕ) (p : Θ × E) (hp : p.2 ∉ K) : (transposeOp a b)^[n] w p = 0 := by
-    induction n generalizing p with
-    | zero => exact hwK p hp
-    | succ n ih => rw [iterate_succ_apply']; exact transposeOp_eq_zero hK.isClosed ih p hp
   set W := (transposeOp a b)^[N] w
-  obtain ⟨M, hM⟩ := (hP.prod hK).exists_bound_of_continuousOn (hW N).continuous.continuousOn
+  have hWK : ∀ p : Θ × E, p.2 ∉ K → W p = 0 := iterate_transposeOp_eq_zero hK.isClosed hwK N
+  obtain ⟨M, hM⟩ := (hP.prod hK).exists_bound_of_continuousOn
+    (contDiff_iterate_transposeOp ha hw N).continuous.continuousOn
   refine ⟨M * μ.real K / (2 * π) ^ N, fun θ hθP s ↦ ?_⟩
   have hint : ‖∫ x, 𝐞 (s * G (θ, x)) • W (θ, x) ∂μ‖ ≤ M * μ.real K := by
-    rw [← setIntegral_eq_integral_of_forall_compl_eq_zero fun x hx ↦ by simp [W, hWK N (θ, x) hx]]
+    rw [← setIntegral_eq_integral_of_forall_compl_eq_zero fun x hx ↦ by simp [hWK (θ, x) hx]]
     exact norm_setIntegral_le_of_norm_le_const hK.measure_lt_top fun x hx ↦ by
       simpa [Circle.smul_def] using hM (θ, x) ⟨hθP, hx⟩
-  have heq := pow_mul_integral_eq (μ := μ) hG ha hK (hθ θ hθP) hw hwK s N
-  have hnorm := congrArg norm heq
-  have h2π : ‖2 * π * I * (s : ℂ)‖ = 2 * π * |s| := by
-    simp [abs_of_pos Real.pi_pos]
-  rw [norm_mul, norm_mul, norm_pow, norm_pow, norm_neg, norm_one, one_pow, one_mul, h2π, mul_pow,
-    mul_assoc] at hnorm
+  have hnorm : (2 * π) ^ N * |s| ^ N * ‖∫ x, 𝐞 (s * G (θ, x)) • u x ∂μ‖ =
+      ‖∫ x, 𝐞 (s * G (θ, x)) • W (θ, x) ∂μ‖ := by
+    simpa [mul_pow, abs_of_pos Real.pi_pos, mul_assoc] using
+      congrArg norm (pow_mul_integral_eq (μ := μ) hG ha hK (hθ θ hθP) hw hwK s N)
   rw [le_div_iff₀ (by positivity)]
   calc |s| ^ N * ‖∫ x, 𝐞 (s * G (θ, x)) • u x ∂μ‖ * (2 * π) ^ N
       = ‖∫ x, 𝐞 (s * G (θ, x)) • W (θ, x) ∂μ‖ := by rw [← hnorm]; ring
