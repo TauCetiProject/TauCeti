@@ -6,18 +6,22 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.MeasureTheory.OuterMeasure.BorelCantelli
+public import Mathlib.Topology.Algebra.InfiniteSum.Real
 public import Mathlib.Topology.MetricSpace.Pseudo.Defs
+import Mathlib.Analysis.Normed.Group.InfiniteSum
 import Mathlib.Order.Filter.EventuallyConst
 import Mathlib.Topology.Instances.Real.Lemmas
 
 /-!
-# Sequences of sets with summable consecutive symmetric differences and Borel--Cantelli limits
+# Borel--Cantelli consequences for sequences
 
 If consecutive sets of a sequence differ by sets of summable measure, the Borel--Cantelli lemma
 shows that almost every point eventually stays inside the sets or eventually stays outside them.
 Membership in the sets therefore converges almost everywhere to membership in their `liminf`.
 This turns a sequence of approximate constructions whose corrections have summable mass into a
 limiting set, as in the allocation of disjoint sets of prescribed mass in a laminar family.
+For metric-valued functions, summable bounds on consecutive distances outside events of
+summable measure imply that almost every pointwise sequence is Cauchy.
 
 Similarly, if for every positive threshold `ε > 0` the deviation sets `{x | ε ≤ dist (f n x) (a x)}`
 have summable outer measure, Borel--Cantelli along the countable sequence `ε = (k + 1)⁻¹` yields
@@ -26,6 +30,7 @@ almost-everywhere convergence `f n x → a x`.
 ## Main statements
 
 * `TauCeti.MeasureTheory.ae_eventually_mem_iff_mem_liminf`
+* `TauCeti.MeasureTheory.ae_cauchySeq_of_summable_of_tsum_measure_dist_gt_ne_top`
 * `TauCeti.MeasureTheory.ae_tendsto_of_tsum_measure_ge_ne_top`
 -/
 
@@ -56,6 +61,18 @@ theorem ae_eventually_mem_iff_mem_liminf {s : ℕ → Set α}
     obtain ⟨M, hM⟩ := eventually_atTop.1 h
     exact (hconst (max M N) (le_max_right M N)).1 (hM _ (le_max_left M N))
   exact eventually_atTop.2 ⟨N, fun n hn ↦ (hconst n hn).trans hlim.symm⟩
+
+/-- If consecutive distances are bounded by a summable real sequence outside events of
+summable measure, then almost every pointwise sequence is Cauchy. -/
+theorem ae_cauchySeq_of_summable_of_tsum_measure_dist_gt_ne_top {E : Type*} [PseudoMetricSpace E]
+    {f : ℕ → α → E} {r : ℕ → ℝ} (hr : Summable r)
+    (hμ : ∑' n, μ {x | r n < dist (f n x) (f (n + 1) x)} ≠ ∞) :
+    ∀ᵐ x ∂μ, CauchySeq (fun n ↦ f n x) := by
+  filter_upwards [ae_eventually_notMem hμ] with x hx
+  apply cauchySeq_of_summable_dist
+  refine hr.of_norm_bounded_eventually_nat ?_
+  filter_upwards [hx] with n hn
+  simpa only [Real.norm_eq_abs, abs_of_nonneg dist_nonneg] using not_lt.mp hn
 
 /-- **Borel--Cantelli criterion for almost-everywhere convergence.** If for every `ε > 0` the
 deviation sets `{x | ε ≤ dist (f n x) (a x)}` have summable outer measure, then `f n x → a x`
