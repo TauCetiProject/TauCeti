@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.AlgebraicTopology.DGLocalSystem.Basic
 public import TauCeti.AlgebraicTopology.DGLocalSystem.Path.Bimodule
 public import TauCeti.AlgebraicTopology.DGLocalSystem.Path.Homotopy
 public import TauCeti.Algebra.Homology.DG.Bimodule.TensorProduct.Module
@@ -35,6 +36,11 @@ left action (`TauCeti.pathChainAppendHomotopy`). Tensoring with a right module `
 over the loops at `b`, but they are natural in `M`, which is all that is needed to transfer
 quasi-isomorphisms (`TauCeti.DGRightModuleHom.isQuasiIso_of_homotopyRetract`).
 
+Packaged as a functor, basepoint change is `TauCeti.DGLocalSystem.changeBasepoint`. Pushing path
+chains forward along a continuous map sends the `0`-chain of a path to that of its image
+(`TauCeti.cubicalChainModuleLinearMap_pathChainPoint`) and intertwines the maps `ρ` of a path
+and of its image (`TauCeti.pathChainToLoopChain_cubicalChainModuleLinearMap`).
+
 ## Main definitions
 
 * `TauCeti.pathChainToLoopChain`: appending the reversal of `δ`, on chains.
@@ -42,6 +48,8 @@ quasi-isomorphisms (`TauCeti.DGRightModuleHom.isQuasiIso_of_homotopyRetract`).
   `TauCeti.tensorPathChainHomotopy`: the map `m ⊗ c ↦ m · ρ(c)` from `M ⊗ C_*(P_{a→b} B)` to `M`,
   the map `m ↦ m ⊗ [δ]` back and the homotopy between their composite and the identity, which
   make `M ⊗ C_*(P_{a→b} B)` a homotopy retract of `M`.
+* `TauCeti.DGLocalSystem.changeBasepoint R a b`: the functor `M ↦ M ⊗ C_*(P_{a→b} B)` from DG
+  local systems at `a` to DG local systems at `b`.
 
 ## Main results
 
@@ -52,6 +60,8 @@ quasi-isomorphisms (`TauCeti.DGRightModuleHom.isQuasiIso_of_homotopyRetract`).
   the map back is homotopic to the identity.
 * `TauCeti.isQuasiIso_tensorBimoduleMap_pathChainBimodule`: basepoint change preserves
   quasi-isomorphisms.
+* `TauCeti.DGLocalSystem.isQuasiIso_changeBasepoint_map`: the same statement for the functor
+  `TauCeti.DGLocalSystem.changeBasepoint`.
 
 ## References
 
@@ -169,6 +179,42 @@ theorem pathChainToLoopChain_smul_pathChainPoint (δ : MoorePathBetween B a b)
       NormalizedCubicalChain.leftAct_def, ← NormalizedCubicalChain.map_cast,
       NormalizedCubicalChain.crossProduct_point_right, ← h, NormalizedCubicalChain.map_comp,
       NormalizedCubicalChain.map_comp, LinearMap.comp_apply, LinearMap.comp_apply]
+
+section Map
+
+variable {X : Type*} [TopologicalSpace X] (f : C(B, X))
+
+/-- Pushing path chains forward along `f` sends the `0`-chain of a path to the `0`-chain of its
+image. -/
+@[simp]
+theorem cubicalChainModuleLinearMap_pathChainPoint (δ : MoorePathBetween B a b) :
+    cubicalChainModuleLinearMap R (MoorePathBetween.map f) (pathChainPoint R δ) =
+      pathChainPoint R (MoorePathBetween.map f δ) := by
+  rw [pathChainPoint_def, pathChainPoint_def, cubicalChainModuleLinearMap_lof,
+    NormalizedCubicalChain.map_ofCube]
+  congr 2
+  exact ContinuousMap.ext fun t ↦ by simp only [ContinuousMap.comp_apply, SingularCube.point_apply]
+
+/-- Appending the reversal of the image of `δ` after pushing path chains forward along `f` is
+pushing loop chains forward along `f` after appending the reversal of `δ`. -/
+theorem pathChainToLoopChain_cubicalChainModuleLinearMap (δ : MoorePathBetween B a b)
+    (x : cubicalChainModule (MoorePathBetween B a b) (MooreLoopSpace B b) R) :
+    pathChainToLoopChain R (MoorePathBetween.map f δ)
+        (cubicalChainModuleLinearMap R (MoorePathBetween.map f) x) =
+      loopChainMap R f rfl (pathChainToLoopChain R δ x) := by
+  induction x using cubicalChainModule.induction_on with
+  | add x x' hx hx' => rw [map_add, map_add, hx, hx', map_add, map_add]
+  | lof q c =>
+    have h : (MoorePathBetween.loopAppendHomotopyEquiv (MoorePathBetween.map f δ)).symm.toFun.comp
+        (MoorePathBetween.map f) =
+          (MooreLoopSpace.map f rfl).toContinuousMap.comp
+            (MoorePathBetween.loopAppendHomotopyEquiv δ).symm.toFun :=
+      ContinuousMap.ext fun γ ↦ MooreLoopSpace.ext (by simp)
+    rw [cubicalChainModuleLinearMap_lof, pathChainToLoopChain_lof, pathChainToLoopChain_lof,
+      loopChainMap_lof, ← LinearMap.comp_apply (NormalizedCubicalChain.map R _ q),
+      ← NormalizedCubicalChain.map_comp, h, NormalizedCubicalChain.map_comp, LinearMap.comp_apply]
+
+end Map
 
 section BasepointChange
 
@@ -360,5 +406,35 @@ theorem isQuasiIso_tensorBimoduleMap_pathChainBimodule
       (tensorPathChainAct_tensorBimoduleMap δ f) (tensorBimoduleMap_tensorPathChainPoint δ f)
 
 end BasepointChange
+
+namespace DGLocalSystem
+
+variable (R) in
+/-- **Changing the basepoint** of DG local systems from `a` to `b`: tensoring with the chain
+bimodule `C_*(P_{a→b} B)` of Moore paths from `a` to `b`. The definition is exposed so that its
+objects and morphisms remain definitionally `tensorBimoduleObj` and `tensorBimoduleMap`. -/
+@[expose]
+def changeBasepoint (a b : B) : DGLocalSystem.{v} B a R ⥤ DGLocalSystem.{max v u w} B b R :=
+  DGRightModuleCat.tensorBimoduleFunctor.flip.obj (pathChainBimodule B a b R)
+
+@[simp]
+theorem changeBasepoint_obj (M : DGLocalSystem.{v} B a R) :
+    (changeBasepoint R a b).obj M =
+      DGRightModuleCat.tensorBimoduleObj M (pathChainBimodule B a b R) :=
+  (rfl)
+
+@[simp]
+theorem changeBasepoint_map {M N : DGLocalSystem.{v} B a R} (g : M ⟶ N) :
+    (changeBasepoint R a b).map g =
+      DGRightModuleCat.tensorBimoduleMap g (𝟙 (pathChainBimodule B a b R)) :=
+  (rfl)
+
+/-- **Changing the basepoint preserves quasi-isomorphisms.** -/
+theorem isQuasiIso_changeBasepoint_map {M N : DGLocalSystem.{v} B a R} {g : M ⟶ N}
+    (hg : DGRightModuleCat.IsQuasiIso g) :
+    DGRightModuleCat.IsQuasiIso ((changeBasepoint R a b).map g) :=
+  isQuasiIso_tensorBimoduleMap_pathChainBimodule hg
+
+end DGLocalSystem
 
 end TauCeti
