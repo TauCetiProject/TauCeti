@@ -549,9 +549,9 @@ theorem sq_setAverage_norm_le_setAverage_norm_sq {E : Type*} [NormedAddCommGroup
   have h1 := pow_le_pow_left' (enorm_setAverage_le_setLAverage μ (fun x ↦ ‖g x‖) s) 2
   simp only [eNorm_norm] at h1
   have h := h1.trans (sq_setLAverage_enorm_le_ofReal_setAverage_norm_sq hg2)
-  have ha : 0 ≤ ⨍ x in s, ‖g x‖ ∂μ := integral_nonneg fun _ ↦ norm_nonneg _
+  have ha : 0 ≤ ⨍ x in s, ‖g x‖ ∂μ := average_nonneg fun _ ↦ norm_nonneg _
   simp only [Real.eNorm_of_nonneg ha, ← ENNReal.ofReal_pow ha] at h
-  exact (ENNReal.ofReal_le_ofReal_iff (integral_nonneg fun _ ↦ by positivity)).1 h
+  exact (ENNReal.ofReal_le_ofReal_iff (average_nonneg fun _ ↦ by positivity)).1 h
 
 end Jensen
 
