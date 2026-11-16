@@ -107,18 +107,15 @@ def lift {α : Sort*} {r : ℕ} {x : E}
 @[simp]
 theorem lift_mk {α : Sort*} {r : ℕ} {x : E}
     (f : ∀ s : E → F, ContDiffAt 𝕜 ∞ s x → α) (hf) (s : E → F) (hs : ContDiffAt 𝕜 ∞ s x) :
-    lift f hf (mk r s hs) = f s hs :=
-  (rfl)
+    lift f hf (mk r s hs) = f s hs := (rfl)
 
 /-- Derivative coordinates through order `r` of an `r`-jet in the chosen bundle chart. -/
-def coordinates {r : ℕ} {x : E} :
-    JetAt 𝕜 F r x → ((i : Fin (r + 1)) → E [×i.val]→L[𝕜] F) :=
+def coordinates {r : ℕ} {x : E} : JetAt 𝕜 F r x → ((i : Fin (r + 1)) → E [×i.val]→L[𝕜] F) :=
   Setoid.kerLift _
 
 @[simp]
 theorem coordinates_mk (r : ℕ) {x : E} (s : E → F) (hs : ContDiffAt 𝕜 ∞ s x) :
-    coordinates (mk r s hs) = fun i : Fin (r + 1) ↦ iteratedFDeriv 𝕜 i.val s x :=
-  (rfl)
+    coordinates (mk r s hs) = fun i : Fin (r + 1) ↦ iteratedFDeriv 𝕜 i.val s x := (rfl)
 
 /-- Two local smooth sections define the same `r`-jet at `x` if and only if their iterated
 derivatives at `x` agree in every order `i ≤ r`. -/
@@ -126,12 +123,8 @@ derivatives at `x` agree in every order `i ≤ r`. -/
 theorem mk_eq_mk_iff {r : ℕ} {x : E} {s t : E → F}
     (hs : ContDiffAt 𝕜 ∞ s x) (ht : ContDiffAt 𝕜 ∞ t x) :
     mk r s hs = mk r t ht ↔ ∀ i : Fin (r + 1),
-      iteratedFDeriv 𝕜 i.val s x = iteratedFDeriv 𝕜 i.val t x := by
-  constructor
-  · intro h i
-    exact congrFun (congrArg coordinates h) i
-  · intro h
-    exact Quotient.sound (funext h)
+      iteratedFDeriv 𝕜 i.val s x = iteratedFDeriv 𝕜 i.val t x :=
+  ⟨fun h i ↦ congrFun (congrArg coordinates h) i, fun h ↦ Quotient.sound (funext h)⟩
 
 /-- An `r`-jet depends only on the germ of a representative section at `x`. -/
 theorem mk_eq_mk_of_eventuallyEq (r : ℕ) {x : E} {s t : E → F}
@@ -141,8 +134,7 @@ theorem mk_eq_mk_of_eventuallyEq (r : ℕ) {x : E} {s t : E → F}
 
 /-- An `r`-jet is uniquely determined by its coordinate tuple. -/
 @[ext]
-theorem ext {r : ℕ} {x : E} {j k : JetAt 𝕜 F r x} (h : coordinates j = coordinates k) :
-    j = k :=
+theorem ext {r : ℕ} {x : E} {j k : JetAt 𝕜 F r x} (h : coordinates j = coordinates k) : j = k :=
   Setoid.kerLift_injective _ h
 
 /-- Order-zero field value of an `r`-jet in the selected fibre coordinates. -/
@@ -150,15 +142,13 @@ def value {r : ℕ} {x : E} (j : JetAt 𝕜 F r x) : F :=
   coordinates j 0 0
 
 theorem coordinates_zero_apply {r : ℕ} {x : E} (j : JetAt 𝕜 F r x)
-    (v : Fin (0 : Fin (r + 1)).val → E) :
-    coordinates j 0 v = value j :=
+    (v : Fin (0 : Fin (r + 1)).val → E) : coordinates j 0 v = value j :=
   congrArg (coordinates j 0) (funext fun k ↦ Fin.elim0 k)
 
 @[simp]
 theorem value_mk (r : ℕ) {x : E} (s : E → F) (hs : ContDiffAt 𝕜 ∞ s x) :
-    value (mk r s hs) = s x := by
-  rw [value, coordinates_mk]
-  exact iteratedFDeriv_zero_apply _
+    value (mk r s hs) = s x :=
+  iteratedFDeriv_zero_apply _
 
 /-- Order-zero evaluation is surjective in every order `r`. -/
 theorem value_surjective (r : ℕ) (x : E) :
@@ -171,44 +161,33 @@ def truncate {r₁ r₂ : ℕ} {x : E} (hle : r₁ ≤ r₂) : JetAt 𝕜 F r₂
     (mk_eq_mk_iff a.2 b.2).mpr fun i ↦ congrFun hab (i.castLE (Nat.add_le_add_right hle 1))
 
 @[simp]
-theorem truncate_mk {r₁ r₂ : ℕ} (hle : r₁ ≤ r₂) {x : E} (s : E → F)
-    (hs : ContDiffAt 𝕜 ∞ s x) :
-    truncate hle (mk r₂ s hs) = mk r₁ s hs :=
-  (rfl)
+theorem truncate_mk {r₁ r₂ : ℕ} (hle : r₁ ≤ r₂) {x : E} (s : E → F) (hs : ContDiffAt 𝕜 ∞ s x) :
+    truncate hle (mk r₂ s hs) = mk r₁ s hs := (rfl)
 
 @[simp]
 theorem coordinates_truncate {r₁ r₂ : ℕ} (hle : r₁ ≤ r₂) {x : E} (j : JetAt 𝕜 F r₂ x) :
-    coordinates (truncate hle j) = jetTruncate hle (coordinates j) := by
-  induction j using JetAt.inductionOn with
-  | hmk s hs =>
-    funext i
-    simp
+    coordinates (truncate hle j) = jetTruncate hle (coordinates j) :=
+  JetAt.inductionOn j fun _ _ ↦ funext fun _ ↦ by simp
 
 @[simp]
 theorem value_truncate {r₁ r₂ : ℕ} (hle : r₁ ≤ r₂) {x : E} (j : JetAt 𝕜 F r₂ x) :
-    value (truncate hle j) = value j := by
-  induction j using JetAt.inductionOn with
-  | hmk s hs => simp
+    value (truncate hle j) = value j :=
+  JetAt.inductionOn j fun _ _ ↦ rfl
 
 @[simp]
-theorem truncate_refl {r : ℕ} {x : E} (j : JetAt 𝕜 F r x) :
-    truncate (le_refl r) j = j := by
-  induction j using JetAt.inductionOn with
-  | hmk s hs => simp
+theorem truncate_refl {r : ℕ} {x : E} (j : JetAt 𝕜 F r x) : truncate (le_refl r) j = j :=
+  JetAt.inductionOn j fun _ _ ↦ rfl
 
 @[simp]
-theorem truncate_trans {r₁ r₂ r₃ : ℕ} (h₁₂ : r₁ ≤ r₂) (h₂₃ : r₂ ≤ r₃)
-    {x : E} (j : JetAt 𝕜 F r₃ x) :
-    truncate h₁₂ (truncate h₂₃ j) = truncate (h₁₂.trans h₂₃) j := by
-  induction j using JetAt.inductionOn with
-  | hmk s hs => simp
+theorem truncate_trans {r₁ r₂ r₃ : ℕ} (h₁₂ : r₁ ≤ r₂) (h₂₃ : r₂ ≤ r₃) {x : E}
+    (j : JetAt 𝕜 F r₃ x) : truncate h₁₂ (truncate h₂₃ j) = truncate (h₁₂.trans h₂₃) j :=
+  JetAt.inductionOn j fun _ _ ↦ rfl
 
 /-- Jet truncation `JetAt 𝕜 F r₂ x → JetAt 𝕜 F r₁ x` is surjective for `r₁ ≤ r₂`. -/
 theorem truncate_surjective {r₁ r₂ : ℕ} (hle : r₁ ≤ r₂) (x : E) :
-    Function.Surjective (truncate hle : JetAt 𝕜 F r₂ x → JetAt 𝕜 F r₁ x) := by
-  intro j
-  obtain ⟨s, hs, rfl⟩ := mk_surjective r₁ x j
-  exact ⟨mk r₂ s hs, rfl⟩
+    Function.Surjective (truncate hle : JetAt 𝕜 F r₂ x → JetAt 𝕜 F r₁ x) := fun j ↦
+  let ⟨s, hs, h⟩ := mk_surjective r₁ x j
+  ⟨mk r₂ s hs, h⟩
 
 /-! ### Identification at orders `0` and `1` -/
 
@@ -217,24 +196,18 @@ variable (𝕜) in
 def zeroEquiv (x : E) : JetAt 𝕜 F 0 x ≃ F where
   toFun := value
   invFun v := mk 0 (fun _ ↦ v) contDiffAt_const
-  left_inv j := by
-    refine ext (funext fun i ↦ ?_)
-    have hi : i = 0 := Fin.ext (Nat.lt_one_iff.mp i.isLt)
-    subst hi
-    ext w
-    dsimp only
-    rw [coordinates_zero_apply, coordinates_zero_apply, value_mk]
+  left_inv j := ext <| funext fun i ↦ by
+    obtain rfl : i = 0 := Fin.ext (Nat.lt_one_iff.mp i.isLt)
+    exact ContinuousMultilinearMap.ext fun _ ↦ by
+      rw [coordinates_zero_apply, coordinates_zero_apply, value_mk]
   right_inv _ := value_mk 0 _ _
 
 @[simp]
-theorem zeroEquiv_apply {x : E} (j : JetAt 𝕜 F 0 x) :
-    zeroEquiv 𝕜 x j = value j :=
-  (rfl)
+theorem zeroEquiv_apply {x : E} (j : JetAt 𝕜 F 0 x) : zeroEquiv 𝕜 x j = value j := (rfl)
 
 @[simp]
 theorem zeroEquiv_symm_apply {x : E} (v : F) :
-    (zeroEquiv 𝕜 x).symm v = mk 0 (fun _ ↦ v) contDiffAt_const :=
-  (rfl)
+    (zeroEquiv 𝕜 x).symm v = mk 0 (fun _ ↦ v) contDiffAt_const := (rfl)
 
 /-- Order-one jets in `JetAt` identify canonically with `TauCeti.FirstJetAt`. -/
 def equivFirstJetAt (x : E) : JetAt 𝕜 F 1 x ≃ FirstJetAt 𝕜 F x where
@@ -245,23 +218,20 @@ def equivFirstJetAt (x : E) : JetAt 𝕜 F 1 x ≃ FirstJetAt 𝕜 F x where
          congrArg (continuousMultilinearCurryFin1 𝕜 E F) (h 1)⟩
   invFun j := mk 1 (FirstJetAt.exists_section j).choose
     (FirstJetAt.exists_section j).choose_spec.1.contDiffAt
-  left_inv j := by
-    induction j using JetAt.inductionOn with
-    | hmk s hs =>
-      have hspec := (FirstJetAt.exists_section (FirstJetAt.mk s hs)).choose_spec
-      obtain ⟨hsv, hsd⟩ := (FirstJetAt.mk_eq_mk_iff hspec.1.contDiffAt hs).mp hspec.2
-      refine (mk_eq_mk_iff hspec.1.contDiffAt hs).mpr (Fin.forall_fin_two.mpr ⟨?_, ?_⟩)
-      · ext w
-        exact (iteratedFDeriv_zero_apply _).trans (hsv.trans (iteratedFDeriv_zero_apply _).symm)
-      · apply (continuousMultilinearCurryFin1 𝕜 E F).injective
-        exact (continuousMultilinearCurryFin1_iteratedFDeriv_one _ x).trans
+  left_inv j := JetAt.inductionOn j fun s hs ↦ by
+    have hspec := (FirstJetAt.exists_section (FirstJetAt.mk s hs)).choose_spec
+    obtain ⟨hsv, hsd⟩ := (FirstJetAt.mk_eq_mk_iff hspec.1.contDiffAt hs).mp hspec.2
+    refine (mk_eq_mk_iff hspec.1.contDiffAt hs).mpr (Fin.forall_fin_two.mpr ⟨?_, ?_⟩)
+    · exact ContinuousMultilinearMap.ext fun _ ↦
+        (iteratedFDeriv_zero_apply _).trans (hsv.trans (iteratedFDeriv_zero_apply _).symm)
+    · exact (continuousMultilinearCurryFin1 𝕜 E F).injective <|
+        (continuousMultilinearCurryFin1_iteratedFDeriv_one _ x).trans
           (hsd.trans (continuousMultilinearCurryFin1_iteratedFDeriv_one s x).symm)
   right_inv j := (FirstJetAt.exists_section j).choose_spec.2
 
 @[simp]
 theorem equivFirstJetAt_mk {x : E} (s : E → F) (hs : ContDiffAt 𝕜 ∞ s x) :
-    equivFirstJetAt x (mk 1 s hs) = FirstJetAt.mk s hs :=
-  (rfl)
+    equivFirstJetAt x (mk 1 s hs) = FirstJetAt.mk s hs := (rfl)
 
 @[simp]
 theorem equivFirstJetAt_symm_mk {x : E} (s : E → F) (hs : ContDiffAt 𝕜 ∞ s x) :
@@ -271,11 +241,8 @@ theorem equivFirstJetAt_symm_mk {x : E} (s : E → F) (hs : ContDiffAt 𝕜 ∞ 
 @[simp]
 theorem coordinates_equivFirstJetAt {x : E} (j : JetAt 𝕜 F 1 x) :
     FirstJetAt.coordinates (equivFirstJetAt x j) =
-      (value j, continuousMultilinearCurryFin1 𝕜 E F (coordinates j 1)) := by
-  induction j using JetAt.inductionOn with
-  | hmk s hs =>
-    rw [equivFirstJetAt_mk, FirstJetAt.coordinates_mk, value_mk, coordinates_mk]
-    exact Prod.ext rfl (continuousMultilinearCurryFin1_iteratedFDeriv_one s x).symm
+      (value j, continuousMultilinearCurryFin1 𝕜 E F (coordinates j 1)) :=
+  JetAt.inductionOn j fun _ _ ↦ by simp [continuousMultilinearCurryFin1_iteratedFDeriv_one]
 
 @[simp]
 theorem value_equivFirstJetAt {x : E} (j : JetAt 𝕜 F 1 x) :
@@ -285,14 +252,13 @@ theorem value_equivFirstJetAt {x : E} (j : JetAt 𝕜 F 1 x) :
 @[simp]
 theorem value_equivFirstJetAt_symm {x : E} (j : FirstJetAt 𝕜 F x) :
     value ((equivFirstJetAt x).symm j) = FirstJetAt.value j := by
-  obtain ⟨s, hs, rfl⟩ := FirstJetAt.exists_section j
-  simp
+  obtain ⟨_, _, rfl⟩ := FirstJetAt.exists_section j; simp
 
 @[simp]
 theorem coordinates_equivFirstJetAt_symm_one {x : E} (j : FirstJetAt 𝕜 F x) :
     coordinates ((equivFirstJetAt x).symm j) 1 =
       (continuousMultilinearCurryFin1 𝕜 E F).symm (FirstJetAt.coordinates j).2 := by
-  obtain ⟨s, hs, rfl⟩ := FirstJetAt.exists_section j
+  obtain ⟨_, _, rfl⟩ := FirstJetAt.exists_section j
   simp [← continuousMultilinearCurryFin1_iteratedFDeriv_one]
 
 /-! ### Symmetric coordinate equivalence and global realization -/
@@ -301,11 +267,9 @@ theorem coordinates_equivFirstJetAt_symm_one {x : E} (j : FirstJetAt 𝕜 F x) :
 under arbitrary permutations of its multilinear slots. -/
 theorem coordinates_comp_perm [IsRCLikeNormedField 𝕜] {r : ℕ} {x : E} (j : JetAt 𝕜 F r x)
     (i : Fin (r + 1)) (v : Fin i.val → E) (σ : Equiv.Perm (Fin i.val)) :
-    coordinates j i (v ∘ σ) = coordinates j i v := by
-  induction j using JetAt.inductionOn with
-  | hmk s hs =>
-    simpa only [coordinates_mk] using hs.iteratedFDeriv_comp_perm_of_minSmoothness
-      (by rw [minSmoothness_of_isRCLikeNormedField]; simp) v σ
+    coordinates j i (v ∘ σ) = coordinates j i v :=
+  JetAt.inductionOn j fun _ hs ↦ hs.iteratedFDeriv_comp_perm_of_minSmoothness
+    (by rw [minSmoothness_of_isRCLikeNormedField]; simp) v σ
 
 /-- Over `ℝ` or `ℂ`, `JetAt.coordinates` identifies `r`-jets at `x` bijectively with all tuples of
 slot-symmetric continuous multilinear maps through order `r`. This identification depends on the
@@ -318,20 +282,18 @@ def coordinatesEquiv [IsRCLikeNormedField 𝕜] (r : ℕ) (x : E) :
   invFun A := mk r (finiteJetPolynomial r A.1 x) (contDiff_finiteJetPolynomial r A.1 x).contDiffAt
   left_inv j := by
     let := IsRCLikeNormedField.rclike 𝕜
-    refine ext (funext fun i ↦ ?_)
-    exact iteratedFDeriv_finiteJetPolynomial_self r (coordinates j) x i (coordinates_comp_perm j i)
+    exact ext <| funext fun i ↦
+      iteratedFDeriv_finiteJetPolynomial_self r (coordinates j) x i (coordinates_comp_perm j i)
   right_inv A := by
     let := IsRCLikeNormedField.rclike 𝕜
-    refine Subtype.ext (funext fun i ↦ ?_)
-    exact iteratedFDeriv_finiteJetPolynomial_self r A.1 x i (A.2 i)
+    exact Subtype.ext <| funext fun i ↦
+      iteratedFDeriv_finiteJetPolynomial_self r A.1 x i (A.2 i)
 
 @[simp]
-theorem coe_coordinatesEquiv_apply [IsRCLikeNormedField 𝕜] {r : ℕ} {x : E}
-    (j : JetAt 𝕜 F r x) :
+theorem coe_coordinatesEquiv_apply [IsRCLikeNormedField 𝕜] {r : ℕ} {x : E} (j : JetAt 𝕜 F r x) :
     ((coordinatesEquiv r x j :
       {_A : (i : Fin (r + 1)) → E [×i.val]→L[𝕜] F // _}) :
-        (i : Fin (r + 1)) → E [×i.val]→L[𝕜] F) = coordinates j :=
-  (rfl)
+        (i : Fin (r + 1)) → E [×i.val]→L[𝕜] F) = coordinates j := (rfl)
 
 @[simp]
 theorem coordinates_coordinatesEquiv_symm [IsRCLikeNormedField 𝕜] (r : ℕ) (x : E)
@@ -354,16 +316,15 @@ theorem exists_section_eventually_mem [IsRCLikeNormedField 𝕜] {r : ℕ} {x : 
     ∃ s : E → F, ∃ hs : ContDiff 𝕜 ∞ s,
       mk r s hs.contDiffAt = j ∧ ∀ᶠ y in 𝓝 x, (y, s y) ∈ u := by
   let := IsRCLikeNormedField.rclike 𝕜
-  obtain ⟨s, hs, hsj, hsu⟩ :=
-    exists_contDiff_iteratedFDeriv_eq_eventually_mem r (coordinates j)
-      (coordinates_comp_perm j) x hu
+  obtain ⟨s, hs, hsj, hsu⟩ := exists_contDiff_iteratedFDeriv_eq_eventually_mem r (coordinates j)
+    (coordinates_comp_perm j) x hu
   exact ⟨s, hs.of_le (by simp), ext (funext hsj), hsu⟩
 
 /-- Over `ℝ` or `ℂ`, every `r`-jet class has a globally `C^∞` representative on the base chart. -/
 theorem exists_section [IsRCLikeNormedField 𝕜] {r : ℕ} {x : E} (j : JetAt 𝕜 F r x) :
-    ∃ s : E → F, ∃ hs : ContDiff 𝕜 ∞ s, mk r s hs.contDiffAt = j := by
-  obtain ⟨s, hs, hsj, -⟩ := exists_section_eventually_mem j Filter.univ_mem
-  exact ⟨s, hs, hsj⟩
+    ∃ s : E → F, ∃ hs : ContDiff 𝕜 ∞ s, mk r s hs.contDiffAt = j :=
+  let ⟨s, hs, hsj, _⟩ := exists_section_eventually_mem j Filter.univ_mem
+  ⟨s, hs, hsj⟩
 
 /-! ### Nonlinear bundle coordinate transformations on `JetAt` -/
 
@@ -387,24 +348,20 @@ theorem coordinates_map [IsRCLikeNormedField 𝕜] {r : ℕ} {x : E'}
     {h : E' → E} {g : E' × F → G} (j : JetAt 𝕜 F r (h x))
     (hh : ContDiffAt 𝕜 r h x) (hg : ContDiffAt 𝕜 r g (x, value j)) :
     coordinates (map h g j) = jetCoordChange r h g x (coordinates j) := by
-  have hhg : ContDiffAt 𝕜 r h x ∧ ContDiffAt 𝕜 r g (x, value j) := ⟨hh, hg⟩
-  simp [map, hhg]
+  simp [map, hh, hg]
 
 @[simp]
 theorem value_map [IsRCLikeNormedField 𝕜] {r : ℕ} {x : E'}
     (h : E' → E) (g : E' × F → G) (j : JetAt 𝕜 F r (h x)) :
     value (map h g j) = g (x, value j) := by
   by_cases hhg : ContDiffAt 𝕜 r h x ∧ ContDiffAt 𝕜 r g (x, value j)
-  · rw [value, coordinates_map j hhg.1 hhg.2]
-    exact jetCoordChange_zero_apply r h g x (coordinates j) 0
+  · rw [value, coordinates_map j hhg.1 hhg.2]; exact jetCoordChange_zero_apply _ _ _ _ _ 0
   · simp [map, hhg]
 
 /-- `JetAt.map` depends only on the germs of the coordinate maps and the input jet coordinates. -/
 theorem map_congr [IsRCLikeNormedField 𝕜] {r : ℕ} {x : E'}
-    {h h' : E' → E} {g g' : E' × F → G}
-    {j : JetAt 𝕜 F r (h x)} {j' : JetAt 𝕜 F r (h' x)}
-    (hh : h =ᶠ[𝓝 x] h') (hg : g =ᶠ[𝓝 (x, value j)] g')
-    (hj : coordinates j = coordinates j') :
+    {h h' : E' → E} {g g' : E' × F → G} {j : JetAt 𝕜 F r (h x)} {j' : JetAt 𝕜 F r (h' x)}
+    (hh : h =ᶠ[𝓝 x] h') (hg : g =ᶠ[𝓝 (x, value j)] g') (hj : coordinates j = coordinates j') :
     map h g j = map h' g' j' := by
   have hv : value j = value j' := by rw [value, value, hj]
   have hcond : (ContDiffAt 𝕜 r h x ∧ ContDiffAt 𝕜 r g (x, value j)) ↔
@@ -415,13 +372,10 @@ theorem map_congr [IsRCLikeNormedField 𝕜] {r : ℕ} {x : E'}
       ⟨fun h1 ↦ h1.congr_of_eventuallyEq hg.symm, fun h1 ↦ h1.congr_of_eventuallyEq hg⟩
   by_cases hhg : ContDiffAt 𝕜 r h x ∧ ContDiffAt 𝕜 r g (x, value j)
   · have hhg' := hcond.mp hhg
-    apply ext
-    rw [coordinates_map j hhg.1 hhg.2, coordinates_map j' hhg'.1 hhg'.2, ← hj]
-    exact jetCoordChange_congr (coordinates j) hh hg
-  · have hhg' : ¬ (ContDiffAt 𝕜 r h' x ∧ ContDiffAt 𝕜 r g' (x, value j')) :=
-      mt hcond.mpr hhg
-    rw [map, map]
-    split_ifs
+    exact ext <| by
+      rw [coordinates_map j hhg.1 hhg.2, coordinates_map j' hhg'.1 hhg'.2, ← hj]
+      exact jetCoordChange_congr (coordinates j) hh hg
+  · simp only [map, hhg, mt hcond.mpr hhg, ↓reduceDIte]
     simp only [← hv, hg.eq_of_nhds]
 
 /-- Computing the `r`-jet before or after transforming a smooth local section gives the same
@@ -434,11 +388,10 @@ theorem map_mk [IsRCLikeNormedField 𝕜] {r : ℕ} {x : E'}
     map h g (mk r s hs) =
       mk r (fun y ↦ g (y, s (h y))) (hg.comp x (contDiffAt_id.prodMk (hs.comp x hh))) := by
   have hr : (r : ℕ∞ω) ≤ ∞ := by simp
-  have hg' : ContDiffAt 𝕜 r g (x, value (mk r s hs)) := by
-    simpa only [value_mk] using hg.of_le hr
-  apply ext
-  rw [coordinates_map (mk r s hs) (hh.of_le hr) hg', coordinates_mk, coordinates_mk]
-  exact jetCoordChange_iteratedFDeriv (hh.of_le hr) (hs.of_le hr) (hg.of_le hr)
+  exact ext <| by
+    rw [coordinates_map (mk r s hs) (hh.of_le hr) (by simpa only [value_mk] using hg.of_le hr),
+      coordinates_mk, coordinates_mk]
+    exact jetCoordChange_iteratedFDeriv (hh.of_le hr) (hs.of_le hr) (hg.of_le hr)
 
 /-- Nonlinear coordinate transformations on `JetAt` commute with truncation to any lower order. -/
 @[simp]
@@ -447,64 +400,54 @@ theorem truncate_map [IsRCLikeNormedField 𝕜] {r₁ r₂ : ℕ} (hle : r₁ �
     (hh : ContDiffAt 𝕜 r₂ h x) (hg : ContDiffAt 𝕜 r₂ g (x, value j)) :
     truncate hle (map h g j) = map h g (truncate hle j) := by
   have hr : (r₁ : ℕ∞ω) ≤ r₂ := Nat.cast_le.mpr hle
-  have hg₁ : ContDiffAt 𝕜 r₁ g (x, value (truncate hle j)) := by
-    simpa only [value_truncate] using hg.of_le hr
-  apply ext
-  rw [coordinates_truncate, coordinates_map j hh hg,
-    coordinates_map (truncate hle j) (hh.of_le hr) hg₁, coordinates_truncate,
-    jetTruncate_jetCoordChange]
+  exact ext <| by
+    rw [coordinates_truncate, coordinates_map j hh hg, coordinates_map (truncate hle j)
+      (hh.of_le hr) (by simpa only [value_truncate] using hg.of_le hr),
+      coordinates_truncate, jetTruncate_jetCoordChange]
 
 /-- At order `1`, `JetAt.map` agrees with `FirstJetAt.map` under `JetAt.equivFirstJetAt`. -/
 theorem equivFirstJetAt_map [IsRCLikeNormedField 𝕜] {x : E'}
     {h : E' → E} {g : E' × F → G} (j : JetAt 𝕜 F 1 (h x))
     (hh : ContDiffAt 𝕜 1 h x) (hg : ContDiffAt 𝕜 1 g (x, value j)) :
-    equivFirstJetAt x (map h g j) = FirstJetAt.map h g (equivFirstJetAt (h x) j) := by
-  apply FirstJetAt.ext
-  rw [coordinates_equivFirstJetAt, FirstJetAt.coordinates_map, coordinates_equivFirstJetAt]
-  dsimp only [value]
-  rw [coordinates_map j hh hg]
-  exact (firstJetCoordChange_eq_jetCoordChange h g x (coordinates j)).symm
+    equivFirstJetAt x (map h g j) = FirstJetAt.map h g (equivFirstJetAt (h x) j) :=
+  FirstJetAt.ext <| by
+    rw [coordinates_equivFirstJetAt, FirstJetAt.coordinates_map, coordinates_equivFirstJetAt]
+    dsimp only [value]
+    rw [coordinates_map j hh hg]
+    exact (firstJetCoordChange_eq_jetCoordChange h g x (coordinates j)).symm
 
 /-- Identity base and fibre coordinate maps induce the identity on `r`-jets. -/
 @[simp]
 theorem map_id [IsRCLikeNormedField 𝕜] {r : ℕ} {x : E} (j : JetAt 𝕜 F r x) :
-    map id Prod.snd j = j := by
-  apply ext
-  rw [coordinates_map j contDiffAt_id contDiffAt_snd, jetCoordChange_id]
+    map id Prod.snd j = j :=
+  ext <| by rw [coordinates_map j contDiffAt_id contDiffAt_snd, jetCoordChange_id]
 
 /-- Nonlinear bundle coordinate changes compose on `r`-jet section classes. -/
 theorem map_comp [IsRCLikeNormedField 𝕜] {r : ℕ} {y : E''}
     (h : E' → E) (k : E'' → E') (g : E' × F → G) (l : E'' × G → H)
     (j : JetAt 𝕜 F r (h (k y)))
     (hh : ContDiffAt 𝕜 r h (k y)) (hk : ContDiffAt 𝕜 r k y)
-    (hg : ContDiffAt 𝕜 r g (k y, value j))
-    (hl : ContDiffAt 𝕜 r l (y, g (k y, value j))) :
+    (hg : ContDiffAt 𝕜 r g (k y, value j)) (hl : ContDiffAt 𝕜 r l (y, g (k y, value j))) :
     map k l (map h g j) =
       map (h ∘ k) (fun p : E'' × F ↦ l (p.1, g (k p.1, p.2))) j := by
-  have hl' : ContDiffAt 𝕜 r l (y, value (map h g j)) := by
-    simpa only [value_map] using hl
   have hfg : ContDiffAt 𝕜 r (fun p : E'' × F ↦ l (p.1, g (k p.1, p.2))) (y, value j) :=
-    hl.comp (y, value j)
-      (contDiffAt_fst.prodMk (hg.comp (y, value j)
-        ((hk.comp (y, value j) contDiffAt_fst).prodMk contDiffAt_snd)))
-  apply ext
-  rw [coordinates_map (map h g j) hk hl', coordinates_map j hh hg,
-    coordinates_map (x := y) (h := h ∘ k) j (hh.comp y hk) hfg]
-  exact jetCoordChange_comp (coordinates j) hh hk hg hl
+    hl.comp (y, value j) (contDiffAt_fst.prodMk (hg.comp (y, value j)
+      ((hk.comp (y, value j) contDiffAt_fst).prodMk contDiffAt_snd)))
+  exact ext <| by
+    rw [coordinates_map (map h g j) hk (by simpa only [value_map] using hl),
+      coordinates_map j hh hg, coordinates_map (x := y) (h := h ∘ k) j (hh.comp y hk) hfg]
+    exact jetCoordChange_comp (coordinates j) hh hk hg hl
 
 /-- Coordinate maps that are inverse as germs restore the original `r`-jet coordinates. -/
 theorem coordinates_map_inverse [IsRCLikeNormedField 𝕜] {r : ℕ} {x : E}
     (h : E' → E) (k : E → E') (g : E' × F → G) (l : E × G → F)
     (j : JetAt 𝕜 F r (h (k x)))
     (hh : ContDiffAt 𝕜 r h (k x)) (hk : ContDiffAt 𝕜 r k x)
-    (hg : ContDiffAt 𝕜 r g (k x, value j))
-    (hl : ContDiffAt 𝕜 r l (x, g (k x, value j)))
+    (hg : ContDiffAt 𝕜 r g (k x, value j)) (hl : ContDiffAt 𝕜 r l (x, g (k x, value j)))
     (hbase : h ∘ k =ᶠ[𝓝 x] id)
     (hfibre : (fun p : E × F ↦ l (p.1, g (k p.1, p.2))) =ᶠ[𝓝 (x, value j)] Prod.snd) :
     coordinates (map k l (map h g j)) = coordinates j := by
-  have hl' : ContDiffAt 𝕜 r l (x, value (map h g j)) := by
-    simpa only [value_map] using hl
-  rw [coordinates_map (map h g j) hk hl', coordinates_map j hh hg]
+  rw [coordinates_map (map h g j) hk (by simpa only [value_map] using hl), coordinates_map j hh hg]
   exact jetCoordChange_inverse (coordinates j) hh hk hg hl hbase hfibre
 
 end JetAt
