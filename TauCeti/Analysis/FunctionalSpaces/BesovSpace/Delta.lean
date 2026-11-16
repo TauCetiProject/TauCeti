@@ -68,7 +68,7 @@ private theorem toLp_fourierInv_ae_eq (j : ℕ) (p : ℝ≥0∞) :
     (𝓕⁻ (φ.inhomogeneousLittlewoodPaleySchwartz j)).toLp p (volume : Measure E) =ᵐ[volume]
       𝓕⁻ fun ξ ↦ (φ.inhomogeneousLittlewoodPaley j ξ : ℂ) := by
   filter_upwards [(𝓕⁻ (φ.inhomogeneousLittlewoodPaleySchwartz j)).coeFn_toLp p] with x hx
-  rw [hx, SchwartzMap.fourierInv_coe, φ.coe_inhomogeneousLittlewoodPaleySchwartz]
+  rw [hx, φ.coe_fourierInv_inhomogeneousLittlewoodPaleySchwartz]
 
 variable {φ}
 
