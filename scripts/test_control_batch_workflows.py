@@ -19,6 +19,20 @@ def workflow(name):
 
 
 class ControlBatches(unittest.TestCase):
+    def test_shared_mode_reuses_the_retained_loop_and_keeps_the_canary_separate(self):
+        status = workflow('pr-status.yml')
+        self.assertIn({'cron': '*/5 * * * *'}, status.get('on', status.get(True))['schedule'])
+        self.assertIn("vars.PR_STATUS_SHARED_EVIDENCE == 'true'", status['jobs']['reconcile']['if'])
+        labels = workflow('pr-labels.yml')
+        dispatch = labels.get('on', labels.get(True))['workflow_dispatch']['inputs']
+        self.assertFalse(dispatch['shared_evidence']['default'])
+        self.assertIn("vars.PR_STATUS_SHARED_EVIDENCE != 'true'", labels['jobs']['sweep']['if'])
+        wake = labels['jobs']['wake-shared-backstop']
+        self.assertIn("vars.PR_STATUS_SHARED_EVIDENCE == 'true'", wake['if'])
+        self.assertEqual(wake['steps'][0]['run'], 'gh workflow run pr-status.yml --ref main')
+        self.assertEqual(wake['steps'][0]['env']['GH_TOKEN'], '${{ github.token }}')
+        self.assertNotIn('APP_PRIVATE_KEY', str(wake))
+
     def test_status_workflows_distinguish_deferral_from_failure(self):
         steps = workflow('pr-status.yml')['jobs']['reconcile']['steps']
         batch = next(s for s in steps if s.get('name') == 'Reconcile PR status labels')

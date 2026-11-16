@@ -18,6 +18,7 @@ on:
   # Retry retained work even after the final PR event of a quiet period.
   schedule:
     - cron: "7 * * * *"
+    - cron: "*/5 * * * *"
   workflow_dispatch:
   pull_request_target:
     types: [opened, reopened, synchronize, closed, edited, converted_to_draft, ready_for_review, labeled, unlabeled]
@@ -42,7 +43,9 @@ jobs:
     # (self-tested, hold, keep, roadmap/*, ...) still wake the batch.
     if: >
       github.repository == 'TauCetiProject/TauCeti' && (
-        ((github.event_name == 'schedule' || github.event_name == 'workflow_dispatch') && github.ref == 'refs/heads/main')
+        (((github.event_name == 'schedule'
+             && (vars.PR_STATUS_SHARED_EVIDENCE == 'true' || github.event.schedule == '7 * * * *'))
+            || github.event_name == 'workflow_dispatch') && github.ref == 'refs/heads/main')
         || (github.event_name == 'pull_request_target'
           && (github.event.action != 'edited' || github.event.changes.base != null)
           && !((github.event.action == 'labeled' || github.event.action == 'unlabeled')
@@ -104,10 +107,10 @@ jobs:
             .github/actions/checkout-merge-policy
           persist-credentials: false
       - name: Prepare pinned shared tools
-        uses: TauCetiProject/TauCetiTools/.github/actions/setup@246ca8f610c12815746730d5ff02173193fa89ba
+        uses: TauCetiProject/TauCetiTools/.github/actions/setup@1f5d35c117736e8907bbc09be80a4704196536e5
         with:
           tools-repository: TauCetiProject/TauCetiTools
-          tools-ref: 246ca8f610c12815746730d5ff02173193fa89ba
+          tools-ref: 1f5d35c117736e8907bbc09be80a4704196536e5
           project-directory: .
       - name: Checkout the pinned merge policy (read-only)
         uses: ./.github/actions/checkout-merge-policy
@@ -171,6 +174,8 @@ jobs:
         env:
           GH_TOKEN: ${{ steps.app-token.outputs.token }}
           TAUCETI_GITHUB_WRITE_ROLE: review-bot-installation-143500674
+          TAUCETI_PR_STATUS_SHARED_EVIDENCE: ${{ vars.PR_STATUS_SHARED_EVIDENCE }}
+          TAUCETI_GITHUB_STATE_TOKEN: ${{ secrets.TAUCETI_GITHUB_STATE_CLIENT_TOKEN }}
           SELF_TESTED_MERGE_BACKEND: ${{ vars.MERGE_BACKEND }}
           SELF_TESTED_WRITE_TOKEN: ${{ github.token }}
           GH_REPO: ${{ github.repository }}
