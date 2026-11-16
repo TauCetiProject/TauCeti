@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.Symplectic.Floer.Manifold
-public import TauCeti.Geometry.Symplectic.Floer.Linearization
+public import TauCeti.Geometry.Symplectic.Floer.Linearization.Basic
 public import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.AlongCurve.Hom
 public import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.AlongCurve.Surface
 import TauCeti.Geometry.Manifold.VectorBundle.Translate
