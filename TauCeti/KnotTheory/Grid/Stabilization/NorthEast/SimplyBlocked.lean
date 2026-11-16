@@ -5,7 +5,6 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.KnotTheory.Grid.SimplyBlocked.Map
 import TauCeti.KnotTheory.Grid.Homology.ExactSequence
 public import TauCeti.KnotTheory.Grid.Stabilization.NorthEast.Grading
 public import TauCeti.KnotTheory.Grid.Homology.Series.SimplyBlocked
@@ -33,7 +32,7 @@ characteristic two, the bigraded Poincaré series and Alexander-graded Euler cha
 are unchanged.
 
 The chain-level specialization construction is shared with the south-west comparison through
-`SimplyBlocked/Map.lean`, and the exact-sequence quasi-isomorphism transfer is shared through
+`SimplyBlocked/Basic.lean`, and the exact-sequence quasi-isomorphism transfer is shared through
 `Homology/ExactSequence.lean`.
 
 ## References
@@ -141,9 +140,8 @@ theorem simplyBlockedStabilizeXSuccMap_simplyBlockedDifferential (c : GridChainH
     G.simplyBlockedStabilizeXSuccMap s i R
         ((G.stabilizeX s.succ (G.X s).succ s).simplyBlockedDifferential R j c) =
       G.simplyBlockedDifferential R i (G.simplyBlockedStabilizeXSuccMap s i R c) :=
-  simplyBlockedMap_simplyBlockedDifferential R i j (simplyBlockedStabilizeXSuccRingHom s i R)
-    (G.stabilizeXSuccChainMap s R) G _
-    (simplyBlockedStabilizeXSuccRingHom_specialization s i R)
+  G.simplyBlockedDifferential_of_specialization R
+    (G.simplyBlockedStabilizeXSuccMap_simplyBlockedSpecialization s i R)
     (G.stabilizeXSuccChainMap_unblockedDifferential s R) c
 
 /-! ### Quasi-isomorphism after blocking -/
@@ -157,17 +155,26 @@ theorem exists_sub_simplyBlockedStabilizeXSuccMap_mem_range {y : GridChainHat R 
     (hy : y ∈ LinearMap.ker (G.simplyBlockedDifferential R i)) :
     ∃ x ∈ LinearMap.ker ((G').simplyBlockedDifferential R j),
       y - G.simplyBlockedStabilizeXSuccMap s i R x ∈
-        LinearMap.range (G.simplyBlockedDifferential R i) :=
-  exists_sub_specializationCompatibleMap_mem_range R i j
-    (G.stabilizeXSuccChainMap s R).toAddMonoidHom
-    (G.simplyBlockedStabilizeXSuccMap s i R).toAddMonoidHom G _
-    (G.stabilizeXSuccChainMap_unblockedDifferential s R)
-    (fun c => by
-      rw [LinearMap.toAddMonoidHom_coe, LinearMap.map_smulₛₗ]
-      simp [Fin.predAbove_succ_succAbove])
-    (G.simplyBlockedStabilizeXSuccMap_simplyBlockedSpecialization s i R)
-    (fun _ hc => G.exists_sub_stabilizeXSuccChainMap_mem_range s R hc)
-    (fun _ hx h => G.mem_range_of_stabilizeXSuccChainMap_mem_range s R hx h) hy
+        LinearMap.range (G.simplyBlockedDifferential R i) := by
+  simpa only [LinearMap.toAddMonoidHom_coe] using
+    G.exists_sub_map_mem_range_simplyBlockedDifferential R i j
+      (G.stabilizeXSuccChainMap s R).toAddMonoidHom
+      (G.simplyBlockedStabilizeXSuccMap s i R).toAddMonoidHom _
+      (by simpa only [LinearMap.toAddMonoidHom_coe] using
+        G.stabilizeXSuccChainMap_unblockedDifferential s R)
+      (fun c => by
+        rw [LinearMap.toAddMonoidHom_coe, LinearMap.map_smulₛₗ]
+        simp)
+      (by simpa only [LinearMap.toAddMonoidHom_coe] using
+        G.simplyBlockedStabilizeXSuccMap_simplyBlockedSpecialization s i R)
+      (by
+        intro c hc
+        simpa only [LinearMap.toAddMonoidHom_coe] using
+          G.exists_sub_stabilizeXSuccChainMap_mem_range s R hc)
+      (by
+        intro x hx h
+        exact G.mem_range_of_stabilizeXSuccChainMap_mem_range s R hx
+          (by simpa only [LinearMap.toAddMonoidHom_coe] using h)) hy
 
 /-- A simply blocked cycle of the stabilized diagram whose image in `G` is a boundary is itself a
 boundary. -/
@@ -175,17 +182,26 @@ theorem mem_range_of_simplyBlockedStabilizeXSuccMap_mem_range {x : GridChainHat 
     (hx : x ∈ LinearMap.ker ((G').simplyBlockedDifferential R j))
     (h : G.simplyBlockedStabilizeXSuccMap s i R x ∈
       LinearMap.range (G.simplyBlockedDifferential R i)) :
-    x ∈ LinearMap.range ((G').simplyBlockedDifferential R j) :=
-  mem_range_of_specializationCompatibleMap_mem_range R i j
+    x ∈ LinearMap.range ((G').simplyBlockedDifferential R j) := by
+  exact G.mem_range_simplyBlockedDifferential_of_map_mem_range R i j
     (G.stabilizeXSuccChainMap s R).toAddMonoidHom
-    (G.simplyBlockedStabilizeXSuccMap s i R).toAddMonoidHom G _
-    (G.stabilizeXSuccChainMap_unblockedDifferential s R)
+    (G.simplyBlockedStabilizeXSuccMap s i R).toAddMonoidHom _
+    (by simpa only [LinearMap.toAddMonoidHom_coe] using
+      G.stabilizeXSuccChainMap_unblockedDifferential s R)
     (fun c => by
       rw [LinearMap.toAddMonoidHom_coe, LinearMap.map_smulₛₗ]
-      simp [Fin.predAbove_succ_succAbove])
-    (G.simplyBlockedStabilizeXSuccMap_simplyBlockedSpecialization s i R)
-    (fun _ hc => G.exists_sub_stabilizeXSuccChainMap_mem_range s R hc)
-    (fun _ hx h => G.mem_range_of_stabilizeXSuccChainMap_mem_range s R hx h) hx h
+      simp)
+    (by simpa only [LinearMap.toAddMonoidHom_coe] using
+      G.simplyBlockedStabilizeXSuccMap_simplyBlockedSpecialization s i R)
+    (by
+      intro c hc
+      simpa only [LinearMap.toAddMonoidHom_coe] using
+        G.exists_sub_stabilizeXSuccChainMap_mem_range s R hc)
+    (by
+      intro x hx h
+      exact G.mem_range_of_stabilizeXSuccChainMap_mem_range s R hx
+        (by simpa only [LinearMap.toAddMonoidHom_coe] using h)) hx
+    (by simpa only [LinearMap.toAddMonoidHom_coe] using h)
 
 end TauCeti.GridDiagram
 
@@ -256,9 +272,11 @@ theorem oneVariableSpecializationStabilizeXSuccHomologyMap_bijective :
     (G.simplyBlockedStabilizeXSuccMap s i R)
     (G.simplyBlockedStabilizeXSuccMap_simplyBlockedDifferential s i R)
   · intro x hx hfx
-    exact G.mem_range_of_simplyBlockedStabilizeXSuccMap_mem_range s i R hx hfx
+    exact G.mem_range_of_simplyBlockedStabilizeXSuccMap_mem_range s i R
+      (LinearMap.mem_ker.mpr hx) hfx
   · intro y hy
-    exact G.exists_sub_simplyBlockedStabilizeXSuccMap_mem_range s i R hy
+    simpa only [LinearMap.mem_ker] using
+      G.exists_sub_simplyBlockedStabilizeXSuccMap_mem_range s i R (LinearMap.mem_ker.mpr hy)
 
 /-- The stabilization comparison on the homology of the one-variable specialization, packaged as an
 `R`-linear equivalence by restricting scalars along `MvPolynomial.C`. -/

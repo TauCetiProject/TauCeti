@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.KnotTheory.Grid.Commutation.InitialPentagon.Overlap.Residual.Assembly
-public import TauCeti.KnotTheory.Grid.SimplyBlocked.Map
+public import TauCeti.KnotTheory.Grid.SimplyBlocked.Basic
 
 /-!
 # The simply blocked commutation chain map
@@ -95,10 +95,8 @@ theorem simplyBlockedCommutationMap_simplyBlockedDifferential (c : GridChainHat 
     G.simplyBlockedCommutationMap R C i (G.simplyBlockedDifferential R i c) =
       (G.swapColumns C.column (finRotate n C.column)).simplyBlockedDifferential R (σ i)
         (G.simplyBlockedCommutationMap R C i c) := by
-  apply simplyBlockedMap_simplyBlockedDifferential
-  · intro p
-    simpa only [RingHom.coe_coe, AlgEquiv.coe_toRingEquiv, renameEquiv_apply] using
-      (simplyBlockedRingHom_rename R σ i p).symm
+  apply simplyBlockedDifferential_of_specialization
+  · exact G.simplyBlockedCommutationMap_simplyBlockedSpecialization R C i
   · intro c
     exact LinearMap.congr_fun (G.commutationMap_comp_unblockedDifferential C R) c
 

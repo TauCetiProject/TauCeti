@@ -130,9 +130,11 @@ theorem oneVariableSpecializationStabilizeXHomologyMap_bijective :
     (G.simplyBlockedStabilizeXMap s i R)
     (G.simplyBlockedStabilizeXMap_simplyBlockedDifferential s i R)
   · intro x hx hfx
-    exact G.mem_range_of_simplyBlockedStabilizeXMap_mem_range s i R hx hfx
+    exact G.mem_range_of_simplyBlockedStabilizeXMap_mem_range s i R
+      (LinearMap.mem_ker.mpr hx) hfx
   · intro y hy
-    exact G.exists_sub_simplyBlockedStabilizeXMap_mem_range s i R hy
+    simpa only [LinearMap.mem_ker] using
+      G.exists_sub_simplyBlockedStabilizeXMap_mem_range s i R (LinearMap.mem_ker.mpr hy)
 
 /-- The stabilization comparison on the homology of the one-variable specialization, packaged as an
 `R`-linear equivalence by restricting scalars along `MvPolynomial.C`. -/
