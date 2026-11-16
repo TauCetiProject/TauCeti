@@ -8,10 +8,12 @@ module
 public import Mathlib.Analysis.Normed.Group.Quotient
 public import Mathlib.Analysis.Normed.Module.HahnBanach
 public import Mathlib.LinearAlgebra.SesquilinearForm.Orthogonal
+public import TauCeti.Analysis.Normed.Module.Dual.Bilinear
+public import TauCeti.Analysis.Normed.Module.Dual.Quotient
 import Mathlib.Analysis.LocallyConvex.SeparatingDual
 
 /-!
-# The dual of a submodule
+# The dual and bidual of a submodule
 
 Restricting continuous linear functionals from `E` to a submodule `S` is precomposition with the
 inclusion `S.subtypeL`. Its kernel is the annihilator of `S`, and by the Hahn–Banach theorem it is
@@ -20,6 +22,9 @@ its restriction, since a norm-preserving extension of the restriction is a repre
 same class. Hence restriction descends to an isometric identification of the quotient of the
 continuous dual of `E` by the annihilator of `S` with the continuous dual of `S`. This is the
 counterpart of the identification of the dual of `E ⧸ S` with the annihilator of `S`.
+
+Combining the two dualities identifies the bidual `S**` isometrically with the biorthogonal
+annihilator `(Sᗮ)ᗮ` in `E**`, via the bidual inclusion `S.subtypeL**`.
 
 The annihilator is Mathlib's `Submodule.orthogonalBilin` for `topDualPairing`, and the duals carry
 the topology of bounded convergence. The kernel computation holds over any normed field, for any
@@ -141,6 +146,87 @@ theorem quotientAnnihilatorEquivDual_naturality (S : Submodule 𝕜 E) (R : Subm
     (R.quotientAnnihilatorEquivDual (Submodule.Quotient.mk f)).comp Ts =
       S.quotientAnnihilatorEquivDual (Submodule.Quotient.mk (f.comp T)) := by
   simp only [quotientAnnihilatorEquivDual_mk, ContinuousLinearMap.comp_assoc, h]
+
+attribute [local instance] ContinuousLinearMap.strongDualSeminormedAddCommGroup
+  ContinuousLinearMap.strongDualNormedSpace
+  ContinuousLinearMap.strongBidualSeminormedAddCommGroup ContinuousLinearMap.strongBidualNormedSpace
+
+/-- The bidual of a submodule `S` is isometrically the biorthogonal annihilator `(Sᗮ)ᗮ` in the
+bidual of `E`, via the bidual inclusion `S.subtypeL**`. -/
+noncomputable def doubleDualEquivOrthogonalBilin (S : Submodule 𝕜 E) :
+    StrongDual 𝕜 (StrongDual 𝕜 S) ≃ₗᵢ[𝕜]
+      (S.orthogonalBilin (topDualPairing 𝕜 E).flip).orthogonalBilin
+        (topDualPairing 𝕜 (StrongDual 𝕜 E)).flip :=
+  let e := S.quotientAnnihilatorEquivDual
+  let precompEquiv : StrongDual 𝕜 (StrongDual 𝕜 S) ≃ₗᵢ[𝕜]
+      StrongDual 𝕜 (StrongDual 𝕜 E ⧸ S.orthogonalBilin (topDualPairing 𝕜 E).flip) :=
+    { toFun Φ := Φ.comp e.toLinearIsometry.toContinuousLinearMap
+      invFun Ψ := Ψ.comp e.symm.toLinearIsometry.toContinuousLinearMap
+      left_inv Φ := by ext f; simp
+      right_inv Ψ := by ext q; simp
+      map_add' _ _ := by ext q; simp
+      map_smul' _ _ := by ext q; simp
+      norm_map' Φ := le_antisymm
+        ((Φ.opNorm_comp_le _).trans <|
+          mul_le_of_le_one_right (norm_nonneg Φ) e.toLinearIsometry.norm_toContinuousLinearMap_le)
+        (by
+          have h := ((Φ.comp e.toLinearIsometry.toContinuousLinearMap).opNorm_comp_le
+            e.symm.toLinearIsometry.toContinuousLinearMap).trans
+            (mul_le_of_le_one_right (norm_nonneg _)
+              e.symm.toLinearIsometry.norm_toContinuousLinearMap_le)
+          have hcomp : (Φ.comp e.toLinearIsometry.toContinuousLinearMap).comp
+              e.symm.toLinearIsometry.toContinuousLinearMap = Φ := by
+            ext f
+            simp
+          rwa [hcomp] at h) }
+  precompEquiv.trans
+    (S.orthogonalBilin (topDualPairing 𝕜 E).flip).quotientDualEquivAnnihilator
+
+/-- The bidual identification of a submodule evaluates a functional on `S*` by restricting the
+ambient functional to `S`. -/
+@[simp]
+theorem doubleDualEquivOrthogonalBilin_apply (S : Submodule 𝕜 E)
+    (Φ : StrongDual 𝕜 (StrongDual 𝕜 S)) (f : StrongDual 𝕜 E) :
+    (S.doubleDualEquivOrthogonalBilin Φ : StrongDual 𝕜 (StrongDual 𝕜 E)) f =
+      Φ (f.comp S.subtypeL) := by
+  simp [doubleDualEquivOrthogonalBilin]
+
+/-- Forgetting the biorthogonal subtype recovers the bidual inclusion `S.subtypeL**`. -/
+theorem coe_doubleDualEquivOrthogonalBilin (S : Submodule 𝕜 E)
+    (Φ : StrongDual 𝕜 (StrongDual 𝕜 S)) :
+    (S.doubleDualEquivOrthogonalBilin Φ : StrongDual 𝕜 (StrongDual 𝕜 E)) =
+      ContinuousLinearMap.precomp 𝕜
+        (ContinuousLinearMap.precomp 𝕜 S.subtypeL : StrongDual 𝕜 E →L[𝕜] StrongDual 𝕜 S) Φ := by
+  ext f
+  simp
+
+/-- The inverse bidual identification evaluates on the restriction of an ambient functional as the
+original biorthogonal functional. -/
+@[simp]
+theorem doubleDualEquivOrthogonalBilin_symm_apply_comp_subtypeL (S : Submodule 𝕜 E)
+    (Ψ : (S.orthogonalBilin (topDualPairing 𝕜 E).flip).orthogonalBilin
+      (topDualPairing 𝕜 (StrongDual 𝕜 E)).flip) (f : StrongDual 𝕜 E) :
+    S.doubleDualEquivOrthogonalBilin.symm Ψ (f.comp S.subtypeL) =
+      (Ψ : StrongDual 𝕜 (StrongDual 𝕜 E)) f := by
+  simpa only [← doubleDualEquivOrthogonalBilin_apply] using
+    congrArg (fun Φ : StrongDual 𝕜 (StrongDual 𝕜 E) ↦ Φ f)
+      (congrArg Subtype.val (S.doubleDualEquivOrthogonalBilin.apply_symm_apply Ψ))
+
+/-- The range of the bidual inclusion `S.subtypeL**` is exactly the biorthogonal `(Sᗮ)ᗮ`. -/
+theorem range_precomp_precomp_subtypeL (S : Submodule 𝕜 E) :
+    (ContinuousLinearMap.precomp 𝕜
+        (ContinuousLinearMap.precomp 𝕜 S.subtypeL : StrongDual 𝕜 E →L[𝕜] StrongDual 𝕜 S)).range =
+      (S.orthogonalBilin (topDualPairing 𝕜 E).flip).orthogonalBilin
+        (topDualPairing 𝕜 (StrongDual 𝕜 E)).flip := by
+  ext Ψ
+  constructor
+  · rintro ⟨Φ, rfl⟩
+    simpa only [ContinuousLinearMap.coe_coe, ← coe_doubleDualEquivOrthogonalBilin] using
+      (S.doubleDualEquivOrthogonalBilin Φ).property
+  · intro hΨ
+    refine ⟨S.doubleDualEquivOrthogonalBilin.symm ⟨Ψ, hΨ⟩, ?_⟩
+    rw [ContinuousLinearMap.coe_coe, ← coe_doubleDualEquivOrthogonalBilin,
+      S.doubleDualEquivOrthogonalBilin.apply_symm_apply]
 
 end HahnBanach
 

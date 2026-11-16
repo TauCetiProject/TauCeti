@@ -6,9 +6,11 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.LocallyConvex.SeparatingDual
+public import Mathlib.Analysis.Normed.Module.DoubleDual
 public import Mathlib.Analysis.Normed.Module.HahnBanach
 public import Mathlib.LinearAlgebra.SesquilinearForm.Orthogonal
 public import Mathlib.Topology.Algebra.Module.FiniteDimension
+public import TauCeti.Analysis.Normed.Module.Dual.Submodule
 public import TauCeti.Analysis.Normed.Operator.Banach
 public import TauCeti.LinearAlgebra.Dual.Annihilator
 import TauCeti.Analysis.Normed.Operator.Basic
@@ -28,8 +30,10 @@ in `E`.
 This file proves the unconditional identities `ker T* = (range T)ᗮ`,
 `range T* ≤ (ker T)ᗮ` and, when functionals separate points of `F`, `ker T = (range T*)_⊥`.
 For a bounded operator between Banach spaces it then proves the **closed-range theorem**:
-`range T` is closed iff `range T*` is closed, in which case `range T* = (ker T)ᗮ`.
-It also proves that a bounded map between Banach spaces is bijective iff its transpose is.
+`range T` is closed iff `range T*` is closed, in which case `range T* = (ker T)ᗮ`, and
+consequently the bidual inclusion `T.ker.subtypeL**` identifies `(ker T)**` isometrically with
+`ker T**`. It also proves that a bounded map between Banach spaces is bijective iff its transpose
+is.
 
 If `T` has closed range of finite codimension, every functional vanishing on `range T` is
 continuous, so the kernel of the transpose agrees with the kernel of the algebraic dual map
@@ -39,6 +43,9 @@ The reverse implication only needs the domain to be complete. It goes through th
 that a map whose adjoint is bounded below is surjective: geometric Hahn–Banach shows that the
 closure of the image of a ball contains a ball, and Banach's lemma
 `ContinuousLinearMap.exists_preimage_norm_le_of_mem_closure` upgrades this to surjectivity.
+The same geometric Hahn–Banach separation also characterizes `closure (T '' closedBall 0 r)` by
+dual norm inequalities, and in particular shows that if `T** Φ = J_F y` with `‖Φ‖ ≤ r` then
+`y ∈ closure (T '' closedBall 0 r)`.
 Completeness of the domain cannot be dropped: the inclusion of finitely supported sequences
 into `ℓ²` has dense proper range, while its adjoint is surjective.
 
@@ -48,6 +55,11 @@ into `ℓ²` has dense proper range, while its adjoint is surjective.
 * `ContinuousLinearMap.ker_eq_orthogonalBilin_range_precomp`: `ker T = (range T*)_⊥`.
 * `ContinuousLinearMap.range_precomp_eq_orthogonalBilin_ker`: if `range T` is closed, then
   `range T* = (ker T)ᗮ`.
+* `ContinuousLinearMap.kerDoubleDualEquivKerPrecompPrecomp`: if `range T` is closed, `(ker T)**`
+  is isometrically `ker T**` via `T.ker.subtypeL**`.
+* `ContinuousLinearMap.mem_closure_image_closedBall_iff` and
+  `ContinuousLinearMap.mem_closure_image_closedBall_of_precomp_precomp_eq`: bipolar and bidual
+  criteria for membership in `closure (T '' closedBall 0 r)`.
 * `ContinuousLinearMap.surjective_of_norm_le_norm_comp`: a map whose adjoint is bounded below
   is surjective.
 * `ContinuousLinearMap.isClosed_range_precomp_iff`: the closed-range theorem.
@@ -144,40 +156,130 @@ theorem isClosed_range_precomp_of_isClosed_range (T : E →L[𝕜] F)
   rw [T.range_precomp_eq_orthogonalBilin_ker hT, ← h]
   exact isClosed_ker _
 
+attribute [local instance] ContinuousLinearMap.strongDualSeminormedAddCommGroup
+  ContinuousLinearMap.strongDualNormedSpace
+  ContinuousLinearMap.strongBidualSeminormedAddCommGroup ContinuousLinearMap.strongBidualNormedSpace
+
+/-- For a bounded operator between Banach spaces with closed range, the bidual inclusion
+`T.ker.subtypeL**` identifies `(ker T)**` isometrically with `ker T**`. -/
+noncomputable def kerDoubleDualEquivKerPrecompPrecomp (T : E →L[𝕜] F)
+    (hT : IsClosed (T.range : Set F)) :
+    StrongDual 𝕜 (StrongDual 𝕜 T.ker) ≃ₗᵢ[𝕜]
+      (precomp 𝕜 (precomp 𝕜 T : StrongDual 𝕜 F →L[𝕜] StrongDual 𝕜 E) :
+        StrongDual 𝕜 (StrongDual 𝕜 E) →L[𝕜] StrongDual 𝕜 (StrongDual 𝕜 F)).ker :=
+  T.ker.doubleDualEquivOrthogonalBilin.trans <|
+    LinearIsometryEquiv.ofEq _ _ <| by
+      rw [← T.range_precomp_eq_orthogonalBilin_ker hT,
+        ← ker_precomp_eq_orthogonalBilin_range
+          (precomp 𝕜 T : StrongDual 𝕜 F →L[𝕜] StrongDual 𝕜 E)]
+
+/-- The identification `(ker T)** ≃ₗᵢ[𝕜] ker T**` evaluates a functional on `(ker T)*` by
+restricting the ambient functional to `ker T`. -/
+@[simp]
+theorem kerDoubleDualEquivKerPrecompPrecomp_apply (T : E →L[𝕜] F)
+    (hT : IsClosed (T.range : Set F)) (Φ : StrongDual 𝕜 (StrongDual 𝕜 T.ker))
+    (f : StrongDual 𝕜 E) :
+    (kerDoubleDualEquivKerPrecompPrecomp T hT Φ : StrongDual 𝕜 (StrongDual 𝕜 E)) f =
+      Φ (f.comp T.ker.subtypeL) := by
+  simp [kerDoubleDualEquivKerPrecompPrecomp]
+
+/-- Forgetting the kernel subtype recovers the bidual inclusion `T.ker.subtypeL**`. -/
+theorem coe_kerDoubleDualEquivKerPrecompPrecomp (T : E →L[𝕜] F)
+    (hT : IsClosed (T.range : Set F)) (Φ : StrongDual 𝕜 (StrongDual 𝕜 T.ker)) :
+    (kerDoubleDualEquivKerPrecompPrecomp T hT Φ : StrongDual 𝕜 (StrongDual 𝕜 E)) =
+      precomp 𝕜 (precomp 𝕜 T.ker.subtypeL : StrongDual 𝕜 E →L[𝕜] StrongDual 𝕜 T.ker) Φ := by
+  ext f
+  simp
+
+/-- The inverse identification `ker T** ≃ₗᵢ[𝕜] (ker T)**` evaluates on the restriction of an
+ambient functional as the original element of `ker T**`. -/
+@[simp]
+theorem kerDoubleDualEquivKerPrecompPrecomp_symm_apply_comp_subtypeL (T : E →L[𝕜] F)
+    (hT : IsClosed (T.range : Set F))
+    (Ψ : (precomp 𝕜 (precomp 𝕜 T : StrongDual 𝕜 F →L[𝕜] StrongDual 𝕜 E) :
+      StrongDual 𝕜 (StrongDual 𝕜 E) →L[𝕜] StrongDual 𝕜 (StrongDual 𝕜 F)).ker)
+    (f : StrongDual 𝕜 E) :
+    (kerDoubleDualEquivKerPrecompPrecomp T hT).symm Ψ (f.comp T.ker.subtypeL) =
+      (Ψ : StrongDual 𝕜 (StrongDual 𝕜 E)) f := by
+  simpa only [← kerDoubleDualEquivKerPrecompPrecomp_apply T hT] using
+    congrArg (fun Φ : StrongDual 𝕜 (StrongDual 𝕜 E) ↦ Φ f)
+      (congrArg Subtype.val ((kerDoubleDualEquivKerPrecompPrecomp T hT).apply_symm_apply Ψ))
+
+/-- For a bounded operator between Banach spaces with closed range, the range of the bidual
+inclusion `T.ker.subtypeL**` is exactly `ker T**`. -/
+theorem range_precomp_precomp_ker_subtypeL (T : E →L[𝕜] F)
+    (hT : IsClosed (T.range : Set F)) :
+    (precomp 𝕜 (precomp 𝕜 T.ker.subtypeL : StrongDual 𝕜 E →L[𝕜] StrongDual 𝕜 T.ker) :
+        StrongDual 𝕜 (StrongDual 𝕜 T.ker) →L[𝕜] StrongDual 𝕜 (StrongDual 𝕜 E)).range =
+      (precomp 𝕜 (precomp 𝕜 T : StrongDual 𝕜 F →L[𝕜] StrongDual 𝕜 E) :
+        StrongDual 𝕜 (StrongDual 𝕜 E) →L[𝕜] StrongDual 𝕜 (StrongDual 𝕜 F)).ker := by
+  rw [T.ker.range_precomp_precomp_subtypeL, ← T.range_precomp_eq_orthogonalBilin_ker hT,
+    ← ker_precomp_eq_orthogonalBilin_range
+      (precomp 𝕜 T : StrongDual 𝕜 F →L[𝕜] StrongDual 𝕜 E)]
+
 end HahnBanach
 
 section RCLike
 
 variable [RCLike 𝕜] [SeminormedAddCommGroup E] [NormedSpace 𝕜 E]
 
+/-- **Bipolar criterion for images of closed balls.** For a bounded operator `T : E →L[𝕜] F` and
+`0 ≤ r`, a vector `y` lies in `closure (T '' closedBall 0 r)` if and only if
+`‖g y‖ ≤ r * ‖g.comp T‖` for every continuous linear functional `g` on `F`. -/
+theorem mem_closure_image_closedBall_iff [SeminormedAddCommGroup F] [NormedSpace 𝕜 F]
+    (T : E →L[𝕜] F) {r : ℝ} (hr : 0 ≤ r) {y : F} :
+    y ∈ closure (T '' closedBall 0 r) ↔ ∀ g : StrongDual 𝕜 F, ‖g y‖ ≤ r * ‖g.comp T‖ := by
+  constructor
+  · intro hy g
+    refine isClosed_le g.continuous.norm continuous_const |>.closure_subset_iff.mpr ?_ hy
+    rintro _ ⟨x, hx, rfl⟩
+    calc ‖g (T x)‖ = ‖(g.comp T) x‖ := rfl
+      _ ≤ ‖g.comp T‖ * ‖x‖ := (g.comp T).le_opNorm x
+      _ ≤ ‖g.comp T‖ * r := by gcongr; exact mem_closedBall_zero_iff.1 hx
+      _ = r * ‖g.comp T‖ := mul_comm _ _
+  · intro h
+    by_contra hy
+    -- Separate `y` from the closed real-convex set `closure (T '' closedBall 0 r)`.
+    obtain ⟨f, u, hfK, hfy⟩ : ∃ (f : StrongDual 𝕜 F) (u : ℝ),
+        (∀ a ∈ closure (T '' closedBall (0 : E) r), RCLike.re (f a) < u) ∧
+          u < RCLike.re (f y) := by
+      let : NormedSpace ℝ E := .restrictScalars ℝ 𝕜 E
+      let : NormedSpace ℝ F := .restrictScalars ℝ 𝕜 F
+      have : IsScalarTower ℝ 𝕜 E := .restrictScalars ℝ 𝕜 E
+      have : IsScalarTower ℝ 𝕜 F := .restrictScalars ℝ 𝕜 F
+      have hconv : Convex ℝ (T '' closedBall (0 : E) r) :=
+        (convex_closedBall 0 r).linear_image ((T : E →ₗ[𝕜] F).restrictScalars ℝ)
+      exact RCLike.geometric_hahn_banach_closed_point hconv.closure isClosed_closure hy
+    have hfT := StrongDual.re_apply_add_mul_norm_le (f := f.comp T) (x := 0) hr fun x hx ↦
+      (hfK _ (subset_closure ⟨x, hx, rfl⟩)).le
+    rw [map_zero, map_zero, zero_add] at hfT
+    have hfy' := (RCLike.re_le_norm (f y)).trans (h f)
+    linarith
+
+/-- If the bidual adjoint `T**` maps a bidual element `Φ` of norm at most `r` to the canonical
+image of `y`, then `y` lies in the norm closure of `T '' closedBall 0 r`. -/
+theorem mem_closure_image_closedBall_of_precomp_precomp_eq
+    [SeminormedAddCommGroup F] [NormedSpace 𝕜 F] (T : E →L[𝕜] F)
+    {Φ : StrongDual 𝕜 (StrongDual 𝕜 E)} {r : ℝ} (hr : ‖Φ‖ ≤ r) {y : F}
+    (hΦ : precomp 𝕜 (precomp 𝕜 T : StrongDual 𝕜 F →L[𝕜] StrongDual 𝕜 E) Φ =
+      NormedSpace.inclusionInDoubleDual 𝕜 F y) :
+    y ∈ closure (T '' closedBall 0 r) :=
+  (T.mem_closure_image_closedBall_iff ((norm_nonneg Φ).trans hr)).2 fun g ↦ by
+    have hgy : g y = Φ (g.comp T) := by
+      simpa [NormedSpace.dual_def] using (congr($hΦ g)).symm
+    rw [hgy]
+    exact (Φ.le_opNorm _).trans (mul_le_mul_of_nonneg_right hr (norm_nonneg _))
+
 /-- If the adjoint of `S` is bounded below with constant `K`, then every `y` lies in the closure
 of the image of the closed ball of radius `K * ‖y‖`. -/
 theorem mem_closure_image_closedBall_of_norm_le_norm_comp
     [SeminormedAddCommGroup F] [NormedSpace 𝕜 F] (S : E →L[𝕜] F) {K : ℝ≥0}
     (hK : ∀ g : StrongDual 𝕜 F, ‖g‖ ≤ K * ‖g.comp S‖) (y : F) :
-    y ∈ closure (S '' closedBall 0 (K * ‖y‖)) := by
-  set r : ℝ := K * ‖y‖ with hr_def
-  have hr : 0 ≤ r := by positivity
-  by_contra hy
-  -- Separate `y` from the closed real-convex hull of the image of the ball.
-  obtain ⟨f, u, hfK, hfy⟩ : ∃ (f : StrongDual 𝕜 F) (u : ℝ),
-      (∀ a ∈ closure (S '' closedBall (0 : E) r), RCLike.re (f a) < u) ∧
-        u < RCLike.re (f y) := by
-    let : NormedSpace ℝ E := .restrictScalars ℝ 𝕜 E
-    let : NormedSpace ℝ F := .restrictScalars ℝ 𝕜 F
-    have : IsScalarTower ℝ 𝕜 E := .restrictScalars ℝ 𝕜 E
-    have : IsScalarTower ℝ 𝕜 F := .restrictScalars ℝ 𝕜 F
-    have hconv : Convex ℝ (S '' closedBall (0 : E) r) :=
-      (convex_closedBall 0 r).linear_image ((S : E →ₗ[𝕜] F).restrictScalars ℝ)
-    exact RCLike.geometric_hahn_banach_closed_point hconv.closure isClosed_closure hy
-  have hfS := StrongDual.re_apply_add_mul_norm_le (f := f.comp S) (x := 0) hr fun x hx ↦
-    (hfK _ (subset_closure ⟨x, hx, rfl⟩)).le
-  rw [map_zero, map_zero, zero_add] at hfS
-  have hfy' := (RCLike.re_le_norm (f y)).trans (f.le_opNorm y)
-  have : ‖f‖ * ‖y‖ ≤ r * ‖f.comp S‖ :=
-    calc ‖f‖ * ‖y‖ ≤ K * ‖f.comp S‖ * ‖y‖ := by gcongr; exact hK f
-      _ = r * ‖f.comp S‖ := by rw [hr_def]; ring
-  linarith
+    y ∈ closure (S '' closedBall 0 (K * ‖y‖)) :=
+  (S.mem_closure_image_closedBall_iff (by positivity)).2 fun g ↦
+    calc ‖g y‖ ≤ ‖g‖ * ‖y‖ := g.le_opNorm y
+      _ ≤ K * ‖g.comp S‖ * ‖y‖ := by gcongr; exact hK g
+      _ = K * ‖y‖ * ‖g.comp S‖ := by ring
 
 /-- A bounded operator on a complete seminormed space whose adjoint is bounded below is
 surjective. -/

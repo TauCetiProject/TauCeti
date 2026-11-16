@@ -44,6 +44,8 @@ weak-star closed submodules of `E*`.
 
 * `ContinuousLinearMap.dualAction`: the dual action `a ↦ (φ ↦ φ ∘ M a)` of a bounded bilinear
   action `M`.
+* `ContinuousLinearMap.restrictSubmodule`: restriction of a bounded bilinear action to an
+  invariant submodule.
 
 ## Main results
 
@@ -55,8 +57,9 @@ weak-star closed submodules of `E*`.
   bimodule satisfy the bimodule laws.
 * `ContinuousLinearMap.continuous_toWeakDual_dualAction`: each dual action is weak-star
   continuous in the dual variable.
-* `ContinuousLinearMap.precomp_dualAction_apply`: the adjoint of a module map intertwines the
-  dual actions.
+* `ContinuousLinearMap.precomp_dualAction_apply` and
+  `ContinuousLinearMap.precomp_subtypeL_dualAction_apply`: adjoints of module maps and restriction
+  to invariant submodules intertwine the dual actions.
 
 ## References
 
@@ -137,5 +140,61 @@ theorem precomp_dualAction_apply {M : A →L[𝕜] E →L[𝕜] E} {N : A →L[�
     precomp 𝕜 T (dualAction N a ψ) = dualAction M a (precomp 𝕜 T ψ) := by
   ext x
   simp [hT]
+
+section Submodule
+
+/-- Restrict a bounded bilinear action `M : A →L[𝕜] E →L[𝕜] E` to an `M`-invariant submodule `S`. -/
+def restrictSubmodule (M : A →L[𝕜] E →L[𝕜] E) (S : Submodule 𝕜 E)
+    (hS : ∀ a, ∀ x ∈ S, M a x ∈ S) : A →L[𝕜] S →L[𝕜] S :=
+  LinearMap.mkContinuous
+    { toFun a := (M a).restrict (hS a)
+      map_add' a b := by ext x; simp
+      map_smul' c a := by ext x; simp }
+    ‖M‖ fun a ↦ opNorm_le_bound _ (mul_nonneg (norm_nonneg M) (norm_nonneg a)) fun x ↦ by
+      simpa using M.le_opNorm₂ a x.1
+
+/-- The restricted action evaluates by applying the ambient action to the underlying element. -/
+@[simp]
+theorem coe_restrictSubmodule_apply (M : A →L[𝕜] E →L[𝕜] E) (S : Submodule 𝕜 E)
+    (hS : ∀ a, ∀ x ∈ S, M a x ∈ S) (a : A) (x : S) :
+    (M.restrictSubmodule S hS a x : E) = M a x := (rfl)
+
+/-- The operator norm of a restricted action is at most that of the ambient action. -/
+theorem norm_restrictSubmodule_le (M : A →L[𝕜] E →L[𝕜] E) (S : Submodule 𝕜 E)
+    (hS : ∀ a, ∀ x ∈ S, M a x ∈ S) : ‖M.restrictSubmodule S hS‖ ≤ ‖M‖ :=
+  LinearMap.mkContinuous_norm_le _ (norm_nonneg M) _
+
+/-- Restriction to an invariant submodule preserves the left-action law. -/
+theorem restrictSubmodule_mul_apply_of_left [Mul A] {L : A →L[𝕜] E →L[𝕜] E}
+    (hL : ∀ a b x, L (a * b) x = L a (L b x)) (S : Submodule 𝕜 E)
+    (hS : ∀ a, ∀ x ∈ S, L a x ∈ S) (a b : A) (x : S) :
+    L.restrictSubmodule S hS (a * b) x =
+      L.restrictSubmodule S hS a (L.restrictSubmodule S hS b x) :=
+  Subtype.ext (hL a b x)
+
+/-- Restriction to an invariant submodule preserves the right-action law. -/
+theorem restrictSubmodule_mul_apply_of_right [Mul A] {R : A →L[𝕜] E →L[𝕜] E}
+    (hR : ∀ a b x, R (a * b) x = R b (R a x)) (S : Submodule 𝕜 E)
+    (hS : ∀ a, ∀ x ∈ S, R a x ∈ S) (a b : A) (x : S) :
+    R.restrictSubmodule S hS (a * b) x =
+      R.restrictSubmodule S hS b (R.restrictSubmodule S hS a x) :=
+  Subtype.ext (hR a b x)
+
+/-- Restriction to a jointly invariant submodule preserves commutativity of two actions. -/
+theorem restrictSubmodule_apply_comm {L R : A →L[𝕜] E →L[𝕜] E}
+    (hLR : ∀ a b x, L a (R b x) = R b (L a x)) (S : Submodule 𝕜 E)
+    (hSL : ∀ a, ∀ x ∈ S, L a x ∈ S) (hSR : ∀ a, ∀ x ∈ S, R a x ∈ S) (a b : A) (x : S) :
+    L.restrictSubmodule S hSL a (R.restrictSubmodule S hSR b x) =
+      R.restrictSubmodule S hSR b (L.restrictSubmodule S hSL a x) :=
+  Subtype.ext (hLR a b x)
+
+/-- Restriction of functionals to an invariant submodule intertwines the dual actions. -/
+theorem precomp_subtypeL_dualAction_apply (M : A →L[𝕜] E →L[𝕜] E) (S : Submodule 𝕜 E)
+    (hS : ∀ a, ∀ x ∈ S, M a x ∈ S) (a : A) (φ : StrongDual 𝕜 E) :
+    precomp 𝕜 S.subtypeL (dualAction M a φ) =
+      dualAction (M.restrictSubmodule S hS) a (precomp 𝕜 S.subtypeL φ) :=
+  precomp_dualAction_apply (fun _ _ ↦ rfl) a φ
+
+end Submodule
 
 end ContinuousLinearMap
