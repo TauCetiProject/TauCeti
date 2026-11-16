@@ -96,6 +96,10 @@ apply to all three ends.
   `TauCeti.Floer.perturbationPullback_positiveEndChart_stdComplexLineImag_of_le`: where a
   perturbation is `H_q(t) dt` on the end `q`, its pullback along the positive end chart is
   `H'_q(t) dt`.
+* `TauCeti.Floer.perturbation_positiveEndChart_eq_mul_of_le`,
+  `TauCeti.Floer.differentiableAt_perturbation_positiveEndChart`: there, at a point of the end,
+  each component of the perturbation is a constant multiple of `H_q(t₀)`, so it is differentiable
+  in the target point when `H_q(t₀)` is.
 
 ## References
 
@@ -797,6 +801,34 @@ theorem perturbationPullback_positiveEndChart_stdComplexLineImag_of_le {X : Type
   rw [perturbationPullback_positiveEndChart,
     perturbationPullback_endChart_stdComplexLineImag_of_le hKH hH
       (by simpa [← mul_assoc] using hζ), positiveEndHamiltonian_apply, Prod.smul_snd, smul_eq_mul]
+
+/-- Where `K = H_q(t) dt` on the end `q`, each component of `K` at the point `φ'_q(ζ)` of the end is
+a constant multiple of the end Hamiltonian `H_q(t₀)`, for the end coordinate `t₀` of the point. -/
+theorem perturbation_positiveEndChart_eq_mul_of_le {X : Type*}
+    {K : ℂ → X → ℂ →L[ℝ] ℝ} {H : Puncture → ℝ → X → ℝ} {T₀ : ℝ}
+    (hKH : ∀ q w x, T₀ ≤ q.endSign * (q.endCoord w).re →
+      K w x = H q (q.endCoord w).im x • q.endAngularForm w)
+    {q : Puncture} {ζ : ℝ × ℝ} (hζ : T₀ ≤ ζ.1) (x : X) (v : ℂ) :
+    K (Complex.equivRealProdCLM.symm (positiveEndChart q ζ)) x v =
+      q.endAngularForm (Complex.equivRealProdCLM.symm (positiveEndChart q ζ)) v *
+        H q (q.endCoord (Complex.equivRealProdCLM.symm (positiveEndChart q ζ))).im x := by
+  have hre : T₀ ≤ q.endSign *
+      (q.endCoord (Complex.equivRealProdCLM.symm (positiveEndChart q ζ))).re := by
+    rw [positiveEndChart_apply, re_endCoord_endChart]
+    simpa [← mul_assoc] using hζ
+  rw [hKH q _ x hre, smul_apply, smul_eq_mul, mul_comm]
+
+/-- Where `K = H_q(t) dt` on the end `q` and the Hamiltonians `H_q(t)` are differentiable, the
+components of `K` at the point `φ'_q(ζ)` of the end are differentiable in the target point. -/
+theorem differentiableAt_perturbation_positiveEndChart {K : ℂ → V → ℂ →L[ℝ] ℝ} {T₀ : ℝ}
+    (hKH : ∀ q w x, T₀ ≤ q.endSign * (q.endCoord w).re →
+      K w x = H q (q.endCoord w).im x • q.endAngularForm w)
+    {q : Puncture} (hHd : ∀ t, Differentiable ℝ (H q t)) {ζ : ℝ × ℝ} (hζ : T₀ ≤ ζ.1) (v : ℂ)
+    (y : V) :
+    DifferentiableAt ℝ (fun x ↦ K (Complex.equivRealProdCLM.symm (positiveEndChart q ζ)) x v)
+      y := by
+  simp only [perturbation_positiveEndChart_eq_mul_of_le hKH hζ]
+  exact ((hHd _) y).const_mul _
 
 end Floer
 
