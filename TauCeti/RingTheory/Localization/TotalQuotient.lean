@@ -9,6 +9,7 @@ public import Mathlib.Algebra.Algebra.Basic
 public import Mathlib.Algebra.Field.IsField
 public import Mathlib.RingTheory.Localization.Defs
 public import TauCeti.Algebra.Regular.Submonoid
+public import TauCeti.RingTheory.Localization.Defs
 
 /-!
 # Total quotients of commutative semirings
@@ -35,25 +36,6 @@ noncomputable section
 
 open scoped nonZeroDivisors
 
-namespace IsLocalization
-
-/-- A localization of a commutative semiring in which sums vanish only when every summand does
-has the same property. -/
-theorem subsingleton_addUnits {R : Type*} [CommSemiring R] (M : Submonoid R) (S : Type*)
-    [CommSemiring S] [Algebra R S] [IsLocalization M S] [Subsingleton (AddUnits R)] :
-    Subsingleton (AddUnits S) :=
-  Subsingleton.addUnits_of_isAddUnit fun a ha ↦ by
-    obtain ⟨b, h⟩ := ha.exists_neg
-    obtain ⟨⟨r, s⟩, rfl⟩ := mk'_surjective M a
-    obtain ⟨⟨u, v⟩, rfl⟩ := mk'_surjective M b
-    rw [← mk'_add, mk'_eq_zero_iff] at h
-    obtain ⟨m, hm⟩ := h
-    rw [mul_add, add_eq_zero] at hm
-    exact (mk'_eq_zero_iff (S := S) r s).mpr
-      ⟨m * v, by simpa [mul_assoc, mul_comm (v : R)] using hm.1⟩
-
-end IsLocalization
-
 namespace TauCeti
 
 /-- The total quotient of a commutative semiring: its localization at all regular elements. -/
@@ -72,7 +54,8 @@ instance : FaithfulSMul R (TotalQuotient R) :=
 instance [Subsingleton (AddUnits R)] : Subsingleton (AddUnits (TotalQuotient R)) :=
   IsLocalization.subsingleton_addUnits (regulars R) _
 
-/-- The total quotient of a semiring domain is a field. -/
+/-- The total quotient of a semiring domain satisfies `IsField`: every nonzero element has a
+multiplicative inverse, so it carries a semifield structure (a field only when `R` is a ring). -/
 theorem isField [IsDomain R] : IsField (TotalQuotient R) where
   exists_pair_ne := ⟨0, 1, fun h ↦ zero_ne_one <|
     FaithfulSMul.algebraMap_injective R (TotalQuotient R) (by simpa using h)⟩
