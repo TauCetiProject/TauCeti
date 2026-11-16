@@ -155,7 +155,7 @@ theorem continuous_integral_smul_Lp_of_hasCompactSupport {X 𝕜 F : Type*} [Top
     [SMulCommClass ℝ 𝕜 F] [CompleteSpace F] {k : X → 𝕜} (hk : Continuous k)
     (hkc : HasCompactSupport k) {p : ℝ≥0∞} [Fact (1 ≤ p)] :
     Continuous fun h : Lp F p μ => ∫ x, k x • h x ∂μ := by
-  have : Fact (1 ≤ p.conjExponent) := ⟨le_self_add⟩
+  have : Fact (1 ≤ p.conjExponent) := ⟨ENNReal.HolderConjugate.one_le _ p⟩
   have hk' := hk.memLp_of_hasCompactSupport (μ := μ) (p := p.conjExponent) hkc
   refine (((ContinuousLinearMap.lsmul 𝕜 𝕜 (E := F)).flip.lpPairing μ p p.conjExponent).flip
     (hk'.toLp k)).continuous.congr fun h => ?_
