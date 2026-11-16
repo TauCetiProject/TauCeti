@@ -137,7 +137,7 @@ variable (b : P.Base)
 
 /-- Vanishing of every simple coroot functional `P.coroot' i` on `x` is equivalent to vanishing of
 the pairing `P.toLinearMap x (P.coroot i)` on `b.support`. -/
-lemma forall_coroot'_eq_zero_iff (x : M) :
+lemma forall_mem_support_coroot'_eq_zero_iff_toLinearMap_eq_zero (x : M) :
     (∀ i ∈ b.support, P.coroot' i x = 0) ↔ ∀ i : b.support, P.toLinearMap x (P.coroot i) = 0 :=
   ⟨fun h i ↦ (P.toLinearMap.flip_apply _ _).symm.trans (h i.1 i.2),
     fun h i hi ↦ (P.toLinearMap.flip_apply _ _).trans (h ⟨i, hi⟩)⟩

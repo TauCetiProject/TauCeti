@@ -13,24 +13,15 @@ import TauCeti.LinearAlgebra.RootSystem.Reduced
 /-!
 # Littelmann's raising operator preserves Lakshmibai–Seshadri paths
 
-Let `π` be a Lakshmibai–Seshadri path of dominant shape `λ` and `αᵢ` a simple root. On
-piecewise-linear paths, Littelmann's raising operator `e_αᵢ` is conjugate to the lowering operator
-`f_αᵢ` by path reversal (`TauCeti.PLPath.raise_def`): `e_αᵢ p = (f_αᵢ p.reverse).map reverse`.
-
-On Lakshmibai–Seshadri encodings, path reversal is realized by Littelmann's duality
-`TauCeti.LSPath.dual`, which sends `LSPath P b λ` to `LSPath P b (-(w₀ • λ))`
-(`TauCeti.LSPath.toPLPath_dual`). When `λ` is dominant, `-(w₀ • λ)` is again dominant
-(`TauCeti.neg_smul_mem_dominantChamber_longestElement`), so stability of Lakshmibai–Seshadri paths
-under `f_αᵢ` (`TauCeti.LSPath.exists_toPLPath_eq_of_lower_eq_some`) immediately implies stability
-under `e_αᵢ` (`TauCeti.LSPath.exists_toPLPath_eq_of_raise_eq_some`).
+On piecewise-linear paths, `e_αᵢ` is conjugate to `f_αᵢ` by path reversal (`PLPath.raise_def`),
+which on LS encodings is realized by `TauCeti.LSPath.dual` (`TauCeti.LSPath.toPLPath_dual`). Since
+`-(w₀ • λ)` is dominant whenever `λ` is, stability of LS paths under `f_αᵢ`
+(`TauCeti.LSPath.exists_toPLPath_eq_of_lower_eq_some`) yields stability under `e_αᵢ`.
 
 ## Main results
 
-* `TauCeti.LSPath.exists_toPLPath_eq_of_raise_eq_some`: **Littelmann's raising operator preserves
-  Lakshmibai–Seshadri paths of dominant shape.**
-* `TauCeti.LSPath.mem_range_toPLPath_of_lower_eq_some` and
-  `TauCeti.LSPath.mem_range_toPLPath_of_raise_eq_some`: closure of the realized LS paths under
-  `PLPath.lower` and `PLPath.raise`.
+* `TauCeti.LSPath.exists_toPLPath_eq_of_raise_eq_some`,
+  `TauCeti.LSPath.mem_range_toPLPath_of_raise_eq_some`.
 
 ## References
 
@@ -51,10 +42,7 @@ variable {ι M N : Type*} [AddCommGroup M] [AddCommGroup N]
   {𝕜 V : Type*} [Field 𝕜] [LinearOrder 𝕜] [IsStrictOrderedRing 𝕜]
   [AddCommGroup V] [Module 𝕜 V]
 
-/-- **Littelmann's raising operator preserves Lakshmibai–Seshadri paths.** Let `π` be an LS path of
-dominant shape `λ`, realized in `V` by `f`, let `αᵢ` be a simple root and let `F` be a form on `V`
-inducing the simple coroot pairing `⟨-, αᵢ^∨⟩`. If the raising operator `e_αᵢ` is defined on the
-path of `π`, then its result is again the path of an LS path of shape `λ`. -/
+/-- **Littelmann's raising operator preserves Lakshmibai–Seshadri paths of dominant shape.** -/
 theorem exists_toPLPath_eq_of_raise_eq_some (π : LSPath P b lam)
     (hlam : lam ∈ dominantChamber P b) (f : M →+ V) (i : b.support) (F : Module.Dual 𝕜 V)
     (hF : ∀ m, F (f m) = (P.coroot' i m : 𝕜)) {q : PLPath 𝕜 V}
@@ -67,23 +55,12 @@ theorem exists_toPLPath_eq_of_raise_eq_some (π : LSPath P b lam)
     (neg_smul_mem_dominantChamber_longestElement hlam) f i F hF hr
   exact ⟨dual.symm σ, toPLPath_dual_symm 𝕜 f σ⟩
 
-/-- The image of `TauCeti.LSPath.toPLPath` for dominant `λ` is closed under `PLPath.lower`. -/
-theorem mem_range_toPLPath_of_lower_eq_some (hlam : lam ∈ dominantChamber P b) (f : M →+ V)
-    (i : b.support) (F : Module.Dual 𝕜 V) (hF : ∀ m, F (f m) = (P.coroot' i m : 𝕜))
-    {p q : PLPath 𝕜 V} (hp : p ∈ Set.range fun π : LSPath P b lam ↦ π.toPLPath 𝕜 f)
-    (hq : PLPath.lower F (f (P.root i)) p = some q) :
-    q ∈ Set.range fun π : LSPath P b lam ↦ π.toPLPath 𝕜 f := by
-  have := P.flip_isReduced
-  obtain ⟨π, rfl⟩ := hp
-  exact exists_toPLPath_eq_of_lower_eq_some π hlam f i F hF hq
-
 /-- The image of `TauCeti.LSPath.toPLPath` for dominant `λ` is closed under `PLPath.raise`. -/
 theorem mem_range_toPLPath_of_raise_eq_some (hlam : lam ∈ dominantChamber P b) (f : M →+ V)
     (i : b.support) (F : Module.Dual 𝕜 V) (hF : ∀ m, F (f m) = (P.coroot' i m : 𝕜))
     {p q : PLPath 𝕜 V} (hp : p ∈ Set.range fun π : LSPath P b lam ↦ π.toPLPath 𝕜 f)
     (hq : PLPath.raise F (f (P.root i)) p = some q) :
     q ∈ Set.range fun π : LSPath P b lam ↦ π.toPLPath 𝕜 f := by
-  obtain ⟨π, rfl⟩ := hp
-  exact exists_toPLPath_eq_of_raise_eq_some π hlam f i F hF hq
+  rcases hp with ⟨π, rfl⟩; exact exists_toPLPath_eq_of_raise_eq_some π hlam f i F hF hq
 
 end TauCeti.LSPath

@@ -40,7 +40,8 @@ The integrality statements use that the height at a break `a` before the directi
 
 ## Main results
 
-* `TauCeti.LSPath.exists_toPLPath_eq_of_lower_eq_some`: **Littelmann's lowering operator
+* `TauCeti.LSPath.exists_toPLPath_eq_of_lower_eq_some` and
+  `TauCeti.LSPath.mem_range_toPLPath_of_lower_eq_some`: **Littelmann's lowering operator
   preserves Lakshmibai–Seshadri paths**.
 
 ## References
@@ -447,5 +448,14 @@ theorem exists_toPLPath_eq_of_lower_eq_some (π : LSPath P b lam)
     (by rw [sum_map_snd_lowerList i hj₁ hk₀j₁, sum_map_snd_dirDurations]) hL, ?_⟩
   rw [toPLPath_ofLinked]
   exact Option.some.inj (hlow.symm.trans hq)
+
+/-- The image of `TauCeti.LSPath.toPLPath` for dominant `λ` is closed under `PLPath.lower`. -/
+theorem mem_range_toPLPath_of_lower_eq_some (hlam : lam ∈ dominantChamber P b) (f : M →+ V)
+    (i : b.support) (F : Module.Dual 𝕜 V) (hF : ∀ m, F (f m) = (P.coroot' i m : 𝕜))
+    {p q : PLPath 𝕜 V} (hp : p ∈ Set.range fun π : LSPath P b lam ↦ π.toPLPath 𝕜 f)
+    (hq : PLPath.lower F (f (P.root i)) p = some q) :
+    q ∈ Set.range fun π : LSPath P b lam ↦ π.toPLPath 𝕜 f := by
+  obtain ⟨π, rfl⟩ := hp
+  exact exists_toPLPath_eq_of_lower_eq_some π hlam f i F hF hq
 
 end TauCeti.LSPath

@@ -697,8 +697,7 @@ section SemilinearImages
 variable {𝕜' W : Type*} [Field 𝕜'] [PartialOrder 𝕜'] [IsStrictOrderedRing 𝕜']
   [AddCommGroup W] [Module 𝕜' W] {σ : 𝕜 →+* 𝕜'}
 
-/-- A semilinear image along a monotone ring homomorphism preserves elementary path moves,
-including when segments collapse. -/
+/-- Semilinear images along a monotone ring homomorphism preserve elementary path moves. -/
 theorem Move.mapSemilinear {l m : List V} (h : Move 𝕜 l m) (g : V →ₛₗ[σ] W) (hσ : Monotone σ) :
     Move 𝕜' (l.map g) (m.map g) := by
   have hσ_pos {r : 𝕜} (hr : 0 < r) : 0 < σ r :=
@@ -708,58 +707,73 @@ theorem Move.mapSemilinear {l m : List V} (h : Move 𝕜 l m) (g : V →ₛₗ[�
   cases h with
   | @merge l m v w hvw =>
     have hray : SameRay 𝕜' (g v) (g w) := by
-      rcases hvw with h0 | h0 | ⟨r₁, r₂, hr₁, hr₂, heq⟩
-      · simp [h0]
-      · simp [h0]
+      rcases hvw with rfl | rfl | ⟨r₁, r₂, hr₁, hr₂, heq⟩
+      · simp
+      · simp
       · exact Or.inr (Or.inr ⟨σ r₁, σ r₂, hσ_pos hr₁, hσ_pos hr₂,
           by rw [← map_smulₛₗ, ← map_smulₛₗ, heq]⟩)
     simpa using Move.merge (l.map g) (m.map g) hray
   | erase_zero l m => simpa using Move.erase_zero (l.map g) (m.map g)
 
-/-- Normalizing a presentation before taking its semilinear image along a monotone ring
-homomorphism does not change the path. -/
+/-- Normalizing before taking a semilinear image along a monotone ring hom does not change the path.
+-/
 theorem ofSegments_map_normalize_semilinear (g : V →ₛₗ[σ] W) (hσ : Monotone σ) (l : List V) :
-    ofSegments 𝕜' ((normalize 𝕜 l).map g) = ofSegments 𝕜' (l.map g) := by
-  apply ofSegments_eq_ofSegments_iff.mpr
-  exact (EqvGen.reflTransGen_le_eqvGen _ _ _
-    ((reflTransGen_move_normalize l).lift _ fun _ _ h ↦ h.mapSemilinear g hσ)).symm _ _
+    ofSegments 𝕜' ((normalize 𝕜 l).map g) = ofSegments 𝕜' (l.map g) :=
+  ofSegments_eq_ofSegments_iff.mpr ((EqvGen.reflTransGen_le_eqvGen _ _ _
+    ((reflTransGen_move_normalize l).lift _ fun _ _ h ↦ h.mapSemilinear g hσ)).symm _ _)
 
-/-- The semilinear image of a piecewise-linear path along `g : V →ₛₗ[σ] W`, with any collapsed
-segments removed. -/
+/-- The semilinear image of a piecewise-linear path along `g : V →ₛₗ[σ] W`. -/
 noncomputable def mapSemilinear (p : PLPath 𝕜 V) (g : V →ₛₗ[σ] W) : PLPath 𝕜' W :=
   ofSegments 𝕜' (p.segments.map g)
 
-/-- Definitional unfolding of `PLPath.mapSemilinear` in terms of `ofSegments` and `segments`. -/
+/-- Definitional unfolding of `PLPath.mapSemilinear`. -/
 theorem mapSemilinear_def (p : PLPath 𝕜 V) (g : V →ₛₗ[σ] W) :
-    p.mapSemilinear g = ofSegments 𝕜' (p.segments.map g) :=
-  (rfl)
+    p.mapSemilinear g = ofSegments 𝕜' (p.segments.map g) := (rfl)
 
-/-- A semilinear image along a monotone ring homomorphism can be computed on any segment
-presentation. -/
+/-- A semilinear image along a monotone ring hom can be computed on any segment presentation. -/
 theorem mapSemilinear_ofSegments (l : List V) (g : V →ₛₗ[σ] W) (hσ : Monotone σ) :
     (ofSegments 𝕜 l).mapSemilinear g = ofSegments 𝕜' (l.map g) := by
   simp only [mapSemilinear, segments_ofSegments, ofSegments_map_normalize_semilinear g hσ]
 
-/-- Semilinear images preserve the endpoint. -/
+@[simp]
+theorem mapSemilinear_one (g : V →ₛₗ[σ] W) :
+    (1 : PLPath 𝕜 V).mapSemilinear g = 1 := by simp [mapSemilinear]
+
+@[simp]
+theorem mapSemilinear_straight (v : V) (g : V →ₛₗ[σ] W) :
+    (straight 𝕜 v).mapSemilinear g = straight 𝕜' (g v) := by
+  by_cases hv : v = 0 <;> simp [mapSemilinear, straight_def, normalize, consMerge, hv]
+
+/-- Semilinear images along a monotone ring homomorphism preserve concatenation. -/
+theorem mapSemilinear_mul (p q : PLPath 𝕜 V) (g : V →ₛₗ[σ] W) (hσ : Monotone σ) :
+    (p * q).mapSemilinear g = p.mapSemilinear g * q.mapSemilinear g := by
+  simp [mapSemilinear, ofSegments_map_normalize_semilinear g hσ, List.map_append]
+
 @[simp]
 theorem endpoint_mapSemilinear (p : PLPath 𝕜 V) (g : V →ₛₗ[σ] W) :
     (p.mapSemilinear g).endpoint = g p.endpoint := by
   simp [mapSemilinear, endpoint_def, map_list_sum]
 
-/-- Semilinear images commute with reversal. -/
 @[simp]
 theorem mapSemilinear_reverse (p : PLPath 𝕜 V) (g : V →ₛₗ[σ] W) :
     p.reverse.mapSemilinear g = (p.mapSemilinear g).reverse := by
   simp [mapSemilinear, segments_reverse, List.map_reverse, List.map_map, reverse_ofSegments,
     Function.comp_def]
 
+/-- Composition of semilinear images along monotone ring homomorphisms. -/
+theorem mapSemilinear_mapSemilinear {𝕜'' U : Type*} [Field 𝕜''] [PartialOrder 𝕜'']
+    [IsStrictOrderedRing 𝕜''] [AddCommGroup U] [Module 𝕜'' U] {τ : 𝕜' →+* 𝕜''} {ρ : 𝕜 →+* 𝕜''}
+    [RingHomCompTriple σ τ ρ] (p : PLPath 𝕜 V) (g : V →ₛₗ[σ] W) (h : W →ₛₗ[τ] U)
+    (hτ : Monotone τ) :
+    (p.mapSemilinear g).mapSemilinear h = p.mapSemilinear (h.comp g) := by
+  simp [mapSemilinear, ofSegments_map_normalize_semilinear h hτ, List.map_map]
+
 end SemilinearImages
 
 /-- For a `𝕜`-linear map, `mapSemilinear` coincides with `PLPath.map`. -/
 @[simp]
 theorem mapSemilinear_eq_map {W : Type*} [AddCommGroup W] [Module 𝕜 W]
-    (p : PLPath 𝕜 V) (g : V →ₗ[𝕜] W) : p.mapSemilinear g = p.map g := by
-  rw [mapSemilinear_def, map_def]
+    (p : PLPath 𝕜 V) (g : V →ₗ[𝕜] W) : p.mapSemilinear g = p.map g := (rfl)
 
 end PLPath
 

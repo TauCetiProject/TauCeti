@@ -141,18 +141,16 @@ theorem ext {π π' : LSPath P b lam} (hdir : List.ofFn π.dir = List.ofFn π'.d
 
 /-- Two Lakshmibai–Seshadri encodings of the same shape are equal once their lengths, directions,
 and break times agree pointwise. -/
-theorem eq_of_length_dir_time {π π' : LSPath P b lam}
-    (hlen : π.length = π'.length)
+theorem ext' {π π' : LSPath P b lam} (hlen : π.length = π'.length)
     (hdir : ∀ j : Fin (π.length + 1), (π.dir j).1 = (π'.dir (j.cast (by rw [hlen]))).1)
     (htime : ∀ k : Fin (π.length + 2), π.time k = π'.time (k.cast (by rw [hlen]))) :
     π = π' := by
-  apply LSPath.ext
-  · refine List.ext_getElem (by simp [hlen]) fun n h₁ _ ↦ Subtype.ext ?_
-    rw [List.getElem_ofFn, List.getElem_ofFn]
-    exact hdir ⟨n, by simpa only [List.length_ofFn] using h₁⟩
-  · refine List.ext_getElem (by simp [hlen]) fun n h₁ _ ↦ ?_
-    rw [List.getElem_ofFn, List.getElem_ofFn]
-    exact htime ⟨n, by simpa only [List.length_ofFn] using h₁⟩
+  obtain ⟨l, τ, a, _, _, _, _, _⟩ := π
+  obtain ⟨l', τ', a', _, _, _, _, _⟩ := π'
+  obtain rfl : l = l' := hlen
+  obtain rfl : τ = τ' := funext fun j ↦ Subtype.ext (hdir j)
+  obtain rfl : a = a' := funext htime
+  rfl
 
 /-- The directions of a Lakshmibai–Seshadri path decrease in the Bruhat order of `W / W_λ`; they
 strictly decrease by `TauCeti.LSPath.dir_succ_ne`. -/
@@ -246,6 +244,15 @@ theorem endpoint_toPLPath (π : LSPath P b lam) :
   simp only [toPLPath, PLPath.endpoint_ofSegments, timed, List.map_ofFn, List.sum_ofFn,
     Function.comp_apply]
 
+/-- Taking a semilinear image of a realized LS path along a monotone ring homomorphism commutes
+with `toPLPath` by postcomposing the realization `f` with the semilinear map. -/
+theorem mapSemilinear_toPLPath {𝕜' W : Type*} [Field 𝕜'] [LinearOrder 𝕜'] [IsStrictOrderedRing 𝕜']
+    [AddCommGroup W] [Module 𝕜' W] {σ : 𝕜 →+* 𝕜'} (g : V →ₛₗ[σ] W) (hσ : Monotone σ)
+    (π : LSPath P b lam) :
+    (π.toPLPath 𝕜 f).mapSemilinear g = π.toPLPath 𝕜' (g.toAddMonoidHom.comp f) := by
+  rw [toPLPath_def, toPLPath_def, PLPath.mapSemilinear_ofSegments _ g hσ]
+  congr 1; simp [timed_def, List.map_ofFn, Function.comp_def]
+
 section Examples
 
 variable (lam) in
@@ -308,9 +315,8 @@ theorem eq_straight_iff_dir_zero_eq_one (π : LSPath P b lam) :
       · simpa using hzero
       · simpa using hlast
 
-/-- **Uniqueness of the LS path for a pure central shape.** If `χ` is annihilated by every simple
-coroot (including `χ = 0`, pure central characters, and arbitrary weights when `ι` is empty), every
-Lakshmibai–Seshadri path of shape `χ` equals `straight χ`. -/
+/-- **Uniqueness of the LS path for a pure central shape.** If `χ` is killed by every simple coroot,
+every LS path of shape `χ` equals `straight χ`. -/
 theorem eq_straight_of_forall_coroot'_eq_zero {χ : M}
     (hχ : ∀ i ∈ b.support, P.coroot' i χ = 0) (π : LSPath P b χ) :
     π = straight χ := by
@@ -329,58 +335,54 @@ theorem toPLPath_straight :
 
 section Congr
 
+variable {lam' lam₁ lam₂ lam₃ : M}
+
 /-- Transport of Lakshmibai–Seshadri encodings along an equality of shape weights. -/
-def congr {lam lam' : M} (h : lam = lam') : LSPath P b lam ≃ LSPath P b lam' :=
-  h ▸ Equiv.refl _
+def congr (h : lam = lam') : LSPath P b lam ≃ LSPath P b lam' := h ▸ Equiv.refl _
 
 @[simp]
 theorem congr_refl (lam : M) :
-    (congr (rfl : lam = lam) : LSPath P b lam ≃ LSPath P b lam) = Equiv.refl _ :=
-  (rfl)
+    (congr (rfl : lam = lam) : LSPath P b lam ≃ LSPath P b lam) = Equiv.refl _ := (rfl)
 
 @[simp]
-theorem congr_symm {lam lam' : M} (h : lam = lam') :
-    (congr (P := P) (b := b) h).symm = congr h.symm := by subst h; rfl
+theorem congr_symm (h : lam = lam') : (congr (P := P) (b := b) h).symm = congr h.symm := by
+  subst h; rfl
 
 @[simp]
-theorem congr_trans {lam₁ lam₂ lam₃ : M} (h₁ : lam₁ = lam₂) (h₂ : lam₂ = lam₃) :
+theorem congr_trans (h₁ : lam₁ = lam₂) (h₂ : lam₂ = lam₃) :
     (congr (P := P) (b := b) h₁).trans (congr h₂) = congr (h₁.trans h₂) := by subst h₁ h₂; rfl
 
 @[simp]
-theorem congr_congr {lam₁ lam₂ lam₃ : M} (h₁ : lam₁ = lam₂) (h₂ : lam₂ = lam₃)
-    (π : LSPath P b lam₁) :
+theorem congr_congr (h₁ : lam₁ = lam₂) (h₂ : lam₂ = lam₃) (π : LSPath P b lam₁) :
     congr h₂ (congr h₁ π) = congr (h₁.trans h₂) π := by subst h₁ h₂; rfl
 
 @[simp]
-theorem length_congr {lam lam' : M} (h : lam = lam') (π : LSPath P b lam) :
-    (congr h π).length = π.length := by subst h; rfl
+theorem length_congr (h : lam = lam') (π : LSPath P b lam) : (congr h π).length = π.length := by
+  subst h; rfl
 
 @[simp]
-theorem dir_congr {lam lam' : M} (h : lam = lam') (π : LSPath P b lam)
-    (j : Fin ((congr h π).length + 1)) :
+theorem dir_congr (h : lam = lam') (π : LSPath P b lam) (j : Fin ((congr h π).length + 1)) :
     ((congr h π).dir j).1 = (π.dir (j.cast (by rw [length_congr]))).1 := by subst h; rfl
 
 @[simp]
-theorem time_congr {lam lam' : M} (h : lam = lam') (π : LSPath P b lam)
-    (k : Fin ((congr h π).length + 2)) :
+theorem time_congr (h : lam = lam') (π : LSPath P b lam) (k : Fin ((congr h π).length + 2)) :
     (congr h π).time k = π.time (k.cast (by rw [length_congr])) := by subst h; rfl
 
 @[simp]
-theorem duration_congr {lam lam' : M} (h : lam = lam') (π : LSPath P b lam)
-    (j : Fin ((congr h π).length + 1)) :
+theorem duration_congr (h : lam = lam') (π : LSPath P b lam) (j : Fin ((congr h π).length + 1)) :
     (congr h π).duration j = π.duration (j.cast (by rw [length_congr])) := by subst h; rfl
 
 @[simp]
-theorem congr_straight {lam lam' : M} (h : lam = lam') :
+theorem congr_straight (h : lam = lam') :
     congr (P := P) (b := b) h (straight lam) = straight lam' := by subst h; rfl
 
 omit [LinearOrder 𝕜] [IsStrictOrderedRing 𝕜] in
 @[simp]
-theorem timed_congr {lam lam' : M} (h : lam = lam') (π : LSPath P b lam) :
+theorem timed_congr (h : lam = lam') (π : LSPath P b lam) :
     (congr h π).timed 𝕜 f = π.timed 𝕜 f := by subst h; rfl
 
 @[simp]
-theorem toPLPath_congr {lam lam' : M} (h : lam = lam') (π : LSPath P b lam) :
+theorem toPLPath_congr (h : lam = lam') (π : LSPath P b lam) :
     (congr h π).toPLPath 𝕜 f = π.toPLPath 𝕜 f := by subst h; rfl
 
 end Congr

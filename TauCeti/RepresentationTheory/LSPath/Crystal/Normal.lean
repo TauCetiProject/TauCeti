@@ -21,42 +21,23 @@ import TauCeti.RepresentationTheory.LSPath.LinearMap
 /-!
 # The normal crystal of Lakshmibai–Seshadri paths
 
-Let `P : RootDatum ι X Y` be a finite reduced root datum with base `b`, and let `λ : X` be a
-dominant weight. Littelmann's path model equips the finite type `LSPath P b λ` of
-Lakshmibai–Seshadri encodings of shape `λ` with the structure of a connected normal crystal
-`TauCeti.LSPath.crystal` with unique highest element `TauCeti.LSPath.straight λ`.
-
-First, `X → ℚ ⊗[ℤ] X` (`TensorProduct.mk ℤ ℚ X 1`) provides a canonical faithful rational
-realization (`RootPairing.tensorProduct_mk_injective`) in which no two distinct orbit weights lie on
-the same ray (`RootPairing.pairwise_not_sameRay_tensorProduct_mk_orbit`), with rational coroot forms
-`Module.Dual.baseChange ℚ (P.coroot' i)`. In every realization `(𝕜, V, f, F)`, the image of
-`LSPath.toPLPath` is crystal-admissible (`TauCeti.LSPath.isCrystalSet_range_toPLPath`); transporting
-`TauCeti.PLPath.normalCrystalOn` from `ℚ ⊗[ℤ] X` along `LSPath.toPLPath` defines
-`TauCeti.LSPath.crystal`, and pushing paths forward from `ℚ ⊗[ℤ] X` via
-`TauCeti.PLPath.mapSemilinear` and `AddMonoidHom.liftBaseChangeSemilinear` proves universal
-compatibility with `PLPath.raise`, `PLPath.lower`, and `PLPath.minHeight` in **every** additive
-realization `(𝕜, V, f, F)`, without requiring `f` to be injective.
-
-Since `TauCeti.LSPath.straight λ` is the unique LS path annihilated by all raising operators
-(`TauCeti.LSPath.forall_crystal_e_eq_none_iff`) and `LSPath P b λ` is finite
-(`TauCeti.LSPath.finite`), every LS path is obtained from `straight λ` by a lowering word
-(`TauCeti.LSPath.exists_fWord_straight_eq_some`), the crystal graph is connected
-(`TauCeti.LSPath.connected_crystal_graph`), and the realized LS paths of shape `λ` coincide with
-the root-operator component of `PLPath.straight 𝕜 (f λ)`
-(`TauCeti.LSPath.mem_range_toPLPath_iff_exists_lowerWord`,
-`TauCeti.LSPath.mem_range_toPLPath_iff_reflTransGen`).
+For a finite reduced root datum `P : RootDatum ι X Y` with base `b` and dominant weight `λ : X`,
+Littelmann's path model equips `LSPath P b λ` with a connected normal crystal `LSPath.crystal`
+whose unique highest element is `LSPath.straight λ`. We transport `PLPath.normalCrystalOn` from
+the canonical rational realization `X → ℚ ⊗[ℤ] X` along `LSPath.toPLPath` and push forward via
+`PLPath.mapSemilinear` and `AddMonoidHom.liftBaseChangeSemilinear` for universal compatibility
+with `PLPath.raise`, `PLPath.lower`, and `PLPath.minHeight` in every realization `(𝕜, V, f, F)`.
 
 ## Main definitions and results
 
-* `TauCeti.LSPath.crystal`: the normal crystal on `LSPath P b λ` with weight map
-  `TauCeti.LSPath.weight`.
-* `TauCeti.LSPath.isCrystalSet_range_toPLPath`, `TauCeti.LSPath.raise_toPLPath`, and
-  `TauCeti.LSPath.lower_toPLPath`: admissibility and universal realization compatibility.
-* `TauCeti.LSPath.congrIso` and `TauCeti.LSPath.dualIso`: shape transport and Littelmann's path
-  duality as strict crystal isomorphisms.
+* `TauCeti.LSPath.crystal`, `TauCeti.LSPath.isCrystalSet_range_toPLPath`,
+  `TauCeti.LSPath.isIntegralPath_toPLPath`, `TauCeti.LSPath.raise_toPLPath`,
+  `TauCeti.LSPath.lower_toPLPath`, `TauCeti.LSPath.toPLPathHom`,
+  `TauCeti.LSPath.toPLPathComponentIso`.
+* `TauCeti.LSPath.congrIso`, `TauCeti.LSPath.dualIso`: shape transport and path duality.
 * `TauCeti.LSPath.forall_crystal_e_eq_none_iff`, `TauCeti.LSPath.exists_fWord_straight_eq_some`,
   `TauCeti.LSPath.connected_crystal_graph`,
-  `TauCeti.LSPath.mem_range_toPLPath_iff_exists_lowerWord`, and
+  `TauCeti.LSPath.mem_range_toPLPath_iff_exists_lowerWord`,
   `TauCeti.LSPath.mem_range_toPLPath_iff_reflTransGen`.
 
 ## References
@@ -78,15 +59,15 @@ open RootPairing
 variable {ι X Y : Type*} [AddCommGroup X] [AddCommGroup Y]
   {P : RootDatum ι X Y} {b : P.Base} [Finite ι] [P.IsReduced] {lam : X}
 
-/-! ### The normal crystal on `LSPath P b λ` -/
+/-! ### Admissibility and construction of the normal crystal on `LSPath P b λ` -/
 
 private noncomputable abbrev toRatPLPath (π : LSPath P b lam) : PLPath ℚ (ℚ ⊗[ℤ] X) :=
   π.toPLPath ℚ (TensorProduct.mk ℤ ℚ X 1).toAddMonoidHom
 
 omit [Finite ι] [P.IsReduced] in
 private theorem injective_mkRatAddHom (P : RootDatum ι X Y) :
-    Function.Injective (TensorProduct.mk ℤ ℚ X 1).toAddMonoidHom :=
-  P.tensorProduct_mk_injective ℚ
+    Function.Injective (TensorProduct.mk ℤ ℚ X 1).toAddMonoidHom := by
+  simpa only [LinearMap.toAddMonoidHom_coe] using P.tensorProduct_mk_injective ℚ
 
 omit [Finite ι] [P.IsReduced] in
 private theorem baseChange_coroot'_mkRat (i : b.support) (x : X) :
@@ -98,38 +79,50 @@ private theorem toRatPLPath_injective (hlam : lam ∈ dominantChamber P b) :
     Function.Injective (toRatPLPath (P := P) (b := b) (lam := lam)) := by
   have := P.finite_weylGroup_of_base b
   exact toPLPath_injective hlam (injective_mkRatAddHom P).injOn
-    (P.pairwise_not_sameRay_tensorProduct_mk_orbit ℚ lam)
+    (by simpa only [LinearMap.toAddMonoidHom_coe] using
+      P.pairwise_not_sameRay_tensorProduct_mk_orbit ℚ lam)
 
 private theorem mapSemilinear_toRatPLPath {𝕜 V : Type*} [Field 𝕜] [LinearOrder 𝕜]
-    [IsStrictOrderedRing 𝕜] [AddCommGroup V] [Module 𝕜 V] (f : X →+ V)
-    (π : LSPath P b lam) :
+    [IsStrictOrderedRing 𝕜] [AddCommGroup V] [Module 𝕜 V] (f : X →+ V) (π : LSPath P b lam) :
     (toRatPLPath π).mapSemilinear (f.liftBaseChangeSemilinear (Rat.castHom 𝕜)) =
       π.toPLPath 𝕜 f := by
-  rw [toRatPLPath, toPLPath_def, toPLPath_def,
-    PLPath.mapSemilinear_ofSegments _ _ (Rat.cast_mono (K := 𝕜))]
-  congr 1
-  simp [timed_def, List.map_ofFn, Function.comp_def, TensorProduct.mk_apply]
+  have hcomp : (f.liftBaseChangeSemilinear (Rat.castHom 𝕜)).toAddMonoidHom.comp
+      (TensorProduct.mk ℤ ℚ X 1).toAddMonoidHom = f := by ext x; simp [TensorProduct.mk_apply]
+  rw [toRatPLPath, mapSemilinear_toPLPath ℚ _ _ (Rat.cast_mono (K := 𝕜)), hcomp]
 
-/-- **Admissibility of realized LS paths.** In every realization `(𝕜, V, f)` with height forms `F`
-inducing the simple coroots, the image of `LSPath.toPLPath` for dominant `λ` is a
-crystal-admissible set (`TauCeti.PLPath.IsCrystalSet`). -/
-theorem isCrystalSet_range_toPLPath {𝕜 V : Type*} [Field 𝕜] [LinearOrder 𝕜]
-    [IsStrictOrderedRing 𝕜] [AddCommGroup V] [Module 𝕜 V]
-    (hlam : lam ∈ dominantChamber P b) (f : X →+ V) (F : b.support → Module.Dual 𝕜 V)
-    (hF : ∀ (i : b.support) (x : X), F i (f x) = (P.coroot' i x : 𝕜)) :
-    PLPath.IsCrystalSet b f F (Set.range fun π : LSPath P b lam ↦ π.toPLPath 𝕜 f) where
-  endpoint_mem_range := by rintro _ ⟨π, rfl⟩; exact ⟨π.weight hlam, apply_weight 𝕜 f hlam π⟩
-  exists_minHeight_eq_intCast := by
-    rintro _ ⟨π, rfl⟩ i
-    have := P.flip_isReduced
-    obtain ⟨e, _, he, _⟩ :=
-      π.exists_neg_minHeight_eq_natCast_and_apply_endpoint_sub_minHeight_eq_natCast
-        hlam f i (F i) (hF i)
-    exact ⟨-(e : ℤ), by push_cast; linarith⟩
-  mem_of_raise_eq_some hr hπ := mem_range_toPLPath_of_raise_eq_some hlam f _ (F _) (hF _) hπ hr
-  mem_of_lower_eq_some hl hπ := mem_range_toPLPath_of_lower_eq_some hlam f _ (F _) (hF _) hπ hl
+section Admissibility
 
-section CrystalConstruction
+variable {𝕜 V : Type*} [Field 𝕜] [LinearOrder 𝕜] [IsStrictOrderedRing 𝕜]
+  [AddCommGroup V] [Module 𝕜 V] (hlam : lam ∈ dominantChamber P b) (f : X →+ V)
+  (F : b.support → Module.Dual 𝕜 V)
+  (hF : ∀ (i : b.support) (x : X), F i (f x) = (P.coroot' i x : 𝕜))
+
+include hlam hF
+
+/-- **Admissibility of realized LS paths.** In every realization `(𝕜, V, f, F)`, the image of
+`LSPath.toPLPath` for dominant `λ` is crystal-admissible. -/
+theorem isCrystalSet_range_toPLPath :
+    PLPath.IsCrystalSet b f F (Set.range fun π : LSPath P b lam ↦ π.toPLPath 𝕜 f) := by
+  have := P.flip_isReduced
+  exact
+    { endpoint_mem_range := by rintro _ ⟨π, rfl⟩; exact ⟨π.weight hlam, apply_weight 𝕜 f hlam π⟩
+      exists_minHeight_eq_intCast := by
+        rintro _ ⟨π, rfl⟩ i; exact π.exists_minHeight_eq_intCast hlam f i (F i) (hF i)
+      mem_of_raise_eq_some hr hπ := mem_range_toPLPath_of_raise_eq_some hlam f _ (F _) (hF _) hπ hr
+      mem_of_lower_eq_some hl hπ :=
+        mem_range_toPLPath_of_lower_eq_some hlam f _ (F _) (hF _) hπ hl }
+
+/-- Every realized Lakshmibai–Seshadri path of dominant shape is an integral path. -/
+theorem isIntegralPath_toPLPath (π : LSPath P b lam) :
+    PLPath.IsIntegralPath b f F (π.toPLPath 𝕜 f) :=
+  (isCrystalSet_range_toPLPath hlam f F hF).subset_isIntegralPath ⟨π, rfl⟩
+
+/-- The straight path along a dominant weight `λ` is an integral path in every realization. -/
+theorem isIntegralPath_straight :
+    PLPath.IsIntegralPath b f F (PLPath.straight 𝕜 (f lam)) := by
+  simpa only [toPLPath_straight] using isIntegralPath_toPLPath hlam f F hF (straight lam)
+
+end Admissibility
 
 private noncomputable abbrev ratCrystalOn (hlam : lam ∈ dominantChamber P b) :
     NormalCrystal P b (Set.range (toRatPLPath (P := P) (b := b) (lam := lam))) :=
@@ -143,116 +136,97 @@ private noncomputable abbrev toRatRangeEquiv (hlam : lam ∈ dominantChamber P b
     LSPath P b lam ≃ Set.range (toRatPLPath (P := P) (b := b) (lam := lam)) :=
   Equiv.ofInjective toRatPLPath (toRatPLPath_injective hlam)
 
-private theorem toRatRangeEquiv_apply_val (hlam : lam ∈ dominantChamber P b)
-    (π : LSPath P b lam) :
-    (toRatRangeEquiv hlam π).1 = toRatPLPath π :=
-  congrArg Subtype.val (Equiv.ofInjective_apply (f := toRatPLPath) (toRatPLPath_injective hlam) π)
-
-/-- **The normal crystal of Lakshmibai–Seshadri paths of dominant shape `λ`.** Its weight map is
-`TauCeti.LSPath.weight`, and its raising and lowering operators realize Littelmann's path root
-operators in every additive realization of `X` (`TauCeti.LSPath.raise_toPLPath`,
-`TauCeti.LSPath.lower_toPLPath`). -/
+/-- **The normal crystal of Lakshmibai–Seshadri paths of dominant shape `λ`**, with weight map
+`LSPath.weight` and root operators realizing Littelmann's path root operators in every realization.
+-/
 noncomputable def crystal (hlam : lam ∈ dominantChamber P b) :
     NormalCrystal P b (LSPath P b lam) :=
   (ratCrystalOn hlam).transport (toRatRangeEquiv hlam).symm
-
-private theorem toRatPLPath_symm_toRatRangeEquiv (hlam : lam ∈ dominantChamber P b)
-    (s : Set.range (toRatPLPath (P := P) (b := b) (lam := lam))) :
-    toRatPLPath ((toRatRangeEquiv hlam).symm s) = s.1 :=
-  congrArg Subtype.val ((toRatRangeEquiv hlam).apply_symm_apply s)
 
 private theorem map_toRatPLPath_crystal_e (hlam : lam ∈ dominantChamber P b) (i : b.support)
     (π : LSPath P b lam) :
     ((crystal hlam).e i π).map toRatPLPath =
       PLPath.raise (Module.Dual.baseChange ℚ (P.coroot' i))
-        (TensorProduct.mk ℤ ℚ X 1 (P.root i)) (toRatPLPath π) := by
-  have hcomp : toRatPLPath ∘ (toRatRangeEquiv hlam).symm = Subtype.val :=
-    funext (toRatPLPath_symm_toRatRangeEquiv hlam)
-  rw [crystal, NormalCrystal.transport_e, Equiv.symm_symm, ratCrystalOn, Option.map_map, hcomp]
-  exact (PLPath.unattach_normalCrystalOn_e i (toRatRangeEquiv hlam π)).trans
-    (by rw [toRatRangeEquiv_apply_val]; rfl)
+        ((TensorProduct.mk ℤ ℚ X 1).toAddMonoidHom (P.root i)) (toRatPLPath π) := by
+  rw [crystal, NormalCrystal.transport_e, Equiv.symm_symm, ratCrystalOn, Option.map_map,
+    toRatRangeEquiv, Equiv.self_comp_ofInjective_symm, ← Option.unattach,
+    PLPath.unattach_normalCrystalOn_e, Equiv.ofInjective_apply]
 
 private theorem map_toRatPLPath_crystal_f (hlam : lam ∈ dominantChamber P b) (i : b.support)
     (π : LSPath P b lam) :
     ((crystal hlam).f i π).map toRatPLPath =
       PLPath.lower (Module.Dual.baseChange ℚ (P.coroot' i))
-        (TensorProduct.mk ℤ ℚ X 1 (P.root i)) (toRatPLPath π) := by
-  have hcomp : toRatPLPath ∘ (toRatRangeEquiv hlam).symm = Subtype.val :=
-    funext (toRatPLPath_symm_toRatRangeEquiv hlam)
-  rw [crystal, NormalCrystal.transport_f, Equiv.symm_symm, ratCrystalOn, Option.map_map, hcomp]
-  exact (PLPath.unattach_normalCrystalOn_f i (toRatRangeEquiv hlam π)).trans
-    (by rw [toRatRangeEquiv_apply_val]; rfl)
-
-end CrystalConstruction
+        ((TensorProduct.mk ℤ ℚ X 1).toAddMonoidHom (P.root i)) (toRatPLPath π) := by
+  rw [crystal, NormalCrystal.transport_f, Equiv.symm_symm, ratCrystalOn, Option.map_map,
+    toRatRangeEquiv, Equiv.self_comp_ofInjective_symm, ← Option.unattach,
+    PLPath.unattach_normalCrystalOn_f, Equiv.ofInjective_apply]
 
 /-! ### Universal compatibility with realizations -/
-
-section Realization
 
 @[simp]
 theorem crystal_wt (hlam : lam ∈ dominantChamber P b) (π : LSPath P b lam) :
     (crystal hlam).wt π = π.weight hlam := by
   rw [crystal, NormalCrystal.transport_wt, Equiv.symm_symm, ratCrystalOn,
-    PLPath.normalCrystalOn_wt_eq_iff, toRatRangeEquiv_apply_val,
+    PLPath.normalCrystalOn_wt_eq_iff, toRatRangeEquiv, Equiv.ofInjective_apply,
     apply_weight ℚ (TensorProduct.mk ℤ ℚ X 1).toAddMonoidHom hlam π]
 
-variable {𝕜 V : Type*} [Field 𝕜] [LinearOrder 𝕜] [IsStrictOrderedRing 𝕜]
-  [AddCommGroup V] [Module 𝕜 V]
+section Realization
 
-/-- **Universal compatibility of `crystal.e` with `PLPath.raise`.** In any realization `(𝕜, V, f)`
-with a height form `F` inducing the simple coroot pairing `⟨-, αᵢ^∨⟩`, raising the realized path
-`π.toPLPath 𝕜 f` agrees with applying `(crystal hlam).e i` and then realizing. -/
-theorem raise_toPLPath (hlam : lam ∈ dominantChamber P b) (f : X →+ V) (i : b.support)
-    (F : Module.Dual 𝕜 V) (hF : ∀ x, F (f x) = (P.coroot' i x : 𝕜)) (π : LSPath P b lam) :
+variable {𝕜 V : Type*} [Field 𝕜] [LinearOrder 𝕜] [IsStrictOrderedRing 𝕜]
+  [AddCommGroup V] [Module 𝕜 V] (hlam : lam ∈ dominantChamber P b)
+
+section ArbitraryRealization
+
+variable (f : X →+ V)
+
+section SingleRoot
+
+variable (i : b.support) (F : Module.Dual 𝕜 V) (hF : ∀ x, F (f x) = (P.coroot' i x : 𝕜))
+
+include hF
+
+/-- **Universal compatibility of `crystal.e` with `PLPath.raise`** in any realization `(𝕜, V, f)`.
+-/
+theorem raise_toPLPath (π : LSPath P b lam) :
     PLPath.raise F (f (P.root i)) (π.toPLPath 𝕜 f) =
       ((crystal hlam).e i π).map (·.toPLPath 𝕜 f) := by
-  have hFG := f.apply_liftBaseChangeSemilinear (Rat.castHom 𝕜) hF
-  have hroot : f (P.root i) =
-      f.liftBaseChangeSemilinear (Rat.castHom 𝕜) (TensorProduct.mk ℤ ℚ X 1 (P.root i)) := by
-    simp [TensorProduct.mk_apply]
+  have hFG := f.apply_liftBaseChangeSemilinear (Rat.castHom 𝕜) F
+    (Module.Dual.baseChange ℚ (P.coroot' i)) fun x ↦ by simp [hF]
+  have hroot : f (P.root i) = f.liftBaseChangeSemilinear (Rat.castHom 𝕜)
+      ((TensorProduct.mk ℤ ℚ X 1).toAddMonoidHom (P.root i)) := by simp [TensorProduct.mk_apply]
   rw [← mapSemilinear_toRatPLPath f π, hroot,
     PLPath.raise_mapSemilinear _ (Rat.cast_mono (K := 𝕜)) hFG, ← map_toRatPLPath_crystal_e hlam,
     Option.map_map]
-  exact congrArg (fun h ↦ Option.map h _) (funext fun ρ ↦ mapSemilinear_toRatPLPath (𝕜 := 𝕜) f ρ)
+  exact congrArg (Option.map · _) (funext fun ρ ↦ mapSemilinear_toRatPLPath (𝕜 := 𝕜) f ρ)
 
-/-- **Universal compatibility of `crystal.f` with `PLPath.lower`.** In any realization `(𝕜, V, f)`
-with a height form `F` inducing the simple coroot pairing `⟨-, αᵢ^∨⟩`, lowering the realized path
-`π.toPLPath 𝕜 f` agrees with applying `(crystal hlam).f i` and then realizing. -/
-theorem lower_toPLPath (hlam : lam ∈ dominantChamber P b) (f : X →+ V) (i : b.support)
-    (F : Module.Dual 𝕜 V) (hF : ∀ x, F (f x) = (P.coroot' i x : 𝕜)) (π : LSPath P b lam) :
+/-- **Universal compatibility of `crystal.f` with `PLPath.lower`** in any realization `(𝕜, V, f)`.
+-/
+theorem lower_toPLPath (π : LSPath P b lam) :
     PLPath.lower F (f (P.root i)) (π.toPLPath 𝕜 f) =
       ((crystal hlam).f i π).map (·.toPLPath 𝕜 f) := by
-  have hFG := f.apply_liftBaseChangeSemilinear (Rat.castHom 𝕜) hF
-  have hroot : f (P.root i) =
-      f.liftBaseChangeSemilinear (Rat.castHom 𝕜) (TensorProduct.mk ℤ ℚ X 1 (P.root i)) := by
-    simp [TensorProduct.mk_apply]
+  have hFG := f.apply_liftBaseChangeSemilinear (Rat.castHom 𝕜) F
+    (Module.Dual.baseChange ℚ (P.coroot' i)) fun x ↦ by simp [hF]
+  have hroot : f (P.root i) = f.liftBaseChangeSemilinear (Rat.castHom 𝕜)
+      ((TensorProduct.mk ℤ ℚ X 1).toAddMonoidHom (P.root i)) := by simp [TensorProduct.mk_apply]
   rw [← mapSemilinear_toRatPLPath f π, hroot,
     PLPath.lower_mapSemilinear _ (Rat.cast_mono (K := 𝕜)) hFG, ← map_toRatPLPath_crystal_f hlam,
     Option.map_map]
-  exact congrArg (fun h ↦ Option.map h _) (funext fun ρ ↦ mapSemilinear_toRatPLPath (𝕜 := 𝕜) f ρ)
+  exact congrArg (Option.map · _) (funext fun ρ ↦ mapSemilinear_toRatPLPath (𝕜 := 𝕜) f ρ)
 
-/-- Universal compatibility of `crystal.ε` with `PLPath.minHeight`: in any realization, the
-minimum simple-coroot height of `π.toPLPath 𝕜 f` is `-((crystal hlam).ε i π)`. -/
-theorem minHeight_toPLPath_eq_neg_crystal_ε (hlam : lam ∈ dominantChamber P b) (f : X →+ V)
-    (i : b.support) (F : Module.Dual 𝕜 V) (hF : ∀ x, F (f x) = (P.coroot' i x : 𝕜))
-    (π : LSPath P b lam) :
+/-- Universal compatibility of `crystal.ε` with `PLPath.minHeight` in any realization. -/
+theorem minHeight_toPLPath_eq_neg_crystal_ε (π : LSPath P b lam) :
     (π.toPLPath 𝕜 f).minHeight F = -((crystal hlam).ε i π : 𝕜) := by
-  have hFG := f.apply_liftBaseChangeSemilinear (Rat.castHom 𝕜) hF
-  have hm : (toRatPLPath π).minHeight (Module.Dual.baseChange ℚ (P.coroot' i)) =
-      -((crystal hlam).ε i π : ℚ) := by
-    rw [crystal, NormalCrystal.transport_ε, Equiv.symm_symm, ratCrystalOn,
-      PLPath.cast_normalCrystalOn_ε, toRatRangeEquiv_apply_val, neg_neg]
-  rw [← mapSemilinear_toRatPLPath f π,
-    PLPath.minHeight_mapSemilinear (Rat.cast_mono (K := 𝕜)) hFG, hm]
-  simp
+  have hFG := f.apply_liftBaseChangeSemilinear (Rat.castHom 𝕜) F
+    (Module.Dual.baseChange ℚ (P.coroot' i)) fun x ↦ by simp [hF]
+  have hε : ((crystal hlam).ε i π : ℚ) =
+      -(toRatPLPath π).minHeight (Module.Dual.baseChange ℚ (P.coroot' i)) := by
+    simp [crystal, ratCrystalOn, toRatRangeEquiv]
+  rw [← mapSemilinear_toRatPLPath f π, PLPath.minHeight_mapSemilinear (Rat.cast_mono (K := 𝕜)) hFG]
+  simpa using congrArg (fun q : ℚ ↦ -(q : 𝕜)) hε.symm
 
-/-- Universal compatibility of `crystal.φ` with `PLPath.minHeight`: in any realization,
-`F (π.toPLPath 𝕜 f).endpoint - (π.toPLPath 𝕜 f).minHeight F = (crystal hlam).φ i π`. -/
-theorem apply_endpoint_sub_minHeight_toPLPath_eq_crystal_φ
-    (hlam : lam ∈ dominantChamber P b) (f : X →+ V) (i : b.support) (F : Module.Dual 𝕜 V)
-    (hF : ∀ x, F (f x) = (P.coroot' i x : 𝕜)) (π : LSPath P b lam) :
-    F (π.toPLPath 𝕜 f).endpoint - (π.toPLPath 𝕜 f).minHeight F =
-      ((crystal hlam).φ i π : 𝕜) := by
+/-- Universal compatibility of `crystal.φ` with `PLPath.minHeight` in any realization. -/
+theorem apply_endpoint_sub_minHeight_toPLPath_eq_crystal_φ (π : LSPath P b lam) :
+    F (π.toPLPath 𝕜 f).endpoint - (π.toPLPath 𝕜 f).minHeight F = ((crystal hlam).φ i π : 𝕜) := by
   rw [← apply_weight 𝕜 f hlam, hF, minHeight_toPLPath_eq_neg_crystal_ε hlam f i F hF]
   have hcast : (((crystal hlam).φ i π : 𝕜) - ((crystal hlam).ε i π : 𝕜)) =
       (P.coroot' i (π.weight hlam) : 𝕜) := by
@@ -260,9 +234,7 @@ theorem apply_endpoint_sub_minHeight_toPLPath_eq_crystal_φ
   linarith
 
 /-- Iterated raising on realized LS paths agrees with `(crystal hlam).eIter`. -/
-theorem raiseIter_toPLPath (hlam : lam ∈ dominantChamber P b) (f : X →+ V) (i : b.support)
-    (F : Module.Dual 𝕜 V) (hF : ∀ x, F (f x) = (P.coroot' i x : 𝕜)) (n : ℕ)
-    (π : LSPath P b lam) :
+theorem raiseIter_toPLPath (n : ℕ) (π : LSPath P b lam) :
     PLPath.raiseIter F (f (P.root i)) n (π.toPLPath 𝕜 f) =
       ((crystal hlam).eIter i n π).map (·.toPLPath 𝕜 f) := by
   induction n generalizing π with
@@ -272,9 +244,7 @@ theorem raiseIter_toPLPath (hlam : lam ∈ dominantChamber P b) (f : X →+ V) (
     cases (crystal hlam).e i π <;> simp [ih]
 
 /-- Iterated lowering on realized LS paths agrees with `(crystal hlam).fIter`. -/
-theorem lowerIter_toPLPath (hlam : lam ∈ dominantChamber P b) (f : X →+ V) (i : b.support)
-    (F : Module.Dual 𝕜 V) (hF : ∀ x, F (f x) = (P.coroot' i x : 𝕜)) (n : ℕ)
-    (π : LSPath P b lam) :
+theorem lowerIter_toPLPath (n : ℕ) (π : LSPath P b lam) :
     PLPath.lowerIter F (f (P.root i)) n (π.toPLPath 𝕜 f) =
       ((crystal hlam).fIter i n π).map (·.toPLPath 𝕜 f) := by
   induction n generalizing π with
@@ -283,10 +253,11 @@ theorem lowerIter_toPLPath (hlam : lam ∈ dominantChamber P b) (f : X →+ V) (
     rw [PLPath.lowerIter_succ, NormalCrystal.fIter_succ, lower_toPLPath hlam f i F hF]
     cases (crystal hlam).f i π <;> simp [ih]
 
+end SingleRoot
+
 /-- Raising along a word on realized LS paths agrees with `(crystal hlam).eWord`. -/
-theorem raiseWord_toPLPath (hlam : lam ∈ dominantChamber P b) (f : X →+ V)
-    (F : b.support → Module.Dual 𝕜 V) (hF : ∀ i x, F i (f x) = (P.coroot' i x : 𝕜))
-    (w : List b.support) (π : LSPath P b lam) :
+theorem raiseWord_toPLPath (F : b.support → Module.Dual 𝕜 V)
+    (hF : ∀ i x, F i (f x) = (P.coroot' i x : 𝕜)) (w : List b.support) (π : LSPath P b lam) :
     PLPath.raiseWord F (fun i ↦ f (P.root i)) w (π.toPLPath 𝕜 f) =
       ((crystal hlam).eWord w π).map (·.toPLPath 𝕜 f) := by
   induction w generalizing π with
@@ -296,9 +267,8 @@ theorem raiseWord_toPLPath (hlam : lam ∈ dominantChamber P b) (f : X →+ V)
     cases (crystal hlam).e i π <;> simp [ih]
 
 /-- Lowering along a word on realized LS paths agrees with `(crystal hlam).fWord`. -/
-theorem lowerWord_toPLPath (hlam : lam ∈ dominantChamber P b) (f : X →+ V)
-    (F : b.support → Module.Dual 𝕜 V) (hF : ∀ i x, F i (f x) = (P.coroot' i x : 𝕜))
-    (w : List b.support) (π : LSPath P b lam) :
+theorem lowerWord_toPLPath (F : b.support → Module.Dual 𝕜 V)
+    (hF : ∀ i x, F i (f x) = (P.coroot' i x : 𝕜)) (w : List b.support) (π : LSPath P b lam) :
     PLPath.lowerWord F (fun i ↦ f (P.root i)) w (π.toPLPath 𝕜 f) =
       ((crystal hlam).fWord w π).map (·.toPLPath 𝕜 f) := by
   induction w generalizing π with
@@ -307,10 +277,14 @@ theorem lowerWord_toPLPath (hlam : lam ∈ dominantChamber P b) (f : X →+ V)
     rw [PLPath.lowerWord_cons, NormalCrystal.fWord_cons, lower_toPLPath hlam f i (F i) (hF i)]
     cases (crystal hlam).f i π <;> simp [ih]
 
-/-- In any faithful ray-separating realization, `(crystal hlam).e i π = some ρ` is equivalent to
-`PLPath.raise F (f (P.root i)) (π.toPLPath 𝕜 f) = some (ρ.toPLPath 𝕜 f)`. -/
-theorem crystal_e_eq_some_iff (hlam : lam ∈ dominantChamber P b) {f : X →+ V}
-    (hf : Set.InjOn f (Set.range fun w : P.weylGroup ↦ w • lam))
+end ArbitraryRealization
+
+section FaithfulRealization
+
+variable {f : X →+ V}
+
+/-- Characterization of `(crystal hlam).e i π = some ρ` in a faithful ray-separating realization. -/
+theorem crystal_e_eq_some_iff (hf : Set.InjOn f (Set.range fun w : P.weylGroup ↦ w • lam))
     (hS : (Set.range fun w : P.weylGroup ↦ f (w • lam)).Pairwise fun u v ↦ ¬ SameRay 𝕜 u v)
     (i : b.support) (F : Module.Dual 𝕜 V) (hF : ∀ x, F (f x) = (P.coroot' i x : 𝕜))
     {π ρ : LSPath P b lam} :
@@ -319,10 +293,8 @@ theorem crystal_e_eq_some_iff (hlam : lam ∈ dominantChamber P b) {f : X →+ V
   rw [raise_toPLPath hlam f i F hF,
     ← (Option.map_injective (toPLPath_injective hlam hf hS)).eq_iff, Option.map_some]
 
-/-- In any faithful ray-separating realization, `(crystal hlam).f i π = some ρ` is equivalent to
-`PLPath.lower F (f (P.root i)) (π.toPLPath 𝕜 f) = some (ρ.toPLPath 𝕜 f)`. -/
-theorem crystal_f_eq_some_iff (hlam : lam ∈ dominantChamber P b) {f : X →+ V}
-    (hf : Set.InjOn f (Set.range fun w : P.weylGroup ↦ w • lam))
+/-- Characterization of `(crystal hlam).f i π = some ρ` in a faithful ray-separating realization. -/
+theorem crystal_f_eq_some_iff (hf : Set.InjOn f (Set.range fun w : P.weylGroup ↦ w • lam))
     (hS : (Set.range fun w : P.weylGroup ↦ f (w • lam)).Pairwise fun u v ↦ ¬ SameRay 𝕜 u v)
     (i : b.support) (F : Module.Dual 𝕜 V) (hF : ∀ x, F (f x) = (P.coroot' i x : 𝕜))
     {π ρ : LSPath P b lam} :
@@ -330,6 +302,22 @@ theorem crystal_f_eq_some_iff (hlam : lam ∈ dominantChamber P b) {f : X →+ V
       PLPath.lower F (f (P.root i)) (π.toPLPath 𝕜 f) = some (ρ.toPLPath 𝕜 f) := by
   rw [lower_toPLPath hlam f i F hF,
     ← (Option.map_injective (toPLPath_injective hlam hf hS)).eq_iff, Option.map_some]
+
+/-- Realization `LSPath.toPLPath` as a strict crystal morphism into `PLPath.normalCrystal`. -/
+noncomputable def toPLPathHom (hf : Function.Injective f) {F : b.support → Module.Dual 𝕜 V}
+    (hF : ∀ (i : b.support) (x : X), F i (f x) = (P.coroot' i x : 𝕜)) :
+    NormalCrystal.StrictHom (crystal hlam) (PLPath.normalCrystal hf hF) where
+  toFun π := ⟨π.toPLPath 𝕜 f, isIntegralPath_toPLPath hlam f F hF π⟩
+  wt_toFun π := (PLPath.normalCrystalOn_wt_eq_iff (hf := hf) (hF := hF)
+    (hS := PLPath.isCrystalSet_setOf_isIntegralPath)).mpr (by simp [apply_weight 𝕜 f hlam π])
+  e_toFun i π := by rw [PLPath.normalCrystalOn_e_eq_map_iff, raise_toPLPath hlam f i (F i) (hF i)]
+
+@[simp]
+theorem toPLPathHom_apply (hf : Function.Injective f) {F : b.support → Module.Dual 𝕜 V}
+    (hF : ∀ (i : b.support) (x : X), F i (f x) = (P.coroot' i x : 𝕜)) (π : LSPath P b lam) :
+    (toPLPathHom hlam hf hF π).1 = π.toPLPath 𝕜 f := (rfl)
+
+end FaithfulRealization
 
 end Realization
 
@@ -345,9 +333,7 @@ noncomputable def congrIso {lam' : X} (h : lam = lam') (hlam : lam ∈ dominantC
 
 @[simp]
 theorem coe_congrIso {lam' : X} (h : lam = lam') (hlam : lam ∈ dominantChamber P b)
-    (hlam' : lam' ∈ dominantChamber P b) :
-    ⇑(congrIso h hlam hlam') = congr h :=
-  (rfl)
+    (hlam' : lam' ∈ dominantChamber P b) : ⇑(congrIso h hlam hlam') = congr h := (rfl)
 
 @[simp]
 theorem congrIso_refl (hlam : lam ∈ dominantChamber P b) :
@@ -359,101 +345,113 @@ theorem congrIso_symm {lam' : X} (h : lam = lam') (hlam : lam ∈ dominantChambe
     (hlam' : lam' ∈ dominantChamber P b) :
     (congrIso h hlam hlam').symm = congrIso h.symm hlam' hlam := by
   subst h
-  exact NormalCrystal.StrictIso.ext fun π ↦
-    by simpa using (NormalCrystal.StrictIso.refl (crystal hlam)).symm_apply_apply π
+  exact NormalCrystal.StrictIso.ext fun π ↦ EquivLike.injective (congrIso rfl hlam hlam') (by simp)
 
-/-- **Littelmann's path duality `LSPath.dual` is a strict crystal isomorphism** from the dual
-crystal `(crystal hlam).dual` onto `crystal hlam'` for `-(w₀ • λ)`. -/
+@[simp]
+theorem congrIso_trans {lam₁ lam₂ lam₃ : X} (h₁ : lam₁ = lam₂) (h₂ : lam₂ = lam₃)
+    (hlam₁ : lam₁ ∈ dominantChamber P b) (hlam₂ : lam₂ ∈ dominantChamber P b)
+    (hlam₃ : lam₃ ∈ dominantChamber P b) :
+    (congrIso h₁ hlam₁ hlam₂).trans (congrIso h₂ hlam₂ hlam₃) =
+      congrIso (h₁.trans h₂) hlam₁ hlam₃ := by
+  subst h₁ h₂; exact NormalCrystal.StrictIso.ext fun _ ↦ by simp
+
+/-- **Littelmann's path duality `LSPath.dual` is a strict crystal isomorphism**
+`(crystal hlam).dual ≃ crystal hlam'`. -/
 noncomputable def dualIso (hlam : lam ∈ dominantChamber P b)
     (hlam' : -(longestElement P b • lam) ∈ dominantChamber P b := by
-      have := P.flip_isReduced
-      exact neg_smul_mem_dominantChamber_longestElement hlam) :
+      have := P.flip_isReduced; exact neg_smul_mem_dominantChamber_longestElement hlam) :
     NormalCrystal.StrictIso (crystal hlam).dual (crystal hlam') where
   toEquiv := dual
   wt_toFun π := by simp [weight_dual π hlam hlam']
   e_toFun i π := by
-    let f₀ : X →+ (ℚ ⊗[ℤ] X) := (TensorProduct.mk ℤ ℚ X 1).toAddMonoidHom
-    let F₀ : Module.Dual ℚ (ℚ ⊗[ℤ] X) := Module.Dual.baseChange ℚ (P.coroot' i)
     simp only [Equiv.toFun_as_coe]
     apply Option.map_injective (toRatPLPath_injective hlam')
-    rw [← raise_toPLPath hlam' f₀ i F₀ (baseChange_coroot'_mkRat i), toPLPath_dual,
-      PLPath.raise_reverse, lower_toPLPath hlam f₀ i F₀ (baseChange_coroot'_mkRat i),
+    rw [← raise_toPLPath hlam' _ i _ (baseChange_coroot'_mkRat i), toPLPath_dual,
+      PLPath.raise_reverse, lower_toPLPath hlam _ i _ (baseChange_coroot'_mkRat i),
       NormalCrystal.dual_e, Option.map_map, Option.map_map]
-    exact congrArg (fun h ↦ Option.map h _)
-      (funext fun ρ : LSPath P b lam ↦ (toPLPath_dual ρ ℚ f₀).symm)
+    exact congrArg (Option.map · _) (funext fun ρ : LSPath P b lam ↦ (toPLPath_dual ρ ℚ _).symm)
 
 @[simp]
 theorem coe_dualIso (hlam : lam ∈ dominantChamber P b)
     (hlam' : -(longestElement P b • lam) ∈ dominantChamber P b) :
-    ⇑(dualIso hlam hlam') = dual :=
-  (rfl)
+    ⇑(dualIso hlam hlam') = dual := (rfl)
+
+@[simp]
+theorem coe_dualIso_symm (hlam : lam ∈ dominantChamber P b)
+    (hlam' : -(longestElement P b • lam) ∈ dominantChamber P b) :
+    ⇑(dualIso hlam hlam').symm = dual.symm :=
+  funext fun π ↦ EquivLike.injective (dualIso hlam hlam') (by simp)
 
 /-! ### Highest element, connectedness, and comparison with the operator-generated component -/
 
-/-- **Uniqueness of the highest LS path in `crystal hlam`.** An LS path of dominant shape `λ` is
-annihilated by all crystal raising operators if and only if it is `straight λ`. -/
-theorem forall_crystal_e_eq_none_iff (hlam : lam ∈ dominantChamber P b) (π : LSPath P b lam) :
+section Component
+
+variable (hlam : lam ∈ dominantChamber P b)
+include hlam
+
+/-- **Uniqueness of the highest LS path:** `(∀ i, e_i π = none) ↔ π = straight λ`. -/
+theorem forall_crystal_e_eq_none_iff (π : LSPath P b lam) :
     (∀ i, (crystal hlam).e i π = none) ↔ π = straight lam := by
   have := P.flip_isReduced
-  let f₀ : X →+ (ℚ ⊗[ℤ] X) := (TensorProduct.mk ℤ ℚ X 1).toAddMonoidHom
-  let F₀ : b.support → Module.Dual ℚ (ℚ ⊗[ℤ] X) :=
-    fun i ↦ Module.Dual.baseChange ℚ (P.coroot' i)
-  rw [← π.forall_raise_eq_none_iff hlam f₀ F₀ baseChange_coroot'_mkRat]
-  refine forall_congr' fun i ↦ ?_
-  rw [raise_toPLPath hlam f₀ i (F₀ i) (baseChange_coroot'_mkRat i), Option.map_eq_none_iff]
+  rw [← π.forall_raise_eq_none_iff hlam (TensorProduct.mk ℤ ℚ X 1).toAddMonoidHom
+    (fun i ↦ Module.Dual.baseChange ℚ (P.coroot' i)) baseChange_coroot'_mkRat]
+  exact forall_congr' fun i ↦ by
+    rw [raise_toPLPath hlam _ i _ (baseChange_coroot'_mkRat i), Option.map_eq_none_iff]
 
 @[simp]
-theorem crystal_e_straight (hlam : lam ∈ dominantChamber P b) (i : b.support) :
-    (crystal hlam).e i (straight lam) = none :=
+theorem crystal_e_straight (i : b.support) : (crystal hlam).e i (straight lam) = none :=
   (forall_crystal_e_eq_none_iff hlam (straight lam)).mpr rfl i
 
-/-- **Every Lakshmibai–Seshadri path of dominant shape `λ` is obtained from `straight λ` by a
-lowering word.** -/
-theorem exists_fWord_straight_eq_some (hlam : lam ∈ dominantChamber P b)
-    (π : LSPath P b lam) :
+@[simp]
+theorem crystal_ε_straight (i : b.support) : (crystal hlam).ε i (straight lam) = 0 :=
+  ((crystal hlam).ε_eq_zero_iff).mpr (crystal_e_straight hlam i)
+
+/-- The lowering string length of `straight λ` along a simple root `αᵢ` equals `⟨λ, αᵢ^∨⟩`. -/
+theorem intCast_crystal_φ_straight (i : b.support) :
+    ((crystal hlam).φ i (straight lam) : ℤ) = P.coroot' i lam := by
+  simpa [RootPairing.coroot'] using (crystal hlam).φ_sub_ε i (straight lam)
+
+@[simp]
+theorem crystal_φ_straight (i : b.support) :
+    (crystal hlam).φ i (straight lam) = (P.coroot' i lam).toNat := by
+  rw [← intCast_crystal_φ_straight hlam i, Int.toNat_natCast]
+
+/-- **Every LS path of dominant shape `λ` is obtained from `straight λ` by a lowering word.** -/
+theorem exists_fWord_straight_eq_some (π : LSPath P b lam) :
     ∃ w : List b.support, (crystal hlam).fWord w (straight lam) = some π := by
-  have := P.flip_isReduced
-  have := finite hlam
+  have := P.flip_isReduced; have := finite hlam
   exact (crystal hlam).exists_fWord_eq_some_of_unique_highest
     (fun x hx ↦ (forall_crystal_e_eq_none_iff hlam x).mp hx) π
 
 /-- **The crystal graph of `LSPath P b λ` is connected** for every dominant weight `λ`. -/
-theorem connected_crystal_graph (hlam : lam ∈ dominantChamber P b) :
-    (crystal hlam).graph.Connected :=
+theorem connected_crystal_graph : (crystal hlam).graph.Connected :=
   (crystal hlam).graph.connected_iff_exists_forall_reachable.mpr ⟨straight lam, fun π ↦
     let ⟨_, hw⟩ := exists_fWord_straight_eq_some hlam π
-    (crystal hlam).reachable_of_fWord_eq_some hw⟩
+    (crystal hlam).graph_reachable_of_fWord_eq_some hw⟩
 
-/-- **Littelmann's path-model theorem (lowering-word form).** In every additive realization
-`f : X →+ V` over an ordered field `𝕜` with height forms `F` inducing the simple coroots, a
-piecewise-linear path `p` is the realization of a Lakshmibai–Seshadri path of dominant shape `λ`
-if and only if `p` is obtained from the straight path `PLPath.straight 𝕜 (f λ)` by a lowering word
-along the simple roots. -/
-theorem mem_range_toPLPath_iff_exists_lowerWord {𝕜 V : Type*} [Field 𝕜] [LinearOrder 𝕜]
-    [IsStrictOrderedRing 𝕜] [AddCommGroup V] [Module 𝕜 V]
-    (hlam : lam ∈ dominantChamber P b) (f : X →+ V) (F : b.support → Module.Dual 𝕜 V)
+variable {𝕜 V : Type*} [Field 𝕜] [LinearOrder 𝕜] [IsStrictOrderedRing 𝕜]
+  [AddCommGroup V] [Module 𝕜 V]
+
+/-- **Littelmann's path-model theorem (lowering-word form).** In every realization `(𝕜, V, f, F)`,
+the realized LS paths of dominant shape `λ` are the paths obtained from `PLPath.straight 𝕜 (f λ)`
+by a lowering word along the simple roots. -/
+theorem mem_range_toPLPath_iff_exists_lowerWord (f : X →+ V) (F : b.support → Module.Dual 𝕜 V)
     (hF : ∀ i x, F i (f x) = (P.coroot' i x : 𝕜)) {p : PLPath 𝕜 V} :
     (p ∈ Set.range fun π : LSPath P b lam ↦ π.toPLPath 𝕜 f) ↔
       ∃ w : List b.support,
         PLPath.lowerWord F (fun i ↦ f (P.root i)) w (PLPath.straight 𝕜 (f lam)) = some p := by
-  constructor
-  · rintro ⟨π, rfl⟩
-    obtain ⟨w, hw⟩ := exists_fWord_straight_eq_some hlam π
+  refine ⟨fun ⟨π, hπ⟩ ↦ ?_, fun ⟨w, hw⟩ ↦ ?_⟩
+  · subst hπ; obtain ⟨w, hw⟩ := exists_fWord_straight_eq_some hlam π
     exact ⟨w, by rw [← toPLPath_straight (P := P) (b := b) 𝕜 f,
       lowerWord_toPLPath hlam f F hF w (straight lam), hw, Option.map_some]⟩
-  · rintro ⟨w, hw⟩
-    rw [← toPLPath_straight (P := P) (b := b) 𝕜 f,
+  · rw [← toPLPath_straight (P := P) (b := b) 𝕜 f,
       lowerWord_toPLPath hlam f F hF w (straight lam), Option.map_eq_some_iff] at hw
-    obtain ⟨π, _, hπ⟩ := hw
-    exact ⟨π, hπ⟩
+    exact let ⟨π, _, hπ⟩ := hw; ⟨π, hπ⟩
 
-/-- **Littelmann's path-model theorem (component form).** In every additive realization `f : X →+ V`
-over an ordered field `𝕜` with height forms `F` inducing the simple coroots, the realized
-Lakshmibai–Seshadri paths of dominant shape `λ` are precisely the paths reachable from the straight
-path `PLPath.straight 𝕜 (f λ)` by arbitrary sequences of simple-root lowering and raising steps. -/
-theorem mem_range_toPLPath_iff_reflTransGen {𝕜 V : Type*} [Field 𝕜] [LinearOrder 𝕜]
-    [IsStrictOrderedRing 𝕜] [AddCommGroup V] [Module 𝕜 V]
-    (hlam : lam ∈ dominantChamber P b) (f : X →+ V) (F : b.support → Module.Dual 𝕜 V)
+/-- **Littelmann's path-model theorem (component form).** In every realization `(𝕜, V, f, F)`, the
+realized LS paths of dominant shape `λ` are precisely the paths reachable from
+`PLPath.straight 𝕜 (f λ)` by arbitrary sequences of simple-root lowering and raising steps. -/
+theorem mem_range_toPLPath_iff_reflTransGen (f : X →+ V) (F : b.support → Module.Dual 𝕜 V)
     (hF : ∀ i x, F i (f x) = (P.coroot' i x : 𝕜)) {p : PLPath 𝕜 V} :
     (p ∈ Set.range fun π : LSPath P b lam ↦ π.toPLPath 𝕜 f) ↔
       Relation.ReflTransGen (PLPath.RootStep b f F) (PLPath.straight 𝕜 (f lam)) p :=
@@ -461,5 +459,60 @@ theorem mem_range_toPLPath_iff_reflTransGen {𝕜 V : Type*} [Field 𝕜] [Linea
     PLPath.reflTransGen_rootStep_of_lowerWord_eq_some hw,
     fun h ↦ (isCrystalSet_range_toPLPath hlam f F hF).mem_of_reflTransGen_rootStep h
       ⟨straight lam, toPLPath_straight 𝕜 f⟩⟩
+
+section ComponentIso
+
+variable {f : X →+ V} (hf : Function.Injective f) {F : b.support → Module.Dual 𝕜 V}
+  (hF : ∀ (i : b.support) (x : X), F i (f x) = (P.coroot' i x : 𝕜))
+  (hS : (Set.range fun w : P.weylGroup ↦ f (w • lam)).Pairwise fun u v ↦ ¬ SameRay 𝕜 u v)
+
+/-- **Littelmann's path-model theorem as a strict crystal isomorphism.** In every injective,
+ray-separating realization `(𝕜, V, f, F)`, `TauCeti.LSPath.crystal` is strictly isomorphic to the
+connected component of `PLPath.straight 𝕜 (f λ)` in `TauCeti.PLPath.normalCrystal`. -/
+noncomputable def toPLPathComponentIso :
+    NormalCrystal.StrictIso (crystal hlam) (PLPath.normalCrystalComponent hf hF
+      ⟨PLPath.straight 𝕜 (f lam), isIntegralPath_straight hlam f F hF⟩) where
+  toEquiv := Equiv.ofBijective
+    (fun π ↦ ⟨toPLPathHom hlam hf hF π,
+      (PLPath.mem_supp_connectedComponentMk_normalCrystalOn_iff _ _).mpr
+        ((mem_range_toPLPath_iff_reflTransGen hlam f F hF).mp
+          ⟨π, (toPLPathHom_apply hlam hf hF π).symm⟩)⟩)
+    ⟨fun _ _ h ↦ toPLPath_injective hlam hf.injOn hS (congrArg (fun x ↦ x.1.1) h), fun y ↦ by
+      obtain ⟨π, hπ⟩ := (mem_range_toPLPath_iff_reflTransGen hlam f F hF).mpr
+        ((PLPath.mem_supp_connectedComponentMk_normalCrystalOn_iff _ y.1).mp y.2)
+      exact ⟨π, Subtype.ext (Subtype.ext hπ)⟩⟩
+  wt_toFun π := by
+    rw [PLPath.normalCrystalComponent, NormalCrystal.component_eq_restrict,
+      NormalCrystal.restrict_wt]
+    exact (toPLPathHom hlam hf hF).wt_apply π
+  e_toFun i π := by
+    apply Option.map_injective Subtype.val_injective
+    rw [Option.map_map, Function.comp_def, ← Option.unattach, PLPath.normalCrystalComponent,
+      NormalCrystal.component_eq_restrict, NormalCrystal.unattach_restrict_e]
+    exact (toPLPathHom hlam hf hF).e_apply i π
+
+@[simp]
+theorem toPLPathComponentIso_apply (π : LSPath P b lam) :
+    (toPLPathComponentIso hlam hf hF hS π).1 = toPLPathHom hlam hf hF π := (rfl)
+
+@[simp]
+theorem toPLPathHom_toPLPathComponentIso_symm
+    (y : (PLPath.normalCrystal hf hF).graph.connectedComponentMk
+      ⟨PLPath.straight 𝕜 (f lam), isIntegralPath_straight hlam f F hF⟩) :
+    toPLPathHom hlam hf hF ((toPLPathComponentIso hlam hf hF hS).symm y) = y.1 := by
+  simpa only [toPLPathComponentIso_apply] using
+    congrArg Subtype.val ((toPLPathComponentIso hlam hf hF hS).apply_symm_apply y)
+
+@[simp]
+theorem toPLPath_toPLPathComponentIso_symm
+    (y : (PLPath.normalCrystal hf hF).graph.connectedComponentMk
+      ⟨PLPath.straight 𝕜 (f lam), isIntegralPath_straight hlam f F hF⟩) :
+    ((toPLPathComponentIso hlam hf hF hS).symm y).toPLPath 𝕜 f = y.1.1 := by
+  simpa only [toPLPathHom_apply] using
+    congrArg Subtype.val (toPLPathHom_toPLPathComponentIso_symm hlam hf hF hS y)
+
+end ComponentIso
+
+end Component
 
 end TauCeti.LSPath

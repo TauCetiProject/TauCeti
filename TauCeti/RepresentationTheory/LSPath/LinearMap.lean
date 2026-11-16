@@ -10,16 +10,9 @@ public import TauCeti.RepresentationTheory.LSPath.RootOperator
 /-!
 # Root operators under linear and semilinear maps
 
-The linear- and semilinear-image constructions `TauCeti.PLPath.map` and
-`TauCeti.PLPath.mapSemilinear` are defined in `TauCeti.RepresentationTheory.LSPath.PLPath`,
-including for noninjective maps and collapsed segments. This file proves naturality of minimum
-heights and root operators under both semilinear and linear maps.
-
-The operators `lower` and `raise` commute with a semilinear map `g : V →ₛₗ[σ] W` along a monotone
-ring homomorphism `σ : 𝕜 →+* 𝕜'` when the target coroot form intertwines the source form
-(`f' (g v) = σ (f v)`) and the target root is the image of the source root. Since `σ` is strictly
-monotone, all running heights and record-cut comparisons are preserved. Specializing to
-`σ = RingHom.id 𝕜` recovers linear naturality.
+This file proves naturality of `PLPath.minHeight`, `PLPath.lower`, and `PLPath.raise` under
+semilinear maps `g : V →ₛₗ[σ] W` along a monotone ring homomorphism `σ : 𝕜 →+* 𝕜'` intertwining the
+height forms (`f' (g v) = σ (f v)`), and specializes to `σ = RingHom.id 𝕜` for linear maps.
 
 ## References
 
@@ -33,8 +26,7 @@ namespace TauCeti.PLPath
 
 open Module
 
-/-- Running minimum height commutes with a semilinear map along a monotone ring homomorphism
-intertwining the height forms. -/
+/-- Running minimum height commutes with a semilinear map along a monotone ring homomorphism. -/
 theorem listMinHeight_mapSemilinear {𝕜 𝕜' V W : Type*} [Semiring 𝕜] [LinearOrder 𝕜]
     [Semiring 𝕜'] [LinearOrder 𝕜'] [AddCommMonoid V] [Module 𝕜 V] [AddCommMonoid W] [Module 𝕜' W]
     {σ : 𝕜 →+* 𝕜'} {g : V →ₛₗ[σ] W} (hσ : Monotone σ)
@@ -50,19 +42,17 @@ section Semilinear
 
 variable {𝕜 𝕜' V W : Type*} [Field 𝕜] [LinearOrder 𝕜] [Field 𝕜'] [LinearOrder 𝕜']
   [AddCommGroup V] [Module 𝕜 V] [AddCommGroup W] [Module 𝕜' W] {σ : 𝕜 →+* 𝕜'}
+  {g : V →ₛₗ[σ] W} {f : Dual 𝕜 V} {f' : Dual 𝕜' W}
 
-/-- Minimum height commutes with a semilinear image along a monotone ring homomorphism
-intertwining the height forms. -/
+/-- Minimum height commutes with a semilinear image along a monotone ring homomorphism. -/
 theorem minHeight_mapSemilinear [IsStrictOrderedRing 𝕜] [IsStrictOrderedRing 𝕜']
-    {g : V →ₛₗ[σ] W} (hσ : Monotone σ) {f : Dual 𝕜 V} {f' : Dual 𝕜' W}
-    (hf : ∀ v, f' (g v) = σ (f v)) (p : PLPath 𝕜 V) :
+    (hσ : Monotone σ) (hf : ∀ v, f' (g v) = σ (f v)) (p : PLPath 𝕜 V) :
     (p.mapSemilinear g).minHeight f' = σ (p.minHeight f) := by
   rw [mapSemilinear_def, minHeight_ofSegments, listMinHeight_mapSemilinear hσ hf, ← minHeight_def]
 
-/-- Capped record reflection commutes with a semilinear map along a monotone ring homomorphism
-intertwining the height forms. No normalization or injectivity assumption is needed. -/
-theorem reflectRecords_mapSemilinear {g : V →ₛₗ[σ] W} (hσ : Monotone σ)
-    {f : Dual 𝕜 V} {f' : Dual 𝕜' W} (hf : ∀ v, f' (g v) = σ (f v)) (x : V) (c : 𝕜) (l : List V) :
+/-- Capped record reflection commutes with a semilinear map along a monotone ring homomorphism. -/
+theorem reflectRecords_mapSemilinear (hσ : Monotone σ) (hf : ∀ v, f' (g v) = σ (f v))
+    (x : V) (c : 𝕜) (l : List V) :
     reflectRecords f' (g x) (σ c) (l.map g) = (reflectRecords f x c l).map g := by
   have hσ_strict : StrictMono σ := hσ.strictMono_of_injective σ.injective
   induction l generalizing c with
@@ -76,19 +66,16 @@ theorem reflectRecords_mapSemilinear {g : V →ₛₗ[σ] W} (hσ : Monotone σ)
     · rw [List.map_cons,
         reflectRecords_cons_of_pos (f := f') (hmin ▸ map_zero σ ▸ hσ_strict h),
         reflectRecords_cons_of_pos h, List.map_cons, List.map_cons, hmin, hc, ih (c - f v)]
-      congr 1
-      · simp [preReflection_apply, map_sub, map_smulₛₗ, hf]
-      · rw [List.cons.injEq]
-        refine ⟨?_, rfl⟩
-        rw [hf v, ← map_div₀, ← _root_.map_one σ, ← map_sub, map_smulₛₗ]
+      refine congrArg₂ List.cons (by simp [preReflection_apply, map_sub, map_smulₛₗ, hf])
+        (congrArg₂ List.cons ?_ rfl)
+      rw [hf v, ← map_div₀, ← _root_.map_one σ, ← map_sub, map_smulₛₗ]
     · rw [List.map_cons,
         reflectRecords_cons_of_nonpos (f := f') (hmin ▸ map_zero σ ▸ hσ (le_of_not_gt h)),
         reflectRecords_cons_of_nonpos (le_of_not_gt h), List.map_cons, hc, ih (c - f v)]
 
-/-- Lowering on lists is natural for semilinear maps along a monotone ring homomorphism
-intertwining the root and height form. -/
-theorem listLower_mapSemilinear {g : V →ₛₗ[σ] W} (hσ : Monotone σ)
-    {f : Dual 𝕜 V} {f' : Dual 𝕜' W} (hf : ∀ v, f' (g v) = σ (f v)) (x : V) (l : List V) :
+/-- Lowering on lists is natural for semilinear maps along a monotone ring homomorphism. -/
+theorem listLower_mapSemilinear (hσ : Monotone σ) (hf : ∀ v, f' (g v) = σ (f v))
+    (x : V) (l : List V) :
     listLower f' (g x) (l.map g) = (listLower f x l).map (List.map g) := by
   have hσ_strict : StrictMono σ := hσ.strictMono_of_injective σ.injective
   have hsum : f' (l.map g).sum = σ (f l.sum) := by rw [← map_list_sum, hf]
@@ -102,29 +89,21 @@ theorem listLower_mapSemilinear {g : V →ₛₗ[σ] W} (hσ : Monotone σ)
     rw [hm, ← _root_.map_one σ, ← map_add, reflectRecords_mapSemilinear hσ hf]
   · simp only [h, mt hcond.mp h, ↓reduceIte, Option.map_none]
 
-/-- Lowering commutes with a semilinear image along a monotone ring homomorphism intertwining the
-root and height form. -/
+/-- Lowering commutes with a semilinear image along a monotone ring homomorphism. -/
 theorem lower_mapSemilinear [IsStrictOrderedRing 𝕜] [IsStrictOrderedRing 𝕜']
-    (p : PLPath 𝕜 V) {g : V →ₛₗ[σ] W} (hσ : Monotone σ) {f : Dual 𝕜 V} {f' : Dual 𝕜' W}
-    (hf : ∀ v, f' (g v) = σ (f v)) (x : V) :
+    (p : PLPath 𝕜 V) (hσ : Monotone σ) (hf : ∀ v, f' (g v) = σ (f v)) (x : V) :
     lower f' (g x) (p.mapSemilinear g) = (lower f x p).map (fun q ↦ q.mapSemilinear g) := by
   obtain ⟨l, rfl⟩ := ofSegments_surjective p
   simp only [mapSemilinear_ofSegments l g hσ, lower_ofSegments, listLower_mapSemilinear hσ hf,
     Option.map_map]
-  congr 1
-  funext m
-  exact (mapSemilinear_ofSegments m g hσ).symm
+  exact congrArg (Option.map · _) (funext fun m ↦ (mapSemilinear_ofSegments m g hσ).symm)
 
-/-- Raising commutes with a semilinear image along a monotone ring homomorphism intertwining the
-root and height form. -/
+/-- Raising commutes with a semilinear image along a monotone ring homomorphism. -/
 theorem raise_mapSemilinear [IsStrictOrderedRing 𝕜] [IsStrictOrderedRing 𝕜']
-    (p : PLPath 𝕜 V) {g : V →ₛₗ[σ] W} (hσ : Monotone σ) {f : Dual 𝕜 V} {f' : Dual 𝕜' W}
-    (hf : ∀ v, f' (g v) = σ (f v)) (x : V) :
+    (p : PLPath 𝕜 V) (hσ : Monotone σ) (hf : ∀ v, f' (g v) = σ (f v)) (x : V) :
     raise f' (g x) (p.mapSemilinear g) = (raise f x p).map (fun q ↦ q.mapSemilinear g) := by
   simp only [raise_def, ← mapSemilinear_reverse, lower_mapSemilinear _ hσ hf, Option.map_map]
-  congr 1
-  funext q
-  exact (mapSemilinear_reverse q g).symm
+  exact congrArg (Option.map · _) (funext fun q ↦ (mapSemilinear_reverse q g).symm)
 
 end Semilinear
 

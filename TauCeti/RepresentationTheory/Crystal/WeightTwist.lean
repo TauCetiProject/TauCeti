@@ -173,28 +173,20 @@ def weightTwist (ψ : StrictIso c d) (χ : X)
   e_toFun i x := by simp
 
 @[simp]
-theorem coe_weightTwist (ψ : StrictIso c d) (χ : X)
-    (hχ : ∀ i : b.support, P.toLinearMap χ (P.coroot i) = 0) :
-    ⇑(ψ.weightTwist χ hχ) = ψ :=
-  (rfl)
+theorem coe_weightTwist (ψ : StrictIso c d) (χ : X) (hχ) : ⇑(ψ.weightTwist χ hχ) = ψ := (rfl)
 
 @[simp]
-theorem weightTwist_refl (c : NormalCrystal P b B) (χ : X)
-    (hχ : ∀ i : b.support, P.toLinearMap χ (P.coroot i) = 0) :
+theorem weightTwist_refl (c : NormalCrystal P b B) :
     (StrictIso.refl c).weightTwist χ hχ = StrictIso.refl (c.weightTwist χ hχ) :=
   StrictIso.ext fun _ ↦ by simp
 
 @[simp]
-theorem weightTwist_symm (ψ : StrictIso c d) (χ : X)
-    (hχ : ∀ i : b.support, P.toLinearMap χ (P.coroot i) = 0) :
+theorem weightTwist_symm (ψ : StrictIso c d) :
     (ψ.weightTwist χ hχ).symm = ψ.symm.weightTwist χ hχ :=
-  StrictIso.ext fun y ↦ by
-    obtain ⟨x, rfl⟩ := ψ.toEquiv.surjective y
-    exact ((ψ.weightTwist χ hχ).symm_apply_apply x).trans (ψ.symm_apply_apply x).symm
+  StrictIso.ext fun y ↦ EquivLike.injective (ψ.weightTwist χ hχ) (by simp)
 
 @[simp]
-theorem weightTwist_trans (ψ : StrictIso c d) (φ : StrictIso d d') (χ : X)
-    (hχ : ∀ i : b.support, P.toLinearMap χ (P.coroot i) = 0) :
+theorem weightTwist_trans (ψ : StrictIso c d) (φ : StrictIso d d') :
     (ψ.trans φ).weightTwist χ hχ = (ψ.weightTwist χ hχ).trans (φ.weightTwist χ hχ) :=
   StrictIso.ext fun _ ↦ by simp
 

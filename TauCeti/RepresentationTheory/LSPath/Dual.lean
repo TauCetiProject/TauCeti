@@ -11,23 +11,17 @@ public import TauCeti.RepresentationTheory.LSPath.Weight
 /-!
 # Littelmann's dual Lakshmibai–Seshadri path
 
-Let `P` be a finite reduced root datum with base `b`, and write `w₀` for the longest element of its
-Weyl group (`TauCeti.longestElement`). For any weight `λ`, Littelmann's dual of an LS path
-`π = (τ₀, …, τ_l; a₀, …, a_{l+1})` of shape `λ` is the LS path
-`π^* = (τ_l w₀, …, τ₀ w₀; 1 - a_{l+1}, …, 1 - a₀)` of shape `-(w₀ • λ)`, where each coset is
-represented by its minimal coset representative. By
-`CoxeterSystem.MinimalCosetRepChain.isAChain_one_sub_reverseMul_longestElement_iff` and
-`TauCeti.minimalCosetRep_mul_longestElement_smul`, its distinguished timed presentation is
-`TauCeti.PLPath.reverseTimed (π.timed 𝕜 f)` and its path is `(π.toPLPath 𝕜 f).reverse`, with no
-dominance assumption on `λ`.
+For a finite reduced root pairing `P` with base `b` and longest element `w₀`, Littelmann's dual of
+an LS path `π = (τ₀, …, τ_l; a₀, …, a_{l+1})` of shape `λ` is
+`π^* = (τ_l w₀, …, τ₀ w₀; 1 - a_{l+1}, …, 1 - a₀)` of shape `-(w₀ • λ)`. Its distinguished timed
+presentation is `PLPath.reverseTimed (π.timed 𝕜 f)` and its path is `(π.toPLPath 𝕜 f).reverse`,
+with no dominance assumption on `λ`.
 
 ## Main definitions and results
 
 * `TauCeti.LSPath.dual`: Littelmann's duality `LSPath P b λ ≃ LSPath P b (-(w₀ • λ))`.
-* `TauCeti.LSPath.timed_dual`, `TauCeti.LSPath.toPLPath_dual`, and `TauCeti.LSPath.weight_dual`:
-  compatibility with `TauCeti.PLPath.reverseTimed`, `TauCeti.PLPath.reverse`, and
-  `TauCeti.LSPath.weight`.
-* `TauCeti.LSPath.dual_symm_eq_congr_dual` and `TauCeti.LSPath.congr_dual_dual`: involutivity.
+* `TauCeti.LSPath.timed_dual`, `TauCeti.LSPath.toPLPath_dual`, `TauCeti.LSPath.weight_dual`.
+* `TauCeti.LSPath.dual_symm_eq_congr_dual`, `TauCeti.LSPath.congr_dual_dual`.
 
 ## References
 
@@ -50,17 +44,12 @@ variable {ι : Type u} {M : Type w} {N : Type x} [AddCommGroup M] [AddCommGroup 
 
 /-! ### Littelmann's dual Lakshmibai–Seshadri path -/
 
-section Dual
-
-/-- Auxiliary construction of Littelmann's dual LS path of shape `-(w₀ • λ)`. -/
 private noncomputable def dualAux {lam : M} (π : LSPath P b lam) :
     LSPath P b (-(longestElement P b • lam)) where
   length := π.length
-  dir j :=
-    ⟨(weylCoxeterSystem P b).minimalCosetRep
-        (P.wallIndices b (-(longestElement P b • lam)))
-        ((π.dir j.rev).1 * longestElement P b),
-      (weylCoxeterSystem P b).isMinimalCosetRep_minimalCosetRep _ _⟩
+  dir j := ⟨(weylCoxeterSystem P b).minimalCosetRep (P.wallIndices b (-(longestElement P b • lam)))
+      ((π.dir j.rev).1 * longestElement P b),
+    (weylCoxeterSystem P b).isMinimalCosetRep_minimalCosetRep _ _⟩
   time k := 1 - π.time k.rev
   time_zero := by simp [Fin.rev_zero, π.time_last]
   time_last := by simp [Fin.rev_last, π.time_zero]
@@ -78,10 +67,8 @@ private noncomputable def dualAux {lam : M} (π : LSPath P b lam) :
     obtain ⟨C, hhead, hlast, hC⟩ := π.exists_isAChain j.rev
     refine ⟨C.reverseMul (P.isLongest_longestElement b)
       (conj_longestElement_mem_parabolic_wallIndices_iff lam),
-      Subtype.ext (by rw [CoxeterSystem.MinimalCosetRepChain.head_reverseMul, hlast,
-        Fin.rev_castSucc]),
-      Subtype.ext (by rw [CoxeterSystem.MinimalCosetRepChain.last_reverseMul, hhead,
-        Fin.rev_succ]), ?_⟩
+      Subtype.ext (by rw [C.head_reverseMul, hlast, Fin.rev_castSucc]),
+      Subtype.ext (by rw [C.last_reverseMul, hhead, Fin.rev_succ]), ?_⟩
     rw [Fin.rev_succ, Fin.rev_castSucc, ← Fin.succ_castSucc]
     exact C.isAChain_one_sub_reverseMul_longestElement_iff.mpr hC
 
@@ -100,22 +87,15 @@ private theorem congr_dualAux_dualAux {lam : M} (π : LSPath P b lam) :
       P.wallIndices b lam :=
     congrArg (P.wallIndices b) (neg_longestElement_smul_neg_longestElement_smul lam)
   symm
-  refine eq_of_length_dir_time (by simp [dualAux]) (fun j ↦ ?_) (fun k ↦ ?_)
+  refine ext' (by simp [dualAux]) (fun j ↦ ?_) (fun k ↦ ?_)
   · simp only [dir_congr, dualAux, Fin.rev_rev, hwall]
-    exact (((P.isLongest_longestElement b).minimalCosetRep_mul_minimalCosetRep_mul
-      (conj_longestElement_mem_parabolic_wallIndices_iff lam) (π.dir j).2).symm).trans
-      (congrArg (fun i ↦ (weylCoxeterSystem P b).minimalCosetRep (P.wallIndices b lam)
-        ((weylCoxeterSystem P b).minimalCosetRep (P.wallIndices b (-(longestElement P b • lam)))
-          ((π.dir i).1 * longestElement P b) * longestElement P b)) (Fin.ext rfl))
-  · simp only [time_congr, dualAux, Fin.rev_rev, sub_sub_cancel]
-    exact congrArg π.time (Fin.ext rfl)
+    exact ((P.isLongest_longestElement b).minimalCosetRep_mul_minimalCosetRep_mul
+      (conj_longestElement_mem_parabolic_wallIndices_iff lam) (π.dir j).2).symm
+  · simp [time_congr, dualAux]; rfl
 
-/-- **Littelmann's dual Lakshmibai–Seshadri path.** Reversing the directions by `w₀` and replacing
-each break `a` by `1 - a` gives an equivalence between Lakshmibai–Seshadri paths of shape `λ` and
-Lakshmibai–Seshadri paths of shape `-(w₀ • λ)`, realizing path reversal on `TauCeti.PLPath`
-(`TauCeti.LSPath.toPLPath_dual`). -/
-noncomputable def dual {lam : M} :
-    LSPath P b lam ≃ LSPath P b (-(longestElement P b • lam)) where
+/-- **Littelmann's dual Lakshmibai–Seshadri path** `LSPath P b λ ≃ LSPath P b (-(w₀ • λ))`,
+realizing path reversal on `TauCeti.PLPath` (`TauCeti.LSPath.toPLPath_dual`). -/
+noncomputable def dual {lam : M} : LSPath P b lam ≃ LSPath P b (-(longestElement P b • lam)) where
   toFun := dualAux
   invFun π' := congr (neg_longestElement_smul_neg_longestElement_smul lam) (dualAux π')
   left_inv := congr_dualAux_dualAux
@@ -124,59 +104,44 @@ noncomputable def dual {lam : M} :
 variable {lam : M} (π : LSPath P b lam)
 
 @[simp]
-theorem length_dual : (dual π).length = π.length :=
-  (rfl)
+theorem length_dual : (dual π).length = π.length := (rfl)
 
-/-- The `j`-th direction of `π^*` is the minimal coset representative of `τ_{l - j} w₀` in
-`W / W_{-(w₀ • λ)}`. -/
+/-- The `j`-th direction of `π^*` is the minimal coset representative of `τ_{l - j} w₀`. -/
 @[simp]
 theorem dir_dual (j : Fin ((dual π).length + 1)) :
-    ((dual π).dir j).1 =
-      (weylCoxeterSystem P b).minimalCosetRep
-        (P.wallIndices b (-(longestElement P b • lam)))
-        ((π.dir (j.cast (by rw [length_dual])).rev).1 * longestElement P b) :=
-  (rfl)
+    ((dual π).dir j).1 = (weylCoxeterSystem P b).minimalCosetRep
+      (P.wallIndices b (-(longestElement P b • lam)))
+      ((π.dir (j.cast (by rw [length_dual])).rev).1 * longestElement P b) := (rfl)
 
 /-- The `k`-th break of `π^*` is `1 - a_{l + 1 - k}`. -/
 @[simp]
 theorem time_dual (k : Fin ((dual π).length + 2)) :
-    (dual π).time k = 1 - π.time (k.cast (by rw [length_dual])).rev :=
-  (rfl)
+    (dual π).time k = 1 - π.time (k.cast (by rw [length_dual])).rev := (rfl)
 
 /-- The durations of `π^*` are the durations of `π` in reverse order. -/
 @[simp]
 theorem duration_dual (j : Fin ((dual π).length + 1)) :
     (dual π).duration j = π.duration (j.cast (by rw [length_dual])).rev := by
-  have hj : j.val < π.length + 1 := by simpa [length_dual] using j.isLt
-  have hsucc :
-      (j.succ.cast (congrArg (· + 2) (length_dual π))).rev =
-        (j.cast (congrArg (· + 1) (length_dual π))).rev.castSucc :=
-    Fin.ext (by simp [Fin.val_rev])
-  have hcast :
-      (j.castSucc.cast (congrArg (· + 2) (length_dual π))).rev =
-        (j.cast (congrArg (· + 1) (length_dual π))).rev.succ :=
-    Fin.ext (by simp [Fin.val_rev]; omega)
-  rw [duration_def, time_dual, time_dual, hsucc, hcast, duration_def]
-  ring
+  rw [duration_def, time_dual, time_dual, duration_def]
+  have h₁ : (j.succ.cast (congrArg (· + 2) (length_dual π))).rev =
+      (j.cast (congrArg (· + 1) (length_dual π))).rev.castSucc := Fin.ext (by simp [Fin.val_rev])
+  have h₂ : (j.castSucc.cast (congrArg (· + 2) (length_dual π))).rev =
+      (j.cast (congrArg (· + 1) (length_dual π))).rev.succ :=
+    Fin.ext (by simp [Fin.val_rev]; have := j.isLt; simp [length_dual] at this; omega)
+  rw [h₁, h₂]; ring
 
-/-- The inverse of `dual` is `dual` followed by shape transport along
-`-(w₀ • -(w₀ • λ)) = λ`. -/
+/-- The inverse of `dual` is `dual` followed by shape transport along `-(w₀ • -(w₀ • λ)) = λ`. -/
 theorem dual_symm_eq_congr_dual (π' : LSPath P b (-(longestElement P b • lam))) :
-    dual.symm π' =
-      congr (by simp [smul_neg, smul_smul_longestElement]) (dual π') :=
-  (rfl)
+    dual.symm π' = congr (by simp [smul_neg, smul_smul_longestElement]) (dual π') := (rfl)
 
 /-- Applying `dual` twice returns the original LS path up to `-(w₀ • -(w₀ • λ)) = λ`. -/
 @[simp]
-theorem congr_dual_dual
-    (h : -(longestElement P b • -(longestElement P b • lam)) = lam) :
-    congr h (dual (dual π)) = π :=
-  congr_dualAux_dualAux π
+theorem congr_dual_dual (h : -(longestElement P b • -(longestElement P b • lam)) = lam) :
+    congr h (dual (dual π)) = π := congr_dualAux_dualAux π
 
 @[simp]
 theorem dual_congr {lam' : M} (h : lam = lam') :
-    dual (congr h π) =
-      congr (congrArg (fun m ↦ -(longestElement P b • m)) h) (dual π) :=
+    dual (congr h π) = congr (congrArg (fun m ↦ -(longestElement P b • m)) h) (dual π) :=
   dualAux_congr h π
 
 section Realization
@@ -185,28 +150,22 @@ variable (𝕜 : Type*) {V : Type*} [Field 𝕜] [LinearOrder 𝕜] [IsStrictOrd
   [AddCommGroup V] [Module 𝕜 V] (f : M →+ V)
 
 omit [LinearOrder 𝕜] [IsStrictOrderedRing 𝕜] in
-/-- **The distinguished timed presentation of `π^*` is the reversal of that of `π`.** Each segment
-`d_j • f (τ_j • λ)` is negated and the list is traversed in reverse order. -/
+/-- **The distinguished timed presentation of `π^*` is the reversal of that of `π`.** -/
 @[simp]
-theorem timed_dual :
-    (dual π).timed 𝕜 f = PLPath.reverseTimed (π.timed 𝕜 f) := by
-  apply List.ext_getElem
-  · simp [timed_def, PLPath.reverseTimed_def]
-  · intro n h₁ h₂
-    simp only [timed_def, PLPath.reverseTimed_def, List.getElem_ofFn, List.getElem_reverse,
-      List.length_map, List.length_ofFn, List.getElem_map, duration_dual, dir_dual]
-    have hn : n < (dual π).length + 1 := by simpa only [timed_def, List.length_ofFn] using h₁
-    have hidx :
-        ((⟨n, hn⟩ : Fin ((dual π).length + 1)).cast (by rw [length_dual])).rev =
-          ⟨(π.length + 1) - 1 - n, by simp [length_dual] at hn; omega⟩ :=
-      Fin.ext (by simp [Fin.val_rev])
-    rw [hidx, minimalCosetRep_mul_longestElement_smul lam, map_neg, smul_neg]
+theorem timed_dual : (dual π).timed 𝕜 f = PLPath.reverseTimed (π.timed 𝕜 f) := by
+  refine List.ext_getElem (by simp [timed_def, PLPath.reverseTimed_def]) fun n h₁ _ ↦ ?_
+  simp only [timed_def, PLPath.reverseTimed_def, List.getElem_ofFn, List.getElem_reverse,
+    List.length_map, List.length_ofFn, List.getElem_map, duration_dual, dir_dual]
+  have hidx : ((⟨n, by simpa only [timed_def, List.length_ofFn] using h₁⟩ :
+      Fin ((dual π).length + 1)).cast (by rw [length_dual])).rev =
+      ⟨π.length - n, by simp only [timed_def, List.length_ofFn, length_dual] at h₁; omega⟩ :=
+    Fin.ext (by simp [Fin.val_rev])
+  rw [hidx, minimalCosetRep_mul_longestElement_smul lam, map_neg, smul_neg]
+  simp only [Nat.add_sub_cancel]
 
-/-- **The piecewise-linear path of Littelmann's dual LS path `π^*` is the reversal of the
-piecewise-linear path of `π`.** -/
+/-- **The piecewise-linear path of `π^*` is the reversal of the path of `π`.** -/
 @[simp]
-theorem toPLPath_dual :
-    (dual π).toPLPath 𝕜 f = (π.toPLPath 𝕜 f).reverse := by
+theorem toPLPath_dual : (dual π).toPLPath 𝕜 f = (π.toPLPath 𝕜 f).reverse := by
   rw [toPLPath_def, timed_dual, PLPath.ofSegments_map_snd_reverseTimed, ← toPLPath_def]
 
 @[simp]
@@ -222,7 +181,5 @@ theorem weight_dual (hlam : lam ∈ dominantChamber P b)
     (dual π).weight hlam' = -π.weight hlam :=
   (dual π).weight_eq_of_forall_endpoint_eq hlam' fun f ↦ by
     rw [toPLPath_dual, PLPath.endpoint_reverse, map_neg, apply_weight ℚ]
-
-end Dual
 
 end TauCeti.LSPath
