@@ -9,6 +9,7 @@ public import TauCeti.LinearAlgebra.IntegralLattice.Characteristic.Unimodular
 public import TauCeti.LinearAlgebra.IntegralLattice.Characteristic.EvenSublattice
 public import TauCeti.LinearAlgebra.IntegralLattice.Milgram
 import TauCeti.LinearAlgebra.FiniteBilinearModule.GaussSum.AffineLagrangian
+import TauCeti.LinearAlgebra.IntegralLattice.Characteristic.ParityKernel
 import TauCeti.LinearAlgebra.IntegralLattice.Overlattice.Metabolic
 
 /-!
@@ -40,73 +41,6 @@ namespace TauCeti.IntegralLattice
 universe u
 variable {V : Type u} [AddCommGroup V] [Module ℚ V] (L : IntegralLattice V)
 
-private theorem half_characteristic_mem_dual {w : L} (hw : L.IsCharacteristicVector w) :
-    (1 / 2 : ℚ) • (w : V) ∈ L.evenSublattice.dualCarrier := by
-  rw [LinearMap.BilinForm.mem_dualSubmodule]
-  intro y hy
-  let yL : L := ⟨y, L.evenSublattice_carrier_le hy⟩
-  have he : Even (L.integralNorm yL) := (L.mem_evenSublattice_carrier_iff yL).mp hy
-  have hp := (L.isCharacteristicVector_iff w).mp hw yL
-  have hb : 2 ∣ L.integralForm w yL := Int.modEq_zero_iff_dvd.mp
-    (hp.trans (Int.modEq_zero_iff_dvd.mpr (even_iff_two_dvd.mp he)))
-  obtain ⟨k, hk⟩ := hb
-  refine Submodule.mem_one.mpr ⟨k, ?_⟩
-  rw [eq_intCast, L.evenSublattice_form, map_smul, LinearMap.smul_apply, smul_eq_mul,
-    ← L.integralForm_cast w yL, hk]
-  push_cast
-  ring
-
-private def halfCharacteristicDual {w : L} (hw : L.IsCharacteristicVector w) :
-    L.evenSublattice.dualCarrier :=
-  ⟨(1 / 2 : ℚ) • (w : V), half_characteristic_mem_dual L hw⟩
-
-private theorem quadratic_halfCharacteristicDual {w : L} (hw : L.IsCharacteristicVector w) :
-    L.evenSublattice.discriminantQuadraticMap L.isEven_evenSublattice
-        (Submodule.Quotient.mk (halfCharacteristicDual L hw)) =
-      ZMod.toRatAddCircle 8 (L.integralNorm w : ZMod 8) := by
-  rw [discriminantQuadraticMap_mk, L.evenSublattice_form, ZMod.toRatAddCircle_intCast,
-    L.integralNorm_cast, L.norm_apply]
-  simp only [halfCharacteristicDual, Subtype.coe_mk, map_smul, LinearMap.smul_apply,
-    smul_eq_mul]
-  congr 1
-  ring
-
-private theorem halfNorm_add_lattice_vector {w : L} (hw : L.IsCharacteristicVector w)
-    (y : L) :
-    ∃ k : ℤ, L.form ((1 / 2 : ℚ) • (w : V) + y)
-        ((1 / 2 : ℚ) • (w : V) + y) / 2 =
-      L.form ((1 / 2 : ℚ) • (w : V)) ((1 / 2 : ℚ) • (w : V)) / 2 + k := by
-  obtain ⟨k, hk⟩ := Int.modEq_iff_dvd.mp ((L.isCharacteristicVector_iff w).mp hw y)
-  refine ⟨L.integralForm w y + k, ?_⟩
-  rw [← L.norm_apply, ← L.norm_apply, L.norm_add]
-  simp only [L.norm_smul, map_smul, LinearMap.smul_apply, smul_eq_mul]
-  rw [← L.integralForm_cast w y, ← L.integralNorm_cast y]
-  have hkq : (L.integralNorm y : ℚ) - L.integralForm w y = 2 * k := by exact_mod_cast hk
-  push_cast
-  linarith
-
-private theorem quadratic_halfCharacteristicDual_add {w : L}
-    (hw : L.IsCharacteristicVector w)
-    (h : L.evenSublattice.discriminantSubgroup
-      (L.toIntermediateCarrier L.evenSublattice_form.symm L.evenSublattice_carrier_le)) :
-    L.evenSublattice.discriminantQuadraticMap L.isEven_evenSublattice
-        ((Submodule.Quotient.mk (halfCharacteristicDual L hw) :
-          L.evenSublattice.DiscriminantGroup) + h) =
-      L.evenSublattice.discriminantQuadraticMap L.isEven_evenSublattice
-        (Submodule.Quotient.mk (halfCharacteristicDual L hw)) := by
-  obtain ⟨x, hx⟩ := h
-  induction x using Submodule.Quotient.induction_on with
-  | _ y =>
-    have hy : (y : V) ∈ L.carrier := by
-      have := (L.evenSublattice.mk_mem_discriminantSubgroup_iff
-        (L.toIntermediateCarrier L.evenSublattice_form.symm L.evenSublattice_carrier_le) y).mp hx
-      rwa [coe_toIntermediateCarrier] at this
-    obtain ⟨k, hk⟩ := halfNorm_add_lattice_vector L hw ⟨y, hy⟩
-    rw [← Submodule.Quotient.mk_add, discriminantQuadraticMap_mk,
-      discriminantQuadraticMap_mk, L.evenSublattice_form]
-    simp only [Submodule.coe_add, halfCharacteristicDual, Subtype.coe_mk]
-    rw [hk, AddCircle.coe_add_intCast]
-
 private theorem gaussSum_evenSublattice_of_characteristic [L.IsNondegenerate]
     (hL : L.IsUnimodular) {w : L} (hw : L.IsCharacteristicVector w) :
     (L.evenSublattice.discriminantQuadraticModule L.isEven_evenSublattice).gaussSum =
@@ -117,7 +51,7 @@ private theorem gaussSum_evenSublattice_of_characteristic [L.IsNondegenerate]
     L.evenSublattice_carrier_le
   let H : AddSubgroup A := L.evenSublattice.discriminantSubgroup
     (L.toIntermediateCarrier L.evenSublattice_form.symm L.evenSublattice_carrier_le)
-  let a : A := Submodule.Quotient.mk (halfCharacteristicDual L hw)
+  let a : A := L.halfCharacteristicClass hw
   have hM : hI.toIntegralLattice.IsUnimodular := by
     rw [L.toIntegralLattice_toIntermediateCarrier]
     exact hL
@@ -126,9 +60,9 @@ private theorem gaussSum_evenSublattice_of_characteristic [L.IsNondegenerate]
       L.isEven_evenSublattice] using
       hI.isUnimodular_toIntegralLattice_iff_isLagrangian.mp hM
   have ha (h : H) : A.quadratic (a + h) = A.quadratic a :=
-    quadratic_halfCharacteristicDual_add L hw h
+    L.discriminantQuadraticMap_halfCharacteristicClass_add hw h
   have hqa : A.quadratic a = ZMod.toRatAddCircle 8 (L.integralNorm w : ZMod 8) :=
-    quadratic_halfCharacteristicDual L hw
+    L.discriminantQuadraticMap_halfCharacteristicClass hw
   have hcard : (Nat.card H) ^ 2 = Nat.card L.evenSublattice.DiscriminantGroup :=
     FiniteBilinearModule.IsLagrangian.card_sq A.toFiniteBilinearModule hH
       (L.evenSublattice.isNondegenerate_discriminantQuadraticModule L.isEven_evenSublattice)
