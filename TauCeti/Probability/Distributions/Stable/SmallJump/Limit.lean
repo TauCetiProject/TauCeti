@@ -69,6 +69,9 @@ theorem tendsto_stableSmallJumpRemainderMeasure_of_conv_eq
   have hβ := hv.2
   -- Mathlib's Lévy continuity theorem is sequential; `𝓝[>] 0` is countably generated.
   refine tendsto_of_seq_tendsto fun ε hlim ↦ ?_
+  -- The anonymous constructor builds the subtype underlying `ProbabilityMeasure`, so the
+  -- composite from `tendsto_of_seq_tendsto` does not match `Function.comp_def` or
+  -- `Function.comp_apply`; restate it as the sequence of band laws.
   change Tendsto (β := ProbabilityMeasure ℝ) (fun n ↦ ⟨stableSmallJumpRemainderMeasure α β (ε n) r,
     isProbabilityMeasure_stableSmallJumpRemainderMeasure α β (ε n) r⟩) atTop (𝓝 μ)
   apply ProbabilityMeasure.tendsto_of_tendsto_charFun
@@ -87,7 +90,6 @@ theorem tendsto_stableSmallJumpRemainderMeasure_of_conv_eq
   apply ht.congr'
   filter_upwards [(tendsto_nhdsWithin_iff.mp hlim).1.eventually_le_const hr,
     (tendsto_nhdsWithin_iff.mp hlim).2] with n hnr hn
-  let _ := isProbabilityMeasure_stableSmallJumpRemainderMeasure α β (ε n) r
   simp only [Function.comp_apply, ProbabilityMeasure.coe_mk]
   rw [stableCompensatedPoissonMeasure_split α β (Set.mem_Ioi.1 hn) hnr,
     charFun_conv, mul_div_cancel_right₀ _ hne]
@@ -105,42 +107,32 @@ private theorem lintegral_sq_le_of_conv_eq
   have hα' : α ∈ Ioo 0 2 := ⟨hv.1.1, hv.1.2.lt_of_ne hα⟩
   have hβ := hv.2
   let V := ∫ x in Metric.ball (0 : ℝ) r, x ^ 2 ∂stableLevyMeasure α β
-  let ε (n : ℕ) := min r ((2 : ℝ)⁻¹ ^ n)
-  have hε (n : ℕ) : 0 < ε n := lt_min hr (by positivity)
-  have hεr (n : ℕ) : ε n ≤ r := min_le_left _ _
-  let ρ (n : ℕ) : ProbabilityMeasure ℝ :=
-    ⟨stableSmallJumpRemainderMeasure α β (ε n) r,
-      isProbabilityMeasure_stableSmallJumpRemainderMeasure α β (ε n) r⟩
-  have hεlim : Tendsto ε atTop (𝓝[>] 0) := by
-    refine tendsto_nhdsWithin_iff.mpr ⟨?_, .of_forall hε⟩
-    simpa only [min_eq_right hr.le] using
-      ((tendsto_const_nhds : Tendsto (fun _ : ℕ ↦ r) atTop (𝓝 r)).min
-        (tendsto_pow_atTop_nhds_zero_of_lt_one (by norm_num : (0 : ℝ) ≤ 2⁻¹)
-          (by norm_num : (2 : ℝ)⁻¹ < 1)))
-  have hconv : Tendsto ρ atTop (𝓝 μ) :=
-    (tendsto_stableSmallJumpRemainderMeasure_of_conv_eq hα hr hμ).comp hεlim
-  have hbound (n : ℕ) : ∫⁻ x, ENNReal.ofReal (x ^ 2) ∂(ρ n : Measure ℝ) ≤
-      ENNReal.ofReal (V + (r / 6 * V) ^ 2) := by
-    have hmem := memLp_two_id_stableSmallJumpRemainderMeasure hα' hβ (hε n) (hεr n)
-    have hint : Integrable (fun x : ℝ ↦ x ^ 2)
-        (stableSmallJumpRemainderMeasure α β (ε n) r) := by
+  -- Every band law with inner cutoff in `(0, r]` obeys the uniform second-moment bound.
+  have hbound : ∀ᶠ ε in 𝓝[>] (0 : ℝ),
+      ∫⁻ x, ENNReal.ofReal (x ^ 2) ∂stableSmallJumpRemainderMeasure α β ε r ≤
+        ENNReal.ofReal (V + (r / 6 * V) ^ 2) := by
+    filter_upwards [Ioc_mem_nhdsGT hr] with ε ⟨hε, hεr⟩
+    have hmem := memLp_two_id_stableSmallJumpRemainderMeasure hα' hβ hε hεr
+    have hint : Integrable (fun x : ℝ ↦ x ^ 2) (stableSmallJumpRemainderMeasure α β ε r) := by
       simpa only [id_eq] using (memLp_two_iff_integrable_sq aestronglyMeasurable_id).1 hmem
-    simp only [ρ, ProbabilityMeasure.coe_mk]
     rw [← ofReal_integral_eq_lintegral_ofReal
       hint (ae_of_all _ fun x ↦ sq_nonneg x)]
     apply ENNReal.ofReal_le_ofReal
-    rw [integral_sq_stableSmallJumpRemainderMeasure hα' hβ (hε n) (hεr n)]
-    have hv := variance_id_stableSmallJumpRemainderMeasure_le hα' hβ (hε n) (hεr n)
-    have hm := abs_integral_id_stableSmallJumpRemainderMeasure_le hα' hβ (hε n) (hεr n)
-    have hmean : |∫ x, x ∂stableSmallJumpRemainderMeasure α β (ε n) r| ≤ r / 6 * V :=
+    rw [integral_sq_stableSmallJumpRemainderMeasure hα' hβ hε hεr]
+    have hv := variance_id_stableSmallJumpRemainderMeasure_le hα' hβ hε hεr
+    have hm := abs_integral_id_stableSmallJumpRemainderMeasure_le hα' hβ hε hεr
+    have hmean : |∫ x, x ∂stableSmallJumpRemainderMeasure α β ε r| ≤ r / 6 * V :=
       hm.trans (mul_le_mul_of_nonneg_left hv (by positivity))
     have hsq := (sq_le_sq₀ (abs_nonneg _) (by positivity : 0 ≤ r / 6 * V)).2 hmean
     rw [sq_abs] at hsq
     exact add_le_add hv hsq
+  -- The band laws converge to `μ` along `𝓝[>] 0`, so the bound passes to the limit.
   have h := le_liminf_lintegral_of_tendsto_probabilityMeasure
     (f := fun x : ℝ ↦ ENNReal.ofReal (x ^ 2))
-    (ENNReal.continuous_ofReal.comp (by fun_prop)).lowerSemicontinuous hconv
-  exact h.trans (liminf_le_of_frequently_le' (Frequently.of_forall hbound))
+    (ENNReal.continuous_ofReal.comp (by fun_prop)).lowerSemicontinuous
+    (tendsto_stableSmallJumpRemainderMeasure_of_conv_eq hα hr hμ)
+  simp only [ProbabilityMeasure.coe_mk] at h
+  exact h.trans (liminf_le_of_frequently_le' hbound.frequently)
 
 /-- Every limiting small-jump probability factor has a finite second moment, at every shape.
 At shape two the Lévy measure vanishes, the compensated law is the point mass at zero, and the

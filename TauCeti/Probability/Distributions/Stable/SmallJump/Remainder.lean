@@ -74,16 +74,10 @@ theorem stableSmallJumpRemainderMeasure_self (α β r : ℝ) :
 
 /-- The compensated small-jump remainder is a probability measure for all cutoffs. When the
 Lévy mass of the band is zero or infinite the jump rate is zero, and the law is a point mass. -/
-theorem isProbabilityMeasure_stableSmallJumpRemainderMeasure (α β ε r : ℝ) :
+instance isProbabilityMeasure_stableSmallJumpRemainderMeasure (α β ε r : ℝ) :
     IsProbabilityMeasure (stableSmallJumpRemainderMeasure α β ε r) := by
   rw [stableSmallJumpRemainderMeasure_def]
-  by_cases h : stableLevyMeasure α β {x : ℝ | ε < |x| ∧ |x| ≤ r} = 0 ∨
-      stableLevyMeasure α β {x : ℝ | ε < |x| ∧ |x| ≤ r} = ∞
-  · rcases h with h | h <;> simp only [h, ENNReal.toNNReal_zero, ENNReal.toNNReal_top,
-      compoundPoissonMeasure_zero] <;> infer_instance
-  · rw [not_or] at h
-    let _ := cond_isProbabilityMeasure_of_finite h.1 h.2
-    infer_instance
+  infer_instance
 
 /-- The identity has a finite second moment under a valid compensated small-jump remainder. -/
 theorem memLp_two_id_stableSmallJumpRemainderMeasure {α β ε r : ℝ}
@@ -115,7 +109,6 @@ theorem integral_id_stableSmallJumpRemainderMeasure {α β ε r : ℝ}
   have htop : ν band ≠ ∞ := ne_top_of_le_ne_top (stableLevyMeasure_abs_gt_ne_top hε)
     (measure_mono fun _ hx ↦ hx.1)
   let _ := isProbabilityMeasure_cond_stableLevyMeasure_smallJumpBand hα hβ hε hεr
-  let _ := isProbabilityMeasure_stableSmallJumpRemainderMeasure α β ε r
   have hjump : MemLp id 2 (cond ν band) :=
     memLp_two_id_cond_stableLevyMeasure_smallJumpBand
   have hjump_one : Integrable id (cond ν band) := hjump.integrable (by norm_num)
@@ -244,7 +237,6 @@ theorem integral_sq_stableSmallJumpRemainderMeasure {α β ε r : ℝ}
     ∫ x, x ^ 2 ∂stableSmallJumpRemainderMeasure α β ε r =
       Var[id; stableSmallJumpRemainderMeasure α β ε r] +
         (∫ x, x ∂stableSmallJumpRemainderMeasure α β ε r) ^ 2 := by
-  let _ := isProbabilityMeasure_stableSmallJumpRemainderMeasure α β ε r
   have hvariance := variance_eq_sub
     (memLp_two_id_stableSmallJumpRemainderMeasure hα hβ hε hεr)
   simp only [id_eq, Pi.pow_apply] at hvariance

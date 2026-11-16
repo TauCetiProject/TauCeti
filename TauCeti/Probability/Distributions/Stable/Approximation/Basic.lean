@@ -11,6 +11,7 @@ public import Mathlib.Probability.Moments.IntegrableExpMul
 import TauCeti.MeasureTheory.Integral.Bochner.Set
 import TauCeti.Probability.Distributions.Affine
 import TauCeti.Probability.Distributions.CompoundPoisson.Transforms
+import TauCeti.Probability.Distributions.CompoundPoisson.Intensity
 
 /-!
 # Compensated compound-Poisson approximations to stable laws
@@ -101,13 +102,7 @@ mass. -/
 theorem isProbabilityMeasure_stableCompensatedPoissonMeasure (α β ε : ℝ) :
     IsProbabilityMeasure (stableCompensatedPoissonMeasure α β ε) := by
   rw [stableCompensatedPoissonMeasure_def]
-  by_cases h : stableLevyMeasure α β {x : ℝ | ε < |x|} = 0 ∨
-      stableLevyMeasure α β {x : ℝ | ε < |x|} = ∞
-  · rcases h with h | h <;> simp only [h, ENNReal.toNNReal_zero, ENNReal.toNNReal_top,
-      compoundPoissonMeasure_zero] <;> infer_instance
-  · rw [not_or] at h
-    let _ := cond_isProbabilityMeasure_of_finite h.1 h.2
-    infer_instance
+  infer_instance
 
 /-- The characteristic function of a compensated stable approximation is the exponential of
 the truncated compensated Lévy integral. -/
