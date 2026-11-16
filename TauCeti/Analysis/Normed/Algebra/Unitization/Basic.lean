@@ -26,8 +26,8 @@ inverse are bounded; the inherited norm need not equal the ℓ¹ norm.
 The ℓ¹ unitization of a commutative normed algebra is moreover a commutative normed ring
 (`WithLp.instUnitizationNormedCommRing`).
 
-The canonical inclusion and nonunital coordinate projection of the ℓ¹ unitization are
-also bundled as bounded linear maps.
+The canonical inclusion and coordinate projections of the ℓ¹ unitization are also bundled as
+bounded linear maps, and the spectrum of an included element is identified with its quasispectrum.
 
 No normalization of the norm of the identity is assumed. The forward map is bounded by
 `max ‖(1 : A)‖ 1`, so the results apply to any complete nontrivially normed scalar field.
@@ -165,6 +165,21 @@ noncomputable def unitizationInrL : A →L[𝕜] WithLp 1 (Unitization 𝕜 A) :
 theorem unitizationInrL_apply (a : A) :
     unitizationInrL 𝕜 A a = toLp 1 (a : Unitization 𝕜 A) := (rfl)
 
+/-- The projection onto the scalar summand of the external ℓ¹ unitization. -/
+noncomputable def unitizationFstL : WithLp 1 (Unitization 𝕜 A) →L[𝕜] 𝕜 :=
+  LinearMap.mkContinuous
+    { toFun := fun u ↦ (ofLp u).fst
+      map_add' := fun _ _ ↦ rfl
+      map_smul' := fun _ _ ↦ rfl }
+    1 fun u ↦ by
+      rw [one_mul, unitization_norm_def]
+      exact le_add_of_nonneg_right (norm_nonneg (ofLp u).snd)
+
+/-- The bounded scalar projection recovers the scalar coordinate. -/
+@[simp]
+theorem unitizationFstL_apply (u : WithLp 1 (Unitization 𝕜 A)) :
+    unitizationFstL 𝕜 A u = (ofLp u).fst := (rfl)
+
 /-- The projection onto the nonunital summand of the external ℓ¹ unitization. -/
 noncomputable def unitizationSndL : WithLp 1 (Unitization 𝕜 A) →L[𝕜] A :=
   ((Unitization.sndHom 𝕜 𝕜 A).comp
@@ -197,6 +212,30 @@ theorem unitization_eq_fst_smul_one_add_inr (u : WithLp 1 (Unitization 𝕜 A)) 
   apply (unitizationAlgEquiv 𝕜).injective
   simp [← Algebra.algebraMap_eq_smul_one, Unitization.algebraMap_eq_inl,
     Unitization.inl_fst_add_inr_snd_eq]
+
+/-- The spectrum of an element in its external ℓ¹ unitization coincides with its quasispectrum. -/
+@[simp]
+theorem spectrum_unitization_toLp_inr (a : A) :
+    spectrum 𝕜 (toLp 1 (a : Unitization 𝕜 A)) = quasispectrum 𝕜 a := by
+  rw [Unitization.quasispectrum_eq_spectrum_inr 𝕜 a,
+    ← AlgEquiv.spectrum_eq (unitizationAlgEquiv 𝕜) (toLp 1 (a : Unitization 𝕜 A))]
+  simp
+
+/-- Formulation of `spectrum_unitization_toLp_inr` for the bundled inclusion `unitizationInrL`. -/
+theorem spectrum_unitizationInrL (a : A) :
+    spectrum 𝕜 (unitizationInrL 𝕜 A a) = quasispectrum 𝕜 a := by
+  simp
+
+/-- Zero belongs to the spectrum of every element in its external ℓ¹ unitization. -/
+theorem zero_mem_spectrum_toLp_inr (a : A) :
+    (0 : 𝕜) ∈ spectrum 𝕜 (toLp 1 (a : Unitization 𝕜 A)) := by
+  rw [spectrum_unitization_toLp_inr]
+  exact quasispectrum.zero_mem 𝕜 a
+
+/-- Zero belongs to the spectrum of every element included via `unitizationInrL`. -/
+theorem zero_mem_spectrum_unitizationInrL (a : A) :
+    (0 : 𝕜) ∈ spectrum 𝕜 (unitizationInrL 𝕜 A a) :=
+  zero_mem_spectrum_toLp_inr a
 
 variable {𝕜 A : Type*} [NormedField 𝕜] [NonUnitalNormedCommRing A] [NormedSpace 𝕜 A]
   [IsScalarTower 𝕜 A A] [SMulCommClass 𝕜 A A]
