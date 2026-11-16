@@ -5,9 +5,9 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.GroupTheory.GroupAction.MultipleTransitivity
 public import Mathlib.GroupTheory.PGroup
 public import TauCeti.Data.Nat.Factorial.Prime
+public import TauCeti.GroupTheory.GroupAction.MultipleTransitivity
 public import TauCeti.GroupTheory.GroupAction.Simple.Stabilizer
 public import TauCeti.GroupTheory.GroupAction.SubMulAction
 public import TauCeti.GroupTheory.GroupAction.Transitive
@@ -25,11 +25,12 @@ group of permutations of `p + 1` points.
 
 The element `a` fixes exactly one point `x` and permutes the other `p` points transitively. So the
 stabilizer of `x` is transitive, hence primitive, on these `p` points, and `G` is doubly
-transitive, hence primitive. A nontrivial normal subgroup `N` is therefore transitive. Its
-intersection with the stabilizer of `x` is normal in that stabilizer, so it is trivial or
-transitive on the other `p` points. In the second case `p` divides `|N|`. In the first case `N`
-acts regularly, which `TauCeti.stabilizer_ne_bot_of_card_eq_succ` excludes: an automorphism of
-order `p` of a group of order `p + 1` forces `p + 1` to be a prime power.
+transitive, by `TauCeti.is_two_pretransitive_of_card_eq_succ_of_smul_ne`, hence primitive. A
+nontrivial normal subgroup `N` is therefore transitive. Its intersection with the stabilizer of
+`x` is normal in that stabilizer, so it is trivial or transitive on the other `p` points. In the
+second case `p` divides `|N|`. In the first case `N` acts regularly, which
+`TauCeti.stabilizer_ne_bot_of_card_eq_succ` excludes: an automorphism of order `p` of a group of
+order `p + 1` forces `p + 1` to be a prime power.
 
 Finally, since `p` divides the order of every nontrivial normal subgroup and `p ^ 2` does not
 divide `|G|`, the criterion
@@ -42,9 +43,6 @@ by an element of order `7`, but its translations form a proper normal subgroup.
 
 ## Main results
 
-* `TauCeti.is_two_pretransitive_of_card_eq_succ_of_smul_ne`: a transitive action on `p + 1`
-  points is doubly transitive if some element `a` fixes a point and moves a point that `a ^ p`
-  fixes.
 * `TauCeti.prime_dvd_natCard_of_normal_of_card_eq_succ`: in a faithful transitive action on
   `p + 1` points of a group containing an element of order `p`, the order of every nontrivial
   normal subgroup is divisible by `p`, if two distinct primes divide `p + 1`.
@@ -55,8 +53,6 @@ by an element of order `7`, but its translations form a proper normal subgroup.
 
 * J. D. Dixon and B. Mortimer, *Permutation Groups*, Graduate Texts in Mathematics 163, Springer,
   1996, §1.6, for normal subgroups of primitive permutation groups.
-* H. Wielandt, *Finite Permutation Groups*, Academic Press, 1964, Theorem 9.1, for double
-  transitivity through a point stabilizer.
 -/
 
 public section
@@ -64,35 +60,6 @@ public section
 namespace TauCeti
 
 open _root_.MulAction TauCeti.MulAction
-
-/-- **Double transitivity in degree `p + 1`.** Let a group `G` act transitively on `p + 1` points,
-`p` prime. If some element `a` of `G` fixes a point and moves a point `y` that `a ^ p` fixes, then
-the action of `G` is doubly transitive.
-
-For a group of permutations containing a cycle with a unique fixed point, of any length, see
-`TauCeti.is_two_pretransitive_of_isCycle_mem_of_existsUnique_fixedPoint`. The present statement
-is about an arbitrary action, which need not be faithful, and asks only for the period of one
-moved point. -/
-theorem is_two_pretransitive_of_card_eq_succ_of_smul_ne
-    {G X : Type*} [Group G] [MulAction G X] [IsPretransitive G X]
-    {p : ℕ} (hp : p.Prime) (hcard : Nat.card X = p + 1)
-    {a : G} {x y : X} (hx : a • x = x) (hy : a ^ p • y = y) (hay : a • y ≠ y) :
-    IsMultiplyPretransitive G X 2 := by
-  have : Finite X := Nat.finite_of_card_ne_zero (by omega)
-  have hax : a ∈ stabilizer G x := mem_stabilizer_iff.mpr hx
-  have hyx : y ∈ SubMulAction.ofStabilizer G x :=
-    (SubMulAction.mem_ofStabilizer_iff G x).mpr fun h ↦ hay (h ▸ hx)
-  -- The element `a` of the stabilizer of `x` moves the point `y` of the complement of `x`, which
-  -- has `p` points, and `a ^ p` fixes it: the stabilizer of `x` is transitive on this complement.
-  have hY : Nat.card (SubMulAction.ofStabilizer G x) = p := by
-    rw [SubMulAction.nat_card_ofStabilizer_eq, hcard, Nat.add_sub_cancel]
-  have : IsPretransitive (stabilizer G x) (SubMulAction.ofStabilizer G x) :=
-    isPretransitive_of_prime_natCard_of_smul_ne (hY ▸ hp) (g := ⟨a, hax⟩) (x := ⟨y, hyx⟩)
-      (Subtype.ext (by
-        rw [hY, SubMulAction.val_smul, subgroup_smul_def, Subgroup.coe_pow, hy]))
-      fun h ↦ hay (by
-        simpa only [SubMulAction.val_smul, subgroup_smul_def] using congrArg Subtype.val h)
-  exact SubMulAction.ofStabilizer.isMultiplyPretransitive.mpr (is_one_pretransitive_iff.mpr this)
 
 /-- **Normal subgroups in degree `p + 1`.** Let a group `G` act faithfully and transitively on
 `p + 1` points, `p` prime, with two distinct primes dividing `p + 1`, and let `G` contain an
