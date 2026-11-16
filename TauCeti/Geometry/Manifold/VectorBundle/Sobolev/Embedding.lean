@@ -111,6 +111,9 @@ theorem exists_sobolevEmbeddingL [T2Space M] {pstar : ℝ≥0∞} (hpstar : psta
       ((ContinuousLinearMap.proj (R := ℝ) (φ := fun i : Fin A.sectionChartData.n ↦
           ∀ _ : Fin (finrank ℝ F), Wkp μ (A.sectionChartData.image i) p (k + 1)) i).comp
         (A.sectionChartData.sobolevSections μ p (k + 1)).subtypeL))
+  -- The inclusion followed by the two projections evaluates `w` at `i` and `l`. This holds by
+  -- definition only, unfolding `pi`, `proj`, `comp` and `subtypeL`, as the index type
+  -- `Fin A.sectionChartData.n` of the projection unfolds to `Fin A.n`.
   have hD (w : SobolevSection A μ p (k + 1)) (i : Fin A.n) (l : Fin (finrank ℝ F)) :
       D i w l = Emb i ((w : A.sectionChartData.SobolevData μ p (k + 1)) i l) :=
     (rfl)
