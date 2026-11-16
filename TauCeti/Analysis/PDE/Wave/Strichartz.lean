@@ -262,12 +262,13 @@ private theorem exists_eLpNorm_halfWavePropagator_comp_apply_adjoint_apply_le (h
     have hexp : n * θ - 2 / q = 2 * (n / 2 - n * (r⁻¹).toReal - 1 / q) := by ring
     rw [hexp] at hdecay
     calc _ = ENNReal.ofReal (B ^ θ) := by
-          simp [θ, ENNReal.ofReal, Real.toNNReal_rpow_of_nonneg hB]
+          rw [NNReal.one_rpow, mul_one, ← Real.toNNReal_rpow_of_nonneg hB,
+            ENNReal.ofNNReal_toNNReal]
       _ ≤ _ := ENNReal.ofReal_le_ofReal hdecay
       _ = _ := by
           rw [ENNReal.ofReal_mul (by positivity), ENNReal.ofReal_mul (by positivity),
-            ← ENNReal.ofReal_rpow_of_pos hτ, Real.eNorm_eq_ofReal_abs, mul_assoc]
-          rfl
+            ← ENNReal.ofReal_rpow_of_pos hτ, Real.eNorm_eq_ofReal_abs, mul_assoc,
+            ENNReal.ofNNReal_toNNReal]
   · rw [top_unique (not_lt.1 (memLp_iff.not.1 hg)), ENNReal.mul_top]
     · exact le_top
     · refine mul_ne_zero (mul_ne_zero ?_ ?_) ?_
