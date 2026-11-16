@@ -13,6 +13,7 @@ import Mathlib.Analysis.Analytic.Constructions
 import Mathlib.Analysis.Calculus.Deriv.Polynomial
 import TauCeti.Analysis.Analytic.OfScalars
 import TauCeti.Analysis.Complex.CauchyIntegralPolydisc
+import TauCeti.Analysis.Complex.UniformLimit
 
 /-!
 # Regularized hypergeometric functions `₀F₁` and `₂F₁`
@@ -238,18 +239,16 @@ section Gaussian
 `regularizedGaussHGFunSeries a b c`, for all complex parameters `a`, `b`, `c`. -/
 theorem hasFPowerSeriesOnBall_regularizedGaussHGFun (a b c : ℂ) :
     HasFPowerSeriesOnBall (regularizedGaussHGFun a b c)
-      (regularizedGaussHGFunSeries a b c) 0 1 := by
-  have hr := radius_regularizedGaussHGFunSeries_ge_one a b c
-  exact ⟨hr, zero_lt_one, fun hy =>
-    ((regularizedGaussHGFunSeries a b c).hasFPowerSeriesOnBall (zero_lt_one.trans_le hr)).hasSum
-      (Metric.eball_subset_eball hr hy)⟩
+      (regularizedGaussHGFunSeries a b c) 0 1 :=
+  ((regularizedGaussHGFunSeries a b c).hasFPowerSeriesOnBall
+    (zero_lt_one.trans_le (radius_regularizedGaussHGFunSeries_ge_one a b c))).mono
+    zero_lt_one (radius_regularizedGaussHGFunSeries_ge_one a b c)
 
 /-- For any complex parameters `a`, `b`, `c`, `regularizedGaussHGFun a b c` is analytic at every
 point of the open unit disk. -/
 theorem analyticAt_regularizedGaussHGFun (a b c : ℂ) {z : ℂ} (hz : ‖z‖ < 1) :
-    AnalyticAt ℂ (regularizedGaussHGFun a b c) z := by
-  refine (hasFPowerSeriesOnBall_regularizedGaussHGFun a b c).analyticAt_of_mem ?_
-  rwa [Metric.mem_eball, edist_zero_right, ← ofReal_norm, ENNReal.ofReal_lt_one]
+    AnalyticAt ℂ (regularizedGaussHGFun a b c) z :=
+  analyticAt_regularizedHGFun_of_card_eq_add_one (a := {a, b}) (b := {c}) rfl hz
 
 /-- For any complex parameters `a`, `b`, `c`, `regularizedGaussHGFun a b c` is analytic on the open
 unit disk. -/
@@ -268,9 +267,9 @@ complex parameters `a`, `b`, `c`. -/
 @[simp]
 theorem regularizedGaussHGFun_zero (a b c : ℂ) :
     regularizedGaussHGFun a b c 0 = (Gamma c)⁻¹ := by
-  rw [regularizedGaussHGFun_eq_tsum_coeff_mul_pow,
-    tsum_eq_single 0 fun n hn => by simp [zero_pow hn]]
-  simp [coeff_regularizedGaussHGFunSeries]
+  rw [regularizedGaussHGFun, regularizedGaussHGFunSeries, ← regularizedHGFun,
+    regularizedHGFun_zero]
+  simp [regularizedHGFunCoeff]
 
 /-- On the open unit disk, the power series of `regularizedGaussHGFun a b c` is summable. -/
 theorem summable_coeff_regularizedGaussHGFunSeries_mul_pow (a b c : ℂ) {z : ℂ} (hz : ‖z‖ < 1) :
@@ -417,6 +416,15 @@ private theorem differentiable_coeff_regularizedGaussHGFunSeries_mul_pow
     differentiable_one_div_Gamma.comp (by fun_prop)
   fun_prop
 
+private theorem norm_ascPochhammer_eval_le_ascFactorial {s : ℂ} {M : ℕ} (hs : ‖s‖ ≤ M) (n : ℕ) :
+    ‖(ascPochhammer ℂ n).eval s‖ ≤ M.ascFactorial n := by
+  induction n with
+  | zero => simp
+  | succ n ih =>
+    rw [ascPochhammer_succ_eval, Nat.ascFactorial_succ, Nat.cast_mul, mul_comm ((M + n : ℕ) : ℝ),
+      norm_mul]
+    exact mul_le_mul ih ((norm_add_le s n).trans (by simp [hs])) (norm_nonneg _) (by positivity)
+
 private theorem norm_regularizedGaussHGFun_term_add_le {a b c z : ℂ} {M k : ℕ} {CΓ r : ℝ}
     (ha : ‖a‖ ≤ M) (hb : ‖b‖ ≤ M) (hc : 1 ≤ (c + ((M + 1 : ℕ) : ℂ)).re)
     (hCΓ : ‖(Gamma (c + ((M + 1 : ℕ) : ℂ)))⁻¹‖ ≤ CΓ) (hz : ‖z‖ ≤ r) :
@@ -426,20 +434,9 @@ private theorem norm_regularizedGaussHGFun_term_add_le {a b c z : ℂ} {M k : �
           (r : ℂ) ^ k‖ := by
   have hr₀ : 0 ≤ r := (norm_nonneg z).trans hz
   have hCΓ₀ : 0 ≤ CΓ := (norm_nonneg _).trans hCΓ
-  -- Bound each ascending Pochhammer factor by `(M)_{M + 1 + k} = (M)_{M + 1} (2M + 1)_k`.
-  have hpoch {s : ℂ} (hs : ‖s‖ ≤ M) (n : ℕ) :
-      ‖(ascPochhammer ℂ n).eval s‖ ≤ (M.ascFactorial n : ℝ) := by
-    induction n with
-    | zero => simp
-    | succ n ih =>
-      rw [ascPochhammer_succ_right, Nat.ascFactorial_succ, Nat.cast_mul, mul_comm ((M + n : ℕ) : ℝ)]
-      simp only [Polynomial.eval_mul, Polynomial.eval_add, Polynomial.eval_X,
-        Polynomial.eval_natCast, norm_mul]
-      exact mul_le_mul ih ((norm_add_le s n).trans (by simp [hs])) (norm_nonneg _)
-        (Nat.cast_nonneg _)
   let P : ℝ := M.ascFactorial (M + 1)
-  have hΓk : ‖(Gamma (c + ((M + 1 + k : ℕ) : ℂ)))⁻¹‖ ≤ CΓ / k ! := by
-    rw [Nat.cast_add, ← add_assoc]
+  have hΓk : ‖Gamma (c + ((M + 1 + k : ℕ) : ℂ))‖⁻¹ ≤ CΓ / k ! := by
+    rw [← norm_inv, Nat.cast_add, ← add_assoc]
     exact (norm_inv_Gamma_add_natCast_le hc k).trans
       (div_le_div_of_nonneg_right hCΓ (Nat.cast_nonneg _))
   have hM2 : M + (M + 1) = 2 * M + 1 := by omega
@@ -451,18 +448,17 @@ private theorem norm_regularizedGaussHGFun_term_add_le {a b c z : ℂ} {M k : �
           (r : ℂ) ^ k‖ =
         ((2 * M + 1).ascFactorial k : ℝ) ^ 2 / (k ! * k !) * r ^ k := by
     rw [coeff_regularizedGaussHGFunSeries, add_comm (1 : ℂ) k, Gamma_nat_eq_factorial,
-      ascPochhammer_nat_eq_natCast_ascFactorial, norm_mul, norm_div, norm_mul, norm_mul, norm_pow,
-      Complex.norm_natCast, Complex.norm_natCast, Complex.norm_of_nonneg hr₀, sq]
-  rw [hk_coeff, coeff_regularizedGaussHGFunSeries, div_eq_mul_inv, mul_inv, norm_mul, norm_mul,
-    norm_mul, norm_mul, norm_inv (((M + 1 + k)! : ℕ) : ℂ), Complex.norm_natCast, norm_pow,
-    pow_add ‖z‖ (M + 1) k]
-  have ha_le := (hpoch ha (M + 1 + k)).trans_eq hpM
-  have hb_le := (hpoch hb (M + 1 + k)).trans_eq hpM
+      ascPochhammer_nat_eq_natCast_ascFactorial]
+    simp [abs_of_nonneg hr₀, sq]
+  rw [hk_coeff, coeff_regularizedGaussHGFunSeries, pow_add z (M + 1) k, div_eq_mul_inv, mul_inv]
+  simp only [norm_mul, norm_inv, Complex.norm_natCast, norm_pow]
+  have ha_le := (norm_ascPochhammer_eval_le_ascFactorial ha (M + 1 + k)).trans_eq hpM
+  have hb_le := (norm_ascPochhammer_eval_le_ascFactorial hb (M + 1 + k)).trans_eq hpM
   have hinv_fac : ((((M + 1 + k)! : ℕ) : ℝ))⁻¹ ≤ ((k ! : ℝ))⁻¹ :=
     inv_anti₀ (mod_cast Nat.factorial_pos k) (mod_cast Nat.factorial_le (Nat.le_add_left k (M + 1)))
   calc ‖(ascPochhammer ℂ (M + 1 + k)).eval a‖ *
           ‖(ascPochhammer ℂ (M + 1 + k)).eval b‖ *
-          (((((M + 1 + k)! : ℕ) : ℝ))⁻¹ * ‖(Gamma (c + ↑(M + 1 + k)))⁻¹‖) *
+          (((((M + 1 + k)! : ℕ) : ℝ))⁻¹ * ‖Gamma (c + ↑(M + 1 + k))‖⁻¹) *
           (‖z‖ ^ (M + 1) * ‖z‖ ^ k)
       ≤ (P * ((2 * M + 1).ascFactorial k : ℝ)) * (P * ((2 * M + 1).ascFactorial k : ℝ)) *
           (((k ! : ℝ))⁻¹ * (CΓ / k !)) * (r ^ (M + 1) * r ^ k) := by gcongr
@@ -538,31 +534,20 @@ theorem analyticAt_uncurry_regularizedGaussHGFun {p : ℂ × ℂ × ℂ × ℂ} 
     · exact analyticAt_snd.comp (analyticAt_snd.comp analyticAt_snd)
   obtain ⟨δ, hδ, u, hu, hbound⟩ := exists_summable_bound_regularizedGaussHGFun_polydisc
     (v₀ := e p) hp
-  -- Apply Osgood's lemma on `ball (e p) δ`, using the uniform majorant `u` for continuity and
-  -- slice-wise complex differentiability.
+  -- Uniform convergence of the holomorphic partial sums on `ball (e p) δ` yields holomorphy, hence
+  -- analyticity.
   let F : ℕ → (Fin 4 → ℂ) → ℂ := fun n w =>
     (regularizedGaussHGFunSeries (w 0) (w 1) (w 2)).coeff n * w 3 ^ n
   let g : (Fin 4 → ℂ) → ℂ := fun w => ∑' n, F n w
   have hF_diff (n : ℕ) : Differentiable ℂ (F n) :=
     differentiable_coeff_regularizedGaussHGFunSeries_mul_pow
       (by fun_prop) (by fun_prop) (by fun_prop) (by fun_prop) n
-  have hg_cont : ContinuousOn g (Metric.ball (e p) δ) :=
-    continuousOn_tsum (fun n => (hF_diff n).continuous.continuousOn) hu fun n w hw => hbound n w hw
-  have hg_anal : AnalyticAt ℂ g (e p) := by
-    refine hg_cont.analyticAt_of_differentiableAt_update
-      (Metric.isOpen_ball.mem_nhds (Metric.mem_ball_self hδ)) fun y hy i => ?_
-    have hupd_diff (j : Fin 4) : Differentiable ℂ fun x : ℂ => Function.update y i x j := by
-      by_cases h : j = i
-      · subst h; simp
-      · simp [Function.update_of_ne h]
-    let V : Set ℂ := Function.update y i ⁻¹' Metric.ball (e p) δ
-    have hV : IsOpen V :=
-      Metric.isOpen_ball.preimage (continuous_pi fun j => (hupd_diff j).continuous)
-    have hyV : y i ∈ V := by simp [V, hy]
-    exact (differentiableOn_tsum_of_summable_norm hu
-      (fun n => (differentiable_coeff_regularizedGaussHGFunSeries_mul_pow
-        (hupd_diff 0) (hupd_diff 1) (hupd_diff 2) (hupd_diff 3) n).differentiableOn)
-      hV fun n x hx => hbound n _ hx).differentiableAt (hV.mem_nhds hyV)
+  have hg_anal : AnalyticAt ℂ g (e p) :=
+    ((tendstoUniformlyOn_tsum hu hbound).differentiableOn
+      (Eventually.of_forall fun s => DifferentiableOn.fun_sum fun n _ =>
+        (hF_diff n).differentiableOn)
+      Metric.isOpen_ball).analyticAt_of_finiteDimensional
+      (Metric.isOpen_ball.mem_nhds (Metric.mem_ball_self hδ))
   have hgf : g ∘ e = fun q : ℂ × ℂ × ℂ × ℂ =>
       regularizedGaussHGFun q.1 q.2.1 q.2.2.1 q.2.2.2 := by
     ext q

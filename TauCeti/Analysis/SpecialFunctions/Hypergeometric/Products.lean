@@ -278,8 +278,8 @@ private theorem legendreCombination_eq_at_half (lam mu nu : ℂ) {z : ℂ}
   · obtain ⟨hw₀, hw₁⟩ := (hmem w).mp hw
     exact (hasDerivAt_legendreCombination lam mu nu hw₀ hw₁).deriv
 
-private theorem legendreCombination_half_of_re_gt {lam mu nu : ℂ}
-    (hlam : 1 < lam.re) (hmu : 1 < mu.re) (hnu : 1 < nu.re) :
+private theorem legendreCombination_half_of_re_gt {lam mu : ℂ}
+    (hlam : 1 < lam.re) (hmu : 1 < mu.re) (nu : ℂ) :
     legendreCombination lam mu nu (1 / 2) =
       (Gamma (lam + mu + nu + 3 / 2) * Gamma (1 / 2 + mu))⁻¹ := by
   -- Send `z = x → 0⁺` along `(0, 1)`: the factors at `x` approach `(Γ(1 + λ + μ))⁻¹` while the
@@ -302,12 +302,11 @@ private theorem legendreCombination_half_of_re_gt {lam mu nu : ℂ}
       linarith [hx.1]
   have h12 : ((1 : ℂ) / 2).re = 1 / 2 := by norm_num
   have hm12 : ((-1 : ℂ) / 2).re = -1 / 2 := by norm_num
-  have hb_re : 0 < (1 / 2 + nu).re := by simp only [add_re, h12]; linarith
-  have hbc_re : (1 / 2 + nu).re < (1 + nu + mu).re := by
-    simp only [add_re, one_re, h12]; linarith
-  have hv₀ := (tendsto_regularizedGaussHGFun_nhdsWithin_ball_one (a := 1 / 2 - lam) hb_re hbc_re
+  have hv₀ := (tendsto_regularizedGaussHGFun_nhdsWithin_ball_one (a := 1 / 2 - lam)
+    (b := 1 / 2 + nu) (c := 1 + nu + mu)
     (by simp only [add_re, sub_re, one_re, h12]; linarith)).comp htend_one
-  have hvm := (tendsto_regularizedGaussHGFun_nhdsWithin_ball_one (a := -1 / 2 - lam) hb_re hbc_re
+  have hvm := (tendsto_regularizedGaussHGFun_nhdsWithin_ball_one (a := -1 / 2 - lam)
+    (b := 1 / 2 + nu) (c := 1 + nu + mu)
     (by simp only [add_re, sub_re, one_re, h12, hm12]; linarith)).comp htend_one
   have hcomb := (((hcont_u (-1 / 2 - nu)).mul hv₀).add ((hcont_u (1 / 2 - nu)).mul hvm)).sub
     ((hcont_u (1 / 2 - nu)).mul hv₀)
@@ -328,33 +327,33 @@ private theorem legendreCombination_half_of_re_gt {lam mu nu : ℂ}
   rw [add_sub_right_comm, sub_self, zero_add, hr1, hr2, hr3]
   field_simp [hΓ_ne]
 
-private theorem differentiable_legendreCombination_half {fl fm fn : ℂ → ℂ}
-    (hl : Differentiable ℂ fl) (hm : Differentiable ℂ fm) (hn : Differentiable ℂ fn) :
-    Differentiable ℂ fun w => legendreCombination (fl w) (fm w) (fn w) (1 / 2) := by
+private theorem differentiable_legendreCombination_half {fl fm : ℂ → ℂ}
+    (hl : Differentiable ℂ fl) (hm : Differentiable ℂ fm) (nu : ℂ) :
+    Differentiable ℂ fun w => legendreCombination (fl w) (fm w) nu (1 / 2) := by
   have hhalf : ∀ _ : ℂ, ‖(1 / 2 : ℂ)‖ < 1 := fun _ => by norm_num
   have hhalf' : ∀ _ : ℂ, ‖(1 : ℂ) - 1 / 2‖ < 1 := fun _ => by norm_num
   have hu_m : Differentiable ℂ fun w =>
-      regularizedGaussHGFun (1 / 2 + fl w) (-1 / 2 - fn w) (1 + fl w + fm w) (1 / 2) :=
-    Differentiable.regularizedGaussHGFun (by fun_prop) (by fun_prop) (by fun_prop)
+      regularizedGaussHGFun (1 / 2 + fl w) (-1 / 2 - nu) (1 + fl w + fm w) (1 / 2) :=
+    Differentiable.regularizedGaussHGFun (by fun_prop) (differentiable_const _) (by fun_prop)
       (differentiable_const _) hhalf
   have hu_0 : Differentiable ℂ fun w =>
-      regularizedGaussHGFun (1 / 2 + fl w) (1 / 2 - fn w) (1 + fl w + fm w) (1 / 2) :=
-    Differentiable.regularizedGaussHGFun (by fun_prop) (by fun_prop) (by fun_prop)
+      regularizedGaussHGFun (1 / 2 + fl w) (1 / 2 - nu) (1 + fl w + fm w) (1 / 2) :=
+    Differentiable.regularizedGaussHGFun (by fun_prop) (differentiable_const _) (by fun_prop)
       (differentiable_const _) hhalf
   have hv_0 : Differentiable ℂ fun w =>
-      regularizedGaussHGFun (1 / 2 - fl w) (1 / 2 + fn w) (1 + fn w + fm w) (1 - 1 / 2) :=
-    Differentiable.regularizedGaussHGFun (by fun_prop) (by fun_prop) (by fun_prop)
+      regularizedGaussHGFun (1 / 2 - fl w) (1 / 2 + nu) (1 + nu + fm w) (1 - 1 / 2) :=
+    Differentiable.regularizedGaussHGFun (by fun_prop) (differentiable_const _) (by fun_prop)
       (differentiable_const _) hhalf'
   have hv_m : Differentiable ℂ fun w =>
-      regularizedGaussHGFun (-1 / 2 - fl w) (1 / 2 + fn w) (1 + fn w + fm w) (1 - 1 / 2) :=
-    Differentiable.regularizedGaussHGFun (by fun_prop) (by fun_prop) (by fun_prop)
+      regularizedGaussHGFun (-1 / 2 - fl w) (1 / 2 + nu) (1 + nu + fm w) (1 - 1 / 2) :=
+    Differentiable.regularizedGaussHGFun (by fun_prop) (differentiable_const _) (by fun_prop)
       (differentiable_const _) hhalf'
   exact ((hu_m.mul hv_0).add (hu_0.mul hv_m)).sub (hu_0.mul hv_0)
 
-private theorem differentiable_inv_Gamma_legendreRHS {fl fm fn : ℂ → ℂ}
-    (hl : Differentiable ℂ fl) (hm : Differentiable ℂ fm) (hn : Differentiable ℂ fn) :
+private theorem differentiable_inv_Gamma_legendreRHS {fl fm : ℂ → ℂ}
+    (hl : Differentiable ℂ fl) (hm : Differentiable ℂ fm) (nu : ℂ) :
     Differentiable ℂ fun w =>
-      (Gamma (fl w + fm w + fn w + 3 / 2) * Gamma (1 / 2 + fm w))⁻¹ := by
+      (Gamma (fl w + fm w + nu + 3 / 2) * Gamma (1 / 2 + fm w))⁻¹ := by
   simp_rw [mul_inv]
   exact (differentiable_one_div_Gamma.comp (by fun_prop)).mul
     (differentiable_one_div_Gamma.comp (by fun_prop))
@@ -374,29 +373,21 @@ theorem regularizedGaussHGFun_legendreRelation (lam mu nu : ℂ) {z : ℂ}
   have hz_half := legendreCombination_eq_at_half lam mu nu hz₀ hz₁
   dsimp only [legendreCombination] at hz_half
   rw [hz_half]
-  -- Extend from `(1, ∞)³` to `ℂ³` one parameter at a time via `Differentiable.eq_of_ofReal_gt_eq`.
-  have step1 {l m : ℝ} (hl : 1 < l) (hm : 1 < m) (ν : ℂ) :
-      legendreCombination l m ν (1 / 2) =
-        (Gamma ((l : ℂ) + m + ν + 3 / 2) * Gamma (1 / 2 + m))⁻¹ :=
+  -- Extend `(lam, mu)` from `(1, ∞)²` to `ℂ²` via `Differentiable.eq_of_ofReal_gt_eq`.
+  have step {l : ℝ} (hl : 1 < l) (μ : ℂ) :
+      legendreCombination l μ nu (1 / 2) =
+        (Gamma ((l : ℂ) + μ + nu + 3 / 2) * Gamma (1 / 2 + μ))⁻¹ :=
     congrFun ((differentiable_legendreCombination_half
-        (differentiable_const _) (differentiable_const _) differentiable_fun_id).eq_of_ofReal_gt_eq
+        (differentiable_const _) differentiable_fun_id nu).eq_of_ofReal_gt_eq
       (differentiable_inv_Gamma_legendreRHS
-        (differentiable_const _) (differentiable_const _) differentiable_fun_id)
+        (differentiable_const _) differentiable_fun_id nu)
       fun r (hr : 1 < r) => legendreCombination_half_of_re_gt
-        (by simpa using hl) (by simpa using hm) (by simpa using hr)) ν
-  have step2 {l : ℝ} (hl : 1 < l) (μ ν : ℂ) :
-      legendreCombination l μ ν (1 / 2) =
-        (Gamma ((l : ℂ) + μ + ν + 3 / 2) * Gamma (1 / 2 + μ))⁻¹ :=
-    congrFun ((differentiable_legendreCombination_half
-        (differentiable_const _) differentiable_fun_id (differentiable_const _)).eq_of_ofReal_gt_eq
-      (differentiable_inv_Gamma_legendreRHS
-        (differentiable_const _) differentiable_fun_id (differentiable_const _))
-      fun r (hr : 1 < r) => step1 hl hr ν) μ
+        (by simpa using hl) (by simpa using hr) nu) μ
   exact congrFun ((differentiable_legendreCombination_half
-      differentiable_fun_id (differentiable_const _) (differentiable_const _)).eq_of_ofReal_gt_eq
+      differentiable_fun_id (differentiable_const _) nu).eq_of_ofReal_gt_eq
     (differentiable_inv_Gamma_legendreRHS
-      differentiable_fun_id (differentiable_const _) (differentiable_const _))
-    fun r (hr : 1 < r) => step2 hr mu nu) lam
+      differentiable_fun_id (differentiable_const _) nu)
+    fun r (hr : 1 < r) => step hr mu) lam
 
 /-- **Elliott's generalized Legendre relation** (DLMF 15.16.5) for the ordinary Gauss
 hypergeometric series on `{z | ‖z‖ < 1 ∧ ‖1 - z‖ < 1}`, with `Γ(1/2 + mu)` in place of DLMF's

@@ -13,6 +13,7 @@ public import TauCeti.Analysis.Complex.CauchyIntegralPolydisc
 public import TauCeti.Analysis.Complex.SlitPlane
 import Mathlib.MeasureTheory.Integral.DominatedConvergence
 import TauCeti.Analysis.Analytic.Binomial
+import TauCeti.Analysis.SpecialFunctions.Pow.Complex
 import TauCeti.Analysis.SpecialFunctions.RegularizedHypergeometric
 
 /-!
@@ -30,8 +31,9 @@ On the open unit disk `‖z‖ < 1`, expanding `(1 - z t) ^ (-a)` in its binomia
 integrating term by term against the Beta weight identifies `Complex.regularizedGaussHGFun a b c z`
 with `Complex.eulerIntegral a b c z` throughout `0 < b.re < c.re`. When `(a + b).re < c.re` as
 well, dominated convergence extends `eulerIntegral a b c` continuously to the closed unit disk and
-evaluates it at `z = 1` via Euler's Beta integral, yielding Gauss's summation theorem (DLMF
-15.4.20) as a boundary limit along `Metric.ball 0 1`.
+evaluates it at `z = 1` via Euler's Beta integral; contiguous parameter shifts then remove
+`0 < b.re < c.re`, yielding Gauss's summation theorem (DLMF 15.4.20) as a boundary limit along
+`Metric.ball 0 1` whenever `(a + b).re < c.re`.
 
 The integral is defined at all parameters, but no representation of the Gauss
 function is asserted outside the convergence region. In particular, its normalized
@@ -49,7 +51,8 @@ value can vanish when a Gamma factor has a pole.
 * `Complex.continuousOn_eulerIntegral_closedBall` — continuity of `eulerIntegral a b c` on
   `Metric.closedBall 0 1` when `0 < b.re < c.re` and `(a + b).re < c.re`.
 * `Complex.tendsto_regularizedGaussHGFun_nhdsWithin_ball_one` — Gauss's summation formula (DLMF
-  15.4.20) as the limit of `regularizedGaussHGFun a b c` at `1` within `Metric.ball 0 1`.
+  15.4.20) as the limit of `regularizedGaussHGFun a b c` at `1` within `Metric.ball 0 1` when
+  `(a + b).re < c.re`.
 
 ## References
 
@@ -185,12 +188,7 @@ private theorem inv_Gamma_mul_integral_multichoose_mul_pow (a : ℂ) {b c : ℂ}
   have hbn_re : 0 < (b + n).re := by
     simp only [add_re, natCast_re]
     linarith [n.cast_nonneg (α := ℝ)]
-  have hbn_ne : ∀ k : ℕ, b ≠ -k := by
-    intro k hk
-    have := congrArg re hk
-    simp only [neg_re, natCast_re] at this
-    linarith [k.cast_nonneg (α := ℝ)]
-  have hpoch := Gamma_add_nat_div_Gamma_eq (n := n) b hbn_ne
+  have hpoch := Gamma_add_nat_div_Gamma_eq (n := n) b (ne_neg_natCast_of_re_pos hb)
   have hbnc : b + (n : ℂ) + (c - b) = c + n := by ring
   rw [hint, betaIntegral_eq_Gamma_mul_div (b + n) (c - b) hbn_re hcb, hbnc, hmc,
     coeff_regularizedGaussHGFunSeries, ← hpoch]
@@ -270,42 +268,42 @@ theorem eulerIntegral_one {a b c : ℂ} (hb : 0 < b.re) (habc : (a + b).re < c.r
   linear_combination
     Gamma (c - a - b) * (Gamma (c - b))⁻¹ * (Gamma (c - a))⁻¹ * inv_mul_cancel₀ hΓb
 
-private theorem norm_one_sub_mul_ofReal_cpow_neg_le (a : ℂ) {z : ℂ}
+private theorem one_sub_mul_ofReal_mem_slitPlane_of_mem_closedBall {z : ℂ}
     (hz : z ∈ Metric.closedBall (0 : ℂ) 1) {t : ℝ} (ht : t ∈ Ioo (0 : ℝ) 1) :
-    ‖(1 - z * (t : ℂ)) ^ (-a)‖ ≤
+    1 - z * (t : ℂ) ∈ slitPlane := by
+  have hnorm : ‖-(z * (t : ℂ))‖ < 1 := by
+    rw [norm_neg, norm_mul, Complex.norm_of_nonneg ht.1.le]
+    exact (mul_le_of_le_one_left ht.1.le (by simpa using hz)).trans_lt ht.2
+  simpa [sub_eq_add_neg] using mem_slitPlane_of_norm_lt_one hnorm
+
+private theorem norm_eulerIntegrand_le (a b c : ℂ) {z : ℂ}
+    (hz : z ∈ Metric.closedBall (0 : ℂ) 1) {t : ℝ} (ht : t ∈ Ioo (0 : ℝ) 1) :
+    ‖(t : ℂ) ^ (b - 1) * (1 - (t : ℂ)) ^ (c - b - 1) * (1 - z * (t : ℂ)) ^ (-a)‖ ≤
+      Real.exp (Real.pi * |a.im|) *
+        (2 ^ (-a.re) * ‖(t : ℂ) ^ (b - 1) * (1 - (t : ℂ)) ^ (c - b - 1)‖ +
+          ‖(t : ℂ) ^ (b - 1) * (1 - (t : ℂ)) ^ (c - a - b - 1)‖) := by
+  let w₁ : ℝ := ‖(t : ℂ) ^ (b - 1) * (1 - (t : ℂ)) ^ (c - b - 1)‖
+  let w₂ : ℝ := ‖(t : ℂ) ^ (b - 1) * (1 - (t : ℂ)) ^ (c - a - b - 1)‖
+  have hcpow : ‖(1 - z * (t : ℂ)) ^ (-a)‖ ≤
       Real.exp (Real.pi * |a.im|) * (2 ^ (-a.re) + (1 - t) ^ (-a.re)) := by
-  have hz_le : ‖z‖ ≤ 1 := by simpa using hz
-  have h1t_pos : 0 < 1 - t := sub_pos.mpr ht.2
-  have hzt_le : ‖z * (t : ℂ)‖ ≤ t := by
-    rw [norm_mul, Complex.norm_of_nonneg ht.1.le]
-    exact mul_le_of_le_one_left ht.1.le hz_le
-  have h_low : 1 - t ≤ ‖(1 : ℂ) - z * (t : ℂ)‖ := by
-    linarith [norm_sub_norm_le (1 : ℂ) (z * (t : ℂ)), norm_one (α := ℂ)]
-  have h_high : ‖(1 : ℂ) - z * (t : ℂ)‖ ≤ 2 :=
-    (norm_sub_le 1 (z * (t : ℂ))).trans (by rw [norm_one]; linarith [ht.2])
-  have hexp : (Real.exp (arg (1 - z * (t : ℂ)) * (-a).im))⁻¹ ≤ Real.exp (Real.pi * |a.im|) := by
-    rw [← Real.exp_neg]
-    refine Real.exp_le_exp.mpr ?_
-    have h1 : -(arg (1 - z * (t : ℂ)) * (-a).im) = arg (1 - z * (t : ℂ)) * a.im := by
-      simp [neg_im]
-    rw [h1]
-    exact (le_abs_self _).trans ((abs_mul _ _).trans_le
-      (mul_le_mul_of_nonneg_right (abs_arg_le_pi _) (abs_nonneg _)))
-  have hrpow : ‖(1 : ℂ) - z * (t : ℂ)‖ ^ (-a).re ≤ 2 ^ (-a.re) + (1 - t) ^ (-a.re) := by
-    rw [neg_re]
-    rcases le_total 0 (-a.re) with hre | hre
-    · exact (Real.rpow_le_rpow (norm_nonneg _) h_high hre).trans
-        (le_add_of_nonneg_right (Real.rpow_nonneg h1t_pos.le _))
-    · exact (Real.rpow_le_rpow_of_nonpos h1t_pos h_low hre).trans
-        (le_add_of_nonneg_left (Real.rpow_nonneg zero_le_two _))
-  calc ‖(1 - z * (t : ℂ)) ^ (-a)‖
-      ≤ ‖(1 : ℂ) - z * (t : ℂ)‖ ^ (-a).re *
-          (Real.exp (arg (1 - z * (t : ℂ)) * (-a).im))⁻¹ := by
-        rw [← div_eq_mul_inv]; exact norm_cpow_le _ _
-    _ ≤ (2 ^ (-a.re) + (1 - t) ^ (-a.re)) * Real.exp (Real.pi * |a.im|) :=
-        mul_le_mul hrpow hexp (inv_nonneg.mpr (Real.exp_pos _).le)
-          (add_nonneg (Real.rpow_nonneg zero_le_two _) (Real.rpow_nonneg h1t_pos.le _))
-    _ = Real.exp (Real.pi * |a.im|) * (2 ^ (-a.re) + (1 - t) ^ (-a.re)) := mul_comm _ _
+    simpa [neg_im, neg_re] using
+      norm_one_sub_mul_ofReal_cpow_le (-a) (by simpa using hz) ht.1.le ht.2
+  have hw₂_eq : w₁ * (1 - t) ^ (-a.re) = w₂ := by
+    have h1t_eq : (1 : ℂ) - (t : ℂ) = ((1 - t : ℝ) : ℂ) := by push_cast; ring
+    have h1t_ne : (1 : ℂ) - (t : ℂ) ≠ 0 :=
+      sub_ne_zero.mpr (ofReal_ne_one.mpr ht.2.ne).symm
+    have hnorm_1t : ‖(1 - (t : ℂ)) ^ (-a)‖ = (1 - t) ^ (-a.re) := by
+      rw [h1t_eq, norm_cpow_eq_rpow_re_of_pos (sub_pos.mpr ht.2), neg_re]
+    dsimp only [w₁, w₂]
+    rw [← hnorm_1t, ← norm_mul, mul_assoc, ← cpow_add _ _ h1t_ne]
+    congr 3
+    ring
+  rw [norm_mul]
+  calc w₁ * ‖(1 - z * (t : ℂ)) ^ (-a)‖
+      ≤ w₁ * (Real.exp (Real.pi * |a.im|) * (2 ^ (-a.re) + (1 - t) ^ (-a.re))) :=
+        mul_le_mul_of_nonneg_left hcpow (norm_nonneg _)
+    _ = Real.exp (Real.pi * |a.im|) * (2 ^ (-a.re) * w₁ + w₁ * (1 - t) ^ (-a.re)) := by ring
+    _ = Real.exp (Real.pi * |a.im|) * (2 ^ (-a.re) * w₁ + w₂) := by rw [hw₂_eq]
 
 /-- When `0 < b.re < c.re` and `(a + b).re < c.re`, `eulerIntegral a b c` is continuous on the
 closed unit disk `Metric.closedBall 0 1`. -/
@@ -318,72 +316,44 @@ theorem continuousOn_eulerIntegral_closedBall {a b c : ℂ}
     linarith
   -- Restrict to `(0, 1)`, where `‖z * t‖ < 1` holds uniformly on `closedBall 0 1`.
   let μ : Measure ℝ := volume.restrict (Ioo 0 1)
+  have hμ : μ = volume.restrict (Ioc 0 1) := restrict_Ioo_eq_restrict_Ioc
   let F : ℂ → ℝ → ℂ := fun z t =>
     (t : ℂ) ^ (b - 1) * (1 - (t : ℂ)) ^ (c - b - 1) * (1 - z * (t : ℂ)) ^ (-a)
-  let w₁ : ℝ → ℝ := fun t => ‖(t : ℂ) ^ (b - 1) * (1 - (t : ℂ)) ^ (c - b - 1)‖
-  let w₂ : ℝ → ℝ := fun t => ‖(t : ℂ) ^ (b - 1) * (1 - (t : ℂ)) ^ (c - a - b - 1)‖
+  let w : ℂ → ℝ → ℝ := fun v t => ‖(t : ℂ) ^ (b - 1) * (1 - (t : ℂ)) ^ (v - 1)‖
   let C : ℝ := Real.exp (Real.pi * |a.im|)
-  have hw₁_int : Integrable w₁ μ := by
-    rw [show μ = volume.restrict (Ioc 0 1) from restrict_Ioo_eq_restrict_Ioc]
+  have hbeta_int {v : ℂ} (hv : 0 < v.re) : Integrable (w v) μ := by
+    rw [hμ]
     exact (intervalIntegrable_iff_integrableOn_Ioc_of_le zero_le_one).mp
-      (betaIntegral_convergent hb hcb).norm
-  have hw₂_int : Integrable w₂ μ := by
-    rw [show μ = volume.restrict (Ioc 0 1) from restrict_Ioo_eq_restrict_Ioc]
-    exact (intervalIntegrable_iff_integrableOn_Ioc_of_le zero_le_one).mp
-      (betaIntegral_convergent hb hcab).norm
-  have hslit {z : ℂ} (hz : z ∈ Metric.closedBall (0 : ℂ) 1) {t : ℝ} (ht : t ∈ Ioo (0 : ℝ) 1) :
-      1 - z * (t : ℂ) ∈ slitPlane := by
-    have hnorm : ‖-(z * (t : ℂ))‖ < 1 := by
-      rw [norm_neg, norm_mul, Complex.norm_of_nonneg ht.1.le]
-      exact (mul_le_of_le_one_left ht.1.le (by simpa using hz)).trans_lt ht.2
-    simpa [sub_eq_add_neg] using mem_slitPlane_of_norm_lt_one hnorm
-  -- Apply dominated convergence on `μ` with integrable majorant `C * (2 ^ (-a.re) * w₁ + w₂)`.
+      (betaIntegral_convergent hb hv).norm
+  -- Apply dominated convergence on `μ` with integrable majorant
+  -- `C * (2 ^ (-a.re) * w (c - b) + w (c - a - b))`.
   have hcont_int : ContinuousOn (fun z => ∫ t, F z t ∂μ) (Metric.closedBall 0 1) := by
     refine MeasureTheory.continuousOn_of_dominated
-      (bound := fun t => C * (2 ^ (-a.re) * w₁ t + w₂ t))
+      (bound := fun t => C * (2 ^ (-a.re) * w (c - b) t + w (c - a - b) t))
       (fun z hz => ?_) (fun z hz => ?_)
-      (((hw₁_int.const_mul (2 ^ (-a.re))).add hw₂_int).const_mul C) ?_
+      ((((hbeta_int hcb).const_mul (2 ^ (-a.re))).add (hbeta_int hcab)).const_mul C) ?_
     · refine (continuousOn_of_forall_continuousAt fun t ht => ?_).aestronglyMeasurable
         measurableSet_Ioo
       refine ((ContinuousAt.cpow (by fun_prop) continuousAt_const
         (ofReal_mem_slitPlane.mpr ht.1)).mul
         (ContinuousAt.cpow (by fun_prop) continuousAt_const ?_)).mul
-        (ContinuousAt.cpow (by fun_prop) continuousAt_const (hslit hz ht))
+        (ContinuousAt.cpow (by fun_prop) continuousAt_const
+          (one_sub_mul_ofReal_mem_slitPlane_of_mem_closedBall hz ht))
       simpa using ofReal_mem_slitPlane.mpr (sub_pos.mpr ht.2)
     · filter_upwards [ae_restrict_mem measurableSet_Ioo] with t ht
-      have hcpow := norm_one_sub_mul_ofReal_cpow_neg_le a hz ht
-      have hw₂_eq : w₁ t * (1 - t) ^ (-a.re) = w₂ t := by
-        have h1t_eq : (1 : ℂ) - (t : ℂ) = ((1 - t : ℝ) : ℂ) := by push_cast; ring
-        have h1t_ne : (1 : ℂ) - (t : ℂ) ≠ 0 :=
-          sub_ne_zero.mpr (ofReal_ne_one.mpr ht.2.ne).symm
-        have hnorm_1t : ‖(1 - (t : ℂ)) ^ (-a)‖ = (1 - t) ^ (-a.re) := by
-          rw [h1t_eq, norm_cpow_eq_rpow_re_of_pos (sub_pos.mpr ht.2), neg_re]
-        dsimp only [w₁, w₂]
-        rw [← hnorm_1t, ← norm_mul, mul_assoc, ← cpow_add _ _ h1t_ne]
-        congr 3
-        ring
-      dsimp only [F]
-      rw [norm_mul]
-      calc w₁ t * ‖(1 - z * (t : ℂ)) ^ (-a)‖
-          ≤ w₁ t * (C * (2 ^ (-a.re) + (1 - t) ^ (-a.re))) :=
-            mul_le_mul_of_nonneg_left hcpow (norm_nonneg _)
-        _ = C * (2 ^ (-a.re) * w₁ t + w₁ t * (1 - t) ^ (-a.re)) := by ring
-        _ = C * (2 ^ (-a.re) * w₁ t + w₂ t) := by rw [hw₂_eq]
+      exact norm_eulerIntegrand_le a b c hz ht
     · filter_upwards [ae_restrict_mem measurableSet_Ioo] with t ht
       refine continuousOn_of_forall_continuousAt fun z hz => ?_
       exact continuousAt_const.mul
-        (ContinuousAt.cpow (by fun_prop) continuousAt_const (hslit hz ht))
+        (ContinuousAt.cpow (by fun_prop) continuousAt_const
+          (one_sub_mul_ofReal_mem_slitPlane_of_mem_closedBall hz ht))
   have heq : eulerIntegral a b c = fun z => (Gamma b * Gamma (c - b))⁻¹ * ∫ t, F z t ∂μ := by
     ext z
-    rw [eulerIntegral_def, intervalIntegral.integral_of_le zero_le_one,
-      ← restrict_Ioo_eq_restrict_Ioc]
+    rw [eulerIntegral_def, intervalIntegral.integral_of_le zero_le_one, ← hμ]
   rw [heq]
   exact continuousOn_const.mul hcont_int
 
-/-- **Gauss's summation theorem** as a limit on the open unit disk (DLMF 15.4.20): when
-`0 < b.re < c.re` and `(a + b).re < c.re`, `regularizedGaussHGFun a b c z` tends to
-`Gamma (c - a - b) / (Gamma (c - a) * Gamma (c - b))` as `z → 1` within `Metric.ball 0 1`. -/
-theorem tendsto_regularizedGaussHGFun_nhdsWithin_ball_one {a b c : ℂ}
+private theorem tendsto_regularizedGaussHGFun_nhdsWithin_ball_one_of_re_pos_of_re_lt {a b c : ℂ}
     (hb : 0 < b.re) (hbc : b.re < c.re) (habc : (a + b).re < c.re) :
     Tendsto (regularizedGaussHGFun a b c) (𝓝[Metric.ball 0 1] 1)
       (𝓝 (Gamma (c - a - b) / (Gamma (c - a) * Gamma (c - b)))) := by
@@ -392,5 +362,109 @@ theorem tendsto_regularizedGaussHGFun_nhdsWithin_ball_one {a b c : ℂ}
   rw [ContinuousWithinAt, eulerIntegral_one hb habc] at hcont
   exact hcont.congr' (eventuallyEq_nhdsWithin_of_eqOn fun z hz =>
     (regularizedGaussHGFun_eq_eulerIntegral a hb hbc (by simpa using hz)).symm)
+
+private theorem tendsto_regularizedGaussHGFun_nhdsWithin_ball_one_of_re_pos {a b c : ℂ}
+    (hb : 0 < b.re) (habc : (a + b).re < c.re) :
+    Tendsto (regularizedGaussHGFun a b c) (𝓝[Metric.ball 0 1] 1)
+      (𝓝 (Gamma (c - a - b) / (Gamma (c - a) * Gamma (c - b)))) := by
+  obtain ⟨N, hcN⟩ := exists_nat_gt (b.re - c.re)
+  induction N generalizing a c with
+  | zero =>
+    exact tendsto_regularizedGaussHGFun_nhdsWithin_ball_one_of_re_pos_of_re_lt hb
+      (by simp only [Nat.cast_zero] at hcN; linarith) habc
+  | succ N ih =>
+    -- Shift `c` upward via DLMF 15.5.15 until `b.re < c.re` holds.
+    have hcN' : b.re - (c + 1).re < N := by
+      simp only [Nat.cast_add, Nat.cast_one] at hcN
+      simp only [add_re, one_re]
+      linarith
+    have h₁ := ih (a := a) (c := c + 1)
+      (by simp only [add_re, one_re] at habc ⊢; linarith) hcN'
+    have h₂ := ih (a := a + 1) (c := c + 1)
+      (by simp only [add_re, one_re] at habc ⊢; linarith) hcN'
+    have hlim := (h₁.const_mul (c - a)).add (h₂.const_mul a)
+    have hcab : 0 < (c - a - b).re := by simp only [sub_re, add_re] at habc ⊢; linarith
+    have hcab_ne : c - a - b ≠ 0 := by simpa using ne_neg_natCast_of_re_pos hcab 0
+    have hval :
+        (c - a) * (Gamma (c + 1 - a - b) / (Gamma (c + 1 - a) * Gamma (c + 1 - b))) +
+            a * (Gamma (c + 1 - (a + 1) - b) /
+              (Gamma (c + 1 - (a + 1)) * Gamma (c + 1 - b))) =
+          Gamma (c - a - b) / (Gamma (c - a) * Gamma (c - b)) := by
+      have hr₁ : c + 1 - a - b = c - a - b + 1 := by ring
+      have hr₂ : c + 1 - a = c - a + 1 := by ring
+      have hr₃ : c + 1 - b = c - b + 1 := by ring
+      have hr₄ : c + 1 - (a + 1) - b = c - a - b := by ring
+      have hr₅ : c + 1 - (a + 1) = c - a := by ring
+      rw [hr₁, hr₂, hr₃, hr₄, hr₅, Gamma_add_one (c - a - b) hcab_ne]
+      simp only [div_eq_mul_inv, mul_inv]
+      linear_combination
+        -(c - a - b) * Gamma (c - a - b) * (Gamma (c - b + 1))⁻¹ *
+            one_div_Gamma_eq_self_mul_one_div_Gamma_add_one (c - a) -
+          Gamma (c - a - b) * (Gamma (c - a))⁻¹ *
+            one_div_Gamma_eq_self_mul_one_div_Gamma_add_one (c - b)
+    rw [hval] at hlim
+    exact hlim.congr' (eventuallyEq_nhdsWithin_of_eqOn fun z hz =>
+      (regularizedGaussHGFun_eq_sub_mul_add_mul a b c (by simpa using hz)).symm)
+
+private theorem regularizedGaussHGFun_eq_mul_sub_mul_mul (a b c : ℂ) {z : ℂ} (hz : ‖z‖ < 1) :
+    regularizedGaussHGFun a b c z =
+      c * regularizedGaussHGFun a (b + 1) (c + 1) z -
+        a * (c - b) * z * regularizedGaussHGFun (a + 1) (b + 1) (c + 2) z := by
+  have h₁ := regularizedGaussHGFun_eq_sub_mul_add_mul b a c hz
+  rw [regularizedGaussHGFun_symm b a, regularizedGaussHGFun_symm b a,
+    regularizedGaussHGFun_symm (b + 1) a] at h₁
+  have h₂ := regularizedGaussHGFun_eq_regularizedGaussHGFun_sub_mul_mul a b (c + 1) hz
+  have hc2 : c + 1 + 1 = c + 2 := by ring
+  rw [hc2] at h₂
+  linear_combination h₁ + (c - b) * h₂
+
+/-- **Gauss's summation theorem** as a limit on the open unit disk (DLMF 15.4.20): when
+`(a + b).re < c.re`, `regularizedGaussHGFun a b c z` tends to
+`Gamma (c - a - b) / (Gamma (c - a) * Gamma (c - b))` as `z → 1` within `Metric.ball 0 1`. -/
+theorem tendsto_regularizedGaussHGFun_nhdsWithin_ball_one {a b c : ℂ}
+    (habc : (a + b).re < c.re) :
+    Tendsto (regularizedGaussHGFun a b c) (𝓝[Metric.ball 0 1] 1)
+      (𝓝 (Gamma (c - a - b) / (Gamma (c - a) * Gamma (c - b)))) := by
+  obtain ⟨N, hbN⟩ := exists_nat_gt (-b.re)
+  induction N generalizing a b c with
+  | zero =>
+    exact tendsto_regularizedGaussHGFun_nhdsWithin_ball_one_of_re_pos
+      (by simp only [Nat.cast_zero, neg_lt_zero] at hbN; exact hbN) habc
+  | succ N ih =>
+    -- Shift `b` and `c` upward together so `(c - a - b).re` stays positive until `0 < b.re` holds.
+    have hbN' : -(b + 1).re < N := by
+      simp only [Nat.cast_add, Nat.cast_one] at hbN
+      simp only [add_re, one_re]
+      linarith
+    have hre2 : (2 : ℂ).re = 2 := by norm_num
+    have h₁ := ih (a := a) (b := b + 1) (c := c + 1)
+      (by simp only [add_re, one_re] at habc ⊢; linarith) hbN'
+    have h₂ := ih (a := a + 1) (b := b + 1) (c := c + 2)
+      (by simp only [add_re, one_re, hre2] at habc ⊢; linarith) hbN'
+    have hz_id : Tendsto (fun z : ℂ => z) (𝓝[Metric.ball 0 1] 1) (𝓝 1) :=
+      tendsto_nhdsWithin_of_tendsto_nhds tendsto_id
+    have hlim := (h₁.const_mul c).sub ((hz_id.const_mul (a * (c - b))).mul h₂)
+    have hval :
+        c * (Gamma (c + 1 - a - (b + 1)) / (Gamma (c + 1 - a) * Gamma (c + 1 - (b + 1)))) -
+            a * (c - b) * 1 *
+              (Gamma (c + 2 - (a + 1) - (b + 1)) /
+                (Gamma (c + 2 - (a + 1)) * Gamma (c + 2 - (b + 1)))) =
+          Gamma (c - a - b) / (Gamma (c - a) * Gamma (c - b)) := by
+      have hr₁ : c + 1 - a - (b + 1) = c - a - b := by ring
+      have hr₂ : c + 1 - a = c - a + 1 := by ring
+      have hr₃ : c + 1 - (b + 1) = c - b := by ring
+      have hr₄ : c + 2 - (a + 1) - (b + 1) = c - a - b := by ring
+      have hr₅ : c + 2 - (a + 1) = c - a + 1 := by ring
+      have hr₆ : c + 2 - (b + 1) = c - b + 1 := by ring
+      rw [hr₁, hr₂, hr₃, hr₄, hr₅, hr₆]
+      simp only [div_eq_mul_inv, mul_inv]
+      linear_combination
+        a * Gamma (c - a - b) * (Gamma (c - a + 1))⁻¹ *
+            one_div_Gamma_eq_self_mul_one_div_Gamma_add_one (c - b) -
+          Gamma (c - a - b) * (Gamma (c - b))⁻¹ *
+            one_div_Gamma_eq_self_mul_one_div_Gamma_add_one (c - a)
+    rw [hval] at hlim
+    exact hlim.congr' (eventuallyEq_nhdsWithin_of_eqOn fun z hz =>
+      (regularizedGaussHGFun_eq_mul_sub_mul_mul a b c (by simpa using hz)).symm)
 
 end Complex
