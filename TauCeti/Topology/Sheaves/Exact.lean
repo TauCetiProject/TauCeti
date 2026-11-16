@@ -9,6 +9,8 @@ public import Mathlib.Algebra.Category.Grp.Colimits
 import Mathlib.Algebra.Category.Grp.FilteredColimits
 import Mathlib.CategoryTheory.Sites.EpiMono
 public import Mathlib.Algebra.Homology.ShortComplex.Ab
+public import Mathlib.CategoryTheory.Functor.EpiMono
+public import Mathlib.CategoryTheory.Sites.Over
 public import Mathlib.Topology.Sheaves.Abelian
 
 /-!
@@ -27,11 +29,10 @@ complexes of sections are exact over a basis, where they compute sheaf cohomolog
 
 In the other direction, an epimorphism of sheaves is only locally surjective on sections: a section
 of the target lifts near every point, on a member of any set of opens which contains a basis inside
-each of its members (`TopCat.Sheaf.exists_mem_lift_of_epi`). Consequently, any morphism intertwined
-under an epimorphism with a morphism that vanishes on all opens inside `V` also vanishes on all
-opens inside `V` (`TopCat.Sheaf.app_eq_zero_of_epi_comp`). This file also records sectionwise
-evaluation of `∑ i ∈ s, η i - 𝟙 F` (`TopCat.Sheaf.sum_sub_id_app_eq_zero_iff`) and gluing of
-locally finite sums of sections (`TopCat.Sheaf.exists_gluing_finset_sum`).
+each of its members (`TopCat.Sheaf.exists_mem_lift_of_epi`). For sheaves valued in any category
+with zero morphisms, whenever restriction to the over site of `V` preserves epimorphisms, any
+morphism intertwined under an epimorphism with a morphism vanishing on all opens inside `V` also
+vanishes on all opens inside `V` (`TopCat.Sheaf.app_eq_zero_of_epi_comp`).
 
 ## References
 
@@ -45,6 +46,8 @@ open CategoryTheory Limits Opposite TopologicalSpace
 universe u
 
 namespace TopCat.Sheaf
+
+section Abelian
 
 variable {X : TopCat.{u}}
   {S : ShortComplex (CategoryTheory.Sheaf (Opens.grothendieckTopology X) AddCommGrpCat.{u})}
@@ -98,70 +101,29 @@ theorem exists_mem_lift_of_epi
     ← ConcreteCategory.comp_apply, ← G.obj.map_comp]
   rfl
 
-/-- If `π₁ : G₁ ⟶ Z₁` is an epimorphism of sheaves of abelian groups and `π₁ ≫ ζ = φ ≫ π₂`,
-where `φ : G₁ ⟶ G₂` vanishes on all opens inside `V`, then `ζ : Z₁ ⟶ Z₂` also vanishes on all
-opens inside `V`. -/
-theorem app_eq_zero_of_epi_comp {G₁ G₂ Z₁ Z₂ : X.Sheaf AddCommGrpCat.{u}}
+end Abelian
+
+section ZeroMorphisms
+
+/-- If `π₁ : G₁ ⟶ Z₁` is an epimorphism of sheaves valued in a category with zero morphisms,
+restriction to the over site of `V` preserves epimorphisms, and `π₁ ≫ ζ = φ ≫ π₂`, where
+`φ : G₁ ⟶ G₂` vanishes on all opens inside `V`, then `ζ : Z₁ ⟶ Z₂` also vanishes on all opens
+inside `V`. -/
+theorem app_eq_zero_of_epi_comp {C : Type*} [Category* C] [HasZeroMorphisms C]
+    {X : TopCat} {G₁ G₂ Z₁ Z₂ : X.Sheaf C}
     (π₁ : G₁ ⟶ Z₁) [Epi π₁] (π₂ : G₂ ⟶ Z₂) (φ : G₁ ⟶ G₂) (ζ : Z₁ ⟶ Z₂)
     (hcomm : π₁ ≫ ζ = φ ≫ π₂) {V : Opens X}
+    [((Opens.grothendieckTopology X).overPullback C V).PreservesEpimorphisms]
     (hφ : ∀ ⦃W : Opens X⦄, W ≤ V → φ.hom.app (op W) = 0) ⦃W : Opens X⦄ (hW : W ≤ V) :
     ζ.hom.app (op W) = 0 := by
-  refine AddCommGrpCat.hom_ext <| AddMonoidHom.ext fun z ↦ ?_
-  rw [AddCommGrpCat.hom_zero, AddMonoidHom.zero_apply]
-  choose U _ hxU hUW t ht using fun x : W ↦
-    exists_mem_lift_of_epi (B := Set.univ)
-      (fun _ _ U' _ y hy ↦ ⟨U', Set.mem_univ _, hy, le_rfl⟩)
-      π₁ (Set.mem_univ W) z x.1 x.2
-  have hcov : W ≤ ⨆ x : W, U x := fun x hx ↦ Opens.mem_iSup.2 ⟨⟨x, hx⟩, hxU ⟨x, hx⟩⟩
-  refine Z₂.eq_of_locally_eq' U W (fun x ↦ homOfLE (hUW x)) hcov _ _ fun x ↦ ?_
-  rw [map_zero, ← NatTrans.naturality_apply ζ.hom, ← ht x,
-    ← ConcreteCategory.comp_apply, ← TopCat.Sheaf.comp_app, hcomm,
-    TopCat.Sheaf.comp_app, hφ ((hUW x).trans hW), zero_comp]
-  simp
+  let P := (Opens.grothendieckTopology X).overPullback C V
+  have hPφ : P.map φ = 0 := by
+    ext U
+    exact hφ (leOfHom U.unop.hom)
+  have hPζ : P.map ζ = 0 := by
+    rw [← cancel_epi (P.map π₁), ← P.map_comp, hcomm, P.map_comp, hPφ, zero_comp, comp_zero]
+  exact congrArg (fun α : P.obj Z₁ ⟶ P.obj Z₂ ↦ α.hom.app (op (Over.mk (homOfLE hW)))) hPζ
 
-/-- For a finite family of endomorphisms `η` of a sheaf `F` valued in a preadditive category,
-`(∑ i ∈ s, η i) - 𝟙 F` vanishes on `W` if and only if `∑ i ∈ s, (η i).hom.app (op W)` is the
-identity on `F(W)`. -/
-theorem sum_sub_id_app_eq_zero_iff {C : Type*} [Category* C] [Preadditive C]
-    {Y : TopCat} {F : Y.Sheaf C} {ι : Type*} (s : Finset ι) (η : ι → (F ⟶ F))
-    (W : Opens Y) :
-    ((∑ i ∈ s, η i) - 𝟙 F).hom.app (op W) = 0 ↔
-      ∑ i ∈ s, (η i).hom.app (op W) = 𝟙 (F.obj.obj (op W)) := by
-  rw [← InducedCategory.homAddEquiv_apply, map_sub, map_sum]
-  simp [sub_eq_zero]
-
-/-- Gluing a locally finite sum of sections of an abelian sheaf `G` over `U`: if each `a i`
-vanishes on opens inside `V i`, and `N` covers `U` with `N k ≤ V i` for all `i ∉ S k`, then the
-finite sums `∑ i ∈ S k, a i|_{N k}` glue to a section `b` over `U`. -/
-theorem exists_gluing_finset_sum (G : X.Sheaf AddCommGrpCat.{u}) {U : Opens X} {ι κ : Type*}
-    (V : ι → Opens X) (a : ι → G.obj.obj (op U))
-    (ha : ∀ i ⦃W : Opens X⦄ (hWU : W ≤ U), W ≤ V i → G.obj.map (homOfLE hWU).op (a i) = 0)
-    (N : κ → Opens X) (hNU : ∀ k, N k ≤ U) (hN : U ≤ ⨆ k, N k) (S : κ → Finset ι)
-    (hSV : ∀ k i, i ∉ S k → N k ≤ V i) :
-    ∃ b : G.obj.obj (op U), ∀ k,
-      G.obj.map (homOfLE (hNU k)).op b =
-        ∑ i ∈ S k, G.obj.map (homOfLE (hNU k)).op (a i) := by
-  classical
-  let sf : ∀ k : κ, G.obj.obj (op (N k)) :=
-    fun k ↦ ∑ i ∈ S k, G.obj.map (homOfLE (hNU k)).op (a i)
-  have hcompat : TopCat.Presheaf.IsCompatible G.obj N sf := by
-    intro k₁ k₂
-    let W := N k₁ ⊓ N k₂
-    have hWU : W ≤ U := inf_le_left.trans (hNU k₁)
-    have hrestrict (k : κ) (hWN : W ≤ N k) (hs : S k ⊆ S k₁ ∪ S k₂) :
-        G.obj.map (homOfLE hWN).op (sf k) =
-          ∑ i ∈ S k₁ ∪ S k₂, G.obj.map (homOfLE hWU).op (a i) := by
-      simp only [sf, map_sum]
-      have hterm (i : ι) :
-          G.obj.map (homOfLE hWN).op (G.obj.map (homOfLE (hNU k)).op (a i)) =
-            G.obj.map (homOfLE hWU).op (a i) := by
-        rw [← Functor.map_comp_apply]
-        exact congrArg (fun f : W ⟶ U ↦ G.obj.map f.op (a i)) (Subsingleton.elim _ _)
-      simp_rw [hterm]
-      exact Finset.sum_subset hs fun i _ hi ↦ ha i hWU (hWN.trans (hSV k i hi))
-    exact (hrestrict k₁ inf_le_left Finset.subset_union_left).trans
-      (hrestrict k₂ inf_le_right Finset.subset_union_right).symm
-  obtain ⟨b, hb, -⟩ := G.existsUnique_gluing' N U (fun k ↦ homOfLE (hNU k)) hN sf hcompat
-  exact ⟨b, hb⟩
+end ZeroMorphisms
 
 end TopCat.Sheaf

@@ -26,9 +26,10 @@ with the discrete topology, and this is the adjunction `f^* ⊣ f_*` for the ide
 
 The composite `godement C X = stalksFunctor C X ⋙ skyscraperProductFunctor C X` is the *Godement
 sheaf* functor `F ↦ ∏ₓ (iₓ)_* Fₓ`, whose coordinate at `x` on a morphism is the induced morphism of
-skyscraper sheaves (`godement_map_π`). When `C` is abelian, `godement C X` is additive
-(`additive_godement`) and local, sending morphisms that vanish on all opens inside `V` to morphisms
-that vanish on all opens inside `V` (`godement_map_app_eq_zero_of_app_eq_zero`). The unit of the
+skyscraper sheaves (`godement_map_π`). Whenever `C` has zero morphisms, colimits, and products,
+`godement C X` is local, sending morphisms that vanish on all opens inside `V` to morphisms that
+vanish on all opens inside `V` (`godement_map_app_eq_zero_of_app_eq_zero`); when `C` is abelian, it
+is also additive (`additive_godement`). The unit of the
 adjunction is the canonical morphism `toGodement C X : F ⟶ godement C X F` (`toGodement_eq_unit`),
 whose coordinate at `x` sends a section over an open containing `x` to its germ at `x`
 (`toGodement_app_π_hom_app`), as the unit of the adjunction between the stalk at `x` and the
@@ -68,9 +69,9 @@ valued in an abelian concrete category with the usual stalk hypotheses its augme
 ## Main results
 
 * `TauCeti.Topology.godement_map_π`: the coordinates of the Godement sheaf of a morphism.
-* `TauCeti.Topology.additive_godement` and
-  `TauCeti.Topology.godement_map_app_eq_zero_of_app_eq_zero`: additivity and locality of the
-  Godement functor for abelian targets.
+* `TauCeti.Topology.godement_map_app_eq_zero_of_app_eq_zero`: locality of the Godement functor
+  for categories with zero morphisms, colimits, and products.
+* `TauCeti.Topology.additive_godement`: additivity of the Godement functor for abelian targets.
 * `TauCeti.Topology.toGodement_app_π`: the coordinate of `toGodement` at `x` is the unit of the
   adjunction between the stalk at `x` and the skyscraper sheaf at `x`.
 * `TauCeti.Topology.toGodement_app_π_hom_app`: this coordinate sends a section to its germ at `x`.
@@ -384,7 +385,12 @@ instance additive_godement : (godement C X).Additive where
       ((Preadditive.add_comp _ _ _ ((godement C X).map α) ((godement C X).map β) _).trans
         (congrArg₂ (· + ·) (godement_map_π C X α x) (godement_map_π C X β x))).symm
 
-variable {C X}
+end Additive
+
+section Locality
+
+variable {C : Type*} [Category.{u} C] [HasZeroMorphisms C] [HasColimits C] [HasProducts.{u} C]
+  {X : TopCat.{u}}
 
 /-- Locality of the Godement functor: if `α : F ⟶ G` vanishes on all opens inside `V`, then so
 does `(godement C X).map α`. -/
@@ -408,19 +414,17 @@ theorem godement_map_app_eq_zero_of_app_eq_zero {F G : X.Sheaf C} (α : F ⟶ G)
     ((evW.map_comp ((godement C X).map α) (Pi.π fam y)).symm.trans ?_)).trans zero_comp.symm
   by_cases hyW : y ∈ W
   · have hstalk := TopCat.Presheaf.stalkFunctor_map_eq_zero_of_app_eq_zero α.hom hα (hW hyW)
-    have hsky : (skyscraperSheafFunctor y).map
-        ((TopCat.Presheaf.stalkFunctor C y).map α.hom) = 0 := by
-      rw [hstalk, Functor.map_zero]
-    have hπ : (godement C X).map α ≫ Pi.π fam y = 0 :=
-      (godement_map_π C X α y).trans ((congrArg (_ ≫ ·) hsky).trans comp_zero)
-    rw [hπ, Functor.map_zero]
-  · have hzeroW : IsZero (evW.obj (fam y)) :=
-      (isZero_zero C).of_iso
-        ((eqToIso ((skyscraperSheaf_obj_obj y (G.presheaf.stalk y) (op W)).trans
-          (ite_eq_right hyW))).trans HasZeroObject.zeroIsoTerminal.symm)
-    exact hzeroW.eq_of_tgt _ _
+    have hskyW : evW.map ((skyscraperSheafFunctor y).map
+        ((TopCat.Presheaf.stalkFunctor C y).map α.hom)) = 0 := by
+      rw [hstalk]
+      change (SkyscraperPresheafFunctor.map' y
+        (0 : F.presheaf.stalk y ⟶ G.presheaf.stalk y)).app (op W) = 0
+      simp [SkyscraperPresheafFunctor.map'_app, hyW]
+    exact (congrArg evW.map (godement_map_π C X α y)).trans
+      ((evW.map_comp _ _).trans ((congrArg (_ ≫ ·) hskyW).trans comp_zero))
+  · exact (isTerminalSkyscraperSheafObjObjOfNotMem hyW).hom_ext _ _
 
-end Additive
+end Locality
 
 section Resolution
 

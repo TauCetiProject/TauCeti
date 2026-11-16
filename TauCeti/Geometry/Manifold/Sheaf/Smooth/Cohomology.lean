@@ -8,9 +8,8 @@ module
 public import Mathlib.Geometry.Manifold.PartitionOfUnity
 public import TauCeti.Geometry.Manifold.Sheaf.Smooth.Restrict
 public import TauCeti.Topology.Sheaves.Fine
+import Mathlib.Topology.Sets.OpenCover
 import TauCeti.Geometry.Manifold.Algebra.SmoothFunctions
-import TauCeti.Geometry.Manifold.ContMDiffMap.Basic
-import TauCeti.Geometry.Manifold.ContMDiffMap.Chart.Restriction
 
 /-!
 # Fineness and sheaf cohomology of smooth functions on a manifold
@@ -71,7 +70,16 @@ variable {𝕜 : Type*} [NontriviallyNormedField 𝕜]
   {EM : Type*} [NormedAddCommGroup EM] [NormedSpace 𝕜 EM]
   {HM : Type*} [TopologicalSpace HM] (IM : ModelWithCorners 𝕜 EM HM)
   {M : Type u} [TopologicalSpace M] [ChartedSpace HM M]
-  (V : Type u) [NormedAddCommGroup V] [NormedSpace 𝕜 V]
+
+/-- The inclusion of an open subset `W` of `M`, as a smooth map `C^∞⟮IM, W; IM, M⟯`. -/
+private def subtypeValMap (W : Opens M) : C^∞⟮IM, W; IM, M⟯ :=
+  ⟨Subtype.val, contMDiff_subtype_val⟩
+
+private theorem subtypeValMap_apply (W : Opens M) (x : W) :
+    subtypeValMap IM W x = x.1 :=
+  rfl
+
+variable (V : Type u) [NormedAddCommGroup V] [NormedSpace 𝕜 V]
 
 /-- Pointwise multiplication on sections over `W` as an additive homomorphism from smooth scalar
 functions on `W` to endomorphisms of `(smoothSheafAddCommGroup IM 𝓘(𝕜, V) M V).obj.obj (op W)`. -/
@@ -83,6 +91,28 @@ private def smulAppHom (W : Opens (TopCat.of M)) :
     (M := (smoothSheafAddCommGroup IM 𝓘(𝕜, V) M V).obj.obj (op W))
     (N := (smoothSheafAddCommGroup IM 𝓘(𝕜, V) M V).obj.obj (op W))).symm.toAddMonoidHom.comp
       (Module.toAddMonoidEnd C^∞⟮IM, W; 𝓘(𝕜), 𝕜⟯ C^∞⟮IM, W; 𝓘(𝕜, V), V⟯).toAddMonoidHom
+
+private theorem smulAppHom_apply (W : Opens (TopCat.of M)) (c : C^∞⟮IM, W; 𝓘(𝕜), 𝕜⟯)
+    (f : C^∞⟮IM, W; 𝓘(𝕜, V), V⟯) :
+    smulAppHom IM V W c f = c • f :=
+  rfl
+
+private theorem map_apply {U₁ U₂ : (Opens (TopCat.of M))ᵒᵖ} (h : U₁ ⟶ U₂)
+    (f : C^∞⟮IM, U₁.unop; 𝓘(𝕜, V), V⟯) :
+    (smoothSheafAddCommGroup IM 𝓘(𝕜, V) M V).obj.map h f =
+      ContMDiffMap.restrictAddMonoidHom IM 𝓘(𝕜, V) V (leOfHom h.unop) f :=
+  rfl
+
+private theorem smulAppHom_map_apply (g : C^∞⟮IM, M; 𝓘(𝕜), 𝕜⟯)
+    {U₁ U₂ : (Opens (TopCat.of M))ᵒᵖ} (h : U₁ ⟶ U₂) (f : C^∞⟮IM, U₁.unop; 𝓘(𝕜, V), V⟯) :
+    smulAppHom IM V U₂.unop (ContMDiffMap.compRightAlgHom 𝕜 𝕜 (subtypeValMap IM U₂.unop) g)
+        ((smoothSheafAddCommGroup IM 𝓘(𝕜, V) M V).obj.map h f) =
+      (smoothSheafAddCommGroup IM 𝓘(𝕜, V) M V).obj.map h
+        (smulAppHom IM V U₁.unop (ContMDiffMap.compRightAlgHom 𝕜 𝕜 (subtypeValMap IM U₁.unop) g)
+          f) := by
+  rw [map_apply, smulAppHom_apply, smulAppHom_apply, map_apply]
+  refine ContMDiffMap.ext fun x ↦ ?_
+  simp [subtypeValMap_apply]
 
 private theorem smulAppHom_one (W : Opens (TopCat.of M)) :
     smulAppHom IM V W 1 = 𝟙 ((smoothSheafAddCommGroup IM 𝓘(𝕜, V) M V).obj.obj (op W)) :=
@@ -98,19 +128,15 @@ def smulEnd (g : C^∞⟮IM, M; 𝓘(𝕜), 𝕜⟯) :
     smoothSheafAddCommGroup IM 𝓘(𝕜, V) M V ⟶ smoothSheafAddCommGroup IM 𝓘(𝕜, V) M V :=
   ObjectProperty.homMk
     { app U := smulAppHom IM V U.unop
-        (ContMDiffMap.compRightAlgHom 𝕜 𝕜
-          ((ContMDiffMap.id : C^∞⟮IM, M; IM, M⟯).restrict U.unop) g)
-      naturality {U₁ U₂} h := AddCommGrpCat.hom_ext <|
-        AddMonoidHom.ext fun (f : C^∞⟮IM, U₁.unop; 𝓘(𝕜, V), V⟯) ↦
-          ContMDiffMap.ext fun x ↦
-            (congrArg (· • f ⟨x.1, leOfHom h.unop x.2⟩) (by simp : _ = g x.1)).trans
-            (congrArg (· • f ⟨x.1, leOfHom h.unop x.2⟩) (by simp : _ = g x.1)).symm }
+        (ContMDiffMap.compRightAlgHom 𝕜 𝕜 (subtypeValMap IM U.unop) g)
+      naturality {U₁ U₂} h := ConcreteCategory.hom_ext _ _ fun f ↦ by
+        rw [ConcreteCategory.comp_apply, ConcreteCategory.comp_apply]
+        exact smulAppHom_map_apply IM V g h f }
 
 private theorem smulEnd_hom_app (g : C^∞⟮IM, M; 𝓘(𝕜), 𝕜⟯) (W : Opens (TopCat.of M)) :
     (smulEnd IM V g).hom.app (op W) =
       smulAppHom IM V W
-        (ContMDiffMap.compRightAlgHom 𝕜 𝕜
-          ((ContMDiffMap.id : C^∞⟮IM, M; IM, M⟯).restrict W) g) :=
+        (ContMDiffMap.compRightAlgHom 𝕜 𝕜 (subtypeValMap IM W) g) :=
   rfl
 
 /-- Evaluating `smulEnd IM V g` at a section over `W` multiplies pointwise by `g`. -/
@@ -119,10 +145,9 @@ theorem smulEnd_hom_app_apply (g : C^∞⟮IM, M; 𝓘(𝕜), 𝕜⟯) (W : Open
     (f : C^∞⟮IM, W; 𝓘(𝕜, V), V⟯) (x : W) :
     @DFunLike.coe (no_index C^∞⟮IM, W; 𝓘(𝕜, V), V⟯) (no_index ↥W) (fun _ ↦ V) _
         (no_index ((smulEnd IM V g).hom.app (op W) f)) x =
-      g x.1 • f x :=
-  congrArg (· • f x)
-    (by simp : ContMDiffMap.compRightAlgHom 𝕜 𝕜
-      ((ContMDiffMap.id : C^∞⟮IM, M; IM, M⟯).restrict W) g x = g x.1)
+      g x.1 • f x := by
+  rw [smulEnd_hom_app, smulAppHom_apply]
+  simp [subtypeValMap_apply]
 
 /-- Pointwise multiplication by `g₁ + g₂` is the sum of the corresponding sheaf endomorphisms. -/
 theorem smulEnd_add (g₁ g₂ : C^∞⟮IM, M; 𝓘(𝕜), 𝕜⟯) :
@@ -176,17 +201,18 @@ private theorem sup_complSupport_eq_top {ρ : SmoothPartitionOfUnity ι I M}
 private theorem restrict_eq_zero_of_le_complSupport (ρ : SmoothPartitionOfUnity ι I M) (i : ι)
     {W : Opens (TopCat.of M)} (hW : W ≤ complSupport ρ i) :
     ContMDiffMap.compRightAlgHom ℝ ℝ
-        ((ContMDiffMap.id : C^∞⟮I, M; I, M⟯).restrict W) (ρ i) = 0 := by
+        (TauCeti.smoothSheafAddCommGroup.subtypeValMap I W) (ρ i) = 0 := by
   ext y
-  simpa using image_eq_zero_of_notMem_tsupport (f := ρ i) (hW y.2)
+  simpa [TauCeti.smoothSheafAddCommGroup.subtypeValMap_apply] using
+    image_eq_zero_of_notMem_tsupport (f := ρ i) (hW y.2)
 
 private theorem sum_restrict_eq_one (ρ : SmoothPartitionOfUnity ι I M) {s : Finset ι}
     {W : Opens (TopCat.of M)} (hsum : ∀ y : W, ∑ i ∈ s, ρ i y.1 = 1) :
     ∑ i ∈ s,
       ContMDiffMap.compRightAlgHom ℝ ℝ
-        ((ContMDiffMap.id : C^∞⟮I, M; I, M⟯).restrict W) (ρ i) = 1 := by
+        (TauCeti.smoothSheafAddCommGroup.subtypeValMap I W) (ρ i) = 1 := by
   ext y
-  simpa using hsum y
+  simpa [TauCeti.smoothSheafAddCommGroup.subtypeValMap_apply] using hsum y
 
 private theorem exists_local_finset (ρ : SmoothPartitionOfUnity ι I M) (x : M) :
     ∃ (N : Opens (TopCat.of M)) (_ : x ∈ N) (s : Finset ι),
@@ -229,20 +255,6 @@ variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimension
   {M : Type u} [TopologicalSpace M] [ChartedSpace H M] [IsManifold I ∞ M]
   [T2Space M] [SigmaCompactSpace M]
 
-/-- Every open cover of `TopCat.of M` in the `Opens` lattice admits a subordinate smooth partition
-of unity. -/
-private theorem exists_smoothPartitionOfUnity_of_iSup_eq_top {ι : Type u}
-    {U : ι → Opens (TopCat.of M)} (hU : ⨆ i, U i = ⊤) :
-    ∃ ρ : SmoothPartitionOfUnity ι I M Set.univ,
-      ρ.IsSubordinate (fun i ↦ (U i : Set M)) := by
-  refine SmoothPartitionOfUnity.exists_isSubordinate I isClosed_univ
-    (fun i ↦ (U i : Set M)) (fun i ↦ (U i).isOpen) fun x _ ↦ ?_
-  have hx : x ∈ (⨆ i, U i : Opens (TopCat.of M)) := by
-    rw [hU]
-    exact Set.mem_univ x
-  obtain ⟨i, hxi⟩ := Opens.mem_iSup.1 hx
-  exact Set.mem_iUnion.2 ⟨i, hxi⟩
-
 namespace smoothSheafAddCommGroup
 
 /-- On a Hausdorff, `σ`-compact finite-dimensional smooth real manifold (possibly with boundary or
@@ -251,7 +263,8 @@ fine. -/
 instance isFine (V : Type u) [NormedAddCommGroup V] [NormedSpace ℝ V] :
     (smoothSheafAddCommGroup I 𝓘(ℝ, V) M V).IsFine where
   exists_isPartitionOfUnity _ U hU := by
-    obtain ⟨ρ, hρ⟩ := exists_smoothPartitionOfUnity_of_iSup_eq_top I hU
+    obtain ⟨ρ, hρ⟩ := SmoothPartitionOfUnity.exists_isSubordinate I isClosed_univ
+      (fun i ↦ (U i : Set M)) (fun i ↦ (U i).isOpen) (IsOpenCover.mk hU).iSup_set_eq_univ.ge
     exact ⟨_, ρ.isPartitionOfUnity_smoothSheafAddCommGroup hρ V⟩
 
 /-- On a Hausdorff, `σ`-compact finite-dimensional smooth real manifold, the sheaf cohomology of
@@ -300,8 +313,7 @@ finite-dimensional smooth real manifold (possibly with boundary or corners), the
 open subset `U` of `M`. -/
 theorem subsingleton_H'_smoothSheafAddCommGroup (U : Opens (TopCat.of M)) (n : ℕ) (hn : 0 < n) :
     Subsingleton ((smoothSheafAddCommGroup I 𝓘(ℝ, V) M V).H' n U) := by
-  have : LocallyCompactSpace H := I.locallyCompactSpace
-  have : LocallyCompactSpace U := ChartedSpace.locallyCompactSpace H U
+  have : LocallyCompactSpace U := Manifold.locallyCompact_of_finiteDimensional I
   exact smoothSheafAddCommGroup.subsingleton_H'_of_sigmaCompactSpace I U n hn
 
 /-- **Acyclicity of the sheaf of smooth functions.** On a Hausdorff, second-countable
@@ -309,8 +321,7 @@ finite-dimensional smooth real manifold (possibly with boundary or corners), the
 `Sheaf.H` of `smoothSheafAddCommGroup I 𝓘(ℝ, V) M V` vanishes in every positive degree. -/
 theorem subsingleton_H_smoothSheafAddCommGroup (n : ℕ) (hn : 0 < n) :
     Subsingleton ((smoothSheafAddCommGroup I 𝓘(ℝ, V) M V).H n) := by
-  have : LocallyCompactSpace H := I.locallyCompactSpace
-  have : LocallyCompactSpace M := ChartedSpace.locallyCompactSpace H M
+  have : LocallyCompactSpace M := Manifold.locallyCompact_of_finiteDimensional I
   exact smoothSheafAddCommGroup.subsingleton_H_of_pos I n hn
 
 end SecondCountable

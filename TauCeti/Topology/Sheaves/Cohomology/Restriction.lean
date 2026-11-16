@@ -10,7 +10,7 @@ public import TauCeti.CategoryTheory.Sites.SheafCohomology.Over
 public import TauCeti.CategoryTheory.Sites.ExtensionByZero
 public import TauCeti.Topology.Sheaves.Cohomology.Instances
 public import Mathlib.Topology.Sheaves.Over
-public import Mathlib.Topology.Sheaves.Functors
+import TauCeti.CategoryTheory.Sites.Over
 
 /-!
 # Cohomology depends only on the restricted sheaf
@@ -37,25 +37,6 @@ namespace TopologicalSpace.Opens
 universe u
 
 variable {X : TopCat.{u}}
-
-/-- Restricting abelian sheaves to an open subset preserves finite colimits. -/
-instance preservesFiniteColimits_sheafRestrict (U : Opens X) :
-    PreservesFiniteColimits (U.sheafRestrict (C := AddCommGrpCat.{u})) := by
-  have hp : PreservesFiniteColimits
-      (TopCat.Sheaf.pullback AddCommGrpCat.{u} U.inclusion') := by
-    have := (TopCat.Sheaf.pullbackPushforwardAdjunction AddCommGrpCat.{u}
-      U.inclusion').leftAdjoint_preservesColimits.{0, 0}
-    infer_instance
-  -- Supply preservation explicitly so that instance search need not unfold the
-  -- source functor of the naive restriction comparison.
-  exact @preservesFiniteColimits_of_natIso _ _ _ _ _ _
-    (U.isOpenEmbedding.sheafPullbackIso (A := AddCommGrpCat.{u})) hp
-
-/-- Restricting abelian sheaves to the over site of an open subset preserves finite colimits. -/
-instance preservesFiniteColimits_overPullback (U : Opens X) :
-    PreservesFiniteColimits ((Opens.grothendieckTopology X).overPullback AddCommGrpCat.{u} U) :=
-  preservesFiniteColimits_of_natIso
-    (U.sheafRestrictSheafEquivOver (A := AddCommGrpCat.{u}))
 
 /-- The cohomology of an abelian sheaf at an open subset `U` is naturally isomorphic to the global
 cohomology of its restriction `U.sheafRestrict.obj F` on the open subspace `U`. -/
@@ -90,25 +71,23 @@ def cohomologyPresheafObjIsoSheafRestrictH (U : Opens X) (F : X.Sheaf AddCommGrp
 on `U`, in every degree. -/
 def cohomologyIsoOfRestrictIso (U : Opens X) {F G : X.Sheaf AddCommGrpCat.{u}}
     (e : U.sheafRestrict.obj F ≅ U.sheafRestrict.obj G) (n : ℕ) :
-    Sheaf.H' F n U ≅ Sheaf.H' G n U := by
-  let e' : F.over U ≅ G.over U :=
-    (U.sheafRestrictSheafEquivOver.app F).symm ≪≫
-      U.sheafEquivOver.inverse.mapIso e ≪≫ U.sheafRestrictSheafEquivOver.app G
-  let η := (Opens.grothendieckTopology X).cohomologyPresheafEvaluationIsoFunctorOverH U n
-  exact η.app F ≪≫ (Sheaf.functorH _ n).mapIso e' ≪≫ (η.app G).symm
+    Sheaf.H' F n U ≅ Sheaf.H' G n U :=
+  (U.cohomologyPresheafEvaluationIsoSheafRestrictFunctorH n).app F ≪≫
+    (Sheaf.functorH (Opens.grothendieckTopology U) n).mapIso e ≪≫
+    ((U.cohomologyPresheafEvaluationIsoSheafRestrictFunctorH n).app G).symm
 
 /-- The identity of the restricted sheaf induces the identity on cohomology. -/
 @[simp]
 theorem cohomologyIsoOfRestrictIso_refl (U : Opens X) (F : X.Sheaf AddCommGrpCat.{u}) (n : ℕ) :
-    U.cohomologyIsoOfRestrictIso (Iso.refl _) n = Iso.refl (Sheaf.H' F n U) := by
-  simp [cohomologyIsoOfRestrictIso]
+    U.cohomologyIsoOfRestrictIso (Iso.refl _) n = Iso.refl (Sheaf.H' F n U) :=
+  Iso.ext <| by simp [cohomologyIsoOfRestrictIso]
 
 /-- Composing isomorphisms of restricted sheaves composes the induced cohomology isomorphisms. -/
 theorem cohomologyIsoOfRestrictIso_trans (U : Opens X) {F G H : X.Sheaf AddCommGrpCat.{u}}
     (e₁ : U.sheafRestrict.obj F ≅ U.sheafRestrict.obj G)
     (e₂ : U.sheafRestrict.obj G ≅ U.sheafRestrict.obj H) (n : ℕ) :
     U.cohomologyIsoOfRestrictIso (e₁ ≪≫ e₂) n =
-      U.cohomologyIsoOfRestrictIso e₁ n ≪≫ U.cohomologyIsoOfRestrictIso e₂ n := by
-  simp [cohomologyIsoOfRestrictIso]
+      U.cohomologyIsoOfRestrictIso e₁ n ≪≫ U.cohomologyIsoOfRestrictIso e₂ n :=
+  Iso.ext <| by simp [cohomologyIsoOfRestrictIso]
 
 end TopologicalSpace.Opens

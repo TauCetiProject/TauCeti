@@ -10,7 +10,9 @@ public import Mathlib.CategoryTheory.Sites.GlobalSections
 public import TauCeti.Topology.Sheaves.Cohomology.Forget
 public import TauCeti.Topology.Sheaves.Godement
 import Mathlib.Algebra.Category.Grp.Zero
+import Mathlib.CategoryTheory.Limits.Constructions.LimitsOfProductsAndEqualizers
 import TauCeti.Algebra.Homology.ShortComplex.ShortExact
+import TauCeti.CategoryTheory.Sites.Over
 import TauCeti.CategoryTheory.Sites.SheafCohomology.LongExactSequence
 import TauCeti.Topology.Sheaves.Cohomology.Restriction
 import TauCeti.Topology.Sheaves.Exact
@@ -36,18 +38,19 @@ positive degree (`TopCat.Sheaf.IsFine.isZero_rightDerived_Γ_succ`,
 
 ## Mathematical overview
 
-Embed an abelian sheaf `F` into its Godement sheaf `G⁰(F) = (godement AddCommGrpCat X).obj F`
-(`TauCeti.Topology.toGodement`), with cokernel sheaf `Z¹(F)`. The Godement functor is additive
-(`TauCeti.Topology.additive_godement`) and local
-(`TauCeti.Topology.godement_map_app_eq_zero_of_app_eq_zero`), so any sheaf partition of unity on
-`F` pushes forward to `G⁰(F)` (`TauCeti.Topology.isPartitionOfUnity_godement_map`) and hence to
+Embed a sheaf `F` valued in an abelian category `C` (with colimits, products, and sheafification)
+into its Godement sheaf `G⁰(F) = (godement C X).obj F` (`TauCeti.Topology.toGodement`), with
+cokernel sheaf `Z¹(F)`. The Godement functor is additive (`TauCeti.Topology.additive_godement`) and
+local (`TauCeti.Topology.godement_map_app_eq_zero_of_app_eq_zero`), so any sheaf partition of unity
+on `F` pushes forward to `G⁰(F)` (`TauCeti.Topology.isPartitionOfUnity_godement_map`) and hence to
 `Z¹(F)` (`TopCat.Sheaf.app_eq_zero_of_epi_comp`). In particular `Z¹(F)` is again fine when `F` is
 (`TauCeti.Topology.isFine_cokernel_toGodement_app`).
 
-Moreover, global sections `G⁰(F)(⊤) ⟶ Z¹(F)(⊤)` are surjective whenever `F` is fine: any global
-section `z` of `Z¹(F)` lifts locally to `G⁰(F)`, extends from each local neighbourhood to `⊤`
-because `G⁰(F)` is flasque (`TauCeti.Topology.isFlasque_godement_obj`), and is reassembled by the
-induced partition of unity on `G⁰(F)` (`TauCeti.Topology.surjective_cokernel_π_toGodement_top`).
+Moreover, for sheaves of abelian groups, global sections `G⁰(F)(⊤) ⟶ Z¹(F)(⊤)` are surjective
+whenever `F` is fine: any global section `z` of `Z¹(F)` lifts locally to `G⁰(F)`, extends from each
+local neighbourhood to `⊤` because `G⁰(F)` is flasque (`TauCeti.Topology.isFlasque_godement_obj`),
+and is reassembled by the induced partition of unity on `G⁰(F)`
+(`TopCat.Sheaf.exists_gluing_finset_sum`, `TauCeti.Topology.surjective_cokernel_π_toGodement_top`).
 Since `G⁰(F)` has no higher cohomology (`TauCeti.Topology.subsingleton_H_succ_of_isFlasque`),
 dimension shifting along `0 ⟶ F ⟶ G⁰(F) ⟶ Z¹(F) ⟶ 0` proves `H¹(X, F) = 0` and inductively
 `Hⁿ⁺²(X, F) ≅ Hⁿ⁺¹(X, Z¹(F)) = 0`.
@@ -61,6 +64,8 @@ dimension shifting along `0 ⟶ F ⟶ G⁰(F) ⟶ Z¹(F) ⟶ 0` proves `H¹(X, F
 
 ## Main results
 
+* `TopCat.Sheaf.sum_sub_id_app_eq_zero_iff` and `TopCat.Sheaf.exists_gluing_finset_sum`: sectionwise
+  evaluation of `∑ i ∈ s, η i - 𝟙 F` and gluing of locally finite sums of sections.
 * `TopCat.Sheaf.IsFine.of_retract`, `TopCat.Sheaf.IsFine.of_iso`, and
   `TopCat.Sheaf.IsFine.of_isZero`: fineness is preserved by retracts and isomorphisms and holds for
   zero sheaves.
@@ -232,7 +237,55 @@ instance isFine_sheafCompose {D : Type*} [Category* D] [Preadditive D] (G : C �
     obtain ⟨η, hη⟩ := IsFine.exists_isPartitionOfUnity (F := F) U hU
     exact ⟨_, hη.sheafCompose G⟩
 
+/-- For a finite family of endomorphisms `η` of a sheaf `F` valued in a preadditive category,
+`(∑ i ∈ s, η i) - 𝟙 F` vanishes on `W` if and only if `∑ i ∈ s, (η i).hom.app (op W)` is the
+identity on `F(W)`. -/
+theorem sum_sub_id_app_eq_zero_iff {F : X.Sheaf C} {ι : Type*} (s : Finset ι) (η : ι → (F ⟶ F))
+    (W : Opens X) :
+    ((∑ i ∈ s, η i) - 𝟙 F).hom.app (op W) = 0 ↔
+      ∑ i ∈ s, (η i).hom.app (op W) = 𝟙 (F.obj.obj (op W)) := by
+  rw [← InducedCategory.homAddEquiv_apply, map_sub, map_sum]
+  simp [sub_eq_zero]
+
 end Preadditive
+
+section AddCommGrp
+
+/-- Gluing a locally finite sum of sections of an abelian sheaf `G` over `U`: if each `a i`
+vanishes on opens inside `V i`, and `N` covers `U` with `N k ≤ V i` for all `i ∉ S k`, then the
+finite sums `∑ i ∈ S k, a i|_{N k}` glue to a section `b` over `U`. -/
+theorem exists_gluing_finset_sum {X : TopCat.{u}} (G : X.Sheaf AddCommGrpCat.{u}) {U : Opens X}
+    {ι κ : Type*} (V : ι → Opens X) (a : ι → G.obj.obj (op U))
+    (ha : ∀ i ⦃W : Opens X⦄ (hWU : W ≤ U), W ≤ V i → G.obj.map (homOfLE hWU).op (a i) = 0)
+    (N : κ → Opens X) (hNU : ∀ k, N k ≤ U) (hN : U ≤ ⨆ k, N k) (S : κ → Finset ι)
+    (hSV : ∀ k i, i ∉ S k → N k ≤ V i) :
+    ∃ b : G.obj.obj (op U), ∀ k,
+      G.obj.map (homOfLE (hNU k)).op b =
+        ∑ i ∈ S k, G.obj.map (homOfLE (hNU k)).op (a i) := by
+  classical
+  let sf : ∀ k : κ, G.obj.obj (op (N k)) :=
+    fun k ↦ ∑ i ∈ S k, G.obj.map (homOfLE (hNU k)).op (a i)
+  have hcompat : TopCat.Presheaf.IsCompatible G.obj N sf := by
+    intro k₁ k₂
+    let W := N k₁ ⊓ N k₂
+    have hWU : W ≤ U := inf_le_left.trans (hNU k₁)
+    have hrestrict (k : κ) (hWN : W ≤ N k) (hs : S k ⊆ S k₁ ∪ S k₂) :
+        G.obj.map (homOfLE hWN).op (sf k) =
+          ∑ i ∈ S k₁ ∪ S k₂, G.obj.map (homOfLE hWU).op (a i) := by
+      simp only [sf, map_sum]
+      have hterm (i : ι) :
+          G.obj.map (homOfLE hWN).op (G.obj.map (homOfLE (hNU k)).op (a i)) =
+            G.obj.map (homOfLE hWU).op (a i) := by
+        rw [← Functor.map_comp_apply]
+        exact congrArg (fun f : W ⟶ U ↦ G.obj.map f.op (a i)) (Subsingleton.elim _ _)
+      simp_rw [hterm]
+      exact Finset.sum_subset hs fun i _ hi ↦ ha i hWU (hWN.trans (hSV k i hi))
+    exact (hrestrict k₁ inf_le_left Finset.subset_union_left).trans
+      (hrestrict k₂ inf_le_right Finset.subset_union_right).symm
+  obtain ⟨b, hb, -⟩ := G.existsUnique_gluing' N U (fun k ↦ homOfLE (hNU k)) hN sf hcompat
+  exact ⟨b, hb⟩
+
+end AddCommGrp
 
 end TopCat.Sheaf
 
@@ -271,22 +324,21 @@ instance isFine_godement_obj (F : X.Sheaf C) [F.IsFine] :
     obtain ⟨η, hη⟩ := TopCat.Sheaf.IsFine.exists_isPartitionOfUnity (F := F) U hU
     exact ⟨_, isPartitionOfUnity_godement_map hη⟩
 
-end Abelian
+section Sheafify
 
-variable {X : TopCat.{u}}
+variable [HasSheafify (Opens.grothendieckTopology X) C]
 
 /-- Given a sheaf partition of unity on `F`, its induced endomorphisms on the cokernel sheaf
-`Z¹(F) = cokernel ((toGodement AddCommGrpCat X).app F)` form a sheaf partition of unity with the
-same support complements and local neighbourhoods, compatible with the Godement partition of
-unity. -/
+`Z¹(F) = cokernel ((toGodement C X).app F)` form a sheaf partition of unity with the same support
+complements and local neighbourhoods, compatible with the Godement partition of unity. -/
 private theorem exists_cokernel_toGodement_partitionOfUnity
-    {F : X.Sheaf AddCommGrpCat.{u}} {ι : Type*} {U : ι → Opens X} {η : ι → (F ⟶ F)}
+    {F : X.Sheaf C} {ι : Type*} {U : ι → Opens X} {η : ι → (F ⟶ F)}
     (hη : F.IsPartitionOfUnity U η) :
-    let G := (godement AddCommGrpCat.{u} X).obj F
-    let ιG := (toGodement AddCommGrpCat.{u} X).app F
+    let G := (godement C X).obj F
+    let ιG := (toGodement C X).app F
     let Z := cokernel ιG
     let π := cokernel.π ιG
-    let η' : ι → (G ⟶ G) := fun i ↦ (godement AddCommGrpCat.{u} X).map (η i)
+    let η' : ι → (G ⟶ G) := fun i ↦ (godement C X).map (η i)
     ∃ (ζ : ι → (Z ⟶ Z)) (V : ι → Opens X),
       (∀ i, π ≫ ζ i = η' i ≫ π) ∧
       (∀ i, U i ⊔ V i = ⊤) ∧
@@ -297,10 +349,11 @@ private theorem exists_cokernel_toGodement_partitionOfUnity
         (∀ ⦃W : Opens X⦄, W ≤ N → ∑ i ∈ s, (η' i).hom.app (op W) = 𝟙 (G.obj.obj (op W))) ∧
         ∀ ⦃W : Opens X⦄, W ≤ N → ∑ i ∈ s, (ζ i).hom.app (op W) = 𝟙 (Z.obj.obj (op W)) := by
   intro G ιG Z π η'
+  have : HasLimits C := has_limits_of_hasEqualizers_and_products
   obtain ⟨V, htop, hzero', hlocG⟩ := isPartitionOfUnity_godement_map hη
   let ζ : ι → (Z ⟶ Z) := fun i ↦ cokernel.desc ιG (η' i ≫ π) (by
     have hnat : ιG ≫ η' i = η i ≫ ιG :=
-      ((toGodement AddCommGrpCat.{u} X).naturality (η i)).symm
+      ((toGodement C X).naturality (η i)).symm
     rw [← Category.assoc, hnat, Category.assoc, cokernel.condition, comp_zero])
   have hcomm (i : ι) : π ≫ ζ i = η' i ≫ π := cokernel.π_desc _ _ _
   have hzeroZ (i : ι) : ∀ ⦃W : Opens X⦄, W ≤ V i → (ζ i).hom.app (op W) = 0 :=
@@ -318,16 +371,22 @@ private theorem exists_cokernel_toGodement_partitionOfUnity
   exact ⟨N, hxN, s, hsV, hsumG,
     fun W hW ↦ (TopCat.Sheaf.sum_sub_id_app_eq_zero_iff s ζ W).1 (hδZ hW)⟩
 
-/-- The cokernel `Z¹(F)` of the canonical embedding `F ⟶ G⁰(F)` of a fine abelian sheaf into its
-Godement sheaf is again fine. -/
-instance isFine_cokernel_toGodement_app (F : X.Sheaf AddCommGrpCat.{u}) [F.IsFine] :
-    (cokernel ((toGodement AddCommGrpCat.{u} X).app F)).IsFine where
+/-- The cokernel `Z¹(F)` of the canonical embedding `F ⟶ G⁰(F)` of a fine sheaf valued in an
+abelian category into its Godement sheaf is again fine. -/
+instance isFine_cokernel_toGodement_app (F : X.Sheaf C) [F.IsFine] :
+    (cokernel ((toGodement C X).app F)).IsFine where
   exists_isPartitionOfUnity _ U hU := by
     obtain ⟨η, hη⟩ := TopCat.Sheaf.IsFine.exists_isPartitionOfUnity (F := F) U hU
     obtain ⟨ζ, V, -, htop, -, hzeroZ, hloc⟩ := exists_cokernel_toGodement_partitionOfUnity hη
     exact ⟨ζ, V, htop, hzeroZ, fun x ↦ by
       obtain ⟨N, hxN, s, hsV, -, hsumZ⟩ := hloc x
       exact ⟨N, hxN, s, hsV, hsumZ⟩⟩
+
+end Sheafify
+
+end Abelian
+
+variable {X : TopCat.{u}}
 
 /-- If `π ≫ ζ = φ ≫ π` for morphisms of abelian sheaves, `U ⊔ V = ⊤`, both `φ` and `ζ` vanish on
 `V`, and a global section `g` of `G` lifts `z|_U` along `π` after restriction to `U`, then
