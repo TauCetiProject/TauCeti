@@ -7,7 +7,7 @@ module
 
 public import TauCeti.Analysis.BoundedVariation.Truncation
 public import TauCeti.MeasureTheory.Function.Coarea.Lipschitz
-import Mathlib.Analysis.Calculus.LocalExtr.Basic
+import TauCeti.Analysis.Calculus.FDeriv.Clamp
 import TauCeti.Analysis.InnerProductSpace.NormDet
 import TauCeti.MeasureTheory.Function.Coarea.Measurability
 import TauCeti.Topology.EMetricSpace.Lipschitz
@@ -18,27 +18,21 @@ import TauCeti.Topology.MetricSpace.ProperSpace
 
 For a real-valued function `u` locally Lipschitz on an open set `Ω` of a finite-dimensional real
 inner product space `E`, at almost every level `t : ℝ` the variational perimeter
-`TauCeti.perimeter volume Ω {x | t < u x}` of the superlevel set `{u > t}` in `Ω` coincides with
-the codimension-one Euclidean Hausdorff measure `μHE[finrank ℝ E - 1] ((Ω : Set E) ∩ u ⁻¹' {t})` of
-the level set inside `Ω`.
+`TauCeti.perimeter volume Ω {x | t < u x}` of the superlevel set `{u > t}` in `Ω` equals the
+Euclidean Hausdorff measure `μHE[finrank ℝ E - 1] ((Ω : Set E) ∩ u ⁻¹' {t})` of the level set
+inside `Ω`.
 
-The two sides come from two independent coarea formulas:
+This bridges variational lower bounds on superlevel perimeters—such as the sharp Euclidean
+isoperimetric inequality and the superlevel perimeter comparison for Schwarz rearrangement—with
+Hausdorff level-set integrals in the Lipschitz coarea formula, as used in the Lipschitz and Sobolev
+Pólya–Szegő inequalities.
 
-* `TauCeti.totalVariationOn_max_min_const_eq_lintegral_perimeter` expresses the variation on an
-  open subset `V` of the clipped function `x ↦ max a (min (u x) b)` as the integral over `Ico a b`
-  of `t ↦ perimeter volume V {x | t < u x}`. Since `x ↦ max a (min (u x) b)` is locally Lipschitz
-  on `V` and its Fréchet derivative equals `fderiv ℝ u x` where `u x ∈ Ioo a b` and vanishes at
-  every point where `u x ≤ a` or `b ≤ u x` (by local extremality), that variation equals
-  `∫⁻ x in (V : Set E) ∩ u ⁻¹' Ioo a b, ‖fderiv ℝ u x‖ₑ`.
-* The locally Lipschitz coarea formula in `TauCeti.MeasureTheory.Function.Coarea.Lipschitz`
-  expresses the integral over `Ioo a b` (hence over `Ico a b`) of
-  `t ↦ μHE[finrank ℝ E - 1] ((V : Set E) ∩ u ⁻¹' {t})` as the same gradient integral via
-  `ContinuousLinearMap.normDet_adjoint_eq_norm`.
-
-On any open `V` where `‖fderiv ℝ u‖` is integrable, the two finite measures on `ℝ` with these
-densities agree on all half-open intervals `Ico a b`, hence coincide by `Measure.ext_of_Ico`, so
-their densities agree almost everywhere. Exhausting `Ω` by relatively compact open subsets and
-passing to the supremum yields the identity on `Ω`.
+Both sides take values in `ℝ≥0∞` and may equal `∞` (for instance on unbounded level sets when
+`Ω = ⊤`), with equality asserted in `ℝ≥0∞` via exhaustion of `Ω` by relatively compact open subsets
+on which `‖fderiv ℝ u‖` is integrable and `Measure.ext_of_Ico` applies. No positive-dimension
+hypothesis is imposed: when `finrank ℝ E = 0`, truncated subtraction `0 - 1 = 0` makes `μHE[0]`
+counting measure, and both sides vanish at every level `t` other than the single value taken by
+`u`.
 
 ## Main statements
 
@@ -63,45 +57,6 @@ open scoped ENNReal NNReal Topology
 
 namespace LocallyLipschitzOn
 
-section FDerivClip
-
-variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
-
-/-- At any point `x` of an open set `V` where `u` is continuous, clipping `u` to `[a, b]` retains
-`fderiv ℝ u x` when `a < u x < b` and kills the Fréchet derivative when `u x ≤ a` or `b ≤ u x`. -/
-private theorem fderiv_max_min_const_of_continuousOn {V : Set E} (hV : IsOpen V) {u : E → ℝ}
-    (hu : ContinuousOn u V) (a b : ℝ) {x : E} (hx : x ∈ V) :
-    fderiv ℝ (fun y ↦ max a (min (u y) b)) x = (u ⁻¹' Ioo a b).indicator (fderiv ℝ u) x := by
-  by_cases hab : a < b
-  · rcases lt_or_ge (u x) b with hxb | hbx
-    · rcases le_or_gt (u x) a with hxa | hax
-      · have hmin : IsLocalMin (fun y ↦ max a (min (u y) b)) x := by
-          refine Eventually.of_forall fun y ↦ ?_
-          dsimp only
-          grind
-        have hxnot : x ∉ u ⁻¹' Ioo a b := fun h ↦ h.1.not_ge hxa
-        rw [hmin.fderiv_eq_zero, indicator_of_notMem hxnot]
-      · have hxmem : x ∈ u ⁻¹' Ioo a b := ⟨hax, hxb⟩
-        have hnhds : u ⁻¹' Ioo a b ∈ 𝓝 x :=
-          (hu.continuousAt (hV.mem_nhds hx)).preimage_mem_nhds (isOpen_Ioo.mem_nhds hxmem)
-        have hev : (fun y ↦ max a (min (u y) b)) =ᶠ[𝓝 x] u := by
-          filter_upwards [hnhds] with y hy
-          exact (max_eq_right ((min_eq_left hy.2.le).symm ▸ hy.1.le)).trans (min_eq_left hy.2.le)
-        rw [hev.fderiv_eq, indicator_of_mem hxmem]
-    · have hmax : IsLocalMax (fun y ↦ max a (min (u y) b)) x := by
-        refine Eventually.of_forall fun y ↦ ?_
-        dsimp only
-        grind
-      have hxnot : x ∉ u ⁻¹' Ioo a b := fun h ↦ h.2.not_ge hbx
-      rw [hmax.fderiv_eq_zero, indicator_of_notMem hxnot]
-  · have hconst : (fun y ↦ max a (min (u y) b)) = fun _ ↦ a := by
-      ext y
-      grind
-    have hxnot : x ∉ u ⁻¹' Ioo a b := fun h ↦ hab (h.1.trans h.2)
-    rw [hconst, fderiv_const_apply, indicator_of_notMem hxnot]
-
-end FDerivClip
-
 variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteDimensional ℝ E]
   [MeasurableSpace E] [BorelSpace E]
 
@@ -125,7 +80,7 @@ private theorem setLIntegral_Ico_perimeter_eq_hausdorff {V : Opens E} {u : E →
     have hcongr : ∫⁻ x in V, ‖fderiv ℝ (fun y ↦ max a (min (u y) b)) x‖ₑ =
         ∫⁻ x in V, S.indicator (fun x ↦ ‖fderiv ℝ u x‖ₑ) x := by
       refine setLIntegral_congr_fun hVm fun x hx ↦ ?_
-      rw [fderiv_max_min_const_of_continuousOn V.isOpen hu.continuousOn a b hx]
+      rw [fderiv_max_min_eq_indicator u a b x]
       by_cases hxu : x ∈ u ⁻¹' Ioo a b
       · have hxS : x ∈ S := ⟨hx, hxu⟩
         simp [hxu, hxS]

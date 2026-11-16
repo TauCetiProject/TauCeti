@@ -21,8 +21,9 @@ derivative of a map into a sphere is tangent to the sphere. Away from the origin
 derivative of a norm-composition forces the one-dimensional profile derivative to vanish.
 Reflections in hyperplanes show that any radially invariant map on a real inner product space has
 constant operator norm of the Fréchet derivative along each sphere
-(`TauCeti.norm_fderiv_eq_of_norm_eq`), and any radially nonincreasing map is confined to a single
-sphere on each regular level set (`TauCeti.norm_eq_of_eq_of_forall_fderiv_ne_zero`).
+(`TauCeti.norm_fderiv_eq_of_norm_eq`), and on a real normed space, every level set of a radially
+nonincreasing map on which `fderiv` never vanishes lies on a single sphere
+(`TauCeti.norm_eq_of_eq_of_forall_fderiv_ne_zero`).
 
 The squared norm of the derivative of a map from `ℂ` to a Euclidean space is at most twice the
 sum of the squared partial derivatives of its components along `1` and `I`
@@ -108,8 +109,8 @@ theorem hasFDerivAt_norm_sq_sub (x₀ x : F) :
   simpa using ((hasFDerivAt_id x).sub_const x₀).norm_sq
 
 /-- A map on a real inner product space that depends only on the norm has equal Fréchet derivative
-operator norms at any two points of equal norm. At nondifferentiable points both derivatives vanish
-together through the connecting hyperplane reflection. -/
+operator norms at any two points of equal norm. At nondifferentiable points, the totalized `fderiv`
+is zero by definition. -/
 theorem norm_fderiv_eq_of_norm_eq {f : F → E} {x y : F}
     (hrad : ∀ z w : F, ‖z‖ = ‖w‖ → f z = f w) (hxy : ‖x‖ = ‖y‖) :
     ‖fderiv ℝ f x‖ = ‖fderiv ℝ f y‖ := by
@@ -121,9 +122,9 @@ theorem norm_fderiv_eq_of_norm_eq {f : F → E} {x y : F}
   rw [hfderiv]
   simp [R, Submodule.reflection_sub hxy]
 
-/-- On any regular level set of a radially nonincreasing map, all points have the same norm: if two
-points had different radii, the map would be constant on the open annulus between them and its
-Fréchet derivative would vanish at an intermediate radius. -/
+/-- On a real normed space, every level set of a radially nonincreasing map along which `fderiv ℝ f`
+never vanishes lies on a single sphere. At nondifferentiable points, the totalized `fderiv` is zero
+by definition. -/
 theorem norm_eq_of_eq_of_forall_fderiv_ne_zero {G : Type*} [NormedAddCommGroup G]
     [NormedSpace ℝ G] [PartialOrder G] {f : E → G} {x y : E}
     (hrad : ∀ z w : E, ‖z‖ ≤ ‖w‖ → f w ≤ f z)
