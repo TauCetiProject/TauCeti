@@ -328,7 +328,7 @@ def boundaryBasisSemilinearMap
   basisOfLinearIndependentOfCardEqFinrank'
     (fun l ↦ ⟨_, semilinearMap_mem_range_d φ hd (b l).2⟩)
     (LinearIndependent.of_comp (LinearMap.range (D.d i j).hom).subtype
-      ((Basis.linearIndependent_semilinearMap_comp_iff φ (c j) (e j)).2
+      ((Basis.linearIndependent_semilinearMap_comp_iff φ φ.injective (c j) (e j)).2
         (b.linearIndependent.map' _ (LinearMap.range (C.d i j).hom).ker_subtype)))
     (by rw [Fintype.card_fin, finrank_range_d_eq_of_toMatrix_eq φ hd, finrank_eq_card_basis b,
       Fintype.card_fin])
@@ -344,8 +344,9 @@ theorem coe_boundaryBasisSemilinearMap
 
 /-- **Brackets under scalar extension.** Let `φ : F →+* K` be a homomorphism of fields, and let
 `C` and `D` be exact in degree `j`. For a bracket of `C` in degree `j`, built from a basis `b₁` of
-the boundaries `im (C.d i j)` and lifts `s` of a basis of `im (C.d j k)`, take for `D` a basis `b₁'`
-of `im (D.d i j)` and lifts made of the images of `b₁` and `s` under the `φ`-semilinear map
+the boundaries `im (C.d i j)` and lifts `s` of a basis of `im (C.d j k)`, take for `D` the basis
+`b₁'` of `im (D.d i j)` whose vectors are the images of `b₁`, a basis `b₀'` of `im (D.d j k)`, and
+as lifts of `b₀'` the images of `s`, all under the `φ`-semilinear map
 `semilinearMap φ (c j) (e j)`. Then the bracket of `D` is the image under `φ` of the bracket of
 `C`. -/
 theorem torsionBracket_semilinearMap {k : ι} (hi : cs.prev j = i) (hk : cs.next j = k)

@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.LinearAlgebra.Determinant
-import TauCeti.LinearAlgebra.Matrix.Rank
+import Mathlib.LinearAlgebra.LinearIndependent.BaseChange
 
 /-!
 # Transporting coordinates along a ring homomorphism
@@ -21,9 +21,10 @@ This is the comparison map between a based module and its scalar extension along
 a basis of the extension rather than by a tensor product. It applies `σ` to the matrices of linear
 maps and to determinants: a linear map `g` whose matrix in the bases `b'` is the image under `σ` of
 the matrix of a linear map `f` in the bases `b` is intertwined with `f`, and the determinant in `b'`
-of the image of a family is `σ` of its determinant in `b`. When `σ` is a homomorphism of fields, a
-family is linearly independent exactly when its image is. This is how invariants computed from
-matrices, such as the torsion of a based chain complex, are compared along a homomorphism of fields.
+of the image of a family is `σ` of its determinant in `b`. When `σ` is injective and `S` is a
+domain, a family is linearly independent exactly when its image is. This is how invariants
+computed from matrices, such as the torsion of a based chain complex, are compared along a
+homomorphism of fields.
 
 When `σ` is invertible, a `σ`-semilinear equivalence `f : M ≃ₛₗ[σ] M'` carries a basis `b` of `M`
 to the basis `f ∘ b` of `M'` (`Module.Basis.mapₛₗ`), and so preserves `finrank`
@@ -39,8 +40,8 @@ carries complex bases to complex bases.
   matrices correspond under `σ`.
 * `Module.Basis.det_comp_semilinearMap`: the determinant of the image of a family is the image of
   its determinant.
-* `Module.Basis.linearIndependent_semilinearMap_comp_iff`: along a homomorphism of fields, a family
-  is linearly independent exactly when its image is.
+* `Module.Basis.linearIndependent_semilinearMap_comp_iff`: along an injective homomorphism into a
+  domain, a family is linearly independent exactly when its image is.
 * `Module.Basis.mapₛₗ`: the image of a basis under a semilinear equivalence.
 * `LinearEquiv.finrank_eqₛₗ`: semilinear equivalences along ring isomorphisms preserve `finrank`.
 -/
@@ -118,43 +119,29 @@ theorem det_comp_semilinearMap (b : Basis ι R M) (b' : Basis ι S M') (v : ι �
 
 end CommRing
 
-section Field
+section Domain
 
-variable {ι K L M M' : Type*} [Field K] [Field L] (σ : K →+* L)
+variable {ι K L M M' : Type*} [CommRing K] [CommRing L] [IsDomain L] (σ : K →+* L)
   [AddCommGroup M] [Module K M] [AddCommGroup M'] [Module L M'] [Finite ι]
 
-/-- Along a homomorphism of fields `σ`, a family `v` of vectors is linearly independent exactly when
-its image under `semilinearMap σ b b'` is. -/
-theorem linearIndependent_semilinearMap_comp_iff (b : Basis ι K M) (b' : Basis ι L M')
-    {κ : Type*} {v : κ → M} :
+/-- Along an injective ring homomorphism `σ` into a domain, a family `v` of vectors is linearly
+independent exactly when its image under `semilinearMap σ b b'` is. -/
+theorem linearIndependent_semilinearMap_comp_iff (hσ : Function.Injective σ) (b : Basis ι K M)
+    (b' : Basis ι L M') {κ : Type*} {v : κ → M} :
     LinearIndependent L (b.semilinearMap σ b' ∘ v) ↔ LinearIndependent K v := by
-  have : Module.Finite K M := .of_basis b
-  have : Module.Finite L M' := .of_basis b'
-  -- Either side forces the family to be finite.
-  suffices Finite κ →
-      (LinearIndependent L (b.semilinearMap σ b' ∘ v) ↔ LinearIndependent K v) from
-    ⟨fun h ↦ (this h.finite).1 h, fun h ↦ (this h.finite).2 h⟩
-  intro _
   have := Fintype.ofFinite ι
-  have := Fintype.ofFinite κ
-  classical
   let := σ.toAlgebra
-  have : FaithfulSMul K L := (faithfulSMul_iff_algebraMap_injective K L).2 σ.injective
-  -- In the coordinates of `b` and `b'`, the two families are the rows of the matrix `A` of the
-  -- coordinates of `v` and of its image under `σ`.
-  let A : Matrix κ ι K := Matrix.of fun k i ↦ b.repr (v k) i
-  have hv : b.equivFun.toLinearMap ∘ v = A.row := by
-    ext k i
-    simp [A, Matrix.row]
+  have : FaithfulSMul K L := (faithfulSMul_iff_algebraMap_injective K L).2 hσ
+  -- In the coordinates of `b'`, the image of `v` is the coordinates of `v` in `b`, mapped by `σ`.
   have hw : b'.equivFun.toLinearMap ∘ (b.semilinearMap σ b' ∘ v) =
-      (A.map (algebraMap K L)).row := by
+      fun k ↦ algebraMap K L ∘ (b.equivFun.toLinearMap ∘ v) k := by
     ext k i
-    simp [A, Matrix.row, RingHom.algebraMap_toAlgebra]
+    simp [RingHom.algebraMap_toAlgebra]
   rw [← LinearMap.linearIndependent_iff b'.equivFun.toLinearMap (LinearEquiv.ker _), hw,
-    ← LinearMap.linearIndependent_iff b.equivFun.toLinearMap (LinearEquiv.ker _), hv,
-    Matrix.linearIndependent_map_algebraMap_row_iff]
+    linearIndependent_algebraMap_comp_iff,
+    LinearMap.linearIndependent_iff b.equivFun.toLinearMap (LinearEquiv.ker _)]
 
-end Field
+end Domain
 
 section Map
 
