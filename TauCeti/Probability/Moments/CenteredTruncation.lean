@@ -14,9 +14,12 @@ public import Mathlib.Probability.Independence.Basic
 # Bounded centered approximations in mean square
 
 `centeredTruncation X P R` keeps `X` on the closed norm ball of radius `R` and subtracts
-its expectation. It is centered, bounded by `2R`, and has every finite absolute moment.
-For a centered square-integrable variable its mean-square approximation error is bounded by
-the second moment outside that ball, and tends to zero as the radius tends to infinity.
+the integral of the truncated variable. On a probability space it is bounded by `2R` and,
+when `X` is almost everywhere strongly measurable, has every finite absolute moment.
+Its integral is zero when the target space is also complete.
+For a centered square-integrable variable in a complete real inner product space, its
+mean-square approximation error is bounded by the second moment outside that ball,
+and tends to zero as the radius tends to infinity.
 These approximations allow moment arguments for bounded variables to be transferred to
 variables having only a second moment.
 
@@ -41,7 +44,8 @@ section Normed
 
 variable [NormedSpace ℝ E] (X : Ω → E) (P : Measure Ω)
 
-/-- Truncate a variable outside a closed norm ball, then subtract its expectation. -/
+/-- Truncate a variable outside a closed norm ball, then subtract its integral
+with respect to `P`. -/
 def centeredTruncation (R : ℝ≥0) (ω : Ω) : E :=
   {ω | ‖X ω‖ ≤ R}.indicator X ω - ∫ ω, {ω | ‖X ω‖ ≤ R}.indicator X ω ∂P
 
@@ -63,13 +67,14 @@ variable {X P}
   simp only [centeredTruncation, NNReal.coe_zero, h, integral_zero, sub_self, Pi.zero_apply]
 
 /-- Centered truncation of a measurable variable is measurable. -/
-@[fun_prop] theorem measurable_centeredTruncation [MeasurableSpace E] [BorelSpace E]
+@[fun_prop] theorem _root_.Measurable.centeredTruncation [MeasurableSpace E] [BorelSpace E]
     (hX : Measurable X) (R : ℝ≥0) :
     Measurable (centeredTruncation X P R) :=
   (hX.indicator (measurableSet_le hX.norm measurable_const)).sub_const _
 
 /-- Centered truncation preserves strong measurability almost everywhere. -/
-theorem aestronglyMeasurable_centeredTruncation (hX : AEStronglyMeasurable X P) (R : ℝ≥0) :
+theorem _root_.MeasureTheory.AEStronglyMeasurable.centeredTruncation
+    (hX : AEStronglyMeasurable X P) (R : ℝ≥0) :
     AEStronglyMeasurable (centeredTruncation X P R) P :=
   (hX.indicator₀ (nullMeasurableSet_le hX.norm.aemeasurable aemeasurable_const)).sub
     aestronglyMeasurable_const
@@ -90,15 +95,17 @@ theorem norm_centeredTruncation_le (R : ℝ≥0) (ω : Ω) :
         (.of_forall (norm_indicator_le (X := X) R))))
 
 /-- Every finite absolute moment of a centered truncation exists. -/
-theorem memLp_centeredTruncation (hX : AEStronglyMeasurable X P) (R : ℝ≥0)
+theorem _root_.MeasureTheory.AEStronglyMeasurable.memLp_centeredTruncation
+    (hX : AEStronglyMeasurable X P) (R : ℝ≥0)
     {p : ℝ≥0∞} : MemLp (centeredTruncation X P R) p P :=
-  (memLp_const (2 * (R : ℝ))).mono' (aestronglyMeasurable_centeredTruncation hX R)
+  (memLp_const (2 * (R : ℝ))).mono' (hX.centeredTruncation R)
     (.of_forall (norm_centeredTruncation_le R))
 
 variable [CompleteSpace E]
 
 /-- The bounded approximation has expectation zero. -/
-@[simp] theorem integral_centeredTruncation (hX : AEStronglyMeasurable X P) (R : ℝ≥0) :
+@[simp] theorem _root_.MeasureTheory.AEStronglyMeasurable.integral_centeredTruncation
+    (hX : AEStronglyMeasurable X P) (R : ℝ≥0) :
     ∫ ω, centeredTruncation X P R ω ∂P = 0 := by
   have hi : Integrable ({ω | ‖X ω‖ ≤ R}.indicator X) P :=
     Integrable.of_bound
@@ -116,7 +123,7 @@ variable [InnerProductSpace ℝ E] [CompleteSpace E] {X : Ω → E} {P : Measure
 
 /-- The mean-square error of centered truncation is bounded by the discarded second moment.
 No distributional or independence assumption is needed. -/
-theorem integral_norm_sub_centeredTruncation_sq_le (hX : MemLp X 2 P)
+theorem _root_.MeasureTheory.MemLp.integral_norm_sub_centeredTruncation_sq_le (hX : MemLp X 2 P)
     (hmean : ∫ ω, X ω ∂P = 0) (R : ℝ≥0) :
     ∫ ω, ‖X ω - centeredTruncation X P R ω‖ ^ 2 ∂P ≤
       ∫ ω, {ω | (R : ℝ) < ‖X ω‖}.indicator (fun ω ↦ ‖X ω‖ ^ 2) ω ∂P := by
@@ -141,26 +148,26 @@ theorem integral_norm_sub_centeredTruncation_sq_le (hX : MemLp X 2 P)
         by_cases h : ‖X ω‖ ≤ R <;> simp [Y, T, indicator, h, not_lt.mpr, not_le.mp]
 
 /-- Centered truncations approximate a centered square-integrable variable in mean square. -/
-theorem tendsto_integral_norm_sub_centeredTruncation_sq (hX : MemLp X 2 P)
-    (hmean : ∫ ω, X ω ∂P = 0) :
+theorem _root_.MeasureTheory.MemLp.tendsto_integral_norm_sub_centeredTruncation_sq
+    (hX : MemLp X 2 P) (hmean : ∫ ω, X ω ∂P = 0) :
     Tendsto (fun R : ℝ≥0 ↦ ∫ ω, ‖X ω - centeredTruncation X P R ω‖ ^ 2 ∂P)
       atTop (𝓝 0) :=
   squeeze_zero (fun _ ↦ integral_nonneg fun _ ↦ sq_nonneg _)
-    (integral_norm_sub_centeredTruncation_sq_le hX hmean)
+    (hX.integral_norm_sub_centeredTruncation_sq_le hmean)
     hX.tendsto_integral_indicator_norm_sq
 
 /-- The second absolute moments of bounded centered approximations converge to that of
 the original centered variable. In particular, unit variance is recovered in the limit. -/
-theorem tendsto_integral_norm_centeredTruncation_sq (hX : MemLp X 2 P)
+theorem _root_.MeasureTheory.MemLp.tendsto_integral_norm_centeredTruncation_sq (hX : MemLp X 2 P)
     (hmean : ∫ ω, X ω ∂P = 0) :
     Tendsto (fun R : ℝ≥0 ↦ ∫ ω, ‖centeredTruncation X P R ω‖ ^ 2 ∂P)
       atTop (𝓝 (∫ ω, ‖X ω‖ ^ 2 ∂P)) := by
   let hR (R : ℝ≥0) : MemLp (centeredTruncation X P R) 2 P :=
-    memLp_centeredTruncation hX.aestronglyMeasurable R
+    hX.aestronglyMeasurable.memLp_centeredTruncation R
   have hs : Tendsto (fun R : ℝ≥0 ↦
       ‖hX.toLp X - (hR R).toLp (centeredTruncation X P R)‖ ^ 2) atTop (𝓝 0) := by
     simpa only [← MemLp.toLp_sub, MemLp.norm_toLp_sq, Pi.sub_apply] using
-      tendsto_integral_norm_sub_centeredTruncation_sq hX hmean
+      hX.tendsto_integral_norm_sub_centeredTruncation_sq hmean
   have hn := (Real.continuous_sqrt.tendsto 0).comp hs
   simp only [Function.comp_def, Real.sqrt_sq_eq_abs, abs_norm, Real.sqrt_zero] at hn
   have ht : Tendsto (fun R ↦ (hR R).toLp (centeredTruncation X P R)) atTop

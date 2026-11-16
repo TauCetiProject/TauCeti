@@ -105,7 +105,7 @@ theorem integrable_norm_wignerMatrix_sub_centeredTruncation_sq (R : ℝ≥0) (n 
   simp_rw [wignerMatrix_sub, sub_self]
   exact integrable_norm_wignerMatrix_sq
     (fun ij ↦ ((hd ij).symm.memLp_snd hX).sub
-      (memLp_centeredTruncation ((hd ij).symm.memLp_snd hX).aestronglyMeasurable R))
+      (((hd ij).symm.memLp_snd hX).aestronglyMeasurable.memLp_centeredTruncation R))
     (fun _ ↦ memLp_const 0) n
 
 include hmean
@@ -119,7 +119,7 @@ theorem inv_mul_integral_norm_wignerMatrix_sub_centeredTruncation_sq_le
         ∫ ω, {ω | (R : ℝ) < ‖X ω‖}.indicator (fun ω ↦ ‖X ω‖ ^ 2) ω ∂P := by
   have hm (ij : StrictUpper) : MemLp (fun ω ↦ ξ ij ω - centeredTruncation (ξ ij) P R ω) 2 P :=
     ((hd ij).symm.memLp_snd hX).sub
-      (memLp_centeredTruncation ((hd ij).symm.memLp_snd hX).aestronglyMeasurable R)
+      (((hd ij).symm.memLp_snd hX).aestronglyMeasurable.memLp_centeredTruncation R)
   rw [integral_norm_wignerMatrix_sub_sq hm
     (fun ij ↦ (((hd ij).sub_centeredTruncation R).comp
       (measurable_norm.pow_const 2)).integral_eq)]
@@ -131,7 +131,7 @@ theorem inv_mul_integral_norm_wignerMatrix_sub_centeredTruncation_sq_le
         exact (div_le_one (by positivity)).mpr (by linarith)
       simpa only [div_eq_inv_mul, mul_assoc, Function.comp_def] using
         mul_le_of_le_one_left he hc
-    _ ≤ _ := integral_norm_sub_centeredTruncation_sq_le hX hmean R
+    _ ≤ _ := hX.integral_norm_sub_centeredTruncation_sq_le hmean R
 
 variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [CompleteSpace E]
 
@@ -150,8 +150,8 @@ theorem integral_norm_spectralMeasure_wignerMatrix_sub_centeredTruncation_sq_le
     (integrable_norm_wignerMatrix_sub_centeredTruncation_sq hX hd R _) hf
     (aemeasurable_wignerMatrix (fun ij ↦ (hd ij).aemeasurable_fst) hη _)
     (aemeasurable_wignerMatrix (fun ij ↦
-      (aestronglyMeasurable_centeredTruncation
-        ((hd ij).symm.memLp_snd hX).aestronglyMeasurable R).aemeasurable) hη _)).trans ?_
+      (((hd ij).symm.memLp_snd hX).aestronglyMeasurable.centeredTruncation R).aemeasurable)
+      hη _)).trans ?_
   simpa only [Fintype.card_fin, Nat.cast_add, Nat.cast_one, div_eq_mul_inv, mul_assoc] using
     mul_le_mul_of_nonneg_left
       (inv_mul_integral_norm_wignerMatrix_sub_centeredTruncation_sq_le hX hmean hd R n)
