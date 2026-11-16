@@ -5,9 +5,10 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Algebra.Order.Module.PositiveLinearMap
 public import Mathlib.Topology.ContinuousMap.Algebra
+public import Mathlib.Topology.ContinuousMap.Ordered
 public import TauCeti.Topology.Algebra.Group.UCB.Translation
-public import TauCeti.Topology.ContinuousMap.Ordered
 
 import TauCeti.Topology.ContinuousMap.Compact
 
@@ -175,8 +176,8 @@ theorem orbitPositiveLinearMap_apply (x : X) (f : C(X, ℝ)) (g : G) :
 
 @[simp]
 theorem orbitPositiveLinearMap_one (x : X) :
-    orbitPositiveLinearMap G x 1 = 1 :=
-  (orbitAlgHom G x).map_one
+    orbitPositiveLinearMap G x 1 = 1 := by
+  rw [coe_orbitPositiveLinearMap, map_one]
 
 /-- Left translation `L_g` on `UCB G` intertwines `orbitAlgHom` with precomposition by
 `Homeomorph.smul g⁻¹` on `C(X, ℝ)`. -/
@@ -190,8 +191,8 @@ theorem leftTranslation_orbitAlgHom (g : G) (x : X) (f : C(X, ℝ)) :
 `Homeomorph.smul g⁻¹` on `C(X, ℝ)`. -/
 theorem leftTranslation_orbitPositiveLinearMap (g : G) (x : X) (f : C(X, ℝ)) :
     leftTranslation g (orbitPositiveLinearMap G x f) =
-      orbitPositiveLinearMap G x (f.comp (Homeomorph.smul g⁻¹ : X ≃ₜ X)) :=
-  leftTranslation_orbitAlgHom g x f
+      orbitPositiveLinearMap G x (f.comp (Homeomorph.smul g⁻¹ : X ≃ₜ X)) := by
+  simp only [coe_orbitPositiveLinearMap, leftTranslation_orbitAlgHom]
 
 /-- Right translation `R_g` on `UCB G` shifts the basepoint of `orbitAlgHom` from `x` to `g • x`. -/
 theorem rightTranslation_orbitAlgHom (g : G) (x : X) (f : C(X, ℝ)) :
@@ -202,8 +203,8 @@ theorem rightTranslation_orbitAlgHom (g : G) (x : X) (f : C(X, ℝ)) :
 /-- Right translation `R_g` on `UCB G` shifts the basepoint of `orbitPositiveLinearMap` from `x` to
 `g • x`. -/
 theorem rightTranslation_orbitPositiveLinearMap (g : G) (x : X) (f : C(X, ℝ)) :
-    rightTranslation g (orbitPositiveLinearMap G x f) = orbitPositiveLinearMap G (g • x) f :=
-  rightTranslation_orbitAlgHom g x f
+    rightTranslation g (orbitPositiveLinearMap G x f) = orbitPositiveLinearMap G (g • x) f := by
+  simp only [coe_orbitPositiveLinearMap, rightTranslation_orbitAlgHom]
 
 end UCB
 

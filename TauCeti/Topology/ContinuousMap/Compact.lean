@@ -87,9 +87,9 @@ theorem exists_pos_le_norm_sub_of_notMem_range {X E : Type*} [TopologicalSpace X
     ∃ δ > 0, ∀ x, δ ≤ ‖f x - y‖ := by
   simpa only [dist_eq_norm] using f.exists_pos_le_dist_of_notMem_range hy
 
-/-- If a monoid `M` acts jointly continuously on a compact space `X`, any continuous map
-`f : C(X, β)` into a pseudometric space moves every point `x : X` by less than `ε` under elements
-`u` in a neighborhood of `1 : M`. -/
+/-- If a monoid `M` acts jointly continuously on a compact space `X`, then for any continuous map
+`f : C(X, β)` into a pseudometric space and `ε > 0`, `dist (f (u • x)) (f x) < ε` holds uniformly
+for all `x : X` when `u` is in a neighborhood of `1 : M`. -/
 theorem eventually_forall_dist_smul_lt {M X β : Type*} [Monoid M] [TopologicalSpace M]
     [TopologicalSpace X] [CompactSpace X] [MulAction M X] [ContinuousSMul M X]
     [PseudoMetricSpace β] (f : C(X, β)) {ε : ℝ} (hε : 0 < ε) :
