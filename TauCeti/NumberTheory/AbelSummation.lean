@@ -458,10 +458,11 @@ theorem sum_Icc_div_log_eq (c : ℕ → ℝ) (x : ℝ) :
       ∑ k ∈ Finset.Icc 2 n, c k / Real.log k := by
     simp_rw [mul_ite, mul_zero, sum_Icc_zero_ite_two_le, div_eq_inv_mul]
   simp only [hsum, sum_Icc_zero_ite_two_le, Real.deriv_inv_log] at habel
-  rw [habel, sub_eq_add_neg, ← integral_neg, div_eq_inv_mul]
+  rw [habel, sub_eq_add_neg, ← integral_neg]
   congr 1
-  refine setIntegral_congr_fun measurableSet_Ioc fun t _ ↦ ?_
-  ring
+  · ring
+  · refine setIntegral_congr_fun measurableSet_Ioc fun t _ ↦ ?_
+    ring
 
 /-- If `S` differs from `log t` by at most `C` for `t ≥ 2`, then the error weighted by
 `1 / (t log² t)` is integrable on `(a, ∞)` for `a ≥ 2`, and its integral there is at most

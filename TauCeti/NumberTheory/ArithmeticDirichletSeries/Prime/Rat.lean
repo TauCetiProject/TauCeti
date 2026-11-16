@@ -44,10 +44,9 @@ theorem primeSummatory_rat_eq_sum_primesLE {M : Type*} [AddCommMonoid M] (f : �
     exact (and_iff_left (hprime v)).symm
   rw [primeSummatory_apply]
   refine Finset.sum_bij (fun v _ ↦ Ideal.absNorm v.asIdeal) (fun v hv ↦ (hmem v).mp hv)
-    (fun v _ w _ h ↦ ?_) (fun p hp ↦ ?_) fun _ _ ↦ rfl
-  · simp only [Rat.HeightOneSpectrum.absNorm_asIdeal] at h
-    exact Rat.HeightOneSpectrum.primesEquiv.injective (Subtype.ext h)
-  · obtain ⟨v, hv⟩ := Rat.HeightOneSpectrum.exists_absNorm_eq (Nat.prime_of_mem_primesLE hp)
-    exact ⟨v, (hmem v).mpr (hv ▸ hp), hv⟩
+    (fun v _ w _ h ↦ Rat.HeightOneSpectrum.absNorm_asIdeal_injective h) (fun p hp ↦ ?_)
+    fun _ _ ↦ rfl
+  obtain ⟨v, hv⟩ := Rat.HeightOneSpectrum.exists_absNorm_eq (Nat.prime_of_mem_primesLE hp)
+  exact ⟨v, (hmem v).mpr (hv ▸ hp), hv⟩
 
 end TauCeti
