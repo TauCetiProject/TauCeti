@@ -144,7 +144,8 @@ theorem baseChangeEquiv_tmul_one (s : S) :
       algebraMap S (SignedSym (G.baseChange S)) s :=
   (baseChangeEquiv G S).commutes s
 
-/-- The inverse comparison is scalar extension of the original generator map. -/
+/-- On generators, the inverse comparison agrees with the scalar extension of the original
+generator map. -/
 @[simp]
 theorem baseChangeEquiv_symm_generator (x : S ⊗[R] V) :
     (baseChangeEquiv G S).symm (generator (G.baseChange S) x) =
