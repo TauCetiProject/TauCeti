@@ -17,9 +17,11 @@ local homology group in degree `n`. This file defines that generator condition a
 every point in a finite-dimensional charted space has local orientations. Integral coefficients
 are represented by the universe-lifted module `ULift ℤ`. The construction is the inverse image of
 `1` under the chart computation of local homology. The two generators of a fibre isomorphic to
-`ℤ` differ by sign; reversal and preservation by local homology isomorphisms are also proved, and
-isomorphisms of pairs `(M, M ∖ {x}) ≅ (N, N ∖ {y})` transport local orientations
-(`TauCeti.LocalOrientation.map`), compatibly with reversal, identities and composites.
+`ℤ` differ by sign; reversal and preservation by local homology isomorphisms are also proved, the
+latter because surjective additive maps preserve generators
+(`TauCeti.exists_zsmul_eq_map_of_surjective`), and isomorphisms of pairs
+`(M, M ∖ {x}) ≅ (N, N ∖ {y})` transport local orientations (`TauCeti.LocalOrientation.map`),
+compatibly with reversal, identities and composites.
 
 The local orientation is the generator of `Hₙ(M, M ∖ {x}; ℤ)` described in Hatcher's
 *Algebraic Topology*, Section 3.3.
@@ -93,6 +95,15 @@ lemma LocalOrientation.coe_neg {M : Type w} [TopologicalSpace M] {x : M} {d : �
       (ModuleCat.of ℤ (ULift.{w} ℤ)) ({x} : Set M) d) = -z.val :=
   (rfl)
 
+/-- A surjective additive map carries an element of which every element is an integral multiple to
+an element of which every element is an integral multiple. -/
+theorem exists_zsmul_eq_map_of_surjective {F A B : Type*} [AddGroup A] [AddGroup B]
+    [FunLike F A B] [AddMonoidHomClass F A B] {g : F} (hg : Function.Surjective g) {a : A}
+    (ha : ∀ z, ∃ c : ℤ, c • a = z) (z : B) : ∃ c : ℤ, c • g a = z := by
+  obtain ⟨w, rfl⟩ := hg z
+  obtain ⟨c, rfl⟩ := ha w
+  exact ⟨c, (map_zsmul g c a).symm⟩
+
 /-- An isomorphism of integral local homology groups preserves the generator condition. -/
 theorem IsLocalOrientation.map {M N : Type w} [TopologicalSpace M] [TopologicalSpace N]
     {x : M} {y : N} {d : ℕ}
@@ -100,15 +111,8 @@ theorem IsLocalOrientation.map {M N : Type w} [TopologicalSpace M] [TopologicalS
     (hz : IsLocalOrientation x d z)
     (e : localHomology (A := ModuleCat.{w} ℤ) (ModuleCat.of ℤ (ULift.{w} ℤ)) ({x} : Set M) d ≅
       localHomology (A := ModuleCat.{w} ℤ) (ModuleCat.of ℤ (ULift.{w} ℤ)) ({y} : Set N) d) :
-    IsLocalOrientation y d (e.hom z) := by
-  intro a
-  obtain ⟨c, hc⟩ := hz (e.inv a)
-  refine ⟨c, ?_⟩
-  calc
-    c • e.hom z = e.hom (c • z) :=
-      (e.hom.hom.toAddMonoidHom.map_zsmul c z).symm
-    _ = e.hom (e.inv a) := congrArg e.hom hc
-    _ = a := e.inv_hom_id_apply a
+    IsLocalOrientation y d (e.hom z) :=
+  exists_zsmul_eq_map_of_surjective (ConcreteCategory.bijective_of_isIso e.hom).2 hz
 
 /-- An isomorphism of pairs `(M, M ∖ {x}) ≅ (N, N ∖ {y})` carries local orientations at `x` to
 local orientations at `y`, through the isomorphism it induces on integral local homology. -/

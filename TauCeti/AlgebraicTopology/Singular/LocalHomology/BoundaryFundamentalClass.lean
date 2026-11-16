@@ -118,13 +118,8 @@ private lemma isClosed_collarSegment [T2Space X] : IsClosed (collarSegment c y) 
     rw [Subtype.isCompact_iff]
     convert isCompact_Icc (a := (0 : ℝ)) (b := 1 / 2) using 1
     ext r
-    simp only [mem_image, mem_ofPred_eq, Subtype.exists, mem_Ico, exists_and_right,
-      exists_eq_right, mem_Icc]
-    constructor
-    · rintro ⟨⟨h₀, -⟩, h⟩
-      exact ⟨h₀, h⟩
-    · rintro ⟨h₀, h⟩
-      exact ⟨⟨h₀, by linarith⟩, h⟩
+    simp
+    grind
   exact ((isCompact_singleton.prod hK).image hc.isOpenEmbedding.continuous).isClosed
 
 private lemma isOpen_collarSlit [T2Space X] : IsOpen (collarSlit c y) := by
@@ -293,7 +288,7 @@ private lemma isZero_localHomology_collarSegment [T2Space X] (y : N) (k : ℕ) :
   refine TopPair.isZero_singularHomology_of_homotopy
     (f := TopPair.ofSubsetMap (TopCat.ofHom ρ) hρ) ?_
     (TopCat.ofHom ⟨fun x ↦ ⟨ρ x, collarPush_one_notMem_collarSegment hc y x⟩, by fun_prop⟩)
-    (by rw [TopPair.ofSubsetMap_fst]; rfl) R k
+    (by ext x; exact (TopPair.ofSubsetMap_fst_apply _ hρ x).symm) R k
   rw [← TopPair.ofSubsetMap_id (X := TopCat.of (collarPart c 1))
     (B := Subtype.val ⁻¹' (collarSegment c y)ᶜ) fun _ hx ↦ hx]
   exact TopPair.ofSubsetHomotopy (g₀ := 𝟙 (TopCat.of (collarPart c 1))) (g₁ := TopCat.ofHom ρ) F
@@ -452,6 +447,8 @@ private lemma isIso_singularHomologyMap_boundaryToSlit (k : ℕ) :
       · refine Subtype.ext (Eq.trans ?_
           (TopPair.ofInclusionMap_snd_apply (hst := inter_subset_left)
             (hst' := inter_subset_left) _ _ x).symm)
+        -- Both sides are `slitRetraction hc y ⟨x, _⟩` once the `TopPair.ofHom` components of the
+        -- composite unfold.
         rfl
       · exact (TopPair.ofInclusionMap_fst_apply (hst := inter_subset_left)
           (hst' := inter_subset_left) _ _ x).symm
@@ -526,7 +523,7 @@ private lemma singularHomologyMap_boundaryPairMap_singularHomologyToLocalHomolog
     (compl_subset_compl.2 (singleton_subset_iff.2 hp) : MapsTo (𝟙 (TopCat.of X)) _ _)
   have hGF : TopPair.Hom.fst (boundaryPairMap c hc hA y b hb) = TopPair.Hom.snd F := by
     ext x
-    exact Subtype.ext (Eq.trans rfl (TopPair.ofSubsetMap_snd_apply (X := TopCat.of X)
+    exact Subtype.ext ((TopPair.ofSubsetMap_snd_apply (X := TopCat.of X)
       (Y := TopCat.of X) (B := (Aᶜ : Set (TopCat.of X)))
       (B' := ({c (y, half)}ᶜ : Set (TopCat.of X))) (𝟙 (TopCat.of X)) _ x).symm)
   -- The local image of `∂μ` at `b` is its image in `Hₙ₋₁(∂X, ∂X ∖ {b})`.
@@ -559,15 +556,6 @@ variable [T2Space X] [CompactSpace X] {M : Type} [TopologicalSpace M] [T2Space M
   (o : HomologicalOrientation M E n) (hn : finrank ℝ E = n) {ι : M → X} (hι : IsOpenEmbedding ι)
   (hιf : range ι = (range f)ᶜ) (hf : IsCollared f)
 
-/-- The relative fundamental class restricts to a local orientation at every interior point. -/
-private lemma isLocalOrientation_localHomologyRestriction_fundamentalClassRel {p : X}
-    (hp : p ∈ range ι) :
-    IsLocalOrientation p n (localHomologyRestriction (ModuleCat.of ℤ (ULift.{0} ℤ))
-      (singleton_subset_iff.2 hp) n (o.fundamentalClassRel hn hι hιf hf)) := by
-  obtain ⟨x, rfl⟩ := hp
-  rw [o.localHomologyRestriction_fundamentalClassRel hn hι hιf hf x]
-  exact (o x).property.map _
-
 /-- **The boundary of the relative fundamental class is a fundamental class of the boundary.** Let
 `ι : M → X` be an open embedding of an oriented `n`-manifold `M` into a compact Hausdorff space
 `X` whose complement `∂X = X ∖ ι(M)` is the image of a collared map `f : N → X`. The connecting
@@ -582,7 +570,7 @@ theorem isFundamentalClass_singularHomologyδ_fundamentalClassRel {m : ℕ} (hm 
   set R := ModuleCat.of ℤ (ULift.{0} ℤ)
   obtain ⟨c, hc⟩ := isCollared_iff.1 hf
   have hS : (range ι)ᶜ = range f := by rw [hιf, compl_compl]
-  refine (isFundamentalClass_iff _).2 fun b ↦ ?_
+  refine (isFundamentalClass_iff_forall_isLocalOrientation _).2 fun b ↦ ?_
   obtain ⟨y, hy⟩ : (b : X) ∈ range f := hS ▸ b.2
   -- The interior point `p = c (y, 1/2)`; the triple `(X, X ∖ {p}, X ∖ T)` has an isomorphism as
   -- connecting morphism, since `(X, X ∖ T)` has no homology.
@@ -596,21 +584,15 @@ theorem isFundamentalClass_singularHomologyδ_fundamentalClassRel {m : ℕ} (hm 
   have key := singularHomologyMap_boundaryPairMap_singularHomologyToLocalHomology hc hS y b
     hy.symm hp hm (o.fundamentalClassRel hn hι hιf hf)
   -- The image of `[X, ∂X]` at `p` generates, hence so do its images under the two isomorphisms.
-  have transfer {A B : ModuleCat.{0} ℤ} (e : A ⟶ B) [IsIso e] {a : A}
-      (h : ∀ z, ∃ k : ℤ, k • a = z) (z : B) : ∃ k : ℤ, k • e a = z := by
-    obtain ⟨k, hk⟩ := h (inv e z)
-    refine ⟨k, ?_⟩
-    have he : e (k • a) = k • e a := map_zsmul (ConcreteCategory.hom e) k a
-    rw [← he, hk, ← ConcreteCategory.comp_apply, IsIso.inv_hom_id, ConcreteCategory.id_apply]
-  have h₃ := isLocalOrientation_localHomologyRestriction_fundamentalClassRel o hn hι hιf hf hp
-  refine Submodule.eq_top_iff'.2 fun z ↦ Submodule.mem_span_singleton.2 ?_
-  obtain ⟨k, hk⟩ := transfer
-    (inv (TopPair.singularHomologyMap (boundaryPairMap c hc hS y b hy.symm) R m))
-    (transfer ((segmentTriple hc y).singularHomologyδ R n m hm)
-      ((isLocalOrientation_iff _ _ _).1 h₃)) z
-  refine ⟨k, ?_⟩
-  rw [← hk, ← key, ← ConcreteCategory.comp_apply, IsIso.hom_inv_id, ConcreteCategory.id_apply]
-  exact int_smul_eq_zsmul _ _ _
+  have h := exists_zsmul_eq_map_of_surjective
+    (ConcreteCategory.bijective_of_isIso ((segmentTriple hc y).singularHomologyδ R n m hm)).2
+    ((isLocalOrientation_iff _ _ _).1
+      (o.isLocalOrientation_localHomologyRestriction_fundamentalClassRel hn hι hιf hf hp))
+  rw [← key] at h
+  have h' := exists_zsmul_eq_map_of_surjective (ConcreteCategory.bijective_of_isIso
+    (inv (TopPair.singularHomologyMap (boundaryPairMap c hc hS y b hy.symm) R m))).2 h
+  rw [← ConcreteCategory.comp_apply, IsIso.hom_inv_id, ConcreteCategory.id_apply] at h'
+  exact (isLocalOrientation_iff _ _ _).2 h'
 
 end HomologicalOrientation
 
