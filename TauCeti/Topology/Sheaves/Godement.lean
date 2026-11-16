@@ -416,10 +416,9 @@ theorem godement_map_app_eq_zero_of_app_eq_zero {F G : X.Sheaf C} (α : F ⟶ G)
   · have hstalk := TopCat.Presheaf.stalkFunctor_map_eq_zero_of_app_eq_zero α.hom hα (hW hyW)
     have hskyW : evW.map ((skyscraperSheafFunctor y).map
         ((TopCat.Presheaf.stalkFunctor C y).map α.hom)) = 0 := by
-      rw [hstalk]
-      change (SkyscraperPresheafFunctor.map' y
-        (0 : F.presheaf.stalk y ⟶ G.presheaf.stalk y)).app (op W) = 0
-      simp [SkyscraperPresheafFunctor.map'_app, hyW]
+      dsimp only [evW]
+      rw [hstalk, Functor.comp_map, ObjectProperty.ι_map, evaluation_obj_map,
+        skyscraperSheafFunctor_map_hom_app_of_mem y 0 hyW, zero_comp, comp_zero]
     exact (congrArg evW.map (godement_map_π C X α y)).trans
       ((evW.map_comp _ _).trans ((congrArg (_ ≫ ·) hskyW).trans comp_zero))
   · exact (isTerminalSkyscraperSheafObjObjOfNotMem hyW).hom_ext _ _

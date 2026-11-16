@@ -46,6 +46,8 @@ No manifold axioms are needed: only the charted space structures enter.
 * `TauCeti.smoothSheafRing.overIso`: the same for the restriction to the over site of `U`.
 * `TauCeti.smoothSheafRing.stalkIso`: the stalks of the sheaves of `U` and of `M` at a point of `U`
   agree, compatibly with germs.
+* `TauCeti.smoothSheafAddCommGroup.map_apply`: the restriction map of
+  `smoothSheafAddCommGroup IM I M A` acts on sections by `ContMDiffMap.restrictAddMonoidHom`.
 * `TauCeti.smoothSheafAddCommGroup.restrictIso`:
   `U.sheafRestrict.obj (smoothSheafAddCommGroup IM I M A)` is the sheaf of smooth functions on `U`
   into an abelian additive Lie group `A`.
@@ -201,6 +203,15 @@ end TauCeti.smoothSheafRing
 namespace TauCeti.smoothSheafAddCommGroup
 
 variable [AddCommGroup A] [LieAddGroup I ∞ A] {M}
+
+/-- The restriction map of `smoothSheafAddCommGroup IM I M A` acts on sections by
+`ContMDiffMap.restrictAddMonoidHom`. -/
+@[simp]
+theorem map_apply {U₁ U₂ : (Opens (TopCat.of M))ᵒᵖ} (h : U₁ ⟶ U₂)
+    (f : C^∞⟮IM, U₁.unop; I, A⟯) :
+    (smoothSheafAddCommGroup IM I M A).obj.map h f =
+      ContMDiffMap.restrictAddMonoidHom IM I A (leOfHom h.unop) f :=
+  rfl
 
 /-- Smooth group-valued functions on the image in `M` of an open subset `V` of `U` are the smooth
 group-valued functions on `V`. -/

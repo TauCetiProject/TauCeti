@@ -17,6 +17,7 @@ import TauCeti.CategoryTheory.Sites.SheafCohomology.LongExactSequence
 import TauCeti.Topology.Sheaves.Cohomology.Restriction
 import TauCeti.Topology.Sheaves.Exact
 import TauCeti.Topology.Sheaves.Flasque.Basic
+import TauCeti.Topology.Sheaves.Gluing
 
 /-!
 # Fine sheaves are acyclic
@@ -64,8 +65,7 @@ dimension shifting along `0 ⟶ F ⟶ G⁰(F) ⟶ Z¹(F) ⟶ 0` proves `H¹(X, F
 
 ## Main results
 
-* `TopCat.Sheaf.sum_sub_id_app_eq_zero_iff` and `TopCat.Sheaf.exists_gluing_finset_sum`: sectionwise
-  evaluation of `∑ i ∈ s, η i - 𝟙 F` and gluing of locally finite sums of sections.
+* `TopCat.Sheaf.sum_sub_id_app_eq_zero_iff`: sectionwise evaluation of `∑ i ∈ s, η i - 𝟙 F`.
 * `TopCat.Sheaf.IsFine.of_retract`, `TopCat.Sheaf.IsFine.of_iso`, and
   `TopCat.Sheaf.IsFine.of_isZero`: fineness is preserved by retracts and isomorphisms and holds for
   zero sheaves.
@@ -248,44 +248,6 @@ theorem sum_sub_id_app_eq_zero_iff {F : X.Sheaf C} {ι : Type*} (s : Finset ι) 
   simp [sub_eq_zero]
 
 end Preadditive
-
-section AddCommGrp
-
-/-- Gluing a locally finite sum of sections of an abelian sheaf `G` over `U`: if each `a i`
-vanishes on opens inside `V i`, and `N` covers `U` with `N k ≤ V i` for all `i ∉ S k`, then the
-finite sums `∑ i ∈ S k, a i|_{N k}` glue to a section `b` over `U`. -/
-theorem exists_gluing_finset_sum {X : TopCat.{u}} (G : X.Sheaf AddCommGrpCat.{u}) {U : Opens X}
-    {ι κ : Type*} (V : ι → Opens X) (a : ι → G.obj.obj (op U))
-    (ha : ∀ i ⦃W : Opens X⦄ (hWU : W ≤ U), W ≤ V i → G.obj.map (homOfLE hWU).op (a i) = 0)
-    (N : κ → Opens X) (hNU : ∀ k, N k ≤ U) (hN : U ≤ ⨆ k, N k) (S : κ → Finset ι)
-    (hSV : ∀ k i, i ∉ S k → N k ≤ V i) :
-    ∃ b : G.obj.obj (op U), ∀ k,
-      G.obj.map (homOfLE (hNU k)).op b =
-        ∑ i ∈ S k, G.obj.map (homOfLE (hNU k)).op (a i) := by
-  classical
-  let sf : ∀ k : κ, G.obj.obj (op (N k)) :=
-    fun k ↦ ∑ i ∈ S k, G.obj.map (homOfLE (hNU k)).op (a i)
-  have hcompat : TopCat.Presheaf.IsCompatible G.obj N sf := by
-    intro k₁ k₂
-    let W := N k₁ ⊓ N k₂
-    have hWU : W ≤ U := inf_le_left.trans (hNU k₁)
-    have hrestrict (k : κ) (hWN : W ≤ N k) (hs : S k ⊆ S k₁ ∪ S k₂) :
-        G.obj.map (homOfLE hWN).op (sf k) =
-          ∑ i ∈ S k₁ ∪ S k₂, G.obj.map (homOfLE hWU).op (a i) := by
-      simp only [sf, map_sum]
-      have hterm (i : ι) :
-          G.obj.map (homOfLE hWN).op (G.obj.map (homOfLE (hNU k)).op (a i)) =
-            G.obj.map (homOfLE hWU).op (a i) := by
-        rw [← Functor.map_comp_apply]
-        exact congrArg (fun f : W ⟶ U ↦ G.obj.map f.op (a i)) (Subsingleton.elim _ _)
-      simp_rw [hterm]
-      exact Finset.sum_subset hs fun i _ hi ↦ ha i hWU (hWN.trans (hSV k i hi))
-    exact (hrestrict k₁ inf_le_left Finset.subset_union_left).trans
-      (hrestrict k₂ inf_le_right Finset.subset_union_right).symm
-  obtain ⟨b, hb, -⟩ := G.existsUnique_gluing' N U (fun k ↦ homOfLE (hNU k)) hN sf hcompat
-  exact ⟨b, hb⟩
-
-end AddCommGrp
 
 end TopCat.Sheaf
 
