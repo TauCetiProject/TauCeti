@@ -23,7 +23,9 @@ only by precomposition: near `p`,
 under `φ ∘ ψ` passes through the neighbourhoods of the points `φ^[j] p`, where `ψ` does nothing.
 The same holds for a perturbation that moves `p`, such as a small translation, provided it is the
 identity near the later points `φ^[j] (ψ p)` of the orbit of `ψ p`
-(`Function.iterate_comp_eventuallyEq_iterate_comp`).
+(`Function.iterate_comp_eventuallyEq_iterate_comp`). In particular, if `ψ` is the translation by
+`c` near `p`, then near `p` the `k`-th iterate of `φ ∘ ψ` is `w ↦ φ^[k] (w + c)`
+(`Function.iterate_comp_eventuallyEq_comp_add`).
 
 When `p` is a periodic point of period `k`, the derivative of `φ^[k]` at `p` is the linearized
 return map of its orbit. The return map of the perturbed map `φ ∘ ψ` is then the return map of
@@ -80,6 +82,19 @@ theorem iterate_comp_eventuallyEq_of_eventuallyEq_id (hk : 0 < k) (hψp : ψ p =
     (φ ∘ ψ)^[k] =ᶠ[𝓝 p] φ^[k] ∘ ψ :=
   iterate_comp_eventuallyEq_iterate_comp hk hψ (by simpa only [hψp] using hφ)
     (by simpa only [hψp] using hid)
+
+/-- **Iterates of a map perturbed by a local translation.** If `ψ` is the translation by `c` near
+`p` and the identity near the later points `φ^[j] (p + c)`, `0 < j < k`, of the orbit of `p + c`,
+and `φ` is continuous at the orbit points `φ^[j] (p + c)` for `j < k`, then near `p` the `k`-th
+iterate of `φ ∘ ψ` is `w ↦ φ^[k] (w + c)`. -/
+theorem iterate_comp_eventuallyEq_comp_add [Add X] [ContinuousAdd X] (hk : 0 < k) {c : X}
+    (hadd : ψ =ᶠ[𝓝 p] fun w ↦ w + c) (hφ : ∀ j < k, ContinuousAt φ (φ^[j] (p + c)))
+    (hid : ∀ j, 0 < j → j < k → ψ =ᶠ[𝓝 (φ^[j] (p + c))] id) :
+    (φ ∘ ψ)^[k] =ᶠ[𝓝 p] fun w ↦ φ^[k] (w + c) := by
+  rw [← hadd.eq_of_nhds] at hφ hid
+  exact (iterate_comp_eventuallyEq_iterate_comp hk
+    ((continuous_id.add continuous_const).continuousAt.congr_of_eventuallyEq hadd) hφ hid).trans
+    (hadd.fun_comp φ^[k])
 
 end Function
 

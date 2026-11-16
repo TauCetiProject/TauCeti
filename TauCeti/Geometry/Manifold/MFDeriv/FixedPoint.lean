@@ -99,8 +99,8 @@ computed in any chart, also on manifolds with boundary or corners
   excludes the eigenvalues `±1` of the return maps of all covers of period at most `N`.
 * `TauCeti.fixedPointDerivative_iterate`: at a fixed point where `f` is differentiable, the
   fixed-point derivative of `f^[n]` is the `n`-th power of that of `f`.
-* `HasFDerivAt.isNondegenerateFixedPt_iff`: on a normed space, a fixed point at which `f` has
-  derivative `D` is nondegenerate exactly when `1 - D` is injective.
+* `HasFDerivAt.isNondegenerateFixedPt_iff_injective_id_sub`: on a normed space, a fixed point at
+  which `f` has derivative `D` is nondegenerate exactly when `1 - D` is injective.
 * `TauCeti.isNondegenerateFixedPt_iff_det_id_sub_ne_zero`: in finite dimensions, a fixed point at
   which `f` is differentiable is nondegenerate exactly when `det (1 - df_x) ≠ 0`.
 * `TauCeti.det_id_sub_fderivWithin_extChartAt_comp_extChartAt_symm`: `det (1 - df_x)` at a fixed
@@ -444,11 +444,12 @@ theorem det_id_sub_fixedPointDerivative_modelSpace (f : E → E) (x : {x // f x 
 /-- **Nondegeneracy on a normed space.** If `f` has Fréchet derivative `D` at a fixed point `x`
 of a normed space, with its trivial chart, then `x` is nondegenerate exactly when `1 - D` is
 injective. -/
-theorem _root_.HasFDerivAt.isNondegenerateFixedPt_iff {f : E → E} {D : E →L[𝕜] E} {x : E}
-    (hD : HasFDerivAt f D x) (hx : IsFixedPt f x) :
+theorem _root_.HasFDerivAt.isNondegenerateFixedPt_iff_injective_id_sub {f : E → E}
+    {D : E →L[𝕜] E} {x : E} (hD : HasFDerivAt f D x) (hx : IsFixedPt f x) :
     IsNondegenerateFixedPt 𝓘(𝕜, E) f x ↔ Injective (ContinuousLinearMap.id 𝕜 E - D) := by
   rw [TauCeti.isNondegenerateFixedPt_iff, hD.hasMFDerivAt.mfderiv, injective_iff_map_eq_zero]
-  simp only [hx, hD.hasMFDerivAt.mdifferentiableAt, true_and]
+  simp only [hx, hD.hasMFDerivAt.mdifferentiableAt, true_and, sub_apply,
+    ContinuousLinearMap.id_apply]
   -- The tangent space `TangentSpace 𝓘(𝕜, E) x` is `E` by definition.
   exact forall_congr' fun v ↦ imp_congr_left
     ⟨fun h ↦ sub_eq_zero.2 h.symm, fun h ↦ (sub_eq_zero.1 h).symm⟩

@@ -90,24 +90,16 @@ moves no point by more than `M |t|`. -/
 theorem norm_hamiltonianFlow_sub_le (hX : LipschitzWith K (ω.hamiltonianVectorField H)) {M : ℝ}
     (hM : ∀ z, ‖ω.hamiltonianVectorField H z‖ ≤ M) (t : ℝ) (x : V) :
     ‖ω.hamiltonianFlow H hX t x - x‖ ≤ M * |t| := by
-  have h := convex_univ.norm_image_sub_le_of_norm_hasDerivWithin_le
-    (f := fun s ↦ ω.hamiltonianFlow H hX s x)
-    (fun s _ ↦ (ω.hasDerivAt_hamiltonianFlow H hX x s).hasDerivWithinAt) (fun s _ ↦ hM _)
-    (Set.mem_univ 0) (Set.mem_univ t)
-  simpa using h
+  rw [hamiltonianFlow_eq]
+  exact norm_flowOfLipschitz_sub_le hX hM t x
 
 /-- **Flow along a constant field.** If the Hamiltonian vector field equals `c` along the segment
 `{x + τ • c | τ ∈ [[0, t]]}`, then the time-`t` map sends `x` to `x + t • c`. -/
 theorem hamiltonianFlow_apply_eq_add_smul (hX : LipschitzWith K (ω.hamiltonianVectorField H))
     {x c : V} {t : ℝ} (hc : ∀ τ ∈ Set.uIcc 0 t, ω.hamiltonianVectorField H (x + τ • c) = c) :
     ω.hamiltonianFlow H hX t x = x + t • c := by
-  have hγ : IsIntegralCurveOn (fun τ : ℝ ↦ x + τ • c)
-      (fun _ y ↦ ω.hamiltonianVectorField H y) (Set.uIcc 0 t) := fun τ hτ ↦ by
-    simp only [hc τ hτ]
-    exact (((hasDerivAt_id τ).smul_const c).const_add x).hasDerivWithinAt.congr_deriv (by simp)
-  have h := eq_flowOfLipschitz_of_isIntegralCurveOn hX hγ le_rfl
-  simp only [zero_smul, add_zero] at h
-  rw [hamiltonianFlow_eq, ← h]
+  rw [hamiltonianFlow_eq]
+  exact flowOfLipschitz_apply_eq_add_smul hX hc
 
 /-- An autonomous Hamiltonian is conserved by its flow. Where `H` is not differentiable, its
 Hamiltonian vector field vanishes by convention, so the orbit is a rest point. -/

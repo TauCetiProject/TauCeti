@@ -10,7 +10,6 @@ public import TauCeti.Geometry.Manifold.MFDeriv.FixedPoint
 import TauCeti.Analysis.Calculus.FDeriv.Comp
 import TauCeti.Analysis.Calculus.Sard.EqualDimension
 import TauCeti.Dynamics.PeriodicPts.LocalPerturbation
-import Mathlib.Analysis.Calculus.MeanValue
 import Mathlib.Geometry.Manifold.PartitionOfUnity
 import Mathlib.Topology.MetricSpace.Thickening
 
@@ -21,8 +20,9 @@ Let `(V, ω)` be a finite-dimensional symplectic vector space, for instance a ch
 with its area form, and let `φ` be a self-map of `V`. A point `x` of period `k` is *nondegenerate*
 when the linearized return map `d(φ^[k])_x` does not have `1` as an eigenvalue
 (`TauCeti.IsNondegenerateFixedPt`). This file shows that an arbitrarily small Hamiltonian
-perturbation, supported in a prescribed open set `W`, makes nondegenerate every point of a compact
-set `K ⊆ W` that has period `k` and whose orbit leaves `W` until it returns
+perturbation `ψ`, supported in a prescribed open set `W`, makes every point `x` of a compact set
+`K ⊆ W` with `(φ ∘ ψ)^[k] x = x` a nondegenerate fixed point of `(φ ∘ ψ)^[k]`, provided every
+orbit of `φ` starting in `W` leaves `W` until time `k`: `φ^[j] y ∉ W` for `y ∈ W` and `0 < j < k`
 (`TauCeti.SymplecticForm.exists_hamiltonianFlow_isNondegenerateFixedPt_iterate`). For `k = 1` the
 orbit condition is empty, so the fixed points in `K` become nondegenerate, and therefore finite
 (`TauCeti.SymplecticForm.exists_hamiltonianFlow_finite_fixedPoints`).
@@ -44,20 +44,22 @@ the derivative `1 - d(φ^[k])_y` of `g` at `y` is invertible. The critical value
 measure zero, so its regular values are dense (`TauCeti.dense_setOf_forall_surjective_fderiv`):
 arbitrarily small regular values `c` exist, and for them every such `x` is nondegenerate.
 
-This is the transversality step for making all periodic points of an area-preserving surface map
-of period at most a cutoff nondegenerate. The orbit condition holds near a point of least period
-`k` once `W` is a small enough ball, so the points of period `k` away from the points of smaller
-period are made nondegenerate in finitely many such steps. The localized twists of
-`TauCeti.Geometry.Symplectic.Hamiltonian.ReturnMapPerturbation` then make the resulting finitely
-many orbits nondegenerate in all iterates.
+This is meant as the transversality step for making all periodic points of an area-preserving
+surface map of period at most a cutoff nondegenerate. The orbit condition holds near a point of
+least period `k` once `W` is a small enough ball. Combined with the stability of nondegeneracy
+under small `C¹` perturbations, which is not proved here, finitely many such steps would make the
+points of period `k` away from the points of smaller period nondegenerate, and the localized
+twists of `TauCeti.Geometry.Symplectic.Hamiltonian.ReturnMapPerturbation` would then make the
+resulting finitely many orbits nondegenerate in all iterates.
 
 ## Main results
 
 * `TauCeti.SymplecticForm.exists_hamiltonianFlow_eventuallyEq_add`: localized Hamiltonian
   translations.
-* `TauCeti.SymplecticForm.exists_hamiltonianFlow_isNondegenerateFixedPt_iterate`: an arbitrarily
-  small localized Hamiltonian translation makes the periodic points through a compact set, whose
-  orbits leave the support until they return, nondegenerate.
+* `TauCeti.SymplecticForm.exists_hamiltonianFlow_isNondegenerateFixedPt_iterate`: if every orbit
+  starting in `W` leaves `W` until time `k`, an arbitrarily small Hamiltonian translation localized
+  in `W` makes the points of period `k` of the perturbed map in a compact set `K ⊆ W`
+  nondegenerate.
 * `TauCeti.SymplecticForm.exists_hamiltonianFlow_finite_fixedPoints`: the case `k = 1`, in which
   the fixed points in the compact set become nondegenerate and finite.
 
@@ -94,7 +96,7 @@ private theorem hamiltonianFlow_eventuallyEq_add_of_forall {H : V → ℝ} {L : 
   refine (ω.hamiltonianFlow_apply_eq_add_smul H hX fun τ hτ ↦ hfield _ ?_).trans (by simp)
   rw [uIcc_of_le zero_le_one] at hτ
   refine thickening_thickening_subset r r K (ball_subset_thickening hx' r ?_)
-  rw [mem_ball, dist_eq_norm, add_sub_cancel_left, norm_smul, Real.norm_eq_abs,
+  simp only [mem_ball, dist_eq_norm, add_sub_cancel_left, norm_smul, Real.norm_eq_abs,
     abs_of_nonneg hτ.1]
   exact (mul_le_of_le_one_left (norm_nonneg c) hτ.2).trans_lt hc
 
@@ -170,19 +172,6 @@ theorem exists_hamiltonianFlow_eventuallyEq_add {K W : Set V} (hK : IsCompact K)
         (by rw [mul_comm ‖c‖, ← mul_assoc]; gcongr; exact hM z)
     simpa using ω.norm_hamiltonianFlow_sub_le H hX hbound 1 w
 
-omit [NormedSpace ℝ V] [FiniteDimensional ℝ V] in
-/-- If `ψ` is the translation by `c` near `x` and the identity near the later points
-`φ^[j] (x + c)`, `0 < j < k`, of the orbit of `x + c`, then near `x` the `k`-th iterate of `φ ∘ ψ`
-is `w ↦ φ^[k] (w + c)`. -/
-private theorem iterate_comp_eventuallyEq_comp_add {φ ψ : V → V} {k : ℕ} (hk : 0 < k) {x c : V}
-    (hadd : ψ =ᶠ[𝓝 x] fun w ↦ w + c) (hφ : ∀ j < k, ContinuousAt φ (φ^[j] (x + c)))
-    (hid : ∀ j, 0 < j → j < k → ψ =ᶠ[𝓝 (φ^[j] (x + c))] id) :
-    (φ ∘ ψ)^[k] =ᶠ[𝓝 x] fun w ↦ φ^[k] (w + c) := by
-  rw [← hadd.eq_of_nhds] at hφ hid
-  exact (iterate_comp_eventuallyEq_iterate_comp hk
-    ((continuous_id.add continuous_const).continuousAt.congr_of_eventuallyEq hadd) hφ hid).trans
-    (hadd.fun_comp φ^[k])
-
 /-- **Hamiltonian translations make the periodic points through a compact set nondegenerate.**
 Let `K` be a compact subset of an open set `W` of a finite-dimensional symplectic vector space,
 let `k > 0`, and let `φ` be a self-map that is differentiable along the first `k` points of the
@@ -249,7 +238,7 @@ theorem exists_hamiltonianFlow_isNondegenerateFixedPt_iterate {φ : V → V} {k 
     simp [g, y, ← h]
   have hsurj := hcS y hy hgy
   rw [(hg y hy).fderiv] at hsurj
-  exact (hD.isNondegenerateFixedPt_iff hfix).2 ((LinearMap.injective_iff_surjective
+  exact (hD.isNondegenerateFixedPt_iff_injective_id_sub hfix).2 ((LinearMap.injective_iff_surjective
     (f := (ContinuousLinearMap.id ℝ V - fderiv ℝ φ^[k] y : V →ₗ[ℝ] V))).2 hsurj)
 
 /-- **Hamiltonian translations make the fixed points in a compact set nondegenerate.** Let `K` be
