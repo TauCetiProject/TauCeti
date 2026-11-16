@@ -32,15 +32,14 @@ pattern: it suffices that it preserves component types and that the expansion of
 the row is invariant under it (`mem_glueSymmetries_of_forall_gluePatterns`), and the scalar orbits
 of the `𝔽₄`-linear row `D₄⁶` are then permuted as well.  In particular the rotations of a marked
 block and the even permutations indicated by a pattern of the row are glue symmetries for every
-row except `A₅⁴ D₄` (`mem_glueSymmetries_of_mem_symmetries`), and they act on `N_r`
-(`TauCeti.RootfulNiemeierType.patternIsometryHom`).  This covers the cyclic patterns of `D₈³`,
-`E₆⁴`, `A₈³`, `A₆⁴`, `D₄⁶`, `A₄⁶`, `A₃⁸`, `A₂¹²` and `A₁²⁴`, and the alternating group on the
-four components of `D₆⁴`.  In the row `A₅⁴ D₄` the rotation of the three `A₅` components marked
+row except `A₅⁴ D₄` (`mem_glueSymmetries_of_mem_symmetries`).  This covers the cyclic patterns of
+`D₈³`, `E₆⁴`, `A₈³`, `A₆⁴`, `D₄⁶`, `A₄⁶`, `A₃⁸`, `A₂¹²` and `A₁²⁴`, and the alternating group on
+the four components of `D₆⁴`.  In the row `A₅⁴ D₄` the rotation of the three `A₅` components marked
 in `[2(024)0]` does not preserve the glue subgroup: it carries `[33001]` to `[30301]`, whose
 difference with `[30302]` is the nonzero word `[00003]` of shortest norm `1`.  Coupling that block
 rotation with `D₄` triality in `TauCeti.LinearAlgebra.IntegralLattice.Rank24.TableRow.A5FourthD4`
-completes the faithful pattern-symmetry action across all 23 rows
-(`TauCeti.RootfulNiemeierType.patternTrialityIsometryHom`).
+yields the unconditional faithful pattern-symmetry action across all 23 rows
+(`TauCeti.RootfulNiemeierType.patternIsometryHom`).
 
 ## Main declarations
 
@@ -52,16 +51,14 @@ completes the faithful pattern-symmetry action across all 23 rows
 * `TauCeti.RootfulNiemeierType.latticeIsometryHom`,
   `TauCeti.RootfulNiemeierType.latticeIsometryHom_injective`: the faithful action of the glue
   symmetries on `N_r`.
-* `TauCeti.RootfulNiemeierType.mem_glueSymmetries_of_mem_symmetries`,
-  `TauCeti.RootfulNiemeierType.patternIsometryHom`,
-  `TauCeti.RootfulNiemeierType.patternIsometryHom_injective`: for every row other than `A₅⁴ D₄`,
-  the indicated symmetries of the table patterns are glue symmetries and act faithfully on `N_r`.
-* `TauCeti.RootfulNiemeierType.a5FourthD4BlockRot_not_mem_glueSymmetries`,
-  `TauCeti.RootfulNiemeierType.permCongr_finRotate_not_mem_glueSymmetries_a5FourthD4`,
+* `TauCeti.RootfulNiemeierType.mem_glueSymmetries_of_mem_symmetries`: for every row other than
+  `A₅⁴ D₄`, the indicated symmetries of the table patterns are glue symmetries.
+* `TauCeti.RootfulNiemeierType.a5FourthD4BlockRot_notMem_glueSymmetries`,
+  `TauCeti.RootfulNiemeierType.permCongr_finRotate_notMem_glueSymmetries_a5FourthD4`,
   `TauCeti.RootfulNiemeierType.forall_permCongr_mem_glueSymmetries_iff`: `A₅⁴ D₄` is the unique row
   whose indicated pattern symmetries are not pure position glue symmetries.
-* `TauCeti.RootfulNiemeierType.patternTrialityIsometryHom`,
-  `TauCeti.RootfulNiemeierType.patternTrialityIsometryHom_injective`: the unconditional faithful
+* `TauCeti.RootfulNiemeierType.patternIsometryHom`,
+  `TauCeti.RootfulNiemeierType.patternIsometryHom_injective`: the unconditional faithful
   pattern-symmetry action across all 23 rootful rank-24 rows.
 
 ## References
@@ -140,9 +137,11 @@ theorem mem_glueSymmetries_of_glueWords {g : Equiv.Perm (Fin r.components.length
     (hw : ∀ d : Fin r.components.length → ℕ,
       List.ofFn (d ∘ g) ∈ r.glueWords ↔ List.ofFn d ∈ r.glueWords) :
     g ∈ r.glueSymmetries := by
-  refine ⟨hg, apply_mem_glueSubgroup_iff_of_mem_glueGenerators_iff
-    (piGlueAlphabetCongr r.componentType r.isSimplyLaced_componentType g hg
-      (hs := r.isSimplyLaced_componentType)) fun v ↦ ?_⟩
+  let φ := piGlueAlphabetCongr r.componentType r.isSimplyLaced_componentType g hg
+    (hs := r.isSimplyLaced_componentType)
+  refine ⟨hg, apply_mem_glueSubgroup_iff_of_mem_glueGenerators_iff φ.toAddEquiv.toAddMonoidHom
+    φ.injective (fun y _ ↦ φ.surjective y) fun v ↦ ?_⟩
+  change φ v ∈ r.glueGenerators ↔ v ∈ r.glueGenerators
   rw [mem_glueGenerators_iff, mem_glueGenerators_iff,
     encodeGlueWord_piGlueAlphabetCongr_eq_ofFn, encodeGlueWord_def]
   exact hw fun i ↦ (((r.componentType i).glueLabelEquiv
@@ -277,8 +276,32 @@ theorem mem_glueSymmetries_of_mem_symmetries {r : RootfulNiemeierType}
           simp only [GluePattern.expand_literal, Finset.mem_singleton, h, List.ofFn_inj]
           exact (Equiv.surjective _).injective_comp_right.eq_iff' rfl
 
+/-- Reindexing the entries of a digit list by `a5FourthD4BlockRot` reads positions `0, 2, 3, 1, 4`.
+-/
+private theorem ofFn_getD_a5FourthD4BlockRot (l : List ℕ) :
+    List.ofFn (fun k : Fin a5FourthD4.components.length ↦ l.getD (a5FourthD4BlockRot k) 0) =
+      [l.getD 0 0, l.getD 2 0, l.getD 3 0, l.getD 1 0, l.getD 4 0] := by
+  refine List.ext_getElem (by simp [length_components_a5FourthD4]) fun i hi _ ↦ ?_
+  have hi5 : i < 5 := by simpa [length_components_a5FourthD4] using hi
+  simp only [List.getElem_ofFn]
+  interval_cases i
+  · rw [show (⟨0, hi⟩ : Fin a5FourthD4.components.length) = 0 from Fin.ext (by simp),
+      a5FourthD4BlockRot_zero]; simp
+  · rw [show (⟨1, hi⟩ : Fin a5FourthD4.components.length) = 1 from
+      Fin.ext (by simp [length_components_a5FourthD4]),
+      a5FourthD4BlockRot_one]; simp [length_components_a5FourthD4]
+  · rw [show (⟨2, hi⟩ : Fin a5FourthD4.components.length) = 2 from
+      Fin.ext (by simp [length_components_a5FourthD4]),
+      a5FourthD4BlockRot_two]; simp [length_components_a5FourthD4]
+  · rw [show (⟨3, hi⟩ : Fin a5FourthD4.components.length) = 3 from
+      Fin.ext (by simp [length_components_a5FourthD4]),
+      a5FourthD4BlockRot_three]; simp [length_components_a5FourthD4]
+  · rw [show (⟨4, hi⟩ : Fin a5FourthD4.components.length) = 4 from
+      Fin.ext (by simp [length_components_a5FourthD4]),
+      a5FourthD4BlockRot_four]; simp [length_components_a5FourthD4]
+
 /-- `a5FourthD4BlockRot` is not a pure position glue symmetry of `A₅⁴ D₄`. -/
-theorem a5FourthD4BlockRot_not_mem_glueSymmetries :
+theorem a5FourthD4BlockRot_notMem_glueSymmetries :
     a5FourthD4BlockRot ∉ a5FourthD4.glueSymmetries := by
   intro hg
   -- Decode the two generators `[3, 3, 0, 0, 1]` and `[3, 0, 0, 3, 3]` of `A₅⁴ D₄`.
@@ -311,15 +334,8 @@ theorem a5FourthD4BlockRot_not_mem_glueSymmetries :
         fun k ↦ ([3, 3, 0, 0, 1] : List ℕ).getD (a5FourthD4BlockRot k) 0 := by
       funext k
       rw [← getD_encodeGlueWord, henc₁]
-    rw [hfun]
-    have hcast (i : Fin 5) : Fin.cast length_components_a5FourthD4.symm i = i := rfl
-    have h0 : (a5FourthD4BlockRot (0 : Fin 5) : ℕ) = 0 := congrArg Fin.val a5FourthD4BlockRot_zero
-    have h1 : (a5FourthD4BlockRot (1 : Fin 5) : ℕ) = 2 := congrArg Fin.val a5FourthD4BlockRot_one
-    have h2 : (a5FourthD4BlockRot (2 : Fin 5) : ℕ) = 3 := congrArg Fin.val a5FourthD4BlockRot_two
-    have h3 : (a5FourthD4BlockRot (3 : Fin 5) : ℕ) = 1 := congrArg Fin.val a5FourthD4BlockRot_three
-    have h4 : (a5FourthD4BlockRot (4 : Fin 5) : ℕ) = 4 := congrArg Fin.val a5FourthD4BlockRot_four
-    exact (List.ofFn_congr length_components_a5FourthD4 _).trans
-      (by simp [List.ofFn_succ, hcast, h0, h1, h2, h3, h4])
+    rw [hfun, ofFn_getD_a5FourthD4BlockRot]
+    decide
   -- Adding `w₂` (`[3, 0, 0, 3, 3]`) produces `[0, 0, 0, 0, 2]`, violating minimum glue norm `≥ 4`.
   have hsum_mem : w₁' + w₂ ∈ a5FourthD4.glueSubgroup := add_mem hw₁' hw₂'
   have henc_sum : encodeGlueWord a5FourthD4.componentType a5FourthD4.isSimplyLaced_componentType
@@ -337,14 +353,14 @@ theorem a5FourthD4BlockRot_not_mem_glueSymmetries :
 /-- **In `A₅⁴ D₄`, the block rotation of `[2(024)0]` is not a pure position glue symmetry**:
 the generator of `(GluePattern.cyclic [2] [0, 2, 4] [0]).symmetries`, transported to the component
 positions of `A₅⁴ D₄`, does not belong to `a5FourthD4.glueSymmetries`. -/
-theorem permCongr_finRotate_not_mem_glueSymmetries_a5FourthD4
+theorem permCongr_finRotate_notMem_glueSymmetries_a5FourthD4
     (hlen : (GluePattern.cyclic [2] [0, 2, 4] [0]).length = a5FourthD4.components.length :=
       by decide) :
     (finCongr hlen).permCongr
       (Equiv.Perm.finSumPerm (Equiv.Perm.finSumPerm 1 (finRotate 3)) 1) ∉
       a5FourthD4.glueSymmetries := by
   rw [permCongr_finRotate_eq_a5FourthD4BlockRot]
-  exact a5FourthD4BlockRot_not_mem_glueSymmetries
+  exact a5FourthD4BlockRot_notMem_glueSymmetries
 
 /-- **The indicated symmetries of all patterns of a row are pure position glue symmetries if and
 only if the row is not `A₅⁴ D₄`.** -/
@@ -355,41 +371,19 @@ theorem forall_permCongr_mem_glueSymmetries_iff {r : RootfulNiemeierType} :
       r ≠ a5FourthD4 := by
   refine ⟨fun h ↦ ?_, fun hr p hp g hg ↦ mem_glueSymmetries_of_mem_symmetries hr hp hg⟩
   rintro rfl
-  exact permCongr_finRotate_not_mem_glueSymmetries_a5FourthD4 _
+  exact permCongr_finRotate_notMem_glueSymmetries_a5FourthD4 _
     (h (GluePattern.cyclic [2] [0, 2, 4] [0]) (List.Mem.head _) _
       (by rw [GluePattern.symmetries_cyclic]; exact Subgroup.mem_zpowers _))
 
-/-- **The indicated symmetries of a table pattern act on the lattice of its row**, for every row
-other than `A₅⁴ D₄`, by moving the component in position `k` to position `g k`. -/
-noncomputable def patternIsometryHom {r : RootfulNiemeierType} (hr : r ≠ a5FourthD4)
+/-- For every row other than `A₅⁴ D₄`, the indicated symmetries of a table pattern act on `N_r` by
+pure position permutation through `latticeIsometryHom`. -/
+private noncomputable def patternPositionIsometryHom {r : RootfulNiemeierType} (hr : r ≠ a5FourthD4)
     {p : GluePattern} (hp : p ∈ r.gluePatterns) :
     p.symmetries →* IntegralLattice.Isometry r.lattice r.lattice :=
   r.latticeIsometryHom.comp <|
     ((finCongr (length_eq_of_mem_gluePatterns hp)).permCongrHom.toMonoidHom.comp
       p.symmetries.subtype).codRestrict r.glueSymmetries fun g ↦
         mem_glueSymmetries_of_mem_symmetries hr hp g.2
-
-/-- The action of an indicated pattern symmetry `g` on `N_r` reads the component in position `k`
-from position `g⁻¹ k`, the positions of the pattern being those of the row. -/
-@[simp]
-theorem patternIsometryHom_apply {r : RootfulNiemeierType} (hr : r ≠ a5FourthD4)
-    {p : GluePattern} (hp : p ∈ r.gluePatterns) (g : p.symmetries)
-    (x : ∀ i, Fin (r.componentType i).rank → ℚ) (k : Fin r.components.length)
-    (j : Fin (r.componentType k).rank) :
-    patternIsometryHom hr hp g x k j =
-      x (((finCongr (length_eq_of_mem_gluePatterns hp)).permCongr g)⁻¹ k)
-        (Fin.cast (congrArg rank (r.componentType_apply_of_mem_glueSymmetries
-          (inv_mem (mem_glueSymmetries_of_mem_symmetries hr hp g.2)) k)).symm j) :=
-  r.latticeIsometryHom_apply _ x k j
-
-/-- For every row other than `A₅⁴ D₄`, the indicated symmetries of a table pattern act faithfully on
-`N_r`. -/
-theorem patternIsometryHom_injective {r : RootfulNiemeierType} (hr : r ≠ a5FourthD4)
-    {p : GluePattern} (hp : p ∈ r.gluePatterns) :
-    Function.Injective (patternIsometryHom hr hp) := by
-  refine r.latticeIsometryHom_injective.comp fun g h hgh ↦ ?_
-  exact Subtype.ext ((finCongr (length_eq_of_mem_gluePatterns hp)).permCongrHom.injective
-    (congrArg Subtype.val hgh))
 
 private noncomputable def a5FourthD4PatternIsometryHomOfEq {r : RootfulNiemeierType}
     (hr : r = a5FourthD4) :
@@ -398,45 +392,62 @@ private noncomputable def a5FourthD4PatternIsometryHomOfEq {r : RootfulNiemeierT
   hr ▸ fun hp ↦ a5FourthD4PatternIsometryHom hp
 
 /-- **The indicated symmetries of every table pattern act on the lattice of its row**, across all
-23 rows of `RootfulNiemeierType`: away from `A₅⁴ D₄` this is the pure position action
-`patternIsometryHom`, and on `A₅⁴ D₄` it is the coupled block-rotation and `D₄`-triality action
+23 rows of `RootfulNiemeierType`: away from `A₅⁴ D₄` this is the pure position action through
+`latticeIsometryHom`, and on `A₅⁴ D₄` it is the coupled block-rotation and `D₄`-triality action
 `a5FourthD4PatternIsometryHom`. -/
-noncomputable def patternTrialityIsometryHom {r : RootfulNiemeierType} {p : GluePattern}
+noncomputable def patternIsometryHom {r : RootfulNiemeierType} {p : GluePattern}
     (hp : p ∈ r.gluePatterns) :
     p.symmetries →* IntegralLattice.Isometry r.lattice r.lattice :=
   if hr : r = a5FourthD4 then
     a5FourthD4PatternIsometryHomOfEq hr hp
   else
-    patternIsometryHom hr hp
+    patternPositionIsometryHom hr hp
 
-/-- Away from `A₅⁴ D₄`, `patternTrialityIsometryHom` agrees with the pure position action
-`patternIsometryHom`. -/
+/-- Away from `A₅⁴ D₄`, `patternIsometryHom` acts by the pure position glue symmetry through
+`latticeIsometryHom`. -/
+theorem patternIsometryHom_eq_latticeIsometryHom {r : RootfulNiemeierType} (hr : r ≠ a5FourthD4)
+    {p : GluePattern} (hp : p ∈ r.gluePatterns) (g : p.symmetries) :
+    patternIsometryHom hp g = r.latticeIsometryHom
+      ⟨(finCongr (length_eq_of_mem_gluePatterns hp)).permCongr g.1,
+        mem_glueSymmetries_of_mem_symmetries hr hp g.2⟩ := by
+  simp [patternIsometryHom, hr, patternPositionIsometryHom]
+
+/-- Away from `A₅⁴ D₄`, the action of an indicated pattern symmetry `g` on `N_r` reads the
+component in position `k` from position `g⁻¹ k`, the positions of the pattern being those of the
+row. -/
 @[simp]
-theorem patternTrialityIsometryHom_of_ne {r : RootfulNiemeierType} (hr : r ≠ a5FourthD4)
-    {p : GluePattern} (hp : p ∈ r.gluePatterns) :
-    patternTrialityIsometryHom hp = patternIsometryHom hr hp := by
-  rw [patternTrialityIsometryHom, dite_eq_right hr]
+theorem patternIsometryHom_apply {r : RootfulNiemeierType} (hr : r ≠ a5FourthD4)
+    {p : GluePattern} (hp : p ∈ r.gluePatterns) (g : p.symmetries)
+    (x : ∀ i, Fin (r.componentType i).rank → ℚ) (k : Fin r.components.length)
+    (j : Fin (r.componentType k).rank) :
+    patternIsometryHom hp g x k j =
+      x (((finCongr (length_eq_of_mem_gluePatterns hp)).permCongr g)⁻¹ k)
+        (Fin.cast (congrArg rank (r.componentType_apply_of_mem_glueSymmetries
+          (inv_mem (mem_glueSymmetries_of_mem_symmetries hr hp g.2)) k)).symm j) := by
+  rw [patternIsometryHom_eq_latticeIsometryHom hr, r.latticeIsometryHom_apply]
 
-/-- On `A₅⁴ D₄`, `patternTrialityIsometryHom` agrees with the coupled action
+/-- On `A₅⁴ D₄`, `patternIsometryHom` agrees with the coupled action
 `a5FourthD4PatternIsometryHom`. -/
 @[simp]
-theorem patternTrialityIsometryHom_a5FourthD4 {p : GluePattern}
+theorem patternIsometryHom_a5FourthD4 {p : GluePattern}
     (hp : p ∈ a5FourthD4.gluePatterns) :
-    patternTrialityIsometryHom hp = a5FourthD4PatternIsometryHom hp := by
-  rw [patternTrialityIsometryHom, dite_eq_left rfl]
-  rfl
+    patternIsometryHom hp = a5FourthD4PatternIsometryHom hp := by
+  simp [patternIsometryHom, a5FourthD4PatternIsometryHomOfEq]
 
-/-- **The pattern-symmetry action `patternTrialityIsometryHom` is faithful for every pattern of
-every one of the 23 rootful rank-24 rows.** -/
-theorem patternTrialityIsometryHom_injective {r : RootfulNiemeierType} {p : GluePattern}
+/-- **The pattern-symmetry action `patternIsometryHom` is faithful for every pattern of every one
+of the 23 rootful rank-24 rows.** -/
+theorem patternIsometryHom_injective {r : RootfulNiemeierType} {p : GluePattern}
     (hp : p ∈ r.gluePatterns) :
-    Function.Injective (patternTrialityIsometryHom hp) := by
+    Function.Injective (patternIsometryHom hp) := by
   by_cases hr : r = a5FourthD4
   · subst hr
-    rw [patternTrialityIsometryHom_a5FourthD4]
+    rw [patternIsometryHom_a5FourthD4]
     exact a5FourthD4PatternIsometryHom_injective hp
-  · rw [patternTrialityIsometryHom_of_ne hr]
-    exact patternIsometryHom_injective hr hp
+  · intro g h hgh
+    rw [patternIsometryHom_eq_latticeIsometryHom hr,
+      patternIsometryHom_eq_latticeIsometryHom hr] at hgh
+    exact Subtype.ext ((finCongr (length_eq_of_mem_gluePatterns hp)).permCongrHom.injective
+      (congrArg Subtype.val (r.latticeIsometryHom_injective hgh)))
 
 end RootfulNiemeierType
 

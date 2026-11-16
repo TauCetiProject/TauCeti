@@ -8,6 +8,7 @@ module
 public import TauCeti.LinearAlgebra.IntegralLattice.Rank24.Niemeier
 public import TauCeti.LinearAlgebra.IntegralLattice.Isometry.Group
 public import TauCeti.LinearAlgebra.IntegralLattice.RootLattice.TypeD.Triality
+import Mathlib.GroupTheory.SpecificGroups.Cyclic
 
 /-!
 # Coupled block-rotation and `D₄`-triality symmetry of the table row `A₅⁴ D₄`
@@ -19,7 +20,7 @@ ordered components `(A₅, A₅, A₅, A₅, D₄)` and glue columns
 
 As characterized across all 23 rows by
 `TauCeti.RootfulNiemeierType.forall_permCongr_mem_glueSymmetries_iff` (proved from
-`TauCeti.RootfulNiemeierType.permCongr_finRotate_not_mem_glueSymmetries_a5FourthD4` in
+`TauCeti.RootfulNiemeierType.permCongr_finRotate_notMem_glueSymmetries_a5FourthD4` in
 `TauCeti.LinearAlgebra.IntegralLattice.Rank24.TableRow.Symmetry`), `A₅⁴ D₄` is the unique row of
 the rootful rank-24 table whose indicated pattern symmetries are not pure position glue symmetries:
 rotating the three `A₅` positions `1 ↦ 2 ↦ 3 ↦ 1` marked in `[2(024)0]` while fixing the `D₄` label
@@ -43,7 +44,7 @@ Using `QuadraticMap.IsometryEquiv.piCongr'` and
   fixing `A₅` position `0`, and acting by `typeD4Triality` on `D₄` position `4`.
 * `TauCeti.RootfulNiemeierType.a5FourthD4PatternIsometryHom`: the faithful action of `p.symmetries`
   on `niemeierA5FourthD4` for every pattern `p ∈ a5FourthD4.gluePatterns` (combined with the other
-  22 rows into `TauCeti.RootfulNiemeierType.patternTrialityIsometryHom` in
+  22 rows into `TauCeti.RootfulNiemeierType.patternIsometryHom` in
   `TauCeti.LinearAlgebra.IntegralLattice.Rank24.TableRow.Symmetry`).
 
 ## Main declarations
@@ -179,22 +180,23 @@ theorem permCongr_finRotate_eq_a5FourthD4BlockRot
         (Equiv.Perm.finSumPerm (Equiv.Perm.finSumPerm 1 (finRotate 3)) 1) =
       a5FourthD4BlockRot := by
   -- Evaluate both permutations on the identity digit word `[0, 1, 2, 3, 4]`.
+  let g : Equiv.Perm (Fin (GluePattern.cyclic [2] [0, 2, 4] [0]).length) :=
+    Equiv.Perm.finSumPerm (Equiv.Perm.finSumPerm 1 (finRotate 3)) 1
   have hseed : (fun j : Fin (GluePattern.cyclic [0] [1, 2, 3] [4]).length ↦ (j : ℕ)) =
       (GluePattern.cyclic [0] [1, 2, 3] [4]).seed := by
     have h0 := GluePattern.ofFn_seed_cyclic_comp_pow [0] [1, 2, 3] [4] 0
     rw [pow_zero, Equiv.Perm.coe_one] at h0
     exact List.ofFn_injective ((by decide : _ = [0, 1, 2, 3, 4]).trans h0.symm)
-  have hrot : List.ofFn (fun j : Fin (GluePattern.cyclic [2] [0, 2, 4] [0]).length ↦
-        (Equiv.Perm.finSumPerm (Equiv.Perm.finSumPerm 1 (finRotate 3)) 1 j : ℕ)) =
+  have hrot : List.ofFn (fun j : Fin (GluePattern.cyclic [2] [0, 2, 4] [0]).length ↦ (g j : ℕ)) =
       [0, 2, 3, 1, 4] := by
     have h1 := GluePattern.ofFn_seed_cyclic_comp_pow [0] [1, 2, 3] [4] 1
     rw [pow_one, ← hseed] at h1
     exact h1
   have hlist : List.ofFn (fun k : Fin a5FourthD4.components.length ↦
-        (((finCongr hlen).permCongr
-          (Equiv.Perm.finSumPerm (Equiv.Perm.finSumPerm 1 (finRotate 3)) 1) k) : ℕ)) =
+        (((finCongr hlen).permCongr g k) : ℕ)) =
       List.ofFn (fun k : Fin a5FourthD4.components.length ↦ (a5FourthD4BlockRot k : ℕ)) :=
-    (congrArg List.ofFn (funext fun _ ↦ rfl)).trans
+    (congrArg List.ofFn (funext fun k ↦ by
+      rw [Equiv.permCongr_apply, finCongr_apply_coe, finCongr_symm_apply])).trans
       ((List.ofFn_congr hlen _).symm.trans (hrot.trans (by decide)))
   ext k
   exact congrFun (List.ofFn_injective hlist) k
@@ -261,17 +263,6 @@ private theorem glueAlphabet_ofEq_eq_apply (w : a5FourthD4.glueModule)
   subst hab
   exact (FiniteQuadraticModule.Isometry.ofEq_apply ha (w a)).trans (cast_eq _ _)
 
-/-- Identifying the glue alphabet at index `a = 4` with `(D 4).glueAlphabet` transports `w a` to
-`w 4`. -/
-private theorem glueAlphabet_ofEq_D4_apply (w : a5FourthD4.glueModule)
-    {a : Fin a5FourthD4.components.length} (ha4 : a = 4)
-    (ha : (a5FourthD4.componentType a).glueAlphabet
-        (a5FourthD4.isSimplyLaced_componentType a) =
-      (D 4).glueAlphabet (isSimplyLaced_D 4)) :
-    FiniteQuadraticModule.Isometry.ofEq ha (w a) = w 4 := by
-  subst ha4
-  exact (FiniteQuadraticModule.Isometry.ofEq_apply ha (w 4)).trans (cast_eq _ _)
-
 @[simp]
 theorem a5FourthD4BlockTrialityGlueIsometry_apply_zero (w : a5FourthD4.glueModule) :
     a5FourthD4BlockTrialityGlueIsometry w 0 = w 0 := by
@@ -306,24 +297,11 @@ theorem a5FourthD4BlockTrialityGlueIsometry_apply_three (w : a5FourthD4.glueModu
 theorem a5FourthD4BlockTrialityGlueIsometry_apply_four (w : a5FourthD4.glueModule) :
     a5FourthD4BlockTrialityGlueIsometry w 4 =
       typeD4GlueAlphabetTriality (isSimplyLaced_D 4) (w 4) := by
-  refine (a5FourthD4BlockTrialityGlueIsometry_apply w 4).trans ?_
-  have hcomp : a5FourthD4BlockTrialityGlueComponent 4 =
-      (FiniteQuadraticModule.Isometry.ofEq
-        (glueAlphabet_congr (componentType_a5FourthD4BlockRot_symm_eq_D4 rfl)
-          (a5FourthD4.isSimplyLaced_componentType (a5FourthD4BlockRot.symm 4))
-          (isSimplyLaced_D 4))).trans
-        ((typeD4GlueAlphabetTriality (isSimplyLaced_D 4)).trans
-          (FiniteQuadraticModule.Isometry.ofEq
-            (glueAlphabet_congr (D4_eq_componentType_a5FourthD4 rfl) (isSimplyLaced_D 4)
-              (a5FourthD4.isSimplyLaced_componentType 4)))) :=
-    dite_eq_left rfl
-  refine (DFunLike.congr_fun hcomp _).trans ?_
-  refine (QuadraticMap.IsometryEquiv.trans_apply _ _ _).trans ?_
-  refine (QuadraticMap.IsometryEquiv.trans_apply _ _ _).trans ?_
-  refine (FiniteQuadraticModule.Isometry.ofEq_apply _ _).trans ?_
-  refine (cast_eq _ _).trans ?_
-  exact congrArg (typeD4GlueAlphabetTriality (isSimplyLaced_D 4))
-    (glueAlphabet_ofEq_D4_apply w a5FourthD4BlockRot_symm_four _)
+  rw [a5FourthD4BlockTrialityGlueIsometry_apply, a5FourthD4BlockTrialityGlueComponent,
+    dite_eq_left rfl, QuadraticMap.IsometryEquiv.trans_apply,
+    QuadraticMap.IsometryEquiv.trans_apply]
+  exact ((FiniteQuadraticModule.Isometry.ofEq_apply _ _).trans (cast_eq _ _)).trans
+    (congrArg _ (glueAlphabet_ofEq_eq_apply w a5FourthD4BlockRot_symm_four _))
 
 /-- Applying `a5FourthD4BlockTrialityGlueIsometry` three times returns the original glue word. -/
 @[simp]
@@ -432,7 +410,10 @@ theorem a5FourthD4BlockTrialityGlueIsometry_mem_glueGenerators_iff (w : a5Fourth
 theorem a5FourthD4BlockTrialityGlueIsometry_mem_glueSubgroup_iff (w : a5FourthD4.glueModule) :
     a5FourthD4BlockTrialityGlueIsometry w ∈ a5FourthD4.glueSubgroup ↔
       w ∈ a5FourthD4.glueSubgroup :=
-  apply_mem_glueSubgroup_iff_of_mem_glueGenerators_iff a5FourthD4BlockTrialityGlueIsometry
+  apply_mem_glueSubgroup_iff_of_mem_glueGenerators_iff
+    a5FourthD4BlockTrialityGlueIsometry.toAddEquiv.toAddMonoidHom
+    a5FourthD4BlockTrialityGlueIsometry.injective
+    (fun y _ ↦ a5FourthD4BlockTrialityGlueIsometry.surjective y)
     a5FourthD4BlockTrialityGlueIsometry_mem_glueGenerators_iff w
 
 /-! ### The coupled block-rotation and triality isometry of `niemeierA5FourthD4` -/
@@ -482,22 +463,11 @@ private theorem glueAlphabetIsometry_a5FourthD4BlockTrialityComponent
     rw [glueAlphabetIsometry_typeD4GlueAlphabetTriality (isSimplyLaced_D 4) (valid_D.mpr le_rfl),
       glueAlphabetIsometry_ofEq (componentType_a5FourthD4BlockRot_symm_eq_D4 hk)
         (a5FourthD4.valid_componentType (a5FourthD4BlockRot.symm k)) (valid_D.mpr le_rfl)
-        (a5FourthD4.isSimplyLaced_componentType (a5FourthD4BlockRot.symm k)) (isSimplyLaced_D 4)]
-    let e₁ := (a5FourthD4.componentType (a5FourthD4BlockRot.symm k)).rootLatticeIsometryOfEq
-      (a5FourthD4.isSimplyLaced_componentType (a5FourthD4BlockRot.symm k))
-      (componentType_a5FourthD4BlockRot_symm_eq_D4 hk) (isSimplyLaced_D 4)
-    let e₂ := typeD4Triality (isSimplyLaced_D 4)
-    let e₃ := (D 4).rootLatticeIsometryOfEq (isSimplyLaced_D 4)
-      (D4_eq_componentType_a5FourthD4 hk) (a5FourthD4.isSimplyLaced_componentType k)
-    have htr : e₁.discriminantGroupEquiv.trans
-        (e₂.discriminantGroupEquiv.trans e₃.discriminantGroupEquiv) =
-        (e₁.trans (e₂.trans e₃)).discriminantGroupEquiv := by
-      rw [Isometry.discriminantGroupEquiv_trans, Isometry.discriminantGroupEquiv_trans]
-    refine (Isometry.discriminantQuadraticIsometry_apply _ _ _).trans ?_
-    refine (congrArg _ ((Isometry.discriminantQuadraticIsometry_apply _ _ _).trans
-      (congrArg _ (Isometry.discriminantQuadraticIsometry_apply _ _ _)))).trans ?_
-    exact (DFunLike.congr_fun htr _).trans
-      (Isometry.discriminantQuadraticIsometry_apply _ _ _).symm
+        (a5FourthD4.isSimplyLaced_componentType (a5FourthD4BlockRot.symm k)) (isSimplyLaced_D 4),
+      Isometry.discriminantQuadraticIsometry_trans,
+      Isometry.discriminantQuadraticIsometry_trans,
+      QuadraticMap.IsometryEquiv.trans_apply,
+      QuadraticMap.IsometryEquiv.trans_apply]
   · rw [a5FourthD4BlockTrialityGlueComponent, a5FourthD4BlockTrialityRootComponent,
       dite_eq_right hk, dite_eq_right hk]
     exact glueAlphabetIsometry_ofEq (componentType_a5FourthD4BlockRot_symm k)
@@ -544,49 +514,51 @@ private theorem rootLatticeIsometryOfEq_eq_apply
   exact (a5FourthD4.componentType a).rootLatticeIsometryOfEq_apply
     (a5FourthD4.isSimplyLaced_componentType a) ha hT (x a) j
 
+private theorem niemeierA5FourthD4BlockTriality_apply
+    (x : ∀ i, Fin (a5FourthD4.componentType i).rank → ℚ)
+    (k : Fin a5FourthD4.components.length) :
+    niemeierA5FourthD4BlockTriality x k =
+      a5FourthD4BlockTrialityRootComponent k (x (a5FourthD4BlockRot.symm k)) := by
+  rw [niemeierA5FourthD4BlockTriality, Isometry.trans_apply, Isometry.trans_apply,
+    Isometry.ofEq_apply, Isometry.ofEq_apply, gluedLatticePiCongrIsometry'_apply]
+
+private theorem niemeierA5FourthD4BlockTriality_apply_of_ne_four
+    (x : ∀ i, Fin (a5FourthD4.componentType i).rank → ℚ)
+    {k b : Fin a5FourthD4.components.length} (hk : k ≠ 4) (hb : a5FourthD4BlockRot.symm k = b)
+    (hrank : (a5FourthD4.componentType b).rank = (a5FourthD4.componentType k).rank)
+    (j : Fin (a5FourthD4.componentType k).rank) :
+    niemeierA5FourthD4BlockTriality x k j = x b (Fin.cast hrank.symm j) := by
+  rw [niemeierA5FourthD4BlockTriality_apply, a5FourthD4BlockTrialityRootComponent,
+    dite_eq_right hk]
+  exact rootLatticeIsometryOfEq_eq_apply x hb _ hrank j
+
 @[simp]
 theorem niemeierA5FourthD4BlockTriality_apply_zero
     (x : ∀ i, Fin (a5FourthD4.componentType i).rank → ℚ) :
-    niemeierA5FourthD4BlockTriality x 0 = x 0 := by
-  funext j
-  rw [niemeierA5FourthD4BlockTriality, Isometry.trans_apply, Isometry.trans_apply,
-    Isometry.ofEq_apply, Isometry.ofEq_apply, gluedLatticePiCongrIsometry'_apply,
-    a5FourthD4BlockTrialityRootComponent, dite_eq_right (by decide)]
-  exact (rootLatticeIsometryOfEq_eq_apply x a5FourthD4BlockRot_symm_zero _ rfl j).trans
-    (congrArg (x 0) (Fin.cast_eq_self j))
+    niemeierA5FourthD4BlockTriality x 0 = x 0 :=
+  funext fun j ↦ (niemeierA5FourthD4BlockTriality_apply_of_ne_four x (by decide)
+    a5FourthD4BlockRot_symm_zero rfl j).trans (congrArg (x 0) (Fin.cast_eq_self j))
 
 @[simp]
 theorem niemeierA5FourthD4BlockTriality_apply_one
     (x : ∀ i, Fin (a5FourthD4.componentType i).rank → ℚ) :
-    niemeierA5FourthD4BlockTriality x 1 = x 3 := by
-  funext j
-  rw [niemeierA5FourthD4BlockTriality, Isometry.trans_apply, Isometry.trans_apply,
-    Isometry.ofEq_apply, Isometry.ofEq_apply, gluedLatticePiCongrIsometry'_apply,
-    a5FourthD4BlockTrialityRootComponent, dite_eq_right (by decide)]
-  exact (rootLatticeIsometryOfEq_eq_apply x a5FourthD4BlockRot_symm_one _ rfl j).trans
-    (congrArg (x 3) (Fin.cast_eq_self j))
+    niemeierA5FourthD4BlockTriality x 1 = x 3 :=
+  funext fun j ↦ (niemeierA5FourthD4BlockTriality_apply_of_ne_four x (by decide)
+    a5FourthD4BlockRot_symm_one rfl j).trans (congrArg (x 3) (Fin.cast_eq_self j))
 
 @[simp]
 theorem niemeierA5FourthD4BlockTriality_apply_two
     (x : ∀ i, Fin (a5FourthD4.componentType i).rank → ℚ) :
-    niemeierA5FourthD4BlockTriality x 2 = x 1 := by
-  funext j
-  rw [niemeierA5FourthD4BlockTriality, Isometry.trans_apply, Isometry.trans_apply,
-    Isometry.ofEq_apply, Isometry.ofEq_apply, gluedLatticePiCongrIsometry'_apply,
-    a5FourthD4BlockTrialityRootComponent, dite_eq_right (by decide)]
-  exact (rootLatticeIsometryOfEq_eq_apply x a5FourthD4BlockRot_symm_two _ rfl j).trans
-    (congrArg (x 1) (Fin.cast_eq_self j))
+    niemeierA5FourthD4BlockTriality x 2 = x 1 :=
+  funext fun j ↦ (niemeierA5FourthD4BlockTriality_apply_of_ne_four x (by decide)
+    a5FourthD4BlockRot_symm_two rfl j).trans (congrArg (x 1) (Fin.cast_eq_self j))
 
 @[simp]
 theorem niemeierA5FourthD4BlockTriality_apply_three
     (x : ∀ i, Fin (a5FourthD4.componentType i).rank → ℚ) :
-    niemeierA5FourthD4BlockTriality x 3 = x 2 := by
-  funext j
-  rw [niemeierA5FourthD4BlockTriality, Isometry.trans_apply, Isometry.trans_apply,
-    Isometry.ofEq_apply, Isometry.ofEq_apply, gluedLatticePiCongrIsometry'_apply,
-    a5FourthD4BlockTrialityRootComponent, dite_eq_right (by decide)]
-  exact (rootLatticeIsometryOfEq_eq_apply x a5FourthD4BlockRot_symm_three _ rfl j).trans
-    (congrArg (x 2) (Fin.cast_eq_self j))
+    niemeierA5FourthD4BlockTriality x 3 = x 2 :=
+  funext fun j ↦ (niemeierA5FourthD4BlockTriality_apply_of_ne_four x (by decide)
+    a5FourthD4BlockRot_symm_three rfl j).trans (congrArg (x 2) (Fin.cast_eq_self j))
 
 /-- On the `D₄` component at position `4`, `niemeierA5FourthD4BlockTriality` acts by
 `typeD4Triality`. -/
@@ -596,21 +568,18 @@ theorem niemeierA5FourthD4BlockTriality_apply_four
     niemeierA5FourthD4BlockTriality x 4 =
       typeD4Triality (isSimplyLaced_D 4) (x 4) := by
   funext j
-  rw [niemeierA5FourthD4BlockTriality, Isometry.trans_apply, Isometry.trans_apply,
-    Isometry.ofEq_apply, Isometry.ofEq_apply, gluedLatticePiCongrIsometry'_apply,
-    a5FourthD4BlockTrialityRootComponent, dite_eq_left rfl,
-    Isometry.trans_apply, Isometry.trans_apply]
+  rw [niemeierA5FourthD4BlockTriality_apply, a5FourthD4BlockTrialityRootComponent,
+    dite_eq_left rfl, Isometry.trans_apply, Isometry.trans_apply]
   refine (rootLatticeIsometryOfEq_apply (D 4) (isSimplyLaced_D 4)
     (D4_eq_componentType_a5FourthD4 rfl) (a5FourthD4.isSimplyLaced_componentType 4) _ j).trans ?_
   have hin : (a5FourthD4.componentType (a5FourthD4BlockRot.symm 4)).rootLatticeIsometryOfEq
       (a5FourthD4.isSimplyLaced_componentType (a5FourthD4BlockRot.symm 4))
       (componentType_a5FourthD4BlockRot_symm_eq_D4 rfl) (isSimplyLaced_D 4)
-      (x (a5FourthD4BlockRot.symm 4)) = x 4 := by
-    funext m
-    exact (rootLatticeIsometryOfEq_eq_apply x a5FourthD4BlockRot_symm_four _ rfl m).trans
+      (x (a5FourthD4BlockRot.symm 4)) = x 4 :=
+    funext fun m ↦ (rootLatticeIsometryOfEq_eq_apply x a5FourthD4BlockRot_symm_four _ rfl m).trans
       (congrArg (x 4) (Fin.cast_eq_self m))
   rw [hin]
-  rfl
+  exact congrArg _ (Fin.cast_eq_self j)
 
 /-- The cube of `niemeierA5FourthD4BlockTriality` is the identity isometry. -/
 @[simp]
@@ -659,12 +628,6 @@ theorem det_niemeierA5FourthD4BlockTriality :
     Isometry.det niemeierA5FourthD4 niemeierA5FourthD4BlockTriality = 1 :=
   Isometry.det_eq_one_of_pow_eq_one (by decide : Odd 3) niemeierA5FourthD4BlockTriality_pow_three
 
-/-- `niemeierA5FourthD4BlockTriality` belongs to the special orthogonal group of
-`niemeierA5FourthD4`. -/
-theorem niemeierA5FourthD4BlockTriality_mem_specialOrthogonalGroup :
-    niemeierA5FourthD4BlockTriality ∈ specialOrthogonalGroup niemeierA5FourthD4 :=
-  mem_specialOrthogonalGroup_iff.mpr det_niemeierA5FourthD4BlockTriality
-
 end NiemeierA5FourthD4BlockTriality
 
 namespace RootfulNiemeierType
@@ -673,96 +636,53 @@ open DynkinType IntegralLattice
 
 /-! ### Pattern symmetry action on `A₅⁴ D₄` -/
 
-private theorem niemeierA5FourthD4BlockTriality_pow_of_blockRot_pow (k : ℕ) :
-    niemeierA5FourthD4BlockTriality ^
-        (![0, 0, 1, 2, 0] (((a5FourthD4BlockRot ^ k) 1).cast length_components_a5FourthD4)) =
-      niemeierA5FourthD4BlockTriality ^ k := by
-  rw [pow_eq_pow_mod k a5FourthD4BlockRot_pow_three,
-    pow_eq_pow_mod k niemeierA5FourthD4BlockTriality_pow_three]
-  have hk : k % 3 = 0 ∨ k % 3 = 1 ∨ k % 3 = 2 := by omega
-  rcases hk with h0 | h1 | h2
-  · rw [h0]
-    have hexp : ![0, 0, 1, 2, 0] (((a5FourthD4BlockRot ^ 0) 1).cast length_components_a5FourthD4) =
-        0 := by decide
-    exact congrArg (niemeierA5FourthD4BlockTriality ^ ·) hexp
-  · rw [h1]
-    have hexp : ![0, 0, 1, 2, 0] (((a5FourthD4BlockRot ^ 1) 1).cast length_components_a5FourthD4) =
-        1 := by decide
-    exact congrArg (niemeierA5FourthD4BlockTriality ^ ·) hexp
-  · rw [h2]
-    have hexp : ![0, 0, 1, 2, 0] (((a5FourthD4BlockRot ^ 2) 1).cast length_components_a5FourthD4) =
-        2 := by decide
-    exact congrArg (niemeierA5FourthD4BlockTriality ^ ·) hexp
-
-private theorem exp_permCongr_one {p : GluePattern} (hp : p ∈ a5FourthD4.gluePatterns) :
-    ![0, 0, 1, 2, 0]
-      ((((finCongr (length_eq_of_mem_gluePatterns hp)).permCongr
-          (1 : Equiv.Perm (Fin p.length))) 1).cast length_components_a5FourthD4) = 0 := by
-  rw [Equiv.Perm.one_def, Equiv.permCongr_refl, Equiv.refl_apply]
-  decide
-
-private theorem permCongr_finRotate_pow_eq_a5FourthD4BlockRot_pow
-    (hlen : (GluePattern.cyclic [2] [0, 2, 4] [0]).length = a5FourthD4.components.length)
-    (k : ℕ) :
-    (finCongr hlen).permCongr
-        (Equiv.Perm.finSumPerm (Equiv.Perm.finSumPerm 1 (finRotate 3)) 1 ^ k) =
-      a5FourthD4BlockRot ^ k :=
-  (map_pow (finCongr hlen).permCongrHom _ k).trans
-    (congrArg (· ^ k) (permCongr_finRotate_eq_a5FourthD4BlockRot hlen))
-
-private theorem exists_permCongr_eq_a5FourthD4BlockRot_pow {p : GluePattern}
+private theorem permCongr_mem_zpowers_a5FourthD4BlockRot {p : GluePattern}
     (hp : p ∈ a5FourthD4.gluePatterns) (g : p.symmetries) :
-    ∃ k : ℕ, (finCongr (length_eq_of_mem_gluePatterns hp)).permCongr g.1 =
-      a5FourthD4BlockRot ^ k := by
+    (finCongr (length_eq_of_mem_gluePatterns hp)).permCongr g.1 ∈
+      Subgroup.zpowers a5FourthD4BlockRot := by
   rcases g with ⟨g1, hg2⟩
+  dsimp only
   have hp' := hp
   simp only [gluePatterns, List.mem_cons, List.not_mem_nil, or_false] at hp'
   rcases hp' with rfl | rfl | rfl | rfl
-  · rw [GluePattern.symmetries_cyclic] at hg2
-    obtain ⟨k, rfl⟩ := (Submonoid.mem_powers_iff _ _).mp (mem_powers_iff_mem_zpowers.mpr hg2)
-    exact ⟨k, permCongr_finRotate_pow_eq_a5FourthD4BlockRot_pow _ k⟩
+  · let gen : Equiv.Perm (Fin (GluePattern.cyclic [2] [0, 2, 4] [0]).length) :=
+      Equiv.Perm.finSumPerm (Equiv.Perm.finSumPerm 1 (finRotate 3)) 1
+    have hgen : g1 ∈ Subgroup.zpowers gen := by
+      rwa [GluePattern.symmetries_cyclic] at hg2
+    have hmem := Subgroup.mem_map_of_mem
+      (finCongr (length_eq_of_mem_gluePatterns hp)).permCongrHom.toMonoidHom hgen
+    rwa [MonoidHom.map_zpowers, MulEquiv.coe_toMonoidHom, Equiv.permCongrHom_coe,
+      permCongr_finRotate_eq_a5FourthD4BlockRot] at hmem
   all_goals
     rw [GluePattern.symmetries_literal, Subgroup.mem_bot] at hg2
     subst hg2
-    exact ⟨0, by rw [pow_zero]; rfl⟩
+    rw [Equiv.Perm.one_def, Equiv.permCongr_refl]
+    exact one_mem _
+
+/-- The isomorphism between the order-3 cyclic subgroup generated by `a5FourthD4BlockRot` and
+that generated by `niemeierA5FourthD4BlockTriality`. -/
+private noncomputable def a5FourthD4BlockRotMulEquivTriality :
+    Subgroup.zpowers a5FourthD4BlockRot ≃* Subgroup.zpowers niemeierA5FourthD4BlockTriality :=
+  mulEquivOfOrderOfEq (g := ⟨a5FourthD4BlockRot, Subgroup.mem_zpowers _⟩)
+    (g' := ⟨niemeierA5FourthD4BlockTriality, Subgroup.mem_zpowers _⟩)
+    (fun x ↦ by
+      obtain ⟨n, hn⟩ := Subgroup.mem_zpowers_iff.mp x.2
+      exact Subgroup.mem_zpowers_iff.mpr ⟨n, Subtype.ext hn⟩)
+    (fun x ↦ by
+      obtain ⟨n, hn⟩ := Subgroup.mem_zpowers_iff.mp x.2
+      exact Subgroup.mem_zpowers_iff.mpr ⟨n, Subtype.ext hn⟩)
+    (by simp [Subgroup.orderOf_mk])
 
 /-- **The indicated symmetries of every pattern of `A₅⁴ D₄` act on `niemeierA5FourthD4`**:
 trivially on the three literal patterns `[33001]`, `[30302]`, `[30033]`, and via powers of
 `niemeierA5FourthD4BlockTriality` on the cyclic pattern `[2(024)0]`. -/
 noncomputable def a5FourthD4PatternIsometryHom {p : GluePattern}
     (hp : p ∈ a5FourthD4.gluePatterns) :
-    p.symmetries →* IntegralLattice.Isometry niemeierA5FourthD4 niemeierA5FourthD4 where
-  toFun g :=
-    niemeierA5FourthD4BlockTriality ^
-      (![0, 0, 1, 2, 0]
-        ((((finCongr (length_eq_of_mem_gluePatterns hp)).permCongr g.1) 1).cast
-          length_components_a5FourthD4))
-  map_one' := by
-    rw [Subgroup.coe_one, exp_permCongr_one hp, pow_zero]
-  map_mul' g h := by
-    rw [Subgroup.coe_mul]
-    obtain ⟨k, hgk⟩ := exists_permCongr_eq_a5FourthD4BlockRot_pow hp g
-    obtain ⟨m, hhm⟩ := exists_permCongr_eq_a5FourthD4BlockRot_pow hp h
-    have hgh : (finCongr (length_eq_of_mem_gluePatterns hp)).permCongr (g.1 * h.1) =
-        a5FourthD4BlockRot ^ (k + m) :=
-      (map_mul (finCongr (length_eq_of_mem_gluePatterns hp)).permCongrHom g.1 h.1).trans
-        ((congrArg₂ (· * ·) hgk hhm).trans (pow_add _ _ _).symm)
-    rw [hgh, hgk, hhm, niemeierA5FourthD4BlockTriality_pow_of_blockRot_pow,
-      niemeierA5FourthD4BlockTriality_pow_of_blockRot_pow,
-      niemeierA5FourthD4BlockTriality_pow_of_blockRot_pow, pow_add]
-
-/-- Explicit formula for `a5FourthD4PatternIsometryHom hp g` in terms of the image of position `1`
-under `g`. -/
--- Not `@[simp]`: kept out of the default simp set so specific `@[simp]` lemmas on literal
--- patterns, the cyclic generator, and `Isometry.det` fire without unfolding the internal exponent.
-theorem a5FourthD4PatternIsometryHom_apply {p : GluePattern}
-    (hp : p ∈ a5FourthD4.gluePatterns) (g : p.symmetries) :
-    a5FourthD4PatternIsometryHom hp g =
-      niemeierA5FourthD4BlockTriality ^
-        (![0, 0, 1, 2, 0]
-          ((((finCongr (length_eq_of_mem_gluePatterns hp)).permCongr g.1) 1).cast
-            length_components_a5FourthD4)) :=
-  (rfl)
+    p.symmetries →* IntegralLattice.Isometry niemeierA5FourthD4 niemeierA5FourthD4 :=
+  ((Subgroup.subtype _).comp a5FourthD4BlockRotMulEquivTriality.toMonoidHom).comp <|
+    ((finCongr (length_eq_of_mem_gluePatterns hp)).permCongrHom.toMonoidHom.comp
+      p.symmetries.subtype).codRestrict (Subgroup.zpowers a5FourthD4BlockRot)
+      (permCongr_mem_zpowers_a5FourthD4BlockRot hp)
 
 /-- Whenever `g` acts on the five component positions of `A₅⁴ D₄` as `a5FourthD4BlockRot ^ k`,
 `a5FourthD4PatternIsometryHom hp g` is `niemeierA5FourthD4BlockTriality ^ k`. -/
@@ -771,8 +691,16 @@ theorem a5FourthD4PatternIsometryHom_eq_pow_of_permCongr_eq_pow {p : GluePattern
     (hk : (finCongr (length_eq_of_mem_gluePatterns hp)).permCongr g.1 =
       a5FourthD4BlockRot ^ k) :
     a5FourthD4PatternIsometryHom hp g = niemeierA5FourthD4BlockTriality ^ k := by
-  rw [a5FourthD4PatternIsometryHom_apply, hk,
-    niemeierA5FourthD4BlockTriality_pow_of_blockRot_pow]
+  have hsub :
+      (((finCongr (length_eq_of_mem_gluePatterns hp)).permCongrHom.toMonoidHom.comp
+        p.symmetries.subtype).codRestrict (Subgroup.zpowers a5FourthD4BlockRot)
+        (permCongr_mem_zpowers_a5FourthD4BlockRot hp)) g =
+      (⟨a5FourthD4BlockRot, Subgroup.mem_zpowers _⟩ :
+        Subgroup.zpowers a5FourthD4BlockRot) ^ k :=
+    Subtype.ext (by simp [hk])
+  rw [a5FourthD4PatternIsometryHom, MonoidHom.comp_apply, hsub, map_pow, MonoidHom.comp_apply,
+    MulEquiv.coe_toMonoidHom, a5FourthD4BlockRotMulEquivTriality,
+    mulEquivOfOrderOfEq_apply_gen, Subgroup.coe_subtype]
 
 /-- Every indicated pattern symmetry of `A₅⁴ D₄` acts on the component positions as a power
 `a5FourthD4BlockRot ^ k` (`k < 3`) and on `niemeierA5FourthD4` as the matching power
@@ -782,10 +710,13 @@ theorem exists_a5FourthD4PatternIsometryHom_eq_pow {p : GluePattern}
     ∃ k < 3,
       (finCongr (length_eq_of_mem_gluePatterns hp)).permCongr g.1 = a5FourthD4BlockRot ^ k ∧
         a5FourthD4PatternIsometryHom hp g = niemeierA5FourthD4BlockTriality ^ k := by
-  obtain ⟨k, hk⟩ := exists_permCongr_eq_a5FourthD4BlockRot_pow hp g
+  obtain ⟨k, hk⟩ := (Submonoid.mem_powers_iff _ _).mp
+    (mem_powers_iff_mem_zpowers.mpr (permCongr_mem_zpowers_a5FourthD4BlockRot hp g))
+  have hk' : (finCongr (length_eq_of_mem_gluePatterns hp)).permCongr g.1 =
+      a5FourthD4BlockRot ^ k := hk.symm
   refine ⟨k % 3, Nat.mod_lt k (by decide), ?_, ?_⟩
-  · exact hk.trans (pow_eq_pow_mod k a5FourthD4BlockRot_pow_three)
-  · exact (a5FourthD4PatternIsometryHom_eq_pow_of_permCongr_eq_pow hp g hk).trans
+  · exact hk'.trans (pow_eq_pow_mod k a5FourthD4BlockRot_pow_three)
+  · exact (a5FourthD4PatternIsometryHom_eq_pow_of_permCongr_eq_pow hp g hk').trans
       (pow_eq_pow_mod k niemeierA5FourthD4BlockTriality_pow_three)
 
 /-- On any literal pattern of `A₅⁴ D₄`, `a5FourthD4PatternIsometryHom` is trivial. -/
@@ -794,11 +725,7 @@ theorem a5FourthD4PatternIsometryHom_literal {word : List ℕ}
     (hp : GluePattern.literal word ∈ a5FourthD4.gluePatterns)
     (g : (GluePattern.literal word).symmetries) :
     a5FourthD4PatternIsometryHom hp g = 1 := by
-  have hg : g = 1 := by
-    rcases g with ⟨g1, hg2⟩
-    rw [GluePattern.symmetries_literal, Subgroup.mem_bot] at hg2
-    exact Subtype.ext hg2
-  rw [hg, map_one]
+  rw [Subsingleton.elim g 1, map_one]
 
 /-- On the generator of `(GluePattern.cyclic [2] [0, 2, 4] [0]).symmetries`,
 `a5FourthD4PatternIsometryHom` acts as `niemeierA5FourthD4BlockTriality`. -/
@@ -822,30 +749,15 @@ theorem det_a5FourthD4PatternIsometryHom {p : GluePattern}
   obtain ⟨k, -, -, hg⟩ := exists_a5FourthD4PatternIsometryHom_eq_pow hp g
   rw [hg, map_pow, det_niemeierA5FourthD4BlockTriality, one_pow]
 
-/-- Every pattern symmetry of `A₅⁴ D₄` acts inside `specialOrthogonalGroup niemeierA5FourthD4`. -/
-theorem a5FourthD4PatternIsometryHom_mem_specialOrthogonalGroup {p : GluePattern}
-    (hp : p ∈ a5FourthD4.gluePatterns) (g : p.symmetries) :
-    a5FourthD4PatternIsometryHom hp g ∈ specialOrthogonalGroup niemeierA5FourthD4 :=
-  mem_specialOrthogonalGroup_iff.mpr (det_a5FourthD4PatternIsometryHom hp g)
-
 /-- **The pattern-symmetry action `a5FourthD4PatternIsometryHom` on `niemeierA5FourthD4` is
 faithful.** -/
 theorem a5FourthD4PatternIsometryHom_injective {p : GluePattern}
     (hp : p ∈ a5FourthD4.gluePatterns) :
     Function.Injective (a5FourthD4PatternIsometryHom hp) := by
-  refine (injective_iff_map_eq_one (a5FourthD4PatternIsometryHom hp)).mpr fun g hg ↦ ?_
-  obtain ⟨k, -, hperm, hpow⟩ := exists_a5FourthD4PatternIsometryHom_eq_pow hp g
-  rw [hpow] at hg
-  have hdvd : 3 ∣ k := by
-    rw [← orderOf_niemeierA5FourthD4BlockTriality]
-    exact orderOf_dvd_iff_pow_eq_one.mpr hg
-  have hrot1 : a5FourthD4BlockRot ^ k = 1 := by
-    rw [← orderOf_a5FourthD4BlockRot] at hdvd
-    exact orderOf_dvd_iff_pow_eq_one.mp hdvd
-  apply Subtype.ext
-  exact (finCongr (length_eq_of_mem_gluePatterns hp)).permCongrHom.injective
-    (hperm.trans (hrot1.trans
-      (map_one (finCongr (length_eq_of_mem_gluePatterns hp)).permCongrHom).symm))
+  refine (Subtype.val_injective.comp a5FourthD4BlockRotMulEquivTriality.injective).comp ?_
+  intro g h hgh
+  exact Subtype.ext ((finCongr (length_eq_of_mem_gluePatterns hp)).permCongrHom.injective
+    (congrArg Subtype.val hgh))
 
 end RootfulNiemeierType
 

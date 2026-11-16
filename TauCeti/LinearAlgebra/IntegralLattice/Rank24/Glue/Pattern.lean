@@ -254,6 +254,11 @@ theorem seed_evenPermutations {n : ℕ} (word : Fin n → ℕ) :
 theorem symmetries_literal (word : List ℕ) : (literal word).symmetries = ⊥ :=
   (rfl)
 
+/-- The indicated symmetry subgroup of a literal pattern is trivial, containing only the
+identity. -/
+instance instUniqueSymmetriesLiteral (word : List ℕ) : Unique (literal word).symmetries :=
+  inferInstanceAs (Unique (⊥ : Subgroup (Equiv.Perm (Fin word.length))))
+
 /-- A cyclic pattern indicates the rotations of its marked block. -/
 @[simp]
 theorem symmetries_cyclic (pre block post : List ℕ) :

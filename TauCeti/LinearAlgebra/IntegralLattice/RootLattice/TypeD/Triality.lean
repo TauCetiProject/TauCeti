@@ -426,9 +426,7 @@ formulation, this requires no auxiliary field and evaluates directly on Conway--
 `typeD4TrialityLabelPerm` (`typeD4GlueAlphabetTriality_glueLabelEquiv`). -/
 noncomputable def typeD4GlueAlphabetTriality :
     FiniteQuadraticModule.Isometry ((D 4).glueAlphabet ht) ((D 4).glueAlphabet ht) :=
-  ((D 4).glueAlphabetIsometry (valid_D.mpr le_rfl) ht).trans <|
-    ((typeD4Triality ht).discriminantQuadraticIsometry ((D 4).isEven_rootLattice ht)).trans
-      ((D 4).glueAlphabetIsometry (valid_D.mpr le_rfl) ht).symm
+  glueAlphabetIsometryOfRootLattice (valid_D.mpr le_rfl) (valid_D.mpr le_rfl) (typeD4Triality ht)
 
 /-- `glueAlphabetIsometry` intertwines `typeD4GlueAlphabetTriality` with the discriminant-form
 action of `typeD4Triality`. -/
@@ -436,11 +434,8 @@ theorem glueAlphabetIsometry_typeD4GlueAlphabetTriality (hv : (D 4).Valid)
     (x : (D 4).glueAlphabet ht) :
     (D 4).glueAlphabetIsometry hv ht (typeD4GlueAlphabetTriality ht x) =
       (typeD4Triality ht).discriminantQuadraticIsometry ((D 4).isEven_rootLattice ht)
-        ((D 4).glueAlphabetIsometry hv ht x) := by
-  have hv' : hv = valid_D.mpr le_rfl := Subsingleton.elim _ _
-  subst hv'
-  rw [typeD4GlueAlphabetTriality, QuadraticMap.IsometryEquiv.trans_apply,
-    QuadraticMap.IsometryEquiv.trans_apply, QuadraticMap.IsometryEquiv.apply_symm_apply]
+        ((D 4).glueAlphabetIsometry hv ht x) :=
+  glueAlphabetIsometry_glueAlphabetIsometryOfRootLattice hv hv (typeD4Triality ht) x
 
 /-- **`typeD4GlueAlphabetTriality` permutes the Conway--Sloane labels `0, 1, 2, 3` by
 `typeD4TrialityLabelPerm`**, fixing `0` and cycling `1 ↦ 2 ↦ 3 ↦ 1` (`s ↦ v ↦ c ↦ s`). -/

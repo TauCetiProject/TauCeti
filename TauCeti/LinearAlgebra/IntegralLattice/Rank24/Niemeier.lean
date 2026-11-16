@@ -293,11 +293,8 @@ target root sublattice**, because in every row `R_r` is spanned by the norm-`2` 
 theorem map_rootLattice_carrier_ambientEquiv {r s : RootfulNiemeierType}
     (e : Isometry r.lattice s.lattice) :
     r.rootLattice.carrier.map e.ambientEquiv.toLinearMap = s.rootLattice.carrier := by
-  rw [← r.span_vectorsOfNorm_two_lattice, ← s.span_vectorsOfNorm_two_lattice, Submodule.map_span]
-  congr 1
-  rw [← Set.image_comp, ← e.carrierEquiv_image_vectorsOfNorm 2, Set.image_image]
-  simp only [Function.comp_apply, LinearEquiv.coe_coe, Isometry.ambientEquiv_apply,
-    Isometry.coe_carrierEquiv_apply]
+  rw [← r.span_vectorsOfNorm_two_lattice, ← s.span_vectorsOfNorm_two_lattice]
+  exact e.map_span_val_image_vectorsOfNorm 2
 
 /-- **Every isometry between rootful Niemeier lattices preserves membership in the orthogonal-sum
 root sublattice.** -/
@@ -306,8 +303,8 @@ root sublattice.** -/
 theorem apply_mem_rootLattice_carrier_iff {r s : RootfulNiemeierType}
     (e : Isometry r.lattice s.lattice) (x : ∀ i, Fin (r.componentType i).rank → ℚ) :
     e x ∈ s.rootLattice.carrier ↔ x ∈ r.rootLattice.carrier := by
-  rw [← e.ambientEquiv_apply, ← map_rootLattice_carrier_ambientEquiv e, Submodule.mem_map_equiv,
-    LinearEquiv.symm_apply_apply]
+  rw [← r.span_vectorsOfNorm_two_lattice, ← s.span_vectorsOfNorm_two_lattice]
+  exact e.apply_mem_span_val_image_vectorsOfNorm_iff 2 x
 
 /-- **`R_r` has the displayed number of roots**: the number of its norm-`2` vectors is the sum of
 the root counts of the components, which is the displayed root count of the row. -/
