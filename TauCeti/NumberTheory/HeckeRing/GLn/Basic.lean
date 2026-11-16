@@ -660,68 +660,6 @@ lemma inv_conjugate_mem_SLnZ_of_mem_ker (g : GL (Fin n) ℚ) (A : Matrix (Fin n)
     rw [← h_unit_eq, inv_mul_cancel_left]
   rw [h_delta, mul_assoc]
 
-/-- The transposed conjugation product, entrywise: the bridge deriving each `_reverse` lemma
-from its forward counterpart applied to `Aᵀ` and `γᵀ`. -/
-private lemma transpose_conj_apply (A gamma : Matrix (Fin n) (Fin n) ℤ) (i j : Fin n) :
-    (Aᵀ.adjugate * gammaᵀ * Aᵀ) i j = (A * gamma * A.adjugate) j i := by
-  rw [← Matrix.adjugate_transpose, ← Matrix.transpose_mul, ← Matrix.transpose_mul,
-    Matrix.transpose_apply, Matrix.mul_assoc]
-
-/-- Reverse direction of `adjugate_conj_dvd`, derived from it at `Aᵀ`, `γᵀ`:
-`d | (γ - I)` entry-wise implies `d | (A * γ * adj(A))` entry-wise. -/
-private lemma conj_dvd_reverse (A gamma : Matrix (Fin n) (Fin n) ℤ)
-    (hgamma : ∀ i j : Fin n, A.det ∣ (gamma i j - (1 : Matrix (Fin n) (Fin n) ℤ) i j))
-    (i j : Fin n) :
-    A.det ∣ (A * gamma * A.adjugate) i j := by
-  have hT : ∀ i j : Fin n, Aᵀ.det ∣ (gammaᵀ i j - (1 : Matrix (Fin n) (Fin n) ℤ) i j) := by
-    intro i j
-    have h_one : (1 : Matrix (Fin n) (Fin n) ℤ) i j = (1 : Matrix (Fin n) (Fin n) ℤ) j i := by
-      rcases eq_or_ne i j with rfl | h
-      · rfl
-      · rw [Matrix.one_apply_ne h, Matrix.one_apply_ne (Ne.symm h)]
-    rw [Matrix.det_transpose, Matrix.transpose_apply, h_one]
-    exact hgamma j i
-  have h := adjugate_conj_dvd n Aᵀ gammaᵀ hT j i
-  rwa [Matrix.det_transpose, transpose_conj_apply] at h
-
-/-- Reverse direction of `conj_mat_det_one`, derived from it at `Aᵀ`, `γᵀ`:
-`(A * γ * adj(A)) / det(A)` has determinant 1 when `det(γ) = 1`. -/
-private lemma conj_mat_det_one_reverse
-    (A gamma : Matrix (Fin n) (Fin n) ℤ) (hgamma_det : gamma.det = 1)
-    (hdvd : ∀ i j : Fin n, A.det ∣ (A * gamma * A.adjugate) i j) (hAdet : A.det ≠ 0) :
-    (Matrix.of fun i j ↦ (A * gamma * A.adjugate) i j / A.det).det = 1 := by
-  have hdvdT : ∀ i j : Fin n, Aᵀ.det ∣ (Aᵀ.adjugate * gammaᵀ * Aᵀ) i j := fun i j ↦ by
-    rw [Matrix.det_transpose, transpose_conj_apply]
-    exact hdvd j i
-  have h := conj_mat_det_one n Aᵀ gammaᵀ (by rwa [Matrix.det_transpose]) hdvdT
-    (by rwa [Matrix.det_transpose])
-  have h_transpose : (Matrix.of fun i j ↦ (A * gamma * A.adjugate) i j / A.det) =
-      (Matrix.of fun i j ↦ (Aᵀ.adjugate * gammaᵀ * Aᵀ) i j / Aᵀ.det)ᵀ := by
-    ext i j
-    simp only [Matrix.transpose_apply, Matrix.of_apply, Matrix.det_transpose,
-      transpose_conj_apply]
-  rw [h_transpose, Matrix.det_transpose]
-  exact h
-
-/-- Reverse direction of `int_mul_eq`, derived from it at `Aᵀ`, `γᵀ`: `δ * A = A * γ` where
-`δ = (A * γ * adj(A)) / det(A)`. -/
-private lemma int_mul_eq_reverse (A gamma : Matrix (Fin n) (Fin n) ℤ) (hAdet : A.det ≠ 0)
-    (hdvd : ∀ i j : Fin n, A.det ∣ (A * gamma * A.adjugate) i j) :
-    (Matrix.of fun i j ↦ (A * gamma * A.adjugate) i j / A.det) * A = A * gamma := by
-  have hdvdT : ∀ i j : Fin n, Aᵀ.det ∣ (Aᵀ.adjugate * gammaᵀ * Aᵀ) i j := fun i j ↦ by
-    rw [Matrix.det_transpose, transpose_conj_apply]
-    exact hdvd j i
-  have h := int_mul_eq n Aᵀ gammaᵀ (by rwa [Matrix.det_transpose]) hdvdT
-  have h_transpose : (Matrix.of fun i j ↦ (Aᵀ.adjugate * gammaᵀ * Aᵀ) i j / Aᵀ.det) =
-      (Matrix.of fun i j ↦ (A * gamma * A.adjugate) i j / A.det)ᵀ := by
-    ext i j
-    simp only [Matrix.of_apply, Matrix.transpose_apply, Matrix.det_transpose,
-      transpose_conj_apply]
-  rw [h_transpose] at h
-  have h2 := congrArg Matrix.transpose h
-  rwa [Matrix.transpose_mul, Matrix.transpose_mul, Matrix.transpose_transpose,
-    Matrix.transpose_transpose] at h2
-
 /-- Reverse direction of `inv_conjugate_mem_SLnZ_of_mem_ker`: if `g` has integer matrix `A`
 and `γ ∈ SL_n(ℤ)` is congruent to the identity modulo `|det A|`, then `g γ g⁻¹` is again in
 `SL_n(ℤ)`. -/
@@ -730,32 +668,18 @@ lemma conjugate_mem_SLnZ_of_mem_ker (g : GL (Fin n) ℚ) (A : Matrix (Fin n) (Fi
     (γ : SpecialLinearGroup (Fin n) ℤ)
     (hγ : γ ∈ (SpecialLinearGroup.map (Int.castRingHom (ZMod A.det.natAbs))).ker) :
     g * (γ : GL (Fin n) ℚ) * g⁻¹ ∈ SLnZ n := by
-  have hAdet : A.det ≠ 0 := det_ne_zero_of_val_eq n g hA
-  have h_entry : ∀ i j, A.det ∣ (γ.val i j - (1 : Matrix _ _ ℤ) i j) :=
-    fun i j ↦ by
-      rw [Matrix.one_apply]
-      exact Int.natAbs_dvd.mp (SpecialLinearGroup.mem_ker_map_intCast_zmod_iff.mp hγ i j)
-  have hdvd := conj_dvd_reverse n A γ.val h_entry
-  set delta_mat := Matrix.of fun i j ↦ (A * γ.val * A.adjugate) i j / A.det
-  have hdelta_det : delta_mat.det = 1 :=
-    conj_mat_det_one_reverse n A γ.val γ.prop hdvd hAdet
-  set delta : SpecialLinearGroup (Fin n) ℤ := ⟨delta_mat, hdelta_det⟩
-  have h_int_eq : delta_mat * A = A * γ.val := int_mul_eq_reverse n A γ.val hAdet hdvd
-  have h_mat_eq : ((delta : GL (Fin n) ℚ) * g).val = (g * (γ : GL (Fin n) ℚ)).val := by
-    -- unit multiplication is definitionally matrix multiplication of the coordinates;
-    -- `change` states it since no rewriting lemma unfolds `Units.val` products here
-    change ((delta : GL (Fin n) ℚ).val * g.val : Matrix _ _ ℚ) =
-      (g.val * (γ : GL (Fin n) ℚ).val : Matrix _ _ ℚ)
-    simp only [mapGL_coe_matrix, algebraMap_int_eq,
-      map_apply_coe, RingHom.mapMatrix_apply, Int.coe_castRingHom] at hA ⊢
-    rw [hA]
-    simp only [← Int.coe_castRingHom, ← Matrix.map_mul]
-    rw [h_int_eq]
-  have h_unit_eq : (delta : GL (Fin n) ℚ) * g = g * (γ : GL (Fin n) ℚ) := Units.ext h_mat_eq
-  have h_conj : g * (γ : GL (Fin n) ℚ) * g⁻¹ = (delta : GL (Fin n) ℚ) := by
-    rw [← h_unit_eq, mul_inv_cancel_right]
-  rw [SLnZ, MonoidHom.mem_range, h_conj]
-  exact ⟨delta, rfl⟩
+  set gT := (GeneralLinearGroup.transposeMulEquiv (Fin n) g).unop
+  have hγT : γ.transpose ∈ (SpecialLinearGroup.map (Int.castRingHom (ZMod Aᵀ.det.natAbs))).ker := by
+    rw [det_transpose, SpecialLinearGroup.mem_ker_map_intCast_zmod_iff] at *
+    intro i j
+    simpa [SpecialLinearGroup.coe_transpose, eq_comm] using hγ j i
+  obtain ⟨σ, hσ⟩ := (mem_SLnZ_iff n).1 (inv_conjugate_mem_SLnZ_of_mem_ker n gT Aᵀ
+    (by simp [gT, hA, Matrix.transpose_map]) γ.transpose hγT)
+  refine (mem_SLnZ_iff n).2 ⟨σ.transpose, Units.ext ?_⟩
+  have h := congrArg (fun x : GL (Fin n) ℚ ↦ (x : Matrix (Fin n) (Fin n) ℚ)ᵀ) hσ
+  simpa [gT, SpecialLinearGroup.coe_transpose, Matrix.coe_units_inv,
+    Matrix.transpose_nonsing_inv, Matrix.transpose_mul, Matrix.mul_assoc,
+    ← Matrix.transpose_map] using h
 
 /-- The image in `GL_n(ℚ)` of the congruence kernel `Γ(d) = ker(SL_n(ℤ) → SL_n(ℤ/dℤ))`
     has nonzero relative index in `SL_n(ℤ)`: it is a finite-index congruence subgroup. -/
