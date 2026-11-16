@@ -6,19 +6,19 @@ Authors: Codex
 module
 
 public import TauCeti.Probability.RandomMatrices.Ginibre.Basic
-public import TauCeti.Probability.Distributions.Gaussian.ProperComplex.Product
 public import TauCeti.MeasureTheory.Measure.Lebesgue.Matrix
 
 /-!
-# The complex Ginibre density and independent-entry characterization
+# The complex Ginibre density
 
 The complex Ginibre law has planar product density
 `π^(-m*n) exp(-∑ i j, ‖X i j‖²)`. The dimensions here are arbitrary natural numbers: when
 one dimension is zero, the matrix space has one point and the density is one.
 
-Vectorization identifies the law with the identity-covariance proper complex Gaussian.
-The independent-entry characterization applies on arbitrary sample spaces and lets statements
-about the canonical matrix law transfer to random matrices specified by their entries.
+The vectorization bridges in `Ginibre.Basic` identify the law with the centered
+identity-covariance proper complex Gaussian. Here this gives the explicit density and its
+normalization, absolute continuity for the rank results, and `HasPDF` and `pdf` identities for
+random matrices with the prescribed law.
 
 ## References
 
@@ -59,7 +59,7 @@ theorem ginibreComplexPDFReal_pos (m n : ℕ) (X : Matrix (Fin m) (Fin n) ℂ) :
   rw [ginibreComplexPDFReal_def]
   positivity
 
-/-- Taking the real part of the extended density recovers the real-valued density. -/
+/-- Applying `ENNReal.toReal` to the extended density recovers the real-valued density. -/
 @[simp]
 theorem toReal_ginibreComplexPDF (m n : ℕ) (X : Matrix (Fin m) (Fin n) ℂ) :
     (ginibreComplexPDF m n X).toReal = ginibreComplexPDFReal m n X := by
@@ -104,27 +104,6 @@ theorem ginibreComplexPDF_ne_top (m n : ℕ) (X : Matrix (Fin m) (Fin n) ℂ) :
 theorem measurable_ginibreComplexPDF (m n : ℕ) : Measurable (ginibreComplexPDF m n) := by
   unfold ginibreComplexPDF
   exact (measurable_ginibreComplexPDFReal m n).ennreal_ofReal
-
-/-- Column-stacking a complex Ginibre matrix gives the centered identity-covariance
-proper complex Gaussian vector. -/
-theorem map_vec_ginibreComplex (m n : ℕ) :
-    (ginibreComplex m n).map Matrix.vec =
-      properComplexGaussianMeasure (0 : Fin n × Fin m → ℂ) 1 := by
-  rw [ginibreComplex_def, Measure.map_map measurable_matrix_vec (by fun_prop),
-    properComplexGaussianMeasure_zero_one_eq_pi]
-  convert (measurePreserving_piCongrLeft
-    (fun _ : Fin m × Fin n ↦ properComplexGaussianScalar) (Equiv.prodComm _ _)).symm.map_eq using 2
-  funext z p
-  simp only [Function.comp_apply, Matrix.vec, Matrix.of_apply]
-  exact (Equiv.piCongrLeft_symm_apply (fun _ : Fin m × Fin n ↦ ℂ)
-    (Equiv.prodComm (Fin n) (Fin m)) z p).symm
-
-/-- Reshaping the identity-covariance complex Gaussian vector gives the complex Ginibre law. -/
-theorem ginibreComplex_eq_map_properComplexGaussianMeasure (m n : ℕ) :
-    ginibreComplex m n =
-      (properComplexGaussianMeasure (0 : Fin m × Fin n → ℂ) 1).map
-        (fun z ↦ Matrix.of fun i j ↦ z (i, j)) := by
-  rw [properComplexGaussianMeasure_zero_one_eq_pi, ginibreComplex_def]
 
 /-- The complex Ginibre law has density `π^(-m*n) exp(-∑ i j, ‖X i j‖²)`. -/
 theorem ginibreComplex_eq_withDensity (m n : ℕ) :

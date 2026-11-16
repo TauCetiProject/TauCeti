@@ -5,16 +5,18 @@ Authors: Codex
 -/
 module
 
-public import TauCeti.Probability.RandomMatrices.Ginibre.Density
+public import TauCeti.Probability.RandomMatrices.Ginibre.Basic
 import Mathlib.LinearAlgebra.Matrix.Vec
 
 /-!
-# Unitary invariance of Ginibre and complex Gaussian Gram laws
+# Symmetries of Ginibre and complex Gaussian Gram laws
 
 A rectangular standard complex Ginibre matrix is invariant under multiplication by deterministic
 unitaries on either side. More generally, rectangular matrices with orthonormal rows on the left
 and orthonormal columns on the right send it to the standard law in the target shape. Its Gram
 matrix therefore has a unitary-conjugation-invariant law and obeys orthonormal compression.
+Transpose and conjugate transpose swap the Ginibre dimensions; the companion Gram matrix
+`Xᴴ * X` has the Gaussian Gram law with dimension and sample size exchanged.
 The proofs use the proper complex Gaussian covariance transformation under the vectorized
 matrix map `X ↦ U * X * V`. The invariance is stated both as equality of pushforward measures
 and for random matrices with the prescribed law.
@@ -33,9 +35,43 @@ open scoped ComplexOrder Kronecker
 
 namespace TauCeti.Probability
 
+/-- Transposing a complex Ginibre matrix swaps its row and column dimensions. -/
+@[simp]
+theorem map_transpose_ginibreComplex (m n : ℕ) :
+    (ginibreComplex m n).map Matrix.transpose = ginibreComplex n m := by
+  rw [ginibreComplex_eq_map_properComplexGaussianMeasure n m, ← map_vec_ginibreComplex m n,
+    Measure.map_map (by fun_prop) measurable_matrix_vec]
+  congr 1
+
+/-- Conjugate-transposing a complex Ginibre matrix swaps its row and column dimensions. -/
+@[simp]
+theorem map_conjTranspose_ginibreComplex (m n : ℕ) :
+    (ginibreComplex m n).map Matrix.conjTranspose = ginibreComplex n m := by
+  have hstar : (Measure.pi fun _ : Fin n × Fin m ↦ properComplexGaussianScalar).map
+      (fun z p ↦ star (z p)) = Measure.pi (fun _ : Fin n × Fin m ↦
+        properComplexGaussianScalar) := by
+    rw [Measure.pi_map_pi (fun _ ↦ (by fun_prop : Measurable (star : ℂ → ℂ)).aemeasurable)]
+    simp only [RCLike.star_def, map_star_properComplexGaussianScalar]
+  have h := congrArg (fun μ : Measure (Fin n × Fin m → ℂ) ↦
+    μ.map (fun z ↦ Matrix.of fun i j ↦ z (i, j))) hstar
+  rw [Measure.map_map (by fun_prop) (by fun_prop), ← ginibreComplex_def] at h
+  rw [← properComplexGaussianMeasure_zero_one_eq_pi, ← map_vec_ginibreComplex m n,
+    Measure.map_map (by fun_prop) measurable_matrix_vec] at h
+  convert h using 1
+  congr 1
+
+/-- The companion Gram matrix of an `m × n` complex Ginibre matrix has dimension `n` and
+sample size `m`. -/
+theorem map_conjTranspose_mul_self_ginibreComplex (m n : ℕ) :
+    (ginibreComplex m n).map (fun X ↦ Xᴴ * X) = gaussianGramComplex n m := by
+  rw [gaussianGramComplex_def, ← map_conjTranspose_ginibreComplex m n,
+    Measure.map_map (by fun_prop) (by fun_prop)]
+  simp only [Function.comp_def, Matrix.conjTranspose_conjTranspose]
+
 /-- Multiplication by rectangular matrices with orthonormal rows on the left and
 orthonormal columns on the right sends a standard complex Ginibre law to the smaller shape. -/
-theorem map_mul_mul_ginibreComplex_of_orthonormal {m n m' n' : ℕ}
+theorem map_mul_mul_ginibreComplex_of_mul_conjTranspose_eq_one_of_conjTranspose_mul_eq_one
+    {m n m' n' : ℕ}
     (U : Matrix (Fin m') (Fin m) ℂ) (V : Matrix (Fin n) (Fin n') ℂ)
     (hU : U * Uᴴ = 1) (hV : Vᴴ * V = 1) :
     (ginibreComplex m n).map (fun X ↦ U * X * V) = ginibreComplex m' n' := by
@@ -69,7 +105,8 @@ theorem map_unitary_mul_mul_ginibreComplex (m n : ℕ)
     (U : Matrix (Fin m) (Fin m) ℂ) (V : Matrix (Fin n) (Fin n) ℂ)
     (hU : U ∈ Matrix.unitaryGroup (Fin m) ℂ) (hV : V ∈ Matrix.unitaryGroup (Fin n) ℂ) :
     (ginibreComplex m n).map (fun X ↦ U * X * V) = ginibreComplex m n :=
-  map_mul_mul_ginibreComplex_of_orthonormal U V (Matrix.mem_unitaryGroup_iff.mp hU)
+  map_mul_mul_ginibreComplex_of_mul_conjTranspose_eq_one_of_conjTranspose_mul_eq_one
+    U V (Matrix.mem_unitaryGroup_iff.mp hU)
     (Matrix.mem_unitaryGroup_iff'.mp hV)
 
 /-- Compression by a rectangular matrix with orthonormal rows preserves the standard complex
@@ -79,7 +116,8 @@ theorem map_mul_mul_conjTranspose_gaussianGramComplex_of_mul_conjTranspose_eq_on
     (gaussianGramComplex m n).map (fun A ↦ U * A * Uᴴ) = gaussianGramComplex m' n := by
   have h := congrArg
     (fun μ : Measure (Matrix (Fin m') (Fin n) ℂ) ↦ μ.map (fun X ↦ X * Xᴴ))
-      (map_mul_mul_ginibreComplex_of_orthonormal U (1 : Matrix (Fin n) (Fin n) ℂ) hU (by simp))
+      (map_mul_mul_ginibreComplex_of_mul_conjTranspose_eq_one_of_conjTranspose_mul_eq_one
+        U (1 : Matrix (Fin n) (Fin n) ℂ) hU (by simp))
   rw [Measure.map_map (by fun_prop) (by fun_prop)] at h
   rw [gaussianGramComplex_def, gaussianGramComplex_def,
     Measure.map_map (by fun_prop) (by fun_prop)]
@@ -101,14 +139,36 @@ open TauCeti.Probability
 
 variable {Ω : Type*} [MeasurableSpace Ω] {P : Measure Ω} {m n : ℕ}
 
+/-- Transposing a complex Ginibre random matrix swaps its row and column dimensions. -/
+theorem HasLaw.transpose_ginibreComplex {X : Ω → Matrix (Fin m) (Fin n) ℂ}
+    (hX : HasLaw X (ginibreComplex m n) P) :
+    HasLaw (fun ω ↦ (X ω)ᵀ) (ginibreComplex n m) P :=
+  (HasLaw.mk (by fun_prop) (map_transpose_ginibreComplex m n)).comp hX
+
+/-- Conjugate-transposing a complex Ginibre random matrix swaps its dimensions. -/
+theorem HasLaw.conjTranspose_ginibreComplex {X : Ω → Matrix (Fin m) (Fin n) ℂ}
+    (hX : HasLaw X (ginibreComplex m n) P) :
+    HasLaw (fun ω ↦ (X ω)ᴴ) (ginibreComplex n m) P :=
+  (HasLaw.mk (by fun_prop) (map_conjTranspose_ginibreComplex m n)).comp hX
+
+/-- The companion Gram matrix of a complex Ginibre random matrix has the complex Gaussian
+Gram law with dimension and sample size exchanged. -/
+theorem HasLaw.conjTranspose_mul_self_ginibreComplex {X : Ω → Matrix (Fin m) (Fin n) ℂ}
+    (hX : HasLaw X (ginibreComplex m n) P) :
+    HasLaw (fun ω ↦ (X ω)ᴴ * X ω) (gaussianGramComplex n m) P :=
+  (HasLaw.mk (by fun_prop) (map_conjTranspose_mul_self_ginibreComplex m n)).comp hX
+
 /-- Rectangular orthonormal multiplication sends a complex Ginibre random matrix to the
 standard complex Ginibre law in the target shape. -/
-theorem HasLaw.mul_mul_ginibreComplex_of_orthonormal {m' n' : ℕ}
+theorem HasLaw.mul_mul_ginibreComplex_of_mul_conjTranspose_eq_one_of_conjTranspose_mul_eq_one
+    {m' n' : ℕ}
     {X : Ω → Matrix (Fin m) (Fin n) ℂ} (hX : HasLaw X (ginibreComplex m n) P)
     (U : Matrix (Fin m') (Fin m) ℂ) (V : Matrix (Fin n) (Fin n') ℂ)
     (hU : U * Uᴴ = 1) (hV : Vᴴ * V = 1) :
     HasLaw (fun ω ↦ U * X ω * V) (ginibreComplex m' n') P :=
-  (HasLaw.mk (by fun_prop) (map_mul_mul_ginibreComplex_of_orthonormal U V hU hV)).comp hX
+  (HasLaw.mk (by fun_prop)
+    (map_mul_mul_ginibreComplex_of_mul_conjTranspose_eq_one_of_conjTranspose_mul_eq_one
+      U V hU hV)).comp hX
 
 /-- Rectangular orthonormal compression of a complex Gaussian Gram random matrix has the
 complex Gaussian Gram law in the target dimension. -/
@@ -126,7 +186,8 @@ theorem HasLaw.unitary_mul_mul_ginibreComplex {X : Ω → Matrix (Fin m) (Fin n)
     (U : Matrix (Fin m) (Fin m) ℂ) (V : Matrix (Fin n) (Fin n) ℂ)
     (hU : U ∈ Matrix.unitaryGroup (Fin m) ℂ) (hV : V ∈ Matrix.unitaryGroup (Fin n) ℂ) :
     HasLaw (fun ω ↦ U * X ω * V) (ginibreComplex m n) P :=
-  hX.mul_mul_ginibreComplex_of_orthonormal U V (Matrix.mem_unitaryGroup_iff.mp hU)
+  hX.mul_mul_ginibreComplex_of_mul_conjTranspose_eq_one_of_conjTranspose_mul_eq_one
+    U V (Matrix.mem_unitaryGroup_iff.mp hU)
     (Matrix.mem_unitaryGroup_iff'.mp hV)
 
 /-- Unitary conjugation preserves the standard complex Gaussian Gram law on any sample space. -/

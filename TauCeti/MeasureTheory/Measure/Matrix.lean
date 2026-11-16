@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.LinearAlgebra.Matrix.Rank.Closed
+public import TauCeti.LinearAlgebra.Matrix.Rank
 public import TauCeti.MeasureTheory.Measure.Lebesgue.Matrix
 public import TauCeti.MeasureTheory.Measure.MvPolynomialZeroLocus
 import Mathlib.LinearAlgebra.Matrix.MvPolynomial
@@ -15,8 +15,9 @@ import TauCeti.MeasureTheory.Constructions.Pi
 # Almost-sure rank of matrices with a density
 
 A rectangular matrix over a measurable integral domain, sampled from a law absolutely continuous
-with respect to an atomless sigma-finite product reference measure, has maximal rank almost
-surely. More precisely, each fixed square submatrix selected by embeddings has nonzero determinant
+with respect to product `volume`, has maximal rank almost surely when `volume` on the scalar
+type is sigma-finite and vanishes on singletons (`NullSingletonClass`). More precisely, each
+fixed square submatrix selected by embeddings has nonzero determinant
 almost surely. The determinant polynomial is
 Mathlib's `Matrix.mvPolynomialX`, renamed along the selected coordinates; its zero locus is null
 by `MvPolynomial.volume_setOfPred_eval_eq_zero`.
@@ -25,8 +26,9 @@ In particular this applies to Lebesgue measure over both `ℝ` and `ℂ`. The re
 dependent entries as well as independent ones, provided the joint law has a density.
 Empty row, column, and minor index types are allowed.
 
-The exact-rank strata are measurable, and the maximal-rank conclusion is available both for
-function-valued arrays and for the bundled `Matrix` type.
+Over a measurable field, rank sublevel sets and exact-rank strata are measurable. The maximal-rank
+conclusion over an integral domain is available both for function-valued arrays and for the
+bundled `Matrix` type.
 -/
 
 public section
@@ -35,20 +37,26 @@ open MeasureTheory
 
 namespace Matrix
 
+/-- Matrices over a measurable field of rank at most `k` form a measurable set. -/
+theorem measurableSet_setOfPred_rank_le {m n K : Type*} [Finite m] [Fintype n]
+    [Field K] [MeasurableSpace K] [MeasurableSingletonClass K]
+    [MeasurableAdd₂ K] [MeasurableMul₂ K] (k : ℕ) :
+    MeasurableSet {A : Matrix m n K | A.rank ≤ k} := by
+  classical
+  let _ := Fintype.ofFinite m
+  simp only [Matrix.rank_le_iff_forall_det_submatrix_eq_zero, Set.ofPred_forall]
+  refine MeasurableSet.iInter fun r ↦ MeasurableSet.iInter fun c ↦ ?_
+  have h := (MvPolynomial.measurableSet_setOfPred_eval_eq_zero
+    (Matrix.mvPolynomialX (Fin (k + 1)) (Fin (k + 1)) K).det).preimage
+      (by fun_prop : Measurable (fun A : Matrix m n K ↦ fun q ↦ A (r q.1) (c q.2)))
+  simpa only [Set.preimage_ofPred_eq, Matrix.eval_det_mvPolynomialX, Matrix.submatrix] using h
+
 /-- Matrices over a measurable field of rank exactly `k` form a measurable set. -/
 theorem measurableSet_setOfPred_rank_eq {m n K : Type*} [Finite m] [Fintype n]
     [Field K] [MeasurableSpace K] [MeasurableSingletonClass K]
     [MeasurableAdd₂ K] [MeasurableMul₂ K] (k : ℕ) :
     MeasurableSet {A : Matrix m n K | A.rank = k} := by
-  classical
-  let _ := Fintype.ofFinite m
-  have hle (p : ℕ) : MeasurableSet {A : Matrix m n K | A.rank ≤ p} := by
-    simp only [Matrix.rank_le_iff_forall_det_submatrix_eq_zero, Set.ofPred_forall]
-    refine MeasurableSet.iInter fun r ↦ MeasurableSet.iInter fun c ↦ ?_
-    have h := (MvPolynomial.measurableSet_setOfPred_eval_eq_zero
-      (Matrix.mvPolynomialX (Fin (p + 1)) (Fin (p + 1)) K).det).preimage
-        (by fun_prop : Measurable (fun A : Matrix m n K ↦ fun q ↦ A (r q.1) (c q.2)))
-    simpa only [Set.preimage_ofPred_eq, Matrix.eval_det_mvPolynomialX, Matrix.submatrix] using h
+  have hle (p : ℕ) := measurableSet_setOfPred_rank_le (m := m) (n := n) (K := K) p
   cases k with
   | zero => simpa only [Nat.le_zero] using hle 0
   | succ k =>
@@ -97,8 +105,9 @@ theorem ae_det_submatrix_ne_zero [DecidableEq l] (μ : Measure (m → n → K))
   filter_upwards [hμ.ae_le h] with A hA
   simpa only [MeasurableEquiv.coe_piCurry_symm, Sigma.curry_uncurry] using hA
 
-/-- A rectangular matrix whose law is absolutely continuous with respect to atomless product
-volume has maximal rank almost surely, including when one index type is empty. -/
+/-- A rectangular matrix whose law is absolutely continuous with respect to product volume
+has maximal rank almost surely when scalar volume is sigma-finite and null on singletons,
+including when one index type is empty. -/
 theorem ae_rank_eq_min (μ : Measure (m → n → K)) (hμ : μ ≪ volume) :
     ∀ᵐ A ∂μ, (Matrix.of A).rank = min (Fintype.card m) (Fintype.card n) := by
   classical
@@ -112,8 +121,9 @@ theorem ae_rank_eq_min (μ : Measure (m → n → K)) (hμ : μ ≪ volume) :
   simpa only [Matrix.rank_of_det_ne_zero hA, Fintype.card_fin] using
     (Matrix.of A).rank_submatrix_le r c
 
-/-- A matrix whose law is absolutely continuous with respect to atomless product volume
-has maximal rank almost surely, including when one index type is empty. -/
+/-- A matrix whose law is absolutely continuous with respect to product volume has maximal rank
+almost surely when scalar volume is sigma-finite and null on singletons, including when one
+index type is empty. -/
 theorem ae_rank_eq_min_matrix (μ : Measure (Matrix m n K)) (hμ : μ ≪ volume) :
     ∀ᵐ X ∂μ, X.rank = min (Fintype.card m) (Fintype.card n) := by
   classical

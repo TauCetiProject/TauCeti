@@ -94,8 +94,8 @@ open TauCeti.Probability
 variable {Ω : Type*} [MeasurableSpace Ω] {P : Measure Ω} {m n : ℕ}
   {A : Ω → Matrix (Fin m) (Fin m) ℂ}
 
-/-- The joint law of the diagonal entries of a complex Gaussian Gram random matrix is a
-product of gamma laws. -/
+/-- For positive sample size `n`, the real diagonal entries of a complex Gaussian Gram random
+matrix are independent gamma variables with shape `n` and rate one. -/
 theorem HasLaw.diag_re_gaussianGramComplex [NeZero n]
     (hA : HasLaw A (gaussianGramComplex m n) P) :
     HasLaw (fun ω i ↦ (A ω i i).re) (Measure.pi fun _ : Fin m ↦ gammaMeasure n 1) P :=

@@ -39,6 +39,8 @@ Nonnegative random variables whose real coercions have a common law are identica
 
 ## Main results
 
+* `ProbabilityTheory.HasLaw.ae` — almost-everywhere properties of a law transfer to any random
+  variable with that law, without requiring the property to be measurable;
 * `ProbabilityTheory.HasLaw.cond` — conditioning transports a prescribed law;
 * `ProbabilityTheory.HasLaw.aemeasurable_of_ae_eq_comp` — a map almost everywhere equal to an
   a.e. measurable map composed with a random variable of the right law is a.e. measurable;
@@ -77,6 +79,12 @@ namespace Probability
 
 variable {X : Type*} {Y : Type*} [MeasurableSpace X] [MeasurableSpace Y] {T : X → Y}
 variable {μ : Measure X} {ν : Measure Y}
+
+/-- A property holding almost everywhere under a law holds almost surely for any random
+variable with that law, without a measurability assumption on the property. -/
+protected theorem _root_.ProbabilityTheory.HasLaw.ae (hT : HasLaw T ν μ) {p : Y → Prop}
+    (hp : ∀ᵐ y ∂ν, p y) : ∀ᵐ x ∂μ, p (T x) :=
+  ae_of_ae_map hT.aemeasurable (hT.map_eq ▸ hp)
 
 /-- Conditioning a random variable on the preimage of a measurable event gives its law
 conditioned on that event. The statement includes events of zero or infinite mass, when both

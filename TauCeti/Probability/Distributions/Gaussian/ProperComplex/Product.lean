@@ -12,7 +12,8 @@ import TauCeti.MeasureTheory.Measure.PiWithDensity
 /-!
 # Products of standard proper complex Gaussian laws
 
-The identity-covariance proper complex Gaussian is the product of its scalar coordinate laws.
+The centered identity-covariance proper complex Gaussian is the product of its scalar
+coordinate laws.
 Consequently complex linear maps of independent standard coordinates have covariance `L * Lᴴ`.
 This identifies independent-entry matrix models with the multivariate Gaussian model and supplies
 their unitary invariance, including empty coordinate types and singular linear images.
@@ -34,7 +35,7 @@ namespace TauCeti.Probability
 
 variable {ι κ : Type*} [Fintype ι] [Fintype κ] [DecidableEq ι] [DecidableEq κ]
 
-/-- Independent standard proper complex Gaussian coordinates form the identity-covariance
+/-- Independent standard proper complex Gaussian coordinates form the centered identity-covariance
 proper complex Gaussian vector. -/
 theorem properComplexGaussianMeasure_zero_one_eq_pi :
     properComplexGaussianMeasure (0 : ι → ℂ) 1 =

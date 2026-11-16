@@ -8,14 +8,16 @@ module
 public import TauCeti.Probability.RandomMatrices.Ginibre.Density
 public import TauCeti.Analysis.Matrix.SpectralMeasure.Basic
 public import TauCeti.MeasureTheory.Measure.Matrix
+public import TauCeti.Probability.HasLaw
 
 /-!
 # Exact rank of complex Gaussian Gram matrices
 
 A complex Ginibre matrix is absolutely continuous with respect to product planar volume.
 Consequently an `m × n` Ginibre matrix and its Gram matrix both have rank `min m n` almost
-surely. The Gram matrix is positive definite exactly in the regime `m ≤ n`; when `n < m` its
-spectral measure has the deterministic atom `(m - n) / m` at zero. These statements include
+surely. The Gram matrix is almost surely positive definite exactly in the regime `m ≤ n`;
+when `n < m` and `m > 0`, its spectral measure almost surely has the deterministic atom
+`(m - n) / m` at zero. These statements include
 zero sample size and distinguish the number of samples from the matrix dimension.
 
 The argument uses the almost-sure maximal rank theorem for absolutely continuous matrix laws,
@@ -70,7 +72,8 @@ theorem ae_det_eq_zero_iff_gaussianGramComplex (m n : ℕ) :
   simpa only [hA.posDef_iff_det_ne_zero, ne_eq, not_not, not_le] using not_congr h
 
 /-- The spectral measure of a complex Gaussian Gram matrix almost surely has the zero atom
-forced by its rectangular shape. The witness also records that the matrix is Hermitian. -/
+forced by its dimension `m > 0` and sample size `n`. The witness also records that the matrix
+is Hermitian. -/
 theorem ae_spectralMeasure_apply_singleton_zero_gaussianGramComplex (m n : ℕ) [NeZero m] :
     ∀ᵐ A ∂gaussianGramComplex m n, ∃ hA : A.IsHermitian,
       (A.spectralMeasure hA : Measure ℝ) {0} = (m : ℝ≥0∞)⁻¹ * (m - n : ℕ) := by
@@ -102,45 +105,35 @@ variable {Ω : Type*} [MeasurableSpace Ω] {P : Measure Ω} {m n : ℕ}
 /-- A complex Ginibre random matrix has maximal rank almost surely, on any probability space. -/
 theorem HasLaw.ae_rank_eq_min_ginibreComplex {X : Ω → Matrix (Fin m) (Fin n) ℂ}
     (hX : HasLaw X (ginibreComplex m n) P) :
-    ∀ᵐ ω ∂P, (X ω).rank = min m n := by
-  have h := TauCeti.Probability.ae_rank_eq_min_ginibreComplex m n
-  rw [← hX.map_eq] at h
-  exact ae_of_ae_map hX.aemeasurable h
+    ∀ᵐ ω ∂P, (X ω).rank = min m n :=
+  hX.ae (TauCeti.Probability.ae_rank_eq_min_ginibreComplex m n)
 
 /-- A random matrix with the complex Gaussian Gram law has rank `min m n` almost surely. -/
 theorem HasLaw.ae_rank_eq_min_gaussianGramComplex {A : Ω → Matrix (Fin m) (Fin m) ℂ}
     (hA : HasLaw A (gaussianGramComplex m n) P) :
-    ∀ᵐ ω ∂P, (A ω).rank = min m n := by
-  have h := TauCeti.Probability.ae_rank_eq_min_gaussianGramComplex m n
-  rw [← hA.map_eq] at h
-  exact ae_of_ae_map hA.aemeasurable h
+    ∀ᵐ ω ∂P, (A ω).rank = min m n :=
+  hA.ae (TauCeti.Probability.ae_rank_eq_min_gaussianGramComplex m n)
 
 /-- A complex Gaussian Gram random matrix is positive definite almost surely exactly when
 there are at least as many samples as rows. -/
 theorem HasLaw.ae_posDef_iff_gaussianGramComplex {A : Ω → Matrix (Fin m) (Fin m) ℂ}
     (hA : HasLaw A (gaussianGramComplex m n) P) :
-    ∀ᵐ ω ∂P, (A ω).PosDef ↔ m ≤ n := by
-  have h := TauCeti.Probability.ae_posDef_iff_gaussianGramComplex m n
-  rw [← hA.map_eq] at h
-  exact ae_of_ae_map hA.aemeasurable h
+    ∀ᵐ ω ∂P, (A ω).PosDef ↔ m ≤ n :=
+  hA.ae (TauCeti.Probability.ae_posDef_iff_gaussianGramComplex m n)
 
 /-- A complex Gaussian Gram random determinant almost surely vanishes exactly when the
 sample size is smaller than the row dimension. -/
 theorem HasLaw.ae_det_eq_zero_iff_gaussianGramComplex {A : Ω → Matrix (Fin m) (Fin m) ℂ}
     (hA : HasLaw A (gaussianGramComplex m n) P) :
-    ∀ᵐ ω ∂P, (A ω).det = 0 ↔ n < m := by
-  have h := TauCeti.Probability.ae_det_eq_zero_iff_gaussianGramComplex m n
-  rw [← hA.map_eq] at h
-  exact ae_of_ae_map hA.aemeasurable h
+    ∀ᵐ ω ∂P, (A ω).det = 0 ↔ n < m :=
+  hA.ae (TauCeti.Probability.ae_det_eq_zero_iff_gaussianGramComplex m n)
 
 /-- A complex Gaussian Gram random matrix almost surely has the prescribed spectral atom at
-zero, on any probability space. -/
+zero, for dimension `m > 0` and sample size `n`, on any probability space. -/
 theorem HasLaw.ae_spectralMeasure_apply_singleton_zero_gaussianGramComplex [NeZero m]
     {A : Ω → Matrix (Fin m) (Fin m) ℂ} (hA : HasLaw A (gaussianGramComplex m n) P) :
     ∀ᵐ ω ∂P, ∃ h : (A ω).IsHermitian,
-      ((A ω).spectralMeasure h : Measure ℝ) {0} = (m : ℝ≥0∞)⁻¹ * (m - n : ℕ) := by
-  have h := TauCeti.Probability.ae_spectralMeasure_apply_singleton_zero_gaussianGramComplex m n
-  rw [← hA.map_eq] at h
-  exact ae_of_ae_map hA.aemeasurable h
+      ((A ω).spectralMeasure h : Measure ℝ) {0} = (m : ℝ≥0∞)⁻¹ * (m - n : ℕ) :=
+  hA.ae (TauCeti.Probability.ae_spectralMeasure_apply_singleton_zero_gaussianGramComplex m n)
 
 end ProbabilityTheory

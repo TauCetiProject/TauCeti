@@ -5,7 +5,7 @@ Authors: Codex
 -/
 module
 
-public import TauCeti.Probability.RandomMatrices.Ginibre.Density
+public import TauCeti.Probability.RandomMatrices.Ginibre.Basic
 public import TauCeti.Probability.Distributions.Gaussian.ProperComplex.Support
 public import TauCeti.Analysis.Matrix.GramFactorization
 public import TauCeti.LinearAlgebra.Matrix.Rank.Closed
