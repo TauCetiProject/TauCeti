@@ -171,7 +171,7 @@ variable [MeasurableSpace X] [PseudoEMetricSpace X] [StandardBorelSpace X]
 /-- The Wasserstein extended distance equips every anchored finite-distance component with a
 pseudoemetric space structure whenever the ground extended distance is measurable and `1 ≤ p`. -/
 @[instance_reducible]
-noncomputable def pseudoEMetricSpace
+def pseudoEMetricSpace
     (hd : Measurable fun z : X × X ↦ edist z.1 z.2) (hp : 1 ≤ p) :
     PseudoEMetricSpace (WassersteinComponent p μ₀) :=
   PseudoEMetricSpace.ofEDist
@@ -188,7 +188,7 @@ variable [BorelSpace X] [SecondCountableTopology X] [Fact (1 ≤ p)]
 
 /-- The canonical Wasserstein pseudoemetric on an anchored component when the ground extended
 distance is Borel measurable. -/
-noncomputable instance instPseudoEMetricSpace :
+instance instPseudoEMetricSpace :
     PseudoEMetricSpace (WassersteinComponent p μ₀) :=
   pseudoEMetricSpace measurable_edist Fact.out
 
@@ -215,7 +215,7 @@ theorem edist_ne_top (μ ν : WassersteinComponent p μ₀) : edist μ ν ≠ �
 
 /-- Every anchored finite-distance component carries the real-valued Wasserstein
 pseudometric. -/
-noncomputable instance instPseudoMetricSpace :
+instance instPseudoMetricSpace :
     PseudoMetricSpace (WassersteinComponent p μ₀) :=
   PseudoEMetricSpace.toPseudoMetricSpace edist_ne_top
 
@@ -236,7 +236,7 @@ variable [MetricSpace X] [MeasurableSpace X] [BorelSpace X] [SecondCountableTopo
 
 /-- On a Polish metric ground space, Wasserstein distance separates laws, so every anchored
 finite-distance component is a metric space. -/
-noncomputable instance instMetricSpace : MetricSpace (WassersteinComponent p μ₀) where
+instance instMetricSpace : MetricSpace (WassersteinComponent p μ₀) where
   toPseudoMetricSpace := inferInstance
   eq_of_dist_eq_zero {μ ν} h := by
     have hp : (1 : ℝ≥0∞) ≤ p := Fact.out
@@ -476,7 +476,7 @@ variable [StandardBorelSpace X]
 /-- The Wasserstein extended distance equips finite-moment laws with a pseudoemetric space
 structure whenever the ground distance is measurable and `1 ≤ p`. -/
 @[instance_reducible]
-noncomputable def pseudoEMetricSpace
+def pseudoEMetricSpace
     (hd : Measurable fun z : X × X ↦ edist z.1 z.2) (hp : 1 ≤ p) :
     PseudoEMetricSpace (WassersteinSpace p X) :=
   PseudoEMetricSpace.ofEDist
@@ -493,7 +493,7 @@ variable [BorelSpace X] [SecondCountableTopology X] [Fact (1 ≤ p)]
 
 /-- The canonical Wasserstein pseudoemetric on finite-moment laws when the ground distance is
 Borel measurable. -/
-noncomputable instance instPseudoEMetricSpace : PseudoEMetricSpace (WassersteinSpace p X) :=
+instance instPseudoEMetricSpace : PseudoEMetricSpace (WassersteinSpace p X) :=
   pseudoEMetricSpace measurable_edist Fact.out
 
 /-- The extended distance on finite-moment laws is their Wasserstein distance. -/
@@ -504,7 +504,7 @@ theorem edist_def (μ ν : WassersteinSpace p X) :
   (rfl)
 
 /-- Finite-moment laws carry the real-valued Wasserstein pseudometric. -/
-noncomputable instance instPseudoMetricSpace : PseudoMetricSpace (WassersteinSpace p X) :=
+instance instPseudoMetricSpace : PseudoMetricSpace (WassersteinSpace p X) :=
   PseudoEMetricSpace.toPseudoMetricSpace fun μ ν ↦ by
     rw [edist_def]
     exact wassersteinEDist_ne_top measurable_edist μ ν
@@ -601,7 +601,7 @@ variable [MetricSpace X] [MeasurableSpace X] [BorelSpace X] [SecondCountableTopo
 
 /-- On a Polish metric ground space, the Wasserstein pseudometric on finite-moment laws is a
 metric. -/
-noncomputable instance instMetricSpace : MetricSpace (WassersteinSpace p X) where
+instance instMetricSpace : MetricSpace (WassersteinSpace p X) where
   toPseudoMetricSpace := inferInstance
   eq_of_dist_eq_zero {μ ν} h := by
     have hp : (1 : ℝ≥0∞) ≤ p := Fact.out
