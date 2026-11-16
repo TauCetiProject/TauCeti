@@ -12,7 +12,7 @@ import TauCeti.MeasureTheory.Function.EssSup
 /-!
 # Hölder continuity of weak solutions with a mass term (De Giorgi)
 
-Let `a` be measurable and uniformly elliptic on an open set `Ω ⊆ ℝⁿ`, `n ≥ 1`, with constants
+Let `a` be measurable and uniformly elliptic on an open set `Ω ⊆ ℝⁿ`, with constants
 `0 < λ ≤ Λ`, and let `c` be a measurable mass coefficient with `|c| ≤ γ` on `Ω`. This file extends
 De Giorgi's theorem `TauCeti.PDE.exists_holderOnWith_preciseRepresentative` to weak solutions
 `u ∈ H¹(Ω)` of
@@ -44,8 +44,8 @@ which `|u| ≤ M`, the datum satisfies `|f| ≤ γ M`, so its `Lʳ(B(x, ρ))` no
 solution of the homogeneous equation within `K ρ^(2 - n/r) γ M |B(x, ρ)|^(1/r) / λ`, which is a
 multiple of `ρ² γ M / λ`, of `u`. The Morrey gain is therefore `2` whatever `r` is, and the
 Hölder theorem near solutions of the homogeneous equation
-(`TauCeti.PDE.exists_holderOnWith_preciseRepresentative_of_forall_ae_abs_sub_le`) applies with
-the gain `2`. The sign condition `c ≥ 0` is used only through local boundedness
+(`TauCeti.PDE.exists_holderOnWith_preciseRepresentative_of_forall_exists_ae_abs_sub_le`) applies
+with the gain `2`. The sign condition `c ≥ 0` is used only through local boundedness
 (`TauCeti.PDE.exists_ae_abs_value_le_mul_pow_mul_rpow_mul_sqrt_setIntegral_lowerOrder`), which
 bounds `|u|` on `B(x, R/2)` by `D R^(-n/2) ‖u‖_{L²(B(x, R))}`.
 
@@ -156,7 +156,7 @@ theorem exists_forall_energyFormH1_eq_zero_ae_abs_sub_le_mass [Nonempty ι] :
   exact mul_le_mul ((Real.norm_eq_abs _).symm.trans_le (hc_bound x (hball hxB))) hx
     (abs_nonneg _) hgamma
 
-/-- **De Giorgi's theorem for bounded solutions with a mass term.** Let `n ≥ 1` be the dimension.
+/-- **De Giorgi's theorem for bounded solutions with a mass term.** Let `n` be the dimension.
 There are `α ∈ (0, 1]` and `C > 0`, depending only on `λ`, `Λ`, the dimension and the
 normalization of the additive Haar measure `mu`, such that the following holds. Let `a` be
 measurable and uniformly elliptic on `Ω` with constants `λ, Λ`, let `c` be measurable with
@@ -170,7 +170,7 @@ representative of `u` is Hölder continuous on `K` with exponent `α` and consta
 
 The precise representative agrees with `u` almost everywhere on `Ω`
 (`TauCeti.W1p.ae_eq_preciseRepresentative`). Neither `α` nor `C` depends on `γ`. -/
-theorem exists_holderOnWith_preciseRepresentative_mass_of_ae_abs_le [Nonempty ι] :
+theorem exists_holderOnWith_preciseRepresentative_mass_of_ae_abs_le :
     ∃ (α : ℝ≥0) (C : ℝ), 0 < α ∧ α ≤ 1 ∧ 0 < C ∧ ∀ {Omega : Opens (EuclideanSpace ℝ ι)}
       {a : EuclideanSpace ℝ ι → Matrix ι ι ℝ} {c : EuclideanSpace ℝ ι → ℝ} {gamma : ℝ}
       {u : W1p mu Omega 2} {K : Set (EuclideanSpace ℝ ι)} {R M : ℝ},
@@ -185,41 +185,28 @@ theorem exists_holderOnWith_preciseRepresentative_mass_of_ae_abs_le [Nonempty ι
           (R ^ (-(Fintype.card ι : ℝ) / 2) * √(∫ y in Omega, W1p.value u y ^ 2 ∂mu) +
             gamma * R ^ 2 * M / lam)).toNNReal α
           (preciseRepresentative mu (W1p.value u)) K := by
-  obtain ⟨K₀, -, hsplit⟩ := exists_forall_energyFormH1_eq_zero_ae_abs_sub_le_mass (mu := mu)
+  rcases isEmpty_or_nonempty ι with hι | hι
+  · refine ⟨1, 1, zero_lt_one, le_rfl, zero_lt_one, ?_⟩
+    intros
+    exact Set.subsingleton_of_subsingleton.holderOnWith _ _ _
+  obtain ⟨K₀, hK₀, hsplit⟩ := exists_forall_energyFormH1_eq_zero_ae_abs_sub_le_mass (mu := mu)
   obtain ⟨α, C, hα, hα1, hC, hhol⟩ :=
-    exists_holderOnWith_preciseRepresentative_of_forall_ae_abs_sub_le (mu := mu) (lam := lam)
-      (Lam := Lam) (γ := 2) two_pos
-  refine ⟨α, C * max 1 K₀, hα, hα1, by positivity, ?_⟩
+    exists_holderOnWith_preciseRepresentative_of_forall_exists_ae_abs_sub_le (mu := mu)
+      (lam := lam) (Lam := Lam) (γ := 2) two_pos hK₀.le
+  refine ⟨α, C, hα, hα1, hC, ?_⟩
   intro Omega a c gamma u K R M h ha hc hc_bound hu hR hRK hM
   rcases K.eq_empty_or_nonempty with rfl | ⟨x₁, hx₁⟩
   · exact holderOnWith_empty _ _ _
-  have hlam : 0 < lam := h.pos
-  -- Every ball of radius `R` centred in `K` lies in `Ω`.
-  have hball : ∀ x ∈ K, ball x R ⊆ (Omega : Set (EuclideanSpace ℝ ι)) := fun x hx =>
-    (ball_subset_thickening hx R).trans ((thickening_subset_cthickening R K).trans hRK)
-  have hgamma : 0 ≤ gamma :=
-    (norm_nonneg _).trans (hc_bound x₁ (hball x₁ hx₁ (mem_ball_self hR)))
+  have hx₁Ω : x₁ ∈ (Omega : Set (EuclideanSpace ℝ ι)) := hRK (self_subset_cthickening K hx₁)
+  have hgamma : 0 ≤ gamma := (norm_nonneg _).trans (hc_bound x₁ hx₁Ω)
   have hM0 : 0 ≤ M := nonneg_of_ae_restrict_abs_le (measure_ball_pos mu x₁ hR).ne' (hM x₁ hx₁)
-  -- On every ball `B(x, ρ)`, `x ∈ K`, `ρ ≤ R`, `u` is within `ρ² K₀ γ M / λ` of a solution of
-  -- the homogeneous equation.
-  refine (hhol (A := K₀ * (gamma * M) / lam) h ha (fun x hx ρ hρ hρR => ?_) hR hRK).mono_const ?_
-  · obtain ⟨g, hg, hug⟩ := hsplit h ha hc hc_bound hu hρ ((ball_subset_ball hρR).trans
-      (hball x hx)) (ae_restrict_of_ae_restrict_of_subset (ball_subset_ball hρR) (hM x hx))
-    exact ⟨g, hg, hug.mono fun y hy => hy.trans_eq (by rw [Real.rpow_two]; ring)⟩
-  · -- `C (Q + K₀ P) ≤ C max 1 K₀ (Q + P)`.
-    refine Real.toNNReal_le_toNNReal ?_
-    set Q := R ^ (-(Fintype.card ι : ℝ) / 2) * √(∫ y in Omega, W1p.value u y ^ 2 ∂mu)
-    set P := gamma * R ^ 2 * M / lam
-    have hQ : 0 ≤ Q := by positivity
-    have hP : 0 ≤ P := by positivity
-    have hmax := add_mul_le_max_mul_add (K := K₀) hQ hP
-    calc C * R ^ (-(α : ℝ)) * (Q + (R : ℝ) ^ (2 : ℝ) * (K₀ * (gamma * M) / lam)) =
-          C * R ^ (-(α : ℝ)) * (Q + K₀ * P) := by
-          rw [Real.rpow_two]
-          simp only [P]
-          ring
-      _ ≤ C * R ^ (-(α : ℝ)) * (max 1 K₀ * (Q + P)) := by gcongr
-      _ = _ := by ring
+  -- On every ball `B(x, ρ)`, `x ∈ K`, `ρ ≤ R`, the datum `-c u` is bounded by `γ M`.
+  refine (hhol (N := fun _ => gamma * M) h ha (fun x hx ρ hρ hρR hballρ => ?_)
+    (fun _ _ => le_rfl) (mul_nonneg hgamma hM0) hR hRK).mono_const
+    (Real.toNNReal_le_toNNReal (le_of_eq (by rw [Real.rpow_two]; ring)))
+  exact hsplit h ha hc hc_bound hu hρ hballρ
+    (ae_restrict_of_ae_restrict_of_subset (ball_subset_ball hρR) (hM x hx)) |>.imp fun _ hg =>
+      ⟨hg.1, hg.2.mono fun _ hy => hy.trans_eq (by rw [Real.rpow_two])⟩
 
 /-- The constant of `TauCeti.PDE.exists_holderOnWith_preciseRepresentative_mass_of_ae_abs_le` at
 the radius `R / 2`, with the bound `M = D R^(-n/2) N` from local boundedness, is at most
@@ -261,7 +248,7 @@ private theorem mul_half_rpow_mul_add_le {C₁ D R N gamma lam n : ℝ} {α : �
         gcongr
     _ = _ := by ring
 
-/-- **De Giorgi's theorem with a mass term.** Let `n ≥ 1` be the dimension. There are
+/-- **De Giorgi's theorem with a mass term.** Let `n` be the dimension. There are
 `α ∈ (0, 1]` and `C > 0`, depending only on `λ`, `Λ`, the dimension and the normalization of the
 additive Haar measure `mu`, such that the following holds. Let `a` be measurable and uniformly
 elliptic on `Ω` with constants `λ, Λ`, let `c` be measurable with `0 ≤ c ≤ γ` on `Ω`, and let
@@ -276,7 +263,7 @@ The precise representative agrees with `u` almost everywhere on `Ω`
 (`TauCeti.W1p.ae_eq_preciseRepresentative`). The sign condition enters only through De Giorgi's
 local boundedness theorem; for bounded solutions and `c` of either sign, see
 `TauCeti.PDE.exists_holderOnWith_preciseRepresentative_mass_of_ae_abs_le`. -/
-theorem exists_holderOnWith_preciseRepresentative_mass [Nonempty ι] :
+theorem exists_holderOnWith_preciseRepresentative_mass :
     ∃ (α : ℝ≥0) (C : ℝ), 0 < α ∧ α ≤ 1 ∧ 0 < C ∧ ∀ {Omega : Opens (EuclideanSpace ℝ ι)}
       {a : EuclideanSpace ℝ ι → Matrix ι ι ℝ} {c : EuclideanSpace ℝ ι → ℝ} {gamma : ℝ}
       {u : W1p mu Omega 2} {K : Set (EuclideanSpace ℝ ι)} {R : ℝ},
@@ -291,6 +278,10 @@ theorem exists_holderOnWith_preciseRepresentative_mass [Nonempty ι] :
           (R ^ (-(Fintype.card ι : ℝ) / 2) *
             √(∫ y in Omega, W1p.value u y ^ 2 ∂mu))).toNNReal α
           (preciseRepresentative mu (W1p.value u)) K := by
+  rcases isEmpty_or_nonempty ι with hι | hι
+  · refine ⟨1, 1, zero_lt_one, le_rfl, zero_lt_one, ?_⟩
+    intros
+    exact Set.subsingleton_of_subsingleton.holderOnWith _ _ _
   obtain ⟨α, C₁, hα, hα1, hC₁, hhol⟩ :=
     exists_holderOnWith_preciseRepresentative_mass_of_ae_abs_le (mu := mu) (lam := lam)
       (Lam := Lam)
@@ -325,11 +316,11 @@ theorem exists_holderOnWith_preciseRepresentative_mass [Nonempty ι] :
     (Real.toNNReal_le_toNNReal (mul_half_rpow_mul_add_le hα1 hC₁.le hD.le hR (by positivity)
       hgamma hlam))
 
-/-- **Continuity of weak solutions with a mass term.** Let `n ≥ 1` be the dimension. Let `a` be
+/-- **Continuity of weak solutions with a mass term.** Let `n` be the dimension. Let `a` be
 measurable and uniformly elliptic on `Ω`, let `c` be measurable and bounded with `c ≥ 0` on `Ω`,
 and let `u ∈ H¹(Ω)` be a weak solution of `-∂ᵢ(aⁱʲ ∂ⱼu) + c u = 0`. Then the precise
 representative of `u`, which agrees with `u` almost everywhere on `Ω`, is continuous on `Ω`. -/
-theorem continuousOn_preciseRepresentative_mass [Nonempty ι]
+theorem continuousOn_preciseRepresentative_mass
     {Omega : Opens (EuclideanSpace ℝ ι)} {a : EuclideanSpace ℝ ι → Matrix ι ι ℝ}
     {c : EuclideanSpace ℝ ι → ℝ} {gamma : ℝ} {u : W1p mu Omega 2}
     (h : UniformlyEllipticOn (Omega : Set (EuclideanSpace ℝ ι)) a lam Lam)

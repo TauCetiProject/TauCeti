@@ -81,6 +81,9 @@ All in the namespace `TauCeti.PDE`.
   `B(x₀, ρ)`, `ρ ≤ R`.
 * `exists_holderOnWith_preciseRepresentative_of_forall_ae_abs_sub_le`: the Hölder continuity of
   the precise representative of such a function.
+* `exists_holderOnWith_preciseRepresentative_of_forall_exists_ae_abs_sub_le`: the same for a
+  function within `K₀ ρ^γ N(B(x, ρ)) / λ` of a homogeneous solution, as supplied by a splitting
+  lemma for a datum with norm `N`.
 * `exists_forall_energyFormH1_eq_zero_ae_abs_sub_le` and
   `exists_forall_energyFormH1_eq_zero_ae_abs_sub_le_divergence`: on a ball, a weak solution with
   right-hand side `f` (or `∂ᵢFⁱ`) is a weak solution of the homogeneous equation up to an error
@@ -135,7 +138,7 @@ namespace PDE
 /-! ### Comparison with a solution of the homogeneous equation -/
 
 /-- Absorbing the constant `K` of the datum: `Q + K P ≤ max 1 K (Q + P)` for `Q, P ≥ 0`. -/
-theorem add_mul_le_max_mul_add {Q P K : ℝ} (hQ : 0 ≤ Q) (hP : 0 ≤ P) :
+private theorem add_mul_le_max_mul_add {Q P K : ℝ} (hQ : 0 ≤ Q) (hP : 0 ≤ P) :
     Q + K * P ≤ max 1 K * (Q + P) := by
   nlinarith [le_max_left 1 K, le_max_right 1 K]
 
@@ -502,18 +505,18 @@ private theorem exists_ae_abs_value_le_mul_add_of_exists_ae_abs_sub_le [Nonempty
     _ = _ := by ring
 
 /-- Hölder continuity for a function within `K₀ ρ^γ N(B(x, ρ)) / λ` of a solution of the
-homogeneous equation on every ball `B(x, ρ) ⊆ Ω`, as supplied by a splitting lemma, where the
-norm `N` of the datum on a set is at most its norm `N(Ω)` on `Ω`: the form of
-`TauCeti.PDE.exists_holderOnWith_preciseRepresentative_of_forall_ae_abs_sub_le` with
+homogeneous equation on every ball `B(x, ρ) ⊆ Ω` with `x ∈ K` and `ρ ≤ R`, as supplied by a
+splitting lemma, where the norm `N` of the datum on a set is at most its norm `N(Ω)` on `Ω`: the
+form of `TauCeti.PDE.exists_holderOnWith_preciseRepresentative_of_forall_ae_abs_sub_le` with
 `A = K₀ N(Ω) / λ` and the splitting constant `K₀` absorbed into `C`. -/
-private theorem exists_holderOnWith_preciseRepresentative_of_forall_exists_ae_abs_sub_le
+theorem exists_holderOnWith_preciseRepresentative_of_forall_exists_ae_abs_sub_le
     [Nonempty ι] {lam Lam γ K₀ : ℝ} (hγ : 0 < γ) (hK₀ : 0 ≤ K₀) :
     ∃ (α : ℝ≥0) (C : ℝ), 0 < α ∧ α ≤ 1 ∧ 0 < C ∧ ∀ {Omega : Opens (EuclideanSpace ℝ ι)}
       {a : EuclideanSpace ℝ ι → Matrix ι ι ℝ} {u : W1p mu Omega 2}
       {K : Set (EuclideanSpace ℝ ι)} {R : ℝ} {N : Set (EuclideanSpace ℝ ι) → ℝ},
       UniformlyEllipticOn (Omega : Set (EuclideanSpace ℝ ι)) a lam Lam →
       AEStronglyMeasurable a (mu.restrict Omega) →
-      (∀ x ρ, 0 < ρ → ball x ρ ⊆ (Omega : Set (EuclideanSpace ℝ ι)) →
+      (∀ x ∈ K, ∀ ρ, 0 < ρ → ρ ≤ R → ball x ρ ⊆ (Omega : Set (EuclideanSpace ℝ ι)) →
         ∃ g : W1p mu ⟨ball x ρ, isOpen_ball⟩ 2,
           (∀ v : W1p0 mu ⟨ball x ρ, isOpen_ball⟩ 2,
             energyFormH1 a 0 0 g (v : W1p mu ⟨ball x ρ, isOpen_ball⟩ 2) = 0) ∧
@@ -536,7 +539,7 @@ private theorem exists_holderOnWith_preciseRepresentative_of_forall_exists_ae_ab
   refine (hhol (A := K₀ * N Omega / lam) h ha (fun x hx ρ hρ hρR => ?_) hR hRK).mono_const ?_
   · have hballρ : ball x ρ ⊆ (Omega : Set (EuclideanSpace ℝ ι)) := (ball_subset_ball hρR).trans
       ((ball_subset_thickening hx R).trans ((thickening_subset_cthickening R K).trans hRK))
-    obtain ⟨g, hg, hug⟩ := hsplit x ρ hρ hballρ
+    obtain ⟨g, hg, hug⟩ := hsplit x hx ρ hρ hρR hballρ
     refine ⟨g, hg, hug.mono fun y hy => hy.trans ?_⟩
     calc K₀ * ρ ^ γ * N (ball x ρ) / lam ≤ K₀ * ρ ^ γ * N Omega / lam := by
           gcongr
@@ -762,7 +765,7 @@ theorem exists_holderOnWith_preciseRepresentative_of_memLp [Nonempty ι] {lam La
       (sub_pos.2 ((div_lt_iff₀ hr0).2 (by linarith only [hrn]))) hK₀.le
   refine ⟨α, C, hα, hα1, hC, fun {Omega a f u K R} h ha hf hu hR hRK => ?_⟩
   exact hhol (N := fun s => (eLpNorm f r (mu.restrict s)).toReal) h ha
-    (fun x ρ hρ hballρ =>
+    (fun _ _ ρ hρ _ hballρ =>
       hsplit h ha (hf.mono_measure (Measure.restrict_mono hballρ le_rfl)) hu hρ hballρ)
     (fun s hs => ENNReal.toReal_mono hf.eLpNorm_ne_top
       (eLpNorm_mono_measure _ (Measure.restrict_mono hs le_rfl)))
@@ -905,7 +908,7 @@ theorem exists_holderOnWith_preciseRepresentative_of_memLp_divergence [Nonempty 
       (sub_pos.2 ((div_lt_one hq0).2 hqn)) hK₀.le
   refine ⟨α, C, hα, hα1, hC, fun {Omega a F u K R} h ha hF hu hR hRK => ?_⟩
   exact hhol (N := fun s => (eLpNorm F q (mu.restrict s)).toReal) h ha
-    (fun x ρ hρ hballρ =>
+    (fun _ _ ρ hρ _ hballρ =>
       hsplit h ha (hF.mono_measure (Measure.restrict_mono hballρ le_rfl)) hu hρ hballρ)
     (fun s hs => ENNReal.toReal_mono hF.eLpNorm_ne_top
       (eLpNorm_mono_measure _ (Measure.restrict_mono hs le_rfl)))
