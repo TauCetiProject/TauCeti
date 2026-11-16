@@ -71,7 +71,8 @@ parallelograms traps every entry `h p` between explicit linear combinations `ent
   `TauCeti.Hive.le_entryUpperBound`, `TauCeti.Hive.boundary_eq_zero_iff`.
 * `TauCeti.Hive.isConvexPolyhedron_realFibre`, `TauCeti.Hive.isCompact_realFibre`,
   `TauCeti.Hive.isProperMap_boundary_properCone`.
-* `TauCeti.Hive.finite_fixedIntegerHive`, `TauCeti.Hive.dominates_add_of_productBoundary`,
+* `TauCeti.Hive.finite_fixedIntegerHive`, `TauCeti.Hive.shiftProductBoundaryEquiv`,
+  `TauCeti.Hive.hiveCount_productBoundary_shift`, `TauCeti.Hive.dominates_add_of_productBoundary`,
   `TauCeti.Hive.detShift_le_of_productBoundary`,
   `TauCeti.Hive.finite_support_hiveCount_productBoundary`.
 
@@ -549,6 +550,31 @@ theorem hiveCount_productBoundary_dual {n : ℕ} (lam μ γ : DominantWeight n) 
       invFun := fun h => ⟨h.1.reflect.rotate, boundary_reflect_rotate_of_productBoundary h.2⟩
       left_inv := fun _ => by ext p; simp
       right_inv := fun _ => by ext p; simp }
+
+/-- **Determinant-shift equivalence on product-boundary hive fibres**: adding the normalized affine
+hive `affine n a (a + b)` bijects `FixedIntegerHive (productBoundary lam μ γ)` with
+`FixedIntegerHive (productBoundary (lam.shift a) (μ.shift b) (γ.shift (a + b)))`. -/
+def shiftProductBoundaryEquiv {n : ℕ} (lam μ γ : DominantWeight n) (a b : ℤ) :
+    FixedIntegerHive (productBoundary lam μ γ) ≃
+      FixedIntegerHive (productBoundary (lam.shift a) (μ.shift b) (γ.shift (a + b))) where
+  toFun h := ⟨h.1 + affine n a (a + b), by ext s i; fin_cases s <;> simp [h.2]⟩
+  invFun h := ⟨h.1 + affine n (-a) (-(a + b)), by ext s i; fin_cases s <;> simp [h.2]; omega⟩
+  left_inv h := by ext p; simp [mul_add]; abel
+  right_inv h := by ext p; simp [mul_add]; abel
+
+@[simp] theorem shiftProductBoundaryEquiv_apply_val {n : ℕ} (lam μ γ : DominantWeight n) (a b : ℤ)
+    (h : FixedIntegerHive (productBoundary lam μ γ)) :
+    (shiftProductBoundaryEquiv lam μ γ a b h).1 = h.1 + affine n a (a + b) := (rfl)
+
+@[simp] theorem shiftProductBoundaryEquiv_symm_apply_val {n : ℕ} (lam μ γ : DominantWeight n)
+    (a b : ℤ) (h : FixedIntegerHive (productBoundary (lam.shift a) (μ.shift b) (γ.shift (a + b)))) :
+    ((shiftProductBoundaryEquiv lam μ γ a b).symm h).1 = h.1 + affine n (-a) (-(a + b)) := (rfl)
+
+/-- Shifting a product boundary by determinant twists `(a, b, a + b)` preserves `hiveCount`. -/
+@[simp] theorem hiveCount_productBoundary_shift {n : ℕ} (lam μ γ : DominantWeight n) (a b : ℤ) :
+    hiveCount (productBoundary (lam.shift a) (μ.shift b) (γ.shift (a + b))) =
+      hiveCount (productBoundary lam μ γ) :=
+  (Fintype.card_congr (shiftProductBoundaryEquiv lam μ γ a b)).symm
 
 /-! ### Central-degree conservation, dominance bound, lower-coordinate bound, and finite support -/
 
