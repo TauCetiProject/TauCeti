@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.MeasureTheory.Integral.Gamma
+import Mathlib.Analysis.SpecialFunctions.Gaussian.GaussianIntegral
 import TauCeti.Analysis.SpecialFunctions.Exp.Image
 
 /-!
@@ -25,10 +26,14 @@ When `q = k` is a natural number, `Γ(k + 1) = k!` yields the real-exponent eval
   `r > -1` and `q > -1`.
 * `TauCeti.integral_rpow_mul_neg_log_rpow`:
   `∫ t in 0..1, t ^ r * (-log t) ^ q = Γ(q + 1) / (r + 1) ^ (q + 1)`.
-* `TauCeti.integral_rpow_mul_neg_log_pow` and `TauCeti.integral_rpow_mul_log_pow`: the natural
-  logarithmic power cases `(-log t) ^ k` and `(log t) ^ k`.
-* `TauCeti.integral_pow_mul_neg_log_pow` and `TauCeti.integral_pow_mul_log_pow`: the natural
-  polynomial-moment specializations `t ^ j * (-log t) ^ k` and `t ^ j * (log t) ^ k`.
+* `TauCeti.intervalIntegrable_rpow_mul_neg_log_pow`, `TauCeti.integral_rpow_mul_neg_log_pow`,
+  `TauCeti.intervalIntegrable_rpow_mul_log_pow`, and `TauCeti.integral_rpow_mul_log_pow`:
+  interval integrability and evaluation for the natural logarithmic power cases `(-log t) ^ k` and
+  `(log t) ^ k`.
+* `TauCeti.intervalIntegrable_pow_mul_neg_log_pow`, `TauCeti.integral_pow_mul_neg_log_pow`,
+  `TauCeti.intervalIntegrable_pow_mul_log_pow`, and `TauCeti.integral_pow_mul_log_pow`:
+  interval integrability and evaluation for the natural polynomial-moment specializations
+  `t ^ j * (-log t) ^ k` and `t ^ j * (log t) ^ k`.
 -/
 
 public section
@@ -54,17 +59,8 @@ theorem integrableOn_Ioo_rpow_mul_neg_log_rpow {r q : ℝ} (hr : -1 < r) (hq : -
     simpa using this
   rw [integrableOn_image_iff_integrableOn_abs_deriv_smul measurableSet_Ioi
     (fun u _ ↦ ((hasDerivAt_neg u).exp).hasDerivWithinAt) (exp_injective.comp neg_injective).injOn]
-  have hgamma : IntegrableOn (fun x : ℝ ↦ exp (-x) * x ^ q) (Ioi 0) := by
-    simpa [add_sub_cancel_right] using Real.GammaIntegral_convergent (s := q + 1) (by linarith)
-  have hscaled : IntegrableOn (fun u : ℝ ↦ exp (-((r + 1) * u)) * ((r + 1) * u) ^ q) (Ioi 0) :=
-    (integrableOn_Ioi_comp_mul_left_iff (fun x : ℝ ↦ exp (-x) * x ^ q) 0 hb).mpr
-      (by simpa only [mul_zero] using hgamma)
-  refine IntegrableOn.congr_fun (hscaled.const_mul ((r + 1) ^ (-q)))
-    (fun u (hu : 0 < u) ↦ ?_) measurableSet_Ioi
-  rw [exp_neg_pullback, mul_rpow hb.le hu.le, neg_mul]
-  calc (r + 1) ^ (-q) * (exp (-((r + 1) * u)) * ((r + 1) ^ q * u ^ q))
-      = ((r + 1) ^ (-q) * (r + 1) ^ q) * (u ^ q * exp (-((r + 1) * u))) := by ring
-    _ = u ^ q * exp (-((r + 1) * u)) := by simp [← rpow_add hb]
+  exact (integrableOn_rpow_mul_exp_neg_mul_rpow hq zero_lt_one hb).congr_fun
+    (fun u _ ↦ by simp only [exp_neg_pullback, rpow_one]) measurableSet_Ioi
 
 /-- For `r > -1` and `q > -1`, `t ↦ t ^ r * (-log t) ^ q` is interval integrable on `[0, 1]`. -/
 theorem intervalIntegrable_rpow_mul_neg_log_rpow {r q : ℝ} (hr : -1 < r) (hq : -1 < q) :
@@ -105,23 +101,44 @@ theorem integral_rpow_mul_neg_log_pow {r : ℝ} (hr : -1 < r) (k : ℕ) :
   rw [Gamma_nat_eq_factorial] at h
   simpa only [rpow_natCast, ← Nat.cast_add_one] using h
 
+private lemma rpow_mul_log_pow_eq (r : ℝ) (k : ℕ) :
+    (fun t : ℝ ↦ t ^ r * log t ^ k) = fun t : ℝ ↦ (-1) ^ k * (t ^ r * (-log t) ^ k) := by
+  ext t
+  have hsign : (-1 : ℝ) ^ k * (-1 : ℝ) ^ k = 1 := by simp [← mul_pow]
+  rw [neg_pow]
+  linear_combination -t ^ r * log t ^ k * hsign
+
+/-- For `r > -1` and `k : ℕ`, `t ↦ t ^ r * (log t) ^ k` is interval integrable on `[0, 1]`. -/
+theorem intervalIntegrable_rpow_mul_log_pow {r : ℝ} (hr : -1 < r) (k : ℕ) :
+    IntervalIntegrable (fun t : ℝ ↦ t ^ r * log t ^ k) volume 0 1 := by
+  rw [rpow_mul_log_pow_eq]
+  exact (intervalIntegrable_rpow_mul_neg_log_pow hr k).const_mul ((-1) ^ k)
+
 /-- For `r > -1` and `k : ℕ`, `∫₀¹ t ^ r * (log t) ^ k dt = (-1) ^ k * k! / (r + 1) ^ (k + 1)`. -/
 theorem integral_rpow_mul_log_pow {r : ℝ} (hr : -1 < r) (k : ℕ) :
     ∫ t in (0 : ℝ)..1, t ^ r * log t ^ k = (-1) ^ k * (k.factorial : ℝ) / (r + 1) ^ (k + 1) := by
-  have hsign : (-1 : ℝ) ^ k * (-1 : ℝ) ^ k = 1 := by simp [← mul_pow]
-  have hrewrite :
-      (fun t : ℝ ↦ t ^ r * log t ^ k) = fun t : ℝ ↦ (-1) ^ k * (t ^ r * (-log t) ^ k) := by
-    ext t
-    rw [neg_pow]
-    linear_combination -t ^ r * log t ^ k * hsign
-  rw [hrewrite, intervalIntegral.integral_const_mul, integral_rpow_mul_neg_log_pow hr k,
-    mul_div_assoc]
+  rw [rpow_mul_log_pow_eq, intervalIntegral.integral_const_mul,
+    integral_rpow_mul_neg_log_pow hr k, mul_div_assoc]
+
+/-- For natural numbers `j` and `k`, `t ↦ t ^ j * (-log t) ^ k` is interval integrable on
+`[0, 1]`. -/
+theorem intervalIntegrable_pow_mul_neg_log_pow (j k : ℕ) :
+    IntervalIntegrable (fun t : ℝ ↦ t ^ j * (-log t) ^ k) volume 0 1 := by
+  simpa only [rpow_natCast] using
+    intervalIntegrable_rpow_mul_neg_log_pow (r := j) (by linarith [Nat.cast_nonneg (α := ℝ) j]) k
 
 /-- For natural numbers `j` and `k`, `∫₀¹ t ^ j * (-log t) ^ k dt = k! / (j + 1) ^ (k + 1)`. -/
 theorem integral_pow_mul_neg_log_pow (j k : ℕ) :
     ∫ t in (0 : ℝ)..1, t ^ j * (-log t) ^ k = (k.factorial : ℝ) / (j + 1 : ℝ) ^ (k + 1) := by
   simpa only [rpow_natCast] using
     integral_rpow_mul_neg_log_pow (r := j) (by linarith [Nat.cast_nonneg (α := ℝ) j]) k
+
+/-- For natural numbers `j` and `k`, `t ↦ t ^ j * (log t) ^ k` is interval integrable on
+`[0, 1]`. -/
+theorem intervalIntegrable_pow_mul_log_pow (j k : ℕ) :
+    IntervalIntegrable (fun t : ℝ ↦ t ^ j * log t ^ k) volume 0 1 := by
+  simpa only [rpow_natCast] using
+    intervalIntegrable_rpow_mul_log_pow (r := j) (by linarith [Nat.cast_nonneg (α := ℝ) j]) k
 
 /-- For natural numbers `j` and `k`,
 `∫₀¹ t ^ j * (log t) ^ k dt = (-1) ^ k * k! / (j + 1) ^ (k + 1)`. -/
