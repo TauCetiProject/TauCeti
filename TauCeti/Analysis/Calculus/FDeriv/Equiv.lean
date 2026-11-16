@@ -45,6 +45,8 @@ open set `U` and mapping it into an open set `V`, with an inverse `Ψ` different
   `p` of the source and its image `e p`.
 * `OpenPartialHomeomorph.isInvertible_fderiv`, `OpenPartialHomeomorph.inverse_fderiv`: hence the
   derivative at such a point is invertible, with inverse the derivative of `e.symm` at `e p`.
+* `OpenPartialHomeomorph.det_fderiv_mul_det_fderiv_symm`: for an open partial homeomorphism of a
+  space to itself, `det De(e⁻¹ p) · det De⁻¹(p) = 1` at a point `p` of the target.
 * `TauCeti.fderiv_comp_fderiv_eq_id_of_invOn`: `DΦ(y) ∘ DΨ(Φ y) = id`.
 * `Equiv.det_fderiv_symm_mul_det_fderiv`: for a bijection `φ` differentiable at `φ⁻¹ y` with its
   inverse differentiable at `y`, the Jacobian determinants are reciprocal,
@@ -159,6 +161,16 @@ theorem inverse_fderiv (e : OpenPartialHomeomorph E F) {y : E} (hy : y ∈ e.sou
     (fderiv 𝕜 e y).inverse = fderiv 𝕜 e.symm (e y) :=
   ContinuousLinearMap.inverse_eq (e.fderiv_comp_fderiv_symm_of_mem_source hy he hes)
     (e.fderiv_symm_comp_fderiv_of_mem_source hy he hes)
+
+/-- For an open partial homeomorphism of a space to itself, differentiable at `e⁻¹ p` with inverse
+differentiable at a point `p` of its target, the Jacobian determinants of `e` at `e⁻¹ p` and of
+`e⁻¹` at `p` are reciprocal. -/
+theorem det_fderiv_mul_det_fderiv_symm (e : OpenPartialHomeomorph E E) {p : E}
+    (hp : p ∈ e.target) (hd : DifferentiableAt 𝕜 e (e.symm p))
+    (hds : DifferentiableAt 𝕜 e.symm p) :
+    (fderiv 𝕜 e (e.symm p)).det * (fderiv 𝕜 e.symm p).det = 1 := by
+  rw [← ContinuousLinearMap.det_comp, e.fderiv_comp_fderiv_symm hp hd hds,
+    ContinuousLinearMap.det_id]
 
 end OpenPartialHomeomorph
 
