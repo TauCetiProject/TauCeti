@@ -11,26 +11,31 @@ import Mathlib.Probability.Independence.InfinitePi
 import TauCeti.Probability.Independence.DisjointBlocks
 
 /-!
-# Splitting off one coordinate of an infinite product measure
+# Splitting an infinite product measure into factors
 
-For a family of probability measures indexed by `Option ι`, the product measure
-`Measure.infinitePi μ` is the law of an assignment `x` whose coordinates are independent with laws
-`μ i`. Reading `x` as its value at `none` together with its restriction to the indices `some i`
-separates it into two independent pieces, so
+This file provides factorization identities for Mathlib's `Measure.infinitePi`, complementing
+Mathlib's finite-product splitting lemmas in `Mathlib.MeasureTheory.Constructions.Pi`.
+
+For a family of probability measures indexed by `Option ι`, reading an assignment `x` as its
+value at `none` together with its restriction to `some i` separates `Measure.infinitePi μ` into
+two independent pieces:
 
 ```text
 (Measure.infinitePi μ).map (fun x => (x none, fun i => x (some i)))
   = μ none ⊗ Measure.infinitePi (fun i => μ (some i)).
 ```
 
-This is the infinite-product analogue of Mathlib's `MeasureTheory.Measure.pi_map_piOptionEquivProd`,
-which is stated for `Measure.pi` over a finite index type. It isolates one distinguished
-coordinate — a global or initial variable — from the independent remaining coordinates, each
-with its respective law.
+For an arbitrary index type `ι` and a decidable predicate `p : ι → Prop`, the measurable
+equivalence `MeasurableEquiv.piEquivPiSubtypeProd X p` splits `Measure.infinitePi μ` into the
+binary product of the infinite product measures on `{i // p i}` and `{i // ¬ p i}`, giving the
+infinite-product analogue of `MeasureTheory.measurePreserving_piEquivPiSubtypeProd`.
 
 ## Main results
 
-* `TauCeti.MeasureTheory.Measure.infinitePi_map_none_some` — the displayed identity.
+* `TauCeti.MeasureTheory.Measure.infinitePi_map_none_some` — splitting off the coordinate `none`
+  on `Option ι`.
+* `TauCeti.measurePreserving_infinitePi_piEquivPiSubtypeProd` — splitting an infinite product
+  measure along a predicate `p : ι → Prop` on the index type.
 -/
 
 public section
@@ -74,5 +79,33 @@ theorem infinitePi_map_none_some {ι : Type*} {X : Option ι → Type*}
 end Measure
 
 end MeasureTheory
+
+/-- **Splitting an infinite product measure along a predicate.** For any decidable predicate
+`p : ι → Prop`, the equivalence `MeasurableEquiv.piEquivPiSubtypeProd X p` sends
+`Measure.infinitePi μ` to the binary product of the infinite product measures over `{i // p i}`
+and `{i // ¬ p i}`. This is the infinite-product analogue of
+`MeasureTheory.measurePreserving_piEquivPiSubtypeProd`. -/
+theorem measurePreserving_infinitePi_piEquivPiSubtypeProd {ι : Type*} {X : ι → Type*}
+    [∀ i, MeasurableSpace (X i)] (μ : ∀ i, Measure (X i)) [∀ i, IsProbabilityMeasure (μ i)]
+    (p : ι → Prop) [DecidablePred p] :
+    MeasurePreserving (MeasurableEquiv.piEquivPiSubtypeProd X p) (Measure.infinitePi μ)
+      ((Measure.infinitePi fun i : Subtype p => μ i).prod
+        (Measure.infinitePi fun i : {i // ¬ p i} => μ i)) := by
+  set e := (MeasurableEquiv.piEquivPiSubtypeProd X p).symm
+  refine MeasurePreserving.symm e ⟨e.measurable, Measure.eq_infinitePi μ fun s t ht => ?_⟩
+  have hpre : e ⁻¹' ((s : Set ι).pi t) =
+      ((s.subtype p : Set (Subtype p)).pi fun i => t i) ×ˢ
+        ((s.subtype (fun i => ¬ p i) : Set {i // ¬ p i}).pi fun i => t i) := by
+    ext ⟨f, g⟩
+    simp only [e, Set.mem_preimage, Set.mem_pi, Finset.mem_coe, Set.mem_prod, Finset.mem_subtype,
+      Subtype.forall, ← forall_and]
+    refine forall_congr' fun i => ?_
+    by_cases hi : p i <;> simp [hi]
+  rw [e.map_apply, hpre, Measure.prod_prod,
+    Measure.infinitePi_pi (μ := fun i : Subtype p => μ i) (fun i _ => ht i.1),
+    Measure.infinitePi_pi (μ := fun i : {i // ¬ p i} => μ i) (fun i _ => ht i.1),
+    Finset.prod_subtype_eq_prod_filter (f := fun i => μ i (t i)),
+    Finset.prod_subtype_eq_prod_filter (f := fun i => μ i (t i)),
+    Finset.prod_filter_mul_prod_filter_not]
 
 end TauCeti
