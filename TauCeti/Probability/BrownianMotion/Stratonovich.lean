@@ -9,8 +9,11 @@ public import TauCeti.Probability.BrownianMotion.QuadraticVariation
 public import TauCeti.Probability.BrownianMotion.WeightedQuadraticVariation
 public import TauCeti.Probability.Process.Stratonovich
 import Mathlib.Analysis.Calculus.ContDiff.Deriv
+import TauCeti.Algebra.BigOperators.Finset.Range
+import TauCeti.Algebra.Order.Field.Basic
 import TauCeti.Analysis.Calculus.Taylor.Symmetric
 import TauCeti.MeasureTheory.Function.ConvergenceInMeasure
+import TauCeti.Order.Monotone.Basic
 
 /-!
 # Brownian Stratonovich symmetric-endpoint and temporal-midpoint partition limits
@@ -40,13 +43,14 @@ in probability to `H(B_b) - H(B_a)` without any second derivative of `h` or mome
 
 In contrast to the symmetric-endpoint rule, temporal-midpoint convergence genuinely depends on the
 Brownian half-step increment law: for a deterministically time-changed pre-Brownian motion `B ∘ A`
-evaluated at intermediate clock values `a_i ≤ c_i ≤ a_{i+1}`, the temporal-midpoint sum for the
-identity integrand has exact mean bias `1 / 2 * ∑ ((c_i - a_i) - (a_{i+1} - c_i))` and variance
-`1 / 2 * ∑ ((c_i - a_i)² + (a_{i+1} - c_i)²)`
+evaluated at intermediate clock values `a_i ≤ c_i ≤ a_{i+1}`, the deviation
+`(∑ B(c_i)(B(a_{i+1}) - B(a_i))) - (B(a_n)² - B(a_0)²) / 2` of the intermediate-sample sum from
+the symmetric Stratonovich value has exact expectation `1 / 2 * ∑ ((c_i - a_i) - (a_{i+1} - c_i))`
+and variance `1 / 2 * ∑ ((c_i - a_i)² + (a_{i+1} - c_i)²)`
 (`IsPreBrownianReal.integral_sum_comp_midpoint_mul_sub_sub_half_sq`,
 `IsPreBrownianReal.variance_sum_comp_midpoint_mul_sub_sub_half_sq`), so under
-vanishing clock mesh and asymptotic clock asymmetry `β` it converges in probability to
-`(B(A_1)² - B(A_0)²) / 2 + β`
+vanishing clock mesh and asymptotic clock asymmetry `β` the intermediate-sample sum converges in
+probability to `(B(A_1)² - B(A_0)²) / 2 + β`
 (`IsPreBrownianReal.tendstoInMeasure_sum_comp_midpoint_mul_sub`).
 
 ## References
@@ -63,81 +67,6 @@ noncomputable section
 
 open Finset Filter MeasureTheory ProbabilityTheory Set
 open scoped NNReal ENNReal Topology
-
-private theorem sum_range_two_mul {M : Type*} [AddCommMonoid M] (f : ℕ → M) (n : ℕ) :
-    ∑ j ∈ range (2 * n), f j = ∑ i ∈ range n, (f (2 * i) + f (2 * i + 1)) := by
-  induction n with
-  | zero => simp
-  | succ m ih =>
-    rw [Nat.mul_succ, sum_range_succ, sum_range_succ, ih, sum_range_succ, add_assoc]
-
-private theorem tendstoInMeasure_add_zero {Ω ι : Type*} {mΩ : MeasurableSpace Ω}
-    {μ : Measure Ω} {l : Filter ι} {f₁ f₂ : ι → Ω → ℝ}
-    (h₁ : TendstoInMeasure μ f₁ l (fun _ ↦ 0))
-    (h₂ : TendstoInMeasure μ f₂ l (fun _ ↦ 0)) :
-    TendstoInMeasure μ (fun k ω ↦ f₁ k ω + f₂ k ω) l (fun _ ↦ 0) := by
-  rw [tendstoInMeasure_iff_norm] at h₁ h₂ ⊢
-  intro ε hε
-  have h0 : Tendsto (fun k ↦ μ {ω | ε / 2 ≤ ‖f₁ k ω - 0‖} + μ {ω | ε / 2 ≤ ‖f₂ k ω - 0‖})
-      l (𝓝 0) := by
-    simpa only [add_zero] using (h₁ (ε / 2) (half_pos hε)).add (h₂ (ε / 2) (half_pos hε))
-  refine tendsto_of_tendsto_of_tendsto_of_le_of_le tendsto_const_nhds h0
-    (fun _ ↦ by positivity) fun k ↦ ?_
-  refine (measure_mono fun ω hω ↦ ?_).trans (measure_union_le _ _)
-  by_contra hnot
-  rw [Set.mem_union, not_or] at hnot
-  have hlt₁ : ‖f₁ k ω‖ < ε / 2 := by simpa only [Set.mem_ofPred_eq, sub_zero, not_le] using hnot.1
-  have hlt₂ : ‖f₂ k ω‖ < ε / 2 := by simpa only [Set.mem_ofPred_eq, sub_zero, not_le] using hnot.2
-  have hsum : ‖f₁ k ω + f₂ k ω - 0‖ < ε := by
-    rw [sub_zero]
-    exact (norm_add_le _ _).trans_lt (by linarith)
-  exact hsum.not_ge hω
-
-private theorem tendstoInMeasure_const_mul_zero {Ω ι : Type*} {mΩ : MeasurableSpace Ω}
-    {μ : Measure Ω} {l : Filter ι} (c : ℝ) {f : ι → Ω → ℝ}
-    (hf : TendstoInMeasure μ f l (fun _ ↦ 0)) :
-    TendstoInMeasure μ (fun k ω ↦ c * f k ω) l (fun _ ↦ 0) := by
-  rcases eq_or_ne c 0 with rfl | hc
-  · rw [tendstoInMeasure_iff_norm]
-    intro ε hε
-    simp only [zero_mul, sub_self, norm_zero, hε.not_ge, Set.ofPred_false, measure_empty]
-    exact tendsto_const_nhds
-  · rw [tendstoInMeasure_iff_norm] at hf ⊢
-    intro ε hε
-    have hcpos : 0 < |c| := abs_pos.2 hc
-    refine tendsto_of_tendsto_of_tendsto_of_le_of_le tendsto_const_nhds
-      (hf (ε / |c|) (div_pos hε hcpos)) (fun _ ↦ by positivity) fun k ↦ measure_mono fun ω hω ↦ ?_
-    simp only [Set.mem_ofPred_eq, sub_zero, Real.norm_eq_abs, abs_mul] at hω ⊢
-    rwa [div_le_iff₀' hcpos]
-
-private theorem monotoneOn_Iic_of_le_succ {α : Type*} [Preorder α] {f : ℕ → α} {N : ℕ}
-    (h : ∀ j < N, f j ≤ f (j + 1)) : MonotoneOn f (Set.Iic N) := by
-  have hrec : ∀ a b, a ≤ b → b ≤ N → f a ≤ f b := by
-    intro a b hab
-    induction hab with
-    | refl => intro _; exact le_rfl
-    | @step m _ ih =>
-      intro hm
-      exact (ih (Nat.le_of_succ_le hm)).trans (h m (Nat.lt_of_succ_le hm))
-  exact fun a _ b hb hab ↦ hrec a b hab hb
-
-private theorem monotoneOn_even_odd_Iic {α : Type*} [Preorder α] {n : ℕ} {a c : ℕ → α}
-    (hac : ∀ i < n, a i ≤ c i ∧ c i ≤ a (i + 1)) :
-    MonotoneOn (fun j ↦ if j % 2 = 0 then a (j / 2) else c (j / 2)) (Set.Iic (2 * n)) := by
-  refine monotoneOn_Iic_of_le_succ fun j hj ↦ ?_
-  have hi : j / 2 < n := by omega
-  obtain ⟨h₁, h₂⟩ := hac (j / 2) hi
-  rcases Nat.mod_two_eq_zero_or_one j with hmod | hmod
-  · have hdiv1 : (j + 1) / 2 = j / 2 := by omega
-    have hmod1 : (j + 1) % 2 = 1 := by omega
-    simpa only [hmod, ↓reduceIte, hmod1, one_ne_zero, hdiv1] using h₁
-  · have hdiv1 : (j + 1) / 2 = j / 2 + 1 := by omega
-    have hmod1 : (j + 1) % 2 = 0 := by omega
-    simpa only [hmod, one_ne_zero, ↓reduceIte, hmod1, hdiv1] using h₂
-
-private theorem nnreal_le_midpoint_and_le {x y : ℝ≥0} (h : x ≤ y) :
-    x ≤ (x + y) / 2 ∧ (x + y) / 2 ≤ y := by
-  constructor <;> · rw [← NNReal.coe_le_coe]; push_cast; linarith [NNReal.coe_le_coe.2 h]
 
 namespace TauCeti.Probability.IsFilteredPreBrownianReal
 
@@ -164,7 +93,9 @@ theorem integral_sq_sum_mul_midpoint_sq_sub_sq (hB : IsFilteredPreBrownianReal �
     have hmod : (2 * i + 1) % 2 = 1 := by omega
     simp [u, hdiv, hmod]
   have hu : MonotoneOn u (Set.Iic (2 * n)) :=
-    monotoneOn_even_odd_Iic fun i hi ↦ nnreal_le_midpoint_and_le (ht hi.le hi (Nat.le_succ _))
+    TauCeti.monotoneOn_even_odd_Iic fun i hi ↦ by
+      have hle := ht hi.le hi (Nat.le_succ _)
+      exact ⟨TauCeti.left_le_add_div_two.2 hle, TauCeti.add_div_two_le_right.2 hle⟩
   let H : ℕ → Ω → ℝ := fun j ↦
     if j % 2 = 0 then Y (j / 2) else fun ω ↦ -Y (j / 2) ω
   have hH_even (i : ℕ) : H (2 * i) = Y i := by simp [H]
@@ -182,7 +113,7 @@ theorem integral_sq_sum_mul_midpoint_sq_sub_sq (hB : IsFilteredPreBrownianReal �
     · have hj_eq : j = 2 * (j / 2) + 1 := by omega
       have hle : t (j / 2) ≤ u (2 * (j / 2) + 1) := by
         rw [hu_odd]
-        exact (nnreal_le_midpoint_and_le (ht hi.le hi (Nat.le_succ _))).1
+        exact TauCeti.left_le_add_div_two.2 (ht hi.le hi (Nat.le_succ _))
       rw [hj_eq, hH_odd]
       exact (hY _ hi).neg.mono (ℱ.mono hle) le_rfl
   have hHi : ∀ j < 2 * n, MemLp (H j) 2 P := by
@@ -202,8 +133,9 @@ theorem integral_sq_sum_mul_midpoint_sq_sub_sq (hB : IsFilteredPreBrownianReal �
       ∑ i ∈ range n, Y i ω *
         ((B ((t i + t (i + 1)) / 2) ω - B (t i) ω) ^ 2 -
           (B (t (i + 1)) ω - B ((t i + t (i + 1)) / 2) ω) ^ 2) := by
-    rw [sum_range_two_mul]
+    rw [sum_range_mul_eq_sum_sum _ 2]
     refine sum_congr rfl fun i _ ↦ ?_
+    rw [sum_range_succ, sum_range_one, add_zero]
     have h2 : 2 * i + 1 + 1 = 2 * (i + 1) := by omega
     rw [h2, hu_even, hu_odd, hu_even, hH_even, hH_odd]
     push_cast
@@ -211,8 +143,9 @@ theorem integral_sq_sum_mul_midpoint_sq_sub_sq (hB : IsFilteredPreBrownianReal �
   have hrhs :
       2 * ∑ j ∈ range (2 * n), (∫ ω, H j ω ^ 2 ∂P) * ((u (j + 1) : ℝ) - u j) ^ 2 =
         ∑ i ∈ range n, (∫ ω, Y i ω ^ 2 ∂P) * ((t (i + 1) : ℝ) - t i) ^ 2 := by
-    rw [sum_range_two_mul, mul_sum]
+    rw [sum_range_mul_eq_sum_sum _ 2, mul_sum]
     refine sum_congr rfl fun i _ ↦ ?_
+    rw [sum_range_succ, sum_range_one, add_zero]
     have h2 : 2 * i + 1 + 1 = 2 * (i + 1) := by omega
     rw [h2, hu_even, hu_odd, hu_even, hH_even, hH_odd]
     simp only [neg_sq]
@@ -365,7 +298,7 @@ theorem variance_sum_comp_midpoint_mul_sub_sub_half_sq (hB : IsPreBrownianReal B
     have hdiv : (2 * i + 1) / 2 = i := by omega
     have hmod : (2 * i + 1) % 2 = 1 := by omega
     simp [u, hdiv, hmod]
-  have hu : MonotoneOn u (Set.Iic (2 * n)) := monotoneOn_even_odd_Iic hac
+  have hu : MonotoneOn u (Set.Iic (2 * n)) := TauCeti.monotoneOn_even_odd_Iic hac
   let τ : Fin (2 * n + 1) → ℝ≥0 := fun j ↦ u j
   have hτ : Monotone τ := fun j₁ j₂ hle ↦
     hu (Nat.le_of_lt_succ j₁.isLt) (Nat.le_of_lt_succ j₂.isLt) hle
@@ -386,9 +319,10 @@ theorem variance_sum_comp_midpoint_mul_sub_sub_half_sq (hB : IsPreBrownianReal B
     have hfin : ∑ j : Fin (2 * n), ξ j ω =
         ∑ m ∈ range (2 * n), sgn m * (B (u (m + 1)) ω - B (u m) ω) ^ 2 :=
       Fin.sum_univ_eq_sum_range (fun m ↦ sgn m * (B (u (m + 1)) ω - B (u m) ω) ^ 2) (2 * n)
-    rw [hfin, sum_range_two_mul,
+    rw [hfin, sum_range_mul_eq_sum_sum _ 2,
       ← TauCeti.sum_half_add_mul_sub_id (fun i ↦ B (a i) ω) n, ← sum_sub_distrib]
     refine sum_congr rfl fun i _ ↦ ?_
+    rw [sum_range_succ, sum_range_one, add_zero]
     have h2 : 2 * i + 1 + 1 = 2 * (i + 1) := by omega
     have hm0 : (2 * i) % 2 = 0 := by omega
     have hm1 : (2 * i + 1) % 2 = 1 := by omega
@@ -408,14 +342,15 @@ theorem variance_sum_comp_midpoint_mul_sub_sub_half_sq (hB : IsPreBrownianReal B
       rw [hB.integral_sq_sub_of_le (hτ (Fin.castSucc_le_succ j)),
         hB.integral_pow_four_sub_of_le (hτ (Fin.castSucc_le_succ j))]
       ring
-    change Var[fun ω ↦ sgn j * (B (τ j.succ) ω - B (τ j.castSucc) ω) ^ 2; P] = _
+    dsimp only [ξ]
     rw [variance_const_mul, hsq_sgn, hv_sq]
     dsimp [τ]
     ring
   simp_rw [hterm]
   rw [Fin.sum_univ_eq_sum_range (fun m ↦ 1 / 2 * ((u (m + 1) : ℝ) - u m) ^ 2) (2 * n),
-    sum_range_two_mul, mul_sum]
+    sum_range_mul_eq_sum_sum _ 2, mul_sum]
   refine sum_congr rfl fun i _ ↦ ?_
+  rw [sum_range_succ, sum_range_one, add_zero]
   have h2 : 2 * i + 1 + 1 = 2 * (i + 1) := by omega
   rw [h2, hu_even, hu_odd, hu_even]
   ring
@@ -531,19 +466,6 @@ open TauCeti.Probability
 
 variable {Ω : Type*} {mΩ : MeasurableSpace Ω} {P : Measure Ω} {B : ℝ≥0 → Ω → ℝ}
 
-private theorem grid_mem_Icc {a b : ℝ≥0} {k : ℕ} {π : ℕ → ℝ≥0}
-    (hmono : MonotoneOn π (Set.Iic k)) (ha : π 0 = a) (hb : π k = b)
-    {i : ℕ} (hi : i ≤ k) : π i ∈ Icc a b :=
-  ⟨ha ▸ hmono (Nat.zero_le _) hi (Nat.zero_le _), hb ▸ hmono hi Set.self_mem_Iic hi⟩
-
-private theorem dist_grid_succ_le {k : ℕ} {π : ℕ → ℝ≥0}
-    (hmono : MonotoneOn π (Set.Iic k)) {δ : ℝ}
-    (hmesh : ∀ i < k, (π (i + 1) : ℝ) - π i ≤ δ)
-    {i : ℕ} (hi : i < k) : dist (π (i + 1)) (π i) ≤ δ := by
-  rw [NNReal.dist_eq, abs_of_nonneg
-    (sub_nonneg.2 (NNReal.coe_le_coe.2 (hmono hi.le hi (Nat.le_succ _))))]
-  exact hmesh i hi
-
 private theorem tendstoInMeasure_sq_sum_range (hB : IsPreBrownianReal B P)
     {a b : ℝ≥0} {k : ℕ → ℕ} {π : ℕ → ℕ → ℝ≥0}
     (hmono : ∀ n, MonotoneOn (π n) (Set.Iic (k n)))
@@ -641,8 +563,9 @@ theorem tendstoInMeasure_sum_mul_midpoint_sq_sub_sq (hB : IsBrownianReal B P)
     have hM := mem_iInter.1 hω M
     simp only [F, mem_iUnion, mem_ofPred_eq] at hM
     obtain ⟨n, i, hgt⟩ := hM
-    have hle : |g (B (π n i) ω)| ≤ M :=
-      (hC ⟨π n i, grid_mem_Icc (hmono n) (ha n) (hb n) i.isLt.le, rfl⟩).trans hMC
+    have hmem_i : π n i ∈ Icc a b :=
+      ha n ▸ hb n ▸ ((hmono n).mono Icc_subset_Iic_self).mapsTo_Icc ⟨Nat.zero_le _, i.isLt.le⟩
+    have hle : |g (B (π n i) ω)| ≤ M := (hC ⟨π n i, hmem_i, rfl⟩).trans hMC
     exact hgt.not_ge hle
   have hF_inf : ⨅ M : ℕ, P (F M) = 0 := by
     rw [← hF_anti.measure_iInter hF_meas ⟨0, measure_ne_top P _⟩]
@@ -703,8 +626,11 @@ theorem tendstoInMeasure_sum_sub_mul_sub_sub_deriv_mul_sq (hB : IsBrownianReal B
   have : IsProbabilityMeasure P := (hB.hasLaw_eval 0).isProbabilityMeasure
   exact TauCeti.Probability.tendstoInMeasure_sum_sub_mul_sub_sub_deriv_mul_sq
     (s := Icc a b) isCompact_Icc hh
-    (fun n _ hi ↦ grid_mem_Icc (hmono n) (ha n) (hb n) hi)
-    (fun n _ hi ↦ dist_grid_succ_le (hmono n) (hmesh n) hi)
+    (fun n _ hi ↦ ha n ▸ hb n ▸ ((hmono n).mono Icc_subset_Iic_self).mapsTo_Icc ⟨Nat.zero_le _, hi⟩)
+    (fun n i hi ↦ by
+      rw [NNReal.dist_eq, abs_of_nonneg
+        (sub_nonneg.2 (NNReal.coe_le_coe.2 (hmono n hi.le hi (Nat.le_succ _))))]
+      exact hmesh n i hi)
     hδ
     (fun n i _ ↦ (hB.aemeasurable (π n i)).aestronglyMeasurable)
     (hB.cont.mono fun _ hc ↦ hc.continuousOn)
@@ -728,8 +654,11 @@ theorem tendstoInMeasure_sum_half_add_mul_sub (hB : IsBrownianReal B P)
   have : IsProbabilityMeasure P := (hB.hasLaw_eval 0).isProbabilityMeasure
   exact TauCeti.Probability.tendstoInMeasure_sum_half_add_mul_sub
     (s := Icc a b) isCompact_Icc hh hH ha hb
-    (fun n _ hi ↦ grid_mem_Icc (hmono n) (ha n) (hb n) hi)
-    (fun n _ hi ↦ dist_grid_succ_le (hmono n) (hmesh n) hi)
+    (fun n _ hi ↦ ha n ▸ hb n ▸ ((hmono n).mono Icc_subset_Iic_self).mapsTo_Icc ⟨Nat.zero_le _, hi⟩)
+    (fun n i hi ↦ by
+      rw [NNReal.dist_eq, abs_of_nonneg
+        (sub_nonneg.2 (NNReal.coe_le_coe.2 (hmono n hi.le hi (Nat.le_succ _))))]
+      exact hmesh n i hi)
     hδ
     (fun n i _ ↦ (hB.aemeasurable (π n i)).aestronglyMeasurable)
     (hB.cont.mono fun _ hc ↦ hc.continuousOn)
@@ -759,8 +688,11 @@ theorem tendstoInMeasure_sum_half_add_mul_sub_add_of_boundedVariationOn
     hmono n (Nat.le_of_lt_succ i.isLt) (Nat.le_of_lt_succ j.isLt) hij
   have hqv_grid := hB.tendstoInMeasure_quadraticSum_add_of_boundedVariationOn hgrid
     (fun n ↦ ha n) (fun n ↦ hb n)
-    (fun n i ↦ dist_grid_succ_le (hmono n) (hmesh n) i.isLt) hδ
-    (fun n j ↦ hAmeas n j (Nat.le_of_lt_succ j.isLt)) hA
+    (fun n i ↦ by
+      rw [NNReal.dist_eq, abs_of_nonneg
+        (sub_nonneg.2 (NNReal.coe_le_coe.2 (hgrid n (Fin.castSucc_le_succ i))))]
+      exact hmesh n i i.isLt)
+    hδ (fun n j ↦ hAmeas n j (Nat.le_of_lt_succ j.isLt)) hA
   have hqv : TendstoInMeasure P
       (fun n ω ↦ ∑ i ∈ range (k n), ((B + A) (π n (i + 1)) ω - (B + A) (π n i) ω) ^ 2)
       atTop (fun _ ↦ (b : ℝ) - a) := by
@@ -770,8 +702,11 @@ theorem tendstoInMeasure_sum_half_add_mul_sub_add_of_boundedVariationOn
       (fun i ↦ ((B + A) (π n (i + 1)) ω - (B + A) (π n i) ω) ^ 2) (k n)
   exact TauCeti.Probability.tendstoInMeasure_sum_half_add_mul_sub
     (s := Icc a b) isCompact_Icc hh hH ha hb
-    (fun n _ hi ↦ grid_mem_Icc (hmono n) (ha n) (hb n) hi)
-    (fun n _ hi ↦ dist_grid_succ_le (hmono n) (hmesh n) hi)
+    (fun n _ hi ↦ ha n ▸ hb n ▸ ((hmono n).mono Icc_subset_Iic_self).mapsTo_Icc ⟨Nat.zero_le _, hi⟩)
+    (fun n i hi ↦ by
+      rw [NNReal.dist_eq, abs_of_nonneg
+        (sub_nonneg.2 (NNReal.coe_le_coe.2 (hmono n hi.le hi (Nat.le_succ _))))]
+      exact hmesh n i hi)
     hδ
     (fun n i hi ↦ ((hB.aemeasurable (π n i)).aestronglyMeasurable).add (hAmeas n i hi))
     (by
@@ -802,7 +737,9 @@ theorem tendstoInMeasure_sum_midpoint_mul_sub (hB : IsBrownianReal B P)
     have hmod : (2 * i + 1) % 2 = 1 := by omega
     simp [u, hdiv, hmod]
   have hu_mono (n : ℕ) : MonotoneOn (u n) (Set.Iic (2 * k n)) :=
-    monotoneOn_even_odd_Iic fun i hi ↦ nnreal_le_midpoint_and_le (hmono n hi.le hi (Nat.le_succ _))
+    TauCeti.monotoneOn_even_odd_Iic fun i hi ↦ by
+      have hle := hmono n hi.le hi (Nat.le_succ _)
+      exact ⟨TauCeti.left_le_add_div_two.2 hle, TauCeti.add_div_two_le_right.2 hle⟩
   have hu_mesh (n : ℕ) : ∀ j < 2 * k n, (u n (j + 1) : ℝ) - u n j ≤ max (δ n) 0 := by
     intro j hj
     have hi : j / 2 < k n := by omega
@@ -837,29 +774,31 @@ theorem tendstoInMeasure_sum_midpoint_mul_sub (hB : IsBrownianReal B P)
         (B (π n (i + 1)) ω - B ((π n i + π n (i + 1)) / 2) ω) ^ 2))
       atTop (fun _ ↦ (b : ℝ) - a) := by
     refine hqv_u.congr_left fun n ↦ ae_of_all _ fun ω ↦ ?_
-    rw [sum_range_two_mul]
+    rw [sum_range_mul_eq_sum_sum _ 2]
     refine sum_congr rfl fun i _ ↦ ?_
+    rw [sum_range_succ, sum_range_one, add_zero]
     have h2 : 2 * i + 1 + 1 = 2 * (i + 1) := by omega
     rw [h2, hu_even, hu_odd, hu_even]
-  have hmem_left (n i : ℕ) (hi : i < k n) : π n i ∈ Icc a b :=
-    grid_mem_Icc (hmono n) (ha n) (hb n) hi.le
-  have hmem_right (n i : ℕ) (hi : i < k n) : π n (i + 1) ∈ Icc a b :=
-    grid_mem_Icc (hmono n) (ha n) (hb n) hi
+  have hmem_grid (n i : ℕ) (hi : i ≤ k n) : π n i ∈ Icc a b :=
+    ha n ▸ hb n ▸ ((hmono n).mono Icc_subset_Iic_self).mapsTo_Icc ⟨Nat.zero_le _, hi⟩
+  have hmem_left (n i : ℕ) (hi : i < k n) : π n i ∈ Icc a b := hmem_grid n i hi.le
+  have hmem_right (n i : ℕ) (hi : i < k n) : π n (i + 1) ∈ Icc a b := hmem_grid n (i + 1) hi
   have hmem_mid (n i : ℕ) (hi : i < k n) : (π n i + π n (i + 1)) / 2 ∈ Icc a b := by
-    obtain ⟨h1, h2⟩ := nnreal_le_midpoint_and_le (hmono n hi.le hi (Nat.le_succ _))
-    exact ⟨(hmem_left n i hi).1.trans h1, h2.trans (hmem_right n i hi).2⟩
+    have hle := hmono n hi.le hi (Nat.le_succ _)
+    exact ⟨(hmem_left n i hi).1.trans (TauCeti.left_le_add_div_two.2 hle),
+      (TauCeti.add_div_two_le_right.2 hle).trans (hmem_right n i hi).2⟩
   have hR₁ := TauCeti.Probability.tendstoInMeasure_sum_midpoint_sub_half_add_sub_half_deriv
     (s := Icc a b) isCompact_Icc hh
     (x := π) (z := fun n i ↦ (π n i + π n (i + 1)) / 2) (y := fun n i ↦ π n (i + 1))
     hmem_left hmem_mid hmem_right
     (δ := fun n ↦ max (δ n) 0)
     (fun n i hi ↦ by
-      obtain ⟨h1, _⟩ := nnreal_le_midpoint_and_le (hmono n hi.le hi (Nat.le_succ _))
+      have h1 := TauCeti.left_le_add_div_two.2 (hmono n hi.le hi (Nat.le_succ _))
       rw [NNReal.dist_eq, abs_of_nonneg (sub_nonneg.2 (NNReal.coe_le_coe.2 h1))]
       push_cast
       linarith [hmesh n i hi, NNReal.coe_le_coe.2 h1, le_max_left (δ n) 0, le_max_right (δ n) 0])
     (fun n i hi ↦ by
-      obtain ⟨_, h2⟩ := nnreal_le_midpoint_and_le (hmono n hi.le hi (Nat.le_succ _))
+      have h2 := TauCeti.add_div_two_le_right.2 (hmono n hi.le hi (Nat.le_succ _))
       rw [NNReal.dist_eq, abs_of_nonneg (sub_nonneg.2 (NNReal.coe_le_coe.2 h2))]
       push_cast
       linarith [hmesh n i hi, NNReal.coe_le_coe.2 h2, le_max_left (δ n) 0, le_max_right (δ n) 0])
@@ -869,17 +808,26 @@ theorem tendstoInMeasure_sum_midpoint_mul_sub (hB : IsBrownianReal B P)
     (fun n i _ ↦ (hB.aemeasurable _).aestronglyMeasurable)
     (hB.cont.mono fun _ hc ↦ hc.continuousOn)
     hqv_pair
-  have hR₂ := tendstoInMeasure_const_mul_zero (1 / 2)
-    (hB.tendstoInMeasure_sum_mul_midpoint_sq_sub_sq hh.continuous_deriv_one hmono ha hb hmesh hδ)
+  have hR₂ : TendstoInMeasure P
+      (fun n ω ↦ 1 / 2 * ∑ i ∈ range (k n), deriv h (B (π n i) ω) *
+        ((B ((π n i + π n (i + 1)) / 2) ω - B (π n i) ω) ^ 2 -
+          (B (π n (i + 1)) ω - B ((π n i + π n (i + 1)) / 2) ω) ^ 2))
+      atTop (fun _ ↦ 0) := by
+    simpa only [mul_zero] using
+      (hB.tendstoInMeasure_sum_mul_midpoint_sq_sub_sq hh.continuous_deriv_one
+        hmono ha hb hmesh hδ).const_mul (1 / 2)
   have hsym := TauCeti.Probability.tendstoInMeasure_sum_half_add_mul_sub_sub
-    (s := Icc a b) isCompact_Icc hh hH
-    (fun n _ hi ↦ grid_mem_Icc (hmono n) (ha n) (hb n) hi)
-    (fun n _ hi ↦ dist_grid_succ_le (hmono n) (hmesh n) hi)
+    (s := Icc a b) isCompact_Icc hh hH hmem_grid
+    (fun n i hi ↦ by
+      rw [NNReal.dist_eq, abs_of_nonneg
+        (sub_nonneg.2 (NNReal.coe_le_coe.2 (hmono n hi.le hi (Nat.le_succ _))))]
+      exact hmesh n i hi)
     hδ
     (fun n i _ ↦ (hB.aemeasurable (π n i)).aestronglyMeasurable)
     (hB.cont.mono fun _ hc ↦ hc.continuousOn)
     (tendstoInMeasure_sq_sum_range hB.toIsPreBrownianReal hmono ha hb hmesh hδ)
-  have htot := tendstoInMeasure_add_zero (tendstoInMeasure_add_zero hR₁ hR₂) hsym
+  have htot := (hR₁.add hR₂).add hsym
+  simp only [add_zero] at htot
   rw [tendstoInMeasure_iff_norm] at htot ⊢
   intro ε hε
   refine (htot ε hε).congr fun n ↦ ?_

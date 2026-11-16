@@ -64,7 +64,8 @@ solve the second estimate for `Y` and substitute it into the first.
 It also records that the normalized position `(c - a) / (b - a)` of a point `c ∈ [a, b]` lies in
 `[0, 1]`, also when the interval is degenerate, and that for a finite family of nonnegative
 elements the sum `1 + ∑ i ∈ s, (x i)⁻¹` is positive and bounds each reciprocal `(x j)⁻¹`.
-Finally, a nonnegative quantity bounded by `A / t ^ k` with `0 < t` forces `0 ≤ A`.
+Finally, a nonnegative quantity bounded by `A / t ^ k` with `0 < t` forces `0 ≤ A`, and the
+midpoint `(a + b) / 2` satisfies `a ≤ (a + b) / 2 ↔ a ≤ b` and `(a + b) / 2 ≤ b ↔ a ≤ b`.
 
 ## Main results
 
@@ -106,6 +107,8 @@ Finally, a nonnegative quantity bounded by `A / t ^ k` with `0 < t` forces `0 �
 * `TauCeti.add_le_mul_add_mul_of_le_of_le`: `U + Y ≤ (2 + (2 M² + 1) (2 / c) (a + b)) (Z + W)` from
   `U ≤ 2 Z + 2 M² Y` and `c / 2 * Y ≤ a Z + b W`.
 * `TauCeti.le_two_mul_of_le_add_mul`: `J ≤ 2 * Y` from `J ≤ Y + X * J`, `X ≤ 1 / 2` and `0 ≤ J`.
+* `TauCeti.left_le_add_div_two`, `TauCeti.add_div_two_le_right`: non-strict counterparts of
+  `left_lt_add_div_two` and `add_div_two_lt_right` in a strictly ordered semifield.
 -/
 
 public section
@@ -412,6 +415,20 @@ theorem nonneg_of_le_div_pow {α : Type*} [Field α] [LinearOrder α] [IsStrictO
 theorem pos_of_mem_Ioo_neg_one_div {K : Type*} [Field K] [LinearOrder K] [IsStrictOrderedRing K]
     {s t : K} (ht : t ∈ Set.Ioo (-1 / s) (1 / s)) : 0 < s :=
   one_div_pos.1 (neg_lt_self_iff.1 (by simpa only [neg_div] using ht.1.trans ht.2))
+
+/-- Non-strict counterpart of `left_lt_add_div_two`: the midpoint `(a + b) / 2` lies at or above
+`a` if and only if `a ≤ b`. -/
+theorem left_le_add_div_two {α : Type*} [Semifield α] [PartialOrder α] [PosMulReflectLT α]
+    [IsStrictOrderedRing α] {a b : α} : a ≤ (a + b) / 2 ↔ a ≤ b := by
+  have := PosMulReflectLT.toMulPosReflectLT (α := α)
+  rw [le_div_iff₀ (zero_lt_two' α), mul_two, add_le_add_iff_left]
+
+/-- Non-strict counterpart of `add_div_two_lt_right`: the midpoint `(a + b) / 2` lies at or below
+`b` if and only if `a ≤ b`. -/
+theorem add_div_two_le_right {α : Type*} [Semifield α] [PartialOrder α] [PosMulReflectLT α]
+    [IsStrictOrderedRing α] {a b : α} : (a + b) / 2 ≤ b ↔ a ≤ b := by
+  have := PosMulReflectLT.toMulPosReflectLT (α := α)
+  rw [div_le_iff₀ (zero_lt_two' α), mul_two, add_le_add_iff_right]
 
 end TauCeti
 

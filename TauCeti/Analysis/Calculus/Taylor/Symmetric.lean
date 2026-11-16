@@ -11,8 +11,8 @@ import Mathlib.Analysis.Calculus.Deriv.Add
 import Mathlib.Analysis.Calculus.Deriv.Comp
 import Mathlib.Analysis.Calculus.Deriv.Mul
 import Mathlib.Analysis.Calculus.Deriv.Pow
-import Mathlib.Analysis.Calculus.MeanValue
 import Mathlib.Topology.UniformSpace.HeineCantor
+import TauCeti.Analysis.Calculus.MeanValue
 
 /-!
 # Symmetric-endpoint, midpoint, and cross-increment Taylor estimates
@@ -80,18 +80,11 @@ theorem abs_sub_sub_deriv_mul_le {h h' : ℝ → ℝ} {s : Set ℝ} {x y M : ℝ
     (hs : uIcc x y ⊆ s) (hh : ∀ z ∈ uIcc x y, HasDerivWithinAt h (h' z) s z)
     (hosc : ∀ z ∈ uIcc x y, |h' z - h' x| ≤ M) :
     |h y - h x - h' x * (y - x)| ≤ M * |y - x| := by
-  let g : ℝ → ℝ := fun z ↦ h z - h' x * (z - x)
-  have hg : ∀ z ∈ uIcc x y, HasDerivWithinAt g (h' z - h' x) (uIcc x y) z := by
-    intro z hz
-    have hlin : HasDerivWithinAt (fun w ↦ h' x * (w - x)) (h' x * 1) (uIcc x y) z :=
-      ((hasDerivWithinAt_id z (uIcc x y)).sub_const x).const_mul (h' x)
-    simpa only [g, Pi.sub_def, id_eq, mul_one] using ((hh z hz).mono hs).sub hlin
-  have hbound := (convex_uIcc x y).norm_image_sub_le_of_norm_hasDerivWithin_le hg
-    (fun z hz ↦ by simpa only [Real.norm_eq_abs] using hosc z hz) left_mem_uIcc right_mem_uIcc
-  have heq : g y - g x = h y - h x - h' x * (y - x) := by
-    dsimp [g]
-    ring
-  simpa only [Real.norm_eq_abs, heq] using hbound
+  simpa only [Real.norm_eq_abs, smul_eq_mul, mul_comm (y - x)] using
+    (convex_uIcc x y).norm_image_sub_le_of_norm_hasDerivWithin_le'
+      (fun z hz ↦ (hh z hz).mono hs)
+      (fun z hz ↦ by simpa only [Real.norm_eq_abs] using hosc z hz)
+      left_mem_uIcc right_mem_uIcc
 
 /-- Oscillation of `h'` between `x` and `y` bounds the difference between the cross-increment
 `(h y - h x) * (y - x)` and the left-weighted squared increment `h' x * (y - x) ^ 2`. -/
@@ -230,17 +223,11 @@ theorem abs_midpoint_sub_half_add_sub_half_deriv_le {h h' : ℝ → ℝ} {s : Se
   have h₁ : |h z - h x - h' x * (z - x)| ≤ M * |z - x| :=
     abs_sub_sub_deriv_mul_le hxz (fun u hu ↦ hh u (Or.inl hu)) (fun u hu ↦ hosc u (Or.inl hu))
   have h₂ : |h y - h z - h' x * (y - z)| ≤ M * |y - z| := by
-    let g : ℝ → ℝ := fun u ↦ h u - h' x * (u - z)
-    have hg : ∀ u ∈ uIcc z y, HasDerivWithinAt g (h' u - h' x) (uIcc z y) u := by
-      intro u hu
-      have hlin : HasDerivWithinAt (fun w ↦ h' x * (w - z)) (h' x * 1) (uIcc z y) u :=
-        ((hasDerivWithinAt_id u (uIcc z y)).sub_const z).const_mul (h' x)
-      simpa only [g, Pi.sub_def, id_eq, mul_one] using ((hh u (Or.inr hu)).mono hzy).sub hlin
-    have hb := (convex_uIcc z y).norm_image_sub_le_of_norm_hasDerivWithin_le hg
-      (fun u hu ↦ by simpa only [Real.norm_eq_abs] using hosc u (Or.inr hu))
-      left_mem_uIcc right_mem_uIcc
-    have heq : g y - g z = h y - h z - h' x * (y - z) := by dsimp [g]; ring
-    simpa only [Real.norm_eq_abs, heq] using hb
+    simpa only [Real.norm_eq_abs, smul_eq_mul, mul_comm (y - z)] using
+      (convex_uIcc z y).norm_image_sub_le_of_norm_hasDerivWithin_le'
+        (fun u hu ↦ (hh u (Or.inr hu)).mono hzy)
+        (fun u hu ↦ by simpa only [Real.norm_eq_abs] using hosc u (Or.inr hu))
+        left_mem_uIcc right_mem_uIcc
   have hid : h z * (y - x) - (h x + h y) / 2 * (y - x) -
       1 / 2 * h' x * ((z - x) ^ 2 - (y - z) ^ 2) =
       1 / 2 * ((h z - h x - h' x * (z - x)) - (h y - h z - h' x * (y - z))) * (y - x) := by
