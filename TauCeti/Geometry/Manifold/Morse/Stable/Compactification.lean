@@ -51,7 +51,9 @@ The main results are:
   space of unparametrized trajectories from `p` to `r`
   (`TauCeti.IsAdaptedPseudoGradient.exists_homeomorph_morseTrajectoryRecords_orbitQuotient`).
 
-Under the Morse–Smale condition the index drops strictly along the chain of a broken trajectory
+The values of `f` decrease weakly along the chain of a broken trajectory
+(`TauCeti.IsAdaptedPseudoGradient.antitone_apply_of_chain`). Under the Morse–Smale condition the
+index drops strictly along the chain of a broken trajectory
 (`TauCeti.IsAdaptedPseudoGradient.IsMorseSmale.strictAnti_manifoldMorseIndex_of_chain`), so a
 broken trajectory from `p` to `r` has at most `ind p - ind r` components
 (`TauCeti.IsAdaptedPseudoGradient.IsMorseSmale.add_manifoldMorseIndex_le_of_chain`).
@@ -78,6 +80,7 @@ In the namespace `TauCeti.IsAdaptedPseudoGradient`:
   convergence of their records.
 * `IsMorseSmale.closure_morseTrajectoryRecords_subset`: the limits of records of trajectories are
   records of broken trajectories.
+* `antitone_apply_of_chain`: `f` decreases weakly along a broken trajectory.
 * `IsMorseSmale.strictAnti_manifoldMorseIndex_of_chain`,
   `IsMorseSmale.add_manifoldMorseIndex_le_of_chain`: the Morse index drops strictly along a broken
   trajectory, which therefore has at most `ind p - ind r` components.
@@ -258,6 +261,17 @@ theorem exists_homeomorph_morseTrajectoryRecords_orbitQuotient [Nonempty ι]
   obtain ⟨Φ, -⟩ := hX.exists_homeomorph_morseTrajectoryRecords hpr hc i₀
   obtain ⟨e, -⟩ := hX.exists_orbitQuotient_homeomorph_levelSlice hpr (hc i₀)
   exact ⟨Φ.trans e.symm⟩
+
+/-- **`f` decreases along a broken trajectory.** The values of `f` at the critical points of a
+chain joined by trajectories decrease weakly. No transversality is needed. -/
+theorem antitone_apply_of_chain {k : ℕ} {x : Fin (k + 1) → M} {z : Fin k → M}
+    (hz : ∀ j : Fin k, z j ∈ hX.flow.unstableSet (x j.castSucc) ∩ hX.flow.stableSet (x j.succ)) :
+    Antitone fun j ↦ f (x j) := by
+  refine Fin.antitone_iff_succ_le.2 fun j ↦ ?_
+  by_cases h : x j.castSucc = x j.succ
+  · rw [h]
+  · have h' := hX.mem_Ioo_of_mem_unstableSet_inter_stableSet h (hz j)
+    exact (h'.1.trans h'.2).le
 
 namespace IsMorseSmale
 

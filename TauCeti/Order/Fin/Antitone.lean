@@ -8,9 +8,16 @@ module
 public import Mathlib.Algebra.Order.Group.Int
 public import Mathlib.Data.Fintype.Card
 public import Mathlib.Data.Fin.SuccPred
+import Mathlib.Order.SuccPred.Fin
+import Mathlib.Order.SuccPred.IntervalSucc
 
 /-!
-# Decreasing integer weights with prescribed equal adjacent values
+# Antitone functions on `Fin (n + 1)`
+
+For an antitone function `g` on `Fin (n + 1)`, the open intervals `(g i.succ, g i.castSucc)`
+between consecutive values are pairwise disjoint (`Antitone.pairwise_disjoint_on_Ioo_succ`), so
+a value lies strictly between consecutive values for at most one step `i : Fin n`. This locates a
+level crossed by a chain along which a function decreases.
 
 For every set `S` of adjacent positions `i.castSucc, i.succ` in `Fin (n + 1)` there is a
 decreasing integer function on `Fin (n + 1)` whose adjacent values agree exactly at the positions
@@ -19,6 +26,8 @@ block-triangular subgroups of `GLₙ₊₁` by the adjacent coordinates lying in
 
 ## Main results
 
+* `Fin.eq_of_mem_Ioo_succ_castSucc`: a value lies in `(g i.succ, g i.castSucc)` for at most one
+  step `i` of an antitone `g`.
 * `Fin.exists_antitone_castSucc_eq_succ_iff_mem`: a decreasing `w : Fin (n + 1) → ℤ` with
   `w i.castSucc = w i.succ` exactly for `i ∈ S`.
 -/
@@ -26,6 +35,16 @@ block-triangular subgroups of `GLₙ₊₁` by the adjacent coordinates lying in
 public section
 
 namespace Fin
+
+/-- For an antitone function on `Fin (n + 1)`, a value lies strictly between `g i.succ` and
+`g i.castSucc` for at most one step `i`. -/
+theorem eq_of_mem_Ioo_succ_castSucc {α : Type*} [Preorder α] {n : ℕ} {g : Fin (n + 1) → α}
+    (hg : Antitone g) {c : α} {i j : Fin n} (hi : c ∈ Set.Ioo (g i.succ) (g i.castSucc))
+    (hj : c ∈ Set.Ioo (g j.succ) (g j.castSucc)) : i = j := by
+  by_contra hne
+  have h := hg.pairwise_disjoint_on_Ioo_succ ((castSucc_injective n).ne hne)
+  simp only [Function.onFun, orderSucc_castSucc] at h
+  exact h.ne_of_mem hi hj rfl
 
 /-- For every set `S` of adjacent positions there is a decreasing integer weight on
 `Fin (n + 1)` whose adjacent values are equal exactly at `S`: subtract one at each step not in
