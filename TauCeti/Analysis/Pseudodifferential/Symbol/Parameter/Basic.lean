@@ -38,9 +38,11 @@ sector of spectral parameters, as used for contour integrals, lies in a slightly
 
 ## Main results
 
-* `TauCeti.parameterWeight_rpow_le_of_nonpos`, `TauCeti.parameterWeight_rpow_le_one_add_sqrt_rpow`,
-  `TauCeti.parameterWeight_rpow_le`: the weight dominates `⟨ξ⟩ = (1 + ‖ξ‖²) ^ (1 / 2)` and
-  `1 + ‖z‖ ^ (1 / 2)`, and at a fixed spectral parameter it is at most a multiple of `⟨ξ⟩`;
+* `TauCeti.parameterWeight_rpow_le_one_add_norm_sq_rpow`,
+  `TauCeti.parameterWeight_rpow_le_one_add_sqrt_rpow`,
+  `TauCeti.parameterWeight_rpow_le_mul_one_add_norm_sq_rpow`: the weight dominates
+  `⟨ξ⟩ = (1 + ‖ξ‖²) ^ (1 / 2)` and `1 + ‖z‖ ^ (1 / 2)`, and at a fixed spectral parameter it is at
+  most a multiple of `⟨ξ⟩`;
 * `TauCeti.ParameterSymbol.inclusion`: the order inclusions, and the complex vector space
   structure of each class;
 * `TauCeti.ParameterSymbol.comp`: the pointwise composition of symbols of orders `m'` and `m` has
@@ -128,14 +130,17 @@ theorem one_add_norm_sq_le_parameterWeight_sq (ξ : CoordinateSpace n) (z : ℂ)
   rw [parameterWeight_def]
   nlinarith
 
+/-- A real power of the parameter weight as a power of its square: `w ^ r = (w ^ 2) ^ (r / 2)`. -/
+theorem parameterWeight_rpow_eq_sq_rpow (ξ : CoordinateSpace n) (z : ℂ) (r : ℝ) :
+    parameterWeight ξ z ^ r = (parameterWeight ξ z ^ 2) ^ (r / 2) := by
+  rw [Real.rpow_div_two_eq_sqrt r (by positivity), Real.sqrt_sq (parameterWeight_pos ξ z).le]
+
 /-- For a nonpositive exponent the parameter weight is dominated by the frequency weight:
 `w ^ r ≤ ⟨ξ⟩ ^ r`. -/
-theorem parameterWeight_rpow_le_of_nonpos (ξ : CoordinateSpace n) (z : ℂ) {r : ℝ} (hr : r ≤ 0) :
-    parameterWeight ξ z ^ r ≤ (1 + ‖ξ‖ ^ 2) ^ (r / 2) := by
-  have hw := parameterWeight_pos ξ z
-  calc parameterWeight ξ z ^ r = (parameterWeight ξ z ^ 2) ^ (r / 2) := by
-        rw [← Real.rpow_natCast, ← Real.rpow_mul hw.le]
-        ring_nf
+theorem parameterWeight_rpow_le_one_add_norm_sq_rpow (ξ : CoordinateSpace n) (z : ℂ) {r : ℝ}
+    (hr : r ≤ 0) : parameterWeight ξ z ^ r ≤ (1 + ‖ξ‖ ^ 2) ^ (r / 2) := by
+  calc parameterWeight ξ z ^ r = (parameterWeight ξ z ^ 2) ^ (r / 2) :=
+        parameterWeight_rpow_eq_sq_rpow ξ z r
     _ ≤ (1 + ‖ξ‖ ^ 2) ^ (r / 2) :=
         Real.rpow_le_rpow_of_nonpos (by positivity) (one_add_norm_sq_le_parameterWeight_sq ξ z)
           (by linarith)
@@ -150,23 +155,22 @@ theorem parameterWeight_rpow_le_one_add_sqrt_rpow (ξ : CoordinateSpace n) (z : 
 
 /-- At a fixed spectral parameter `z` the parameter weight is comparable to the frequency weight:
 `w ^ r ≤ (3 (1 + ‖z‖)) ^ (|r| / 2) ⟨ξ⟩ ^ r` for every real `r`. -/
-theorem parameterWeight_rpow_le (ξ : CoordinateSpace n) (z : ℂ) (r : ℝ) :
+theorem parameterWeight_rpow_le_mul_one_add_norm_sq_rpow (ξ : CoordinateSpace n) (z : ℂ)
+    (r : ℝ) :
     parameterWeight ξ z ^ r ≤ (3 * (1 + ‖z‖)) ^ (|r| / 2) * (1 + ‖ξ‖ ^ 2) ^ (r / 2) := by
   have hz : 1 ≤ 3 * (1 + ‖z‖) := by linarith [norm_nonneg z]
   rcases le_total r 0 with hr | hr
-  · exact (parameterWeight_rpow_le_of_nonpos ξ z hr).trans
+  · exact (parameterWeight_rpow_le_one_add_norm_sq_rpow ξ z hr).trans
       (le_mul_of_one_le_left (by positivity) (Real.one_le_rpow hz (by positivity)))
-  · have hw := parameterWeight_pos ξ z
-    have hsq : parameterWeight ξ z ^ 2 ≤ 3 * (1 + ‖z‖) * (1 + ‖ξ‖ ^ 2) := by
+  · have hsq : parameterWeight ξ z ^ 2 ≤ 3 * (1 + ‖z‖) * (1 + ‖ξ‖ ^ 2) := by
       have := Real.sq_sqrt (norm_nonneg z)
       have := Real.sqrt_nonneg ‖z‖
       rw [parameterWeight_def]
       nlinarith [sq_nonneg (1 - ‖ξ‖), sq_nonneg (1 - Real.sqrt ‖z‖),
         sq_nonneg (‖ξ‖ - Real.sqrt ‖z‖), norm_nonneg ξ, mul_nonneg (norm_nonneg z)
           (sq_nonneg ‖ξ‖)]
-    calc parameterWeight ξ z ^ r = (parameterWeight ξ z ^ 2) ^ (r / 2) := by
-          rw [← Real.rpow_natCast, ← Real.rpow_mul hw.le]
-          ring_nf
+    calc parameterWeight ξ z ^ r = (parameterWeight ξ z ^ 2) ^ (r / 2) :=
+          parameterWeight_rpow_eq_sq_rpow ξ z r
       _ ≤ (3 * (1 + ‖z‖) * (1 + ‖ξ‖ ^ 2)) ^ (r / 2) :=
           Real.rpow_le_rpow (by positivity) hsq (by linarith)
       _ = _ := by rw [abs_of_nonneg hr, Real.mul_rpow (by positivity) (by positivity)]
