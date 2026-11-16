@@ -59,6 +59,8 @@ theorem `TauCeti.Wkp.dense_contDiffOn_representatives`.
   form on a ball, with averages.
 * `TauCeti.W1p.setLAverage_rpow_enorm_value_sub_setAverage_le_of_ball_subset`: the same for a
   ball inside the domain of a Sobolev function of possibly higher integrability.
+* `TauCeti.W1p.memLp_value_of_convex_of_isBounded_of_finrank_le`: for `n ≤ p₀`, a `W^{1,p₀}(Ω)`
+  function lies in `L^q(U)` for every finite `q` on every bounded convex open subset `U ⊆ Ω`.
 
 ## References
 
@@ -375,6 +377,55 @@ theorem W1p.setLAverage_rpow_enorm_value_sub_setAverage_le_of_ball_subset [Nontr
       ⨍⁻ x in ball c r, ‖W1p.gradient u x‖ₑ ^ p.toReal ∂mu :=
     laverage_congr (hgrad.mono fun x hx => by simp only [hx])
   rwa [h1, h2] at h
+
+/-- **All finite-exponent `L^q` integrability on a bounded convex open subset when `n ≤ p`.** If
+`n ≤ p ≤ ∞`, where `n` is the dimension, and `U ⊆ Ω` is bounded, convex, and open (with no
+compact-closure requirement in `Ω`), then every `u ∈ W^{1,p}(Ω)` lies in `L^q(U)` for every finite
+`q : ℝ≥0∞`. -/
+theorem W1p.memLp_value_of_convex_of_isBounded_of_finrank_le
+    (hp : (finrank ℝ E : ℝ≥0∞) ≤ p) {U : Set E} (hUo : IsOpen U) (hconv : Convex ℝ U)
+    (hb : Bornology.IsBounded U) (hUΩ : U ⊆ (Omega : Set E)) {q : ℝ≥0∞} (hq : q ≠ ∞)
+    (u : W1p mu Omega p) : MemLp (W1p.value u) q (mu.restrict U) := by
+  rcases U.eq_empty_or_nonempty with rfl | ⟨x₀, hx₀⟩
+  · rw [Measure.restrict_empty]
+    exact memLp_iff.2 (by simp)
+  have : IsFiniteMeasure (mu.restrict U) := isFiniteMeasure_restrict.2 hb.measure_lt_top.ne
+  rcases subsingleton_or_nontrivial E with hE | hE
+  · exact (memLp_const (W1p.value u x₀)).ae_eq
+      (.of_forall fun x => congrArg _ (Subsingleton.elim x₀ x))
+  set n := finrank ℝ E
+  have hn1 : 1 ≤ n := finrank_pos
+  have : Fact (1 ≤ (n : ℝ≥0∞)) := ⟨by exact_mod_cast hn1⟩
+  set V : Opens E := ⟨U, hUo⟩
+  have hV : V ≤ Omega := hUΩ
+  set uV : W1p mu V n := W1p.ofExponentLE hp (W1p.restrictL hV u)
+  set q' : ℝ≥0 := max (n : ℝ≥0) q.toNNReal
+  have hnq' : (n : ℝ≥0∞) ≤ q' := by exact_mod_cast le_max_left (n : ℝ≥0) q.toNNReal
+  have hqq' : q ≤ q' :=
+    (ENNReal.coe_toNNReal hq).symm.le.trans (by exact_mod_cast le_max_right (n : ℝ≥0) q.toNNReal)
+  have hq'pos : (0 : ℝ) < q' :=
+    lt_of_lt_of_le (Nat.cast_pos.2 finrank_pos)
+      (by exact_mod_cast le_max_left (n : ℝ≥0) q.toNNReal)
+  have hδn : ((n : ℝ≥0∞).toReal)⁻¹ - (q' : ℝ)⁻¹ < (n : ℝ)⁻¹ := by
+    rw [ENNReal.toReal_natCast]
+    exact sub_lt_self _ (inv_pos.2 hq'pos)
+  have hU0 : mu U ≠ 0 := (hUo.measure_pos mu ⟨x₀, hx₀⟩).ne'
+  have hSP := W1p.eLpNorm_value_sub_setAverage_le_mul_measure_rpow_of_convex (Omega := V)
+    (p := (n : ℝ≥0∞)) (ENNReal.natCast_ne_top n) hconv hb subset_rfl hU0 hnq' rfl hδn uV
+  have hsub : MemLp (fun x ↦ W1p.value uV x - ⨍ y in U, W1p.value uV y ∂mu) q' (mu.restrict U) :=
+    memLp_iff.2 (hSP.trans_lt (ENNReal.mul_lt_top (ENNReal.mul_lt_top
+      (ENNReal.div_lt_top ENNReal.ofReal_ne_top hU0)
+      (ENNReal.rpow_lt_top_of_nonneg (sub_nonneg.2 hδn.le) hb.measure_lt_top.ne))
+      eNorm_lt_top))
+  have heq : (fun x ↦ W1p.value uV x - ⨍ y in U, W1p.value uV y ∂mu) +
+      (fun _ ↦ ⨍ y in U, W1p.value uV y ∂mu) = (W1p.value uV : E → ℝ) := by
+    funext x
+    simp
+  have huV : MemLp (W1p.value uV) q' (mu.restrict U) :=
+    heq ▸ hsub.add (memLp_const (⨍ y in U, W1p.value uV y ∂mu))
+  have hval : W1p.value uV =ᵐ[mu.restrict U] W1p.value u :=
+    (W1p.value_ofExponentLE_ae _ _).trans (W1p.value_restrictL_ae hV u)
+  exact (huV.mono_exponent hqq').ae_eq hval
 
 end W1p
 

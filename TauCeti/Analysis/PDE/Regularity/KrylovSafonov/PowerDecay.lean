@@ -8,8 +8,10 @@ module
 public import TauCeti.Analysis.PDE.Regularity.KrylovSafonov.MeasureEstimate
 public import TauCeti.MeasureTheory.Integral.CalderonZygmund.KrylovSafonov
 import Mathlib.Analysis.SpecialFunctions.Log.Base
+import TauCeti.Analysis.Calculus.ContDiff.Translation
 import TauCeti.Analysis.PDE.MaximumPrinciple.NonDivergence.Basic
 import TauCeti.Basic.ENNReal.Real
+import TauCeti.MeasureTheory.Function.LpSeminorm.Comp
 import TauCeti.MeasureTheory.Measure.Lebesgue.DyadicCube.Euclidean
 
 /-!
@@ -368,27 +370,14 @@ theorem exists_volume_setOf_le_comp_add_inter_dyadicCube_le_rpow_mul {κ : ℝ} 
   intro lam Lam R k c a u f hR ha hLam hcont hu hnonneg hsuper hf hx t ht
   set c₀ : EuclideanSpace ℝ ι := WithLp.toLp 2 fun _ ↦ 2⁻¹ * 2 ^ k
   set d := c - c₀
-  have hd (x : EuclideanSpace ℝ ι) : dist (x + d) c = dist x c₀ := by
-    rw [← dist_add_right x c₀ d]
-    simp [d]
-  have hball : MapsTo (· + d) (ball c₀ R) (ball c R) := fun x hx ↦ by
-    rw [mem_ball, hd]
-    exact hx
-  have hcball : MapsTo (· + d) (closedBall c₀ R) (closedBall c R) := fun x hx ↦ by
-    rw [mem_closedBall, hd]
-    exact hx
-  have hpre : (· + d) ⁻¹' ball c R = ball c₀ R := by
-    ext x
-    simp only [mem_preimage, mem_ball, hd]
-  have he : MeasurableEmbedding (· + d : EuclideanSpace ℝ ι → EuclideanSpace ℝ ι) :=
-    measurableEmbedding_addRight d
+  have hpre : (· + d) ⁻¹' ball c R = ball c₀ R := by simp [d]
+  have hcpre : (· + d) ⁻¹' closedBall c R = closedBall c₀ R := by simp [d]
+  have hball : MapsTo (· + d) (ball c₀ R) (ball c R) := hpre.superset
+  have hcball : MapsTo (· + d) (closedBall c₀ R) (closedBall c R) := hcpre.superset
   have hfd : eLpNorm (fun x ↦ (f (x + d))⁺) (Fintype.card ι) (volume.restrict (ball c₀ R)) =
-      eLpNorm (fun x ↦ (f x)⁺) (Fintype.card ι) (volume.restrict (ball c R)) := by
-    rw [← hpre]
-    -- Present the integrand as a composition with the translation, the form of
-    -- `MeasurableEmbedding.eLpNorm_map_measure`; the two agree by beta reduction.
-    change eLpNorm ((fun x ↦ (f x)⁺) ∘ (· + d)) _ _ = _
-    rw [← he.eLpNorm_map_measure, ← he.restrict_map, map_add_right_eq_self]
+      eLpNorm (fun x ↦ (f x)⁺) (Fintype.card ι) (volume.restrict (ball c R)) :=
+    hpre ▸ (measurePreserving_add_right volume d).eLpNorm_comp_restrict_preimage
+      (measurableEmbedding_addRight d) (fun x ↦ (f x)⁺) _ _
   have ha' : UniformlyEllipticOn (ball c₀ R) (fun x ↦ a (x + d)) lam Lam :=
     .of_bounds ha.pos ha.le (fun _ hx ξ ↦ ha.lower_bound (hball hx) ξ)
       (fun _ hx η ξ ↦ ha.upper_bound (hball hx) η ξ)
@@ -396,7 +385,7 @@ theorem exists_volume_setOf_le_comp_add_inter_dyadicCube_le_rpow_mul {κ : ℝ} 
     (f := fun x ↦ f (x + d)) (by simp [c₀]) hR
     ha' hLam
     (hcont.comp (continuous_id.add continuous_const).continuousOn hcball)
-    (hu.comp (contDiff_id.add contDiff_const).contDiffOn hball)
+    (by simpa [d] using hu.comp_add_right_ball d)
     (fun x hx ↦ hnonneg _ (hcball hx)) (fun x hx ↦ ?_) (by rwa [hfd]) ?_ ht
   · have h1 : fderiv ℝ (fun y ↦ u (y + d)) = fun y ↦ fderiv ℝ u (y + d) :=
       funext fun y ↦ fderiv_comp_add_right d
@@ -404,7 +393,9 @@ theorem exists_volume_setOf_le_comp_add_inter_dyadicCube_le_rpow_mul {κ : ℝ} 
     exact hsuper _ (hball hx)
   · obtain ⟨x, hx, hux⟩ := hx
     refine ⟨x - d, ?_, by simpa using hux⟩
-    rw [mem_ball, ← hd, sub_add_cancel]
+    have hpre2 : (· + d) ⁻¹' ball c (2 * 2 ^ k * √(Fintype.card ι)) =
+        ball c₀ (2 * 2 ^ k * √(Fintype.card ι)) := by simp [d]
+    rw [← hpre2, mem_preimage, sub_add_cancel]
     exact hx
 
 end PDE

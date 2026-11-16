@@ -37,6 +37,9 @@ For the real-valued norm `lpNorm`, monotonicity in the measure needs `f ∈ Lᵖ
 * `MeasureTheory.eLpNorm_add_measure_rpow_le`: the `p`-th power of the `Lᵖ` seminorm is
   subadditive in the measure, at every `p : ℝ≥0∞` (a pseudometrizable codomain with an extended
   norm suffices).
+* `MeasureTheory.eLpNorm_restrict_biUnion_finset_rpow_le`: subadditivity of the `p`-th power of
+  `eLpNorm` over a finite union, for `0 < p < ∞` (including `p < 1`).
+* `MeasureTheory.eLpNorm_restrict_rpow_le_sum_of_subset_iUnion`: the same over a finite cover.
 * `MeasureTheory.eLpNorm_restrict_biUnion_finset_le`: subadditivity over a finite union.
 * `MeasureTheory.eLpNorm_restrict_le_sum_of_subset_iUnion`: subadditivity over a finite cover.
 * `MeasureTheory.MemLp.restrict_of_subset_iUnion`: `Lᵖ` on each piece of a finite cover gives
@@ -71,6 +74,43 @@ theorem eLpNorm_add_measure_rpow_le {α ε : Type*} [MeasurableSpace α] [Topolo
   · rcases not_and_or.1 hm with h | h
     · simp [eLpNorm_of_not_aestronglyMeasurable h, hr]
     · simp [eLpNorm_of_not_aestronglyMeasurable h, hr]
+
+/-- **Subadditivity of the `p`-th power of `eLpNorm` over a finite union.** For `0 < p < ∞`, the
+`p`-th power of the `Lᵖ` seminorm of `f` on a finite union of sets is at most the sum of the
+`p`-th powers of its `Lᵖ` seminorms on the pieces, without assuming `1 ≤ p` or measurability of
+the sets. -/
+theorem eLpNorm_restrict_biUnion_finset_rpow_le {α ε ι : Type*} [MeasurableSpace α]
+    [TopologicalSpace ε] [ENorm ε] [TopologicalSpace.PseudoMetrizableSpace ε] {p : ℝ≥0∞}
+    {μ : Measure α} (f : α → ε) (hp0 : p ≠ 0) (hp : p ≠ ∞) (t : Finset ι) (s : ι → Set α) :
+    eLpNorm f p (μ.restrict (⋃ i ∈ t, s i)) ^ p.toReal ≤
+      ∑ i ∈ t, eLpNorm f p (μ.restrict (s i)) ^ p.toReal := by
+  classical
+  have hr : 0 < p.toReal := ENNReal.toReal_pos hp0 hp
+  induction t using Finset.induction_on with
+  | empty => simp [hr]
+  | insert a t ha ih =>
+    rw [Finset.set_biUnion_insert, Finset.sum_insert ha]
+    calc eLpNorm f p (μ.restrict (s a ∪ ⋃ i ∈ t, s i)) ^ p.toReal
+        ≤ eLpNorm f p (μ.restrict (s a) + μ.restrict (⋃ i ∈ t, s i)) ^ p.toReal :=
+          ENNReal.rpow_le_rpow (eLpNorm_mono_measure _ (Measure.restrict_union_le _ _)) hr.le
+      _ ≤ eLpNorm f p (μ.restrict (s a)) ^ p.toReal +
+            eLpNorm f p (μ.restrict (⋃ i ∈ t, s i)) ^ p.toReal :=
+          eLpNorm_add_measure_rpow_le f _ _
+      _ ≤ _ := by gcongr
+
+/-- **Subadditivity of the `p`-th power of `eLpNorm` over a finite cover.** For `0 < p < ∞`, the
+`p`-th power of the `Lᵖ` seminorm of `f` on a set covered by finitely many sets is at most the sum
+of the `p`-th powers of its `Lᵖ` seminorms on the pieces. -/
+theorem eLpNorm_restrict_rpow_le_sum_of_subset_iUnion {α ε ι : Type*} [MeasurableSpace α]
+    [TopologicalSpace ε] [ENorm ε] [TopologicalSpace.PseudoMetrizableSpace ε] [Fintype ι]
+    {p : ℝ≥0∞} {μ : Measure α} (f : α → ε) (hp0 : p ≠ 0) (hp : p ≠ ∞) {s : Set α}
+    {t : ι → Set α} (hs : s ⊆ ⋃ i, t i) :
+    eLpNorm f p (μ.restrict s) ^ p.toReal ≤ ∑ i, eLpNorm f p (μ.restrict (t i)) ^ p.toReal := by
+  have hr : 0 < p.toReal := ENNReal.toReal_pos hp0 hp
+  refine (ENNReal.rpow_le_rpow
+    (eLpNorm_mono_measure f (Measure.restrict_mono_set μ hs)) hr.le).trans ?_
+  simpa only [Finset.mem_univ, Set.iUnion_true] using
+    eLpNorm_restrict_biUnion_finset_rpow_le (μ := μ) f hp0 hp Finset.univ t
 
 variable {α ε : Type*} {m : MeasurableSpace α} [TopologicalSpace ε] [ContinuousENorm ε]
   [TopologicalSpace.PseudoMetrizableSpace ε] {p : ℝ≥0∞} {μ ν : Measure α}

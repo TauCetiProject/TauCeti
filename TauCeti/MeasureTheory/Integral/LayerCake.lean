@@ -107,10 +107,10 @@ therefore makes every shifted tail integrable.
 * `TauCeti.integrable_rpow_iff_integrableOn_weighted_tail` and
   `TauCeti.integrable_rpow_iff_integrableAtFilter_weighted_tail` — the weighted-tail
   integrability criteria for positive real-power moments;
-* `TauCeti.lintegral_ofReal_rpow_le_of_meas_le_rpow_mul` and
-  `TauCeti.eLpNorm_le_of_meas_le_rpow_mul` — quantitative `L^p` bounds for `0 < p < ε` from a
-  power-decay bound `μ {f ≥ t} ≤ C t ^ (-ε) V` on the superlevel sets of a nonnegative function on
-  a space of measure at most `V`.
+* `MeasureTheory.Measure.lintegral_ofReal_rpow_le_of_meas_lt_rpow_mul` and
+  `MeasureTheory.Measure.eLpNorm_le_of_meas_lt_rpow_mul` — quantitative `L^p` bounds for
+  `0 < p < ε` from a power-decay bound `μ {f > t} ≤ C t ^ (-ε) V` for `t > 1` on a space of
+  measure at most `V`.
 -/
 
 public section
@@ -802,80 +802,82 @@ theorem integrable_rpow_iff_integrableAtFilter_weighted_tail
 
 end WeightedTail
 
+end TauCeti
+
+namespace MeasureTheory.Measure
+
 /-- **Quantitative `L^p` moment bound from power-law superlevel decay.** Let `f` be almost
-everywhere nonnegative and measurable on a space of measure `μ univ ≤ V`, and suppose its
-superlevel sets satisfy `μ {x | t ≤ f x} ≤ C t ^ (-ε) V` for every `t > 0`. Then for every
+everywhere nonnegative and measurable on a space of measure `μ univ ≤ V`, and suppose its strict
+superlevel sets satisfy `μ {x | t < f x} ≤ C t ^ (-ε) V` for every `t > 1`. Then for every
 exponent `0 < p < ε`,
 
-`∫⁻ x, ENNReal.ofReal (f x ^ p) ∂μ ≤ ENNReal.ofReal (1 + C * p / (ε - p)) * V`. -/
-theorem lintegral_ofReal_rpow_le_of_meas_le_rpow_mul {α : Type*} [MeasurableSpace α]
+`∫⁻ x, ENNReal.ofReal (f x ^ p) ∂μ ≤ (1 + ENNReal.ofReal (C * p / (ε - p))) * V`. -/
+theorem lintegral_ofReal_rpow_le_of_meas_lt_rpow_mul {α : Type*} [MeasurableSpace α]
     (μ : Measure α) {f : α → ℝ} (hf : AEMeasurable f μ) (hfn : 0 ≤ᵐ[μ] f)
     {p ε C : ℝ} (hp : 0 < p) (hpε : p < ε) {V : ℝ≥0∞} (hV : μ univ ≤ V)
-    (htail : ∀ ⦃t : ℝ⦄, 0 < t → μ {x | t ≤ f x} ≤ ENNReal.ofReal (C * t ^ (-ε)) * V) :
-    ∫⁻ x, ENNReal.ofReal (f x ^ p) ∂μ ≤ ENNReal.ofReal (1 + C * p / (ε - p)) * V := by
-  rw [lintegral_eq_lintegral_meas_le μ (hfn.mono fun _ hx ↦ Real.rpow_nonneg hx p) (hf.pow_const p)]
-  -- For `s > 0`, `{s ≤ f ^ p}` lies up to a null set in `{s ^ p⁻¹ ≤ f}`.
-  have hsub (s : ℝ) (hs : 0 < s) : μ {x | s ≤ f x ^ p} ≤ μ {x | s ^ p⁻¹ ≤ f x} := by
+    (htail : ∀ ⦃t : ℝ⦄, 1 < t → μ {x | t < f x} ≤ ENNReal.ofReal (C * t ^ (-ε)) * V) :
+    ∫⁻ x, ENNReal.ofReal (f x ^ p) ∂μ ≤ (1 + ENNReal.ofReal (C * p / (ε - p))) * V := by
+  rw [lintegral_eq_lintegral_meas_lt μ (hfn.mono fun _ hx ↦ Real.rpow_nonneg hx p) (hf.pow_const p)]
+  -- For `s > 0`, `{s < f ^ p}` lies up to a null set in `{s ^ p⁻¹ < f}`.
+  have hsub (s : ℝ) (hs : 0 < s) : μ {x | s < f x ^ p} ≤ μ {x | s ^ p⁻¹ < f x} := by
     refine measure_mono_ae (hfn.mono fun x hfx hsx ↦ ?_)
-    calc s ^ p⁻¹ ≤ (f x ^ p) ^ p⁻¹ := Real.rpow_le_rpow hs.le hsx (inv_nonneg.2 hp.le)
+    calc s ^ p⁻¹ < (f x ^ p) ^ p⁻¹ := Real.rpow_lt_rpow hs.le hsx (inv_pos.2 hp)
       _ = f x := by rw [← Real.rpow_mul hfx, mul_inv_cancel₀ hp.ne', Real.rpow_one]
-  rcases le_or_gt C 0 with hC | hC
-  · -- When `C ≤ 0` every positive superlevel set is null.
-    have hzero : ∫⁻ s in Ioi (0 : ℝ), μ {x | s ≤ f x ^ p} = 0 := by
-      refine (setLIntegral_congr_fun measurableSet_Ioi (g := fun _ ↦ 0)
-        fun s (hs : 0 < s) ↦ ?_).trans lintegral_zero
-      refine nonpos_iff_eq_zero.1
-        ((hsub s hs).trans ((htail (Real.rpow_pos_of_pos hs p⁻¹)).trans ?_))
-      rw [ENNReal.ofReal_of_nonpos (mul_nonpos_of_nonpos_of_nonneg hC (by positivity)), zero_mul]
-    rw [hzero]
-    exact zero_le
   -- Split `(0, ∞)` at `1`: bound by `V` on `(0, 1]` and integrate `C s ^ (-ε / p) V` on `(1, ∞)`.
   rw [← Ioc_union_Ioi_eq_Ioi (zero_le_one : (0 : ℝ) ≤ 1)]
-  have h1 : ∫⁻ s in Ioc (0 : ℝ) 1, μ {x | s ≤ f x ^ p} ≤ V := by
-    calc ∫⁻ s in Ioc (0 : ℝ) 1, μ {x | s ≤ f x ^ p}
+  have h1 : ∫⁻ s in Ioc (0 : ℝ) 1, μ {x | s < f x ^ p} ≤ V := by
+    calc ∫⁻ s in Ioc (0 : ℝ) 1, μ {x | s < f x ^ p}
         ≤ ∫⁻ _ in Ioc (0 : ℝ) 1, V := lintegral_mono fun _ ↦ (measure_mono (subset_univ _)).trans hV
       _ = V := by simp [Real.volume_Ioc]
-  have hs_lt : -(ε / p) < -1 := neg_lt_neg ((one_lt_div hp).2 hpε)
-  have h2 : ∫⁻ s in Ioi (1 : ℝ), μ {x | s ≤ f x ^ p} ≤
+  have h2 : ∫⁻ s in Ioi (1 : ℝ), μ {x | s < f x ^ p} ≤
       ENNReal.ofReal (C * p / (ε - p)) * V := by
+    rcases le_or_gt C 0 with hC | hC
+    · have hzero : ∫⁻ s in Ioi (1 : ℝ), μ {x | s < f x ^ p} = 0 := by
+        refine (setLIntegral_congr_fun measurableSet_Ioi (g := fun _ ↦ 0)
+          fun s (hs1 : 1 < s) ↦ ?_).trans lintegral_zero
+        have hs : 0 < s := zero_lt_one.trans hs1
+        have hs1' : 1 < s ^ p⁻¹ := Real.one_lt_rpow hs1 (inv_pos.2 hp)
+        refine nonpos_iff_eq_zero.1 ((hsub s hs).trans ((htail hs1').trans ?_))
+        rw [ENNReal.ofReal_of_nonpos (mul_nonpos_of_nonpos_of_nonneg hC (by positivity)), zero_mul]
+      rw [hzero]
+      exact zero_le
+    have hs_lt : -(ε / p) < -1 := neg_lt_neg ((one_lt_div hp).2 hpε)
     have hle : ∀ᵐ s ∂volume.restrict (Ioi (1 : ℝ)),
-        μ {x | s ≤ f x ^ p} ≤ (ENNReal.ofReal C * V) * ENNReal.ofReal (s ^ (-(ε / p))) := by
+        μ {x | s < f x ^ p} ≤ (ENNReal.ofReal C * V) * ENNReal.ofReal (s ^ (-(ε / p))) := by
       filter_upwards [ae_restrict_mem measurableSet_Ioi] with s (hs1 : 1 < s)
       have hs : 0 < s := zero_lt_one.trans hs1
-      refine (hsub s hs).trans ((htail (Real.rpow_pos_of_pos hs p⁻¹)).trans_eq ?_)
+      refine (hsub s hs).trans ((htail (Real.one_lt_rpow hs1 (inv_pos.2 hp))).trans_eq ?_)
       rw [← Real.rpow_mul hs.le, inv_mul_eq_div, ← neg_div, ENNReal.ofReal_mul hC.le]
       ring
-    calc ∫⁻ s in Ioi (1 : ℝ), μ {x | s ≤ f x ^ p}
+    calc ∫⁻ s in Ioi (1 : ℝ), μ {x | s < f x ^ p}
         ≤ ∫⁻ s in Ioi (1 : ℝ), (ENNReal.ofReal C * V) * ENNReal.ofReal (s ^ (-(ε / p))) :=
           lintegral_mono_ae hle
       _ = (ENNReal.ofReal C * V) * ∫⁻ s in Ioi (1 : ℝ), ENNReal.ofReal (s ^ (-(ε / p))) :=
           lintegral_const_mul _ (by fun_prop)
       _ = (ENNReal.ofReal C * V) * ENNReal.ofReal (-(1 : ℝ) ^ (-(ε / p) + 1) / (-(ε / p) + 1)) := by
-          rw [lintegral_ofReal_rpow_Ioi_of_lt hs_lt one_pos]
+          rw [TauCeti.lintegral_ofReal_rpow_Ioi_of_lt hs_lt one_pos]
       _ = ENNReal.ofReal (C * p / (ε - p)) * V := by
           have hfrac : -(1 : ℝ) ^ (-(ε / p) + 1) / (-(ε / p) + 1) = p / (ε - p) := by
             rw [Real.one_rpow, div_eq_div_iff (by linarith) (by linarith)]
             field_simp [hp.ne']
             ring
           rw [hfrac, mul_right_comm, ← ENNReal.ofReal_mul hC.le, mul_div_assoc]
-  have hpos : 0 ≤ C * p / (ε - p) := div_nonneg (mul_nonneg hC.le hp.le) (sub_pos.2 hpε).le
-  calc (∫⁻ s in Ioc (0 : ℝ) 1 ∪ Ioi 1, μ {x | s ≤ f x ^ p})
-      ≤ (∫⁻ s in Ioc (0 : ℝ) 1, μ {x | s ≤ f x ^ p}) +
-          ∫⁻ s in Ioi (1 : ℝ), μ {x | s ≤ f x ^ p} := lintegral_union_le _ _ _
+  calc (∫⁻ s in Ioc (0 : ℝ) 1 ∪ Ioi 1, μ {x | s < f x ^ p})
+      ≤ (∫⁻ s in Ioc (0 : ℝ) 1, μ {x | s < f x ^ p}) +
+          ∫⁻ s in Ioi (1 : ℝ), μ {x | s < f x ^ p} := lintegral_union_le _ _ _
     _ ≤ V + ENNReal.ofReal (C * p / (ε - p)) * V := add_le_add h1 h2
-    _ = ENNReal.ofReal (1 + C * p / (ε - p)) * V := by
-        rw [ENNReal.ofReal_add zero_le_one hpos, ENNReal.ofReal_one, add_mul, one_mul]
+    _ = (1 + ENNReal.ofReal (C * p / (ε - p))) * V := by rw [add_mul, one_mul]
 
 /-- **Quantitative `L^p` seminorm bound from power-law superlevel decay.** Under the hypotheses of
-`TauCeti.lintegral_ofReal_rpow_le_of_meas_le_rpow_mul`,
+`MeasureTheory.Measure.lintegral_ofReal_rpow_le_of_meas_lt_rpow_mul`,
 
-`eLpNorm f (ENNReal.ofReal p) μ ≤ ENNReal.ofReal ((1 + C * p / (ε - p)) ^ p⁻¹) * V ^ p⁻¹`. -/
-theorem eLpNorm_le_of_meas_le_rpow_mul {α : Type*} [MeasurableSpace α]
+`eLpNorm f (ENNReal.ofReal p) μ ≤ (1 + ENNReal.ofReal (C * p / (ε - p))) ^ p⁻¹ * V ^ p⁻¹`. -/
+theorem eLpNorm_le_of_meas_lt_rpow_mul {α : Type*} [MeasurableSpace α]
     (μ : Measure α) {f : α → ℝ} (hf : AEStronglyMeasurable f μ) (hfn : 0 ≤ᵐ[μ] f)
     {p ε C : ℝ} (hp : 0 < p) (hpε : p < ε) {V : ℝ≥0∞} (hV : μ univ ≤ V)
-    (htail : ∀ ⦃t : ℝ⦄, 0 < t → μ {x | t ≤ f x} ≤ ENNReal.ofReal (C * t ^ (-ε)) * V) :
+    (htail : ∀ ⦃t : ℝ⦄, 1 < t → μ {x | t < f x} ≤ ENNReal.ofReal (C * t ^ (-ε)) * V) :
     eLpNorm f (ENNReal.ofReal p) μ ≤
-      ENNReal.ofReal ((1 + C * p / (ε - p)) ^ p⁻¹) * V ^ p⁻¹ := by
+      (1 + ENNReal.ofReal (C * p / (ε - p))) ^ p⁻¹ * V ^ p⁻¹ := by
   have hp0 : ENNReal.ofReal p ≠ 0 := (ENNReal.ofReal_pos.2 hp).ne'
   rw [eLpNorm_eq_lintegral_rpow_eNorm_toReal hp0 ENNReal.ofReal_ne_top hf,
     ENNReal.toReal_ofReal hp.le, one_div]
@@ -884,35 +886,13 @@ theorem eLpNorm_le_of_meas_le_rpow_mul {α : Type*} [MeasurableSpace α]
     dsimp only
     rw [Real.eNorm_eq_ofReal hfx, ENNReal.ofReal_rpow_of_nonneg hfx hp.le]
   rw [hcongr]
-  have hmom := lintegral_ofReal_rpow_le_of_meas_le_rpow_mul μ hf.aemeasurable hfn hp hpε hV htail
-  rcases le_or_gt C 0 with hC | hC
-  · -- When `C ≤ 0` the moment vanishes, since every positive superlevel set is null.
-    have hzero : ∫⁻ x, ENNReal.ofReal (f x ^ p) ∂μ = 0 := by
-      refine nonpos_iff_eq_zero.1 ((lintegral_ofReal_rpow_le_of_meas_le_rpow_mul μ
-        hf.aemeasurable hfn hp hpε hV (C := -((ε - p) / p)) fun t ht ↦ ?_).trans ?_)
-      · refine (htail ht).trans ?_
-        rw [ENNReal.ofReal_of_nonpos (mul_nonpos_of_nonpos_of_nonneg hC (by positivity)), zero_mul]
-        exact zero_le
-      · have hnp : 1 + -((ε - p) / p) * p / (ε - p) ≤ 0 := by
-          have hsubne : ε - p ≠ 0 := (sub_pos.2 hpε).ne'
-          field_simp [hp.ne', hsubne]
-          linarith
-        rw [ENNReal.ofReal_of_nonpos hnp, zero_mul]
-    rw [hzero, ENNReal.zero_rpow_of_pos (inv_pos.2 hp)]
-    exact zero_le
-  have hpos : 0 ≤ 1 + C * p / (ε - p) := by
-    have : 0 ≤ C * p / (ε - p) := div_nonneg (mul_nonneg hC.le hp.le) (sub_pos.2 hpε).le
-    linarith
   calc (∫⁻ x, ENNReal.ofReal (f x ^ p) ∂μ) ^ p⁻¹
-      ≤ (ENNReal.ofReal (1 + C * p / (ε - p)) * V) ^ p⁻¹ :=
-        ENNReal.rpow_le_rpow hmom (inv_nonneg.2 hp.le)
-    _ = ENNReal.ofReal ((1 + C * p / (ε - p)) ^ p⁻¹) * V ^ p⁻¹ := by
-        rw [ENNReal.mul_rpow_of_nonneg _ _ (inv_nonneg.2 hp.le),
-          ENNReal.ofReal_rpow_of_nonneg hpos (inv_nonneg.2 hp.le)]
-
-end TauCeti
-
-namespace MeasureTheory.Measure
+      ≤ ((1 + ENNReal.ofReal (C * p / (ε - p))) * V) ^ p⁻¹ :=
+        ENNReal.rpow_le_rpow
+          (μ.lintegral_ofReal_rpow_le_of_meas_lt_rpow_mul hf.aemeasurable hfn hp hpε hV htail)
+          (inv_nonneg.2 hp.le)
+    _ = (1 + ENNReal.ofReal (C * p / (ε - p))) ^ p⁻¹ * V ^ p⁻¹ :=
+        ENNReal.mul_rpow_of_nonneg _ _ (inv_nonneg.2 hp.le)
 
 /-- The integral of the shifted tail of a half-line measure is the extended integral of
 its truncated distance above the threshold. No finiteness or normalization is required. -/

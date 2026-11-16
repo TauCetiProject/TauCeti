@@ -10,6 +10,7 @@ import TauCeti.Analysis.Calculus.Morse.Linearization
 import TauCeti.Analysis.Matrix.Contraction
 import TauCeti.Analysis.PDE.MaximumPrinciple.NonDivergence.Basic
 import TauCeti.Analysis.Sobolev.Wkp.Local.Approximation
+import TauCeti.MeasureTheory.Function.LpSeminorm.PosPart
 
 /-!
 # Approximation of strong supersolutions by classical ones
@@ -34,6 +35,10 @@ the form in which the Krylov–Safonov estimates consume supersolutions.
 
 ## Main declarations
 
+* `TauCeti.PDE.exists_contDiff_abs_sub_le_and_ae_abs_sub_le_of_wkp`: a function `u ∈ W^{2,p}` with
+  a continuous representative `ū` is uniformly approximated on `K` by smooth functions whose
+  principal part differs from the weak principal part of `u` almost everywhere on `S ⊆ K` by a
+  nonnegative function of `Lᵖ(S)` norm at most `η`.
 * `TauCeti.PDE.exists_contDiff_abs_sub_le_and_sum_mul_fderiv_fderiv_le_of_wkp`: a strong
   supersolution is uniformly approximated by smooth classical supersolutions whose right-hand
   sides have nearly the same `Lᵖ` norm of the positive part.
@@ -68,7 +73,7 @@ variable {ι : Type*} [Fintype ι] [DecidableEq ι]
 /-- **Principal-part error of a smooth Sobolev approximation.** Mollifying `u ∈ W^{2,p}(Ω)` gives a
 smooth `v` within `η` of `ū` on `K` whose principal part differs from the weak principal part of `u`
 almost everywhere on `S ⊆ K` by a nonnegative function `e` of `Lᵖ(S)` norm at most `η`. -/
-private theorem exists_contDiff_abs_sub_le_and_ae_abs_sub_le {p : ℝ≥0∞}
+theorem exists_contDiff_abs_sub_le_and_ae_abs_sub_le_of_wkp {p : ℝ≥0∞}
     [Fact (1 ≤ p)] (hp : p ≠ ∞) {Ω : Opens (EuclideanSpace ℝ ι)} (u : Wkp mu Ω p 2)
     {ū : EuclideanSpace ℝ ι → ℝ} (hcont : ContinuousOn ū Ω)
     (hū : (Wkp.value 2 u : EuclideanSpace ℝ ι → ℝ) =ᵐ[mu.restrict Ω] ū)
@@ -145,7 +150,7 @@ theorem exists_contDiff_abs_sub_le_and_sum_mul_fderiv_fderiv_le_of_wkp {p : ℝ�
       eLpNorm (fun x ↦ (g x)⁺) p (mu.restrict S) ≤
         eLpNorm (fun x ↦ (f x)⁺) p (mu.restrict S) + ENNReal.ofReal η := by
   obtain ⟨v, e, hv, hvK, he0, heS, hL⟩ :=
-    exists_contDiff_abs_sub_le_and_ae_abs_sub_le hp u hcont hū hK hKΩ hSK ha hη
+    exists_contDiff_abs_sub_le_and_ae_abs_sub_le_of_wkp hp u hcont hū hK hKΩ hSK ha hη
   set L : EuclideanSpace ℝ ι → ℝ := fun x ↦ ∑ i, ∑ j, a x i j * fderiv ℝ (fderiv ℝ v) x
     (EuclideanSpace.single i 1) (EuclideanSpace.single j 1)
   refine ⟨v, fun x ↦ max (L x) ((f x)⁺ + e x), hv, hvK, fun x _ ↦ le_max_left _ _, ?_⟩
@@ -184,7 +189,7 @@ theorem exists_contDiff_abs_sub_le_and_abs_sum_mul_fderiv_fderiv_le_of_wkp {p : 
         (EuclideanSpace.single i 1) (EuclideanSpace.single j 1)| ≤ g x) ∧
       eLpNorm g p (mu.restrict S) ≤ eLpNorm f p (mu.restrict S) + ENNReal.ofReal η := by
   obtain ⟨v, e, hv, hvK, _, heS, hL⟩ :=
-    exists_contDiff_abs_sub_le_and_ae_abs_sub_le hp u hcont hū hK hKΩ hSK ha hη
+    exists_contDiff_abs_sub_le_and_ae_abs_sub_le_of_wkp hp u hcont hū hK hKΩ hSK ha hη
   set L : EuclideanSpace ℝ ι → ℝ := fun x ↦ ∑ i, ∑ j, a x i j * fderiv ℝ (fderiv ℝ v) x
     (EuclideanSpace.single i 1) (EuclideanSpace.single j 1)
   refine ⟨v, fun x ↦ max |L x| (f x + e x), hv, hvK, fun x _ ↦ le_max_left _ _, ?_⟩
@@ -247,13 +252,9 @@ theorem exists_contDiff_div_le_and_sum_mul_fderiv_fderiv_le_of_wkp {p : ℝ≥0�
     have h : fderiv ℝ (fun y ↦ v y + ζ) = fderiv ℝ v := funext fun y ↦ fderiv_add_const ζ
     rw [h]
     exact mul_le_mul_of_nonneg_left (hvg x hx) (inv_pos.2 hσ).le
-  have hpos : (fun x ↦ (σ⁻¹ * g x)⁺) = σ⁻¹ • fun x ↦ (g x)⁺ := by
-    funext x
-    simp only [Pi.smul_apply, smul_eq_mul, posPart_def, mul_max_of_nonneg _ _
-      (inv_pos.2 hσ).le, mul_zero]
   calc eLpNorm (fun x ↦ (σ⁻¹ * g x)⁺) p (mu.restrict S)
-      = ENNReal.ofReal σ⁻¹ * eLpNorm (fun x ↦ (g x)⁺) p (mu.restrict S) := by
-        rw [hpos, eLpNorm_const_smul, Real.eNorm_eq_ofReal (inv_pos.2 hσ).le]
+      = ENNReal.ofReal σ⁻¹ * eLpNorm (fun x ↦ (g x)⁺) p (mu.restrict S) :=
+        eLpNorm_posPart_const_mul (inv_pos.2 hσ).le g
     _ ≤ ENNReal.ofReal σ⁻¹ * (ENNReal.ofReal M + ENNReal.ofReal η) := by
         gcongr
         exact hg.trans (add_le_add_left hfM _)

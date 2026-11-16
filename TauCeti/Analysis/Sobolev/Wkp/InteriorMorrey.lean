@@ -9,6 +9,7 @@ public import TauCeti.Analysis.Sobolev.W1p.InteriorMorrey
 public import TauCeti.Analysis.Sobolev.Wkp.LineDeriv
 public import TauCeti.Analysis.Sobolev.Wkp.PreciseRepresentative
 import TauCeti.Analysis.Sobolev.W1p.SobolevEmbedding
+import TauCeti.MeasureTheory.Measure.OpenPos
 import TauCeti.Topology.Sets.Opens
 
 /-!
@@ -47,6 +48,9 @@ representative only depends on `u` near each point (`preciseRepresentative_congr
   finite `q ≥ 1`, when `n ≤ p` and `V` is open with compact closure in `Ω`.
 * `TauCeti.Wkp.continuousOn_preciseRepresentative`: the precise representative of
   `u ∈ W^{2,p}(Ω)`, `n ≤ p`, is continuous on `Ω`.
+* `TauCeti.Wkp.preciseRepresentative_le_of_ae_le`, `TauCeti.Wkp.le_preciseRepresentative_of_ae_le`,
+  `TauCeti.Wkp.abs_preciseRepresentative_le_of_ae_abs_le`: almost everywhere comparison against a
+  continuous function on an open subset of `Ω` transfers pointwise to the precise representative.
 * `TauCeti.Wkp.exists_holderOnWith_preciseRepresentative_of_isCompact`: it is
   `(1 - n / q)`-Hölder continuous on every compact subset of `Ω`, for every finite `q > n`.
 
@@ -110,6 +114,48 @@ theorem Wkp.continuousOn_preciseRepresentative (hp : (finrank ℝ E : ℝ≥0∞
   exact (((W1p.continuousOn_preciseRepresentative
     (by exact_mod_cast lt_add_one (finrank ℝ E)) w).congr heq.symm).continuousAt
     (V.isOpen.mem_nhds (hxV rfl))).continuousWithinAt
+
+/-- If `u ∈ W^{2,p}(Ω)` with `n ≤ p` satisfies `u ≤ g` almost everywhere on an open subset `U ⊆ Ω`
+and `g` is continuous on `U`, then its precise representative satisfies `u* ≤ g` everywhere on
+`U`. -/
+theorem Wkp.preciseRepresentative_le_of_ae_le (hp : (finrank ℝ E : ℝ≥0∞) ≤ p)
+    (u : Wkp mu Omega p 2) {U : Set E} (hU : IsOpen U) (hUΩ : U ⊆ Omega) {g : E → ℝ}
+    (hg : ContinuousOn g U) (hle : ∀ᵐ x ∂mu.restrict U, Wkp.value 2 u x ≤ g x) :
+    ∀ x ∈ U, preciseRepresentative mu (Wkp.value 2 u) x ≤ g x := by
+  have hae := (Wkp.ae_eq_preciseRepresentative 2 u).filter_mono
+    (ae_mono (Measure.restrict_mono hUΩ le_rfl))
+  refine ((Wkp.continuousOn_preciseRepresentative hp u).mono hUΩ).forall_le_of_ae_le
+    (μ := mu) hg hU ?_
+  filter_upwards [hae, hle] with x hx h
+  exact hx ▸ h
+
+/-- If `u ∈ W^{2,p}(Ω)` with `n ≤ p` satisfies `g ≤ u` almost everywhere on an open subset `U ⊆ Ω`
+and `g` is continuous on `U`, then its precise representative satisfies `g ≤ u*` everywhere on
+`U`. -/
+theorem Wkp.le_preciseRepresentative_of_ae_le (hp : (finrank ℝ E : ℝ≥0∞) ≤ p)
+    (u : Wkp mu Omega p 2) {U : Set E} (hU : IsOpen U) (hUΩ : U ⊆ Omega) {g : E → ℝ}
+    (hg : ContinuousOn g U) (hle : ∀ᵐ x ∂mu.restrict U, g x ≤ Wkp.value 2 u x) :
+    ∀ x ∈ U, g x ≤ preciseRepresentative mu (Wkp.value 2 u) x := by
+  have hae := (Wkp.ae_eq_preciseRepresentative 2 u).filter_mono
+    (ae_mono (Measure.restrict_mono hUΩ le_rfl))
+  refine hg.forall_le_of_ae_le (μ := mu) ((Wkp.continuousOn_preciseRepresentative hp u).mono hUΩ)
+    hU ?_
+  filter_upwards [hae, hle] with x hx h
+  exact hx ▸ h
+
+/-- If `u ∈ W^{2,p}(Ω)` with `n ≤ p` satisfies `|u| ≤ g` almost everywhere on an open subset
+`U ⊆ Ω` and `g` is continuous on `U`, then its precise representative satisfies `|u*| ≤ g`
+everywhere on `U`. -/
+theorem Wkp.abs_preciseRepresentative_le_of_ae_abs_le (hp : (finrank ℝ E : ℝ≥0∞) ≤ p)
+    (u : Wkp mu Omega p 2) {U : Set E} (hU : IsOpen U) (hUΩ : U ⊆ Omega) {g : E → ℝ}
+    (hg : ContinuousOn g U) (hle : ∀ᵐ x ∂mu.restrict U, |Wkp.value 2 u x| ≤ g x) :
+    ∀ x ∈ U, |preciseRepresentative mu (Wkp.value 2 u) x| ≤ g x := by
+  have hae := (Wkp.ae_eq_preciseRepresentative 2 u).filter_mono
+    (ae_mono (Measure.restrict_mono hUΩ le_rfl))
+  refine (((Wkp.continuousOn_preciseRepresentative hp u).mono hUΩ).abs).forall_le_of_ae_le
+    (μ := mu) hg hU ?_
+  filter_upwards [hae, hle] with x hx h
+  exact hx ▸ h
 
 /-- **Hölder continuity of `W^{2,p}` functions for `p` at least the dimension.** If `n ≤ p ≤ ∞`,
 where `n` is the dimension, then for every finite `q > n` the precise representative of any

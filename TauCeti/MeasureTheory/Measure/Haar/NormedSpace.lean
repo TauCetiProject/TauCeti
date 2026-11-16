@@ -18,6 +18,7 @@ import Mathlib.MeasureTheory.Group.Integral
 import Mathlib.MeasureTheory.Measure.Haar.NormedSpace
 import Mathlib.MeasureTheory.Measure.Real
 import Mathlib.RingTheory.Norm.Transitivity
+import TauCeti.MeasureTheory.Function.LpSeminorm.Lintegral
 import TauCeti.MeasureTheory.Measure.OpenPos
 import TauCeti.RingTheory.Norm.RCLike
 
@@ -108,6 +109,9 @@ gives a set of measure one.
   empty).
 * `MeasureTheory.Measure.rpow_neg_mul_toReal_eLpNorm_ball_le`: the same in scale-invariant form,
   `R^(-n/p₀) ‖f‖_{L^{p₀}(B(x₀, R))} ≤ |B(0, 1)|^(1/p₀ - 1/p) R^(-n/p) ‖f‖_{L^p(B(x₀, R))}`.
+* `MeasureTheory.Measure.exists_mem_ball_norm_le_rpow_neg_mul_toReal_eLpNorm`: Chebyshev point
+  selection on a ball, finding `w ∈ B(x₀, r)` with
+  `‖f w‖ ≤ |B(0, 1)|^(-1/p) r^(-n/p) ‖f‖_{L^p(B(x₀, r))}`.
 * `ContinuousAffineMap.measurePreserving_of_abs_det_eq_one`: a continuous affine self-map whose
   linear part has `|det| = 1` preserves an additive Haar measure.
 * `ContinuousLinearMap.abs_det_le_opNorm_pow`: `|det f| ≤ ‖f‖ ^ n` in dimension `n`.
@@ -216,6 +220,37 @@ theorem rpow_neg_mul_toReal_eLpNorm_ball_le
             (R ^ finrank ℝ E * mu.real (ball (0 : E) 1)) ^ (1 / p₀ - 1 / p)) := by
         gcongr
     _ = _ := by rw [mul_left_comm, hRpow]; ring
+
+/-- **Chebyshev point selection on a ball.** For `p > 0`, `r > 0`, and `f ∈ L^p(B(x₀, r))` in
+dimension `n`, there is a point `w ∈ B(x₀, r)` at which
+`‖f w‖ ≤ |B(0, 1)|^(-1/p) r^(-n/p) ‖f‖_{L^p(B(x₀, r))}`. -/
+theorem exists_mem_ball_norm_le_rpow_neg_mul_toReal_eLpNorm
+    {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
+    [MeasurableSpace E] [BorelSpace E] (mu : Measure E) [mu.IsAddHaarMeasure]
+    {F : Type*} [NormedAddCommGroup F] {f : E → F} {p r : ℝ} {x₀ : E}
+    (hp : 0 < p) (hr : 0 < r)
+    (hf : MemLp f (ENNReal.ofReal p) (mu.restrict (ball x₀ r))) :
+    ∃ w ∈ ball x₀ r,
+      ‖f w‖ ≤ mu.real (ball (0 : E) 1) ^ (-p⁻¹) *
+        (r ^ (-((finrank ℝ E : ℝ) / p)) *
+          (eLpNorm f (ENNReal.ofReal p) (mu.restrict (ball x₀ r))).toReal) := by
+  have hp0 : ENNReal.ofReal p ≠ 0 := (ENNReal.ofReal_pos.2 hp).ne'
+  have hpos : 0 < mu (ball x₀ r) := isOpen_ball.measure_pos mu (nonempty_ball.2 hr)
+  obtain ⟨w, hw, hle⟩ := hf.exists_mem_measure_rpow_mul_enorm_le_eLpNorm hp0 ENNReal.ofReal_ne_top
+    measurableSet_ball hpos.ne' measure_ball_lt_top.ne
+  have hreal := ENNReal.toReal_mono hf.eLpNorm_ne_top hle
+  rw [ENNReal.toReal_mul, ← ENNReal.toReal_rpow, ENNReal.toReal_ofReal hp.le, toReal_eNorm,
+    ← measureReal_def] at hreal
+  have hmr : 0 < mu.real (ball x₀ r) := Metric.measureReal_ball_pos mu x₀ hr
+  have hinv : ‖f w‖ ≤ mu.real (ball x₀ r) ^ (-p⁻¹) *
+      (eLpNorm f (ENNReal.ofReal p) (mu.restrict (ball x₀ r))).toReal := by
+    rw [Real.rpow_neg hmr.le, inv_mul_eq_div, le_div_iff₀' (Real.rpow_pos_of_pos hmr _)]
+    exact hreal
+  refine ⟨w, hw, hinv.trans_eq ?_⟩
+  rw [mu.addHaar_real_ball_rpow x₀ hr (-p⁻¹)]
+  have hexp : (finrank ℝ E : ℝ) * -p⁻¹ = -((finrank ℝ E : ℝ) / p) := by ring
+  rw [hexp]
+  ring
 
 /-- For a ball of radius `r > 0` in dimension `n`, `n / r` times its real measure is
 `n rⁿ⁻¹` times the real measure of the unit ball, the derivative in `r` of its measure. -/
