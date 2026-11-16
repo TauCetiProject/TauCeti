@@ -30,8 +30,10 @@ Hilbert C⋆-module.
 
 ## Main declarations
 
-* `CStarMatrix.instNonUnitalContinuousFunctionalCalculusReal`: the real continuous functional
-  calculus of `CStarMatrix n n A`, which instance search does not find on its own.
+* `CStarMatrix.instNonUnitalContinuousFunctionalCalculusReal`,
+  `CStarMatrix.instContinuousFunctionalCalculusReal`: the non-unital and unital real continuous
+  functional calculus instances on `CStarMatrix n n A`, which instance search does not find on its
+  own.
 * `CStarMatrix.ofMatrix_symm_mul`, `CStarMatrix.ofMatrix_symm_star`: reading a C⋆-matrix as an
   ordinary matrix respects multiplication and sends `star` to the conjugate transpose.
 * `CStarMatrix.isSelfAdjoint_of_forall_isSelfAdjoint_sum`: a matrix all of whose quadratic forms
@@ -121,6 +123,11 @@ instance instNonUnitalContinuousFunctionalCalculusReal :
 
 instance instNonnegSpectrumClassReal : NonnegSpectrumClass ℝ (CStarMatrix n n A) :=
   CStarAlgebra.instNonnegSpectrumClass'
+
+noncomputable instance instContinuousFunctionalCalculusReal {n A : Type*} [Fintype n]
+    [DecidableEq n] [CStarAlgebra A] [PartialOrder A] [StarOrderedRing A] :
+    ContinuousFunctionalCalculus ℝ (CStarMatrix n n A) IsSelfAdjoint :=
+  IsSelfAdjoint.instContinuousFunctionalCalculus
 
 /-- A matrix over a C⋆-algebra is positive exactly when all its finite quadratic forms are
 positive. -/
