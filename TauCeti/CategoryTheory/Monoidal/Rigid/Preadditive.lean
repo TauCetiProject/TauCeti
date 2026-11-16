@@ -104,15 +104,13 @@ theorem surjective_algebraMap_end_rightDual
     (hX : Function.Surjective (algebraMap R (End X))) :
     Function.Surjective (algebraMap R (End Xᘁ)) := by
   intro g
-  let p : ExactPairing X Xᘁ := HasRightDual.exact
-  obtain ⟨r, hr⟩ := hX (End.of (ExactPairing.leftMate p p g.asHom))
+  obtain ⟨r, hr⟩ := exists_smul_id_eq_of_surjective hX (leftAdjointMate g.asHom)
   refine ⟨r, End.ext ?_⟩
-  have hg : ExactPairing.leftMate p p g.asHom = r • 𝟙 X := by
-    simpa [End.algebraMap_asHom] using (congrArg End.asHom hr).symm
-  have hmate : (ExactPairing.leftMate p p g.asHom)ᘁ = g.asHom :=
-    ExactPairing.rightHom_ext (X := X) (by
-      rw [rightAdjointMate_comp_evaluation, ExactPairing.leftMate_comp_evaluation])
-  rw [End.algebraMap_asHom, ← hmate, hg, rightAdjointMate_smul, rightAdjointMate_id]
+  have h : (r • 𝟙 (ᘁ(Xᘁ)))ᘁ = (leftAdjointMate g.asHom)ᘁ := congrArg rightAdjointMate hr
+  rw [rightAdjointMate_smul, rightAdjointMate_id, rightAdjointMate_leftAdjointMate] at h
+  rw [End.algebraMap_asHom]
+  -- `(ᘁ(Xᘁ))ᘁ` is definitionally `Xᘁ` via `hasRightDualLeftDual` on `hasLeftDualRightDual`.
+  exact h
 
 /-- If `X` has scalar endomorphisms over `R`, then so does its right dual `Xᘁ`. -/
 theorem bijective_algebraMap_end_rightDual
@@ -218,11 +216,9 @@ theorem hom_tensorUnit_eq_smul_evaluation_of_surjective_right {X Y : C} [ExactPa
     ∃ r : R, f = r • ε_ X Y := by
   let e := (tensorRightHomLinearEquiv R Y X Y (𝟙_ C)).trans
     (Linear.homCongr R (Iso.refl Y) (λ_ Y))
-  obtain ⟨r, hr⟩ := hY (End.of (e f))
-  have hef : e f = r • 𝟙 Y := by
-    simpa [End.algebraMap_asHom] using (congrArg End.asHom hr).symm
+  obtain ⟨r, hr⟩ := exists_smul_id_eq_of_surjective hY (e f)
   refine ⟨r, e.injective ?_⟩
-  rw [map_smul, hef]
+  rw [map_smul, ← hr]
   congr 1
   -- Frobenius reciprocity carries evaluation to the identity, with the unitors removed.
   simp only [e, LinearEquiv.trans_apply, Linear.homCongr_apply, Iso.refl_inv,
@@ -236,11 +232,9 @@ theorem hom_tensorUnit_eq_smul_evaluation_of_surjective_left {X Y : C} [ExactPai
     ∃ r : R, f = r • ε_ X Y := by
   let e := (tensorLeftHomLinearEquiv R X X Y (𝟙_ C)).trans
     (Linear.homCongr R (Iso.refl X) (ρ_ X))
-  obtain ⟨r, hr⟩ := hX (End.of (e f))
-  have hef : e f = r • 𝟙 X := by
-    simpa [End.algebraMap_asHom] using (congrArg End.asHom hr).symm
+  obtain ⟨r, hr⟩ := exists_smul_id_eq_of_surjective hX (e f)
   refine ⟨r, e.injective ?_⟩
-  rw [map_smul, hef]
+  rw [map_smul, ← hr]
   congr 1
   -- The other Frobenius reciprocity bijection carries evaluation to the identity of `X`.
   simp only [e, LinearEquiv.trans_apply, Linear.homCongr_apply, Iso.refl_inv,

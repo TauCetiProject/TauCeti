@@ -97,10 +97,7 @@ theorem leftUnitor_inv_scalar_whiskerRight_leftUnitor_hom_of_surjective {R : Typ
     [CommSemiring R] [Preadditive C] [MonoidalPreadditive C] [Linear R C] [MonoidalLinear R C]
     (h : Function.Surjective (algebraMap R (End (𝟙_ C)))) (a : 𝟙_ C ⟶ 𝟙_ C) (Y : C) :
     (λ_ Y).inv ≫ a ▷ Y ≫ (λ_ Y).hom = (ρ_ Y).inv ≫ Y ◁ a ≫ (ρ_ Y).hom := by
-  obtain ⟨r, hr⟩ := h (End.of a)
-  have ha : a = r • 𝟙 (𝟙_ C) := by
-    simpa [End.algebraMap_asHom] using (congrArg End.asHom hr).symm
-  subst ha
+  obtain ⟨r, rfl⟩ := exists_smul_id_eq_of_surjective h a
   simp
 
 /-- If the tensor unit is simple with finite-dimensional endomorphisms over an algebraically

@@ -7,13 +7,11 @@ module
 
 public import Mathlib.CategoryTheory.Preadditive.Biproducts
 public import TauCeti.CategoryTheory.Monoidal.Rigid.DualFunctor
-public import TauCeti.CategoryTheory.Monoidal.Rigid.Simple
+public import TauCeti.CategoryTheory.Monoidal.Rigid.Preadditive
 public import TauCeti.CategoryTheory.Monoidal.Scalar
-public import TauCeti.CategoryTheory.Semisimple.Basic
-public import TauCeti.CategoryTheory.Simple.Classes
 
 /-!
-# Bidual traces, squared norms, and pivot-free global dimension
+# Bidual traces and squared norms without a pivotal structure
 
 In a right rigid monoidal category `C` without a chosen pivotal structure, an endomorphism of an
 object `X` has no canonical categorical trace, because closing up a loop requires identifying `X`
@@ -40,19 +38,18 @@ We develop the basic calculus of `doubleDualTrace` and `squaredNorm`:
 * **Double-mate invariance and duality**: because `doubleRightDualFunctor C` preserves scalars
   under its unit comparison, `doubleDualTrace (aᘁᘁ) = doubleDualTrace a`, and passing from
   `a : X ≅ Xᘁᘁ` to `a.rightAdjointMate.symm : Xᘁ ≅ Xᘁᘁᘁ` preserves `squaredNorm`
-  (`TauCeti.squaredNorm_rightDual`).
-* **Unit**: at the unit comparison `εIso (doubleRightDualFunctor C)`, both `doubleDualTrace` and
+  (`TauCeti.squaredNorm_rightAdjointMate_symm`).
+* **Unit**: at the unit comparison `εIso (doubleRightDualFunctor C)`, both trace factors and
   `squaredNorm` equal `𝟙 (𝟙_ C)`.
 * **Linearity and biproducts**: `doubleDualTrace` is additive, `R`-linear, and sums over the
   diagonal components of finite and binary biproducts.
-* **Invertibility on simple objects**: when `η_ X Xᘁ` splits and every endomorphism of `X` is a
-  scalar multiple of `𝟙 X`, `doubleDualTrace a.hom` is an isomorphism (hence a unit in
-  `End (𝟙_ C)`). In a finite semisimple rigid abelian category with simple tensor unit, both
-  `doubleDualTrace a.hom` and `squaredNorm a` are isomorphisms and nonzero for any split simple
-  object `X`.
-* **Pivot-free global dimension**: when `SimpleClasses C` is finite, summing `squaredNorm (a S)`
-  over a family `a : ∀ S : SimpleClasses C, S.repr ≅ S.reprᘁᘁ` defines `TauCeti.normGlobalDim C a`,
-  which is independent of `a` whenever the simple representatives have scalar endomorphisms.
+* **Invertibility from split coevaluation**: when `η_ X Xᘁ` is a split monomorphism and every
+  endomorphism of `X` is a scalar multiple of `𝟙 X`, `doubleDualTrace a.hom` is an isomorphism in
+  `C` and a unit in `End (𝟙_ C)`.
+
+The resulting invertibility and nonvanishing properties in finite semisimple categories live in
+`TauCeti.CategoryTheory.Monoidal.Rigid.Semisimple`, and the pivot-free global dimension lives in
+`TauCeti.CategoryTheory.Monoidal.Rigid.GlobalDim`.
 
 ## Main declarations
 
@@ -60,24 +57,22 @@ We develop the basic calculus of `doubleDualTrace` and `squaredNorm`:
   squared norm of `X ≅ Xᘁᘁ`;
 * `TauCeti.doubleDualTrace_comp_rightAdjointMate_rightAdjointMate`, `TauCeti.doubleDualTrace_conj`,
   and `TauCeti.squaredNorm_conj`: dinaturality and isomorphism invariance;
-* `TauCeti.doubleDualTrace_rightAdjointMate_rightAdjointMate` and `TauCeti.squaredNorm_rightDual`:
-  invariance under the double right adjoint mate and under right duality;
-* `TauCeti.doubleDualTrace_unit_ε` and `TauCeti.squaredNorm_unit_εIso`: values at the tensor unit;
+* `TauCeti.doubleDualTrace_rightAdjointMate_rightAdjointMate` and
+  `TauCeti.squaredNorm_rightAdjointMate_symm`: invariance under the double right adjoint mate and
+  under passing to `a.rightAdjointMate.symm`;
+* `TauCeti.doubleDualTrace_ε_doubleRightDualFunctor`,
+  `TauCeti.doubleDualTrace_rightAdjointMate_η_doubleRightDualFunctor`, and
+  `TauCeti.squaredNorm_εIso_doubleRightDualFunctor`: values at the tensor unit;
 * `TauCeti.squaredNorm_congr`: independence of `a : X ≅ Xᘁᘁ` for objects with scalar
   endomorphisms;
-* `TauCeti.isIso_doubleDualTrace_of_isSplitMono`, `TauCeti.isIso_doubleDualTrace_of_simple`,
-  `TauCeti.isIso_squaredNorm_of_simple`, and `TauCeti.squaredNorm_ne_zero_of_simple`:
-  invertibility and nonvanishing on simple objects;
-* `TauCeti.normGlobalDim`, `TauCeti.normGlobalDim_congr_of_bijective`, and
-  `TauCeti.normGlobalDim_congr`: the global dimension without a pivotal structure and its
-  independence of the chosen double-dual isomorphisms.
+* `TauCeti.isIso_doubleDualTrace_of_isSplitMono` and
+  `TauCeti.isUnit_endOf_doubleDualTrace_of_isSplitMono`: invertibility when `η_ X Xᘁ` splits.
 
 ## References
 
 * P. Etingof, D. Nikshych, V. Ostrik, *On fusion categories*, Ann. of Math. **162** (2005),
   §2.1, Proposition 2.1 and Definition 2.2
-* [P. Etingof, S. Gelaki, D. Nikshych, V. Ostrik, *Tensor categories*][egno15], §7.21,
-  Definition 7.21.3
+* [P. Etingof, S. Gelaki, D. Nikshych, V. Ostrik, *Tensor categories*][egno15], §7.21
 -/
 
 public section
@@ -113,8 +108,9 @@ theorem squaredNorm_def {X : C} (a : X ≅ (Xᘁ : C)ᘁ) :
     squaredNorm a = doubleDualTrace a.hom ≫ doubleDualTrace (rightAdjointMate a.inv) :=
   (rfl)
 
-/-- Since scalars commute, the two trace factors of `TauCeti.squaredNorm` commute. -/
-theorem squaredNorm_eq_comm {X : C} (a : X ≅ (Xᘁ : C)ᘁ) :
+/-- Since scalars commute, `TauCeti.squaredNorm` is also the product of its two trace factors in
+the reverse order. -/
+theorem squaredNorm_def' {X : C} (a : X ≅ (Xᘁ : C)ᘁ) :
     squaredNorm a = doubleDualTrace (rightAdjointMate a.inv) ≫ doubleDualTrace a.hom :=
   scalar_comm _ _
 
@@ -135,26 +131,30 @@ theorem doubleDualTrace_conj {X Y : C} (e : X ≅ Y) (a : X ⟶ (Xᘁ : C)ᘁ) :
 /-- Transporting `a : X ≅ Xᘁᘁ` along an isomorphism `e : X ≅ Y` preserves `squaredNorm`. -/
 theorem squaredNorm_conj {X Y : C} (e : X ≅ Y) (a : X ≅ (Xᘁ : C)ᘁ) :
     squaredNorm (e.symm ≪≫ a ≪≫ (doubleRightDualFunctor C).mapIso e) = squaredNorm a := by
+  have hmap_hom : ((doubleRightDualFunctor C).mapIso e).hom = (e.hom)ᘁᘁ := by
+    rw [Functor.mapIso_hom, doubleRightDualFunctor_map]
+  have hmap_inv : ((doubleRightDualFunctor C).mapIso e).inv = (e.inv)ᘁᘁ := by
+    rw [Functor.mapIso_inv, doubleRightDualFunctor_map]
+  have hhom : (e.symm ≪≫ a ≪≫ (doubleRightDualFunctor C).mapIso e).hom =
+      e.inv ≫ a.hom ≫ (e.hom)ᘁᘁ :=
+    (Iso.trans_hom _ _).trans <| (Iso.symm_hom e =≫ _).trans <|
+      e.inv ≫= (Iso.trans_hom a _).trans (a.hom ≫= hmap_hom)
+  have hinv : (e.symm ≪≫ a ≪≫ (doubleRightDualFunctor C).mapIso e).inv =
+      (e.inv)ᘁᘁ ≫ a.inv ≫ e.hom :=
+    (Iso.trans_inv _ _).trans <| (_ ≫= Iso.symm_inv e).trans <|
+      ((Iso.trans_inv a _).trans (hmap_inv =≫ a.inv) =≫ e.hom).trans (Category.assoc _ _ _)
   rw [squaredNorm_def, squaredNorm_def]
   congr 1
-  · exact doubleDualTrace_conj e a.hom
-  · have h : doubleDualTrace (rightAdjointMate (((e.inv)ᘁᘁ ≫ a.inv) ≫ e.hom)) =
-        doubleDualTrace (rightAdjointMate a.inv) := by
-      simpa only [comp_rightAdjointMate, Iso.symm_inv, Iso.symm_hom, Iso.rightAdjointMate_hom,
-        Iso.rightAdjointMate_inv] using
-        doubleDualTrace_conj e.rightAdjointMate.symm (rightAdjointMate a.inv)
-    exact h
-
-/-- A scalar acting on `X` from the left factors out of `doubleDualTrace`. -/
-theorem doubleDualTrace_scalar_whiskerRight_comp {X : C} (d : 𝟙_ C ⟶ 𝟙_ C)
-    (a : X ⟶ (Xᘁ : C)ᘁ) :
-    doubleDualTrace ((λ_ X).inv ≫ d ▷ X ≫ (λ_ X).hom ≫ a) = d ≫ doubleDualTrace a := by
-  have h : η_ X Xᘁ ≫ ((λ_ X).inv ≫ d ▷ X ≫ (λ_ X).hom ≫ a) ▷ (Xᘁ : C) =
-      d ≫ η_ X Xᘁ ≫ a ▷ (Xᘁ : C) := by
-    calc _ = (η_ X Xᘁ ≫ (λ_ (X ⊗ (Xᘁ : C))).inv) ≫ d ▷ (X ⊗ (Xᘁ : C)) ≫
-          (λ_ (X ⊗ (Xᘁ : C))).hom ≫ a ▷ (Xᘁ : C) := by monoidal
-      _ = _ := by rw [comp_scalar_whiskerRight_assoc]; simp
-  rw [doubleDualTrace_def, doubleDualTrace_def, reassoc_of% h]
+  · -- `(doubleRightDualFunctor C).obj Y` and `(Yᘁ : C)ᘁ` are definitionally equal
+    -- (`doubleRightDualFunctor_obj`), aligning the target of `hhom` with `doubleDualTrace`.
+    exact (congrArg doubleDualTrace hhom).trans (doubleDualTrace_conj e a.hom)
+  · -- Similarly, the source `(doubleRightDualFunctor C).obj Y` of `hinv` aligns with `(Yᘁ : C)ᘁ`
+    -- in `rightAdjointMate`.
+    refine (congrArg (fun f : (Yᘁ : C)ᘁ ⟶ Y ↦ doubleDualTrace (rightAdjointMate f)) hinv).trans ?_
+    rw [comp_rightAdjointMate, comp_rightAdjointMate, ← Iso.rightAdjointMate_inv e,
+      ← Iso.symm_hom e.rightAdjointMate, ← Iso.rightAdjointMate_hom e,
+      ← Iso.symm_inv e.rightAdjointMate, Category.assoc]
+    exact doubleDualTrace_conj e.rightAdjointMate.symm (rightAdjointMate a.inv)
 
 /-- **Double-mate invariance**: the bidual trace of `aᘁᘁ` equals the bidual trace of `a`. -/
 @[simp]
@@ -170,6 +170,8 @@ theorem doubleDualTrace_rightAdjointMate_rightAdjointMate {X : C} (a : X ⟶ (X�
     rw [doubleDualTrace_def, F.map_comp, F.map_comp,
       doubleRightDualFunctor_map_coevaluation, doubleRightDualFunctor_map_evaluation]
     simp only [Category.assoc, doubleDualTrace_def]
+    -- `hmid` whiskers by `F.obj (Xᘁ : C)` whereas `doubleDualTrace (aᘁᘁ)` writes the same object
+    -- as `(((Xᘁ : C)ᘁ : C)ᘁ : C)` (`doubleRightDualFunctor_obj`), preventing direct `rw`.
     exact _ ≫= (Category.assoc _ _ _).trans (_ ≫= (reassoc_of% hmid) _)
   calc doubleDualTrace (aᘁᘁ)
       = ε F ≫ (η F ≫ doubleDualTrace (aᘁᘁ) ≫ ε F) ≫ η F := by
@@ -181,62 +183,61 @@ theorem doubleDualTrace_rightAdjointMate_rightAdjointMate {X : C} (a : X ⟶ (X�
 /-- **Duality of squared norms** (`|Xᘁ|² = |X|²`): passing from `a : X ≅ Xᘁᘁ` to the induced
 isomorphism `a.rightAdjointMate.symm : Xᘁ ≅ Xᘁᘁᘁ` preserves the squared norm. -/
 @[simp]
-theorem squaredNorm_rightDual {X : C} (a : X ≅ (Xᘁ : C)ᘁ) :
+theorem squaredNorm_rightAdjointMate_symm {X : C} (a : X ≅ (Xᘁ : C)ᘁ) :
     squaredNorm a.rightAdjointMate.symm = squaredNorm a := by
   rw [squaredNorm_def, Iso.symm_hom, Iso.symm_inv, Iso.rightAdjointMate_inv,
     Iso.rightAdjointMate_hom, doubleDualTrace_rightAdjointMate_rightAdjointMate,
-    ← squaredNorm_eq_comm]
+    ← squaredNorm_def']
 
 /-- At the unit comparison of `doubleRightDualFunctor C`, the bidual trace is `𝟙 (𝟙_ C)`. -/
 @[simp]
-theorem doubleDualTrace_unit_ε :
+theorem doubleDualTrace_ε_doubleRightDualFunctor :
     doubleDualTrace (ε (doubleRightDualFunctor C)) = 𝟙 (𝟙_ C) := by
-  dsimp only [doubleDualTrace]
-  rw [doubleRightDualFunctor_ε, comp_whiskerRight, Category.assoc,
+  -- Rewrite `ε` in term mode first because `(doubleRightDualFunctor C).obj (𝟙_ C)` aligns with
+  -- `((𝟙_ C)ᘁ : C)ᘁ` via `doubleRightDualFunctor_obj`.
+  refine (congrArg doubleDualTrace (doubleRightDualFunctor_ε C)).trans ?_
+  rw [doubleDualTrace_def, comp_whiskerRight, Category.assoc,
     rightMate_comp_evaluation, ← whisker_exchange_assoc, ← rightDualUnitIso_hom,
+    coevaluation_comp_whiskerLeft_rightDualUnitIso_hom_assoc,
+    rightDualIso_inv_whiskerRight_evaluation, ExactPairing.unit_evaluation, Iso.inv_hom_id]
+
+/-- At the right adjoint mate of the inverse unit comparison of `doubleRightDualFunctor C`, the
+bidual trace is `𝟙 (𝟙_ C)`. -/
+@[simp]
+theorem doubleDualTrace_rightAdjointMate_η_doubleRightDualFunctor :
+    doubleDualTrace
+      (@rightAdjointMate C _ _ _ _ _ (RightRigidCategory.rightDual (𝟙_ C))
+        (η (doubleRightDualFunctor C))) = 𝟙 (𝟙_ C) := by
+  -- Rewrite `η` in term mode first for the same `(doubleRightDualFunctor C).obj` alignment.
+  refine (congrArg (fun f ↦
+    doubleDualTrace (@rightAdjointMate C _ _ _ _ _ (RightRigidCategory.rightDual (𝟙_ C)) f))
+    (doubleRightDualFunctor_η C)).trans ?_
+  rw [doubleDualTrace_def,
+    @rightAdjointMate_comp_evaluation C _ _ _ _ _ (RightRigidCategory.rightDual (𝟙_ C)),
+    MonoidalCategory.whiskerLeft_comp, Category.assoc, coevaluation_comp_rightMate_assoc,
+    ← whisker_exchange_assoc, ← rightDualUnitIso_hom,
     coevaluation_comp_whiskerLeft_rightDualUnitIso_hom_assoc,
     rightDualIso_inv_whiskerRight_evaluation, ExactPairing.unit_evaluation, Iso.inv_hom_id]
 
 /-- At the unit comparison isomorphism `εIso (doubleRightDualFunctor C)`, the squared norm is
 `𝟙 (𝟙_ C)` (`|𝟙_ C|² = 1`). -/
 @[simp]
-theorem squaredNorm_unit_εIso :
+theorem squaredNorm_εIso_doubleRightDualFunctor :
     squaredNorm (Functor.Monoidal.εIso (doubleRightDualFunctor C)) = 𝟙 (𝟙_ C) := by
-  dsimp only [squaredNorm, Functor.Monoidal.εIso_hom, Functor.Monoidal.εIso_inv]
-  rw [doubleDualTrace_unit_ε, Category.id_comp]
-  -- Conjugate the mate of `η` by `rightDualUnitIso C : (𝟙_ C)ᘁ ≅ 𝟙_ C` to reduce it to `ε`.
-  let p₁ := (RightRigidCategory.rightDual (𝟙_ C)).exact
-  let u : (RightRigidCategory.rightDual (𝟙_ C)).rightDual ≅ 𝟙_ C := rightDualUnitIso C
-  let η₀ : ((RightRigidCategory.rightDual (𝟙_ C)).rightDual)ᘁ ⟶ 𝟙_ C :=
-    rightMate p₁ HasRightDual.exact u.inv ≫ u.hom
-  have hη : η (doubleRightDualFunctor C) = η₀ := by
-    rw [doubleRightDualFunctor_η, ← rightDualUnitIso_inv, ← rightDualUnitIso_hom]
-  have hε : u.inv ≫ rightMate HasRightDual.exact p₁ u.hom = ε (doubleRightDualFunctor C) := by
-    rw [doubleRightDualFunctor_ε, ← rightDualUnitIso_inv, ← rightDualUnitIso_hom]
-  have key : u.inv ≫
-      @rightAdjointMate C _ _ _ _ _ (RightRigidCategory.rightDual (𝟙_ C)) η₀ ≫
-      (@rightAdjointMate C _ _ _ _ _ (RightRigidCategory.rightDual (𝟙_ C)) u.hom)ᘁ =
-        u.inv ≫ rightMate HasRightDual.exact p₁ u.hom := by
-    rw [@rightAdjointMate_eq_rightMate C _ _ _ _ _ (RightRigidCategory.rightDual (𝟙_ C)) η₀,
-      @rightAdjointMate_eq_rightMate C _ _ _ _ _ (RightRigidCategory.rightDual (𝟙_ C)) u.hom,
-      rightAdjointMate_eq_rightMate, ← comp_rightMate]
-    dsimp only [η₀]
-    rw [← Category.assoc (rightMate HasRightDual.exact p₁ u.hom), ← comp_rightMate, u.inv_hom_id,
-      rightMate_id, Category.id_comp]
-  have hu : u.inv ≫
-      @rightAdjointMate C _ _ _ _ _ (RightRigidCategory.rightDual (𝟙_ C))
-        (η (doubleRightDualFunctor C)) ≫
-      (@rightAdjointMate C _ _ _ _ _ (RightRigidCategory.rightDual (𝟙_ C)) u.hom)ᘁ =
-        ε (doubleRightDualFunctor C) :=
-    (congrArg (fun f ↦ u.inv ≫
-      @rightAdjointMate C _ _ _ _ _ (RightRigidCategory.rightDual (𝟙_ C)) f ≫
-      (@rightAdjointMate C _ _ _ _ _ (RightRigidCategory.rightDual (𝟙_ C)) u.hom)ᘁ) hη).trans
-      (key.trans hε)
-  have hconj := @doubleDualTrace_conj C _ _ _ _ (𝟙_ C) u
-    (@rightAdjointMate C _ _ _ _ _ (RightRigidCategory.rightDual (𝟙_ C))
-      (η (doubleRightDualFunctor C)))
-  -- At `Y = 𝟙_ C`, `doubleDualTrace_conj` uses `RightRigidCategory.rightDual (𝟙_ C)` on `u.hom`.
-  exact hconj.symm.trans ((congrArg doubleDualTrace hu).trans doubleDualTrace_unit_ε)
+  -- Apply `squaredNorm_def`, `εIso_hom`, and `εIso_inv` in term mode because `εIso` has target
+  -- `(doubleRightDualFunctor C).obj (𝟙_ C)` (`doubleRightDualFunctor_obj`).
+  refine (squaredNorm_def (Functor.Monoidal.εIso (doubleRightDualFunctor C))).trans ?_
+  have h1 : doubleDualTrace (Functor.Monoidal.εIso (doubleRightDualFunctor C)).hom = 𝟙 (𝟙_ C) :=
+    (congrArg doubleDualTrace (Functor.Monoidal.εIso_hom (doubleRightDualFunctor C))).trans
+      doubleDualTrace_ε_doubleRightDualFunctor
+  have h2 : doubleDualTrace
+      (@rightAdjointMate C _ _ _ _ _ (RightRigidCategory.rightDual (𝟙_ C))
+        (Functor.Monoidal.εIso (doubleRightDualFunctor C)).inv) = 𝟙 (𝟙_ C) :=
+    (congrArg (fun f ↦
+        doubleDualTrace (@rightAdjointMate C _ _ _ _ _ (RightRigidCategory.rightDual (𝟙_ C)) f))
+      (Functor.Monoidal.εIso_inv (doubleRightDualFunctor C))).trans
+      doubleDualTrace_rightAdjointMate_η_doubleRightDualFunctor
+  exact (h1 =≫ _).trans ((Category.id_comp _).trans h2)
 
 section Zero
 
@@ -334,7 +335,7 @@ endomorphisms scales `doubleDualTrace a` by the scalar of `f`. -/
 theorem doubleDualTrace_comp_of_bijective
     (hX : Function.Bijective (algebraMap R (End X))) (f : X ⟶ X) (a : X ⟶ (Xᘁ : C)ᘁ) :
     doubleDualTrace (f ≫ a) = endAlgEquivOfBijective hX (End.of f) • doubleDualTrace a := by
-  conv_lhs => rw [← endAlgEquivOfBijective_of_smul_id hX f]
+  conv_lhs => rw [← endAlgEquivOfBijective_endOf_smul_id hX f]
   rw [Linear.smul_comp, Category.id_comp, doubleDualTrace_smul]
 
 /-- Postcomposing `g : Xᘁᘁ ⟶ X` with an endomorphism `f : X ⟶ X` of an object with scalar
@@ -343,7 +344,7 @@ theorem doubleDualTrace_rightAdjointMate_comp_of_bijective
     (hX : Function.Bijective (algebraMap R (End X))) (g : (Xᘁ : C)ᘁ ⟶ X) (f : X ⟶ X) :
     doubleDualTrace (rightAdjointMate (g ≫ f)) =
       endAlgEquivOfBijective hX (End.of f) • doubleDualTrace (rightAdjointMate g) := by
-  conv_lhs => rw [← endAlgEquivOfBijective_of_smul_id hX f]
+  conv_lhs => rw [← endAlgEquivOfBijective_endOf_smul_id hX f]
   rw [Linear.comp_smul, Category.comp_id, rightAdjointMate_smul, doubleDualTrace_smul]
 
 variable (R) in
@@ -382,8 +383,7 @@ theorem exists_smul_doubleDualTrace_eq_id [IsSplitMono (η_ X Xᘁ)]
   exact IsSplitMono.id (η_ X Xᘁ)
 
 /-- If `η_ X Xᘁ` is a split monomorphism and every endomorphism of `X` is a scalar multiple of
-`𝟙 X`, then `doubleDualTrace a.hom` is an isomorphism in `C` (equivalently, a unit of
-`End (𝟙_ C)` by `CategoryTheory.isUnit_iff_isIso`). -/
+`𝟙 X`, then `doubleDualTrace a.hom` is an isomorphism in `C`. -/
 theorem isIso_doubleDualTrace_of_isSplitMono [IsSplitMono (η_ X Xᘁ)]
     (hX : Function.Surjective (algebraMap R (End X))) (a : X ≅ (Xᘁ : C)ᘁ) :
     IsIso (doubleDualTrace a.hom) := by
@@ -392,126 +392,15 @@ theorem isIso_doubleDualTrace_of_isSplitMono [IsSplitMono (η_ X Xᘁ)]
     by rw [Linear.comp_smul, Category.comp_id, hr],
     by rw [Linear.smul_comp, Category.id_comp, hr]⟩⟩
 
+/-- If `η_ X Xᘁ` is a split monomorphism and every endomorphism of `X` is a scalar multiple of
+`𝟙 X`, then `End.of (doubleDualTrace a.hom)` is a unit in `End (𝟙_ C)`. -/
+theorem isUnit_endOf_doubleDualTrace_of_isSplitMono [IsSplitMono (η_ X Xᘁ)]
+    (hX : Function.Surjective (algebraMap R (End X))) (a : X ≅ (Xᘁ : C)ᘁ) :
+    IsUnit (End.of (doubleDualTrace a.hom)) :=
+  (CategoryTheory.isUnit_iff_isIso _).2 (isIso_doubleDualTrace_of_isSplitMono hX a)
+
 end SplitMono
 
 end RightRigid
-
-section Simple
-
-variable {C : Type u} [Category.{v} C] [MonoidalCategory C] [RigidCategory C]
-  [Abelian C] [MonoidalPreadditive C] [IsFiniteSemisimpleCategory C] [Simple (𝟙_ C)]
-
-section CommSemiring
-
-variable {R : Type w} [CommSemiring R] [Linear R C] [MonoidalLinear R C]
-
-/-- In a finite semisimple rigid abelian category with simple tensor unit, if `X` is simple and
-`algebraMap R (End X)` is surjective, then `doubleDualTrace a.hom` is an isomorphism. -/
-theorem isIso_doubleDualTrace_of_surjective_of_simple {X : C} [Simple X]
-    (hX : Function.Surjective (algebraMap R (End X))) (a : X ≅ (Xᘁ : C)ᘁ) :
-    IsIso (doubleDualTrace a.hom) := by
-  have : IsSplitMono (η_ X Xᘁ) :=
-    isSplitMono_of_nonzero_from_simple (coevaluation_ne_zero (Simple.not_isZero X))
-  exact isIso_doubleDualTrace_of_isSplitMono hX a
-
-/-- In a finite semisimple rigid abelian category with simple tensor unit, if `X` is simple and
-`algebraMap R (End X)` is surjective, then `squaredNorm a` is an isomorphism. -/
-theorem isIso_squaredNorm_of_surjective_of_simple {X : C} [Simple X]
-    (hX : Function.Surjective (algebraMap R (End X))) (a : X ≅ (Xᘁ : C)ᘁ) :
-    IsIso (squaredNorm a) := by
-  rw [squaredNorm_def, ← Iso.rightAdjointMate_inv, ← Iso.symm_hom]
-  have : IsIso (doubleDualTrace a.hom) := isIso_doubleDualTrace_of_surjective_of_simple hX a
-  have : IsIso (doubleDualTrace a.rightAdjointMate.symm.hom) :=
-    isIso_doubleDualTrace_of_surjective_of_simple (surjective_algebraMap_end_rightDual hX)
-      a.rightAdjointMate.symm
-  exact IsIso.comp_isIso
-
-end CommSemiring
-
-section Field
-
-variable (k : Type w) [Field k] [IsAlgClosed k] [Linear k C] [MonoidalLinear k C]
-
-include k in
-/-- For a split simple object `X` in a finite semisimple rigid category with simple tensor unit,
-`doubleDualTrace a.hom` is an isomorphism. -/
-theorem isIso_doubleDualTrace_of_simple {X : C} [Simple X] [FiniteDimensional k (X ⟶ X)]
-    (a : X ≅ (Xᘁ : C)ᘁ) : IsIso (doubleDualTrace a.hom) :=
-  isIso_doubleDualTrace_of_surjective_of_simple
-    (bijective_algebraMap_end_of_simple k X).surjective a
-
-include k in
-/-- For a split simple object `X` in a finite semisimple rigid category with simple tensor unit,
-`End.of (doubleDualTrace a.hom)` is a unit in `End (𝟙_ C)`. -/
-theorem isUnit_of_doubleDualTrace_of_simple {X : C} [Simple X] [FiniteDimensional k (X ⟶ X)]
-    (a : X ≅ (Xᘁ : C)ᘁ) : IsUnit (End.of (doubleDualTrace a.hom)) :=
-  (CategoryTheory.isUnit_iff_isIso _).2 (isIso_doubleDualTrace_of_simple k a)
-
-include k in
-/-- For a split simple object `X` in a finite semisimple rigid category with simple tensor unit,
-`doubleDualTrace a.hom` is nonzero. -/
-theorem doubleDualTrace_ne_zero_of_simple {X : C} [Simple X] [FiniteDimensional k (X ⟶ X)]
-    (a : X ≅ (Xᘁ : C)ᘁ) : doubleDualTrace a.hom ≠ 0 := by
-  have := isIso_doubleDualTrace_of_simple k a
-  exact (isIso_iff_ne_zero _).1 this
-
-include k in
-/-- For a split simple object `X` in a finite semisimple rigid category with simple tensor unit,
-`squaredNorm a` is an isomorphism. -/
-theorem isIso_squaredNorm_of_simple {X : C} [Simple X] [FiniteDimensional k (X ⟶ X)]
-    (a : X ≅ (Xᘁ : C)ᘁ) : IsIso (squaredNorm a) :=
-  isIso_squaredNorm_of_surjective_of_simple
-    (bijective_algebraMap_end_of_simple k X).surjective a
-
-include k in
-/-- For a split simple object `X` in a finite semisimple rigid category with simple tensor unit,
-`squaredNorm a` is nonzero. -/
-theorem squaredNorm_ne_zero_of_simple {X : C} [Simple X] [FiniteDimensional k (X ⟶ X)]
-    (a : X ≅ (Xᘁ : C)ᘁ) : squaredNorm a ≠ 0 := by
-  have := isIso_squaredNorm_of_simple k a
-  exact (isIso_iff_ne_zero _).1 this
-
-end Field
-
-end Simple
-
-section NormGlobalDim
-
-variable (C : Type u) [Category.{v} C] [MonoidalCategory C] [RightRigidCategory C] [Preadditive C]
-  [Fintype (SimpleClasses C)]
-
-/-- **The global dimension without a pivotal structure** (Etingof–Nikshych–Ostrik, Definition 2.2;
-Etingof–Gelaki–Nikshych–Ostrik, Definition 7.21.3): the sum of the squared norms of the simple
-representatives, for a family of isomorphisms to their double right duals. When the simple
-representatives have scalar endomorphisms, its value is independent of the family `a` by
-`TauCeti.normGlobalDim_congr_of_bijective`. -/
-noncomputable def normGlobalDim (a : ∀ S : SimpleClasses C, S.repr ≅ ((S.repr)ᘁ : C)ᘁ) :
-    𝟙_ C ⟶ 𝟙_ C :=
-  ∑ S : SimpleClasses C, squaredNorm (a S)
-
-/-- The defining formula of `TauCeti.normGlobalDim`. -/
-theorem normGlobalDim_def (a : ∀ S : SimpleClasses C, S.repr ≅ ((S.repr)ᘁ : C)ᘁ) :
-    normGlobalDim C a = ∑ S : SimpleClasses C, squaredNorm (a S) :=
-  (rfl)
-
-/-- When every simple representative has scalar endomorphisms over a commutative semiring `R`,
-`TauCeti.normGlobalDim` is independent of the chosen double-dual isomorphisms. -/
-theorem normGlobalDim_congr_of_bijective (R : Type w) [CommSemiring R] [Linear R C]
-    [MonoidalPreadditive C] [MonoidalLinear R C]
-    (hS : ∀ S : SimpleClasses C, Function.Bijective (algebraMap R (End S.repr)))
-    (a b : ∀ S : SimpleClasses C, S.repr ≅ ((S.repr)ᘁ : C)ᘁ) :
-    normGlobalDim C a = normGlobalDim C b :=
-  Finset.sum_congr rfl fun S _ ↦ squaredNorm_congr R (hS S) (a S) (b S)
-
-/-- Over an algebraically closed field `k`, if each simple representative has finite-dimensional
-endomorphisms, `TauCeti.normGlobalDim` is independent of the chosen double-dual isomorphisms. -/
-theorem normGlobalDim_congr (k : Type w) [Field k] [IsAlgClosed k] [MonoidalPreadditive C]
-    [Linear k C] [MonoidalLinear k C] [HasKernels C]
-    [∀ S : SimpleClasses C, FiniteDimensional k (S.repr ⟶ S.repr)]
-    (a b : ∀ S : SimpleClasses C, S.repr ≅ ((S.repr)ᘁ : C)ᘁ) :
-    normGlobalDim C a = normGlobalDim C b :=
-  normGlobalDim_congr_of_bijective C k (fun S ↦ bijective_algebraMap_end_of_simple k S.repr) a b
-
-end NormGlobalDim
 
 end TauCeti

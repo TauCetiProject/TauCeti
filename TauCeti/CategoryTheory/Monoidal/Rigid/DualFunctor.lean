@@ -501,16 +501,6 @@ theorem doubleRightDualFunctor_map_coevaluation (X : C) :
       -- The two sides differ only in how the intermediate objects are written.
       rfl
 
-omit [RightRigidCategory C] in
-/-- For the self-pairing `exactPairingUnit` of the tensor unit, the right mate of any scalar
-`d : 𝟙_ C ⟶ 𝟙_ C` is `d` itself. -/
-@[simp]
-theorem rightMate_exactPairingUnit (d : 𝟙_ C ⟶ 𝟙_ C) :
-    rightMate exactPairingUnit exactPairingUnit d = d := by
-  refine rightHom_ext (X := 𝟙_ C) ?_
-  rw [rightMate_comp_evaluation, TauCeti.ExactPairing.unit_evaluation,
-    rightUnitor_naturality, ← unitors_equal, leftUnitor_naturality]
-
 /-- The double right dual functor preserves scalars `d : 𝟙_ C ⟶ 𝟙_ C` under its unit comparison:
 `ε ≫ dᘁᘁ ≫ η = d`. -/
 @[reassoc]
@@ -518,6 +508,9 @@ theorem doubleRightDualFunctor_ε_map_η (d : 𝟙_ C ⟶ 𝟙_ C) :
     ε (doubleRightDualFunctor C) ≫ (doubleRightDualFunctor C).map d ≫
       η (doubleRightDualFunctor C) = d := by
   rw [doubleRightDualFunctor_ε, doubleRightDualFunctor_η, doubleRightDualFunctor_map]
+  -- Write the intermediate objects as iterated right duals rather than
+  -- `(doubleRightDualFunctor C).obj (𝟙_ C)` (definitionally equal by `doubleRightDualFunctor_obj`)
+  -- so that the explicit-pairing mates below compose with `comp_rightMate`.
   have key : ((rightDualIso (RightRigidCategory.rightDual (𝟙_ C)).exact exactPairingUnit).inv ≫
         rightMate HasRightDual.exact (RightRigidCategory.rightDual (𝟙_ C)).exact
           (rightDualIso (RightRigidCategory.rightDual (𝟙_ C)).exact exactPairingUnit).hom) ≫

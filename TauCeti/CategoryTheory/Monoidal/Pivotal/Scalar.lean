@@ -72,7 +72,7 @@ scalar times the left dimension of `X`. -/
 theorem leftTrace_eq_smul_leftDim_of_bijective {X : C}
     (hX : Function.Bijective (algebraMap R (End X))) (f : X ⟶ X) :
     leftTrace f = endAlgEquivOfBijective hX (End.of f) • leftDim X := by
-  conv_lhs => rw [← endAlgEquivOfBijective_of_smul_id hX f]
+  conv_lhs => rw [← endAlgEquivOfBijective_endOf_smul_id hX f]
   rw [leftTrace_smul, leftTrace_id]
 
 /-- For an object `X` with scalar endomorphisms over `R`, the right trace of `f : X ⟶ X` is its
@@ -80,7 +80,7 @@ scalar times the right dimension of `X`. -/
 theorem rightTrace_eq_smul_rightDim_of_bijective {X : C}
     (hX : Function.Bijective (algebraMap R (End X))) (f : X ⟶ X) :
     rightTrace f = endAlgEquivOfBijective hX (End.of f) • rightDim X := by
-  conv_lhs => rw [← endAlgEquivOfBijective_of_smul_id hX f]
+  conv_lhs => rw [← endAlgEquivOfBijective_endOf_smul_id hX f]
   rw [rightTrace_smul, rightTrace_id]
 
 /-- In a spherical category, for an object `X` with scalar endomorphisms over `R`, the trace of

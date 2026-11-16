@@ -32,9 +32,11 @@ An additive linear functor induces an algebra homomorphism on endomorphisms,
 when the functor is bijective on the object's endomorphisms.
 
 When the structure map `algebraMap R (End X)` of an object `X` over a commutative semiring `R`
-is bijective, its inverse `TauCeti.endAlgEquivOfBijective` identifies `End X` as an `R`-algebra
-with `R`, so every endomorphism is its scalar times `𝟙 X` and invertible endomorphisms correspond
-to units of `R`.
+is surjective, every endomorphism is a scalar multiple of `𝟙 X`
+(`TauCeti.exists_smul_id_eq_of_surjective`). When it is bijective, its inverse
+`TauCeti.endAlgEquivOfBijective` identifies `End X` as an `R`-algebra with `R`, so every
+endomorphism is its scalar times `𝟙 X` and the scalars of an automorphism and its inverse multiply
+to `1`.
 -/
 
 public section
@@ -174,25 +176,30 @@ open CategoryTheory
 
 universe w v u
 
-section Bijective
+section ScalarEnd
 
 variable {R : Type w} [CommSemiring R] {C : Type u} [Category.{v} C] [Preadditive C] [Linear R C]
   {X : C}
+
+/-- If `algebraMap R (End X)` is surjective, every endomorphism `f : X ⟶ X` is a scalar multiple
+`r • 𝟙 X` of the identity. -/
+theorem exists_smul_id_eq_of_surjective (hX : Function.Surjective (algebraMap R (End X)))
+    (f : X ⟶ X) : ∃ r : R, r • 𝟙 X = f := by
+  obtain ⟨r, hr⟩ := hX (End.of f)
+  exact ⟨r, by simpa only [End.algebraMap_asHom] using congrArg End.asHom hr⟩
 
 /-- When the structure map `algebraMap R (End X)` of an object `X` over a commutative semiring `R`
 is bijective, its inverse identifies `End X` as an `R`-algebra with `R`. -/
 noncomputable def endAlgEquivOfBijective (hX : Function.Bijective (algebraMap R (End X))) :
     End X ≃ₐ[R] R :=
-  let h : Function.Bijective (Algebra.ofId R (End X)) :=
-    ⟨fun r s hrs ↦ hX.injective (by simpa only [Algebra.ofId_apply] using hrs),
-      fun f ↦ by simpa only [Algebra.ofId_apply] using hX.surjective f⟩
-  (AlgEquiv.ofBijective (Algebra.ofId R (End X)) h).symm
+  (AlgEquiv.ofBijective (Algebra.ofId R (End X))
+    (id hX : Function.Bijective (Algebra.ofId R (End X)))).symm
 
 /-- The inverse of `TauCeti.endAlgEquivOfBijective` is `algebraMap R (End X)`. -/
 @[simp]
 theorem endAlgEquivOfBijective_symm_apply (hX : Function.Bijective (algebraMap R (End X)))
-    (r : R) : (endAlgEquivOfBijective hX).symm r = algebraMap R (End X) r :=
-  (rfl)
+    (r : R) : (endAlgEquivOfBijective hX).symm r = algebraMap R (End X) r := by
+  rw [endAlgEquivOfBijective, AlgEquiv.symm_symm, AlgEquiv.ofBijective_apply, Algebra.ofId_apply]
 
 /-- Every endomorphism of an object with scalar endomorphisms is its scalar times the identity. -/
 @[simp]
@@ -201,7 +208,7 @@ theorem endAlgEquivOfBijective_smul_id (hX : Function.Bijective (algebraMap R (E
   rw [← End.algebraMap_asHom, ← endAlgEquivOfBijective_symm_apply hX, AlgEquiv.symm_apply_apply]
 
 /-- Every morphism `f : X ⟶ X` of an object with scalar endomorphisms is its scalar times `𝟙 X`. -/
-theorem endAlgEquivOfBijective_of_smul_id (hX : Function.Bijective (algebraMap R (End X)))
+theorem endAlgEquivOfBijective_endOf_smul_id (hX : Function.Bijective (algebraMap R (End X)))
     (f : X ⟶ X) : endAlgEquivOfBijective hX (End.of f) • 𝟙 X = f :=
   endAlgEquivOfBijective_smul_id hX (End.of f)
 
@@ -218,15 +225,6 @@ theorem endAlgEquivOfBijective_hom_mul_inv (hX : Function.Bijective (algebraMap 
     endAlgEquivOfBijective hX (End.of a.hom) * endAlgEquivOfBijective hX (End.of a.inv) = 1 := by
   rw [← map_mul, ← End.of_comp, a.inv_hom_id, End.of_id, map_one]
 
-/-- For an object with scalar endomorphisms over `R`, the scalar of an endomorphism `f : X ⟶ X`
-is a unit of `R` if and only if `f` is an isomorphism. -/
-theorem isUnit_endAlgEquivOfBijective_iff (hX : Function.Bijective (algebraMap R (End X)))
-    (f : X ⟶ X) : IsUnit (endAlgEquivOfBijective hX (End.of f)) ↔ IsIso f := by
-  refine ⟨fun hu ↦ (CategoryTheory.isUnit_iff_isIso (End.of f)).1 ?_,
-    fun hi ↦ ((CategoryTheory.isUnit_iff_isIso (End.of f)).2 hi).map
-      (endAlgEquivOfBijective hX).toMonoidHom⟩
-  simpa using hu.map (endAlgEquivOfBijective hX).symm.toMonoidHom
-
-end Bijective
+end ScalarEnd
 
 end TauCeti

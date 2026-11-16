@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.CategoryTheory.Monoidal.Pivotal.Simple
-public import TauCeti.CategoryTheory.Monoidal.Rigid.SquaredNorm
+public import TauCeti.CategoryTheory.Monoidal.Rigid.GlobalDim
 
 /-!
 # The global dimension of a pivotal category
@@ -19,21 +19,19 @@ the left dimension of `Sᘁ` is the right dimension of `S`, it is also `∑ S, l
 and in a spherical category it is the sum of the squares of the quantum dimensions of the simple
 objects.
 
-Comparing with the pivot-free constructions of `TauCeti.CategoryTheory.Monoidal.Rigid.SquaredNorm`,
-the right trace of `f : X ⟶ X` is `doubleDualTrace (f ≫ (pivotalIsoApp X).hom)` and the left trace
-is `doubleDualTrace ((pivotalIsoApp X).inv ≫ f)ᘁ`; in particular,
-`squaredNorm (pivotalIsoApp X) = leftDim X ≫ rightDim X`. When every simple representative has
-scalar endomorphisms, `squaredNorm (a S) = squaredNorm (pivotalIsoApp S.repr)` for any family
-`a : ∀ S : SimpleClasses C, S.repr ≅ S.reprᘁᘁ`, so the pivot-free global dimension
-`TauCeti.normGlobalDim C a` equals `TauCeti.globalDim C` (`TauCeti.normGlobalDim_eq_globalDim`),
-and consequently `globalDim C` does not depend on the pivotal structure.
+Because `squaredNorm (pivotalIsoApp X) = leftDim X ≫ rightDim X`
+(`TauCeti.squaredNorm_pivotalIsoApp` in `TauCeti.CategoryTheory.Monoidal.Pivotal.Trace`),
+`globalDim C` equals the pivot-free global dimension `TauCeti.normGlobalDim` of
+`TauCeti.CategoryTheory.Monoidal.Rigid.GlobalDim` evaluated at `pivotalIsoApp`. When every simple
+representative has scalar endomorphisms, `normGlobalDim C a` is independent of the family
+`a : ∀ S : SimpleClasses C, S.repr ≅ S.reprᘁᘁ`, so `normGlobalDim C a = globalDim C`
+(`TauCeti.normGlobalDim_eq_globalDim`), and `globalDim C` does not depend on the pivotal structure.
 
 ## Main declarations
 
-* `TauCeti.rightTrace_eq_doubleDualTrace`, `TauCeti.leftTrace_eq_doubleDualTrace`, and
-  `TauCeti.squaredNorm_pivotalIsoApp`: comparison of pivotal traces, dimensions, and squared norms;
 * `TauCeti.globalDim`: the global dimension of a pivotal category, with
-  `TauCeti.globalDim_def` and `TauCeti.globalDim_eq_sum_leftDim_comp_rightDim` computing it;
+  `TauCeti.globalDim_def`, `TauCeti.globalDim_eq_sum_leftDim_comp_rightDim`, and
+  `TauCeti.globalDim_eq_normGlobalDim_pivotalIsoApp` computing it;
 * `TauCeti.globalDim_eq_sum_quantumDim_comp_quantumDim`: in a spherical category it is the sum of
   the squared quantum dimensions of the simple objects;
 * `TauCeti.normGlobalDim_eq_globalDim_of_bijective` and `TauCeti.normGlobalDim_eq_globalDim`:
@@ -54,47 +52,6 @@ open CategoryTheory CategoryTheory.Limits MonoidalCategory
 universe w v u
 
 namespace TauCeti
-
-section TraceComparison
-
-variable {C : Type u} [Category.{v} C] [MonoidalCategory C] [RigidCategory C] [PivotalCategory C]
-
-/-- In a pivotal category, the right trace of `f : X ⟶ X` is the bidual trace of
-`f ≫ (pivotalIsoApp X).hom`. -/
-theorem rightTrace_eq_doubleDualTrace {X : C} (f : X ⟶ X) :
-    rightTrace f = doubleDualTrace (f ≫ (pivotalIsoApp X).hom) := by
-  rw [rightTrace_eq_pivotalIsoApp, doubleDualTrace_def, comp_whiskerRight, Category.assoc]
-
-/-- In a pivotal category, the left trace of `f : X ⟶ X` is the bidual trace of the right adjoint
-mate of `(pivotalIsoApp X).inv ≫ f`. -/
-theorem leftTrace_eq_doubleDualTrace {X : C} (f : X ⟶ X) :
-    leftTrace f = doubleDualTrace (rightAdjointMate ((pivotalIsoApp X).inv ≫ f)) := by
-  rw [← rightTrace_rightAdjointMate, rightTrace_eq_doubleDualTrace, comp_rightAdjointMate,
-    pivotalIsoApp_rightDual]
-
-/-- At the component `pivotalIsoApp X` of a pivotal structure, `doubleDualTrace` gives the right
-dimension of `X`. -/
-@[simp]
-theorem doubleDualTrace_pivotalIsoApp_hom (X : C) :
-    doubleDualTrace (pivotalIsoApp X).hom = rightDim X := by
-  rw [← rightTrace_id, rightTrace_eq_doubleDualTrace, Category.id_comp]
-
-/-- At the mate of the inverse component `(pivotalIsoApp X).inv`, `doubleDualTrace` gives the left
-dimension of `X`. -/
-@[simp]
-theorem doubleDualTrace_rightAdjointMate_pivotalIsoApp_inv (X : C) :
-    doubleDualTrace (rightAdjointMate (pivotalIsoApp X).inv) = leftDim X := by
-  rw [← leftTrace_id, leftTrace_eq_doubleDualTrace, Category.comp_id]
-
-/-- **Comparison with a pivotal structure**: the squared norm of `pivotalIsoApp X` is
-`leftDim X ≫ rightDim X`, the summand of `TauCeti.globalDim`. -/
-@[simp]
-theorem squaredNorm_pivotalIsoApp (X : C) :
-    squaredNorm (pivotalIsoApp X) = leftDim X ≫ rightDim X := by
-  rw [squaredNorm_eq_comm, doubleDualTrace_rightAdjointMate_pivotalIsoApp_inv,
-    doubleDualTrace_pivotalIsoApp_hom]
-
-end TraceComparison
 
 section GlobalDim
 
