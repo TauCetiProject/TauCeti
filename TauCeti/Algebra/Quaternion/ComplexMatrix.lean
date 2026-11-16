@@ -275,6 +275,14 @@ theorem coe_unitaryEquivSpecialUnitaryGroup_symm_apply
       (M : Matrix (Fin 2) (Fin 2) ℂ) :=
   congrArg Subtype.val (unitaryEquivSpecialUnitaryGroup.apply_symm_apply M)
 
+/-- If a special unitary matrix `g` is the matrix of a quaternion `q` with `q ^ n = 1`, then
+`g ^ n = 1`. -/
+theorem pow_eq_one_of_coe_eq_toComplexMatrix {g : Matrix.specialUnitaryGroup (Fin 2) ℂ}
+    {q : ℍ[ℝ]} {n : ℕ} (hg : (g : Matrix (Fin 2) (Fin 2) ℂ) = toComplexMatrix q)
+    (hq : q ^ n = 1) : g ^ n = 1 := by
+  apply Subtype.ext
+  rw [SubmonoidClass.coe_pow, hg, ← map_pow, hq, map_one, OneMemClass.coe_one]
+
 end Quaternion
 
 end

@@ -23,7 +23,12 @@ Mathlib's `Mathlib.Algebra.Quaternion`.
   because the quaternion `r + r i` squares to `2 r² i`.
 * `Quaternion.sq_eq_two_re_smul_sub_normSq` and `Quaternion.pow_three_eq_smul_sub`:
   Cayley–Hamilton identities `q² = (2 q.re) • q - normSq q` and
-  `q³ = ((2 q.re)² - normSq q) • q - 2 q.re * normSq q`.
+  `q³ = ((2 q.re)² - normSq q) • q - 2 q.re * normSq q`, together with
+  `Quaternion.pow_four_eq_one_of_normSq_eq_one_of_re_eq_zero`,
+  `Quaternion.pow_six_eq_one_of_normSq_eq_one_of_two_mul_re_sq_eq_one` and
+  `Quaternion.pow_eight_eq_one_of_normSq_eq_one_of_two_mul_re_sq_eq_two` giving `q⁴ = 1`,
+  `q⁶ = 1` and `q⁸ = 1` for quaternions of norm one with `q.re = 0`, `(2 q.re)² = 1` and
+  `(2 q.re)² = 2`.
 * `Quaternion.normSq_mk_div` and `Quaternion.normSq_mk_div_two`: the norm of
   `(a + b i + c j + d k) / s` is `(a² + b² + c² + d²) / s²`.
 -/
@@ -67,6 +72,42 @@ theorem sq_eq_two_re_smul_sub_normSq (q : ℍ[R]) :
 theorem pow_three_eq_smul_sub (q : ℍ[R]) :
     q ^ 3 = ((2 * q.re) ^ 2 - normSq q) • q - ↑(2 * q.re * normSq q) := by
   ext <;> simp [pow_succ, normSq_def'] <;> ring
+
+/-- A Hamilton quaternion of norm one with vanishing real part satisfies `q⁴ = 1`. -/
+theorem pow_four_eq_one_of_normSq_eq_one_of_re_eq_zero {q : ℍ[R]}
+    (hq : normSq q = 1) (hre : q.re = 0) : q ^ 4 = 1 := by
+  have hq2 : q ^ 2 = -1 := by
+    simpa [hq, hre] using sq_eq_two_re_smul_sub_normSq q
+  calc q ^ 4 = (q ^ 2) ^ 2 := by rw [← pow_mul]
+    _ = (-1) ^ 2 := by rw [hq2]
+    _ = 1 := by rw [neg_one_sq]
+
+/-- A Hamilton quaternion of norm one with `(2 q.re)² = 1` satisfies `q⁶ = 1`. -/
+theorem pow_six_eq_one_of_normSq_eq_one_of_two_mul_re_sq_eq_one {q : ℍ[R]}
+    (hq : normSq q = 1) (hre : (2 * q.re) ^ 2 = 1) : q ^ 6 = 1 := by
+  have hq3 : q ^ 3 = -↑(2 * q.re) := by
+    simpa [hq, hre] using pow_three_eq_smul_sub q
+  calc q ^ 6 = (q ^ 3) ^ 2 := by rw [← pow_mul]
+    _ = (-↑(2 * q.re)) ^ 2 := by rw [hq3]
+    _ = 1 := by rw [neg_sq, ← coe_pow, hre, coe_one]
+
+/-- A Hamilton quaternion of norm one with `(2 q.re)² = 2` satisfies `q⁸ = 1`. -/
+theorem pow_eight_eq_one_of_normSq_eq_one_of_two_mul_re_sq_eq_two {q : ℍ[R]}
+    (hq : normSq q = 1) (hre : (2 * q.re) ^ 2 = 2) : q ^ 8 = 1 := by
+  have hsq : q ^ 2 = (2 * q.re) • q - 1 := by
+    simpa [hq] using sq_eq_two_re_smul_sub_normSq q
+  have hq3 : q ^ 3 = q - ↑(2 * q.re) := by
+    have h21 : (2 : R) - 1 = 1 := by ring
+    have h := pow_three_eq_smul_sub q
+    rwa [hq, hre, h21, one_smul, mul_one] at h
+  have hq4 : q ^ 4 = -1 := by
+    calc q ^ 4 = q * q ^ 3 := by rw [pow_succ']
+      _ = q * (q - ↑(2 * q.re)) := by rw [hq3]
+      _ = q ^ 2 - (2 * q.re) • q := by rw [mul_sub, ← sq, ← coe_commutes, coe_mul_eq_smul]
+      _ = -1 := by rw [hsq, sub_right_comm, sub_self, zero_sub]
+  calc q ^ 8 = (q ^ 4) ^ 2 := by rw [← pow_mul]
+    _ = (-1) ^ 2 := by rw [hq4]
+    _ = 1 := by rw [neg_one_sq]
 
 /-- The norm of the quaternion `(a + b i + c j + d k) / s` is `(a² + b² + c² + d²) / s²`. -/
 theorem normSq_mk_div {K : Type*} [Field K] (a b c d s : K) :

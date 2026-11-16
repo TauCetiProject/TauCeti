@@ -244,6 +244,13 @@ theorem torusHom_injective : Function.Injective torusHom := fun z w h => by
   have h00 := congrArg (fun g : SU2 => (g : Matrix (Fin 2) (Fin 2) ℂ) 0 0) h
   exact Circle.ext (by simpa using h00)
 
+/-- The central element `torusHom (-1) = diag (-1, -1)` of `SU(2)` is not the identity. -/
+@[simp]
+theorem torusHom_neg_one_ne_one : torusHom (-1) ≠ 1 := fun h => by
+  have hc := congrArg Subtype.val (torusHom_injective (h.trans torusHom.map_one.symm))
+  simp only [Circle.coe_neg, Circle.coe_one] at hc
+  norm_num at hc
+
 /-- The maximal torus of `SU(2)` *is* the circle group, as a topological group. -/
 noncomputable def torusContinuousMulEquiv : Circle ≃ₜ* torus where
   __ := MonoidHom.ofInjective torusHom_injective

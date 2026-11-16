@@ -115,7 +115,8 @@ theorem card_binaryOctahedralSqrtTwoCoords : binaryOctahedralSqrtTwoCoords.card 
 
 /-- A vector lies in `binaryOctahedralSqrtTwoCoords` precisely when it has two nonzero coordinates
 and every nonzero coordinate is `±1`. -/
-theorem mem_binaryOctahedralSqrtTwoCoords_iff_card_ne_zero {w : Fin 4 → ℤ} :
+theorem mem_binaryOctahedralSqrtTwoCoords_iff_eq_one_or_eq_neg_one_and_card_filter_eq_two
+    {w : Fin 4 → ℤ} :
     w ∈ binaryOctahedralSqrtTwoCoords ↔
       (∀ i, w i ≠ 0 → w i = 1 ∨ w i = -1) ∧
         (Finset.univ.filter fun i => w i ≠ 0).card = 2 := by
@@ -160,6 +161,15 @@ private theorem even_sum_of_mem_binaryOctahedralSqrtTwoCoords {w : Fin 4 → ℤ
 
 /-! ### Arithmetic of `ℤ / √2` unit quaternions -/
 
+/-- A quaternion with `ℤ / √2` coordinates has norm one precisely when its `√2`-scaled coordinates
+lie in `binaryOctahedralSqrtTwoCoords`. -/
+private theorem normSq_div_sqrt_two_eq_one_iff {w : Fin 4 → ℤ} :
+    normSq (⟨w 0 / √2, w 1 / √2, w 2 / √2, w 3 / √2⟩ : ℍ[ℝ]) = 1 ↔
+      w ∈ binaryOctahedralSqrtTwoCoords := by
+  rw [mem_binaryOctahedralSqrtTwoCoords_iff, Fin.sum_univ_four, normSq_mk_div,
+    Real.sq_sqrt zero_le_two, div_eq_one_iff_eq two_ne_zero]
+  exact_mod_cast Iff.rfl
+
 /-- An element of `SU(2)` with quaternion coordinates in `ℤ / √2` has `√2`-scaled coordinates in
 `binaryOctahedralSqrtTwoCoords`, since its determinant is one. -/
 private theorem mem_binaryOctahedralSqrtTwoCoords_of_coe_eq {g : SU2} {w : Fin 4 → ℤ}
@@ -167,22 +177,17 @@ private theorem mem_binaryOctahedralSqrtTwoCoords_of_coe_eq {g : SU2} {w : Fin 4
       toComplexMatrix ⟨w 0 / √2, w 1 / √2, w 2 / √2, w 3 / √2⟩) :
     w ∈ binaryOctahedralSqrtTwoCoords := by
   have hdet := (Matrix.mem_specialUnitaryGroup_iff.mp g.2).2
-  rw [hg, det_toComplexMatrix, normSq_mk_div, Real.sq_sqrt zero_le_two, ← Complex.ofReal_one,
-    Complex.ofReal_inj, div_eq_one_iff_eq two_ne_zero] at hdet
-  rw [mem_binaryOctahedralSqrtTwoCoords_iff, Fin.sum_univ_four]
-  exact_mod_cast hdet
+  rw [hg, det_toComplexMatrix, ← Complex.ofReal_one, Complex.ofReal_inj] at hdet
+  exact normSq_div_sqrt_two_eq_one_iff.mp hdet
 
 /-- Every vector in `binaryOctahedralSqrtTwoCoords` gives a unit quaternion, hence a matrix in
 `SU(2)`. -/
 private theorem toComplexMatrix_mem_of_mem_binaryOctahedralSqrtTwoCoords {w : Fin 4 → ℤ}
     (hw : w ∈ binaryOctahedralSqrtTwoCoords) :
     toComplexMatrix ⟨w 0 / √2, w 1 / √2, w 2 / √2, w 3 / √2⟩ ∈
-      Matrix.specialUnitaryGroup (Fin 2) ℂ := by
-  refine mem_specialUnitaryGroup_toComplexMatrix ((mem_unitary_iff_normSq_eq_one _).mpr ?_)
-  have hw := mem_binaryOctahedralSqrtTwoCoords_iff.mp hw
-  rw [Fin.sum_univ_four] at hw
-  rw [normSq_mk_div, Real.sq_sqrt zero_le_two, div_eq_one_iff_eq two_ne_zero]
-  exact_mod_cast hw
+      Matrix.specialUnitaryGroup (Fin 2) ℂ :=
+  mem_specialUnitaryGroup_toComplexMatrix
+    ((mem_unitary_iff_normSq_eq_one _).mpr (normSq_div_sqrt_two_eq_one_iff.mpr hw))
 
 /-- No quaternion with half-integer coordinates equals a `√2`-scaled coordinate quaternion: a
 nonzero entry `±1 / √2` would force `vᵢ² = 2` in `ℤ`. -/
@@ -363,7 +368,8 @@ theorem mem_binaryOctahedralSubgroup_iff_two_nonzero_coords {g : SU2} :
   rw [mem_binaryOctahedralSubgroup_iff]
   refine or_congr_right ⟨?_, ?_⟩
   · rintro ⟨w, hw, hg⟩
-    obtain ⟨hsign, hcard⟩ := mem_binaryOctahedralSqrtTwoCoords_iff_card_ne_zero.mp hw
+    obtain ⟨hsign, hcard⟩ :=
+      mem_binaryOctahedralSqrtTwoCoords_iff_eq_one_or_eq_neg_one_and_card_filter_eq_two.mp hw
     refine ⟨fun i => w i / √2, fun i hi => ?_, ?_, hg⟩
     · have hwi : w i ≠ 0 := fun h0 => hi (by simp [h0])
       rcases hsign i hwi with h1 | h1 <;> simp [h1, neg_div]
@@ -403,9 +409,10 @@ private theorem notMem_binaryTetrahedralSubgroup_of_coe_eq_div_sqrt_two {g : SU2
 coordinate vectors into the binary octahedral subgroup. -/
 private noncomputable def binaryOctahedralCoordsFun :
     binaryTetrahedralCoords ⊕ binaryOctahedralSqrtTwoCoords → binaryOctahedralSubgroup
-  | .inl v => ⟨binaryTetrahedralCoordsEquiv v, .inl (binaryTetrahedralCoordsEquiv v).2⟩
+  | .inl v => ⟨binaryTetrahedralCoordsEquiv v,
+      mem_binaryOctahedralSubgroup_iff.mpr (.inl (binaryTetrahedralCoordsEquiv v).2)⟩
   | .inr w => ⟨⟨_, toComplexMatrix_mem_of_mem_binaryOctahedralSqrtTwoCoords w.2⟩,
-      .inr ⟨w, w.2, rfl⟩⟩
+      mem_binaryOctahedralSubgroup_iff.mpr (.inr ⟨w, w.2, rfl⟩)⟩
 
 private theorem binaryOctahedralCoordsFun_bijective :
     Function.Bijective binaryOctahedralCoordsFun := by
@@ -435,7 +442,7 @@ private theorem binaryOctahedralCoordsFun_bijective :
       ext i
       fin_cases i
       exacts [h0, h1, h2, h3]
-  · rcases g.2 with hg | ⟨w, hw, hg⟩
+  · rcases mem_binaryOctahedralSubgroup_iff.mp g.2 with hg | ⟨w, hw, hg⟩
     · refine ⟨.inl (binaryTetrahedralCoordsEquiv.symm ⟨g, hg⟩), ?_⟩
       apply Subtype.ext
       exact congrArg (fun x : binaryTetrahedralSubgroup => (x : SU2))
@@ -480,7 +487,7 @@ theorem natCard_binaryOctahedralSubgroup : Nat.card binaryOctahedralSubgroup = 4
 /-- **The binary octahedral subgroup contains the binary tetrahedral subgroup.** -/
 theorem binaryTetrahedralSubgroup_le_binaryOctahedralSubgroup :
     binaryTetrahedralSubgroup ≤ binaryOctahedralSubgroup :=
-  fun _ => Or.inl
+  fun _ hg => mem_binaryOctahedralSubgroup_iff.mpr (.inl hg)
 
 /-- **The binary tetrahedral subgroup has index two in the binary octahedral subgroup.** -/
 @[simp]
@@ -498,7 +505,7 @@ instance : (binaryTetrahedralSubgroup.subgroupOf binaryOctahedralSubgroup).Norma
 @[simp]
 theorem binaryDihedralRotation_four_mem_binaryOctahedralSubgroup :
     binaryDihedralRotation 4 ∈ binaryOctahedralSubgroup := by
-  refine .inr ⟨![1, 1, 0, 0], by decide, ?_⟩
+  refine mem_binaryOctahedralSubgroup_iff.mpr (.inr ⟨![1, 1, 0, 0], by decide, ?_⟩)
   rw [coe_binaryDihedralRotation_four]
   congr 1
   ext <;> simp
@@ -528,7 +535,7 @@ theorem mem_binaryOctahedralSubgroup_iff_or_inv_mul_mem_binaryTetrahedralSubgrou
       g ∈ binaryTetrahedralSubgroup ∨
         (binaryDihedralRotation 4)⁻¹ * g ∈ binaryTetrahedralSubgroup := by
   refine ⟨fun hg => ?_, fun h => ?_⟩
-  · rcases hg with hg | ⟨w, -, hg⟩
+  · rcases mem_binaryOctahedralSubgroup_iff.mp hg with hg | ⟨w, -, hg⟩
     · exact .inl hg
     · refine .inr ?_
       have hinv : (((binaryDihedralRotation 4)⁻¹ : SU2) : Matrix (Fin 2) (Fin 2) ℂ) =
@@ -635,7 +642,7 @@ theorem coe_binaryOctahedralFaceGen :
 @[simp]
 theorem binaryOctahedralEdgeGen_mem_binaryOctahedralSubgroup :
     binaryOctahedralEdgeGen ∈ binaryOctahedralSubgroup := by
-  refine .inr ⟨![0, 1, 1, 0], by decide, ?_⟩
+  refine mem_binaryOctahedralSubgroup_iff.mpr (.inr ⟨![0, 1, 1, 0], by decide, ?_⟩)
   rw [coe_binaryOctahedralEdgeGen]
   congr 1
   ext <;> simp
@@ -695,23 +702,14 @@ theorem binaryOctahedralFaceGen_pow_three : binaryOctahedralFaceGen ^ 3 = torusH
 /-- The `<2, 3, 4>` edge generator `a = (i + j) / √2` has order four. -/
 @[simp]
 theorem orderOf_binaryOctahedralEdgeGen : orderOf binaryOctahedralEdgeGen = 4 := by
-  have hpow4 : binaryOctahedralEdgeGen ^ 4 = 1 := by
-    calc binaryOctahedralEdgeGen ^ 4 = (binaryOctahedralEdgeGen ^ 2) ^ 2 := by rw [← pow_mul]
+  refine orderOf_eq_prime_pow (p := 2) (n := 1) ?_ ?_
+  · rw [pow_one, binaryOctahedralEdgeGen_sq]
+    exact torusHom_neg_one_ne_one
+  · calc binaryOctahedralEdgeGen ^ 2 ^ (1 + 1)
+        = (binaryOctahedralEdgeGen ^ 2) ^ 2 := by group
       _ = torusHom (-1) ^ 2 := by rw [binaryOctahedralEdgeGen_sq]
       _ = torusHom ((-1) ^ 2) := by rw [← map_pow]
       _ = 1 := by rw [neg_one_sq, map_one]
-  have hdvd4 : orderOf binaryOctahedralEdgeGen ∣ 4 := orderOf_dvd_iff_pow_eq_one.mpr hpow4
-  have hne2 : ¬ orderOf binaryOctahedralEdgeGen ∣ 2 := by
-    rw [orderOf_dvd_iff_pow_eq_one, binaryOctahedralEdgeGen_sq]
-    intro h
-    have hc := congrArg Subtype.val (torusHom_injective (h.trans torusHom.map_one.symm))
-    simp only [Circle.coe_neg, Circle.coe_one] at hc
-    norm_num at hc
-  have hle4 : orderOf binaryOctahedralEdgeGen ≤ 4 := Nat.le_of_dvd (by norm_num) hdvd4
-  have hpos : 0 < orderOf binaryOctahedralEdgeGen :=
-    orderOf_pos_iff.mpr (isOfFinOrder_iff_pow_eq_one.mpr ⟨4, by norm_num, hpow4⟩)
-  interval_cases orderOf binaryOctahedralEdgeGen <;>
-    first | rfl | exact absurd hdvd4 (by decide) | exact absurd (by decide) hne2
 
 /-- The `<2, 3, 4>` face generator `b = (1 + i + j + k) / 2` has order six. -/
 @[simp]
@@ -720,29 +718,22 @@ theorem orderOf_binaryOctahedralFaceGen : orderOf binaryOctahedralFaceGen = 6 :=
     calc binaryOctahedralFaceGen ^ 6 = (binaryOctahedralFaceGen ^ 2) ^ 3 := by rw [← pow_mul]
       _ = binaryTetrahedralOmega ^ 3 := by rw [binaryOctahedralFaceGen_sq]
       _ = 1 := binaryTetrahedralOmega_pow_three
-  have hdvd6 : orderOf binaryOctahedralFaceGen ∣ 6 := orderOf_dvd_iff_pow_eq_one.mpr hpow6
-  have hne2 : ¬ orderOf binaryOctahedralFaceGen ∣ 2 := by
-    rw [orderOf_dvd_iff_pow_eq_one, binaryOctahedralFaceGen_sq]
+  refine orderOf_eq_of_pow_and_pow_div_prime hpow6 fun p hp hdvd => ?_
+  rcases (by decide : ∀ p ∈ Nat.divisors 6, p.Prime → p = 2 ∨ p = 3) p
+      (Nat.mem_divisors.mpr ⟨hdvd, by decide⟩) hp with rfl | rfl
+  · have h62 : 6 / 2 = 3 := by norm_num
+    rw [h62, binaryOctahedralFaceGen_pow_three]
+    exact torusHom_neg_one_ne_one
+  · have h63 : 6 / 3 = 2 := by norm_num
+    rw [h63, binaryOctahedralFaceGen_sq]
     intro h
     have hord := orderOf_binaryTetrahedralOmega
     rw [h, orderOf_one] at hord
     omega
-  have hne3 : ¬ orderOf binaryOctahedralFaceGen ∣ 3 := by
-    rw [orderOf_dvd_iff_pow_eq_one, binaryOctahedralFaceGen_pow_three]
-    intro h
-    have hc := congrArg Subtype.val (torusHom_injective (h.trans torusHom.map_one.symm))
-    simp only [Circle.coe_neg, Circle.coe_one] at hc
-    norm_num at hc
-  have hle6 : orderOf binaryOctahedralFaceGen ≤ 6 := Nat.le_of_dvd (by norm_num) hdvd6
-  have hpos : 0 < orderOf binaryOctahedralFaceGen :=
-    orderOf_pos_iff.mpr (isOfFinOrder_iff_pow_eq_one.mpr ⟨6, by norm_num, hpow6⟩)
-  interval_cases orderOf binaryOctahedralFaceGen <;>
-    first | rfl | exact absurd hdvd6 (by decide) | exact absurd (by decide) hne2 |
-      exact absurd (by decide) hne3
 
 /-- **The `<2, 3, 4>` product relation**: `a b c = -1`, where `c = binaryDihedralRotation 4`
 satisfies `c⁴ = -1` (`TauCeti.SU2.binaryDihedralRotation_pow_self`). -/
-theorem binaryOctahedralEdgeGen_mul_faceGen_mul_rotation :
+theorem binaryOctahedralEdgeGen_mul_binaryOctahedralFaceGen_mul_binaryDihedralRotation_four :
     binaryOctahedralEdgeGen * binaryOctahedralFaceGen * binaryDihedralRotation 4 =
       torusHom (-1) := by
   rw [mul_assoc, binaryOctahedralFaceGen_mul_binaryDihedralRotation_four, ← sq,
@@ -774,54 +765,31 @@ private theorem pow_eight_eq_one_of_coe_eq_div_sqrt_two {g : SU2} {w : Fin 4 →
     g ^ 8 = 1 := by
   have hw := mem_binaryOctahedralSqrtTwoCoords_of_coe_eq hg
   set q : ℍ[ℝ] := ⟨w 0 / √2, w 1 / √2, w 2 / √2, w 3 / √2⟩
-  have hq : normSq q = 1 := by
-    have hw' := mem_binaryOctahedralSqrtTwoCoords_iff.mp hw
-    rw [Fin.sum_univ_four] at hw'
-    rw [normSq_mk_div, Real.sq_sqrt zero_le_two, div_eq_one_iff_eq two_ne_zero]
-    exact_mod_cast hw'
-  set t : ℝ := 2 * q.re with ht_def
-  have hsq : q ^ 2 = t • q - 1 := by
-    simpa [← ht_def, hq] using sq_eq_two_re_smul_sub_normSq q
+  have hq : normSq q = 1 := normSq_div_sqrt_two_eq_one_iff.mpr hw
   have hw_cases := (by decide : ∀ w ∈ binaryOctahedralSqrtTwoCoords, w 0 = 0 ∨ w 0 ^ 2 = 1) w hw
   have hq8 : q ^ 8 = 1 := by
     rcases hw_cases with h0 | h1
-    · have ht0 : t = 0 := by simp [ht_def, q, h0]
-      have hq2 : q ^ 2 = -1 := by simp [hsq, ht0]
-      calc q ^ 8 = (q ^ 2) ^ 4 := by rw [← pow_mul]
-        _ = (-1) ^ 4 := by rw [hq2]
-        _ = 1 := by norm_num
-    · have ht2 : t ^ 2 = 2 := by
-        have h1' : (w 0 : ℝ) ^ 2 = 1 := by exact_mod_cast h1
-        simp only [ht_def, q, mul_pow, div_pow, Real.sq_sqrt zero_le_two, h1']
-        ring
-      have hq3 : q ^ 3 = q - ↑t := by
-        have h21 : (2 : ℝ) - 1 = 1 := by norm_num
-        have h := pow_three_eq_smul_sub q
-        rwa [← ht_def, hq, ht2, h21, one_smul, mul_one] at h
-      have hq4 : q ^ 4 = -1 := by
-        calc q ^ 4 = q * q ^ 3 := by rw [pow_succ']
-          _ = q * (q - ↑t) := by rw [hq3]
-          _ = q ^ 2 - t • q := by
-            rw [mul_sub, ← sq, ← coe_commutes, coe_mul_eq_smul]
-          _ = -1 := by rw [hsq, sub_right_comm, sub_self, zero_sub]
+    · have hq4 := pow_four_eq_one_of_normSq_eq_one_of_re_eq_zero hq (by simp [q, h0])
       calc q ^ 8 = (q ^ 4) ^ 2 := by rw [← pow_mul]
-        _ = (-1) ^ 2 := by rw [hq4]
-        _ = 1 := by norm_num
-  apply Subtype.ext
-  rw [SubmonoidClass.coe_pow, hg, ← map_pow, hq8, map_one, OneMemClass.coe_one]
+        _ = 1 := by rw [hq4, one_pow]
+    · refine pow_eight_eq_one_of_normSq_eq_one_of_two_mul_re_sq_eq_two hq ?_
+      have h1' : (w 0 : ℝ) ^ 2 = 1 := by exact_mod_cast h1
+      simp only [q, mul_pow, div_pow, Real.sq_sqrt zero_le_two, h1']
+      ring
+  exact pow_eq_one_of_coe_eq_toComplexMatrix hg hq8
 
 /-- Every element of the binary octahedral subgroup outside the binary tetrahedral subgroup
 satisfies `g⁸ = 1`: its quaternion real part is `0` (order `4`) or `±1 / √2` (order `8`). -/
 theorem pow_eight_eq_one_of_mem_binaryOctahedralSubgroup_of_notMem {g : SU2}
     (hg : g ∈ binaryOctahedralSubgroup) (hnot : g ∉ binaryTetrahedralSubgroup) : g ^ 8 = 1 := by
-  rcases hg with hg | ⟨_, -, hg⟩
+  rcases mem_binaryOctahedralSubgroup_iff.mp hg with hg | ⟨_, -, hg⟩
   · exact absurd hg hnot
   · exact pow_eight_eq_one_of_coe_eq_div_sqrt_two hg
 
 /-- **Every element of the binary octahedral subgroup satisfies `g⁸ = 1` or `g⁶ = 1`.** -/
 theorem pow_eight_eq_one_or_pow_six_eq_one_of_mem_binaryOctahedralSubgroup {g : SU2}
     (hg : g ∈ binaryOctahedralSubgroup) : g ^ 8 = 1 ∨ g ^ 6 = 1 := by
-  rcases hg with hg | ⟨_, -, hg⟩
+  rcases mem_binaryOctahedralSubgroup_iff.mp hg with hg | ⟨_, -, hg⟩
   · refine (pow_four_eq_one_or_pow_six_eq_one_of_mem_binaryTetrahedralSubgroup hg).imp
       (fun h4 => ?_) id
     calc g ^ 8 = (g ^ 4) ^ 2 := by rw [← pow_mul]
@@ -859,12 +827,9 @@ theorem exponent_binaryOctahedralSubgroup : Monoid.exponent binaryOctahedralSubg
     exact Nat.Coprime.mul_dvd_of_dvd_of_dvd (by norm_num) h8 h3
 
 /-- **The binary octahedral subgroup is not cyclic.** -/
-theorem not_isCyclic_binaryOctahedralSubgroup : ¬IsCyclic binaryOctahedralSubgroup := by
-  intro hcyc
-  obtain ⟨g, hg⟩ := IsCyclic.exists_ofOrder_eq_natCard (α := binaryOctahedralSubgroup)
-  rw [← Subgroup.orderOf_coe, natCard_binaryOctahedralSubgroup] at hg
-  have hle := orderOf_le_eight_of_mem_binaryOctahedralSubgroup g.2
-  omega
+theorem not_isCyclic_binaryOctahedralSubgroup : ¬IsCyclic binaryOctahedralSubgroup := fun h => by
+  have := h.exponent_eq_card
+  simp at this
 
 /-- **The binary octahedral subgroup is not isomorphic to `QuaternionGroup 12`**: every element of
 `binaryOctahedralSubgroup` has order at most `8`, whereas `QuaternionGroup.a 1` has order `24`. -/

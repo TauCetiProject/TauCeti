@@ -325,41 +325,30 @@ theorem binaryTetrahedralSubgroup_eq_closure :
 /-- **Every element of the binary tetrahedral subgroup satisfies `g⁴ = 1` or `g⁶ = 1`.** -/
 theorem pow_four_eq_one_or_pow_six_eq_one_of_mem_binaryTetrahedralSubgroup {g : SU2}
     (hg : g ∈ binaryTetrahedralSubgroup) : g ^ 4 = 1 ∨ g ^ 6 = 1 := by
-  obtain ⟨v, hv, hg⟩ := hg
+  obtain ⟨v, hv, hg⟩ := mem_binaryTetrahedralSubgroup_iff.mp hg
   set q : ℍ[ℝ] := ⟨v 0 / 2, v 1 / 2, v 2 / 2, v 3 / 2⟩
   have hq : normSq q = 1 := by
     have hv_sum := mem_binaryTetrahedralCoords_iff.mp hv
     rw [Fin.sum_univ_four] at hv_sum
     rw [normSq_mk_div_two, div_eq_one_iff_eq four_ne_zero]
     exact_mod_cast hv_sum
-  set t : ℝ := 2 * q.re with ht_def
-  have hre : t = (v 0 : ℝ) := by simp [ht_def, q]; ring
   have hv_cases := (by decide : ∀ v ∈ binaryTetrahedralCoords,
     v 0 = 0 ∨ v 0 ^ 2 = 1 ∨ v = ![2, 0, 0, 0] ∨ v = ![-2, 0, 0, 0]) v hv
   have hq_pow : q ^ 4 = 1 ∨ q ^ 6 = 1 := by
     rcases hv_cases with h0 | h1 | rfl | rfl
-    · left
-      have hq2 : q ^ 2 = -1 := by
-        simpa [← ht_def, hq, hre, h0] using sq_eq_two_re_smul_sub_normSq q
-      calc q ^ 4 = (q ^ 2) ^ 2 := by rw [← pow_mul]
-        _ = (-1) ^ 2 := by rw [hq2]
-        _ = 1 := by norm_num
-    · right
-      have ht1 : t ^ 2 = 1 := by rw [hre]; exact_mod_cast h1
-      have hq3 : q ^ 3 = -↑t := by
-        simpa [← ht_def, hq, ht1] using pow_three_eq_smul_sub q
-      calc q ^ 6 = (q ^ 3) ^ 2 := by rw [← pow_mul]
-        _ = (-↑t) ^ 2 := by rw [hq3]
-        _ = 1 := by rw [neg_sq, ← coe_pow, ht1, coe_one]
+    · exact .inl (pow_four_eq_one_of_normSq_eq_one_of_re_eq_zero hq (by simp [q, h0]))
+    · refine .inr (pow_six_eq_one_of_normSq_eq_one_of_two_mul_re_sq_eq_one hq ?_)
+      have hre : 2 * q.re = (v 0 : ℝ) := by simp [q]; ring
+      rw [hre]
+      exact_mod_cast h1
     · left
       have hq1 : q = 1 := by ext <;> simp [q]
       simp [hq1]
     · left
       have hqm1 : q = -1 := by ext <;> simp [q]
       norm_num [hqm1]
-  refine hq_pow.imp (fun h4 => Subtype.ext ?_) (fun h6 => Subtype.ext ?_)
-  · rw [SubmonoidClass.coe_pow, hg, ← map_pow, h4, map_one, OneMemClass.coe_one]
-  · rw [SubmonoidClass.coe_pow, hg, ← map_pow, h6, map_one, OneMemClass.coe_one]
+  exact hq_pow.imp (pow_eq_one_of_coe_eq_toComplexMatrix hg)
+    (pow_eq_one_of_coe_eq_toComplexMatrix hg)
 
 /-- Every element of the binary tetrahedral subgroup has order at most `6`. -/
 theorem orderOf_le_six_of_mem_binaryTetrahedralSubgroup {g : SU2}
