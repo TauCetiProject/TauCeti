@@ -38,7 +38,11 @@ when endomorphisms are identified with tensors, without adding an instance on th
 * `TensorProduct.instCompleteSpaceOfFiniteDimensional`: the tensor product of two
   finite-dimensional inner product spaces is complete, which discharges completeness hypotheses
   on tensor products in adjoint statements for finite-dimensional factors.
+* `TensorProduct.norm_mapL`: the tensor product `f ⊗ g` of bounded operators has norm
+  `‖f‖ * ‖g‖`; `ContinuousLinearMap.norm_rTensor` and `ContinuousLinearMap.norm_lTensor` are the
+  cases `f ⊗ 1` and `1 ⊗ g` for a nonzero other factor.
 * `ContinuousLinearMap.rTensor_lTensor_apply_comm`: `f ⊗ 1` and `1 ⊗ g` commute.
+* `ContinuousLinearMap.denseRange_rTensor`: if `f` has dense range then so does `f ⊗ 1`.
 * `InnerProductSpace.tensorDualMetric_tmul`: on pure tensors, the metric on `F ⊗ E*` is the
   product of the inner product of `F` and the dual metric of `E`.
 * `InnerProductSpace.tensorDualMetric_eq_trace`: evaluation carries this metric to the
@@ -130,6 +134,40 @@ end TauCeti
 
 namespace TensorProduct
 
+section mapL
+
+variable {𝕜 E E' F F' : Type*} [RCLike 𝕜] [NormedAddCommGroup E] [InnerProductSpace 𝕜 E]
+  [NormedAddCommGroup E'] [InnerProductSpace 𝕜 E'] [NormedAddCommGroup F] [InnerProductSpace 𝕜 F]
+  [NormedAddCommGroup F'] [InnerProductSpace 𝕜 F']
+
+/-- The tensor product `f ⊗ g` of bounded operators has norm `‖f‖ * ‖g‖`, sharpening Mathlib's
+`TensorProduct.norm_mapL_le`. -/
+@[simp]
+theorem norm_mapL (f : E →L[𝕜] E') (g : F →L[𝕜] F') : ‖mapL f g‖ = ‖f‖ * ‖g‖ := by
+  refine le_antisymm (norm_mapL_le f g) ?_
+  set C := ‖mapL f g‖
+  have h (x : E) (y : F) : ‖f x‖ * ‖g y‖ ≤ C * ‖y‖ * ‖x‖ := by
+    have := (mapL f g).le_opNorm (x ⊗ₜ[𝕜] y)
+    simp only [mapL_tmul, norm_tmul] at this
+    exact this.trans_eq (by ring)
+  -- Testing on `x ⊗ₜ y` bounds `‖f‖ * ‖g y‖`, and then `‖f‖ * ‖g‖`.
+  have hy (y : F) : ‖f‖ * ‖g y‖ ≤ C * ‖y‖ := by
+    rcases (norm_nonneg (g y)).eq_or_lt with h0 | hpos
+    · rw [← h0, mul_zero]
+      positivity
+    · refine (le_div_iff₀ hpos).1 <| f.opNorm_le_bound (by positivity) fun x ↦ ?_
+      rw [div_mul_eq_mul_div, le_div_iff₀ hpos]
+      exact h x y
+  rcases (norm_nonneg f).eq_or_lt with h0 | hpos
+  · rw [← h0, zero_mul]
+    positivity
+  · rw [mul_comm ‖f‖]
+    refine (le_div_iff₀ hpos).1 <| g.opNorm_le_bound (by positivity) fun y ↦ ?_
+    rw [div_mul_eq_mul_div, le_div_iff₀ hpos]
+    exact (mul_comm _ _).trans_le (hy y)
+
+end mapL
+
 variable {𝕜 E F : Type*} [RCLike 𝕜] [NormedAddCommGroup E] [InnerProductSpace 𝕜 E]
   [FiniteDimensional 𝕜 E] [NormedAddCommGroup F] [InnerProductSpace 𝕜 F] [FiniteDimensional 𝕜 F]
 
@@ -151,6 +189,35 @@ variable {𝕜 X₀ X₁ Y₀ Y₁ : Type*} [RCLike 𝕜] [NormedAddCommGroup X�
 theorem rTensor_lTensor_apply_comm (f : X₀ →L[𝕜] X₁) (g : Y₀ →L[𝕜] Y₁) (x : X₀ ⊗[𝕜] Y₀) :
     f.rTensor Y₁ (g.lTensor X₀ x) = g.lTensor X₁ (f.rTensor Y₀ x) := by
   rw [← comp_apply, rTensor_comp_lTensor, ← comp_apply, lTensor_comp_rTensor]
+
+/-- Tensoring with a nonzero space `Y₀` on the right preserves the operator norm, sharpening
+Mathlib's `ContinuousLinearMap.norm_rTensor_le`. -/
+@[simp]
+theorem norm_rTensor [Nontrivial Y₀] (f : X₀ →L[𝕜] X₁) : ‖f.rTensor Y₀‖ = ‖f‖ := by
+  rw [rTensor_eq_mapL, TensorProduct.norm_mapL, norm_id, mul_one]
+
+/-- Tensoring with a nonzero space `X₀` on the left preserves the operator norm, sharpening
+Mathlib's `ContinuousLinearMap.norm_lTensor_le`. -/
+@[simp]
+theorem norm_lTensor [Nontrivial X₀] (g : Y₀ →L[𝕜] Y₁) : ‖g.lTensor X₀‖ = ‖g‖ := by
+  rw [lTensor_eq_mapL, TensorProduct.norm_mapL, norm_id, one_mul]
+
+variable (Y₀) in
+/-- If `f` has dense range then so does `f ⊗ 1`: the pure tensors `c ⊗ₜ y` span `X₁ ⊗[𝕜] Y₀`, and
+each lies in the closure of the range of `f ⊗ 1`. -/
+theorem denseRange_rTensor {f : X₀ →L[𝕜] X₁} (hf : DenseRange f) :
+    DenseRange (f.rTensor Y₀) := by
+  let T := LinearMap.range (f.rTensor Y₀).toLinearMap
+  have htmul (c : X₁) (y : Y₀) : c ⊗ₜ[𝕜] y ∈ T.topologicalClosure := by
+    induction c using hf.induction_on with
+    | hp =>
+      exact T.isClosed_topologicalClosure.preimage
+        ((TensorProduct.mkL 𝕜 X₁ Y₀).flip y).continuous
+    | ih x => exact T.le_topologicalClosure ⟨x ⊗ₜ[𝕜] y, by simp⟩
+  have hT : T.topologicalClosure = ⊤ := eq_top_iff.2 <|
+    (TensorProduct.span_tmul_eq_top 𝕜 X₁ Y₀).ge.trans <|
+      Submodule.span_le.2 fun _ ⟨c, y, h⟩ ↦ h ▸ htmul c y
+  exact Submodule.dense_iff_topologicalClosure_eq_top.2 hT
 
 end ContinuousLinearMap
 

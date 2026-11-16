@@ -8,6 +8,7 @@ module
 public import Mathlib.Analysis.InnerProductSpace.TensorProduct
 public import Mathlib.Topology.Algebra.LinearMapCompletion
 public import TauCeti.Analysis.InnerProductSpace.Completion
+public import TauCeti.Analysis.InnerProductSpace.TensorProduct.Basic
 public import TauCeti.Analysis.Normed.Operator.Completion
 
 /-!
@@ -29,10 +30,10 @@ space, whether or not `E` and `F` are complete. This file develops the operators
   (`ContinuousLinearMap.rTensorCompletion_comp_lTensorCompletion`), and their product is the
   extension `TensorProduct.mapLCompletion f g` of `TensorProduct.mapL f g`, the tensor product
   `f ⊗ g` of the operators, which is likewise unique on pure tensors, has norm `‖f‖ * ‖g‖`
-  (`TensorProduct.norm_mapLCompletion`) and satisfies `(f ⊗ g)† = f† ⊗ g†`
-  (`TensorProduct.adjoint_mapLCompletion`): if `f'` and `g'` are formal adjoints of `f` and `g`
-  then `mapL f' g'` is a formal adjoint of `mapL f g` (`TensorProduct.inner_mapL_left`), so
-  `ContinuousLinearMap.adjoint_completion` applies.
+  (`TensorProduct.norm_mapLCompletion`, from `TensorProduct.norm_mapL`) and satisfies
+  `(f ⊗ g)† = f† ⊗ g†` (`TensorProduct.adjoint_mapLCompletion`): if `f'` and `g'` are formal
+  adjoints of `f` and `g` then `mapL f' g'` is a formal adjoint of `mapL f g`
+  (`TensorProduct.inner_mapL_left`), so `ContinuousLinearMap.adjoint_completion` applies.
 * Amplification preserves the operator norm when the other factor is nonzero
   (`ContinuousLinearMap.norm_rTensorCompletion`), composition and the identity, and it commutes
   with adjoints (`ContinuousLinearMap.adjoint_rTensorCompletion`), since `f ⊗ 1` is `f ⊗ id`
@@ -46,7 +47,8 @@ space, whether or not `E` and `F` are complete. This file develops the operators
   `ContinuousLinearMap.rTensorCompletion_commIsometry_completion`) and the factors of `f ⊗ g`
   (`TensorProduct.mapLCompletion_commIsometry_completion`).
 * Completing a factor first does not change the completed tensor product: `E ⊗[𝕜] F` is dense in
-  `Ê ⊗[𝕜] F` (`TensorProduct.denseRange_rTensor_toComplₗᵢ`), which gives the unitaries
+  `Ê ⊗[𝕜] F` (`TensorProduct.denseRange_rTensor_toComplₗᵢ`, an instance of
+  `ContinuousLinearMap.denseRange_rTensor`), which gives the unitaries
   `E ⊗̂ F ≃ Ê ⊗̂ F` and `E ⊗̂ F ≃ E ⊗̂ F̂` (`TensorProduct.completionLeftIsometry`,
   `TensorProduct.completionRightIsometry`). Through them the associator of the algebraic tensor
   product extends to the unitary `(E ⊗̂ F) ⊗̂ G ≃ E ⊗̂ (F ⊗̂ G)`
@@ -119,18 +121,10 @@ variable (𝕜 E F) in
 algebraic tensor product `E ⊗[𝕜] F` is dense there. -/
 theorem denseRange_rTensor_toComplₗᵢ :
     DenseRange ((Completion.toComplₗᵢ (𝕜 := 𝕜) (E := E)).rTensor F) := by
-  let T := LinearMap.range ((Completion.toComplₗᵢ (𝕜 := 𝕜) (E := E)).rTensor F).toLinearMap
-  -- Every pure tensor `c ⊗ₜ y` lies in the closure of `T`: the closure is closed, and contains
-  -- `c ⊗ₜ y` for `c` in `E`.
-  have htmul (c : Completion E) (y : F) : c ⊗ₜ[𝕜] y ∈ T.topologicalClosure := by
-    induction c using Completion.induction_on with
-    | hp =>
-      exact T.isClosed_topologicalClosure.preimage ((mkL 𝕜 (Completion E) F).flip y).continuous
-    | ih x => exact T.le_topologicalClosure ⟨x ⊗ₜ[𝕜] y, by simp⟩
-  have hT : T.topologicalClosure = ⊤ := eq_top_iff.2 <|
-    (span_tmul_eq_top 𝕜 (Completion E) F).ge.trans <|
-      Submodule.span_le.2 fun _ ⟨c, y, h⟩ ↦ h ▸ htmul c y
-  exact Submodule.dense_iff_topologicalClosure_eq_top.2 hT
+  have := ContinuousLinearMap.denseRange_rTensor F
+    (f := (Completion.toComplₗᵢ (𝕜 := 𝕜) (E := E)).toContinuousLinearMap) Completion.denseRange_coe
+  rwa [← LinearIsometry.toContinuousLinearMap_rTensor,
+    LinearIsometry.coe_toContinuousLinearMap] at this
 
 variable (𝕜 E F) in
 /-- Completing the left factor does not change the completed tensor product:
@@ -332,28 +326,8 @@ theorem norm_mapLCompletion_le (f : E →L[𝕜] E') (g : F →L[𝕜] F') :
 /-- The tensor product `f ⊗ g` has norm `‖f‖ * ‖g‖`. -/
 @[simp]
 theorem norm_mapLCompletion (f : E →L[𝕜] E') (g : F →L[𝕜] F') :
-    ‖mapLCompletion f g‖ = ‖f‖ * ‖g‖ := by
-  refine le_antisymm (norm_mapLCompletion_le f g) ?_
-  set C := ‖mapLCompletion f g‖
-  have h (x : E) (y : F) : ‖f x‖ * ‖g y‖ ≤ C * ‖y‖ * ‖x‖ := by
-    have := (mapLCompletion f g).le_opNorm (x ⊗ₜ[𝕜] y : E ⊗[𝕜] F)
-    simp only [mapLCompletion_tmul, Completion.norm_coe, norm_tmul] at this
-    exact this.trans_eq (by ring)
-  -- Testing on `x ⊗ₜ y` bounds `‖f‖ * ‖g y‖`, and then `‖f‖ * ‖g‖`.
-  have hy (y : F) : ‖f‖ * ‖g y‖ ≤ C * ‖y‖ := by
-    rcases (norm_nonneg (g y)).eq_or_lt with h0 | hpos
-    · rw [← h0, mul_zero]
-      positivity
-    · refine (le_div_iff₀ hpos).1 <| f.opNorm_le_bound (by positivity) fun x ↦ ?_
-      rw [div_mul_eq_mul_div, le_div_iff₀ hpos]
-      exact h x y
-  rcases (norm_nonneg f).eq_or_lt with h0 | hpos
-  · rw [← h0, zero_mul]
-    positivity
-  · rw [mul_comm ‖f‖]
-    refine (le_div_iff₀ hpos).1 <| g.opNorm_le_bound (by positivity) fun y ↦ ?_
-    rw [div_mul_eq_mul_div, le_div_iff₀ hpos]
-    exact (mul_comm _ _).trans_le (hy y)
+    ‖mapLCompletion f g‖ = ‖f‖ * ‖g‖ :=
+  (ContinuousLinearMap.norm_completion _).trans (norm_mapL f g)
 
 /-- The tensor product of the identities is the identity: `1 ⊗ 1 = 1`. -/
 @[simp]
@@ -461,8 +435,8 @@ theorem norm_rTensorCompletion_le (f : E →L[𝕜] E') : ‖f.rTensorCompletion
 /-- The amplification `f ⊗ 1` to a nonzero space `F` has the same norm as `f`. -/
 @[simp]
 theorem norm_rTensorCompletion [Nontrivial F] (f : E →L[𝕜] E') :
-    ‖f.rTensorCompletion F‖ = ‖f‖ := by
-  rw [rTensorCompletion_eq_mapLCompletion, norm_mapLCompletion, norm_id, mul_one]
+    ‖f.rTensorCompletion F‖ = ‖f‖ :=
+  (norm_completion _).trans (norm_rTensor _)
 
 @[simp]
 theorem rTensorCompletion_id :
@@ -566,8 +540,8 @@ theorem norm_lTensorCompletion_le (g : F →L[𝕜] F') : ‖g.lTensorCompletion
 /-- The amplification `1 ⊗ g` from a nonzero space `E` has the same norm as `g`. -/
 @[simp]
 theorem norm_lTensorCompletion [Nontrivial E] (g : F →L[𝕜] F') :
-    ‖g.lTensorCompletion E‖ = ‖g‖ := by
-  rw [lTensorCompletion_eq_mapLCompletion, norm_mapLCompletion, norm_id, one_mul]
+    ‖g.lTensorCompletion E‖ = ‖g‖ :=
+  (norm_completion _).trans (norm_lTensor _)
 
 @[simp]
 theorem lTensorCompletion_id :
