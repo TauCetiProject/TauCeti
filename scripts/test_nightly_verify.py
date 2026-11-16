@@ -109,7 +109,7 @@ class NightlyVerification(unittest.TestCase):
         source = JOBS['reference']['runs-on'].replace('needs.pick-reference-runner', 'needs.picker')
         for current, selected, target, expected in (
             (1, '1', '["self-hosted","tauceti-fleet-pr"]', ['self-hosted', 'tauceti-fleet-pr']),
-            (1, '1', '["nscloud-build"]', 'ubuntu-24.04'),
+            (1, '1', '["nscloud-build"]', ['nscloud-build']),
             (2, '1', '["namespace-build"]', 'ubuntu-24.04'),
             (2, '', '', 'ubuntu-24.04'),
         ):
