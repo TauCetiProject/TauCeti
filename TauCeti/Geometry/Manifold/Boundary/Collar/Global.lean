@@ -20,9 +20,10 @@ PL collar theorems can add the corresponding regularity to the same data.
 
 The parameter is the half-open interval `[0,1)`.  Thus a collar is an open embedding of
 `N × Ico 0 1` whose zero slice is the given embedding.  The small API below is the part consumed by
-gluing: restriction along an open subset of the boundary, reparametrization of the boundary (in
-particular by the image of the embedding, `TauCeti.IsCollared.subtypeVal_range`), and the
-injectivity and zero-slice consequences.
+gluing: restriction along an open subset of the boundary, and the injectivity and zero-slice
+consequences.  Separately, `TauCeti.IsCollared.subtypeVal_range` collars the inclusion of the
+image of a collared map, so that the boundary can be collared as a subset, as for the boundary
+fundamental class.
 
 The collar-neighborhood formulation follows J. Lee, *Introduction to Smooth Manifolds*, 2nd ed.,
 Theorem 9.25; this declaration is its topological abstraction.  The API adapts the existing

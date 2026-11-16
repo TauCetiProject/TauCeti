@@ -23,11 +23,11 @@ relative fundamental class `[X, ∂X] ∈ Hₙ₊₁(X, ∂X; ℤ)`
 the local homology `Hₙ(∂X, ∂X ∖ {z}; ℤ)` generates that group at every point `z` of `∂X`
 (`TauCeti.HomologicalOrientation.isFundamentalClass_singularHomologyδ_fundamentalClassRel`). No
 manifold structure is assumed on `∂X`: the collar identifies its local homology at `z` with the
-local homology of `M` at an interior point one dimension up. Through
-`TopPair.exists_boundary_eq_of_singularHomologyδ_eq`, a fundamental chain of `X` relative to `∂X`
-may therefore be chosen with boundary any cycle of `∂X` representing `∂[X, ∂X]`, and such a cycle
-is a fundamental cycle of `∂X`; this is the homological input of fundamental chains of manifolds
-with corners.
+local homology of `M` at an interior point one dimension up. Through the cubical–singular
+comparison, `TopPair.exists_boundary_eq_of_singularHomologyδ_eq` therefore gives a normalized
+cubical fundamental chain of `X` relative to `∂X` whose boundary is any prescribed normalized
+cubical cycle of `∂X` representing `∂[X, ∂X]`, and such a cycle is a fundamental cycle of `∂X`;
+this is the homological input of fundamental chains of manifolds with corners.
 
 ## Proof
 
@@ -75,29 +75,6 @@ open CategoryTheory Limits Set Topology Module
 universe w v u
 
 namespace TauCeti
-
-/-- For nested subsets `B ⊆ A` of `X`, the pair `(X, B)` maps isomorphically onto the total pair
-of the triple `(X, A, B)`. -/
-private def ofSubsetToTotalPair {X : TopCat.{w}} {S T : Set X} (h : S ⊆ T) :
-    TopPair.ofSubset S ⟶ TopTriple.totalPair.obj (TopTriple.ofSubset h) :=
-  TopPair.ofHom (𝟙 _) (TopCat.ofHom ⟨fun q ↦ q, continuous_id⟩) rfl
-
-private instance {X : TopCat.{w}} {S T : Set X} (h : S ⊆ T) :
-    IsIso (ofSubsetToTotalPair h) :=
-  have : IsIso (TopPair.Hom.fst (ofSubsetToTotalPair h)) := inferInstanceAs (IsIso (𝟙 X))
-  TopPair.isIso_of_isIso_fst_of_surjective_snd _ fun q ↦ ⟨q, rfl⟩
-
-/-- The connecting morphism of the triple `(X, X ∖ T, X ∖ S)` for `T ⊆ S` is an isomorphism when
-the local homology along `S` vanishes in the adjacent degrees. -/
-private lemma isIso_singularHomologyδ_ofSubset_compl {A : Type u} [Category.{v} A]
-    [HasCoproducts.{w} A] [Abelian A] (R : A) {X : Type w} [TopologicalSpace X] {S T : Set X}
-    (h : T ⊆ S) (k : ℕ) (hk : IsZero (localHomology R S (k + 1)))
-    (hk' : IsZero (localHomology R S k)) :
-    IsIso ((TopTriple.ofSubset (X := TopCat.of X) (compl_subset_compl.2 h)).singularHomologyδ R
-      (k + 1) k) :=
-  TopTriple.isIso_singularHomologyδ_of_isZero _ R (k + 1) k
-    (hk.of_iso (asIso (TopPair.singularHomologyMap (ofSubsetToTotalPair _) R _)).symm)
-    (hk'.of_iso (asIso (TopPair.singularHomologyMap (ofSubsetToTotalPair _) R _)).symm)
 
 namespace CollarModel
 
@@ -180,7 +157,7 @@ private abbrev triple : TopTriple.{w} :=
 
 /-- The connecting morphism of the triple is an isomorphism, since the local homology along the
 segment vanishes. -/
-private lemma isIso_singularHomologyδ_triple (k : ℕ) :
+private instance isIso_singularHomologyδ_triple (k : ℕ) :
     IsIso ((triple b).singularHomologyδ R (k + 1) k) :=
   isIso_singularHomologyδ_ofSubset_compl R (singleton_subset_iff.2 (mem_segment_half b)) k
     (isZero_localHomology_segment R b _)
@@ -203,6 +180,8 @@ private abbrev lowerPair : TopPair.{w} :=
 /-- The inclusion of `lowerPair b` into the inner pair of the triple. -/
 private def lowerPairMap : lowerPair b ⟶ TopTriple.innerPair.obj (triple b) :=
   TopPair.ofInclusionMap _ (compl_segment_subset b) (ContinuousMap.inclusion (lower_subset b))
+    -- The ascription unfolds the coercion of `ContinuousMap.inclusion` to `Subtype.val`, where
+    -- `hx.2` applies.
     fun x hx ↦ show ((ContinuousMap.inclusion (lower_subset b) x : B × Ico (0 : ℝ) 1)) ∈
       (segment b)ᶜ from hx.2
 
@@ -290,6 +269,8 @@ private def lowerHomotopy :
 private lemma fromLower_comp_toLower :
     fromLower b ≫ toLower b =
       TopPair.ofInclusionMap inter_subset_left inter_subset_left (lowerContraction B)
+        -- The ascription unfolds the point `lowerContraction B q` to its underlying pair, whose
+        -- first coordinate is that of `q`.
         fun q (hq : (q : B × Ico (0 : ℝ) 1) ∈ lower B ∩ (segment b)ᶜ) ↦
           show ((lowerContraction B q : lower B) : B × Ico (0 : ℝ) 1) ∈ lower B ∩ (segment b)ᶜ
             from ⟨(lowerContraction B q).2, fun h ↦ hq.2 ⟨h.1, hq.1.le⟩⟩ :=
@@ -303,6 +284,7 @@ private lemma isIso_singularHomologyMap_toLower (k : ℕ) :
     (toLower_comp_fromLower b ▸ TopPair.Homotopy.refl _) ?_ R k
   rw [fromLower_comp_toLower, ← TopPair.ofInclusionMap_id]
   exact TopPair.ofInclusionHomotopy (hst := inter_subset_left) (hst' := inter_subset_left)
+    -- As in `fromLower_comp_toLower`, the ascription unfolds the point to its underlying pair.
     (lowerHomotopy B) fun τ q (hq : (q : B × Ico (0 : ℝ) 1) ∈ lower B ∩ (segment b)ᶜ) ↦
       (⟨(lowerHomotopy B (τ, q)).2, fun h ↦ hq.2 ⟨h.1, hq.1.le⟩⟩ :
         ((lowerHomotopy B (τ, q) : lower B) : B × Ico (0 : ℝ) 1) ∈ lower B ∩ (segment b)ᶜ)
@@ -410,16 +392,19 @@ private def boundaryTripleMap : boundaryTriple z ⟶ spaceTriple (c := c) z :=
 
 /-- The inclusion `m ↦ (m, 0)` of the model, as a map out of the inner pair of
 `boundaryTriple z`. -/
+-- `boundaryMap z` has this type because `TopTriple.innerPair.obj (boundaryTriple z)` unfolds, by
+-- the `abbrev`s `TopTriple.innerPair` and `TopTriple.of`, to the pair of the inclusion
+-- `Subtype.val : D ∖ {z} → D`, which is `TopPair.ofSubset ({z}ᶜ : Set D)` by definition.
 private def boundaryTripleInnerMap :
     TopTriple.innerPair.obj (boundaryTriple z) ⟶ TopTriple.innerPair.obj (triple z) :=
   boundaryMap z
 
-private lemma isIso_singularHomologyMap_boundaryTripleInnerMap (k : ℕ) :
+private instance isIso_singularHomologyMap_boundaryTripleInnerMap (k : ℕ) :
     IsIso (TopPair.singularHomologyMap (boundaryTripleInnerMap z) R k) :=
   isIso_singularHomologyMap_boundaryMap R z k
 
 include hc in
-private lemma isIso_singularHomologyMap_outerPair_collarTripleMap (k : ℕ) :
+private instance isIso_singularHomologyMap_outerPair_collarTripleMap (k : ℕ) :
     IsIso (TopPair.singularHomologyMap (TopTriple.outerPair.map (collarTripleMap hc z)) R k) := by
   have h : c ⁻¹' {c (z, half)} = {(z, half)} := by
     rw [← image_singleton, hc.isOpenEmbedding.injective.preimage_image]
@@ -467,9 +452,6 @@ the inverse of the inclusion `m ↦ (m, 0)`. -/
 private def localHomologyIso (k : ℕ) :
     (TopTriple.outerPair.obj (spaceTriple (c := c) z)).singularHomology R (k + 1) ≅
       (TopTriple.innerPair.obj (boundaryTriple z)).singularHomology R k :=
-  have := isIso_singularHomologyMap_outerPair_collarTripleMap R hc z (k + 1)
-  have := isIso_singularHomologyδ_triple R z k
-  have := isIso_singularHomologyMap_boundaryTripleInnerMap R z k
   (asIso (TopPair.singularHomologyMap (TopTriple.outerPair.map (collarTripleMap hc z)) R
       (k + 1))).symm ≪≫ asIso ((triple z).singularHomologyδ R (k + 1) k rfl) ≪≫
     (asIso (TopPair.singularHomologyMap (boundaryTripleInnerMap z) R k)).symm
@@ -486,9 +468,6 @@ private lemma singularHomologyδ_boundaryTriple (k : ℕ) :
       TopPair.singularHomologyMap (boundaryTripleInnerMap z) R k ≫
         TopPair.singularHomologyMap (TopTriple.innerPair.map (collarTripleMap hc z)) R k := by
     rw [innerPair_map_boundaryTripleMap hc z, TopPair.singularHomologyMap_comp]
-  have := isIso_singularHomologyMap_outerPair_collarTripleMap R hc z (k + 1)
-  have := isIso_singularHomologyδ_triple R z k
-  have := isIso_singularHomologyMap_boundaryTripleInnerMap R z k
   have := isIso_singularHomologyδ_spaceTriple R hc z k
   have : IsIso ((triple z).singularHomologyδ R (k + 1) k rfl ≫
       TopPair.singularHomologyMap (TopTriple.innerPair.map (collarTripleMap hc z)) R k) := by
@@ -555,7 +534,10 @@ theorem isFundamentalClass_singularHomologyδ_fundamentalClassRel :
       (CollarModel.singularHomologyδ_boundaryTriple (ModuleCat.of ℤ (ULift.{0} ℤ)) hc z n)
   rw [houter] at key
   -- So the image of `∂[X, ∂X]` at `z` is the image of the local orientation at `p` under
-  -- `localHomologyIso`.
+  -- `localHomologyIso`. The final step is up to definitional unfolding: the inner pair of
+  -- `boundaryTriple z` is `TopPair.ofSubset ({z}ᶜ : Set ∂X)`, so its homology is the local homology
+  -- of `∂X` at `z` (see `boundaryTripleInnerMap`), and the outer pair of `spaceTriple z` is
+  -- `TopPair.ofSubset {p}ᶜ`, whose homology is the abbreviation `localHomology` at `p`.
   convert (hloc _ hp).map (x := c (z, CollarModel.half)) (y := z) (d := n + 1) (d' := n)
     (CollarModel.localHomologyIso (ModuleCat.of ℤ (ULift.{0} ℤ)) hc z n) using 1
   exact (singularHomologyToLocalHomology_eq_singularHomologyπ _ z _).trans
