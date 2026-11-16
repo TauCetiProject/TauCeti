@@ -8,7 +8,6 @@ module
 public import TauCeti.Algebra.AlgebraicGroup.Chevalley.Root.Subgroup
 import TauCeti.Algebra.Lie.Presentation.Serre.TripleBond
 import TauCeti.Algebra.AlgebraicGroup.Chevalley.Braid.Basic
-import TauCeti.LinearAlgebra.RootSystem.SimplyConnectedRootDatum.SerrePresentation
 
 /-!
 # The triple-bond braid relation in Chevalley data
