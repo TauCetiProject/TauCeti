@@ -12,33 +12,23 @@ import TauCeti.Combinatorics.Graph.Serre.Path.Basic
 # Connected components of Serre graphs
 
 The connected component `Γ.component v` of a vertex `v` in a Serre graph `Γ` is the subgraph
-(`SerreGraph.subgraph`) consisting of the vertices reachable from `v` by a path of `Γ` and the
-darts whose source is reachable from `v`. Because extending a path from `v` to `src e` by `e`
-reaches `tgt e`, a dart has reachable source if and only if its reverse does, so `componentDarts`
-is closed under reversal and contains every dart with an endpoint in `componentVertices`.
-
-Every path of `Γ` starting in the component of `v` stays in it and lifts through the inclusion
-`Γ.componentInclusion v`, so `Γ.component v` is always connected. When `Γ` is preconnected every
-vertex and dart belongs to the component of `v`, and `Γ.componentIsoOfPreconnected` identifies
-`Γ.component v` with `Γ`.
-
-In Bass–Serre theory, the quotient of the Bass–Serre tree `X(𝔸, v₀)` of a graph of groups `𝔸` by
-`π₁(𝔸, v₀)` is isomorphic to `Γ.component v₀`, and hence to `Γ` itself when `Γ` is preconnected.
+(`SerreGraph.subgraph`) spanned by the vertices and darts reachable from `v`. It is always
+connected, and when `Γ` is preconnected `Γ.componentIsoOfPreconnected` identifies `Γ.component v`
+with `Γ`.
 
 ## Main definitions
 
 * `TauCeti.SerreGraph.componentVertices`, `TauCeti.SerreGraph.componentDarts`: the vertices and
   darts of `Γ` reachable from `v`.
-* `TauCeti.SerreGraph.component`: the connected component of `v` as a `SerreGraph`.
-* `TauCeti.SerreGraph.componentBase`: `v` as a vertex of `Γ.component v`.
-* `TauCeti.SerreGraph.componentInclusion`: the inclusion morphism `(Γ.component v).Hom Γ`.
+* `TauCeti.SerreGraph.component`, `TauCeti.SerreGraph.componentBase`,
+  `TauCeti.SerreGraph.componentInclusion`: the connected component subgraph, its base vertex, and
+  inclusion morphism.
 * `TauCeti.SerreGraph.componentIsoOfPreconnected`: the isomorphism `(Γ.component v).Iso Γ` when
   `Γ` is preconnected.
 
 ## Main results
 
-* `TauCeti.SerreGraph.exists_component_path`: every path of `Γ` starting in the component of `v`
-  lifts to `Γ.component v`.
+* `TauCeti.SerreGraph.exists_component_path`: every path of `Γ` starting in `Γ.component v` lifts.
 * `TauCeti.SerreGraph.component_connected`: `Γ.component v` is connected.
 
 ## References
@@ -55,21 +45,17 @@ namespace TauCeti.SerreGraph
 variable (Γ : SerreGraph.{u, v}) (v : Γ.V)
 
 /-- The vertices of `Γ` reachable from `v` by an edge path. -/
-def componentVertices : Set Γ.V :=
-  {a | Nonempty (Γ.Path v a)}
+def componentVertices : Set Γ.V := {a | Nonempty (Γ.Path v a)}
 
 theorem mem_componentVertices_iff (a : Γ.V) :
-    a ∈ Γ.componentVertices v ↔ Nonempty (Γ.Path v a) :=
-  Iff.rfl
+    a ∈ Γ.componentVertices v ↔ Nonempty (Γ.Path v a) := Iff.rfl
 
 /-- The base vertex `v` belongs to its own connected component. -/
-@[simp] theorem self_mem_componentVertices : v ∈ Γ.componentVertices v :=
-  ⟨.nil⟩
+@[simp] theorem self_mem_componentVertices : v ∈ Γ.componentVertices v := ⟨.nil⟩
 
 /-- If the source of a dart lies in the component of `v`, so does its target. -/
 theorem tgt_mem_componentVertices_of_src_mem {e : Γ.E} (he : Γ.src e ∈ Γ.componentVertices v) :
-    Γ.tgt e ∈ Γ.componentVertices v :=
-  he.map (·.cons (Γ.dart e))
+    Γ.tgt e ∈ Γ.componentVertices v := he.map (·.cons (Γ.dart e))
 
 /-- The target of a dart lies in the component of `v` if and only if its source does. -/
 theorem tgt_mem_componentVertices_iff (e : Γ.E) :
@@ -81,16 +67,13 @@ theorem tgt_mem_componentVertices_iff (e : Γ.E) :
 
 /-- Reachability from a vertex in the component of `v` implies membership in the component. -/
 theorem mem_componentVertices_of_path {a b : Γ.V} (ha : a ∈ Γ.componentVertices v)
-    (p : Γ.Path a b) : b ∈ Γ.componentVertices v :=
-  ha.map (·.comp p)
+    (p : Γ.Path a b) : b ∈ Γ.componentVertices v := ha.map (·.comp p)
 
 /-- The darts of `Γ` whose source lies in the connected component of `v`. -/
-def componentDarts : Set Γ.E :=
-  {e | Γ.src e ∈ Γ.componentVertices v}
+def componentDarts : Set Γ.E := {e | Γ.src e ∈ Γ.componentVertices v}
 
 theorem mem_componentDarts_iff (e : Γ.E) :
-    e ∈ Γ.componentDarts v ↔ Nonempty (Γ.Path v (Γ.src e)) :=
-  Iff.rfl
+    e ∈ Γ.componentDarts v ↔ Nonempty (Γ.Path v (Γ.src e)) := Iff.rfl
 
 /-- The dart set of a connected component is closed under reversal. -/
 @[simp] theorem rev_mem_componentDarts_iff (e : Γ.E) :
@@ -99,13 +82,11 @@ theorem mem_componentDarts_iff (e : Γ.E) :
 
 /-- The source of a dart in the component lies in the component. -/
 theorem src_mem_componentVertices {e : Γ.E} (he : e ∈ Γ.componentDarts v) :
-    Γ.src e ∈ Γ.componentVertices v :=
-  he
+    Γ.src e ∈ Γ.componentVertices v := he
 
 /-- The target of a dart in the component lies in the component. -/
 theorem tgt_mem_componentVertices {e : Γ.E} (he : e ∈ Γ.componentDarts v) :
-    Γ.tgt e ∈ Γ.componentVertices v :=
-  Γ.tgt_mem_componentVertices_of_src_mem v he
+    Γ.tgt e ∈ Γ.componentVertices v := Γ.tgt_mem_componentVertices_of_src_mem v he
 
 /-- The connected component of `v` in `Γ`, as a Serre graph. -/
 abbrev component : SerreGraph.{u, v} :=
@@ -113,20 +94,16 @@ abbrev component : SerreGraph.{u, v} :=
     fun e => (Γ.rev_mem_componentDarts_iff v e).mpr
 
 /-- The base vertex `v` as a vertex of `Γ.component v`. -/
-def componentBase : (Γ.component v).V :=
-  ⟨v, Γ.self_mem_componentVertices v⟩
+def componentBase : (Γ.component v).V := ⟨v, Γ.self_mem_componentVertices v⟩
 
 /-- The inclusion morphism from `Γ.component v` into `Γ`. -/
-abbrev componentInclusion : (Γ.component v).Hom Γ :=
-  Γ.subgraphInclusion _ _ _ _
+abbrev componentInclusion : (Γ.component v).Hom Γ := Γ.subgraphInclusion _ _ _ _
 
 @[simp] theorem componentBase_val : (Γ.componentBase v).1 = v := (rfl)
 
-instance : Nonempty (Γ.component v).V :=
-  ⟨Γ.componentBase v⟩
+instance : Nonempty (Γ.component v).V := ⟨Γ.componentBase v⟩
 
-instance [IsEmpty Γ.E] : IsEmpty (Γ.component v).E :=
-  ⟨fun e => isEmptyElim e.1⟩
+instance [IsEmpty Γ.E] : IsEmpty (Γ.component v).E := ⟨fun e => isEmptyElim e.1⟩
 
 /-- Every path in `Γ` starting at a vertex in the component of `v` lifts to `Γ.component v`. -/
 theorem exists_component_path {a b : Γ.V} (p : Γ.Path a b) (ha : a ∈ Γ.componentVertices v) :
@@ -140,10 +117,8 @@ theorem exists_component_path {a b : Γ.V} (p : Γ.Path a b) (ha : a ∈ Γ.comp
 /-- Every vertex of `Γ.component v` is reachable from `Γ.componentBase v` within `Γ.component v`. -/
 theorem component_reachable (a : (Γ.component v).V) :
     Nonempty ((Γ.component v).Path (Γ.componentBase v) a) := by
-  obtain ⟨a, ha⟩ := a
-  obtain ⟨p⟩ := (Γ.mem_componentVertices_iff v a).mp ha
-  obtain ⟨q, -⟩ := Γ.exists_component_path v p (Γ.self_mem_componentVertices v)
-  exact ⟨q⟩
+  obtain ⟨a, ha⟩ := a; obtain ⟨p⟩ := (Γ.mem_componentVertices_iff v a).mp ha
+  exact ⟨(Γ.exists_component_path v p (Γ.self_mem_componentVertices v)).choose⟩
 
 /-- The connected component of any vertex is preconnected. -/
 theorem component_preconnected : (Γ.component v).Preconnected :=

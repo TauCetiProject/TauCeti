@@ -10,34 +10,23 @@ public import TauCeti.GroupTheory.GraphOfGroups.BassSerre.Basic
 /-!
 # Stabilizers and quotient of the Bass–Serre tree
 
-From the path model of `X(𝔸, v₀)` (`GraphOfGroups.bassSerreTree`), this file reads off the vertex
+From the path model of `X(𝔸, v₀)` (`GraphOfGroups.bassSerreTree`), this file computes the vertex
 and edge stabilizers of the `π₁(𝔸, v₀)`-action and identifies the quotient graph
-`X(𝔸, v₀) / π₁(𝔸, v₀)`:
-
-* **Vertex stabilizers** (`GraphOfGroups.stabilizer_vertex`): the stabilizer of `p A_v` in
-  `π₁(𝔸, v₀)` is `(π₁.vertexHom p).range = p A_v p⁻¹`, isomorphic to `A_v` via
-  `GraphOfGroups.vertexStabilizerEquiv`.
-* **Edge stabilizers** (`GraphOfGroups.stabilizer_edge`): the stabilizer of `[e, p]` is
-  `((𝔸.α e).range).map (π₁.vertexHom p) = p α_e(A_e) p⁻¹`, isomorphic to `A_e` via
-  `GraphOfGroups.edgeStabilizerEquiv`; for `[e, p · a]` from `p A_v` to `(p a e) A_{v'}` this is
-  `p a α_e(A_e) a⁻¹ p⁻¹`.
-* **Quotient graph** (`GraphOfGroups.bassSerreQuotientIso`): the quotient `X(𝔸, v₀) / π₁(𝔸, v₀)`
-  is isomorphic to the connected component `Γ.component v₀`, and hence to `Γ` itself when `Γ` is
-  preconnected (`GraphOfGroups.bassSerreQuotientIsoOfPreconnected`).
+`X(𝔸, v₀) / π₁(𝔸, v₀)` with `Γ.component v₀` (and with `Γ` when `Γ` is preconnected).
 
 ## Main definitions
 
 * `TauCeti.GraphOfGroups.vertexStabilizerEquiv`, `TauCeti.GraphOfGroups.edgeStabilizerEquiv`:
-  isomorphisms of `A_v` and `A_e` with the corresponding vertex and dart stabilizers.
+  isomorphisms `A_v ≃* stab(p A_v)` and `A_e ≃* stab([e, p])`.
 * `TauCeti.GraphOfGroups.bassSerreQuotient`: the quotient graph `X(𝔸, v₀) / π₁(𝔸, v₀)`.
 * `TauCeti.GraphOfGroups.bassSerreQuotientIso`,
-  `TauCeti.GraphOfGroups.bassSerreQuotientIsoOfPreconnected`: isomorphisms of the quotient graph
-  with `Γ.component v₀` and (when `Γ` is preconnected) with `Γ`.
+  `TauCeti.GraphOfGroups.bassSerreQuotientIsoOfPreconnected`: isomorphisms with `Γ.component v₀`
+  and (when `Γ` is preconnected) with `Γ`.
 
 ## Main results
 
-* `TauCeti.GraphOfGroups.stabilizer_vertex`, `TauCeti.GraphOfGroups.stabilizer_edge`: explicit
-  vertex and dart stabilizers.
+* `TauCeti.GraphOfGroups.stabilizer_vertex`, `TauCeti.GraphOfGroups.stabilizer_edge`:
+  `stab(p A_v) = (π₁.vertexHom p).range` and `stab([e, p]) = ((𝔸.α e).range).map (π₁.vertexHom p)`.
 * `TauCeti.GraphOfGroups.bassSerreTree_isEllipticSubgroup_range_vertexHom`: every conjugated vertex
   group `p A_v p⁻¹` is elliptic in `X(𝔸, v₀)`.
 
@@ -70,16 +59,14 @@ variable {𝔸 v₀}
 `π₁.vertexHom p : A_v →* π₁(𝔸, v₀)`. -/
 theorem stabilizer_vertex {v : Γ.V} (p : 𝔸.Path ⟨v₀⟩ ⟨v⟩) :
     stabilizer (π₁ 𝔸 v₀) (𝔸.bassSerreVertex v₀ p) = (π₁.vertexHom p).range := by
-  ext g
-  refine π₁.induction_on g fun s => ?_
+  ext g; refine π₁.induction_on g fun s => ?_
   simp [mem_stabilizer_iff, bassSerreVertex_eq_iff, ← π₁.vertexHom_eq_mk_iff]
 
 /-- At the base vertex `1 · A_{v₀}`, the stabilizer is the image of `A_{v₀}` in `π₁(𝔸, v₀)`. -/
 @[simp] theorem stabilizer_bassSerreBaseVertex :
     stabilizer (π₁ 𝔸 v₀) (𝔸.bassSerreBaseVertex v₀) =
-      (π₁.vertexHom (Quiver.Path.nil : 𝔸.Path ⟨v₀⟩ ⟨v₀⟩)).range := by
-  rw [bassSerreBaseVertex_def]
-  exact stabilizer_vertex .nil
+      (π₁.vertexHom (Quiver.Path.nil : 𝔸.Path ⟨v₀⟩ ⟨v₀⟩)).range :=
+  𝔸.bassSerreBaseVertex_def v₀ ▸ stabilizer_vertex .nil
 
 /-- The isomorphism of `A_v` onto the stabilizer of `p A_v` in `π₁(𝔸, v₀)` sending `a` to
 `π₁.vertexHom p a`. -/
@@ -96,8 +83,7 @@ conjugate along `p` of the edge-group image `α_e(A_e)`. For `p = q · a` (the d
 and `(q a e) A_{v'}`), this is `q a α_e(A_e) a⁻¹ q⁻¹`. -/
 theorem stabilizer_edge (e : Γ.E) (p : 𝔸.Path ⟨v₀⟩ ⟨Γ.src e⟩) :
     stabilizer (π₁ 𝔸 v₀) (𝔸.bassSerreDart v₀ e p) = ((𝔸.α e).range).map (π₁.vertexHom p) := by
-  ext g
-  refine π₁.induction_on g fun s => ?_
+  ext g; refine π₁.induction_on g fun s => ?_
   simp [mem_stabilizer_iff, bassSerreDart_eq_iff, ← MonoidHom.range_comp,
     ← π₁.vertexHom_eq_mk_iff]
 
@@ -124,8 +110,7 @@ end Stabilizers
 /-! ### The quotient graph `X(𝔸, v₀) / π₁(𝔸, v₀)` -/
 
 /-- The quotient Serre graph `X(𝔸, v₀) / π₁(𝔸, v₀)`. -/
-abbrev bassSerreQuotient : SerreGraph.{max u v w, max u v w} :=
-  (𝔸.bassSerreTree v₀).quotient
+abbrev bassSerreQuotient : SerreGraph.{max u v w, max u v w} := (𝔸.bassSerreTree v₀).quotient
 
 /-- The morphism from `X(𝔸, v₀) / π₁(𝔸, v₀)` to `Γ.component v₀` induced by the invariant
 component projection. -/
@@ -148,14 +133,11 @@ private theorem bassSerreQuotientToComponent_mapV_bijective :
   refine ⟨fun x y => ?_, fun ⟨v, hv⟩ => ?_⟩
   · obtain ⟨u₁, rfl⟩ := (𝔸.bassSerreTree v₀).quotientMap_mapV_surjective x
     obtain ⟨u₂, rfl⟩ := (𝔸.bassSerreTree v₀).quotientMap_mapV_surjective y
-    rw [bassSerreQuotientToComponent_mapV_quotientMap,
-      bassSerreQuotientToComponent_mapV_quotientMap]
     refine bassSerreVertex_induction_on u₁ fun {v₁} p₁ =>
-      bassSerreVertex_induction_on u₂ fun {v₂} p₂ => fun h => ?_
+      bassSerreVertex_induction_on u₂ fun {v₂} p₂ h => ?_
     obtain rfl : v₁ = v₂ := by simpa using congrArg Subtype.val h
     exact GTree.quotientMap_mapV_eq_iff.mpr ⟨π₁.mk (p₂.comp p₁.reverse),
-      (mk_smul_bassSerreVertex _ _).trans
-        (bassSerreVertex_congr (Path.Homotopic.comp_reverse_comp p₂ p₁))⟩
+      (mk_smul_bassSerreVertex _ _).trans (bassSerreVertex_congr (.comp_reverse_comp p₂ p₁))⟩
   · obtain ⟨P⟩ := (Γ.mem_componentVertices_iff v₀ v).mp hv
     exact ⟨(𝔸.bassSerreTree v₀).quotientMap.mapV
       (𝔸.bassSerreVertex v₀ ((dartPrefunctor 𝔸).mapPath P)), Subtype.ext (by simp)⟩
@@ -165,14 +147,11 @@ private theorem bassSerreQuotientToComponent_mapE_bijective :
   refine ⟨fun x y => ?_, fun ⟨e, he⟩ => ?_⟩
   · obtain ⟨d₁, rfl⟩ := (𝔸.bassSerreTree v₀).quotientMap_mapE_surjective x
     obtain ⟨d₂, rfl⟩ := (𝔸.bassSerreTree v₀).quotientMap_mapE_surjective y
-    rw [bassSerreQuotientToComponent_mapE_quotientMap,
-      bassSerreQuotientToComponent_mapE_quotientMap]
     refine bassSerreDart_induction_on d₁ fun e₁ p₁ =>
-      bassSerreDart_induction_on d₂ fun e₂ p₂ => fun h => ?_
+      bassSerreDart_induction_on d₂ fun e₂ p₂ h => ?_
     obtain rfl : e₁ = e₂ := by simpa using congrArg Subtype.val h
     exact GTree.quotientMap_mapE_eq_iff.mpr ⟨π₁.mk (p₂.comp p₁.reverse),
-      (mk_smul_bassSerreDart _ _ _).trans
-        (bassSerreDart_congr (Path.Homotopic.comp_reverse_comp p₂ p₁))⟩
+      (mk_smul_bassSerreDart _ _ _).trans (bassSerreDart_congr (.comp_reverse_comp p₂ p₁))⟩
   · obtain ⟨P⟩ := (Γ.mem_componentDarts_iff v₀ e).mp he
     exact ⟨(𝔸.bassSerreTree v₀).quotientMap.mapE
       (𝔸.bassSerreDart v₀ e ((dartPrefunctor 𝔸).mapPath P)), Subtype.ext (by simp)⟩
@@ -222,14 +201,12 @@ theorem bassSerreQuotientIsoOfPreconnected_def (hΓ : Γ.Preconnected) :
 @[simp] theorem bassSerreQuotientIsoOfPreconnected_equivV_quotientMap (hΓ : Γ.Preconnected)
     (u : (𝔸.bassSerreTree v₀).V) :
     (𝔸.bassSerreQuotientIsoOfPreconnected v₀ hΓ).equivV ((𝔸.bassSerreTree v₀).quotientMap.mapV u) =
-      (𝔸.bassSerreTypeHom v₀).mapV u := by
-  simp [bassSerreQuotientIsoOfPreconnected_def]
+      (𝔸.bassSerreTypeHom v₀).mapV u := by simp [bassSerreQuotientIsoOfPreconnected_def]
 
 @[simp] theorem bassSerreQuotientIsoOfPreconnected_equivE_quotientMap (hΓ : Γ.Preconnected)
     (d : (𝔸.bassSerreTree v₀).E) :
     (𝔸.bassSerreQuotientIsoOfPreconnected v₀ hΓ).equivE ((𝔸.bassSerreTree v₀).quotientMap.mapE d) =
-      (𝔸.bassSerreTypeHom v₀).mapE d := by
-  simp [bassSerreQuotientIsoOfPreconnected_def]
+      (𝔸.bassSerreTypeHom v₀).mapE d := by simp [bassSerreQuotientIsoOfPreconnected_def]
 
 @[simp] theorem bassSerreQuotientIsoOfPreconnected_equivV_symm_self (hΓ : Γ.Preconnected) :
     (𝔸.bassSerreQuotientIsoOfPreconnected v₀ hΓ).equivV.symm v₀ =

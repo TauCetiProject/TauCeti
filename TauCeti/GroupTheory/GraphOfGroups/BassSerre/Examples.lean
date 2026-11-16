@@ -14,35 +14,21 @@ import TauCeti.GroupTheory.SpecificGroups.Cyclic.Index
 /-!
 # Canonical examples and checks for the Bass–Serre tree
 
-This file verifies the Bass–Serre tree construction (`GraphOfGroups.bassSerreTree`) on five
-canonical families and boundary cases:
-
-1. **Edgeless components** (`GraphOfGroups.bassSerreTree_point`): whenever `Γ.component v₀` has no
-   darts, `X(𝔸, v₀)` has a single vertex `1 · A_{v₀}` without darts and is isomorphic as a Serre
-   graph to `SerreGraph.noEdge PUnit`.
-2. **Free products and `ℤ ∗ ℤ`** (`GraphOfGroups.bassSerreTree_free_product`): for `ℤ ∗ ℤ`
-   (`GraphOfGroups.coprod (Multiplicative ℤ) (Multiplicative ℤ)`), the neighbours of the base
-   vertex `⟨a⟩` correspond bijectively to `ℤ` via `k ↦ a^k ⟨b⟩` and the base vertex has degree `ℵ₀`.
-3. **Baumslag–Solitar groups `BS(m, n)` and `BS(1, 2)`** (`GraphOfGroups.card_star_baumslagSolitar`,
-   `GraphOfGroups.bassSerreTree_BS12`): for `GraphOfGroups.baumslagSolitar m n hm hn`, every vertex
-   of `X` has degree `|m| + |n|`; for `BS(1, 2)`, the boundary indices are `1` and `2` and every
-   vertex has degree `3`.
-4. **Unquotiented homotopy classes of based `𝔸`-paths** (`GraphOfGroups.HomotopyPathFrom`,
-   `GraphOfGroups.bassSerreTree_not_quotient_paths`): without the left-coset equivalence `p ≈ p a`,
-   homotopy classes of based paths have a distinct point at `v₀` for every `a ∈ A_{v₀}` and trivial
-   basepoint stabilizer.
-5. **Disconnected underlying graphs** (`GraphOfGroups.bassSerreTree_two_isolated`): over two
-   isolated vertices, both `X(𝔸, v₀)` and its quotient `X(𝔸, v₀) / π₁(𝔸, v₀)` have a single vertex
-   while the ambient graph has two.
+This file verifies `GraphOfGroups.bassSerreTree` on five canonical families and boundary cases:
+edgeless components, the free product `ℤ ∗ ℤ`, Baumslag–Solitar groups `BS(m, n)` (and `BS(1, 2)`),
+unquotiented homotopy classes of based `𝔸`-paths, and disconnected graphs (two isolated vertices).
 
 ## Main results
 
-* `TauCeti.GraphOfGroups.bassSerreTree_point`,
-  `TauCeti.GraphOfGroups.bassSerreTree_free_product`,
-  `TauCeti.GraphOfGroups.card_star_baumslagSolitar`,
-  `TauCeti.GraphOfGroups.bassSerreTree_BS12`,
-  `TauCeti.GraphOfGroups.bassSerreTree_not_quotient_paths`,
-  `TauCeti.GraphOfGroups.bassSerreTree_two_isolated`.
+* `TauCeti.GraphOfGroups.bassSerreTree_point`: edgeless component gives `SerreGraph.noEdge PUnit`.
+* `TauCeti.GraphOfGroups.bassSerreTree_free_product`: in `ℤ ∗ ℤ`, neighbours of `⟨a⟩` are indexed
+  by `ℤ` (`k ↦ a^k ⟨b⟩`) with degree `ℵ₀`.
+* `TauCeti.GraphOfGroups.card_star_baumslagSolitar`, `TauCeti.GraphOfGroups.bassSerreTree_BS12`:
+  every vertex of `X` for `BS(m, n)` has degree `|m| + |n|` (and `3` for `BS(1, 2)`).
+* `TauCeti.GraphOfGroups.bassSerreTree_not_quotient_paths`: `HomotopyPathFrom` has trivial basepoint
+  stabilizer and one point at `v₀` per element of `A_{v₀}`.
+* `TauCeti.GraphOfGroups.bassSerreTree_two_isolated`: over two isolated vertices, `X` and `X / π₁`
+  each have a single vertex while the ambient graph has two.
 
 ## References
 
@@ -99,20 +85,17 @@ theorem bassSerreTree_free_product :
   -- `GraphOfGroups.segment` and `SerreGraph.segment`.
   let e : SerreGraph.segment.E := false
   let v₀ : SerreGraph.segment.V := SerreGraph.segment.src e
-  let eAdj : Multiplicative ℤ ≃
-      {w : (F2.bassSerreTree v₀).V // Nonempty (F2.bassSerreBaseVertex v₀ ⟶ w)} :=
-    (coprodAdjacentEquiv (Multiplicative ℤ) (Multiplicative ℤ) v₀ e .nil).trans
-      (Equiv.subtypeEquivRight fun _ => by rw [bassSerreBaseVertex_def])
-  let eStar : {E : (F2.bassSerreTree v₀).E //
-      (F2.bassSerreTree v₀).src E = F2.bassSerreBaseVertex v₀} ≃ Multiplicative ℤ :=
-    (Equiv.subtypeEquivRight fun _ => by rw [bassSerreBaseVertex_def]).trans
-      (coprodStarEquiv (Multiplicative ℤ) (Multiplicative ℤ) v₀ e .nil)
-  refine ⟨⟨Multiplicative.ofAdd.trans eAdj, fun k => ?_⟩, ?_⟩
+  have hb : F2.bassSerreBaseVertex v₀ = F2.bassSerreVertex v₀ .nil := F2.bassSerreBaseVertex_def v₀
+  refine ⟨⟨Multiplicative.ofAdd.trans
+      ((coprodAdjacentEquiv (Multiplicative ℤ) (Multiplicative ℤ) v₀ e .nil).trans
+        (Equiv.subtypeEquivRight fun _ => by rw [← hb]; rfl)), fun k => ?_⟩, ?_⟩
   · exact (coprodAdjacentEquiv_apply_val (A := Multiplicative ℤ) (B := Multiplicative ℤ)
         (v₀ := v₀) (e := e) .nil (Multiplicative.ofAdd k)).trans
       (congrArg (fun p => F2.bassSerreVertex v₀ (p.cons (Letter.dart (SerreGraph.segment.dart e))))
         (Path.ofVertex_eq_nil_cons _).symm)
-  · exact (Cardinal.mk_congr (eStar.trans Multiplicative.toAdd)).trans Cardinal.mk_int
+  · exact (Cardinal.mk_congr (((Equiv.subtypeEquivRight fun _ => by rw [← hb]; rfl).trans
+      (coprodStarEquiv (Multiplicative ℤ) (Multiplicative ℤ) v₀ e .nil)).trans
+        Multiplicative.toAdd)).trans Cardinal.mk_int
 
 end FreeProduct
 
@@ -126,12 +109,10 @@ theorem card_star_baumslagSolitar (m n : ℤ) (hm : m ≠ 0) (hn : n ≠ 0)
     Nat.card {E : ((baumslagSolitar m n hm hn).bassSerreTree ()).E //
       ((baumslagSolitar m n hm hn).bassSerreTree ()).src E = u} =
       m.natAbs + n.natAbs := by
-  have : (zpowGroupHom (α := Multiplicative ℤ) m).range.FiniteIndex :=
+  have hfin (k : ℤ) (hk : k ≠ 0) : (zpowGroupHom (α := Multiplicative ℤ) k).range.FiniteIndex :=
     Subgroup.finiteIndex_iff.mpr <| by
-      rw [IsCyclic.index_zpowGroupHom_range_of_infinite]; exact Int.natAbs_ne_zero.mpr hm
-  have : (zpowGroupHom (α := Multiplicative ℤ) n).range.FiniteIndex :=
-    Subgroup.finiteIndex_iff.mpr <| by
-      rw [IsCyclic.index_zpowGroupHom_range_of_infinite]; exact Int.natAbs_ne_zero.mpr hn
+      rw [IsCyclic.index_zpowGroupHom_range_of_infinite]; exact Int.natAbs_ne_zero.mpr hk
+  have := hfin m hm; have := hfin n hn
   -- `baumslagSolitar` is `@[expose]` and reduces definitionally to `GraphOfGroups.loop`.
   exact (card_star_loop (zpowGroupHom (α := Multiplicative ℤ) m) (zpowGroupHom n)
       (zpow_left_injective hm) (zpow_left_injective hn) u).trans (by simp)
@@ -162,12 +143,13 @@ theorem bassSerreTree_not_quotient_paths :
       HomotopyPathFrom.ofPath (v₀ := v₀) (Path.ofVertex a)) ∧
     stabilizer (π₁ 𝔸 v₀)
       (HomotopyPathFrom.ofPath (𝔸 := 𝔸) (v₀ := v₀) Quiver.Path.nil) = ⊥ := by
-  refine ⟨fun a b hab => ?_, eq_bot_iff.mpr fun g hg => Subgroup.mem_bot.mpr ?_⟩
-  · exact Path.ofVertex_homotopic_ofVertex_iff.mp (HomotopyPathFrom.ofPath_eq_ofPath_iff.mp hab)
-  · refine π₁.induction_on (P := fun g => g ∈ stabilizer (π₁ 𝔸 v₀) _ → g = 1) g (fun s hs => ?_) hg
-    rw [mem_stabilizer_iff, HomotopyPathFrom.mk_smul_ofPath, Quiver.Path.comp_nil,
-      HomotopyPathFrom.ofPath_eq_ofPath_iff] at hs
-    exact (π₁.mk_nil (𝔸 := 𝔸) (a := v₀)) ▸ π₁.mk_eq_mk_iff.mpr hs
+  refine ⟨fun a b hab => Path.ofVertex_homotopic_ofVertex_iff.mp
+      (HomotopyPathFrom.ofPath_eq_ofPath_iff.mp hab),
+    eq_bot_iff.mpr fun g hg => Subgroup.mem_bot.mpr ?_⟩
+  refine π₁.induction_on (P := fun g => g ∈ stabilizer (π₁ 𝔸 v₀) _ → g = 1) g (fun s hs => ?_) hg
+  rw [mem_stabilizer_iff, HomotopyPathFrom.mk_smul_ofPath, Quiver.Path.comp_nil,
+    HomotopyPathFrom.ofPath_eq_ofPath_iff] at hs
+  exact (π₁.mk_nil (𝔸 := 𝔸) (a := v₀)) ▸ π₁.mk_eq_mk_iff.mpr hs
 
 end UnquotientedPaths
 

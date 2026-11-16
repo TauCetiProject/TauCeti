@@ -883,24 +883,18 @@ def lift {β : Sort*} (f : ∀ {v : Γ.V}, 𝔸.Path ⟨v₀⟩ ⟨v⟩ → β)
 
 @[simp] theorem lift_ofPath {β : Sort*} (f : ∀ {v : Γ.V}, 𝔸.Path ⟨v₀⟩ ⟨v⟩ → β)
     (hf : ∀ {v : Γ.V} (p q : 𝔸.Path ⟨v₀⟩ ⟨v⟩), p.Homotopic q → f p = f q)
-    {v : Γ.V} (p : 𝔸.Path ⟨v₀⟩ ⟨v⟩) :
-    lift f hf (ofPath p) = f p := (rfl)
+    {v : Γ.V} (p : 𝔸.Path ⟨v₀⟩ ⟨v⟩) : lift f hf (ofPath p) = f p := (rfl)
 
 /-- Prove a property of `𝔸.HomotopyPathFrom v₀` by checking it on `𝔸`-paths starting at `v₀`. -/
 @[elab_as_elim] theorem induction_on {P : 𝔸.HomotopyPathFrom v₀ → Prop}
-    (x : 𝔸.HomotopyPathFrom v₀)
-    (h : ∀ {v : Γ.V} (p : 𝔸.Path ⟨v₀⟩ ⟨v⟩), P (ofPath p)) : P x := by
-  rcases x with ⟨v, q⟩
-  exact Quotient.inductionOn q fun p => h p
+    (x : 𝔸.HomotopyPathFrom v₀) (h : ∀ {v : Γ.V} (p : 𝔸.Path ⟨v₀⟩ ⟨v⟩), P (ofPath p)) : P x := by
+  rcases x with ⟨_, q⟩; exact q.inductionOn fun p => h p
 
 theorem ofPath_eq_ofPath_iff_exists {v w : Γ.V} {p : 𝔸.Path ⟨v₀⟩ ⟨v⟩} {q : 𝔸.Path ⟨v₀⟩ ⟨w⟩} :
     ofPath p = ofPath q ↔ ∃ h : v = w, Path.Homotopic (h ▸ p) q := by
-  refine ⟨fun h => ?_, ?_⟩
-  · have hv : v = w := congrArg vertex h
-    subst hv
-    exact ⟨rfl, by injection h with _ hq; exact Quotient.exact hq⟩
-  · rintro ⟨rfl, hpq⟩
-    exact congrArg (HomotopyPathFrom.mk v) (Quotient.sound hpq)
+  refine ⟨fun h => ?_, fun ⟨h, hpq⟩ => by subst h; exact congrArg (mk v) (Quotient.sound hpq)⟩
+  obtain rfl : v = w := congrArg vertex h
+  exact ⟨rfl, by injection h with _ hq; exact Quotient.exact hq⟩
 
 @[simp] theorem ofPath_eq_ofPath_iff {v : Γ.V} {p q : 𝔸.Path ⟨v₀⟩ ⟨v⟩} :
     ofPath p = ofPath q ↔ p.Homotopic q :=
@@ -924,10 +918,9 @@ instance : SMul (π₁ 𝔸 v₀) (𝔸.HomotopyPathFrom v₀) where
 /-- `π₁(𝔸, v₀)` acts on `𝔸.HomotopyPathFrom v₀` on the left by concatenating closed `𝔸`-paths at
 `v₀`. -/
 instance : MulAction (π₁ 𝔸 v₀) (𝔸.HomotopyPathFrom v₀) where
-  one_smul x := induction_on x fun p => by
-    rw [← π₁.mk_nil, mk_smul_ofPath, Quiver.Path.nil_comp]
-  mul_smul g h x := π₁.induction_on g fun s₁ => π₁.induction_on h fun s₂ =>
-    induction_on x fun p => by
+  one_smul x := induction_on x fun _ => by rw [← π₁.mk_nil, mk_smul_ofPath, Quiver.Path.nil_comp]
+  mul_smul g h x := π₁.induction_on g fun _ => π₁.induction_on h fun _ =>
+    induction_on x fun _ => by
       rw [← π₁.mk_comp, mk_smul_ofPath, mk_smul_ofPath, mk_smul_ofPath, Quiver.Path.comp_assoc]
 
 end HomotopyPathFrom
