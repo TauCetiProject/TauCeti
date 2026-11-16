@@ -23,9 +23,12 @@ transports it along the diffeomorphism `Φ_c(s, t) = (s + c (1 - μ(|w|)), t)` o
 `w = s + i t` and a smooth radial cutoff `μ` equal to `1` for `|w| ≤ 3` and to `0` for `|w| ≥ 8`,
 with slope at most `1/4` (`TauCeti.Floer.exchangeMap`).
 
-* `Φ_c` is the identity near the inputs `0`, `1` and the translation by `c` near the output end.
-  It is `C²` (`TauCeti.Floer.contDiff_exchangeMap`), and for `0 ≤ c ≤ 1` the slope bound makes it
-  injective with positive Jacobian. It maps `S` onto itself
+* `Φ_c` is the identity near the inputs `0`, `1` and the translation by `c` near the output end
+  (`TauCeti.Floer.exchangeMap_of_norm_le`, `TauCeti.Floer.exchangeMap_of_le_norm`).
+  It is `C²` (`TauCeti.Floer.contDiff_exchangeMap`), and for `|c| ≤ 1` the slope bound makes it
+  bijective with nonnegative Jacobian (`TauCeti.Floer.injective_exchangeMap`,
+  `TauCeti.Floer.surjective_exchangeMap`, `TauCeti.Floer.det_fderiv_exchangeMap_nonneg`). For
+  `0 ≤ c ≤ 1` it maps `S` onto itself
   (`TauCeti.Floer.image_exchangeMap_thricePuncturedSphereReal`) and the truncation `S_R` onto the
   truncation with recentred output end
   (`TauCeti.Floer.image_exchangeMap_truncation`); it fixes the circles `s = R` of the input ends and
@@ -79,7 +82,7 @@ private theorem exists_exchangeCutoff :
       (∀ r ≤ 3, μ r = 1) ∧ (∀ r, |deriv μ r| ≤ 1 / 4) ∧ ∀ r ∉ Ioo 3 8, deriv μ r = 0 :=
   exists_contDiff_antitone_cutoff_abs_deriv_le (by norm_num) zero_le_one (by norm_num)
 
-/-- The radial cutoff of the diffeomorphism `Φ_c`. -/
+/-- The radial cutoff of the map `Φ_c`. -/
 private noncomputable def exchangeCutoff : ℝ → ℝ :=
   exists_exchangeCutoff.choose
 
@@ -112,10 +115,11 @@ private theorem lipschitzWith_exchangeCutoff : LipschitzWith (1 / 4) exchangeCut
 private noncomputable def exchangeShift (c : ℝ) (y : ℝ × ℝ) : ℝ :=
   c * (1 - exchangeCutoff ‖Complex.equivRealProdCLM.symm y‖)
 
-/-- The diffeomorphism `Φ_c(s, t) = (s + c (1 - μ(|w|)), t)` of the plane, for `w = s + i t` and a
-smooth radial cutoff `μ` equal to `1` for `|w| ≤ 3` and to `0` for `|w| ≥ 8`. It is the identity
-near the inputs `0`, `1` and the translation by `c` near the output end, and it carries the
-pair-of-pants datum to the member `c` of the input-exchange family. -/
+/-- The `C²` map `Φ_c(s, t) = (s + c (1 - μ(|w|)), t)` of the plane, for `w = s + i t` and a
+smooth radial cutoff `μ` equal to `1` for `|w| ≤ 3` and to `0` for `|w| ≥ 8`, with slope at most
+`1/4`. It is the identity near the inputs `0`, `1` and the translation by `c` near the output end,
+it is a diffeomorphism of the plane for `|c| ≤ 1`, and it carries the pair-of-pants datum to the
+member `c` of the input-exchange family. -/
 noncomputable def exchangeMap (c : ℝ) (y : ℝ × ℝ) : ℝ × ℝ :=
   (y.1 + exchangeShift c y, y.2)
 
@@ -154,7 +158,7 @@ private theorem contDiff_exchangeShift (c : ℝ) : ContDiff ℝ 2 (exchangeShift
     exact contDiff_exchangeCutoff.contDiffAt.comp y
       ((contDiffAt_norm ℝ hne).comp y e.contDiff.contDiffAt)
 
-/-- The diffeomorphism `Φ_c` is `C²`. -/
+/-- The map `Φ_c` is `C²`. -/
 theorem contDiff_exchangeMap (c : ℝ) : ContDiff ℝ 2 (exchangeMap c) :=
   (contDiff_fst.add (contDiff_exchangeShift c)).prodMk contDiff_snd
 
@@ -202,15 +206,17 @@ private theorem one_half_lt_inv_nnnorm_refl :
     ContinuousLinearMap.nnNorm_id, inv_one]
   norm_num
 
-private theorem injective_exchangeMap (hc : |c| ≤ 1) : Injective (exchangeMap c) :=
+/-- For `|c| ≤ 1` the map `Φ_c` is injective. -/
+theorem injective_exchangeMap (hc : |c| ≤ 1) : Injective (exchangeMap c) :=
   injOn_univ.1 <| (approximatesLinearOn_exchangeMap hc).injOn (Or.inr one_half_lt_inv_nnnorm_refl)
 
-private theorem surjective_exchangeMap (hc : |c| ≤ 1) : Surjective (exchangeMap c) :=
+/-- For `|c| ≤ 1` the map `Φ_c` is surjective. -/
+theorem surjective_exchangeMap (hc : |c| ≤ 1) : Surjective (exchangeMap c) :=
   (approximatesLinearOn_exchangeMap hc).surjective (Or.inr one_half_lt_inv_nnnorm_refl)
 
 /-- For `|c| ≤ 1` the diffeomorphism `Φ_c` preserves orientation: its Jacobian determinant is
 `1 + ∂_s` of the displacement, which is at least `1/2`. -/
-private theorem det_fderiv_exchangeMap_nonneg (hc : |c| ≤ 1) (y : ℝ × ℝ) :
+theorem det_fderiv_exchangeMap_nonneg (hc : |c| ≤ 1) (y : ℝ × ℝ) :
     0 ≤ (fderiv ℝ (exchangeMap c) y).det := by
   set g := exchangeShift c
   have hg : HasFDerivAt g (fderiv ℝ g y) y :=
@@ -232,25 +238,27 @@ private theorem det_fderiv_exchangeMap_nonneg (hc : |c| ≤ 1) (y : ℝ × ℝ) 
   simp only [_root_.add_apply, ContinuousLinearMap.coe_fst']
   linarith [(abs_le.1 hcol).1]
 
-/-- On the disc `|w| < 3` the diffeomorphism `Φ_c` is the identity nearby. -/
-private theorem exchangeMap_eventuallyEq_id (hy : ‖Complex.equivRealProdCLM.symm y‖ < 3) :
+/-- On the disc `|w| < 3` the map `Φ_c` is the identity nearby. -/
+theorem exchangeMap_eventuallyEq_id (hy : ‖Complex.equivRealProdCLM.symm y‖ < 3) :
     exchangeMap c =ᶠ[𝓝 y] id := by
   filter_upwards [(isOpen_lt (continuous_norm.comp Complex.equivRealProdCLM.symm.continuous)
     continuous_const).mem_nhds hy] with y' hy'
   ext <;> simp [exchangeMap, exchangeShift_of_norm_le (le_of_lt hy')]
 
-/-- Off the disc `|w| ≤ 8` the diffeomorphism `Φ_c` is the translation by `c` nearby. -/
-private theorem exchangeMap_eventuallyEq_add (hy : 8 < ‖Complex.equivRealProdCLM.symm y‖) :
+/-- Off the disc `|w| ≤ 8` the map `Φ_c` is the translation by `c` nearby. -/
+theorem exchangeMap_eventuallyEq_add (hy : 8 < ‖Complex.equivRealProdCLM.symm y‖) :
     exchangeMap c =ᶠ[𝓝 y] (· + (c, 0)) := by
   filter_upwards [(isOpen_lt continuous_const
     (continuous_norm.comp Complex.equivRealProdCLM.symm.continuous)).mem_nhds hy] with y' hy'
   ext <;> simp [exchangeMap, exchangeShift_of_le_norm (le_of_lt hy')]
 
-private theorem exchangeMap_of_norm_le (hy : ‖Complex.equivRealProdCLM.symm y‖ ≤ 3) :
+/-- On the disc `|w| ≤ 3` the map `Φ_c` is the identity. -/
+theorem exchangeMap_of_norm_le (hy : ‖Complex.equivRealProdCLM.symm y‖ ≤ 3) :
     exchangeMap c y = y := by
   ext <;> simp [exchangeMap, exchangeShift_of_norm_le hy]
 
-private theorem exchangeMap_of_le_norm (hy : 8 ≤ ‖Complex.equivRealProdCLM.symm y‖) :
+/-- Off the open disc `|w| < 8` the map `Φ_c` is the translation by `c`. -/
+theorem exchangeMap_of_le_norm (hy : 8 ≤ ‖Complex.equivRealProdCLM.symm y‖) :
     exchangeMap c y = y + (c, 0) := by
   ext <;> simp [exchangeMap, exchangeShift_of_le_norm hy]
 
