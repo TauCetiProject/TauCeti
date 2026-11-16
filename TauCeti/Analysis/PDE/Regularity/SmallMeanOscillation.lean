@@ -836,9 +836,9 @@ a constant `P₀` satisfying `Q x₀ (4R)` such that on every ball `B(c, r)`, of
 `ψ β + (1 - ψ) P₀` has mean deviation at most `4 · 8^(n + 1) δ` from a convex combination
 `t P + (1 - t) P₀`, where `P` is `P₀` or satisfies `Q c r`.
 
-The cutoff `ψ` vanishes outside `B(x₀, 2R)` and is `2 / R`-Lipschitz, and `P₀` is the constant of
-`B(x₀, 4R)`. On small balls near `x₀` the constant is `ψ(c) P + (1 - ψ(c)) P₀` for a constant `P`
-of the ball, whose drift from `P₀` is controlled along dyadic balls
+In the proof, the cutoff `ψ` vanishes outside `B(x₀, 2R)` and is `2 / R`-Lipschitz, and `P₀` is
+the constant of `B(x₀, 4R)`. On small balls near `x₀` the constant is `ψ(c) P + (1 - ψ(c)) P₀` for
+a constant `P` of the ball, whose drift from `P₀` is controlled along dyadic balls
 (`TauCeti.PDE.exists_setAverage_le_and_div_mul_norm_sub_le`); elsewhere it is `P₀`. -/
 theorem exists_forall_setAverage_norm_cutoff_sub_le [NormedSpace ℝ F]
     {β : EuclideanSpace ℝ (Fin (n + 1)) → F} (hβ : AEStronglyMeasurable β volume) {Lam : ℝ}
@@ -889,7 +889,7 @@ deviation at most `δ` from `a`. Then for every ball `B(x₀, R)` with `4R ≤ r
 coefficient matrix `b`, bounded by `Λ`, which agrees with `a` on `B(x₀, R)` and has mean deviation
 at most `4 · 8^(n + 1) δ` from an elliptic constant matrix on every ball, of any radius.
 
-The field is `b = ψ a + (1 - ψ) A₀`, where `ψ` is a `2 / R`-Lipschitz cutoff equal to one on
+The proof takes `b = ψ a + (1 - ψ) A₀`, where `ψ` is a `2 / R`-Lipschitz cutoff equal to one on
 `B(x₀, R)` and zero outside `B(x₀, 2R)`, and `A₀` is the frozen matrix of `B(x₀, 4R)`
 (`TauCeti.PDE.exists_forall_setAverage_norm_cutoff_sub_le`). This is how coefficients of vanishing
 mean oscillation, which are close to constant matrices only on small balls, meet estimates that ask
@@ -994,7 +994,7 @@ theorem exists_eLpNorm_gradient_le_of_setAverage_le_of_gradient_eq_zero
   · obtain ⟨A, hA, hAδ⟩ := hbosc c r hr
     exact ⟨A, hA, hAδ.trans_eq (by field_simp)⟩
   · rw [← hu φ]
-    exact energyFormH1_eq_of_eqOn_of_ae_gradient_eq_zero hba (ae_restrict_of_ae hsupp) _
+    exact energyFormH1_eq_of_eqOn_of_ae_gradient_eq_zero hba 0 0 (ae_restrict_of_ae hsupp) _
 
 end Localization
 
