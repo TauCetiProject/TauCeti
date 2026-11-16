@@ -29,6 +29,10 @@ Tau Ceti work in [#42](https://github.com/TauCetiProject/TauCeti/pull/42).
 ambient space whose intermediate paths all stay in `V`. Analytic continuation consumes it in
 `Analysis/Complex/Conformal/GlobalBranch.lean`.
 
+`Path.continuousFamily` packages a jointly continuous map on `Y × [0, 1]` with fixed ends as a
+continuous family of paths; the smoothing of caps in `Geometry/Symplectic/Floer/Cap/Smoothing.lean`
+feeds such families to `Path.homotopic_of_continuous_square`.
+
 `Path.homotopic_of_continuous_square` is likewise adapted from Kim Morrison's
 [#38292](https://github.com/leanprover-community/mathlib4/pull/38292). It is used by
 `AlgebraicTopology/UniversalCover/BasedPath.lean`, where it previously lived privately, and by
@@ -248,6 +252,20 @@ theorem exists_homotopy_forall_mem_of_isSimplyConnected {V : Set X} (hV : IsSimp
     (map_codRestrict (x := ⟨a, haV⟩) (y := ⟨b, hbV⟩) p hp)
     (map_codRestrict (x := ⟨a, haV⟩) (y := ⟨b, hbV⟩) q hq), fun t x => ?_⟩
   simp
+
+/-- The continuous family of paths from `x₀` to `x₁` given by a jointly continuous map `F` on
+`Y × [0, 1]` which sends `Y × {0}` to `x₀` and `Y × {1}` to `x₁`. -/
+@[expose]
+def continuousFamily {Y : Type*} [TopologicalSpace Y] {x₀ x₁ : X} (F : Y → I → X)
+    (hF : Continuous ↿F) (h₀ : ∀ y, F y 0 = x₀) (h₁ : ∀ y, F y 1 = x₁) : C(Y, Path x₀ x₁) where
+  toFun y := ⟨⟨F y, hF.comp (continuous_const.prodMk continuous_id)⟩, h₀ y, h₁ y⟩
+  continuous_toFun := continuous_uncurry_iff.1 hF
+
+@[simp]
+theorem continuousFamily_apply {Y : Type*} [TopologicalSpace Y] {x₀ x₁ : X} (F : Y → I → X)
+    (hF : Continuous ↿F) (h₀ : ∀ y, F y 0 = x₀) (h₁ : ∀ y, F y 1 = x₁) (y : Y) (t : I) :
+    continuousFamily F hF h₀ h₁ y t = F y t :=
+  (rfl)
 
 /-- **A square with prescribed edges is a path homotopy.** A continuous map on `I × I` that
 restricts to `p` at `t = 0` and to `q` at `t = 1`, and is constant along each of the edges `s = 0`

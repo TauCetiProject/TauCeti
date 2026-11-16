@@ -6,6 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.Symplectic.Floer.Cap.Area
+import TauCeti.Algebra.Order.Floor.Ring
+import TauCeti.Geometry.Manifold.Instances.Icc.CollaredSmoothTransition
 import TauCeti.Geometry.Manifold.SmoothApprox
 import TauCeti.Topology.Homotopy.Path
 
@@ -27,8 +29,9 @@ such a loop is the integral of the form over a smooth based cap in its class
 The proof smooths a disc relative to its boundary, keeping the boundary values exactly. A raw cap
 is the class of a path `P` in the loop space from `γ` to the constant loop. It is first replaced
 by a continuous map of the plane which is already smooth off a rectangle inside the unit square.
-Fix a smooth map `c` of `[0, 1]` onto itself which is `0` near `0` and `1` near `1`, and its linear
-interpolation `τ_r = (1 - r) id + r c` with the identity. Then:
+Fix a smooth map `c` of `[0, 1]` onto itself which is `0` near `0` and `1` near `1`
+(`TauCeti.collaredSmoothTransition`), and its linear interpolation `τ_r = (1 - r) id + r c` with
+the identity (`TauCeti.collaredSmoothTransitionLineMap`). Then:
 
 * near the edge `s = 0` the map is `g ∘ τ_r`, with `r` rising smoothly from `0` to `1`;
 * the rest of the disc is `P` precomposed with `c` in the loop direction, so it is constant
@@ -71,28 +74,9 @@ namespace TauCeti.Floer
 
 section Reparam
 
-/-- A smooth map of the line which is `0` up to `1/4` and `1` from `3/4` on. Precomposing a loop
-with it makes the loop constant equal to its base point near the ends of the unit interval. -/
-private def capCut (t : ℝ) : ℝ :=
-  Real.smoothTransition (2 * t - 1 / 2)
-
 /-- A smooth map of the line which is `0` up to `1/6` and `1` from `1/4` on. -/
 private def capRamp (s : ℝ) : ℝ :=
   Real.smoothTransition (12 * s - 2)
-
-/-- The interpolation `t + r (capCut t - t)` between the identity (`r = 0`) and `capCut`
-(`r = 1`). -/
-private def capReparam (r t : ℝ) : ℝ :=
-  t + r * (capCut t - t)
-
-private theorem capCut_of_le {t : ℝ} (ht : t ≤ 1 / 4) : capCut t = 0 :=
-  Real.smoothTransition.zero_of_nonpos (by linarith)
-
-private theorem capCut_of_ge {t : ℝ} (ht : 3 / 4 ≤ t) : capCut t = 1 :=
-  Real.smoothTransition.one_of_one_le (by linarith)
-
-private theorem capCut_mem (t : ℝ) : capCut t ∈ Icc (0 : ℝ) 1 :=
-  ⟨Real.smoothTransition.nonneg _, Real.smoothTransition.le_one _⟩
 
 private theorem capRamp_of_le {s : ℝ} (hs : s ≤ 1 / 6) : capRamp s = 0 :=
   Real.smoothTransition.zero_of_nonpos (by linarith)
@@ -103,94 +87,46 @@ private theorem capRamp_of_ge {s : ℝ} (hs : 1 / 4 ≤ s) : capRamp s = 1 :=
 private theorem capRamp_mem (s : ℝ) : capRamp s ∈ Icc (0 : ℝ) 1 :=
   ⟨Real.smoothTransition.nonneg _, Real.smoothTransition.le_one _⟩
 
-private theorem capReparam_zero_left (t : ℝ) : capReparam 0 t = t := by
-  simp [capReparam]
-
-private theorem capReparam_one_left (t : ℝ) : capReparam 1 t = capCut t := by
-  simp [capReparam]
-
-private theorem capReparam_zero_right (r : ℝ) : capReparam r 0 = 0 := by
-  simp [capReparam, capCut_of_le (by norm_num : (0 : ℝ) ≤ 1 / 4)]
-
-private theorem capReparam_one_right (r : ℝ) : capReparam r 1 = 1 := by
-  simp [capReparam, capCut_of_ge (by norm_num : (3 / 4 : ℝ) ≤ 1)]
-
-/-- Near the base point the interpolation commutes with the translation by `1`. -/
-private theorem capReparam_add_one (r : ℝ) {t : ℝ} (ht₀ : -1 / 4 ≤ t) (ht₁ : t ≤ 1 / 4) :
-    capReparam r (t + 1) = capReparam r t + 1 := by
-  rw [capReparam, capReparam, capCut_of_ge (by linarith), capCut_of_le ht₁]
-  ring
-
-private theorem capReparam_mem {r t : ℝ} (hr : r ∈ Icc (0 : ℝ) 1) (ht : t ∈ Icc (0 : ℝ) 1) :
-    capReparam r t ∈ Icc (0 : ℝ) 1 := by
-  obtain ⟨hr₀, hr₁⟩ := hr
-  obtain ⟨ht₀, ht₁⟩ := ht
-  obtain ⟨hc₀, hc₁⟩ := capCut_mem t
-  have h : capReparam r t = (1 - r) * t + r * capCut t := by
-    rw [capReparam]
-    ring
-  rw [h]
-  constructor <;> nlinarith [mul_nonneg (sub_nonneg.2 hr₁) ht₀, mul_nonneg hr₀ hc₀,
-    mul_le_mul_of_nonneg_left ht₁ (sub_nonneg.2 hr₁), mul_le_mul_of_nonneg_left hc₁ hr₀]
-
-private theorem contDiff_capCut : ContDiff ℝ ∞ capCut :=
-  Real.smoothTransition.contDiff.comp ((contDiff_const.mul contDiff_id).sub contDiff_const)
-
 private theorem contDiff_capRamp : ContDiff ℝ ∞ capRamp :=
   Real.smoothTransition.contDiff.comp ((contDiff_const.mul contDiff_id).sub contDiff_const)
 
-private theorem contDiff_capReparam_capRamp :
-    ContDiff ℝ ∞ fun z : ℝ × ℝ ↦ capReparam (capRamp z.1) z.2 :=
-  contDiff_snd.add ((contDiff_capRamp.comp contDiff_fst).mul
-    ((contDiff_capCut.comp contDiff_snd).sub contDiff_snd))
+/-- Near the base point the straight-line homotopy to the collared smooth transition commutes with
+the translation by `1`. -/
+private theorem lineMap_add_one (r : ℝ) {t : ℝ} (ht₀ : -1 / 4 ≤ t) (ht₁ : t ≤ 1 / 4) :
+    collaredSmoothTransitionLineMap r (t + 1) = collaredSmoothTransitionLineMap r t + 1 := by
+  rw [collaredSmoothTransitionLineMap, collaredSmoothTransitionLineMap,
+    collaredSmoothTransition_eq_one_of_ge (by linarith), collaredSmoothTransition_eq_zero_of_le ht₁]
+  ring
 
-private theorem continuous_capReparam : Continuous fun z : ℝ × ℝ ↦ capReparam z.1 z.2 := by
-  have hc : Continuous capCut := contDiff_capCut.continuous
-  unfold capReparam
-  fun_prop
+private theorem contDiff_lineMap_capRamp :
+    ContDiff ℝ ∞ fun z : ℝ × ℝ ↦ collaredSmoothTransitionLineMap (capRamp z.1) z.2 :=
+  (contDiff_collaredSmoothTransitionLineMap le_rfl).comp
+    ((contDiff_capRamp.comp contDiff_fst).prodMk contDiff_snd)
 
-/-- The interpolation `capReparam` as a map of the unit interval, for `r ∈ [0, 1]`. -/
+/-- The straight-line homotopy to the collared smooth transition as a map of the unit interval,
+for `r ∈ [0, 1]`. -/
 private def capReparamI (r t : unitInterval) : unitInterval :=
-  ⟨capReparam r t, capReparam_mem r.2 t.2⟩
+  ⟨collaredSmoothTransitionLineMap r t, collaredSmoothTransitionLineMap_mem r.2 t.2⟩
 
 private theorem coe_capReparamI (r t : unitInterval) :
-    (capReparamI r t : ℝ) = capReparam r t :=
+    (capReparamI r t : ℝ) = collaredSmoothTransitionLineMap r t :=
   (rfl)
 
 private theorem continuous_capReparamI :
     Continuous fun q : unitInterval × unitInterval ↦ capReparamI q.1 q.2 :=
-  (continuous_capReparam.comp (continuous_subtype_val.prodMap continuous_subtype_val)).subtype_mk _
+  ((contDiff_collaredSmoothTransitionLineMap le_rfl).continuous.comp
+    (continuous_subtype_val.prodMap continuous_subtype_val)).subtype_mk _
 
 private theorem capReparamI_zero_right (r : unitInterval) : capReparamI r 0 = 0 :=
-  Subtype.ext (capReparam_zero_right r)
+  Subtype.ext (collaredSmoothTransitionLineMap_zero_right r)
 
 private theorem capReparamI_one_right (r : unitInterval) : capReparamI r 1 = 1 :=
-  Subtype.ext (capReparam_one_right r)
+  Subtype.ext (collaredSmoothTransitionLineMap_one_right r)
 
 private theorem capReparamI_zero_left (t : unitInterval) : capReparamI 0 t = t :=
-  Subtype.ext (capReparam_zero_left t)
+  Subtype.ext (collaredSmoothTransitionLineMap_zero_left t)
 
 end Reparam
-
-/-! ### Continuous families of loops -/
-
-section Family
-
-variable {M : Type*} [TopologicalSpace M] {x : M}
-
-/-- The continuous family of loops at `x` given by a continuous map `F` on `Y × [0, 1]` sending
-`Y × {0, 1}` to `x`. -/
-private def loopFamily {Y : Type*} [TopologicalSpace Y] (F : Y → unitInterval → M)
-    (hF : Continuous ↿F) (h₀ : ∀ y, F y 0 = x) (h₁ : ∀ y, F y 1 = x) : C(Y, Ω M x) where
-  toFun y := ⟨⟨F y, hF.comp (continuous_const.prodMk continuous_id)⟩, h₀ y, h₁ y⟩
-  continuous_toFun := Path.continuous_uncurry_iff.1 hF
-
-private theorem loopFamily_apply {Y : Type*} [TopologicalSpace Y] (F : Y → unitInterval → M)
-    (hF : Continuous ↿F) (h₀ : ∀ y, F y 0 = x) (h₁ : ∀ y, F y 1 = x) (y : Y) (t : unitInterval) :
-    loopFamily F hF h₀ h₁ y t = F y t :=
-  (rfl)
-
-end Family
 
 /-! ### A model of a cap which is smooth near the boundary of a rectangle -/
 
@@ -199,22 +135,24 @@ section Model
 variable {M : Type*} [TopologicalSpace M] {x : M} {γ : Ω M x}
 
 /-- The model of the raw cap of `P`, for a periodic extension `g` of `γ`: `g` precomposed with
-`capReparam (capRamp s)` for `s ≤ 1/3`, and `P` precomposed with `capCut` in the loop direction,
-run three times as fast, beyond. It is smooth near the edge `s = 0` and equal to `x` near the seam
-and near the edge `s = 1`. -/
+`collaredSmoothTransitionLineMap (capRamp s)` for `s ≤ 1/3`, and `P` precomposed with
+`collaredSmoothTransition` in the loop direction, run three times as fast, beyond. It is smooth
+near the edge `s = 0` and equal to `x` near the seam and near the edge `s = 1`. -/
 private def capModel (g : ℝ → M) (P : Path γ (Path.refl x)) (z : ℝ × ℝ) : M :=
-  if z.1 ≤ 1 / 3 then g (capReparam (capRamp z.1) z.2)
-  else P (projIcc 0 1 zero_le_one (3 * z.1 - 1)) (projIcc 0 1 zero_le_one (capCut z.2))
+  if z.1 ≤ 1 / 3 then g (collaredSmoothTransitionLineMap (capRamp z.1) z.2)
+  else P (projIcc 0 1 zero_le_one (3 * z.1 - 1))
+    (projIcc 0 1 zero_le_one (collaredSmoothTransition z.2))
 
 variable {g : ℝ → M} {P : Path γ (Path.refl x)}
 
 private theorem capModel_of_le {z : ℝ × ℝ} (hz : z.1 ≤ 1 / 3) :
-    capModel g P z = g (capReparam (capRamp z.1) z.2) := by
+    capModel g P z = g (collaredSmoothTransitionLineMap (capRamp z.1) z.2) := by
   simp only [capModel, hz, ↓reduceIte]
 
 private theorem capModel_of_lt {z : ℝ × ℝ} (hz : 1 / 3 < z.1) :
     capModel g P z =
-      P (projIcc 0 1 zero_le_one (3 * z.1 - 1)) (projIcc 0 1 zero_le_one (capCut z.2)) := by
+      P (projIcc 0 1 zero_le_one (3 * z.1 - 1))
+        (projIcc 0 1 zero_le_one (collaredSmoothTransition z.2)) := by
   simp only [capModel, hz.not_ge, ↓reduceIte]
 
 private theorem continuous_uncurry_path (P : Path γ (Path.refl x)) :
@@ -222,10 +160,17 @@ private theorem continuous_uncurry_path (P : Path γ (Path.refl x)) :
   Path.continuous_uncurry_iff.2 P.continuous
 
 private theorem capModel_zero (t : ℝ) : capModel g P (0, t) = g t := by
-  rw [capModel_of_le (by norm_num), capRamp_of_le (by norm_num), capReparam_zero_left]
+  rw [capModel_of_le (by norm_num), capRamp_of_le (by norm_num),
+    collaredSmoothTransitionLineMap_zero_left]
 
 variable (hgγ : ∀ t : unitInterval, g t = γ t)
 include hgγ
+
+private theorem apply_zero_eq_base : g 0 = x := by
+  rw [← Icc.coe_zero, hgγ, γ.source]
+
+private theorem apply_one_eq_base : g 1 = x := by
+  rw [← Icc.coe_one, hgγ, γ.target]
 
 private theorem capModel_eq_of_mem (s t : unitInterval) :
     capModel g P (s, t) = P (projIcc 0 1 zero_le_one (3 * s - 1))
@@ -236,56 +181,59 @@ private theorem capModel_eq_of_mem (s t : unitInterval) :
       ← hgγ, coe_capReparamI]
   · have hr : (⟨capRamp s, capRamp_mem s⟩ : unitInterval) = 1 :=
       Subtype.ext (capRamp_of_ge (by linarith))
-    rw [capModel_of_lt hs, hr, projIcc_of_mem _ (capCut_mem t)]
+    rw [capModel_of_lt hs, hr, projIcc_of_mem _ (collaredSmoothTransition_mem t)]
     congr 1
-    exact Subtype.ext (capReparam_one_left t).symm
+    exact Subtype.ext (collaredSmoothTransitionLineMap_one_left t).symm
 
 private theorem continuous_capModel (hg : Continuous g) : Continuous (capModel g P) := by
-  have hr : Continuous fun z : ℝ × ℝ ↦ capReparam (capRamp z.1) z.2 :=
-    contDiff_capReparam_capRamp.continuous
+  have hr : Continuous fun z : ℝ × ℝ ↦ collaredSmoothTransitionLineMap (capRamp z.1) z.2 :=
+    contDiff_lineMap_capRamp.continuous
   have hs : Continuous fun z : ℝ × ℝ ↦ projIcc (0 : ℝ) 1 zero_le_one (3 * z.1 - 1) :=
     continuous_projIcc.comp ((continuous_const.mul continuous_fst).sub continuous_const)
-  have ht : Continuous fun z : ℝ × ℝ ↦ projIcc (0 : ℝ) 1 zero_le_one (capCut z.2) :=
-    continuous_projIcc.comp (contDiff_capCut.continuous.comp continuous_snd)
+  have ht : Continuous fun z : ℝ × ℝ ↦
+      projIcc (0 : ℝ) 1 zero_le_one (collaredSmoothTransition z.2) :=
+    continuous_projIcc.comp (continuous_collaredSmoothTransition.comp continuous_snd)
   refine Continuous.if_le (hg.comp hr) ((continuous_uncurry_path P).comp (hs.prodMk ht))
     continuous_fst continuous_const fun z hz ↦ ?_
-  rw [hz, capRamp_of_ge (by norm_num), capReparam_one_left,
-    projIcc_of_le_left _ (by norm_num), Icc.mk_zero, P.source, projIcc_of_mem _ (capCut_mem _),
-    ← hgγ]
+  rw [hz, capRamp_of_ge (by norm_num), collaredSmoothTransitionLineMap_one_left,
+    projIcc_of_le_left _ (by norm_num), Icc.mk_zero, P.source,
+    projIcc_of_mem _ (collaredSmoothTransition_mem _), ← hgγ]
 
 /-- The model is `x` beyond `s = 2/3`, and near the seam beyond `s = 1/4`. -/
 private theorem capModel_eq_base {z : ℝ × ℝ}
     (hz : 2 / 3 < z.1 ∨ 1 / 4 < z.1 ∧ (z.2 ≤ 1 / 4 ∨ 3 / 4 ≤ z.2)) : capModel g P z = x := by
   rcases le_or_gt z.1 (1 / 3) with hs | hs
   · have hz' : 1 / 4 < z.1 ∧ (z.2 ≤ 1 / 4 ∨ 3 / 4 ≤ z.2) := hz.resolve_left (by linarith)
-    rw [capModel_of_le hs, capRamp_of_ge hz'.1.le, capReparam_one_left]
+    rw [capModel_of_le hs, capRamp_of_ge hz'.1.le, collaredSmoothTransitionLineMap_one_left]
     rcases hz'.2 with ht | ht
-    · rw [capCut_of_le ht, ← Icc.coe_zero, hgγ, γ.source]
-    · rw [capCut_of_ge ht, ← Icc.coe_one, hgγ, γ.target]
+    · rw [collaredSmoothTransition_eq_zero_of_le ht, apply_zero_eq_base hgγ]
+    · rw [collaredSmoothTransition_eq_one_of_ge ht, apply_one_eq_base hgγ]
   · rw [capModel_of_lt hs]
     rcases hz with hz | ⟨-, ht | ht⟩
     · rw [projIcc_of_right_le _ (by linarith), Icc.mk_one, P.target, Path.refl_apply]
-    · rw [capCut_of_le ht, projIcc_left, Icc.mk_zero, Path.source]
-    · rw [capCut_of_ge ht, projIcc_right, Icc.mk_one, Path.target]
+    · rw [collaredSmoothTransition_eq_zero_of_le ht, projIcc_left, Icc.mk_zero, Path.source]
+    · rw [collaredSmoothTransition_eq_one_of_ge ht, projIcc_right, Icc.mk_one, Path.target]
 
 private theorem capModel_one (t : ℝ) : capModel g P (1, t) = x :=
   capModel_eq_base hgγ (Or.inl (by norm_num))
 
 private theorem capModel_seam_zero (s : ℝ) : capModel g P (s, 0) = x := by
   rcases le_or_gt s (1 / 3) with hs | hs
-  · rw [capModel_of_le hs, capReparam_zero_right, ← Icc.coe_zero, hgγ, γ.source]
-  · rw [capModel_of_lt hs, capCut_of_le (by norm_num), projIcc_left, Icc.mk_zero, Path.source]
+  · rw [capModel_of_le hs, collaredSmoothTransitionLineMap_zero_right, apply_zero_eq_base hgγ]
+  · rw [capModel_of_lt hs, collaredSmoothTransition_eq_zero_of_le (by norm_num), projIcc_left,
+      Icc.mk_zero, Path.source]
 
 private theorem capModel_seam_one (s : ℝ) : capModel g P (s, 1) = x := by
   rcases le_or_gt s (1 / 3) with hs | hs
-  · rw [capModel_of_le hs, capReparam_one_right, ← Icc.coe_one, hgγ, γ.target]
-  · rw [capModel_of_lt hs, capCut_of_ge (by norm_num), projIcc_right, Icc.mk_one, Path.target]
+  · rw [capModel_of_le hs, collaredSmoothTransitionLineMap_one_right, apply_one_eq_base hgγ]
+  · rw [capModel_of_lt hs, collaredSmoothTransition_eq_one_of_ge (by norm_num), projIcc_right,
+      Icc.mk_one, Path.target]
 
 /-- The model is periodic in `t` near the seam. -/
 private theorem capModel_add_one (hgp : Periodic g 1) (s : ℝ) {t : ℝ} (ht₀ : -1 / 4 ≤ t)
     (ht₁ : t ≤ 1 / 4) : capModel g P (s, t + 1) = capModel g P (s, t) := by
   rcases le_or_gt s (1 / 3) with hs | hs
-  · rw [capModel_of_le hs, capModel_of_le hs, capReparam_add_one _ ht₀ ht₁, hgp]
+  · rw [capModel_of_le hs, capModel_of_le hs, lineMap_add_one _ ht₀ ht₁, hgp]
   · rw [capModel_eq_base hgγ (Or.inr ⟨by linarith, Or.inr (by linarith)⟩),
       capModel_eq_base hgγ (Or.inr ⟨by linarith, Or.inl ht₁⟩)]
 
@@ -317,10 +265,11 @@ private theorem contMDiffOn_capModel {E H : Type*} [NormedAddCommGroup E] [Norme
     [TopologicalSpace H] {I : ModelWithCorners ℝ E H} [ChartedSpace H M]
     (hg : ContMDiff 𝓘(ℝ) I ∞ g) : ContMDiffOn 𝓘(ℝ, ℝ × ℝ) I ∞ (capModel g P) capSmoothSet := by
   rintro z (hz | hz)
-  · have h : capModel g P =ᶠ[𝓝 z] fun w : ℝ × ℝ ↦ g (capReparam (capRamp w.1) w.2) := by
+  · have h : capModel g P =ᶠ[𝓝 z] fun w : ℝ × ℝ ↦
+        g (collaredSmoothTransitionLineMap (capRamp w.1) w.2) := by
       filter_upwards [(isOpen_lt continuous_fst continuous_const).mem_nhds hz] with w hw
       exact capModel_of_le (le_of_lt hw)
-    exact ((hg.comp contDiff_capReparam_capRamp.contMDiff).contMDiffAt.congr_of_eventuallyEq
+    exact ((hg.comp contDiff_lineMap_capRamp.contMDiff).contMDiffAt.congr_of_eventuallyEq
       h).contMDiffWithinAt
   · have h : capModel g P =ᶠ[𝓝 z] fun _ ↦ x := by
       filter_upwards [isOpen_capBaseSet.mem_nhds hz] with w hw
@@ -329,11 +278,15 @@ private theorem contMDiffOn_capModel {E H : Type*} [NormedAddCommGroup E] [Norme
 
 /-- The path in the loop space traced by the model on the unit square. -/
 private def capModelPath (hg : Continuous g) : Path γ (Path.refl x) where
-  toContinuousMap := loopFamily (fun s t : unitInterval ↦ capModel g P (s, t))
+  toContinuousMap := Path.continuousFamily (fun s t : unitInterval ↦ capModel g P (s, t))
     ((continuous_capModel hgγ hg).comp (continuous_subtype_val.prodMap continuous_subtype_val))
-    (fun s ↦ capModel_seam_zero hgγ s) (fun s ↦ capModel_seam_one hgγ s)
-  source' := Path.ext (funext fun t ↦ (capModel_zero t).trans (hgγ t))
-  target' := Path.ext (funext fun t ↦ capModel_one hgγ t)
+    (fun s ↦ by rw [Icc.coe_zero, capModel_seam_zero hgγ])
+    (fun s ↦ by rw [Icc.coe_one, capModel_seam_one hgγ])
+  source' := Path.ext (funext fun t ↦ by
+    rw [ContinuousMap.toFun_eq_coe, Path.continuousFamily_apply, Icc.coe_zero, capModel_zero, hgγ])
+  target' := Path.ext (funext fun t ↦ by
+    rw [ContinuousMap.toFun_eq_coe, Path.continuousFamily_apply, Icc.coe_one, capModel_one hgγ,
+      Path.refl_apply])
 
 private theorem capModelPath_apply (hg : Continuous g) (s t : unitInterval) :
     capModelPath (P := P) hgγ hg s t = capModel g P (s, t) :=
@@ -353,15 +306,15 @@ private theorem homotopic_capModelPath (hg : Continuous g) :
   have hρ : Continuous ρ := continuous_projIcc.comp
     ((continuous_subtype_val.comp continuous_fst).mul
       (contDiff_capRamp.continuous.comp (continuous_subtype_val.comp continuous_snd)))
-  let K := loopFamily (x := x) (fun (q : unitInterval × unitInterval) (t : unitInterval) ↦
-      P (σ q) (capReparamI (ρ q) t))
+  let K := Path.continuousFamily (x₀ := x) (x₁ := x)
+    (fun (q : unitInterval × unitInterval) (t : unitInterval) ↦ P (σ q) (capReparamI (ρ q) t))
     ((continuous_uncurry_path P).comp ((hσ.comp continuous_fst).prodMk
       (continuous_capReparamI.comp ((hρ.comp continuous_fst).prodMk continuous_snd))))
     (fun q ↦ by simp only [capReparamI_zero_right, Path.source])
     (fun q ↦ by simp only [capReparamI_one_right, Path.target])
   refine Path.homotopic_of_continuous_square K K.continuous (fun s ↦ ?_) (fun s ↦ ?_)
     (fun a ↦ ?_) (fun a ↦ ?_) <;> refine Path.ext (funext fun t ↦ ?_) <;>
-    rw [loopFamily_apply]
+    rw [Path.continuousFamily_apply]
   · have h₁ : σ (0, s) = s := by simp [σ]
     have h₂ : ρ (0, s) = 0 := by simp [ρ]
     rw [h₁, h₂, capReparamI_zero_left]
@@ -464,9 +417,8 @@ private theorem isSmoothBasedCap_periodize (hgp : Periodic g 1)
       capModel_add_one hgγ hgp s (by linarith) (by linarith)]
   apply_add_one z := by simp only [Int.fract_add_one]
   apply_zero t := by
-    have h := hgp.sub_int_mul_eq (x := (t : ℝ)) ⌊(t : ℝ)⌋
-    rw [mul_one, Int.self_sub_floor] at h
-    rw [hGf _ (mem_capFixedSet_of_fst (Or.inl (by norm_num))), capModel_zero, h, hgγ]
+    rw [hGf _ (mem_capFixedSet_of_fst (Or.inl (by norm_num))), capModel_zero, hgp.apply_fract,
+      hgγ]
   apply_one t := by
     rw [hGf _ (mem_capFixedSet_of_fst (Or.inr (by norm_num))), capModel_one hgγ]
   apply_seam s := by
@@ -487,15 +439,19 @@ private theorem homotopic_capModelPath_toPath (hgp : Periodic g 1)
     R.continuous.comp ((continuous_fst.comp continuous_fst).prodMk
       ((continuous_subtype_val.comp (continuous_snd.comp continuous_fst)).prodMk
         (continuous_subtype_val.comp continuous_snd)))
-  let K := loopFamily (x := x)
+  let K := Path.continuousFamily (x₀ := x) (x₁ := x)
     (fun (q : unitInterval × unitInterval) (t : unitInterval) ↦ R (q.1, ((q.2 : ℝ), (t : ℝ)))) hR
-    (fun q ↦ (R.eq_fst _ (mem_capFixedSet_of_snd (Or.inl (by norm_num)))).trans
-      (capModel_seam_zero hgγ _))
-    (fun q ↦ (R.eq_fst _ (mem_capFixedSet_of_snd (Or.inr (by norm_num)))).trans
-      (capModel_seam_one hgγ _))
+    (fun q ↦ by
+      rw [Icc.coe_zero]
+      exact (R.eq_fst _ (mem_capFixedSet_of_snd (Or.inl (by norm_num)))).trans
+        (capModel_seam_zero hgγ _))
+    (fun q ↦ by
+      rw [Icc.coe_one]
+      exact (R.eq_fst _ (mem_capFixedSet_of_snd (Or.inr (by norm_num)))).trans
+        (capModel_seam_one hgγ _))
   refine Path.homotopic_of_continuous_square K K.continuous (fun s ↦ ?_) (fun s ↦ ?_)
     (fun a ↦ ?_) (fun a ↦ ?_) <;> refine Path.ext (funext fun t ↦ ?_) <;>
-    rw [loopFamily_apply]
+    rw [Path.continuousFamily_apply]
   · exact R.apply_zero _
   · -- At `t = 1` the periodization reads `G` at `t = 0`, where both values are `x`.
     rw [R.apply_one, IsSmoothBasedCap.toPath_apply]
@@ -505,9 +461,11 @@ private theorem homotopic_capModelPath_toPath (hgp : Periodic g 1)
         ← R.fst_eq_snd (x := ((s : ℝ), 0)) (mem_capFixedSet_of_snd (Or.inl (by norm_num)))]
       exact (capModel_seam_one hgγ _).trans (capModel_seam_zero hgγ _).symm
     · rw [Int.fract_eq_self.2 ⟨t.2.1, h⟩]
-  · exact (R.eq_fst _ (mem_capFixedSet_of_fst (Or.inl (by norm_num)))).trans
+  · rw [Icc.coe_zero]
+    exact (R.eq_fst _ (mem_capFixedSet_of_fst (Or.inl (by norm_num)))).trans
       ((capModel_zero t).trans (hgγ t))
-  · exact (R.eq_fst _ (mem_capFixedSet_of_fst (Or.inr (by norm_num)))).trans
+  · rw [Icc.coe_one]
+    exact (R.eq_fst _ (mem_capFixedSet_of_fst (Or.inr (by norm_num)))).trans
       (capModel_one hgγ _)
 
 variable [FiniteDimensional ℝ E] [I.Boundaryless] [IsManifold I ∞ M] [T2Space M]
