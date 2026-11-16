@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.Normed.Lp.lpHolder
-public import TauCeti.Analysis.Normed.Operator.MetricSurjection
+public import TauCeti.Analysis.Normed.Module.Quotient
 import TauCeti.Analysis.Normed.Lp.Basic
 import TauCeti.Analysis.Normed.Lp.MapCLM
 
@@ -31,8 +31,9 @@ Specializing `v` to the inclusion of the closed unit ball `Metric.closedBall (0 
 complete normed space `E` produces the canonical summation surjection
 `TauCeti.unitBallSummation 𝕜 E : lp (fun _ : Metric.closedBall (0 : E) 1 ↦ 𝕜) 1 →L[𝕜] E`,
 characterized by its values on unit coordinate vectors
-(`ContinuousLinearMap.eq_unitBallSummation_iff`). Over a densely normed field `𝕜`, this map is a
-metric surjection (`TauCeti.isMetricSurjection_unitBallSummation`).
+(`ContinuousLinearMap.eq_unitBallSummation_iff`). Over a densely normed field `𝕜`, its underlying
+bounded additive homomorphism is a normed quotient map
+(`TauCeti.isQuotient_toNormedAddGroupHom_unitBallSummation`).
 
 ## Main definitions and results
 
@@ -44,8 +45,8 @@ metric surjection (`TauCeti.isMetricSurjection_unitBallSummation`).
   and exact operator norm of `TauCeti.lpOneSummation`.
 * `TauCeti.unitBallSummation` and `ContinuousLinearMap.eq_unitBallSummation_iff`: canonical
   summation map from `ℓ¹` on the closed unit ball of `E` and its universal property.
-* `TauCeti.isMetricSurjection_unitBallSummation`: `TauCeti.unitBallSummation 𝕜 E` is a metric
-  surjection over any densely normed field `𝕜`.
+* `TauCeti.isQuotient_toNormedAddGroupHom_unitBallSummation`: `TauCeti.unitBallSummation 𝕜 E` is a
+  normed quotient map (`NormedAddGroupHom.IsQuotient`) over any densely normed field `𝕜`.
 
 ## References
 
@@ -319,31 +320,31 @@ section DenselyNormedField
 variable (𝕜 E : Type*) [DenselyNormedField 𝕜]
   [NormedAddCommGroup E] [NormedSpace 𝕜 E] [CompleteSpace E]
 
-/-- Over a densely normed field, `unitBallSummation 𝕜 E` is a metric surjection. -/
-theorem isMetricSurjection_unitBallSummation :
-    (unitBallSummation 𝕜 E).IsMetricSurjection where
-  norm_le_one := norm_unitBallSummation_le 𝕜 E
-  exists_apply_eq_norm_lt y {ε} hε := by
-    classical
-    obtain ⟨c, hcy, hclt⟩ := DenselyNormedField.lt_norm_lt (α := 𝕜) ‖y‖ (‖y‖ + ε)
-      (norm_nonneg y) (lt_add_of_pos_right ‖y‖ hε)
-    have hc0 : c ≠ 0 := norm_pos_iff.mp ((norm_nonneg y).trans_lt hcy)
-    have hz : c⁻¹ • y ∈ Metric.closedBall (0 : E) 1 := by
-      rw [mem_closedBall_zero_iff, norm_smul, norm_inv]
-      exact inv_mul_le_one_of_le₀ hcy.le (norm_nonneg c)
-    refine ⟨lp.single 1 ⟨c⁻¹ • y, hz⟩ c, by simp [smul_inv_smul₀ hc0], ?_⟩
-    simpa [lp.norm_single zero_lt_one] using hclt
+/-- Over a densely normed field, the bounded additive homomorphism underlying
+`unitBallSummation 𝕜 E` is a normed quotient map. -/
+theorem isQuotient_toNormedAddGroupHom_unitBallSummation :
+    (unitBallSummation 𝕜 E).toNormedAddGroupHom.IsQuotient := by
+  refine .of_norm_lift (by simpa using norm_unitBallSummation_le 𝕜 E) fun {ε} hε y ↦ ?_
+  classical
+  obtain ⟨c, hcy, hclt⟩ := DenselyNormedField.lt_norm_lt (α := 𝕜) ‖y‖ (‖y‖ + ε)
+    (norm_nonneg y) (lt_add_of_pos_right ‖y‖ hε)
+  have hc0 : c ≠ 0 := norm_pos_iff.mp ((norm_nonneg y).trans_lt hcy)
+  have hz : c⁻¹ • y ∈ Metric.closedBall (0 : E) 1 := by
+    rw [mem_closedBall_zero_iff, norm_smul, norm_inv]
+    exact inv_mul_le_one_of_le₀ hcy.le (norm_nonneg c)
+  refine ⟨lp.single 1 ⟨c⁻¹ • y, hz⟩ c, by simp [smul_inv_smul₀ hc0], ?_⟩
+  simpa [lp.norm_single zero_lt_one] using hclt
 
 /-- Over a densely normed field and on a nontrivial space, `unitBallSummation 𝕜 E` has norm `1`. -/
 @[simp]
-theorem norm_unitBallSummation [Nontrivial E] : ‖unitBallSummation 𝕜 E‖ = 1 :=
-  (isMetricSurjection_unitBallSummation 𝕜 E).norm_eq_one
+theorem norm_unitBallSummation [Nontrivial E] : ‖unitBallSummation 𝕜 E‖ = 1 := by
+  simpa using (isQuotient_toNormedAddGroupHom_unitBallSummation 𝕜 E).norm_eq_one
 
 /-- Over a densely normed field and on a nontrivial space, `unitBallSummation 𝕜 E` has nonnegative
 operator norm `1`. -/
 @[simp]
-theorem nnnorm_unitBallSummation [Nontrivial E] : ‖unitBallSummation 𝕜 E‖₊ = 1 :=
-  (isMetricSurjection_unitBallSummation 𝕜 E).nnnorm_eq_one
+theorem nnnorm_unitBallSummation [Nontrivial E] : ‖unitBallSummation 𝕜 E‖₊ = 1 := by
+  simpa using (isQuotient_toNormedAddGroupHom_unitBallSummation 𝕜 E).nnnorm_eq_one
 
 end DenselyNormedField
 
@@ -361,12 +362,12 @@ variable {𝕜 E F : Type*} [DenselyNormedField 𝕜]
 @[simp]
 theorem opNorm_comp_unitBallSummation (T : E →L[𝕜] F) :
     ‖T ∘L TauCeti.unitBallSummation 𝕜 E‖ = ‖T‖ :=
-  (TauCeti.isMetricSurjection_unitBallSummation 𝕜 E).opNorm_comp T
+  T.opNorm_comp_of_isQuotient (TauCeti.isQuotient_toNormedAddGroupHom_unitBallSummation 𝕜 E)
 
 /-- Precomposing with `TauCeti.unitBallSummation 𝕜 E` preserves the nonnegative operator norm. -/
 @[simp]
 theorem opNNNorm_comp_unitBallSummation (T : E →L[𝕜] F) :
     ‖T ∘L TauCeti.unitBallSummation 𝕜 E‖₊ = ‖T‖₊ :=
-  (TauCeti.isMetricSurjection_unitBallSummation 𝕜 E).opNNNorm_comp T
+  T.opNNNorm_comp_of_isQuotient (TauCeti.isQuotient_toNormedAddGroupHom_unitBallSummation 𝕜 E)
 
 end ContinuousLinearMap

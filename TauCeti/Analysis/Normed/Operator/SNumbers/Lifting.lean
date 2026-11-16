@@ -20,13 +20,14 @@ seminormed space has equal approximation and Kolmogorov numbers,
 (`ContinuousLinearMap.singularValue_lpOne_eq_kolmogorovNumber`). Neither completeness nor
 Hausdorffness of `F` is required, and `ι` and `F` may live in arbitrary universes.
 
-Combining this equality on scalar `ℓ¹` with metric-surjection invariance of Kolmogorov numbers
-(`ContinuousLinearMap.IsMetricSurjection.kolmogorovNumber_comp`) expresses the Kolmogorov numbers
+Combining this equality on scalar `ℓ¹` with quotient invariance of Kolmogorov numbers
+(`ContinuousLinearMap.kolmogorovNumber_comp_of_isQuotient`) expresses the Kolmogorov numbers
 of an arbitrary operator `T : E →L[𝕜] F` as approximation numbers after precomposition with a
 summation surjection (**Pietsch's lifting identity**):
-* for any metric surjection `Q : lp (fun _ : ι ↦ 𝕜) 1 →L[𝕜] E` over a complete nontrivially
-  normed field `𝕜`, `(T ∘L Q).singularValue n = T.kolmogorovNumber n`
-  (`ContinuousLinearMap.IsMetricSurjection.singularValue_comp_lpOne`);
+* for any operator `Q : lp (fun _ : ι ↦ 𝕜) 1 →L[𝕜] E` over a complete nontrivially normed field
+  `𝕜` whose underlying bounded additive homomorphism is a normed quotient map,
+  `(T ∘L Q).singularValue n = T.kolmogorovNumber n`
+  (`ContinuousLinearMap.singularValue_comp_lpOne_of_isQuotient`);
 * in particular, for a complete normed domain `E` over a complete densely normed field `𝕜`,
   `(T ∘L TauCeti.unitBallSummation 𝕜 E).singularValue n = T.kolmogorovNumber n`
   (`ContinuousLinearMap.singularValue_comp_unitBallSummation`).
@@ -35,8 +36,8 @@ summation surjection (**Pietsch's lifting identity**):
 
 * `ContinuousLinearMap.singularValue_lpOne_eq_kolmogorovNumber`: `aₙ(S) = dₙ(S)` for operators
   out of `lp (fun _ : ι ↦ 𝕜) 1` over complete scalar fields.
-* `ContinuousLinearMap.IsMetricSurjection.singularValue_comp_lpOne`: `aₙ(T ∘ Q) = dₙ(T)` for
-  every metric surjection `Q` from scalar `ℓ¹`.
+* `ContinuousLinearMap.singularValue_comp_lpOne_of_isQuotient`: `aₙ(T ∘ Q) = dₙ(T)` for every
+  normed quotient map `Q` from scalar `ℓ¹`.
 * `ContinuousLinearMap.singularValue_comp_unitBallSummation`: Pietsch's lifting identity.
 
 ## References
@@ -124,14 +125,15 @@ theorem singularValue_lpOne_eq_kolmogorovNumber (S : lp (fun _ : ι ↦ 𝕜) 1 
       rw [coe_nnNorm]
       linarith
 
-/-- Precomposing `T : E →L[𝕜] F` with any metric surjection out of scalar `ℓ¹` turns the
-Kolmogorov numbers of `T` into approximation numbers, over any complete nontrivially normed
-field. -/
-theorem IsMetricSurjection.singularValue_comp_lpOne {E : Type*}
-    [SeminormedAddCommGroup E] [NormedSpace 𝕜 E]
-    {Q : lp (fun _ : ι ↦ 𝕜) 1 →L[𝕜] E} (hQ : Q.IsMetricSurjection) (T : E →L[𝕜] F) (n : ℕ) :
+/-- Precomposing `T : E →L[𝕜] F` with any continuous linear operator out of scalar `ℓ¹` whose
+underlying bounded additive homomorphism is a normed quotient map turns the Kolmogorov numbers of
+`T` into approximation numbers, over any complete nontrivially normed field. -/
+theorem singularValue_comp_lpOne_of_isQuotient {E : Type*}
+    [SeminormedAddCommGroup E] [NormedSpace 𝕜 E] (T : E →L[𝕜] F)
+    {Q : lp (fun _ : ι ↦ 𝕜) 1 →L[𝕜] E} (hQ : Q.toNormedAddGroupHom.IsQuotient) (n : ℕ) :
     (T ∘L Q).singularValue n = T.kolmogorovNumber n :=
-  ((T ∘L Q).singularValue_lpOne_eq_kolmogorovNumber n).trans (hQ.kolmogorovNumber_comp T n)
+  ((T ∘L Q).singularValue_lpOne_eq_kolmogorovNumber n).trans
+    (T.kolmogorovNumber_comp_of_isQuotient hQ n)
 
 end LpOneLifting
 
@@ -147,7 +149,8 @@ numbers of `T`. -/
 @[simp]
 theorem singularValue_comp_unitBallSummation (T : E →L[𝕜] F) (n : ℕ) :
     (T ∘L TauCeti.unitBallSummation 𝕜 E).singularValue n = T.kolmogorovNumber n :=
-  (TauCeti.isMetricSurjection_unitBallSummation 𝕜 E).singularValue_comp_lpOne T n
+  T.singularValue_comp_lpOne_of_isQuotient
+    (TauCeti.isQuotient_toNormedAddGroupHom_unitBallSummation 𝕜 E) n
 
 end UnitBallLifting
 
