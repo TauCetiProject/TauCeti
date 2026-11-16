@@ -507,9 +507,10 @@ theorem _root_.Bundle.ContMDiffRiemannianMetric.chartGramMatrix_toWithMetric
       Matrix.of fun i j ↦
         g.inner x (chartLocalFrame (I := I) α i x) (chartLocalFrame (I := I) α j x) := by
   ext i j
-  rw [chartGramMatrix_apply, WithMetric.inner_def, WithMetric.mfderiv_ofWithMetric_chartLocalFrame,
+  rw [chartGramMatrix_apply, WithMetric.inner_def,
+    WithMetric.mfderiv_ofWithMetric_chartLocalFrame,
     WithMetric.mfderiv_ofWithMetric_chartLocalFrame]
-  rfl
+  simp only [Matrix.of_apply]
 
 end Metric
 

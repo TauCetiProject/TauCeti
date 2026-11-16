@@ -27,45 +27,6 @@ variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimension
   {H : Type*} [TopologicalSpace H] {I : ModelWithCorners ℝ E H}
   {M : Type*} [TopologicalSpace M] [ChartedSpace H M] [IsManifold I 1 M] {n n' : ℕ∞ω}
 
-section Transport
-
-variable {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F] [FiniteDimensional ℝ F]
-  {H' : Type*} [TopologicalSpace H'] {J : ModelWithCorners ℝ F H'}
-  {N : Type*} [TopologicalSpace N] [ChartedSpace H' N] [IsManifold J 1 N]
-
-/-- Pulling back both metrics preserves their relative volume density wherever the differential
-is surjective as well as injective. -/
-theorem relativeVolumeDensity_pullback
-    (g : ContMDiffRiemannianMetric J n F (fun y : N ↦ TangentSpace J y))
-    (g' : ContMDiffRiemannianMetric J n' F (fun y : N ↦ TangentSpace J y))
-    (f : M → N) (hf : ContMDiff I J (n + 1) f) (hf' : ContMDiff I J (n' + 1) f)
-    (hinj : ∀ x, Function.Injective (mfderiv I J f x))
-    (x : M) (hsurj : Function.Surjective (mfderiv I J f x)) :
-    relativeVolumeDensity (g.pullback f hf hinj) (g'.pullback f hf' hinj) x =
-      relativeVolumeDensity g g' (f x) := by
-  let e := LinearEquiv.ofBijective (mfderiv I J f x).toLinearMap ⟨hinj x, hsurj⟩
-  exact relativeVolumeDensity_eq_of_linearEquiv _ _ g g' e
-    (g.pullback_inner f hf hinj x) (g'.pullback_inner f hf' hinj x)
-
-/-- In equal dimensions, pulling back both metrics along an immersion preserves their relative
-volume density. -/
-theorem relativeVolumeDensity_pullback_of_finrank_eq
-    (g : ContMDiffRiemannianMetric J n F (fun y : N ↦ TangentSpace J y))
-    (g' : ContMDiffRiemannianMetric J n' F (fun y : N ↦ TangentSpace J y))
-    (f : M → N) (hf : ContMDiff I J (n + 1) f) (hf' : ContMDiff I J (n' + 1) f)
-    (hinj : ∀ x, Function.Injective (mfderiv I J f x))
-    (hdim : Module.finrank ℝ E = Module.finrank ℝ F) (x : M) :
-    relativeVolumeDensity (g.pullback f hf hinj) (g'.pullback f hf' hinj) x =
-      relativeVolumeDensity g g' (f x) := by
-  -- Tangent spaces have the model's linear structure; stating the dimension argument on the
-  -- models avoids asking instance synthesis to unfold the tangent-space type synonym.
-  have hsurj : Function.Surjective (mfderiv I J f x) :=
-    (LinearMap.injective_iff_surjective_of_finrank_eq_finrank
-      (K := ℝ) (V := E) (V₂ := F) (f := (mfderiv I J f x).toLinearMap) hdim).1 (hinj x)
-  exact relativeVolumeDensity_pullback g g' f hf hf' hinj x hsurj
-
-end Transport
-
 /-- Restricting both metrics to an open submanifold preserves their relative volume density. -/
 @[simp]
 theorem relativeVolumeDensity_restrictOpenTangentSpace

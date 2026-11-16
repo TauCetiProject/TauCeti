@@ -26,7 +26,8 @@ noncomputable section
 
 open LinearMap (BilinForm)
 
-variable {R V : Type*} [CommRing R] [LinearOrder R] [IsStrictOrderedRing R]
+variable {R V : Type*} [CommRing R] [PartialOrder R]
+  [Nontrivial R] [IsOrderedRing R] [PosMulReflectLT R]
   [AddCommGroup V] [Module R V]
 
 /-- The Gram determinant of a symmetric positive-definite bilinear form is positive in every
@@ -75,7 +76,7 @@ theorem Module.Basis.bilinFormDetRatio_eq_det_bilinFormToMatrix_of_eq_one
   rw [b.bilinFormDetRatio_eq, hB, Matrix.det_one, div_one]
 
 /-- The Gram determinant ratio of two symmetric positive-definite bilinear forms is positive. -/
-theorem LinearMap.BilinForm.detRatio_pos [LinearOrder K] [IsStrictOrderedRing K]
+theorem LinearMap.BilinForm.detRatio_pos [PartialOrder K] [IsOrderedRing K] [PosMulReflectLT K]
     (B B' : BilinForm K V) (hsymm : ∀ v w, B v w = B w v)
     (hpos : ∀ v, v ≠ 0 → 0 < B v v) (hsymm' : ∀ v w, B' v w = B' w v)
     (hpos' : ∀ v, v ≠ 0 → 0 < B' v v) :
@@ -89,13 +90,26 @@ theorem LinearMap.BilinForm.detRatio_self (B : BilinForm K V) (hB : B.Nondegener
     B.detRatio B = 1 :=
   div_self ((BilinForm.nondegenerate_iff_det_ne_zero (Module.finBasis K V)).1 hB)
 
-/-- Reversing the forms inverts the determinant ratio. -/
+/-- The determinant ratio is nonzero exactly when both forms are nondegenerate. -/
+theorem LinearMap.BilinForm.detRatio_ne_zero_iff (B B' : BilinForm K V) :
+    B.detRatio B' ≠ 0 ↔ B.Nondegenerate ∧ B'.Nondegenerate := by
+  simp only [detRatio, ne_eq, div_eq_zero_iff, not_or,
+    ← nondegenerate_iff_det_ne_zero (Module.finBasis K V)]
+  exact and_comm
+
+/-- The determinant ratio vanishes exactly when at least one form is degenerate. -/
 @[simp]
+theorem LinearMap.BilinForm.detRatio_eq_zero_iff (B B' : BilinForm K V) :
+    B.detRatio B' = 0 ↔ ¬ B.Nondegenerate ∨ ¬ B'.Nondegenerate := by
+  simpa only [not_and_or, not_not] using (not_congr (detRatio_ne_zero_iff B B'))
+
+/-- Reversing the forms inverts the determinant ratio. -/
 theorem LinearMap.BilinForm.inv_detRatio (B B' : BilinForm K V) :
     (B.detRatio B')⁻¹ = B'.detRatio B := by
   simp only [detRatio, inv_div]
 
 /-- Ratios multiply when the intermediate form is nondegenerate. -/
+@[simp]
 theorem LinearMap.BilinForm.detRatio_mul_detRatio (B B' B'' : BilinForm K V)
     (hB' : B'.Nondegenerate) : B.detRatio B' * B'.detRatio B'' = B.detRatio B'' := by
   rw [detRatio, detRatio, detRatio, mul_comm,

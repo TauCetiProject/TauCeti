@@ -5,11 +5,12 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-import Mathlib.Analysis.SpecialFunctions.Sqrt
+public import Mathlib.Topology.VectorBundle.FiniteDimensional
+public import TauCeti.Analysis.InnerProductSpace.Gram.VolumeDensity
 public import TauCeti.Geometry.Manifold.Riemannian.VolumeDensity.Total
 public import TauCeti.Geometry.Manifold.Riemannian.WithMetric.Basic
-public import TauCeti.LinearAlgebra.BilinearForm.DetRatio
 public import TauCeti.Geometry.Manifold.VectorBundle.Riemannian.Basic
+public import TauCeti.LinearAlgebra.BilinearForm.DetRatio
 
 /-!
 # The relative volume density of two Riemannian metrics
@@ -126,7 +127,10 @@ variable (g g') in
 @[simp]
 theorem relativeVolumeDensity_pos (x : M) : 0 < relativeVolumeDensity g g' x :=
   Real.sqrt_pos.2 <| LinearMap.BilinForm.detRatio_pos _ _
-    (g.symm x) (g.pos x) (g'.symm x) (g'.pos x)
+    (by simpa only [ContinuousLinearMap.toBilinForm_apply] using g.symm x)
+    (by simpa only [ContinuousLinearMap.toBilinForm_apply] using g.pos x)
+    (by simpa only [ContinuousLinearMap.toBilinForm_apply] using g'.symm x)
+    (by simpa only [ContinuousLinearMap.toBilinForm_apply] using g'.pos x)
 
 variable (g) in
 /-- The relative volume density of a metric with respect to itself is one. -/
@@ -135,7 +139,9 @@ theorem relativeVolumeDensity_self (x : M) : relativeVolumeDensity g g x = 1 := 
   rw [relativeVolumeDensity, LinearMap.BilinForm.detRatio_self _
     ((LinearMap.BilinForm.nondegenerate_iff_det_ne_zero
       (Module.finBasis ℝ (TangentSpace I x))).2
-      (Module.Basis.det_bilinFormToMatrix_pos _ (g.symm x) (g.pos x)).ne'), Real.sqrt_one]
+      (Module.Basis.det_bilinFormToMatrix_pos _
+        (by simpa only [ContinuousLinearMap.toBilinForm_apply] using g.symm x)
+        (by simpa only [ContinuousLinearMap.toBilinForm_apply] using g.pos x)).ne'), Real.sqrt_one]
 
 variable (g g') in
 /-- The relative volume density never vanishes. -/
@@ -145,7 +151,6 @@ theorem relativeVolumeDensity_ne_zero (x : M) : relativeVolumeDensity g g' x ≠
 
 variable (g g') in
 /-- Reversing the metrics inverts the relative volume density. -/
-@[simp]
 theorem inv_relativeVolumeDensity (x : M) :
     (relativeVolumeDensity g g' x)⁻¹ = relativeVolumeDensity g' g x := by
   rw [relativeVolumeDensity_def, relativeVolumeDensity_def, ← Real.sqrt_inv,
@@ -159,7 +164,10 @@ theorem relativeVolumeDensity_sq (x : M) :
       (g.inner x).toBilinForm.detRatio (g'.inner x).toBilinForm := by
   rw [relativeVolumeDensity_def, Real.sq_sqrt]
   exact (LinearMap.BilinForm.detRatio_pos _ _
-    (g.symm x) (g.pos x) (g'.symm x) (g'.pos x)).le
+    (by simpa only [ContinuousLinearMap.toBilinForm_apply] using g.symm x)
+    (by simpa only [ContinuousLinearMap.toBilinForm_apply] using g.pos x)
+    (by simpa only [ContinuousLinearMap.toBilinForm_apply] using g'.symm x)
+    (by simpa only [ContinuousLinearMap.toBilinForm_apply] using g'.pos x)).le
 
 variable (g g') in
 /-- The density depends only on the inner products at the given point. -/
@@ -187,13 +195,58 @@ theorem relativeVolumeDensity_eq_of_linearEquiv
   have hB : (g.inner x).toBilinForm =
       LinearMap.BilinForm.congr e.symm (h.inner y).toBilinForm := by
     ext v w
-    exact hg v w
+    simpa only [ContinuousLinearMap.toBilinForm_apply, LinearMap.BilinForm.congr_apply,
+      LinearEquiv.symm_symm] using hg v w
   have hB' : (g'.inner x).toBilinForm =
       LinearMap.BilinForm.congr e.symm (h'.inner y).toBilinForm := by
     ext v w
-    exact hg' v w
+    simpa only [ContinuousLinearMap.toBilinForm_apply, LinearMap.BilinForm.congr_apply,
+      LinearEquiv.symm_symm] using hg' v w
   rw [relativeVolumeDensity_def, relativeVolumeDensity_def, hB, hB',
     LinearMap.BilinForm.detRatio_congr]
+
+section Transport
+
+variable {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F] [FiniteDimensional ℝ F]
+  {H' : Type*} [TopologicalSpace H'] {J : ModelWithCorners ℝ F H'}
+  {N : Type*} [TopologicalSpace N] [ChartedSpace H' N] [IsManifold J 1 N]
+
+/-- Pulling back both metrics preserves their relative volume density wherever the differential
+is surjective as well as injective. -/
+theorem relativeVolumeDensity_pullback
+    (g : ContMDiffRiemannianMetric J n F (fun y : N ↦ TangentSpace J y))
+    (g' : ContMDiffRiemannianMetric J n' F (fun y : N ↦ TangentSpace J y))
+    (f : M → N) (hf : ContMDiff I J (n + 1) f) (hf' : ContMDiff I J (n' + 1) f)
+    (hinj : ∀ x, Function.Injective (mfderiv I J f x))
+    (x : M) (hsurj : Function.Surjective (mfderiv I J f x)) :
+    relativeVolumeDensity (g.pullback f hf hinj) (g'.pullback f hf' hinj) x =
+      relativeVolumeDensity g g' (f x) := by
+  have hbij : Function.Bijective (mfderiv I J f x).toLinearMap := ⟨hinj x, hsurj⟩
+  let e := LinearEquiv.ofBijective (mfderiv I J f x).toLinearMap hbij
+  exact relativeVolumeDensity_eq_of_linearEquiv _ _ g g' e
+    (fun v w ↦ by simp [e, pullback_inner])
+    (fun v w ↦ by simp [e, pullback_inner])
+
+/-- In equal dimensions, pulling back both metrics along an immersion preserves their relative
+volume density. -/
+theorem relativeVolumeDensity_pullback_of_finrank_eq
+    (g : ContMDiffRiemannianMetric J n F (fun y : N ↦ TangentSpace J y))
+    (g' : ContMDiffRiemannianMetric J n' F (fun y : N ↦ TangentSpace J y))
+    (f : M → N) (hf : ContMDiff I J (n + 1) f) (hf' : ContMDiff I J (n' + 1) f)
+    (hinj : ∀ x, Function.Injective (mfderiv I J f x))
+    (hdim : Module.finrank ℝ E = Module.finrank ℝ F) (x : M) :
+    relativeVolumeDensity (g.pullback f hf hinj) (g'.pullback f hf' hinj) x =
+      relativeVolumeDensity g g' (f x) := by
+  have hdim' : Module.finrank ℝ (TangentSpace I x) =
+      Module.finrank ℝ (TangentSpace J (f x)) := by
+    rw [VectorBundle.finrank_eq ℝ E (TangentSpace I),
+      VectorBundle.finrank_eq ℝ F (TangentSpace J), hdim]
+  have hsurj : Function.Surjective (mfderiv I J f x) :=
+    (LinearMap.injective_iff_surjective_of_finrank_eq_finrank
+      (f := (mfderiv I J f x).toLinearMap) hdim').1 (hinj x)
+  exact relativeVolumeDensity_pullback g g' f hf hf' hinj x hsurj
+
+end Transport
 
 variable (g g') in
 /-- Lowering the regularity of the reference metric leaves the density unchanged. -/
@@ -261,10 +314,11 @@ theorem relativeVolumeDensity_eq_div_chartVolumeDensity {α x : M}
 
 variable (g g') in
 /-- Changing the reference metric multiplies relative volume densities. -/
-theorem relativeVolumeDensity_eq_mul {n'' : ℕ∞ω}
+@[simp]
+theorem relativeVolumeDensity_mul_relativeVolumeDensity {n'' : ℕ∞ω}
     {g'' : ContMDiffRiemannianMetric I n'' E (fun x : M ↦ TangentSpace I x)} (x : M) :
-    relativeVolumeDensity g g'' x =
-      relativeVolumeDensity g g' x * relativeVolumeDensity g' g'' x := by
+    relativeVolumeDensity g g' x * relativeVolumeDensity g' g'' x =
+      relativeVolumeDensity g g'' x := by
   have hpos := chartVolumeDensity_pos (I := I) (WithMetric.toWithMetric g' x)
     (by simpa only [TangentBundle.trivializationAt_baseSet] using
       mem_chart_source H (WithMetric.toWithMetric g' x))
@@ -280,7 +334,7 @@ theorem contMDiffWithinAt_relativeVolumeDensity
     {EP : Type*} [NormedAddCommGroup EP] [NormedSpace ℝ EP]
     {HP : Type*} [TopologicalSpace HP] {IP : ModelWithCorners ℝ EP HP}
     {P : Type*} [TopologicalSpace P] [ChartedSpace HP P]
-    {k : ℕ∞ω} [IsManifold I (k + 1) M]
+    {k : ℕ∞ω}
     (g : P → ContMDiffRiemannianMetric I n E (fun x : M ↦ TangentSpace I x))
     (g' : P → ContMDiffRiemannianMetric I n' E (fun x : M ↦ TangentSpace I x))
     {b : P → M} {s : Set P} {p : P}
@@ -294,79 +348,59 @@ theorem contMDiffWithinAt_relativeVolumeDensity
         ((g' q).inner (b q))) s p) :
     ContMDiffWithinAt IP 𝓘(ℝ) k (fun q ↦ relativeVolumeDensity (g q) (g' q) (b q)) s p := by
   classical
-  -- Evaluate both sections in one smooth chart frame, then take the determinant ratio.
-  have hb : ContMDiffWithinAt IP I k b s p :=
-    (contMDiffWithinAt_totalSpace_iff.mp hg).1
-  have hframe (i : Fin (Module.finrank ℝ E)) :=
-    ((contMDiffOn_chartLocalFrame (I := I) (n := k) (b p) i).contMDiffAt
-      ((trivializationAt E (TangentSpace I) (b p)).open_baseSet.mem_nhds
-        (by simpa only [TangentBundle.trivializationAt_baseSet] using
-          mem_chart_source H (b p)))).comp_contMDiffWithinAt p hb
-  let A (q : P) := Matrix.of fun i j ↦
-    (g q).inner (b q) (chartLocalFrame (I := I) (b p) i (b q))
-      (chartLocalFrame (I := I) (b p) j (b q))
-  let A' (q : P) := Matrix.of fun i j ↦
-    (g' q).inner (b q) (chartLocalFrame (I := I) (b p) i (b q))
-      (chartLocalFrame (I := I) (b p) j (b q))
-  have hentry {m : ℕ∞ω} {g₀ : P → ContMDiffRiemannianMetric I m E (fun x : M ↦ TangentSpace I x)}
-      (h : ContMDiffWithinAt IP (I.prod 𝓘(ℝ, E →L[ℝ] E →L[ℝ] ℝ)) k
-        (fun q ↦ TotalSpace.mk' (E →L[ℝ] E →L[ℝ] ℝ)
-          (E := fun x : M ↦ TangentSpace I x →L[ℝ] TangentSpace I x →L[ℝ] ℝ) (b q)
-          ((g₀ q).inner (b q))) s p)
-      (i j : Fin (Module.finrank ℝ E)) :
-      ContMDiffWithinAt IP 𝓘(ℝ) k
-        (fun q ↦ (g₀ q).inner (b q) (chartLocalFrame (I := I) (b p) i (b q))
-          (chartLocalFrame (I := I) (b p) j (b q))) s p := by
-    have hval : ContMDiffWithinAt IP (I.prod 𝓘(ℝ)) k
-        (fun q ↦ TotalSpace.mk' ℝ (E := Bundle.Trivial M ℝ) (b q)
-          ((g₀ q).inner (b q) (chartLocalFrame (I := I) (b p) i (b q))
-            (chartLocalFrame (I := I) (b p) j (b q)))) s p :=
-      h.clm_bundle_apply₂ (F₁ := E) (F₂ := E) (hframe i) (hframe j)
-    exact (contMDiffWithinAt_totalSpace_iff.mp hval).2
-  have hdet {A₀ : P → Matrix (Fin (Module.finrank ℝ E)) (Fin (Module.finrank ℝ E)) ℝ}
-      (h : ∀ i j, ContMDiffWithinAt IP 𝓘(ℝ) k (fun q ↦ A₀ q i j) s p) :
-      ContMDiffWithinAt IP 𝓘(ℝ) k (fun q ↦ (A₀ q).det) s p := by
-    simp only [Matrix.det_apply']
-    exact contMDiffWithinAt_finsetSum fun σ _ ↦ contMDiffWithinAt_const.mul
-      (contMDiffWithinAt_finsetProd fun i _ ↦ h (σ i) i)
-  -- At the base point this frame is a basis, so positivity permits division and square root.
-  have hpos {m : ℕ∞ω}
-      (g₀ : ContMDiffRiemannianMetric I m E (fun x : M ↦ TangentSpace I x)) :
-      0 < (Matrix.of fun i j ↦ g₀.inner (b p)
-        (chartLocalFrame (I := I) (b p) i (b p))
-        (chartLocalFrame (I := I) (b p) j (b p))).det := by
-    let B := (trivializationAt E (TangentSpace I) (b p)).basisAt (Module.finBasis ℝ E)
-      (by simpa only [TangentBundle.trivializationAt_baseSet] using mem_chart_source H (b p))
-    have hGram : (Matrix.of fun i j ↦ g₀.inner (b p)
-        (chartLocalFrame (I := I) (b p) i (b p))
-        (chartLocalFrame (I := I) (b p) j (b p))) =
-        LinearMap.BilinForm.toMatrix B (g₀.inner (b p)).toBilinForm := by
-      ext i j
-      simp only [B, Matrix.of_apply, LinearMap.BilinForm.toMatrix_apply,
-        chartLocalFrame_apply_of_mem_chart_source _ (mem_chart_source H (b p))]
-      rfl
-    rw [hGram]
-    exact B.det_bilinFormToMatrix_pos (g₀.symm (b p)) (g₀.pos (b p))
-  have hratio := (hdet (hentry hg')).div₀ (hdet (hentry hg)) (hpos (g p)).ne'
-  have hratio_pos : 0 < (A' p).det / (A p).det := div_pos (hpos (g' p)) (hpos (g p))
-  -- Basis independence identifies the smooth coordinate expression with the density locally.
-  have heq {q : P} (hq : b q ∈ (chartAt H (b p)).source) :
-      relativeVolumeDensity (g q) (g' q) (b q) = √((A' q).det / (A q).det) := by
-    rw [Module.Basis.relativeVolumeDensity_eq_sqrt_div
-      ((trivializationAt E (TangentSpace I) (b p)).basisAt (Module.finBasis ℝ E)
-        (by simpa only [TangentBundle.trivializationAt_baseSet] using hq))]
-    simp only [A, A', chartLocalFrame_apply_of_mem_chart_source _ hq]
-  refine ((Real.contDiffAt_sqrt hratio_pos.ne').comp_contMDiffWithinAt
-    (f := fun q ↦ (A' q).det / (A q).det) hratio).congr_of_eventuallyEq ?_
-      (heq (mem_chart_source H (b p)))
-  filter_upwards [hb.continuousWithinAt.preimage_mem_nhdsWithin
-    (chart_source_mem_nhds H (b p))] with q hq
+  -- Use one trivialization for both metrics and compose the existing Gram-density smoothness.
+  let e := trivializationAt E (TangentSpace I) (b p)
+  let G {m : ℕ∞ω} (g₀ : ContMDiffRiemannianMetric I m E (fun x : M ↦ TangentSpace I x))
+      (q : P) := (trivializationAt (E →L[ℝ] E →L[ℝ] ℝ)
+        (fun x : M ↦ TangentSpace I x →L[ℝ] TangentSpace I x →L[ℝ] ℝ) (b p)
+        ⟨b q, g₀.inner (b q)⟩).2
+  have hcoord {q : P} (hq : b q ∈ e.baseSet)
+      {m : ℕ∞ω} (g₀ : ContMDiffRiemannianMetric I m E (fun x : M ↦ TangentSpace I x))
+      (v w : E) : G g₀ q v w =
+        g₀.inner (b q) (e.symm (b q) v) (e.symm (b q) w) := by
+    simp only [G, hom_trivializationAt_apply]
+    rw [inCoordinates_apply_eq₂ hq hq (by simp)]
+    simp [e]
+  have hpos {q : P} (hq : b q ∈ e.baseSet) {m : ℕ∞ω}
+      (g₀ : ContMDiffRiemannianMetric I m E (fun x : M ↦ TangentSpace I x))
+      (v : E) (hv : v ≠ 0) : 0 < G g₀ q v v := by
+    rw [hcoord hq]
+    apply g₀.pos
+    simpa only [← e.linearEquivAt_symm_apply (R := ℝ) (b q) hq,
+      EmbeddingLike.map_ne_zero_iff] using hv
+  have hden {q : P} (hq : b q ∈ e.baseSet) :
+      0 < (Module.finBasis ℝ E).metricVolumeDensity (G (g q) q) := by
+    apply (Module.finBasis ℝ E).metricVolumeDensity_pos_of_posDef _ (hpos hq (g q))
+    constructor
+    intro v w
+    simp only [ContinuousLinearMap.toBilinForm_apply, hcoord hq, (g q).symm]
+  have hp : b p ∈ e.baseSet := mem_baseSet_trivializationAt E (TangentSpace I) (b p)
+  have hs := ((Module.finBasis ℝ E).contDiffAt_metricVolumeDensity_of_posDef
+    (hpos hp (g' p))).comp_contMDiffWithinAt (f := fun q ↦ G (g' q) q)
+      (contMDiffWithinAt_totalSpace_iff.mp hg').2
+  have ht := ((Module.finBasis ℝ E).contDiffAt_metricVolumeDensity_of_posDef
+    (hpos hp (g p))).comp_contMDiffWithinAt (f := fun q ↦ G (g q) q)
+      (contMDiffWithinAt_totalSpace_iff.mp hg).2
+  have heq {q : P} (hq : b q ∈ e.baseSet) :
+      relativeVolumeDensity (g q) (g' q) (b q) =
+        (Module.finBasis ℝ E).metricVolumeDensity (G (g' q) q) /
+          (Module.finBasis ℝ E).metricVolumeDensity (G (g q) q) := by
+    rw [(e.basisAt (Module.finBasis ℝ E) hq).relativeVolumeDensity_eq_sqrt_div,
+      Module.Basis.metricVolumeDensity_def, Module.Basis.metricVolumeDensity_def,
+      ← Real.sqrt_div' _ (((Module.finBasis ℝ E).metricVolumeDensity_pos _).1 (hden hq)).le]
+    congr 3 <;> ext i j <;>
+      simp only [hcoord hq, Trivialization.basisAt, Module.Basis.map_apply,
+        Trivialization.linearEquivAt_symm_apply, Matrix.of_apply]
+  refine (hs.div₀ ht (hden hp).ne').congr_of_eventuallyEq ?_ (heq hp)
+  have hb : ContinuousWithinAt b s p :=
+    (contMDiffWithinAt_totalSpace_iff.mp hg).1.continuousWithinAt
+  filter_upwards [hb.preimage_mem_nhdsWithin (e.open_baseSet.mem_nhds hp)] with q hq
   exact heq hq
 
 variable (g g') in
 /-- The relative volume density is `C^k` at every point whenever both metrics are at least
 `C^k`. -/
-theorem contMDiffAt_relativeVolumeDensity {k : ℕ∞ω} [IsManifold I (k + 1) M]
+theorem contMDiffAt_relativeVolumeDensity {k : ℕ∞ω}
     (hk : k ≤ n) (hk' : k ≤ n') (x₀ : M) :
     ContMDiffAt I 𝓘(ℝ) k (relativeVolumeDensity g g') x₀ :=
   contMDiffWithinAt_relativeVolumeDensity (fun _ ↦ g) (fun _ ↦ g')
@@ -374,7 +408,7 @@ theorem contMDiffAt_relativeVolumeDensity {k : ℕ∞ω} [IsManifold I (k + 1) M
 
 variable (g g') in
 /-- The relative volume density is `C^k` on any set whenever both metrics are at least `C^k`. -/
-theorem contMDiffOn_relativeVolumeDensity {k : ℕ∞ω} [IsManifold I (k + 1) M]
+theorem contMDiffOn_relativeVolumeDensity {k : ℕ∞ω}
     (hk : k ≤ n) (hk' : k ≤ n') (s : Set M) :
     ContMDiffOn I 𝓘(ℝ) k (relativeVolumeDensity g g') s :=
   fun x _ ↦ (contMDiffAt_relativeVolumeDensity g g' hk hk' x).contMDiffWithinAt
@@ -382,13 +416,12 @@ theorem contMDiffOn_relativeVolumeDensity {k : ℕ∞ω} [IsManifold I (k + 1) M
 variable (g g') in
 /-- The relative volume density of two continuous metrics is continuous. -/
 theorem continuous_relativeVolumeDensity : Continuous (relativeVolumeDensity g g') := by
-  have : IsManifold I (0 + 1) M := by simpa using (inferInstance : IsManifold I 1 M)
   exact continuous_iff_continuousAt.2 fun x ↦
     (contMDiffAt_relativeVolumeDensity g g' (k := 0) bot_le bot_le x).continuousAt
 
 variable (g g') in
 /-- The relative volume density is `C^k` whenever both metrics are at least `C^k`. -/
-theorem contMDiff_relativeVolumeDensity {k : ℕ∞ω} [IsManifold I (k + 1) M]
+theorem contMDiff_relativeVolumeDensity {k : ℕ∞ω}
     (hk : k ≤ n) (hk' : k ≤ n') :
     ContMDiff I 𝓘(ℝ) k (relativeVolumeDensity g g') := by
   exact contMDiffAt_relativeVolumeDensity g g' hk hk'
@@ -495,6 +528,10 @@ theorem integrable_riemannianVolume_iff_integrable_relativeVolumeDensity_smul {F
       (ae_of_all _ fun _ ↦ ENNReal.ofReal_lt_top)]
   simp only [Function.comp_apply, ENNReal.toReal_ofReal (relativeVolumeDensity_nonneg g g' _)]
 
+end Measure
+
+attribute [local instance] extChartAtMeasurableSpaceE extChartAtBorelSpaceE
+
 variable (g g') in
 /-- **Total volume under a change of metric.** On a compact manifold, the total volume of `g'` is
 `∫ J dV_g`. -/
@@ -504,7 +541,5 @@ theorem riemannianTotalVolume_eq_integral_relativeVolumeDensity [CompactSpace M]
   simpa only [integral_const, smul_eq_mul, mul_one, ← riemannianTotalVolume_def] using
     integral_riemannianVolume_eq_integral_relativeVolumeDensity_smul g g'
       fun _ ↦ (1 : ℝ)
-
-end Measure
 
 end Bundle.ContMDiffRiemannianMetric

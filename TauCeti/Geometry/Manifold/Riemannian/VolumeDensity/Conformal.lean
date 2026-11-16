@@ -90,7 +90,8 @@ theorem relativeVolumeDensity_rescale_right {n' : ℕ∞ω}
     {f : M → ℝ} {hf : ContMDiff I 𝓘(ℝ) n' f} {hf_pos : ∀ x, 0 < f x} (x : M) :
     relativeVolumeDensity g (g'.rescale f hf hf_pos) x =
       f x ^ ((Module.finrank ℝ E : ℝ) / 2) * relativeVolumeDensity g g' x := by
-  rw [relativeVolumeDensity_eq_mul g g', relativeVolumeDensity_rescale, mul_comm]
+  rw [← relativeVolumeDensity_mul_relativeVolumeDensity g g',
+    relativeVolumeDensity_rescale, mul_comm]
 
 /-- In real dimension `N`, rescaling the reference metric by `f` divides the relative volume
 density by `f ^ (N / 2)`. -/
