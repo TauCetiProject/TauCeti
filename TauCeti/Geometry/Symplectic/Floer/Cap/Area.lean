@@ -17,7 +17,8 @@ symplectic form of a closed symplectic manifold, and `γ` a loop in `M` based at
 of `γ` (`TauCeti.Floer.RawCap γ`) are homotopy classes of continuous discs bounding `γ`, and they
 form a torsor under `π₂(M, x)` (`TauCeti.Floer.RawCap.instAddTorsor`). The integral of `φ` over
 the classes of `π₂(M, x)` is the homomorphism `TauCeti.sphereIntegralHom`. This file defines the
-integral of `φ` over a raw cap and proves that it obeys the recapping law for this homomorphism.
+integral of `φ` over a raw cap and proves that it obeys the recapping law for this homomorphism,
+and that gluing a smooth cylinder of loops to a raw cap adds the integral of `φ` over the cylinder.
 
 A **smooth based cap** of `γ` (`TauCeti.Floer.IsSmoothBasedCap`) is a smooth map
 `u : ℝ × ℝ → M`, `1`-periodic in `t`, with `u (0, t) = γ t`, `u (1, t) = x` and `u (s, 0) = x` for
@@ -42,6 +43,20 @@ line `s = 0`, so that they glue smoothly. A smooth based cap has a raw cap
   `a` to its area, `area (a +ᵥ D) = ∫_a φ + area D` (`TauCeti.Floer.RawCap.area_vadd`), and the
   areas of two raw caps differ by the integral over the sphere by which they differ
   (`TauCeti.Floer.RawCap.area_sub_area`).
+* **The gluing law.** A **smooth based homotopy** from a loop `γ₁` to a loop `γ₂`
+  (`TauCeti.Floer.IsSmoothBasedHomotopy`) is a smooth cylinder `w`, `1`-periodic in `t`, from `γ₁`
+  at `s = 0` to `γ₂` at `s = 1`, whose seam `t = 0` stays at `x`; a smooth based cap is one ending
+  at the constant loop (`TauCeti.Floer.isSmoothBasedCap_iff`). Its homotopy class
+  `IsSmoothBasedHomotopy.homotopyClass` glues to raw caps `D` of `γ₂`, giving the raw caps
+  `w.homotopyClass ≫ D` of `γ₁`. On smooth caps `u` of `γ₂` this is the concatenation
+  `rectangleTrans w u`, a smooth based cap of `γ₁`
+  (`TauCeti.Floer.IsSmoothBasedHomotopy.rawCap_rectangleTrans`), so gluing a cylinder to a cap adds
+  its integral to the area, `area (w ≫ D) = ∫ w^* φ + area D`
+  (`TauCeti.Floer.RawCap.area_homotopyClass_comp`), and cutting it off subtracts it
+  (`TauCeti.Floer.RawCap.area_inv_homotopyClass_comp`). The energy identity of a Floer cylinder has
+  the area `∫ w^* ω` as its topological term; when the cylinder is a smooth based homotopy, this
+  law rewrites that term as the difference `area (w ≫ D) - area D` of the areas of raw caps of its
+  two ends, the form in which actions of capped orbits enter capped Floer theory.
 
 The recapping law is the hypothesis of `TauCeti.Floer.CapClass.lift`, with the area homomorphism
 `TauCeti.sphereIntegralHom` on the group `π₂(M, x)` of spheres. The area is measured with the cap
@@ -54,6 +69,10 @@ oriented from `γ` to its centre, as for `TauCeti.capArea`; the capped action
 
 * `TauCeti.Floer.IsSmoothBasedCap I γ u`: `u` is a smooth based cap of `γ`.
 * `TauCeti.Floer.IsSmoothBasedCap.rawCap`: the raw cap of a smooth based cap.
+* `TauCeti.Floer.IsSmoothBasedHomotopy I γ₁ γ₂ w`: `w` is a smooth based homotopy of loops from
+  `γ₁` to `γ₂`.
+* `TauCeti.Floer.IsSmoothBasedHomotopy.homotopyClass`: its class in the fundamental groupoid of the
+  loop space.
 * `TauCeti.Floer.RawCap.area φ h D`: the integral of `φ` over a raw cap `D` of a loop with a
   smooth based cap (`h`).
 
@@ -68,6 +87,11 @@ oriented from `γ` to its centre, as for `TauCeti.capArea`; the capped action
 * `TauCeti.Floer.RawCap.area_vadd`: the recapping law.
 * `TauCeti.Floer.RawCap.area_sub_area`: two raw caps have areas differing by the integral over the
   sphere by which they differ.
+* `TauCeti.Floer.IsSmoothBasedHomotopy.rawCap_rectangleTrans`: the raw cap of a smooth cap glued
+  to a smooth based homotopy is the homotopy class glued to the raw cap.
+* `TauCeti.Floer.RawCap.area_homotopyClass_comp`,
+  `TauCeti.Floer.RawCap.area_inv_homotopyClass_comp`: gluing a smooth based homotopy to a raw cap
+  adds its integral to the area, and cutting it off subtracts it.
 
 ## References
 
@@ -89,6 +113,75 @@ namespace TauCeti.Floer
 variable {E H M F : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [TopologicalSpace H]
   {I : ModelWithCorners ℝ E H} [TopologicalSpace M] [ChartedSpace H M]
   [NormedAddCommGroup F] [NormedSpace ℝ F] {x : M} {γ : Ω M x}
+
+omit [TopologicalSpace M] in
+/-- Two `1`-periodic maps on `ℝ` that agree on the unit interval agree everywhere. -/
+private theorem eq_of_periodic_of_forall_unitInterval {f g : ℝ → M} (hf : Function.Periodic f 1)
+    (hg : Function.Periodic g 1) (h : ∀ t : unitInterval, f t = g t) (t : ℝ) : f t = g t := by
+  have ht : t - ⌊t⌋ * 1 ∈ unitInterval := by
+    rw [mul_one, ← Int.fract]
+    exact ⟨Int.fract_nonneg t, (Int.fract_lt_one t).le⟩
+  rw [← hf.sub_int_mul_eq ⌊t⌋, ← hg.sub_int_mul_eq ⌊t⌋]
+  exact h ⟨_, ht⟩
+
+/-! ### Smooth based homotopies of loops -/
+
+variable (I) in
+/-- A **smooth based homotopy** of loops from `γ₁` to `γ₂`, both based at `x`: a smooth map
+`w : ℝ × ℝ → M`, `1`-periodic in its second coordinate, which runs along `γ₁` for `s = 0` and along
+`γ₂` for `s = 1`, and sends the edge `t = 0` of the unit square to `x`. The loops `w (s, ·)` are
+based at `x`, so `s ↦ w (s, ·)` is a path in the loop space from `γ₁` to `γ₂`: a cylinder whose
+seam stays at the base point. A smooth based cap is a smooth based homotopy to the constant loop
+(`TauCeti.Floer.isSmoothBasedCap_iff`). -/
+structure IsSmoothBasedHomotopy (γ₁ γ₂ : Ω M x) (w : ℝ × ℝ → M) : Prop where
+  /-- A smooth based homotopy is smooth. -/
+  contMDiff : ContMDiff 𝓘(ℝ, ℝ × ℝ) I ∞ w
+  /-- A smooth based homotopy is `1`-periodic in its second coordinate. -/
+  apply_add_one : ∀ z : ℝ × ℝ, w (z.1, z.2 + 1) = w z
+  /-- A smooth based homotopy starts at the first loop. -/
+  apply_zero : ∀ t : unitInterval, w (0, t) = γ₁ t
+  /-- A smooth based homotopy ends at the second loop. -/
+  apply_one : ∀ t : unitInterval, w (1, t) = γ₂ t
+  /-- The seam `t = 0` stays at the base point. -/
+  apply_seam : ∀ s : unitInterval, w (s, 0) = x
+
+namespace IsSmoothBasedHomotopy
+
+variable {γ₁ γ₂ : Ω M x} {w : ℝ × ℝ → M}
+
+/-- The edge `t = 1` of a smooth based homotopy stays at the base point. -/
+theorem apply_seam_one (hw : IsSmoothBasedHomotopy I γ₁ γ₂ w) (s : unitInterval) :
+    w (s, 1) = x := by
+  simpa using (hw.apply_add_one (s, 0)).trans (hw.apply_seam s)
+
+/-- The path `s ↦ w (s, ·)` in the loop space of a smooth based homotopy `w`, from `γ₁` to
+`γ₂`. -/
+def toPath (hw : IsSmoothBasedHomotopy I γ₁ γ₂ w) : Path γ₁ γ₂ where
+  toFun s := ⟨⟨fun t ↦ w (s, t),
+    hw.contMDiff.continuous.comp (continuous_const.prodMk continuous_subtype_val)⟩,
+    hw.apply_seam s, hw.apply_seam_one s⟩
+  continuous_toFun := Path.continuous_uncurry_iff.1 <|
+    hw.contMDiff.continuous.comp (by fun_prop)
+  source' := Path.ext <| funext hw.apply_zero
+  target' := Path.ext <| funext hw.apply_one
+
+@[simp]
+theorem toPath_apply (hw : IsSmoothBasedHomotopy I γ₁ γ₂ w) (s t : unitInterval) :
+    hw.toPath s t = w (s, t) :=
+  (rfl)
+
+/-- The homotopy class of a smooth based homotopy: the class of its path in the loop space, a
+morphism from `γ₁` to `γ₂` in the fundamental groupoid of `Ω M x`. It glues to raw caps of `γ₂`
+to give raw caps `hw.homotopyClass ≫ D` of `γ₁`. -/
+def homotopyClass (hw : IsSmoothBasedHomotopy I γ₁ γ₂ w) :
+    (⟨γ₁⟩ : FundamentalGroupoid (Ω M x)) ⟶ ⟨γ₂⟩ :=
+  Path.Homotopic.Quotient.mk hw.toPath
+
+theorem homotopyClass_def (hw : IsSmoothBasedHomotopy I γ₁ γ₂ w) :
+    hw.homotopyClass = Path.Homotopic.Quotient.mk hw.toPath :=
+  (rfl)
+
+end IsSmoothBasedHomotopy
 
 /-! ### Smooth based caps -/
 
@@ -115,36 +208,32 @@ structure IsSmoothBasedCap (γ : Ω M x) (u : ℝ × ℝ → M) : Prop where
 theorem isSmoothBasedCap_refl (x : M) : IsSmoothBasedCap I (Path.refl x) fun _ ↦ x :=
   ⟨contMDiff_const, fun _ ↦ rfl, fun _ ↦ rfl, fun _ ↦ rfl, fun _ ↦ rfl⟩
 
+/-- A smooth based cap of `γ` is exactly a smooth based homotopy from `γ` to the constant loop. -/
+theorem isSmoothBasedCap_iff {u : ℝ × ℝ → M} :
+    IsSmoothBasedCap I γ u ↔ IsSmoothBasedHomotopy I γ (Path.refl x) u :=
+  ⟨fun hu ↦ ⟨hu.contMDiff, hu.apply_add_one, hu.apply_zero, hu.apply_one, hu.apply_seam⟩,
+    fun hu ↦ ⟨hu.contMDiff, hu.apply_add_one, hu.apply_zero, hu.apply_one, hu.apply_seam⟩⟩
+
 namespace IsSmoothBasedCap
 
 variable {u u' : ℝ × ℝ → M}
 
 /-- The edge `t = 1` of a smooth based cap stays at the base point. -/
-theorem apply_seam_one (hu : IsSmoothBasedCap I γ u) (s : unitInterval) : u (s, 1) = x := by
-  simpa using (hu.apply_add_one (s, 0)).trans (hu.apply_seam s)
+theorem apply_seam_one (hu : IsSmoothBasedCap I γ u) (s : unitInterval) : u (s, 1) = x :=
+  (isSmoothBasedCap_iff.1 hu).apply_seam_one s
 
 /-- Two smooth based caps of the same loop agree along the whole line `s = 0`, where both are the
 periodic extension of the loop. -/
 theorem apply_zero_eq_apply_zero (hu : IsSmoothBasedCap I γ u) (hu' : IsSmoothBasedCap I γ u')
-    (t : ℝ) : u (0, t) = u' (0, t) := by
-  have hp : Function.Periodic (fun t ↦ u (0, t)) 1 := fun t ↦ hu.apply_add_one (0, t)
-  have hp' : Function.Periodic (fun t ↦ u' (0, t)) 1 := fun t ↦ hu'.apply_add_one (0, t)
-  have ht : t - ⌊t⌋ * 1 ∈ unitInterval := by
-    rw [mul_one, ← Int.fract]
-    exact ⟨Int.fract_nonneg t, (Int.fract_lt_one t).le⟩
-  rw [← hp.sub_int_mul_eq ⌊t⌋, ← hp'.sub_int_mul_eq ⌊t⌋]
-  exact (hu.apply_zero ⟨_, ht⟩).trans (hu'.apply_zero ⟨_, ht⟩).symm
+    (t : ℝ) : u (0, t) = u' (0, t) :=
+  eq_of_periodic_of_forall_unitInterval (f := fun t ↦ u (0, t)) (g := fun t ↦ u' (0, t))
+    (fun t ↦ hu.apply_add_one (0, t))
+    (fun t ↦ hu'.apply_add_one (0, t)) (fun t ↦ (hu.apply_zero t).trans (hu'.apply_zero t).symm) t
 
 /-- The path `s ↦ u (s, ·)` in the loop space of a smooth based cap `u`, from `γ` to the constant
 loop. -/
-def toPath (hu : IsSmoothBasedCap I γ u) : Path γ (Path.refl x) where
-  toFun s := ⟨⟨fun t ↦ u (s, t),
-    hu.contMDiff.continuous.comp (continuous_const.prodMk continuous_subtype_val)⟩,
-    hu.apply_seam s, hu.apply_seam_one s⟩
-  continuous_toFun := Path.continuous_uncurry_iff.1 <|
-    hu.contMDiff.continuous.comp (by fun_prop)
-  source' := Path.ext <| funext hu.apply_zero
-  target' := Path.ext <| funext hu.apply_one
+def toPath (hu : IsSmoothBasedCap I γ u) : Path γ (Path.refl x) :=
+  (isSmoothBasedCap_iff.1 hu).toPath
 
 @[simp]
 theorem toPath_apply (hu : IsSmoothBasedCap I γ u) (s t : unitInterval) :
@@ -312,6 +401,102 @@ theorem sphereIntegral_rawCap_vsub_rawCap [FiniteDimensional ℝ E] [I.Boundaryl
 
 end IsSmoothBasedCap
 
+/-! ### Gluing smooth based homotopies to smooth based caps -/
+
+namespace IsSmoothBasedHomotopy
+
+variable {γ₁ γ₂ : Ω M x} {w u : ℝ × ℝ → M}
+
+/-- The end `s = 1` of a smooth based homotopy to `γ₂` agrees along the whole line with the start
+of a smooth based cap of `γ₂`: both are the periodic extension of `γ₂`. -/
+theorem apply_one_eq_apply_zero (hw : IsSmoothBasedHomotopy I γ₁ γ₂ w)
+    (hu : IsSmoothBasedCap I γ₂ u) (t : ℝ) : w (1, t) = u (0, t) :=
+  eq_of_periodic_of_forall_unitInterval (f := fun t ↦ w (1, t)) (g := fun t ↦ u (0, t))
+    (fun t ↦ hw.apply_add_one (1, t))
+    (fun t ↦ hu.apply_add_one (0, t)) (fun t ↦ (hw.apply_one t).trans (hu.apply_zero t).symm) t
+
+/-- **Gluing a smooth cap to a smooth homotopy.** The concatenation `rectangleTrans w u` of a
+smooth based homotopy `w` from `γ₁` to `γ₂` and a smooth based cap `u` of `γ₂` is a smooth based
+cap of `γ₁`. -/
+theorem isSmoothBasedCap_rectangleTrans (hw : IsSmoothBasedHomotopy I γ₁ γ₂ w)
+    (hu : IsSmoothBasedCap I γ₂ u) : IsSmoothBasedCap I γ₁ (rectangleTrans w u) where
+  contMDiff := _root_.TauCeti.contMDiff_rectangleTrans (n := ⊤) hw.contMDiff hu.contMDiff
+    (hw.apply_one_eq_apply_zero hu)
+  apply_add_one := rectangleTrans_apply_add_snd hw.apply_add_one hu.apply_add_one
+  apply_zero t := by rw [rectangleTrans_apply_zero, hw.apply_zero]
+  apply_one t := by rw [rectangleTrans_apply_one, hu.apply_one]
+  apply_seam s := by
+    rcases lt_or_ge (s : ℝ) (2 / 3) with hs | hs
+    · rw [rectangleTrans_eq_left (hw.apply_one_eq_apply_zero hu) hs]
+      exact hw.apply_seam ⟨_, Real.smoothTransition.nonneg _, Real.smoothTransition.le_one _⟩
+    · rw [rectangleTrans_eq_right (hw.apply_one_eq_apply_zero hu) (by simp only; linarith)]
+      exact hu.apply_seam ⟨_, Real.smoothTransition.nonneg _, Real.smoothTransition.le_one _⟩
+
+/-- The concatenation of the paths in the loop space of a smooth based homotopy and of a smooth
+based cap, reparametrized by `concatReparamI`, is the path of their concatenation
+`rectangleTrans`. -/
+private theorem trans_reparam_apply (hw : IsSmoothBasedHomotopy I γ₁ γ₂ w)
+    (hu : IsSmoothBasedCap I γ₂ u) (s t : unitInterval) :
+    (hw.toPath.trans hu.toPath).reparam IsSmoothBasedCap.concatReparamI
+        IsSmoothBasedCap.continuous_concatReparamI IsSmoothBasedCap.concatReparamI_zero
+        IsSmoothBasedCap.concatReparamI_one s t =
+      rectangleTrans w u ((s : ℝ), (t : ℝ)) := by
+  have h := hw.apply_one_eq_apply_zero hu
+  have hβ₀ := Real.smoothTransition.nonneg (3 * (s : ℝ) - 2)
+  have hβ₁ := Real.smoothTransition.le_one (3 * (s : ℝ))
+  rw [Path.coe_reparam, Function.comp_apply, Path.trans_apply]
+  rcases le_or_gt (s : ℝ) (1 / 2) with hs | hs
+  · -- First half: `w`.
+    have hc : (IsSmoothBasedCap.concatReparamI s : ℝ) ≤ 1 / 2 := by
+      rw [IsSmoothBasedCap.coe_concatReparamI, IsSmoothBasedCap.concatReparam_of_le hs]
+      linarith
+    rw [dite_eq_left hc, rectangleTrans_eq_left h (by simp only; linarith)]
+    simp only [toPath_apply, IsSmoothBasedCap.coe_concatReparamI,
+      IsSmoothBasedCap.concatReparam_of_le hs, Function.comp_apply, Prod.map_apply, id_eq]
+    congr 2
+    ring
+  · rw [rectangleTrans_eq_right h (by simp only; linarith)]
+    simp only [Function.comp_apply, Prod.map_apply, id_eq]
+    split_ifs with hc
+    · -- Second half, while the path rests at `γ₂`.
+      rw [IsSmoothBasedCap.coe_concatReparamI, IsSmoothBasedCap.concatReparam_of_lt hs] at hc
+      have hz : Real.smoothTransition (3 * (s : ℝ) - 2) = 0 := by linarith
+      simp only [toPath_apply, IsSmoothBasedCap.coe_concatReparamI,
+        IsSmoothBasedCap.concatReparam_of_lt hs, hz]
+      norm_num [h]
+    · -- Second half: `u`.
+      simp only [IsSmoothBasedCap.toPath_apply, IsSmoothBasedCap.coe_concatReparamI,
+        IsSmoothBasedCap.concatReparam_of_lt hs]
+      congr 2
+      ring
+
+/-- **The raw cap of a glued cap.** The raw cap of the concatenation of a smooth based homotopy
+`w` and a smooth based cap `u` is the homotopy class of `w` glued to the raw cap of `u`. -/
+theorem rawCap_rectangleTrans (hw : IsSmoothBasedHomotopy I γ₁ γ₂ w)
+    (hu : IsSmoothBasedCap I γ₂ u) :
+    (hw.isSmoothBasedCap_rectangleTrans hu).rawCap = hw.homotopyClass ≫ hu.rawCap := by
+  rw [IsSmoothBasedCap.rawCap_def, homotopyClass_def, IsSmoothBasedCap.rawCap_def,
+    FundamentalGroupoid.comp_eq, ← Path.Homotopic.Quotient.mk_trans]
+  -- The path of the glued cap reparametrizes the concatenation of the two paths.
+  have hrep : (hw.isSmoothBasedCap_rectangleTrans hu).toPath =
+      (hw.toPath.trans hu.toPath).reparam IsSmoothBasedCap.concatReparamI
+        IsSmoothBasedCap.continuous_concatReparamI IsSmoothBasedCap.concatReparamI_zero
+        IsSmoothBasedCap.concatReparamI_one :=
+    Path.ext <| funext fun s ↦ Path.ext <| funext fun t ↦ (trans_reparam_apply hw hu s t).symm
+  rw [hrep]
+  exact Quotient.sound ⟨(Path.Homotopy.reparam (hw.toPath.trans hu.toPath) _
+    IsSmoothBasedCap.continuous_concatReparamI IsSmoothBasedCap.concatReparamI_zero
+    IsSmoothBasedCap.concatReparamI_one).symm⟩
+
+/-- If `w` is a smooth based homotopy from `γ₁` to `γ₂` and `γ₂` has a smooth based cap, then so
+has `γ₁`. -/
+theorem exists_isSmoothBasedCap (hw : IsSmoothBasedHomotopy I γ₁ γ₂ w)
+    (h : ∃ u, IsSmoothBasedCap I γ₂ u) : ∃ u, IsSmoothBasedCap I γ₁ u :=
+  let ⟨_, hu⟩ := h
+  ⟨_, hw.isSmoothBasedCap_rectangleTrans hu⟩
+
+end IsSmoothBasedHomotopy
+
 /-! ### The area of a raw cap -/
 
 section Area
@@ -362,6 +547,37 @@ theorem RawCap.area_sub_area (hφ : IsSmoothForm I 1 φ) (hdφ : mextDeriv φ = 
   have : Nonempty (RawCap γ) := ⟨D⟩
   conv_lhs => rw [← vsub_vadd D' D, RawCap.area_vadd hφ hdφ h]
   exact add_sub_cancel_right _ _
+
+/-- **Gluing a cylinder to a cap adds its area.** If `w` is a smooth based homotopy from `γ₁` to
+`γ₂`, and `γ₁` and `γ₂` have smooth based caps, then gluing `w` to a raw cap `D` of `γ₂` adds the
+integral of a closed `C¹` two-form over `w` to the area. The second cap exists whenever the first
+does (`TauCeti.Floer.IsSmoothBasedHomotopy.exists_isSmoothBasedCap`). -/
+theorem RawCap.area_homotopyClass_comp (hφ : IsSmoothForm I 1 φ) (hdφ : mextDeriv φ = 0)
+    {γ₁ γ₂ : Ω M x} {w : ℝ × ℝ → M} (hw : IsSmoothBasedHomotopy I γ₁ γ₂ w)
+    (h₁ : ∃ u, IsSmoothBasedCap I γ₁ u) (h₂ : ∃ u, IsSmoothBasedCap I γ₂ u) (D : RawCap γ₂) :
+    RawCap.area φ h₁ (hw.homotopyClass ≫ D) =
+      rectangleIntegral φ w (0, 0) (1, 1) + RawCap.area φ h₂ D := by
+  obtain ⟨u, hu⟩ := h₂
+  have : Nonempty (RawCap γ₂) := ⟨D⟩
+  -- Write `D` as a sphere glued to the raw cap of `u`, and glue `w` to the smooth cap `u`.
+  rw [← vsub_vadd D hu.rawCap, RawCap.comp_vadd, ← hw.rawCap_rectangleTrans hu,
+    RawCap.area_vadd hφ hdφ, RawCap.area_vadd hφ hdφ, RawCap.area_rawCap hφ hdφ,
+    RawCap.area_rawCap hφ hdφ, rectangleIntegral_rectangleTrans (hφ.of_le (by simp))
+      (hw.contMDiff.of_le (by simp)) (hu.contMDiff.of_le (by simp))
+      (hw.apply_one_eq_apply_zero hu)]
+  abel
+
+/-- **Cutting a cylinder off a cap subtracts its area.** If `w` is a smooth based homotopy from
+`γ₁` to `γ₂`, and `γ₁` and `γ₂` have smooth based caps, then gluing the inverse of `w` to a raw cap
+`D` of `γ₁` subtracts the integral of a closed `C¹` two-form over `w` from the area. -/
+theorem RawCap.area_inv_homotopyClass_comp (hφ : IsSmoothForm I 1 φ) (hdφ : mextDeriv φ = 0)
+    {γ₁ γ₂ : Ω M x} {w : ℝ × ℝ → M} (hw : IsSmoothBasedHomotopy I γ₁ γ₂ w)
+    (h₁ : ∃ u, IsSmoothBasedCap I γ₁ u) (h₂ : ∃ u, IsSmoothBasedCap I γ₂ u) (D : RawCap γ₁) :
+    RawCap.area φ h₂ (inv hw.homotopyClass ≫ D) =
+      RawCap.area φ h₁ D - rectangleIntegral φ w (0, 0) (1, 1) := by
+  have h := RawCap.area_homotopyClass_comp hφ hdφ hw h₁ h₂ (inv hw.homotopyClass ≫ D)
+  rw [IsIso.hom_inv_id_assoc] at h
+  exact eq_sub_of_add_eq' h.symm
 
 /-- **The capped action of a smooth cap.** For a smooth based cap `u` of `γ` and a closed real
 `C¹` two-form `σ`, the capped action of `γ` with the disc `u` run backwards, from its centre to
