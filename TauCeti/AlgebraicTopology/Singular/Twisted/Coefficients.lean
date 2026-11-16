@@ -75,6 +75,15 @@ lemma twistedChainComplexFunctor_map {L K : LocalCoefficientSystem.{u, v, max v 
     (twistedChainComplexFunctor R X).map f = twistedChainComplexCoefficientMap f :=
   (rfl)
 
+/-- **Twisted chains are additive in the coefficients**: the coefficient map of a sum of
+morphisms of local systems is the sum of their coefficient maps. -/
+instance twistedChainComplexFunctor_additive : (twistedChainComplexFunctor R X).Additive where
+  map_add {L _ _ _} := HomologicalComplex.hom_ext _ _ fun _ ↦ twistedChainComplex_hom_ext L
+    fun σ ↦ by
+      simp only [HomologicalComplex.add_f_apply, Preadditive.comp_add,
+        ιTwistedChainComplex_twistedChainComplexCoefficientMap_f, NatTrans.app_add,
+        Preadditive.add_comp]
+
 variable {R X}
 
 -- Evaluation in a chain degree is restriction to the initial vertices of singular simplices,
