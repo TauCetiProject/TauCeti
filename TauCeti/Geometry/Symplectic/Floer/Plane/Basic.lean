@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Analysis.Complex.RealChart
 public import TauCeti.Analysis.Complex.ThricePuncturedSphere.EndCoordinate
 public import Mathlib.Analysis.SpecialFunctions.SmoothTransition
 public import Mathlib.Analysis.SpecialFunctions.Complex.CircleMap
@@ -266,6 +267,13 @@ theorem re_endCoord_cylindricalEndLift (p : PSSPlane) (z : ℂ) :
     (p.endCoord (p.cylindricalEndLift z)).re = z.re := by
   obtain ⟨k, hk⟩ := p.exists_endCoord_cylindricalEndLift z
   simp [hk]
+
+/-- The real chart of the end lift of a PSS plane at a point `(ε s, t)` is the image of
+`ε s + i t`. -/
+theorem realChart_cylindricalEndLift_endSign_mul (p : PSSPlane) (s t : ℝ) :
+    TauCeti.Complex.realChart p.cylindricalEndLift (p.endSign * s, t) =
+      Complex.equivRealProdCLM (p.cylindricalEndLift (↑(p.endSign * s) + ↑t * Complex.I)) := by
+  rw [TauCeti.Complex.realChart_apply, Complex.equivRealProdCLM_symm_apply]
 
 /-- A family of period one in the angular coordinate takes the same value at the angular
 coordinate of the image of a cylinder point under the end lift as at the angular coordinate of the

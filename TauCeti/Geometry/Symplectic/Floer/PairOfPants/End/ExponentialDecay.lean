@@ -123,16 +123,10 @@ theorem eq_zero_of_dysonSeriesLeft_positiveEndHamiltonian_apply_eq_self {q : Pun
       (ω.hamiltonianVectorField (positiveEndHamiltonian H q t)) (y (q.endSign * t))) 1 v = v) :
     v = 0 := by
   rcases q.endSign_eq_one_or_eq_neg_one with h | h
-  · have hH' : positiveEndHamiltonian H q = H q := by
-      funext t x
-      simp only [positiveEndHamiltonian_apply, h, one_mul]
-    simp only [hH', h, one_mul] at hv
+  · simp only [positiveEndHamiltonian_of_endSign_eq_one H h, h, one_mul] at hv
     exact ω.eq_zero_of_dysonSeriesLeft_apply_eq_self hL hHs hy hnd hv
   -- On the output end `H'_q` is the reversed Hamiltonian `-H_q(-t)`, with the orbit `t ↦ y(-t)`.
-  have hH' : positiveEndHamiltonian H q = fun t x ↦ -H q (-t) x := by
-    funext t x
-    simp only [positiveEndHamiltonian_apply, h, neg_one_mul]
-  simp only [hH', h, neg_one_mul] at hv
+  simp only [positiveEndHamiltonian_of_endSign_eq_neg_one H h, h, neg_one_mul] at hv
   refine ω.eq_zero_of_dysonSeriesLeft_reverse_apply_eq_self hL hHs hH hyper.comp_neg
     (fun t ↦ ω.hasDerivAt_comp_neg_of_hasDerivAt_hamiltonianVectorField_neg ?_)
     (by simpa only [neg_zero] using hnd) hv

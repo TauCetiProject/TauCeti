@@ -80,14 +80,6 @@ variable {V : Type*} [NormedAddCommGroup V] [NormedSpace ℝ V] [FiniteDimension
   {ω : SymplecticForm V} {H : ℝ → V → ℝ} {u : ℝ × ℝ → V} {J : ℝ × ℝ → AlmostComplexStructure V}
   {c M : ℝ} {K : Set V}
 
-/-- The end lift of the positive plane in real coordinates, at a point `(s, t)`, is the image of
-`s + i t`. -/
-private theorem realChart_positive_mk (s t : ℝ) :
-    realChart positive.cylindricalEndLift (s, t) =
-      Complex.equivRealProdCLM
-        (positive.cylindricalEndLift (↑(positive.endSign * s) + ↑t * Complex.I)) := by
-  rw [realChart_apply, Complex.equivRealProdCLM_symm_apply, endSign_positive, one_mul]
-
 /-- The half-cylinder `s > a` of the positive plane lies in the part `‖w‖ > exp (2πa)` of the
 plane. -/
 private theorem exp_lt_norm_realChart_positive {a : ℝ} {z : ℝ × ℝ} (hz : a < z.1) :
@@ -282,7 +274,9 @@ theorem exists_halfCylinder_comp_realChart_positive (ω : SymplecticForm V)
       (ha.trans hz.1.le) (differentiableAt_realChart_positive hud hz.1) (hfloer _ (hmem hz.1)),
     ((ω.setLIntegral_floerEnergyDensity_comp_realChart_positive_le hH hHs ha hud).trans_lt
       ((lintegral_mono_set hsub).trans_lt hE.lt_top)).ne⟩
-  simpa only [comp_apply, realChart_positive_mk] using periodic_comp_cylindricalEndLift_positive u s
+  have h := periodic_comp_cylindricalEndLift_positive u s
+  simp only [← realChart_cylindricalEndLift_endSign_mul] at h
+  simpa only [comp_apply, endSign_positive, one_mul] using h
 
 /-- **The asymptotic orbit at the end of the positive plane.** This is the case `p = positive` of
 `exists_periodic_hasDerivAt_tendstoUniformly_pssPlanePerturbation`, for an arbitrary Hamiltonian;
@@ -312,8 +306,9 @@ private theorem exists_periodic_hasDerivAt_tendstoUniformly_positive
     ω.exists_halfCylinder_comp_realChart_positive one_ne_zero hH hHs hu huK hJc hJM hfloer hE
   obtain ⟨x, hxper, hx, φ, -, hφ, hux⟩ := exists_periodic_hasDerivAt_tendstoUniformly_of_floer
     hHs hH hu' hper hK huK' hc hJc' hJM' hfloer' hE'
-  simp only [comp_apply, realChart_positive_mk] at hux
-  exact ⟨x, hxper, hx, φ, hφ, hux⟩
+  simp only [comp_apply] at hux
+  simp only [← realChart_cylindricalEndLift_endSign_mul]
+  simpa only [endSign_positive, one_mul] using ⟨x, hxper, hx, φ, hφ, hux⟩
 
 /-- **The asymptotic action at the end of the positive plane.** This is the case `p = positive` of
 `exists_periodic_hasDerivAt_tendsto_hamiltonianAction_pssPlanePerturbation`, for an arbitrary
@@ -347,8 +342,9 @@ private theorem exists_periodic_hasDerivAt_tendsto_hamiltonianAction_positive
   obtain ⟨x, hxper, hx, ⟨φ, -, hφ, hux⟩, hA⟩ :=
     exists_periodic_hasDerivAt_tendsto_hamiltonianAction_of_floer
       hHs hH hu' hper hK huK' hc hJc' hJM' hfloer' hE'
-  simp only [comp_apply, realChart_positive_mk] at hux hA
-  exact ⟨x, hxper, hx, ⟨φ, hφ, hux⟩, hA⟩
+  simp only [comp_apply] at hux hA
+  simp only [← realChart_cylindricalEndLift_endSign_mul]
+  simpa only [endSign_positive, one_mul] using ⟨x, hxper, hx, ⟨φ, hφ, hux⟩, hA⟩
 
 omit [FiniteDimensional ℝ V] in
 /-- The negative plane given by `H` is the positive plane given by the reversed Hamiltonian

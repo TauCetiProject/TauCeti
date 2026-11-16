@@ -93,15 +93,9 @@ private theorem exists_pos_forall_eq_of_isNondegenerateFixedPt_positiveEndHamilt
       (∀ t, HasDerivAt y (ω.hamiltonianVectorField (positiveEndHamiltonian H q t) (y t)) t) →
       dist (y 0) (x 0) < ε → y = x := by
   rcases q.endSign_eq_one_or_eq_neg_one with h | h
-  · have hH : positiveEndHamiltonian H q = H q := by
-      funext t y
-      simp only [positiveEndHamiltonian_apply, h, one_mul]
-    rw [hH] at hx ⊢
+  · rw [positiveEndHamiltonian_of_endSign_eq_one H h] at hx ⊢
     exact ω.exists_pos_forall_eq_of_isNondegenerateFixedPt hL hx hnd
-  · have hH : positiveEndHamiltonian H q = fun t y ↦ -H q (-t) y := by
-      funext t y
-      simp only [positiveEndHamiltonian_apply, h, neg_one_mul]
-    rw [hH] at hx ⊢
+  · rw [positiveEndHamiltonian_of_endSign_eq_neg_one H h] at hx ⊢
     exact ω.exists_pos_forall_eq_of_isNondegenerateFixedPt_reverse hL hx hnd
 
 /-- **The ends of a Floer pair of pants converge to nondegenerate orbits.** Let `K` be equal to

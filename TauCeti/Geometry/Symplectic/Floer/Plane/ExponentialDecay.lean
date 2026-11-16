@@ -156,13 +156,6 @@ private theorem exists_pos_eventually_norm_sub_add_norm_fderiv_sub_le_exp_positi
   exact exists_pos_eventually_norm_sub_add_norm_fderiv_sub_smulRight_le_exp hHs hH hW hJq hJqper
     hK hKW hJqt hu' hper huK' (fun z hz ↦ hJ' z ▸ hfloer' z hz) hE' hiso hnd
 
-/-- The real chart of the end lift of a PSS plane at a point `(ε s, t)` is the image of
-`ε s + i t`. -/
-private theorem realChart_cylindricalEndLift_endSign_mul (p : PSSPlane) (s t : ℝ) :
-    realChart p.cylindricalEndLift (p.endSign * s, t) =
-      Complex.equivRealProdCLM (p.cylindricalEndLift (↑(p.endSign * s) + ↑t * Complex.I)) := by
-  rw [realChart_apply, Complex.equivRealProdCLM_symm_apply]
-
 /-- The end lift of the negative plane is that of the positive plane after the reflection
 `z ↦ -z`, and `X_{-H(t)} = -X_{H_t}`. So, read through the end lift of the negative plane at
 `(-s, t)`, the distance of the derivative of `u` from that of the stationary cylinder of the orbit
