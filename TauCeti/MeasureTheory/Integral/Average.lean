@@ -122,6 +122,8 @@ applied to an integrable function that is almost everywhere at least `a`.
 * `TauCeti.sq_setAverage_norm_le_setAverage_norm_sq`: Jensen's inequality
   `(⨍_s ‖g‖)² ≤ ⨍_s ‖g‖²`, bounding the mean oscillation by the square mean oscillation.
 * `TauCeti.laverage_const_mul`: a finite constant factor comes out of the lower average.
+* `TauCeti.setLAverage_add_const`: a constant term comes out of the lower average over a set of
+  finite nonzero measure.
 * `TauCeti.laverage_rpow_enorm_rpow_inv_eq`: `(⨍ ‖f‖ ^ p) ^ (1/p)` is the `Lᵖ` seminorm divided by
   the `p`-th root of the total mass.
 * `TauCeti.setLAverage_enorm_sq_le_of_setIntegral_le`: an estimate between Bochner integrals of
@@ -470,6 +472,12 @@ theorem laverage_const_mul {c : ℝ≥0∞} (hc : c ≠ ∞) (f : X → ℝ≥0�
     ⨍⁻ x, c * f x ∂μ = c * ⨍⁻ x, f x ∂μ := by
   rw [laverage_eq, laverage_eq, lintegral_const_mul' _ _ hc, mul_div_assoc]
 
+/-- A constant term comes out of the lower average over a set of finite nonzero measure. -/
+theorem setLAverage_add_const {s : Set X} (hs0 : μ s ≠ 0) (hs : μ s ≠ ∞) (f : X → ℝ≥0∞)
+    (c : ℝ≥0∞) : ⨍⁻ x in s, (f x + c) ∂μ = ⨍⁻ x in s, f x ∂μ + c := by
+  rw [setLAverage_eq, setLAverage_eq, lintegral_add_right _ measurable_const, setLIntegral_const,
+    ENNReal.add_div, ENNReal.mul_div_cancel_right hs0 hs]
+
 /-- For `0 < p < ∞`, the `p`-th root of the lower average of `‖f‖ₑ ^ p` is the `Lᵖ` seminorm of
 `f` divided by the `p`-th root of the total mass. -/
 theorem laverage_rpow_enorm_rpow_inv_eq {F : Type*} [NormedAddCommGroup F] {f : X → F}
@@ -629,9 +637,7 @@ theorem setLAverage_enorm_sq_le_of_ae_eq_zero {E : Type*} [NormedAddCommGroup E]
       ≤ ⨍⁻ x in s, (2 * ‖f x - c‖ₑ ^ (2 : ℝ) + 2 * ‖c‖ₑ ^ (2 : ℝ)) ∂μ :=
         setLAverage_mono_ae s (Filter.Eventually.of_forall hpt)
     _ = 2 * D + 2 * ‖c‖ₑ ^ (2 : ℝ) := by
-        rw [setLAverage_eq, lintegral_add_right _ measurable_const, lintegral_const_mul' _ _
-          ENNReal.ofNat_ne_top, setLIntegral_const, ENNReal.add_div, mul_div_assoc,
-          ENNReal.mul_div_cancel_right hs0 hst, ← setLAverage_eq]
+        rw [setLAverage_add_const hs0 hst, laverage_const_mul ENNReal.ofNat_ne_top]
     _ ≤ 2 * D + 2 * ((θ : ℝ≥0∞)⁻¹ * D) := by gcongr
     _ = 2 * (1 + (θ : ℝ≥0∞)⁻¹) * D := by ring
 

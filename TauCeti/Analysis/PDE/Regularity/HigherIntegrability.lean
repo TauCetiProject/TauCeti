@@ -109,52 +109,6 @@ namespace PDE
 variable {ι : Type*} [Fintype ι] [DecidableEq ι] {mu : Measure (EuclideanSpace ℝ ι)}
   [mu.IsAddHaarMeasure]
 
-/-- The constants of the reverse Hölder inequality: `A (C/ρ)² (2cρ)² = A C² (2c)²` does not depend
-on `ρ`, and both coefficients are at most `2ⁿ (A C² (2c)² + 12)`. -/
-private theorem ofReal_two_pow_mul_add_le {n : ℕ} {A C c ρ : ℝ} (hA : 0 ≤ A) (hc : 0 ≤ c)
-    (hρ : 0 < ρ) (G Φ : ℝ≥0∞) :
-    ENNReal.ofReal (2 ^ n) * (ENNReal.ofReal (A * (C / ρ) ^ 2) *
-        (ENNReal.ofReal (c * (2 * ρ)) ^ (2 : ℝ) * G) + 12 * Φ) ≤
-      ((2 ^ n * (A * C ^ 2 * (2 * c) ^ 2) + 2 ^ n * 12).toNNReal : ℝ≥0∞) * G +
-        ((2 ^ n * (A * C ^ 2 * (2 * c) ^ 2) + 2 ^ n * 12).toNNReal : ℝ≥0∞) * Φ := by
-  have hconst : ENNReal.ofReal (A * (C / ρ) ^ 2) * ENNReal.ofReal (c * (2 * ρ)) ^ (2 : ℝ) =
-      ENNReal.ofReal (A * C ^ 2 * (2 * c) ^ 2) := by
-    rw [ENNReal.ofReal_rpow_of_nonneg (mul_nonneg hc (by positivity)) zero_le_two,
-      ← ENNReal.ofReal_mul (by positivity), Real.rpow_two]
-    congr 1
-    field_simp
-  have hsplit : ENNReal.ofReal (2 ^ n) * (ENNReal.ofReal (A * C ^ 2 * (2 * c) ^ 2) * G + 12 * Φ) =
-      ENNReal.ofReal (2 ^ n * (A * C ^ 2 * (2 * c) ^ 2)) * G + ENNReal.ofReal (2 ^ n * 12) * Φ := by
-    rw [ENNReal.ofReal_mul (p := 2 ^ n) (by positivity),
-      ENNReal.ofReal_mul (p := 2 ^ n) (by positivity), ENNReal.ofReal_ofNat]
-    ring
-  rw [← mul_assoc, hconst, hsplit]
-  gcongr
-  · exact ENNReal.ofReal_le_ofReal (le_add_of_nonneg_right (by positivity))
-  · exact ENNReal.ofReal_le_ofReal (le_add_of_nonneg_left (by positivity))
-
-omit [DecidableEq ι] in
-/-- The Sobolev–Poincaré inequality from `Lˢ` to `L²` for `u ∈ H¹(Ω)` on a ball `B(y, r) ⊆ Ω`,
-squared: `⨍_B |u - u_B|² ≤ (c r)² (⨍_B ‖∇u‖ ^ s) ^ (2/s)`. -/
-private theorem setLAverage_enorm_value_sub_setAverage_sq_le [Nonempty ι] {s : ℝ≥0}
-    [Fact (1 ≤ (s : ℝ≥0∞))] (hs2 : s ≤ 2)
-    (hsn : (s : ℝ)⁻¹ - 2⁻¹ < (finrank ℝ (EuclideanSpace ℝ ι) : ℝ)⁻¹)
-    {Omega : Opens (EuclideanSpace ℝ ι)} (u : W1p mu Omega 2) {y : EuclideanSpace ℝ ι} {r : ℝ}
-    (hr : 0 < r) (hball : ball y r ⊆ (Omega : Set (EuclideanSpace ℝ ι))) :
-    ⨍⁻ x in ball y r, ‖W1p.value u x - ⨍ z in ball y r, W1p.value u z ∂mu‖ₑ ^ (2 : ℝ) ∂mu ≤
-      ENNReal.ofReal (2 ^ finrank ℝ (EuclideanSpace ℝ ι) / finrank ℝ (EuclideanSpace ℝ ι) *
-          ((1 - ((s : ℝ)⁻¹ - 2⁻¹)) / ((finrank ℝ (EuclideanSpace ℝ ι) : ℝ)⁻¹ -
-            ((s : ℝ)⁻¹ - 2⁻¹))) ^ (1 - ((s : ℝ)⁻¹ - 2⁻¹)) * r) ^ (2 : ℝ) *
-        (⨍⁻ x in ball y r, ‖W1p.gradient u x‖ₑ ^ (s : ℝ) ∂mu) ^ (2 / (s : ℝ)) := by
-  have hSP := W1p.setLAverage_rpow_enorm_value_sub_setAverage_le_of_ball_subset (p := s)
-    ENNReal.coe_ne_top (by exact_mod_cast hs2 : (s : ℝ≥0∞) ≤ 2) hr hball (q := 2)
-    (by exact_mod_cast hs2) (by simp) hsn u
-  rw [ENNReal.coe_toReal, NNReal.coe_ofNat] at hSP
-  have := ENNReal.rpow_le_rpow hSP (by norm_num : (0 : ℝ) ≤ 2)
-  rwa [← ENNReal.rpow_mul, inv_mul_cancel₀ two_ne_zero, ENNReal.rpow_one,
-    ENNReal.mul_rpow_of_nonneg _ _ (by norm_num : (0 : ℝ) ≤ 2), ← ENNReal.rpow_mul,
-    inv_mul_eq_div] at this
-
 /-- The constant `2 ((2Λ/λ)² + 1)` of the Caccioppoli inequality is at most `2 ((2K)² + 1)` when
 `Λ ≤ K λ`. -/
 private theorem two_mul_sq_add_one_le_of_le_mul
@@ -170,8 +124,8 @@ private theorem two_mul_sq_add_one_le_of_le_mul
   gcongr
 
 omit [DecidableEq ι] in
-/-- The Sobolev–Poincaré inequality of `setLAverage_enorm_value_sub_setAverage_sq_le`, with its
-constant `c`, depending only on `n` and `s`, named:
+/-- The Sobolev–Poincaré inequality from `Lˢ` to `L²` for `u ∈ H¹(Ω)` on a ball `B(y, r) ⊆ Ω`,
+squared, with a constant `c` depending only on `n` and `s`:
 `⨍_B |u - u_B|² ≤ c² r² (⨍_B ‖∇u‖ ^ s) ^ (2/s)`. -/
 private theorem exists_setLAverage_enorm_value_sub_setAverage_sq_le [Nonempty ι] {s : ℝ≥0}
     [Fact (1 ≤ (s : ℝ≥0∞))] (hs2 : s ≤ 2)
@@ -189,8 +143,84 @@ private theorem exists_setLAverage_enorm_value_sub_setAverage_sq_le [Nonempty ι
     mul_nonneg (by positivity) (Real.rpow_nonneg (div_nonneg (by linarith)
       (sub_nonneg.2 hsn.le)) _)
   refine ⟨_, hc, fun {Omega} u y r hr hball => ?_⟩
-  refine (setLAverage_enorm_value_sub_setAverage_sq_le hs2 hsn u hr hball).trans_eq ?_
-  rw [ENNReal.ofReal_rpow_of_nonneg (mul_nonneg hc hr.le) zero_le_two, Real.rpow_two, mul_pow]
+  have hSP := W1p.setLAverage_rpow_enorm_value_sub_setAverage_le_of_ball_subset (p := s)
+    ENNReal.coe_ne_top (by exact_mod_cast hs2 : (s : ℝ≥0∞) ≤ 2) hr hball (q := 2)
+    (by exact_mod_cast hs2) (by simp) hsn u
+  rw [ENNReal.coe_toReal, NNReal.coe_ofNat] at hSP
+  have := ENNReal.rpow_le_rpow hSP (by norm_num : (0 : ℝ) ≤ 2)
+  rwa [← ENNReal.rpow_mul, inv_mul_cancel₀ two_ne_zero, ENNReal.rpow_one,
+    ENNReal.mul_rpow_of_nonneg _ _ (by norm_num : (0 : ℝ) ≤ 2), ← ENNReal.rpow_mul,
+    inv_mul_eq_div, ENNReal.ofReal_rpow_of_nonneg (mul_nonneg hc hr.le) zero_le_two,
+    Real.rpow_two, mul_pow] at this
+
+omit [DecidableEq ι] in
+/-- **Assembling a reverse Hölder inequality.** On balls `B(y, ρ) ⊆ B(y, κρ) ⊆ B(y, 2ρ)`, a
+Caccioppoli inequality from `B(y, ρ)` to `B(y, κρ)` with the constant `A (C / (κρ - ρ))²`, and a
+Poincaré inequality on `B(y, κρ)` with the constant `M (κρ)²`, give a reverse Hölder inequality
+from `B(y, ρ)` to `B(y, 2ρ)` with constants independent of `ρ`. -/
+private theorem setLAverage_enorm_sq_le_of_setIntegral_le_of_le_mul_sq
+    {G Fv : EuclideanSpace ℝ ι → EuclideanSpace ℝ ι} {W : EuclideanSpace ℝ ι → ℝ}
+    {y : EuclideanSpace ℝ ι} {ρ κ A C M β s : ℝ} (hρ : 0 < ρ) (hκ1 : 1 < κ) (hκ2 : κ ≤ 2)
+    (hs : 0 < s) (hA : 0 ≤ A) (hM : 0 ≤ M) (hβ : 0 ≤ β)
+    (hG : MemLp G 2 (mu.restrict (ball y ρ))) (hW : MemLp W 2 (mu.restrict (ball y (κ * ρ))))
+    (hF : MemLp Fv 2 (mu.restrict (ball y (κ * ρ))))
+    (hc : ∫ x in ball y ρ, ‖G x‖ ^ 2 ∂mu ≤
+      A * (C / (κ * ρ - ρ)) ^ 2 * ∫ x in ball y (κ * ρ), ‖W x‖ ^ 2 ∂mu +
+        β * ∫ x in ball y (κ * ρ), ‖Fv x‖ ^ 2 ∂mu)
+    (hP : ⨍⁻ x in ball y (κ * ρ), ‖W x‖ₑ ^ (2 : ℝ) ∂mu ≤
+      ENNReal.ofReal (M * (κ * ρ) ^ 2) *
+        (⨍⁻ x in ball y (κ * ρ), ‖G x‖ₑ ^ s ∂mu) ^ (2 / s)) :
+    ⨍⁻ x in ball y ρ, ‖G x‖ₑ ^ (2 : ℝ) ∂mu ≤
+      ENNReal.ofReal (κ ^ finrank ℝ (EuclideanSpace ℝ ι) * (A * C ^ 2 * M * (κ / (κ - 1)) ^ 2) *
+          ((2 / κ) ^ finrank ℝ (EuclideanSpace ℝ ι)) ^ (2 / s)) *
+        (⨍⁻ x in ball y (2 * ρ), ‖G x‖ₑ ^ s ∂mu) ^ (2 / s) +
+      ENNReal.ofReal (2 ^ finrank ℝ (EuclideanSpace ℝ ι) * β) *
+        ⨍⁻ x in ball y (2 * ρ), ‖Fv x‖ₑ ^ (2 : ℝ) ∂mu := by
+  set n := finrank ℝ (EuclideanSpace ℝ ι)
+  have hκ0 : 0 < κ := one_pos.trans hκ1
+  set k : ℝ := (2 / κ) ^ n
+  have hk : 0 ≤ k := by positivity
+  -- Passing from `B(y, κρ)` to `B(y, 2ρ)` costs the ratio `(2 / κ)ⁿ` of their measures.
+  have henl : ∀ g : EuclideanSpace ℝ ι → ℝ≥0∞,
+      ⨍⁻ x in ball y (κ * ρ), g x ∂mu ≤ ENNReal.ofReal k * ⨍⁻ x in ball y (2 * ρ), g x ∂mu :=
+    fun g => (setLAverage_ball_le g (by positivity)
+      (ball_subset_ball (by nlinarith) : ball y (κ * ρ) ⊆ ball y (2 * ρ))).trans_eq
+      (by rw [mul_div_mul_right _ _ hρ.ne'])
+  -- The Caccioppoli inequality between averages.
+  have hav := setLAverage_enorm_sq_le_of_setIntegral_le (μ := mu) (k := ENNReal.ofReal (κ ^ n))
+    (by positivity) hβ
+    (by rw [Measure.addHaar_ball_mul_of_pos mu y hκ0, Measure.addHaar_ball_center mu y])
+    measure_ball_lt_top.ne hG.norm.integrable_sq hW.norm.integrable_sq hF.norm.integrable_sq hc
+  refine hav.trans ?_
+  have hPk : ⨍⁻ x in ball y (κ * ρ), ‖W x‖ₑ ^ (2 : ℝ) ∂mu ≤
+      ENNReal.ofReal (M * (κ * ρ) ^ 2) * (ENNReal.ofReal (k ^ (2 / s)) *
+        (⨍⁻ x in ball y (2 * ρ), ‖G x‖ₑ ^ s ∂mu) ^ (2 / s)) := by
+    refine hP.trans ?_
+    gcongr
+    refine (ENNReal.rpow_le_rpow (henl _) (by positivity)).trans_eq ?_
+    rw [ENNReal.mul_rpow_of_nonneg _ _ (by positivity), ENNReal.ofReal_rpow_of_nonneg hk
+      (by positivity)]
+  calc ENNReal.ofReal (κ ^ n) * (ENNReal.ofReal (A * (C / (κ * ρ - ρ)) ^ 2) *
+          ⨍⁻ x in ball y (κ * ρ), ‖W x‖ₑ ^ (2 : ℝ) ∂mu +
+        ENNReal.ofReal β * ⨍⁻ x in ball y (κ * ρ), ‖Fv x‖ₑ ^ (2 : ℝ) ∂mu)
+      ≤ ENNReal.ofReal (κ ^ n) * (ENNReal.ofReal (A * (C / (κ * ρ - ρ)) ^ 2) *
+          (ENNReal.ofReal (M * (κ * ρ) ^ 2) * (ENNReal.ofReal (k ^ (2 / s)) *
+            (⨍⁻ x in ball y (2 * ρ), ‖G x‖ₑ ^ s ∂mu) ^ (2 / s))) +
+        ENNReal.ofReal β * (ENNReal.ofReal k *
+          ⨍⁻ x in ball y (2 * ρ), ‖Fv x‖ₑ ^ (2 : ℝ) ∂mu)) := by
+        gcongr
+        exact henl _
+    _ = _ := by
+        have hc1 : κ ^ n * (A * (C / (κ * ρ - ρ)) ^ 2 * (M * (κ * ρ) ^ 2 * k ^ (2 / s))) =
+            κ ^ n * (A * C ^ 2 * M * (κ / (κ - 1)) ^ 2) * k ^ (2 / s) := by
+          rw [show κ * ρ - ρ = (κ - 1) * ρ by ring]
+          field_simp
+        have hc2 : κ ^ n * (β * k) = 2 ^ n * β := by
+          simp only [k, div_pow]
+          field_simp
+        rw [← hc1, ← hc2]
+        simp (disch := positivity) only [ENNReal.ofReal_mul]
+        ring
 
 /-- **The reverse Hölder inequality for the gradient of a weak solution.** Let `n ≥ 1` be the
 dimension, let `1 ≤ s ≤ 2` with `1/s - 1/2 < 1/n`, and let `K` bound the ellipticity ratio.
@@ -219,50 +249,43 @@ theorem exists_setLAverage_enorm_gradient_sq_le_divergence [Nonempty ι] {s : �
   obtain ⟨C, -, hC⟩ :=
     exists_setIntegral_ball_norm_gradient_sq_le_sub_setAverage_divergence (ι := ι)
   have : Fact (1 ≤ (s : ℝ≥0∞)) := ⟨by exact_mod_cast hs1⟩
+  obtain ⟨c, -, hP⟩ := exists_setLAverage_enorm_value_sub_setAverage_sq_le (mu := mu) hs2 hsn
   set n := finrank ℝ (EuclideanSpace ℝ ι)
-  set δ : ℝ := (s : ℝ)⁻¹ - 2⁻¹
-  set c : ℝ := 2 ^ n / n * ((1 - δ) / ((n : ℝ)⁻¹ - δ)) ^ (1 - δ)
   set A : ℝ := 2 * ((2 * K) ^ 2 + 1)
-  have hA0 : 0 ≤ A := by
-    simp only [A]
-    positivity
-  have hn1 : (1 : ℝ) ≤ n := by exact_mod_cast Module.finrank_pos
-  have hδ1 : δ < 1 := hsn.trans_le (inv_le_one_of_one_le₀ hn1)
-  have hc : 0 ≤ c := mul_nonneg (by positivity)
-    (Real.rpow_nonneg (div_nonneg (by linarith) (sub_nonneg.2 hsn.le)) _)
-  refine ⟨(2 ^ n * (A * C ^ 2 * (2 * c) ^ 2) + 2 ^ n * 12).toNNReal, ?_⟩
+  set K₁ : ℝ := 2 ^ n * (A * C ^ 2 * c ^ 2 * (2 / (2 - 1)) ^ 2) * ((2 / 2) ^ n) ^ (2 / (s : ℝ))
+  have hA0 : 0 ≤ A := by positivity
+  have hK₁ : 0 ≤ K₁ := by positivity
+  refine ⟨(K₁ + 2 ^ n * 12).toNNReal, ?_⟩
   intro Omega a lam Lam F u y ρ h hK ha hF hu hρ hball
-  have hlam : 0 < lam := h.pos
   set m := ⨍ z in ball y (2 * ρ), W1p.value u z ∂mu
   -- Caccioppoli's inequality for `u - m`, with its constant bounded through `Λ ≤ K λ`.
   have hIρ : ∫ x in ball y ρ, ‖W1p.gradient u x‖ ^ 2 ∂mu ≤
-      A * (C / ρ) ^ 2 * ∫ x in ball y (2 * ρ), ‖W1p.value u x - m‖ ^ 2 ∂mu
+      A * (C / (2 * ρ - ρ)) ^ 2 * ∫ x in ball y (2 * ρ), ‖W1p.value u x - m‖ ^ 2 ∂mu
         + 12 / lam ^ 2 * ∫ x in ball y (2 * ρ), ‖F x‖ ^ 2 ∂mu := by
-    have hcacc := hC h ha hF hu (by linarith : ρ < 2 * ρ) hball
-    rw [show 2 * ρ - ρ = ρ by ring] at hcacc
-    refine hcacc.trans ?_
     have hA : 2 * ((2 * Lam / lam) ^ 2 + 1) ≤ A := two_mul_sq_add_one_le_of_le_mul h hK
+    refine (hC h ha hF hu (by linarith : ρ < 2 * ρ) hball).trans ?_
     simp only [Real.norm_eq_abs, sq_abs]
     gcongr
-  -- The Sobolev–Poincaré inequality on `B(y, 2ρ)`, and the averaged Caccioppoli inequality.
-  have hP := setLAverage_enorm_value_sub_setAverage_sq_le hs2 hsn u (by positivity) hball
+  -- The Sobolev–Poincaré inequality on `B(y, 2ρ)`, and the assembly.
   have : IsFiniteMeasure (mu.restrict (ball y (2 * ρ))) :=
     isFiniteMeasure_restrict.2 measure_ball_lt_top.ne
-  -- The ratio of the measures of the two balls is `2ⁿ`.
-  have hμ2 : mu (ball y (2 * ρ)) = ENNReal.ofReal (2 ^ n) * mu (ball y ρ) := by
-    rw [Measure.addHaar_ball_of_pos mu y (by positivity), Measure.addHaar_ball_of_pos mu y hρ,
-      mul_pow, ENNReal.ofReal_mul (by positivity), mul_assoc]
-  have hav := setLAverage_enorm_sq_le_of_setIntegral_le (f := fun x => W1p.value u x - m)
-    (by positivity) (by positivity) hμ2 measure_ball_lt_top.ne
-    ((Lp.memLp (W1p.gradient u)).norm.integrable_sq.mono_measure
+  have hav := setLAverage_enorm_sq_le_of_setIntegral_le_of_le_mul_sq
+    (W := fun x => W1p.value u x - m) hρ (by norm_num) le_rfl (one_pos.trans_le hs1) hA0
+    (sq_nonneg c) (by positivity)
+    ((Lp.memLp (W1p.gradient u)).mono_measure
       (Measure.restrict_mono ((ball_subset_ball (by linarith)).trans hball) le_rfl))
-    ((((Lp.memLp (W1p.value u)).mono_measure (Measure.restrict_mono hball le_rfl)).sub
-      (memLp_const m)).norm.integrable_sq)
-    (hF.norm.integrable_sq.mono_measure (Measure.restrict_mono hball le_rfl)) hIρ
-  rw [ofReal_div_sq_mul_setLAverage_eq _ hlam 12,
-    ENNReal.ofReal_ofNat] at hav
-  refine hav.trans (le_trans ?_ (ofReal_two_pow_mul_add_le hA0 hc hρ _ _))
-  gcongr
+    (((Lp.memLp (W1p.value u)).mono_measure (Measure.restrict_mono hball le_rfl)).sub
+      (memLp_const m))
+    (hF.mono_measure (Measure.restrict_mono hball le_rfl)) hIρ
+    (hP u (by positivity) hball)
+  rw [← mul_div_assoc, ofReal_div_sq_mul_setLAverage_eq _ h.pos] at hav
+  refine hav.trans (add_le_add ?_ ?_)
+  · gcongr ?_ * _
+    rw [ENNReal.ofNNReal_toNNReal]
+    exact ENNReal.ofReal_le_ofReal (le_add_of_nonneg_right (by positivity))
+  · gcongr ?_ * _
+    rw [ENNReal.ofNNReal_toNNReal]
+    exact ENNReal.ofReal_le_ofReal (le_add_of_nonneg_left hK₁)
 
 /-- An exponent `s < 2` close enough to `2` for the Sobolev–Poincaré inequality from `Lˢ` to
 `L²` in dimension `n ≥ 1`: `s = 2n/(n + 1)`, for which `1/s - 1/2 = 1/(2n) < 1/n`. -/
@@ -372,75 +395,6 @@ theorem exists_memLp_gradient_ball_divergence [Nonempty ι] (K : ℝ) :
 
 /-! ### Up to the boundary -/
 
-omit [DecidableEq ι] in
-/-- **Assembling a reverse Hölder inequality.** On balls `B(y, ρ) ⊆ B(y, κρ) ⊆ B(y, 2ρ)`, a
-Caccioppoli inequality from `B(y, ρ)` to `B(y, κρ)` with the constant `A (C / (κρ - ρ))²`, and a
-Poincaré inequality on `B(y, κρ)` with the constant `M (κρ)²`, give a reverse Hölder inequality
-from `B(y, ρ)` to `B(y, 2ρ)` with constants independent of `ρ`. -/
-private theorem setLAverage_enorm_sq_le_of_setIntegral_le_of_le_mul_sq
-    {G Fv : EuclideanSpace ℝ ι → EuclideanSpace ℝ ι} {W : EuclideanSpace ℝ ι → ℝ}
-    {y : EuclideanSpace ℝ ι} {ρ κ A C M β s : ℝ} (hρ : 0 < ρ) (hκ1 : 1 < κ) (hκ2 : κ ≤ 2)
-    (hs : 0 < s) (hA : 0 ≤ A) (hM : 0 ≤ M) (hβ : 0 ≤ β)
-    (hG : MemLp G 2 mu) (hW : MemLp W 2 (mu.restrict (ball y (κ * ρ)))) (hF : MemLp Fv 2 mu)
-    (hc : ∫ x in ball y ρ, ‖G x‖ ^ 2 ∂mu ≤
-      A * (C / (κ * ρ - ρ)) ^ 2 * ∫ x in ball y (κ * ρ), ‖W x‖ ^ 2 ∂mu +
-        β * ∫ x in ball y (κ * ρ), ‖Fv x‖ ^ 2 ∂mu)
-    (hP : ⨍⁻ x in ball y (κ * ρ), ‖W x‖ₑ ^ (2 : ℝ) ∂mu ≤
-      ENNReal.ofReal (M * (κ * ρ) ^ 2) *
-        (⨍⁻ x in ball y (κ * ρ), ‖G x‖ₑ ^ s ∂mu) ^ (2 / s)) :
-    ⨍⁻ x in ball y ρ, ‖G x‖ₑ ^ (2 : ℝ) ∂mu ≤
-      ENNReal.ofReal (κ ^ finrank ℝ (EuclideanSpace ℝ ι) * (A * C ^ 2 * M * (κ / (κ - 1)) ^ 2) *
-          ((2 / κ) ^ finrank ℝ (EuclideanSpace ℝ ι)) ^ (2 / s)) *
-        (⨍⁻ x in ball y (2 * ρ), ‖G x‖ₑ ^ s ∂mu) ^ (2 / s) +
-      ENNReal.ofReal (2 ^ finrank ℝ (EuclideanSpace ℝ ι) * β) *
-        ⨍⁻ x in ball y (2 * ρ), ‖Fv x‖ₑ ^ (2 : ℝ) ∂mu := by
-  set n := finrank ℝ (EuclideanSpace ℝ ι)
-  have hκ0 : 0 < κ := one_pos.trans hκ1
-  set k : ℝ := (2 / κ) ^ n
-  have hk : 0 ≤ k := by positivity
-  -- Passing from `B(y, κρ)` to `B(y, 2ρ)` costs the ratio `(2 / κ)ⁿ` of their measures.
-  have henl : ∀ g : EuclideanSpace ℝ ι → ℝ≥0∞,
-      ⨍⁻ x in ball y (κ * ρ), g x ∂mu ≤ ENNReal.ofReal k * ⨍⁻ x in ball y (2 * ρ), g x ∂mu :=
-    fun g => (setLAverage_ball_le g (by positivity)
-      (ball_subset_ball (by nlinarith) : ball y (κ * ρ) ⊆ ball y (2 * ρ))).trans_eq
-      (by rw [mul_div_mul_right _ _ hρ.ne'])
-  -- The Caccioppoli inequality between averages.
-  have hav := setLAverage_enorm_sq_le_of_setIntegral_le (μ := mu) (k := ENNReal.ofReal (κ ^ n))
-    (by positivity) hβ
-    (by rw [Measure.addHaar_ball_mul_of_pos mu y hκ0, Measure.addHaar_ball_center mu y])
-    measure_ball_lt_top.ne hG.norm.integrable_sq.integrableOn hW.norm.integrable_sq
-    hF.norm.integrable_sq.integrableOn hc
-  refine hav.trans ?_
-  have hPk : ⨍⁻ x in ball y (κ * ρ), ‖W x‖ₑ ^ (2 : ℝ) ∂mu ≤
-      ENNReal.ofReal (M * (κ * ρ) ^ 2) * (ENNReal.ofReal (k ^ (2 / s)) *
-        (⨍⁻ x in ball y (2 * ρ), ‖G x‖ₑ ^ s ∂mu) ^ (2 / s)) := by
-    refine hP.trans ?_
-    gcongr
-    refine (ENNReal.rpow_le_rpow (henl _) (by positivity)).trans_eq ?_
-    rw [ENNReal.mul_rpow_of_nonneg _ _ (by positivity), ENNReal.ofReal_rpow_of_nonneg hk
-      (by positivity)]
-  calc ENNReal.ofReal (κ ^ n) * (ENNReal.ofReal (A * (C / (κ * ρ - ρ)) ^ 2) *
-          ⨍⁻ x in ball y (κ * ρ), ‖W x‖ₑ ^ (2 : ℝ) ∂mu +
-        ENNReal.ofReal β * ⨍⁻ x in ball y (κ * ρ), ‖Fv x‖ₑ ^ (2 : ℝ) ∂mu)
-      ≤ ENNReal.ofReal (κ ^ n) * (ENNReal.ofReal (A * (C / (κ * ρ - ρ)) ^ 2) *
-          (ENNReal.ofReal (M * (κ * ρ) ^ 2) * (ENNReal.ofReal (k ^ (2 / s)) *
-            (⨍⁻ x in ball y (2 * ρ), ‖G x‖ₑ ^ s ∂mu) ^ (2 / s))) +
-        ENNReal.ofReal β * (ENNReal.ofReal k *
-          ⨍⁻ x in ball y (2 * ρ), ‖Fv x‖ₑ ^ (2 : ℝ) ∂mu)) := by
-        gcongr
-        exact henl _
-    _ = _ := by
-        have hc1 : κ ^ n * (A * (C / (κ * ρ - ρ)) ^ 2 * (M * (κ * ρ) ^ 2 * k ^ (2 / s))) =
-            κ ^ n * (A * C ^ 2 * M * (κ / (κ - 1)) ^ 2) * k ^ (2 / s) := by
-          rw [show κ * ρ - ρ = (κ - 1) * ρ by ring]
-          field_simp
-        have hc2 : κ ^ n * (β * k) = 2 ^ n * β := by
-          simp only [k, div_pow]
-          field_simp
-        rw [← hc1, ← hc2]
-        simp (disch := positivity) only [ENNReal.ofReal_mul]
-        ring
-
 open Filter in
 /-- **The reverse Hölder inequality for the zero extension, on balls well inside `Ω`.** If
 `B(y, 3ρ/2) ⊆ Ω`, the gradient of the zero extension `u₀` of a weak solution `u ∈ H¹₀(Ω)`
@@ -518,9 +472,9 @@ private theorem exists_setLAverage_enorm_gradient_extendByZeroL_sq_le_of_ball_su
   exact setLAverage_enorm_sq_le_of_setIntegral_le_of_le_mul_sq
     (W := fun x => W1p.value ub x - ⨍ z in ball y (3 / 2 * ρ), W1p.value ub z ∂mu)
     hρ (by norm_num) (by norm_num) hs0 (by positivity) (sq_nonneg c) (by positivity)
-    ((Lp.memLp (W1p.gradient ub)).mono_measure (by simp))
+    (((Lp.memLp (W1p.gradient ub)).mono_measure (by simp)).restrict _)
     ((((Lp.memLp (W1p.value ub)).mono_measure (by simp)).restrict _).sub (memLp_const _))
-    ((memLp_indicator_iff_restrict hOm.nullMeasurableSet).2 hF) hcacc hPB
+    (((memLp_indicator_iff_restrict hOm.nullMeasurableSet).2 hF).restrict _) hcacc hPB
 
 omit [DecidableEq ι] in
 /-- If the complement of `T` fills a proportion `θ` of `B(z, ρ/2)`, then `B(z, ρ/2) \ T` has
@@ -531,19 +485,20 @@ private theorem toNNReal_div_pow_mul_measure_ball_le {T : Set (EuclideanSpace �
     ((θ / 4 ^ finrank ℝ (EuclideanSpace ℝ ι)).toNNReal : ℝ≥0∞) * mu (ball y (2 * ρ)) ≤
       mu (ball z (ρ / 2) \ T) := by
   have hz' : ENNReal.ofReal θ * mu (ball z (ρ / 2)) ≤ mu (ball z (ρ / 2) \ T) := by
-    have := ENNReal.ofReal_le_ofReal hdens
-    rwa [ENNReal.ofReal_mul hθ.le, measureReal_def, measureReal_def,
-      ENNReal.ofReal_toReal measure_ball_lt_top.ne,
-      ENNReal.ofReal_toReal (measure_ne_top_of_subset sdiff_subset measure_ball_lt_top.ne)]
-      at this
+    refine (ENNReal.toReal_le_toReal (ENNReal.mul_ne_top ENNReal.ofReal_ne_top
+      measure_ball_lt_top.ne) (measure_ne_top_of_subset sdiff_subset measure_ball_lt_top.ne)).1 ?_
+    rwa [ENNReal.toReal_mul, ENNReal.toReal_ofReal hθ.le]
   refine le_trans (le_of_eq ?_) hz'
   rw [ENNReal.ofNNReal_toNNReal, Measure.addHaar_ball_of_pos mu y (by positivity),
     Measure.addHaar_ball_of_pos mu z (by positivity)]
   simp (disch := positivity) only [← mul_assoc, ← ENNReal.ofReal_mul]
   congr 2
-  rw [div_mul_eq_mul_div, mul_div_assoc, ← div_pow]
-  congr 2
-  ring
+  have h4 : (4 : ℝ) ^ finrank ℝ (EuclideanSpace ℝ ι) =
+      2 ^ finrank ℝ (EuclideanSpace ℝ ι) * 2 ^ finrank ℝ (EuclideanSpace ℝ ι) := by
+    rw [← mul_pow]
+    norm_num
+  rw [h4, mul_pow, div_pow]
+  field_simp
 
 open Filter in
 /-- **The reverse Hölder inequality for the zero extension, at the boundary.** If the complement
@@ -621,9 +576,9 @@ private theorem exists_setLAverage_enorm_gradient_extendByZeroL_sq_le_of_mul_le 
     ring
   exact setLAverage_enorm_sq_le_of_setIntegral_le_of_le_mul_sq (W := fun x => W1p.value ub x)
     hρ (by norm_num) le_rfl hs0 (by positivity) (by positivity) (by positivity)
-    ((Lp.memLp (W1p.gradient ub)).mono_measure (by simp))
+    (((Lp.memLp (W1p.gradient ub)).mono_measure (by simp)).restrict _)
     (((Lp.memLp (W1p.value ub)).mono_measure (by simp)).restrict _)
-    ((memLp_indicator_iff_restrict hOm.nullMeasurableSet).2 hF) hcacc hPB
+    (((memLp_indicator_iff_restrict hOm.nullMeasurableSet).2 hF).restrict _) hcacc hPB
 
 open Filter in
 /-- **The reverse Hölder inequality up to the boundary.** Let `n ≥ 1` be the dimension, let
