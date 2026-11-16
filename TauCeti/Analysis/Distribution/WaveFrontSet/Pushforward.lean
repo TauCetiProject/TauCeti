@@ -194,15 +194,15 @@ theorem waveFrontSet_cutoffPushforwardCLM_subset_of_surjective {A : E →L[ℝ] 
 
 /-- **Hörmander's wave front bound for a pushforward along a linear map proper on the support.**
 If the linear map `A` is proper on the support of `T`, the pushforward `A_* T` satisfies
-`WF(A_* T) ⊆ {(A x, η) | x ∈ Ω ∩ supp T, Aᵀ η = 0 or (x, Aᵀ η) ∈ WF(T)}`. Over a neighbourhood of
-each point of `Ω'`, `A_* T` is the pushforward of `T` with a cutoff
-(`Distribution.restrictCLM_pushforward`), to which
-`Distribution.waveFrontSet_cutoffPushforwardCLM_subset` applies. -/
+`WF(A_* T) ⊆ {(A x, η) | x ∈ Ω ∩ supp T, Aᵀ η = 0 or (x, Aᵀ η) ∈ WF(T)}`. -/
 theorem waveFrontSet_pushforward_subset (A : E →L[ℝ] E') (T : 𝓓'(Ω, ℂ))
     (hT : IsProperOnSupport T A Ω') :
     (pushforward T A A.contDiff.contDiffOn hT : 𝓓'(Ω', ℂ)).waveFrontSet ⊆
       {p | ∃ x ∈ (Ω : Set E) ∩ dsupport T, A x = p.1 ∧
         ((A†) p.2 = 0 ∨ (x, (A†) p.2) ∈ T.waveFrontSet)} := by
+  -- Over a neighbourhood of each point of `Ω'`, `A_* T` is the pushforward of `T` with a cutoff
+  -- (`Distribution.restrictCLM_pushforward`), to which
+  -- `Distribution.waveFrontSet_cutoffPushforwardCLM_subset` applies.
   rintro ⟨y, η⟩ hp
   obtain ⟨K, hK, hyK, hKΩ'⟩ := exists_compact_subset Ω'.isOpen (mem_waveFrontSet_iff.1 hp).1
   obtain ⟨χ, hχ, -⟩ := TestFunction.exists_eventually_eq_one (n := ⊤) (hT.isCompact hK hKΩ')

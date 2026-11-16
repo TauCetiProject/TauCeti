@@ -141,6 +141,15 @@ theorem _root_.IsCompact.prod_inter_setOf_eq {Y Z : Type*} [TopologicalSpace Y]
   ext z
   exact ⟨fun hz ↦ ⟨⟨z, hz.1⟩, hz.2, rfl⟩, by rintro ⟨z, hz, rfl⟩; exact ⟨z.2, hz⟩⟩
 
+/-- The points of a compact set `C` that a map continuous on `C` sends into a closed set `K` form
+a compact set. -/
+theorem _root_.IsCompact.inter_preimage {Y : Type*} [TopologicalSpace Y] {C : Set X}
+    {K : Set Y} {Φ : X → Y} (hC : IsCompact C) (hΦ : ContinuousOn Φ C) (hK : IsClosed K) :
+    IsCompact (C ∩ Φ ⁻¹' K) := by
+  have : CompactSpace C := isCompact_iff_compactSpace.1 hC
+  rw [← Subtype.image_preimage_coe]
+  exact (hK.preimage hΦ.domRestrict).isCompact.image continuous_subtype_val
+
 /-- A compact set contains no infinite subset all of whose subsets are closed: such a subset would
 be closed, hence compact, and discrete. -/
 theorem _root_.IsCompact.finite_of_forall_isClosed {K S : Set X}

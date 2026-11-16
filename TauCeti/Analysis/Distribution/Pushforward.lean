@@ -8,6 +8,7 @@ module
 public import TauCeti.Analysis.Distribution.CutoffPushforward
 public import TauCeti.Analysis.Distribution.Restriction
 public import TauCeti.Analysis.Distribution.TensorProduct
+import TauCeti.Topology.Compactness.Compact
 
 /-!
 # Pushforward of distributions along maps proper on their support
@@ -43,8 +44,9 @@ in a locally convex space.
 * `Distribution.pushforward_eq_cutoffPushforwardCLM`: agreement with the pushforward of a
   compactly supported distribution, and `Distribution.restrictCLM_pushforward`: locally, every
   pushforward is such a pushforward.
-* `Distribution.inter_dsupport_pushforward_subset` and `Distribution.dsupport_pushforward_subset`:
-  `Ω' ∩ supp (Φ_* T) ⊆ Φ (Ω ∩ supp T)`, the image being closed in `Ω'`.
+* `Distribution.dsupport_pushforward_subset`: `supp (Φ_* T) ⊆ closure (Φ (Ω ∩ supp T))`, and
+  `Distribution.inter_dsupport_pushforward_subset`: `Ω' ∩ supp (Φ_* T) ⊆ Φ (Ω ∩ supp T)` for
+  finite-dimensional `E'`.
 * `Distribution.pushforward_add`, `Distribution.pushforward_smul`: linearity.
 * `Distribution.pushforward_id`, `Distribution.pushforward_pushforward`: functoriality.
 * `Distribution.pushforward_tensorProduct`: `(Φ × Ψ)_* (S ⊗ T) = Φ_* S ⊗ Ψ_* T`.
@@ -65,25 +67,12 @@ noncomputable section
 open Set Filter TopologicalSpace TestFunction
 open scoped Distributions Topology
 
-/-- A closed subset of `U ∩ D ∩ Φ⁻¹(K)` is compact if it lies in a compact subset `C` of `U` on
-which `Φ` is continuous. -/
-private theorem isCompact_inter_inter_preimage {X Y : Type*} [TopologicalSpace X] [T2Space X]
-    [TopologicalSpace Y] {U D C : Set X} {Φ : X → Y} {K : Set Y} (hΦ : ContinuousOn Φ U)
-    (hD : IsClosed D) (hK : IsClosed K) (hC : IsCompact C) (hCU : C ⊆ U)
-    (hsub : U ∩ D ∩ Φ ⁻¹' K ⊆ C) : IsCompact (U ∩ D ∩ Φ ⁻¹' K) := by
-  have heq : U ∩ D ∩ Φ ⁻¹' K = C ∩ Φ ⁻¹' K ∩ D :=
-    Subset.antisymm (fun x hx ↦ ⟨⟨hsub hx, hx.2⟩, hx.1.2⟩) fun x hx ↦
-      ⟨⟨hCU hx.1.1, hx.2⟩, hx.1.2⟩
-  rw [heq]
-  exact (hC.of_isClosed_subset ((hΦ.mono hCU).preimage_isClosed_of_isClosed hC.isClosed hK)
-    inter_subset_left).inter_right hD
-
 namespace Distribution
 
 section IsProperOnSupport
 
 variable {E E' F : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [TopologicalSpace E']
-  [T2Space E'] [AddCommGroup F] [Module ℝ F] [TopologicalSpace F] {Ω : Opens E} {Ω' : Opens E'}
+  [AddCommGroup F] [Module ℝ F] [TopologicalSpace F] {Ω : Opens E} {Ω' : Opens E'}
   {Φ : E → E'}
 
 /-! ### Maps proper on the support of a distribution -/
@@ -95,21 +84,18 @@ compact. This is the condition for the pushforward `Φ_* T` to `Ω'` (`Distribut
 def IsProperOnSupport (T : 𝓓'(Ω, F)) (Φ : E → E') (Ω' : Opens E') : Prop :=
   ∀ K : Set E', IsCompact K → K ⊆ Ω' → IsCompact ((Ω : Set E) ∩ dsupport T ∩ Φ ⁻¹' K)
 
-omit [T2Space E'] in
 /-- Unfolds `Distribution.IsProperOnSupport`. -/
 theorem isProperOnSupport_iff {T : 𝓓'(Ω, F)} :
     IsProperOnSupport T Φ Ω' ↔
       ∀ K : Set E', IsCompact K → K ⊆ Ω' → IsCompact ((Ω : Set E) ∩ dsupport T ∩ Φ ⁻¹' K) :=
   Iff.rfl
 
-omit [T2Space E'] in
 /-- If `Φ` is proper on the support of `T`, the part of the support of `T` in `Ω` over a compact
 subset of `Ω'` is compact. -/
 theorem IsProperOnSupport.isCompact {T : 𝓓'(Ω, F)} (hT : IsProperOnSupport T Φ Ω') {K : Set E'}
     (hK : IsCompact K) (hKΩ' : K ⊆ Ω') : IsCompact ((Ω : Set E) ∩ dsupport T ∩ Φ ⁻¹' K) :=
   hT K hK hKΩ'
 
-omit [T2Space E'] in
 /-- A map that is proper from `Ω` to `Ω'` is proper on the support of every distribution. -/
 theorem isProperOnSupport_of_isCompact_inter_preimage (T : 𝓓'(Ω, F))
     (hΦ : ∀ K : Set E', IsCompact K → K ⊆ Ω' → IsCompact ((Ω : Set E) ∩ Φ ⁻¹' K)) :
@@ -119,35 +105,37 @@ theorem isProperOnSupport_of_isCompact_inter_preimage (T : 𝓓'(Ω, F))
 
 /-- Every map continuous on `Ω` is proper on the support of a distribution whose support is a
 compact subset of `Ω`. -/
-theorem isProperOnSupport_of_isCompact_dsupport (hΦ : ContinuousOn Φ Ω)
+theorem isProperOnSupport_of_isCompact_dsupport [T2Space E'] (hΦ : ContinuousOn Φ Ω)
     {T : 𝓓'(Ω, F)} (hT : IsCompact (dsupport T)) (hTΩ : dsupport T ⊆ Ω) :
-    IsProperOnSupport T Φ Ω' := fun _ hK _ ↦
-  isCompact_inter_inter_preimage hΦ isClosed_dsupport hK.isClosed hT hTΩ
-    fun _ hx ↦ hx.1.2
+    IsProperOnSupport T Φ Ω' := fun _ hK _ ↦ by
+  rw [inter_eq_right.2 hTΩ]
+  exact hT.inter_preimage (hΦ.mono hTΩ) hK.isClosed
 
-omit [T2Space E'] in
 /-- Every map is proper on the support of the zero distribution. -/
 theorem isProperOnSupport_zero [IsTopologicalAddGroup F] : IsProperOnSupport (0 : 𝓓'(Ω, F)) Φ Ω' :=
   fun _ _ _ ↦ by simp [dsupport_zero]
 
 /-- The sum of two distributions on whose supports `Φ` is proper. -/
-theorem IsProperOnSupport.add [IsTopologicalAddGroup F] (hΦ : ContinuousOn Φ Ω) {S T : 𝓓'(Ω, F)}
+theorem IsProperOnSupport.add [IsTopologicalAddGroup F] {S T : 𝓓'(Ω, F)}
     (hS : IsProperOnSupport S Φ Ω') (hT : IsProperOnSupport T Φ Ω') :
     IsProperOnSupport (S + T) Φ Ω' := fun K hK hKΩ' ↦ by
-  refine isCompact_inter_inter_preimage hΦ isClosed_dsupport hK.isClosed
-    ((hS K hK hKΩ').union (hT K hK hKΩ')) (union_subset (fun x hx ↦ hx.1.1)
-      fun x hx ↦ hx.1.1) fun x hx ↦ ?_
-  rcases dsupport_add_subset (⇑S) (⇑T) hx.1.2 with h | h
-  · exact Or.inl ⟨⟨hx.1.1, h⟩, hx.2⟩
-  · exact Or.inr ⟨⟨hx.1.1, h⟩, hx.2⟩
+  -- Over `K`, the support of `S + T` in `Ω` is a closed part of the union of those of `S` and `T`.
+  convert ((hS K hK hKΩ').union (hT K hK hKΩ')).inter_right
+    (isClosed_dsupport (f := ⇑(S + T))) using 1
+  refine Subset.antisymm (fun x hx ↦ ⟨?_, hx.1.2⟩) fun x hx ↦ ?_
+  · rcases dsupport_add_subset (⇑S) (⇑T) hx.1.2 with h | h
+    · exact Or.inl ⟨⟨hx.1.1, h⟩, hx.2⟩
+    · exact Or.inr ⟨⟨hx.1.1, h⟩, hx.2⟩
+  · rcases hx.1 with h | h <;> exact ⟨⟨h.1.1, hx.2⟩, h.2⟩
 
 /-- A scalar multiple of a distribution on whose support `Φ` is proper. -/
 theorem IsProperOnSupport.smul {R : Type*} [Monoid R] [DistribMulAction R F]
-    [SMulCommClass ℝ R F] [ContinuousConstSMul R F] {Φ : E → E'} (hΦ : ContinuousOn Φ Ω)
+    [SMulCommClass ℝ R F] [ContinuousConstSMul R F] {Φ : E → E'}
     {T : 𝓓'(Ω, F)} (hT : IsProperOnSupport T Φ Ω') (c : R) :
-    IsProperOnSupport (c • T) Φ Ω' := fun K hK hKΩ' ↦
-  isCompact_inter_inter_preimage hΦ isClosed_dsupport hK.isClosed (hT K hK hKΩ')
-    (fun _ hx ↦ hx.1.1) fun _ hx ↦ ⟨⟨hx.1.1, dsupport_smul_subset c (⇑T) hx.1.2⟩, hx.2⟩
+    IsProperOnSupport (c • T) Φ Ω' := fun K hK hKΩ' ↦ by
+  convert (hT K hK hKΩ').inter_right (isClosed_dsupport (f := ⇑(c • T))) using 1
+  exact Subset.antisymm (fun x hx ↦ ⟨⟨⟨hx.1.1, dsupport_smul_subset c (⇑T) hx.1.2⟩, hx.2⟩, hx.1.2⟩)
+    fun x hx ↦ ⟨⟨hx.1.1.1, hx.2⟩, hx.1.2⟩
 
 end IsProperOnSupport
 
@@ -210,7 +198,7 @@ theorem pushforward_apply_of_eventuallyEq (f : 𝓓(Ω', ℝ)) {g : 𝓓(Ω, ℝ
   -- By definition, `Φ_* T` pairs `f` with `T` through the cutoff chosen for `supp f`.
   have h : pushforward T Φ hΦ hT f = T (cutoffCompCLM
       (hT.exists_eventually_eq_one f.hasCompactSupport f.tsupport_subset).choose Φ hΦ f) :=
-    rfl
+    TestFunction.limitCLM_apply ..
   rw [h]
   refine map_eq_map_of_forall_eventuallyEq T fun x hx ↦ ((cutoffCompCLM_eventuallyEq ?_ hx.1
     hx).trans (hg x hx).symm)
@@ -277,12 +265,13 @@ private theorem exists_isOpen_disjoint_image (hΦ : ContinuousOn Φ Ω)
 private theorem pushforward_apply_eq_zero {f : 𝓓(Ω', ℝ)}
     (hf : Disjoint (tsupport f) (Φ '' ((Ω : Set E) ∩ dsupport T))) :
     pushforward T Φ hΦ hT f = 0 := by
-  rw [pushforward_apply_of_eventuallyEq f (g := 0) fun x hx ↦ ?_, map_zero]
-  have hcont : ContinuousAt Φ x := hΦ.continuousOn.continuousAt (Ω.isOpen.mem_nhds hx.1)
-  have hfx : Φ x ∉ tsupport f := fun h ↦ disjoint_left.1 hf h ⟨x, hx, rfl⟩
-  filter_upwards [hcont.preimage_mem_nhds ((isClosed_tsupport f).isOpen_compl.mem_nhds hfx)]
-    with y hy
-  simp [image_eq_zero_of_notMem_tsupport hy]
+  -- The support of `T` in `Ω` misses `Φ⁻¹(supp f)`, so the zero cutoff will do.
+  have hempty : (Ω : Set E) ∩ dsupport T ∩ Φ ⁻¹' tsupport f = ∅ :=
+    eq_empty_of_forall_notMem fun x hx ↦ disjoint_left.1 hf hx.2 ⟨x, hx.1, rfl⟩
+  rw [pushforward_apply_eq_cutoffCompCLM f (χ := 0) (by simp [hempty])]
+  convert map_zero T
+  ext x
+  simp [cutoffCompCLM_apply]
 
 /-- **The support of the pushforward** lies in the closure of the image of the support:
 `supp (Φ_* T) ⊆ closure (Φ (Ω ∩ supp T))`. -/
@@ -313,7 +302,7 @@ theorem pushforward_zero (h0 : IsProperOnSupport (0 : 𝓓'(Ω, F)) Φ Ω' := is
 
 /-- The pushforward is additive. -/
 theorem pushforward_add {S : 𝓓'(Ω, F)} (hS : IsProperOnSupport S Φ Ω')
-    (hST : IsProperOnSupport (S + T) Φ Ω' := hS.add hΦ.continuousOn hT) :
+    (hST : IsProperOnSupport (S + T) Φ Ω' := hS.add hT) :
     pushforward (S + T) Φ hΦ hST = pushforward S Φ hΦ hS + pushforward T Φ hΦ hT := by
   ext f
   -- One cutoff serves `S`, `T` and `S + T`.
@@ -336,7 +325,7 @@ theorem pushforward_add {S : 𝓓'(Ω, F)} (hS : IsProperOnSupport S Φ Ω')
 /-- The pushforward commutes with scalar multiplication. -/
 theorem pushforward_smul {R : Type*} [Monoid R] [DistribMulAction R F] [SMulCommClass ℝ R F]
     [ContinuousConstSMul R F] (c : R)
-    (hcT : IsProperOnSupport (c • T) Φ Ω' := hT.smul hΦ.continuousOn c) :
+    (hcT : IsProperOnSupport (c • T) Φ Ω' := hT.smul c) :
     pushforward (c • T) Φ hΦ hcT = c • pushforward T Φ hΦ hT := by
   ext f
   obtain ⟨χ, hχ⟩ := hT.exists_eventually_eq_one f.hasCompactSupport f.tsupport_subset
@@ -357,6 +346,7 @@ theorem isProperOnSupport_id (T : 𝓓'(Ω, F)) : IsProperOnSupport T id Ω :=
     rwa [preimage_id, inter_eq_self_of_subset_right hKΩ]
 
 /-- **The pushforward along the identity** is the identity. -/
+@[simp]
 theorem pushforward_id {hid : ContDiffOn ℝ (⊤ : ℕ∞) (id : E → E) Ω} (T : 𝓓'(Ω, F))
     (hT : IsProperOnSupport T id Ω := isProperOnSupport_id T) :
     pushforward T id hid hT = T := by
@@ -391,19 +381,11 @@ theorem pushforward_pushforward [FiniteDimensional ℝ E'] {Ψ : E' → E''}
     exact ⟨x, ⟨hx, hyf⟩, rfl⟩
   -- Near every point of the support of `T` in `Ω`, `h ∘ Φ` agrees with `f ∘ Ψ ∘ Φ`.
   have h₂ (x : E) (hx : x ∈ (Ω : Set E) ∩ dsupport T) :
-      (fun y ↦ h (Φ y)) =ᶠ[𝓝 x] fun y ↦ f ((Ψ ∘ Φ) y) := by
-    have hcont : ContinuousAt Φ x := hΦ.continuousOn.continuousAt (Ω.isOpen.mem_nhds hx.1)
-    by_cases hfx : (Ψ ∘ Φ) x ∈ tsupport f
-    · filter_upwards [hcont.preimage_mem_nhds (hχ'.filter_mono
-        (nhds_le_nhdsSet (mem_image_of_mem Φ (show x ∈ L from ⟨hx, hfx⟩))))] with y hy
-      simp only [mem_preimage, mem_ofPred_eq] at hy
-      simp [h, hy]
-    · have hcont' : ContinuousAt (Ψ ∘ Φ) x :=
-        hΨΦ.continuousOn.continuousAt (Ω.isOpen.mem_nhds hx.1)
-      filter_upwards [hcont'.preimage_mem_nhds ((isClosed_tsupport f).isOpen_compl.mem_nhds hfx)]
-        with y hy
-      have hy' : f (Ψ (Φ y)) = 0 := image_eq_zero_of_notMem_tsupport hy
-      simp [h, hy']
+      (fun y ↦ h (Φ y)) =ᶠ[𝓝 x] fun y ↦ f ((Ψ ∘ Φ) y) :=
+    -- The image of `L` is the part of `Φ (Ω ∩ supp T)` over `supp f`.
+    (cutoffCompCLM_eventuallyEq (s := Φ '' ((Ω : Set E) ∩ dsupport T))
+      (by rwa [← image_inter_preimage]) (hΦT hx) (mem_image_of_mem Φ hx)).comp_tendsto
+      (hΦ.continuousOn.continuousAt (Ω.isOpen.mem_nhds hx.1)).tendsto
   rw [h₁, pushforward_apply_eq_cutoffCompCLM f hχ]
   exact pushforward_apply_of_eventuallyEq h fun x hx ↦
     (cutoffCompCLM_eventuallyEq hχ hx.1 hx).trans (h₂ x hx).symm
@@ -425,10 +407,17 @@ theorem IsProperOnSupport.tensorProduct (hV : (V : Set (E × D)) = (Ω : Set E) 
     IsProperOnSupport (S.tensorProduct T hV.subset) (Prod.map Φ Ψ) V' := fun K hK hKV' ↦ by
   have hK₁ : Prod.fst '' K ⊆ Ω' := image_subset_iff.2 fun p hp ↦ (hV' (hKV' hp)).1
   have hK₂ : Prod.snd '' K ⊆ O' := image_subset_iff.2 fun p hp ↦ (hV' (hKV' hp)).2
-  refine isCompact_inter_inter_preimage (hV ▸ hΦ.prodMap hΨ) isClosed_dsupport hK.isClosed
-    ((hS _ (hK.image continuous_fst) hK₁).prod (hT _ (hK.image continuous_snd) hK₂))
-    (hV ▸ prod_mono (inter_subset_left.trans inter_subset_left)
-      (inter_subset_left.trans inter_subset_left)) fun p hp ↦ ?_
+  -- Over `K`, the support of `S ⊗ T` lies in the product `C` of the parts of the supports of `S`
+  -- and `T` over the projections of `K`.
+  have hC := (hS _ (hK.image continuous_fst) hK₁).prod (hT _ (hK.image continuous_snd) hK₂)
+  have hCV : ((Ω : Set E) ∩ dsupport S ∩ Φ ⁻¹' (Prod.fst '' K)) ×ˢ
+      ((O : Set D) ∩ dsupport T ∩ Ψ ⁻¹' (Prod.snd '' K)) ⊆ (V : Set (E × D)) :=
+    hV ▸ prod_mono (inter_subset_left.trans inter_subset_left)
+      (inter_subset_left.trans inter_subset_left)
+  have hΦΨ : ContinuousOn (Prod.map Φ Ψ) V := hV ▸ hΦ.prodMap hΨ
+  convert ((hC.inter_preimage (hΦΨ.mono hCV) hK.isClosed).inter_right
+    (isClosed_dsupport (f := ⇑(S.tensorProduct T hV.subset)))) using 1
+  refine Subset.antisymm (fun p hp ↦ ⟨⟨?_, hp.2⟩, hp.1.2⟩) fun p hp ↦ ⟨⟨hCV hp.1.1, hp.2⟩, hp.1.2⟩
   have hpV : p ∈ (Ω : Set E) ×ˢ (O : Set D) := hV ▸ hp.1.1
   have hpST := dsupport_tensorProduct_subset S T hV.subset hp.1.2
   exact ⟨⟨⟨hpV.1, hpST.1⟩, ⟨Prod.map Φ Ψ p, hp.2, rfl⟩⟩,
@@ -466,9 +455,12 @@ omit [FiniteDimensional ℝ E'] [FiniteDimensional ℝ D'] in
 theorem isProperOnSupport_fst_tensorProduct (hV : (V : Set (E × D)) = (Ω : Set E) ×ˢ (O : Set D))
     (hT : IsCompact (dsupport T)) (hTO : dsupport T ⊆ O) :
     IsProperOnSupport (S.tensorProduct T hV.subset) Prod.fst Ω := fun K hK hKΩ ↦ by
-  refine isCompact_inter_inter_preimage continuousOn_fst isClosed_dsupport hK.isClosed
-    ((hK.inter_right (isClosed_dsupport (f := ⇑S))).prod hT)
-    (hV ▸ prod_mono (inter_subset_left.trans hKΩ) hTO) fun p hp ↦ ?_
+  have hCV : (K ∩ dsupport S) ×ˢ dsupport T ⊆ (V : Set (E × D)) :=
+    hV ▸ prod_mono (inter_subset_left.trans hKΩ) hTO
+  convert ((((hK.inter_right (isClosed_dsupport (f := ⇑S))).prod hT).inter_preimage
+    continuousOn_fst hK.isClosed).inter_right
+    (isClosed_dsupport (f := ⇑(S.tensorProduct T hV.subset)))) using 1
+  refine Subset.antisymm (fun p hp ↦ ⟨⟨?_, hp.2⟩, hp.1.2⟩) fun p hp ↦ ⟨⟨hCV hp.1.1, hp.2⟩, hp.1.2⟩
   have hpST := dsupport_tensorProduct_subset S T hV.subset hp.1.2
   exact ⟨⟨hp.2, hpST.1⟩, hpST.2⟩
 
