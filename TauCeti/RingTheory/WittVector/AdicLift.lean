@@ -7,14 +7,12 @@ module
 
 public import Mathlib.RingTheory.AdicCompletion.RingHom
 public import Mathlib.RingTheory.Teichmuller
-public import Mathlib.RingTheory.WittVector.Complete
 public import Mathlib.RingTheory.WittVector.TeichmullerSeries
 
 import Mathlib.LinearAlgebra.SModEq.Pow
 import TauCeti.Algebra.CharP.Quotient
 import TauCeti.RingTheory.Ideal.Quotient.Nilpotent
 import TauCeti.RingTheory.Perfect.Basic
-import TauCeti.RingTheory.Perfection
 
 /-!
 # Ring homomorphisms out of the Witt vectors of a perfect ring
