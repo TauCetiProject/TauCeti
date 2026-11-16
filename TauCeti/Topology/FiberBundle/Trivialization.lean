@@ -23,6 +23,8 @@ and the trivializations at the points of the base of a fibre bundle make its pro
 locally trivial map.
 Finally, the inverse of a trivialization undoes a coordinate change into it, and over a point
 of its base set a trivialization is an equivalence between the fibre and the model fibre.
+When the model fibre is a point, so is every fibre, and a projection with a chosen point in each
+fibre is a bijection onto the base.
 
 ## Main results
 
@@ -44,6 +46,9 @@ of its base set a trivialization is an equivalence between the fibre and the mod
 * `Bundle.Trivialization.map_mem_sheet_iff`, `Bundle.Trivialization.map_symm_eq_of_mem_sheet`:
   a continuous map `g` over the base, between two trivialized maps with discrete target fibre,
   carries the sheets of `p` over a preconnected set onto sheets of `q`.
+* `TauCeti.subsingleton_fiber_of_subsingleton`, `TauCeti.bijective_proj_of_subsingleton`: a fibre
+  bundle whose model fibre is a point has point fibres, and with a chosen point in each fibre its
+  projection is a bijection.
 -/
 
 public section
@@ -361,3 +366,38 @@ theorem map_symm_eq_of_mem_sheet (hg : Continuous g) (hqg : ∀ e, q (g e) = p e
 end SheetComparison
 
 end Bundle.Trivialization
+
+namespace TauCeti
+
+section Subsingleton
+
+variable {B : Type*} [TopologicalSpace B] (F : Type*) [TopologicalSpace F] [Subsingleton F]
+  (E : B → Type*) [TopologicalSpace (TotalSpace F E)] [∀ b, TopologicalSpace (E b)]
+  [FiberBundle F E]
+
+include F in
+/-- The fibres of a fibre bundle whose model fibre is a point have a single point. -/
+theorem subsingleton_fiber_of_subsingleton (b : B) : Subsingleton (E b) :=
+  (FiberBundle.homeomorphAt F E b).toEquiv.subsingleton
+
+include F in
+/-- For a fibre bundle whose model fibre is a point, the complement of the point `0` of a fibre is
+empty. -/
+theorem isEmpty_compl_zero_fiber_of_subsingleton [∀ b, Zero (E b)] (b : B) :
+    IsEmpty ({0}ᶜ : Set (E b)) :=
+  have := subsingleton_fiber_of_subsingleton F E b
+  isEmpty_coe_sort.2 (eq_empty_of_forall_notMem fun _ hx ↦ hx (Subsingleton.elim _ _))
+
+/-- The projection of a fibre bundle whose model fibre is a point, with a chosen point `0` in each
+fibre, is a bijection onto its base. -/
+theorem bijective_proj_of_subsingleton [∀ b, Zero (E b)] : Function.Bijective (π F E) := by
+  refine ⟨fun v w h ↦ ?_, fun b ↦ ⟨⟨b, 0⟩, rfl⟩⟩
+  obtain ⟨b, x⟩ := v
+  obtain ⟨b', y⟩ := w
+  obtain rfl : b = b' := h
+  have := subsingleton_fiber_of_subsingleton F E b
+  rw [Subsingleton.elim x y]
+
+end Subsingleton
+
+end TauCeti
