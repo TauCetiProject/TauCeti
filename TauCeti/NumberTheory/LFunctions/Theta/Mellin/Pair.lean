@@ -46,6 +46,15 @@ functional-equation pair.
   shifted unit fundamental domain `(traceShift K * ·) '' D⁻¹`, yielding Neukirch VII (5.9) both
   off the poles (`mellinKernelFEPair_idealLattice_Λ_eq`) and globally for `entireΛ`
   (`mellinKernelFEPair_idealLattice_entireΛ_eq`).
+* `TauCeti.LFunctions.mellinKernelEntireCompletion`: the critical-strip `s / 2`-normalized
+  pole-cleared completion `4 * (mellinKernelFEPair hD L).entireΛ (s / 2)`, which agrees with
+  `s (s - 1) Λ(D, L, s / 2)` off `{0, 1}`, takes the value `2 a₀` at `0` and `1`, and satisfies
+  the global `s ↔ 1 - s` functional equations (`mellinKernelEntireCompletion_one_sub`,
+  `mellinKernelEntireCompletion_mixedDual_idealLattice`,
+  `mellinKernelEntireCompletion_idealLattice_one_sub`).
+* `exists_norm_mellinKernel_sub_mellinConstant_le_on_Ici` and
+  `exists_norm_mellinKernel_sub_mellinConstant_le_on_Ioi`: uniform stretched-exponential tail
+  bounds on `[1, ∞)` and `(1, ∞)` around `mellinConstant K`.
 
 At the lattice `σ(𝔞)` of a fractional ideal, Neukirch's (5.5) reads `Λ` at `s/2` as the completed
 partial zeta function of the class of `𝔞⁻¹`; this file does not make that identification.
@@ -116,6 +125,33 @@ theorem isBigO_mellinKernel_sub_mellinConstant {D : Set (realSpace K)}
     push_cast
     rfl
   simpa only [h] using isBigO_mellinKernel_sub_rpow hD.measurableSet hD.isBounded L r
+
+open scoped Classical in
+/-- Over a unit fundamental domain `D`, `mellinKernel D L - mellinConstant K` satisfies a
+stretched-exponential bound with exponent `[K : ℚ]⁻¹` on all of `[1, ∞)`. -/
+theorem exists_norm_mellinKernel_sub_mellinConstant_le_on_Ici {D : Set (realSpace K)}
+    (hD : IsUnitFundamentalDomain K D) (L : Submodule ℤ (mixedSpace K)) [DiscreteTopology L]
+    [IsZLattice ℝ L] :
+    ∃ c > 0, ∃ C ≥ 0, ∀ u ∈ Ici (1 : ℝ),
+      ‖mellinKernel D L u - mellinConstant K‖ ≤
+        C * Real.exp (-c * u ^ (Module.finrank ℚ K : ℝ)⁻¹) := by
+  have hcst : (mellinConstant K : ℂ) = (2 : ℂ) ^ nrComplexPlaces K / (torsionOrder K : ℂ) *
+      ((surfaceHaar K).real (Subtype.val ⁻¹' D) : ℂ) := by
+    rw [mellinConstant_eq_mul_surfaceHaar_real hD]
+    push_cast
+    rfl
+  simpa only [hcst] using exists_norm_mellinKernel_sub_le_on_Ici hD.measurableSet hD.isBounded L
+
+open scoped Classical in
+/-- Strict-ray form of `exists_norm_mellinKernel_sub_mellinConstant_le_on_Ici` on `(1, ∞)`. -/
+theorem exists_norm_mellinKernel_sub_mellinConstant_le_on_Ioi {D : Set (realSpace K)}
+    (hD : IsUnitFundamentalDomain K D) (L : Submodule ℤ (mixedSpace K)) [DiscreteTopology L]
+    [IsZLattice ℝ L] :
+    ∃ c > 0, ∃ C ≥ 0, ∀ u ∈ Ioi (1 : ℝ),
+      ‖mellinKernel D L u - mellinConstant K‖ ≤
+        C * Real.exp (-c * u ^ (Module.finrank ℚ K : ℝ)⁻¹) := by
+  obtain ⟨c, hc, C, hC, hb⟩ := exists_norm_mellinKernel_sub_mellinConstant_le_on_Ici hD L
+  exact ⟨c, hc, C, hC, fun u hu ↦ hb u (mem_Ici.mpr hu.le)⟩
 
 /-! ### The functional-equation pair -/
 
@@ -267,8 +303,9 @@ open scoped Classical in
 theorem mellinKernelFEPair_entireΛ_inv_two {D : Set (realSpace K)}
     (hD : IsUnitFundamentalDomain K D) (L : Submodule ℤ (mixedSpace K)) [DiscreteTopology L]
     [IsZLattice ℝ L] :
-    (mellinKernelFEPair hD L).entireΛ 2⁻¹ = (mellinConstant K : ℂ) / 2 := by
-  simpa only [one_div] using mellinKernelFEPair_entireΛ_half hD L
+    (mellinKernelFEPair hD L).entireΛ 2⁻¹ = 2⁻¹ * (mellinConstant K : ℂ) := by
+  rw [← div_eq_inv_mul, ← one_div]
+  exact mellinKernelFEPair_entireΛ_half hD L
 
 open scoped Classical in
 /-- Away from `0` and `1/2`, `entireΛ` of the lattice pair is `s * (s - 1/2) * Λ s`. -/
@@ -278,7 +315,7 @@ theorem mellinKernelFEPair_entireΛ_eq_mul_Λ {D : Set (realSpace K)}
     (mellinKernelFEPair hD L).entireΛ s =
       s * (s - 1 / 2) * (mellinKernelFEPair hD L).Λ s := by
   have hk : s ≠ ((mellinKernelFEPair hD L).k : ℂ) := by simpa using h1
-  simpa [smul_eq_mul] using (mellinKernelFEPair hD L).entireΛ_eq_smul_Λ h0 hk
+  simpa [smul_eq_mul] using (mellinKernelFEPair hD L).entireΛ_eq_smul_Λ (.inl h0) (.inl hk)
 
 open scoped Classical in
 /-- **Global functional equation of the pole-cleared lattice completion**:
@@ -348,5 +385,103 @@ theorem mellinKernelFEPair_idealLattice_entireΛ_eq
         (1 / 2 - s) := by
   rw [mellinKernelFEPair_entireΛ_eq hD (idealLattice K I) s,
     mellinKernelFEPair_mixedDual_idealLattice_entireΛ hJ hD.inv]
+
+/-! ### Critical-strip `s / 2` pole-cleared lattice completion -/
+
+open scoped Classical in
+/-- **Critical-strip pole-cleared completion** of a lattice Mellin pair:
+`4 * (mellinKernelFEPair hD L).entireΛ (s / 2)`. Away from `0` and `1` it equals
+`s * (s - 1) * (mellinKernelFEPair hD L).Λ (s / 2)`, while at `0` and `1` it takes the nonzero
+removable value `2 * mellinConstant K`. -/
+def mellinKernelEntireCompletion {D : Set (realSpace K)} (hD : IsUnitFundamentalDomain K D)
+    (L : Submodule ℤ (mixedSpace K)) [DiscreteTopology L] [IsZLattice ℝ L] (s : ℂ) : ℂ :=
+  4 * (mellinKernelFEPair hD L).entireΛ (s / 2)
+
+open scoped Classical in
+theorem mellinKernelEntireCompletion_def {D : Set (realSpace K)}
+    (hD : IsUnitFundamentalDomain K D) (L : Submodule ℤ (mixedSpace K)) [DiscreteTopology L]
+    [IsZLattice ℝ L] (s : ℂ) :
+    mellinKernelEntireCompletion hD L s = 4 * (mellinKernelFEPair hD L).entireΛ (s / 2) := (rfl)
+
+open scoped Classical in
+/-- `mellinKernelEntireCompletion` is entire on `ℂ`. -/
+theorem differentiable_mellinKernelEntireCompletion {D : Set (realSpace K)}
+    (hD : IsUnitFundamentalDomain K D) (L : Submodule ℤ (mixedSpace K)) [DiscreteTopology L]
+    [IsZLattice ℝ L] :
+    Differentiable ℂ (mellinKernelEntireCompletion hD L) :=
+  ((mellinKernelFEPair hD L).differentiable_entireΛ.comp
+    (differentiable_id.div_const 2)).const_mul 4
+
+open scoped Classical in
+@[simp]
+theorem mellinKernelEntireCompletion_zero {D : Set (realSpace K)}
+    (hD : IsUnitFundamentalDomain K D) (L : Submodule ℤ (mixedSpace K)) [DiscreteTopology L]
+    [IsZLattice ℝ L] :
+    mellinKernelEntireCompletion hD L 0 = 2 * (mellinConstant K : ℂ) := by
+  rw [mellinKernelEntireCompletion_def, zero_div, mellinKernelFEPair_entireΛ_zero]
+  ring
+
+open scoped Classical in
+@[simp]
+theorem mellinKernelEntireCompletion_one {D : Set (realSpace K)}
+    (hD : IsUnitFundamentalDomain K D) (L : Submodule ℤ (mixedSpace K)) [DiscreteTopology L]
+    [IsZLattice ℝ L] :
+    mellinKernelEntireCompletion hD L 1 = 2 * (mellinConstant K : ℂ) := by
+  rw [mellinKernelEntireCompletion_def, mellinKernelFEPair_entireΛ_half]
+  ring
+
+open scoped Classical in
+/-- Away from `0` and `1`, `mellinKernelEntireCompletion` equals
+`s * (s - 1) * (mellinKernelFEPair hD L).Λ (s / 2)`. -/
+theorem mellinKernelEntireCompletion_eq_mul_Λ {D : Set (realSpace K)}
+    (hD : IsUnitFundamentalDomain K D) (L : Submodule ℤ (mixedSpace K)) [DiscreteTopology L]
+    [IsZLattice ℝ L] {s : ℂ} (h0 : s ≠ 0) (h1 : s ≠ 1) :
+    mellinKernelEntireCompletion hD L s =
+      s * (s - 1) * (mellinKernelFEPair hD L).Λ (s / 2) := by
+  have hs0 : s / 2 ≠ 0 := div_ne_zero h0 two_ne_zero
+  have hs1 : s / 2 ≠ 1 / 2 := fun h ↦ h1 ((div_left_inj₀ two_ne_zero).mp h)
+  rw [mellinKernelEntireCompletion_def, mellinKernelFEPair_entireΛ_eq_mul_Λ hD L hs0 hs1]
+  ring
+
+open scoped Classical in
+/-- Global `s ↔ 1 - s` functional equation of `mellinKernelEntireCompletion`. -/
+theorem mellinKernelEntireCompletion_one_sub {D : Set (realSpace K)}
+    (hD : IsUnitFundamentalDomain K D) (L : Submodule ℤ (mixedSpace K)) [DiscreteTopology L]
+    [IsZLattice ℝ L] (s : ℂ) :
+    mellinKernelEntireCompletion hD L (1 - s) =
+      mellinKernelEntireCompletion hD.inv (mixedDual K L) s := by
+  have harg : (1 - s) / 2 = (1 / 2 : ℂ) - s / 2 := by ring
+  rw [mellinKernelEntireCompletion_def, mellinKernelEntireCompletion_def, harg,
+    mellinKernelFEPair_entireΛ_eq hD L, sub_sub_cancel]
+
+open scoped Classical in
+/-- For the Euclidean dual of an ideal lattice `σ(I)`, the critical-strip completion over `D`
+coincides with that of the trace-dual lattice `σ(J)` over the translated domain
+`(traceShift K * ·) '' D`. -/
+theorem mellinKernelEntireCompletion_mixedDual_idealLattice
+    {I J : (FractionalIdeal (𝓞 K)⁰ K)ˣ}
+    (hJ : (J : FractionalIdeal (𝓞 K)⁰ K) =
+      FractionalIdeal.dual ℤ ℚ (I : FractionalIdeal (𝓞 K)⁰ K))
+    {D : Set (realSpace K)} (hD : IsUnitFundamentalDomain K D) :
+    mellinKernelEntireCompletion hD (mixedDual K (idealLattice K I)) =
+      mellinKernelEntireCompletion (hD.mul traceShift_mem_normOneSurface)
+        (idealLattice K J) := by
+  funext s
+  rw [mellinKernelEntireCompletion_def, mellinKernelEntireCompletion_def,
+    mellinKernelFEPair_mixedDual_idealLattice_entireΛ hJ hD]
+
+open scoped Classical in
+/-- Global `s ↔ 1 - s` functional equation of `mellinKernelEntireCompletion` for an ideal lattice
+`σ(I)` and its trace dual `σ(J)`. -/
+theorem mellinKernelEntireCompletion_idealLattice_one_sub
+    {I J : (FractionalIdeal (𝓞 K)⁰ K)ˣ}
+    (hJ : (J : FractionalIdeal (𝓞 K)⁰ K) =
+      FractionalIdeal.dual ℤ ℚ (I : FractionalIdeal (𝓞 K)⁰ K))
+    {D : Set (realSpace K)} (hD : IsUnitFundamentalDomain K D) (s : ℂ) :
+    mellinKernelEntireCompletion hD (idealLattice K I) (1 - s) =
+      mellinKernelEntireCompletion (hD.inv.mul traceShift_mem_normOneSurface)
+        (idealLattice K J) s := by
+  rw [mellinKernelEntireCompletion_one_sub,
+    mellinKernelEntireCompletion_mixedDual_idealLattice hJ hD.inv]
 
 end TauCeti.LFunctions

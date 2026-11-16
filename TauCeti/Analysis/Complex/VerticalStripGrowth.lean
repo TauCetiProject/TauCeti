@@ -187,16 +187,14 @@ theorem hasVerticalStripGrowth_natCast_cpow_ofReal_mul {n : ℕ} (hn : n ≠ 0) 
   (hasVerticalStripGrowth_congr fun s ↦ (natCast_cpow_ofReal_mul hn c s).symm).mp
     hasVerticalStripGrowth_cexp_ofReal_mul
 
-/-- The identity function has vertical-strip growth with exponent `1`. -/
-theorem hasVerticalStripGrowth_id : HasVerticalStripGrowth (fun s : ℂ ↦ s) := by
+/-- The identity function has vertical-strip growth. -/
+@[to_fun (attr := simp)]
+theorem hasVerticalStripGrowth_id : HasVerticalStripGrowth id := by
   intro a b _
   refine ⟨max |a| |b| + 1, by positivity, 1, zero_le_one, 0, le_rfl, fun s hs _ ↦ ?_⟩
   have hre : |s.re| ≤ max |a| |b| := abs_le_max_abs_abs hs.1 hs.2
-  have hnorm : ‖s‖ ≤ |s.re| + |s.im| := by
-    calc ‖s‖ = ‖(s.re : ℂ) + (s.im : ℂ) * Complex.I‖ := by rw [Complex.re_add_im]
-      _ ≤ ‖(s.re : ℂ)‖ + ‖(s.im : ℂ) * Complex.I‖ := norm_add_le _ _
-      _ = |s.re| + |s.im| := by simp
-  dsimp only
+  have hnorm : ‖s‖ ≤ |s.re| + |s.im| := Complex.norm_le_abs_re_add_abs_im s
+  dsimp only [id_eq]
   rw [Real.rpow_one]
   nlinarith [abs_nonneg s.im, (abs_nonneg s.re).trans hre]
 

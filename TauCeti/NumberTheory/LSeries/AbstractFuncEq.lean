@@ -143,6 +143,13 @@ theorem Λ₀_congr {P P' : WeakFEPair E} (hf : Set.EqOn P.f P'.f (Set.Ioi 0)) (
   simp only [Λ₀, mellin]
   exact MeasureTheory.setIntegral_congr_fun measurableSet_Ioi fun t ht ↦ by rw [hmod ht]
 
+/-- Two weak pairs whose functions `f` agree on `(0, ∞)`, with the same weight, root number and
+constants, have the same completed function: `Λ` sees `f` only through a Mellin transform. -/
+theorem Λ_congr {P P' : WeakFEPair E} (hf : Set.EqOn P.f P'.f (Set.Ioi 0)) (hk : P.k = P'.k)
+    (hε : P.ε = P'.ε) (hf₀ : P.f₀ = P'.f₀) (hg₀ : P.g₀ = P'.g₀) : P.Λ = P'.Λ := by
+  funext s
+  simp only [Λ, Λ₀_congr hf hk hε hf₀ hg₀, hk, hε, hf₀, hg₀]
+
 /-- **Pole-cleared entire completion** of a weak functional-equation pair. Away from `0` and `k`
 it equals `(s * (s - k)) • Λ s`, while at `0` and `k` the spurious values of the raw product are
 replaced by the removable values `k • f₀` and `k • (ε • g₀)`. -/
@@ -173,35 +180,36 @@ theorem entireΛ_k_eq_zero_iff : P.entireΛ P.k = 0 ↔ P.g₀ = 0 := by
   rw [entireΛ_k, smul_eq_zero_iff_right (Complex.ofReal_ne_zero.mpr P.hk.ne'),
     smul_eq_zero_iff_right P.hε]
 
-/-- Away from `0` and `k`, `entireΛ` is `(s * (s - k)) • Λ s`. -/
-theorem entireΛ_eq_smul_Λ {s : ℂ} (h0 : s ≠ 0) (hk : s ≠ P.k) :
+/-- Away from the poles of `Λ` (at `s` unless `s = 0` with `f₀ ≠ 0` or `s = k` with `g₀ ≠ 0`),
+`entireΛ s` equals `(s * (s - k)) • Λ s`. -/
+theorem entireΛ_eq_smul_Λ {s : ℂ} (h0 : s ≠ 0 ∨ P.f₀ = 0) (hk : s ≠ P.k ∨ P.g₀ = 0) :
     P.entireΛ s = (s * (s - P.k)) • P.Λ s := by
-  have hks : (P.k : ℂ) - s ≠ 0 := sub_ne_zero.mpr hk.symm
-  have h1 : (s * (s - P.k)) * (1 / s) = s - P.k := by field_simp
-  have h2 : (s * (s - P.k)) * (P.ε / ((P.k : ℂ) - s)) = -(s * P.ε) := by
-    field_simp
-    ring
-  rw [Λ, smul_sub, smul_sub, smul_smul, smul_smul, h1, h2, neg_smul, sub_neg_eq_add,
-    mul_smul s P.ε P.g₀, entireΛ_def]
+  have h1 : (s * (s - P.k)) • ((1 / s) • P.f₀) = (s - P.k) • P.f₀ := by
+    rcases h0 with h0 | hf₀
+    · rw [smul_smul]; congr 1; field_simp
+    · simp [hf₀]
+  have h2 : (s * (s - P.k)) • ((P.ε / ((P.k : ℂ) - s)) • P.g₀) = -(s • (P.ε • P.g₀)) := by
+    rcases hk with hk | hg₀
+    · have hks : (P.k : ℂ) - s ≠ 0 := sub_ne_zero.mpr hk.symm
+      rw [smul_smul, ← neg_smul, ← mul_smul]; congr 1; field_simp; ring
+    · simp [hg₀]
+  rw [Λ, smul_sub, smul_sub, h1, h2, sub_neg_eq_add, entireΛ_def]
 
 /-- `entireΛ` agrees with `(z * (z - k)) • Λ z` as a punctured germ at every point. -/
 theorem entireΛ_eventuallyEq (s : ℂ) :
     P.entireΛ =ᶠ[𝓝[≠] s] fun z ↦ (z * (z - P.k)) • P.Λ z := by
-  have hne (a : ℂ) : ∀ᶠ z in 𝓝[≠] s, z ≠ a := by
-    rcases eq_or_ne s a with rfl | h
-    · exact self_mem_nhdsWithin
-    · exact nhdsWithin_le_nhds (eventually_ne_nhds h)
-  filter_upwards [hne 0, hne P.k] with z hz0 hzk
-  exact P.entireΛ_eq_smul_Λ hz0 hzk
+  filter_upwards [(eventually_cofinite_ne 0).filter_mono (nhdsNE_le_cofinite s),
+    (eventually_cofinite_ne (P.k : ℂ)).filter_mono (nhdsNE_le_cofinite s)] with z hz0 hzk
+  exact P.entireΛ_eq_smul_Λ (.inl hz0) (.inl hzk)
 
 /-- For a strong pair, `entireΛ` equals `(s * (s - k)) • Λ s` everywhere on `ℂ`. -/
 theorem _root_.IsStrongFEPair.entireΛ_eq_smul_Λ {P : WeakFEPair E} (hP : IsStrongFEPair P)
-    (s : ℂ) : P.entireΛ s = (s * (s - P.k)) • P.Λ s := by
-  simp [entireΛ_def, hP.Λ_eq_Λ₀, hP.hf₀, hP.hg₀]
+    (s : ℂ) : P.entireΛ s = (s * (s - P.k)) • P.Λ s :=
+  P.entireΛ_eq_smul_Λ (.inr hP.hf₀) (.inr hP.hg₀)
 
 /-- **Functional equation of the pole-cleared completion**, valid on all of `ℂ` including `0`
 and `k`. -/
-theorem entireΛ_sub (s : ℂ) : P.entireΛ (P.k - s) = P.ε • P.symm.entireΛ s := by
+theorem entireΛ_k_sub (s : ℂ) : P.entireΛ (P.k - s) = P.ε • P.symm.entireΛ s := by
   have hmul : ((P.k : ℂ) - s) * (((P.k : ℂ) - s) - P.k) = s * (s - P.k) := by ring
   have hlin : ((P.k : ℂ) - s) - P.k = -s := by ring
   have hlin' : (P.k : ℂ) - s = -(s - P.k) := by ring

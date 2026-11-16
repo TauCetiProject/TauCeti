@@ -103,10 +103,10 @@ theorem completedHurwitzZetaOdd_eq_Λ₀ (a : UnitAddCircle) (s : ℂ) :
 theorem exists_norm_completedHurwitzZetaEven₀_le_exp_mul_log (a : UnitAddCircle) :
     ∃ C > 0, ∀ s : ℂ, ‖completedHurwitzZetaEven₀ a s‖ ≤
       Real.exp (C * (1 + ‖s‖) * Real.log (2 + ‖s‖)) := by
-  obtain ⟨C₁, hC₁, c₁, hc₁, hf⟩ := exists_norm_hurwitzEvenFEPair_f_sub_le a
-  obtain ⟨C₂, hC₂, c₂, hc₂, hg⟩ := exists_norm_hurwitzEvenFEPair_g_sub_le a
-  obtain ⟨C, hC, hΛ⟩ := (hurwitzEvenFEPair a).exists_norm_Λ₀_le_exp_mul_log hC₁ hc₁ one_pos
-    hC₂ hc₂ one_pos hf hg
+  obtain ⟨C₁, -, c₁, hc₁, hf⟩ := exists_norm_hurwitzEvenFEPair_f_sub_le a
+  obtain ⟨C₂, -, c₂, hc₂, hg⟩ := exists_norm_hurwitzEvenFEPair_g_sub_le a
+  obtain ⟨C, hC, hΛ⟩ := (hurwitzEvenFEPair a).exists_norm_Λ₀_le_exp_mul_log hc₁ one_pos
+    hc₂ one_pos hf hg
   refine ⟨21 * C, by positivity, fun s ↦ ?_⟩
   rw [completedHurwitzZetaEven₀, norm_div, Complex.norm_two]
   refine (div_le_self (norm_nonneg _) one_le_two).trans
@@ -118,10 +118,10 @@ theorem exists_norm_completedHurwitzZetaEven₀_le_exp_mul_log (a : UnitAddCircl
 theorem exists_norm_completedHurwitzZetaOdd_le_exp_mul_log (a : UnitAddCircle) :
     ∃ C > 0, ∀ s : ℂ, ‖completedHurwitzZetaOdd a s‖ ≤
       Real.exp (C * (1 + ‖s‖) * Real.log (2 + ‖s‖)) := by
-  obtain ⟨C₁, hC₁, c₁, hc₁, hf⟩ := exists_norm_hurwitzOddFEPair_f_sub_le a
-  obtain ⟨C₂, hC₂, c₂, hc₂, hg⟩ := exists_norm_hurwitzOddFEPair_g_sub_le a
-  obtain ⟨C, hC, hΛ⟩ := (hurwitzOddFEPair a).exists_norm_Λ₀_le_exp_mul_log hC₁ hc₁ one_pos
-    hC₂ hc₂ one_pos hf hg
+  obtain ⟨C₁, -, c₁, hc₁, hf⟩ := exists_norm_hurwitzOddFEPair_f_sub_le a
+  obtain ⟨C₂, -, c₂, hc₂, hg⟩ := exists_norm_hurwitzOddFEPair_g_sub_le a
+  obtain ⟨C, hC, hΛ⟩ := (hurwitzOddFEPair a).exists_norm_Λ₀_le_exp_mul_log hc₁ one_pos
+    hc₂ one_pos hf hg
   refine ⟨21 * C, by positivity, fun s ↦ ?_⟩
   rw [completedHurwitzZetaOdd_eq_Λ₀, norm_div, Complex.norm_two]
   refine (div_le_self (norm_nonneg _) one_le_two).trans

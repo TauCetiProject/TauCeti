@@ -46,8 +46,6 @@ that of `g`. Combined with Mathlib's functional equation it gives the Mellin pri
 * `TauCeti.FEPairWithLevel.toWeakFEPair`: its transport to Mathlib's `WeakFEPair`.
 * `WeakFEPair.toFEPairWithLevel`: a weak pair presented at a given level.
 * `TauCeti.FEPairWithLevel.symm`: the pair read backwards at the same level.
-* `WeakFEPair.Λ_congr`: the completed function of a weak pair depends only on `f` on `(0, ∞)` and
-  the constants.
 * `TauCeti.FEPairWithLevel.Λ`: the completed function, the continued Mellin transform of `f - f₀`.
 * `TauCeti.FEPairWithLevel.hasMellin`, `differentiableAt_Λ`, `Λ_residue_zero`, `Λ_residue_k`:
   its Mellin representation, regularity and residues.
@@ -193,16 +191,6 @@ variable (Q : WeakFEPair E) (N : ℝ) (hN : 0 < N)
 @[simp] theorem toFEPairWithLevel_g₀ : (Q.toFEPairWithLevel N hN).g₀ = Q.g₀ := (rfl)
 
 @[simp] theorem toFEPairWithLevel_N : (Q.toFEPairWithLevel N hN).N = N := (rfl)
-
-/-- Two weak pairs whose functions `f` agree on `(0, ∞)`, with the same weight, root number and
-constants, have the same completed function: `Λ` sees `f` only through a Mellin transform. -/
-theorem Λ_congr {P P' : WeakFEPair E} (hf : EqOn P.f P'.f (Ioi 0)) (hk : P.k = P'.k)
-    (hε : P.ε = P'.ε) (hf₀ : P.f₀ = P'.f₀) (hg₀ : P.g₀ = P'.g₀) : P.Λ = P'.Λ := by
-  have hmod : EqOn P.f_modif P'.f_modif (Ioi 0) := fun t ht ↦ by
-    simp only [f_modif, Pi.add_apply, indicator_apply, hf ht, hk, hε, hf₀, hg₀]
-  funext s
-  simp only [Λ, Λ₀, mellin, hk, hε, hf₀, hg₀]
-  rw [setIntegral_congr_fun measurableSet_Ioi fun t ht ↦ by rw [hmod ht]]
 
 end WeakFEPair
 
@@ -465,11 +453,8 @@ theorem Λ_eq [CompleteSpace E] {s : ℂ} (h0 : s ≠ 0) (hk : s ≠ P.k) :
 included. -/
 theorem Λ_eventuallyEq [CompleteSpace E] (s : ℂ) :
     P.Λ =ᶠ[𝓝[≠] s] fun z ↦ (P.ε * (P.N : ℂ) ^ (-z)) • P.symm.Λ (P.k - z) := by
-  have hne (a : ℂ) : ∀ᶠ z in 𝓝[≠] s, z ≠ a := by
-    rcases eq_or_ne s a with rfl | h
-    · exact self_mem_nhdsWithin
-    · exact nhdsWithin_le_nhds (eventually_ne_nhds h)
-  filter_upwards [hne 0, hne P.k] with z hz0 hzk
+  filter_upwards [(eventually_cofinite_ne 0).filter_mono (nhdsNE_le_cofinite s),
+    (eventually_cofinite_ne (P.k : ℂ)).filter_mono (nhdsNE_le_cofinite s)] with z hz0 hzk
   exact P.Λ_eq hz0 hzk
 
 /-- With zero constant terms, the completed function equals the entire part `Λ₀` of the
@@ -519,8 +504,9 @@ theorem entireΛ_zero_eq_zero_iff : P.entireΛ 0 = 0 ↔ P.f₀ = 0 :=
 theorem entireΛ_k_eq_zero_iff : P.entireΛ P.k = 0 ↔ P.g₀ = 0 :=
   P.toWeakFEPair.entireΛ_k_eq_zero_iff
 
-/-- Away from `0` and `k`, `entireΛ` equals `(s * (s - k)) • Λ s`. -/
-theorem entireΛ_eq_smul_Λ {s : ℂ} (h0 : s ≠ 0) (hk : s ≠ P.k) :
+/-- Away from the poles of `Λ` (at `s` unless `s = 0` with `f₀ ≠ 0` or `s = k` with `g₀ ≠ 0`),
+`entireΛ s` equals `(s * (s - k)) • Λ s`. -/
+theorem entireΛ_eq_smul_Λ {s : ℂ} (h0 : s ≠ 0 ∨ P.f₀ = 0) (hk : s ≠ P.k ∨ P.g₀ = 0) :
     P.entireΛ s = (s * (s - P.k)) • P.Λ s :=
   P.toWeakFEPair.entireΛ_eq_smul_Λ h0 hk
 
@@ -532,7 +518,7 @@ theorem entireΛ_eventuallyEq (s : ℂ) :
 /-- With zero constant terms, `entireΛ` equals `(s * (s - k)) • Λ s` everywhere on `ℂ`. -/
 theorem entireΛ_eq_smul_Λ_of_constants_eq_zero (hf : P.f₀ = 0) (hg : P.g₀ = 0) (s : ℂ) :
     P.entireΛ s = (s * (s - P.k)) • P.Λ s :=
-  IsStrongFEPair.entireΛ_eq_smul_Λ ⟨hf, hg⟩ s
+  P.entireΛ_eq_smul_Λ (.inr hf) (.inr hg)
 
 /-- **The Mellin principle for the pole-cleared completion at level `N`**:
 `entireΛ(f, s) = ε N ^ (-s) entireΛ(g, k - s)` at every `s : ℂ`, including `0` and `k`. -/
@@ -546,17 +532,14 @@ theorem entireΛ_eq [CompleteSpace E] (s : ℂ) :
   apply Filter.EventuallyEq.eq_of_nhds
   apply (P.differentiable_entireΛ.continuous.continuousAt.eventuallyEq_nhds_iff_eventuallyEq_nhdsNE
     hR_cont.continuousAt).mp
-  have hne (a : ℂ) : ∀ᶠ z in 𝓝[≠] s, z ≠ a := by
-    rcases eq_or_ne s a with rfl | h
-    · exact self_mem_nhdsWithin
-    · exact nhdsWithin_le_nhds (eventually_ne_nhds h)
-  filter_upwards [hne 0, hne P.k] with z hz0 hzk
+  filter_upwards [(eventually_cofinite_ne 0).filter_mono (nhdsNE_le_cofinite s),
+    (eventually_cofinite_ne (P.k : ℂ)).filter_mono (nhdsNE_le_cofinite s)] with z hz0 hzk
   have hmul : ((P.k : ℂ) - z) * (((P.k : ℂ) - z) - P.symm.k) = z * (z - P.k) := by
     rw [symm_k]; ring
   dsimp only [R]
-  rw [P.entireΛ_eq_smul_Λ hz0 hzk, P.Λ_eq hz0 hzk,
-    P.symm.entireΛ_eq_smul_Λ (sub_ne_zero.mpr hzk.symm)
-      (by rw [symm_k]; exact fun h' ↦ hz0 (sub_eq_self.mp h')),
+  rw [P.entireΛ_eq_smul_Λ (.inl hz0) (.inl hzk), P.Λ_eq hz0 hzk,
+    P.symm.entireΛ_eq_smul_Λ (.inl (sub_ne_zero.mpr hzk.symm))
+      (.inl (by rw [symm_k]; exact fun h' ↦ hz0 (sub_eq_self.mp h'))),
     hmul, smul_comm]
 
 end TauCeti.FEPairWithLevel
