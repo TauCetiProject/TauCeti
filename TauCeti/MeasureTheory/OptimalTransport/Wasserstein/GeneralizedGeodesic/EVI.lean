@@ -7,7 +7,6 @@ module
 
 public import TauCeti.Analysis.GradientFlow.EVI.MinimizingMovement
 public import TauCeti.MeasureTheory.OptimalTransport.Wasserstein.GeneralizedGeodesic.Convex
-import TauCeti.Analysis.SpecificLimits.DiscreteGronwall
 import TauCeti.MeasureTheory.OptimalTransport.Wasserstein.Complete
 
 /-!
@@ -24,11 +23,11 @@ and uniqueness of each Jordan–Kinderlehrer–Otto (JKO) step
 `TauCeti.PenalizedConvex` (`TauCeti.penalizedConvex_of_generalizedGeodesicallyConvex`).
 
 Applying the metric `EVI_λ` convergence theory to `WassersteinSpace 2 E`, this file proves that from
-every initial law `μ₀` of finite energy (`φ μ₀ ≠ ⊤` and `φ μ₀ ≠ ⊥`) starts the unique `EVI_λ`
-gradient flow `u`, and that piecewise constant JKO interpolants converge uniformly to `u` on compact
-time intervals as the time step tends to `0`. When `φ` never takes the value `⊥`, existence extends
-by contraction and stability to every `μ₀ ∈ closure {μ | φ μ ≠ ⊤}`, characterizing the `EVI_λ`
-domain.
+every initial law `μ₀` of finite energy (`φ μ₀ ≠ ⊤` and `φ μ₀ ≠ ⊥`) starts an `EVI_λ` gradient flow
+`u` (unique on `[0, ∞)` by `TauCeti.IsEVISolution.eqOn`), and that piecewise constant JKO
+interpolants converge uniformly to `u` on compact time intervals as the time step tends to `0`. When
+`φ` never takes the value `⊥`, existence extends by contraction and stability to every
+`μ₀ ∈ closure {μ | φ μ ≠ ⊤}`, characterizing the `EVI_λ` domain.
 
 ## Main results
 
@@ -64,26 +63,6 @@ variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [Measurabl
   [BorelSpace E] [SecondCountableTopology E] [CompleteSpace E]
   {lam : ℝ} {φ : WassersteinSpace 2 E → EReal}
 
-private lemma exists_moreauYosida_and_penalizedConvex
-    (hφ : LowerSemicontinuous φ) (hconv : ∀ ν, GeneralizedGeodesicallyConvex lam φ ν)
-    {ν₀ : WassersteinSpace 2 E} (hν₀top : φ ν₀ ≠ ⊤) (hν₀bot : φ ν₀ ≠ ⊥) :
-    ∃ τ₀ : ℝ≥0, 0 < τ₀ ∧ moreauYosida φ τ₀ ν₀ ≠ ⊥ ∧
-      ∀ τ : ℝ≥0, 0 < τ → τ < τ₀ → PenalizedConvex lam τ φ := by
-  set r₀ : ℝ := (2 * (|lam| + 1))⁻¹
-  have hr₀ : 0 < r₀ := by positivity
-  set τ₀ : ℝ≥0 := r₀.toNNReal
-  have hτ₀ : 0 < τ₀ := Real.toNNReal_pos.2 hr₀
-  have hpos : ∀ {δ : ℝ≥0}, δ ≤ τ₀ → 0 < 1 + lam * (δ : ℝ) := fun {δ} hδ ↦ by
-    have hδr : (δ : ℝ) ≤ r₀ :=
-      (NNReal.coe_le_coe.2 hδ).trans_eq (Real.coe_toNNReal r₀ hr₀.le)
-    have habs : |lam| * (δ : ℝ) ≤ 2⁻¹ := abs_mul_le_inv_of_le_inv two_pos hδr
-    linarith [(one_add_mul_mem_Icc_of_abs_mul_le (NNReal.coe_nonneg δ) habs).1]
-  refine ⟨τ₀, hτ₀,
-    (hconv ν₀).moreauYosida_ne_bot (hφ.lowerSemicontinuousAt ν₀) hν₀top hν₀bot
-      hτ₀ (hpos le_rfl) ν₀,
-    fun τ hτ hττ₀ ↦
-      penalizedConvex_of_generalizedGeodesicallyConvex hconv hτ (hpos hττ₀.le).le⟩
-
 /-- **Existence of Wasserstein `EVI_λ` flows and uniform convergence of JKO schemes**
 (Ambrosio–Gigli–Savaré, Theorems 4.0.4 and 11.2.1; Ambrosio–Gigli, Theorem 3.25). Let
 `φ : WassersteinSpace 2 E → EReal` be lower semicontinuous and `lam`-convex along generalized
@@ -100,10 +79,35 @@ theorem exists_isEVISolution_tendstoUniformlyOn_of_generalizedGeodesicallyConvex
         (∀ᶠ j in atTop, ∀ k, J j (k + 1) ∈ moreauYosidaResolvent φ (τ j) (J j k)) →
         ∀ T : ℝ, TendstoUniformlyOn
           (fun j (t : ℝ) ↦ J j ⌈t / (τ j : ℝ)⌉₊) u atTop (Icc 0 T) := by
-  obtain ⟨τ₀, hτ₀, h₀, hPen⟩ :=
-    exists_moreauYosida_and_penalizedConvex hφ hconv hμ₀ hμ₀bot
-  exact exists_isEVISolution_tendstoUniformlyOn_of_penalizedConvex
-    hφ hτ₀ hτ₀ hPen h₀ hμ₀
+  set r₀ : ℝ := (2 * (|lam| + 1))⁻¹
+  have hr₀ : 0 < r₀ := by positivity
+  set τ₀ : ℝ≥0 := r₀.toNNReal
+  have hτ₀ : 0 < τ₀ := Real.toNNReal_pos.2 hr₀
+  have hpos : ∀ {δ : ℝ≥0}, δ ≤ τ₀ → 0 < 1 + lam * (δ : ℝ) := fun {δ} hδ ↦ by
+    have hδr : (δ : ℝ) ≤ r₀ :=
+      (NNReal.coe_le_coe.2 hδ).trans_eq (Real.coe_toNNReal r₀ hr₀.le)
+    have habs : |lam * (δ : ℝ)| ≤ 1 / 2 := by
+      rw [abs_mul, abs_of_nonneg (NNReal.coe_nonneg δ)]
+      calc |lam| * (δ : ℝ) ≤ (|lam| + 1) * r₀ :=
+            mul_le_mul (by linarith) hδr (NNReal.coe_nonneg _) (by positivity)
+        _ = 1 / 2 := by dsimp [r₀]; field_simp
+    linarith [(abs_le.1 habs).1]
+  exact exists_isEVISolution_tendstoUniformlyOn_of_penalizedConvex hφ hτ₀ hτ₀
+    (fun τ hτ hττ₀ ↦ penalizedConvex_of_generalizedGeodesicallyConvex hconv hτ (hpos hττ₀.le).le)
+    ((hconv μ₀).moreauYosida_ne_bot (hφ.lowerSemicontinuousAt μ₀) hμ₀ hμ₀bot (hpos le_rfl) μ₀)
+    hμ₀
+
+/-- **Characterization of the Wasserstein `EVI_λ` domain** (Ambrosio–Gigli–Savaré, Theorems 4.0.4
+and 11.2.1). For an energy `φ` on `P₂(E)` that is lower semicontinuous, `lam`-convex along
+generalized geodesics based at every law, and never equal to `⊥`,
+`TauCeti.eviDomain lam φ = closure {μ | φ μ ≠ ⊤}`. -/
+theorem eviDomain_eq_closure_of_generalizedGeodesicallyConvex
+    (hφ : LowerSemicontinuous φ) (hconv : ∀ ν, GeneralizedGeodesicallyConvex lam φ ν)
+    (hbot : ∀ ν, φ ν ≠ ⊥) : eviDomain lam φ = closure {μ | φ μ ≠ ⊤} :=
+  eviDomain_eq_closure_of_subset hφ fun _ hμ ↦
+    let ⟨u, hu0, hu, _⟩ :=
+      exists_isEVISolution_tendstoUniformlyOn_of_generalizedGeodesicallyConvex hφ hconv hμ (hbot _)
+    mem_eviDomain.2 ⟨u, hu, hu0⟩
 
 /-- **Existence of Wasserstein `EVI_λ` flows on `closure {μ | φ μ ≠ ⊤}`**
 (Ambrosio–Gigli–Savaré, Theorems 4.0.4 and 11.2.1). If `φ` is lower semicontinuous on `P₂(E)`,
@@ -113,21 +117,8 @@ theorem exists_isEVISolution_of_mem_closure_of_generalizedGeodesicallyConvex
     (hφ : LowerSemicontinuous φ) (hconv : ∀ ν, GeneralizedGeodesicallyConvex lam φ ν)
     (hbot : ∀ ν, φ ν ≠ ⊥) {μ₀ : WassersteinSpace 2 E}
     (hμ₀ : μ₀ ∈ closure {μ | φ μ ≠ ⊤}) :
-    ∃ u : ℝ → WassersteinSpace 2 E, IsEVISolution lam φ u ∧ u 0 = μ₀ := by
-  obtain ⟨seq, hseq, -⟩ := mem_closure_iff_seq_limit.1 hμ₀
-  obtain ⟨τ₀, hτ₀, h₀, hPen⟩ :=
-    exists_moreauYosida_and_penalizedConvex hφ hconv (hseq 0) (hbot (seq 0))
-  exact exists_isEVISolution_of_mem_closure_of_penalizedConvex hφ hτ₀ hτ₀ hPen h₀ hμ₀
-
-/-- **Characterization of the Wasserstein `EVI_λ` domain** (Ambrosio–Gigli–Savaré, Theorems 4.0.4
-and 11.2.1). For an energy `φ` on `P₂(E)` that is lower semicontinuous, `lam`-convex along
-generalized geodesics based at every law, and never equal to `⊥`,
-`TauCeti.eviDomain lam φ = closure {μ | φ μ ≠ ⊤}`. -/
-theorem eviDomain_eq_closure_of_generalizedGeodesicallyConvex
-    (hφ : LowerSemicontinuous φ) (hconv : ∀ ν, GeneralizedGeodesicallyConvex lam φ ν)
-    (hbot : ∀ ν, φ ν ≠ ⊥) : eviDomain lam φ = closure {μ | φ μ ≠ ⊤} :=
-  Set.Subset.antisymm eviDomain_subset_closure fun _ hμ ↦
-    mem_eviDomain.2
-      (exists_isEVISolution_of_mem_closure_of_generalizedGeodesicallyConvex hφ hconv hbot hμ)
+    ∃ u : ℝ → WassersteinSpace 2 E, IsEVISolution lam φ u ∧ u 0 = μ₀ :=
+  mem_eviDomain.1
+    (eviDomain_eq_closure_of_generalizedGeodesicallyConvex hφ hconv hbot ▸ hμ₀)
 
 end TauCeti

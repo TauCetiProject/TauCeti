@@ -245,12 +245,27 @@ theorem le_apply_of_forall_mem_moreauYosidaResolvent
 
 /-- The multi-step estimate of
 `TauCeti.apply_add_edist_sq_div_le_of_forall_mem_moreauYosidaResolvent` in real numbers:
-`d(u m, u n)² ≤ 2 (n - m) τ (φ (u m) - φ (u n))` when the energies are real. -/
+`d(u m, u n)² ≤ 2 (n - m) τ (φ (u m) - φ (u n))` when `m ≤ n` and the energies are real. -/
 theorem toReal_edist_sq_le_mul_sub_of_forall_mem_moreauYosidaResolvent
-    (hu : ∀ n, u (n + 1) ∈ moreauYosidaResolvent φ τ (u n)) (hτ : 0 < τ) {m n : ℕ} (hmn : m < n)
-    (hfmn : edist (u m) (u n) ≠ ⊤) {em en : ℝ} (hem : φ (u m) = em) (hen : φ (u n) = en) :
+    (hu : ∀ n, u (n + 1) ∈ moreauYosidaResolvent φ τ (u n)) {m n : ℕ} (hmn : m ≤ n)
+    {em en : ℝ} (hem : φ (u m) = em) (hen : φ (u n) = en) :
     (edist (u m) (u n)).toReal ^ 2 ≤ 2 * ((n - m : ℕ) * τ) * (em - en) := by
+  rcases hmn.eq_or_lt with rfl | hmn
+  · simp
+  have hfmn : edist (u m) (u n) ≠ ⊤ := by
+    obtain ⟨k, rfl⟩ := Nat.exists_eq_add_of_le hmn.le
+    refine ne_top_of_le_ne_top
+      (ENNReal.sum_ne_top.2 fun i _ ↦ edist_ne_top_of_mem_moreauYosidaResolvent (hu (m + i)))
+      (edist_le_range_sum_edist (fun i ↦ u (m + i)) k)
   have hC1 := apply_add_edist_sq_div_le_of_forall_mem_moreauYosidaResolvent hu hmn.le
+  rcases eq_or_ne τ 0 with rfl | hτ0
+  · have hd0 : edist (u m) (u n) = 0 := by
+      by_contra h0
+      rw [hem, hen, ENNReal.coe_zero, mul_zero, mul_zero, ENNReal.div_zero (pow_ne_zero 2 h0),
+        EReal.coe_ennreal_top, EReal.add_top_of_ne_bot (EReal.coe_ne_bot _), top_le_iff] at hC1
+      exact EReal.coe_ne_top _ hC1
+    simp [hd0]
+  have hτ : 0 < τ := pos_iff_ne_zero.2 hτ0
   have hk : (0 : ℝ) < (n - m : ℕ) := by exact_mod_cast Nat.sub_pos_of_lt hmn
   have hk0 : ((n - m : ℕ) : ℝ≥0∞) ≠ 0 := by exact_mod_cast (Nat.sub_pos_of_lt hmn).ne'
   have hP : edist (u m) (u n) ^ 2 / (2 * ((n - m : ℕ) * τ)) ≠ ⊤ :=
@@ -289,7 +304,7 @@ theorem edist_ceil_sq_le_of_forall_mem_moreauYosidaResolvent
   · rw [hmn', edist_self, zero_pow two_ne_zero]
     exact zero_le
   have hk : (0 : ℝ) < (n - m : ℕ) := by exact_mod_cast Nat.sub_pos_of_lt hmn'
-  have hD := toReal_edist_sq_le_mul_sub_of_forall_mem_moreauYosidaResolvent hu hτ hmn' hfmn hem hen
+  have hD := toReal_edist_sq_le_mul_sub_of_forall_mem_moreauYosidaResolvent hu hmn'.le hem hen
   set D := (edist (u m) (u n)).toReal
   -- `(n - m) τ ≤ t - s + τ`, `φ (u m) ≤ E`, and the a priori lower bound on `φ (u n)`.
   have hkτ : ((n - m : ℕ) : ℝ) * τ ≤ t - s + τ := by
@@ -614,25 +629,6 @@ theorem tendsto_subseq_of_forall_mem_moreauYosidaResolvent
     rw [← ENNReal.rpow_two]
     exact (ENNReal.le_rpow_inv_iff two_pos).1 h
 
-/-- For every `k : ℕ`, four times the canonical step size `τ' / (4 * (k + 1))` is at most `τ'`. -/
-theorem four_mul_div_four_mul_add_one_le (τ' : ℝ≥0) (k : ℕ) :
-    4 * (τ' / (4 * (k + 1))) ≤ τ' := by
-  rw [← NNReal.coe_le_coe]
-  push_cast
-  rw [mul_div_assoc', div_le_iff₀ (by positivity)]
-  nlinarith [(k.cast_nonneg : (0 : ℝ) ≤ k), NNReal.coe_nonneg τ']
-
-/-- The canonical step-size sequence `k ↦ τ' / (4 * (k + 1))` tends to `0`. -/
-theorem tendsto_div_four_mul_add_one (τ' : ℝ≥0) :
-    Tendsto (fun k : ℕ ↦ τ' / (4 * (k + 1))) atTop (𝓝 0) := by
-  refine NNReal.tendsto_coe.1 ?_
-  have h := tendsto_one_div_add_atTop_nhds_zero_nat.const_mul ((τ' : ℝ) / 4)
-  rw [mul_zero] at h
-  refine h.congr fun k ↦ ?_
-  push_cast
-  have : (k : ℝ) + 1 ≠ 0 := by positivity
-  field_simp
-
 /-- **Existence of generalized minimizing movements** (Ambrosio–Gigli–Savaré, Section 2.2).
 Let `l y` be the filter of an auxiliary convergence `y_n ⇀ y` on an extended metric space `X`,
 possibly weaker than that of the metric, such that
@@ -667,11 +663,14 @@ theorem exists_isGeneralizedMinimizingMovement (hl : ∀ y, pure y ≤ l y)
   have hA : moreauYosida φ τ' x₀ = A := (EReal.coe_toReal hAtop hAbot).symm
   have hE : φ x₀ = E := (EReal.coe_toReal hφx₀ hEbot).symm
   have hEA : 0 ≤ E - A := sub_nonneg.2 (by exact_mod_cast hA ▸ hE ▸ moreauYosida_le_self φ τ' x₀)
-  -- The time steps `τ' / (4 (k + 1))`, and minimizing movement sequences from `x₀`.
-  set τ : ℕ → ℝ≥0 := fun k ↦ τ' / (4 * (k + 1))
+  -- The time steps `(τ' / 4) / (k + 1)`, and minimizing movement sequences from `x₀`.
+  set τ : ℕ → ℝ≥0 := fun k ↦ τ' / 4 / ↑(k + 1)
   have hτ k : 0 < τ k := by positivity
-  have hττ' k : 4 * τ k ≤ τ' := four_mul_div_four_mul_add_one_le τ' k
-  have hτ0 : Tendsto τ atTop (𝓝 0) := tendsto_div_four_mul_add_one τ'
+  have hττ' k : 4 * τ k ≤ τ' := calc
+    4 * τ k ≤ 4 * (τ' / 4) := by gcongr; exact div_le_self zero_le (Nat.one_le_cast.2 k.succ_pos)
+    _ = τ' := mul_div_cancel₀ τ' four_ne_zero
+  have hτ0 : Tendsto τ atTop (𝓝 0) :=
+    (tendsto_add_atTop_iff_nat 1).2 (tendsto_const_div_atTop_nhds_zero_nat (τ' / 4))
   choose U hU0 hU using fun k ↦ exists_forall_mem_moreauYosidaResolvent
     (fun z _ _ hv ↦ hd (tendsto_const_pure.mono_right (hl z)) hv) hφ hcpt
     (((le_mul_of_one_le_left zero_le (by norm_num)).trans (hττ' k)).trans_lt (half_lt_self hτ₀))

@@ -64,10 +64,9 @@ satisfy the discrete variational inequality of `TauCeti.Analysis.GradientFlow.Mo
 
 ## Main results
 
-* `TauCeti.IsGeneralizedGeodesicPlan.dist_sq_add_le` and
-  `TauCeti.IsGeneralizedGeodesicPlan.dist_left_sq_le`: convexity of the squared Wasserstein
-  distance from the base point and quadratic bound from the left endpoint along a generalized
-  geodesic.
+* `TauCeti.dist_sq_le_of_eq_generalizedGeodesic` and
+  `TauCeti.IsGeneralizedGeodesicPlan.dist_sq_add_le`: quadratic distance bound between points along
+  a generalized geodesic and convexity of the squared Wasserstein distance from the base point.
 * `TauCeti.GeneralizedGeodesicallyConvex.add_edist_sq_div` and
   `TauCeti.GeneralizedGeodesicallyConvex.exists_convexAlong_add_dist_sq_div`:
   `(m + 1 / τ)`-convexity of the JKO penalized functional along generalized geodesics.
@@ -179,6 +178,43 @@ theorem GeneralizedGeodesicallyConvex.mono (h : GeneralizedGeodesicallyConvex m 
 
 end Convexity
 
+section NormedSpace
+
+variable [NormedSpace ℝ E] [BorelSpace E] [SecondCountableTopology E] [CompleteSpace E]
+
+/-- **Distance between two points along a generalized geodesic.** For a measure `γ` on `E × E × E`
+and laws `νs`, `νr` in `P₂(E)` equal to `generalizedGeodesic γ s` and `generalizedGeodesic γ r`,
+`W₂ (νs, νr) ^ 2 ≤ (r - s) ^ 2 ∫ ‖y₀ - y₁‖ ^ 2 dγ`. -/
+theorem dist_sq_le_of_eq_generalizedGeodesic {γ : Measure (E × E × E)} {s r : ℝ}
+    {νs νr : WassersteinSpace 2 E}
+    (hνs : ((νs : ProbabilityMeasure E) : Measure E) = generalizedGeodesic γ s)
+    (hνr : ((νr : ProbabilityMeasure E) : Measure E) = generalizedGeodesic γ r) :
+    dist νs νr ^ 2 ≤ (r - s) ^ 2 * ∫ z, ‖z.1 - z.2‖ ^ 2 ∂γ.snd := by
+  set f : E × E → E × E := fun z ↦ ((1 - s) • z.1 + s • z.2, (1 - r) • z.1 + r • z.2)
+  have hf_meas : Measurable f := by fun_prop
+  have hcoupl : IsCoupling (γ.snd.map f) ((νs : ProbabilityMeasure E) : Measure E)
+      ((νr : ProbabilityMeasure E) : Measure E) := by
+    constructor
+    · rw [hνs, generalizedGeodesic_def, Measure.fst, Measure.map_map measurable_fst hf_meas,
+        Measure.snd, Measure.map_map (by fun_prop) measurable_snd]
+      rfl
+    · rw [hνr, generalizedGeodesic_def, Measure.snd, Measure.map_map measurable_snd hf_meas,
+        Measure.snd, Measure.map_map (by fun_prop) measurable_snd]
+      rfl
+  refine (WassersteinSpace.dist_sq_le_integral hcoupl).trans ?_
+  rw [integral_map (f := fun z : E × E ↦ ‖z.1 - z.2‖ ^ 2) hf_meas.aemeasurable (by fun_prop)]
+  have hpoint : ∀ z : E × E, ‖(f z).1 - (f z).2‖ ^ 2 = (r - s) ^ 2 * ‖z.1 - z.2‖ ^ 2 := fun z ↦ by
+    have hsub : ((1 - s) • z.1 + s • z.2) - ((1 - r) • z.1 + r • z.2) =
+        (r - s) • (z.1 - z.2) := by
+      simp only [sub_smul, one_smul, smul_sub]
+      abel
+    dsimp [f]
+    rw [hsub, norm_smul, Real.norm_eq_abs, mul_pow, sq_abs]
+  simp_rw [hpoint, integral_const_mul]
+  exact le_rfl
+
+end NormedSpace
+
 section Hilbert
 
 variable [BorelSpace E] [SecondCountableTopology E] [CompleteSpace E]
@@ -216,36 +252,6 @@ theorem IsGeneralizedGeodesicPlan.dist_sq_add_le {μ ν₀ ν₁ ν : Wasserstei
     ENNReal.ofReal_le_ofReal_iff (add_nonneg (mul_nonneg ht' (sq_nonneg _))
       (mul_nonneg ht.1 (sq_nonneg _)))] at hW
   exact hW
-
-/-- **Distance from the left endpoint along a generalized geodesic.** Along the generalized
-geodesic `ν_t` of a quadratic generalized-geodesic plan `γ` from `ν₀` to `ν₁` based at `μ`,
-`W₂ (ν₀, ν_t) ^ 2 ≤ t ^ 2 ∫ ‖y₀ - y₁‖² dγ`. -/
-theorem IsGeneralizedGeodesicPlan.dist_left_sq_le {μ ν₀ ν₁ ν : WassersteinSpace 2 E}
-    (hγ : IsGeneralizedGeodesicPlan 2 γ ((μ : ProbabilityMeasure E) : Measure E)
-      ((ν₀ : ProbabilityMeasure E) : Measure E) ((ν₁ : ProbabilityMeasure E) : Measure E))
-    (hν : ((ν : ProbabilityMeasure E) : Measure E) = generalizedGeodesic γ t) :
-    dist ν₀ ν ^ 2 ≤ t ^ 2 * ∫ z, ‖z.1 - z.2‖ ^ 2 ∂γ.snd := by
-  have hπ := hγ.isCoupling_snd
-  set f : E × E → E × E := fun z ↦ (z.1, (1 - t) • z.1 + t • z.2)
-  have hf_meas : Measurable f := by fun_prop
-  have hcoupl : IsCoupling (γ.snd.map f) ((ν₀ : ProbabilityMeasure E) : Measure E)
-      ((ν : ProbabilityMeasure E) : Measure E) := by
-    constructor
-    · rw [← hπ.fst_eq, Measure.fst, Measure.fst, Measure.map_map measurable_fst hf_meas]
-      rfl
-    · rw [hν, generalizedGeodesic_def, Measure.snd, Measure.map_map measurable_snd hf_meas,
-        Measure.snd, Measure.map_map (by fun_prop) measurable_snd]
-      rfl
-  refine (WassersteinSpace.dist_sq_le_integral hcoupl).trans ?_
-  rw [integral_map (f := fun z : E × E ↦ ‖z.1 - z.2‖ ^ 2) hf_meas.aemeasurable (by fun_prop)]
-  have hpoint : ∀ z : E × E, ‖(f z).1 - (f z).2‖ ^ 2 = t ^ 2 * ‖z.1 - z.2‖ ^ 2 := fun z ↦ by
-    have hsub : z.1 - ((1 - t) • z.1 + t • z.2) = t • (z.1 - z.2) := by
-      rw [sub_smul, one_smul, smul_sub]
-      abel
-    dsimp [f]
-    rw [hsub, norm_smul, Real.norm_eq_abs, mul_pow, sq_abs]
-  simp_rw [hpoint, integral_const_mul]
-  exact le_rfl
 
 variable {m : ℝ} {φ : WassersteinSpace 2 E → EReal} {μ : WassersteinSpace 2 E} {τ : ℝ≥0}
 
@@ -391,88 +397,76 @@ theorem penalizedConvex_of_generalizedGeodesicallyConvex
 
 /-- **Coercivity of energies convex along generalized geodesics** (Ambrosio–Gigli–Savaré,
 Lemma 2.4.8 and §9.2). Let `φ` be `m`-convex along generalized geodesics based at `μ`, and lower
-semicontinuous and finite at some law `ν₀`. Then for every time step `τ > 0` with `1 + m τ > 0` and
+semicontinuous and finite at some law `ν₀`. Then for every time step `τ ≥ 0` with `1 + m τ > 0` and
 every law `ν` in `P₂(E)`, `φ_τ(ν) ≠ ⊥`. -/
 theorem GeneralizedGeodesicallyConvex.moreauYosida_ne_bot
     (h : GeneralizedGeodesicallyConvex m φ μ)
     {ν₀ : WassersteinSpace 2 E} (hν₀ : LowerSemicontinuousAt φ ν₀)
     (hν₀top : φ ν₀ ≠ ⊤) (hν₀bot : φ ν₀ ≠ ⊥)
-    (hτ : 0 < τ) (hmτ : 0 < 1 + m * τ) (ν : WassersteinSpace 2 E) :
-    moreauYosida φ τ ν ≠ ⊥ := by
-  refine moreauYosida_ne_bot_of_forall_one_add_mul_pos hτ hmτ (edist_ne_top ν μ)
-    fun {σ} hσ hmσ ↦ ?_
-  set Ψ : WassersteinSpace 2 E → EReal :=
-    fun z ↦ φ z + ((dist μ z ^ 2 / (2 * σ) : ℝ) : EReal)
-  have hΨ_eq : moreauYosida φ σ μ = ⨅ z, Ψ z := by
-    rw [moreauYosida_eq_iInf]
-    exact iInf_congr fun z ↦ congr_arg (φ z + ·) (coe_edist_sq_div_eq_coe_dist_sq_div hσ μ z)
-  rw [hΨ_eq]
-  have hΨtop : Ψ ν₀ ≠ ⊤ := EReal.add_ne_top hν₀top (EReal.coe_ne_top _)
-  have hΨbot : Ψ ν₀ ≠ ⊥ := EReal.add_ne_bot_iff.2 ⟨hν₀bot, EReal.coe_ne_bot _⟩
-  have hcont : Continuous (fun z : WassersteinSpace 2 E ↦
-      ((dist μ z ^ 2 / (2 * σ) : ℝ) : EReal)) :=
-    EReal.continuous_coe_iff.2 (((continuous_const.dist continuous_id).pow 2).div_const _)
-  refine iInf_ne_bot_of_lowerSemicontinuousAt (x₀ := ν₀) (κ := m + (σ : ℝ)⁻¹)
-    (hν₀.add' hcont.continuousAt.lowerSemicontinuousAt
-      (EReal.continuousAt_add (.inr (EReal.coe_ne_bot _)) (.inr (EReal.coe_ne_top _))))
-    hΨtop hΨbot ?_ fun z hz ↦ ?_
-  · have : m + (σ : ℝ)⁻¹ = (1 + m * σ) / σ := by field_simp; ring
-    rw [this]
-    positivity
-  · have hΨ' : ∀ w : WassersteinSpace 2 E,
-        φ w + ((edist μ w ^ 2 / (2 * σ) : ℝ≥0∞) : EReal) = Ψ w := fun w ↦
-      congr_arg (φ w + ·) (coe_edist_sq_div_eq_coe_dist_sq_div hσ μ w)
-    obtain ⟨γ, hγ, hconv⟩ := h.add_edist_sq_div hσ ((hΨ' ν₀).symm ▸ hΨtop) ((hΨ' z).symm ▸ hz)
-    set I : ℝ := ∫ u, ‖u.1 - u.2‖ ^ 2 ∂γ.snd
-    have hI : 0 ≤ I := integral_nonneg fun _ ↦ sq_nonneg _
-    refine ⟨Real.sqrt I, Real.sqrt_nonneg I, fun t ht ↦ ?_⟩
-    obtain ⟨νt, hνt⟩ := exists_coe_eq_generalizedGeodesic hγ.isCoupling_snd t
-    refine ⟨νt, ?_, ?_⟩
-    · refine (pow_le_pow_iff_left₀ dist_nonneg
-        (mul_nonneg ht.1 (Real.sqrt_nonneg I)) two_ne_zero).1 ?_
-      rw [mul_pow, Real.sq_sqrt hI]
-      exact hγ.dist_left_sq_le hνt
-    · have hle := hconv t ht νt hνt
-      simp only [hΨ'] at hle
-      rwa [Real.sq_sqrt hI]
+    (hmτ : 0 < 1 + m * τ) (ν : WassersteinSpace 2 E) :
+    moreauYosida φ τ ν ≠ ⊥ :=
+  moreauYosida_ne_bot_of_lowerSemicontinuousAt (x₁ := μ) hν₀ hν₀top hν₀bot hmτ
+    (fun {σ} hσ _ z hztop ↦ by
+      have hΨ' : ∀ w : WassersteinSpace 2 E,
+          φ w + ((edist μ w ^ 2 / (2 * σ) : ℝ≥0∞) : EReal) =
+            φ w + ((dist μ w ^ 2 / (2 * σ) : ℝ) : EReal) := fun w ↦
+        congr_arg (φ w + ·) (coe_edist_sq_div_eq_coe_dist_sq_div hσ μ w)
+      obtain ⟨γ, hγ, hconv⟩ := h.add_edist_sq_div hσ
+        ((hΨ' ν₀).symm ▸ EReal.add_ne_top hν₀top (EReal.coe_ne_top _))
+        ((hΨ' z).symm ▸ EReal.add_ne_top hztop (EReal.coe_ne_top _))
+      set I : ℝ := ∫ u, ‖u.1 - u.2‖ ^ 2 ∂γ.snd
+      have hI : 0 ≤ I := integral_nonneg fun _ ↦ sq_nonneg _
+      refine ⟨Real.sqrt I, fun t ht ↦ ?_⟩
+      obtain ⟨νt, hνt⟩ := exists_coe_eq_generalizedGeodesic hγ.isCoupling_snd t
+      refine ⟨νt, ?_, ?_⟩
+      · refine (pow_le_pow_iff_left₀ dist_nonneg
+          (mul_nonneg ht.1 (Real.sqrt_nonneg I)) two_ne_zero).1 ?_
+        rw [mul_pow, Real.sq_sqrt hI]
+        simpa only [sub_zero] using
+          dist_sq_le_of_eq_generalizedGeodesic hγ.generalizedGeodesic_zero.symm hνt
+      · have hle := hconv t ht νt hνt
+        simp only [hΨ'] at hle
+        rwa [Real.sq_sqrt hI])
+    ν
 
 /-- **Coercivity of energies convex along generalized geodesics that never take `⊥`.** If `φ` is
 lower semicontinuous on `P₂(E)`, never takes the value `⊥`, and is `m`-convex along generalized
-geodesics based at `μ`, then `φ_τ(ν) ≠ ⊥` for every `τ > 0` with `1 + m τ > 0` and every law `ν`. -/
+geodesics based at `μ`, then `φ_τ(ν) ≠ ⊥` for every `τ ≥ 0` with `1 + m τ > 0` and every law `ν`. -/
 theorem GeneralizedGeodesicallyConvex.moreauYosida_ne_bot_of_forall_ne_bot
     (hφ : LowerSemicontinuous φ) (h : GeneralizedGeodesicallyConvex m φ μ)
-    (hbot : ∀ ν, φ ν ≠ ⊥) (hτ : 0 < τ) (hmτ : 0 < 1 + m * τ) (ν : WassersteinSpace 2 E) :
+    (hbot : ∀ ν, φ ν ≠ ⊥) (hmτ : 0 < 1 + m * τ) (ν : WassersteinSpace 2 E) :
     moreauYosida φ τ ν ≠ ⊥ := by
   by_cases hdom : ∃ ν₀, φ ν₀ ≠ ⊤
   · obtain ⟨ν₀, hν₀top⟩ := hdom
-    exact h.moreauYosida_ne_bot (hφ.lowerSemicontinuousAt ν₀) hν₀top (hbot ν₀) hτ hmτ ν
-  · refine ne_bot_of_le_ne_bot top_ne_bot (le_moreauYosida_iff.2 fun z _ ↦ ?_)
-    have hz : φ z = ⊤ := by_contradiction fun hz ↦ hdom ⟨z, hz⟩
-    rw [hz, coe_edist_sq_div_eq_coe_dist_sq_div hτ,
-      EReal.top_add_of_ne_bot (EReal.coe_ne_bot _)]
+    exact h.moreauYosida_ne_bot (hφ.lowerSemicontinuousAt ν₀) hν₀top (hbot ν₀) hmτ ν
+  · rw [moreauYosida_eq_top_of_forall_eq_top fun z _ ↦ not_ne_iff.1 fun hz ↦ hdom ⟨z, hz⟩]
+    exact top_ne_bot
 
-/-- **Existence of the JKO step without compactness.** Let `φ` be lower semicontinuous on `P₂(E)`
-and `m`-convex along generalized geodesics based at `μ`. If `τ > 0` satisfies `1 + m τ > 0` and
-`φ_τ(μ) ≠ ⊥`, then the JKO resolvent `J_τ μ` is nonempty. -/
+/-- **Existence of the JKO step without compactness.** Let `φ` be lower semicontinuous on `P₂(E)`,
+never equal to `⊥`, and `m`-convex along generalized geodesics based at `μ`. If `τ > 0` satisfies
+`1 + m τ > 0`, then the JKO resolvent `J_τ μ` is nonempty. -/
 theorem GeneralizedGeodesicallyConvex.moreauYosidaResolvent_nonempty
     (hφ : LowerSemicontinuous φ) (h : GeneralizedGeodesicallyConvex m φ μ)
-    (hτ : 0 < τ) (hmτ : 0 < 1 + m * τ) (hbot : moreauYosida φ τ μ ≠ ⊥) :
+    (hτ : 0 < τ) (hmτ : 0 < 1 + m * τ) (hbot : ∀ ν, φ ν ≠ ⊥) :
     (moreauYosidaResolvent φ τ μ).Nonempty :=
   moreauYosidaResolvent_nonempty_of_convexAlong hφ hτ hmτ
-    (fun {_ _} h₀ h₁ ↦ h.exists_convexAlong_add_dist_sq_div hτ hmτ.le h₀ h₁) hbot
+    (fun {_ _} h₀ h₁ ↦ h.exists_convexAlong_add_dist_sq_div hτ hmτ.le h₀ h₁)
+    (h.moreauYosida_ne_bot_of_forall_ne_bot hφ hbot hmτ μ)
 
 /-- **Existence and uniqueness of the JKO step.** Let `φ` be lower semicontinuous on `P₂(E)`,
-finite somewhere (`∃ ν, φ ν ≠ ⊤`), and `m`-convex along generalized geodesics based at `μ`. If
-`τ > 0` satisfies `1 + m τ > 0` and `φ_τ(μ) ≠ ⊥`, then `J_τ μ` contains a unique law. -/
+finite at some law `ν₀` (`φ ν₀ ≠ ⊤` and `φ ν₀ ≠ ⊥`), and `m`-convex along generalized geodesics
+based at `μ`. If `τ > 0` satisfies `1 + m τ > 0`, then `J_τ μ` contains a unique law. -/
 theorem GeneralizedGeodesicallyConvex.existsUnique_mem_moreauYosidaResolvent
-    (hφ : LowerSemicontinuous φ) (h : GeneralizedGeodesicallyConvex m φ μ)
-    (hτ : 0 < τ) (hmτ : 0 < 1 + m * τ) (hmoreau : moreauYosida φ τ μ ≠ ⊥)
-    (hdom : ∃ ν, φ ν ≠ ⊤) :
+    {ν₀ : WassersteinSpace 2 E} (hφ : LowerSemicontinuous φ)
+    (h : GeneralizedGeodesicallyConvex m φ μ) (hτ : 0 < τ) (hmτ : 0 < 1 + m * τ)
+    (hν₀top : φ ν₀ ≠ ⊤) (hν₀bot : φ ν₀ ≠ ⊥) :
     ∃! ν, ν ∈ moreauYosidaResolvent φ τ μ := by
+  have hmoreau := h.moreauYosida_ne_bot (hφ.lowerSemicontinuousAt ν₀) hν₀top hν₀bot hmτ μ
   have hbot : ∀ z, φ z ≠ ⊥ := fun z ↦
     apply_ne_bot_of_moreauYosida_ne_bot hmoreau (edist_ne_top μ z)
-  obtain ⟨ν, hν⟩ := h.moreauYosidaResolvent_nonempty hφ hτ hmτ hmoreau
-  exact ⟨ν, hν, fun ν' hν' ↦ h.subsingleton_moreauYosidaResolvent hτ hmτ hbot hdom hν' hν⟩
+  obtain ⟨ν, hν⟩ := h.moreauYosidaResolvent_nonempty hφ hτ hmτ hbot
+  exact ⟨ν, hν,
+    fun ν' hν' ↦ h.subsingleton_moreauYosidaResolvent hτ hmτ hbot ⟨ν₀, hν₀top⟩ hν' hν⟩
 
 /-- **Existence of JKO sequences without compactness.** Let `φ` be lower semicontinuous on `P₂(E)`,
 never equal to `⊥`, and `m`-convex along generalized geodesics based at every law. Then for every
@@ -483,10 +477,7 @@ theorem exists_forall_mem_moreauYosidaResolvent_of_generalizedGeodesicallyConvex
     (hτ : 0 < τ) (hmτ : 0 < 1 + m * τ) (hbot : ∀ ν, φ ν ≠ ⊥) (μ : WassersteinSpace 2 E) :
     ∃ u : ℕ → WassersteinSpace 2 E,
       u 0 = μ ∧ ∀ n, u (n + 1) ∈ moreauYosidaResolvent φ τ (u n) := by
-  have step : ∀ z : WassersteinSpace 2 E, ∃ y, y ∈ moreauYosidaResolvent φ τ z := fun z ↦
-    (hconv z).moreauYosidaResolvent_nonempty hφ hτ hmτ
-      ((hconv z).moreauYosida_ne_bot_of_forall_ne_bot hφ hbot hτ hmτ z)
-  choose f hf using step
+  choose f hf using fun z ↦ (hconv z).moreauYosidaResolvent_nonempty hφ hτ hmτ hbot
   exact ⟨fun n ↦ f^[n] μ, rfl, fun n ↦ by simpa only [Function.iterate_succ_apply'] using hf _⟩
 
 end Hilbert
