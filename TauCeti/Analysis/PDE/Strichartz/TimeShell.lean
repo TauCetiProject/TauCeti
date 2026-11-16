@@ -9,6 +9,8 @@ public import TauCeti.Analysis.PDE.Strichartz.TTStar
 import Mathlib.Data.Int.Log
 import TauCeti.MeasureTheory.Function.Lp.Integral.Functional
 import TauCeti.MeasureTheory.Integral.SchurTest
+import TauCeti.MeasureTheory.Measure.Lebesgue.Basic
+import TauCeti.MeasureTheory.Measure.Prod
 
 /-!
 # The `TT*` pairings on dyadic time shells
@@ -32,7 +34,7 @@ is a null set, the integral of an integrable function on `ℝ × ℝ` is the sum
 the shells (`TauCeti.hasSum_setIntegral_timeShell`). The restriction of `T` to a shell is bounded
 in three ways, all in mixed norms `L²_t L^a_x`:
 
-* **At equal exponents** (`TauCeti.lintegral_timeShell_enorm_inner_adjoint_le`): if the time
+* **At equal exponents** (`TauCeti.setLIntegral_timeShell_enorm_inner_adjoint_le`): if the time
   pairings decay like `‖U(s) U(t)* g‖_r ≤ A |s - t| ^ (-γ) ‖g‖_{r'}`, `γ ≥ 0`, then the integral of
   `|⟪U(s)* F(s), U(t)* G(t)⟫|` over the shell is at most `4 A ρ ^ (1 - γ) ‖F‖_{L² L^{r'}}
   ‖G‖_{L² L^{r'}}`. On the shell the pairing decay is at least `ρ ^ (-γ)`, and Schur's test for
@@ -63,7 +65,7 @@ form, over `s < t`, is the restriction to the half plane.
 * `TauCeti.hasSum_setIntegral_timeShell`: the decomposition of a double integral over the
   shells `ρ = 2ʲ`.
 * `TauCeti.setIntegral_timeShell_inner_eq_conj`: the shell pairings are conjugate symmetric.
-* `TauCeti.lintegral_timeShell_enorm_inner_adjoint_le`: the bound at equal exponents.
+* `TauCeti.setLIntegral_timeShell_enorm_inner_adjoint_le`: the bound at equal exponents.
 * `TauCeti.enorm_setIntegral_timeShell_inner_adjoint_le`,
   `TauCeti.enorm_setIntegral_timeShell_inner_adjoint_le'`: the bounds with an energy factor.
 
@@ -89,10 +91,23 @@ def timeShell (ρ : ℝ) : Set (ℝ × ℝ) := {p | ρ ≤ dist p.1 p.2 ∧ dist
 theorem mem_timeShell {ρ : ℝ} {p : ℝ × ℝ} :
     p ∈ timeShell ρ ↔ ρ ≤ dist p.1 p.2 ∧ dist p.1 p.2 < 2 * ρ := Iff.rfl
 
-/-- The section of the dyadic time shell at `s` is the set of `t` with `ρ ≤ |s - t| < 2ρ`. -/
-theorem mk_mem_timeShell_iff_mem_ball_diff {ρ s t : ℝ} :
-    (s, t) ∈ timeShell ρ ↔ t ∈ ball s (2 * ρ) \ ball s ρ := by
+/-- The section of the dyadic time shell at a first time `s` is the set of `t` with
+`ρ ≤ |s - t| < 2ρ`. -/
+theorem mk_preimage_timeShell_right (ρ s : ℝ) :
+    Prod.mk s ⁻¹' timeShell ρ = ball s (2 * ρ) \ ball s ρ := by
+  ext t
   simp [dist_comm t s, and_comm]
+
+/-- The section of the dyadic time shell at a second time `t` is the set of `s` with
+`ρ ≤ |s - t| < 2ρ`. -/
+theorem mk_preimage_timeShell_left (ρ t : ℝ) :
+    (fun s ↦ (s, t)) ⁻¹' timeShell ρ = ball t (2 * ρ) \ ball t ρ := by
+  ext s
+  simp [and_comm]
+
+/-- The two times of a pair in a dyadic time shell are distinct. -/
+theorem ne_of_mem_timeShell {ρ : ℝ} {p : ℝ × ℝ} (hp : p ∈ timeShell ρ) : p.1 ≠ p.2 :=
+  dist_pos.1 (by linarith [hp.1, hp.2])
 
 theorem measurableSet_timeShell (ρ : ℝ) : MeasurableSet (timeShell ρ) :=
   (measurableSet_le measurable_const measurable_dist).inter
@@ -128,14 +143,13 @@ theorem pairwise_disjoint_timeShell_zpow :
 /-- The dyadic time shells `ρ = 2ʲ`, `j ∈ ℤ`, cover exactly the pairs of distinct times. -/
 theorem iUnion_timeShell_zpow : ⋃ j : ℤ, timeShell ((2 : ℝ) ^ j) = {p | p.1 ≠ p.2} := by
   ext p
-  simp only [mem_iUnion, mem_timeShell, mem_ofPred_eq]
+  simp only [mem_iUnion, mem_ofPred_eq]
   constructor
-  · rintro ⟨j, hj, -⟩ h
-    rw [h, dist_self] at hj
-    exact (zpow_pos two_pos j).not_ge hj
+  · rintro ⟨j, hj⟩
+    exact ne_of_mem_timeShell hj
   · intro h
     have hd : 0 < dist p.1 p.2 := dist_pos.2 h
-    refine ⟨Int.log 2 (dist p.1 p.2), ?_, ?_⟩
+    refine ⟨Int.log 2 (dist p.1 p.2), mem_timeShell.2 ⟨?_, ?_⟩⟩
     · exact_mod_cast Int.zpow_log_le_self (b := 2) one_lt_two hd
     · have := Int.lt_zpow_succ_log_self (b := 2) one_lt_two (dist p.1 p.2)
       rw [zpow_add_one₀ (by norm_num)] at this
@@ -152,11 +166,9 @@ theorem hasSum_setIntegral_timeShell {E : Type*} [NormedAddCommGroup E] [NormedS
   have h := hasSum_integral_iUnion (fun j ↦ measurableSet_timeShell _)
     pairwise_disjoint_timeShell_zpow hf.integrableOn
   -- The diagonal is a null set.
-  have hdiag : ∀ᵐ p : ℝ × ℝ ∂(volume.prod volume), p ∈ {p : ℝ × ℝ | p.1 ≠ p.2} := by
-    rw [ae_iff]
-    simp only [mem_ofPred_eq, ne_eq, not_not]
-    rw [Measure.prod_apply (measurableSet_eq_fun measurable_fst measurable_snd)]
-    simp [Set.preimage]
+  have hdiag : ∀ᵐ p : ℝ × ℝ ∂(volume.prod volume), p ∈ {p : ℝ × ℝ | p.1 ≠ p.2} :=
+    ae_iff.2 (measure_mono_null (fun p hp ↦ (not_not.1 hp).symm)
+      (Measure.prod_graph_eq_zero measurable_id))
   rwa [iUnion_timeShell_zpow, Measure.restrict_eq_self_of_ae_mem hdiag] at h
 
 /-- The pairing of two time-dependent vectors over a dyadic time shell is conjugate symmetric:
@@ -165,55 +177,15 @@ theorem setIntegral_timeShell_inner_eq_conj {𝕜 V : Type*} [RCLike 𝕜] [Norm
     [InnerProductSpace 𝕜 V] (ρ : ℝ) (f g : ℝ → V) :
     ∫ z in timeShell ρ, ⟪f z.1, g z.2⟫_𝕜 ∂(volume.prod volume) =
       starRingEnd 𝕜 (∫ z in timeShell ρ, ⟪g z.1, f z.2⟫_𝕜 ∂(volume.prod volume)) := by
-  rw [← integral_conj, ← integral_indicator (measurableSet_timeShell ρ),
-    ← integral_indicator (measurableSet_timeShell ρ), ← integral_prod_swap]
-  refine integral_congr_ae (ae_of_all _ fun z ↦ ?_)
-  by_cases hz : z ∈ timeShell ρ
-  · dsimp only
-    rw [indicator_of_mem (swap_mem_timeShell.2 hz), indicator_of_mem hz, Prod.fst_swap,
-      Prod.snd_swap, inner_conj_symm]
-  · dsimp only
-    rw [indicator_of_notMem (fun h ↦ hz (swap_mem_timeShell.1 h)), indicator_of_notMem hz]
+  have hswap : Prod.swap ⁻¹' timeShell ρ = timeShell ρ := ext fun _ ↦ swap_mem_timeShell
+  rw [← integral_conj]
+  conv_rhs => rw [← Measure.measurePreserving_swap.setIntegral_preimage_emb
+    MeasurableEquiv.prodComm.measurableEmbedding _ (timeShell ρ), hswap]
+  simp only [Prod.fst_swap, Prod.snd_swap, inner_conj_symm]
 
 variable {𝕜 X E H : Type*} [RCLike 𝕜] {mX : MeasurableSpace X} {μ : Measure X}
   [NormedAddCommGroup E] [InnerProductSpace 𝕜 E] [CompleteSpace E]
   [NormedAddCommGroup H] [InnerProductSpace 𝕜 H] [CompleteSpace H]
-
-/-- The kernel `1_{|s - t| < R}` is measurable on `ℝ × ℝ`. -/
-private theorem measurable_uncurry_indicator_ball (R : ℝ) :
-    Measurable (Function.uncurry fun s t : ℝ ↦ (ball s R).indicator (1 : ℝ → ℝ≥0∞) t) := by
-  have : (Function.uncurry fun s t : ℝ ↦ (ball s R).indicator (1 : ℝ → ℝ≥0∞) t) =
-      {p : ℝ × ℝ | dist p.2 p.1 < R}.indicator 1 := by
-    ext p
-    simp [indicator, mem_ball, Function.uncurry]
-  rw [this]
-  exact measurable_one.indicator
-    (measurableSet_lt (measurable_snd.dist measurable_fst) measurable_const)
-
-/-- Schur's test for the kernel `1_{|s - t| < 2ρ}` on the line: its rows and columns have
-integral `4ρ`, so `∫∫_{|s - t| < 2ρ} a(s) b(t) ds dt ≤ 4ρ ‖a‖₂ ‖b‖₂`. -/
-private theorem lintegral_lintegral_mul_indicator_ball_mul_le {ρ : ℝ} {a b : ℝ → ℝ≥0∞}
-    (ha : AEMeasurable a) (hb : AEMeasurable b) :
-    ∫⁻ s, ∫⁻ t, a s * ((ball s (2 * ρ)).indicator (1 : ℝ → ℝ≥0∞) t * b t) ≤
-      ENNReal.ofReal (4 * ρ) * eLpNorm a 2 * eLpNorm b 2 := by
-  have hk := measurable_uncurry_indicator_ball (2 * ρ)
-  have hrow (s : ℝ) :
-      ∫⁻ t, (ball s (2 * ρ)).indicator (1 : ℝ → ℝ≥0∞) t = ENNReal.ofReal (4 * ρ) := by
-    rw [lintegral_indicator_one measurableSet_ball, Real.volume_ball]
-    ring_nf
-  have hcol (t : ℝ) :
-      ∫⁻ s, (ball s (2 * ρ)).indicator (1 : ℝ → ℝ≥0∞) t = ENNReal.ofReal (4 * ρ) := by
-    have : (fun s : ℝ ↦ (ball s (2 * ρ)).indicator (1 : ℝ → ℝ≥0∞) t) =
-        (ball t (2 * ρ)).indicator 1 := by
-      ext s
-      simp only [indicator, Pi.one_apply, mem_ball, dist_comm]
-    rw [this, hrow]
-  have h := lintegral_lintegral_mul_mul_le hk.aemeasurable ha hb (p := 2) (q := 2)
-    (ae_of_all _ fun s ↦ (hrow s).le) (ae_of_all _ fun t ↦ (hcol t).le)
-  have hx (x : ℝ≥0∞) : x ^ (1 - (2 : ℝ)⁻¹) * x ^ (2 : ℝ)⁻¹ = x := by
-    rw [← ENNReal.rpow_add_of_nonneg _ _ (by norm_num) (by norm_num)]
-    norm_num
-  simpa only [ENNReal.toReal_ofNat, hx] using h
 
 /-- On the dyadic time shell, the pairing decay `‖U(s) U(t)* g‖_r ≤ A |s - t| ^ (-γ) ‖g‖_{r'}`
 bounds `|⟪U(s)* F(s), U(t)* G(t)⟫|` by `A ρ ^ (-γ) ‖F(s)‖_{r'} 1_{|s - t| < 2ρ} ‖G(t)‖_{r'}`. -/
@@ -228,16 +200,11 @@ private theorem indicator_timeShell_enorm_inner_adjoint_le {r r' : ℝ≥0∞} [
   by_cases hz : z ∈ timeShell ρ
   · rw [indicator_of_mem hz, indicator_of_mem (by rw [mem_ball, dist_comm]; exact hz.2),
       Pi.one_apply, one_mul]
-    have hne : z.1 ≠ z.2 := fun h ↦ by
-      have h1 := hz.1
-      have h2 := hz.2
-      rw [h, dist_self] at h1 h2
-      linarith
     have hdist : ENNReal.ofReal ρ ≤ ‖z.1 - z.2‖ₑ := by
       rw [← eDist_eq_eNorm_sub, edist_dist]
       exact ENNReal.ofReal_le_ofReal hz.1
     calc _ ≤ A * ‖z.1 - z.2‖ₑ ^ (-γ) * eLpNorm (F z.1) r' μ * eLpNorm (G z.2) r' μ :=
-          enorm_inner_adjoint_le hU hne _ _
+          enorm_inner_adjoint_le hU (ne_of_mem_timeShell hz) _ _
       _ ≤ A * ENNReal.ofReal ρ ^ (-γ) * eLpNorm (F z.1) r' μ * eLpNorm (G z.2) r' μ := by
           gcongr A * ?_ * _ * _
           rw [ENNReal.rpow_neg, ENNReal.rpow_neg]
@@ -256,7 +223,7 @@ shell `ρ ≤ |s - t| < 2ρ`,
 
 With the dispersive estimate, `r = ∞` and `γ = σ`, this is the bound of Keel and Tao at the
 exponent pair `(∞, ∞)`. -/
-theorem lintegral_timeShell_enorm_inner_adjoint_le {r r' : ℝ≥0∞} [r'.HolderConjugate r]
+theorem setLIntegral_timeShell_enorm_inner_adjoint_le {r r' : ℝ≥0∞} [r'.HolderConjugate r]
     {γ : ℝ} (hγ : 0 ≤ γ) (ρ : ℝ) {U : ℝ → H →L[𝕜] Lp E 2 μ} {A : ℝ≥0∞}
     (hU : ∀ s t, s ≠ t → ∀ g : Lp E 2 μ,
       eLpNorm (U s (((U t)†) g)) r μ ≤ A * ‖s - t‖ₑ ^ (-γ) * eLpNorm g r' μ)
@@ -278,8 +245,8 @@ theorem lintegral_timeShell_enorm_inner_adjoint_le {r r' : ℝ≥0∞} [r'.Holde
       (volume.prod volume) :=
     ha.comp_fst.mul ((measurable_uncurry_indicator_ball (2 * ρ)).aemeasurable.mul hb.comp_snd)
   have hk : AEMeasurable (fun s ↦ ∫⁻ t, a s * (k s t * b t)) := hprod.lintegral_prod_right'
-  have h4 : ENNReal.ofReal (4 * ρ) = 4 * ENNReal.ofReal ρ := by
-    rw [ENNReal.ofReal_mul (by norm_num)]
+  have h4 : ENNReal.ofReal (2 * (2 * ρ)) = 4 * ENNReal.ofReal ρ := by
+    rw [← mul_assoc, ENNReal.ofReal_mul (by norm_num)]
     norm_num
   have hpow : ENNReal.ofReal ρ ^ (1 - γ) = ENNReal.ofReal ρ * ENNReal.ofReal ρ ^ (-γ) := by
     rw [sub_eq_add_neg, ENNReal.rpow_add _ _ (ENNReal.ofReal_pos.2 hρ).ne'
@@ -292,36 +259,30 @@ theorem lintegral_timeShell_enorm_inner_adjoint_le {r r' : ℝ≥0∞} [r'.Holde
     _ = c * ∫⁻ s, ∫⁻ t, a s * (k s t * b t) := by
         rw [← lintegral_const_mul'' _ hk]
         exact lintegral_congr fun s ↦ lintegral_const_mul'' _ (hinner s)
-    _ ≤ c * (ENNReal.ofReal (4 * ρ) * eLpNorm a 2 * eLpNorm b 2) := by
+    _ ≤ c * (ENNReal.ofReal (2 * (2 * ρ)) * eLpNorm a 2 * eLpNorm b 2) := by
         gcongr
-        exact lintegral_lintegral_mul_indicator_ball_mul_le ha hb
+        exact lintegral_lintegral_mul_indicator_ball_mul_le ha hb (2 * ρ)
     _ = _ := by
         rw [h4, hpow]
         ring
 
-/-- The `s`-section `ρ ≤ |s - t| < 2ρ` of the dyadic time shell has length `2ρ`. -/
-private theorem volume_ball_diff_ball {ρ : ℝ} (hρ : 0 ≤ ρ) (s : ℝ) :
-    volume (ball s (2 * ρ) \ ball s ρ) = ENNReal.ofReal (2 * ρ) := by
-  rw [measure_sdiff (ball_subset_ball (by linarith)) measurableSet_ball.nullMeasurableSet
-    measure_ball_lt_top.ne, Real.volume_ball, Real.volume_ball,
-    ← ENNReal.ofReal_sub _ (by positivity)]
-  ring_nf
+/-- The `L²` norm of a function into `ℝ≥0∞` is the square root of the integral of its square. -/
+private theorem eLpNorm_two_eq {f : ℝ → ℝ≥0∞} (hf : AEMeasurable f) :
+    eLpNorm f 2 = (∫⁻ x, f x ^ (2 : ℝ)) ^ (2⁻¹ : ℝ) := by
+  rw [eLpNorm_eq_lintegral_rpow_eNorm_toReal two_ne_zero ENNReal.ofNat_ne_top
+    hf.aestronglyMeasurable]
+  simp
 
 /-- The square of the `L²` norm of `b` on the section `ρ ≤ |s - t| < 2ρ` at `s` is the integral
 of `b²` over the section of the dyadic time shell. -/
 private theorem eLpNorm_indicator_ball_diff_eq {ρ : ℝ} {b : ℝ → ℝ≥0∞} (hb : AEMeasurable b)
     (s : ℝ) : eLpNorm ((ball s (2 * ρ) \ ball s ρ).indicator b) 2 =
       (∫⁻ t, (timeShell ρ).indicator (fun z ↦ b z.2 ^ (2 : ℝ)) (s, t)) ^ (2⁻¹ : ℝ) := by
-  rw [eLpNorm_eq_lintegral_rpow_eNorm_toReal two_ne_zero ENNReal.ofNat_ne_top
-    (hb.indicator (measurableSet_ball.diff measurableSet_ball)).aestronglyMeasurable]
-  simp only [ENNReal.toReal_ofNat, eNorm_eq_self, one_div]
+  rw [eLpNorm_two_eq (hb.indicator (measurableSet_ball.diff measurableSet_ball))]
   congr 1
   refine lintegral_congr fun t ↦ ?_
-  by_cases h : t ∈ ball s (2 * ρ) \ ball s ρ
-  · rw [indicator_of_mem h, indicator_of_mem (mk_mem_timeShell_iff_mem_ball_diff.2 h)]
-  · rw [indicator_of_notMem h, indicator_of_notMem
-      (fun h' ↦ h (mk_mem_timeShell_iff_mem_ball_diff.1 h'))]
-    simp
+  rw [← indicator_comp_right (Prod.mk s), mk_preimage_timeShell_right]
+  exact congr($(indicator_comp_of_zero (g := fun x : ℝ≥0∞ ↦ x ^ (2 : ℝ)) (by simp)) t).symm
 
 private theorem aemeasurable_uncurry_indicator_timeShell (ρ : ℝ) {b : ℝ → ℝ≥0∞}
     (hb : AEMeasurable b) :
@@ -342,30 +303,20 @@ private theorem eLpNorm_eLpNorm_indicator_ball_diff {ρ : ℝ} (hρ : 0 ≤ ρ) 
     (hb : AEMeasurable b) :
     eLpNorm (fun s ↦ eLpNorm ((ball s (2 * ρ) \ ball s ρ).indicator b) 2) 2 =
       ENNReal.ofReal (2 * ρ) ^ (2⁻¹ : ℝ) * eLpNorm b 2 := by
-  have h2 {f : ℝ → ℝ≥0∞} (hf : AEMeasurable f) :
-      eLpNorm f 2 = (∫⁻ x, f x ^ (2 : ℝ)) ^ (2⁻¹ : ℝ) := by
-    rw [eLpNorm_eq_lintegral_rpow_eNorm_toReal two_ne_zero ENNReal.ofNat_ne_top
-      hf.aestronglyMeasurable]
-    simp
   -- Integrating the squared sections over `s` gives `2ρ ∫ b²`, by Tonelli's theorem.
   have hcol (t : ℝ) : ∫⁻ s, (timeShell ρ).indicator (fun z ↦ b z.2 ^ (2 : ℝ)) (s, t) =
       b t ^ (2 : ℝ) * ENNReal.ofReal (2 * ρ) := by
     have : (fun s ↦ (timeShell ρ).indicator (fun z ↦ b z.2 ^ (2 : ℝ)) (s, t)) =
         (ball t (2 * ρ) \ ball t ρ).indicator fun _ ↦ b t ^ (2 : ℝ) := by
       ext s
-      by_cases h : (s, t) ∈ timeShell ρ
-      · have h' : s ∈ ball t (2 * ρ) \ ball t ρ :=
-          mk_mem_timeShell_iff_mem_ball_diff.1 (swap_mem_timeShell.2 h)
-        rw [indicator_of_mem h, indicator_of_mem h']
-      · have h' : s ∉ ball t (2 * ρ) \ ball t ρ := fun h' ↦
-          h (swap_mem_timeShell.1 (mk_mem_timeShell_iff_mem_ball_diff.2 h'))
-        rw [indicator_of_notMem h, indicator_of_notMem h']
+      rw [← indicator_comp_right fun s ↦ (s, t), mk_preimage_timeShell_left]
+      rfl
     rw [this, lintegral_indicator_const (measurableSet_ball.diff measurableSet_ball),
-      volume_ball_diff_ball hρ]
+      volume_ball_sdiff_ball hρ (by linarith), show 2 * (2 * ρ - ρ) = 2 * ρ by ring]
   have hsq (x : ℝ≥0∞) : (x ^ (2⁻¹ : ℝ)) ^ (2 : ℝ) = x := by
     rw [← ENNReal.rpow_mul]
     norm_num
-  rw [h2 (aemeasurable_eLpNorm_indicator_ball_diff ρ hb), h2 hb]
+  rw [eLpNorm_two_eq (aemeasurable_eLpNorm_indicator_ball_diff ρ hb), eLpNorm_two_eq hb]
   simp_rw [eLpNorm_indicator_ball_diff_eq hb, hsq]
   rw [lintegral_lintegral_swap (aemeasurable_uncurry_indicator_timeShell ρ hb)]
   simp_rw [hcol]
@@ -391,10 +342,9 @@ private theorem integral_indicator_timeShell_inner_eq {ρ : ℝ} {U : ℝ → H 
       (fun z ↦ ⟪((U z.1)†) (F z.1), ((U z.2)†) (G z.2)⟫_𝕜) (s, t)) =
         fun t ↦ ⟪((U s)†) (F s), ((U t)†) ((ball s (2 * ρ) \ ball s ρ).indicator G t)⟫_𝕜 := by
     ext t
-    by_cases ht : t ∈ ball s (2 * ρ) \ ball s ρ
-    · rw [indicator_of_mem (mk_mem_timeShell_iff_mem_ball_diff.2 ht), indicator_of_mem ht]
-    · rw [indicator_of_notMem (fun h ↦ ht (mk_mem_timeShell_iff_mem_ball_diff.1 h)),
-        indicator_of_notMem ht, map_zero, inner_zero_right]
+    rw [← indicator_comp_right (Prod.mk s), mk_preimage_timeShell_right]
+    exact congr($(indicator_comp_of_zero (g := fun v ↦ ⟪((U s)†) (F s), v⟫_𝕜)
+      (inner_zero_right _)) t).trans (congrArg _ (congrFun (adjoint_indicator_eq G _) t).symm)
   rw [h, integral_inner]
   rw [adjoint_indicator_eq]
   exact hUG.indicator (measurableSet_ball.diff measurableSet_ball)
@@ -425,7 +375,8 @@ private theorem enorm_integral_adjoint_indicator_ball_diff_le {p r : ℝ≥0∞}
   rw [hb', eLpNorm_indicator_eq_eLpNorm_restrict (μ := volume) hS.nullMeasurableSet,
     eLpNorm_indicator_eq_eLpNorm_restrict (μ := volume) hS.nullMeasurableSet]
   have h := eLpNorm_le_eLpNorm_mul_rpow_measure_univ hp (hb.restrict (s := S)).aestronglyMeasurable
-  rwa [Measure.restrict_apply_univ, volume_ball_diff_ball hρ] at h
+  rwa [Measure.restrict_apply_univ, volume_ball_sdiff_ball hρ (by linarith),
+    show 2 * (2 * ρ - ρ) = 2 * ρ by ring] at h
 
 /-- **The time pairings on a dyadic shell, with an energy factor.** Let `U(t) : H → L²(X, μ)` be
 bounded operators, `‖U(t)‖ ≤ M`, satisfying a dual estimate with a time exponent `p ≤ 2`,

@@ -13,7 +13,9 @@ public import Mathlib.MeasureTheory.Measure.Lebesgue.Basic
 Replacing two subsets of the real line by open centered intervals of the same respective
 volumes can only decrease the volume of their one-sided difference. The inequality uses
 Mathlib's extended-radius balls and `Real.volume_eball`, and allows zero and infinite volumes.
-It supplies the sectionwise contraction inequality for Steiner symmetrization.
+It supplies the sectionwise contraction inequality for Steiner symmetrization. The annulus
+between two concentric open intervals of radii `0 ≤ r ≤ R` has length `2 (R - r)`
+(`TauCeti.volume_ball_sdiff_ball`).
 
 An order-connected subset of the real line of positive finite volume agrees almost everywhere
 with a nonempty bounded open interval (`Set.OrdConnected.exists_ae_eq_Ioo`): finite volume
@@ -73,6 +75,14 @@ theorem volume_eball_sdiff_le (s u : Set ℝ) :
     · rw [measure_sdiff (Metric.eball_subset_eball (ENNReal.div_le_div_right h 2))
         Metric.isOpen_eball.measurableSet.nullMeasurableSet (by rwa [hlength]), hlength, hlength]
       exact le_measure_sdiff
+
+/-- The annulus between two concentric open intervals of radii `0 ≤ r ≤ R` has length
+`2 (R - r)`. -/
+theorem volume_ball_sdiff_ball {r R : ℝ} (hr : 0 ≤ r) (hrR : r ≤ R) (x : ℝ) :
+    volume (Metric.ball x R \ Metric.ball x r) = ENNReal.ofReal (2 * (R - r)) := by
+  rw [measure_sdiff (Metric.ball_subset_ball hrR) measurableSet_ball.nullMeasurableSet
+    measure_ball_lt_top.ne, Real.volume_ball, Real.volume_ball,
+    ← ENNReal.ofReal_sub _ (by positivity), mul_sub]
 
 /-- A permutation of the coordinates combined with sign changes, `x ↦ fun i => c i * x (e i)`
 with `|c i| = 1`, preserves Lebesgue measure on `ι → ℝ`. -/
