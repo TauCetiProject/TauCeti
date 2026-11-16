@@ -630,6 +630,13 @@ instance instCompleteSpace [CompleteSpace F] : CompleteSpace (CkHolderSpaceOn k 
 
 attribute [irreducible] instNormedAddCommGroup instNormedSpace _root_.TauCeti.CkHolderSpaceOn
 
+/-- Precomposing a Hölder map with a `1`-Lipschitz map keeps the Hölder constant and exponent. -/
+private theorem holderWith_comp_lipschitzWith_one {X Y Z : Type*} [PseudoEMetricSpace X]
+    [PseudoEMetricSpace Y] [PseudoEMetricSpace Z] {C r : ℝ≥0} {g : Y → Z} {ι : X → Y}
+    (hg : HolderWith C r g) (hι : LipschitzWith 1 ι) : HolderWith C r (g ∘ ι) := by
+  have h := hg.comp (holderWith_one.2 hι)
+  rwa [mul_one, NNReal.one_rpow, mul_one] at h
+
 /-- If the derivative fields of an element of `C^{k,α}(Ω)` are the pullbacks of bounded
 continuous fields `D i` on a metric space `X` along a `1`-Lipschitz map `Ω → X`, and the top field
 `D k` is `α`-Hölder, then the norm is at most the sum of the supremum norms of the `D i` and the
@@ -643,9 +650,7 @@ private theorem norm_le_of_iteratedFDeriv_eq {X : Type*} [MetricSpace X] {ι : �
     ‖f‖ ≤ ∑ i, ‖D i‖ + nnHolderNorm α (D (Fin.last k) : X → E [×k]→L[ℝ] F) := by
   refine norm_le_sum_add_of_norm_iteratedFDeriv_le_of_holderWith (M := fun i ↦ ‖D i‖)
     (fun i ↦ norm_nonneg (D i)) (fun i x ↦ by rw [hD]; exact (D i).norm_coe_le_norm (ι x)) ?_
-  have h := hH.holderWith.comp (holderWith_one.2 hι)
-  rw [mul_one, NNReal.one_rpow, mul_one] at h
-  convert h using 1
+  convert holderWith_comp_lipschitzWith_one hH.holderWith hι using 1
   exact funext fun x ↦ hD _ x
 
 section restrict
@@ -678,10 +683,8 @@ def restrictL (h : Ω' ≤ Ω) : CkHolderSpaceOn k α Ω F →L[ℝ] CkHolderSpa
                 fun x : Ω' ↦ (⟨x, h x.2⟩ : Ω) :=
             funext fun x ↦ iteratedFDeriv_extendZero_of_le h f (Fin.last k) x
           rw [he]
-          have hc := (holderWith_one.2
-            ((LipschitzWith.subtype_val (Ω' : Set E)).subtype_mk fun x ↦ h x.2)).memHolder.comp
-            f.memHolder_iteratedFDeriv
-          rwa [mul_one] at hc)
+          exact (holderWith_comp_lipschitzWith_one f.memHolder_iteratedFDeriv.holderWith
+            ((LipschitzWith.subtype_val (Ω' : Set E)).subtype_mk fun x ↦ h x.2)).memHolder)
       map_add' f g := by ext x; simp [extendZero_of_le h]
       map_smul' c f := by ext x; simp [extendZero_of_le h] }
     1 fun f ↦ by
@@ -803,10 +806,8 @@ def restrictOnL : CkHolderSpace k α E F →L[ℝ] CkHolderSpaceOn k α Ω F :=
   LinearMap.mkContinuous
     { toFun f := ofContDiffOn f f.contDiff.contDiffOn
         (fun i hi ↦ ⟨‖f‖, fun x ↦ f.norm_iteratedFDeriv_apply_le hi x⟩)
-        (by
-          have hc := (holderWith_one.2 (LipschitzWith.subtype_val (Ω : Set E))).memHolder.comp
-            f.memHolder_iteratedFDeriv
-          rwa [mul_one] at hc)
+        (holderWith_comp_lipschitzWith_one f.memHolder_iteratedFDeriv.holderWith
+          (LipschitzWith.subtype_val (Ω : Set E))).memHolder
       map_add' f g := by ext x; simp
       map_smul' c f := by ext x; simp }
     1 fun f ↦ by
