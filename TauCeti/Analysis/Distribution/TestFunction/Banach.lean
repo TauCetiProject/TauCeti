@@ -8,8 +8,7 @@ module
 public import TauCeti.Analysis.Distribution.TestFunction.Frechet
 public import TauCeti.Analysis.Normed.Module.Multilinear.SecondCountable
 public import Mathlib.Topology.ContinuousMap.SecondCountableSpace
-import Mathlib.MeasureTheory.Measure.Haar.OfBasis
-import TauCeti.Analysis.Calculus.BumpFunction.Convolution
+import TauCeti.Analysis.Calculus.BumpFunction.DerivativeApproximation
 import TauCeti.Analysis.Calculus.IteratedFDeriv.Homothety
 import TauCeti.Analysis.Distribution.TestFunction.Convergence
 
@@ -77,8 +76,7 @@ public section
 noncomputable section
 
 open Filter Function Metric Set TopologicalSpace
-open scoped Topology Uniformity ContDiff BoundedContinuousFunction Distributions Pointwise
-open scoped Convolution
+open scoped Topology Uniformity ContDiff BoundedContinuousFunction Distributions
 
 namespace ContDiffMapSupportedIn
 
@@ -109,14 +107,6 @@ theorem withSeminorms_supSeminorm_self :
     rfl
   · rw [Finset.sup_singleton, one_smul]
     exact supSeminorm_le_supSeminorm_self 𝕜 i
-
-/-- For a finite order `ℓ`, the seminorm `max_{j ≤ ℓ} N_j` vanishes only at zero. -/
-theorem supSeminorm_self_eq_zero_iff (f : 𝓓^{ℓ}_{K}(E, F)) :
-    ContDiffMapSupportedIn.supSeminorm 𝕜 E F ℓ K ℓ f = 0 ↔ f = 0 := by
-  refine ⟨fun h ↦ ext fun x ↦ ?_, fun h ↦ h ▸ map_zero _⟩
-  have h0 := (norm_apply_le_seminorm 𝕜 (f := f) (x := x)).trans
-    ((Seminorm.le_finset_sup_apply (Finset.mem_Iic.2 (Nat.zero_le ℓ))).trans h.le)
-  simpa using h0
 
 /-- For a finite order `ℓ`, the uniform structure of `𝓓^{ℓ}_{K}(E, F)` is the one of the
 seminorm `max_{j ≤ ℓ} N_j`. -/
@@ -293,7 +283,7 @@ instance normedAddCommGroup : NormedAddCommGroup (NormedContDiffMapSupportedIn E
     { norm_nonneg f := apply_nonneg p f
       norm_smul c f := map_smul_eq_mul p c f
       norm_triangle f g := map_add_le_add p f g
-      norm_eq_zero_iff := ContDiffMapSupportedIn.supSeminorm_self_eq_zero_iff (𝕜 := ℝ) }
+      norm_eq_zero_iff := ContDiffMapSupportedIn.supSeminorm_eq_zero_iff (𝕜 := ℝ) ℓ }
     (by
       -- The uniform structure `U` of the synonym is, by definition, the one of `𝓓^{ℓ}_{K}(E, F)`.
       change 𝓤[(ContDiffMapSupportedIn.uniformSpace : UniformSpace 𝓓^{ℓ}_{K}(E, F))] = _
@@ -460,50 +450,29 @@ end Jet
 
 section Density
 
-/-- **Mollification.** A `C^ℓ` map `g` supported in `K` whose support keeps the distance `δ > 0`
-from the complement of `K` is a limit of smooth maps supported in `K`: its convolutions with
-normalized bumps of radius at most `δ`, whose derivatives of order at most `ℓ` are the
-convolutions of those of `g` and converge uniformly. -/
-private theorem mem_closure_setOf_contDiff_of_add_subset [FiniteDimensional ℝ E] [CompleteSpace F]
-    (g : NormedContDiffMapSupportedIn E F ℓ K) {δ : ℝ} (hδ : 0 < δ)
-    (hg : closedBall (0 : E) δ + tsupport g ⊆ (K : Set E)) :
+/-- **Mollification.** A `C^ℓ` map `g` supported in `K` whose support lies in the interior of `K`
+is a limit of smooth maps supported in `K`: by
+`ContDiff.exists_contDiff_hasCompactSupport_tendstoUniformly_iteratedFDeriv`, it has smooth
+approximants supported in the interior of `K` whose derivatives of order at most `ℓ` converge
+uniformly. -/
+private theorem mem_closure_setOf_contDiff_of_tsupport_subset [FiniteDimensional ℝ E]
+    [CompleteSpace F] (g : NormedContDiffMapSupportedIn E F ℓ K)
+    (hg : tsupport g ⊆ interior (K : Set E)) :
     g ∈ closure {f : NormedContDiffMapSupportedIn E F ℓ K | ContDiff ℝ ∞ f} := by
-  borelize E
-  let μ : MeasureTheory.Measure E := MeasureTheory.Measure.addHaar
-  let ρ : ℕ → ContDiffBump (0 : E) := fun n ↦
-    ⟨δ / (2 * ((n : ℝ) + 1)), δ / ((n : ℝ) + 1), by positivity, by
-      rw [div_lt_div_iff_of_pos_left hδ (by positivity) (by positivity)]
-      linarith [(n.cast_nonneg : (0 : ℝ) ≤ n)]⟩
-  have hρ : Tendsto (fun n ↦ (ρ n).rOut) atTop (𝓝 0) :=
-    ((tendsto_const_div_atTop_nhds_zero_nat δ).comp (tendsto_add_atTop_nat 1)).congr
-      fun n ↦ by simp [ρ]
-  set m : ℕ → E → F := fun n ↦ (ρ n).normed μ ⋆[ContinuousLinearMap.lsmul ℝ ℝ, μ] (g : E → F)
-    with hm
-  have hm_smooth (n : ℕ) : ContDiff ℝ ∞ (m n) :=
-    (ρ n).hasCompactSupport_normed.contDiff_convolution_left _ (ρ n).contDiff_normed
-      g.contDiff.continuous.locallyIntegrable
-  have hmK (n : ℕ) : support (m n) ⊆ K :=
-    (subset_tsupport _).trans ((ρ n).tsupport_normed_convolution_subset.trans
-      ((add_subset_add_right (closedBall_subset_closedBall
-        (div_le_self hδ.le (by linarith [(n.cast_nonneg : (0 : ℝ) ≤ n)])))).trans hg))
+  obtain ⟨m, L, -, hLK, hm, hconv⟩ :=
+    g.contDiff.exists_contDiff_hasCompactSupport_tendstoUniformly_iteratedFDeriv
+      g.hasCompactSupport isOpen_interior hg
   let M : ℕ → NormedContDiffMapSupportedIn E F ℓ K := fun n ↦
-    ofContDiffMapSupportedIn (.of_support_subset ((hm_smooth n).of_le (by exact_mod_cast le_top))
-      (hmK n))
+    ofContDiffMapSupportedIn (.of_support_subset ((hm n).1.of_le (by exact_mod_cast le_top))
+      ((subset_tsupport _).trans ((hm n).2.trans (hLK.trans interior_subset))))
   have hMm (n : ℕ) : ⇑(M n) = m n := funext <| ContDiffMapSupportedIn.coe_of_support_subset _ _
-  -- The derivatives of order at most `ℓ` of the mollifications converge uniformly.
-  have hconv (k : ℕ) (hk : k ≤ ℓ) :
-      TendstoUniformly (fun n ↦ iteratedFDeriv ℝ k (m n)) (iteratedFDeriv ℝ k g) atTop := by
-    have hk' : (k : ℕ∞) ≤ ℓ := by exact_mod_cast hk
-    have hu := (g.hasCompactSupport.iteratedFDeriv k).uniformContinuous_of_continuous
-      (g.contDiff.continuous_iteratedFDeriv (m := k) (by exact_mod_cast hk))
-    simp only [hm, g.hasCompactSupport.iteratedFDeriv_normed_convolution (N := ℓ) g.contDiff _ hk']
-    exact ContDiffBump.tendstoUniformly_normed_convolution (μ := μ) hρ hu
   rw [Metric.mem_closure_iff]
   intro ε hε
   obtain ⟨n, hn⟩ := ((eventually_all_finset (Finset.range (ℓ + 1))).2 fun k hk ↦
-    Metric.tendstoUniformly_iff.1 (hconv k (Nat.lt_succ_iff.1 (Finset.mem_range.1 hk))) _
+    Metric.tendstoUniformly_iff.1
+      (hconv k (by exact_mod_cast Nat.lt_succ_iff.1 (Finset.mem_range.1 hk))) _
       (half_pos hε)).exists
-  refine ⟨M n, by rw [mem_ofPred_eq, hMm]; exact hm_smooth n, ?_⟩
+  refine ⟨M n, by rw [mem_ofPred_eq, hMm]; exact (hm n).1, ?_⟩
   rw [dist_eq_norm]
   refine ((norm_le_iff _ (half_pos hε).le).2 fun j hj x _ ↦ ?_).trans_lt (half_lt_self hε)
   have hj' : (j : WithTop ℕ∞) ≤ ℓ := by exact_mod_cast hj
@@ -512,14 +481,14 @@ private theorem mem_closure_setOf_contDiff_of_add_subset [FiniteDimensional ℝ 
   exact (hn j (Finset.mem_range.2 (Nat.lt_succ_of_le hj)) x).le
 
 /-- **Contraction.** If `K` is convex and `x₀` is an interior point of `K`, every `C^ℓ` map `f`
-supported in `K` is a limit of `C^ℓ` maps supported in `K` whose supports keep a positive
-distance from the complement of `K`: the maps `f ∘ homothety x₀ t` for `t > 1`, which tend to `f`
+supported in `K` is a limit of `C^ℓ` maps supported in `K` whose supports lie in the interior of
+`K`: the maps `f ∘ homothety x₀ t` for `t > 1`, which tend to `f`
 as `t → 1`. Their supports lie in the image of `K` under the homothety of ratio `t⁻¹` about `x₀`,
 a compact subset of the interior of `K`. -/
-private theorem mem_closure_setOf_add_subset (hK : Convex ℝ (K : Set E)) {x₀ : E}
+private theorem mem_closure_setOf_tsupport_subset (hK : Convex ℝ (K : Set E)) {x₀ : E}
     (hx₀ : x₀ ∈ interior (K : Set E)) (f : NormedContDiffMapSupportedIn E F ℓ K) :
     f ∈ closure {g : NormedContDiffMapSupportedIn E F ℓ K |
-      ∃ δ > 0, closedBall (0 : E) δ + tsupport g ⊆ (K : Set E)} := by
+      tsupport g ⊆ interior (K : Set E)} := by
   -- The homothety `h t` of ratio `max 1 t` about `x₀`, and the inverse formula for it.
   set h : ℝ → E → E := fun t ↦ AffineMap.homothety x₀ (max 1 t) with hh
   have hh' (t : ℝ) : h t = fun x ↦ max 1 t • (x - x₀) + x₀ :=
@@ -550,23 +519,16 @@ private theorem mem_closure_setOf_add_subset (hK : Convex ℝ (K : Set E)) {x₀
       ((f.contDiff.continuous_iteratedFDeriv hk').comp hcont)
   have hG1 : G 1 = f := ext fun x ↦ by simp [G, hh, AffineMap.homothety_one]
   -- For `t > 1` the support of `G t` is a compact subset of the interior of `K`.
-  have hmargin {t : ℝ} (ht : 1 < t) :
-      ∃ δ > 0, closedBall (0 : E) δ + tsupport (G t) ⊆ (K : Set E) := by
-    have hsub : tsupport (G t) ⊆ interior (K : Set E) := by
-      refine (closure_minimal (fun x hx ↦ hmem (by simpa [G, hGg] using hx))
-        (K.isCompact.isClosed.preimage (hcont.comp (Continuous.prodMk_right t)))).trans
-          fun x (hx : h t x ∈ (K : Set E)) ↦ ?_
-      have hx' : AffineMap.homothety x₀ t x ∈ closure (K : Set E) := by
-        simpa [hh, max_eq_right ht.le, K.isCompact.isClosed.closure_eq] using hx
-      obtain ⟨y, hy, hyx⟩ := hK.closure_subset_image_homothety_interior_of_one_lt hx₀ t ht hx'
-      rwa [← AffineMap.homothety_injective x₀ (zero_lt_one.trans ht).ne' hyx]
-    obtain ⟨δ, hδ, hδK⟩ :=
-      (G t).hasCompactSupport.isCompact.exists_cthickening_subset_open isOpen_interior hsub
-    refine ⟨δ, hδ, ?_⟩
-    rw [(G t).hasCompactSupport.isCompact.closedBall_zero_add hδ.le]
-    exact hδK.trans interior_subset
+  have hsub {t : ℝ} (ht : 1 < t) : tsupport (G t) ⊆ interior (K : Set E) := by
+    refine (closure_minimal (fun x hx ↦ hmem (by simpa [G, hGg] using hx))
+      (K.isCompact.isClosed.preimage (hcont.comp (Continuous.prodMk_right t)))).trans
+        fun x (hx : h t x ∈ (K : Set E)) ↦ ?_
+    have hx' : AffineMap.homothety x₀ t x ∈ closure (K : Set E) := by
+      simpa [hh, max_eq_right ht.le, K.isCompact.isClosed.closure_eq] using hx
+    obtain ⟨y, hy, hyx⟩ := hK.closure_subset_image_homothety_interior_of_one_lt hx₀ t ht hx'
+    rwa [← AffineMap.homothety_injective x₀ (zero_lt_one.trans ht).ne' hyx]
   exact hG1 ▸ mem_closure_of_tendsto ((hG.tendsto 1).mono_left (nhdsWithin_le_nhds (s := Ioi 1)))
-    (eventually_nhdsWithin_of_forall fun t ht ↦ hmargin ht)
+    (eventually_nhdsWithin_of_forall fun t ht ↦ hsub ht)
 
 /-- **Smooth density.** If `K` is convex, the smooth maps supported in `K` are dense among the
 `C^ℓ` maps supported in `K`. -/
@@ -582,9 +544,8 @@ theorem dense_setOf_contDiff [CompleteSpace F] (hK : Convex ℝ (K : Set E)) :
   · exact hzero h0
   by_cases hint : (interior (K : Set E)).Nonempty
   · obtain ⟨x₀, hx₀⟩ := hint
-    refine closure_minimal (fun g hg ↦ ?_) isClosed_closure (mem_closure_setOf_add_subset hK hx₀ f)
-    obtain ⟨δ, hδ, hgK⟩ := hg
-    exact mem_closure_setOf_contDiff_of_add_subset g hδ hgK
+    exact closure_minimal (fun g hg ↦ mem_closure_setOf_contDiff_of_tsupport_subset g hg)
+      isClosed_closure (mem_closure_setOf_tsupport_subset hK hx₀ f)
   · exact hzero <| f.contDiff.continuous.ext_on
       (interior_eq_empty_iff_dense_compl.1 (not_nonempty_iff_eq_empty.1 hint)) continuous_const
       fun x hx ↦ f.zero_on_compl hx

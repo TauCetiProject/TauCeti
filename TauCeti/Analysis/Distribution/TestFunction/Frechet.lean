@@ -41,6 +41,7 @@ sets, `LinearMap.exists_schwartzKernel_supportedIn`.
   `𝓓^{n}_{K}(E, F)` completely metrizable, hence a Baire space and barrelled.
 * `ContDiffMapSupportedIn.supSeminorm_apply_eq_of_scalars`: the seminorms `N_{≤i}` do not depend
   on the field of scalars.
+* `ContDiffMapSupportedIn.supSeminorm_eq_zero_iff`: each seminorm `N_{≤i}` vanishes only at zero.
 * `LinearMap.exists_bound_supportedIn_of_continuous`: a separately continuous bilinear map on two
   such spaces is bounded by `C N_{≤k}(φ) N_{≤k}(ψ)` for some `C` and `k`.
 
@@ -140,6 +141,14 @@ theorem supSeminorm_apply_eq_of_scalars (i : ℕ) (f : 𝓓^{n}_{K}(E, F)) :
       (seminorm_apply_eq_of_scalars _ f).trans_le (Seminorm.le_finset_sup_apply hj))
     (Seminorm.finset_sup_apply_le (apply_nonneg _ _) fun _ hj ↦
       (seminorm_apply_eq_of_scalars _ f).symm.trans_le (Seminorm.le_finset_sup_apply hj))
+
+/-- Each seminorm `max_{j ≤ i} N_j` vanishes only at zero, since it bounds the sup norm `N_0`. -/
+theorem supSeminorm_eq_zero_iff (i : ℕ) (f : 𝓓^{n}_{K}(E, F)) :
+    ContDiffMapSupportedIn.supSeminorm 𝕜 E F n K i f = 0 ↔ f = 0 := by
+  refine ⟨fun h ↦ ext fun x ↦ ?_, fun h ↦ h ▸ map_zero _⟩
+  have h0 := (norm_apply_le_seminorm 𝕜 (f := f) (x := x)).trans
+    ((Seminorm.le_finset_sup_apply (Finset.mem_Iic.2 (Nat.zero_le i))).trans h.le)
+  simpa using h0
 
 end Scalars
 
