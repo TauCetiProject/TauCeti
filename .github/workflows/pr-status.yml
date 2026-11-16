@@ -104,10 +104,10 @@ jobs:
             .github/actions/checkout-merge-policy
           persist-credentials: false
       - name: Prepare pinned shared tools
-        uses: TauCetiProject/TauCetiTools/.github/actions/setup@e4ed3eab96457b7425b494b0ea1952319f1d12d6
+        uses: TauCetiProject/TauCetiTools/.github/actions/setup@616716975611700a9433d6667117c73f14fb678f
         with:
           tools-repository: TauCetiProject/TauCetiTools
-          tools-ref: e4ed3eab96457b7425b494b0ea1952319f1d12d6
+          tools-ref: 616716975611700a9433d6667117c73f14fb678f
           project-directory: .
       - name: Checkout the pinned merge policy (read-only)
         uses: ./.github/actions/checkout-merge-policy
@@ -170,6 +170,7 @@ jobs:
       - name: Reconcile PR status labels
         env:
           GH_TOKEN: ${{ steps.app-token.outputs.token }}
+          TAUCETI_GITHUB_WRITE_ROLE: review-bot-installation-143500674
           SELF_TESTED_MERGE_BACKEND: ${{ vars.MERGE_BACKEND }}
           SELF_TESTED_WRITE_TOKEN: ${{ github.token }}
           GH_REPO: ${{ github.repository }}
@@ -181,7 +182,13 @@ jobs:
           args=(--since "$SINCE" --state-in "$RUNNER_TEMP/state-in/state.json" --state-out "$RUNNER_TEMP/progress/state.json")
           mkdir -p "$RUNNER_TEMP/progress"
           case "$PR" in ''|*[!0-9]*) ;; *) args+=(--pr "$PR") ;; esac
-          python3 scripts/pr_status/batch.py "${args[@]}" --budget-seconds 600
+          result=0
+          python3 scripts/pr_status/batch.py "${args[@]}" --budget-seconds 600 || result=$?
+          if [ "$result" -eq 75 ]; then
+            echo "::notice::PR reconciliation deferred; checkpoint retains unfinished work"
+          else
+            exit "$result"
+          fi
 
       - name: Save completed progress and unfinished work
         if: always()
