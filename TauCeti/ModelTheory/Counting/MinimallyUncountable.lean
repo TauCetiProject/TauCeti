@@ -640,40 +640,48 @@ theorem BFScattered.exists_minimallyUncountableOn_inter_modelsOf
   have hα_step (n : ℕ) : α n + Ordinal.omega0 ≤ α (n + 1) := (hstep n).1
   have hα_mono : Monotone α := monotone_nat_of_le_succ fun n => le_self_add.trans (hα_step n)
   -- Follow each Cantor branch `X : ℕ → Bool` along the shifted nodes of length `i + 1`.
-  let restr (n : ℕ) (X : ℕ → Bool) : Fin n → Bool := fun i => X i
+  let restr (n : ℕ) (X : ℕ → Bool) : Fin n → Bool := fun j => X j
+  have hrestr_init (n : ℕ) (X : ℕ → Bool) : Fin.init (restr (n + 1) X) = restr n X := by
+    funext j
+    simp [Fin.init, restr]
+  have hrestr_last (n : ℕ) (X : ℕ → Bool) : restr (n + 1) X (Fin.last n) = X n := by
+    simp [restr]
   let chain (X : ℕ → Bool) (i : ℕ) : RelationalConfiguration L ℕ :=
     (stage (i + 1)).node (restr (i + 1) X)
+  have hstep_node (X : ℕ → Bool) (n : ℕ) :
+      bfEquivSetoid L ℕ (α n) ((stage n).node (restr n X)) (chain X n) := by
+    have h := (hstep n).2.1 (restr (n + 1) X)
+    rwa [hrestr_init] at h
   have hchain (X : ℕ → Bool) (i : ℕ) :
       bfEquivSetoid L ℕ (α i + Ordinal.omega0) (chain X i) (chain X (i + 1)) :=
-    bfEquivSetoid_anti (hα_step i) ((hstep (i + 1)).2.1 (restr (i + 2) X))
+    bfEquivSetoid_anti (hα_step i) (hstep_node X (i + 1))
   choose lim hlim using fun X => exists_limit_of_bfEquiv_chain hα_mono (hchain X)
+  have hlim_node (X : ℕ → Bool) (n : ℕ) :
+      bfEquivSetoid L ℕ (α n) ((stage n).node (restr n X)) (lim X) :=
+    (bfEquivSetoid L ℕ (α n)).trans' (hstep_node X n)
+      ((bfEquivSetoid L ℕ (α n)).symm' (hlim X n))
   have hlim_mem (X : ℕ → Bool) : lim X ∈ K :=
-    (stage 0).class_subset (restr 0 X)
-      ((bfEquivSetoid L ℕ (α 0)).trans' ((hstep 0).2.1 (restr 1 X))
-        ((bfEquivSetoid L ℕ (α 0)).symm' (hlim X 0)))
+    (stage 0).class_subset (restr 0 X) (hlim_node X 0)
   -- Distinct branches separate at `β_sup := ⨆ n, α n < ω₁`, contradicting scatteredness of `K`.
   let β_sup : Ordinal.{0} := ⨆ n : ℕ, α n
   have hβ_lt : β_sup < ω₁ := Ordinal.iSup_lt_omega_one fun n => (stage n).level_lt
   have hsep {X Y : ℕ → Bool} (hXY : X ≠ Y) : ¬ bfEquivSetoid L ℕ β_sup (lim X) (lim Y) := by
     have hex : ∃ k, X k ≠ Y k := Function.ne_iff.mp hXY
     let i := Nat.find hex
-    have hi_ne : X i ≠ Y i := Nat.find_spec hex
-    have hinit : restr i X = restr i Y :=
-      funext fun j => of_not_not (Nat.find_min hex j.2)
-    have hX : bfEquivSetoid L ℕ (α (i + 1)) (lim X) (chain X i) :=
-      (bfEquivSetoid L ℕ (α (i + 1))).trans' (hlim X (i + 1))
-        ((bfEquivSetoid L ℕ (α (i + 1))).symm' ((hstep (i + 1)).2.1 (restr (i + 2) X)))
-    have hY : bfEquivSetoid L ℕ (α (i + 1)) (lim Y) (chain Y i) :=
-      (bfEquivSetoid L ℕ (α (i + 1))).trans' (hlim Y (i + 1))
-        ((bfEquivSetoid L ℕ (α (i + 1))).symm' ((hstep (i + 1)).2.1 (restr (i + 2) Y)))
+    have hinit : Fin.init (restr (i + 1) X) = Fin.init (restr (i + 1) Y) := by
+      rw [hrestr_init, hrestr_init]
+      exact funext fun j => of_not_not (Nat.find_min hex j.2)
+    have hlast : restr (i + 1) X (Fin.last i) ≠ restr (i + 1) Y (Fin.last i) := by
+      rw [hrestr_last, hrestr_last]
+      exact Nat.find_spec hex
     intro hbf
     have hbf' : bfEquivSetoid L ℕ (α (i + 1)) (lim X) (lim Y) :=
       bfEquivSetoid_anti (Ordinal.le_iSup α (i + 1)) hbf
     have hnodes : bfEquivSetoid L ℕ (α (i + 1)) (chain X i) (chain Y i) :=
-      (bfEquivSetoid L ℕ (α (i + 1))).trans'
-        ((bfEquivSetoid L ℕ (α (i + 1))).symm' hX)
-        ((bfEquivSetoid L ℕ (α (i + 1))).trans' hbf' hY)
-    exact (hstep i).2.2 (restr (i + 1) X) (restr (i + 1) Y) hinit hi_ne hnodes
+      (bfEquivSetoid L ℕ (α (i + 1))).trans' (hlim_node X (i + 1))
+        ((bfEquivSetoid L ℕ (α (i + 1))).trans' hbf'
+          ((bfEquivSetoid L ℕ (α (i + 1))).symm' (hlim_node Y (i + 1))))
+    exact (hstep i).2.2 (restr (i + 1) X) (restr (i + 1) Y) hinit hlast hnodes
   have hinj : Function.Injective
       (fun X : ℕ → Bool =>
         (⟦⟨lim X, hlim_mem X⟩⟧ :
@@ -710,7 +718,7 @@ theorem exists_minimallyUncountableOn_modelsOf_inter_of_bfScattered {ι : Type u
     (hunc : ¬ (Quotient.mk (isoSetoid L ℕ) '' modelsOf (V := ℕ) Θ).Countable) :
     ∃ θ : L.Sentenceω, MinimallyUncountableOn (modelsOf (V := ℕ) Θ ∩ modelsOf θ) :=
   hK.exists_minimallyUncountableOn_inter_modelsOf_of_measurableSet (measurableSet_modelsOf Θ)
-    (isomorphismInvariant_iff.mpr fun _ _ hcd => (isoSetoid_mem_modelsOf_iff hcd).mp) hunc
+    (isomorphismInvariant_iff.mpr fun _ _ hcd => (mem_modelsOf_iff_of_isoSetoid hcd).mp) hunc
 
 /-- **The Harnik–Makkai reduction.** In a countable relational vocabulary, any `L_{ω₁ω}` sentence
 `Θ` whose models on `ℕ` are back-and-forth scattered and meet uncountably many isomorphism classes

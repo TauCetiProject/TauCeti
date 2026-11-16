@@ -65,7 +65,7 @@ theorem exists_bfLevel_mem_modelsOf_iff_of_analyticSet [Countable V]
     ∃ α : Ordinal.{o}, α < ω₁ ∧
       ∀ β ≥ α, ∀ c ∈ C, ∀ d ∈ C, bfEquivSetoid L V β c d → (c ∈ modelsOf θ ↔ d ∈ modelsOf θ) :=
   exists_bfLevel_mem_iff_of_measurableSet hC (measurableSet_modelsOf θ) fun _ _ _ _ hcd =>
-    (isoSetoid_mem_modelsOf_iff hcd).mp
+    (mem_modelsOf_iff_of_isoSetoid hcd).mp
 
 /-- **Asymptotic back-and-forth saturation of model classes.** On a countable carrier in a
 relational language with countably many relation symbols of each arity, for every infinitary

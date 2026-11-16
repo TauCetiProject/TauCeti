@@ -48,8 +48,8 @@ Descriptive Set Theory*, and Kechris, *Classical Descriptive Set Theory*.
   measurable, and `TauCeti.RelationalConfiguration.standardBorelSpace_modelsOf` makes them
   standard Borel.
 * `FirstOrder.Language.Equiv.mem_modelsOf_iff` and
-  `TauCeti.RelationalConfiguration.isoSetoid_mem_modelsOf_iff`: model classes are invariant under
-  isomorphism of the decoded structures.
+  `TauCeti.RelationalConfiguration.mem_modelsOf_iff_of_isoSetoid`: model classes are invariant
+  under isomorphism of the decoded structures.
 -/
 
 public section
@@ -213,7 +213,7 @@ namespace TauCeti.RelationalConfiguration
 variable {L : Language.{u, v}} [L.IsRelational] {V : Type w} {ι : Type uι}
 
 /-- Isomorphic configurations on the same carrier satisfy the same infinitary sentences. -/
-theorem isoSetoid_mem_modelsOf_iff {c d : RelationalConfiguration L V} {φ : L.SentenceInf ι}
+theorem mem_modelsOf_iff_of_isoSetoid {c d : RelationalConfiguration L V} {φ : L.SentenceInf ι}
     (h : isoSetoid L V c d) : c ∈ modelsOf φ ↔ d ∈ modelsOf φ := by
   obtain ⟨e⟩ := isoSetoid_apply.mp h
   exact e.mem_modelsOf_iff φ
