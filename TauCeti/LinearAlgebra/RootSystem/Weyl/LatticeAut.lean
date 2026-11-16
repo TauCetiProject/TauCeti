@@ -7,7 +7,6 @@ module
 
 public import TauCeti.LinearAlgebra.RootSystem.CoweightLattice
 public import TauCeti.LinearAlgebra.RootSystem.Weyl.BasedAut
-import Mathlib.Algebra.Pointwise.Stabilizer
 
 /-!
 # Automorphisms of a root pairing preserving a pair of lattices
@@ -50,19 +49,21 @@ fixing that class.
 
 * `RootPairing.mem_latticeAut_iff`: an automorphism preserves the lattices exactly when its
   forward weight and coweight maps carry them onto themselves.
-* `RootPairing.mem_latticeAut_dualLattice_iff`: for a lattice and its dual, preserving the lattice
-  suffices.
+* `RootPairing.mem_latticeAut_dualLattice_iff` and
+  `RootPairing.mem_latticeAut_flip_dualLattice_iff`: for a lattice and its dual, preserving one of
+  the two lattices suffices.
+* `RootPairing.autFlip_mem_latticeAut_iff`: `RootPairing.Equiv.autFlip` identifies the
+  lattice-preserving automorphisms of `P` and of `P.flip`.
 * `RootPairing.reflection_mem_latticeAut` and `RootPairing.weylGroup_le_latticeAut`: the
   reflections, hence the Weyl group, preserve lattices containing the roots and the coroots and
   pairing integrally.
 * `RootPairing.latticeAut_rootSpan_coweightLattice` and
   `RootPairing.latticeAut_coweightLattice_flip_corootSpan`: every automorphism preserves the
   adjoint and the simply connected lattices.
-* `RootPairing.Base.isComplement'_weylGroup_subgroupOf_basedAut_subgroupOf`: in a subgroup of
-  automorphisms containing the Weyl group, the Weyl group complements the based automorphisms;
-  `RootPairing.Base.isComplement'_weylGroup_basedAut_latticeAut` is the case of the
-  lattice-preserving automorphisms. These complement results require a finite reduced
-  crystallographic root pairing over a characteristic-zero domain.
+* `RootPairing.Base.isComplement'_weylGroup_basedAut_latticeAut`: inside the lattice-preserving
+  automorphisms, the Weyl group complements the based ones, for a finite reduced root pairing over
+  a characteristic-zero domain. It specializes
+  `RootPairing.Base.isComplement'_weylGroup_subgroupOf_basedAut_subgroupOf`.
 
 ## References
 
@@ -89,15 +90,22 @@ the weight space and an additive subgroup `Y₀` of the coweight space: the auto
 weight map carries `X₀` onto itself and whose forward coweight map `g.coweightEquiv.symm` (the
 weight map of `RootPairing.Equiv.autFlip P g`) carries `Y₀` onto itself. -/
 noncomputable def latticeAut (X₀ : Submodule ℤ M) (Y₀ : Submodule ℤ N) : Subgroup P.Aut :=
-  MulAction.stabilizer P.Aut (X₀ : Set M) ⊓
-    (MulAction.stabilizer P.flip.Aut (Y₀ : Set N)).comap (Equiv.autFlip P).toMonoidHom
+  MulAction.stabilizer P.Aut X₀ ⊓
+    (MulAction.stabilizer P.flip.Aut Y₀).comap (Equiv.autFlip P).toMonoidHom
+
+variable (P) in
+/-- `RootPairing.latticeAut` is the intersection of the stabilizer of `X₀` with the preimage
+under `RootPairing.Equiv.autFlip` of the stabilizer of `Y₀`. -/
+theorem latticeAut_def (X₀ : Submodule ℤ M) (Y₀ : Submodule ℤ N) :
+    P.latticeAut X₀ Y₀ = MulAction.stabilizer P.Aut X₀ ⊓
+      (MulAction.stabilizer P.flip.Aut Y₀).comap (Equiv.autFlip P).toMonoidHom :=
+  (rfl)
 
 variable {X₀ : Submodule ℤ M} {Y₀ : Submodule ℤ N} {g : P.Aut}
 
-/-- The definition of `RootPairing.latticeAut` through the two actions. -/
+/-- Membership in `RootPairing.latticeAut` through the two pointwise actions on lattices. -/
 theorem mem_latticeAut_iff_smul :
-    g ∈ P.latticeAut X₀ Y₀ ↔
-      g • (X₀ : Set M) = X₀ ∧ Equiv.autFlip P g • (Y₀ : Set N) = Y₀ :=
+    g ∈ P.latticeAut X₀ Y₀ ↔ g • X₀ = X₀ ∧ Equiv.autFlip P g • Y₀ = Y₀ :=
   Iff.rfl
 
 /-- **An automorphism preserves the lattices exactly when its forward weight and coweight maps
@@ -105,24 +113,63 @@ carry them onto themselves.** -/
 theorem mem_latticeAut_iff :
     g ∈ P.latticeAut X₀ Y₀ ↔
       g.weightEquiv '' X₀ = X₀ ∧ g.coweightEquiv.symm '' Y₀ = Y₀ := by
-  rw [mem_latticeAut_iff_smul, ← image_smul, ← image_smul]
-  simp only [Equiv.smul_eq_weightEquiv, Equiv.weightEquiv_autFlip]
+  simp only [mem_latticeAut_iff_smul, ← SetLike.coe_set_eq, Submodule.coe_pointwise_smul,
+    ← image_smul, Equiv.smul_eq_weightEquiv, Equiv.weightEquiv_autFlip]
 
 /-- **For a lattice and its dual, an automorphism preserves both as soon as it preserves the
 lattice of weights.** -/
 @[simp]
 theorem mem_latticeAut_dualLattice_iff :
-    g ∈ P.latticeAut X₀ (P.dualLattice X₀) ↔ g • (X₀ : Set M) = X₀ :=
-  ⟨And.left, fun h ↦ ⟨h, autFlip_smul_dualLattice_of_smul_eq h⟩⟩
+    g ∈ P.latticeAut X₀ (P.dualLattice X₀) ↔ g • X₀ = X₀ :=
+  mem_latticeAut_iff_smul.trans ⟨And.left, fun h ↦ ⟨h, by rw [autFlip_smul_dualLattice, h]⟩⟩
+
+/-- `RootPairing.Equiv.autFlip` carries the automorphisms preserving `X₀` and `Y₀` onto the
+automorphisms of the flipped pairing preserving `Y₀` and `X₀`. -/
+@[simp]
+theorem autFlip_mem_latticeAut_iff :
+    Equiv.autFlip P g ∈ P.flip.latticeAut Y₀ X₀ ↔ g ∈ P.latticeAut X₀ Y₀ := by
+  have key : Equiv.autFlip P.flip (Equiv.autFlip P g) = g :=
+    (Equiv.autFlip_apply _).trans
+      ((Equiv.autFlip_symm_apply _).symm.trans ((Equiv.autFlip P).symm_apply_apply g))
+  -- `key` lives in the automorphisms of `P.flip.flip`, which is `P` by definition.
+  rw [mem_latticeAut_iff_smul, mem_latticeAut_iff_smul, and_comm, key]
+  exact Iff.rfl
+
+/-- **For a lattice of coweights and its dual, an automorphism preserves both as soon as it
+preserves the lattice of coweights.** -/
+@[simp]
+theorem mem_latticeAut_flip_dualLattice_iff :
+    g ∈ P.latticeAut (P.flip.dualLattice Y₀) Y₀ ↔ Equiv.autFlip P g • Y₀ = Y₀ := by
+  rw [← autFlip_mem_latticeAut_iff, mem_latticeAut_dualLattice_iff]
 
 /-- A lattice-preserving automorphism preserves the lattice of weights. -/
-theorem smul_eq_of_mem_latticeAut (hg : g ∈ P.latticeAut X₀ Y₀) : g • (X₀ : Set M) = X₀ :=
+theorem smul_eq_of_mem_latticeAut (hg : g ∈ P.latticeAut X₀ Y₀) : g • X₀ = X₀ :=
   hg.1
 
 /-- A lattice-preserving automorphism preserves the lattice of coweights. -/
 theorem autFlip_smul_eq_of_mem_latticeAut (hg : g ∈ P.latticeAut X₀ Y₀) :
-    Equiv.autFlip P g • (Y₀ : Set N) = Y₀ :=
+    Equiv.autFlip P g • Y₀ = Y₀ :=
   hg.2
+
+/-- A lattice-preserving automorphism moves a weight into the lattice of weights exactly when
+the weight lies there. -/
+theorem smul_mem_iff_of_mem_latticeAut (hg : g ∈ P.latticeAut X₀ Y₀) {x : M} :
+    g • x ∈ X₀ ↔ x ∈ X₀ := by
+  conv_lhs => rw [← hg.1]
+  rw [← SetLike.mem_coe, Submodule.coe_pointwise_smul, smul_mem_smul_set_iff, SetLike.mem_coe]
+
+/-- A lattice-preserving automorphism moves a coweight into the lattice of coweights exactly
+when the coweight lies there. -/
+theorem autFlip_smul_mem_iff_of_mem_latticeAut (hg : g ∈ P.latticeAut X₀ Y₀) {y : N} :
+    Equiv.autFlip P g • y ∈ Y₀ ↔ y ∈ Y₀ :=
+  smul_mem_iff_of_mem_latticeAut (P := P.flip) (autFlip_mem_latticeAut_iff.mpr hg)
+
+/-- The coweight map of a lattice-preserving automorphism moves a coweight into the lattice of
+coweights exactly when the coweight lies there. -/
+theorem coweightEquiv_mem_iff_of_mem_latticeAut (hg : g ∈ P.latticeAut X₀ Y₀) {y : N} :
+    g.coweightEquiv y ∈ Y₀ ↔ y ∈ Y₀ := by
+  rw [← autFlip_smul_mem_iff_of_mem_latticeAut hg, Equiv.smul_eq_weightEquiv,
+    Equiv.weightEquiv_autFlip, LinearEquiv.symm_apply_apply]
 
 /-- The reflection in a root `αᵢ` preserves lattices containing `αᵢ` and `αᵢ^∨` and pairing
 integrally. On coweights it is the reflection of the flipped pairing in `αᵢ^∨`
@@ -155,7 +202,7 @@ coweight lattice. -/
 theorem latticeAut_rootSpan_coweightLattice :
     P.latticeAut (P.rootSpan ℤ) P.coweightLattice = ⊤ := by
   rw [← dualLattice_rootSpan, eq_top_iff]
-  exact fun g _ ↦ mem_latticeAut_dualLattice_iff.mpr g.smul_rootSpan
+  exact fun g _ ↦ mem_latticeAut_dualLattice_iff.mpr (Equiv.smul_rootSpan g)
 
 variable (P) in
 /-- **Every automorphism preserves the simply connected lattices**: the weight lattice and the
@@ -163,21 +210,23 @@ coroot lattice. -/
 @[simp]
 theorem latticeAut_coweightLattice_flip_corootSpan :
     P.latticeAut P.flip.coweightLattice (P.corootSpan ℤ) = ⊤ :=
-  eq_top_iff.mpr fun g _ ↦ ⟨g.smul_coweightLattice_flip, Equiv.smul_rootSpan (P := P.flip) _⟩
+  eq_top_iff.mpr fun g _ ↦ ⟨g.smul_coweightLattice_flip, Equiv.smul_corootSpan _⟩
 
 /-! ### The restricted decomposition -/
 
 namespace Base
 
-variable [Finite ι] [CharZero R] [IsDomain R] [P.IsCrystallographic] [P.IsReduced]
+variable [Finite ι] [CharZero R] [IsDomain R] [P.IsReduced]
 
 /-- **The Weyl group complements the based lattice-preserving automorphisms** among the
 lattice-preserving automorphisms, for lattices containing the roots and the coroots and pairing
-integrally. -/
+integrally. Such lattices force the pairing to be crystallographic
+(`RootPairing.isCrystallographic_of_le_dualLattice`). -/
 theorem isComplement'_weylGroup_basedAut_latticeAut (b : P.Base) (hroot : ∀ i, P.root i ∈ X₀)
     (hcoroot : ∀ i, P.coroot i ∈ Y₀) (hXY : Y₀ ≤ P.dualLattice X₀) :
     (P.weylGroup.subgroupOf (P.latticeAut X₀ Y₀)).IsComplement'
       (b.basedAut.subgroupOf (P.latticeAut X₀ Y₀)) :=
+  have := isCrystallographic_of_le_dualLattice hroot hcoroot hXY
   b.isComplement'_weylGroup_subgroupOf_basedAut_subgroupOf
     (weylGroup_le_latticeAut hroot hcoroot hXY)
 
