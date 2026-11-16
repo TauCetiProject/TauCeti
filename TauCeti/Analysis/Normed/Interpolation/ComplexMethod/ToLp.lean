@@ -68,44 +68,15 @@ variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℂ E]
 
 section Pairing
 
-/-- Integration against a fixed `G ∈ L^q`, `f ↦ ∫ ⟪G, f⟫`, as a continuous linear functional on the
-conjugate space `Lʳ`. -/
-private def innerLpCLM {q r : ℝ≥0∞} [Fact (1 ≤ r)] [q.HolderConjugate r] {G : α → E}
-    (hG : MemLp G q μ) : Lp E r μ →L[ℂ] ℂ :=
-  LinearMap.mkContinuous
-    { toFun f := ∫ x, ⟪G x, f x⟫_ℂ ∂μ
-      map_add' f f' := by
-        rw [← integral_add (hG.integrable_inner_of_holderConjugate (Lp.memLp f))
-          (hG.integrable_inner_of_holderConjugate (Lp.memLp f'))]
-        refine integral_congr_ae ?_
-        filter_upwards [Lp.coeFn_add f f'] with x hx
-        rw [hx, Pi.add_apply, inner_add_right]
-      map_smul' c f := by
-        rw [RingHom.id_apply, smul_eq_mul, ← integral_const_mul]
-        refine integral_congr_ae ?_
-        filter_upwards [Lp.coeFn_smul c f] with x hx
-        rw [hx, Pi.smul_apply, inner_smul_right] }
-    (eLpNorm G q μ).toReal fun f => by
-      have h := TauCeti.enorm_integral_inner_le (μ := μ) (𝕜 := ℂ) (u := G) (v := f)
-        (p := q) (q := r)
-      simp only [LinearMap.coe_mk, AddHom.coe_mk, Lp.norm_def, ← ENNReal.toReal_mul]
-      rw [← toReal_eNorm]
-      exact ENNReal.toReal_mono (ENNReal.mul_ne_top hG.eLpNorm_ne_top (Lp.eLpNorm_ne_top f)) h
-
-private theorem innerLpCLM_apply {q r : ℝ≥0∞} [Fact (1 ≤ r)] [q.HolderConjugate r]
-    {G : α → E} (hG : MemLp G q μ) (f : Lp E r μ) :
-    innerLpCLM hG f = ∫ x, ⟪G x, f x⟫_ℂ ∂μ :=
-  (rfl)
-
 /-- Integration against an integrable simple function `G`, `v ↦ ∫ ⟪G, v⟫`, as a continuous linear
 functional on `L¹ + L^∞`. -/
 private def innerSumCLM (G : SimpleFunc α E) (hG : Integrable G μ) : L1AddLinfty ℂ E μ →L[ℂ] ℂ :=
-  (l1Linfty ℂ E μ).sumLift (innerLpCLM (q := ∞) (G.memLp_top μ))
-    (innerLpCLM (q := 1) (memLp_one_iff_integrable.2 hG)) fun x => by
+  (l1Linfty ℂ E μ).sumLift ((G.memLp_top μ).innerLpCLM ℂ (q' := 1))
+    ((memLp_one_iff_integrable.2 hG).innerLpCLM ℂ (q' := ∞)) fun x => by
       have hx' := (l1Linfty ℂ E μ).mem_inter_iff.1 x.2
       rw [l1Linfty_embed₀, l1Linfty_embed₁] at hx'
       have hx := (L1AddLinfty.lpToAmbient_eq_lpToAmbient_iff ℂ).1 hx'
-      rw [interFst_apply, interSnd_apply, innerLpCLM_apply, innerLpCLM_apply]
+      rw [interFst_apply, interSnd_apply, MemLp.innerLpCLM_apply, MemLp.innerLpCLM_apply]
       exact integral_congr_ae (hx.mono fun y hy => by simp only [hy])
 
 /-- Pairing an integrable simple function with a function of `L¹ + L^∞` is integrable, and its
@@ -123,8 +94,8 @@ private theorem integrable_inner_and_innerSumCLM_apply (G : SimpleFunc α E) (hG
       fun x => ⟪G x, L1AddLinfty.toAEEqFun ℂ v x⟫_ℂ :=
     hae.mono fun x hx => by simp only [← hx, Pi.add_apply, inner_add_right]
   refine ⟨(hg.add hh).congr hcongr, ?_⟩
-  rw [← hgh, map_add, innerSumCLM, sumLift_fstToSum, sumLift_sndToSum, innerLpCLM_apply,
-    innerLpCLM_apply, ← integral_add hg hh, hgh]
+  rw [← hgh, map_add, innerSumCLM, sumLift_fstToSum, sumLift_sndToSum, MemLp.innerLpCLM_apply,
+    MemLp.innerLpCLM_apply, ← integral_add hg hh, hgh]
   exact integral_congr_ae hcongr
 
 open Classical in
@@ -220,11 +191,12 @@ private theorem exists_slope {p₀ p₁ p : ℝ≥0∞} (hp₀ : 1 ≤ p₀) (hp
 `(a N ^ β₀) ^ (1 - θ) (a N ^ β₁) ^ θ = a N` for `a, N ≥ 0`. -/
 private theorem rpow_mul_rpow_interp {a N θ κ : ℝ} (ha : 0 ≤ a) (hN : 0 ≤ N) :
     (a * N ^ (1 - θ * κ)) ^ (1 - θ) * (a * N ^ (1 + (1 - θ) * κ)) ^ θ = a * N := by
+  have hsum : (1 - θ * κ) * (1 - θ) + (1 + (1 - θ) * κ) * θ = 1 := by ring
   rw [Real.mul_rpow ha (Real.rpow_nonneg hN _), Real.mul_rpow ha (Real.rpow_nonneg hN _),
     ← Real.rpow_mul hN, ← Real.rpow_mul hN, mul_mul_mul_comm,
-    ← Real.rpow_add' ha (by norm_num), ← Real.rpow_add' hN (by ring_nf; norm_num)]
-  ring_nf
-  simp
+    ← Real.rpow_add' ha (by rw [sub_add_cancel]; exact one_ne_zero),
+    ← Real.rpow_add' hN (by rw [hsum]; exact one_ne_zero), sub_add_cancel, hsum, Real.rpow_one,
+    Real.rpow_one]
 
 /-! ### The analytic family -/
 
@@ -316,15 +288,15 @@ private theorem bddAbove_pairingFamily (hθ : θ ∈ Icc (0 : ℝ) 1) {g : Simpl
     (norm_nonneg _) (Real.exp_pos _).le
 
 /-- **The family on a boundary line.** Let `1 / r' = β / q` for the conjugate exponent `r'` of
-`r ≥ 1`, with `β = 1 + (re z - θ) κ ≥ 0`. If `F z` is a function `f ∈ Lʳ`, then Hölder's
-inequality bounds the family at `z` by `‖f‖_r ‖g‖_q ^ β`. -/
+`r ≥ 1`, with `β = 1 + (re z - θ) κ ≥ 0`. If `F z` is a function `f ∈ Lʳ` with `‖f‖_r ≤ M`, then
+Hölder's inequality bounds the family at `z` by `M ‖g‖_q ^ β`. -/
 private theorem norm_pairingFamily_le {g : SimpleFunc α E} (hg : Integrable g μ) {q r : ℝ≥0∞}
-    (hgq : eLpNorm g q μ ≠ ∞) (hr1 : 1 ≤ r) {β : ℝ} (hβ : 0 ≤ β)
+    [Fact (1 ≤ r)] (hgq : eLpNorm g q μ ≠ ∞) {β : ℝ} (hβ : 0 ≤ β)
     (hr : r.conjExponent⁻¹ = ENNReal.ofReal β * q⁻¹) {F : ℂ → L1AddLinfty ℂ E μ} {z : ℂ}
-    (hzβ : 1 + (z.re - θ) * κ = β) (f : Lp E r μ)
-    (hFz : ⇑(L1AddLinfty.toAEEqFun ℂ (F z)) =ᵐ[μ] ⇑f) :
-    ‖pairingFamily hg θ κ F z‖ ≤ ‖f‖ * (eLpNorm g q μ).toReal ^ β := by
-  have : r.HolderConjugate r.conjExponent := .conjExponent hr1
+    (hzβ : 1 + (z.re - θ) * κ = β) {f : Lp E r μ} {M : ℝ} (hfM : ‖f‖ ≤ M)
+    (hFz : F z = L1AddLinfty.ofLp f) :
+    ‖pairingFamily hg θ κ F z‖ ≤ M * (eLpNorm g q μ).toReal ^ β := by
+  have : r.HolderConjugate r.conjExponent := .conjExponent Fact.out
   set u : α → E := fun x => conj (coeff θ κ ‖g x‖ z) • g x
   have hu : AEStronglyMeasurable u μ :=
     (g.map fun w => conj (coeff θ κ ‖w‖ z) • w).aestronglyMeasurable
@@ -332,7 +304,7 @@ private theorem norm_pairingFamily_le {g : SimpleFunc α E} (hg : Integrable g �
     eLpNorm_le_eLpNorm_rpow hβ hu hr (ae_of_all _ fun x => by
       simpa [u, hzβ] using norm_conj_coeff_smul_le (θ := θ) (κ := κ) (g x) z)
   have hΦz : ‖pairingFamily hg θ κ F z‖ₑ ≤ eLpNorm g q μ ^ β * eLpNorm f r μ := by
-    rw [pairingFamily_eq, integral_congr_ae (hFz.mono fun x hx => by rw [hx])]
+    rw [pairingFamily_eq, hFz, L1AddLinfty.toAEEqFun_ofLp]
     exact (TauCeti.enorm_integral_inner_le (p := r.conjExponent) (q := r)).trans
       (mul_le_mul_left hule _)
   have hfin : eLpNorm g q μ ^ β * eLpNorm f r μ ≠ ∞ :=
@@ -342,6 +314,8 @@ private theorem norm_pairingFamily_le {g : SimpleFunc α E} (hg : Integrable g �
         exact ENNReal.toReal_mono hfin hΦz
     _ = ‖f‖ * (eLpNorm g q μ).toReal ^ β := by
         rw [ENNReal.toReal_mul, ← ENNReal.toReal_rpow, Lp.norm_def, mul_comm]
+    _ ≤ M * (eLpNorm g q μ).toReal ^ β :=
+        mul_le_mul_of_nonneg_right hfM (Real.rpow_nonneg ENNReal.toReal_nonneg _)
 
 end Family
 
@@ -378,23 +352,19 @@ private theorem norm_integral_inner_le_of_isStripFunction {q : ℝ≥0∞} (hθ 
     have hFz : F z = (lebesgue ℂ E μ p₀ p₁).fstToSum (g'.1 z.im) := by
       conv_lhs => rw [← re_add_im z, show z.re = 0 from hz, ofReal_zero, zero_add]
       exact hF.apply_mul_I z.im
-    refine (norm_pairingFamily_le hg hgq Fact.out hβ₀ hq₀ (by rw [show z.re = 0 from hz]; ring)
-      (g'.1 z.im) ?_).trans (mul_le_mul_of_nonneg_right
-        ((ZeroAtInftyContinuousMap.norm_coe_le_norm _ _).trans (norm_fst_le g'))
-        (Real.rpow_nonneg ENNReal.toReal_nonneg _))
+    refine norm_pairingFamily_le hg hgq hβ₀ hq₀ (by rw [show z.re = 0 from hz]; ring)
+      ((ZeroAtInftyContinuousMap.norm_coe_le_norm g'.1 z.im).trans (norm_fst_le g')) ?_
     simp only [F']
-    rw [hFz, sumSpaceEmbed_fstToSum, lebesgue_embed₀, L1AddLinfty.toAEEqFun_ofLp]
+    rw [hFz, sumSpaceEmbed_fstToSum, lebesgue_embed₀]
   have hb (z : ℂ) (hz : z ∈ re ⁻¹' {1}) : ‖pairingFamily hg θ κ F' z‖ ≤
       ‖g'‖ * (eLpNorm g q μ).toReal ^ (1 + (1 - θ) * κ) := by
     have hFz : F z = (lebesgue ℂ E μ p₀ p₁).sndToSum (g'.2 z.im) := by
       conv_lhs => rw [← re_add_im z, show z.re = 1 from hz, ofReal_one]
       exact hF.apply_one_add_mul_I z.im
-    refine (norm_pairingFamily_le hg hgq Fact.out hβ₁ hq₁ (by rw [show z.re = 1 from hz])
-      (g'.2 z.im) ?_).trans (mul_le_mul_of_nonneg_right
-        ((ZeroAtInftyContinuousMap.norm_coe_le_norm _ _).trans (norm_snd_le g'))
-        (Real.rpow_nonneg ENNReal.toReal_nonneg _))
+    refine norm_pairingFamily_le hg hgq hβ₁ hq₁ (by rw [show z.re = 1 from hz])
+      ((ZeroAtInftyContinuousMap.norm_coe_le_norm g'.2 z.im).trans (norm_snd_le g')) ?_
     simp only [F']
-    rw [hFz, sumSpaceEmbed_sndToSum, lebesgue_embed₁, L1AddLinfty.toAEEqFun_ofLp]
+    rw [hFz, sumSpaceEmbed_sndToSum, lebesgue_embed₁]
   -- The three-lines theorem at `θ`.
   have h3 := norm_le_interp_of_mem_verticalClosedStrip₀₁' _ (z := θ)
     (by simpa [verticalClosedStrip] using hθ') hd hB ha hb
