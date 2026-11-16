@@ -38,10 +38,10 @@ enumeration is `a ↦ k + a`, an index lies in it exactly when it is at least `k
 
 The shuffle of two disjoint fixed-cardinality subsets lists the increasing enumeration of the first
 followed by that of the second, and mapping along an order embedding or order isomorphism commutes
-with increasing enumerations and preserves shuffle signs. The shuffle of a singleton `{i}` with
-`s.erase i` lists `i` first and then `s.erase i`, and in the presentation `Fin (n + 1)` it is the
-inverse cycle moving the position of `i` in `s` to the front. For an `r`-subset `T` of `Fin m`, the
-shuffle sorting `T` followed by its complement `Tᶜ` has sign
+with increasing enumerations and preserves shuffle permutations and shuffle signs. The shuffle of
+a singleton `{i}` with `s.erase i` lists `i` first and then `s.erase i`, and in the presentation
+`Fin (n + 1)` it is the inverse cycle moving the position of `i` in `s` to the front. For an
+`r`-subset `T` of `Fin m`, the shuffle sorting `T` followed by its complement `Tᶜ` has sign
 `(-1) ^ (∑ i ∈ T, i - r * (r - 1) / 2)`, so the product of the shuffle signs of two `r`-subsets
 `S` and `T` is `(-1) ^ (∑ i ∈ S, i + ∑ j ∈ T, j)`.
 -/
@@ -211,7 +211,7 @@ theorem conj_permOfDisjoint_singleton_erase (i : I) (s : Finset I) (hi : i ∈ s
 @[simp]
 theorem ofFinEmbEquiv_symm_ofSingleton (a : I) (i : Fin 1) :
     ofFinEmbEquiv.symm (ofSingleton a) i = a :=
-  _root_.Finset.orderEmbOfFin_singleton a i
+  mem_ofSingleton.mp ((mem_range_ofFinEmbEquiv_symm_iff_mem (ofSingleton a) _).mp ⟨i, rfl⟩)
 
 /-- The increasing enumeration of a two-element subset `{a, b}` with `a < b` is `![a, b]`. -/
 theorem coe_ofFinEmbEquiv_symm_pair {s : powersetCard I 2} {a b : I} (hab : a < b)
@@ -236,6 +236,48 @@ theorem ofFinEmbEquiv_symm_map_orderEmbedding {J : Type*} [LinearOrder J] {n : �
     _root_.Finset.map_map]
   rfl
 
+/-- Mapping a fixed-cardinality subset along an order isomorphism composes its increasing
+enumeration with that order isomorphism. -/
+@[simp]
+theorem ofFinEmbEquiv_symm_map_orderIso {J : Type*} [LinearOrder J] {n : ℕ}
+    (e : I ≃o J) (s : powersetCard I n) :
+    ofFinEmbEquiv.symm (map n e.toEmbedding s) =
+      (ofFinEmbEquiv.symm s).trans e.toOrderEmbedding := by
+  rw [← e.toOrderEmbedding_toEmbedding, ofFinEmbEquiv_symm_map_orderEmbedding]
+
+/-- Mapping two disjoint fixed-cardinality subsets along an order embedding preserves their
+shuffle permutation. -/
+@[simp]
+theorem permOfDisjoint_map_orderEmbedding {J : Type*} [LinearOrder J] {m n : ℕ}
+    (e : I ↪o J) {s : powersetCard I m} {t : powersetCard I n}
+    (hst' : Disjoint (map m e.toEmbedding s).val (map n e.toEmbedding t).val) :
+    permOfDisjoint hst' =
+      permOfDisjoint (s := s) (t := t) ((disjoint_map e.toEmbedding).mp hst') := by
+  have hst : Disjoint s.val t.val := (disjoint_map e.toEmbedding).mp hst'
+  apply Equiv.ext
+  intro j
+  apply (ofFinEmbEquiv.symm (disjUnion hst')).injective
+  have hlhs := orderEmbOfFin_permOfDisjoint (map m e.toEmbedding s)
+    (map n e.toEmbedding t) hst' j
+  have hrhs := congrArg e (orderEmbOfFin_permOfDisjoint s t hst j)
+  simp only [← ofFinEmbEquiv_symm_apply] at hlhs hrhs
+  refine hlhs.trans ?_
+  rw [← map_disjUnion e.toEmbedding hst]
+  simp only [ofFinEmbEquiv_symm_map_orderEmbedding, RelEmbedding.trans_apply, hrhs]
+  rcases finSumFinEquiv.symm j with a | b <;> simp
+
+/-- Mapping two disjoint fixed-cardinality subsets along an order isomorphism preserves their
+shuffle permutation. -/
+@[simp]
+theorem permOfDisjoint_map_orderIso {J : Type*} [LinearOrder J] {m n : ℕ}
+    (e : I ≃o J) {s : powersetCard I m} {t : powersetCard I n}
+    (hst' : Disjoint (map m e.toEmbedding s).val (map n e.toEmbedding t).val) :
+    permOfDisjoint hst' =
+      permOfDisjoint (s := s) (t := t) ((disjoint_map e.toEmbedding).mp hst') := by
+  simpa only [OrderIso.toOrderEmbedding_toEmbedding] using
+    permOfDisjoint_map_orderEmbedding e.toOrderEmbedding
+      (by simpa only [OrderIso.toOrderEmbedding_toEmbedding] using hst')
+
 /-- An order isomorphism preserves the shuffle sign of a fixed-cardinality subset. -/
 @[simp]
 theorem sign_map_orderIso {J : Type*} [LinearOrder J] [Fintype I] [Fintype J] {n : ℕ}
@@ -248,30 +290,10 @@ theorem sign_map_orderIso {J : Type*} [LinearOrder J] [Fintype I] [Fintype J] {n
   let t := compl hm s
   have hst : Disjoint s.val t.val := disjoint_compl_right
   have hst' : Disjoint (map n e.toEmbedding s).val
-      (map (Fintype.card I - n) e.toEmbedding t).val := by
-    rw [map_compl_equiv hm e.toEquiv]
-    exact disjoint_compl_right
-  have hunion : disjUnion hst' =
-      map (n + (Fintype.card I - n)) e.toOrderEmbedding.toEmbedding (disjUnion hst) := by
-    refine eq_iff_subset.mpr fun x hx ↦ ?_
-    obtain ⟨a, rfl⟩ := e.surjective x
-    simpa using hx
-  rw [sign_eq_permOfDisjoint_sign hmn s t hst, sign_eq_permOfDisjoint_sign hmn' _ _ hst']
-  congr 1
-  apply Equiv.ext
-  intro j
-  apply (ofFinEmbEquiv.symm (disjUnion hst')).injective
-  have hlhs := orderEmbOfFin_permOfDisjoint (map n e.toEmbedding s)
-    (map (Fintype.card I - n) e.toEmbedding t) hst' j
-  have hrhs := congrArg e (orderEmbOfFin_permOfDisjoint s t hst j)
-  simp only [← ofFinEmbEquiv_symm_apply] at hlhs hrhs
-  refine hlhs.trans ?_
-  rw [hunion, ofFinEmbEquiv_symm_map_orderEmbedding, RelEmbedding.trans_apply,
-    OrderIso.coe_toOrderEmbedding, hrhs]
-  rcases finSumFinEquiv.symm j with a | b <;>
-  · dsimp only [Sum.elim_inl, Sum.elim_inr]
-    rw [← e.toOrderEmbedding_toEmbedding, ofFinEmbEquiv_symm_map_orderEmbedding,
-      RelEmbedding.trans_apply, OrderIso.coe_toOrderEmbedding]
+      (map (Fintype.card I - n) e.toEmbedding t).val :=
+    (disjoint_map e.toEmbedding).mpr hst
+  rw [sign_eq_permOfDisjoint_sign hmn s t hst, sign_eq_permOfDisjoint_sign hmn' _ _ hst',
+    permOfDisjoint_map_orderIso]
 
 section Fin
 

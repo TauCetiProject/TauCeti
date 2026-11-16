@@ -37,20 +37,21 @@ of `⋀[R]^r N`.
 * `Submodule.minorsIdeal_finrank_le_colon_exteriorPower`: the maximal minors of a submodule `N` of
   a finite free module `F` multiply `⋀[R]^r F` into
   `LinearMap.range (exteriorPower.map r N.subtype)`.
-* `Submodule.smul_mem_range_exteriorPower_map_of_mem_fittingIdeal`: elements of
+* `Submodule.smul_mem_range_exteriorPower_map_of_mem_fittingIdeal_zero`: elements of
   `TauCeti.fittingIdeal R (M ⧸ N) 0` multiply `⋀[R]^r M` into
   `LinearMap.range (exteriorPower.map r N.subtype)`.
 * `Submodule.fittingIdeal_le_annihilator_exteriorPower_cokernel`: `Fitt₀(M ⧸ N)` annihilates
   `↥(⋀[R]^r M) ⧸ LinearMap.range (exteriorPower.map r N.subtype)` (Dasgupta–Kakde, Lemma 3.9).
-* `LinearMap.fittingIdeal_coker_le_annihilator_exteriorPower_coker`: the linear-map form for any
-  `f : P →ₗ[R] M` into a finite `R`-module `M`.
+* `LinearMap.fittingIdeal_coker_zero_le_annihilator_exteriorPower_cokernel`: the linear-map form
+  for any `f : P →ₗ[R] M` into a finite `R`-module `M`.
 
 ## Implementation notes
 
 Dasgupta and Kakde state Lemma 3.9 assuming `M` is finitely presented, `N` is finitely generated,
-and `r ≥ 1`. Because `TauCeti.fittingIdeal` is defined for every finite module via arbitrary
-generating families of the presentation kernel, only `[Module.Finite R M]` is needed here, with no
-hypotheses on `N` or `r`.
+and `r ≥ 1`. Because `TauCeti.fittingIdeal` is defined for every finite module via
+`Submodule.minorsIdeal` of the presentation kernel (using determinants on arbitrary tuples of
+kernel elements rather than a finite relation matrix), only `[Module.Finite R M]` is needed here,
+with no hypotheses on `N` or `r`.
 
 ## References
 
@@ -91,7 +92,7 @@ variable {R M : Type*} [CommRing R] [AddCommGroup M] [Module R M] [Module.Finite
 
 /-- Every element of `TauCeti.fittingIdeal R (M ⧸ N) 0` multiplies every element of `⋀[R]^r M`
 into `LinearMap.range (exteriorPower.map r N.subtype)`. -/
-theorem smul_mem_range_exteriorPower_map_of_mem_fittingIdeal (N : Submodule R M) (r : ℕ)
+theorem smul_mem_range_exteriorPower_map_of_mem_fittingIdeal_zero (N : Submodule R M) (r : ℕ)
     {a : R} (ha : a ∈ TauCeti.fittingIdeal R (M ⧸ N) 0) (z : ⋀[R]^r M) :
     a • z ∈ LinearMap.range (exteriorPower.map r N.subtype) := by
   obtain ⟨n, π, hπ⟩ := Module.Finite.exists_fin' R M
@@ -115,7 +116,7 @@ theorem fittingIdeal_le_annihilator_exteriorPower_cokernel (N : Submodule R M) (
       Module.annihilator R (↥(⋀[R]^r M) ⧸ LinearMap.range (exteriorPower.map r N.subtype)) := by
   rw [annihilator_quotient]
   exact fun _ ha ↦ mem_colon.2 fun z _ ↦
-    N.smul_mem_range_exteriorPower_map_of_mem_fittingIdeal r ha z
+    N.smul_mem_range_exteriorPower_map_of_mem_fittingIdeal_zero r ha z
 
 end Finite
 
@@ -126,7 +127,7 @@ namespace LinearMap
 /-- **Linear-map form of exterior-power cokernel annihilation.** For any linear map `f : P →ₗ[R] M`
 into a finite `R`-module `M` and any `r : ℕ`, the zeroth Fitting ideal of `M ⧸ LinearMap.range f`
 annihilates the cokernel of `exteriorPower.map r f : ⋀[R]^r P →ₗ[R] ⋀[R]^r M`. -/
-theorem fittingIdeal_coker_le_annihilator_exteriorPower_coker {R P M : Type*} [CommRing R]
+theorem fittingIdeal_coker_zero_le_annihilator_exteriorPower_cokernel {R P M : Type*} [CommRing R]
     [AddCommGroup P] [Module R P] [AddCommGroup M] [Module R M] [Module.Finite R M]
     (f : P →ₗ[R] M) (r : ℕ) :
     TauCeti.fittingIdeal R (M ⧸ LinearMap.range f) 0 ≤
