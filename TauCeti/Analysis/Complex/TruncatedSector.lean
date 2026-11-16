@@ -9,6 +9,7 @@ public import Mathlib.Analysis.Complex.Convex
 public import Mathlib.Analysis.SpecialFunctions.Complex.CircleMap
 import Mathlib.Analysis.SpecialFunctions.Complex.LogDeriv
 import TauCeti.Analysis.Complex.Rectangle
+import TauCeti.Analysis.SpecialFunctions.Complex.CircleMap
 
 /-!
 # Closed and open truncated sectors in the complex plane
@@ -22,8 +23,8 @@ and these sets reduce to full sectors of radius `R`.
 
 Defining truncated sectors as polar images rather than through `Complex.arg` avoids any restriction
 to the principal branch `(-π, π]`: sectors crossing the negative real axis behave the same way as
-sectors inside the slit plane. When the angular interval does lie in `(-π, π]` (respectively
-`[-π, π]` in the open case), membership reduces to simultaneous bounds on `‖z - z₀‖` and
+sectors inside the slit plane. When `0 < r` and `[θ₁, θ₂] ⊆ (-π, π]` (respectively `0 ≤ r` and
+`[θ₁, θ₂] ⊆ [-π, π]` in the open case), membership reduces to simultaneous bounds on `‖z - z₀‖` and
 `Complex.arg (z - z₀)`.
 
 For `0 ≤ r ≤ R` and `0 ≤ θ₂ - θ₁ < 2π` the polar parametrization does not wrap around `z₀`, so the
@@ -47,9 +48,10 @@ is the union of the two radial segments at `θ₁`, `θ₂` and the two circular
 * `Complex.isCompact_closedTruncatedSector`, `Complex.isClosed_closedTruncatedSector`,
   `Complex.isPreconnected_closedTruncatedSector`, `Complex.isOpen_openTruncatedSector`:
   compactness, closedness, connectedness and openness.
-* `Complex.closure_openTruncatedSector`, `Complex.interior_closedTruncatedSector`,
-  `Complex.frontier_closedTruncatedSector`: closure, interior and frontier for `0 ≤ r ≤ R` and
-  `0 ≤ θ₂ - θ₁ < 2π`.
+* `Complex.closure_openTruncatedSector`: the closure of the open truncated sector is the closed
+  truncated sector when `r < R` and `θ₁ < θ₂`.
+* `Complex.interior_closedTruncatedSector`, `Complex.frontier_closedTruncatedSector`: interior and
+  frontier for `0 ≤ r ≤ R` and `0 ≤ θ₂ - θ₁ < 2π`.
 -/
 
 public section
@@ -139,19 +141,7 @@ theorem openTruncatedSector_nonempty :
     (openTruncatedSector z₀ r R θ₁ θ₂).Nonempty ↔ r < R ∧ θ₁ < θ₂ := by
   rw [openTruncatedSector, image_nonempty, prod_nonempty_iff, nonempty_Ioo, nonempty_Ioo]
 
-/-! ### Polar uniqueness, norm bounds, and `Complex.arg` characterizations -/
-
-/-- Polar coordinates around `z₀` determine a positive radius and an angle within `2π`: if
-`0 < ρ₁`, `0 ≤ ρ₂`, `|φ₁ - φ₂| < 2π` and `circleMap z₀ ρ₁ φ₁ = circleMap z₀ ρ₂ φ₂`, then
-`ρ₁ = ρ₂` and `φ₁ = φ₂`. -/
-theorem eq_and_eq_of_circleMap_eq {ρ₁ ρ₂ φ₁ φ₂ : ℝ} (hρ₁ : 0 < ρ₁) (hρ₂ : 0 ≤ ρ₂)
-    (hφ : |φ₁ - φ₂| < 2 * Real.pi) (h : circleMap z₀ ρ₁ φ₁ = circleMap z₀ ρ₂ φ₂) :
-    ρ₁ = ρ₂ ∧ φ₁ = φ₂ := by
-  have hnorm : ‖circleMap z₀ ρ₁ φ₁ - z₀‖ = ‖circleMap z₀ ρ₂ φ₂ - z₀‖ := by rw [h]
-  rw [circleMap_sub_center, circleMap_sub_center, norm_circleMap_zero, norm_circleMap_zero,
-    abs_of_pos hρ₁, abs_of_nonneg hρ₂] at hnorm
-  subst hnorm
-  exact ⟨rfl, eq_of_circleMap_eq hρ₁.ne' hφ h⟩
+/-! ### Norm bounds and `Complex.arg` characterizations -/
 
 /-- Every point of `closedTruncatedSector z₀ r R θ₁ θ₂` with `0 ≤ r` has distance to `z₀` in
 `[r, R]`. -/
@@ -169,12 +159,6 @@ theorem norm_sub_mem_Ioo_of_mem_openTruncatedSector (hr : 0 ≤ r)
   rw [circleMap_sub_center, norm_circleMap_zero, abs_of_pos (hr.trans_lt hρ.1)]
   exact hρ
 
-/-- For `0 < ρ` and `θ ∈ (-π, π]`, the principal argument of `circleMap z₀ ρ θ - z₀` is `θ`. -/
-theorem arg_circleMap_sub {ρ θ : ℝ} (hρ : 0 < ρ) (hθ : θ ∈ Ioc (-Real.pi) Real.pi) :
-    arg (circleMap z₀ ρ θ - z₀) = θ := by
-  rw [circleMap_sub_center, circleMap_zero, arg_real_mul _ hρ, arg_exp_mul_I,
-    (toIocMod_eq_self Real.two_pi_pos).2 ⟨hθ.1, by linarith [hθ.2]⟩]
-
 /-- When `0 ≤ r` and `[θ₁, θ₂] ⊆ [-π, π]`, the open truncated sector is cut out by strict bounds
 on `‖z - z₀‖` and `arg (z - z₀)`. Even at the endpoints `θ₁ = -π` or `θ₂ = π` no branch-cut defect
 arises because strict inequalities confine `θ` to `(-π, π)`. -/
@@ -186,8 +170,8 @@ theorem openTruncatedSector_eq_norm_arg (hr : 0 ≤ r) (hθ₁ : -Real.pi ≤ θ
   constructor
   · rintro ⟨ρ, hρ, θ, hθ, rfl⟩
     have hρ₀ : 0 < ρ := hr.trans_lt hρ.1
-    rw [arg_circleMap_sub hρ₀ ⟨hθ₁.trans_lt hθ.1, (hθ.2.trans_le hθ₂).le⟩, circleMap_sub_center,
-      norm_circleMap_zero, abs_of_pos hρ₀]
+    rw [TauCeti.arg_circleMap_sub hρ₀ ⟨hθ₁.trans_lt hθ.1, (hθ.2.trans_le hθ₂).le⟩,
+      circleMap_sub_center, norm_circleMap_zero, abs_of_pos hρ₀]
     exact ⟨hρ.1, hρ.2, hθ.1, hθ.2⟩
   · rintro ⟨hrw, hwR, h1, h2⟩
     refine ⟨‖w - z₀‖, ⟨hrw, hwR⟩, arg (w - z₀), ⟨h1, h2⟩, ?_⟩
@@ -212,7 +196,7 @@ theorem closedTruncatedSector_eq_norm_arg (hr : 0 < r) (hθ₁ : -Real.pi < θ�
   constructor
   · rintro ⟨ρ, hρ, θ, hθ, rfl⟩
     have hρ₀ : 0 < ρ := hr.trans_le hρ.1
-    rw [arg_circleMap_sub hρ₀ ⟨hθ₁.trans_le hθ.1, hθ.2.trans hθ₂⟩, circleMap_sub_center,
+    rw [TauCeti.arg_circleMap_sub hρ₀ ⟨hθ₁.trans_le hθ.1, hθ.2.trans hθ₂⟩, circleMap_sub_center,
       norm_circleMap_zero, abs_of_pos hρ₀]
     exact ⟨hρ.1, hρ.2, hθ.1, hθ.2⟩
   · rintro ⟨hrw, hwR, h1, h2⟩
@@ -268,15 +252,10 @@ theorem image_add_exp_rectangle_eq_closedTruncatedSector (hr : 0 < r) (hrR : r �
 
 /-! ### Topological properties: compactness, openness, closure, interior, and frontier -/
 
-private theorem continuous_uncurry_circleMap (z₀ : ℂ) :
-    Continuous (Function.uncurry (circleMap z₀)) := by
-  unfold Function.uncurry circleMap
-  fun_prop
-
 /-- The closed truncated sector is compact. -/
 theorem isCompact_closedTruncatedSector (z₀ : ℂ) (r R θ₁ θ₂ : ℝ) :
     IsCompact (closedTruncatedSector z₀ r R θ₁ θ₂) :=
-  (isCompact_Icc.prod isCompact_Icc).image (continuous_uncurry_circleMap z₀)
+  (isCompact_Icc.prod isCompact_Icc).image (TauCeti.continuous_uncurry_circleMap z₀)
 
 /-- The closed truncated sector is closed. -/
 theorem isClosed_closedTruncatedSector (z₀ : ℂ) (r R θ₁ θ₂ : ℝ) :
@@ -287,13 +266,13 @@ theorem isClosed_closedTruncatedSector (z₀ : ℂ) (r R θ₁ θ₂ : ℝ) :
 theorem isPreconnected_closedTruncatedSector (z₀ : ℂ) (r R θ₁ θ₂ : ℝ) :
     IsPreconnected (closedTruncatedSector z₀ r R θ₁ θ₂) :=
   (isPreconnected_Icc.prod isPreconnected_Icc).image _
-    (continuous_uncurry_circleMap z₀).continuousOn
+    (TauCeti.continuous_uncurry_circleMap z₀).continuousOn
 
 /-- The open truncated sector is preconnected. -/
 theorem isPreconnected_openTruncatedSector (z₀ : ℂ) (r R θ₁ θ₂ : ℝ) :
     IsPreconnected (openTruncatedSector z₀ r R θ₁ θ₂) :=
   (isPreconnected_Ioo.prod isPreconnected_Ioo).image _
-    (continuous_uncurry_circleMap z₀).continuousOn
+    (TauCeti.continuous_uncurry_circleMap z₀).continuousOn
 
 /-- For `0 ≤ r`, the open truncated sector is an open set in `ℂ`. Neither `r < R` nor
 `θ₂ - θ₁ < 2π` is required: every point of `Ioo r R` is strictly positive, so the open truncated
@@ -329,7 +308,7 @@ theorem closure_openTruncatedSector (hrR : r < R) (hθ : θ₁ < θ₂) :
   rw [openTruncatedSector_def, closedTruncatedSector_def, ← hcl]
   exact (image_closure_of_isCompact
     (hcl ▸ (isCompact_Icc.prod isCompact_Icc))
-    (continuous_uncurry_circleMap z₀).continuousOn).symm
+    (TauCeti.continuous_uncurry_circleMap z₀).continuousOn).symm
 
 /-- A point on the parameter-boundary image of a non-wrapping truncated sector cannot lie in the
 open truncated sector. -/
@@ -342,7 +321,7 @@ private theorem disjoint_openTruncatedSector_boundary (hr : 0 ≤ r)
   simp only [Function.uncurry_apply_pair] at heq
   have hρ₀_pos : 0 < ρ₀ := hr.trans_lt hρ₀.1
   rcases hb with ⟨hρ₁, hφ₁⟩ | ⟨hρ₁, -⟩
-  · have ⟨_, hφeq⟩ := eq_and_eq_of_circleMap_eq hρ₀_pos (hr.trans hρ₁.1)
+  · have ⟨_, hφeq⟩ := TauCeti.eq_and_eq_of_circleMap_eq hρ₀_pos (hr.trans hρ₁.1)
       (by rcases hφ₁ with rfl | rfl <;>
         exact abs_lt.2 ⟨by linarith [hφ₀.1, hφ₀.2], by linarith [hφ₀.1, hφ₀.2]⟩) heq.symm
     rcases hφ₁ with rfl | rfl
@@ -414,7 +393,7 @@ private theorem notMem_interior_closedTruncatedSector_of_boundary (hr : 0 ≤ r)
         norm_circleMap_zero, abs_of_pos (by positivity)]
       linarith
     obtain ⟨ρ₂, hρ₂, φ₂, hφ₂, heq⟩ := mem_closedTruncatedSector.1 hmem
-    have ⟨_, hφeq⟩ := eq_and_eq_of_circleMap_eq (by positivity : 0 < ε / 2) (hr.trans hρ₂.1)
+    have ⟨_, hφeq⟩ := TauCeti.eq_and_eq_of_circleMap_eq (by positivity : 0 < ε / 2) (hr.trans hρ₂.1)
       (abs_lt.2 ⟨by linarith [hψ, hφ₂.1, hφ₂.2, Real.pi_pos],
         by linarith [hψ, hφ₂.1, hφ₂.2]⟩) heq.symm
     linarith [hψ, hφ₂.2, hφeq]
@@ -437,7 +416,7 @@ private theorem notMem_interior_closedTruncatedSector_of_boundary (hr : 0 ≤ r)
         ((hcont.continuousAt (x := 0)).preimage_mem_nhds (by simpa using ball_mem_nhds _ hε))
     obtain ⟨t, ht_ball, ht_Ioo⟩ := (hev.and (Ioo_mem_nhdsGT hη)).exists
     obtain ⟨ρ₂, hρ₂, φ₂, hφ₂, heq⟩ := mem_closedTruncatedSector.1 (hball ht_ball)
-    have ⟨_, hφeq⟩ := eq_and_eq_of_circleMap_eq hρ₁_pos (hr.trans hρ₂.1)
+    have ⟨_, hφeq⟩ := TauCeti.eq_and_eq_of_circleMap_eq hρ₁_pos (hr.trans hρ₂.1)
       (abs_lt.2 ⟨by linarith [hη_def, hφ₂.1, hφ₂.2, ht_Ioo.1, ht_Ioo.2],
         by linarith [hη_def, hφ₂.1, hφ₂.2, ht_Ioo.1, ht_Ioo.2]⟩) heq.symm
     linarith [hφ₂.1, ht_Ioo.1]
@@ -450,7 +429,7 @@ private theorem notMem_interior_closedTruncatedSector_of_boundary (hr : 0 ≤ r)
         ((hcont.continuousAt (x := 0)).preimage_mem_nhds (by simpa using ball_mem_nhds _ hε))
     obtain ⟨t, ht_ball, ht_Ioo⟩ := (hev.and (Ioo_mem_nhdsGT hη)).exists
     obtain ⟨ρ₂, hρ₂, φ₂, hφ₂, heq⟩ := mem_closedTruncatedSector.1 (hball ht_ball)
-    have ⟨_, hφeq⟩ := eq_and_eq_of_circleMap_eq hρ₁_pos (hr.trans hρ₂.1)
+    have ⟨_, hφeq⟩ := TauCeti.eq_and_eq_of_circleMap_eq hρ₁_pos (hr.trans hρ₂.1)
       (abs_lt.2 ⟨by linarith [hη_def, hφ₂.1, hφ₂.2, ht_Ioo.1, ht_Ioo.2],
         by linarith [hη_def, hφ₂.1, hφ₂.2, ht_Ioo.1, ht_Ioo.2]⟩) heq.symm
     linarith [hφ₂.2, ht_Ioo.1]

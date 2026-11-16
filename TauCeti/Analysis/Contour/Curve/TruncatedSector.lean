@@ -7,7 +7,11 @@ module
 
 public import TauCeti.Analysis.Complex.TruncatedSector
 public import TauCeti.Analysis.Contour.Curve.Rectangle
-import Mathlib.MeasureTheory.Integral.CircleIntegral
+import TauCeti.Analysis.Contour.Curve.Circle.Basic
+import TauCeti.Analysis.Contour.Curve.Concat
+import TauCeti.Analysis.Contour.Curve.Integrability
+import TauCeti.Analysis.Contour.Curve.Reparam
+import TauCeti.Analysis.SpecialFunctions.Complex.CircleMap
 
 /-!
 # The boundary of a truncated sector as a closed piecewise-`C¹` curve
@@ -136,17 +140,11 @@ theorem truncatedSectorBoundary_of_mem_Icc_three_four {t : ℝ} (ht : t ∈ Icc 
 
 /-! ### Piecewise-`C¹` regularity and joint parameter continuity -/
 
-private theorem contDiff_polarOfComplex (z₀ : ℂ) {n : WithTop ℕ∞} :
-    ContDiff ℝ n (fun w : ℂ ↦ circleMap z₀ w.re w.im) := by
-  have hexp : ContDiff ℝ n (fun w : ℂ ↦ exp ((w.im : ℂ) * I)) :=
-    ((contDiff_exp (𝕜 := ℂ)).restrict_scalars ℝ).comp
-      ((ofRealCLM.contDiff.comp imCLM.contDiff).mul contDiff_const)
-  exact contDiff_const.add ((ofRealCLM.contDiff.comp reCLM.contDiff).mul hexp)
-
 /-- The truncated-sector boundary is piecewise `C¹` on `[0, 4]`. -/
 theorem isPiecewiseC1On_truncatedSectorBoundary (z₀ : ℂ) (r R θ₁ θ₂ : ℝ) :
     TauCeti.IsPiecewiseC1On (truncatedSectorBoundary z₀ r R θ₁ θ₂) 0 4 :=
-  (contDiff_polarOfComplex z₀ (n := 1)).contDiffOn.comp_isPiecewiseC1On
+  ((TauCeti.contDiff_uncurry_circleMap z₀ (n := 1)).comp
+    (reCLM.contDiff.prodMk imCLM.contDiff)).contDiffOn.comp_isPiecewiseC1On
     (isPiecewiseC1On_rectBoundary _ _) (mapsTo_univ _ _)
 
 /-- `truncatedSectorBoundary` is jointly continuous in `(z₀, r, R, θ₁, θ₂)` and `t : ℝ`. -/
@@ -233,115 +231,6 @@ section Integral
 
 variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℂ E]
 
-/-- Along an open cell `(a, b)` where a curve `γ` agrees with a `C¹` curve `η` on `[a, b]`
-(`a ≤ b`), the contour integrand `deriv γ t • f (γ t)` is interval-integrable and has the same
-integral as `deriv η t • f (η t)`. -/
-private theorem intervalIntegrable_and_integral_eq_of_eqOn_Icc {γ η : ℝ → ℂ} {f : ℂ → E} {a b : ℝ}
-    (hab : a ≤ b) (hγ : EqOn γ η (Icc a b)) (hη : ContDiff ℝ 1 η)
-    (hf : ContinuousOn f (η '' Icc a b)) :
-    IntervalIntegrable (fun t ↦ deriv γ t • f (γ t)) volume a b ∧
-      ∫ t in a..b, deriv γ t • f (γ t) = ∫ t in a..b, deriv η t • f (η t) := by
-  have heq_Ioo : EqOn (fun t ↦ deriv γ t • f (γ t)) (fun t ↦ deriv η t • f (η t)) (Ioo a b) := by
-    intro t ht
-    dsimp only
-    have hev : γ =ᶠ[nhds t] η :=
-      Filter.eventuallyEq_of_mem (Icc_mem_nhds ht.1 ht.2) fun u hu ↦ hγ hu
-    rw [hev.deriv_eq, hγ (Ioo_subset_Icc_self ht)]
-  have heq_uIoo : EqOn (fun t ↦ deriv γ t • f (γ t)) (fun t ↦ deriv η t • f (η t)) (uIoo a b) := by
-    rwa [uIoo_of_le hab]
-  have hcont : ContinuousOn (fun t ↦ deriv η t • f (η t)) (uIcc a b) := by
-    rw [uIcc_of_le hab]
-    exact (hη.continuous_deriv le_rfl).continuousOn.smul
-      (hf.comp hη.continuous.continuousOn (mapsTo_image η _))
-  exact ⟨(intervalIntegrable_congr_uIoo heq_uIoo).2 hcont.intervalIntegrable,
-    intervalIntegral.integral_congr_uIoo heq_uIoo⟩
-
-/-- Radial segment change of variables on `[k, k + 1]`: for
-`η t = circleMap z₀ (a + (t - k) * (b - a)) θ`, the contour integral over `k..k + 1` is
-`exp (θ * I) • ∫ ρ in a..b, f (circleMap z₀ ρ θ)`. -/
-private theorem integral_radial_leg (f : ℂ → E) (z₀ : ℂ) (a b θ k : ℝ) :
-    ∫ t in k..(k + 1),
-        deriv (fun u : ℝ ↦ circleMap z₀ (a + (u - k) * (b - a)) θ) t •
-          f (circleMap z₀ (a + (t - k) * (b - a)) θ) =
-      exp (θ * I) • ∫ ρ : ℝ in a..b, f (circleMap z₀ ρ θ) := by
-  have hderiv (t : ℝ) :
-      deriv (fun u : ℝ ↦ circleMap z₀ (a + (u - k) * (b - a)) θ) t =
-        ((b - a : ℝ) : ℂ) * exp (θ * I) := by
-    have hd1 : HasDerivAt (fun u : ℝ ↦ a + (u - k) * (b - a)) (0 + 1 * (b - a)) t :=
-      (hasDerivAt_const t a).add (((hasDerivAt_id t).sub_const k).mul_const (b - a))
-    rw [zero_add, one_mul] at hd1
-    have hd2 : HasDerivAt (fun u : ℝ ↦ ((a + (u - k) * (b - a) : ℝ) : ℂ)) ((b - a : ℝ) : ℂ) t :=
-      hd1.ofReal_comp
-    have hd3 : HasDerivAt (fun u : ℝ ↦ z₀ + ((a + (u - k) * (b - a) : ℝ) : ℂ) * exp (θ * I))
-        (0 + ((b - a : ℝ) : ℂ) * exp (θ * I)) t :=
-      (hasDerivAt_const t z₀).add (hd2.mul_const (exp (θ * I)))
-    rw [zero_add] at hd3
-    exact hd3.deriv
-  have h1 :
-      ∫ t in k..(k + 1),
-          deriv (fun u : ℝ ↦ circleMap z₀ (a + (u - k) * (b - a)) θ) t •
-            f (circleMap z₀ (a + (t - k) * (b - a)) θ) =
-        exp (θ * I) • ((b - a) • ∫ s in (0 : ℝ)..1, f (circleMap z₀ (a + s * (b - a)) θ)) := by
-    have hshift := intervalIntegral.integral_comp_sub_right
-      (fun s : ℝ ↦ (((b - a : ℝ) : ℂ) * exp (θ * I)) • f (circleMap z₀ (a + s * (b - a)) θ)) k
-        (a := k) (b := k + 1)
-    rw [sub_self, add_sub_cancel_left] at hshift
-    calc
-      _ = ∫ t in k..(k + 1),
-            (((b - a : ℝ) : ℂ) * exp (θ * I)) • f (circleMap z₀ (a + (t - k) * (b - a)) θ) :=
-        intervalIntegral.integral_congr fun t _ ↦ by rw [hderiv]
-      _ = ∫ s in (0 : ℝ)..1,
-            (exp (θ * I) • (b - a) • f (circleMap z₀ (a + s * (b - a)) θ)) := by
-        rw [hshift]
-        exact intervalIntegral.integral_congr fun s _ ↦ by
-          rw [mul_comm ((b - a : ℝ) : ℂ), mul_smul, coe_smul]
-      _ = exp (θ * I) • ((b - a) • ∫ s in (0 : ℝ)..1, f (circleMap z₀ (a + s * (b - a)) θ)) := by
-        rw [intervalIntegral.integral_smul, intervalIntegral.integral_smul]
-  rw [h1]
-  congr 1
-  have hcov := intervalIntegral.smul_integral_comp_mul_add (a := 0) (b := 1)
-    (fun ρ : ℝ ↦ f (circleMap z₀ ρ θ)) (b - a) a
-  rw [mul_zero, zero_add, mul_one, sub_add_cancel] at hcov
-  rw [← hcov]
-  exact congrArg _ (intervalIntegral.integral_congr fun s _ ↦ by ring_nf)
-
-/-- Circular arc change of variables on `[k, k + 1]`: for
-`η t = circleMap z₀ ρ (α + (t - k) * (β - α))`, the contour integral over `k..k + 1` is
-`∫ θ in α..β, deriv (circleMap z₀ ρ) θ • f (circleMap z₀ ρ θ)`. -/
-private theorem integral_arc_leg (f : ℂ → E) (z₀ : ℂ) (ρ α β k : ℝ) :
-    ∫ t in k..(k + 1),
-        deriv (fun u : ℝ ↦ circleMap z₀ ρ (α + (u - k) * (β - α))) t •
-          f (circleMap z₀ ρ (α + (t - k) * (β - α))) =
-      ∫ θ : ℝ in α..β, deriv (circleMap z₀ ρ) θ • f (circleMap z₀ ρ θ) := by
-  have hderiv (t : ℝ) :
-      deriv (fun u : ℝ ↦ circleMap z₀ ρ (α + (u - k) * (β - α))) t =
-        (β - α) • deriv (circleMap z₀ ρ) (α + (t - k) * (β - α)) := by
-    have hd1 : HasDerivAt (fun u : ℝ ↦ α + (u - k) * (β - α)) (0 + 1 * (β - α)) t :=
-      (hasDerivAt_const t α).add (((hasDerivAt_id t).sub_const k).mul_const (β - α))
-    rw [zero_add, one_mul] at hd1
-    have hd2 := ((hasDerivAt_circleMap z₀ ρ (α + (t - k) * (β - α))).scomp t hd1).deriv
-    rw [deriv_circleMap]
-    exact hd2
-  have hshift := intervalIntegral.integral_comp_sub_right
-    (fun s : ℝ ↦ (β - α) •
-      (deriv (circleMap z₀ ρ) (α + s * (β - α)) • f (circleMap z₀ ρ (α + s * (β - α))))) k
-      (a := k) (b := k + 1)
-  rw [sub_self, add_sub_cancel_left] at hshift
-  have hcov := intervalIntegral.smul_integral_comp_mul_add (a := 0) (b := 1)
-    (fun θ : ℝ ↦ deriv (circleMap z₀ ρ) θ • f (circleMap z₀ ρ θ)) (β - α) α
-  rw [mul_zero, zero_add, mul_one, sub_add_cancel] at hcov
-  calc
-    _ = ∫ t in k..(k + 1), (β - α) •
-          (deriv (circleMap z₀ ρ) (α + (t - k) * (β - α)) •
-            f (circleMap z₀ ρ (α + (t - k) * (β - α)))) :=
-      intervalIntegral.integral_congr fun t _ ↦ by rw [hderiv, smul_assoc]
-    _ = (β - α) • ∫ s in (0 : ℝ)..1,
-          deriv (circleMap z₀ ρ) (α + s * (β - α)) • f (circleMap z₀ ρ (α + s * (β - α))) := by
-      rw [hshift, intervalIntegral.integral_smul]
-    _ = ∫ θ : ℝ in α..β, deriv (circleMap z₀ ρ) θ • f (circleMap z₀ ρ θ) := by
-      rw [← hcov]
-      exact congrArg _ (intervalIntegral.integral_congr fun s _ ↦ by ring_nf)
-
 /-- **The contour integral along `truncatedSectorBoundary`** of a function continuous on its trace
 over `[0, 4]` is the signed sum of its two radial integrals over `r..R` (at angles `θ₁` and `θ₂`)
 and its two circular-arc integrals over `θ₁..θ₂` (at radii `R` and `r`). No ordering or positivity
@@ -356,61 +245,78 @@ theorem integral_truncatedSectorBoundary {f : ℂ → E}
         (∫ θ : ℝ in θ₁..θ₂, deriv (circleMap z₀ R) θ • f (circleMap z₀ R θ)) -
         (∫ θ : ℝ in θ₁..θ₂, deriv (circleMap z₀ r) θ • f (circleMap z₀ r θ)) := by
   set γ := truncatedSectorBoundary z₀ r R θ₁ θ₂
-  let η₀ : ℝ → ℂ := fun u ↦ circleMap z₀ (r + (u - 0) * (R - r)) θ₁
-  let η₁ : ℝ → ℂ := fun u ↦ circleMap z₀ R (θ₁ + (u - 1) * (θ₂ - θ₁))
-  let η₂ : ℝ → ℂ := fun u ↦ circleMap z₀ (R + (u - 2) * (r - R)) θ₂
-  let η₃ : ℝ → ℂ := fun u ↦ circleMap z₀ r (θ₂ + (u - 3) * (θ₁ - θ₂))
-  have hrad (a b θ k : ℝ) : ContDiff ℝ 1 (fun u : ℝ ↦ circleMap z₀ (a + (u - k) * (b - a)) θ) :=
-    contDiff_const.add
-      ((ofRealCLM.contDiff.comp (by fun_prop : ContDiff ℝ 1 fun u : ℝ ↦ a + (u - k) * (b - a))).mul
-        contDiff_const)
-  have harc (ρ α β k : ℝ) : ContDiff ℝ 1 (fun u : ℝ ↦ circleMap z₀ ρ (α + (u - k) * (β - α))) :=
-    (contDiff_circleMap z₀ ρ).comp (by fun_prop)
-  have hγ₀ : EqOn γ η₀ (Icc 0 1) := fun t ht ↦ by
-    simpa [γ, η₀] using truncatedSectorBoundary_of_mem_Icc_zero_one ht
-  have hγ₁ : EqOn γ η₁ (Icc 1 2) := fun t ht ↦
-    truncatedSectorBoundary_of_mem_Icc_one_two ht
-  have hγ₂ : EqOn γ η₂ (Icc 2 3) := fun t ht ↦
-    truncatedSectorBoundary_of_mem_Icc_two_three ht
-  have hγ₃ : EqOn γ η₃ (Icc 3 4) := fun t ht ↦
-    truncatedSectorBoundary_of_mem_Icc_three_four ht
-  have hsub₀ : η₀ '' Icc 0 1 ⊆ γ '' Icc 0 4 :=
-    hγ₀.symm.image_eq.trans_subset (image_mono (Icc_subset_Icc_right (by norm_num)))
-  have hsub₁ : η₁ '' Icc 1 2 ⊆ γ '' Icc 0 4 :=
-    hγ₁.symm.image_eq.trans_subset (image_mono (Icc_subset_Icc (by norm_num) (by norm_num)))
-  have hsub₂ : η₂ '' Icc 2 3 ⊆ γ '' Icc 0 4 :=
-    hγ₂.symm.image_eq.trans_subset (image_mono (Icc_subset_Icc (by norm_num) (by norm_num)))
-  have hsub₃ : η₃ '' Icc 3 4 ⊆ γ '' Icc 0 4 :=
-    hγ₃.symm.image_eq.trans_subset (image_mono (Icc_subset_Icc_left (by norm_num)))
-  obtain ⟨hi₀, heq₀⟩ := intervalIntegrable_and_integral_eq_of_eqOn_Icc (by norm_num) hγ₀
-    (hrad r R θ₁ 0) (hf.mono hsub₀)
-  obtain ⟨hi₁, heq₁⟩ := intervalIntegrable_and_integral_eq_of_eqOn_Icc (by norm_num) hγ₁
-    (harc R θ₁ θ₂ 1) (hf.mono hsub₁)
-  obtain ⟨hi₂, heq₂⟩ := intervalIntegrable_and_integral_eq_of_eqOn_Icc (by norm_num) hγ₂
-    (hrad R r θ₂ 2) (hf.mono hsub₂)
-  obtain ⟨hi₃, heq₃⟩ := intervalIntegrable_and_integral_eq_of_eqOn_Icc (by norm_num) hγ₃
-    (harc r θ₂ θ₁ 3) (hf.mono hsub₃)
-  have hi₀₁ := hi₀.trans hi₁
-  have hi₀₂ := hi₀₁.trans hi₂
-  rw [← intervalIntegral.integral_add_adjacent_intervals hi₀₂ hi₃,
-    ← intervalIntegral.integral_add_adjacent_intervals hi₀₁ hi₂,
-    ← intervalIntegral.integral_add_adjacent_intervals hi₀ hi₁,
-    heq₀, heq₁, heq₂, heq₃]
-  have e₀ : ∫ t in (0 : ℝ)..1, deriv η₀ t • f (η₀ t) =
+  have hi : IntervalIntegrable (fun t ↦ deriv γ t • f (γ t)) volume 0 4 :=
+    (isPiecewiseC1On_truncatedSectorBoundary z₀ r R θ₁ θ₂).intervalIntegrable_deriv_smul_comp
+      (by rwa [uIcc_of_le (by norm_num)])
+  have hi_sub {a b : ℝ} (ha : 0 ≤ a) (hb : b ≤ 4) (hab : a ≤ b) :
+      IntervalIntegrable (fun t ↦ deriv γ t • f (γ t)) volume a b :=
+    hi.mono_set (by rw [uIcc_of_le hab, uIcc_of_le (by norm_num)]; exact Icc_subset_Icc ha hb)
+  have hleg {a b : ℝ} (ha : 0 ≤ a) (hb : b ≤ 4) (hab : a ≤ b)
+      {η : ℝ → ℂ} {φ : ℝ → ℝ} {c : ℝ}
+      (heq : EqOn γ (η ∘ φ) (Icc a b))
+      (hφ : ∀ t ∈ uIcc a b, HasDerivAt φ c t)
+      (hη : ∀ u, DifferentiableAt ℝ η u)
+      (hη' : Continuous (deriv η)) :
+      ∫ t in a..b, deriv γ t • f (γ t) = ∫ u in φ a..φ b, deriv η u • f (η u) := by
+    rw [TauCeti.Contour.intervalIntegral_deriv_smul_congr
+      (heq.mono (uIoo_of_le hab ▸ Ioo_subset_Icc_self))]
+    refine TauCeti.Contour.integral_deriv_smul_comp_reparam hφ continuousOn_const
+      (fun u _ ↦ hη u) hη'.continuousOn (hf.mono ?_)
+    rw [← image_comp, uIcc_of_le hab, ← heq.image_eq]
+    exact image_mono (Icc_subset_Icc ha hb)
+  rw [← intervalIntegral.integral_add_adjacent_intervals (b := 3)
+      (hi_sub (by norm_num) (by norm_num) (by norm_num))
+      (hi_sub (by norm_num) (by norm_num) (by norm_num)),
+    ← intervalIntegral.integral_add_adjacent_intervals (b := 2)
+      (hi_sub (by norm_num) (by norm_num) (by norm_num))
+      (hi_sub (by norm_num) (by norm_num) (by norm_num)),
+    ← intervalIntegral.integral_add_adjacent_intervals (b := 1)
+      (hi_sub (by norm_num) (by norm_num) (by norm_num))
+      (hi_sub (by norm_num) (by norm_num) (by norm_num))]
+  have e₀ : ∫ t in (0 : ℝ)..1, deriv γ t • f (γ t) =
       exp (θ₁ * I) • ∫ ρ : ℝ in r..R, f (circleMap z₀ ρ θ₁) := by
-    simpa only [zero_add] using integral_radial_leg f z₀ r R θ₁ 0
-  have e₁ : ∫ t in (1 : ℝ)..2, deriv η₁ t • f (η₁ t) =
+    rw [hleg (by norm_num) (by norm_num) (by norm_num)
+      (η := fun ρ ↦ circleMap z₀ ρ θ₁) (φ := fun t ↦ r + t * (R - r)) (c := R - r)
+      (fun t ht ↦ truncatedSectorBoundary_of_mem_Icc_zero_one ht)
+      (fun t _ ↦ by simpa only [one_mul] using ((hasDerivAt_id' t).mul_const (R - r)).const_add r)
+      (fun ρ ↦ (TauCeti.hasDerivAt_circleMap_radius z₀ θ₁ ρ).differentiableAt)
+      (continuous_const.congr fun ρ ↦ (TauCeti.deriv_circleMap_radius z₀ θ₁ ρ).symm)]
+    simp [TauCeti.deriv_circleMap_radius, intervalIntegral.integral_smul]
+  have e₁ : ∫ t in (1 : ℝ)..2, deriv γ t • f (γ t) =
       ∫ θ : ℝ in θ₁..θ₂, deriv (circleMap z₀ R) θ • f (circleMap z₀ R θ) := by
-    rw [show (2 : ℝ) = 1 + 1 by norm_num]
-    exact integral_arc_leg f z₀ R θ₁ θ₂ 1
-  have e₂ : ∫ t in (2 : ℝ)..3, deriv η₂ t • f (η₂ t) =
+    rw [hleg (by norm_num) (by norm_num) (by norm_num)
+      (η := circleMap z₀ R) (φ := fun t ↦ θ₁ + (t - 1) * (θ₂ - θ₁)) (c := θ₂ - θ₁)
+      (fun t ht ↦ truncatedSectorBoundary_of_mem_Icc_one_two ht)
+      (fun t _ ↦ by
+        simpa only [one_mul] using (((hasDerivAt_id' t).sub_const 1).mul_const _).const_add θ₁)
+      (fun θ ↦ (hasDerivAt_circleMap z₀ R θ).differentiableAt)
+      (continuous_deriv_circleMap z₀ R)]
+    norm_num
+  have e₂ : ∫ t in (2 : ℝ)..3, deriv γ t • f (γ t) =
       exp (θ₂ * I) • ∫ ρ : ℝ in R..r, f (circleMap z₀ ρ θ₂) := by
-    rw [show (3 : ℝ) = 2 + 1 by norm_num]
-    exact integral_radial_leg f z₀ R r θ₂ 2
-  have e₃ : ∫ t in (3 : ℝ)..4, deriv η₃ t • f (η₃ t) =
+    rw [hleg (by norm_num) (by norm_num) (by norm_num)
+      (η := fun ρ ↦ circleMap z₀ ρ θ₂) (φ := fun t ↦ R + (t - 2) * (r - R)) (c := r - R)
+      (fun t ht ↦ truncatedSectorBoundary_of_mem_Icc_two_three ht)
+      (fun t _ ↦ by
+        simpa only [one_mul] using (((hasDerivAt_id' t).sub_const 2).mul_const _).const_add R)
+      (fun ρ ↦ (TauCeti.hasDerivAt_circleMap_radius z₀ θ₂ ρ).differentiableAt)
+      (continuous_const.congr fun ρ ↦ (TauCeti.deriv_circleMap_radius z₀ θ₂ ρ).symm)]
+    have h2 : R + (2 - 2) * (r - R) = R := by ring
+    have h3 : R + (3 - 2) * (r - R) = r := by ring
+    rw [h2, h3]
+    simp [TauCeti.deriv_circleMap_radius, intervalIntegral.integral_smul]
+  have e₃ : ∫ t in (3 : ℝ)..4, deriv γ t • f (γ t) =
       ∫ θ : ℝ in θ₂..θ₁, deriv (circleMap z₀ r) θ • f (circleMap z₀ r θ) := by
-    rw [show (4 : ℝ) = 3 + 1 by norm_num]
-    exact integral_arc_leg f z₀ r θ₂ θ₁ 3
+    rw [hleg (by norm_num) (by norm_num) (by norm_num)
+      (η := circleMap z₀ r) (φ := fun t ↦ θ₂ + (t - 3) * (θ₁ - θ₂)) (c := θ₁ - θ₂)
+      (fun t ht ↦ truncatedSectorBoundary_of_mem_Icc_three_four ht)
+      (fun t _ ↦ by
+        simpa only [one_mul] using (((hasDerivAt_id' t).sub_const 3).mul_const _).const_add θ₂)
+      (fun θ ↦ (hasDerivAt_circleMap z₀ r θ).differentiableAt)
+      (continuous_deriv_circleMap z₀ r)]
+    have h3 : θ₂ + (3 - 3) * (θ₁ - θ₂) = θ₂ := by ring
+    have h4 : θ₂ + (4 - 3) * (θ₁ - θ₂) = θ₁ := by ring
+    rw [h3, h4]
   rw [e₀, e₁, e₂, e₃, intervalIntegral.integral_symm r R, intervalIntegral.integral_symm θ₁ θ₂,
     smul_neg]
   abel

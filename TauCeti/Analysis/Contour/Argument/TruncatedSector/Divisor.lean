@@ -8,8 +8,8 @@ module
 public import TauCeti.Analysis.Contour.Argument.TruncatedSector.Basic
 public import TauCeti.Analysis.Meromorphic.Counting.Basic
 import Mathlib.Analysis.Analytic.ChangeOrigin
-import Mathlib.Analysis.Meromorphic.NormalForm
-import Mathlib.Analysis.Normed.Module.Convex
+import TauCeti.Analysis.Contour.Argument.Divisor
+import TauCeti.Analysis.Contour.Winding.Number.TruncatedSector
 
 /-!
 # The divisor and zero-counting forms of the argument principle on a truncated sector
@@ -33,7 +33,7 @@ set or finiteness witness from the caller.
 
 public section
 
-open Set Complex Metric
+open Set Complex
 open scoped Real
 
 namespace TauCeti.Contour
@@ -53,75 +53,15 @@ theorem argumentPrinciple_truncatedSectorBoundary_divisor
     ∫ t in (0 : ℝ)..4,
         deriv (truncatedSectorBoundary z₀ r R θ₁ θ₂) t •
           logDeriv f (truncatedSectorBoundary z₀ r R θ₁ θ₂ t) =
-      2 * π * I * (divisorCount f U (closedTruncatedSector z₀ r R θ₁ θ₂) : ℂ) := by
-  classical
-  set K := closedTruncatedSector z₀ r R θ₁ θ₂
-  have hcompact : IsCompact K := isCompact_closedTruncatedSector z₀ r R θ₁ θ₂
-  obtain ⟨δ, hδ, hδU⟩ := hcompact.exists_cthickening_subset_open hU hSU
-  let V := thickening δ K
-  have hKV : K ⊆ V := self_subset_thickening hδ K
-  have hVU : V ⊆ U := (thickening_subset_cthickening δ K).trans hδU
-  have hfV : MeromorphicOn f V := hf.mono_set hVU
-  have hV_preconn : IsPreconnected V := by
-    refine isPreconnected_of_forall_pair fun x hx y hy ↦ ?_
-    obtain ⟨a, ha, hxa⟩ := mem_thickening_iff.1 hx
-    obtain ⟨b, hb, hyb⟩ := mem_thickening_iff.1 hy
-    refine ⟨ball a δ ∪ K ∪ ball b δ, ?_, Or.inl (Or.inl (mem_ball.2 hxa)),
-      Or.inr (mem_ball.2 hyb), ?_⟩
-    · exact union_subset (union_subset (ball_subset_thickening ha δ) hKV)
-        (ball_subset_thickening hb δ)
-    · exact (((convex_ball a δ).isPreconnected).union a (mem_ball_self hδ) ha
-        (isPreconnected_closedTruncatedSector z₀ r R θ₁ θ₂)).union b (Or.inr hb)
-          (mem_ball_self hδ) (convex_ball b δ).isPreconnected
-  have hzfr : circleMap z₀ r θ₁ ∈ frontier K := by
-    simpa using truncatedSectorBoundary_mem_frontier hr hrR hθ hspan 0
-  have hzV : circleMap z₀ r θ₁ ∈ V :=
-    hKV (circleMap_mem_closedTruncatedSector (left_mem_Icc.2 hrR) (left_mem_Icc.2 hθ))
-  have htop (x : ℂ) (hx : x ∈ V) : meromorphicOrderAt f x ≠ ⊤ :=
-    hfV.meromorphicOrderAt_ne_top_of_isPreconnected hV_preconn hzV hx (by simp [hfr _ hzfr])
-  have hfinite : (Function.support (MeromorphicOn.divisor f V)).Finite :=
-    (hf.mono_set hδU).divisor_support_finite_of_subset hcompact.cthickening
-      (thickening_subset_cthickening δ K)
-  have hdefects := hcompact.cthickening.finite_sdiff_of_mem_codiscreteWithin
-    (hf.mono_set hδU).analyticAt_mem_codiscreteWithin
-  let S := hfinite.toFinset ∪ hdefects.toFinset
-  have hoff (x : ℂ) (hx : x ∈ V) (hxS : x ∉ S) : AnalyticAt ℂ f x ∧ f x ≠ 0 := by
-    have hxoff := Finset.notMem_union.mp hxS
-    have hd : MeromorphicOn.divisor f V x = 0 := by simpa using hxoff.1
-    have ho : meromorphicOrderAt f x = 0 := by
-      rw [hfV.divisor_apply hx, WithTop.untop₀_eq_zero] at hd
-      exact hd.resolve_right (htop x hx)
-    have ha : AnalyticAt ℂ f x := by
-      by_contra ha
-      exact hxoff.2 (hdefects.mem_toFinset.mpr
-        ⟨thickening_subset_cthickening δ K hx, ha⟩)
-    exact ⟨ha, ha.meromorphicNFAt.meromorphicOrderAt_eq_zero_iff.mp ho⟩
-  have hSfr (x : ℂ) (hx : x ∈ S) : x ∉ frontier K := by
-    intro hxfr
-    rcases Finset.mem_union.mp hx with hx | hx
-    · have hxV := (MeromorphicOn.divisor f V).supportWithinDomain (by simpa using hx)
-      have hd : MeromorphicOn.divisor f V x ≠ 0 := by simpa using hx
-      exact hd (by simp [hfV.divisor_apply hxV, hfr x hxfr])
-    · exact (hdefects.mem_toFinset.mp hx).2 (hreg x hxfr)
-  have hcount : divisorCount f U K = ∑ x ∈ S with x ∈ K, MeromorphicOn.divisor f U x := by
-    rw [divisorCount_def]
-    apply finsum_mem_eq_sum_of_subset
-    · intro x hx
-      refine Finset.mem_filter.mpr ⟨?_, hx.1⟩
-      apply Finset.mem_union_left
-      simpa only [Finite.mem_toFinset, Function.mem_support,
-        hf.divisor_apply (hSU hx.1), hfV.divisor_apply (hKV hx.1)] using hx.2
-    · intro x hx
-      exact (Finset.mem_filter.mp hx).2
-  rw [argumentPrinciple_truncatedSectorBoundary (ord := MeromorphicOn.divisor f V) hr hrR hθ hspan
-    isOpen_thickening hKV hoff (fun x _ hx ↦ hfV x hx)
-    (fun x _ hx ↦ by
-      rw [hfV.divisor_apply hx, WithTop.coe_untop₀_of_ne_top (htop x hx)]) hSfr]
-  congr 1
-  rw [hcount, Int.cast_sum]
-  exact Finset.sum_congr rfl fun x hx ↦ by
-    rw [hfV.divisor_apply (hKV (Finset.mem_filter.mp hx).2),
-      hf.divisor_apply (hSU (Finset.mem_filter.mp hx).2)]
+      2 * π * I * (divisorCount f U (closedTruncatedSector z₀ r R θ₁ θ₂) : ℂ) :=
+  argumentPrinciple_nullHomologous_divisor
+    (isCompact_closedTruncatedSector z₀ r R θ₁ θ₂)
+    (isPreconnected_closedTruncatedSector z₀ r R θ₁ θ₂)
+    hU hSU hf hreg hfr (isPiecewiseC1On_truncatedSectorBoundary z₀ r R θ₁ θ₂)
+    (fun t _ ↦ truncatedSectorBoundary_mem_frontier hr hrR hθ hspan t) (by simp)
+    (isNullHomologous_truncatedSectorBoundary hrR hθ Subset.rfl)
+    (fun x hx ↦ windingNumber_truncatedSectorBoundary_eq_one hr hspan
+      (interior_closedTruncatedSector hr hrR hθ hspan ▸ hx))
 
 /-- **Zero-counting form of the argument principle on a truncated sector.** If the divisor of `f`
 has no negative values in `closedTruncatedSector z₀ r R θ₁ θ₂`, the boundary integral counts zeros

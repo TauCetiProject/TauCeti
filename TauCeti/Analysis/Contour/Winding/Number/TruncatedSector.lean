@@ -12,6 +12,7 @@ import TauCeti.Analysis.Complex.Conformal.ArgumentPrinciple
 import TauCeti.Analysis.Contour.Winding.Number.Homotopy
 import TauCeti.Analysis.Contour.Winding.Number.Rectangle
 import TauCeti.Analysis.Contour.Winding.Number.Translate
+import TauCeti.Analysis.SpecialFunctions.Complex.CircleMap
 
 /-!
 # Winding numbers of the boundary of a truncated sector
