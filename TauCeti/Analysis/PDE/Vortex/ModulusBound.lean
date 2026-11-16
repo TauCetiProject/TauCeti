@@ -8,8 +8,8 @@ module
 public import TauCeti.Analysis.PDE.Vortex.AmplitudeForm
 public import TauCeti.Analysis.PDE.Vortex.Decay
 import Mathlib.Analysis.Calculus.ContDiff.WithLp
+import TauCeti.Algebra.Order.BigOperators.Ring.Multiset
 import TauCeti.Analysis.Complex.LogOneAddNormSq
-import TauCeti.Analysis.InnerProductSpace.Laplacian.ExponentialDecay
 import TauCeti.Analysis.SpecialFunctions.Exp.Shift
 
 /-!
@@ -33,8 +33,8 @@ are drawn.
 * **Uniform exponential decay.** For every rate `c < 1 / 2` and radius `R₀` there is one
   constant `K`, depending only on `m`, `R₀` and `c`, with `1 - |α(z)|² ≤ K exp (-c |z|)` for every
   such vortex whose zeros lie in the closed disc of radius `R₀`
-  (`TauCeti.Vortex.exists_forall_one_sub_normSq_le_mul_exp`). For a single vortex this is
-  `TauCeti.Vortex.exists_one_sub_normSq_le_mul_exp`; the point here is that the constant is
+  (`TauCeti.Vortex.exists_one_sub_normSq_le_mul_exp_of_forall_mem_norm_le`). For a single vortex
+  this is `TauCeti.Vortex.exists_one_sub_normSq_le_mul_exp`; the point here is that the constant is
   uniform over a compact window of divisors. The lower bound gives `|α|² ≥ (1 + 4 c²) / 2`
   outside an explicit radius depending only on `m`, `R₀` and `c`, which is the input of the
   exterior comparison `TauCeti.Vortex.one_sub_normSq_le_neg_log_mul_exp`.
@@ -78,34 +78,6 @@ open scoped ContDiff
 
 /-! ### The comparison function -/
 
-/-- The Laplacian of `log (‖z - a‖² + C)` is `4 C / (‖z - a‖² + C)²`. -/
-private theorem laplacian_log_norm_sub_sq_add {C : ℝ} (hC : 0 < C) (a z : ℂ) :
-    Δ (fun w : ℂ ↦ Real.log (‖w - a‖ ^ 2 + C)) z = 4 * C / (‖z - a‖ ^ 2 + C) ^ 2 := by
-  set c : ℂ := (((Real.sqrt C)⁻¹ : ℝ) : ℂ)
-  set f : ℂ → ℂ := fun w ↦ (w - a) * c
-  have hc2 : ‖c‖ ^ 2 = C⁻¹ := by
-    simp [c, Complex.norm_real, inv_pow, Real.sq_sqrt hC.le]
-  have hf : AnalyticAt ℂ f z := (analyticAt_id.sub analyticAt_const).mul analyticAt_const
-  have hfun : (fun w : ℂ ↦ Real.log (‖w - a‖ ^ 2 + C)) =
-      fun w ↦ Real.log C + Real.log (1 + ‖f w‖ ^ 2) := by
-    funext w
-    rw [← Real.log_mul hC.ne' (by positivity)]
-    congr 1
-    simp only [f, norm_mul, mul_pow, hc2]
-    field_simp
-    ring
-  have hg : ContDiffAt ℝ 2 (fun w ↦ Real.log (1 + ‖f w‖ ^ 2)) z :=
-    (contDiffAt_const.add ((hf.contDiffAt.restrict_scalars ℝ).norm_sq ℝ)).log (by positivity)
-  have hderiv : deriv f z = c := by
-    simp [f]
-  rw [hfun, show (fun w ↦ Real.log C + Real.log (1 + ‖f w‖ ^ 2)) =
-      (fun _ ↦ Real.log C) + fun w ↦ Real.log (1 + ‖f w‖ ^ 2) from rfl,
-    contDiffAt_const.laplacian_add hg, laplacian_const, Pi.zero_apply, zero_add,
-    laplacian_log_one_add_norm_sq_of_analyticAt hf, hderiv, hc2]
-  simp only [f, norm_mul, mul_pow, hc2]
-  field_simp
-  ring
-
 /-- The function `z ↦ ∑_{a ∈ D} log (‖z - a‖² + C)` is `C²`, with Laplacian
 `∑_{a ∈ D} 4 C / (‖z - a‖² + C)²`. -/
 private theorem contDiff_sum_log_and_laplacian {C : ℝ} (hC : 0 < C) (D : Multiset ℂ) :
@@ -136,34 +108,9 @@ private theorem exp_neg_sum_log_mul_norm_prod_sq {C : ℝ} (hC : 0 < C) (D : Mul
   | empty => simp
   | cons b D ih =>
     have hb : 0 < ‖z - b‖ ^ 2 + C := by positivity
-    rw [Multiset.map_cons, Multiset.sum_cons, Multiset.map_cons, Multiset.prod_cons,
-      Multiset.map_cons, Multiset.prod_cons, ← ih, neg_add, Real.exp_add, Real.exp_neg,
-      Real.exp_log hb, norm_mul, mul_pow, div_eq_mul_inv]
-    ring
-
-/-- `log (‖z - a‖² + C) - 2 log ‖z‖ → 0` at infinity. -/
-private theorem tendsto_log_norm_sub_sq_add_sub {C : ℝ} (hC : 0 < C) (a : ℂ) :
-    Tendsto (fun z : ℂ ↦ Real.log (‖z - a‖ ^ 2 + C) - 2 * Real.log ‖z‖) (cocompact ℂ) (𝓝 0) := by
-  have hinv : Tendsto (fun z : ℂ ↦ z⁻¹) (cocompact ℂ) (𝓝 0) := by
-    rw [← cobounded_eq_cocompact]
-    exact tendsto_inv₀_cobounded
-  have hq : Tendsto (fun z : ℂ ↦ ‖1 - a * z⁻¹‖ ^ 2 + C * ‖z⁻¹‖ ^ 2) (cocompact ℂ) (𝓝 1) := by
-    have h := (((tendsto_const_nhds (x := (1 : ℂ))).sub
-      ((tendsto_const_nhds (x := a)).mul hinv)).norm.pow 2).add
-      ((tendsto_const_nhds (x := C)).mul (hinv.norm.pow 2))
-    simpa using h
-  have hlog := ((Real.continuousAt_log one_ne_zero).tendsto.comp hq)
-  rw [Real.log_one] at hlog
-  refine hlog.congr' ?_
-  filter_upwards [(isCompact_singleton : IsCompact ({0} : Set ℂ)).compl_mem_cocompact] with z hz
-  rw [Set.mem_compl_singleton_iff] at hz
-  have hza : z - a = z * (1 - a * z⁻¹) := by field_simp
-  simp only [Function.comp_apply]
-  rw [hza, norm_mul, norm_inv,
-    show (2 : ℝ) * Real.log ‖z‖ = Real.log (‖z‖ ^ 2) by rw [Real.log_pow]; norm_num,
-    ← Real.log_div (by positivity) (by positivity)]
-  congr 1
-  field_simp
+    simp only [Multiset.map_cons, Multiset.sum_cons, Multiset.prod_cons, ← ih, neg_add,
+      Real.exp_add, Real.exp_neg, Real.exp_log hb, norm_mul, mul_pow]
+    field_simp
 
 /-- The comparison function has the same growth as the amplitude:
 `-(1 / 2) ∑_{a ∈ D} log (‖z - a‖² + C) + m log ‖z‖ → 0`, where `m` is the cardinality of `D`. -/
@@ -184,38 +131,27 @@ private theorem tendsto_neg_half_mul_sum_log_add_card_mul_log {C : ℝ} (hC : 0 
     nsmul_eq_mul]
   ring
 
-/-! ### Two product inequalities -/
+/-! ### The weights `C / (‖z - a‖² + C)` -/
 
-/-- For `tₐ ∈ [0, 1]`, the product `∏ (1 - tₐ)` lies in `[0, 1]` and
-`∑ tₐ² ≤ card · (1 - ∏ (1 - tₐ))`. -/
-private theorem sum_sq_le_card_mul_one_sub_prod (s : Multiset ℝ) (hs : ∀ t ∈ s, 0 ≤ t ∧ t ≤ 1) :
-    0 ≤ (s.map fun t ↦ 1 - t).prod ∧ (s.map fun t ↦ 1 - t).prod ≤ 1 ∧
-      (s.map fun t ↦ t ^ 2).sum ≤ (Multiset.card s : ℝ) * (1 - (s.map fun t ↦ 1 - t).prod) := by
-  induction s using Multiset.induction_on with
-  | empty => simp
-  | cons t₀ s ih =>
-    obtain ⟨h₀, h₁⟩ := hs t₀ (Multiset.mem_cons_self _ _)
-    obtain ⟨hP₀, hP₁, hS⟩ := ih fun t ht ↦ hs t (Multiset.mem_cons_of_mem ht)
-    simp only [Multiset.map_cons, Multiset.prod_cons, Multiset.sum_cons, Multiset.card_cons]
-    push_cast
-    set P := (s.map fun t ↦ 1 - t).prod
-    set S := (s.map fun t ↦ t ^ 2).sum
-    have hk : (0 : ℝ) ≤ Multiset.card s := Nat.cast_nonneg _
-    refine ⟨mul_nonneg (by linarith) hP₀, by nlinarith, ?_⟩
-    nlinarith [mul_nonneg (sub_nonneg.2 hP₁) (sub_nonneg.2 h₁), mul_nonneg hk (mul_nonneg h₀ hP₀),
-      mul_le_of_le_one_left h₀ h₁]
+/-- The weights `C / (‖z - a‖² + C)` lie in `[0, 1]`. -/
+private theorem mem_Icc_of_mem_map_div_norm_sub_sq_add {C : ℝ} (hC : 0 < C) (D : Multiset ℂ)
+    (z : ℂ) : ∀ s ∈ D.map fun a ↦ C / (‖z - a‖ ^ 2 + C), s ∈ Set.Icc 0 1 := by
+  intro s hs
+  obtain ⟨a, -, rfl⟩ := Multiset.mem_map.1 hs
+  exact ⟨by positivity, div_le_one_of_le₀ (by nlinarith [sq_nonneg ‖z - a‖]) (by positivity)⟩
 
-/-- For `tₐ ∈ [0, 1]`, `1 - ∏ (1 - tₐ) ≤ ∑ tₐ`. -/
-private theorem one_sub_prod_le_sum (s : Multiset ℝ) (hs : ∀ t ∈ s, 0 ≤ t ∧ t ≤ 1) :
-    1 - (s.map fun t ↦ 1 - t).prod ≤ s.sum := by
-  induction s using Multiset.induction_on with
-  | empty => simp
-  | cons t₀ s ih =>
-    obtain ⟨h₀, -⟩ := hs t₀ (Multiset.mem_cons_self _ _)
-    have hP := sum_sq_le_card_mul_one_sub_prod s fun t ht ↦ hs t (Multiset.mem_cons_of_mem ht)
-    have ih := ih fun t ht ↦ hs t (Multiset.mem_cons_of_mem ht)
-    simp only [Multiset.map_cons, Multiset.prod_cons, Multiset.sum_cons]
-    nlinarith [mul_le_of_le_one_right h₀ hP.2.1]
+/-- `∏ (1 - C / (‖z - a‖² + C)) = ∏ ‖z - a‖² / (‖z - a‖² + C)`. -/
+private theorem prod_map_one_sub_div_norm_sub_sq_add {C : ℝ} (hC : 0 < C) (D : Multiset ℂ)
+    (z : ℂ) :
+    ((D.map fun a ↦ C / (‖z - a‖ ^ 2 + C)).map fun t ↦ 1 - t).prod =
+      (D.map fun a ↦ ‖z - a‖ ^ 2 / (‖z - a‖ ^ 2 + C)).prod := by
+  rw [Multiset.map_map]
+  congr 1
+  refine Multiset.map_congr rfl fun a _ ↦ ?_
+  have : 0 < ‖z - a‖ ^ 2 + C := by positivity
+  simp only [Function.comp_apply]
+  field_simp
+  ring
 
 /-! ### The comparison theorem for the scalar equation -/
 
@@ -230,35 +166,29 @@ private theorem rhs_lt_neg_half_mul_sum {D : Multiset ℂ} {C : ℝ}
       -(1 / 2) * (D.map fun a ↦ 4 * C / (‖z - a‖ ^ 2 + C) ^ 2).sum := by
   have hC₀ : 0 < C := lt_of_le_of_lt (by positivity) hC
   -- The weights `tₐ = C / (‖z - a‖² + C) ∈ [0, 1]`.
-  set t : ℂ → ℝ := fun a ↦ C / (‖z - a‖ ^ 2 + C) with ht
-  have ht01 : ∀ s ∈ D.map t, 0 ≤ s ∧ s ≤ 1 := by
-    intro s hs
-    obtain ⟨a, -, rfl⟩ := Multiset.mem_map.1 hs
-    exact ⟨by positivity, div_le_one_of_le₀ (by nlinarith [sq_nonneg ‖z - a‖]) (by positivity)⟩
-  obtain ⟨hP₀, hP₁, hS⟩ := sum_sq_le_card_mul_one_sub_prod _ ht01
-  rw [Multiset.card_map, Multiset.map_map, Multiset.map_map] at hS
-  rw [Multiset.map_map] at hP₀ hP₁
+  have h01 := mem_Icc_of_mem_map_div_norm_sub_sq_add hC₀ D z
+  have hP₀ := Multiset.prod_map_nonneg (f := fun t : ℝ ↦ 1 - t) fun t ht ↦
+    sub_nonneg.2 (h01 t ht).2
+  have hP₁ := Multiset.prod_map_one_sub_le_one (fun t ht ↦ (h01 t ht).1) fun t ht ↦ (h01 t ht).2
+  have hS := Multiset.sum_map_sq_le_card_mul_one_sub_prod_map_one_sub (fun t ht ↦ (h01 t ht).1)
+    fun t ht ↦ (h01 t ht).2
+  rw [Multiset.card_map] at hS
   -- In these weights the Laplacian is `-(2 / C) ∑ tₐ²` and `exp (2 v) |f|² = ∏ (1 - tₐ)`.
   have hsum : (D.map fun a ↦ 4 * C / (‖z - a‖ ^ 2 + C) ^ 2).sum =
-      4 / C * (D.map ((fun s ↦ s ^ 2) ∘ t)).sum := by
-    rw [← Multiset.sum_map_mul_left]
+      4 / C * ((D.map fun a ↦ C / (‖z - a‖ ^ 2 + C)).map fun t ↦ t ^ 2).sum := by
+    rw [Multiset.map_map, ← Multiset.sum_map_mul_left]
     congr 1
     refine Multiset.map_congr rfl fun a _ ↦ ?_
-    simp only [Function.comp_apply, ht]
+    simp only [Function.comp_apply]
     field_simp
   have hprod : Real.exp (2 * (-(1 / 2) * (D.map fun a ↦ Real.log (‖z - a‖ ^ 2 + C)).sum)) *
-      ‖(D.map fun a ↦ z - a).prod‖ ^ 2 = (D.map ((fun s ↦ 1 - s) ∘ t)).prod := by
+      ‖(D.map fun a ↦ z - a).prod‖ ^ 2 =
+        ((D.map fun a ↦ C / (‖z - a‖ ^ 2 + C)).map fun t ↦ 1 - t).prod := by
     rw [show ∀ y : ℝ, 2 * (-(1 / 2) * y) = -y from fun y ↦ by ring,
-      exp_neg_sum_log_mul_norm_prod_sq hC₀ D z]
-    congr 1
-    refine Multiset.map_congr rfl fun a _ ↦ ?_
-    have : 0 < ‖z - a‖ ^ 2 + C := by positivity
-    simp only [Function.comp_apply, ht]
-    field_simp
-    ring
+      exp_neg_sum_log_mul_norm_prod_sq hC₀ D z, prod_map_one_sub_div_norm_sub_sq_add hC₀ D z]
   rw [hsum]
-  set P := (D.map ((fun s ↦ 1 - s) ∘ t)).prod
-  set S := (D.map ((fun s ↦ s ^ 2) ∘ t)).sum
+  set P := ((D.map fun a ↦ C / (‖z - a‖ ^ 2 + C)).map fun t ↦ 1 - t).prod
+  set S := ((D.map fun a ↦ C / (‖z - a‖ ^ 2 + C)).map fun t ↦ t ^ 2).sum
   rcases eq_or_ne ‖(D.map fun a ↦ z - a).prod‖ 0 with h0 | h0
   · -- Where `f` vanishes the left side is `-1 / 8`, while `-(2 / C) ∑ tₐ² ≥ -2 m / C > -1 / 8`.
     rw [h0]
@@ -291,7 +221,7 @@ theorem prod_div_le_exp_two_mul_mul_norm_prod_sq {D : Multiset ℂ} {u : ℂ →
   set F : ℂ → ℝ := fun w ↦ (D.map fun a ↦ Real.log (‖w - a‖ ^ 2 + C)).sum with hF
   obtain ⟨hFd, hFΔ⟩ := contDiff_sum_log_and_laplacian hC₀ D
   set v : ℂ → ℝ := (-(1 / 2) : ℝ) • F with hv
-  have hvz (w : ℂ) : v w = -(1 / 2) * F w := rfl
+  have hvz (w : ℂ) : v w = -(1 / 2) * F w := by simp only [hv, Pi.smul_apply, smul_eq_mul]
   -- It suffices to show that the comparison function `v` lies below `u`.
   suffices hle : ∀ w, v w ≤ u w by
     calc _ = Real.exp (2 * v z) * ‖(D.map fun a ↦ z - a).prod‖ ^ 2 := by
@@ -351,20 +281,10 @@ theorem one_sub_normSq_le_sum {x : ℂ → EuclideanSpace ℝ (Fin 4)} (hx : Con
     1 - 4 * (x z 2 ^ 2 + x z 3 ^ 2) ≤ (D.map fun a ↦ C / (‖z - a‖ ^ 2 + C)).sum := by
   have hC₀ : 0 < C := lt_of_le_of_lt (by positivity) hC
   have hlow := prod_div_le_normSq hx hsol hframe hD hC z
-  have ht01 : ∀ s ∈ D.map fun a ↦ C / (‖z - a‖ ^ 2 + C), 0 ≤ s ∧ s ≤ 1 := by
-    intro s hs
-    obtain ⟨a, -, rfl⟩ := Multiset.mem_map.1 hs
-    exact ⟨by positivity, div_le_one_of_le₀ (by nlinarith [sq_nonneg ‖z - a‖]) (by positivity)⟩
-  have h := one_sub_prod_le_sum _ ht01
-  rw [Multiset.map_map] at h
-  have hprod : (D.map ((fun s ↦ 1 - s) ∘ fun a ↦ C / (‖z - a‖ ^ 2 + C))).prod =
-      (D.map fun a ↦ ‖z - a‖ ^ 2 / (‖z - a‖ ^ 2 + C)).prod := by
-    congr 1
-    refine Multiset.map_congr rfl fun a _ ↦ ?_
-    have : 0 < ‖z - a‖ ^ 2 + C := by positivity
-    simp only [Function.comp_apply]
-    field_simp
-    ring
+  have h01 := mem_Icc_of_mem_map_div_norm_sub_sq_add hC₀ D z
+  have h := Multiset.one_sub_prod_map_one_sub_le_sum (fun t ht ↦ (h01 t ht).1)
+    fun t ht ↦ (h01 t ht).2
+  rw [prod_map_one_sub_div_norm_sub_sq_add hC₀ D z] at h
   linarith
 
 /-- **Localization of small moduli near the zeros.** For a smooth plane vortex with the degree-`m`
@@ -424,9 +344,10 @@ private theorem one_sub_le_normSq_of_le_norm {x : ℂ → EuclideanSpace ℝ (Fi
     nlinarith [mul_pos hδ hC₀]
   linarith [one_sub_normSq_le_sum hx hsol hframe hD hC z]
 
-/-- The case `0 ≤ c` of `exists_forall_one_sub_normSq_le_mul_exp`, with a nonnegative constant. -/
-private theorem exists_forall_one_sub_normSq_le_mul_exp_of_nonneg (m : ℕ) (R₀ : ℝ) {c : ℝ}
-    (hc₀ : 0 ≤ c) (hc : c < 1 / 2) :
+/-- The case `0 ≤ c` of `exists_one_sub_normSq_le_mul_exp_of_forall_mem_norm_le`, with a
+nonnegative constant. -/
+private theorem exists_one_sub_normSq_le_mul_exp_of_forall_mem_norm_le_of_nonneg (m : ℕ) (R₀ : ℝ)
+    {c : ℝ} (hc₀ : 0 ≤ c) (hc : c < 1 / 2) :
     ∃ K, 0 ≤ K ∧ ∀ (x : ℂ → EuclideanSpace ℝ (Fin 4)) (D : Multiset ℂ), ContDiff ℝ ∞ x →
       (∀ z, equation x z = 0) →
       Tendsto (fun z ↦ sectionValue x z * ((z / (‖z‖ : ℂ)) ^ m)⁻¹) (cocompact ℂ) (𝓝 1) →
@@ -468,13 +389,14 @@ private theorem exists_forall_one_sub_normSq_le_mul_exp_of_nonneg (m : ℕ) (R�
 degree `m`, radius `R₀` and rate `c < 1 / 2` there is a constant `K` such that every smooth plane
 vortex with the degree-`m` end framing whose zeros lie in the closed disc of radius `R₀` satisfies
 `1 - |α(z)|² ≤ K exp (-c |z|)` for every `z`. -/
-theorem exists_forall_one_sub_normSq_le_mul_exp (m : ℕ) (R₀ : ℝ) {c : ℝ} (hc : c < 1 / 2) :
+theorem exists_one_sub_normSq_le_mul_exp_of_forall_mem_norm_le (m : ℕ) (R₀ : ℝ) {c : ℝ}
+    (hc : c < 1 / 2) :
     ∃ K, ∀ (x : ℂ → EuclideanSpace ℝ (Fin 4)) (D : Multiset ℂ), ContDiff ℝ ∞ x →
       (∀ z, equation x z = 0) →
       Tendsto (fun z ↦ sectionValue x z * ((z / (‖z‖ : ℂ)) ^ m)⁻¹) (cocompact ℂ) (𝓝 1) →
       IsZeroMultiplicity (sectionValue x) (fun z ↦ D.count z) → (∀ a ∈ D, ‖a‖ ≤ R₀) →
       ∀ z, 1 - 4 * (x z 2 ^ 2 + x z 3 ^ 2) ≤ K * Real.exp (-(c * ‖z‖)) := by
-  obtain ⟨K, hK₀, hK⟩ := exists_forall_one_sub_normSq_le_mul_exp_of_nonneg m R₀
+  obtain ⟨K, hK₀, hK⟩ := exists_one_sub_normSq_le_mul_exp_of_forall_mem_norm_le_of_nonneg m R₀
     (le_max_right c 0) (max_lt hc (by norm_num))
   refine ⟨K, fun x D hx hsol hframe hD hD₀ z ↦ (hK x D hx hsol hframe hD hD₀ z).trans ?_⟩
   exact mul_le_mul_of_nonneg_left (Real.exp_le_exp.mpr (neg_le_neg
