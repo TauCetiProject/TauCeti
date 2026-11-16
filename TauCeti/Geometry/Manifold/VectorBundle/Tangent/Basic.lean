@@ -62,6 +62,8 @@ are those of its summands, so its tangent coordinate changes are those of the su
 * `TauCeti.Manifold.continuousLinearMapAt_trivializationAt_self` and
   `TauCeti.Manifold.symmL_trivializationAt_self`: the canonical trivialization at `x` and its
   inverse act as the identity on the fibre over `x`.
+* `TauCeti.Manifold.extChartAt_tangent_self_snd`: in the tangent-bundle chart at `v`, the fibre
+  coordinate of `v` is `v` itself.
 * `TauCeti.Manifold.extend_eq_trivializationAt_symm`: the extension of a tangent vector `w` at `x`
   is the vector field with constant coordinates `w` in the canonical trivialization at `x`.
 * `TauCeti.Manifold.inTangentCoordinates_eq_self_of_eq`: a field of linear maps read in the tangent
@@ -257,6 +259,15 @@ theorem symmL_trivializationAt_self (x : M) (v : E) :
     (trivializationAt E (TangentSpace I) x).symmL 𝕜 x v = v := by
   rw [TangentBundle.symmL_trivializationAt_eq_core (mem_chart_source H x)]
   exact (tangentBundleCore I M).coordChange_self (achart H x) x (mem_chart_source H x) v
+
+/-- In the tangent-bundle chart at `v`, the fibre coordinate of `v` itself is `v`: the chart reads
+fibres through the tangent coordinate change from the chart at `v.proj` to itself, which is the
+identity at `v.proj`. -/
+theorem extChartAt_tangent_self_snd (v : TangentBundle I M) :
+    (extChartAt I.tangent v v).2 = v.2 := by
+  rw [extChartAt_coe, Function.comp_apply, ModelWithCorners.tangent, ModelWithCorners.prod_apply,
+    modelWithCornersSelf_coe, id, TangentBundle.coe_chartAt_snd]
+  exact tangentCoordChange_self (mem_extChartAt_source v.proj)
 
 /-- The vector field with constant coordinates `u` in the trivialization of the tangent bundle at
 `x` takes the value `u` at `x`. -/

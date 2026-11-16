@@ -254,14 +254,7 @@ private theorem IsRegularLagrangian.eulerLagrange_extChartAt_self_of_isMIntegral
   have hX₁ : (X (γ t)).1 = (Φ (γ t)).2 := by
     have h := hreg.mfderiv_proj_eq_snd_of_isHamiltonianVectorField hL hX (γ t)
     rw [Bundle.mfderiv_proj] at h
-    have hΦ : (Φ (γ t)).2 = (γ t).2 := by
-      -- The fibre coordinate is read in the trivialization at `(γ t).proj`, which is the identity
-      -- on the fibre over that point.
-      have hb := FiberBundle.mem_baseSet_trivializationAt' (F := E) (E := TangentSpace I) (γ t).proj
-      rw [Bundle.extChartAt_apply_of_mem_baseSet (γ t) hb,
-        ← Trivialization.continuousLinearMapAt_apply_of_mem (R := ℝ) _ hb]
-      exact Manifold.continuousLinearMapAt_trivializationAt_self _ _
-    rw [hΦ, ← h]
+    rw [Manifold.extChartAt_tangent_self_snd, ← h]
     -- `dπ` is the first projection of `E × E`, read on the tangent space of `TM`.
     rfl
   exact eulerLagrange_of_hasDerivAt_of_symplecticForm (L := L ∘ Φ.symm)
@@ -308,15 +301,10 @@ theorem IsRegularLagrangian.eulerLagrange_extChartAt_of_isMIntegralCurve
     ((Bundle.mem_extChartAt_source_iff w₀ (γ t)).1 ht).2
   have hbase : (γ t).proj ∈ (extChartAt I (γ t).proj).source := mem_extChartAt_source _
   -- Both changes of base charts are smooth at the relevant points.
-  have htrans : ∀ a b : M, ∀ z ∈ (extChartAt I a).source ∩ (extChartAt I b).source,
-      ContDiffAt ℝ ∞ (extChartAt I a ∘ (extChartAt I b).symm) (extChartAt I b z) := by
-    rintro a b z ⟨ha, hb⟩
-    have h := contDiffWithinAt_ext_coord_change (I := I) (n := ∞) a b (y := extChartAt I b z)
-      ⟨(extChartAt I b).map_source hb, by rwa [mem_preimage, PartialEquiv.symm_symm,
-        (extChartAt I b).left_inv hb]⟩
-    rwa [I.range_eq_univ, contDiffWithinAt_univ] at h
-  have hψ : ContDiffAt ℝ ∞ ψ (Φ (γ t)).1 := htrans _ _ _ ⟨hbase₀, hbase⟩
-  have hφ : ContDiffAt ℝ ∞ φ (Ψ (γ t)).1 := htrans _ _ _ ⟨hbase, hbase₀⟩
+  have hψ : ContDiffAt ℝ ∞ ψ (Φ (γ t)).1 :=
+    contDiffAt_ext_coord_change _ _ (PartialEquiv.mem_symm_trans_source _ hbase hbase₀)
+  have hφ : ContDiffAt ℝ ∞ φ (Ψ (γ t)).1 :=
+    contDiffAt_ext_coord_change _ _ (PartialEquiv.mem_symm_trans_source _ hbase₀ hbase)
   -- The base coordinate in the chart at `w₀` has velocity the fibre coordinate there.
   have hq₀ : HasDerivAt (fun s ↦ (Ψ (γ s)).1) (Ψ (γ t)).2 t := by
     have h := (hψ.differentiableAt (by simp)).hasFDerivAt.comp_hasDerivAt_of_eq t hq rfl
