@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.LinearAlgebra.RootSystem.Finite.CanonicalBilinear
 public import Mathlib.LinearAlgebra.RootSystem.IsValuedIn
 public import Mathlib.LinearAlgebra.RootSystem.Reduced
 public import TauCeti.LinearAlgebra.RootSystem.Component.Basic
@@ -17,7 +18,7 @@ pairing on the component space and its coroot analogue, whose non-orthogonality 
 component. It is a root system, irreducible when `2 ≠ 0` in the field, so each component gives an
 irreducible root system and, by `RootPairing.isInternal_componentSpace`, the ambient space is the
 direct sum of their spaces. The component pairing inherits being crystallographic and being
-reduced.
+reduced, and the canonical bilinear form splits as the orthogonal sum of the component root forms.
 
 The pairing between the two component spaces is perfect because a root or coroot of a component is
 orthogonal to everything in the other components, so nondegeneracy of the ambient pairing already
@@ -35,6 +36,10 @@ holds on the component.
   `2 ≠ 0` in the field.
 * `RootPairing.componentProj_reflection_of_eq`: the projection onto the component space of `C`
   carries the reflections at roots of `C` to the reflections of the component pairing.
+* `RootPairing.componentPairing_coroot'_componentProj`: evaluating a component coroot on
+  `P.componentProj C x` agrees with evaluating the ambient coroot on `x`.
+* `RootPairing.rootForm_eq_sum_componentPairing`: the canonical bilinear form of a finite root
+  system is the orthogonal sum of the canonical bilinear forms of its irreducible components.
 
 ## References
 
@@ -170,6 +175,40 @@ instance isReduced_componentPairing [P.IsReduced] : (P.componentPairing C).IsRed
     · exact Subtype.ext h
     · exact Subtype.ext h
 
+/-- Evaluating a component coroot on `P.componentProj C x` agrees with evaluating the ambient
+coroot on `x`. -/
+theorem componentPairing_coroot'_componentProj (i : C.supp) (x : M) :
+    (P.componentPairing C).coroot' i (P.componentProj C x) = P.coroot' i x := by
+  let _ : Fintype P.Component := Fintype.ofFinite _
+  conv_rhs => rw [← P.sum_componentProj x]
+  rw [map_sum, Finset.sum_eq_single_of_mem C (Finset.mem_univ C)]
+  · simp [coroot']
+  · intro D _ hDC
+    have hne : P.componentOf i ≠ D := by
+      have hC : P.componentOf i = C := (C.mem_supp_iff i).mp i.2
+      exact hC.trans_ne hDC.symm
+    exact coroot'_eq_zero_of_mem_componentSpace hne (P.componentProj D x).2
+
 end
+
+/-- **The canonical bilinear form of a finite root system is the orthogonal sum of the canonical
+bilinear forms of its irreducible components.** -/
+theorem rootForm_eq_sum_componentPairing [Fintype ι] [Fintype P.Component]
+    [∀ C : P.Component, Fintype C.supp] [P.IsRootSystem] (x y : M) :
+    P.RootForm x y =
+      ∑ C : P.Component, (P.componentPairing C).RootForm (P.componentProj C x)
+        (P.componentProj C y) := by
+  let e : ι ≃ Σ C : P.Component, C.supp := (_root_.Equiv.sigmaFiberEquiv P.componentOf).symm
+  rw [rootForm_apply_apply,
+    Fintype.sum_equiv e _
+      (fun s : Σ C : P.Component, C.supp ↦
+        (P.componentPairing s.1).coroot' s.2 (P.componentProj s.1 x) *
+          (P.componentPairing s.1).coroot' s.2 (P.componentProj s.1 y))
+      (fun i ↦ by
+        simp only [e, componentPairing_coroot'_componentProj]
+        rfl),
+    Fintype.sum_sigma]
+  refine Finset.sum_congr rfl fun C _ ↦ ?_
+  rw [rootForm_apply_apply]
 
 end RootPairing

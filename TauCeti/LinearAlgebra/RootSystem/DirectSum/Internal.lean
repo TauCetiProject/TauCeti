@@ -8,6 +8,7 @@ module
 public import TauCeti.LinearAlgebra.Projection
 public import TauCeti.LinearAlgebra.RootSystem.Component.Pairing
 public import TauCeti.LinearAlgebra.RootSystem.DirectSum.Basic
+import Mathlib.Algebra.Ring.Regular
 import TauCeti.LinearAlgebra.RootSystem.Weyl.Transport
 
 /-!
@@ -34,10 +35,9 @@ form, and Weyl-group results for `internalDirectSum`, requiring only `[Finite κ
 
 Finally, for a finite root system `P` over a field with `2 ≠ 0`,
 `RootPairing.equivInternalDirectSumComponentPairing` identifies `P` with the internal direct sum
-of its irreducible component pairings `P.componentPairing`. As consequences, the Weyl group of `P`
+of its irreducible component pairings `P.componentPairing`. As a consequence, the Weyl group of `P`
 splits as the product of the Weyl groups of its irreducible components
-(`RootPairing.componentWeylGroupEquiv`), and the canonical bilinear form splits as the orthogonal
-sum of the component root forms (`RootPairing.rootForm_eq_sum_componentPairing`).
+(`RootPairing.componentWeylGroupEquiv`).
 
 ## Main definitions
 
@@ -68,8 +68,6 @@ sum of the component root forms (`RootPairing.rootForm_eq_sum_componentPairing`)
   `RootPairing.mem_dominantChamber_internalDirectSum_iff`,
   `RootPairing.mem_openDominantChamber_internalDirectSum_iff`: coordinatewise decomposition along
   `TauCeti.internalProjection`.
-* `RootPairing.rootForm_eq_sum_componentPairing`: the canonical bilinear form of a finite root
-  system is the orthogonal sum of its irreducible component root forms.
 
 ## References
 
@@ -92,35 +90,6 @@ variable {κ R M : Type*} [CommRing R] [NeZero (2 : R)]
   (P : ∀ c, RootPairing (ι c) R (E c) (N c))
 
 omit [NeZero (2 : R)] in
-/-- The canonical linear equivalence `(∀ c, E c) ≃ₗ[R] M` associated to a finite internal direct
-sum decomposition `E`, requiring no `DecidableEq κ`. -/
-private noncomputable def internalDirectSumWeightEquiv [Fintype κ] : (∀ c, E c) ≃ₗ[R] M :=
-  LinearEquiv.ofLinearMap
-    (∑ c, (E c).subtype.comp (LinearMap.proj c))
-    (LinearMap.pi fun c ↦ internalProjection hEi hEt c)
-    (LinearMap.ext fun x ↦ by
-      simp only [LinearMap.comp_apply, LinearMap.sum_apply, LinearMap.pi_apply,
-        Submodule.coe_subtype, LinearMap.proj_apply, LinearMap.id_apply]
-      exact sum_coe_internalProjection hEi hEt x)
-    (LinearMap.ext fun x ↦ funext fun c ↦ by
-      simp only [LinearMap.comp_apply, LinearMap.pi_apply, LinearMap.sum_apply,
-        Submodule.coe_subtype, LinearMap.proj_apply, LinearMap.id_apply, map_sum]
-      rw [Finset.sum_eq_single_of_mem c (Finset.mem_univ c)]
-      · exact internalProjection_apply hEi hEt (x c)
-      · intro d _ hdc
-        exact internalProjection_apply_of_ne hEi hEt hdc (x d))
-
-omit [NeZero (2 : R)] in
-private theorem internalDirectSumWeightEquiv_apply [Fintype κ] (x : ∀ c, E c) :
-    internalDirectSumWeightEquiv hEi hEt x = ∑ c, (x c : M) := by
-  simp [internalDirectSumWeightEquiv]
-
-omit [NeZero (2 : R)] in
-private theorem internalDirectSumWeightEquiv_symm_apply [Fintype κ] (x : M) (c : κ) :
-    (internalDirectSumWeightEquiv hEi hEt).symm x c = internalProjection hEi hEt c x := by
-  simp [internalDirectSumWeightEquiv]
-
-omit [NeZero (2 : R)] in
 /-- The ambient module `M` of a finite internal direct sum of root pairings is reflexive, so
 `Module.Dual.eval R M` is a perfect pairing. -/
 private theorem isReflexive_of_internalDirectSum [Finite κ]
@@ -129,29 +98,36 @@ private theorem isReflexive_of_internalDirectSum [Finite κ]
   let _ : Fintype κ := Fintype.ofFinite κ
   have : Module.IsReflexive R (∀ c, E c) :=
     Module.IsReflexive.of_isPerfPair (LinearMap.piPairing fun c ↦ (P c).toLinearMap)
-  let e := internalDirectSumWeightEquiv hEi hEt
+  let e := internalDirectSumEquiv hEi hEt
   exact Module.IsReflexive.of_split e.symm.toLinearMap e.toLinearMap
     (LinearMap.ext fun x ↦ e.apply_symm_apply x)
 
-omit [NeZero (2 : R)] in
-/-- The coordinatewise reflection permutation on `Σ c, ι c`, defined using classical decidability
-so that `internalDirectSum` requires no `[DecidableEq κ]`. -/
-private noncomputable def internalReflectionPerm (s : Σ c, ι c) : _root_.Equiv.Perm (Σ c, ι c) :=
-  let _ : DecidableEq κ := Classical.decEq κ
-  _root_.Equiv.sigmaCongrRight fun d ↦
-    if h : d = s.1 then (P d).reflectionPerm (h ▸ s.2) else _root_.Equiv.refl (ι d)
+include hEi hEt in
+private theorem internalDirectSum_root_injective :
+    Function.Injective fun s : Σ c, ι c ↦ ((P s.1).root s.2 : M) := by
+  rintro ⟨c, i⟩ ⟨d, j⟩ h
+  by_cases hcd : c = d
+  · subst hcd
+    exact congrArg (Sigma.mk c) ((P c).root.injective (Subtype.ext h))
+  · have h0 : (P c).root i = 0 := by
+      have := congrArg (internalProjection hEi hEt c) h
+      simpa [internalProjection_apply_of_ne hEi hEt (Ne.symm hcd)] using this
+    exact ((P c).ne_zero i h0).elim
 
-omit [NeZero (2 : R)] in
-private theorem internalReflectionPerm_same (c : κ) (i j : ι c) :
-    internalReflectionPerm P ⟨c, i⟩ ⟨c, j⟩ = ⟨c, (P c).reflectionPerm i j⟩ := by
-  let _ : DecidableEq κ := Classical.decEq κ
-  simp [internalReflectionPerm]
-
-omit [NeZero (2 : R)] in
-private theorem internalReflectionPerm_ne {c d : κ} (hcd : c ≠ d) (i : ι c) (j : ι d) :
-    internalReflectionPerm P ⟨c, i⟩ ⟨d, j⟩ = ⟨d, j⟩ := by
-  let _ : DecidableEq κ := Classical.decEq κ
-  simp [internalReflectionPerm, Ne.symm hcd]
+private theorem internalDirectSum_coroot_injective :
+    Function.Injective fun s : Σ c, ι c ↦
+      ((P s.1).coroot' s.2).comp (internalProjection hEi hEt s.1) := by
+  rintro ⟨c, i⟩ ⟨d, j⟩ h
+  by_cases hcd : c = d
+  · subst hcd
+    refine congrArg (Sigma.mk c) ((P c).coroot.injective ?_)
+    refine (P c).flip.toPerfPair.injective (LinearMap.ext fun x ↦ ?_)
+    have hx := LinearMap.congr_fun h (x : M)
+    simpa [coroot'] using hx
+  · have h0 : (2 : R) = 0 := by
+      have hx := LinearMap.congr_fun h ((P c).root i : M)
+      simpa [internalProjection_apply_of_ne hEi hEt hcd, root_coroot'_eq_pairing] using hx
+    exact (two_ne_zero h0).elim
 
 /-- **The finite internal direct sum of root pairings on submodules `E c ≤ M`.**
 
@@ -164,63 +140,42 @@ noncomputable def internalDirectSum [Finite κ] :
   isPerfPair_toLinearMap := by
     have := isReflexive_of_internalDirectSum hEi hEt P
     infer_instance
-  root :=
-    ⟨fun s ↦ ((P s.1).root s.2 : M), by
-      rintro ⟨c, i⟩ ⟨d, j⟩ h
-      by_cases hcd : c = d
-      · subst hcd
-        exact congrArg (Sigma.mk c) ((P c).root.injective (Subtype.ext h))
-      · have h0 : (P c).root i = 0 := by
-          have := congrArg (internalProjection hEi hEt c) h
-          simpa [internalProjection_apply_of_ne hEi hEt (Ne.symm hcd)] using this
-        exact ((P c).ne_zero i h0).elim⟩
+  root := ⟨fun s ↦ ((P s.1).root s.2 : M), internalDirectSum_root_injective hEi hEt P⟩
   coroot :=
-    ⟨fun s ↦ ((P s.1).coroot' s.2).comp (internalProjection hEi hEt s.1), by
-      rintro ⟨c, i⟩ ⟨d, j⟩ h
-      by_cases hcd : c = d
-      · subst hcd
-        refine congrArg (Sigma.mk c) ((P c).coroot.injective ?_)
-        refine (P c).flip.toPerfPair.injective (LinearMap.ext fun x ↦ ?_)
-        have hx := LinearMap.congr_fun h (x : M)
-        simpa [coroot'] using hx
-      · have h0 : (2 : R) = 0 := by
-          have hx := LinearMap.congr_fun h ((P c).root i : M)
-          simpa [internalProjection_apply_of_ne hEi hEt hcd, root_coroot'_eq_pairing] using hx
-        exact (two_ne_zero h0).elim⟩
+    ⟨fun s ↦ ((P s.1).coroot' s.2).comp (internalProjection hEi hEt s.1),
+      internalDirectSum_coroot_injective hEi hEt P⟩
   root_coroot_two s := by
-    change ((P s.1).coroot' s.2) (internalProjection hEi hEt s.1 ((P s.1).root s.2 : M)) = 2
-    rw [internalProjection_apply, root_coroot'_eq_pairing, pairing_same]
-  reflectionPerm := internalReflectionPerm P
+    simp only [Function.Embedding.coeFn_mk, Module.Dual.eval_apply, LinearMap.comp_apply,
+      internalProjection_apply, root_coroot'_eq_pairing, pairing_same]
+  reflectionPerm :=
+    let _ : Fintype κ := Fintype.ofFinite κ
+    let _ : DecidableEq κ := Classical.decEq κ
+    (pi P).reflectionPerm
   reflectionPerm_root := by
     rintro ⟨c, i⟩ ⟨d, j⟩
-    change ((P d).root j : M) -
-        ((P c).coroot' i (internalProjection hEi hEt c ((P d).root j : M))) •
-          ((P c).root i : M) =
-      ((P (internalReflectionPerm P ⟨c, i⟩ ⟨d, j⟩).1).root
-        (internalReflectionPerm P ⟨c, i⟩ ⟨d, j⟩).2 : M)
+    let _ : Fintype κ := Fintype.ofFinite κ
+    let _ : DecidableEq κ := Classical.decEq κ
+    simp only [Function.Embedding.coeFn_mk, Module.Dual.eval_apply, LinearMap.comp_apply]
     by_cases hcd : c = d
     · subst hcd
-      rw [internalReflectionPerm_same, internalProjection_apply]
+      rw [pi_reflectionPerm_same, internalProjection_apply]
       exact_mod_cast (P c).reflectionPerm_root i j
-    · rw [internalReflectionPerm_ne P hcd,
-        internalProjection_apply_of_ne hEi hEt (Ne.symm hcd)]
+    · rw [pi_reflectionPerm_ne P hcd, internalProjection_apply_of_ne hEi hEt (Ne.symm hcd)]
       simp
   reflectionPerm_coroot := by
     rintro ⟨c, i⟩ ⟨d, j⟩
+    let _ : Fintype κ := Fintype.ofFinite κ
+    let _ : DecidableEq κ := Classical.decEq κ
     refine LinearMap.ext fun x ↦ ?_
-    change ((P d).coroot' j (internalProjection hEi hEt d x)) -
-        ((P d).coroot' j (internalProjection hEi hEt d ((P c).root i : M))) *
-          ((P c).coroot' i (internalProjection hEi hEt c x)) =
-      ((P (internalReflectionPerm P ⟨c, i⟩ ⟨d, j⟩).1).coroot'
-        (internalReflectionPerm P ⟨c, i⟩ ⟨d, j⟩).2)
-        (internalProjection hEi hEt (internalReflectionPerm P ⟨c, i⟩ ⟨d, j⟩).1 x)
+    simp only [Function.Embedding.coeFn_mk, LinearMap.sub_apply, LinearMap.smul_apply,
+      LinearMap.comp_apply, Module.Dual.eval_apply, smul_eq_mul]
     by_cases hcd : c = d
     · subst hcd
-      rw [internalReflectionPerm_same, internalProjection_apply]
+      rw [pi_reflectionPerm_same, internalProjection_apply]
       have h := congrArg (fun y ↦ (P c).toLinearMap (internalProjection hEi hEt c x) y)
         ((P c).reflectionPerm_coroot i j)
       simpa [coroot', map_sub, map_smul, smul_eq_mul, mul_comm] using h
-    · rw [internalReflectionPerm_ne P hcd, internalProjection_apply_of_ne hEi hEt hcd]
+    · rw [pi_reflectionPerm_ne P hcd, internalProjection_apply_of_ne hEi hEt hcd]
       simp
 
 section Evaluation
@@ -277,13 +232,17 @@ theorem isOrthogonal_internalDirectSum_of_ne {c d : κ} (hcd : c ≠ d) (i : ι 
 
 @[simp]
 theorem internalDirectSum_reflectionPerm_same (c : κ) (i j : ι c) :
-    (internalDirectSum hEi hEt P).reflectionPerm ⟨c, i⟩ ⟨c, j⟩ = ⟨c, (P c).reflectionPerm i j⟩ :=
-  internalReflectionPerm_same P c i j
+    (internalDirectSum hEi hEt P).reflectionPerm ⟨c, i⟩ ⟨c, j⟩ = ⟨c, (P c).reflectionPerm i j⟩ := by
+  let _ : Fintype κ := Fintype.ofFinite κ
+  let _ : DecidableEq κ := Classical.decEq κ
+  exact pi_reflectionPerm_same P c i j
 
 @[simp]
 theorem internalDirectSum_reflectionPerm_ne {c d : κ} (hcd : c ≠ d) (i : ι c) (j : ι d) :
-    (internalDirectSum hEi hEt P).reflectionPerm ⟨c, i⟩ ⟨d, j⟩ = ⟨d, j⟩ :=
-  internalReflectionPerm_ne P hcd i j
+    (internalDirectSum hEi hEt P).reflectionPerm ⟨c, i⟩ ⟨d, j⟩ = ⟨d, j⟩ := by
+  let _ : Fintype κ := Fintype.ofFinite κ
+  let _ : DecidableEq κ := Classical.decEq κ
+  exact pi_reflectionPerm_ne P hcd i j
 
 /-- Formula for the reflection of an internal direct sum at `⟨c, i⟩` on an arbitrary vector. -/
 theorem internalDirectSum_reflection_apply (c : κ) (i : ι c) (x : M) :
@@ -370,7 +329,7 @@ private theorem internalDirectSumCoweightEquiv_symm_apply
 direct sum `RootPairing.internalDirectSum hEi hEt P`.** -/
 noncomputable def piEquivInternalDirectSum [DecidableEq κ] :
     (pi P).Equiv (internalDirectSum hEi hEt P) where
-  weightMap := (internalDirectSumWeightEquiv hEi hEt).toLinearMap
+  weightMap := (internalDirectSumEquiv hEi hEt).toLinearMap
   coweightMap := (internalDirectSumCoweightEquiv hEi hEt P).symm.toLinearMap
   indexEquiv := _root_.Equiv.refl (Σ c, ι c)
   weight_coweight_transpose := by
@@ -378,7 +337,7 @@ noncomputable def piEquivInternalDirectSum [DecidableEq κ] :
     simp only [LinearMap.comp_apply, LinearMap.dualMap_apply, LinearEquiv.coe_coe,
       LinearMap.toPerfPair_apply, flip_toLinearMap, LinearMap.flip_apply,
       internalDirectSum_toLinearMap, Module.Dual.eval_apply, pi_toLinearMap_apply,
-      internalDirectSumWeightEquiv_apply, internalDirectSumCoweightEquiv_symm_apply]
+      internalDirectSumEquiv_apply, internalDirectSumCoweightEquiv_symm_apply]
     rw [map_sum]
     refine Finset.sum_congr rfl fun c _ ↦ ?_
     have h := LinearMap.congr_fun ((P c).flip.toPerfPair.apply_symm_apply (f.comp (E c).subtype))
@@ -389,7 +348,7 @@ noncomputable def piEquivInternalDirectSum [DecidableEq κ] :
   root_weightMap := by
     ext ⟨c, i⟩
     simp only [comp_apply, LinearEquiv.coe_coe, pi_root, _root_.Equiv.refl_apply,
-      internalDirectSum_root, internalDirectSumWeightEquiv_apply]
+      internalDirectSum_root, internalDirectSumEquiv_apply]
     rw [Finset.sum_eq_single_of_mem c (Finset.mem_univ c)]
     · simp
     · intro d _ hdc
@@ -416,16 +375,16 @@ theorem piEquivInternalDirectSum_indexEquiv [DecidableEq κ] (s : Σ c, ι c) :
 @[simp]
 theorem piEquivInternalDirectSum_weightMap_apply [DecidableEq κ] (x : ∀ c, E c) :
     (piEquivInternalDirectSum hEi hEt P).weightMap x = ∑ c, (x c : M) :=
-  internalDirectSumWeightEquiv_apply hEi hEt x
+  internalDirectSumEquiv_apply hEi hEt x
 
 @[simp]
 theorem piEquivInternalDirectSum_weightEquiv_symm_apply [DecidableEq κ]
     (x : M) (c : κ) :
     (piEquivInternalDirectSum hEi hEt P).weightEquiv.symm x c = internalProjection hEi hEt c x := by
   have heq : (piEquivInternalDirectSum hEi hEt P).weightEquiv =
-      internalDirectSumWeightEquiv hEi hEt :=
+      internalDirectSumEquiv hEi hEt :=
     LinearEquiv.toLinearMap_injective rfl
-  rw [heq, internalDirectSumWeightEquiv_symm_apply]
+  rw [heq, internalDirectSumEquiv_symm_apply]
 
 end EquivPi
 
@@ -509,11 +468,7 @@ theorem isReduced_internalDirectSum_of_isRegular (h2 : IsRegular (2 : R)) [∀ c
 `2 ≠ 0`) is reduced. -/
 instance isReduced_internalDirectSum [NoZeroDivisors R] [∀ c, (P c).IsReduced] :
     (internalDirectSum hEi hEt P).IsReduced :=
-  isReduced_internalDirectSum_of_isRegular hEi hEt P
-    ⟨fun _ _ h ↦ sub_eq_zero.mp
-      ((mul_eq_zero.mp (by rw [mul_sub, sub_eq_zero]; exact h)).resolve_left two_ne_zero),
-     fun _ _ h ↦ sub_eq_zero.mp
-      ((mul_eq_zero.mp (by rw [sub_mul, sub_eq_zero]; exact h)).resolve_right two_ne_zero)⟩
+  isReduced_internalDirectSum_of_isRegular hEi hEt P (IsRegular.of_ne_zero' two_ne_zero)
 
 end Properties
 
@@ -605,7 +560,7 @@ theorem Base.height_internalDirectSum [CharZero R] (b : ∀ c, (P c).Base) (c : 
     (Base.internalDirectSum hEi hEt b).height ⟨c, i⟩ = (b c).height i := by
   let _ : Fintype κ := Fintype.ofFinite κ
   let _ : DecidableEq κ := Classical.decEq κ
-  change ((Base.pi b).map (piEquivInternalDirectSum hEi hEt P)).height ⟨c, i⟩ = (b c).height i
+  dsimp only [Base.internalDirectSum]
   rw [← piEquivInternalDirectSum_indexEquiv hEi hEt P ⟨c, i⟩, Base.height_map, Base.height_pi]
 
 /-- A root of an internal direct sum is positive for `Base.internalDirectSum` iff it is positive in
@@ -709,10 +664,8 @@ theorem internalDirectSumWeylGroupEquiv_ofIdx_self (c : κ) (i : ι c) :
       weylGroup.ofIdx (P c) i := by
   let _ : Fintype κ := Fintype.ofFinite κ
   let _ : DecidableEq κ := Classical.decEq κ
-  change piWeylGroupEquiv P
-      ((piEquivInternalDirectSum hEi hEt P).weylGroupEquiv.symm
-        (weylGroup.ofIdx (internalDirectSum hEi hEt P) ⟨c, i⟩)) c = _
-  rw [piEquivInternalDirectSum_weylGroupEquiv_symm_ofIdx, piWeylGroupEquiv_ofIdx,
+  simp only [internalDirectSumWeylGroupEquiv, MulEquiv.trans_apply,
+    piEquivInternalDirectSum_weylGroupEquiv_symm_ofIdx, piWeylGroupEquiv_ofIdx,
     Pi.mulSingle_eq_same]
 
 @[simp]
@@ -721,10 +674,8 @@ theorem internalDirectSumWeylGroupEquiv_ofIdx_ne {c d : κ} (hdc : d ≠ c) (i :
         (weylGroup.ofIdx (internalDirectSum hEi hEt P) ⟨c, i⟩) d = 1 := by
   let _ : Fintype κ := Fintype.ofFinite κ
   let _ : DecidableEq κ := Classical.decEq κ
-  change piWeylGroupEquiv P
-      ((piEquivInternalDirectSum hEi hEt P).weylGroupEquiv.symm
-        (weylGroup.ofIdx (internalDirectSum hEi hEt P) ⟨c, i⟩)) d = _
-  rw [piEquivInternalDirectSum_weylGroupEquiv_symm_ofIdx, piWeylGroupEquiv_ofIdx,
+  simp only [internalDirectSumWeylGroupEquiv, MulEquiv.trans_apply,
+    piEquivInternalDirectSum_weylGroupEquiv_symm_ofIdx, piWeylGroupEquiv_ofIdx,
     Pi.mulSingle_eq_of_ne hdc]
 
 end WeylGroup
@@ -762,48 +713,6 @@ section ComponentDecomposition
 variable {ι K M N : Type*} [Field K] [AddCommGroup M] [Module K M]
   [AddCommGroup N] [Module K N] (P : RootPairing ι K M N)
 
-/-- Evaluating a coroot of a component `C` on any vector `x : M` is the same as evaluating the
-component coroot on `P.componentProj C x`. -/
-private theorem coroot'_eq_componentPairing_coroot'_componentProj [Finite ι]
-    [P.IsRootSystem] (C : P.Component) (i : C.supp) (x : M) :
-    P.coroot' i x = (P.componentPairing C).coroot' i (P.componentProj C x) := by
-  let _ : Fintype P.Component := Fintype.ofFinite _
-  conv_lhs => rw [← P.sum_componentProj x]
-  rw [map_sum, Finset.sum_eq_single_of_mem C (Finset.mem_univ C)]
-  · simp [coroot']
-  · intro D _ hDC
-    have hne : P.componentOf i ≠ D := by
-      have hC : P.componentOf i = C := (C.mem_supp_iff i).mp i.2
-      exact hC.trans_ne hDC.symm
-    exact coroot'_eq_zero_of_mem_componentSpace hne (P.componentProj D x).2
-
-/-- **The canonical bilinear form of a finite root system is the orthogonal sum of the canonical
-bilinear forms of its irreducible components.** -/
-theorem rootForm_eq_sum_componentPairing [Fintype ι] [Fintype P.Component]
-    [∀ C : P.Component, Fintype C.supp] [P.IsRootSystem] (x y : M) :
-    P.RootForm x y =
-      ∑ C : P.Component, (P.componentPairing C).RootForm (P.componentProj C x)
-        (P.componentProj C y) := by
-  let e : ι ≃ Σ C : P.Component, C.supp :=
-    { toFun := fun i ↦ ⟨P.componentOf i, ⟨i, rfl⟩⟩
-      invFun := fun s ↦ s.2.1
-      left_inv := fun _ ↦ rfl
-      right_inv := fun ⟨C, ⟨i, hi⟩⟩ ↦ by
-        have hC : P.componentOf i = C := (C.mem_supp_iff i).mp hi
-        subst hC
-        rfl }
-  rw [rootForm_apply_apply, Fintype.sum_equiv e _
-      (fun s : Σ C : P.Component, C.supp ↦
-        (P.componentPairing s.1).coroot' s.2 (P.componentProj s.1 x) *
-          (P.componentPairing s.1).coroot' s.2 (P.componentProj s.1 y))
-      (fun i ↦ by
-        simp only [e, _root_.Equiv.coe_fn_mk]
-        rw [coroot'_eq_componentPairing_coroot'_componentProj P (P.componentOf i) ⟨i, rfl⟩ x,
-          coroot'_eq_componentPairing_coroot'_componentProj P (P.componentOf i) ⟨i, rfl⟩ y]),
-    Fintype.sum_sigma]
-  refine Finset.sum_congr rfl fun C _ ↦ ?_
-  rw [rootForm_apply_apply]
-
 /-- **Canonical decomposition of a finite root system into the internal direct sum of its
 irreducible component pairings** (Bourbaki, Lie VI §1, no. 2). -/
 noncomputable def equivInternalDirectSumComponentPairing [NeZero (2 : K)] [Finite ι]
@@ -812,28 +721,21 @@ noncomputable def equivInternalDirectSumComponentPairing [NeZero (2 : K)] [Finit
       (P.iSup_componentSpace.trans IsRootSystem.span_root_eq_top) P.componentPairing) where
   weightMap := LinearMap.id
   coweightMap := P.flip.toPerfPair.symm.toLinearMap
-  indexEquiv :=
-    { toFun := fun i ↦ ⟨P.componentOf i, ⟨i, rfl⟩⟩
-      invFun := fun s ↦ s.2.1
-      left_inv := fun _ ↦ rfl
-      right_inv := fun ⟨C, ⟨i, hi⟩⟩ ↦ by
-        have hC : P.componentOf i = C := (C.mem_supp_iff i).mp hi
-        subst hC
-        rfl }
+  indexEquiv := (_root_.Equiv.sigmaFiberEquiv P.componentOf).symm
   weight_coweight_transpose := by
     refine LinearMap.ext fun f ↦ LinearMap.ext fun x ↦ ?_
     simp
   root_weightMap := by
     ext i
-    simp
+    exact (coe_componentPairing_root P (P.componentOf i) ⟨i, rfl⟩).symm
   coroot_coweightMap := by
     ext ⟨C, ⟨i, hi⟩⟩
     apply P.flip.toPerfPair.injective
     refine LinearMap.ext fun x ↦ ?_
-    simp only [comp_apply, LinearEquiv.coe_coe, _root_.Equiv.coe_fn_symm_mk,
+    simp only [comp_apply, LinearEquiv.coe_coe,
       LinearEquiv.apply_symm_apply, internalDirectSum_coroot, LinearMap.comp_apply,
       internalProjection_componentSpace_eq_componentProj]
-    exact (coroot'_eq_componentPairing_coroot'_componentProj P C ⟨i, hi⟩ x).symm
+    exact componentPairing_coroot'_componentProj P C ⟨i, hi⟩ x
   bijective_weightMap := Function.bijective_id
   bijective_coweightMap := LinearEquiv.bijective _
 
