@@ -42,7 +42,8 @@ and `b` have a common refinement, and `G'` acts simply transitively on these cla
   `NonabelianH1.pullback_mk_eq_mk_iff`, `NonabelianH1.pullback_one`,
   `NonabelianH1.pullback_comp` for a composite of morphisms of sites, the compatibilities
   `NonabelianH1.pullback_map` and `NonabelianH1.map_pullback` with `NonabelianH1.map`, and
-  `NonabelianH1.pullback_eq_map`: along the identity functor, the pullback is `NonabelianH1.map`.
+  `NonabelianH1.pullback_eq_map`: along the identity functor, the pullback is `NonabelianH1.map`,
+  so that `NonabelianH1.pullback_id` holds.
 
 ## References
 
@@ -50,9 +51,9 @@ and `b` have a common refinement, and `G'` acts simply transitively on these cla
   torsors under a sheaf of groups and their classes.
 * J. Giraud, *Cohomologie non abélienne*, Chapitre III, for torsors, their contracted products
   and their inverse images under morphisms of sites.
-* The sections before sheafification are the colimit over `V ⟶ u(U)` defining the presheaf
+* The sections before sheafification combine the colimit over `V ⟶ u(U)` defining the presheaf
   pullback, as in Mathlib's `CategoryTheory.Functor.sheafPullback` through the left Kan extension
-  along `u.op`.
+  along `u.op`, with the contracted product with `G'` along `φ`.
 -/
 
 public noncomputable section
@@ -145,16 +146,9 @@ private lemma rel_equivalence (V : D) : _root_.Equivalence (Rel φ P V) where
   trans := by
     rintro x y z ⟨c, m, n, g, h₁, h₂⟩ ⟨c', m', n', g', h₁', h₂'⟩
     -- Refine `c` and `c'` to a common `e` on which the two maps to `y.arr` agree.
-    let l := IsCofiltered.minToLeft c c'
-    let r := IsCofiltered.minToRight c c'
-    let k := IsCofiltered.eqHom (l ≫ n) (r ≫ m')
-    have hk : k ≫ l ≫ n = k ≫ r ≫ m' := IsCofiltered.eq_condition _ _
-    refine ⟨_, k ≫ l ≫ m, k ≫ r ≫ n',
-      G.obj.map (k ≫ l).right.op g * G.obj.map (k ≫ r).right.op g', ?_, ?_⟩
-    · rw [← Category.assoc, res_comp, h₁, res_smul, mul_smul]
-      congr 1
-      rw [← res_comp, Category.assoc, hk, ← Category.assoc, res_comp, h₁', res_smul,
-        ← res_comp, Category.assoc]
+    obtain ⟨e, l, r, hk⟩ := IsCofiltered.cospan n m'
+    refine ⟨e, l ≫ m, r ≫ n', G.obj.map l.right.op g * G.obj.map r.right.op g', ?_, ?_⟩
+    · rw [res_comp, h₁, res_smul, mul_smul, ← res_comp, hk, res_comp, h₁', res_smul, ← res_comp]
     · rw [h₂', h₂, map_mul, transport_map, transport_map, mul_assoc]
 
 /-- The setoid of representatives of sections of the pullback over `V`. -/
@@ -248,7 +242,7 @@ private lemma bijective_sec :
 /-- The sections of the pullback over `V` form a set of size at most that of `G'(V)`. -/
 private instance : Small.{w} (Sec φ P V) := by
   rcases isEmpty_or_nonempty (Sec φ P V) with h | ⟨⟨s₀⟩⟩
-  · exact small_of_injective (f := fun s ↦ (h.elim s : PEmpty.{w + 1})) fun s ↦ h.elim s
+  · infer_instance
   · refine small_of_surjective (f := fun b : G'.obj.obj (op V) ↦ b • s₀) fun s ↦ ?_
     obtain ⟨⟨b, s'⟩, hb⟩ := (bijective_sec φ P V).2 (s, s₀)
     simp only [Prod.mk.injEq] at hb
@@ -265,9 +259,9 @@ private def secMap {V' : D} (β : V' ⟶ V) : Sec φ P V → Sec φ P V' :=
       refine ⟨(StructuredArrow.map β).obj c, (StructuredArrow.map β).map m,
         (StructuredArrow.map β).map n, g, h₁, ?_⟩
       rw [h₂, map_mul, transport_apply, transport_apply]
-      simp only [StructuredArrow.map_obj_hom, op_comp, Functor.map_comp]
-      -- The restriction of `φ(g)` along `c` and then `β` is its restriction along `β ≫ c`.
-      rfl)
+      simp only [StructuredArrow.map_obj_hom, StructuredArrow.map_obj_right, op_comp,
+        Functor.map_comp]
+      exact congrArg _ (ConcreteCategory.comp_apply _ _ _).symm)
 
 private lemma secMap_cls {V' : D} (β : V' ⟶ V) (a : StructuredArrow V u)
     (p : P.sheaf.obj.obj (op a.right)) (x : G'.obj.obj (op V)) :
@@ -295,19 +289,6 @@ private lemma secMap_comp {V' V'' : D} (β' : V'' ⟶ V') (β : V' ⟶ V) (s : S
       ((StructuredArrow.map β).obj a)) p (G'.obj.map (β' ≫ β).op x)
   simp only [res, StructuredArrow.homMk_right] at h
   simpa [secMap_cls] using h
-
-/-- `G'(V)` acts on the small model of the sections of the pullback over `V`. -/
-private instance : MulAction (G'.obj.obj (op V)) (Shrink.{w} (Sec φ P V)) :=
-  (equivShrink _).symm.mulAction _
-
-private lemma equivShrink_symm_smul (b : G'.obj.obj (op V)) (s : Shrink.{w} (Sec φ P V)) :
-    (equivShrink _).symm (b • s) = b • (equivShrink _).symm s :=
-  Equiv.symm_apply_apply _ _
-
-private lemma equivShrink_smul (b : G'.obj.obj (op V)) (s : Sec φ P V) :
-    equivShrink.{w} _ (b • s) = b • equivShrink _ s :=
-  (equivShrink _).symm.injective (by rw [equivShrink_symm_smul, Equiv.symm_apply_apply,
-    Equiv.symm_apply_apply])
 
 private lemma equivShrink_cls (a : StructuredArrow V u) (p : P.sheaf.obj.obj (op a.right))
     (x : G'.obj.obj (op V)) :
@@ -411,14 +392,19 @@ def toPullback :
     P.sheaf ⟶ (u.sheafPushforwardContinuous (Type w) J K).obj (P.pullback φ).sheaf :=
   ObjectProperty.homMk (toPre φ P ≫ Functor.whiskerLeft u.op (pre φ P).toSheafify)
 
+private lemma toPullback_hom_app (U : Cᵒᵖ) (p : P.sheaf.obj.obj U) :
+    (P.toPullback φ).hom.app U p = (pre φ P).toSheafify.app (u.op.obj U) ((toPre φ P).app U p) :=
+  rfl
+
 /-- The morphism `P ⟶ u_* (P.pullback φ)` is `φ`-equivariant. -/
 @[simp]
 lemma toPullback_smul {U : Cᵒᵖ} (g : G.obj.obj U) (p : P.sheaf.obj.obj U) :
     (P.toPullback φ).hom.app U (g • p) = φ.hom.app U g • (P.toPullback φ).hom.app U p := by
-  have h₁ := toPre_smul φ P g p
-  have h₂ := equivShrink_cls φ P (StructuredArrow.mk (𝟙 (u.obj U.unop))) p (φ.hom.app U g)
-  exact (congrArg ((pre φ P).toSheafify.app (u.op.obj U)) (h₁.trans h₂)).trans
-    ((pre φ P).toSheafify_smul _ _)
+  rw [toPullback_hom_app, toPullback_hom_app]
+  -- The action of `u_* G'` on `u_* (P.pullback φ)` over `U` is that of `G'` over `u(U)`.
+  have h := (toPre_smul φ P g p).trans
+    (equivShrink_cls φ P (StructuredArrow.mk (𝟙 (u.obj U.unop))) p (φ.hom.app U g))
+  exact (congrArg ((pre φ P).toSheafify.app (u.op.obj U)) h).trans ((pre φ P).toSheafify_smul _ _)
 
 variable {φ P} {R : Torsor G'}
   (h : P.sheaf ⟶ (u.sheafPushforwardContinuous (Type w) J K).obj R.sheaf)
@@ -430,12 +416,10 @@ private lemma map_hom_app_res {V : D} {c a : StructuredArrow V u} (m : c ⟶ a)
     (p : P.sheaf.obj.obj (op a.right)) :
     R.sheaf.obj.map a.hom.op (h.hom.app (op a.right) p) =
       R.sheaf.obj.map c.hom.op (h.hom.app (op c.right) (res P m p)) := by
-  rw [res, NatTrans.naturality_apply h.hom, Functor.sheafPushforwardContinuous_obj_obj_map]
-  -- Read the image of `p` as a section of `R` over `u(a.right)`, rather than of `u_* R`.
-  obtain ⟨y, hy⟩ : ∃ y : R.sheaf.obj.obj (op (u.obj a.right)), h.hom.app (op a.right) p = y :=
-    ⟨_, rfl⟩
-  rw [hy, ← StructuredArrow.w m, op_comp, Functor.map_comp_apply]
-  rfl
+  rw [res, NatTrans.naturality_apply h.hom, Functor.sheafPushforwardContinuous_obj_obj_map,
+    ← StructuredArrow.w m]
+  simp only [Quiver.Hom.unop_op, op_comp, Functor.map_comp]
+  exact types_comp_apply _ _ _
 
 variable (hh : ∀ (U : Cᵒᵖ) (g : G.obj.obj U) (p : P.sheaf.obj.obj U),
   h.hom.app U (g • p) = φ.hom.app U g • h.hom.app U p)
@@ -473,24 +457,15 @@ private def liftPre : (pre φ P).presheaf ⟶ R.sheaf.obj where
   naturality V V' β := by
     obtain ⟨V⟩ := V
     obtain ⟨V'⟩ := V'
-    ext s : 3
+    refine ConcreteCategory.ext_apply fun s ↦ ?_
     obtain ⟨t, rfl⟩ := (equivShrink _).surjective s
     obtain ⟨a, p, x, rfl⟩ := cls_surjective φ P t
-    -- Both sides are evaluations of composites of functions.
-    change secLift h hh V'
-        ((equivShrink _).symm ((presheaf φ P).map β (equivShrink _ (cls φ P a p x)))) =
-      R.sheaf.obj.map β (secLift h hh V ((equivShrink _).symm (equivShrink _ (cls φ P a p x))))
-    rw [presheaf_map_equivShrink, Equiv.symm_apply_apply, Equiv.symm_apply_apply, secMap_cls,
-      secLift_cls, secLift_cls, R.map_smul]
+    simp only [types_comp_apply, TypeCat.ofHom_apply, Equiv.symm_apply_apply]
+    rw [secMap_cls, secLift_cls, secLift_cls, R.map_smul]
     congr 1
-    -- Read the image of `p` as a section of `R` over `u(a.right)`, rather than of `u_* R`.
-    obtain ⟨y, hy⟩ : ∃ y : R.sheaf.obj.obj (op (u.obj a.right)), h.hom.app (op a.right) p = y :=
-      ⟨_, rfl⟩
-    have key : R.sheaf.obj.map (β.unop ≫ a.hom).op y =
-        R.sheaf.obj.map β (R.sheaf.obj.map a.hom.op y) := by
-      rw [op_comp, Functor.map_comp_apply, Quiver.Hom.op_unop]
-    subst hy
-    exact key
+    simp only [StructuredArrow.map_obj_hom, StructuredArrow.map_obj_right, op_comp,
+      Functor.map_comp, Quiver.Hom.op_unop]
+    exact types_comp_apply _ _ _
 
 omit [HasWeakSheafify K (Type w)] [K.WEqualsLocallyBijective (Type w)] in
 private lemma liftPre_app_equivShrink {V : D} (t : Sec φ P V) :
@@ -527,8 +502,7 @@ private lemma hom_app_toSheafify_cls (f : P.pullback φ ⟶ R) {V : D} (a : Stru
         ((P.toPullback φ).hom.app (op a.right) p)) := by
   have e : equivShrink _ (cls φ P a p x) = x • (presheaf φ P).map a.hom.op
       (equivShrink _ (cls φ P (StructuredArrow.mk (𝟙 (u.obj a.right))) p 1)) := by
-    rw [cls_eq_smul_secMap, equivShrink_smul, presheaf_map_equivShrink]
-    rfl
+    rw [cls_eq_smul_secMap, equivShrink_smul, presheaf_map_equivShrink, Quiver.Hom.unop_op]
   rw [e, (pre φ P).toSheafify_smul]
   exact (f.map_smul _ _ _).trans (congrArg (x • ·)
     ((congrArg (f.hom.hom.app _) (NatTrans.naturality_apply (pre φ P).toSheafify a.hom.op _)).trans
@@ -667,14 +641,22 @@ lemma pullback_comp {E : Type u₃} [Category.{v₃} E] {L : GrothendieckTopolog
 
 /-- Pulling back along the identity functor is extending the structure group: the pullback is
 the contracted product. -/
+@[simp]
 lemma pullback_eq_map [HasWeakSheafify J (Type w)] [J.WEqualsLocallyBijective (Type w)]
-    {G' : Sheaf J GrpCat.{w}} (φ : G ⟶ G') :
-    pullback (φ ≫ (Functor.sheafPushforwardContinuousId GrpCat.{w} J).inv.app G') = map φ := by
+    {G' : Sheaf J GrpCat.{w}}
+    (φ : G ⟶ ((𝟭 C).sheafPushforwardContinuous GrpCat.{w} J J).obj G') :
+    pullback φ = map (φ ≫ (Functor.sheafPushforwardContinuousId GrpCat.{w} J).hom.app G') := by
   funext x
   induction x using ind with | h P => ?_
   rw [map_mk]
-  refine pullback_mk_eq_mk (P.toMap φ ≫
-    (Functor.sheafPushforwardContinuousId (Type w) J).inv.app _) fun U g p ↦ P.toMap_smul φ g p
+  refine pullback_mk_eq_mk (P.toMap _ ≫
+    (Functor.sheafPushforwardContinuousId (Type w) J).inv.app _) fun U g p ↦ P.toMap_smul _ g p
+
+/-- Pulling back along the identity functor and the identity of `G` is the identity of
+`H¹(G)`. -/
+lemma pullback_id [HasWeakSheafify J (Type w)] [J.WEqualsLocallyBijective (Type w)] :
+    pullback ((Functor.sheafPushforwardContinuousId GrpCat.{w} J).inv.app G) = id := by
+  simp
 
 end NonabelianH1
 
