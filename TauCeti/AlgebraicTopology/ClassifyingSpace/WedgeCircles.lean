@@ -11,7 +11,9 @@ public import TauCeti.AlgebraicTopology.ClassifyingSpace.Homology
 public import TauCeti.AlgebraicTopology.ClassifyingSpace.Uniqueness
 public import TauCeti.AlgebraicTopology.EilenbergMacLane.OneDimensional
 public import TauCeti.RepresentationTheory.Homological.GroupHomology.DirectedUnion
+import Mathlib.Algebra.Category.ModuleCat.AB
 import TauCeti.AlgebraicTopology.EilenbergMacLane.HomotopyEquiv
+import TauCeti.AlgebraicTopology.Singular.Homotopy.Invariance
 
 /-!
 # A wedge of circles is a classifying space of a free group

@@ -5,15 +5,23 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.AlgebraicTopology.Cellular.Dimension
-public import TauCeti.AlgebraicTopology.EilenbergMacLane.Covering
-public import TauCeti.AlgebraicTopology.FundamentalGroup.WedgeSum
-public import TauCeti.AlgebraicTopology.Homotopy.Hurewicz.Comparison
-public import TauCeti.AlgebraicTopology.SemilocallySimplyConnected.WedgeSum
-public import TauCeti.AlgebraicTopology.UniversalCover.Action
-public import TauCeti.Topology.CWComplex.Classical.Covering
-public import TauCeti.Topology.CWComplex.Classical.DeltaGenerated
-public import TauCeti.Topology.CWComplex.Classical.WedgeCircles
+public import Mathlib.AlgebraicTopology.SingularHomology.Basic
+public import Mathlib.Analysis.Complex.Circle
+public import Mathlib.CategoryTheory.Abelian.GrothendieckAxioms.Basic
+public import Mathlib.GroupTheory.FreeGroup.Basic
+public import Mathlib.Topology.CWComplex.Classical.Basic
+public import TauCeti.AlgebraicTopology.EilenbergMacLane.Basic
+public import TauCeti.AlgebraicTopology.SemilocallySimplyConnected.Basic
+public import TauCeti.Topology.WedgeSum
+import TauCeti.AlgebraicTopology.Cellular.Dimension
+import TauCeti.AlgebraicTopology.EilenbergMacLane.Covering
+import TauCeti.AlgebraicTopology.FundamentalGroup.WedgeSum
+import TauCeti.AlgebraicTopology.Homotopy.Hurewicz.Comparison
+import TauCeti.AlgebraicTopology.SemilocallySimplyConnected.WedgeSum
+import TauCeti.AlgebraicTopology.UniversalCover.Action
+import TauCeti.Topology.CWComplex.Classical.Covering
+import TauCeti.Topology.CWComplex.Classical.DeltaGenerated
+import TauCeti.Topology.CWComplex.Classical.WedgeCircles
 
 /-!
 # One-dimensional CW complexes are aspherical
