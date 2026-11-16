@@ -22,7 +22,8 @@ Consequently, a vertex partition `P` satisfies the finite Frieze–Kannan weak-r
 `#P.parts ≤ k` and `G.cutDiscrepancy P ≤ ε * m²` if and only if `P.cellPartition` satisfies the
 analytic weak-regularity bound `#P.cellPartition.parts ≤ k` and
 `cutNorm volume ((finiteGraphGraphon G).toSymmKernel - (stepGraphonAvg ...).toSymmKernel) ≤ ε`
-(`SimpleGraph.card_parts_le_and_cutDiscrepancy_le_iff`).
+(`Finpartition.card_parts_cellPartition`,
+`SimpleGraph.cutNorm_finiteGraphGraphon_sub_stepGraphonAvg_le_iff`).
 
 Transporting the finite theorems `SimpleGraph.exists_refinement_weightedEnergy_add_sq_lt`,
 `SimpleGraph.frieze_kannan_refining`, and `SimpleGraph.frieze_kannan_cutDiscrepancy` along
@@ -34,16 +35,16 @@ rather than splitting individual vertex cells.
 
 ## Main results
 
-* `SimpleGraph.card_parts_le_and_cutDiscrepancy_le_iff` and
-  `SimpleGraph.le_and_card_parts_le_and_cutDiscrepancy_le_iff`: equivalence between the finite
-  `cutDiscrepancy` weak-regularity predicate on `P` and the analytic `cutNorm` weak-regularity
-  predicate on `P.cellPartition`.
 * `SimpleGraph.exists_cellPartition_refinement_energy_add_sq_lt`: a cut-norm defect above `ε` over
   `P.cellPartition` yields a refining vertex partition `Q ≤ P` whose lifted cell partition has at
   most `4 * #P.cellPartition.parts` parts and raises `graphonPartitionEnergy` by more than `ε²`.
-* `SimpleGraph.frieze_kannan_cellPartition_refining` and `SimpleGraph.frieze_kannan_cellPartition`:
-  analytic Frieze–Kannan weak regularity for `finiteGraphGraphon G`, witnessed by `P.cellPartition`
-  with `#P.cellPartition.parts ≤ 4 ^ ⌈1 / ε²⌉`.
+* `SimpleGraph.frieze_kannan_cellPartition_refining`: for `ε > 0`, every vertex partition `P₀` of
+  `Fin m` (`0 < m`) has a refinement `P ≤ P₀` whose lifted partition `P.cellPartition` refines
+  `P₀.cellPartition`, has `#P.cellPartition.parts ≤ 4 ^ ⌈1 / ε²⌉ * #P₀.cellPartition.parts`, and
+  approximates `finiteGraphGraphon G` within `ε` in cut norm.
+* `SimpleGraph.frieze_kannan_cellPartition`: analytic Frieze–Kannan weak regularity for
+  `finiteGraphGraphon G` (`ε > 0`, `0 < m`), witnessed by `P.cellPartition` with
+  `#P.cellPartition.parts ≤ 4 ^ ⌈1 / ε²⌉`.
 * `SimpleGraph.frieze_kannan_stepGraphonOfFinpartition`: approximation of `finiteGraphGraphon G`
   within `ε` in both `cutNorm` and `cutDist` by `stepGraphonOfFinpartition P` at
   `G.edgeDensityIcc`.
@@ -65,34 +66,6 @@ open scoped unitInterval
 namespace SimpleGraph
 
 variable {m : ℕ} [NeZero m]
-
-/-- **Equivalence of finite and analytic weak regularity on a partition.** A vertex partition `P` of
-`Fin m` (`0 < m`) has at most `k` parts and cut discrepancy at most `ε * m²` if and only if its
-lifted cell partition `P.cellPartition` has at most `k` parts and approximates
-`finiteGraphGraphon G` within `ε` in rectangle cut norm. -/
-theorem card_parts_le_and_cutDiscrepancy_le_iff (G : SimpleGraph (Fin m)) [DecidableRel G.Adj]
-    (P : Finpartition (univ : Finset (Fin m))) {k : ℕ} {ε : ℝ} :
-    (#P.parts ≤ k ∧ G.cutDiscrepancy P ≤ ε * (m : ℝ) ^ 2) ↔
-      #P.cellPartition.parts ≤ k ∧
-        cutNorm volume ((finiteGraphGraphon G).toSymmKernel -
-          (stepGraphonAvg (μ := volume) P.cellPartition P.measurableSet_of_mem_cellPartition
-            (finiteGraphGraphon G)).toSymmKernel) ≤ ε := by
-  rw [P.card_parts_cellPartition, G.cutNorm_finiteGraphGraphon_sub_stepGraphonAvg_le_iff P]
-
-/-- **Equivalence of finite and analytic refining weak regularity.** Refining `P₀` into at most
-`k * #P₀.parts` parts with cut discrepancy at most `ε * m²` is equivalent to `P.cellPartition`
-refining `P₀.cellPartition` into at most `k * #P₀.cellPartition.parts` parts with graphon cut-norm
-error at most `ε`. -/
-theorem le_and_card_parts_le_and_cutDiscrepancy_le_iff (G : SimpleGraph (Fin m))
-    [DecidableRel G.Adj] (P P₀ : Finpartition (univ : Finset (Fin m))) {k : ℕ} {ε : ℝ} :
-    (P ≤ P₀ ∧ #P.parts ≤ k * #P₀.parts ∧ G.cutDiscrepancy P ≤ ε * (m : ℝ) ^ 2) ↔
-      P.cellPartition ≤ P₀.cellPartition ∧
-        #P.cellPartition.parts ≤ k * #P₀.cellPartition.parts ∧
-        cutNorm volume ((finiteGraphGraphon G).toSymmKernel -
-          (stepGraphonAvg (μ := volume) P.cellPartition P.measurableSet_of_mem_cellPartition
-            (finiteGraphGraphon G)).toSymmKernel) ≤ ε := by
-  rw [Finpartition.cellPartition_le_cellPartition_iff, P₀.card_parts_cellPartition,
-    G.card_parts_le_and_cutDiscrepancy_le_iff P]
 
 /-- **Cell-preserving analytic energy increment.** If the block average of `finiteGraphGraphon G`
 over `P.cellPartition` fails to approximate `finiteGraphGraphon G` within `ε` in cut norm (`0 ≤ ε`),
@@ -135,7 +108,9 @@ theorem frieze_kannan_cellPartition_refining (G : SimpleGraph (Fin m))
   classical
   obtain ⟨P, hP, hcard, hcut⟩ := G.frieze_kannan_refining P₀ hε
   rw [Fintype.card_fin] at hcut
-  exact ⟨P, (G.le_and_card_parts_le_and_cutDiscrepancy_le_iff P P₀).1 ⟨hP, hcard, hcut⟩⟩
+  refine ⟨P, Finpartition.cellPartition_mono hP, ?_,
+    (G.cutNorm_finiteGraphGraphon_sub_stepGraphonAvg_le_iff P).2 hcut⟩
+  simpa only [Finpartition.card_parts_cellPartition] using hcard
 
 /-- **Analytic Frieze–Kannan weak regularity specialized to `finiteGraphGraphon`.** For `ε > 0` and
 `0 < m`, `finiteGraphGraphon G` admits a weak-regular measurable partition of `(I, volume)` of the
@@ -150,7 +125,8 @@ theorem frieze_kannan_cellPartition (G : SimpleGraph (Fin m)) {ε : ℝ} (hε : 
   classical
   obtain ⟨P, hcard, hcut⟩ := G.frieze_kannan_cutDiscrepancy hε
   rw [Fintype.card_fin] at hcut
-  exact ⟨P, (G.card_parts_le_and_cutDiscrepancy_le_iff P).1 ⟨hcard, hcut⟩⟩
+  exact ⟨P, P.card_parts_cellPartition.trans_le hcard,
+    (G.cutNorm_finiteGraphGraphon_sub_stepGraphonAvg_le_iff P).2 hcut⟩
 
 /-- **Step-graphon approximation of `finiteGraphGraphon` via `stepGraphonOfFinpartition`.** For
 `ε > 0` and `0 < m`, there is a vertex partition `P` of `Fin m` into at most `4 ^ ⌈1 / ε²⌉` parts
@@ -171,9 +147,10 @@ theorem frieze_kannan_stepGraphonOfFinpartition (G : SimpleGraph (Fin m)) [Decid
   rw [G.stepGraphonAvg_finiteGraphGraphon_eq_stepGraphonOfFinpartition P] at hcut
   exact ⟨P, hcard, hcut, (cutDist_le_cutNorm_sub (finiteGraphGraphon G) _).trans hcut⟩
 
-/-- **Analytic Frieze–Kannan comparison on any finite vertex type.** Along `e : V ≃ Fin m` with
-`0 < m`, `G` has a vertex partition `P` into at most `4 ^ ⌈1 / ε²⌉` parts whose relabelled cell
-partition approximates `finiteGraphGraphon (G.comap e.symm)` within `ε` in cut norm. -/
+/-- **Analytic Frieze–Kannan comparison on any finite vertex type.** For `ε > 0`, along
+`e : V ≃ Fin m` with `0 < m`, `G` has a vertex partition `P` into at most `4 ^ ⌈1 / ε²⌉` parts
+whose relabelled cell partition approximates `finiteGraphGraphon (G.comap e.symm)` within `ε` in cut
+norm. -/
 theorem frieze_kannan_cellPartition_comap_symm {V : Type*} [Fintype V] [DecidableEq V]
     (G : SimpleGraph V) (e : V ≃ Fin m) {ε : ℝ} (hε : 0 < ε) :
     ∃ P : Finpartition (univ : Finset V),

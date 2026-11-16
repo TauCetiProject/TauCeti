@@ -21,8 +21,8 @@ regularity and analytic `cutNorm` / `cutDist` weak regularity for `finiteGraphGr
   `SimpleGraph.frieze_kannan_cellPartition_refining`.
 * On a nonempty finite vertex type `V`, `Fintype.equivFin V` transports the weak-regularity bound
   through `SimpleGraph.frieze_kannan_cellPartition_comap_symm`, without `[DecidableRel G.Adj]`.
-* On the empty host `Fin 0`, the finite Frieze–Kannan statement holds with `0` parts and `0` cut
-  discrepancy, while `finiteGraphGraphon G = 0` has cut-norm defect `0` over `⊤`.
+* On the empty host `Fin 0`, `SimpleGraph.frieze_kannan_cutDiscrepancy` still applies directly for
+  every `ε > 0`.
 -/
 
 open Finset MeasureTheory
@@ -30,7 +30,7 @@ open Finset MeasureTheory
 namespace TauCeti.DenseGraphLimits
 
 -- Non-integral `1 / ε² = 16 / 9` (`⌈16 / 9⌉₊ = 2`, `4 ^ 2 = 16`): step-graphon approximation in
--- both `cutNorm` and `cutDist`.
+-- `cutDist`.
 example {m : ℕ} [NeZero m] (G : SimpleGraph (Fin m)) [DecidableRel G.Adj] :
     ∃ P : Finpartition (univ : Finset (Fin m)),
       #P.parts ≤ 16 ∧
@@ -73,8 +73,7 @@ example {V : Type*} [Fintype V] [DecidableEq V] [Nonempty V] (G : SimpleGraph V)
             (finiteGraphGraphon (G.comap (Fintype.equivFin V).symm))).toSymmKernel) ≤ ε :=
   G.frieze_kannan_cellPartition_comap_symm (Fintype.equivFin V) hε
 
--- Empty host `Fin 0`: finite Frieze–Kannan holds trivially (`#P.parts = 0`, `cutDiscrepancy = 0`),
--- and `finiteGraphGraphon G = 0` has zero cut-norm defect over `⊤`.
+-- Empty host `Fin 0`: the finite `cutDiscrepancy` Frieze–Kannan bound applies without `[NeZero m]`.
 example (G : SimpleGraph (Fin 0)) [DecidableRel G.Adj] {ε : ℝ} (hε : 0 < ε) :
     ∃ P : Finpartition (univ : Finset (Fin 0)),
       #P.parts ≤ 4 ^ ⌈1 / ε ^ 2⌉₊ ∧

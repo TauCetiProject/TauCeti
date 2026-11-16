@@ -27,8 +27,9 @@ graphons match general step graphons on `P.cellPartition` in both directions:
 * `stepGraphonAvg_stepGraphonOfFinpartition` and
   `blockAverage_cellPartition_stepGraphonOfFinpartition` show that it is its own block average over
   `P.cellPartition` and that block averaging recovers `val`;
-* `rectIntegral_stepGraphonOfFinpartition_preimage` and `l2sq_stepGraphonOfFinpartition` express its
-  cell-preimage rectangle integrals and squared `L²` norm as finite sums over `P.parts`.
+* `rectIntegral_stepGraphonOfFinpartition`, `rectIntegral_stepGraphonOfFinpartition_preimage`, and
+  `l2sq_stepGraphonOfFinpartition` express its single-block and cell-preimage rectangle integrals
+  and squared `L²` norm in terms of `P.parts`.
 
 ## Main definitions
 
@@ -47,9 +48,10 @@ graphons match general step graphons on `P.cellPartition` in both directions:
 * `TauCeti.DenseGraphLimits.stepGraphonAvg_stepGraphonOfFinpartition` and
   `TauCeti.DenseGraphLimits.stepGraphonAvg_cellPartition_eq_stepGraphonOfFinpartition`:
   compatibility with `stepGraphonAvg` and `blockAverage`.
-* `TauCeti.DenseGraphLimits.rectIntegral_stepGraphonOfFinpartition_preimage` and
-  `TauCeti.DenseGraphLimits.l2sq_stepGraphonOfFinpartition`: rectangle integrals over cell preimages
-  and squared `L²` norm.
+* `TauCeti.DenseGraphLimits.rectIntegral_stepGraphonOfFinpartition`,
+  `TauCeti.DenseGraphLimits.rectIntegral_stepGraphonOfFinpartition_preimage`, and
+  `TauCeti.DenseGraphLimits.l2sq_stepGraphonOfFinpartition`: rectangle integrals and squared `L²`
+  norm.
 -/
 
 public section
@@ -197,20 +199,19 @@ theorem stepGraphonAvg_cellPartition_eq_stepGraphonOfFinpartition
         (fun _ _ => blockAverage_comm _ _ _ _) := by
   rw [stepGraphonAvg_def, stepGraphon_cellPartition_eq_stepGraphonOfFinpartition]
 
-omit [NeZero m] in
-/-- Grouping a sum over `X ⊆ Fin m` by the subtype of parts of `P`. -/
-private theorem sum_apply_part_subtype (P : Finpartition (univ : Finset (Fin m)))
-    (X : Finset (Fin m)) (g : P.parts → ℝ) :
-    ∑ i ∈ X, g ⟨P.part i, P.part_mem.2 (mem_univ i)⟩ =
-      ∑ A : P.parts, (#(X ∩ A.1) : ℝ) * g A := by
-  classical
-  rw [← Finset.sum_fiberwise X (fun i => (⟨P.part i, P.part_mem.2 (mem_univ i)⟩ : P.parts))]
-  refine Finset.sum_congr rfl fun A _ => ?_
-  rw [Finset.sum_congr rfl fun i hi => by rw [(Finset.mem_filter.1 hi).2], Finset.sum_const,
-    nsmul_eq_mul]
-  congr 3
-  ext i
-  simp [Subtype.ext_iff, P.part_eq_iff_mem A.2]
+/-- **Single-block rectangle integral.** Over the cells of two parts `A` and `B` of `P`,
+`stepGraphonOfFinpartition` integrates to `(#A.1 / m) * (#B.1 / m) * val A B`. -/
+@[simp]
+theorem rectIntegral_stepGraphonOfFinpartition (P : Finpartition (univ : Finset (Fin m)))
+    (val : P.parts → P.parts → Set.Icc (0 : ℝ) 1) (hsymm : ∀ A B, val A B = val B A)
+    (A B : P.parts) :
+    (stepGraphonOfFinpartition P val hsymm).toSymmKernel.rectIntegral volume
+        (cellFin m ⁻¹' (A.1 : Set (Fin m))) (cellFin m ⁻¹' (B.1 : Set (Fin m))) =
+      (#A.1 / m) * (#B.1 / m) * (val A B : ℝ) := by
+  rw [← P.partsCellPartitionEquiv_apply_coe, ← P.partsCellPartitionEquiv_apply_coe,
+    stepGraphonOfFinpartition_def, rectIntegral_stepGraphon,
+    P.volume_real_partsCellPartitionEquiv, P.volume_real_partsCellPartitionEquiv,
+    Equiv.symm_apply_apply, Equiv.symm_apply_apply]
 
 /-- **Rectangle integral over cell preimages.** Over the cells of two vertex sets `S` and `T`,
 `stepGraphonOfFinpartition` integrates to the trace-weighted block sum divided by `m²`. -/
@@ -228,12 +229,13 @@ theorem rectIntegral_stepGraphonOfFinpartition_preimage (P : Finpartition (univ 
   simp only [Graphon.coe_toSymmKernel, Graphon.ofMatrix_apply]
   have hT (A : P.parts) :
       ∑ j ∈ T, (val A ⟨P.part j, P.part_mem.2 (mem_univ j)⟩ : ℝ) =
-        ∑ B : P.parts, (#(T ∩ B.1) : ℝ) * val A B :=
-    sum_apply_part_subtype P T fun B => (val A B : ℝ)
+        ∑ B : P.parts, (#(T ∩ B.1) : ℝ) * val A B := by
+    rw [P.sum_apply_part_subtype T fun B => (val A B : ℝ)]
+    simp_rw [nsmul_eq_mul]
   simp_rw [sum_congr rfl fun i _ => hT ⟨P.part i, P.part_mem.2 (mem_univ i)⟩]
-  rw [sum_apply_part_subtype P S fun A => ∑ B : P.parts, (#(T ∩ B.1) : ℝ) * val A B]
+  rw [P.sum_apply_part_subtype S fun A => ∑ B : P.parts, (#(T ∩ B.1) : ℝ) * val A B]
   refine Finset.sum_congr rfl fun A _ => ?_
-  rw [Finset.mul_sum]
+  rw [nsmul_eq_mul, Finset.mul_sum]
   exact Finset.sum_congr rfl fun B _ => by ring
 
 /-- **Squared `L²` norm of `stepGraphonOfFinpartition`.** Each pair of parts `(A, B)` contributes
@@ -242,39 +244,12 @@ theorem l2sq_stepGraphonOfFinpartition (P : Finpartition (univ : Finset (Fin m))
     (val : P.parts → P.parts → Set.Icc (0 : ℝ) 1) (hsymm : ∀ A B, val A B = val B A) :
     l2sq volume (stepGraphonOfFinpartition P val hsymm).toSymmKernel =
       ∑ A : P.parts, ∑ B : P.parts, (#A.1 * #B.1 / (m : ℝ) ^ 2) * (val A B : ℝ) ^ 2 := by
-  let W := stepGraphonOfFinpartition P val hsymm
-  have havg := stepGraphonAvg_stepGraphonOfFinpartition P P.measurableSet_of_mem_cellPartition
-    val hsymm
-  calc l2sq volume W.toSymmKernel
-      = graphonPartitionEnergy volume P.cellPartition P.measurableSet_of_mem_cellPartition W := by
-        rw [graphonPartitionEnergy_eq, havg]
-    _ = ∑ pq : P.cellPartition.parts × P.cellPartition.parts,
-          W.toSymmKernel.rectIntegral volume (pq.1 : Set I) (pq.2 : Set I) *
-            (blockAverage P.cellPartition W pq.1 pq.2 : ℝ) := by
-        simp_rw [graphonPartitionEnergy_eq_sum, coe_blockAverage]
-    _ = ∑ A : P.parts, ∑ B : P.parts,
-          W.toSymmKernel.rectIntegral volume
-              (P.partsCellPartitionEquiv A : Set I) (P.partsCellPartitionEquiv B : Set I) *
-            (blockAverage P.cellPartition W
-              (P.partsCellPartitionEquiv A) (P.partsCellPartitionEquiv B) : ℝ) := by
-        rw [Fintype.sum_prod_type, ← P.partsCellPartitionEquiv.sum_comp]
-        exact Finset.sum_congr rfl fun A _ => (P.partsCellPartitionEquiv.sum_comp _).symm
-    _ = ∑ A : P.parts, ∑ B : P.parts, (#A.1 * #B.1 / (m : ℝ) ^ 2) * (val A B : ℝ) ^ 2 := by
-        have hm : (m : ℝ) ≠ 0 := Nat.cast_ne_zero.2 (NeZero.ne m)
-        refine Finset.sum_congr rfl fun A _ => Finset.sum_congr rfl fun B _ => ?_
-        have hvolA : (#A.1 : ℝ) / m ≠ 0 :=
-          div_ne_zero (Nat.cast_ne_zero.2 (P.nonempty_of_mem_parts A.2).card_pos.ne') hm
-        have hvolB : (#B.1 : ℝ) / m ≠ 0 :=
-          div_ne_zero (Nat.cast_ne_zero.2 (P.nonempty_of_mem_parts B.2).card_pos.ne') hm
-        have hrect : W.toSymmKernel.rectIntegral volume
-            (P.partsCellPartitionEquiv A : Set I) (P.partsCellPartitionEquiv B : Set I) =
-            (#A.1 / m) * (#B.1 / m) * (val A B : ℝ) := by
-          have h := coe_blockAverage_eq_inv_mul_rectIntegral P.cellPartition W
-            (P.partsCellPartitionEquiv A) (P.partsCellPartitionEquiv B)
-          rw [blockAverage_cellPartition_stepGraphonOfFinpartition P val hsymm A B,
-            P.volume_real_partsCellPartitionEquiv, P.volume_real_partsCellPartitionEquiv] at h
-          exact ((eq_inv_mul_iff_mul_eq₀ (mul_ne_zero hvolA hvolB)).1 h).symm
-        rw [hrect, blockAverage_cellPartition_stepGraphonOfFinpartition P val hsymm A B]
-        ring
+  rw [stepGraphonOfFinpartition_def, l2sq_stepGraphon, ← P.partsCellPartitionEquiv.sum_comp]
+  refine Finset.sum_congr rfl fun A _ => ?_
+  rw [← P.partsCellPartitionEquiv.sum_comp]
+  refine Finset.sum_congr rfl fun B _ => ?_
+  rw [P.volume_real_partsCellPartitionEquiv, P.volume_real_partsCellPartitionEquiv,
+    Equiv.symm_apply_apply, Equiv.symm_apply_apply]
+  ring
 
 end TauCeti.DenseGraphLimits

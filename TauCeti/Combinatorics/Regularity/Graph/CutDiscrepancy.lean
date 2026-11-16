@@ -42,8 +42,8 @@ Densities include the diagonal blocks: a part `C` is paired with itself, with th
 * `SimpleGraph.cutDiscrepancy G P`: the maximum deviation of the prediction from the true count.
 * `SimpleGraph.cutDiscrepancy_le_iff` and `SimpleGraph.lt_cutDiscrepancy_iff`: bounds on the cut
   discrepancy are rectangle bounds, and exceeding a bound is witnessed by a rectangle.
-* `SimpleGraph.cutDiscrepancy_bot` and `SimpleGraph.cutDiscrepancy_of_isEmpty`: the partition into
-  singletons, or any partition of an empty vertex type, has cut discrepancy `0`.
+* `SimpleGraph.cutDiscrepancy_bot` and `SimpleGraph.cutDiscrepancy_of_subsingleton`: the partition
+  into singletons, or any partition of a subsingleton vertex type, has cut discrepancy `0`.
 * `SimpleGraph.steppedCount_comap_symm` and `SimpleGraph.cutDiscrepancy_comap_symm`: invariance of
   stepped predictions and cut discrepancy under relabelling along an equivalence.
 
@@ -245,10 +245,13 @@ theorem cutDiscrepancy_le_card_sq : G.cutDiscrepancy P ≤ (Fintype.card V : ℝ
 theorem cutDiscrepancy_bot : G.cutDiscrepancy ⊥ = 0 :=
   le_antisymm (cutDiscrepancy_le_iff.2 fun A B ↦ by simp) (G.cutDiscrepancy_nonneg ⊥)
 
-/-- On an empty vertex type, the cut discrepancy of every partition is `0`. -/
+/-- On a subsingleton vertex type, the cut discrepancy of every partition is `0`. -/
 @[simp]
-theorem cutDiscrepancy_of_isEmpty [IsEmpty V] : G.cutDiscrepancy P = 0 :=
-  le_antisymm ((G.cutDiscrepancy_le_card_sq P).trans_eq (by simp)) (G.cutDiscrepancy_nonneg P)
+theorem cutDiscrepancy_of_subsingleton [Subsingleton V] : G.cutDiscrepancy P = 0 := by
+  have hP : P = ⊥ := P.eq_bot_iff_forall_card_eq_one.2 fun B hB =>
+    le_antisymm (card_le_one.2 fun x _ y _ => Subsingleton.elim x y)
+      (P.nonempty_of_mem_parts hB).card_pos
+  rw [hP, cutDiscrepancy_bot]
 
 /-- **Stepped predictions are invariant under relabelling.** Relabel the vertices along `e`: the
 graph becomes `G.comap e.symm`, the partition becomes the pullback of `P` along `e.symm`, and both
@@ -259,20 +262,12 @@ theorem steppedCount_comap_symm {W : Type*} [Fintype W] [DecidableEq W] (e : V �
     (G.comap e.symm).steppedCount ((P.copy (image_univ_equiv e.symm).symm).comap e.symm)
         (A.map e.toEmbedding) (B.map e.toEmbedding) =
       G.steppedCount P A B := by
-  have hpart (v : V) :
-      ((P.copy (image_univ_equiv e.symm).symm).comap e.symm).part (e v) =
-        (P.part v).map e.toEmbedding := by
-    have hcopy : (P.copy (image_univ_equiv e.symm).symm).part v = P.part v :=
-      Finpartition.part_eq_of_mem _ (by simp) (P.mem_part (mem_univ v))
-    ext y
-    rw [Finpartition.part_comap (mem_univ _), mem_filter, Equiv.symm_apply_apply, hcopy,
-      mem_map_equiv]
-    simp
   rw [steppedCount_eq_sum_edgeDensity_part, steppedCount_eq_sum_edgeDensity_part, sum_map]
   refine sum_congr rfl fun x _ => ?_
   rw [sum_map]
   refine sum_congr rfl fun y _ => ?_
-  simp only [Equiv.coe_toEmbedding, hpart, edgeDensity_comap_symm]
+  simp only [Equiv.coe_toEmbedding, P.part_comap_copy_equiv, Equiv.symm_apply_apply,
+    Equiv.symm_symm, edgeDensity_comap_symm]
 
 /-- **The cut discrepancy is invariant under relabelling.** Relabel the vertices along `e`: the
 graph becomes `G.comap e.symm` and the partition becomes the pullback of `P` along `e.symm`. -/
