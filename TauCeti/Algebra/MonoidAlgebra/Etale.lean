@@ -16,7 +16,7 @@ A commutative group algebra is étale when the group order is invertible in the
 base ring. Over a field this condition is also necessary: an étale algebra over a
 field is finite, and torsion of prime order equal to the characteristic produces a
 nonzero nilpotent. Applied to character groups, this detects the infinitesimal
-structure of diagonalizable groups.
+structure of finite diagonalizable groups.
 
 ## References
 
