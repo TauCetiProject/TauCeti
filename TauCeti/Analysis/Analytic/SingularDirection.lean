@@ -8,12 +8,14 @@ module
 public import Mathlib.Analysis.Analytic.Order
 public import Mathlib.Analysis.Calculus.FDeriv.Analytic
 public import Mathlib.Analysis.Complex.Basic
-public import Mathlib.Analysis.LocallyConvex.SeparatingDual
-public import Mathlib.Topology.Baire.Lemmas
-import Mathlib.Analysis.Analytic.CPolynomial
 import Mathlib.Analysis.Analytic.Constructions
 import Mathlib.Analysis.Analytic.IsolatedZeros
+import Mathlib.Analysis.Analytic.Linear
 import Mathlib.Analysis.Analytic.Uniqueness
+import Mathlib.Topology.Algebra.Module.Equiv.Pi
+-- Proof-only: `Set.Finite.dense_sInter` for finite intersections of dense open sets.
+import Mathlib.Topology.Baire.Lemmas
+import TauCeti.Analysis.Analytic.Uniqueness
 
 /-!
 # Singular directions of analytic functions
@@ -33,15 +35,19 @@ At a fixed point `x`, the singular directions of any function analytic at `x` fo
 nonzero scalars (`TauCeti.eventually_apply_add_smul_smul_eq_zero_iff`). When `f` does not vanish on
 a neighbourhood of `x`, its singular directions have empty interior
 (`AnalyticAt.interior_setOf_eventually_apply_add_smul_eq_zero_eq_empty`), so the nonsingular
-directions form a dense open set (`AnalyticAt.dense_setOf_not_eventually_apply_add_smul_eq_zero`).
-Consequently, a finite family of germs not vanishing near `x` shares an open dense set of
-nonsingular directions (`TauCeti.dense_setOf_forall_not_eventually_apply_add_smul_eq_zero`), and a
-countable family shares a residual set of nonsingular directions
-(`TauCeti.eventually_residual_forall_not_eventually_apply_add_smul_eq_zero`), hence a dense one in
-any Baire space. Placing a common nonzero nonsingular direction along a coordinate axis puts any
-finite family of non-locally-zero analytic germs simultaneously in Weierstrass general position
-(`TauCeti.exists_continuousLinearEquiv_forall_analyticOrderAt_ne_top`,
-`TauCeti.exists_continuousLinearEquiv_finSucc_forall_analyticOrderAt_ne_top`).
+directions form an open (`AnalyticAt.isOpen_setOf_not_eventually_apply_add_smul_eq_zero`) and dense
+(`AnalyticAt.dense_setOf_not_eventually_apply_add_smul_eq_zero`) set. Consequently, a finite family
+of germs not vanishing near `x` shares an open
+(`TauCeti.isOpen_setOf_forall_not_eventually_apply_add_smul_eq_zero`) and dense
+(`TauCeti.dense_setOf_forall_not_eventually_apply_add_smul_eq_zero`) set of nonsingular directions.
+Picking a common nonsingular direction with nonzero vertical component and applying an explicit
+linear shear puts any finite family of non-locally-zero analytic germs simultaneously in
+Weierstrass general position (`TauCeti.exists_continuousLinearEquiv_forall_analyticOrderAt_ne_top`,
+`TauCeti.exists_continuousLinearEquiv_finSucc_forall_analyticOrderAt_ne_top`). This generalizes
+the single-germ `RCLike` general-position theorem formerly proved via `SeparatingDual` in
+`TauCeti.Analysis.Analytic.Uniqueness`, which is retained here as the `Unit`-indexed corollary
+`AnalyticAt.exists_continuousLinearEquiv_analyticOrderAt_ne_top` over any nontrivially normed
+field.
 
 Where `f` is analytic, the directional derivatives `(x, v) ↦ Dⁿ f (x) (v, …, v)` are analytic
 functions of the pair `(x, v)` (`AnalyticOnNhd.iteratedFDeriv_apply_diag`), so the incidence set
@@ -64,15 +70,15 @@ directional derivatives `Dⁿ F (x) (v, …, v)` all vanish
 * `AnalyticAt.isClosed_setOf_eventually_apply_add_smul_eq_zero`,
   `AnalyticAt.interior_setOf_eventually_apply_add_smul_eq_zero_eq_empty`: the singular directions
   at `x` form a closed set, with empty interior when `f` is not locally zero at `x`.
-* `TauCeti.dense_setOf_forall_not_eventually_apply_add_smul_eq_zero`,
-  `TauCeti.exists_ne_zero_forall_not_eventually_apply_add_smul_eq_zero`: open density and existence
-  of common nonzero nonsingular directions for finite families of non-locally-zero analytic germs.
-* `TauCeti.eventually_residual_forall_not_eventually_apply_add_smul_eq_zero`,
-  `TauCeti.dense_setOf_forall_not_eventually_apply_add_smul_eq_zero_of_countable`: residuality
-  and Baire-space density of common nonsingular directions for countable families.
+* `TauCeti.isOpen_setOf_forall_not_eventually_apply_add_smul_eq_zero`,
+  `TauCeti.dense_setOf_forall_not_eventually_apply_add_smul_eq_zero`,
+  `TauCeti.exists_ne_zero_forall_not_eventually_apply_add_smul_eq_zero`: openness, density, and
+  existence of common nonzero nonsingular directions for finite families of non-locally-zero
+  analytic germs.
 * `TauCeti.exists_continuousLinearEquiv_forall_analyticOrderAt_ne_top`,
-  `TauCeti.exists_continuousLinearEquiv_finSucc_forall_analyticOrderAt_ne_top`: simultaneous linear
-  general position for finite families of non-locally-zero analytic germs.
+  `AnalyticAt.exists_continuousLinearEquiv_analyticOrderAt_ne_top`,
+  `TauCeti.exists_continuousLinearEquiv_finSucc_forall_analyticOrderAt_ne_top`: simultaneous and
+  single-germ linear general position for finite families of non-locally-zero analytic germs.
 * `AnalyticAt.eventually_apply_add_smul_eq_zero_iff`: `v` is singular for `f` at `x` if and only
   if every directional derivative `Dⁿ f (x) (v, …, v)` vanishes.
 * `AnalyticOnNhd.iteratedFDeriv_apply_diag`: the directional derivatives are analytic in `(x, v)`.
@@ -86,6 +92,9 @@ directional derivatives `Dⁿ F (x) (v, …, v)` all vanish
 
 * S. Łojasiewicz, *Triangulation of semi-analytic sets*, Annali della Scuola Normale Superiore di
   Pisa (3) 18 (1964), 449–474, §2, Lemma 3.
+* S. Łojasiewicz, *Ensembles semi-analytiques*, IHÉS, 1965, §15 (Weierstrass general position).
+* L. Hörmander, *An Introduction to Complex Analysis in Several Variables*, §6.1.
+* R. C. Gunning, H. Rossi, *Analytic Functions of Several Complex Variables*, Ch. II, §B.
 -/
 
 public section
@@ -111,26 +120,6 @@ section NontriviallyNormedField
 
 variable {𝕜 E F : Type*} [NontriviallyNormedField 𝕜] [NormedAddCommGroup E] [NormedSpace 𝕜 E]
   [NormedAddCommGroup F] [NormedSpace 𝕜 F] {f : E → F} {x v : E}
-
-/-- If the homogeneous polynomial `v ↦ m (v, …, v)` associated to a continuous multilinear map
-vanishes near a point `v₀`, then it vanishes on the whole space. -/
-private theorem continuousMultilinearMap_apply_diag_eq_zero_of_eventuallyEq {n : ℕ}
-    {m : E [×n]→L[𝕜] F} {v₀ : E} (h : (fun v ↦ m fun _ ↦ v) =ᶠ[𝓝 v₀] 0) (v : E) :
-    (m fun _ ↦ v) = 0 := by
-  let q : FormalMultilinearSeries 𝕜 E F := fun k ↦ if hk : k = n then hk ▸ m else 0
-  have hq₀ : HasFiniteFPowerSeriesOnBall (fun y ↦ m fun _ ↦ y) q 0 (n + 1) ⊤ := by
-    refine .mk' (fun k hk ↦ dite_eq_right (by omega)) ENNReal.zero_lt_top fun y _ ↦ ?_
-    rw [Finset.sum_eq_single_of_mem n (Finset.self_mem_range_succ n)
-      fun k _ hkn ↦ by simp [q, hkn]]
-    simp [q]
-  have hq : HasFPowerSeriesOnBall (fun y ↦ m fun _ ↦ y) (q.changeOrigin v₀) v₀ ⊤ := by
-    simpa using (hq₀.changeOrigin (y := v₀) ENNReal.coe_lt_top).toHasFPowerSeriesOnBall
-  have hzero : HasFPowerSeriesAt 0 (q.changeOrigin v₀) v₀ := hq.hasFPowerSeriesAt.congr h
-  have hsum : HasSum (fun k ↦ q.changeOrigin v₀ k fun _ ↦ v - v₀) 0 := by
-    convert hasSum_zero (α := F) using 1
-    ext k
-    exact hzero.apply_eq_zero k (v - v₀)
-  exact (hq.hasSum_sub (Metric.mem_eball.2 (edist_lt_top v v₀))).unique hsum
 
 namespace HasFPowerSeriesAt
 
@@ -193,8 +182,7 @@ theorem interior_setOf_eventually_apply_add_smul_eq_zero_eq_empty (hf : Analytic
     filter_upwards [mem_interior_iff_mem_nhds.1 hv₀] with v hv
     exact (hp.hasFPowerSeriesAt.eventually_apply_add_smul_eq_zero_iff.1 hv)
   have hdiag (n : ℕ) (y : E) : p n (fun _ ↦ y) = 0 :=
-    continuousMultilinearMap_apply_diag_eq_zero_of_eventuallyEq
-      (hmem.mono fun v hv ↦ hv n) y
+    (p n).apply_diag_eq_zero_of_eventuallyEq (hmem.mono fun v hv ↦ hv n) y
   filter_upwards [Metric.isOpen_eball.mem_nhds (Metric.mem_eball_self hp.r_pos)] with z hz
   have hsum : HasSum (fun n ↦ p n fun _ ↦ z - x) 0 := by
     convert hasSum_zero (α := F) using 1
@@ -203,7 +191,7 @@ theorem interior_setOf_eventually_apply_add_smul_eq_zero_eq_empty (hf : Analytic
   exact (hp.hasSum_sub hz).unique hsum
 
 /-- If `f` is analytic at `x` and does not vanish on a neighbourhood of `x`, then its singular
-directions at `x` form a nowhere dense closed set. -/
+directions at `x` form a nowhere dense set. -/
 theorem isNowhereDense_setOf_eventually_apply_add_smul_eq_zero (hf : AnalyticAt 𝕜 f x)
     (h0 : ¬ f =ᶠ[𝓝 x] 0) :
     IsNowhereDense {v | ∀ᶠ ξ in 𝓝 (0 : 𝕜), f (x + ξ • v) = 0} := by
@@ -211,14 +199,12 @@ theorem isNowhereDense_setOf_eventually_apply_add_smul_eq_zero (hf : AnalyticAt 
     hf.interior_setOf_eventually_apply_add_smul_eq_zero_eq_empty h0]
 
 /-- If `f` is analytic at `x` and does not vanish on a neighbourhood of `x`, then its nonsingular
-directions at `x` form a dense open set. -/
+directions at `x` form a dense set. -/
 theorem dense_setOf_not_eventually_apply_add_smul_eq_zero (hf : AnalyticAt 𝕜 f x)
     (h0 : ¬ f =ᶠ[𝓝 x] 0) :
     Dense {v | ¬ ∀ᶠ ξ in 𝓝 (0 : 𝕜), f (x + ξ • v) = 0} := by
-  rw [show {v | ¬ ∀ᶠ ξ in 𝓝 (0 : 𝕜), f (x + ξ • v) = 0} =
-      {v | ∀ᶠ ξ in 𝓝 (0 : 𝕜), f (x + ξ • v) = 0}ᶜ from rfl,
-    dense_iff_closure_eq, closure_compl,
-    hf.interior_setOf_eventually_apply_add_smul_eq_zero_eq_empty h0, compl_empty]
+  rw [← compl_ofPred, ← interior_eq_empty_iff_dense_compl]
+  exact hf.interior_setOf_eventually_apply_add_smul_eq_zero_eq_empty h0
 
 section CharZero
 
@@ -255,29 +241,14 @@ theorem isOpen_setOf_forall_not_eventually_apply_add_smul_eq_zero [Finite ι]
   exact isOpen_iInter_of_finite fun i ↦ (hg i).isOpen_setOf_not_eventually_apply_add_smul_eq_zero
 
 /-- The common nonsingular directions at `x` of a finite family of functions analytic at `x`, none
-of which vanishes on a neighbourhood of `x`, form a dense open set. -/
+of which vanishes on a neighbourhood of `x`, form a dense set. -/
 theorem dense_setOf_forall_not_eventually_apply_add_smul_eq_zero [Finite ι]
     (hg : ∀ i, AnalyticAt 𝕜 (g i) x) (h0 : ∀ i, ¬ g i =ᶠ[𝓝 x] 0) :
     Dense {v | ∀ i, ¬ ∀ᶠ ξ in 𝓝 (0 : 𝕜), g i (x + ξ • v) = 0} := by
-  classical
-  cases nonempty_fintype ι
-  suffices ∀ s : Finset ι,
-      IsOpen {v | ∀ i ∈ s, ¬ ∀ᶠ ξ in 𝓝 (0 : 𝕜), g i (x + ξ • v) = 0} ∧
-        Dense {v | ∀ i ∈ s, ¬ ∀ᶠ ξ in 𝓝 (0 : 𝕜), g i (x + ξ • v) = 0} by
-    simpa using (this Finset.univ).2
-  intro s
-  induction s using Finset.induction_on with
-  | empty => simp [dense_univ]
-  | insert i s _ ih =>
-    have heq : {v | ∀ j ∈ insert i s, ¬ ∀ᶠ ξ in 𝓝 (0 : 𝕜), g j (x + ξ • v) = 0} =
-        {v | ¬ ∀ᶠ ξ in 𝓝 (0 : 𝕜), g i (x + ξ • v) = 0} ∩
-          {v | ∀ j ∈ s, ¬ ∀ᶠ ξ in 𝓝 (0 : 𝕜), g j (x + ξ • v) = 0} := by
-      ext v
-      simp
-    rw [heq]
-    have ho := (hg i).isOpen_setOf_not_eventually_apply_add_smul_eq_zero
-    have hd := (hg i).dense_setOf_not_eventually_apply_add_smul_eq_zero (h0 i)
-    exact ⟨ho.inter ih.1, hd.inter_of_isOpen_left ih.2 ho⟩
+  rw [ofPred_forall, ← sInter_range]
+  exact (finite_range _).dense_sInter
+    (forall_mem_range.2 fun i ↦ (hg i).isOpen_setOf_not_eventually_apply_add_smul_eq_zero)
+    (forall_mem_range.2 fun i ↦ (hg i).dense_setOf_not_eventually_apply_add_smul_eq_zero (h0 i))
 
 /-- Every finite family of functions analytic at `x` on a nontrivial normed space, none of which
 vanishes on a neighbourhood of `x`, admits a common nonzero nonsingular direction at `x`. -/
@@ -289,51 +260,63 @@ theorem exists_ne_zero_forall_not_eventually_apply_add_smul_eq_zero [Nontrivial 
       isOpen_compl_singleton (Set.nonempty_compl_of_nontrivial 0)
   exact ⟨v, hv0, hv⟩
 
-/-- The common nonsingular directions at `x` of a countable family of functions analytic at `x`,
-none of which vanishes on a neighbourhood of `x`, form a residual set in `E`. -/
-theorem eventually_residual_forall_not_eventually_apply_add_smul_eq_zero [Countable ι]
-    (hg : ∀ i, AnalyticAt 𝕜 (g i) x) (h0 : ∀ i, ¬ g i =ᶠ[𝓝 x] 0) :
-    ∀ᶠ v in residual E, ∀ i, ¬ ∀ᶠ ξ in 𝓝 (0 : 𝕜), g i (x + ξ • v) = 0 := by
-  rw [eventually_countable_forall]
-  exact fun i ↦ residual_of_dense_open
-    (hg i).isOpen_setOf_not_eventually_apply_add_smul_eq_zero
-    ((hg i).dense_setOf_not_eventually_apply_add_smul_eq_zero (h0 i))
-
-/-- In a Baire normed space, the common nonsingular directions at `x` of a countable family of
-functions analytic at `x`, none of which vanishes on a neighbourhood of `x`, form a dense set. -/
-theorem dense_setOf_forall_not_eventually_apply_add_smul_eq_zero_of_countable [BaireSpace E]
-    [Countable ι] (hg : ∀ i, AnalyticAt 𝕜 (g i) x) (h0 : ∀ i, ¬ g i =ᶠ[𝓝 x] 0) :
-    Dense {v | ∀ i, ¬ ∀ᶠ ξ in 𝓝 (0 : 𝕜), g i (x + ξ • v) = 0} :=
-  dense_of_mem_residual (eventually_residual_forall_not_eventually_apply_add_smul_eq_zero hg h0)
-
 end Families
 
 section GeneralPosition
 
 /-- **Simultaneous Weierstrass general position on `E × 𝕜`.** Let `f i` be a finite family of
-functions analytic at `p : E × 𝕜`, none of which vanishes on a neighbourhood of `p`. If continuous
-linear forms separate points of `E × 𝕜` (for instance when `RCLike 𝕜`), there is a continuous
-linear equivalence `L : (E × 𝕜) ≃L[𝕜] (E × 𝕜)` such that every `f i ∘ L` has finite analytic order
-along the vertical coordinate at `L.symm p`. -/
-theorem exists_continuousLinearEquiv_forall_analyticOrderAt_ne_top [SeparatingDual 𝕜 (E × 𝕜)]
-    {ι : Type*} [Finite ι] {G : ι → Type*} [∀ i, NormedAddCommGroup (G i)]
-    [∀ i, NormedSpace 𝕜 (G i)] {f : ∀ i, E × 𝕜 → G i} {p : E × 𝕜}
+functions analytic at `p : E × 𝕜`, none of which vanishes on a neighbourhood of `p`. There is a
+continuous linear equivalence `L : (E × 𝕜) ≃L[𝕜] (E × 𝕜)` such that every `f i ∘ L` has finite
+analytic order along the vertical coordinate at `L.symm p`. -/
+theorem exists_continuousLinearEquiv_forall_analyticOrderAt_ne_top {ι : Type*} [Finite ι]
+    {G : ι → Type*} [∀ i, NormedAddCommGroup (G i)] [∀ i, NormedSpace 𝕜 (G i)]
+    {f : ∀ i, E × 𝕜 → G i} {p : E × 𝕜}
     (hf : ∀ i, AnalyticAt 𝕜 (f i) p) (h0 : ∀ i, ¬ f i =ᶠ[𝓝 p] 0) :
     ∃ L : (E × 𝕜) ≃L[𝕜] (E × 𝕜),
       ∀ i, analyticOrderAt (fun t ↦ f i (L ((L.symm p).1, t))) (L.symm p).2 ≠ ⊤ := by
-  have : Nontrivial (E × 𝕜) := ⟨(0, 1), 0, by simp⟩
-  obtain ⟨v, hv0, hv⟩ := exists_ne_zero_forall_not_eventually_apply_add_smul_eq_zero hf h0
-  obtain ⟨L, hL⟩ := SeparatingDual.exists_continuousLinearEquiv_apply_eq
-    (R := 𝕜) (x := ((0 : E), (1 : 𝕜))) (y := v) (by simp) hv0
-  refine ⟨L, fun i htop ↦ hv i ?_⟩
+  -- Choose a common nonsingular direction with nonzero vertical component and normalize it.
+  have hopen : IsOpen {v : E × 𝕜 | v.2 ≠ 0} := isOpen_compl_singleton.preimage continuous_snd
+  obtain ⟨v, hv, hv2⟩ :=
+    (dense_setOf_forall_not_eventually_apply_add_smul_eq_zero hf h0).exists_mem_open hopen
+      ⟨(0, 1), by simp⟩
+  set u : E := v.2⁻¹ • v.1
+  have hv' (i : ι) : ¬ ∀ᶠ ξ in 𝓝 (0 : 𝕜), f i (p + ξ • (u, (1 : 𝕜))) = 0 := by
+    have hvu : v.2⁻¹ • v = (u, (1 : 𝕜)) := by
+      ext <;> simp [u, inv_mul_cancel₀ hv2]
+    rw [← hvu, eventually_apply_add_smul_smul_eq_zero_iff (inv_ne_zero hv2)]
+    exact hv i
+  -- Apply the vertical shear `(x, t) ↦ (x + t • u, t)`, sending `(0, 1)` to `(u, 1)`.
+  let L : (E × 𝕜) ≃L[𝕜] (E × 𝕜) :=
+    { toFun := fun q ↦ (q.1 + q.2 • u, q.2)
+      invFun := fun q ↦ (q.1 - q.2 • u, q.2)
+      map_add' := fun q₁ q₂ ↦ by ext <;> simp [add_smul, add_assoc, add_left_comm]
+      map_smul' := fun c q ↦ by ext <;> simp [smul_add, smul_smul]
+      left_inv := fun q ↦ by ext <;> simp
+      right_inv := fun q ↦ by ext <;> simp
+      continuous_toFun := by fun_prop
+      continuous_invFun := by fun_prop }
+  refine ⟨L, fun i htop ↦ hv' i ?_⟩
   rw [analyticOrderAt_eq_top] at htop
   have hnhds : map (· + (L.symm p).2) (𝓝 (0 : 𝕜)) = 𝓝 (L.symm p).2 := by simp
   filter_upwards [(eventually_map.1 (hnhds ▸ htop))] with ξ hξ
-  have hline : L ((L.symm p).1, ξ + (L.symm p).2) = p + ξ • v := by
+  have hline : L ((L.symm p).1, ξ + (L.symm p).2) = p + ξ • (u, (1 : 𝕜)) := by
     have hpt : ((L.symm p).1, ξ + (L.symm p).2) = L.symm p + ξ • ((0 : E), (1 : 𝕜)) := by
       ext <;> simp [add_comm]
-    rw [hpt, map_add, map_smul, L.apply_symm_apply, hL]
+    rw [hpt, map_add, map_smul, L.apply_symm_apply]
+    simp [L]
   rwa [← hline]
+
+/-- **General position in the last variable.** A function analytic at `p` on `E × 𝕜` that does not
+vanish near `p` becomes regular in the last variable after a linear change of coordinates: there
+are a continuous linear automorphism `L` and a point `q` with `L q = p` such that
+`t ↦ f (L (q.1, t))` has finite analytic order at `q.2`. -/
+theorem _root_.AnalyticAt.exists_continuousLinearEquiv_analyticOrderAt_ne_top {f : E × 𝕜 → F}
+    {p : E × 𝕜} (hf : AnalyticAt 𝕜 f p) (hf0 : ¬ f =ᶠ[𝓝 p] 0) :
+    ∃ (L : (E × 𝕜) ≃L[𝕜] E × 𝕜) (q : E × 𝕜), L q = p ∧
+      analyticOrderAt (fun t ↦ f (L (q.1, t))) q.2 ≠ ⊤ := by
+  obtain ⟨L, hL⟩ := exists_continuousLinearEquiv_forall_analyticOrderAt_ne_top
+    (f := fun _ : Unit ↦ f) (fun _ ↦ hf) (fun _ ↦ hf0)
+  exact ⟨L, L.symm p, L.apply_symm_apply p, hL ()⟩
 
 /-- **Simultaneous Weierstrass general position on `Fin (n + 1) → 𝕜`.** For any finite family of
 functions `f i` analytic at `p : Fin (n + 1) → 𝕜`, none of which vanishes on a neighbourhood of
@@ -346,24 +329,33 @@ theorem exists_continuousLinearEquiv_finSucc_forall_analyticOrderAt_ne_top {n : 
     ∃ L : (Fin (n + 1) → 𝕜) ≃L[𝕜] (Fin (n + 1) → 𝕜),
       ∀ i, analyticOrderAt (fun t ↦ f i (L (Fin.cons t (Fin.tail (L.symm p)))))
         (L.symm p 0) ≠ ⊤ := by
-  have : SeparatingDual 𝕜 (Fin (n + 1) → 𝕜) :=
-    ⟨fun y hy ↦ let ⟨j, hj⟩ := Function.ne_iff.1 hy; ⟨ContinuousLinearMap.proj j, hj⟩⟩
-  have : Nontrivial (Fin (n + 1) → 𝕜) := ⟨Fin.cons 1 0, 0, fun h ↦ one_ne_zero (congrFun h 0)⟩
-  obtain ⟨v, hv0, hv⟩ := exists_ne_zero_forall_not_eventually_apply_add_smul_eq_zero hf h0
-  obtain ⟨L, hL⟩ := SeparatingDual.exists_continuousLinearEquiv_apply_eq
-    (R := 𝕜) (x := Fin.cons (1 : 𝕜) (0 : Fin n → 𝕜)) (y := v)
-    (fun h ↦ one_ne_zero (congrFun h 0)) hv0
-  refine ⟨L, fun i htop ↦ hv i ?_⟩
-  rw [analyticOrderAt_eq_top] at htop
-  have hnhds : map (· + L.symm p 0) (𝓝 (0 : 𝕜)) = 𝓝 (L.symm p 0) := by simp
-  filter_upwards [(eventually_map.1 (hnhds ▸ htop))] with ξ hξ
-  have hline : L (Fin.cons (ξ + L.symm p 0) (Fin.tail (L.symm p))) = p + ξ • v := by
-    have hpt : Fin.cons (ξ + L.symm p 0) (Fin.tail (L.symm p)) =
-        L.symm p + ξ • Fin.cons (1 : 𝕜) (0 : Fin n → 𝕜) := by
-      ext j
-      refine Fin.cases ?_ (fun k ↦ ?_) j <;> simp [Fin.tail, add_comm]
-    rw [hpt, map_add, map_smul, L.apply_symm_apply, hL]
-  rwa [← hline]
+  let e : ((Fin n → 𝕜) × 𝕜) ≃L[𝕜] (Fin (n + 1) → 𝕜) :=
+    (ContinuousLinearEquiv.prodComm 𝕜 (Fin n → 𝕜) 𝕜).trans (Fin.consEquivL 𝕜 fun _ ↦ 𝕜)
+  have hf' (i : ι) : AnalyticAt 𝕜 (f i ∘ e) (e.symm p) :=
+    (hf i).comp_of_eq (e.analyticAt _) (e.apply_symm_apply p)
+  have h0' (i : ι) : ¬ (f i ∘ e) =ᶠ[𝓝 (e.symm p)] 0 := fun h ↦ h0 i <| by
+    have htend : Tendsto e.symm (𝓝 p) (𝓝 (e.symm p)) := e.symm.continuous.continuousAt
+    filter_upwards [htend.eventually h] with y hy
+    simpa [Function.comp_apply] using hy
+  obtain ⟨L₀, hL₀⟩ := exists_continuousLinearEquiv_forall_analyticOrderAt_ne_top hf' h0'
+  refine ⟨e.symm.trans (L₀.trans e), fun i ↦ ?_⟩
+  have he (q : (Fin n → 𝕜) × 𝕜) : e q = Fin.cons q.2 q.1 := by
+    ext j
+    simp [e, Fin.consEquivL_apply]
+  have hsymm : (e.symm.trans (L₀.trans e)).symm p = e (L₀.symm (e.symm p)) := by
+    simp [ContinuousLinearEquiv.symm_trans_apply]
+  have h0_eq : (e.symm.trans (L₀.trans e)).symm p 0 = (L₀.symm (e.symm p)).2 := by
+    rw [hsymm, he, Fin.cons_zero]
+  have htail_eq : Fin.tail ((e.symm.trans (L₀.trans e)).symm p) = (L₀.symm (e.symm p)).1 := by
+    rw [hsymm, he, Fin.tail_cons]
+  have hfun : (fun t ↦ f i ((e.symm.trans (L₀.trans e))
+      (Fin.cons t (Fin.tail ((e.symm.trans (L₀.trans e)).symm p))))) =
+      fun t ↦ (f i ∘ e) (L₀ ((L₀.symm (e.symm p)).1, t)) := by
+    ext t
+    rw [htail_eq, ← he ((L₀.symm (e.symm p)).1, t)]
+    simp
+  rw [hfun, h0_eq]
+  exact hL₀ i
 
 end GeneralPosition
 

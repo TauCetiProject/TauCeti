@@ -9,9 +9,10 @@ public import Mathlib.LinearAlgebra.FiniteDimensional.Defs
 public import Mathlib.Topology.Connected.LocallyConnected
 public import TauCeti.Geometry.RealAnalytic.Semianalytic.Manifold
 import Mathlib.Analysis.Normed.Module.FiniteDimension
-import Mathlib.Topology.Compactness.LocallyFinite
 import TauCeti.Geometry.RealAnalytic.Semianalytic.Decomposition
 import TauCeti.Topology.ConnectedComponents
+import TauCeti.Topology.LocallyConnected
+import TauCeti.Topology.OpenPartialHomeomorph.Basic
 
 /-!
 # Connected components and local connectedness of semianalytic sets
@@ -40,6 +41,16 @@ real normed space transports these local finiteness, component-semianalyticity, 
 local-connectedness properties to `TauCeti.MSemianalyticAt` and `TauCeti.IsMSemianalytic` without
 requiring smoothness of the atlas or Hausdorffness of the ambient space.
 
+The structure and arguments closely follow the parallel semialgebraic development in
+`TauCeti.Geometry.RealAlgebraic.Semialgebraic.Components` and
+`TauCeti.Geometry.RealAlgebraic.Semialgebraic.LocallyConnected`, using the general topological
+component lemmas `TauCeti.connectedComponentIn_inter_eq_sUnion`,
+`Set.Finite.image_connectedComponentIn_sUnion`, `Set.Finite.isOpen_preimage_connectedComponentIn`,
+`Set.Finite.isOpen_preimage_connectedComponentIn_inter`,
+`Set.Finite.connectedComponentIn_inter_mem_nhdsWithin`,
+`TauCeti.locallyFinite_connectedComponentIn_iff`, and
+`TauCeti.locallyConnectedSpace_subtype_iff_nhdsWithin`.
+
 ## References
 
 * S. Łojasiewicz, *Ensembles semi-analytiques*, IHÉS, 1965, §16–17.
@@ -53,99 +64,6 @@ open Filter Set Topology
 open scoped Manifold
 
 namespace TauCeti
-
-/-! ### Locally finite unions on charted spaces -/
-
-section LocallyFiniteUnion
-
-variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
-  {H : Type*} [TopologicalSpace H] {I : ModelWithCorners ℝ E H}
-  {M : Type*} [TopologicalSpace M] [ChartedSpace H M]
-
-/-- A finite bounded union of sets semianalytic at a manifold point is semianalytic there. -/
-theorem MSemianalyticAt.biUnion {ι : Type*} {J : Set ι} (hJ : J.Finite) {s : ι → Set M} {x : M}
-    (hs : ∀ i ∈ J, MSemianalyticAt I (s i) x) : MSemianalyticAt I (⋃ i ∈ J, s i) x := by
-  have := hJ.to_subtype
-  simpa only [biUnion_eq_iUnion] using MSemianalyticAt.iUnion fun i : J ↦ hs i.1 i.2
-
-/-- A finite bounded union of semianalytic subsets of a manifold is semianalytic. -/
-protected theorem IsMSemianalytic.biUnion {ι : Type*} {J : Set ι} (hJ : J.Finite) {s : ι → Set M}
-    (hs : ∀ i ∈ J, IsMSemianalytic I (s i)) : IsMSemianalytic I (⋃ i ∈ J, s i) :=
-  isMSemianalytic_iff.2 fun x ↦ .biUnion hJ fun i hi ↦ (hs i hi).mSemianalyticAt x
-
-/-- **Locally finite unions on manifolds.** The union of a locally finite family of semianalytic
-subsets of a charted space is semianalytic. -/
-theorem _root_.LocallyFinite.isMSemianalytic_iUnion {ι : Type*} {s : ι → Set M}
-    (hfin : LocallyFinite s) (hs : ∀ i, IsMSemianalytic I (s i)) :
-    IsMSemianalytic I (⋃ i, s i) :=
-  isMSemianalytic_iff.2 fun x ↦ by
-    obtain ⟨V, hV, hJ⟩ := hfin x
-    refine (MSemianalyticAt.biUnion hJ fun i _ ↦ (hs i).mSemianalyticAt x).congr ?_
-    filter_upwards [hV] with y hy
-    simp only [mem_iUnion, exists_prop]
-    exact ⟨fun ⟨i, _, hyi⟩ ↦ ⟨i, hyi⟩, fun ⟨i, hyi⟩ ↦ ⟨i, ⟨y, hyi, hy⟩, hyi⟩⟩
-
-end LocallyFiniteUnion
-
-/-! ### Topological helpers for locally finite connected decompositions -/
-
-section TopologicalHelpers
-
-variable {X : Type*} [TopologicalSpace X]
-
-private theorem locallyFinite_connectedComponentIn_of_forall {s : Set X}
-    (h : ∀ x, ∃ U, IsOpen U ∧ x ∈ U ∧ (_root_.connectedComponentIn s '' (s ∩ U)).Finite) :
-    LocallyFinite (fun C : (_root_.connectedComponentIn s '' s) ↦ (C : Set X)) := by
-  intro x
-  obtain ⟨U, hUo, hxU, hfin⟩ := h x
-  refine ⟨U, hUo.mem_nhds hxU, (hfin.preimage Subtype.val_injective.injOn).subset ?_⟩
-  rintro C ⟨y, hyC, hyU⟩
-  obtain ⟨z, _, hzC⟩ := C.property
-  have hy : y ∈ _root_.connectedComponentIn s z := hzC ▸ hyC
-  exact ⟨y, ⟨connectedComponentIn_subset s z hy, hyU⟩, (connectedComponentIn_eq hy).symm.trans hzC⟩
-
-private theorem finite_image_connectedComponentIn_of_locallyFinite {s K : Set X}
-    (hlf : LocallyFinite (fun C : (_root_.connectedComponentIn s '' s) ↦ (C : Set X)))
-    (hK : IsCompact K) :
-    (_root_.connectedComponentIn s '' (s ∩ K)).Finite := by
-  refine ((hlf.finite_nonempty_inter_compact hK).image Subtype.val).subset ?_
-  rintro _ ⟨x, ⟨hxs, hxK⟩, rfl⟩
-  exact ⟨⟨_root_.connectedComponentIn s x, x, hxs, rfl⟩,
-    ⟨x, mem_connectedComponentIn hxs, hxK⟩, rfl⟩
-
-private theorem nhdsWithin_connectedComponentIn_inter {s U : Set X} {𝒞 : Set (Set X)} {x : X}
-    (hx : x ∈ s) (hUo : IsOpen U) (hxU : x ∈ U) (h𝒞fin : 𝒞.Finite) (h𝒞cov : ⋃₀ 𝒞 = s ∩ U)
-    (h𝒞conn : ∀ t ∈ 𝒞, IsPreconnected t) :
-    _root_.connectedComponentIn (s ∩ U) x ∈ 𝓝[s] x ∧
-      IsOpen ((Subtype.val : s → X) ⁻¹' _root_.connectedComponentIn (s ∩ U) x) := by
-  set C := _root_.connectedComponentIn (s ∩ U) x
-  have hxC : x ∈ C := mem_connectedComponentIn ⟨hx, hxU⟩
-  have hCT : C ⊆ s ∩ U := connectedComponentIn_subset _ _
-  have hfin : (_root_.connectedComponentIn (s ∩ U) '' (s ∩ U)).Finite := by
-    simpa only [h𝒞cov] using h𝒞fin.image_connectedComponentIn_sUnion h𝒞conn h𝒞cov.subset
-  obtain ⟨O, hOo, hO⟩ := isOpen_induced_iff.1 (hfin.isOpen_preimage_connectedComponentIn x)
-  have hCeq : C = s ∩ (U ∩ O) := by
-    apply Set.eq_of_preimage_val_eq_of_subset hCT (by grind)
-    simpa only [← inter_assoc, Subtype.preimage_coe_self_inter] using hO.symm
-  refine ⟨by rw [hCeq]; exact inter_mem_nhdsWithin s ((hUo.inter hOo).mem_nhds (hCeq ▸ hxC).2), ?_⟩
-  rw [hCeq, preimage_inter]
-  simpa only [Subtype.coe_preimage_self, univ_inter] using
-    (hUo.inter hOo).preimage continuous_subtype_val
-
-private theorem locallyConnectedSpace_of_forall {s : Set X}
-    (h : ∀ x ∈ s, ∀ V ∈ 𝓝[s] x, ∃ C ∈ 𝓝[s] x, C ⊆ s ∩ V ∧ IsConnected C) :
-    LocallyConnectedSpace s := by
-  refine locallyConnectedSpace_iff_connected_subsets.2 fun x V hV ↦ ?_
-  obtain ⟨W, hW, hWV⟩ := (mem_nhds_subtype s x V).1 hV
-  obtain ⟨C, hCn, hCW, hc⟩ := h x x.property W (mem_nhdsWithin_of_mem_nhds hW)
-  refine ⟨(Subtype.val : s → X) ⁻¹' C, ?_, ?_, fun y hy ↦ hWV (hCW hy).2⟩
-  · rw [nhds_subtype_eq_comap_nhdsWithin]
-    exact preimage_mem_comap hCn
-  · apply Topology.IsInducing.subtypeVal.isPreconnected_image.1
-    simpa only [Subtype.image_preimage_val, inter_eq_right.2 (hCW.trans inter_subset_left)] using
-      hc.isPreconnected
-
-end TopologicalHelpers
 
 /-! ### Connected components and local connectedness in normed spaces -/
 
@@ -197,16 +115,16 @@ theorem IsSemianalytic.connectedComponentIn {s : Set E} (hs : IsSemianalytic s) 
 the ambient normed space. -/
 theorem IsSemianalytic.locallyFinite_connectedComponentIn {s : Set E} (hs : IsSemianalytic s) :
     LocallyFinite (fun C : (_root_.connectedComponentIn s '' s) ↦ (C : Set E)) :=
-  locallyFinite_connectedComponentIn_of_forall fun x ↦ by
+  locallyFinite_connectedComponentIn_iff.2 fun x ↦ by
     obtain ⟨U, hUo, hxU, -, -, hfin⟩ :=
       (hs.semianalyticAt x).exists_finite_image_connectedComponentIn univ_mem
-    exact ⟨U, hUo, hxU, hfin⟩
+    exact ⟨U, hUo.mem_nhds hxU, hfin⟩
 
 /-- Only finitely many connected components of a semianalytic set meet a given compact set. -/
 theorem IsSemianalytic.finite_image_connectedComponentIn_of_isCompact {s K : Set E}
     (hs : IsSemianalytic s) (hK : IsCompact K) :
     (_root_.connectedComponentIn s '' (s ∩ K)).Finite :=
-  finite_image_connectedComponentIn_of_locallyFinite hs.locallyFinite_connectedComponentIn hK
+  hs.locallyFinite_connectedComponentIn.finite_image_connectedComponentIn_of_isCompact hK
 
 /-- A bounded semianalytic subset of a finite-dimensional real normed space has only finitely many
 connected components. -/
@@ -225,12 +143,16 @@ theorem SemianalyticAt.exists_isConnected_mem_nhdsWithin {s V : Set E} {x : E}
   obtain ⟨W, hW, hWV⟩ := mem_nhdsWithin_iff_exists_mem_nhds_inter.1 hV
   obtain ⟨U, 𝒞, hUo, hxU, hUW, _, hsUsa, h𝒞fin, _, h𝒞cov, h𝒞cell⟩ :=
     hs.exists_isConnected_partition_inter hW
-  obtain ⟨hCn, hopen⟩ := nhdsWithin_connectedComponentIn_inter hx hUo hxU h𝒞fin h𝒞cov
-    fun t ht ↦ (h𝒞cell t ht).1.isPreconnected
+  have hfin : (_root_.connectedComponentIn (s ∩ U) '' (s ∩ U)).Finite := by
+    simpa only [h𝒞cov] using
+      h𝒞fin.image_connectedComponentIn_sUnion (fun t ht ↦ (h𝒞cell t ht).1.isPreconnected)
+        h𝒞cov.subset
   have hCT := connectedComponentIn_subset (s ∩ U) x
-  exact ⟨_root_.connectedComponentIn (s ∩ U) x, hCn,
+  exact ⟨_root_.connectedComponentIn (s ∩ U) x,
+    hfin.connectedComponentIn_inter_mem_nhdsWithin hx (hUo.mem_nhds hxU),
     fun y hy ↦ ⟨(hCT hy).1, hWV ⟨hUW (hCT hy).2, (hCT hy).1⟩⟩,
-    isConnected_connectedComponentIn_iff.2 ⟨hx, hxU⟩, hsUsa.connectedComponentIn x, hopen⟩
+    isConnected_connectedComponentIn_iff.2 ⟨hx, hxU⟩, hsUsa.connectedComponentIn x,
+    hfin.isOpen_preimage_connectedComponentIn_inter hUo x⟩
 
 /-- At any point `x ∈ s` where `s` is semianalytic, `𝓝[s] x` has a basis of connected semianalytic
 sets open in the subspace `s`. -/
@@ -250,9 +172,9 @@ theorem SemianalyticAt.nhdsWithin_hasBasis_isConnected {s : Set E} {x : E}
 subspace topology. -/
 theorem IsSemianalytic.locallyConnectedSpace {s : Set E} (hs : IsSemianalytic s) :
     LocallyConnectedSpace s :=
-  locallyConnectedSpace_of_forall fun x hx _ hV ↦ by
+  locallyConnectedSpace_subtype_iff_nhdsWithin.2 fun x hx _ hV ↦ by
     obtain ⟨C, hCn, hCV, hc, _, _⟩ := (hs.semianalyticAt x).exists_isConnected_mem_nhdsWithin hx hV
-    exact ⟨C, hCn, hCV, hc⟩
+    exact ⟨C, hCn, hCV, hc.isPreconnected⟩
 
 end NormedSpace
 
@@ -260,41 +182,45 @@ end NormedSpace
 
 section Manifold
 
-private theorem _root_.OpenPartialHomeomorph.isLocallyClosed_image_symm_of_subset_target
-    {X Y : Type*} [TopologicalSpace X] [TopologicalSpace Y] (e : OpenPartialHomeomorph X Y)
-    {s : Set Y} (hs : IsLocallyClosed s) (hst : s ⊆ e.target) :
-    IsLocallyClosed (e.symm '' s) := by
-  obtain ⟨O, F, hO, hF, rfl⟩ := hs
-  refine ⟨e.symm '' (e.target ∩ O), (e.symm '' (e.target ∩ O ∩ Fᶜ))ᶜ,
-    e.isOpen_image_symm_of_subset_target (e.open_target.inter hO) inter_subset_left,
-    (e.isOpen_image_symm_of_subset_target ((e.open_target.inter hO).inter hF.isOpen_compl)
-      (inter_subset_left.trans inter_subset_left)).isClosed_compl, ?_⟩
-  ext x
-  simp only [mem_image, mem_inter_iff, mem_compl_iff, not_exists, not_and]
-  refine ⟨?_, ?_⟩
-  · rintro ⟨z, ⟨hzO, hzF⟩, rfl⟩
-    have hzt : z ∈ e.target := hst ⟨hzO, hzF⟩
-    exact ⟨⟨z, ⟨hzt, hzO⟩, rfl⟩, fun w ⟨⟨hwt, _⟩, hwF⟩ hwz ↦
-      hwF (e.symm.injOn hwt hzt hwz ▸ hzF)⟩
-  · rintro ⟨⟨z, ⟨hzt, hzO⟩, rfl⟩, hnot⟩
-    exact ⟨z, ⟨hzO, by_contra fun hzF ↦ hnot z ⟨⟨hzt, hzO⟩, hzF⟩ rfl⟩, rfl⟩
-
-variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
+variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
   {H : Type*} [TopologicalSpace H] {I : ModelWithCorners ℝ E H} [I.Boundaryless]
   {M : Type*} [TopologicalSpace M] [ChartedSpace H M]
 
+/-- The preferred extended chart at `x` of a boundaryless charted space, bundled as an
+`OpenPartialHomeomorph M E`. -/
+private noncomputable def extChartOpenPartialHomeomorph (I : ModelWithCorners ℝ E H)
+    [I.Boundaryless] (x : M) : OpenPartialHomeomorph M E :=
+  (chartAt H x).trans I.toHomeomorph.toOpenPartialHomeomorph
+
+private theorem coe_extChartOpenPartialHomeomorph (I : ModelWithCorners ℝ E H) [I.Boundaryless]
+    (x : M) : ⇑(extChartOpenPartialHomeomorph I x) = ⇑(extChartAt I x) := by
+  ext y
+  simp [extChartOpenPartialHomeomorph, OpenPartialHomeomorph.trans_apply]
+
+private theorem coe_extChartOpenPartialHomeomorph_symm (I : ModelWithCorners ℝ E H)
+    [I.Boundaryless] (x : M) :
+    ⇑(extChartOpenPartialHomeomorph I x).symm = ⇑(extChartAt I x).symm := by
+  ext z
+  simp [extChartOpenPartialHomeomorph]
+
+variable [FiniteDimensional ℝ E]
+
 /-- **Local connected partition on a manifold.** If `s` is semianalytic at a manifold point `x` and
 `V ∈ 𝓝 x`, there is an open neighborhood `U ⊆ V` of `x` such that `s ∩ U` is partitioned into
-finitely many pairwise disjoint connected locally closed subsets. -/
+finitely many pairwise disjoint connected locally closed subsets, each semianalytic at `x`. -/
 theorem MSemianalyticAt.exists_isConnected_partition_inter {s V : Set M} {x : M}
     (hs : MSemianalyticAt I s x) (hV : V ∈ 𝓝 x) :
     ∃ (U : Set M) (𝒞 : Set (Set M)),
       IsOpen U ∧ x ∈ U ∧ U ⊆ V ∧
       𝒞.Finite ∧ 𝒞.PairwiseDisjoint id ∧ ⋃₀ 𝒞 = s ∩ U ∧
-      ∀ C ∈ 𝒞, IsConnected C ∧ IsLocallyClosed C := by
-  let e : OpenPartialHomeomorph M E := (chartAt H x).trans I.toHomeomorph.toOpenPartialHomeomorph
-  have hx : x ∈ e.source := by simp [e, mem_chart_source]
-  have hs' : SemianalyticAt (e.symm ⁻¹' s) (e x) := (mSemianalyticAt_def I).1 hs
+      ∀ C ∈ 𝒞, IsConnected C ∧ IsLocallyClosed C ∧ MSemianalyticAt I C x := by
+  let e : OpenPartialHomeomorph M E := extChartOpenPartialHomeomorph I x
+  have he : ⇑e = ⇑(extChartAt I x) := coe_extChartOpenPartialHomeomorph I x
+  have he_symm : ⇑e.symm = ⇑(extChartAt I x).symm := coe_extChartOpenPartialHomeomorph_symm I x
+  have hx : x ∈ e.source := by simp [e, extChartOpenPartialHomeomorph, mem_chart_source]
+  have hs' : SemianalyticAt (e.symm ⁻¹' s) (e x) := by
+    rw [he, he_symm]
+    exact (mSemianalyticAt_def I).1 hs
   have hV₀ : e.target ∩ e.symm ⁻¹' V ∈ 𝓝 (e x) := inter_mem (e.open_target.mem_nhds (e.mapsTo hx))
     ((e.continuousAt_symm (e.mapsTo hx)).preimage_mem_nhds (by rwa [e.left_inv hx]))
   obtain ⟨U₀, 𝒞₀, hU₀o, hexU₀, hU₀sub, _, _, h𝒞₀fin, h𝒞₀disj, h𝒞₀cov, h𝒞₀cell⟩ :=
@@ -316,8 +242,14 @@ theorem MSemianalyticAt.exists_isConnected_partition_inter {s V : Set M} {x : M}
   · rintro _ ⟨C₀, hC₀, rfl⟩
     have hC₀t : C₀ ⊆ e.target :=
       (subset_sUnion_of_mem hC₀).trans (h𝒞₀cov ▸ inter_subset_right.trans hU₀t)
-    exact ⟨(h𝒞₀cell C₀ hC₀).1.image e.symm (e.continuousOn_symm.mono hC₀t),
-      e.isLocallyClosed_image_symm_of_subset_target (h𝒞₀cell C₀ hC₀).2.2 hC₀t⟩
+    refine ⟨(h𝒞₀cell C₀ hC₀).1.image e.symm (e.continuousOn_symm.mono hC₀t),
+      e.isLocallyClosed_image_symm_of_subset_target (h𝒞₀cell C₀ hC₀).2.2 hC₀t, ?_⟩
+    rw [mSemianalyticAt_def, ← he, ← he_symm]
+    refine ((h𝒞₀cell C₀ hC₀).2.1.semianalyticAt (e x)).congr ?_
+    filter_upwards [hU₀o.mem_nhds hexU₀] with z hz
+    simp only [mem_preimage]
+    exact ⟨fun hzC₀ ↦ mem_image_of_mem _ hzC₀,
+      fun ⟨w, hwC₀, hwz⟩ ↦ e.symm.injOn (hC₀t hwC₀) (hU₀t hz) hwz ▸ hwC₀⟩
 
 /-- Only finitely many connected components of `s` meet a sufficiently small open neighborhood of
 any manifold point where `s` is semianalytic. -/
@@ -334,37 +266,15 @@ theorem MSemianalyticAt.exists_finite_image_connectedComponentIn {s V : Set M} {
 semianalytic at `x`, including when `x` lies outside `s` or on its frontier. -/
 theorem MSemianalyticAt.connectedComponentIn {s : Set M} {x : M} (hs : MSemianalyticAt I s x)
     (y : M) : MSemianalyticAt I (_root_.connectedComponentIn s y) x := by
-  let e : OpenPartialHomeomorph M E := (chartAt H x).trans I.toHomeomorph.toOpenPartialHomeomorph
-  have hx : x ∈ e.source := by simp [e, mem_chart_source]
-  have hs' : SemianalyticAt (e.symm ⁻¹' s) (e x) := (mSemianalyticAt_def I).1 hs
-  obtain ⟨U₀, 𝒞₀, hU₀o, hexU₀, hU₀t, _, _, h𝒞₀fin, _, h𝒞₀cov, h𝒞₀cell⟩ :=
-    hs'.exists_isConnected_partition_inter (e.open_target.mem_nhds (e.mapsTo hx))
-  let 𝒞 : Set (Set M) := image e.symm '' 𝒞₀
-  have hC₀sub {C₀ : Set E} (hC₀ : C₀ ∈ 𝒞₀) : C₀ ⊆ U₀ :=
-    (subset_sUnion_of_mem hC₀).trans (h𝒞₀cov ▸ inter_subset_right)
-  have h𝒞cov : ⋃₀ 𝒞 = s ∩ (e.symm '' U₀) := by
-    rw [← image_sUnion, h𝒞₀cov, inter_comm, image_inter_preimage, inter_comm]
-  have h𝒞conn : ∀ C ∈ 𝒞, IsPreconnected C := by
-    rintro _ ⟨C₀, hC₀, rfl⟩
-    exact (h𝒞₀cell C₀ hC₀).1.isPreconnected.image e.symm
-      (e.continuousOn_symm.mono ((hC₀sub hC₀).trans hU₀t))
-  have hcomp := connectedComponentIn_inter_eq_sUnion h𝒞conn h𝒞cov y
-  let ℐ : Set (Set E) := {C₀ ∈ 𝒞₀ | e.symm '' C₀ ⊆ _root_.connectedComponentIn s y}
-  have hpre : e.symm ⁻¹' _root_.connectedComponentIn s y ∩ U₀ = ⋃ C₀ ∈ ℐ, C₀ := by
-    ext z
-    simp only [ℐ, mem_inter_iff, mem_preimage, mem_iUnion, mem_sep_iff, exists_prop]
-    refine ⟨fun ⟨hzs, hzU₀⟩ ↦ ?_, fun ⟨C₀, ⟨hC₀, hC₀y⟩, hzC₀⟩ ↦
-      ⟨hC₀y (mem_image_of_mem _ hzC₀), hC₀sub hC₀ hzC₀⟩⟩
-    have hzmem : e.symm z ∈ _root_.connectedComponentIn s y ∩ (e.symm '' U₀) :=
-      ⟨hzs, mem_image_of_mem _ hzU₀⟩
-    obtain ⟨_, ⟨⟨C₀, hC₀, rfl⟩, hC₀y⟩, w, hwC₀, hwz⟩ := mem_sUnion.1 (hcomp ▸ hzmem)
-    exact ⟨C₀, ⟨hC₀, hC₀y⟩, e.symm.injOn (hU₀t (hC₀sub hC₀ hwC₀)) (hU₀t hzU₀) hwz ▸ hwC₀⟩
-  have hsa : IsSemianalytic (e.symm ⁻¹' _root_.connectedComponentIn s y ∩ U₀) := by
-    rw [hpre]
-    exact .biUnion (h𝒞₀fin.subset (sep_subset _ _)) fun C₀ hC₀ ↦ (h𝒞₀cell C₀ hC₀.1).2.1
-  refine (mSemianalyticAt_def I).2 ((hsa.semianalyticAt (e x)).congr ?_)
-  filter_upwards [hU₀o.mem_nhds hexU₀] with z hz
-  simp [e, hz]
+  obtain ⟨U, 𝒞, hUo, hxU, -, h𝒞fin, -, h𝒞cov, h𝒞cell⟩ :=
+    hs.exists_isConnected_partition_inter univ_mem
+  have hcomp : MSemianalyticAt I (_root_.connectedComponentIn s y ∩ U) x := by
+    rw [connectedComponentIn_inter_eq_sUnion (fun t ht ↦ (h𝒞cell t ht).1.isPreconnected) h𝒞cov,
+      sUnion_eq_biUnion]
+    exact .biUnion (h𝒞fin.subset (sep_subset _ _)) fun t ht ↦ (h𝒞cell t ht.1).2.2
+  refine hcomp.congr ?_
+  filter_upwards [hUo.mem_nhds hxU] with z hz
+  simp [hz]
 
 /-- Every connected component of a semianalytic subset of a manifold is semianalytic. -/
 theorem IsMSemianalytic.connectedComponentIn {s : Set M} (hs : IsMSemianalytic I s) (y : M) :
@@ -375,17 +285,17 @@ theorem IsMSemianalytic.connectedComponentIn {s : Set M} (hs : IsMSemianalytic I
 finite family. -/
 theorem IsMSemianalytic.locallyFinite_connectedComponentIn {s : Set M} (hs : IsMSemianalytic I s) :
     LocallyFinite (fun C : (_root_.connectedComponentIn s '' s) ↦ (C : Set M)) :=
-  locallyFinite_connectedComponentIn_of_forall fun x ↦ by
+  locallyFinite_connectedComponentIn_iff.2 fun x ↦ by
     obtain ⟨U, hUo, hxU, -, hfin⟩ :=
       (hs.mSemianalyticAt x).exists_finite_image_connectedComponentIn univ_mem
-    exact ⟨U, hUo, hxU, hfin⟩
+    exact ⟨U, hUo.mem_nhds hxU, hfin⟩
 
 /-- Only finitely many connected components of a semianalytic subset of a manifold meet a given
 compact set. -/
 theorem IsMSemianalytic.finite_image_connectedComponentIn_of_isCompact {s K : Set M}
     (hs : IsMSemianalytic I s) (hK : IsCompact K) :
     (_root_.connectedComponentIn s '' (s ∩ K)).Finite :=
-  finite_image_connectedComponentIn_of_locallyFinite hs.locallyFinite_connectedComponentIn hK
+  hs.locallyFinite_connectedComponentIn.finite_image_connectedComponentIn_of_isCompact hK
 
 /-- On a compact manifold, every semianalytic subset has only finitely many connected components. -/
 theorem IsMSemianalytic.finite_image_connectedComponentIn [CompactSpace M] {s : Set M}
@@ -399,12 +309,16 @@ theorem MSemianalyticAt.exists_isConnected_mem_nhdsWithin {s V : Set M} {x : M}
     ∃ C, C ∈ 𝓝[s] x ∧ C ⊆ s ∩ V ∧ IsConnected C ∧ IsOpen ((Subtype.val : s → M) ⁻¹' C) := by
   obtain ⟨W, hW, hWV⟩ := mem_nhdsWithin_iff_exists_mem_nhds_inter.1 hV
   obtain ⟨U, 𝒞, hUo, hxU, hUW, h𝒞fin, _, h𝒞cov, h𝒞cell⟩ := hs.exists_isConnected_partition_inter hW
-  obtain ⟨hCn, hopen⟩ := nhdsWithin_connectedComponentIn_inter hx hUo hxU h𝒞fin h𝒞cov
-    fun t ht ↦ (h𝒞cell t ht).1.isPreconnected
+  have hfin : (_root_.connectedComponentIn (s ∩ U) '' (s ∩ U)).Finite := by
+    simpa only [h𝒞cov] using
+      h𝒞fin.image_connectedComponentIn_sUnion (fun t ht ↦ (h𝒞cell t ht).1.isPreconnected)
+        h𝒞cov.subset
   have hCT := connectedComponentIn_subset (s ∩ U) x
-  exact ⟨_root_.connectedComponentIn (s ∩ U) x, hCn,
+  exact ⟨_root_.connectedComponentIn (s ∩ U) x,
+    hfin.connectedComponentIn_inter_mem_nhdsWithin hx (hUo.mem_nhds hxU),
     fun y hy ↦ ⟨(hCT hy).1, hWV ⟨hUW (hCT hy).2, (hCT hy).1⟩⟩,
-    isConnected_connectedComponentIn_iff.2 ⟨hx, hxU⟩, hopen⟩
+    isConnected_connectedComponentIn_iff.2 ⟨hx, hxU⟩,
+    hfin.isOpen_preimage_connectedComponentIn_inter hUo x⟩
 
 /-- At any point `x ∈ s` where `s` is semianalytic on a manifold, `𝓝[s] x` has a basis of connected
 sets open in the subspace `s`. -/
@@ -424,9 +338,9 @@ theorem MSemianalyticAt.nhdsWithin_hasBasis_isConnected {s : Set M} {x : M}
 normed space is locally connected in its subspace topology. -/
 theorem IsMSemianalytic.locallyConnectedSpace {s : Set M} (hs : IsMSemianalytic I s) :
     LocallyConnectedSpace s :=
-  locallyConnectedSpace_of_forall fun x hx _ hV ↦ by
+  locallyConnectedSpace_subtype_iff_nhdsWithin.2 fun x hx _ hV ↦ by
     obtain ⟨C, hCn, hCV, hc, _⟩ := (hs.mSemianalyticAt x).exists_isConnected_mem_nhdsWithin hx hV
-    exact ⟨C, hCn, hCV, hc⟩
+    exact ⟨C, hCn, hCV, hc.isPreconnected⟩
 
 end Manifold
 

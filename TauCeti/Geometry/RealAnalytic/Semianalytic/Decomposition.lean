@@ -13,6 +13,8 @@ import Mathlib.Topology.Algebra.Module.FiniteDimension
 import TauCeti.Analysis.Analytic.Complexification.Weierstrass
 import TauCeti.Analysis.Analytic.SingularDirection
 import TauCeti.Analysis.Analytic.Submanifold.Transport
+import TauCeti.Data.Set.Lattice
+import TauCeti.Geometry.RealAlgebraic.Stack.Delineation
 import TauCeti.Geometry.RealAlgebraic.Stack.Sectors
 import TauCeti.Geometry.RealAnalytic.Projection
 import TauCeti.Geometry.RealAnalytic.Semianalytic.Stack
@@ -31,20 +33,26 @@ finite-dimensional normed space each piece is locally closed.
 
 Applying this decomposition to the analytic functions appearing in local sign-condition descriptions
 of semianalytic germs yields simultaneous local partitions compatible with any finite family of
-germs semianalytic at `x₀` (`TauCeti.SemianalyticAt.exists_isAnalyticSubmanifold_partition`,
-`TauCeti.SemianalyticAt.exists_isConnected_partition`), and in particular writes the trace `s ∩ U`
-of a germ semianalytic at `x₀` on an arbitrarily small open semianalytic neighborhood `U` as a
-finite disjoint union of connected semianalytic pieces
+germs semianalytic at `x₀` (`TauCeti.exists_isAnalyticSubmanifold_partition_subset_or_disjoint`,
+`TauCeti.exists_isConnected_partition_subset_or_disjoint`), and in particular writes the trace
+`s ∩ U` of a germ semianalytic at `x₀` on an arbitrarily small open semianalytic neighborhood `U`
+as a finite disjoint union of connected semianalytic pieces
 (`TauCeti.SemianalyticAt.exists_isAnalyticSubmanifold_partition_inter`,
 `TauCeti.SemianalyticAt.exists_isConnected_partition_inter`).
 
-The proof inducts on the ambient dimension `n`: after discarding the germs vanishing near `x₀` and
-applying a continuous linear change of coordinates to put the remaining germs into simultaneous
-Weierstrass general position along the `0`-th coordinate, the real Weierstrass preparation theorem
-replaces each germ on a cylindrical slab `(t₀ - ε, t₀ + ε) × B₀` up to a constant unit sign by a
-shifted Weierstrass polynomial. Adjoining the two slab-boundary linear factors `X - C (t₀ ∓ ε)` to
-that polynomial family, taking its analytic Collins projection on the base, decomposing the base by
-the induction hypothesis inside a closed ball contained in `B₀`, and selecting the stack cells
+The proof inducts on the ambient dimension `n`, following the same projection-and-lifting scheme as
+the semialgebraic CAD construction `TauCeti.exists_isCAD_signInvariant`: after discarding the germs
+vanishing near `x₀` and applying a continuous linear change of coordinates
+(`TauCeti.exists_continuousLinearEquiv_finSucc_forall_analyticOrderAt_ne_top`) to put the remaining
+germs into simultaneous Weierstrass general position along the `0`-th coordinate, the real
+Weierstrass preparation theorem (`AnalyticAt.exists_weierstrassPreparation_real`) replaces each germ
+on a cylindrical slab `(t₀ - ε, t₀ + ε) × B₀` up to a constant unit sign by a shifted Weierstrass
+polynomial. Adjoining the two slab-boundary linear factors `X - C (t₀ ∓ ε)` to that polynomial
+family, taking its analytic Collins projection on the base
+(`TauCeti.exists_analyticOnNhd_projection_delineation`), decomposing the base by the induction
+hypothesis inside a closed ball contained in `B₀`, lifting along the resulting delineations
+(`TauCeti.Delineation.isSemianalytic_of_mem_stackCells`,
+`TauCeti.Delineation.exists_isAnalyticSubmanifold_of_mem_stackCells`), and selecting the stack cells
 contained in the open slab produces a partition of the slab whose pushforward under the linear
 equivalence partitions an open semianalytic neighborhood of `x₀`.
 
@@ -53,12 +61,12 @@ equivalence partitions an open semianalytic neighborhood of `x₀`.
 * `TauCeti.exists_isAnalyticSubmanifold_partition_signInvariant`: local partition of an open
   semianalytic neighborhood in `Fin n → ℝ` into finitely many connected semianalytic real analytic
   submanifolds on which finitely many analytic germs are sign-invariant.
-* `TauCeti.SemianalyticAt.exists_isAnalyticSubmanifold_partition`,
+* `TauCeti.exists_isAnalyticSubmanifold_partition_subset_or_disjoint`,
   `TauCeti.SemianalyticAt.exists_isAnalyticSubmanifold_partition_inter`: compatible local analytic
   submanifold partitions for finite families of semianalytic germs and for a single semianalytic
   germ in `Fin n → ℝ`.
 * `TauCeti.exists_isConnected_partition_signInvariant`,
-  `TauCeti.SemianalyticAt.exists_isConnected_partition`,
+  `TauCeti.exists_isConnected_partition_subset_or_disjoint`,
   `TauCeti.SemianalyticAt.exists_isConnected_partition_inter`: coordinate-free versions in any
   finite-dimensional real normed space.
 
@@ -69,6 +77,12 @@ equivalence partitions an open semianalytic neighborhood of `x₀`.
   Pisa (3) 18 (1964), 449–474, §1–2.
 * E. Bierstone and P. D. Milman, *Semianalytic and subanalytic sets*, Publications Mathématiques de
   l'IHÉS 67 (1988), 5–42, §2.
+* G. E. Collins, *Quantifier elimination for real closed fields by cylindrical algebraic
+  decomposition*, Lecture Notes in Computer Science 33 (1975), 134–183.
+* S. Basu, R. Pollack, and M.-F. Roy, *Algorithms in Real Algebraic Geometry*, second edition,
+  Section 5.1 and Chapters 10–11.
+* S. McCallum, *An improved projection operation for cylindrical algebraic decomposition*,
+  Springer (1998), 242–268 (analytic delineability and lifting).
 -/
 
 public section
@@ -120,19 +134,6 @@ private theorem natDegree_slabPoly_le (c : ∀ j : ι₁, Fin (d j) → (Fin n �
   · exact (natDegree_X_sub_C _).le
   · exact (natDegree_X_sub_C _).le
 
-/-- Every member of a delineated polynomial family is sign-invariant along
-`y ↦ (F k (tail y)).eval (y 0)` on each ambient stack cell. -/
-private theorem signInvariant_eval_of_mem_stackCells {κ : Type*} {S : Set (Fin n → ℝ)}
-    {F : κ → (Fin n → ℝ) → ℝ[X]} (D : Delineation fun k (x : S) ↦ F k x) (k : κ)
-    {E : Set (Fin (n + 1) → ℝ)} (hE : E ∈ stackCells S D.root) :
-    SignInvariant (fun y : Fin (n + 1) → ℝ ↦ (F k (Fin.tail y)).eval (y 0)) E := by
-  have hcomp : (fun y : Fin (n + 1) → ℝ ↦ (F k (Fin.tail y)).eval (y 0)) ∘ cylinder S =
-      fun z : S × ℝ ↦ (F k z.1.1).eval z.2 := by
-    ext z
-    simp [cylinder_def]
-  rcases mem_stackCells.1 hE with ⟨i, rfl⟩ | ⟨j, rfl⟩ <;> rw [signInvariant_image, hcomp]
-  exacts [D.signInvariant_sectionSet k i, D.signInvariant_sectorSet k j]
-
 /-- Because `X - C (t₀ - ε)` and `X - C (t₀ + ε)` belong to `slabPoly c t₀ ε`, every ambient cell of
 a delineation of `slabPoly c t₀ ε` lies either inside or outside the open slab
 `{y | y 0 ∈ Ioo (t₀ - ε) (t₀ + ε)}`. -/
@@ -150,7 +151,7 @@ private theorem subset_or_disjoint_slab_of_mem_stackCells {S : Set (Fin n → �
   rw [hslab]
   exact subset_or_disjoint_setOf_sign
     (f := fun b (y : Fin (n + 1) → ℝ) ↦ (slabPoly c t₀ ε (.inr b) (Fin.tail y)).eval (y 0))
-    (fun b ↦ signInvariant_eval_of_mem_stackCells D (.inr b) hE)
+    (fun b ↦ D.signInvariant_eval_of_mem_stackCells (.inr b) hE)
     (fun σ : Bool → SignType ↦ σ false = 1 ∧ σ true = -1)
 
 /-- Simultaneous real Weierstrass preparation on an open cylindrical slab `(t₀ - ε, t₀ + ε) × B₀`:
@@ -170,7 +171,7 @@ private theorem exists_slab_weierstrass_sign [Finite ι₁]
   classical
   cases nonempty_fintype ι₁
   set z₀ := Fin.tail y₀
-  set t₀ := y₀ 0
+  set t₀ := y₀ 0 with ht₀
   let e : (Fin n → ℝ) × ℝ → Fin (n + 1) → ℝ := fun p ↦ Fin.cons p.2 p.1
   have he₀ : e (z₀, t₀) = y₀ := Fin.cons_self_tail y₀
   have he_an (p : (Fin n → ℝ) × ℝ) : AnalyticAt ℝ e p :=
@@ -191,8 +192,7 @@ private theorem exists_slab_weierstrass_sign [Finite ι₁]
     have heV : e ⁻¹' V₂ ∈ 𝓝 (z₀, t₀) := (he_an _).continuousAt.preimage_mem_nhds (he₀ ▸ hV₂)
     filter_upwards [heV, eventually_all.2 hfac, eventually_all.2 hunit] with p hpV hpf hpu
     refine ⟨hpV, fun j ↦ ?_⟩
-    change SignType.sign ((g j ∘ e) p) = _
-    rw [hpf j, sign_mul, hpu j]
+    rw [← Function.comp_apply (f := g j), hpf j, sign_mul, hpu j]
   obtain ⟨δ, hδ, hball⟩ := Metric.eventually_nhds_iff.1 hprod
   have hc_nhds : ∀ᶠ z in 𝓝 z₀, ∀ j k, AnalyticAt ℝ (c j k) z :=
     eventually_all.2 fun j ↦ eventually_all.2 fun k ↦ (hc j k).eventually_analyticAt
@@ -203,8 +203,7 @@ private theorem exists_slab_weierstrass_sign [Finite ι₁]
   have hdist : dist (Fin.tail y, y 0) (z₀, t₀) < δ := by
     rw [Prod.dist_eq]
     refine max_lt (hB₀sub _ hyB).1 ?_
-    change dist (y 0) (y₀ 0) < δ
-    rw [Real.dist_eq, abs_sub_lt_iff]
+    rw [ht₀, Real.dist_eq, abs_sub_lt_iff]
     exact ⟨by linarith [hyI.2], by linarith [hyI.1]⟩
   obtain ⟨hyV, hysign⟩ := hball hdist
   have hey : e (Fin.tail y, y 0) = y := Fin.cons_self_tail y
@@ -261,7 +260,7 @@ private theorem lift_slab_partition [Finite ι₁] {B₀ U' : Set (Fin n → ℝ
       let S' : 𝒟 := ⟨S, hS𝒟⟩
       obtain ⟨E, hES, hyE⟩ := mem_sUnion.1 <|
         (sUnion_stackCells (C := S'.1) (fun x ↦ ((D S').strictMono_root x).monotone)).symm ▸
-          (show y ∈ Fin.tail ⁻¹' S'.1 from hyS)
+          mem_preimage.2 hyS
       have hEH : E ⊆ H := (subset_or_disjoint_slab_of_mem_stackCells (D S') hES).resolve_right
         fun hd ↦ disjoint_left.1 hd hyE hyH
       exact ⟨E, ⟨S', hES, hEH⟩, hyE⟩
@@ -281,38 +280,55 @@ private theorem lift_slab_partition [Finite ι₁] {B₀ U' : Set (Fin n → ℝ
       (fun a m ↦ ((analyticOnNhd_coeff_slabPoly hc t₀ ε a m).mono hSB₀).analyticOnSubmanifold hSsub)
       hES
     exact ⟨hEconn, hEsa, ⟨d', by omega, hEsub⟩,
-      fun j ↦ signInvariant_eval_of_mem_stackCells (D S) (.inl j) hES⟩
+      fun j ↦ (D S).signInvariant_eval_of_mem_stackCells (.inl j) hES⟩
 
-/-- Pushing forward a finite partition `𝒞₀` of an open set `W` containing `L.symm x₀` along a
-continuous linear equivalence `L : (Fin m → ℝ) ≃L[ℝ] (Fin m → ℝ)` produces a partition of the open
-semianalytic neighborhood `L '' W` of `x₀` into connected semianalytic real analytic
-submanifolds. -/
-private theorem image_continuousLinearEquiv_partition {m : ℕ} {P : Set (Fin m → ℝ) → Prop}
-    (L : (Fin m → ℝ) ≃L[ℝ] (Fin m → ℝ)) {x₀ : Fin m → ℝ} {V W : Set (Fin m → ℝ)}
-    {𝒞₀ : Set (Set (Fin m → ℝ))} (hWo : IsOpen W) (hy₀W : L.symm x₀ ∈ W) (hWV : L '' W ⊆ V)
+/-- Pushing forward a finite partition `𝒞₀` of an open set `W` containing `e.symm x₀` along a
+continuous linear equivalence `e : E₁ ≃L[ℝ] E₂` produces a partition of the open semianalytic
+neighborhood `e '' W` of `x₀` into connected semianalytic pieces carrying any extra property `Q`. -/
+private theorem image_continuousLinearEquiv_partition {E₁ E₂ : Type*}
+    [NormedAddCommGroup E₁] [NormedSpace ℝ E₁] [NormedAddCommGroup E₂] [NormedSpace ℝ E₂]
+    {Q : Set E₂ → Prop} (e : E₁ ≃L[ℝ] E₂) {x₀ : E₂} {V : Set E₂} {W : Set E₁}
+    {𝒞₀ : Set (Set E₁)} (hWo : IsOpen W) (hy₀W : e.symm x₀ ∈ W) (hWV : e '' W ⊆ V)
     (h𝒞₀fin : 𝒞₀.Finite) (h𝒞₀disj : 𝒞₀.PairwiseDisjoint id) (h𝒞₀cov : ⋃₀ 𝒞₀ = W)
-    (h𝒞₀cell : ∀ E ∈ 𝒞₀, IsConnected E ∧ IsSemianalytic E ∧
-      (∃ d' ≤ m, IsAnalyticSubmanifold d' E) ∧ P (L '' E)) :
-    ∃ (U : Set (Fin m → ℝ)) (𝒞 : Set (Set (Fin m → ℝ))),
+    (h𝒞₀cell : ∀ E ∈ 𝒞₀, IsConnected E ∧ IsSemianalytic E ∧ Q (e '' E)) :
+    ∃ (U : Set E₂) (𝒞 : Set (Set E₂)),
       IsOpen U ∧ x₀ ∈ U ∧ U ⊆ V ∧ IsSemianalytic U ∧
       𝒞.Finite ∧ 𝒞.PairwiseDisjoint id ∧ ⋃₀ 𝒞 = U ∧
-      ∀ C ∈ 𝒞, IsConnected C ∧ IsSemianalytic C ∧ (∃ d' ≤ m, IsAnalyticSubmanifold d' C) ∧ P C := by
-  let 𝒞 : Set (Set (Fin m → ℝ)) := image L '' 𝒞₀
-  have h𝒞cov : ⋃₀ 𝒞 = L '' W := by rw [← image_sUnion, h𝒞₀cov]
-  have h𝒞sa : ∀ C ∈ 𝒞, IsConnected C ∧ IsSemianalytic C ∧
-      (∃ d' ≤ m, IsAnalyticSubmanifold d' C) ∧ P C := by
+      ∀ C ∈ 𝒞, IsConnected C ∧ IsSemianalytic C ∧ Q C := by
+  let 𝒞 : Set (Set E₂) := image e '' 𝒞₀
+  have h𝒞cov : ⋃₀ 𝒞 = e '' W := by rw [← image_sUnion, h𝒞₀cov]
+  have h𝒞cell : ∀ C ∈ 𝒞, IsConnected C ∧ IsSemianalytic C ∧ Q C := by
     rintro _ ⟨E, hE, rfl⟩
-    obtain ⟨hEc, hEsa, ⟨d', hd', hEsub⟩, hEP⟩ := h𝒞₀cell E hE
-    refine ⟨hEc.image L L.continuous.continuousOn, ?_,
-      ⟨d', hd', hEsub.image_continuousLinearEquiv L⟩, hEP⟩
-    rw [L.image_eq_preimage_symm]
-    exact hEsa.preimage fun x _ ↦ L.symm.analyticAt x
-  refine ⟨L '' W, 𝒞, L.toHomeomorph.isOpenMap W hWo, ⟨L.symm x₀, hy₀W, L.apply_symm_apply x₀⟩,
-    hWV, ?_, h𝒞₀fin.image _, ?_, h𝒞cov, h𝒞sa⟩
+    obtain ⟨hEc, hEsa, hEQ⟩ := h𝒞₀cell E hE
+    refine ⟨hEc.image e e.continuous.continuousOn, ?_, hEQ⟩
+    rw [e.image_eq_preimage_symm]
+    exact hEsa.preimage fun x _ ↦ e.symm.analyticAt x
+  refine ⟨e '' W, 𝒞, e.toHomeomorph.isOpenMap W hWo, ⟨e.symm x₀, hy₀W, e.apply_symm_apply x₀⟩,
+    hWV, ?_, h𝒞₀fin.image _, ?_, h𝒞cov, h𝒞cell⟩
   · rw [← h𝒞cov, sUnion_eq_biUnion]
-    exact IsSemianalytic.biUnion (h𝒞₀fin.image _) fun C hC ↦ (h𝒞sa C hC).2.1
+    exact IsSemianalytic.biUnion (h𝒞₀fin.image _) fun C hC ↦ (h𝒞cell C hC).2.1
   · rintro _ ⟨E₁, hE₁, rfl⟩ _ ⟨E₂, hE₂, rfl⟩ hne
-    exact (disjoint_image_iff L.injective).2 (h𝒞₀disj hE₁ hE₂ fun h ↦ hne (h ▸ rfl))
+    exact (disjoint_image_iff e.injective).2 (h𝒞₀disj hE₁ hE₂ fun h ↦ hne (h ▸ rfl))
+
+/-- Sign invariance of a family `f` on the pushforward `L '' E` of a slab cell `E`, separating the
+germs vanishing on `V₁` from the Weierstrass-prepared germs. -/
+private theorem signInvariant_image_of_slab {n : ℕ} {ι : Type*}
+    {f : ι → (Fin (n + 1) → ℝ) → ℝ} {x₀ : Fin (n + 1) → ℝ} {V₁ : Set (Fin (n + 1) → ℝ)}
+    (hV₁zero : ∀ x ∈ V₁, ∀ i, f i =ᶠ[𝓝 x₀] 0 → f i x = 0)
+    (L : (Fin (n + 1) → ℝ) ≃L[ℝ] (Fin (n + 1) → ℝ)) {E : Set (Fin (n + 1) → ℝ)}
+    {p : {i : ι // ¬ f i =ᶠ[𝓝 x₀] 0} → (Fin (n + 1) → ℝ) → ℝ}
+    {u₀ : {i : ι // ¬ f i =ᶠ[𝓝 x₀] 0} → SignType}
+    (hEV₁ : ∀ y ∈ E, L y ∈ V₁)
+    (hsign : ∀ y ∈ E, ∀ j, SignType.sign (f j.1 (L y)) = SignType.sign (p j y) * u₀ j)
+    (hEsign : ∀ j, SignInvariant (p j) E) (i : ι) :
+    SignInvariant (f i) (L '' E) := by
+  by_cases hi : f i =ᶠ[𝓝 x₀] 0
+  · exact (signInvariant_const 0).congr fun x ⟨y, hyE, hxy⟩ ↦
+      hxy ▸ (hV₁zero (L y) (hEV₁ y hyE) i hi).symm
+  · rw [signInvariant_image, signInvariant_def]
+    intro y₁ hy₁ y₂ hy₂
+    rw [Function.comp_apply, Function.comp_apply, hsign y₁ hy₁ ⟨i, hi⟩, hsign y₂ hy₂ ⟨i, hi⟩,
+      signInvariant_def.1 (hEsign ⟨i, hi⟩) y₁ hy₁ y₂ hy₂]
 
 end SlabHelpers
 
@@ -341,14 +357,14 @@ theorem exists_isAnalyticSubmanifold_partition_signInvariant.{u} {n : ℕ} {ι :
       ⟨0, le_rfl, isOpen_univ.isAnalyticSubmanifold univ_nonempty⟩,
       fun _ ↦ subsingleton_of_subsingleton.signInvariant⟩
   | succ n ih =>
-    -- Shrink `V` to an open `V₁` where every germ locally zero at `x₀` vanishes identically.
+    -- Stage 1: Shrink `V` to an open `V₁` where every germ locally zero at `x₀` vanishes.
     have hzero : ∀ᶠ x in 𝓝 x₀, ∀ i, f i =ᶠ[𝓝 x₀] 0 → f i x = 0 :=
       eventually_all.2 fun i ↦ by
         by_cases hi : f i =ᶠ[𝓝 x₀] 0
         exacts [hi.mono fun _ hx _ ↦ hx, .of_forall fun _ h ↦ (hi h).elim]
     obtain ⟨V₁, hV₁sub, hV₁o, hx₀V₁⟩ := eventually_nhds_iff.1 (inter_mem hV hzero)
     let ι₁ := {i : ι // ¬ f i =ᶠ[𝓝 x₀] 0}
-    -- Put the non-locally-zero germs into simultaneous Weierstrass general position via `L`.
+    -- Stage 2: Put non-locally-zero germs in Weierstrass general position and prepare on a slab.
     obtain ⟨L, hord⟩ := exists_continuousLinearEquiv_finSucc_forall_analyticOrderAt_ne_top
       (f := fun j : ι₁ ↦ f j.1) (fun j ↦ hf j.1) (fun j ↦ j.2)
     set y₀ := L.symm x₀
@@ -356,7 +372,7 @@ theorem exists_isAnalyticSubmanifold_partition_signInvariant.{u} {n : ℕ} {ι :
       (g := fun j : ι₁ ↦ f j.1 ∘ L) (fun j ↦ (hf j.1).comp_of_eq (L.analyticAt y₀)
         (L.apply_symm_apply x₀)) hord
       ((hV₁o.preimage L.continuous).mem_nhds (by simpa [y₀] using hx₀V₁))
-    -- Project the augmented slab polynomial family onto `B₀` and decompose inside a closed ball.
+    -- Stage 3: Project the augmented slab polynomial family onto `B₀` and decompose inside a ball.
     obtain ⟨g, hg_an, hg_delin⟩ := exists_analyticOnNhd_projection_delineation
       (F := slabPoly c (y₀ 0) ε) (d := Sum.elim d (fun _ ↦ 1))
       (fun a m _ ↦ analyticOnNhd_coeff_slabPoly hc (y₀ 0) ε a m)
@@ -365,6 +381,7 @@ theorem exists_isAnalyticSubmanifold_partition_signInvariant.{u} {n : ℕ} {ι :
     obtain ⟨U', 𝒟, hU'o, hz₀U', hU'ball, _, h𝒟fin, h𝒟disj, h𝒟cov, h𝒟cell⟩ :=
       ih (f := fun a : ULift.{u} g ↦ a.down.1) (fun a ↦ hg_an a.down.1 a.down.2 _ hz₀B₀)
         (Metric.ball_mem_nhds (Fin.tail y₀) (half_pos hr₀))
+    -- Stage 4: Delineate `slabPoly` over each base cell and lift to a partition of the slab `W`.
     have hclos (S : Set (Fin n → ℝ)) (hS : S ∈ 𝒟) : closure S ⊆ B₀ :=
       (closure_mono ((subset_sUnion_of_mem hS).trans (h𝒟cov ▸ hU'ball))).trans <|
         Metric.closure_ball_subset_closedBall.trans <|
@@ -377,6 +394,7 @@ theorem exists_isAnalyticSubmanifold_partition_signInvariant.{u} {n : ℕ} {ι :
     let D (S : 𝒟) := Classical.choice (hdelin S)
     obtain ⟨𝒞₀, h𝒞₀fin, h𝒞₀disj, h𝒞₀cov, h𝒞₀cell⟩ := lift_slab_partition hc h𝒟fin h𝒟disj h𝒟cov
       hclos (fun S hS ↦ ⟨(h𝒟cell S hS).1, (h𝒟cell S hS).2.1, (h𝒟cell S hS).2.2.1⟩) D
+    -- Stage 5: Push forward the slab partition along `L` and verify sign invariance on each cell.
     set W := (Fin.tail ⁻¹' U') ∩ {y : Fin (n + 1) → ℝ | y 0 ∈ Ioo (y₀ 0 - ε) (y₀ 0 + ε)}
     have hWB₀ (y : Fin (n + 1) → ℝ) (hy : y ∈ W) : Fin.tail y ∈ B₀ :=
       hball₀ ((Metric.ball_subset_ball (half_lt_self hr₀).le) (hU'ball hy.1))
@@ -386,25 +404,19 @@ theorem exists_isAnalyticSubmanifold_partition_signInvariant.{u} {n : ℕ} {ι :
       ⟨hz₀U', by simp [y₀, hε]⟩
       (fun _ ⟨y, hyW, hxy⟩ ↦ hxy ▸ (hV₁sub _ (hslab y (hWB₀ y hyW) hyW.2).1).1)
       h𝒞₀fin h𝒞₀disj h𝒞₀cov fun E hE ↦ ?_
-    obtain ⟨hEc, hEsa, hEsub, hEsign⟩ := h𝒞₀cell E hE
+    obtain ⟨hEc, hEsa, ⟨d', hd', hEsub⟩, hEsign⟩ := h𝒞₀cell E hE
     have hEW : E ⊆ W := h𝒞₀cov ▸ subset_sUnion_of_mem hE
-    refine ⟨hEc, hEsa, hEsub, fun i ↦ ?_⟩
-    by_cases hi : f i =ᶠ[𝓝 x₀] 0
-    · exact (signInvariant_const 0).congr fun x ⟨y, hyE, hxy⟩ ↦
-        hxy ▸ ((hV₁sub _ (hslab y (hWB₀ y (hEW hyE)) (hEW hyE).2).1).2 i hi).symm
-    · rw [signInvariant_image, signInvariant_def]
-      intro y₁ hy₁ y₂ hy₂
-      change SignType.sign ((f i ∘ L) y₁) = SignType.sign ((f i ∘ L) y₂)
-      rw [(hslab y₁ (hWB₀ y₁ (hEW hy₁)) (hEW hy₁).2).2 ⟨i, hi⟩,
-        (hslab y₂ (hWB₀ y₂ (hEW hy₂)) (hEW hy₂).2).2 ⟨i, hi⟩,
-        signInvariant_def.1 (hEsign ⟨i, hi⟩) y₁ hy₁ y₂ hy₂]
+    exact ⟨hEc, hEsa, ⟨d', hd', hEsub.image_continuousLinearEquiv L⟩,
+      signInvariant_image_of_slab (fun x hx ↦ (hV₁sub x hx).2) L
+        (fun y hy ↦ (hslab y (hWB₀ y (hEW hy)) (hEW hy).2).1)
+        (fun y hy j ↦ (hslab y (hWB₀ y (hEW hy)) (hEW hy).2).2 j) hEsign⟩
 
 /-- **Simultaneous local analytic submanifold partition for semianalytic germs in `Fin n → ℝ`.**
 Given finitely many sets `s i` semianalytic at `x₀ : Fin n → ℝ` and a neighborhood `V` of `x₀`,
 there exists an open semianalytic neighborhood `U ⊆ V` of `x₀` partitioned into finitely many
 pairwise disjoint connected semianalytic real analytic submanifolds, each lying either inside or
 outside every `s i`. -/
-theorem SemianalyticAt.exists_isAnalyticSubmanifold_partition {n : ℕ} {ι : Type*} [Finite ι]
+theorem exists_isAnalyticSubmanifold_partition_subset_or_disjoint {n : ℕ} {ι : Type*} [Finite ι]
     {s : ι → Set (Fin n → ℝ)} {x₀ : Fin n → ℝ} {V : Set (Fin n → ℝ)}
     (hs : ∀ i, SemianalyticAt (s i) x₀) (hV : V ∈ 𝓝 x₀) :
     ∃ (U : Set (Fin n → ℝ)) (𝒞 : Set (Set (Fin n → ℝ))),
@@ -435,19 +447,6 @@ theorem SemianalyticAt.exists_isAnalyticSubmanifold_partition {n : ℕ} {ι : Ty
     have hmem := Set.ext_iff.1 (hst i) y
     exact ht_eq i ▸ (hmem.1 ⟨hys, hCU hyC⟩).1
 
-private theorem filter_subset_partition {X : Type*} {s U : Set X} {𝒟 : Set (Set X)}
-    (h𝒟fin : 𝒟.Finite) (h𝒟disj : 𝒟.PairwiseDisjoint id) (h𝒟cov : ⋃₀ 𝒟 = U)
-    (hcompat : ∀ C ∈ 𝒟, C ⊆ s ∨ Disjoint C s) :
-    {C ∈ 𝒟 | C ⊆ s}.Finite ∧ {C ∈ 𝒟 | C ⊆ s}.PairwiseDisjoint id ∧
-      ⋃₀ {C ∈ 𝒟 | C ⊆ s} = s ∩ U := by
-  refine ⟨h𝒟fin.subset (sep_subset _ _), h𝒟disj.subset (sep_subset _ _), ?_⟩
-  ext y
-  simp only [mem_sUnion, mem_sep_iff, mem_inter_iff]
-  refine ⟨fun ⟨C, ⟨hC𝒟, hCs⟩, hyC⟩ ↦ ⟨hCs hyC, h𝒟cov ▸ mem_sUnion.2 ⟨C, hC𝒟, hyC⟩⟩, ?_⟩
-  rintro ⟨hys, hyU⟩
-  obtain ⟨C, hC𝒟, hyC⟩ := mem_sUnion.1 (h𝒟cov.symm ▸ hyU)
-  exact ⟨C, ⟨hC𝒟, (hcompat C hC𝒟).resolve_right fun hd ↦ disjoint_left.1 hd hyC hys⟩, hyC⟩
-
 /-- **Local connected analytic submanifold partition of a semianalytic germ in `Fin n → ℝ`.** If `s`
 is semianalytic at `x₀ : Fin n → ℝ` and `V ∈ 𝓝 x₀`, there is an open semianalytic neighborhood
 `U ⊆ V` of `x₀` such that `s ∩ U` is globally semianalytic and partitioned into finitely many
@@ -459,48 +458,21 @@ theorem SemianalyticAt.exists_isAnalyticSubmanifold_partition_inter {n : ℕ}
       𝒞.Finite ∧ 𝒞.PairwiseDisjoint id ∧ ⋃₀ 𝒞 = s ∩ U ∧
       ∀ C ∈ 𝒞, IsConnected C ∧ IsSemianalytic C ∧ ∃ d ≤ n, IsAnalyticSubmanifold d C := by
   obtain ⟨U, 𝒟, hUo, hx₀U, hUV, hUsa, h𝒟fin, h𝒟disj, h𝒟cov, h𝒟cell⟩ :=
-    SemianalyticAt.exists_isAnalyticSubmanifold_partition (fun _ : Unit ↦ hs) hV
-  obtain ⟨h𝒞fin, h𝒞disj, h𝒞cov⟩ :=
-    filter_subset_partition h𝒟fin h𝒟disj h𝒟cov fun C hC ↦ (h𝒟cell C hC).2.2.2 ()
+    exists_isAnalyticSubmanifold_partition_subset_or_disjoint (fun _ : Unit ↦ hs) hV
+  have h𝒞fin : {C ∈ 𝒟 | C ⊆ s}.Finite := h𝒟fin.subset (sep_subset _ _)
+  have h𝒞cov : ⋃₀ {C ∈ 𝒟 | C ⊆ s} = s ∩ U := by
+    rw [sUnion_sep_subset_eq_inter fun C hC ↦ (h𝒟cell C hC).2.2.2 (), h𝒟cov]
   have hsUsa : IsSemianalytic (s ∩ U) := by
     rw [← h𝒞cov, sUnion_eq_biUnion]
     exact .biUnion h𝒞fin fun C hC ↦ (h𝒟cell C hC.1).2.1
-  exact ⟨U, {C ∈ 𝒟 | C ⊆ s}, hUo, hx₀U, hUV, hUsa, hsUsa, h𝒞fin, h𝒞disj, h𝒞cov,
-    fun C hC ↦ ⟨(h𝒟cell C hC.1).1, (h𝒟cell C hC.1).2.1, (h𝒟cell C hC.1).2.2.1⟩⟩
+  exact ⟨U, {C ∈ 𝒟 | C ⊆ s}, hUo, hx₀U, hUV, hUsa, hsUsa, h𝒞fin, h𝒟disj.subset (sep_subset _ _),
+    h𝒞cov, fun C hC ↦ ⟨(h𝒟cell C hC.1).1, (h𝒟cell C hC.1).2.1, (h𝒟cell C hC.1).2.2.1⟩⟩
 
 /-! ### Coordinate-free local decompositions in finite-dimensional real normed spaces -/
 
 section FiniteDimensional
 
-variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
-
-private theorem image_symm_coord_partition {n : ℕ} {P : Set E → Prop}
-    (φ : E ≃L[ℝ] (Fin n → ℝ)) {x₀ : E} {V : Set E} {U₀ : Set (Fin n → ℝ)}
-    {𝒞₀ : Set (Set (Fin n → ℝ))} (hU₀o : IsOpen U₀) (hx₀U₀ : φ x₀ ∈ U₀)
-    (hU₀V : U₀ ⊆ φ.symm ⁻¹' V) (hU₀sa : IsSemianalytic U₀)
-    (h𝒞₀fin : 𝒞₀.Finite) (h𝒞₀disj : 𝒞₀.PairwiseDisjoint id) (h𝒞₀cov : ⋃₀ 𝒞₀ = U₀)
-    (h𝒞₀cell : ∀ C₀ ∈ 𝒞₀, IsConnected C₀ ∧ IsSemianalytic C₀ ∧
-      (∃ d ≤ n, IsAnalyticSubmanifold d C₀) ∧ P (φ.symm '' C₀)) :
-    ∃ (U : Set E) (𝒞 : Set (Set E)),
-      IsOpen U ∧ x₀ ∈ U ∧ U ⊆ V ∧ IsSemianalytic U ∧
-      𝒞.Finite ∧ 𝒞.PairwiseDisjoint id ∧ ⋃₀ 𝒞 = U ∧
-      ∀ C ∈ 𝒞, IsConnected C ∧ IsSemianalytic C ∧ IsLocallyClosed C ∧ P C := by
-  refine ⟨φ.symm '' U₀, image φ.symm '' 𝒞₀, φ.symm.toHomeomorph.isOpenMap U₀ hU₀o,
-    ⟨φ x₀, hx₀U₀, φ.symm_apply_apply x₀⟩, image_subset_iff.2 hU₀V, ?_,
-    h𝒞₀fin.image _, ?_, by rw [← image_sUnion, h𝒞₀cov], ?_⟩
-  · rw [φ.symm.image_eq_preimage_symm]
-    exact hU₀sa.preimage fun x _ ↦ φ.analyticAt x
-  · rintro _ ⟨E₁, hE₁, rfl⟩ _ ⟨E₂, hE₂, rfl⟩ hne
-    exact (disjoint_image_iff φ.symm.injective).2 (h𝒞₀disj hE₁ hE₂ fun h ↦ hne (h ▸ rfl))
-  · rintro _ ⟨C₀, hC₀, rfl⟩
-    obtain ⟨hCc, hCsa, ⟨_, _, hCsub⟩, hCP⟩ := h𝒞₀cell C₀ hC₀
-    refine ⟨hCc.image φ.symm φ.symm.continuous.continuousOn, ?_, ?_, hCP⟩
-    · rw [φ.symm.image_eq_preimage_symm]
-      exact hCsa.preimage fun x _ ↦ φ.analyticAt x
-    · rw [φ.symm.image_eq_preimage_symm]
-      exact hCsub.isLocallyClosed.preimage φ.continuous
-
-variable [FiniteDimensional ℝ E]
+variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
 
 /-- **Local sign-invariant decomposition of real analytic germs.** Given finitely many real
 functions `f i` analytic at a point `x₀` of a finite-dimensional real normed space `E` and a
@@ -517,21 +489,24 @@ theorem exists_isConnected_partition_signInvariant {ι : Type*} [Finite ι]
         ∀ i, SignInvariant (f i) C := by
   let φ : E ≃L[ℝ] (Fin (Module.finrank ℝ E) → ℝ) :=
     (Module.finBasis ℝ E).equivFun.toContinuousLinearEquiv
-  obtain ⟨U₀, 𝒞₀, hU₀o, hx₀U₀, hU₀V, hU₀sa, h𝒞₀fin, h𝒞₀disj, h𝒞₀cov, h𝒞₀cell⟩ :=
+  obtain ⟨U₀, 𝒞₀, hU₀o, hx₀U₀, hU₀V, _, h𝒞₀fin, h𝒞₀disj, h𝒞₀cov, h𝒞₀cell⟩ :=
     exists_isAnalyticSubmanifold_partition_signInvariant (f := fun i ↦ f i ∘ φ.symm)
       (fun i ↦ (hf i).comp_of_eq (φ.symm.analyticAt (φ x₀)) (φ.symm_apply_apply x₀))
       (φ.toHomeomorph.symm.continuous.continuousAt.preimage_mem_nhds
         (by simpa [φ.symm_apply_apply] using hV))
-  refine image_symm_coord_partition φ hU₀o hx₀U₀ hU₀V hU₀sa h𝒞₀fin h𝒞₀disj h𝒞₀cov fun C₀ hC₀ ↦ ?_
-  obtain ⟨hCc, hCsa, hCsub, hCsign⟩ := h𝒞₀cell C₀ hC₀
-  exact ⟨hCc, hCsa, hCsub, fun i ↦ signInvariant_image.2 (hCsign i)⟩
+  refine image_continuousLinearEquiv_partition φ.symm hU₀o hx₀U₀ (image_subset_iff.2 hU₀V)
+    h𝒞₀fin h𝒞₀disj h𝒞₀cov fun C₀ hC₀ ↦ ?_
+  obtain ⟨hCc, hCsa, ⟨_, _, hCsub⟩, hCsign⟩ := h𝒞₀cell C₀ hC₀
+  exact ⟨hCc, hCsa,
+    (φ.symm.image_eq_preimage_symm C₀).symm ▸ hCsub.isLocallyClosed.preimage φ.continuous,
+    fun i ↦ signInvariant_image.2 (hCsign i)⟩
 
 /-- **Simultaneous local connected partition for semianalytic germs.** Given finitely many sets
 `s i` semianalytic at a point `x₀` of a finite-dimensional real normed space `E` and `V ∈ 𝓝 x₀`,
 there exists an open semianalytic neighborhood `U ⊆ V` of `x₀` partitioned into finitely many
 pairwise disjoint connected, semianalytic, locally closed sets, each lying inside or outside every
 `s i`. -/
-theorem SemianalyticAt.exists_isConnected_partition {ι : Type*} [Finite ι]
+theorem exists_isConnected_partition_subset_or_disjoint {ι : Type*} [Finite ι]
     {s : ι → Set E} {x₀ : E} {V : Set E}
     (hs : ∀ i, SemianalyticAt (s i) x₀) (hV : V ∈ 𝓝 x₀) :
     ∃ (U : Set E) (𝒞 : Set (Set E)),
@@ -543,13 +518,16 @@ theorem SemianalyticAt.exists_isConnected_partition {ι : Type*} [Finite ι]
     (Module.finBasis ℝ E).equivFun.toContinuousLinearEquiv
   have hs' (i : ι) : SemianalyticAt (φ.symm ⁻¹' s i) (φ x₀) :=
     (φ.symm_apply_apply x₀ ▸ hs i).preimage (φ.symm.analyticAt (φ x₀))
-  obtain ⟨U₀, 𝒞₀, hU₀o, hx₀U₀, hU₀V, hU₀sa, h𝒞₀fin, h𝒞₀disj, h𝒞₀cov, h𝒞₀cell⟩ :=
-    SemianalyticAt.exists_isAnalyticSubmanifold_partition hs'
+  obtain ⟨U₀, 𝒞₀, hU₀o, hx₀U₀, hU₀V, _, h𝒞₀fin, h𝒞₀disj, h𝒞₀cov, h𝒞₀cell⟩ :=
+    exists_isAnalyticSubmanifold_partition_subset_or_disjoint hs'
       (φ.toHomeomorph.symm.continuous.continuousAt.preimage_mem_nhds
         (by simpa [φ.symm_apply_apply] using hV))
-  refine image_symm_coord_partition φ hU₀o hx₀U₀ hU₀V hU₀sa h𝒞₀fin h𝒞₀disj h𝒞₀cov fun C₀ hC₀ ↦ ?_
-  obtain ⟨hCc, hCsa, hCsub, hCcompat⟩ := h𝒞₀cell C₀ hC₀
-  refine ⟨hCc, hCsa, hCsub, fun i ↦ ?_⟩
+  refine image_continuousLinearEquiv_partition φ.symm hU₀o hx₀U₀ (image_subset_iff.2 hU₀V)
+    h𝒞₀fin h𝒞₀disj h𝒞₀cov fun C₀ hC₀ ↦ ?_
+  obtain ⟨hCc, hCsa, ⟨_, _, hCsub⟩, hCcompat⟩ := h𝒞₀cell C₀ hC₀
+  refine ⟨hCc, hCsa,
+    (φ.symm.image_eq_preimage_symm C₀).symm ▸ hCsub.isLocallyClosed.preimage φ.continuous,
+    fun i ↦ ?_⟩
   rcases hCcompat i with hsub | hdisj
   · exact .inl (image_subset_iff.2 hsub)
   · exact .inr (disjoint_left.2 fun _ ⟨y, hy, hxy⟩ hys ↦
@@ -566,14 +544,15 @@ theorem SemianalyticAt.exists_isConnected_partition_inter {s V : Set E} {x₀ : 
       𝒞.Finite ∧ 𝒞.PairwiseDisjoint id ∧ ⋃₀ 𝒞 = s ∩ U ∧
       ∀ C ∈ 𝒞, IsConnected C ∧ IsSemianalytic C ∧ IsLocallyClosed C := by
   obtain ⟨U, 𝒟, hUo, hx₀U, hUV, hUsa, h𝒟fin, h𝒟disj, h𝒟cov, h𝒟cell⟩ :=
-    SemianalyticAt.exists_isConnected_partition (fun _ : Unit ↦ hs) hV
-  obtain ⟨h𝒞fin, h𝒞disj, h𝒞cov⟩ :=
-    filter_subset_partition h𝒟fin h𝒟disj h𝒟cov fun C hC ↦ (h𝒟cell C hC).2.2.2 ()
+    exists_isConnected_partition_subset_or_disjoint (fun _ : Unit ↦ hs) hV
+  have h𝒞fin : {C ∈ 𝒟 | C ⊆ s}.Finite := h𝒟fin.subset (sep_subset _ _)
+  have h𝒞cov : ⋃₀ {C ∈ 𝒟 | C ⊆ s} = s ∩ U := by
+    rw [sUnion_sep_subset_eq_inter fun C hC ↦ (h𝒟cell C hC).2.2.2 (), h𝒟cov]
   have hsUsa : IsSemianalytic (s ∩ U) := by
     rw [← h𝒞cov, sUnion_eq_biUnion]
     exact .biUnion h𝒞fin fun C hC ↦ (h𝒟cell C hC.1).2.1
-  exact ⟨U, {C ∈ 𝒟 | C ⊆ s}, hUo, hx₀U, hUV, hUsa, hsUsa, h𝒞fin, h𝒞disj, h𝒞cov,
-    fun C hC ↦ ⟨(h𝒟cell C hC.1).1, (h𝒟cell C hC.1).2.1, (h𝒟cell C hC.1).2.2.1⟩⟩
+  exact ⟨U, {C ∈ 𝒟 | C ⊆ s}, hUo, hx₀U, hUV, hUsa, hsUsa, h𝒞fin, h𝒟disj.subset (sep_subset _ _),
+    h𝒞cov, fun C hC ↦ ⟨(h𝒟cell C hC.1).1, (h𝒟cell C hC.1).2.1, (h𝒟cell C hC.1).2.2.1⟩⟩
 
 end FiniteDimensional
 

@@ -9,7 +9,7 @@ public import TauCeti.Geometry.Manifold.Complex.StructureSheaf.SmoothComparison
 public import Mathlib.RingTheory.Noetherian.Defs
 
 import Mathlib.RingTheory.FiniteType
-import TauCeti.Analysis.Analytic.Uniqueness
+import TauCeti.Analysis.Analytic.SingularDirection
 import TauCeti.Geometry.Manifold.Complex.Analytic
 import TauCeti.Geometry.Manifold.Complex.StructureSheaf.StalkPullback
 import TauCeti.Geometry.Manifold.Complex.StructureSheaf.Weierstrass
