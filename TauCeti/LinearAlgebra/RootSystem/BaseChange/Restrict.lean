@@ -170,36 +170,6 @@ section Self
 variable {ι L M N : Type*} [Field L] [AddCommGroup M] [AddCommGroup N] [Module L M] [Module L N]
   (P : RootPairing ι L M N) [P.IsBalanced]
 
-/-- The bilinear pairing of `P.restrictScalars' L` is the restriction of `P.toLinearMap`. -/
-@[simp]
-theorem restrictScalars'_self_toLinearMap_apply_apply
-    (x : span L (range P.root)) (y : span L (range P.coroot)) :
-    (P.restrictScalars' L).toLinearMap x y = P.toLinearMap x y :=
-  P.restrictScalars_toLinearMap_apply_apply L x y
-
-/-- `P.restrictScalars' L` has the same root-coroot pairings as `P`. -/
-@[simp]
-theorem restrictScalars'_self_pairing (i j : ι) :
-    (P.restrictScalars' L).pairing i j = P.pairing i j :=
-  P.restrictScalars_pairing L i j
-
--- Not `@[simp]`: `coroot'` unfolds to `toLinearMap.flip ∘ coroot` (`simpNF`).
-/-- Each coroot functional of `P.restrictScalars' L` is the restriction of `P.coroot' i`. -/
-theorem restrictScalars'_self_coroot'_apply (i : ι) (x : span L (range P.root)) :
-    (P.restrictScalars' L).coroot' i x = P.coroot' i x :=
-  P.algebraMap_restrictScalars'_coroot'_apply L i x
-
-/-- Each root functional of `P.restrictScalars' L` is the restriction of `P.root' i`. -/
-theorem restrictScalars'_self_root'_apply (i : ι) (y : span L (range P.coroot)) :
-    (P.restrictScalars' L).root' i y = P.root' i y :=
-  P.algebraMap_restrictScalars'_root'_apply L i y
-
-/-- `P.restrictScalars' L` has the same Coxeter weights as `P`. -/
-@[simp]
-theorem restrictScalars'_self_coxeterWeight (i j : ι) :
-    (P.restrictScalars' L).coxeterWeight i j = P.coxeterWeight i j :=
-  P.algebraMap_restrictScalars'_coxeterWeight L i j
-
 /-- Projecting onto the root span intertwines each ambient reflection with the corresponding
 reflection of `P.restrictScalars' L`. -/
 @[simp]

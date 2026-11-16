@@ -84,7 +84,7 @@ variable {ι R M N : Type*} [CommRing R] [AddCommGroup M] [Module R M]
 
 /-- The **central kernel** of a root pairing: the common kernel of all coroot functionals
 `P.coroot' i`. Under the perfect pairing between `M` and `N`, this is the dual annihilator of the
-coroot span (`RootPairing.corootSpan_dualAnnihilator_map_eq_corootKer`). -/
+coroot span (`RootPairing.corootSpan_dualAnnihilator_map_eq_iInf_ker_coroot'`). -/
 def corootKer : Submodule R M :=
   ⨅ i, LinearMap.ker (P.coroot' i)
 
@@ -98,18 +98,6 @@ variable {P} in
 theorem mem_corootKer {x : M} : x ∈ P.corootKer ↔ ∀ i, P.coroot' i x = 0 := by
   simp [corootKer_def]
 
-/-- The dual annihilator of the coroot span maps onto `P.corootKer` under `P.toPerfPair.symm`. -/
-theorem corootSpan_dualAnnihilator_map_eq_corootKer :
-    (P.corootSpan R).dualAnnihilator.map (P.toPerfPair.symm : Dual R N →ₗ[R] M) = P.corootKer :=
-  P.corootSpan_dualAnnihilator_map_eq_iInf_ker_coroot'
-
-/-- The dual annihilator of the root span maps onto `P.flip.corootKer` under
-`P.toLinearMap.flip.toPerfPair.symm`. -/
-theorem rootSpan_dualAnnihilator_map_eq_flip_corootKer :
-    (P.rootSpan R).dualAnnihilator.map (P.toLinearMap.flip.toPerfPair.symm : Dual R M →ₗ[R] N) =
-      P.flip.corootKer :=
-  P.rootSpan_dualAnnihilator_map_eq_iInf_ker_root'
-
 /-- For any base `b`, the common kernel of the *simple* coroot functionals equals `P.corootKer`. -/
 theorem Base.iInf_ker_coroot'_support_eq_corootKer {P : RootPairing ι R M N} (b : P.Base) :
     (⨅ i ∈ b.support, LinearMap.ker (P.coroot' i)) = P.corootKer := by
@@ -120,7 +108,7 @@ theorem Base.iInf_ker_coroot'_support_eq_corootKer {P : RootPairing ι R M N} (b
 /-- The central kernel of a root system is trivial. -/
 @[simp]
 theorem corootKer_eq_bot [P.IsRootSystem] : P.corootKer = ⊥ := by
-  rw [← corootSpan_dualAnnihilator_map_eq_corootKer]
+  rw [corootKer_def, ← P.corootSpan_dualAnnihilator_map_eq_iInf_ker_coroot']
   simp [corootSpan]
 
 variable {P}
@@ -157,7 +145,7 @@ instance instFlipIsBalanced [P.IsBalanced] : P.flip.IsBalanced where
 submodules of the weight space. -/
 theorem isCompl_rootSpan_corootKer [P.IsBalanced] :
     IsCompl (P.rootSpan R) P.corootKer := by
-  rw [← corootSpan_dualAnnihilator_map_eq_corootKer]
+  rw [corootKer_def, ← P.corootSpan_dualAnnihilator_map_eq_iInf_ker_coroot']
   exact (IsBalanced.isPerfectCompl (P := P)).isCompl_left
 
 /-- A root pairing is balanced precisely when `P.rootSpan R` complements `P.corootKer` in `M`
@@ -168,8 +156,8 @@ theorem isBalanced_iff_isCompl :
   refine ⟨fun _ ↦ ⟨P.isCompl_rootSpan_corootKer, P.flip.isCompl_rootSpan_corootKer⟩, ?_⟩
   rintro ⟨h₁, h₂⟩
   refine ⟨⟨?_, ?_⟩⟩
-  · rwa [corootSpan_dualAnnihilator_map_eq_corootKer]
-  · rwa [rootSpan_dualAnnihilator_map_eq_flip_corootKer]
+  · exact P.corootSpan_dualAnnihilator_map_eq_iInf_ker_coroot'.symm ▸ h₁
+  · exact P.rootSpan_dualAnnihilator_map_eq_iInf_ker_root'.symm ▸ h₂
 
 private lemma smul_eq_self_of_mem_ker_weylGroupToPerm {k : P.weylGroup}
     (hk : k ∈ P.weylGroupToPerm.ker) {x : M} (hx : x ∈ P.rootSpan R) :
@@ -261,7 +249,7 @@ private lemma finrank_add_finrank_corootKer_eq {ι K M N : Type*} [Field K]
   have : IsReflexive K M := .of_isPerfPair Q.toLinearMap
   have : IsReflexive K N := .of_isPerfPair Q.flip.toLinearMap
   have hker : finrank K Q.corootKer = finrank K (Q.corootSpan K).dualAnnihilator := by
-    rw [← Q.corootSpan_dualAnnihilator_map_eq_corootKer]
+    rw [corootKer_def, ← Q.corootSpan_dualAnnihilator_map_eq_iInf_ker_coroot']
     exact LinearEquiv.finrank_map_eq _ _
   rw [hker, Q.toPerfPair.finrank_eq, Subspace.dual_finrank_eq,
     Subspace.finrank_add_finrank_dualAnnihilator_eq]
