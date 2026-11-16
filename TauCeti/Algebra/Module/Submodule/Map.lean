@@ -42,6 +42,8 @@ is a surjection rather than an isomorphism.
   vectors.
 * `Submodule.mapIic_symm_apply`: the inverse of `Submodule.mapIic` takes inverse images along the
   inclusion.
+* `Submodule.map_equiv_eq_iff`: a semilinear equivalence carries `p` onto `q` exactly when it
+  maps a vector into `q` precisely when the vector lies in `p`.
 * `LinearMap.map_equivMapOfInjective_comap_subtype`: the restriction of an injective map to `B`
   carries the trace of `A` in `B` onto the trace of `A.map f` in `B.map f`.
 -/
@@ -74,6 +76,20 @@ isomorphism's round-trip laws. -/
 theorem mapIic_symm_apply (p : Submodule R M) (N : Set.Iic p) :
     p.mapIic.symm N = (N : Submodule R M).comap p.subtype :=
   rfl
+
+section Equiv
+
+variable {τ₁₂ : R →+* R₂} {τ₂₁ : R₂ →+* R} [RingHomInvPair τ₁₂ τ₂₁] [RingHomInvPair τ₂₁ τ₁₂]
+
+/-- A semilinear equivalence `e` carries `p` onto `q` exactly when `e x ∈ q ↔ x ∈ p` for
+every `x`. -/
+theorem map_equiv_eq_iff {e : M ≃ₛₗ[τ₁₂] M₂} {p : Submodule R M} {q : Submodule R₂ M₂} :
+    p.map (e : M →ₛₗ[τ₁₂] M₂) = q ↔ ∀ x, e x ∈ q ↔ x ∈ p := by
+  rw [SetLike.ext_iff, e.surjective.forall]
+  simp only [mem_map_equiv, LinearEquiv.symm_apply_apply]
+  exact forall_congr' fun _ ↦ Iff.comm
+
+end Equiv
 
 end Submodule
 
