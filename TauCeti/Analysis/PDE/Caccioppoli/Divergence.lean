@@ -269,6 +269,17 @@ theorem exists_setIntegral_ball_norm_gradient_sq_le_sub_setAverage_divergence :
     rw [h1, h2, sub_eq_add_neg]
   rwa [e1, e2] at hcacc
 
+omit [DecidableEq ι] in
+/-- If `f₀` is almost everywhere the zero extension `1_s f` of `f`, then the integral of
+`g ‖f₀‖²` over the whole space is the integral of `g ‖f‖²` over `s`. -/
+private theorem integral_mul_norm_sq_of_ae_eq_indicator {X E : Type*} [MeasurableSpace X]
+    [NormedAddCommGroup E] {μ : Measure X} {s : Set X} (hs : MeasurableSet s) {f f₀ : X → E}
+    (g : X → ℝ) (h : f₀ =ᵐ[μ] s.indicator f) :
+    ∫ x, g x * ‖f₀ x‖ ^ 2 ∂μ = ∫ x in s, g x * ‖f x‖ ^ 2 ∂μ := by
+  rw [← integral_indicator hs]
+  refine integral_congr_ae (h.mono fun x hx => ?_)
+  by_cases hx' : x ∈ s <;> simp [hx, hx']
+
 open Filter Metric in
 /-- **The Caccioppoli inequality up to the boundary.** There is `C > 0`, depending only on the
 dimension, such that the following holds for every additive Haar measure `μ`. Let `a` be
@@ -321,24 +332,16 @@ theorem exists_setIntegral_ball_norm_indicator_gradient_sq_le_divergence :
     (Eventually.of_forall fun x => by positivity) hrR (by simp) fun ψ hψ hcpt _ => by
       have hcacc :=
         h.setIntegral_sq_mul_norm_gradient_sq_le_divergence ha hF hu hψ hcpt (.inr u.2)
-      have e1 : ∫ x, ψ x ^ 2 * ‖W1p.gradient u₀ x‖ ^ 2 ∂mu =
-          ∫ x in Omega, ψ x ^ 2 * ‖W1p.gradient (u : W1p mu Omega 2) x‖ ^ 2 ∂mu := by
-        rw [← integral_indicator hOm]
-        refine integral_congr_ae (hgrad.mono fun x hx => ?_)
-        by_cases hx' : x ∈ (Omega : Set (EuclideanSpace ℝ ι)) <;> simp [hx, hx']
+      have e1 := integral_mul_norm_sq_of_ae_eq_indicator hOm (fun x => ψ x ^ 2) hgrad
       have e2 : ∫ x, ‖∇ ψ x‖ ^ 2 * W1p.value u₀ x ^ 2 ∂mu =
           ∫ x in Omega, ‖∇ ψ x‖ ^ 2 * W1p.value (u : W1p mu Omega 2) x ^ 2 ∂mu := by
-        rw [← integral_indicator hOm]
-        refine integral_congr_ae (hval.mono fun x hx => ?_)
-        by_cases hx' : x ∈ (Omega : Set (EuclideanSpace ℝ ι)) <;> simp [hx, hx']
+        simpa only [Real.norm_eq_abs, sq_abs] using
+          integral_mul_norm_sq_of_ae_eq_indicator hOm (fun x => ‖∇ ψ x‖ ^ 2) hval
       have e3 : ∫ x, ψ x ^ 2 *
             (12 / lam ^ 2 * ‖(Omega : Set (EuclideanSpace ℝ ι)).indicator F x‖ ^ 2) ∂mu =
           12 / lam ^ 2 * ∫ x in Omega, ψ x ^ 2 * ‖F x‖ ^ 2 ∂mu := by
-        rw [← integral_indicator hOm, ← integral_const_mul]
-        congr 1
-        funext x
-        by_cases hx' : x ∈ (Omega : Set (EuclideanSpace ℝ ι)) <;> simp [hx']
-        ring
+        rw [← integral_mul_norm_sq_of_ae_eq_indicator hOm _ (f₀ := _) .rfl, ← integral_const_mul]
+        exact integral_congr_ae (.of_forall fun x => by ring)
       simp only [htop]
       rw [e1, e2, e3]
       exact hcacc
