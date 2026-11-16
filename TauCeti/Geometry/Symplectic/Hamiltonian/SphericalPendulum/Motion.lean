@@ -215,29 +215,13 @@ theorem sphericalPendulumEnergyMomentum_eq_of_isMIntegralCurveOn (hs : IsPreconn
     (hγ : IsMIntegralCurveOn γ (sphericalPendulumSymplecticForm.hamiltonianVectorField
       fun y ↦ sphericalPendulumHamiltonian y) s) {t₀ : ℝ} (ht₀ : t₀ ∈ s) (ht : t ∈ s) :
     sphericalPendulumEnergyMomentum (γ t) = sphericalPendulumEnergyMomentum (γ t₀) := by
+  have hI := isIntegrableSystem_sphericalPendulumEnergyMomentum
   have hσ := isSymplectic_sphericalPendulumSymplecticForm.isNondegenerate
-  have hF (y : sphericalPendulumPhaseSpace) :=
-    (contDiff_sphericalPendulumEnergyMomentum (n := 1)).differentiable one_ne_zero
-      (y : EuclideanSpace ℝ (Fin 3) × EuclideanSpace ℝ (Fin 3))
-  have hι (y : sphericalPendulumPhaseSpace) :=
-    (isSmoothEmbedding_coe_sphericalPendulumPhaseSpace.contMDiff y).mdifferentiableAt
-      (by simp : (∞ : WithTop ℕ∞) ≠ 0)
-  -- The energy is conserved by its own flow, and the vertical angular momentum Poisson-commutes
-  -- with it.
-  have hJ : sphericalPendulumSymplecticForm.IsFirstIntegral
-      (fun y ↦ sphericalPendulumHamiltonian y)
-      (fun y ↦ angularMomentum (EuclideanSpace.single 0 1) (EuclideanSpace.single 1 1)
-        (y : EuclideanSpace ℝ (Fin 3) × EuclideanSpace ℝ (Fin 3))) :=
-    SmoothTwoForm.isFirstIntegral_iff.2 fun y ↦ by
-      rw [← SmoothTwoForm.neg_poissonBracket,
-        poissonBracket_sphericalPendulumHamiltonian_angularMomentum_comp_subtypeVal, neg_zero]
-  refine Prod.ext ?_ ?_
-  · simpa using (hσ.isHamiltonianVectorField_hamiltonianVectorField _)
-      |>.apply_eq_of_isMIntegralCurveOn hs hγ (fun u _ ↦ by
-        simpa [Function.comp_def] using (hF (γ u)).fst.comp_mdifferentiableAt (hι (γ u))) ht₀ ht
-  · simpa using hJ.apply_eq_of_isMIntegralCurveOn hσ hs hγ
-      (fun u _ ↦ by
-        simpa [Function.comp_def] using (hF (γ u)).snd.comp_mdifferentiableAt (hι (γ u))) ht₀ ht
+  -- Each component of `F` is a first integral of the energy, and is smooth.
+  have h (i : Fin 2) := (hI.isFirstIntegral 0 i).apply_eq_of_isMIntegralCurveOn hσ hs hγ
+    (fun u _ ↦ ((contMDiff_pi_module_iff.1 hI.contMDiff i) (γ u)).mdifferentiableAt (by simp))
+    ht₀ ht
+  exact Prod.ext (by simpa using h 0) (by simpa using h 1)
 
 /-- Along a motion of the spherical pendulum, the height `q₃` moves with velocity `p₃`. -/
 theorem hasDerivWithinAt_fst_apply_two_of_isMIntegralCurveOn_sphericalPendulum
