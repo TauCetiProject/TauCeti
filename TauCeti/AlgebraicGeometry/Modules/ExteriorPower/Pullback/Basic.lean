@@ -177,6 +177,7 @@ instance isIso_pullbackExteriorPowerComparison_one :
 /-- In degree zero, the pullback comparison for modules on schemes is the identification
 `f^* 𝒪_Y ⟶ 𝒪_X` of `SheafOfModules.pullbackObjUnitToUnit`, read through the identifications
 `⋀⁰ M ≅ 𝒪`. -/
+@[reassoc]
 theorem pullbackExteriorPowerComparison_app_comp_exteriorPowerZeroIso (M : Y.Modules) :
     (pullbackExteriorPowerComparison f 0).app M ≫
         (SheafOfModules.exteriorPowerZeroIso X.sheaf).hom.app ((pullback f).obj M) =

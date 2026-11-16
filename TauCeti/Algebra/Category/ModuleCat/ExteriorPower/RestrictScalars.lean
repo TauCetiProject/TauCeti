@@ -166,16 +166,16 @@ theorem iso₀_hom_restrictScalarsExteriorPowerComparison_app_apply (M : ModuleC
   have hx : x = (ModuleCat.exteriorPower.iso₀ N).hom x •
       ModuleCat.exteriorPower.mk (M := N) Fin.elim0 := by
     apply (ModuleCat.exteriorPower.iso₀ N).toLinearEquiv.injective
-    -- `toLinearEquiv` of an isomorphism in `ModuleCat` applies its underlying morphism.
-    change (ModuleCat.exteriorPower.iso₀ N).hom x = (ModuleCat.exteriorPower.iso₀ N).hom (_ • _)
-    rw [map_smul, ModuleCat.exteriorPower.iso₀_hom_apply, smul_eq_mul, mul_one]
+    rw [Iso.toLinearEquiv_apply, Iso.toLinearEquiv_apply, map_smul,
+      ModuleCat.exteriorPower.iso₀_hom_apply, smul_eq_mul, mul_one]
   set c := (ModuleCat.exteriorPower.iso₀ N).hom x
   -- The action of `S` on the restricted exterior power is the action of `R` through `f`.
   have h₁ : (restrictScalarsExteriorPowerComparison.{u, u, u} f 0).app M
       (c • ModuleCat.exteriorPower.mk (M := N) Fin.elim0) =
         f c • ModuleCat.exteriorPower.mk (M := M) Fin.elim0 :=
     (map_smul ((restrictScalarsExteriorPowerComparison.{u, u, u} f 0).app M).hom c _).trans
-      (congrArg (c • ·) (restrictScalarsExteriorPowerComparison_app_mk f 0 M _))
+      ((congrArg (c • ·) (restrictScalarsExteriorPowerComparison_app_mk f 0 M _)).trans
+        (ModuleCat.restrictScalars.smul_def' f (M := M.exteriorPower 0) c _))
   refine (congrArg (ModuleCat.exteriorPower.iso₀ M).hom (hx ▸ h₁ :)).trans ?_
   rw [map_smul, ModuleCat.exteriorPower.iso₀_hom_apply, smul_eq_mul, mul_one]
 

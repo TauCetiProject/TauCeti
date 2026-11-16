@@ -97,6 +97,7 @@ instance isIso_pullbackSymmetricPowerComparison_one :
 /-- In degree zero, the pullback comparison for modules on schemes is the identification
 `f^* 𝒪_Y ⟶ 𝒪_X` of `SheafOfModules.pullbackObjUnitToUnit`, read through the identifications
 `Sym⁰ M ≅ 𝒪`. -/
+@[reassoc]
 theorem pullbackSymmetricPowerComparison_app_comp_symmetricPowerZeroIso (M : Y.Modules) :
     (pullbackSymmetricPowerComparison f 0).app M ≫
         (SheafOfModules.symmetricPowerZeroIso X.sheaf).hom.app ((pullback f).obj M) =

@@ -22,7 +22,7 @@ Its mate under an adjunction `G ⊣ φ_*` is the canonical natural map
 `G (Symⁿ M) ⟶ Symⁿ (G M)`. The adjunction is an explicit argument, so the same construction
 applies both to pullback of sheaves of modules and to pullback of modules on schemes. In degree
 one the comparison is an isomorphism for every such adjunction. In degree zero it is the transpose
-`G R ⟶ R` of the unit map `S ⟶ φ_* R`, which for pullback of sheaves of modules is
+`G S ⟶ R` of the unit map `S ⟶ φ_* R`, which for pullback of sheaves of modules is
 `SheafOfModules.pullbackObjUnitToUnit φ`. The pushforward comparison
 is invertible in every degree when the functor of sites is also cocontinuous and the
 coefficient-ring map is an isomorphism.
@@ -172,7 +172,8 @@ theorem pushforwardSymmetricPowerComparison_app_comp_map_symmetricPowerZeroIso
     (commRingCatHom φ) M.val).trans (congrArg (_ ≫ ·) (by
       -- Both unit maps act on sections by `φ`.
       ext U
-      exact TauCeti.PresheafOfModules.pushforward_ε_app_apply F (commRingCatHom φ) U 1))
+      exact (TauCeti.PresheafOfModules.pushforward_ε_app_apply F (commRingCatHom φ) U 1).trans
+        (unitToPushforwardObjUnit_val_app_apply φ (X := U) 1).symm))
 
 /-- Restriction along a continuous and cocontinuous functor with an isomorphism of coefficient
 sheaves preserves every symmetric power. -/
@@ -284,9 +285,9 @@ instance isIso_pullbackSymmetricPowerComparison_one :
     (pullbackSymmetricPowerComparison_app_comp_symmetricPowerOneIso adj M)]
   infer_instance
 
-/-- In degree zero, the pullback comparison is the transpose `G R ⟶ R` of the unit map
-`S ⟶ φ_* R`, read through the identifications `Sym⁰ M ≅ R`. For `G` the pullback of sheaves of
-modules this transpose is `SheafOfModules.pullbackObjUnitToUnit φ`. -/
+/-- In degree zero, the pullback comparison is the transpose `G S ⟶ R` of the unit map
+`S ⟶ φ_* R`, read through the identifications `Sym⁰ M ≅ S` and `Sym⁰ (G M) ≅ R`. For `G` the
+pullback of sheaves of modules this transpose is `SheafOfModules.pullbackObjUnitToUnit φ`. -/
 -- Not `@[simp]`: `symmetricPowerZeroIso_hom_app` unfolds the left-hand side.
 @[reassoc]
 theorem pullbackSymmetricPowerComparison_app_comp_symmetricPowerZeroIso
@@ -294,7 +295,8 @@ theorem pullbackSymmetricPowerComparison_app_comp_symmetricPowerZeroIso
     (pullbackSymmetricPowerComparison adj 0).app M ≫
         (symmetricPowerZeroIso R).hom.app (G.obj M) =
       G.map ((symmetricPowerZeroIso S).hom.app M) ≫
-        (adj.homEquiv _ _).symm (unitToPushforwardObjUnit φ) := by
+        (adj.homEquiv (unit (ringCatSheaf S)) (unit (ringCatSheaf R))).symm
+          (unitToPushforwardObjUnit φ) := by
   apply (adj.homEquiv _ _).injective
   rw [Adjunction.homEquiv_unit, Adjunction.homEquiv_unit, Functor.map_comp,
     unit_comp_pushforward_pullbackSymmetricPowerComparison_assoc,
@@ -305,16 +307,24 @@ theorem pullbackSymmetricPowerComparison_app_comp_symmetricPowerZeroIso
   exact ((symmetricPowerZeroIso S).hom.naturality_assoc _ _).trans
     (congrArg (_ ≫ ·) (Category.id_comp _))
 
-/-- The pullback comparison is an isomorphism in degree zero whenever the transpose `G R ⟶ R` of
+/-- The pullback comparison is an isomorphism in degree zero whenever the transpose `G S ⟶ R` of
 the unit map `S ⟶ φ_* R` is. -/
 theorem isIso_pullbackSymmetricPowerComparison_zero
-    (h : IsIso ((adj.homEquiv _ _).symm (unitToPushforwardObjUnit φ))) :
+    (h : IsIso ((adj.homEquiv (unit (ringCatSheaf S)) (unit (ringCatSheaf R))).symm
+      (unitToPushforwardObjUnit φ))) :
     IsIso (pullbackSymmetricPowerComparison adj 0) := by
   rw [NatTrans.isIso_iff_isIso_app]
   intro M
   rw [(Iso.eq_comp_inv ((symmetricPowerZeroIso R).app _)).mpr
     (pullbackSymmetricPowerComparison_app_comp_symmetricPowerZeroIso adj M)]
   exact IsIso.comp_isIso' (IsIso.comp_isIso' inferInstance h) inferInstance
+
+/-- The comparison for pullback of sheaves of modules is an isomorphism in degree zero whenever
+`SheafOfModules.pullbackObjUnitToUnit φ` is, for instance when the functor of sites is final. -/
+instance isIso_pullbackSymmetricPowerComparison_zero_of_isIso_pullbackObjUnitToUnit
+    [(pushforward.{u} φ).IsRightAdjoint] [h : IsIso (pullbackObjUnitToUnit φ)] :
+    IsIso (pullbackSymmetricPowerComparison (pullbackPushforwardAdjunction.{u} φ) 0) :=
+  isIso_pullbackSymmetricPowerComparison_zero (pullbackPushforwardAdjunction.{u} φ) h
 
 end
 
