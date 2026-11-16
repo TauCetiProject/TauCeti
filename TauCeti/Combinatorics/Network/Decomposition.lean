@@ -114,6 +114,37 @@ structure WeightedClosedWalk (Q : V → V → Type v) (K : Type w) where
   /-- The weight of the closed walk. -/
   weight : K
 
+/-- Two weighted walks are equal when their endpoints, walks after transporting those endpoints,
+and weights are equal. -/
+@[ext (iff := false)]
+theorem WeightedWalk.ext {p₁ p₂ : WeightedWalk Q K}
+    (hsource : p₁.source = p₂.source) (htarget : p₁.target = p₂.target)
+    (hwalk : @Quiver.Path.cast V ⟨Q⟩ _ _ _ _ hsource htarget p₁.walk = p₂.walk)
+    (hweight : p₁.weight = p₂.weight) : p₁ = p₂ := by
+  obtain ⟨s₁, t₁, p₁, q₁⟩ := p₁
+  obtain ⟨s₂, t₂, p₂, q₂⟩ := p₂
+  dsimp at hsource htarget hwalk hweight
+  cases hsource
+  cases htarget
+  cases hwalk
+  cases hweight
+  rfl
+
+/-- Two weighted closed walks are equal when their bases, walks after transporting those bases,
+and weights are equal. -/
+@[ext (iff := false)]
+theorem WeightedClosedWalk.ext {c₁ c₂ : WeightedClosedWalk Q K}
+    (hbase : c₁.base = c₂.base)
+    (hwalk : @Quiver.Path.cast V ⟨Q⟩ _ _ _ _ hbase hbase c₁.walk = c₂.walk)
+    (hweight : c₁.weight = c₂.weight) : c₁ = c₂ := by
+  obtain ⟨s₁, p₁, q₁⟩ := c₁
+  obtain ⟨s₂, p₂, q₂⟩ := c₂
+  dsimp at hbase hwalk hweight
+  cases hbase
+  cases hwalk
+  cases hweight
+  rfl
+
 section AddCommMonoid
 
 variable [AddCommMonoid K]
