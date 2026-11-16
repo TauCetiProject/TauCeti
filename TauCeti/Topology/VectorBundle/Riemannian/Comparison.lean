@@ -14,10 +14,11 @@ import TauCeti.Topology.VectorBundle.Hom
 /-!
 # Uniform comparison of metrics over compact sets
 
-In a continuous Riemannian vector bundle, a continuously varying family of bilinear forms on the
-fibres has locally bounded operator norm for the given fibre inner products, so it is uniformly
-bounded over a compact set. When the fibres are finite-dimensional, a continuous family that is
-positive definite at every point of a compact set is moreover uniformly coercive there:
+For continuous Riemannian vector bundles `E₁` and `E₂`, a continuously varying family of bilinear
+maps from the fibres of `E₁` and `E₂` to a normed space has locally bounded operator norm for the
+given fibre inner products, so it is uniformly bounded over a compact set. For bilinear forms on
+the fibres of one bundle with finite-dimensional fibres, a continuous family that is positive
+definite at every point of a compact set is moreover uniformly coercive there:
 `c ‖v‖² ≤ φ v v` for one constant `c > 0`. The families may lie over a map `b : X → B`, so that a
 parameter of the family, such as the time of a family of metrics, can be part of the compact set.
 
@@ -29,17 +30,18 @@ compact base every continuous metric is uniformly equivalent to a fixed referenc
 how norms of tensor fields measured by different metrics, or by the metrics of a family at
 different times, are compared.
 
-Each local bound is read off in the trivialization at a point, where the family of forms has
-continuous coordinates and the trivialization and its inverse are locally bounded in norm. This
-follows the coordinate argument of Mathlib's `eventually_norm_symmL_trivializationAt_self_comp_lt`.
+Each local bound is read off in the trivializations at a point, where the family has continuous
+coordinates and the trivializations and their inverses are locally bounded in norm. This follows
+the coordinate argument of Mathlib's `eventually_norm_symmL_trivializationAt_self_comp_lt`.
 The upper bounds need no finite dimensionality; the coercivity of the coordinate form at the
 point uses `IsCompact.exists_pos_forall_mul_norm_sq_le` on the finite-dimensional model fibre.
 
 ## Main results
 
 * `ContinuousWithinAt.exists_eventually_norm_le_bundle` and
-  `IsCompact.exists_bound_of_continuousOn_bundle`: a continuous family of bilinear forms has
-  locally bounded operator norm, and bounded operator norm on a compact set.
+  `IsCompact.exists_bound_of_continuousOn_bundle`: a continuous family of bilinear maps on the
+  fibres of two continuous Riemannian bundles has locally bounded operator norm, and bounded
+  operator norm on a compact set.
 * `ContinuousWithinAt.exists_pos_eventually_mul_norm_sq_le_bundle` and
   `IsCompact.exists_pos_forall_mul_norm_sq_le_bundle`: a continuous family of positive definite
   bilinear forms on finite-dimensional fibres is locally uniformly coercive, and uniformly
@@ -75,52 +77,70 @@ private theorem IsCompact.exists_forall_of_forall_exists_eventually {X : Type*}
 
 section Norm
 
-variable [∀ x, NormedAddCommGroup (E x)] [∀ x, InnerProductSpace ℝ (E x)] [FiberBundle F E]
-  [VectorBundle ℝ F E] [IsContinuousRiemannianBundle F E]
-  {X : Type*} [TopologicalSpace X] {b : X → B} {φ : ∀ y, E (b y) →L[ℝ] E (b y) →L[ℝ] ℝ}
+variable {X : Type*} [TopologicalSpace X] {b : X → B}
 
-/-- **Local boundedness of a continuous family of bilinear forms.** In a continuous Riemannian
-bundle, a family of bilinear forms on the fibres over a map `b`, continuous within `s` at `y₀`, has
-operator norm bounded on a neighbourhood of `y₀` within `s`. -/
+section Bound
+
+variable
+  {F₁ : Type*} [NormedAddCommGroup F₁] [NormedSpace ℝ F₁] {E₁ : B → Type*}
+  [TopologicalSpace (TotalSpace F₁ E₁)] [∀ x, NormedAddCommGroup (E₁ x)]
+  [∀ x, InnerProductSpace ℝ (E₁ x)] [FiberBundle F₁ E₁] [VectorBundle ℝ F₁ E₁]
+  [IsContinuousRiemannianBundle F₁ E₁]
+  {F₂ : Type*} [NormedAddCommGroup F₂] [NormedSpace ℝ F₂] {E₂ : B → Type*}
+  [TopologicalSpace (TotalSpace F₂ E₂)] [∀ x, NormedAddCommGroup (E₂ x)]
+  [∀ x, InnerProductSpace ℝ (E₂ x)] [FiberBundle F₂ E₂] [VectorBundle ℝ F₂ E₂]
+  [IsContinuousRiemannianBundle F₂ E₂]
+  {G : Type*} [NormedAddCommGroup G] [NormedSpace ℝ G]
+  {φ : ∀ y, E₁ (b y) →L[ℝ] E₂ (b y) →L[ℝ] G}
+
+/-- **Local boundedness of a continuous family of bilinear maps.** For continuous Riemannian
+bundles `E₁` and `E₂`, a family of bilinear maps `E₁ × E₂ → G` on the fibres over a map `b`,
+continuous within `s` at `y₀`, has operator norm bounded on a neighbourhood of `y₀` within `s`. -/
 theorem ContinuousWithinAt.exists_eventually_norm_le_bundle {s : Set X} {y₀ : X}
-    (hφ : ContinuousWithinAt (fun y ↦ TotalSpace.mk' (F →L[ℝ] F →L[ℝ] ℝ)
-      (E := fun x ↦ E x →L[ℝ] E x →L[ℝ] ℝ) (b y) (φ y)) s y₀) :
+    (hφ : ContinuousWithinAt (fun y ↦ TotalSpace.mk' (F₁ →L[ℝ] F₂ →L[ℝ] G)
+      (E := fun x ↦ E₁ x →L[ℝ] E₂ x →L[ℝ] G) (b y) (φ y)) s y₀) :
     ∃ C, ∀ᶠ y in 𝓝[s] y₀, ‖φ y‖ ≤ C := by
   rw [continuousWithinAt_hom_bundle] at hφ
-  obtain ⟨hb, hG⟩ := hφ
-  set e := trivializationAt F E (b y₀)
-  -- `G y` is the form `φ y` read in the trivialization `e` at `b y₀`.
-  set G : X → F →L[ℝ] F →L[ℝ] ℝ := fun y ↦
-    inCoordinates F E (F →L[ℝ] ℝ) (fun x ↦ E x →L[ℝ] ℝ) (b y₀) (b y) (b y₀) (b y) (φ y)
-  obtain ⟨C, hC, hCe⟩ := eventually_norm_trivializationAt_lt F E (b y₀)
-  have hbase : ∀ᶠ y in 𝓝[s] y₀, b y ∈ e.baseSet :=
-    hb.eventually_mem (e.open_baseSet.mem_nhds (FiberBundle.mem_baseSet_trivializationAt' _))
-  refine ⟨(‖G y₀‖ + 1) * C * C, ?_⟩
-  filter_upwards [hb.eventually hCe, hbase, hG.norm.eventually (gt_mem_nhds (lt_add_one _))]
-    with y hyC hyb hyG
+  obtain ⟨hb, hΦ⟩ := hφ
+  set e₁ := trivializationAt F₁ E₁ (b y₀)
+  set e₂ := trivializationAt F₂ E₂ (b y₀)
+  -- `Φ y` is the map `φ y` read in the trivializations `e₁` and `e₂` at `b y₀`.
+  set Φ : X → F₁ →L[ℝ] F₂ →L[ℝ] G := fun y ↦
+    inCoordinates F₁ E₁ (F₂ →L[ℝ] G) (fun x ↦ E₂ x →L[ℝ] G) (b y₀) (b y) (b y₀) (b y) (φ y)
+  obtain ⟨C₁, hC₁, hC₁e⟩ := eventually_norm_trivializationAt_lt F₁ E₁ (b y₀)
+  obtain ⟨C₂, hC₂, hC₂e⟩ := eventually_norm_trivializationAt_lt F₂ E₂ (b y₀)
+  have hbase₁ : ∀ᶠ y in 𝓝[s] y₀, b y ∈ e₁.baseSet :=
+    hb.eventually_mem (e₁.open_baseSet.mem_nhds (FiberBundle.mem_baseSet_trivializationAt' _))
+  have hbase₂ : ∀ᶠ y in 𝓝[s] y₀, b y ∈ e₂.baseSet :=
+    hb.eventually_mem (e₂.open_baseSet.mem_nhds (FiberBundle.mem_baseSet_trivializationAt' _))
+  refine ⟨(‖Φ y₀‖ + 1) * C₁ * C₂, ?_⟩
+  filter_upwards [hb.eventually hC₁e, hb.eventually hC₂e, hbase₁, hbase₂,
+    hΦ.norm.eventually (gt_mem_nhds (lt_add_one _))] with y hy₁ hy₂ hyb₁ hyb₂ hyΦ
   refine opNorm_le_bound₂ _ (by positivity) fun v w ↦ ?_
-  have hev (u : E (b y)) : ‖e.continuousLinearMapAt ℝ (b y) u‖ ≤ C * ‖u‖ :=
-    le_of_opNorm_le _ hyC.le u
-  rw [← inCoordinates_apply_continuousLinearMapAt₂_eq_apply hyb hyb]
-  calc ‖G y (e.continuousLinearMapAt ℝ (b y) v) (e.continuousLinearMapAt ℝ (b y) w)‖
-      ≤ ‖G y‖ * ‖e.continuousLinearMapAt ℝ (b y) v‖ * ‖e.continuousLinearMapAt ℝ (b y) w‖ :=
+  rw [← inCoordinates_apply_continuousLinearMapAt₂_eq_apply hyb₁ hyb₂]
+  calc ‖Φ y (e₁.continuousLinearMapAt ℝ (b y) v) (e₂.continuousLinearMapAt ℝ (b y) w)‖
+      ≤ ‖Φ y‖ * ‖e₁.continuousLinearMapAt ℝ (b y) v‖ * ‖e₂.continuousLinearMapAt ℝ (b y) w‖ :=
         le_opNorm₂ _ _ _
-    _ ≤ (‖G y₀‖ + 1) * (C * ‖v‖) * (C * ‖w‖) := by
+    _ ≤ (‖Φ y₀‖ + 1) * (C₁ * ‖v‖) * (C₂ * ‖w‖) := by
         gcongr
-        exacts [hev v, hev w]
-    _ = (‖G y₀‖ + 1) * C * C * ‖v‖ * ‖w‖ := by ring
+        exacts [le_of_opNorm_le _ hy₁.le v, le_of_opNorm_le _ hy₂.le w]
+    _ = (‖Φ y₀‖ + 1) * C₁ * C₂ * ‖v‖ * ‖w‖ := by ring
 
-/-- **A continuous family of bilinear forms is bounded on a compact set.** In a continuous
-Riemannian bundle, a family of bilinear forms on the fibres over a map `b`, continuous on a compact
-set `K`, has operator norm bounded on `K`. -/
+/-- **A continuous family of bilinear maps is bounded on a compact set.** For continuous
+Riemannian bundles `E₁` and `E₂`, a family of bilinear maps `E₁ × E₂ → G` on the fibres over a map
+`b`, continuous on a compact set `K`, has operator norm bounded on `K`. -/
 theorem IsCompact.exists_bound_of_continuousOn_bundle {K : Set X} (hK : IsCompact K)
-    (hφ : ContinuousOn (fun y ↦ TotalSpace.mk' (F →L[ℝ] F →L[ℝ] ℝ)
-      (E := fun x ↦ E x →L[ℝ] E x →L[ℝ] ℝ) (b y) (φ y)) K) :
+    (hφ : ContinuousOn (fun y ↦ TotalSpace.mk' (F₁ →L[ℝ] F₂ →L[ℝ] G)
+      (E := fun x ↦ E₁ x →L[ℝ] E₂ x →L[ℝ] G) (b y) (φ y)) K) :
     ∃ C, ∀ y ∈ K, ‖φ y‖ ≤ C :=
   hK.exists_forall_of_forall_exists_eventually (p := fun C y ↦ ‖φ y‖ ≤ C)
     (fun _ _ hab _ h ↦ h.trans hab) fun y hy ↦ (hφ y hy).exists_eventually_norm_le_bundle
 
-variable [FiniteDimensional ℝ F]
+end Bound
+
+variable [∀ x, NormedAddCommGroup (E x)] [∀ x, InnerProductSpace ℝ (E x)] [FiberBundle F E]
+  [VectorBundle ℝ F E] [IsContinuousRiemannianBundle F E] [FiniteDimensional ℝ F]
+  {φ : ∀ y, E (b y) →L[ℝ] E (b y) →L[ℝ] ℝ}
 
 /-- **Local uniform coercivity of a continuous family of bilinear forms.** In a continuous
 Riemannian bundle with finite-dimensional fibres, let a family of bilinear forms on the fibres over

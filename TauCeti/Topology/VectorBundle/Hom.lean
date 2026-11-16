@@ -43,8 +43,8 @@ section through the local trivializations of the two charts
 
 In the trivializations at a point, the coordinate expression of a bilinear fibre map evaluated on
 the coordinates of two fibre vectors is the coordinate of its value on them
-(`ContinuousLinearMap.inCoordinates_apply_continuousLinearMapAt₂`); for a scalar-valued bilinear
-fibre map this is its value on the two fibre vectors
+(`ContinuousLinearMap.inCoordinates_apply_continuousLinearMapAt₂`); for a bilinear fibre map with
+values in a fixed space this is its value on the two fibre vectors
 (`ContinuousLinearMap.inCoordinates_apply_continuousLinearMapAt₂_eq_apply`).
 
 The coordinate argument uses `ContinuousLinearMap.inCoordinates_inverse` and parallels
@@ -614,15 +614,15 @@ theorem ContinuousLinearMap.inCoordinates_apply_continuousLinearMapAt₂ {x₀ x
       Trivialization.linearMapAt_def_of_notMem _ h₃]
 
 /-- Over the base sets of the source trivializations at `x₀`, the coordinate expression of a
-scalar-valued bilinear fibre map, evaluated on the coordinates of two fibre vectors, is the value
-of the fibre map on them. -/
+bilinear fibre map with values in a fixed space, evaluated on the coordinates of two fibre vectors,
+is the value of the fibre map on them. -/
 theorem ContinuousLinearMap.inCoordinates_apply_continuousLinearMapAt₂_eq_apply {x₀ x : B}
     (h₁ : x ∈ (trivializationAt F₁ E₁ x₀).baseSet) (h₂ : x ∈ (trivializationAt F₂ E₂ x₀).baseSet)
-    (ϕ : E₁ x →L[𝕜] E₂ x →L[𝕜] 𝕜) (v : E₁ x) (w : E₂ x) :
-    inCoordinates F₁ E₁ (F₂ →L[𝕜] 𝕜) (fun x ↦ E₂ x →L[𝕜] 𝕜) x₀ x x₀ x ϕ
+    (ϕ : E₁ x →L[𝕜] E₂ x →L[𝕜] F₃) (v : E₁ x) (w : E₂ x) :
+    inCoordinates F₁ E₁ (F₂ →L[𝕜] F₃) (fun x ↦ E₂ x →L[𝕜] F₃) x₀ x x₀ x ϕ
         ((trivializationAt F₁ E₁ x₀).continuousLinearMapAt 𝕜 x v)
         ((trivializationAt F₂ E₂ x₀).continuousLinearMapAt 𝕜 x w) = ϕ v w := by
-  rw [inCoordinates_apply_continuousLinearMapAt₂ (E₃ := Bundle.Trivial B 𝕜) h₁ h₂]
+  rw [inCoordinates_apply_continuousLinearMapAt₂ (E₃ := Bundle.Trivial B F₃) h₁ h₂]
   simp
 
 end TwoVariables
