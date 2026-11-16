@@ -47,6 +47,10 @@ topology for the subspace topology (`LinearMap.isStrictMap_of_isModuleTopology_r
 Restriction of scalars along a finite algebra carrying the module topology preserves the
 module topology (`IsModuleTopology.restrictScalars`). No finiteness of the module is needed.
 
+Every `R`-linear endomorphism and automorphism acts continuously on a module carrying its
+`R`-module topology (`TauCeti.instContinuousConstSMulLinearMapOfIsModuleTopology`,
+`TauCeti.instContinuousConstSMulLinearEquivOfIsModuleTopology`).
+
 The basis-dependent API is grouped in `TauCeti.ModuleTopology`, alongside Mathlib's
 organizational `ModuleTopology` namespace.
 -/
@@ -349,6 +353,27 @@ instance instIsTopologicalAddGroupTensorProductOfIsModuleTopology
     [TopologicalSpace (TensorProduct 𝕜 M N)] [IsModuleTopology 𝕜 (TensorProduct 𝕜 M N)] :
     IsTopologicalAddGroup (TensorProduct 𝕜 M N) :=
   IsModuleTopology.isTopologicalAddGroup 𝕜 (TensorProduct 𝕜 M N)
+
+section ContinuousConstSMul
+
+variable {R V : Type*} [Semiring R] [TopologicalSpace R]
+  [AddCommMonoid V] [Module R V] [TopologicalSpace V] [IsModuleTopology R V]
+
+/-- Every `R`-linear endomorphism acts continuously on a module carrying its `R`-module topology;
+via `Units.continuousConstSMul`, this also equips `LinearMap.GeneralLinearGroup R V` with a
+`ContinuousConstSMul` instance on `V`. -/
+instance instContinuousConstSMulLinearMapOfIsModuleTopology :
+    ContinuousConstSMul (V →ₗ[R] V) V :=
+  have := IsModuleTopology.toContinuousAdd R V
+  ⟨fun f ↦ IsModuleTopology.continuous_of_linearMap f⟩
+
+/-- Every `R`-linear automorphism acts continuously on a module carrying its `R`-module topology. -/
+instance instContinuousConstSMulLinearEquivOfIsModuleTopology :
+    ContinuousConstSMul (V ≃ₗ[R] V) V :=
+  have := IsModuleTopology.toContinuousAdd R V
+  ⟨fun T ↦ IsModuleTopology.continuous_of_linearMap (T : V →ₗ[R] V)⟩
+
+end ContinuousConstSMul
 
 end TauCeti
 

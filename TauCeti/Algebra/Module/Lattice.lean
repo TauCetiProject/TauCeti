@@ -40,7 +40,7 @@ space over the fraction field.
 * `Submodule.toAddSubgroup_submoduleOf`: taking the underlying additive subgroup commutes
   with restricting a submodule to another submodule.
 * `Submodule.isLattice_span`: the span of a finite set spanning the ambient module is a full
-  lattice.
+  lattice; `Module.Basis.isLattice_span_range` specializes this to the span of a finite basis.
 * `Module.Finite.of_isLattice`: a module containing a full lattice is finite.
 * `Submodule.finrank_eq_finrank`: a full lattice and its ambient space have the
   same finrank.
@@ -360,6 +360,12 @@ theorem isLattice_span {s : Set V} (hs : s.Finite) (hspan : span A s = ⊤) :
     (span R s).IsLattice A where
   fg := ⟨hs.toFinset, by simp⟩
   span_eq_top := by rw [span_span_of_tower, hspan]
+
+/-- The `R`-span of a finite `A`-basis `b` of `V` is a full `A`-lattice. -/
+instance _root_.Module.Basis.isLattice_span_range {ι : Type*} [Finite ι]
+    (b : Module.Basis ι A V) :
+    (span R (Set.range b)).IsLattice A :=
+  isLattice_span (Set.finite_range b) b.span_eq
 
 end Span
 

@@ -16,9 +16,10 @@ neighbourhood `𝓝[≠] x` is nontrivial. Around `0`, every basic open ball `{y
 contains a nonzero element of valuation `δ * γ < γ` where `0 < δ < 1`, and translation transports
 this to every `x : K`.
 
-This is the valuative counterpart of `NormedField.punctured_nhds_neBot`; in particular, it triggers
+This is the valuative counterpart of `NormedField.nhdsNE_neBot`; in particular, it triggers
 Mathlib's `MeasureTheory.Measure.IsAddHaarMeasure.nullSingletonClass` on nonarchimedean local
-fields and `Module.punctured_nhds_neBot` on nontrivial vector spaces over `K`.
+fields and supplies the `[NeBot (𝓝[≠] (0 : K))]` assumption of `Module.punctured_nhds_neBot` for
+nontrivial topological vector spaces over `K`.
 
 ## Main declarations
 

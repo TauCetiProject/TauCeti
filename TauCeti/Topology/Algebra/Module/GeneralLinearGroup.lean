@@ -275,23 +275,4 @@ theorem continuous_linearEquiv_det :
 
 end Det
 
-section ContinuousConstSMul
-
-variable {R V : Type*} [Semiring R] [TopologicalSpace R]
-  [AddCommMonoid V] [Module R V] [TopologicalSpace V] [ContinuousAdd V] [IsModuleTopology R V]
-
-/-- Every `R`-linear endomorphism acts continuously on a module carrying its `R`-module topology;
-via `Units.continuousConstSMul`, this also equips `LinearMap.GeneralLinearGroup R V` with a
-`ContinuousConstSMul` instance on `V`. -/
-instance instContinuousConstSMulLinearMapOfIsModuleTopology :
-    ContinuousConstSMul (V →ₗ[R] V) V :=
-  ⟨fun f ↦ IsModuleTopology.continuous_of_linearMap f⟩
-
-/-- Every `R`-linear automorphism acts continuously on a module carrying its `R`-module topology. -/
-instance instContinuousConstSMulLinearEquivOfIsModuleTopology :
-    ContinuousConstSMul (V ≃ₗ[R] V) V :=
-  ⟨fun T ↦ IsModuleTopology.continuous_of_linearMap (T : V →ₗ[R] V)⟩
-
-end ContinuousConstSMul
-
 end TauCeti
