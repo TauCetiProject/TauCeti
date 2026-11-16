@@ -279,6 +279,7 @@ theorem smoothSectionFiberMap_smul (x : M) (f : C^∞⟮I, M; ℝ⟯)
     simp [ContMDiffSection.smul_apply]
 
 /-- Fibre maps compose: the fibre map of `L ∘ L'` is the composition of the fibre maps. -/
+@[simp]
 theorem smoothSectionFiberMap_comp [FiniteDimensional ℝ F'] [ContMDiffVectorBundle ∞ F' W I]
     {F'' : Type*} [NormedAddCommGroup F''] [NormedSpace ℝ F'']
     {U : M → Type*} [TopologicalSpace (TotalSpace F'' U)]
