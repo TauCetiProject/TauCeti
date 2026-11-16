@@ -10,8 +10,6 @@ public import TauCeti.FieldTheory.FunctionField.ConstantExtension.Basic
 import Mathlib.FieldTheory.PurelyInseparable.PerfectClosure
 -- Proof-only: a spanning family with as many elements as the dimension is independent.
 import Mathlib.LinearAlgebra.Dimension.OrzechProperty
--- Proof-only: membership in the preimage of an intermediate field.
-import TauCeti.FieldTheory.IntermediateField.Map
 
 /-!
 # Bases of constants in a constant field extension

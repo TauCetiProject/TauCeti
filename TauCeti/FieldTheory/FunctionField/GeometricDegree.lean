@@ -447,6 +447,7 @@ theorem finrank_constantCompositum_eq_finrank_of_linearDisjoint
 variable {F k' F'} in
 /-- Under linear disjointness, a constant `c ∈ k'` lies in the compositum `F · M` of a
 subextension `M` of `k' / k` exactly when it lies in `M`. -/
+@[simp]
 theorem algebraMap_mem_constantCompositum_iff_of_linearDisjoint
     (H : (IsScalarTower.toAlgHom k k' F').fieldRange.LinearDisjoint F)
     {M : IntermediateField k k'} {m : k'} :
