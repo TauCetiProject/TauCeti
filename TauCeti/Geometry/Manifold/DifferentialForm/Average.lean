@@ -133,8 +133,10 @@ private theorem averageModel_smul (c : ℝ) (α : SmoothForm I M F k) (x : M) :
     averageModel μ (c • α) x = c • averageModel μ α x := by
   have h (a : G) : pullbackSMulForm (c • α) a x = c • pullbackSMulForm α a x := by
     unfold pullbackSMulForm
-    rw [Submodule.coe_smul, mpullback_smul]
-    rfl
+    rw [Submodule.coe_smul, mpullback_smul, Pi.smul_apply]
+    -- The sides differ only by the `@id` ascription in `pullbackSMulForm`, which reads the
+    -- fibre `T_x M [⋀^Fin k]→L[ℝ] F` as `E [⋀^Fin k]→L[ℝ] F` definitionally.
+    exact id_eq _
   simp only [averageModel, h]
   exact integral_smul c _
 
@@ -202,8 +204,10 @@ private theorem averageModel_add (α β : SmoothForm I M F k) (x : M) :
   have h (a : G) :
       pullbackSMulForm (α + β) a x = pullbackSMulForm α a x + pullbackSMulForm β a x := by
     unfold pullbackSMulForm
-    rw [Submodule.coe_add, mpullback_add]
-    rfl
+    rw [Submodule.coe_add, mpullback_add, Pi.add_apply]
+    -- The sides differ only by the `@id` ascription in `pullbackSMulForm`, which reads the
+    -- fibre `T_x M [⋀^Fin k]→L[ℝ] F` as `E [⋀^Fin k]→L[ℝ] F` definitionally.
+    exact id_eq _
   simp only [averageModel, h]
   exact integral_add (integrable_pullbackSMulForm J μ α x) (integrable_pullbackSMulForm J μ β x)
 
@@ -379,7 +383,7 @@ theorem mextDerivₗ_measureAverage (α : SmoothForm I M F k) :
 theorem IsClosed.measureAverage {α : SmoothForm I M F k} (hα : α.IsClosed) :
     (measureAverage J μ α).IsClosed := by
   have h0 : mextDerivₗ I k α = 0 :=
-    Subtype.ext (by rw [mextDerivₗ_apply, (isClosed_def α).mp hα]; rfl)
+    Subtype.ext (by rw [mextDerivₗ_apply, (isClosed_def α).mp hα, Submodule.coe_zero])
   have h := congrArg Subtype.val (mextDerivₗ_measureAverage J μ α)
   rw [h0, map_zero, mextDerivₗ_apply] at h
   exact (isClosed_def _).mpr h
