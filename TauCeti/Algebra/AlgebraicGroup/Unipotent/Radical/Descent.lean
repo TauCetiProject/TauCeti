@@ -283,10 +283,14 @@ extension `K / k`: the scalar extension of the coordinate Hopf algebra of `R_{u,
 canonically isomorphic to the coordinate Hopf algebra of `R_{u,K}(G_K)`. -/
 def unipotentRadicalBaseChangeIso (H : FiniteTypeCommHopfAlgCat.{u, u} k) :
     baseChange (K := K) (unipotentRadical H) ≅ unipotentRadical (baseChange (K := K) H) :=
-  ObjectProperty.isoMk _
-    (CommHopfAlgCat.quotientBaseChangeIso (K := K) (unipotentRadicalDefiningIdeal H)).symm ≪≫
-    eqToIso (congrArg (quotient (baseChange (K := K) H))
-      (baseChangeHopfIdeal_unipotentRadicalDefiningIdeal (K := K) H))
+  ObjectProperty.isoMk _ <|
+    CommHopfAlgCat.quotientBaseChangeIsoOfMapEq
+      (unipotentRadicalDefiningIdeal H)
+      (unipotentRadicalDefiningIdeal (baseChange (K := K) H))
+      (Iso.refl (CommHopfAlgCat.baseChange (K := K) H.obj))
+      (by
+        rw [Iso.refl_hom, ← _root_.CommHopfAlgCat.ofHom_id, _root_.CommHopfAlgCat.hom_ofHom,
+          HopfIdeal.map_id, baseChangeHopfIdeal_unipotentRadicalDefiningIdeal])
 
 /-- The unipotent-radical base-change isomorphism commutes with the coordinate quotient maps. -/
 @[reassoc (attr := simp)]
@@ -295,21 +299,11 @@ theorem baseChangeMap_unipotentRadicalCoordinateMap_comp_unipotentRadicalBaseCha
     baseChangeMap (K := K) (unipotentRadicalCoordinateMap H) ≫
         (unipotentRadicalBaseChangeIso (K := K) H).hom =
       unipotentRadicalCoordinateMap (baseChange (K := K) H) := by
-  rw [unipotentRadicalBaseChangeIso, Iso.trans_hom, eqToIso.hom,
-    unipotentRadicalCoordinateMap_def, unipotentRadicalCoordinateMap_def, ← Category.assoc]
-  have hinv : baseChangeMap (K := K) (mkQuotient H (unipotentRadicalDefiningIdeal H)) ≫
-      (ObjectProperty.isoMk (finiteTypeCommHopfAlgProperty K)
-        (CommHopfAlgCat.quotientBaseChangeIso (K := K)
-          (unipotentRadicalDefiningIdeal H)).symm).hom =
-      mkQuotient (baseChange (K := K) H)
-        (CommHopfAlgCat.baseChangeHopfIdeal (K := K) (unipotentRadicalDefiningIdeal H)) := by
-    apply (forget₂ (FiniteTypeCommHopfAlgCat.{u, u} K)
-      (_root_.CommHopfAlgCat.{u} K)).map_injective
-    rw [Functor.map_comp, ← cancel_mono
-      (CommHopfAlgCat.quotientBaseChangeIso (K := K) (unipotentRadicalDefiningIdeal H)).hom]
-    exact (Category.assoc _ _ _).trans (by simp)
-  rw [hinv, mkQuotient_comp_eqToHom
-    (baseChangeHopfIdeal_unipotentRadicalDefiningIdeal (K := K) H).symm]
+  apply ObjectProperty.hom_ext
+  simp only [unipotentRadicalBaseChangeIso, ObjectProperty.FullSubcategory.comp_hom,
+    ObjectProperty.isoMk_hom, unipotentRadicalCoordinateMap_def, ObjectProperty.homMk_hom,
+    CommHopfAlgCat.baseChangeMap_mkQuotient_comp_quotientBaseChangeIsoOfMapEq_hom,
+    Iso.refl_hom, Category.id_comp]
 
 /-- The inverse unipotent-radical base-change isomorphism commutes with the coordinate quotient
 maps. -/
