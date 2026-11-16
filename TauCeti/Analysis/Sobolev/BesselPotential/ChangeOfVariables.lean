@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Analysis.Distribution.TemperedDistribution.ChangeOfVariables
 public import TauCeti.Analysis.Sobolev.BesselPotential.Basic
+public import TauCeti.Analysis.Sobolev.BesselPotential.Extension
 public import TauCeti.Analysis.Sobolev.BesselPotential.Schwartz
 public import TauCeti.Analysis.Sobolev.Wkp.ChangeOfVariables
 import Mathlib.Analysis.Normed.Operator.Extend
@@ -15,6 +16,7 @@ import TauCeti.Analysis.Sobolev.BesselPotential.ComplexInterpolation
 import TauCeti.Analysis.Sobolev.BesselPotential.Duality
 import TauCeti.Analysis.Sobolev.BesselPotential.Inclusion
 import TauCeti.Analysis.Sobolev.BesselPotential.SmoothMultiplier
+import TauCeti.MeasureTheory.Function.Jacobian.Equiv
 import TauCeti.MeasureTheory.Function.Lp.CastMeasure
 
 /-!
@@ -46,8 +48,8 @@ The bound `‖u ∘ φ‖_{H^s} ≤ C ‖u‖_{H^s}` is first proved on Schwartz
 (`SchwartzMap.exists_norm_toBesselPotentialSpaceCLM_compCLM_le`), in three steps.
 
 * **Nonnegative integer orders**, by induction. At order `0` it is the change of variables formula
-  with the bound on `|det Dφ⁻¹|` (`SchwartzMap.integral_norm_comp_sq_le`). Raising the order by one
-  adds the first derivatives, `‖v‖²_{H^{k+1}} = ‖v‖²_{H^k} + (2π)⁻² ∑ᵢ ‖∂ᵢ v‖²_{H^k}`
+  with the bound on `|det Dφ⁻¹|` (`TauCeti.integral_comp_equiv_le_mul_integral`). Raising the order
+  by one adds the first derivatives, `‖v‖²_{H^{k+1}} = ‖v‖²_{H^k} + (2π)⁻² ∑ᵢ ‖∂ᵢ v‖²_{H^k}`
   (`SchwartzMap.norm_toBesselPotentialSpaceCLM_add_one_sq`), and by the chain rule
   `∂ᵢ (u ∘ φ) = ∑ⱼ ⟪bⱼ, Dφ bᵢ⟫ (∂ⱼ u) ∘ φ` (`SchwartzMap.lineDerivOp_compCLM`), whose coefficients
   are bounded multipliers on `H^k`
@@ -75,6 +77,8 @@ pullback of tempered distributions.
 * `TemperedDistribution.MemSobolev.compCLM`: the pullback preserves `H^s`.
 * `BesselPotentialSpace.compCLM`, `BesselPotentialSpace.compEquiv`: the pullback as a bounded
   operator and as a continuous linear automorphism of `H^s`.
+* `SchwartzMap.hasSobolevExtension_compCLM`: composition with `φ` on Schwartz functions extends to
+  `H^s → H^s`, in the form `SchwartzMap.HasSobolevExtension` used for composing Sobolev estimates.
 
 ## References
 
@@ -171,11 +175,11 @@ private theorem exists_sq_bound_compCLM_succ
       ‖toBesselPotentialSpaceCLM k 2
         (smulLeftCLM F (fun x ↦ ((⟪b j, fderiv ℝ φ x (b i)⟫ : ℝ) : ℂ)) w)‖ ≤
         c * ‖toBesselPotentialSpaceCLM k 2 w‖ :=
-    exists_norm_toBesselPotentialSpaceCLM_smulLeftCLM_le k (hφ.inner_fderiv_apply _ _)
+    exists_norm_toBesselPotentialSpaceCLM_smulLeftCLM_le (by norm_num) ENNReal.ofNat_ne_top k
+      (hφ.inner_fderiv_apply _ _)
       fun n _ ↦ hφ.exists_norm_iteratedFDeriv_inner_fderiv_apply_le hb _ _ n
   choose c hc using hc
   set K := ∑ i, ∑ j, c i j ^ 2
-  have hK : 0 ≤ K := by positivity
   refine ⟨C * (1 + K), by positivity, fun u ↦ ?_⟩
   have hd (i : Fin (Module.finrank ℝ E)) :
       ‖toBesselPotentialSpaceCLM k 2 (∂_{b i} (P u))‖ ^ 2 ≤
@@ -197,15 +201,16 @@ private theorem exists_sq_bound_compCLM_succ
       K * (C * ∑ j, ‖toBesselPotentialSpaceCLM k 2 (∂_{b j} u)‖ ^ 2) := by
     rw [Finset.sum_mul]
     exact Finset.sum_le_sum fun i _ ↦ hd i
+  -- Expand both sides with `‖v‖²_{H^{k+1}} = ‖v‖²_{H^k} + (2π)⁻² ∑ᵢ ‖∂ᵢ v‖²_{H^k}`.
   have hrec := norm_toBesselPotentialSpaceCLM_add_one_sq (F := F) b (k : ℝ)
   rw [Nat.cast_succ, hrec, hrec]
-  have hu := hC u
-  have hπ : 0 < (2 * Real.pi)⁻¹ ^ 2 := by positivity
-  have hY : 0 ≤ ∑ j, ‖toBesselPotentialSpaceCLM k 2 (∂_{b j} u)‖ ^ 2 := by positivity
-  have hX : 0 ≤ ‖toBesselPotentialSpaceCLM k 2 u‖ ^ 2 := by positivity
-  nlinarith [mul_nonneg (mul_nonneg hC0 hK) hX, mul_nonneg hC0 hY,
-    mul_nonneg (mul_nonneg hC0 hK) hY, mul_le_mul_of_nonneg_left hsum hπ.le,
-    mul_nonneg hπ.le (mul_nonneg hC0 hY), mul_nonneg hπ.le (mul_nonneg (mul_nonneg hC0 hK) hY)]
+  set X := ‖toBesselPotentialSpaceCLM k 2 u‖ ^ 2
+  set Y := ∑ j, ‖toBesselPotentialSpaceCLM k 2 (∂_{b j} u)‖ ^ 2
+  set π' := (2 * Real.pi)⁻¹ ^ 2
+  calc _ ≤ C * X + π' * (K * (C * Y)) := by gcongr; exact hC u
+    _ ≤ C * X + π' * (K * (C * Y)) + (C * K * X + π' * (C * Y)) :=
+        le_add_of_nonneg_right (by positivity)
+    _ = C * (1 + K) * (X + π' * Y) := by ring
 
 /-- **Changes of variables on `H^k`, on Schwartz functions.** Let `φ` be a bijection such that `φ`
 and `φ⁻¹` have temperate growth, the derivatives of `φ` of positive order are bounded and
@@ -232,7 +237,9 @@ theorem exists_norm_toBesselPotentialSpaceCLM_compCLM_le_natCast
     refine ⟨max M 0, le_max_right _ _, fun u ↦ ?_⟩
     rw [Nat.cast_zero, norm_toBesselPotentialSpaceCLM_zero_sq,
       norm_toBesselPotentialSpaceCLM_zero_sq]
-    exact (integral_norm_comp_sq_le hψ hM u).trans
+    exact (TauCeti.integral_comp_equiv_le_mul_integral volume (hψ.1.differentiable (by simp)) hM
+      (g := fun x ↦ ‖u x‖ ^ 2) (fun _ ↦ by positivity)
+      ((u.memLp 2).integrable_norm_pow two_ne_zero)).trans
       (mul_le_mul_of_nonneg_right (le_max_left _ _) (integral_nonneg fun _ ↦ by positivity))
   | succ k ih =>
     obtain ⟨C, hC0, hC⟩ := ih
@@ -259,8 +266,9 @@ theorem exists_norm_toBesselPotentialSpaceCLM_compCLM_le_neg_natCast
   have hM' (y : E) : |(fderiv ℝ φ.symm.symm y).det| ≤ M := by simpa using hM y
   obtain ⟨Cs, hCs⟩ := exists_norm_toBesselPotentialSpaceCLM_compCLM_le_natCast (F := F)
     (φ := φ.symm) hψ hφ' hb' hM' k
-  obtain ⟨CJ, hCJ⟩ := exists_norm_toBesselPotentialSpaceCLM_smulLeftCLM_le (F := F) k hJ
-    fun n _ ↦ hφ.exists_norm_iteratedFDeriv_abs_det_fderiv_symm_le hψ hb' n
+  obtain ⟨CJ, hCJ⟩ := exists_norm_toBesselPotentialSpaceCLM_smulLeftCLM_le (F := F) (p := 2)
+    (by norm_num) ENNReal.ofNat_ne_top k hJ fun n _ ↦
+      hφ.exists_norm_iteratedFDeriv_abs_det_fderiv_symm_le hψ hb' n
   have hQ (v : 𝓢(E, F)) : ‖toBesselPotentialSpaceCLM k 2 (pushforwardCLM ℂ φ hφ hψ v)‖ ≤
       max CJ 0 * (max Cs 0 * ‖toBesselPotentialSpaceCLM k 2 v‖) := by
     have hv : pushforwardCLM ℂ φ hφ hψ v = smulLeftCLM F J
@@ -422,6 +430,7 @@ theorem toDistr_compCLM (u : H^{s}(E, F)) :
   MemSobolev.toBesselPotentialSpace_toDistr _
 
 /-- On Schwartz functions the pullback is composition with `φ`. -/
+@[simp]
 theorem compCLM_toBesselPotentialSpaceCLM (u : 𝓢(E, F)) :
     compCLM φ hφ hψ hb hb' s (SchwartzMap.toBesselPotentialSpaceCLM s 2 u) =
       SchwartzMap.toBesselPotentialSpaceCLM s 2
@@ -458,4 +467,34 @@ theorem compEquiv_apply (u : H^{s}(E, F)) :
     compEquiv φ hφ hψ hb hb' s u = compCLM φ hφ hψ hb hb' s u :=
   (rfl)
 
+/-- The inverse of the pullback along `φ` is the pullback along `φ⁻¹`. -/
+@[simp]
+theorem compEquiv_symm_apply (u : H^{s}(E, F)) :
+    (compEquiv φ hφ hψ hb hb' s).symm u =
+      compCLM φ.symm hψ (by simpa using hφ) hb' (by simpa using hb) s u :=
+  (rfl)
+
 end BesselPotentialSpace
+
+namespace SchwartzMap
+
+open scoped BesselPotentialSpace
+
+variable {E F : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteDimensional ℝ E]
+  [MeasurableSpace E] [BorelSpace E] [NormedAddCommGroup F] [InnerProductSpace ℂ F]
+  [CompleteSpace F] {φ : E ≃ E}
+
+/-- **Changes of variables extend to `H^s`.** If `φ` and `φ⁻¹` have temperate growth and bounded
+derivatives of every positive order, then composition with `φ` on Schwartz functions extends to a
+bounded operator `H^s → H^s`, for every real `s`. -/
+theorem hasSobolevExtension_compCLM (hφ : (φ : E → E).HasTemperateGrowth)
+    (hψ : (φ.symm : E → E).HasTemperateGrowth)
+    (hb : ∀ n, ∃ C, ∀ x, ‖iteratedFDeriv ℝ (n + 1) φ x‖ ≤ C)
+    (hb' : ∀ n, ∃ C, ∀ x, ‖iteratedFDeriv ℝ (n + 1) φ.symm x‖ ≤ C) (s : ℝ) :
+    HasSobolevExtension
+      (compCLM ℂ (F := F) hφ (hψ.exists_norm_le_of_leftInverse φ.left_inv)) s s :=
+  hasSobolevExtension_iff.2 ⟨BesselPotentialSpace.compCLM φ hφ hψ hb hb' s,
+    ContinuousLinearMap.ext fun u ↦
+      BesselPotentialSpace.compCLM_toBesselPotentialSpaceCLM hφ hψ hb hb' u⟩
+
+end SchwartzMap

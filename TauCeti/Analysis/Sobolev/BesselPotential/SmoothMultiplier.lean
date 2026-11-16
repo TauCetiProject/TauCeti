@@ -43,9 +43,8 @@ up to order `k` and `f ∈ H^{k,p}`, while `∂_v f ∈ H^{k,p}`.
 * `TemperedDistribution.MemSobolev.smulLeftCLM_of_norm_iteratedFDeriv_le`: a function of temperate
   growth with bounded derivatives up to order `k` multiplies `H^{k,p}` into itself, for
   `1 < p < ∞`.
-* `SchwartzMap.exists_norm_toBesselPotentialSpaceCLM_smulLeftCLM_le`: for Hilbert-space values and
-  `p = 2`, the closed graph theorem turns this into the bound `‖g u‖_{H^k} ≤ C ‖u‖_{H^k}` on
-  Schwartz functions.
+* `SchwartzMap.exists_norm_toBesselPotentialSpaceCLM_smulLeftCLM_le`: the closed graph theorem
+  turns this into the bound `‖g u‖_{H^{k,p}} ≤ C ‖u‖_{H^{k,p}}` on Schwartz functions.
 
 ## References
 
@@ -108,25 +107,26 @@ end TemperedDistribution
 namespace SchwartzMap
 
 open TemperedDistribution
-open scoped BesselPotentialSpace
+open scoped BesselPotentialSpace ENNReal
 
 variable {E F : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteDimensional ℝ E]
   [MeasurableSpace E] [BorelSpace E] [NormedAddCommGroup F] [InnerProductSpace ℂ F]
-  [CompleteSpace F]
+  [CompleteSpace F] {p : ℝ≥0∞} [Fact (1 ≤ p)]
 
-/-- **Multipliers with bounded derivatives on `H^k`, on Schwartz functions.** If `g` has temperate
-growth and bounded derivatives of order at most `k`, then `‖g u‖_{H^k} ≤ C ‖u‖_{H^k}` for every
-Schwartz function `u`, with `C` independent of `u`. -/
-theorem exists_norm_toBesselPotentialSpaceCLM_smulLeftCLM_le (k : ℕ) {g : E → ℂ}
-    (hg : g.HasTemperateGrowth) (hbd : ∀ n ≤ k, ∃ C, ∀ x, ‖iteratedFDeriv ℝ n g x‖ ≤ C) :
-    ∃ C, ∀ u : 𝓢(E, F), ‖toBesselPotentialSpaceCLM k 2 (smulLeftCLM F g u)‖ ≤
-      C * ‖toBesselPotentialSpaceCLM k 2 u‖ := by
+/-- **Multipliers with bounded derivatives on `H^{k,p}`, on Schwartz functions.** For
+`1 < p < ∞`, if `g` has temperate growth and bounded derivatives of order at most `k`, then
+`‖g u‖_{H^{k,p}} ≤ C ‖u‖_{H^{k,p}}` for every Schwartz function `u`, with `C` independent of
+`u`. -/
+theorem exists_norm_toBesselPotentialSpaceCLM_smulLeftCLM_le (hp : 1 < p) (hp_top : p ≠ ∞)
+    (k : ℕ) {g : E → ℂ} (hg : g.HasTemperateGrowth)
+    (hbd : ∀ n ≤ k, ∃ C, ∀ x, ‖iteratedFDeriv ℝ n g x‖ ≤ C) :
+    ∃ C, ∀ u : 𝓢(E, F), ‖toBesselPotentialSpaceCLM k p (smulLeftCLM F g u)‖ ≤
+      C * ‖toBesselPotentialSpaceCLM k p u‖ := by
   -- Multiplication by `g` preserves `H^k`, so by the closed graph theorem it is bounded there.
-  have hmem (f : H^{(k : ℝ)}(E, F)) :
-      MemSobolev (k : ℝ) 2 (TemperedDistribution.smulLeftCLM F g f.toDistr) :=
-    f.memSobolev_toDistr.smulLeftCLM_of_norm_iteratedFDeriv_le (by norm_num)
-      ENNReal.ofNat_ne_top hg hbd
-  let L : H^{(k : ℝ)}(E, F) →ₗ[ℂ] H^{(k : ℝ)}(E, F) :=
+  have hmem (f : H^{(k : ℝ), p}(E, F)) :
+      MemSobolev (k : ℝ) p (TemperedDistribution.smulLeftCLM F g f.toDistr) :=
+    f.memSobolev_toDistr.smulLeftCLM_of_norm_iteratedFDeriv_le hp hp_top hg hbd
+  let L : H^{(k : ℝ), p}(E, F) →ₗ[ℂ] H^{(k : ℝ), p}(E, F) :=
     { toFun f := (hmem f).toBesselPotentialSpace
       map_add' f f' := BesselPotentialSpace.ext (by simp)
       map_smul' c f := BesselPotentialSpace.ext (by simp) }
@@ -134,10 +134,10 @@ theorem exists_norm_toBesselPotentialSpaceCLM_smulLeftCLM_le (k : ℕ) {g : E �
     BesselPotentialSpace.continuous_of_continuous_toDistr (L.restrictScalars ℝ) <|
       ((TemperedDistribution.smulLeftCLM F g).continuous.comp
         BesselPotentialSpace.continuous_toDistr).congr fun f ↦ by simp [L]
-  let T : H^{(k : ℝ)}(E, F) →L[ℂ] H^{(k : ℝ)}(E, F) := ⟨L, hL⟩
+  let T : H^{(k : ℝ), p}(E, F) →L[ℂ] H^{(k : ℝ), p}(E, F) := ⟨L, hL⟩
   refine ⟨‖T‖, fun u ↦ ?_⟩
-  have hT : T (toBesselPotentialSpaceCLM k 2 u) =
-      toBesselPotentialSpaceCLM k 2 (smulLeftCLM F g u) :=
+  have hT : T (toBesselPotentialSpaceCLM k p u) =
+      toBesselPotentialSpaceCLM k p (smulLeftCLM F g u) :=
     BesselPotentialSpace.ext (by simp [T, L, smulLeftCLM_toTemperedDistributionCLM_eq])
   rw [← hT]
   exact T.le_opNorm _

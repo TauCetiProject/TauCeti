@@ -144,6 +144,17 @@ theorem norm_toBesselPotentialSpaceCLM {F : Type*} [NormedAddCommGroup F] [Inner
   rw [← BesselPotentialSpace.norm_toLp_eq, toLp_toBesselPotentialSpaceCLM,
     norm_toLp_fourierMultiplierCLM_eq (by fun_prop)]
 
+omit [InnerProductSpace ℝ E] [FiniteDimensional ℝ E] [MeasurableSpace E] [BorelSpace E]
+  [CompleteSpace F] in
+/-- The pointwise integrand of the squared `H^r` norm:
+`‖(1 + ‖ξ‖ ^ 2) ^ (r / 2) • v‖ ^ 2 = (1 + ‖ξ‖ ^ 2) ^ r * ‖v‖ ^ 2`. -/
+private theorem norm_one_add_norm_sq_rpow_smul_sq (r : ℝ) (ξ : E) (v : F) :
+    ‖(((1 + ‖ξ‖ ^ 2) ^ (r / 2) : ℝ) : ℂ) • v‖ ^ 2 = (1 + ‖ξ‖ ^ 2) ^ r * ‖v‖ ^ 2 := by
+  have h1 : 0 < 1 + ‖ξ‖ ^ 2 := by positivity
+  rw [norm_smul, Complex.norm_real, Real.norm_of_nonneg (Real.rpow_pos_of_pos h1 _).le, mul_pow,
+    ← Real.rpow_natCast, ← Real.rpow_mul h1.le]
+  norm_num
+
 /-- The square of the `H^r` norm of a Schwartz function `u` with Hilbert-space values is
 `∫ (1 + ‖ξ‖ ^ 2) ^ r ‖𝓕 u ξ‖ ^ 2`. -/
 theorem norm_toBesselPotentialSpaceCLM_sq {F : Type*} [NormedAddCommGroup F]
@@ -155,11 +166,7 @@ theorem norm_toBesselPotentialSpaceCLM_sq {F : Type*} [NormedAddCommGroup F]
   simp_rw [Real.rpow_two]
   rw [← Real.rpow_natCast, ← Real.rpow_mul (integral_nonneg fun _ ↦ by positivity)]
   norm_num
-  refine integral_congr_ae (Filter.Eventually.of_forall fun ξ ↦ ?_)
-  have h1 : 0 < 1 + ‖ξ‖ ^ 2 := by positivity
-  simp only [norm_smul, Real.norm_eq_abs, abs_of_pos (Real.rpow_pos_of_pos h1 _), mul_pow]
-  rw [← Real.rpow_natCast, ← Real.rpow_mul h1.le]
-  norm_num
+  exact integral_congr_ae (.of_forall fun ξ ↦ norm_one_add_norm_sq_rpow_smul_sq r ξ _)
 
 omit [CompleteSpace F] in
 /-- The integrand `(1 + ‖ξ‖ ^ 2) ^ r ‖𝓕 u ξ‖ ^ 2` of the squared `H^r` norm of a Schwartz function
@@ -167,12 +174,7 @@ is integrable. -/
 theorem integrable_one_add_norm_sq_rpow_mul_norm_fourier_sq (r : ℝ) (u : 𝓢(E, F)) :
     Integrable fun ξ ↦ (1 + ‖ξ‖ ^ 2) ^ r * ‖𝓕 u ξ‖ ^ 2 := by
   refine ((memLp_one_add_norm_sq_rpow_smul_fourier (F := F) r u 2).integrable_norm_pow
-    two_ne_zero).congr (.of_forall fun ξ ↦ ?_)
-  have h1 : 0 < 1 + ‖ξ‖ ^ 2 := by positivity
-  simp only [norm_smul, Complex.norm_real, Real.norm_eq_abs,
-    abs_of_pos (Real.rpow_pos_of_pos h1 _), mul_pow]
-  rw [← Real.rpow_natCast, ← Real.rpow_mul h1.le]
-  norm_num
+    two_ne_zero).congr (.of_forall fun ξ ↦ norm_one_add_norm_sq_rpow_smul_sq r ξ _)
 
 /-- The square of the `H⁰` norm of a Schwartz function with Hilbert-space values is the square of
 its `L²` norm, `∫ ‖u‖²`. -/
