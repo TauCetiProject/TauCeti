@@ -43,8 +43,11 @@ the base: pulling back along the projection is injective, since the projection h
 (`TauCeti.leftInverse_singularCohomologyMap_prodThomPairPuncturedSection` and
 `TauCeti.injective_singularCohomologyMap_prodThomPairPuncturedProj`). The cohomology of the total
 space `B × F` is that of the base when `F` is contractible
-(`TauCeti.exists_singularCohomologyMap_prodThomPairProj_eq`). These two facts compute the
-cohomology of the Thom pair in degrees above the rank from its long exact sequence
+(`TauCeti.exists_singularCohomologyMap_prodThomPairProj_eq`). From the long exact sequence of the
+pair, these two facts identify the cohomology of the Thom pair with a complement of the base in
+that of `B × (F ∖ {0})`, through the connecting morphism
+(`TauCeti.bijective_prodThomPair_singularCohomologyδ_comp_inr`). This computes the cohomology of
+the Thom pair in degrees at least the rank
 (`TauCeti.AlgebraicTopology.Cohomology.ProdThomPair.Sphere` and
 `TauCeti.AlgebraicTopology.Cohomology.ProdThomPair.Line`).
 
@@ -61,6 +64,9 @@ cohomology of the Thom pair in degrees above the rank from its long exact sequen
   `TauCeti.injective_singularCohomologyMap_prodThomPairPuncturedProj` and
   `TauCeti.exists_singularCohomologyMap_prodThomPairProj_eq`: the cohomology of the base injects
   into that of `B × (F ∖ {0})` and is all of that of `B × F` for contractible `F`.
+* `TauCeti.bijective_prodThomPair_singularCohomologyδ_comp_inr`: for contractible `E` with a
+  nonzero vector and a decomposition `D` of `Hⁿ(B × (E ∖ {0}))` whose first factor is `π^*`,
+  `c ↦ δ (D (0, c))` is a bijection onto `Hⁿ⁺¹(B × E, B × (E ∖ {0}))`.
 
 ## References
 
@@ -202,7 +208,7 @@ theorem exists_singularCohomologyMap_prodThomPairProj_eq [Linear k (ModuleCat.{w
   refine ⟨inv (TopCat.singularCohomologyMap (prodThomPairProj B E) m) y, ?_⟩
   rw [← ConcreteCategory.comp_apply, IsIso.inv_hom_id, ConcreteCategory.id_apply]
 
-/-- **The cohomology of the Thom pair above the rank, from that of the punctured product.** Let
+/-- **The cohomology of the Thom pair from that of the punctured product.** Let
 `E` be contractible with a nonzero vector, and let
 `D : Hⁿ(B; R, M) × Hᵖ(B; R, M) ≃ Hⁿ(B × (E ∖ {0}); R, M)` be a linear equivalence that is the
 pullback along the projection `π : B × (E ∖ {0}) → B` on the first factor. Then, for
