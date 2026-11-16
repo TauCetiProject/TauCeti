@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Algebra.Ring.NegOnePow
 public import Mathlib.Data.Nat.Factorization.Basic
 public import Mathlib.NumberTheory.DirichletCharacter.Basic
 public import Mathlib.NumberTheory.LegendreSymbol.JacobiSymbol
@@ -60,6 +61,13 @@ The character need not be primitive: `(-12 / ·)` is induced from `(-3 / ·)`.
 * `TauCeti.kroneckerSym_eq_zero_iff`: `(a / b) = 0` exactly when `gcd (a, b) ≠ 1`.
 * `TauCeti.kroneckerSym_eq_jacobiSym_natAbs`: `(D / n) = J(n | |D|)` for `D ≡ 1 (mod 4)`.
 * `TauCeti.kroneckerSym_mod_right'`: for `D ≡ 0, 1 (mod 4)`, `(D / ·)` is periodic modulo `D`.
+* `TauCeti.kroneckerSym_neg_one_left`, `TauCeti.kroneckerSym_two_left`,
+  `TauCeti.kroneckerSym_neg_right_of_nonneg`, `TauCeti.kroneckerSym_mod_left'`,
+  `TauCeti.kroneckerSym_mod_left`, `TauCeti.kroneckerSym_quadratic_reciprocity`,
+  `TauCeti.kroneckerSym_add_self_right_of_emod_four_eq_two`: supplementary numerator values,
+  sign-invariance in the denominator for nonnegative numerators, numerator periodicity for odd
+  positive denominators, quadratic reciprocity for odd integers of either sign, and the denominator
+  shift law for `c ≡ 2 (mod 4)`.
 * `TauCeti.kroneckerChar_intCast`, `TauCeti.kroneckerChar_isQuadratic`,
   `TauCeti.kroneckerChar_neg_one`: the character computes the Kronecker symbol, is quadratic, and
   has value `sign D` at `-1`.
@@ -428,6 +436,167 @@ theorem kroneckerSym_mod_right' {D : ℤ} (hD : D ≡ 0 [ZMOD 4] ∨ D ≡ 1 [ZM
 theorem kroneckerSym_mod_right {D : ℤ} (hD : D ≡ 0 [ZMOD 4] ∨ D ≡ 1 [ZMOD 4]) (n : ℤ) :
     kroneckerSym D n = kroneckerSym D (n % D) :=
   kroneckerSym_mod_right' hD (Int.emod_emod n D).symm
+
+/-- `(-1 / b) = χ₄ b` for every odd integer `b`, of either sign: at negative odd `b`, the sign
+factor `-1` cancels the oddness of `χ₄`. -/
+theorem kroneckerSym_neg_one_left {b : ℤ} (hb : Odd b) : kroneckerSym (-1) b = χ₄ b := by
+  have hb0 : b ≠ 0 := by rintro rfl; exact Int.not_odd_zero hb
+  rw [kroneckerSym_of_odd (-1) hb, jacobiSym.at_neg_one (Int.natAbs_odd.mpr hb)]
+  rcases Int.natAbs_eq b with h | h
+  · rw [ite_eq_right (by omega), one_mul]
+    conv_rhs => rw [h]
+    rw [Int.cast_natCast]
+  · have hbneg : b < 0 := by have := Int.natAbs_pos.mpr hb0; omega
+    rw [ite_eq_left ⟨by norm_num, hbneg⟩, neg_one_mul]
+    conv_rhs => rw [h]
+    rw [Int.cast_neg, Int.cast_natCast, χ₄_neg]
+
+/-- `(2 / b) = χ₈ b` for every integer `b`: both sides vanish when `b` is even, and when `b` is
+odd the second supplement gives `J(2 | |b|) = χ₈ |b| = χ₈ b`. -/
+@[simp]
+theorem kroneckerSym_two_left (b : ℤ) : kroneckerSym 2 b = χ₈ b := by
+  by_cases hb : Odd b
+  · rw [kroneckerSym_of_odd 2 hb, ite_eq_right (by norm_num), one_mul,
+      jacobiSym.at_two (Int.natAbs_odd.mpr hb)]
+    rcases Int.natAbs_eq b with h | h
+    · conv_rhs => rw [h]
+      rw [Int.cast_natCast]
+    · conv_rhs => rw [h]
+      rw [Int.cast_neg, Int.cast_natCast, χ₈_neg]
+  · have h2 : (2 : ℤ) ∣ b := even_iff_two_dvd.mp (Int.not_odd_iff_even.mp hb)
+    rw [kroneckerSym_eq_zero_of_two_dvd dvd_rfl h2, (χ₈_intCast_eq_zero_iff b).mpr h2]
+
+/-- For a nonnegative numerator `a`, negating the denominator leaves `(a / b)` unchanged. -/
+theorem kroneckerSym_neg_right_of_nonneg {a : ℤ} (ha : 0 ≤ a) (b : ℤ) :
+    kroneckerSym a (-b) = kroneckerSym a b := by
+  rcases eq_or_ne b 0 with rfl | hb
+  · simp
+  rw [neg_eq_neg_one_mul, kroneckerSym_mul_right a (by norm_num) hb, kroneckerSym_neg_one_right,
+    ite_eq_right (not_lt.mpr ha), one_mul]
+
+/-- For odd positive `b`, the Kronecker symbol `(· / b)` depends only on the numerator modulo `b`.
+The positivity hypothesis cannot be dropped: `(-1 / -3) = -1` while `(2 / -3) = 1`. -/
+theorem kroneckerSym_mod_left' {a₁ a₂ b : ℤ} (hb : Odd b) (hb₀ : 0 < b)
+    (h : a₁ % b = a₂ % b) : kroneckerSym a₁ b = kroneckerSym a₂ b := by
+  lift b to ℕ using hb₀.le
+  rw [kroneckerSym_eq_jacobiSym _ ((Int.odd_natCast b).mp hb),
+    kroneckerSym_eq_jacobiSym _ ((Int.odd_natCast b).mp hb)]
+  exact jacobiSym.mod_left' h
+
+/-- For odd positive `b`, `(a / b) = (a % b / b)`. -/
+theorem kroneckerSym_mod_left (a : ℤ) {b : ℤ} (hb : Odd b) (hb₀ : 0 < b) :
+    kroneckerSym a b = kroneckerSym (a % b) b :=
+  kroneckerSym_mod_left' hb hb₀ (Int.emod_emod a b).symm
+
+/-- **Quadratic reciprocity for the Kronecker symbol**: for odd integers `a` and `b` of either
+sign, `(a / b) = s * (-1) ^ (((a - 1) / 2) * ((b - 1) / 2)) * (b / a)`, where `s = -1` when
+both `a < 0` and `b < 0` and `s = 1` otherwise. -/
+theorem kroneckerSym_quadratic_reciprocity {a b : ℤ} (ha : Odd a) (hb : Odd b) :
+    kroneckerSym a b = (if a < 0 ∧ b < 0 then -1 else 1) *
+      ((((a - 1) / 2) * ((b - 1) / 2)).negOnePow : ℤ) * kroneckerSym b a := by
+  have haN : Odd a.natAbs := Int.natAbs_odd.mpr ha
+  have hbN : Odd b.natAbs := Int.natAbs_odd.mpr hb
+  have ⟨u, hu⟩ := haN
+  have ⟨v, hv⟩ := hbN
+  have hu2 : a.natAbs / 2 = u := by omega
+  have hv2 : b.natAbs / 2 = v := by omega
+  have hqr : jacobiSym a.natAbs b.natAbs =
+      (((u : ℤ) * v).negOnePow : ℤ) * jacobiSym b.natAbs a.natAbs := by
+    rw [jacobiSym.quadratic_reciprocity haN hbN, hu2, hv2, ← Int.coe_negOnePow_natCast,
+      Nat.cast_mul]
+  rw [kroneckerSym_of_odd a hb, kroneckerSym_of_odd b ha]
+  rcases Int.natAbs_eq a with ha_eq | ha_eq <;> rcases Int.natAbs_eq b with hb_eq | hb_eq
+  · have ha' : (a - 1) / 2 = u := by omega
+    have hb' : (b - 1) / 2 = v := by omega
+    rw [ha', hb', ite_eq_right (by omega), ite_eq_right (by omega), one_mul, one_mul, one_mul]
+    conv_lhs => rw [ha_eq]
+    conv_rhs => rw [hb_eq]
+    exact hqr
+  · have ha' : (a - 1) / 2 = u := by omega
+    have hb' : (b - 1) / 2 = -((v : ℤ) + 1) := by omega
+    have hexp : (u : ℤ) * -((v : ℤ) + 1) + u = -((u : ℤ) * v) := by ring
+    rw [ha', hb', ite_eq_right (by omega), ite_eq_right (by omega), one_mul, one_mul, one_mul]
+    conv_lhs => rw [ha_eq]
+    conv_rhs => rw [hb_eq]
+    rw [jacobiSym.neg _ haN, hqr, χ₄_eq_neg_one_pow (Nat.odd_iff.mp haN), hu2,
+      ← Int.coe_negOnePow_natCast, ← mul_assoc, ← Units.val_mul, ← Int.negOnePow_add, hexp,
+      Int.negOnePow_neg]
+  · have ha' : (a - 1) / 2 = -((u : ℤ) + 1) := by omega
+    have hb' : (b - 1) / 2 = v := by omega
+    have hexp : -((u : ℤ) + 1) * v = -((v : ℤ) + u * v) := by ring
+    rw [ha', hb', ite_eq_right (by omega), ite_eq_right (by omega), one_mul, one_mul, one_mul]
+    conv_lhs => rw [ha_eq]
+    conv_rhs => rw [hb_eq]
+    rw [jacobiSym.neg _ hbN, hqr, χ₄_eq_neg_one_pow (Nat.odd_iff.mp hbN), hv2,
+      ← Int.coe_negOnePow_natCast, ← mul_assoc, ← Units.val_mul, ← Int.negOnePow_add, hexp,
+      Int.negOnePow_neg]
+  · have ha' : (a - 1) / 2 = -((u : ℤ) + 1) := by omega
+    have hb' : (b - 1) / 2 = -((v : ℤ) + 1) := by omega
+    rw [ha', hb', ite_eq_left ⟨by omega, by omega⟩, ite_eq_left ⟨by omega, by omega⟩]
+    conv_lhs => rw [ha_eq]
+    conv_rhs => rw [hb_eq]
+    rw [jacobiSym.neg _ hbN, jacobiSym.neg _ haN, hqr,
+      χ₄_eq_neg_one_pow (Nat.odd_iff.mp hbN), χ₄_eq_neg_one_pow (Nat.odd_iff.mp haN),
+      hu2, hv2, ← Int.coe_negOnePow_natCast, ← Int.coe_negOnePow_natCast]
+    have hexp : -((u : ℤ) + 1) * -((v : ℤ) + 1) + u = (v + u * v) + (2 * u + 1) := by ring
+    have hsign : ((-((u : ℤ) + 1) * -((v : ℤ) + 1)).negOnePow : ℤ) * ((u : ℤ).negOnePow : ℤ) =
+        -(((v : ℤ).negOnePow : ℤ) * (((u : ℤ) * v).negOnePow : ℤ)) := by
+      rw [← Units.val_mul, ← Int.negOnePow_add, hexp, Int.negOnePow_add,
+        Int.negOnePow_two_mul_add_one, Units.val_mul, Units.val_neg, Units.val_one, mul_neg_one,
+        Int.negOnePow_add, Units.val_mul]
+    linear_combination -jacobiSym b.natAbs a.natAbs * hsign
+
+/-- When `c ≡ 2 (mod 4)`, shifting the denominator by `c` multiplies the Kronecker symbol by
+`-χ₄ d`: `(c / (d + c)) = -χ₄ d * (c / d)` for every integer `d`. -/
+theorem kroneckerSym_add_self_right_of_emod_four_eq_two {c : ℤ} (hc : c % 4 = 2) (d : ℤ) :
+    kroneckerSym c (d + c) = -χ₄ d * kroneckerSym c d := by
+  by_cases hd : Odd d
+  · set m : ℤ := c / 2
+    have hc_eq : c = 2 * m := by omega
+    have hm_odd : Odd m := Int.odd_iff.mpr (by omega)
+    have hm_ne : m ≠ 0 := by omega
+    have hdc_odd : Odd (d + c) := Int.odd_iff.mpr (by have := Int.odd_iff.mp hd; omega)
+    set s : ℤ := χ₄ m
+    have hm4_cases : m % 4 = 1 ∨ m % 4 = 3 := by omega
+    have hs : (m % 4 = 1 ∧ s = 1) ∨ (m % 4 = 3 ∧ s = -1) := by
+      rcases hm4_cases with h | h
+      · exact .inl ⟨h, χ₄_int_one_mod_four h⟩
+      · exact .inr ⟨h, χ₄_int_three_mod_four h⟩
+    set D : ℤ := m * s
+    have hD_mod : D ≡ 1 [ZMOD 4] := int_mul_χ₄_modEq_one hm_odd
+    have hD_ne : D ≠ 0 := mul_ne_zero hm_ne (by rcases hs with ⟨_, h⟩ | ⟨_, h⟩ <;> omega)
+    have hc_split : c = (2 * s) * D := by
+      rcases hs with ⟨_, h⟩ | ⟨_, h⟩ <;> simp only [D, h] <;> omega
+    have hD_period : kroneckerSym D (d + c) = kroneckerSym D d := by
+      refine kroneckerSym_mod_right' (.inr hD_mod) ?_
+      rw [hc_split, Int.add_mul_emod_self_right]
+    have h2s_ne : 2 * s ≠ 0 := by rcases hs with ⟨_, h⟩ | ⟨_, h⟩ <;> omega
+    have hsplit (n : ℤ) : kroneckerSym c n = kroneckerSym (2 * s) n * kroneckerSym D n := by
+      rw [hc_split, kroneckerSym_mul_left h2s_ne hD_ne]
+    rw [hsplit (d + c), hsplit d, hD_period]
+    -- Compare the factor `(2 * s / ·)` at `d + c` and `d`, modulo `8`.
+    suffices hfactor : kroneckerSym (2 * s) (d + c) = -χ₄ d * kroneckerSym (2 * s) d by
+      rw [hfactor]
+      ring
+    have hd_mod : d % 8 = 1 ∨ d % 8 = 3 ∨ d % 8 = 5 ∨ d % 8 = 7 := by
+      have := Int.odd_iff.mp hd
+      omega
+    rcases hs with ⟨hm4, hs1⟩ | ⟨hm4, hs1⟩
+    · have hc8 : c % 8 = 2 := by omega
+      rw [hs1, mul_one, kroneckerSym_two_left, kroneckerSym_two_left, χ₈_int_eq_if_mod_eight,
+        χ₈_int_eq_if_mod_eight, χ₄_int_eq_if_mod_four]
+      rcases hd_mod with h | h | h | h <;> (split_ifs <;> omega)
+    · have hc8 : c % 8 = 6 := by omega
+      have hneg2 (n : ℤ) (hn : Odd n) : kroneckerSym (2 * (-1)) n = χ₄ n * χ₈ n := by
+        rw [mul_comm, kroneckerSym_mul_left (by norm_num) (by norm_num),
+          kroneckerSym_neg_one_left hn, kroneckerSym_two_left]
+      rw [hs1, hneg2 _ hdc_odd, hneg2 _ hd, χ₄_int_eq_if_mod_four, χ₄_int_eq_if_mod_four,
+        χ₈_int_eq_if_mod_eight, χ₈_int_eq_if_mod_eight]
+      rcases hd_mod with h | h | h | h <;> (split_ifs <;> omega)
+  · have h2d : (2 : ℤ) ∣ d := even_iff_two_dvd.mp (Int.not_odd_iff_even.mp hd)
+    have h2c : (2 : ℤ) ∣ c := Int.dvd_iff_emod_eq_zero.mpr (by omega)
+    rw [kroneckerSym_eq_zero_of_two_dvd h2c (dvd_add h2d h2c),
+      kroneckerSym_eq_zero_of_two_dvd h2c h2d, mul_zero]
 
 /-! ### The Kronecker character of a discriminant -/
 
