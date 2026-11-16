@@ -47,11 +47,13 @@ attached to a realization keep its Cartan matrix, roots, coroots, pairing and re
   consists of the coordinate vectors of its coweights.
 * `TauCeti.CartanDatum.realizationHom_toLinearMap_bijective`: every Cartan datum whose coweight
   lattice has a finite basis is isomorphic to the datum of a coweight lattice of a rational
-  realization of its Cartan matrix.
+  realization of its Cartan matrix, with inverse `TauCeti.CartanDatum.Hom.inverse`.
+* `TauCeti.CartanDatum.realizationHom_weightMap_bijective`: this isomorphism is also bijective on
+  weights.
 
 ## References
 
-* V. G. Kac, *Infinite-dimensional Lie algebras*, third edition, §1.1 (realizations) and §6.1
+* V. G. Kac, *Infinite-dimensional Lie algebras*, third edition, §1.1 (realizations) and §10.1
   (the lattice of integral weights).
 * G. Lusztig, *Introduction to Quantum Groups*, Progress in Mathematics 110, Birkhäuser, 1993,
   §1.1 (Cartan data) and §2.2 (root data).
@@ -120,9 +122,56 @@ reflections `y ↦ y − αᵢ(y) hᵢ` of the realization. -/
 theorem coe_coreflection_toCartanDatum (i : I) (y : L.lattice) :
     (((L.toCartanDatum d hdiag hoff hd hsymm).coreflection i y : L.lattice) : H) =
       y - R.root i y • R.coroot i := by
-  rw [CartanDatum.coreflection_apply, Submodule.coe_sub, Submodule.coe_smul_of_tower,
-    toCartanDatum_pairing, toCartanDatum_root, toCartanDatum_coroot, coe_coroot,
-    ← Int.cast_smul_eq_zsmul ℚ, cast_pairing, coe_root]
+  simp [CartanDatum.coreflection_apply, ← Int.cast_smul_eq_zsmul ℚ]
+
+/-- The simple reflections of the datum of a coweight lattice are the restrictions of the
+reflections `φ ↦ φ − φ(hᵢ) αᵢ` of the dual of the realization. -/
+@[simp]
+theorem coe_reflection_toCartanDatum (i : I) (φ : L.weightLattice) :
+    (((L.toCartanDatum d hdiag hoff hd hsymm).reflection i φ : L.weightLattice) : Dual ℚ H) =
+      φ - (φ : Dual ℚ H) (R.coroot i) • R.root i := by
+  simp [CartanDatum.reflection_apply, ← Int.cast_smul_eq_zsmul ℚ]
+
+/-! The simp lemmas above rewrite the roots, coroots and pairing of `L.toCartanDatum` to those of
+`L`, so the general simp lemmas about `TauCeti.CartanDatum` stated with `D.root` and `D.coroot`
+no longer apply to them. The following lemmas restate those general lemmas in this normal form. -/
+
+@[simp]
+theorem coreflection_toCartanDatum_coroot_self (i : I) :
+    (L.toCartanDatum d hdiag hoff hd hsymm).coreflection i (L.coroot i) = -L.coroot i :=
+  (L.toCartanDatum d hdiag hoff hd hsymm).coreflection_coroot_self i
+
+@[simp]
+theorem reflection_toCartanDatum_root_self (i : I) :
+    (L.toCartanDatum d hdiag hoff hd hsymm).reflection i (L.root i) = -L.root i :=
+  (L.toCartanDatum d hdiag hoff hd hsymm).reflection_root_self i
+
+section Hom
+
+variable {L d hdiag hoff hd hsymm} {X Y : Type*} [AddCommGroup X] [AddCommGroup Y]
+  {D : CartanDatum I X Y}
+
+@[simp]
+theorem toLinearMap_coroot (f : CartanDatum.Hom (L.toCartanDatum d hdiag hoff hd hsymm) D)
+    (i : I) : f.toLinearMap (L.coroot i) = D.coroot i :=
+  f.map_coroot i
+
+@[simp]
+theorem pairing_weightMap (f : CartanDatum.Hom (L.toCartanDatum d hdiag hoff hd hsymm) D) (x : X)
+    (y : L.lattice) : L.pairing (f.weightMap x) y = D.pairing x (f.toLinearMap y) :=
+  f.pairing_weightMap x y
+
+@[simp]
+theorem pairing_root_toLinearMap (f : CartanDatum.Hom D (L.toCartanDatum d hdiag hoff hd hsymm))
+    (i : I) (y : Y) : L.pairing (L.root i) (f.toLinearMap y) = D.pairing (D.root i) y :=
+  f.pairing_root_map i y
+
+@[simp]
+theorem weightMap_root (f : CartanDatum.Hom D (L.toCartanDatum d hdiag hoff hd hsymm)) (i : I) :
+    f.weightMap (L.root i) = D.root i :=
+  f.weightMap_root i
+
+end Hom
 
 /-! ### Nested coweight lattices -/
 
@@ -193,37 +242,15 @@ variable [Finite κ]
 /-- The simple coroots of a datum stay independent over `ℚ` in coordinates. -/
 private theorem linearIndependent_repr_coroot :
     LinearIndependent ℚ fun i k ↦ (b.repr (D.coroot i) k : ℚ) := by
-  have hli : LinearIndependent ℤ fun i k ↦ b.repr (D.coroot i) k := by
-    have e : (fun i k ↦ b.repr (D.coroot i) k) =
-        (Finsupp.lcoeFun (R := ℤ) (α := κ) (M := ℤ)) ∘ b.repr.toLinearMap ∘ D.coroot := by
-      ext
-      simp
-    rw [e]
-    exact (D.linearIndependent_coroot.map' b.repr.toLinearMap (LinearEquiv.ker _)).map'
-      Finsupp.lcoeFun (LinearMap.ker_eq_bot.mpr DFunLike.coe_injective)
-  convert (linearIndependent_algebraMap_comp_iff (S := ℚ)).mpr hli using 1
-  ext
-  simp
+  simpa [Function.comp_def] using (linearIndependent_algebraMap_comp_iff (S := ℚ)).mpr
+    (D.linearIndependent_coroot.map' b.equivFun.toLinearMap b.equivFun.ker)
 
 /-- The values `(⟨αⱼ, bₖ⟩)ₖ` of the simple roots of a datum on a basis stay independent over `ℚ`. -/
 private theorem linearIndependent_pairing_root_basis :
     LinearIndependent ℚ fun j k ↦ (D.pairing (D.root j) (b k) : ℚ) := by
-  have hinj : Function.Injective (LinearMap.pi fun k ↦ D.pairing.flip (b k)) := by
-    rw [← LinearMap.ker_eq_bot, LinearMap.ker_eq_bot']
-    intro x hx
-    apply (LinearMap.IsPerfPair.bijective_left D.pairing).injective
-    rw [map_zero]
-    exact b.ext fun k ↦ by simpa using congr_fun hx k
-  have hli : LinearIndependent ℤ fun j k ↦ D.pairing (D.root j) (b k) := by
-    have e : (fun j k ↦ D.pairing (D.root j) (b k)) =
-        (LinearMap.pi fun k ↦ D.pairing.flip (b k)) ∘ D.root := by
-      ext
-      simp
-    rw [e]
-    exact D.linearIndependent_root.map' _ (LinearMap.ker_eq_bot.mpr hinj)
-  convert (linearIndependent_algebraMap_comp_iff (S := ℚ)).mpr hli using 1
-  ext
-  simp
+  let e := D.pairing.toPerfPair.trans (b.constr ℤ).symm
+  simpa [e, Function.comp_def] using (linearIndependent_algebraMap_comp_iff (S := ℚ)).mpr
+    (D.linearIndependent_root.map' e.toLinearMap e.ker)
 
 /-- The **rational realization of the Cartan matrix of a datum** on `ℚ^κ`, through a `ℤ`-basis `b`
 of the coweight lattice: the simple coroot `hᵢ` is its coordinate vector `(bₖ*(hᵢ))ₖ`, and the
@@ -279,43 +306,49 @@ theorem mem_coweightLattice_iff {x : κ → ℚ} :
   refine ⟨fun hx ↦ ?_, ?_⟩
   · choose n hn using hx
     refine ⟨b.equivFun.symm n, funext fun k ↦ ?_⟩
-    have hk : b.repr (b.equivFun.symm n) k = n k := congr_fun (b.equivFun.apply_symm_apply n) k
-    rw [hk]
+    rw [← b.equivFun_apply, b.equivFun.apply_symm_apply]
     simpa using hn k
   · rintro ⟨y, rfl⟩ k
     simp
 
 /-- The **morphism from a Cartan datum to the datum of its realization**: a coweight goes to its
-coordinate vector. It is an isomorphism
-(`TauCeti.CartanDatum.realizationHom_toLinearMap_bijective`). -/
+coordinate vector. It is bijective on coweights
+(`TauCeti.CartanDatum.realizationHom_toLinearMap_bijective`) and on weights
+(`TauCeti.CartanDatum.realizationHom_weightMap_bijective`), so it is an isomorphism, with inverse
+`TauCeti.CartanDatum.Hom.inverse`. -/
 noncomputable def realizationHom :
     Hom D ((D.coweightLattice b).toCartanDatum D.symmetrizer D.cartan_apply_self
       (fun _ _ ↦ D.cartan_nonpos) D.symmetrizer_pos D.symmetrizer_mul_cartan) where
-  toLinearMap := LinearMap.codRestrict _
-    (AddMonoidHom.mk' (fun y k ↦ (b.repr y k : ℚ)) fun y z ↦ by ext; simp).toIntLinearMap
-    fun y ↦ (D.mem_coweightLattice_iff b).mpr ⟨y, rfl⟩
+  toLinearMap := LinearMap.codRestrict _ (Pi.algebraMap κ ℤ ℚ ∘ₗ b.equivFun.toLinearMap)
+    fun y ↦ (D.mem_coweightLattice_iff b).mpr ⟨y, by ext; simp [Pi.algebraMap]⟩
   map_coroot i := by
     ext
-    simp [realization_coroot]
+    simp [realization_coroot, Pi.algebraMap]
   pairing_root_map i y := Int.cast_injective (α := ℚ) <| by
-    simp
+    simp [Pi.algebraMap, Function.comp_def]
   symmetrizer_eq := rfl
 
 @[simp]
 theorem coe_realizationHom_toLinearMap (y : Y) :
     ((D.realizationHom b).toLinearMap y : κ → ℚ) = fun k ↦ (b.repr y k : ℚ) := by
   ext
-  simp [realizationHom]
+  simp [realizationHom, Pi.algebraMap]
 
 /-- **Every Cartan datum on a coweight lattice with a finite basis comes from a realization**: the
-coordinates in a basis identify it with the datum of a coweight lattice of a rational realization
-of its Cartan matrix, compatibly with roots, coroots, pairing and symmetrizer. -/
+coordinates in a basis are a bijection from its coweight lattice onto the coweight lattice of the
+datum of a rational realization of its Cartan matrix. Since `TauCeti.CartanDatum.realizationHom`
+is a morphism of Cartan data, this makes it an isomorphism, with inverse
+`TauCeti.CartanDatum.Hom.inverse`. -/
 theorem realizationHom_toLinearMap_bijective :
     Function.Bijective (D.realizationHom b).toLinearMap := by
   refine ⟨fun y z h ↦ b.repr.injective <| Finsupp.ext fun k ↦ ?_, fun x ↦ ?_⟩
   · simpa using congr_fun (congrArg Subtype.val h) k
   · obtain ⟨y, hy⟩ := (D.mem_coweightLattice_iff b).mp x.2
     exact ⟨y, Subtype.ext (by simpa using hy)⟩
+
+/-- The morphism from a Cartan datum to the datum of its realization is bijective on weights. -/
+theorem realizationHom_weightMap_bijective : Function.Bijective (D.realizationHom b).weightMap :=
+  (D.realizationHom b).weightMap_bijective (D.realizationHom_toLinearMap_bijective b)
 
 end CartanDatum
 
