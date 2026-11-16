@@ -170,7 +170,9 @@ numbering. -/
 private theorem ext_finSumFinRevEquiv {D D' : BrauerDiagram k}
     (h : ∀ y, finSumFinRevEquiv k k (k + k) rfl (D.val y) =
       finSumFinRevEquiv k k (k + k) rfl (D'.val y)) : D = D' :=
-  Subtype.ext (Equiv.ext fun y => (finSumFinRevEquiv k k (k + k) rfl).injective (h y))
+  by
+    ext y
+    exact (finSumFinRevEquiv k k (k + k) rfl).injective (h y)
 
 end BrauerDiagram
 

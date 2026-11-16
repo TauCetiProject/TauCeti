@@ -73,8 +73,9 @@ variable {k : ℕ}
 
 /-- Two planar matchings are equal when they match every point with the same partner. -/
 @[ext]
-theorem ext {x y : PlanarMatching k} (h : ∀ a, x.1.val a = y.1.val a) : x = y :=
-  Subtype.ext <| Subtype.ext <| Equiv.ext h
+theorem ext {x y : PlanarMatching k} (h : ∀ a, x.1.val a = y.1.val a) : x = y := by
+  ext a : 2
+  exact h a
 
 /-- There is no planar matching of an odd number of points. -/
 theorem isEmpty_of_not_even (hk : ¬ Even k) : IsEmpty (PlanarMatching k) :=

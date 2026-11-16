@@ -715,7 +715,7 @@ extended past the middle boundary, because the permutation diagram has no cap: a
 which leaves at the top point `σ a`. -/
 @[simp]
 theorem composeDiagram_permToBrauer_left : composeDiagram (permToBrauer σ) D = D.relabel 1 σ := by
-  refine Subtype.ext (Equiv.ext fun x => ?_)
+  ext x
   rcases x with i | j
   · rcases h : D.val (Sum.inl i) with i' | a
     · rw [composeDiagram_val_inl_eq_inl_of_cap_lower _ D h]
@@ -739,7 +739,7 @@ is extended past the middle boundary, because the permutation diagram has no cup
 @[simp]
 theorem composeDiagram_permToBrauer_right :
     composeDiagram D (permToBrauer τ) = D.relabel τ⁻¹ 1 := by
-  refine Subtype.ext (Equiv.ext fun x => ?_)
+  ext x
   rcases x with i | j
   · rcases h : D.val (Sum.inl (τ i)) with a' | j'
     · rw [composeDiagram_val_inl_eq_inl_of_cap_upper (D₁ := D) (D₂ := permToBrauer τ) (a := τ i)
