@@ -22,7 +22,8 @@ Combined with the locality of the composition symbol
 (`TauCeti.Symbol.isSmoothing_sharp_sub_comp`), this shows that `Op(c) v` only depends on `v` near
 the positions where the symbol `c` does not vanish, up to a smoothing operator: if `c` has compact
 spatial support and vanishes outside `K`, and `χ` is a compactly supported Schwartz function equal
-to `1` on a neighbourhood of `K`, then
+to `1` on a neighbourhood of `K`, then `Op(c) v = Op(c) (χ v) - Op(r) v` for a smoothing symbol `r`
+(`TauCeti.Symbol.exists_isSmoothing_toDistr_quantizeSobolev_eq_smulLeftCLM_sub`), and so
 `‖Op(c) v‖_{H^{t - m}} ≤ C (‖χ v‖_{H^t} + ‖v‖_{H^r})` for every `r ≤ t`
 (`TauCeti.Symbol.exists_norm_quantizeSobolev_le_smulLeftCLM`). Estimates of this form localize the
 lower order terms in elliptic estimates.
@@ -75,15 +76,18 @@ theorem toDistr_quantizeSobolev_sharp {a : Symbol n W U m'} {b : Symbol n V W m}
 
 /-- **Locality modulo smoothing operators.** Let the symbol `c` with compact spatial support
 vanish at positions outside `K`, and let the Schwartz function `χ` have compact support and equal
-`1` on a neighbourhood of `K`. Then `Op(c) v` is controlled by `χ v` in `H^t` and by `v` in any
-weaker norm `H^r`, `r ≤ t`: `‖Op(c) v‖_{H^{t - m}} ≤ C (‖χ v‖_{H^t} + ‖v‖_{H^r})`. -/
-theorem exists_norm_quantizeSobolev_le_smulLeftCLM {c : Symbol n V W m}
+`1` on a neighbourhood of `K`. Then `Op(c) v = Op(c) (χ v) - Op(r) v` on every `H^t`, for a
+smoothing symbol `r` with compact spatial support: `Op(c) v` only depends on `v` near `K`, up to a
+smoothing operator. -/
+theorem exists_isSmoothing_toDistr_quantizeSobolev_eq_smulLeftCLM_sub {c : Symbol n V W m}
     (hc : c.HasCompactSpatialSupport) {K : Set (CoordinateSpace n)}
     (hcK : ∀ x ∉ K, ∀ ξ, c.coefficient (x, ξ) = 0) {χ : 𝓢(CoordinateSpace n, ℂ)}
-    (hχ : HasCompactSupport χ) (hχK : ∀ᶠ x in 𝓝ˢ K, χ x = 1) {r t : ℝ} (hrt : r ≤ t) :
-    ∃ C, ∀ v : H^{t}(CoordinateSpace n, V),
-      ‖c.quantizeSobolev hc t v‖ ≤ C * (‖BesselPotentialSpace.smulLeftCLM t χ v‖ +
-        ‖BesselPotentialSpace.inclusion hrt v‖) := by
+    (hχ : HasCompactSupport χ) (hχK : ∀ᶠ x in 𝓝ˢ K, χ x = 1) :
+    ∃ (r : Symbol n V W (m + 0)) (hr : r.HasCompactSpatialSupport), r.IsSmoothing ∧
+      ∀ (t : ℝ) (v : H^{t}(CoordinateSpace n, V)),
+        (c.quantizeSobolev hc t v).toDistr =
+          (c.quantizeSobolev hc t (BesselPotentialSpace.smulLeftCLM t χ v)).toDistr -
+            (r.quantizeSobolev hr t v).toDistr := by
   have hF := hasCompactSpatialSupport_ofSpatial_smul_id (V := V) hχ
   set F := ofSpatial (fun x ↦ χ x • ContinuousLinearMap.id ℂ V) ((χ.smooth ⊤).smul contDiff_const)
   have hχ1 : ∀ x ∈ K, χ x = 1 := fun x hx ↦ hχK.self_of_nhdsSet x hx
@@ -99,28 +103,42 @@ theorem exists_norm_quantizeSobolev_le_smulLeftCLM {c : Symbol n V W m}
       (hχK.filter_mono (nhds_le_nhdsSet hx)).mono fun y hy ξ ↦ by simp [F, hy, hχ1 x hx]
   have hsmK : (c.sharp F hF - c.comp F).HasCompactSpatialSupport :=
     (hc.sharp hF).sub (hF.comp_left c)
-  obtain ⟨T, hT⟩ := hsm.exists_continuousLinearMap_toDistr_quantizeSobolev_eq hsmK r (t - m)
+  refine ⟨_, hsmK, hsm, fun t v ↦ ?_⟩
+  -- `Op(c) v = Op(c # χ) v - Op(c # χ - c ∘ χ) v`, and `Op(c # χ) v = Op(c) (χ v)`.
+  have h₁ : (c.quantizeSobolev hc t v).toDistr =
+      ((c.sharp F hF).quantizeSobolev (hc.sharp hF) t v).toDistr -
+        ((c.sharp F hF - c.comp F).quantizeSobolev hsmK t v).toDistr := by
+    rw [← toDistr_quantizeSobolev_sub_apply _ _ ((hc.sharp hF).sub hsmK)]
+    exact toDistr_quantizeSobolev_congr (by rw [coefficient_sub, coefficient_sub, hcomp,
+      coefficient_inclusion, sub_sub_cancel]) hc _ rfl
+  rw [h₁, toDistr_quantizeSobolev_sharp hc hF]
+  congr 1
+  exact toDistr_quantizeSobolev_congr rfl hc hc (toDistr_quantizeSobolev_ofSpatial_smul_id χ hF t v)
+
+/-- **Locality modulo smoothing operators.** Let the symbol `c` with compact spatial support
+vanish at positions outside `K`, and let the Schwartz function `χ` have compact support and equal
+`1` on a neighbourhood of `K`. Then `Op(c) v` is controlled by `χ v` in `H^t` and by `v` in any
+weaker norm `H^r`, `r ≤ t`: `‖Op(c) v‖_{H^{t - m}} ≤ C (‖χ v‖_{H^t} + ‖v‖_{H^r})`. -/
+theorem exists_norm_quantizeSobolev_le_smulLeftCLM {c : Symbol n V W m}
+    (hc : c.HasCompactSpatialSupport) {K : Set (CoordinateSpace n)}
+    (hcK : ∀ x ∉ K, ∀ ξ, c.coefficient (x, ξ) = 0) {χ : 𝓢(CoordinateSpace n, ℂ)}
+    (hχ : HasCompactSupport χ) (hχK : ∀ᶠ x in 𝓝ˢ K, χ x = 1) {r t : ℝ} (hrt : r ≤ t) :
+    ∃ C, ∀ v : H^{t}(CoordinateSpace n, V),
+      ‖c.quantizeSobolev hc t v‖ ≤ C * (‖BesselPotentialSpace.smulLeftCLM t χ v‖ +
+        ‖BesselPotentialSpace.inclusion hrt v‖) := by
+  obtain ⟨R, hR, hsm, hloc⟩ :=
+    exists_isSmoothing_toDistr_quantizeSobolev_eq_smulLeftCLM_sub hc hcK hχ hχK
+  obtain ⟨T, hT⟩ := hsm.exists_continuousLinearMap_toDistr_quantizeSobolev_eq hR r (t - m)
   set C := ‖T‖
   refine ⟨‖c.quantizeSobolev hc t‖ + C, fun v ↦ ?_⟩
   set w := T (BesselPotentialSpace.inclusion hrt v)
-  have hw := hT (BesselPotentialSpace.toDistr_inclusion hrt v).symm
   have hwle : ‖w‖ ≤ C * ‖BesselPotentialSpace.inclusion hrt v‖ := T.le_opNorm _
-  -- `Op(c) v = Op(c # χ) v - Op(c # χ - c ∘ χ) v = Op(c) (χ v) - w`.
+  -- `Op(c) v = Op(c) (χ v) - w`.
   have hv : c.quantizeSobolev hc t v =
       c.quantizeSobolev hc t (BesselPotentialSpace.smulLeftCLM t χ v) - w := by
     refine BesselPotentialSpace.ext ?_
-    have h₁ : (c.quantizeSobolev hc t v).toDistr =
-        ((c.sharp F hF).quantizeSobolev (hc.sharp hF) t v).toDistr -
-          ((c.sharp F hF - c.comp F).quantizeSobolev hsmK t v).toDistr := by
-      rw [← toDistr_quantizeSobolev_sub_apply _ _ ((hc.sharp hF).sub hsmK)]
-      exact toDistr_quantizeSobolev_congr (by rw [coefficient_sub, coefficient_sub, hcomp,
-        coefficient_inclusion, sub_sub_cancel]) hc _ rfl
-    have h₂ : ((c.sharp F hF).quantizeSobolev (hc.sharp hF) t v).toDistr =
-        (c.quantizeSobolev hc t (BesselPotentialSpace.smulLeftCLM t χ v)).toDistr := by
-      rw [toDistr_quantizeSobolev_sharp hc hF]
-      exact toDistr_quantizeSobolev_congr rfl hc hc
-        (toDistr_quantizeSobolev_ofSpatial_smul_id χ hF t v)
-    rw [h₁, h₂, hw, BesselPotentialSpace.toDistr_sub]
+    rw [hloc t v, hT (BesselPotentialSpace.toDistr_inclusion hrt v).symm,
+      BesselPotentialSpace.toDistr_sub]
   rw [hv]
   calc ‖c.quantizeSobolev hc t (BesselPotentialSpace.smulLeftCLM t χ v) - w‖
       ≤ ‖c.quantizeSobolev hc t‖ * ‖BesselPotentialSpace.smulLeftCLM t χ v‖ +

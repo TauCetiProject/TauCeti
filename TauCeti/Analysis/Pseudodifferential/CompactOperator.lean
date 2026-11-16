@@ -79,20 +79,10 @@ theorem smulLeftCLM_comp_quantizeSobolev (ha : a.HasCompactSpatialSupport) (s : 
     {φ : 𝓢(CoordinateSpace n, ℂ)} (hφ : EqOn φ 1 K) :
     BesselPotentialSpace.smulLeftCLM (s - m) φ ∘L a.quantizeSobolev ha s =
       a.quantizeSobolev ha s := by
-  refine BesselPotentialSpace.continuousLinearMap_ext ENNReal.ofNat_ne_top fun u ↦
-    BesselPotentialSpace.ext ?_
-  ext ψ
-  rw [ContinuousLinearMap.comp_apply, BesselPotentialSpace.toDistr_smulLeftCLM,
-    TemperedDistribution.smulLeftCLM_apply_apply,
-    toDistr_quantizeSobolev_toBesselPotentialSpaceCLM_apply,
-    toDistr_quantizeSobolev_toBesselPotentialSpaceCLM_apply]
-  refine integral_congr_ae (.of_forall fun x ↦ ?_)
-  dsimp only
-  rw [SchwartzMap.smulLeftCLM_apply_apply φ.hasTemperateGrowth, smul_eq_mul]
+  refine (quantizeSobolev_eq_smulLeftCLM_comp ha ha (fun x ξ ↦ ?_) s).symm
   by_cases hx : x ∈ K
-  · rw [hφ hx, Pi.one_apply, one_mul]
-  · rw [quantizeSchwartzValue_congr_left (b := 0) (hK x hx), quantizeSchwartzValue_zero_left,
-      smul_zero, smul_zero]
+  · rw [hφ hx, Pi.one_apply, one_smul]
+  · rw [hK x hx, smul_zero]
 
 /-- **Compactness of quantizations with compact spatial support.** For a symbol `a` of order `m`
 with compact spatial support and a finite-dimensional complex Hilbert space `W`, the quantization
