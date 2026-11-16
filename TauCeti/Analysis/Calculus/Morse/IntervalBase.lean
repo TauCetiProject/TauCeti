@@ -591,6 +591,32 @@ theorem tendsto_nhds_one_of_tendsto_intervalBaseTimeCoordinate_atTop {α : Type*
   ((tendsto_intervalBaseOrbit_atTop one_pos).comp h).congr' <| hx.mono fun _ hi ↦
     intervalBaseOrbit_one_intervalBaseTimeCoordinate hi
 
+/-- The time coordinate tends to `-∞` at `0`. -/
+theorem tendsto_intervalBaseTimeCoordinate_nhdsGT_zero :
+    Tendsto intervalBaseTimeCoordinate (𝓝[>] 0) atBot := by
+  have h : Tendsto (fun t : ℝ ↦ Real.log (1 - t ^ 2) / 2) (𝓝[>] 0) (𝓝 0) := by
+    have hc : Continuous (fun t : ℝ ↦ 1 - t ^ 2) := by fun_prop
+    simpa using (((Real.continuousAt_log (by norm_num : (1 : ℝ) - 0 ^ 2 ≠ 0)).tendsto.comp
+      (hc.tendsto 0)).div_const 2).mono_left nhdsWithin_le_nhds
+  refine (Real.tendsto_log_nhdsGT_zero.atBot_add h.neg).congr fun t ↦ ?_
+  rw [intervalBaseTimeCoordinate_apply]; ring
+
+/-- The time coordinate tends to `+∞` at `1`. -/
+theorem tendsto_intervalBaseTimeCoordinate_nhdsLT_one :
+    Tendsto intervalBaseTimeCoordinate (𝓝[<] 1) atTop := by
+  have h₁ : Tendsto (fun t : ℝ ↦ 1 - t ^ 2) (𝓝[<] 1) (𝓝[>] 0) := by
+    refine tendsto_nhdsWithin_of_tendsto_nhds_of_eventually_within _ ?_ ?_
+    · have hc : Continuous (fun t : ℝ ↦ 1 - t ^ 2) := by fun_prop
+      simpa using (hc.tendsto 1).mono_left nhdsWithin_le_nhds
+    · filter_upwards [Ioo_mem_nhdsLT (show (0 : ℝ) < 1 by norm_num)] with t ht
+      exact sub_pos.2 (by nlinarith [ht.1, ht.2])
+  have h₂ : Tendsto (fun t : ℝ ↦ -(Real.log (1 - t ^ 2) / 2)) (𝓝[<] 1) atTop :=
+    tendsto_neg_atBot_atTop.comp ((Real.tendsto_log_nhdsGT_zero.comp h₁).atBot_div_const two_pos)
+  have h₃ : Tendsto Real.log (𝓝[<] 1) (𝓝 0) := by
+    simpa using (Real.continuousAt_log one_ne_zero).tendsto.mono_left nhdsWithin_le_nhds
+  refine (h₃.add_atTop h₂).congr fun t ↦ ?_
+  rw [intervalBaseTimeCoordinate_apply]; ring
+
 /-! ### The flow and the time coordinate -/
 
 private theorem strictMonoOn_intervalBaseFlow_Icc_zero_one (C s : ℝ) :
