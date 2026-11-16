@@ -680,17 +680,15 @@ theorem plumbedTruncation_mono (q : Puncture) (L : ℝ) : Monotone (q.plumbedTru
 theorem iUnion_plumbedTruncation {q : Puncture} (hq : q ≠ inf) {L : ℝ} (hL : 0 < L) :
     ⋃ R, q.plumbedTruncation L R = {w | (w ≠ 0 ∧ w ≠ 1) ∧ w ≠ q.plumbingMap L 1} := by
   refine (iUnion_subset (plumbedTruncation_subset hq hL)).antisymm fun w hw ↦ ?_
-  obtain ⟨⟨hw0, hw1⟩, hwψ⟩ := hw
   have hS {w' : ℂ} (h0 : w' ≠ 0) (h1 : w' ≠ 1) : ∃ R, w' ∈ truncation R := by
     have h : w' ∈ ⋃ R, truncation R := by rw [iUnion_truncation]; exact ⟨h0, h1⟩
     exact mem_iUnion.1 h
   by_cases hle : (q.endCoord w).re ≤ L / 2
-  · obtain ⟨R, hR⟩ := hS hw0 hw1
+  · obtain ⟨R, hR⟩ := hS hw.1.1 hw.1.2
     exact mem_iUnion.2 ⟨R, mem_plumbedTruncation_iff.2 (Or.inl ⟨hR, hle⟩)⟩
-  · have hwc : w ≠ q.endCenter := by
-      rcases q.endCenter_eq_zero_or_eq_one with h | h <;> rw [h] <;> assumption
-    obtain ⟨R, hR⟩ := hS (q.sub_endCenter_div_plumbingFactor_ne_zero L hwc)
-      fun h ↦ hwψ ((q.sub_endCenter_div_plumbingFactor_eq_one_iff L).1 h)
+  · have hwc := ne_endCenter hw.1 q
+    obtain ⟨h0', h1'⟩ := q.sub_endCenter_div_plumbingFactor_ne_zero_and_ne_one L hw
+    obtain ⟨R, hR⟩ := hS h0' h1'
     refine mem_iUnion.2 ⟨R, mem_plumbedTruncation_iff.2 (Or.inr ⟨_, hR, ?_,
       plumbingMap_sub_endCenter_div q L w⟩)⟩
     rw [re_endCoord_inf_sub_endCenter_div q L hwc]
