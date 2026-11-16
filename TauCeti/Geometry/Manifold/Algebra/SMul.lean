@@ -40,6 +40,8 @@ underlying real manifold.
 * `ContMDiffSMul.contMDiff_smul_const`: the orbit maps `g ↦ g • x` of a `C^n` action are `C^n`.
 * `ContMDiffSMul.mdifferentiableAt_smul_const`: the orbit maps of a `C^1` action are
   differentiable.
+* `ContMDiffConstSMul.mdifferentiable_const_smul`, `ContMDiffSMul.mdifferentiable_const_smul`: the
+  translations `y ↦ g • y` of an action by `C^n` maps, with `n ≠ 0`, are differentiable.
 * `ContMDiffSMul.contMDiffOn_comp_smul_symm`: in the coordinates `(w, g) ↦ e (g • e.symm w)` of
   a `C^n` partial homeomorphism `e` with `C^n` inverse, a `C^n` action is jointly `C^n`.
 * `ContinuousLinearEquiv.contMDiffConstSMul_transContinuousLinearEquiv_iff`: a linear change of
@@ -103,6 +105,29 @@ theorem ContMDiffSMul.mdifferentiableAt_smul_const {𝕜 : Type*} [NontriviallyN
     {M : Type*} [TopologicalSpace M] [ChartedSpace H' M] [SMul G M]
     [ContMDiffSMul I I' 1 G M] (x : M) (g : G) : MDifferentiableAt I I' (fun h : G ↦ h • x) g :=
   (contMDiff_smul_const (n := 1) x).mdifferentiableAt one_ne_zero
+
+/-- Each translation `y ↦ g • y` of an action by `C^n` maps, with `n ≠ 0`, is differentiable. -/
+@[to_additive /-- Each translation `y ↦ g +ᵥ y` of an additive action by `C^n` maps, with
+`n ≠ 0`, is differentiable. -/]
+theorem ContMDiffConstSMul.mdifferentiable_const_smul {𝕜 : Type*} [NontriviallyNormedField 𝕜]
+    {E : Type*} [NormedAddCommGroup E] [NormedSpace 𝕜 E]
+    {H : Type*} [TopologicalSpace H] {I : ModelWithCorners 𝕜 E H}
+    {G : Type*} {M : Type*} [TopologicalSpace M] [ChartedSpace H M] [SMul G M] {n : ℕ∞ω}
+    [ContMDiffConstSMul I n G M] (hn : n ≠ 0) (g : G) : MDifferentiable I I fun y : M ↦ g • y :=
+  (contMDiff_const_smul (I := I) (n := n) g).mdifferentiable hn
+
+/-- Each translation `y ↦ g • y` of a `C^n` action, with `n ≠ 0`, is differentiable. -/
+@[to_additive /-- Each translation `y ↦ g +ᵥ y` of a `C^n` additive action, with `n ≠ 0`, is
+differentiable. -/]
+theorem ContMDiffSMul.mdifferentiable_const_smul {𝕜 : Type*} [NontriviallyNormedField 𝕜]
+    {E : Type*} [NormedAddCommGroup E] [NormedSpace 𝕜 E]
+    {H : Type*} [TopologicalSpace H] {I : ModelWithCorners 𝕜 E H}
+    {E' : Type*} [NormedAddCommGroup E'] [NormedSpace 𝕜 E']
+    {H' : Type*} [TopologicalSpace H'] {I' : ModelWithCorners 𝕜 E' H'}
+    {G : Type*} [TopologicalSpace G] [ChartedSpace H G]
+    {M : Type*} [TopologicalSpace M] [ChartedSpace H' M] [SMul G M] {n : ℕ∞ω}
+    [ContMDiffSMul I I' n G M] (hn : n ≠ 0) (g : G) : MDifferentiable I' I' fun y : M ↦ g • y :=
+  (ContMDiffSMul.contMDiff_const_smul (I := I) (n := n) g).mdifferentiable hn
 
 /-- In the coordinates of a `C^n` partial homeomorphism `e` with `C^n` inverse, a `C^n` action is
 the jointly `C^n` map `(w, g) ↦ e (g • e.symm w)` on the set of pairs for which it is defined.
