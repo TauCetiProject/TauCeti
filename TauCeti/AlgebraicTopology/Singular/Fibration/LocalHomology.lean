@@ -330,13 +330,7 @@ private lemma excisionIso_hom_naturality (hε₀ : 0 < ε) (hf : f ≫ p' = p) (
   have hQ : TopPair.excisionMap (X := E) (p ⁻¹' e.chartBall b ε) (p ⁻¹' {b})ᶜ ≫
         TopPair.ofSubsetMap f (f.mapsTo_preimage_of_comp_eq hf {b}ᶜ) =
       Q ≫ TopPair.excisionMap (X := E') (p' ⁻¹' e.chartBall b ε) (p' ⁻¹' {b})ᶜ :=
-    TopPair.hom_ext_of_fst _ (by
-      ext x
-      rw [TopPair.Hom.fst_comp, TopPair.Hom.fst_comp]
-      -- The ambient spaces of the pairs are `TopCat.of` of subtypes, which `rw` does not unfold.
-      erw [ConcreteCategory.comp_apply, ConcreteCategory.comp_apply, TopPair.excisionMap_fst_apply,
-        TopPair.excisionMap_fst_apply, TopPair.ofSubsetMap_fst_apply]
-      exact (TopPair.interPairMap_fst_apply _ _ _ x).symm)
+    (TopPair.interPairMap_comp_excisionMap f _ _).symm
   have hQ' : (e.chartBallComplFiberPairIso hb hε p).hom ≫
         TopPair.ofSubsetMap (f.preimageMap hf (e.chartBall b ε))
           ((f.preimageMap hf (e.chartBall b ε)).mapsTo_preimage_of_comp_eq
@@ -478,21 +472,17 @@ theorem homologyMap_comp_fiberLocalization_comp_singularHomologyComplFiberIso_ho
         (TopCat.singularHomologyComplFiberIso R e hb hε hε₀ hp n m h).hom ≫
           ((AlgebraicTopology.singularHomologyFunctor (ModuleCat.{u} R) n).obj
             (ModuleCat.of R R)).map (f.preimageMap hf {b}) := by
-  have hπ := TopPair.singularHomologyπ_naturality
-    (TopPair.ofSubsetMap f (f.mapsTo_preimage_of_comp_eq hf {b}ᶜ)) (ModuleCat.of R R) m
-  rw [TopPair.ofSubsetMap_fst] at hπ
-  calc _ = (SSet.homologyMap (_root_.TopCat.toSSet.map f) (ModuleCat.of R R) m ≫
-          fiberLocalization (ModuleCat.of R R) p' b m) ≫
-            (TopCat.singularHomologyComplFiberIso R e hb hε hε₀ hp' n m h).hom :=
-        (Category.assoc _ _ _).symm
-    _ = (fiberLocalization (ModuleCat.of R R) p b m ≫
-          TopPair.singularHomologyMap (TopPair.ofSubsetMap f (f.mapsTo_preimage_of_comp_eq hf {b}ᶜ))
-            (ModuleCat.of R R) m) ≫
-            (TopCat.singularHomologyComplFiberIso R e hb hε hε₀ hp' n m h).hom :=
-        congrArg (· ≫ _) hπ
-    _ = _ := by
-      rw [Category.assoc, TopCat.singularHomologyComplFiberIso_hom_naturality R e hb hε hε₀ hp hp'
-        hf]
+  have hloc : SSet.homologyMap (_root_.TopCat.toSSet.map f) (ModuleCat.of R R) m ≫
+        fiberLocalization (ModuleCat.of R R) p' b m =
+      fiberLocalization (ModuleCat.of R R) p b m ≫
+        TopPair.singularHomologyMap (TopPair.ofSubsetMap f (f.mapsTo_preimage_of_comp_eq hf {b}ᶜ))
+          (ModuleCat.of R R) m := by
+    have hσ := homologyMap_comp_fiberLocalization (ModuleCat.of R R) f.hom
+      (congrArg (fun g : E ⟶ B ↦ ⇑g.hom) hf) b m
+    -- `hσ` is stated for `TopCat.ofHom f.hom` on `TopCat.of E`, which `exact` identifies with `f`.
+    rw [localHomologyMap_def] at hσ
+    exact hσ
+  rw [reassoc_of% hloc, TopCat.singularHomologyComplFiberIso_hom_naturality R e hb hε hε₀ hp hp' hf]
 
 include hp' in
 /-- **Living over the fundamental class under maps of fibrations.** Let `p : E ⟶ B` and
