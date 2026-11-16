@@ -8,6 +8,7 @@ module
 public import Mathlib.Topology.Algebra.Module.Multilinear.Topology
 public import TauCeti.Analysis.InnerProductSpace.KulkarniNomizu
 public import TauCeti.Topology.Algebra.Module.FiniteDimension
+import Mathlib.Data.Fin.Tuple.Reflection
 
 /-!
 # Algebraic curvature tensors
@@ -305,8 +306,8 @@ def toLinearMap₄ : FourTensor V →ₗ[ℝ] V →ₗ[ℝ] V →ₗ[ℝ] V →�
 /-- Currying a four-tensor into a four-fold linear map is injective. -/
 theorem toLinearMap₄_injective : Function.Injective (toLinearMap₄ (V := V)) := fun _ _ h ↦ by
   ext m
-  have hm : m = ![m 0, m 1, m 2, m 3] := by funext i; fin_cases i <;> rfl
-  rw [hm]; exact congr($h (m 0) (m 1) (m 2) (m 3))
+  rw [← FinVec.etaExpand_eq m]
+  exact congr($h (m 0) (m 1) (m 2) (m 3))
 
 end NormedSpace
 
@@ -335,7 +336,7 @@ theorem ofLinearMap₄_apply (T : V →ₗ[ℝ] V →ₗ[ℝ] V →ₗ[ℝ] V �
 /-- Currying and uncurrying a four-tensor recovers the original four-tensor. -/
 @[simp] theorem ofLinearMap₄_toLinearMap₄ (r : FourTensor V) :
     ofLinearMap₄ (toLinearMap₄ r) = r := by
-  ext m; rw [ofLinearMap₄_apply, toLinearMap₄_apply]; congr 1; funext i; fin_cases i <;> rfl
+  ext m; rw [ofLinearMap₄_apply, toLinearMap₄_apply]; exact congrArg r (FinVec.etaExpand_eq m)
 
 /-- Uncurrying and currying a four-fold linear form recovers the original form. -/
 @[simp] theorem toLinearMap₄_ofLinearMap₄ (T : V →ₗ[ℝ] V →ₗ[ℝ] V →ₗ[ℝ] V →ₗ[ℝ] ℝ) :

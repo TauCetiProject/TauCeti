@@ -74,10 +74,8 @@ private theorem symm_part_add_exterior_eq {B : BilinForm R M} (hB : B.IsSymm)
       (B + TauCeti.BilinForm.ofExteriorSquareDual ψ).flip) = B := by
   ext x y
   simp only [LinearMap.smul_apply, LinearMap.add_apply, flip_apply, smul_eq_mul]
-  rw [hB.eq y x, ← (TauCeti.BilinForm.isAlt_ofExteriorSquareDual ψ).neg_eq x y,
-    show B x y + TauCeti.BilinForm.ofExteriorSquareDual ψ x y +
-      (B x y + -TauCeti.BilinForm.ofExteriorSquareDual ψ x y) = 2 * B x y by ring,
-    ← mul_assoc, invOf_mul_self, one_mul]
+  rw [hB.eq y x, ← (TauCeti.BilinForm.isAlt_ofExteriorSquareDual ψ).neg_eq x y]
+  grind [invOf_mul_self]
 
 private theorem alt_part_add_exterior_eq {B : BilinForm R M} (hB : B.IsSymm)
     (ψ : Module.Dual R (⋀[R]^2 M)) :
@@ -90,9 +88,8 @@ private theorem alt_part_add_exterior_eq {B : BilinForm R M} (hB : B.IsSymm)
     LinearMap.add_apply, flip_apply, smul_eq_mul]
   have hneg := (TauCeti.BilinForm.isAlt_ofExteriorSquareDual ψ).neg_eq x y
   simp only [TauCeti.BilinForm.ofExteriorSquareDual_apply] at hneg
-  rw [hB.eq y x, ← hneg, show B x y + ψ (exteriorPower.ιMulti R 2 ![x, y]) -
-      (B x y + -ψ (exteriorPower.ιMulti R 2 ![x, y])) =
-      2 * ψ (exteriorPower.ιMulti R 2 ![x, y]) by ring, ← mul_assoc, invOf_mul_self, one_mul]
+  rw [hB.eq y x, ← hneg]
+  grind [invOf_mul_self]
 
 /-- When `2` is invertible in `R`, decomposing a bilinear form into its symmetric and alternating
 parts identifies `symmSubmodule R M × Module.Dual R (⋀[R]^2 M)` with `BilinForm R M`. -/
@@ -114,8 +111,7 @@ noncomputable def symmProdExteriorDualEquiv :
       TauCeti.BilinForm.ofExteriorSquareDual_apply, LinearMap.IsAlt.toAlternatingMap_apply,
       exteriorPower.alternatingMapLinearEquiv_apply_ιMulti, Matrix.cons_val_zero,
       Matrix.cons_val_one, smul_eq_mul]
-    rw [show ⅟(2 : R) * (B x y + B y x) + ⅟(2 : R) * (B x y - B y x) = (⅟(2 : R) * 2) * B x y
-      by ring, invOf_mul_self, one_mul]
+    grind [invOf_mul_self]
 
 variable {R M}
 
@@ -163,7 +159,7 @@ theorem finrank_symmSubmodule {R M : Type*} [CommSemiring R] [AddCommMonoid M] [
       left_inv := fun B ↦ Subtype.ext <| (toMatrix b).injective <| Matrix.ext fun _ _ ↦ by
         dsimp only; rw [LinearEquiv.apply_symm_apply]; simp
       right_inv := fun f ↦ funext fun p ↦ p.ind fun _ _ ↦ by
-        dsimp only; simp only [Sym2.lift_mk]; rw [LinearEquiv.apply_symm_apply]; rfl }
+        dsimp only; simp only [Sym2.lift_mk]; rw [LinearEquiv.apply_symm_apply]; simp }
   rw [e.finrank_eq, Module.finrank_pi, Sym2.card, Fintype.card_fin, Nat.choose_two_right]
   simp [Nat.mul_comm]
 

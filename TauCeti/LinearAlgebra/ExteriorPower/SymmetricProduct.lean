@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.Lie.ExteriorPower
-public import TauCeti.LinearAlgebra.BilinearMap.Multilinear
 import Mathlib.Tactic.Module
 import TauCeti.LinearAlgebra.ExteriorPower.Basic
 import TauCeti.LinearAlgebra.ExteriorPower.Square
@@ -32,8 +31,8 @@ via `id ∧ id = id` and the traceless-Ricci operator via `Ric₀ ∧ id`.
 
 * `exteriorPower.symmMap₂_apply_ιMulti`, `exteriorPower.symmMap₂_comm`,
   `exteriorPower.symmMap₂_self`, `exteriorPower.symmMap₂_id_right`,
-  `exteriorPower.symmMap₂_id_left`, `exteriorPower.map_comp_symmMap₂`, and
-  `exteriorPower.symmMap₂_comp_map`.
+  `exteriorPower.symmMap₂_id_left`, `exteriorPower.symmMap₂_comp_symmMap₂`,
+  `exteriorPower.map_comp_symmMap₂`, and `exteriorPower.symmMap₂_comp_map`.
 
 ## References
 
@@ -65,22 +64,22 @@ power, characterized by `symmMap₂ f g (u ∧ v) = ⅟2 • (f u ∧ g v + g u 
 noncomputable def symmMap₂ :
     (M →ₗ[R] N) →ₗ[R] (M →ₗ[R] N) →ₗ[R] (⋀[R]^2 M →ₗ[R] ⋀[R]^2 N) :=
   LinearMap.mk₂ R (fun f g ↦ alternatingMapLinearEquiv (isAlt_symmWedgeBilin f g).toAlternatingMap)
-    (fun _ _ _ ↦ linearMap_ext <| AlternatingMap.ext fun _ ↦ by
-      simp only [LinearMap.compAlternatingMap_apply, LinearMap.add_apply, symmWedgeBilin,
-        alternatingMapLinearEquiv_apply_ιMulti, LinearMap.IsAlt.toAlternatingMap_apply,
-        LinearMap.mk₂_apply, ιMulti_two_add_left, ιMulti_two_add_right]; module)
-    (fun _ _ _ ↦ linearMap_ext <| AlternatingMap.ext fun _ ↦ by
-      simp only [LinearMap.compAlternatingMap_apply, LinearMap.smul_apply, symmWedgeBilin,
-        alternatingMapLinearEquiv_apply_ιMulti, LinearMap.IsAlt.toAlternatingMap_apply,
-        LinearMap.mk₂_apply, ιMulti_two_smul_left, ιMulti_two_smul_right]; module)
-    (fun _ _ _ ↦ linearMap_ext <| AlternatingMap.ext fun _ ↦ by
-      simp only [LinearMap.compAlternatingMap_apply, LinearMap.add_apply, symmWedgeBilin,
-        alternatingMapLinearEquiv_apply_ιMulti, LinearMap.IsAlt.toAlternatingMap_apply,
-        LinearMap.mk₂_apply, ιMulti_two_add_left, ιMulti_two_add_right]; module)
-    (fun _ _ _ ↦ linearMap_ext <| AlternatingMap.ext fun _ ↦ by
-      simp only [LinearMap.compAlternatingMap_apply, LinearMap.smul_apply, symmWedgeBilin,
-        alternatingMapLinearEquiv_apply_ιMulti, LinearMap.IsAlt.toAlternatingMap_apply,
-        LinearMap.mk₂_apply, ιMulti_two_smul_left, ιMulti_two_smul_right]; module)
+    (fun _ _ _ ↦ linearMap_ext_ιMulti_two fun _ _ ↦ by
+      simp only [LinearMap.add_apply, symmWedgeBilin, alternatingMapLinearEquiv_apply_ιMulti,
+        LinearMap.IsAlt.toAlternatingMap_apply, LinearMap.mk₂_apply, Matrix.cons_val_zero,
+        Matrix.cons_val_one, ιMulti_two_add_left, ιMulti_two_add_right]; module)
+    (fun _ _ _ ↦ linearMap_ext_ιMulti_two fun _ _ ↦ by
+      simp only [LinearMap.smul_apply, symmWedgeBilin, alternatingMapLinearEquiv_apply_ιMulti,
+        LinearMap.IsAlt.toAlternatingMap_apply, LinearMap.mk₂_apply, Matrix.cons_val_zero,
+        Matrix.cons_val_one, ιMulti_two_smul_left, ιMulti_two_smul_right]; module)
+    (fun _ _ _ ↦ linearMap_ext_ιMulti_two fun _ _ ↦ by
+      simp only [LinearMap.add_apply, symmWedgeBilin, alternatingMapLinearEquiv_apply_ιMulti,
+        LinearMap.IsAlt.toAlternatingMap_apply, LinearMap.mk₂_apply, Matrix.cons_val_zero,
+        Matrix.cons_val_one, ιMulti_two_add_left, ιMulti_two_add_right]; module)
+    (fun _ _ _ ↦ linearMap_ext_ιMulti_two fun _ _ ↦ by
+      simp only [LinearMap.smul_apply, symmWedgeBilin, alternatingMapLinearEquiv_apply_ιMulti,
+        LinearMap.IsAlt.toAlternatingMap_apply, LinearMap.mk₂_apply, Matrix.cons_val_zero,
+        Matrix.cons_val_one, ιMulti_two_smul_left, ιMulti_two_smul_right]; module)
 
 /-- On `u ∧ v`, `symmMap₂ f g` evaluates to `⅟2 • (f u ∧ g v + g u ∧ f v)`. -/
 @[simp] theorem symmMap₂_apply_ιMulti (f g : M →ₗ[R] N) (u v : M) :
@@ -93,30 +92,25 @@ noncomputable def symmMap₂ :
 theorem symmMap₂_apply_ιMulti_tuple (f g : M →ₗ[R] N) (v : Fin 2 → M) :
     symmMap₂ f g (ιMulti R 2 v) =
       ⅟(2 : R) • (ιMulti R 2 ![f (v 0), g (v 1)] + ιMulti R 2 ![g (v 0), f (v 1)]) := by
-  have hv : v = ![v 0, v 1] := by funext i; fin_cases i <;> rfl
-  conv_lhs => rw [hv]
-  exact symmMap₂_apply_ιMulti f g (v 0) (v 1)
+  simp [symmMap₂, symmWedgeBilin, alternatingMapLinearEquiv_apply_ιMulti,
+    LinearMap.IsAlt.toAlternatingMap_apply]
 
 /-- `symmMap₂` is symmetric in its two linear-map arguments. -/
 theorem symmMap₂_comm (f g : M →ₗ[R] N) : symmMap₂ f g = symmMap₂ g f :=
-  linearMap_ext <| AlternatingMap.ext fun _ ↦ by
-    simp only [LinearMap.compAlternatingMap_apply, symmMap₂_apply_ιMulti_tuple, add_comm]
+  linearMap_ext_ιMulti_two fun _ _ ↦ by simp only [symmMap₂_apply_ιMulti, add_comm]
 
 /-- On the diagonal `(f, f)`, `symmMap₂` agrees with `exteriorPower.map 2 f`. -/
 @[simp] theorem symmMap₂_self (f : M →ₗ[R] N) : symmMap₂ f f = map 2 f :=
-  linearMap_ext <| AlternatingMap.ext fun v ↦ by
-    have hv : v = ![v 0, v 1] := by funext i; fin_cases i <;> rfl
-    conv_rhs => rw [LinearMap.compAlternatingMap_apply, hv, map_apply_ιMulti_two]
-    simp only [LinearMap.compAlternatingMap_apply, symmMap₂_apply_ιMulti_tuple, ← two_smul R,
-      smul_smul, invOf_mul_self, one_smul]
+  linearMap_ext_ιMulti_two fun _ _ ↦ by
+    simp only [symmMap₂_apply_ιMulti, map_apply_ιMulti_two, ← two_smul R, smul_smul, invOf_mul_self,
+      one_smul]
 
 /-- Pairing an endomorphism `f` with `id` gives half the derivation action `lieMap 2 f`. -/
 theorem symmMap₂_id_right (f : Module.End R M) :
     symmMap₂ f LinearMap.id = ⅟(2 : R) • lieMap 2 f :=
-  linearMap_ext <| AlternatingMap.ext fun v ↦ by
-    have hv : v = ![v 0, v 1] := by funext i; fin_cases i <;> rfl
-    rw [hv]; simp only [LinearMap.compAlternatingMap_apply, symmMap₂_apply_ιMulti,
-      LinearMap.id_apply, LinearMap.smul_apply, lieMap_two_apply_ιMulti]
+  linearMap_ext_ιMulti_two fun _ _ ↦ by
+    simp only [symmMap₂_apply_ιMulti, LinearMap.id_apply, LinearMap.smul_apply,
+      lieMap_two_apply_ιMulti]
 
 /-- Pairing `id` with an endomorphism `f` gives half the derivation action `lieMap 2 f`. -/
 theorem symmMap₂_id_left (f : Module.End R M) :
@@ -124,21 +118,25 @@ theorem symmMap₂_id_left (f : Module.End R M) :
 
 variable {P : Type*} [AddCommGroup P] [Module R P]
 
+/-- Composition law for `symmMap₂`:
+`(f₁ ∧ g₁) ∘ (f₂ ∧ g₂) = ⅟2 • ((f₁ ∘ f₂) ∧ (g₁ ∘ g₂) + (f₁ ∘ g₂) ∧ (g₁ ∘ f₂))`. -/
+theorem symmMap₂_comp_symmMap₂ (f₁ g₁ : N →ₗ[R] P) (f₂ g₂ : M →ₗ[R] N) :
+    (symmMap₂ f₁ g₁).comp (symmMap₂ f₂ g₂) =
+      ⅟(2 : R) • (symmMap₂ (f₁.comp f₂) (g₁.comp g₂) + symmMap₂ (f₁.comp g₂) (g₁.comp f₂)) :=
+  linearMap_ext_ιMulti_two fun _ _ ↦ by
+    simp only [LinearMap.comp_apply, LinearMap.smul_apply, LinearMap.add_apply,
+      symmMap₂_apply_ιMulti, map_smul, map_add]
+    module
+
 /-- Naturality of `symmMap₂` under post-composition with `map 2 h`. -/
 theorem map_comp_symmMap₂ (h : N →ₗ[R] P) (f g : M →ₗ[R] N) :
-    (map 2 h).comp (symmMap₂ f g) = symmMap₂ (h.comp f) (h.comp g) :=
-  linearMap_ext <| AlternatingMap.ext fun _ ↦ by
-    simp only [LinearMap.compAlternatingMap_apply, LinearMap.comp_apply,
-      symmMap₂_apply_ιMulti_tuple, map_smul, map_add, map_apply_ιMulti_two]
+    (map 2 h).comp (symmMap₂ f g) = symmMap₂ (h.comp f) (h.comp g) := by
+  rw [← symmMap₂_self h, symmMap₂_comp_symmMap₂, symmMap₂_comm (h.comp g) (h.comp f), ← two_smul R,
+    smul_smul, invOf_mul_self, one_smul]
 
 /-- Naturality of `symmMap₂` under pre-composition with `map 2 h`. -/
 theorem symmMap₂_comp_map (f g : N →ₗ[R] P) (h : M →ₗ[R] N) :
-    (symmMap₂ f g).comp (map 2 h) = symmMap₂ (f.comp h) (g.comp h) :=
-  linearMap_ext <| AlternatingMap.ext fun v ↦ by
-    have hv : v = ![v 0, v 1] := by funext i; fin_cases i <;> rfl
-    conv_lhs => rw [LinearMap.compAlternatingMap_apply, LinearMap.comp_apply, hv,
-      map_apply_ιMulti_two, symmMap₂_apply_ιMulti]
-    simp only [LinearMap.compAlternatingMap_apply, symmMap₂_apply_ιMulti_tuple,
-      LinearMap.comp_apply]
+    (symmMap₂ f g).comp (map 2 h) = symmMap₂ (f.comp h) (g.comp h) := by
+  rw [← symmMap₂_self h, symmMap₂_comp_symmMap₂, ← two_smul R, smul_smul, invOf_mul_self, one_smul]
 
 end exteriorPower

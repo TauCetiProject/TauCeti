@@ -7,6 +7,7 @@ module
 
 public import Mathlib.LinearAlgebra.ExteriorPower.Basic
 public import TauCeti.LinearAlgebra.BilinearMap.Multilinear
+import Mathlib.Data.Fin.Tuple.Reflection
 
 /-!
 # Recognizing a second exterior power
@@ -33,6 +34,8 @@ comparing the index set `{(i, j) | i < j}` with Mathlib's index set of two-eleme
 * `exteriorPower.ιMulti_two_add_left`, `exteriorPower.ιMulti_two_add_right`,
   `exteriorPower.ιMulti_two_smul_left`, `exteriorPower.ιMulti_two_smul_right`, and
   `exteriorPower.ιMulti_two_swap`: the wedge `u ∧ w` of two vectors is bilinear and antisymmetric.
+* `exteriorPower.linearMap_ext_ιMulti_two`: linear maps out of `⋀²M` are determined on pure wedges
+  `u ∧ v`.
 -/
 
 public section
@@ -70,6 +73,15 @@ theorem ιMulti_two_swap (u w : M) :
     ιMulti R 2 ![w, u] = -ιMulti R 2 ![u, w] := by
   simpa [Equiv.swap_apply_def] using
     (ιMulti R 2).map_swap ![u, w] (by decide : (0 : Fin 2) ≠ 1)
+
+/-- Two linear maps out of `⋀[R]^2 M` agree if they agree on all pure wedges `u ∧ v`. -/
+theorem linearMap_ext_ιMulti_two {N : Type*} [AddCommGroup N] [Module R N]
+    {f g : ⋀[R]^2 M →ₗ[R] N}
+    (h : ∀ u v : M, f (ιMulti R 2 ![u, v]) = g (ιMulti R 2 ![u, v])) : f = g :=
+  linearMap_ext <| AlternatingMap.ext fun v ↦ by
+    rw [LinearMap.compAlternatingMap_apply, LinearMap.compAlternatingMap_apply,
+      ← FinVec.etaExpand_eq v]
+    exact h (v 0) (v 1)
 
 end exteriorPower
 

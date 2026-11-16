@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Analysis.InnerProductSpace.AlgebraicCurvature.Basic
 public import TauCeti.LinearAlgebra.BilinearForm.Symmetric
+import Mathlib.Data.Fin.Tuple.Reflection
 import Mathlib.Data.Nat.Choose.Basic
 import Mathlib.LinearAlgebra.ExteriorPower.Basis
 import Mathlib.LinearAlgebra.FiniteDimensional.Lemmas
@@ -68,23 +69,20 @@ section NormedSpace
 variable {V : Type*} [NormedAddCommGroup V] [NormedSpace ℝ V]
 
 /-- A first-pair antisymmetric four-tensor vanishes when its first two arguments are dependent. -/
-theorem apply_eq_zero_of_not_linearIndependent_of_antisymm_first {r : FourTensor V}
-    (h₁ : ∀ u v z w, r ![u, v, z, w] = -r ![v, u, z, w]) {u v : V}
-    (huv : ¬LinearIndependent ℝ ![u, v]) (z w : V) : r ![u, v, z, w] = 0 := by
-  have hdiag (a : V) : r ![a, a, z, w] = 0 := CharZero.eq_neg_self_iff.mp (h₁ a a z w)
-  obtain ⟨s, t, hst, hne⟩ : ∃ s t : ℝ, s • u + t • v = 0 ∧ ¬(s = 0 ∧ t = 0) := by
-    simpa [LinearIndependent.pair_iff] using huv
-  by_cases hs : s = 0
-  · have h0 := congrArg (fun x ↦ toLinearMap₄ r u x z w) hst
-    simp [hs] at h0; exact h0.resolve_left fun ht ↦ hne ⟨hs, ht⟩
-  · have h0 := congrArg (fun x ↦ toLinearMap₄ r x v z w) hst
-    simp [hdiag] at h0; exact h0.resolve_left hs
+theorem apply_eq_zero_of_not_linearIndependent_of_antisymm_first {r : FourTensor V} {u v : V}
+    (huv : ¬LinearIndependent ℝ ![u, v])
+    (h₁ : ∀ u v z w, r ![u, v, z, w] = -r ![v, u, z, w]) (z w : V) : r ![u, v, z, w] = 0 := by
+  have hAlt : (toLinearMap₄ r).IsAlt := fun a ↦ LinearMap.ext₂ fun c d ↦ by
+    rw [toLinearMap₄_apply]; exact CharZero.eq_neg_self_iff.mp (h₁ a a c d)
+  have h0 := AlternatingMap.map_linearDependent (K := ℝ) (N := V →ₗ[ℝ] V →ₗ[ℝ] ℝ)
+    hAlt.toAlternatingMap ![u, v] huv
+  simpa using congr($h0 z w)
 
 /-- An algebraic curvature tensor vanishes on `(u, v, u, v)` for linearly dependent `u, v`. -/
 theorem IsAlgebraicCurvature.apply_self_eq_zero_of_not_linearIndependent {r : FourTensor V}
     (hr : IsAlgebraicCurvature r) {u v : V} (huv : ¬LinearIndependent ℝ ![u, v]) :
     r ![u, v, u, v] = 0 :=
-  apply_eq_zero_of_not_linearIndependent_of_antisymm_first hr.antisymm_first huv u v
+  apply_eq_zero_of_not_linearIndependent_of_antisymm_first huv hr.antisymm_first u v
 
 /-- **Sectional polarization**: algebraic curvature tensors agreeing on all `(u, v, u, v)` agree. -/
 theorem IsAlgebraicCurvature.eq_of_apply_self_eq {r₁ r₂ : FourTensor V}
@@ -161,7 +159,7 @@ private def bianchiMultilinear (r : FourTensor V) :
 private theorem bianchiMultilinear_map_eq_zero_of_lt {r : FourTensor V}
     (hr : IsBivectorSymmetric r) (m : Fin 4 → V) {i j : Fin 4} (hm : m i = m j) (hij : i < j) :
     bianchiMultilinear r m = 0 := by
-  change r ![m 0, m 1, m 2, m 3] + r ![m 1, m 2, m 0, m 3] + r ![m 2, m 0, m 1, m 3] = 0
+  simp only [bianchiMultilinear, MultilinearMap.mk'_apply]
   have hf := isBivectorSymmetric_self_first hr; have hl := isBivectorSymmetric_self_last hr
   fin_cases i <;> fin_cases j <;> first | exact absurd hij (by decide) | (
     simp only [Fin.zero_eta, Fin.mk_one, Fin.reduceFinMk, Fin.isValue] at hm ⊢; rw [hm])
@@ -229,19 +227,19 @@ variable {V : Type*} [NormedAddCommGroup V] [NormedSpace ℝ V] [FiniteDimension
 
 /-- On a space of dimension at most `1`, every first-pair antisymmetric four-tensor is zero. -/
 theorem eq_zero_of_finrank_le_one_of_antisymm_first {r : FourTensor V}
-    (h₁ : ∀ u v z w, r ![u, v, z, w] = -r ![v, u, z, w]) (hdim : Module.finrank ℝ V ≤ 1) :
-    r = 0 :=
+    (hdim : Module.finrank ℝ V ≤ 1)
+    (h₁ : ∀ u v z w, r ![u, v, z, w] = -r ![v, u, z, w]) : r = 0 :=
   toLinearMap₄_injective <| by
     ext u v z w
     have huv : ¬LinearIndependent ℝ ![u, v] := fun h ↦ by
       have hcard := h.fintype_card_le_finrank; rw [Fintype.card_fin] at hcard; omega
     simpa only [map_zero, LinearMap.zero_apply, toLinearMap₄_apply] using
-      apply_eq_zero_of_not_linearIndependent_of_antisymm_first h₁ huv z w
+      apply_eq_zero_of_not_linearIndependent_of_antisymm_first huv h₁ z w
 
 /-- On a space of dimension at most `1`, every algebraic curvature tensor is zero. -/
 theorem IsAlgebraicCurvature.eq_zero_of_finrank_le_one {r : FourTensor V}
     (hr : IsAlgebraicCurvature r) (hdim : Module.finrank ℝ V ≤ 1) : r = 0 :=
-  eq_zero_of_finrank_le_one_of_antisymm_first hr.antisymm_first hdim
+  eq_zero_of_finrank_le_one_of_antisymm_first hdim hr.antisymm_first
 
 /-- On a space of dimension at most `1`, `algebraicCurvatureSubmodule V` is trivial. -/
 theorem algebraicCurvatureSubmodule_eq_bot_of_finrank_le_one (hdim : Module.finrank ℝ V ≤ 1) :
@@ -288,9 +286,9 @@ def bivectorSymmetricEquivSymmBilin :
     exact (LinearMap.exteriorSquareBilinear_ιMulti_ιMulti
       (toLinearMap₄ r.1) _ _ ![u, v] ![z, w]).trans (toLinearMap₄_apply r.1 u v z w)
   right_inv _ := Subtype.ext <| (LinearMap.exteriorSquareBilinear_eq_iff ..).mpr fun v w ↦ by
-    have hv : v = ![v 0, v 1] := by funext i; fin_cases i <;> rfl
-    have hw : w = ![w 0, w 1] := by funext i; fin_cases i <;> rfl
-    rw [toLinearMap₄_apply, fourTensorOfExteriorBilin_apply]; conv_lhs => rw [hv, hw]
+    have hv : ![v 0, v 1] = v := FinVec.etaExpand_eq v
+    have hw : ![w 0, w 1] = w := FinVec.etaExpand_eq w
+    rw [toLinearMap₄_apply, fourTensorOfExteriorBilin_apply, hv, hw]
 
 /-- Evaluation of `bivectorSymmetricEquivSymmBilin` on pure wedges `u ∧ v` and `z ∧ w`. -/
 @[simp] theorem bivectorSymmetricEquivSymmBilin_apply_ιMulti (r : bivectorSymmetricSubmodule V)
@@ -328,7 +326,7 @@ theorem bianchiAlternatingMap_surjective :
      fun u v z w ↦ by
        simp only [hrω]; rw [h12 u z v w, h01 z u v w, h23 z u w v, h12 z w u v]; ring⟩⟩,
     AlternatingMap.ext fun m ↦ ?_⟩
-  have hm : ![m 0, m 1, m 2, m 3] = m := by funext k; fin_cases k <;> rfl
+  have hm : ![m 0, m 1, m 2, m 3] = m := FinVec.etaExpand_eq m
   simp only [bianchiAlternatingMap_apply, hrω]
   rw [h12 (m 1) (m 0) (m 2) (m 3), h01 (m 0) (m 1) (m 2) (m 3),
     h01 (m 0) (m 2) (m 1) (m 3), h12 (m 0) (m 1) (m 2) (m 3), hm]; ring
@@ -341,22 +339,20 @@ private theorem choose_symm_sub_choose_four {n d : ℕ}
   | m + 4 =>
     have hc4 : 24 * (m + 4).choose 4 = (m + 4) * (m + 3) * (m + 2) * (m + 1) := by
       have h := (Nat.descFactorial_eq_factorial_mul_choose (m + 4) 4).symm
-      simp only [Nat.descFactorial_succ, Nat.descFactorial_zero, Nat.sub_zero,
-        show m + 4 - 3 = m + 1 by omega, show m + 4 - 2 = m + 2 by omega,
-        show m + 4 - 1 = m + 3 by omega, Nat.factorial] at h; linarith
+      simp [Nat.factorial, Nat.add_sub_assoc] at h; linarith
     have hc2 : 2 * (m + 4).choose 2 = (m + 4) * (m + 3) := by
       have h := (Nat.descFactorial_eq_factorial_mul_choose (m + 4) 2).symm
-      simp only [Nat.descFactorial_succ, Nat.descFactorial_zero, Nat.sub_zero,
-        show m + 4 - 1 = m + 3 by omega, Nat.factorial] at h; linarith
+      simp [Nat.factorial] at h; linarith
     have hp := Nat.mul_div_cancel' (Nat.even_mul_succ_self ((m + 4).choose 2)).two_dvd
     have h24 : 24 * ((m + 4).choose 4 + d) =
         12 * (2 * ((m + 4).choose 2 * ((m + 4).choose 2 + 1) / 2)) := by omega
-    rw [hp, show 12 * ((m + 4).choose 2 * ((m + 4).choose 2 + 1)) =
-      3 * (2 * (m + 4).choose 2) * (2 * (m + 4).choose 2 + 2) by ring, hc2] at h24
-    have hsq : (m + 3) * (m + 5) + 1 = (m + 4) ^ 2 := by ring
+    have h12 : 12 * ((m + 4).choose 2 * ((m + 4).choose 2 + 1)) =
+        3 * (2 * (m + 4).choose 2) * (2 * (m + 4).choose 2 + 2) := by ring
+    rw [hp, h12, hc2] at h24
+    have hsq : (m + 4) ^ 2 - 1 = (m + 3) * (m + 5) := Nat.sub_eq_of_eq_add (by ring)
     have hident : 3 * ((m + 4) * (m + 3)) * ((m + 4) * (m + 3) + 2) =
         (m + 4) * (m + 3) * (m + 2) * (m + 1) + 2 * ((m + 4) ^ 2 * ((m + 3) * (m + 5))) := by ring
-    rw [show (m + 4) ^ 2 - 1 = (m + 3) * (m + 5) by omega]; omega
+    rw [hsq]; omega
 
 /-- **Dimension of `algebraicCurvatureSubmodule V`**: `n ^ 2 * (n ^ 2 - 1) / 12`. -/
 theorem finrank_algebraicCurvatureSubmodule :
@@ -401,8 +397,9 @@ theorem IsBivectorSymmetric.isSymm_ricci {r : FourTensor V} (hr : IsBivectorSymm
 
 /-- In dimension `2`, every pair-antisymmetric `r` is `(scalar r / 2) • constantCurvature V`. -/
 theorem eq_smul_constantCurvature_of_finrank_eq_two_of_antisymm {r : FourTensor V}
+    (hdim : Module.finrank ℝ V = 2)
     (h₁ : ∀ u v z w, r ![u, v, z, w] = -r ![v, u, z, w])
-    (h₂ : ∀ u v z w, r ![u, v, z, w] = -r ![u, v, w, z]) (hdim : Module.finrank ℝ V = 2) :
+    (h₂ : ∀ u v z w, r ![u, v, z, w] = -r ![u, v, w, z]) :
     r = (scalar r / 2) • constantCurvature V := by
   let b : OrthonormalBasis (Fin 2) ℝ V := (stdOrthonormalBasis ℝ V).reindex (finCongr hdim)
   have h1s (x z w : V) : r ![x, x, z, w] = 0 := CharZero.eq_neg_self_iff.mp (h₁ x x z w)
@@ -424,22 +421,23 @@ theorem eq_smul_constantCurvature_of_finrank_eq_two_of_antisymm {r : FourTensor 
 theorem IsAlgebraicCurvature.eq_smul_constantCurvature_of_finrank_eq_two {r : FourTensor V}
     (hr : IsAlgebraicCurvature r) (hdim : Module.finrank ℝ V = 2) :
     r = (scalar r / 2) • constantCurvature V :=
-  eq_smul_constantCurvature_of_finrank_eq_two_of_antisymm hr.antisymm_first hr.antisymm_last hdim
+  eq_smul_constantCurvature_of_finrank_eq_two_of_antisymm hdim hr.antisymm_first hr.antisymm_last
 
 /-- In dimension `2`, every pair-antisymmetric four-tensor satisfies `Ric = (Scal / 2) g`. -/
 theorem ricci_eq_half_scalar_smul_innerₗ_of_finrank_eq_two_of_antisymm {r : FourTensor V}
+    (hdim : Module.finrank ℝ V = 2)
     (h₁ : ∀ u v z w, r ![u, v, z, w] = -r ![v, u, z, w])
-    (h₂ : ∀ u v z w, r ![u, v, z, w] = -r ![u, v, w, z]) (hdim : Module.finrank ℝ V = 2) :
+    (h₂ : ∀ u v z w, r ![u, v, z, w] = -r ![u, v, w, z]) :
     ricci r = (scalar r / 2) • innerₗ V := by
-  conv_lhs => rw [eq_smul_constantCurvature_of_finrank_eq_two_of_antisymm h₁ h₂ hdim]
+  conv_lhs => rw [eq_smul_constantCurvature_of_finrank_eq_two_of_antisymm hdim h₁ h₂]
   rw [map_smul, ricci_constantCurvature, hdim]; norm_num
 
 /-- In dimension `2`, every algebraic curvature tensor satisfies `Ric = (Scal / 2) g`. -/
 theorem IsAlgebraicCurvature.ricci_eq_half_scalar_smul_innerₗ_of_finrank_eq_two {r : FourTensor V}
     (hr : IsAlgebraicCurvature r) (hdim : Module.finrank ℝ V = 2) :
     ricci r = (scalar r / 2) • innerₗ V :=
-  ricci_eq_half_scalar_smul_innerₗ_of_finrank_eq_two_of_antisymm hr.antisymm_first hr.antisymm_last
-    hdim
+  ricci_eq_half_scalar_smul_innerₗ_of_finrank_eq_two_of_antisymm hdim hr.antisymm_first
+    hr.antisymm_last
 
 end InnerProductSpace
 
