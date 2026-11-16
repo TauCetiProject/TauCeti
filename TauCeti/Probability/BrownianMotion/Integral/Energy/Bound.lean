@@ -437,24 +437,18 @@ theorem IsFilteredPreBrownianReal.tendsto_measure_exists_abs_simpleGains_gt_of_e
   exact tendsto_measure_of_energy_tail_bound hε henergy fun δ hδ k ↦
     hW.measure_exists_abs_simpleGains_gt_le hcont (hgrid k) (hheight k) hε hδ.le
 
-private theorem ofReal_elementaryEnergy_clip_eq
-    (hτ : MonotoneOn τ (Iic n)) (t : ℝ≥0) (ω : Ω) :
+private theorem ofReal_elementaryEnergy_clip_eq (hτ : MonotoneOn τ (Iic n)) (t : ℝ≥0) (ω : Ω) :
     ENNReal.ofReal (elementaryEnergy (fun i ↦ min (τ i) t)
       (fun i ↦ if τ i ≤ t then a i else 0) n ω) =
       ∫⁻ s, ‖Finance.simpleHolding τ n a s ω‖ₑ ^ 2 ∂timeMeasure t := by
   rw [elementaryEnergy_def, Finance.lintegral_enorm_sq_simpleHolding_timeMeasure hτ,
-    ENNReal.ofReal_sum_of_nonneg]
-  · refine sum_congr rfl fun i _ ↦ ?_
-    by_cases hle : τ i ≤ t
-    · simp only [hle, ↓reduceIte, min_eq_left hle,
-        ENNReal.ofReal_mul (sq_nonneg _), Real.enorm_sq_eq_ofReal_sq]
-    · have hgt : (min (τ (i + 1)) t : ℝ) - τ i ≤ 0 :=
-        sub_nonpos.mpr (NNReal.coe_le_coe.mpr ((min_le_right _ _).trans (le_of_not_ge hle)))
-      simp [hle, ENNReal.ofReal_eq_zero.mpr hgt]
-  · intro i hi
-    have hi' := mem_range.mp hi
-    exact mul_nonneg (sq_nonneg _)
-      (sub_nonneg.mpr (NNReal.coe_le_coe.mpr (min_le_min_right t (hτ hi'.le hi' (Nat.le_succ i)))))
+    ENNReal.ofReal_sum_of_nonneg fun i hi ↦ mul_nonneg (sq_nonneg _) (sub_nonneg.mpr <|
+      NNReal.coe_le_coe.mpr (min_le_min_right t
+        (hτ (mem_range.mp hi).le (mem_range.mp hi) (Nat.le_succ i))))]
+  refine sum_congr rfl fun i _ ↦ ?_
+  by_cases hle : τ i ≤ t
+  · simp [hle, ENNReal.ofReal_mul (sq_nonneg _), Real.enorm_sq_eq_ofReal_sq]
+  · simp [hle, le_of_not_ge hle]
 
 /-- If the pathwise lower square-energy integrals of left-measurable simple holdings on `(0, t]`
 converge to `0` in `P`-measure along a filter `l`, then the corresponding elementary Brownian gains
@@ -474,31 +468,23 @@ theorem IsFilteredPreBrownianReal.tendstoInMeasure_simpleGains_zero_of_lintegral
   have hτ' (k : ι) : MonotoneOn (τ' k) (Iic (N k)) :=
     fun _ hi _ hj hij ↦ min_le_min_right t (hgrid k hi hj hij)
   have ha' (k : ι) (i : ℕ) (hi : i < N k) : StronglyMeasurable[ℱ (τ' k i)] (a' k i) := by
-    dsimp only [τ', a']
-    split_ifs with hle
+    dsimp only [τ', a']; split_ifs with hle
     · exact (hheight k i hi).mono (ℱ.mono (le_min le_rfl hle))
     · exact stronglyMeasurable_zero
-  have he : TendstoInMeasure P (fun k ↦ elementaryEnergy (τ' k) (a' k) (N k)) l (fun _ ↦ 0) := by
-    refine tendstoInMeasure_iff_norm.2 fun ε hε ↦ ?_
-    refine (henergy (ENNReal.ofReal ε) (ENNReal.ofReal_pos.mpr hε)).congr fun k ↦ ?_
-    congr 1
-    ext ω
-    have hnn := elementaryEnergy_nonneg (a := a' k) (hτ' k) ω
-    simp only [Set.mem_ofPred_eq, sub_zero, Real.norm_eq_abs, abs_of_nonneg hnn]
-    rw [← ofReal_elementaryEnergy_clip_eq (hgrid k) t ω]
-    exact ENNReal.ofReal_le_ofReal_iff hnn
-  have hsum_eq (k : ι) (ω : Ω) :
-      (∑ i ∈ range (N k), a' k i ω * (W (τ' k (i + 1)) ω - W (τ' k i) ω)) =
-        Finance.simpleGains (grid k) (N k) (height k) W t ω := by
-    rw [Finance.simpleGains_def]
-    refine sum_congr rfl fun i hi ↦ ?_
-    have hi' := mem_range.mp hi
-    by_cases hle : grid k i ≤ t
-    · simp [τ', a', hle]
-    · have hgt : t ≤ grid k i := le_of_not_ge hle
-      simp [τ', a', hle, min_eq_right hgt,
-        min_eq_right (hgt.trans (hgrid k hi'.le hi' (Nat.le_succ i)))]
-  exact (hW.tendstoInMeasure_sum_mul_sub_of_energy hτ' ha' he).congr_left
-    fun k ↦ .of_forall (hsum_eq k)
+  have he : TendstoInMeasure P (fun k ↦ elementaryEnergy (τ' k) (a' k) (N k)) l (fun _ ↦ 0) :=
+    tendstoInMeasure_iff_norm.2 fun ε hε ↦ (henergy _ (ENNReal.ofReal_pos.mpr hε)).congr fun k ↦
+      congrArg P <| Set.ext fun ω ↦ by
+        have hnn := elementaryEnergy_nonneg (a := a' k) (hτ' k) ω
+        simp only [Set.mem_ofPred_eq, sub_zero, Real.norm_eq_abs, abs_of_nonneg hnn]
+        rw [← ofReal_elementaryEnergy_clip_eq (hgrid k) t ω, ENNReal.ofReal_le_ofReal_iff hnn]
+  refine (hW.tendstoInMeasure_sum_mul_sub_of_energy hτ' ha' he).congr_left
+    fun k ↦ .of_forall fun ω ↦ ?_
+  rw [Finance.simpleGains_def]
+  refine sum_congr rfl fun i hi ↦ ?_
+  by_cases hle : grid k i ≤ t
+  · simp [τ', a', hle]
+  · have hgt : t ≤ grid k i := le_of_not_ge hle
+    simp [τ', a', hle, min_eq_right hgt,
+      min_eq_right (hgt.trans (hgrid k (mem_range.mp hi).le (mem_range.mp hi) (Nat.le_succ i)))]
 
 end TauCeti.Probability

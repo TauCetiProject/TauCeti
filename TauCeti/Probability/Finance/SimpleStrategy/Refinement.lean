@@ -193,26 +193,19 @@ theorem exists_simpleHolding_simpleGains_add [OrderBot ι] {mΩ : MeasurableSpac
   let l : Fin n₁ ⊕ Fin n₂ → ι := Sum.elim (fun i ↦ τ₁ i.1) (fun j ↦ τ₂ j.1)
   let u : Fin n₁ ⊕ Fin n₂ → ι := Sum.elim (fun i ↦ τ₁ (i.1 + 1)) (fun j ↦ τ₂ (j.1 + 1))
   let α : Fin n₁ ⊕ Fin n₂ → Ω → ℝ := Sum.elim (fun i ↦ a₁ i.1) (fun j ↦ a₂ j.1)
-  have hαm (x : Fin n₁ ⊕ Fin n₂) (_ : x ∈ (univ : Finset _)) :
-      StronglyMeasurable[ℱ (l x)] (α x) := by
-    cases x with
-    | inl i => exact ha₁ i.1 i.2
-    | inr j => exact ha₂ j.1 j.2
   obtain ⟨n, τ, b, hτ₀, hτ, hbm, hbb, hhold, hgains⟩ :=
-    exists_simpleHolding_simpleGains_eq_sum ℱ univ l u α hαm
+    exists_simpleHolding_simpleGains_eq_sum ℱ univ l u α fun x _ ↦
+      x.casesOn (fun i ↦ ha₁ i.1 i.2) (fun j ↦ ha₂ j.1 j.2)
   refine ⟨n, τ, b, hτ₀, hτ, hbm, fun j hj ω ↦ ?_, fun t ω ↦ ?_, fun X t ω ↦ ?_⟩
   · rw [← Fin.sum_univ_eq_sum_range, ← Fin.sum_univ_eq_sum_range]
     simpa only [Fintype.sum_sum_type, α, Sum.elim_inl, Sum.elim_inr] using hbb j hj ω
   · rw [hhold t ω, Fintype.sum_sum_type, simpleHolding_def τ₁, simpleHolding_def τ₂,
-      ← Fin.sum_univ_eq_sum_range, ← Fin.sum_univ_eq_sum_range]
-    rfl
+      ← Fin.sum_univ_eq_sum_range, ← Fin.sum_univ_eq_sum_range]; rfl
   · rw [hgains X t ω, Fintype.sum_sum_type, simpleGains_def τ₁, simpleGains_def τ₂,
       ← Fin.sum_univ_eq_sum_range, ← Fin.sum_univ_eq_sum_range]
-    congr 1
-    · refine sum_congr rfl fun i _ ↦ ?_
-      simp [l, u, α, hτ₁ i.2.le i.2 (Nat.le_succ _)]
-    · refine sum_congr rfl fun j _ ↦ ?_
-      simp [l, u, α, hτ₂ j.2.le j.2 (Nat.le_succ _)]
+    congr 1 <;> refine sum_congr rfl fun i _ ↦ ?_
+    · simp [l, u, α, hτ₁ i.2.le i.2 (Nat.le_succ _)]
+    · simp [l, u, α, hτ₂ i.2.le i.2 (Nat.le_succ _)]
 
 /-- Two left-measurable simple strategies admit a single strictly increasing common grid starting
 at `⊥` whose holdings and gains against every price path are the pointwise differences of the
@@ -233,9 +226,8 @@ theorem exists_simpleHolding_simpleGains_sub [OrderBot ι] {mΩ : MeasurableSpac
   obtain ⟨n, τ, b, hτ₀, hτ, hbm, hbb, hhold, hgains⟩ :=
     exists_simpleHolding_simpleGains_add ℱ hτ₁ hτ₂ ha₁
       (a₂ := (-1 : ℝ) • a₂) (fun j hj ↦ (ha₂ j hj).const_smul (-1 : ℝ))
-  refine ⟨n, τ, b, hτ₀, hτ, hbm, fun j hj ω ↦ ?_, fun t ω ↦ ?_, fun X t ω ↦ ?_⟩
-  · simpa [Pi.smul_apply] using hbb j hj ω
-  · rw [hhold, simpleHolding_smul, neg_one_mul, ← sub_eq_add_neg]
-  · rw [hgains, simpleGains_smul, neg_one_mul, ← sub_eq_add_neg]
+  refine ⟨n, τ, b, hτ₀, hτ, hbm, fun j hj ω ↦ by simpa [Pi.smul_apply] using hbb j hj ω,
+    fun t ω ↦ by rw [hhold, simpleHolding_smul, neg_one_mul, ← sub_eq_add_neg],
+    fun X t ω ↦ by rw [hgains, simpleGains_smul, neg_one_mul, ← sub_eq_add_neg]⟩
 
 end TauCeti.Finance

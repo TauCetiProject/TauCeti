@@ -261,10 +261,8 @@ theorem integral_l2Integral (hW : IsFilteredPreBrownianReal ℱ W P) (T : ℝ≥
 private theorem exists_simpleHolding_l2Integral_linearCombination_step
     (hW : IsFilteredPreBrownianReal ℱ W P) (T : ℝ≥0) (c : Rectangle ℱ →₀ ℝ) :
     letI := (hW.toIsPreBrownianReal.hasLaw_eval 0).isProbabilityMeasure
-    ∃ (m : ℕ) (σ : ℕ → ℝ≥0) (d : ℕ → Ω → ℝ)
-      (hσ : MonotoneOn σ (Iic m))
-      (hd : ∀ j < m, StronglyMeasurable[ℱ (σ j)] (d j))
-      (hd₂ : ∀ j < m, MemLp (d j) 2 P),
+    ∃ (m : ℕ) (σ : ℕ → ℝ≥0) (d : ℕ → Ω → ℝ) (hσ : MonotoneOn σ (Iic m))
+      (hd : ∀ j < m, StronglyMeasurable[ℱ (σ j)] (d j)) (hd₂ : ∀ j < m, MemLp (d j) 2 P),
       Finsupp.linearCombination ℝ (step (P := P) T) c =
         (Finance.memLp_simpleHolding_predictableMeasure hd hd₂ T).toLp
           (Function.uncurry (Finance.simpleHolding σ m d)) ∧
@@ -283,15 +281,12 @@ private theorem exists_simpleHolding_l2Integral_linearCombination_step
   · rw [Finsupp.linearCombination_apply, Finsupp.sum]
     have hterms (R : Rectangle ℱ) (_ : R ∈ c.support) :
         ((c R • step (P := P) T R : Lp ℝ 2 (ℱ.predictableMeasure P T)) : ℝ≥0 × Ω → ℝ) =ᵐ[
-          ℱ.predictableMeasure P T]
-          fun p ↦ (Ioc R.s R.t).indicator (fun _ ↦ b R p.2) p.1 := by
-      filter_upwards [Lp.coeFn_smul (c R) (step (P := P) T R),
-        indicatorConstLp_coeFn (p := (2 : ℝ≥0∞))
-          (hs := measurableSet_predictable_Ioc_prod R.s R.t R.known)
-          (hμs := measure_ne_top (ℱ.predictableMeasure P T) _) (c := (1 : ℝ))] with p hp hq
-      rw [hp, Pi.smul_apply, smul_eq_mul, hq]
+          ℱ.predictableMeasure P T] fun p ↦ (Ioc R.s R.t).indicator (fun _ ↦ b R p.2) p.1 := by
+      filter_upwards [Lp.coeFn_smul (c R) (step (P := P) T R), indicatorConstLp_coeFn (p := 2)
+        (hs := measurableSet_predictable_Ioc_prod R.s R.t R.known)
+        (hμs := measure_ne_top (ℱ.predictableMeasure P T) _) (c := (1 : ℝ))] with p hp hq
       by_cases ht : p.1 ∈ Ioc R.s R.t <;> by_cases hω : p.2 ∈ R.event <;>
-        simp [b, Rectangle.height, ht, hω]
+        simp [b, Rectangle.height, hp, hq, ht, hω]
     filter_upwards [(Lp.coeFn_finsetSum c.support fun R ↦ c R • step (P := P) T R).trans
       (eventuallyEq_sum hterms),
       (Finance.memLp_simpleHolding_predictableMeasure hd hd₂ T).coeFn_toLp] with p hp hto
@@ -307,7 +302,7 @@ private theorem exists_simpleHolding_l2Integral_linearCombination_step
       by_cases hst : R.s ≤ R.t
       · by_cases hsT : R.s ≤ T
         · simp [b, hst, min_eq_left hsT, max_eq_right (le_min hst hsT), mul_assoc]
-        · have hTs : T ≤ R.s := le_of_not_ge hsT
+        · have hTs := le_of_not_ge hsT
           simp [b, hst, min_eq_right hTs, min_eq_right (hTs.trans hst), max_eq_left hTs]
       · simp [hst, max_eq_left ((min_le_left R.t T).trans (le_of_not_ge hst))]
     filter_upwards [(Lp.coeFn_finsetSum c.support fun R ↦
@@ -319,10 +314,8 @@ private theorem exists_simpleHolding_l2Integral_linearCombination_step
 predictable `L²` integral maps the `L²` class of `Finance.simpleHolding` to the `L²(P)` class of
 `Finance.simpleGains` at horizon `T`. -/
 theorem l2Integral_toLp_simpleHolding (hW : IsFilteredPreBrownianReal ℱ W P)
-    {n : ℕ} {τ : ℕ → ℝ≥0} {a : ℕ → Ω → ℝ}
-    (hτ : MonotoneOn τ (Iic n))
-    (ha : ∀ i < n, StronglyMeasurable[ℱ (τ i)] (a i))
-    (ha₂ : ∀ i < n, MemLp (a i) 2 P) (T : ℝ≥0) :
+    {n : ℕ} {τ : ℕ → ℝ≥0} {a : ℕ → Ω → ℝ} (hτ : MonotoneOn τ (Iic n))
+    (ha : ∀ i < n, StronglyMeasurable[ℱ (τ i)] (a i)) (ha₂ : ∀ i < n, MemLp (a i) 2 P) (T : ℝ≥0) :
     letI := hW.toIsPreBrownianReal.hasLaw_eval 0 |>.isProbabilityMeasure
     hW.l2Integral T ((Finance.memLp_simpleHolding_predictableMeasure ha ha₂ T).toLp
       (Function.uncurry (Finance.simpleHolding τ n a))) =
@@ -336,44 +329,33 @@ theorem l2Integral_toLp_simpleHolding (hW : IsFilteredPreBrownianReal ℱ W P)
     (ε / 2) (ENNReal.div_pos hε.ne' (by norm_num))
   obtain ⟨m, σ, d, hσ, hd, hd₂, hlc_hold, hlc_gain⟩ :=
     exists_simpleHolding_l2Integral_linearCombination_step hW T c
-  have hed_gain : edist (hW.l2Integral T (Finsupp.linearCombination ℝ (step (P := P) T) c)) v =
+  have hed : edist (hW.l2Integral T (Finsupp.linearCombination ℝ (step (P := P) T) c)) v =
       edist u (Finsupp.linearCombination ℝ (step (P := P) T) c) := by
     have hs : StronglyMeasurable[ℱ.predictable]
         (Function.uncurry (Finance.simpleHolding σ m d) -
           Function.uncurry (Finance.simpleHolding τ n a)) :=
       (Finance.isStronglyPredictable_simpleHolding hd).sub
         (Finance.isStronglyPredictable_simpleHolding ha)
-    rw [edist_comm u, hlc_gain, hlc_hold, Lp.edist_def, Lp.edist_def]
-    rw [eLpNorm_congr_ae (((hW.memLp_simpleGains hσ hd hd₂ T).coeFn_toLp).sub
-      ((hW.memLp_simpleGains hτ ha ha₂ T).coeFn_toLp))]
-    rw [eLpNorm_congr_ae (((Finance.memLp_simpleHolding_predictableMeasure hd hd₂ T).coeFn_toLp).sub
-      ((Finance.memLp_simpleHolding_predictableMeasure ha ha₂ T).coeFn_toLp))]
-    rw [hW.eLpNorm_simpleGains_sub_eq hσ hτ hd ha hd₂ ha₂ T, ℱ.predictableMeasure_def,
+    rw [edist_comm u, hlc_gain, hlc_hold, Lp.edist_def, Lp.edist_def,
+      eLpNorm_congr_ae (((hW.memLp_simpleGains hσ hd hd₂ T).coeFn_toLp).sub
+        ((hW.memLp_simpleGains hτ ha ha₂ T).coeFn_toLp)),
+      eLpNorm_congr_ae (((Finance.memLp_simpleHolding_predictableMeasure hd hd₂ T).coeFn_toLp).sub
+        ((Finance.memLp_simpleHolding_predictableMeasure ha ha₂ T).coeFn_toLp)),
+      hW.eLpNorm_simpleGains_sub_eq hσ hτ hd ha hd₂ ha₂ T, ℱ.predictableMeasure_def,
       eLpNorm_trim ℱ.predictable_le_prod hs]
     rfl
-  calc
-    edist (hW.l2Integral T u) v
-      ≤ edist (hW.l2Integral T u)
-          (hW.l2Integral T (Finsupp.linearCombination ℝ (step (P := P) T) c)) +
-        edist (hW.l2Integral T (Finsupp.linearCombination ℝ (step (P := P) T) c)) v :=
-        edist_triangle _ _ _
-    _ = edist u (Finsupp.linearCombination ℝ (step (P := P) T) c) +
-          edist u (Finsupp.linearCombination ℝ (step (P := P) T) c) := by
-        rw [(hW.l2Integral T).isometry.edist_eq, hed_gain]
-    _ ≤ ε / 2 + ε / 2 := add_le_add hdist.le hdist.le
-    _ = ε := ENNReal.add_halves ε
+  refine (edist_triangle _ (hW.l2Integral T (Finsupp.linearCombination ℝ (step T) c)) _).trans ?_
+  rw [(hW.l2Integral T).isometry.edist_eq, hed]
+  exact (add_le_add hdist.le hdist.le).trans_eq (ENNReal.add_halves ε)
 
 /-- Almost-everywhere evaluation of `l2Integral T` on a square-integrable left-measurable simple
 holding. -/
 theorem coeFn_l2Integral_toLp_simpleHolding (hW : IsFilteredPreBrownianReal ℱ W P)
-    {n : ℕ} {τ : ℕ → ℝ≥0} {a : ℕ → Ω → ℝ}
-    (hτ : MonotoneOn τ (Iic n))
-    (ha : ∀ i < n, StronglyMeasurable[ℱ (τ i)] (a i))
-    (ha₂ : ∀ i < n, MemLp (a i) 2 P) (T : ℝ≥0) :
+    {n : ℕ} {τ : ℕ → ℝ≥0} {a : ℕ → Ω → ℝ} (hτ : MonotoneOn τ (Iic n))
+    (ha : ∀ i < n, StronglyMeasurable[ℱ (τ i)] (a i)) (ha₂ : ∀ i < n, MemLp (a i) 2 P) (T : ℝ≥0) :
     letI := hW.toIsPreBrownianReal.hasLaw_eval 0 |>.isProbabilityMeasure
     hW.l2Integral T ((Finance.memLp_simpleHolding_predictableMeasure ha ha₂ T).toLp
-      (Function.uncurry (Finance.simpleHolding τ n a))) =ᵐ[P]
-      Finance.simpleGains τ n a W T := by
+      (Function.uncurry (Finance.simpleHolding τ n a))) =ᵐ[P] Finance.simpleGains τ n a W T := by
   let := hW.toIsPreBrownianReal.hasLaw_eval 0 |>.isProbabilityMeasure
   rw [hW.l2Integral_toLp_simpleHolding hτ ha ha₂ T]
   exact (hW.memLp_simpleGains hτ ha ha₂ T).coeFn_toLp

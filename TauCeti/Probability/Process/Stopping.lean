@@ -82,20 +82,14 @@ theorem ContinuousWithinAt.stoppedProcess {ι Ω E : Type*} [LinearOrder ι] [No
 time. At an infinite stopping time the path is unchanged. -/
 theorem Continuous.stoppedProcess {ι Ω E : Type*} [LinearOrder ι] [Nonempty ι]
     [TopologicalSpace ι] [OrderClosedTopology ι] [TopologicalSpace E]
-    {X : ι → Ω → E} {τ : Ω → WithTop ι} {ω : Ω}
-    (hX : Continuous (X · ω)) :
+    {X : ι → Ω → E} {τ : Ω → WithTop ι} {ω : Ω} (hX : Continuous (X · ω)) :
     Continuous (MeasureTheory.stoppedProcess X τ · ω) := by
   cases hτ : τ ω with
   | top => simpa [MeasureTheory.stoppedProcess, hτ] using hX
   | coe u =>
-    have heq : (MeasureTheory.stoppedProcess X τ · ω) = fun t ↦ X (min t u) ω := by
-      ext t
-      rcases le_total t u with htu | hut
-      · rw [MeasureTheory.stoppedProcess_eq_of_le (hτ ▸ WithTop.coe_le_coe.mpr htu),
-          min_eq_left htu]
-      · rw [MeasureTheory.stoppedProcess_eq_of_ge (hτ ▸ WithTop.coe_le_coe.mpr hut),
-          min_eq_right hut]
-        simp [hτ]
+    have heq : (MeasureTheory.stoppedProcess X τ · ω) = fun t ↦ X (min t u) ω := funext fun t ↦ by
+      rw [MeasureTheory.stoppedProcess, hτ, ← WithTop.coe_min,
+        WithTop.untopA_eq_untop WithTop.coe_ne_top, WithTop.untop_coe]
     exact heq ▸ hX.comp (continuous_id.min continuous_const)
 
 namespace MeasureTheory
@@ -150,19 +144,15 @@ then `U k` converges to `X t` in `P`-measure on a finite measure space. No measu
 stopping-time assumption on `X` or `τ k` is needed. -/
 theorem tendstoInMeasure_of_stoppedProcess_ae_eq {ι Ω E : Type*} [LinearOrder ι] [Nonempty ι]
     [TopologicalSpace ι] [OrderTopology ι] [PseudoEMetricSpace E]
-    {mΩ : MeasurableSpace Ω} {P : Measure Ω} [IsFiniteMeasure P]
+    [MeasurableSpace Ω] {P : Measure Ω} [IsFiniteMeasure P]
     {X : ι → Ω → E} {τ : ℕ → Ω → WithTop ι} {U : ℕ → Ω → E} {t : ι}
     (hτ_top : ∀ᵐ ω ∂P, Tendsto (τ · ω) atTop (𝓝 ⊤))
     (hUm : ∀ k, AEStronglyMeasurable (U k) P)
     (hX_stop : ∀ k, stoppedProcess X (τ k) t =ᵐ[P] U k) :
-    TendstoInMeasure P U atTop (X t) := by
-  have hsm (k : ℕ) : AEStronglyMeasurable (stoppedProcess X (τ k) t) P :=
-    (hUm k).congr (hX_stop k).symm
-  have hs_ae : ∀ᵐ ω ∂P, Tendsto (fun k ↦ stoppedProcess X (τ k) t ω) atTop (𝓝 (X t ω)) := by
-    filter_upwards [hτ_top] with ω hω
-    refine tendsto_const_nhds.congr' ?_
-    filter_upwards [(WithTop.tendsto_nhds_top_iff _).mp hω t] with k hk
-    exact (stoppedProcess_eq_of_le (τ := τ k) hk.le).symm
-  exact (tendstoInMeasure_of_tendsto_ae hsm hs_ae).congr_left hX_stop
+    TendstoInMeasure P U atTop (X t) :=
+  (tendstoInMeasure_of_tendsto_ae (fun k ↦ (hUm k).congr (hX_stop k).symm)
+    (hτ_top.mono fun _ hω ↦ tendsto_const_nhds.congr' <|
+      ((WithTop.tendsto_nhds_top_iff _).mp hω t).mono fun k hk ↦
+        (stoppedProcess_eq_of_le (τ := τ k) hk.le).symm)).congr_left hX_stop
 
 end MeasureTheory
