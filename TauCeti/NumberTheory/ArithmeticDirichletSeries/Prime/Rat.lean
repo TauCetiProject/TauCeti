@@ -13,7 +13,7 @@ import TauCeti.NumberTheory.NumberField.Ideal.IntegersRat
 # Prime summatory functions over `ℚ`
 
 The nonzero primes of `𝓞 ℚ` correspond to the rational primes through their absolute norms
-(Mathlib's `Rat.HeightOneSpectrum.primesEquiv`, with `TauCeti.Rat.HeightOneSpectrum.absNorm_asIdeal`
+(Mathlib's `Rat.HeightOneSpectrum.primesEquiv`, with `Rat.HeightOneSpectrum.absNorm_asIdeal`
 identifying the norm of `v` with its generator). This file transports a prime summatory function
 over `ℚ` whose weight depends only on the norm to the corresponding sum over Mathlib's
 `Nat.primesLE`, so that results stated for the primes of a number field specialize to the
