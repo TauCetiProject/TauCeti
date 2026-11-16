@@ -9,6 +9,7 @@ public import TauCeti.Analysis.PDE.Regularity.KrylovSafonov.PowerDecay
 public import TauCeti.Analysis.Sobolev.Wkp.Basic
 import TauCeti.Analysis.PDE.MaximumPrinciple.NonDivergence.Sobolev
 import TauCeti.MeasureTheory.Measure.Lebesgue.DyadicCube.Euclidean
+import TauCeti.Topology.Instances.ENNReal
 
 /-!
 # Power decay for strong supersolutions
@@ -73,15 +74,14 @@ private theorem le_ofReal_mul_rpow_neg_mul_of_forall_div {C ε t : ℝ} (ht : 0 
     {m V : ℝ≥0∞} (hV : V ≠ ∞)
     (h : ∀ ζ : ℝ, 0 < ζ → m ≤ ENNReal.ofReal (C * (t / (1 + 3 * ζ)) ^ (-ε)) * V) :
     m ≤ ENNReal.ofReal (C * t ^ (-ε)) * V := by
-  have hlim : Tendsto (fun ζ : ℝ ↦ ENNReal.ofReal (C * (t / (1 + 3 * ζ)) ^ (-ε)) * V)
-      (𝓝[>] 0) (𝓝 (ENNReal.ofReal (C * t ^ (-ε)) * V)) := by
-    refine ENNReal.Tendsto.mul_const ?_ (Or.inr hV)
-    refine (ENNReal.continuous_ofReal.tendsto _).comp (tendsto_nhdsWithin_of_tendsto_nhds ?_)
-    have h : ContinuousAt (fun ζ : ℝ ↦ C * (t / (1 + 3 * ζ)) ^ (-ε)) 0 := by
-      refine continuousAt_const.mul (ContinuousAt.rpow_const ?_ (Or.inl (by simp [ht.ne'])))
-      exact continuousAt_const.div (by fun_prop) (by norm_num)
-    simpa using h.tendsto
-  exact ge_of_tendsto hlim (eventually_nhdsWithin_of_forall fun ζ hζ ↦ h ζ hζ)
+  have hφ : ContinuousAt (fun ζ : ℝ ↦ C * (t / (1 + 3 * ζ)) ^ (-ε) * V.toReal) 0 := by
+    refine (continuousAt_const.mul (ContinuousAt.rpow_const ?_ (Or.inl (by simp [ht.ne'])))).mul
+      continuousAt_const
+    exact continuousAt_const.div (by fun_prop) (by norm_num)
+  have hle := le_ofReal_of_forall_pos_le_ofReal hφ.continuousWithinAt fun ζ hζ ↦ by
+    rw [ENNReal.ofReal_mul' ENNReal.toReal_nonneg, ENNReal.ofReal_toReal hV]
+    exact h ζ hζ
+  simpa [ENNReal.ofReal_mul' ENNReal.toReal_nonneg, ENNReal.ofReal_toReal hV] using hle
 
 /-- **Power decay of the superlevel sets of a strong supersolution** (Gilbarg–Trudinger,
 Section 9.7; Caffarelli–Cabré, Lemma 4.6). Let `κ > 0`. There are constants `C > 0`, `ε > 0` and

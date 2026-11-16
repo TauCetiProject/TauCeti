@@ -10,6 +10,7 @@ public import TauCeti.Analysis.Sobolev.Wkp.Basic
 import TauCeti.Algebra.Order.Archimedean.Basic
 import TauCeti.Analysis.PDE.MaximumPrinciple.NonDivergence.Sobolev
 import TauCeti.Analysis.Normed.Group.Basic
+import TauCeti.Basic.ENNReal.Real
 import TauCeti.Analysis.Normed.Lp.PiLp
 import TauCeti.Analysis.PDE.MaximumPrinciple.NonDivergence.Basic
 import TauCeti.Analysis.SpecialFunctions.Pow.Integral
@@ -290,22 +291,6 @@ private theorem exists_eLpNorm_le_mul_rpow_mul_of_le [Nonempty ι] {κ : ℝ} (h
     exact H hm ha hLam hcont hu hnonneg hsuper hf hy hum
   · gcongr
     exact div_le_self hR.le (by linarith)
-
-/-- If `E = ∞` and `D, r > 0`, then everything is bounded by `D (s + r E)`. -/
-private theorem le_ofReal_mul_add_ofReal_mul_top {X : ℝ≥0∞} {D r : ℝ} (hD : 0 < D) (hr : 0 < r)
-    (s : ℝ) : X ≤ ENNReal.ofReal D * (ENNReal.ofReal s + ENNReal.ofReal r * ∞) := by
-  rw [ENNReal.mul_top (ENNReal.ofReal_pos.2 hr).ne', add_top,
-    ENNReal.mul_top (ENNReal.ofReal_pos.2 hD).ne']
-  exact le_top
-
-/-- Fold `ofReal D * (ofReal s + ofReal r * ofReal F)` into a single `ofReal`, for the right-hand
-sides of the weak Harnack inequalities. -/
-private theorem ofReal_mul_ofReal_add_ofReal_mul_ofReal (D : ℝ) {s r F : ℝ} (hs : 0 ≤ s)
-    (hr : 0 ≤ r) (hF : 0 ≤ F) :
-    ENNReal.ofReal D * (ENNReal.ofReal s + ENNReal.ofReal r * ENNReal.ofReal F) =
-      ENNReal.ofReal (D * (s + r * F)) := by
-  rw [← ENNReal.ofReal_mul hr, ← ENNReal.ofReal_add hs (mul_nonneg hr hF),
-    ← ENNReal.ofReal_mul' (add_nonneg hs (mul_nonneg hr hF))]
 
 /-- **The weak Harnack inequality of Krylov and Safonov** (Gilbarg–Trudinger, Theorem 9.22;
 Caffarelli–Cabré, Theorem 4.8). Let `κ > 0`. There are `p > 0` and `C > 0`, depending only on the
