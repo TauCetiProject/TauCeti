@@ -30,6 +30,12 @@ identifies cohomology twisted by it with ordinary cohomology. Independently of o
 `TauCeti.VectorBundleOrientationCover.signLocalSystemTensorIso` identifies its tensor square
 with the constant coefficient system: evaluate both factors at either orientation and multiply.
 
+Over the base set of a trivialization of the atlas the system is trivialized without a global
+orientation: transport along a path in the base set carries the element with value `r` at the
+orientation read as a fixed orientation `ω` of the model fibre to the element with value `r` at the
+orientation read as `ω` at the end of the path
+(`TauCeti.VectorBundleOrientationCover.signLocalSystem_map_mk_signLocalSystemFiberEquiv_symm`).
+
 ## Main definitions
 
 * `TauCeti.VectorBundleOrientationCover.signLocalSystem`: the orientation local system `o(E)`.
@@ -184,6 +190,53 @@ theorem signLocalSystemTensorIso_inv_app_mul {x : B} (o : Orientation ℝ (E x) 
     (⟨⟨x, o⟩, rfl⟩ : (proj ⁻¹' {x} : Set (VectorBundleOrientationCover F E ι))) a b
 
 end Tensor
+
+/-- **Transport over a trivializing set**: along a path in the base set of the trivialization of
+the atlas at `b₀`, transport in the orientation local system carries the element with value `r`
+at the orientation read as `ω` at the start to the element with value `r` at the orientation read
+as `ω` at the end. The lift of the reversed path through the orientation read as `ω` stays in the
+sheet read as `ω` (`TauCeti.VectorBundleOrientationCover.mem_sheet_of_continuous`). -/
+theorem signLocalSystem_map_mk_signLocalSystemFiberEquiv_symm (b₀ : B) (ω : Orientation ℝ F ι)
+    {x y : B} (γ : Path x y) (hγ : ∀ t, γ t ∈ (trivializationAt F E b₀).baseSet)
+    (hx : x ∈ (trivializationAt F E b₀).baseSet) (hy : y ∈ (trivializationAt F E b₀).baseSet)
+    (r : R) :
+    ((signLocalSystem F E R hι).map (Path.Homotopic.Quotient.mk γ)).hom
+        ((signLocalSystemFiberEquiv hι
+          (((trivializationAt F E b₀).mapOrientation ι hx).symm ω)).symm r) =
+      (signLocalSystemFiberEquiv hι (((trivializationAt F E b₀).mapOrientation ι hy).symm ω)).symm
+        r := by
+  set e := trivializationAt F E b₀
+  set cov := isCoveringMap_proj (F := F) (E := E) hι
+  -- Lift the reversed path through the orientation read as `ω` at `y`; it stays in that sheet.
+  let c₀ : (proj ⁻¹' {y} : Set (VectorBundleOrientationCover F E ι)) :=
+    ⟨⟨y, (e.mapOrientation ι hy).symm ω⟩, rfl⟩
+  have hc₀ : γ.symm 0 = proj c₀.1 := by simp [c₀]
+  let Γ := cov.liftPath γ.symm c₀.1 hc₀
+  have hΓ (t : unitInterval) : (Γ t).proj ∈ e.baseSet := by
+    rw [show (Γ t).proj = γ.symm t from congrFun (cov.liftPath_lifts γ.symm c₀.1 hc₀) t]
+    exact hγ _
+  have h₀ : Γ 0 ∈ sheet e ω := by
+    rw [cov.liftPath_zero]
+    exact mem_sheet_iff.2 ⟨hy, Equiv.apply_symm_apply _ _⟩
+  let q : FundamentalGroupoid.mk (X := TopCat.of B) x ⟶ FundamentalGroupoid.mk y :=
+    Path.Homotopic.Quotient.mk γ
+  -- Transport along `q` evaluates at the endpoint of the lift of the reversed path.
+  have hm : cov.monodromy (inv q) c₀ = ⟨⟨x, (e.mapOrientation ι hx).symm ω⟩, rfl⟩ := by
+    have hmon : ((cov.monodromy (inv q) c₀ : _) : VectorBundleOrientationCover F E ι) = Γ 1 := by
+      rw [← Groupoid.inv_eq_inv]
+      exact cov.monodromy_eq_apply_one (cov.liftPath_lifts _ _ _) (cov.liftPath_zero _ _ _)
+    have hsheet := mem_sheet_of_continuous hι b₀ ω hΓ h₀ 1
+    rw [← hmon] at hsheet
+    obtain ⟨hm, hω⟩ := mem_sheet_iff.1 hsheet
+    generalize cov.monodromy (inv q) c₀ = m at hm hω ⊢
+    obtain ⟨⟨x', o'⟩, hx'⟩ := m
+    obtain rfl : x' = x := hx'
+    exact Subtype.ext (VectorBundleOrientationCover.ext rfl
+      (heq_of_eq ((Equiv.eq_symm_apply _).2 hω)))
+  apply (signLocalSystemFiberEquiv hι ((e.mapOrientation ι hy).symm ω)).injective
+  rw [LinearEquiv.apply_symm_apply, signLocalSystemFiberEquiv_apply,
+    signLocalSystemObjEquiv_map_apply, hm, ← signLocalSystemFiberEquiv_apply,
+    LinearEquiv.apply_symm_apply]
 
 end VectorBundleOrientationCover
 

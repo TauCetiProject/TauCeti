@@ -26,6 +26,8 @@ at `x` (`TauCeti.LocalCoefficientSystem.d_ιTwistedChainComplex_simplex₁_apply
   coefficient in the fibre at a point, with `ιTwistedHomology₀_def` its defining equation.
 * `TauCeti.LocalCoefficientSystem.d_ιTwistedChainComplex_simplex₁_apply`: the twisted boundary
   of the singular `1`-simplex of a path.
+* `TauCeti.LocalCoefficientSystem.ιTwistedHomology₀_homologyMap_subsetTwistedChainComplexMap`: the
+  map induced by an inclusion of subspaces on the classes of coefficients.
 * `TauCeti.LocalCoefficientSystem.isColimitTwistedHomology₀Cocone`,
   `TauCeti.LocalCoefficientSystem.twistedHomology₀IsoColimit`: zeroth homology is the colimit of the
   local system.
@@ -310,6 +312,25 @@ lemma ιTwistedHomology₀_homologyMap {Y : TopCat.{v}} (f : Y ⟶ X) (y : Y) :
     HomologicalComplex.p_opcyclesMap_assoc,
     ιTwistedChainComplex_twistedChainComplexMap_f_assoc]
   rfl
+
+/-- The map induced by an inclusion `A ⊆ B` carries the class of a coefficient over `x ∈ A`
+to the class of the same coefficient over `x ∈ B`. -/
+@[reassoc]
+lemma ιTwistedHomology₀_homologyMap_subsetTwistedChainComplexMap {A B : Set X} (h : A ⊆ B)
+    (x : A) :
+    ιTwistedHomology₀ ((pullback (X := TopCat.of ↥A) (ContinuousMap.subtypeVal A)).obj L) x ≫
+        HomologicalComplex.homologyMap (subsetTwistedChainComplexMap L h) 0 =
+      ιTwistedHomology₀ ((pullback (X := TopCat.of ↥B) (ContinuousMap.subtypeVal B)).obj L)
+        (Set.inclusion h x) := by
+  have hη := ιTwistedHomology₀_coefficientMap ((pullback (X := TopCat.of ↥A)
+    (ContinuousMap.subtypeVal A)).obj L) ((pullbackCompIso
+      (TopCat.ofHom (ContinuousMap.inclusion h)).hom
+      (TopCat.ofHom (ContinuousMap.subtypeVal B)).hom).hom.app L) x
+  simp only [pullbackCompIso_hom_app_app] at hη
+  -- The source of the coefficient comparison is the pullback along `subtypeVal A` only by
+  -- unfolding, as in `subsetTwistedChainComplexMap`, so the composite is split by `erw`.
+  erw [subsetTwistedChainComplexMap_eq, HomologicalComplex.homologyMap_comp, reassoc_of% hη]
+  exact ιTwistedHomology₀_homologyMap _ (TopCat.ofHom (ContinuousMap.inclusion h)) x
 
 /-- The canonical cocone from the local system to its twisted zeroth homology. -/
 -- The cocone point must compute to twisted homology in the colimit comparison signatures.
