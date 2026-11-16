@@ -29,9 +29,17 @@ first beyond. Applied to the increments `gⱼ = |fⱼ(x) - fⱼ(y)|` at distance
 pieces with `‖fⱼ‖_∞ ≲ 2^{-jα}` and Lipschitz constants `≲ 2^{j(1-α)}`, this shows that `∑ⱼ fⱼ` is
 `α`-Hölder.
 
+For `0 < s < t` the same bound sums `(2^j)^s (1 + 2^j r)^(-t)` over `j ∈ ℕ` to at most
+`C r^(-s)`, uniformly in `r > 0`: with `u = 2^j r`, the term is `r^(-s)` times
+`u^s (1 + u)^(-t) ≤ min (u^s) ((u^s)^(-(t - s)/s))`. These are the sums of the dyadic pieces of a
+kernel with the size `(2^j)^s` at scale `2^{-j}` and rapid decay beyond it, evaluated at
+distance `r`: they give the bound `C r^(-s)` of the whole kernel.
+
 ## Main declarations
 
 * `TauCeti.sum_min_zpow_mul_rpow_neg_le`: the uniform bound over any finite set of scales.
+* `TauCeti.exists_tsum_rpow_mul_one_add_rpow_neg_le`: for `0 < s < t`,
+  `∑ⱼ (2^j)^s (1 + 2^j r)^(-t) ≤ C r^(-s)` for every `r > 0`.
 * `TauCeti.exists_tsum_le_mul_rpow_of_rpow_mul_le`: for `0 < α < 1`, a nonnegative sequence with
   `2^{jα} gⱼ ≤ a` and `2^{jα} gⱼ ≤ b 2^j d` sums to at most `C (a + b) d^α`.
 
@@ -88,6 +96,69 @@ theorem sum_min_zpow_mul_rpow_neg_le {b δ : ℝ} (hb : 1 < b) (hδ : 0 < δ) (u
     _ = ∑ i ∈ s.map (addRightEmbedding m), f i := by simp
     _ ≤ (1 - q)⁻¹ + (1 - b⁻¹)⁻¹ := sum_le_hasSum _ (fun i _ ↦ by positivity) hf
     _ = (1 - b⁻¹)⁻¹ + (1 - q)⁻¹ := add_comm _ _
+
+/-- With `u = 2^j r`, the term `(2^j)^s (1 + 2^j r)^(-t)` is `r^(-s)` times
+`u^s (1 + u)^(-t) ≤ min (u^s) ((u^s)^(-δ))`, where `u^s = b^j r^s` for `b = 2^s` and
+`δ = (t - s) / s`. -/
+private theorem rpow_mul_one_add_rpow_neg_le_mul_min {s t r : ℝ} (hs : 0 < s) (hst : s < t)
+    (hr : 0 < r) (j : ℕ) :
+    ((2 : ℝ) ^ j) ^ s * (1 + 2 ^ j * r) ^ (-t) ≤ r ^ (-s) *
+      min ((2 ^ s) ^ (j : ℤ) * r ^ s) (((2 ^ s) ^ (j : ℤ) * r ^ s) ^ (-((t - s) / s))) := by
+  set u : ℝ := 2 ^ j * r
+  have hu : 0 < u := by positivity
+  have hbj : ((2 : ℝ) ^ s) ^ (j : ℤ) * r ^ s = u ^ s := by
+    simp only [u]
+    rw [zpow_natCast, Real.rpow_pow_comm zero_le_two, Real.mul_rpow (by positivity) hr.le]
+  have hj : ((2 : ℝ) ^ j) ^ s = r ^ (-s) * u ^ s := by
+    simp only [u]
+    rw [Real.mul_rpow (by positivity) hr.le, Real.rpow_neg hr.le, mul_left_comm,
+      inv_mul_cancel₀ (by positivity), mul_one]
+  rw [hbj, hj, mul_assoc]
+  refine mul_le_mul_of_nonneg_left (le_min ?_ ?_) (by positivity)
+  · exact mul_le_of_le_one_right (by positivity)
+      (Real.rpow_le_one_of_one_le_of_nonpos (by linarith) (by linarith))
+  · have hsδ : s * -((t - s) / s) = s + -t := by
+      field_simp
+      ring
+    rw [← Real.rpow_mul hu.le, hsδ, Real.rpow_add hu]
+    exact mul_le_mul_of_nonneg_left
+      (Real.rpow_le_rpow_of_nonpos hu (le_add_of_nonneg_left zero_le_one) (by linarith))
+      (by positivity)
+
+/-- **Dyadic sums with polynomial decay.** For `0 < s < t` there is `C ≥ 0` such that for every
+`r > 0` the series `∑ⱼ (2^j)^s (1 + 2^j r)^(-t)` over `j ∈ ℕ` converges, with sum at most
+`C r^(-s)`. -/
+theorem exists_tsum_rpow_mul_one_add_rpow_neg_le {s t : ℝ} (hs : 0 < s) (hst : s < t) :
+    ∃ C : ℝ, 0 ≤ C ∧ ∀ r : ℝ, 0 < r →
+      Summable (fun j : ℕ ↦ ((2 : ℝ) ^ j) ^ s * (1 + 2 ^ j * r) ^ (-t)) ∧
+        ∑' j : ℕ, ((2 : ℝ) ^ j) ^ s * (1 + 2 ^ j * r) ^ (-t) ≤ C * r ^ (-s) := by
+  -- The terms are bounded by `r^(-s) min (b^j r^s) ((b^j r^s)^(-δ))`, whose finite sums are
+  -- bounded uniformly in `r` by `sum_min_zpow_mul_rpow_neg_le`.
+  set b : ℝ := 2 ^ s
+  set δ : ℝ := (t - s) / s
+  have hb : 1 < b := Real.one_lt_rpow one_lt_two hs
+  have hδ : 0 < δ := div_pos (by linarith) hs
+  set C : ℝ := (1 - b⁻¹)⁻¹ + (1 - b ^ (-δ))⁻¹
+  have hC : 0 ≤ C := by
+    have := sub_pos.2 (inv_lt_one_of_one_lt₀ hb)
+    have := sub_pos.2 (Real.rpow_lt_one_of_one_lt_of_neg hb (by linarith : -δ < 0))
+    positivity
+  refine ⟨C, hC, fun r hr ↦ ?_⟩
+  set f : ℕ → ℝ := fun j ↦ ((2 : ℝ) ^ j) ^ s * (1 + 2 ^ j * r) ^ (-t)
+  have hf0 : ∀ j, 0 ≤ f j := fun j ↦ by positivity
+  have hsum (N : ℕ) : ∑ j ∈ Finset.range N, f j ≤ C * r ^ (-s) := by
+    calc ∑ j ∈ Finset.range N, f j
+        ≤ ∑ j ∈ Finset.range N,
+            r ^ (-s) * min (b ^ (j : ℤ) * r ^ s) ((b ^ (j : ℤ) * r ^ s) ^ (-δ)) :=
+          Finset.sum_le_sum fun j _ ↦ rpow_mul_one_add_rpow_neg_le_mul_min hs hst hr j
+      _ = r ^ (-s) * ∑ i ∈ (Finset.range N).map (Nat.castEmbedding : ℕ ↪ ℤ),
+            min (b ^ i * r ^ s) ((b ^ i * r ^ s) ^ (-δ)) := by
+          rw [Finset.mul_sum, Finset.sum_map]
+          rfl
+      _ ≤ r ^ (-s) * C :=
+          mul_le_mul_of_nonneg_left (sum_min_zpow_mul_rpow_neg_le hb hδ _ _) (by positivity)
+      _ = C * r ^ (-s) := mul_comm _ _
+  exact ⟨summable_of_sum_range_le hf0 hsum, Real.tsum_le_of_sum_range_le hf0 hsum⟩
 
 /-- **Summing two dyadic bounds.** For `0 < α < 1` there is `C ≥ 0` such that every nonnegative
 sequence with `2^{jα} gⱼ ≤ a` and `2^{jα} gⱼ ≤ b 2^j d` for all `j`, where `a, b, d ≥ 0`, is

@@ -15,6 +15,7 @@ import Mathlib.Analysis.Fourier.FourierTransformDeriv
 import TauCeti.Analysis.Calculus.IteratedFDeriv.Prod
 import TauCeti.Analysis.SpecialFunctions.Exp.Deriv
 import TauCeti.Analysis.SpecialFunctions.JapaneseBracket.Basic
+import TauCeti.Topology.Circle.Metric
 
 /-!
 # The kernel of the Kohn–Nirenberg quantization
@@ -40,6 +41,10 @@ the diagonal.
   the kernel is the inverse Fourier transform of the rescaled frequency slice, equivalently the
   angular-frequency integral `(2π)⁻ⁿ ∫ exp(i ⟪x - y, ξ⟫) a(x, ξ) dξ`.
 * `TauCeti.norm_quantizationKernel_le`: `‖K_a(x, y)‖ ≤ (2π)⁻ⁿ ∫ ‖a(x, ξ)‖ dξ`, uniformly in `y`.
+* `TauCeti.norm_quantizationKernel_sub_quantizationKernel_right_le` and
+  `TauCeti.norm_quantizationKernel_sub_quantizationKernel_left_le`: the increments of `K_a` in
+  each variable are bounded by the increment times the first frequency moment
+  `∫ ‖ξ‖ ‖a(x, ξ)‖ dξ`, plus, in the first variable, the increment of the coefficient.
 * `TauCeti.continuous_quantizationKernel_right` and `TauCeti.continuous_quantizationKernel`:
   `y ↦ K_a(x, y)` is continuous when the frequency slice at `x` is integrable, and `K_a` is jointly
   continuous for a continuous coefficient with growth bounds `‖a(x, ξ)‖ ≤ C_K ⟨ξ⟩ ^ m`, `m < -n`,
@@ -171,6 +176,87 @@ theorem continuous_quantizationKernel_right (ha : Integrable (fun ξ ↦ a (x, �
   rw [funext (quantizationKernel_eq_fourierInv a x)]
   exact (VectorFourier.fourierIntegral_continuous Real.continuous_fourierChar
     continuous_inner.neg (ha.comp_smul two_pi_pos.ne')).comp (continuous_const.sub continuous_id)
+
+omit [FiniteDimensional ℝ E] [MeasurableSpace E] [BorelSpace E] in
+/-- The kernel integrands at two displacements differ by at most `2π ‖ζ‖ ‖z - z'‖ ‖a(x, 2πζ)‖`. -/
+private theorem norm_fourierChar_smul_sub_fourierChar_smul_le (ζ z z' : E) (A : V →L[ℂ] W) :
+    ‖𝐞 ⟪ζ, z⟫ • A - 𝐞 ⟪ζ, z'⟫ • A‖ ≤ ‖z - z'‖ * (‖(2 * π) • ζ‖ * ‖A‖) := by
+  rw [Circle.smul_def, Circle.smul_def, ← sub_smul, norm_smul, norm_smul,
+    Real.norm_of_nonneg two_pi_pos.le]
+  calc ‖(𝐞 ⟪ζ, z⟫ : ℂ) - 𝐞 ⟪ζ, z'⟫‖ * ‖A‖ ≤ 2 * π * (‖ζ‖ * ‖z - z'‖) * ‖A‖ := by
+        gcongr
+        -- `𝐞 t = Circle.exp (2πt)`, and `Circle.exp` is `1`-Lipschitz.
+        have hlip := lipschitzWith_one_circleExp.dist_le_mul (2 * π * ⟪ζ, z⟫) (2 * π * ⟪ζ, z'⟫)
+        have hd : dist (𝐞 ⟪ζ, z⟫) (𝐞 ⟪ζ, z'⟫) = ‖(𝐞 ⟪ζ, z⟫ : ℂ) - 𝐞 ⟪ζ, z'⟫‖ := by
+          rw [← Complex.dist_eq]
+          exact Subtype.dist_eq _ _
+        rw [← Real.fourierChar_apply', ← Real.fourierChar_apply', NNReal.coe_one, one_mul, hd,
+          Real.dist_eq, ← mul_sub, abs_mul, abs_of_pos two_pi_pos, ← inner_sub_right] at hlip
+        refine hlip.trans (mul_le_mul_of_nonneg_left ?_ two_pi_pos.le)
+        exact abs_real_inner_le_norm _ _
+    _ = ‖z - z'‖ * (2 * π * ‖ζ‖ * ‖A‖) := by ring
+
+/-- **Increments in the second variable.** If the frequency slice `ξ ↦ a(x, ξ)` and
+`ξ ↦ ‖ξ‖ ‖a(x, ξ)‖` are integrable, then
+`‖K_a(x, y) - K_a(x, y')‖ ≤ (2π)⁻ⁿ ‖y - y'‖ ∫ ‖ξ‖ ‖a(x, ξ)‖ dξ`. -/
+theorem norm_quantizationKernel_sub_quantizationKernel_right_le
+    (ha : Integrable (fun ξ ↦ a (x, ξ))) (ha' : Integrable (fun ξ ↦ ‖ξ‖ * ‖a (x, ξ)‖))
+    (y y' : E) :
+    ‖quantizationKernel a x y - quantizationKernel a x y'‖ ≤
+      ((2 * π) ^ finrank ℝ E)⁻¹ * ‖y - y'‖ * ∫ ξ, ‖ξ‖ * ‖a (x, ξ)‖ := by
+  have hpos : 0 < ((2 * π) ^ finrank ℝ E)⁻¹ := by positivity
+  rw [quantizationKernel_def, quantizationKernel_def,
+    ← integral_sub (integrable_quantizationKernel_integrand ha y)
+      (integrable_quantizationKernel_integrand ha y')]
+  refine (norm_integral_le_of_norm_le
+    ((ha'.comp_smul two_pi_pos.ne').const_mul ‖y - y'‖)
+    (ae_of_all _ fun ζ ↦ ?_)).trans_eq ?_
+  · refine (norm_fourierChar_smul_sub_fourierChar_smul_le ζ _ _ _).trans_eq ?_
+    rw [sub_sub_sub_cancel_left, norm_sub_rev]
+  · have hc := Measure.integral_comp_smul (μ := volume) (fun ξ ↦ ‖ξ‖ * ‖a (x, ξ)‖) (2 * π)
+    rw [smul_eq_mul, abs_of_pos hpos] at hc
+    rw [integral_const_mul, hc]
+    ring
+
+/-- **Increments in the first variable.** If the frequency slices `ξ ↦ a(x, ξ)` and
+`ξ ↦ a(x', ξ)` and the function `ξ ↦ ‖ξ‖ ‖a(x, ξ)‖` are integrable, then
+`‖K_a(x, y) - K_a(x', y)‖ ≤ (2π)⁻ⁿ (‖x - x'‖ ∫ ‖ξ‖ ‖a(x, ξ)‖ dξ + ∫ ‖a(x, ξ) - a(x', ξ)‖ dξ)`:
+the first term comes from the phase, the second from the coefficient. -/
+theorem norm_quantizationKernel_sub_quantizationKernel_left_le {x' : E}
+    (ha : Integrable (fun ξ ↦ a (x, ξ))) (ha' : Integrable (fun ξ ↦ ‖ξ‖ * ‖a (x, ξ)‖))
+    (hx' : Integrable (fun ξ ↦ a (x', ξ))) (y : E) :
+    ‖quantizationKernel a x y - quantizationKernel a x' y‖ ≤
+      ((2 * π) ^ finrank ℝ E)⁻¹ *
+        (‖x - x'‖ * (∫ ξ, ‖ξ‖ * ‖a (x, ξ)‖) + ∫ ξ, ‖a (x, ξ) - a (x', ξ)‖) := by
+  have hpos : 0 < ((2 * π) ^ finrank ℝ E)⁻¹ := by positivity
+  have hd : Integrable (fun ξ ↦ ‖a (x, ξ) - a (x', ξ)‖) := (ha.sub hx').norm
+  rw [quantizationKernel_def, quantizationKernel_def,
+    ← integral_sub (integrable_quantizationKernel_integrand ha y)
+      (integrable_quantizationKernel_integrand hx' y)]
+  refine (norm_integral_le_of_norm_le
+    (((ha'.comp_smul two_pi_pos.ne').const_mul ‖x - x'‖).add
+      (hd.comp_smul two_pi_pos.ne'))
+    (ae_of_all _ fun ζ ↦ ?_)).trans_eq ?_
+  · -- Split the increment into the change of the phase and the change of the coefficient.
+    have hsplit : 𝐞 ⟪ζ, x - y⟫ • a (x, (2 * π) • ζ) - 𝐞 ⟪ζ, x' - y⟫ • a (x', (2 * π) • ζ) =
+        (𝐞 ⟪ζ, x - y⟫ • a (x, (2 * π) • ζ) - 𝐞 ⟪ζ, x' - y⟫ • a (x, (2 * π) • ζ)) +
+          𝐞 ⟪ζ, x' - y⟫ • (a (x, (2 * π) • ζ) - a (x', (2 * π) • ζ)) := by
+      simp only [Circle.smul_def, smul_sub]
+      abel
+    rw [hsplit]
+    refine (norm_add_le _ _).trans (add_le_add ?_ ?_)
+    · refine (norm_fourierChar_smul_sub_fourierChar_smul_le ζ _ _ _).trans_eq ?_
+      rw [sub_sub_sub_cancel_right]
+    · exact (Circle.norm_smul (E := V →L[ℂ] W) _ _).le
+  · have hc₁ := Measure.integral_comp_smul (μ := volume) (fun ξ ↦ ‖ξ‖ * ‖a (x, ξ)‖) (2 * π)
+    have hc₂ := Measure.integral_comp_smul (μ := volume) (fun ξ ↦ ‖a (x, ξ) - a (x', ξ)‖) (2 * π)
+    rw [smul_eq_mul, abs_of_pos hpos] at hc₁ hc₂
+    have h₁ : ∫ ζ, ‖x - x'‖ * (‖(2 * π) • ζ‖ * ‖a (x, (2 * π) • ζ)‖) =
+        ‖x - x'‖ * (((2 * π) ^ finrank ℝ E)⁻¹ * ∫ ξ, ‖ξ‖ * ‖a (x, ξ)‖) := by
+      rw [integral_const_mul, hc₁]
+    rw [Pi.add_def, integral_add ((ha'.comp_smul two_pi_pos.ne').const_mul _)
+      (hd.comp_smul two_pi_pos.ne'), h₁, hc₂]
+    ring
 
 /-- **Joint continuity.** For a continuous coefficient whose growth bound
 `‖a(x, ξ)‖ ≤ C_K ⟨ξ⟩ ^ m` with `m < -n` is uniform for `x` in each compact set `K`, the kernel
