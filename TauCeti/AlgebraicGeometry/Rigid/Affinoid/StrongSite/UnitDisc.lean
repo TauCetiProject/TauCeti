@@ -19,44 +19,27 @@ import TauCeti.RingTheory.MvPowerSeries.TateAlgebra.Eval
 # Strict sublevel opens and the unit-disc checks for the strong affinoid G-topology
 
 For any element `f` of an affinoid `K`-algebra `A`, the strict sublevel locus
-`{x ∈ Sp A : |f(x)| < 1}` is strong-admissible: for any topologically nilpotent unit `ϖ ∈ K`
-(`0 < ‖ϖ‖ < 1`), it is exhausted by the rational subdomains `R(fⁿ / ϖ) = {|f|ⁿ ≤ ‖ϖ‖}` (`n ≥ 1`),
-and the maximum modulus principle refines every affinoid test map into `{|f| < 1}` through a
-single stage of this exhaustion.
-
-Specialising to the one-variable Tate algebra `K⟨X⟩` gives the two classical checks of
-[Bosch, Güntzer, Remmert, *Non-Archimedean Analysis*][bosch-guntzer-remmert], §§9.1.2 and 9.1.4:
-
-1. The open unit disc `{x ∈ Sp K⟨X⟩ : |X(x)| < 1}` is strong-admissible, admissibly exhausted by
-   the closed subdiscs `{|X|ⁿ ≤ ‖ϖ‖}` (`n ≥ 1`).
-2. Together with the unit circle `{|X| = 1}` (a Laurent affinoid subdomain), the open unit disc
-   covers `Sp K⟨X⟩` set-theoretically, yet `{openUnitDisc, unitCircle}` is **not** an admissible
-   cover in `strongGTopology`: any finite affinoid refinement would bound `|X|` away from `1` on
-   `openUnitDisc`, contradicting the existence of classical points of `Sp K⟨X⟩` where
-   `|X(x)|ⁿ = ‖ϖ‖` for arbitrarily large `n`.
+`{x ∈ Sp A : |f(x)| < 1}` is strong-admissible: for `0 < ‖ϖ‖ < 1`, it is exhausted by the rational
+subdomains `R(fⁿ / ϖ) = {|f|ⁿ ≤ ‖ϖ‖}` (`n ≥ 1`), and the maximum modulus principle refines every
+affinoid test map into `{|f| < 1}` through a single stage. Specialising to `K⟨X⟩` gives the two
+checks of [BGR, §§9.1.2, 9.1.4]: `{|X| < 1}` is strong-admissible, whereas `{openUnitDisc,
+unitCircle}` covers `Sp K⟨X⟩` set-theoretically without being strong-admissible.
 
 ## Main definitions
 
-* `TauCeti.AffinoidSubdomain.laurent`: any Laurent domain `L(f, g⁻¹)` as an `AffinoidSubdomain`.
-* `TauCeti.AffinoidSubdomain.eqOne`: the sphere `{x ∈ Sp A : |f(x)| = 1}` as a Laurent subdomain.
-* `TauCeti.AffinoidSubdomain.closedSublevelPow`: the rational subdomain
-  `R(fⁿ / ϖ) = {x ∈ Sp A : |f(x)|ⁿ ≤ ‖ϖ‖}` for `ϖ ≠ 0`.
+* `TauCeti.AffinoidSubdomain.laurent`, `TauCeti.AffinoidSubdomain.eqOne`,
+  `TauCeti.AffinoidSubdomain.closedSublevelPow`: Laurent domains, `{|f| = 1}`, and `{|f|ⁿ ≤ ‖ϖ‖}`.
 * `TauCeti.StrongAdmissibleOpen.ltOne`: the strict sublevel open `{x ∈ Sp A : |f(x)| < 1}`.
 * `TauCeti.MvPowerSeries.openUnitDisc`, `TauCeti.MvPowerSeries.closedSubdisc`,
-  `TauCeti.MvPowerSeries.unitCircle`: the open unit disc, closed subdiscs `{|X|ⁿ ≤ ‖ϖ‖}`, and unit
-  circle in `Sp K⟨X⟩`.
+  `TauCeti.MvPowerSeries.unitCircle`: the open unit disc, closed subdiscs, and unit circle.
 
 ## Main results
 
-* `TauCeti.StrongAdmissibleOpen.covers_ltOne_closedSublevelPow`: `{|f|ⁿ ≤ ‖ϖ‖}` (`n ≥ 1`) is a
-  strong-admissible cover of `{|f| < 1}` for any `0 < ‖ϖ‖ < 1`.
-* `TauCeti.MvPowerSeries.covers_openUnitDisc_closedSubdisc`: the closed subdiscs `{|X|ⁿ ≤ ‖ϖ‖}`
-  (`n ≥ 1`) form a strong-admissible cover of the open unit disc in `Sp K⟨X⟩`.
-* `TauCeti.MvPowerSeries.exists_pointNorm_X_pow_eq_norm`: for `‖ϖ‖ ≤ 1` and `n ≥ 1`, `Sp K⟨X⟩` has
-  a classical point `x` with `|X(x)|ⁿ = ‖ϖ‖`.
-* `TauCeti.MvPowerSeries.openUnitDisc_union_unitCircle` and
-  `TauCeti.MvPowerSeries.not_covers_openUnitDisc_unitCircle`: `{openUnitDisc, unitCircle}` covers
-  `Sp K⟨X⟩` as sets, but is not a strong-admissible cover.
+* `TauCeti.StrongAdmissibleOpen.covers_ltOne_closedSublevelPow` and
+  `TauCeti.MvPowerSeries.covers_openUnitDisc_closedSubdisc`: strong exhaustion by `{|f|ⁿ ≤ ‖ϖ‖}`.
+* `TauCeti.MvPowerSeries.exists_pointNorm_X_pow_eq_norm`,
+  `TauCeti.MvPowerSeries.openUnitDisc_union_unitCircle`, and
+  `TauCeti.MvPowerSeries.not_covers_openUnitDisc_unitCircle`: set cover vs. non-admissibility.
 
 ## References
 
@@ -82,19 +65,15 @@ namespace AffinoidSubdomain
 `A`. -/
 noncomputable def laurent (hA : IsAffinoidAlgebra K A) {r s : ℕ} (f : Fin r → A)
     (g : Fin s → A) : AffinoidSubdomain K A :=
-  let _ : NormedCommRing A := hA.residueNormedCommRing
-  let _ : NormedAlgebra K A := hA.residueNormedAlgebra
-  have : IsUltrametricDist A := hA.isUltrametricDist_residueNormedCommRing
-  have : CompleteSpace A := hA.completeSpace_residueNormedCommRing
+  let _ := hA.residueNormedCommRing; let _ := hA.residueNormedAlgebra
+  have := hA.isUltrametricDist_residueNormedCommRing; have := hA.completeSpace_residueNormedCommRing
   ofMap (LaurentFraction.isAffinoidSubdomainMap hA (f := f) (g := g))
 
 @[simp]
 theorem coe_laurent (hA : IsAffinoidAlgebra K A) {r s : ℕ} (f : Fin r → A) (g : Fin s → A) :
     (laurent hA f g : Set (MaximalSpectrum A)) = laurentDomain K f g := by
-  let _ : NormedCommRing A := hA.residueNormedCommRing
-  let _ : NormedAlgebra K A := hA.residueNormedAlgebra
-  have : IsUltrametricDist A := hA.isUltrametricDist_residueNormedCommRing
-  have : CompleteSpace A := hA.completeSpace_residueNormedCommRing
+  let _ := hA.residueNormedCommRing; let _ := hA.residueNormedAlgebra
+  have := hA.isUltrametricDist_residueNormedCommRing; have := hA.completeSpace_residueNormedCommRing
   exact coe_ofMap _
 
 /-- The unit-sphere locus `{x ∈ Sp A : |f(x)| = 1}` as the Laurent subdomain `L(f, f⁻¹)`. -/
@@ -104,8 +83,7 @@ noncomputable def eqOne (hA : IsAffinoidAlgebra K A) (f : A) : AffinoidSubdomain
 @[simp]
 theorem coe_eqOne (hA : IsAffinoidAlgebra K A) (f : A) :
     (eqOne hA f : Set (MaximalSpectrum A)) = {x | pointNorm K x f = 1} := by
-  ext x
-  simp [eqOne, le_antisymm_iff]
+  ext x; simp [eqOne, le_antisymm_iff]
 
 /-- The closed rational sublevel subdomain `R(fⁿ / ϖ) = {x ∈ Sp A : |f(x)|ⁿ ≤ ‖ϖ‖}` for `ϖ ≠ 0`. -/
 noncomputable def closedSublevelPow (hA : IsAffinoidAlgebra K A) (f : A) {ϖ : K} (hϖ : ϖ ≠ 0)
@@ -118,8 +96,7 @@ noncomputable def closedSublevelPow (hA : IsAffinoidAlgebra K A) (f : A) {ϖ : K
 theorem coe_closedSublevelPow (hA : IsAffinoidAlgebra K A) (f : A) {ϖ : K} (hϖ : ϖ ≠ 0) (n : ℕ) :
     (closedSublevelPow hA f hϖ n : Set (MaximalSpectrum A)) =
       {x | pointNorm K x f ^ n ≤ ‖ϖ‖} := by
-  ext x
-  simp [closedSublevelPow, hϖ, x.pointNorm_pow]
+  ext x; simp [closedSublevelPow, hϖ, x.pointNorm_pow]
 
 end AffinoidSubdomain
 
@@ -129,35 +106,28 @@ closed sublevel sets `{|f|ⁿ ≤ ‖ϖ‖}`. -/
 theorem ltOne_eq_biUnion_closedSublevelPow (f : A) {ϖ : K} (hϖ₀ : 0 < ‖ϖ‖) (hϖ₁ : ‖ϖ‖ < 1) :
     {x : MaximalSpectrum A | pointNorm K x f < 1} =
       ⋃ n ∈ {n : ℕ | 1 ≤ n}, {x : MaximalSpectrum A | pointNorm K x f ^ n ≤ ‖ϖ‖} := by
-  ext x
-  simp only [Set.mem_iUnion, Set.mem_ofPred]
-  refine ⟨fun hx ↦ ?_, fun ⟨n, _, hxn⟩ ↦ ?_⟩
-  · obtain ⟨m, hm⟩ := exists_pow_lt_of_lt_one hϖ₀ hx
-    exact ⟨m + 1, Nat.succ_pos m,
-      (pow_le_pow_of_le_one (pointNorm_nonneg f) hx.le (Nat.le_succ m)).trans hm.le⟩
-  · have hlt : pointNorm K x f ^ n < 1 ^ n := by simpa using hxn.trans_lt hϖ₁
-    exact lt_of_pow_lt_pow_left₀ n zero_le_one hlt
+  ext x; simp only [Set.mem_iUnion, Set.mem_ofPred]
+  refine ⟨fun hx ↦ ?_, fun ⟨n, _, hxn⟩ ↦
+    lt_of_pow_lt_pow_left₀ n zero_le_one (by simpa using hxn.trans_lt hϖ₁)⟩
+  obtain ⟨m, hm⟩ := exists_pow_lt_of_lt_one hϖ₀ hx
+  exact ⟨m + 1, Nat.succ_pos m,
+    (pow_le_pow_of_le_one (pointNorm_nonneg f) hx.le (Nat.le_succ m)).trans hm.le⟩
 
 /-- For any `0 < ‖ϖ‖`, the closed sublevel exhaustion `{|f|ⁿ ≤ ‖ϖ‖}` (`n ≥ 1`) of `{|f| < 1}` is
 affinoid-test refined. -/
 theorem isAffinoidTestRefined_ltOne (f : A) {ϖ : K} (hϖ₀ : 0 < ‖ϖ‖) :
     IsAffinoidTestRefined K {x : MaximalSpectrum A | pointNorm K x f < 1}
       ((fun n : ℕ ↦ {x : MaximalSpectrum A | pointNorm K x f ^ n ≤ ‖ϖ‖}) '' {n : ℕ | 1 ≤ n}) := by
-  -- By the maximum modulus principle, `supSeminorm K (φ f) < 1`, so a single stage works.
   rw [isAffinoidTestRefined_iff]
   intro B _ _ hB φ hφ
-  have hsup : supSeminorm K (φ f) < 1 := by
-    refine (hB.supSeminorm_lt_iff zero_lt_one).mpr fun y ↦ ?_
-    rw [← hB.pointNorm_maximalSpectrumComap φ y f]
-    exact hφ ⟨y, rfl⟩
+  have hsup : supSeminorm K (φ f) < 1 := (hB.supSeminorm_lt_iff zero_lt_one).mpr fun y ↦ by
+    rw [← hB.pointNorm_maximalSpectrumComap φ y f]; exact hφ ⟨y, rfl⟩
   obtain ⟨m, hm⟩ := exists_pow_lt_of_lt_one hϖ₀ hsup
   have hle : supSeminorm K (φ f) ^ (m + 1) ≤ ‖ϖ‖ :=
     (pow_le_pow_of_le_one (supSeminorm_nonneg _) hsup.le (Nat.le_succ m)).trans hm.le
   refine ⟨{AffinoidSubdomain.univ hB}, Set.finite_singleton _, by simp, ?_⟩
-  rintro W hW
-  obtain rfl : W = AffinoidSubdomain.univ hB := Set.mem_singleton_iff.mp hW
-  refine ⟨{x | pointNorm K x f ^ (m + 1) ≤ ‖ϖ‖}, ⟨m + 1, Nat.succ_pos m, rfl⟩, ?_⟩
-  intro y _
+  rintro W hW; obtain rfl := Set.mem_singleton_iff.mp hW
+  refine ⟨{x | pointNorm K x f ^ (m + 1) ≤ ‖ϖ‖}, ⟨m + 1, Nat.succ_pos m, rfl⟩, fun y _ ↦ ?_⟩
   rw [Set.mem_preimage, Set.mem_ofPred, hB.pointNorm_maximalSpectrumComap]
   exact (pow_le_pow_left₀ (pointNorm_nonneg _) (hB.pointNorm_le_supSeminorm y (φ f)) _).trans hle
 
@@ -166,18 +136,13 @@ namespace StrongAdmissibleOpen
 /-- The strict sublevel locus `{x ∈ Sp A : |f(x)| < 1}` as a strong-admissible open of `Sp A`. -/
 noncomputable def ltOne (hA : IsAffinoidAlgebra K A) (f : A) : StrongAdmissibleOpen K A :=
   let hϖ := NormedField.exists_norm_lt_one K
-  let ϖ : K := hϖ.choose
-  have hϖ₀ : 0 < ‖ϖ‖ := hϖ.choose_spec.1
-  have hϖ₁ : ‖ϖ‖ < 1 := hϖ.choose_spec.2
-  have hne : ϖ ≠ 0 := norm_pos_iff.mp hϖ₀
+  have hϖ₀ : 0 < ‖hϖ.choose‖ := hϖ.choose_spec.1
   ⟨{x | pointNorm K x f < 1},
-    AffinoidSubdomain.closedSublevelPow hA f hne '' {n : ℕ | 1 ≤ n},
-    by
-      simp only [Set.image_image, AffinoidSubdomain.coe_closedSublevelPow, Set.sUnion_image]
-      exact (ltOne_eq_biUnion_closedSublevelPow f hϖ₀ hϖ₁).symm,
-    by
-      simp only [Set.image_image, AffinoidSubdomain.coe_closedSublevelPow]
-      exact isAffinoidTestRefined_ltOne f hϖ₀⟩
+    AffinoidSubdomain.closedSublevelPow hA f (norm_pos_iff.mp hϖ₀) '' {n : ℕ | 1 ≤ n},
+    by simp only [Set.image_image, AffinoidSubdomain.coe_closedSublevelPow, Set.sUnion_image]
+       exact (ltOne_eq_biUnion_closedSublevelPow f hϖ₀ hϖ.choose_spec.2).symm,
+    by simp only [Set.image_image, AffinoidSubdomain.coe_closedSublevelPow]
+       exact isAffinoidTestRefined_ltOne f hϖ₀⟩
 
 @[simp]
 theorem coe_ltOne (hA : IsAffinoidAlgebra K A) (f : A) :
@@ -201,9 +166,8 @@ theorem covers_ltOne_closedSublevelPow [hA : Fact (IsAffinoidAlgebra K A)] (f : 
   · rintro _ ⟨n, _, rfl⟩ x hx
     rw [← SetLike.mem_coe, AffinoidSubdomain.coe_toStrongAdmissibleOpen,
       AffinoidSubdomain.coe_closedSublevelPow, Set.mem_ofPred] at hx
-    rw [mem_ltOne]
-    have hlt : pointNorm K x f ^ n < 1 ^ n := by simpa using hx.trans_lt hϖ₁
-    exact lt_of_pow_lt_pow_left₀ n zero_le_one hlt
+    exact lt_of_pow_lt_pow_left₀ n zero_le_one
+      (show pointNorm K x f ^ n < 1 ^ n by simpa using hx.trans_lt hϖ₁)
   · simp only [Set.image_image, AffinoidSubdomain.coe_toStrongAdmissibleOpen,
       AffinoidSubdomain.coe_closedSublevelPow, coe_ltOne]
     exact isAffinoidTestRefined_ltOne f hϖ₀
@@ -272,27 +236,20 @@ theorem pointNorm_unitDiscCoord_le_one (x : MaximalSpectrum T₁) :
 /-- The open unit disc and the unit circle are disjoint in `Sp K⟨X⟩`. -/
 theorem disjoint_openUnitDisc_unitCircle :
     Disjoint (openUnitDisc (K := K) : Set (MaximalSpectrum T₁))
-      (unitCircle (K := K) : Set (MaximalSpectrum T₁)) := by
-  rw [Set.disjoint_left]
-  intro x hxlt hxeq
-  rw [coe_openUnitDisc, Set.mem_ofPred] at hxlt
-  rw [coe_unitCircle, Set.mem_ofPred] at hxeq
-  exact hxlt.ne hxeq
+      (unitCircle (K := K) : Set (MaximalSpectrum T₁)) :=
+  Set.disjoint_left.mpr fun _ hxlt hxeq ↦ by
+    rw [coe_openUnitDisc] at hxlt; rw [coe_unitCircle] at hxeq; exact hxlt.ne hxeq
 
 /-- The open unit disc and the unit circle cover `Sp K⟨X⟩` set-theoretically. -/
 theorem openUnitDisc_union_unitCircle :
     (openUnitDisc (K := K) : Set (MaximalSpectrum T₁)) ∪
       (unitCircle (K := K) : Set (MaximalSpectrum T₁)) = Set.univ := by
-  ext x
-  simp only [Set.mem_union, coe_openUnitDisc, coe_unitCircle, Set.mem_ofPred, Set.mem_univ,
-    iff_true]
-  exact lt_or_eq_of_le (pointNorm_unitDiscCoord_le_one x)
+  ext x; simp [lt_or_eq_of_le (pointNorm_unitDiscCoord_le_one x)]
 
 /-- For any `ϖ : K` with `‖ϖ‖ ≤ 1` and `n ≥ 1`, the closed unit disc `Sp K⟨X⟩` contains a classical
 point `x` at which `|X(x)|ⁿ = ‖ϖ‖`. -/
 theorem exists_pointNorm_X_pow_eq_norm {ϖ : K} (hϖ : ‖ϖ‖ ≤ 1) {n : ℕ} (hn : 1 ≤ n) :
     ∃ x : MaximalSpectrum T₁, pointNorm K x unitDiscCoord ^ n = ‖ϖ‖ := by
-  -- Adjoin an `n`-th root of `ϖ` and pass to a maximal quotient field `L`.
   let g : K[X] := Polynomial.X ^ n - Polynomial.C ϖ
   have hg : g.Monic := Polynomial.monic_X_pow_sub_C ϖ (by omega)
   have : Module.Finite K (AdjoinRoot g) := hg.finite_adjoinRoot
@@ -312,11 +269,9 @@ theorem exists_pointNorm_X_pow_eq_norm {ϖ : K} (hϖ : ‖ϖ‖ ≤ 1) {n : ℕ}
   have : CompleteSpace L := FiniteDimensional.completeSpace K L
   have hφ (r : K) : ‖algebraMap K L r‖ = ‖r‖ := norm_algebraMap' L r
   let α : L := Ideal.Quotient.mk m (AdjoinRoot.root g)
-  have hαn : α ^ n = algebraMap K L ϖ := by
-    apply sub_eq_zero.mp
-    have hroot := congrArg (Ideal.Quotient.mk m) (AdjoinRoot.eval₂_root g)
+  have hαn : α ^ n = algebraMap K L ϖ := sub_eq_zero.mp <| by
     simpa [g, α, ← AdjoinRoot.algebraMap_eq, ← IsScalarTower.algebraMap_eq K (AdjoinRoot g) L]
-      using hroot
+      using congrArg (Ideal.Quotient.mk m) (AdjoinRoot.eval₂_root g)
   have hαnorm : ‖α‖ ^ n = ‖ϖ‖ := by rw [← norm_pow, hαn, hφ]
   have hαle : ∀ _ : Fin 1, ‖α‖ ≤ 1 := fun _ ↦
     le_of_pow_le_pow_left₀ (by omega : n ≠ 0) zero_le_one (by simpa [hαnorm] using hϖ)
@@ -324,31 +279,26 @@ theorem exists_pointNorm_X_pow_eq_norm {ϖ : K} (hϖ : ‖ϖ‖ ≤ 1) {n : ℕ}
     { _root_.MvPowerSeries.restrictedEval₂ (algebraMap K L) (fun _ ↦ α) (fun r ↦ (hφ r).le) hαle
       with commutes' := _root_.MvPowerSeries.restrictedEval₂_algebraMap _ _ _ _ }
   refine ⟨⟨RingHom.ker ψ, ψ.ker_isMaximal_of_isAlgebraic⟩, ?_⟩
-  have hpt : pointNorm K ⟨RingHom.ker ψ, ψ.ker_isMaximal_of_isAlgebraic⟩ unitDiscCoord = ‖α‖ := by
-    rw [pointNorm_eq_spectralNorm (ψ := ψ) le_rfl, ← NormedAlgebra.norm_eq_spectralNorm K]
-    exact congrArg norm
-      (_root_.MvPowerSeries.restrictedEval₂_X (algebraMap K L) (fun _ ↦ α) _ hαle 0)
-  rw [hpt, hαnorm]
+  rw [pointNorm_eq_spectralNorm (ψ := ψ) le_rfl, ← NormedAlgebra.norm_eq_spectralNorm K]
+  exact (congrArg (fun a ↦ ‖a‖ ^ n)
+    (_root_.MvPowerSeries.restrictedEval₂_X (algebraMap K L) (fun _ ↦ α) _ hαle 0)).trans hαnorm
 
 private theorem exists_lt_one_forall_pointNorm_le (R' : Finset (AffinoidSubdomain K T₁))
-    (hR' : ∀ W ∈ R', (W : Set (MaximalSpectrum T₁)) ⊆
-      (openUnitDisc (K := K) : Set (MaximalSpectrum T₁))) :
+    (hR' : ∀ W ∈ R', (W : Set (MaximalSpectrum T₁)) ⊆ (openUnitDisc (K := K) : Set _)) :
     ∃ r : ℝ, 0 ≤ r ∧ r < 1 ∧ ∀ W ∈ R', ∀ x ∈ W, pointNorm K x unitDiscCoord ≤ r := by
   classical
   let S : Finset ℝ := R'.image (fun W ↦ supSeminorm K (W.toSections unitDiscCoord)) ∪ {0}
   have hS : S.Nonempty := by simp [S]
-  refine ⟨S.max' hS, Finset.le_max' S 0 (by simp [S]), ?_, fun W hW x hx ↦ ?_⟩
-  · rw [Finset.max'_lt_iff S hS]
-    intro s hs
-    simp only [S, Finset.mem_union, Finset.mem_image, Finset.mem_singleton] at hs
-    rcases hs with ⟨W, hW, rfl⟩ | rfl
+  refine ⟨S.max' hS, Finset.le_max' S 0 (by simp [S]), (Finset.max'_lt_iff S hS).mpr ?_,
+    fun W hW x hx ↦ ?_⟩
+  · simp only [S, Finset.mem_union, Finset.mem_image, Finset.mem_singleton]
+    rintro _ (⟨W, hW, rfl⟩ | rfl)
     · exact (AffinoidSubdomain.supSeminorm_toSections_lt_iff isAffinoidAlgebra_tate W
         unitDiscCoord zero_lt_one).mpr fun y hy ↦ hR' W hW hy
     · exact zero_lt_one
-  · have hWle : supSeminorm K (W.toSections unitDiscCoord) ≤ S.max' hS :=
-      Finset.le_max' S _ (Finset.mem_union_left _ (Finset.mem_image_of_mem _ hW))
-    exact ((AffinoidSubdomain.supSeminorm_toSections_le_iff isAffinoidAlgebra_tate W
-      unitDiscCoord (supSeminorm_nonneg _)).mp le_rfl x hx).trans hWle
+  · exact ((AffinoidSubdomain.supSeminorm_toSections_le_iff isAffinoidAlgebra_tate W
+      unitDiscCoord (supSeminorm_nonneg _)).mp le_rfl x hx).trans
+      (Finset.le_max' S _ (Finset.mem_union_left _ (Finset.mem_image_of_mem _ hW)))
 
 /-- Although `{openUnitDisc, unitCircle}` covers `Sp K⟨X⟩` as sets, it is **not** an admissible
 cover in `strongGTopology` [BGR, §9.1.2]. -/
@@ -357,14 +307,11 @@ theorem not_covers_openUnitDisc_unitCircle :
       {openUnitDisc, unitCircle.toStrongAdmissibleOpen} := by
   classical
   intro hcov
-  have href := ((StrongAdmissibleOpen.strongGTopology_covers_iff (K := K) (A := T₁)).mp hcov).2
-  rw [isAffinoidTestRefined_iff] at href
-  obtain ⟨R, hfin, hRuniv, hRref⟩ := href isAffinoidAlgebra_tate (AlgHom.id K T₁)
-    (by simp [StrongAdmissibleOpen.coe_top])
-  let R' : Finset (AffinoidSubdomain K T₁) :=
-    {W ∈ hfin.toFinset | (W : Set (MaximalSpectrum T₁)) ⊆
-      (openUnitDisc (K := K) : Set (MaximalSpectrum T₁))}
-  obtain ⟨r, hr₀, hr₁, hr⟩ := exists_lt_one_forall_pointNorm_le R'
+  obtain ⟨R, hfin, hRuniv, hRref⟩ := (isAffinoidTestRefined_iff.mp
+    (((StrongAdmissibleOpen.strongGTopology_covers_iff (K := K) (A := T₁)).mp hcov).2))
+    isAffinoidAlgebra_tate (AlgHom.id K T₁) (by simp [StrongAdmissibleOpen.coe_top])
+  obtain ⟨r, hr₀, hr₁, hr⟩ := exists_lt_one_forall_pointNorm_le
+    {W ∈ hfin.toFinset | (W : Set (MaximalSpectrum T₁)) ⊆ (openUnitDisc (K := K) : Set _)}
     fun _ hW ↦ (Finset.mem_filter.mp hW).2
   obtain ⟨ϖ, hϖ₀, hϖ₁⟩ := NormedField.exists_norm_lt_one K
   obtain ⟨m, hm⟩ := exists_pow_lt_of_lt_one hϖ₀ hr₁
@@ -374,21 +321,13 @@ theorem not_covers_openUnitDisc_unitCircle :
   obtain ⟨_, ⟨W, hWR, rfl⟩, hxW⟩ := Set.mem_sUnion.mp (hRuniv ▸ Set.mem_univ x)
   obtain ⟨V, hVmem, hWV⟩ := hRref W hWR
   rw [IsAffinoidAlgebra.maximalSpectrumComap_id, Set.preimage_id] at hWV
-  have hWsub : (W : Set (MaximalSpectrum T₁)) ⊆
-      (openUnitDisc (K := K) : Set (MaximalSpectrum T₁)) := by
-    simp only [Set.mem_image, Set.mem_insert_iff, Set.mem_singleton_iff] at hVmem
-    rcases hVmem with ⟨_, rfl | rfl, rfl⟩
+  have hWsub : (W : Set (MaximalSpectrum T₁)) ⊆ (openUnitDisc (K := K) : Set _) := by
+    rcases (by simpa using hVmem : V = _ ∨ V = _) with rfl | rfl
     · exact hWV
-    · exfalso
-      have hxeq : pointNorm K x unitDiscCoord = 1 := by
-        simpa [AffinoidSubdomain.coe_toStrongAdmissibleOpen, coe_unitCircle] using hWV hxW
-      exact hxlt.ne hxeq
-  have hxle : pointNorm K x unitDiscCoord ≤ r :=
-    hr W (Finset.mem_filter.mpr ⟨hfin.mem_toFinset.mpr hWR, hWsub⟩) x hxW
-  have hpow : ‖ϖ‖ ≤ r ^ (m + 1) := hx ▸ pow_le_pow_left₀ (pointNorm_nonneg _) hxle (m + 1)
-  have hrpow : r ^ (m + 1) < ‖ϖ‖ :=
-    (pow_le_pow_of_le_one hr₀ hr₁.le (Nat.le_succ m)).trans_lt hm
-  exact (hpow.trans_lt hrpow).false
+    · exact False.elim (hxlt.ne (by simpa using hWV hxW))
+  have hxle := hr W (Finset.mem_filter.mpr ⟨hfin.mem_toFinset.mpr hWR, hWsub⟩) x hxW
+  exact ((hx ▸ pow_le_pow_left₀ (pointNorm_nonneg _) hxle (m + 1)).trans_lt
+    ((pow_le_pow_of_le_one hr₀ hr₁.le (Nat.le_succ m)).trans_lt hm)).false
 
 end MvPowerSeries
 
