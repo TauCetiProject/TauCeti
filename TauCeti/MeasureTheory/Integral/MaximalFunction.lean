@@ -28,7 +28,9 @@ import TauCeti.MeasureTheory.Integral.Lebesgue.Truncation
 import TauCeti.Analysis.SpecialFunctions.Pow.NNReal
 -- `TauCeti.MeasureTheory.Integral.Average` is imported privately: its change of variables for
 -- averages, `TauCeti.setLAverage_comp_preimage_of_map_eq_smul`, is used only inside the proofs of
--- the translation and dilation invariance of the maximal function.
+-- the translation and dilation invariance of the maximal function, and
+-- `TauCeti.setLAverage_smul_measure` only inside the proof of
+-- `TauCeti.maximalFunction_smul_measure`.
 import TauCeti.MeasureTheory.Integral.Average
 -- `TauCeti.Analysis.Normed.Module.Ball` is imported privately: it supplies
 -- `TauCeti.preimage_smul_ball_smul_norm` inside the proof of the dilation invariance.
@@ -163,8 +165,9 @@ and letting the truncations increase to `F` gives the bound for `∫⁻ F ^ q`.
   `TauCeti.lintegral_rpow_maximalFunction_mul_le`: the **weighted maximal inequality** of
   Fefferman and Stein, of weak type `(1, 1)` and of strong type `(p, p)` for `1 < p < ∞`.
 * `TauCeti.lintegral_tsum_maximalFunction_rpow_le`,
-  `TauCeti.lintegral_rpow_tsum_maximalFunction_rpow_le`: the **vector-valued maximal inequality**
-  of Fefferman and Stein for `1 < r ≤ p < ∞`.
+  `TauCeti.lintegral_rpow_tsum_maximalFunction_rpow_le_of_exponent_lt`: the **vector-valued
+  maximal inequality** of Fefferman and Stein for `1 < r ≤ p < ∞`, where `r` is the exponent of
+  the sum.
 * `TauCeti.eLpNorm_maximalFunction_lt_top`,
   `TauCeti.ae_maximalFunction_lt_top_of_eLpNorm_ne_top`: a function with finite `Lᵖ` seminorm
   has a maximal function with finite `Lᵖ` seminorm for `1 < p ≤ ∞`, and the maximal function
@@ -286,13 +289,8 @@ private theorem mul_measure_lt_maximalFunction_le_of_subsingleton [Subsingleton 
 constant cancels in every average. -/
 @[simp]
 theorem maximalFunction_smul_measure {c : ℝ≥0∞} (hc : c ≠ 0) (hc' : c ≠ ∞) (μ : Measure X)
-    (f : X → F) : maximalFunction (c • μ) f = maximalFunction μ f := by
-  ext x
-  rw [maximalFunction_def, maximalFunction_def]
-  refine iSup_congr fun r => iSup_congr fun _ => ?_
-  rw [setLAverage_eq, setLAverage_eq, Measure.restrict_smul, lintegral_smul_measure, smul_apply]
-  simp only [smul_eq_mul]
-  rw [ENNReal.mul_div_mul_left _ _ hc hc']
+    (f : X → F) : maximalFunction (c • μ) f = maximalFunction μ f :=
+  funext fun x => by simp only [maximalFunction_def, setLAverage_smul_measure hc hc']
 
 section Sublinear
 
@@ -430,7 +428,8 @@ theorem maximalFunction_le_ofReal_mul_maximalFunction_map {E' : Type*} [NormedAd
       maximalFunction (μ.map e) (fun z => f (e.symm z)) (e x) := by
   have : (μ.map e).IsAddHaarMeasure := e.isAddHaarMeasure_map μ
   set em : E ≃ᵐ E' := e.toHomeomorph.toMeasurableEquiv
-  have hem : ⇑em = ⇑e := rfl
+  have hem : ⇑em = ⇑e := by
+    simp only [em, Homeomorph.toMeasurableEquiv_coe, ContinuousLinearEquiv.coe_toHomeomorph]
   refine maximalFunction_le fun r hr => ?_
   have hsub₁ : ball x r ⊆ e ⁻¹' ball (e x) (a * r) := fun y hy => by
     rw [mem_ball, dist_eq_norm] at hy
@@ -956,8 +955,9 @@ theorem mul_setLIntegral_lt_maximalFunction_le (μ : Measure E) [μ.IsAddHaarMea
 
 With `w = 1` this recovers the unweighted bound `TauCeti.lintegral_rpow_maximalFunction_le`, with
 `5 ^ n` in place of `4 ^ n`. Applied to `w = g ^ (q - 1)` it controls the pairing of `(M f) ^ p`
-with an `Lᵠ'` function, which is how `TauCeti.lintegral_rpow_tsum_maximalFunction_rpow_le` reaches
-the vector-valued maximal inequality. -/
+with an `Lᵠ'` function, which is how
+`TauCeti.lintegral_rpow_tsum_maximalFunction_rpow_le_of_exponent_lt` reaches the vector-valued
+maximal inequality. -/
 theorem lintegral_rpow_maximalFunction_mul_le (μ : Measure E) [μ.IsAddHaarMeasure] {f : E → F}
     (hf : AEMeasurable (fun x => ‖f x‖ₑ) μ) {w : E → ℝ≥0∞} (hw : AEMeasurable w μ) {p : ℝ}
     (hp : 1 < p) :
@@ -1102,10 +1102,11 @@ with `C = (c(r) * 5 ^ n * (c(s) * 4 ^ n) ^ (1 / s)) ^ (p / r)`, where
 conjugate to `p / r`; it depends only on `n`, `r` and `p`. The family is indexed by any countable
 type, so this covers sequences. For `r = 2` this is the square-function form
 `‖(∑' i, (M fᵢ) ^ 2) ^ (1 / 2)‖_p ≤ C' ‖(∑' i, ‖fᵢ‖ ^ 2) ^ (1 / 2)‖_p` for `2 < p < ∞`; the diagonal
-case `p = r` is `TauCeti.lintegral_tsum_maximalFunction_rpow_le`. -/
-theorem lintegral_rpow_tsum_maximalFunction_rpow_le (μ : Measure E) [μ.IsAddHaarMeasure]
-    {f : ι → E → F} (hf : ∀ i, AEMeasurable (fun x => ‖f i x‖ₑ) μ) {r p : ℝ} (hr : 1 < r)
-    (hrp : r < p) :
+case `p = r` is `TauCeti.lintegral_tsum_maximalFunction_rpow_le`. The suffix `_of_exponent_lt`
+records that the exponent `r` of the sum lies below `p`. -/
+theorem lintegral_rpow_tsum_maximalFunction_rpow_le_of_exponent_lt (μ : Measure E)
+    [μ.IsAddHaarMeasure] {f : ι → E → F} (hf : ∀ i, AEMeasurable (fun x => ‖f i x‖ₑ) μ) {r p : ℝ}
+    (hr : 1 < r) (hrp : r < p) :
     ∫⁻ x, (∑' i, maximalFunction μ (f i) x ^ r) ^ (p / r) ∂μ ≤
       (ENNReal.ofReal (2 * r * 2 ^ (r - 1) / (r - 1)) * 5 ^ finrank ℝ E *
         (ENNReal.ofReal (2 * (p / (p - r)) * 2 ^ (p / (p - r) - 1) / (p / (p - r) - 1)) *

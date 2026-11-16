@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.SpecialFunctions.Pow.NNReal
+public import Mathlib.MeasureTheory.Integral.Average
 public import Mathlib.MeasureTheory.Measure.Prod
 import Mathlib.MeasureTheory.Function.SpecialFunctions.Basic
 import Mathlib.MeasureTheory.Integral.MeanInequalities
@@ -39,11 +40,17 @@ over a family of sets `{x | R t x}`: pulling the power inside makes it an integr
 the `Lʳ` norms in `t` of the truncated weights (`TauCeti.lintegral_mul_setLIntegral_rpow_le`).
 Off-diagonal Marcinkiewicz interpolation uses it with the sets cut out by a height `c * t ^ γ`.
 
+Applied to the counting measure on a countable index type and to the normalised restriction of `μ`
+to a set `s`, it says that the `ℓʳ` norm of the averages over `s` of a countable family is at most
+the average over `s` of its pointwise `ℓʳ` norm (`TauCeti.tsum_setLAverage_rpow_le`).
+
 ## Main declarations
 
 * `TauCeti.lintegral_Lp_lintegral_le`: Minkowski's integral inequality.
 * `TauCeti.lintegral_mul_setLIntegral_rpow_le`: Minkowski's integral inequality for weighted
   truncations.
+* `TauCeti.tsum_setLAverage_rpow_le`: Minkowski's inequality for the averages of a countable
+  family.
 
 ## References
 
@@ -219,5 +226,20 @@ theorem lintegral_mul_setLIntegral_rpow_le [SFinite ν] [SFinite μ] {R : β →
         refine lintegral_congr fun x ↦ ?_
         rw [hsec, ENNReal.mul_rpow_of_nonneg _ _ (inv_nonneg.2 hr0.le), ← ENNReal.rpow_mul,
           mul_inv_cancel₀ hr0.ne', ENNReal.rpow_one]
+
+/-- **Minkowski's inequality for averages.** The `ℓʳ` norm of the averages over `s` of a countable
+family of functions is at most the average over `s` of their pointwise `ℓʳ` norm:
+`∑' i, (⨍⁻_s gᵢ) ^ r ≤ (⨍⁻_s (∑' i, gᵢ ^ r) ^ r⁻¹) ^ r`. -/
+theorem tsum_setLAverage_rpow_le {κ : Type*} [Countable κ] [SFinite μ] (s : Set α)
+    {g : κ → α → ℝ≥0∞} (hg : ∀ i, Measurable (g i)) {r : ℝ} (hr : 1 ≤ r) :
+    ∑' i, (⨍⁻ x in s, g i x ∂μ) ^ r ≤ (⨍⁻ x in s, (∑' i, g i x ^ r) ^ r⁻¹ ∂μ) ^ r := by
+  let _ : MeasurableSpace κ := ⊤
+  have : MeasurableSingletonClass κ := ⟨fun _ => trivial⟩
+  have hmeas : Measurable (uncurry g) := measurable_from_prod_countable_right fun i => hg i
+  have key := lintegral_Lp_lintegral_le (μ := Measure.count) (ν := (μ s)⁻¹ • μ.restrict s)
+    hmeas.aemeasurable hr
+  simp only [lintegral_count, ← setLAverage_eq'] at key
+  rw [one_div] at key
+  exact (ENNReal.rpow_inv_le_iff (by linarith)).1 key
 
 end TauCeti

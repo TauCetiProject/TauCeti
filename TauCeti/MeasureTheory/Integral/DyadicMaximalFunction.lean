@@ -232,11 +232,11 @@ theorem volume_lt_maximalFunction_le_mul_volume_lt_dyadicMaximalFunction [Nonemp
       3 ^ Fintype.card ι * volume {x | t < dyadicMaximalFunction f x} := by
   set n := Fintype.card ι
   set C := calderonZygmundCubes (fun y => ‖f y‖ₑ) t
-  -- The centre of the dyadic cube `q`; the ball about it of radius three halves of the side of
-  -- `q` is the concentric cube `3Q`.
+  -- The centre of the dyadic cube `q`; the closed ball about it of radius three halves of the side
+  -- of `q` is the concentric cube `3Q`.
   set c : ℤ × (ι → ℤ) → ι → ℝ := fun q i => ((q.2 i : ℝ) + 2⁻¹) * 2 ^ q.1
   have hsub : {x | 3 ^ n * t < maximalFunction volume f x} ⊆
-      ⋃ q ∈ C, ball (c q) (3 * 2 ^ q.1 / 2) := by
+      ⋃ q ∈ C, closedBall (c q) (3 * (2 ^ q.1 / 2)) := by
     intro x hx
     by_contra hnot
     simp only [mem_iUnion, not_exists] at hnot
@@ -255,14 +255,14 @@ theorem volume_lt_maximalFunction_le_mul_volume_lt_dyadicMaximalFunction [Nonemp
       (by simpa only [ENNReal.rpow_one] using hf) ht hlt'
     have hyq := mem_closedBall.1 (dyadicCube_subset_closedBall q.1 q.2 (hQq hyQ))
     have h2k : (2 : ℝ) ^ (j + 1) ≤ 2 ^ q.1 := zpow_le_zpow_right₀ one_le_two hkq
-    refine hnot q hq (mem_ball.2 ?_)
+    refine hnot q hq (mem_closedBall.2 (le_of_lt ?_))
     calc dist x (c q) ≤ dist x y + dist y (c q) := dist_triangle _ _ _
       _ < r + 2 ^ q.1 / 2 := add_lt_add_of_lt_of_le (mem_ball'.1 hyB) hyq
-      _ ≤ 3 * 2 ^ q.1 / 2 := by linarith
+      _ ≤ 3 * (2 ^ q.1 / 2) := by linarith
   calc volume {x | 3 ^ n * t < maximalFunction volume f x}
-      ≤ volume (⋃ q ∈ C, ball (c q) (3 * 2 ^ q.1 / 2)) := measure_mono hsub
-    _ ≤ 3 ^ n * volume (⋃ q ∈ C, dyadicCube q.1 q.2) :=
-        volume_biUnion_ball_le_three_pow_mul_volume_biUnion
+      ≤ volume (⋃ q ∈ C, closedBall (c q) (3 * (2 ^ q.1 / 2))) := measure_mono hsub
+    _ ≤ 3 ^ n * volume (⋃ q ∈ C, dyadicCube q.1 q.2) := by
+        simpa only [ENNReal.ofReal_ofNat] using volume_biUnion_closedBall_calderonZygmundCubes_le 3
     _ = 3 ^ n * volume {x | t < dyadicMaximalFunction f x} := by
         rw [setOf_lt_dyadicMaximalFunction_eq hf ht]
 

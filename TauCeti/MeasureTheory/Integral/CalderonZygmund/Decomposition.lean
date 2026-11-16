@@ -56,8 +56,10 @@ run the same stopping time on functions in `Lᵖ`.
   `TauCeti.biUnion_calderonZygmundCubes_subset`,
   `TauCeti.ae_le_of_forall_notMem_calderonZygmundCubes` and
   `TauCeti.mul_volume_biUnion_calderonZygmundCubes_le`.
-* `TauCeti.volume_biUnion_ball_le_three_pow_mul_volume_biUnion`: the concentric cubes of three
-  times the side have at most `3ⁿ` times the total volume.
+* `TauCeti.volume_biUnion_closedBall_calderonZygmundCubes_le`,
+  `TauCeti.mul_volume_biUnion_closedBall_calderonZygmundCubes_le`: the concentric cubes of `c`
+  times the side have at most `cⁿ` times the total volume, so `t` times their measure is at most
+  `cⁿ` times the integral of `g`.
 * `TauCeti.calderonZygmundBad`, `TauCeti.calderonZygmundGood`: the bad parts and the good part,
   with `TauCeti.calderonZygmundGood_add_tsum_calderonZygmundBad` (the decomposition),
   `TauCeti.integral_calderonZygmundBad`, `TauCeti.lintegral_enorm_calderonZygmundBad_le`,
@@ -302,22 +304,38 @@ theorem mul_volume_biUnion_calderonZygmundCubes_le :
   exact tsum_le_tsum fun q =>
     (mul_volume_lt_setLIntegral_of_mem_calderonZygmundCubes q.2).le
 
-/-- The concentric cubes of three times the side of the Calderón–Zygmund cubes, open sup-norm
-balls about their centres, have total volume at most `3ⁿ` times that of the Calderón–Zygmund
+/-- The concentric cubes of `c` times the side of the Calderón–Zygmund cubes, closed sup-norm
+balls about their centres, have total volume at most `cⁿ` times that of the Calderón–Zygmund
 cubes. -/
-theorem volume_biUnion_ball_le_three_pow_mul_volume_biUnion :
+theorem volume_biUnion_closedBall_calderonZygmundCubes_le (c : ℝ) :
     volume (⋃ q ∈ calderonZygmundCubes g t,
-        Metric.ball (fun i => ((q.2 i : ℝ) + 2⁻¹) * 2 ^ q.1) (3 * 2 ^ q.1 / 2)) ≤
-      3 ^ Fintype.card ι * volume (⋃ q ∈ calderonZygmundCubes g t, dyadicCube q.1 q.2) := by
-  calc volume (⋃ q ∈ calderonZygmundCubes g t,
-        Metric.ball (fun i => ((q.2 i : ℝ) + 2⁻¹) * 2 ^ q.1) (3 * 2 ^ q.1 / 2))
-      ≤ ∑' q : calderonZygmundCubes g t,
-          volume (Metric.ball (fun i => ((q.1.2 i : ℝ) + 2⁻¹) * 2 ^ q.1.1) (3 * 2 ^ q.1.1 / 2)) :=
+        Metric.closedBall (fun i => ((q.2 i : ℝ) + 2⁻¹) * 2 ^ q.1) (c * (2 ^ q.1 / 2))) ≤
+      ENNReal.ofReal c ^ Fintype.card ι *
+        volume (⋃ q ∈ calderonZygmundCubes g t, dyadicCube q.1 q.2) := by
+  calc _ ≤ ∑' q : calderonZygmundCubes g t, volume
+        (Metric.closedBall (fun i => ((q.1.2 i : ℝ) + 2⁻¹) * 2 ^ q.1.1) (c * (2 ^ q.1.1 / 2))) :=
         measure_biUnion_le _ (to_countable _) _
-    _ = 3 ^ Fintype.card ι * volume (⋃ q ∈ calderonZygmundCubes g t, dyadicCube q.1 q.2) := by
-        rw [measure_biUnion (to_countable _) pairwiseDisjoint_calderonZygmundCubes
-          fun q _ => measurableSet_dyadicCube q.1 q.2, ← ENNReal.tsum_mul_left]
-        exact tsum_congr fun q => volume_ball_eq_three_pow_mul_volume_dyadicCube q.1.1 q.1.2
+    _ ≤ ∑' q : calderonZygmundCubes g t,
+          ENNReal.ofReal c ^ Fintype.card ι * volume (dyadicCube q.1.1 q.1.2) :=
+        tsum_le_tsum fun q => volume_closedBall_dyadicCube_le c _ _
+    _ = _ := by
+        rw [ENNReal.tsum_mul_left, measure_biUnion (to_countable _)
+          pairwiseDisjoint_calderonZygmundCubes fun q _ => measurableSet_dyadicCube q.1 q.2]
+
+/-- `t` times the measure of the union of the concentric cubes of `c` times the side of the
+Calderón–Zygmund cubes of `g` at height `t` is at most `cⁿ` times the integral of `g`. -/
+theorem mul_volume_biUnion_closedBall_calderonZygmundCubes_le (c : ℝ) :
+    t * volume (⋃ q ∈ calderonZygmundCubes g t,
+        Metric.closedBall (fun i => ((q.2 i : ℝ) + 2⁻¹) * 2 ^ q.1) (c * (2 ^ q.1 / 2))) ≤
+      ENNReal.ofReal c ^ Fintype.card ι * ∫⁻ x, g x := by
+  calc _ ≤ t * (ENNReal.ofReal c ^ Fintype.card ι *
+        volume (⋃ q ∈ calderonZygmundCubes g t, dyadicCube q.1 q.2)) :=
+        mul_le_mul_right (volume_biUnion_closedBall_calderonZygmundCubes_le c) _
+    _ = ENNReal.ofReal c ^ Fintype.card ι *
+          (t * volume (⋃ q ∈ calderonZygmundCubes g t, dyadicCube q.1 q.2)) := by ring
+    _ ≤ ENNReal.ofReal c ^ Fintype.card ι * ∫⁻ x, g x :=
+        mul_le_mul_right (mul_volume_biUnion_calderonZygmundCubes_le.trans
+          (setLIntegral_le_lintegral _ _)) _
 
 end Cubes
 

@@ -8,6 +8,7 @@ module
 public import TauCeti.MeasureTheory.Integral.CalderonZygmund.Decomposition
 public import TauCeti.MeasureTheory.Integral.MaximalFunction
 import Mathlib.MeasureTheory.Measure.Haar.Unique
+import TauCeti.Analysis.SpecialFunctions.Pow.NNReal
 import TauCeti.MeasureTheory.Integral.Marcinkiewicz.General
 import TauCeti.MeasureTheory.Integral.MinkowskiIntegral
 
@@ -21,11 +22,11 @@ function `x ↦ (∑' i, (M fᵢ x) ^ r) ^ (1 / r)` of a countable family is bou
 every `1 < p < ∞`. For `r = 2` this bounds the maximal functions of the pieces of a square function,
 the form Littlewood–Paley theory uses. The range `r ≤ p` is
 `TauCeti.lintegral_tsum_maximalFunction_rpow_le` and
-`TauCeti.lintegral_rpow_tsum_maximalFunction_rpow_le`, proved from the weighted inequality by
-duality. This file proves the weak type `(1, 1)` endpoint
+`TauCeti.lintegral_rpow_tsum_maximalFunction_rpow_le_of_exponent_lt`, proved from the weighted
+inequality by duality. This file proves the weak type `(1, 1)` endpoint
 (`TauCeti.mul_measure_lt_tsum_maximalFunction_rpow_rpow_inv_le`) and the remaining range
-`1 < p < r` (`TauCeti.lintegral_rpow_tsum_maximalFunction_rpow_le_of_lt`), which for `r = 2` is the
-square-function form for `1 < p < 2`.
+`1 < p < r` (`TauCeti.lintegral_rpow_tsum_maximalFunction_rpow_le_of_lt_exponent`), which for
+`r = 2` is the square-function form for `1 < p < 2`.
 
 ## The argument
 
@@ -52,10 +53,12 @@ to `E`, at the cost of the factor `(‖e‖ ‖e⁻¹‖)ⁿ` comparing the ball
 
 ## Main declarations
 
+* `TauCeti.vectorMaximalFunctionWeakConst`: the constant of the weak type `(1, 1)` bound on
+  `ι → ℝ`.
 * `TauCeti.mul_measure_lt_tsum_maximalFunction_rpow_rpow_inv_le`: the weak type `(1, 1)` bound
   for the `ℓʳ`-valued maximal function.
-* `TauCeti.lintegral_rpow_tsum_maximalFunction_rpow_le_of_lt`: its `Lᵖ(ℓʳ)` bound for
-  `1 < p < r`.
+* `TauCeti.lintegral_rpow_tsum_maximalFunction_rpow_le_of_lt_exponent`: its `Lᵖ(ℓʳ)` bound for
+  `1 < p < r`, below the exponent `r` of the sum.
 
 ## References
 
@@ -73,15 +76,7 @@ open scoped ENNReal
 
 variable {ι κ : Type*} [Fintype ι]
 
-/-! ### Elementary estimates: powers in `ℝ≥0∞`, Chebyshev and Minkowski -/
-
-/-- For `1 ≤ r` and `a ≤ b`, `a ^ r ≤ b ^ (r - 1) * a`. -/
-private theorem rpow_le_rpow_sub_one_mul {a b : ℝ≥0∞} (hab : a ≤ b) {r : ℝ} (hr : 1 ≤ r) :
-    a ^ r ≤ b ^ (r - 1) * a := by
-  calc a ^ r = a ^ (r - 1) * a := by
-        conv_lhs => rw [← sub_add_cancel r 1]
-        rw [ENNReal.rpow_add_of_nonneg _ _ (by linarith) zero_le_one, ENNReal.rpow_one]
-    _ ≤ b ^ (r - 1) * a := by gcongr
+/-! ### Elementary estimates: powers in `ℝ≥0∞` and Chebyshev -/
 
 /-- If `s ^ r < ∑' i, (a i + b i) ^ r` with `1 ≤ r`, then `(s / 2) ^ r` lies below one of
 `∑' i, a i ^ r` and `∑' i, b i ^ r`. -/
@@ -141,45 +136,10 @@ private theorem mul_measure_rpow_div_two_lt_le {X : Type*} [MeasurableSpace X] {
     _ = 2 ^ r * K * I * (t * t ^ (r - 1) * (t ^ r)⁻¹) := by ring
     _ = 2 ^ r * K * I := by rw [htr, mul_one]
 
-/-- **Minkowski's inequality for averages.** The `ℓʳ` norm of the averages of a countable family
-of functions over `s` is at most the average over `s` of their pointwise `ℓʳ` norm:
-`∑' i, (⨍⁻_s gᵢ) ^ r ≤ (⨍⁻_s (∑' i, gᵢ ^ r) ^ r⁻¹) ^ r`. -/
-private theorem tsum_setLAverage_rpow_le [Countable κ] {X : Type*} [MeasurableSpace X]
-    {μ : Measure X} [SFinite μ] (s : Set X) {g : κ → X → ℝ≥0∞} (hg : ∀ i, Measurable (g i))
-    {r : ℝ} (hr : 1 ≤ r) :
-    ∑' i, (⨍⁻ x in s, g i x ∂μ) ^ r ≤ (⨍⁻ x in s, (∑' i, g i x ^ r) ^ r⁻¹ ∂μ) ^ r := by
-  let _ : MeasurableSpace κ := ⊤
-  have : MeasurableSingletonClass κ := ⟨fun _ => trivial⟩
-  have hmeas : Measurable (Function.uncurry g) :=
-    measurable_from_prod_countable_right fun i => hg i
-  have key := lintegral_Lp_lintegral_le (μ := Measure.count) (ν := (μ s)⁻¹ • μ.restrict s)
-    hmeas.aemeasurable hr
-  simp only [lintegral_count, ← setLAverage_eq'] at key
-  rw [one_div] at key
-  exact (ENNReal.rpow_inv_le_iff (by linarith)).1 key
-
-/-! ### Dyadic cubes and their threefold enlargements -/
-
-/-- If `x` lies outside the open sup-norm ball of radius `3 · 2ᵏ / 2` about the centre of a
-dyadic cube `Q` of level `k`, the concentric cube of three times its side, and the ball `B(x, ρ)`
-meets `Q`, then `Q ⊆ B(x, 2 ρ)`. -/
-private theorem dyadicCube_subset_ball_two_mul {k : ℤ} {m : ι → ℤ} {x : ι → ℝ} {ρ : ℝ}
-    (hx : x ∉ ball (fun i => ((m i : ℝ) + 2⁻¹) * 2 ^ k) (3 * 2 ^ k / 2))
-    (hne : (ball x ρ ∩ dyadicCube k m).Nonempty) : dyadicCube k m ⊆ ball x (2 * ρ) := by
-  obtain ⟨y, hyB, hyQ⟩ := hne
-  have hxc := le_of_not_gt (mt mem_ball.2 hx)
-  have hyc := mem_closedBall.1 (dyadicCube_subset_closedBall k m hyQ)
-  have hxy := mem_ball.1 hyB
-  intro z hz
-  have hyz := dist_lt_of_mem_dyadicCube hyQ hz
-  rw [mem_ball]
-  linarith [dist_triangle x y (fun i => ((m i : ℝ) + 2⁻¹) * 2 ^ k), dist_triangle z y x,
-    dist_comm z y, dist_comm y x]
-
 /-! ### Averages over a family of dyadic cubes -/
 
-/-- The function equal on each dyadic cube of `T` to the average of `g` over that cube, and to `0`
-off the cubes when they are pairwise disjoint. -/
+/-- The function equal to `0` off the dyadic cubes of `T` and, when they are pairwise disjoint, to
+the average of `g` over the cube of `T` containing the point. -/
 private noncomputable def cubeAverage (T : Set (ℤ × (ι → ℤ))) (g : (ι → ℝ) → ℝ≥0∞)
     (y : ι → ℝ) : ℝ≥0∞ :=
   ∑' q : T, (dyadicCube q.1.1 q.1.2).indicator (fun _ => ⨍⁻ z in dyadicCube q.1.1 q.1.2, g z) y
@@ -217,15 +177,15 @@ Then the maximal function at `x` of the restriction of `g` to the cubes is at mo
 that of the cube averages of `g`: a ball about `x` that meets one of the cubes contains it once
 its radius is doubled. -/
 private theorem maximalFunction_indicator_biUnion_le {x : ι → ℝ}
-    (hx : ∀ q ∈ T, x ∉ ball (fun i => ((q.2 i : ℝ) + 2⁻¹) * 2 ^ q.1) (3 * 2 ^ q.1 / 2)) :
+    (hx : ∀ q ∈ T, x ∉ ball (fun i => ((q.2 i : ℝ) + 2⁻¹) * 2 ^ q.1) (3 * (2 ^ q.1 / 2))) :
     maximalFunction volume ((⋃ q ∈ T, dyadicCube q.1 q.2).indicator g) x ≤
       2 ^ Fintype.card ι * maximalFunction volume (cubeAverage T g) x := by
   have hU : MeasurableSet (⋃ q ∈ T, dyadicCube q.1 q.2) :=
     MeasurableSet.biUnion T.to_countable fun q _ => measurableSet_dyadicCube _ _
   refine maximalFunction_le fun ρ hρ => ?_
   have h2B : volume (ball x (2 * ρ)) = 2 ^ Fintype.card ι * volume (ball x ρ) := by
-    rw [Real.volume_pi_ball _ (by positivity), Real.volume_pi_ball _ hρ, ← ENNReal.ofReal_ofNat 2,
-      ← ENNReal.ofReal_pow (by norm_num), ← ENNReal.ofReal_mul (by positivity), ← mul_pow]
+    rw [volume.addHaar_ball_mul_of_pos x two_pos, ENNReal.ofReal_pow zero_le_two,
+      ENNReal.ofReal_ofNat, Module.finrank_fintype_fun_eq_card, volume.addHaar_ball_center x]
   simp only [eNorm_eq_self]
   rw [setLAverage_eq]
   refine ENNReal.div_le_of_le_mul ?_
@@ -254,6 +214,17 @@ private theorem maximalFunction_indicator_biUnion_le {x : ι → ℝ}
 
 /-! ### The Calderón–Zygmund cubes of the pointwise `ℓʳ` norm -/
 
+/-- The constant `3ⁿ + 2 ^ r (1 + (2ⁿ) ^ (2 r - 1)) c(n, r)` of the weak type `(1, 1)` bound for the
+`ℓʳ`-valued maximal function on `ι → ℝ` in dimension `n`
+(`TauCeti.mul_measure_lt_tsum_maximalFunction_rpow_rpow_inv_le`), where `c(n, r)` is the constant
+`TauCeti.maximalFunctionConst n r` of the scalar maximal inequality. -/
+noncomputable def vectorMaximalFunctionWeakConst (n : ℕ) (r : ℝ) : ℝ≥0∞ :=
+  3 ^ n + 2 ^ r * (1 + (2 ^ n) ^ (2 * r - 1)) * maximalFunctionConst n r
+
+theorem vectorMaximalFunctionWeakConst_def (n : ℕ) (r : ℝ) :
+    vectorMaximalFunctionWeakConst n r =
+      3 ^ n + 2 ^ r * (1 + (2 ^ n) ^ (2 * r - 1)) * maximalFunctionConst n r := (rfl)
+
 section Cubes
 
 variable [Countable κ] {g : κ → (ι → ℝ) → ℝ≥0∞} {r : ℝ} {t : ℝ≥0∞}
@@ -272,7 +243,7 @@ private theorem tsum_cubeAverage_rpow_le (hg : ∀ i, Measurable (g i)) (hr : 1 
   · obtain ⟨q, hq, hyq⟩ := hy
     simp only [cubeAverage_of_mem pairwiseDisjoint_calderonZygmundCubes hq hyq]
     exact (tsum_setLAverage_rpow_le _ hg hr).trans
-      (rpow_le_rpow_sub_one_mul (setLAverage_le_of_mem_calderonZygmundCubes hq) hr)
+      (ENNReal.rpow_le_rpow_sub_one_mul (setLAverage_le_of_mem_calderonZygmundCubes hq) hr)
   · simp only [not_exists, not_and] at hy
     simp only [cubeAverage_of_forall_notMem hy, ENNReal.zero_rpow_of_pos (by linarith : 0 < r),
       tsum_zero, mul_zero, le_refl]
@@ -320,7 +291,7 @@ private theorem ae_tsum_indicator_compl_rpow_le [Nonempty ι] (hg : ∀ i, Measu
     have hle := hy (by simpa only [mem_iUnion, not_exists] using hyU)
     calc ∑' i, g i y ^ r = ((∑' i, g i y ^ r) ^ r⁻¹) ^ r :=
           (ENNReal.rpow_inv_rpow (by linarith) _).symm
-      _ ≤ t ^ (r - 1) * (∑' i, g i y ^ r) ^ r⁻¹ := rpow_le_rpow_sub_one_mul hle hr
+      _ ≤ t ^ (r - 1) * (∑' i, g i y ^ r) ^ r⁻¹ := ENNReal.rpow_le_rpow_sub_one_mul hle hr
 
 omit [Countable κ] in
 /-- **The splitting.** Let `T` be a family of dyadic cubes. A point where the `ℓʳ` norm of the
@@ -330,7 +301,7 @@ or `2ⁿ` times that of the maximal functions of their cube averages, exceeds `t
 private theorem setOf_rpow_lt_tsum_maximalFunction_subset (hg : ∀ i, Measurable (g i))
     (hr : 1 ≤ r) (T : Set (ℤ × (ι → ℤ))) (t : ℝ≥0∞) :
     {x | t ^ r < ∑' i, maximalFunction volume (g i) x ^ r} ⊆
-      (⋃ q ∈ T, ball (fun i => ((q.2 i : ℝ) + 2⁻¹) * 2 ^ q.1) (3 * 2 ^ q.1 / 2)) ∪
+      (⋃ q ∈ T, ball (fun i => ((q.2 i : ℝ) + 2⁻¹) * 2 ^ q.1) (3 * (2 ^ q.1 / 2))) ∪
         {x | (t / 2) ^ r < ∑' i,
           maximalFunction volume ((⋃ q ∈ T, dyadicCube q.1 q.2)ᶜ.indicator (g i)) x ^ r} ∪
         {x | (t / 2) ^ r < ∑' i,
@@ -340,9 +311,9 @@ private theorem setOf_rpow_lt_tsum_maximalFunction_subset (hg : ∀ i, Measurabl
   set U := ⋃ q ∈ T, dyadicCube q.1 q.2
   have hU : MeasurableSet U :=
     MeasurableSet.biUnion T.to_countable fun q _ => measurableSet_dyadicCube _ _
-  by_cases hxS : x ∈ ⋃ q ∈ T, ball (fun i => ((q.2 i : ℝ) + 2⁻¹) * 2 ^ q.1) (3 * 2 ^ q.1 / 2)
+  by_cases hxS : x ∈ ⋃ q ∈ T, ball (fun i => ((q.2 i : ℝ) + 2⁻¹) * 2 ^ q.1) (3 * (2 ^ q.1 / 2))
   · exact .inl (.inl hxS)
-  have hxT : ∀ q ∈ T, x ∉ ball (fun i => ((q.2 i : ℝ) + 2⁻¹) * 2 ^ q.1) (3 * 2 ^ q.1 / 2) := by
+  have hxT : ∀ q ∈ T, x ∉ ball (fun i => ((q.2 i : ℝ) + 2⁻¹) * 2 ^ q.1) (3 * (2 ^ q.1 / 2)) := by
     simpa only [mem_iUnion, not_exists] using hxS
   -- `gᵢ` is its part off the cubes plus its part on the cubes.
   have hle : ∀ i, maximalFunction volume (g i) x ≤ maximalFunction volume (Uᶜ.indicator (g i)) x +
@@ -425,8 +396,7 @@ private theorem mul_volume_lt_tsum_maximalFunction_cubeAverage_le (hg : ∀ i, M
 private theorem mul_volume_lt_tsum_maximalFunction_rpow_rpow_inv_le_of_measurable [Nonempty ι]
     (hg : ∀ i, Measurable (g i)) (hr : 1 < r) (t : ℝ≥0∞) :
     t * volume {x | t < (∑' i, maximalFunction volume (g i) x ^ r) ^ r⁻¹} ≤
-      (3 ^ Fintype.card ι + 2 ^ r * (1 + (2 ^ Fintype.card ι) ^ (2 * r - 1)) *
-        maximalFunctionConst (Fintype.card ι) r) * ∫⁻ x, (∑' i, g i x ^ r) ^ r⁻¹ := by
+      vectorMaximalFunctionWeakConst (Fintype.card ι) r * ∫⁻ x, (∑' i, g i x ^ r) ^ r⁻¹ := by
   set n := Fintype.card ι
   set F : (ι → ℝ) → ℝ≥0∞ := fun x => (∑' i, g i x ^ r) ^ r⁻¹
   rcases eq_or_ne t 0 with rfl | ht0
@@ -434,21 +404,21 @@ private theorem mul_volume_lt_tsum_maximalFunction_rpow_rpow_inv_le_of_measurabl
   rcases eq_or_ne t ∞ with rfl | httop
   · simp
   rcases eq_or_ne (∫⁻ x, F x) ∞ with hFi | hFi
-  · rw [hFi, ENNReal.mul_top (by positivity)]
+  · rw [hFi, ENNReal.mul_top (by rw [vectorMaximalFunctionWeakConst_def]; positivity)]
     exact le_top
   -- Split along the Calderón–Zygmund cubes of `F` at height `t`.
   have hsub := (setOf_rpow_lt_tsum_maximalFunction_subset hg hr.le (calderonZygmundCubes F t) t)
   replace hsub : {x | t < (∑' i, maximalFunction volume (g i) x ^ r) ^ r⁻¹} ⊆ _ := fun x hx =>
     hsub ((ENNReal.lt_rpow_inv_iff (by linarith)).1 hx)
   have hS : t * volume (⋃ q ∈ calderonZygmundCubes F t,
-      ball (fun i => ((q.2 i : ℝ) + 2⁻¹) * 2 ^ q.1) (3 * 2 ^ q.1 / 2)) ≤ 3 ^ n * ∫⁻ x, F x := by
-    calc _ ≤ t * (3 ^ n * volume (⋃ q ∈ calderonZygmundCubes F t, dyadicCube q.1 q.2)) := by
+      ball (fun i => ((q.2 i : ℝ) + 2⁻¹) * 2 ^ q.1) (3 * (2 ^ q.1 / 2))) ≤ 3 ^ n * ∫⁻ x, F x := by
+    calc _ ≤ t * volume (⋃ q ∈ calderonZygmundCubes F t,
+          closedBall (fun i => ((q.2 i : ℝ) + 2⁻¹) * 2 ^ q.1) (3 * (2 ^ q.1 / 2))) := by
           gcongr
-          exact volume_biUnion_ball_le_three_pow_mul_volume_biUnion
-      _ = 3 ^ n * (t * volume (⋃ q ∈ calderonZygmundCubes F t, dyadicCube q.1 q.2)) := by ring
+          exact ball_subset_closedBall
       _ ≤ 3 ^ n * ∫⁻ x, F x := by
-          gcongr
-          exact mul_volume_biUnion_calderonZygmundCubes_le.trans (setLIntegral_le_lintegral _ _)
+          simpa only [ENNReal.ofReal_ofNat] using
+            mul_volume_biUnion_closedBall_calderonZygmundCubes_le (g := F) (t := t) 3
   have hgood := mul_volume_lt_tsum_maximalFunction_indicator_compl_le hg hr hFi ht0 httop
   have hbad := mul_volume_lt_tsum_maximalFunction_cubeAverage_le hg hr ht0 httop
   have h2n : ((2 : ℝ≥0∞) ^ n) ^ r * (2 ^ n) ^ (r - 1) = (2 ^ n) ^ (2 * r - 1) := by
@@ -456,7 +426,7 @@ private theorem mul_volume_lt_tsum_maximalFunction_rpow_rpow_inv_le_of_measurabl
     ring_nf
   set I := ∫⁻ x, F x
   calc _ ≤ t * (volume (⋃ q ∈ calderonZygmundCubes F t,
-          ball (fun i => ((q.2 i : ℝ) + 2⁻¹) * 2 ^ q.1) (3 * 2 ^ q.1 / 2)) +
+          ball (fun i => ((q.2 i : ℝ) + 2⁻¹) * 2 ^ q.1) (3 * (2 ^ q.1 / 2))) +
         volume {x | (t / 2) ^ r < ∑' i, maximalFunction volume
           ((⋃ q ∈ calderonZygmundCubes F t, dyadicCube q.1 q.2)ᶜ.indicator (g i)) x ^ r} +
         volume {x | (t / 2) ^ r < ∑' i, (2 ^ n * maximalFunction volume
@@ -469,7 +439,7 @@ private theorem mul_volume_lt_tsum_maximalFunction_rpow_rpow_inv_le_of_measurabl
         rw [mul_add, mul_add]
         exact add_le_add (add_le_add hS hgood) hbad
     _ = _ := by
-        rw [← h2n]
+        rw [vectorMaximalFunctionWeakConst_def, ← h2n]
         ring
 
 omit [Countable κ] in
@@ -503,8 +473,7 @@ above `s` and the diagonal `Lʳ(ℓʳ)` bound the part below. -/
 private theorem volume_lt_tsum_maximalFunction_rpow_rpow_inv_le [Nonempty ι]
     (hg : ∀ i, Measurable (g i)) (hr : 1 < r) {s : ℝ≥0∞} (hs : s ≠ 0) (hs' : s ≠ ∞) :
     volume {x | s < (∑' i, maximalFunction volume (g i) x ^ r) ^ r⁻¹} ≤
-      2 * (3 ^ Fintype.card ι + 2 ^ r * (1 + (2 ^ Fintype.card ι) ^ (2 * r - 1)) *
-          maximalFunctionConst (Fintype.card ι) r) * s⁻¹ *
+      2 * vectorMaximalFunctionWeakConst (Fintype.card ι) r * s⁻¹ *
           (∫⁻ x in {x | s < (∑' i, g i x ^ r) ^ r⁻¹}, (∑' i, g i x ^ r) ^ r⁻¹) +
         2 ^ r * maximalFunctionConst (Fintype.card ι) r * (s ^ r)⁻¹ *
           ∫⁻ x in {x | (∑' i, g i x ^ r) ^ r⁻¹ ≤ s}, ((∑' i, g i x ^ r) ^ r⁻¹) ^ r := by
@@ -552,11 +521,10 @@ private theorem volume_lt_tsum_maximalFunction_rpow_rpow_inv_le [Nonempty ι]
 
 /-- The strong type `(p, p)` bound below the diagonal for measurable `ℝ≥0∞`-valued families on
 `ι → ℝ`, by Marcinkiewicz interpolation of `volume_lt_tsum_maximalFunction_rpow_rpow_inv_le`. -/
-private theorem lintegral_rpow_tsum_maximalFunction_rpow_le_of_lt_of_measurable [Nonempty ι]
-    (hg : ∀ i, Measurable (g i)) {p : ℝ} (hp : 1 < p) (hpr : p < r) :
+private theorem lintegral_rpow_tsum_maximalFunction_rpow_le_of_lt_exponent_of_measurable
+    [Nonempty ι] (hg : ∀ i, Measurable (g i)) {p : ℝ} (hp : 1 < p) (hpr : p < r) :
     ∫⁻ x, (∑' i, maximalFunction volume (g i) x ^ r) ^ (p / r) ≤
-      (ENNReal.ofReal (p / (p - 1)) * (2 * (3 ^ Fintype.card ι + 2 ^ r *
-          (1 + (2 ^ Fintype.card ι) ^ (2 * r - 1)) * maximalFunctionConst (Fintype.card ι) r)) +
+      (ENNReal.ofReal (p / (p - 1)) * (2 * vectorMaximalFunctionWeakConst (Fintype.card ι) r) +
         ENNReal.ofReal (p / (r - p)) * (2 ^ r * maximalFunctionConst (Fintype.card ι) r)) *
         ∫⁻ x, (∑' i, g i x ^ r) ^ (p / r) := by
   have hr : 1 < r := hp.trans hpr
@@ -565,8 +533,7 @@ private theorem lintegral_rpow_tsum_maximalFunction_rpow_le_of_lt_of_measurable 
   have key := lintegral_rpow_le_of_meas_ofReal_lt_le (μ := volume) (ν := volume)
     (f := fun x => (∑' i, g i x ^ r) ^ r⁻¹)
     (u := fun x => (∑' i, maximalFunction volume (g i) x ^ r) ^ r⁻¹) (p₀ := 1) (p₁ := r) (c := 1)
-    (A₀ := 2 * (3 ^ Fintype.card ι + 2 ^ r * (1 + (2 ^ Fintype.card ι) ^ (2 * r - 1)) *
-      maximalFunctionConst (Fintype.card ι) r))
+    (A₀ := 2 * vectorMaximalFunctionWeakConst (Fintype.card ι) r)
     (A₁ := 2 ^ r * maximalFunctionConst (Fintype.card ι) r)
     ((Measurable.tsum fun i => (hg i).pow_const r).pow_const _).aemeasurable
     ((Measurable.tsum fun i => (measurable_maximalFunction volume _).pow_const r).pow_const
@@ -597,65 +564,58 @@ private theorem exists_measurable_maximalFunction_eq [Countable κ] {X F : Type*
       rw [hy, eNorm_eq_self]),
     ae_all_iff.2 fun i => (hf i).ae_eq_mk⟩
 
-
 section Transfer
 
-variable {E F : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
+variable {E F : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [MeasurableSpace E] [BorelSpace E]
+  [ENorm F] [Countable κ] [Nonempty ι] {r : ℝ}
 
-/-- A continuous linear equivalence between `E` and `ι → ℝ`, `ι` nonempty, and its inverse have
-positive operator norm. -/
-private theorem norm_pos_and_norm_symm_pos [Nonempty ι] (e : E ≃L[ℝ] (ι → ℝ)) :
-    0 < ‖(e : E →L[ℝ] (ι → ℝ))‖ ∧ 0 < ‖(e.symm : (ι → ℝ) →L[ℝ] E)‖ := by
-  obtain ⟨i⟩ := ‹Nonempty ι›
-  have hz : (fun _ : ι => (1 : ℝ)) ≠ 0 := fun h => one_ne_zero (congrFun h i)
-  refine ⟨norm_pos_iff.2 fun h => hz ?_, norm_pos_iff.2 fun h => hz ?_⟩
-  · simpa using congrArg (fun L : E →L[ℝ] (ι → ℝ) => L (e.symm fun _ => 1)) h
-  · simpa using congrArg (fun L : (ι → ℝ) →L[ℝ] E => e (L fun _ => 1)) h
-
-variable [MeasurableSpace E] [BorelSpace E]
-
-/-- The image of an additive Haar measure under a continuous linear equivalence with `ι → ℝ` is a
-positive finite multiple of `volume`. -/
-private theorem exists_map_eq_smul_volume (μ : Measure E) [μ.IsAddHaarMeasure]
-    (e : E ≃L[ℝ] (ι → ℝ)) : ∃ c : ℝ≥0∞, c ≠ 0 ∧ c ≠ ∞ ∧ μ.map e = c • volume := by
-  have : (μ.map e).IsAddHaarMeasure := e.isAddHaarMeasure_map μ
-  refine ⟨Measure.addHaarScalarFactor (μ.map e) volume, ?_, ENNReal.coe_ne_top,
-    Measure.isAddLeftInvariant_eq_smul _ _⟩
-  simpa only [ne_eq, ENNReal.coe_eq_zero] using
-    (Measure.addHaarScalarFactor_pos_of_isAddHaarMeasure (μ.map e) volume).ne'
-
-variable [Nonempty ι] {r : ℝ}
-
-/-- The pointwise `ℓʳ` norm of the maximal functions for `μ` is at most `(‖e‖ ‖e⁻¹‖)ⁿ` times that
-of the maximal functions of the transported family `gᵢ ∘ e⁻¹` for `volume`, at `e x`. -/
-private theorem tsum_maximalFunction_rpow_rpow_inv_le (μ : Measure E) [μ.IsAddHaarMeasure]
-    (e : E ≃L[ℝ] (ι → ℝ)) (g : κ → E → ℝ≥0∞) (hr : 0 < r) (x : E) :
-    (∑' i, maximalFunction μ (g i) x ^ r) ^ r⁻¹ ≤
-      ENNReal.ofReal ((‖(e : E →L[ℝ] (ι → ℝ))‖ * ‖(e.symm : (ι → ℝ) →L[ℝ] E)‖) ^
-        Fintype.card ι) *
-        (∑' i, maximalFunction volume (fun z => g i (e.symm z)) (e x) ^ r) ^ r⁻¹ := by
-  obtain ⟨ha, hb⟩ := norm_pos_and_norm_symm_pos e
-  obtain ⟨c, hc, hc', hν⟩ := exists_map_eq_smul_volume μ e
+/-- **Transport to `ι → ℝ`.** Let `Gᵢ = gᵢ ∘ e⁻¹` for measurable modifications `gᵢ` of `‖fᵢ‖ₑ`.
+Then `e_* μ = c • volume` for some `c`, the pointwise `ℓʳ` norm of the maximal functions of the
+`fᵢ` for `μ` at `x` is at most `(‖e‖ ‖e⁻¹‖)ⁿ` times that of the `Gᵢ` for `volume` at `e x`, and
+integrals against `μ` of functions of the pointwise sum `∑' i, ‖fᵢ‖ₑ ^ r` are `c` times the
+corresponding integrals of `∑' i, Gᵢ ^ r` against `volume`. -/
+private theorem exists_map_eq_smul_volume_and_tsum_maximalFunction_rpow_rpow_inv_le
+    (μ : Measure E) [μ.IsAddHaarMeasure] (e : E ≃L[ℝ] (ι → ℝ)) {f : κ → E → F}
+    (hf : ∀ i, AEMeasurable (fun x => ‖f i x‖ₑ) μ) (hr : 0 < r) :
+    ∃ (G : κ → (ι → ℝ) → ℝ≥0∞) (c : ℝ≥0∞), (∀ i, Measurable (G i)) ∧ μ.map e = c • volume ∧
+      (∀ x, (∑' i, maximalFunction μ (f i) x ^ r) ^ r⁻¹ ≤
+        ENNReal.ofReal ((‖(e : E →L[ℝ] (ι → ℝ))‖ * ‖(e.symm : (ι → ℝ) →L[ℝ] E)‖) ^
+          Fintype.card ι) * (∑' i, maximalFunction volume (G i) (e x) ^ r) ^ r⁻¹) ∧
+      ∀ φ : ℝ≥0∞ → ℝ≥0∞, Measurable φ →
+        ∫⁻ x, φ (∑' i, ‖f i x‖ₑ ^ r) ∂μ = c * ∫⁻ z, φ (∑' i, G i z ^ r) := by
+  obtain ⟨g, hg, hM, hae⟩ := exists_measurable_maximalFunction_eq μ hf
+  have : Nontrivial E := e.toEquiv.nontrivial
   have : FiniteDimensional ℝ E := e.symm.toLinearEquiv.finiteDimensional
+  have : (μ.map e).IsAddHaarMeasure := e.isAddHaarMeasure_map μ
+  obtain ⟨c, hc, hc', hν⟩ : ∃ c : ℝ≥0∞, c ≠ 0 ∧ c ≠ ∞ ∧ μ.map e = c • volume :=
+    ⟨Measure.addHaarScalarFactor (μ.map e) volume, by simpa only [ne_eq, ENNReal.coe_eq_zero] using
+      (Measure.addHaarScalarFactor_pos_of_isAddHaarMeasure (μ.map e) volume).ne',
+      ENNReal.coe_ne_top, Measure.isAddLeftInvariant_eq_smul _ _⟩
   have hfin : finrank ℝ E = Fintype.card ι :=
     e.toLinearEquiv.finrank_eq.trans (Module.finrank_fintype_fun_eq_card ℝ)
-  set K := ENNReal.ofReal ((‖(e : E →L[ℝ] (ι → ℝ))‖ * ‖(e.symm : (ι → ℝ) →L[ℝ] E)‖) ^
-    Fintype.card ι)
-  have hM : ∀ i, maximalFunction μ (g i) x ≤
-      K * maximalFunction volume (fun z => g i (e.symm z)) (e x) := fun i => by
-    have h := maximalFunction_le_ofReal_mul_maximalFunction_map μ e ha hb
+  have hG : ∀ i, Measurable fun z => g i (e.symm z) :=
+    fun i => (hg i).comp e.symm.continuous.measurable
+  refine ⟨fun i z => g i (e.symm z), c, hG, hν, fun x => ?_, fun φ hφ => ?_⟩
+  · -- The `ℓʳ` norm is monotone and positively homogeneous.
+    have hhom : ∀ (K : ℝ≥0∞) {a b : κ → ℝ≥0∞}, (∀ i, a i ≤ K * b i) →
+        (∑' i, a i ^ r) ^ r⁻¹ ≤ K * (∑' i, b i ^ r) ^ r⁻¹ := fun K a b h => by
+      calc (∑' i, a i ^ r) ^ r⁻¹ ≤ (∑' i, (K * b i) ^ r) ^ r⁻¹ := by
+            gcongr with i
+            exact h i
+        _ = K * (∑' i, b i ^ r) ^ r⁻¹ := by
+            simp only [ENNReal.mul_rpow_of_nonneg _ _ hr.le, ENNReal.tsum_mul_left]
+            rw [ENNReal.mul_rpow_of_nonneg _ _ (inv_nonneg.2 hr.le), ENNReal.rpow_rpow_inv hr.ne']
+    refine hhom _ fun i => ?_
+    have h := maximalFunction_le_ofReal_mul_maximalFunction_map μ e e.norm_pos e.norm_symm_pos
       (fun y => (e : E →L[ℝ] (ι → ℝ)).le_opNorm y)
       (fun z => (e.symm : (ι → ℝ) →L[ℝ] E).le_opNorm z) (g i) x
-    rwa [hfin, hν, maximalFunction_smul_measure hc hc'] at h
-  calc (∑' i, maximalFunction μ (g i) x ^ r) ^ r⁻¹
-      ≤ (∑' i, (K * maximalFunction volume (fun z => g i (e.symm z)) (e x)) ^ r) ^ r⁻¹ := by
-        gcongr with i
-        exact hM i
-    _ = K * (∑' i, maximalFunction volume (fun z => g i (e.symm z)) (e x) ^ r) ^ r⁻¹ := by
-        simp only [ENNReal.mul_rpow_of_nonneg _ _ hr.le, ENNReal.tsum_mul_left]
-        rw [ENNReal.mul_rpow_of_nonneg _ _ (inv_nonneg.2 hr.le), ENNReal.rpow_rpow_inv hr.ne']
-
-variable [ENorm F] [Countable κ]
+    rwa [hfin, hν, maximalFunction_smul_measure hc hc', ← hM i] at h
+  · rw [← smul_eq_mul, ← lintegral_smul_measure, ← hν,
+      lintegral_map (f := fun z => φ (∑' i, g i (e.symm z) ^ r))
+        (hφ.comp (Measurable.tsum fun i => (hG i).pow_const r)) e.continuous.measurable]
+    refine lintegral_congr_ae ?_
+    filter_upwards [hae] with x hx
+    simp only [hx, e.symm_apply_apply]
 
 /-- **The vector-valued maximal inequality of Fefferman and Stein, weak type `(1, 1)`.** Let `μ` be
 an additive Haar measure on a real normed space `E` of positive dimension `n`, let
@@ -664,9 +624,10 @@ family `fᵢ`, the `ℓʳ`-valued maximal function satisfies
 
 `t μ {(∑' i, (M fᵢ) ^ r) ^ (1 / r) > t} ≤ C ∫⁻ (∑' i, ‖fᵢ‖ₑ ^ r) ^ (1 / r) ∂μ`
 
-with `C = (‖e‖ ‖e⁻¹‖)ⁿ (3ⁿ + 2 ^ r (1 + (2ⁿ) ^ (2 r - 1)) c(n, r))`, where `c(n, r)` is the
-constant `TauCeti.maximalFunctionConst n r` of the scalar maximal inequality. The constant depends
-on `E` only through `‖e‖ ‖e⁻¹‖`; on `ι → ℝ`, with the identity, it depends only on `n` and `r`.
+with `C = (‖e‖ ‖e⁻¹‖)ⁿ A`, where `A = 3ⁿ + 2 ^ r (1 + (2ⁿ) ^ (2 r - 1)) c(n, r)` is
+`TauCeti.vectorMaximalFunctionWeakConst n r` and `c(n, r)` is the constant
+`TauCeti.maximalFunctionConst n r` of the scalar maximal inequality. The constant depends on `E`
+only through `‖e‖ ‖e⁻¹‖`; on `ι → ℝ`, with the identity, it depends only on `n` and `r`.
 
 The proof is on `ι → ℝ` with the sup norm, where balls are cubes: the Calderón–Zygmund cubes of
 the pointwise `ℓʳ` norm split the family into a part bounded by `t`, handled by the `Lʳ(ℓʳ)`
@@ -678,36 +639,26 @@ theorem mul_measure_lt_tsum_maximalFunction_rpow_rpow_inv_le (μ : Measure E)
     (hf : ∀ i, AEMeasurable (fun x => ‖f i x‖ₑ) μ) (hr : 1 < r) (t : ℝ≥0∞) :
     t * μ {x | t < (∑' i, maximalFunction μ (f i) x ^ r) ^ r⁻¹} ≤
       ENNReal.ofReal ((‖(e : E →L[ℝ] (ι → ℝ))‖ * ‖(e.symm : (ι → ℝ) →L[ℝ] E)‖) ^
-          Fintype.card ι) *
-        (3 ^ Fintype.card ι + 2 ^ r * (1 + (2 ^ Fintype.card ι) ^ (2 * r - 1)) *
-          maximalFunctionConst (Fintype.card ι) r) *
+          Fintype.card ι) * vectorMaximalFunctionWeakConst (Fintype.card ι) r *
         ∫⁻ x, (∑' i, ‖f i x‖ₑ ^ r) ^ r⁻¹ ∂μ := by
-  obtain ⟨g, hg, hM, hae⟩ := exists_measurable_maximalFunction_eq μ hf
-  obtain ⟨ha, hb⟩ := norm_pos_and_norm_symm_pos e
-  obtain ⟨c, -, -, hν⟩ := exists_map_eq_smul_volume μ e
   have hr0 : 0 < r := by linarith
+  obtain ⟨G, c, hG, hν, hM, hI⟩ :=
+    exists_map_eq_smul_volume_and_tsum_maximalFunction_rpow_rpow_inv_le μ e hf hr0
+  have : Nontrivial E := e.toEquiv.nontrivial
   set K := ENNReal.ofReal ((‖(e : E →L[ℝ] (ι → ℝ))‖ * ‖(e.symm : (ι → ℝ) →L[ℝ] E)‖) ^
     Fintype.card ι)
-  have hK : K ≠ 0 := (ENNReal.ofReal_pos.2 (by positivity)).ne'
+  have hK : K ≠ 0 := (ENNReal.ofReal_pos.2 (pow_pos (mul_pos e.norm_pos e.norm_symm_pos) _)).ne'
   have hK' : K ≠ ∞ := ENNReal.ofReal_ne_top
-  -- The transported family on `ι → ℝ`, its maximal functions and its pointwise `ℓʳ` norm.
-  set G : κ → (ι → ℝ) → ℝ≥0∞ := fun i z => g i (e.symm z)
-  have hG : ∀ i, Measurable (G i) := fun i => (hg i).comp e.symm.continuous.measurable
+  -- The `ℓʳ` norm of the maximal functions of the transported family.
   set u : (ι → ℝ) → ℝ≥0∞ := fun z => (∑' i, maximalFunction volume (G i) z ^ r) ^ r⁻¹
   have hu : Measurable u :=
     (Measurable.tsum fun i => (measurable_maximalFunction volume _).pow_const r).pow_const _
-  set Φ : (ι → ℝ) → ℝ≥0∞ := fun z => (∑' i, G i z ^ r) ^ r⁻¹
-  have hΦ : Measurable Φ := (Measurable.tsum fun i => (hG i).pow_const r).pow_const _
-  have hI : ∫⁻ x, (∑' i, ‖f i x‖ₑ ^ r) ^ r⁻¹ ∂μ = c * ∫⁻ z, Φ z := by
-    rw [← smul_eq_mul, ← lintegral_smul_measure, ← hν, lintegral_map hΦ e.continuous.measurable]
-    refine lintegral_congr_ae ?_
-    filter_upwards [hae] with x hx
-    simp only [Φ, G, hx, e.symm_apply_apply]
   have hsub : {x | t < (∑' i, maximalFunction μ (f i) x ^ r) ^ r⁻¹} ⊆ e ⁻¹' {z | t / K < u z} :=
     fun x hx => by
-      simp only [hM, mem_ofPred_eq] at hx
+      rw [mem_ofPred_eq] at hx
       rw [mem_preimage, mem_ofPred_eq, ENNReal.div_lt_iff (.inl hK) (.inl hK'), mul_comm]
-      exact hx.trans_le (tsum_maximalFunction_rpow_rpow_inv_le μ e g hr0 x)
+      exact hx.trans_le (hM x)
+  have hI' := hI (· ^ r⁻¹) (measurable_id.pow_const _)
   calc t * μ {x | t < (∑' i, maximalFunction μ (f i) x ^ r) ^ r⁻¹}
       ≤ K * (t / K) * (c * volume {z | t / K < u z}) := by
         rw [ENNReal.mul_div_cancel hK hK']
@@ -716,80 +667,68 @@ theorem mul_measure_lt_tsum_maximalFunction_rpow_rpow_inv_le (μ : Measure E)
         rw [← Measure.map_apply e.continuous.measurable (measurableSet_lt measurable_const hu), hν,
           smul_apply, smul_eq_mul]
     _ = K * c * ((t / K) * volume {z | t / K < u z}) := by ring
-    _ ≤ K * c * ((3 ^ Fintype.card ι + 2 ^ r * (1 + (2 ^ Fintype.card ι) ^ (2 * r - 1)) *
-          maximalFunctionConst (Fintype.card ι) r) * ∫⁻ z, Φ z) := by
+    _ ≤ K * c * (vectorMaximalFunctionWeakConst (Fintype.card ι) r *
+          ∫⁻ z, (∑' i, G i z ^ r) ^ r⁻¹) := by
         gcongr K * c * ?_
         exact mul_volume_lt_tsum_maximalFunction_rpow_rpow_inv_le_of_measurable hG hr _
     _ = _ := by
-        rw [hI]
+        rw [hI']
         ring
 
-/-- **The vector-valued maximal inequality of Fefferman and Stein below the diagonal.** Let `μ` be
-an additive Haar measure on a real normed space `E` of positive dimension `n`, let
+/-- **The vector-valued maximal inequality of Fefferman and Stein below the exponent of the sum.**
+Let `μ` be an additive Haar measure on a real normed space `E` of positive dimension `n`, let
 `e : E ≃L[ℝ] (ι → ℝ)` be a continuous linear equivalence, and let `1 < p < r`. For every countable
 family `fᵢ`, the `ℓʳ`-valued maximal function is bounded on `Lᵖ(ℓʳ)`:
 
 `∫⁻ (∑' i, (M fᵢ) ^ r) ^ (p / r) ∂μ ≤ C ∫⁻ (∑' i, ‖fᵢ‖ₑ ^ r) ^ (p / r) ∂μ`,
 
 with `C = (‖e‖ ‖e⁻¹‖) ^ (n p) (p / (p - 1) · 2 A + p / (r - p) · 2 ^ r c(n, r))`, where `A` is the
-constant of the weak type `(1, 1)` bound
-`TauCeti.mul_measure_lt_tsum_maximalFunction_rpow_rpow_inv_le` for `e = id` and `c(n, r)` is the
-constant `TauCeti.maximalFunctionConst n r` of the scalar maximal inequality. Together with
+constant `TauCeti.vectorMaximalFunctionWeakConst n r` of the weak type `(1, 1)` bound
+`TauCeti.mul_measure_lt_tsum_maximalFunction_rpow_rpow_inv_le` and `c(n, r)` is the constant
+`TauCeti.maximalFunctionConst n r` of the scalar maximal inequality. Together with
 `TauCeti.lintegral_tsum_maximalFunction_rpow_le` for `p = r` and
-`TauCeti.lintegral_rpow_tsum_maximalFunction_rpow_le` for `r < p`, this covers every
+`TauCeti.lintegral_rpow_tsum_maximalFunction_rpow_le_of_exponent_lt` for `r < p`, this covers every
 `1 < p, r < ∞`; for `r = 2` it is the square-function form
-`‖(∑' i, (M fᵢ) ^ 2) ^ (1 / 2)‖_p ≤ C' ‖(∑' i, ‖fᵢ‖ ^ 2) ^ (1 / 2)‖_p` for `1 < p < 2`.
+`‖(∑' i, (M fᵢ) ^ 2) ^ (1 / 2)‖_p ≤ C' ‖(∑' i, ‖fᵢ‖ ^ 2) ^ (1 / 2)‖_p` for `1 < p < 2`. The suffix
+`_of_lt_exponent` records that `p` lies below the exponent `r` of the sum.
 
 The proof interpolates, by Marcinkiewicz's theorem
 (`TauCeti.lintegral_rpow_le_of_meas_ofReal_lt_le`), between the weak type `(1, 1)` bound and the
 diagonal `Lʳ(ℓʳ)` bound. -/
-theorem lintegral_rpow_tsum_maximalFunction_rpow_le_of_lt (μ : Measure E) [μ.IsAddHaarMeasure]
-    (e : E ≃L[ℝ] (ι → ℝ)) {f : κ → E → F} (hf : ∀ i, AEMeasurable (fun x => ‖f i x‖ₑ) μ)
-    {p : ℝ} (hp : 1 < p) (hpr : p < r) :
+theorem lintegral_rpow_tsum_maximalFunction_rpow_le_of_lt_exponent (μ : Measure E)
+    [μ.IsAddHaarMeasure] (e : E ≃L[ℝ] (ι → ℝ)) {f : κ → E → F}
+    (hf : ∀ i, AEMeasurable (fun x => ‖f i x‖ₑ) μ) {p : ℝ} (hp : 1 < p) (hpr : p < r) :
     ∫⁻ x, (∑' i, maximalFunction μ (f i) x ^ r) ^ (p / r) ∂μ ≤
       ENNReal.ofReal ((‖(e : E →L[ℝ] (ι → ℝ))‖ * ‖(e.symm : (ι → ℝ) →L[ℝ] E)‖) ^
           Fintype.card ι) ^ p *
-        (ENNReal.ofReal (p / (p - 1)) * (2 * (3 ^ Fintype.card ι + 2 ^ r *
-            (1 + (2 ^ Fintype.card ι) ^ (2 * r - 1)) * maximalFunctionConst (Fintype.card ι) r)) +
+        (ENNReal.ofReal (p / (p - 1)) * (2 * vectorMaximalFunctionWeakConst (Fintype.card ι) r) +
           ENNReal.ofReal (p / (r - p)) * (2 ^ r * maximalFunctionConst (Fintype.card ι) r)) *
         ∫⁻ x, (∑' i, ‖f i x‖ₑ ^ r) ^ (p / r) ∂μ := by
-  obtain ⟨g, hg, hM, hae⟩ := exists_measurable_maximalFunction_eq μ hf
-  obtain ⟨c, -, -, hν⟩ := exists_map_eq_smul_volume μ e
   have hr0 : 0 < r := by linarith
   have hp0 : 0 < p := by linarith
+  obtain ⟨G, c, hG, hν, hM, hI⟩ :=
+    exists_map_eq_smul_volume_and_tsum_maximalFunction_rpow_rpow_inv_le μ e hf hr0
   set K := ENNReal.ofReal ((‖(e : E →L[ℝ] (ι → ℝ))‖ * ‖(e.symm : (ι → ℝ) →L[ℝ] E)‖) ^
     Fintype.card ι)
-  set G : κ → (ι → ℝ) → ℝ≥0∞ := fun i z => g i (e.symm z)
-  have hG : ∀ i, Measurable (G i) := fun i => (hg i).comp e.symm.continuous.measurable
   have hpow : ∀ a : ℝ≥0∞, (a ^ r⁻¹) ^ p = a ^ (p / r) := fun a => by
     rw [← ENNReal.rpow_mul, inv_mul_eq_div]
   have hu : Measurable fun z => (∑' i, maximalFunction volume (G i) z ^ r) ^ (p / r) :=
     (Measurable.tsum fun i => (measurable_maximalFunction volume _).pow_const r).pow_const _
-  have hΦ : Measurable fun z => (∑' i, G i z ^ r) ^ (p / r) :=
-    (Measurable.tsum fun i => (hG i).pow_const r).pow_const _
-  have hI : ∫⁻ x, (∑' i, ‖f i x‖ₑ ^ r) ^ (p / r) ∂μ = c * ∫⁻ z, (∑' i, G i z ^ r) ^ (p / r) := by
-    rw [← smul_eq_mul, ← lintegral_smul_measure, ← hν, lintegral_map hΦ e.continuous.measurable]
-    refine lintegral_congr_ae ?_
-    filter_upwards [hae] with x hx
-    simp only [G, hx, e.symm_apply_apply]
+  have hI' := hI (· ^ (p / r)) (measurable_id.pow_const _)
   calc ∫⁻ x, (∑' i, maximalFunction μ (f i) x ^ r) ^ (p / r) ∂μ
       ≤ ∫⁻ x, K ^ p * (∑' i, maximalFunction volume (G i) (e x) ^ r) ^ (p / r) ∂μ := by
         refine lintegral_mono fun x => ?_
         rw [← hpow, ← hpow, ← ENNReal.mul_rpow_of_nonneg _ _ hp0.le]
-        simp only [hM]
         gcongr
-        exact tsum_maximalFunction_rpow_rpow_inv_le μ e g hr0 x
+        exact hM x
     _ = K ^ p * (c * ∫⁻ z, (∑' i, maximalFunction volume (G i) z ^ r) ^ (p / r)) := by
         rw [lintegral_const_mul' _ _ (ENNReal.rpow_ne_top_of_nonneg hp0.le ENNReal.ofReal_ne_top),
           ← lintegral_map hu e.continuous.measurable, hν, lintegral_smul_measure, smul_eq_mul]
-    _ ≤ K ^ p * (c * ((ENNReal.ofReal (p / (p - 1)) * (2 * (3 ^ Fintype.card ι + 2 ^ r *
-            (1 + (2 ^ Fintype.card ι) ^ (2 * r - 1)) * maximalFunctionConst (Fintype.card ι) r)) +
-          ENNReal.ofReal (p / (r - p)) * (2 ^ r * maximalFunctionConst (Fintype.card ι) r)) *
-            ∫⁻ z, (∑' i, G i z ^ r) ^ (p / r))) := by
+    _ ≤ K ^ p * (c * (_ * ∫⁻ z, (∑' i, G i z ^ r) ^ (p / r))) := by
         gcongr
-        exact lintegral_rpow_tsum_maximalFunction_rpow_le_of_lt_of_measurable hG hp hpr
+        exact lintegral_rpow_tsum_maximalFunction_rpow_le_of_lt_exponent_of_measurable hG hp hpr
     _ = _ := by
-        rw [hI]
+        rw [hI']
         ring
 
 end Transfer
