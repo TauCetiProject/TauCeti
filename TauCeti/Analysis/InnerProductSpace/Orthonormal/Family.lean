@@ -5,7 +5,9 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.LinearAlgebra.UnitaryGroup
 public import TauCeti.Analysis.InnerProductSpace.Frame
+import TauCeti.LinearAlgebra.Matrix.Module
 
 /-!
 # Coordinate isometries of orthonormal families
@@ -21,7 +23,9 @@ becomes an equality on the span: `‖P x‖² = ∑ᵢ ‖⟪vᵢ, x⟫‖²`.
 
 Combining an orthonormal family with the rows of a matrix `A` gives an orthonormal family exactly
 when `A * Aᴴ = 1` (`Orthonormal.orthonormal_sum_smul_iff`); for square matrices this
-identifies the changes of orthonormal frame with the unitary group.
+identifies the changes of orthonormal frame with the unitary group
+(`Orthonormal.orthonormal_sum_smul_iff_mem_unitaryGroup`), and a unitary change of frame
+preserves and reflects orthonormality (`TauCeti.orthonormal_sum_smul_iff_of_mem_unitaryGroup`).
 -/
 
 public section
@@ -138,7 +142,31 @@ theorem orthonormal_sum_smul_iff {κ : Type*} [DecidableEq κ] (hv : Orthonormal
   simp only [hv.inner_sum, Matrix.mul_apply, Matrix.one_apply, Matrix.conjTranspose_apply,
     RCLike.star_def, mul_comm, eq_comm (a := k)]
 
+/-- Combining an orthonormal family with the rows of a square matrix `A` produces an orthonormal
+family exactly when `A` is unitary. -/
+theorem orthonormal_sum_smul_iff_mem_unitaryGroup [DecidableEq ι] (hv : Orthonormal 𝕜 v)
+    (A : Matrix ι ι 𝕜) :
+    Orthonormal 𝕜 (fun j ↦ ∑ i, A j i • v i) ↔ A ∈ Matrix.unitaryGroup ι 𝕜 := by
+  rw [hv.orthonormal_sum_smul_iff, Matrix.mem_unitaryGroup_iff, Matrix.star_eq_conjTranspose]
+
 end Orthonormal
+
+namespace TauCeti
+
+variable {𝕜 E ι : Type*} [RCLike 𝕜] [NormedAddCommGroup E] [InnerProductSpace 𝕜 E]
+  [Fintype ι] [DecidableEq ι] {v : ι → E}
+
+/-- A unitary change of frame `vⱼ ↦ ∑ i, A j i • vᵢ` preserves and reflects orthonormality. -/
+theorem orthonormal_sum_smul_iff_of_mem_unitaryGroup {A : Matrix ι ι 𝕜}
+    (hA : A ∈ Matrix.unitaryGroup ι 𝕜) :
+    Orthonormal 𝕜 (fun j ↦ ∑ i, A j i • v i) ↔ Orthonormal 𝕜 v := by
+  refine ⟨fun hw ↦ ?_, fun hv ↦ (hv.orthonormal_sum_smul_iff_mem_unitaryGroup A).2 hA⟩
+  -- The inverse change of frame is the one by `star A`, which is unitary too.
+  have := (hw.orthonormal_sum_smul_iff_mem_unitaryGroup (star A)).2 (Unitary.star_mem hA)
+  simp_rw [← Matrix.sum_mul_apply_smul, (Matrix.mem_unitaryGroup_iff').1 hA] at this
+  simpa [Matrix.one_apply] using this
+
+end TauCeti
 
 variable {𝕜 E ι : Type*} [RCLike 𝕜] [NormedAddCommGroup E] [InnerProductSpace 𝕜 E]
   [Fintype ι]
