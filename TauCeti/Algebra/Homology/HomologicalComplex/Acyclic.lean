@@ -128,7 +128,8 @@ theorem map_of_shortExact (hQ : Q.Acyclic) (hQP : ∀ n, P (Q.X n)) :
 
 include hP hF in
 /-- **`F` preserves acyclicity of bounded-below `ℤ`-indexed complexes in an adapted class.**
-Restricting `Q` along `ComplexShape.embeddingUpIntGE b` reduces to `map_of_shortExact`. -/
+If `Q` is an acyclic `ℤ`-indexed cochain complex satisfying `Q.IsStrictlyGE b` whose terms all lie
+in `P`, then `(F.mapHomologicalComplex _).obj Q` is acyclic. -/
 theorem map_of_shortExact_of_isStrictlyGE {Q : CochainComplex C ℤ} (b : ℤ) [Q.IsStrictlyGE b]
     (hQ : Q.Acyclic) (hQP : ∀ n, P (Q.X n)) :
     ((F.mapHomologicalComplex _).obj Q).Acyclic := by
