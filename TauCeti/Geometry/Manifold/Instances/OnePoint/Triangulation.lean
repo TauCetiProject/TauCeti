@@ -17,8 +17,9 @@ import TauCeti.Geometry.Manifold.Complex.Analytic
 The Riemann sphere `OnePoint ℂ` is triangulated by the boundary of a tetrahedron
 (`TauCeti.isTriangulable_onePoint`). As a compact connected triangulable surface it therefore
 keeps finite CW type after deleting any finite set
-(`Set.Finite.finiteCWType_compl_of_isTriangulable`). This supplies the finite CW models of the
-punctured Riemann sphere used in the branched-cover formula for maps onto it.
+(`Set.Finite.finiteCWType_compl_of_isTriangulable`). This provides a triangulation-based
+`FiniteCWType ↥Sᶜ` instance for the punctured Riemann sphere, independent of
+`TauCeti.ComplexManifold.instFiniteCWTypeCompl`.
 
 ## Main results
 

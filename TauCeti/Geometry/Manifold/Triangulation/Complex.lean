@@ -21,9 +21,10 @@ connected triangulable Riemann surface leaves a space of finite CW type
 (`TauCeti.isTriangulable_onePoint`), so the complement of every finite set of its points has
 finite CW type (`Set.Finite.finiteCWType_compl_onePoint_complex`). These are theorems rather than
 instances: the finiteness `hS : S.Finite` and the triangulation `hY : IsTriangulable Y` are not
-type-class hypotheses, so instance search could not supply them. They discharge the
-`[FiniteCWType ↥Sᶜ]` hypothesis of the topological Riemann–Hurwitz formula when `S` is a finite set
-of branch values.
+type-class hypotheses, so instance search could not supply them. They provide a triangulation-based
+route to `FiniteCWType ↥Sᶜ`, independent of the unconditional Morse-theoretic
+`TauCeti.ComplexManifold.finiteCWType_compl` used by
+`TauCeti.Analysis.Complex.RiemannSurface.Branch.EulerCharacteristic`.
 
 ## References
 

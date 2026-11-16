@@ -37,8 +37,6 @@ characteristics `TauCeti.eulerChar`.
   the free locus of `Γ` has finite CW type.
 * `TauCeti.Fuchsian.branchValues_subset_ellipticOrbits_union_cusps`: a finite-index map of
   compactified quotients branches only over elliptic orbits and cusps.
-* `TauCeti.Fuchsian.compactSpace_compactifiedQuotient_of_le`: if `Δ ≤ Γ` has finite index and
-  `X(Δ)` is compact, so is `X(Γ)`.
 * `TauCeti.Fuchsian.eulerChar_compactifiedQuotient_eq_index_mul_sub_ramificationDegree`: the
   Riemann--Hurwitz formula `χ(X(Δ)) = [Γ : Δ] · χ(X(Γ)) - R`, with `R` the ramification degree.
 * `TauCeti.Fuchsian.eulerChar_compactifiedQuotient_eq_index_mul_sub_interior_sub_cusps`: the
@@ -105,14 +103,6 @@ theorem branchValues_subset_ellipticOrbits_union_cusps :
 
 variable [hcompact : letI : DiscreteTopology Δ := DiscreteTopology.of_subset ‹DiscreteTopology Γ› h
   CompactSpace Δ.CompactifiedQuotient]
-
-include hcompact in
-/-- If `Δ ≤ Γ` has finite index and `X(Δ)` is compact, then `X(Γ)` is compact as the continuous
-image of `X(Δ)`. -/
-theorem compactSpace_compactifiedQuotient_of_le :
-    CompactSpace Γ.CompactifiedQuotient :=
-  let : DiscreteTopology Δ := DiscreteTopology.of_subset ‹DiscreteTopology Γ› h
-  (compactifiedQuotientFiniteHolomorphicMap h).compactSpace_codomain
 
 include hcompact in
 /-- **The Riemann--Hurwitz formula for Fuchsian groups.** Let `Δ ≤ Γ` be discrete subgroups of

@@ -135,13 +135,9 @@ private def sigmaCriticalPointsIocEquiv {a : ℕ → ℝ} (hmono : StrictMono a)
       obtain ⟨k, hk⟩ := mem_iUnion.1 (hcover.symm ▸ ha0 x : f x ∈ ⋃ k, Ioc (a k) (a (k + 1)))
       exact ⟨⟨k, x, ⟨hx, hk⟩, hxm⟩, rfl⟩
 
-/-- **The CW model of a proper Morse function** (Milnor, *Morse Theory*, Theorem 3.5). Let `f` be
-a Morse function on a boundaryless manifold `M`, proper and bounded below. Then `M` is homotopy
-equivalent to a Hausdorff CW complex `X` whose `m`-cells correspond to the critical points of `f`
-of index `m`, for every `m`. When there are infinitely many critical points of index `m`, `X` has
-infinitely many `m`-cells. -/
-theorem IsMorse.exists_cwComplex_homotopyEquiv (hf : IsMorse I f) (hp : IsProperMap f)
-    (hbdd : BddBelow (range f)) :
+/-- Finite-dimensional core of `TauCeti.IsMorse.exists_cwComplex_homotopyEquiv`. -/
+private theorem IsMorse.exists_cwComplex_homotopyEquiv_of_finiteDimensional (hf : IsMorse I f)
+    (hp : IsProperMap f) (hbdd : BddBelow (range f)) :
     ∃ (X : Type u) (_ : TopologicalSpace X) (_ : T2Space X) (_ : CWComplex (univ : Set X)),
       Nonempty (M ≃ₕ X) ∧ ∀ m, Nonempty (cell (univ : Set X) m ≃
         ↥{x ∈ criticalPoints I f | manifoldMorseIndex I f x = m}) := by
@@ -207,6 +203,32 @@ theorem IsMorse.exists_cwComplex_homotopyEquiv (hf : IsMorse I f) (hp : IsProper
       exact hh k (S k) w
   exact ⟨h.symm⟩
 
+omit [FiniteDimensional ℝ E] in
+/-- **The CW model of a proper Morse function** (Milnor, *Morse Theory*, Theorem 3.5). Let `f` be
+a Morse function on a boundaryless manifold `M`, proper and bounded below. Then `M` is homotopy
+equivalent to a Hausdorff CW complex `X` whose `m`-cells correspond to the critical points of `f`
+of index `m`, for every `m`. When there are infinitely many critical points of index `m`, `X` has
+infinitely many `m`-cells. -/
+theorem IsMorse.exists_cwComplex_homotopyEquiv (hf : IsMorse I f) (hp : IsProperMap f)
+    (hbdd : BddBelow (range f)) :
+    ∃ (X : Type u) (_ : TopologicalSpace X) (_ : T2Space X) (_ : CWComplex (univ : Set X)),
+      Nonempty (M ≃ₕ X) ∧ ∀ m, Nonempty (cell (univ : Set X) m ≃
+        ↥{x ∈ criticalPoints I f | manifoldMorseIndex I f x = m}) := by
+  rcases isEmpty_or_nonempty M with _ | hM
+  · refine ⟨PEmpty.{u + 1}, _, inferInstance, inferInstance,
+      ⟨Homeomorph.empty.toHomotopyEquiv⟩, fun m ↦ ?_⟩
+    have : IsEmpty (cell (univ : Set PEmpty.{u + 1}) m) := ⟨fun j ↦ PEmpty.elim (map m j 0)⟩
+    exact ⟨Equiv.equivOfIsEmpty _ _⟩
+  · obtain ⟨x₀⟩ := hM
+    obtain ⟨a, K, -, htop, hreg, hK, -, -⟩ := hf.exists_regular_sublevel_exhaustion hp hbdd
+    obtain ⟨n, hn⟩ := (htop.eventually_ge_atTop (f x₀)).exists
+    have : Nonempty {x | f x ≤ a n} := ⟨⟨x₀, hn⟩⟩
+    have hcomp : IsCompact (f ⁻¹' Iic (a n)) := hK n ▸ K.isCompact n
+    have : FiniteDimensional ℝ E := finiteDimensional_of_isCompact_sublevel (I := I)
+      hf.contMDiff.continuous hcomp (hreg n)
+    exact hf.exists_cwComplex_homotopyEquiv_of_finiteDimensional hp hbdd
+
+omit [FiniteDimensional ℝ E] in
 /-- **The finite CW model of a proper Morse function with finitely many critical points.** Let `f`
 be a Morse function on a boundaryless manifold `M`, proper, bounded below, and with finitely many
 critical points. Then `M` is homotopy equivalent to a finite Hausdorff CW complex `X` whose
@@ -218,13 +240,11 @@ theorem IsMorse.exists_finite_cwComplex_homotopyEquiv_of_isProperMap (hf : IsMor
       ∀ m, Nonempty (cell (univ : Set X) m ≃
         ↥{x ∈ criticalPoints I f | manifoldMorseIndex I f x = m}) := by
   obtain ⟨X, _, _, _, ⟨h⟩, hcell⟩ := hf.exists_cwComplex_homotopyEquiv hp hbdd
-  have : _root_.Finite (criticalPoints I f) := hfin.to_subtype
-  refine ⟨X, _, ‹_›, ‹_›, RelCWComplex.finite_of_finite_cells (.of_equiv _
-    ((Equiv.sigmaFiberEquiv fun x : criticalPoints I f ↦ manifoldMorseIndex I f x).symm.trans
-      (Equiv.sigmaCongrRight fun m ↦ ?_))), ⟨h⟩, hcell⟩
-  exact (Equiv.subtypeSubtypeEquivSubtypeInter (· ∈ criticalPoints I f)
-    (manifoldMorseIndex I f · = m)).trans (hcell m).some.symm
+  have := finite_sigma_criticalPoints (I := I) hfin
+  exact ⟨X, _, ‹_›, ‹_›, RelCWComplex.finite_of_finite_cells (.of_equiv _
+    (Equiv.sigmaCongrRight fun m ↦ (hcell m).some.symm)), ⟨h⟩, hcell⟩
 
+omit [FiniteDimensional ℝ E] in
 /-- A boundaryless manifold carrying a proper Morse function bounded below with finitely many
 critical points has finite CW type. -/
 theorem IsMorse.finiteCWType_of_isProperMap (hf : IsMorse I f) (hp : IsProperMap f)

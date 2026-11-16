@@ -14,45 +14,45 @@ import TauCeti.Data.Set.Restrict
 # Euler characteristics of branched covers
 
 Let `f : X → Y` be a finite holomorphic map from a compact Riemann surface to a preconnected
-Riemann surface, and let `S ⊆ Y` contain every branch value of `f`. By surjectivity `Y` is also
-compact, so `X`, `Y`, and the complement in either surface of any finite set all have finite CW
-type (`TauCeti.ComplexManifold.instFiniteCWType`, `TauCeti.ComplexManifold.instFiniteCWTypeCompl`).
+Riemann surface. By surjectivity `Y` is also compact (`FiniteHolomorphicMap.compactSpace_codomain`),
+so `X`, `Y`, and the complement in either surface of any finite set all have finite CW type
+(`TauCeti.ComplexManifold.instFiniteCWType`, `TauCeti.ComplexManifold.instFiniteCWTypeCompl`).
 
-Deleting `S` from the target and `f⁻¹(S)` from the source leaves a covering map whose fibres all
-have `degree f` points. Finite-cover multiplicativity of the Euler characteristic therefore gives
+Deleting a set `S ⊆ Y` containing every branch value of `f` from the target, and `f⁻¹(S)` from the
+source, leaves a covering map whose fibres all have `degree f` points. Finite-cover multiplicativity
+of the Euler characteristic therefore gives
 
 `χ(X \ f⁻¹(S)) = degree f · χ(Y \ S)`
 
 whenever `Y \ S` has finite CW type (in particular whenever `S` is finite).
 
-When `S` is finite, adding the count of deleted points
-`#f⁻¹(S) + ramificationDegree f = degree f · #S` gives the punctured form of the branched-cover
-formula,
+Puncturing at `S = f.branchValues`, adding the fibre count
+`#f⁻¹(S) + ramificationDegree f = degree f · #S`, and substituting
+`χ(M \ T) = χ(M) - #T` (`TauCeti.ComplexManifold.eulerChar_compl`) yields the unconditional
+topological Riemann--Hurwitz formula `χ(X) = degree f · χ(Y) - ramificationDegree f`. It uses only
+the finite-CW Euler characteristic, local multiplicities and the analytic fibre-sum degree; no
+canonical divisor and no Riemann--Roch theorem enters. Conversely, applying
+`TauCeti.ComplexManifold.eulerChar_compl` again yields the punctured branched-cover formula
 
-`(χ(X \ f⁻¹(S)) + #f⁻¹(S)) + ramificationDegree f = degree f · (χ(Y \ S) + #S)`.
+`(χ(X \ f⁻¹(S)) + #f⁻¹(S)) + ramificationDegree f = degree f · (χ(Y \ S) + #S)`
 
-For compact Riemann surfaces deleting a finite set subtracts its cardinality from the Euler
-characteristic (`TauCeti.ComplexManifold.eulerChar_compl`), so the two parenthesised sums are
-`χ(X)` and `χ(Y)`. Puncturing at `f.branchValues` gives the unconditional topological
-Riemann--Hurwitz formula `χ(X) = degree f · χ(Y) - ramificationDegree f`. It uses only the
-finite-CW Euler characteristic, local multiplicities and the analytic fibre-sum degree; no
-canonical divisor and no Riemann--Roch theorem enters.
+for every finite subset `S ⊆ Y`, whether or not `S` contains the branch values.
 
 ## Main results
 
-* `FiniteHolomorphicMap.compactSpace_codomain`, `FiniteHolomorphicMap.finiteCWType_codomain`:
-  the preconnected target `Y` is compact and hence has finite CW type.
-* `FiniteHolomorphicMap.finiteCWType_compl_of_finite`,
-  `FiniteHolomorphicMap.finiteCWType_compl_branchValues`: `Y \ S` (in particular
-  `Y \ f.branchValues`) has finite CW type for any finite `S ⊆ Y`.
+* `FiniteHolomorphicMap.finiteCWType_compl_preimage_of_finite`: `X \ f⁻¹(S)` has finite CW type
+  for any finite `S ⊆ Y`.
+* `FiniteHolomorphicMap.finiteCWType_codomain`, `FiniteHolomorphicMap.finiteCWType_compl_of_finite`,
+  `FiniteHolomorphicMap.finiteCWType_compl_branchValues`: the preconnected target `Y` and `Y \ S`
+  (in particular `Y \ f.branchValues`) have finite CW type for any finite `S ⊆ Y`.
 * `FiniteHolomorphicMap.finiteCWType_compl_preimage`: the punctured source has finite CW type
   when the punctured target does.
 * `FiniteHolomorphicMap.eulerChar_compl_preimage`: `χ(X \ f⁻¹(S)) = degree f · χ(Y \ S)`.
-* `FiniteHolomorphicMap.eulerChar_compl_preimage_add_ncard_add_ramificationDegree`: the punctured
-  branched-cover formula for a finite set `S` of punctures containing the branch values.
 * `FiniteHolomorphicMap.eulerChar_eq_degree_mul_eulerChar_sub_ramificationDegree`:
   `χ(X) = degree f · χ(Y) - ramificationDegree f` unconditionally for every finite holomorphic map
   `f : X → Y` from a compact Riemann surface to a preconnected Riemann surface.
+* `FiniteHolomorphicMap.eulerChar_compl_preimage_add_ncard_add_ramificationDegree`: the punctured
+  branched-cover formula for any finite set `S` of punctures.
 
 ## References
 
@@ -73,30 +73,24 @@ universe u
 
 namespace TauCeti.RiemannSurface.FiniteHolomorphicMap
 
-variable {X Y : Type u} [TopologicalSpace X] [ChartedSpace ℂ X]
+section FiniteCWType
+
+variable {X Y : Type*} [TopologicalSpace X] [ChartedSpace ℂ X]
   [TopologicalSpace Y] [ChartedSpace ℂ Y]
-  [IsManifold 𝓘(ℂ) 1 X] [IsManifold 𝓘(ℂ) 1 Y]
-  [CompactSpace X] [T2Space X] [T2Space Y]
+  [IsManifold 𝓘(ℂ) 1 X] [CompactSpace X]
   (f : FiniteHolomorphicMap X Y) {S : Set Y}
 
-/-- If the target punctured at a set containing every branch value has finite CW type, so does
-the source punctured at its preimage. -/
-theorem finiteCWType_compl_preimage (hS : f.branchValues ⊆ S) [FiniteCWType ↥Sᶜ] :
+/-- Deleting the preimage of a finite set from the compact source leaves an open Riemann surface of
+finite CW type. -/
+theorem finiteCWType_compl_preimage_of_finite [T2Space X] (hfin : S.Finite) :
     FiniteCWType ↥(f ⁻¹' S)ᶜ :=
-  (f.isCoveringMap_restrictPreimage_compl hS).finiteCWType fun y ↦
-    (Sᶜ.finite_preimage_restrictPreimage_iff.2 (by simpa using f.finite_fiber y)).to_subtype
-
-variable [PreconnectedSpace Y]
+  ComplexManifold.finiteCWType_compl 𝓘(ℂ) (hfin.preimage' fun y _ ↦ f.finite_fiber y) one_ne_zero
 
 section Codomain
 
-include f
-omit [T2Space X]
+variable [IsManifold 𝓘(ℂ) 1 Y] [T2Space Y] [PreconnectedSpace Y]
 
-/-- The preconnected codomain of a finite holomorphic map from a compact Riemann surface is
-compact, by surjectivity. -/
-theorem compactSpace_codomain : CompactSpace Y :=
-  ⟨f.surjective.range_eq ▸ isCompact_range f.holomorphic.continuous⟩
+include f
 
 /-- The preconnected codomain of a finite holomorphic map from a compact Riemann surface has
 finite CW type. -/
@@ -118,12 +112,24 @@ theorem finiteCWType_compl_branchValues : FiniteCWType ↥f.branchValuesᶜ :=
 
 end Codomain
 
-/-- Deleting the preimage of a finite set containing the branch values from the source leaves an
-open Riemann surface of finite CW type. -/
-theorem finiteCWType_compl_preimage_of_finite (hfin : S.Finite) (hS : f.branchValues ⊆ S) :
-    FiniteCWType ↥(f ⁻¹' S)ᶜ := by
-  have := f.finiteCWType_compl_of_finite hfin
-  exact f.finiteCWType_compl_preimage hS
+end FiniteCWType
+
+section Covering
+
+variable {X Y : Type u} [TopologicalSpace X] [ChartedSpace ℂ X]
+  [TopologicalSpace Y] [ChartedSpace ℂ Y]
+  [IsManifold 𝓘(ℂ) 1 X] [IsManifold 𝓘(ℂ) 1 Y]
+  [CompactSpace X] [T2Space X] [T2Space Y]
+  (f : FiniteHolomorphicMap X Y) {S : Set Y}
+
+/-- If the target punctured at a set containing every branch value has finite CW type, so does
+the source punctured at its preimage. -/
+theorem finiteCWType_compl_preimage (hS : f.branchValues ⊆ S) [FiniteCWType ↥Sᶜ] :
+    FiniteCWType ↥(f ⁻¹' S)ᶜ :=
+  (f.isCoveringMap_restrictPreimage_compl hS).finiteCWType fun y ↦
+    (Sᶜ.finite_preimage_restrictPreimage_iff.2 (by simpa using f.finite_fiber y)).to_subtype
+
+variable [PreconnectedSpace Y]
 
 /-- **Euler characteristics of a punctured branched cover.** Deleting a set `S` containing every
 branch value from the target, and its preimage from the source, multiplies Euler characteristics
@@ -136,34 +142,39 @@ theorem eulerChar_compl_preimage (hS : f.branchValues ⊆ S) [FiniteCWType ↥S�
     fun y ↦ by
       rw [Nat.card_coe_set_eq, f.ncard_fiber_restrictPreimage_compl hS]
 
-/-- **The punctured branched-cover formula.** For a finite set `S` containing every branch value,
-`(χ(X \ f⁻¹(S)) + #f⁻¹(S)) + ramificationDegree f = degree f · (χ(Y \ S) + #S)`.
-For compact Riemann surfaces the parenthesised sums are `χ(X)` and `χ(Y)`, which turns this into
-the Riemann--Hurwitz formula. -/
-theorem eulerChar_compl_preimage_add_ncard_add_ramificationDegree (hfin : S.Finite)
-    (hS : f.branchValues ⊆ S) :
-    @eulerChar ↥(f ⁻¹' S)ᶜ _ (f.finiteCWType_compl_preimage_of_finite hfin hS) +
-        (f ⁻¹' S).ncard + ramificationDegree f =
-      degree f * (@eulerChar ↥Sᶜ _ (f.finiteCWType_compl_of_finite hfin) + S.ncard) := by
-  have := f.finiteCWType_compl_of_finite hfin
-  have hcount : ((f ⁻¹' S).ncard + ramificationDegree f : ℤ) = degree f * S.ncard := by
-    exact_mod_cast f.ncard_preimage_add_ramificationDegree hfin hS
-  rw [f.eulerChar_compl_preimage hS]
-  linear_combination hcount
-
 /-- **The topological Riemann--Hurwitz formula in Euler-characteristic form.** For any finite
 holomorphic map `f : X → Y` from a compact Riemann surface to a preconnected Riemann surface,
 `χ(X) = deg f · χ(Y) - R(f)`, where `R(f)` is the ramification degree. -/
 theorem eulerChar_eq_degree_mul_eulerChar_sub_ramificationDegree :
     eulerChar X = degree f * @eulerChar Y _ f.finiteCWType_codomain - ramificationDegree f := by
   have : CompactSpace Y := f.compactSpace_codomain
+  have := f.finiteCWType_compl_branchValues
+  have hcount : ((f ⁻¹' f.branchValues).ncard + ramificationDegree f : ℤ) =
+      degree f * f.branchValues.ncard := by
+    exact_mod_cast f.ncard_preimage_add_ramificationDegree f.finite_branchValues Subset.rfl
   have := (f.finite_branchValues.preimage' fun y _ ↦ f.finite_fiber y).to_subtype
   have := f.finite_branchValues.to_subtype
   have hX := ComplexManifold.eulerChar_compl (f ⁻¹' f.branchValues)
   have hY := ComplexManifold.eulerChar_compl f.branchValues
+  linear_combination f.eulerChar_compl_preimage Subset.rfl + hcount - hX + degree f * hY
+
+/-- **The punctured branched-cover formula.** For any finite set `S ⊆ Y`,
+`(χ(X \ f⁻¹(S)) + #f⁻¹(S)) + ramificationDegree f = degree f · (χ(Y \ S) + #S)`.
+Because deleting a finite set subtracts its cardinality from the Euler characteristic, both
+sides reduce to the unconditional Riemann--Hurwitz formula. -/
+theorem eulerChar_compl_preimage_add_ncard_add_ramificationDegree (hfin : S.Finite) :
+    @eulerChar ↥(f ⁻¹' S)ᶜ _ (f.finiteCWType_compl_preimage_of_finite hfin) +
+        (f ⁻¹' S).ncard + ramificationDegree f =
+      degree f * (@eulerChar ↥Sᶜ _ (f.finiteCWType_compl_of_finite hfin) + S.ncard) := by
+  have : CompactSpace Y := f.compactSpace_codomain
+  have := (hfin.preimage' fun y _ ↦ f.finite_fiber y).to_subtype
+  have := hfin.to_subtype
+  have hX := ComplexManifold.eulerChar_compl (f ⁻¹' S)
+  have hY := ComplexManifold.eulerChar_compl S
   linear_combination
-    f.eulerChar_compl_preimage_add_ncard_add_ramificationDegree f.finite_branchValues Subset.rfl -
-      hX + degree f * hY
+    f.eulerChar_eq_degree_mul_eulerChar_sub_ramificationDegree + hX - degree f * hY
+
+end Covering
 
 end TauCeti.RiemannSurface.FiniteHolomorphicMap
 

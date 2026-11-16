@@ -8,14 +8,14 @@ module
 public import Mathlib.Data.Set.Card
 public import TauCeti.AlgebraicTopology.Cellular.EulerCharacteristic.FiniteCWType
 public import TauCeti.Geometry.Manifold.Morse.CWModel
-import Mathlib.Analysis.Calculus.BumpFunction.InnerProduct
 import Mathlib.Analysis.Calculus.Deriv.Inv
 import Mathlib.Geometry.Manifold.BumpFunction
-import Mathlib.Geometry.Manifold.Diffeomorph
 import Mathlib.Topology.Maps.Proper.CompactlyGenerated
+import TauCeti.Algebra.Order.Group.Bounds
 import TauCeti.AlgebraicTopology.Cellular.EulerCharacteristic.Puncture
+import TauCeti.Geometry.Manifold.ModelWithCorners.RestrictScalars.LinearEquiv
 import TauCeti.Geometry.Manifold.Morse.CWModel.Proper
-import TauCeti.Geometry.Manifold.Morse.Generic.Relative
+import TauCeti.Geometry.Manifold.Morse.Generic.Strong
 
 /-!
 # Finite CW type of a compact smooth manifold with finitely many points removed
@@ -39,12 +39,12 @@ squared norm).
 
 Summing these poles over `p ∈ S` and restricting to `U = Sᶜ` gives a smooth nonnegative function
 `F₀ : C^∞(U, ℝ)` whose sublevels `{F₀ ≤ B}` are closed away from `S` in compact `M`, hence compact
-in `U`, and which has no critical points on `{1 < F₀}`. Relative compact Morse approximation
-(`ContMDiffMap.exists_isMorseOn_hasCompactSupport_sub_compl`) perturbs `F₀` by a compactly
-supported function on `{F₀ < 2}` to a smooth function `g` that is Morse on `{F₀ ≤ 4}` and agrees
-with `F₀` on `{2 < F₀}`. Then `g` is globally Morse on `U`, proper, bounded below, and has
-critical points only inside the compact set `{F₀ ≤ 4}`, hence finitely many; the proper Morse CW
-model (`TauCeti.IsMorse.finiteCWType_of_isProperMap`) concludes.
+in `U` (so `F₀` is proper), and which has no critical points on `{1 < F₀}`. Relative proper Morse
+approximation (`ContMDiffMap.exists_isMorse_isProperMap_mem_ball`) perturbs `F₀` within `C⁰`
+distance `1` while keeping it unchanged near `{2 ≤ F₀}`, producing a globally Morse proper
+bounded-below function `g` on `U` whose critical points all lie inside the compact sublevel
+`{F₀ ≤ 2}`, hence finitely many; the proper Morse CW model
+(`TauCeti.IsMorse.finiteCWType_of_isProperMap`) concludes.
 
 ## Main results
 
@@ -108,16 +108,6 @@ private lemma contMDiffAt_puncturePole [IsManifold I ∞ M] [T2Space M] {c x : M
       (contMDiffAt_extChartAt' (by simpa only [extChartAt_source] using hsrc)))
   · exact contMDiffAt_const.congr_of_eventuallyEq
       (notMem_tsupport_iff_eventuallyEq.1 fun h ↦ hx (tsupport_puncturePole_subset b h))
-
-omit [FiniteDimensional ℝ V] in
-private lemma mem_criticalPoints_congr [I.Boundaryless] {f₁ f₂ : M → ℝ} {x : M}
-    (h : f₁ =ᶠ[𝓝 x] f₂) :
-    x ∈ criticalPoints I f₁ ↔ x ∈ criticalPoints I f₂ := by
-  have htend : Tendsto (extChartAt I x).symm (𝓝 (extChartAt I x x)) (𝓝 x) := by
-    simpa only [extChartAt_to_inv] using (continuousAt_extChartAt_symm (I := I) x).tendsto
-  rw [mem_criticalPoints_iff_fderiv_comp_extChartAt_symm_eq_zero,
-    mem_criticalPoints_iff_fderiv_comp_extChartAt_symm_eq_zero,
-    (h.comp_tendsto htend).fderiv_eq]
 
 /-- Wherever `puncturePole b x > 1`, the point `x` lies inside the inner radius `b.rIn` of `b`, so
 in the extended chart at `c` the pole agrees locally with `z ↦ b.rIn ^ 2 * (‖z - e c‖ ^ 2)⁻¹`. -/
@@ -233,7 +223,7 @@ private lemma notMem_criticalPoints_punctureSum [I.Boundaryless] [IsManifold I �
   have hxW : x ∈ W p :=
     hbW p (tsupport_puncturePole_subset (b p) (subset_tsupport _ (mem_support.2 hp0.ne')))
   have hev := punctureSum_eventuallyEq hWo hWd hbW p hxW
-  rw [mem_criticalPoints_congr hev]
+  rw [hev.mem_criticalPoints_iff]
   exact notMem_criticalPoints_puncturePole (b p) (hev.eq_of_nhds ▸ h1)
 
 private lemma isCompact_sublevel_punctureSum [T2Space M] [CompactSpace M] {S : Set M}
@@ -249,47 +239,16 @@ private lemma isCompact_sublevel_punctureSum [T2Space M] [CompactSpace M] {S : S
     exact ⟨O, hO, hpO, fun y hy hne ↦ hsub ⟨hy, hne⟩⟩
   choose O hOopen hpO hOB using hnhds
   have hSO : S ⊆ ⋃ p : S, O p := fun z hz ↦ mem_iUnion.2 ⟨⟨z, hz⟩, hpO ⟨z, hz⟩⟩
-  have hK : IsCompact (Subtype.val ⁻¹' (⋃ p : S, O p)ᶜ : Set U) := by
-    refine Topology.IsEmbedding.subtypeVal.isCompact_iff.2 ?_
-    have himg : Subtype.val '' (Subtype.val ⁻¹' (⋃ p : S, O p)ᶜ : Set U) = (⋃ p : S, O p)ᶜ := by
-      ext y
-      simp only [mem_image, mem_preimage, Subtype.exists, exists_and_right, exists_eq_right]
-      exact ⟨fun ⟨_, hy⟩ ↦ hy, fun hy ↦ ⟨fun hyS ↦ hy (hSO hyS), hy⟩⟩
-    rw [himg]
-    exact (isOpen_iUnion hOopen).isClosed_compl.isCompact
+  have hK : IsCompact (Subtype.val ⁻¹' (⋃ p : S, O p)ᶜ : Set U) :=
+    Topology.IsInducing.subtypeVal.isCompact_preimage'
+      (isOpen_iUnion hOopen).isClosed_compl.isCompact
+      (by rw [Subtype.range_coe]; exact compl_subset_compl.2 hSO)
   refine hK.of_isClosed_subset (isClosed_le hcont continuous_const) fun x hx hp ↦ ?_
   obtain ⟨p, hp'⟩ := mem_iUnion.1 hp
   have hlt : B < puncturePole (b p) x := hOB p x hp' fun h ↦ x.2 (h ▸ p.2)
   have hle : puncturePole (b p) x ≤ punctureSum b x :=
     Finset.single_le_sum (fun q _ ↦ puncturePole_nonneg (b q) x) (Finset.mem_univ p)
   exact hx.not_gt (hlt.trans_le hle)
-
-/-- Compactly supported perturbation of a nonnegative function with compact sublevels remains
-proper and bounded below. -/
-private lemma isProperMap_and_bddBelow_of_hasCompactSupport_sub {X : Type u} [TopologicalSpace X]
-    {f g : X → ℝ} (hf_nonneg : ∀ x, 0 ≤ f x) (hf_sub : ∀ B, IsCompact {x | f x ≤ B})
-    (hf_cont : Continuous f) (hg_cont : Continuous g)
-    (hgc : HasCompactSupport fun x ↦ g x - f x) :
-    IsProperMap g ∧ BddBelow (range g) := by
-  let d : X → ℝ := fun x ↦ g x - f x
-  have hd_cont : Continuous d := hg_cont.sub hf_cont
-  refine ⟨isProperMap_iff_isCompact_preimage.2 ⟨hg_cont, fun Q hQ ↦ ?_⟩, ?_⟩
-  · obtain ⟨B, hB⟩ := hQ.bddAbove
-    refine (hgc.union (hf_sub B)).of_isClosed_subset (hQ.isClosed.preimage hg_cont) fun x hx ↦ ?_
-    by_cases hts : x ∈ tsupport d
-    · exact Or.inl hts
-    · have hzero : d x = 0 := image_eq_zero_of_notMem_tsupport hts
-      exact Or.inr (hB (by simpa [sub_eq_zero.1 hzero] using hx))
-  · obtain ⟨m, hm⟩ : BddBelow (range d) := by
-      refine ((hgc.image hd_cont).union (isCompact_singleton (x := (0 : ℝ)))).bddBelow.mono ?_
-      rintro _ ⟨x, rfl⟩
-      by_cases hx : x ∈ tsupport d
-      · exact Or.inl ⟨x, hx, rfl⟩
-      · exact Or.inr (image_eq_zero_of_notMem_tsupport hx)
-    refine ⟨m, ?_⟩
-    rintro _ ⟨x, rfl⟩
-    have hmx : m ≤ g x - f x := hm (mem_range_self x)
-    linarith [hf_nonneg x]
 
 private theorem finiteCWType_compl_of_innerProductSpace [T2Space M] [CompactSpace M]
     (I : ModelWithCorners ℝ V H) [I.Boundaryless] [IsManifold I ∞ M] {S : Set M}
@@ -311,31 +270,30 @@ private theorem finiteCWType_compl_of_innerProductSpace [T2Space M] [CompactSpac
   have hF₀_crit {x : U} (hx : 1 < F₀ x) : x ∉ criticalPoints I F₀ := fun hcrit ↦
     notMem_criticalPoints_punctureSum (fun p ↦ (hW p).2) hWd hbW hx
       (mem_criticalPoints_comp_subtypeVal.1 hcrit)
-  have hK : IsCompact {x : U | F₀ x ≤ 4} := isCompact_sublevel_punctureSum hS b hF₀_cont 4
-  have hKC : IsMorseOn I F₀ ({x : U | F₀ x ≤ 4} ∩ {x : U | 2 ≤ F₀ x}) :=
+  have hF₀_sub (B : ℝ) : IsCompact {x : U | F₀ x ≤ B} :=
+    isCompact_sublevel_punctureSum hS b hF₀_cont B
+  have hF₀_prop : IsProperMap F₀ :=
+    isProperMap_iff_isCompact_preimage.2 ⟨hF₀_cont, fun Q hQ ↦
+      let ⟨B, hB⟩ := hQ.bddAbove
+      (hF₀_sub B).of_isClosed_subset (hQ.isClosed.preimage hF₀_cont) fun _ hx ↦ hB hx⟩
+  have hF₀_morseC : IsMorseOn I F₀ {x : U | 2 ≤ F₀ x} :=
     isMorseOn_iff_criticalPoints.2 ⟨F₀.contMDiff.contMDiffOn, fun _ hx hcrit ↦
-      (hF₀_crit (lt_of_lt_of_le one_lt_two hx.2) hcrit).elim⟩
-  obtain ⟨g, -, hgK, hgc, hgs⟩ := F₀.exists_isMorseOn_hasCompactSupport_sub_compl hK
-    (isClosed_le continuous_const hF₀_cont) hKC (𝒰 := univ) univ_mem
-  have hg_high {x : U} (hx : 2 < F₀ x) : x ∉ criticalPoints I g := by
-    have hnts : x ∉ tsupport fun y ↦ g y - F₀ y := fun hts ↦ (hgs hts) hx.le
-    have hev : (g : U → ℝ) =ᶠ[𝓝 x] F₀ := by
-      filter_upwards [notMem_tsupport_iff_eventuallyEq.1 hnts] with y hy
-      exact sub_eq_zero.1 hy
-    rw [mem_criticalPoints_congr hev]
-    exact hF₀_crit (lt_trans one_lt_two hx)
-  have hg_morse : IsMorse I g := by
-    rw [← isMorseOn_univ, isMorseOn_iff_criticalPoints]
-    refine ⟨g.contMDiff.contMDiffOn, fun x _ hcrit ↦ ?_⟩
-    by_cases hxK : F₀ x ≤ 4
-    · exact hgK.isManifoldNondegenerateCriticalPoint_of_mem_criticalPoints hxK hcrit
-    · exact (hg_high (by linarith) hcrit).elim
-  have hg_fin : (criticalPoints I g).Finite :=
-    (hg_morse.finite_criticalPoints_inter hK).subset fun x hcrit ↦
-      ⟨hcrit, not_lt.1 fun hgt : 4 < F₀ x ↦ hg_high (by linarith) hcrit⟩
-  obtain ⟨hg_prop, hg_bdd⟩ := isProperMap_and_bddBelow_of_hasCompactSupport_sub
-    (fun x : U ↦ Finset.sum_nonneg fun p _ ↦ puncturePole_nonneg (b p) x)
-    (isCompact_sublevel_punctureSum hS b hF₀_cont) hF₀_cont g.contMDiff.continuous hgc
+      (hF₀_crit (lt_of_lt_of_le one_lt_two hx) hcrit).elim⟩
+  obtain ⟨g, -, hg_morse, hg_prop, hg_dist, hgs⟩ :=
+    F₀.exists_isMorse_isProperMap_mem_ball .empty hF₀_prop
+      (isClosed_le continuous_const hF₀_cont) hF₀_morseC
+  have hg_bdd : BddBelow (range g) :=
+    BddBelow.range_of_abs_sub_le
+      ⟨0, forall_mem_range.2 fun x : U ↦ Finset.sum_nonneg fun p _ ↦ puncturePole_nonneg (b p) x⟩
+      fun x ↦ (hg_dist x).le
+  have hg_fin : (criticalPoints I g).Finite := by
+    refine (hg_morse.finite_criticalPoints_inter (hF₀_sub 2)).subset fun x hcrit ↦ ⟨hcrit, ?_⟩
+    change F₀ x ≤ 2
+    by_contra! hgt
+    have hnts : x ∉ tsupport fun y ↦ g y - F₀ y := fun hts ↦ hgs hts hgt.le
+    have hev : (g : U → ℝ) =ᶠ[𝓝 x] F₀ :=
+      (notMem_tsupport_iff_eventuallyEq.1 hnts).mono fun _ hy ↦ sub_eq_zero.1 hy
+    exact hF₀_crit (one_lt_two.trans hgt) (hev.mem_criticalPoints_iff.1 hcrit)
   exact hg_morse.finiteCWType_of_isProperMap hg_prop hg_bdd hg_fin
 
 end InnerProductModel
@@ -345,34 +303,38 @@ end TauCeti
 namespace Set.Finite
 
 variable {E : Type v} {H : Type w} {M : Type u} [NormedAddCommGroup E] [NormedSpace ℝ E]
-  [FiniteDimensional ℝ E] [TopologicalSpace H] [TopologicalSpace M] [ChartedSpace H M]
+  [TopologicalSpace H] [TopologicalSpace M] [ChartedSpace H M]
   [T2Space M] [CompactSpace M] {S : Set M}
 
 /-- **Complements of finite sets in compact smooth manifolds have finite CW type.** Let `M` be a
-compact Hausdorff smooth manifold modelled on a boundaryless real model `I` over a
-finite-dimensional space, and let `S ⊆ M` be finite. Then `M \ S` has finite CW type. -/
+compact Hausdorff smooth manifold modelled on a boundaryless real model `I`, and let `S ⊆ M` be
+finite. Then `M \ S` has finite CW type. -/
 theorem finiteCWType_compl_of_isManifold (hS : S.Finite) (I : ModelWithCorners ℝ E H)
     [I.Boundaryless] [IsManifold I ∞ M] : FiniteCWType ↥Sᶜ := by
-  let e : E ≃L[ℝ] EuclideanSpace ℝ (Fin (finrank ℝ E)) :=
-    ContinuousLinearEquiv.ofFinrankEq finrank_euclideanSpace_fin.symm
-  let I' := I.transContinuousLinearEquiv e
-  have : I'.Boundaryless :=
-    ⟨by rw [ModelWithCorners.transContinuousLinearEquiv_range, I.range_eq_univ,
-      image_univ_of_surjective e.surjective]⟩
-  exact TauCeti.finiteCWType_compl_of_innerProductSpace I' hS
+  rcases isEmpty_or_nonempty M with _ | _
+  · exact FiniteCWType.of_discreteTopology ↥Sᶜ
+  · have : FiniteDimensional ℝ E := FiniteDimensional.of_locallyCompact_manifold M I
+    let e : E ≃L[ℝ] EuclideanSpace ℝ (Fin (finrank ℝ E)) :=
+      ContinuousLinearEquiv.ofFinrankEq finrank_euclideanSpace_fin.symm
+    exact TauCeti.finiteCWType_compl_of_innerProductSpace (I.transContinuousLinearEquiv e) hS
 
 /-- **The Euler characteristic of a punctured compact smooth manifold.** Let `M` be a compact
-Hausdorff smooth manifold modelled on a boundaryless real model `I` over a finite-dimensional
-space `E`, and let `S ⊆ M` be finite. Then `χ(M \ S) = χ(M) - (-1) ^ dim E · #S`. -/
+Hausdorff smooth manifold modelled on a boundaryless real model `I` over `E`, and let `S ⊆ M` be
+finite. Then `χ(M \ S) = χ(M) - (-1) ^ dim E · #S`. -/
 theorem eulerChar_compl_of_isManifold (hS : S.Finite) (I : ModelWithCorners ℝ E H)
     [I.Boundaryless] [IsManifold I ∞ M] :
     @eulerChar ↥Sᶜ _ (hS.finiteCWType_compl_of_isManifold I) =
       @eulerChar M _ (FiniteCWType.of_isManifold M I) - (-1) ^ finrank ℝ E * S.ncard := by
-  let _ : ChartedSpace E H := I.toHomeomorph.symm.chartedSpace
-  let _ : ChartedSpace E M := .comp E H M
-  have := FiniteCWType.of_isManifold M I
-  have := hS.finiteCWType_compl_of_isManifold I
-  exact eulerChar_compl_of_finite (E := E) hS
+  rcases isEmpty_or_nonempty M with _ | _
+  · have := FiniteCWType.of_isManifold M I
+    have := hS.finiteCWType_compl_of_isManifold I
+    simp [eulerChar_of_discreteTopology, S.eq_empty_of_isEmpty]
+  · have : FiniteDimensional ℝ E := FiniteDimensional.of_locallyCompact_manifold M I
+    let _ : ChartedSpace E H := I.toHomeomorph.symm.chartedSpace
+    let _ : ChartedSpace E M := .comp E H M
+    have := FiniteCWType.of_isManifold M I
+    have := hS.finiteCWType_compl_of_isManifold I
+    exact eulerChar_compl_of_finite (E := E) hS
 
 end Set.Finite
 

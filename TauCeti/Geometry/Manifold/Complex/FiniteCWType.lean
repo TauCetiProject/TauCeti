@@ -43,8 +43,7 @@ the end of this file).
 ## Main results
 
 * `TauCeti.ComplexManifold.finiteCWType`: a compact Hausdorff manifold modelled on a boundaryless
-  complex model over a finite-dimensional space, of class `C^n` for some `n ≠ 0`, has finite CW
-  type.
+  complex model, of class `C^n` for some `n ≠ 0`, has finite CW type.
 * `TauCeti.ComplexManifold.instFiniteCWType`: the corresponding low-priority instance for compact
   Riemann surfaces, charted on `ℂ`.
 * `TauCeti.ComplexManifold.finiteCWType_compl`: the complement of a finite subset in a compact
@@ -83,19 +82,21 @@ namespace ComplexManifold
 
 section FiniteCWType
 
-variable {E H : Type*} [NormedAddCommGroup E] [NormedSpace ℂ E] [FiniteDimensional ℂ E]
+variable {E H : Type*} [NormedAddCommGroup E] [NormedSpace ℂ E]
   [TopologicalSpace H] {M : Type u} [TopologicalSpace M] [T2Space M] [CompactSpace M]
 
 variable (I : ModelWithCorners ℂ E H) [I.Boundaryless] (M) [ChartedSpace H M] in
 /-- **Compact complex manifolds have finite CW type.** A compact Hausdorff manifold modelled on a
-boundaryless complex model `I` over a finite-dimensional space, of class `C^n` for some `n ≠ 0`, is
-homotopy equivalent to a finite CW complex. With the same charts it is a compact smooth
-boundaryless real manifold, modelled on `I.restrictScalars ℝ`, so this is
-`TauCeti.FiniteCWType.of_isManifold`. -/
-theorem finiteCWType {n : ℕ∞ω} (hn : n ≠ 0) [h : IsManifold I n M] : FiniteCWType M :=
-  have : IsManifold (I.restrictScalars ℝ) ∞ M :=
-    I.isManifold_restrictScalars ℝ (h.of_ne_zero ∞ hn)
-  FiniteCWType.of_isManifold (I := I.restrictScalars ℝ) M
+boundaryless complex model `I`, of class `C^n` for some `n ≠ 0`, is homotopy equivalent to a finite
+CW complex. With the same charts it is a compact smooth boundaryless real manifold, modelled on
+`I.restrictScalars ℝ`, so this is `TauCeti.FiniteCWType.of_isManifold`. -/
+theorem finiteCWType {n : ℕ∞ω} (hn : n ≠ 0) [h : IsManifold I n M] : FiniteCWType M := by
+  rcases isEmpty_or_nonempty M with _ | _
+  · exact FiniteCWType.of_discreteTopology M
+  · have : FiniteDimensional ℂ E := FiniteDimensional.of_locallyCompact_manifold M I
+    have : IsManifold (I.restrictScalars ℝ) ∞ M :=
+      I.isManifold_restrictScalars ℝ (h.of_ne_zero ∞ hn)
+    exact FiniteCWType.of_isManifold (I := I.restrictScalars ℝ) M
 
 /-- **Compact Riemann surfaces have finite CW type.** A compact Hausdorff complex manifold charted
 on `ℂ` has finite CW type. This is a low-priority instance, the case `I = 𝓘(ℂ)` of
@@ -107,14 +108,16 @@ instance (priority := 100) instFiniteCWType [ChartedSpace ℂ M] [IsManifold �
 
 variable (I : ModelWithCorners ℂ E H) [I.Boundaryless] [ChartedSpace H M] in
 /-- **Complements of finite sets in compact complex manifolds have finite CW type.** Let `M` be a
-compact Hausdorff manifold modelled on a boundaryless complex model `I` over a finite-dimensional
-space, of class `C^n` for some `n ≠ 0`, and let `S ⊆ M` be finite. Then `M \ S` has finite CW
-type. -/
+compact Hausdorff manifold modelled on a boundaryless complex model `I`, of class `C^n` for some
+`n ≠ 0`, and let `S ⊆ M` be finite. Then `M \ S` has finite CW type. -/
 theorem finiteCWType_compl {S : Set M} (hS : S.Finite) {n : ℕ∞ω} (hn : n ≠ 0)
-    [h : IsManifold I n M] : FiniteCWType ↥Sᶜ :=
-  have : IsManifold (I.restrictScalars ℝ) ∞ M :=
-    I.isManifold_restrictScalars ℝ (h.of_ne_zero ∞ hn)
-  hS.finiteCWType_compl_of_isManifold (I.restrictScalars ℝ)
+    [h : IsManifold I n M] : FiniteCWType ↥Sᶜ := by
+  rcases isEmpty_or_nonempty M with _ | _
+  · exact FiniteCWType.of_discreteTopology ↥Sᶜ
+  · have : FiniteDimensional ℂ E := FiniteDimensional.of_locallyCompact_manifold M I
+    have : IsManifold (I.restrictScalars ℝ) ∞ M :=
+      I.isManifold_restrictScalars ℝ (h.of_ne_zero ∞ hn)
+    exact hS.finiteCWType_compl_of_isManifold (I.restrictScalars ℝ)
 
 /-- **Finitely punctured compact Riemann surfaces have finite CW type.** Deleting a finite subset
 `S` from a compact Hausdorff complex manifold charted on `ℂ` leaves an open Riemann surface of
@@ -131,10 +134,15 @@ theorem eulerChar_compl_of_finite {S : Set M} (hS : S.Finite) {n : ℕ∞ω} (hn
     [h : IsManifold I n M] :
     @eulerChar ↥Sᶜ _ (finiteCWType_compl I hS hn) =
       @eulerChar M _ (finiteCWType M I hn) - S.ncard := by
-  have : IsManifold (I.restrictScalars ℝ) ∞ M :=
-    I.isManifold_restrictScalars ℝ (h.of_ne_zero ∞ hn)
-  rw [hS.eulerChar_compl_of_isManifold (I.restrictScalars ℝ), finrank_real_of_complex E,
-    pow_mul, neg_one_sq, one_pow, one_mul]
+  rcases isEmpty_or_nonempty M with _ | _
+  · have := finiteCWType M I hn
+    have := finiteCWType_compl I hS hn
+    simp [eulerChar_of_discreteTopology, S.eq_empty_of_isEmpty]
+  · have : FiniteDimensional ℂ E := FiniteDimensional.of_locallyCompact_manifold M I
+    have : IsManifold (I.restrictScalars ℝ) ∞ M :=
+      I.isManifold_restrictScalars ℝ (h.of_ne_zero ∞ hn)
+    rw [hS.eulerChar_compl_of_isManifold (I.restrictScalars ℝ), finrank_real_of_complex E,
+      pow_mul, neg_one_sq, one_pow, one_mul]
 
 /-- **Euler characteristic of a finitely punctured compact Riemann surface.** Deleting a finite
 subset `S` from a compact Riemann surface `M` gives `χ(M \ S) = χ(M) - #S`. -/
