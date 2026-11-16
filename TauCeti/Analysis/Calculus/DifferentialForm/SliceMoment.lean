@@ -160,6 +160,12 @@ private theorem fderiv_apply_base_eq (hTc : ContDiff ℝ 1 T) {x : E × ℂ}
     Even.neg_pow, one_pow] at h
   linear_combination -h
 
+/-- A coefficient of a continuous `T` is continuous along the fibre. -/
+private theorem continuous_coeff (hTc : Continuous T) (z : E) (A : Fin 2 → E × ℂ) :
+    Continuous fun w ↦ T (z, w) A :=
+  (ContinuousAlternatingMap.apply ℝ (E × ℂ) ℝ A).continuous.comp
+    (hTc.comp (Continuous.prodMk_right z))
+
 /-- A continuous function vanishing off a compact set is integrable on `ℂ`. -/
 private theorem integrable_of_vanishing {G : Type*} [NormedAddCommGroup G] {f : ℂ → G}
     (hK : IsCompact K) (hf : Continuous f) (h : ∀ w ∉ K, f w = 0) : Integrable f :=
@@ -179,8 +185,8 @@ private theorem integrable_coeff_smul {G : Type*} [NormedAddCommGroup G] [Normed
     {g : ℂ → G} (hK : IsCompact K) (hTc : ContDiff ℝ 1 T) (hg : Continuous g)
     (hT : ∀ z, ∀ w ∉ K, T (z, w) = 0) (z : E) (A : Fin 2 → E × ℂ) :
     Integrable fun w ↦ T (z, w) A • g w :=
-  integrable_of_vanishing hK (((ContinuousAlternatingMap.apply ℝ (E × ℂ) ℝ A).continuous.comp
-    (hTc.continuous.comp (Continuous.prodMk_right z))).smul hg) fun w hw ↦ by simp [hT z w hw]
+  integrable_of_vanishing hK ((continuous_coeff hTc.continuous z A).smul hg) fun w hw ↦ by
+    simp [hT z w hw]
 
 /-- **Integration by parts along a fibre.** A fibre derivative of a coefficient of `T`, weighted
 by `g`, integrates to minus the coefficient weighted by the derivative of `g`. -/
@@ -341,9 +347,7 @@ theorem norm_conjWirtingerDeriv_sliceMoment_apply_le (hK : IsCompact K) (hTc : C
     ‖conjWirtingerDeriv (sliceMoment T g) z v‖ ≤ ∫ w, ‖deriv g w‖ *
       (|(T (z, w) ![(v, 0), (0, 1)] - T (z, w) ![(I • v, 0), (0, I)]) / 2| +
         |(T (z, w) ![(v, 0), (0, I)] + T (z, w) ![(I • v, 0), (0, 1)]) / 2|) := by
-  have hc (A : Fin 2 → V × ℂ) : Continuous fun w ↦ T (z, w) A :=
-    (ContinuousAlternatingMap.apply ℝ (V × ℂ) ℝ A).continuous.comp
-      (hTc.continuous.comp (Continuous.prodMk_right z))
+  have hc := continuous_coeff hTc.continuous z
   rw [conjWirtingerDeriv_sliceMoment_apply hK hTc hg hT hdT v]
   refine norm_integral_le_of_norm_le (integrable_of_vanishing hK
     (hg.deriv.continuous.norm.mul ((((hc _).sub (hc _)).div_const _).abs.add
