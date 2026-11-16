@@ -109,7 +109,7 @@ everywhere. -/
 theorem mem_realPhaseSpace {hs : 0 ≤ s} {F : H^{s}(ℂ)} :
     F ∈ realPhaseSpace hs ↔
       ∀ᵐ z ∂volume, ((inclusion hs F).toLp z).im = 0 := by
-  rw [realPhaseSpace, LinearMap.mem_ker, ContinuousLinearMap.coe_coe, imInclusionCLM,
+  simp only [realPhaseSpace, imInclusionCLM, LinearMap.mem_ker, ContinuousLinearMap.coe_coe,
     ContinuousLinearMap.comp_apply, ContinuousLinearMap.coe_restrictScalars', toLp_inclusion,
     Lp.eq_zero_iff_ae_eq_zero]
   have him := imCLM.coeFn_compLpL (p := 2) (μ := volume) (inclusionLp hs F)
@@ -198,14 +198,14 @@ def phase : realPhaseSpace (zero_le_one.trans hs.le) →ₗ[ℝ] ℂ → ℝ whe
     filter_upwards [coeFn_toLp_inclusion_add (zero_le_one.trans hs.le) (F : H^{s}(ℂ))
         (G : H^{s}(ℂ)), coeFn_toLp_inclusion_ae_eq_re_contRep hs F,
       coeFn_toLp_inclusion_ae_eq_re_contRep hs G] with z h h₁ h₂
-    rw [Submodule.coe_add, h, Pi.add_apply, h₁, h₂, Pi.add_apply, ofReal_add]
+    simp only [Submodule.coe_add, h, Pi.add_apply, h₁, h₂, ofReal_add]
   map_smul' c F := by
     refine re_contRep_eq_of_ae_eq hs _
       ((continuous_re.comp (contRep hs F).continuous).const_smul c) ?_
     filter_upwards [coeFn_toLp_inclusion_smul (zero_le_one.trans hs.le) (c : ℂ) (F : H^{s}(ℂ)),
       coeFn_toLp_inclusion_ae_eq_re_contRep hs F] with z h h₁
-    rw [Submodule.coe_smul, ← Complex.coe_smul, h, Pi.smul_apply, h₁, RingHom.id_apply,
-      Pi.smul_apply, smul_eq_mul, smul_eq_mul, ofReal_mul]
+    simp only [Submodule.coe_smul, ← Complex.coe_smul, h, Pi.smul_apply, h₁, RingHom.id_apply,
+      smul_eq_mul, ofReal_mul]
 
 theorem continuous_phase (F : realPhaseSpace (zero_le_one.trans hs.le)) : Continuous (phase hs F) :=
   continuous_re.comp (contRep hs F).continuous
@@ -331,8 +331,8 @@ theorem exists_norm_subOne_expGauge_sub_le :
   refine ⟨C, hC, fun {F G R} hF hG ↦ ?_⟩
   have key := hlip (coeFn_toLp_inclusion hs F) (coeFn_toLp_inclusion hs G)
     (memSobolev_toLp_inclusion h₀ (F : H^{s}(ℂ))) (memSobolev_toLp_inclusion h₀ (G : H^{s}(ℂ)))
-    (R := R) (by rw [toBesselPotentialSpace_memSobolev_toLp_inclusion]; exact hF)
-    (by rw [toBesselPotentialSpace_memSobolev_toLp_inclusion]; exact hG)
+    (R := R) (by rwa [toBesselPotentialSpace_memSobolev_toLp_inclusion, Submodule.norm_coe])
+    (by rwa [toBesselPotentialSpace_memSobolev_toLp_inclusion, Submodule.norm_coe])
     (h := (inclusion h₀ (subOne (expGauge hs F))).toLp)
     (h' := (inclusion h₀ (subOne (expGauge hs G))).toLp)
     (by
@@ -342,8 +342,8 @@ theorem exists_norm_subOne_expGauge_sub_le :
       filter_upwards [coeFn_toLp_inclusion_subOne h₀ (expGauge hs G)] with z hz
       rw [hz, expGauge_apply])
     (memSobolev_toLp_inclusion h₀ _) (memSobolev_toLp_inclusion h₀ _)
-  simp only [toBesselPotentialSpace_memSobolev_toLp_inclusion] at key
-  exact key
+  simpa only [toBesselPotentialSpace_memSobolev_toLp_inclusion, ← Submodule.coe_sub,
+    Submodule.norm_coe] using key
 
 /-- **The exponential is continuous** from the real phases to `G_s` with its Sobolev topology. -/
 @[fun_prop, continuity]
@@ -424,7 +424,7 @@ theorem exists_expGauge_eq_and_norm_le :
     refine (toSubgroup hs).injective (Subtype.ext (funext fun z ↦ Subtype.ext ?_))
     rw [expGauge_apply]
     exact congrFun heq z
-  · calc ‖Φ‖ = ‖hF.toBesselPotentialSpace‖ := rfl
+  · calc ‖Φ‖ = ‖hF.toBesselPotentialSpace‖ := (Submodule.norm_coe Φ).symm
       _ ≤ (1 - C * R)⁻¹ * R := hbound
       _ ≤ 2 * R := by
           gcongr
