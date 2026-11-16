@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.LinearAlgebra.RootSystem.Hom
+public import TauCeti.LinearAlgebra.RootSystem.EquivComp
 
 /-!
 # The automorphism `-1` of a root pairing
@@ -16,8 +16,9 @@ negations are mutually transposed. On root indices it is the root negation
 `i ↦ P.reflectionPerm i i` of Mathlib's `RootPairing.indexNeg`. This file bundles it as an element
 `RootPairing.Equiv.neg P` of the automorphism group `P.Aut`.
 
-The automorphism `-1` is central in `P.Aut`, since every automorphism acts linearly on weights,
-and it is an involution. It is in general not in the Weyl group; when it is, it is the longest
+The automorphism `-1` is natural: it commutes with every morphism and every equivalence of root
+pairings, since these act linearly on weights. In particular it is central in `P.Aut`, and it is an
+involution. It is in general not in the Weyl group; when it is, it is the longest
 element of every base. Composing it with the longest element is how the opposition involution
 `-w₀` of a base becomes an automorphism of the root pairing.
 
@@ -29,6 +30,8 @@ element of every base. Composing it with the longest element is how the oppositi
 
 * `RootPairing.Equiv.neg_smul_eq_neg`, `RootPairing.Equiv.neg_indexEquiv_apply`: `-1` negates
   weights and negates roots on indices.
+* `RootPairing.Hom.comp_neg`, `RootPairing.Equiv.comp_neg`, `RootPairing.Equiv.autCongr_neg`:
+  `-1` is natural with respect to morphisms and equivalences of root pairings.
 * `RootPairing.Equiv.commute_neg`: `-1` is central in the automorphism group.
 * `RootPairing.Equiv.neg_mul_neg`: `-1` is an involution.
 -/
@@ -39,14 +42,8 @@ namespace RootPairing
 
 variable {ι R M N : Type*} [CommRing R] [AddCommGroup M] [Module R M] [AddCommGroup N]
   [Module R N] (P : RootPairing ι R M N)
-
-/-- Root negation `i ↦ P.reflectionPerm i i` is an involution of the root indices. This is the
-involutivity of Mathlib's `RootPairing.indexNeg`, stated for the bare function so that it can be
-fed to `Function.Involutive.toPerm` without introducing the non-global negation instance. -/
-theorem involutive_reflectionPerm_self : Function.Involutive fun i ↦ P.reflectionPerm i i :=
-  fun i ↦ P.root.injective <| by
-    rw [P.root_reflectionPerm, P.reflection_apply_self, P.root_reflectionPerm,
-      P.reflection_apply_self, neg_neg]
+  {ι₂ M₂ N₂ : Type*} [AddCommGroup M₂] [Module R M₂] [AddCommGroup N₂] [Module R N₂]
+  {Q : RootPairing ι₂ R M₂ N₂}
 
 namespace Equiv
 
@@ -55,10 +52,10 @@ negation `i ↦ P.reflectionPerm i i` on the root indices. -/
 def neg : P.Aut where
   weightMap := -LinearMap.id
   coweightMap := -LinearMap.id
-  indexEquiv := (P.involutive_reflectionPerm_self).toPerm
+  indexEquiv := letI := P.indexNeg; _root_.Equiv.neg ι
   weight_coweight_transpose := by ext; simp
   root_weightMap := by ext; simp
-  coroot_coweightMap := by ext; simp [Function.Involutive.toPerm_symm]
+  coroot_coweightMap := by ext; simp
   bijective_weightMap := by simpa using (LinearEquiv.neg R (M := M)).bijective
   bijective_coweightMap := by simpa using (LinearEquiv.neg R (M := N)).bijective
 
@@ -82,12 +79,46 @@ theorem neg_coweightEquiv : (neg P).coweightEquiv = LinearEquiv.neg R :=
 theorem neg_indexEquiv_apply (i : ι) : (neg P).indexEquiv i = P.reflectionPerm i i :=
   (rfl)
 
+/-- The action of `-1` on root indices is its own inverse. -/
+@[simp]
+theorem neg_indexEquiv_symm : (neg P).indexEquiv.symm = (neg P).indexEquiv :=
+  letI := P.indexNeg; _root_.Equiv.neg_symm
+
+end Equiv
+
+/-- **`-1` is natural with respect to morphisms of root pairings**: every morphism acts linearly on
+weights and coweights, so commutes with negation. -/
+theorem Hom.comp_neg (f : P.Hom Q) :
+    f.comp (Equiv.neg P).toHom = (Equiv.neg Q).toHom.comp f := by
+  ext i
+  · exact map_neg f.weightMap i
+  · exact (map_neg f.coweightMap i).symm
+  · refine Q.root.injective ?_
+    change Q.root (f.indexEquiv (P.reflectionPerm i i)) =
+      Q.root (Q.reflectionPerm (f.indexEquiv i) (f.indexEquiv i))
+    rw [← Hom.root_weightMap_apply, root_reflectionPerm, root_reflectionPerm,
+      reflection_apply_self, reflection_apply_self, map_neg, Hom.root_weightMap_apply]
+
+namespace Equiv
+
+/-- **`-1` is natural with respect to equivalences of root pairings.** -/
+theorem comp_neg (e : P.Equiv Q) : e.comp (neg P) = (neg Q).comp e := by
+  have h := Hom.comp_neg P e.toHom
+  ext i
+  · exact congr(Hom.weightMap $h i)
+  · exact congr(Hom.coweightMap $h i)
+  · exact congr(Hom.indexEquiv $h i)
+
+/-- **Conjugation by an equivalence of root pairings carries `-1` to `-1`.** -/
+@[simp]
+theorem autCongr_neg (e : P.Equiv Q) : e.autCongr (neg P) = neg Q := by
+  rw [autCongr_apply, ← comp_neg, ← comp_assoc]
+  simp
+
 /-- **`-1` is central** in the automorphism group of a root pairing: every automorphism acts
 linearly on weights, so commutes with negation. -/
-theorem commute_neg (g : P.Aut) : Commute (neg P) g := by
-  refine weightHom_injective P (LinearEquiv.ext fun x ↦ ?_)
-  simp only [map_mul, mul_apply_eq_comp, weightHom_apply, neg_weightEquiv,
-    LinearEquiv.neg_apply, map_neg]
+theorem commute_neg (g : P.Aut) : Commute (neg P) g :=
+  (comp_neg P g).symm
 
 /-- **`-1` is an involution.**
 

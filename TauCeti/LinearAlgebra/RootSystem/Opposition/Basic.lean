@@ -42,6 +42,9 @@ alone.
 * `TauCeti.root_opposition`, `TauCeti.coroot'_opposition` and `TauCeti.opposition_involutive`: the
   opposition map is an involution of the root indices realising `α ↦ -w₀ α` on roots, and negating
   the longest-element translate on the coroot functionals.
+* `RootPairing.coroot_opposition`: the coroot of `opposition i` is `-w₀` applied to the coroot of
+  `i`.
+* `RootPairing.pairing_opposition`: the opposition involution preserves the root pairings.
 * `TauCeti.opposition_mem_support`: **the opposition involution permutes the simple roots.**
 * `TauCeti.neg_smul_mem_posRootCone_longestElement`: **`-w₀` preserves the positive root cone**, the
   consequence of that permutation for nonnegative combinations of the simple roots;
@@ -207,3 +210,34 @@ theorem oppositionPerm_oppositionPerm (i : b.support) :
 end Opposition
 
 end TauCeti
+
+namespace RootPairing
+
+open TauCeti
+
+variable {ι R M N : Type*} [CommRing R] [AddCommGroup M] [Module R M] [AddCommGroup N]
+  [Module R N] (P : RootPairing ι R M N)
+  [CharZero R] [Finite ι] [IsDomain R] [P.IsCrystallographic] [P.IsReduced] (b : P.Base)
+
+/-- **The coroot of `opposition i` is `-w₀` applied to the coroot of `i`**, where an automorphism
+`g` acts on coweights by `g.coweightEquiv.symm`, the contragredient of its action on weights. This
+is the coroot companion of `TauCeti.root_opposition`. -/
+theorem coroot_opposition (i : ι) :
+    P.coroot (opposition P b i) =
+      -(longestElement P b : P.Aut).coweightEquiv.symm (P.coroot i) := by
+  -- An automorphism `g` carries the coroot `αᵢ^∨` to `α_{g i}^∨`.
+  have h : (longestElement P b : P.Aut).coweightEquiv.symm (P.coroot i) =
+      P.coroot ((longestElement P b : P.Aut).indexEquiv i) := by
+    rw [LinearEquiv.symm_apply_eq, Equiv.coweightEquiv_apply, Hom.coroot_coweightMap_apply,
+      _root_.Equiv.symm_apply_apply]
+  rw [h, P.coroot_eq_neg_iff, ← P.root_eq_neg_iff, root_opposition,
+    Equiv.root_indexEquiv_eq_smul, Subgroup.smul_def]
+
+/-- **The opposition involution preserves the root pairings.** -/
+@[simp]
+theorem pairing_opposition (i j : ι) :
+    P.pairing (opposition P b i) (opposition P b j) = P.pairing i j := by
+  rw [← root_coroot'_eq_pairing, coroot'_opposition, root_opposition, smul_neg,
+    smul_smul_longestElement, map_neg, neg_neg, root_coroot'_eq_pairing]
+
+end RootPairing
