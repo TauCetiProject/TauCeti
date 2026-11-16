@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Analysis.Calculus.ContDiff.Basic
 public import Mathlib.Topology.MetricSpace.Holder
+import Mathlib.Analysis.Calculus.ContDiff.Bounds
 
 /-!
 # Iterated derivatives of iterated derivatives
@@ -25,7 +26,9 @@ derivatives, which transfers Hölder bounds between the two forms of the second 
 Where a function `ζ` equals one on a neighbourhood of a point, every iterated derivative of
 `ζ * u` there is that of `u` (`Filter.EventuallyEq.iteratedFDeriv_mul_eq`). Bounded derivatives up
 to a finite order have a common bound
-(`TauCeti.exists_forall_norm_iteratedFDeriv_le_of_forall_exists`), and such a
+(`TauCeti.exists_forall_norm_iteratedFDeriv_le_of_forall_exists`), they stay bounded after applying
+a continuous linear map to the values
+(`ContinuousLinearMap.exists_norm_iteratedFDeriv_comp_left_le_of_forall_exists`), and such a
 common bound is nonnegative and bounds the function itself
 (`TauCeti.nonneg_and_norm_le_of_norm_iteratedFDeriv_le`). Adding a constant to a function does not
 change its iterated derivatives of positive order (`TauCeti.iteratedFDeriv_succ_add_const`), and
@@ -162,6 +165,20 @@ theorem exists_forall_norm_iteratedFDeriv_le_of_forall_exists {f : E → F} {N :
   exact ⟨∑ n ∈ Finset.range (N + 1), max (C n) 0, fun n hn x ↦ (hC n hn x).trans
     ((le_max_left _ _).trans (Finset.single_le_sum (f := fun n ↦ max (C n) 0)
       (fun _ _ ↦ le_max_right _ _) (Finset.mem_range.2 (by omega))))⟩
+
+/-- Bounded derivatives of `f` up to order `N` give bounded derivatives of `L ∘ f` up to order
+`N`, for a continuous linear map `L`. The map `L` may be linear over a normed `𝕜`-algebra `𝕜'`,
+such as `ℂ` over `ℝ`. -/
+theorem _root_.ContinuousLinearMap.exists_norm_iteratedFDeriv_comp_left_le_of_forall_exists
+    {𝕜' G : Type*} [NontriviallyNormedField 𝕜'] [NormedAlgebra 𝕜 𝕜'] [NormedSpace 𝕜' F]
+    [IsScalarTower 𝕜 𝕜' F] [NormedAddCommGroup G] [NormedSpace 𝕜 G] [NormedSpace 𝕜' G]
+    [IsScalarTower 𝕜 𝕜' G] (L : F →L[𝕜'] G) {f : E → F} {N : ℕ} (hf : ContDiff 𝕜 N f)
+    (hbd : ∀ n ≤ N, ∃ C, ∀ x, ‖iteratedFDeriv 𝕜 n f x‖ ≤ C) :
+    ∀ n ≤ N, ∃ C, ∀ x, ‖iteratedFDeriv 𝕜 n (L ∘ f) x‖ ≤ C := fun n hn ↦ by
+  obtain ⟨C, hC⟩ := hbd n hn
+  exact ⟨‖L‖ * C, fun x ↦
+    ((L.restrictScalars 𝕜).norm_iteratedFDeriv_comp_left hf.contDiffAt (mod_cast hn)).trans
+      (mul_le_mul_of_nonneg_left (hC x) (norm_nonneg _))⟩
 
 /-- A bound `G` on the derivatives of `f` of order at most `N` is nonnegative and bounds `f`. -/
 theorem nonneg_and_norm_le_of_norm_iteratedFDeriv_le {f : E → F} {N : ℕ} {G : ℝ}

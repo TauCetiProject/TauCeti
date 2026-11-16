@@ -29,7 +29,9 @@ of the Japanese bracket.
 The derivative `Df` of a function `f` of temperate growth has temperate growth, since the iterated
 derivatives of `Df` are those of `f` shifted by one order. So does each directional derivative
 `x ↦ Df(x) v`. These are the coefficients that appear when the Leibniz rule is applied to the
-product of a Schwartz function or a tempered distribution with `f`.
+product of a Schwartz function or a tempered distribution with `f`. Applying a fixed continuous
+linear map `L` to the values, for instance taking coordinates of a matrix-valued `f`, also
+preserves temperate growth.
 
 On a finite-dimensional space the determinant is a polynomial in the matrix entries, so it has
 temperate growth, and so does the Jacobian determinant `x ↦ det Df(x)`. The absolute value of a
@@ -52,6 +54,8 @@ A measure of temperate growth is finite on compact sets.
 * `Function.hasTemperateGrowth_norm_sub_pow`: `y ↦ ‖x - y‖ ^ (2N)` has temperate growth.
 * `Function.HasTemperateGrowth.fderiv`: `Df` has temperate growth.
 * `Function.HasTemperateGrowth.fderiv_apply`: `x ↦ Df(x) v` has temperate growth.
+* `Function.HasTemperateGrowth.continuousLinearMap_comp`: `L ∘ f` has temperate growth for a
+  continuous linear map `L`.
 * `Function.HasTemperateGrowth.prod`: finite products of functions of temperate growth.
 * `ContinuousLinearMap.hasTemperateGrowth_det`, `Function.HasTemperateGrowth.det_fderiv`: the
   determinant and the Jacobian determinant have temperate growth.
@@ -111,6 +115,15 @@ growth. -/
 theorem fderiv_apply (hf : f.HasTemperateGrowth) (v : E) :
     (fun x ↦ _root_.fderiv ℝ f x v).HasTemperateGrowth :=
   (ContinuousLinearMap.apply ℝ F v).hasTemperateGrowth.comp hf.fderiv
+
+/-- Applying a fixed continuous linear map `L` to the values of a function of temperate growth gives
+a function of temperate growth. The map `L` may be linear over a normed `ℝ`-algebra `𝕜`, such
+as `ℂ`. -/
+theorem continuousLinearMap_comp {𝕜 G : Type*} [NontriviallyNormedField 𝕜] [NormedAlgebra ℝ 𝕜]
+    [NormedSpace 𝕜 F] [IsScalarTower ℝ 𝕜 F] [NormedAddCommGroup G] [NormedSpace ℝ G]
+    [NormedSpace 𝕜 G] [IsScalarTower ℝ 𝕜 G] (L : F →L[𝕜] G) (hf : f.HasTemperateGrowth) :
+    (L ∘ f).HasTemperateGrowth :=
+  (L.restrictScalars ℝ).hasTemperateGrowth.comp hf
 
 /-- A finite product of functions of temperate growth has temperate growth. -/
 theorem prod {ι R : Type*} [NormedCommRing R] [NormedAlgebra ℝ R] {f : ι → E → R}

@@ -8,6 +8,7 @@ module
 public import Mathlib.Analysis.Distribution.TemperedDistribution
 public import Mathlib.Topology.Algebra.Module.FiniteDimension
 public import TauCeti.Topology.Algebra.Module.FiniteDimension
+import TauCeti.Analysis.Distribution.TemperateGrowth
 import TauCeti.Analysis.Distribution.TemperedDistribution.Lp
 import TauCeti.Analysis.Distribution.TemperedDistribution.SmulLeft
 
@@ -167,12 +168,11 @@ theorem mulLeftCLM_add {A B : E → F →L[ℂ] G} (hA : A.HasTemperateGrowth)
   rw [← Finset.sum_add_distrib]
   refine Finset.sum_congr rfl fun k _ ↦ ?_
   set c := (Module.finBasis ℂ (F →L[ℂ] G)).coordCLM k
-  have hc {C : E → F →L[ℂ] G} (hC : C.HasTemperateGrowth) : (c ∘ C).HasTemperateGrowth :=
-    (c.restrictScalars ℝ).hasTemperateGrowth.comp hC
   have hcomp : c ∘ (A + B) = c ∘ A + c ∘ B := by
     ext x
     simp
-  rw [hcomp, smulLeftCLM_add (hc hA) (hc hB), ContinuousLinearMap.comp_add]
+  rw [hcomp, smulLeftCLM_add (hA.continuousLinearMap_comp c) (hB.continuousLinearMap_comp c),
+    ContinuousLinearMap.comp_add]
 
 /-- **Composition.** For `A : E → (F →L[ℂ] G)` and `B : E → (G →L[ℂ] H)` of temperate growth,
 `B (A u) = (B A) u`, where `B A` is the pointwise composition `x ↦ B x ∘ A x`. -/
@@ -183,10 +183,8 @@ theorem mulLeftCLM_comp_mulLeftCLM [FiniteDimensional ℂ H] {A : E → F →L[�
   rw [ContinuousLinearMap.comp_apply, mulLeftCLM_apply_apply]
   set a := Module.finBasis ℂ (F →L[ℂ] G)
   set b := Module.finBasis ℂ (G →L[ℂ] H)
-  have hca (k) : (a.coordCLM k ∘ A).HasTemperateGrowth :=
-    ((a.coordCLM k).restrictScalars ℝ).hasTemperateGrowth.comp hA
-  have hcb (l) : (b.coordCLM l ∘ B).HasTemperateGrowth :=
-    ((b.coordCLM l).restrictScalars ℝ).hasTemperateGrowth.comp hB
+  have hca (k) := hA.continuousLinearMap_comp (a.coordCLM k)
+  have hcb (l) := hB.continuousLinearMap_comp (b.coordCLM l)
   rw [mulLeftCLM_apply_apply_of_eq_sum (Finset.univ : Finset (_ × _))
       (c := fun lk x ↦ b.coordCLM lk.1 (B x) * a.coordCLM lk.2 (A x))
       (fun lk _ ↦ (hcb lk.1).mul (hca lk.2)) (fun lk ↦ (b lk.1).comp (a lk.2))
@@ -223,8 +221,6 @@ theorem mulLeftCLM_toTemperedDistributionCLM_eq {A : E → F →L[ℂ] G}
   ext φ
   rw [mulLeftCLM_apply_apply]
   set b := Module.finBasis ℂ (F →L[ℂ] G)
-  have hc (k) : (b.coordCLM k ∘ A).HasTemperateGrowth :=
-    ((b.coordCLM k).restrictScalars ℝ).hasTemperateGrowth.comp hA
   have hφ (k) : (f : 𝓢'(E, F)) (SchwartzMap.smulLeftCLM ℂ (b.coordCLM k ∘ A) φ) =
       ((SchwartzMap.smulLeftCLM F (b.coordCLM k ∘ A) f : 𝓢(E, F)) : 𝓢'(E, F)) φ := by
     rw [← smulLeftCLM_apply_apply, smulLeftCLM_toTemperedDistributionCLM_eq]
@@ -233,7 +229,8 @@ theorem mulLeftCLM_toTemperedDistributionCLM_eq {A : E → F →L[ℂ] G}
   congr 2
   ext x
   simp only [sum_apply, SchwartzMap.postcompCLM_apply,
-    SchwartzMap.smulLeftCLM_apply_apply (hc _), SchwartzMap.bilinLeftCLM_apply,
+    SchwartzMap.smulLeftCLM_apply_apply (hA.continuousLinearMap_comp _),
+    SchwartzMap.bilinLeftCLM_apply,
     ContinuousLinearMap.apply_apply, map_smul]
   rw [← b.sum_coordCLM_smul (A x), sum_apply]
   simp
