@@ -54,8 +54,6 @@ Banach space in which the smooth perturbations are dense.
 
 ## Main results
 
-* `ContDiffMapSupportedIn.withSeminorms_supSeminorm_self`: for finite `ℓ`, the single seminorm
-  `max_{j ≤ ℓ} N_j` defines the topology of `𝓓^{ℓ}_{K}(E, F)`.
 * `TauCeti.NormedContDiffMapSupportedIn.norm_def`,
   `TauCeti.NormedContDiffMapSupportedIn.norm_le_iff`: the norm is `max_{j ≤ ℓ} N_j`.
 * `TauCeti.NormedContDiffMapSupportedIn.isometry_jet`: the jet map is an isometry.
@@ -77,46 +75,6 @@ noncomputable section
 
 open Filter Function Metric Set TopologicalSpace
 open scoped Topology Uniformity ContDiff BoundedContinuousFunction Distributions
-
-namespace ContDiffMapSupportedIn
-
-variable {𝕜 E F : Type*} [NontriviallyNormedField 𝕜] [NormedAddCommGroup E] [NormedSpace ℝ E]
-  [NormedAddCommGroup F] [NormedSpace ℝ F] [NormedSpace 𝕜 F] [SMulCommClass ℝ 𝕜 F]
-  {ℓ : ℕ} {K : Compacts E}
-
-variable (𝕜) in
-/-- For a finite order `ℓ`, the seminorms of order above `ℓ` vanish, so every seminorm
-`max_{j ≤ i} N_j` is at most `max_{j ≤ ℓ} N_j`. -/
-theorem supSeminorm_le_supSeminorm_self (i : ℕ) (f : 𝓓^{ℓ}_{K}(E, F)) :
-    ContDiffMapSupportedIn.supSeminorm 𝕜 E F ℓ K i f ≤
-      ContDiffMapSupportedIn.supSeminorm 𝕜 E F ℓ K ℓ f := by
-  refine Seminorm.finset_sup_apply_le (apply_nonneg _ _) fun j _ ↦ ?_
-  by_cases hjℓ : j ≤ ℓ
-  · exact Seminorm.le_finset_sup_apply (Finset.mem_Iic.2 hjℓ)
-  · rw [ContDiffMapSupportedIn.seminorm_eq_bot_of_gt 𝕜 (by exact_mod_cast not_le.1 hjℓ)]
-    exact apply_nonneg _ _
-
-variable (𝕜 E F ℓ K) in
-/-- **The `C^ℓ` norm defines the topology.** For a finite order `ℓ`, the single seminorm
-`max_{j ≤ ℓ} N_j` defines the topology of `𝓓^{ℓ}_{K}(E, F)`. -/
-theorem withSeminorms_supSeminorm_self :
-    WithSeminorms fun _ : Unit ↦ ContDiffMapSupportedIn.supSeminorm 𝕜 E F ℓ K ℓ := by
-  refine (ContDiffMapSupportedIn.withSeminorms' 𝕜 E F ℓ K).congr (fun _ ↦ ⟨{ℓ}, 1, ?_⟩)
-    fun i ↦ ⟨{()}, 1, ?_⟩
-  · rw [Finset.sup_singleton, one_smul]
-    rfl
-  · rw [Finset.sup_singleton, one_smul]
-    exact supSeminorm_le_supSeminorm_self 𝕜 i
-
-/-- For a finite order `ℓ`, the uniform structure of `𝓓^{ℓ}_{K}(E, F)` is the one of the
-seminorm `max_{j ≤ ℓ} N_j`. -/
-theorem uniformSpace_eq_supSeminorm_self :
-    (uniformSpace : UniformSpace 𝓓^{ℓ}_{K}(E, F)) =
-      (ContDiffMapSupportedIn.supSeminorm ℝ E F ℓ K ℓ).toSeminormedAddCommGroup.toUniformSpace := by
-  rw [(SeminormFamily.withSeminorms_iff_uniformSpace_eq_iInf _).1
-    (withSeminorms_supSeminorm_self ℝ E F ℓ K), ciInf_unique]
-
-end ContDiffMapSupportedIn
 
 namespace TauCeti
 
