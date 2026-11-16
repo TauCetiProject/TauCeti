@@ -9,8 +9,9 @@ public import TauCeti.KnotTheory.ConnectedSum.Congruence
 public import TauCeti.KnotTheory.Mirror
 public import TauCeti.KnotTheory.Slice.Concordance
 public import TauCeti.KnotTheory.Slice.ConnectedSum
-import TauCeti.Geometry.Diffeomorphism.Sphere.RotationFamily
-import TauCeti.Geometry.Manifold.LocallyFlat.Concordance.Smooth
+import TauCeti.Analysis.InnerProductSpace.LinearIsometry
+import TauCeti.Geometry.Diffeomorphism.Diffeotopy.Rotation
+import TauCeti.KnotTheory.ConnectedSum.Commutativity
 import TauCeti.KnotTheory.ConnectedSum.Position
 
 /-!
@@ -20,14 +21,23 @@ Two oriented smooth circle presentations `K₀, K₁ : S¹ → M` in a finite-di
 `M` are smoothly concordant (`TauCeti.SmoothEmbedding.Concordant`) when they are joined by a smooth
 collared track `S¹ × ℝ → M × ℝ`. Packaging smooth concordance as a quotient of
 `TauCeti.SmoothCircleEmbedding I M` gives the type
-`TauCeti.SmoothCircleEmbedding.ConcordanceClass I M` of smooth concordance classes. Rotating the
-circle parameter traces a source diffeotopy (`TauCeti.SmoothCircleEmbedding.concordant_rotate`), so
-the quotient class depends only on the oriented curve up to smooth concordance; reversing the circle
-parameter and transporting along ambient diffeomorphisms descend to equivalences on
-`ConcordanceClass`.
+`TauCeti.SmoothCircleEmbedding.ConcordanceClass I M` of smooth concordance classes, equipped with
+eliminators `ConcordanceClass.lift` and `ConcordanceClass.lift₂`. Rotating the circle parameter
+traces a source diffeotopy (`TauCeti.SmoothCircleEmbedding.concordant_rotate`), so rotating the
+circle parameter (changing the basepoint) does not change the smooth concordance class
+(`TauCeti.SmoothCircleEmbedding.toConcordanceClass_rotate`); reversing the circle parameter and
+transporting along ambient diffeomorphisms descend to equivalences on `ConcordanceClass`.
 
-When the ambient manifold is the unit sphere `Sⁿ` of an `(n + 1)`-dimensional real inner product
-space `E` with `3 ≤ n`, smooth concordance classes carry a **canonical abelian monoid structure**
+In the unit sphere `Sⁿ` of an `(n + 1)`-dimensional real inner product space `E`, linear isometries
+of equal determinant induce the same equivalence on `ConcordanceClass` in every dimension `n`
+(`transDiffeomorph_unitSphereDiffeomorph_eq_of_det_eq`). In particular, all reflections induce a
+single canonical involutive mirroring operation (`ConcordanceClass.mirror`, `mirrorEquiv`), and
+composing reversal with mirroring gives the canonical reverse-mirror involution
+(`ConcordanceClass.reverseMirror`, `reverseMirrorEquiv`), represented by
+`SmoothCircleEmbedding.reverseMirror ι K` for every great circle `ι`
+(`toConcordanceClass_reverseMirror`).
+
+When `3 ≤ n`, smooth concordance classes in `Sⁿ` carry a **canonical abelian monoid structure**
 (`AddCommMonoid`) whose addition is the connected sum and whose zero is the class of any great
 circle:
 
@@ -38,29 +48,27 @@ circle:
   position for any great circle `ι` (`exists_rep_isConnectedSumPosition`). For `3 ≤ n`, the
   concordance class of `connectedSum K₁ K₂ h₁ h₂` depends neither on the positioned representatives
   nor on the great circle `ι`
-  (`TauCeti.SmoothCircleEmbedding.concordant_connectedSum_of_concordant_of_greatCircle`), and
-  satisfies the unit, commutativity, and associativity laws
-  (`toConcordanceClass_connectedSum`).
+  (`TauCeti.SmoothCircleEmbedding.concordant_connectedSum_of_concordant`), and satisfies the unit,
+  commutativity, and associativity laws (`toConcordanceClass_connectedSum`).
 * **Symmetries and inverse candidate.** Orientation reversal, linear isometries of the ambient
-  inner product space, the reverse mirror image, and (in `ℝⁿ⁺¹`) coordinate reflection all act as
-  additive equivalences (`reverseAddEquiv`, `transLinearIsometryAddEquiv`,
-  `reverseMirrorAddEquiv`, `mirrorAddEquiv`), with `reverseMirrorAddEquiv` factoring as reversal
-  composed with mirroring (`reverseMirrorAddEquiv_eq_reverseAddEquiv_trans_mirrorAddEquiv`). Linear
-  isometries of equal determinant induce the same automorphism
-  (`transLinearIsometryAddEquiv_eq_of_det_eq`). For every concordance class `x`, the sum
-  `x + reverseMirrorAddEquiv x` admits a smoothly slice representative
-  (`exists_isSmoothlySlice_rep_add_reverseMirrorAddEquiv`). Showing that every smoothly slice knot
-  is smoothly concordant to a great circle upgrades this monoid to an abelian group with
+  inner product space, mirroring, and the reverse mirror image all act as additive equivalences
+  (`reverseAddEquiv`, `transLinearIsometryAddEquiv`, `mirrorAddEquiv`, `reverseMirrorAddEquiv`),
+  with `reverseMirrorAddEquiv = reverseAddEquiv.trans mirrorAddEquiv`. For every concordance class
+  `x`, the sum `x + x.reverseMirror` admits a smoothly slice representative
+  (`exists_isSmoothlySlice_rep_add_reverseMirror`). Showing that every smoothly slice knot is
+  smoothly concordant to a great circle upgrades this monoid to an abelian group with
   `reverseMirrorAddEquiv` as negation.
 
-In every sphere dimension `n`, smooth concordance implies topological concordance, so topological
-sliceness (`TauCeti.IsTopologicallySlice`) and the smooth cobordism distance
-(`TauCeti.cobordismDistance`) descend to smooth concordance classes.
+In every sphere dimension `n`, topological sliceness (`TauCeti.IsTopologicallySlice`) descends to
+smooth concordance classes because smooth concordance implies topological concordance
+(`TauCeti.SmoothEmbedding.Concordant.isTopologicallySlice_iff`), while the unoriented knot cobordism
+distance (`TauCeti.cobordismDistance`) descends directly from its smooth concordance invariance
+(`TauCeti.cobordismDistance_congr_concordant`).
 
 ## Main definitions
 
 * `TauCeti.SmoothCircleEmbedding.ConcordanceClass`: smooth concordance classes of oriented smooth
-  circle embeddings into a manifold.
+  circle embeddings into a manifold, with `ConcordanceClass.lift` and `ConcordanceClass.lift₂`.
 * `TauCeti.SmoothCircleEmbedding.toConcordanceClass`: the quotient map to smooth concordance
   classes.
 * `TauCeti.SmoothCircleEmbedding.ConcordanceClass.reverse`,
@@ -68,31 +76,34 @@ sliceness (`TauCeti.IsTopologicallySlice`) and the smooth cobordism distance
   concordance classes.
 * `TauCeti.SmoothCircleEmbedding.ConcordanceClass.transDiffeomorph`: transport of concordance
   classes along an ambient diffeomorphism.
+* `TauCeti.SmoothCircleEmbedding.ConcordanceClass.mirror`,
+  `TauCeti.SmoothCircleEmbedding.ConcordanceClass.mirrorEquiv`,
+  `TauCeti.SmoothCircleEmbedding.ConcordanceClass.reverseMirror`,
+  `TauCeti.SmoothCircleEmbedding.ConcordanceClass.reverseMirrorEquiv`: canonical mirroring and
+  reverse-mirroring involutions on concordance classes in `Sⁿ` for any `n`.
 * `TauCeti.SmoothCircleEmbedding.ConcordanceClass.instAddCommMonoid`: the canonical abelian monoid
   structure on smooth concordance classes in `Sⁿ` for `3 ≤ n`.
 * `TauCeti.SmoothCircleEmbedding.ConcordanceClass.reverseAddEquiv`,
   `TauCeti.SmoothCircleEmbedding.ConcordanceClass.transLinearIsometryAddEquiv`,
-  `TauCeti.SmoothCircleEmbedding.ConcordanceClass.reverseMirrorAddEquiv`,
-  `TauCeti.SmoothCircleEmbedding.ConcordanceClass.mirrorAddEquiv`: the additive automorphisms and
-  isomorphisms of the smooth concordance monoid.
+  `TauCeti.SmoothCircleEmbedding.ConcordanceClass.mirrorAddEquiv`,
+  `TauCeti.SmoothCircleEmbedding.ConcordanceClass.reverseMirrorAddEquiv`: the additive automorphisms
+  and isomorphisms of the smooth concordance monoid.
 * `TauCeti.SmoothCircleEmbedding.ConcordanceClass.IsTopologicallySlice`,
   `TauCeti.SmoothCircleEmbedding.ConcordanceClass.cobordismDistance`: topological sliceness and
-  smooth cobordism distance on smooth concordance classes.
+  unoriented cobordism distance on smooth concordance classes.
 
 ## Main results
 
 * `TauCeti.SmoothCircleEmbedding.concordant_rotate`: rotating the circle parameter preserves smooth
   concordance.
+* `ConcordanceClass.transDiffeomorph_unitSphereDiffeomorph_eq_of_det_eq`: linear isometries of
+  equal determinant induce the same equivalence on concordance classes in `Sⁿ`.
 * `TauCeti.SmoothCircleEmbedding.toConcordanceClass_greatCircle`,
   `TauCeti.SmoothCircleEmbedding.toConcordanceClass_unknot`,
   `TauCeti.SmoothCircleEmbedding.toConcordanceClass_connectedSum`: any great circle represents `0`
   and any positioned connected sum represents `+`.
-* `TauCeti.SmoothCircleEmbedding.ConcordanceClass.transLinearIsometryAddEquiv_eq_of_det_eq`: linear
-  isometries of the same determinant induce the same automorphism on concordance classes.
-* `SmoothCircleEmbedding.ConcordanceClass.exists_isSmoothlySlice_rep_add_reverseMirrorAddEquiv`:
+* `TauCeti.SmoothCircleEmbedding.ConcordanceClass.exists_isSmoothlySlice_rep_add_reverseMirror`:
   every class plus its reverse mirror class has a smoothly slice representative.
-* `TauCeti.SmoothEmbedding.Concordant.isTopologicallySlice_iff`: topological sliceness is invariant
-  under smooth concordance in every sphere dimension.
 
 ## References
 
@@ -111,42 +122,14 @@ open scoped Manifold ContDiff RealInnerProductSpace
 
 namespace TauCeti
 
+/-- `3 ≤ m + 3` as a `Fact`, for activating the smooth concordance monoid on `S^{m + 3}` (in
+particular `S³` when `m = 0`). -/
+theorem three_le_add_three_fact (m : ℕ) : Fact (3 ≤ m + 3) :=
+  ⟨Nat.le_add_left 3 m⟩
+
 /-! ### Rotating the circle parameter -/
 
 namespace SmoothCircleEmbedding
-
-private theorem contMDiff_circleExpShift (θ : ℝ) :
-    ContMDiff (𝓡∂ 1) (𝓡 1) ∞ (fun t : unitInterval => Circle.exp (θ * t)) :=
-  contMDiff_circleExp.comp (contMDiff_const.mul (contMDiff_subtypeVal_Icc (x := 0) (y := 1)))
-
-private def circleExpTotalDiffeomorph (θ : ℝ) :
-    (unitInterval × Circle) ≃ₘ⟮(𝓡∂ 1).prod (𝓡 1), (𝓡∂ 1).prod (𝓡 1)⟯ unitInterval × Circle where
-  toFun q := (q.1, Circle.exp (θ * q.1) * q.2)
-  invFun q := (q.1, Circle.exp (-θ * q.1) * q.2)
-  left_inv q := by
-    refine Prod.ext rfl ?_
-    dsimp only
-    rw [← mul_assoc, ← Circle.exp_add, neg_mul, neg_add_cancel, Circle.exp_zero, one_mul]
-  right_inv q := by
-    refine Prod.ext rfl ?_
-    dsimp only
-    rw [← mul_assoc, ← Circle.exp_add, neg_mul, add_neg_cancel, Circle.exp_zero, one_mul]
-  contMDiff_toFun :=
-    contMDiff_fst.prodMk (((contMDiff_circleExpShift θ).comp contMDiff_fst).mul contMDiff_snd)
-  contMDiff_invFun :=
-    contMDiff_fst.prodMk
-      (((contMDiff_circleExpShift (-θ)).comp contMDiff_fst).mul contMDiff_snd)
-
-@[simp]
-private theorem circleExpTotalDiffeomorph_snd (θ : ℝ) (q : unitInterval × Circle) :
-    (circleExpTotalDiffeomorph θ q).2 = Circle.exp (θ * q.1) * q.2 :=
-  rfl
-
-/-- The smooth rotation diffeotopy `(t, z) ↦ exp(i θ t) * z` of the unit circle. -/
-private def circleExpDiffeotopy (θ : ℝ) : Diffeotopy (𝓡 1) ∞ Circle where
-  toDiffeomorph := circleExpTotalDiffeomorph θ
-  fst_apply _ := rfl
-  snd_apply_zero' z := by simp
 
 /-- **Rotating the circle parameter of a smooth circle presentation yields a smoothly concordant
 presentation.** -/
@@ -156,11 +139,9 @@ theorem concordant_rotate {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
     (K : SmoothCircleEmbedding I M) (a : Circle) :
     SmoothEmbedding.Concordant K (K.rotate a) := by
   obtain ⟨θ, rfl⟩ := Circle.exp_surjective a
-  have hfinal : (circleExpDiffeotopy θ).final = circleRotationHom (Circle.exp θ) :=
-    _root_.Diffeomorph.ext fun z => by simp [circleExpDiffeotopy, Diffeotopy.final_apply]
-  have hrot : K.compDiffeomorph (circleExpDiffeotopy θ).final = K.rotate (Circle.exp θ) := by
-    rw [hfinal]
-    exact SmoothEmbedding.ext fun z => by simp
+  have hrot : K.compDiffeomorph (circleExpDiffeotopy (m := ∞) θ).final =
+      K.rotate (Circle.exp θ) :=
+    SmoothEmbedding.ext fun z => by simp
   exact hrot ▸ .of_concordance (.ofSourceDiffeotopy le_rfl (circleExpDiffeotopy θ) K)
 
 /-! ### Smooth concordance classes of circle presentations -/
@@ -241,13 +222,57 @@ protected theorem inductionOn {motive : ConcordanceClass I M → Prop}
 /-- Binary induction principle for smooth concordance classes. -/
 @[elab_as_elim]
 protected theorem inductionOn₂
-    {P : Type*} [TopologicalSpace P] [ChartedSpace H P] [IsManifold I ∞ P]
-    {motive : ConcordanceClass I M → ConcordanceClass I P → Prop}
-    (x : ConcordanceClass I M) (y : ConcordanceClass I P)
-    (h : ∀ (K₁ : SmoothCircleEmbedding I M) (K₂ : SmoothCircleEmbedding I P),
+    {E' : Type*} [NormedAddCommGroup E'] [NormedSpace ℝ E'] [FiniteDimensional ℝ E']
+    {H' : Type*} [TopologicalSpace H'] {I' : ModelWithCorners ℝ E' H'}
+    {P : Type*} [TopologicalSpace P] [ChartedSpace H' P] [IsManifold I' ∞ P]
+    {motive : ConcordanceClass I M → ConcordanceClass I' P → Prop}
+    (x : ConcordanceClass I M) (y : ConcordanceClass I' P)
+    (h : ∀ (K₁ : SmoothCircleEmbedding I M) (K₂ : SmoothCircleEmbedding I' P),
       motive K₁.toConcordanceClass K₂.toConcordanceClass) :
     motive x y :=
   Quotient.inductionOn₂ x y h
+
+/-- Universal property of `ConcordanceClass`: a function on `SmoothCircleEmbedding I M` constant on
+smooth concordance classes descends to `ConcordanceClass I M`. -/
+protected def lift {α : Sort*} (f : SmoothCircleEmbedding I M → α)
+    (hf : ∀ K₁ K₂, SmoothEmbedding.Concordant K₁ K₂ → f K₁ = f K₂)
+    (x : ConcordanceClass I M) : α :=
+  Quotient.lift f (fun K₁ K₂ h => hf K₁ K₂ (SmoothEmbedding.Concordant.setoid_r_iff.1 h)) x
+
+/-- Evaluating `ConcordanceClass.lift` on the class of `K` computes `f K`. -/
+@[simp]
+theorem lift_toConcordanceClass {α : Sort*} (f : SmoothCircleEmbedding I M → α)
+    (hf : ∀ K₁ K₂, SmoothEmbedding.Concordant K₁ K₂ → f K₁ = f K₂)
+    (K : SmoothCircleEmbedding I M) :
+    ConcordanceClass.lift f hf K.toConcordanceClass = f K := by
+  rfl
+
+/-- Binary universal property of `ConcordanceClass`: a two-argument function constant on smooth
+concordance classes in each variable descends to `ConcordanceClass`. -/
+protected def lift₂
+    {E' : Type*} [NormedAddCommGroup E'] [NormedSpace ℝ E'] [FiniteDimensional ℝ E']
+    {H' : Type*} [TopologicalSpace H'] {I' : ModelWithCorners ℝ E' H'}
+    {P : Type*} [TopologicalSpace P] [ChartedSpace H' P] [IsManifold I' ∞ P]
+    {α : Sort*} (f : SmoothCircleEmbedding I M → SmoothCircleEmbedding I' P → α)
+    (hf : ∀ K₁ K₂ L₁ L₂, SmoothEmbedding.Concordant K₁ L₁ →
+      SmoothEmbedding.Concordant K₂ L₂ → f K₁ K₂ = f L₁ L₂)
+    (x : ConcordanceClass I M) (y : ConcordanceClass I' P) : α :=
+  Quotient.lift₂ f (fun K₁ K₂ L₁ L₂ h₁ h₂ =>
+    hf K₁ K₂ L₁ L₂ (SmoothEmbedding.Concordant.setoid_r_iff.1 h₁)
+      (SmoothEmbedding.Concordant.setoid_r_iff.1 h₂)) x y
+
+/-- Evaluating `ConcordanceClass.lift₂` on the classes of `K₁` and `K₂` computes `f K₁ K₂`. -/
+@[simp]
+theorem lift₂_toConcordanceClass
+    {E' : Type*} [NormedAddCommGroup E'] [NormedSpace ℝ E'] [FiniteDimensional ℝ E']
+    {H' : Type*} [TopologicalSpace H'] {I' : ModelWithCorners ℝ E' H'}
+    {P : Type*} [TopologicalSpace P] [ChartedSpace H' P] [IsManifold I' ∞ P]
+    {α : Sort*} (f : SmoothCircleEmbedding I M → SmoothCircleEmbedding I' P → α)
+    (hf : ∀ K₁ K₂ L₁ L₂, SmoothEmbedding.Concordant K₁ L₁ →
+      SmoothEmbedding.Concordant K₂ L₂ → f K₁ K₂ = f L₁ L₂)
+    (K₁ : SmoothCircleEmbedding I M) (K₂ : SmoothCircleEmbedding I' P) :
+    ConcordanceClass.lift₂ f hf K₁.toConcordanceClass K₂.toConcordanceClass = f K₁ K₂ := by
+  rfl
 
 /-- Every smooth concordance class is represented by some smooth circle presentation. -/
 theorem exists_rep (x : ConcordanceClass I M) :
@@ -256,18 +281,18 @@ theorem exists_rep (x : ConcordanceClass I M) :
 
 /-- Orientation reversal of smooth circle presentations, descended to smooth concordance classes. -/
 def reverse (x : ConcordanceClass I M) : ConcordanceClass I M :=
-  Quotient.map SmoothCircleEmbedding.reverse
-    (fun K₁ K₂ h => SmoothEmbedding.Concordant.setoid_r_iff.2 <| by
+  ConcordanceClass.lift (fun K => K.reverse.toConcordanceClass)
+    (fun K₁ K₂ h => by
       have hrev (K : SmoothCircleEmbedding I M) : K.reverse = K.compDiffeomorph circleReflection :=
         SmoothEmbedding.ext fun z => by simp
       rw [hrev K₁, hrev K₂]
-      exact (SmoothEmbedding.Concordant.setoid_r_iff.1 h).compDiffeomorph circleReflection) x
+      exact (h.compDiffeomorph circleReflection).toConcordanceClass_eq) x
 
 /-- The reverse of the concordance class of `K` is the concordance class of `K.reverse`. -/
 @[simp]
 theorem reverse_toConcordanceClass (K : SmoothCircleEmbedding I M) :
     K.toConcordanceClass.reverse = K.reverse.toConcordanceClass := by
-  simp [reverse, SmoothCircleEmbedding.toConcordanceClass]; rfl
+  rfl
 
 /-- Reversing orientation twice returns the original concordance class. -/
 @[simp]
@@ -279,21 +304,18 @@ theorem reverse_involutive : Function.Involutive (reverse (I := I) (M := M)) :=
   reverse_reverse
 
 /-- Orientation reversal as a self-equivalence of smooth concordance classes. -/
-def reverseEquiv : ConcordanceClass I M ≃ ConcordanceClass I M where
-  toFun := reverse
-  invFun := reverse
-  left_inv := reverse_reverse
-  right_inv := reverse_reverse
+def reverseEquiv : ConcordanceClass I M ≃ ConcordanceClass I M :=
+  reverse_involutive.toPerm reverse
 
 /-- Applying `reverseEquiv` computes `reverse`. -/
 @[simp]
 theorem reverseEquiv_apply (x : ConcordanceClass I M) : reverseEquiv x = x.reverse := by
-  simp [reverseEquiv]
+  rfl
 
 /-- `reverseEquiv` is its own inverse. -/
 @[simp]
 theorem reverseEquiv_symm : (reverseEquiv (I := I) (M := M)).symm = reverseEquiv :=
-  Equiv.ext fun x => (reverseEquiv.symm_apply_eq).2 (by simp)
+  reverse_involutive.toPerm_symm
 
 section TransDiffeomorph
 
@@ -302,29 +324,21 @@ variable {P Q : Type*} [TopologicalSpace P] [ChartedSpace H P] [IsManifold I ∞
 
 /-- Transport smooth concordance classes along a smooth diffeomorphism of the ambient manifold. -/
 def transDiffeomorph (e : M ≃ₘ⟮I, I⟯ P) : ConcordanceClass I M ≃ ConcordanceClass I P where
-  toFun := Quotient.map (fun K => K.transDiffeomorph e)
-    (fun _ _ h => SmoothEmbedding.Concordant.setoid_r_iff.2
-      ((SmoothEmbedding.Concordant.setoid_r_iff.1 h).transDiffeomorph e))
-  invFun := Quotient.map (fun K => K.transDiffeomorph e.symm)
-    (fun _ _ h => SmoothEmbedding.Concordant.setoid_r_iff.2
-      ((SmoothEmbedding.Concordant.setoid_r_iff.1 h).transDiffeomorph e.symm))
+  toFun := ConcordanceClass.lift (fun K => toConcordanceClass (K.transDiffeomorph e))
+    fun _ _ h => (h.transDiffeomorph e).toConcordanceClass_eq
+  invFun := ConcordanceClass.lift (fun K => toConcordanceClass (K.transDiffeomorph e.symm))
+    fun _ _ h => (h.transDiffeomorph e.symm).toConcordanceClass_eq
   left_inv x := x.inductionOn fun K => by
-    simp only [SmoothCircleEmbedding.toConcordanceClass, Quotient.map_mk]
-    congr 1
-    rw [SmoothEmbedding.transDiffeomorph_transDiffeomorph, Diffeomorph.self_trans_symm,
-      SmoothEmbedding.transDiffeomorph_refl]
+    simp [SmoothEmbedding.transDiffeomorph_transDiffeomorph]
   right_inv y := y.inductionOn fun K => by
-    simp only [SmoothCircleEmbedding.toConcordanceClass, Quotient.map_mk]
-    congr 1
-    rw [SmoothEmbedding.transDiffeomorph_transDiffeomorph, Diffeomorph.symm_trans_self,
-      SmoothEmbedding.transDiffeomorph_refl]
+    simp [SmoothEmbedding.transDiffeomorph_transDiffeomorph]
 
 /-- Transporting the concordance class of `K` along `e` gives the class of
 `K.transDiffeomorph e`. -/
 @[simp]
 theorem transDiffeomorph_toConcordanceClass (e : M ≃ₘ⟮I, I⟯ P) (K : SmoothCircleEmbedding I M) :
     transDiffeomorph e K.toConcordanceClass = toConcordanceClass (K.transDiffeomorph e) := by
-  simp [ConcordanceClass, transDiffeomorph, SmoothCircleEmbedding.toConcordanceClass]; rfl
+  rfl
 
 /-- The inverse of `transDiffeomorph e` is `transDiffeomorph e.symm`. -/
 @[simp]
@@ -399,22 +413,174 @@ theorem ConcordanceClass.exists_rep_isConnectedSumPosition (hn : 2 ≤ n) (ι : 
     let ⟨K', hc, hpos⟩ := exists_concordant_isConnectedSumPosition_of_two_le hn ι K
     ⟨K', hpos, hc.symm.toConcordanceClass_eq⟩
 
-/-! ### The canonical abelian monoid structure in dimension `n ≥ 3` -/
+/-! ### Linear isometries, mirroring, and reverse-mirroring in every dimension -/
 
-/-- Every `(n + 1)`-dimensional real inner product space with `1 ≤ n` admits a linear isometric
-embedding of `ℂ`, cutting out a great circle in its unit sphere `Sⁿ`. -/
-theorem nonempty_linearIsometry_complex (hn : 1 ≤ n) : Nonempty (ℂ →ₗᵢ[ℝ] E) := by
+namespace ConcordanceClass
+
+/-- **Linear isometries of equal determinant induce the same equivalence** on smooth concordance
+classes in `Sⁿ`, in every dimension `n`. -/
+theorem transDiffeomorph_unitSphereDiffeomorph_eq_of_det_eq {e₁ e₂ : E ≃ₗᵢ[ℝ] E}
+    (he : (LinearEquiv.det e₁.toLinearEquiv : ℝ) = LinearEquiv.det e₂.toLinearEquiv) :
+    transDiffeomorph (e₁.unitSphereDiffeomorph (n := n) (k := n) ∞) =
+      transDiffeomorph (e₂.unitSphereDiffeomorph (n := n) (k := n) ∞) :=
+  Equiv.ext fun x => x.inductionOn fun K => by
+    rw [transDiffeomorph_toConcordanceClass, transDiffeomorph_toConcordanceClass]
+    exact (SmoothEmbedding.smoothAmbientIsotopic_transDiffeomorph_unitSphereDiffeomorph K he)
+      |>.toConcordanceClass_eq
+
+/-- **Any orientation-preserving linear isometry of `E` acts as the identity** on smooth
+concordance classes in `Sⁿ`. -/
+theorem transDiffeomorph_unitSphereDiffeomorph_eq_refl_of_det_eq_one {e : E ≃ₗᵢ[ℝ] E}
+    (he : (LinearEquiv.det e.toLinearEquiv : ℝ) = 1) :
+    transDiffeomorph (e.unitSphereDiffeomorph (n := n) (k := n) ∞) = Equiv.refl _ := by
+  rw [transDiffeomorph_unitSphereDiffeomorph_eq_of_det_eq (e₂ := .refl ℝ E) (by simpa using he),
+    LinearIsometryEquiv.unitSphereDiffeomorph_refl, transDiffeomorph_refl]
+
+private def defaultReflection (E : Type*) [NormedAddCommGroup E] [InnerProductSpace ℝ E]
+    (n : ℕ) [Fact (finrank ℝ E = n + 1)] : E ≃ₗᵢ[ℝ] E :=
   have : FiniteDimensional ℝ E := .of_fact_finrank_eq_succ n
-  let b := stdOrthonormalBasis ℝ E
-  have hdim : finrank ℝ E = n + 1 := Fact.out
-  let i₀ : Fin (finrank ℝ E) := ⟨0, by omega⟩
-  let i₁ : Fin (finrank ℝ E) := ⟨1, by omega⟩
-  let p : sphere (0 : E) 1 := ⟨b i₀, by simp [b.orthonormal.1]⟩
-  let v : sphere (0 : (ℝ ∙ (p : E))ᗮ) 1 :=
-    ⟨⟨b i₁, Submodule.mem_orthogonal_singleton_iff_inner_right.2
-      (b.orthonormal.2 (by simp [i₀, i₁]))⟩,
-      mem_sphere_zero_iff_norm.2 (by simp [b.orthonormal.1])⟩
-  exact ⟨sphereRotationPlane p v⟩
+  have : Nontrivial E := Module.nontrivial_of_finrank_pos (R := ℝ)
+    (by rw [(Fact.out : finrank ℝ E = n + 1)]; omega)
+  (TauCeti.exists_det_eq_neg_one (F := E)).choose
+
+private theorem det_defaultReflection :
+    (LinearEquiv.det (defaultReflection E n).toLinearEquiv : ℝ) = -1 := by
+  have : FiniteDimensional ℝ E := .of_fact_finrank_eq_succ n
+  have : Nontrivial E := Module.nontrivial_of_finrank_pos (R := ℝ)
+    (by rw [(Fact.out : finrank ℝ E = n + 1)]; omega)
+  exact (TauCeti.exists_det_eq_neg_one (F := E)).choose_spec
+
+/-- **Canonical mirroring on smooth concordance classes** in the unit sphere `Sⁿ` of `E`:
+transport along any linear isometry of `E` of determinant `-1`. -/
+def mirror (x : ConcordanceClass (𝓡 n) (sphere (0 : E) 1)) :
+    ConcordanceClass (𝓡 n) (sphere (0 : E) 1) :=
+  transDiffeomorph ((defaultReflection E n).unitSphereDiffeomorph (n := n) (k := n) ∞) x
+
+/-- Every linear isometry `e : E ≃ₗᵢ[ℝ] E` of determinant `-1` acts on smooth concordance classes
+as `ConcordanceClass.mirror`. -/
+theorem transDiffeomorph_unitSphereDiffeomorph_eq_mirror_of_det_eq_neg_one {e : E ≃ₗᵢ[ℝ] E}
+    (he : (LinearEquiv.det e.toLinearEquiv : ℝ) = -1)
+    (x : ConcordanceClass (𝓡 n) (sphere (0 : E) 1)) :
+    transDiffeomorph (e.unitSphereDiffeomorph (n := n) (k := n) ∞) x = x.mirror :=
+  Equiv.congr_fun (transDiffeomorph_unitSphereDiffeomorph_eq_of_det_eq
+    (he.trans det_defaultReflection.symm)) x
+
+/-- Mirroring twice returns the original smooth concordance class. -/
+@[simp]
+theorem mirror_mirror (x : ConcordanceClass (𝓡 n) (sphere (0 : E) 1)) :
+    x.mirror.mirror = x := by
+  rw [mirror, mirror, ← Equiv.trans_apply, ← transDiffeomorph_trans,
+    ← LinearIsometryEquiv.unitSphereDiffeomorph_trans,
+    transDiffeomorph_unitSphereDiffeomorph_eq_refl_of_det_eq_one, Equiv.refl_apply]
+  rw [LinearIsometryEquiv.toLinearEquiv_trans, LinearEquiv.det_trans, Units.val_mul,
+    det_defaultReflection]
+  norm_num
+
+/-- Mirroring on smooth concordance classes is an involution. -/
+theorem mirror_involutive :
+    Function.Involutive (mirror (E := E) (n := n)) :=
+  mirror_mirror
+
+/-- Mirroring as a self-equivalence of smooth concordance classes in `Sⁿ`. -/
+def mirrorEquiv :
+    ConcordanceClass (𝓡 n) (sphere (0 : E) 1) ≃ ConcordanceClass (𝓡 n) (sphere (0 : E) 1) :=
+  mirror_involutive.toPerm mirror
+
+/-- Applying `mirrorEquiv` computes `mirror`. -/
+@[simp]
+theorem mirrorEquiv_apply (x : ConcordanceClass (𝓡 n) (sphere (0 : E) 1)) :
+    mirrorEquiv x = x.mirror := by
+  rfl
+
+/-- `mirrorEquiv` is its own inverse. -/
+@[simp]
+theorem mirrorEquiv_symm : (mirrorEquiv (E := E) (n := n)).symm = mirrorEquiv :=
+  mirror_involutive.toPerm_symm
+
+/-- Every linear isometry of determinant `-1` induces the equivalence `mirrorEquiv` on smooth
+concordance classes. -/
+theorem transDiffeomorph_unitSphereDiffeomorph_eq_mirrorEquiv_of_det_eq_neg_one {e : E ≃ₗᵢ[ℝ] E}
+    (he : (LinearEquiv.det e.toLinearEquiv : ℝ) = -1) :
+    transDiffeomorph (e.unitSphereDiffeomorph (n := n) (k := n) ∞) = mirrorEquiv :=
+  Equiv.ext (transDiffeomorph_unitSphereDiffeomorph_eq_mirror_of_det_eq_neg_one he)
+
+/-- Reversing the mirror image of a smooth concordance class equals mirroring its reverse. -/
+@[simp]
+theorem reverse_mirror (x : ConcordanceClass (𝓡 n) (sphere (0 : E) 1)) :
+    x.mirror.reverse = x.reverse.mirror :=
+  reverse_transDiffeomorph _ x
+
+/-- **The reverse mirror image of a smooth concordance class** in `Sⁿ`: orientation reversal
+followed by mirroring. -/
+def reverseMirror (x : ConcordanceClass (𝓡 n) (sphere (0 : E) 1)) :
+    ConcordanceClass (𝓡 n) (sphere (0 : E) 1) :=
+  x.reverse.mirror
+
+/-- `reverseMirror` is orientation reversal followed by mirroring. -/
+theorem reverseMirror_def (x : ConcordanceClass (𝓡 n) (sphere (0 : E) 1)) :
+    x.reverseMirror = x.reverse.mirror := by
+  rfl
+
+/-- Applying `reverseMirror` twice returns the original smooth concordance class. -/
+@[simp]
+theorem reverseMirror_reverseMirror (x : ConcordanceClass (𝓡 n) (sphere (0 : E) 1)) :
+    x.reverseMirror.reverseMirror = x := by
+  simp [reverseMirror]
+
+/-- `reverseMirror` on smooth concordance classes is an involution. -/
+theorem reverseMirror_involutive :
+    Function.Involutive (reverseMirror (E := E) (n := n)) :=
+  reverseMirror_reverseMirror
+
+/-- Reverse-mirroring as a self-equivalence of smooth concordance classes in `Sⁿ`. -/
+def reverseMirrorEquiv :
+    ConcordanceClass (𝓡 n) (sphere (0 : E) 1) ≃ ConcordanceClass (𝓡 n) (sphere (0 : E) 1) :=
+  reverseMirror_involutive.toPerm reverseMirror
+
+/-- Applying `reverseMirrorEquiv` computes `reverseMirror`. -/
+@[simp]
+theorem reverseMirrorEquiv_apply (x : ConcordanceClass (𝓡 n) (sphere (0 : E) 1)) :
+    reverseMirrorEquiv x = x.reverseMirror := by
+  rfl
+
+/-- `reverseMirrorEquiv` is its own inverse. -/
+@[simp]
+theorem reverseMirrorEquiv_symm :
+    (reverseMirrorEquiv (E := E) (n := n)).symm = reverseMirrorEquiv :=
+  reverseMirror_involutive.toPerm_symm
+
+/-- `reverseMirrorEquiv` factors as orientation reversal followed by mirroring. -/
+theorem reverseMirrorEquiv_eq_reverseEquiv_trans_mirrorEquiv :
+    reverseMirrorEquiv (E := E) (n := n) = reverseEquiv.trans mirrorEquiv :=
+  Equiv.ext fun _ => by rfl
+
+/-- `reverseMirrorEquiv` also factors as mirroring followed by orientation reversal. -/
+theorem reverseMirrorEquiv_eq_mirrorEquiv_trans_reverseEquiv :
+    reverseMirrorEquiv (E := E) (n := n) = mirrorEquiv.trans reverseEquiv :=
+  Equiv.ext fun x => (reverse_mirror x).symm
+
+/-- `reverseMirror` commutes with orientation reversal on smooth concordance classes. -/
+@[simp]
+theorem reverse_reverseMirror (x : ConcordanceClass (𝓡 n) (sphere (0 : E) 1)) :
+    x.reverseMirror.reverse = x.reverse.reverseMirror := by
+  simp [reverseMirror]
+
+end ConcordanceClass
+
+/-- For **every** great circle `ι`, the concordance class of
+`SmoothCircleEmbedding.reverseMirror ι K` is the reverse mirror class of `K`. -/
+@[simp]
+theorem toConcordanceClass_reverseMirror (ι : ℂ →ₗᵢ[ℝ] E)
+    (K : SmoothCircleEmbedding (𝓡 n) (sphere (0 : E) 1)) :
+    (reverseMirror ι K).toConcordanceClass = K.toConcordanceClass.reverseMirror := by
+  rw [ConcordanceClass.reverseMirror, ConcordanceClass.reverse_toConcordanceClass,
+    ← ConcordanceClass.transDiffeomorph_unitSphereDiffeomorph_eq_mirror_of_det_eq_neg_one
+      (ConcordanceClass.det_defaultReflection (E := E) (n := n)),
+    ConcordanceClass.transDiffeomorph_toConcordanceClass]
+  exact (concordant_reverseMirror_of_det_eq_neg_one ι
+    ConcordanceClass.det_defaultReflection K).toConcordanceClass_eq
+
+/-! ### The canonical abelian monoid structure in dimension `n ≥ 3` -/
 
 namespace ConcordanceClass
 
@@ -422,11 +588,16 @@ section Monoid
 
 variable [Fact (3 ≤ n)]
 
+private theorem two_le_of_fact (n : ℕ) [Fact (3 ≤ n)] : 2 ≤ n :=
+  le_trans (by decide) (Fact.out : 3 ≤ n)
+
 /-- The zero smooth concordance class in `Sⁿ` (`n ≥ 3`): the class of any great circle. -/
 instance instZero : Zero (ConcordanceClass (𝓡 n) (sphere (0 : E) 1)) where
   zero :=
-    let ι₀ := (nonempty_linearIsometry_complex (E := E) (n := n)
-      (le_trans (by decide) (Fact.out : 3 ≤ n))).some
+    let ι₀ := (TauCeti.nonempty_linearIsometry_complex (E := E) (by
+      have := (Fact.out : finrank ℝ E = n + 1)
+      have := (Fact.out : 3 ≤ n)
+      omega)).some
     (greatCircle (n := n) ι₀).toConcordanceClass
 
 /-- Addition of smooth concordance classes in `Sⁿ` (`n ≥ 3`), given by the connected sum of
@@ -434,19 +605,22 @@ positioned representatives. -/
 instance instAdd : Add (ConcordanceClass (𝓡 n) (sphere (0 : E) 1)) where
   add x y :=
     let hn2 : 2 ≤ n := le_trans (by decide) (Fact.out : 3 ≤ n)
-    let ι₀ := (nonempty_linearIsometry_complex (E := E) (n := n)
-      (le_trans (by decide) (Fact.out : 3 ≤ n))).some
-    let hx := x.exists_rep_isConnectedSumPosition hn2 ι₀
-    let hy := y.exists_rep_isConnectedSumPosition hn2 ι₀
-    (connectedSum hx.choose hy.choose hx.choose_spec.1 hy.choose_spec.1).toConcordanceClass
-
-private theorem two_le_of_fact (n : ℕ) [Fact (3 ≤ n)] : 2 ≤ n :=
-  le_trans (by decide) (Fact.out : 3 ≤ n)
+    let ι₀ := (TauCeti.nonempty_linearIsometry_complex (E := E) (by
+      have := (Fact.out : finrank ℝ E = n + 1)
+      have := (Fact.out : 3 ≤ n)
+      omega)).some
+    (connectedSum
+      (x.exists_rep_isConnectedSumPosition hn2 ι₀).choose
+      (y.exists_rep_isConnectedSumPosition hn2 ι₀).choose
+      (x.exists_rep_isConnectedSumPosition hn2 ι₀).choose_spec.1
+      (y.exists_rep_isConnectedSumPosition hn2 ι₀).choose_spec.1).toConcordanceClass
 
 private def defaultGreatCircle (E : Type*) [NormedAddCommGroup E] [InnerProductSpace ℝ E]
     (n : ℕ) [Fact (finrank ℝ E = n + 1)] [Fact (3 ≤ n)] : ℂ →ₗᵢ[ℝ] E :=
-  (nonempty_linearIsometry_complex (E := E) (n := n)
-    (le_trans (by decide) (Fact.out : 3 ≤ n))).some
+  (TauCeti.nonempty_linearIsometry_complex (E := E) (by
+    have := (Fact.out : finrank ℝ E = n + 1)
+    have := (Fact.out : 3 ≤ n)
+    omega)).some
 
 private def posRep (x : ConcordanceClass (𝓡 n) (sphere (0 : E) 1)) :
     SmoothCircleEmbedding (𝓡 n) (sphere (0 : E) 1) :=
@@ -463,23 +637,33 @@ private theorem toConcordanceClass_posRep (x : ConcordanceClass (𝓡 n) (sphere
 private theorem zero_eq_defaultGreatCircle :
     (0 : ConcordanceClass (𝓡 n) (sphere (0 : E) 1)) =
       (greatCircle (n := n) (defaultGreatCircle E n)).toConcordanceClass :=
-  rfl
-
-private theorem add_eq_posRep (x y : ConcordanceClass (𝓡 n) (sphere (0 : E) 1)) :
-    x + y = (connectedSum (posRep x) (posRep y)
-      (isConnectedSumPosition_posRep x) (isConnectedSumPosition_posRep y)).toConcordanceClass :=
-  rfl
+  toConcordanceClass_greatCircle_eq (two_le_of_fact n) _ (defaultGreatCircle E n)
 
 private theorem add_toConcordanceClass_eq {ι : ℂ →ₗᵢ[ℝ] E}
     {K₁ K₂ : SmoothCircleEmbedding (𝓡 n) (sphere (0 : E) 1)}
     (h₁ : IsConnectedSumPosition ι K₁) (h₂ : IsConnectedSumPosition ι K₂) :
     K₁.toConcordanceClass + K₂.toConcordanceClass =
       (connectedSum K₁ K₂ h₁ h₂).toConcordanceClass := by
-  rw [add_eq_posRep]
-  exact (concordant_connectedSum_of_concordant_of_greatCircle (Fact.out : 3 ≤ n)
-    (isConnectedSumPosition_posRep _) (isConnectedSumPosition_posRep _) h₁ h₂
-    (toConcordanceClass_eq_iff.1 (toConcordanceClass_posRep _))
-    (toConcordanceClass_eq_iff.1 (toConcordanceClass_posRep _))).toConcordanceClass_eq
+  obtain ⟨ι₀, hp₁, hp₂, hadd⟩ :
+      ∃ (ι₀ : ℂ →ₗᵢ[ℝ] E)
+        (hp₁ : ∃ L₁, IsConnectedSumPosition ι₀ L₁ ∧ L₁.toConcordanceClass = K₁.toConcordanceClass)
+        (hp₂ : ∃ L₂, IsConnectedSumPosition ι₀ L₂ ∧ L₂.toConcordanceClass = K₂.toConcordanceClass),
+        K₁.toConcordanceClass + K₂.toConcordanceClass =
+          (connectedSum hp₁.choose hp₂.choose
+            hp₁.choose_spec.1 hp₂.choose_spec.1).toConcordanceClass :=
+    ⟨_, _, _, rfl⟩
+  rw [hadd]
+  exact (concordant_connectedSum_of_concordant (Fact.out : 3 ≤ n)
+    hp₁.choose_spec.1 hp₂.choose_spec.1 h₁ h₂
+    (toConcordanceClass_eq_iff.1 hp₁.choose_spec.2)
+    (toConcordanceClass_eq_iff.1 hp₂.choose_spec.2)).toConcordanceClass_eq
+
+private theorem add_eq_posRep (x y : ConcordanceClass (𝓡 n) (sphere (0 : E) 1)) :
+    x + y = (connectedSum (posRep x) (posRep y)
+      (isConnectedSumPosition_posRep x) (isConnectedSumPosition_posRep y)).toConcordanceClass := by
+  conv_lhs => rw [← toConcordanceClass_posRep x, ← toConcordanceClass_posRep y]
+  exact add_toConcordanceClass_eq (isConnectedSumPosition_posRep x)
+    (isConnectedSumPosition_posRep y)
 
 /-- **The smooth knot concordance monoid.** In a sphere `Sⁿ` of dimension `n ≥ 3`, smooth
 concordance classes form an abelian monoid under the connected sum, with the class of any great
@@ -535,12 +719,14 @@ end ConcordanceClass
 /-- **Every great circle represents `0` in the smooth concordance monoid.** -/
 @[simp]
 theorem toConcordanceClass_greatCircle [Fact (3 ≤ n)] (ι : ℂ →ₗᵢ[ℝ] E) :
-    (greatCircle (n := n) ι).toConcordanceClass = 0 :=
-  toConcordanceClass_greatCircle_eq (ConcordanceClass.two_le_of_fact n) ι
+    (greatCircle (n := n) ι).toConcordanceClass = 0 := by
+  rw [ConcordanceClass.zero_eq_defaultGreatCircle]
+  exact toConcordanceClass_greatCircle_eq (ConcordanceClass.two_le_of_fact n) ι
     (ConcordanceClass.defaultGreatCircle E n)
 
 /-- **The connected sum of positioned knots represents `+` in the smooth concordance monoid**,
 independently of the chosen great circle `ι`. -/
+@[simp]
 theorem toConcordanceClass_connectedSum [Fact (3 ≤ n)] {ι : ℂ →ₗᵢ[ℝ] E}
     {K₁ K₂ : SmoothCircleEmbedding (𝓡 n) (sphere (0 : E) 1)}
     (h₁ : IsConnectedSumPosition ι K₁) (h₂ : IsConnectedSumPosition ι K₂) :
@@ -569,9 +755,9 @@ def reverseAddEquiv :
   toEquiv := reverseEquiv
   map_add' x y := by
     obtain ⟨L₁, L₂, hL₁, hL₂, hc₁, hc₂, hc⟩ :=
-      concordant_reverse_connectedSum (two_le_of_fact n)
+      exists_concordant_reverse_connectedSum (two_le_of_fact n)
         (isConnectedSumPosition_posRep x) (isConnectedSumPosition_posRep y)
-    dsimp only [reverseEquiv]
+    simp only [Equiv.toFun_as_coe, reverseEquiv_apply]
     rw [add_eq_posRep, reverse_toConcordanceClass, hc.toConcordanceClass_eq,
       toConcordanceClass_connectedSum hL₁ hL₂,
       ← hc₁.toConcordanceClass_eq, ← hc₂.toConcordanceClass_eq,
@@ -581,20 +767,14 @@ def reverseAddEquiv :
 /-- `reverseAddEquiv` agrees with `reverse` on elements. -/
 @[simp]
 theorem reverseAddEquiv_apply (x : ConcordanceClass (𝓡 n) (sphere (0 : E) 1)) :
-    reverseAddEquiv x = x.reverse := by
-  simp [reverseAddEquiv]
-
-/-- Applying `reverseAddEquiv` to the class of `K` gives the class of `K.reverse`. -/
-theorem reverseAddEquiv_toConcordanceClass
-    (K : SmoothCircleEmbedding (𝓡 n) (sphere (0 : E) 1)) :
-    reverseAddEquiv K.toConcordanceClass = K.reverse.toConcordanceClass := by
-  simp
+    reverseAddEquiv x = x.reverse :=
+  reverseEquiv_apply x
 
 /-- `reverseAddEquiv` is involutive: its inverse is itself. -/
 @[simp]
 theorem reverseAddEquiv_symm :
     (reverseAddEquiv (E := E) (n := n)).symm = reverseAddEquiv :=
-  AddEquiv.ext fun _ => reverseAddEquiv.toEquiv.symm_apply_eq.2 (by simp)
+  AddEquiv.toEquiv_injective reverseEquiv_symm
 
 /-- Reversing the zero concordance class gives zero. -/
 @[simp]
@@ -622,15 +802,19 @@ def transLinearIsometryAddEquiv (e : E ≃ₗᵢ[ℝ] E') :
     let ι₀ := defaultGreatCircle E n
     let ι' : ℂ →ₗᵢ[ℝ] E' := e.toLinearIsometry.comp ι₀
     have he : ∀ w, e (ι₀ w) = ι' w := fun _ => rfl
-    -- Unfold `toEquiv` so the goal is stated in terms of `transDiffeomorph`.
-    change transDiffeomorph (e.unitSphereDiffeomorph ∞) (x + y) =
-      transDiffeomorph (e.unitSphereDiffeomorph ∞) x +
-        transDiffeomorph (e.unitSphereDiffeomorph ∞) y
+    simp only [Equiv.toFun_as_coe]
     rw [add_eq_posRep, transDiffeomorph_toConcordanceClass,
-      transLinearIsometryEquiv_connectedSum
+      transDiffeomorph_connectedSum
         (isConnectedSumPosition_posRep x) (isConnectedSumPosition_posRep y) he,
       toConcordanceClass_connectedSum, ← transDiffeomorph_toConcordanceClass,
       ← transDiffeomorph_toConcordanceClass, toConcordanceClass_posRep, toConcordanceClass_posRep]
+
+/-- Applying `transLinearIsometryAddEquiv e` transports along `e.unitSphereDiffeomorph ∞`. -/
+theorem transLinearIsometryAddEquiv_apply (e : E ≃ₗᵢ[ℝ] E')
+    (x : ConcordanceClass (𝓡 n) (sphere (0 : E) 1)) :
+    transLinearIsometryAddEquiv e x =
+      transDiffeomorph (e.unitSphereDiffeomorph (n := n) (k := n) ∞) x := by
+  rfl
 
 /-- `transLinearIsometryAddEquiv e` sends the class of `K` to the class of `K` transported along
 `e.unitSphereDiffeomorph ∞`. -/
@@ -639,116 +823,121 @@ theorem transLinearIsometryAddEquiv_toConcordanceClass (e : E ≃ₗᵢ[ℝ] E')
     (K : SmoothCircleEmbedding (𝓡 n) (sphere (0 : E) 1)) :
     transLinearIsometryAddEquiv e K.toConcordanceClass =
       toConcordanceClass (K.transDiffeomorph (e.unitSphereDiffeomorph (n := n) (k := n) ∞)) := by
-  simp [transLinearIsometryAddEquiv]
+  rfl
+
+/-- `transLinearIsometryAddEquiv` commutes with orientation reversal on concordance classes. -/
+@[simp]
+theorem reverse_transLinearIsometryAddEquiv (e : E ≃ₗᵢ[ℝ] E')
+    (x : ConcordanceClass (𝓡 n) (sphere (0 : E) 1)) :
+    (transLinearIsometryAddEquiv e x).reverse = transLinearIsometryAddEquiv e x.reverse := by
+  exact reverse_transDiffeomorph (e.unitSphereDiffeomorph (n := n) (k := n) ∞) x
 
 /-- The inverse of `transLinearIsometryAddEquiv e` is `transLinearIsometryAddEquiv e.symm`. -/
 @[simp]
 theorem transLinearIsometryAddEquiv_symm (e : E ≃ₗᵢ[ℝ] E') :
     (transLinearIsometryAddEquiv (n := n) e).symm = transLinearIsometryAddEquiv e.symm :=
-  AddEquiv.ext fun x => x.inductionOn fun _ => by simp [transLinearIsometryAddEquiv]
+  AddEquiv.toEquiv_injective <|
+    (transDiffeomorph_symm _).trans (congrArg transDiffeomorph (e.unitSphereDiffeomorph_symm))
 
 /-- The identity linear isometry induces the identity additive equivalence on concordance
 classes. -/
 @[simp]
 theorem transLinearIsometryAddEquiv_refl :
-    transLinearIsometryAddEquiv (n := n) (LinearIsometryEquiv.refl ℝ E) = AddEquiv.refl _ := by
-  refine AddEquiv.ext fun x => x.inductionOn fun K => ?_
-  have hrefl : (LinearIsometryEquiv.refl ℝ E).unitSphereDiffeomorph (n := n) (k := n) ∞ =
-      _root_.Diffeomorph.refl (𝓡 n) (sphere (0 : E) 1) ∞ :=
-    _root_.Diffeomorph.ext fun z => Subtype.ext (by simp)
-  rw [transLinearIsometryAddEquiv_toConcordanceClass, hrefl, SmoothEmbedding.transDiffeomorph_refl,
-    AddEquiv.refl_apply]
+    transLinearIsometryAddEquiv (n := n) (LinearIsometryEquiv.refl ℝ E) = AddEquiv.refl _ :=
+  AddEquiv.toEquiv_injective <|
+    (congrArg transDiffeomorph LinearIsometryEquiv.unitSphereDiffeomorph_refl).trans
+      transDiffeomorph_refl
 
 /-- Composing linear isometry equivalences composes the induced additive equivalences on concordance
 classes. -/
 theorem transLinearIsometryAddEquiv_trans (e₁ : E ≃ₗᵢ[ℝ] E') (e₂ : E' ≃ₗᵢ[ℝ] E'') :
     transLinearIsometryAddEquiv (n := n) (e₁.trans e₂) =
-      (transLinearIsometryAddEquiv e₁).trans (transLinearIsometryAddEquiv e₂) := by
-  refine AddEquiv.ext fun x => x.inductionOn fun K => ?_
-  have hcomp : (e₁.trans e₂).unitSphereDiffeomorph (n := n) (k := n) ∞ =
-      (e₁.unitSphereDiffeomorph (n := n) (k := n) ∞).trans
-        (e₂.unitSphereDiffeomorph (n := n) (k := n) ∞) :=
-    _root_.Diffeomorph.ext fun z => Subtype.ext (by simp)
-  rw [transLinearIsometryAddEquiv_toConcordanceClass, hcomp,
-    ← SmoothEmbedding.transDiffeomorph_transDiffeomorph,
-    AddEquiv.trans_apply, transLinearIsometryAddEquiv_toConcordanceClass,
-    transLinearIsometryAddEquiv_toConcordanceClass]
+      (transLinearIsometryAddEquiv e₁).trans (transLinearIsometryAddEquiv e₂) :=
+  AddEquiv.toEquiv_injective <|
+    (congrArg transDiffeomorph (LinearIsometryEquiv.unitSphereDiffeomorph_trans e₁ e₂)).trans
+      (transDiffeomorph_trans _ _)
 
 /-- **Linear isometries of the same determinant induce the same automorphism** on the smooth
 concordance monoid. -/
 theorem transLinearIsometryAddEquiv_eq_of_det_eq {e₁ e₂ : E ≃ₗᵢ[ℝ] E}
     (he : (LinearEquiv.det e₁.toLinearEquiv : ℝ) = LinearEquiv.det e₂.toLinearEquiv) :
     transLinearIsometryAddEquiv (n := n) e₁ = transLinearIsometryAddEquiv e₂ :=
-  AddEquiv.ext fun x => x.inductionOn fun K => by
-    rw [transLinearIsometryAddEquiv_toConcordanceClass,
-      transLinearIsometryAddEquiv_toConcordanceClass]
-    exact (SmoothEmbedding.smoothAmbientIsotopic_transDiffeomorph_unitSphereDiffeomorph K he)
-      |>.toConcordanceClass_eq
+  AddEquiv.toEquiv_injective (transDiffeomorph_unitSphereDiffeomorph_eq_of_det_eq he)
 
 /-- **Any orientation-preserving linear isometry of `E` acts as the identity** on the smooth
 concordance monoid of `Sⁿ`. -/
 theorem transLinearIsometryAddEquiv_eq_refl_of_det_eq_one {e : E ≃ₗᵢ[ℝ] E}
     (he : (LinearEquiv.det e.toLinearEquiv : ℝ) = 1) :
     transLinearIsometryAddEquiv (n := n) e = AddEquiv.refl _ :=
-  (transLinearIsometryAddEquiv_eq_of_det_eq (e₂ := .refl ℝ E) (by simpa using he)).trans
-    transLinearIsometryAddEquiv_refl
+  AddEquiv.toEquiv_injective (transDiffeomorph_unitSphereDiffeomorph_eq_refl_of_det_eq_one he)
 
 end LinearIsometry
 
+/-- **Canonical mirroring as an involutive additive automorphism** of the smooth concordance monoid
+of `Sⁿ`. -/
+def mirrorAddEquiv :
+    ConcordanceClass (𝓡 n) (sphere (0 : E) 1) ≃+ ConcordanceClass (𝓡 n) (sphere (0 : E) 1) :=
+  transLinearIsometryAddEquiv (defaultReflection E n)
+
+/-- `mirrorAddEquiv` agrees with `mirror` on elements. -/
+@[simp]
+theorem mirrorAddEquiv_apply (x : ConcordanceClass (𝓡 n) (sphere (0 : E) 1)) :
+    mirrorAddEquiv x = x.mirror := by
+  rfl
+
+/-- Every linear isometry of `E` of determinant `-1` induces the additive automorphism
+`mirrorAddEquiv`. -/
+theorem transLinearIsometryAddEquiv_eq_mirrorAddEquiv_of_det_eq_neg_one {e : E ≃ₗᵢ[ℝ] E}
+    (he : (LinearEquiv.det e.toLinearEquiv : ℝ) = -1) :
+    transLinearIsometryAddEquiv (n := n) e = mirrorAddEquiv :=
+  transLinearIsometryAddEquiv_eq_of_det_eq (he.trans det_defaultReflection.symm)
+
+/-- `mirrorAddEquiv` is its own inverse. -/
+@[simp]
+theorem mirrorAddEquiv_symm : (mirrorAddEquiv (E := E) (n := n)).symm = mirrorAddEquiv :=
+  AddEquiv.ext fun _ => mirrorAddEquiv.toEquiv.symm_apply_eq.2 (by simp)
+
+/-- Mirroring the zero smooth concordance class gives zero. -/
+@[simp]
+theorem mirror_zero : (0 : ConcordanceClass (𝓡 n) (sphere (0 : E) 1)).mirror = 0 := by
+  rw [← mirrorAddEquiv_apply, map_zero]
+
+/-- Mirroring distributes over addition of smooth concordance classes. -/
+theorem mirror_add (x y : ConcordanceClass (𝓡 n) (sphere (0 : E) 1)) :
+    (x + y).mirror = x.mirror + y.mirror := by
+  rw [← mirrorAddEquiv_apply, map_add, mirrorAddEquiv_apply, mirrorAddEquiv_apply]
+
 /-- **The reverse mirror image as an involutive additive automorphism** of the smooth concordance
-monoid. It sends the class of `K` to the class of `reverseMirror ι K` for any great circle `ι`. -/
+monoid: orientation reversal followed by mirroring. -/
 def reverseMirrorAddEquiv :
     ConcordanceClass (𝓡 n) (sphere (0 : E) 1) ≃+ ConcordanceClass (𝓡 n) (sphere (0 : E) 1) :=
-  let hn2 : 2 ≤ n := le_trans (by decide) (Fact.out : 3 ≤ n)
-  let ι₀ := (nonempty_linearIsometry_complex (E := E) (n := n)
-    (le_trans (by decide) (Fact.out : 3 ≤ n))).some
-  let f : ConcordanceClass (𝓡 n) (sphere (0 : E) 1) → ConcordanceClass (𝓡 n) (sphere (0 : E) 1) :=
-    Quotient.map (reverseMirror ι₀) (fun _ _ h =>
-      SmoothEmbedding.Concordant.setoid_r_iff.2
-        (concordant_reverseMirror_of_concordant hn2 ι₀ ι₀
-          (SmoothEmbedding.Concordant.setoid_r_iff.1 h)))
-  { toFun := f
-    invFun := f
-    left_inv := fun x => x.inductionOn fun K => by
-      simp [f, SmoothCircleEmbedding.toConcordanceClass]; rfl
-    right_inv := fun x => x.inductionOn fun K => by
-      simp [f, SmoothCircleEmbedding.toConcordanceClass]; rfl
-    map_add' := fun x y => by
-      have happly (K : SmoothCircleEmbedding (𝓡 n) (sphere (0 : E) 1)) :
-          f K.toConcordanceClass =
-            (reverseMirror (defaultGreatCircle E n) K).toConcordanceClass := by
-        simp [f, ι₀, defaultGreatCircle, SmoothCircleEmbedding.toConcordanceClass]; rfl
-      have hx : (posRep x).toConcordanceClass = x := toConcordanceClass_posRep x
-      have hy : (posRep y).toConcordanceClass = y := toConcordanceClass_posRep y
-      conv_lhs => rw [add_eq_posRep]
-      conv_rhs => rw [← hx, ← hy]
-      rw [happly, happly, happly,
-        reverseMirror_connectedSum (isConnectedSumPosition_posRep x)
-          (isConnectedSumPosition_posRep y),
-        toConcordanceClass_connectedSum] }
+  reverseAddEquiv.trans mirrorAddEquiv
 
-/-- For **every** great circle `ι`, `reverseMirrorAddEquiv` sends the concordance class of `K` to
-the concordance class of `reverseMirror ι K`. -/
-theorem reverseMirrorAddEquiv_toConcordanceClass (ι : ℂ →ₗᵢ[ℝ] E)
-    (K : SmoothCircleEmbedding (𝓡 n) (sphere (0 : E) 1)) :
-    reverseMirrorAddEquiv K.toConcordanceClass = (reverseMirror ι K).toConcordanceClass := by
-  have hdef : reverseMirrorAddEquiv K.toConcordanceClass =
-      (reverseMirror (defaultGreatCircle E n) K).toConcordanceClass := by
-    simp [ConcordanceClass, reverseMirrorAddEquiv, defaultGreatCircle,
-      SmoothCircleEmbedding.toConcordanceClass]; rfl
-  rw [hdef]
-  exact (concordant_reverseMirror_of_concordant (two_le_of_fact n)
-    (defaultGreatCircle E n) ι (.refl K)).toConcordanceClass_eq
-
-/-- Applying `reverseMirrorAddEquiv` twice returns the original concordance class. -/
+/-- `reverseMirrorAddEquiv` agrees with `reverseMirror` on elements. -/
 @[simp]
-theorem reverseMirrorAddEquiv_apply_reverseMirrorAddEquiv
-    (x : ConcordanceClass (𝓡 n) (sphere (0 : E) 1)) :
-    reverseMirrorAddEquiv (reverseMirrorAddEquiv x) = x :=
-  x.inductionOn fun K => by
-    rw [reverseMirrorAddEquiv_toConcordanceClass (defaultGreatCircle E n),
-      reverseMirrorAddEquiv_toConcordanceClass (defaultGreatCircle E n),
-      reverseMirror_reverseMirror]
+theorem reverseMirrorAddEquiv_apply (x : ConcordanceClass (𝓡 n) (sphere (0 : E) 1)) :
+    reverseMirrorAddEquiv x = x.reverseMirror := by
+  rfl
+
+/-- **The reverse mirror automorphism factors as orientation reversal followed by mirroring.** -/
+theorem reverseMirrorAddEquiv_eq_reverseAddEquiv_trans_mirrorAddEquiv :
+    reverseMirrorAddEquiv (E := E) (n := n) = reverseAddEquiv.trans mirrorAddEquiv := by
+  rfl
+
+/-- **The reverse mirror automorphism also factors as mirroring followed by orientation
+reversal.** -/
+theorem reverseMirrorAddEquiv_eq_mirrorAddEquiv_trans_reverseAddEquiv :
+    reverseMirrorAddEquiv (E := E) (n := n) = mirrorAddEquiv.trans reverseAddEquiv :=
+  AddEquiv.ext fun x => (reverse_mirror x).symm
+
+/-- For every linear isometry `e : E ≃ₗᵢ[ℝ] E` of determinant `-1`, `reverseMirrorAddEquiv` is
+orientation reversal followed by `transLinearIsometryAddEquiv e`. -/
+theorem reverseMirrorAddEquiv_eq_reverseAddEquiv_trans_transLinearIsometryAddEquiv_of_det_eq_neg_one
+    {e : E ≃ₗᵢ[ℝ] E} (he : (LinearEquiv.det e.toLinearEquiv : ℝ) = -1) :
+    reverseMirrorAddEquiv (E := E) (n := n) =
+      reverseAddEquiv.trans (transLinearIsometryAddEquiv e) :=
+  congrArg reverseAddEquiv.trans
+    (transLinearIsometryAddEquiv_eq_mirrorAddEquiv_of_det_eq_neg_one he).symm
 
 /-- `reverseMirrorAddEquiv` is its own inverse. -/
 @[simp]
@@ -756,34 +945,28 @@ theorem reverseMirrorAddEquiv_symm :
     (reverseMirrorAddEquiv (E := E) (n := n)).symm = reverseMirrorAddEquiv :=
   AddEquiv.ext fun _ => reverseMirrorAddEquiv.toEquiv.symm_apply_eq.2 (by simp)
 
-/-- `reverseMirrorAddEquiv` commutes with orientation reversal on concordance classes. -/
-theorem reverse_reverseMirrorAddEquiv (x : ConcordanceClass (𝓡 n) (sphere (0 : E) 1)) :
-    (reverseMirrorAddEquiv x).reverse = reverseMirrorAddEquiv x.reverse := by
-  refine x.inductionOn fun K => ?_
-  let ι₀ := defaultGreatCircle E n
-  let σ := (ℝ ∙ ι₀ Complex.I)ᗮ.reflection.unitSphereDiffeomorph (n := n) (k := n) ∞
-  have h1 : (reverseMirror ι₀ K).toConcordanceClass =
-      toConcordanceClass (K.reverse.transDiffeomorph σ) := by
-    rw [reverseMirror_eq_turnOver, toConcordanceClass_turnOver]
-  have h2 : (reverseMirror ι₀ K.reverse).toConcordanceClass =
-      toConcordanceClass (K.transDiffeomorph σ) := by
-    rw [reverseMirror_eq_turnOver, K.reverse_reverse, toConcordanceClass_turnOver]
-  rw [reverseMirrorAddEquiv_toConcordanceClass ι₀ K, h1,
-    reverse_toConcordanceClass K, reverseMirrorAddEquiv_toConcordanceClass ι₀ K.reverse, h2]
-  simp
+/-- Reverse-mirroring the zero smooth concordance class gives zero. -/
+@[simp]
+theorem reverseMirror_zero : (0 : ConcordanceClass (𝓡 n) (sphere (0 : E) 1)).reverseMirror = 0 := by
+  rw [← reverseMirrorAddEquiv_apply, map_zero]
+
+/-- Reverse-mirroring distributes over addition of smooth concordance classes. -/
+theorem reverseMirror_add (x y : ConcordanceClass (𝓡 n) (sphere (0 : E) 1)) :
+    (x + y).reverseMirror = x.reverseMirror + y.reverseMirror := by
+  rw [← reverseMirrorAddEquiv_apply, map_add, reverseMirrorAddEquiv_apply,
+    reverseMirrorAddEquiv_apply]
 
 /-- **Every smooth concordance class plus its reverse mirror class admits a smoothly slice
 representative.** -/
-theorem exists_isSmoothlySlice_rep_add_reverseMirrorAddEquiv
+theorem exists_isSmoothlySlice_rep_add_reverseMirror
     (x : ConcordanceClass (𝓡 n) (sphere (0 : E) 1)) :
     ∃ K : SmoothCircleEmbedding (𝓡 n) (sphere (0 : E) 1),
-      TauCeti.IsSmoothlySlice K ∧ K.toConcordanceClass = x + reverseMirrorAddEquiv x := by
+      TauCeti.IsSmoothlySlice K ∧ K.toConcordanceClass = x + x.reverseMirror := by
   let ι₀ := defaultGreatCircle E n
-  refine ⟨connectedSum (posRep x) (reverseMirror ι₀ (posRep x))
+  refine ⟨connectedSum (posRep x) (SmoothCircleEmbedding.reverseMirror ι₀ (posRep x))
       (isConnectedSumPosition_posRep x) (isConnectedSumPosition_posRep x).reverseMirror,
     isSmoothlySlice_connectedSum_reverseMirror (isConnectedSumPosition_posRep x), ?_⟩
-  rw [toConcordanceClass_connectedSum, ← reverseMirrorAddEquiv_toConcordanceClass ι₀,
-    toConcordanceClass_posRep]
+  simp [toConcordanceClass_posRep]
 
 end AddEquiv
 
@@ -791,68 +974,32 @@ end ConcordanceClass
 
 end Sphere
 
-/-! ### Euclidean spheres, mirror automorphism, and the unknot in `S³` -/
+/-! ### Euclidean spheres, coordinate mirroring, and the unknot in `S³` -/
 
 section EuclideanSphere
 
 attribute [local instance] finrank_euclideanSpace_fin_succ_fact
 
-/-- `3 ≤ m + 3` as a `Fact`, for activating the smooth concordance monoid on `S^{m + 3}` (in
-particular `S³` when `m = 0`). -/
-theorem three_le_add_three_fact (m : ℕ) : Fact (3 ≤ m + 3) :=
-  ⟨Nat.le_add_left 3 m⟩
-
 namespace ConcordanceClass
 
-section Mirror
-
-variable {n : ℕ} [Fact (3 ≤ n)]
-
-/-- **Mirroring as an involutive additive automorphism** of the smooth concordance monoid of
-`Sⁿ ⊆ ℝⁿ⁺¹`. -/
-def mirrorAddEquiv :
-    ConcordanceClass (𝓡 n) (sphere (0 : EuclideanSpace ℝ (Fin (n + 1))) 1) ≃+
-      ConcordanceClass (𝓡 n) (sphere (0 : EuclideanSpace ℝ (Fin (n + 1))) 1) :=
-  transLinearIsometryAddEquiv (ℝ ∙ EuclideanSpace.single (Fin.last n) (1 : ℝ))ᗮ.reflection
-
-/-- `mirrorAddEquiv` sends the concordance class of `K` to the concordance class of `K.mirror`. -/
+/-- On `Sⁿ ⊆ ℝⁿ⁺¹`, canonical mirroring sends the concordance class of `K` to the concordance class
+of the coordinate mirror image `K.mirror`. -/
 @[simp]
-theorem mirrorAddEquiv_toConcordanceClass
+theorem mirror_toConcordanceClass {n : ℕ}
     (K : SmoothCircleEmbedding (𝓡 n) (sphere (0 : EuclideanSpace ℝ (Fin (n + 1))) 1)) :
-    mirrorAddEquiv K.toConcordanceClass = K.mirror.toConcordanceClass := by
-  rw [mirrorAddEquiv, transLinearIsometryAddEquiv_toConcordanceClass, ← K.mirror_def]
+    K.toConcordanceClass.mirror = K.mirror.toConcordanceClass := by
+  rw [K.mirror_def, ← transDiffeomorph_toConcordanceClass,
+    transDiffeomorph_unitSphereDiffeomorph_eq_mirror_of_det_eq_neg_one
+      (linearEquiv_det_reflection_orthogonal_singleton (by simp))]
 
-/-- `mirrorAddEquiv` is its own inverse. -/
-@[simp]
-theorem mirrorAddEquiv_symm : (mirrorAddEquiv (n := n)).symm = mirrorAddEquiv := by
-  rw [mirrorAddEquiv, transLinearIsometryAddEquiv_symm, Submodule.reflection_symm]
-
-/-- Applying `mirrorAddEquiv` twice returns the original concordance class. -/
-@[simp]
-theorem mirrorAddEquiv_apply_mirrorAddEquiv
-    (x : ConcordanceClass (𝓡 n) (sphere (0 : EuclideanSpace ℝ (Fin (n + 1))) 1)) :
-    mirrorAddEquiv (mirrorAddEquiv x) = x :=
-  x.inductionOn fun _ => by simp
-
-/-- **The reverse mirror automorphism factors as orientation reversal followed by mirroring.** -/
-theorem reverseMirrorAddEquiv_eq_reverseAddEquiv_trans_mirrorAddEquiv :
-    reverseMirrorAddEquiv (E := EuclideanSpace ℝ (Fin (n + 1))) (n := n) =
-      reverseAddEquiv.trans mirrorAddEquiv := by
-  refine AddEquiv.ext fun x => x.inductionOn fun K => ?_
-  let ι₀ := defaultGreatCircle (EuclideanSpace ℝ (Fin (n + 1))) n
-  rw [AddEquiv.trans_apply, reverseAddEquiv_toConcordanceClass, mirrorAddEquiv_toConcordanceClass,
-    reverseMirrorAddEquiv_toConcordanceClass ι₀]
-  exact (concordant_reverseMirror_reverse_mirror ι₀ K).toConcordanceClass_eq
-
-/-- **The reverse mirror automorphism also factors as mirroring followed by orientation
-reversal.** -/
-theorem reverseMirrorAddEquiv_eq_mirrorAddEquiv_trans_reverseAddEquiv :
-    reverseMirrorAddEquiv (E := EuclideanSpace ℝ (Fin (n + 1))) (n := n) =
-      mirrorAddEquiv.trans reverseAddEquiv :=
-  reverseMirrorAddEquiv_eq_reverseAddEquiv_trans_mirrorAddEquiv.trans <|
-    AddEquiv.ext fun x => x.inductionOn fun _ => by simp
-
-end Mirror
+/-- On `Sⁿ ⊆ ℝⁿ⁺¹` (`3 ≤ n`), `mirrorAddEquiv` is induced by reflection in the last coordinate
+hyperplane. -/
+theorem mirrorAddEquiv_eq_transLinearIsometryAddEquiv_reflection {n : ℕ} [Fact (3 ≤ n)] :
+    mirrorAddEquiv (E := EuclideanSpace ℝ (Fin (n + 1))) (n := n) =
+      transLinearIsometryAddEquiv
+        (ℝ ∙ EuclideanSpace.single (Fin.last n) (1 : ℝ))ᗮ.reflection :=
+  (transLinearIsometryAddEquiv_eq_mirrorAddEquiv_of_det_eq_neg_one
+    (linearEquiv_det_reflection_orthogonal_singleton (by simp))).symm
 
 end ConcordanceClass
 
@@ -874,32 +1021,13 @@ section Invariants
 variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] {n : ℕ}
   [Fact (finrank ℝ E = n + 1)]
 
-/-- **Topological sliceness is invariant under smooth concordance** in every sphere dimension
-`n`. -/
-theorem SmoothEmbedding.Concordant.isTopologicallySlice_iff
-    {K₀ K : SmoothCircleEmbedding (𝓡 n) (sphere (0 : E) 1)}
-    (h : SmoothEmbedding.Concordant K₀ K) :
-    IsTopologicallySlice K₀ ↔ IsTopologicallySlice K := by
-  obtain ⟨Φ⟩ := SmoothEmbedding.concordant_iff_nonempty.1 h
-  let himm := Φ.toSmoothEmbedding.isImmersion
-  let L := (himm.isImmersionOfComplement_complement ((1 : Circle), (0 : ℝ))).equiv
-  have : FiniteDimensional ℝ ((EuclideanSpace ℝ (Fin 1) × ℝ) × himm.complement) :=
-    L.symm.toLinearEquiv.finiteDimensional
-  have : FiniteDimensional ℝ himm.complement :=
-    Module.Finite.of_surjective (LinearMap.snd ℝ (EuclideanSpace ℝ (Fin 1) × ℝ) _)
-      Prod.snd_surjective
-  have hdim := L.toLinearEquiv.finrank_eq
-  rw [Module.finrank_prod, Module.finrank_prod, Module.finrank_prod,
-    finrank_euclideanSpace_fin, finrank_euclideanSpace_fin, Module.finrank_self] at hdim
-  exact Φ.topologicallyConcordant.isTopologicallySlice_iff (by simp) (by omega)
-
 namespace SmoothCircleEmbedding.ConcordanceClass
 
 /-- **Topological sliceness of a smooth concordance class**: a class is topologically slice when
 its representatives bound locally flat disks in `Dⁿ⁺¹` (`TauCeti.IsTopologicallySlice`). -/
 def IsTopologicallySlice (x : ConcordanceClass (𝓡 n) (sphere (0 : E) 1)) : Prop :=
-  Quotient.lift TauCeti.IsTopologicallySlice
-    (fun _ _ h => propext (SmoothEmbedding.Concordant.setoid_r_iff.1 h).isTopologicallySlice_iff) x
+  ConcordanceClass.lift TauCeti.IsTopologicallySlice
+    (fun _ _ h => propext h.isTopologicallySlice_iff) x
 
 /-- The smooth concordance class of `K` is topologically slice if and only if `K` is topologically
 slice. -/
@@ -907,13 +1035,51 @@ slice. -/
 theorem isTopologicallySlice_toConcordanceClass_iff
     (K : SmoothCircleEmbedding (𝓡 n) (sphere (0 : E) 1)) :
     K.toConcordanceClass.IsTopologicallySlice ↔ TauCeti.IsTopologicallySlice K := by
-  simp [IsTopologicallySlice, SmoothCircleEmbedding.toConcordanceClass]
+  rfl
 
 /-- Orientation reversal preserves topological sliceness of smooth concordance classes. -/
 @[simp]
 theorem isTopologicallySlice_reverse_iff (x : ConcordanceClass (𝓡 n) (sphere (0 : E) 1)) :
     x.reverse.IsTopologicallySlice ↔ x.IsTopologicallySlice :=
   x.inductionOn fun _ => by simp
+
+/-- Linear isometry equivalences preserve topological sliceness of smooth concordance classes in
+every sphere dimension `n`. -/
+@[simp]
+theorem isTopologicallySlice_transDiffeomorph_unitSphereDiffeomorph_iff
+    {F : Type*} [NormedAddCommGroup F] [InnerProductSpace ℝ F] [Fact (finrank ℝ F = n + 1)]
+    (e : E ≃ₗᵢ[ℝ] F) (x : ConcordanceClass (𝓡 n) (sphere (0 : E) 1)) :
+    (transDiffeomorph (e.unitSphereDiffeomorph (n := n) (k := n) ∞) x).IsTopologicallySlice ↔
+      x.IsTopologicallySlice :=
+  x.inductionOn fun K => by
+    rw [transDiffeomorph_toConcordanceClass, isTopologicallySlice_toConcordanceClass_iff,
+      isTopologicallySlice_toConcordanceClass_iff]
+    exact isTopologicallySlice_congr_linearIsometryEquiv e fun z => by simp
+
+/-- Mirroring preserves topological sliceness of smooth concordance classes in every sphere
+dimension `n`. -/
+@[simp]
+theorem isTopologicallySlice_mirror_iff
+    (x : ConcordanceClass (𝓡 n) (sphere (0 : E) 1)) :
+    x.mirror.IsTopologicallySlice ↔ x.IsTopologicallySlice :=
+  isTopologicallySlice_transDiffeomorph_unitSphereDiffeomorph_iff _ x
+
+/-- Reverse-mirroring preserves topological sliceness of smooth concordance classes in every sphere
+dimension `n`. -/
+@[simp]
+theorem isTopologicallySlice_reverseMirror_iff
+    (x : ConcordanceClass (𝓡 n) (sphere (0 : E) 1)) :
+    x.reverseMirror.IsTopologicallySlice ↔ x.IsTopologicallySlice := by
+  simp [reverseMirror]
+
+/-- Linear isometry additive equivalences preserve topological sliceness of smooth concordance
+classes. -/
+@[simp]
+theorem isTopologicallySlice_transLinearIsometryAddEquiv_iff [Fact (3 ≤ n)]
+    {F : Type*} [NormedAddCommGroup F] [InnerProductSpace ℝ F] [Fact (finrank ℝ F = n + 1)]
+    (e : E ≃ₗᵢ[ℝ] F) (x : ConcordanceClass (𝓡 n) (sphere (0 : E) 1)) :
+    (transLinearIsometryAddEquiv e x).IsTopologicallySlice ↔ x.IsTopologicallySlice :=
+  isTopologicallySlice_transDiffeomorph_unitSphereDiffeomorph_iff e x
 
 /-- The zero smooth concordance class is topologically slice. -/
 @[simp]
@@ -924,54 +1090,20 @@ theorem isTopologicallySlice_zero [Fact (3 ≤ n)] :
   exact TauCeti.isTopologicallySlice_greatCircle _
 
 /-- Every smooth concordance class plus its reverse mirror class is topologically slice. -/
-theorem isTopologicallySlice_add_reverseMirrorAddEquiv [Fact (3 ≤ n)]
+theorem isTopologicallySlice_add_reverseMirror [Fact (3 ≤ n)]
     (x : ConcordanceClass (𝓡 n) (sphere (0 : E) 1)) :
-    (x + reverseMirrorAddEquiv x).IsTopologicallySlice := by
-  obtain ⟨K, hK, hKx⟩ := exists_isSmoothlySlice_rep_add_reverseMirrorAddEquiv x
+    (x + x.reverseMirror).IsTopologicallySlice := by
+  obtain ⟨K, hK, hKx⟩ := exists_isSmoothlySlice_rep_add_reverseMirror x
   rw [← hKx, isTopologicallySlice_toConcordanceClass_iff]
   exact hK.isTopologicallySlice
 
-/-- Linear isometry equivalences preserve topological sliceness of smooth concordance classes. -/
-@[simp]
-theorem isTopologicallySlice_transLinearIsometryAddEquiv_iff [Fact (3 ≤ n)]
-    {F : Type*} [NormedAddCommGroup F] [InnerProductSpace ℝ F] [Fact (finrank ℝ F = n + 1)]
-    (e : E ≃ₗᵢ[ℝ] F) (x : ConcordanceClass (𝓡 n) (sphere (0 : E) 1)) :
-    (transLinearIsometryAddEquiv e x).IsTopologicallySlice ↔ x.IsTopologicallySlice :=
-  x.inductionOn fun K => by
-    rw [transLinearIsometryAddEquiv_toConcordanceClass, isTopologicallySlice_toConcordanceClass_iff,
-      isTopologicallySlice_toConcordanceClass_iff]
-    exact isTopologicallySlice_congr_linearIsometryEquiv e fun z => by simp
-
-/-- The reverse mirror automorphism preserves topological sliceness of smooth concordance
-classes. -/
-@[simp]
-theorem isTopologicallySlice_reverseMirrorAddEquiv_iff [Fact (3 ≤ n)]
-    (x : ConcordanceClass (𝓡 n) (sphere (0 : E) 1)) :
-    (reverseMirrorAddEquiv x).IsTopologicallySlice ↔ x.IsTopologicallySlice := by
-  refine x.inductionOn fun K => ?_
-  let ι₀ := defaultGreatCircle E n
-  rw [reverseMirrorAddEquiv_toConcordanceClass ι₀ K,
-    reverseMirror_eq_turnOver, toConcordanceClass_turnOver,
-    isTopologicallySlice_toConcordanceClass_iff, isTopologicallySlice_toConcordanceClass_iff]
-  exact (isTopologicallySlice_congr_linearIsometryEquiv (ℝ ∙ ι₀ Complex.I)ᗮ.reflection
-    fun z => by simp).trans TauCeti.isTopologicallySlice_reverse_iff
-
-attribute [local instance] finrank_euclideanSpace_fin_succ_fact in
-/-- The mirror automorphism of `Sⁿ ⊆ ℝⁿ⁺¹` preserves topological sliceness of smooth concordance
-classes. -/
-@[simp]
-theorem isTopologicallySlice_mirrorAddEquiv_iff {m : ℕ} [Fact (3 ≤ m)]
-    (x : ConcordanceClass (𝓡 m) (sphere (0 : EuclideanSpace ℝ (Fin (m + 1))) 1)) :
-    (mirrorAddEquiv x).IsTopologicallySlice ↔ x.IsTopologicallySlice :=
-  isTopologicallySlice_transLinearIsometryAddEquiv_iff _ x
-
-/-- **Smooth cobordism distance on smooth concordance classes**: the minimum genus of a smooth
-oriented cobordism in `Sⁿ × [0, 1]` between representatives (`TauCeti.cobordismDistance`). -/
+/-- **Unoriented smooth cobordism distance on smooth concordance classes**: the minimum genus (or
+`⊤` if no cobordism exists) of a smooth connected orientable knot cobordism
+(`TauCeti.KnotCobordism`) in `Sⁿ × [0, 1]` between the unoriented images of representatives,
+ignoring knot orientations (`TauCeti.cobordismDistance`). -/
 def cobordismDistance (x y : ConcordanceClass (𝓡 n) (sphere (0 : E) 1)) : ℕ∞ :=
-  Quotient.lift₂ TauCeti.cobordismDistance
-    (fun _ _ _ _ h₀ h₁ => cobordismDistance_congr_concordant
-      (SmoothEmbedding.Concordant.setoid_r_iff.1 h₀)
-      (SmoothEmbedding.Concordant.setoid_r_iff.1 h₁)) x y
+  ConcordanceClass.lift₂ TauCeti.cobordismDistance
+    (fun _ _ _ _ h₀ h₁ => cobordismDistance_congr_concordant h₀ h₁) x y
 
 /-- On representatives, `ConcordanceClass.cobordismDistance` agrees with
 `TauCeti.cobordismDistance`. -/
@@ -980,7 +1112,7 @@ theorem cobordismDistance_toConcordanceClass
     (K₀ K₁ : SmoothCircleEmbedding (𝓡 n) (sphere (0 : E) 1)) :
     cobordismDistance K₀.toConcordanceClass K₁.toConcordanceClass =
       TauCeti.cobordismDistance K₀ K₁ := by
-  simp [cobordismDistance, SmoothCircleEmbedding.toConcordanceClass]
+  rfl
 
 /-- Every smooth concordance class is at cobordism distance `0` from itself. -/
 @[simp]
@@ -1015,38 +1147,29 @@ theorem cobordismDistance_transDiffeomorph
     cobordismDistance (transDiffeomorph Ψ x) (transDiffeomorph Ψ y) = cobordismDistance x y :=
   x.inductionOn₂ y fun _ _ => by simp
 
-/-- Linear isometry equivalences preserve smooth cobordism distance on concordance classes. -/
+/-- Mirroring preserves smooth cobordism distance in every sphere dimension `n`. -/
+@[simp]
+theorem cobordismDistance_mirror
+    (x y : ConcordanceClass (𝓡 n) (sphere (0 : E) 1)) :
+    cobordismDistance x.mirror y.mirror = cobordismDistance x y :=
+  cobordismDistance_transDiffeomorph _ x y
+
+/-- Reverse-mirroring preserves smooth cobordism distance in every sphere dimension `n`. -/
+@[simp]
+theorem cobordismDistance_reverseMirror
+    (x y : ConcordanceClass (𝓡 n) (sphere (0 : E) 1)) :
+    cobordismDistance x.reverseMirror y.reverseMirror = cobordismDistance x y := by
+  simp [reverseMirror]
+
+/-- Linear isometry additive equivalences preserve smooth cobordism distance on concordance
+classes. -/
 @[simp]
 theorem cobordismDistance_transLinearIsometryAddEquiv [Fact (3 ≤ n)]
     {F : Type*} [NormedAddCommGroup F] [InnerProductSpace ℝ F] [Fact (finrank ℝ F = n + 1)]
     (e : E ≃ₗᵢ[ℝ] F) (x y : ConcordanceClass (𝓡 n) (sphere (0 : E) 1)) :
     cobordismDistance (transLinearIsometryAddEquiv e x) (transLinearIsometryAddEquiv e y) =
-      cobordismDistance x y :=
-  x.inductionOn₂ y fun _ _ => by simp
-
-attribute [local instance] finrank_euclideanSpace_fin_succ_fact in
-/-- The mirror automorphism of `Sⁿ ⊆ ℝⁿ⁺¹` preserves smooth cobordism distance. -/
-@[simp]
-theorem cobordismDistance_mirrorAddEquiv {m : ℕ} [Fact (3 ≤ m)]
-    (x y : ConcordanceClass (𝓡 m) (sphere (0 : EuclideanSpace ℝ (Fin (m + 1))) 1)) :
-    cobordismDistance (mirrorAddEquiv x) (mirrorAddEquiv y) = cobordismDistance x y :=
-  cobordismDistance_transLinearIsometryAddEquiv _ x y
-
-/-- The reverse mirror automorphism preserves smooth cobordism distance. -/
-@[simp]
-theorem cobordismDistance_reverseMirrorAddEquiv [Fact (3 ≤ n)]
-    (x y : ConcordanceClass (𝓡 n) (sphere (0 : E) 1)) :
-    cobordismDistance (reverseMirrorAddEquiv x) (reverseMirrorAddEquiv y) =
       cobordismDistance x y := by
-  refine x.inductionOn₂ y fun K₀ K₁ => ?_
-  let ι₀ := defaultGreatCircle E n
-  rw [reverseMirrorAddEquiv_toConcordanceClass ι₀ K₀,
-    reverseMirrorAddEquiv_toConcordanceClass ι₀ K₁,
-    reverseMirror_eq_turnOver, reverseMirror_eq_turnOver,
-    toConcordanceClass_turnOver, toConcordanceClass_turnOver,
-    cobordismDistance_toConcordanceClass, TauCeti.cobordismDistance_transDiffeomorph,
-    TauCeti.cobordismDistance_reverse_left, TauCeti.cobordismDistance_reverse_right,
-    cobordismDistance_toConcordanceClass]
+  exact cobordismDistance_transDiffeomorph (e.unitSphereDiffeomorph (n := n) (k := n) ∞) x y
 
 end SmoothCircleEmbedding.ConcordanceClass
 
