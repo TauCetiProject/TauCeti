@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.CategoryTheory.Monoidal.Diagram.RigidObject.Substitution
-public import TauCeti.CategoryTheory.Monoidal.Free.DualitySignature.Basic
+public import TauCeti.CategoryTheory.Monoidal.Free.DualitySignature.Universal
 
 /-!
 # Substitution of rigid expressions for coupons
@@ -65,20 +65,12 @@ substitution `RigidObject.subst` of the underlying object expressions `(f a).as`
 theorem projectObj_eq_subst {α : Type w} (f : α → T.FreeRigid) (X : RigidObject α) :
     RigidObject.projectObj f X = ⟨RigidObject.subst (fun a ↦ (f a).as) X⟩ := by
   induction X with
-  | of a =>
-    rw [RigidObject.projectObj_of, RigidObject.subst_of]
-  | unit =>
-    rw [RigidObject.projectObj_unit, RigidObject.subst_unit]
-    rfl
-  | tensor X Y ihX ihY =>
-    rw [RigidObject.projectObj_tensor, RigidObject.subst_tensor, ihX, ihY]
-    rfl
-  | rightDual X ihX =>
-    rw [RigidObject.projectObj_rightDual, RigidObject.subst_rightDual, ihX]
-    rfl
-  | leftDual X ihX =>
-    rw [RigidObject.projectObj_leftDual, RigidObject.subst_leftDual, ihX]
-    rfl
+  | of _ => rw [RigidObject.projectObj_of, RigidObject.subst_of]
+  | unit => rw [RigidObject.projectObj_unit, RigidObject.subst_unit]; rfl
+  | tensor _ _ ihX ihY =>
+    rw [RigidObject.projectObj_tensor, RigidObject.subst_tensor, ihX, ihY]; rfl
+  | rightDual _ ih => rw [RigidObject.projectObj_rightDual, RigidObject.subst_rightDual, ih]; rfl
+  | leftDual _ ih => rw [RigidObject.projectObj_leftDual, RigidObject.subst_leftDual, ih]; rfl
 
 /-- Underlying `RigidObject` form of `projectObj_eq_subst`: categorical interpretation into
 `T.FreeRigid` agrees with syntactic substitution `RigidObject.subst`. -/
