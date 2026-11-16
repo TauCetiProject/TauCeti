@@ -30,7 +30,8 @@ product variants that witness the sharpness of the hypotheses in Gaschütz's spl
   `Multiplicative (ZMod 4) ⧸ twoSubgroup` with `Multiplicative (ZMod 2)` relates
   `twoSubgroup.quotientExtension` to `TauCeti.zmodFourExtension` via
   `GroupExtension.relabelEquivOfMulEquiv`, transporting splittings by
-  `GroupExtension.Splitting.equivOfMulEquiv` and recovering non-existence of complements from
+  `GroupExtension.splittingEquivOfMulEquiv` and recovering
+  `IsEmpty twoSubgroup.quotientExtension.Splitting` from
   `TauCeti.isEmpty_splitting_zmodFourExtension`.
 * **Crossed projections and normalization.** Conjugation on `twoSubgroup` is trivial, so every
   multiplicative `1`-cocycle `Multiplicative (ZMod 4) → twoSubgroup` squares `c (ofAdd 1)` at
@@ -68,6 +69,8 @@ included kernel of `TauCeti.zmodFourExtension`. -/
 def twoSubgroup : Subgroup (Multiplicative (ZMod 4)) :=
   zmodFourExtension.inl.range
 
+theorem twoSubgroup_def : twoSubgroup = zmodFourExtension.inl.range := (rfl)
+
 /-- An element of `Multiplicative (ZMod 4)` lies in `twoSubgroup` precisely when it is `1` or
 `ofAdd 2`. -/
 @[simp]
@@ -92,9 +95,6 @@ theorem coe_twoGenerator : (twoGenerator : Multiplicative (ZMod 4)) = ofAdd 2 :=
   (rfl)
 
 theorem twoGenerator_ne_one : twoGenerator ≠ 1 := by
-  intro h
-  have hc : (ofAdd 2 : Multiplicative (ZMod 4)) = 1 := congrArg Subtype.val h
-  revert hc
   decide
 
 /-- Every element of `twoSubgroup` is `1` or `twoGenerator`. -/
@@ -161,7 +161,7 @@ theorem subgroup_eq_bot_or_eq_twoSubgroup_or_eq_top
     (by simp) twoSubgroup card_twoSubgroup S
 
 /-- The trivial subgroup is a local complement of `twoSubgroup` inside `twoSubgroup` itself. -/
-theorem twoSubgroup_isLocalComplement_bot_self :
+theorem isLocalComplement_twoSubgroup_bot_self :
     twoSubgroup.IsLocalComplement ⊥ twoSubgroup :=
   Subgroup.isLocalComplement_self_left.mpr rfl
 
@@ -179,7 +179,7 @@ theorem isLocalComplement_twoSubgroup_iff {K H : Subgroup (Multiplicative (ZMod 
     · exfalso
       exact twoSubgroup_ne_bot (by simpa using h.inf_eq_bot)
   · rintro ⟨rfl, rfl⟩
-    exact twoSubgroup_isLocalComplement_bot_self
+    exact isLocalComplement_twoSubgroup_bot_self
 
 /-- `twoSubgroup` has no local complement in the whole group `Multiplicative (ZMod 4)`. -/
 theorem not_exists_isLocalComplement_twoSubgroup_top :
@@ -199,9 +199,7 @@ theorem not_exists_isComplement'_twoSubgroup :
 induced by `zmodFourExtension.rightHom`. -/
 noncomputable def quotientTwoSubgroupMulEquiv :
     Multiplicative (ZMod 4) ⧸ twoSubgroup ≃* Multiplicative (ZMod 2) :=
-  (QuotientGroup.quotientMulEquivOfEq zmodFourExtension.range_inl_eq_ker_rightHom).trans
-    (QuotientGroup.quotientKerEquivOfSurjective zmodFourExtension.rightHom
-      zmodFourExtension.rightHom_surjective)
+  zmodFourExtension.quotientRangeInlEquivRight
 
 @[simp]
 theorem quotientTwoSubgroupMulEquiv_mk (x : Multiplicative (ZMod 4)) :
@@ -235,15 +233,36 @@ noncomputable def quotientExtensionRelabelEquiv :
     twoSubgroupMulEquiv.symm (MulEquiv.refl _) quotientTwoSubgroupMulEquiv
     quotientExtension_inl_comp quotientExtension_rightHom_comp
 
+@[simp]
+theorem quotientExtensionRelabelEquiv_apply (x : Multiplicative (ZMod 4)) :
+    quotientExtensionRelabelEquiv x = x :=
+  GroupExtension.relabelEquivOfMulEquiv_apply _ _ _ _ _ _ _ x
+
+@[simp]
+theorem quotientExtensionRelabelEquiv_symm_apply (x : Multiplicative (ZMod 4)) :
+    quotientExtensionRelabelEquiv.symm x = x :=
+  GroupExtension.relabelEquivOfMulEquiv_symm_apply _ _ _ _ _ _ _ x
+
 /-- Splittings of `twoSubgroup.quotientExtension` correspond bijectively to splittings of
 `TauCeti.zmodFourExtension`. -/
 noncomputable def quotientExtensionSplittingEquiv :
     twoSubgroup.quotientExtension.Splitting ≃ zmodFourExtension.Splitting :=
-  GroupExtension.Splitting.equivOfMulEquiv twoSubgroup.quotientExtension zmodFourExtension
+  twoSubgroup.quotientExtension.splittingEquivOfMulEquiv zmodFourExtension
     (MulEquiv.refl _) quotientTwoSubgroupMulEquiv quotientExtension_rightHom_comp
 
-/-- Transporting `TauCeti.isEmpty_splitting_zmodFourExtension` across
-`quotientExtensionSplittingEquiv` shows that `twoSubgroup.quotientExtension` has no splitting. -/
+@[simp]
+theorem quotientExtensionSplittingEquiv_apply
+    (s : twoSubgroup.quotientExtension.Splitting) (y : Multiplicative (ZMod 2)) :
+    quotientExtensionSplittingEquiv s y = s (quotientTwoSubgroupMulEquiv.symm y) := by
+  simp [quotientExtensionSplittingEquiv]
+
+@[simp]
+theorem quotientExtensionSplittingEquiv_symm_apply
+    (s : zmodFourExtension.Splitting) (q : Multiplicative (ZMod 4) ⧸ twoSubgroup) :
+    quotientExtensionSplittingEquiv.symm s q = s (quotientTwoSubgroupMulEquiv q) := by
+  simp [quotientExtensionSplittingEquiv]
+
+/-- The quotient extension `twoSubgroup.quotientExtension` has no splitting. -/
 theorem isEmpty_splitting_quotientExtension_twoSubgroup :
     IsEmpty twoSubgroup.quotientExtension.Splitting := by
   have := TauCeti.isEmpty_splitting_zmodFourExtension
@@ -286,14 +305,14 @@ additive `1`-cocycle. -/
 theorem isCocycle₁_zero_twoSubgroup :
     IsCocycle₁ (0 : Multiplicative (ZMod 4) → Additive twoSubgroup) := fun _ _ => by simp
 
-/-- The zero locus of the unnormalized zero `1`-cocycle is `⊤`, which is not a complement of
-`twoSubgroup`. -/
+/-- The zero locus of the unnormalized zero `1`-cocycle is `⊤`. -/
 @[simp]
 theorem zeroLocus_zero_twoSubgroup :
     zeroLocus isCocycle₁_zero_twoSubgroup = ⊤ := by
   ext x
   simp
 
+/-- The zero locus of the unnormalized zero `1`-cocycle is not a complement of `twoSubgroup`. -/
 theorem not_isComplement'_zeroLocus_zero_twoSubgroup :
     ¬ twoSubgroup.IsComplement' (zeroLocus isCocycle₁_zero_twoSubgroup) := by
   rw [zeroLocus_zero_twoSubgroup, Subgroup.isComplement'_top_right]
@@ -375,16 +394,6 @@ theorem factorSetFun_twoSubgroupQuotientSection_mk_ofAdd_one :
     (QuotientGroup.eq_one_iff _).mpr ((mem_twoSubgroup_iff _).mpr (Or.inr rfl))
   rw [h11, hmk, twoSubgroupQuotientSection_one, inv_one, mul_one, coe_twoGenerator]
 
-/-- At the pair of nontrivial cosets, the factor set of `twoSubgroupQuotientSection` evaluates to
-`twoGenerator` (`ofAdd 2`), the generator of `twoSubgroup`. -/
-theorem factorSet_twoSubgroupQuotientSection_mk_ofAdd_one :
-    GroupExtension.factorSet twoSubgroupQuotientSection twoSubgroupQuotientSection_one
-      twoSubgroup.quotientExtension_inducesAction
-      (((ofAdd 1 : Multiplicative (ZMod 4)) : Multiplicative (ZMod 4) ⧸ twoSubgroup),
-        ((ofAdd 1 : Multiplicative (ZMod 4)) : Multiplicative (ZMod 4) ⧸ twoSubgroup)) =
-      twoGenerator := by
-  simp
-
 /-- For every normalized section `σ` of `twoSubgroup.quotientExtension`, the cohomology class of
 its factor set in `H²(C₄ ⧸ C₂, C₂)` is nonzero. -/
 theorem cohomologyClass_factorSet_twoSubgroup_ne_zero
@@ -402,7 +411,7 @@ theorem index_twoSubgroup_nsmul_cohomologyClass_eq_zero
     twoSubgroup.index •
       (GroupExtension.factorSet σ hσ
         twoSubgroup.quotientExtension_inducesAction).cohomologyClass = 0 :=
-  twoSubgroup_isLocalComplement_bot_self.index_nsmul_cohomologyClass_eq_zero σ hσ
+  isLocalComplement_twoSubgroup_bot_self.index_nsmul_cohomologyClass_eq_zero σ hσ
 
 /-- `[C₄ : C₂] = 2` is not coprime to `|C₂| = 2`. -/
 theorem not_coprime_index_card_twoSubgroup :
@@ -411,7 +420,7 @@ theorem not_coprime_index_card_twoSubgroup :
   decide
 
 /-- `[C₄ : C₂] = 2` has no multiplicative inverse modulo `|C₂| = 2`. -/
-theorem not_exists_inv_exponent_twoSubgroup :
+theorem not_exists_mul_index_twoSubgroup_mod_card_eq_one :
     ¬ ∃ e : ℕ, (e * twoSubgroup.index) % Nat.card twoSubgroup = 1 := by
   rw [index_twoSubgroup, card_twoSubgroup]
   rintro ⟨e, he⟩
@@ -426,15 +435,34 @@ end QuotientCohomology
 def prodTwoSubgroup : Subgroup (Multiplicative (ZMod 4) × Multiplicative (ZMod 3)) :=
   twoSubgroup.prod ⊥
 
+theorem prodTwoSubgroup_def : prodTwoSubgroup = twoSubgroup.prod ⊥ := (rfl)
+
+/-- An element of `Multiplicative (ZMod 4) × Multiplicative (ZMod 3)` lies in `prodTwoSubgroup`
+precisely when its first coordinate is `1` or `ofAdd 2` and its second coordinate is `1`. -/
+@[simp]
+theorem mem_prodTwoSubgroup_iff (x : Multiplicative (ZMod 4) × Multiplicative (ZMod 3)) :
+    x ∈ prodTwoSubgroup ↔ (x.1 = 1 ∨ x.1 = ofAdd 2) ∧ x.2 = 1 := by
+  simp [prodTwoSubgroup, Subgroup.mem_prod]
+
 /-- The subgroup `C₄ × 1` of index three inside
 `Multiplicative (ZMod 4) × Multiplicative (ZMod 3)`. -/
 def prodFourSubgroup : Subgroup (Multiplicative (ZMod 4) × Multiplicative (ZMod 3)) :=
   (⊤ : Subgroup (Multiplicative (ZMod 4))).prod ⊥
 
+theorem prodFourSubgroup_def :
+    prodFourSubgroup = (⊤ : Subgroup (Multiplicative (ZMod 4))).prod ⊥ :=
+  (rfl)
+
+/-- An element of `Multiplicative (ZMod 4) × Multiplicative (ZMod 3)` lies in `prodFourSubgroup`
+precisely when its second coordinate is `1`. -/
+@[simp]
+theorem mem_prodFourSubgroup_iff (x : Multiplicative (ZMod 4) × Multiplicative (ZMod 3)) :
+    x ∈ prodFourSubgroup ↔ x.2 = 1 := by
+  simp [prodFourSubgroup, Subgroup.mem_prod]
+
 theorem prodTwoSubgroup_le_prodFourSubgroup : prodTwoSubgroup ≤ prodFourSubgroup :=
   Subgroup.prod_mono le_top le_rfl
 
-@[simp]
 theorem card_prodTwoSubgroup : Nat.card prodTwoSubgroup = 2 := by
   rw [prodTwoSubgroup, Nat.card_congr (Subgroup.prodEquiv twoSubgroup _).toEquiv, Nat.card_prod,
     card_twoSubgroup, Subgroup.card_bot, mul_one]
@@ -451,12 +479,12 @@ theorem coprime_index_prodFourSubgroup_card_prodTwoSubgroup :
   decide
 
 /-- The inverse exponent `e = 1` satisfies `1 * [C₄ × C₃ : C₄ × 1] ≡ 1 (mod |C₂ × 1|)`. -/
-theorem inv_exponent_one_prodFourSubgroup :
+theorem one_mul_index_prodFourSubgroup_mod_card_eq_one :
     (1 * prodFourSubgroup.index) % Nat.card prodTwoSubgroup = 1 := by
   rw [index_prodFourSubgroup, card_prodTwoSubgroup]
 
 /-- `C₂ × 1` has `⊥` as a local complement inside `C₂ × 1` itself. -/
-theorem prodTwoSubgroup_isLocalComplement_bot_self :
+theorem isLocalComplement_prodTwoSubgroup_bot_self :
     prodTwoSubgroup.IsLocalComplement ⊥ prodTwoSubgroup :=
   Subgroup.isLocalComplement_self_left.mpr rfl
 
@@ -476,7 +504,7 @@ theorem not_exists_isComplement'_prodTwoSubgroup :
 
 /-! ### `C₂ × C₃`: Sylow `p`-subgroup sharpness when `N` is not a `p`-group -/
 
-/-- `Multiplicative (ZMod 2) × Multiplicative (ZMod 3)` is cyclic of order six. -/
+/-- `Multiplicative (ZMod 2) × Multiplicative (ZMod 3)` is cyclic. -/
 theorem isCyclic_zmodTwo_prod_zmodThree :
     IsCyclic (Multiplicative (ZMod 2) × Multiplicative (ZMod 3)) :=
   Group.isCyclic_prod_iff.mpr ⟨inferInstance, inferInstance, by
@@ -490,7 +518,7 @@ theorem not_isPGroup_two_top_zmodTwo_prod_zmodThree :
   rintro ⟨k, hk⟩
   have hcard :
       Nat.card (⊤ : Subgroup (Multiplicative (ZMod 2) × Multiplicative (ZMod 3))) = 6 := by
-    rw [Nat.card_congr Subgroup.topEquiv.toEquiv]
+    rw [Subgroup.card_top]
     simp
   have h3 : 3 ∣ 2 ^ k := by omega
   have h32 : 3 ∣ 2 := Nat.prime_three.dvd_of_dvd_pow h3
@@ -505,16 +533,13 @@ theorem not_top_le_sylow_two_zmodTwo_prod_zmodThree
     top_unique hle
   exact not_isPGroup_two_top_zmodTwo_prod_zmodThree (htop ▸ P.isPGroup)
 
-/-- In `C₂ × C₃`, the finite abelian normal subgroup `⊤` has a global complement (`⊥`), yet has no
-local complement in any Sylow `2`-subgroup `P`, showing that `IsPGroup p N` cannot be omitted in
-`IsPGroup.exists_isComplement'_iff_sylow`. -/
-theorem exists_isComplement'_top_and_not_exists_isLocalComplement_sylow_two
+/-- In `C₂ × C₃`, the improper subgroup `⊤` has no local complement in any Sylow `2`-subgroup
+`P`, showing (together with `Subgroup.isComplement'_top_bot`) that `IsPGroup p N` cannot be
+omitted in `IsPGroup.exists_isComplement'_iff_sylow`. -/
+theorem not_exists_isLocalComplement_top_sylow_two
     (P : Sylow 2 (Multiplicative (ZMod 2) × Multiplicative (ZMod 3))) :
-    (∃ D : Subgroup (Multiplicative (ZMod 2) × Multiplicative (ZMod 3)),
-      (⊤ : Subgroup _).IsComplement' D) ∧
-      ¬ ∃ K : Subgroup (Multiplicative (ZMod 2) × Multiplicative (ZMod 3)),
-        (⊤ : Subgroup _).IsLocalComplement K P :=
-  ⟨⟨⊥, Subgroup.isComplement'_top_bot⟩, fun ⟨_, hK⟩ =>
-    not_top_le_sylow_two_zmodTwo_prod_zmodThree P hK.left_le⟩
+    ¬ ∃ K : Subgroup (Multiplicative (ZMod 2) × Multiplicative (ZMod 3)),
+      (⊤ : Subgroup _).IsLocalComplement K P :=
+  fun ⟨_, hK⟩ => not_top_le_sylow_two_zmodTwo_prod_zmodThree P hK.left_le
 
 end TauCeti.Examples.CyclicFour

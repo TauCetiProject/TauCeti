@@ -98,7 +98,7 @@ group extensions induce a bijection between their splittings, sending `s` to `eE
   /-- Compatible additive equivalences `(eE, eG)` on the middle and quotient groups of two additive
   group extensions induce a bijection between their splittings, sending `s` to
   `eE ∘ s ∘ eG.symm`. -/]
-def Splitting.equivOfMulEquiv {N' E' G' : Type*} [Group N'] [Group E'] [Group G']
+def splittingEquivOfMulEquiv {N' E' G' : Type*} [Group N'] [Group E'] [Group G']
     (S' : GroupExtension N' E' G') (eE : E ≃* E') (eG : G ≃* G')
     (hright : S'.rightHom.comp eE.toMonoidHom = eG.toMonoidHom.comp S.rightHom) :
     S.Splitting ≃ S'.Splitting where
@@ -121,19 +121,19 @@ def Splitting.equivOfMulEquiv {N' E' G' : Type*} [Group N'] [Group E'] [Group G'
   right_inv s' := DFunLike.ext _ _ fun _ => by simp
 
 @[to_additive (attr := simp)]
-theorem Splitting.equivOfMulEquiv_apply {N' E' G' : Type*} [Group N'] [Group E'] [Group G']
+theorem splittingEquivOfMulEquiv_apply {N' E' G' : Type*} [Group N'] [Group E'] [Group G']
     (S' : GroupExtension N' E' G') (eE : E ≃* E') (eG : G ≃* G')
     (hright : S'.rightHom.comp eE.toMonoidHom = eG.toMonoidHom.comp S.rightHom)
     (s : S.Splitting) (g' : G') :
-    Splitting.equivOfMulEquiv S S' eE eG hright s g' = eE (s (eG.symm g')) :=
+    S.splittingEquivOfMulEquiv S' eE eG hright s g' = eE (s (eG.symm g')) :=
   (rfl)
 
 @[to_additive (attr := simp)]
-theorem Splitting.equivOfMulEquiv_symm_apply {N' E' G' : Type*} [Group N'] [Group E'] [Group G']
+theorem splittingEquivOfMulEquiv_symm_apply {N' E' G' : Type*} [Group N'] [Group E'] [Group G']
     (S' : GroupExtension N' E' G') (eE : E ≃* E') (eG : G ≃* G')
     (hright : S'.rightHom.comp eE.toMonoidHom = eG.toMonoidHom.comp S.rightHom)
     (s' : S'.Splitting) (g : G) :
-    (Splitting.equivOfMulEquiv S S' eE eG hright).symm s' g = eE.symm (s' (eG g)) :=
+    (S.splittingEquivOfMulEquiv S' eE eG hright).symm s' g = eE.symm (s' (eG g)) :=
   (rfl)
 
 end MulEquiv

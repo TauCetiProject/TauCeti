@@ -63,16 +63,9 @@ def zmodFourExtension :
       RingHom.toAddMonoidHom_eq_coe, AddMonoidHom.coe_ofClass, ofAdd_eq_one]
     rw [← h, Set.mem_range]
     exact toAdd.exists_congr fun x => by rw [← toAdd.apply_eq_iff_eq, toAdd_ofAdd]
-  rightHom_surjective := by
-    intro y
-    refine ⟨ofAdd ((toAdd y).cast), ?_⟩
-    rw [AddMonoidHom.toMultiplicative_apply_apply, toAdd_ofAdd, RingHom.toAddMonoidHom_eq_coe,
-      AddMonoidHom.coe_ofClass]
-    conv_rhs => rw [← ofAdd_toAdd y]
-    refine congrArg ofAdd ?_
-    generalize toAdd y = z
-    revert z
-    decide
+  rightHom_surjective :=
+    ofAdd.surjective.comp
+      ((ZMod.castHom_surjective (by decide : (2 : ℕ) ∣ 4)).comp toAdd.surjective)
 
 /-- The kernel of `1 → ℤ/2 → ℤ/4 → ℤ/2 → 1` is included by the doubling map. -/
 @[simp]
@@ -107,14 +100,8 @@ theorem zmodFourExtension_rightHom_ofAdd_one :
 residue modulo two to its canonical representative `{0, 1}` modulo four. -/
 def zmodFourExtensionSection : zmodFourExtension.Section where
   toFun y := ofAdd ((toAdd y).cast : ZMod 4)
-  rightInverse_rightHom y := by
-    rw [zmodFourExtension_rightHom, AddMonoidHom.toMultiplicative_apply_apply, toAdd_ofAdd,
-      RingHom.toAddMonoidHom_eq_coe, AddMonoidHom.coe_ofClass]
-    conv_rhs => rw [← ofAdd_toAdd y]
-    refine congrArg ofAdd ?_
-    generalize toAdd y = z
-    revert z
-    decide
+  rightInverse_rightHom y :=
+    toAdd.injective (by simp [zmodFourExtension_rightHom])
 
 theorem zmodFourExtensionSection_apply (y : Multiplicative (ZMod 2)) :
     zmodFourExtensionSection y = ofAdd ((toAdd y).cast : ZMod 4) :=

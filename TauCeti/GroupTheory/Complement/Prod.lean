@@ -26,7 +26,8 @@ namespace Subgroup
 variable {G G' : Type*} [Group G] [Group G']
 
 /-- Coordinatewise complements form a complement in the direct product. -/
-@[to_additive /-- Coordinatewise additive complements form a complement in the direct product. -/]
+@[to_additive IsComplement'.prod /-- Coordinatewise additive complements form a complement in the
+direct product. -/]
 theorem IsComplement'.prod {H₁ D₁ : Subgroup G} {H₂ D₂ : Subgroup G'}
     (h₁ : H₁.IsComplement' D₁) (h₂ : H₂.IsComplement' D₂) :
     (H₁.prod H₂).IsComplement' (D₁.prod D₂) := by
@@ -41,8 +42,8 @@ theorem IsComplement'.prod {H₁ D₁ : Subgroup G} {H₂ D₂ : Subgroup G'}
   · exact congrArg Subtype.val (hux₂ ⟨y₂, hy₂⟩ hdy₂)
 
 /-- If two product subgroups are complements, so are their first factors. -/
-@[to_additive /-- If two products of additive subgroups are complements, so are their first
-factors. -/]
+@[to_additive IsComplement'.of_prod_left /-- If two products of additive subgroups are complements,
+so are their first factors. -/]
 theorem IsComplement'.of_prod_left {H₁ D₁ : Subgroup G} {H₂ D₂ : Subgroup G'}
     (h : (H₁.prod H₂).IsComplement' (D₁.prod D₂)) : H₁.IsComplement' D₁ := by
   rw [isComplement'_def, isComplement_iff_existsUnique_inv_mul_mem]
@@ -55,8 +56,8 @@ theorem IsComplement'.of_prod_left {H₁ D₁ : Subgroup G} {H₂ D₂ : Subgrou
   exact Subtype.ext (congrArg (Prod.fst ∘ Subtype.val) (hy.trans hx.symm))
 
 /-- If two product subgroups are complements, so are their second factors. -/
-@[to_additive /-- If two products of additive subgroups are complements, so are their second
-factors. -/]
+@[to_additive IsComplement'.of_prod_right /-- If two products of additive subgroups are complements,
+so are their second factors. -/]
 theorem IsComplement'.of_prod_right {H₁ D₁ : Subgroup G} {H₂ D₂ : Subgroup G'}
     (h : (H₁.prod H₂).IsComplement' (D₁.prod D₂)) : H₂.IsComplement' D₂ := by
   rw [isComplement'_def, isComplement_iff_existsUnique_inv_mul_mem]
@@ -69,8 +70,8 @@ theorem IsComplement'.of_prod_right {H₁ D₁ : Subgroup G} {H₂ D₂ : Subgro
   exact Subtype.ext (congrArg (Prod.snd ∘ Subtype.val) (hy.trans hx.symm))
 
 /-- Product subgroups are complements in `G × G'` if and only if their factors are complements. -/
-@[to_additive (attr := simp) /-- Products of additive subgroups are complements if and only if
-their factors are complements. -/]
+@[to_additive (attr := simp) isComplement'_prod_prod /-- Products of additive subgroups are
+complements if and only if their factors are complements. -/]
 theorem isComplement'_prod_prod {H₁ D₁ : Subgroup G} {H₂ D₂ : Subgroup G'} :
     (H₁.prod H₂).IsComplement' (D₁.prod D₂) ↔ H₁.IsComplement' D₁ ∧ H₂.IsComplement' D₂ :=
   ⟨fun h => ⟨h.of_prod_left, h.of_prod_right⟩, fun ⟨h₁, h₂⟩ => h₁.prod h₂⟩

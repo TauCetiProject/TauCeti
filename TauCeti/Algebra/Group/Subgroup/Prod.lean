@@ -36,40 +36,40 @@ theorem map_inr (K : Subgroup G') : K.map (MonoidHom.inr G G') = (⊥ : Subgroup
   toSubmonoid_injective (Submonoid.map_inr K.toSubmonoid)
 
 /-- Pulling back a product subgroup along the left inclusion recovers its first factor. -/
-@[to_additive (attr := simp) /-- Pulling back a product of additive subgroups along the left
-inclusion recovers its first factor. -/]
+@[to_additive (attr := simp) prod_comap_inl /-- Pulling back a product of additive subgroups along
+the left inclusion recovers its first factor. -/]
 theorem prod_comap_inl (H : Subgroup G) (K : Subgroup G') :
     (H.prod K).comap (MonoidHom.inl G G') = H := by
   ext x
   simp [mem_prod]
 
 /-- Pulling back a product subgroup along the right inclusion recovers its second factor. -/
-@[to_additive (attr := simp) /-- Pulling back a product of additive subgroups along the right
-inclusion recovers its second factor. -/]
+@[to_additive (attr := simp) prod_comap_inr /-- Pulling back a product of additive subgroups along
+the right inclusion recovers its second factor. -/]
 theorem prod_comap_inr (H : Subgroup G) (K : Subgroup G') :
     (H.prod K).comap (MonoidHom.inr G G') = K := by
   ext y
   simp [mem_prod]
 
 /-- Pushing a product subgroup forward along the first projection recovers its first factor. -/
-@[to_additive (attr := simp) /-- Pushing a product of additive subgroups forward along the first
-projection recovers its first factor. -/]
+@[to_additive (attr := simp) prod_map_fst /-- Pushing a product of additive subgroups forward along
+the first projection recovers its first factor. -/]
 theorem prod_map_fst (H : Subgroup G) (K : Subgroup G') :
     (H.prod K).map (MonoidHom.fst G G') = H := by
   ext x
   simp [mem_prod, (⟨1, K.one_mem⟩ : ∃ y, y ∈ K)]
 
 /-- Pushing a product subgroup forward along the second projection recovers its second factor. -/
-@[to_additive (attr := simp) /-- Pushing a product of additive subgroups forward along the second
-projection recovers its second factor. -/]
+@[to_additive (attr := simp) prod_map_snd /-- Pushing a product of additive subgroups forward along
+the second projection recovers its second factor. -/]
 theorem prod_map_snd (H : Subgroup G) (K : Subgroup G') :
     (H.prod K).map (MonoidHom.snd G G') = K := by
   ext y
   simp [mem_prod, (⟨1, H.one_mem⟩ : ∃ x, x ∈ H)]
 
 /-- Two product subgroups are equal if and only if their respective factors are equal. -/
-@[to_additive (attr := simp) /-- Two products of additive subgroups are equal if and only if their
-respective factors are equal. -/]
+@[to_additive (attr := simp) prod_eq_prod_iff /-- Two products of additive subgroups are equal if
+and only if their respective factors are equal. -/]
 theorem prod_eq_prod_iff {H₁ K₁ : Subgroup G} {H₂ K₂ : Subgroup G'} :
     H₁.prod H₂ = K₁.prod K₂ ↔ H₁ = K₁ ∧ H₂ = K₂ := by
   constructor
@@ -80,23 +80,23 @@ theorem prod_eq_prod_iff {H₁ K₁ : Subgroup G} {H₂ K₂ : Subgroup G'} :
     rfl
 
 /-- A product subgroup is the whole product group if and only if both factors are `⊤`. -/
-@[to_additive (attr := simp) /-- A product of additive subgroups is `⊤` if and only if both
-factors are `⊤`. -/]
+@[to_additive (attr := simp) prod_eq_top_iff /-- A product of additive subgroups is `⊤` if and only
+if both factors are `⊤`. -/]
 theorem prod_eq_top_iff {H : Subgroup G} {K : Subgroup G'} :
     H.prod K = ⊤ ↔ H = ⊤ ∧ K = ⊤ := by
   rw [← top_prod_top, prod_eq_prod_iff]
 
 /-- The intersection of two product subgroups is the product of their intersections. -/
-@[to_additive (attr := simp) /-- The intersection of two products of additive subgroups is the
-product of their intersections. -/]
+@[to_additive (attr := simp) prod_inf_prod /-- The intersection of two products of additive
+subgroups is the product of their intersections. -/]
 theorem prod_inf_prod (H₁ K₁ : Subgroup G) (H₂ K₂ : Subgroup G') :
     (H₁.prod H₂) ⊓ (K₁.prod K₂) = (H₁ ⊓ K₁).prod (H₂ ⊓ K₂) := by
   ext x
   simp [mem_prod, and_and_and_comm]
 
 /-- A product subgroup is the join of its two coordinate factors `H.prod ⊥` and `⊥.prod K`. -/
-@[to_additive /-- A product of additive subgroups is the join of its two coordinate factors
-`H.prod ⊥` and `⊥.prod K`. -/]
+@[to_additive prod_bot_sup_bot_prod /-- A product of additive subgroups is the join of its two
+coordinate factors `H.prod ⊥` and `⊥.prod K`. -/]
 theorem prod_bot_sup_bot_prod (H : Subgroup G) (K : Subgroup G') :
     (H.prod (⊥ : Subgroup G')) ⊔ ((⊥ : Subgroup G).prod K) = H.prod K := by
   refine le_antisymm (sup_le (prod_mono le_rfl bot_le) (prod_mono bot_le le_rfl)) fun p hp => ?_
@@ -104,8 +104,8 @@ theorem prod_bot_sup_bot_prod (H : Subgroup G) (K : Subgroup G') :
   exact mul_mem_sup ⟨hp.1, rfl⟩ ⟨rfl, hp.2⟩
 
 /-- The join of two product subgroups is the product of their joins. -/
-@[to_additive (attr := simp) /-- The join of two products of additive subgroups is the product of
-their joins. -/]
+@[to_additive (attr := simp) prod_sup_prod /-- The join of two products of additive subgroups is the
+product of their joins. -/]
 theorem prod_sup_prod (H₁ K₁ : Subgroup G) (H₂ K₂ : Subgroup G') :
     (H₁.prod H₂) ⊔ (K₁.prod K₂) = (H₁ ⊔ K₁).prod (H₂ ⊔ K₂) := by
   rw [← prod_bot_sup_bot_prod H₁ H₂, ← prod_bot_sup_bot_prod K₁ K₂,
