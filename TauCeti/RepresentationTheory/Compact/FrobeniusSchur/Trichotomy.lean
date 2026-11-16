@@ -71,22 +71,12 @@ open Module TauCeti
 
 namespace ContRepresentation
 
-section CompactGroup
-
-variable {G V : Type*} [Group G] [TopologicalSpace G] [IsTopologicalGroup G]
-  [CompactSpace G] [MeasurableSpace G] [BorelSpace G]
-  [NormedAddCommGroup V] [InnerProductSpace ℂ V] [FiniteDimensional ℂ V]
-
-variable (π : ContRepresentation ℂ G V) (hπ : Continuous π)
-
-include hπ
-
-omit [TopologicalSpace G] [IsTopologicalGroup G] [CompactSpace G] [MeasurableSpace G]
-  [BorelSpace G] hπ in
 /-- The two invariant counts of an irreducible unitary representation are `(1, 0)`, `(0, 0)` or
 `(0, 1)`: they are non-negative and add up to at most `1`. This is the arithmetic behind every
 statement below. -/
-private theorem finrank_invariants_squares_cases (hunitary : IsUnitary π)
+private theorem finrank_invariants_squares_cases {G V : Type*} [Group G]
+    [NormedAddCommGroup V] [InnerProductSpace ℂ V] [FiniteDimensional ℂ V]
+    (π : ContRepresentation ℂ G V) (hunitary : IsUnitary π)
     (hirr : Representation.IsIrreducible π.toRepresentation) :
     (finrank ℂ (symmetricSquare π).invariants = 1 ∧ finrank ℂ (exteriorSquare π).invariants = 0) ∨
       (finrank ℂ (symmetricSquare π).invariants = 0 ∧
@@ -95,6 +85,15 @@ private theorem finrank_invariants_squares_cases (hunitary : IsUnitary π)
         finrank ℂ (exteriorSquare π).invariants = 1) := by
   have hle := finrank_invariants_squares_le_one hunitary hirr
   omega
+
+section CompactGroup
+
+variable {G V : Type*} [Group G] [TopologicalSpace G] [IsTopologicalGroup G]
+  [CompactSpace G] [MeasurableSpace G] [BorelSpace G]
+  [NormedAddCommGroup V] [InnerProductSpace ℂ V] [FiniteDimensional ℂ V]
+  (π : ContRepresentation ℂ G V) (hπ : Continuous π)
+
+include hπ
 
 /-- **The Frobenius-Schur reality trichotomy for compact groups.** The indicator of an irreducible
 unitary representation of a compact group on a finite-dimensional complex inner product space is
