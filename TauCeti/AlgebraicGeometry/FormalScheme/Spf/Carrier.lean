@@ -178,9 +178,8 @@ def maximalSpectrumHomeomorphClosedPoints (hI : IsAdic I) (hIjac : I ≤ Ring.ja
 @[simp]
 theorem maximalSpectrumHomeomorphClosedPoints_apply_val (hI : IsAdic I)
     (hIjac : I ≤ Ring.jacobson A) (m : MaximalSpectrum A) :
-    ((maximalSpectrumHomeomorphClosedPoints hI hIjac m).1 : PrimeSpectrum A) =
-      m.toPrimeSpectrum := by
-  rfl
+    ((maximalSpectrumHomeomorphClosedPoints hI hIjac m).1 : PrimeSpectrum A) = m.toPrimeSpectrum :=
+  by rfl
 
 /-- The inverse of `maximalSpectrumHomeomorphClosedPoints` preserves the underlying maximal
 ideal. -/
@@ -188,8 +187,8 @@ ideal. -/
 theorem maximalSpectrumHomeomorphClosedPoints_symm_apply_asIdeal (hI : IsAdic I)
     (hIjac : I ≤ Ring.jacobson A) (p : {p : carrier A // IsClosed ({p} : Set (carrier A))}) :
     ((maximalSpectrumHomeomorphClosedPoints hI hIjac).symm p).asIdeal =
-      (p.1 : PrimeSpectrum A).asIdeal := by
-  rfl
+      (p.1 : PrimeSpectrum A).asIdeal :=
+  by rfl
 
 end ClosedPoints
 

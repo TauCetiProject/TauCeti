@@ -224,8 +224,8 @@ theorem map_maximalIdeal_eq_of_quotientMap_bijective (f : R →+* S) {J : Ideal 
     (hbij : Function.Bijective (Ideal.quotientMap (J.map f) f H)) :
     (maximalIdeal R).map f = maximalIdeal S := by
   let e : R ⧸ J ≃+* S ⧸ J.map f := RingEquiv.ofBijective _ hbij
-  have hJne : J ≠ ⊤ := (lt_of_le_of_lt hJ (maximalIdeal.isMaximal R).lt_top).ne
-  have : Nontrivial (R ⧸ J) := Ideal.Quotient.nontrivial_iff.mpr hJne
+  have : Nontrivial (R ⧸ J) := Ideal.Quotient.nontrivial_iff.mpr
+    (lt_of_le_of_lt hJ (maximalIdeal.isMaximal R).lt_top).ne
   have : Nontrivial (S ⧸ J.map f) := e.injective.nontrivial
   have hJS : J.map f ≤ maximalIdeal S := le_maximalIdeal (Ideal.Quotient.nontrivial_iff.mp ‹_›)
   have : IsLocalRing (S ⧸ J.map f) := .of_surjective' _ Ideal.Quotient.mk_surjective
@@ -260,14 +260,13 @@ theorem quotientMap_maximalIdeal_pow_bijective (f : R →+* S) {K : Ideal R} {n 
     {Hm : maximalIdeal R ^ n ≤ (maximalIdeal S ^ n).comap f} :
     Function.Bijective (Ideal.quotientMap (maximalIdeal S ^ n) f Hm) := by
   rcases n with _ | n
-  · have : Subsingleton (R ⧸ maximalIdeal R ^ 0) := by
-      rw [pow_zero, Ideal.one_eq_top]; exact Ideal.Quotient.subsingleton_iff.mpr rfl
-    have : Subsingleton (S ⧸ maximalIdeal S ^ 0) := by
-      rw [pow_zero, Ideal.one_eq_top]; exact Ideal.Quotient.subsingleton_iff.mpr rfl
-    exact ⟨fun _ _ _ ↦ Subsingleton.elim _ _, fun y ↦ ⟨0, Subsingleton.elim _ _⟩⟩
-  · have hm : (maximalIdeal R).map f = maximalIdeal S :=
-      map_maximalIdeal_eq_of_quotientMap_bijective f
-        (hK.trans (Ideal.pow_le_self (Nat.succ_ne_zero n))) hbij
+  · have : Subsingleton (R ⧸ maximalIdeal R ^ 0) :=
+      Ideal.Quotient.subsingleton_iff.mpr (by rw [pow_zero, Ideal.one_eq_top])
+    have : Subsingleton (S ⧸ maximalIdeal S ^ 0) :=
+      Ideal.Quotient.subsingleton_iff.mpr (by rw [pow_zero, Ideal.one_eq_top])
+    exact ⟨fun _ _ _ ↦ Subsingleton.elim _ _, fun _ ↦ ⟨0, Subsingleton.elim _ _⟩⟩
+  · have hm := map_maximalIdeal_eq_of_quotientMap_bijective f
+      (hK.trans (Ideal.pow_le_self (Nat.succ_ne_zero n))) hbij
     exact Ideal.quotientMap_bijective_congr f rfl (by rw [Ideal.map_pow, hm])
       (Ideal.quotientMap_bijective_of_le f hK hbij (HJ := Ideal.le_comap_map))
 

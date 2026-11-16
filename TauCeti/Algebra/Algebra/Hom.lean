@@ -166,30 +166,28 @@ variable {R S T : Type*} [Semiring R] [Semiring S] [Semiring T]
 
 /-- Evaluating `f.toIntAlgHom'` applies `f`. -/
 @[simp]
-theorem RingHom.toIntAlgHom'_apply (f : R →+* S) (x : R) : f.toIntAlgHom' x = f x := by
-  rfl
+theorem RingHom.toIntAlgHom'_apply (f : R →+* S) (x : R) : f.toIntAlgHom' x = f x := rfl
 
 /-- The underlying ring homomorphism of `f.toIntAlgHom'` is `f`. -/
 @[simp]
-theorem RingHom.toIntAlgHom'_toRingHom (f : R →+* S) : (f.toIntAlgHom' : R →+* S) = f := by
-  ext; rfl
+theorem RingHom.toIntAlgHom'_toRingHom (f : R →+* S) : (f.toIntAlgHom' : R →+* S) = f := rfl
 
 /-- `RingHom.toIntAlgHom'` sends the identity ring homomorphism to the identity `ℤ`-algebra
 homomorphism. -/
 @[simp]
-theorem RingHom.toIntAlgHom'_id : (RingHom.id R).toIntAlgHom' = AlgHom.id ℤ R := by
-  ext; rfl
+theorem RingHom.toIntAlgHom'_id : (RingHom.id R).toIntAlgHom' = AlgHom.id ℤ R :=
+  AlgHom.ext fun _ ↦ rfl
 
 /-- `RingHom.toIntAlgHom'` preserves composition. -/
 @[simp]
 theorem RingHom.toIntAlgHom'_comp (f : S →+* T) (g : R →+* S) :
-    (f.comp g).toIntAlgHom' = f.toIntAlgHom'.comp g.toIntAlgHom' := by
-  ext; rfl
+    (f.comp g).toIntAlgHom' = f.toIntAlgHom'.comp g.toIntAlgHom' :=
+  AlgHom.ext fun _ ↦ rfl
 
 /-- Reading a `ℤ`-algebra homomorphism as a ring homomorphism and back recovers it. -/
 @[simp]
-theorem AlgHom.toRingHom_toIntAlgHom' (φ : R →ₐ[ℤ] S) : (φ : R →+* S).toIntAlgHom' = φ := by
-  ext; rfl
+theorem AlgHom.toRingHom_toIntAlgHom' (φ : R →ₐ[ℤ] S) : (φ : R →+* S).toIntAlgHom' = φ :=
+  AlgHom.ext fun _ ↦ rfl
 
 end ToIntAlgHom'
 

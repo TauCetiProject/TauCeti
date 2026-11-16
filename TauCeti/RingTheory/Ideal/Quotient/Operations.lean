@@ -117,21 +117,17 @@ theorem quotientMap_bijective_of_le {S : Type*} [CommRing S] (f : R →+* S) {K 
     Function.Bijective (quotientMap (J.map f) f HJ) := by
   let e : R ⧸ K ≃+* S ⧸ K.map f := RingEquiv.ofBijective _ hbij
   refine ⟨quotientMap_injective' fun r hr ↦ ?_, fun y ↦ ?_⟩
-  · -- The isomorphism `e : R ⧸ K ≃ S ⧸ K S` carries `J / K` onto `J S / K S`.
-    have hmap : (J.map (Quotient.mk K)).map e.toRingHom =
+  · have hmap : (J.map (Quotient.mk K)).map e.toRingHom =
         (J.map f).map (Quotient.mk (K.map f)) := by
-      rw [map_map, map_map]
-      exact congrArg (J.map ·) (quotientMap_comp_mk HK)
+      rw [map_map, map_map]; exact congrArg (J.map ·) (quotientMap_comp_mk HK)
     have hmem : e (Quotient.mk K r) ∈ (J.map (Quotient.mk K)).map e.toRingHom :=
       hmap ▸ mem_map_of_mem _ hr
-    have hmk : Quotient.mk K r ∈ J.map (Quotient.mk K) :=
-      comap_map_of_bijective e.toRingHom e.bijective (I := J.map (Quotient.mk K)) ▸ hmem
-    exact comap_map_mk hKJ ▸ hmk
+    exact comap_map_mk hKJ ▸
+      (comap_map_of_bijective e.toRingHom e.bijective (I := J.map (Quotient.mk K)) ▸ hmem)
   · obtain ⟨s, rfl⟩ := Quotient.mk_surjective y
     obtain ⟨r, hr⟩ := exists_sub_mem_of_surjective_quotientMap hbij.2 s
-    refine ⟨Quotient.mk J r, ?_⟩
-    rw [quotientMap_mk, Quotient.eq]
-    simpa [neg_sub] using neg_mem (map_mono hKJ hr)
+    exact ⟨Quotient.mk J r, by
+      rw [quotientMap_mk, Quotient.eq]; simpa [neg_sub] using neg_mem (map_mono hKJ hr)⟩
 
 /-- Bijectivity of `Ideal.quotientMap` is preserved under rewriting equal source and target
 ideals. -/
@@ -140,8 +136,7 @@ theorem quotientMap_bijective_congr {S : Type*} [CommRing S] (f : R →+* S)
     {H₁ : I₁ ≤ J₁.comap f} {H₂ : I₂ ≤ J₂.comap f}
     (h : Function.Bijective (quotientMap J₁ f H₁)) :
     Function.Bijective (quotientMap J₂ f H₂) := by
-  subst hI hJ
-  exact h
+  subst hI hJ; exact h
 
 /-- If `Ideal.quotientMap` along `f : R →+* S` modulo zero ideals is bijective, then `f` itself is
 bijective. -/
@@ -151,9 +146,8 @@ theorem bijective_of_quotientMap_bot_bijective {S : Type*} [CommRing S] (f : R �
     Function.Bijective f := by
   subst hI hJ
   have heq : (f : R → S) =
-      RingEquiv.quotientBot S ∘ quotientMap ⊥ f H ∘ (RingEquiv.quotientBot R).symm := by
-    ext x
-    simp
+      RingEquiv.quotientBot S ∘ quotientMap ⊥ f H ∘ (RingEquiv.quotientBot R).symm :=
+    funext fun _ ↦ by simp
   rw [heq]
   exact (RingEquiv.quotientBot S).bijective.comp
     (hbij.comp (RingEquiv.quotientBot R).symm.bijective)
