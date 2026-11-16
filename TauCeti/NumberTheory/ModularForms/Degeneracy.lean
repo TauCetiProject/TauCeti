@@ -402,6 +402,15 @@ lemma coe_levelRaise [𝒢'.HasDetOne] [NeZero d]
   unfold levelRaise
   rw [FunLike.coe_smul, _root_.CuspForm.coe_restrict, _root_.CuspForm.coe_translate]
 
+/-- The underlying function of the level-raise of a cusp form is that of the level-raise of the
+cusp form read as a modular form. -/
+@[simp]
+lemma _root_.CuspForm.coe_levelRaise_eq_modularForm [𝒢'.HasDetOne] [NeZero d]
+    (hle : 𝒢' ≤ ConjAct.toConjAct (scaleGL d)⁻¹ • 𝒢) (f : CuspForm 𝒢 k) :
+    ⇑(CuspForm.levelRaise d hle f) = ⇑(ModularForm.levelRaise d hle (f : ModularForm 𝒢 k)) := by
+  rw [CuspForm.coe_levelRaise, ModularForm.coe_levelRaise]
+  rfl
+
 /-- **The defining formula for `V_d` on cusp forms**: `(V_d f) τ = f (d τ)`, with no stray
 power of `d`. -/
 @[simp]
@@ -865,15 +874,6 @@ lemma ModularForm.coe_levelRaise_slash [𝒢'.HasDetOne] [NeZero d]
       (d : ℂ) ^ (1 - k) • ((⇑f ∣[k] mapGL ℝ (conjScale d γ c hc)) ∣[k] scaleGL d) := by
   rw [coe_levelRaise, _root_.ModularForm.smul_slash, σ_mapGL_real_eq_refl,
     ContinuousAlgEquiv.refl_apply, slash_scaleGL_slash_mapGL]
-
-/-- The underlying function of the level-raise of a cusp form is that of the level-raise of the
-cusp form read as a modular form. -/
-@[simp]
-lemma _root_.CuspForm.coe_levelRaise_eq_modularForm [𝒢'.HasDetOne] [NeZero d]
-    (hle : 𝒢' ≤ ConjAct.toConjAct (scaleGL d)⁻¹ • 𝒢) (f : CuspForm 𝒢 k) :
-    ⇑(CuspForm.levelRaise d hle f) = ⇑(ModularForm.levelRaise d hle (f : ModularForm 𝒢 k)) := by
-  rw [CuspForm.coe_levelRaise, ModularForm.coe_levelRaise]
-  rfl
 
 /-- Slashing a level-raised cusp form by an integral matrix `γ` whose lower-left entry is
 divisible by `d` is the level-raise of the slash of `f` by the conjugate matrix
