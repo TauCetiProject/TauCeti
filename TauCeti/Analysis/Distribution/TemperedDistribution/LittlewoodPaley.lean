@@ -108,6 +108,8 @@ blocks `Δⱼ u`.
   is a sum of boundedly many blocks of another, composed with it.
 * `TemperedDistribution.littlewoodPaleyBlock_besselPotential_comm`: the blocks commute with the
   Bessel potentials.
+* `TemperedDistribution.littlewoodPaleyBlock_apply_apply`: the blocks are symmetric for the
+  pairing with Schwartz functions, `(Δⱼ u) f = u (Δⱼ f)`.
 * `TemperedDistribution.littlewoodPaleyBlock_toTemperedDistributionCLM_eq_ite`: a Schwartz function
   whose Fourier transform is carried by the region where `ψⱼ = 1` is its own `j`-th block and has
   no other block.
@@ -547,6 +549,17 @@ theorem littlewoodPaleyBlock_toTemperedDistributionCLM_eq [CompleteSpace F] (j :
   rw [littlewoodPaleyBlock_apply]
   exact fourierMultiplierCLM_toTemperedDistributionCLM_eq
     (φ.hasTemperateGrowth_ofReal_inhomogeneousLittlewoodPaley j) f
+
+/-- **The Littlewood–Paley blocks are symmetric.** For a tempered distribution `u` and a Schwartz
+function `f`, `(Δⱼ u) f = u (Δⱼ f)`, where on the right `Δⱼ` is the Fourier multiplier by `ψⱼ` on
+Schwartz functions. This holds because `ψⱼ` is even
+(`ContDiffBump.inhomogeneousLittlewoodPaley_neg`). -/
+theorem littlewoodPaleyBlock_apply_apply (j : ℕ) (u : 𝓢'(E, F)) (f : 𝓢(E, ℂ)) :
+    littlewoodPaleyBlock F φ j u f =
+      u (SchwartzMap.fourierMultiplierCLM ℂ
+        (fun ξ ↦ (φ.inhomogeneousLittlewoodPaley j ξ : ℂ)) f) :=
+  fourierMultiplierCLM_apply_apply_of_even
+    (fun ξ ↦ by simp only [φ.inhomogeneousLittlewoodPaley_neg]) u f
 
 /-- **A Schwartz function carried by one block.** If on the support of the Fourier transform of
 a Schwartz function `f` the piece `ψⱼ` equals `1` and every other piece `ψₖ` vanishes, then

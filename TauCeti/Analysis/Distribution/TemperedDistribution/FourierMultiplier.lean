@@ -29,6 +29,8 @@ the starting point of Bernstein's inequalities.
 ## Main results
 
 * `TemperedDistribution.fourierMultiplierCLM_add`: Fourier multipliers are additive in the symbol.
+* `TemperedDistribution.fourierMultiplierCLM_apply_apply_of_even`: a multiplier with an even
+  symbol is the transpose of the multiplier on Schwartz functions, `(T_g u) f = u (T_g f)`.
 * `TemperedDistribution.lineDerivOp_fourierMultiplierCLM`: directional derivatives commute with
   Fourier multipliers.
 * `TemperedDistribution.fourierMultiplierCLM_eq_zero_of_not_hasTemperateGrowth`: the multiplier of
@@ -62,6 +64,29 @@ theorem fourierMultiplierCLM_eq_zero_of_not_hasTemperateGrowth {g : E → ℂ}
   refine ContinuousLinearMap.ext fun f => ?_
   rw [fourierMultiplierCLM_apply, smulLeftCLM_eq_zero_of_not_hasTemperateGrowth hg, zero_apply,
     FourierTransform.fourierInv_zero, zero_apply]
+
+/-- **Multipliers with even symbols are symmetric.** If the symbol `g` is even, the Fourier
+multiplier `T_g` on tempered distributions is the transpose of the one on Schwartz functions:
+`(T_g u) f = u (T_g f)`. For an even symbol, multiplying `𝓕⁻ f`, the reflection of `𝓕 f`, by `g`
+gives the reflection of `g • 𝓕 f`, and the Fourier transform of a reflection is the inverse
+Fourier transform. -/
+theorem fourierMultiplierCLM_apply_apply_of_even {g : E → ℂ} (hg : g.Even) (u : 𝓢'(E, F))
+    (f : 𝓢(E, ℂ)) :
+    fourierMultiplierCLM F g u f = u (SchwartzMap.fourierMultiplierCLM ℂ g f) := by
+  by_cases hgt : g.HasTemperateGrowth
+  swap
+  · simp [hgt, SchwartzMap.fourierMultiplierCLM_apply, SchwartzMap.smulLeftCLM]
+  rw [fourierMultiplierCLM_apply_apply, SchwartzMap.fourierMultiplierCLM_apply]
+  congr 1
+  have key : (SchwartzMap.smulLeftCLM ℂ g (𝓕⁻ f) : E → ℂ) =
+      (SchwartzMap.smulLeftCLM ℂ g (𝓕 f) : E → ℂ) ∘ LinearIsometryEquiv.neg ℝ (E := E) := by
+    ext ξ
+    simp [SchwartzMap.smulLeftCLM_apply_apply hgt, SchwartzMap.fourierInv_coe,
+      Real.fourierInv_eq_fourier_neg, SchwartzMap.fourier_coe, hg ξ]
+  ext x
+  rw [SchwartzMap.fourier_coe, key, Real.fourier_comp_linearIsometry,
+    SchwartzMap.fourierInv_coe, Real.fourierInv_eq_fourier_neg]
+  rfl
 
 /-- Fourier multipliers on tempered distributions are additive in the symbol. -/
 theorem fourierMultiplierCLM_add {g₁ g₂ : E → ℂ} (hg₁ : g₁.HasTemperateGrowth)

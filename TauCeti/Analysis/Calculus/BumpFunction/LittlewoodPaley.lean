@@ -51,6 +51,7 @@ derivative bounds; it localizes operators to the frequencies of a single block.
 * `ContDiffBump.exists_norm_iteratedFDeriv_littlewoodPaley_le`: `‖D^k ψⱼ‖ ≤ B 2^{-jk}`.
 * `ContDiffBump.inhomogeneousLittlewoodPaley`: the inhomogeneous partition `ψ₀ = φ, ψ₁, ψ₂, …`.
 * `ContDiffBump.hasSum_inhomogeneousLittlewoodPaley`: `∑ⱼ ψⱼ ξ = 1` for every `ξ`.
+* `ContDiffBump.inhomogeneousLittlewoodPaley_neg`: the pieces `ψⱼ` are even.
 * `ContDiffBump.exists_inhomogeneousLittlewoodPaley_pos`: on a nontrivial space no piece `ψⱼ`
   is identically zero.
 * `ContDiffBump.exists_inhomogeneousLittlewoodPaley_mul_eq_zero`: finite overlap of the pieces,
@@ -288,6 +289,15 @@ theorem inhomogeneousLittlewoodPaley_succ_apply_eq_one_apply (j : ℕ) (ξ : E) 
     φ.inhomogeneousLittlewoodPaley (j + 1) ξ =
       φ.inhomogeneousLittlewoodPaley 1 (((2 : ℝ) ^ j)⁻¹ • ξ) := by
   simp [inhomogeneousLittlewoodPaley_succ_apply, smul_smul, pow_succ, mul_comm]
+
+/-- The pieces `ψⱼ` of the inhomogeneous partition are even functions, since the bump function `φ`
+is radial. -/
+@[simp]
+theorem inhomogeneousLittlewoodPaley_neg (j : ℕ) (ξ : E) :
+    φ.inhomogeneousLittlewoodPaley j (-ξ) = φ.inhomogeneousLittlewoodPaley j ξ := by
+  rcases j with _ | j
+  · simp [ContDiffBump.neg]
+  · simp [inhomogeneousLittlewoodPaley_succ_apply, smul_neg, ContDiffBump.neg]
 
 /-- Each piece of the inhomogeneous partition is smooth. -/
 @[fun_prop]
