@@ -33,7 +33,8 @@ orientation.
 
 ## Main results
 
-* `Bundle.ContMDiffRiemannianMetric.relativeVolumeDensity_rescale`: the conformal relative density.
+* `Bundle.ContMDiffRiemannianMetric.relativeVolumeDensity_rescale_right`: conformal rescaling
+  of the relative density.
 
 * `TauCeti.WithMetric.riemannianVolume_rescale`: the Riemannian volume of `f g` is the image of
   the volume of `g` weighted by `f ^ (N / 2)`.
@@ -53,59 +54,10 @@ orientation.
 
 public section
 
-open Bundle MeasureTheory Set Bundle.ContMDiffRiemannianMetric
+open Bundle MeasureTheory Set Bundle.ContMDiffRiemannianMetric Bundle.RiemannianMetric
 open scoped ENNReal Manifold ContDiff
 
 noncomputable section
-
-namespace Bundle.ContMDiffRiemannianMetric
-
-open TauCeti
-
-variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
-  {H : Type*} [TopologicalSpace H] {I : ModelWithCorners ℝ E H} {n : ℕ∞ω}
-  {M : Type*} [TopologicalSpace M] [ChartedSpace H M] [IsManifold I 1 M]
-
-/-- **The conformal case.** In real dimension `N`, the relative volume density of the rescaled
-metric `f g` with respect to `g` is `f ^ (N / 2)`. -/
-@[simp]
-theorem relativeVolumeDensity_rescale
-    (g : ContMDiffRiemannianMetric I n E (fun x : M ↦ TangentSpace I x))
-    {f : M → ℝ} {hf : ContMDiff I 𝓘(ℝ) n f}
-    {hf_pos : ∀ x, 0 < f x} (x : M) :
-    relativeVolumeDensity g (g.rescale f hf hf_pos) x =
-      f x ^ ((Module.finrank ℝ E : ℝ) / 2) := by
-  have hpos := chartVolumeDensity_pos (I := I) (WithMetric.toWithMetric g x)
-    (by simpa only [TangentBundle.trivializationAt_baseSet] using
-      mem_chart_source H (WithMetric.toWithMetric g x))
-  rw [relativeVolumeDensity_eq_div_chartVolumeDensity g _ (mem_chart_source H x),
-    WithMetric.chartVolumeDensity_rescale, mul_div_cancel_right₀ _ hpos.ne']
-
-/-- In real dimension `N`, rescaling the compared metric by `f` multiplies the relative volume
-density by `f ^ (N / 2)`. -/
-@[simp]
-theorem relativeVolumeDensity_rescale_right {n' : ℕ∞ω}
-    (g : ContMDiffRiemannianMetric I n E (fun x : M ↦ TangentSpace I x))
-    (g' : ContMDiffRiemannianMetric I n' E (fun x : M ↦ TangentSpace I x))
-    {f : M → ℝ} {hf : ContMDiff I 𝓘(ℝ) n' f} {hf_pos : ∀ x, 0 < f x} (x : M) :
-    relativeVolumeDensity g (g'.rescale f hf hf_pos) x =
-      f x ^ ((Module.finrank ℝ E : ℝ) / 2) * relativeVolumeDensity g g' x := by
-  rw [← relativeVolumeDensity_mul_relativeVolumeDensity g g',
-    relativeVolumeDensity_rescale, mul_comm]
-
-/-- In real dimension `N`, rescaling the reference metric by `f` divides the relative volume
-density by `f ^ (N / 2)`. -/
-@[simp]
-theorem relativeVolumeDensity_rescale_left {n' : ℕ∞ω}
-    (g : ContMDiffRiemannianMetric I n E (fun x : M ↦ TangentSpace I x))
-    (g' : ContMDiffRiemannianMetric I n' E (fun x : M ↦ TangentSpace I x))
-    {f : M → ℝ} {hf : ContMDiff I 𝓘(ℝ) n f} {hf_pos : ∀ x, 0 < f x} (x : M) :
-    relativeVolumeDensity (g.rescale f hf hf_pos) g' x =
-      relativeVolumeDensity g g' x / f x ^ ((Module.finrank ℝ E : ℝ) / 2) := by
-  rw [← inv_relativeVolumeDensity g' _, relativeVolumeDensity_rescale_right]
-  simp only [mul_inv_rev, inv_relativeVolumeDensity, div_eq_mul_inv]
-
-end Bundle.ContMDiffRiemannianMetric
 
 namespace TauCeti.WithMetric
 
@@ -130,7 +82,7 @@ theorem riemannianVolume_rescale :
       ((riemannianVolume I (WithMetric g)).withDensity fun x ↦
           ENNReal.ofReal (f x.ofWithMetric ^ ((Module.finrank ℝ E : ℝ) / 2))).map
         fun x ↦ toWithMetric (g.rescale f hf hf_pos) x.ofWithMetric := by
-  simpa only [relativeVolumeDensity_rescale] using
+  simpa only [relativeVolumeDensity_rescale_right, relativeVolumeDensity_self, mul_one] using
     riemannianVolume_eq_map_withDensity_relativeVolumeDensity g (g.rescale f hf hf_pos)
 
 /-- Integration of a nonnegative function against the volume of the rescaled metric `f g`, in real
@@ -139,7 +91,7 @@ theorem lintegral_riemannianVolume_rescale (φ : M → ℝ≥0∞) :
     ∫⁻ x, φ x.ofWithMetric ∂riemannianVolume I (WithMetric (g.rescale f hf hf_pos)) =
       ∫⁻ x, ENNReal.ofReal (f x.ofWithMetric ^ ((Module.finrank ℝ E : ℝ) / 2)) *
         φ x.ofWithMetric ∂riemannianVolume I (WithMetric g) := by
-  simpa only [relativeVolumeDensity_rescale] using
+  simpa only [relativeVolumeDensity_rescale_right, relativeVolumeDensity_self, mul_one] using
     lintegral_riemannianVolume_eq_lintegral_relativeVolumeDensity_mul
       g (g.rescale f hf hf_pos) φ
 
@@ -150,7 +102,7 @@ theorem integral_riemannianVolume_rescale {F : Type*} [NormedAddCommGroup F] [No
     ∫ x, φ x.ofWithMetric ∂riemannianVolume I (WithMetric (g.rescale f hf hf_pos)) =
       ∫ x, f x.ofWithMetric ^ ((Module.finrank ℝ E : ℝ) / 2) • φ x.ofWithMetric
         ∂riemannianVolume I (WithMetric g) := by
-  simpa only [relativeVolumeDensity_rescale] using
+  simpa only [relativeVolumeDensity_rescale_right, relativeVolumeDensity_self, mul_one] using
     integral_riemannianVolume_eq_integral_relativeVolumeDensity_smul
       g (g.rescale f hf hf_pos) φ
 
@@ -182,7 +134,7 @@ theorem riemannianTotalVolume_rescale [CompactSpace M] :
     riemannianTotalVolume I (WithMetric (g.rescale f hf hf_pos)) =
       ∫ x, f x.ofWithMetric ^ ((Module.finrank ℝ E : ℝ) / 2)
         ∂riemannianVolume I (WithMetric g) := by
-  simpa only [relativeVolumeDensity_rescale] using
+  simpa only [relativeVolumeDensity_rescale_right, relativeVolumeDensity_self, mul_one] using
     riemannianTotalVolume_eq_integral_relativeVolumeDensity g (g.rescale f hf hf_pos)
 
 /-- **Total volume of a Yamabe conformal metric.** On a compact manifold of real dimension `N`,

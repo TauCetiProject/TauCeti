@@ -8,11 +8,12 @@ module
 public import Mathlib.Geometry.Manifold.VectorBundle.Riemannian
 
 /-!
-# Lowering the smoothness of a Riemannian metric
+# Regularity and fibrewise formulas for Riemannian metrics
 
 A `C^n` Riemannian metric on a vector bundle is in particular a `C^m` Riemannian metric for every
-`m ≤ n`. This lets a metric built with more regularity than needed, such as an analytic model
-metric, be used by results stated for smooth metrics.
+`m ≤ n`. Forgetting regularity preserves the inner products on each fibre. This lets a metric
+built with more regularity than needed, such as an analytic model metric, be used by results
+stated for smooth metrics.
 
 ## Main definitions
 
@@ -36,6 +37,12 @@ variable
   {E : B → Type*} [TopologicalSpace (TotalSpace F E)]
   [∀ b, TopologicalSpace (E b)] [∀ b, AddCommGroup (E b)] [∀ b, Module ℝ (E b)]
   [FiberBundle F E] [VectorBundle ℝ F E]
+
+/-- Forgetting the regularity of a smooth metric preserves its inner products. -/
+@[simp]
+theorem toRiemannianMetric_inner (g : ContMDiffRiemannianMetric IB n F E) :
+    g.toRiemannianMetric.inner = g.inner :=
+  (rfl)
 
 /-- A `C^n` Riemannian metric regarded as a `C^m` Riemannian metric, for `m ≤ n`. -/
 def ofLE (g : ContMDiffRiemannianMetric IB n F E) (h : m ≤ n) :

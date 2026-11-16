@@ -9,11 +9,12 @@ public import TauCeti.Geometry.Manifold.Riemannian.VolumeDensity.Relative
 public import TauCeti.Geometry.Manifold.Riemannian.Restriction.Basic
 
 /-!
-# Relative volume density under pullback and restriction
+# Relative volume density under restriction
 
-Transporting two metrics through a tangent-space linear equivalence preserves their relative
-volume density. In particular, pulling back by a map whose differential is bijective preserves
-the density, as does restricting both metrics to an open submanifold or a closed time interval.
+This file proves that restricting both metrics to an open submanifold or to `M × [a, b]`
+preserves their relative volume density, including at the interval endpoints. It uses fibrewise
+transport from `TauCeti.Geometry.Manifold.VectorBundle.Riemannian.VolumeDensity` and pullback
+invariance from `TauCeti.Geometry.Manifold.Riemannian.VolumeDensity.Relative`.
 -/
 
 public section
@@ -21,24 +22,33 @@ public section
 open Bundle
 open scoped ContDiff Manifold
 
-namespace Bundle.ContMDiffRiemannianMetric
+namespace Bundle.RiemannianMetric
 
 variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
   {H : Type*} [TopologicalSpace H] {I : ModelWithCorners ℝ E H}
-  {M : Type*} [TopologicalSpace M] [ChartedSpace H M] [IsManifold I 1 M] {n n' : ℕ∞ω}
+  {M : Type*} [TopologicalSpace M] [ChartedSpace H M]
 
 /-- Restricting both metrics to an open submanifold preserves their relative volume density. -/
 @[simp]
 theorem relativeVolumeDensity_restrictOpenTangentSpace
-    (g : ContMDiffRiemannianMetric I n E (fun x : M ↦ TangentSpace I x))
-    (g' : ContMDiffRiemannianMetric I n' E (fun x : M ↦ TangentSpace I x))
+    (g g' : RiemannianMetric (fun x : M ↦ TangentSpace I x))
     (U : TopologicalSpace.Opens M) (x : U) :
     relativeVolumeDensity (g.restrictOpenTangentSpace U) (g'.restrictOpenTangentSpace U) x =
       relativeVolumeDensity g g' x.val := by
-  rw [restrictOpenTangentSpace_eq_pullback, restrictOpenTangentSpace_eq_pullback]
-  apply relativeVolumeDensity_pullback
-  rw [TauCeti.Manifold.mfderiv_subtype_val]
-  exact (TauCeti.Manifold.tangentSpaceOpenEquiv (I := I) x).surjective
+  exact relativeVolumeDensity_eq_of_linearEquiv _ _ g g'
+    (TauCeti.Manifold.tangentSpaceOpenEquiv (I := I) x).toLinearEquiv
+    (fun v w ↦ restrictOpenTangentSpace_inner g U x v w)
+    (fun v w ↦ restrictOpenTangentSpace_inner g' U x v w)
+
+end Bundle.RiemannianMetric
+
+namespace Bundle.ContMDiffRiemannianMetric
+
+open Bundle.RiemannianMetric
+
+variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
+  {H : Type*} [TopologicalSpace H] {I : ModelWithCorners ℝ E H}
+  {M : Type*} [TopologicalSpace M] [ChartedSpace H M] [IsManifold I 1 M] {n n' : ℕ∞ω}
 
 /-- Restricting both metrics to a closed time interval preserves their relative volume density,
 including at the endpoints. -/
@@ -48,8 +58,9 @@ theorem relativeVolumeDensity_restrictIcc {a b : ℝ} [Fact (a < b)]
       (fun p : M × ℝ ↦ TangentSpace (I.prod 𝓘(ℝ)) p))
     (g' : ContMDiffRiemannianMetric (I.prod 𝓘(ℝ)) n' (E × ℝ)
       (fun p : M × ℝ ↦ TangentSpace (I.prod 𝓘(ℝ)) p)) (p : M × Set.Icc a b) :
-    relativeVolumeDensity (g.restrictIcc a b) (g'.restrictIcc a b) p =
-      relativeVolumeDensity g g' (p.1, p.2) := by
+    relativeVolumeDensity (g.restrictIcc a b).toRiemannianMetric
+      (g'.restrictIcc a b).toRiemannianMetric p =
+      relativeVolumeDensity g.toRiemannianMetric g'.toRiemannianMetric (p.1, p.2) := by
   rw [restrictIcc_eq_pullback, restrictIcc_eq_pullback]
   exact relativeVolumeDensity_pullback g g' _ _ _ _ p
     (TauCeti.Manifold.isInvertible_mfderiv_prodMap_id_subtypeVal_Icc p).surjective

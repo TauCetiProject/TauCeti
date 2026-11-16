@@ -17,7 +17,7 @@ determinants by the same nonzero square, so the ratio
 is basis independent. For positive-definite symmetric forms it is positive; for a nondegenerate
 form its self ratio is one. This provides a basis- and orientation-free comparison of bilinear
 forms; its square root gives
-`Bundle.ContMDiffRiemannianMetric.relativeVolumeDensity` for Riemannian metrics.
+`Bundle.RiemannianMetric.relativeVolumeDensity` for Riemannian metrics.
 -/
 
 public section
