@@ -132,6 +132,8 @@ applied to an integrable function that is almost everywhere at least `a`.
   nonnegative function and `r ≥ 1`.
 * `TauCeti.sq_setLAverage_enorm_le_ofReal_setAverage_norm_sq`: Jensen's inequality
   `(⨍_s ‖h‖ₑ)² ≤ ofReal (⨍_s ‖h‖²)` between a lower average and a Bochner average.
+* `TauCeti.setLAverage_enorm_sq_le_of_ae_eq_zero`: the mean of `‖f‖²` is at most
+  `2 (1 + θ⁻¹)` times the mean of `‖f - c‖²` when `f` vanishes on a proportion `θ` of the set.
 * `TauCeti.laverage_smul_measure`, `TauCeti.average_smul_measure`,
   `TauCeti.setLAverage_smul_measure`, `TauCeti.setAverage_smul_measure`: averages are unchanged
   when the measure is multiplied by a positive finite scalar.
@@ -557,6 +559,70 @@ theorem sq_setLAverage_enorm_le_ofReal_setAverage_norm_sq {E : Type*} [NormedAdd
     rpow_laverage_le_laverage_rpow (μ := μ.restrict s) (u := fun x => ‖h x‖ₑ) one_le_two
 
 end Jensen
+
+section VanishingProportion
+
+open scoped NNReal
+
+variable {X : Type*} [MeasurableSpace X] {μ : Measure X}
+
+/-- **The mean of `‖f‖²` is controlled by the mean oscillation when `f` vanishes on a fixed
+proportion of the set.** If `f` vanishes almost everywhere on a subset `S` of `s` with
+`θ μ(s) ≤ μ(S)`, `θ > 0`, then for every constant `c`
+
+`⨍_s ‖f‖² ≤ 2 (1 + θ⁻¹) ⨍_s ‖f - c‖²`.
+
+Taking for `c` the mean of `f` turns a Poincaré inequality for `f - c` into one for `f` itself,
+as for a Sobolev function vanishing on a part of a ball outside the domain. -/
+theorem setLAverage_enorm_sq_le_of_ae_eq_zero {E : Type*} [NormedAddCommGroup E] {f : X → E}
+    {s S : Set X} {θ : ℝ≥0} (hθ : θ ≠ 0) (hSs : S ⊆ s) (hS : θ * μ s ≤ μ S)
+    (hf : ∀ᵐ x ∂μ.restrict S, f x = 0) (c : E) :
+    ⨍⁻ x in s, ‖f x‖ₑ ^ (2 : ℝ) ∂μ ≤
+      2 * (1 + (θ : ℝ≥0∞)⁻¹) * ⨍⁻ x in s, ‖f x - c‖ₑ ^ (2 : ℝ) ∂μ := by
+  -- If `μ s` is `0` or `∞`, the left side vanishes.
+  rcases eq_or_ne (μ s) 0 with hs0 | hs0
+  · rw [setLAverage_eq, setLIntegral_measure_zero _ _ hs0, ENNReal.zero_div]
+    exact zero_le
+  rcases eq_or_ne (μ s) ∞ with hst | hst
+  · rw [setLAverage_eq, hst, ENNReal.div_top]
+    exact zero_le
+  set D := ⨍⁻ x in s, ‖f x - c‖ₑ ^ (2 : ℝ) ∂μ
+  -- On `S` the deviation from `c` is `‖c‖`, so `θ ‖c‖² ≤ ⨍_s ‖f - c‖²`.
+  have hc : ‖c‖ₑ ^ (2 : ℝ) ≤ (θ : ℝ≥0∞)⁻¹ * D := by
+    have hS' : ‖c‖ₑ ^ (2 : ℝ) * μ S ≤ D * μ s := by
+      calc ‖c‖ₑ ^ (2 : ℝ) * μ S = ∫⁻ x in S, ‖f x - c‖ₑ ^ (2 : ℝ) ∂μ := by
+            rw [← setLIntegral_const]
+            exact lintegral_congr_ae (hf.mono fun x hx => by simp [hx])
+        _ ≤ ∫⁻ x in s, ‖f x - c‖ₑ ^ (2 : ℝ) ∂μ := lintegral_mono_set hSs
+        _ = D * μ s := by rw [mul_comm, measure_mul_setLAverage _ hst]
+    have hθc : (θ : ℝ≥0∞) * ‖c‖ₑ ^ (2 : ℝ) ≤ D := by
+      rw [← ENNReal.mul_le_mul_iff_left hs0 hst]
+      calc (θ : ℝ≥0∞) * ‖c‖ₑ ^ (2 : ℝ) * μ s = ‖c‖ₑ ^ (2 : ℝ) * (θ * μ s) := by ring
+        _ ≤ ‖c‖ₑ ^ (2 : ℝ) * μ S := mul_le_mul_right hS _
+        _ ≤ D * μ s := hS'
+    calc ‖c‖ₑ ^ (2 : ℝ) = (θ : ℝ≥0∞)⁻¹ * (θ * ‖c‖ₑ ^ (2 : ℝ)) := by
+          rw [← mul_assoc, ENNReal.inv_mul_cancel (by exact_mod_cast hθ) ENNReal.coe_ne_top,
+            one_mul]
+      _ ≤ _ := by gcongr
+  -- Pointwise `‖f‖² ≤ 2 ‖f - c‖² + 2 ‖c‖²`.
+  have hpt : ∀ x, ‖f x‖ₑ ^ (2 : ℝ) ≤ 2 * ‖f x - c‖ₑ ^ (2 : ℝ) + 2 * ‖c‖ₑ ^ (2 : ℝ) := fun x => by
+    have h1 : ‖f x‖ₑ ≤ ‖f x - c‖ₑ + ‖c‖ₑ := by
+      simpa using eNorm_add_le (f x - c) c
+    calc ‖f x‖ₑ ^ (2 : ℝ) ≤ (‖f x - c‖ₑ + ‖c‖ₑ) ^ (2 : ℝ) := by gcongr
+      _ ≤ 2 ^ ((2 : ℝ) - 1) * (‖f x - c‖ₑ ^ (2 : ℝ) + ‖c‖ₑ ^ (2 : ℝ)) :=
+        ENNReal.rpow_add_le_mul_rpow_add_rpow _ _ one_le_two
+      _ = _ := by norm_num; ring
+  calc ⨍⁻ x in s, ‖f x‖ₑ ^ (2 : ℝ) ∂μ
+      ≤ ⨍⁻ x in s, (2 * ‖f x - c‖ₑ ^ (2 : ℝ) + 2 * ‖c‖ₑ ^ (2 : ℝ)) ∂μ :=
+        setLAverage_mono_ae s (Filter.Eventually.of_forall hpt)
+    _ = 2 * D + 2 * ‖c‖ₑ ^ (2 : ℝ) := by
+        rw [setLAverage_eq, lintegral_add_right _ measurable_const, lintegral_const_mul' _ _
+          ENNReal.ofNat_ne_top, setLIntegral_const, ENNReal.add_div, mul_div_assoc,
+          ENNReal.mul_div_cancel_right hs0 hst, ← setLAverage_eq]
+    _ ≤ 2 * D + 2 * ((θ : ℝ≥0∞)⁻¹ * D) := by gcongr
+    _ = 2 * (1 + (θ : ℝ≥0∞)⁻¹) * D := by ring
+
+end VanishingProportion
 
 section Subset
 
