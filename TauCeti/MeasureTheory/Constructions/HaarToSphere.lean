@@ -7,8 +7,10 @@ module
 
 public import Mathlib.MeasureTheory.Constructions.HaarToSphere
 public import Mathlib.MeasureTheory.Integral.IntegralEqImproper
+public import Mathlib.MeasureTheory.Integral.IntervalIntegral.FundThmCalculus
 import Mathlib.Analysis.SpecialFunctions.Pow.Integral
 import TauCeti.MeasureTheory.Integral.IntegralEqImproper
+import TauCeti.MeasureTheory.Group.Integral
 
 /-!
 # Integration in polar coordinates
@@ -61,6 +63,9 @@ Public formalization references:
   integrable on a ball about `c` if and only if its radial integrand is integrable.
 * `LinearIsometryEquiv.map_toSphere`: a linear isometric equivalence carries the surface
   measure of `μ` to the surface measure of the image of `μ`.
+* `TauCeti.integral_toSphere_coe_eq_zero`: the surface measure has barycenter zero.
+* `TauCeti.hasDerivAt_setIntegral_ball`: the derivative in the radius of the integral of a
+  continuous function over a ball is its integral over the sphere of that radius.
 -/
 
 public section
@@ -469,5 +474,84 @@ theorem _root_.MeasureTheory.Measure.ae_toSphere_ae_Ioi_of_ae (μ : Measure E) [
   filter_upwards [hp] with θ hθ
   exact (ae_volumeIoiPow_iff _ (fun t ↦ P (t • (θ : E)))).mp hθ
 
+/-! ### The barycenter of the sphere and the radial derivative of ball integrals -/
+
+section Radial
+
+variable {μ : Measure E} [μ.IsAddHaarMeasure]
+
+/-- The ball integrals `s ↦ ∫ x in ball 0 s, f x` of a function continuous on `closedBall 0 R`
+are the primitive of the radial integrand `s ↦ s ^ (n - 1) ∫ f (s θ)` on `[0, R]`. -/
+private lemma setIntegral_ball_zero_eq_intervalIntegral [Nontrivial E] {f : E → ℝ} {R s : ℝ}
+    (hf : ContinuousOn f (closedBall (0 : E) R)) (hs : s ∈ Icc 0 R) :
+    ∫ x in ball (0 : E) s, f x ∂μ = ∫ t in (0 : ℝ)..s,
+      t ^ (finrank ℝ E - 1) * ∫ θ : sphere (0 : E) 1, f (t • (θ : E)) ∂μ.toSphere := by
+  rw [setIntegral_ball_zero_eq_integral_Ioo (((hf.mono (closedBall_subset_closedBall hs.2))
+      |>.integrableOn_compact (isCompact_closedBall _ _)).mono_set ball_subset_closedBall),
+    intervalIntegral.integral_of_le hs.1, integral_Ioc_eq_integral_Ioo]
+  rfl
+
+/-- **The derivative of a ball integral in the radius.** If `f` is continuous on the closed ball
+`closedBall c R` and `0 < σ < R`, the integral of `f` over `ball c s` has derivative
+`σ ^ (n - 1) ∫ f (c + σ θ) dμ.toSphere` in `s` at `σ`: the integral of `f` over the sphere of
+radius `σ` about `c`. -/
+theorem hasDerivAt_setIntegral_ball {f : E → ℝ} {c : E} {R σ : ℝ}
+    (hf : ContinuousOn f (closedBall c R)) (hσ : σ ∈ Ioo 0 R) :
+    HasDerivAt (fun s ↦ ∫ x in ball c s, f x ∂μ)
+      (σ ^ (finrank ℝ E - 1) * ∫ θ : sphere (0 : E) 1, f (c + σ • (θ : E)) ∂μ.toSphere) σ := by
+  rcases subsingleton_or_nontrivial E with hE | hE
+  · -- In the trivial space the sphere is empty, and every ball of positive radius is `univ`.
+    have : IsEmpty (sphere (0 : E) 1) :=
+      ⟨fun θ ↦ by simpa [Subsingleton.elim (θ : E) 0] using norm_eq_of_mem_sphere θ⟩
+    simp only [integral_of_isEmpty, mul_zero]
+    refine (hasDerivAt_const σ (∫ x, f x ∂μ)).congr_of_eventuallyEq ?_
+    filter_upwards [lt_mem_nhds hσ.1] with s hs
+    rw [show ball c s = univ from eq_univ_of_forall fun x ↦ by simp [Subsingleton.elim x c, hs],
+      Measure.restrict_univ]
+  -- Translate to the origin and integrate in polar coordinates.
+  set g : ℝ → ℝ := fun t ↦
+    t ^ (finrank ℝ E - 1) * ∫ θ : sphere (0 : E) 1, f (c + t • (θ : E)) ∂μ.toSphere
+  have hf₀ : ContinuousOn (fun y ↦ f (y + c)) (closedBall (0 : E) R) :=
+    hf.comp (continuous_id.add continuous_const).continuousOn fun y hy ↦ by
+      simpa [mem_closedBall, dist_eq_norm] using hy
+  have hg : ContinuousOn g (Icc 0 R) := by
+    refine ((continuous_pow _).continuousOn).mul ?_
+    simpa [add_comm] using hf₀.integral_toSphere_smul (μ := μ)
+  have heq : ∀ s ∈ Icc 0 R, ∫ x in ball c s, f x ∂μ = ∫ t in (0 : ℝ)..s, g t := fun s hs ↦ by
+    rw [setIntegral_ball_eq_setIntegral_ball_zero_add,
+      setIntegral_ball_zero_eq_intervalIntegral (hf₀.mono subset_rfl) hs]
+    simp [g, add_comm]
+  have hderiv : HasDerivAt (fun s ↦ ∫ t in (0 : ℝ)..s, g t) (g σ) σ :=
+    intervalIntegral.integral_hasDerivAt_right
+      ((hg.mono (by simpa [uIcc_of_le hσ.1.le] using Icc_subset_Icc_right hσ.2.le)
+        ).intervalIntegrable)
+      ((hg.mono Ioo_subset_Icc_self).stronglyMeasurableAtFilter isOpen_Ioo σ hσ)
+      ((hg.mono Ioo_subset_Icc_self).continuousAt (isOpen_Ioo.mem_nhds hσ))
+  refine hderiv.congr_of_eventuallyEq ?_
+  filter_upwards [isOpen_Ioo.mem_nhds hσ] with s hs
+  exact heq s (Ioo_subset_Icc_self hs)
+
+/-- **The surface measure of the unit sphere has barycenter zero**: `∫ θ dμ.toSphere = 0`, since
+`μ.toSphere` is invariant under `θ ↦ -θ`. -/
+theorem integral_toSphere_coe_eq_zero :
+    ∫ θ : sphere (0 : E) 1, (θ : E) ∂μ.toSphere = 0 := by
+  set ι : E ≃ₗᵢ[ℝ] E := LinearIsometryEquiv.neg ℝ
+  set g : sphere (0 : E) 1 → sphere (0 : E) 1 := Subtype.map ι fun x hx ↦ by simpa using hx
+  have hmap : μ.toSphere.map g = μ.toSphere := by
+    rw [LinearIsometryEquiv.map_toSphere ι μ]
+    congr 1
+    exact Measure.map_neg_eq_self μ
+  have hg : Measurable g := ι.continuous.measurable.subtype_map _
+  have h := integral_map (μ := μ.toSphere) hg.aemeasurable
+    (f := fun θ : sphere (0 : E) 1 ↦ (θ : E)) continuous_subtype_val.aestronglyMeasurable
+  rw [hmap] at h
+  have hneg : ∫ θ : sphere (0 : E) 1, (θ : E) ∂μ.toSphere =
+      -∫ θ : sphere (0 : E) 1, (θ : E) ∂μ.toSphere := by
+    rw [← integral_neg]
+    exact h
+  rw [eq_neg_iff_add_eq_zero, ← two_smul ℝ] at hneg
+  exact (smul_eq_zero.mp hneg).resolve_left two_ne_zero
+
+end Radial
 
 end TauCeti
