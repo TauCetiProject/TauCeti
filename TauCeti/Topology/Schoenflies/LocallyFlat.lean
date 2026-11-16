@@ -5,37 +5,36 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Analysis.InnerProductSpace.Hemisphere
 public import TauCeti.Geometry.Manifold.LocallyFlat.Brown
-public import TauCeti.Topology.Schoenflies.Standard
-import TauCeti.Analysis.Normed.Module.Ball.Homeomorph
+import Mathlib.Analysis.Normed.Module.Ball.Homeomorph
 import TauCeti.Analysis.Normed.Module.Ball.Radial.Extension
 import TauCeti.Topology.Circle.Schoenflies
 import TauCeti.Topology.ConnectedComponents
+import TauCeti.Topology.Schoenflies.Disc
 
 /-!
 # The generalized Schoenflies theorem for locally flat spheres
 
 Combining M. Brown's bicollaring theorem (`TauCeti.IsLocallyFlat.isBicollared_of_finrank_eq`) with
 his generalized Schoenflies theorem
-(`TauCeti.IsBicollar.exists_homeomorph_closure_connectedComponentIn_compl_range` for `m ≥ 2`,
-`TauCeti.exists_homeomorph_closure_connectedComponentIn_compl_range_of_finrank_eq_one` for `m = 1`,
-and the zero-dimensional degenerate case `m = 0`) yields the **locally flat generalized Schoenflies
-theorem** in every dimension `m ≥ 0`: let `σ : S(E) → S(F)` be a codimension-one locally flat
-embedding between unit spheres of real normed spaces (`finrank ℝ F = finrank ℝ E + 1`). Then the
-complement of `range σ` in `S(F)` has two connected components, and the closure of each component
-is homeomorphic to the closed unit ball of `E` by a homeomorphism inverting `σ` on `range σ` and
-sending `range σ` onto the boundary sphere `S(E)`. Equivalently, `σ` extends across each side to a
-closed embedding `closedBall (0 : E) 1 → S(F)` carrying `ball (0 : E) 1` onto that complementary
-component.
+(`TauCeti.IsBicollar.exists_homeomorph_closure_connectedComponentIn_compl_range`, valid in every
+dimension `m ≥ 0` and for arbitrary real normed spaces) yields the **locally flat generalized
+Schoenflies theorem** in every dimension `m ≥ 0`: let `σ : S(E) → S(F)` be a codimension-one locally
+flat embedding between unit spheres of real normed spaces (`finrank ℝ F = finrank ℝ E + 1`). Then
+the complement of `range σ` in `S(F)` has two connected components, and the closure of each
+component is homeomorphic to the closed unit ball of `E` by a homeomorphism inverting `σ` on
+`range σ` and sending `range σ` onto the boundary sphere `S(E)`. Equivalently, `σ` extends across
+each side to a closed embedding `closedBall (0 : E) 1 → S(F)` carrying `ball (0 : E) 1` onto that
+complementary component.
 
-Two unifications happen along the way:
+Two additional results are developed on the `IsBicollar` layer before passing to locally flat
+spheres:
 
-* On the `IsBicollar` layer, `TauCeti.Topology.Schoenflies.Disc` assumes `1 < finrank ℝ E` and an
-  inner product on `F`, whereas `TauCeti.Topology.Circle.Schoenflies` treats `finrank ℝ E = 1` for
-  any real normed space `F`. Transporting the ambient sphere to a Euclidean sphere via
-  `TauCeti.sphereHomeomorphOfFinrankEq` removes the inner-product assumption for `1 < finrank ℝ E`
-  and combines `m = 0`, `m = 1`, and `m ≥ 2` into a single statement for all real normed spaces
-  `E`, `F` with `finrank ℝ F = finrank ℝ E + 1`.
+* `TauCeti.IsBicollar.closure_connectedComponentIn_compl_range_of_finrank_eq` and
+  `TauCeti.IsBicollar.frontier_connectedComponentIn_compl_range_of_finrank_eq` unify the closure
+  and frontier formulas across `m = 0`, `m = 1` (`TauCeti.Topology.Circle.Schoenflies`), and
+  `m ≥ 2` (`TauCeti.Topology.Schoenflies.Components`).
 * When `F` is a real inner product space, gluing the two complementary discs along `range σ` via
   `TauCeti.exists_homeomorph_sphere_of_union_closedBall_orthogonal` gives an ambient
   self-homeomorphism of `S(F)` straightening `σ` to `TauCeti.equatorInclusion` and carrying a
@@ -55,11 +54,9 @@ using `TauCeti.latitudeHomeomorphComplPair` as an explicit global bicollar onto 
 * `TauCeti.exists_connectedComponentIn_compl_range_sphere_eq_union`: the complement of an embedded
   codimension-one sphere splits into the connected component of any chosen exterior point and one
   disjoint second component.
-* `TauCeti.IsBicollar.closure_connectedComponentIn_compl_range_of_finrank_eq`,
-  `TauCeti.IsBicollar.frontier_connectedComponentIn_compl_range_of_finrank_eq`, and
-  `TauCeti.IsBicollar.exists_homeomorph_closure_connectedComponentIn_compl_range_of_finrank_eq`:
-  Brown's generalized Schoenflies theorem for bicollared spheres in unit spheres of arbitrary real
-  normed spaces in every dimension `m ≥ 0`.
+* `TauCeti.IsBicollar.closure_connectedComponentIn_compl_range_of_finrank_eq` and
+  `TauCeti.IsBicollar.frontier_connectedComponentIn_compl_range_of_finrank_eq`: closure and
+  frontier of each complementary domain of a bicollared sphere in every dimension `m ≥ 0`.
 * `TauCeti.IsBicollar.exists_isClosedEmbedding_closedBall` and
   `TauCeti.IsLocallyFlat.exists_isClosedEmbedding_closedBall`: closed-ball extension form of the
   Schoenflies theorem on either side of `range σ`.
@@ -169,27 +166,6 @@ private lemma connectedComponentIn_compl_range_of_finrank_eq_zero
   rw [hrange, compl_empty, connectedComponentIn_univ]
   exact connectedComponent_eq_singleton y
 
-/-- Degenerate `finrank ℝ E = 0` case of the generalized Schoenflies theorem: `{y}` and
-`closedBall (0 : E) 1 = {0}` are both singletons. -/
-private lemma exists_homeomorph_closure_of_finrank_eq_zero
-    (hEF : finrank ℝ F = finrank ℝ E + 1) (h0 : finrank ℝ E = 0) (hi : Injective σ)
-    (y : sphere (0 : F) 1) :
-    ∃ h : closure (connectedComponentIn (range σ)ᶜ y) ≃ₜ closedBall (0 : E) 1,
-      (∀ (z : closure (connectedComponentIn (range σ)ᶜ y)) x,
-        (z : sphere (0 : F) 1) = σ x → (h z : E) = x) ∧
-      ∀ z, (h z : E) ∈ sphere (0 : E) 1 ↔ (z : sphere (0 : F) 1) ∈ range σ := by
-  obtain ⟨hrange, hcomp⟩ := connectedComponentIn_compl_range_of_finrank_eq_zero hEF h0 hi y
-  have : FiniteDimensional ℝ E := finiteDimensional_of_injective_sphere hEF hi
-  have : Subsingleton E := finrank_zero_iff.1 h0
-  have hE_emp : sphere (0 : E) 1 = ∅ := sphere_eq_empty_of_subsingleton one_ne_zero
-  have : IsEmpty (sphere (0 : E) 1) := isEmpty_coe_sort.2 hE_emp
-  have : Unique (closure (connectedComponentIn (range σ)ᶜ y)) :=
-    ⟨⟨y, subset_closure (hcomp ▸ rfl)⟩, fun ⟨z, hz⟩ ↦ Subtype.ext <| by simpa [hcomp] using hz⟩
-  have : Unique (closedBall (0 : E) 1) :=
-    ⟨⟨0, mem_closedBall_self zero_le_one⟩, fun z ↦ Subtype.ext (Subsingleton.elim _ _)⟩
-  exact ⟨Homeomorph.homeomorphOfUnique _ _, fun _ x ↦ isEmptyElim x,
-    fun _ ↦ by simp [hE_emp, hrange]⟩
-
 end Complement
 
 /-! ### Unified bicollared Schoenflies theorem in all dimensions -/
@@ -229,46 +205,6 @@ theorem frontier_connectedComponentIn_compl_range_of_finrank_eq (hb : IsBicollar
     · exact frontier_connectedComponentIn_compl_range_of_finrank_eq_one hEF h1.symm hb.injective hy
     · exact hb.frontier_connectedComponentIn_compl_range hEF hgt hy
 
-/-- **Brown's generalized Schoenflies theorem in all dimensions (`m ≥ 0`) and arbitrary real normed
-spaces.** Let `σ : S(E) → S(F)` admit a bicollar `b`, where `finrank ℝ F = finrank ℝ E + 1`. Then
-for every `y ∉ range σ`, the closure of the connected component of `y` in `(range σ)ᶜ` is
-homeomorphic to `closedBall (0 : E) 1` by a homeomorphism inverting `σ` on `range σ` and sending
-`range σ` onto `sphere (0 : E) 1`. -/
-theorem exists_homeomorph_closure_connectedComponentIn_compl_range_of_finrank_eq
-    (hb : IsBicollar σ b) (hEF : finrank ℝ F = finrank ℝ E + 1)
-    {y : sphere (0 : F) 1} (hy : y ∉ range σ) :
-    ∃ h : closure (connectedComponentIn (range σ)ᶜ y) ≃ₜ closedBall (0 : E) 1,
-      (∀ (z : closure (connectedComponentIn (range σ)ᶜ y)) x,
-        (z : sphere (0 : F) 1) = σ x → (h z : E) = x) ∧
-      ∀ z, (h z : E) ∈ sphere (0 : E) 1 ↔ (z : sphere (0 : F) 1) ∈ range σ := by
-  rcases Nat.eq_zero_or_pos (finrank ℝ E) with h0 | hpos
-  · exact exists_homeomorph_closure_of_finrank_eq_zero hEF h0 hb.injective y
-  · rcases eq_or_lt_of_le (Nat.succ_le_of_lt hpos) with h1 | hgt
-    · exact exists_homeomorph_closure_connectedComponentIn_compl_range_of_finrank_eq_one
-        hEF h1.symm hb.injective hy
-    · -- Transport `S(F)` to a Euclidean sphere so `InnerProductSpace` is available for `m ≥ 2`.
-      have : FiniteDimensional ℝ F := .of_finrank_pos (by omega)
-      let G := EuclideanSpace ℝ (Fin (finrank ℝ E + 1))
-      let Φ : sphere (0 : F) 1 ≃ₜ sphere (0 : G) 1 :=
-        sphereHomeomorphOfFinrankEq (by simp [G, hEF])
-      have hyΦ : Φ y ∉ range (Φ ∘ σ) := by
-        rw [range_comp, Φ.injective.mem_set_image]
-        exact hy
-      have hbΦ := hb.isOpenEmbedding_comp Φ.isOpenEmbedding
-      obtain ⟨hG, hhG_inv, hhG_sph⟩ :=
-        hbΦ.exists_homeomorph_closure_connectedComponentIn_compl_range (by simp [G]) hgt hyΦ
-      have hclΦ : closure (connectedComponentIn (range (Φ ∘ σ))ᶜ (Φ y)) =
-          Φ '' closure (connectedComponentIn (range σ)ᶜ y) := by
-        rw [range_comp, ← image_compl_eq Φ.bijective, ← Φ.image_connectedComponentIn hy,
-          Φ.image_closure]
-      let Ψ : closure (connectedComponentIn (range σ)ᶜ y) ≃ₜ
-          closure (connectedComponentIn (range (Φ ∘ σ))ᶜ (Φ y)) :=
-        Φ.subtype fun z ↦ (hclΦ ▸ Φ.injective.mem_set_image).symm
-      refine ⟨Ψ.trans hG, fun z x hzx ↦ hhG_inv (Ψ z) x (by simp [Ψ, hzx]), fun z ↦ ?_⟩
-      exact (hhG_sph (Ψ z)).trans <| by
-        rw [Homeomorph.subtype_apply_coe, range_comp]
-        exact Φ.injective.mem_set_image
-
 /-- **Closed-ball extension form of Brown's generalized Schoenflies theorem (`m ≥ 0`).** For each
 complementary point `y ∉ range σ`, `σ` extends to a closed embedding
 `g : closedBall (0 : E) 1 → S(F)` whose image is `closure (connectedComponentIn (range σ)ᶜ y)` and
@@ -281,7 +217,7 @@ theorem exists_isClosedEmbedding_closedBall (hb : IsBicollar σ b)
       (∀ z : closedBall (0 : E) 1,
         (z : E) ∈ ball (0 : E) 1 ↔ g z ∈ connectedComponentIn (range σ)ᶜ y) := by
   obtain ⟨h, hh_inv, hh_sph⟩ :=
-    hb.exists_homeomorph_closure_connectedComponentIn_compl_range_of_finrank_eq hEF hy
+    hb.exists_homeomorph_closure_connectedComponentIn_compl_range hEF hy
   have hcl := hb.closure_connectedComponentIn_compl_range_of_finrank_eq hEF hy
   let g : closedBall (0 : E) 1 → sphere (0 : F) 1 := Subtype.val ∘ h.symm
   refine ⟨g, isClosed_closure.isClosedEmbedding_subtypeVal.comp h.symm.isClosedEmbedding,
@@ -338,9 +274,9 @@ theorem exists_homeomorph_sphere_eq_equatorInclusion
   have hB (z : closedBall (0 : E) 1) : ‖(B z : (ℝ ∙ (p : F))ᗮ)‖ = 1 ↔ ‖(z : E)‖ = 1 := by
     simp [B]
   obtain ⟨eA, heA, hnA⟩ :=
-    hb.exists_homeomorph_closure_connectedComponentIn_compl_range_of_finrank_eq hEF hy
+    hb.exists_homeomorph_closure_connectedComponentIn_compl_range hEF hy
   obtain ⟨eC, -, hnC⟩ :=
-    hb.exists_homeomorph_closure_connectedComponentIn_compl_range_of_finrank_eq hEF hw
+    hb.exists_homeomorph_closure_connectedComponentIn_compl_range hEF hw
   obtain ⟨h, hhA, hhpos, -⟩ := exists_homeomorph_sphere_of_union_closedBall_orthogonal p
     isClosed_closure isClosed_closure hAC (eA.trans B) (eC.trans B)
     (fun z ↦ by
@@ -394,7 +330,7 @@ theorem exists_homeomorph_closure_connectedComponentIn_compl_range (hf : IsLocal
         (z : sphere (0 : F) 1) = σ x → (h z : E) = x) ∧
       ∀ z, (h z : E) ∈ sphere (0 : E) 1 ↔ (z : sphere (0 : F) 1) ∈ range σ :=
   let ⟨_, hb⟩ := isBicollared_iff.1 (hf.isBicollared_of_finrank_eq hEF)
-  hb.exists_homeomorph_closure_connectedComponentIn_compl_range_of_finrank_eq hEF hy
+  hb.exists_homeomorph_closure_connectedComponentIn_compl_range hEF hy
 
 /-- **Closed-ball extension form of the locally flat generalized Schoenflies theorem (`m ≥ 0`).**
 For every `y ∉ range σ`, `σ` extends to a closed embedding `g : closedBall (0 : E) 1 → S(F)` with

@@ -12,6 +12,7 @@ import Mathlib.Analysis.LocallyConvex.WithSeminorms
 import Mathlib.Topology.Compactification.OnePoint.Sphere
 import TauCeti.Topology.Compactification.OnePoint.FilledHull
 import TauCeti.Topology.ConnectedComponents
+import TauCeti.Topology.Schoenflies.Disc
 
 /-!
 # The generalized Schoenflies theorem in finite-dimensional real normed spaces
@@ -214,7 +215,7 @@ theorem exists_homeomorph_filledHull_range_closedBall (hf : IsLocallyBicollared 
   obtain ⟨ψ, b, q₀, hψ, hb, hq₀, hcl_sub, -, hpre_cl⟩ :=
     exists_isOpenEmbedding_sphere_filledHull hf hinj
   obtain ⟨hS, hhS_inv, hhS_sph⟩ :=
-    hb.exists_homeomorph_closure_connectedComponentIn_compl_range_of_finrank_eq (by simp) hq₀
+    hb.exists_homeomorph_closure_connectedComponentIn_compl_range (by simp) hq₀
   let eD : filledHull (range f) ≃ₜ closure (connectedComponentIn (range (ψ ∘ f))ᶜ q₀) :=
     (Homeomorph.setCongr hpre_cl.symm).trans (hψ.isEmbedding.homeomorphOfSubsetRange hcl_sub)
   have heD (z : filledHull (range f)) :
