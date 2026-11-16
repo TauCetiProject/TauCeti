@@ -6,7 +6,7 @@ Authors: Codex
 module
 
 import Mathlib.Tactic.FinCases
-public import TauCeti.Combinatorics.Graph.Connectivity.Flow
+public import TauCeti.Combinatorics.Graph.Connectivity.Flow.Basic
 public import TauCeti.Combinatorics.Graph.Union
 
 /-!
