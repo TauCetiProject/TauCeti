@@ -58,6 +58,9 @@ of `ℝⁿ`, where no compact localization in the position is available.
 * `TauCeti.Symbol.IsUniformlyEllipticAbove.exists_isUniformAsymptoticSum_sharpTerm_left`,
   `TauCeti.Symbol.IsUniformlyEllipticAbove.exists_isUniformAsymptoticSum_sharpTerm_right`:
   **a uniformly elliptic uniform symbol has uniform left and right parametrix symbols**.
+* `TauCeti.ClassicalSymbol.IsElliptic.exists_isAsymptoticSum_sharpTerm_left`: **an elliptic
+  classical symbol has a left parametrix symbol**, with no radius of invertibility uniform in the
+  position.
 * `TauCeti.Symbol.isSmoothing_sharp_sub_ofSpatial`: **the local parametrix modulo smoothing
   symbols.** For a smooth function `ψ` of the position, `q(x, ξ) = ψ(x) b(x, ξ)` with `b` a left
   parametrix symbol of `a`, and a symbol `p` with compact spatial support which agrees with `a`
@@ -498,5 +501,41 @@ theorem isSmoothing_sharp_sub_ofSpatial {a : Symbol n V W m} {b : Symbol n W V (
 end Parametrix
 
 end Symbol
+
+namespace ClassicalSymbol
+
+open HomogeneousSymbol
+
+variable {n : ℕ} {V W : Type*} [NormedAddCommGroup V] [NormedSpace ℂ V] [CompleteSpace V]
+  [NormedAddCommGroup W] [NormedSpace ℂ W] {m : ℝ}
+
+/-- **An elliptic classical symbol has a left parametrix symbol.** If the principal symbol of a
+classical symbol `a` of order `m` is invertible at every nonzero frequency, its full symbol has a
+left parametrix symbol `b` of order `-m`, `1 ∼ ∑ₖ sharpTerm b a k`. Unlike
+`TauCeti.Symbol.IsEllipticAbove.exists_isAsymptoticSum_sharpTerm`, this asks for no radius beyond
+which `a(x, ξ)` is invertible at all positions; such a radius need not exist when the base is
+noncompact. -/
+theorem IsElliptic.exists_isAsymptoticSum_sharpTerm_left {a : ClassicalSymbol n V W m}
+    (ha : a.IsElliptic) :
+    ∃ b : Symbol n W V (-m), Symbol.IsAsymptoticSum (m := fun k : ℕ ↦ -m + m - k)
+      (Symbol.inclusion (by simp) (Symbol.const (.id ℂ V))) (b.sharpTerm a.toSymbol) := by
+  have ha' := isElliptic_def.1 ha
+  set χ : FrequencyCutoff (CoordinateSpace n) := default
+  -- The cut-off inverse `χ(ξ) a_m(x, ξ)⁻¹` of the principal symbol is a left inverse of `a` up to
+  -- the symbol `χ a_m⁻¹ r` of order `-1`, with `r = a - χ a_m`, and the symbol
+  -- `χ² - 1`, which vanishes at large frequencies.
+  set b₀ := cutoffSymbol χ (a.principal.inverse ha')
+  refine Symbol.exists_isAsymptoticSum_sharpTerm_left (b₀ := b₀) ?_
+  obtain ⟨t, ht⟩ := Symbol.isSmoothing_iff.1 (Symbol.isSmoothing_of_coefficient_eq_zero (a :=
+    b₀.comp (cutoffSymbol χ a.principal) - Symbol.inclusion (by simp) (Symbol.const (.id ℂ V))) 2
+    fun x ξ hξ ↦ by
+      have h := (HomogeneousSymbol.isElliptic_iff.1 ha' x ξ
+        (norm_pos_iff.1 (by linarith))).inverse_comp_self
+      simp only [coefficient_principal] at h
+      simp [b₀, coefficient_cutoffSymbol, χ.apply_eq_one_of_two_le_norm hξ, h]) (-1)
+  refine ⟨t + Symbol.inclusion (by simp) (b₀.comp (a.remainder χ 1)), funext fun p ↦ ?_⟩
+  simp [ht, b₀, coefficient_principal]
+
+end ClassicalSymbol
 
 end TauCeti
