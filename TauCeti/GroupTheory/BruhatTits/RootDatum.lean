@@ -436,63 +436,38 @@ theorem inv_mem_reflectionCoset {i : ι} {m : G} (hm : m ∈ D.reflectionCoset i
   rw [this]
   exact D.mul_mem_reflectionCoset hconj hinv
 
-/-- The product of two elements of the same reflection coset lies in `T`. -/
 theorem mul_mem_T_of_mem_reflectionCoset {i : ι} {m m' : G}
     (hm : m ∈ D.reflectionCoset i) (hm' : m' ∈ D.reflectionCoset i) : m * m' ∈ D.T := by
   simpa using D.mul_inv_mem_T (D.inv_mem_reflectionCoset hm') hm
-
-/-- Every element of a reflection coset has square in `T`. -/
 theorem mul_self_mem_T {i : ι} {m : G} (hm : m ∈ D.reflectionCoset i) : m * m ∈ D.T :=
   D.mul_mem_T_of_mem_reflectionCoset hm hm
-
-/-- Two elements of the same reflection coset also differ on the right by an element of `T`. -/
 theorem inv_mul_mem_T {i : ι} {m m' : G}
     (hm : m ∈ D.reflectionCoset i) (hm' : m' ∈ D.reflectionCoset i) : m⁻¹ * m' ∈ D.T :=
   D.mul_mem_T_of_mem_reflectionCoset (D.inv_mem_reflectionCoset hm) hm'
-
-/-- Conjugating `M b` by `m ∈ M a` lands in `M (s_a b)` (Bruhat–Tits I, 6.1.2 (5)). -/
 theorem mul_mul_inv_mem_reflectionCoset {i j : ι} {m g : G}
     (hm : m ∈ D.reflectionCoset i) (hg : g ∈ D.reflectionCoset j) :
     m * g * m⁻¹ ∈ D.reflectionCoset (P.reflectionPerm i j) := by
-  set k := P.reflectionPerm i j
-  have hneg : P.reflectionPerm k k = P.reflectionPerm i (P.reflectionPerm j j) := by
-    refine P.root.injective ?_
-    rw [P.root_reflectionPerm, P.reflection_apply_self, P.root_reflectionPerm,
-      P.root_reflectionPerm, P.root_reflectionPerm, P.reflection_apply_self, map_neg]
+  set k := P.reflectionPerm i j; have hminv := D.inv_mem_reflectionCoset hm
+  have hneg : P.reflectionPerm k k = P.reflectionPerm i (P.reflectionPerm j j) := P.root.injective
+    (by simp only [P.root_reflectionPerm, P.reflection_apply_self, map_neg]
+        rw [← P.root_reflectionPerm])
+  have hconjU {l} {z : G} (hz : z ∈ D.U l) : m * z * m⁻¹ ∈ D.U (P.reflectionPerm i l) :=
+    D.reflection_conjugates i m hm l ▸ Subgroup.smul_mem_pointwise_smul _ _ _ hz
   obtain ⟨u, hu, hne, x, hx, m₁, hm₁, y, hy, rfl⟩ := D.exists_mem_bruhat j
-  have hminv : m⁻¹ ∈ D.reflectionCoset i := D.inv_mem_reflectionCoset hm
   have hm₁' : m * m₁ * m⁻¹ ∈ D.reflectionCoset k := by
     refine D.mem_reflectionCoset_of_mem_mul ?_ ?_ ?_
-    · have hu' : m * (x * m₁ * y) * m⁻¹ ∈ (D.U (P.reflectionPerm k k) : Set G) \ {1} := by
-        refine ⟨?_, fun h ↦ hne ?_⟩
-        · rw [hneg, ← D.reflection_conjugates i m hm (P.reflectionPerm j j),
-            ← ConjAct.toConjAct_smul]
-          exact Subgroup.smul_mem_pointwise_smul _ _ _ hu
-        · have : x * m₁ * y = m⁻¹ * (m * (x * m₁ * y) * m⁻¹) * m := by group
-          rw [this, h, mul_one, inv_mul_cancel]
-      have hx' : m * x⁻¹ * m⁻¹ ∈ D.U k := by
-        rw [← D.reflection_conjugates i m hm j, ← ConjAct.toConjAct_smul]
-        exact Subgroup.smul_mem_pointwise_smul _ _ _ (inv_mem hx)
-      have hy' : m * y⁻¹ * m⁻¹ ∈ D.U k := by
-        rw [← D.reflection_conjugates i m hm j, ← ConjAct.toConjAct_smul]
-        exact Subgroup.smul_mem_pointwise_smul _ _ _ (inv_mem hy)
-      have := D.mul_mul_mem_mul hx' hy' (D.bruhat k hu')
-      convert this using 1
+    · have hu' : m * (x * m₁ * y) * m⁻¹ ∈ (D.U (P.reflectionPerm k k) : Set G) \ {1} :=
+        ⟨hneg ▸ hconjU hu, fun h ↦ hne (by simpa [mul_assoc] using congrArg (m⁻¹ * · * m) h)⟩
+      convert D.mul_mul_mem_mul (hconjU (inv_mem hx)) (hconjU (inv_mem hy)) (D.bruhat k hu') using 1
       group
-    · rw [ConjAct.toConjAct_mul, ConjAct.toConjAct_mul, mul_smul, mul_smul,
-        ConjAct.toConjAct_inv, ← ConjAct.toConjAct_inv,
-        D.reflection_conjugates i m⁻¹ hminv k, P.reflectionPerm_self,
-        D.reflection_conjugates j m₁ hm₁ j,
-        D.reflection_conjugates i m hm (P.reflectionPerm j j), hneg]
+    · rw [ConjAct.toConjAct_mul, ConjAct.toConjAct_mul, mul_smul, mul_smul, ConjAct.toConjAct_inv,
+        ← ConjAct.toConjAct_inv, D.reflection_conjugates i m⁻¹ hminv k, P.reflectionPerm_self,
+        D.reflection_conjugates j m₁ hm₁ j, D.reflection_conjugates i m hm, hneg]
     · rw [hneg, ConjAct.toConjAct_mul, ConjAct.toConjAct_mul, mul_smul, mul_smul,
-        ConjAct.toConjAct_inv, ← ConjAct.toConjAct_inv,
-        D.reflection_conjugates i m⁻¹ hminv (P.reflectionPerm i (P.reflectionPerm j j)),
+        ConjAct.toConjAct_inv, ← ConjAct.toConjAct_inv, D.reflection_conjugates i m⁻¹ hminv,
         P.reflectionPerm_self, D.conj_smul_U_neg hm₁, D.reflection_conjugates i m hm j]
-  have hs := D.mul_inv_mem_T hm₁ hg
-  have hconj := D.mul_mul_inv_mem_T hm hs
-  have : m * g * m⁻¹ = (m * (g * m₁⁻¹) * m⁻¹) * (m * m₁ * m⁻¹) := by group
-  rw [this]
-  exact D.mul_mem_reflectionCoset hconj hm₁'
+  have hmul : m * g * m⁻¹ = (m * (g * m₁⁻¹) * m⁻¹) * (m * m₁ * m⁻¹) := by group
+  exact hmul ▸ D.mul_mem_reflectionCoset (D.mul_mul_inv_mem_T hm (D.mul_inv_mem_T hm₁ hg)) hm₁'
 
 /-- Each element of a reflection coset normalizes `T`. -/
 theorem reflectionCoset_subset_normalizer (i : ι) :
@@ -508,7 +483,6 @@ theorem weylNormalizer_le_normalizer : D.weylNormalizer ≤ Subgroup.normalizer 
 theorem T_normal_weylNormalizer : (D.T.subgroupOf D.weylNormalizer).Normal :=
   (Subgroup.normal_subgroupOf_iff_le_normalizer D.T_le_weylNormalizer).mpr
     D.weylNormalizer_le_normalizer
-
 attribute [instance] T_normal_weylNormalizer
 
 end Ordered
