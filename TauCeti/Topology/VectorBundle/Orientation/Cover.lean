@@ -120,43 +120,37 @@ theorem mk_eq_mk_iff {b : B} {o o' : Orientation ℝ (E b) ι} :
   · rintro rfl
     rfl
 
+section FiberEquiv
+
 omit [TopologicalSpace B] [NormedAddCommGroup F] [NormedSpace ℝ F]
-    [TopologicalSpace (TotalSpace F E)] in
+  [TopologicalSpace (TotalSpace F E)]
+
 /-- Canonical equivalence between the fibre of `VectorBundleOrientationCover F E ι` over `b` and
 `Orientation ℝ (E b) ι`. -/
 def fiberEquiv (b : B) :
     ((proj : VectorBundleOrientationCover F E ι → B) ⁻¹' {b}) ≃ Orientation ℝ (E b) ι where
   toFun p := cast (congrArg (fun x ↦ Orientation ℝ (E x) ι) p.2) p.1.orientation
   invFun o := ⟨⟨b, o⟩, rfl⟩
-  left_inv := by
-    rintro ⟨⟨b', o⟩, rfl : b' = b⟩
-    rfl
+  left_inv := by rintro ⟨⟨b', o⟩, rfl : b' = b⟩; rfl
   right_inv _ := rfl
 
-omit [TopologicalSpace B] [NormedAddCommGroup F] [NormedSpace ℝ F]
-    [TopologicalSpace (TotalSpace F E)] in
 @[simp]
 theorem fiberEquiv_apply_mk (b : B) (o : Orientation ℝ (E b) ι)
     {h : (⟨b, o⟩ : VectorBundleOrientationCover F E ι) ∈ proj ⁻¹' {b}} :
-    fiberEquiv b ⟨⟨b, o⟩, h⟩ = o :=
-  (rfl)
+    fiberEquiv b ⟨⟨b, o⟩, h⟩ = o := (rfl)
 
--- `simp` matches `Subtype.mk` proof binders at reducible transparency, where `rfl : b = b` is not
--- reducible to `⟨b, o⟩ ∈ proj ⁻¹' {b}`; this companion handles equality-typed proofs.
-omit [TopologicalSpace B] [NormedAddCommGroup F] [NormedSpace ℝ F]
-    [TopologicalSpace (TotalSpace F E)] in
+-- Companion for equality-typed subtype proofs (`rfl : b = b` is not reducible to `∈ proj ⁻¹' {b}`).
 @[simp]
 theorem fiberEquiv_apply_mk' (b : B) (o : Orientation ℝ (E b) ι)
     {h : (⟨b, o⟩ : VectorBundleOrientationCover F E ι).proj = b} :
     fiberEquiv b (⟨⟨b, o⟩, h⟩ : (proj : VectorBundleOrientationCover F E ι → B) ⁻¹' {b}) = o :=
   (rfl)
 
-omit [TopologicalSpace B] [NormedAddCommGroup F] [NormedSpace ℝ F]
-    [TopologicalSpace (TotalSpace F E)] in
 @[simp]
 theorem fiberEquiv_symm_apply (b : B) (o : Orientation ℝ (E b) ι) :
-    (fiberEquiv (F := F) (E := E) (ι := ι) b).symm o = ⟨⟨b, o⟩, rfl⟩ :=
-  (rfl)
+    (fiberEquiv (F := F) (E := E) (ι := ι) b).symm o = ⟨⟨b, o⟩, rfl⟩ := (rfl)
+
+end FiberEquiv
 
 /-- The sheet of the orientation double cover read as the orientation `o` of the model fibre in
 the linear trivialization `e`: the orientations of fibres over `e.baseSet` that `e` transports
@@ -534,12 +528,11 @@ theorem coe_ofContinuous (o : ∀ b, Orientation ℝ (E b) ι)
 
 theorem ofContinuous_apply (o : ∀ b, Orientation ℝ (E b) ι)
     (ho : Continuous fun b ↦ (⟨b, o b⟩ : VectorBundleOrientationCover F E ι)) (b : B) :
-    ofContinuous o ho b = o b :=
-  (rfl)
+    ofContinuous o ho b = o b := (rfl)
 
 /-- An orientation of the pullback bundle `f *ᵖ E` from a family of fibre orientations whose
-associated lift over `f` into `VectorBundleOrientationCover F E ι` is continuous. Note that
-`Bundle.Pullback ⇑f E b'` is a type synonym for `E (f b')` inheriting its module instances. -/
+associated lift over `f` into `VectorBundleOrientationCover F E ι` is continuous (`((⇑f) *ᵖ E) b'`
+is a type synonym for `E (f b')` inheriting its module instances). -/
 def ofContinuousPullback {B' : Type*} [TopologicalSpace B'] (f : C(B', B))
     (o : ∀ b', Orientation ℝ (E (f b')) ι)
     (ho : Continuous fun b' ↦ (⟨f b', o b'⟩ : VectorBundleOrientationCover F E ι)) :
@@ -547,11 +540,8 @@ def ofContinuousPullback {B' : Type*} [TopologicalSpace B'] (f : C(B', B))
   toFun := o
   eventually_mapOrientation_eq' b' := by
     have hb := FiberBundle.mem_baseSet_trivializationAt' (F := F) (E := E) (f b')
-    have hmem : (⟨f b', o b'⟩ : VectorBundleOrientationCover F E ι) ∈
-        VectorBundleOrientationCover.sheet (trivializationAt F E (f b'))
-          ((trivializationAt F E (f b')).mapOrientation ι hb (o b')) := ⟨hb, rfl⟩
     filter_upwards [ho.continuousAt.preimage_mem_nhds
-      ((VectorBundleOrientationCover.isOpen_sheet_trivializationAt _ _).mem_nhds hmem)]
+      ((VectorBundleOrientationCover.isOpen_sheet_trivializationAt _ _).mem_nhds ⟨hb, rfl⟩)]
       with x ⟨_, hx⟩ hx'
     -- `trivializationAt F ((⇑f) *ᵖ E) b'` is `(trivializationAt F E (f b')).pullback f`
     -- (`FiberBundle.pullback_trivializationAt'`).
@@ -566,14 +556,12 @@ def ofContinuousPullback {B' : Type*} [TopologicalSpace B'] (f : C(B', B))
 theorem coe_ofContinuousPullback {B' : Type*} [TopologicalSpace B'] (f : C(B', B))
     (o : ∀ b', Orientation ℝ (E (f b')) ι)
     (ho : Continuous fun b' ↦ (⟨f b', o b'⟩ : VectorBundleOrientationCover F E ι)) :
-    ⇑(ofContinuousPullback f o ho) = o :=
-  (rfl)
+    ⇑(ofContinuousPullback f o ho) = o := (rfl)
 
 theorem ofContinuousPullback_apply {B' : Type*} [TopologicalSpace B'] (f : C(B', B))
     (o : ∀ b', Orientation ℝ (E (f b')) ι)
     (ho : Continuous fun b' ↦ (⟨f b', o b'⟩ : VectorBundleOrientationCover F E ι)) (b' : B') :
-    ofContinuousPullback f o ho b' = o b' :=
-  (rfl)
+    ofContinuousPullback f o ho b' = o b' := (rfl)
 
 /-- The points of the orientation double cover lying on the section given by an orientation `o`
 form an open set. -/
@@ -611,30 +599,26 @@ theorem continuous_mk_cover_pullback {B' : Type*} [TopologicalSpace B'] (f : C(B
   refine VectorBundleOrientationCover.continuous_of_isOpen_preimage_sheet f.continuous
     fun b o' ↦ isOpen_iff_mem_nhds.2 fun x₀ ⟨hx₀, hxo⟩ ↦ ?_
   have hpull : x₀ ∈ ((trivializationAt F E b).pullback f).baseSet := by
-    rw [Trivialization.pullback_baseSet]
-    exact hx₀
+    rwa [Trivialization.pullback_baseSet]
   filter_upwards [o.eventually_mapOrientation_eq hι ((trivializationAt F E b).pullback f) hpull,
     f.continuous.continuousAt.preimage_mem_nhds
-      ((trivializationAt F E b).open_baseSet.mem_nhds hx₀)]
-    with x hx hx'
+      ((trivializationAt F E b).open_baseSet.mem_nhds hx₀)] with x hx hx'
   have hpullx : x ∈ ((trivializationAt F E b).pullback f).baseSet := by
-    rw [Trivialization.pullback_baseSet]
-    exact hx'
-  refine ⟨hx', ?_⟩
-  exact (((trivializationAt F E b).mapOrientation_pullback f hpullx (o x)).symm.trans
-    (hx hpullx)).trans (((trivializationAt F E b).mapOrientation_pullback f hpull (o x₀)).trans hxo)
+    rwa [Trivialization.pullback_baseSet]
+  exact ⟨hx', (((trivializationAt F E b).mapOrientation_pullback f hpullx (o x)).symm.trans
+    (hx hpullx)).trans (((trivializationAt F E b).mapOrientation_pullback f hpull (o x₀)).trans
+      hxo)⟩
 
-/-- For a continuous map `f : C(B', B)` and `Fintype.card ι = finrank ℝ F`, a family of fibre
-orientations of `f *ᵖ E` is locally constant in the preferred trivializations of `f *ᵖ E` if and
-only if its lift over `f` into `VectorBundleOrientationCover F E ι` is continuous. -/
+/-- For `f : C(B', B)` and `Fintype.card ι = finrank ℝ F`, a family of fibre orientations of
+`f *ᵖ E` is locally constant in the preferred trivializations of `f *ᵖ E` iff its lift over `f`
+into `VectorBundleOrientationCover F E ι` is continuous. -/
 theorem continuous_mk_pullback_iff {B' : Type*} [TopologicalSpace B'] (f : C(B', B))
     (hι : Fintype.card ι = finrank ℝ F) (o : ∀ b', Orientation ℝ (((⇑f) *ᵖ E) b') ι) :
     Continuous (fun b' ↦ (⟨f b', o b'⟩ : VectorBundleOrientationCover F E ι)) ↔
-      ∀ b₀ : B', ∀ᶠ x in 𝓝 b₀,
-        ∀ hx : x ∈ (trivializationAt F ((⇑f) *ᵖ E) b₀).baseSet,
-          (trivializationAt F ((⇑f) *ᵖ E) b₀).mapOrientation ι hx (o x) =
-            (trivializationAt F ((⇑f) *ᵖ E) b₀).mapOrientation ι
-              (FiberBundle.mem_baseSet_trivializationAt' b₀) (o b₀) :=
+      ∀ b₀ : B', ∀ᶠ x in 𝓝 b₀, ∀ hx : x ∈ (trivializationAt F ((⇑f) *ᵖ E) b₀).baseSet,
+        (trivializationAt F ((⇑f) *ᵖ E) b₀).mapOrientation ι hx (o x) =
+          (trivializationAt F ((⇑f) *ᵖ E) b₀).mapOrientation ι
+            (FiberBundle.mem_baseSet_trivializationAt' b₀) (o b₀) :=
   ⟨fun ho ↦ (ofContinuousPullback f o ho).eventually_mapOrientation_eq',
     fun ho ↦ (⟨o, ho⟩ : VectorBundleOrientation F ((⇑f) *ᵖ E) ι).continuous_mk_cover_pullback f hι⟩
 

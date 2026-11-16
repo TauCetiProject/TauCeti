@@ -438,34 +438,26 @@ theorem detLineCongr_symm (f : M →ₗ[R] N) {g : M' →ₗ[R] N'} (e₁ : M �
   rw [LinearEquiv.symm_apply_eq, ← LinearEquiv.trans_apply, ← detLineCongr_trans]
   simp
 
-/-- The canonical linear equivalence `f.detLine ≃ₗ[R] g.detLine` induced by an equality `f = g` of
-linear maps, defined as `LinearMap.detLineCongr` along the identity equivalences of `M` and `N`. -/
+/-- The canonical linear equivalence `f.detLine ≃ₗ[R] g.detLine` induced by `f = g`, defined as
+`LinearMap.detLineCongr` along the identity equivalences of `M` and `N`. -/
 def detLineOfEq {f g : M →ₗ[R] N} (h : f = g) : f.detLine ≃ₗ[R] g.detLine :=
   f.detLineCongr (.refl R M) (.refl R N) (by simp [h])
 
 theorem detLineOfEq_def {f g : M →ₗ[R] N} (h : f = g) :
-    detLineOfEq h = f.detLineCongr (.refl R M) (.refl R N) (by simp [h]) :=
-  (rfl)
+    detLineOfEq h = f.detLineCongr (.refl R M) (.refl R N) (by simp [h]) := (rfl)
 
 @[simp]
 theorem detLineOfEq_rfl (f : M →ₗ[R] N) :
-    detLineOfEq (rfl : f = f) = LinearEquiv.refl R f.detLine :=
-  detLineCongr_refl
+    detLineOfEq (rfl : f = f) = LinearEquiv.refl R f.detLine := detLineCongr_refl
 
 @[simp]
 theorem detLineOfEq_symm {f g : M →ₗ[R] N} (h : f = g) :
-    (detLineOfEq h).symm = detLineOfEq h.symm := by
-  subst h
-  simp
+    (detLineOfEq h).symm = detLineOfEq h.symm := by subst h; simp
 
-/-- Composing `LinearMap.detLineOfEq` along two chained equalities equals `LinearMap.detLineOfEq`
-of their transitivity. -/
 @[simp]
 theorem detLineOfEq_trans {f g k : M →ₗ[R] N} (h₁ : f = g) (h₂ : g = k) :
     (detLineOfEq h₁).trans (detLineOfEq h₂) = detLineOfEq (h₁.trans h₂) := by
-  subst h₁
-  subst h₂
-  simp
+  subst h₁; subst h₂; simp
 
 @[simp]
 theorem detLineOfEq_detLineOfEq {f g k : M →ₗ[R] N} (h₁ : f = g) (h₂ : g = k) (v : f.detLine) :
@@ -582,8 +574,7 @@ variable {R M N M' N' : Type*} [CommRing R] [PartialOrder R] [IsStrictOrderedRin
 /-- `Module.Ray.map` commutes with negation of rays between determinant lines of linear maps. -/
 @[simp]
 theorem map_detLine_neg {f : M →ₗ[R] N} {g : M' →ₗ[R] N'} (e : f.detLine ≃ₗ[R] g.detLine)
-    (r : Module.Ray R f.detLine) :
-    Module.Ray.map e (-r) = -Module.Ray.map e r :=
+    (r : Module.Ray R f.detLine) : Module.Ray.map e (-r) = -Module.Ray.map e r :=
   @Module.Ray.map_neg R _ _ _ f.detLine g.detLine TensorProduct.addCommGroup
     TensorProduct.addCommGroup _ _ e r
 
@@ -595,10 +586,7 @@ theorem map_detLineOfEq_neg {f g : M →ₗ[R] N} (h : f = g) (r : Module.Ray R 
 theorem map_detLineOfEq_map_detLineOfEq {f g k : M →ₗ[R] N} (h₁ : f = g) (h₂ : g = k)
     (r : Module.Ray R f.detLine) :
     Module.Ray.map (LinearMap.detLineOfEq h₂) (Module.Ray.map (LinearMap.detLineOfEq h₁) r) =
-      Module.Ray.map (LinearMap.detLineOfEq (h₁.trans h₂)) r := by
-  subst h₁
-  subst h₂
-  simp
+      Module.Ray.map (LinearMap.detLineOfEq (h₁.trans h₂)) r := by subst h₁; subst h₂; simp
 
 /-- A ray in the determinant line of a linear map does not equal its own negation. -/
 theorem ne_neg_self_detLine {f : M →ₗ[R] N} [IsDomain R] [IsTorsionFree R f.detLine]
@@ -619,8 +607,6 @@ theorem eq_or_eq_neg_detLine {f : M →ₗ[K] N} (r₁ r₂ : Module.Ray K f.det
   @Module.Ray.eq_or_eq_neg_of_finrank_eq_one K f.detLine _ _ _ TensorProduct.addCommGroup _
     (LinearMap.finrank_detLine f) r₁ r₂
 
-/-- A ray in the determinant line of a linear map over a linearly ordered field differs from another
-if and only if it is the opposite ray. -/
 theorem ne_iff_eq_neg_detLine {f : M →ₗ[K] N} (r₁ r₂ : Module.Ray K f.detLine) :
     r₁ ≠ r₂ ↔ r₁ = -r₂ :=
   @Module.Ray.ne_iff_eq_neg_of_finrank_eq_one K f.detLine _ _ _ TensorProduct.addCommGroup _
