@@ -169,17 +169,19 @@ theorem wordValue_append (x : Fin n → G) (u w : List ℕ) :
 
 /-- A homomorphism carries the value of a signed letter at `x` to its value at the images of
 `x`. -/
+@[simp]
 theorem map_letter {H F : Type*} [Group H] [FunLike F G H] [MonoidHomClass F G H] (f : F)
     (x : Fin n → G) (t : ℕ) : f (letter x t) = letter (f ∘ x) t := by
   simp only [letter_def, Function.comp_apply]
   split_ifs <;> simp
 
 /-- A homomorphism carries the value of a word at `x` to its value at the images of `x`. -/
+@[simp]
 theorem map_wordValue {H F : Type*} [Group H] [FunLike F G H] [MonoidHomClass F G H] (f : F)
     (x : Fin n → G) (w : List ℕ) : f (wordValue x w) = wordValue (f ∘ x) w := by
   induction w with
   | nil => simp
-  | cons t w ih => rw [wordValue_cons, wordValue_cons, map_mul, map_letter, ih]
+  | cons t w ih => simp [ih]
 
 /-- A cyclic rotation of a word with value `1` has value `1`. -/
 theorem wordValue_rotate_eq_one {x : Fin n → G} {w : List ℕ} (hw : wordValue x w = 1) (k : ℕ) :
