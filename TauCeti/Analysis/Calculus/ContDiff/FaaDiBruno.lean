@@ -23,12 +23,16 @@ The same expansion bounds the norm of the `m`-th coefficient
 `m` have norm at most `B`, it is at most `max 1 B ^ m` times the sum, over the ordered partitions
 `c` of `m`, of `‖q c.length‖`. For a composite `g ∘ f` this bounds the `m`-th derivative by the
 derivatives of `g` of order at most `m` (`ContDiffAt.norm_iteratedFDeriv_comp_le_sum`), keeping
-track of each order separately, as needed for changes of variables in Sobolev spaces.
+track of each order separately, as needed for changes of variables in Sobolev spaces. In
+particular, a smooth function on a proper space composed with a smooth map that is bounded together
+with all its derivatives has bounded derivatives of every order
+(`ContDiff.exists_norm_iteratedFDeriv_comp_le`).
 -/
 
 public section
 
 open Filter Topology
+open scoped ContDiff
 
 variable {𝕜 : Type*} [NontriviallyNormedField 𝕜]
   {E : Type*} [NormedAddCommGroup E] [NormedSpace 𝕜 E]
@@ -80,3 +84,26 @@ theorem ContDiffAt.norm_iteratedFDeriv_comp_le_sum {g : F → G} {f : E → F} {
       max 1 B ^ m * ∑ c : OrderedFinpartition m, ‖iteratedFDeriv 𝕜 c.length g (f x)‖ := by
   rw [iteratedFDeriv_comp hg hf le_rfl]
   exact FormalMultilinearSeries.norm_taylorComp_le _ _ hB
+
+/-- **Composites with bounded derivatives.** Let `f` be smooth, bounded, with bounded derivatives
+of every order, and let `g` be smooth on a proper space. Then every derivative of `g ∘ f` is
+bounded: the derivatives of `g` are bounded on the compact ball containing the range of `f`. -/
+theorem ContDiff.exists_norm_iteratedFDeriv_comp_le [ProperSpace F] {g : F → G} {f : E → F}
+    (hg : ContDiff 𝕜 ∞ g) (hf : ContDiff 𝕜 ∞ f)
+    (hb : ∀ n, ∃ C, ∀ x, ‖iteratedFDeriv 𝕜 n f x‖ ≤ C) (m : ℕ) :
+    ∃ C, ∀ x, ‖iteratedFDeriv 𝕜 m (g ∘ f) x‖ ≤ C := by
+  obtain ⟨R, hR⟩ := hb 0
+  have hA (k : ℕ) : ∃ A, ∀ y ∈ Metric.closedBall (0 : F) R, ‖iteratedFDeriv 𝕜 k g y‖ ≤ A :=
+    (isCompact_closedBall (0 : F) R).exists_bound_of_continuousOn
+      (hg.continuous_iteratedFDeriv (by exact_mod_cast le_top)).continuousOn
+  choose A hA using hA
+  choose B hB using hb
+  set B' := ∑ k ∈ Finset.range (m + 1), |B k|
+  refine ⟨max 1 B' ^ m * ∑ c : OrderedFinpartition m, A c.length, fun x ↦ ?_⟩
+  have hx : f x ∈ Metric.closedBall (0 : F) R := by simpa using hR x
+  refine ((hg.of_le (by exact_mod_cast le_top)).contDiffAt.norm_iteratedFDeriv_comp_le_sum
+    (hf.of_le (by exact_mod_cast le_top)).contDiffAt (B := B') fun k _ hkm ↦ ?_).trans ?_
+  · exact (hB k x).trans ((le_abs_self _).trans (Finset.single_le_sum (f := fun k ↦ |B k|)
+      (fun _ _ ↦ abs_nonneg _) (Finset.mem_range.2 (by omega))))
+  · gcongr with c
+    exact hA _ _ hx
