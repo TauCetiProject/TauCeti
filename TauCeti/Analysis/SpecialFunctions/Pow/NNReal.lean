@@ -79,6 +79,10 @@ closed intervals for a reciprocal radius parameter `α / r`.
 
 On a seminormed group, `x ↦ c * ‖x‖₊ ^ a` tends to `0` at `0` for every positive exponent `a`.
 
+Continuity of `x ↦ x ^ y` on a set of nonnegative reals does not change when the set is rescaled
+by a nonzero factor, since `x ^ y = c ^ y (c⁻¹ x) ^ y`; for continuous functional calculus this
+compares the powers of an element with those of its multiples.
+
 ## Main declarations
 
 * `ENNReal.pow_rpow_comm`: natural and real powers commute in `ℝ≥0∞`.
@@ -119,6 +123,8 @@ On a seminormed group, `x ↦ c * ‖x‖₊ ^ a` tends to `0` at `0` for every 
   `ofReal (p * 2⁻¹ ^ (1 - p) / (p - 1)) * (2 * A) = ofReal (2 * p * 2 ^ (p - 1) / (p - 1)) * A`.
 * `NNReal.rpow_neg_mem_Icc_iff`: an interval of negative powers is equivalent to an interval
   for the reciprocal parameter `α / r`.
+* `NNReal.continuousOn_rpow_const_smul_image_iff`: `x ↦ x ^ y` is continuous on `c • S`, for
+  `c ≠ 0`, exactly when it is continuous on `S`.
 * `TauCeti.tendsto_const_mul_nnnorm_rpow_nhds_zero`: `c * ‖x‖₊ ^ a → 0` as `x → 0` for `0 < a`.
 -/
 
@@ -489,6 +495,22 @@ lemma max_two_mul_le_toNNReal {α C M ρ : ℝ≥0} {C₀ D N R : ℝ} (hα1 : (
         rw [show (2 : ℝ) * 2 * D = 4 * D by ring]
         gcongr
         exact le_max_right _ _
+
+/-- Continuity of `x ↦ x ^ y` on a set of nonnegative reals is unchanged by rescaling the set by
+a nonzero factor. -/
+theorem continuousOn_rpow_const_smul_image_iff {S : Set ℝ≥0} {y : ℝ} {c : ℝ≥0} (hc : c ≠ 0) :
+    ContinuousOn (fun x : ℝ≥0 ↦ x ^ y) ((c • ·) '' S) ↔ ContinuousOn (fun x : ℝ≥0 ↦ x ^ y) S := by
+  suffices h : ∀ {c : ℝ≥0} {S : Set ℝ≥0}, c ≠ 0 → ContinuousOn (fun x : ℝ≥0 ↦ x ^ y) S →
+      ContinuousOn (fun x : ℝ≥0 ↦ x ^ y) ((c • ·) '' S) from
+    ⟨fun h' ↦ by simpa [Set.image_image, smul_smul, hc] using h (inv_ne_zero hc) h', h hc⟩
+  intro c S hc hS
+  -- On `c • S`, `x ^ y = c ^ y * (c⁻¹ • x) ^ y`.
+  have hmaps : Set.MapsTo (c⁻¹ • ·) ((c • ·) '' S) S := by
+    rintro _ ⟨x, hx, rfl⟩
+    simpa [smul_smul, hc] using hx
+  refine ((hS.comp (continuous_const_smul c⁻¹).continuousOn hmaps).const_smul (c ^ y)).congr
+    fun _ ⟨x, _, hxc⟩ ↦ ?_
+  simp [← hxc, hc, NNReal.mul_rpow, smul_eq_mul]
 
 end NNReal
 
