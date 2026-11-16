@@ -59,6 +59,10 @@ from frequency zero, because differentiation multiplies Fourier coefficients by 
 * `TauCeti.CircleSobolev.inner_ofContinuousMap`, `TauCeti.CircleSobolev.real_inner_ofContinuousMap`:
   Parseval's identity, the inner product in `H⁰` of two continuous loops is the mean of their
   pointwise inner product.
+* `TauCeti.CircleSobolev.norm_ofContinuousMap_sq`,
+  `TauCeti.CircleSobolev.norm_ofContinuousMap_le_of_forall_norm_le`: the squared `H⁰` norm of a
+  continuous loop is the mean of its squared pointwise norm, so pointwise domination of loops
+  gives domination in `H⁰`.
 
 ## References
 
@@ -301,6 +305,26 @@ theorem real_inner_ofContinuousMap (f g : C(AddCircle T, F)) :
     (continuous_inner.comp (f.continuous.prodMk g.continuous)).integrable_of_hasCompactSupport
       (HasCompactSupport.of_compactSpace _)
   rw [real_inner_eq_re_inner, inner_ofContinuousMap, ← RCLike.re_eq_complex_re, ← integral_re hi]
+
+/-- **Parseval's identity for the norm.** The squared norm in `H⁰` of the Fourier coefficient
+sequence of a continuous loop `f` is the mean of `‖f x‖²`. -/
+theorem norm_ofContinuousMap_sq (f : C(AddCircle T, F)) :
+    ‖ofContinuousMap T f‖ ^ 2 = ∫ x, ‖f x‖ ^ 2 ∂AddCircle.haarAddCircle := by
+  rw [← real_inner_self_eq_norm_sq, real_inner_ofContinuousMap]
+  simp only [← RCLike.re_eq_complex_re, inner_self_eq_norm_sq]
+
+/-- Pointwise domination `‖f x‖ ≤ C ‖g x‖` of continuous loops gives the same domination of their
+Fourier coefficient sequences in `H⁰`. -/
+theorem norm_ofContinuousMap_le_of_forall_norm_le {f g : C(AddCircle T, F)} {C : ℝ} (hC : 0 ≤ C)
+    (h : ∀ x, ‖f x‖ ≤ C * ‖g x‖) :
+    ‖ofContinuousMap T f‖ ≤ C * ‖ofContinuousMap T g‖ := by
+  have hint (u : C(AddCircle T, F)) :
+      Integrable (fun x ↦ ‖u x‖ ^ 2) AddCircle.haarAddCircle :=
+    (u.continuous.norm.pow 2).integrable_of_hasCompactSupport (HasCompactSupport.of_compactSpace _)
+  refine (pow_le_pow_iff_left₀ (norm_nonneg _) (by positivity) two_ne_zero).1 ?_
+  rw [mul_pow, norm_ofContinuousMap_sq, norm_ofContinuousMap_sq, ← integral_const_mul]
+  refine integral_mono (hint f) ((hint g).const_mul _) fun x ↦ ?_
+  simpa only [mul_pow] using pow_le_pow_left₀ (norm_nonneg _) (h x) 2
 
 end Inner
 
