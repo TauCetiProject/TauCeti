@@ -159,7 +159,7 @@ theorem mul_integral_norm_sq_smul_le_of_mem_gaugeFixedKernel (hx : Continuous x)
   have hy₂ := (mem_gaugeFixedKernel.1 hy).2.1
   obtain ⟨A, -, hcut⟩ := exists_cutoff_fderiv_bound (E := ℂ)
   -- `ψ n` is one on the disc of radius `n + 1`, with derivative at most `A / (n + 1)`.
-  choose ψ ψ' hψ hψ01 hψ1 hψ0 hψd hψb using fun n : ℕ ↦ hcut 0 ((n : ℝ) + 1) (by positivity)
+  choose ψ ψ' hψ hψ01 hψ1 hψ0 hψd hψb _ _ using fun n : ℕ ↦ hcut 0 ((n : ℝ) + 1) (by positivity)
   have hn : Integrable fun z ↦ ‖y z‖ ^ 2 := hy₂.integrable_norm_pow two_ne_zero
   have hineq (n : ℕ) := mul_integral_norm_sq_mul_smul_le hx hR hχ hχM hχ0 hχd (hψ n 2)
     (HasCompactSupport.intro (isCompact_closedBall 0 (2 * ((n : ℝ) + 1))) fun z hz ↦
@@ -201,13 +201,10 @@ theorem exists_integral_norm_sq_le_mul_setIntegral_closedBall (hx : ContDiff ℝ
     hx hsol hlim hcov (c := 1 / 4) (by norm_num) (by norm_num)
   obtain ⟨A, -, hcut⟩ := exists_cutoff_fderiv_bound (E := ℂ)
   -- `b` is one on the disc of radius `R` and vanishes beyond `2 R`; the cutoff is `1 - b`.
-  obtain ⟨b, b', hb, hb01, hb1, hb0, hbd, hbb⟩ := hcut 0 R hR0
+  obtain ⟨b, b', hb, hb01, hb1, hb0, hbd, hbb, hb'c, hb'0⟩ := hcut 0 R hR0
   refine ⟨2 * R, 1 + 16 * (A * R⁻¹) ^ 2, fun y hyK ↦ ?_⟩
   have hy₂ : MemLp y 2 := memLp_of_mem_gaugeFixedKernel hyK
   have hn : Integrable fun z ↦ ‖y z‖ ^ 2 := hy₂.integrable_norm_pow two_ne_zero
-  have hb'c : Continuous b' := by
-    have h : b' = fderiv ℝ b := funext fun z ↦ (hbd z).fderiv.symm
-    exact h ▸ (hb 1).continuous_fderiv one_ne_zero
   have hB : Integrable fun z ↦ ‖-b' z‖ ^ 2 * ‖y z‖ ^ 2 :=
     Integrable.mono' (hn.const_mul ((A * R⁻¹) ^ 2))
       ((hb'c.neg.norm.pow 2).aestronglyMeasurable.mul hn.aestronglyMeasurable)
@@ -224,14 +221,7 @@ theorem exists_integral_norm_sq_le_mul_setIntegral_closedBall (hx : ContDiff ℝ
   have hBball : ∫ z, ‖b' z‖ ^ 2 * ‖y z‖ ^ 2 ≤
       (A * R⁻¹) ^ 2 * ∫ z in closedBall 0 (2 * R), ‖y z‖ ^ 2 := by
     rw [← setIntegral_eq_integral_of_forall_compl_eq_zero (s := closedBall (0 : ℂ) (2 * R))
-      fun z hz ↦ by
-        -- Beyond radius `2 R` the cutoff vanishes near `z`, so its derivative there is zero.
-        have hev : b =ᶠ[𝓝 z] fun _ ↦ 0 := by
-          filter_upwards [(isOpen_lt continuous_const continuous_norm).mem_nhds
-            (show 2 * R < ‖z‖ by simpa using hz)] with w hw
-          exact hb0 w (by simpa using hw)
-        rw [(hbd z).unique ((hasFDerivAt_const 0 z).congr_of_eventuallyEq hev)]
-        simp, ← integral_const_mul]
+      fun z hz ↦ by simp [hb'0 z (by simpa using hz)], ← integral_const_mul]
     refine setIntegral_mono (by simpa using hB.integrableOn) (hn.const_mul _).integrableOn
       fun z ↦ ?_
     exact mul_le_mul_of_nonneg_right (pow_le_pow_left₀ (norm_nonneg _) (hbb z) 2) (sq_nonneg _)
@@ -418,7 +408,7 @@ theorem finiteDimensional_gaugeFixedKernel_of_tendsto (hx : ContDiff ℝ 1 x)
     FiniteDimensional ℝ (gaugeFixedKernel x) := by
   obtain ⟨ρ, C, hC⟩ := exists_integral_norm_sq_le_mul_setIntegral_closedBall hx hsol hlim hcov
   obtain ⟨A, -, hcut⟩ := exists_cutoff_fderiv_bound (E := ℂ)
-  obtain ⟨b, b', hb, hb01, hb1, hb0, hbd, hbb⟩ := hcut 0 (max ρ 1) (by positivity)
+  obtain ⟨b, b', hb, hb01, hb1, hb0, hbd, hbb, -, -⟩ := hcut 0 (max ρ 1) (by positivity)
   set T := gaugeFixedKernelToLp x
   -- A bounded sequence in the range of `T` with pairwise distances at least `1` is impossible.
   have : FiniteDimensional ℝ (LinearMap.range T) := by

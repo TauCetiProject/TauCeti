@@ -186,7 +186,7 @@ private theorem exists_pos_forall_exists_diffeomorph_eqOn :
   intro n hn c h r hr hhc hcd hδ
   have hn' : (n : WithTop ℕ∞) ≠ 0 := by exact_mod_cast (zero_lt_one.trans_le hn).ne'
   set δ : ℝ := (2 * (1 + 2 * C))⁻¹ with hδdef
-  obtain ⟨ρ, ρ', hρcd, hρ01, hρ1, hρ0, hρd, hρ'le⟩ := hρ c r hr
+  obtain ⟨ρ, ρ', hρcd, hρ01, hρ1, hρ0, hρd, hρ'le, -, -⟩ := hρ c r hr
   -- The perturbation `u = ρ • (h - id)`.
   let u : E → E := fun x ↦ ρ x • (h x - x)
   have hu0 (x : E) (hx : x ∉ closedBall c (2 * r)) : u =ᶠ[𝓝 x] fun _ ↦ 0 := by

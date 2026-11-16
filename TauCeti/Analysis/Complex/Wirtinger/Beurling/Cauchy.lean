@@ -219,7 +219,7 @@ theorem _root_.HasCompactSupport.wirtingerDeriv_cauchyTransform_ae_eq_beurlingL2
   set R : ℕ → ℝ := fun n ↦ 2 * r + n
   have hR (n : ℕ) : 0 < R n := by positivity
   have hrR (n : ℕ) : 2 * r ≤ R n := by simp only [R]; linarith [n.cast_nonneg (α := ℝ)]
-  choose χ χ' hχs _ hχ1 hχ0 hχd hχ' using fun n ↦ hcut 0 (R n) (hR n)
+  choose χ χ' hχs _ hχ1 hχ0 hχd hχ' _ _ using fun n ↦ hcut 0 (R n) (hR n)
   have hχfd (n : ℕ) (x : ℂ) : ‖fderiv ℝ (χ n) x‖ ≤ C₀ * (R n)⁻¹ := by
     rw [(hχd n x).fderiv]
     exact hχ' n x

@@ -9,7 +9,6 @@ public import TauCeti.Analysis.PDE.Vortex.FiniteKernel
 import TauCeti.Analysis.Calculus.BumpFunction.Cutoff
 import TauCeti.Analysis.SpecialFunctions.JapaneseBracket.Exp
 import TauCeti.MeasureTheory.Function.L2Space
-import TauCeti.MeasureTheory.Function.Lp.Norm
 import TauCeti.MeasureTheory.Integral.Lebesgue.Truncation
 
 /-!
@@ -162,29 +161,22 @@ private theorem sub_mul_integral_norm_sq_smul_le (hx : Continuous x) {c₁ R d K
   linarith
 
 /-- **The absorption for the weight `(1 - b) V`.** Let `b` be a cutoff equal to one on the disc
-of radius `R` of the exterior estimate (mass `c₁`) and vanishing beyond `2 R`, with `|db| ≤ a`,
-and let `V ≥ 0` be a bounded `C²` weight with `|dV| ≤ d V` and `V ≤ E` on the disc of radius
-`2 R`. Then `(c₁² - d²) ∫ |(1 - b) V y|² ≤ (2 d a + a²) E² ∫ |y|²` on kernel elements. -/
+of radius `R` of the exterior estimate (mass `c₁`), whose derivative `db` is continuous, vanishes
+beyond `2 R` and satisfies `|db| ≤ a`, and let `V ≥ 0` be a bounded `C²` weight with
+`|dV| ≤ d V` and `V ≤ E` on the disc of radius `2 R`. Then
+`(c₁² - d²) ∫ |(1 - b) V y|² ≤ (2 d a + a²) E² ∫ |y|²` on kernel elements. -/
 private theorem sub_mul_integral_norm_sq_cutoff_smul_le (hx : Continuous x) {c₁ R d a E B : ℝ}
     (hR : ∀ u : ℂ → EuclideanSpace ℝ (Fin 4), ContDiff ℝ 2 u → HasCompactSupport u →
       (∀ z, ‖z‖ ≤ R → u z = 0) → c₁ ^ 2 * (∫ z, ‖u z‖ ^ 2) ≤ ∫ z, ‖gaugeFixedOperator x u z‖ ^ 2)
     (hd : 0 ≤ d) {b : ℂ → ℝ} {b' : ℂ → ℂ →L[ℝ] ℝ} (hb : ContDiff ℝ 2 b)
     (hb01 : ∀ z, 0 ≤ b z ∧ b z ≤ 1) (hb1 : ∀ z, ‖z‖ ≤ R → b z = 1)
-    (hb0 : ∀ z, 2 * R < ‖z‖ → b z = 0) (hbd : ∀ z, HasFDerivAt b (b' z) z)
-    (hbb : ∀ z, ‖b' z‖ ≤ a) {V : ℂ → ℝ} (hV : ContDiff ℝ 2 V) (hV0 : ∀ z, 0 ≤ V z)
+    (hbd : ∀ z, HasFDerivAt b (b' z) z) (hbb : ∀ z, ‖b' z‖ ≤ a) (hb'c : Continuous b')
+    (hb'0 : ∀ z, 2 * R < ‖z‖ → b' z = 0) {V : ℂ → ℝ} (hV : ContDiff ℝ 2 V) (hV0 : ∀ z, 0 ≤ V z)
     (hVB : ∀ z, V z ≤ B) (hdV : ∀ z, ‖fderiv ℝ V z‖ ≤ d * V z)
     (hVE : ∀ z, ‖z‖ ≤ 2 * R → V z ≤ E) {y : ℂ → EuclideanSpace ℝ (Fin 4)}
     (hyK : y ∈ gaugeFixedKernel x) :
     (c₁ ^ 2 - d ^ 2) * ∫ z, ‖((1 - b z) * V z) • y z‖ ^ 2 ≤
       (2 * d * a + a ^ 2) * E ^ 2 * ∫ z, ‖y z‖ ^ 2 := by
-  have hb'c : Continuous b' :=
-    (funext fun z ↦ (hbd z).fderiv.symm : b' = fderiv ℝ b) ▸ hb.continuous_fderiv two_ne_zero
-  -- Beyond radius `2 R` the cutoff vanishes near `z`, so its derivative there is zero.
-  have hb'0 (z : ℂ) (hz : 2 * R < ‖z‖) : b' z = 0 := by
-    have hev : b =ᶠ[𝓝 z] fun _ ↦ 0 := by
-      filter_upwards [(isOpen_lt continuous_const continuous_norm).mem_nhds hz] with w hw
-      exact hb0 w hw
-    exact (hbd z).unique ((hasFDerivAt_const 0 z).congr_of_eventuallyEq hev)
   exact sub_mul_integral_norm_sq_smul_le (χ := fun z ↦ (1 - b z) * V z) (M := B) hx hR
     ((contDiff_const.sub hb).mul hV)
     (fun z ↦ by
@@ -206,7 +198,8 @@ private theorem lintegral_ofReal_sq_mul_norm_sq_le (hx : Continuous x) {c₁ R d
     (hd : 0 ≤ d) (hdc₁ : d < c₁) (hE : 0 ≤ E) {b : ℂ → ℝ} {b' : ℂ → ℂ →L[ℝ] ℝ}
     (hb : ContDiff ℝ 2 b) (hb01 : ∀ z, 0 ≤ b z ∧ b z ≤ 1) (hb1 : ∀ z, ‖z‖ ≤ R → b z = 1)
     (hb0 : ∀ z, 2 * R < ‖z‖ → b z = 0) (hbd : ∀ z, HasFDerivAt b (b' z) z)
-    (hbb : ∀ z, ‖b' z‖ ≤ a) {V : ℂ → ℝ} (hV : ContDiff ℝ 2 V) (hV0 : ∀ z, 0 ≤ V z)
+    (hbb : ∀ z, ‖b' z‖ ≤ a) (hb'c : Continuous b') (hb'0 : ∀ z, 2 * R < ‖z‖ → b' z = 0)
+    {V : ℂ → ℝ} (hV : ContDiff ℝ 2 V) (hV0 : ∀ z, 0 ≤ V z)
     (hVB : ∀ z, V z ≤ B) (hdV : ∀ z, ‖fderiv ℝ V z‖ ≤ d * V z)
     (hVE : ∀ z, ‖z‖ ≤ 2 * R → V z ≤ E) {y : ℂ → EuclideanSpace ℝ (Fin 4)}
     (hyK : y ∈ gaugeFixedKernel x) :
@@ -215,8 +208,8 @@ private theorem lintegral_ofReal_sq_mul_norm_sq_le (hx : Continuous x) {c₁ R d
   have hy₂ := (mem_gaugeFixedKernel.1 hyK).2.1
   have hn : Integrable fun z ↦ ‖y z‖ ^ 2 := hy₂.integrable_norm_pow two_ne_zero
   have hgap : 0 < c₁ ^ 2 - d ^ 2 := by nlinarith
-  have hχ := sub_mul_integral_norm_sq_cutoff_smul_le hx hR hd hb hb01 hb1 hb0 hbd hbb hV hV0
-    hVB hdV hVE hyK
+  have hχ := sub_mul_integral_norm_sq_cutoff_smul_le hx hR hd hb hb01 hb1 hbd hbb hb'c hb'0 hV
+    hV0 hVB hdV hVE hyK
   have hχy := integrable_norm_smul_sq_of_mem_gaugeFixedKernel (χ := fun z ↦ (1 - b z) * V z)
     ((continuous_const.sub hb.continuous).mul hV.continuous) (fun z ↦ pow_le_pow_left₀
       (mul_nonneg (by linarith [hb01 z]) (hV0 z))
@@ -236,11 +229,12 @@ private theorem lintegral_ofReal_sq_mul_norm_sq_le (hx : Continuous x) {c₁ R d
             (sq_nonneg ‖y z‖)]
     _ = 2 * (∫ z, ‖((1 - b z) * V z) • y z‖ ^ 2) + 2 * E ^ 2 * ∫ z, ‖y z‖ ^ 2 := by
       rw [integral_add (hχy.const_mul _) (hn.const_mul _), integral_const_mul, integral_const_mul]
-    _ ≤ _ := by
-      rw [div_eq_mul_inv, add_mul, mul_assoc, mul_assoc]
-      have := mul_le_mul_of_nonneg_left hχ (inv_nonneg.2 hgap.le)
-      rw [← mul_assoc, inv_mul_cancel₀ hgap.ne', one_mul] at this
-      nlinarith
+    _ ≤ 2 * ((2 * d * a + a ^ 2) * E ^ 2 * (∫ z, ‖y z‖ ^ 2) / (c₁ ^ 2 - d ^ 2)) +
+          2 * E ^ 2 * ∫ z, ‖y z‖ ^ 2 := by
+      gcongr
+      rw [le_div_iff₀ hgap]
+      linarith
+    _ = _ := by ring
 
 /-! ### Exponential decay of the kernel -/
 
@@ -264,7 +258,7 @@ theorem exists_eLpNorm_exp_mul_smul_le_of_mem_gaugeFixedKernel (hx : ContDiff �
     hx hsol hlim hcov (c := (d + 1 / 2) / 2) (by linarith) (by linarith)
   -- `b` is one on the disc of radius `R` and vanishes beyond `2 R`; the cutoff is `1 - b`.
   obtain ⟨A, hA, hcut⟩ := exists_cutoff_fderiv_bound (E := ℂ)
-  obtain ⟨b, b', hb, hb01, hb1, hb0, hbd, hbb⟩ := hcut 0 R hR0
+  obtain ⟨b, b', hb, hb01, hb1, hb0, hbd, hbb, hb'c, hb'0⟩ := hcut 0 R hR0
   set W : ℂ → ℝ := fun z ↦ Real.exp (d * √(1 + ‖z‖ ^ 2))
   set E := Real.exp (d * √(1 + (2 * R) ^ 2))
   set K := 2 * ((2 * d * (A * R⁻¹) + (A * R⁻¹) ^ 2) * E ^ 2 / (((d + 1 / 2) / 2) ^ 2 - d ^ 2)) +
@@ -281,7 +275,8 @@ theorem exists_eLpNorm_exp_mul_smul_le_of_mem_gaugeFixedKernel (hx : ContDiff �
     have hV0 := exp_div_one_add_mul_exp_nonneg (E := ℂ) (b := 1) d hε.le
     refine lintegral_ofReal_sq_mul_norm_sq_le hx.continuous hR hd0 (by linarith)
       (Real.exp_pos _).le (hb 2) hb01 (fun z hz ↦ hb1 z (by simpa using hz))
-      (fun z hz ↦ hb0 z (by simpa using hz)) hbd hbb
+      (fun z hz ↦ hb0 z (by simpa using hz)) hbd hbb hb'c
+      (fun z hz ↦ hb'0 z (by simpa using hz))
       (contDiff_exp_div_one_add_mul_exp d one_pos hε.le) hV0
       (exp_div_one_add_mul_exp_le_one_div d hε) (fun z ↦ ?_) (fun z hz ↦ ?_) hyK
     · refine (norm_fderiv_exp_div_one_add_mul_exp_le d one_pos hε.le z).trans ?_
