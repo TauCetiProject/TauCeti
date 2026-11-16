@@ -238,7 +238,8 @@ theorem seminorm_eq_lpNorm_of_contDiffOn {j k : ℕ} (h : j ≤ k) (u : Wkp mu O
     (hu : (value k u : E → ℝ) =ᵐ[mu.restrict Omega] f) :
     seminorm k j h u = lpNorm (iteratedFDeriv ℝ j f) p (mu.restrict Omega) := by
   cases j with
-  | zero => exact (seminorm_zero_apply k h u).trans (norm_value_eq_lpNorm_of_contDiffOn k u hf hu)
+  | zero =>
+      exact (seminorm_zero_apply k h u).trans (norm_value_eq_lpNorm_iteratedFDeriv_zero k u hu)
   | succ j =>
       rw [seminorm_succ_apply]
       exact norm_iteratedGradient_eq_lpNorm_of_contDiffOn j (toOrderL h u) hf

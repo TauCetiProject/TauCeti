@@ -226,16 +226,15 @@ theorem Wkp.memLp_iteratedFDeriv_of_contDiffOn (k : ℕ) (u : Wkp mu Omega p k)
         exact .of_forall fun x => norm_iteratedGradientChain f k x
 
 /-- The `Lᵖ` norm of the value of a Sobolev function agrees with the order-zero classical
-derivative seminorm for any representative that is `C^0` on the domain. -/
-theorem Wkp.norm_value_eq_lpNorm_of_contDiffOn (k : ℕ) (u : Wkp mu Omega p k)
-    {f : E → ℝ} (hf : ContDiffOn ℝ 0 f Omega)
-    (hu : (value k u : E → ℝ) =ᵐ[mu.restrict Omega] f) :
+derivative seminorm for any almost-everywhere representative on the domain. -/
+theorem Wkp.norm_value_eq_lpNorm_iteratedFDeriv_zero (k : ℕ) (u : Wkp mu Omega p k)
+    {f : E → ℝ} (hu : (value k u : E → ℝ) =ᵐ[mu.restrict Omega] f) :
     ‖value k u‖ = lpNorm (iteratedFDeriv ℝ 0 f) p (mu.restrict Omega) := by
   rw [Lp.norm_def, lpNorm]
   congr 1
   refine eLpNorm_congr_norm_ae (Lp.aestronglyMeasurable _)
-    ((ContinuousOn.continuousOn_iteratedFDeriv hf Omega.isOpen le_rfl).aestronglyMeasurable
-      Omega.isOpen.measurableSet) ?_
+    ((continuousMultilinearCurryFin0 ℝ E ℝ).symm.continuous.comp_aestronglyMeasurable
+      ((Lp.aestronglyMeasurable _).congr hu)) ?_
   filter_upwards [hu] with x hx
   rw [hx, norm_iteratedFDeriv_zero]
 
@@ -246,12 +245,12 @@ theorem Wkp.norm_le_sum_lpNorm_iteratedFDeriv_of_contDiffOn :
     ∀ (k : ℕ) (u : Wkp mu Omega p k) {f : E → ℝ}, ContDiffOn ℝ k f Omega →
       (value k u : E → ℝ) =ᵐ[mu.restrict Omega] f →
       ‖u‖ ≤ ∑ i ∈ Finset.range (k + 1), lpNorm (iteratedFDeriv ℝ i f) p (mu.restrict Omega)
-  | 0, u, f, hf, hu => by
-      rw [Finset.sum_range_one, ← norm_value_eq_lpNorm_of_contDiffOn 0 u hf hu, value_zero]
+  | 0, u, f, _, hu => by
+      rw [Finset.sum_range_one, ← norm_value_eq_lpNorm_iteratedFDeriv_zero 0 u hu, value_zero]
   | 1, u, f, hf, hu => by
       have h := norm_le_norm_lowerOrder_add_norm_iteratedGradient 0 u
       rw [Finset.sum_range_succ, Finset.sum_range_one,
-        ← norm_value_eq_lpNorm_of_contDiffOn 1 u (hf.of_le (by simp)) hu, value_one,
+        ← norm_value_eq_lpNorm_iteratedFDeriv_zero 1 u hu, value_one,
         ← norm_iteratedGradient_eq_lpNorm_of_contDiffOn 0 u hf hu, iteratedGradient_zero]
       simpa only [lowerOrder_zero, iteratedGradient_zero] using h
   | k + 2, u, f, hf, hu => by
