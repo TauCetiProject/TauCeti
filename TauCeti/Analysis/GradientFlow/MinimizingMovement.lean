@@ -90,9 +90,10 @@ definition here allows approximating initial data, but not nonuniform partitions
   `TauCeti.apply_add_curveAction_div_le_liminf_of_forall_mem_moreauYosidaResolvent`: a limit of
   piecewise constant interpolants of minimizing movements is absolutely continuous, and satisfies
   the energy–action inequality.
-* `TauCeti.IsGeneralizedMinimizingMovement.absolutelyContinuousOnInterval` and
+* `TauCeti.IsGeneralizedMinimizingMovement.absolutelyContinuousOnInterval`,
+  `TauCeti.IsGeneralizedMinimizingMovement.continuousOn` and
   `TauCeti.IsGeneralizedMinimizingMovement.curveAction_ne_top`: generalized minimizing movements
-  are absolutely continuous with locally finite `2`-action.
+  are absolutely continuous, hence continuous on `[0, ∞)`, with locally finite `2`-action.
 
 ## References
 
@@ -173,10 +174,7 @@ private theorem forall_edist_ne_top_and_exists_eq
   have hP : edist (u 0) (u n) ^ 2 / (2 * τ') ≠ ⊤ :=
     ENNReal.div_ne_top (ENNReal.pow_ne_top (hfin n)) (by simp [hτ'.ne'])
   have hcoer := hA ▸ moreauYosida_le φ τ' (hfin n)
-  have hbot : φ (u n) ≠ ⊥ := by
-    rintro h
-    rw [h, EReal.bot_add] at hcoer
-    exact EReal.coe_ne_bot _ (le_bot_iff.1 hcoer)
+  have hbot : φ (u n) ≠ ⊥ := apply_ne_bot_of_moreauYosida_ne_bot (hfin n) (hA ▸ EReal.coe_ne_bot A)
   have htop : φ (u n) ≠ ⊤ := ne_top_of_le_ne_top (EReal.coe_ne_top E) hle
   refine ⟨(φ (u n)).toReal, (EReal.coe_toReal htop hbot).symm, ?_⟩
   rw [← EReal.coe_toReal htop hbot, EReal.coe_le_coe_add_coe_ennreal_iff hP] at hcoer
@@ -643,7 +641,7 @@ theorem exists_isGeneralizedMinimizingMovement (hl : ∀ y, pure y ≤ l y)
   have hAbot : moreauYosida φ τ' x₀ ≠ ⊥ := moreauYosida_ne_bot_of_lt (half_lt_self hτ₀) hx₀ h₀
   have hAtop : moreauYosida φ τ' x₀ ≠ ⊤ :=
     ne_top_of_le_ne_top hφx₀ (moreauYosida_le_self φ τ' x₀)
-  have hEbot : φ x₀ ≠ ⊥ := fun h ↦ hAbot (le_bot_iff.1 (h ▸ moreauYosida_le_self φ τ' x₀))
+  have hEbot : φ x₀ ≠ ⊥ := apply_ne_bot_of_moreauYosida_ne_bot (by simp) hAbot
   set A := (moreauYosida φ τ' x₀).toReal
   set E := (φ x₀).toReal
   have hA : moreauYosida φ τ' x₀ = A := (EReal.coe_toReal hAtop hAbot).symm
@@ -818,6 +816,24 @@ theorem IsGeneralizedMinimizingMovement.absolutelyContinuousOnInterval
   obtain ⟨τ, U, hτ, hτ0, hU, hU0, ⟨S, hS⟩, hconv⟩ := isGeneralizedMinimizingMovement_iff.1 h
   exact absolutelyContinuousOnInterval_of_forall_mem_moreauYosidaResolvent hd hτ₀ h₀ hτ hτ0 hU
     hU0 hS (fun t ht ↦ hconv t ht.1) hT
+
+/-- **Generalized minimizing movements are continuous.** Under the hypotheses of
+`TauCeti.IsGeneralizedMinimizingMovement.absolutelyContinuousOnInterval`, a generalized minimizing
+movement is continuous on `[0, ∞)`. -/
+theorem IsGeneralizedMinimizingMovement.continuousOn
+    (hd : ∀ ⦃v w : ℕ → X⦄ ⦃y z : X⦄, Tendsto v atTop (l y) → Tendsto w atTop (l z) →
+      edist y z ≤ liminf (fun n ↦ edist (v n) (w n)) atTop)
+    (hτ₀ : 0 < τ₀) (h₀ : moreauYosida φ τ₀ x₁ ≠ ⊥)
+    (h : IsGeneralizedMinimizingMovement l φ x₀ u) : ContinuousOn u (Ici 0) := by
+  intro t ht
+  have ht' : (0 : ℝ) ≤ t := ht
+  -- The curve is absolutely continuous, hence continuous, on `[0, t + 1]`.
+  have hac := (h.absolutelyContinuousOnInterval hd hτ₀ h₀
+    (by linarith : (0 : ℝ) ≤ t + 1)).continuousOn'
+  rw [uIcc_of_le (by linarith)] at hac
+  refine (hac t ⟨ht, by linarith⟩).mono_of_mem_nhdsWithin ?_
+  rw [← Ici_inter_Iic]
+  exact inter_mem_nhdsWithin _ (Iic_mem_nhds (by linarith))
 
 /-- **Generalized minimizing movements have locally finite `2`-action.** Under the hypotheses of
 `TauCeti.IsGeneralizedMinimizingMovement.absolutelyContinuousOnInterval`, the action
