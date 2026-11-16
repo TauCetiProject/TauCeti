@@ -10,8 +10,12 @@ public import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.Curvatu
 public import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.Curvature.Tensor
 public import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.Hom
 public import Mathlib.Geometry.Manifold.VectorBundle.CovariantDerivative.Torsion
+import TauCeti.Analysis.Calculus.FDeriv.ContinuousLinearMap
 import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.Parametric
+import TauCeti.Geometry.Manifold.VectorBundle.LocalFrame
 import TauCeti.Geometry.Manifold.VectorBundle.Section.Extension
+import TauCeti.Geometry.Manifold.VectorField.Parametric
+import TauCeti.Topology.Algebra.Module.Trace
 
 /-!
 # The first variation of the curvature of a family of connections
@@ -38,9 +42,11 @@ parameter derivative with the outer covariant derivative `∇ᵗ_X` is
 `TauCeti.Manifold.hasDerivAt_covariantDerivative_covariantDerivative_of_hasDerivAt_difference`.
 No metric is involved.
 
-When `Γ'` is a differentiable section of `Hom(TM, Hom(TM, TM))`, `∇ᵗΓ'` is the covariant derivative
-of `Γ'` for the connection induced by `∇ᵗ` on this iterated Hom bundle (`CovariantDerivative.hom`),
-and the formula becomes the pointwise identity
+When the vector fields `∇ˢ_X Z` are jointly `C²` for all smooth `X` and `Z`, `Γ'` is a
+differentiable section of `Hom(TM, Hom(TM, TM))`, since on a local frame it is the parameter
+derivative of `∇ˢ_X Z`. Then `∇ᵗΓ'` is the covariant derivative of `Γ'` for the connection induced
+by `∇ᵗ` on this iterated Hom bundle (`CovariantDerivative.hom`), and the formula becomes the
+pointwise identity
 
 `∂ₛ R^s(u, v) w = (∇ᵗ_u Γ')(w, v) - (∇ᵗ_v Γ')(w, u)`
 
@@ -125,6 +131,56 @@ theorem hasDerivAt_curvatureOperator_of_hasDerivAt_difference [IsManifold I 2 M]
   have key (a b c d p q : E) : a - d - p - (c - b - q) = a + b - (c + d) - (p - q) := by abel
   exact (key _ _ _ _ _ _).symm
 
+/-- The derivative `Γ'` of the difference tensors of a family of connections is a differentiable
+section of `Hom(TM, Hom(TM, TM))` at `x` when the vector fields `∇ˢ_X Z` are jointly `C²` in
+`(s, y)` at `(t, x)` for smooth `X` and `Z`: on a local frame near `x`, which agrees with smooth
+global sections, `Γ'` is the `C¹` parameter derivative of `∇ˢ_X Z`. -/
+private theorem mdifferentiableAt_of_hasDerivAt_difference [T2Space M] [IsManifold I ∞ M]
+    {cov : ℝ → CovariantDerivative I E (TangentSpace I : M → Type _)}
+    (hC : ∀ᶠ y in 𝓝 x, HasDerivAt (fun s ↦ (cov s).difference (cov t) y) (C y) t)
+    (hreg : ∀ X Z : Π y : M, TangentSpace I y, CMDiff ∞ (T% X) → CMDiff ∞ (T% Z) →
+      ContMDiffAt (𝓘(ℝ).prod I) (I.prod 𝓘(ℝ, E)) 2
+        (fun q : ℝ × M ↦ TotalSpace.mk' E q.2 (cov q.1 Z q.2 (X q.2))) (t, x)) :
+    MDiffAt (fun y ↦ TotalSpace.mk' (E →L[ℝ] E →L[ℝ] E)
+      (E := fun y : M ↦ TangentSpace I y →L[ℝ] TangentSpace I y →L[ℝ] TangentSpace I y) y
+        (C y)) x := by
+  set e := trivializationAt E (TangentSpace I) x
+  set b := Module.finBasis ℝ E
+  have hx : x ∈ e.baseSet := mem_baseSet_trivializationAt E (TangentSpace I) x
+  obtain ⟨F, hF, hFe⟩ := e.exists_contMDiff_eventuallyEq_localFrame (I := I) b hx
+  -- Near `x`, `Γ'(Fⱼ, Fₖ)` is the parameter derivative of `∇ˢ_{Fₖ} Fⱼ`, a `C¹` vector field.
+  have hV (j k : Fin (Module.finrank ℝ E)) : ∀ᶠ y in 𝓝 x,
+      ContMDiffAt I (I.prod 𝓘(ℝ, E)) 1
+        (fun y ↦ TotalSpace.mk' E y (deriv (fun s ↦ cov s (F j) y (F k y)) t)) y :=
+    (contMDiffAt_iff_contMDiffAt_nhds (by simp)).mp
+      (contMDiffAt_deriv_vectorField_of_contMDiffAt (W := fun s y ↦ cov s (F j) y (F k y)) (m := 1)
+        (hreg (F k) (F j) (hF k) (hF j)) (by norm_num))
+  obtain ⟨u, hu, huo, hxu⟩ := eventually_nhds_iff.mp
+    ((e.open_baseSet.eventually_mem hx).and (hC.and ((eventually_all.2 hFe).and
+      (eventually_all.2 fun j ↦ eventually_all.2 (hV j)))))
+  have hin (j k : Fin (Module.finrank ℝ E)) : ContMDiffOn I (I.prod 𝓘(ℝ, E)) 1
+      (fun y ↦ TotalSpace.mk' E y (C y (e.localFrame b j y) (e.localFrame b k y))) u := by
+    have heq : ∀ z ∈ u, TotalSpace.mk' E z (C z (e.localFrame b j z) (e.localFrame b k z)) =
+        TotalSpace.mk' E z (deriv (fun s ↦ cov s (F j) z (F k z)) t) := fun z hz ↦ by
+      obtain ⟨-, hCz, hFz, -⟩ := hu z hz
+      rw [← hFz j, ← hFz k]
+      exact congrArg (TotalSpace.mk' E z)
+        (hasDerivAt_covariantDerivative_apply_of_hasDerivAt_difference hCz
+          ((hF j z).mdifferentiableAt (by simp)) (F k z)).deriv.symm
+    exact fun y hy ↦ ((hu y hy).2.2.2 j k).contMDiffWithinAt.congr heq (heq y hy)
+  have hsub : Set.MapsTo id u (e.baseSet ∩ e.baseSet) := fun y hy ↦ ⟨(hu y hy).1, (hu y hy).1⟩
+  have hhom (j : Fin (Module.finrank ℝ E)) : ContMDiffOn I (I.prod 𝓘(ℝ, E →L[ℝ] E)) 1
+      (fun y ↦ TotalSpace.mk' (E →L[ℝ] E)
+        (E := fun y : M ↦ TangentSpace I y →L[ℝ] TangentSpace I y) y
+        (C y (e.localFrame b j y))) u :=
+    contMDiffOn_hom_of_localFrame (e := e) (e' := e) b (f := id) contMDiffOn_id hsub (hin j)
+  exact ((contMDiffOn_hom_of_localFrame (e := e)
+    (e' := trivializationAt (E →L[ℝ] E)
+      (fun y : M ↦ TangentSpace I y →L[ℝ] TangentSpace I y) x) b (f := id) (A := C)
+    contMDiffOn_id (fun y hy ↦ by rw [hom_trivializationAt_baseSet]; exact
+      ⟨(hu y hy).1, (hu y hy).1, (hu y hy).1⟩) hhom).contMDiffAt
+    (huo.mem_nhds hxu)).mdifferentiableAt one_ne_zero
+
 section Tensor
 
 variable [T2Space M] [IsManifold I ∞ M]
@@ -133,17 +189,15 @@ variable [T2Space M] [IsManifold I ∞ M]
 
 /-- **The first variation of the curvature tensor of a family of connections.** Let `∇ˢ` be a
 family of smooth covariant derivatives on `TM` whose difference tensors `∇ˢ - ∇ᵗ` have derivative
-`Γ'` at `s = t` near `x`, with `Γ'` a section of `Hom(TM, Hom(TM, TM))` differentiable at `x` and
-`∇ᵗ` torsion free at `x`. Suppose that for smooth vector fields `X` and `Z` the vector fields
-`∇ˢ_X Z` are jointly `C²` in `(s, y)` at `(t, x)`. Write `∇ᵗΓ'` for the covariant derivative of
+`Γ'` at `s = t` near `x`, with `∇ᵗ` torsion free at `x`. Suppose that for smooth vector fields `X`
+and `Z` the vector fields `∇ˢ_X Z` are jointly `C²` in `(s, y)` at `(t, x)`; then `Γ'` is a section
+of `Hom(TM, Hom(TM, TM))` differentiable at `x`. Write `∇ᵗΓ'` for the covariant derivative of
 `Γ'` along the connection induced by `∇ᵗ` on `Hom(TM, Hom(TM, TM))`, so that `∇ᵗΓ' x u w v` is
 `(∇ᵗ_u Γ')(w, v)`. Then for `u, v, w ∈ T_x M` the curvature tensors satisfy
 
 `∂ₛ R^s(u, v) w = (∇ᵗ_u Γ')(w, v) - (∇ᵗ_v Γ')(w, u)` at `s = t`. -/
 theorem hasDerivAt_curvatureTensor_of_hasDerivAt_difference
     (hC : ∀ᶠ y in 𝓝 x, HasDerivAt (fun s ↦ (cov s).difference (cov t) y) (C y) t)
-    (hCd : MDiffAt (fun y ↦ TotalSpace.mk' (E →L[ℝ] E →L[ℝ] E)
-      (E := fun y : M ↦ TangentSpace I y →L[ℝ] TangentSpace I y →L[ℝ] TangentSpace I y) y (C y)) x)
     (htors : (cov t).torsion x = 0)
     (hreg : ∀ X Z : Π y : M, TangentSpace I y, CMDiff ∞ (T% X) → CMDiff ∞ (T% Z) →
       ContMDiffAt (𝓘(ℝ).prod I) (I.prod 𝓘(ℝ, E)) 2
@@ -158,13 +212,13 @@ theorem hasDerivAt_curvatureTensor_of_hasDerivAt_difference
   have hXd := (hX x).mdifferentiableAt (by simp)
   have hYd := (hY x).mdifferentiableAt (by simp)
   have hZd := (hZ x).mdifferentiableAt (by simp)
+  have hCd := mdifferentiableAt_of_hasDerivAt_difference hC hreg
   rw [CovariantDerivative.hom_hom_apply _ _ _ hCd hZd hYd,
     CovariantDerivative.hom_hom_apply _ _ _ hCd hZd hXd]
-  exact HasDerivAt.congr_of_eventuallyEq (F := E)
-    (hasDerivAt_curvatureOperator_of_hasDerivAt_difference hC htors hXd hYd
-      (Eventually.of_forall fun y ↦ (hZ y).mdifferentiableAt (by simp)) (hreg X Z hX hZ)
-      (hreg Y Z hY hZ))
-    (Eventually.of_forall fun s ↦ CovariantDerivative.curvatureTensor_apply (cov s) x hX hY hZ)
+  simp_rw [CovariantDerivative.curvatureTensor_apply _ x hX hY hZ]
+  exact hasDerivAt_curvatureOperator_of_hasDerivAt_difference hC htors hXd hYd
+    (Eventually.of_forall fun y ↦ (hZ y).mdifferentiableAt (by simp)) (hreg X Z hX hZ)
+    (hreg Y Z hY hZ)
 
 /-- **The first variation of the Ricci tensor is the trace of that of the curvature tensor.** Let
 `∇ˢ` be a family of smooth covariant derivatives on `TM`, and let `u, v ∈ T_x M`. If for every
@@ -175,18 +229,16 @@ theorem hasDerivAt_ricciTensor_of_hasDerivAt_curvatureTensor {u v : TangentSpace
     {D : TangentSpace I x →ₗ[ℝ] TangentSpace I x}
     (hD : ∀ w, HasDerivAt (fun s ↦ (cov s).curvatureTensor x w u v) (D w) t) :
     HasDerivAt (fun s ↦ (cov s).ricciTensor x u v) (LinearMap.trace ℝ (TangentSpace I x) D) t := by
-  classical
-  let b := Module.finBasis ℝ (TangentSpace I x)
-  rw [LinearMap.trace_eq_matrix_trace ℝ b]
-  simp only [Matrix.trace, Matrix.diag, LinearMap.toMatrix_apply]
-  refine (HasDerivAt.fun_sum fun i _ ↦ ?_).congr_of_eventuallyEq
-    (Eventually.of_forall fun s ↦ (cov s).ricciTensor_eq_sum x b u v)
-  -- The tangent space at `x` is the model space `E`, whose normed structure differentiates the
-  -- coordinate functionals of `b`.
-  let b' : Module.Basis (Fin (Module.finrank ℝ E)) ℝ E := b
-  have hDi : HasDerivAt (F := E) (fun s ↦ (cov s).curvatureTensor x (b i) u v) (D (b i)) t :=
-    hD (b i)
-  exact (LinearMap.toContinuousLinearMap (b'.coord i)).hasFDerivAt.comp_hasDerivAt t hDi
+  -- The tangent space at `x` is the model space `E`, whose normed structure differentiates
+  -- endomorphisms and their trace.
+  let R : ℝ → E →L[ℝ] E := fun s ↦ LinearMap.toContinuousLinearMap
+    ((((cov s).curvatureTensor x).flip u).flip v : E →ₗ[ℝ] E)
+  have hR : HasDerivAt R (LinearMap.toContinuousLinearMap (D : E →ₗ[ℝ] E)) t :=
+    hasDerivAt_clm_apply.mpr hD
+  have h := (traceCLM ℝ E).hasFDerivAt.comp_hasDerivAt t hR
+  simp only [R, Function.comp_def, traceCLM_apply] at h
+  simp only [CovariantDerivative.ricciTensor_apply]
+  exact h
 
 /-- **The Palatini identity for a family of connections.** In the setting of
 `hasDerivAt_curvatureTensor_of_hasDerivAt_difference`, write `∇ᵗΓ'` for the covariant derivative
@@ -199,8 +251,6 @@ The first trace is that of the endomorphism `w ↦ ∇ᵗΓ' x w v u`, obtained 
 flipping its arguments, and the second that of `∇ᵗΓ' x u v`. No metric is involved. -/
 theorem hasDerivAt_ricciTensor_of_hasDerivAt_difference
     (hC : ∀ᶠ y in 𝓝 x, HasDerivAt (fun s ↦ (cov s).difference (cov t) y) (C y) t)
-    (hCd : MDiffAt (fun y ↦ TotalSpace.mk' (E →L[ℝ] E →L[ℝ] E)
-      (E := fun y : M ↦ TangentSpace I y →L[ℝ] TangentSpace I y →L[ℝ] TangentSpace I y) y (C y)) x)
     (htors : (cov t).torsion x = 0)
     (hreg : ∀ X Z : Π y : M, TangentSpace I y, CMDiff ∞ (T% X) → CMDiff ∞ (T% Z) →
       ContMDiffAt (𝓘(ℝ).prod I) (I.prod 𝓘(ℝ, E)) 2
@@ -213,7 +263,7 @@ theorem hasDerivAt_ricciTensor_of_hasDerivAt_difference
         LinearMap.trace ℝ (TangentSpace I x) ((cov t).hom ((cov t).hom (cov t)) C x u v)) t := by
   rw [← map_sub]
   refine hasDerivAt_ricciTensor_of_hasDerivAt_curvatureTensor fun w ↦ ?_
-  simpa using hasDerivAt_curvatureTensor_of_hasDerivAt_difference hC hCd htors hreg w u v
+  simpa using hasDerivAt_curvatureTensor_of_hasDerivAt_difference hC htors hreg w u v
 
 /-- **The Palatini identity for a family of connections, in a basis.** In the setting of
 `hasDerivAt_ricciTensor_of_hasDerivAt_difference`, for every basis `b` of `T_x M`,
@@ -223,8 +273,6 @@ theorem hasDerivAt_ricciTensor_of_hasDerivAt_difference
 where `bᵢ*` is the `i`-th coordinate in `b`. -/
 theorem hasDerivAt_ricciTensor_sum_of_hasDerivAt_difference
     (hC : ∀ᶠ y in 𝓝 x, HasDerivAt (fun s ↦ (cov s).difference (cov t) y) (C y) t)
-    (hCd : MDiffAt (fun y ↦ TotalSpace.mk' (E →L[ℝ] E →L[ℝ] E)
-      (E := fun y : M ↦ TangentSpace I y →L[ℝ] TangentSpace I y →L[ℝ] TangentSpace I y) y (C y)) x)
     (htors : (cov t).torsion x = 0)
     (hreg : ∀ X Z : Π y : M, TangentSpace I y, CMDiff ∞ (T% X) → CMDiff ∞ (T% Z) →
       ContMDiffAt (𝓘(ℝ).prod I) (I.prod 𝓘(ℝ, E)) 2
@@ -234,7 +282,7 @@ theorem hasDerivAt_ricciTensor_sum_of_hasDerivAt_difference
       (∑ i, b.repr ((cov t).hom ((cov t).hom (cov t)) C x (b i) v u -
         (cov t).hom ((cov t).hom (cov t)) C x u v (b i)) i) t := by
   classical
-  refine (hasDerivAt_ricciTensor_of_hasDerivAt_difference hC hCd htors hreg u v).congr_deriv ?_
+  refine (hasDerivAt_ricciTensor_of_hasDerivAt_difference hC htors hreg u v).congr_deriv ?_
   rw [← map_sub, LinearMap.trace_eq_matrix_trace ℝ b]
   simp [Matrix.trace, LinearMap.toMatrix_apply]
 

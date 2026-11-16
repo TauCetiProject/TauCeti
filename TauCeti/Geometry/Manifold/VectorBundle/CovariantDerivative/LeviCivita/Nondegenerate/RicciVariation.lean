@@ -102,10 +102,10 @@ theorem hasDerivAt_ricciTensor_of_isLeviCivitaConnection
           ((cov t).hom ((cov t).hom (cov t))
             (fun y ↦ deriv (fun s ↦ (cov s).difference (cov t) y) t) x u v)) t :=
   hasDerivAt_ricciTensor_of_hasDerivAt_difference
+    -- The fibres `T_y M` are read as the model space `E`, whose normed structure the parameter
+    -- derivative of the difference tensors uses.
     (Eventually.of_forall fun y ↦ DifferentiableAt.hasDerivAt (𝕜 := ℝ) (F := E →L[ℝ] E →L[ℝ] E)
       (g.differentiableAt_difference_of_isLeviCivitaConnection hc hcov y))
-    ((g.contMDiff_deriv_difference_of_isLeviCivitaConnection hc hcov x).mdifferentiableAt
-      (by simp))
     (congrFun (hcov t).torsion x)
     (fun _ _ hX hZ ↦ g.contMDiffAt_covariantDerivative_apply_of_isLeviCivitaConnection hc hcov
       ((hX x).of_le (by simp)) ((hZ x).of_le (by simp)))
