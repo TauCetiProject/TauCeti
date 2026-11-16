@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.Symplectic.Floer.Compactness.Manifold
+import TauCeti.MeasureTheory.Integral.EnergyConcentration
 import TauCeti.MeasureTheory.Measure.Lebesgue.VolumeOfBalls
 
 /-!
@@ -28,8 +29,8 @@ if `r² + ∫_{B_r(z₀)} e(u) < δ`, then `r² e(u)(z₀) ≤ C (r² + ∫_{B_r
 window of the chart, `e(u)` and `‖∂ₛv‖²` for the coordinate expression `v` of `u` bound each other
 up to constants (`IsNondegenerate.exists_forall_norm_fderiv_extChartAt_comp_sq_le` and
 `exists_forall_floerEnergyDensity_le_norm_fderiv_extChartAt_comp_sq`), and the square `B_r(z₀)`
-has area `4 r²`, so a pointwise bound between the densities integrates over it
-(`Real.setIntegral_ball_prod_le_mul_add`).
+has area `4 r²` (`Real.volume_real_ball_prod`), so a pointwise bound between the densities
+integrates over it (`TauCeti.setIntegral_le_mul_measureReal_add_setIntegral_of_le`).
 
 So a disc of radius `r` and small energy has energy density at most `C (1 + ∫ e(u) / r²)` at its
 centre. Contrapositively, a disc on which `r² e(u)` is large at the centre carries at least a fixed
@@ -109,7 +110,7 @@ theorem IsNondegenerate.exists_pos_forall_sq_mul_floerEnergyDensity_le_of_small_
       r ^ 2 + ∫ y in ball z₀ r, ω.floerEnergyDensity Ks Kt u y < δ →
       r ^ 2 * ω.floerEnergyDensity Ks Kt u z₀ ≤
         C * (r ^ 2 + ∫ y in ball z₀ r, ω.floerEnergyDensity Ks Kt u y) := by
-  set e := extChartAt I α with he
+  set e := extChartAt I α
   -- The energy density and `‖∂ₛv‖²` control each other on `D × K`, for `v = e ∘ u`.
   obtain ⟨A, hA0, B, hB0, hpt⟩ := hω.exists_forall_norm_fderiv_extChartAt_comp_sq_le (Kt := Kt) α
     hD hK hKα (hJ.continuousOn.mono hDKW) (hXs.continuousOn.mono hDKW) hJt
@@ -121,7 +122,7 @@ theorem IsNondegenerate.exists_pos_forall_sq_mul_floerEnergyDensity_le_of_small_
     Floer.exists_pos_forall_sq_mul_norm_fderiv_sq_le_of_small_energy_of_finiteDimensional hW hJ
       (contDiffOn_hamiltonianOneFormInChartAt hXs hXt) hD hK hDKW
       (fun z _ _ hy ↦ Floer.almostComplexInChartAt_apply_apply (hKα hy) z)
-  set κ := 1 + A + 4 * B with hκ
+  set κ := 1 + 4 * (A + B + 1) with hκ
   have hκ0 : 0 < κ := by positivity
   refine ⟨δ / κ, div_pos hδ hκ0, A' * C * κ + B', by positivity,
     fun u z₀ r hr hrD hu hu' hfl huK hint hE ↦ ?_⟩
@@ -130,27 +131,22 @@ theorem IsNondegenerate.exists_pos_forall_sq_mul_floerEnergyDensity_le_of_small_
   have hus {y : ℝ × ℝ} (hy : y ∈ ball z₀ r) : u y ∈ e.source := (huK hy).1
   have hdiff {y : ℝ × ℝ} (hy : y ∈ ball z₀ r) : MDifferentiableAt 𝓘(ℝ, ℝ × ℝ) I u y :=
     (hu.mdifferentiableOn (by norm_num)).mdifferentiableAt (isOpen_ball.mem_nhds hy)
-  have hcd : ContDiffOn ℝ 3 (e ∘ u) (ball z₀ r) := contMDiffOn_iff_contDiffOn.1 <|
-    (contMDiffOn_extChartAt (n := 3)).comp hu fun y hy ↦ by
-      rw [mem_preimage, ← extChartAt_source I]; exact hus hy
-  have hf0 : ∀ y ∈ ball z₀ r, 0 ≤ f y := fun y hy ↦ floerEnergyDensity_nonneg hω (by
-    have h := hJt y (hrD hy) _ (huK hy).2
-    rwa [e.left_inv (hus hy)] at h) (hfl y hy)
+  obtain ⟨hcd, hcfl⟩ := ω.contDiffOn_extChartAt_comp_and_fderiv_stdComplexLineImag_sub isOpen_ball
+    hu (fun _ hy ↦ hus hy) hfl
+  have hf0 : ∀ y ∈ ball z₀ r, 0 ≤ f y := fun y hy ↦
+    hω.floerEnergyDensity_nonneg_of_tames_inChartAt hJt (hrD hy) (hus hy) (huK hy).2 (hfl y hy)
   have hgf : ∀ y ∈ ball z₀ r, g y ≤ A * f y + B := fun y hy ↦
     hpt (hrD hy) (hus hy) (huK hy).2 (hdiff hy) (hfl y hy)
   have hIf0 : 0 ≤ ∫ y in ball z₀ r, f y := setIntegral_nonneg measurableSet_ball hf0
   -- The coordinate energy is controlled by the Floer energy and the area `4 r²` of the square.
-  have hIg := Real.setIntegral_ball_prod_le_mul_add hr
-    ((hu'.norm.pow 2).integrableOn_compact (isCompact_closedBall z₀ r) |>.mono_set
-      ball_subset_closedBall) hint hgf
+  have hIg := setIntegral_le_mul_measureReal_add_setIntegral_of_le measurableSet_ball
+    measure_ball_lt_top.ne hA0 hB0 ((hu'.norm.pow 2).integrableOn_compact
+      (isCompact_closedBall z₀ r) |>.mono_set ball_subset_closedBall) hint hf0 hgf
+  rw [Real.volume_real_ball_prod z₀ hr] at hIg
   have hIgκ : r ^ 2 + ∫ y in ball z₀ r, g y ≤ κ * (r ^ 2 + ∫ y in ball z₀ r, f y) := by
     rw [hκ]
-    linear_combination hIg + mul_nonneg hA0 (sq_nonneg r) + 4 * mul_nonneg hB0 hIf0 + hIf0
-  have hmv := hmean hr hrD hcd hu' (fun y hy ↦ by
-      simpa only [hamiltonianOneFormInChartAt_stdComplexLineReal,
-        hamiltonianOneFormInChartAt_stdComplexLineImag, ← he, Function.comp_apply] using
-        ω.fderiv_extChartAt_comp_stdComplexLineImag_sub (hdiff hy) (hus hy) (hfl y hy))
-    (fun y hy ↦ (huK hy).2) (hIgκ.trans_lt <| by
+    linear_combination hIg + 4 * hIf0 + 3 * mul_nonneg hA0 hIf0 + 3 * mul_nonneg hB0 hIf0
+  have hmv := hmean hr hrD hcd hu' hcfl (fun y hy ↦ (huK hy).2) (hIgκ.trans_lt <| by
       calc κ * (r ^ 2 + ∫ y in ball z₀ r, f y) < κ * (δ / κ) := by gcongr
         _ = δ := mul_div_cancel₀ _ hκ0.ne')
   -- At the centre, the energy density is controlled by `‖∂ₛv‖²`.

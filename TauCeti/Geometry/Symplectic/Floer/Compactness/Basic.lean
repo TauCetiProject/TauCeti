@@ -12,6 +12,7 @@ import Mathlib.Analysis.Calculus.ContDiff.WithLp
 import Mathlib.Analysis.InnerProductSpace.EuclideanDist
 import Mathlib.MeasureTheory.Measure.Lebesgue.Complex
 import TauCeti.Analysis.Calculus.FDeriv.WithLp
+import TauCeti.Analysis.Complex.Basic
 import TauCeti.Geometry.Symplectic.Floer.Graph
 import TauCeti.MeasureTheory.Integral.EnergyConcentration
 import TauCeti.MeasureTheory.Integral.WithLp
@@ -748,13 +749,6 @@ theorem exists_pos_forall_tendstoLocallyUniformlyOn_subseq_off_finset_of_norm_sq
   obtain ⟨φ, -, Z, v, hφ, -, -, h⟩ :=
     hconv (p := fun _ ↦ 0) hΩ hΩD (fun _ ↦ rfl) hu hfl huK hf0 hgle hint hE
   exact ⟨φ, Z, v, hφ, h⟩
-
-/-- Through the coordinate `equivRealProdCLM`, the disc of `ℂ` of radius `r` about
-`equivRealProdCLM.symm z₀` lies in the square `B_r(z₀)` of `ℝ × ℝ`. -/
-private theorem dist_equivRealProdCLM_le (y : ℂ) (z₀ : ℝ × ℝ) :
-    dist (equivRealProdCLM y) z₀ ≤ dist y (equivRealProdCLM.symm z₀) := by
-  conv_lhs => rw [← equivRealProdCLM.apply_symm_apply z₀]
-  exact (lipschitz_equivRealProd.dist_le_mul y _).trans (by simp)
 
 /-- `TauCeti.Floer.exists_pos_forall_pi_mul_sq_mul_norm_fderiv_one_sq_le_of_small_energy` for
 solutions on a square `B_r(z₀)` of `ℝ × ℝ`, read through the complex coordinate `equivRealProdCLM`
