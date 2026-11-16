@@ -22,7 +22,7 @@ Over a commutative ring `R`, specializing `TauCeti.Algebra.Homology.Monoidal.KFl
 ## References
 
 * N. Spaltenstein, *Resolutions of unbounded complexes*, Compositio Math. 65 (1988), 121–154.
-* [Stacks Project, Tag 06Y4](https://stacks.math.columbia.edu/tag/06Y4).
+* [Stacks Project, Tag 064K](https://stacks.math.columbia.edu/tag/064K).
 -/
 
 public section

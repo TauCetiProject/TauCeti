@@ -9,7 +9,7 @@ public import Mathlib.CategoryTheory.Localization.DerivabilityStructure.Derives
 public import Mathlib.CategoryTheory.Functor.Derived.LeftDerivedTwo
 
 /-!
-# Postcomposition absoluteness for functors derived via derivability structures
+# Postcomposition absoluteness and one-variable specialization for derived functors
 
 When a localizer morphism `Φ : LocalizerMorphism W₁ W₂` is a left derivability structure and
 `h : Φ.Derives F` holds (meaning `Φ.functor ⋙ F` inverts `W₁`), any left derived functor `(LF, α)`
@@ -18,7 +18,13 @@ of `F` is computed pointwise on `Φ.functor.obj X₁`, so it remains a left deri
 (`CategoryTheory.LocalizerMorphism.Derives.isLeftDerivedFunctor_comp`). Specializing to product
 localizers yields two-variable postcomposition absoluteness for
 `CategoryTheory.Functor.IsLeftDerivedFunctor₂`
-(`CategoryTheory.LocalizerMorphism.Derives.isLeftDerivedFunctor₂_comp`).
+(`CategoryTheory.LocalizerMorphism.Derives.isLeftDerivedFunctor₂_comp`), as well as one-variable
+restriction of `Derives` (`CategoryTheory.LocalizerMorphism.Derives.obj`,
+`CategoryTheory.LocalizerMorphism.Derives.flip_obj`) and one-variable left derived functor
+characterizations via `CategoryTheory.Functor.bifunctorCounit₁` and
+`CategoryTheory.Functor.bifunctorCounit₂`
+(`CategoryTheory.LocalizerMorphism.Derives.isLeftDerivedFunctor_bifunctorCounit₁`,
+`CategoryTheory.LocalizerMorphism.Derives.isLeftDerivedFunctor_bifunctorCounit₂`).
 
 ## References
 
@@ -98,6 +104,71 @@ lemma isLeftDerivedFunctor₂_comp
   have := h.isIso' (whiskeringLeft₂HomEquiv α) X₀
   dsimp [whiskeringLeft₂HomEquiv] at this ⊢
   infer_instance
+
+section Prod
+
+variable {C₀₁ C₀₂ : Type*} [Category* C₀₁] [Category* C₀₂]
+  {W₀₁ : MorphismProperty C₀₁} {W₀₂ : MorphismProperty C₀₂}
+  {W₁ : MorphismProperty C₁} {W₂ : MorphismProperty C₂}
+  {Φ₁ : LocalizerMorphism W₀₁ W₁} {Φ₂ : LocalizerMorphism W₀₂ W₂}
+
+/-- If `Φ₁.prod Φ₂` derives `uncurry.obj F₀`, then fixing an object `X₁ : C₀₁` in the first
+variable yields `Φ₂.Derives (F₀.obj (Φ₁.functor.obj X₁))`. -/
+lemma obj [W₀₁.ContainsIdentities]
+    (h : (Φ₁.prod Φ₂).Derives (uncurry.obj F₀)) (X₁ : C₀₁) :
+    Φ₂.Derives (F₀.obj (Φ₁.functor.obj X₁)) := by
+  intro X₂ Y₂ f₂ hf₂
+  simpa [LocalizerMorphism.prod, uncurry] using
+    h ((𝟙 X₁, f₂) : (X₁, X₂) ⟶ (X₁, Y₂)) ⟨W₀₁.id_mem X₁, hf₂⟩
+
+/-- If `Φ₁.prod Φ₂` derives `uncurry.obj F₀`, then fixing an object `X₂ : C₀₂` in the second
+variable yields `Φ₁.Derives (F₀.flip.obj (Φ₂.functor.obj X₂))`. -/
+lemma flip_obj [W₀₂.ContainsIdentities]
+    (h : (Φ₁.prod Φ₂).Derives (uncurry.obj F₀)) (X₂ : C₀₂) :
+    Φ₁.Derives (F₀.flip.obj (Φ₂.functor.obj X₂)) := by
+  intro X₁ Y₁ f₁ hf₁
+  simpa [LocalizerMorphism.prod, uncurry] using
+    h ((f₁, 𝟙 X₂) : (X₁, X₂) ⟶ (Y₁, X₂)) ⟨hf₁, W₀₂.id_mem X₂⟩
+
+section BifunctorCounit
+
+variable [W₁.ContainsIdentities] [W₂.ContainsIdentities]
+  [(Φ₁.prod Φ₂).IsLeftDerivabilityStructure]
+  {L₁ : C₁ ⥤ D₁} {L₂ : C₂ ⥤ D₂} [L₁.IsLocalization W₁] [L₂.IsLocalization W₂]
+  {LF : D₁ ⥤ D₂ ⥤ H} (h : (Φ₁.prod Φ₂).Derives (uncurry.obj F₀))
+  (α : (((whiskeringLeft₂ H).obj L₁).obj L₂).obj LF ⟶ F₀) [LF.IsLeftDerivedFunctor₂ α W₁ W₂]
+
+include h in
+/-- If `Φ₁.prod Φ₂` is a left derivability structure deriving `uncurry.obj F₀` and `Φ₂` is a left
+derivability structure, then evaluating any left derived bifunctor `(LF, α)` of `F₀` at
+`L₁.obj (Φ₁.functor.obj X₁)` yields a left derived functor of `F₀.obj (Φ₁.functor.obj X₁)` via
+`Functor.bifunctorCounit₁`. -/
+lemma isLeftDerivedFunctor_bifunctorCounit₁ [W₀₁.ContainsIdentities]
+    [Φ₂.IsLeftDerivabilityStructure] (X₁ : C₀₁) :
+    (LF.obj (L₁.obj (Φ₁.functor.obj X₁))).IsLeftDerivedFunctor
+      (bifunctorCounit₁ α (Φ₁.functor.obj X₁)) W₂ := by
+  rw [(h.obj X₁).isLeftDerivedFunctor_iff_isIso]
+  intro X₂
+  simpa [bifunctorCounit₁, whiskeringLeft₂HomEquiv, LocalizerMorphism.prod] using
+    h.isIso' (whiskeringLeft₂HomEquiv α) (X₁, X₂)
+
+include h in
+/-- If `Φ₁.prod Φ₂` is a left derivability structure deriving `uncurry.obj F₀` and `Φ₁` is a left
+derivability structure, then evaluating the flipped left derived bifunctor `(LF.flip, α)` at
+`L₂.obj (Φ₂.functor.obj X₂)` yields a left derived functor of `F₀.flip.obj (Φ₂.functor.obj X₂)` via
+`Functor.bifunctorCounit₂`. -/
+lemma isLeftDerivedFunctor_bifunctorCounit₂ [W₀₂.ContainsIdentities]
+    [Φ₁.IsLeftDerivabilityStructure] (X₂ : C₀₂) :
+    (LF.flip.obj (L₂.obj (Φ₂.functor.obj X₂))).IsLeftDerivedFunctor
+      (bifunctorCounit₂ α (Φ₂.functor.obj X₂)) W₁ := by
+  rw [(h.flip_obj X₂).isLeftDerivedFunctor_iff_isIso]
+  intro X₁
+  simpa [bifunctorCounit₂, whiskeringLeft₂HomEquiv, LocalizerMorphism.prod] using
+    h.isIso' (whiskeringLeft₂HomEquiv α) (X₁, X₂)
+
+end BifunctorCounit
+
+end Prod
 
 end TwoVariables
 

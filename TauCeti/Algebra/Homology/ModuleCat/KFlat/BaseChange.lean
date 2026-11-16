@@ -32,11 +32,10 @@ Combining this invariance with `TauCeti.Algebra.Homology.ModuleCat.KFlat.Derivab
 * `TauCeti.hasLeftDerivedFunctor_extendScalars`:
   `(ModuleCat.extendScalars f).mapHomologicalComplex (.up ℤ) ⋙ DerivedCategory.Q` admits a left
   derived functor `− ⊗^L_R S : D(R) ⥤ D(S)` with respect to quasi-isomorphisms;
-* `TauCeti.isIso_app_of_isLeftDerivedFunctor_extendScalars_of_isKFlat`,
-  `TauCeti.isIso_app_of_isLeftDerivedFunctor_extendScalars_of_boundedAbove_flat`, and
-  `TauCeti.isIso_app_single_obj_of_isLeftDerivedFunctor_extendScalars_of_flat`: any left derived
+* `TauCeti.isIso_app_of_isLeftDerivedFunctor_extendScalars_of_isKFlat` and
+  `TauCeti.isIso_app_of_isLeftDerivedFunctor_extendScalars_of_boundedAbove_flat`: any left derived
   functor of scalar extension is computed on the nose on K-flat complexes and, in particular, on
-  bounded-above complexes of flat modules and single-degree flat modules;
+  bounded-above complexes of flat modules;
 * `TauCeti.isLeftDerivedFunctor_comp_of_isLeftDerivedFunctor_extendScalars`: any left derived
   functor of scalar extension is absolute, remaining left derived after postcomposition with any
   functor;
@@ -155,16 +154,6 @@ theorem isIso_app_of_isLeftDerivedFunctor_extendScalars_of_boundedAbove_flat
     (hP : ∀ n, Module.Flat R (P.X n)) : IsIso (α.app P) :=
   have := CochainComplex.isKFlat_of_boundedAbove_flat_moduleCat P b hP
   isIso_app_of_isLeftDerivedFunctor_extendScalars_of_isKFlat f F hF α P
-
-include hF in
-/-- When `F` inverts quasi-isomorphisms of `S`-module complexes, any left derived functor `(LF, α)`
-of `(ModuleCat.extendScalars f).mapHomologicalComplex (.up ℤ) ⋙ F` is computed by termwise scalar
-extension on a flat `R`-module placed in a single cohomological degree `n`. -/
-theorem isIso_app_single_obj_of_isLeftDerivedFunctor_extendScalars_of_flat
-    [LF.IsLeftDerivedFunctor α (quasiIso (ModuleCat.{u} R) (.up ℤ))]
-    (M : ModuleCat.{u} R) [Module.Flat R M] (n : ℤ) :
-    IsIso (α.app ((HomologicalComplex.single (ModuleCat.{u} R) (.up ℤ) n).obj M)) :=
-  isIso_app_of_isLeftDerivedFunctor_extendScalars_of_isKFlat f F hF α _
 
 include hF in
 /-- **Left derived scalar extension is absolute.** When `F` inverts quasi-isomorphisms of `S`-module
