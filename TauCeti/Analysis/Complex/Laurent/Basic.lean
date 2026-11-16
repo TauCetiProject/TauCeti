@@ -112,6 +112,18 @@ theorem circleLaurentCoeff_add {f g : ℂ → E} {c : ℂ} {R : ℝ}
   rw [circleIntegral.integral_add (hf.sub_zpow_smul (-n - 1) hc)
     (hg.sub_zpow_smul (-n - 1) hc), smul_add]
 
+/-- Extracting coefficients commutes with subtraction of functions integrable on the circle. -/
+theorem circleLaurentCoeff_sub {f g : ℂ → E} {c : ℂ} {R : ℝ}
+    (hf : CircleIntegrable f c R) (hg : CircleIntegrable g c R) (n : ℤ) :
+    circleLaurentCoeff (fun z => f z - g z) c R n =
+      circleLaurentCoeff f c R n - circleLaurentCoeff g c R n := by
+  rcases eq_or_ne R 0 with (rfl | hR)
+  · simp only [circleLaurentCoeff_def, circleIntegral.integral_radius_zero, smul_zero, sub_zero]
+  have hc : c ∉ sphere c |R| := by simpa [eq_comm] using hR
+  simp only [circleLaurentCoeff_def, smul_sub]
+  rw [circleIntegral.integral_sub (hf.sub_zpow_smul (-n - 1) hc)
+    (hg.sub_zpow_smul (-n - 1) hc), smul_sub]
+
 /-- The Cauchy estimate for any integer Laurent coefficient, including negative degrees
 and the degenerate circle of radius zero. -/
 theorem norm_circleLaurentCoeff_le {f : ℂ → E} {c : ℂ} {R M : ℝ} (hR : 0 ≤ R)

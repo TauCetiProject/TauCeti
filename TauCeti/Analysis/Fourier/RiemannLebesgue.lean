@@ -5,10 +5,17 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Analysis.Fourier.AddCircle
 public import Mathlib.Analysis.Fourier.RiemannLebesgueLemma
 
 /-!
-# Riemann--Lebesgue along a vertical line
+# Riemann--Lebesgue for Fourier coefficients and along a vertical line
+
+The Fourier coefficients of any function on the circle `AddCircle T` tend to `0` as the frequency
+`n → ±∞`, that is, along the cofinite filter on `ℤ`. This is Mathlib's Riemann--Lebesgue lemma on
+`ℝ` applied to the restriction of the function to a period interval. As there, no hypothesis on
+the function is needed: if it is not integrable, every coefficient is `0`. The same holds for the
+coefficients `fourierCoeffOn` of a function on an interval `[a, b]`.
 
 Testing a function on the vertical line `Re s = c` against a Dirichlet series produces the
 oscillating factor `x ^ (i t)`, which is the Fourier character of frequency `-(2π)⁻¹ log x` in
@@ -21,6 +28,8 @@ simple-pole factor `1 / (σ + i t - 1)` for `σ > 1`.
 
 ## Main declarations
 
+* `TauCeti.tendsto_fourierCoeff_cofinite`, `TauCeti.tendsto_fourierCoeffOn_cofinite`: the Fourier
+  coefficients of any function on the circle, or on an interval, tend to `0` as `n → ±∞`.
 * `TauCeti.continuous_cpow_mul_I`, `TauCeti.norm_cpow_mul_I`: the factor `x ^ (t * I)` is
   continuous in `t` and has modulus `1`.
 * `TauCeti.integrable_inv_sub_one_mul_mul_cpow`: the simple-pole integrand
@@ -32,12 +41,43 @@ simple-pole factor `1 / (σ + i t - 1)` for `σ > 1`.
 
 public section
 
-open Complex Filter MeasureTheory
+open Complex Filter MeasureTheory Set
 open scoped FourierTransform Real Topology
 
 namespace TauCeti
 
 variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℂ E]
+
+/-- **Riemann--Lebesgue for Fourier coefficients**: the Fourier coefficients of any function on
+`AddCircle T` tend to `0` as `n → ±∞`. If `f` is not integrable, every coefficient is `0`. -/
+theorem tendsto_fourierCoeff_cofinite {T : ℝ} [hT : Fact (0 < T)] (f : AddCircle T → E) :
+    Tendsto (fourierCoeff f) cofinite (𝓝 0) := by
+  have hfreq : Tendsto (fun n : ℤ ↦ (n : ℝ) * T⁻¹) cofinite (cocompact ℝ) :=
+    ((Homeomorph.mulRight₀ T⁻¹ (inv_ne_zero hT.out.ne')).isClosedEmbedding.tendsto_cocompact).comp
+      Int.tendsto_coe_cofinite
+  have h := ((Real.tendsto_integral_exp_smul_cocompact
+    ((Ioc 0 T).indicator fun x : ℝ ↦ f x)).comp hfreq).const_smul (1 / T)
+  rw [smul_zero] at h
+  refine h.congr fun n ↦ ?_
+  rw [fourierCoeff_eq_intervalIntegral f n 0, zero_add, intervalIntegral.integral_of_le hT.out.le,
+    ← integral_indicator measurableSet_Ioc]
+  congr 1
+  refine integral_congr_ae (.of_forall fun x ↦ ?_)
+  simp only [indicator_apply]
+  split_ifs
+  · rw [Circle.smul_def, Real.fourierChar_apply, fourier_coe_apply]
+    congr 2
+    push_cast
+    field_simp
+  · simp
+
+/-- **Riemann--Lebesgue for Fourier coefficients on an interval**: the Fourier coefficients
+`fourierCoeffOn hab f n` of any function `f` on `[a, b]` tend to `0` as `n → ±∞`. -/
+theorem tendsto_fourierCoeffOn_cofinite {a b : ℝ} (hab : a < b) (f : ℝ → E) :
+    Tendsto (fourierCoeffOn hab f) cofinite (𝓝 0) := by
+  -- `fourierCoeffOn` is defined as the Fourier coefficient of the `(b - a)`-periodic lift of `f`.
+  have := Fact.mk (sub_pos.2 hab)
+  exact tendsto_fourierCoeff_cofinite _
 
 /-- **Riemann--Lebesgue on a vertical line**: the integral of `f` against the oscillating factor
 `x ^ (i t)` tends to `0` as `x → ∞`.
