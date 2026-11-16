@@ -274,34 +274,6 @@ namespace TauCeti.GLSymplectic
 
 variable {n : Type*} [Fintype n] [DecidableEq n]
 
-private theorem neg_mem_sp (X : {X : selfAdjoint (Matrix (n ⊕ n) (n ⊕ n) ℝ) //
-      (X : Matrix (n ⊕ n) (n ⊕ n) ℝ) ∈ LieAlgebra.Symplectic.sp n ℝ}) :
-    ((-X.1 : selfAdjoint (Matrix (n ⊕ n) (n ⊕ n) ℝ)) : Matrix (n ⊕ n) (n ⊕ n) ℝ) ∈
-      LieAlgebra.Symplectic.sp n ℝ := by
-  rw [NegMemClass.coe_neg]
-  exact neg_mem X.2
-
-variable (n) in
-/-- Negation of the symmetric elements of the symplectic Lie algebra. -/
-private def negSymmSpHomeomorph : {X : selfAdjoint (Matrix (n ⊕ n) (n ⊕ n) ℝ) //
-      (X : Matrix (n ⊕ n) (n ⊕ n) ℝ) ∈ LieAlgebra.Symplectic.sp n ℝ} ≃ₜ
-    {X : selfAdjoint (Matrix (n ⊕ n) (n ⊕ n) ℝ) //
-      (X : Matrix (n ⊕ n) (n ⊕ n) ℝ) ∈ LieAlgebra.Symplectic.sp n ℝ} where
-  toFun X := ⟨-X.1, neg_mem_sp X⟩
-  invFun X := ⟨-X.1, neg_mem_sp X⟩
-  left_inv X := Subtype.ext (neg_neg X.1)
-  right_inv X := Subtype.ext (neg_neg X.1)
-  continuous_toFun := continuous_subtype_val.neg.subtype_mk _
-  continuous_invFun := continuous_subtype_val.neg.subtype_mk _
-
-private theorem coe_negSymmSpHomeomorph_apply
-    (X : {X : selfAdjoint (Matrix (n ⊕ n) (n ⊕ n) ℝ) //
-      (X : Matrix (n ⊕ n) (n ⊕ n) ℝ) ∈ LieAlgebra.Symplectic.sp n ℝ}) :
-    ((negSymmSpHomeomorph n X : selfAdjoint (Matrix (n ⊕ n) (n ⊕ n) ℝ)) :
-      Matrix (n ⊕ n) (n ⊕ n) ℝ) =
-      -((X : selfAdjoint (Matrix (n ⊕ n) (n ⊕ n) ℝ)) : Matrix (n ⊕ n) (n ⊕ n) ℝ) :=
-  NegMemClass.coe_neg _
-
 variable (n) in
 /-- **The Cartan decomposition of the real symplectic group in the polar order `A = P U`**: the
 map `(X, U) ↦ exp X * realify U` is a homeomorphism from the product of the symmetric matrices in
@@ -317,7 +289,8 @@ def leftCartanHomeomorph :
         (X : Matrix (n ⊕ n) (n ⊕ n) ℝ) ∈ LieAlgebra.Symplectic.sp n ℝ} × unitaryGroup n ℂ ≃ₜ
       GLSymplectic n ℝ :=
   -- `(X, U) ↦ (realify U⁻¹ * exp (-X))⁻¹`
-  ((Homeomorph.prodComm _ _).trans ((Homeomorph.inv _).prodCongr (negSymmSpHomeomorph n))).trans
+  ((Homeomorph.prodComm _ _).trans ((Homeomorph.inv _).prodCongr
+    ((Homeomorph.neg _).subtype fun X ↦ by simp [neg_mem_iff]))).trans
     ((cartanHomeomorph n).trans (Homeomorph.inv _))
 
 /-- The Cartan decomposition map of `Sp(2n, ℝ)` in the polar order sends `(X, U)` to
@@ -330,18 +303,19 @@ theorem val_leftCartanHomeomorph_apply
       NormedSpace.exp ((p.1 : selfAdjoint (Matrix (n ⊕ n) (n ⊕ n) ℝ)) :
           Matrix (n ⊕ n) (n ⊕ n) ℝ) *
         (p.2 : Matrix n n ℂ).realify := by
-  have hp : leftCartanHomeomorph n p =
-      (cartanHomeomorph n (p.2⁻¹, negSymmSpHomeomorph n p.1))⁻¹ := (rfl)
-  rw [hp, Subgroup.coe_inv, Matrix.coe_units_inv, val_cartanHomeomorph_apply]
+  simp only [leftCartanHomeomorph, Homeomorph.trans_apply, Homeomorph.coe_prodComm,
+    Homeomorph.coe_prodCongr, Prod.map_fst, Prod.map_snd, Prod.fst_swap, Prod.snd_swap,
+    Homeomorph.coe_inv, Subgroup.coe_inv, Matrix.coe_units_inv, val_cartanHomeomorph_apply,
+    Homeomorph.subtype_apply_coe, Homeomorph.coe_neg, NegMemClass.coe_neg]
   refine Matrix.inv_eq_right_inv ?_
   have hU : ((p.2⁻¹ : unitaryGroup n ℂ) : Matrix n n ℂ).realify * (p.2 : Matrix n n ℂ).realify =
       1 := by
     rw [← realify_mul, ← Submonoid.coe_mul, inv_mul_cancel, Submonoid.coe_one, realify_one]
   -- `exp (-X) * exp X = 1`
-  have hX : NormedSpace.exp ((negSymmSpHomeomorph n p.1 : selfAdjoint (Matrix (n ⊕ n) (n ⊕ n) ℝ)) :
-      Matrix (n ⊕ n) (n ⊕ n) ℝ) * NormedSpace.exp ((p.1 : selfAdjoint (Matrix (n ⊕ n) (n ⊕ n) ℝ)) :
+  have hX : NormedSpace.exp (-((p.1 : selfAdjoint (Matrix (n ⊕ n) (n ⊕ n) ℝ)) :
+      Matrix (n ⊕ n) (n ⊕ n) ℝ)) * NormedSpace.exp ((p.1 : selfAdjoint (Matrix (n ⊕ n) (n ⊕ n) ℝ)) :
         Matrix (n ⊕ n) (n ⊕ n) ℝ) = 1 := by
-    rw [coe_negSymmSpHomeomorph_apply, Matrix.exp_neg]
+    rw [Matrix.exp_neg]
     exact Matrix.nonsing_inv_mul _ ((Matrix.isUnit_iff_isUnit_det _).1 (Matrix.isUnit_exp _))
   rw [Matrix.mul_assoc, ← Matrix.mul_assoc (NormedSpace.exp _), hX, Matrix.one_mul, hU]
 
