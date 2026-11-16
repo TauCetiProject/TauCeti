@@ -315,8 +315,8 @@ private lemma stdSimplex_map_comp_map_eq_const {d : ℕ} (θ : ⦋d⦌ ⟶ ⦋n 
       (by simpa using h.δ_castSucc_map : stdSimplex.δ 0 ≫ h.map = p.map), p.δ_map, comp_const]
 
 /-- The collapse `Δ[n] ⊗ Δ[1] ⟶ Δ[n + 1]` of a simplex `(a, b)` whose first component lies in
-`∂Δ[n]` misses a vertex: if `a` misses the vertex `j` of `Δ[n]`, the image misses `j + 1` when
-`j ≠ 0`, and both `0` and `1` when `j = 0`. -/
+`∂Δ[n]` is a simplex `θ` of `Δ[n + 1]` which misses a vertex `v > 1`, or misses both vertices `0`
+and `1`. -/
 private lemma collapse_boundary_misses_vertex {d : ℕ} {a : Δ[n] _⦋d⦌} (ha : a ∈ (∂Δ[n]).obj _)
     (b : Δ[1] _⦋d⦌) {θ : ⦋d⦌ ⟶ ⦋n + 1⦌}
     (hθ : θ = SimplexCategory.Hom.mk ((prodStdSimplex₁.collapseOrderHom n).comp
@@ -352,7 +352,8 @@ noncomputable def homotopy : Homotopy q p where
     simpa using h.δ_castSucc_map
   rel := by
     -- A simplex of `∂Δ[n] ⊗ Δ[1]` is sent by `collapse` to a simplex of `Δ[n + 1]` missing a
-    -- vertex (`collapse_boundary_misses_vertex`), on which `h.map` is constant.
+    -- vertex `v > 1`, or both `0` and `1` (`collapse_boundary_misses_vertex`), on which `h.map` is
+    -- constant (`stdSimplex_map_comp_map_eq_const`).
     rw [Subcomplex.ofSimplex_ι, comp_const, comp_const]
     refine hom_ext_uliftYoneda fun ⟨d⟩ φ ↦ ?_
     let a : Δ[n] _⦋d⦌ := (yonedaEquiv φ).1.1
