@@ -338,13 +338,16 @@ theorem _root_.Homeomorph.isLocallySpectralMap_comp {Z : Type*} [TopologicalSpac
     fun U V hUV hUo hVo hUs hVs ↦ ?_
   have := hUs
   have := hVs
-  let hU := e.isEmbedding.homeomorphImage U
+  let hU := e.image U
   have : CompactSpace (e '' U) := hU.compactSpace
   have : SpectralSpace (e '' U) := hU.symm.isOpenEmbedding.spectralSpace
   have hUV' : MapsTo f (e '' U) V := by
     rintro _ ⟨z, hzU, rfl⟩
     exact hUV hzU
-  have heq : hUV.restrict (f ∘ e) U V = hUV'.restrict f (e '' U) V ∘ hU := (rfl)
+  have heq : hUV.restrict (f ∘ e) U V = hUV'.restrict f (e '' U) V ∘ hU := by
+    funext z
+    apply Subtype.ext
+    simp only [MapsTo.val_restrict_apply, Function.comp_apply, hU, Homeomorph.image_apply_coe]
   rw [heq]
   exact (hf.isSpectralMap_restrict hUV' (e.isOpenMap U hUo) hVo).comp hU.isProperMap.isSpectralMap
 

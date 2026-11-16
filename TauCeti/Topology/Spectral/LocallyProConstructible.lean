@@ -272,7 +272,7 @@ theorem IsLocallyProConstructible.preimage {u : Set Y} (hu : IsLocallyProConstru
     have hW : IsProConstructible ((Subtype.val : W x → X) ⁻¹' (f ⁻¹' u)) := by
       convert (hu.isProConstructible_preimage (hVo x)).preimage hg using 1
       ext y
-      rfl
+      simp
     have he : IsOpenEmbedding (e x) := .inclusion _ ((hWo x).preimage continuous_subtype_val)
     exact hW.image he.isSpectralMap
   obtain ⟨T, hT⟩ := (isCompact_iff_compactSpace.mpr hUs.toCompactSpace).elim_finite_subcover
@@ -328,8 +328,13 @@ theorem IsLocallyProConstructible.isLocallySpectralMap_fst {R : Set (X × Y)}
   refine ⟨U', hU'sub.trans inter_subset_left, hU'o, hqU', ?_⟩
   have hOV : MapsTo (fun p : R ↦ p.1.1) O V := fun _ hp ↦ hp.1
   have hg : IsSpectralMap (hOV.restrict (fun p : R ↦ p.1.1) O V) := by
+    have heOP (p : O) : ((eOP p : V ×ˢ W) : X × Y) = p.1.1 := rfl
     have hfactor : hOV.restrict (fun p : R ↦ p.1.1) O V =
-        (Prod.fst : V × W → V) ∘ eVW ∘ (Subtype.val : P → V ×ˢ W) ∘ eOP := (rfl)
+        (Prod.fst : V × W → V) ∘ eVW ∘ (Subtype.val : P → V ×ˢ W) ∘ eOP := by
+      funext p
+      apply Subtype.ext
+      simp only [MapsTo.val_restrict_apply, Function.comp_apply, eVW,
+        Homeomorph.Set.prod_apply V W (eOP p).1, heOP]
     rw [hfactor]
     exact isProperMap_fst_of_compactSpace.isSpectralMap.comp
       (eVW.isProperMap.isSpectralMap.comp
@@ -353,7 +358,8 @@ theorem IsLocallyProConstructible.isLocallySpectralMap_snd {R : Set (X × Y)}
   have hR' : IsLocallyProConstructible R' :=
     hR.preimage_of_isOpenEmbedding (Homeomorph.prodComm Y X).isOpenEmbedding
   let e : R ≃ₜ R' := (Homeomorph.prodComm X Y).subtype fun _ ↦ by simp [R']
-  have heq : (fun q : R ↦ q.1.2) = (fun q : R' ↦ q.1.1) ∘ e := rfl
+  have heq : (fun q : R ↦ q.1.2) = (fun q : R' ↦ q.1.1) ∘ e :=
+    funext fun q ↦ by simp [e]
   rw [heq, e.isLocallySpectralMap_comp_iff]
   exact hR'.isLocallySpectralMap_fst hX
 
@@ -373,7 +379,7 @@ theorem IsLocallyProConstructible.preimage_prodMk_right {R : Set (X × Y)}
     eUV.symm.isProperMap.isSpectralMap.comp (isSpectralMap_prodMk_right (Y := V) (⟨x, hxU⟩ : U))
   convert (hR.isProConstructible_preimage (hUo.prod hVo)).preimage hg using 1
   ext v
-  rfl
+  simp [eUV]
 
 /-- Slicing a locally pro-constructible subset `R ⊆ X × Y` at a point `y : Y` of a locally spectral
 space `Y` yields a locally pro-constructible subset `{x : X | (x, y) ∈ R}` of `X`, with no ambient

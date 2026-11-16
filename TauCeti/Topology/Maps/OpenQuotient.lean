@@ -10,6 +10,8 @@ public import Mathlib.Topology.Homeomorph.Lemmas
 public import Mathlib.Topology.Inseparable
 public import Mathlib.Topology.Maps.OpenQuotient
 public import TauCeti.Data.Setoid.Basic
+import Mathlib.Topology.ContinuousMap.Basic
+import Mathlib.Topology.Homeomorph.Quotient
 
 /-!
 # Open quotient maps
@@ -184,40 +186,21 @@ even when `W` is not saturated for `r`. -/
 noncomputable def IsOpen.quotientComapHomeomorphImage {r : Setoid X} {W : Set X} (hW : IsOpen W)
     (hq : IsOpenMap (Quotient.mk r)) :
     Quotient (r.comap (Subtype.val : W → X)) ≃ₜ Quotient.mk r '' W := by
-  let g : W → Quotient.mk r '' W := fun w ↦ ⟨Quotient.mk r w.1, w.1, w.2, rfl⟩
-  let f : Quotient (r.comap (Subtype.val : W → X)) → Quotient.mk r '' W :=
-    Quotient.lift g fun _ _ h ↦ Subtype.ext (Quotient.sound h)
-  have hf_cont : Continuous f :=
-    Continuous.quotient_lift
-      ((continuous_quot_mk.comp continuous_subtype_val).subtype_mk fun w : W ↦ ⟨w.1, w.2, rfl⟩) _
-  have hf_bij : Function.Bijective f := by
-    refine ⟨Quotient.ind₂ fun w₁ w₂ h ↦
-      Quotient.sound (@Quotient.exact _ r _ _ (congrArg Subtype.val h)), ?_⟩
-    rintro ⟨_, x, hxW, rfl⟩
-    exact ⟨Quotient.mk _ ⟨x, hxW⟩, rfl⟩
-  have hf_open : IsOpenMap f := by
-    intro O hO
-    have hO' : IsOpen (Quotient.mk (r.comap (Subtype.val : W → X)) ⁻¹' O) :=
-      hO.preimage continuous_quot_mk
-    have himg : IsOpen (Quotient.mk r '' (Subtype.val ''
-        (Quotient.mk (r.comap (Subtype.val : W → X)) ⁻¹' O))) :=
-      hq _ (hW.isOpenMap_subtype_val _ hO')
-    have heq : f '' O = Subtype.val ⁻¹' (Quotient.mk r '' (Subtype.val ''
-        (Quotient.mk (r.comap (Subtype.val : W → X)) ⁻¹' O))) := by
-      ext z
-      constructor
-      · rintro ⟨u, huO, rfl⟩
-        obtain ⟨w, rfl⟩ := Quotient.exists_rep u
-        exact ⟨w.1, ⟨w, huO, rfl⟩, rfl⟩
-      · rintro ⟨_, ⟨w, hwO, rfl⟩, hzw⟩
-        exact ⟨Quotient.mk _ w, hwO, Subtype.ext hzw⟩
-    rw [heq]
-    exact himg.preimage continuous_subtype_val
-  exact (Equiv.ofBijective f hf_bij).toHomeomorphOfContinuousOpen hf_cont hf_open
+  let g : C(W, Quotient.mk r '' W) :=
+    ⟨fun w ↦ ⟨Quotient.mk r w.1, w.1, w.2, rfl⟩,
+      (continuous_quot_mk.comp continuous_subtype_val).subtype_mk _⟩
+  have hg : IsOpenQuotientMap g :=
+    ⟨fun ⟨_, x, hxW, hx⟩ ↦ ⟨⟨x, hxW⟩, Subtype.ext hx⟩,
+      g.continuous, (hq.comp hW.isOpenMap_subtype_val).subtype_mk _⟩
+  exact (Homeomorph.Quotient.congrRight fun w₁ w₂ ↦ by
+    rw [Setoid.comap_rel, Setoid.ker_def, Subtype.ext_iff]
+    exact (@Quotient.eq _ r w₁.1 w₂.1).symm).trans hg.isQuotientMap.homeomorph
 
 @[simp]
 theorem IsOpen.coe_quotientComapHomeomorphImage_mk {r : Setoid X} {W : Set X} (hW : IsOpen W)
     (hq : IsOpenMap (Quotient.mk r)) (w : W) :
     ((hW.quotientComapHomeomorphImage hq
-      (Quotient.mk (r.comap (Subtype.val : W → X)) w)) : Quotient r) = Quotient.mk r w.1 :=
-  (rfl)
+      (Quotient.mk (r.comap (Subtype.val : W → X)) w)) : Quotient r) = Quotient.mk r w.1 := by
+  simp only [IsOpen.quotientComapHomeomorphImage, Homeomorph.trans_apply,
+    IsQuotientMap.homeomorph_apply]
+  exact congrArg Subtype.val (Setoid.kerLift_mk _ w)

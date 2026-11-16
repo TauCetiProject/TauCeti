@@ -40,7 +40,7 @@ but no criterion that tests spectrality on a basis; this supplies the missing en
 * `TauCeti.isSpectralMap_eval`: a coordinate projection is spectral when every other factor
   is quasi-compact.
 * `TauCeti.isSpectralMap_prodMk_right`, `TauCeti.isSpectralMap_prodMk_left`: pairing with a fixed
-  point gives a spectral map into a product of prespectral spaces.
+  point gives a spectral map into a product.
 * `Topology.IsEmbedding.spectralSpace_preimage_iff` : a subset of the range of an embedding is
   spectral if and only if its preimage is — the transport step of any "prove it on a subspace"
   argument.
@@ -134,26 +134,23 @@ theorem isSpectralMap_eval {ι : Type*} {Z : ι → Type*} [∀ i, TopologicalSp
     · rw [Function.update_of_ne hj]
       exact hZ j hj
 
-/-- Pairing on the left with a fixed point `x : X` gives a spectral map `Y → X × Y` between
-prespectral spaces. -/
-theorem isSpectralMap_prodMk_right [PrespectralSpace X] [PrespectralSpace Y] (x : X) :
-    IsSpectralMap (fun y : Y ↦ (x, y)) := by
-  refine isSpectralMap_of_isTopologicalBasis
-    ((PrespectralSpace.isTopologicalBasis (X := X)).prod
-      (PrespectralSpace.isTopologicalBasis (X := Y)))
-    (.prodMk_right x) ?_
-  rintro _ ⟨A, -, B, ⟨-, hBc⟩, rfl⟩
-  by_cases hxA : x ∈ A
-  · convert hBc
-    ext y
-    simp [hxA]
-  · convert isCompact_empty
-    ext y
-    simp [hxA]
+/-- Pairing on the left with a fixed point `x : X` gives a spectral map `Y → X × Y`. -/
+theorem isSpectralMap_prodMk_right (x : X) :
+    IsSpectralMap (fun y : Y ↦ (x, y)) where
+  toContinuous := .prodMk_right x
+  isCompact_preimage_of_isOpen := fun U hUo hUc ↦ by
+    have heq : (fun y : Y ↦ (x, y)) ⁻¹' U = Prod.snd '' (U ∩ (closure ({x} : Set X) ×ˢ univ)) := by
+      ext y
+      constructor
+      · intro hy
+        exact ⟨(x, y), ⟨hy, subset_closure rfl, trivial⟩, rfl⟩
+      · rintro ⟨⟨z, y⟩, ⟨hzyU, hz, -⟩, rfl⟩
+        exact ((specializes_iff_mem_closure.mpr hz).prod specializes_rfl).mem_open hUo hzyU
+    rw [heq]
+    exact (hUc.inter_right (isClosed_closure.prod isClosed_univ)).image continuous_snd
 
-/-- Pairing on the right with a fixed point `y : Y` gives a spectral map `X → X × Y` between
-prespectral spaces. -/
-theorem isSpectralMap_prodMk_left [PrespectralSpace X] [PrespectralSpace Y] (y : Y) :
+/-- Pairing on the right with a fixed point `y : Y` gives a spectral map `X → X × Y`. -/
+theorem isSpectralMap_prodMk_left (y : Y) :
     IsSpectralMap (fun x : X ↦ (x, y)) :=
   (Homeomorph.prodComm Y X).isProperMap.isSpectralMap.comp (isSpectralMap_prodMk_right y)
 

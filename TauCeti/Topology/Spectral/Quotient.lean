@@ -400,7 +400,7 @@ theorem IsLocallyProConstructible.isProConstructible_comap {r : Setoid X}
   convert (hR.isProConstructible_preimage (hWo.prod hWo)).preimage
     eWW.symm.isProperMap.isSpectralMap using 1
   ext ⟨w₁, w₂⟩
-  rfl
+  simp [eWW, Setoid.comap_rel]
 
 /-- **Scholze, *Étale cohomology of diamonds*, Lemma 2.10** (local space assertion): if `X` is
 locally spectral, `{q : X × X | r q.1 q.2}` is locally pro-constructible in `X × X`, and the first
