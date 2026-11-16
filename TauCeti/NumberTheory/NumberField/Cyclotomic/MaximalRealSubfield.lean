@@ -38,21 +38,21 @@ field cut out by the even characters.
 
 * `IsOfFinOrder.add_inv_mem_maximalRealSubfield`, `IsPrimitiveRoot.add_inv_mem_maximalRealSubfield`:
   for an element `ζ` of finite order in a field `K`, `ζ + ζ⁻¹` lies in `maximalRealSubfield K`.
-* `IsPrimitiveRoot.toMaximalRealInteger`: `ζ + ζ⁻¹` in `𝓞 (maximalRealSubfield K)`.
+* `IsPrimitiveRoot.addInvMaximalRealInteger`: `ζ + ζ⁻¹` in `𝓞 (maximalRealSubfield K)`.
 * `IsPrimitiveRoot.toSubfield_adjoin_add_inv_eq_maximalRealSubfield` and
-  `IsPrimitiveRoot.adjoin_rat_toMaximalRealInteger_eq_top`: `ζ + ζ⁻¹` generates `K⁺` over `ℚ`.
+  `IsPrimitiveRoot.adjoin_rat_addInvMaximalRealInteger_eq_top`: `ζ + ζ⁻¹` generates `K⁺` over `ℚ`.
 * `TauCeti.IsCyclotomicExtension.Rat.complexEmbedding_galEquivZMod_symm_neg_one_apply`: the
   automorphism attached to `-1` is complex conjugation under every complex embedding.
 * `TauCeti.IsCyclotomicExtension.Rat.galEquivZMod_symm_neg_one_apply_eq_self_iff`: its fixed points
   are the maximal real subfield.
 * `TauCeti.IsCyclotomicExtension.Rat.finrank_maximalRealSubfield`: for `n > 2`,
   `[K⁺ : ℚ] = φ(n) / 2`.
-* `toSubfield_intermediateFieldEquivSubgroupChar_symm_evenSubgroup`:
-  the even characters cut out the maximal real subfield.
+* The even characters cut out the maximal real subfield:
+`TauCeti.IsCyclotomicExtension.Rat.toSubfield_intermediateFieldEquivSubgroupChar_symm_evenSubgroup`.
 
 ## References
 
-* L. C. Washington, *Introduction to Cyclotomic Fields*, Propositions 2.16 and Chapter 3.
+* L. C. Washington, *Introduction to Cyclotomic Fields*, Chapters 2 and 3.
 -/
 
 public section
@@ -60,10 +60,11 @@ public section
 open NumberField ComplexConjugate IntermediateField _root_.IsCyclotomicExtension.Rat
   DirichletCharacter Polynomial
 
-/-- **The sum of a root of unity and its inverse is totally real.** Under any complex embedding `φ`,
-an element `ζ` of finite order maps to the unit circle, where complex conjugation is inversion. -/
+/-- **The sum of a root of unity and its inverse is totally real**: for any element `ζ` of finite
+multiplicative order in `K`, `ζ + ζ⁻¹` lies in `maximalRealSubfield K`. -/
 theorem IsOfFinOrder.add_inv_mem_maximalRealSubfield {K : Type*} [Field K] {ζ : K}
     (hζ : IsOfFinOrder ζ) : ζ + ζ⁻¹ ∈ maximalRealSubfield K := by
+  -- Under any complex embedding `φ`, `ζ` maps to the unit circle, where conjugation is inversion.
   intro φ
   obtain ⟨m, hm0, hm⟩ := isOfFinOrder_iff_pow_eq_one.mp hζ
   have hz : φ ζ ^ m = 1 := by rw [← map_pow, hm, map_one]
@@ -74,6 +75,8 @@ theorem IsOfFinOrder.add_inv_mem_maximalRealSubfield {K : Type*} [Field K] {ζ :
 namespace TauCeti.IsCyclotomicExtension.Rat
 
 open TauCeti.DirichletCharacter
+
+section GalEquivZMod
 
 variable (n : ℕ) [NeZero n] {K : Type*} [Field K] [NumberField K]
   [_root_.IsCyclotomicExtension {n} ℚ K]
@@ -124,17 +127,6 @@ theorem toSubfield_fixedField_zpowers_galEquivZMod_symm_neg_one :
   rw [mem_toSubfield, mem_fixedField_zpowers_iff,
     galEquivZMod_symm_neg_one_apply_eq_self_iff]
 
-/-- **The degree of the maximal real subfield of `ℚ(ζₙ)` is `φ(n) / 2`** when `n > 2`. For `n > 2`,
-`ℚ(ζₙ)` is a CM field of degree `φ(n)` over `ℚ` and quadratic over `ℚ(ζₙ)⁺`. -/
-theorem finrank_maximalRealSubfield (hn : 2 < n) :
-    Module.finrank ℚ (maximalRealSubfield K) = n.totient / 2 := by
-  have : IsCMField K :=
-    _root_.IsCyclotomicExtension.Rat.isCMField K ⟨n, Set.mem_singleton n, hn⟩
-  have htower := Module.finrank_mul_finrank ℚ (maximalRealSubfield K) K
-  rw [Algebra.IsQuadraticExtension.finrank_eq_two (maximalRealSubfield K) K,
-    _root_.IsCyclotomicExtension.Rat.finrank n K] at htower
-  omega
-
 variable (R : Type*) [CommRing R] [HasEnoughRootsOfUnity R (Monoid.exponent (ZMod n)ˣ)]
   [IsAbelianGalois ℚ K]
 
@@ -167,6 +159,21 @@ theorem toSubfield_intermediateFieldEquivSubgroupChar_symm_evenSubgroup :
     MulEquiv.apply_symm_apply, Units.val_neg, Units.val_one,
     _root_.DirichletCharacter.mem_evenSubgroup_iff, _root_.DirichletCharacter.Even]
 
+end GalEquivZMod
+
+/-- **The degree of the maximal real subfield of `ℚ(ζₙ)` is `φ(n) / 2`** when `n > 2`. -/
+theorem finrank_maximalRealSubfield (n : ℕ) (K : Type*) [Field K] [CharZero K]
+    [_root_.IsCyclotomicExtension {n} ℚ K] (hn : 2 < n) :
+    Module.finrank ℚ (maximalRealSubfield K) = n.totient / 2 := by
+  have : NeZero n := ⟨by omega⟩
+  have : NumberField K := _root_.IsCyclotomicExtension.numberField {n} ℚ K
+  have : IsCMField K :=
+    _root_.IsCyclotomicExtension.Rat.isCMField K ⟨n, Set.mem_singleton n, hn⟩
+  have htower := Module.finrank_mul_finrank ℚ (maximalRealSubfield K) K
+  rw [Algebra.IsQuadraticExtension.finrank_eq_two (maximalRealSubfield K) K,
+    _root_.IsCyclotomicExtension.Rat.finrank n K] at htower
+  omega
+
 end TauCeti.IsCyclotomicExtension.Rat
 
 namespace IsPrimitiveRoot
@@ -180,38 +187,41 @@ theorem add_inv_mem_maximalRealSubfield [NeZero n] (hζ : IsPrimitiveRoot ζ n) 
   (hζ.isOfFinOrder (NeZero.ne n)).add_inv_mem_maximalRealSubfield
 
 /-- **The real cyclotomic integer `ζ + ζ⁻¹`** as an element of the ring of integers
-`𝓞 (maximalRealSubfield K)`. Both `ζ` and `ζ⁻¹` are roots of `Xⁿ - 1`, hence integral over `ℤ`, and
-their sum lies in `maximalRealSubfield K`. -/
-noncomputable def toMaximalRealInteger [NeZero n] (hζ : IsPrimitiveRoot ζ n) :
+`𝓞 (maximalRealSubfield K)`. -/
+noncomputable def addInvMaximalRealInteger [NeZero n] (hζ : IsPrimitiveRoot ζ n) :
     𝓞 (maximalRealSubfield K) :=
   ⟨⟨ζ + ζ⁻¹, hζ.add_inv_mem_maximalRealSubfield⟩, by
     rw [mem_integralClosure_iff, ← isIntegral_algebraMap_iff (B := K)]
     exact (hζ.isIntegral (NeZero.pos n)).add (hζ.inv.isIntegral (NeZero.pos n))⟩
 
-/-- Coercing `hζ.toMaximalRealInteger` to `maximalRealSubfield K` gives `ζ + ζ⁻¹`. -/
+/-- Coercing `hζ.addInvMaximalRealInteger` to `maximalRealSubfield K` gives `ζ + ζ⁻¹`. -/
 @[simp]
-theorem val_toMaximalRealInteger [NeZero n] (hζ : IsPrimitiveRoot ζ n) :
-    (hζ.toMaximalRealInteger : maximalRealSubfield K) =
+theorem coe_addInvMaximalRealInteger [NeZero n] (hζ : IsPrimitiveRoot ζ n) :
+    (hζ.addInvMaximalRealInteger : maximalRealSubfield K) =
       ⟨ζ + ζ⁻¹, hζ.add_inv_mem_maximalRealSubfield⟩ :=
   (rfl)
 
-/-- Coercing `hζ.toMaximalRealInteger` all the way to `K` gives `ζ + ζ⁻¹`. -/
-theorem coe_toMaximalRealInteger [NeZero n] (hζ : IsPrimitiveRoot ζ n) :
-    ((hζ.toMaximalRealInteger : maximalRealSubfield K) : K) = ζ + ζ⁻¹ :=
+/-- Coercing `hζ.addInvMaximalRealInteger` all the way to `K` gives `ζ + ζ⁻¹`. -/
+theorem coe_coe_addInvMaximalRealInteger [NeZero n] (hζ : IsPrimitiveRoot ζ n) :
+    ((hζ.addInvMaximalRealInteger : maximalRealSubfield K) : K) = ζ + ζ⁻¹ :=
   (rfl)
 
-/-- Over `ℚ(ζ + ζ⁻¹)`, `ℚ(ζₙ)` has degree at most `2`: `ζ` is a root of the monic quadratic
-`X² - (ζ + ζ⁻¹) X + 1`. -/
-private theorem finrank_adjoin_add_inv_le_two [NeZero n] [NumberField K]
+/-- Over `ℚ(ζ + ζ⁻¹)`, `ℚ(ζₙ)` has degree at most `2`. -/
+private theorem finrank_adjoin_add_inv_le_two [NeZero n] [CharZero K]
     [_root_.IsCyclotomicExtension {n} ℚ K] (hζ : IsPrimitiveRoot ζ n) :
     Module.finrank (IntermediateField.adjoin ℚ ({ζ + ζ⁻¹} : Set K)) K ≤ 2 := by
+  have : NumberField K := _root_.IsCyclotomicExtension.numberField {n} ℚ K
   set E : IntermediateField ℚ K := IntermediateField.adjoin ℚ {ζ + ζ⁻¹}
+  have hle : Algebra.adjoin ℚ ({ζ} : Set K) ≤ E⟮ζ⟯.toSubalgebra.restrictScalars ℚ := by
+    rw [Algebra.adjoin_le_iff, Set.singleton_subset_iff, SetLike.mem_coe,
+      Subalgebra.mem_restrictScalars, IntermediateField.mem_toSubalgebra]
+    exact IntermediateField.mem_adjoin_simple_self E ζ
   have htop : E⟮ζ⟯ = ⊤ := eq_top_iff.2 fun x _ ↦ by
-    have hx : x ∈ Algebra.adjoin ℚ ({ζ} : Set K) := by
-      rw [_root_.IsCyclotomicExtension.adjoin_primitive_root_eq_top hζ]; trivial
-    exact (Algebra.adjoin_le_iff.2 (Set.singleton_subset_iff.2
-      (IntermediateField.mem_adjoin_simple_self E ζ)) :
-        Algebra.adjoin ℚ ({ζ} : Set K) ≤ E⟮ζ⟯.toSubalgebra.restrictScalars ℚ) hx
+    rw [← IntermediateField.mem_toSubalgebra, ← Subalgebra.mem_restrictScalars (R := ℚ)]
+    apply hle
+    rw [_root_.IsCyclotomicExtension.adjoin_primitive_root_eq_top hζ]
+    exact Algebra.mem_top
+  -- `ζ` is a root of the monic quadratic `X² - (ζ + ζ⁻¹) X + 1` over `E`.
   let p : E[X] := X ^ 2 - C ⟨ζ + ζ⁻¹, IntermediateField.mem_adjoin_simple_self ℚ _⟩ * X + 1
   have hp_deg : p.natDegree ≤ 2 := by dsimp [p]; compute_degree!
   have hp_monic : p.Monic :=
@@ -228,43 +238,42 @@ private theorem finrank_adjoin_add_inv_le_two [NeZero n] [NumberField K]
     Polynomial.natDegree_le_of_dvd (minpoly.dvd E ζ hp_aeval) hp_monic.ne_zero
   omega
 
-/-- **`ζ + ζ⁻¹` generates the maximal real subfield of `ℚ(ζₙ)`.** Over `E = ℚ(ζ + ζ⁻¹)`, `ζ` is a
-root of the monic quadratic `X² - (ζ + ζ⁻¹) X + 1`, so `[K : E] ≤ 2`, which forces `E = K⁺`. -/
-theorem toSubfield_adjoin_add_inv_eq_maximalRealSubfield [NeZero n] [NumberField K]
+/-- **`ζ + ζ⁻¹` generates the maximal real subfield of `ℚ(ζₙ)` over `ℚ`.** -/
+theorem toSubfield_adjoin_add_inv_eq_maximalRealSubfield [NeZero n] [CharZero K]
     [_root_.IsCyclotomicExtension {n} ℚ K] (hζ : IsPrimitiveRoot ζ n) :
     (IntermediateField.adjoin ℚ {ζ + ζ⁻¹}).toSubfield = maximalRealSubfield K := by
+  have : NumberField K := _root_.IsCyclotomicExtension.numberField {n} ℚ K
   set E : IntermediateField ℚ K := IntermediateField.adjoin ℚ {ζ + ζ⁻¹}
-  let M : IntermediateField ℚ K := (maximalRealSubfield K).toIntermediateField fun _ ↦ by simp
-  have hEM_field : E ≤ M := IntermediateField.adjoin_le_iff.2
-    (Set.singleton_subset_iff.2 hζ.add_inv_mem_maximalRealSubfield)
-  have hEM : E.toSubalgebra ≤ M.toSubalgebra := fun _ hx ↦ hEM_field hx
-  have hdeg_le : Module.finrank E K ≤ 2 := hζ.finrank_adjoin_add_inv_le_two
-  have hfin : Module.finrank ℚ M.toSubalgebra ≤ Module.finrank ℚ E.toSubalgebra := by
-    have hposE : 0 < Module.finrank ℚ E.toSubalgebra := Module.finrank_pos
-    have hposEK : 0 < Module.finrank E K := Module.finrank_pos
-    have hM_le : Module.finrank ℚ M.toSubalgebra ≤ Module.finrank ℚ K :=
-      LinearMap.finrank_le_finrank_of_injective (f := M.toSubalgebra.val.toLinearMap)
-        Subtype.val_injective
-    by_cases hn : 2 < n
-    · have htowerE : Module.finrank ℚ E.toSubalgebra * Module.finrank E K = Module.finrank ℚ K :=
-        Module.finrank_mul_finrank ℚ E K
-      have hfinK := _root_.IsCyclotomicExtension.Rat.finrank n K
-      have hfinM : Module.finrank ℚ M.toSubalgebra = n.totient / 2 :=
-        TauCeti.IsCyclotomicExtension.Rat.finrank_maximalRealSubfield n K hn
-      interval_cases Module.finrank E K <;> omega
-    · have hn0 : 0 < n := NeZero.pos n
-      have hfin1 : Module.finrank ℚ K = 1 := by
-        rw [_root_.IsCyclotomicExtension.Rat.finrank n K]
-        interval_cases n <;> decide
-      omega
-  have heq : E.toSubalgebra = M.toSubalgebra := Subalgebra.eq_of_le_of_finrank_le hEM hfin
-  ext x
-  exact SetLike.ext_iff.mp heq x
+  set M : IntermediateField ℚ K :=
+    fixedField (Subgroup.zpowers ((galEquivZMod n K).symm (-1)))
+  have hM : M.toSubfield = maximalRealSubfield K :=
+    TauCeti.IsCyclotomicExtension.Rat.toSubfield_fixedField_zpowers_galEquivZMod_symm_neg_one n K
+  suffices E = M by rw [this, hM]
+  have hEM : E ≤ M := IntermediateField.adjoin_le_iff.2 <| Set.singleton_subset_iff.2 <| by
+    rw [SetLike.mem_coe, ← mem_toSubfield, hM]
+    exact hζ.add_inv_mem_maximalRealSubfield
+  by_cases hn : 2 < n
+  · have : Fact (1 < n) := ⟨by omega⟩
+    have hcard : Module.finrank M K = 2 := by
+      rw [IntermediateField.finrank_fixedField_eq_card, Nat.card_zpowers, MulEquiv.orderOf_eq,
+        Units.orderOf_neg_one, ZMod.ringChar_zmod_n,
+        ite_eq_right_iff.mpr fun h ↦ absurd h (by omega)]
+    exact IntermediateField.eq_of_le_of_finrank_le' hEM
+      (hζ.finrank_adjoin_add_inv_le_two.trans_eq hcard.symm)
+  · have hn0 : 0 < n := NeZero.pos n
+    have hfin1 : Module.finrank ℚ K = 1 := by
+      rw [_root_.IsCyclotomicExtension.Rat.finrank n K]
+      interval_cases n <;> decide
+    have hEtop : E = ⊤ := IntermediateField.eq_of_le_of_finrank_le le_top <| by
+      rw [IntermediateField.finrank_top', hfin1]
+      exact Module.finrank_pos
+    exact le_antisymm hEM (hEtop.symm ▸ le_top)
 
 /-- **`ζ + ζ⁻¹` generates `maximalRealSubfield K` as a `ℚ`-algebra.** -/
-theorem adjoin_rat_toMaximalRealInteger_eq_top [NeZero n] [NumberField K]
+theorem adjoin_rat_addInvMaximalRealInteger_eq_top [NeZero n] [CharZero K]
     [_root_.IsCyclotomicExtension {n} ℚ K] (hζ : IsPrimitiveRoot ζ n) :
-    Algebra.adjoin ℚ {(hζ.toMaximalRealInteger : maximalRealSubfield K)} = ⊤ := by
+    Algebra.adjoin ℚ {(hζ.addInvMaximalRealInteger : maximalRealSubfield K)} = ⊤ := by
+  have : NumberField K := _root_.IsCyclotomicExtension.numberField {n} ℚ K
   rw [eq_top_iff]
   intro x _
   -- Since `K / ℚ` is algebraic, `Algebra.adjoin ℚ {ζ + ζ⁻¹}` agrees with `ℚ(ζ + ζ⁻¹)`.
@@ -277,16 +286,20 @@ theorem adjoin_rat_toMaximalRealInteger_eq_top [NeZero n] [NumberField K]
     exact x.2
   have hxA : (x : K) ∈ Algebra.adjoin ℚ ({ζ + ζ⁻¹} : Set K) := by
     rwa [heq, mem_toSubalgebra, ← mem_toSubfield]
+  have hf : ∀ z : maximalRealSubfield K,
+      IsScalarTower.toAlgHom ℚ (maximalRealSubfield K) K z = (z : K) := fun z ↦ by
+    rw [IsScalarTower.toAlgHom_apply, Subfield.algebraMap_ofSubfield, Subfield.coe_subtype]
   have hmap := Algebra.adjoin_image (R := ℚ) (A := maximalRealSubfield K) (B := K)
     (IsScalarTower.toAlgHom ℚ (maximalRealSubfield K) K)
-    {(hζ.toMaximalRealInteger : maximalRealSubfield K)}
-  rw [Set.image_singleton] at hmap
+    {(hζ.addInvMaximalRealInteger : maximalRealSubfield K)}
+  rw [Set.image_singleton, hf, hζ.coe_coe_addInvMaximalRealInteger] at hmap
   have hxmap : (x : K) ∈ (Algebra.adjoin ℚ
-      {(hζ.toMaximalRealInteger : maximalRealSubfield K)}).map
+      {(hζ.addInvMaximalRealInteger : maximalRealSubfield K)}).map
       (IsScalarTower.toAlgHom ℚ (maximalRealSubfield K) K) := by
     rw [← hmap]
     exact hxA
   obtain ⟨y, hy, hyx⟩ := Subalgebra.mem_map.mp hxmap
+  rw [hf] at hyx
   obtain rfl : y = x := Subtype.ext hyx
   exact hy
 

@@ -44,6 +44,7 @@ coordinates of `ℤ[i]` in the basis `1, i` are described for every quadratic cy
 * `IsPrimitiveRoot.isUnit_intCast_add_intCast_mul_toInteger_iff_of_four`: `a + b i` is a unit
   exactly when `a² + b² = 1`;
 * `TauCeti.finrank_eq_two_of_isCyclotomicExtension_four`: `[K : ℚ] = 2`;
+* `TauCeti.discr_four`: `discr K = -4`;
 * `TauCeti.isPrincipalIdealRing_ringOfIntegers_four`: `ℤ[i]` is a principal ideal domain;
 * `TauCeti.exists_gal_apply_eq_pow_three_of_four`: complex conjugation of `ℤ[i]` cubes every
   fourth root of unity;
@@ -178,6 +179,13 @@ theorem finrank_eq_two_of_isCyclotomicExtension_four
   decide
 
 variable (K : Type*) [Field K] [NumberField K] [IsCyclotomicExtension {4} ℚ K]
+
+/-- The discriminant of the fourth cyclotomic field `ℚ(i)` is `-4`. -/
+@[simp]
+theorem discr_four : NumberField.discr K = -4 := by
+  have hζ := IsCyclotomicExtension.zeta_spec 4 ℚ K
+  exact NumberField.GaussianRationals.discr_eq_neg_four hζ.minpoly_toInteger_eq_X_sq_add_one
+    hζ.adjoin_toInteger_four
 
 /-- **`ℤ[i]` is a principal ideal domain.** This is
 `TauCeti.NumberField.GaussianRationals.isPrincipalIdealRing` at a primitive fourth root of

@@ -13,6 +13,7 @@ public import TauCeti.NumberTheory.NumberField.IntrinsicLabel
 public import TauCeti.NumberTheory.NumberField.Monogenic
 import Mathlib.NumberTheory.NumberField.Discriminant.Basic
 import TauCeti.NumberTheory.NumberField.ClassNumber.SmallDiscriminant
+import TauCeti.NumberTheory.NumberField.WorkedExamples.Cubic23.Units
 
 /-!
 # The maximal real subfield of a seventh cyclotomic field
@@ -30,15 +31,18 @@ contradicting Minkowski's lower bound `|discr L⁺| > 2` in degree `3`; hence `[
 `𝓞 L⁺ = ℤ[ζ + ζ⁻¹]`, and `discr L⁺ = 49`.
 
 As `L⁺` is totally real of degree `3` and discriminant `49`, its intrinsic label prefix is `3.3.49`,
-and Minkowski's cubic bound (`49` threshold in `TauCeti.NumberField.ClassNumber.SmallDiscriminant`)
-makes `𝓞 L⁺` a principal ideal domain of class number `1`.
+and Minkowski's cubic bound (`49` threshold in
+`TauCeti.NumberTheory.NumberField.ClassNumber.SmallDiscriminant`) makes `𝓞 L⁺` a principal ideal
+domain of class number `1`.
 
 ## Main results
 
-* `IsPrimitiveRoot.add_inv_pow_three_of_seven`: `(ζ + ζ⁻¹)³ + (ζ + ζ⁻¹)² - 2 (ζ + ζ⁻¹) - 1 = 0`.
-* `IsPrimitiveRoot.minpoly_toMaximalRealInteger_seven`: `minpoly ℤ (ζ + ζ⁻¹) = X³ + X² - 2 X - 1`.
-* `IsPrimitiveRoot.index_toMaximalRealInteger_seven` and
-  `IsPrimitiveRoot.adjoin_toMaximalRealInteger_seven`: `[𝓞 L⁺ : ℤ[ζ + ζ⁻¹]] = 1` and
+* `IsPrimitiveRoot.add_inv_pow_three_add_sq_sub_two_mul_sub_one`:
+  `(ζ + ζ⁻¹)³ + (ζ + ζ⁻¹)² - 2 (ζ + ζ⁻¹) - 1 = 0`.
+* `IsPrimitiveRoot.minpoly_addInvMaximalRealInteger_seven`:
+  `minpoly ℤ (ζ + ζ⁻¹) = X³ + X² - 2 X - 1`.
+* `IsPrimitiveRoot.index_addInvMaximalRealInteger_seven` and
+  `IsPrimitiveRoot.adjoin_addInvMaximalRealInteger_seven`: `[𝓞 L⁺ : ℤ[ζ + ζ⁻¹]] = 1` and
   `𝓞 L⁺ = ℤ[ζ + ζ⁻¹]`.
 * `TauCeti.NumberField.frobeniusThreeSeven_pow_three` and
   `TauCeti.NumberField.toSubfield_fixedField_zpowers_frobeniusThreeSeven_pow_three`: the cube of
@@ -64,9 +68,9 @@ noncomputable section
 open NumberField NumberField.InfinitePlace Polynomial IntermediateField IsCyclotomicExtension
 open scoped NumberField
 
-/-- For a primitive seventh root of unity `ζ` in a field, `ζ + ζ⁻¹` is a root of
-`X³ + X² - 2 X - 1`: multiplying by `ζ³` gives the cyclotomic sum `∑_{k < 7} ζᵏ = 0`. -/
-theorem IsPrimitiveRoot.add_inv_pow_three_of_seven {F : Type*} [Field F] {ζ : F}
+/-- For a primitive seventh root of unity `ζ` in a field, `ζ + ζ⁻¹` satisfies
+`(ζ + ζ⁻¹)³ + (ζ + ζ⁻¹)² - 2 (ζ + ζ⁻¹) - 1 = 0`. -/
+theorem IsPrimitiveRoot.add_inv_pow_three_add_sq_sub_two_mul_sub_one {F : Type*} [Field F] {ζ : F}
     (hζ : IsPrimitiveRoot ζ 7) :
     (ζ + ζ⁻¹) ^ 3 + (ζ + ζ⁻¹) ^ 2 - 2 * (ζ + ζ⁻¹) - 1 = 0 := by
   have h0 : ζ ≠ 0 := hζ.ne_zero (by decide)
@@ -81,13 +85,6 @@ theorem IsPrimitiveRoot.add_inv_pow_three_of_seven {F : Type*} [Field F] {ζ : F
     _ = 0 * ζ ^ 3 := by rw [hsum, zero_mul]
 
 namespace TauCeti.NumberField
-
-/-- The defining cubic `X³ + X² - 2 X - 1` of `ζ₇ + ζ₇⁻¹` has discriminant `49`. -/
-@[simp]
-theorem discr_X_pow_three_add_X_sq_sub_two_mul_X_sub_one :
-    (X ^ 3 + X ^ 2 - 2 * X - 1 : ℤ[X]).discr = 49 := by
-  rw [Polynomial.discr_of_degree_eq_three (by compute_degree!)]
-  norm_num [coeff_add, coeff_sub, coeff_X_pow, coeff_mul_X, coeff_X, coeff_C, coeff_one]
 
 section CyclotomicSeven
 
@@ -116,14 +113,15 @@ theorem toSubfield_fixedField_zpowers_frobeniusThreeSeven_pow_three :
   rw [frobeniusThreeSeven_pow_three,
     TauCeti.IsCyclotomicExtension.Rat.toSubfield_fixedField_zpowers_galEquivZMod_symm_neg_one 7 L]
 
+end CyclotomicSeven
+
 /-- **The maximal real subfield of `ℚ(ζ₇)` has degree `3` over `ℚ`.** -/
 @[simp]
-theorem finrank_maximalRealSubfield_seven :
+theorem finrank_maximalRealSubfield_seven {L : Type*} [Field L] [CharZero L]
+    [IsCyclotomicExtension {7} ℚ L] :
     Module.finrank ℚ (maximalRealSubfield L) = 3 := by
   rw [TauCeti.IsCyclotomicExtension.Rat.finrank_maximalRealSubfield 7 L (by decide)]
   decide
-
-end CyclotomicSeven
 
 end TauCeti.NumberField
 
@@ -131,11 +129,11 @@ namespace IsPrimitiveRoot
 
 open TauCeti.NumberField
 
-variable {L : Type*} [Field L] [NumberField L] [IsCyclotomicExtension {7} ℚ L] {ζ : L}
-
 /-- **The minimal polynomial over `ℤ` of `ζ₇ + ζ₇⁻¹` in `𝓞 (ℚ(ζ₇)⁺)` is `X³ + X² - 2 X - 1`.** -/
-theorem minpoly_toMaximalRealInteger_seven (hζ : IsPrimitiveRoot ζ 7) :
-    minpoly ℤ hζ.toMaximalRealInteger = X ^ 3 + X ^ 2 - 2 * X - 1 := by
+theorem minpoly_addInvMaximalRealInteger_seven {L : Type*} [Field L] [CharZero L]
+    [IsCyclotomicExtension {7} ℚ L] {ζ : L} (hζ : IsPrimitiveRoot ζ 7) :
+    minpoly ℤ hζ.addInvMaximalRealInteger = X ^ 3 + X ^ 2 - 2 * X - 1 := by
+  have : NumberField L := IsCyclotomicExtension.numberField {7} ℚ L
   let p : ℤ[X] := X ^ 3 + X ^ 2 - 2 * X - 1
   have hp_le : p.natDegree ≤ 3 := by dsimp [p]; compute_degree!
   have hp_coeff : p.coeff 3 = 1 := by simp [p, coeff_X, coeff_one]
@@ -145,44 +143,45 @@ theorem minpoly_toMaximalRealInteger_seven (hζ : IsPrimitiveRoot ζ 7) :
   have hp_monic : (p.map (algebraMap ℤ ℚ)).Monic := hp_monicℤ.map _
   have hp_deg : (p.map (algebraMap ℤ ℚ)).natDegree = 3 :=
     (hp_monicℤ.natDegree_map _).trans hp_degℤ
-  have hp_aeval : aeval (hζ.toMaximalRealInteger : maximalRealSubfield L)
+  have hp_aeval : aeval (hζ.addInvMaximalRealInteger : maximalRealSubfield L)
       (p.map (algebraMap ℤ ℚ)) = 0 := by
     apply (maximalRealSubfield L).subtype.injective
     rw [map_zero]
     simpa [p, aeval_map_algebraMap, map_sub, map_add, map_mul, map_pow, map_ofNat, map_one,
-      coe_toMaximalRealInteger] using hζ.add_inv_pow_three_of_seven
+      coe_coe_addInvMaximalRealInteger] using hζ.add_inv_pow_three_add_sq_sub_two_mul_sub_one
   -- Over `ℚ`, `θ` generates the cubic field `L⁺`, so `minpoly ℚ θ` has degree `3` and equals `p`.
   have : Algebra.IsAlgebraic ℚ (maximalRealSubfield L) := NumberField.isAlgebraic _
   have htop :
-      IntermediateField.adjoin ℚ {(hζ.toMaximalRealInteger : maximalRealSubfield L)} = ⊤ := by
+      IntermediateField.adjoin ℚ {(hζ.addInvMaximalRealInteger : maximalRealSubfield L)} = ⊤ := by
     apply IntermediateField.toSubalgebra_injective
     rw [IntermediateField.top_toSubalgebra, IntermediateField.adjoin_toSubalgebra]
-    exact hζ.adjoin_rat_toMaximalRealInteger_eq_top
+    exact hζ.adjoin_rat_addInvMaximalRealInteger_eq_top
   have hmin_deg :
-      (minpoly ℚ (hζ.toMaximalRealInteger : maximalRealSubfield L)).natDegree = 3 := by
+      (minpoly ℚ (hζ.addInvMaximalRealInteger : maximalRealSubfield L)).natDegree = 3 := by
     rw [← IntermediateField.adjoin.finrank (Algebra.IsIntegral.isIntegral _), htop,
       IntermediateField.finrank_top', finrank_maximalRealSubfield_seven]
-  have hminℚ : (minpoly ℤ hζ.toMaximalRealInteger).map (algebraMap ℤ ℚ) =
+  have hminℚ : (minpoly ℤ hζ.addInvMaximalRealInteger).map (algebraMap ℤ ℚ) =
       p.map (algebraMap ℤ ℚ) := by
-    rw [← RingOfIntegers.minpoly_coe hζ.toMaximalRealInteger,
-      ← minpoly.isIntegrallyClosed_eq_field_fractions' ℚ hζ.toMaximalRealInteger.isIntegral_coe]
+    rw [← RingOfIntegers.minpoly_coe hζ.addInvMaximalRealInteger,
+      ← minpoly.isIntegrallyClosed_eq_field_fractions' ℚ hζ.addInvMaximalRealInteger.isIntegral_coe]
     exact (Polynomial.eq_of_monic_of_dvd_of_natDegree_le
       (minpoly.monic (Algebra.IsIntegral.isIntegral _)) hp_monic
       (minpoly.dvd ℚ _ hp_aeval) (hp_deg.trans_le hmin_deg.ge)).symm
   exact Polynomial.map_injective (algebraMap ℤ ℚ) (RingHom.injective_int (algebraMap ℤ ℚ)) hminℚ
 
-/-- **`ζ₇ + ζ₇⁻¹` has index `1` in `𝓞 (ℚ(ζ₇)⁺)`.** In `49 = [𝓞 L⁺ : ℤ[θ]]² · discr L⁺`, index `7`
-would leave `|discr L⁺| = 1`, contradicting `|discr L⁺| > 2` (`NumberField.abs_discr_gt_two`). -/
+/-- **`ζ₇ + ζ₇⁻¹` has index `1` in `𝓞 (ℚ(ζ₇)⁺)`.** -/
 @[simp]
-theorem index_toMaximalRealInteger_seven (hζ : IsPrimitiveRoot ζ 7) :
+theorem index_addInvMaximalRealInteger_seven {L : Type*} [Field L] [NumberField L]
+    [IsCyclotomicExtension {7} ℚ L] {ζ : L} (hζ : IsPrimitiveRoot ζ 7) :
     IntegralPrimitiveElement.index
-      (⟨hζ.toMaximalRealInteger, hζ.adjoin_rat_toMaximalRealInteger_eq_top⟩ :
+      (⟨hζ.addInvMaximalRealInteger, hζ.adjoin_rat_addInvMaximalRealInteger_eq_top⟩ :
         IntegralPrimitiveElement (maximalRealSubfield L)) = 1 := by
   let t : IntegralPrimitiveElement (maximalRealSubfield L) :=
-    ⟨hζ.toMaximalRealInteger, hζ.adjoin_rat_toMaximalRealInteger_eq_top⟩
+    ⟨hζ.addInvMaximalRealInteger, hζ.adjoin_rat_addInvMaximalRealInteger_eq_top⟩
   have hd := t.discr_minpoly_eq_index_sq_mul_discr
-  rw [hζ.minpoly_toMaximalRealInteger_seven,
-    discr_X_pow_three_add_X_sq_sub_two_mul_X_sub_one] at hd
+  rw [hζ.minpoly_addInvMaximalRealInteger_seven,
+    Cubic23.discr_X_pow_three_add_X_sq_sub_two_mul_X_sub_one] at hd
+  -- In `49 = t.index ^ 2 * |discr L⁺|`, `|discr L⁺| > 2` forces `t.index = 1`.
   have hgt : 2 < |NumberField.discr (maximalRealSubfield L)| :=
     NumberField.abs_discr_gt_two (by rw [finrank_maximalRealSubfield_seven]; decide)
   have : 2 < (NumberField.discr (maximalRealSubfield L)).natAbs := by
@@ -198,23 +197,29 @@ theorem index_toMaximalRealInteger_seven (hζ : IsPrimitiveRoot ζ 7) :
 
 /-- **The ring of integers of `ℚ(ζ₇)⁺` is `ℤ[ζ₇ + ζ₇⁻¹]`.** -/
 @[simp]
-theorem adjoin_toMaximalRealInteger_seven (hζ : IsPrimitiveRoot ζ 7) :
-    Algebra.adjoin ℤ {hζ.toMaximalRealInteger} = ⊤ := by
+theorem adjoin_addInvMaximalRealInteger_seven {L : Type*} [Field L] [CharZero L]
+    [IsCyclotomicExtension {7} ℚ L] {ζ : L} (hζ : IsPrimitiveRoot ζ 7) :
+    Algebra.adjoin ℤ {hζ.addInvMaximalRealInteger} = ⊤ := by
+  have : NumberField L := IsCyclotomicExtension.numberField {7} ℚ L
   let t : IntegralPrimitiveElement (maximalRealSubfield L) :=
-    ⟨hζ.toMaximalRealInteger, hζ.adjoin_rat_toMaximalRealInteger_eq_top⟩
+    ⟨hζ.addInvMaximalRealInteger, hζ.adjoin_rat_addInvMaximalRealInteger_eq_top⟩
   rw [← IntegralPrimitiveElement.adjoin_def t]
-  exact (IntegralPrimitiveElement.index_eq_one_iff t).mp hζ.index_toMaximalRealInteger_seven
+  exact (IntegralPrimitiveElement.index_eq_one_iff t).mp hζ.index_addInvMaximalRealInteger_seven
 
 end IsPrimitiveRoot
 
 namespace TauCeti.NumberField
 
-variable (L : Type*) [Field L] [NumberField L] [IsCyclotomicExtension {7} ℚ L]
-
-/-- **`ℚ(ζ₇)⁺` is monogenic**, generated integrally by `ζ₇ + ζ₇⁻¹`. -/
-theorem isMonogenic_maximalRealSubfield_seven : IsMonogenic (maximalRealSubfield L) :=
+/-- **`ℚ(ζ₇)⁺` is monogenic.** -/
+theorem isMonogenic_maximalRealSubfield_seven (L : Type*) [Field L] [CharZero L]
+    [IsCyclotomicExtension {7} ℚ L] :
+    IsMonogenic (maximalRealSubfield L) :=
   let hζ := IsCyclotomicExtension.zeta_spec 7 ℚ L
-  isMonogenic_def.mpr ⟨hζ.toMaximalRealInteger, hζ.adjoin_toMaximalRealInteger_seven⟩
+  isMonogenic_def.mpr ⟨hζ.addInvMaximalRealInteger, hζ.adjoin_addInvMaximalRealInteger_seven⟩
+
+section NumberField
+
+variable (L : Type*) [Field L] [NumberField L] [IsCyclotomicExtension {7} ℚ L]
 
 /-- **The discriminant of `ℚ(ζ₇)⁺` is `49`.** -/
 @[simp]
@@ -222,20 +227,18 @@ theorem discr_maximalRealSubfield_seven :
     NumberField.discr (maximalRealSubfield L) = 49 := by
   have hζ := IsCyclotomicExtension.zeta_spec 7 ℚ L
   let t : IntegralPrimitiveElement (maximalRealSubfield L) :=
-    ⟨hζ.toMaximalRealInteger, hζ.adjoin_rat_toMaximalRealInteger_eq_top⟩
+    ⟨hζ.addInvMaximalRealInteger, hζ.adjoin_rat_addInvMaximalRealInteger_eq_top⟩
   have hd := t.discr_minpoly_eq_index_sq_mul_discr
-  rw [hζ.minpoly_toMaximalRealInteger_seven,
-    discr_X_pow_three_add_X_sq_sub_two_mul_X_sub_one,
-    hζ.index_toMaximalRealInteger_seven] at hd
+  rw [hζ.minpoly_addInvMaximalRealInteger_seven,
+    Cubic23.discr_X_pow_three_add_X_sq_sub_two_mul_X_sub_one,
+    hζ.index_addInvMaximalRealInteger_seven] at hd
   simpa using hd.symm
 
 /-- **`ℚ(ζ₇)⁺` has three real places.** -/
 @[simp]
 theorem nrRealPlaces_maximalRealSubfield_seven :
     nrRealPlaces (maximalRealSubfield L) = 3 := by
-  have h := card_add_two_mul_card_eq_rank (maximalRealSubfield L)
-  rw [finrank_maximalRealSubfield_seven (L := L), IsTotallyReal.nrComplexPlaces_eq_zero] at h
-  omega
+  rw [← IsTotallyReal.finrank, finrank_maximalRealSubfield_seven]
 
 /-- **The intrinsic label prefix of `ℚ(ζ₇)⁺` is `3.3.49`.** -/
 theorem hasLMFDBIntrinsicLabel_maximalRealSubfield_seven :
@@ -246,18 +249,21 @@ theorem hasLMFDBIntrinsicLabel_maximalRealSubfield_seven :
   rw [discr_maximalRealSubfield_seven L]
   norm_num
 
-/-- **The ring of integers of `ℚ(ζ₇)⁺` is a principal ideal domain**, by Minkowski's cubic
-discriminant bound (`49 ≤ 49` in
-`isPrincipalIdealRing_of_finrank_eq_three_of_natAbs_discr_le_forty_nine`). -/
-theorem isPrincipalIdealRing_maximalRealSubfield_seven :
-    IsPrincipalIdealRing (𝓞 (maximalRealSubfield L)) :=
-  isPrincipalIdealRing_of_finrank_eq_three_of_natAbs_discr_le_forty_nine
+end NumberField
+
+/-- **The ring of integers of `ℚ(ζ₇)⁺` is a principal ideal domain.** -/
+theorem isPrincipalIdealRing_maximalRealSubfield_seven (L : Type*) [Field L] [CharZero L]
+    [IsCyclotomicExtension {7} ℚ L] :
+    IsPrincipalIdealRing (𝓞 (maximalRealSubfield L)) := by
+  have : NumberField L := IsCyclotomicExtension.numberField {7} ℚ L
+  exact isPrincipalIdealRing_of_finrank_eq_three_of_natAbs_discr_le_forty_nine
     (finrank_maximalRealSubfield_seven (L := L))
     (by rw [discr_maximalRealSubfield_seven L]; norm_num)
 
 /-- **The class number of `ℚ(ζ₇)⁺` is `1`.** -/
 @[simp]
-theorem classNumber_maximalRealSubfield_seven :
+theorem classNumber_maximalRealSubfield_seven (L : Type*) [Field L] [NumberField L]
+    [IsCyclotomicExtension {7} ℚ L] :
     NumberField.classNumber (maximalRealSubfield L) = 1 :=
   NumberField.classNumber_eq_one_iff.mpr (isPrincipalIdealRing_maximalRealSubfield_seven L)
 

@@ -35,11 +35,11 @@ send the class of a fractional ideal to the class of the fractional ideal with t
   (`maximalOrderUnitsEquiv_toPrincipalIdeal`).
 * `TauCeti.GlobalNumberFields.maximalOrderPicEquiv`: the wide Picard group of the maximal order
   is the class group of `𝓞 K`, via Mathlib's `ClassGroup.mulEquiv`; its order is `classNumber K`
-  (`natCard_pic_maximalNumberFieldOrder`), so it is trivial iff `𝓞 K` is a principal ideal domain
+  (`card_pic_maximalNumberFieldOrder`), so it is trivial iff `𝓞 K` is a principal ideal domain
   (`subsingleton_pic_maximalNumberFieldOrder_iff`).
 * `TauCeti.GlobalNumberFields.maximalOrderNarrowPicEquiv`: the narrow Picard group of the maximal
   order is the narrow class group of `K`, preserving cardinality and triviality
-  (`natCard_narrowPic_maximalNumberFieldOrder`,
+  (`card_narrowPic_maximalNumberFieldOrder`,
   `subsingleton_narrowPic_maximalNumberFieldOrder_iff`).
 * `TauCeti.GlobalNumberFields.toClassGroup_comp_maximalOrderNarrowPicEquiv`: under these
   equivalences, `NumberFieldOrder.narrowToPic` becomes `NumberField.NarrowClassGroup.toClassGroup`.
@@ -223,7 +223,7 @@ theorem toClassGroup_maximalOrderNarrowPicEquiv (c : NarrowPic (maximalNumberFie
 variable (K) in
 /-- **The wide Picard group of the maximal order has `classNumber K` elements.** -/
 @[simp]
-theorem natCard_pic_maximalNumberFieldOrder :
+theorem card_pic_maximalNumberFieldOrder :
     Nat.card (Pic (maximalNumberFieldOrder K)) = NumberField.classNumber K := by
   rw [Nat.card_congr (maximalOrderPicEquiv K).toEquiv, Nat.card_eq_fintype_card,
     NumberField.classNumber]
@@ -233,7 +233,7 @@ variable (K) in
 domain.** -/
 theorem subsingleton_pic_maximalNumberFieldOrder_iff :
     Subsingleton (Pic (maximalNumberFieldOrder K)) ↔ IsPrincipalIdealRing (𝓞 K) := by
-  rw [← NumberField.classNumber_eq_one_iff, ← natCard_pic_maximalNumberFieldOrder,
+  rw [← NumberField.classNumber_eq_one_iff, ← card_pic_maximalNumberFieldOrder,
     Nat.card_eq_one_iff_unique]
   exact ⟨fun h ↦ ⟨h, inferInstance⟩, And.left⟩
 
@@ -247,7 +247,7 @@ theorem subsingleton_pic_maximalNumberFieldOrder [IsPrincipalIdealRing (𝓞 K)]
 variable (K) in
 /-- **The narrow Picard group of the maximal order has the same order as `Cl⁺(K)`.** -/
 @[simp]
-theorem natCard_narrowPic_maximalNumberFieldOrder :
+theorem card_narrowPic_maximalNumberFieldOrder :
     Nat.card (NarrowPic (maximalNumberFieldOrder K)) = Nat.card (NarrowClassGroup K) :=
   Nat.card_congr (maximalOrderNarrowPicEquiv K).toEquiv
 

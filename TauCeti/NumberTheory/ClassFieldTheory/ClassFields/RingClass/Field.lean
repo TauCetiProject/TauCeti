@@ -385,8 +385,7 @@ theorem hilbertClassField_le_ringClassField : hilbertClassField K ≤ ringClassF
 
 variable (O)
 
-/-- **The Galois group of the ring class field is trivial iff `Pic O` is trivial**, read directly
-off `ringClassArtinEquiv`. -/
+/-- **The Galois group of the ring class field of `O` is trivial iff `Pic O` is trivial.** -/
 theorem subsingleton_gal_ringClassField_iff :
     Subsingleton Gal(ringClassField O/K) ↔ Subsingleton (Pic O) :=
   (ringClassArtinEquiv O).toEquiv.symm.subsingleton_congr
@@ -402,6 +401,7 @@ theorem ringClassField_eq_bot_iff : ringClassField O = ⊥ ↔ Subsingleton (Pic
     Nat.card_eq_one_iff_unique, and_iff_left (inferInstance : Nonempty (Pic O))]
 
 /-- When `Pic O` is trivial, the ring class field of `O` is `⊥` (that is, `K` itself). -/
+@[simp]
 theorem ringClassField_eq_bot [Subsingleton (Pic O)] : ringClassField O = ⊥ :=
   (ringClassField_eq_bot_iff O).2 ‹_›
 
@@ -415,18 +415,5 @@ theorem range_ideleClassNormMap_ringClassField_eq_top_iff :
   obtain ⟨a, rfl⟩ := ringClassIdeleQuotient_surjective O x
   obtain ⟨b, rfl⟩ := ringClassIdeleQuotient_surjective O y
   simp [h]
-
-/-- When `Pic O` is trivial, every maximal ideal of `𝓞 K` not dividing the conductor of `O` has a
-generator in `O`: it splits completely in `ringClassField O = ⊥`. -/
-theorem exists_mem_toRingOfIntegers_span_eq_of_subsingleton_pic [Subsingleton (Pic O)]
-    (J : integralIdealsPrimeTo O.conductorModulus) [(J : Ideal (𝓞 K)).IsMaximal] :
-    ∃ β ∈ O.toRingOfIntegers, (J : Ideal (𝓞 K)) = Ideal.span {β} := by
-  rw [← ncard_primesOver_ringClassField_eq_finrank_iff]
-  have h1 : Module.finrank K (ringClassField O) = 1 :=
-    IntermediateField.finrank_eq_one_iff.2 (ringClassField_eq_bot O)
-  have hmul := ncard_primesOver_ringClassField_mul_orderOf_picClass O J
-  rw [Nat.card_eq_one_iff_unique.2 ⟨inferInstance, inferInstance⟩,
-    orderOf_eq_one_iff.2 (Subsingleton.elim _ _), mul_one] at hmul
-  exact hmul.trans h1.symm
 
 end TauCeti.ClassFieldTheory
