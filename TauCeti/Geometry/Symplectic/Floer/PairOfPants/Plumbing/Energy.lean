@@ -134,7 +134,7 @@ private theorem setIntegral_plumbedTruncation_of_integrableOn (hq : q ≠ inf) {
   have hd := (aedisjoint_truncation_inter_image (L := L) hq (L / 2)).mono
     (fun z hz ↦ ⟨hz, (mem_truncation.1 hz).2.2 q⟩)
     (image_mono fun w hw ↦ ⟨hw, (mem_truncation.1 hw).2.2 inf⟩)
-  rw [preimage_union, preimage_image_plumbingMap]
+  rw [preimage_union, ← TauCeti.Complex.image_realChart_preimage]
   exact setIntegral_union₀ hd hA.isClosed.measurableSet.nullMeasurableSet hfT hfA
 
 /-- The plumbing chart maps a point of the inserted pair of pants outside the circle `s_∞ = -L/2`

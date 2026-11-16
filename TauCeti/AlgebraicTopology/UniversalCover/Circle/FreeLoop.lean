@@ -30,6 +30,7 @@ joined (`Path.joined_toCircle_iff_isConj`).
 
 * `Circle.joined_iff_degree_toBasedLoop_eq`: free loops of the circle are joined exactly when they
   have the same degree.
+* `Circle.degree_toBasedLoop_zpow`: the free loop `ζ ↦ ζⁿ` has degree `n`.
 * `Circle.freeLoopComponentsEquivInt`: `π₀(C(S¹, S¹)) ≃ ℤ`, by the degree.
 * `Circle.mooreFreeLoopComponentsEquivInt`: the same for the Moore free loop space.
 
@@ -63,6 +64,20 @@ theorem degree_toBasedLoop_eq_of_joined {f g : C(Circle, Circle)} (h : Joined f 
   obtain ⟨H⟩ := h
   exact degree_eq_of_homotopy _ _ H.toContinuousMap (fun t ↦ H.apply_zero t)
     (fun t ↦ H.apply_one t) H.prop
+
+/-- The free loop `ζ ↦ ζⁿ` of the circle has degree `n`. -/
+@[simp]
+theorem degree_toBasedLoop_zpow (n : ℤ) :
+    degree (⟨(· ^ n), continuous_zpow n⟩ : C(Circle, Circle)).toBasedLoop = n := by
+  obtain ⟨k, rfl | rfl⟩ := Int.eq_nat_or_neg n
+  · rw [degree_congr _ (expLoop.map (continuous_pow k)) fun t ↦ by
+        rw [ContinuousMap.toBasedLoop_apply]
+        simp [unitToCircle_apply],
+      degree_map_pow, degree_expLoop, mul_one]
+  · rw [degree_congr _ (expLoop.map (continuous_pow k)).inv fun t ↦ by
+        rw [ContinuousMap.toBasedLoop_apply]
+        simp [unitToCircle_apply],
+      degree_inv, degree_map_pow, degree_expLoop, mul_one]
 
 /-- **Free loops of the circle are classified by their degree.** Two maps `S¹ → S¹` are joined by
 a path in `C(S¹, S¹)` exactly when they have the same degree. -/
