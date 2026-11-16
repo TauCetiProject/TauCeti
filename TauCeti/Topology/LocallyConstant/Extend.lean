@@ -109,17 +109,15 @@ theorem exists_isCompact_comap_eq_comap [LocallyCompactSpace X] {K L : Set X}
   -- The set where `f` and `g` agree is open in `L`, so it is cut out by an open `t ⊆ X`.
   obtain ⟨t, ht, hte⟩ := isOpen_induced_iff.1
     ((f.isLocallyConstant.prodMk g.isLocallyConstant) {p : Y × Y | p.1 = p.2})
+  have hmem : ∀ x : L, (x : X) ∈ t ↔ f x = g x := fun x => by
+    simpa only [mem_preimage, mem_ofPred_eq, toFun_eq_coe] using Set.ext_iff.1 hte x
   have hKt : K ⊆ t ∩ interior L := fun x hx => by
-    refine ⟨?_, hKL hx⟩
-    have : (⟨x, interior_subset (hKL hx)⟩ : L) ∈ Subtype.val ⁻¹' t := by
-      rw [hte]
-      exact congr($h ⟨x, hx⟩)
-    exact this
+    refine ⟨(hmem ⟨x, interior_subset (hKL hx)⟩).2 ?_, hKL hx⟩
+    simpa only [coe_comap_apply, ContinuousMap.coe_mk, inclusion_mk] using congr($h ⟨x, hx⟩)
   obtain ⟨L', hL', hKL', hL't⟩ := exists_compact_between hK (ht.inter isOpen_interior) hKt
   have hL'L : L' ⊆ L := fun x hx => interior_subset (hL't hx).2
   refine ⟨L', hL', hKL', hL'L, LocallyConstant.ext fun x => ?_⟩
-  have : (inclusion hL'L x : L) ∈ Subtype.val ⁻¹' t := (hL't x.2).1
-  rw [hte] at this
-  exact this
+  rw [coe_comap_apply, coe_comap_apply, ContinuousMap.coe_mk, ← hmem, coe_inclusion]
+  exact (hL't x.2).1
 
 end LocallyConstant

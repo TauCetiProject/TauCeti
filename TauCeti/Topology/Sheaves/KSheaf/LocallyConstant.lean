@@ -95,7 +95,7 @@ form a K-sheaf. -/
 theorem isKSheaf_locallyConstant [T2Space X] [LocallyCompactSpace X] :
     (locallyConstant X M).IsKSheaf where
   nonempty_isTerminal := by
-    have : IsEmpty ((⊥ : Compacts X) : Set X) := ⟨fun x => x.2⟩
+    have : IsEmpty ((⊥ : Compacts X) : Set X) := isEmpty_coe_sort.2 Compacts.coe_bot
     exact ⟨(Types.isTerminalEquivUnique _).symm
       { default := ⟨isEmptyElim, IsLocallyConstant.of_constant _ isEmptyElim⟩
         uniq := fun _ => LocallyConstant.ext isEmptyElim }⟩
@@ -105,16 +105,16 @@ theorem isKSheaf_locallyConstant [T2Space X] [LocallyCompactSpace X] :
     · -- Two functions on `K₄ = K₂ ∪ K₃` agreeing on `K₂` and on `K₃` are equal.
       rintro (f g : LocallyConstant (K₄ : Set X) M) ⟨h₂, h₃⟩
       refine LocallyConstant.ext fun ⟨x, hx⟩ => ?_
-      rw [← sq.sup_eq] at hx
+      rw [← sq.sup_eq, Compacts.coe_sup] at hx
       rcases hx with hx | hx
       · exact congr($h₂ ⟨x, hx⟩)
       · exact congr($h₃ ⟨x, hx⟩)
     · -- Functions on `K₂` and `K₃` agreeing on `K₁ = K₂ ∩ K₃` glue along the closed cover.
       rintro (f₂ : LocallyConstant (K₂ : Set X) M) (f₃ : LocallyConstant (K₃ : Set X) M) h
       classical
-      have h₀ : (K₄ : Set X) ⊆ K₂ ∪ K₃ := by rw [← sq.sup_eq]; rfl
+      have h₀ : (K₄ : Set X) ⊆ K₂ ∪ K₃ := by rw [← sq.sup_eq, Compacts.coe_sup]
       have hf : ∀ x (hx : x ∈ (K₂ : Set X) ∩ K₃), f₂ ⟨x, hx.1⟩ = f₃ ⟨x, hx.2⟩ := fun x hx => by
-        have hx₁ : x ∈ (K₁ : Set X) := by rw [← sq.inf_eq]; exact hx
+        have hx₁ : x ∈ (K₁ : Set X) := by rw [← sq.inf_eq, Compacts.coe_inf]; exact hx
         exact congr($h ⟨x, hx₁⟩)
       have h₂ := K₂.isCompact.isClosed
       have h₃ := K₃.isCompact.isClosed
@@ -171,7 +171,7 @@ theorem isKSheaf_locallyConstantModule [T2Space X] [LocallyCompactSpace X] :
     { nonempty_isTerminal := ?_
       isPullback := fun sq => ?_
       nonempty_isColimit_coconeOfCompacts := fun K => ?_ }
-  · have : IsEmpty ((⊥ : Compacts X) : Set X) := ⟨fun x => x.2⟩
+  · have : IsEmpty ((⊥ : Compacts X) : Set X) := isEmpty_coe_sort.2 Compacts.coe_bot
     have : Subsingleton (LocallyConstant ((⊥ : Compacts X) : Set X) M) :=
       ⟨fun _ _ => LocallyConstant.ext isEmptyElim⟩
     exact ⟨(ModuleCat.isZero_of_subsingleton _).isTerminal⟩
