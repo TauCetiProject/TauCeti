@@ -40,6 +40,8 @@ valued in the closed unit ball.
   statements read pointwise on norms, for the homeomorphism and its inverse.
 * `TauCeti.isOpenEmbedding_inclusion_comp_unitBall`: `E` embeds openly in its closed unit ball.
 * `Homeomorph.unitBall_symm_apply_coe`: the inverse radial map in explicit coordinates.
+* `OpenPartialHomeomorph.univBall_apply` and `OpenPartialHomeomorph.univBall_symm_apply`: the
+  radial map onto a ball and its inverse, in explicit coordinates.
 * `TauCeti.cubeHomeomorphClosedBall`: the cube `I^N` is the closed unit ball of the sup norm on
   `N → ℝ`, through `t ↦ 2 * t - 1` in every coordinate.
 * `TauCeti.nonempty_homeomorph_cube_closedBall`: the closed unit ball of a real normed space of
@@ -70,6 +72,31 @@ theorem Homeomorph.unitBall_symm_apply_coe (y : ball (0 : W) 1) :
     ((OpenPartialHomeomorph.toHomeomorphSourceTarget_symm_apply_coe
       (OpenPartialHomeomorph.univUnitBall (E := W)) y).trans
       (OpenPartialHomeomorph.univUnitBall_symm_apply y.1))
+
+/-- Mathlib's radial map `OpenPartialHomeomorph.univBall c r` of `W` onto the ball of radius
+`r > 0` about `c`, in explicit coordinates: `x ↦ c + r x / √(1 + ‖x‖²)`. -/
+theorem OpenPartialHomeomorph.univBall_apply {r : ℝ} (hr : 0 < r) (c x : W) :
+    univBall c r x = (r / √(1 + ‖x‖ ^ 2)) • x + c := by
+  rw [univBall, dite_eq_left_of_eq_true (eq_true hr)]
+  -- `trans'` has no `apply` lemma: by definition it applies `univUnitBall`, then `unitBallBall`.
+  change unitBallBall c r hr (univUnitBall x) = _
+  rw [unitBallBall_apply, univUnitBall_apply, vadd_eq_add, smul_smul, div_eq_mul_inv]
+
+/-- The inverse of the radial map `OpenPartialHomeomorph.univBall c r` onto the ball of radius
+`r > 0` about `c`, in explicit coordinates: `y ↦ (y - c) / √(r² - ‖y - c‖²)`. -/
+theorem OpenPartialHomeomorph.univBall_symm_apply {r : ℝ} (hr : 0 < r) (c y : W) :
+    (univBall c r).symm y = (√(r ^ 2 - ‖y - c‖ ^ 2))⁻¹ • (y - c) := by
+  rw [univBall, dite_eq_left_of_eq_true (eq_true hr)]
+  -- `trans'` has no `symm_apply` lemma: by definition its inverse applies the inverse of
+  -- `unitBallBall`, then that of `univUnitBall`.
+  change univUnitBall.symm ((unitBallBall c r hr).symm y) = _
+  have hsq : √(r ^ 2 - ‖y - c‖ ^ 2) = r * √(1 - ‖r⁻¹ • (y - c)‖ ^ 2) := by
+    rw [norm_smul, Real.norm_eq_abs, abs_inv, abs_of_pos hr, ← Real.sqrt_sq hr.le,
+      ← Real.sqrt_mul (sq_nonneg r), Real.sqrt_sq hr.le]
+    congr 1
+    field_simp
+  rw [unitBallBall_symm_apply, univUnitBall_symm_apply, vsub_eq_sub, smul_smul, hsq, mul_inv,
+    mul_comm]
 
 namespace ContinuousLinearEquiv
 
