@@ -23,6 +23,8 @@ restricts on the symmetric group to the coefficient change of the group algebra
 (`TauCeti.BrauerAlgebra.mapRingHom_ofPerm`). For instance, reduction modulo a prime `p` maps the
 integral Brauer algebra `B_k(δ)` over `ℤ` onto the Brauer algebra over `ZMod p` at the reduced loop
 value, compatibly with all the products of diagrams (`TauCeti.BrauerAlgebra.mapRingHom_surjective`).
+Along an algebra map `f : A →ₐ[R] B` the coefficient change is an algebra map over `R`,
+`TauCeti.BrauerAlgebra.mapAlgHom f : B_k(δ) →ₐ[R] B_k(f δ)`.
 
 For an `R`-algebra `S` the coefficient change along `algebraMap R S` identifies the Brauer algebra
 over `S` with the scalar extension of the Brauer algebra over `R`: the **scalar-extension
@@ -36,6 +38,8 @@ a base ring, such as `ℤ` or a field, are transported to an extension of it.
 
 * `TauCeti.BrauerAlgebra.mapRingHom`: the coefficient change `B_k(δ) →+* B_k(f δ)` along a ring
   homomorphism `f`.
+* `TauCeti.BrauerAlgebra.mapAlgHom`: the coefficient change `B_k(δ) →ₐ[R] B_k(f δ)` along an
+  algebra map `f : A →ₐ[R] B`.
 * `TauCeti.BrauerAlgebra.scalarTensorEquiv`: the scalar-extension isomorphism
   `S ⊗[R] B_k(δ) ≃ₐ[S] B_k(algebraMap R S δ)`.
 
@@ -43,7 +47,8 @@ a base ring, such as `ℤ` or a field, are transported to an extension of it.
 
 * `TauCeti.BrauerAlgebra.mapRingHom_of`: the coefficient change fixes every diagram.
 * `TauCeti.BrauerAlgebra.mapRingHom_id` and `TauCeti.BrauerAlgebra.mapRingHom_comp`: the identity
-  and composition laws.
+  and composition laws, and `TauCeti.BrauerAlgebra.mapAlgHom_id` and
+  `TauCeti.BrauerAlgebra.mapAlgHom_comp` for algebra maps.
 * `TauCeti.BrauerAlgebra.mapRingHom_injective` and `TauCeti.BrauerAlgebra.mapRingHom_surjective`:
   the coefficient change along an injective, or surjective, ring homomorphism is injective, or
   surjective.
@@ -52,6 +57,8 @@ a base ring, such as `ℤ` or a field, are transported to an extension of it.
 * `TauCeti.BrauerAlgebra.scalarTensorEquiv_tmul` and
   `TauCeti.BrauerAlgebra.scalarTensorEquiv_symm_of`: the scalar-extension isomorphism on pure
   tensors and on the diagram basis.
+* `TauCeti.BrauerAlgebra.basis_map_scalarTensorEquiv`: the scalar-extension isomorphism carries the
+  basis `1 ⊗ D` to the diagram basis over `S`.
 
 ## References
 
@@ -153,6 +160,7 @@ theorem mapRingHom_surjective {f : R →+* S} (hf : Function.Surjective f) :
 
 /-- **The coefficient change on the symmetric group**: on the group algebra of `Sₖ` inside the
 Brauer algebra it is the coefficient change `MonoidAlgebra.mapRingHom` of the group algebra. -/
+@[simp]
 theorem mapRingHom_ofPerm (f : R →+* S) (x : MonoidAlgebra R (Equiv.Perm (Fin k))) :
     mapRingHom f (ofPerm R δ k x) =
       ofPerm S (f δ) k (MonoidAlgebra.mapRingHom (Equiv.Perm (Fin k)) f x) := by
@@ -160,6 +168,50 @@ theorem mapRingHom_ofPerm (f : R →+* S) (x : MonoidAlgebra R (Equiv.Perm (Fin 
   | zero => simp
   | add x y hx hy => simp only [map_add, hx, hy]
   | single σ r => simp [MonoidAlgebra.mapRingHom_single]
+
+/-! ### The coefficient change along an algebra map -/
+
+section AlgHom
+
+variable {A B C : Type*} [CommSemiring A] [CommSemiring B] [CommSemiring C]
+  [Algebra R A] [Algebra R B] [Algebra R C] {δ : A}
+
+/-- **The coefficient change of the Brauer algebra along an algebra map** `f : A →ₐ[R] B`: the
+coefficient change `TauCeti.BrauerAlgebra.mapRingHom` of `f`, as an algebra map
+`B_k(δ) →ₐ[R] B_k(f δ)` over `R`. -/
+noncomputable def mapAlgHom (f : A →ₐ[R] B) :
+    BrauerAlgebra A δ k →ₐ[R] BrauerAlgebra B (f δ) k where
+  __ := mapRingHom f.toRingHom
+  commutes' r := by
+    change mapRingHom f.toRingHom (algebraMap R _ r) = _
+    rw [IsScalarTower.algebraMap_apply R A (BrauerAlgebra A δ k),
+      IsScalarTower.algebraMap_apply R B (BrauerAlgebra B (f δ) k), mapRingHom_algebraMap]
+    simp
+
+@[simp]
+theorem toRingHom_mapAlgHom (f : A →ₐ[R] B) :
+    ((mapAlgHom f : BrauerAlgebra A δ k →ₐ[R] BrauerAlgebra B (f δ) k) :
+      BrauerAlgebra A δ k →+* BrauerAlgebra B (f δ) k) = mapRingHom (f : A →+* B) :=
+  (rfl)
+
+@[simp]
+theorem mapAlgHom_apply (f : A →ₐ[R] B) (x : BrauerAlgebra A δ k) :
+    mapAlgHom f x = mapRingHom (f : A →+* B) x :=
+  (rfl)
+
+/-- The identity law for the coefficient change along algebra maps. -/
+@[simp]
+theorem mapAlgHom_id :
+    (mapAlgHom (AlgHom.id R A) : BrauerAlgebra A δ k →ₐ[R] BrauerAlgebra A δ k) = AlgHom.id R _ :=
+  AlgHom.ext fun x => RingHom.congr_fun mapRingHom_id x
+
+/-- The composition law for the coefficient change along algebra maps. -/
+theorem mapAlgHom_comp (g : B →ₐ[R] C) (f : A →ₐ[R] B) :
+    (mapAlgHom (g.comp f) : BrauerAlgebra A δ k →ₐ[R] BrauerAlgebra C (g (f δ)) k) =
+      (mapAlgHom g).comp (mapAlgHom f) :=
+  AlgHom.ext fun x => RingHom.congr_fun (mapRingHom_comp g.toRingHom f.toRingHom) x
+
+end AlgHom
 
 /-! ### The scalar-extension isomorphism -/
 
@@ -212,6 +264,36 @@ comes from `1 ⊗ D`. -/
 theorem scalarTensorEquiv_symm_of (D : BrauerDiagram k) :
     (scalarTensorEquiv R S δ k).symm (of D) = 1 ⊗ₜ of D := by
   rw [AlgEquiv.symm_apply_eq, scalarTensorEquiv_tmul, mapRingHom_of, one_smul]
+
+/-- **The inverse of the scalar-extension isomorphism on coefficient changes**: the coefficient
+change of `x` comes from `1 ⊗ x`. -/
+@[simp]
+theorem scalarTensorEquiv_symm_mapRingHom (x : BrauerAlgebra R δ k) :
+    (scalarTensorEquiv R S δ k).symm (mapRingHom (algebraMap R S) x) = 1 ⊗ₜ x := by
+  rw [AlgEquiv.symm_apply_eq, scalarTensorEquiv_tmul, one_smul]
+
+/-- The coefficients of the image of the scalar-extension isomorphism are the coordinates in the
+basis `1 ⊗ D` of the scalar extension. -/
+@[simp]
+theorem coeff_scalarTensorEquiv (x : S ⊗[R] BrauerAlgebra R δ k) :
+    (scalarTensorEquiv R S δ k x).coeff = (Algebra.TensorProduct.basis S (basis R δ k)).repr x := by
+  simp [scalarTensorEquiv, scalarTensorLinearEquiv]
+
+/-- The coordinates of the inverse of the scalar-extension isomorphism in the basis `1 ⊗ D` are the
+coefficients. -/
+@[simp]
+theorem basis_repr_scalarTensorEquiv_symm (y : BrauerAlgebra S (algebraMap R S δ) k) :
+    (Algebra.TensorProduct.basis S (basis R δ k)).repr ((scalarTensorEquiv R S δ k).symm y) =
+      y.coeff := by
+  rw [← coeff_scalarTensorEquiv, AlgEquiv.apply_symm_apply]
+
+/-- **The scalar-extension isomorphism matches the bases**: it carries the basis `1 ⊗ D` of the
+scalar extension to the diagram basis over `S`. -/
+@[simp]
+theorem basis_map_scalarTensorEquiv :
+    (Algebra.TensorProduct.basis S (basis R δ k)).map (scalarTensorEquiv R S δ k).toLinearEquiv =
+      basis S (algebraMap R S δ) k :=
+  Module.Basis.eq_ofRepr_eq_repr fun x D => by simp
 
 end ScalarTensor
 

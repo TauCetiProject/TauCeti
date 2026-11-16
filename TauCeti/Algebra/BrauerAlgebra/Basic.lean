@@ -24,10 +24,11 @@ multiplied by stacking: for diagrams `D₁` and `D₂`,
 where `D₁ ∘ D₂ = TauCeti.composeDiagram D₁ D₂` is the diagram read off by placing `D₁` above `D₂`
 and `c = TauCeti.middleLoopCount D₁ D₂` is the number of closed loops left in the middle. It is a
 unital associative `R`-algebra with the identity diagram as unit and the diagrams as a basis, so
-it has rank `(2 * k - 1)‼`. Brauer introduced it because, for `V = ℂⁿ` with its standard
-symmetric form, `B_k(n)` acts on the tensor power `V^{⊗k}` with image the commutant of the
-orthogonal group, and with `δ = -2l` the same holds for the symplectic group on `ℂ^{2l}`. This file
-builds the algebra itself; its action on tensor powers is not constructed here.
+it has rank `(2 * k - 1)‼`; more generally it is an `A`-algebra, coefficientwise, for every
+commutative semiring `A` of which `R` is an algebra. Brauer introduced it because, for `V = ℂⁿ`
+with its standard symmetric form, `B_k(n)` acts on the tensor power `V^{⊗k}` with image the
+commutant of the orthogonal group, and with `δ = -2l` the same holds for the symplectic group on
+`ℂ^{2l}`. This file builds the algebra itself; its action on tensor powers is not constructed here.
 
 All of the combinatorics is already available: stacking is associative
 (`TauCeti.composeDiagram_assoc`), the loop counts of the two bracketings of a triple stack agree
@@ -143,10 +144,23 @@ variable (R δ k) in
 noncomputable def coeffAddEquiv : BrauerAlgebra R δ k ≃+ (BrauerDiagram k →₀ R) :=
   (coeffEquiv R δ k).addEquiv
 
-noncomputable instance : Module R (BrauerAlgebra R δ k) := (coeffAddEquiv R δ k).module R
+section Scalars
+
+variable {A A' : Type*} [Semiring A] [Semiring A'] [Module A R] [Module A' R]
+
+/-- The Brauer algebra over `R` is a module over every ring acting on `R`, coefficientwise. -/
+noncomputable instance : Module A (BrauerAlgebra R δ k) := (coeffAddEquiv R δ k).module A
 
 @[simp]
-theorem coeff_smul (r : R) (x : BrauerAlgebra R δ k) : (r • x).coeff = r • x.coeff := (rfl)
+theorem coeff_smul (a : A) (x : BrauerAlgebra R δ k) : (a • x).coeff = a • x.coeff := (rfl)
+
+instance [SMul A A'] [IsScalarTower A A' R] : IsScalarTower A A' (BrauerAlgebra R δ k) where
+  smul_assoc a b x := ext <| smul_assoc a b x.coeff
+
+instance [SMulCommClass A A' R] : SMulCommClass A A' (BrauerAlgebra R δ k) where
+  smul_comm a b x := ext <| smul_comm a b x.coeff
+
+end Scalars
 
 variable (R δ k) in
 /-- The coefficients in the diagram basis, as a linear equivalence. -/
@@ -244,10 +258,14 @@ noncomputable instance instSemiring : Semiring (BrauerAlgebra R δ k) where
   one_mul _ := ext <| by simp only [coeff_mul, coeff_one, mulCoeff_one_left]
   mul_one _ := ext <| by simp only [coeff_mul, coeff_one, mulCoeff_one_right]
 
-noncomputable instance : Algebra R (BrauerAlgebra R δ k) :=
+/-- The Brauer algebra over `R` is an algebra over every commutative semiring `A` of which `R` is
+an algebra; for `A = R` this is its algebra structure over its own coefficients. -/
+noncomputable instance {A : Type*} [CommSemiring A] [Algebra A R] :
+    Algebra A (BrauerAlgebra R δ k) :=
   Algebra.ofModule
-    (fun _ _ _ => ext <| by simp only [coeff_mul, coeff_smul, map_smul, LinearMap.smul_apply])
-    (fun _ _ _ => ext <| by simp only [coeff_mul, coeff_smul, map_smul])
+    (fun _ _ _ => ext <| by
+      simp only [coeff_mul, coeff_smul, LinearMap.map_smul_of_tower, LinearMap.smul_apply])
+    (fun _ _ _ => ext <| by simp only [coeff_mul, coeff_smul, LinearMap.map_smul_of_tower])
 
 /-! ### The ring structure over a commutative ring -/
 
