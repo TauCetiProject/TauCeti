@@ -8,6 +8,7 @@ module
 public import TauCeti.Geometry.Symplectic.Floer.HalfCylinder.Basic
 public import TauCeti.Geometry.Symplectic.Floer.Plane.Action
 import TauCeti.Algebra.Ring.Periodic
+import TauCeti.Geometry.Symplectic.JHolomorphic.RealChart
 
 /-!
 # The asymptotic orbit at the end of a finite-energy PSS plane
@@ -161,7 +162,7 @@ theorem isComplexLinearMap_perturbedFDeriv_comp_realChart_positive (ω : Symplec
     ((contDiff_realChart positive.contDiff_cylindricalEndLift).differentiable one_ne_zero z) hu
     (differentiableAt_perturbation_target hH hHs _ _ 1)
     (differentiableAt_perturbation_target hH hHs _ _ Complex.I)
-    (Floer.isComplexLinearMap_fderiv_realChart (positive.hasDerivAt_cylindricalEndLift _)) hfloer
+    (isComplexLinearMap_fderiv_realChart (positive.hasDerivAt_cylindricalEndLift _)) hfloer
 
 /-- From `s = 2` on, where `u` is differentiable at the image of `(s, t)` under the end lift `φ`
 of the positive plane, the energy density of `u ∘ φ` at `(s, t)` for the cylindrical datum
