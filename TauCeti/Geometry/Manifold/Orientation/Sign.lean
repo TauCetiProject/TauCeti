@@ -38,6 +38,8 @@ a composite of differentiable maps is the product of the signs.
   differentiable maps is the product of the orientation signs.
 * `TauCeti.Manifold.Orientation.orientationSign_eq_one_or_eq_neg_one_of_isRegularPoint`: at a
   regular point the orientation sign is `1` or `-1`.
+* `TauCeti.Manifold.Orientation.isRegularPoint_of_orientationSign_ne_zero`: conversely, a point of
+  nonzero orientation sign is a regular point.
 * `TauCeti.Manifold.Orientation.eventually_orientationSign_eq`: the orientation sign is constant
   near a point where the map is `C¹` with invertible derivative.
 
@@ -168,6 +170,12 @@ theorem orientationSign_eq_one_or_eq_neg_one_of_isRegularPoint (h : IsRegularPoi
   -- The two orientations force the source and target models to have the same dimension.
   orientationSign_eq_one_or_eq_neg_one
     ((isRegularPoint_iff_isInvertible_mfderiv (o.card_eq.symm.trans o'.card_eq)).1 h)
+
+/-- Where the orientation sign is nonzero, `f` has a regular point: its manifold derivative is
+invertible. -/
+theorem isRegularPoint_of_orientationSign_ne_zero (h : orientationSign o o' f x ≠ 0) :
+    IsRegularPoint I J f x :=
+  isRegularPoint_iff.2 (not_not.1 (mt orientationSign_of_not_isInvertible h)).surjective
 
 /-- The orientation sign of a composite of differentiable maps is the product of the orientation
 signs. -/
