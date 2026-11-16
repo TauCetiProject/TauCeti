@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Combinatorics.SimpleGraph.Basic
+public import Mathlib.Combinatorics.SimpleGraph.Metric
 public import Mathlib.Data.Fin.Tuple.Basic
 
 /-!
@@ -25,6 +26,8 @@ decidable subset of a finite function type.
 
 * `SimpleGraph.isWalkFrom_snoc`: a walk extended by one vertex is a walk exactly when the new
   vertex is adjacent to the old endpoint.
+* `SimpleGraph.IsWalkFrom.edist_le`: every vertex of a walk from `v₀` lies at extended distance at
+  most its step index from `v₀`.
 * `SimpleGraph.IsWalkFrom.update`: moving an interior vertex of a walk whose neighbouring positions
   carry the same vertex to another neighbour of that vertex gives a walk.
 -/
@@ -87,6 +90,18 @@ theorem IsWalkFrom.adj {m : ℕ} {s : Fin (m + 1) → V} (hs : IsWalkFrom G v₀
   have h := hs.2 ⟨a, by omega⟩
   rwa [show (⟨a, _⟩ : Fin m).castSucc = a from Fin.ext rfl,
     show (⟨a, _⟩ : Fin m).succ = b from Fin.ext (by simp [hab])] at h
+
+/-- Every vertex of a walk from `v₀` lies at extended distance at most its step index from
+`v₀`. -/
+theorem IsWalkFrom.edist_le {m : ℕ} {s : Fin (m + 1) → V} (hs : IsWalkFrom G v₀ s)
+    (i : Fin (m + 1)) : G.edist v₀ (s i) ≤ i.val := by
+  induction i using Fin.induction with
+  | zero => simp [hs.apply_zero]
+  | succ j ih =>
+    calc G.edist v₀ (s j.succ)
+        ≤ G.edist v₀ (s j.castSucc) + G.edist (s j.castSucc) (s j.succ) := G.edist_triangle
+      _ ≤ (j.val : ℕ∞) + 1 := add_le_add ih (le_of_eq (edist_eq_one_iff_adj.mpr (hs.2 j)))
+      _ = (j.succ : ℕ) := by simp
 
 /-- Moving the vertex at an interior position `b` of a walk, whose two neighbouring positions
 carry the same vertex, to another neighbour of that vertex gives a walk. -/

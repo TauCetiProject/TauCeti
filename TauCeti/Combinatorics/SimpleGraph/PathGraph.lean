@@ -8,17 +8,20 @@ module
 public import Mathlib.Combinatorics.SimpleGraph.Acyclic
 public import Mathlib.Combinatorics.SimpleGraph.Hamiltonian
 public import Mathlib.Combinatorics.SimpleGraph.Hasse
+public import Mathlib.Combinatorics.SimpleGraph.Metric
+public import Mathlib.Data.Nat.Dist
 
 /-!
-# A finite tree of maximum degree two is a path graph
+# Path graphs: distances and trees of maximum degree two
 
 A finite connected graph in which every vertex has at most two neighbours is a path or a cycle, and
 acyclicity leaves the path. This file proves that identification in the form a consumer wants: a
 finite tree of maximum degree two is isomorphic to Mathlib's `SimpleGraph.pathGraph` on as many
 vertices as it has, so its vertices can be numbered `0, …, n - 1` with two of them adjacent exactly
-when their numbers are consecutive.
+when their numbers are consecutive. It also computes the graph distance and extended graph distance
+on `SimpleGraph.pathGraph n` as `Nat.dist` of the vertex indices.
 
-The proof takes a path `p` of greatest length in the graph, which Mathlib's
+The tree proof takes a path `p` of greatest length in the graph, which Mathlib's
 `SimpleGraph.exists_isPath_forall_isPath_length_le_length` supplies. Every neighbour of a vertex of
 `p` again lies on `p`: at an interior vertex because the two neighbours along `p` already exhaust
 the degree bound, and at an endpoint because a neighbour off `p` could be prepended, contradicting
@@ -30,6 +33,8 @@ of `p`. The subgraph spanned by `p` is therefore all of `G`, and Mathlib's
 
 ## Main results
 
+* `SimpleGraph.edist_pathGraph`, `SimpleGraph.dist_pathGraph`: the extended distance and distance
+  between vertices of `SimpleGraph.pathGraph n` equal `Nat.dist` of their indices.
 * `SimpleGraph.IsTree.nonempty_iso_pathGraph_of_degree_le_two`: a finite tree of maximum degree two
   is isomorphic to the path graph on its vertices.
 * `SimpleGraph.Iso.adj_iff_of_pathGraph`: adjacency read through such a numbering is
@@ -67,6 +72,54 @@ end TauCeti
 namespace SimpleGraph
 
 variable {V : Type*} {G : SimpleGraph V}
+
+/-! ## Distances in a path graph -/
+
+/-- Every walk in a path graph has length at least the index distance between its endpoints. -/
+private theorem dist_le_length_of_pathGraph {n : ℕ} {u v : Fin n}
+    (w : (pathGraph n).Walk u v) : Nat.dist u.val v.val ≤ w.length := by
+  induction w with
+  | nil => simp
+  | @cons a b c hab _ ih =>
+    rw [pathGraph_adj] at hab
+    simp only [Walk.length_cons, Nat.dist] at ih ⊢
+    omega
+
+/-- In a path graph, the extended distance between `u` and `v` with `u ≤ v` is at most
+`v - u`. -/
+private theorem edist_pathGraph_le_of_le {n : ℕ} {u v : Fin n} (huv : u.val ≤ v.val) :
+    (pathGraph n).edist u v ≤ (v.val - u.val : ℕ) := by
+  generalize hd : v.val - u.val = d
+  induction d generalizing u with
+  | zero =>
+    obtain rfl : u = v := Fin.ext (by omega)
+    simp
+  | succ d ih =>
+    let u' : Fin n := ⟨u.val + 1, by omega⟩
+    have hadj : (pathGraph n).Adj u u' := pathGraph_adj.2 (Or.inl rfl)
+    calc (pathGraph n).edist u v
+        ≤ (pathGraph n).edist u u' + (pathGraph n).edist u' v := (pathGraph n).edist_triangle
+      _ ≤ 1 + (d : ℕ∞) := add_le_add (le_of_eq (edist_eq_one_iff_adj.mpr hadj))
+            (ih (u := u') (by simp [u']; omega) (by simp [u']; omega))
+      _ = ((d + 1 : ℕ) : ℕ∞) := by simp [add_comm]
+
+/-- In a path graph, the extended distance between two vertices is the distance between their
+indices. -/
+@[simp]
+theorem edist_pathGraph {n : ℕ} (u v : Fin n) :
+    (pathGraph n).edist u v = (Nat.dist u.val v.val : ℕ∞) := by
+  refine le_antisymm ?_ (le_iInf fun w ↦ Nat.cast_le.2 (dist_le_length_of_pathGraph w))
+  rcases le_total u.val v.val with h | h
+  · rw [Nat.dist_eq_sub_of_le h]
+    exact edist_pathGraph_le_of_le h
+  · rw [edist_comm, Nat.dist_eq_sub_of_le_right h]
+    exact edist_pathGraph_le_of_le h
+
+/-- In a path graph, the distance between two vertices is the distance between their indices. -/
+@[simp]
+theorem dist_pathGraph {n : ℕ} (u v : Fin n) :
+    (pathGraph n).dist u v = Nat.dist u.val v.val := by
+  simp [dist]
 
 /-! ## Numbering a graph as a path -/
 
