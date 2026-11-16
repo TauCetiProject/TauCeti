@@ -308,6 +308,20 @@ theorem smul_apply_of_sq_smul_eq {g : G} {x : X} (hx : g ^ 2 • x = x) {f : Λ 
     rw [← hf0, hf.dist_eq ⟨le_rfl, ht0.trans htD⟩ ht', zero_sub, abs_neg, abs_of_nonneg ht'.1]
   exact hd.eq_of_mem_segment_of_dist_eq hmem₁ hmem₂ (hgx_dist.trans hf_dist.symm)
 
+/-- If `g` fixes no point of a `Λ`-tree `(X, d)` while `g ^ 2 • x = x`, then the displacement
+`d x (g • x)` is not even in `Λ` (otherwise `g` would fix the midpoint of `[x, g • x]`). -/
+theorem not_even_dist_smul_of_sq_smul_eq {g : G} {x : X} (hne : ¬IsElliptic X g)
+    (hx : g ^ 2 • x = x) : ¬Even (d x (g • x)) := by
+  rintro ⟨m, hm⟩
+  obtain ⟨f, hf0, hfD, hf, -⟩ := d.isSegment_iff.1 (hd.isSegment_segment x (g • x))
+  have hm0 : 0 ≤ m := by
+    have := d.nonneg x (g • x)
+    grind
+  have hmIcc : m ∈ Set.Icc 0 (d x (g • x)) := ⟨hm0, by grind⟩
+  have hfix := hd.smul_apply_of_sq_smul_eq hG hx hf0 hfD hf hmIcc
+  rw [hm, add_sub_cancel_right] at hfix
+  exact hne (isElliptic_iff.2 ⟨f m, hfix⟩)
+
 end IsTree
 
 /-! ### The translation action of `Λ` on itself -/

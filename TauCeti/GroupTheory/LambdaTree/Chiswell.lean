@@ -66,7 +66,8 @@ Lyndon length function if and only if it acts freely on a `Λ`-tree
   (`TauCeti.LyndonLength.chiswellMetric_root_smul`).
 * `TauCeti.LyndonLength.isGeodesic_chiswellMetric`: `l.chiswellMetric` is geodesic.
 * `TauCeti.LyndonLength.isIsometricAction_chiswellMetric`: `G` acts on `l.ChiswellTree` by
-  isometries.
+  isometries (`TauCeti.LyndonLength.ChiswellTree.smul_mk_of_two_nsmul_le`,
+  `TauCeti.LyndonLength.ChiswellTree.smul_mk_of_lt`).
 * `TauCeti.LyndonLength.isTree_chiswellMetric`, `TauCeti.LyndonLength.isTree_chiswellMetric_iff`:
   `l.chiswellMetric` is a `Λ`-tree if and only if the Gromov products of `l` lie in `Λ`.
 * `TauCeti.LyndonLength.basedLength_chiswellTree_root`: at `ChiswellTree.root l`, the based length
@@ -174,6 +175,10 @@ variable {l}
 def mk (g : G) (a : Icc (0 : Λ) (l g)) : l.ChiswellTree :=
   Quotient.mk (chiswellSetoid l) ⟨g, a⟩
 
+private theorem mk_eq_quotientMk (g : G) (a : Icc (0 : Λ) (l g)) :
+    mk g a = (Quotient.mk (chiswellSetoid l) ⟨g, a⟩ : l.ChiswellTree) :=
+  (rfl)
+
 /-- Every point of Chiswell's tree is the class of a pair `(g, a)`. -/
 @[elab_as_elim, induction_eliminator]
 protected theorem ind {motive : l.ChiswellTree → Prop} (mk : ∀ g a, motive (mk g a))
@@ -260,8 +265,8 @@ def chiswellMetric : LambdaMetric Λ l.ChiswellTree where
 `a + b - 2 min (a, b, c(g, f))`; here twice the minimum is written out in `Λ`. -/
 theorem chiswellMetric_mk_mk (g f : G) (a : Icc (0 : Λ) (l g)) (b : Icc (0 : Λ) (l f)) :
     l.chiswellMetric (ChiswellTree.mk g a) (ChiswellTree.mk f b) =
-      a + b - min (2 • (a : Λ)) (min (2 • (b : Λ)) (l g + l f - l (g⁻¹ * f))) := by
-  rfl
+      a + b - min (2 • (a : Λ)) (min (2 • (b : Λ)) (l g + l f - l (g⁻¹ * f))) :=
+  (rfl)
 
 /-- The distance between the classes of `(g, a)` and `(f, b)` in Chiswell's tree is
 `a + b - 2 min (a, b, c)` when the Gromov product `c = c(g, f)` lies in `Λ`. -/
@@ -295,6 +300,10 @@ private theorem doubleGromov_comm (g f : G) :
     l g + l f - l (g⁻¹ * f) = l f + l g - l (f⁻¹ * g) :=
   l.gromovProduct_eq_gromovProduct_iff.1 (l.gromovProduct_comm g f)
 
+private theorem doubleGromov_nonneg (g f : G) :
+    0 ≤ l g + l f - l (g⁻¹ * f) :=
+  sub_nonneg.2 <| by simpa using map_mul_le_add l g⁻¹ f
+
 private theorem doubleGromov_le_two_nsmul_left (g f : G) :
     l g + l f - l (g⁻¹ * f) ≤ 2 • l g :=
   (l.gromovProduct_le_coe_iff (c := l g)).1 (l.gromovProduct_le_left g f)
@@ -302,6 +311,21 @@ private theorem doubleGromov_le_two_nsmul_left (g f : G) :
 private theorem doubleGromov_le_two_nsmul_right (g f : G) :
     l g + l f - l (g⁻¹ * f) ≤ 2 • l f :=
   (l.gromovProduct_le_coe_iff (c := l f)).1 (l.gromovProduct_le_right g f)
+
+private theorem map_le_map_add_map_mul (k g : G) : l g ≤ l k + l (k * g) := by
+  simpa [map_inv_eq_map] using map_mul_le_add l k⁻¹ (k * g)
+
+private theorem sub_mem_Icc_of_two_nsmul_le {k g : G} {a : Icc (0 : Λ) (l g)}
+    (h : 2 • (a : Λ) ≤ l k + l g - l (k * g)) :
+    l k - (a : Λ) ∈ Icc 0 (l k) :=
+  ⟨by have := map_le_map_add_map_mul l k g; rw [two_nsmul] at h; grind,
+    sub_le_self (l k) a.2.1⟩
+
+private theorem add_sub_mem_Icc_of_lt {k g : G} {a : Icc (0 : Λ) (l g)}
+    (h : l k + l g - l (k * g) < 2 • (a : Λ)) :
+    (a : Λ) + l (k * g) - l g ∈ Icc 0 (l (k * g)) :=
+  ⟨by have := map_le_map_add_map_mul l k g; rw [two_nsmul] at h; grind,
+    by have := a.2.2; grind⟩
 
 /-- The pair `(h, l h)` representing `h • root l`. -/
 private def vertexPair (h : G) : (g : G) × Icc (0 : Λ) (l g) :=
@@ -339,23 +363,9 @@ private theorem preDist_eq_zero_iff_forall_vertexPair {p q : (g : G) × Icc (0 :
 `c(k⁻¹, g)` of `[k, k * g]` folds onto `[k, 1]` and the remainder runs along `[1, k * g]`. -/
 private def smulPair (k : G) (p : (g : G) × Icc (0 : Λ) (l g)) : (g : G) × Icc (0 : Λ) (l g) :=
   if h : 2 • (p.2 : Λ) ≤ l k + l p.1 - l (k * p.1) then
-    ⟨k, ⟨l k - p.2,
-      by
-        have htri : l p.1 ≤ l k + l (k * p.1) := by
-          simpa [map_inv_eq_map] using map_mul_le_add l k⁻¹ (k * p.1)
-        rw [two_nsmul] at h
-        grind,
-      sub_le_self (l k) p.2.2.1⟩⟩
+    ⟨k, ⟨l k - p.2, sub_mem_Icc_of_two_nsmul_le l h⟩⟩
   else
-    ⟨k * p.1, ⟨(p.2 : Λ) + l (k * p.1) - l p.1,
-      by
-        have htri : l p.1 ≤ l k + l (k * p.1) := by
-          simpa [map_inv_eq_map] using map_mul_le_add l k⁻¹ (k * p.1)
-        rw [two_nsmul] at h
-        grind,
-      by
-        have := p.2.2.2
-        grind⟩⟩
+    ⟨k * p.1, ⟨(p.2 : Λ) + l (k * p.1) - l p.1, add_sub_mem_Icc_of_lt l (lt_of_not_ge h)⟩⟩
 
 /-- Equivariance of distances from vertices: `d(h, k • p) = d(k⁻¹ * h, p)` on pairs. -/
 private theorem preDist_vertexPair_smulPair (k h : G) (p : (g : G) × Icc (0 : Λ) (l g)) :
@@ -390,115 +400,55 @@ private theorem smulPair_congr (k : G) {p q : (g : G) × Icc (0 : Λ) (l g)}
     rw [preDist_vertexPair_smulPair, preDist_vertexPair_smulPair,
       (preDist_eq_zero_iff_forall_vertexPair l).1 hpq]
 
-private def chiswellSMul (k : G) (x : l.ChiswellTree) : l.ChiswellTree :=
-  Quotient.map (smulPair l k) (fun _ _ => smulPair_congr l k) x
-
-private theorem chiswellSMul_one (x : l.ChiswellTree) : chiswellSMul l 1 x = x :=
-  Quotient.inductionOn x fun p => Quotient.sound <|
-    (preDist_eq_zero_iff_forall_vertexPair l).2 fun h => by
-      rw [preDist_vertexPair_smulPair, inv_one, one_mul]
-
-private theorem chiswellSMul_mul (k₁ k₂ : G) (x : l.ChiswellTree) :
-    chiswellSMul l (k₁ * k₂) x = chiswellSMul l k₁ (chiswellSMul l k₂ x) :=
-  Quotient.inductionOn x fun p => Quotient.sound <|
-    (preDist_eq_zero_iff_forall_vertexPair l).2 fun h => by
-      rw [preDist_vertexPair_smulPair, preDist_vertexPair_smulPair, preDist_vertexPair_smulPair,
-        mul_inv_rev, mul_assoc]
-
 namespace ChiswellTree
 
 variable {l}
 
-instance : SMul G l.ChiswellTree where
-  smul k := lift
-    (fun g a =>
-      if h : 2 • (a : Λ) ≤ l k + l g - l (k * g) then
-        mk k ⟨l k - (a : Λ),
-          by
-            have htri : l g ≤ l k + l (k * g) := by
-              simpa [map_inv_eq_map] using map_mul_le_add l k⁻¹ (k * g)
-            rw [two_nsmul] at h
-            grind,
-          sub_le_self (l k) a.2.1⟩
-      else
-        mk (k * g) ⟨(a : Λ) + l (k * g) - l g,
-          by
-            have htri : l g ≤ l k + l (k * g) := by
-              simpa [map_inv_eq_map] using map_mul_le_add l k⁻¹ (k * g)
-            rw [two_nsmul] at h
-            grind,
-          by
-            have := a.2.2
-            grind⟩)
-    (by
-      intro g₁ g₂ a b hab hle
-      have hpq : preDist l ⟨g₁, a⟩ ⟨g₂, b⟩ = 0 :=
-        (preDist_eq_zero_iff l).2 ⟨hab, l.coe_le_gromovProduct_iff.1 hle⟩
-      refine Eq.trans ?_ (Eq.trans (Quotient.sound (smulPair_congr l k hpq)) ?_)
-      · dsimp only [smulPair]
-        split_ifs <;> rfl
-      · dsimp only [smulPair]
-        split_ifs <;> rfl)
+/-- Left multiplication by `G` on `l.ChiswellTree`. -/
+protected def smul (k : G) (x : l.ChiswellTree) : l.ChiswellTree :=
+  Quotient.map (smulPair l k) (fun _ _ => smulPair_congr l k) x
 
-/-- Left multiplication by `k : G` on the class of `(g, a)`: along the triangle `1, k, k * g`, the
-initial part `2 • a ≤ l k + l g - l (k * g)` folds onto `[0, l k]` toward `k`, and the remainder
-runs along `[0, l (k * g)]` toward `k * g`. -/
-theorem smul_mk (k g : G) (a : Icc (0 : Λ) (l g)) :
-    k • mk g a =
-      if h : 2 • (a : Λ) ≤ l k + l g - l (k * g) then
-        mk k ⟨l k - (a : Λ),
-          by
-            have htri : l g ≤ l k + l (k * g) := by
-              simpa [map_inv_eq_map] using map_mul_le_add l k⁻¹ (k * g)
-            rw [two_nsmul] at h
-            grind,
-          sub_le_self (l k) a.2.1⟩
-      else
-        mk (k * g) ⟨(a : Λ) + l (k * g) - l g,
-          by
-            have htri : l g ≤ l k + l (k * g) := by
-              simpa [map_inv_eq_map] using map_mul_le_add l k⁻¹ (k * g)
-            rw [two_nsmul] at h
-            grind,
-          by
-            have := a.2.2
-            grind⟩ :=
-  (rfl)
-
-end ChiswellTree
+instance : SMul G l.ChiswellTree :=
+  ⟨ChiswellTree.smul⟩
 
 private theorem smul_mk_eq_quotientMk (k g : G) (a : Icc (0 : Λ) (l g)) :
-    k • ChiswellTree.mk g a = Quotient.mk (chiswellSetoid l) (smulPair l k ⟨g, a⟩) := by
-  rw [ChiswellTree.smul_mk, smulPair]
-  split_ifs <;> rfl
+    k • mk g a = Quotient.mk (chiswellSetoid l) (smulPair l k ⟨g, a⟩) :=
+  (rfl)
 
-private theorem smul_eq_chiswellSMul (k : G) (x : l.ChiswellTree) :
-    k • x = chiswellSMul l k x := by
-  induction x with | mk g a => exact smul_mk_eq_quotientMk l k g a
+instance instMulAction : MulAction G l.ChiswellTree where
+  one_smul x := by
+    refine Quotient.inductionOn x fun p => Quotient.sound <|
+      (preDist_eq_zero_iff_forall_vertexPair l).2 fun h => ?_
+    rw [preDist_vertexPair_smulPair, inv_one, one_mul]
+  mul_smul k₁ k₂ x := by
+    refine Quotient.inductionOn x fun p => Quotient.sound <|
+      (preDist_eq_zero_iff_forall_vertexPair l).2 fun h => ?_
+    rw [preDist_vertexPair_smulPair, preDist_vertexPair_smulPair, preDist_vertexPair_smulPair,
+      mul_inv_rev, mul_assoc]
 
-instance ChiswellTree.instMulAction : MulAction G l.ChiswellTree where
-  one_smul := by
-    intro x
-    rw [smul_eq_chiswellSMul, chiswellSMul_one]
-  mul_smul := by
-    intro k₁ k₂ x
-    simp only [smul_eq_chiswellSMul, chiswellSMul_mul]
+/-- Left multiplication by `k : G` on the class of `(g, a)` in the initial branch
+`2 • a ≤ l k + l g - l (k * g)`, which folds onto `[0, l k]` toward `k`. -/
+@[simp]
+theorem smul_mk_of_two_nsmul_le {k g : G} {a : Icc (0 : Λ) (l g)}
+    (h : 2 • (a : Λ) ≤ l k + l g - l (k * g)) :
+    k • mk g a = mk k ⟨l k - (a : Λ), by exact sub_mem_Icc_of_two_nsmul_le l h⟩ := by
+  rw [smul_mk_eq_quotientMk, smulPair, dite_eq_left h, ← mk_eq_quotientMk]
+
+/-- Left multiplication by `k : G` on the class of `(g, a)` beyond the branch point,
+`l k + l g - l (k * g) < 2 • a`, which runs along `[0, l (k * g)]` toward `k * g`. -/
+@[simp]
+theorem smul_mk_of_lt {k g : G} {a : Icc (0 : Λ) (l g)}
+    (h : l k + l g - l (k * g) < 2 • (a : Λ)) :
+    k • mk g a = mk (k * g) ⟨(a : Λ) + l (k * g) - l g, by exact add_sub_mem_Icc_of_lt l h⟩ := by
+  rw [smul_mk_eq_quotientMk, smulPair, dite_eq_right h.not_ge, ← mk_eq_quotientMk]
 
 /-- Acting by `g : G` sends the root of Chiswell's tree to the class of `(g, l g)`. -/
-theorem ChiswellTree.smul_root (g : G) :
-    g • root l = ChiswellTree.mk g ⟨l g, apply_nonneg l g, le_rfl⟩ := by
-  rw [root, smul_mk_eq_quotientMk]
-  refine Quotient.sound ((preDist_eq_zero_iff_forall_vertexPair l).2 fun h => ?_)
-  have h₁ :
-      preDist l (vertexPair l (g⁻¹ * h)) ⟨1, ⟨0, le_rfl, apply_nonneg l 1⟩⟩ = l (h⁻¹ * g) := by
-    have hinv : l (g⁻¹ * h) = l (h⁻¹ * g) := by
-      rw [← map_inv_eq_map l (g⁻¹ * h), mul_inv_rev, inv_inv]
-    rw [preDist_vertexPair_left]
-    simp [hinv]
-  have h₂ : preDist l (vertexPair l h) (vertexPair l g) = l (h⁻¹ * g) := by
-    rw [preDist_vertexPair_left, vertexPair, min_eq_right (doubleGromov_le_two_nsmul_right l h g)]
-    simp
-  exact (preDist_vertexPair_smulPair l g h _).trans (h₁.trans h₂.symm)
+theorem smul_root (g : G) :
+    g • root l = mk g ⟨l g, apply_nonneg l g, le_rfl⟩ := by
+  rw [root, smul_mk_of_two_nsmul_le (by simp)]
+  simp
+
+end ChiswellTree
 
 /-- The distance between the root and its translate by `g` in Chiswell's tree is `l g`. -/
 @[simp]
@@ -540,8 +490,10 @@ private theorem preDist_smulPair (k : G) (p q : (g : G) × Icc (0 : Λ) (l g)) :
 /-- `G` acts on `l.ChiswellTree` by isometries of `l.chiswellMetric`. -/
 theorem isIsometricAction_chiswellMetric : l.chiswellMetric.IsIsometricAction G :=
   l.chiswellMetric.isIsometricAction_iff.2 fun k x y => by
-    rw [smul_eq_chiswellSMul, smul_eq_chiswellSMul]
-    exact Quotient.inductionOn₂ x y fun p q => preDist_smulPair l k p q
+    induction x with | mk g a =>
+    induction y with | mk f b =>
+    rw [smul_mk_eq_quotientMk, smul_mk_eq_quotientMk, mk_eq_quotientMk, mk_eq_quotientMk]
+    exact preDist_smulPair l k ⟨g, a⟩ ⟨f, b⟩
 
 /-! ### Geodesicity and the `Λ`-tree property -/
 
@@ -606,7 +558,7 @@ private theorem exists_isSegment_mk_of_lt {g f : G} {s : Icc (0 : Λ) (l g)}
     (hDt : l g + l f - l (g⁻¹ * f) < 2 • (t : Λ)) :
     ∃ σ, l.chiswellMetric.IsSegment σ (ChiswellTree.mk g s) (ChiswellTree.mk f t) := by
   set D := l g + l f - l (g⁻¹ * f)
-  have hD₀ : 0 ≤ D := sub_nonneg.2 (by simpa [map_inv_eq_map] using map_mul_le_add l g⁻¹ f)
+  have hD₀ : 0 ≤ D := doubleGromov_nonneg l g f
   have hs₀ := s.2.1; have hs := s.2.2; have ht₀ := t.2.1; have ht := t.2.2
   have hdist : l.chiswellMetric (ChiswellTree.mk g s) (ChiswellTree.mk f t) = s + t - D := by
     rw [chiswellMetric_mk_mk, two_nsmul, two_nsmul]
@@ -737,8 +689,7 @@ private theorem dist_embedPair_embedPair (p q : (g : G) × Icc (0 : Λ) (l g)) :
   have hg : d x₀ (p.1 • x₀) = l p.1 := by simp [← hlen]
   have hf : d x₀ (q.1 • x₀) = l q.1 := by simp [← hlen]
   have hgf : d x₀ ((p.1⁻¹ * q.1) • x₀) = l (p.1⁻¹ * q.1) := by simp [← hlen]
-  rw [hg, hf, hgf]
-  rfl
+  rw [hg, hf, hgf, preDist]
 
 private theorem embedPair_vertexPair (h : G) :
     embedPair hd hG x₀ hlen (vertexPair l h) = h • x₀ := by
@@ -757,7 +708,7 @@ noncomputable def chiswellEmbed : l.ChiswellTree → X :=
 private theorem chiswellEmbed_quotientMk (p : (g : G) × Icc (0 : Λ) (l g)) :
     chiswellEmbed hd hG x₀ hlen (Quotient.mk (chiswellSetoid l) p) =
       embedPair hd hG x₀ hlen p :=
-  rfl
+  (rfl)
 
 @[simp]
 theorem dist_chiswellEmbed (x y : l.ChiswellTree) :
@@ -778,7 +729,7 @@ theorem chiswellEmbed_smul (k : G) (x : l.ChiswellTree) :
     chiswellEmbed hd hG x₀ hlen (k • x) = k • chiswellEmbed hd hG x₀ hlen x := by
   induction x with | mk g a =>
   let p : (g : G) × Icc (0 : Λ) (l g) := ⟨g, a⟩
-  rw [smul_mk_eq_quotientMk, ChiswellTree.mk, chiswellEmbed_quotientMk, chiswellEmbed_quotientMk]
+  rw [smul_mk_eq_quotientMk, mk_eq_quotientMk, chiswellEmbed_quotientMk, chiswellEmbed_quotientMk]
   set u := embedPair hd hG x₀ hlen p
   set q := smulPair l k p
   set v := embedPair hd hG x₀ hlen q

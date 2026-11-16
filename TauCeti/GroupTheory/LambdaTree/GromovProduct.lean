@@ -253,14 +253,6 @@ theorem min_dist_add_dist_sub_dist_le (v x y z : X) :
     have hb'' : b ∈ hd.segment v x ∩ hd.segment v y := hxy ▸ this
     exact min_le_right _ _ |>.trans (key ⟨hb''.1, hb'.2⟩)
 
-/-- The four-point `0`-hyperbolicity inequality in a `Λ`-tree: of the three sums of opposite
-distances among four points, the largest two are equal. -/
-theorem four_point (x y z w : X) :
-    d x y + d z w ≤ max (d x z + d y w) (d x w + d y z) := by
-  have h := hd.min_dist_add_dist_sub_dist_le w x z y
-  rw [d.symm w x, d.symm w z, d.symm w y, d.symm z y] at h
-  grind
-
 end IsTree
 
 /-! ### Characterisation of `Λ`-trees by four-point `0`-hyperbolicity -/
@@ -280,6 +272,12 @@ theorem four_point_of_min_dist_add_dist_sub_dist_le {v₀ : X}
   rw [d.symm w y] at h₂
   rw [d.symm z x] at h₃
   grind
+
+/-- The four-point `0`-hyperbolicity inequality in a `Λ`-tree: of the three sums of opposite
+distances among four points, the largest two are equal. -/
+theorem IsTree.four_point (hd : d.IsTree) (x y z w : X) :
+    d x y + d z w ≤ max (d x z + d y w) (d x w + d y z) :=
+  four_point_of_min_dist_add_dist_sub_dist_le (hd.min_dist_add_dist_sub_dist_le w) x y z w
 
 /-- A nonempty geodesic `Λ`-metric space whose doubled Gromov products are even and which satisfies
 the four-point `0`-hyperbolicity inequality is a `Λ`-tree (Chiswell, Theorem 2.1.6). -/

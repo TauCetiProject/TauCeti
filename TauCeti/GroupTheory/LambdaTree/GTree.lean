@@ -241,14 +241,37 @@ theorem IsIsometricAction.toSerreGraphDartEquiv_smul (hG : d.IsIsometricAction G
   simp [SerreGraph.Aut.smul_dart_def, IsIsometricAction.toSerreGraphAut,
     IsIsometricAction.toSerreGraphIso, smulUnitDistEquiv]
 
+/-- If `g ^ 2 • x = x` in a `ℤ`-tree `(X, d)` and `d x (g • x)` is odd, then `g` reverses the
+middle dart of `[x, g • x]` in `d.toSerreGraph`. -/
+private theorem IsTree.exists_toSerreGraphAut_smul_eq_rev_of_odd (hd : d.IsTree)
+    (hG : d.IsIsometricAction G) {g : G} {x : X} (hx : g ^ 2 • x = x)
+    (hodd : Odd (d x (g • x))) :
+    ∃ e : d.toSerreGraph.E, hG.toSerreGraphAut g • e = d.toSerreGraph.rev e := by
+  obtain ⟨f, hf0, hfD, hf, -⟩ := d.isSegment_iff.1 (hd.isSegment_segment x (g • x))
+  set D := d x (g • x)
+  have hD₀ : 0 ≤ D := d.nonneg x (g • x)
+  obtain ⟨k, hkD⟩ := hodd
+  have hk : k ∈ Icc 0 D := ⟨by omega, by omega⟩
+  have hk1 : k + 1 ∈ Icc 0 D := ⟨by omega, by omega⟩
+  have huv : d (f k) (f (k + 1)) = 1 := by
+    rw [hf.dist_eq hk hk1, sub_add_cancel_left, abs_neg, abs_one]
+  refine ⟨d.toSerreGraphDartEquiv.symm ⟨(f k, f (k + 1)), huv⟩,
+    d.toSerreGraphDartEquiv.injective (Subtype.ext ?_)⟩
+  rw [hG.toSerreGraphDartEquiv_smul, toSerreGraphDartEquiv_rev, Equiv.apply_symm_apply]
+  have hDk : D - k = k + 1 := by omega
+  have hDk1 : D - (k + 1) = k := by omega
+  exact Prod.ext
+    ((hd.smul_apply_of_sq_smul_eq hG hx hf0 hfD hf hk).trans (congrArg f hDk))
+    ((hd.smul_apply_of_sq_smul_eq hG hx hf0 hfD hf hk1).trans (congrArg f hDk1))
+
 /-- In a `ℤ`-tree `(X, d)` with an isometric action of `G`, an element `g` reverses a dart of
 `d.toSerreGraph` if and only if `g` is a metric inversion on `X`. -/
 theorem IsTree.exists_toSerreGraphAut_smul_eq_rev_iff (hd : d.IsTree) (hG : d.IsIsometricAction G)
     (g : G) :
     (∃ e : d.toSerreGraph.E, hG.toSerreGraphAut g • e = d.toSerreGraph.rev e) ↔
       IsInversion X g := by
-  rw [isInversion_iff, isElliptic_iff, isElliptic_iff]
-  refine ⟨?_, ?_⟩
+  rw [isInversion_iff]
+  refine ⟨?_, fun ⟨hne, hsq⟩ => ?_⟩
   · rintro ⟨e, hrev⟩
     have hval := congrArg (fun f => (d.toSerreGraphDartEquiv f).1) hrev
     rw [hG.toSerreGraphDartEquiv_smul, toSerreGraphDartEquiv_rev] at hval
@@ -256,40 +279,15 @@ theorem IsTree.exists_toSerreGraphAut_smul_eq_rev_iff (hd : d.IsTree) (hG : d.Is
     rw [heq] at hval
     have hgu : g • u = v := congrArg Prod.fst hval
     have hgv : g • v = u := congrArg Prod.snd hval
-    refine ⟨fun ⟨z, hz⟩ => ?_, ⟨u, by rw [pow_two, mul_smul, hgu, hgv]⟩⟩
+    refine ⟨fun hz => ?_, isElliptic_iff.2 ⟨u, by rw [pow_two, mul_smul, hgu, hgv]⟩⟩
+    obtain ⟨z, hz⟩ := isElliptic_iff.1 hz
     have hzv : d z v = d z u := by rw [← hz, ← hgu, hG.dist_smul_smul, hz]
     obtain ⟨k, hk⟩ := hd.even_dist_add_dist_sub_dist z u v
     rw [hzv, huv] at hk
     omega
-  · rintro ⟨hne, x, hx⟩
-    obtain ⟨f, hf0, hfD, hf, -⟩ := d.isSegment_iff.1 (hd.isSegment_segment x (g • x))
-    set D := d x (g • x)
-    have hDpos : 0 < D := d.pos_iff.2 fun h => hne ⟨x, h.symm⟩
-    have hrev (t : ℤ) (ht : t ∈ Icc 0 D) : g • f t = f (D - t) :=
-      hd.smul_apply_of_sq_smul_eq hG hx hf0 hfD hf ht
-    -- If `D` were even, `f (D / 2)` would be fixed by `g`; hence `D = 2 * k + 1` is odd.
-    set k := D / 2
-    have hodd : D = 2 * k + 1 := by
-      rcases Int.even_or_odd' D with ⟨m, hm | hm⟩
-      · exfalso
-        have hm0 : m ∈ Icc 0 D := ⟨by omega, by omega⟩
-        have hDm : D - m = m := by omega
-        have hfix := hrev m hm0
-        rw [hDm] at hfix
-        exact hne ⟨f m, hfix⟩
-      · omega
-    have hk : k ∈ Icc 0 D := ⟨by omega, by omega⟩
-    have hk1 : k + 1 ∈ Icc 0 D := ⟨by omega, by omega⟩
-    have huv : d (f k) (f (k + 1)) = 1 := by
-      rw [hf.dist_eq hk hk1, sub_add_cancel_left, abs_neg, abs_one]
-    let e : d.toSerreGraph.E := d.toSerreGraphDartEquiv.symm ⟨(f k, f (k + 1)), huv⟩
-    have hDk : D - k = k + 1 := by omega
-    have hDk1 : D - (k + 1) = k := by omega
-    refine ⟨e, d.toSerreGraphDartEquiv.injective (Subtype.ext ?_)⟩
-    rw [hG.toSerreGraphDartEquiv_smul, toSerreGraphDartEquiv_rev]
-    simp only [e, Equiv.apply_symm_apply]
-    exact Prod.ext ((hrev k hk).trans (congrArg f hDk))
-      ((hrev (k + 1) hk1).trans (congrArg f hDk1))
+  · obtain ⟨x, hx⟩ := isElliptic_iff.1 hsq
+    exact hd.exists_toSerreGraphAut_smul_eq_rev_of_odd hG hx
+      (Int.not_even_iff_odd.1 (hd.not_even_dist_smul_of_sq_smul_eq hG hne hx))
 
 /-- An inversion-free isometric action of `G` on a `ℤ`-tree `(X, d)` defines a simplicial `G`-tree
 with vertices `X` and unit-distance darts; use `IsTree.toGTreeVertexEquiv` and
@@ -401,27 +399,35 @@ section ChiswellGTree
 
 variable {G : Type u} [Group G] {l : LyndonLength G ℤ} (hl : l.IsFree)
 
+private theorem IsFree.isTree_chiswellMetric (hl : l.IsFree) : l.chiswellMetric.IsTree :=
+  l.isTree_chiswellMetric hl.exists_coe_eq_gromovProduct
+
+private theorem IsFree.isFreeAction_chiswellTree (hl : l.IsFree) :
+    LambdaMetric.IsFreeAction G l.ChiswellTree :=
+  (l.isFreeAction_chiswellTree_iff hl.exists_coe_eq_gromovProduct).2 hl
+
+private theorem IsFree.not_isInversion_chiswellTree (hl : l.IsFree) (g : G) :
+    ¬LambdaMetric.IsInversion l.ChiswellTree g :=
+  hl.isFreeAction_chiswellTree.not_isInversion g
+
 /-- The Chiswell `G`-tree attached to a free `ℤ`-valued Lyndon length function on `G`. Use
 `IsFree.chiswellGTreeVertexEquiv` and `IsFree.chiswellGTreeDartEquiv` to pass between the `G`-tree
 and `l.ChiswellTree`. -/
 noncomputable def IsFree.chiswellGTree : GTree.{u, u} G :=
-  (l.isTree_chiswellMetric hl.exists_coe_eq_gromovProduct).toGTree
-    l.isIsometricAction_chiswellMetric
-    ((l.isFreeAction_chiswellTree_iff hl.exists_coe_eq_gromovProduct).2 hl).not_isInversion
+  hl.isTree_chiswellMetric.toGTree l.isIsometricAction_chiswellMetric
+    hl.not_isInversion_chiswellTree
 
 /-- The vertices of `hl.chiswellGTree` are identified with `l.ChiswellTree`. -/
 noncomputable def IsFree.chiswellGTreeVertexEquiv : hl.chiswellGTree.V ≃ l.ChiswellTree :=
-  (l.isTree_chiswellMetric hl.exists_coe_eq_gromovProduct).toGTreeVertexEquiv
-    l.isIsometricAction_chiswellMetric
-    ((l.isFreeAction_chiswellTree_iff hl.exists_coe_eq_gromovProduct).2 hl).not_isInversion
+  hl.isTree_chiswellMetric.toGTreeVertexEquiv l.isIsometricAction_chiswellMetric
+    hl.not_isInversion_chiswellTree
 
 /-- The darts of `hl.chiswellGTree` are identified with ordered pairs in `l.ChiswellTree` at unit
 distance. -/
 noncomputable def IsFree.chiswellGTreeDartEquiv :
     hl.chiswellGTree.E ≃ { p : l.ChiswellTree × l.ChiswellTree // l.chiswellMetric p.1 p.2 = 1 } :=
-  (l.isTree_chiswellMetric hl.exists_coe_eq_gromovProduct).toGTreeDartEquiv
-    l.isIsometricAction_chiswellMetric
-    ((l.isFreeAction_chiswellTree_iff hl.exists_coe_eq_gromovProduct).2 hl).not_isInversion
+  hl.isTree_chiswellMetric.toGTreeDartEquiv l.isIsometricAction_chiswellMetric
+    hl.not_isInversion_chiswellTree
 
 /-- The root vertex of `hl.chiswellGTree` corresponding to `ChiswellTree.root l`. -/
 noncomputable def IsFree.chiswellGTreeRoot : hl.chiswellGTree.V :=
@@ -435,27 +441,27 @@ theorem IsFree.chiswellGTreeVertexEquiv_chiswellGTreeRoot :
 @[simp]
 theorem IsFree.chiswellGTreeVertexEquiv_src (e : hl.chiswellGTree.E) :
     hl.chiswellGTreeVertexEquiv (hl.chiswellGTree.src e) = (hl.chiswellGTreeDartEquiv e).1.1 :=
-  (l.isTree_chiswellMetric hl.exists_coe_eq_gromovProduct).toGTreeVertexEquiv_src
-    l.isIsometricAction_chiswellMetric _ e
+  hl.isTree_chiswellMetric.toGTreeVertexEquiv_src l.isIsometricAction_chiswellMetric
+    hl.not_isInversion_chiswellTree e
 
 @[simp]
 theorem IsFree.chiswellGTreeVertexEquiv_tgt (e : hl.chiswellGTree.E) :
     hl.chiswellGTreeVertexEquiv (hl.chiswellGTree.tgt e) = (hl.chiswellGTreeDartEquiv e).1.2 :=
-  (l.isTree_chiswellMetric hl.exists_coe_eq_gromovProduct).toGTreeVertexEquiv_tgt
-    l.isIsometricAction_chiswellMetric _ e
+  hl.isTree_chiswellMetric.toGTreeVertexEquiv_tgt l.isIsometricAction_chiswellMetric
+    hl.not_isInversion_chiswellTree e
 
 @[simp]
 theorem IsFree.chiswellGTreeDartEquiv_rev (e : hl.chiswellGTree.E) :
     (hl.chiswellGTreeDartEquiv (hl.chiswellGTree.rev e)).1 =
       ((hl.chiswellGTreeDartEquiv e).1.2, (hl.chiswellGTreeDartEquiv e).1.1) :=
-  (l.isTree_chiswellMetric hl.exists_coe_eq_gromovProduct).toGTreeDartEquiv_rev
-    l.isIsometricAction_chiswellMetric _ e
+  hl.isTree_chiswellMetric.toGTreeDartEquiv_rev l.isIsometricAction_chiswellMetric
+    hl.not_isInversion_chiswellTree e
 
 @[simp]
 theorem IsFree.chiswellGTreeVertexEquiv_smul (g : G) (v : hl.chiswellGTree.V) :
     hl.chiswellGTreeVertexEquiv (g • v) = g • hl.chiswellGTreeVertexEquiv v :=
-  (l.isTree_chiswellMetric hl.exists_coe_eq_gromovProduct).toGTreeVertexEquiv_smul
-    l.isIsometricAction_chiswellMetric _ g v
+  hl.isTree_chiswellMetric.toGTreeVertexEquiv_smul l.isIsometricAction_chiswellMetric
+    hl.not_isInversion_chiswellTree g v
 
 @[simp]
 theorem IsFree.chiswellGTreeVertexEquiv_symm_smul (g : G) (x : l.ChiswellTree) :
@@ -466,15 +472,15 @@ theorem IsFree.chiswellGTreeVertexEquiv_symm_smul (g : G) (x : l.ChiswellTree) :
 theorem IsFree.chiswellGTreeDartEquiv_smul (g : G) (e : hl.chiswellGTree.E) :
     (hl.chiswellGTreeDartEquiv (g • e)).1 =
       (g • (hl.chiswellGTreeDartEquiv e).1.1, g • (hl.chiswellGTreeDartEquiv e).1.2) :=
-  (l.isTree_chiswellMetric hl.exists_coe_eq_gromovProduct).toGTreeDartEquiv_smul
-    l.isIsometricAction_chiswellMetric _ g e
+  hl.isTree_chiswellMetric.toGTreeDartEquiv_smul l.isIsometricAction_chiswellMetric
+    hl.not_isInversion_chiswellTree g e
 
 @[simp]
 theorem IsFree.chiswellGTree_dist (u v : hl.chiswellGTree.V) :
     (hl.chiswellGTree.dist u v : ℤ) =
       l.chiswellMetric (hl.chiswellGTreeVertexEquiv u) (hl.chiswellGTreeVertexEquiv v) :=
-  (l.isTree_chiswellMetric hl.exists_coe_eq_gromovProduct).toGTree_dist
-    l.isIsometricAction_chiswellMetric _ u v
+  hl.isTree_chiswellMetric.toGTree_dist l.isIsometricAction_chiswellMetric
+    hl.not_isInversion_chiswellTree u v
 
 /-- On `hl.chiswellGTree`, an element of `G` acts hyperbolically if and only if it is
 nontrivial. -/
@@ -483,8 +489,7 @@ theorem IsFree.chiswellGTree_isHyperbolic_iff {g : G} :
     hl.chiswellGTree.IsHyperbolic g ↔ g ≠ 1 := by
   refine ⟨GTree.IsHyperbolic.ne_one, fun hg => ?_⟩
   rw [IsFree.chiswellGTree, LambdaMetric.IsTree.toGTree_isHyperbolic_iff]
-  exact LambdaMetric.isFreeAction_iff.1
-    ((l.isFreeAction_chiswellTree_iff hl.exists_coe_eq_gromovProduct).2 hl) g hg
+  exact LambdaMetric.isFreeAction_iff.1 hl.isFreeAction_chiswellTree g hg
 
 /-- On `hl.chiswellGTree`, an element of `G` is elliptic if and only if it is `1`. -/
 @[simp]
@@ -497,10 +502,8 @@ theorem IsFree.chiswellGTree_isElliptic_iff {g : G} :
 theorem IsFree.basedLength_chiswellGTree :
     hl.chiswellGTree.isTree_pathMetric.basedLength hl.chiswellGTree.isIsometricAction_pathMetric
       hl.chiswellGTreeRoot = l :=
-  ((l.isTree_chiswellMetric hl.exists_coe_eq_gromovProduct).basedLength_toGTree
-    l.isIsometricAction_chiswellMetric
-    ((l.isFreeAction_chiswellTree_iff hl.exists_coe_eq_gromovProduct).2 hl).not_isInversion
-    (ChiswellTree.root l)).trans l.basedLength_chiswellTree_root
+  (hl.isTree_chiswellMetric.basedLength_toGTree l.isIsometricAction_chiswellMetric
+    hl.not_isInversion_chiswellTree (ChiswellTree.root l)).trans l.basedLength_chiswellTree_root
 
 end ChiswellGTree
 

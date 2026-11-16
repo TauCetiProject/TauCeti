@@ -328,7 +328,7 @@ theorem toSerreGraphDartEquiv_rev (e : d.toSerreGraph.E) :
   (rfl)
 
 /-- Two darts of `d.toSerreGraph` with the same source and the same target are equal. -/
-theorem toSerreGraph_eq_of_src_eq_of_tgt_eq {e₁ e₂ : d.toSerreGraph.E}
+theorem toSerreGraph_dart_eq_of_src_eq_of_tgt_eq {e₁ e₂ : d.toSerreGraph.E}
     (hsrc : d.toSerreGraph.src e₁ = d.toSerreGraph.src e₂)
     (htgt : d.toSerreGraph.tgt e₁ = d.toSerreGraph.tgt e₂) : e₁ = e₂ := by
   apply d.toSerreGraphDartEquiv.injective
@@ -463,7 +463,7 @@ theorem IsTree.dist_eq_toSerreGraph_length (hd : d.IsTree) {u v : d.toSerreGraph
         have haw_ne : φ a ≠ φ w := by
           intro haw
           obtain rfl := φ.injective haw
-          refine hne (toSerreGraph_eq_of_src_eq_of_tgt_eq ?_ ?_)
+          refine hne (toSerreGraph_dart_eq_of_src_eq_of_tgt_eq ?_ ?_)
           · rw [d.toSerreGraph.src_rev, f.2.1, e.2.2]
           · rw [d.toSerreGraph.tgt_rev, f.2.2, e.2.1]
         have haw_pos : 0 < d (φ a) (φ w) := d.pos_iff.2 haw_ne
