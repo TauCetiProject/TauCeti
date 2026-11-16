@@ -148,11 +148,8 @@ theorem fourier_phasePropagator (t : ℝ) (f : Lp F 2 (volume : Measure E)) :
 /-- On the Fourier side, `exp(itω(D))` is pointwise multiplication by `exp(i t ω(ξ))`, almost
 everywhere. -/
 theorem coeFn_fourier_phasePropagator (t : ℝ) (f : Lp F 2 (volume : Measure E)) :
-    𝓕 (phasePropagator F ω t f) =ᵐ[volume] fun ξ ↦ phaseSymbol ω t ξ • 𝓕 f ξ := by
-  rw [fourier_phasePropagator]
-  filter_upwards [Lp.coeFn_lpSMul (r := 2) ((memLp_phaseSymbol ω t).toLp _) (𝓕 f),
-    (memLp_phaseSymbol ω t).coeFn_toLp] with ξ h₁ h₂
-  rw [h₁, Pi.smul_apply', h₂]
+    𝓕 (phasePropagator F ω t f) =ᵐ[volume] fun ξ ↦ phaseSymbol ω t ξ • 𝓕 f ξ :=
+  Lp.coeFn_fourier_fourierMultiplierCLM_toLp f (memLp_phaseSymbol ω t)
 
 /-- `exp(i0ω(D))` is the identity. -/
 @[simp]

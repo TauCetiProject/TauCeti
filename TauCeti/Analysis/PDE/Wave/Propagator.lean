@@ -275,62 +275,28 @@ theorem norm_waveSinPropagator_le (t : ℝ) : ‖waveSinPropagator (E := E) F t�
 /-- `t ↦ D⁻¹ sin(tD)` is `1`-Lipschitz in operator norm. -/
 theorem norm_waveSinPropagator_sub_le (s t : ℝ) :
     ‖waveSinPropagator (E := E) F s - waveSinPropagator F t‖ ≤ |s - t| := by
-  have hm : MemLp (fun ξ : E ↦ waveSinSymbol s ξ - waveSinSymbol t ξ) ∞ volume :=
-    (memLp_waveSinSymbol s).sub (memLp_waveSinSymbol t)
-  have h : waveSinPropagator (E := E) F s - waveSinPropagator F t =
-      Lp.fourierMultiplierCLM F (hm.toLp _) := by
-    refine Lp.eq_fourierMultiplierCLM_iff.2 fun f ↦ ?_
-    rw [← Lp.fourier_fourierMultiplierCLM]
-    refine Lp.ext ?_
-    rw [sub_apply, FourierTransform.fourier_sub]
-    filter_upwards [Lp.coeFn_sub (𝓕 (waveSinPropagator F s f)) (𝓕 (waveSinPropagator F t f)),
-      coeFn_fourier_waveSinPropagator s f, coeFn_fourier_waveSinPropagator t f,
-      Lp.coeFn_fourier_fourierMultiplierCLM_toLp f hm] with ξ h₁ h₂ h₃ h₄
-    rw [h₁, Pi.sub_apply, h₂, h₃, h₄, sub_smul]
-  rw [h]
-  exact Lp.norm_fourierMultiplierCLM_toLp_le hm (abs_nonneg _)
+  rw [waveSinPropagator_def, waveSinPropagator_def, ← Lp.fourierMultiplierCLM_sub,
+    ← MemLp.toLp_sub]
+  exact Lp.norm_fourierMultiplierCLM_toLp_le _ (abs_nonneg _)
     (Eventually.of_forall (norm_waveSinSymbol_sub_le s t))
 
 /-- `(t, g) ↦ D⁻¹ sin(tD) g` is jointly continuous. -/
 theorem continuous_waveSinPropagator_uncurry :
-    Continuous fun p : ℝ × Lp F 2 (volume : Measure E) ↦ waveSinPropagator F p.1 p.2 := by
-  refine continuous_iff_continuousAt.2 fun p ↦ tendsto_iff_norm_sub_tendsto_zero.2 ?_
-  -- `‖S(τ) g - S(τ₀) g₀‖ ≤ |τ| ‖g - g₀‖ + |τ - τ₀| ‖g₀‖`.
-  set S := waveSinPropagator (E := E) F
-  have hle : ∀ q : ℝ × Lp F 2 (volume : Measure E),
-      ‖S q.1 q.2 - S p.1 p.2‖ ≤ |q.1| * ‖q.2 - p.2‖ + |q.1 - p.1| * ‖p.2‖ := fun q ↦ by
-    have h : S q.1 q.2 - S p.1 p.2 = S q.1 (q.2 - p.2) + (S q.1 - S p.1) p.2 := by
-      rw [map_sub, sub_apply]
-      abel
-    rw [h]
-    exact (norm_add_le _ _).trans (add_le_add
-      (((S q.1).le_opNorm _).trans
-        (mul_le_mul_of_nonneg_right (norm_waveSinPropagator_le q.1) (norm_nonneg _)))
-      (((S q.1 - S p.1).le_opNorm p.2).trans
-        (mul_le_mul_of_nonneg_right (norm_waveSinPropagator_sub_le q.1 p.1) (norm_nonneg _))))
-  refine squeeze_zero (fun _ ↦ norm_nonneg _) hle ?_
-  have hc : Continuous fun q : ℝ × Lp F 2 (volume : Measure E) ↦
-      |q.1| * ‖q.2 - p.2‖ + |q.1 - p.1| * ‖p.2‖ := by fun_prop
-  simpa using hc.tendsto p
+    Continuous fun p : ℝ × Lp F 2 (volume : Measure E) ↦ waveSinPropagator F p.1 p.2 :=
+  ((LipschitzWith.mk_one (f := waveSinPropagator (E := E) F) fun s t ↦
+    (dist_eq_norm _ _).trans_le ((norm_waveSinPropagator_sub_le s t).trans_eq
+      (Real.dist_eq s t).symm)).continuous.comp continuous_fst).clm_apply continuous_snd
 
 /-- `cos(tD) = (W₊(t) + W₋(t)) / 2`, where `W₊(t) = exp(itD)` is the half-wave propagator and
 `W₋(t) = W₊(-t)`. -/
 theorem waveCosPropagator_eq_halfWavePropagator (t : ℝ) :
     waveCosPropagator (E := E) F t =
       (2⁻¹ : ℂ) • (halfWavePropagator F t + halfWavePropagator F (-t)) := by
-  refine (Lp.eq_fourierMultiplierCLM_iff.2 fun f ↦ ?_).symm
-  rw [← Lp.fourier_fourierMultiplierCLM, ← waveCosPropagator_def]
-  refine Lp.ext ?_
-  rw [_root_.smul_apply, _root_.add_apply, FourierTransform.fourier_smul,
-    FourierTransform.fourier_add]
-  filter_upwards [Lp.coeFn_smul (2⁻¹ : ℂ)
-      (𝓕 (halfWavePropagator F t f) + 𝓕 (halfWavePropagator F (-t) f)),
-    Lp.coeFn_add (𝓕 (halfWavePropagator F t f)) (𝓕 (halfWavePropagator F (-t) f)),
-    coeFn_fourier_phasePropagator sqrtNegLaplacianSymbol t f,
-    coeFn_fourier_phasePropagator sqrtNegLaplacianSymbol (-t) f,
-    coeFn_fourier_waveCosPropagator t f] with ξ h₁ h₂ h₃ h₄ h₅
-  rw [h₁, Pi.smul_apply, h₂, Pi.add_apply, halfWavePropagator_def, halfWavePropagator_def, h₃, h₄,
-    h₅, waveCosSymbol_eq_phaseSymbol, ← add_smul, smul_smul]
+  rw [halfWavePropagator_def, halfWavePropagator_def, phasePropagator_def, phasePropagator_def,
+    ← Lp.fourierMultiplierCLM_add, ← Lp.fourierMultiplierCLM_smul, ← MemLp.toLp_add,
+    ← MemLp.toLp_const_smul, waveCosPropagator_def]
+  congr 1
+  exact MemLp.toLp_congr _ _ (.of_forall fun ξ ↦ waveCosSymbol_eq_phaseSymbol t ξ)
 
 /-- `t ↦ cos(tD) f` is continuous for every `f ∈ L²`. -/
 theorem continuous_waveCosPropagator_apply (f : Lp F 2 (volume : Measure E)) :
@@ -373,10 +339,7 @@ theorem hasDerivAt_waveCosPropagator_apply {f h : Lp F 2 (volume : Measure E)}
   rcases eq_or_ne s t with rfl | hst
   · simp only [sub_self, smul_zero, norm_zero]
     positivity
-  have hs' : |s| ≤ |t| + 1 := by
-    have := abs_sub_abs_le_abs_sub s t
-    rw [Metric.mem_ball, Real.dist_eq] at hs
-    linarith
+  have hs' : |s| ≤ |t| + 1 := by simpa only [Real.norm_eq_abs] using (norm_lt_of_mem_ball hs).le
   rw [norm_smul, norm_inv, Real.norm_eq_abs, inv_mul_le_iff₀ (abs_pos.2 (sub_ne_zero.2 hst))]
   refine (norm_waveCosSymbol_sub_le s t ξ).trans ?_
   rw [mul_comm |s - t|, mul_comm (2 * |t| + 1)]

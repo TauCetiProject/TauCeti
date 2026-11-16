@@ -318,10 +318,8 @@ private theorem hasDerivWithinAt_duhamel (hu : IsWaveSolutionOn u u' u'' G s) (t
       filter_upwards [nhdsWithin_le_nhds (Metric.ball_mem_nhds τ one_pos)] with σ hσ
       rw [ContinuousLinearMap.norm_restrictScalars]
       refine (norm_waveSinPropagator_le _).trans ?_
-      rw [Metric.mem_ball, Real.dist_eq] at hσ
-      have := abs_sub_abs_le_abs_sub (t - σ) (t - τ)
-      rw [show t - σ - (t - τ) = -(σ - τ) by ring, abs_neg] at this
-      linarith)
+      simpa only [Real.norm_eq_abs] using
+        (norm_lt_of_mem_ball (Metric.mem_ball.2 ((dist_sub_left t σ τ).trans_lt hσ))).le)
   have h := hC.add hS
   simp only [ContinuousLinearMap.coe_restrictScalars'] at h
   convert h using 1

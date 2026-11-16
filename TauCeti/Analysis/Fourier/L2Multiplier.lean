@@ -173,6 +173,10 @@ theorem fourierMultiplierCLM_add :
   ext1 f
   simp [fourierMultiplierCLM_apply, Lp.smul_add]
 
+theorem fourierMultiplierCLM_sub :
+    fourierMultiplierCLM F (m₁ - m₂) = fourierMultiplierCLM F m₁ - fourierMultiplierCLM F m₂ :=
+  map_sub (AddMonoidHom.mk' (fourierMultiplierCLM F) fourierMultiplierCLM_add) m₁ m₂
+
 /-- The multiplier of a finite sum of symbols is the sum of the multipliers. -/
 theorem fourierMultiplierCLM_sum {ι : Type*} (s : Finset ι)
     (m : ι → Lp ℂ ∞ (volume : Measure E)) :
@@ -526,8 +530,7 @@ theorem coeFn_fourier_convolutionLp (hk : Integrable k) (f : Lp F 2 (volume : Me
     (eLpNorm_fourier_top_le _).trans_lt (memLp_one_iff_integrable.2 hki).eLpNorm_lt_top
   have h := congr($(convolutionLp_eq_fourierMultiplierCLM (F := F) hk hk'.coeFn_toLp) f)
   rw [coe_restrictScalars'] at h
-  rw [h, Lp.fourier_fourierMultiplierCLM]
-  filter_upwards [Lp.coeFn_lpSMul (r := 2) (hk'.toLp _) (𝓕 f), hk'.coeFn_toLp] with ξ h₁ h₂
-  rw [h₁, Pi.smul_apply', h₂]
+  rw [h]
+  exact Lp.coeFn_fourier_fourierMultiplierCLM_toLp f hk'
 
 end TauCeti
