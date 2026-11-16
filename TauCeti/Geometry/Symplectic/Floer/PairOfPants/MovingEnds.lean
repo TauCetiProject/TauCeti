@@ -288,6 +288,33 @@ theorem puncturedSpherePerturbation_eq_inputEndPerturbation
   puncturedSpherePerturbation_eq_inputEndPerturbation_of_norm_sub_lt
     (fun j => by nlinarith [norm_nonneg (a j), exp_neg_two_pi_lt_one]) hsep hout hw x
 
+/-- On the part `s > 0` of an input end with nonzero scale `a`, the point `c + a φ₀(z)` of its end
+lift lies in the disc `‖w - c‖ < ‖a‖ / 2`. -/
+theorem norm_mul_cylindricalEndLift_lt {a : ℂ} (ha : a ≠ 0) {z : ℂ} (hz : 0 < z.re) :
+    ‖a * zero.cylindricalEndLift z‖ < ‖a‖ / 2 := by
+  have h := norm_cylindricalEndLift_sub_endCenter zero z
+  rw [endCenter_zero, sub_zero, endScale_zero] at h
+  have h2 : ‖(1 / 2 : ℂ)‖ = 1 / 2 := by norm_num
+  rw [norm_mul, h, h2]
+  have : Real.exp (-(2 * π * z.re)) < 1 :=
+    Real.exp_lt_one_iff.2 (by nlinarith [Real.pi_pos])
+  nlinarith [norm_pos_iff.2 ha]
+
+/-- On the part `s ≤ -1` of the output end, the point `φ_∞(z)` lies outside the support
+`‖w - c‖ < ‖a‖ exp (-2π) / 2` of an input end whose disc `‖w - c‖ < ‖a‖ / 2` lies in the disc
+`‖w‖ ≤ 2 exp (2π)`. -/
+theorem le_norm_cylindricalEndLift_inf_sub {c a : ℂ}
+    (hout : ‖c‖ + ‖a‖ / 2 ≤ 2 * Real.exp (2 * π)) {z : ℂ} (hz : z.re ≤ -1) :
+    ‖a‖ * Real.exp (-(2 * π)) / 2 ≤ ‖inf.cylindricalEndLift z - c‖ := by
+  have hnorm : 2 * Real.exp (2 * π) ≤ ‖inf.cylindricalEndLift z‖ := by
+    have h := norm_cylindricalEndLift_sub_endCenter inf z
+    rw [endCenter_inf, sub_zero, endScale_inf, Complex.norm_ofNat] at h
+    rw [h]
+    gcongr
+    nlinarith [Real.pi_pos]
+  have h := norm_sub_norm_le (inf.cylindricalEndLift z) c
+  nlinarith [norm_nonneg a, exp_neg_two_pi_lt_one]
+
 /-- **The datum on an input end.** If the discs `‖w - c j‖ < ‖a j‖ / 2` are pairwise disjoint and
 lie in the disc `‖w‖ ≤ 2 exp (2π)`, then on the part `s > 0` of the input end `i`, the pullback of
 the datum along the end lift `z ↦ c i + a i φ₀(z)` is the continuation datum
@@ -300,13 +327,8 @@ theorem puncturedSpherePerturbation_cylindricalEndLift_of_pos
         (a i * (deriv zero.cylindricalEndLift z * v)) =
       v.im * (smoothTransition (z.re - 1) * H i z.im x) := by
   have hlt : ‖c i + a i * zero.cylindricalEndLift z - c i‖ < ‖a i‖ / 2 := by
-    have h := norm_cylindricalEndLift_sub_endCenter zero z
-    rw [endCenter_zero, sub_zero, endScale_zero] at h
-    have h2 : ‖(1 / 2 : ℂ)‖ = 1 / 2 := by norm_num
-    rw [add_sub_cancel_left, norm_mul, h, h2]
-    have : Real.exp (-(2 * π * z.re)) < 1 :=
-      Real.exp_lt_one_iff.2 (by nlinarith [Real.pi_pos])
-    nlinarith [norm_pos_iff.2 ha]
+    rw [add_sub_cancel_left]
+    exact norm_mul_cylindricalEndLift_lt ha hz
   rw [puncturedSpherePerturbation_eq_inputEndPerturbation hsep hout hlt,
     inputEndPerturbation_cylindricalEndLift_apply hH ha]
 
@@ -332,16 +354,9 @@ theorem puncturedSpherePerturbation_cylindricalEndLift_inf_of_le
     puncturedSpherePerturbation c a H Hout (inf.cylindricalEndLift z) x
         (deriv inf.cylindricalEndLift z * v) =
       v.im * (smoothTransition (-z.re - 1) * Hout z.im x) := by
-  have hnorm : 2 * Real.exp (2 * π) ≤ ‖inf.cylindricalEndLift z‖ := by
-    have h := norm_cylindricalEndLift_sub_endCenter inf z
-    rw [endCenter_inf, sub_zero, endScale_inf, Complex.norm_ofNat] at h
-    rw [h]
-    gcongr
-    nlinarith [Real.pi_pos]
-  rw [puncturedSpherePerturbation_eq_negativePlanePerturbation fun i => ?_,
+  rw [puncturedSpherePerturbation_eq_negativePlanePerturbation
+      fun i => le_norm_cylindricalEndLift_inf_sub (hout i) hz,
     negativePlanePerturbation_cylindricalEndLift_apply hH]
-  have h := norm_sub_norm_le (inf.cylindricalEndLift z) (c i)
-  nlinarith [hout i, norm_nonneg (a i), exp_neg_two_pi_lt_one]
 
 /-- **The datum is `Hout(t) dt` far out on the output end.** Under the hypothesis of
 `puncturedSpherePerturbation_cylindricalEndLift_inf_of_le`, on the part `s ≤ -2` of the output end
