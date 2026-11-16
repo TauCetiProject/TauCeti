@@ -51,7 +51,7 @@ coordinates by `⟨a, b⟩ = ∑ᵢ ∑ⱼ aᵢ bⱼ Gᵢⱼ`.
   and reference generators of potential `0` this holds with `c = 0`
   (`TauCeti.NovikovModule.novikovPairingOfMatrix_map_algebraMap_mem_periodFiltration`). The pairing
   is jointly continuous (`TauCeti.NovikovModule.continuous_novikovPairingOfMatrix`).
-* **Degree.** For degrees `d₁`, `d₂` on the generators that are shifted by recapping through a
+* **Degree.** For degrees `d₁`, `d₂` on the generators with `d (h +ᵥ p) = δ h + d p` for a
   homomorphism `δ : H →+ D`, if each entry `G i j` is homogeneous of degree
   `d₁ (r₁ i) + d₂ (r₂ j) - n`, then the pairing of homogeneous combinations of degrees `k` and `l`
   is homogeneous of degree `k + l - n` (`TauCeti.NovikovModule.novikovPairingOfMatrix_mem_gradeBy`).
