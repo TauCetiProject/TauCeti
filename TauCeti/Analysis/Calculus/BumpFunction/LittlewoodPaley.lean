@@ -156,6 +156,15 @@ theorem littlewoodPaley_eq_zero_of_le_norm {j : ℤ} {ξ : E}
   rw [littlewoodPaley_apply, φ.zero_of_le_dist (by rwa [dist_zero_right]),
     φ.zero_of_le_dist (by rwa [dist_zero_right]), sub_self]
 
+/-- Every Littlewood–Paley cutoff takes values in `[-1, 1]`. -/
+theorem abs_littlewoodPaley_le_one (j : ℤ) (ξ : E) : |φ.littlewoodPaley j ξ| ≤ 1 := by
+  rw [littlewoodPaley_apply]
+  have := φ.nonneg (x := ((2 : ℝ) ^ j)⁻¹ • ξ)
+  have := φ.le_one (x := ((2 : ℝ) ^ j)⁻¹ • ξ)
+  have := φ.nonneg (x := ((2 : ℝ) ^ (j - 1))⁻¹ • ξ)
+  have := φ.le_one (x := ((2 : ℝ) ^ (j - 1))⁻¹ • ξ)
+  exact abs_sub_le_iff.2 ⟨by linarith, by linarith⟩
+
 /-- On a nontrivial space each cutoff `ψⱼ` takes a positive value: at a point `ξ` with
 `‖ξ‖ = 2^{j-1} φ.rOut`, `ψⱼ ξ = φ (2^{-j} ξ) - φ (2^{1-j} ξ) = φ (2^{-j} ξ) > 0`. -/
 theorem exists_littlewoodPaley_pos [Nontrivial E] (j : ℤ) : ∃ ξ, 0 < φ.littlewoodPaley j ξ := by

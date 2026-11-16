@@ -62,6 +62,9 @@ is non-stationary on the support of `a`, so `𝓕 G_t (s) = O(|t|^(-N))`
 
 * `TauCeti.exists_norm_fourierInv_phaseSymbol_sqrtNegLaplacianSymbol_mul_le`: the dispersive
   kernel bound for one frequency cutoff vanishing near the origin.
+* `TauCeti.exists_norm_fourierInv_phaseSymbol_sqrtNegLaplacianSymbol_mul_inv_smul_le`: the same
+  bound for the cutoff rescaled to frequency `c`, `C cⁿ (1 + c |t|)^(-(n - 1)/2)` uniformly in
+  `c > 0`.
 * `ContDiffBump.exists_norm_fourierInv_phaseSymbol_sqrtNegLaplacianSymbol_mul_littlewoodPaley_le`:
   the kernel bound for the dyadic cutoffs, `C 2^{jn} (1 + 2^j |t|)^(-(n - 1)/2)`.
 * `ContDiffBump.exists_eLpNorm_halfWavePropagator_fourierMultiplierCLM_littlewoodPaley_le`: the
@@ -426,6 +429,39 @@ theorem exists_norm_fourierInv_phaseSymbol_sqrtNegLaplacianSymbol_mul_le {ψ : E
       _ ≤ max A K * max 1 (2 ^ ((n - 1) / 2)) * (1 + |t|) ^ (-(n - 1) / 2) := by
           rw [← mul_assoc]; gcongr; exact le_max_right _ _
 
+/-- **The dispersive bound for a rescaled half-wave kernel.** Let `E` have dimension `n` and let
+`ψ` be smooth, compactly supported and vanish near the origin. There is `C ≥ 0` such that for
+every scale `c > 0`, every time `t` and every point `x`, the kernel localized by `ψ(c⁻¹ ·)`, to
+frequencies `‖ξ‖ ≈ c`, satisfies
+
+`|𝓕⁻ (exp(2πit‖·‖) ψ(c⁻¹ ·)) (x)| ≤ C cⁿ (1 + c |t|)^(-(n - 1)/2)`. -/
+theorem exists_norm_fourierInv_phaseSymbol_sqrtNegLaplacianSymbol_mul_inv_smul_le {ψ : E → ℂ}
+    (hψ : ContDiff ℝ ∞ ψ) (hψc : HasCompactSupport ψ) (hψ0 : (0 : E) ∉ tsupport ψ) :
+    ∃ C, 0 ≤ C ∧ ∀ {c : ℝ}, 0 < c → ∀ (t : ℝ) (x : E),
+      ‖𝓕⁻ (fun ξ ↦ phaseSymbol sqrtNegLaplacianSymbol t ξ * ψ (c⁻¹ • ξ)) x‖ ≤
+        C * c ^ Module.finrank ℝ E * (1 + c * |t|) ^ (-((Module.finrank ℝ E : ℝ) - 1) / 2) := by
+  obtain ⟨C, hC0, hC⟩ :=
+    exists_norm_fourierInv_phaseSymbol_sqrtNegLaplacianSymbol_mul_le hψ hψc hψ0
+  refine ⟨C, hC0, fun {c} hc t x ↦ ?_⟩
+  have heq : (fun ξ ↦ phaseSymbol sqrtNegLaplacianSymbol t ξ * ψ (c⁻¹ • ξ)) =
+      fun ξ ↦ (fun η ↦ phaseSymbol sqrtNegLaplacianSymbol (c * t) η * ψ η) (c⁻¹ • ξ) := by
+    ext ξ
+    dsimp only
+    rw [phaseSymbol_apply, phaseSymbol_apply, sqrtNegLaplacianSymbol_apply,
+      sqrtNegLaplacianSymbol_apply, norm_smul, norm_inv, Real.norm_of_nonneg hc.le]
+    congr 4
+    field_simp
+  rw [heq, fourierInv_comp_smul (fun η ↦ phaseSymbol sqrtNegLaplacianSymbol (c * t) η * ψ η),
+    inv_inv, norm_smul]
+  simp only [Real.norm_eq_abs, inv_pow, abs_inv, inv_inv, abs_of_pos (pow_pos hc _)]
+  calc _ ≤ c ^ Module.finrank ℝ E *
+        (C * (1 + |c * t|) ^ (-((Module.finrank ℝ E : ℝ) - 1) / 2)) := by
+        gcongr
+        exact hC _ _
+    _ = _ := by
+        rw [abs_mul, abs_of_pos hc]
+        ring
+
 end TauCeti
 
 /-! ### Dyadic blocks -/
@@ -447,32 +483,19 @@ theorem exists_norm_fourierInv_phaseSymbol_sqrtNegLaplacianSymbol_mul_littlewood
       ‖𝓕⁻ (fun ξ ↦ phaseSymbol sqrtNegLaplacianSymbol t ξ * φ.littlewoodPaley j ξ) x‖ ≤
         C * ((2 : ℝ) ^ j) ^ Module.finrank ℝ E *
           (1 + 2 ^ j * |t|) ^ (-((Module.finrank ℝ E : ℝ) - 1) / 2) := by
-  obtain ⟨C, hC0, hC⟩ := exists_norm_fourierInv_phaseSymbol_sqrtNegLaplacianSymbol_mul_le
+  obtain ⟨C, hC0, hC⟩ := exists_norm_fourierInv_phaseSymbol_sqrtNegLaplacianSymbol_mul_inv_smul_le
     (ofRealCLM.contDiff.comp (φ.contDiff_littlewoodPaley 0))
     ((φ.hasCompactSupport_littlewoodPaley 0).comp_left ofReal_zero)
     (fun h ↦ φ.zero_notMem_tsupport_littlewoodPaley 0 (tsupport_comp_subset ofReal_zero _ h))
   refine ⟨C, hC0, fun j t x ↦ ?_⟩
-  have h2 : (0 : ℝ) < 2 ^ j := zpow_pos two_pos j
+  -- `ψⱼ` is the rescaling `ψ₀ (2^{-j} ·)`.
   have heq : (fun ξ ↦ phaseSymbol sqrtNegLaplacianSymbol t ξ * φ.littlewoodPaley j ξ) =
-      fun ξ ↦ (fun η ↦ phaseSymbol sqrtNegLaplacianSymbol (2 ^ j * t) η *
-        φ.littlewoodPaley 0 η) (((2 : ℝ) ^ j)⁻¹ • ξ) := by
+      fun ξ ↦ phaseSymbol sqrtNegLaplacianSymbol t ξ *
+        (fun η ↦ (φ.littlewoodPaley 0 η : ℂ)) (((2 : ℝ) ^ j)⁻¹ • ξ) := by
     ext ξ
-    dsimp only
-    rw [littlewoodPaley_apply_eq_littlewoodPaley_zero_apply, phaseSymbol_apply, phaseSymbol_apply,
-      sqrtNegLaplacianSymbol_apply, sqrtNegLaplacianSymbol_apply, norm_smul, norm_inv,
-      Real.norm_of_nonneg h2.le]
-    congr 4
-    field_simp
-  rw [heq, fourierInv_comp_smul (fun η ↦ phaseSymbol sqrtNegLaplacianSymbol (2 ^ j * t) η *
-    (φ.littlewoodPaley 0 η : ℂ)), inv_inv, norm_smul]
-  simp only [Real.norm_eq_abs, inv_pow, abs_inv, inv_inv, abs_of_pos (pow_pos h2 _)]
-  calc _ ≤ ((2 : ℝ) ^ j) ^ Module.finrank ℝ E *
-        (C * (1 + |2 ^ j * t|) ^ (-((Module.finrank ℝ E : ℝ) - 1) / 2)) := by
-        gcongr
-        exact hC _ _
-    _ = _ := by
-        rw [abs_mul, abs_of_pos h2]
-        ring
+    rw [littlewoodPaley_apply_eq_littlewoodPaley_zero_apply]
+  rw [heq]
+  exact hC (zpow_pos two_pos j) t x
 
 /-! ### The operator form -/
 
