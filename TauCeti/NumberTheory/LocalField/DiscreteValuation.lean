@@ -15,31 +15,25 @@ public import TauCeti.RingTheory.Valuation.ValuativeRel.ValueGroup
 /-!
 # Discrete valuations of nonarchimedean local fields
 
-For a nonarchimedean local field `K`, `𝒪[K]` is a discrete valuation ring, so
-`ValuativeRel.isRankOneDiscrete_valuation` equips `ValuativeRel.valuation K` with a
-`Valuation.IsRankOneDiscrete` instance. This file connects its normalized valuations
-`intValuation`, `intAddVal`, `realAddVal`, and `extRealAddVal` with the local-field API
+For a nonarchimedean local field `K`, `ValuativeRel.isRankOneDiscrete_valuation` makes
+`ValuativeRel.valuation K` rank-one discrete. This file relates its normalized valuations
+`intValuation`, `intAddVal`, `realAddVal`, and `extRealAddVal` to the local-field API
 (`normalizedValuation`, `normalizedValuationWithZero`, `normalizedNormedField`,
-`ramificationIndex`, `IsTotallyRamified`) and with Mathlib's concrete valuations on `ℚ_[p]`.
+`ramificationIndex`, `IsTotallyRamified`) and Mathlib's concrete valuations on `ℚ_[p]`.
 
 ## Main results
 
-* `TauCeti.normalizedValuationWithZero_eq_inv_intValuation`,
-  `TauCeti.intAddVal_valuation_coe`, and `TauCeti.realAddVal_valuation_coe`: comparison of
-  `intValuation`, `intAddVal`, and `realAddVal` on `K` with `normalizedValuationWithZero` and
-  `normalizedValuation`.
-* `TauCeti.normalizedNormedField_norm_eq_rpow_neg_realAddVal`: the norm of
-  `normalizedNormedField K` satisfies `‖x‖ = (Nat.card 𝓀[K]) ^ (-((valuation K).realAddVal x))` for
-  `x ≠ 0`.
+* `TauCeti.normalizedValuationWithZero_eq_inv_intValuation`, `TauCeti.intAddVal_valuation_coe`,
+  `TauCeti.realAddVal_valuation_coe`, and
+  `TauCeti.normalizedNormedField_norm_eq_rpow_neg_realAddVal`: comparison with
+  `normalizedValuationWithZero`, `normalizedValuation`, and `normalizedNormedField`.
 * `TauCeti.ramificationIdx_valuation_eq_ramificationIndex`,
   `TauCeti.isTotallyRamified_iff_ramificationIdx_eq_finrank`, and
-  `TauCeti.extRealAddVal_valuation_coe`: for any subfield `K` of a nonarchimedean local field `L`,
-  `(valuation L).ramificationIdx K = ramificationIndex K L`, and `(valuation L).extRealAddVal K`
-  agrees on `Lˣ` with `(normalizedValuation L x).toAdd / ramificationIndex K L`.
+  `TauCeti.extRealAddVal_valuation_coe`: identification with `ramificationIndex K L` and
+  `IsTotallyRamified K L` for any subfield `K` of a nonarchimedean local field `L`.
 * `Padic.intValuation_valuation`, `Padic.intAddVal_valuation`, and
-  `TauCeti.realAddVal_valuation_padic`: on `ℚ_[p]`, `(valuation ℚ_[p]).intValuation`,
-  `intAddVal`, and `realAddVal` agree with `Padic.mulValuation`, `Padic.addValuation`, and
-  `TauCeti.padicRealValuation p`.
+  `TauCeti.realAddVal_valuation_padic`: identification with `Padic.mulValuation`,
+  `Padic.addValuation`, and `TauCeti.padicRealValuation p` on `ℚ_[p]`.
 
 ## References
 
@@ -72,18 +66,16 @@ theorem intValuation_valuation_apply (x : K) :
     (valuation K).intValuation x = (normalizedValuationWithZero K x)⁻¹ := by
   rw [normalizedValuationWithZero_eq_inv_intValuation, inv_inv]
 
-/-- On `Kˣ`, the additive normalized valuation `(normalizedValuation K x).toAdd` agrees with
-`Valuation.ord (valuation K).intValuation x`. -/
+/-- On `Kˣ`, `(normalizedValuation K x).toAdd` equals `Valuation.ord (valuation K).intValuation x`.
+-/
 theorem toAdd_normalizedValuation_eq_ord_intValuation (x : Kˣ) :
     (normalizedValuation K x).toAdd = Valuation.ord (valuation K).intValuation (x : K) := by
-  have h := normalizedValuationWithZero_eq_inv_intValuation (x : K)
-  have hcoe : (normalizedValuation K x : ℤᵐ⁰) = WithZero.exp (normalizedValuation K x).toAdd := by
-    rw [WithZero.exp_eq_coe_ofAdd, ofAdd_toAdd]
-  rw [normalizedValuationWithZero_coe, hcoe,
+  apply WithZero.exp_injective
+  rw [WithZero.exp_eq_coe_ofAdd, ofAdd_toAdd, ← normalizedValuationWithZero_coe,
+    normalizedValuationWithZero_eq_inv_intValuation,
     Valuation.valuation_eq_exp_neg_ord (valuation K).intValuation
       ((valuation K).intValuation.ne_zero_iff.mpr x.ne_zero),
-    ← WithZero.exp_neg, neg_neg] at h
-  exact WithZero.exp_injective h
+    ← WithZero.exp_neg, neg_neg]
 
 /-- On `Kˣ`, `(valuation K).intAddVal` agrees with `(normalizedValuation K x).toAdd`. -/
 @[simp]
@@ -91,15 +83,13 @@ theorem intAddVal_valuation_coe (x : Kˣ) :
     (valuation K).intAddVal (x : K) = ((normalizedValuation K x).toAdd : WithTop ℤ) := by
   rw [(valuation K).intAddVal_of_ne_zero x.ne_zero, toAdd_normalizedValuation_eq_ord_intValuation]
 
-/-- On `Kˣ`, `(valuation K).realAddVal` agrees with `(normalizedValuation K x).toAdd` cast to
-`ℝ`. -/
+/-- On `Kˣ`, `(valuation K).realAddVal` agrees with `(normalizedValuation K x).toAdd` in `ℝ`. -/
 @[simp]
 theorem realAddVal_valuation_coe (x : Kˣ) :
     (valuation K).realAddVal (x : K) = (((normalizedValuation K x).toAdd : ℝ) : WithTop ℝ) := by
   rw [(valuation K).realAddVal_eq_map, intAddVal_valuation_coe, WithTop.map_coe]
 
-/-- Outside `0`, `((valuation K).realAddVal x).untop₀` is the additive normalized valuation of
-`x`. -/
+/-- Outside `0`, `((valuation K).realAddVal x).untop₀` is the additive normalized valuation. -/
 theorem untop₀_realAddVal_valuation_of_ne_zero {x : K} (hx : x ≠ 0) :
     ((valuation K).realAddVal x).untop₀ = (normalizedValuation K (Units.mk0 x hx)).toAdd := by
   simpa using congrArg WithTop.untop₀ (realAddVal_valuation_coe (Units.mk0 x hx))
@@ -128,14 +118,13 @@ theorem ramificationIdx_valuation_eq_ramificationIndex :
     (valuation L).ramificationIdx K = ramificationIndex K L := by
   let e : ℤᵐ⁰ˣ ≃* Multiplicative ℤ :=
     WithZero.unitsWithZeroEquiv.trans (MulEquiv.inv (Multiplicative ℤ))
-  have he_coe : ∀ γ : ℤᵐ⁰ˣ, (((e : ℤᵐ⁰ˣ →* Multiplicative ℤ) γ : Multiplicative ℤ) : ℤᵐ⁰) =
-      (γ : ℤᵐ⁰)⁻¹ := fun γ ↦ by
+  have he_coe (γ : ℤᵐ⁰ˣ) :
+      (((e : ℤᵐ⁰ˣ →* Multiplicative ℤ) γ : Multiplicative ℤ) : ℤᵐ⁰) = (γ : ℤᵐ⁰)⁻¹ := by
     rw [MonoidHom.coe_ofClass, MulEquiv.trans_apply, MulEquiv.inv_apply, WithZero.coe_inv,
       WithZero.unitsWithZeroEquiv_apply, WithZero.coe_unzero]
   have htop : (valuation L).intValuation.valueGroup = ⊤ :=
     Valuation.valueGroup_eq_top_of_surjective _ (valuation L).intValuation_surjective
-  have hmap :
-      (((valuation L).intValuation.comap (algebraMap K L)).valueGroup).map
+  have hmap : (((valuation L).intValuation.comap (algebraMap K L)).valueGroup).map
         (e : ℤᵐ⁰ˣ →* Multiplicative ℤ) =
         ((normalizedValuation L).comp (Units.map (algebraMap K L : K →* L))).range := by
     ext g
@@ -143,16 +132,14 @@ theorem ramificationIdx_valuation_eq_ramificationIndex :
     constructor
     · rintro ⟨γ, hγ, rfl⟩
       rw [← SetLike.mem_coe, ← MonoidWithZeroHom.valueMonoid_eq_valueGroup', SetLike.mem_coe,
-        MonoidWithZeroHom.mem_valueMonoid_iff, Set.mem_preimage, Set.mem_range] at hγ
+        MonoidWithZeroHom.mem_valueMonoid_iff] at hγ
       obtain ⟨x, hx⟩ := hγ
       rw [Valuation.coe_toMonoidWithZeroHom, Valuation.comap_apply] at hx
-      have hx0 : x ≠ 0 := fun h0 ↦ by
-        rw [h0, map_zero, map_zero] at hx
-        exact Units.ne_zero γ hx.symm
+      have hx0 : x ≠ 0 := fun h0 ↦ Units.ne_zero γ (by simpa [h0] using hx.symm)
       refine ⟨Units.mk0 x hx0, WithZero.coe_inj.mp ?_⟩
-      rw [MonoidHom.comp_apply, ← normalizedValuationWithZero_coe,
-        Units.coe_map, MonoidHom.coe_ofClass, Units.val_mk0,
-        normalizedValuationWithZero_eq_inv_intValuation, hx, he_coe]
+      rw [MonoidHom.comp_apply, ← normalizedValuationWithZero_coe, Units.coe_map,
+        MonoidHom.coe_ofClass, Units.val_mk0, normalizedValuationWithZero_eq_inv_intValuation,
+        hx, he_coe]
     · rintro ⟨x, rfl⟩
       have hne : (valuation L).intValuation (algebraMap K L x) ≠ 0 :=
         (valuation L).intValuation.ne_zero_iff.mpr ((map_ne_zero (algebraMap K L)).mpr x.ne_zero)
@@ -162,18 +149,15 @@ theorem ramificationIdx_valuation_eq_ramificationIndex :
       · rw [he_coe, Units.val_mk0, MonoidHom.comp_apply, ← normalizedValuationWithZero_coe,
           Units.coe_map, MonoidHom.coe_ofClass, normalizedValuationWithZero_eq_inv_intValuation]
   rw [(valuation L).isEquiv_intValuation.symm.ramificationIdx_eq, Valuation.ramificationIdx_def,
-    htop, Subgroup.relIndex_top_right, ← Subgroup.index_map_equiv _ e, hmap,
-    ramificationIndex_def]
+    htop, Subgroup.relIndex_top_right, ← Subgroup.index_map_equiv _ e, hmap, ramificationIndex_def]
 
-/-- An extension `L / K` into a nonarchimedean local field `L` is totally ramified if and only if
-`(valuation L).ramificationIdx K = Module.finrank K L`. -/
+/-- `L / K` is totally ramified iff `(valuation L).ramificationIdx K = Module.finrank K L`. -/
 theorem isTotallyRamified_iff_ramificationIdx_eq_finrank :
     IsTotallyRamified K L ↔ (valuation L).ramificationIdx K = Module.finrank K L := by
   rw [isTotallyRamified_iff_ramificationIndex_eq_finrank,
     ramificationIdx_valuation_eq_ramificationIndex]
 
-/-- On `Lˣ`, `(valuation L).extRealAddVal K` agrees with
-`(normalizedValuation L x).toAdd / ramificationIndex K L`. -/
+/-- On `Lˣ`, `(valuation L).extRealAddVal K` is `(normalizedValuation L x).toAdd / e(L/K)`. -/
 @[simp]
 theorem extRealAddVal_valuation_coe (x : Lˣ) :
     (valuation L).extRealAddVal K (x : L) =
@@ -181,8 +165,7 @@ theorem extRealAddVal_valuation_coe (x : Lˣ) :
   rw [(valuation L).extRealAddVal_eq_map_realAddVal, realAddVal_valuation_coe,
     WithTop.map_coe, ramificationIdx_valuation_eq_ramificationIndex]
 
-/-- Outside `0`, `((valuation L).extRealAddVal K x).untop₀` is the additive normalized valuation of
-`x` divided by `ramificationIndex K L`. -/
+/-- Outside `0`, `((valuation L).extRealAddVal K x).untop₀` is the normalized valuation over `e`. -/
 theorem untop₀_extRealAddVal_valuation_of_ne_zero {x : L} (hx : x ≠ 0) :
     ((valuation L).extRealAddVal K x).untop₀ =
       ((normalizedValuation L (Units.mk0 x hx)).toAdd : ℝ) / (ramificationIndex K L : ℝ) := by
@@ -198,8 +181,7 @@ variable (p : ℕ) [Fact p.Prime]
 
 namespace Padic
 
-/-- On `ℚ_[p]`, the normalized `ℤᵐ⁰`-valued valuation of `ValuativeRel.valuation ℚ_[p]` is
-`Padic.mulValuation`. -/
+/-- On `ℚ_[p]`, `(ValuativeRel.valuation ℚ_[p]).intValuation` equals `Padic.mulValuation`. -/
 @[simp]
 theorem intValuation_valuation :
     (ValuativeRel.valuation ℚ_[p]).intValuation = Padic.mulValuation := by
@@ -208,8 +190,7 @@ theorem intValuation_valuation :
     (TauCeti.normalizedValuationWithZero_eq_inv_intValuation x).symm.trans
       (Padic.normalizedValuationWithZero_eq_inv_mulValuation p x)
 
-/-- On `ℚ_[p]`, the normalized integer additive valuation of `ValuativeRel.valuation ℚ_[p]` is
-`Padic.addValuation`. -/
+/-- On `ℚ_[p]`, `(ValuativeRel.valuation ℚ_[p]).intAddVal` equals `Padic.addValuation`. -/
 @[simp]
 theorem intAddVal_valuation :
     (ValuativeRel.valuation ℚ_[p]).intAddVal = Padic.addValuation := by
@@ -224,8 +205,7 @@ end Padic
 
 namespace TauCeti
 
-/-- On `ℚ_[p]`, the normalized real additive valuation of `ValuativeRel.valuation ℚ_[p]` is
-`TauCeti.padicRealValuation p`. -/
+/-- On `ℚ_[p]`, `(valuation ℚ_[p]).realAddVal` equals `TauCeti.padicRealValuation p`. -/
 @[simp]
 theorem realAddVal_valuation_padic :
     (valuation ℚ_[p]).realAddVal = padicRealValuation p := by

@@ -13,62 +13,35 @@ public import TauCeti.RingTheory.Valuation.ToAdditive
 /-!
 # Normalized `ℤᵐ⁰`-valued, `ℤ`-valued, and `ℝ`-valued valuations of a discrete valuation
 
-Let `v : Valuation R Γ` be a rank-one discrete valuation (`v.IsRankOneDiscrete`), with generator
-`γ = IsRankOneDiscrete.generator v < 1` of `v.valueGroup`. Transporting `v.restrict` along
-`IsRankOneDiscrete.valueGroup₀_equiv_withZeroMulInt v` produces a `ℤᵐ⁰`-valued valuation
-`v.intValuation` equivalent to `v` that sends `γ ^ m` to `WithZero.exp (-m)` and `0` to `0`.
-Converting `v.intValuation` to additive notation via `Valuation.addVal` gives the normalized
-integer additive valuation
-
-`v.intAddVal : AddValuation R (WithTop ℤ)`,
-
-characterized by `v.intAddVal x = m ↔ v x = γ ^ m` and `v.intAddVal x = ⊤ ↔ v x = 0`, so every
-uniformizer has additive valuation `1`. Pushing forward along `ℤ →+ ℝ` gives the real additive
-valuation
-
-`v.realAddVal : AddValuation R (WithTop ℝ)`,
-
-which agrees with `(v.intAddVal ·).map ((↑) : ℤ → ℝ)` and feeds directly into real-valued APIs such
-as Newton polygons.
-
-For any ring `R`, `v.intValuation` is rank-one discrete, preserves compatibility with a
-`ValuativeRel`, and depends only on the equivalence class of `v` (so equivalent rank-one discrete
-valuations have literally equal `intValuation`, `intAddVal`, and `realAddVal`). On a division ring,
-`v.intValuation` is surjective onto `ℤᵐ⁰`. On a field `K`, for any discrete valuation ring `R` with
-`v.Integers R` (in particular `v.valuationSubring`), `v.intAddVal` restricts on `R` to
-`IsDiscreteValuationRing.addVal R` cast from `ℕ∞` to `WithTop ℤ`.
+For a rank-one discrete valuation `v : Valuation R Γ` with value-group generator
+`γ = IsRankOneDiscrete.generator v < 1`, transporting `v.restrict` along
+`IsRankOneDiscrete.valueGroup₀_equiv_withZeroMulInt v` gives a `ℤᵐ⁰`-valued valuation
+`v.intValuation` equivalent to `v` sending `γ ^ m` to `WithZero.exp (-m)`. Passing to additive
+notation yields `v.intAddVal : AddValuation R (WithTop ℤ)` (value `1` on uniformizers) and
+`v.realAddVal : AddValuation R (WithTop ℝ)`.
 
 ## Main definitions
 
-* `Valuation.intValuation`: the normalized `ℤᵐ⁰`-valued valuation attached to a rank-one discrete
-  valuation `v`.
-* `Valuation.intAddVal`: the normalized additive valuation `AddValuation R (WithTop ℤ)` with value
-  `1` at every uniformizer of `v`.
-* `Valuation.realAddVal`: the normalized real additive valuation `AddValuation R (WithTop ℝ)`
-  obtained by casting `v.intAddVal` to `ℝ`.
+* `Valuation.intValuation`: the normalized `ℤᵐ⁰`-valued valuation attached to `v`.
+* `Valuation.intAddVal`: the normalized additive valuation `AddValuation R (WithTop ℤ)`.
+* `Valuation.realAddVal`: the normalized real additive valuation `AddValuation R (WithTop ℝ)`.
 
 ## Main results
 
-* `Valuation.compatible_intValuation`: compatibility with a `ValuativeRel` passes from `v` to
-  `v.intValuation`.
-* `Valuation.intValuation_eq_exp_neg_iff`, `Valuation.intAddVal_eq_coe_iff`, and
-  `Valuation.realAddVal_eq_intCast_iff`: characterization of values by powers of the generator of
-  `v.valueGroup`.
-* `Valuation.IsUniformizer.intAddVal_eq_one`, `Valuation.isUniformizer_iff_intAddVal_eq_one`, and
-  `Valuation.IsUniformizer.realAddVal_eq_one`: uniformizers are precisely the elements of normalized
-  additive valuation `1`.
-* `Valuation.IsEquiv.intValuation_eq`, `Valuation.IsEquiv.intAddVal_eq`, and
-  `Valuation.IsEquiv.realAddVal_eq`: equivalent rank-one discrete valuations on a ring have equal
-  normalized valuations.
-* `Valuation.intValuation_surjective`: on a division ring, `v.intValuation` is surjective onto
-  `ℤᵐ⁰`.
+* `Valuation.isRankOneDiscrete_intValuation`, `Valuation.compatible_intValuation`, and
+  `Valuation.IsEquiv.{intValuation_eq, intAddVal_eq, realAddVal_eq}`: discreteness, `ValuativeRel`
+  compatibility, and equivalence invariance on any ring.
+* `Valuation.intValuation_eq_exp_neg_iff`, `Valuation.intAddVal_eq_coe_iff`,
+  `Valuation.realAddVal_eq_intCast_iff`, and `Valuation.isUniformizer_iff_{int,real}AddVal_eq_one`:
+  characterizations by generator powers and uniformizers.
+* `Valuation.intValuation_surjective` and `Valuation.intAddVal_surjective`: surjectivity on
+  division rings.
 * `Valuation.Integers.intAddVal_algebraMap_eq_map_addVal` and
-  `Valuation.intAddVal_coe_valuationSubring`: compatibility with `IsDiscreteValuationRing.addVal` on
-  any discrete valuation ring of integers.
+  `Valuation.intAddVal_coe_valuationSubring`: compatibility with `IsDiscreteValuationRing.addVal`.
 
 ## References
 
-* J.-P. Serre, *Local Fields*, Graduate Texts in Mathematics 67, Springer, 1979, Chapter I, §1.
+* J.-P. Serre, *Local Fields*, GTM 67, Springer, 1979, Chapter I, §1.
 * J. Neukirch, *Algebraic Number Theory*, Grundlehren 322, Springer, 1999, Chapter II, §3.
 -/
 
@@ -89,13 +62,10 @@ an element of value `(IsRankOneDiscrete.generator v) ^ m` to `WithZero.exp (-m)`
 noncomputable def intValuation : Valuation R ℤᵐ⁰ :=
   v.restrict.map (IsRankOneDiscrete.valueGroup₀_equiv_withZeroMulInt v)
 
-/-- The normalized integer additive valuation attached to a rank-one discrete valuation `v`, with
-values in `WithTop ℤ` and value `1` at every uniformizer. -/
-noncomputable def intAddVal : AddValuation R (WithTop ℤ) :=
-  v.intValuation.addVal
+/-- The normalized integer additive valuation attached to `v`, with value `1` on uniformizers. -/
+noncomputable def intAddVal : AddValuation R (WithTop ℤ) := v.intValuation.addVal
 
-/-- The normalized real additive valuation attached to a rank-one discrete valuation `v`, obtained
-by pushing `v.intAddVal` forward along `ℤ →+ ℝ`. -/
+/-- The normalized real additive valuation attached to `v`, obtained by casting `v.intAddVal`. -/
 noncomputable def realAddVal : AddValuation R (WithTop ℝ) :=
   v.intAddVal.map
     { (Int.castAddHom ℝ).withTopMap with
@@ -104,13 +74,11 @@ noncomputable def realAddVal : AddValuation R (WithTop ℝ) :=
 
 /-- The defining formula of `Valuation.intValuation`. -/
 theorem intValuation_def :
-    v.intValuation = v.restrict.map (IsRankOneDiscrete.valueGroup₀_equiv_withZeroMulInt v) :=
-  (rfl)
+    v.intValuation = v.restrict.map (IsRankOneDiscrete.valueGroup₀_equiv_withZeroMulInt v) := (rfl)
 
 /-- Pointwise evaluation of `Valuation.intValuation`. -/
 theorem intValuation_apply (x : R) :
-    v.intValuation x = IsRankOneDiscrete.valueGroup₀_equiv_withZeroMulInt v (v.restrict x) :=
-  (rfl)
+    v.intValuation x = IsRankOneDiscrete.valueGroup₀_equiv_withZeroMulInt v (v.restrict x) := (rfl)
 
 /-- The defining formula of `Valuation.intAddVal`. -/
 theorem intAddVal_def : v.intAddVal = v.intValuation.addVal := (rfl)
@@ -120,14 +88,11 @@ theorem intAddVal_apply (x : R) : v.intAddVal x = WithZero.negLog (v.intValuatio
   v.intValuation.addVal_apply x
 
 /-- `v.realAddVal` agrees pointwise with `v.intAddVal` cast from `ℤ` to `ℝ`. -/
-theorem realAddVal_eq_map (x : R) :
-    v.realAddVal x = (v.intAddVal x).map ((↑) : ℤ → ℝ) :=
-  (rfl)
+theorem realAddVal_eq_map (x : R) : v.realAddVal x = (v.intAddVal x).map ((↑) : ℤ → ℝ) := (rfl)
 
 /-- The normalized `ℤᵐ⁰`-valued valuation is equivalent to `v`. -/
-theorem isEquiv_intValuation : v.intValuation.IsEquiv v := by
-  rw [intValuation_def]
-  exact (isEquiv_map_self_of_strictMono _
+theorem isEquiv_intValuation : v.intValuation.IsEquiv v :=
+  (isEquiv_map_self_of_strictMono _
     (IsRankOneDiscrete.valueGroup₀_equiv_withZeroMulInt_strictMono v).injective).trans
     v.isEquiv_restrict.symm
 
@@ -135,10 +100,8 @@ theorem isEquiv_intValuation : v.intValuation.IsEquiv v := by
 instance isRankOneDiscrete_intValuation : v.intValuation.IsRankOneDiscrete :=
   .of_isEquiv v.isEquiv_intValuation.symm
 
-/-- If a rank-one discrete valuation `v` is compatible with `ValuativeRel R`, so is its normalized
-`ℤᵐ⁰`-valued valuation `v.intValuation`. -/
-instance compatible_intValuation [ValuativeRel R] [v.Compatible] :
-    v.intValuation.Compatible :=
+/-- Compatibility with `ValuativeRel R` passes from `v` to `v.intValuation`. -/
+instance compatible_intValuation [ValuativeRel R] [v.Compatible] : v.intValuation.Compatible :=
   v.isEquiv_intValuation.symm.compatible
 
 /-- `v.intValuation` vanishes on the same elements as `v`. -/
@@ -148,13 +111,11 @@ theorem intValuation_eq_zero_iff {x : R} : v.intValuation x = 0 ↔ v x = 0 :=
 
 /-- `v.intValuation` induces the same preorder as `v`. -/
 theorem intValuation_le_intValuation_iff {x y : R} :
-    v.intValuation x ≤ v.intValuation y ↔ v x ≤ v y :=
-  v.isEquiv_intValuation x y
+    v.intValuation x ≤ v.intValuation y ↔ v x ≤ v y := v.isEquiv_intValuation x y
 
 /-- `v.intValuation` induces the same strict order as `v`. -/
 theorem intValuation_lt_intValuation_iff {x y : R} :
-    v.intValuation x < v.intValuation y ↔ v x < v y :=
-  v.isEquiv_intValuation.lt_iff_lt
+    v.intValuation x < v.intValuation y ↔ v x < v y := v.isEquiv_intValuation.lt_iff_lt
 
 /-- `v.intValuation x ≤ 1` is equivalent to `v x ≤ 1`. -/
 @[simp]
@@ -200,9 +161,8 @@ theorem intAddVal_eq_coe_iff {x : R} {m : ℤ} :
 
 /-- Outside the valuation support, `v.intAddVal x` is `ord v.intValuation x`. -/
 theorem intAddVal_of_map_ne_zero {x : R} (hx : v x ≠ 0) :
-    v.intAddVal x = (ord v.intValuation x : WithTop ℤ) := by
-  rw [intAddVal_eq_coe_iff]
-  exact (v.ord_intValuation_eq_iff hx).mp rfl
+    v.intAddVal x = (ord v.intValuation x : WithTop ℤ) :=
+  v.intAddVal_eq_coe_iff.mpr ((v.ord_intValuation_eq_iff hx).mp rfl)
 
 /-- Outside the valuation support, `v.intAddVal` takes an integer value. -/
 theorem exists_int_intAddVal {x : R} (hx : v x ≠ 0) :
@@ -210,13 +170,11 @@ theorem exists_int_intAddVal {x : R} (hx : v x ≠ 0) :
   ⟨ord v.intValuation x, v.intAddVal_of_map_ne_zero hx⟩
 
 /-- `v.intAddVal` reverses the preorder of `v`. -/
-theorem intAddVal_le_intAddVal_iff {x y : R} :
-    v.intAddVal x ≤ v.intAddVal y ↔ v y ≤ v x := by
+theorem intAddVal_le_intAddVal_iff {x y : R} : v.intAddVal x ≤ v.intAddVal y ↔ v y ≤ v x := by
   rw [intAddVal_apply, intAddVal_apply, WithZero.negLog_le_negLog, intValuation_le_intValuation_iff]
 
 /-- `v.intAddVal` reverses the strict order of `v`. -/
-theorem intAddVal_lt_intAddVal_iff {x y : R} :
-    v.intAddVal x < v.intAddVal y ↔ v y < v x := by
+theorem intAddVal_lt_intAddVal_iff {x y : R} : v.intAddVal x < v.intAddVal y ↔ v y < v x := by
   rw [← not_le, intAddVal_le_intAddVal_iff, not_le]
 
 /-- `v.intAddVal` vanishes exactly on the elements of valuation `1`. -/
@@ -243,9 +201,7 @@ theorem realAddVal_eq_top_iff {x : R} : v.realAddVal x = ⊤ ↔ v x = 0 := by
 theorem realAddVal_eq_intCast_iff {x : R} {m : ℤ} :
     v.realAddVal x = ((m : ℝ) : WithTop ℝ) ↔ v x = (hv.generator : Γ) ^ m := by
   rw [realAddVal_eq_map, ← v.intAddVal_eq_coe_iff]
-  cases h : v.intAddVal x with
-  | top => simp
-  | coe k => simp
+  cases v.intAddVal x <;> simp
 
 /-- Outside the valuation support, `v.realAddVal x` is `(ord v.intValuation x : ℝ)`. -/
 theorem realAddVal_of_map_ne_zero {x : R} (hx : v x ≠ 0) :
@@ -258,14 +214,12 @@ theorem exists_int_realAddVal {x : R} (hx : v x ≠ 0) :
   ⟨ord v.intValuation x, v.realAddVal_of_map_ne_zero hx⟩
 
 /-- `v.realAddVal` reverses the preorder of `v`. -/
-theorem realAddVal_le_realAddVal_iff {x y : R} :
-    v.realAddVal x ≤ v.realAddVal y ↔ v y ≤ v x := by
+theorem realAddVal_le_realAddVal_iff {x y : R} : v.realAddVal x ≤ v.realAddVal y ↔ v y ≤ v x := by
   rw [realAddVal_eq_map, realAddVal_eq_map,
     (Int.cast_strictMono (R := ℝ)).withTop_map.le_iff_le, intAddVal_le_intAddVal_iff]
 
 /-- `v.realAddVal` reverses the strict order of `v`. -/
-theorem realAddVal_lt_realAddVal_iff {x y : R} :
-    v.realAddVal x < v.realAddVal y ↔ v y < v x := by
+theorem realAddVal_lt_realAddVal_iff {x y : R} : v.realAddVal x < v.realAddVal y ↔ v y < v x := by
   rw [← not_le, realAddVal_le_realAddVal_iff, not_le]
 
 /-- `v.realAddVal` vanishes exactly on the elements of valuation `1`. -/
@@ -287,51 +241,44 @@ section Uniformizer
 
 variable {v} {π : R}
 
-/-- A uniformizer of `v` has normalized `ℤᵐ⁰`-valuation `WithZero.exp (-1)`. -/
-theorem IsUniformizer.intValuation_eq_exp_neg_one (hπ : v.IsUniformizer π) :
-    v.intValuation π = WithZero.exp (-1) := by
-  rw [v.intValuation_eq_exp_neg_iff, zpow_one, hπ.val]
-
 /-- Uniformizers of `v` are precisely the elements of normalized `ℤᵐ⁰`-valuation
 `WithZero.exp (-1)`. -/
 theorem isUniformizer_iff_intValuation_eq_exp_neg_one :
     v.IsUniformizer π ↔ v.intValuation π = WithZero.exp (-1) := by
   rw [IsUniformizer.iff, v.intValuation_eq_exp_neg_iff, zpow_one]
 
+/-- A uniformizer of `v` has normalized `ℤᵐ⁰`-valuation `WithZero.exp (-1)`. -/
+theorem IsUniformizer.intValuation_eq_exp_neg_one (hπ : v.IsUniformizer π) :
+    v.intValuation π = WithZero.exp (-1) :=
+  isUniformizer_iff_intValuation_eq_exp_neg_one.mp hπ
+
 /-- A uniformizer of `v` has order `1` for `v.intValuation`. -/
 @[simp]
-theorem IsUniformizer.ord_intValuation (hπ : v.IsUniformizer π) :
-    ord v.intValuation π = 1 := by
+theorem IsUniformizer.ord_intValuation (hπ : v.IsUniformizer π) : ord v.intValuation π = 1 := by
   rw [ord_def, hπ.intValuation_eq_exp_neg_one, WithZero.log_exp, neg_neg]
+
+/-- Uniformizers of `v` are precisely the elements of normalized integer additive valuation `1`. -/
+theorem isUniformizer_iff_intAddVal_eq_one : v.IsUniformizer π ↔ v.intAddVal π = 1 := by
+  simpa [IsUniformizer.iff] using (v.intAddVal_eq_coe_iff (x := π) (m := 1)).symm
 
 /-- A uniformizer of `v` has normalized integer additive valuation `1`. -/
 @[simp]
-theorem IsUniformizer.intAddVal_eq_one (hπ : v.IsUniformizer π) :
-    v.intAddVal π = 1 := by
-  simpa using (v.intAddVal_eq_coe_iff (x := π) (m := 1)).mpr (by simpa using hπ.val)
-
-/-- Uniformizers of `v` are precisely the elements of normalized integer additive valuation `1`. -/
-theorem isUniformizer_iff_intAddVal_eq_one :
-    v.IsUniformizer π ↔ v.intAddVal π = 1 :=
-  ⟨fun h ↦ h.intAddVal_eq_one,
-    fun h ↦ IsUniformizer.iff.mpr (by simpa using (v.intAddVal_eq_coe_iff (x := π) (m := 1)).mp h)⟩
+theorem IsUniformizer.intAddVal_eq_one (hπ : v.IsUniformizer π) : v.intAddVal π = 1 :=
+  isUniformizer_iff_intAddVal_eq_one.mp hπ
 
 /-- Measured against a uniformizer `π`, `v.intAddVal x = m` means `v x = v π ^ m`. -/
 theorem IsUniformizer.intAddVal_eq_coe_iff (hπ : v.IsUniformizer π) {x : R} {m : ℤ} :
     v.intAddVal x = (m : WithTop ℤ) ↔ v x = v π ^ m := by
   rw [v.intAddVal_eq_coe_iff, hπ.val]
 
+/-- Uniformizers of `v` are precisely the elements of normalized real additive valuation `1`. -/
+theorem isUniformizer_iff_realAddVal_eq_one : v.IsUniformizer π ↔ v.realAddVal π = 1 := by
+  simpa [IsUniformizer.iff] using (v.realAddVal_eq_intCast_iff (x := π) (m := 1)).symm
+
 /-- A uniformizer of `v` has normalized real additive valuation `1`. -/
 @[simp]
-theorem IsUniformizer.realAddVal_eq_one (hπ : v.IsUniformizer π) :
-    v.realAddVal π = 1 := by
-  simp [realAddVal_eq_map, hπ.intAddVal_eq_one]
-
-/-- Uniformizers of `v` are precisely the elements of normalized real additive valuation `1`. -/
-theorem isUniformizer_iff_realAddVal_eq_one :
-    v.IsUniformizer π ↔ v.realAddVal π = 1 :=
-  ⟨fun h ↦ h.realAddVal_eq_one, fun h ↦ IsUniformizer.iff.mpr
-    (by simpa using (v.realAddVal_eq_intCast_iff (x := π) (m := 1)).mp (by simpa using h))⟩
+theorem IsUniformizer.realAddVal_eq_one (hπ : v.IsUniformizer π) : v.realAddVal π = 1 :=
+  isUniformizer_iff_realAddVal_eq_one.mp hπ
 
 end Uniformizer
 
@@ -346,17 +293,14 @@ theorem IsEquiv.intValuation_eq {v₁ : Valuation R Γ₁} {v₂ : Valuation R �
     v₁.intValuation = v₂.intValuation := by
   have hgen : h.orderMonoidIso hv₁.generator' = hv₂.generator' := by
     rw [LinearOrderedCommGroup.genLTOne_unique _ hv₁.generator'_lt_one
-          hv₁.generator'_zpowers_eq_top,
-        LinearOrderedCommGroup.genLTOne_unique _ hv₂.generator'_lt_one
-          hv₂.generator'_zpowers_eq_top]
+      hv₁.generator'_zpowers_eq_top, LinearOrderedCommGroup.genLTOne_unique _
+      hv₂.generator'_lt_one hv₂.generator'_zpowers_eq_top]
     exact h.orderMonoidIso.map_genLTOne'
   ext x
   rcases eq_or_ne (v₁ x) 0 with hx | hx
   · rw [v₁.intValuation_eq_zero_iff.mpr hx, v₂.intValuation_eq_zero_iff.mpr (h.eq_zero.mp hx)]
   · obtain ⟨g, hg⟩ := WithZero.ne_zero_iff_exists.mp (v₁.restrict_eq_zero_iff.not.mpr hx)
-    obtain ⟨m, rfl⟩ : g ∈ Subgroup.zpowers hv₁.generator' := by
-      rw [hv₁.generator'_zpowers_eq_top]
-      trivial
+    obtain ⟨m, rfl⟩ : g ∈ Subgroup.zpowers hv₁.generator' := hv₁.generator'_zpowers_eq_top ▸ trivial
     have h1 : v₁.restrict x = (hv₁.generator' : v₁.ValueGroup₀) ^ m := by
       rw [← hg, WithZero.coe_zpow]
     have h2 : v₂.restrict x = (hv₂.generator' : v₂.ValueGroup₀) ^ m := by
@@ -388,8 +332,8 @@ theorem intValuation_eq_self_of_surjective {u : Valuation R ℤᵐ⁰} [u.IsRank
   Valuation.ext fun x ↦
     IsRankOneDiscrete.valueGroup₀_equiv_withZeroMulInt_restrict_apply_of_surjective hu x
 
-/-- The normalized integer additive valuation of a surjective `ℤᵐ⁰`-valued valuation `u` is
-`u.addVal`. -/
+/-- The normalized integer additive valuation of a surjective `ℤᵐ⁰`-valued valuation is `u.addVal`.
+-/
 @[simp]
 theorem intAddVal_eq_addVal_of_surjective {u : Valuation R ℤᵐ⁰} [u.IsRankOneDiscrete]
     (hu : Function.Surjective u) : u.intAddVal = u.addVal := by
@@ -413,16 +357,14 @@ theorem intValuation_surjective : Function.Surjective v.intValuation :=
 theorem intAddVal_surjective : Function.Surjective v.intAddVal := by
   rintro (_ | m)
   · exact ⟨0, v.intAddVal.map_zero⟩
-  · obtain ⟨x, hx⟩ := v.intValuation_surjective (WithZero.exp (-m))
-    exact ⟨x, v.intValuation.addVal_eq_coe.mpr hx⟩
+  · exact (v.intValuation_surjective _).imp fun _ hx ↦ v.intValuation.addVal_eq_coe.mpr hx
 
 /-- On a division ring, `v.intAddVal x` equals `ord v.intValuation x` for every nonzero `x`. -/
 theorem intAddVal_of_ne_zero {x : F} (hx : x ≠ 0) :
     v.intAddVal x = (ord v.intValuation x : WithTop ℤ) :=
   v.intAddVal_of_map_ne_zero (v.ne_zero_iff.mpr hx)
 
-/-- On a division ring, `v.realAddVal x` equals `(ord v.intValuation x : ℝ)` for every nonzero
-`x`. -/
+/-- On a division ring, `v.realAddVal x` equals `(ord v.intValuation x : ℝ)` for `x ≠ 0`. -/
 theorem realAddVal_of_ne_zero {x : F} (hx : x ≠ 0) :
     v.realAddVal x = ((ord v.intValuation x : ℝ) : WithTop ℝ) :=
   v.realAddVal_of_map_ne_zero (v.ne_zero_iff.mpr hx)
@@ -450,23 +392,16 @@ theorem Integers.isUniformizer_algebraMap_of_irreducible [CommRing R] [IsDomain 
     [IsDiscreteValuationRing R] [Algebra R K] {v : Valuation K Γ} [v.IsRankOneDiscrete]
     (hvR : v.Integers R) {ϖ : R} (hϖ : Irreducible ϖ) :
     v.IsUniformizer (algebraMap R K ϖ) := by
-  let ϖ' : v.valuationSubring := ⟨algebraMap R K ϖ, hvR.map_le_one ϖ⟩
-  refine isUniformizer_of_maximalIdeal_eq_span v (r := ϖ') ?_
+  refine isUniformizer_of_maximalIdeal_eq_span v (r := ⟨algebraMap R K ϖ, hvR.map_le_one ϖ⟩) ?_
   ext x
+  obtain ⟨r, hr⟩ := hvR.exists_of_le_one x.2
   rw [Valuation.mem_maximalIdeal_iff, Ideal.mem_span_singleton,
     (Valuation.valuationSubring.integers v).dvd_iff_le,
-    ValuationSubring.algebraMap_apply, ValuationSubring.algebraMap_apply]
-  obtain ⟨r, hr⟩ := hvR.exists_of_le_one x.2
-  rw [← hr]
-  constructor
-  · intro hlt
-    have hr_nonunit : ¬ IsUnit r := fun hu ↦ hlt.ne (hvR.one_of_isUnit hu)
-    have hϖ_dvd : ϖ ∣ r := by
-      rw [← Ideal.mem_span_singleton, ← hϖ.maximalIdeal_eq]
-      exact (IsLocalRing.mem_maximalIdeal r).mpr hr_nonunit
-    exact hvR.dvd_iff_le.mp hϖ_dvd
-  · intro hle
-    exact hle.trans_lt (hvR.valuation_irreducible_lt_one hϖ)
+    ValuationSubring.algebraMap_apply, ValuationSubring.algebraMap_apply, ← hr]
+  refine ⟨fun hlt ↦ hvR.dvd_iff_le.mp ?_,
+    fun hle ↦ hle.trans_lt (hvR.valuation_irreducible_lt_one hϖ)⟩
+  rw [← Ideal.mem_span_singleton, ← hϖ.maximalIdeal_eq, IsLocalRing.mem_maximalIdeal]
+  exact fun hu ↦ hlt.ne (hvR.one_of_isUnit hu)
 
 /-- **Compatibility with `IsDiscreteValuationRing.addVal`.** For any discrete valuation ring `R` of
 integers for `v` on `K`, `v.intAddVal` on `algebraMap R K r` agrees with
@@ -477,25 +412,18 @@ theorem Integers.intAddVal_algebraMap_eq_map_addVal [CommRing R] [IsDomain R]
     v.intAddVal (algebraMap R K r) = (IsDiscreteValuationRing.addVal R r).map ((↑) : ℕ → ℤ) := by
   rcases eq_or_ne r 0 with rfl | hr
   · simp
-  · obtain ⟨ϖ, hϖ⟩ := IsDiscreteValuationRing.exists_irreducible R
-    obtain ⟨n, u, hru⟩ := IsDiscreteValuationRing.eq_unit_mul_pow_irreducible hr hϖ
-    have hϖu : v.IsUniformizer (algebraMap R K ϖ) :=
-      hvR.isUniformizer_algebraMap_of_irreducible hϖ
-    have hu0 : v.intAddVal (algebraMap R K (u : R)) = 0 :=
-      v.intAddVal_eq_zero_iff.mpr (hvR.one_of_isUnit u.isUnit)
-    rw [hru, map_mul, map_pow, AddValuation.map_mul, AddValuation.map_pow, hu0, zero_add,
-      hϖu.intAddVal_eq_one, IsDiscreteValuationRing.addVal_def' u hϖ n]
-    simp
+  obtain ⟨ϖ, hϖ⟩ := IsDiscreteValuationRing.exists_irreducible R
+  obtain ⟨n, u, rfl⟩ := IsDiscreteValuationRing.eq_unit_mul_pow_irreducible hr hϖ
+  simp [IsDiscreteValuationRing.addVal_def' u hϖ n,
+    (hvR.isUniformizer_algebraMap_of_irreducible hϖ).intAddVal_eq_one, hvR.one_of_isUnit u.isUnit]
 
-/-- On `v.valuationSubring`, `v.intAddVal` agrees with `IsDiscreteValuationRing.addVal` cast from
-`ℕ` to `ℤ`. -/
+/-- On `v.valuationSubring`, `v.intAddVal` is `IsDiscreteValuationRing.addVal` cast to `ℤ`. -/
 theorem intAddVal_coe_valuationSubring (x : v.valuationSubring) :
     v.intAddVal (x : K) =
       (IsDiscreteValuationRing.addVal v.valuationSubring x).map ((↑) : ℕ → ℤ) :=
   (Valuation.valuationSubring.integers v).intAddVal_algebraMap_eq_map_addVal x
 
-/-- On `v.valuationSubring`, `v.realAddVal` agrees with `IsDiscreteValuationRing.addVal` cast from
-`ℕ` to `ℝ`. -/
+/-- On `v.valuationSubring`, `v.realAddVal` is `IsDiscreteValuationRing.addVal` cast to `ℝ`. -/
 theorem realAddVal_coe_valuationSubring (x : v.valuationSubring) :
     v.realAddVal (x : K) =
       (IsDiscreteValuationRing.addVal v.valuationSubring x).map ((↑) : ℕ → ℝ) := by

@@ -14,47 +14,32 @@ import TauCeti.RingTheory.Valuation.LinearIndependent
 /-!
 # The value-group ramification index of a valuation on an algebra
 
-Let `w` be a valuation on an algebra `L` over a commutative ring `K`. Restricting `w` along
-`algebraMap K L` produces a valuation on `K` whose value group
-`(w.comap (algebraMap K L)).valueGroup` is a subgroup of `w.valueGroup`. This file defines the
-value-group ramification index
-
-`w.ramificationIdx K : ℕ`
-
-as the relative index of `(w.comap (algebraMap K L)).valueGroup` in `w.valueGroup`. No valuation on
-`K` and no discreteness hypothesis is needed in the definition: the index depends only on `K` and
-on the equivalence class of `w`, and multiplies in towers.
-
-When `K` is a field and `L` is a `K`-algebra, elements of `L` whose nonzero values represent
-distinct cosets of `(w.comap (algebraMap K L)).valueGroup` in `w.valueGroup` are linearly
-independent over `K`. Consequently, when `L` is a finite division-ring extension of `K`, the
-value-group ramification index is finite, positive, and bounded above by `Module.finrank K L`.
+For a valuation `w` on an algebra `L` over a commutative ring `K`, the value group of
+`w.comap (algebraMap K L)` is a subgroup of `w.valueGroup`. We define the value-group ramification
+index `w.ramificationIdx K : ℕ` as its relative index in `w.valueGroup`, prove equivalence
+invariance and tower multiplicativity, and show that over a field `K`, elements with valuations in
+distinct cosets are `K`-linearly independent, giving `[Γ_w : Γ_{w|_K}] ≤ [L : K]` for a finite
+division-ring extension `L / K`.
 
 ## Main definitions
 
-* `Valuation.ramificationIdx`: the relative index `[Γ_w : Γ_{w|_K}]` of the restricted value group
-  in the value group of `w`.
+* `Valuation.ramificationIdx`: the relative index `[Γ_w : Γ_{w|_K}]`.
 
 ## Main results
 
-* `Valuation.valueGroup_comap_le`: restricting a valuation along a ring homomorphism shrinks its
-  value group.
-* `Valuation.ramificationIdx_eq_one_iff`, `Valuation.ramificationIdx_ne_zero_iff`, and
-  `Valuation.ramificationIdx_pos`: characterizations of `w.ramificationIdx K = 1`, `≠ 0`, and
-  positivity under finite relative index.
-* `Valuation.IsEquiv.ramificationIdx_eq`: equivalent valuations on `L` have the same ramification
-  index over `K`.
+* `Valuation.valueGroup_comap_le`, `Valuation.ramificationIdx_eq_one_iff`,
+  `Valuation.ramificationIdx_ne_zero_iff`, and `Valuation.ramificationIdx_pos`: basic subgroup and
+  index characterizations.
+* `Valuation.IsEquiv.ramificationIdx_eq`: equivalence invariance of `ramificationIdx`.
 * `Valuation.ramificationIdx_comap_mul_ramificationIdx` and `Valuation.ramificationIdx_tower`:
-  multiplicativity of the ramification index in an algebra tower.
-* `Valuation.linearIndependent_of_quotient_valueGroup`: elements of `L` with valuations in distinct
-  cosets of the base value group are linearly independent over `K`.
-* `Valuation.isFiniteRelIndex_valueGroup_comap` and `Valuation.ramificationIdx_le_finrank`: for a
-  finite division-ring extension, the value-group index is finite and at most `[L : K]`.
+  multiplicativity in algebra towers.
+* `Valuation.linearIndependent_of_quotient_valueGroup`,
+  `Valuation.isFiniteRelIndex_valueGroup_comap`, and `Valuation.ramificationIdx_le_finrank`:
+  coset linear independence, finiteness, and `[Γ_w : Γ_{w|_K}] ≤ [L : K]`.
 
 ## References
 
-* J. Neukirch, *Algebraic Number Theory*, Grundlehren 322, Springer, 1999, Chapter II,
-  Proposition 6.8.
+* J. Neukirch, *Algebraic Number Theory*, Grundlehren 322, Springer, 1999, Chapter II, Prop. 6.8.
 * N. Bourbaki, *Commutative Algebra*, Chapter VI, §8.
 -/
 
@@ -74,8 +59,7 @@ theorem valueMonoid_comap_le [Ring R] [Ring S] (w : Valuation S Γ) (f : R →+*
   intro γ hγ
   rw [mem_valueMonoid_iff, Set.mem_preimage, Set.mem_range] at hγ ⊢
   obtain ⟨r, hr⟩ := hγ
-  rw [coe_toMonoidWithZeroHom, comap_apply] at hr
-  exact ⟨f r, by rw [coe_toMonoidWithZeroHom, hr]⟩
+  exact ⟨f r, by simpa only [coe_toMonoidWithZeroHom, comap_apply] using hr⟩
 
 /-- Restricting a valuation along a ring homomorphism shrinks its value group. -/
 theorem valueGroup_comap_le [Ring R] [Ring S] (w : Valuation S Γ) (f : R →+* S) :
@@ -89,20 +73,17 @@ theorem valueGroup_comap_eq_of_surjective [Ring R] [Ring S] (w : Valuation S Γ)
   rw [SetLike.mem_coe, mem_valueMonoid_iff, Set.mem_preimage, Set.mem_range] at hγ ⊢
   obtain ⟨s, hs⟩ := hγ
   obtain ⟨r, rfl⟩ := hf s
-  rw [coe_toMonoidWithZeroHom] at hs
-  exact ⟨r, by rw [coe_toMonoidWithZeroHom, comap_apply, hs]⟩
+  exact ⟨r, by simpa only [coe_toMonoidWithZeroHom, comap_apply] using hs⟩
 
 /-- The **value-group ramification index** `[Γ_w : Γ_{w|_K}]` of a valuation `w` on a `K`-algebra
-`L`: the relative index of the value group of `w` restricted to `K` in the value group of `w`. It
-equals `0` by convention when that index is infinite. -/
+`L`: the relative index of the restricted value group in `w.valueGroup` (`0` when infinite). -/
 noncomputable def ramificationIdx {L : Type*} [Ring L]
     (w : Valuation L Γ) (K : Type*) [CommRing K] [Algebra K L] : ℕ :=
   ((w.comap (algebraMap K L)).valueGroup).relIndex w.valueGroup
 
 /-- The defining formula of `Valuation.ramificationIdx`. -/
 theorem ramificationIdx_def [CommRing K] [Ring L] [Algebra K L] (w : Valuation L Γ) :
-    w.ramificationIdx K = ((w.comap (algebraMap K L)).valueGroup).relIndex w.valueGroup :=
-  (rfl)
+    w.ramificationIdx K = ((w.comap (algebraMap K L)).valueGroup).relIndex w.valueGroup := (rfl)
 
 /-- The value-group ramification index equals `1` if and only if restricting `w` to `K` has the
 same value group as `w`. -/
@@ -177,10 +158,8 @@ private theorem val_valueGroup_mk_comap [Ring R] [Ring L] (w : Valuation L Γ₁
     {r s : R} (hr : (w.comap f : R →*₀ Γ₁) r ≠ 0) (hs : (w.comap f : R →*₀ Γ₁) s ≠ 0)
     (hr' : (w : L →*₀ Γ₁) (f r) ≠ 0) (hs' : (w : L →*₀ Γ₁) (f s) ≠ 0) :
     (valueGroup.mk (w.comap f : R →*₀ Γ₁) r s hr hs : Γ₁ˣ) =
-      (valueGroup.mk (w : L →*₀ Γ₁) (f r) (f s) hr' hs' : Γ₁ˣ) := by
-  apply Units.ext
-  rw [valueGroup.mk_eq_div, valueGroup.mk_eq_div, coe_toMonoidWithZeroHom,
-    coe_toMonoidWithZeroHom, comap_apply, comap_apply]
+      (valueGroup.mk (w : L →*₀ Γ₁) (f r) (f s) hr' hs' : Γ₁ˣ) :=
+  Units.ext <| by simp only [valueGroup.mk_eq_div, coe_toMonoidWithZeroHom, comap_apply]
 
 private theorem map_orderMonoidIso_subgroupOf_valueGroup_comap_le [Ring R] [Ring L]
     {w₁ : Valuation L Γ₁} {w₂ : Valuation L Γ₂} (h : w₁.IsEquiv w₂) (f : R →+* L) :
@@ -189,7 +168,6 @@ private theorem map_orderMonoidIso_subgroupOf_valueGroup_comap_le [Ring R] [Ring
       ((w₂.comap f).valueGroup).subgroupOf w₂.valueGroup := by
   rintro _ ⟨γ, hγ, rfl⟩
   rw [SetLike.mem_coe, Subgroup.mem_subgroupOf] at hγ
-  rw [Subgroup.mem_subgroupOf]
   obtain ⟨r, s, hr, hs, hmk⟩ := (mem_valueGroup_iff_exists_mk_of_comm (w₁.comap f : R →*₀ Γ₁)).mp hγ
   have hrL : w₁ (f r) ≠ 0 := by simpa only [coe_toMonoidWithZeroHom, comap_apply] using hr
   have hsL : w₁ (f s) ≠ 0 := by simpa only [coe_toMonoidWithZeroHom, comap_apply] using hs
@@ -198,10 +176,9 @@ private theorem map_orderMonoidIso_subgroupOf_valueGroup_comap_le [Ring R] [Ring
       (by simpa only [coe_toMonoidWithZeroHom] using hrL)
       (by simpa only [coe_toMonoidWithZeroHom] using hsL)))
   have hmap : (h.orderMonoidIso.toMulEquiv : w₁.valueGroup →* w₂.valueGroup) γ =
-      valueGroup.mk (w₂ : L →*₀ Γ₂) (f r) (f s) (h.eq_zero.ne.mp hrL) (h.eq_zero.ne.mp hsL) := by
-    rw [hγ']
-    exact h.orderMonoidIso_spec hrL hsL
-  rw [hmap]
+      valueGroup.mk (w₂ : L →*₀ Γ₂) (f r) (f s) (h.eq_zero.ne.mp hrL) (h.eq_zero.ne.mp hsL) :=
+    hγ' ▸ h.orderMonoidIso_spec hrL hsL
+  rw [Subgroup.mem_subgroupOf, hmap]
   have hr₂ : (w₂.comap f : R →*₀ Γ₂) r ≠ 0 := by
     simpa only [coe_toMonoidWithZeroHom, comap_apply] using h.eq_zero.ne.mp hrL
   have hs₂ : (w₂.comap f : R →*₀ Γ₂) s ≠ 0 := by
@@ -218,10 +195,9 @@ theorem IsEquiv.map_orderMonoidIso_subgroupOf_valueGroup_comap [Ring R] [Ring L]
     Subgroup.map (h.orderMonoidIso.toMulEquiv : w₁.valueGroup →* w₂.valueGroup)
         (((w₁.comap f).valueGroup).subgroupOf w₁.valueGroup) =
       ((w₂.comap f).valueGroup).subgroupOf w₂.valueGroup := by
-  refine le_antisymm (map_orderMonoidIso_subgroupOf_valueGroup_comap_le h f) ?_
-  rintro γ hγ
-  refine ⟨h.orderMonoidIso.symm γ, ?_, h.orderMonoidIso.apply_symm_apply γ⟩
-  exact map_orderMonoidIso_subgroupOf_valueGroup_comap_le h.symm f ⟨γ, hγ, rfl⟩
+  refine le_antisymm (map_orderMonoidIso_subgroupOf_valueGroup_comap_le h f) fun γ hγ ↦ ?_
+  exact ⟨_, map_orderMonoidIso_subgroupOf_valueGroup_comap_le h.symm f ⟨γ, hγ, rfl⟩,
+    h.orderMonoidIso.apply_symm_apply γ⟩
 
 /-- **Equivalent valuations have the same value-group ramification index.** -/
 theorem IsEquiv.ramificationIdx_eq [CommRing K] [Ring L] [Algebra K L]
@@ -238,8 +214,8 @@ theorem IsEquiv.isFiniteRelIndex_valueGroup_comap_iff [CommRing K] [Ring L] [Alg
       ((w₂.comap (algebraMap K L)).valueGroup).IsFiniteRelIndex w₂.valueGroup := by
   simp only [← ramificationIdx_ne_zero_iff, h.ramificationIdx_eq]
 
-/-- **Multiplicativity of the value-group ramification index in a tower** `M/L/K`, when the
-valuation `w` on `M` extends a valuation `v` on `L`. No valuation on `K` is needed. -/
+/-- **Multiplicativity of the value-group ramification index in a tower** `M/L/K`, when `w` on `M`
+extends `v` on `L`. No valuation on `K` is needed. -/
 theorem ramificationIdx_tower
     (K : Type*) {L M : Type*} [CommRing K] [CommRing L] [Ring M]
     [Algebra K L] [Algebra L M] [Algebra K M] [IsScalarTower K L M]
@@ -256,37 +232,32 @@ variable {K L Γ : Type*} [Field K] [Ring L] [Algebra K L]
   [LinearOrderedCommGroupWithZero Γ] (w : Valuation L Γ)
 
 /-- **Elements with valuations in distinct cosets of the base value group are linearly
-independent.** Let `w` be a valuation on an algebra `L` over a field `K`. If `e i ∈ L` has nonzero
-valuation `g i` and the classes of `g i` modulo the value group of `w|_K` are pairwise distinct,
-then `e` is linearly independent over `K`. -/
+independent.** If `e i ∈ L` has nonzero valuation `g i` and the classes of `g i` modulo
+`(w.comap (algebraMap K L)).valueGroup` are pairwise distinct, then `e` is `K`-linearly
+independent. -/
 theorem linearIndependent_of_quotient_valueGroup {ι : Type*} {e : ι → L} {g : ι → w.valueGroup}
     (hg : ∀ i, w (e i) = ((g i : Γˣ) : Γ))
     (hinj : Function.Injective fun i ↦
       QuotientGroup.mk
         (s := ((w.comap (algebraMap K L)).valueGroup).subgroupOf w.valueGroup) (g i)) :
     LinearIndependent K e := by
+  have hne (c : K) (hc : c ≠ 0) : w (algebraMap K L c) ≠ 0 :=
+    ((hc.isUnit.map (algebraMap K L)).map w).ne_zero
   refine w.linearIndependent_of_map_smul_ne (fun i a ha ↦ ?_) fun i j hij a b ha hb heq ↦ ?_
   · rw [Algebra.smul_def, map_mul, hg]
-    exact mul_ne_zero ((ha.isUnit.map (algebraMap K L)).map w).ne_zero (Units.ne_zero _)
-  · have hwa : w (algebraMap K L a) ≠ 0 := ((ha.isUnit.map (algebraMap K L)).map w).ne_zero
-    have hwb : w (algebraMap K L b) ≠ 0 := ((hb.isUnit.map (algebraMap K L)).map w).ne_zero
-    let ua : Γˣ := Units.mk0 (w (algebraMap K L a)) hwa
-    let ub : Γˣ := Units.mk0 (w (algebraMap K L b)) hwb
-    have hua : ua ∈ (w.comap (algebraMap K L)).valueGroup :=
-      mem_valueGroup _ ⟨a, by rw [coe_toMonoidWithZeroHom, comap_apply, Units.val_mk0]⟩
-    have hub : ub ∈ (w.comap (algebraMap K L)).valueGroup :=
-      mem_valueGroup _ ⟨b, by rw [coe_toMonoidWithZeroHom, comap_apply, Units.val_mk0]⟩
-    have hu : ua * (g i : Γˣ) = ub * (g j : Γˣ) := by
-      apply Units.ext
-      simpa [ua, ub, Algebra.smul_def, map_mul, hg] using heq
-    have hquot : ((g i)⁻¹ * g j : w.valueGroup) ∈
-        ((w.comap (algebraMap K L)).valueGroup).subgroupOf w.valueGroup := by
-      rw [Subgroup.mem_subgroupOf]
-      have hrel : ((g i : Γˣ))⁻¹ * (g j : Γˣ) = ua * ub⁻¹ := by
-        rw [inv_mul_eq_iff_eq_mul, ← mul_assoc, mul_comm (g i : Γˣ) ua, hu, mul_right_comm,
-          mul_inv_cancel, one_mul]
-      simpa [hrel] using mul_mem hua (inv_mem hub)
-    exact hij (hinj (QuotientGroup.eq.mpr hquot))
+    exact mul_ne_zero (hne a ha) (Units.ne_zero _)
+  · have hmem (c : K) (hc : c ≠ 0) :
+        Units.mk0 (w (algebraMap K L c)) (hne c hc) ∈ (w.comap (algebraMap K L)).valueGroup :=
+      mem_valueGroup _ ⟨c, by rw [coe_toMonoidWithZeroHom, comap_apply, Units.val_mk0]⟩
+    set ua := Units.mk0 (w (algebraMap K L a)) (hne a ha)
+    set ub := Units.mk0 (w (algebraMap K L b)) (hne b hb)
+    have hu : ua * (g i : Γˣ) = ub * (g j : Γˣ) :=
+      Units.ext <| by simpa [ua, ub, Algebra.smul_def, map_mul, hg] using heq
+    have hrel : ((g i : Γˣ))⁻¹ * (g j : Γˣ) = ua * ub⁻¹ := by
+      rw [inv_mul_eq_iff_eq_mul, ← mul_assoc, mul_comm (g i : Γˣ) ua, hu, mul_right_comm,
+        mul_inv_cancel, one_mul]
+    exact hij (hinj (QuotientGroup.eq.mpr
+      (by simpa [Subgroup.mem_subgroupOf, hrel] using mul_mem (hmem a ha) (inv_mem (hmem b hb)))))
 
 end FieldBase
 
@@ -302,17 +273,14 @@ private theorem exists_linearIndependent_quotient_valueGroup :
       LinearIndependent K e := by
   classical
   set H := ((w.comap (algebraMap K L)).valueGroup).subgroupOf w.valueGroup
-  let g : (w.valueGroup ⧸ H) → w.valueGroup := Quotient.out
-  have hex (q : w.valueGroup ⧸ H) : ∃ y : L, w y = ((g q : Γˣ) : Γ) := by
-    have hmem : (g q : Γˣ) ∈ w.valueMonoid := by
-      rw [valueMonoid_eq_valueGroup]
-      exact (g q).2
+  have hex (q : w.valueGroup ⧸ H) : ∃ y : L, w y = ((q.out : Γˣ) : Γ) := by
+    have hmem : (q.out : Γˣ) ∈ w.valueMonoid :=
+      (valueMonoid_eq_valueGroup (f := (w : L →*₀ Γ))).symm ▸ q.out.2
     rw [mem_valueMonoid_iff, Set.mem_preimage, Set.mem_range] at hmem
     obtain ⟨y, hy⟩ := hmem
     exact ⟨y, by rwa [coe_toMonoidWithZeroHom] at hy⟩
-  refine ⟨fun q ↦ (hex q).choose,
-    w.linearIndependent_of_quotient_valueGroup (fun q ↦ (hex q).choose_spec) fun q₁ q₂ hq ↦ ?_⟩
-  simpa [g] using hq
+  exact ⟨fun q ↦ (hex q).choose, w.linearIndependent_of_quotient_valueGroup
+    (fun q ↦ (hex q).choose_spec) fun q₁ q₂ hq ↦ by simpa using hq⟩
 
 section Finite
 
@@ -323,20 +291,13 @@ division ring `L` finite over a field `K`, the restricted value group has finite
 `w.valueGroup`. -/
 instance isFiniteRelIndex_valueGroup_comap :
     ((w.comap (algebraMap K L)).valueGroup).IsFiniteRelIndex w.valueGroup := by
-  obtain ⟨e, he⟩ := w.exists_linearIndependent_quotient_valueGroup (K := K)
-  have hfin : Finite
-      (w.valueGroup ⧸ ((w.comap (algebraMap K L)).valueGroup).subgroupOf w.valueGroup) :=
-    he.finite
-  exact ⟨Nat.card_ne_zero.mpr ⟨inferInstance, hfin⟩⟩
+  obtain ⟨_, he⟩ := w.exists_linearIndependent_quotient_valueGroup (K := K)
+  exact ⟨Nat.card_ne_zero.mpr ⟨inferInstance, he.finite⟩⟩
 
 /-- **The value-group ramification index is at most the degree**: `[Γ_w : Γ_{w|_K}] ≤ [L : K]`. -/
 theorem ramificationIdx_le_finrank : w.ramificationIdx K ≤ Module.finrank K L := by
-  obtain ⟨e, he⟩ := w.exists_linearIndependent_quotient_valueGroup (K := K)
-  have hfin : Finite
-      (w.valueGroup ⧸ ((w.comap (algebraMap K L)).valueGroup).subgroupOf w.valueGroup) :=
-    he.finite
-  let _ := Fintype.ofFinite
-    (w.valueGroup ⧸ ((w.comap (algebraMap K L)).valueGroup).subgroupOf w.valueGroup)
+  obtain ⟨_, he⟩ := w.exists_linearIndependent_quotient_valueGroup (K := K)
+  let _ := @Fintype.ofFinite _ he.finite
   rw [ramificationIdx_def, Subgroup.relIndex, Subgroup.index_eq_card, Nat.card_eq_fintype_card]
   exact he.fintype_card_le_finrank
 
