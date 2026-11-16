@@ -26,6 +26,8 @@ chart source, and, when `M` is a Lindelöf space, globally.
   measurable subset of a chart source, with image in a chart source, has measurable image.
 * `MeasurableSet.image_of_continuousOn_injOn_chartedSpace`: a map out of a Lindelöf charted space
   which is continuous and injective on a measurable set has measurable image.
+* `ContinuousOn.measurableEmbedding_chartedSpace`: the restriction of such an injection is a
+  measurable embedding when the target carries its Borel measurable space.
 -/
 
 public section
@@ -106,3 +108,17 @@ theorem MeasurableSet.image_of_continuousOn_injOn_chartedSpace [LindelofSpace M]
     (hu x (hTs x hx))).measurableSet).image_of_continuousOn_injOn_chartAt (α := x) (β := Φ x)
     (hcont.mono Set.inter_subset_left) (hinj.mono Set.inter_subset_left)
     (Set.inter_subset_right.trans Set.inter_subset_left) fun y hy ↦ hus x (hTs x hx) ⟨hy.2.2, hy.1⟩
+
+variable (H H') in
+include H H' in
+omit [OpensMeasurableSpace N] in
+/-- A continuous injection on a measurable subset of a Lindelöf charted space modelled on a
+Polish space is a measurable embedding into a Borel charted space with Hausdorff model.
+Neither charted space is required to be Hausdorff. -/
+theorem ContinuousOn.measurableEmbedding_chartedSpace [LindelofSpace M] [BorelSpace N]
+    {Φ : M → N} {s : Set M} (hcont : ContinuousOn Φ s) (hs : MeasurableSet s)
+    (hinj : Set.InjOn Φ s) : MeasurableEmbedding (s.domRestrict Φ) := by
+  refine ⟨hinj.injective, hcont.domRestrict.measurable, fun t ht ↦ ?_⟩
+  rw [Set.domRestrict_eq, Set.image_comp]
+  exact (hs.subtype_image ht).image_of_continuousOn_injOn_chartedSpace H H'
+    (hcont.mono (Subtype.coe_image_subset s t)) (hinj.mono (Subtype.coe_image_subset s t))
