@@ -740,7 +740,8 @@ section C1
 
 variable [IsContMDiffRiemannianBundle I 1 E (fun x : M ↦ TangentSpace I x)]
 
-local instance : IsContinuousRiemannianBundle E (fun x : M ↦ TangentSpace I x) :=
+local instance instIsContinuousRiemannianBundleOfContMDiffOne :
+    IsContinuousRiemannianBundle E (fun x : M ↦ TangentSpace I x) :=
   IsContMDiffRiemannianBundle.toIsContinuousRiemannianBundle
     (IB := I) (n := 1) (F := E) (V := fun x : M ↦ TangentSpace I x)
 
@@ -787,7 +788,8 @@ end C1
 
 variable [IsContMDiffRiemannianBundle I ∞ E (fun x : M ↦ TangentSpace I x)]
 
-local instance : IsContinuousRiemannianBundle E (fun x : M ↦ TangentSpace I x) :=
+local instance instIsContinuousRiemannianBundleOfContMDiffInfty :
+    IsContinuousRiemannianBundle E (fun x : M ↦ TangentSpace I x) :=
   IsContMDiffRiemannianBundle.toIsContinuousRiemannianBundle
     (IB := I) (n := ∞) (F := E) (V := fun x : M ↦ TangentSpace I x)
 

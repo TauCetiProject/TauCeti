@@ -97,7 +97,8 @@ variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimension
   [RiemannianBundle (fun x : M ↦ TangentSpace I x)]
   [IsContMDiffRiemannianBundle I ∞ E (fun x : M ↦ TangentSpace I x)]
 
-local instance : IsContinuousRiemannianBundle E (fun x : M ↦ TangentSpace I x) :=
+local instance instIsContinuousRiemannianBundleClosedSurface :
+    IsContinuousRiemannianBundle E (fun x : M ↦ TangentSpace I x) :=
   IsContMDiffRiemannianBundle.toIsContinuousRiemannianBundle
     (IB := I) (n := ∞) (F := E) (V := fun x : M ↦ TangentSpace I x)
 
