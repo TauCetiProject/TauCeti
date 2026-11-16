@@ -10,6 +10,7 @@ public import TauCeti.Topology.Algebra.Module.Alternating.Wedge.Pow
 import TauCeti.Geometry.Symplectic.ContinuousAlternatingMap
 import TauCeti.Geometry.Symplectic.Darboux.Basis
 import TauCeti.LinearAlgebra.Alternating.TopDegree
+import TauCeti.LinearAlgebra.Basis.Fin
 import TauCeti.Topology.Algebra.Module.Alternating.TopDegree
 
 /-!
@@ -55,16 +56,6 @@ namespace ContinuousAlternatingMap
 variable {E : Type*} [AddCommGroup E] [Module ℝ E] [TopologicalSpace E] [FiniteDimensional ℝ E]
   {n : ℕ}
 
-omit [TopologicalSpace E] [FiniteDimensional ℝ E] in
-/-- A basis indexed by `Fin n × Fin 2`, listed in the interleaved order `(q₁, p₁, …, qₙ, pₙ)` and
-reindexed by `Fin (2 * n)`. -/
-private theorem coe_reindex_finProdFinEquiv (d : Basis (Fin n × Fin 2) ℝ E) :
-    ⇑(d.reindex (finProdFinEquiv.trans (finCongr (Nat.mul_comm n 2)))) =
-      fun r ↦ d (finProdFinEquiv.symm (Fin.cast (Nat.mul_comm 2 n) r)) := by
-  funext r
-  simp only [Basis.coe_reindex, Function.comp_apply, Equiv.symm_trans_apply, finCongr_symm,
-    finCongr_apply]
-
 /-- **The volume criterion for linear symplectic forms.** On a real vector space of dimension
 `2 n`, a two-form `ω` is nondegenerate, in the sense that the only vector `v` with `ω(v, w) = 0`
 for every `w` is zero, exactly when its top wedge power `ωⁿ` is nonzero. -/
@@ -93,7 +84,7 @@ theorem wedgePow_ne_zero_iff (hn : finrank ℝ E = 2 * n) (ω : E [⋀^Fin 2]→
       (fun i j ↦ by simpa [ωs] using hb.apply_fst_fst i j)
       (fun i j ↦ by simpa [ωs] using hb.apply_fst_snd i j)
     rw [← map_basis_ne_zero_iff _ (b.reindex (finProdFinEquiv.trans (finCongr (Nat.mul_comm n 2)))),
-      coe_reindex_finProdFinEquiv, hval]
+      Basis.coe_reindex_finProdFinEquiv, hval]
     exact Nat.cast_ne_zero.2 n.factorial_ne_zero
 
 section Prod
@@ -127,76 +118,6 @@ private theorem nondegenerate_of_wedgePow_fst_add_snd_ne_zero (hn : finrank ℝ 
     fun v hv ↦ congrArg Prod.snd (h' (0, v) fun q ↦ ?_)⟩
   · rw [fst_add_snd_apply, hv, ω₂.map_coord_zero 0 rfl, add_zero]
   · rw [fst_add_snd_apply, hv, ω₁.map_coord_zero 0 rfl, zero_add]
-
-omit [TopologicalSpace V] [FiniteDimensional ℝ V] [TopologicalSpace W]
-  [FiniteDimensional ℝ W] in
-/-- The concatenation of bases indexed by `Fin n × Fin 2` and `Fin m × Fin 2`, listed in the
-interleaved order, lists the interleaved first basis before the interleaved second basis. -/
-private theorem coe_reindex_prod_finProdFinEquiv (d₁ : Basis (Fin n × Fin 2) ℝ V)
-    (d₂ : Basis (Fin m × Fin 2) ℝ W) :
-    ⇑(((d₁.prod d₂).reindex
-        ((Equiv.sumProdDistrib _ _ _).symm.trans (finSumFinEquiv.prodCongr (Equiv.refl _)))).reindex
-          (finProdFinEquiv.trans (finCongr (Nat.mul_comm (n + m) 2)))) =
-      fun r ↦ Fin.append
-        (fun i ↦ (d₁.reindex (finProdFinEquiv.trans (finCongr (Nat.mul_comm n 2))) i, (0 : W)))
-        (fun j ↦ ((0 : V), d₂.reindex (finProdFinEquiv.trans (finCongr (Nat.mul_comm m 2))) j))
-        (Fin.cast (Nat.mul_add 2 n m) r) := by
-  funext r
-  rw [coe_reindex_finProdFinEquiv, coe_reindex_finProdFinEquiv, coe_reindex_finProdFinEquiv]
-  obtain ⟨r, rfl⟩ : ∃ r', r = Fin.cast (Nat.mul_add 2 n m).symm r' :=
-    ⟨Fin.cast (Nat.mul_add 2 n m) r, Fin.ext rfl⟩
-  beta_reduce
-  rw [Fin.cast_cast, Fin.cast_cast, Fin.cast_eq_self]
-  -- Both sides read off the pair `(⌊r / 2⌋, r mod 2)`, shifted by `n` in the second block.
-  induction r using Fin.addCases with
-  | left i =>
-    rw [Fin.append_left]
-    have : finProdFinEquiv.symm (Fin.cast (by ring : 2 * n + 2 * m = (n + m) * 2)
-        (Fin.castAdd (2 * m) i)) =
-        (Fin.castAdd m (finProdFinEquiv.symm (Fin.cast (Nat.mul_comm 2 n) i)).1,
-          (finProdFinEquiv.symm (Fin.cast (Nat.mul_comm 2 n) i)).2) := by
-      ext <;> simp [finProdFinEquiv_symm_apply]
-    rw [this]
-    simp [Basis.reindex_apply]
-  | right j =>
-    rw [Fin.append_right]
-    have : finProdFinEquiv.symm (Fin.cast (by ring : 2 * n + 2 * m = (n + m) * 2)
-        (Fin.natAdd (2 * n) j)) =
-        (Fin.natAdd n (finProdFinEquiv.symm (Fin.cast (Nat.mul_comm 2 m) j)).1,
-          (finProdFinEquiv.symm (Fin.cast (Nat.mul_comm 2 m) j)).2) := by
-      ext <;> simp [finProdFinEquiv_symm_apply]
-      omega
-    rw [this]
-    simp [Basis.reindex_apply]
-
-/-- A top-degree form on `V × W` which is the product of top-degree forms on `V` and `W` on one
-concatenation of bases `((B₁, 0), (0, B₂))` is their product on every concatenation of families
-`((u, 0), (0, w))`: the families are the images of the bases under `f₁` and `f₂`, and the
-concatenation is the image under `f₁ × f₂`, of determinant `det f₁ · det f₂`. -/
-private theorem apply_append_eq_mul_of_apply_basis (Φ : (V × W) [⋀^Fin (2 * (n + m))]→L[ℝ] ℝ)
-    (Φ₁ : V [⋀^Fin (2 * n)]→L[ℝ] ℝ) (Φ₂ : W [⋀^Fin (2 * m)]→L[ℝ] ℝ)
-    (B₁ : Basis (Fin (2 * n)) ℝ V) (B₂ : Basis (Fin (2 * m)) ℝ W)
-    (B : Basis (Fin (2 * (n + m))) ℝ (V × W))
-    (hB : ⇑B = fun r ↦ Fin.append (fun i ↦ (B₁ i, (0 : W))) (fun j ↦ ((0 : V), B₂ j))
-      (Fin.cast (Nat.mul_add 2 n m) r))
-    (h : Φ B = Φ₁ B₁ * Φ₂ B₂) (u : Fin (2 * n) → V) (w : Fin (2 * m) → W) :
-    Φ (fun r ↦ Fin.append (fun i ↦ (u i, (0 : W))) (fun j ↦ ((0 : V), w j))
-      (Fin.cast (Nat.mul_add 2 n m) r)) = Φ₁ u * Φ₂ w := by
-  set f₁ := B₁.constr ℝ u
-  set f₂ := B₂.constr ℝ w
-  have hu : u = f₁ ∘ B₁ := funext fun i ↦ (B₁.constr_basis ℝ u i).symm
-  have hw : w = f₂ ∘ B₂ := funext fun j ↦ (B₂.constr_basis ℝ w j).symm
-  have happ : (fun r ↦ Fin.append (fun i ↦ (u i, (0 : W))) (fun j ↦ ((0 : V), w j))
-      (Fin.cast (Nat.mul_add 2 n m) r)) = (f₁.prodMap f₂) ∘ B := by
-    rw [hB]
-    funext r
-    simp only [Function.comp_apply]
-    refine Fin.addCases (fun i ↦ ?_) (fun j ↦ ?_) (Fin.cast (Nat.mul_add 2 n m) r) <;>
-      simp [f₁, f₂]
-  rw [happ, apply_eq_det_mul Φ B, h, B.det_comp, B.det_self, LinearMap.det_prodMap, hu, hw,
-    apply_eq_det_mul Φ₁ B₁ (f₁ ∘ B₁), B₁.det_comp, B₁.det_self, apply_eq_det_mul Φ₂ B₂ (f₂ ∘ B₂),
-    B₂.det_comp, B₂.det_self]
-  ring
 
 /-- **The normalized top power of a direct sum of two-forms.** For two-forms `ω₁` on a space `V`
 of dimension `2 n` and `ω₂` on a space `W` of dimension `2 m`, the form
@@ -246,14 +167,14 @@ theorem wedgePow_fst_add_snd_apply_append (hn : finrank ℝ V = 2 * n) (hm : fin
   have hv := wedgePow_apply_finProdFinEquiv ω d
     (fun i j ↦ by simpa [hω, s₁, s₂] using hd.apply_fst_fst i j)
     (fun i j ↦ by simpa [hω, s₁, s₂] using hd.apply_fst_snd i j)
-  rw [← coe_reindex_finProdFinEquiv] at hv₁ hv₂ hv
+  rw [← Basis.coe_reindex_finProdFinEquiv] at hv₁ hv₂ hv
   have hB : ⇑(d.reindex (finProdFinEquiv.trans (finCongr (Nat.mul_comm (n + m) 2)))) =
       fun r ↦ Fin.append
         (fun i ↦ (d₁.reindex (finProdFinEquiv.trans (finCongr (Nat.mul_comm n 2))) i, (0 : W)))
         (fun j ↦ ((0 : V), d₂.reindex (finProdFinEquiv.trans (finCongr (Nat.mul_comm m 2))) j))
         (Fin.cast (Nat.mul_add 2 n m) r) :=
-    coe_reindex_prod_finProdFinEquiv d₁ d₂
-  have key := apply_append_eq_mul_of_apply_basis
+    Basis.coe_reindex_prod_finProdFinEquiv d₁ d₂
+  have key := apply_append_eq_mul_of_apply_basis (Nat.mul_add 2 n m)
     (((n + m).factorial : ℝ)⁻¹ • ω.wedgePow (n + m)) (((n.factorial : ℝ)⁻¹ • ω₁.wedgePow n))
     (((m.factorial : ℝ)⁻¹ • ω₂.wedgePow m)) _ _ _ hB
     (by

@@ -76,8 +76,7 @@ private theorem inChartAt_volumeForm_prod_apply (hn : finrank ℝ E = 2 * n)
         RoughForm.inChartAt (τ.volumeForm m).1 p.2 z.2 b₂ := by
   have hq : (extChartAt (I.prod J) p).symm z =
       ((extChartAt I p.1).symm z.1, (extChartAt J p.2).symm z.2) := by
-    rw [extChartAt_prod]
-    rfl
+    rw [extChartAt_prod, PartialEquiv.prod_coe_symm]
   have hb : ⇑((b₁.prod b₂).reindex (finSumFinEquiv.trans (finCongr (Nat.mul_add 2 n m).symm))) =
       fun r ↦ Fin.append (α := E × F) (fun i ↦ (b₁ i, 0)) (fun j ↦ (0, b₂ j))
         (Fin.cast (Nat.mul_add 2 n m) r) := by
@@ -190,8 +189,7 @@ private theorem liouvilleMeasure_prod_apply_prod_of_subset (σ : SmoothTwoForm I
     exact prod_mono hAx hBy
   have himage : extChartAt (I.prod J) (x, y) '' (A ×ˢ B) =
       (extChartAt I x '' A) ×ˢ (extChartAt J y '' B) := by
-    rw [extChartAt_prod, prod_image_image_eq]
-    rfl
+    rw [extChartAt_prod, prod_image_image_eq, PartialEquiv.prod_coe]
   rw [liouvilleMeasure_apply_of_subset (hA.prod hB) hsub, liouvilleMeasure_apply_of_subset hA hAx,
     liouvilleMeasure_apply_of_subset hB hBy, himage]
   exact setLIntegral_inChartAt_volumeForm_prod (mEF := TauCeti.extChartAtMeasurableSpaceE) σ τ
@@ -210,8 +208,7 @@ theorem liouvilleMeasure_prod (σ : SmoothTwoForm I M) (τ : SmoothTwoForm J N) 
   refine (RoughForm.eq_measure_iff.2 fun p s hs hsub ↦ ?_).symm
   have hUV : (extChartAt (I.prod J) p).source =
       (extChartAt I p.1).source ×ˢ (extChartAt J p.2).source := by
-    rw [extChartAt_prod]
-    rfl
+    rw [extChartAt_prod, PartialEquiv.prod_source]
   -- On the product chart domain `U × V`, both measures agree on measurable rectangles.
   have hrestrict : ((σ.liouvilleMeasure n).prod (τ.liouvilleMeasure m)).restrict
       ((extChartAt I p.1).source ×ˢ (extChartAt J p.2).source) =

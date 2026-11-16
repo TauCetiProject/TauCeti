@@ -37,6 +37,11 @@ chosen vector of either factor, followed by the remaining vectors in their order
 `Module.Basis.coe_prod_reindex_finSumFinEquiv_cycleRange`). These are the bases of `M × N` that
 begin with a vector transverse to a hyperplane of one factor.
 
+A basis indexed by `Fin n × Fin 2`, reindexed by `Fin (2 * n)`, lists its vectors in the
+interleaved order (`Module.Basis.coe_reindex_finProdFinEquiv`), as for Darboux bases
+`(q₁, p₁, …, qₙ, pₙ)`. Interleaving the product of two such bases lists the interleaved basis of
+the first factor before that of the second (`Module.Basis.coe_reindex_prod_finProdFinEquiv`).
+
 ## Main definitions
 
 * `Module.Basis.mkFinConsOfNotMem`: the basis `v, b 0, …, b (k - 1)` of `V`.
@@ -57,6 +62,10 @@ begin with a vector transverse to a hyperplane of one factor.
 * `Module.Basis.coe_prod_reindex_finSumFinEquiv_finCongr`,
   `Module.Basis.coe_prod_reindex_finSumFinEquiv_cycleRange`: the product basis beginning with the
   first vector of the first or of the second factor.
+* `Module.Basis.coe_reindex_finProdFinEquiv`: a basis indexed by `Fin n × Fin 2` in the
+  interleaved order.
+* `Module.Basis.coe_reindex_prod_finProdFinEquiv`: the interleaved product of two bases indexed by
+  `Fin m × Fin 2` and `Fin n × Fin 2`.
 -/
 
 public section
@@ -127,6 +136,55 @@ theorem coe_prod_reindex_finSumFinEquiv_cycleRange (b : Basis (Fin m) R M)
         rw [← finSumFinEquiv_symm_apply_natAdd]
         exact congrArg _ (Fin.ext (by simp; omega))
       simp [Fin.cycleRange_symm_succ, Fin.succAbove_of_le_castSucc _ _ hle, this, prod_apply]
+
+/-- A basis indexed by `Fin n × Fin 2`, reindexed by `Fin (2 * n)` through `finProdFinEquiv`, lists
+its vectors in the interleaved order `d (0, 0), d (0, 1), …, d (n - 1, 0), d (n - 1, 1)`. -/
+theorem coe_reindex_finProdFinEquiv (d : Basis (Fin n × Fin 2) R M) :
+    ⇑(d.reindex (finProdFinEquiv.trans (finCongr (Nat.mul_comm n 2)))) =
+      fun r ↦ d (finProdFinEquiv.symm (Fin.cast (Nat.mul_comm 2 n) r)) := by
+  funext r
+  simp only [coe_reindex, Function.comp_apply, Equiv.symm_trans_apply, finCongr_symm,
+    finCongr_apply]
+
+/-- The product of bases `d₁` and `d₂` indexed by `Fin m × Fin 2` and `Fin n × Fin 2`, reindexed
+by `(Fin m ⊕ Fin n) × Fin 2 ≃ Fin (m + n) × Fin 2` and then interleaved, lists the interleaved
+`d₁` in the first factor followed by the interleaved `d₂` in the second factor. -/
+theorem coe_reindex_prod_finProdFinEquiv (d₁ : Basis (Fin m × Fin 2) R M)
+    (d₂ : Basis (Fin n × Fin 2) R N) :
+    ⇑(((d₁.prod d₂).reindex
+        ((Equiv.sumProdDistrib _ _ _).symm.trans (finSumFinEquiv.prodCongr (Equiv.refl _)))).reindex
+          (finProdFinEquiv.trans (finCongr (Nat.mul_comm (m + n) 2)))) =
+      fun r ↦ Fin.append
+        (fun i ↦ (d₁.reindex (finProdFinEquiv.trans (finCongr (Nat.mul_comm m 2))) i, (0 : N)))
+        (fun j ↦ ((0 : M), d₂.reindex (finProdFinEquiv.trans (finCongr (Nat.mul_comm n 2))) j))
+        (Fin.cast (Nat.mul_add 2 m n) r) := by
+  funext r
+  rw [coe_reindex_finProdFinEquiv, coe_reindex_finProdFinEquiv, coe_reindex_finProdFinEquiv]
+  obtain ⟨r, rfl⟩ : ∃ r', r = Fin.cast (Nat.mul_add 2 m n).symm r' :=
+    ⟨Fin.cast (Nat.mul_add 2 m n) r, Fin.ext rfl⟩
+  beta_reduce
+  rw [Fin.cast_cast, Fin.cast_cast, Fin.cast_eq_self]
+  -- Both sides read off the pair `(⌊r / 2⌋, r mod 2)`, shifted by `m` in the second block.
+  induction r using Fin.addCases with
+  | left i =>
+    rw [Fin.append_left]
+    have : finProdFinEquiv.symm (Fin.cast (by ring : 2 * m + 2 * n = (m + n) * 2)
+        (Fin.castAdd (2 * n) i)) =
+        (Fin.castAdd n (finProdFinEquiv.symm (Fin.cast (Nat.mul_comm 2 m) i)).1,
+          (finProdFinEquiv.symm (Fin.cast (Nat.mul_comm 2 m) i)).2) := by
+      ext <;> simp [finProdFinEquiv_symm_apply]
+    rw [this]
+    simp [reindex_apply]
+  | right j =>
+    rw [Fin.append_right]
+    have : finProdFinEquiv.symm (Fin.cast (by ring : 2 * m + 2 * n = (m + n) * 2)
+        (Fin.natAdd (2 * m) j)) =
+        (Fin.natAdd m (finProdFinEquiv.symm (Fin.cast (Nat.mul_comm 2 n) j)).1,
+          (finProdFinEquiv.symm (Fin.cast (Nat.mul_comm 2 n) j)).2) := by
+      ext <;> simp [finProdFinEquiv_symm_apply]
+      omega
+    rw [this]
+    simp [reindex_apply]
 
 end Prod
 

@@ -10,6 +10,7 @@ public import TauCeti.Geometry.Manifold.Orientation.TopForm
 public import TauCeti.Geometry.Symplectic.Manifold.TwoForm
 public import TauCeti.Geometry.Symplectic.Orientation
 import TauCeti.Geometry.Symplectic.Volume
+import TauCeti.LinearAlgebra.Basis.Fin
 
 /-!
 # The symplectic volume form and orientation of a symplectic manifold
@@ -111,12 +112,8 @@ theorem IsNondegenerate.volumeForm_apply_reindex (h : σ.IsNondegenerate) {x : M
   have hval := ContinuousAlternatingMap.wedgePow_apply_finProdFinEquiv (σ.1 x) (m := n) b
     (fun i j ↦ by rw [hσ, hb.apply_fst_fst])
     (fun i j ↦ by rw [hσ, hb.apply_fst_snd])
-  have hb' : ⇑b ∘ (finProdFinEquiv.trans (finCongr (Nat.mul_comm n 2))).symm =
-      fun r ↦ b (finProdFinEquiv.symm (Fin.cast (Nat.mul_comm 2 n) r)) := by
-    funext r
-    simp only [Function.comp_apply, Equiv.symm_trans_apply, finCongr_symm, finCongr_apply]
-  rw [volumeForm_apply, ContinuousAlternatingMap.smul_apply, Basis.coe_reindex, hb', hval,
-    smul_eq_mul, inv_mul_cancel₀ (by positivity)]
+  rw [volumeForm_apply, ContinuousAlternatingMap.smul_apply, Basis.coe_reindex_finProdFinEquiv,
+    hval, smul_eq_mul, inv_mul_cancel₀ (by positivity)]
 
 /-- **The volume criterion for nondegenerate two-forms.** On a manifold modelled on a space of
 dimension `2 * n`, a smooth two-form is fiberwise nondegenerate exactly when its volume form
