@@ -536,66 +536,88 @@ theorem coordinateFluxIntegrand_scalar
   simp_rw [hfactor, mul_assoc, mul_div_assoc, ← Finset.mul_sum]
   simp only [← mul_div_assoc, ← Finset.sum_div, hsum]
 
-/-- For a radial conformally Euclidean matrix `f(‖x‖) δ`, the flux integrand on the coordinate
-sphere of positive radius `r` is the constant `-(n - 1) f'(r)`. -/
+/-- The pointwise flux density of `f(‖x‖) δ`, expressed using the total derivative `deriv`.
+No differentiability or radius assumption is needed. -/
+theorem coordinateFluxIntegrand_scalar_comp_norm (f : ℝ → ℝ) (r : ℝ)
+    (x : EuclideanSpace ℝ (Fin n)) :
+    coordinateFluxIntegrand n (fun y i j => if i = j then f ‖y‖ else 0) r x =
+      -((n : ℝ) - 1) * deriv f ‖x‖ * ‖x‖ / r := by
+  rw [coordinateFluxIntegrand_scalar]
+  by_cases hx : x = 0
+  · simp [hx]
+  have hpos : 0 < ‖x‖ := norm_pos_iff.mpr hx
+  by_cases hf : DifferentiableAt ℝ f ‖x‖
+  · have hn : DifferentiableAt ℝ (fun y : EuclideanSpace ℝ (Fin n) => ‖y‖) x :=
+      (contDiffAt_id.norm ℝ hx).differentiableAt one_ne_zero
+    rw [fderiv_fun_comp x hf hn, hf.hasDerivAt.hasFDerivAt.fderiv,
+      ContinuousLinearMap.comp_apply]
+    simp only [ContinuousLinearMap.toSpanSingleton_apply, smul_eq_mul,
+      hn.fderiv_norm_self]
+    ring
+  · have hd : ¬DifferentiableAt ℝ (fun y : EuclideanSpace ℝ (Fin n) => f ‖y‖) x := by
+      intro hd
+      -- Restriction to the radial line would make `f` differentiable at `‖x‖`.
+      have hp : DifferentiableAt ℝ (fun t : ℝ => (t / ‖x‖) • x) ‖x‖ := by fun_prop
+      have hd' : DifferentiableAt ℝ (fun y => f ‖y‖) ((‖x‖ / ‖x‖) • x) := by
+        simpa [hpos.ne'] using hd
+      have heq : (fun t : ℝ => f ‖(t / ‖x‖) • x‖) =ᶠ[nhds ‖x‖] f := by
+        filter_upwards [eventually_gt_nhds hpos] with t ht
+        simp [norm_smul, Real.norm_eq_abs, abs_of_pos ht, hpos.ne']
+      exact hf (DifferentiableAt.congr_of_eventuallyEq
+        (hd'.comp ‖x‖ (g := fun y : EuclideanSpace ℝ (Fin n) => f ‖y‖) hp) heq.symm)
+    rw [fderiv_zero_of_not_differentiableAt hd, deriv_zero_of_not_differentiableAt hf]
+    simp
+
+/-- On a nonzero-radius sphere, the flux density of `f(‖x‖) δ` is the constant
+`-(n - 1) deriv f r`, without a differentiability assumption. -/
+theorem coordinateFluxIntegrand_scalar_radial_deriv (f : ℝ → ℝ) {r : ℝ} (hr : r ≠ 0)
+    {x : EuclideanSpace ℝ (Fin n)} (hx : x ∈ Metric.sphere 0 r) :
+    coordinateFluxIntegrand n (fun y i j => if i = j then f ‖y‖ else 0) r x =
+      -((n : ℝ) - 1) * deriv f r := by
+  have hxr : ‖x‖ = r := by simpa using hx
+  rw [coordinateFluxIntegrand_scalar_comp_norm, hxr, mul_div_cancel_right₀ _ hr]
+
+/-- For a radial conformally Euclidean matrix `f(‖x‖) δ` with derivative `f'` at `r`,
+the flux integrand on the coordinate sphere of nonzero radius `r` is `-(n - 1) f'`. -/
 theorem coordinateFluxIntegrand_scalar_radial {f : ℝ → ℝ} {f' r : ℝ}
-    (hf : HasDerivAt f f' r) (hr : 0 < r)
+    (hf : HasDerivAt f f' r) (hr : r ≠ 0)
     {x : EuclideanSpace ℝ (Fin n)} (hx : x ∈ Metric.sphere 0 r) :
     coordinateFluxIntegrand n (fun y i j => if i = j then f ‖y‖ else 0) r x =
       -((n : ℝ) - 1) * f' := by
-  have hxr : ‖x‖ = r := by simpa using hx
-  have hx0 : x ≠ 0 := by intro h; simp [h] at hxr; linarith
-  have hn : DifferentiableAt ℝ (fun y : EuclideanSpace ℝ (Fin n) => ‖y‖) x :=
-    (contDiffAt_id.norm ℝ hx0).differentiableAt one_ne_zero
-  have hf' : HasDerivAt f f' ‖x‖ := hxr ▸ hf
-  rw [coordinateFluxIntegrand_scalar,
-    fderiv_fun_comp x hf'.differentiableAt hn, hf'.hasFDerivAt.fderiv,
-    ContinuousLinearMap.comp_apply]
-  simp only [ContinuousLinearMap.toSpanSingleton_apply, smul_eq_mul,
-    hn.fderiv_norm_self, hxr]
-  field_simp
+  rw [coordinateFluxIntegrand_scalar_radial_deriv f hr hx, hf.deriv]
 
 /-- Radial scalar coefficients have an integrable flux density on every sphere, without
 any differentiability assumption on the radial function. -/
 theorem integrableOn_coordinateFluxIntegrand_scalar_radial (f : ℝ → ℝ) (r : ℝ) :
     IntegrableOn (coordinateFluxIntegrand n (fun y i j => if i = j then f ‖y‖ else 0) r)
       (Metric.sphere 0 r) (Measure.euclideanHausdorffMeasure (n - 1)) := by
-  rcases lt_trichotomy r 0 with hr | rfl | hr
-  · simp [Metric.sphere_eq_empty_of_neg hr]
-  · apply integrableOn_coordinateFluxIntegrand_of_eqOn_const (c := 0)
+  by_cases hr : r = 0
+  · subst r
+    apply integrableOn_coordinateFluxIntegrand_of_eqOn_const (c := 0)
     intro x _
-    simp [coordinateFluxIntegrand_def]
-  · by_cases hf : DifferentiableAt ℝ f r
-    · exact integrableOn_coordinateFluxIntegrand_of_eqOn_const
-        (fun _ hx => coordinateFluxIntegrand_scalar_radial hf.hasDerivAt hr hx)
-    · apply integrableOn_coordinateFluxIntegrand_of_eqOn_const (c := 0)
-      intro x hx
-      have hxr : ‖x‖ = r := by simpa using hx
-      have hd : ¬DifferentiableAt ℝ (fun y : EuclideanSpace ℝ (Fin n) => f ‖y‖) x := by
-        intro hd
-        -- Restriction to the radial line would make `f` differentiable at `r`.
-        have hp : DifferentiableAt ℝ (fun t : ℝ => (t / r) • x) r := by fun_prop
-        have hd' : DifferentiableAt ℝ (fun y => f ‖y‖) ((r / r) • x) := by
-          simpa [hr.ne'] using hd
-        have heq : (fun t : ℝ => f ‖(t / r) • x‖) =ᶠ[nhds r] f := by
-          filter_upwards [eventually_gt_nhds hr] with t ht
-          simp [norm_smul, Real.norm_eq_abs, abs_of_pos ht, abs_of_pos hr, hxr, hr.ne']
-        exact hf (DifferentiableAt.congr_of_eventuallyEq
-          (hd'.comp r (g := fun y : EuclideanSpace ℝ (Fin n) => f ‖y‖) hp) heq.symm)
-      rw [coordinateFluxIntegrand_scalar, fderiv_zero_of_not_differentiableAt hd]
-      simp
+    simp [coordinateFluxIntegrand_scalar_comp_norm]
+  · exact integrableOn_coordinateFluxIntegrand_of_eqOn_const
+      (fun _ hx => coordinateFluxIntegrand_scalar_radial_deriv f hr hx)
 
-/-- The normalized flux of a radial conformally Euclidean matrix in dimension at least two,
-with the sphere areas and dimension factors cancelled. -/
-theorem normalizedCoordinateFlux_scalar_radial {f : ℝ → ℝ} {f' r : ℝ}
-    (hn : 2 ≤ n) (hf : HasDerivAt f f' r) (hr : 0 < r) :
+/-- The normalized flux of `f(‖x‖) δ` in dimension at least two, expressed using `deriv`,
+with the sphere areas and dimension factors cancelled. No differentiability is needed. -/
+theorem normalizedCoordinateFlux_scalar_radial_deriv (hn : 2 ≤ n) (f : ℝ → ℝ)
+    {r : ℝ} (hr : 0 < r) :
     normalizedCoordinateFlux n (fun y i j => if i = j then f ‖y‖ else 0) r =
-      -f' * r ^ (n - 1) / 2 := by
+      -deriv f r * r ^ (n - 1) / 2 := by
   rw [normalizedCoordinateFlux_of_eqOn_const (by omega) hr
-    (fun x hx => coordinateFluxIntegrand_scalar_radial hf hr hx)]
+    (fun x hx => coordinateFluxIntegrand_scalar_radial_deriv f hr.ne' hx)]
   have hn' : (n : ℝ) - 1 ≠ 0 := by
     have : (2 : ℝ) ≤ n := by exact_mod_cast hn
     linarith
   field_simp [hn']
+
+/-- The normalized flux of a radial conformally Euclidean matrix with derivative `f'` at
+positive radius `r`, in dimension at least two, with areas and dimension factors cancelled. -/
+theorem normalizedCoordinateFlux_scalar_radial {f : ℝ → ℝ} {f' r : ℝ}
+    (hn : 2 ≤ n) (hf : HasDerivAt f f' r) (hr : 0 < r) :
+    normalizedCoordinateFlux n (fun y i j => if i = j then f ‖y‖ else 0) r =
+      -f' * r ^ (n - 1) / 2 := by
+  rw [normalizedCoordinateFlux_scalar_radial_deriv hn f hr, hf.deriv]
 
 end TauCeti
