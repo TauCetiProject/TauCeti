@@ -294,6 +294,14 @@ theorem reverse {p q : 𝔸.Path x y} (h : Homotopic p q) : Homotopic p.reverse 
   rw [Quiver.Path.nil_comp] at h₂
   exact h₁.trans h₂
 
+/-- Left cancellation for homotopy of `𝔸`-paths. -/
+theorem of_comp_left (p : 𝔸.Path x y) {r s : 𝔸.Path y z}
+    (h : Homotopic (p.comp r) (p.comp s)) : Homotopic r s := by
+  have cancel (q : 𝔸.Path y z) : Homotopic (p.reverse.comp (p.comp q)) q := by
+    rw [← Quiver.Path.comp_assoc]
+    simpa only [Quiver.Path.nil_comp] using (reverse_comp p).comp_right q
+  exact (cancel r).symm.trans ((h.comp_left p.reverse).trans (cancel s))
+
 end Homotopic
 
 variable (𝔸) in
@@ -419,6 +427,19 @@ composes the conjugation with the inner automorphism by the class of `s`. -/
 theorem vertexHom_comp (s : 𝔸.Path ⟨a⟩ ⟨a⟩) (q : 𝔸.Path ⟨a⟩ ⟨b⟩) :
     vertexHom (s.comp q) = (MulAut.conj (mk s) : π₁ 𝔸 a →* π₁ 𝔸 a).comp (vertexHom q) :=
   MonoidHom.ext (vertexHom_comp_apply s q)
+
+/-- Extending the conjugating path by a vertex group letter `g` precomposes `vertexHom` with inner
+conjugation by `g`. -/
+theorem vertexHom_cons_vertex (p : 𝔸.Path ⟨a⟩ ⟨b⟩) (g : 𝔸.vertexGroup b) :
+    vertexHom (p.cons (Letter.vertex g)) =
+      (vertexHom p).comp (MulAut.conj g : 𝔸.vertexGroup b →* 𝔸.vertexGroup b) := by
+  ext h
+  rw [← Path.comp_ofVertex, vertexHom_apply, MonoidHom.comp_apply, vertexHom_apply,
+    MonoidHom.coe_ofClass, MulAut.conj_apply, mk_eq_mk_iff, Quiver.Path.reverse_comp,
+    Path.reverse_ofVertex]
+  simp only [← Quiver.Path.comp_assoc, Path.comp_ofVertex]
+  exact (((Path.Homotopic.mul p g h).cons _).trans
+    (Path.Homotopic.mul p (g * h) g⁻¹)).comp_right p.reverse
 
 /-- The conjugations of `A_b` into `π₁(𝔸, a)` along two paths `q` and `r` from `a` to `b` differ
 by the inner automorphism by the class of `r q⁻¹`. -/
