@@ -53,9 +53,9 @@ completeness.
   most one, and `TauCeti.CkHolderSpace.restrictOnL`: restriction of a bounded `C^{k,α}` map on the
   whole space to an open set, also of operator norm at most one.
 * `TauCeti.CkHolderSpaceOn.inclusionSuccL`: on a convex open set and for `α ≤ 1`, the inclusion
-  `C^{k+1,α}(Ω) → C^{k,α}(Ω)`, of operator norm at most `3`. Without convexity the inclusion
-  fails: the global Hölder seminorm of the `k`-th derivative is not controlled by the bound on the
-  next derivative across a slit.
+  `C^{k+1,α}(Ω) → C^{k,α}(Ω)`, of operator norm at most `3`. On non-convex open sets the
+  inclusion can fail: across a slit, the global Hölder seminorm of the `k`-th derivative is not
+  controlled by the bound on the next derivative.
 
 ## References
 
@@ -164,16 +164,6 @@ private theorem fieldL_last (J : Jet k α Ω F) :
     (last := HolderSpace.toBoundedContinuousFunctionCLM.comp (WithLp.sndL 1 ℝ _ _))
     (cast := fun j ↦ (PiLp.proj 1 _ j).comp (WithLp.fstL 1 ℝ _ _)))).trans (by simp)
 
-variable (E F) in
-/-- Left currying of `(j + 1)`-multilinear maps, as a continuous linear map. -/
-private def curryLeftL (j : ℕ) : (E [×j + 1]→L[ℝ] F) →L[ℝ] E →L[ℝ] (E [×j]→L[ℝ] F) :=
-  (continuousMultilinearCurryLeftEquiv ℝ (fun _ : Fin (j + 1) ↦ E) F).toContinuousLinearEquiv
-
-private theorem curryLeftL_apply (j : ℕ) (g : E [×j + 1]→L[ℝ] F) :
-    curryLeftL E F j g = g.curryLeft := by
-  ext x v
-  simp [curryLeftL]
-
 /-- The extension by zero of a field on `Ω` to the whole space. -/
 private def extendZero {G : Type*} [Zero G] (g : Ω → G) : E → G :=
   Function.extend Subtype.val g 0
@@ -187,12 +177,11 @@ private theorem extendZero_coe {G : Type*} [Zero G] (g : Ω → G) (x : Ω) :
 next field, curried on the left, as its Fréchet derivative at every point of `Ω`. -/
 private def IsJetGraph (J : Jet k α Ω F) : Prop :=
   ∀ (j : Fin k) (x : Ω), HasFDerivAt (extendZero (fieldL j.castSucc J : Ω → E [×j]→L[ℝ] F))
-    (curryLeftL E F j (fieldL j.succ J x)) x
+    (continuousMultilinearCurryLeftEquiv ℝ (fun _ : Fin (j + 1) ↦ E) F (fieldL j.succ J x)) x
 
 /-- Elements are the jets satisfying the derivative identities. This is the identity map: the
-carrier of `CkHolderSpaceOn` states the identities through its local `field`, which is `fieldL`,
-and through `continuousMultilinearCurryLeftEquiv`, whose underlying continuous linear map is
-`curryLeftL`. Besides this map, the carrier is unfolded only by `toJetL`, the two norm instances,
+carrier of `CkHolderSpaceOn` states the identities through its local `field`, which is `fieldL`.
+Besides this map, the carrier is unfolded only by `toJetL`, the two norm instances,
 `norm_toJet` and `instCompleteSpace`, which use that it is a submodule of the jet space. -/
 private def equivSubtype : CkHolderSpaceOn k α Ω F ≃ {J : Jet k α Ω F // IsJetGraph J} :=
   Equiv.refl _
@@ -213,7 +202,8 @@ private theorem toJet_mk (J : Jet k α Ω F) (hJ) : toJet (mk J hJ) = J := by
 
 private theorem hasFDerivAt_fieldL (f : CkHolderSpaceOn k α Ω F) (j : Fin k) (x : Ω) :
     HasFDerivAt (extendZero (fieldL j.castSucc (toJet f) : Ω → E [×j]→L[ℝ] F))
-      (curryLeftL E F j (fieldL j.succ (toJet f) x)) x :=
+      (continuousMultilinearCurryLeftEquiv ℝ (fun _ : Fin (j + 1) ↦ E) F
+        (fieldL j.succ (toJet f) x)) x :=
   (equivSubtype f).2 j x
 
 /-- The `C^{k,α}(Ω)` norm makes the space a normed additive group. -/
@@ -278,7 +268,8 @@ private theorem hasFTaylorSeriesUpToOn (f : CkHolderSpaceOn k α Ω F) :
     have hfun : (fun y ↦ series f y m) =
         extendZero (fieldL (⟨m, hmk⟩ : Fin k).castSucc (toJet f) : Ω → E [×m]→L[ℝ] F) :=
       funext fun y ↦ series_of_lt f y (by omega)
-    rw [hfun, series_of_lt f x (by omega), extendZero_coe, ← curryLeftL_apply]
+    rw [hfun, series_of_lt f x (by omega), extendZero_coe]
+    -- `continuousMultilinearCurryLeftEquiv` applies `curryLeft`.
     exact (hasFDerivAt_fieldL f ⟨m, hmk⟩ x).hasFDerivWithinAt
   cont m hm := by
     have hmk : m < k + 1 := by
@@ -486,6 +477,26 @@ theorem iteratedFDeriv_smul (c : ℝ) (f : CkHolderSpaceOn k α Ω F) (i : Fin (
     (c • f).iteratedFDeriv i = c • f.iteratedFDeriv i := by
   simpa only [iteratedFDerivL_apply] using (iteratedFDerivL i).map_smul c f
 
+/-- The `k`-th derivative field of the zero element, in the bounded Hölder space, is zero. -/
+@[simp]
+theorem iteratedFDerivHolder_zero :
+    (0 : CkHolderSpaceOn k α Ω F).iteratedFDerivHolder = 0 := by
+  simpa only [iteratedFDerivHolderL_apply] using
+    (iteratedFDerivHolderL (k := k) (α := α) (Ω := Ω) (F := F)).map_zero
+
+/-- The `k`-th derivative field, in the bounded Hölder space, is additive. -/
+@[simp]
+theorem iteratedFDerivHolder_add (f g : CkHolderSpaceOn k α Ω F) :
+    (f + g).iteratedFDerivHolder = f.iteratedFDerivHolder + g.iteratedFDerivHolder := by
+  simpa only [iteratedFDerivHolderL_apply] using iteratedFDerivHolderL.map_add f g
+
+/-- The `k`-th derivative field, in the bounded Hölder space, commutes with scalar
+multiplication. -/
+@[simp]
+theorem iteratedFDerivHolder_smul (c : ℝ) (f : CkHolderSpaceOn k α Ω F) :
+    (c • f).iteratedFDerivHolder = c • f.iteratedFDerivHolder := by
+  simpa only [iteratedFDerivHolderL_apply] using iteratedFDerivHolderL.map_smul c f
+
 /-- The underlying function of the zero element is zero. -/
 @[simp]
 theorem coe_zero : ⇑(0 : CkHolderSpaceOn k α Ω F) = 0 := by
@@ -518,6 +529,14 @@ private def bcfOn {G : Type*} [NormedAddCommGroup G] (g : E → G) (hg : Continu
   BoundedContinuousFunction.ofNormedAddCommGroup (fun x : Ω ↦ g x)
     (continuousOn_iff_continuous_domRestrict.mp hg) hbdd.choose hbdd.choose_spec
 
+omit [NormedSpace ℝ E] in
+/-- The field `bcfOn g` is the restriction of `g` to `Ω`. -/
+@[simp]
+private theorem coe_bcfOn {G : Type*} [NormedAddCommGroup G] (g : E → G)
+    (hg : ContinuousOn g Ω) (hbdd : ∃ C, ∀ x : Ω, ‖g x‖ ≤ C) :
+    ⇑(bcfOn g hg hbdd) = fun x : Ω ↦ g x :=
+  rfl
+
 /-- The jet of iterated derivatives on `Ω` of a function that is `C^k` on `Ω`, with bounded
 derivatives through order `k` on `Ω` and `α`-Hölder `k`-th derivative on `Ω`. -/
 private def jetOf (g : E → F) (hg : ContDiffOn ℝ k g Ω)
@@ -529,7 +548,8 @@ private def jetOf (g : E → F) (hg : ContDiffOn ℝ k g Ω)
         (hbdd j j.2.le),
       HolderSpace.ofBoundedContinuousFunction
         (bcfOn (_root_.iteratedFDeriv ℝ k g)
-          (ContinuousOn.continuousOn_iteratedFDeriv hg Ω.isOpen le_rfl) (hbdd k le_rfl)) hholder)
+          (ContinuousOn.continuousOn_iteratedFDeriv hg Ω.isOpen le_rfl) (hbdd k le_rfl))
+        (by rwa [coe_bcfOn]))
 
 private theorem fieldL_jetOf (g : E → F) (hg : ContDiffOn ℝ k g Ω)
     (hbdd : ∀ i ≤ k, ∃ C, ∀ x : Ω, ‖_root_.iteratedFDeriv ℝ i g x‖ ≤ C)
@@ -538,12 +558,10 @@ private theorem fieldL_jetOf (g : E → F) (hg : ContDiffOn ℝ k g Ω)
   induction i using Fin.lastCases with
   | last =>
     rw [fieldL_last]
-    simp [jetOf, bcfOn]
-    rfl
+    simp [jetOf]
   | cast j =>
     rw [fieldL_castSucc]
-    simp [jetOf, bcfOn]
-    rfl
+    simp [jetOf]
 
 private theorem isJetGraph_jetOf (g : E → F) (hg : ContDiffOn ℝ k g Ω)
     (hbdd : ∀ i ≤ k, ∃ C, ∀ x : Ω, ‖_root_.iteratedFDeriv ℝ i g x‖ ≤ C)
@@ -553,12 +571,13 @@ private theorem isJetGraph_jetOf (g : E → F) (hg : ContDiffOn ℝ k g Ω)
       =ᶠ[nhds (x : E)] _root_.iteratedFDeriv ℝ j g := by
     filter_upwards [Ω.isOpen.mem_nhds x.2] with y hy
     lift y to Ω using hy
-    rw [extendZero_coe, fieldL_jetOf]
-    rfl
+    rw [extendZero_coe]
+    exact fieldL_jetOf g hg hbdd hholder j.castSucc y
   have h := ((hg.contDiffAt (Ω.isOpen.mem_nhds x.2)).differentiableAt_iteratedFDeriv
     (m := j) (by exact_mod_cast j.2)).hasFDerivAt
   rw [fderiv_iteratedFDeriv, Function.comp_apply] at h
-  rw [fieldL_jetOf, curryLeftL_apply]
+  rw [fieldL_jetOf]
+  -- `continuousMultilinearCurryLeftEquiv` applies `curryLeft`.
   exact h.congr_of_eventuallyEq hEq
 
 /-- The element of `C^{k,α}(Ω)` defined by a function on the whole space that is `C^k` on `Ω`,
@@ -593,13 +612,14 @@ private theorem isClosed_isJetGraph : IsClosed {J : Jet k α Ω F | IsJetGraph J
   have hset : {J : Jet k α Ω F | IsJetGraph J} =
       ⋂ j : Fin k, (fun J : Jet k α Ω F ↦ (fieldL j.castSucc J, fieldL j.succ J)) ⁻¹'
         {J | ∀ x : Ω, HasFDerivAt (extendZero (J.1 : Ω → E [×j]→L[ℝ] F))
-          (curryLeftL E F j (J.2 x)) x} := by
+          (continuousMultilinearCurryLeftEquiv ℝ (fun _ : Fin (j + 1) ↦ E) F (J.2 x)) x} := by
     ext J
     simp [IsJetGraph]
   rw [hset]
   exact isClosed_iInter fun j ↦
-    (isClosed_setOf_hasFDerivAt_extend_comp Ω.isOpen (curryLeftL E F j)
-      (curryLeftL E F j).uniformContinuous).preimage
+    (isClosed_setOf_hasFDerivAt_extend_comp Ω.isOpen
+      (continuousMultilinearCurryLeftEquiv ℝ (fun _ : Fin (j + 1) ↦ E) F)
+      (continuousMultilinearCurryLeftEquiv ℝ _ F).isometry.uniformContinuous).preimage
       ((fieldL (k := k) (α := α) (Ω := Ω) (F := F) _).continuous.prodMk
         (fieldL (k := k) (α := α) (Ω := Ω) (F := F) _).continuous)
 
@@ -633,12 +653,6 @@ section restrict
 variable {Ω' : Opens E}
 
 omit [NormedSpace ℝ E] in
-/-- The inclusion of a smaller open set is `1`-Lipschitz. -/
-private theorem lipschitzWith_inclusion (h : Ω' ≤ Ω) :
-    LipschitzWith 1 fun x : Ω' ↦ (⟨x, h x.2⟩ : Ω) :=
-  Isometry.lipschitzWith fun _ _ ↦ rfl
-
-omit [NormedSpace ℝ E] in
 private theorem extendZero_of_le {G : Type*} [Zero G] (h : Ω' ≤ Ω) (g : Ω → G) (x : Ω') :
     extendZero g (x : E) = g ⟨x, h x.2⟩ :=
   extendZero_coe g ⟨x, h x.2⟩
@@ -664,7 +678,8 @@ def restrictL (h : Ω' ≤ Ω) : CkHolderSpaceOn k α Ω F →L[ℝ] CkHolderSpa
                 fun x : Ω' ↦ (⟨x, h x.2⟩ : Ω) :=
             funext fun x ↦ iteratedFDeriv_extendZero_of_le h f (Fin.last k) x
           rw [he]
-          have hc := (holderWith_one.2 (lipschitzWith_inclusion h)).memHolder.comp
+          have hc := (holderWith_one.2
+            ((LipschitzWith.subtype_val (Ω' : Set E)).subtype_mk fun x ↦ h x.2)).memHolder.comp
             f.memHolder_iteratedFDeriv
           rwa [mul_one] at hc)
       map_add' f g := by ext x; simp [extendZero_of_le h]
@@ -672,7 +687,7 @@ def restrictL (h : Ω' ≤ Ω) : CkHolderSpaceOn k α Ω F →L[ℝ] CkHolderSpa
     1 fun f ↦ by
       rw [one_mul, LinearMap.coe_mk, AddHom.coe_mk]
       exact (norm_le_of_iteratedFDeriv_eq (ι := fun x : Ω' ↦ (⟨x, h x.2⟩ : Ω))
-        (lipschitzWith_inclusion h) _ f.iteratedFDeriv
+        ((LipschitzWith.subtype_val (Ω' : Set E)).subtype_mk fun x ↦ h x.2) _ f.iteratedFDeriv
         (fun i x ↦ by rw [iteratedFDeriv_ofContDiffOn, iteratedFDeriv_extendZero_of_le h])
         f.memHolder_iteratedFDeriv).trans (norm_eq f).ge
 
@@ -699,6 +714,13 @@ end restrict
 
 section inclusionSucc
 
+/-- At points of `Ω`, the iterated derivatives of the extension by zero are bounded by the supremum
+norms of the derivative fields. -/
+private theorem norm_iteratedFDeriv_extendZero_le (f : CkHolderSpaceOn k α Ω F) (i : Fin (k + 1))
+    (x : Ω) : ‖_root_.iteratedFDeriv ℝ i (extendZero f) x‖ ≤ ‖f.iteratedFDeriv i‖ :=
+  (congrArg norm (f.iteratedFDeriv_eq (fun y ↦ extendZero_coe f y) i x)).trans_le
+    ((f.iteratedFDeriv i).norm_coe_le_norm x)
+
 /-- On a convex open set and for `α ≤ 1`, the `k`-th derivative of an element of `C^{k+1,α}(Ω)`
 is `α`-Hölder, with constant controlled by the supremum norms of the fields of orders `k` and
 `k + 1`. -/
@@ -709,23 +731,21 @@ private theorem holderOnWith_iteratedFDeriv_extendZero_succ (f : CkHolderSpaceOn
       (_root_.iteratedFDeriv ℝ k (extendZero f)) Ω :=
   (f.contDiffOn fun x ↦ extendZero_coe f x).holderOnWith_iteratedFDeriv_of_lt Ω.isOpen hconv
     k.lt_succ_self hα
-    (fun x hx ↦ (congrArg norm (f.iteratedFDeriv_eq (fun y ↦ extendZero_coe f y)
-      (Fin.last k).castSucc ⟨x, hx⟩)).trans_le ((f.iteratedFDeriv _).norm_coe_le_norm _))
-    (fun x hx ↦ (congrArg norm (f.iteratedFDeriv_eq (fun y ↦ extendZero_coe f y)
-      (Fin.last (k + 1)) ⟨x, hx⟩)).trans_le ((f.iteratedFDeriv _).norm_coe_le_norm _))
+    (fun x hx ↦ norm_iteratedFDeriv_extendZero_le f (Fin.last k).castSucc ⟨x, hx⟩)
+    (fun x hx ↦ norm_iteratedFDeriv_extendZero_le f (Fin.last (k + 1)) ⟨x, hx⟩)
 
 /-- On a convex open set `Ω` and for `α ≤ 1`, the inclusion `C^{k+1,α}(Ω) → C^{k,α}(Ω)`, as a
-continuous linear map. Convexity is needed: for `0 < α ≤ 1`, on a slit annulus in the plane the
-angle function is in `C^{1,α}`, since its gradient is the restriction of a smooth field on the
-full annulus, but it is not in `C^{0,α}`, since it jumps across the slit. -/
+continuous linear map. Some geometric condition on `Ω` is needed, and this map assumes convexity:
+for `0 < α ≤ 1`, on a slit annulus in the plane the angle function is in `C^{1,α}`, since its
+gradient is the restriction of a smooth field on the full annulus, but it is not in `C^{0,α}`,
+since it jumps across the slit, so the inclusion fails there. -/
 def inclusionSuccL (hconv : Convex ℝ (Ω : Set E)) (hα : α ≤ 1) :
     CkHolderSpaceOn (k + 1) α Ω F →L[ℝ] CkHolderSpaceOn k α Ω F :=
   LinearMap.mkContinuous
     { toFun f := ofContDiffOn (extendZero f)
         ((f.contDiffOn fun x ↦ extendZero_coe f x).of_le (by norm_cast; omega))
         (fun i hi ↦ ⟨‖f.iteratedFDeriv ⟨i, by omega⟩‖, fun x ↦
-          (congrArg norm (f.iteratedFDeriv_eq (fun y ↦ extendZero_coe f y) ⟨i, by omega⟩
-            x)).trans_le ((f.iteratedFDeriv _).norm_coe_le_norm x)⟩)
+          norm_iteratedFDeriv_extendZero_le f ⟨i, by omega⟩ x⟩)
         (HolderWith.memHolder fun x y ↦
           holderOnWith_iteratedFDeriv_extendZero_succ f hconv hα x x.2 y y.2)
       map_add' f g := by ext x; simp [extendZero_coe]
@@ -737,8 +757,7 @@ def inclusionSuccL (hconv : Convex ℝ (Ω : Set E)) (hα : α ≤ 1) :
         (K := ‖f.iteratedFDeriv (Fin.last (k + 1))‖₊ +
           2 * ‖f.iteratedFDeriv (Fin.last k).castSucc‖₊) (fun x y ↦ ?_)).trans ?_
       · rw [iteratedFDeriv_ofContDiffOn]
-        exact (congrArg norm (f.iteratedFDeriv_eq (fun y ↦ extendZero_coe f y) i.castSucc
-          x)).trans_le ((f.iteratedFDeriv _).norm_coe_le_norm x)
+        exact norm_iteratedFDeriv_extendZero_le f i.castSucc x
       · rw [iteratedFDeriv_ofContDiffOn, iteratedFDeriv_ofContDiffOn]
         exact holderOnWith_iteratedFDeriv_extendZero_succ f hconv hα x x.2 y y.2
       · have hsum : ∑ i : Fin (k + 2), ‖f.iteratedFDeriv i‖ ≤ ‖f‖ := by
@@ -777,11 +796,6 @@ namespace CkHolderSpace
 
 variable {k α F}
 
-omit [NormedSpace ℝ E] in
-/-- The inclusion of an open set into the whole space is `1`-Lipschitz. -/
-private theorem lipschitzWith_val : LipschitzWith 1 (Subtype.val : Ω → E) :=
-  Isometry.lipschitzWith fun _ _ ↦ rfl
-
 open CkHolderSpaceOn in
 /-- Restriction of a bounded `C^{k,α}` map on the whole space to an open set `Ω`, as a continuous
 linear map to `C^{k,α}(Ω)`. -/
@@ -790,14 +804,15 @@ def restrictOnL : CkHolderSpace k α E F →L[ℝ] CkHolderSpaceOn k α Ω F :=
     { toFun f := ofContDiffOn f f.contDiff.contDiffOn
         (fun i hi ↦ ⟨‖f‖, fun x ↦ f.norm_iteratedFDeriv_apply_le hi x⟩)
         (by
-          have hc := (holderWith_one.2 (lipschitzWith_val Ω)).memHolder.comp
+          have hc := (holderWith_one.2 (LipschitzWith.subtype_val (Ω : Set E))).memHolder.comp
             f.memHolder_iteratedFDeriv
           rwa [mul_one] at hc)
       map_add' f g := by ext x; simp
       map_smul' c f := by ext x; simp }
     1 fun f ↦ by
       rw [one_mul, LinearMap.coe_mk, AddHom.coe_mk]
-      refine (norm_le_of_iteratedFDeriv_eq (lipschitzWith_val Ω) _ f.iteratedFDeriv
+      refine (norm_le_of_iteratedFDeriv_eq (LipschitzWith.subtype_val (Ω : Set E)) _
+        f.iteratedFDeriv
         (fun i x ↦ by rw [iteratedFDeriv_ofContDiffOn, CkHolderSpace.iteratedFDeriv_eq])
         (by rw [CkHolderSpace.coe_iteratedFDeriv]; exact f.memHolder_iteratedFDeriv)).trans_eq ?_
       rw [CkHolderSpace.norm_eq f, CkHolderSpace.coe_iteratedFDeriv, Fin.val_last]
