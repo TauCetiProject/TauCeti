@@ -269,7 +269,7 @@ theorem mem_cells_univ {P : Set V} : P ∈ (univ h).cells ↔ P = Set.univ := by
 @[simp]
 theorem isConical_univ : (univ h).IsConical := by
   refine isConical_iff.mpr fun P hP => ?_
-  exact ⟨⊤, (mem_cells_univ.mp hP).symm⟩
+  exact ⟨⊤, Submodule.top_coe.trans (mem_cells_univ.mp hP).symm⟩
 
 @[simp]
 theorem support_univ : (univ h).support = Set.univ := by
