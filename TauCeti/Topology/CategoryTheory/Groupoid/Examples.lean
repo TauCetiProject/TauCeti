@@ -9,7 +9,10 @@ public import TauCeti.Topology.CategoryTheory.Groupoid.Basic
 public import TauCeti.CategoryTheory.Codiscrete
 public import Mathlib.CategoryTheory.SingleObj
 public import Mathlib.Topology.Algebra.Group.Basic
+public import Mathlib.Topology.Maps.Proper.Basic
 public import Mathlib.Topology.Metrizable.Basic
+
+import TauCeti.Topology.IsLocalHomeomorph
 
 /-!
 # Unit, pair and one-object topological groupoids
@@ -24,6 +27,10 @@ to triples (final, middle, initial), and composition discards the middle coordin
 group over a point, categorical composition of the arrow labelled `h` followed by the arrow
 labelled `g` has label `g * h`. These descriptions make both the topology and the order of
 multiplication explicit for subsequent smooth constructions.
+
+The unit groupoid `Discrete X` is always étale, and proper when `X` is Hausdorff. The one-object
+groupoid `SingleObj G` is étale when `G` is discrete, and proper when `G` is compact (for
+instance, finite and discrete).
 
 ## References
 
@@ -127,6 +134,56 @@ theorem composablePairsHomeomorph_apply
 theorem composablePairsHomeomorph_symm_apply (x : X) :
     (composablePairsHomeomorph X).symm x =
       ⟨((arrowHomeomorph X).symm x, (arrowHomeomorph X).symm x), by simp⟩ := (rfl)
+
+instance instT2SpaceObjects [T2Space X] : T2Space (Discrete X) :=
+  (objectHomeomorph X).symm.t2Space
+
+instance instT2SpaceArrows [T2Space X] : T2Space (Quiver.Total (Discrete X)) :=
+  (arrowHomeomorph X).symm.t2Space
+
+instance instSecondCountableTopologyObjects [SecondCountableTopology X] :
+    SecondCountableTopology (Discrete X) :=
+  (objectHomeomorph X).isInducing.secondCountableTopology
+
+instance instSecondCountableTopologyArrows [SecondCountableTopology X] :
+    SecondCountableTopology (Quiver.Total (Discrete X)) :=
+  (arrowHomeomorph X).isInducing.secondCountableTopology
+
+omit [TopologicalSpace X] in
+/-- Every arrow of the unit groupoid is an identity, so target and source coincide. -/
+@[simp]
+theorem right_eq_left (a : Quiver.Total (Discrete X)) : a.right = a.left :=
+  Discrete.ext (Discrete.eq_of_hom a.hom).symm
+
+omit [TopologicalSpace X] in
+/-- The target map of the unit groupoid equals its source map. -/
+theorem target_eq_source :
+    (Quiver.Total.right : Quiver.Total (Discrete X) → Discrete X) = Quiver.Total.left :=
+  funext (right_eq_left X)
+
+/-- The source map of the unit groupoid is a local homeomorphism. -/
+theorem isLocalHomeomorph_source :
+    IsLocalHomeomorph (Quiver.Total.left : Quiver.Total (Discrete X) → Discrete X) := by
+  convert ((arrowHomeomorph X).trans (objectHomeomorph X).symm).isLocalHomeomorph using 1
+  funext a
+  simp
+
+/-- The target map of the unit groupoid is a local homeomorphism. -/
+theorem isLocalHomeomorph_target :
+    IsLocalHomeomorph (Quiver.Total.right : Quiver.Total (Discrete X) → Discrete X) :=
+  target_eq_source X ▸ isLocalHomeomorph_source X
+
+/-- On a Hausdorff space, the source-target map of the unit groupoid is proper. -/
+theorem isProperMap_source_target [T2Space X] :
+    IsProperMap fun a : Quiver.Total (Discrete X) ↦ (a.left, a.right) := by
+  have hli : Function.LeftInverse
+      (fun p : Discrete X × Discrete X ↦ (arrowHomeomorph X).symm (objectHomeomorph X p.1))
+      (fun a : Quiver.Total (Discrete X) ↦ (a.left, a.right)) := fun a ↦ by
+    simp only [objectHomeomorph_apply, ← arrowHomeomorph_apply, Homeomorph.symm_apply_apply]
+  refine (hli.isClosedEmbedding ?_ ?_).isProperMap
+  · exact (arrowHomeomorph X).symm.continuous.comp
+      ((objectHomeomorph X).continuous.comp continuous_fst)
+  · exact IsTopologicalGroupoid.continuous_source.prodMk IsTopologicalGroupoid.continuous_target
 
 end UnitGroupoid
 
@@ -252,31 +309,6 @@ theorem arrowHomeomorph_apply (a : Quiver.Total (SingleObj G)) :
 theorem arrowHomeomorph_symm_apply (g : G) :
     (arrowHomeomorph G).symm g = ⟨SingleObj.star G, SingleObj.star G, g⟩ := (rfl)
 
-instance [T0Space G] : T0Space (Quiver.Total (SingleObj G)) :=
-  (arrowHomeomorph G).isEmbedding.t0Space
-
-instance [T1Space G] : T1Space (Quiver.Total (SingleObj G)) :=
-  (arrowHomeomorph G).isEmbedding.t1Space
-
-instance [T2Space G] : T2Space (Quiver.Total (SingleObj G)) :=
-  (arrowHomeomorph G).symm.t2Space
-
-instance [RegularSpace G] : RegularSpace (Quiver.Total (SingleObj G)) :=
-  (arrowHomeomorph G).isEmbedding.regularSpace
-
-instance [CompactSpace G] : CompactSpace (Quiver.Total (SingleObj G)) :=
-  (arrowHomeomorph G).symm.compactSpace
-
-instance [FirstCountableTopology G] : FirstCountableTopology (Quiver.Total (SingleObj G)) :=
-  (arrowHomeomorph G).isEmbedding.firstCountableTopology
-
-instance [SecondCountableTopology G] : SecondCountableTopology (Quiver.Total (SingleObj G)) :=
-  (arrowHomeomorph G).isEmbedding.secondCountableTopology
-
-instance [TopologicalSpace.MetrizableSpace G] :
-    TopologicalSpace.MetrizableSpace (Quiver.Total (SingleObj G)) :=
-  (arrowHomeomorph G).isEmbedding.metrizableSpace
-
 /-- All pairs of labels are composable over the single object. The order here is
 categorical: the first label is traversed first. -/
 def composablePairsHomeomorph :
@@ -321,6 +353,52 @@ theorem arrowHomeomorph_comp [Monoid G]
 theorem arrowHomeomorph_inverse [Group G] (a : Quiver.Total (SingleObj G)) :
     arrowHomeomorph G ⟨a.right, a.left, inv a.hom⟩ = (arrowHomeomorph G a)⁻¹ := by
   simp [SingleObj.inv_as_inv]
+
+instance instDiscreteTopologyArrows [DiscreteTopology G] :
+    DiscreteTopology (Quiver.Total (SingleObj G)) :=
+  (arrowHomeomorph G).isEmbedding.discreteTopology
+
+instance instT2SpaceArrows [T2Space G] : T2Space (Quiver.Total (SingleObj G)) :=
+  (arrowHomeomorph G).symm.t2Space
+
+instance instSecondCountableTopologyArrows [SecondCountableTopology G] :
+    SecondCountableTopology (Quiver.Total (SingleObj G)) :=
+  (arrowHomeomorph G).isInducing.secondCountableTopology
+
+instance instCompactSpaceArrows [CompactSpace G] : CompactSpace (Quiver.Total (SingleObj G)) :=
+  (arrowHomeomorph G).symm.compactSpace
+
+instance instT0SpaceArrows [T0Space G] : T0Space (Quiver.Total (SingleObj G)) :=
+  (arrowHomeomorph G).isEmbedding.t0Space
+
+instance instT1SpaceArrows [T1Space G] : T1Space (Quiver.Total (SingleObj G)) :=
+  (arrowHomeomorph G).isEmbedding.t1Space
+
+instance instRegularSpaceArrows [RegularSpace G] : RegularSpace (Quiver.Total (SingleObj G)) :=
+  (arrowHomeomorph G).isEmbedding.regularSpace
+
+instance instFirstCountableTopologyArrows [FirstCountableTopology G] :
+    FirstCountableTopology (Quiver.Total (SingleObj G)) :=
+  (arrowHomeomorph G).isEmbedding.firstCountableTopology
+
+instance instMetrizableSpaceArrows [TopologicalSpace.MetrizableSpace G] :
+    TopologicalSpace.MetrizableSpace (Quiver.Total (SingleObj G)) :=
+  (arrowHomeomorph G).isEmbedding.metrizableSpace
+
+/-- For a discrete label space, the source map of `SingleObj G` is a local homeomorphism. -/
+theorem isLocalHomeomorph_source [DiscreteTopology G] :
+    IsLocalHomeomorph (Quiver.Total.left : Quiver.Total (SingleObj G) → SingleObj G) :=
+  isLocalHomeomorph_of_discreteTopology
+
+/-- For a discrete label space, the target map of `SingleObj G` is a local homeomorphism. -/
+theorem isLocalHomeomorph_target [DiscreteTopology G] :
+    IsLocalHomeomorph (Quiver.Total.right : Quiver.Total (SingleObj G) → SingleObj G) :=
+  isLocalHomeomorph_of_discreteTopology
+
+/-- For a compact label space, the source-target map of `SingleObj G` is proper. -/
+theorem isProperMap_source_target [CompactSpace G] :
+    IsProperMap fun a : Quiver.Total (SingleObj G) ↦ (a.left, a.right) :=
+  (continuous_of_const fun _ _ ↦ Subsingleton.elim _ _).isProperMap
 
 end OneObjectGroupoid
 
