@@ -8,6 +8,9 @@ module
 public import TauCeti.AlgebraicTopology.ClassifyingSpace.Comparison
 public import TauCeti.AlgebraicTopology.ClassifyingSpace.Functoriality
 public import TauCeti.AlgebraicTopology.Homotopy.PointedHomotopyCat
+import TauCeti.AlgebraicTopology.ClassifyingSpace.Classifier
+import TauCeti.Topology.Homotopy.Extension.CWComplex
+import TauCeti.Topology.Homotopy.Extension.HomotopyEquivRel
 
 /-!
 # The classifying space as a functor to the pointed homotopy category
@@ -22,12 +25,18 @@ category, which the strict functor refines by construction.
 Under the identifications `TauCeti.classifyingSpaceFundamentalGroupMulEquiv` of the fundamental
 groups of the classifying spaces with the groups, the fundamental group undoes the classifying
 space: `TauCeti.classifyingSpaceHomotopyFunctorCompFundamentalGroupFunctorIso` is a natural
-isomorphism from `B ⋙ π₁` to the identity functor of `GrpCat`. In particular the
-classifying-space functor is faithful.
+isomorphism from `B ⋙ π₁` to the identity functor of `GrpCat`. By Hatcher's Proposition 1B.9 for
+arbitrary path-connected Hausdorff CW complexes
+(`TauCeti.fundamentalGroupFunctor_map_bijective_of_cwComplex`), pointed homotopy classes out of any
+such `X` into a based space with vanishing higher homotopy groups are in bijection with
+homomorphisms on `π₁`. In particular, `classifyingSpace G` represents `Hom(π₁(-), G)` on
+path-connected Hausdorff CW complexes (`TauCeti.classifyingSpaceHomotopyFunctorHomEquiv`), and
+`TauCeti.classifyingSpaceHomotopyFunctor` is both full and faithful.
 
-The cellular model determines the induced maps up to pointed homotopy. Out of the
-cellular classifying space `TauCeti.cellularClassifyingSpace R` of a presentation, pointed homotopy
-classes of maps to a space without higher homotopy groups are exactly the homomorphisms of
+The cellular model determines the induced maps up to pointed homotopy, and is isomorphic to
+Milnor's model in `PointedHomotopyCat` (`TauCeti.cellularClassifyingSpacePointedHomotopyIso`). Out
+of the cellular classifying space `TauCeti.cellularClassifyingSpace R` of a presentation, pointed
+homotopy classes of maps to a space without higher homotopy groups are the homomorphisms of
 fundamental groups (`TauCeti.fundamentalGroupFunctor_map_bijective_cellularClassifyingSpace`).
 Consequently, for a presentation `e : PresentedGroup R ≃* G` and `φ : G →* H`, every pointed map
 from the cellular model of `G` to `classifyingSpace H` that induces `φ` is pointed homotopic to
@@ -38,18 +47,23 @@ the comparison map of `TauCeti.cellularHomotopyEquivClassifyingSpace` followed b
 
 * `TauCeti.classifyingSpaceFunctor`: Milnor's classifying space as a functor to based spaces.
 * `TauCeti.classifyingSpaceHomotopyFunctor`: the classifying space as a functor to the pointed
-  homotopy category.
+  homotopy category (both `Faithful` and `Full`).
 * `TauCeti.classifyingSpaceHomotopyFunctorCompFundamentalGroupFunctorIso`: the natural
   isomorphism `π₁ ∘ B ≅ 𝟭`.
+* `TauCeti.classifyingSpaceHomotopyFunctorHomEquiv`: the representability bijection
+  `Hom_{PointedHomotopyCat}(X, BG) ≃ (π₁(X) ⟶ G)` for path-connected Hausdorff CW complexes `X`.
 * `TauCeti.cellularClassifyingSpaceBased`: the cellular classifying space as a based space.
-* `TauCeti.cellularHomotopyEquivClassifyingSpaceBasedHom`: the comparison of the cellular model
-  with Milnor's classifying space, as a based map.
+* `TauCeti.cellularHomotopyEquivClassifyingSpaceBasedHom` and
+  `TauCeti.cellularClassifyingSpacePointedHomotopyIso`: the comparison of the cellular model with
+  Milnor's classifying space, as a based map and as an isomorphism in `PointedHomotopyCat`.
 
 ## Main results
 
-* `TauCeti.fundamentalGroupFunctor_map_bijective_cellularClassifyingSpace`: pointed homotopy
-  classes of maps out of a cellular classifying space into a space with no higher homotopy groups
-  are classified by their effect on `π₁`.
+* `TauCeti.fundamentalGroupFunctor_map_bijective_of_cwComplex`: pointed homotopy classes of maps
+  out of any path-connected Hausdorff CW complex into a based space with no higher homotopy groups
+  at its base point are classified by their effect on `π₁`.
+* `TauCeti.fundamentalGroupFunctor_map_bijective_cellularClassifyingSpace`: specialization to a
+  cellular classifying space.
 * `TauCeti.quotient_map_eq_quotient_map_comp_cellularClassifyingSpace`: a pointed map from the
   cellular model realizing a homomorphism is pointed homotopic to the comparison of the two models
   followed by the strictly functorial map.
@@ -151,6 +165,94 @@ theorem classifyingSpaceHomotopyFunctorCompFundamentalGroupFunctorIso_inv_app_ho
 group recovers the homomorphism inducing a map. -/
 instance : classifyingSpaceHomotopyFunctor.{u}.Faithful :=
   .of_comp_iso classifyingSpaceHomotopyFunctorCompFundamentalGroupFunctorIso
+
+instance (G : GrpCat.{u}) : T2Space (classifyingSpaceFunctor.obj G).carrier :=
+  inferInstanceAs (T2Space (classifyingSpace G))
+
+instance (G : GrpCat.{u}) :
+    Topology.CWComplex (Set.univ : Set (classifyingSpaceFunctor.obj G).carrier) :=
+  inferInstanceAs (Topology.CWComplex (Set.univ : Set (classifyingSpace G)))
+
+instance (G : GrpCat.{u}) : PathConnectedSpace (classifyingSpaceFunctor.obj G).carrier :=
+  (isEilenbergMacLaneSpaceOne_classifyingSpace G).isAspherical.pathConnectedSpace
+
+/-- **Pointed maps out of a path-connected Hausdorff CW complex are classified by `π₁` (Hatcher,
+Proposition 1B.9).** If the homotopy groups of `Y` at its base point vanish from degree `2` on,
+then sending a pointed homotopy class `X ⟶ Y` in `PointedHomotopyCat` to its induced homomorphism
+on fundamental groups is bijective. -/
+theorem fundamentalGroupFunctor_map_bijective_of_cwComplex
+    {X Y : BasedTopologicalSpace.{u}} [T2Space X.carrier]
+    [Topology.CWComplex (Set.univ : Set X.carrier)] [PathConnectedSpace X.carrier]
+    (hY : ∀ n : ℕ, Subsingleton (π_ (n + 2) Y.carrier Y.basepoint)) :
+    Function.Bijective (PointedHomotopyCat.fundamentalGroupFunctor.map
+      (X := PointedHomotopyCat.quotient.obj X)
+      (Y := PointedHomotopyCat.quotient.obj Y)) := by
+  refine ⟨fun a b hab ↦ ?_, fun ψ ↦ ?_⟩
+  · obtain ⟨f, rfl⟩ := PointedHomotopyCat.quotient.map_surjective a
+    obtain ⟨g, rfl⟩ := PointedHomotopyCat.quotient.map_surjective b
+    simp only [PointedHomotopyCat.fundamentalGroupFunctor_map_quotient_map] at hab
+    exact (PointedHomotopyCat.quotient_map_eq_iff f g).2
+      (homotopicRel_of_mapOfEq_eq_of_cwComplex hY f.map_basepoint g.map_basepoint
+        (by
+          have h' := congrArg GrpCat.Hom.hom hab
+          rw [BasedTopologicalSpace.fundamentalGroupFunctor_map_hom,
+            BasedTopologicalSpace.fundamentalGroupFunctor_map_hom] at h'
+          exact h'))
+  · let φ : FundamentalGroup X.carrier X.basepoint →* FundamentalGroup Y.carrier Y.basepoint :=
+      ψ.hom
+    obtain ⟨f, hf, hfψ⟩ := exists_mapOfEq_of_cwComplex (x₀ := X.basepoint) hY φ
+    exact ⟨PointedHomotopyCat.quotient.map ⟨f, hf⟩, GrpCat.hom_ext <|
+      (congrArg GrpCat.Hom.hom
+        (PointedHomotopyCat.fundamentalGroupFunctor_map_quotient_map _)).trans
+        ((BasedTopologicalSpace.fundamentalGroupFunctor_map_hom _).trans hfψ)⟩
+
+/-- **The classifying-space functor to the pointed homotopy category is full** (and hence fully
+faithful): every pointed homotopy class `BG ⟶ BH` is induced by a group homomorphism `G ⟶ H`. -/
+instance : classifyingSpaceHomotopyFunctor.{u}.Full where
+  map_surjective {G H} f := by
+    let η := classifyingSpaceHomotopyFunctorCompFundamentalGroupFunctorIso
+    refine ⟨η.inv.app G ≫ PointedHomotopyCat.fundamentalGroupFunctor.map f ≫ η.hom.app H,
+      (fundamentalGroupFunctor_map_bijective_of_cwComplex
+        (X := classifyingSpaceFunctor.obj G) (Y := classifyingSpaceFunctor.obj H)
+        (fun n ↦ subsingleton_homotopyGroup_classifyingSpace H n _)).1 ?_⟩
+    have h := η.hom.naturality
+      (η.inv.app G ≫ PointedHomotopyCat.fundamentalGroupFunctor.map f ≫ η.hom.app H) =≫
+        η.inv.app H
+    dsimp only [CategoryTheory.Functor.comp_map, CategoryTheory.Functor.id_map,
+      CategoryTheory.Functor.comp_obj, CategoryTheory.Functor.id_obj] at h
+    simp only [Category.assoc, Iso.hom_inv_id_app, Iso.hom_inv_id_app_assoc,
+      CategoryTheory.Functor.comp_obj, Category.comp_id] at h
+    exact h
+
+/-- **Milnor's classifying space represents `Hom(π₁(-), G)` on path-connected Hausdorff CW
+complexes.** Sending a pointed homotopy class `X ⟶ BG` to the composite `π₁(X) ⟶ π₁(BG) ≅ G` is a
+bijection. -/
+def classifyingSpaceHomotopyFunctorHomEquiv
+    (X : BasedTopologicalSpace.{u}) [T2Space X.carrier]
+    [Topology.CWComplex (Set.univ : Set X.carrier)] [PathConnectedSpace X.carrier]
+    (G : GrpCat.{u}) :
+    (PointedHomotopyCat.quotient.obj X ⟶ classifyingSpaceHomotopyFunctor.obj G) ≃
+      (PointedHomotopyCat.fundamentalGroupFunctor.obj (PointedHomotopyCat.quotient.obj X) ⟶ G) :=
+  Equiv.ofBijective
+    (fun f ↦ PointedHomotopyCat.fundamentalGroupFunctor.map f ≫
+      classifyingSpaceHomotopyFunctorCompFundamentalGroupFunctorIso.hom.app G)
+    (((Iso.homCongr (Iso.refl _)
+      (classifyingSpaceHomotopyFunctorCompFundamentalGroupFunctorIso.app G)).bijective).comp
+      (fundamentalGroupFunctor_map_bijective_of_cwComplex (X := X)
+        (Y := classifyingSpaceFunctor.obj G)
+        (fun n ↦ subsingleton_homotopyGroup_classifyingSpace G n _)))
+
+@[simp]
+theorem classifyingSpaceHomotopyFunctorHomEquiv_apply
+    (X : BasedTopologicalSpace.{u}) [T2Space X.carrier]
+    [Topology.CWComplex (Set.univ : Set X.carrier)] [PathConnectedSpace X.carrier]
+    (G : GrpCat.{u})
+    (f : PointedHomotopyCat.quotient.obj X ⟶ classifyingSpaceHomotopyFunctor.obj G) :
+    classifyingSpaceHomotopyFunctorHomEquiv X G f =
+      PointedHomotopyCat.fundamentalGroupFunctor.map f ≫
+        classifyingSpaceHomotopyFunctorCompFundamentalGroupFunctorIso.hom.app G := by
+  unfold classifyingSpaceHomotopyFunctorHomEquiv
+  rfl
 
 section Cellular
 
@@ -254,6 +356,45 @@ theorem quotient_map_eq_quotient_map_comp_cellularClassifyingSpace {G H : GrpCat
   exact (hf a).trans <| (congrArg φ.hom
     (classifyingSpaceFundamentalGroupMulEquiv_mapOfEq_cellularHomotopyEquivClassifyingSpace R e
       a).symm).trans (φ.hom.classifyingSpaceFundamentalGroupMulEquiv_mapOfEq _).symm
+
+/-- **The comparison between the cellular and simplicial classifying spaces is an isomorphism in
+`PointedHomotopyCat`.** -/
+def cellularClassifyingSpacePointedHomotopyIso {G : GrpCat.{u}}
+    (e : PresentedGroup R ≃* G) :
+    PointedHomotopyCat.quotient.obj (cellularClassifyingSpaceBased R) ≅
+      classifyingSpaceHomotopyFunctor.obj G :=
+  let h := (hasHomotopyExtensionProperty_singleton_univ
+    (cellularClassifyingSpaceBasepoint R)).exists_basedInverse_homotopicRel
+      (hasHomotopyExtensionProperty_singleton_univ (classifyingSpaceBasepoint G))
+      (cellularHomotopyEquivClassifyingSpace R e)
+      (cellularHomotopyEquivClassifyingSpace_toFun_basepoint R e)
+  let gHom : classifyingSpaceFunctor.obj G ⟶ cellularClassifyingSpaceBased R :=
+    ⟨h.choose, h.choose_spec.1⟩
+  { hom := PointedHomotopyCat.quotient.map (cellularHomotopyEquivClassifyingSpaceBasedHom R e)
+    inv := PointedHomotopyCat.quotient.map gHom
+    hom_inv_id := by
+      dsimp only [classifyingSpaceHomotopyFunctor, CategoryTheory.Functor.comp_obj]
+      rw [← CategoryTheory.Functor.map_comp, ← CategoryTheory.Functor.map_id,
+        PointedHomotopyCat.quotient_map_eq_iff, BasedTopologicalSpace.comp_eq_hom_comp,
+        BasedTopologicalSpace.Hom.toContinuousMap_comp, BasedTopologicalSpace.id_eq_hom_id,
+        BasedTopologicalSpace.Hom.toContinuousMap_id]
+      exact h.choose_spec.2.1
+    inv_hom_id := by
+      dsimp only [classifyingSpaceHomotopyFunctor, CategoryTheory.Functor.comp_obj]
+      rw [← CategoryTheory.Functor.map_comp, ← CategoryTheory.Functor.map_id,
+        PointedHomotopyCat.quotient_map_eq_iff, BasedTopologicalSpace.comp_eq_hom_comp,
+        BasedTopologicalSpace.Hom.toContinuousMap_comp, BasedTopologicalSpace.id_eq_hom_id,
+        BasedTopologicalSpace.Hom.toContinuousMap_id]
+      exact h.choose_spec.2.2 }
+
+@[simp]
+theorem cellularClassifyingSpacePointedHomotopyIso_hom {G : GrpCat.{u}}
+    (e : PresentedGroup R ≃* G) :
+    (cellularClassifyingSpacePointedHomotopyIso R e).hom =
+      PointedHomotopyCat.quotient.map
+        (cellularHomotopyEquivClassifyingSpaceBasedHom R e) := by
+  unfold cellularClassifyingSpacePointedHomotopyIso
+  rfl
 
 end Cellular
 
