@@ -434,6 +434,12 @@ theorem mem_differentialOperators_iff_forall_apply_mem_smul_top
 
 end Points
 
+/-- Multiplication by an element of `A` is a differential operator of order `0`. -/
+theorem _root_.LinearMap.mulLeft_mem_differentialOperators_zero {R A : Type*} [CommSemiring R]
+    [CommRing A] [Algebra R A] (a : A) :
+    LinearMap.mulLeft R a ∈ differentialOperators R A A A 0 :=
+  mem_differentialOperators_zero_iff.2 fun b x ↦ by simp [mul_left_comm]
+
 /-! ### First-order operators on the algebra -/
 
 section FirstOrder
