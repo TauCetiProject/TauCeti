@@ -9,7 +9,9 @@ public import Mathlib.LinearAlgebra.Contraction
 public import Mathlib.LinearAlgebra.ExteriorAlgebra.BaseChange
 public import TauCeti.LinearAlgebra.CliffordAlgebra.VolumeElement.Complex
 public import TauCeti.LinearAlgebra.ExteriorAlgebra.CliffordAction
--- Private: Chevalley grading and ordered-monomial identities are used only in proofs.
+-- Private: Chevalley base-change naturality, grading, and ordered-monomial identities are used
+-- only in proofs.
+import TauCeti.LinearAlgebra.CliffordAlgebra.BaseChange
 import TauCeti.LinearAlgebra.CliffordAlgebra.Contraction
 import TauCeti.LinearAlgebra.CliffordAlgebra.Dimension
 import TauCeti.LinearAlgebra.CliffordAlgebra.OrthogonalBasis

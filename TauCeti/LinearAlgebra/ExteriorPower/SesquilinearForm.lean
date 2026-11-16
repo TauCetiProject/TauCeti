@@ -7,9 +7,13 @@ module
 
 public import Mathlib.LinearAlgebra.BilinearForm.Basic
 public import Mathlib.LinearAlgebra.ExteriorPower.Basis
-public import Mathlib.LinearAlgebra.ExteriorPower.Pairing
+public import Mathlib.LinearAlgebra.ExteriorPower.BilinForm
 public import Mathlib.LinearAlgebra.Matrix.SesquilinearForm
 public import Mathlib.LinearAlgebra.SesquilinearForm.Basic
+-- The Gram-determinant formula `LinearMap.BilinForm.bilinForm_ιMulti_ιMulti` for the induced
+-- bilinear form on an exterior power is private to its file, and the body of
+-- `LinearMap.BilinForm.exteriorPower` is not exposed, so bridging to it needs this import.
+import all Mathlib.LinearAlgebra.ExteriorPower.BilinForm
 
 /-!
 # Sesquilinear Gram forms on exterior powers
@@ -22,12 +26,15 @@ Let `M` be a module over a commutative ring `R`, `σ : R →+* R` a ring endomor
 
   `B.sesqExteriorPower n (v₀ ∧ ⋯ ∧ v_{n-1}) (w₀ ∧ ⋯ ∧ w_{n-1}) = det (B (v i) (w j))`.
 
-To build `B.sesqExteriorPower n` without semilinear alternating maps, we evaluate Mathlib's
-`exteriorPower.alternatingMapToDual` on `B ∘ v` and wrap the codomain `Module.Dual R (⋀[R]^n M)` in
-scalar restriction along `σ`, so `exteriorPower.alternatingMapLinearEquiv` descends the first slot
-directly to a `σ`-semilinear map out of `⋀[R]^n M`.
+Mathlib's `exteriorPower.pairingDual` and `LinearMap.BilinForm.exteriorPower` handle only the
+bilinear case (`σ = RingHom.id R`), whereas Hermitian metrics on complexified exterior algebras and
+polarized Fock spaces require conjugate-linear-first Gram forms. `LinearMap.sesqExteriorPower`
+extends that construction to arbitrary `σ`-sesquilinear forms and feeds
+`LinearMap.sesqExteriorAlgebra` (`TauCeti/LinearAlgebra/ExteriorAlgebra/HermitianMetric.lean`),
+complexified exterior metrics (`TauCeti/LinearAlgebra/ExteriorAlgebra/Complexification.lean`), and
+Fock metrics (`TauCeti/RepresentationTheory/Spin/Polarization/Fock/Metric.lean`).
 
-When `σ = RingHom.id R`, `B.sesqExteriorPower n` agrees with `(pairingDual R M n).comp (map n B)`.
+When `σ = RingHom.id R`, `B.sesqExteriorPower n` agrees with Mathlib's `B.exteriorPower n`.
 When `σ` is involutive and `B` is `σ`-Hermitian (`B.IsSymm`), `B.sesqExteriorPower n` is
 `σ`-Hermitian as well. When `M` has a finite ordered basis `b`, the form making the induced basis
 `b.exteriorPower n` orthonormal is the `n`-th exterior Gram form of the form making `b`
@@ -43,8 +50,8 @@ orthonormal.
 * `LinearMap.eq_sesqExteriorPower_iff`: uniqueness by values on pure wedges.
 * `LinearMap.sesqExteriorPower_map_map`: naturality under `R`-linear maps preserving the form.
 * `LinearMap.IsSymm.sesqExteriorPower`: `σ`-Hermitian symmetry for involutive `σ`.
-* `LinearMap.BilinForm.sesqExteriorPower_eq_pairingDual_comp_map`: bilinear specialization
-  `(pairingDual R M n).comp (map n B)`.
+* `LinearMap.BilinForm.sesqExteriorPower_eq_exteriorPower`: bilinear specialization matching
+  Mathlib's `LinearMap.BilinForm.exteriorPower`.
 * `Matrix.toLinearMapₛₗ₂_exteriorPower_one`: compatibility with the coordinate form of
   `b.exteriorPower n`.
 
@@ -63,45 +70,25 @@ namespace LinearMap
 
 section Twist
 
-/-- Private scalar-restriction wrapper equipping an `R`-module `N` with `r • x = σ r • x`, used to
-descend a `σ`-semilinear alternating family via `exteriorPower.alternatingMapLinearEquiv`. -/
-@[ext]
-private structure Twist {R : Type*} [Semiring R] (_ : R →+* R) (N : Type*) where
-  val : N
+/-- Private scalar-restriction type synonym equipping an `R`-module `N` with `r • x = σ r • x`,
+used to descend a `σ`-semilinear alternating family via
+`exteriorPower.alternatingMapLinearEquiv`. -/
+private def Twist {R : Type*} [Semiring R] (_ : R →+* R) (N : Type*) : Type _ := N
 
 private instance {R N : Type*} [Semiring R] [AddCommGroup N] (σ : R →+* R) :
-    AddCommGroup (Twist σ N) where
-  zero := ⟨0⟩
-  add x y := ⟨x.val + y.val⟩
-  neg x := ⟨-x.val⟩
-  sub x y := ⟨x.val - y.val⟩
-  nsmul n x := ⟨n • x.val⟩
-  zsmul n x := ⟨n • x.val⟩
-  add_assoc _ _ _ := Twist.ext (add_assoc _ _ _)
-  zero_add _ := Twist.ext (zero_add _)
-  add_zero _ := Twist.ext (add_zero _)
-  nsmul_zero _ := Twist.ext (zero_smul _ _)
-  nsmul_succ _ _ := Twist.ext (succ_nsmul _ _)
-  sub_eq_add_neg _ _ := Twist.ext (sub_eq_add_neg _ _)
-  zsmul_zero' _ := Twist.ext (zero_zsmul _)
-  zsmul_succ' _ _ := Twist.ext (SubNegMonoid.zsmul_succ' _ _)
-  zsmul_neg' _ _ := Twist.ext (SubNegMonoid.zsmul_neg' _ _)
-  neg_add_cancel _ := Twist.ext (neg_add_cancel _)
-  add_comm _ _ := Twist.ext (add_comm _ _)
+    AddCommGroup (Twist σ N) :=
+  inferInstanceAs (AddCommGroup N)
 
 private instance {R N : Type*} [CommSemiring R] [AddCommGroup N] [Module R N] (σ : R →+* R) :
-    Module R (Twist σ N) where
-  smul r x := ⟨σ r • x.val⟩
-  one_smul x := Twist.ext (by change σ 1 • x.val = x.val; rw [map_one, one_smul])
-  mul_smul r s x := Twist.ext <| by
-    change σ (r * s) • x.val = σ r • σ s • x.val
-    rw [map_mul, mul_smul]
-  smul_zero r := Twist.ext (smul_zero _)
-  smul_add r x y := Twist.ext (smul_add _ _ _)
-  add_smul r s x := Twist.ext <| by
-    change σ (r + s) • x.val = σ r • x.val + σ s • x.val
-    rw [map_add, add_smul]
-  zero_smul x := Twist.ext (by change σ 0 • x.val = 0; rw [map_zero, zero_smul])
+    Module R (Twist σ N) :=
+  Module.compHom N σ
+
+/-- The identity map viewed as a `σ`-semilinear map out of `Twist σ N`. -/
+private def fromTwist {R N : Type*} [CommSemiring R] [AddCommGroup N] [Module R N] (σ : R →+* R) :
+    Twist σ N →ₛₗ[σ] N where
+  toFun x := x
+  map_add' _ _ := rfl
+  map_smul' _ _ := rfl
 
 end Twist
 
@@ -114,19 +101,16 @@ the Gram matrix `(B (v i) (w j))` (`LinearMap.sesqExteriorPower_ιMulti_ιMulti`
 noncomputable def sesqExteriorPower (B : M →ₛₗ[σ] M →ₗ[R] R) (n : ℕ) :
     ⋀[R]^n M →ₛₗ[σ] ⋀[R]^n M →ₗ[R] R :=
   let alt : AlternatingMap R M (Twist σ (Module.Dual R (⋀[R]^n M))) (Fin n) :=
-    { toFun v := ⟨alternatingMapToDual R M n (B ∘ v)⟩
-      map_update_add' v i x y := Twist.ext <| by
+    { toFun v := alternatingMapToDual R M n (B ∘ v)
+      map_update_add' v i x y := by
         simp only [Function.comp_update, map_add]
         exact (alternatingMapToDual R M n).map_update_add (B ∘ v) i (B x) (B y)
-      map_update_smul' v i c x := Twist.ext <| by
+      map_update_smul' v i c x := by
         simp only [Function.comp_update, map_smulₛₗ, RingHom.id_apply]
         exact (alternatingMapToDual R M n).map_update_smul (B ∘ v) i (σ c) (B x)
-      map_eq_zero_of_eq' v i j hv hij := Twist.ext <|
+      map_eq_zero_of_eq' v i j hv hij :=
         (alternatingMapToDual R M n).map_eq_zero_of_eq (B ∘ v) (by simp [hv]) hij }
-  let L : ⋀[R]^n M →ₗ[R] Twist σ (Module.Dual R (⋀[R]^n M)) := alternatingMapLinearEquiv alt
-  { toFun x := (L x).val
-    map_add' x y := congrArg Twist.val (L.map_add x y)
-    map_smul' c x := congrArg Twist.val (L.map_smul c x) }
+  (fromTwist σ).comp (alternatingMapLinearEquiv alt)
 
 /-- **Gram-determinant formula on pure wedges**: `B.sesqExteriorPower n` pairs two pure wedges by
 `det (B (v i) (w j))`. -/
@@ -135,7 +119,7 @@ theorem sesqExteriorPower_ιMulti_ιMulti (B : M →ₛₗ[σ] M →ₗ[R] R) (n
     B.sesqExteriorPower n (ιMulti R n v) (ιMulti R n w) =
       (Matrix.of fun i j ↦ B (v i) (w j)).det := by
   have h : B.sesqExteriorPower n (ιMulti R n v) = alternatingMapToDual R M n (B ∘ v) :=
-    congrArg Twist.val (alternatingMapLinearEquiv_apply_ιMulti _ v)
+    congrArg (fromTwist σ) (alternatingMapLinearEquiv_apply_ιMulti _ v)
   rw [h, alternatingMapToDual_apply_ιMulti, ← Matrix.det_transpose]
   rfl
 
@@ -164,7 +148,7 @@ theorem sesqExteriorPower_zero_apply (B : M →ₛₗ[σ] M →ₗ[R] R) (x y : 
 /-- In positive degree, the exterior Gram form of the zero form is zero. (In degree zero it sends
 `1, 1` to the empty determinant `1`.) -/
 @[simp]
-theorem zero_sesqExteriorPower (n : ℕ) [NeZero n] :
+theorem sesqExteriorPower_zero (n : ℕ) [NeZero n] :
     (0 : M →ₛₗ[σ] M →ₗ[R] R).sesqExteriorPower n = 0 := by
   have : Nonempty (Fin n) := Fin.pos_iff_nonempty.mp (NeZero.pos n)
   symm
@@ -216,15 +200,14 @@ theorem IsSymm.sesqExteriorPower {B : M →ₛₗ[σ] M →ₗ[R] R} (hσ : Func
     LinearMap.ext_on_range (ιMulti_span R n M) fun v ↦ hpure v y
   exact DFunLike.congr_fun hlhs x
 
-/-- When `σ` is the identity, `LinearMap.sesqExteriorPower` factors through `exteriorPower.map` and
-`exteriorPower.pairingDual`. -/
-theorem BilinForm.sesqExteriorPower_eq_pairingDual_comp_map (B : LinearMap.BilinForm R M)
-    (n : ℕ) :
-    LinearMap.sesqExteriorPower B n = (pairingDual R M n).comp (exteriorPower.map n B) := by
+/-- When `σ` is the identity, `LinearMap.sesqExteriorPower` agrees with Mathlib's bilinear
+exterior-power form `LinearMap.BilinForm.exteriorPower`. -/
+theorem BilinForm.sesqExteriorPower_eq_exteriorPower (B : LinearMap.BilinForm R M) (n : ℕ) :
+    LinearMap.sesqExteriorPower B n = B.exteriorPower n := by
   symm
   rw [eq_sesqExteriorPower_iff]
   intro v w
-  rw [LinearMap.comp_apply, map_apply_ιMulti, pairingDual_ιMulti_ιMulti, ← Matrix.det_transpose]
+  rw [BilinForm.bilinForm_ιMulti_ιMulti, ← Matrix.det_transpose]
   rfl
 
 end LinearMap

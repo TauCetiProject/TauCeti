@@ -7,10 +7,13 @@ module
 
 public import Mathlib.Analysis.Complex.Order
 public import Mathlib.LinearAlgebra.Eigenspace.Basic
+public import Mathlib.LinearAlgebra.Matrix.SesquilinearForm
 public import Mathlib.LinearAlgebra.SesquilinearForm.Basic
+public import Mathlib.LinearAlgebra.TensorProduct.Basis
 public import TauCeti.LinearAlgebra.BilinearForm.BaseChange
 public import TauCeti.LinearAlgebra.Complex.Conjugation
 
+import Mathlib.LinearAlgebra.Basis.Bilinear
 import Mathlib.Tactic.LinearCombination
 import Mathlib.Tactic.Linarith
 
@@ -54,6 +57,9 @@ definite, so is `h`. This is the positive Hermitian form that a Euclidean metric
 * `LinearMap.BilinForm.IsPosSemidef.sesqComplexification` and
   `LinearMap.BilinForm.sesqComplexification_self_pos`: `h` is positive semidefinite, respectively
   positive definite, when `B` is.
+* `Matrix.toLinearMapₛₗ₂_baseChange_complex_one`: for a finite real basis `b`, the Hermitian
+  coordinate form making `b.baseChange ℂ` orthonormal is the sesquilinear complexification of
+  `Matrix.toLinearMap₂ b b 1`.
 -/
 
 public section
@@ -216,3 +222,20 @@ theorem sesqComplexification_self_pos (hB : B.IsSymm) (hpos : B.toQuadraticMap.P
   rcases hab with h | h <;> linarith [hpos' h, hnonneg a, hnonneg b]
 
 end LinearMap.BilinForm
+
+namespace Matrix
+
+/-- For a finite basis `b` of a real module `V`, the Hermitian form on `ℂ ⊗[ℝ] V` making
+`b.baseChange ℂ` orthonormal is the sesquilinear complexification of the real bilinear form making
+`b` orthonormal. -/
+theorem toLinearMapₛₗ₂_baseChange_complex_one {V I : Type*} [AddCommGroup V] [Module ℝ V]
+    [Fintype I] [DecidableEq I] (b : Module.Basis I ℝ V) :
+    toLinearMapₛₗ₂ (starRingEnd ℂ) (b.baseChange ℂ) (b.baseChange ℂ) (1 : Matrix I I ℂ) =
+      LinearMap.BilinForm.sesqComplexification (toLinearMap₂ b b (1 : Matrix I I ℝ)) := by
+  refine LinearMap.ext_basis (b.baseChange ℂ) (b.baseChange ℂ) fun i j ↦ ?_
+  rw [toLinearMapₛₗ₂_apply_basis, Module.Basis.baseChange_apply, Module.Basis.baseChange_apply,
+    LinearMap.BilinForm.sesqComplexification_tmul_tmul, toLinearMap₂_apply_basis, map_one, one_mul,
+    one_mul]
+  by_cases hij : i = j <;> simp [Matrix.one_apply, hij]
+
+end Matrix

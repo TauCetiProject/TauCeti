@@ -9,6 +9,10 @@ public import TauCeti.Analysis.InnerProductSpace.ExteriorPower.Complexification
 public import TauCeti.Analysis.InnerProductSpace.TensorProduct
 public import TauCeti.LinearAlgebra.CliffordAlgebra.ScalarTrace.Representation
 public import TauCeti.LinearAlgebra.CliffordAlgebra.SpinorForms
+-- Private: injectivity of `ι` and `1 ⊗ₜ ·` are used only inside proofs to derive
+-- `FiniteDimensional ℝ V`.
+import Mathlib.RingTheory.Flat.Basic
+import TauCeti.LinearAlgebra.CliffordAlgebra.Vectors
 
 /-!
 # The spinor endomorphism and spinor tensor metrics vs the exterior Gram metric
@@ -134,23 +138,13 @@ theorem inv_two_pow_mul_trace_adjoint_cliffordFormsEquivEnd_mul
         ((ρ.cliffordFormsEquivEnd x).adjoint * ρ.cliffordFormsEquivEnd y) =
       LinearMap.BilinForm.sesqComplexification (innerₗ V).sesqExteriorAlgebra x y := by
   have : FiniteDimensional ℝ V := by
-    have : Nontrivial (CliffordAlgebra (Q.baseChange ℂ)) :=
-      (equivExterior (Q.baseChange ℂ)).toEquiv.nontrivial
-    have : Nontrivial (Module.End ℂ S) := ρ.symm.toEquiv.nontrivial
     have : FiniteDimensional ℝ (Module.End ℂ S) := Module.Finite.trans ℂ (Module.End ℂ S)
     let f : V →ₗ[ℝ] Module.End ℂ S :=
       ((ρ.toLinearMap.comp (ι (Q.baseChange ℂ))).restrictScalars ℝ).comp
         (TensorProduct.mk ℝ ℂ V 1)
-    refine FiniteDimensional.of_injective f (injective_iff_map_eq_zero _ |>.mpr fun v hv ↦ ?_)
-    have hsq : f v * f v = algebraMap ℂ (Module.End ℂ S) (-(‖v‖ ^ 2 : ℝ)) := by
-      simp only [f, LinearMap.comp_apply, LinearMap.restrictScalars_apply,
-        AlgEquiv.toLinearMap_apply, TensorProduct.mk_apply, ← map_mul, ι_sq_scalar,
-        QuadraticForm.baseChange_tmul, mul_one, hQ, AlgEquiv.commutes, Complex.real_smul,
-        Complex.ofReal_neg, Complex.ofReal_pow]
-    rw [hv, zero_mul] at hsq
-    have hnorm : (-(‖v‖ ^ 2 : ℝ) : ℂ) = 0 :=
-      (map_eq_zero_iff _ (RingHom.injective (algebraMap ℂ (Module.End ℂ S)))).mp hsq.symm
-    exact norm_eq_zero.mp (sq_eq_zero_iff.mp (Complex.ofReal_eq_zero.mp (neg_eq_zero.mp hnorm)))
+    exact FiniteDimensional.of_injective f
+      (ρ.injective.comp ((CliffordAlgebra.ι_injective (Q.baseChange ℂ)).comp
+        (Module.Flat.tensorProduct_mk_injective ℝ V ℂ)))
   let e := stdOrthonormalBasis ℝ V
   rw [ρ.cliffordFormsEquivEnd_eq_equivExterior_symm_baseChangeEquiv,
     ρ.cliffordFormsEquivEnd_eq_equivExterior_symm_baseChangeEquiv,

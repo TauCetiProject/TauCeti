@@ -19,6 +19,7 @@ and computes it on homogeneous elements.
 * `TauCeti.exteriorPower.proj`: the projection `⋀ M → ⋀ⁱ M` onto the degree-`i` component.
 * `TauCeti.exteriorPower.coe_proj_of_mem`: it is the identity on `⋀ⁱ M` and vanishes on the other
   exterior powers.
+* `TauCeti.exteriorPower.proj_eq_zero_of_mem_of_ne`: projection onto a distinct degree vanishes.
 -/
 
 public section
@@ -52,6 +53,11 @@ theorem coe_proj_of_mem {i p : ℕ} {x : ExteriorAlgebra R M} (hx : x ∈ ⋀[R]
   · subst hpi
     exact DirectSum.decompose_of_mem_same _ hx
   · exact DirectSum.decompose_of_mem_ne _ hx hpi
+
+/-- On an element of `⋀ᵖ M`, the projection onto `⋀ⁱ M` vanishes whenever `p ≠ i`. -/
+theorem proj_eq_zero_of_mem_of_ne {i p : ℕ} (hpi : p ≠ i) {x : ExteriorAlgebra R M}
+    (hx : x ∈ ⋀[R]^p M) : proj R M i x = 0 :=
+  Subtype.ext <| (coe_proj_of_mem hx).trans (ite_eq_right hpi)
 
 /-- The projection onto `⋀ᵖ M` is the identity on `⋀ᵖ M`. -/
 @[simp]
