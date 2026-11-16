@@ -5,10 +5,11 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Analysis.CStarAlgebra.CStarMatrix
+public import TauCeti.Analysis.CStarAlgebra.CStarMatrix.Basic
 public import Mathlib.Data.Matrix.Block
 import Mathlib.Analysis.CStarAlgebra.Hom
 import Mathlib.LinearAlgebra.Matrix.DotProduct
+import TauCeti.Algebra.Star.PartialIsometry
 
 /-!
 # Rectangular C⋆-norm, block sums, corner inclusions, and reindexing for `CStarMatrix`
@@ -34,14 +35,15 @@ accompanying norm and star identities.
 
 ## Main results
 
-* `CStarMatrix.toCLM_mul`, `CStarMatrix.norm_hMul_le`: rectangular matrix multiplication corresponds
+* `CStarMatrix.toCLM_mul`, `CStarMatrix.norm_mul_le`: rectangular matrix multiplication corresponds
   to operator composition in reverse order and is submultiplicative in operator norm.
 * `CStarMatrix.norm_conjTranspose`, `CStarMatrix.norm_mul_conjTranspose_self`,
   `CStarMatrix.norm_conjTranspose_mul_self`: the C⋆-identities `‖M.conjTranspose‖ = ‖M‖` and
   `‖M * M.conjTranspose‖ = ‖M.conjTranspose * M‖ = ‖M‖ ^ 2` for rectangular `M : CStarMatrix m n A`.
-* `CStarMatrix.mul_conjTranspose_mul_self_of_isIdempotentElem`: if `v.conjTranspose * v` is
-  idempotent for rectangular `v : CStarMatrix m n A`, then `v * v.conjTranspose * v = v` and
-  `v * v.conjTranspose` is a star projection.
+* `CStarMatrix.mul_conjTranspose_mul_self_of_isIdempotentElem`,
+  `CStarMatrix.isStarProjection_mul_conjTranspose_self_of_isIdempotentElem`: if
+  `v.conjTranspose * v` is idempotent for rectangular `v : CStarMatrix m n A`, then
+  `v * v.conjTranspose * v = v` and `v * v.conjTranspose` is a star projection.
 * `CStarMatrix.norm_fromBlocks_zero₁₂_zero₂₁`: exact block-diagonal C⋆-norm identity
   `‖fromBlocks M 0 0 N‖ = max ‖M‖ ‖N‖` for arbitrary rectangular blocks `M` and `N`.
 * `CStarMatrix.norm_inlCorner`, `CStarMatrix.norm_inrCorner`, `CStarMatrix.norm_singleCorner`,
@@ -67,11 +69,22 @@ section RectangularAlgebra
 
 variable {k l m n o R A B : Type*}
 
-/-- Reading a rectangular product `M * N` as an ordinary matrix commutes with multiplication. -/
+/-- Reading the zero `CStarMatrix` as an ordinary matrix gives `0`. -/
 @[simp]
-theorem ofMatrix_symm_hMul [Fintype m] [Mul A] [AddCommMonoid A]
-    (M : CStarMatrix l m A) (N : CStarMatrix m n A) :
-    ofMatrix.symm (M * N) = ofMatrix.symm M * ofMatrix.symm N :=
+theorem ofMatrix_symm_zero [Zero A] :
+    ofMatrix.symm (0 : CStarMatrix m n A) = 0 :=
+  (rfl)
+
+/-- Reading the identity `CStarMatrix` as an ordinary matrix gives `1`. -/
+@[simp]
+theorem ofMatrix_symm_one [DecidableEq n] [Zero A] [One A] :
+    ofMatrix.symm (1 : CStarMatrix n n A) = 1 :=
+  (rfl)
+
+/-- Reading a difference of `CStarMatrix`es as an ordinary matrix respects subtraction. -/
+@[simp]
+theorem ofMatrix_symm_sub [Sub A] (M N : CStarMatrix m n A) :
+    ofMatrix.symm (M - N) = ofMatrix.symm M - ofMatrix.symm N :=
   (rfl)
 
 /-- `ofMatrix` commutes with rectangular matrix multiplication. -/
@@ -144,10 +157,24 @@ theorem conjTranspose_one [DecidableEq n] [Semiring A] [StarRing A] :
   ofMatrix.symm.injective Matrix.conjTranspose_one
 
 /-- Rectangular matrix multiplication is associative. -/
-theorem hMul_assoc [Fintype l] [Fintype m] [NonUnitalSemiring A]
+protected theorem mul_assoc [Fintype l] [Fintype m] [NonUnitalSemiring A]
     (L : CStarMatrix k l A) (M : CStarMatrix l m A) (N : CStarMatrix m n A) :
     L * M * N = L * (M * N) :=
   ofMatrix.symm.injective (Matrix.mul_assoc (ofMatrix.symm L) (ofMatrix.symm M) (ofMatrix.symm N))
+
+/-- Left negation commutes with rectangular matrix multiplication. -/
+@[simp]
+protected theorem neg_mul [Fintype m] [NonUnitalRing A]
+    (M : CStarMatrix l m A) (N : CStarMatrix m n A) :
+    (-M) * N = -(M * N) :=
+  ofMatrix.symm.injective (Matrix.neg_mul (ofMatrix.symm M) (ofMatrix.symm N))
+
+/-- Right negation commutes with rectangular matrix multiplication. -/
+@[simp]
+protected theorem mul_neg [Fintype m] [NonUnitalRing A]
+    (M : CStarMatrix l m A) (N : CStarMatrix m n A) :
+    M * (-N) = -(M * N) :=
+  ofMatrix.symm.injective (Matrix.mul_neg (ofMatrix.symm M) (ofMatrix.symm N))
 
 /-- Left multiplication distributes over subtraction for rectangular matrices. -/
 protected theorem mul_sub [Fintype m] [NonUnitalRing A]
@@ -202,7 +229,7 @@ theorem mapₗ_mul [Fintype m] [Semiring R] [NonUnitalNonAssocSemiring A] [Modul
 theorem mapₙₐ_id [Fintype n] [Semiring R] [NonUnitalNonAssocSemiring A] [Module R A] [Star A] :
     mapₙₐ (NonUnitalStarAlgHom.id R A) = NonUnitalStarAlgHom.id R (CStarMatrix n n A) := by
   ext M i j
-  rfl
+  simp
 
 /-- `mapₙₐ` preserves composition of non-unital `⋆`-algebra homomorphisms. -/
 @[simp]
@@ -213,7 +240,7 @@ theorem mapₙₐ_comp [Fintype n] [Semiring R] [NonUnitalNonAssocSemiring A] [M
     (mapₙₐ (g.comp f) : CStarMatrix n n A →⋆ₙₐ[R] CStarMatrix n n C) =
       (mapₙₐ g).comp (mapₙₐ f) := by
   ext M i j
-  rfl
+  simp
 
 /-- Amplification `mapₙₐ f` of an injective homomorphism `f` is injective. -/
 theorem mapₙₐ_injective [Fintype n] [Semiring R] [NonUnitalNonAssocSemiring A] [Module R A] [Star A]
@@ -553,13 +580,33 @@ theorem isStarProjection_singleCorner [Fintype n] [DecidableEq n] [Semiring R]
   · rw [isSelfAdjoint_iff]
     exact singleCorner_injective (R := R) i (by rw [map_star, h.isSelfAdjoint.star_eq])
 
+/-- Entrywise formula for `CStarMatrix.toOneByOne`. -/
+@[simp]
+theorem toOneByOne_apply [Unique n] [Semiring R] [AddCommMonoid A] [Mul A] [Star A] [Module R A]
+    (a : A) (i j : n) :
+    toOneByOne n R A a i j = a :=
+  (rfl)
+
+/-- Reindexing along identity equivalences on both sides is the identity map. -/
+@[simp]
+theorem reindexₗ_refl_refl [Semiring R] [AddCommMonoid A] [Module R A] (M : CStarMatrix m n A) :
+    reindexₗ R A (Equiv.refl m) (Equiv.refl n) M = M :=
+  (rfl)
+
+/-- On square matrices with equal row and column equivalences, `reindexₗ` agrees with
+`reindexₐ`. -/
+theorem reindexₗ_eq_reindexₐ [Fintype m] [Fintype n] [Semiring R] [AddCommMonoid A] [Mul A]
+    [Module R A] [Star A] (e : m ≃ n) (M : CStarMatrix m m A) :
+    reindexₗ R A e e M = reindexₐ R A e M := by
+  ext i j
+  simp
+
 /-- Rectangular reindexing commutes with `conjTranspose`. -/
 @[simp]
 theorem conjTranspose_reindexₗ [Semiring R] [AddCommMonoid A] [Module R A] [Star A]
     (eₘ : m ≃ l) (eₙ : n ≃ o) (M : CStarMatrix m n A) :
-    (reindexₗ R A eₘ eₙ M).conjTranspose = reindexₗ R A eₙ eₘ M.conjTranspose := by
-  ext i j
-  rfl
+    (reindexₗ R A eₘ eₙ M).conjTranspose = reindexₗ R A eₙ eₘ M.conjTranspose :=
+  (rfl)
 
 /-- Rectangular reindexing is compatible with rectangular matrix multiplication. -/
 @[simp]
@@ -593,11 +640,24 @@ section PermutationUnitary
 variable (A)
 
 /-- Rectangular permutation matrix in `CStarMatrix n m A` associated to an equivalence `e : m ≃ n`,
-with `(i, j)`-entry `1` when `e j = i` and `0` otherwise. -/
+with `(i, j)`-entry `1` when `e.symm i = j` (equivalently `e j = i`) and `0` otherwise. -/
 def permMatrix [DecidableEq m] [Semiring A] (e : m ≃ n) : CStarMatrix n m A :=
   reindexₗ ℕ A e (Equiv.refl m) (1 : CStarMatrix m m A)
 
 variable {A}
+
+/-- Entrywise formula for `CStarMatrix.permMatrix` in terms of `e.symm`. -/
+@[simp]
+theorem permMatrix_apply [DecidableEq m] [Semiring A] (e : m ≃ n) (i : n) (j : m) :
+    permMatrix A e i j = if e.symm i = j then 1 else 0 :=
+  (rfl)
+
+/-- Entrywise formula for `CStarMatrix.permMatrix` in terms of `e`. -/
+theorem permMatrix_apply_eq_ite [DecidableEq m] [DecidableEq n] [Semiring A]
+    (e : m ≃ n) (i : n) (j : m) :
+    permMatrix A e i j = if e j = i then 1 else 0 := by
+  rw [permMatrix_apply]
+  exact if_congr (e.symm_apply_eq.trans eq_comm) rfl rfl
 
 /-- `(permMatrix A e).conjTranspose * permMatrix A e` is the `m × m` identity matrix. -/
 @[simp]
@@ -605,9 +665,8 @@ theorem conjTranspose_permMatrix_mul_self [Fintype n] [DecidableEq m]
     [Semiring A] [StarRing A] (e : m ≃ n) :
     (permMatrix A e).conjTranspose * permMatrix A e = (1 : CStarMatrix m m A) := by
   let _ : Fintype m := Fintype.ofEquiv n e.symm
-  rw [permMatrix, conjTranspose_reindexₗ, reindexₗ_mul, conjTranspose_one, CStarMatrix.mul_one]
-  ext i j
-  rfl
+  rw [permMatrix, conjTranspose_reindexₗ, reindexₗ_mul, conjTranspose_one, CStarMatrix.mul_one,
+    reindexₗ_refl_refl]
 
 /-- `permMatrix A e * (permMatrix A e).conjTranspose` is the `n × n` identity matrix. -/
 @[simp]
@@ -615,7 +674,8 @@ theorem permMatrix_mul_conjTranspose_self [Fintype m] [DecidableEq m] [Decidable
     [Semiring A] [StarRing A] (e : m ≃ n) :
     permMatrix A e * (permMatrix A e).conjTranspose = (1 : CStarMatrix n n A) := by
   let _ : Fintype n := Fintype.ofEquiv m e
-  rw [permMatrix, conjTranspose_reindexₗ, reindexₗ_mul, conjTranspose_one, CStarMatrix.mul_one]
+  rw [permMatrix, conjTranspose_reindexₗ, reindexₗ_mul, conjTranspose_one, CStarMatrix.mul_one,
+    reindexₗ_eq_reindexₐ]
   exact map_one (reindexₐ ℕ A e)
 
 /-- Conjugating a square matrix `M : CStarMatrix m m A` by `permMatrix A e` produces
@@ -624,19 +684,30 @@ theorem permMatrix_mul_conjTranspose_self [Fintype m] [DecidableEq m] [Decidable
 theorem permMatrix_mul_mul_conjTranspose [Fintype m] [Fintype n] [DecidableEq m]
     [Semiring A] [StarRing A] (e : m ≃ n) (M : CStarMatrix m m A) :
     permMatrix A e * M * (permMatrix A e).conjTranspose = reindexₐ ℕ A e M := by
-  have hM : M = reindexₗ ℕ A (Equiv.refl m) (Equiv.refl m) M := rfl
-  nth_rw 1 [hM]
-  rw [permMatrix, conjTranspose_reindexₗ, reindexₗ_mul, reindexₗ_mul]
-  simp only [CStarMatrix.one_mul, conjTranspose_one, CStarMatrix.mul_one]
-  rfl
+  nth_rw 1 [← reindexₗ_refl_refl (R := ℕ) M]
+  rw [permMatrix, conjTranspose_reindexₗ, reindexₗ_mul, reindexₗ_mul,
+    CStarMatrix.one_mul, conjTranspose_one, CStarMatrix.mul_one, reindexₗ_eq_reindexₐ]
 
 /-- Square permutation unitary in `unitary (CStarMatrix n n A)` implementing `e : Equiv.Perm n`. -/
 def permUnitary (A : Type*) [Fintype n] [DecidableEq n] [Ring A] [StarRing A] (e : Equiv.Perm n) :
     unitary (CStarMatrix n n A) :=
   ⟨permMatrix A e, conjTranspose_permMatrix_mul_self e, permMatrix_mul_conjTranspose_self e⟩
 
-/-- Conjugation by `permUnitary A e` equals `reindexₐ ℕ A e`. -/
+/-- Coercing `permUnitary A e` to a matrix recovers `permMatrix A e`. -/
 @[simp]
+theorem coe_permUnitary [Fintype n] [DecidableEq n] [Ring A] [StarRing A] (e : Equiv.Perm n) :
+    (permUnitary A e : CStarMatrix n n A) = permMatrix A e :=
+  (rfl)
+
+/-- Conjugation by a square permutation matrix `permMatrix A e` using `star` equals
+`reindexₐ ℕ A e`. -/
+@[simp]
+theorem permMatrix_mul_mul_star [Fintype n] [DecidableEq n] [Semiring A] [StarRing A]
+    (e : Equiv.Perm n) (M : CStarMatrix n n A) :
+    permMatrix A e * M * star (permMatrix A e) = reindexₐ ℕ A e M :=
+  permMatrix_mul_mul_conjTranspose e M
+
+/-- Conjugation by `permUnitary A e` equals `reindexₐ ℕ A e`. -/
 theorem permUnitary_conj [Fintype n] [DecidableEq n] [Ring A] [StarRing A] (e : Equiv.Perm n)
     (M : CStarMatrix n n A) :
     (permUnitary A e : CStarMatrix n n A) * M * star (permUnitary A e : CStarMatrix n n A) =
@@ -667,17 +738,17 @@ theorem conjTranspose_mul_self_eq_zero [Fintype m] {M : CStarMatrix m n A} :
     M.conjTranspose * M = 0 ↔ M = 0 := by
   let _ : PartialOrder A := CStarAlgebra.spectralOrder A
   let _ : StarOrderedRing A := CStarAlgebra.spectralOrderedRing A
-  rw [← ofMatrix.symm.injective.eq_iff, ofMatrix_symm_hMul, ofMatrix_symm_conjTranspose,
+  rw [← ofMatrix.symm.injective.eq_iff, ofMatrix_symm_mul, ofMatrix_symm_conjTranspose,
     ← ofMatrix.symm.injective.eq_iff (a := M)]
   exact Matrix.conjTranspose_mul_self_eq_zero
 
 /-- For a rectangular `CStarMatrix`, `M * M.conjTranspose = 0` iff `M = 0`. -/
 @[simp]
-theorem mul_conjTranspose_self_eq_zero [Fintype n] {M : CStarMatrix m n A} :
+theorem self_mul_conjTranspose_eq_zero [Fintype n] {M : CStarMatrix m n A} :
     M * M.conjTranspose = 0 ↔ M = 0 := by
   let _ : PartialOrder A := CStarAlgebra.spectralOrder A
   let _ : StarOrderedRing A := CStarAlgebra.spectralOrderedRing A
-  rw [← ofMatrix.symm.injective.eq_iff, ofMatrix_symm_hMul, ofMatrix_symm_conjTranspose,
+  rw [← ofMatrix.symm.injective.eq_iff, ofMatrix_symm_mul, ofMatrix_symm_conjTranspose,
     ← ofMatrix.symm.injective.eq_iff (a := M)]
   exact Matrix.self_mul_conjTranspose_eq_zero
 
@@ -690,36 +761,28 @@ instance instIsProperStar [Fintype n] : IsProperStar (CStarMatrix n n A) where
 theorem mul_conjTranspose_mul_self_of_isIdempotentElem [Fintype m] [Fintype n]
     {v : CStarMatrix m n A} (hv : IsIdempotentElem (v.conjTranspose * v)) :
     v * v.conjTranspose * v = v := by
-  have hvx : v.conjTranspose * (v * v.conjTranspose * v - v) = 0 := by
-    rw [CStarMatrix.mul_sub, ← hMul_assoc, ← hMul_assoc, hMul_assoc (v.conjTranspose * v),
-      hv.eq, sub_self]
-  have hxx : (v * v.conjTranspose * v - v).conjTranspose * (v * v.conjTranspose * v - v) = 0 :=
-    calc (v * v.conjTranspose * v - v).conjTranspose * (v * v.conjTranspose * v - v)
-        = (v.conjTranspose * v * v.conjTranspose - v.conjTranspose) *
-            (v * v.conjTranspose * v - v) := by
-          rw [conjTranspose_sub, conjTranspose_mul, conjTranspose_mul,
-            conjTranspose_conjTranspose, ← hMul_assoc v.conjTranspose v v.conjTranspose]
-      _ = v.conjTranspose * v * (v.conjTranspose * (v * v.conjTranspose * v - v)) -
-            v.conjTranspose * (v * v.conjTranspose * v - v) := by
-          rw [CStarMatrix.sub_mul, hMul_assoc (v.conjTranspose * v) v.conjTranspose]
-      _ = 0 := by rw [hvx, CStarMatrix.mul_zero, sub_zero]
-  exact sub_eq_zero.mp (conjTranspose_mul_self_eq_zero.mp hxx)
+  let V : CStarMatrix (m ⊕ n) (m ⊕ n) A := fromBlocks 0 v 0 0
+  have hV_idem : IsIdempotentElem (star V * V) := by
+    simp [V, IsIdempotentElem, hv.eq]
+  have hV_pi : V * star V * V = V :=
+    (TauCeti.IsPartialIsometry.of_isIdempotentElem_star_mul_self hV_idem).mul_star_mul_self
+  simpa [V, fromBlocks_inj] using hV_pi
 
 /-- Dual rectangular partial-isometry identity: if `v.conjTranspose * v` is idempotent, then
 `v.conjTranspose * v * v.conjTranspose = v.conjTranspose`. -/
 theorem conjTranspose_mul_self_mul_conjTranspose_of_isIdempotentElem [Fintype m] [Fintype n]
     {v : CStarMatrix m n A} (hv : IsIdempotentElem (v.conjTranspose * v)) :
     v.conjTranspose * v * v.conjTranspose = v.conjTranspose := by
-  simpa only [conjTranspose_mul, conjTranspose_conjTranspose, hMul_assoc] using
+  simpa only [conjTranspose_mul, conjTranspose_conjTranspose, CStarMatrix.mul_assoc] using
     congrArg conjTranspose (mul_conjTranspose_mul_self_of_isIdempotentElem hv)
 
 /-- If `v.conjTranspose * v` is idempotent for rectangular `v : CStarMatrix m n A`, then
 `v * v.conjTranspose` is a star projection. -/
-theorem isStarProjection_mul_conjTranspose_of_isIdempotentElem [Fintype m] [Fintype n]
+theorem isStarProjection_mul_conjTranspose_self_of_isIdempotentElem [Fintype m] [Fintype n]
     {v : CStarMatrix m n A} (hv : IsIdempotentElem (v.conjTranspose * v)) :
     IsStarProjection (v * v.conjTranspose) where
   isIdempotentElem := by
-    rw [IsIdempotentElem, ← hMul_assoc (v * v.conjTranspose) v v.conjTranspose,
+    rw [IsIdempotentElem, ← CStarMatrix.mul_assoc (v * v.conjTranspose) v v.conjTranspose,
       mul_conjTranspose_mul_self_of_isIdempotentElem hv]
   isSelfAdjoint := by
     rw [isSelfAdjoint_iff, star_eq_conjTranspose, conjTranspose_mul, conjTranspose_conjTranspose]
@@ -732,7 +795,7 @@ variable {l m n o m₁ m₂ n₁ n₂ A B : Type*}
   [NonUnitalCStarAlgebra A] [PartialOrder A] [StarOrderedRing A]
 
 /-- Operator norm submultiplicativity `‖M * N‖ ≤ ‖M‖ * ‖N‖` for rectangular `CStarMatrix`es. -/
-theorem norm_hMul_le [Fintype l] [Fintype m] [Fintype n]
+protected theorem norm_mul_le [Fintype l] [Fintype m] [Fintype n]
     (M : CStarMatrix l m A) (N : CStarMatrix m n A) :
     ‖M * N‖ ≤ ‖M‖ * ‖N‖ := by
   rw [norm_def, norm_def, norm_def, toCLM_mul, mul_comm]
@@ -776,7 +839,7 @@ private theorem norm_conjTranspose_le [Fintype m] [Fintype n] (M : CStarMatrix m
       _ ≤ ‖M.conjTranspose * M.conjTranspose.conjTranspose‖ :=
           norm_sq_le_norm_mul_conjTranspose_self M.conjTranspose
       _ = ‖M.conjTranspose * M‖ := by rw [conjTranspose_conjTranspose]
-      _ ≤ ‖M.conjTranspose‖ * ‖M‖ := norm_hMul_le M.conjTranspose M
+      _ ≤ ‖M.conjTranspose‖ * ‖M‖ := CStarMatrix.norm_mul_le M.conjTranspose M
 
 /-- `conjTranspose` preserves the operator norm of a rectangular `CStarMatrix`. -/
 @[simp]
@@ -790,7 +853,7 @@ theorem norm_conjTranspose [Fintype m] [Fintype n] (M : CStarMatrix m n A) :
 theorem norm_mul_conjTranspose_self [Fintype m] [Fintype n] (M : CStarMatrix m n A) :
     ‖M * M.conjTranspose‖ = ‖M‖ ^ 2 := by
   refine le_antisymm ?_ (norm_sq_le_norm_mul_conjTranspose_self M)
-  calc ‖M * M.conjTranspose‖ ≤ ‖M‖ * ‖M.conjTranspose‖ := norm_hMul_le M M.conjTranspose
+  calc ‖M * M.conjTranspose‖ ≤ ‖M‖ * ‖M.conjTranspose‖ := CStarMatrix.norm_mul_le M M.conjTranspose
     _ = ‖M‖ ^ 2 := by rw [norm_conjTranspose, sq]
 
 /-- Rectangular C⋆-identity `‖M.conjTranspose * M‖ = ‖M‖ ^ 2`. -/
@@ -834,9 +897,10 @@ theorem norm_fromBlocks_zero₁₂_zero₂₁ [Fintype m₁] [Fintype n₁] [Fin
     ‖fromBlocks M 0 0 N‖ = max ‖M‖ ‖N‖ := by
   -- Square case: `blockDiagHom` is an injective `NonUnitalStarAlgHom`, hence an isometry.
   have hsq_case : ∀ (P : CStarMatrix m₁ m₁ A) (Q : CStarMatrix m₂ m₂ A),
-      ‖fromBlocks P 0 0 Q‖ = max ‖P‖ ‖Q‖ := fun P Q ↦
-    (NonUnitalStarAlgHom.norm_map (blockDiagHom (R := ℂ))
-      (blockDiagHom_injective (R := ℂ)) (P, Q)).trans rfl
+      ‖fromBlocks P 0 0 Q‖ = max ‖P‖ ‖Q‖ := fun P Q ↦ by
+    rw [← blockDiagHom_apply (R := ℂ) (P, Q),
+      NonUnitalStarAlgHom.norm_map (blockDiagHom (R := ℂ)) (blockDiagHom_injective (R := ℂ)) (P, Q),
+      Prod.norm_mk]
   have h_eq : ‖fromBlocks M 0 0 N‖ ^ 2 = (max ‖M‖ ‖N‖) ^ 2 := by
     calc ‖fromBlocks M 0 0 N‖ ^ 2
         = ‖fromBlocks M 0 0 N * (fromBlocks M 0 0 N).conjTranspose‖ :=
@@ -884,8 +948,7 @@ theorem norm_reindexₗ [Fintype l] [Fintype m] [Fintype n] [Fintype o]
         = ‖reindexₗ ℂ A eₘ eₙ M * (reindexₗ ℂ A eₘ eₙ M).conjTranspose‖ :=
           (norm_mul_conjTranspose_self _).symm
       _ = ‖reindexₐ ℂ A eₘ (M * M.conjTranspose)‖ := by
-          rw [conjTranspose_reindexₗ, reindexₗ_mul]
-          rfl
+          rw [conjTranspose_reindexₗ, reindexₗ_mul, reindexₗ_eq_reindexₐ]
       _ = ‖M * M.conjTranspose‖ := norm_reindexₐ eₘ (M * M.conjTranspose)
       _ = ‖M‖ ^ 2 := norm_mul_conjTranspose_self M
   exact (sq_eq_sq₀ (norm_nonneg _) (norm_nonneg _)).mp hsq

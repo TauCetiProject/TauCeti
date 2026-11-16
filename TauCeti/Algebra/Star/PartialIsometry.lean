@@ -111,8 +111,7 @@ section ProperStar
 
 variable [NonUnitalRing R] [StarRing R] [IsProperStar R] {u : R}
 
-/-- In a ring with proper star, `u` is a partial isometry as soon as `star u * u` is idempotent:
-`x = u * star u * u - u` satisfies `star u * x = 0`, hence `star x * x = 0`. -/
+/-- In a ring with proper star, `u` is a partial isometry as soon as `star u * u` is idempotent. -/
 theorem IsPartialIsometry.of_isIdempotentElem_star_mul_self
     (h : IsIdempotentElem (star u * u)) : IsPartialIsometry u := by
   have hux : star u * (u * star u * u - u) = 0 := by

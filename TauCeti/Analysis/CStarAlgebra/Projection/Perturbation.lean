@@ -8,7 +8,7 @@ module
 public import Mathlib.Analysis.CStarAlgebra.Projection
 public import Mathlib.Analysis.CStarAlgebra.Unitary.Connected
 public import Mathlib.Analysis.CStarAlgebra.Unitization
-public import TauCeti.Algebra.Star.PartialIsometry
+public import TauCeti.Algebra.Star.Projection.Intertwiner
 import Mathlib.Analysis.CStarAlgebra.ContinuousFunctionalCalculus.Commute
 import Mathlib.Analysis.Normed.Ring.Units
 import Mathlib.Analysis.SpecialFunctions.ContinuousFunctionalCalculus.ExpLog.Basic
@@ -21,24 +21,19 @@ import TauCeti.Analysis.SpecialFunctions.ContinuousFunctionalCalculus.Polar
 
 Two star projections `p` and `q` in a unital C⋆-algebra satisfying `‖p - q‖ < 1` are unitarily
 conjugate by a unitary close to `1` and hence in the identity path component of the unitary group.
-Explicitly, Sz.-Nagy's intertwiner
+Explicitly, Sz.-Nagy's intertwiner `TauCeti.projectionIntertwiner p q = q * p + (1 - q) * (1 - p)`
+(developed algebraically in `TauCeti/Algebra/Star/Projection/Intertwiner.lean`) satisfies
+`z * p = q * z` and `star z * z = z * star z = 1 - (p - q) ^ 2`. When `‖p - q‖ < 1`,
+`1 - (p - q) ^ 2` is invertible, so `z` is a unit whose polar unitary factor
+`u = hp.closeUnitary hq h` conjugates `p` to `q` (`u * p * star u = q`) and satisfies the sharp
+norm bound `‖(u : A) - 1‖ ≤ √2 * ‖p - q‖ < 2` together with `Joined (1 : unitary A) u`.
 
-`projectionIntertwiner p q = q * p + (1 - q) * (1 - p)`
-
-satisfies `z * p = q * z` and `star z * z = z * star z = 1 - (p - q) ^ 2`. When `‖p - q‖ < 1`,
-`1 - (p - q) ^ 2` is invertible by the Neumann series, so `z` is a unit whose polar unitary factor
-`u = hp.closeUnitary hq h` conjugates `p` to `q` (`u * p * star u = q`). Because
-`z + star z = 2 * (1 - (p - q) ^ 2)`, the polar relation gives `u + star u = 2 * √(1 - (p - q) ^ 2)`
-and therefore `star (u - 1) * (u - 1) = 2 * (1 - √(1 - (p - q) ^ 2)) ≤ 2 * (p - q) ^ 2`, yielding
-the sharp norm estimate `‖(u : A) - 1‖ ≤ √2 * ‖p - q‖ < 2` and `Joined (1 : unitary A) u`.
-
-Subdividing a norm-continuous path of star projections on the compact unit interval shows that any
-two path-connected projections in a unital C⋆-algebra are conjugate by a unitary in the path
-component of `1`. Passing to the minimal unitization `Unitization ℂ B` transfers both the
-nearby-projection theorem and the path-lifting theorem to possibly non-unital C⋆-algebras `B`: if a
-unitary `u` of `Unitization ℂ B` conjugates `p` to `q`, the ideal product
-`unitizationConjElem u p = u.fst • p + u.snd * p` lies in `B` itself and is a partial isometry with
-initial projection `p` and final projection `q`.
+By connectedness of the unit interval, any two projections joined by a norm-continuous path of star
+projections in a unital C⋆-algebra are conjugate by a unitary in the path component of `1`. Passing
+to the minimal unitization `Unitization ℂ B` and applying
+`IsStarProjection.exists_isPartialIsometry_of_unitization_unitary_conj` transfers both the
+nearby-projection theorem and the path-lifting theorem to possibly non-unital C⋆-algebras `B`,
+producing a partial isometry in `B` with initial projection `p` and final projection `q`.
 
 We also compute the exponential of any scalar multiple of a star projection `p`: since the spectrum
 of `p` is contained in `{0, 1}`, `exp (z • p) = 1 + (exp z - 1) • p`, and in particular
@@ -46,11 +41,8 @@ of `p` is contained in `{0, 1}`, `exp (z • p) = 1 + (exp z - 1) • p`, and in
 
 ## Main definitions
 
-* `TauCeti.projectionIntertwiner p q`: the intertwiner `q * p + (1 - q) * (1 - p)`.
-* `IsStarProjection.closeUnitary`: the polar unitary of `projectionIntertwiner p q` when
+* `IsStarProjection.closeUnitary`: the polar unitary of `TauCeti.projectionIntertwiner p q` when
   `‖p - q‖ < 1`.
-* `TauCeti.unitizationConjElem u p`: the element `u.fst • p + u.snd * p` in `B` lifting `u * p`
-  from `Unitization R B` into the ideal `B`.
 
 ## Main results
 
@@ -62,8 +54,10 @@ of `p` is contained in `{0, 1}`, `exp (z • p) = 1 + (exp z - 1) • p`, and in
 * `IsStarProjection.joined_one_closeUnitary`: `Joined (1 : unitary A) (hp.closeUnitary hq h)`.
 * `IsStarProjection.exists_joined_one_unitary_conj_of_path`: endpoints of a norm-continuous path of
   star projections in a unital C⋆-algebra are conjugate by a unitary joined to `1`.
-* `IsStarProjection.exists_isPartialIsometry_of_path`: endpoints of a norm-continuous path of star
-  projections in a possibly non-unital C⋆-algebra are linked by a partial isometry in the algebra.
+* `IsStarProjection.exists_isPartialIsometry_of_norm_sub_lt_one`,
+  `IsStarProjection.exists_isPartialIsometry_of_path`: nearby star projections and endpoints of a
+  norm-continuous path of star projections in a possibly non-unital C⋆-algebra are linked by a
+  partial isometry in the algebra.
 
 ## References
 
@@ -78,168 +72,10 @@ public section
 
 noncomputable section
 
-open NormedSpace
+open NormedSpace TauCeti
 open scoped Real unitInterval
 
-namespace TauCeti
-
-section IntertwinerAlgebra
-
-variable {R : Type*} [Ring R]
-
-/-- Sz.-Nagy's intertwiner `q * p + (1 - q) * (1 - p)` between idempotents `p` and `q`. -/
-def projectionIntertwiner (p q : R) : R :=
-  q * p + (1 - q) * (1 - p)
-
-/-- Unfold `TauCeti.projectionIntertwiner`. -/
-theorem projectionIntertwiner_def (p q : R) :
-    projectionIntertwiner p q = q * p + (1 - q) * (1 - p) :=
-  (rfl)
-
-/-- At equal idempotents `p = q`, the intertwiner is `1`. -/
-@[simp]
-theorem projectionIntertwiner_self {p : R} (hp : IsIdempotentElem p) :
-    projectionIntertwiner p p = 1 := by
-  rw [projectionIntertwiner_def]
-  noncomm_ring [hp.eq]
-
-/-- Right multiplication by an idempotent `p` collapses `projectionIntertwiner p q * p` to
-`q * p`. -/
-theorem projectionIntertwiner_mul_right {p q : R} (hp : IsIdempotentElem p) :
-    projectionIntertwiner p q * p = q * p := by
-  rw [projectionIntertwiner_def]
-  noncomm_ring [hp.eq]
-
-/-- Left multiplication by an idempotent `q` collapses `q * projectionIntertwiner p q` to
-`q * p`. -/
-theorem mul_projectionIntertwiner_left {p q : R} (hq : IsIdempotentElem q) :
-    q * projectionIntertwiner p q = q * p := by
-  have hqqp : q * (q * p) = q * p := by rw [← mul_assoc, hq.eq]
-  rw [projectionIntertwiner_def]
-  noncomm_ring [hq.eq, hqqp]
-
-/-- The element `projectionIntertwiner p q` intertwines idempotents `p` and `q`:
-`z * p = q * z`. -/
-theorem projectionIntertwiner_mul_eq_mul {p q : R} (hp : IsIdempotentElem p)
-    (hq : IsIdempotentElem q) :
-    projectionIntertwiner p q * p = q * projectionIntertwiner p q := by
-  rw [projectionIntertwiner_mul_right hp, mul_projectionIntertwiner_left hq]
-
-/-- For idempotents `p` and `q`, `1 - (p - q) ^ 2` commutes with `p`. -/
-theorem commute_one_sub_sub_mul_self_left {p q : R} (hp : IsIdempotentElem p)
-    (hq : IsIdempotentElem q) : Commute (1 - (p - q) * (p - q)) p := by
-  have hppq : p * (p * q) = p * q := by rw [← mul_assoc, hp.eq]
-  rw [commute_iff_eq]
-  noncomm_ring [hp.eq, hq.eq, hppq]
-
-/-- For idempotents `p` and `q`, `1 - (p - q) ^ 2` commutes with `q`. -/
-theorem commute_one_sub_sub_mul_self_right {p q : R} (hp : IsIdempotentElem p)
-    (hq : IsIdempotentElem q) : Commute (1 - (p - q) * (p - q)) q := by
-  have hqqp : q * (q * p) = q * p := by rw [← mul_assoc, hq.eq]
-  rw [commute_iff_eq]
-  noncomm_ring [hp.eq, hq.eq, hqqp]
-
-section Star
-
-variable [StarRing R]
-
-/-- Taking the star of `projectionIntertwiner p q` for self-adjoint `p`, `q` swaps `p` and `q`. -/
-theorem star_projectionIntertwiner {p q : R} (hp : IsSelfAdjoint p) (hq : IsSelfAdjoint q) :
-    star (projectionIntertwiner p q) = projectionIntertwiner q p := by
-  rw [projectionIntertwiner_def, projectionIntertwiner_def, star_add, star_mul, star_mul,
-    star_sub, star_sub, star_one, hp.star_eq, hq.star_eq]
-
-/-- For star projections `p` and `q`, `star z * z = 1 - (p - q) ^ 2`. -/
-theorem star_projectionIntertwiner_mul_self {p q : R} (hp : IsStarProjection p)
-    (hq : IsStarProjection q) :
-    star (projectionIntertwiner p q) * projectionIntertwiner p q = 1 - (p - q) * (p - q) := by
-  have hqqp : q * (q * p) = q * p := by rw [← mul_assoc, hq.isIdempotentElem.eq]
-  have hpqqp : p * (q * (q * p)) = p * (q * p) := by rw [hqqp]
-  rw [star_projectionIntertwiner hp.isSelfAdjoint hq.isSelfAdjoint, projectionIntertwiner_def,
-    projectionIntertwiner_def]
-  noncomm_ring [hp.isIdempotentElem.eq, hq.isIdempotentElem.eq, hqqp, hpqqp]
-
-/-- For star projections `p` and `q`, `z * star z = 1 - (p - q) ^ 2`; in particular `z` is
-normal. -/
-theorem projectionIntertwiner_mul_star_self {p q : R} (hp : IsStarProjection p)
-    (hq : IsStarProjection q) :
-    projectionIntertwiner p q * star (projectionIntertwiner p q) = 1 - (p - q) * (p - q) := by
-  rw [star_projectionIntertwiner hp.isSelfAdjoint hq.isSelfAdjoint]
-  have h := star_projectionIntertwiner_mul_self hq hp
-  rw [star_projectionIntertwiner hq.isSelfAdjoint hp.isSelfAdjoint] at h
-  rw [h]
-  noncomm_ring
-
-/-- Twice `1 - (p - q) ^ 2` equals `z + star z` for `z = projectionIntertwiner p q`. -/
-theorem projectionIntertwiner_add_star {p q : R} (hp : IsStarProjection p)
-    (hq : IsStarProjection q) :
-    projectionIntertwiner p q + star (projectionIntertwiner p q) =
-      2 * (1 - (p - q) * (p - q)) := by
-  rw [star_projectionIntertwiner hp.isSelfAdjoint hq.isSelfAdjoint, projectionIntertwiner_def,
-    projectionIntertwiner_def]
-  noncomm_ring [hp.isIdempotentElem.eq, hq.isIdempotentElem.eq]
-
-end Star
-
-end IntertwinerAlgebra
-
-section UnitizationConj
-
-variable {R B : Type*} [CommSemiring R] [NonUnitalSemiring B] [Module R B]
-
-/-- For an element `u` of the unitization `Unitization R B` and `p : B`, `unitizationConjElem u p`
-is the unique element `u.fst • p + u.snd * p` of `B` whose image in `Unitization R B` is
-`u * p`. -/
-def unitizationConjElem (u : Unitization R B) (p : B) : B :=
-  u.fst • p + u.snd * p
-
-/-- Coercing `unitizationConjElem u p` into `Unitization R B` recovers `u * p`. -/
-@[simp]
-theorem inr_unitizationConjElem (u : Unitization R B) (p : B) :
-    ((unitizationConjElem u p : B) : Unitization R B) = u * (p : Unitization R B) := by
-  ext
-  · simp [unitizationConjElem]
-  · simp [unitizationConjElem]
-
-variable [StarRing R] [IsScalarTower R B B] [SMulCommClass R B B] [StarRing B] [StarModule R B]
-
-/-- If `u` is unitary in `Unitization R B` and `p` is a star projection in `B`, the initial
-projection `star v * v` of `v = unitizationConjElem u p` in `B` is `p`. -/
-theorem star_unitizationConjElem_mul_self {u : Unitization R B}
-    (hu : u ∈ unitary (Unitization R B)) {p : B} (hp : IsStarProjection p) :
-    star (unitizationConjElem u p) * unitizationConjElem u p = p := by
-  apply Unitization.inr_injective (R := R)
-  rw [Unitization.inr_mul, Unitization.inr_star, inr_unitizationConjElem, star_mul,
-    ← Unitization.inr_star, hp.isSelfAdjoint.star_eq, mul_assoc, ← mul_assoc (star u),
-    Unitary.star_mul_self_of_mem hu, one_mul, ← Unitization.inr_mul, hp.isIdempotentElem.eq]
-
-/-- If `u` in `Unitization R B` conjugates a star projection `p : B` to `q : B`, the final
-projection `v * star v` of `v = unitizationConjElem u p` in `B` is `q`. -/
-theorem unitizationConjElem_mul_star_self {u : Unitization R B} {p q : B}
-    (hp : IsStarProjection p)
-    (hconj : u * (p : Unitization R B) * star u = (q : Unitization R B)) :
-    unitizationConjElem u p * star (unitizationConjElem u p) = q := by
-  apply Unitization.inr_injective (R := R)
-  rw [Unitization.inr_mul, Unitization.inr_star, inr_unitizationConjElem, star_mul,
-    ← Unitization.inr_star, hp.isSelfAdjoint.star_eq, mul_assoc,
-    ← mul_assoc (p : Unitization R B), ← Unitization.inr_mul, hp.isIdempotentElem.eq,
-    ← mul_assoc, hconj]
-
-/-- Under the hypotheses of `star_unitizationConjElem_mul_self`, `unitizationConjElem u p` is a
-partial isometry in `B`. -/
-theorem isPartialIsometry_unitizationConjElem {u : Unitization R B}
-    (hu : u ∈ unitary (Unitization R B)) {p : B} (hp : IsStarProjection p) :
-    IsPartialIsometry (unitizationConjElem u p) := by
-  rw [isPartialIsometry_iff, mul_assoc, star_unitizationConjElem_mul_self hu hp,
-    unitizationConjElem, add_mul, smul_mul_assoc, mul_assoc, hp.isIdempotentElem.eq]
-
-end UnitizationConj
-
-end TauCeti
-
 namespace IsStarProjection
-
-open TauCeti
 
 section Exponential
 
@@ -273,9 +109,8 @@ underlying element `1 + (Complex.exp (Complex.I * t) - 1) • p`. -/
 theorem coe_expUnitary_smul {p : A} (hp : IsStarProjection p) (t : ℝ) :
     (selfAdjoint.expUnitary (t • ⟨p, hp.isSelfAdjoint⟩) : A) =
       1 + (Complex.exp (Complex.I * t) - 1) • p := by
-  rw [selfAdjoint.expUnitary_coe]
-  change NormedSpace.exp (Complex.I • (t • p)) = _
-  rw [← Complex.coe_smul t p, smul_smul, hp.exp_smul]
+  rw [selfAdjoint.expUnitary_coe, selfAdjoint.val_smul, ← Complex.coe_smul t p, smul_smul,
+    hp.exp_smul]
 
 /-- At angle `π`, `expUnitary (π • p)` equals the self-adjoint reflection `1 - 2 • p`. -/
 theorem coe_expUnitary_pi_smul {p : A} (hp : IsStarProjection p) :
@@ -466,47 +301,26 @@ a unitary in the identity path component of `unitary A`. -/
 theorem exists_joined_one_unitary_conj_of_path {p q : A} (γ : Path p q)
     (hγ : ∀ t : I, IsStarProjection (γ t)) :
     ∃ u : unitary A, Joined (1 : unitary A) u ∧ (u : A) * p * star (u : A) = q := by
-  have huc : UniformContinuous γ := CompactSpace.uniformContinuous_of_continuous γ.continuous
-  obtain ⟨δ, hδ_pos, hδ⟩ := Metric.uniformContinuous_iff.mp huc 1 zero_lt_one
-  obtain ⟨N, hN⟩ := exists_nat_one_div_lt hδ_pos
-  have hN_pos : (0 : ℝ) < (N : ℝ) + 1 := by positivity
-  -- Partition `[0, 1]` into `N + 1` equal subintervals of length `< δ`.
-  let pt (k : ℕ) (hk : k ≤ N + 1) : I :=
-    ⟨(k : ℝ) / ((N : ℝ) + 1), ⟨div_nonneg (Nat.cast_nonneg k) hN_pos.le,
-      (div_le_one hN_pos).mpr (by exact_mod_cast hk)⟩⟩
-  have step : ∀ (k : ℕ) (hk : k ≤ N + 1),
-      ∃ u : unitary A, Joined (1 : unitary A) u ∧ (u : A) * p * star (u : A) = γ (pt k hk) := by
-    intro k
-    induction k with
-    | zero =>
-      intro hk
-      refine ⟨1, Joined.refl 1, ?_⟩
-      have hpt0 : pt 0 hk = 0 := by ext; simp [pt]
-      simp [hpt0]
-    | succ k ih =>
-      intro hk
-      obtain ⟨u, hu_join, hu_conj⟩ := ih (Nat.le_of_succ_le hk)
-      have hdist_pt : dist (pt k (Nat.le_of_succ_le hk)) (pt (k + 1) hk) < δ := by
-        rw [Subtype.dist_eq, Real.dist_eq]
-        have hsub : (k : ℝ) / ((N : ℝ) + 1) - ((k + 1 : ℕ) : ℝ) / ((N : ℝ) + 1) =
-            -(1 / ((N : ℝ) + 1)) := by push_cast; ring
-        rw [hsub, abs_neg, abs_of_pos (one_div_pos.mpr hN_pos)]
-        exact hN
-      have hnorm : ‖γ (pt k (Nat.le_of_succ_le hk)) - γ (pt (k + 1) hk)‖ < 1 := by
-        rw [← dist_eq_norm]
-        exact hδ hdist_pt
-      set w := (hγ (pt k (Nat.le_of_succ_le hk))).closeUnitary (hγ (pt (k + 1) hk)) hnorm
-      refine ⟨w * u, by simpa only [mul_one] using
-        ((hγ _).joined_one_closeUnitary (hγ _) hnorm).mul hu_join, ?_⟩
+  let P : I → I → Prop := fun s t ↦
+    ∃ u : unitary A, Joined (1 : unitary A) u ∧ (u : A) * γ s * star (u : A) = γ t
+  have hstar_cont : Continuous (star : unitary A → unitary A) :=
+    (continuous_star.comp continuous_subtype_val).subtype_mk _
+  have hsymm : Std.Symm P := ⟨fun s t ⟨u, hu_join, hu_conj⟩ ↦
+    ⟨star u, by simpa only [star_one] using hu_join.map hstar_cont, by
+      rw [Unitary.coe_star, star_star, ← hu_conj, ← mul_assoc, ← mul_assoc,
+        Unitary.star_mul_self_of_mem u.property, one_mul, mul_assoc,
+        Unitary.star_mul_self_of_mem u.property, mul_one]⟩⟩
+  have htrans : IsTrans I P := ⟨fun r s t ⟨u, hu_join, hu_conj⟩ ⟨w, hw_join, hw_conj⟩ ↦
+    ⟨w * u, by simpa only [mul_one] using hw_join.mul hu_join, by
       simp only [Submonoid.coe_mul, star_mul, mul_assoc]
-      rw [← mul_assoc (u : A), ← mul_assoc ((u : A) * p), hu_conj, ← mul_assoc,
-        (hγ _).closeUnitary_mul_self_mul_star (hγ _) hnorm]
-  obtain ⟨u, hu_join, hu_conj⟩ := step (N + 1) le_rfl
-  have hpt1 : pt (N + 1) le_rfl = 1 := by
-    ext
-    simp [pt, div_self hN_pos.ne']
-  rw [hpt1, γ.target] at hu_conj
-  exact ⟨u, hu_join, hu_conj⟩
+      rw [← mul_assoc (u : A), ← mul_assoc ((u : A) * γ r), hu_conj, ← mul_assoc, hw_conj]⟩⟩
+  have hloc : ∀ s : I, ∀ᶠ t in nhds s, P s t := fun s ↦ by
+    filter_upwards [γ.continuous.continuousAt.eventually (Metric.ball_mem_nhds (γ s) zero_lt_one)]
+      with t ht
+    have hnorm : ‖γ s - γ t‖ < 1 := by rwa [dist_comm, dist_eq_norm] at ht
+    exact ⟨(hγ s).closeUnitary (hγ t) hnorm, (hγ s).joined_one_closeUnitary (hγ t) hnorm,
+      (hγ s).closeUnitary_mul_self_mul_star (hγ t) hnorm⟩
+  simpa only [P, γ.source, γ.target] using PreconnectedSpace.induction₂ P hloc htrans 0 1
 
 end Perturbation
 
@@ -539,10 +353,7 @@ theorem exists_isPartialIsometry_of_norm_sub_lt_one {p q : B}
     (hp : IsStarProjection p) (hq : IsStarProjection q) (h : ‖p - q‖ < 1) :
     ∃ v : B, IsPartialIsometry v ∧ star v * v = p ∧ v * star v = q := by
   obtain ⟨u, -, hu_conj, -⟩ := hp.exists_unitization_unitary_conj_of_norm_sub_lt_one hq h
-  exact ⟨unitizationConjElem (u : Unitization ℂ B) p,
-    isPartialIsometry_unitizationConjElem u.property hp,
-    star_unitizationConjElem_mul_self u.property hp,
-    unitizationConjElem_mul_star_self hp hu_conj⟩
+  exact hp.exists_isPartialIsometry_of_unitization_unitary_conj u hu_conj
 
 /-- Any norm-continuous path of star projections in a possibly non-unital C⋆-algebra `B` yields a
 partial isometry `v : B` with `star v * v = p` and `v * star v = q`. -/
@@ -555,11 +366,7 @@ theorem exists_isPartialIsometry_of_path {p q : B} (γ : Path p q)
   have hγ' : ∀ t : I, IsStarProjection (γ' t) := fun t ↦
     (hγ t).map (Unitization.inrNonUnitalStarAlgHom ℂ B)
   obtain ⟨u, -, hu_conj⟩ := exists_joined_one_unitary_conj_of_path γ' hγ'
-  have hp : IsStarProjection p := γ.source ▸ hγ 0
-  exact ⟨unitizationConjElem (u : Unitization ℂ B) p,
-    isPartialIsometry_unitizationConjElem u.property hp,
-    star_unitizationConjElem_mul_self u.property hp,
-    unitizationConjElem_mul_star_self hp hu_conj⟩
+  exact (γ.source ▸ hγ 0).exists_isPartialIsometry_of_unitization_unitary_conj u hu_conj
 
 end NonUnitalPerturbation
 
