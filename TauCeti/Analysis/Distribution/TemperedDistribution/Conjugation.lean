@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Analysis.Distribution.Sobolev
 public import TauCeti.Analysis.Distribution.SchwartzSpace.Conjugation
+public import TauCeti.Analysis.LocallyConvex.PointwiseConvergence
 import TauCeti.Analysis.Distribution.SchwartzSpace.Fourier
 
 /-!
@@ -78,12 +79,24 @@ theorem conjPostcompCLM_conjPostcompCLM {H : Type*} [NormedAddCommGroup H] [Norm
     conjPostcompCLM L' (conjPostcompCLM L u) =
       PointwiseConvergenceCLM.postcomp _ (L'.comp L) u := by
   ext φ
-  simp only [conjPostcompCLM_apply_apply, SchwartzMap.conjCLM_conjCLM]
-  -- `PointwiseConvergenceCLM.postcomp _ M u` is `M.comp u` by definition, so its value at `φ` is
-  -- `M (u φ)`. Mathlib's simps lemma `PointwiseConvergenceCLM.postcomp_apply` states this only
-  -- with an ill-typed `M.comp u` (it treats `u : 𝓢'(E, F)` as a plain continuous linear map), so
-  -- simp cannot use it here and the definitional unfolding closes the goal instead.
-  rfl
+  simp
+
+variable [MeasurableSpace E] [BorelSpace E] [CompleteSpace F] [CompleteSpace G]
+
+/-- On an `Lᵖ` function `f`, the action of a conjugate-linear map `L` is `f ↦ L ∘ f`. -/
+theorem conjPostcompCLM_toTemperedDistribution_eq {μ : Measure E} [μ.HasTemperateGrowth]
+    {p : ENNReal} [hp : Fact (1 ≤ p)] (L : F →L⋆[ℂ] G) (f : Lp F p μ) :
+    conjPostcompCLM L (f : 𝓢'(E, F)) = ((L.compLp f : Lp G p μ) : 𝓢'(E, G)) := by
+  ext φ
+  have : (1 - p⁻¹)⁻¹.HolderConjugate p :=
+    (ENNReal.HolderConjugate.inv_one_sub_inv' hp.out).symm
+  have hφf : Integrable (fun x ↦ SchwartzMap.conjCLM E φ x • f x) μ :=
+    memLp_one_iff_integrable.1
+      (((SchwartzMap.conjCLM E φ).memLp (1 - p⁻¹)⁻¹ (μ := μ)).smul (Lp.memLp f))
+  rw [conjPostcompCLM_apply_apply, Lp.toTemperedDistribution_apply,
+    Lp.toTemperedDistribution_apply, ← L.integral_comp_commSL (fun r z ↦ by simp) hφf]
+  refine integral_congr_ae ((L.coeFn_compLp f).mono fun x hx ↦ ?_)
+  simp [hx]
 
 end NormedSpace
 
@@ -103,22 +116,6 @@ theorem conjPostcompCLM_toTemperedDistributionCLM_eq (L : F →L⋆[ℂ] G) (f :
     ← L.integral_comp_commSL (fun r z ↦ by simp) hφf]
   congr 1 with x
   simp
-
-omit [FiniteDimensional ℝ E] in
-/-- On an `Lᵖ` function `f`, the action of a conjugate-linear map `L` is `f ↦ L ∘ f`. -/
-theorem conjPostcompCLM_toTemperedDistribution_eq {μ : Measure E} [μ.HasTemperateGrowth]
-    {p : ENNReal} [hp : Fact (1 ≤ p)] (L : F →L⋆[ℂ] G) (f : Lp F p μ) :
-    conjPostcompCLM L (f : 𝓢'(E, F)) = ((L.compLp f : Lp G p μ) : 𝓢'(E, G)) := by
-  ext φ
-  have : (1 - p⁻¹)⁻¹.HolderConjugate p :=
-    (ENNReal.HolderConjugate.inv_one_sub_inv' hp.out).symm
-  have hφf : Integrable (fun x ↦ SchwartzMap.conjCLM E φ x • f x) μ :=
-    memLp_one_iff_integrable.1
-      (((SchwartzMap.conjCLM E φ).memLp (1 - p⁻¹)⁻¹ (μ := μ)).smul (Lp.memLp f))
-  rw [conjPostcompCLM_apply_apply, Lp.toTemperedDistribution_apply,
-    Lp.toTemperedDistribution_apply, ← L.integral_comp_commSL (fun r z ↦ by simp) hφf]
-  refine integral_congr_ae ((L.coeFn_compLp f).mono fun x hx ↦ ?_)
-  simp [hx]
 
 end Embedding
 
