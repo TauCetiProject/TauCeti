@@ -83,8 +83,8 @@ section UnitAddTorus
 variable {d : Type*} [Fintype d] {ι : Type*} {L : Filter ι}
   {μs : ι → ProbabilityMeasure (UnitAddTorus d)} {μ : ProbabilityMeasure (UnitAddTorus d)}
 
-/-- Weak convergence of probability measures on the unit torus `UnitAddTorus d` is equivalent to
-convergence of all multivariate integer Fourier moments. -/
+/-- Weak convergence on `UnitAddTorus d` is equivalent to convergence of all multivariate
+Fourier moments. -/
 theorem tendsto_iff_forall_integral_mFourier_tendsto :
     Tendsto μs L (𝓝 μ) ↔ ∀ k : d → ℤ,
       Tendsto (fun i ↦ ∫ x, UnitAddTorus.mFourier k x ∂(μs i : Measure (UnitAddTorus d))) L
@@ -93,8 +93,8 @@ theorem tendsto_iff_forall_integral_mFourier_tendsto :
     (UnitAddTorus.span_mFourier_closure_eq_top (d := d))]
   exact forall_mem_range
 
-/-- Probability measures on `UnitAddTorus d` tend weakly to Haar probability (`volume`) exactly
-when every nonzero multivariate Fourier moment tends to zero. -/
+/-- Probability measures on `UnitAddTorus d` tend weakly to Haar probability (`volume`) iff every
+nonzero multivariate Fourier moment tends to zero. -/
 theorem tendsto_volume_unitAddTorus_iff :
     Tendsto μs L (𝓝 (volume : Measure (UnitAddTorus d)).toProbabilityMeasure) ↔
       ∀ k : d → ℤ, k ≠ 0 →
@@ -102,18 +102,13 @@ theorem tendsto_volume_unitAddTorus_iff :
           (𝓝 0) := by
   rw [tendsto_iff_forall_integral_mFourier_tendsto]
   simp only [Measure.coe_toProbabilityMeasure, TauCeti.UnitAddTorus.integral_mFourier]
-  constructor
-  · intro h k hk
-    simpa [hk] using h k
-  · intro h k
-    by_cases hk : k = 0
-    · subst k
-      simpa [UnitAddTorus.mFourier_zero] using
-        (tendsto_const_nhds : Tendsto (fun _ : ι ↦ (1 : ℂ)) L (𝓝 1))
-    · simpa [hk] using h k hk
+  refine ⟨fun h k hk ↦ by simpa [hk] using h k, fun h k ↦ ?_⟩
+  by_cases hk : k = 0
+  · subst k; simpa [UnitAddTorus.mFourier_zero] using
+      (tendsto_const_nhds : Tendsto (fun _ : ι ↦ (1 : ℂ)) L (𝓝 1))
+  · simpa [hk] using h k hk
 
-/-- A probability measure on `UnitAddTorus d` is determined by its multivariate integer Fourier
-moments. -/
+/-- A probability measure on `UnitAddTorus d` is determined by its multivariate Fourier moments. -/
 theorem ext_of_forall_integral_mFourier_eq {ν : ProbabilityMeasure (UnitAddTorus d)}
     (h : ∀ k : d → ℤ, ∫ x, UnitAddTorus.mFourier k x ∂(μ : Measure (UnitAddTorus d)) =
       ∫ x, UnitAddTorus.mFourier k x ∂(ν : Measure (UnitAddTorus d))) :
