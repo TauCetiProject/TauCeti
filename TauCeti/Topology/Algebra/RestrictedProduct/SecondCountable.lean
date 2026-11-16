@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Topology.Algebra.RestrictedProduct.Box
 import Mathlib.Logic.Equiv.List
+import Mathlib.Order.Filter.Finite
 
 /-!
 # Second countability of restricted products
@@ -14,11 +15,11 @@ import Mathlib.Logic.Equiv.List
 A restricted product `Πʳ i, [R i, A i]` over a countable index type `ι` of second-countable spaces
 `R i` is second countable whenever `A i` is open for cofinitely many `i`
 (`RestrictedProduct.secondCountableTopology_of_cofinite`). When `[Fact (∀ i, IsOpen (A i))]` holds
-(or when `ι` is finite, with no openness assumption on `A i`), this is registered as a typeclass
-instance. Every principal stage `Πʳ i, [R i, A i]_[𝓟 S]` and the `⊥`-filter restricted product are
-second countable with no assumption on `A i` (via the topological embedding into `Π i, R i`), while
-`Πʳ i, [R i, A i]_[⊤]` requires second countability only on the reference subspaces `A i` (via
-`RestrictedProduct.homeoTop`).
+(or when `ι` is finite, for any filter `𝓕` with no openness assumption on `A i`), this is
+registered as a typeclass instance. Every principal stage `Πʳ i, [R i, A i]_[𝓟 S]` and the
+`⊥`-filter restricted product are second countable with no assumption on `A i` (via the topological
+embedding into `Π i, R i`), while `Πʳ i, [R i, A i]_[⊤]` requires second countability only on the
+reference subspaces `A i` (via `RestrictedProduct.homeoTop`).
 
 Second countability ensures that the open-box topological basis generates the Borel σ-algebra of
 `Πʳ i, [R i, A i]` and unlocks standard Borel, product-measure, restricted Haar-measure, and
@@ -42,8 +43,8 @@ hence not second countable).
 * `RestrictedProduct.secondCountableTopology_of_cofinite`: `Πʳ i, [R i, A i]` is second countable
   when `ι` is countable, every `R i` is second countable, and `∀ᶠ i in cofinite, IsOpen (A i)`.
 * `RestrictedProduct.instSecondCountableTopology`: instance under `[Fact (∀ i, IsOpen (A i))]`.
-* `RestrictedProduct.secondCountableTopology_of_finite`: instance over `[Finite ι]` with no
-  openness hypothesis on `A i`.
+* `RestrictedProduct.secondCountableTopology_of_finite`: instance over `[Finite ι]` for any
+  filter `𝓕`, with no openness hypothesis on `A i`.
 * `TauCeti.not_firstCountableTopology_cantorSingleton`,
   `TauCeti.not_secondCountableTopology_cantorSingleton`: sharpness of cofinite openness of `A i`.
 
@@ -125,11 +126,12 @@ section Finite
 variable {ι : Type*} {R : ι → Type*} {A : ∀ i, Set (R i)}
 variable [Finite ι] [∀ i, TopologicalSpace (R i)] [∀ i, SecondCountableTopology (R i)]
 
-/-- Over a finite index type, `Πʳ i, [R i, A i]` is second countable whenever every factor `R i`
-is second countable, with no openness assumption on `A i`. -/
-instance secondCountableTopology_of_finite :
-    SecondCountableTopology (Πʳ i, [R i, A i]) :=
-  secondCountableTopology_of_cofinite (eventually_cofinite.mpr (Set.toFinite _))
+/-- Over a finite index type, `Πʳ i, [R i, A i]_[𝓕]` is second countable for every filter `𝓕`
+whenever every factor `R i` is second countable, with no openness assumption on `A i`. -/
+instance secondCountableTopology_of_finite {𝓕 : Filter ι} :
+    SecondCountableTopology (Πʳ i, [R i, A i]_[𝓕]) := by
+  obtain ⟨S, rfl⟩ := Filter.eq_principal_of_finite 𝓕
+  exact secondCountableTopology_of_principal
 
 end Finite
 
