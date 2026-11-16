@@ -28,17 +28,8 @@ namespace Real
 exponential-sum bound `exp (x - t) + exp (-t) ≤ 1`. -/
 theorem log_one_add_exp_le_iff {x t : ℝ} :
     log (1 + exp x) ≤ t ↔ exp (x - t) + exp (-t) ≤ 1 := by
-  rw [log_le_iff_le_exp (add_pos zero_lt_one (exp_pos x))]
-  constructor
-  · intro h
-    have hmul := mul_le_mul_of_nonneg_right h (exp_nonneg (-t))
-    rw [add_mul, one_mul, ← exp_add, ← exp_add, add_neg_cancel, exp_zero, ← sub_eq_add_neg,
-      add_comm] at hmul
-    exact hmul
-  · intro h
-    have hmul := mul_le_mul_of_nonneg_right h (exp_nonneg t)
-    rw [add_mul, one_mul, ← exp_add, ← exp_add, sub_add_cancel, neg_add_cancel, exp_zero,
-      add_comm] at hmul
-    exact hmul
+  have hdiv : exp (x - t) + exp (-t) = (1 + exp x) / exp t := by
+    simp [exp_sub, exp_neg, add_div, add_comm]
+  rw [log_le_iff_le_exp (add_pos zero_lt_one (exp_pos x)), hdiv, div_le_one (exp_pos t)]
 
 end Real

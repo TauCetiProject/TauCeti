@@ -28,9 +28,9 @@ We build the standard elementary conic representations over the closed real expo
   negative-log-sigmoid cost representations.
 * Finite nonnegative-weight exponential lifting (`sum_mul_exp_le_iff_exists_mem_cone`) over any
   `Finset`, allowing zero weights and empty index sets.
-* Scalar and finitely weighted process rows with time factors `t i > 0` (in both budget and
-  residual forms) and nonnegatively scaled exponential lifting (`mul_exp_le_iff_exists_mem_cone`;
-  the companion logarithmic linearization is `Real.mul_exp_le_iff_log_add_le_log`).
+* Scalar and finitely weighted process rows with time factors `t i > 0` and nonnegatively scaled
+  exponential lifting (`mul_exp_le_iff_exists_mem_cone`; the companion logarithmic linearization
+  is `Real.mul_exp_le_iff_log_add_le_log`).
 
 ## Main definitions and results
 
@@ -48,7 +48,6 @@ We build the standard elementary conic representations over the closed real expo
   exponential lifting.
 * `TauCeti.ExponentialCone.mem_cone_mul_add_one_iff`,
   `TauCeti.ExponentialCone.sum_mul_exp_div_sub_one_le_iff_exists_mem_cone`,
-  `TauCeti.ExponentialCone.sum_mul_exp_div_sub_one_sub_le_zero_iff`,
   `TauCeti.ExponentialCone.mul_exp_le_iff_exists_mem_cone`: process rows and scaled exponential
   lifting.
 
@@ -202,15 +201,6 @@ theorem sum_mul_exp_div_sub_one_le_iff_exists_mem_cone {ι : Type*} {I : Finset 
       (sub_le_iff_le_add.mp ((mem_cone_mul_add_one_iff (ht i hi)).mp (hcone i hi)))⟩
     simpa only [mul_add, mul_one, Finset.sum_add_distrib] using add_le_add hsum le_rfl
 
-/-- Residual form of `sum_mul_exp_div_sub_one_le_iff_exists_mem_cone`. -/
-theorem sum_mul_exp_div_sub_one_sub_le_zero_iff {ι : Type*} {I : Finset ι}
-    {d t x : ι → ℝ} {L : ℝ} (hd : ∀ i ∈ I, 0 ≤ d i) (ht : ∀ i ∈ I, 0 < t i) :
-    (∑ i ∈ I, d i * (Real.exp (x i / t i) - 1)) - L ≤ 0 ↔
-      ∃ u : ι → ℝ, (∑ i ∈ I, d i * u i) - L ≤ 0 ∧
-        ∀ i ∈ I, (t i * (u i + 1), t i, x i) ∈ cone := by
-  simp only [sub_nonpos]
-  exact sum_mul_exp_div_sub_one_le_iff_exists_mem_cone hd ht
-
 /-- For nonnegative `a`, the scaled exponential inequality `a * exp s ≤ R` is equivalent to the
 existence of an auxiliary `v` with `a * v ≤ R` and `(v, 1, s) ∈ cone`. -/
 theorem mul_exp_le_iff_exists_mem_cone {a s R : ℝ} (ha : 0 ≤ a) :
@@ -268,8 +258,9 @@ example {n : ℕ} (d t x s : Fin n → ℝ) (hd : ∀ j, 0 ≤ d j) (ht : ∀ j,
     (∑ j, d j * (Real.exp (x j / t j) - 1)) - (∑ j, s j * x j) ≤ 0 ↔
       ∃ u : Fin n → ℝ, (∑ j, d j * u j) - (∑ j, s j * x j) ≤ 0 ∧
         ∀ j, (t j * (u j + 1), t j, x j) ∈ cone := by
-  simpa using sum_mul_exp_div_sub_one_sub_le_zero_iff (I := Finset.univ) (d := d) (t := t)
-    (x := x) (L := ∑ j, s j * x j) (fun j _ ↦ hd j) (fun j _ ↦ ht j)
+  simpa only [sub_nonpos, Finset.mem_univ, forall_true_left] using
+    sum_mul_exp_div_sub_one_le_iff_exists_mem_cone (I := Finset.univ) (d := d) (t := t)
+      (x := x) (L := ∑ j, s j * x j) (fun j _ ↦ hd j) (fun j _ ↦ ht j)
 
 example {n : ℕ} (q x : Fin n → ℝ) {a : ℝ} (ha : 0 < a) (b c z : ℝ) :
     a * Real.exp (∑ j, q j * x j) ≤ b * z + c ↔
