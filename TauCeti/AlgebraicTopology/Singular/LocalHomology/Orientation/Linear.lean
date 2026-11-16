@@ -248,4 +248,10 @@ theorem localOrientation_localOrientationEquiv_symm (hF : finrank ℝ F = n + 1)
     ((localOrientationEquiv hF).symm z).localOrientation hF = z :=
   (localOrientationEquiv hF).apply_symm_apply z
 
+@[simp]
+theorem localOrientationEquiv_symm_localOrientation (hF : finrank ℝ F = n + 1)
+    (ω : Orientation ℝ F (Fin (n + 1))) :
+    (localOrientationEquiv hF).symm (ω.localOrientation hF) = ω :=
+  (localOrientationEquiv hF).symm_apply_apply ω
+
 end Orientation
