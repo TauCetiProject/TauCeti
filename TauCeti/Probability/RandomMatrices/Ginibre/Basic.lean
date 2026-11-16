@@ -177,6 +177,50 @@ instance (m n : ℕ) : IsProbabilityMeasure (gaussianGramComplex m n) :=
     (measurable_matrix_mul_conjTranspose (R := ℂ) continuous_star.measurable).aemeasurable).2
     inferInstance
 
+/-- With zero rows, the ginibreReal law is the point mass at zero. -/
+@[simp]
+theorem ginibreReal_zero_left (n : ℕ) : ginibreReal 0 n = Measure.dirac 0 := by
+  have h : (id : _ → _) = fun _ ↦ (0 : Matrix (Fin 0) (Fin n) ℝ) :=
+    funext fun _ ↦ Subsingleton.elim _ _
+  rw [← Measure.map_id (μ := ginibreReal 0 n), h, Measure.map_const, measure_univ, one_smul]
+
+/-- With zero columns, the ginibreReal law is the point mass at zero. -/
+@[simp]
+theorem ginibreReal_zero_right (m : ℕ) : ginibreReal m 0 = Measure.dirac 0 := by
+  have h : (id : _ → _) = fun _ ↦ (0 : Matrix (Fin m) (Fin 0) ℝ) :=
+    funext fun _ ↦ Subsingleton.elim _ _
+  rw [← Measure.map_id (μ := ginibreReal m 0), h, Measure.map_const, measure_univ, one_smul]
+
+/-- With zero rows, the ginibreComplex law is the point mass at zero. -/
+@[simp]
+theorem ginibreComplex_zero_left (n : ℕ) : ginibreComplex 0 n = Measure.dirac 0 := by
+  have h : (id : _ → _) = fun _ ↦ (0 : Matrix (Fin 0) (Fin n) ℂ) :=
+    funext fun _ ↦ Subsingleton.elim _ _
+  rw [← Measure.map_id (μ := ginibreComplex 0 n), h, Measure.map_const, measure_univ, one_smul]
+
+/-- With zero columns, the ginibreComplex law is the point mass at zero. -/
+@[simp]
+theorem ginibreComplex_zero_right (m : ℕ) : ginibreComplex m 0 = Measure.dirac 0 := by
+  have h : (id : _ → _) = fun _ ↦ (0 : Matrix (Fin m) (Fin 0) ℂ) :=
+    funext fun _ ↦ Subsingleton.elim _ _
+  rw [← Measure.map_id (μ := ginibreComplex m 0), h, Measure.map_const, measure_univ, one_smul]
+
+/-- With zero rows, the gaussianGramReal law is the point mass at zero. -/
+@[simp]
+theorem gaussianGramReal_zero_left (n : ℕ) : gaussianGramReal 0 n = Measure.dirac 0 := by
+  have h : (id : _ → _) = fun _ ↦ (0 : Matrix (Fin 0) (Fin 0) ℝ) :=
+    funext fun _ ↦ Subsingleton.elim _ _
+  rw [← Measure.map_id (μ := gaussianGramReal 0 n), h, Measure.map_const, measure_univ, one_smul]
+
+/-- With zero samples, the gaussianGramReal law is the point mass at zero. -/
+@[simp]
+theorem gaussianGramReal_zero_right (m : ℕ) : gaussianGramReal m 0 = Measure.dirac 0 := by
+  have h : (fun X : Matrix (Fin m) (Fin 0) ℝ ↦ X * Xᵀ) = fun _ ↦ 0 := by
+    funext X
+    ext i j
+    simp [Matrix.mul_apply]
+  rw [gaussianGramReal_eq_map_ginibreReal, h, Measure.map_const, measure_univ, one_smul]
+
 /-- With no samples the complex Gaussian Gram matrix is zero. -/
 @[simp]
 theorem gaussianGramComplex_zero_right (m : ℕ) : gaussianGramComplex m 0 = Measure.dirac 0 := by
@@ -322,29 +366,59 @@ theorem integral_trace_re_gaussianGramComplex (m n : ℕ) :
   simp_rw [integral_finsetSum _ fun j _ ↦ hint _ j, hval]
   simp
 
-open scoped MatrixOrder in
 /-- The real Gaussian Gram law is supported on positive semidefinite matrices. -/
 theorem ae_posSemidef_gaussianGramReal (m n : ℕ) :
     ∀ᵐ A ∂(gaussianGramReal m n), A.PosSemidef := by
-  have hclosed : IsClosed {A : Matrix (Fin m) (Fin m) ℝ | A.PosSemidef} := by
-    simpa only [Set.Ici, Matrix.nonneg_iff_posSemidef] using
-      (isClosed_Ici : IsClosed (Set.Ici (0 : Matrix (Fin m) (Fin m) ℝ)))
   rw [gaussianGramReal, ae_map_iff measurable_subtype_coe.aemeasurable
-      hclosed.measurableSet]
+      _root_.isClosed_setOfPred_posSemidef.measurableSet]
   exact ae_posSemidef_wishartGramMeasure n 1
 
-open scoped ComplexOrder MatrixOrder in
 /-- The complex Gaussian Gram law is supported on positive semidefinite matrices. -/
 theorem ae_posSemidef_gaussianGramComplex (m n : ℕ) :
     ∀ᵐ A ∂(gaussianGramComplex m n), A.PosSemidef := by
-  have hclosed : IsClosed {A : Matrix (Fin m) (Fin m) ℂ | A.PosSemidef} := by
-    simpa only [Set.Ici, Matrix.nonneg_iff_posSemidef] using
-      (isClosed_Ici : IsClosed (Set.Ici (0 : Matrix (Fin m) (Fin m) ℂ)))
   rw [gaussianGramComplex, ae_map_iff
       (measurable_matrix_mul_conjTranspose (R := ℂ) continuous_star.measurable).aemeasurable
-      hclosed.measurableSet]
+      _root_.isClosed_setOfPred_posSemidef.measurableSet]
   exact Filter.Eventually.of_forall fun X ↦ posSemidef_self_mul_conjTranspose X
 
 end Probability
 
 end TauCeti
+
+namespace ProbabilityTheory
+
+open TauCeti.Probability
+
+variable {Ω : Type*} [MeasurableSpace Ω] {P : Measure Ω} {m n : ℕ}
+  {X : Ω → Matrix (Fin m) (Fin n) ℂ}
+
+/-- A matrix has the complex Ginibre law exactly when all its entries are independent
+standard proper complex Gaussians. No prior measurability of the whole matrix is required. -/
+theorem hasLaw_ginibreComplex_iff :
+    HasLaw X (ginibreComplex m n) P ↔
+      iIndepFun (fun p : Fin m × Fin n ↦ fun ω ↦ X ω p.1 p.2) P ∧
+        ∀ i j, HasLaw (fun ω ↦ X ω i j) properComplexGaussianScalar P := by
+  constructor
+  · intro hX
+    have hentry := fun i j ↦ (HasLaw.mk Matrix.measurable_apply.aemeasurable
+      (map_apply_ginibreComplex m n i j)).comp hX
+    refine ⟨?_, hentry⟩
+    have : IsProbabilityMeasure P := hX.isProbabilityMeasure
+    apply (iIndepFun_iff_hasLaw_pi_pi
+      (fun (p : Fin m × Fin n) ↦ hentry p.1 p.2)).mpr
+    exact ((iIndepFun_apply_ginibreComplex m n).hasLaw_pi fun (p : Fin m × Fin n) ↦
+      HasLaw.mk Matrix.measurable_apply.aemeasurable
+        (map_apply_ginibreComplex m n p.1 p.2)).comp hX
+  · rintro ⟨hind, hlaw⟩
+    have hflat := hind.hasLaw_pi (fun (p : Fin m × Fin n) ↦ hlaw p.1 p.2)
+    exact (HasLaw.mk
+      (((Matrix.ofMeasurableEquiv (Fin m) (Fin n) ℂ).measurable.comp measurable_curry).aemeasurable)
+      (ginibreComplex_def m n).symm).comp hflat
+
+/-- The Gram matrix of a complex Ginibre random matrix has the complex Gaussian Gram law. -/
+theorem HasLaw.mul_conjTranspose_self_ginibreComplex {X : Ω → Matrix (Fin m) (Fin n) ℂ}
+    (hX : HasLaw X (ginibreComplex m n) P) :
+    HasLaw (fun ω ↦ X ω * (X ω)ᴴ) (gaussianGramComplex m n) P :=
+  (HasLaw.mk (by fun_prop) (gaussianGramComplex_def m n).symm).comp hX
+
+end ProbabilityTheory

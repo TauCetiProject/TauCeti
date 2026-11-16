@@ -5,8 +5,8 @@ Authors: Codex
 -/
 module
 
-public import TauCeti.Probability.Distributions.Gaussian.ProperComplex.Product
-public import TauCeti.Probability.Distributions.Gamma.Sum
+public import TauCeti.Probability.Distributions.Gaussian.ProperComplex.Basic
+public import TauCeti.Probability.Distributions.Gamma.Pi
 public import TauCeti.Probability.Distributions.Chi.Gaussian
 import TauCeti.Probability.Distributions.Exponential.Basic
 import Mathlib.Probability.Distributions.Gaussian.HasGaussianLaw.Independence
@@ -177,16 +177,15 @@ theorem map_sum_norm_sq_pi_properComplexGaussianScalar [Nonempty ι] :
     (Measure.pi fun _ : ι ↦ properComplexGaussianScalar).map (fun z ↦ ∑ i, ‖z i‖ ^ 2) =
       gammaMeasure (Fintype.card ι) 1 := by
   classical
-  have hind := (iIndepFun_pi (μ := fun _ : ι ↦ properComplexGaussianScalar)
-    (X := fun _ : ι ↦ (id : ℂ → ℂ))
-    (fun _ ↦ aemeasurable_id)).comp (fun _ z ↦ ‖z‖ ^ 2) (fun _ ↦ by fun_prop)
-  have hlaw (i : ι) : HasLaw (fun z : ι → ℂ ↦ ‖z i‖ ^ 2)
-      (gammaMeasure 1 1) (Measure.pi fun _ : ι ↦ properComplexGaussianScalar) := by
-    have h := (measurePreserving_eval
-      (fun _ : ι ↦ properComplexGaussianScalar) i).hasLaw
-    exact (HasLaw.mk (by fun_prop) map_norm_sq_properComplexGaussianScalar).comp h
-  simpa using (hind.hasLaw_sum_gammaMeasure (by norm_num) Finset.univ_nonempty
-    (fun _ _ ↦ by norm_num) (fun i _ ↦ hlaw i)).map_eq
+  have hmap : (Measure.pi fun _ : ι ↦ properComplexGaussianScalar).map
+      (fun z i ↦ ‖z i‖ ^ 2) = Measure.pi (fun _ : ι ↦ gammaMeasure 1 1) := by
+    rw [Measure.pi_map_pi (fun _ ↦ (by fun_prop :
+      Measurable (fun z : ℂ ↦ ‖z‖ ^ 2)).aemeasurable)]
+    simp only [map_norm_sq_properComplexGaussianScalar, expMeasure]
+  have h := map_sum_pi_gammaMeasure (a := fun _ : ι ↦ (1 : ℝ)) (fun _ ↦ one_pos) one_pos
+  rw [← hmap, Measure.map_map (by fun_prop) (by fun_prop)] at h
+  simpa only [Function.comp_def, Finset.sum_const, Finset.card_univ, nsmul_eq_mul, mul_one]
+    using h
 
 end TauCeti.Probability
 

@@ -23,7 +23,7 @@ about the canonical matrix law transfer to random matrices specified by their en
 ## References
 
 * G. W. Anderson, A. Guionnet, O. Zeitouni, *An Introduction to Random Matrices*,
-  Cambridge University Press, 2010, §2.5.
+  Cambridge University Press, 2010, §4.1.1.
 * T. Tao, *Topics in Random Matrix Theory*, AMS, 2012, §2.6.
 -/
 
@@ -36,9 +36,50 @@ open scoped ComplexOrder ENNReal
 
 namespace TauCeti.Probability
 
+/-- The real-valued complex Ginibre density relative to product planar Lebesgue measure. -/
+def ginibreComplexPDFReal (m n : ℕ) (X : Matrix (Fin m) (Fin n) ℂ) : ℝ :=
+  Real.exp (-(∑ i, ∑ j, ‖X i j‖ ^ 2)) / Real.pi ^ (m * n)
+
+/-- The entrywise formula for the real-valued complex Ginibre density. -/
+theorem ginibreComplexPDFReal_def (m n : ℕ) (X : Matrix (Fin m) (Fin n) ℂ) :
+    ginibreComplexPDFReal m n X =
+      Real.exp (-(∑ i, ∑ j, ‖X i j‖ ^ 2)) / Real.pi ^ (m * n) := (rfl)
+
 /-- The complex Ginibre density relative to product planar Lebesgue measure on the entries. -/
 def ginibreComplexPDF (m n : ℕ) (X : Matrix (Fin m) (Fin n) ℂ) : ℝ≥0∞ :=
-  ENNReal.ofReal (Real.exp (-(∑ i, ∑ j, ‖X i j‖ ^ 2)) / Real.pi ^ (m * n))
+  ENNReal.ofReal (ginibreComplexPDFReal m n X)
+
+/-- The extended density is the nonnegative lift of the real-valued density. -/
+theorem ginibreComplexPDF_eq_ofReal (m n : ℕ) (X : Matrix (Fin m) (Fin n) ℂ) :
+    ginibreComplexPDF m n X = ENNReal.ofReal (ginibreComplexPDFReal m n X) := (rfl)
+
+/-- The real-valued complex Ginibre density is strictly positive. -/
+theorem ginibreComplexPDFReal_pos (m n : ℕ) (X : Matrix (Fin m) (Fin n) ℂ) :
+    0 < ginibreComplexPDFReal m n X := by
+  rw [ginibreComplexPDFReal_def]
+  positivity
+
+/-- Taking the real part of the extended density recovers the real-valued density. -/
+@[simp]
+theorem toReal_ginibreComplexPDF (m n : ℕ) (X : Matrix (Fin m) (Fin n) ℂ) :
+    (ginibreComplexPDF m n X).toReal = ginibreComplexPDFReal m n X := by
+  rw [ginibreComplexPDF_eq_ofReal, ENNReal.toReal_ofReal (ginibreComplexPDFReal_pos m n X).le]
+
+/-- The real-valued Ginibre density is measurable. -/
+@[fun_prop]
+theorem measurable_ginibreComplexPDFReal (m n : ℕ) :
+    Measurable (ginibreComplexPDFReal m n) := by
+  unfold ginibreComplexPDFReal
+  fun_prop
+
+/-- The real-valued Ginibre density depends only on the real trace of `X * Xᴴ`. -/
+theorem ginibreComplexPDFReal_eq_exp_neg_trace (m n : ℕ) (X : Matrix (Fin m) (Fin n) ℂ) :
+    ginibreComplexPDFReal m n X =
+      Real.exp (-(X * Xᴴ).trace.re) / Real.pi ^ (m * n) := by
+  rw [ginibreComplexPDFReal_def]
+  have h := Matrix.re_trace_mul_conjTranspose_self X
+  simp only [RCLike.re_to_complex] at h
+  rw [h]
 
 /-- The entrywise formula for the complex Ginibre density. -/
 theorem ginibreComplexPDF_def (m n : ℕ) (X : Matrix (Fin m) (Fin n) ℂ) :
@@ -62,49 +103,49 @@ theorem ginibreComplexPDF_ne_top (m n : ℕ) (X : Matrix (Fin m) (Fin n) ℂ) :
 @[fun_prop]
 theorem measurable_ginibreComplexPDF (m n : ℕ) : Measurable (ginibreComplexPDF m n) := by
   unfold ginibreComplexPDF
-  fun_prop
+  exact (measurable_ginibreComplexPDFReal m n).ennreal_ofReal
 
-/-- Column-stacking a complex Ginibre matrix gives independent standard proper complex
-Gaussian coordinates. -/
+/-- Column-stacking a complex Ginibre matrix gives the centered identity-covariance
+proper complex Gaussian vector. -/
 theorem map_vec_ginibreComplex (m n : ℕ) :
     (ginibreComplex m n).map Matrix.vec =
       properComplexGaussianMeasure (0 : Fin n × Fin m → ℂ) 1 := by
   rw [ginibreComplex_def, Measure.map_map measurable_matrix_vec (by fun_prop),
-    properComplexGaussianMeasure_one_eq_pi]
-  exact (measurePreserving_piCongrLeft
-    (fun _ : Fin m × Fin n ↦ properComplexGaussianScalar) (Equiv.prodComm _ _)).symm.map_eq
+    properComplexGaussianMeasure_zero_one_eq_pi]
+  convert (measurePreserving_piCongrLeft
+    (fun _ : Fin m × Fin n ↦ properComplexGaussianScalar) (Equiv.prodComm _ _)).symm.map_eq using 2
+  funext z p
+  simp only [Function.comp_apply, Matrix.vec, Matrix.of_apply]
+  exact (Equiv.piCongrLeft_symm_apply (fun _ : Fin m × Fin n ↦ ℂ)
+    (Equiv.prodComm (Fin n) (Fin m)) z p).symm
 
 /-- Reshaping the identity-covariance complex Gaussian vector gives the complex Ginibre law. -/
 theorem ginibreComplex_eq_map_properComplexGaussianMeasure (m n : ℕ) :
     ginibreComplex m n =
       (properComplexGaussianMeasure (0 : Fin m × Fin n → ℂ) 1).map
         (fun z ↦ Matrix.of fun i j ↦ z (i, j)) := by
-  rw [properComplexGaussianMeasure_one_eq_pi, ginibreComplex_def]
+  rw [properComplexGaussianMeasure_zero_one_eq_pi, ginibreComplex_def]
 
 /-- The complex Ginibre law has density `π^(-m*n) exp(-∑ i j, ‖X i j‖²)`. -/
 theorem ginibreComplex_eq_withDensity (m n : ℕ) :
     ginibreComplex m n = volume.withDensity (ginibreComplexPDF m n) := by
   let e := (MeasurableEquiv.curry (Fin m) (Fin n) ℂ).trans
     (Matrix.ofMeasurableEquiv (Fin m) (Fin n) ℂ)
-  have hc := (measurePreserving_piCurry
-    (fun _ : Fin m ↦ fun _ : Fin n ↦ (volume : Measure ℂ))).comp
-      ((measurePreserving_piCongrLeft
-        (fun _ : Fin m × Fin n ↦ (volume : Measure ℂ))
-        (Equiv.sigmaEquivProd (Fin m) (Fin n))).symm)
-  have he : MeasurePreserving e volume volume := by
-    convert (Matrix.volume_preserving_ofMeasurableEquiv (Fin m) (Fin n) ℂ).comp hc using 1
-    ext z i j
-    rfl
+  have he : MeasurePreserving e volume volume :=
+    (Matrix.volume_preserving_ofMeasurableEquiv (Fin m) (Fin n) ℂ).comp
+      (TauCeti.measurePreserving_curry (fun _ : Fin m ↦ fun _ : Fin n ↦ (volume : Measure ℂ)))
+  have he_fun : (fun z : Fin m × Fin n → ℂ ↦ Matrix.of fun i j ↦ z (i, j)) = e := by
+    simp only [e, MeasurableEquiv.coe_trans, Matrix.coe_ofMeasurableEquiv,
+      MeasurableEquiv.coe_curry, Function.comp_def]
+    funext z
+    congr 1
   rw [ginibreComplex_eq_map_properComplexGaussianMeasure,
-    properComplexGaussianMeasure_eq_withDensity _ Matrix.PosDef.one]
-  have h := e.map_withDensity volume (properComplexGaussianPDF (0 : Fin m × Fin n → ℂ) 1)
-  rw [he.map_eq] at h
-  convert h using 1
-  · rfl
-  · congr 1
-    funext X
-    simp [properComplexGaussianPDF_one, ginibreComplexPDF, e,
-      MeasurableEquiv.curry, Fintype.sum_prod_type]
+    properComplexGaussianMeasure_eq_withDensity _ Matrix.PosDef.one, he_fun,
+    e.map_withDensity, he.map_eq]
+  congr 1
+  funext X
+  simp [properComplexGaussianPDF_one, ginibreComplexPDF_def, e,
+    MeasurableEquiv.coe_curry_symm, Fintype.sum_prod_type]
 
 /-- The complex Ginibre density has total integral one, including empty matrix spaces. -/
 theorem lintegral_ginibreComplexPDF (m n : ℕ) :
@@ -112,6 +153,21 @@ theorem lintegral_ginibreComplexPDF (m n : ℕ) :
   rw [← setLIntegral_univ, ← withDensity_apply _ MeasurableSet.univ,
     ← ginibreComplex_eq_withDensity]
   exact measure_univ
+
+/-- The real-valued Ginibre density has integral one, including empty matrix spaces. -/
+theorem integral_ginibreComplexPDFReal_eq_one (m n : ℕ) :
+    ∫ X, ginibreComplexPDFReal m n X = 1 := by
+  simp_rw [← toReal_ginibreComplexPDF]
+  rw [integral_toReal (measurable_ginibreComplexPDF m n).aemeasurable
+      (ae_of_all _ fun X ↦ (ginibreComplexPDF_ne_top m n X).lt_top),
+    lintegral_ginibreComplexPDF, ENNReal.toReal_one]
+
+/-- The real-valued Ginibre density is integrable. -/
+theorem integrable_ginibreComplexPDFReal (m n : ℕ) :
+    Integrable (ginibreComplexPDFReal m n) := by
+  apply Integrable.of_integral_ne_zero
+  rw [integral_ginibreComplexPDFReal_eq_one]
+  exact one_ne_zero
 
 /-- The Ginibre law is absolutely continuous with respect to product planar volume. -/
 theorem ginibreComplex_absolutelyContinuous (m n : ℕ) : ginibreComplex m n ≪ volume := by
@@ -133,39 +189,16 @@ open TauCeti.Probability
 variable {Ω : Type*} [MeasurableSpace Ω] {P : Measure Ω} {m n : ℕ}
   {X : Ω → Matrix (Fin m) (Fin n) ℂ}
 
-/-- A matrix has the complex Ginibre law exactly when all its entries are independent
-standard proper complex Gaussians. No prior measurability of the whole matrix is required. -/
-theorem hasLaw_ginibreComplex_iff :
-    HasLaw X (ginibreComplex m n) P ↔
-      iIndepFun (fun p : Fin m × Fin n ↦ fun ω ↦ X ω p.1 p.2) P ∧
-        ∀ i j, HasLaw (fun ω ↦ X ω i j) properComplexGaussianScalar P := by
-  constructor
-  · intro hX
-    have : IsProbabilityMeasure P := hX.isProbabilityMeasure_iff.mpr inferInstance
-    refine ⟨?_, fun i j ↦ ?_⟩
-    · have hentry := fun i j ↦ (HasLaw.mk (Matrix.measurable_apply.aemeasurable)
-        (map_apply_ginibreComplex m n i j)).comp hX
-      apply (iIndepFun_iff_hasLaw_pi_pi
-        (fun (p : Fin m × Fin n) ↦ hentry p.1 p.2)).mpr
-      have hread : HasLaw
-          (fun A : Matrix (Fin m) (Fin n) ℂ ↦ fun p : Fin m × Fin n ↦ A p.1 p.2)
-          (Measure.pi fun _ : Fin m × Fin n ↦ properComplexGaussianScalar)
-          (ginibreComplex m n) := by
-        refine ⟨(Measurable.of_eval (fun _ ↦ Matrix.measurable_apply)).aemeasurable, ?_⟩
-        rw [ginibreComplex_def, Measure.map_map (by fun_prop) (by fun_prop)]
-        exact Measure.map_id
-      exact hread.comp hX
-    · exact (HasLaw.mk (Matrix.measurable_apply.aemeasurable)
-        (map_apply_ginibreComplex m n i j)).comp hX
-  · rintro ⟨hind, hlaw⟩
-    have hflat := hind.hasLaw_pi (fun (p : Fin m × Fin n) ↦ hlaw p.1 p.2)
-    exact (HasLaw.mk
-      (((Matrix.ofMeasurableEquiv (Fin m) (Fin n) ℂ).measurable.comp measurable_curry).aemeasurable)
-      (ginibreComplex_def m n).symm).comp hflat
-
-/-- A complex Ginibre random matrix has the explicit matrix density. -/
+/-- A complex Ginibre random matrix has a density with respect to matrix volume. -/
 theorem HasLaw.hasPDF_ginibreComplex (hX : HasLaw X (ginibreComplex m n) P) : HasPDF X P :=
   TauCeti.Probability.hasPDF_of_hasLaw_withDensity
+    (measurable_ginibreComplexPDF m n).aemeasurable
+    (by rwa [← ginibreComplex_eq_withDensity])
+
+/-- The density of a complex Ginibre random matrix is its explicit matrix density. -/
+theorem HasLaw.pdf_eq_ginibreComplexPDF (hX : HasLaw X (ginibreComplex m n) P) :
+    pdf X P =ᵐ[volume] ginibreComplexPDF m n :=
+  TauCeti.Probability.pdf_eq_of_hasLaw_withDensity
     (measurable_ginibreComplexPDF m n).aemeasurable
     (by rwa [← ginibreComplex_eq_withDensity])
 

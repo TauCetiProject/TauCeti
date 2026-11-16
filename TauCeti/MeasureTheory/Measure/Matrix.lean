@@ -14,10 +14,10 @@ import TauCeti.MeasureTheory.Constructions.Pi
 /-!
 # Almost-sure rank of matrices with a density
 
-A rectangular matrix over a measurable field, sampled from a law absolutely continuous with
-respect to an atomless sigma-finite product reference measure, has maximal rank almost surely.
-More precisely, each fixed square submatrix
-selected by embeddings has nonzero determinant almost surely. The determinant polynomial is
+A rectangular matrix over a measurable integral domain, sampled from a law absolutely continuous
+with respect to an atomless sigma-finite product reference measure, has maximal rank almost
+surely. More precisely, each fixed square submatrix selected by embeddings has nonzero determinant
+almost surely. The determinant polynomial is
 Mathlib's `Matrix.mvPolynomialX`, renamed along the selected coordinates; its zero locus is null
 by `MvPolynomial.volume_setOfPred_eval_eq_zero`.
 
@@ -35,23 +35,24 @@ open MeasureTheory
 
 namespace Matrix
 
-/-- Matrices over a topological field of rank exactly `k` form a measurable set. -/
+/-- Matrices over a measurable field of rank exactly `k` form a measurable set. -/
 theorem measurableSet_setOfPred_rank_eq {m n K : Type*} [Finite m] [Fintype n]
-    [Field K] [TopologicalSpace K] [IsTopologicalRing K] [T1Space K] [SecondCountableTopology K]
-    [MeasurableSpace K] [BorelSpace K] (k : ℕ) :
+    [Field K] [MeasurableSpace K] [MeasurableSingletonClass K]
+    [MeasurableAdd₂ K] [MeasurableMul₂ K] (k : ℕ) :
     MeasurableSet {A : Matrix m n K | A.rank = k} := by
   classical
   let _ := Fintype.ofFinite m
+  have hle (p : ℕ) : MeasurableSet {A : Matrix m n K | A.rank ≤ p} := by
+    simp only [Matrix.rank_le_iff_forall_det_submatrix_eq_zero, Set.ofPred_forall]
+    refine MeasurableSet.iInter fun r ↦ MeasurableSet.iInter fun c ↦ ?_
+    have h := (MvPolynomial.measurableSet_setOfPred_eval_eq_zero
+      (Matrix.mvPolynomialX (Fin (p + 1)) (Fin (p + 1)) K).det).preimage
+        (by fun_prop : Measurable (fun A : Matrix m n K ↦ fun q ↦ A (r q.1) (c q.2)))
+    simpa only [Set.preimage_ofPred_eq, Matrix.eval_det_mvPolynomialX, Matrix.submatrix] using h
   cases k with
-  | zero =>
-      simpa only [Nat.le_zero] using
-        (isClosed_setOfPred_rank_le (m := m) (n := n) (K := K) 0).measurableSet
+  | zero => simpa only [Nat.le_zero] using hle 0
   | succ k =>
-      have hle :=
-        (isClosed_setOfPred_rank_le (m := m) (n := n) (K := K) (k + 1)).measurableSet
-      have hlt :=
-        (isClosed_setOfPred_rank_le (m := m) (n := n) (K := K) k).measurableSet
-      convert hle.inter hlt.compl using 1
+      convert (hle (k + 1)).inter (hle k).compl using 1
       ext A
       simp only [Set.mem_ofPred_eq, Set.mem_inter_iff, Set.mem_compl_iff]
       omega
@@ -61,7 +62,8 @@ end Matrix
 namespace MeasureTheory.Measure
 
 variable {m n l K : Type*} [Fintype m] [Fintype n] [Fintype l]
-  [Field K] [MeasureSpace K] [MeasurableSingletonClass K] [MeasurableAdd₂ K] [MeasurableMul₂ K]
+  [CommRing K] [IsDomain K] [MeasureSpace K] [MeasurableSingletonClass K]
+  [MeasurableAdd₂ K] [MeasurableMul₂ K]
   [SigmaFinite (volume : Measure K)]
   [NullSingletonClass (volume : Measure K)]
 

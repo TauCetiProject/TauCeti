@@ -5,7 +5,7 @@ Authors: Codex
 -/
 module
 
-public import TauCeti.Probability.RandomMatrices.Ginibre.Density
+public import TauCeti.Probability.RandomMatrices.Ginibre.Basic
 
 /-!
 # Gamma marginals of complex Gaussian Gram matrices
@@ -22,7 +22,7 @@ Gram matrix is zero, rather than a gamma variable of shape zero.
 ## References
 
 * G. W. Anderson, A. Guionnet, O. Zeitouni, *An Introduction to Random Matrices*,
-  Cambridge University Press, 2010, §2.5.
+  Cambridge University Press, 2010, §4.1.1.
 -/
 
 public section
@@ -38,11 +38,8 @@ gamma variables of shape equal to the positive sample size and rate one. -/
 theorem map_diag_re_gaussianGramComplex (m n : ℕ) [NeZero n] :
     (gaussianGramComplex m n).map (fun A i ↦ (A i i).re) =
       Measure.pi (fun _ : Fin m ↦ gammaMeasure n 1) := by
-  have hc := (measurePreserving_piCurry
-    (fun _ : Fin m ↦ fun _ : Fin n ↦ properComplexGaussianScalar)).comp
-      ((measurePreserving_piCongrLeft
-        (fun _ : Fin m × Fin n ↦ properComplexGaussianScalar)
-        (Equiv.sigmaEquivProd (Fin m) (Fin n))).symm)
+  have hc := TauCeti.measurePreserving_curry
+    (fun _ : Fin m ↦ fun _ : Fin n ↦ properComplexGaussianScalar)
   have hsum : (Measure.pi fun _ : Fin m ↦
       Measure.pi fun _ : Fin n ↦ properComplexGaussianScalar).map
         (fun z i ↦ ∑ j, ‖z i j‖ ^ 2) =
@@ -51,14 +48,7 @@ theorem map_diag_re_gaussianGramComplex (m n : ℕ) [NeZero n] :
       (fun _ ↦ (by fun_prop : Measurable (fun z : Fin n → ℂ ↦ ∑ j, ‖z j‖ ^ 2)).aemeasurable)]
     simp only [map_sum_norm_sq_pi_properComplexGaussianScalar, Fintype.card_fin]
   rw [← hc.map_eq, Measure.map_map (by fun_prop) hc.measurable] at hsum
-  have hc_fun :
-      (⇑(MeasurableEquiv.piCurry (fun _ : Fin m ↦ fun _ : Fin n ↦ ℂ)) ∘
-        ⇑(MeasurableEquiv.piCongrLeft (fun _ : Fin m × Fin n ↦ ℂ)
-          (Equiv.sigmaEquivProd (Fin m) (Fin n))).symm) =
-      (fun z i j ↦ z (i, j)) := by
-    ext z i j
-    rfl
-  rw [hc_fun] at hsum
+  rw [MeasurableEquiv.coe_curry] at hsum
   rw [gaussianGramComplex_def, Measure.map_map (by fun_prop) (by fun_prop),
     ginibreComplex_def, Measure.map_map (by fun_prop) (by fun_prop)]
   convert hsum using 1
@@ -113,6 +103,15 @@ theorem HasLaw.diag_re_gaussianGramComplex [NeZero n]
     ((by fun_prop :
       Measurable (fun A : Matrix (Fin m) (Fin m) ℂ ↦ fun i ↦ (A i i).re)).aemeasurable)
     (map_diag_re_gaussianGramComplex m n)).comp hA
+
+/-- Each real diagonal entry of a complex Gaussian Gram random matrix has gamma law with
+shape equal to its positive sample size and rate one. -/
+theorem HasLaw.apply_diag_re_gaussianGramComplex [NeZero n]
+    (hA : HasLaw A (gaussianGramComplex m n) P) (i : Fin m) :
+    HasLaw (fun ω ↦ (A ω i i).re) (gammaMeasure n 1) P :=
+  (HasLaw.mk ((by fun_prop : Measurable
+    (fun A : Matrix (Fin m) (Fin m) ℂ ↦ (A i i).re)).aemeasurable)
+    (map_apply_diag_re_gaussianGramComplex m n i)).comp hA
 
 /-- The trace of a complex Gaussian Gram random matrix has gamma law with shape `m * n`.
 Both dimensions must be positive. -/

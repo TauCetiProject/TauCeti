@@ -22,7 +22,7 @@ sample size.
 ## References
 
 * G. W. Anderson, A. Guionnet, O. Zeitouni, *An Introduction to Random Matrices*,
-  Cambridge University Press, 2010, §2.5.
+  Cambridge University Press, 2010, §4.1.1.
 -/
 
 public section
@@ -30,7 +30,7 @@ public section
 noncomputable section
 
 open MeasureTheory ProbabilityTheory Matrix
-open scoped ComplexOrder MatrixOrder
+open scoped ComplexOrder
 
 namespace TauCeti.Probability
 
@@ -58,20 +58,16 @@ theorem support_gaussianGramComplex (m n : ℕ) :
   have hr : Set.range (fun X : Matrix (Fin m) (Fin n) ℂ ↦ X * Xᴴ) =
       {A : Matrix (Fin m) (Fin m) ℂ | A.PosSemidef ∧ A.rank ≤ n} := by
     ext A
-    constructor
-    · rintro ⟨X, rfl⟩
-      exact ⟨posSemidef_self_mul_conjTranspose X,
-        (Matrix.rank_self_mul_conjTranspose X).trans_le
-          (by simpa using X.rank_le_card_width)⟩
-    · rintro ⟨hA, hr⟩
-      obtain ⟨X, hX⟩ := hA.exists_eq_conjTranspose_mul_self_of_rank_le
-        (m := Fin n) (by simpa using hr)
-      exact ⟨Xᴴ, by simpa using hX.symm⟩
+    simp only [Set.mem_range, Set.mem_ofPred_eq]
+    have h := Matrix.posSemidef_and_rank_le_iff_eq_conjTranspose_mul_self
+      (m := Fin n) (B := A)
+    simp only [Fintype.card_fin] at h
+    rw [h]
+    simpa [eq_comm] using
+      (Matrix.conjTransposeAddEquiv (Fin m) (Fin n) ℂ).toEquiv.exists_congr_left
+        (p := fun X ↦ X * Xᴴ = A)
   rw [hr]
   apply IsClosed.closure_eq
-  have hpsd : IsClosed {A : Matrix (Fin m) (Fin m) ℂ | A.PosSemidef} := by
-    simpa only [Set.Ici, Matrix.nonneg_iff_posSemidef] using
-      (isClosed_Ici : IsClosed (Set.Ici (0 : Matrix (Fin m) (Fin m) ℂ)))
-  exact hpsd.inter (Matrix.isClosed_setOfPred_rank_le n)
+  exact _root_.isClosed_setOfPred_posSemidef.inter (Matrix.isClosed_setOfPred_rank_le n)
 
 end TauCeti.Probability
