@@ -18,6 +18,9 @@ public import TauCeti.Analysis.Normed.Module.Ball.Homeomorph
 public import TauCeti.Analysis.InnerProductSpace.LinearIsometry
 public import TauCeti.Analysis.InnerProductSpace.OrthogonalLast
 public import TauCeti.Geometry.Sphere.LinearIsometry
+public import TauCeti.Analysis.Complex.Circle
+public import TauCeti.AlgebraicTopology.Singular.Homotopy.Invariance
+public import Mathlib.LinearAlgebra.Complex.FiniteDimensional
 
 /-!
 # The homology of spheres
@@ -91,6 +94,8 @@ Coefficients are an object `R` of an abelian category with coproducts.
   For the unit sphere `S³` of `ℝ⁴` in degrees `1` and `2` these are
   `TauCeti.isZero_reducedSingularHomologyFunctor_one_sphere_euclideanSpace_fin_four` and
   `TauCeti.isZero_reducedSingularHomologyFunctor_two_sphere_euclideanSpace_fin_four`.
+  For the unit circle `Circle` of `ℂ` the unreduced homology vanishes in degrees `k ≥ 2`
+  (`TauCeti.isZero_singularHomology_circle_of_two_le`).
 * `TauCeti.reducedSingularHomologySphereIso`: the isomorphism `H_redₙ(S) ≅ R` determined by an
   orthonormal basis of `E` indexed by `Fin (n + 1)`, with the recursion
   `TauCeti.reducedSingularHomologySphereIso_succ` and the degree-zero generator
@@ -944,6 +949,21 @@ theorem isZero_reducedSingularHomologyFunctor_two_sphere_euclideanSpace_fin_four
   isZero_reducedSingularHomologyFunctor_sphere_of_ne R (n := 3) (by simp) (by norm_num)
 
 end ThreeSphere
+
+section UnitCircle
+
+variable {C : Type u} [Category.{v} C] [HasCoproducts.{0} C] [Abelian C] (R : C)
+
+/-- The unit circle `Circle` of `ℂ` has no singular homology in degrees `k ≥ 2`. -/
+theorem isZero_singularHomology_circle_of_two_le {k : ℕ} (hk : 2 ≤ k) :
+    IsZero (((AlgebraicTopology.singularHomologyFunctor C k).obj R).obj (TopCat.of Circle)) := by
+  obtain ⟨k, rfl⟩ := Nat.exists_eq_add_of_le' hk
+  have h := isZero_reducedSingularHomologyFunctor_sphere_of_ne R (E := ℂ) (n := 1) (k := k + 2)
+    Complex.finrank_real_complex (by lia)
+  exact (h.of_iso ((reducedSingularHomologySuccIso R (k + 1)).app _).symm).of_iso
+    (Circle.homeomorphSphere.toHomotopyEquiv.singularHomologyIso R (k + 2))
+
+end UnitCircle
 
 end TauCeti
 

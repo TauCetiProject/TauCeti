@@ -30,6 +30,9 @@ Mathlib's homotopy lifting for the covering `Circle.exp` lifts the normalized lo
 
 ## Main declarations
 
+* `Circle.freeLoopAngle`: the angle function of the normalized loops, jointly continuous in the
+  time and the circle map, characterized by `Circle.eq_freeLoopAngle_iff` and ending at `2π` times
+  the degree (`Circle.freeLoopAngle_one`).
 * `Circle.freeLoopHomotopyEquiv`: the homotopy equivalence `C(S¹, S¹) ≃ₕ ℤ × S¹`.
 * `Circle.freeLoopHomotopyEquiv_symm_apply`: its homotopy inverse is `(n, z) ↦ (w ↦ z * w ^ n)`.
 * `Circle.freeLoopHomotopyEquiv_apply_symm_apply`: the equivalence is a left inverse of its
@@ -74,18 +77,29 @@ namespace Circle
 private def normalizedLoopFamily : C(I × C(Circle, Circle), Circle) :=
   ⟨fun p ↦ (p.2 1)⁻¹ * p.2 (unitToCircle p.1), by fun_prop⟩
 
-/-- The angle function of the normalized loop of `f`, lifted through `Circle.exp` continuously in
-`f` and starting at `0`. -/
-private noncomputable def freeLoopAngle : C(I × C(Circle, Circle), ℝ) :=
+/-- **The angle function of the free loops of the circle.** The lift `θ(t, f)` of the normalized
+loop `t ↦ (f 1)⁻¹ * f (e^{2πit})` through `Circle.exp : ℝ → S¹` starting at `θ(0, f) = 0`. It is
+jointly continuous in `t` and in the circle map `f`. -/
+noncomputable def freeLoopAngle : C(I × C(Circle, Circle), ℝ) :=
   isCoveringMap_exp.liftHomotopy normalizedLoopFamily (ContinuousMap.const _ 0)
     fun f ↦ by simp [normalizedLoopFamily, unitToCircle_zero]
 
-private theorem exp_freeLoopAngle (t : I) (f : C(Circle, Circle)) :
+theorem exp_freeLoopAngle (t : I) (f : C(Circle, Circle)) :
     exp (freeLoopAngle (t, f)) = (f 1)⁻¹ * f (unitToCircle t) :=
   congr_fun (isCoveringMap_exp.liftHomotopy_lifts normalizedLoopFamily _ _) (t, f)
 
-private theorem freeLoopAngle_zero (f : C(Circle, Circle)) : freeLoopAngle (0, f) = 0 :=
+theorem freeLoopAngle_zero (f : C(Circle, Circle)) : freeLoopAngle (0, f) = 0 :=
   isCoveringMap_exp.liftHomotopy_zero normalizedLoopFamily _ _ f
+
+/-- **Uniqueness of the angle function**: a jointly continuous lift `θ(t, f)` of the normalized
+loops `t ↦ (f 1)⁻¹ * f (e^{2πit})` through `Circle.exp`, starting at `θ(0, f) = 0`, is
+`Circle.freeLoopAngle`. -/
+theorem eq_freeLoopAngle_iff (θ : C(I × C(Circle, Circle), ℝ)) :
+    θ = freeLoopAngle ↔
+      (∀ t f, exp (θ (t, f)) = (f 1)⁻¹ * f (unitToCircle t)) ∧ ∀ f, θ (0, f) = 0 := by
+  rw [freeLoopAngle, isCoveringMap_exp.eq_liftHomotopy_iff', funext_iff, Prod.forall]
+  simp only [Function.comp_apply, ContinuousMap.const_apply]
+  rfl
 
 /-- The **degree** of a circle map `f`: the degree of its loop `t ↦ f (e^{2πit})`
 (`ContinuousMap.toBasedLoop`), the number of times `f` winds counterclockwise around the circle.
@@ -106,8 +120,8 @@ theorem _root_.ContinuousMap.sub_eq_circleDegree_mul (f : C(Circle, Circle)) {θ
     θ 1 - θ 0 = f.circleDegree * (2 * π) :=
   sub_eq_degree_mul f.toBasedLoop hθ fun t ↦ (hθf t).trans (f.toBasedLoop_apply t).symm
 
-/-- The lifted angle of the normalized loop of `f` ends at `2π` times the degree of `f`. -/
-private theorem freeLoopAngle_one (f : C(Circle, Circle)) :
+/-- The angle function of the normalized loop of `f` ends at `2π` times the degree of `f`. -/
+theorem freeLoopAngle_one (f : C(Circle, Circle)) :
     freeLoopAngle (1, f) = f.circleDegree * (2 * π) := by
   -- shifting by an angle of `f 1` turns the lift of the normalized loop into a lift of `f`'s loop
   have h := f.sub_eq_circleDegree_mul (θ := fun t ↦ freeLoopAngle (t, f) + Complex.arg (f 1))

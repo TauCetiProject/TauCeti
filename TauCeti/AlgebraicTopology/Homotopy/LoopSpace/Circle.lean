@@ -42,7 +42,8 @@ is homotopy equivalent to `C(S¹, S¹)` (`TauCeti.MooreFreeLoopSpace.homotopyEqu
 * `Circle.singularHomologyZeroFreeLoopIso`, `Circle.singularHomologyOneFreeLoopIso`:
   `H₀(𝓛S¹; R) ≅ ∐_ℤ R` and `H₁(𝓛S¹; R) ≅ ∐_ℤ R`, through the augmentation and
   `Circle.singularHomologyOneIso : H₁(S¹; R) ≅ R` on each component.
-* `Circle.isZero_singularHomology_freeLoop`: `Hₙ(𝓛S¹; R) = 0` for `n ≥ 2`.
+* `Circle.isZero_singularHomology_freeLoop`, `Circle.isZero_singularHomology_mooreFreeLoopSpace`:
+  `Hₙ(𝓛S¹; R) = 0` for `n ≥ 2`, for both the compact-open and the Moore free loop space.
 * `Circle.singularHomologyZeroFreeLoopLinearEquiv`, `Circle.singularHomologyOneFreeLoopLinearEquiv`:
   `H₀(𝓛S¹; M) ≃ₗ[k] (ℤ →₀ M)` and `H₁(𝓛S¹; M) ≃ₗ[k] (ℤ →₀ M)`.
 * `Circle.map_ofCircleMap_singularHomologyMooreFreeLoopIso_hom`: the Moore isomorphism restricts
@@ -198,12 +199,16 @@ theorem ι_singularHomologyOneFreeLoopIso_inv (m : ℤ) :
 
 /-- The homology of the free loop space of the circle vanishes in degrees at least two. -/
 theorem isZero_singularHomology_freeLoop {n : ℕ} (hn : 2 ≤ n) :
-    IsZero (((singularHomologyFunctor C n).obj R).obj (TopCat.of C(Circle, Circle))) := by
-  obtain ⟨j, rfl⟩ := Nat.exists_eq_add_of_le' hn
-  exact (isColimitCofanSingularHomologyFreeLoop R (j + 2)).isZero_pt
-    (Functor.isZero _ fun _ ↦ (isZero_singularHomologyFunctor_topCatSphere_of_ne R
-      (n := 1) (q := j + 1) (by omega)).of_iso
-        (((singularHomologyFunctor C (j + 2)).obj R).mapIso sphereOneIsoCircleUnlifted).symm)
+    IsZero (((singularHomologyFunctor C n).obj R).obj (TopCat.of C(Circle, Circle))) :=
+  (isColimitCofanSingularHomologyFreeLoop R n).isZero_pt
+    (Functor.isZero _ fun _ ↦ isZero_singularHomology_circle_of_two_le R hn)
+
+/-- The homology of the free Moore loop space of the circle vanishes in degrees at least two. -/
+theorem isZero_singularHomology_mooreFreeLoopSpace {n : ℕ} (hn : 2 ≤ n) :
+    IsZero (((singularHomologyFunctor C n).obj R).obj
+      (TopCat.of (MooreFreeLoopSpace Circle))) :=
+  (isZero_singularHomology_freeLoop R hn).of_iso
+    ((MooreFreeLoopSpace.homotopyEquivCircleMap Circle).singularHomologyIso R n)
 
 section ModuleCat
 
