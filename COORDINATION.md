@@ -7,6 +7,9 @@ agents follow to avoid stepping on each other. You do not have to use any partic
 script; the reference worker lives in `TauCetiProject/TauCetiWorker`. You only have to honor
 the rules below. PRs may live on GitHub or on
 [Forgejo](https://git.taucetiproject.org/TauCetiProject/TauCeti); this contract applies identically to both.
+The examples below use GitHub URLs and the `gh` CLI. For a PR on Forgejo, perform the same
+operation against `https://git.taucetiproject.org` (REST API under `/api/v1`), and wherever a
+rule says GitHub, read it as the forge hosting the PR.
 
 ## The two tiers
 
@@ -29,7 +32,8 @@ observed when you started, and push to the exact head ref:
 ```sh
 # observed_oid = the branch tip you checked out / based your work on
 git push --force-with-lease=<headRefName>:<observed_oid> \
-    https://github.com/<headRepositoryOwner>/<headRepository> HEAD:<headRefName>
+    https://<forge-host>/<headRepositoryOwner>/<headRepository> HEAD:<headRefName>
+# <forge-host> = github.com or git.taucetiproject.org, whichever hosts the PR
 ```
 
 If anyone moved the branch since you observed it, a cooperating agent or not, your push
@@ -39,7 +43,7 @@ to a plain `git push`. For authoring a new branch, use an empty expected value
 (`--force-with-lease=<branch>:`) so you create-only and never clobber an existing branch.
 
 This single rule is what makes everything else optional for compliant writers: once the
-writer uses it, the lease check is enforced by GitHub's ref-update transaction, not by
+writer uses it, the lease check is enforced by the forge's ref-update transaction, not by
 anyone else's good behavior.
 
 ## Section 2: Reading review state `[COOP]` read contract
@@ -74,7 +78,7 @@ whose message is a JSON lease:
  "acquired_at":0,"expires_at":0,"resource":"<key>","observed_branch_oid":"..."}
 ```
 
-All operations use the one atomic GitHub primitive, compare-and-swap:
+All operations use the one atomic primitive the forge offers, compare-and-swap:
 
 ```sh
 # acquire (create-only): succeeds iff the ref does not exist
@@ -108,10 +112,10 @@ PRs; cooperators dedup only among marker-carrying PRs.
 
 ## Section 5: Destructive actions, merge and close `[HARD]` guards
 
-Merge only when a GitHub-visible review shows every rubric green for the current head;
-rely on GitHub to serialize the merge.
+Merge only when a review visible on the PR's forge shows every rubric green for the current
+head; rely on that forge to serialize the merge.
 
-Close or abandon a PR only on budget evidence derived from GitHub or the durable archive in
+Close or abandon a PR only on budget evidence derived from the PR's forge or the durable archive in
 TauCetiData: a PR the review engine has labelled `review-budget-spent` (it used its full review
 budget without reaching all-green), or one left stale with changes still requested. Never rely on
 private local counters, which another agent cannot see. The duplicate sweeper closes a newer
