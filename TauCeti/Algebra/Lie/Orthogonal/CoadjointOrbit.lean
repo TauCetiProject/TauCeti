@@ -14,12 +14,14 @@ import TauCeti.LinearAlgebra.QuadraticForm.SpecialOrthogonal.WeightedSumSquares
 /-!
 # The coadjoint orbits of the rotation group `SO(3)`
 
-The special orthogonal group `SO(n) = Matrix.specialOrthogonalGroup n R` acts on its Lie algebra
+The orthogonal group `O(n) = Matrix.orthogonalGroup n R` acts on its Lie algebra
 `so(n) = LieAlgebra.Orthogonal.so n R` of skew-symmetric matrices by conjugation,
-`Ad_g A = g A g⁻¹ = g A gᵀ` (`TauCeti.specialOrthogonalAdjointRepresentation`), by Lie algebra
-automorphisms (`TauCeti.specialOrthogonalAdjointRepresentation_lie`). The coadjoint action is its
-dual, `(Ad*_g ν)(A) = ν (Ad_(g⁻¹) A)` (`TauCeti.specialOrthogonalCoadjointRepresentation`), as for
-the coadjoint representation of a Lie group.
+`Ad_g A = g A g⁻¹ = g A gᵀ` (`TauCeti.orthogonalAdjointRepresentation`), by Lie algebra
+automorphisms (`TauCeti.orthogonalAdjointRepresentation_lie`). The coadjoint action is its dual,
+`(Ad*_g ν)(A) = ν (Ad_(g⁻¹) A)` (`TauCeti.orthogonalCoadjointRepresentation`), as for the
+coadjoint representation of a Lie group. Both restrict to the special orthogonal group
+`SO(n) = Matrix.specialOrthogonalGroup n R` (`TauCeti.specialOrthogonalAdjointRepresentation`,
+`TauCeti.specialOrthogonalCoadjointRepresentation`).
 
 For `n = 3`, identify `so(3)` with `R³` by the hat map `u ↦ û` (`TauCeti.soThreeEquiv`) and
 `so(3)*` with `R³` by the dot product, `ν_m(û) = m ⬝ᵥ u` (`TauCeti.soThreeDualEquiv`). A rotation
@@ -35,7 +37,7 @@ of `ν_m` is the group of rotations fixing `m`
 
 Over `ℝ`, rotations preserve the dot product, and they act transitively on each sphere about the
 origin (`Matrix.exists_mem_specialOrthogonalGroup_mulVec_eq`). So **the coadjoint orbit of `SO(3)`
-through `ν_m` is the sphere of radius `‖m‖`**:
+through `ν_m` is the sphere of radius `√(m ⬝ᵥ m)`**:
 
 `{Ad*_g ν_m | g ∈ SO(3)} = {ν_p | p ⬝ᵥ p = m ⬝ᵥ m}`
 
@@ -47,13 +49,14 @@ spheres is in `TauCeti.Geometry.Symplectic.Coadjoint.Sphere`.
 
 ## Main definitions
 
+* `TauCeti.orthogonalAdjointRepresentation`, `TauCeti.orthogonalCoadjointRepresentation`: the
+  adjoint and coadjoint representations of `O(n)`.
 * `TauCeti.specialOrthogonalAdjointRepresentation`,
-  `TauCeti.specialOrthogonalCoadjointRepresentation`: the adjoint and coadjoint representations of
-  `SO(n)`.
+  `TauCeti.specialOrthogonalCoadjointRepresentation`: their restrictions to `SO(n)`.
 
 ## Main results
 
-* `TauCeti.specialOrthogonalAdjointRepresentation_lie`: the adjoint action is by Lie algebra
+* `TauCeti.orthogonalAdjointRepresentation_lie`: the adjoint action is by Lie algebra
   automorphisms.
 * `TauCeti.specialOrthogonalAdjointRepresentation_soThreeEquiv`,
   `TauCeti.specialOrthogonalCoadjointRepresentation_soThreeDualEquiv`: for `SO(3)` both actions
@@ -82,13 +85,12 @@ namespace TauCeti
 
 variable {n : Type*} [Fintype n] [DecidableEq n] {R : Type*} [CommRing R]
 
-/-! ### The adjoint and coadjoint representations of `SO(n)` -/
+/-! ### The adjoint and coadjoint representations of `O(n)` and `SO(n)` -/
 
 variable (n R) in
-/-- The **adjoint representation** of the special orthogonal group `SO(n)` on its Lie algebra
-`so(n)` of skew-symmetric matrices, by conjugation `Ad_g A = g A g⁻¹ = g A gᵀ`. -/
-def specialOrthogonalAdjointRepresentation :
-    Representation R (specialOrthogonalGroup n R) (so n R) where
+/-- The **adjoint representation** of the orthogonal group `O(n)` on its Lie algebra `so(n)` of
+skew-symmetric matrices, by conjugation `Ad_g A = g A g⁻¹ = g A gᵀ`. -/
+def orthogonalAdjointRepresentation : Representation R (orthogonalGroup n R) (so n R) where
   toFun g :=
     { toFun A := ⟨(g : Matrix n n R) * A * (g : Matrix n n R)ᵀ, mul_mul_transpose_mem_so _ A.2⟩
       map_add' A B := Subtype.ext (by simp [Matrix.mul_add, Matrix.add_mul])
@@ -97,30 +99,57 @@ def specialOrthogonalAdjointRepresentation :
   map_mul' g h := LinearMap.ext fun A ↦ Subtype.ext (by simp [Matrix.mul_assoc])
 
 @[simp]
+theorem coe_orthogonalAdjointRepresentation_apply (g : orthogonalGroup n R) (A : so n R) :
+    (orthogonalAdjointRepresentation n R g A : Matrix n n R) =
+      (g : Matrix n n R) * A * (g : Matrix n n R)ᵀ :=
+  (rfl)
+
+/-- **The adjoint action is by Lie algebra automorphisms**: `Ad_g ⁅A, B⁆ = ⁅Ad_g A, Ad_g B⁆`. -/
+theorem orthogonalAdjointRepresentation_lie (g : orthogonalGroup n R) (A B : so n R) :
+    orthogonalAdjointRepresentation n R g ⁅A, B⁆ =
+      ⁅orthogonalAdjointRepresentation n R g A, orthogonalAdjointRepresentation n R g B⁆ := by
+  have hg : (g : Matrix n n R)ᵀ * g = 1 := (mem_orthogonalGroup_iff' _ _).1 g.2
+  apply Subtype.ext
+  simp only [coe_orthogonalAdjointRepresentation_apply, LieSubalgebra.coe_bracket,
+    Ring.lie_def, Matrix.mul_sub, Matrix.sub_mul, Matrix.mul_assoc]
+  simp only [← Matrix.mul_assoc (g : Matrix n n R)ᵀ, hg, Matrix.one_mul]
+
+variable (n R) in
+/-- The **coadjoint representation** of `O(n)` on the dual of `so(n)`,
+`(Ad*_g ν)(A) = ν (Ad_(g⁻¹) A)`, the dual of the adjoint representation. -/
+def orthogonalCoadjointRepresentation :
+    Representation R (orthogonalGroup n R) (Dual R (so n R)) :=
+  (orthogonalAdjointRepresentation n R).dual
+
+theorem orthogonalCoadjointRepresentation_apply_apply (g : orthogonalGroup n R)
+    (ν : Dual R (so n R)) (A : so n R) :
+    orthogonalCoadjointRepresentation n R g ν A = ν (orthogonalAdjointRepresentation n R g⁻¹ A) :=
+  (rfl)
+
+variable (n R) in
+/-- The **adjoint representation** of the special orthogonal group `SO(n)` on `so(n)`, the
+restriction of `TauCeti.orthogonalAdjointRepresentation` to `SO(n) ≤ O(n)`. -/
+def specialOrthogonalAdjointRepresentation :
+    Representation R (specialOrthogonalGroup n R) (so n R) :=
+  letI := starRingOfComm (R := R)
+  (orthogonalAdjointRepresentation n R).comp
+    (Submonoid.inclusion specialUnitaryGroup_le_unitaryGroup)
+
+@[simp]
 theorem coe_specialOrthogonalAdjointRepresentation_apply (g : specialOrthogonalGroup n R)
     (A : so n R) :
     (specialOrthogonalAdjointRepresentation n R g A : Matrix n n R) =
       (g : Matrix n n R) * A * (g : Matrix n n R)ᵀ :=
   (rfl)
 
-/-- **The adjoint action is by Lie algebra automorphisms**: `Ad_g ⁅A, B⁆ = ⁅Ad_g A, Ad_g B⁆`. -/
-theorem specialOrthogonalAdjointRepresentation_lie (g : specialOrthogonalGroup n R)
-    (A B : so n R) :
-    specialOrthogonalAdjointRepresentation n R g ⁅A, B⁆ =
-      ⁅specialOrthogonalAdjointRepresentation n R g A,
-        specialOrthogonalAdjointRepresentation n R g B⁆ := by
-  have hg : (g : Matrix n n R)ᵀ * g = 1 := (mem_orthogonalGroup_iff' _ _).1 g.2.1
-  apply Subtype.ext
-  simp only [coe_specialOrthogonalAdjointRepresentation_apply, LieSubalgebra.coe_bracket,
-    Ring.lie_def, Matrix.mul_sub, Matrix.sub_mul, Matrix.mul_assoc]
-  simp only [← Matrix.mul_assoc (g : Matrix n n R)ᵀ, hg, Matrix.one_mul]
-
 variable (n R) in
-/-- The **coadjoint representation** of `SO(n)` on the dual of `so(n)`,
-`(Ad*_g ν)(A) = ν (Ad_(g⁻¹) A)`, the dual of the adjoint representation. -/
+/-- The **coadjoint representation** of `SO(n)` on the dual of `so(n)`, the restriction of
+`TauCeti.orthogonalCoadjointRepresentation` to `SO(n) ≤ O(n)`. -/
 def specialOrthogonalCoadjointRepresentation :
     Representation R (specialOrthogonalGroup n R) (Dual R (so n R)) :=
-  (specialOrthogonalAdjointRepresentation n R).dual
+  letI := starRingOfComm (R := R)
+  (orthogonalCoadjointRepresentation n R).comp
+    (Submonoid.inclusion specialUnitaryGroup_le_unitaryGroup)
 
 theorem specialOrthogonalCoadjointRepresentation_apply_apply (g : specialOrthogonalGroup n R)
     (ν : Dual R (so n R)) (A : so n R) :
@@ -185,8 +214,8 @@ theorem soThreeDualEquiv_mem_range_specialOrthogonalCoadjointRepresentation_iff
     obtain ⟨A, hA, hAm⟩ := exists_mem_specialOrthogonalGroup_mulVec_eq (by simp) h.symm
     exact ⟨⟨A, hA⟩, hAm⟩
 
-/-- **The coadjoint orbit of `SO(3)` through `ν_m` is the sphere of radius `‖m‖`**, read in `so(3)*`
-through the dot product. -/
+/-- **The coadjoint orbit of `SO(3)` through `ν_m` is the sphere of radius `√(m ⬝ᵥ m)`**, read in
+`so(3)*` through the dot product. -/
 theorem range_specialOrthogonalCoadjointRepresentation_soThreeDualEquiv (m : Fin 3 → ℝ) :
     Set.range (fun g ↦
         specialOrthogonalCoadjointRepresentation (Fin 3) ℝ g (soThreeDualEquiv ℝ m)) =

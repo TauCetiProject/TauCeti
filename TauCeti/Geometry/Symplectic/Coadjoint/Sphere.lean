@@ -18,7 +18,7 @@ Identify `so(3)` with `ℝ³`, with the cross product as bracket, by the hat map
 (`TauCeti.soThreeEquiv`), and `so(3)*` with `ℝ³` by the dot product, `ν_n(ξ̂) = n ⬝ ξ`
 (`TauCeti.soThreeDualEquiv`). The coadjoint orbits of `SO(3)` are then the spheres about the
 origin (`TauCeti.range_specialOrthogonalCoadjointRepresentation_soThreeDualEquiv`), and the orbit
-through `ν_n` with `‖n‖ = r > 0` carries the Kirillov–Kostant–Souriau form
+through `ν_n` with `√(n ⬝ n) = r > 0` carries the Kirillov–Kostant–Souriau form
 `ω_n(ξ̂, η̂) = n ⬝ (ξ × η)` (`TauCeti.kksForm_soThreeDualEquiv_mk`) on its tangent vectors `ξ × n`.
 This file builds this
 symplectic manifold on the unit sphere `S² ⊂ ℝ³`, parametrizing the orbit of radius `r` by
@@ -145,11 +145,14 @@ private theorem dotProduct_mvfderiv_eq_zero (x : S²) (v : TangentSpace (𝓡 2)
     (range_mvfderiv_subtypeVal (n := 2) x ▸ LinearMap.mem_range_self _ v)
   rwa [EuclideanSpace.inner_eq_star_dotProduct, star_trivial] at h
 
+/-- A vector of `ℝ³` lies on the unit sphere exactly when `v ⬝ v = 1`. -/
+private theorem toLp_mem_sphere_iff (v : Fin 3 → ℝ) : toLp 2 v ∈ S² ↔ v ⬝ᵥ v = 1 := by
+  rw [mem_sphere_zero_iff_norm, ← pow_eq_one_iff_of_nonneg (norm_nonneg _) two_ne_zero,
+    ← real_inner_self_eq_norm_sq, EuclideanSpace.inner_eq_star_dotProduct, star_trivial, ofLp_toLp]
+
 /-- `x ⬝ x = 1` on the unit sphere. -/
-private theorem dotProduct_self_eq_one (x : S²) : ofLp (x : ℝ³) ⬝ᵥ ofLp (x : ℝ³) = 1 := by
-  have h := real_inner_self_eq_norm_sq (x : ℝ³)
-  rw [norm_eq_of_mem_sphere, one_pow, EuclideanSpace.inner_eq_star_dotProduct, star_trivial] at h
-  exact h
+private theorem dotProduct_self_eq_one (x : S²) : ofLp (x : ℝ³) ⬝ᵥ ofLp (x : ℝ³) = 1 :=
+  (toLp_mem_sphere_iff _).1 (by rw [toLp_ofLp]; exact x.2)
 
 /-- The rotation field `x ↦ ξ × x` is a Hamiltonian vector field of the height `x ↦ x ⬝ ξ`. -/
 private theorem isHamiltonianVectorField_rotationTangent (ξ : Fin 3 → ℝ) :
@@ -281,19 +284,13 @@ theorem range_soThreeDualEquiv_smul_sphere (r : ℝ) (x₀ : S²) :
     refine ⟨r • ofLp (x : ℝ³), ?_, rfl⟩
     simp [dotProduct_self_eq_one]
   · rintro ⟨p, hp, rfl⟩
-    rw [Set.mem_ofPred_eq, smul_dotProduct, dotProduct_smul, dotProduct_self_eq_one,
-      smul_eq_mul, smul_eq_mul, mul_one] at hp
+    simp only [Set.mem_ofPred_eq, smul_dotProduct, dotProduct_smul, dotProduct_self_eq_one,
+      smul_eq_mul, mul_one] at hp
     rcases eq_or_ne r 0 with rfl | hr
     · rw [mul_zero, dotProduct_self_eq_zero] at hp
       exact ⟨x₀, by simp [hp]⟩
     -- Otherwise `p = r x` for the unit vector `x = r⁻¹ p`.
-    have hx : toLp 2 (r⁻¹ • p) ∈ Metric.sphere (0 : ℝ³) 1 := by
-      have h := real_inner_self_eq_norm_sq (toLp 2 (r⁻¹ • p))
-      rw [EuclideanSpace.inner_eq_star_dotProduct, star_trivial, ofLp_toLp, smul_dotProduct,
-        dotProduct_smul, hp, smul_eq_mul, smul_eq_mul,
-        show r⁻¹ * (r⁻¹ * (r * r)) = 1 by field_simp, eq_comm,
-        pow_eq_one_iff_of_nonneg (norm_nonneg _) two_ne_zero] at h
-      exact mem_sphere_zero_iff_norm.2 h
+    have hx : toLp 2 (r⁻¹ • p) ∈ S² := (toLp_mem_sphere_iff _).2 (by simp [hp, hr])
     exact ⟨⟨_, hx⟩, by simp [smul_smul, hr]⟩
 
 /-! ### The area -/

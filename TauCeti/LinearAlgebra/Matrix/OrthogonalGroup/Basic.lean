@@ -38,8 +38,8 @@ star operation the unitary elements of the general linear group are the orthogon
   preserves the dot product.
 * `Matrix.col_dotProduct_col_of_mem_orthogonalGroup`: the columns of an orthogonal matrix are
   orthonormal.
-* `Matrix.coe_specialOrthogonalGroup_inv`: the inverse of a special orthogonal matrix is its
-  transpose.
+* `Matrix.coe_orthogonalGroup_inv`, `Matrix.coe_specialOrthogonalGroup_inv`: the inverse of an
+  orthogonal matrix is its transpose.
 * `Matrix.GeneralLinearGroup.mem_unitarySubgroup_iff_mem_orthogonalGroup`: for a trivial star
   operation, the unitary elements of `GL n R` are the orthogonal matrices.
 -/
@@ -129,15 +129,22 @@ theorem col_dotProduct_col_of_mem_orthogonalGroup {n R : Type*} [Fintype n] [Dec
   rw [← (mem_orthogonalGroup_iff' _ _).1 hA, mul_apply']
   rfl
 
+/-- The inverse of an orthogonal matrix is its transpose. This is not a simp lemma: the simp normal
+form of `↑A⁻¹` is `star ↑A`, by `Matrix.UnitaryGroup.inv_val`. -/
+theorem coe_orthogonalGroup_inv {n R : Type*} [Fintype n] [DecidableEq n] [CommRing R]
+    (A : orthogonalGroup n R) :
+    ((A⁻¹ : orthogonalGroup n R) : Matrix n n R) = (A : Matrix n n R)ᵀ :=
+  left_inv_eq_right_inv (congrArg Subtype.val (inv_mul_cancel A))
+    ((mem_orthogonalGroup_iff _ _).1 A.2)
+
 /-- The inverse of a special orthogonal matrix is its transpose. -/
 @[simp]
 theorem coe_specialOrthogonalGroup_inv {n R : Type*} [Fintype n] [DecidableEq n] [CommRing R]
     (A : specialOrthogonalGroup n R) :
     ((A⁻¹ : specialOrthogonalGroup n R) : Matrix n n R) = (A : Matrix n n R)ᵀ := by
-  -- The inverse in `specialOrthogonalGroup` is `star` for the trivial star `starRingOfComm`, and
-  -- that star is the transpose entry by entry.
-  ext i j
-  rfl
+  let := starRingOfComm (R := R)
+  rw [← Submonoid.coe_inclusion specialUnitaryGroup_le_unitaryGroup, map_inv,
+    coe_orthogonalGroup_inv, Submonoid.coe_inclusion]
 
 end Matrix
 
