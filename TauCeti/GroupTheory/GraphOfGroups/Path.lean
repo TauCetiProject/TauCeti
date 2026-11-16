@@ -294,6 +294,34 @@ theorem reverse {p q : 𝔸.Path x y} (h : Homotopic p q) : Homotopic p.reverse 
   rw [Quiver.Path.nil_comp] at h₂
   exact h₁.trans h₂
 
+/-- Left concatenation preserves and reflects homotopy of `𝔸`-paths. -/
+theorem comp_left_iff (p : 𝔸.Path x y) {q r : 𝔸.Path y z} :
+    Homotopic (p.comp q) (p.comp r) ↔ Homotopic q r := by
+  refine ⟨fun h => ?_, fun h => h.comp_left p⟩
+  have hq : Homotopic (p.reverse.comp (p.comp q)) q := by
+    rw [← Quiver.Path.comp_assoc]
+    simpa only [Quiver.Path.nil_comp] using (reverse_comp p).comp_right q
+  have hr : Homotopic (p.reverse.comp (p.comp r)) r := by
+    rw [← Quiver.Path.comp_assoc]
+    simpa only [Quiver.Path.nil_comp] using (reverse_comp p).comp_right r
+  exact hq.symm.trans ((h.comp_left p.reverse).trans hr)
+
+/-- Right concatenation preserves and reflects homotopy of `𝔸`-paths. -/
+theorem comp_right_iff {p q : 𝔸.Path x y} (r : 𝔸.Path y z) :
+    Homotopic (p.comp r) (q.comp r) ↔ Homotopic p q :=
+  ⟨fun h => (comp_comp_reverse p r).symm.trans
+      ((h.comp_right r.reverse).trans (comp_comp_reverse q r)),
+    fun h => h.comp_right r⟩
+
+/-- Moving a suffix to the other side of a homotopy by reversing it. -/
+theorem comp_homotopic_iff_homotopic_comp_reverse {p : 𝔸.Path x y} {q : 𝔸.Path y z}
+    {r : 𝔸.Path x z} : Homotopic (p.comp q) r ↔ Homotopic p (r.comp q.reverse) := by
+  refine ⟨fun h => (comp_comp_reverse p q).symm.trans (h.comp_right q.reverse), fun h => ?_⟩
+  have hr : Homotopic ((r.comp q.reverse).comp q) r := by
+    rw [Quiver.Path.comp_assoc]
+    simpa only [Quiver.Path.comp_nil] using (reverse_comp q).comp_left r
+  exact (h.comp_right q).trans hr
+
 end Homotopic
 
 variable (𝔸) in
