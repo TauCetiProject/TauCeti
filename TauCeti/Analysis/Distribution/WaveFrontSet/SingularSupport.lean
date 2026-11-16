@@ -123,6 +123,9 @@ private theorem hasSum_fourier_mul_localFourier (T : 𝓓'(Ω, ℂ)) (χ : 𝓓(
   have hKΩ : (K : Set E) ⊆ Ω := χ.tsupport_subset
   let χK : 𝓓_{K}(E, ℂ) := ContDiffMapSupportedIn.of_support_subset χ.contDiff (subset_tsupport _)
   have hχK (y : E) : χK y = χ y := by simp [χK, ContDiffMapSupportedIn.coe_of_support_subset]
+  have hχK' : ofSupportedIn hKΩ χK = χ := by
+    ext y
+    simp [hχK]
   have hφK : support (fun y ↦ (φ y : ℂ)) ⊆ K := fun y hy ↦ by
     have hy' : y ∈ support φ := by simpa using hy
     exact subset_tsupport _ (by simp [hφ hy'])
@@ -131,27 +134,15 @@ private theorem hasSum_fourier_mul_localFourier (T : 𝓓'(Ω, ℂ)) (χ : 𝓓(
   have hφK' : (φK : E → ℂ) = fun y ↦ (φ y : ℂ) := by
     ext y
     simp [φK, ContDiffMapSupportedIn.coe_of_support_subset]
-  have hexp := ContDiffMapSupportedIn.hasSum_fourier_smul_modulate L φK χK
-    (fun y hy ℓ h ↦ Subtype.ext (hL y hy ℓ ℓ.2 h)) fun y hy ↦ by
-      rw [hχK]
-      exact hφ (by simpa [hφK'] using hy)
-  -- Pair the expansion with `T`.
-  let Λ : 𝓓_{K}(E, ℂ) →L[ℂ] ℂ := T.complexPairing ∘L ofSupportedInCLM ℂ hKΩ
-  have hΛφ : Λ φK = T φ := by
-    have h : ofSupportedIn hKΩ φK = postcompCLM (𝕜 := ℝ) ofRealCLM φ := by
-      ext y
-      simp [hφK']
-    simp only [Λ, ContinuousLinearMap.comp_apply, coe_ofSupportedInCLM, h,
+  -- `T φ` is the localized Fourier transform of `T` with cutoff `φ` at `0`.
+  have hTφ : T.localFourier (ofSupportedIn hKΩ φK) 0 = T φ := by
+    rw [localFourier_eq T _ (ψ := postcompCLM (𝕜 := ℝ) ofRealCLM φ) fun y ↦ by simp [hφK'],
       complexPairing_postcompCLM_ofRealCLM]
-  have hΛχ (m : ZLattice.dual L) (b : ℂ) :
-      Λ (b • χK.modulate m) = b * T.localFourier χ (-m) := by
-    rw [map_smul, smul_eq_mul]
-    congr 1
-    simp only [Λ, ContinuousLinearMap.comp_apply, coe_ofSupportedInCLM]
-    rw [localFourier_eq_complexPairing_modulate T hKΩ (f := χK) hχK, neg_neg]
-  have h := hexp.map Λ Λ.continuous
-  simp only [comp_def, hΛχ, hΛφ, hφK'] at h
-  exact h
+  have h := hasSum_localFourier_ofSupportedIn T hKΩ L
+    (fun y hy ℓ h ↦ Subtype.ext (hL y hy ℓ ℓ.2 h)) (φ := φK) (χ := χK) (fun y hy ↦ by
+      rw [hχK]
+      exact hφ (by simpa [hφK'] using hy)) 0
+  simpa only [zero_sub, hχK', hTφ, hφK', smul_eq_mul] using h
 
 /-- **Fourier inversion for a rapidly decreasing localized Fourier transform.** If the localized
 Fourier transform of `T` with cutoff `χ` decays rapidly on all of `E`, there is a smooth function
