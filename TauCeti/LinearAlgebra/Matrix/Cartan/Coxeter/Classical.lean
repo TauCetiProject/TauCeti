@@ -12,7 +12,7 @@ public import TauCeti.LinearAlgebra.RootSystem.Classical.TypeB
 public import TauCeti.LinearAlgebra.RootSystem.Classical.TypeD
 import Mathlib.Data.List.Sort
 import Mathlib.Data.Matrix.Block
-import TauCeti.GroupTheory.OrderOfElement.Basic
+import TauCeti.LinearAlgebra.Matrix.Adjugate.Basic
 import TauCeti.LinearAlgebra.Matrix.OneSubVecMulVec
 
 /-!
@@ -216,9 +216,8 @@ private theorem negacyclicShift_mul_typeBSimpleCoroot (hn : 0 < n) :
 /-- **The Coxeter number of `Bₙ` is `2n`**: the Coxeter element has order `2n`. -/
 theorem orderOf_coxeterElement_B (hn : 0 < n) :
     orderOf (coxeterElement (CartanMatrix.B n)) = 2 * n := by
-  rw [SemiconjBy.orderOf_eq_of_isRegular (negacyclicShift_mul_typeBSimpleRoot hn).symm
-    (isRegular_of_isLeftRegular_det (IsRegular.of_ne_zero (det_typeBSimpleRoot_ne_zero)).left),
-    orderOf_negacyclicShift hn]
+  rw [← orderOf_eq_of_mul_eq_mul (det_typeBSimpleRoot_ne_zero)
+    (negacyclicShift_mul_typeBSimpleRoot hn), orderOf_negacyclicShift hn]
 
 /-- The characteristic polynomial of the Coxeter element of `Bₙ` is `X ^ n + 1`. -/
 theorem charpoly_coxeterElement_B (hn : 0 < n) :
@@ -229,10 +228,8 @@ theorem charpoly_coxeterElement_B (hn : 0 < n) :
 /-- **The Coxeter number of `Cₙ` is `2n`**: the Coxeter element has order `2n`. -/
 theorem orderOf_coxeterElement_C (hn : 0 < n) :
     orderOf (coxeterElement (CartanMatrix.C n)) = 2 * n := by
-  rw [SemiconjBy.orderOf_eq_of_isRegular (negacyclicShift_mul_typeBSimpleCoroot hn).symm
-    (isRegular_of_isLeftRegular_det
-      (IsRegular.of_ne_zero (det_typeBSimpleCoroot_ne_zero hn)).left),
-    orderOf_negacyclicShift hn]
+  rw [← orderOf_eq_of_mul_eq_mul (det_typeBSimpleCoroot_ne_zero hn)
+    (negacyclicShift_mul_typeBSimpleCoroot hn), orderOf_negacyclicShift hn]
 
 /-- The characteristic polynomial of the Coxeter element of `Cₙ` is `X ^ n + 1`. -/
 theorem charpoly_coxeterElement_C (hn : 0 < n) :
@@ -277,8 +274,8 @@ private theorem prod_map_typeD (hn : 4 ≤ n + 1) :
 private theorem orderOf_fromBlocks_negacyclicShift (hn : 0 < n) :
     orderOf (fromBlocks (negacyclicShift ℤ n) 0 0 (-1 : Matrix (Fin 1) (Fin 1) ℤ)) = 2 * n := by
   refine (orderOf_eq_iff (by omega)).2 ⟨?_, fun d hd hd0 h => ?_⟩
-  · rw [fromBlocks_diagonal_pow, ← orderOf_negacyclicShift (R := ℤ) hn, pow_orderOf_eq_one,
-      orderOf_negacyclicShift hn, pow_mul, neg_one_sq, one_pow, fromBlocks_one]
+  · rw [fromBlocks_diagonal_pow, pow_mul', negacyclicShift_pow_self, pow_mul]
+    simp
   · rw [fromBlocks_diagonal_pow, ← fromBlocks_one, fromBlocks_inj] at h
     exact pow_ne_one_of_lt_orderOf hd0.ne' (by rwa [orderOf_negacyclicShift hn]) h.1
 
@@ -303,8 +300,7 @@ private theorem det_typeDSimpleRoot_ne_zero (hn : 4 ≤ n) :
 /-- **The Coxeter number of `Dₙ` is `2n - 2`**: the Coxeter element has order `2 (n - 1)`. -/
 theorem orderOf_coxeterElement_D (hn : 4 ≤ n) :
     orderOf (coxeterElement (CartanMatrix.D n)) = 2 * (n - 1) := by
-  rw [SemiconjBy.orderOf_eq_of_isRegular (prod_map_typeD_mul hn).symm
-    (isRegular_of_isLeftRegular_det (IsRegular.of_ne_zero (det_typeDSimpleRoot_ne_zero hn)).left)]
+  rw [← orderOf_eq_of_mul_eq_mul (det_typeDSimpleRoot_ne_zero hn) (prod_map_typeD_mul hn)]
   obtain ⟨m, rfl⟩ : ∃ m, n = m + 1 := ⟨n - 1, by omega⟩
   rw [prod_map_typeD, ← coe_reindexAlgEquiv ℤ ℤ, Nat.add_sub_cancel,
     ← orderOf_fromBlocks_negacyclicShift (by omega)]
