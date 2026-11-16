@@ -111,36 +111,24 @@ private theorem integrableOn_and_setIntegral_floerEnergyDensity_continuation_le
         (fun z x ↦ pairOfPantsContinuationPerturbation G H L (equivRealProdCLM.symm z) x 1)
         (fun z x ↦ pairOfPantsContinuationPerturbation G H L (equivRealProdCLM.symm z) x I) u z ≤
         a .zero + a .one - a .inf + ∑ q, (B q + Δ q) := by
-  have hf0 := ae_restrict_of_forall_mem (μ := volume) hΩ fun z hz ↦
-    ω.floerEnergyDensity_nonneg (hJ z (hΩS hz)) (hfl z (hΩS hz))
   -- The action bound `a_∞ ≤ a_0 + a_1 + ∑ q, (B_q + Δ_q)` makes the energy bound nonnegative.
   have hE0 : 0 ≤ a .zero + a .one - a .inf + ∑ q, (B q + Δ q) := by
     linarith [le_add_add_sum_of_tendsto_hamiltonianAction_pairOfPantsContinuationPerturbation
       ω hG hH hGs hHs hGB hHB hΔ hu hJ hfl ha]
-  -- The energy over `Ω` is at most the energy over `S`.
-  have hlin : ∫⁻ z in Ω, ENNReal.ofReal (ω.floerEnergyDensity
-      (fun z x ↦ pairOfPantsContinuationPerturbation G H L (equivRealProdCLM.symm z) x 1)
-      (fun z x ↦ pairOfPantsContinuationPerturbation G H L (equivRealProdCLM.symm z) x I) u z) ≤
-      ENNReal.ofReal (a .zero + a .one - a .inf + ∑ q, (B q + Δ q)) := by
-    refine (setLIntegral_le_lintegral _ _).trans <|
+  refine ω.integrableOn_and_setIntegral_floerEnergyDensity_le isOpen_thricePuncturedSphereReal hΩ
+    hΩS (hu.of_le (by norm_num))
+    (fun z hz ↦ (contDiffAt_uncurry_pairOfPantsContinuationPerturbation hG hH hGs hHs L hz.1 z.2
+      1).contDiffWithinAt)
+    (fun z hz ↦ (contDiffAt_uncurry_pairOfPantsContinuationPerturbation hG hH hGs hHs L hz.1 z.2
+      I).contDiffWithinAt)
+    (fun z hz ↦ ω.floerEnergyDensity_nonneg (hJ z (hΩS hz)) (hfl z (hΩS hz))) hE0
+    ((setLIntegral_le_lintegral _ _).trans <|
       (lintegral_floerEnergyDensity_pairOfPantsContinuationPerturbation_le ω hG hH hGs hHs hGB hHB
         hΔ L hu hJ hfl (fun q ↦ by simpa only [endChart_mk] using ha q)).trans
-        (ENNReal.ofReal_le_ofReal (le_of_eq ?_))
-    simp only [Puncture.sum_univ, Puncture.endSign_zero, Puncture.endSign_one,
-      Puncture.endSign_inf]
-    ring
-  have hint : IntegrableOn (ω.floerEnergyDensity
-      (fun z x ↦ pairOfPantsContinuationPerturbation G H L (equivRealProdCLM.symm z) x 1)
-      (fun z x ↦ pairOfPantsContinuationPerturbation G H L (equivRealProdCLM.symm z) x I) u) Ω :=
-    ⟨((ω.continuousOn_floerEnergyDensity isOpen_thricePuncturedSphereReal (hu.of_le (by norm_num))
-      (fun z hz ↦ (contDiffAt_uncurry_pairOfPantsContinuationPerturbation hG hH hGs hHs L hz.1 z.2
-        1).contDiffWithinAt)
-      (fun z hz ↦ (contDiffAt_uncurry_pairOfPantsContinuationPerturbation hG hH hGs hHs L hz.1 z.2
-        I).contDiffWithinAt)).mono hΩS).aestronglyMeasurable hΩ,
-      (hasFiniteIntegral_iff_ofReal hf0).2 (hlin.trans_lt ENNReal.ofReal_lt_top)⟩
-  refine ⟨hint, ?_⟩
-  rw [integral_eq_lintegral_of_nonneg_ae hf0 hint.aestronglyMeasurable]
-  exact ENNReal.toReal_le_of_le_ofReal hE0 hlin
+        (ENNReal.ofReal_le_ofReal (le_of_eq ?_)))
+  simp only [Puncture.sum_univ, Puncture.endSign_zero, Puncture.endSign_one,
+    Puncture.endSign_inf]
+  ring
 
 /-- **Solutions of the pair-of-pants continuation family converge off finitely many bubbling
 points.** Let `K_L` be the pair-of-pants perturbation with continuation necks at the positions
