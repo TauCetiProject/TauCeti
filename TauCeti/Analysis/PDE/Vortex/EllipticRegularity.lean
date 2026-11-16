@@ -9,6 +9,7 @@ public import TauCeti.Analysis.PDE.Vortex.FieldSpace
 public import TauCeti.Analysis.PDE.Vortex.RightInverse
 public import TauCeti.Analysis.PDE.Vortex.VacuumOperator.Sobolev
 import Mathlib.MeasureTheory.SpecificCodomains.WithLp
+import TauCeti.Analysis.Calculus.IteratedFDeriv.Basic
 import TauCeti.Analysis.Distribution.TemperedDistribution.Lp
 import TauCeti.Analysis.Distribution.TemperedDistribution.TestFunction
 import TauCeti.Analysis.PDE.Vortex.Multiplier
@@ -283,7 +284,8 @@ private theorem contDiff_gaugeFixedZerothOrderMatrix_and_bounded {k : ℕ}
       funext fun z ↦ by simp only [PiLp.sub_apply, Pi.sub_apply, vacuumField_apply]
     rw [he]
     -- A single bound for the derivatives through order `k`.
-    obtain ⟨M, hM, hMx⟩ := exists_forall_norm_iteratedFDeriv_le_of_forall_le (hbound a)
+    obtain ⟨M, hMx⟩ := exists_forall_norm_iteratedFDeriv_le_of_forall_exists (hbound a)
+    have hM := (nonneg_and_norm_le_of_norm_iteratedFDeriv_le hMx).1
     refine ⟨hxa.sub contDiff_const, M + ‖vacuumField 0 a‖, by positivity, fun n hn z ↦ ?_⟩
     rw [iteratedFDeriv_sub_apply (hxa.contDiffAt.of_le (mod_cast le_top)) contDiffAt_const]
     refine (norm_sub_le _ _).trans (add_le_add (hMx n hn z) ?_)

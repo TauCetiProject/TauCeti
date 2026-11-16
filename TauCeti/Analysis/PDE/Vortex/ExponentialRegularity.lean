@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.PDE.Vortex.EllipticRegularity
+import TauCeti.Analysis.Calculus.IteratedFDeriv.Basic
 import TauCeti.Analysis.PDE.Vortex.Multiplier
 import TauCeti.Analysis.SpecialFunctions.JapaneseBracket.Deriv
 import TauCeti.Analysis.SpecialFunctions.JapaneseBracket.Exp
@@ -147,9 +148,10 @@ private theorem contDiff_weightCoeff (c : ℝ) (i j : Fin 4) : ContDiff ℝ ∞ 
 /-- The coefficients of the commutator have bounded derivatives through every order `k`. -/
 private theorem exists_norm_iteratedFDeriv_weightCoeff_le (c : ℝ) (i j : Fin 4) (k : ℕ) :
     ∃ M ≥ 0, ∀ n ≤ k, ∀ z, ‖iteratedFDeriv ℝ n (weightCoeff c i j) z‖ ≤ M :=
-  exists_forall_norm_iteratedFDeriv_le_of_forall_le fun n _ ↦
+  have ⟨M, hM⟩ := exists_forall_norm_iteratedFDeriv_le_of_forall_exists fun n _ ↦
     exists_norm_iteratedFDeriv_inner_mul_one_add_norm_sq_rpow_neg_half_le
       (c • symbolDirection i j) n
+  ⟨M, (nonneg_and_norm_le_of_norm_iteratedFDeriv_le hM).1, hM⟩
 
 /-- The commutator of `L_x` with the weight `w = exp(c ρ)`: `σ(dw) v` is the multiplication of
 `w v` by the matrix `weightCoeff c`. -/

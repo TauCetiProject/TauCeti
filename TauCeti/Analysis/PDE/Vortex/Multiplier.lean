@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Analysis.PDE.Vortex.FieldSpace
 public import TauCeti.Analysis.PDE.Vortex.FramedGauge.Basic
+import TauCeti.Analysis.Calculus.IteratedFDeriv.Basic
 import TauCeti.Analysis.Sobolev.BesselPotential.Algebra
 import TauCeti.Analysis.Sobolev.BesselPotential.Embedding
 import TauCeti.Analysis.Sobolev.BesselPotential.Multiplier
@@ -41,17 +42,6 @@ namespace TauCeti.Vortex
 
 open MeasureTheory TemperedDistribution
 open scoped ContDiff
-
-/-- Bounds on the derivatives of `g` of each order through `k` combine into one nonnegative bound
-on all of them, the form of hypothesis taken by the multiplication results below. -/
-theorem exists_forall_norm_iteratedFDeriv_le_of_forall_le {E F : Type*} [NormedAddCommGroup E]
-    [NormedSpace ℝ E] [NormedAddCommGroup F] [NormedSpace ℝ F] {g : E → F} {k : ℕ}
-    (h : ∀ n ≤ k, ∃ C, ∀ z, ‖iteratedFDeriv ℝ n g z‖ ≤ C) :
-    ∃ M ≥ 0, ∀ n ≤ k, ∀ z, ‖iteratedFDeriv ℝ n g z‖ ≤ M := by
-  choose! C hC using h
-  refine ⟨∑ n ∈ Finset.range (k + 1), |C n|, by positivity, fun n hn z ↦ ?_⟩
-  exact (hC n hn z).trans ((le_abs_self _).trans (Finset.single_le_sum
-    (f := fun n ↦ |C n|) (fun _ _ ↦ abs_nonneg _) (Finset.mem_range.2 (Nat.lt_succ_of_le hn))))
 
 /-- Smooth matrix coefficients act on integer-order plane-vortex Sobolev fields whenever
 each entry and its derivatives through order `k` are bounded. This includes coordinate changes
@@ -122,7 +112,8 @@ theorem gaugeLinearAction_mem_sobolevFields_natCast {k : ℕ} {u : ℂ → Circl
     fin_cases i
     exacts [h0, h0, neg_mem (hc 3), hc 2]
   -- A single bound for the derivatives through order `k` of `Re u` and of `Im u`.
-  obtain ⟨M, hM, hMu⟩ := exists_forall_norm_iteratedFDeriv_le_of_forall_le hbound
+  obtain ⟨M, hMu⟩ := exists_forall_norm_iteratedFDeriv_le_of_forall_exists hbound
+  have hM := (nonneg_and_norm_le_of_norm_iteratedFDeriv_le hMu).1
   have hL (L : ℂ →L[ℝ] ℝ) : ∃ M ≥ 0, ∀ n ≤ k, ∀ z,
       ‖iteratedFDeriv ℝ n (fun z ↦ L (u z : ℂ)) z‖ ≤ M :=
     ⟨‖L‖ * M, by positivity, fun n hn z ↦
