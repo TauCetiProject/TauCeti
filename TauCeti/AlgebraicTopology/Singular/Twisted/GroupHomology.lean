@@ -153,7 +153,10 @@ private lemma permIso_hom_smul (n : ℕ) (g : G) (c : ((singularChains k).obj E)
       ((twistedChainComplexCoefficientMap.{u, u, u} (permutationLocalSystemSMul hG k g)).f n).hom
         (((permIso hG k).hom.f n).hom c) := by
   have := hG.toContinuousConstSMul
-  rw [singularChainsRepresentation_apply]
+  rw [singularChainsRepresentation_apply, singularChainComplexFunctor_obj_map, permIso,
+    permutationLocalSystemSMul]
+  -- The lemma is an equation of composite chain maps; evaluating the components of a composite
+  -- at `n` and applying them to `c` is the composite of the applications, by definition.
   exact congrArg (fun f ↦ (f.f n).hom c)
     (hG.isCoveringMap.chainComplexMap_comp_singularChainComplexPermutationIso_hom k
       ⟨(g • ·), continuous_const_smul g⟩ (funext fun _ ↦ hG.map_smul g))

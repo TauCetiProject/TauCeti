@@ -119,8 +119,8 @@ variable (M) in
 /-- The fibres of the orientation double cover are finite: each has two points. -/
 theorem finite_preimage_projHom (b : M) : Finite (projHom (E := E) M ⁻¹' {b}) :=
   Set.finite_coe_iff.2 (Set.finite_of_ncard_ne_zero (by
-    rw [show projHom (E := E) M ⁻¹' {b} = VectorBundleOrientationCover.proj ⁻¹' {b} from rfl,
-      VectorBundleOrientationCover.ncard_fiber (Fintype.card_fin _)]
+    simp only [projHom, TopCat.hom_ofHom, ContinuousMap.coe_mk]
+    rw [VectorBundleOrientationCover.ncard_fiber (Fintype.card_fin _)]
     exact two_ne_zero))
 
 /-- The homological orientation of the orientation cover given by its canonical orientation. -/
