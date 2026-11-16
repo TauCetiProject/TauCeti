@@ -16,10 +16,11 @@ public import Mathlib.Probability.Independence.Basic
 `centeredTruncation X P R` keeps `X` on the closed norm ball of radius `R` and subtracts
 the integral of the truncated variable. On a probability space it is bounded by `2R` and,
 when `X` is almost everywhere strongly measurable, has every finite absolute moment.
-Its integral is zero when the target space is also complete.
-For a centered square-integrable variable in a complete real inner product space, its
-mean-square approximation error is bounded by the second moment outside that ball,
-and tends to zero as the radius tends to infinity.
+Its integral is zero when `P` is a probability measure, `X` is almost everywhere strongly
+measurable, and the target space is complete.
+For a centered square-integrable variable on a probability space with values in a complete
+real inner product space, its mean-square approximation error is bounded by the second moment
+outside that ball, and tends to zero as the radius tends to infinity.
 These approximations allow moment arguments for bounded variables to be transferred to
 variables having only a second moment.
 
