@@ -42,13 +42,14 @@ homeomorphism:
 * **Preimages of rational subsets and normalised presentations**
   (`spaTilt_preimage_rationalSubset`,
   `spaTilt_preimage_rationalSubset_mem_spaRationalFamily_of_exists_isUnit`,
-  `exists_rationalSubset_eq_insert_pseudoUniformizer_pow`,
   `spaTilt_preimage_mem_spaRationalFamily`): set-theoretically, the preimage of `R(T/s)` under
   `spaTilt` is always `R(T♯/s♯)`. Because `♯` is multiplicative, `T♯` spans the unit ideal of `B`
   whenever `T` contains a unit of `B♭`. When `B♭` is Tate (with pseudouniformiser `ϖ♭`), every
   rational open of `Spa(B♭, B♭⁺)` admits a normalised presentation `R((T ∪ {ϖ♭ ^ N}) / s)` with
-  `T ⊆ B♭⁺`, `ϖ♭ ^ N ∈ B♭⁺`, and `s ∈ B♭⁺`, so *every* rational subset of `Spa(B♭, B♭⁺)` pulls back
-  under `spaTilt` to a rational subset of `Spa(B, B⁺)`.
+  `T ⊆ B♭⁺`, `ϖ♭ ^ N ∈ B♭⁺`, and `s ∈ B♭⁺`
+  (`ValuationSpectrum.exists_rationalSubset_eq_insert_pow_of_isPseudoUniformizer`), so *every*
+  rational subset of `Spa(B♭, B♭⁺)` pulls back under `spaTilt` to a rational subset of
+  `Spa(B, B⁺)`.
 * **Functoriality** (`spaTilt_comp_spaComap`,
   `Huber.Pair.Hom.spaTilt_comp_spaComap`, `Huber.Pair.Hom.spaTilt_spaComap`): `spaTilt` commutes
   with `spaComap` along continuous plus-preserving ring homomorphisms and morphisms of Huber pairs.
@@ -78,7 +79,6 @@ No perfectoid base field, perfectoidness of `B` itself, or nontriviality of `B` 
   `TauCeti.PerfectoidSpace.supp_contTilt`, `TauCeti.PerfectoidSpace.mem_supp_contTilt_iff`
 * `TauCeti.PerfectoidSpace.continuous_spaTilt`
 * `TauCeti.PerfectoidSpace.spaTilt_preimage_rationalSubset`,
-  `TauCeti.PerfectoidSpace.exists_rationalSubset_eq_insert_pseudoUniformizer_pow`,
   `TauCeti.PerfectoidSpace.spaTilt_preimage_mem_spaRationalFamily`
 * `TauCeti.PerfectoidSpace.spaTilt_comp_spaComap`,
   `TauCeti.Huber.Pair.Hom.spaTilt_comp_spaComap`, `TauCeti.Huber.Pair.Hom.spaTilt_spaComap`
@@ -187,7 +187,7 @@ variable (p) in
 pair `P : Huber.Pair B` when `B♭` is Tate, see `TauCeti.Huber.Pair.spaTilt`. -/
 noncomputable def spaTilt {Bplus : Subring B} (h : IsRingOfIntegralElements Bplus)
     (x : spa Bplus) : spa (uniformTilt.plusSubring p h) := by
-  refine ⟨(contTilt p ⟨x.1, (spa_def Bplus ▸ Set.inter_subset_left) x.2⟩).1, ?_⟩
+  refine ⟨(contTilt p ⟨x.1, spa_subset_cont Bplus x.2⟩).1, ?_⟩
   rw [mem_spa_iff]
   refine ⟨(mem_cont_iff _).mp (contTilt p _).2, fun f hf ↦ ?_⟩
   rw [contTilt_vle_iff, map_one]
@@ -196,7 +196,7 @@ noncomputable def spaTilt {Bplus : Subring B} (h : IsRingOfIntegralElements Bplu
 /-- The underlying point of `spaTilt p h x` in `Spv B♭` agrees with `contTilt` on `x`. -/
 theorem spaTilt_val_eq_contTilt_val {Bplus : Subring B} (h : IsRingOfIntegralElements Bplus)
     (x : spa Bplus) :
-    (spaTilt p h x).1 = (contTilt p ⟨x.1, (spa_def Bplus ▸ Set.inter_subset_left) x.2⟩).1 :=
+    (spaTilt p h x).1 = (contTilt p ⟨x.1, spa_subset_cont Bplus x.2⟩).1 :=
   (rfl)
 
 /-- **`spaTilt` compares elements via `♯`**: `(x♭).vle f g ↔ x.vle f♯ g♯`. -/
@@ -204,16 +204,18 @@ theorem spaTilt_val_eq_contTilt_val {Bplus : Subring B} (h : IsRingOfIntegralEle
 theorem spaTilt_vle_iff {Bplus : Subring B} (h : IsRingOfIntegralElements Bplus)
     (x : spa Bplus) (f g : uniformTilt p B) :
     (spaTilt p h x).1.toValuativeRel.vle f g ↔
-      x.1.toValuativeRel.vle (uniformTilt.coeff p B 0 f) (uniformTilt.coeff p B 0 g) :=
-  contTilt_vle_iff ⟨x.1, (spa_def Bplus ▸ Set.inter_subset_left) x.2⟩ f g
+      x.1.toValuativeRel.vle (uniformTilt.coeff p B 0 f) (uniformTilt.coeff p B 0 g) := by
+  rw [spaTilt_val_eq_contTilt_val]
+  exact contTilt_vle_iff _ f g
 
 /-- **Strict comparison under `spaTilt`**: `(x♭).vlt f g ↔ x.vlt f♯ g♯`. -/
 @[simp]
 theorem spaTilt_vlt_iff {Bplus : Subring B} (h : IsRingOfIntegralElements Bplus)
     (x : spa Bplus) (f g : uniformTilt p B) :
     (spaTilt p h x).1.toValuativeRel.vlt f g ↔
-      x.1.toValuativeRel.vlt (uniformTilt.coeff p B 0 f) (uniformTilt.coeff p B 0 g) :=
-  contTilt_vlt_iff ⟨x.1, (spa_def Bplus ▸ Set.inter_subset_left) x.2⟩ f g
+      x.1.toValuativeRel.vlt (uniformTilt.coeff p B 0 f) (uniformTilt.coeff p B 0 g) := by
+  rw [spaTilt_val_eq_contTilt_val]
+  exact contTilt_vlt_iff _ f g
 
 /-- **Unique characterisation of `spaTilt` by its valuative comparisons.** A point
 `y ∈ Spa(B♭, B♭⁺)` equals `spaTilt p h x` if and only if `y.vle f g ↔ x.vle f♯ g♯` for all
@@ -231,15 +233,17 @@ Not `@[simp]`, because `ValuationSpectrum.mem_supp_iff` already unfolds `f ∈ v
 which `spaTilt_vle_iff` reduces. -/
 theorem mem_supp_spaTilt_iff {Bplus : Subring B} (h : IsRingOfIntegralElements Bplus)
     (x : spa Bplus) (f : uniformTilt p B) :
-    f ∈ (spaTilt p h x).1.supp ↔ uniformTilt.coeff p B 0 f ∈ x.1.supp :=
-  mem_supp_contTilt_iff ⟨x.1, (spa_def Bplus ▸ Set.inter_subset_left) x.2⟩ f
+    f ∈ (spaTilt p h x).1.supp ↔ uniformTilt.coeff p B 0 f ∈ x.1.supp := by
+  rw [spaTilt_val_eq_contTilt_val]
+  exact mem_supp_contTilt_iff _ f
 
 /-- **The support of `spaTilt p h x` is the preimage under `♯` of the support of `x`.** -/
 @[simp]
 theorem supp_spaTilt {Bplus : Subring B} (h : IsRingOfIntegralElements Bplus) (x : spa Bplus) :
     ((spaTilt p h x).1.supp : Set (uniformTilt p B)) =
-      uniformTilt.coeff p B 0 ⁻¹' (x.1.supp : Set B) :=
-  supp_contTilt ⟨x.1, (spa_def Bplus ▸ Set.inter_subset_left) x.2⟩
+      uniformTilt.coeff p B 0 ⁻¹' (x.1.supp : Set B) := by
+  rw [spaTilt_val_eq_contTilt_val]
+  exact supp_contTilt _
 
 variable (p) in
 /-- **Continuity of `spaTilt`.** No Tate hypothesis on `B♭` is required: the subspace topology on
@@ -250,7 +254,9 @@ theorem continuous_spaTilt {Bplus : Subring B} (h : IsRingOfIntegralElements Bpl
     Continuous (spaTilt p h) := by
   rw [continuous_induced_rng]
   exact (continuous_subtype_val.comp
-    ((continuous_contTilt p).comp (continuous_subtype_val.subtype_mk _))).congr fun _ ↦ rfl
+    ((continuous_contTilt p).comp
+      (continuous_subtype_val.subtype_mk (fun x ↦ spa_subset_cont Bplus x.2)))).congr
+    fun x ↦ (spaTilt_val_eq_contTilt_val h x).symm
 
 /-! ### Preimages of rational subsets and normalised presentations -/
 
@@ -278,34 +284,8 @@ theorem spaTilt_preimage_rationalSubset_mem_spaRationalFamily_of_exists_isUnit {
       spaRationalFamily Bplus := by
   obtain ⟨u, huT, hu⟩ := hT
   rw [spaTilt_preimage_rationalSubset]
-  refine mem_spaRationalFamily_iff.mpr ⟨T.image (uniformTilt.coeff p B 0),
-    uniformTilt.coeff p B 0 s, ?_, rfl⟩
-  rw [Ideal.eq_top_of_isUnit_mem _
-    (Ideal.subset_span (Finset.mem_coe.mpr (Finset.mem_image_of_mem _ huT)))
-    (hu.map (uniformTilt.coeff p B 0))]
-  exact isOpen_univ
-
-open scoped Classical in
-/-- **Normalised presentation of rational subsets of `Spa(B♭, B♭⁺)`** (Scholze, *Perfectoid
-spaces*, proof of Theorem 6.3). For any pseudouniformiser `ϖ♭` of `B♭` (such as
-`PseudoUniformizerRoots.toTilt ψ` for `ψ : PseudoUniformizerRoots p B`), every rational subset
-`R(T₀/s₀)` of `Spa(B♭, B♭⁺)` with open numerator ideal equals `R((T ∪ {ϖ♭ ^ N}) / s)` for some
-`T ⊆ B♭⁺`, `ϖ♭ ^ N ∈ B♭⁺`, and `s ∈ B♭⁺`. -/
-theorem exists_rationalSubset_eq_insert_pseudoUniformizer_pow {Bplus : Subring B}
-    (h : IsRingOfIntegralElements Bplus) {ϖ : uniformTilt p B} (hϖ : IsPseudoUniformizer ϖ)
-    {T₀ : Finset (uniformTilt p B)} {s₀ : uniformTilt p B}
-    (hT₀ : IsOpen (Ideal.span (T₀ : Set (uniformTilt p B)) : Set (uniformTilt p B))) :
-    ∃ (T : Finset (uniformTilt p B)) (s : uniformTilt p B) (N : ℕ),
-      (T : Set (uniformTilt p B)) ⊆ uniformTilt.plusSubring p h ∧
-      ϖ ^ N ∈ uniformTilt.plusSubring p h ∧
-      s ∈ uniformTilt.plusSubring p h ∧
-      rationalSubset (uniformTilt.plusSubring p h) T₀ s₀ =
-        rationalSubset (uniformTilt.plusSubring p h) (insert (ϖ ^ N) T) s := by
-  let : IsTateRing (uniformTilt p B) :=
-    IsTateRing.of_isOpen_isBounded (uniformTilt.plusSubring p h)
-      (uniformTilt.isOpen_plusSubring h) (uniformTilt.isBounded_plusSubring h) hϖ
-  exact exists_rationalSubset_eq_insert_pow_of_isPseudoUniformizer
-    (uniformTilt.isOpen_plusSubring h) hϖ hT₀
+  exact val_preimage_rationalSubset_mem_spaRationalFamily_of_isUnit_mem Bplus
+    (Finset.mem_image_of_mem _ huT) (hu.map (uniformTilt.coeff p B 0))
 
 section TateTilt
 
@@ -360,15 +340,17 @@ theorem spaTilt_val (P : Pair B) (x : spa P.plus) :
 @[simp]
 theorem spaTilt_vle_iff (P : Pair B) (x : spa P.plus) (f g : uniformTilt p B) :
     (P.spaTilt p x).1.toValuativeRel.vle f g ↔
-      x.1.toValuativeRel.vle (uniformTilt.coeff p B 0 f) (uniformTilt.coeff p B 0 g) :=
-  PerfectoidSpace.spaTilt_vle_iff P.isRingOfIntegralElements x f g
+      x.1.toValuativeRel.vle (uniformTilt.coeff p B 0 f) (uniformTilt.coeff p B 0 g) := by
+  rw [P.spaTilt_val]
+  exact PerfectoidSpace.spaTilt_vle_iff P.isRingOfIntegralElements x f g
 
 /-- Strict comparison under `P.spaTilt p` is strict comparison of zeroth coordinates. -/
 @[simp]
 theorem spaTilt_vlt_iff (P : Pair B) (x : spa P.plus) (f g : uniformTilt p B) :
     (P.spaTilt p x).1.toValuativeRel.vlt f g ↔
-      x.1.toValuativeRel.vlt (uniformTilt.coeff p B 0 f) (uniformTilt.coeff p B 0 g) :=
-  PerfectoidSpace.spaTilt_vlt_iff P.isRingOfIntegralElements x f g
+      x.1.toValuativeRel.vlt (uniformTilt.coeff p B 0 f) (uniformTilt.coeff p B 0 g) := by
+  rw [P.spaTilt_val]
+  exact PerfectoidSpace.spaTilt_vlt_iff P.isRingOfIntegralElements x f g
 
 variable (p) in
 /-- `P.spaTilt p` is continuous. -/
@@ -376,7 +358,8 @@ variable (p) in
 theorem continuous_spaTilt (P : Pair B) : Continuous (P.spaTilt p) := by
   rw [continuous_induced_rng]
   exact (continuous_subtype_val.comp
-    (PerfectoidSpace.continuous_spaTilt p P.isRingOfIntegralElements)).congr fun _ ↦ rfl
+    (PerfectoidSpace.continuous_spaTilt p P.isRingOfIntegralElements)).congr
+    fun x ↦ (P.spaTilt_val x).symm
 
 open scoped Classical in
 /-- The preimage of `R(T/s)` under `P.spaTilt p` is `R(T♯/s♯)`. -/
