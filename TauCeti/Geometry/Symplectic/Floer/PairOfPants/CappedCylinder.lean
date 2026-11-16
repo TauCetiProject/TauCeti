@@ -71,7 +71,8 @@ the same energy over corresponding regions
 subset `D` of the capped plane lies in the image of a finite band of the cylinder, so the energy of
 `u` over `D` is at most `a₀ - a_∞ + B_1 + (B_0 + B_1 + B_∞)`, whatever the neck length
 (`TauCeti.SymplecticForm.setIntegral_floerEnergyDensity_plumbedPerturbation_single_inf_le`). This
-is the energy bound for compactness of the capping family.
+is the energy bound for compactness of the capping family. There the energy density is continuous
+(`TauCeti.SymplecticForm.continuousOn_floerEnergyDensity_plumbedPerturbation_single_inf`).
 
 For a manifold target `M` with a nondegenerate two-form `ω`, such as a closed symplectic
 manifold, the curvature bound, the energy identity and the action bound hold both between loops
@@ -329,11 +330,10 @@ private theorem differentiableAt_plumbedPerturbation_endChart_zero
     (hHb : ∀ r, Periodic (Hb r) 1) (hHbs : ∀ r, ContDiff ℝ 1 (uncurry (Hb r))) (hL : 4 < L)
     (v : ℂ) (ζ : ℝ × ℝ) (x : V) :
     DifferentiableAt ℝ (fun x ↦ plumbedPerturbation (Pi.single inf (Hb one)) Hb one L
-      (Complex.equivRealProdCLM.symm (endChart zero ζ)) x v) x := by
-  have hζ := equivRealProdCLM_symm_endChart_ne_endCenter zero ζ
-  rw [endCenter_zero] at hζ
-  exact ((contDiffAt_uncurry_plumbedPerturbation_single_inf (by simp) hHb hHbs hL
-    (eq_endCenter_one_or_of_ne_zero hζ) x v).differentiableAt one_ne_zero).comp x
+      (Complex.equivRealProdCLM.symm (endChart zero ζ)) x v) x :=
+  ((contDiffAt_uncurry_plumbedPerturbation_single_inf (by simp) hHb hHbs hL
+    (eq_endCenter_one_or_of_ne_zero (equivRealProdCLM_symm_endChart_zero_ne_zero ζ)) x
+    v).differentiableAt one_ne_zero).comp x
     (differentiableAt_const _ |>.prodMk differentiableAt_id)
 
 end VectorSpace
@@ -917,6 +917,30 @@ theorem isComplexLinearMap_perturbedFDeriv_cappedCylinderComponent_comp_endChart
     (differentiableAt_plumbedPerturbation_endChart_zero hHb hHbs hL Complex.I ζ _)
     (isComplexLinearMap_fderiv_endChart zero ζ) hfloer
 
+/-- **The energy density of the capping family is continuous on the capped plane.** For
+period-one `C¹` Hamiltonians `Hb`, neck length `L > 4` and a `C¹` map `u` on the capped plane
+`ℂ ∖ {0}`, in real coordinates, the Floer energy density of `u` for the datum obtained by plumbing
+the negative plane with Hamiltonian `Hb 1` into the input end at `1` of the pair of pants with
+Hamiltonians `Hb` is continuous on the capped plane. -/
+theorem continuousOn_floerEnergyDensity_plumbedPerturbation_single_inf (ω : SymplecticForm V)
+    (hHb : ∀ r, Periodic (Hb r) 1) (hHbs : ∀ r, ContDiff ℝ 1 (uncurry (Hb r))) (hL : 4 < L)
+    {u : ℝ × ℝ → V} (hu : ContDiffOn ℝ 1 u {z | Complex.equivRealProdCLM.symm z ≠ 0}) :
+    ContinuousOn (ω.floerEnergyDensity
+        (fun z x ↦ plumbedPerturbation (Pi.single inf (Hb one)) Hb one L
+          (Complex.equivRealProdCLM.symm z) x 1)
+        (fun z x ↦ plumbedPerturbation (Pi.single inf (Hb one)) Hb one L
+          (Complex.equivRealProdCLM.symm z) x Complex.I) u)
+      {z | Complex.equivRealProdCLM.symm z ≠ 0} := by
+  have hK (v : ℂ) : ContDiffOn ℝ 1 (uncurry fun z x ↦ plumbedPerturbation
+      (Pi.single inf (Hb one)) Hb one L (Complex.equivRealProdCLM.symm z) x v)
+      ({z | Complex.equivRealProdCLM.symm z ≠ 0} ×ˢ univ) := by
+    rintro ⟨z, x⟩ ⟨hz, -⟩
+    exact (contDiffAt_uncurry_plumbedPerturbation_single_inf (by simp) hHb hHbs hL
+      (eq_endCenter_one_or_of_ne_zero hz) x v).contDiffWithinAt
+  exact ω.continuousOn_floerEnergyDensity
+    (isOpen_ne_fun Complex.equivRealProdCLM.symm.continuous continuous_const) hu (hK 1)
+    (hK Complex.I)
+
 /-- **The energy of the capping family on compact windows of the capped plane.** Let `Hb` be
 period-one `C¹` Hamiltonians with `|Hb r| ≤ Bb r` and `L > 4`. Let `u` be a `C²` map on the
 capped plane `ℂ ∖ {0}`, in real coordinates, solving the Floer equation there for almost complex
@@ -954,9 +978,7 @@ theorem setIntegral_floerEnergyDensity_plumbedPerturbation_single_inf_le (ω : S
   set S : Set (ℝ × ℝ) := {z | Complex.equivRealProdCLM.symm z ≠ 0}
   have hS : IsOpen S := isOpen_ne_fun Complex.equivRealProdCLM.symm.continuous continuous_const
   -- The end chart of `0` maps the cylinder into the capped plane.
-  have hφS (ζ : ℝ × ℝ) : endChart zero ζ ∈ S := by
-    have h := equivRealProdCLM_symm_endChart_ne_endCenter zero ζ
-    rwa [endCenter_zero] at h
+  have hφS (ζ : ℝ × ℝ) : endChart zero ζ ∈ S := equivRealProdCLM_symm_endChart_zero_ne_zero ζ
   have hud (ζ : ℝ × ℝ) : DifferentiableAt ℝ u (endChart zero ζ) :=
     (hu.contDiffAt (hS.mem_nhds (hφS ζ))).differentiableAt (by norm_num)
   have hfl (ζ : ℝ × ℝ) := ω.isComplexLinearMap_perturbedFDeriv_cappedCylinderComponent_comp_endChart
@@ -974,13 +996,9 @@ theorem setIntegral_floerEnergyDensity_plumbedPerturbation_single_inf_le (ω : S
     prod_mono subset_rfl Ico_subset_Icc_self
   -- The energy over `D` is at most the energy over the image of the band, which is the energy of
   -- the capped cylinder over the band, at most its energy over `[-N, N] × [0, 1]`.
-  have hK (v : ℂ) : ContDiffOn ℝ 1 (uncurry fun z x ↦ plumbedPerturbation
-      (Pi.single inf (Hb one)) Hb one L (Complex.equivRealProdCLM.symm z) x v) (S ×ˢ univ) := by
-    rintro ⟨z, x⟩ ⟨hz, -⟩
-    exact (contDiffAt_uncurry_plumbedPerturbation_single_inf (by simp) hHb hHbs hL
-      (eq_endCenter_one_or_of_ne_zero hz) x v).contDiffWithinAt
-  refine (setIntegral_mono_set (((ω.continuousOn_floerEnergyDensity hS (hu.of_le one_le_two)
-      (hK 1) (hK Complex.I)).mono (image_subset_iff.2 fun ζ _ ↦ hφS ζ)).integrableOn_compact hcpt)
+  refine (setIntegral_mono_set (((ω.continuousOn_floerEnergyDensity_plumbedPerturbation_single_inf
+      hHb hHbs hL (hu.of_le one_le_two)).mono
+        (image_subset_iff.2 fun ζ _ ↦ hφS ζ)).integrableOn_compact hcpt)
     (ae_restrict_of_forall_mem hcpt.isClosed.measurableSet ?_)
     (Eventually.of_forall fun _ hx ↦ hDR hx)).trans ?_
   · rintro _ ⟨ζ, -, rfl⟩

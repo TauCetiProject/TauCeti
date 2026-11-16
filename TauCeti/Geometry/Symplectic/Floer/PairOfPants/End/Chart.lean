@@ -77,6 +77,7 @@ apply to all three ends.
   set of points of `S` whose longitudinal coordinate lies in `P`, for any set `P` of positive
   signed longitudinal coordinates.
 * `TauCeti.Floer.equivRealProdCLM_symm_endChart_ne_endCenter`,
+  `TauCeti.Floer.equivRealProdCLM_symm_endChart_zero_ne_zero`,
   `TauCeti.Floer.endChart_re_endCoord_fract_im_endCoord`: the end chart avoids the center of the
   end, and every other point is its image at the point `(s, t)` with `t ∈ [0, 1)` given by the end
   coordinate.
@@ -334,6 +335,11 @@ theorem equivRealProdCLM_symm_endChart_ne_endCenter (q : Puncture) (z : ℝ × �
     Complex.equivRealProdCLM.symm (endChart q z) ≠ q.endCenter := by
   rw [equivRealProdCLM_symm_endChart]
   exact sub_ne_zero.1 (q.cylindricalEndLift_sub_endCenter_ne_zero _)
+
+/-- The end chart of `0` lands in `ℂ ∖ {0}`. -/
+theorem equivRealProdCLM_symm_endChart_zero_ne_zero (z : ℝ × ℝ) :
+    Complex.equivRealProdCLM.symm (endChart .zero z) ≠ 0 := by
+  simpa only [Puncture.endCenter_zero] using equivRealProdCLM_symm_endChart_ne_endCenter .zero z
 
 /-- The longitudinal coordinate of the end `q` at the image of `(s, t)` is `s`. -/
 theorem re_endCoord_endChart (q : Puncture) (z : ℝ × ℝ) :

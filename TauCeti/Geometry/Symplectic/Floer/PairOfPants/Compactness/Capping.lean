@@ -160,14 +160,9 @@ theorem exists_pos_forall_tendsto_tendstoLocallyUniformlyOn_subseq_off_finset_ca
       (fun z x ↦ plumbedPerturbation (Pi.single inf (Hb one)) Hb one (L k)
         (equivRealProdCLM.symm z) x 1)
       (fun z x ↦ plumbedPerturbation (Pi.single inf (Hb one)) Hb one (L k)
-        (equivRealProdCLM.symm z) x I) (u k)) S := by
-    have hK' (v : ℂ) : ContDiffOn ℝ 1 (uncurry fun z x ↦ plumbedPerturbation
-        (Pi.single inf (Hb one)) Hb one (L k) (equivRealProdCLM.symm z) x v) (S ×ˢ univ) := by
-      rintro ⟨z, x⟩ ⟨hz, -⟩
-      exact (contDiffAt_uncurry_plumbedPerturbation_single_inf (by simp) hHb
-        (fun r ↦ (hHbs r).of_le (by norm_num)) (hC₄ (hLC k)) (eq_endCenter_one_or_of_ne_zero hz)
-        x v).contDiffWithinAt
-    exact ω.continuousOn_floerEnergyDensity hS ((hu k).of_le (by norm_num)) (hK' 1) (hK' I)
+        (equivRealProdCLM.symm z) x I) (u k)) S :=
+    ω.continuousOn_floerEnergyDensity_plumbedPerturbation_single_inf hHb
+      (fun r ↦ (hHbs r).of_le (by norm_num)) (hC₄ (hLC k)) ((hu k).of_le (by norm_num))
   have hintD (k : ℕ) : IntegrableOn (ω.floerEnergyDensity
       (fun z x ↦ plumbedPerturbation (Pi.single inf (Hb one)) Hb one (L k)
         (equivRealProdCLM.symm z) x 1)
