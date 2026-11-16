@@ -8,6 +8,7 @@ module
 public import TauCeti.Analysis.PDE.Caccioppoli.Basic
 import TauCeti.Analysis.PDE.EnergyForm.Restriction
 import TauCeti.MeasureTheory.Function.L2Space
+import TauCeti.MeasureTheory.Integral.Bochner.Set
 
 /-!
 # The Caccioppoli inequality for a right-hand side in divergence form
@@ -268,17 +269,6 @@ theorem exists_setIntegral_ball_norm_gradient_sq_le_sub_setAverage_divergence :
     filter_upwards [W1p.value_add_const_ae uB (-m), W1p.value_restrictL_ae hB u] with x h1 h2
     rw [h1, h2, sub_eq_add_neg]
   rwa [e1, e2] at hcacc
-
-omit [DecidableEq ι] in
-/-- If `f₀` is almost everywhere the zero extension `1_s f` of `f`, then the integral of
-`g ‖f₀‖²` over the whole space is the integral of `g ‖f‖²` over `s`. -/
-private theorem integral_mul_norm_sq_of_ae_eq_indicator {X E : Type*} [MeasurableSpace X]
-    [NormedAddCommGroup E] {μ : Measure X} {s : Set X} (hs : MeasurableSet s) {f f₀ : X → E}
-    (g : X → ℝ) (h : f₀ =ᵐ[μ] s.indicator f) :
-    ∫ x, g x * ‖f₀ x‖ ^ 2 ∂μ = ∫ x in s, g x * ‖f x‖ ^ 2 ∂μ := by
-  rw [← integral_indicator hs]
-  refine integral_congr_ae (h.mono fun x hx => ?_)
-  by_cases hx' : x ∈ s <;> simp [hx, hx']
 
 open Filter Metric in
 /-- **The Caccioppoli inequality up to the boundary.** There is `C > 0`, depending only on the
