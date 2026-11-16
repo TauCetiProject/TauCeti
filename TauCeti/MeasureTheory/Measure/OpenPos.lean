@@ -42,6 +42,8 @@ almost everywhere means everywhere.
 * `MeasureTheory.Measure.restrict_closedBall_ne_zero_of_mul_le`: a closed ball of positive radius
   in which a set has positive density charges the restriction of the measure to that set.
 * `Continuous.ae_le_iff_le`: continuous functions satisfy `f ≤ᵐ[μ] g` if and only if `f ≤ g`.
+* `ContinuousOn.le_of_ae_le`: an almost everywhere inequality on an open set `U` between functions
+  continuous on `U` holds at every point of `U`.
 * `MeasureTheory.ae_eq_top_of_discreteTopology`: on a discrete space, for a measure positive on
   open sets, almost everywhere means everywhere.
 -/
@@ -153,6 +155,22 @@ theorem _root_.Continuous.ae_le_iff_le {X Y : Type*} [TopologicalSpace X] [Measu
   -- The closed set where `f ≤ g` is dense, hence everything.
   ⟨fun h x => (μ.dense_of_ae h).induction (fun _ => id) (isClosed_le hf hg) x,
     Eventually.of_forall⟩
+
+/-- Under a measure positive on nonempty open sets, an almost everywhere inequality on an open set
+`U` between functions continuous on `U` into an order-closed space holds at every point of `U`. -/
+theorem _root_.ContinuousOn.le_of_ae_le {X Y : Type*} [TopologicalSpace X] [MeasurableSpace X]
+    {μ : Measure X} [μ.IsOpenPosMeasure] [TopologicalSpace Y] [Preorder Y]
+    [OrderClosedTopology Y] {f g : X → Y} {U : Set X} (hU : IsOpen U) (hf : ContinuousOn f U)
+    (hg : ContinuousOn g U) (h : f ≤ᵐ[μ.restrict U] g) : ∀ x ∈ U, f x ≤ g x := by
+  -- The points of `U` where `f ≤ g` fails form an open null set, hence an empty one.
+  have hW : IsOpen (U ∩ (fun y ↦ (f y, g y)) ⁻¹' {p : Y × Y | p.1 ≤ p.2}ᶜ) :=
+    (hf.prodMk hg).isOpen_inter_preimage hU OrderClosedTopology.isClosed_le'.isOpen_compl
+  have hnull : μ (U ∩ (fun y ↦ (f y, g y)) ⁻¹' {p : Y × Y | p.1 ≤ p.2}ᶜ) = 0 := by
+    refine measure_mono_null ?_ (ae_iff.1 (ae_imp_of_ae_restrict h))
+    exact fun y hy hle ↦ hy.2 (hle hy.1)
+  intro x hx
+  by_contra hfg
+  exact (hW.eq_empty_of_measure_zero hnull).subset ⟨hx, hfg⟩
 
 /-- On a discrete space, a measure positive on nonempty open sets charges every point, so
 almost everywhere means everywhere. -/

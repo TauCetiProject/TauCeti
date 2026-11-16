@@ -9,6 +9,7 @@ public import TauCeti.Analysis.Sobolev.W1p.InteriorMorrey
 public import TauCeti.Analysis.Sobolev.Wkp.LineDeriv
 public import TauCeti.Analysis.Sobolev.Wkp.PreciseRepresentative
 import TauCeti.Analysis.Sobolev.W1p.SobolevEmbedding
+import TauCeti.MeasureTheory.Measure.OpenPos
 import TauCeti.Topology.Sets.Opens
 
 /-!
@@ -120,19 +121,12 @@ theorem Wkp.abs_preciseRepresentative_le (hp : (finrank ℝ E : ℝ≥0∞) ≤ 
     {U : Set E} (hU : IsOpen U) (hUΩ : U ⊆ Omega) {M : ℝ}
     (hM : ∀ᵐ x ∂mu.restrict U, |Wkp.value 2 u x| ≤ M) {x : E} (hx : x ∈ U) :
     |preciseRepresentative mu (Wkp.value 2 u) x| ≤ M := by
-  set ū := preciseRepresentative mu (Wkp.value 2 u)
-  have hcU : ContinuousOn ū U := (Wkp.continuousOn_preciseRepresentative hp u).mono hUΩ
-  -- `|ū|` and `min |ū| M` are continuous on `U` and agree almost everywhere there.
-  have heq : EqOn (fun y ↦ min |ū y| M) (fun y ↦ |ū y|) U := by
-    refine Measure.eqOn_open_of_ae_eq (μ := mu) ?_ hU (by fun_prop) (by fun_prop)
-    filter_upwards [hM, ae_restrict_of_ae_restrict_of_subset hUΩ
-      (Wkp.ae_eq_preciseRepresentative 2 u)] with y hy hyū
-    have h : ū y = Wkp.value 2 u y := hyū.symm
-    rw [h]
-    exact min_eq_left hy
-  have h : min |ū x| M = |ū x| := heq hx
-  rw [← h]
-  exact min_le_right _ _
+  have hcU : ContinuousOn (preciseRepresentative mu (Wkp.value 2 u)) U :=
+    (Wkp.continuousOn_preciseRepresentative hp u).mono hUΩ
+  refine hcU.abs.le_of_ae_le (μ := mu) hU continuousOn_const ?_ x hx
+  filter_upwards [hM, ae_restrict_of_ae_restrict_of_subset hUΩ
+    (Wkp.ae_eq_preciseRepresentative 2 u)] with y hy hyū
+  rwa [← hyū]
 
 /-- **Hölder continuity of `W^{2,p}` functions for `p` at least the dimension.** If `n ≤ p ≤ ∞`,
 where `n` is the dimension, then for every finite `q > n` the precise representative of any
