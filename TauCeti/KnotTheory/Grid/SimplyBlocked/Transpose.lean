@@ -91,7 +91,7 @@ theorem simplyBlockedDifferential_transpose_simplyBlockedTransposeEquiv
     G.transpose.simplyBlockedDifferential R (G.O i) (G.simplyBlockedTransposeEquiv R i c) =
       G.simplyBlockedTransposeEquiv R i (G.simplyBlockedDifferential R i c) := by
   symm
-  apply simplyBlockedDifferential_of_specialization
+  apply map_simplyBlockedDifferential_of_simplyBlockedSpecialization
   · intro c
     exact (G.simplyBlockedSpecialization_transposeRenameEquiv R i c).symm
   · intro c

@@ -133,6 +133,12 @@ theorem simplyBlockedStabilizeXMap_simplyBlockedSpecialization (c : GridChainMin
     (G.stabilizeXChainMap s R)
     (simplyBlockedStabilizeXRingHom_specialization s i R) c
 
+private theorem stabilizeXChainMap_X_smul (c : GridChainMinus R (n + 1)) :
+    G.stabilizeXChainMap s R ((MvPolynomial.X j : MvPolynomial (Fin (n + 1)) R) • c) =
+      (MvPolynomial.X i : MvPolynomial (Fin n) R) • G.stabilizeXChainMap s R c := by
+  rw [LinearMap.map_smulₛₗ]
+  simp [Fin.predAbove_succAbove]
+
 end Semiring
 
 variable [CommRing R] [CharP R 2]
@@ -142,7 +148,7 @@ theorem simplyBlockedStabilizeXMap_simplyBlockedDifferential (c : GridChainHat R
     G.simplyBlockedStabilizeXMap s i R
         ((G.stabilizeX s.castSucc (G.X s).castSucc s).simplyBlockedDifferential R j c) =
       G.simplyBlockedDifferential R i (G.simplyBlockedStabilizeXMap s i R c) :=
-  G.simplyBlockedDifferential_of_specialization R
+  G.map_simplyBlockedDifferential_of_simplyBlockedSpecialization R
     (G.simplyBlockedStabilizeXMap_simplyBlockedSpecialization s i R)
     (G.stabilizeXChainMap_unblockedDifferential s R) c
 
@@ -158,25 +164,13 @@ theorem exists_sub_simplyBlockedStabilizeXMap_mem_range {y : GridChainHat R n i}
     ∃ x ∈ LinearMap.ker ((G').simplyBlockedDifferential R j),
       y - G.simplyBlockedStabilizeXMap s i R x ∈
         LinearMap.range (G.simplyBlockedDifferential R i) := by
-  simpa only [LinearMap.toAddMonoidHom_coe] using
-    G.exists_sub_map_mem_range_simplyBlockedDifferential R i j
-      (G.stabilizeXChainMap s R).toAddMonoidHom
-      (G.simplyBlockedStabilizeXMap s i R).toAddMonoidHom _
-      (by simpa only [LinearMap.toAddMonoidHom_coe] using
-        G.stabilizeXChainMap_unblockedDifferential s R)
-      (fun c => by
-        rw [LinearMap.toAddMonoidHom_coe, LinearMap.map_smulₛₗ]
-        simp [Fin.predAbove_succAbove])
-      (by simpa only [LinearMap.toAddMonoidHom_coe] using
-        G.simplyBlockedStabilizeXMap_simplyBlockedSpecialization s i R)
-      (by
-        intro c hc
-        simpa only [LinearMap.toAddMonoidHom_coe] using
-          G.exists_sub_stabilizeXChainMap_mem_range s R hc)
-      (by
-        intro x hx h
-        exact G.mem_range_of_stabilizeXChainMap_mem_range s R hx
-          (by simpa only [LinearMap.toAddMonoidHom_coe] using h)) hy
+  exact G.exists_sub_map_mem_range_simplyBlockedDifferential R i j
+    (G.stabilizeXChainMap s R) (G.simplyBlockedStabilizeXMap s i R) _
+    (G.stabilizeXChainMap_unblockedDifferential s R)
+    (G.stabilizeXChainMap_X_smul s i R)
+    (G.simplyBlockedStabilizeXMap_simplyBlockedSpecialization s i R)
+    (fun _ hc => G.exists_sub_stabilizeXChainMap_mem_range s R hc)
+    (fun _ hx h => G.mem_range_of_stabilizeXChainMap_mem_range s R hx h) hy
 
 /-- A simply blocked cycle of the stabilized diagram whose image in `G` is a boundary is itself a
 boundary. -/
@@ -186,23 +180,11 @@ theorem mem_range_of_simplyBlockedStabilizeXMap_mem_range {x : GridChainHat R (n
       LinearMap.range (G.simplyBlockedDifferential R i)) :
     x ∈ LinearMap.range ((G').simplyBlockedDifferential R j) := by
   exact G.mem_range_simplyBlockedDifferential_of_map_mem_range R i j
-    (G.stabilizeXChainMap s R).toAddMonoidHom
-    (G.simplyBlockedStabilizeXMap s i R).toAddMonoidHom _
-    (by simpa only [LinearMap.toAddMonoidHom_coe] using
-      G.stabilizeXChainMap_unblockedDifferential s R)
-    (fun c => by
-      rw [LinearMap.toAddMonoidHom_coe, LinearMap.map_smulₛₗ]
-      simp [Fin.predAbove_succAbove])
-    (by simpa only [LinearMap.toAddMonoidHom_coe] using
-      G.simplyBlockedStabilizeXMap_simplyBlockedSpecialization s i R)
-    (by
-      intro c hc
-      simpa only [LinearMap.toAddMonoidHom_coe] using
-        G.exists_sub_stabilizeXChainMap_mem_range s R hc)
-    (by
-      intro x hx h
-      exact G.mem_range_of_stabilizeXChainMap_mem_range s R hx
-        (by simpa only [LinearMap.toAddMonoidHom_coe] using h)) hx
-    (by simpa only [LinearMap.toAddMonoidHom_coe] using h)
+    (G.stabilizeXChainMap s R) (G.simplyBlockedStabilizeXMap s i R) _
+    (G.stabilizeXChainMap_unblockedDifferential s R)
+    (G.stabilizeXChainMap_X_smul s i R)
+    (G.simplyBlockedStabilizeXMap_simplyBlockedSpecialization s i R)
+    (fun _ hc => G.exists_sub_stabilizeXChainMap_mem_range s R hc)
+    (fun _ hx h => G.mem_range_of_stabilizeXChainMap_mem_range s R hx h) hx h
 
 end TauCeti.GridDiagram

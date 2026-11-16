@@ -64,7 +64,7 @@ theorem simplyBlockedDifferential_relabelRows_finRotate_apply (c : GridChainHat 
         (GridChain.relabelRowsEquiv (finRotate n) c) =
       GridChain.relabelRowsEquiv (finRotate n) (G.simplyBlockedDifferential R i c) := by
   symm
-  apply simplyBlockedDifferential_of_specialization
+  apply map_simplyBlockedDifferential_of_simplyBlockedSpecialization
   · intro c
     exact (simplyBlockedSpecialization_relabelRowsEquiv R (finRotate n) i c).symm
   · intro c
@@ -79,7 +79,7 @@ theorem simplyBlockedDifferential_relabelColumns_finRotate_apply (c : GridChainH
       GridChain.simplyBlockedRelabelColumnsEquiv R (finRotate n) i
         (G.simplyBlockedDifferential R i c) := by
   symm
-  apply simplyBlockedDifferential_of_specialization
+  apply map_simplyBlockedDifferential_of_simplyBlockedSpecialization
   · intro c
     exact (simplyBlockedSpecialization_relabelColumnsRenameEquiv R (finRotate n) i c).symm
   · intro c

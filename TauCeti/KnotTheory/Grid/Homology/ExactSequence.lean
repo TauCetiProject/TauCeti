@@ -423,8 +423,9 @@ variable {m : ℕ} (G : GridDiagram n) (R : Type*)
 section Ring
 
 variable [CommRing R] [CharP R 2] (i : Fin n) (j : Fin m)
-  (f : GridChainMinus R m →+ GridChainMinus R n)
-  (g : GridChainHat R m j →+ GridChainHat R n i)
+  {F : Type*} [FunLike F (GridChainMinus R m) (GridChainMinus R n)]
+  [AddMonoidHomClass F (GridChainMinus R m) (GridChainMinus R n)]
+  (f : F) (g : GridChainHat R m j → GridChainHat R n i)
   (G' : GridDiagram m)
   (hf : ∀ c, f (G'.unblockedDifferential R c) = G.unblockedDifferential R (f c))
   (hX : ∀ c, f ((MvPolynomial.X j : MvPolynomial (Fin m) R) • c) =
@@ -440,8 +441,8 @@ variable [CommRing R] [CharP R 2] (i : Fin n) (j : Fin m)
 
 include hf hX hg hsur hinj
 
-/-- An additive map compatible with specialization is surjective on specialized homology if
-its unblocked lift commutes with the differential and the blocked variable, is surjective on
+/-- A function compatible with specialization is surjective on specialized homology if its
+unblocked additive lift commutes with the differential and the blocked variable, is surjective on
 cycles modulo boundaries, and reflects boundaries among cycles. No differential compatibility
 hypothesis on the specialized map is needed. -/
 theorem exists_sub_map_mem_range_simplyBlockedDifferential {y : GridChainHat R n i}
@@ -451,16 +452,16 @@ theorem exists_sub_map_mem_range_simplyBlockedDifferential {y : GridChainHat R n
   simp only [← Submodule.mem_toAddSubgroup, LinearMap.ker_toAddSubgroup,
     LinearMap.range_toAddSubgroup] at hsur hinj hy ⊢
   refine AddMonoidHom.exists_mem_ker_sub_mem_range_of_exact g
-    (f₁ := f) (f := f)
+    (f₁ := AddMonoidHom.ofClass f) (f := AddMonoidHom.ofClass f)
     (G'.isShortExactDifferential_X_smul_simplyBlockedSpecialization R j)
     (G.isShortExactDifferential_X_smul_simplyBlockedSpecialization R i)
     ?_ ?_ ?_ hsur hsur hinj hy
-  · simpa only [LinearMap.toAddMonoidHom_coe] using hf
-  · simpa only [DistribSMul.toAddMonoidHom_apply] using hX
-  · simpa only [LinearMap.toAddMonoidHom_coe] using hg
+  · simpa only [LinearMap.toAddMonoidHom_coe, AddMonoidHom.coe_ofClass] using hf
+  · simpa only [DistribSMul.toAddMonoidHom_apply, AddMonoidHom.coe_ofClass] using hX
+  · simpa only [LinearMap.toAddMonoidHom_coe, AddMonoidHom.coe_ofClass] using hg
 
-/-- An additive map compatible with specialization reflects boundaries among specialized
-cycles if its unblocked lift commutes with the differential and the blocked variable, is
+/-- A function compatible with specialization reflects boundaries among specialized
+cycles if its unblocked additive lift commutes with the differential and the blocked variable, is
 surjective on cycles modulo boundaries, and reflects boundaries among cycles. No differential
 compatibility hypothesis on the specialized map is needed. -/
 theorem mem_range_simplyBlockedDifferential_of_map_mem_range {x : GridChainHat R m j}
@@ -470,14 +471,14 @@ theorem mem_range_simplyBlockedDifferential_of_map_mem_range {x : GridChainHat R
   simp only [← Submodule.mem_toAddSubgroup, LinearMap.ker_toAddSubgroup,
     LinearMap.range_toAddSubgroup] at hsur hinj hx h ⊢
   refine AddMonoidHom.mem_range_of_map_mem_range_of_exact g
-    (f₁ := f) (f := f)
+    (f₁ := AddMonoidHom.ofClass f) (f := AddMonoidHom.ofClass f)
     (G'.isShortExactDifferential_X_smul_simplyBlockedSpecialization R j)
     (G.isShortExactDifferential_X_smul_simplyBlockedSpecialization R i)
     ?_ ?_ ?_ ?_ hsur hinj hinj hx h
-  · simpa only [LinearMap.toAddMonoidHom_coe] using hf
-  · simpa only [LinearMap.toAddMonoidHom_coe] using hf
-  · simpa only [DistribSMul.toAddMonoidHom_apply] using hX
-  · simpa only [LinearMap.toAddMonoidHom_coe] using hg
+  · simpa only [LinearMap.toAddMonoidHom_coe, AddMonoidHom.coe_ofClass] using hf
+  · simpa only [LinearMap.toAddMonoidHom_coe, AddMonoidHom.coe_ofClass] using hf
+  · simpa only [DistribSMul.toAddMonoidHom_apply, AddMonoidHom.coe_ofClass] using hX
+  · simpa only [LinearMap.toAddMonoidHom_coe, AddMonoidHom.coe_ofClass] using hg
 
 end Ring
 

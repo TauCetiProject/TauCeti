@@ -195,12 +195,12 @@ private noncomputable def oneVariableSpecializationChainMapOfIntertwining :
     (f.comp (G.simplyBlockedChainEquiv R i).toLinearMap)
 
 include h in
-private theorem oneVariableSpecializationChainMapOfIntertwining_d
-    (z : (G.simplyBlockedComplex R i).X ()) :
-    oneVariableSpecializationChainMapOfIntertwining R i j σ f
-        ((G.simplyBlockedComplex R i).d () () z) =
-      (H.simplyBlockedComplex R j).d () ()
-        (oneVariableSpecializationChainMapOfIntertwining R i j σ f z) := by
+private theorem oneVariableSpecializationChainMapOfIntertwining_comp_d :
+    oneVariableSpecializationChainMapOfIntertwining R i j σ f ∘ₛₗ
+        ((G.simplyBlockedComplex R i).d () ()).hom =
+      ((H.simplyBlockedComplex R j).d () ()).hom ∘ₛₗ
+        oneVariableSpecializationChainMapOfIntertwining R i j σ f := by
+  ext z
   apply (H.simplyBlockedChainEquiv R j).injective
   simp only [oneVariableSpecializationChainMapOfIntertwining, LinearMap.comp_apply,
     LinearEquiv.coe_coe, LinearEquiv.apply_symm_apply, simplyBlockedChainEquiv_d]
@@ -211,9 +211,9 @@ The diagrams may have different sizes and need not be knots. -/
 noncomputable def oneVariableSpecializationCyclesMapOfIntertwining :
     LinearMap.ker ((G.simplyBlockedComplex R i).d () ()).hom →ₛₗ[σ]
       LinearMap.ker ((H.simplyBlockedComplex R j).d () ()).hom :=
-  (oneVariableSpecializationChainMapOfIntertwining R i j σ f).restrict fun z hz => by
-    rw [LinearMap.mem_ker] at hz ⊢
-    rw [← oneVariableSpecializationChainMapOfIntertwining_d R i j σ f h, hz, map_zero]
+  (oneVariableSpecializationChainMapOfIntertwining R i j σ f).restrict fun _ hz =>
+    LinearMap.map_mem_ker_of_comp_eq _
+      (oneVariableSpecializationChainMapOfIntertwining_comp_d R i j σ f h) hz
 
 /-- Under the explicit chain identifications, the induced map on cycles is the given chain map. -/
 @[simp]
@@ -226,30 +226,17 @@ theorem simplyBlockedChainEquiv_oneVariableSpecializationCyclesMapOfIntertwining
     oneVariableSpecializationChainMapOfIntertwining, LinearMap.comp_apply, LinearEquiv.coe_coe,
     LinearEquiv.apply_symm_apply]
 
-private theorem oneVariableSpecializationCyclesMapOfIntertwining_mem_boundariesInKer
-    {z : LinearMap.ker ((G.simplyBlockedComplex R i).d () ()).hom}
-    (hz : z ∈ ((G.simplyBlockedComplex R i).d () ()).hom.boundariesInKer) :
-    oneVariableSpecializationCyclesMapOfIntertwining R i j σ f h z ∈
-      ((H.simplyBlockedComplex R j).d () ()).hom.boundariesInKer := by
-  obtain ⟨w, hw⟩ := hz
-  refine ⟨oneVariableSpecializationChainMapOfIntertwining R i j σ f w, ?_⟩
-  simp only [Submodule.subtype_apply, oneVariableSpecializationCyclesMapOfIntertwining,
-    LinearMap.coe_restrict_apply] at hw ⊢
-  rw [← hw, oneVariableSpecializationChainMapOfIntertwining_d R i j σ f h]
-
 /-- An intertwining semilinear chain map descends to the homology of the one-variable
 specialization. Its value on cycle classes is specified by the induced cycle map. -/
 noncomputable def oneVariableSpecializationHomologyMapOfIntertwining :
     (G.simplyBlockedComplex R i).homology () →ₛₗ[σ]
       (H.simplyBlockedComplex R j).homology () :=
   (H.simplyBlockedComplex R j).moduleCatHomologyIso.toLinearEquiv.symm.toLinearMap.comp
-    ((Submodule.mapQ
-      ((G.simplyBlockedComplex R i).d () ()).hom.boundariesInKer
-      ((H.simplyBlockedComplex R j).d () ()).hom.boundariesInKer
-      (oneVariableSpecializationCyclesMapOfIntertwining R i j σ f h)
-      (fun _ hz =>
-        oneVariableSpecializationCyclesMapOfIntertwining_mem_boundariesInKer R i j σ f h hz)).comp
-          (G.simplyBlockedComplex R i).moduleCatHomologyIso.toLinearEquiv.toLinearMap)
+    ((LinearMap.homologyMap (oneVariableSpecializationChainMapOfIntertwining R i j σ f)
+      (G.simplyBlockedComplex R i).hom_d_comp_hom_d
+      (H.simplyBlockedComplex R j).hom_d_comp_hom_d
+      (oneVariableSpecializationChainMapOfIntertwining_comp_d R i j σ f h)).comp
+        (G.simplyBlockedComplex R i).moduleCatHomologyIso.toLinearEquiv.toLinearMap)
 
 /-- The descended homology map sends a cycle class to the class of its cycle image. -/
 @[simp]
@@ -264,7 +251,8 @@ theorem oneVariableSpecializationHomologyMapOfIntertwining_oneVariableSpecializa
   rw [Iso.toLinearEquiv_apply, Iso.toLinearEquiv_apply,
     HomologicalComplex.moduleCatHomologyIso_hom_moduleCatKerHomologyClass,
     HomologicalComplex.moduleCatHomologyIso_hom_moduleCatKerHomologyClass,
-    LinearMap.homologyπ_apply, LinearMap.homologyπ_apply, Submodule.mapQ_apply]
+    LinearMap.homologyπ_apply, LinearMap.homologyπ_apply, LinearMap.homologyMap_mk]
+  rfl
 
 /-- A chain map induces a bijection on homology if it detects boundaries among cycles and every
 cycle in the target differs from the image of a cycle by a boundary. -/
@@ -276,28 +264,37 @@ theorem oneVariableSpecializationHomologyMapOfIntertwining_bijective
       ∃ x, G.simplyBlockedDifferential R i x = 0 ∧
         y - f x ∈ LinearMap.range (H.simplyBlockedDifferential R j)) :
     Function.Bijective (oneVariableSpecializationHomologyMapOfIntertwining R i j σ f h) := by
-  refine ⟨(injective_iff_map_eq_zero _).mpr fun y hy => ?_, fun y => ?_⟩
-  · obtain ⟨z, rfl⟩ := G.oneVariableSpecializationHomologyClass_surjective R i y
-    rw [oneVariableSpecializationHomologyMapOfIntertwining_oneVariableSpecializationHomologyClass,
-      oneVariableSpecializationHomologyClass_eq_zero_iff,
-      mem_range_moduleCatToCycles_simplyBlockedComplex_iff,
-      simplyBlockedChainEquiv_oneVariableSpecializationCyclesMapOfIntertwining] at hy
-    rw [oneVariableSpecializationHomologyClass_eq_zero_iff,
-      mem_range_moduleCatToCycles_simplyBlockedComplex_iff]
-    exact hinj ((G.mem_ker_simplyBlockedComplex_d_iff R i z.1).mp z.2) hy
-  · obtain ⟨y, rfl⟩ := H.oneVariableSpecializationHomologyClass_surjective R j y
-    obtain ⟨x, hx, hxy⟩ := hsurj ((H.mem_ker_simplyBlockedComplex_d_iff R j y.1).mp y.2)
-    let z : LinearMap.ker ((G.simplyBlockedComplex R i).d () ()).hom :=
-      ⟨(G.simplyBlockedChainEquiv R i).symm x, by
-        rw [mem_ker_simplyBlockedComplex_d_iff, LinearEquiv.apply_symm_apply]
-        exact hx⟩
-    refine ⟨G.oneVariableSpecializationHomologyClass R i z, ?_⟩
-    rw [oneVariableSpecializationHomologyMapOfIntertwining_oneVariableSpecializationHomologyClass,
-      oneVariableSpecializationHomologyClass_eq_iff,
-      mem_range_moduleCatToCycles_simplyBlockedComplex_iff, Submodule.coe_sub, map_sub,
-      simplyBlockedChainEquiv_oneVariableSpecializationCyclesMapOfIntertwining,
-      LinearEquiv.apply_symm_apply, ← neg_sub]
-    exact neg_mem hxy
+  have range_iff {k : ℕ} (K : GridDiagram k) (a : Fin k)
+      (z : (K.simplyBlockedComplex R a).X ()) :
+      z ∈ LinearMap.range ((K.simplyBlockedComplex R a).d () ()).hom ↔
+        K.simplyBlockedChainEquiv R a z ∈
+          LinearMap.range (K.simplyBlockedDifferential R a) := by
+    simp only [LinearMap.mem_range]
+    rw [(K.simplyBlockedChainEquiv R a).surjective.exists]
+    simp only [← K.simplyBlockedChainEquiv_d, (K.simplyBlockedChainEquiv R a).injective.eq_iff]
+  have hmap : Function.Bijective
+      (LinearMap.homologyMap (oneVariableSpecializationChainMapOfIntertwining R i j σ f)
+        (G.simplyBlockedComplex R i).hom_d_comp_hom_d
+        (H.simplyBlockedComplex R j).hom_d_comp_hom_d
+        (oneVariableSpecializationChainMapOfIntertwining_comp_d R i j σ f h)) := by
+    constructor
+    · apply (LinearMap.homologyMap_injective_iff _ _ _ _).2
+      intro x hx hfx
+      apply (range_iff G i x).2
+      apply hinj ((G.mem_ker_simplyBlockedComplex_d_iff R i x).mp hx)
+      simpa only [oneVariableSpecializationChainMapOfIntertwining, LinearMap.comp_apply,
+        LinearEquiv.coe_coe, LinearEquiv.apply_symm_apply] using (range_iff H j _).1 hfx
+    · apply (LinearMap.homologyMap_surjective_iff _ _ _ _).2
+      intro y hy
+      obtain ⟨x, hx, hxy⟩ :=
+        hsurj ((H.mem_ker_simplyBlockedComplex_d_iff R j y).mp hy)
+      refine ⟨(G.simplyBlockedChainEquiv R i).symm x, ?_, (range_iff H j _).2 ?_⟩
+      · rw [G.mem_ker_simplyBlockedComplex_d_iff, LinearEquiv.apply_symm_apply]
+        exact hx
+      · simpa only [map_sub, oneVariableSpecializationChainMapOfIntertwining,
+          LinearMap.comp_apply, LinearEquiv.coe_coe, LinearEquiv.apply_symm_apply] using hxy
+  exact (H.simplyBlockedComplex R j).moduleCatHomologyIso.toLinearEquiv.symm.bijective.comp
+    (hmap.comp (G.simplyBlockedComplex R i).moduleCatHomologyIso.toLinearEquiv.bijective)
 
 end Intertwining
 

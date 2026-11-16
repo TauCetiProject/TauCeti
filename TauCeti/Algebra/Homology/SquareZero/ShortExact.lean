@@ -17,7 +17,9 @@ groups with endomorphisms `d₁`, `d` and `dP`, where `d` squares to zero, `u` i
 surjective, the kernel of `p` is the image of `u`, and `u` and `p` intertwine the differentials
 (`AddMonoidHom.IsShortExactDifferential`). Given a second such sequence
 `0 → N₁ --v--> N --q--> Q → 0`, maps `f₁ : M₁ → N₁`, `f : M → N` and `g : P → Q` with
-`f ∘ u = v ∘ f₁` and `g ∘ p = q ∘ f` form a morphism of short exact sequences. The five lemma for
+`f ∘ u = v ∘ f₁` and `g ∘ p = q ∘ f` form a morphism of short exact sequences. The right map `g`
+needs only to be a function: its additivity follows from the compatibility equation and
+surjectivity of `p`. The five lemma for
 the long exact homology sequences
 `H(M₁) --u--> H(M) --p--> H(P) --δ--> H(M₁) --u--> H(M)` and its analogue for `N` transfers
 surjectivity and injectivity on homology from `f₁` and `f` to `g`.
@@ -81,7 +83,7 @@ that every cycle of `e₁` differs from the image under `f₁` of a cycle of `d�
 every cycle of `e` differs from the image under `f` of a cycle of `d` by a boundary, and that a
 cycle of `d` whose image under `f` is a boundary is a boundary. Then every cycle of `eQ` differs
 from the image under `g` of a cycle of `dP` by a boundary. -/
-theorem exists_mem_ker_sub_mem_range_of_exact (g : P →+ Q)
+theorem exists_mem_ker_sub_mem_range_of_exact (g : P → Q)
     (hM : u.IsShortExactDifferential p d₁ d dP) (hN : v.IsShortExactDifferential q e₁ e eQ)
     (hfd : ∀ m, f (d m) = e (f m)) (hfu : ∀ m, f (u m) = v (f₁ m))
     (hgp : ∀ m, g (p m) = q (f m))
@@ -108,7 +110,8 @@ theorem exists_mem_ker_sub_mem_range_of_exact (g : P →+ Q)
   obtain ⟨k, hk⟩ := mem_range.mp hyy'
   refine ⟨p (c' - y'), mem_ker.mpr ?_, mem_range.mpr ⟨-q k, ?_⟩⟩
   · rw [← hM.comm_right, map_sub, hc', mem_ker.mp hy'd, sub_zero, hM.exact.apply_apply_eq_zero]
-  · simp only [map_neg, ← hN.comm_right, hk, hgp, map_sub, map_add, hN.exact.apply_apply_eq_zero]
+  · rw [hgp]
+    simp only [map_neg, ← hN.comm_right, hk, map_sub, map_add, hN.exact.apply_apply_eq_zero]
     abel
 
 /-- **Five lemma, injectivity on homology.** In a morphism `(f₁, f, g)` of short exact sequences
@@ -116,7 +119,7 @@ theorem exists_mem_ker_sub_mem_range_of_exact (g : P →+ Q)
 that every cycle of `e₁` differs from the image under `f₁` of a cycle of `d₁` by a boundary, and
 that a cycle of `d₁` or of `d` whose image under `f₁` or `f` is a boundary is a boundary. Then a
 cycle of `dP` whose image under `g` is a boundary is a boundary. -/
-theorem mem_range_of_map_mem_range_of_exact (g : P →+ Q)
+theorem mem_range_of_map_mem_range_of_exact (g : P → Q)
     (hM : u.IsShortExactDifferential p d₁ d dP) (hN : v.IsShortExactDifferential q e₁ e eQ)
     (hf₁d : ∀ m, f₁ (d₁ m) = e₁ (f₁ m)) (hfd : ∀ m, f (d m) = e (f m))
     (hfu : ∀ m, f (u m) = v (f₁ m)) (hgp : ∀ m, g (p m) = q (f m))

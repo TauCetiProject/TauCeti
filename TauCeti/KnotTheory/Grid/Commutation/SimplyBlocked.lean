@@ -95,7 +95,7 @@ theorem simplyBlockedCommutationMap_simplyBlockedDifferential (c : GridChainHat 
     G.simplyBlockedCommutationMap R C i (G.simplyBlockedDifferential R i c) =
       (G.swapColumns C.column (finRotate n C.column)).simplyBlockedDifferential R (σ i)
         (G.simplyBlockedCommutationMap R C i c) := by
-  apply simplyBlockedDifferential_of_specialization
+  apply map_simplyBlockedDifferential_of_simplyBlockedSpecialization
   · exact G.simplyBlockedCommutationMap_simplyBlockedSpecialization R C i
   · intro c
     exact LinearMap.congr_fun (G.commutationMap_comp_unblockedDifferential C R) c

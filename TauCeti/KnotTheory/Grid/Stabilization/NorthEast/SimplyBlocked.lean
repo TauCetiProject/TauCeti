@@ -131,6 +131,12 @@ theorem simplyBlockedStabilizeXSuccMap_simplyBlockedSpecialization (c : GridChai
     (G.stabilizeXSuccChainMap s R)
     (simplyBlockedStabilizeXSuccRingHom_specialization s i R) c
 
+private theorem stabilizeXSuccChainMap_X_smul (c : GridChainMinus R (n + 1)) :
+    G.stabilizeXSuccChainMap s R ((MvPolynomial.X j : MvPolynomial (Fin (n + 1)) R) • c) =
+      (MvPolynomial.X i : MvPolynomial (Fin n) R) • G.stabilizeXSuccChainMap s R c := by
+  rw [LinearMap.map_smulₛₗ]
+  simp
+
 end Semiring
 
 variable [CommRing R] [CharP R 2]
@@ -140,7 +146,7 @@ theorem simplyBlockedStabilizeXSuccMap_simplyBlockedDifferential (c : GridChainH
     G.simplyBlockedStabilizeXSuccMap s i R
         ((G.stabilizeX s.succ (G.X s).succ s).simplyBlockedDifferential R j c) =
       G.simplyBlockedDifferential R i (G.simplyBlockedStabilizeXSuccMap s i R c) :=
-  G.simplyBlockedDifferential_of_specialization R
+  G.map_simplyBlockedDifferential_of_simplyBlockedSpecialization R
     (G.simplyBlockedStabilizeXSuccMap_simplyBlockedSpecialization s i R)
     (G.stabilizeXSuccChainMap_unblockedDifferential s R) c
 
@@ -156,25 +162,13 @@ theorem exists_sub_simplyBlockedStabilizeXSuccMap_mem_range {y : GridChainHat R 
     ∃ x ∈ LinearMap.ker ((G').simplyBlockedDifferential R j),
       y - G.simplyBlockedStabilizeXSuccMap s i R x ∈
         LinearMap.range (G.simplyBlockedDifferential R i) := by
-  simpa only [LinearMap.toAddMonoidHom_coe] using
-    G.exists_sub_map_mem_range_simplyBlockedDifferential R i j
-      (G.stabilizeXSuccChainMap s R).toAddMonoidHom
-      (G.simplyBlockedStabilizeXSuccMap s i R).toAddMonoidHom _
-      (by simpa only [LinearMap.toAddMonoidHom_coe] using
-        G.stabilizeXSuccChainMap_unblockedDifferential s R)
-      (fun c => by
-        rw [LinearMap.toAddMonoidHom_coe, LinearMap.map_smulₛₗ]
-        simp)
-      (by simpa only [LinearMap.toAddMonoidHom_coe] using
-        G.simplyBlockedStabilizeXSuccMap_simplyBlockedSpecialization s i R)
-      (by
-        intro c hc
-        simpa only [LinearMap.toAddMonoidHom_coe] using
-          G.exists_sub_stabilizeXSuccChainMap_mem_range s R hc)
-      (by
-        intro x hx h
-        exact G.mem_range_of_stabilizeXSuccChainMap_mem_range s R hx
-          (by simpa only [LinearMap.toAddMonoidHom_coe] using h)) hy
+  exact G.exists_sub_map_mem_range_simplyBlockedDifferential R i j
+    (G.stabilizeXSuccChainMap s R) (G.simplyBlockedStabilizeXSuccMap s i R) _
+    (G.stabilizeXSuccChainMap_unblockedDifferential s R)
+    (G.stabilizeXSuccChainMap_X_smul s i R)
+    (G.simplyBlockedStabilizeXSuccMap_simplyBlockedSpecialization s i R)
+    (fun _ hc => G.exists_sub_stabilizeXSuccChainMap_mem_range s R hc)
+    (fun _ hx h => G.mem_range_of_stabilizeXSuccChainMap_mem_range s R hx h) hy
 
 /-- A simply blocked cycle of the stabilized diagram whose image in `G` is a boundary is itself a
 boundary. -/
@@ -184,24 +178,12 @@ theorem mem_range_of_simplyBlockedStabilizeXSuccMap_mem_range {x : GridChainHat 
       LinearMap.range (G.simplyBlockedDifferential R i)) :
     x ∈ LinearMap.range ((G').simplyBlockedDifferential R j) := by
   exact G.mem_range_simplyBlockedDifferential_of_map_mem_range R i j
-    (G.stabilizeXSuccChainMap s R).toAddMonoidHom
-    (G.simplyBlockedStabilizeXSuccMap s i R).toAddMonoidHom _
-    (by simpa only [LinearMap.toAddMonoidHom_coe] using
-      G.stabilizeXSuccChainMap_unblockedDifferential s R)
-    (fun c => by
-      rw [LinearMap.toAddMonoidHom_coe, LinearMap.map_smulₛₗ]
-      simp)
-    (by simpa only [LinearMap.toAddMonoidHom_coe] using
-      G.simplyBlockedStabilizeXSuccMap_simplyBlockedSpecialization s i R)
-    (by
-      intro c hc
-      simpa only [LinearMap.toAddMonoidHom_coe] using
-        G.exists_sub_stabilizeXSuccChainMap_mem_range s R hc)
-    (by
-      intro x hx h
-      exact G.mem_range_of_stabilizeXSuccChainMap_mem_range s R hx
-        (by simpa only [LinearMap.toAddMonoidHom_coe] using h)) hx
-    (by simpa only [LinearMap.toAddMonoidHom_coe] using h)
+    (G.stabilizeXSuccChainMap s R) (G.simplyBlockedStabilizeXSuccMap s i R) _
+    (G.stabilizeXSuccChainMap_unblockedDifferential s R)
+    (G.stabilizeXSuccChainMap_X_smul s i R)
+    (G.simplyBlockedStabilizeXSuccMap_simplyBlockedSpecialization s i R)
+    (fun _ hc => G.exists_sub_stabilizeXSuccChainMap_mem_range s R hc)
+    (fun _ hx h => G.mem_range_of_stabilizeXSuccChainMap_mem_range s R hx h) hx h
 
 end TauCeti.GridDiagram
 
@@ -362,7 +344,7 @@ theorem isHomogeneous_oneVariableSpecializationStabilizeXSuccHomologyEquiv :
       (G.1.oneVariableSpecializationStabilizeXSuccHomologyEquiv s i R).toLinearMap
       ((G.stabilizeXSucc s).bigradedHatHomologyGrading R j).piece
       (G.bigradedHatHomologyGrading R i).piece 0 := by
-  refine (G.stabilizeXSucc s).isHomogeneous_oneVariableSpecializationHomologyMap R j G i
+  refine (G.stabilizeXSucc s).isHomogeneous_bigradedHatHomologyGrading_of_cycles R j G i
     (G.1.oneVariableSpecializationStabilizeXSuccHomologyEquiv s i R).toLinearMap
     (G.1.oneVariableSpecializationStabilizeXSuccCyclesMap s i R) ?_ ?_
   · intro z
@@ -381,7 +363,7 @@ theorem oneVariableSpecializationStabilizeXSuccHomologyEquiv_mem_bigradedHatHomo
     G.1.oneVariableSpecializationStabilizeXSuccHomologyEquiv s i R y ∈
         G.bigradedHatHomologyPiece R i g ↔
       y ∈ (G.stabilizeXSucc s).bigradedHatHomologyPiece R j g := by
-  exact (G.stabilizeXSucc s).bigradedHatHomologyEquiv_mem_piece_iff R j G i
+  exact (G.stabilizeXSucc s).linearEquiv_mem_bigradedHatHomologyPiece_iff R j G i
     (G.1.oneVariableSpecializationStabilizeXSuccHomologyEquiv s i R)
     (G.isHomogeneous_oneVariableSpecializationStabilizeXSuccHomologyEquiv s i R) g y
 
@@ -392,7 +374,7 @@ theorem oneVariableSpecializationStabilizeXSuccHomologyEquiv_symm_mem_bigradedHa
     (G.1.oneVariableSpecializationStabilizeXSuccHomologyEquiv s i R).symm y ∈
         (G.stabilizeXSucc s).bigradedHatHomologyPiece R j g ↔
       y ∈ G.bigradedHatHomologyPiece R i g := by
-  exact (G.stabilizeXSucc s).bigradedHatHomologyEquiv_symm_mem_piece_iff R j G i
+  exact (G.stabilizeXSucc s).linearEquiv_symm_mem_bigradedHatHomologyPiece_iff R j G i
     (G.1.oneVariableSpecializationStabilizeXSuccHomologyEquiv s i R)
     (G.isHomogeneous_oneVariableSpecializationStabilizeXSuccHomologyEquiv s i R) g y
 

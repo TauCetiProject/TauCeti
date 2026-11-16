@@ -71,8 +71,8 @@ specialization.
 * `TauCeti.GridDiagram.simplyBlockedSpecialization_unblockedDifferential`: coefficientwise
   specialization intertwines the unblocked differential with the simply blocked map, so the latter
   really is the `V_i = 0` reduction of the former.
-* `TauCeti.GridDiagram.simplyBlockedDifferential_of_specialization`: a compatible function
-  between specialized chains inherits the unblocked chain equation.
+* `TauCeti.GridDiagram.map_simplyBlockedDifferential_of_simplyBlockedSpecialization`: a compatible
+  function between specialized chains inherits the unblocked chain equation.
 
 ## References
 
@@ -684,7 +684,7 @@ theorem simplyBlockedSpecialization_unblockedDifferential (i : Fin n)
       G.simplyBlockedDifferential_single R i x]) c
 
 /-- A chain equation descends through specialization for any compatible functions. -/
-theorem simplyBlockedDifferential_of_specialization {m : ℕ} {G' : GridDiagram m}
+theorem map_simplyBlockedDifferential_of_simplyBlockedSpecialization {m : ℕ} {G' : GridDiagram m}
     {i : Fin n} {j : Fin m}
     {f : GridChainMinus R m → GridChainMinus R n}
     {g : GridChainHat R m j → GridChainHat R n i}

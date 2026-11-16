@@ -34,7 +34,8 @@ elements of `M`, on which such structure is defined. The image is represented in
 * `LinearMap.homologyπ`: the class of an element of the kernel.
 * `LinearMap.homologyIso`: for `d ∘ d = 0`, Mathlib's homology of the short complex with both maps
   `d` is `d.homology hd`.
-* `LinearMap.homologyMap`: the map on homology induced by a chain map `f` with `f ∘ d = e ∘ f`.
+* `LinearMap.homologyMap`: the map on homology induced by a semilinear chain map
+  `f` across coefficient rings with `f ∘ d = e ∘ f`.
 * `LinearEquiv.homologyEquiv`: the equivalence of homologies induced by a linear equivalence `f`
   with `f ∘ d = e ∘ f`.
 * `LinearMap.mappingCone`: the mapping cone `(m, n) ↦ (-d m, f m + e n)` of such a chain map.
@@ -148,14 +149,15 @@ theorem homologyIso_inv_homologyπ (hd : d ∘ₗ d = 0) (z : ker d) :
   rw [he]
   exact (congrArg (fun f => f z) (d.shortComplex hd).moduleCatCyclesIso_inv_π).symm
 
-section Map
+section SemilinearMap
 
-variable {N : Type*} [AddCommGroup N] [Module S N] {d} {e : N →ₗ[S] N}
+variable {T N : Type*} [Ring T] [AddCommGroup N] [Module T N]
+  {σ : S →+* T} {d} {e : N →ₗ[T] N}
 
-/-- The map on homology induced by a chain map `f` from `(M, d)` to `(N, e)`, that is, a linear
+/-- The map on homology induced by a chain map `f` from `(M, d)` to `(N, e)`, that is, a semilinear
 map with `f ∘ d = e ∘ f`: the class of a cycle `z` goes to the class of `f z`. -/
-noncomputable def homologyMap (f : M →ₗ[S] N) (hd : d ∘ₗ d = 0) (he : e ∘ₗ e = 0)
-    (hf : f ∘ₗ d = e ∘ₗ f) : d.homology hd →ₗ[S] e.homology he :=
+noncomputable def homologyMap (f : M →ₛₗ[σ] N) (hd : d ∘ₗ d = 0) (he : e ∘ₗ e = 0)
+    (hf : f ∘ₛₗ d = e ∘ₛₗ f) : d.homology hd →ₛₗ[σ] e.homology he :=
   d.boundariesInKer.mapQ e.boundariesInKer
     (f.restrict fun _ ↦ map_mem_ker_of_comp_eq (d := d) (e := e) f hf) <| by
     rintro z ⟨w, hw⟩
@@ -165,11 +167,47 @@ noncomputable def homologyMap (f : M →ₗ[S] N) (hd : d ∘ₗ d = 0) (he : e 
 
 /-- The induced map on homology sends the class of a cycle `z` to the class of `f z`. -/
 @[simp]
-theorem homologyMap_mk (f : M →ₗ[S] N) (hd : d ∘ₗ d = 0) (he : e ∘ₗ e = 0)
-    (hf : f ∘ₗ d = e ∘ₗ f) (z : ker d) :
+theorem homologyMap_mk (f : M →ₛₗ[σ] N) (hd : d ∘ₗ d = 0) (he : e ∘ₗ e = 0)
+    (hf : f ∘ₛₗ d = e ∘ₛₗ f) (z : ker d) :
     homologyMap f hd he hf (Submodule.Quotient.mk z) =
       Submodule.Quotient.mk ⟨f z, map_mem_ker_of_comp_eq (d := d) (e := e) f hf z.2⟩ :=
   (rfl)
+
+/-- The map induced by `f` on homology is surjective exactly when every cycle of `e` differs from
+the image of a cycle of `d` by a boundary. -/
+theorem homologyMap_surjective_iff (f : M →ₛₗ[σ] N) (hd : d ∘ₗ d = 0) (he : e ∘ₗ e = 0)
+    (hf : f ∘ₛₗ d = e ∘ₛₗ f) :
+    Function.Surjective (homologyMap f hd he hf) ↔
+      ∀ n ∈ ker e, ∃ m ∈ ker d, n - f m ∈ range e := by
+  refine ⟨fun h n hn ↦ ?_, fun h c ↦ ?_⟩
+  · obtain ⟨c, hc⟩ := h (e.homologyπ he ⟨n, hn⟩)
+    obtain ⟨m, rfl⟩ := d.homologyπ_surjective hd c
+    simp only [homologyπ_apply, homologyMap_mk, Submodule.Quotient.eq'] at hc
+    exact ⟨m, m.2, by simpa [neg_add_eq_sub] using hc⟩
+  · obtain ⟨n, rfl⟩ := e.homologyπ_surjective he c
+    obtain ⟨m, hm, hnm⟩ := h n n.2
+    refine ⟨d.homologyπ hd ⟨m, hm⟩, ?_⟩
+    simpa [Submodule.Quotient.eq', neg_add_eq_sub] using hnm
+
+/-- The map induced by `f` on homology is injective exactly when every cycle of `d` whose image
+under `f` is a boundary is itself a boundary. -/
+theorem homologyMap_injective_iff (f : M →ₛₗ[σ] N) (hd : d ∘ₗ d = 0) (he : e ∘ₗ e = 0)
+    (hf : f ∘ₛₗ d = e ∘ₛₗ f) :
+    Function.Injective (homologyMap f hd he hf) ↔
+      ∀ m ∈ ker d, f m ∈ range e → m ∈ range d := by
+  rw [← ker_eq_bot, Submodule.eq_bot_iff]
+  refine ⟨fun h m hm hfm ↦ ?_, fun h c hc ↦ ?_⟩
+  · simpa [Submodule.Quotient.mk_eq_zero] using h (d.homologyπ hd ⟨m, hm⟩) <| by
+      simpa [Submodule.Quotient.mk_eq_zero] using hfm
+  · obtain ⟨m, rfl⟩ := d.homologyπ_surjective hd c
+    simp only [mem_ker, homologyπ_apply, homologyMap_mk, Submodule.Quotient.mk_eq_zero] at hc ⊢
+    exact h m m.2 hc
+
+end SemilinearMap
+
+section Map
+
+variable {N : Type*} [AddCommGroup N] [Module S N] {d} {e : N →ₗ[S] N}
 
 variable (d) in
 /-- The identity chain map induces the identity map on homology. -/
@@ -245,36 +283,6 @@ theorem homologyMap_homologyMap (g : N →ₗ[S] P) (f : M →ₗ[S] N) (hd : d 
     homologyMap g he hq hg (homologyMap f hd he hf c) =
       homologyMap (g ∘ₗ f) hd hq (by rw [comp_assoc, hf, ← comp_assoc, hg, comp_assoc]) c :=
   congr($(homologyMap_comp_homologyMap g f hd he hq hf hg) c)
-
-/-- The map induced by `f` on homology is surjective exactly when every cycle of `e` differs from
-the image of a cycle of `d` by a boundary. -/
-theorem homologyMap_surjective_iff (f : M →ₗ[S] N) (hd : d ∘ₗ d = 0) (he : e ∘ₗ e = 0)
-    (hf : f ∘ₗ d = e ∘ₗ f) :
-    Function.Surjective (homologyMap f hd he hf) ↔
-      ∀ n ∈ ker e, ∃ m ∈ ker d, n - f m ∈ range e := by
-  refine ⟨fun h n hn ↦ ?_, fun h c ↦ ?_⟩
-  · obtain ⟨c, hc⟩ := h (e.homologyπ he ⟨n, hn⟩)
-    obtain ⟨m, rfl⟩ := d.homologyπ_surjective hd c
-    simp only [homologyπ_apply, homologyMap_mk, Submodule.Quotient.eq'] at hc
-    exact ⟨m, m.2, by simpa [neg_add_eq_sub] using hc⟩
-  · obtain ⟨n, rfl⟩ := e.homologyπ_surjective he c
-    obtain ⟨m, hm, hnm⟩ := h n n.2
-    refine ⟨d.homologyπ hd ⟨m, hm⟩, ?_⟩
-    simpa [Submodule.Quotient.eq', neg_add_eq_sub] using hnm
-
-/-- The map induced by `f` on homology is injective exactly when every cycle of `d` whose image
-under `f` is a boundary is itself a boundary. -/
-theorem homologyMap_injective_iff (f : M →ₗ[S] N) (hd : d ∘ₗ d = 0) (he : e ∘ₗ e = 0)
-    (hf : f ∘ₗ d = e ∘ₗ f) :
-    Function.Injective (homologyMap f hd he hf) ↔
-      ∀ m ∈ ker d, f m ∈ range e → m ∈ range d := by
-  rw [← ker_eq_bot, Submodule.eq_bot_iff]
-  refine ⟨fun h m hm hfm ↦ ?_, fun h c hc ↦ ?_⟩
-  · simpa [Submodule.Quotient.mk_eq_zero] using h (d.homologyπ hd ⟨m, hm⟩) <| by
-      simpa [Submodule.Quotient.mk_eq_zero] using hfm
-  · obtain ⟨m, rfl⟩ := d.homologyπ_surjective hd c
-    simp only [mem_ker, homologyπ_apply, homologyMap_mk, Submodule.Quotient.mk_eq_zero] at hc ⊢
-    exact h m m.2 hc
 
 end Map
 

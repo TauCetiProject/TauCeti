@@ -209,7 +209,7 @@ section HomologyMap
 variable {m : ℕ} (G' : GridDiagram m)
 
 /-- A class-compatible surjective map on unblocked homology lifts cycles modulo boundaries. -/
-theorem exists_sub_mem_range_of_surjective_unblockedHomologyMap
+theorem exists_sub_map_mem_range_unblockedDifferential_of_surjective
     (f : GridChainMinus R m → GridChainMinus R n)
     (hf : ∀ z ∈ LinearMap.ker (G'.unblockedDifferential R),
       f z ∈ LinearMap.ker (G.unblockedDifferential R))
@@ -233,7 +233,7 @@ theorem exists_sub_mem_range_of_surjective_unblockedHomologyMap
   exact ⟨z, z.2, (G.unblockedHomologyClass_eq_zero_iff R _).1 he⟩
 
 /-- A class-compatible injective map on unblocked homology reflects boundaries of cycles. -/
-theorem mem_range_of_injective_unblockedHomologyMap
+theorem mem_range_unblockedDifferential_of_map_mem_range_of_injective
     (f : GridChainMinus R m → GridChainMinus R n)
     {𝓕 : Type*} [FunLike 𝓕 (G'.unblockedHomology R) (G.unblockedHomology R)]
     [ZeroHomClass 𝓕 (G'.unblockedHomology R) (G.unblockedHomology R)] (F : 𝓕)

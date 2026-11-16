@@ -173,7 +173,7 @@ local notation "D" => GridDiagram.simplyBlockedComplex H.val R j
 
 /-- Cycle-level homogeneity of the chain bigrading descends to the homology map.
 The class equation keeps this independent of how the homology comparison was constructed. -/
-theorem isHomogeneous_oneVariableSpecializationHomologyMap {q : ℤ × ℤ}
+theorem isHomogeneous_bigradedHatHomologyGrading_of_cycles {q : ℤ × ℤ}
     (f : (Base).obj ((C).homology ()) →ₗ[R] (BaseH).obj ((D).homology ()))
     (cycles : LinearMap.ker d → LinearMap.ker ((D).d () ()).hom)
     (hclass : ∀ z, f (G.1.oneVariableSpecializationHomologyClass R i z) =
@@ -193,7 +193,7 @@ theorem isHomogeneous_oneVariableSpecializationHomologyMap {q : ℤ × ℤ}
     (hdegree g z hz)
 
 /-- A degree-zero homology equivalence preserves and reflects each homogeneous piece. -/
-theorem bigradedHatHomologyEquiv_mem_piece_iff
+theorem linearEquiv_mem_bigradedHatHomologyPiece_iff
     (e : (Base).obj ((C).homology ()) ≃ₗ[R] (BaseH).obj ((D).homology ()))
     (he : LinearMap.IsHomogeneous e.toLinearMap (G.bigradedHatHomologyGrading R i).piece
       (H.bigradedHatHomologyGrading R j).piece 0) (g : ℤ × ℤ)
@@ -202,14 +202,14 @@ theorem bigradedHatHomologyEquiv_mem_piece_iff
   simpa only [bigradedHatHomologyGrading_piece] using he.linearEquiv_mem_piece_iff g y
 
 /-- The inverse degree-zero equivalence also preserves and reflects homogeneous pieces. -/
-theorem bigradedHatHomologyEquiv_symm_mem_piece_iff
+theorem linearEquiv_symm_mem_bigradedHatHomologyPiece_iff
     (e : (Base).obj ((C).homology ()) ≃ₗ[R] (BaseH).obj ((D).homology ()))
     (he : LinearMap.IsHomogeneous e.toLinearMap (G.bigradedHatHomologyGrading R i).piece
       (H.bigradedHatHomologyGrading R j).piece 0) (g : ℤ × ℤ)
     (y : (BaseH).obj ((D).homology ())) :
     e.symm y ∈ G.bigradedHatHomologyPiece R i g ↔ y ∈ H.bigradedHatHomologyPiece R j g := by
   simpa only [LinearEquiv.apply_symm_apply] using
-    (G.bigradedHatHomologyEquiv_mem_piece_iff R i H j e he g (e.symm y)).symm
+    (G.linearEquiv_mem_bigradedHatHomologyPiece_iff R i H j e he g (e.symm y)).symm
 
 /-- Restrict a degree-zero homology equivalence to a specified homogeneous piece. -/
 noncomputable def bigradedHatHomologyPieceEquiv

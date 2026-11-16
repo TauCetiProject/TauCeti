@@ -81,7 +81,7 @@ theorem isHomogeneous_simplyBlockedHomologyCommutationCoefficientEquiv :
       (hG.simplyBlockedHomologyCommutationCoefficientEquiv R C i).toLinearMap
       ((H).bigradedHatHomologyGrading R i).piece
       ((H').bigradedHatHomologyGrading R (σ i)).piece 0 :=
-  (H).isHomogeneous_oneVariableSpecializationHomologyMap R i (H') (σ i)
+  (H).isHomogeneous_bigradedHatHomologyGrading_of_cycles R i (H') (σ i)
     (hG.simplyBlockedHomologyCommutationCoefficientEquiv R C i).toLinearMap
     (hG.simplyBlockedCommutationCyclesMap R C i)
     (fun z => (hG.simplyBlockedHomologyCommutationCoefficientEquiv_apply R C i _).trans
@@ -98,7 +98,7 @@ theorem simplyBlockedHomologyCommutationCoefficientEquiv_mem_bigradedHatHomology
     hG.simplyBlockedHomologyCommutationCoefficientEquiv R C i y ∈
         (H').bigradedHatHomologyPiece R (σ i) g ↔
       y ∈ (H).bigradedHatHomologyPiece R i g :=
-  (H).bigradedHatHomologyEquiv_mem_piece_iff R i (H') (σ i)
+  (H).linearEquiv_mem_bigradedHatHomologyPiece_iff R i (H') (σ i)
     (hG.simplyBlockedHomologyCommutationCoefficientEquiv R C i)
     (hG.isHomogeneous_simplyBlockedHomologyCommutationCoefficientEquiv R C i) g y
 
@@ -109,7 +109,7 @@ theorem simplyBlockedHomologyCommutationCoefficientEquiv_symm_mem_bigradedHatHom
     (hG.simplyBlockedHomologyCommutationCoefficientEquiv R C i).symm y ∈
         (H).bigradedHatHomologyPiece R i g ↔
       y ∈ (H').bigradedHatHomologyPiece R (σ i) g :=
-  (H).bigradedHatHomologyEquiv_symm_mem_piece_iff R i (H') (σ i)
+  (H).linearEquiv_symm_mem_bigradedHatHomologyPiece_iff R i (H') (σ i)
     (hG.simplyBlockedHomologyCommutationCoefficientEquiv R C i)
     (hG.isHomogeneous_simplyBlockedHomologyCommutationCoefficientEquiv R C i) g y
 
@@ -120,10 +120,8 @@ theorem simplyBlockedHomologyCommutationMap_mem_bigradedHatHomologyPiece_iff
     hG.simplyBlockedHomologyCommutationMap R C i y ∈
         (H').bigradedHatHomologyPiece R (σ i) g ↔
       y ∈ (H).bigradedHatHomologyPiece R i g := by
-  have h := (H).bigradedHatHomologyEquiv_mem_piece_iff R i (H') (σ i)
-    (hG.simplyBlockedHomologyCommutationCoefficientEquiv R C i)
-    (hG.isHomogeneous_simplyBlockedHomologyCommutationCoefficientEquiv R C i) g y
-  exact (hG.simplyBlockedHomologyCommutationCoefficientEquiv_apply R C i y) ▸ h
+  rw [← hG.simplyBlockedHomologyCommutationCoefficientEquiv_apply R C i y]
+  exact hG.simplyBlockedHomologyCommutationCoefficientEquiv_mem_bigradedHatHomologyPiece_iff R C i
 
 /-- Commutation induces a coefficient-linear equivalence on every homogeneous homology piece.
 It is the restriction of the specified pentagon comparison, not an arbitrarily chosen

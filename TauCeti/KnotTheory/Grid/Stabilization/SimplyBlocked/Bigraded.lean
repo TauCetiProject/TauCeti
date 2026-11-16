@@ -87,7 +87,7 @@ theorem isHomogeneous_oneVariableSpecializationStabilizeXHomologyEquiv :
   -- Expose the stabilized grid before introducing cycles: `rw` below does not unfold the
   -- semireducible wrapper when checking its dependent cycle carrier.
   dsimp only [stabilizeX]
-  refine isHomogeneous_oneVariableSpecializationHomologyMap
+  refine isHomogeneous_bigradedHatHomologyGrading_of_cycles
     ⟨G.1.stabilizeX s.castSucc (G.1.X s).castSucc s, (G.stabilizeX s).property⟩ R j G i
     (G.1.oneVariableSpecializationStabilizeXHomologyEquiv s i R).toLinearMap
     (G.1.oneVariableSpecializationStabilizeXCyclesMap s i R) ?_ ?_
@@ -107,7 +107,7 @@ theorem oneVariableSpecializationStabilizeXHomologyEquiv_mem_bigradedHatHomology
     G.1.oneVariableSpecializationStabilizeXHomologyEquiv s i R y ∈
         G.bigradedHatHomologyPiece R i g ↔
       y ∈ (G.stabilizeX s).bigradedHatHomologyPiece R j g :=
-  (G.stabilizeX s).bigradedHatHomologyEquiv_mem_piece_iff R j G i
+  (G.stabilizeX s).linearEquiv_mem_bigradedHatHomologyPiece_iff R j G i
     (G.1.oneVariableSpecializationStabilizeXHomologyEquiv s i R)
     (G.isHomogeneous_oneVariableSpecializationStabilizeXHomologyEquiv s i R) g y
 
@@ -118,7 +118,7 @@ theorem oneVariableSpecializationStabilizeXHomologyEquiv_symm_mem_bigradedHatHom
     (G.1.oneVariableSpecializationStabilizeXHomologyEquiv s i R).symm y ∈
         (G.stabilizeX s).bigradedHatHomologyPiece R j g ↔
       y ∈ G.bigradedHatHomologyPiece R i g :=
-  (G.stabilizeX s).bigradedHatHomologyEquiv_symm_mem_piece_iff R j G i
+  (G.stabilizeX s).linearEquiv_symm_mem_bigradedHatHomologyPiece_iff R j G i
     (G.1.oneVariableSpecializationStabilizeXHomologyEquiv s i R)
     (G.isHomogeneous_oneVariableSpecializationStabilizeXHomologyEquiv s i R) g y
 
@@ -132,9 +132,8 @@ theorem oneVariableSpecializationStabilizeXHomologyMap_mem_bigradedHatHomologyPi
         (BaseA).obj ((G.1.simplyBlockedComplex R i).homology ())) ∈
         G.bigradedHatHomologyPiece R i g ↔
       y ∈ (G.stabilizeX s).bigradedHatHomologyPiece R j g := by
-  have h := (G.stabilizeX s).bigradedHatHomologyEquiv_mem_piece_iff R j G i
-    (G.1.oneVariableSpecializationStabilizeXHomologyEquiv s i R)
-    (G.isHomogeneous_oneVariableSpecializationStabilizeXHomologyEquiv s i R) g y
+  have h := G.oneVariableSpecializationStabilizeXHomologyEquiv_mem_bigradedHatHomologyPiece_iff
+    s i R g y
   exact (G.1.oneVariableSpecializationStabilizeXHomologyEquiv_apply s i R y) ▸ h
 
 /-- The stabilization comparison identifies each homogeneous piece of the homology of the
