@@ -26,9 +26,10 @@ bounded by a geometric sequence `C rⁱ` with `0 ≤ r < 1` lies in every `ℓ�
 (`IsUnit.memℓp_smul_iff`), and conversely, for `p ≠ 0` the geometric sequence `rⁱ`, or a nonzero
 multiple `C rⁱ` of it, lies in `ℓᵖ` exactly when `‖r‖ < 1`, or `‖r‖ = 1` and `p = ∞`
 (`TauCeti.memℓp_pow_iff`, `TauCeti.memℓp_const_mul_pow_iff`). The scalar coordinate vectors are
-linearly independent (so `ℓ^p(ι, 𝕜)` is not finitely generated when `ι` is infinite,
-`lp.not_finite`), and vectors in their span vanish outside the corresponding indices. These
-algebraic facts hold over normed rings at every exponent. In `ℓ²`, the squared norm of a finite sum
+linearly independent, and vectors in their span vanish outside the corresponding indices. These
+algebraic facts hold over normed rings at every exponent; over a normed ring satisfying
+`StrongRankCondition 𝕜`, it follows that `ℓ^p(ι, 𝕜)` is not finitely generated whenever `ι` is
+infinite (`lp.not_finite`). In `ℓ²`, the squared norm of a finite sum
 of single-coordinate vectors is the sum of the squared norms of its coordinates
 (`lp.norm_sum_single_sq`, and `lp.enorm_sum_single` for the extended norm). It follows that the
 operators `v ↦ (aᵢ v)ᵢ` from `F` to `ℓ²(F)` and `(wᵢ) ↦ ∑ᵢ aᵢ wᵢ` from `ℓ²(F)` to `F`, for finitely
@@ -202,8 +203,9 @@ theorem apply_eq_zero_of_mem_span_single {κ : Type*} (f : κ → ι) {x : ℓ^p
 
 end Single
 
-/-- Over an infinite index type, the scalar sequence space `ℓ^p(ι, 𝕜)` is not finitely generated
-(in particular, not finite-dimensional when `𝕜` is a division ring). -/
+/-- Over a normed ring `𝕜` satisfying `StrongRankCondition 𝕜` and an infinite index type `ι`, the
+scalar sequence space `ℓ^p(ι, 𝕜)` is not finitely generated (in particular, not finite-dimensional
+when `𝕜` is a division ring). -/
 theorem not_finite [StrongRankCondition 𝕜] [Infinite ι] : ¬ Module.Finite 𝕜 ℓ^p(ι, 𝕜) := by
   classical
   exact fun _ ↦ Module.Finite.not_linearIndependent_of_infinite _
