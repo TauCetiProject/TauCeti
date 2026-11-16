@@ -45,13 +45,20 @@ variable {E N F : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
   [NormedAddCommGroup N] [NormedSpace ℝ N]
   [NormedAddCommGroup F] [NormedSpace ℝ F] {k : ℕ}
 
-private def fiberScaling (z : (E × N) × ℝ) : E × N := (z.1.1, z.2 • z.1.2)
+/-- Scaling of the normal coordinate, `((q, p), t) ↦ (q, t • p)`: the homotopy along which the
+relative Poincaré operator integrates. -/
+def fiberScaling (z : (E × N) × ℝ) : E × N := (z.1.1, z.2 • z.1.2)
 
-private theorem contDiff_fiberScaling {r : WithTop ℕ∞} :
+omit [NormedAddCommGroup E] [NormedSpace ℝ E] in
+theorem fiberScaling_apply (z : (E × N) × ℝ) : fiberScaling z = (z.1.1, z.2 • z.1.2) :=
+  (rfl)
+
+theorem contDiff_fiberScaling {r : WithTop ℕ∞} :
     ContDiff ℝ r (fiberScaling (E := E) (N := N)) :=
   contDiff_fst.fst.prodMk (contDiff_snd.smul contDiff_fst.snd)
 
-private theorem fderiv_fiberScaling_apply (z v : (E × N) × ℝ) :
+/-- The derivative of the scaling of the normal coordinate. -/
+theorem fderiv_fiberScaling_apply (z v : (E × N) × ℝ) :
     fderiv ℝ fiberScaling z v = (v.1.1, z.2 • v.1.2 + v.2 • z.1.2) := by
   unfold fiberScaling
   have h0 := hasFDerivAt_id (𝕜 := ℝ) z

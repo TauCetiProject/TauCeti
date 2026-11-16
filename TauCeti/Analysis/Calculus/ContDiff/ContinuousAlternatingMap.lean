@@ -25,14 +25,19 @@ The regularity parameter includes the analytic order `ω`, as well as finite ord
 
 The underlying polynomial is Mathlib's
 `ContinuousMultilinearMap.compContinuousLinearMapContinuousMultilinear`.
+
+When the family of alternating maps vanishes to first order at a point, only continuity of the
+family of linear maps is needed: the pullback then also has zero value and zero derivative there
+(`HasFDerivAt.compContinuousLinearMap_of_eq_zero`). This is how a zero first jet of a
+differential form is read in another chart.
 -/
 
 public section
 
 noncomputable section
 
-open Set
-open scoped ContDiff
+open Set Filter
+open scoped ContDiff Topology
 
 variable {𝕜 E F G ι : Type*} [NontriviallyNormedField 𝕜]
   [NormedAddCommGroup E] [NormedSpace 𝕜 E]
@@ -113,3 +118,31 @@ theorem ContinuousAlternatingMap.contDiff_compContinuousLinearMapCLM (n : WithTo
       ← ContinuousAlternatingMap.toContinuousMultilinearMap_compContinuousLinearMap,
       ContinuousAlternatingMap.inv_factorial_smul_alternatizationCLM]
   | (n : ℕ∞) => exact contDiff_compContinuousLinearMapCLM_coe n
+
+/-- A family of alternating maps with zero value and zero derivative at `x`, precomposed with a
+family of continuous linear maps that is continuous at `x`, again has zero value and zero
+derivative at `x`. This is how a zero first jet of a form survives a change of coordinates
+whose derivative is only continuous. -/
+theorem HasFDerivAt.compContinuousLinearMap_of_eq_zero {𝕜 X X' E G ι : Type*}
+    [NontriviallyNormedField 𝕜] [NormedAddCommGroup X] [NormedSpace 𝕜 X]
+    [NormedAddCommGroup X'] [NormedSpace 𝕜 X'] [NormedAddCommGroup E] [NormedSpace 𝕜 E]
+    [NormedAddCommGroup G] [NormedSpace 𝕜 G] [Finite ι]
+    {φ : X → E [⋀^ι]→L[𝕜] G} {L : X → X' →L[𝕜] E} {x : X}
+    (hφ : HasFDerivAt φ (0 : X →L[𝕜] E [⋀^ι]→L[𝕜] G) x) (h₀ : φ x = 0)
+    (hL : ContinuousAt L x) :
+    HasFDerivAt (fun y ↦ (φ y).compContinuousLinearMap (L y))
+      (0 : X →L[𝕜] X' [⋀^ι]→L[𝕜] G) x := by
+  have := Fintype.ofFinite ι
+  have hc : (0 : E [⋀^ι]→L[𝕜] G).compContinuousLinearMap (L x) = 0 := by ext; simp
+  rw [hasFDerivAt_iff_isLittleO] at hφ ⊢
+  simp only [h₀, hc, sub_zero, zero_apply] at hφ ⊢
+  refine Asymptotics.IsBigO.trans_isLittleO ?_ hφ
+  -- Near `x`, the norms of the linear maps stay below `‖L x‖ + 1`.
+  have hb : ∀ᶠ y in 𝓝 x, ‖L y‖ ≤ ‖L x‖ + 1 :=
+    (hL.norm.eventually (gt_mem_nhds (lt_add_one ‖L x‖))).mono fun _ h ↦ h.le
+  refine Asymptotics.IsBigO.of_bound ((‖L x‖ + 1) ^ Fintype.card ι) ?_
+  filter_upwards [hb] with y hy
+  calc ‖(φ y).compContinuousLinearMap (L y)‖ ≤ ‖φ y‖ * ‖L y‖ ^ Fintype.card ι :=
+        ContinuousAlternatingMap.norm_compContinuousLinearMap_le _ _
+    _ ≤ ‖φ y‖ * (‖L x‖ + 1) ^ Fintype.card ι := by gcongr
+    _ = (‖L x‖ + 1) ^ Fintype.card ι * ‖φ y‖ := mul_comm _ _
