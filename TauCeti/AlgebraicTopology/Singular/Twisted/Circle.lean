@@ -170,15 +170,21 @@ theorem intSignRep_ρ_apply (n : Multiplicative ℤ) :
 theorem intSignRep_ρ_ofAdd_one : intSignRep.ρ (Multiplicative.ofAdd 1) = -1 := by
   simp [intSignRep]
 
+/-- In the sign representation, `T - 𝟙` acts as multiplication by `-2`. -/
+theorem intSignRep_ρ_ofAdd_one_sub_id_apply (x : ℤ) :
+    (intSignRep.ρ (Multiplicative.ofAdd 1) - LinearMap.id : Module.End ℤ ℤ) x = -2 * x := by
+  rw [intSignRep_ρ_ofAdd_one]
+  simp
+  ring
+
 /-- In the sign representation, `T - 𝟙 = -2` has range `2ℤ`. -/
 theorem range_intSignRep_ρ_ofAdd_one_sub_id :
     LinearMap.range (intSignRep.ρ (Multiplicative.ofAdd 1) - LinearMap.id) =
       Ideal.span {2} := by
   ext x
-  rw [intSignRep_ρ_ofAdd_one]
-  simp only [LinearMap.mem_range, LinearMap.sub_apply, LinearMap.neg_apply, one_apply_eq_self,
-    LinearMap.id_apply, Ideal.mem_span_singleton]
-  constructor <;> rintro ⟨y, rfl⟩ <;> exact ⟨-y, by ring⟩
+  rw [LinearMap.mem_range, Ideal.mem_span_singleton]
+  constructor <;> rintro ⟨y, rfl⟩ <;>
+    exact ⟨-y, by rw [intSignRep_ρ_ofAdd_one_sub_id_apply]; ring⟩
 
 /-- **The circle with integral coefficients of monodromy `-1` has `H₀ = ℤ / 2`.** -/
 def circleTwistedHomologyIntSignRepIso₀ZMod :
@@ -194,9 +200,9 @@ theorem isZero_circleTwistedHomology_one_intSignRep :
     Limits.IsZero (twistedHomology (circleLocalSystem intSignRep) 1) := by
   refine Limits.IsZero.of_iso ?_ (circleTwistedHomologyIso₁ intSignRep)
   have h : LinearMap.ker (intSignRep.ρ (Multiplicative.ofAdd 1) - LinearMap.id) = ⊥ := by
-    rw [intSignRep_ρ_ofAdd_one, LinearMap.ker_eq_bot']
+    rw [LinearMap.ker_eq_bot']
     intro (x : ℤ) hx
-    rw [LinearMap.sub_apply, LinearMap.neg_apply, one_apply_eq_self, LinearMap.id_apply] at hx
+    rw [intSignRep_ρ_ofAdd_one_sub_id_apply] at hx
     linarith
   rw [h]
   exact ModuleCat.isZero_of_subsingleton _
