@@ -26,8 +26,10 @@ continuous linear maps on `ℓ^q`. The pairing is bilinear, including over compl
 coefficients of a functional are its values on coordinate vectors, without conjugation.
 
 This identification describes the dual of the sequence spaces `ℓ^q` and makes its norm and the
-action of its functionals accessible through coordinates. For `q = 1` the norm formula holds for
-continuous linear maps into any normed space (`ContinuousLinearMap.norm_eq_ciSup_norm_lp_single`).
+action of its functionals accessible through coordinates. For `q = 1` the norm of a functional,
+and more generally of any continuous linear map from ℓ¹ to a normed space, is the supremum of the
+norms of its values on the unit coordinate vectors
+(`ContinuousLinearMap.norm_eq_ciSup_norm_lp_single`, in `TauCeti.Analysis.Normed.Lp.Basic`).
 
 ## Main declarations
 

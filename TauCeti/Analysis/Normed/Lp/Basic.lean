@@ -45,7 +45,7 @@ operators on `lp E p` that converges on every `single i x` converges at every ve
 (`lp.tendsto_apply_of_tendsto_apply_single`). In the scalar case such an operator `T` is given by
 its coordinate series `T x = ∑ i, xᵢ • T eᵢ` (`ContinuousLinearMap.hasSum_smul_lp_single`), and
 on ℓ¹ its norm is the supremum of the norms `‖T eᵢ‖`
-(`ContinuousLinearMap.norm_eq_ciSup_norm_lp_single`): this is the universal property of ℓ¹.
+(`ContinuousLinearMap.norm_eq_ciSup_norm_lp_single`).
 -/
 
 public section
@@ -414,9 +414,8 @@ theorem norm_apply_lp_single_le (T : lp (fun _ : ι ↦ 𝕜) q →L[𝕜] E) (i
   simpa [lp.norm_single (zero_lt_one.trans_le Fact.out)] using
     T.le_opNorm (lp.single q i (1 : 𝕜))
 
-/-- **The universal property of ℓ¹**, in norm: the norm of a continuous linear map on ℓ¹ is the
-supremum of the norms of its values on the unit coordinate vectors. For an empty index type both
-sides are `0`. -/
+/-- The norm of a continuous linear map on ℓ¹ is the supremum of the norms of its values on the
+unit coordinate vectors. For an empty index type both sides are `0`. -/
 theorem norm_eq_ciSup_norm_lp_single (T : lp (fun _ : ι ↦ 𝕜) 1 →L[𝕜] E) :
     ‖T‖ = ⨆ i, ‖T (lp.single 1 i 1)‖ := by
   have hbdd : BddAbove (Set.range fun i ↦ ‖T (lp.single 1 i 1)‖) :=
