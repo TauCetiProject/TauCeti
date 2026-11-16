@@ -23,7 +23,7 @@ the metric, of piecewise constant interpolants of minimizing movements with time
 scheme passes to the limit.
 
 Along a minimizing movement sequence `U` with time step `τ` and `r = 1 + m τ ≥ 0`, the discrete
-energy regularization estimate `TauCeti.PenalizedConvex.apply_le` gives, for `M ≤ N` and every `y`
+energy regularization estimate `TauCeti.PenalizedConvex.apply_le` gives, for `M < N` and every `y`
 of finite energy,
 
 `φ (U N) ≤ φ y + (d(U M, y)² - r ^ (N - M) d(U N, y)²) / (2τ ∑_{n < N - M} r ^ n)`.
@@ -156,14 +156,9 @@ theorem isEVISolution_of_forall_mem_moreauYosidaResolvent (hφ : LowerSemicontin
     (hU : ∀ k n, U k (n + 1) ∈ moreauYosidaResolvent φ (τ k) (U k n))
     (hlim : ∀ t : ℝ, 0 ≤ t → Tendsto (fun k ↦ U k ⌈t / τ k⌉₊) atTop (𝓝 (u t)))
     (hu : ContinuousOn u (Ici 0)) (hdom : ∃ y, φ y ≠ ⊤) (hbot : ∀ t > 0, φ (u t) ≠ ⊥) :
-    IsEVISolution m φ u := by
-  have hreg := fun y (hy : φ y ≠ ⊤) s t (hs : 0 ≤ s) (hst : s < t) ↦
+    IsEVISolution m φ u :=
+  isEVISolution_of_apply_le hφ hu hdom hbot fun _ hy _ _ hs hst ↦
     apply_le_of_forall_mem_moreauYosidaResolvent hφ hτ hτ0 hconv hU hlim hy hs hst
-  have htop : ∀ t > 0, φ (u t) ≠ ⊤ := by
-    obtain ⟨y, hy⟩ := hdom
-    exact fun t ht ↦ ne_top_of_le_ne_top (EReal.add_ne_top hy (EReal.coe_ne_top _))
-      (hreg y hy 0 t le_rfl ht)
-  exact (isEVISolution_iff_apply_le hφ).2 ⟨hu, htop, hbot, hreg⟩
 
 /-- **Generalized minimizing movements are `EVI_m` solutions.** Let `φ` be lower semicontinuous,
 coercive, `φ_{τ₀}(x₁) > -∞` for some `τ₀ > 0`, and penalized convex with parameter `m` for all
@@ -174,17 +169,7 @@ theorem IsGeneralizedMinimizingMovement.isEVISolution {x₀ x₁ : X} {τ₀ : �
     (hτ₀ : 0 < τ₀) (h₀ : moreauYosida φ τ₀ x₁ ≠ ⊥)
     (h : IsGeneralizedMinimizingMovement 𝓝 φ x₀ u) : IsEVISolution m φ u := by
   obtain ⟨τ, U, hτ, hτ0, hU, -, ⟨S, hS⟩, hlim⟩ := isGeneralizedMinimizingMovement_iff.1 h
-  -- The limit curve is absolutely continuous on every interval `[0, T]`, hence continuous.
-  have hcont : ContinuousOn u (Ici 0) := by
-    intro t ht
-    have ht' : (0 : ℝ) ≤ t := ht
-    have hac := (h.absolutelyContinuousOnInterval
-      (fun _ _ _ _ hv hw ↦ (hv.edist hw).liminf_eq.ge) hτ₀ h₀
-      (by linarith : (0 : ℝ) ≤ t + 1)).continuousOn'
-    rw [uIcc_of_le (by linarith)] at hac
-    refine (hac t ⟨ht, by linarith⟩).mono_of_mem_nhdsWithin ?_
-    rw [← Ici_inter_Iic]
-    exact inter_mem_nhdsWithin _ (Iic_mem_nhds (by linarith))
+  have hcont := h.continuousOn (fun _ _ _ _ hv hw ↦ (hv.edist hw).liminf_eq.ge) hτ₀ h₀
   have hconv' : ∀ᶠ k in atTop, PenalizedConvex m (τ k) φ :=
     (tendsto_nhdsWithin_iff.2 ⟨hτ0, Eventually.of_forall hτ⟩).eventually hconv
   exact isEVISolution_of_forall_mem_moreauYosidaResolvent hφ hτ hτ0 hconv' hU hlim hcont
