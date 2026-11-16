@@ -47,7 +47,7 @@ and `Φ(x, y) = (u(x), v(x, y))` (`TauCeti.stripDensityNormalization`). Then:
   displacement `X(x, y) - x` of a map along either boundary line.
 * `Φ` fixes the boundary lines: `v(x, 0) = 0` and `v(x, 1) = 1`
   (`TauCeti.stripDensityNormalization_snd_mk_zero`, `TauCeti.stripDensityNormalization_snd_mk_one`).
-  It commutes with the deck translation, `Φ(x + 1, y) = Φ(x, y) + (1, 0)`
+  On the strip it commutes with the deck translation, `Φ(x + 1, y) = Φ(x, y) + (1, 0)`
   (`TauCeti.stripDensityNormalization_add_fst`), and it maps the strip bijectively onto itself
   (`TauCeti.bijOn_stripDensityNormalization`).
 * Its Jacobian determinant is `ρ / a` (`TauCeti.det_fderiv_stripDensityNormalization`), that is,
@@ -192,14 +192,18 @@ theorem stripAreaFraction_add_one (hρ : Continuous ρ)
       (stripColumnMean_periodic hper).intervalIntegral_add_eq x 0, zero_add, annulusArea_def]
   rw [stripAreaFraction_def, stripAreaFraction_def, h, mul_add, inv_mul_cancel₀ ha]
 
-/-- The normalization commutes with the deck translation `(x, y) ↦ (x + 1, y)`. -/
+/-- On the strip, the normalization commutes with the deck translation `(x, y) ↦ (x + 1, y)`. -/
 theorem stripDensityNormalization_add_fst (hρ : Continuous ρ)
-    (hper : ∀ x y, ρ (x + 1, y) = ρ (x, y)) (ha : annulusArea ρ ≠ 0) (p : ℝ × ℝ) :
+    (hper : ∀ x, ∀ y ∈ Icc (0 : ℝ) 1, ρ (x + 1, y) = ρ (x, y)) (ha : annulusArea ρ ≠ 0)
+    {p : ℝ × ℝ} (hp : p.2 ∈ Icc (0 : ℝ) 1) :
     stripDensityNormalization ρ (p + (1, 0)) = stripDensityNormalization ρ p + (1, 0) := by
-  have hper' : ∀ x, ∀ y ∈ Icc (0 : ℝ) 1, ρ (x + 1, y) = ρ (x, y) := fun x y _ ↦ hper x y
+  -- `v(x, y)` only reads `ρ` on `{x} × [0, y]`, which lies in the strip.
+  have hint : ∫ r in (0 : ℝ)..p.2, ρ (p.1 + 1, r) = ∫ r in (0 : ℝ)..p.2, ρ (p.1, r) :=
+    integral_congr fun y hy ↦ hper p.1 y <|
+      Icc_subset_Icc_right hp.2 (by rwa [uIcc_of_le hp.1] at hy)
   ext
-  · simp [stripAreaFraction_add_one hρ hper' ha]
-  · simp [stripDensityNormalization_snd, (stripColumnMean_periodic hper') p.1, hper]
+  · simp [stripAreaFraction_add_one hρ hper ha]
+  · simp [stripDensityNormalization_snd, (stripColumnMean_periodic hper) p.1, hint]
 
 /-- The area fraction is the identity on the integers. -/
 theorem stripAreaFraction_intCast (hρ : Continuous ρ)
