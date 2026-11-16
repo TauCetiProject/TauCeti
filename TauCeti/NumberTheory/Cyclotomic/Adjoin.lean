@@ -89,17 +89,14 @@ theorem IsPrimitiveRoot.aeval_mem_range_intCast {L : Type*} [Field L] [CharZero 
   let x : K := Polynomial.aeval ζK P
   have hx_val : (x : L) = Polynomial.aeval ζ P := by
     simpa [x, ζK] using (Polynomial.aeval_algHom_apply (K.val : K →+* L).toIntAlgHom ζK P).symm
-  have hfix : ∀ σ : K ≃ₐ[ℚ] K, σ x = x := fun σ ↦ by
+  have hfix (σ : K ≃ₐ[ℚ] K) : σ x = x := by
     have hσ : σ x = Polynomial.aeval (σ ζK) P := by
       simpa [x] using (Polynomial.aeval_algHom_apply (σ : K →+* K).toIntAlgHom ζK P).symm
     rw [hσ, ← hζK.autToPow_spec ℚ σ]
     apply Subtype.ext
-    set e := (hζK.autToPow ℚ σ : ZMod N).val
-    have hpow : ((ζK ^ e : K) : L) = ζ ^ e := SubmonoidClass.coe_pow ζK e
-    have hval : ((Polynomial.aeval (ζK ^ e) P : K) : L) = Polynomial.aeval (ζ ^ e) P := by
-      rw [← hpow]
-      exact (Polynomial.aeval_algHom_apply (K.val : K →+* L).toIntAlgHom (ζK ^ e) P).symm
-    rw [hval, hx_val, hP (hζK.autToPow ℚ σ)]
+    have hval := (Polynomial.aeval_algHom_apply (K.val : K →+* L).toIntAlgHom
+      (ζK ^ (hζK.autToPow ℚ σ : ZMod N).val) P).symm
+    simpa [ζK, hx_val, hP (hζK.autToPow ℚ σ), -IsPrimitiveRoot.autToPow_spec] using hval
   obtain ⟨q, hq⟩ := IntermediateField.mem_bot.mp ((IsGalois.mem_bot_iff_fixed x).mpr hfix)
   have hqL : algebraMap ℚ L q = Polynomial.aeval ζ P := by
     rw [IsScalarTower.algebraMap_apply ℚ K L, IntermediateField.algebraMap_apply, hq, hx_val]
@@ -107,8 +104,7 @@ theorem IsPrimitiveRoot.aeval_mem_range_intCast {L : Type*} [Field L] [CharZero 
     rw [Polynomial.aeval_def, Polynomial.eval₂_eq_sum, Polynomial.sum_def]
     exact IsIntegral.sum _ fun i _ ↦
       (isIntegral_intCast _).mul ((hζ.isIntegral (NeZero.pos N)).pow i)
-  have hintQ : IsIntegral ℤ q :=
-    (isIntegral_algebraMap_iff (R := ℤ) (A := ℚ) (B := L)).mp (hqL.symm ▸ hintL)
   let _ : IsIntegrallyClosed ℤ := GCDMonoid.toIsIntegrallyClosed
-  obtain ⟨m, rfl⟩ := IsIntegrallyClosed.isIntegral_iff.mp hintQ
+  obtain ⟨m, rfl⟩ := IsIntegrallyClosed.isIntegral_iff.mp <|
+    (isIntegral_algebraMap_iff (R := ℤ) (A := ℚ) (B := L)).mp (hqL.symm ▸ hintL)
   exact ⟨m, by simpa using hqL⟩

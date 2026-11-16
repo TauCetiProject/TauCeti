@@ -49,10 +49,9 @@ theorem vecMul_div_map_intCast {ι κ K : Type*} [Fintype ι] [DivisionRing K]
       fun j ↦ (((a ᵥ* M) j : ℤ) : K) / N := by
   ext j
   simp only [vecMul, dotProduct, Matrix.map_apply, eq_intCast, Int.cast_sum, Int.cast_mul,
-    div_eq_mul_inv, Finset.sum_mul]
-  refine Finset.sum_congr rfl fun i _ ↦ ?_
-  rw [mul_assoc, mul_assoc]
-  exact congrArg _ ((Nat.commute_cast (M i j : K) N).inv_right₀.symm.eq)
+    div_eq_mul_inv, Finset.sum_mul, mul_assoc]
+  exact Finset.sum_congr rfl fun i _ ↦
+    congrArg _ (Nat.commute_cast (M i j : K) N).inv_right₀.symm.eq
 
 /-- The matrix `1 + N • B` carries `a / N` to `a / N + a B`, an explicit integral translation,
 whenever `N` does not cast to zero. -/
@@ -100,20 +99,12 @@ theorem exists_div_eq_intCast_iff_zmod_eq_zero {ι K : Type*} [DivisionRing K] [
     (∃ s : ι → ℤ, (fun i ↦ (a i : K) / N) = fun i ↦ (s i : K)) ↔
       (fun i ↦ (a i : ZMod N)) = 0 := by
   have hNK : (N : K) ≠ 0 := Nat.cast_ne_zero.mpr hN
-  constructor
-  · rintro ⟨s, hs⟩
-    ext i
-    have hi : (a i : K) = (s i : K) * (N : K) := (div_eq_iff hNK).mp (congrFun hs i)
-    have hZ : a i = s i * N := by exact_mod_cast hi
+  refine ⟨fun ⟨s, hs⟩ ↦ funext fun i ↦ ?_, fun h0 ↦ ?_⟩
+  · have hZ : a i = s i * N := by exact_mod_cast (div_eq_iff hNK).mp (congrFun hs i)
     exact (ZMod.intCast_zmod_eq_zero_iff_dvd (a i) N).mpr ⟨s i, hZ.trans (mul_comm _ _)⟩
-  · intro h0
-    have hdvd : ∀ i, (N : ℤ) ∣ a i := fun i ↦
-      (ZMod.intCast_zmod_eq_zero_iff_dvd (a i) N).mp (congrFun h0 i)
-    choose s hs using hdvd
-    refine ⟨s, funext fun i ↦ ?_⟩
-    rw [div_eq_iff hNK]
-    have hZ : a i = s i * N := (hs i).trans (mul_comm _ _)
-    exact_mod_cast hZ
+  · choose s hs using fun i ↦ (ZMod.intCast_zmod_eq_zero_iff_dvd (a i) N).mp (congrFun h0 i)
+    refine ⟨s, funext fun i ↦ (div_eq_iff hNK).mpr ?_⟩
+    exact_mod_cast (hs i).trans (mul_comm _ _)
 
 /-- For `N ≠ 0`, a vector `a / N` in a characteristic-zero division ring `K` is non-integral if and
 only if its reduction modulo `N` is nonzero. -/

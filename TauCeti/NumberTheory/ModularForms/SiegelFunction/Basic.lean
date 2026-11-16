@@ -335,32 +335,25 @@ theorem siegelFunction_intCast (s : Fin 2 → ℤ) (τ : ℂ) :
   rw [siegelFunction_def]
   rcases lt_trichotomy (s 0) 0 with hs | hs | hs
   · obtain ⟨m, hm⟩ := Int.eq_succ_of_zero_lt (neg_pos.mpr hs)
-    have hm' : s 0 = -((m + 1 : ℕ) : ℤ) := by omega
     rw [tprod_of_exists_eq_zero ⟨m, ?_⟩, mul_zero]
     have h1 : cexp (2 * π * I * τ) ^ (m + 1) * cexp (2 * π * I * ((s 0 : ℂ) * τ + s 1)) = 1 := by
-      rw [← Complex.exp_nat_mul, ← Complex.exp_add, hm', ← Complex.exp_int_mul_two_pi_mul_I (s 1)]
+      rw [← Complex.exp_nat_mul, ← Complex.exp_add, show s 0 = -((m + 1 : ℕ) : ℤ) by omega,
+        ← Complex.exp_int_mul_two_pi_mul_I (s 1)]
       congr 1; push_cast; ring
     simp [h1]
-  · have h1 : cexp (2 * π * I * ((s 0 : ℂ) * τ + s 1)) = 1 := by
-      rw [hs, Int.cast_zero, zero_mul, zero_add, ← Complex.exp_int_mul_two_pi_mul_I (s 1)]
-      congr 1; ring
-    simp [h1]
+  · simp [hs, ← Complex.exp_int_mul_two_pi_mul_I (s 1), mul_comm (s 1 : ℂ)]
   · obtain ⟨m, hm⟩ := Int.eq_succ_of_zero_lt hs
     rw [tprod_of_exists_eq_zero ⟨m, ?_⟩, mul_zero]
-    have h1 : cexp (2 * π * I * τ) ^ (m + 1) *
-        cexp (-(2 * π * I * ((s 0 : ℂ) * τ + s 1))) = 1 := by
+    have h1 : cexp (2 * π * I * τ) ^ (m + 1) * cexp (-(2 * π * I * ((s 0 : ℂ) * τ + s 1))) = 1 := by
       rw [← Complex.exp_nat_mul, ← Complex.exp_add, hm, ← Complex.exp_int_mul_two_pi_mul_I (-s 1)]
       congr 1; push_cast; ring
     simp [h1]
 
 /-- On the upper half-plane, `g_r(τ) = 0` if and only if `r ∈ ℤ²`. -/
 theorem siegelFunction_eq_zero_iff {r : Fin 2 → ℝ} {τ : ℂ} (hτ : 0 < τ.im) :
-    siegelFunction r τ = 0 ↔ ∃ s : Fin 2 → ℤ, r = fun i ↦ (s i : ℝ) := by
-  refine ⟨fun h ↦ ?_, ?_⟩
-  · by_contra! hr
-    exact siegelFunction_ne_zero hr hτ h
-  · rintro ⟨s, rfl⟩
-    exact siegelFunction_intCast s τ
+    siegelFunction r τ = 0 ↔ ∃ s : Fin 2 → ℤ, r = fun i ↦ (s i : ℝ) :=
+  ⟨fun h ↦ by by_contra! hr; exact siegelFunction_ne_zero hr hτ h,
+    fun ⟨s, hs⟩ ↦ hs ▸ siegelFunction_intCast s τ⟩
 
 /-- **The translation `τ ↦ τ + 1`**: `g_r(τ + 1) = e^{π i / 6} g_{r T}(τ)`, where
 `r T = (r₁, r₁ + r₂)` is the row vector `r` multiplied on the right by `T = [[1, 1], [0, 1]]`. -/

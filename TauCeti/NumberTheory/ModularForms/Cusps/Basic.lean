@@ -302,28 +302,27 @@ theorem natCast_mem_strictPeriods_conjAct_of_Gamma_le {Γ : Subgroup (GL (Fin 2)
 theorem periodic_smul_comp_ofComplex_of_Gamma_invariant {α : Type*} {N : ℕ} {F : ℍ → α}
     (hinv : ∀ δ ∈ CongruenceSubgroup.Gamma N, ∀ τ : ℍ, F (δ • τ) = F τ) (γ : SL(2, ℤ)) :
     Function.Periodic ((fun τ : ℍ ↦ F (γ • τ)) ∘ UpperHalfPlane.ofComplex) N := by
-  have hvadd (τ : ℍ) : F (γ • ((N : ℝ) +ᵥ τ)) = F (γ • τ) := by
-    have hTN : ModularGroup.T ^ (N : ℤ) ∈ CongruenceSubgroup.Gamma N := by
+  intro z
+  dsimp only [Function.comp]
+  have him : (z + (N : ℂ)).im = z.im := by simp
+  by_cases hz : 0 < z.im
+  · have hTN : ModularGroup.T ^ (N : ℤ) ∈ CongruenceSubgroup.Gamma N := by
       simpa using CongruenceSubgroup.ModularGroup_T_pow_mem_Gamma N N dvd_rfl
     have hconj : γ * ModularGroup.T ^ (N : ℤ) * γ⁻¹ ∈ CongruenceSubgroup.Gamma N := by
       simpa using (CongruenceSubgroup.Gamma_normal N).conj_mem _ hTN γ
-    have hsmul : (N : ℝ) +ᵥ τ = (ModularGroup.T ^ (N : ℤ)) • τ := by
-      simpa using (UpperHalfPlane.modular_T_zpow_smul τ (N : ℤ)).symm
-    rw [hsmul, ← mul_smul]
-    have hgrp : γ * ModularGroup.T ^ (N : ℤ) = (γ * ModularGroup.T ^ (N : ℤ) * γ⁻¹) * γ := by group
-    rw [hgrp, mul_smul]
-    exact hinv _ hconj (γ • τ)
-  intro w
-  by_cases hw : 0 < w.im
-  · have hwh : 0 < (w + (N : ℂ)).im := by simp [hw]
-    simp only [Function.comp_apply, UpperHalfPlane.ofComplex_apply_of_im_pos hwh,
-      UpperHalfPlane.ofComplex_apply_of_im_pos hw]
-    have hτ : (⟨w + (N : ℂ), hwh⟩ : ℍ) = (N : ℝ) +ᵥ (⟨w, hw⟩ : ℍ) := by
-      ext; simp [add_comm]
-    rw [hτ, hvadd]
-  · have hwh : (w + (N : ℂ)).im ≤ 0 := by simpa using not_lt.mp hw
-    simp [Function.comp_apply, UpperHalfPlane.ofComplex_apply_of_im_nonpos hwh,
-      UpperHalfPlane.ofComplex_apply_of_im_nonpos (not_lt.mp hw)]
+    have hof : UpperHalfPlane.ofComplex (z + (N : ℂ)) =
+        (ModularGroup.T ^ (N : ℤ)) • UpperHalfPlane.ofComplex z := by
+      rw [UpperHalfPlane.ofComplex_apply_of_im_pos (by linarith),
+        UpperHalfPlane.ofComplex_apply_of_im_pos hz]
+      apply UpperHalfPlane.ext
+      rw [UpperHalfPlane.modular_T_zpow_smul]
+      simp [add_comm]
+    rw [hof, ← mul_smul,
+      show γ * ModularGroup.T ^ (N : ℤ) = (γ * ModularGroup.T ^ (N : ℤ) * γ⁻¹) * γ by group,
+      mul_smul]
+    exact hinv _ hconj _
+  · rw [UpperHalfPlane.ofComplex_apply_of_im_nonpos (by linarith),
+      UpperHalfPlane.ofComplex_apply_of_im_nonpos (not_lt.mp hz)]
 
 end TauCeti
 

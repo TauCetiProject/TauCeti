@@ -191,17 +191,14 @@ theorem isIntegral_of_eval_map_aeval_eq_zero {S R A : Type*} [CommRing S] [CommR
     [CommRing A] [Algebra S R] [Algebra R A] [Algebra S A] [IsScalarTower S R A]
     {Φ : Polynomial (Polynomial S)} (hmon : Φ.Monic) {z x : A} (hz : IsIntegral R z)
     (hx : (Φ.map (Polynomial.aeval (R := S) z).toRingHom).eval x = 0) : IsIntegral R x := by
-  let z' : integralClosure R A := ⟨z, hz⟩
-  let ψ : Polynomial S →+* integralClosure R A :=
-    Polynomial.eval₂RingHom ((algebraMap R (integralClosure R A)).comp (algebraMap S R)) z'
+  let ψ : Polynomial S →+* integralClosure R A := Polynomial.eval₂RingHom
+    ((algebraMap R (integralClosure R A)).comp (algebraMap S R)) ⟨z, hz⟩
   have hcomp :
-      (algebraMap (integralClosure R A) A).comp ψ = (Polynomial.aeval (R := S) z).toRingHom := by
-    refine Polynomial.ringHom_ext' ?_ (by simp [ψ, z'])
-    ext s
-    simp [ψ, IsScalarTower.algebraMap_apply S R A]
-  have hint : IsIntegral (integralClosure R A) x :=
+      (algebraMap (integralClosure R A) A).comp ψ = (Polynomial.aeval (R := S) z).toRingHom :=
+    Polynomial.ringHom_ext' (by ext s; simp [ψ, IsScalarTower.algebraMap_apply S R A])
+      (by simp [ψ])
+  exact isIntegral_trans x
     ⟨Φ.map ψ, hmon.map _, by rw [Polynomial.eval₂_map, hcomp, ← Polynomial.eval_map, hx]⟩
-  exact isIntegral_trans x hint
 
 /-- If `f ∈ A` is integral over `S[g]` and a ring homomorphism `φ : A →+* B` compatible with
 `S → R → B` sends `g` to an element integral over `R`, then `φ f` is integral over `R`. -/
@@ -212,7 +209,7 @@ theorem isIntegral_map_of_isIntegral_adjoin_singleton {S R A B : Type*} [CommRin
     IsIntegral R (φ f) := by
   let _ : Algebra (Algebra.adjoin S ({g} : Set A)) B :=
     (φ.comp (algebraMap (Algebra.adjoin S ({g} : Set A)) A)).toAlgebra
-  have hmem : ∀ y : Algebra.adjoin S ({g} : Set A), IsIntegral R (φ y.1) := fun y ↦
+  have hmem (y : Algebra.adjoin S ({g} : Set A)) : IsIntegral R (φ y.1) :=
     Algebra.adjoin_induction (p := fun a _ ↦ IsIntegral R (φ a))
       (fun _ hx ↦ by rwa [Set.mem_singleton_iff.mp hx])
       (fun s ↦ by
@@ -220,10 +217,9 @@ theorem isIntegral_map_of_isIntegral_adjoin_singleton {S R A B : Type*} [CommRin
         exact isIntegral_algebraMap)
       (fun _ _ _ _ ha hb ↦ by rw [map_add]; exact ha.add hb)
       (fun _ _ _ _ ha hb ↦ by rw [map_mul]; exact ha.mul hb) y.2
-  have hmap : IsIntegral (Algebra.adjoin S ({g} : Set A)) (φ f) := by
-    obtain ⟨p, hp, hpf⟩ := hf
-    exact ⟨p, hp, by rw [RingHom.algebraMap_toAlgebra, ← Polynomial.hom_eval₂, hpf, map_zero]⟩
+  obtain ⟨p, hp, hpf⟩ := hf
   exact isIntegral_trans_common (P := Algebra.adjoin S ({g} : Set A))
-    (fun y ↦ by simpa [RingHom.algebraMap_toAlgebra] using hmem y) hmap
+    (fun y ↦ by simpa [RingHom.algebraMap_toAlgebra] using hmem y)
+    ⟨p, hp, by rw [RingHom.algebraMap_toAlgebra, ← Polynomial.hom_eval₂, hpf, map_zero]⟩
 
 end TauCeti

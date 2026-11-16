@@ -268,38 +268,39 @@ theorem UpperHalfPlane.analyticAt_cuspFunction_const (h : ℝ) (c : ℂ) :
     AnalyticAt ℂ (cuspFunction h fun _ : ℍ ↦ c) 0 :=
   cuspFunction_const h c ▸ analyticAt_const
 
+/-- The `q`-expansion of a constant function is the constant power series. -/
+@[simp]
+theorem UpperHalfPlane.qExpansion_const (h : ℝ) (c : ℂ) :
+    qExpansion h (fun _ : ℍ ↦ c) = PowerSeries.C c := by
+  have hc : (fun _ : ℍ ↦ c) = c • (1 : ℍ → ℂ) := funext fun _ ↦ by simp
+  rw [hc, _root_.UpperHalfPlane.qExpansion_smul (cuspFunction_one h ▸ analyticAt_const),
+    _root_.UpperHalfPlane.qExpansion_one]
+  simp [Algebra.smul_def]
+
 /-- The cusp function of a product is analytic at `0` when both cusp functions are. -/
 theorem UpperHalfPlane.analyticAt_cuspFunction_mul (hf : AnalyticAt ℂ (cuspFunction h f) 0)
-    (hg : AnalyticAt ℂ (cuspFunction h g) 0) :
-    AnalyticAt ℂ (cuspFunction h (f * g)) 0 := by
-  rw [_root_.UpperHalfPlane.cuspFunction_mul hf.continuousAt hg.continuousAt]
-  exact hf.mul hg
+    (hg : AnalyticAt ℂ (cuspFunction h g) 0) : AnalyticAt ℂ (cuspFunction h (f * g)) 0 :=
+  _root_.UpperHalfPlane.cuspFunction_mul hf.continuousAt hg.continuousAt ▸ hf.mul hg
 
 /-- The cusp function of a sum is analytic at `0` when both cusp functions are. -/
 theorem UpperHalfPlane.analyticAt_cuspFunction_add (hf : AnalyticAt ℂ (cuspFunction h f) 0)
-    (hg : AnalyticAt ℂ (cuspFunction h g) 0) :
-    AnalyticAt ℂ (cuspFunction h (f + g)) 0 := by
-  rw [_root_.UpperHalfPlane.cuspFunction_add hf.continuousAt hg.continuousAt]
-  exact hf.add hg
+    (hg : AnalyticAt ℂ (cuspFunction h g) 0) : AnalyticAt ℂ (cuspFunction h (f + g)) 0 :=
+  _root_.UpperHalfPlane.cuspFunction_add hf.continuousAt hg.continuousAt ▸ hf.add hg
 
 /-- The cusp function of a difference is analytic at `0` when both cusp functions are. -/
 theorem UpperHalfPlane.analyticAt_cuspFunction_sub (hf : AnalyticAt ℂ (cuspFunction h f) 0)
-    (hg : AnalyticAt ℂ (cuspFunction h g) 0) :
-    AnalyticAt ℂ (cuspFunction h (f - g)) 0 := by
-  rw [_root_.UpperHalfPlane.cuspFunction_sub hf.continuousAt hg.continuousAt]
-  exact hf.sub hg
+    (hg : AnalyticAt ℂ (cuspFunction h g) 0) : AnalyticAt ℂ (cuspFunction h (f - g)) 0 :=
+  _root_.UpperHalfPlane.cuspFunction_sub hf.continuousAt hg.continuousAt ▸ hf.sub hg
 
 /-- The cusp function of a scalar multiple is analytic at `0` when the cusp function is. -/
 theorem UpperHalfPlane.analyticAt_cuspFunction_smul (hf : AnalyticAt ℂ (cuspFunction h f) 0)
-    (c : ℂ) : AnalyticAt ℂ (cuspFunction h (c • f)) 0 := by
-  rw [_root_.UpperHalfPlane.cuspFunction_smul hf.continuousAt c]
-  exact hf.const_smul
+    (c : ℂ) : AnalyticAt ℂ (cuspFunction h (c • f)) 0 :=
+  _root_.UpperHalfPlane.cuspFunction_smul hf.continuousAt c ▸ hf.const_smul
 
 /-- The cusp function of a power is analytic at `0` when the cusp function is. -/
 theorem UpperHalfPlane.analyticAt_cuspFunction_pow (hf : AnalyticAt ℂ (cuspFunction h f) 0)
-    (n : ℕ) : AnalyticAt ℂ (cuspFunction h (f ^ n)) 0 := by
-  rw [cuspFunction_pow hf.continuousAt n]
-  exact hf.pow n
+    (n : ℕ) : AnalyticAt ℂ (cuspFunction h (f ^ n)) 0 :=
+  cuspFunction_pow hf.continuousAt n ▸ hf.pow n
 
 /-- The `q`-expansion of a power is the power of the `q`-expansion, when the cusp function is
 analytic at `0`. -/
@@ -370,9 +371,7 @@ theorem UpperHalfPlane.meromorphicAt_cuspFunction_of_qParam_pow_mul (hh : 0 < h)
   refine ((analyticAt_id.pow k).meromorphicAt.inv.mul hk).congr ?_
   filter_upwards [cuspFunction_qParam_pow_mul_eventuallyEq hh k f, self_mem_nhdsWithin] with
     q h₁ hq
-  simp only [Set.mem_compl_iff, Set.mem_singleton_iff] at hq
-  simp only [Pi.mul_apply, Pi.inv_apply, Pi.pow_apply, id_eq, h₁,
-    inv_mul_cancel_left₀ (pow_ne_zero k hq)]
+  simp [h₁, inv_mul_cancel_left₀ (pow_ne_zero k (Set.mem_compl_singleton_iff.mp hq))]
 
 /-- The order at `0` of `q ^ k` times the cusp function of `f`. -/
 theorem UpperHalfPlane.meromorphicOrderAt_pow_mul_cuspFunction {k : ℕ}
