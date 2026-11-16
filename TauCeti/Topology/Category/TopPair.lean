@@ -104,6 +104,12 @@ variable {X Y Z : TopCat.{u}} (g : X ⟶ Y) (g' : Y ⟶ Z) {B : Set X} {B' : Set
 lemma range_ofSubset_map : Set.range (ofSubset B).map = B :=
   Subtype.range_coe
 
+/-- The embedding of the pair `(X, B)` is an isomorphism when `B` is all of `X`. -/
+lemma isIso_ofSubset_map_of_eq_univ (h : B = Set.univ) : IsIso (ofSubset B).map := by
+  refine TopCat.isIso_of_bijective_of_isOpenMap _ ⟨Subtype.val_injective, fun y ↦ ?_⟩
+    (h ▸ isOpen_univ : IsOpen B).isOpenEmbedding_subtypeVal.isOpenMap
+  exact ⟨⟨y, h ▸ Set.mem_univ y⟩, rfl⟩
+
 /-- A continuous map `g : X ⟶ Y` carrying `B` into `B'` induces a map of pairs
 `(X, B) ⟶ (Y, B')`. -/
 def ofSubsetMap : ofSubset B ⟶ ofSubset B' :=
