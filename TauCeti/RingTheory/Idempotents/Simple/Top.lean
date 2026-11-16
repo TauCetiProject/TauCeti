@@ -301,10 +301,9 @@ theorem existsUnique_nonempty_linearEquiv_quotient_smul_top
     exact @hX (f y) ⟨r, hr⟩
   have hf_ne : f ≠ 0 := LinearMap.ne_zero_of_surjective hf
   have hi : e i ∉ J := fun hmem ↦ hf_ne <| LinearMap.ext fun y ↦ by
-    obtain ⟨b, rfl⟩ := exists_smul_spanSingletonGenerator y
-    have hgen : e i • spanSingletonGenerator (e i) = spanSingletonGenerator (e i) :=
-      Subtype.ext (by simp [(he.idem i).eq])
-    rw [LinearMap.zero_apply, map_smul, ← hgen,
+    rw [LinearMap.zero_apply, ← smul_spanSingletonGenerator (he.idem i) y, map_smul,
+      ← smul_spanSingletonGenerator (he.idem i) (spanSingletonGenerator (e i)),
+      coe_spanSingletonGenerator,
       LinearMap.mem_ker.mp (hle (Submodule.smul_mem_smul hmem Submodule.mem_top)), smul_zero]
   have := he.isSimpleModule_quotient_smul_top hquot i hi
   have hcoatom : IsCoatom (J • (⊤ : Submodule A (Ideal.span {e i} : Ideal A))) :=

@@ -9,14 +9,12 @@ public import Mathlib.Algebra.Category.ModuleCat.ChangeOfRings
 public import Mathlib.Algebra.Category.ModuleCat.Ext.HasExt
 public import Mathlib.Algebra.Homology.DerivedCategory.Ext.Linear
 public import TauCeti.RepresentationTheory.Quiver.AdmissibleIdeal.Basic
-public import TauCeti.RepresentationTheory.Quiver.PathAlgebra.OfArrows
 public import TauCeti.RepresentationTheory.Quiver.Representation.VertexSimpleModule
 public import TauCeti.RingTheory.Semisimple.BasicAlgebra
 import Mathlib.Algebra.Category.ModuleCat.Simple
 import TauCeti.RepresentationTheory.Quiver.AdmissibleIdeal.Presentation
 import TauCeti.RingTheory.Idempotents.Jacobson
 import TauCeti.RingTheory.Idempotents.RadicalLayerExt
-import TauCeti.RingTheory.Jacobson.Semiprimary
 
 /-!
 # Admissible bound-quiver presentations and the Ext-quiver
@@ -25,14 +23,13 @@ Let `A` be a finite-dimensional algebra over a field `k`, with Jacobson radical 
 a complete family of nonzero orthogonal idempotents `e : Q → A` whose classes span `A ⧸ J` over
 `k`. Choosing lifts in `eⱼ J eᵢ` of a `k`-basis of each `(j, i)`-corner of `J ⧸ J ^ 2` gives a
 quiver structure on `Q` and a surjective algebra homomorphism `f : kQ →ₐ[k] A` with admissible
-kernel (`TauCeti.PathAlgebra.liftAlgHomOfArrows_surjective`,
-`TauCeti.PathAlgebra.isAdmissibleIdeal_ker_liftAlgHomOfArrows`).
+kernel (`CompleteOrthogonalIdempotents.exists_surjective_pathAlgebra_isAdmissibleIdeal_ker`).
 
 This file identifies the simple modules and the arrow counts of that presentation:
 
-* each top `Sᵢ = A eᵢ / J (A eᵢ)` restricts along `f` to the vertex simple module
-  `TauCeti.vertexSimpleModule k Q i`, because `eᵢ` fixes its generator while every arrow lands in
-  `J` and acts by zero
+* each top `Sᵢ = A eᵢ / J (A eᵢ)` restricts along any `k`-algebra map `F : kQ →ₐ[k] A` sending
+  `vertexIdempotent k i` to `e i` and every loop at `i` into `J` to the vertex simple module
+  `TauCeti.vertexSimpleModule k Q i`
   (`TauCeti.PathAlgebra.nonempty_restrictScalars_quotient_smul_top_iso_vertexSimpleModule`);
 * the tops `Sᵢ` are pairwise non-isomorphic simple modules exhausting all simple left `A`-modules
   (`CompleteOrthogonalIdempotents.existsUnique_nonempty_linearEquiv_quotient_smul_top`);
@@ -46,8 +43,9 @@ bound-quiver presentation with the Ext-quiver (`TauCeti.exists_admissible_presen
 ## Main results
 
 * `TauCeti.PathAlgebra.nonempty_restrictScalars_quotient_smul_top_iso_vertexSimpleModule`: for a
-  complete orthogonal idempotent family `e : Q → A` spanning `A ⧸ J` over `k` and arrow elements
-  `f a ∈ J`, restricting scalars of `A eᵢ / J (A eᵢ)` along `liftAlgHomOfArrows` is isomorphic to
+  complete orthogonal idempotent family `e : Q → A` spanning `A ⧸ J` over `k` and a `k`-algebra
+  homomorphism `F : kQ →ₐ[k] A` sending `vertexIdempotent k i` to `e i` and every loop at `i`
+  into `J`, restricting scalars of `A eᵢ / J (A eᵢ)` along `F` is isomorphic to
   `TauCeti.vertexSimpleModule k Q i`.
 * `CompleteOrthogonalIdempotents.exists_admissible_presentation`: bound-quiver presentation with
   the Ext-quiver for a split basic finite-dimensional `k`-algebra given by `e : Q → A` over any
@@ -77,24 +75,20 @@ universe v w
 variable {Q : Type v} [Quiver.{w} Q] [Fintype Q]
   {k : Type (max v w)} [Field k] {A : Type (max v w)} [Ring A] [Algebra k A]
 
-/-- **Restricting the simple top `A eᵢ / J (A eᵢ)` along a corner-arrow algebra map recovers the
-vertex simple `Sᵢ`.** Whenever the classes of `e` span `A ⧸ J` over `k`, the arrow images lie in
-`J`, and `e i ∉ J`, restricting scalars of `A eᵢ / J (A eᵢ)` along `liftAlgHomOfArrows` gives a
-`kQ`-module isomorphic to `TauCeti.vertexSimpleModule k Q i`. -/
+/-- **Restricting the simple top `A eᵢ / J (A eᵢ)` along a path-algebra map recovers the vertex
+simple `Sᵢ`.** Whenever the classes of `e` span `A ⧸ J` over `k`, `e i ∉ J`, and `F : kQ →ₐ[k] A`
+sends `vertexIdempotent k i` to `e i` and every loop at `i` into `J`, restricting scalars of
+`A eᵢ / J (A eᵢ)` along `F` gives a `kQ`-module isomorphic to `TauCeti.vertexSimpleModule k Q i`. -/
 theorem nonempty_restrictScalars_quotient_smul_top_iso_vertexSimpleModule
-    (e : Q → A) (he : CompleteOrthogonalIdempotents e)
-    (f : ∀ {i j : Q}, (i ⟶ j) → A)
-    (hl : ∀ {i j : Q} (a : i ⟶ j), e j * f a = f a)
-    (hr : ∀ {i j : Q} (a : i ⟶ j), f a * e i = f a)
+    (F : pathAlgebra k Q →ₐ[k] A) (e : Q → A) (he : CompleteOrthogonalIdempotents e)
     (J : Ideal A) [J.IsTwoSided]
-    (hquot : Submodule.span k (Set.range fun i ↦ Ideal.Quotient.mk J (e i)) = ⊤)
-    (harrows : ∀ {i j : Q} (a : i ⟶ j), f a ∈ J)
-    (i : Q) (hi : e i ∉ J) :
-    Nonempty ((ModuleCat.restrictScalars (liftAlgHomOfArrows k e he f hl hr).toRingHom).obj
+    (hquot : Submodule.span k (Set.range fun j ↦ Ideal.Quotient.mk J (e j)) = ⊤)
+    (i : Q) (hFi : F (vertexIdempotent k i) = e i)
+    (hloops : ∀ a : i ⟶ i, F (ofArrow a) ∈ J) (hi : e i ∉ J) :
+    Nonempty ((ModuleCat.restrictScalars F.toRingHom).obj
         (ModuleCat.of A ((Ideal.span {e i} : Ideal A) ⧸
           J • (⊤ : Submodule A (Ideal.span {e i} : Ideal A)))) ≅
       vertexSimpleModule k Q i) := by
-  let F := liftAlgHomOfArrows k e he f hl hr
   let S := ModuleCat.of A ((Ideal.span {e i} : Ideal A) ⧸
     J • (⊤ : Submodule A (Ideal.span {e i} : Ideal A)))
   let s₀ : S := Submodule.Quotient.mk (spanSingletonGenerator (e i))
@@ -102,8 +96,7 @@ theorem nonempty_restrictScalars_quotient_smul_top_iso_vertexSimpleModule
   have htor : Module.IsTorsionBySet A S J := Module.isTorsionBySet_quotient_ideal_smul _ J
   refine nonempty_iso_vertexSimpleModule_of_generator (i := i) x₀
     (mk_spanSingletonGenerator_ne_zero hi) ?_ ?_ ?_
-  · rw [ModuleCat.restrictScalars.smul_def, AlgHom.toRingHom_eq_coe, RingHom.coe_coe,
-      liftAlgHomOfArrows_vertexIdempotent]
+  · rw [ModuleCat.restrictScalars.smul_def, AlgHom.toRingHom_eq_coe, RingHom.coe_coe, hFi]
     exact he.smul_quotient_smul_top_eq_self hquot i s₀
   · intro y
     obtain ⟨c, hc⟩ := (he.equivQuotientSMulTop hquot i hi).surjective y
@@ -112,10 +105,9 @@ theorem nonempty_restrictScalars_quotient_smul_top_iso_vertexSimpleModule
       AlgHom.toRingHom_eq_coe, RingHom.coe_coe, AlgHom.commutes]
     exact (algebraMap_smul A c s₀).trans
       ((he.equivQuotientSMulTop_apply hquot i hi c).symm.trans hc)
-  · intro s t a
-    rw [ModuleCat.restrictScalars.smul_def, AlgHom.toRingHom_eq_coe, RingHom.coe_coe,
-      ofArrow_eq_ofPath, liftAlgHomOfArrows_ofPath_toPath]
-    exact @htor s₀ ⟨f a, harrows a⟩
+  · intro a
+    rw [ModuleCat.restrictScalars.smul_def, AlgHom.toRingHom_eq_coe, RingHom.coe_coe]
+    exact @htor s₀ ⟨F (ofArrow a), hloops a⟩
 
 end PathAlgebra
 
@@ -145,41 +137,13 @@ theorem _root_.CompleteOrthogonalIdempotents.exists_admissible_presentation
             Ring.jacobson A • (⊤ : Submodule A (Ideal.span {e i} : Ideal A))))
           (ModuleCat.of A ((Ideal.span {e j} : Ideal A) ⧸
             Ring.jacobson A • (⊤ : Submodule A (Ideal.span {e j} : Ideal A)))) 1)) := by
-  classical
-  have : IsArtinianRing A := IsArtinianRing.of_finite k A
-  have hJ : IsNilpotent (Ring.jacobson A) := IsSemiprimaryRing.isNilpotent
-  have hnotJ (i : Q) : e i ∉ Ring.jacobson A := fun h ↦
-    hne i ((he.idem i).eq_zero_of_mem_jacobson_bot (Ideal.jacobson_bot (R := A) ▸ h))
-  let W (i j : Q) : Submodule k (A ⧸ Ring.jacobson A ^ 2) :=
-    radicalLayerCorner k (Ring.jacobson A) (e j) (e i)
-  let hQ : Quiver.{u} Q := ⟨fun i j ↦ ULift.{u} (Fin (Module.finrank k (W i j)))⟩
-  have hlift (i j : Q) (t : i ⟶ j) : ∃ x ∈ Ring.jacobson A,
-      Ideal.Quotient.mk (Ring.jacobson A ^ 2) (e j * x * e i) =
-        Module.finBasis k (W i j) t.down :=
-    mem_radicalLayerCorner.mp (Module.finBasis k (W i j) t.down).2
-  choose x hxJ hx using hlift
-  let f : ∀ {i j : Q}, (i ⟶ j) → A := fun {i j} t ↦ e j * x i j t * e i
-  have hl {i j : Q} (t : i ⟶ j) : e j * f t = f t := by simp only [f, ← mul_assoc, (he.idem j).eq]
-  have hr {i j : Q} (t : i ⟶ j) : f t * e i = f t := by simp only [f, mul_assoc, (he.idem i).eq]
-  have harrows {i j : Q} (t : i ⟶ j) : f t ∈ Ring.jacobson A :=
-    Ideal.mul_mem_right _ _ (Ideal.mul_mem_left _ _ (hxJ i j t))
-  have hbasis (i j : Q) : (fun t : i ⟶ j ↦ Ideal.Quotient.mk (Ring.jacobson A ^ 2) (f t)) =
-      (W i j).subtype ∘ Module.finBasis k (W i j) ∘ Equiv.ulift := funext (hx i j)
-  refine ⟨hQ, fun i j ↦ inferInstanceAs (Fintype (ULift.{u} (Fin (Module.finrank k (W i j))))),
-    liftAlgHomOfArrows k e he f hl hr, ?_, ?_, fun i ↦ by simp, ?_, ?_⟩
-  · refine liftAlgHomOfArrows_surjective e he f hl hr _ hJ hquot fun i j y hy ↦ ?_
-    rw [hbasis, Set.range_comp, Set.range_comp, Equiv.range_eq_univ, Set.image_univ,
-      ← Submodule.map_span, Module.Basis.span_eq, Submodule.map_top, Submodule.range_subtype]
-    exact mem_radicalLayerCorner.mpr ⟨y, hy, rfl⟩
-  · exact isAdmissibleIdeal_ker_liftAlgHomOfArrows e he f hl hr _ hJ hne harrows fun i j ↦ by
-      rw [hbasis]
-      exact ((Module.finBasis k (W i j)).linearIndependent.comp _ Equiv.ulift.injective).map' _
-        (Submodule.ker_subtype _)
-  · exact fun i ↦ nonempty_restrictScalars_quotient_smul_top_iso_vertexSimpleModule e he f hl hr
-      (Ring.jacobson A) hquot harrows i (hnotJ i)
-  · intro i j
-    exact (Fintype.card_ulift (Fin (Module.finrank k (W i j)))).trans
-      ((Fintype.card_fin _).trans (he.finrank_ext_quotient_smul_top hquot i j (hne j)).symm)
+  obtain ⟨hQ, harr, f, hsurj, hadm, hvert, harrow, hcard⟩ :=
+    he.exists_surjective_pathAlgebra_isAdmissibleIdeal_ker hne hquot
+  refine ⟨hQ, harr, f, hsurj, hadm, hvert, fun i ↦ ?_, fun i j ↦ ?_⟩
+  · exact nonempty_restrictScalars_quotient_smul_top_iso_vertexSimpleModule f e he
+      (Ring.jacobson A) hquot i (hvert i) (fun a ↦ harrow a)
+      ((he.idem i).mem_jacobson_iff.not.mpr (hne i))
+  · exact (hcard i j).trans (he.finrank_ext_quotient_smul_top hquot i j (hne j)).symm
 
 /-- **Gabriel's bound-quiver presentation with the Ext-quiver.** A basic finite-dimensional algebra
 `A` over an algebraically closed field `k` admits a finite quiver `Q`, a surjective `k`-algebra
@@ -202,19 +166,17 @@ theorem exists_admissible_presentation (k A : Type u) [Field k] [IsAlgClosed k] 
   have he : CompleteOrthogonalIdempotents e :=
     (CompleteOrthogonalIdempotents.equiv Equiv.ulift).mpr he₀
   have hne (i : Q) : e i ≠ 0 := hne₀ i.down
-  have hnotJ (i : Q) : e i ∉ Ring.jacobson A := fun h ↦
-    hne i ((he.idem i).eq_zero_of_mem_jacobson_bot (Ideal.jacobson_bot (R := A) ▸ h))
   have hquot : Submodule.span k
       (Set.range fun i ↦ Ideal.Quotient.mk (Ring.jacobson A) (e i)) = ⊤ := by
     have hcomp : (fun i ↦ Ideal.Quotient.mk (Ring.jacobson A) (e i)) =
         (fun i ↦ Ideal.Quotient.mk (Ring.jacobson A) (e₀ i)) ∘ Equiv.ulift := rfl
-    rwa [hcomp, Set.range_comp, Equiv.range_eq_univ, Set.image_univ]
+    rwa [hcomp, Equiv.ulift.surjective.range_comp]
   obtain ⟨hQ, harr, f, hsurj, hadm, -, hres, hext⟩ := he.exists_admissible_presentation hne hquot
   let S (i : Q) : ModuleCat.{u} A := ModuleCat.of A ((Ideal.span {e i} : Ideal A) ⧸
     Ring.jacobson A • (⊤ : Submodule A (Ideal.span {e i} : Ideal A)))
   refine ⟨Q, hQ, inferInstance, harr, f, S, hsurj, hadm, ?_, ?_, hres, hext⟩
   · exact fun i ↦ (simple_iff_isSimpleModule' (S i)).mpr
-      (he.isSimpleModule_quotient_smul_top hquot i (hnotJ i))
+      (he.isSimpleModule_quotient_smul_top hquot i ((he.idem i).mem_jacobson_iff.not.mpr (hne i)))
   · intro X hX
     have : IsSimpleModule A X := (simple_iff_isSimpleModule' X).mp hX
     obtain ⟨i, ⟨φ⟩, huniq⟩ := he.existsUnique_nonempty_linearEquiv_quotient_smul_top hquot X
