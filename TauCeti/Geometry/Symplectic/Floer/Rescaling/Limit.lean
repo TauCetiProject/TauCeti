@@ -36,10 +36,11 @@ exhausting-disc compactness theorem
   subsequence of the rescaled solutions converges to a continuous map `v : ℝ × ℝ → M`.
 
 The limit is only shown to be continuous. That it is pseudoholomorphic for the structure
-`J(z₀, ·)` frozen at the bubbling point, nonconstant, and extends to a sphere needs the
-convergence of the derivatives of the rescaled maps, which is not treated here; given that
-convergence, these are `TauCeti.SmoothTwoForm.isComplexLinearMap_of_tendsto_rescale` and
-`TauCeti.SmoothTwoForm.tendsto_floerEnergyDensity_rescale`.
+`J(z₀, ·)` frozen at the bubbling point and nonconstant needs the convergence of the derivatives
+of the rescaled maps, which is not treated here; given that convergence, these are
+`TauCeti.SmoothTwoForm.isComplexLinearMap_of_tendsto_rescale` and
+`TauCeti.SmoothTwoForm.tendsto_floerEnergyDensity_rescale`. That it extends to a sphere needs
+removal of singularities, which is not provided either.
 
 ## References
 
@@ -59,9 +60,9 @@ variable {E H M F : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [Topologic
   [NormedAddCommGroup F] [NormedSpace ℝ F]
   {ω : SmoothTwoForm I M} {Ks Kt : ℝ × ℝ → M → ℝ} {e : M → F}
 
-/-- **Rescaled Floer solutions in a manifold converge.** Let `uᵢ` solve the Floer equation
-`(du - X_K)^{0,1} = 0` on an open set `U` of the domain, with values in a compact set `K ⊆ M`, for
-domain-dependent structures `J(z, x)` on `T_x M`. Let `e : M → F` be a map into a normed space,
+/-- **Rescaled Floer solutions in a manifold converge.** Let the maps `uᵢ` be differentiable on a
+set `U` of the domain, with values there in a compact set `K ⊆ M`, and let `J(z, x)` be
+domain-dependent structures on `T_x M`. Let `e : M → F` be a map into a normed space,
 differentiable at the points of `K` and injective on `K`, with `J` uniformly tame with respect to
 `e`, `c ‖d e v‖² ≤ ω(v, J(z, x) v)` with `c > 0`, and the pushforwards `d e (X_{K_s})`,
 `d e (X_{K_t})` at most `B`, on `U × K`. Rescale at centres `cᵢ` by scales `εᵢ → 0` to the
@@ -173,7 +174,6 @@ theorem IsNondegenerate.exists_rescale_tendstoLocallyUniformly_comp (hω : ω.Is
       (Eventually.of_forall hsol) hz hblow
   refine ⟨c', ε, R, hε, hc', hε0, hR, hεR, hres.mono fun i hi ↦ hi.1, ?_⟩
   exact hω.exists_strictMono_tendstoLocallyUniformly_comp_rescale hK he he_inj hc hu huK hJc
-    hBs hBt hε0 hR (hres.mono fun i hi w hw ↦ ⟨(hi.2 w hw).1, (hi.2 w hw).2.1,
-      (hi.2 w hw).2.2⟩)
+    hBs hBt hε0 hR (hres.mono fun i hi ↦ hi.2)
 
 end TauCeti.SmoothTwoForm

@@ -10,7 +10,7 @@ public import Mathlib.Topology.UniformSpace.LocallyUniformConvergence
 import TauCeti.Analysis.Calculus.Equicontinuity
 import TauCeti.Analysis.Normed.Operator.Prod
 import TauCeti.Topology.ContinuousMap.Ascoli
-import TauCeti.Topology.Compactness.InjOn
+import TauCeti.Topology.Separation.InvFunOn
 import TauCeti.Geometry.Manifold.MFDeriv.NormedSpace
 
 /-!
@@ -121,6 +121,21 @@ theorem IsNondegenerate.norm_fderiv_comp_le (hω : ω.IsNondegenerate)
         (fderiv ℝ (e ∘ u) z).opNorm_le_norm_apply_one_zero_add_norm_apply_zero_one
     _ ≤ _ := by linarith
 
+/-- **A bound on the energy density bounds the derivative, measured through `e`.** Under the
+hypotheses of `TauCeti.SmoothTwoForm.IsNondegenerate.norm_fderiv_comp_le`, if the Floer energy
+density of `u` at `z` is at most `A`, then `‖d (e ∘ u)(z)‖ ≤ 2 (√(A / c) + B)`. -/
+theorem IsNondegenerate.norm_fderiv_comp_le_of_floerEnergyDensity_le (hω : ω.IsNondegenerate)
+    {J : AlmostComplexStructure (TangentSpace I (u z))} {c A B : ℝ} (hc : 0 < c)
+    (he : MDifferentiableAt I 𝓘(ℝ, F) e (u z)) (hu : MDifferentiableAt 𝓘(ℝ, ℝ × ℝ) I u z)
+    (hJc : ∀ v, c * ‖mvfderiv I e (u z) v‖ ^ 2 ≤ hω.symplecticFormAt (u z) v (J v))
+    (hBs : ‖mvfderiv I e (u z) (ω.hamiltonianVectorField (Ks z) (u z))‖ ≤ B)
+    (hBt : ‖mvfderiv I e (u z) (ω.hamiltonianVectorField (Kt z) (u z))‖ ≤ B)
+    (h : IsComplexLinearMap (AlmostComplexStructure.product ℝ) J
+      (ω.perturbedMFDeriv Ks Kt u z).toLinearMap)
+    (hA : ω.floerEnergyDensity Ks Kt u z ≤ A) :
+    ‖fderiv ℝ (e ∘ u) z‖ ≤ 2 * (√(A / c) + B) :=
+  (hω.norm_fderiv_comp_le hc he hu hJc hBs hBt h).trans (by gcongr)
+
 /-- **Floer solutions in a manifold converge where their energy density is bounded.** Let `uₙ`
 solve the Floer equation `(du - X_{Kₙ})^{0,1} = 0` on an open set `Ω ⊆ ℝ × ℝ`, for perturbations
 `Kₙ = K_{s,n} ds + K_{t,n} dt` and structures `Jₙ`, with values in a compact set `K ⊆ M`. Let
@@ -157,11 +172,9 @@ theorem IsNondegenerate.exists_strictMono_tendstoLocallyUniformlyOn_comp (hω : 
   have hbd (C : Set (ℝ × ℝ)) (hC : IsCompact C) (hCΩ : C ⊆ Ω) :
       ∃ L, ∀ n, ∀ z ∈ C, ‖fderiv ℝ (e ∘ u n) z‖ ≤ L := by
     obtain ⟨A, hA⟩ := hρ C hC hCΩ
-    refine ⟨2 * (√(A / c) + B), fun n z hz ↦ ?_⟩
-    refine (hω.norm_fderiv_comp_le hc (he _ (huK n (hCΩ hz))) (hu n z (hCΩ hz))
-      (hJc n z (hCΩ hz)) (hBs n z (hCΩ hz)) (hBt n z (hCΩ hz)) (hfloer n z (hCΩ hz))).trans ?_
-    gcongr
-    exact hA n z hz
+    exact ⟨2 * (√(A / c) + B), fun n z hz ↦ hω.norm_fderiv_comp_le_of_floerEnergyDensity_le hc
+      (he _ (huK n (hCΩ hz))) (hu n z (hCΩ hz)) (hJc n z (hCΩ hz)) (hBs n z (hCΩ hz))
+      (hBt n z (hCΩ hz)) (hfloer n z (hCΩ hz)) (hA n z hz)⟩
   have hequi : EquicontinuousOn (fun n ↦ e ∘ u n) Ω :=
     equicontinuousOn_of_forall_isCompact_norm_fderiv_le hΩ
       (fun n z hz ↦ (hdiff n hz).differentiableWithinAt) hbd
@@ -217,11 +230,9 @@ theorem IsNondegenerate.exists_strictMono_tendstoLocallyUniformly_comp (hω : ω
     · exact mdifferentiableAt_iff_differentiableAt.1
         ((he _ (huK n hz)).comp z (hu n z hz))
     · rw [← NNReal.coe_le_coe, coe_nnNorm]
-      refine (hω.norm_fderiv_comp_le hc (he _ (huK n hz)) (hu n z hz)
-        (hJc n z hz) (hBs n z hz) (hBt n z hz) (hfloer n z hz)).trans
-        (le_trans ?_ (Real.le_coe_toNNReal _))
-      gcongr
-      exact hρ n z hz
+      exact (hω.norm_fderiv_comp_le_of_floerEnergyDensity_le hc (he _ (huK n hz)) (hu n z hz)
+        (hJc n z hz) (hBs n z hz) (hBt n z hz) (hfloer n z hz) (hρ n z hz)).trans
+        (Real.le_coe_toNNReal _)
   -- Arzelà–Ascoli along the exhausting discs, for maps with values in the compact set `e(K)`.
   have hec : ContinuousOn e K := fun x hx ↦ (he x hx).continuousAt.continuousWithinAt
   have hKe : IsCompact (e '' K) := hK.image_of_continuousOn hec
