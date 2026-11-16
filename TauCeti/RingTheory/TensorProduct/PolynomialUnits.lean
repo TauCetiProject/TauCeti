@@ -12,11 +12,14 @@ public import Mathlib.RingTheory.PolynomialAlgebra
 /-!
 # Units after localizing split polynomials and extending a domain
 
-For a submonoid of split polynomials over a commutative ring, assume their leading
-coefficients become units in the coefficient domain. Every unit after localizing and extending
-scalars is a pure tensor of units. Over a field, the leading-coefficient condition follows
-for every nonzero inverted polynomial. This includes `h = 0`, when the localization
-is the trivial ring. For algebraically closed `k`, every `h` satisfies the splitting hypothesis.
+For a submonoid `M` of split polynomials over a commutative ring `R`, assume their leading
+coefficients map to units in a domain `A` over `R`. Every unit after localizing and extending
+scalars to `A` is a pure tensor of units.
+
+Over a field `k`, nonzero polynomials have unit leading coefficients. If `0 ∈ M`, the
+localization is trivial, and the pure-tensor-of-units conclusion still holds. Thus the field
+result applies to all submonoids of split polynomials, including localization at a single
+split polynomial `h = 0`. If `k` is algebraically closed, every polynomial splits.
 
 This controls transition units when comparing line bundles along points of an open affine line.
 
@@ -29,9 +32,10 @@ public noncomputable section
 
 open Polynomial TensorProduct
 
-/-- Units after base change of a polynomial localization are pure tensors when every
-inverted polynomial splits and has unit leading coefficient in the target domain. -/
-theorem Submonoid.exists_units_eq_tmul
+/-- Units after base change to a domain of a polynomial localization are pure tensors of
+units when every inverted polynomial splits over the base ring and its leading coefficient
+maps to a unit in the domain. -/
+theorem Submonoid.exists_units_eq_tmul_of_splits_of_isUnit_algebraMap_leadingCoeff
     {R A B : Type*} [CommRing R] [CommRing A] [IsDomain A] [Algebra R A]
     [CommRing B] [Algebra R B] [Algebra R[X] B] [IsScalarTower R R[X] B]
     (M : Submonoid R[X]) [IsLocalization M B]
@@ -82,12 +86,12 @@ theorem Submonoid.exists_units_eq_tmul_of_splits
   by_cases hzero : 0 ∈ M
   · have : Subsingleton B := IsLocalization.subsingleton hzero
     exact ⟨1, 1, Subsingleton.elim _ _⟩
-  exact M.exists_units_eq_tmul hsplit (fun h hh ↦
+  exact M.exists_units_eq_tmul_of_splits_of_isUnit_algebraMap_leadingCoeff hsplit (fun h hh ↦
     ((leadingCoeff_ne_zero.mpr (ne_of_mem_of_not_mem hh hzero)).isUnit).map
       (algebraMap k A)) u
 
-/-- A unit after base change of a localization at a split polynomial over a field is a pure
-tensor of units. This applies to any model of the localization, including the zero ring. -/
+/-- A unit after base change to a domain of a localization at a split polynomial over a field
+is a pure tensor of units. This applies to any localization model, including the zero ring. -/
 theorem Polynomial.Splits.exists_units_eq_tmul
     {k A B : Type*} [Field k] [CommRing A] [IsDomain A] [Algebra k A]
     [CommRing B] [Algebra k B] [Algebra k[X] B] [IsScalarTower k k[X] B]
