@@ -258,9 +258,8 @@ private theorem exists_smulLeftCLM_fourier_eq_and_norm_le (h : r ≤ s) (u : H^{
   -- The weighted Fourier transform at order `s` is `𝓕 u.toLp`.
   set G₀ : Lp F 2 (volume : Measure E) := 𝓕 u.toLp
   have hG₀ : smulLeftCLM F (fun x : E ↦ (((1 + ‖x‖ ^ 2) ^ (s / 2) : ℝ) : ℂ)) (𝓕 u.toDistr) =
-      G₀ := by
-    rw [← fourier_besselPotential_eq_smulLeftCLM_fourier_apply, u.bessel_toDistr_eq_toLp,
-      Lp.fourier_toTemperedDistribution_eq]
+      G₀ :=
+    (toTemperedDistribution_fourier_toLp u).symm
   have hmem : MemLp (fun x ↦ w x • G₀ x) 2 (volume : Measure E) :=
     (Lp.memLp G₀).of_le ((hw.1.continuous.aestronglyMeasurable).smul
       (Lp.aestronglyMeasurable G₀)) (.of_forall fun x ↦ by

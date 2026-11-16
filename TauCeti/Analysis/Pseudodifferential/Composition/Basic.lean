@@ -254,9 +254,8 @@ theorem HasCompactSpatialSupport.exists_norm_comp_fourier_slice_le
       (show 1 + ‖y‖ ^ 2 ≤ 1 + ‖R • η‖ ^ 2 by gcongr) (by positivity)).trans ?_
     simpa only [abs_abs] using one_add_norm_smul_sq_rpow_le hR |m'| η
   have hξ : (1 + ‖ξ‖ ^ 2) ^ (m' / 2) * (1 + ‖ξ‖ ^ 2) ^ (m / 2) =
-      (1 + ‖ξ‖ ^ 2) ^ ((m' + m) / 2) := by
-    rw [← Real.rpow_add (by positivity)]
-    ring_nf
+      (1 + ‖ξ‖ ^ 2) ^ ((m' + m) / 2) :=
+    (one_add_norm_sq_rpow_add ξ m' m).symm
   have hη : (1 + ‖η‖ ^ 2) ^ (|m'| / 2) * (1 + ‖η‖ ^ 2) ^ (-(r + |m'|) / 2) =
       (1 + ‖η‖ ^ 2) ^ (-r / 2) := by
     rw [← Real.rpow_add (by positivity)]

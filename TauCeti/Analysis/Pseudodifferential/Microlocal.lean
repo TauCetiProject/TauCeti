@@ -11,6 +11,7 @@ public import TauCeti.Analysis.Distribution.WaveFrontSet.Sobolev.Basic
 import TauCeti.Analysis.Distribution.WaveFrontSet.Sobolev.Localization
 import TauCeti.Analysis.Distribution.WaveFrontSet.Sobolev.Tempered
 import TauCeti.Analysis.Normed.Module.Cone
+import TauCeti.Analysis.SpecialFunctions.JapaneseBracket.Basic
 import TauCeti.Analysis.SpecialFunctions.JapaneseBracket.Deriv
 import TauCeti.Analysis.SpecialFunctions.JapaneseBracket.Peetre
 import TauCeti.Analysis.Sobolev.BesselPotential.Schwartz
@@ -182,7 +183,9 @@ private theorem HasCompactSpatialSupport.exists_lintegral_enorm_fourierKernel_le
     ∃ A : ℝ≥0, (∀ ξ, ∫⁻ ζ, ‖a.fourierKernel t ξ ζ‖ₑ ≤ A) ∧
       ∀ ζ, ∫⁻ ξ, ‖a.fourierKernel t ξ ζ‖ₑ ≤ A := by
   obtain ⟨B, r, hB, hr, hK⟩ := ha.exists_norm_fourierKernel_le t
-  obtain ⟨hrow, hcol⟩ := lintegral_ofReal_mul_one_add_norm_sub_rpow (n := n) hB hr
+  obtain ⟨hrow, hcol⟩ :=
+    lintegral_ofReal_mul_one_add_norm_sub_rpow (V := CoordinateSpace n) volume hB
+      (by rwa [finrank_euclideanSpace_fin])
   have hle (ξ ζ : CoordinateSpace n) :
       ‖a.fourierKernel t ξ ζ‖ₑ ≤ ENNReal.ofReal (B * (1 + ‖ξ - ζ‖) ^ (-r)) := by
     rw [← ofReal_norm]
@@ -317,7 +320,9 @@ the `L²` norm, by Schur's test. -/
 private theorem eLpNorm_lintegral_ofReal_mul_lt_top {B r : ℝ} (hB : 0 ≤ B) (hr : (n : ℝ) < r)
     {g : CoordinateSpace n → ℝ≥0∞} (hg : eLpNorm g 2 volume < ⊤) :
     eLpNorm (fun ξ ↦ ∫⁻ ζ, ENNReal.ofReal (B * (1 + ‖ξ - ζ‖) ^ (-r)) * g ζ) 2 volume < ⊤ := by
-  obtain ⟨hrow, hcol⟩ := lintegral_ofReal_mul_one_add_norm_sub_rpow (n := n) hB hr
+  obtain ⟨hrow, hcol⟩ :=
+    lintegral_ofReal_mul_one_add_norm_sub_rpow (V := CoordinateSpace n) volume hB
+      (by rwa [finrank_euclideanSpace_fin])
   have hk : AEMeasurable (uncurry fun ξ ζ : CoordinateSpace n ↦
       ENNReal.ofReal (B * (1 + ‖ξ - ζ‖) ^ (-r))) (volume.prod volume) := by
     fun_prop

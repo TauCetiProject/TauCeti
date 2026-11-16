@@ -66,6 +66,8 @@ partial logarithmic series, and bounds its distance to the logarithm by a harmon
   `x ↦ (1 + ‖x‖ ^ 2) ^ (-r / 2)` is not integrable over any open cone containing a nonzero vector.
 * `TauCeti.memLp_two_one_add_norm_rpow_neg`: the power `x ↦ (1 + ‖x‖) ^ (-r)` is square
   integrable for `d < 2 r`, for every additive Haar measure.
+* `TauCeti.lintegral_ofReal_mul_one_add_norm_sub_rpow`: the row and column integrals of the
+  convolution kernel `B (1 + ‖ξ - ζ‖) ^ (-r)`, `d < r`, for Schur's test.
 * `TauCeti.integrable_one_add_norm_sq_rpow_neg_succ_div_two`: on `ℝⁿ` the weight
   `x ↦ (1 + ‖x‖ ^ 2) ^ (-(n + 1) / 2)` is integrable.
 * `TauCeti.integrable_one_add_mul_norm_pow_mul_rpow_neg_one_add_norm_sq`: the weight
@@ -315,6 +317,26 @@ theorem memLp_two_one_add_norm_rpow_neg (μ : Measure V) [μ.IsAddHaarMeasure] {
   congr 1
   push_cast
   ring
+
+/-- **The row and column integrals of a convolution kernel.** For every additive Haar measure on
+a finite-dimensional real normed space of dimension `d < r` and `B ≥ 0`, the kernel
+`B (1 + ‖ξ - ζ‖) ^ (-r)` has every row integral and every column integral equal to
+`B ∫ (1 + ‖η‖) ^ (-r) dη`; these are the bounds that Schur's test asks of it. -/
+theorem lintegral_ofReal_mul_one_add_norm_sub_rpow (μ : Measure V) [μ.IsAddHaarMeasure] {B r : ℝ}
+    (hB : 0 ≤ B) (hr : (finrank ℝ V : ℝ) < r) :
+    (∀ ξ : V, ∫⁻ ζ, ENNReal.ofReal (B * (1 + ‖ξ - ζ‖) ^ (-r)) ∂μ =
+        ENNReal.ofReal (B * ∫ η, (1 + ‖η‖) ^ (-r) ∂μ)) ∧
+      ∀ ζ : V, ∫⁻ ξ, ENNReal.ofReal (B * (1 + ‖ξ - ζ‖) ^ (-r)) ∂μ =
+        ENNReal.ofReal (B * ∫ η, (1 + ‖η‖) ^ (-r) ∂μ) := by
+  set k : V → ℝ := fun η ↦ B * (1 + ‖η‖) ^ (-r)
+  have hint : ∫⁻ η, ENNReal.ofReal (k η) ∂μ = ENNReal.ofReal (B * ∫ η, (1 + ‖η‖) ^ (-r) ∂μ) := by
+    rw [← integral_const_mul, ← ofReal_integral_eq_lintegral_ofReal
+      ((integrable_one_add_norm (μ := μ) hr).const_mul B)
+      (.of_forall fun η ↦ mul_nonneg hB (by positivity))]
+  refine ⟨fun ξ ↦ ?_, fun ζ ↦ (lintegral_sub_right_eq_self (fun η ↦ ENNReal.ofReal (k η)) ζ).trans
+    hint⟩
+  simp_rw [norm_sub_rev ξ]
+  exact (lintegral_sub_right_eq_self (fun η ↦ ENNReal.ofReal (k η)) ξ).trans hint
 
 /-- The radial moment `x ↦ ‖x‖ ^ p (1 + ‖x‖ ^ 2) ^ (-r / 2)` of order `p ≥ 0` of the Japanese
 bracket is integrable for every additive Haar measure when its decay exponent exceeds

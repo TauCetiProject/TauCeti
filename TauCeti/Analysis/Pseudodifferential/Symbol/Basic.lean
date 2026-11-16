@@ -722,9 +722,8 @@ theorem exists_norm_coefficient_add_sub_le (a : Symbol n V W m)
     rw [← Real.sqrt_eq_rpow]
     exact Real.le_sqrt_of_sq_le (by linarith)
   have hsplit : (1 + ‖v‖ ^ 2) ^ ((|m - 1| + 1) / 2) =
-      (1 + ‖v‖ ^ 2) ^ (|m - 1| / 2) * (1 + ‖v‖ ^ 2) ^ ((1 : ℝ) / 2) := by
-    rw [← Real.rpow_add (by positivity)]
-    ring_nf
+      (1 + ‖v‖ ^ 2) ^ (|m - 1| / 2) * (1 + ‖v‖ ^ 2) ^ ((1 : ℝ) / 2) :=
+    one_add_norm_sq_rpow_add v _ _
   calc ‖a.coefficient (x, ξ + v) - a.coefficient (x, ξ)‖ ≤ B * ‖v‖ := hmv
     _ ≤ B * (1 + ‖v‖ ^ 2) ^ ((1 : ℝ) / 2) := by gcongr
     _ = _ := by rw [hsplit, hB]; ring
@@ -979,7 +978,7 @@ theorem _root_.ContinuousLinearMap.norm_mixedDeriv_le_of_bilinear {F G H : Type*
   have hD' := hD s.2 t.2 (by omega)
   have hw : (1 + ‖ξ‖ ^ 2) ^ ((μ + ν - β.length) / 2) =
       (1 + ‖ξ‖ ^ 2) ^ ((μ - t.1.length) / 2) * (1 + ‖ξ‖ ^ 2) ^ ((ν - t.2.length) / 2) := by
-    rw [← Real.rpow_add (by positivity), ← ht']
+    rw [← one_add_norm_sq_rpow_add, ← ht']
     push_cast
     ring_nf
   calc ‖B (mixedDeriv s.1 t.1 f x ξ) (mixedDeriv s.2 t.2 g x ξ)‖
