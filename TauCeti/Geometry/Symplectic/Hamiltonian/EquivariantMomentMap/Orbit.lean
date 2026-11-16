@@ -106,12 +106,10 @@ theorem isCoisotropicMap_of_forall_eq (h : σ.IsEquivariantMomentMap μ) (hg : �
     (hfree : ∀ p, (InfinitesimalAction.fundamental I G I' M).isotropy (g p) = ⊥)
     (hinj : ∀ p, Function.Injective (mfderiv J I' g p))
     (hdim : finrank ℝ F + finrank ℝ (GroupLieAlgebra I G) = finrank ℝ E') :
-    hσ.IsCoisotropicMap J g := by
-  rcases isEmpty_or_nonempty N with _ | ⟨⟨p₀⟩⟩
-  · exact hσ.isCoisotropicMap_iff.2 fun p ↦ isEmptyElim p
-  have := finiteDimensional_of_isotropy_fundamental_eq_bot (hfree p₀)
-  exact h.toIsMomentMap.isCoisotropicMap_of_forall_eq hσ hg hfree
-    (fun _ ↦ h.momentCocycle_eq_zero _) (lieAnnihilator_eq_top ℝ _ c) hinj hdim
+    hσ.IsCoisotropicMap J g :=
+  h.toIsMomentMap.isCoisotropicMap_of_forall_eq hσ hg hfree
+    (fun p ↦ have := finiteDimensional_of_isotropy_fundamental_eq_bot (hfree p)
+      h.momentCocycle_eq_zero _) (lieAnnihilator_eq_top ℝ _ c) hinj hdim
 
 /-- **Regular levels of toric moment maps are Lagrangian.** For a group-level moment map of a Lie
 group with abelian Lie algebra and half the dimension of `M`, such as the torus of a symplectic
@@ -122,12 +120,10 @@ theorem isLagrangianMap_of_forall_eq (h : σ.IsEquivariantMomentMap μ) (hg : �
     (hfree : ∀ p, (InfinitesimalAction.fundamental I G I' M).isotropy (g p) = ⊥)
     (hinj : ∀ p, Function.Injective (mfderiv J I' g p))
     (hdimN : finrank ℝ F = finrank ℝ (GroupLieAlgebra I G))
-    (hdim : 2 * finrank ℝ (GroupLieAlgebra I G) = finrank ℝ E') : hσ.IsLagrangianMap J g := by
-  rcases isEmpty_or_nonempty N with _ | ⟨⟨p₀⟩⟩
-  · exact hσ.isLagrangianMap_iff_forall.2 fun p ↦ isEmptyElim p
-  have := finiteDimensional_of_isotropy_fundamental_eq_bot (hfree p₀)
-  exact h.toIsMomentMap.isLagrangianMap_of_forall_eq hσ hg hfree
-    (fun _ ↦ h.momentCocycle_eq_zero _) (lieAnnihilator_eq_top ℝ _ c) hinj hdimN hdim
+    (hdim : 2 * finrank ℝ (GroupLieAlgebra I G) = finrank ℝ E') : hσ.IsLagrangianMap J g :=
+  h.toIsMomentMap.isLagrangianMap_of_forall_eq hσ hg hfree
+    (fun p ↦ have := finiteDimensional_of_isotropy_fundamental_eq_bot (hfree p)
+      h.momentCocycle_eq_zero _) (lieAnnihilator_eq_top ℝ _ c) hinj hdimN hdim
 
 end FiniteDimensional
 

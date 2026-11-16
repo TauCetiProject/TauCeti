@@ -651,13 +651,12 @@ variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [CompleteSpace E
   [ContMDiffSMul I I' ∞ G M]
 
 /-- **A Lie group acting locally freely at a point of a finite-dimensional manifold is
-finite-dimensional.** If the isotropy algebra `𝔤_x` vanishes, the evaluation `ξ ↦ ξ_M(x)` embeds
-the Lie algebra into the tangent space `T_x M`. -/
+finite-dimensional.** This is `InfinitesimalAction.finiteDimensional_of_isotropy_eq_bot` for the
+fundamental vector fields, read on the model space `E` of `G`. -/
 theorem finiteDimensional_of_isotropy_fundamental_eq_bot {x : M}
     (hfree : (InfinitesimalAction.fundamental I G I' M).isotropy x = ⊥) :
     FiniteDimensional ℝ E :=
-  have := FiniteDimensional.of_injective ((InfinitesimalAction.fundamental I G I' M).eval x)
-    (((InfinitesimalAction.fundamental I G I' M).isotropy_eq_bot_iff x).1 hfree)
+  have := (InfinitesimalAction.fundamental I G I' M).finiteDimensional_of_isotropy_eq_bot x hfree
   (tangentSpaceCastModel I (1 : G)).toLinearEquiv.finiteDimensional
 
 end FiniteDimensional

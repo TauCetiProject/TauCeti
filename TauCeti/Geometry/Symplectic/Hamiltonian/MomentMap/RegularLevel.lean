@@ -89,11 +89,14 @@ variable {E' H' : Type*} [NormedAddCommGroup E'] [NormedSpace ℝ E'] [Topologic
 with injective derivatives, from a manifold of dimension `dim M - dim 𝔤`. If the action is locally
 free and the cocycle of `μ` vanishes at every point of the image, and `c` is coadjoint-fixed,
 then `g` is a coisotropic map. -/
-theorem isCoisotropicMap_of_forall_eq [FiniteDimensional ℝ 𝔤] (h : σ.IsMomentMap a μ)
+theorem isCoisotropicMap_of_forall_eq (h : σ.IsMomentMap a μ)
     (hg : ∀ p, μ (g p) = c) (hfree : ∀ p, a.isotropy (g p) = ⊥)
     (hc : ∀ p, σ.momentCocycle a μ (g p) = 0) (hcμ : lieAnnihilator ℝ 𝔤 c = ⊤)
     (hinj : ∀ p, Function.Injective (mfderiv J I g p))
     (hdim : finrank ℝ E' + finrank ℝ 𝔤 = finrank ℝ E) : hσ.IsCoisotropicMap J g := by
+  rcases isEmpty_or_nonempty N with _ | ⟨⟨p₀⟩⟩
+  · exact hσ.isCoisotropicMap_iff.2 fun p ↦ isEmptyElim p
+  have := a.finiteDimensional_of_isotropy_eq_bot _ (hfree p₀)
   let b := Module.finBasis ℝ 𝔤
   refine hσ.isCoisotropicMap_of_forall_eq (F := fun y i ↦ μ y (b i)) (c := fun i ↦ c (b i))
     (fun p ↦ by simp only [hg]) (fun p ↦ (h.isRegularPoint_iff_isotropy_eq_bot b
@@ -106,11 +109,14 @@ theorem isCoisotropicMap_of_forall_eq [FiniteDimensional ℝ 𝔤] (h : σ.IsMom
 the level `μ = c` of a moment map, with injective derivatives, where `2 dim 𝔤 = dim M` and
 `dim N = dim 𝔤`. If the action is locally free and the cocycle of `μ` vanishes at every point of the
 image, and `c` is coadjoint-fixed, then `g` is a Lagrangian map. -/
-theorem isLagrangianMap_of_forall_eq [FiniteDimensional ℝ 𝔤] (h : σ.IsMomentMap a μ)
+theorem isLagrangianMap_of_forall_eq (h : σ.IsMomentMap a μ)
     (hg : ∀ p, μ (g p) = c) (hfree : ∀ p, a.isotropy (g p) = ⊥)
     (hc : ∀ p, σ.momentCocycle a μ (g p) = 0) (hcμ : lieAnnihilator ℝ 𝔤 c = ⊤)
     (hinj : ∀ p, Function.Injective (mfderiv J I g p)) (hdimN : finrank ℝ E' = finrank ℝ 𝔤)
     (hdim : 2 * finrank ℝ 𝔤 = finrank ℝ E) : hσ.IsLagrangianMap J g := by
+  rcases isEmpty_or_nonempty N with _ | ⟨⟨p₀⟩⟩
+  · exact hσ.isLagrangianMap_iff_forall.2 fun p ↦ isEmptyElim p
+  have := a.finiteDimensional_of_isotropy_eq_bot _ (hfree p₀)
   let b := Module.finBasis ℝ 𝔤
   refine hσ.isLagrangianMap_of_forall_eq (F := fun y i ↦ μ y (b i)) (c := fun i ↦ c (b i))
     (fun p ↦ by simp only [hg]) (fun p ↦ (h.isRegularPoint_iff_isotropy_eq_bot b
