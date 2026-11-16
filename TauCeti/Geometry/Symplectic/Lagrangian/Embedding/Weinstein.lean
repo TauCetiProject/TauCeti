@@ -66,9 +66,6 @@ with `f = Diffeomorph.refl` in
 
 ## Main results
 
-* `TauCeti.SmoothEmbedding.normalBundleDiffeomorphOfIsLagrangianMap_symm_zeroSection`: the inverse
-  of the Lagrangian normal-bundle identification maps the zero covector at `q` to the zero normal
-  vector at `q`.
 * `TauCeti.SmoothEmbedding.mfderiv_normalExp_comp_normalBundleDiffeomorph_symm_zeroSection`: the
   differential of cotangent normal-exponential coordinates at a zero covector `(q, 0)` sends
   `w` to `df_q w.1 + n_(w.2)`.
@@ -110,27 +107,10 @@ variable {F E H' H Q M : Type*}
   {J : ModelWithCorners ℝ F H'} {I : ModelWithCorners ℝ E H}
   [TopologicalSpace Q] [ChartedSpace H' Q] [IsManifold J ∞ Q]
   [TopologicalSpace M] [ChartedSpace H M] [IsManifold I ∞ M]
-  {σ : SmoothTwoForm I M} {hσ : σ.IsNondegenerate}
-
-/-- The inverse of `normalBundleDiffeomorphOfIsLagrangianMap` sends the zero covector at `q` to
-the zero normal vector at `q`. -/
-theorem normalBundleDiffeomorphOfIsLagrangianMap_symm_zeroSection
-    (f : SmoothEmbedding J I ∞ Q M) (hf : hσ.IsLagrangianMap J f)
-    (hdim : Module.finrank ℝ (F →L[ℝ] ℝ) = Module.finrank ℝ E - Module.finrank ℝ F) (q : Q) :
-    haveI : IsManifold J 1 Q := .of_le (n := ∞) (by simp)
-    haveI : IsManifold J (∞ + 1) Q := by simpa using (inferInstance : IsManifold J ∞ Q)
-    letI := f.normalSpaceFiberBundle (by simp) hdim
-    (f.normalBundleDiffeomorphOfIsLagrangianMap (m := ∞) (P := F →L[ℝ] ℝ)
-        hf (by simp) (by simp) (by simp) hdim).symm
-      (zeroSection (F →L[ℝ] ℝ) (fun x : Q ↦ TangentSpace J x →L[ℝ] ℝ) q) =
-      zeroSection (F →L[ℝ] ℝ) (fun x : Q ↦ f.NormalSpace x (by simp)) q := by
-  have : IsManifold J 1 Q := .of_le (n := ∞) (by simp)
-  have : IsManifold J (∞ + 1) Q := by simpa using (inferInstance : IsManifold J ∞ Q)
-  simp [zeroSection, map_zero]
-
-variable [I.Boundaryless] [T2Space M]
+  [I.Boundaryless] [T2Space M]
   [RiemannianBundle (fun y : M ↦ TangentSpace I y)]
   [IsContMDiffRiemannianBundle I ∞ E (fun y : M ↦ TangentSpace I y)]
+  {σ : SmoothTwoForm I M} {hσ : σ.IsNondegenerate}
 
 /-- Vertical component of the differential of cotangent normal-exponential coordinates at `(q, 0)`:
 along the fiber line `t ↦ (q, t • α)`, the derivative is the orthogonal normal representative of
@@ -164,7 +144,8 @@ private theorem mfderiv_normalExp_comp_normalBundleDiffeomorph_symm_inr
   let z₀ := zeroSection (F →L[ℝ] ℝ) (fun x : Q ↦ TangentSpace J x →L[ℝ] ℝ) q
   let n₀ := zeroSection (F →L[ℝ] ℝ) (fun x : Q ↦ f.NormalSpace x hn) q
   have hEn : E_eq.symm z₀ = n₀ :=
-    f.normalBundleDiffeomorphOfIsLagrangianMap_symm_zeroSection hf hdim q
+    (f.normalBundleDiffeomorphOfIsLagrangianMap_symm_apply (m := ∞) (P := F →L[ℝ] ℝ)
+      hf hn (by simp) (by simp) hdim ⟨q, 0⟩).trans (by simp [n₀, zeroSection])
   have he : MDifferentiableAt (J.prod 𝓘(ℝ, F →L[ℝ] ℝ)) I (f.normalExp (P := F →L[ℝ] ℝ) hn) n₀ :=
     ((f.contMDiffOn_normalExp (m := 1) hn (by simp) hdim).contMDiffAt
       ((f.isOpen_normalExpDomain hn hdim).mem_nhds
@@ -228,15 +209,18 @@ theorem mfderiv_normalExp_comp_normalBundleDiffeomorph_symm_zeroSection
     hf hn (by simp) (by simp) hdim
   let z₀ := zeroSection (F →L[ℝ] ℝ) (fun x : Q ↦ TangentSpace J x →L[ℝ] ℝ) q
   let n₀ := zeroSection (F →L[ℝ] ℝ) (fun x : Q ↦ f.NormalSpace x hn) q
-  have hEn : E_eq.symm z₀ = n₀ :=
-    f.normalBundleDiffeomorphOfIsLagrangianMap_symm_zeroSection hf hdim q
+  have hEn (y : Q) : E_eq.symm (zeroSection (F →L[ℝ] ℝ) (fun x : Q ↦ TangentSpace J x →L[ℝ] ℝ) y) =
+      zeroSection (F →L[ℝ] ℝ) (fun x : Q ↦ f.NormalSpace x hn) y :=
+    (f.normalBundleDiffeomorphOfIsLagrangianMap_symm_apply (m := ∞) (P := F →L[ℝ] ℝ)
+      hf hn (by simp) (by simp) hdim ⟨y, 0⟩).trans (by simp [zeroSection])
+  have hEn₀ : E_eq.symm z₀ = n₀ := hEn q
   have he : MDifferentiableAt (J.prod 𝓘(ℝ, F →L[ℝ] ℝ)) I (f.normalExp (P := F →L[ℝ] ℝ) hn) n₀ :=
     ((f.contMDiffOn_normalExp (m := 1) hn (by simp) hdim).contMDiffAt
       ((f.isOpen_normalExpDomain hn hdim).mem_nhds
         (f.zeroSection_mem_normalExpDomain hn q))).mdifferentiableAt one_ne_zero
   have hG : MDifferentiableAt (J.prod 𝓘(ℝ, F →L[ℝ] ℝ)) I
       (f.normalExp (P := F →L[ℝ] ℝ) hn ∘ E_eq.symm) z₀ :=
-    (hEn ▸ he).comp z₀ (E_eq.symm.contMDiff.mdifferentiableAt hn)
+    (hEn₀ ▸ he).comp z₀ (E_eq.symm.contMDiff.mdifferentiableAt hn)
   let e := Bundle.zeroSectionTangentEquiv (I := J)
     (F := F →L[ℝ] ℝ) (V := fun x : Q ↦ TangentSpace J x →L[ℝ] ℝ) q
   have hw : w = e.symm ((e w).1, (e w).2) := (e.symm_apply_apply w).symm
@@ -252,9 +236,7 @@ theorem mfderiv_normalExp_comp_normalBundleDiffeomorph_symm_zeroSection
   · have h := mfderiv_comp_apply q hG (mdifferentiableAt_zeroSection ℝ _) (e w).1
     have hfun : (f.normalExp (P := F →L[ℝ] ℝ) hn ∘ E_eq.symm) ∘
         zeroSection (F →L[ℝ] ℝ) (fun x : Q ↦ TangentSpace J x →L[ℝ] ℝ) = f := funext fun y ↦ by
-      rw [Function.comp_apply, Function.comp_apply,
-        f.normalBundleDiffeomorphOfIsLagrangianMap_symm_zeroSection hf hdim y,
-        f.normalExp_zeroSection hn]
+      simp [hEn]
     exact (hfun ▸ h).symm
   · exact f.mfderiv_normalExp_comp_normalBundleDiffeomorph_symm_inr hf hdim q (e w).2
 
@@ -281,14 +263,13 @@ theorem mpullback_normalExp_comp_normalBundleDiffeomorph_symm_zeroSection
   let hn : (∞ : ℕ∞ω) ≠ 0 := by simp
   let := f.normalSpaceFiberBundle hn hdim
   let z₀ := zeroSection (F →L[ℝ] ℝ) (fun x : Q ↦ TangentSpace J x →L[ℝ] ℝ) q
-  let G := f.normalExp (P := F →L[ℝ] ℝ) hn ∘
-    (f.normalBundleDiffeomorphOfIsLagrangianMap (m := ∞) (P := F →L[ℝ] ℝ)
-      hf hn (by simp) (by simp) hdim).symm
-  have hGz : G z₀ = f q := by
-    dsimp only [G, z₀]
-    rw [Function.comp_apply,
-      f.normalBundleDiffeomorphOfIsLagrangianMap_symm_zeroSection hf hdim q,
-      f.normalExp_zeroSection hn]
+  let E_eq := f.normalBundleDiffeomorphOfIsLagrangianMap (m := ∞) (P := F →L[ℝ] ℝ)
+    hf hn (by simp) (by simp) hdim
+  let G := f.normalExp (P := F →L[ℝ] ℝ) hn ∘ E_eq.symm
+  have hEz : E_eq.symm z₀ = zeroSection (F →L[ℝ] ℝ) (fun x : Q ↦ f.NormalSpace x hn) q :=
+    (f.normalBundleDiffeomorphOfIsLagrangianMap_symm_apply (m := ∞) (P := F →L[ℝ] ℝ)
+      hf hn (by simp) (by simp) hdim ⟨q, 0⟩).trans (by simp [zeroSection])
+  have hGz : G z₀ = f q := by simp [G, hEz]
   ext v
   let nF (α : TangentSpace J q →L[ℝ] ℝ) : TangentSpace I (f q) :=
     f.normalRepresentative q hn ((f.normalSpaceEquivOfIsLagrangianMap hf hn q).symm α)
@@ -478,7 +459,8 @@ private theorem exists_cotangent_normalExp_opens_diffeomorph
   refine ⟨W₀, W, Ψ, fun q ↦ ?_, hΨ_val⟩
   have hEq0 : E_eq.symm (zeroSection (F →L[ℝ] ℝ) (fun x : Q ↦ TangentSpace J x →L[ℝ] ℝ) q) =
       zeroSection (F →L[ℝ] ℝ) (fun x ↦ f.NormalSpace x hn) q :=
-    f.normalBundleDiffeomorphOfIsLagrangianMap_symm_zeroSection hf hdim q
+    (f.normalBundleDiffeomorphOfIsLagrangianMap_symm_apply (m := ∞) (P := F →L[ℝ] ℝ)
+      hf hn (by simp) (by simp) hdim ⟨q, 0⟩).trans (by simp [zeroSection])
   have hq : zeroSection (F →L[ℝ] ℝ) (fun x : Q ↦ TangentSpace J x →L[ℝ] ℝ) q ∈ W₀ :=
     Opens.mem_mk.2 (mem_preimage.2 (hEq0.symm ▸ hzero₀ q))
   refine ⟨hq, (hΨ_val ⟨_, hq⟩).trans ?_⟩
