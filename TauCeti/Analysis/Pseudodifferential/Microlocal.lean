@@ -16,6 +16,7 @@ import TauCeti.Analysis.SpecialFunctions.JapaneseBracket.Deriv
 import TauCeti.Analysis.SpecialFunctions.JapaneseBracket.Peetre
 import TauCeti.Analysis.Sobolev.BesselPotential.Schwartz
 import TauCeti.MeasureTheory.Function.Lp.Operator.Integral.Basic
+import TauCeti.MeasureTheory.Group.Integral
 import TauCeti.MeasureTheory.Integral.SchurTest
 
 /-!
@@ -172,9 +173,27 @@ private theorem HasCompactSpatialSupport.exists_norm_fourierKernel_le
   obtain ⟨B, r, hB, hr, hpt⟩ := ha.exists_rpow_mul_norm_fourier_apply_le t t one_pos
   refine ⟨B, r, hB, hr, fun ξ ζ ↦ ContinuousLinearMap.opNorm_le_bound _ (by positivity) fun v ↦ ?_⟩
   rw [fourierKernel, smul_apply, norm_smul, Complex.norm_real, Real.norm_of_nonneg (by positivity)]
-  refine ((by ring : _ = _).trans_le (mul_le_mul_of_nonneg_left (hpt ξ ζ v).1
-    (by positivity : 0 ≤ (1 + ‖ζ‖ ^ 2) ^ (-t / 2)))).trans_eq ?_
-  linear_combination (B * (1 + ‖ξ - ζ‖) ^ (-r) * ‖v‖) * one_add_norm_sq_rpow_neg_mul_rpow ζ t
+  calc _ = (1 + ‖ζ‖ ^ 2) ^ (-t / 2) * ((1 + ‖ξ‖ ^ 2) ^ ((t - m) / 2) *
+          ‖𝓕 (fun x ↦ a.coefficient (x, (2 * π) • ζ)) (ξ - ζ) v‖) := by ring
+    _ ≤ (1 + ‖ζ‖ ^ 2) ^ (-t / 2) * (B * (1 + ‖ξ - ζ‖) ^ (-r) * ((1 + ‖ζ‖ ^ 2) ^ (t / 2) * ‖v‖)) :=
+        mul_le_mul_of_nonneg_left (hpt ξ ζ v).1 (by positivity)
+    _ = B * (1 + ‖ξ - ζ‖) ^ (-r) * ‖v‖ := by
+        linear_combination (B * (1 + ‖ξ - ζ‖) ^ (-r) * ‖v‖) * one_add_norm_sq_rpow_neg_mul_rpow ζ t
+
+/-- The row and column integrals of the kernel `B (1 + ‖ξ - ζ‖) ^ (-r)`, `B ≥ 0`, `r > n`, all
+equal `∫ B (1 + ‖η‖) ^ (-r) dη`. -/
+private theorem lintegral_ofReal_mul_one_add_norm_sub_rpow {B r : ℝ} (hB : 0 ≤ B)
+    (hr : (n : ℝ) < r) :
+    (∀ ξ : CoordinateSpace n, ∫⁻ ζ, ENNReal.ofReal (B * (1 + ‖ξ - ζ‖) ^ (-r)) =
+        ENNReal.ofReal (∫ η : CoordinateSpace n, B * (1 + ‖η‖) ^ (-r))) ∧
+      ∀ ζ : CoordinateSpace n, ∫⁻ ξ, ENNReal.ofReal (B * (1 + ‖ξ - ζ‖) ^ (-r)) =
+        ENNReal.ofReal (∫ η : CoordinateSpace n, B * (1 + ‖η‖) ^ (-r)) := by
+  have hk : Integrable fun η : CoordinateSpace n ↦ B * (1 + ‖η‖) ^ (-r) :=
+    (integrable_one_add_norm (by rwa [finrank_euclideanSpace_fin])).const_mul B
+  have hk0 : 0 ≤ᵐ[volume] fun η : CoordinateSpace n ↦ B * (1 + ‖η‖) ^ (-r) :=
+    .of_forall fun _ ↦ mul_nonneg hB (by positivity)
+  exact ⟨lintegral_ofReal_sub_left_eq_ofReal_integral hk hk0,
+    lintegral_ofReal_sub_right_eq_ofReal_integral hk hk0⟩
 
 omit [CompleteSpace V] [CompleteSpace W] in
 /-- The row and column integrals of the weighted kernel are bounded. -/
@@ -183,9 +202,7 @@ private theorem HasCompactSpatialSupport.exists_lintegral_enorm_fourierKernel_le
     ∃ A : ℝ≥0, (∀ ξ, ∫⁻ ζ, ‖a.fourierKernel t ξ ζ‖ₑ ≤ A) ∧
       ∀ ζ, ∫⁻ ξ, ‖a.fourierKernel t ξ ζ‖ₑ ≤ A := by
   obtain ⟨B, r, hB, hr, hK⟩ := ha.exists_norm_fourierKernel_le t
-  obtain ⟨hrow, hcol⟩ :=
-    lintegral_ofReal_mul_one_add_norm_sub_rpow (V := CoordinateSpace n) volume hB
-      (by rwa [finrank_euclideanSpace_fin])
+  obtain ⟨hrow, hcol⟩ := lintegral_ofReal_mul_one_add_norm_sub_rpow hB hr
   have hle (ξ ζ : CoordinateSpace n) :
       ‖a.fourierKernel t ξ ζ‖ₑ ≤ ENNReal.ofReal (B * (1 + ‖ξ - ζ‖) ^ (-r)) := by
     rw [← ofReal_norm]
@@ -320,9 +337,7 @@ the `L²` norm, by Schur's test. -/
 private theorem eLpNorm_lintegral_ofReal_mul_lt_top {B r : ℝ} (hB : 0 ≤ B) (hr : (n : ℝ) < r)
     {g : CoordinateSpace n → ℝ≥0∞} (hg : eLpNorm g 2 volume < ⊤) :
     eLpNorm (fun ξ ↦ ∫⁻ ζ, ENNReal.ofReal (B * (1 + ‖ξ - ζ‖) ^ (-r)) * g ζ) 2 volume < ⊤ := by
-  obtain ⟨hrow, hcol⟩ :=
-    lintegral_ofReal_mul_one_add_norm_sub_rpow (V := CoordinateSpace n) volume hB
-      (by rwa [finrank_euclideanSpace_fin])
+  obtain ⟨hrow, hcol⟩ := lintegral_ofReal_mul_one_add_norm_sub_rpow hB hr
   have hk : AEMeasurable (uncurry fun ξ ζ : CoordinateSpace n ↦
       ENNReal.ofReal (B * (1 + ‖ξ - ζ‖) ^ (-r))) (volume.prod volume) := by
     fun_prop

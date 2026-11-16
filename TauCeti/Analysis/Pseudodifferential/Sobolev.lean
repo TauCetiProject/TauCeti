@@ -18,6 +18,7 @@ import TauCeti.Analysis.Fourier.Continuous
 import TauCeti.Analysis.Fourier.Parametric
 import TauCeti.Analysis.SpecialFunctions.JapaneseBracket.Basic
 import TauCeti.Analysis.SpecialFunctions.JapaneseBracket.Peetre
+import TauCeti.MeasureTheory.Group.Integral
 import TauCeti.MeasureTheory.Integral.SchurTest
 
 /-!
@@ -658,21 +659,21 @@ private theorem HasCompactSpatialSupport.eLpNorm_smul_fourier_quantizeSchwartzVa
   set N : ℕ := ⌈|s - m|⌉₊ + n + 1
   set k : CoordinateSpace n → ℝ := fun η ↦ (1 + ‖η‖) ^ (-((N : ℝ) - |s - m|))
   set B := 2 ^ (|s - m| / 2) * C₀ * (2 * π) ^ |m|
-  have hB : 0 ≤ B := by positivity
-  set A := ENNReal.ofReal (B * ∫ η, k η)
-  have hA : sobolevFactor n m s * C₀ = B * ∫ η, k η := by
+  set A := ENNReal.ofReal (∫ η, B * k η)
+  have hA : sobolevFactor n m s * C₀ = ∫ η, B * k η := by
+    rw [integral_const_mul]
     simp only [sobolevFactor, B, k, N]
     ring
   rw [hA]
   -- The pointwise bound by the kernel `B k(ξ - ζ)` acting on `⟨ζ⟩ ^ s ‖𝓕 u ζ‖`.
   have hpt := ha.enorm_smul_fourier_quantizeSchwartzValue_le (s := s) hC₀ hdecay u
   -- Schur's test for the kernel `B k(ξ - ζ)`, whose row and column integrals are `A`.
-  obtain ⟨hrow, hcol⟩ :=
-    lintegral_ofReal_mul_one_add_norm_sub_rpow (V := CoordinateSpace n) volume hB
-      (r := N - |s - m|) (by
-        have := Nat.le_ceil |s - m|
-        push_cast [N, finrank_euclideanSpace_fin]
-        linarith)
+  have hk : Integrable fun η ↦ B * k η :=
+    (integrable_one_add_norm (r := N - |s - m|) (by
+      have := Nat.le_ceil |s - m|
+      push_cast [N, finrank_euclideanSpace_fin]
+      linarith)).const_mul B
+  have hk0 : 0 ≤ᵐ[volume] fun η ↦ B * k η := .of_forall fun _ ↦ by positivity
   have hkcont : Continuous k :=
     (continuous_const.add continuous_norm).rpow_const fun x ↦
       Or.inl (add_pos_of_pos_of_nonneg one_pos (norm_nonneg x)).ne'
@@ -687,8 +688,9 @@ private theorem HasCompactSpatialSupport.eLpNorm_smul_fourier_quantizeSchwartzVa
       (fun ζ : CoordinateSpace n ↦ (((1 + ‖ζ‖ ^ 2) ^ (s / 2) : ℝ) : ℂ) • 𝓕 u ζ) :=
     ((hw s).smul (𝓕 u).continuous).aestronglyMeasurable
   have hschur := TauCeti.eLpNorm_lintegral_mul_le hkmeas hgmeas.eNorm
-    (p := 2) one_le_two (A := A) (B := A) (.of_forall fun ξ ↦ (hrow ξ).le)
-    (.of_forall fun ζ ↦ (hcol ζ).le)
+    (p := 2) one_le_two (A := A) (B := A)
+    (.of_forall fun ξ ↦ (lintegral_ofReal_sub_left_eq_ofReal_integral hk hk0 ξ).le)
+    (.of_forall fun ζ ↦ (lintegral_ofReal_sub_right_eq_ofReal_integral hk hk0 ζ).le)
   calc _ ≤ eLpNorm (fun ξ ↦ ∫⁻ ζ, ENNReal.ofReal (B * k (ξ - ζ)) *
           ‖(((1 + ‖ζ‖ ^ 2) ^ (s / 2) : ℝ) : ℂ) • 𝓕 u ζ‖ₑ) 2 volume :=
         eLpNorm_mono_eNorm ((hw (s - m)).smul

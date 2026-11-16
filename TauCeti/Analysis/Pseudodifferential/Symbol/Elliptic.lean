@@ -8,6 +8,7 @@ module
 public import TauCeti.Analysis.Pseudodifferential.Symbol.CutoffInverse
 public import TauCeti.Analysis.Pseudodifferential.Symbol.Frequency
 import Mathlib.Analysis.Calculus.BumpFunction.InnerProduct
+import TauCeti.Analysis.SpecialFunctions.JapaneseBracket.Peetre
 
 /-!
 # Elliptic symbols and their inverse symbols
@@ -327,10 +328,7 @@ inverse is the Bessel weight of order `-s`. -/
 theorem isUniformlyEllipticAbove_besselPotential (s R : ℝ) :
     (besselPotential s : Symbol n V V s).IsUniformlyEllipticAbove R := by
   refine isUniformlyEllipticAbove_of_comp_eq_id (isUniform_besselPotential (-s)) fun x ξ _ => ?_
-  have hw : (0 : ℝ) < 1 + ‖(2 * Real.pi)⁻¹ • ξ‖ ^ 2 := by positivity
-  have h₁ : (1 + ‖(2 * Real.pi)⁻¹ • ξ‖ ^ 2) ^ (-s / 2) * (1 + ‖(2 * Real.pi)⁻¹ • ξ‖ ^ 2) ^ (s / 2) =
-      1 := by
-    rw [← Real.rpow_add hw, neg_div, neg_add_cancel, Real.rpow_zero]
+  have h₁ := one_add_norm_sq_rpow_neg_mul_rpow ((2 * Real.pi)⁻¹ • ξ) s
   have h₂ : (1 + ‖(2 * Real.pi)⁻¹ • ξ‖ ^ 2) ^ (s / 2) * (1 + ‖(2 * Real.pi)⁻¹ • ξ‖ ^ 2) ^ (-s / 2) =
       1 := by
     rw [mul_comm, h₁]
