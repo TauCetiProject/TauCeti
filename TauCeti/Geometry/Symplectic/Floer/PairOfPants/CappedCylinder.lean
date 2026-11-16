@@ -63,10 +63,8 @@ Letting the rectangle grow, the energy over every rectangle is at most `a₀ - a
 B_1 + B_∞)` for the limiting actions `a₀` and `a_∞` of the loops at the two ends
 (`TauCeti.SymplecticForm.setIntegral_floerEnergyDensity_cappedCylinderComponent_le`).
 
-On the capped plane `ℂ ∖ {0}` itself, in real coordinates, the capped datum is `C^n` jointly in the
-neck length `L > 4`, the domain point and the target point
-(`TauCeti.Floer.contDiffOn_plumbedPerturbation_single_inf_one_family`). The end chart `φ_0` is
-holomorphic, so a solution `u` on the capped plane gives the solution `u ∘ φ_0` on the cylinder
+On the capped plane `ℂ ∖ {0}` itself the end chart `φ_0` is holomorphic, so a solution `u` on the
+capped plane gives the solution `u ∘ φ_0` on the cylinder
 (`SymplecticForm.isComplexLinearMap_perturbedFDeriv_cappedCylinderComponent_comp_endChart`) with
 the same energy over corresponding regions
 (`SymplecticForm.integral_floerEnergyDensity_image_endChart_zero_plumbedPerturbation`). A compact
@@ -324,43 +322,6 @@ theorem contDiff_uncurry_cappedCylinderComponent {n : ℕ∞} (hHb : ∀ r, Peri
     ContDiff ℝ n (uncurry (cappedCylinderComponent Hb L v)) :=
   (contMDiff_prod_modelWithCornersSelf_iff.1 (contMDiff_cappedCylinderComponent hHb
     (fun r ↦ contMDiff_prod_modelWithCornersSelf_iff.2 (hHbs r).contMDiff) hL v)).contDiff
-
-/-- **The capped datum is smooth on the capped plane along the capping family**, for a vector
-space target. For period-one Hamiltonians `Hb` of class `C^n` on `ℝ × V`, every component of the
-datum obtained by plumbing the negative plane with Hamiltonian `Hb 1` into the input end at `1`
-of the pair of pants with Hamiltonians `Hb` is `C^n` jointly in the neck length `L > 4`, the point
-of the capped plane `ℂ ∖ {0}`, in real coordinates, and the target point. -/
-theorem contDiffOn_plumbedPerturbation_single_inf_one_family {n : ℕ∞}
-    (hHb : ∀ r, Periodic (Hb r) 1) (hHbs : ∀ r, ContDiff ℝ n (uncurry (Hb r))) (v : ℂ) :
-    ContDiffOn ℝ n (fun p : ℝ × ((ℝ × ℝ) × V) ↦ plumbedPerturbation (Pi.single inf (Hb one)) Hb
-        one p.1 (Complex.equivRealProdCLM.symm p.2.1) p.2.2 v)
-      (Ioi 4 ×ˢ ({z | Complex.equivRealProdCLM.symm z ≠ 0} ×ˢ univ)) := by
-  rintro ⟨L, z, x⟩ ⟨hL, hz, -⟩
-  have hfam := contMDiffAt_plumbedPerturbation_single_inf_family (n := n) (by simp) hHb
-    (fun r ↦ contMDiff_prod_modelWithCornersSelf_iff.2 (hHbs r).contMDiff) hL
-    (eq_endCenter_one_or_of_ne_zero hz) x
-  -- Read the family in the real coordinates `ℝ × ℝ ≃ ℂ` of the domain.
-  have hg : ContMDiffAt 𝓘(ℝ, ℝ × ((ℝ × ℝ) × V)) (𝓘(ℝ, ℝ).prod (𝓘(ℝ, ℂ).prod 𝓘(ℝ, V))) n
-      (fun p : ℝ × ((ℝ × ℝ) × V) ↦ (p.1, (Complex.equivRealProdCLM.symm p.2.1, p.2.2)))
-      (L, z, x) :=
-    (contDiff_fst.contMDiff.prodMk ((Complex.equivRealProdCLM.symm.contDiff.comp
-      (contDiff_fst.comp contDiff_snd)).contMDiff.prodMk
-        (contDiff_snd.comp contDiff_snd).contMDiff)).contMDiffAt
-  exact ((hfam.comp (L, z, x) hg).contDiffAt.clm_apply contDiffAt_const).contDiffWithinAt
-
-/-- **The capped datum is smooth on the capped plane**, for a vector space target. For period-one
-Hamiltonians `Hb` of class `C^n` on `ℝ × V` and neck length `L > 4`, every component of the
-datum obtained by plumbing the negative plane with Hamiltonian `Hb 1` into the input end at `1`
-of the pair of pants with Hamiltonians `Hb` is `C^n` jointly in the point of the capped plane
-`ℂ ∖ {0}`, in real coordinates, and the target point. -/
-theorem contDiffOn_uncurry_plumbedPerturbation_single_inf_one {n : ℕ∞}
-    (hHb : ∀ r, Periodic (Hb r) 1) (hHbs : ∀ r, ContDiff ℝ n (uncurry (Hb r))) (hL : 4 < L)
-    (v : ℂ) :
-    ContDiffOn ℝ n (uncurry fun z x ↦ plumbedPerturbation (Pi.single inf (Hb one)) Hb one L
-      (Complex.equivRealProdCLM.symm z) x v)
-      ({z | Complex.equivRealProdCLM.symm z ≠ 0} ×ˢ univ) :=
-  (contDiffOn_plumbedPerturbation_single_inf_one_family hHb hHbs v).comp
-    (contDiffOn_const.prodMk contDiffOn_id) fun _ hp ↦ ⟨hL, hp⟩
 
 /-- The capped datum at `1` is differentiable in the target point at every point of the image of
 the end chart of `0`. -/
@@ -1013,7 +974,11 @@ theorem setIntegral_floerEnergyDensity_plumbedPerturbation_single_inf_le (ω : S
     prod_mono subset_rfl Ico_subset_Icc_self
   -- The energy over `D` is at most the energy over the image of the band, which is the energy of
   -- the capped cylinder over the band, at most its energy over `[-N, N] × [0, 1]`.
-  have hK := contDiffOn_uncurry_plumbedPerturbation_single_inf_one hHb hHbs hL
+  have hK (v : ℂ) : ContDiffOn ℝ 1 (uncurry fun z x ↦ plumbedPerturbation
+      (Pi.single inf (Hb one)) Hb one L (Complex.equivRealProdCLM.symm z) x v) (S ×ˢ univ) := by
+    rintro ⟨z, x⟩ ⟨hz, -⟩
+    exact (contDiffAt_uncurry_plumbedPerturbation_single_inf (by simp) hHb hHbs hL
+      (eq_endCenter_one_or_of_ne_zero hz) x v).contDiffWithinAt
   refine (setIntegral_mono_set (((ω.continuousOn_floerEnergyDensity hS (hu.of_le one_le_two)
       (hK 1) (hK Complex.I)).mono (image_subset_iff.2 fun ζ _ ↦ hφS ζ)).integrableOn_compact hcpt)
     (ae_restrict_of_forall_mem hcpt.isClosed.measurableSet ?_)

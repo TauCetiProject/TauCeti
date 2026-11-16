@@ -35,7 +35,7 @@ The inputs are:
   `a₀ - a_∞ + B_1 + (B_0 + B_1 + B_∞)` over every compact window of the capped plane, for every
   neck length `L > 4`;
 * the joint smoothness of `K_L` and `J_L` in `L`, the domain point and the target point
-  (`TauCeti.Floer.contDiffOn_plumbedPerturbation_single_inf_one_family`,
+  (`TauCeti.Floer.contDiffAt_uncurry_plumbedPerturbation_single_inf_family`,
   `TauCeti.Floer.contMDiffAt_plumbedAlmostComplex_update_inf`), with `J_L` tamed by `ω`;
 * compactness over a compact parameter window
   (`TauCeti.SymplecticForm.exists_pos_forall_tendsto_tendstoLocallyUniformlyOn_subseq_off_finset`).
@@ -139,8 +139,12 @@ theorem exists_pos_forall_tendsto_tendstoLocallyUniformlyOn_subseq_off_finset_ca
   have hW' : IsOpen (W ∩ Ioi (4 : ℝ) ×ˢ (S ×ˢ (univ : Set V))) :=
     hW.inter (isOpen_Ioi.prod (hS.prod isOpen_univ))
   -- The capped datum, read in real coordinates, is smooth jointly in the neck length.
-  have hKf (v : ℂ) := (contDiffOn_plumbedPerturbation_single_inf_one_family (n := 3) hHb hHbs
-    v).mono (inter_subset_right (s := W))
+  have hKf (v : ℂ) : ContDiffOn ℝ 3 (fun p : ℝ × ((ℝ × ℝ) × V) ↦ plumbedPerturbation
+      (Pi.single inf (Hb one)) Hb one p.1 (equivRealProdCLM.symm p.2.1) p.2.2 v)
+      (W ∩ Ioi 4 ×ˢ (S ×ˢ univ)) := by
+    rintro ⟨L, z, x⟩ ⟨-, hL, hz, -⟩
+    exact (contDiffAt_uncurry_plumbedPerturbation_single_inf_family (by simp) hHb hHbs hL
+      (eq_endCenter_one_or_of_ne_zero hz) x v).contDiffWithinAt
   obtain ⟨δ, hδ, hconv⟩ := ω.exists_pos_forall_tendsto_tendstoLocallyUniformlyOn_subseq_off_finset
     (Ks := fun L z x ↦ plumbedPerturbation (Pi.single inf (Hb one)) Hb one L
       (equivRealProdCLM.symm z) x 1)
@@ -157,8 +161,12 @@ theorem exists_pos_forall_tendsto_tendstoLocallyUniformlyOn_subseq_off_finset_ca
         (equivRealProdCLM.symm z) x 1)
       (fun z x ↦ plumbedPerturbation (Pi.single inf (Hb one)) Hb one (L k)
         (equivRealProdCLM.symm z) x I) (u k)) S := by
-    have hK' := contDiffOn_uncurry_plumbedPerturbation_single_inf_one (n := 1) hHb
-      (fun r ↦ (hHbs r).of_le (by norm_num)) (hC₄ (hLC k))
+    have hK' (v : ℂ) : ContDiffOn ℝ 1 (uncurry fun z x ↦ plumbedPerturbation
+        (Pi.single inf (Hb one)) Hb one (L k) (equivRealProdCLM.symm z) x v) (S ×ˢ univ) := by
+      rintro ⟨z, x⟩ ⟨hz, -⟩
+      exact (contDiffAt_uncurry_plumbedPerturbation_single_inf (by simp) hHb
+        (fun r ↦ (hHbs r).of_le (by norm_num)) (hC₄ (hLC k)) (eq_endCenter_one_or_of_ne_zero hz)
+        x v).contDiffWithinAt
     exact ω.continuousOn_floerEnergyDensity hS ((hu k).of_le (by norm_num)) (hK' 1) (hK' I)
   have hintD (k : ℕ) : IntegrableOn (ω.floerEnergyDensity
       (fun z x ↦ plumbedPerturbation (Pi.single inf (Hb one)) Hb one (L k)
@@ -238,11 +246,7 @@ theorem exists_pos_forall_tendsto_tendstoLocallyUniformlyOn_subseq_off_finset_ca
     (hJa := tames_update_inf h₀.tames (hJb one)) (hJb := hJb) (by simp) hJbp
     (fun r ↦ contMDiff_prod_modelWithCornersSelf_iff.2 (hJbs r).contMDiff) hL
     (eq_endCenter_one_or_of_ne_zero hz) x
-  have hg : ContMDiffAt 𝓘(ℝ, ℝ × ((ℝ × ℝ) × V)) (𝓘(ℝ, ℝ).prod (𝓘(ℝ, ℂ).prod 𝓘(ℝ, V))) 2
-      (fun p : ℝ × ((ℝ × ℝ) × V) ↦ (p.1, (equivRealProdCLM.symm p.2.1, p.2.2))) (L, z, x) :=
-    (contDiff_fst.contMDiff.prodMk ((equivRealProdCLM.symm.contDiff.comp
-      (contDiff_fst.comp contDiff_snd)).contMDiff.prodMk
-        (contDiff_snd.comp contDiff_snd).contMDiff)).contMDiffAt
-  exact (hfam.comp (L, z, x) hg).contDiffAt.contDiffWithinAt
+  exact (hfam.comp (L, z, x)
+    contMDiff_prodMap_equivRealProdCLM_symm.contMDiffAt).contDiffAt.contDiffWithinAt
 
 end TauCeti.SymplecticForm
