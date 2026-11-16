@@ -1,0 +1,145 @@
+/-
+Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
+Released under Apache 2.0 license as described in the file LICENSE.
+Authors: The Tau Ceti contributors
+-/
+module
+
+import TauCeti.RingTheory.Perfectoid.Away
+import TauCeti.RingTheory.Perfectoid.Padic
+import TauCeti.RingTheory.Perfectoid.Pair
+import TauCeti.NumberTheory.Padics.Complex.Basic
+
+/-!
+# Checks for perfectoid Tate rings from integral perfectoid rings
+
+These checks exercise `TauCeti.RingTheory.Perfectoid.Away` on `ℂ_p` regarded as `ℂ_p°[1/π]`, where
+`π ∈ ℂ_p°` satisfies `π ^ p = p`:
+
+* `algebraMap_mul_mem_range_of_isPowerBounded` recovers `π x ∈ ℂ_p°` for power-bounded `x ∈ ℂ_p`;
+* `isUniform_of_hasBasis` and `isPerfectoidTateRing_of_bijective_frobeniusModPow` certify
+  uniformity and perfectoidness of `ℂ_p` purely from its integral perfectoid subring `ℂ_p°`;
+* `π⁻¹` satisfies the `n = 0` condition `π * π⁻¹ = 1 ∈ ℂ_p°` while failing power-boundedness,
+  confirming that quantifying over all `n` in `isPowerBounded_iff_forall_untilt_mul_mem_range` is
+  genuinely needed.
+-/
+
+open Filter Ideal Topology TauCeti.Huber TauCeti.Perfectoid
+open scoped nonZeroDivisors
+
+namespace TauCeti.Examples.PerfectoidAway
+
+variable (p : ℕ) [hp : Fact p.Prime]
+
+-- On `ℂ_p = ℂ_p°[1/π]` with `π ^ p = p`, `Away.lean` yields `π A° ⊆ A₀`, `IsUniform ℂ_p`, and
+-- `IsPerfectoidTateRing p ℂ_p`, while `π⁻¹` shows `π * x ∈ A₀` alone does not force `x ∈ A°`.
+example :
+    ∃ π : powerBoundedSubring ℂ_[p],
+      π ^ p = (p : powerBoundedSubring ℂ_[p]) ∧
+      IsLocalization.Away π ℂ_[p] ∧
+      (∀ x : ℂ_[p], IsPowerBounded x →
+        algebraMap (powerBoundedSubring ℂ_[p]) ℂ_[p] π * x ∈
+          (algebraMap (powerBoundedSubring ℂ_[p]) ℂ_[p]).range) ∧
+      IsUniform ℂ_[p] ∧
+      IsPerfectoidTateRing p ℂ_[p] ∧
+      ((π : ℂ_[p]) * (π : ℂ_[p])⁻¹ ∈ (algebraMap (powerBoundedSubring ℂ_[p]) ℂ_[p]).range ∧
+        ¬IsPowerBounded ((π : ℂ_[p])⁻¹)) := by
+  obtain ⟨r, hr⟩ := IsAlgClosed.exists_pow_nat_eq (p : ℂ_[p]) hp.out.pos
+  let π : powerBoundedSubring ℂ_[p] :=
+    ⟨r, mem_powerBoundedSubring.mpr <| IsPowerBounded.of_pow hp.out.ne_zero <| by
+      rw [hr]
+      exact mem_powerBoundedSubring.mp (natCast_mem (powerBoundedSubring ℂ_[p]) p)⟩
+  have hπ_pow : π ^ p = (p : powerBoundedSubring ℂ_[p]) := Subtype.ext hr
+  have hr_ne : (π : ℂ_[p]) ≠ 0 := by
+    intro h0
+    have hp0 : (p : ℂ_[p]) = 0 := by
+      rw [← hr]
+      change (π : ℂ_[p]) ^ p = 0
+      rw [h0, zero_pow hp.out.ne_zero]
+    exact Nat.cast_ne_zero.mpr hp.out.ne_zero hp0
+  have hnorm_lt : ‖(π : ℂ_[p])‖ < 1 := by
+    by_contra h
+    push Not at h
+    have hpow : 1 ≤ ‖(π : ℂ_[p])‖ ^ p := one_le_pow₀ h
+    rw [← norm_pow] at hpow
+    change 1 ≤ ‖r ^ p‖ at hpow
+    rw [hr] at hpow
+    exact not_lt_of_ge hpow (PadicComplex.norm_p_lt_one p)
+  have hpu : IsPseudoUniformizer (π : ℂ_[p]) :=
+    isPseudoUniformizer_iff_norm_lt_one.mpr ⟨hr_ne, hnorm_lt⟩
+  have hloc : IsLocalization.Away π ℂ_[p] := by
+    refine ⟨?_, ?_, ?_⟩
+    · rintro ⟨_, n, rfl⟩
+      rw [map_pow]
+      exact hpu.isUnit.pow n
+    · intro x
+      obtain ⟨n, hn⟩ := (isBounded_singleton x).exists_pow_mul_subset
+        hpu.isTopologicallyNilpotent
+        ((isOpen_powerBoundedSubring ℂ_[p]).mem_nhds (zero_mem _))
+      refine ⟨⟨⟨(π : ℂ_[p]) ^ n * x,
+        hn (Set.mul_mem_mul (Set.mem_singleton _) (Set.mem_singleton _))⟩,
+        ⟨π ^ n, ⟨n, rfl⟩⟩⟩, ?_⟩
+      change x * (π : ℂ_[p]) ^ n = (π : ℂ_[p]) ^ n * x
+      ring
+    · intro a b hab
+      exact ⟨⟨1, ⟨0, pow_zero _⟩⟩, Subtype.ext (by simpa using hab)⟩
+  have hbasis : (𝓝 (0 : ℂ_[p])).HasBasis (fun _ : ℕ ↦ True) fun n ↦
+      (awayNhd π ℂ_[p] n : Set ℂ_[p]) := by
+    let D : PairOfDefinition ℂ_[p] := PairOfDefinition.ofIsPseudoUniformizer
+      (powerBoundedSubring ℂ_[p]) (isOpen_powerBoundedSubring ℂ_[p])
+      (isRingOfIntegralElements_powerBoundedSubring ℂ_[p]).isBounded hpu π.2
+    refine (hpu.hasBasis_nhds_zero D).congr (fun _ ↦ Iff.rfl) fun n _ ↦ ?_
+    ext x
+    simp only [SetLike.mem_coe, mem_awayNhd, D,
+      PairOfDefinition.ofIsPseudoUniformizer_ringOfDefinition]
+    constructor
+    · rintro ⟨y, hy, rfl⟩
+      refine ⟨⟨y, hy⟩, ?_⟩
+      change (π : ℂ_[p]) ^ n * y = (π : ℂ_[p]) ^ n • y
+      rw [smul_eq_mul]
+    · rintro ⟨a, rfl⟩
+      refine ⟨(a : ℂ_[p]), a.2, ?_⟩
+      change (π : ℂ_[p]) ^ n • (a : ℂ_[p]) = (π : ℂ_[p]) ^ n * (a : ℂ_[p])
+      rw [smul_eq_mul]
+  have hreg : π ∈ (powerBoundedSubring ℂ_[p])⁰ :=
+    mem_nonZeroDivisors_of_ne_zero fun h0 ↦ hr_ne (congrArg Subtype.val h0)
+  have hroot : ∀ a : powerBoundedSubring ℂ_[p], π ^ p ∣ a ^ p → π ∣ a := by
+    intro a ⟨c, hc⟩
+    have hnorm : ‖(a : ℂ_[p])‖ ^ p ≤ ‖(π : ℂ_[p])‖ ^ p := by
+      have hc_val : (a : ℂ_[p]) ^ p = (π : ℂ_[p]) ^ p * (c : ℂ_[p]) := by
+        simpa using congrArg Subtype.val hc
+      rw [← norm_pow, hc_val, norm_mul, norm_pow]
+      have hcle : ‖(c : ℂ_[p])‖ ≤ 1 :=
+        isPowerBounded_iff_norm_le_one.mp (mem_powerBoundedSubring.mp c.2)
+      exact mul_le_of_le_one_right (pow_nonneg (norm_nonneg _) _) hcle
+    have hle : ‖(a : ℂ_[p])‖ ≤ ‖(π : ℂ_[p])‖ := by
+      by_contra hlt
+      push Not at hlt
+      exact not_lt_of_ge hnorm (pow_lt_pow_left₀ hlt (norm_nonneg _) hp.out.ne_zero)
+    refine ⟨⟨(a : ℂ_[p]) / (π : ℂ_[p]),
+      mem_powerBoundedSubring.mpr (isPowerBounded_iff_norm_le_one.mpr ?_)⟩, Subtype.ext ?_⟩
+    · rw [norm_div]
+      exact div_le_one_of_le₀ hle (norm_nonneg _)
+    · simp [mul_div_cancel₀ _ hr_ne]
+  have hdvd : π ^ p ∣ (p : powerBoundedSubring ℂ_[p]) := ⟨1, by rw [mul_one, hπ_pow]⟩
+  have : IsAdicComplete (span {π}) (powerBoundedSubring ℂ_[p]) :=
+    (isRingOfIntegralElements_powerBoundedSubring ℂ_[p]).isAdicComplete_span_singleton π hpu
+  have hbij : Function.Bijective (frobeniusModPow p hdvd) := by
+    refine ⟨(frobeniusModPow_injective_iff hdvd).mpr hroot,
+      (frobeniusModPow_surjective_iff hdvd).mpr fun a ↦ ?_⟩
+    obtain ⟨b, hb⟩ := IsAlgClosed.exists_pow_nat_eq (a : ℂ_[p]) hp.out.pos
+    have hb_pb : b ∈ powerBoundedSubring ℂ_[p] :=
+      mem_powerBoundedSubring.mpr (IsPowerBounded.of_pow hp.out.ne_zero
+        (hb.symm ▸ mem_powerBoundedSubring.mp a.2))
+    refine ⟨⟨b, hb_pb⟩, ?_⟩
+    rw [show a - ⟨b, hb_pb⟩ ^ p = 0 from Subtype.ext (by simpa [sub_eq_zero] using hb.symm)]
+    exact dvd_zero _
+  refine ⟨π, hπ_pow, hloc,
+    fun x hx ↦ algebraMap_mul_mem_range_of_isPowerBounded hp.out.one_lt hbasis hreg hroot hx,
+    isUniform_of_hasBasis hp.out.one_lt hbasis hreg hroot,
+    isPerfectoidTateRing_of_bijective_frobeniusModPow hbasis hreg hbij,
+    ⟨⟨1, by simp [mul_inv_cancel₀ hr_ne]⟩, ?_⟩⟩
+  rw [isPowerBounded_iff_norm_le_one, norm_inv, not_le]
+  exact (one_lt_inv₀ (norm_pos_iff.mpr hr_ne)).mpr hnorm_lt
+
+end TauCeti.Examples.PerfectoidAway

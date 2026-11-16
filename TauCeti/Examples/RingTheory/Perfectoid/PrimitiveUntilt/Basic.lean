@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.CharP.Subring
-public import TauCeti.RingTheory.Perfectoid.PrimitiveUntilt
+public import TauCeti.RingTheory.Perfectoid.PrimitiveUntilt.Basic
 public import TauCeti.RingTheory.Perfectoid.UniformTilt.Gauge
 public import TauCeti.RingTheory.Perfectoid.Padic
 public import TauCeti.NumberTheory.Padics.Complex.Basic
