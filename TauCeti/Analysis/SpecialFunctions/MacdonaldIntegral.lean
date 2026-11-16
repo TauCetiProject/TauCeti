@@ -360,7 +360,7 @@ theorem differentiableOn_integral_exp_neg_mul_cosh_mul_cosh_Ioi (p : ℂ) :
           simp only [neg_re, mul_re, ofReal_re, ofReal_im, mul_zero, sub_zero]
           ring
       _ ≤ ‖Complex.cosh (p * u)‖ * (2 / δ * Real.exp (-(δ / 2 * Real.cosh u))) :=
-          mul_le_mul_of_nonneg_left (TauCeti.exp_neg_mul_mul_le hδ0 (hre ζ hζ).le hc.le)
+          mul_le_mul_of_nonneg_left (TauCeti.exp_neg_mul_mul_le hδ0 (hre ζ hζ).le _)
             (norm_nonneg _)
       _ = 2 / δ * (‖Complex.cosh (p * u)‖ * ‖w u‖) := by
           simp only [hw, norm_exp, neg_re, mul_re, ofReal_re, ofReal_im, mul_zero, sub_zero]

@@ -30,7 +30,7 @@ is bounded on `x ≥ 0`.
 * `TauCeti.abs_exp_sub_one_le_mul_exp_abs`: `|exp t - 1| ≤ |t| exp |t|` for every real `t`.
 * `TauCeti.exp_sub_one_sq_le_two_mul_sq_mul_cosh`: `(exp t - 1)² ≤ 2 t² cosh (2t)` for every real
   `t`.
-* `TauCeti.exp_neg_mul_mul_le`: `x exp (-r x) ≤ (2 / δ) exp (-(δ / 2) x)` for `x ≥ 0`, `0 < δ ≤ r`.
+* `TauCeti.exp_neg_mul_mul_le`: `x exp (-r x) ≤ (2 / δ) exp (-(δ / 2) x)` for `0 < δ ≤ r`.
 -/
 
 public section
@@ -108,10 +108,12 @@ theorem exp_sub_one_sq_le_two_mul_sq_mul_cosh (t : ℝ) :
     _ ≤ t ^ 2 * (2 * cosh (2 * t)) := by gcongr
     _ = 2 * t ^ 2 * cosh (2 * t) := by ring
 
-/-- For `x ≥ 0` and `0 < δ ≤ r`, `x e^{-r x} ≤ (2 / δ) e^{-(δ / 2) x}`, since `y ≤ e^y`: the
-weight `x e^{-r x}` is dominated uniformly in `r ≥ δ` by a single decaying exponential. -/
-theorem exp_neg_mul_mul_le {r δ x : ℝ} (hδ : 0 < δ) (hr : δ ≤ r) (hx : 0 ≤ x) :
+/-- For `0 < δ ≤ r`, `x e^{-r x} ≤ (2 / δ) e^{-(δ / 2) x}`, since `y ≤ e^y`: the weight
+`x e^{-r x}` is dominated uniformly in `r ≥ δ` by a single exponential, decaying as `x → ∞`. -/
+theorem exp_neg_mul_mul_le {r δ : ℝ} (hδ : 0 < δ) (hr : δ ≤ r) (x : ℝ) :
     exp (-(r * x)) * x ≤ 2 / δ * exp (-(δ / 2 * x)) := by
+  rcases lt_or_ge x 0 with hx | hx
+  · exact (mul_nonpos_of_nonneg_of_nonpos (exp_pos _).le hx.le).trans (by positivity)
   have hy := add_one_le_exp (δ / 2 * x)
   have h1 : exp (-(r * x)) ≤ exp (-(δ / 2 * x)) * exp (-(δ / 2 * x)) := by
     rw [← exp_add]
