@@ -76,6 +76,17 @@ theorem contMDiff_toUnits_polarUnitary {k : ℕ∞ω} :
   apply ContMDiff.of_comp_isOpenEmbedding Units.isOpenEmbedding_val
   exact contMDiff_coe_polarUnitary
 
+/-- The unitary polar factor, included in the general linear group, depends continuously on the
+invertible matrix. -/
+theorem continuous_toUnits_polarUnitary :
+    Continuous fun A : GL n 𝕜 ↦ Unitary.toUnits A.polarUnitary :=
+  (contMDiff_toUnits_polarUnitary (k := 0)).continuous
+
+/-- The unitary polar factor depends continuously on the invertible matrix. -/
+theorem continuous_polarUnitary :
+    Continuous (Units.polarUnitary : GL n 𝕜 → unitaryGroup n 𝕜) :=
+  (contMDiff_coe_polarUnitary (n := n) (𝕜 := 𝕜) (k := 0)).continuous.subtype_mk _
+
 /-- Contract the positive factor in `A = P U` by `P ^ (1 - t) U`. It is defined for every real
 time, and stays invertible even outside the homotopy interval. -/
 def polarDeformation (A : GL n 𝕜) (t : ℝ) : GL n 𝕜 :=
@@ -179,7 +190,7 @@ subgroup. Its real-time extension `polarDeformation` is jointly smooth. -/
 def polarHomotopy :
     ContinuousMap.HomotopyRel (ContinuousMap.id (GL n 𝕜))
       ⟨fun A ↦ Unitary.toUnits A.polarUnitary,
-        (contMDiff_toUnits_polarUnitary (k := ∞)).continuous⟩
+        continuous_toUnits_polarUnitary⟩
       (Set.range (Unitary.toUnits : unitaryGroup n 𝕜 → GL n 𝕜)) where
   toFun := fun p : unitInterval × GL n 𝕜 ↦ polarDeformation p.2 (p.1 : ℝ)
   continuous_toFun := by

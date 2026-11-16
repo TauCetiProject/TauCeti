@@ -22,7 +22,9 @@ its pencils `1 - c • (CFC.sqrt S * Θ * CFC.sqrt S)` have the same determinant
 sandwich and its square also have the same traces as `Θ * S` and `Θ * S * Θ * S`.
 
 Over the reals the square root is symmetric, so for a positive-definite `T` the identity
-`CFC.sqrt T * CFC.sqrt T = T` exhibits `T` as `C * Cᵀ` with `C` invertible.
+`CFC.sqrt T * CFC.sqrt T = T` exhibits `T` as `C * Cᵀ` with `C` invertible. A real
+matrix is positive semidefinite exactly when it is over `𝕜`, and its square root over `𝕜` is its
+real square root.
 
 The sandwich is the matrix whose eigenvalues govern the exponential moments of a Gaussian
 quadratic form, and the determinant identity is what turns its spectral formula into a formula
@@ -41,9 +43,13 @@ commutative ring in `TauCeti/LinearAlgebra/Matrix/InvSub.lean`.
   is Hermitian;
 * `Matrix.PosSemidef.rank_sqrt` — the square root of a positive-semidefinite matrix has the same
   rank;
+* `Matrix.transpose_sqrt` — over the reals, the square root is symmetric;
 * `Matrix.PosSemidef.sqrt_mul_transpose_sqrt` — over the reals, the square root times its
   transpose recovers the matrix;
 * `Matrix.PosSemidef.range_toEuclideanLin_sqrt` — its Euclidean linear map has the same range;
+* `Matrix.posSemidef_map_algebraMap_iff` and `Matrix.sqrt_map_algebraMap` — a real matrix is
+  positive semidefinite exactly when it is over `𝕜`, and its square root over `𝕜` is its real
+  square root;
 * `Matrix.inner_toEuclideanCLM_sqrt_toEuclideanLin` — the quadratic form of `Θ` at
   `CFC.sqrt S x` is the quadratic form of the sandwich at `x`;
 * `Matrix.PosSemidef.det_one_sub_smul_sqrt_mul_mul_sqrt_eq_det_one_sub_smul_mul` — for
@@ -83,12 +89,58 @@ theorem PosSemidef.rank_sqrt {S : Matrix ι ι 𝕜} (hS : S.PosSemidef) :
   rw [Matrix.rank_conjTranspose_mul_self]
 
 open scoped Classical in
+/-- The square root of a real matrix is symmetric. -/
+@[simp]
+theorem transpose_sqrt (S : Matrix ι ι ℝ) : (CFC.sqrt S)ᵀ = CFC.sqrt S := by
+  rw [← Matrix.conjTranspose_eq_transpose_of_trivial,
+    (Matrix.LE.le.posSemidef (CFC.sqrt_nonneg S)).isHermitian.eq]
+
+open scoped Classical in
 /-- For a real positive-semidefinite matrix, its square root times its transpose is the matrix. -/
 theorem PosSemidef.sqrt_mul_transpose_sqrt {S : Matrix ι ι ℝ} (hS : S.PosSemidef) :
     CFC.sqrt S * (CFC.sqrt S)ᵀ = S := by
-  rw [← Matrix.conjTranspose_eq_transpose_of_trivial,
-    (Matrix.LE.le.posSemidef (CFC.sqrt_nonneg S)).isHermitian.eq]
+  rw [transpose_sqrt]
   exact CFC.sqrt_mul_sqrt_self S hS.nonneg
+
+omit [Fintype ι] in
+/-- A real positive-semidefinite matrix stays positive semidefinite over `𝕜`. -/
+theorem PosSemidef.map_algebraMap [Finite ι] {S : Matrix ι ι ℝ} (hS : S.PosSemidef) :
+    (S.map (algebraMap ℝ 𝕜)).PosSemidef := by
+  classical
+  have := Fintype.ofFinite ι
+  have h : S.map (algebraMap ℝ 𝕜) =
+      ((CFC.sqrt S).map (algebraMap ℝ 𝕜))ᴴ * (CFC.sqrt S).map (algebraMap ℝ 𝕜) := by
+    rw [← conjTranspose_map _ fun _ => by simp, conjTranspose_eq_transpose_of_trivial,
+      transpose_sqrt, ← Matrix.map_mul, CFC.sqrt_mul_sqrt_self S hS.nonneg]
+  rw [h]
+  exact posSemidef_conjTranspose_mul_self _
+
+omit [Fintype ι] in
+/-- A real matrix is positive semidefinite exactly when it is positive semidefinite over `𝕜`. -/
+@[simp]
+theorem posSemidef_map_algebraMap_iff [Finite ι] {S : Matrix ι ι ℝ} :
+    (S.map (algebraMap ℝ 𝕜)).PosSemidef ↔ S.PosSemidef := by
+  have := Fintype.ofFinite ι
+  refine ⟨fun h => .of_dotProduct_mulVec_nonneg ?_ fun x => ?_, PosSemidef.map_algebraMap⟩
+  · exact (isHermitian_map_iff algebraMap_star_comm (algebraMap ℝ 𝕜).injective).1 h.isHermitian
+  · have hx := h.dotProduct_mulVec_nonneg (algebraMap ℝ 𝕜 ∘ x)
+    rw [star_trivial, ← RCLike.ofReal_nonneg (K := 𝕜), ← RCLike.algebraMap_eq_ofReal,
+      RingHom.map_dotProduct]
+    convert hx using 2
+    · ext i; simp
+    · ext i; exact RingHom.map_mulVec _ _ _ i
+
+open scoped Classical in
+/-- The square root of a real matrix, read over `𝕜`, is the square root of the matrix read over
+`𝕜`. Both sides are the junk value `0` unless the matrix is positive semidefinite. -/
+theorem sqrt_map_algebraMap (S : Matrix ι ι ℝ) :
+    CFC.sqrt (S.map (algebraMap ℝ 𝕜)) = (CFC.sqrt S).map (algebraMap ℝ 𝕜) := by
+  by_cases hS : S.PosSemidef
+  · refine CFC.sqrt_unique ?_ (Matrix.LE.le.posSemidef (CFC.sqrt_nonneg S)).map_algebraMap.nonneg
+    rw [← Matrix.map_mul, CFC.sqrt_mul_sqrt_self S hS.nonneg]
+  · rw [CFC.sqrt_of_not_nonneg (fun h => hS (Matrix.LE.le.posSemidef h)),
+      CFC.sqrt_of_not_nonneg fun h => hS (posSemidef_map_algebraMap_iff.1
+        (Matrix.LE.le.posSemidef h)), Matrix.map_zero _ (map_zero _)]
 
 open scoped Classical in
 /-- The Euclidean linear maps of a positive-semidefinite matrix and its square root have the same
