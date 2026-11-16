@@ -16,7 +16,9 @@ Only the shared index type needs to be finite. `Matrix.smul_vecMulVec_single_sin
 scaled outer product of two coordinate vectors as a matrix unit, and
 `Matrix.one_add_single_mul_one_add_single_of_ne` multiplies two elementary matrices `1 + c Eᵢⱼ`
 and `1 + d Eₖₗ` with `j ≠ k`, whose cross term vanishes. `LinearMap.apply_eq_sum_sum_smul_single`
-expands a linear map on matrices along the matrix units.
+expands a linear map on matrices along the matrix units. `Matrix.sum_mul_single_eq_mul_mul_single`
+and `Matrix.sum_single_eq_single_mul` contract a sum of matrix units weighted by a column or row
+of a matrix into a single matrix product.
 -/
 
 /-- The product of two matrix units vanishes unless their inner indices agree. -/
@@ -55,3 +57,28 @@ public theorem LinearMap.apply_eq_sum_sum_smul_single {ι κ R M : Type*} [Finty
   simp only [map_sum]
   refine Finset.sum_congr rfl fun i _ => Finset.sum_congr rfl fun j _ => ?_
   rw [← map_smul, Matrix.smul_single, smul_eq_mul, mul_one]
+
+/-- Summing `a * Matrix.single t r (b t s)` over `t` computes `(a * b) * Matrix.single s r 1`. -/
+public theorem Matrix.sum_mul_single_eq_mul_mul_single {l m n p R : Type*} [NonAssocSemiring R]
+    [Fintype m] [Fintype n] [DecidableEq m] [DecidableEq n] [DecidableEq p]
+    (r : p) (s : n) (a : Matrix l m R) (b : Matrix m n R) :
+    ∑ t : m, a * Matrix.single t r (b t s) = (a * b) * Matrix.single s r (1 : R) := by
+  ext u v
+  rw [Matrix.sum_apply]
+  by_cases hv : v = r
+  · subst hv
+    simp only [Matrix.mul_single_apply_same, mul_one]
+    rw [Matrix.mul_apply]
+  · simp [Matrix.mul_single_apply_of_ne (hbj := hv)]
+
+/-- Summing `Matrix.single r t (a s t)` over `t` computes `Matrix.single r s 1 * a`. -/
+public theorem Matrix.sum_single_eq_single_mul {l m n R : Type*} [NonAssocSemiring R]
+    [Fintype m] [Fintype n] [DecidableEq l] [DecidableEq m] [DecidableEq n]
+    (r : l) (s : m) (a : Matrix m n R) :
+    ∑ t : n, Matrix.single r t (a s t) = Matrix.single r s (1 : R) * a := by
+  ext u v
+  rw [Matrix.sum_apply]
+  by_cases hu : u = r
+  · subst hu
+    simp [Matrix.single_mul_apply_same, Matrix.single_apply]
+  · simp [Matrix.single_mul_apply_of_ne (h := hu), Ne.symm hu]
