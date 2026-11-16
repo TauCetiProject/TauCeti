@@ -11,6 +11,7 @@ public import TauCeti.ModelTheory.Counting.Scattered.AnalyticSplits
 public import TauCeti.ModelTheory.Counting.Scattered.SentenceSplits
 public import TauCeti.ModelTheory.Counting.Scattered.Thin
 public import TauCeti.ModelTheory.RelationalConfiguration.LopezEscobar
+public import TauCeti.ModelTheory.RelationalConfiguration.SentenceTheory
 public import TauCeti.ModelTheory.Scott.Isomorphism
 public import TauCeti.SetTheory.Descriptive.BorelReducibility
 public import TauCeti.Topology.MetricSpace.Polish.Pi
@@ -20,58 +21,43 @@ import TauCeti.SetTheory.Descriptive.Silver
 /-!
 # Sentence spectra, Borel observables, and thinness
 
-For a family of infinitary sentences `θ : ι → L.SentenceInf κ` and a relational configuration `c`
-on a carrier `V`, the **sentence truth sequence** `TauCeti.sentenceTheory θ c : ι → Bool` records
-which sentences `θ i` hold in the structure decoded from `c`. On a countable carrier with countable
-branching, `sentenceTheory θ` is measurable and invariant under isomorphism.
-
-Combining relative López–Escobar
-(`TauCeti.RelationalConfiguration.exists_sentence_mem_modelsOf_iff`) with Silver's theorem and
-countable-predicate splitting (`TauCeti.countable_range_of_splits`) connects `L_{ω₁ω}` sentence
-spectra to descriptive-set-theoretic thinness and smoothness:
+This module characterizes Borel observables, descriptive-set-theoretic thinness, single-sentence
+splits, and smoothness of isomorphism on relational configurations in terms of `L_{ω₁ω}` sentence
+truth sequences (`TauCeti.RelationalConfiguration.sentenceTheory`):
 
 1. **Borel observables and Cantor recovery.** Along a measurable family `f : X →
    RelationalConfiguration L V` parametrized by a standard Borel space `X`, every
    isomorphism-invariant measurable map `g : X → ι → Bool` is realized as `sentenceTheory θ ∘ f`
-   for a family `θ : ι → L.Sentenceω` (`exists_sentenceTheory_comp_eq`). Composing with Mathlib's
-   measurable injection of any countably separated space into Cantor space shows that every
-   isomorphism-invariant Borel observable into a countably separated space has the same fibres as a
-   countable sentence list (`exists_sentenceTheory_eq_iff_of_countablySeparated`). In particular, if
-   `f : (ι → Bool) → RelationalConfiguration L V` is measurable with pairwise non-isomorphic values
-   on a countable index type `ι`, some `θ : ι → L.Sentenceω` recovers every bit via
-   `sentenceTheory θ (f x) = x` (`exists_sentenceTheory_apply_eq`).
+   for a family `θ : ι → L.Sentenceω` (`exists_sentenceTheory_comp_eq`). Every
+   isomorphism-invariant Borel observable into a countably separated measurable space has the same
+   fibres as a countable sentence list (`exists_sentenceTheory_eq_iff_of_countablySeparated`). In
+   particular, if `f : (ι → Bool) → RelationalConfiguration L V` is measurable with pairwise
+   non-isomorphic values on a countable index type `ι`, some `θ : ι → L.Sentenceω` recovers every
+   bit via `sentenceTheory θ (f x) = x` (`exists_sentenceTheory_apply_eq`).
 2. **Sentence-spectrum characterization of thinness.** On a countable carrier in a countable
    relational vocabulary, a Borel set `C` is thin for isomorphism if and only if every countable
    sequence `θ : ℕ → L.Sentenceω` realizes only countably many truth sequences on `C`
    (`isThinOn_iff_countable_image_sentenceTheory`, and
-   `isThinOnNatModels_iff_countable_image_sentenceTheory` for model classes on `ℕ`). Sufficiency
-   requires no measurability of `C`: a Cantor antichain into `C` would realize all `2^ℵ₀` truth
-   sequences for its Cantor-recovery list. Necessity applies relative Silver's theorem on `C` to the
-   Borel kernel of `sentenceTheory θ`.
+   `isThinOnNatModels_iff_countable_image_sentenceTheory` for model classes on `ℕ`). The reverse
+   implication (`isThinOn_of_forall_countable_image_sentenceTheory`) requires neither measurability
+   nor isomorphism invariance of `C`.
 3. **Single-sentence splits.** If `classOf : C → Q` presents `C` so that truth of `L_{ω₁ω}`
    sentences factors through `classOf` and every single sentence has a truth side meeting only
    countably many points of `Q`, then every countable sentence list realizes countably many truth
    sequences on `C` and hence `C` is thin (`isThinOn_of_splits_along`, `isThinOn_of_holds_splits`,
    `isThinOn_of_sentence_splits`). Neither measurability nor isomorphism invariance of `C`, nor any
-   topology, σ-algebra, or surjectivity on `Q`, is assumed. Combining this with back-and-forth
-   selection characterizes concentrated `L_{ω₁ω}` model classes on `ℕ` by countable single-sentence
-   cuts (`concentratedAtBFLevels_modelsOf_iff_forall_countable_quotient_isoSetoidOn`).
+   topology, σ-algebra, or surjectivity on `Q`, is assumed. For `L_{ω₁ω}` model classes on `ℕ`,
+   concentration at all countable back-and-forth levels is equivalent to every single-sentence cut
+   having a side with countably many models up to isomorphism
+   (`concentratedAtBFLevels_modelsOf_iff_forall_countable_quotient_isoSetoidOn`).
 4. **Smooth complete invariants.** On a Borel class `C`, restricted isomorphism is smooth
    (`Setoid.IsSmooth`) if and only if a single countable sequence `θ : ℕ → L.Sentenceω` separates
-   non-isomorphic members of `C` (`isSmooth_comap_isoSetoid_iff_exists_sentenceTheory`). Because a
-   smooth equivalence relation has Borel graph while every individual isomorphism orbit is cut out
-   by its Scott sentence, a Borel class meets countably many isomorphism classes if and only if it
-   is both thin and smooth (`countable_quotient_comap_isoSetoid_iff_isThinOn_and_isSmooth`).
-
-## Main definitions
-
-* `TauCeti.sentenceTheory`: the `ι → Bool` truth sequence of a family of infinitary sentences at a
-  relational configuration.
+   non-isomorphic members of `C` (`isSmooth_comap_isoSetoid_iff_exists_sentenceTheory`). Moreover,
+   a Borel class meets countably many isomorphism classes if and only if it is both thin and smooth
+   (`countable_quotient_comap_isoSetoid_iff_isThinOn_and_isSmooth`).
 
 ## Main results
 
-* `TauCeti.measurable_sentenceTheory` and `TauCeti.sentenceTheory_eq_of_isoSetoid`: measurability
-  and isomorphism invariance of `sentenceTheory`.
 * `TauCeti.exists_sentenceTheory_comp_eq` and
   `TauCeti.exists_sentenceTheory_eq_iff_of_countablySeparated`: Borel observables into `ι → Bool`
   and into countably separated measurable spaces are realized by `L_{ω₁ω}` sentence lists.
@@ -105,133 +91,13 @@ spectra to descriptive-set-theoretic thinness and smoothness:
 
 public section
 
-universe u v w w' uι uκ
+universe u v w uι uκ
 
 open Cardinal FirstOrder FirstOrder.Language MeasureTheory Set
 
 namespace TauCeti
 
 open RelationalConfiguration
-
-section SentenceTheory
-
-variable {L : Language.{u, v}} [L.IsRelational] {V : Type w} {W : Type w'}
-variable {ι : Type uι} {κ : Type uκ}
-
-open Classical in
-/-- The **sentence truth sequence** of an indexed family of infinitary sentences `θ` at a
-relational configuration `c`: coordinate `i` records whether `c` decodes to a model of `θ i`. -/
-noncomputable def sentenceTheory (θ : ι → L.SentenceInf κ) (c : RelationalConfiguration L V) :
-    ι → Bool :=
-  fun i => decide (c ∈ modelsOf (θ i))
-
-open Classical in
-/-- Coordinate `i` of `sentenceTheory θ c` decides membership of `c` in `modelsOf (θ i)`. -/
-theorem sentenceTheory_apply (θ : ι → L.SentenceInf κ)
-    (c : RelationalConfiguration L V) (i : ι) :
-    sentenceTheory θ c i = decide (c ∈ modelsOf (θ i)) :=
-  (rfl)
-
-@[simp]
-theorem sentenceTheory_apply_eq_true_iff (θ : ι → L.SentenceInf κ)
-    (c : RelationalConfiguration L V) (i : ι) :
-    sentenceTheory θ c i = true ↔ c ∈ modelsOf (θ i) := by
-  classical
-  simp [sentenceTheory_apply]
-
-@[simp]
-theorem sentenceTheory_apply_eq_false_iff (θ : ι → L.SentenceInf κ)
-    (c : RelationalConfiguration L V) (i : ι) :
-    sentenceTheory θ c i = false ↔ c ∉ modelsOf (θ i) := by
-  classical
-  simp [sentenceTheory_apply]
-
-/-- Two configurations have the same `θ`-truth sequence exactly when they satisfy the same
-sentences `θ i`. -/
-theorem sentenceTheory_eq_iff (θ : ι → L.SentenceInf κ)
-    {c d : RelationalConfiguration L V} :
-    sentenceTheory θ c = sentenceTheory θ d ↔ ∀ i, c ∈ modelsOf (θ i) ↔ d ∈ modelsOf (θ i) := by
-  refine ⟨fun h i => ?_, fun h => funext fun i => Bool.eq_iff_iff.2 ?_⟩
-  · simpa only [← sentenceTheory_apply_eq_true_iff] using congrArg (fun f => f i = true) h |>.to_iff
-  · simpa only [sentenceTheory_apply_eq_true_iff] using h i
-
-/-- On a countable carrier, the truth sequence of any family of sentences with countable branching
-is measurable with respect to the product σ-algebras. Neither `L` nor the index type `ι` need be
-countable. -/
-@[fun_prop]
-theorem measurable_sentenceTheory [Countable κ] [Countable V] (θ : ι → L.SentenceInf κ) :
-    Measurable (sentenceTheory (V := V) θ) := by
-  classical
-  refine measurable_pi_iff.2 fun i s _ => ?_
-  have heq : (fun c : RelationalConfiguration L V => sentenceTheory θ c i) ⁻¹' s =
-      (if true ∈ s then modelsOf (θ i) else ∅) ∪
-        (if false ∈ s then (modelsOf (θ i))ᶜ else ∅) := by
-    ext c
-    cases h : sentenceTheory θ c i
-    · have hc : c ∉ modelsOf (θ i) := (sentenceTheory_apply_eq_false_iff θ c i).1 h
-      simp [h, hc]
-    · have hc : c ∈ modelsOf (θ i) := (sentenceTheory_apply_eq_true_iff θ c i).1 h
-      simp [h, hc]
-  rw [heq]
-  refine MeasurableSet.union ?_ ?_
-  · split_ifs <;> [exact measurableSet_modelsOf (θ i); exact .empty]
-  · split_ifs <;> [exact (measurableSet_modelsOf (θ i)).compl; exact .empty]
-
-/-- Isomorphic decoded structures, even on different carriers, have equal `θ`-truth sequences. -/
-theorem sentenceTheory_eq_of_equiv (θ : ι → L.SentenceInf κ)
-    {c : RelationalConfiguration L V} {d : RelationalConfiguration L W}
-    (e : @Language.Equiv L V W c.toStructure d.toStructure) :
-    sentenceTheory θ c = sentenceTheory θ d := by
-  funext i
-  exact Bool.eq_iff_iff.2 <| by
-    simp only [sentenceTheory_apply_eq_true_iff]
-    exact e.mem_modelsOf_iff (θ i)
-
-/-- Isomorphic configurations on a common carrier have equal `θ`-truth sequences. -/
-theorem sentenceTheory_eq_of_isoSetoid (θ : ι → L.SentenceInf κ)
-    {c d : RelationalConfiguration L V} (h : isoSetoid L V c d) :
-    sentenceTheory θ c = sentenceTheory θ d := by
-  obtain ⟨e⟩ := isoSetoid_apply.1 h
-  exact sentenceTheory_eq_of_equiv θ e
-
-@[simp]
-theorem sentenceTheory_perm_smul (θ : ι → L.SentenceInf κ) (σ : Equiv.Perm V)
-    (c : RelationalConfiguration L V) :
-    sentenceTheory θ (σ • c) = sentenceTheory θ c :=
-  sentenceTheory_eq_of_isoSetoid θ ((isoSetoid L V).symm (isoSetoid_perm_smul σ c))
-
-/-- Encoding a structure along a bijection of carriers records its satisfaction of each `θ i`. -/
-theorem sentenceTheory_encodeVia_apply_eq_true_iff {M : Type*} [L.Structure M] (e : M ≃ V)
-    (θ : ι → L.SentenceInf κ) (i : ι) :
-    sentenceTheory θ (e.encodeVia (L := L)) i = true ↔ SentenceInf.Realize (θ i) M := by
-  rw [sentenceTheory_apply_eq_true_iff, mem_modelsOf, e.realize_encodeVia]
-
-/-- The truth sequence on a reduct configuration is the truth sequence of the translated sentences
-along the language map. -/
-theorem sentenceTheory_reductConfiguration {L₀ : Language} [L₀.IsRelational]
-    (g : L₀ →ᴸ L) (θ : ι → L₀.SentenceInf κ) (c : RelationalConfiguration L V) :
-    sentenceTheory θ (g.reductConfiguration c) =
-      sentenceTheory (fun i => g.onBoundedFormulaInf (θ i)) c := by
-  funext i
-  exact Bool.eq_iff_iff.2 <| by
-    simp only [sentenceTheory_apply_eq_true_iff, mem_modelsOf,
-      g.realize_sentenceInf_reductConfiguration]
-
-/-- Transporting a configuration and a sentence family along a language equivalence preserves the
-truth sequence. -/
-@[simp]
-theorem sentenceTheory_onConfiguration {L₀ : Language} [L₀.IsRelational]
-    (e : L₀ ≃ᴸ L) (θ : ι → L₀.SentenceInf κ) (c : RelationalConfiguration L₀ V) :
-    sentenceTheory (fun i => e.toLHom.onBoundedFormulaInf (θ i)) (e.onConfiguration c) =
-      sentenceTheory θ c := by
-  rw [← sentenceTheory_reductConfiguration, e.toLHom_reductConfiguration_onConfiguration]
-
-/-- Isomorphism refines equality of `θ`-truth sequences. -/
-theorem isoSetoid_le_comap_sentenceTheory (θ : ι → L.SentenceInf κ) :
-    isoSetoid L V ≤ (⊥ : Setoid (ι → Bool)).comap (sentenceTheory θ) :=
-  fun _ _ h => sentenceTheory_eq_of_isoSetoid θ h
-
-end SentenceTheory
 
 /-! ### Borel observables and Cantor recovery -/
 
@@ -256,7 +122,7 @@ theorem exists_sentenceTheory_comp_eq {X : Type*} [MeasurableSpace X] [StandardB
     simp only [mem_preimage, mem_singleton_iff, hinv x y hxy]
   choose θ hθ using hcoord
   refine ⟨θ, fun x => funext fun i => Bool.eq_iff_iff.2 ?_⟩
-  simpa only [sentenceTheory_apply_eq_true_iff] using hθ i x
+  simpa only [sentenceTheory_eq_true_iff] using hθ i x
 
 /-- **Borel observables into countably separated spaces.** If `Z` is a countably separated
 measurable space and `g : X → Z` is an isomorphism-invariant measurable map along a standard Borel
@@ -309,7 +175,7 @@ theorem exists_forall_mem_modelsOf_iff [Countable ι]
     ∃ θ : ι → L.Sentenceω, ∀ x i, f x ∈ modelsOf (θ i) ↔ x i = true := by
   obtain ⟨θ, hθ⟩ := exists_sentenceTheory_apply_eq hf hne
   refine ⟨θ, fun x i => ?_⟩
-  simpa only [sentenceTheory_apply_eq_true_iff] using
+  simpa only [sentenceTheory_eq_true_iff] using
     (congrArg (· = true) (congrFun (hθ x) i)).to_iff
 
 end Observables
@@ -360,7 +226,7 @@ theorem countable_image_sentenceTheory_of_isThinOn [Countable ι] [Countable κ]
     measurableSet_eq_fun (hg.comp measurable_fst) (hg.comp measurable_snd)
   have hcount : Countable (Quotient F) :=
     (Setoid.countable_or_hasCantorAntichainOn_of_measurableSet hC (isoSetoid L V) F
-      (fun x y hxy => sentenceTheory_eq_of_isoSetoid θ hxy) hF_meas).resolve_right
+      (fun x y hxy => sentenceTheory_eq_of_isoSetoid hxy θ) hF_meas).resolve_right
       (Setoid.isThinOn_iff_not_hasCantorAntichainOn.1 hthin)
   let qMap : Quotient F → ι → Bool := Quotient.lift g fun _ _ h => h
   have hsub : sentenceTheory θ '' C ⊆ range qMap := by
@@ -432,11 +298,11 @@ theorem countable_image_sentenceTheory_of_splits_along [Countable ι]
   let g : R → ι → Bool := fun q => sentenceTheory θ (rep q).1
   have hg_count : (range g).Countable :=
     countable_range_of_splits g
-      (fun _ _ h => (sentenceTheory_eq_iff θ).2 h) hP_split
+      (fun _ _ h => sentenceTheory_eq_iff.2 h) hP_split
   refine hg_count.mono ?_
   rintro _ ⟨c, hc, rfl⟩
   let q : R := ⟨classOf ⟨c, hc⟩, mem_range_self (f := classOf) ⟨c, hc⟩⟩
-  exact mem_range.2 ⟨q, (sentenceTheory_eq_iff θ).2 fun i => htruth (hrep q) (θ i)⟩
+  exact mem_range.2 ⟨q, sentenceTheory_eq_iff.2 fun i => htruth (hrep q) (θ i)⟩
 
 /-- **Thinness from single-sentence splits along a presentation.** In a countable relational
 vocabulary on a countable carrier, if `classOf : C → Q` determines `L_{ω₁ω}` truth on `C` and

@@ -23,45 +23,24 @@ satisfies `A ⊆ modelsOf θ` and `Disjoint B (modelsOf θ)` (`exists_sentence_s
 `B = Aᶜ` for an isomorphism-invariant Borel set recovers `modelsOf θ = A`
 (`exists_modelsOf_eq_iff`).
 
-Rather than playing the Vaught transform through alternating topological games on Baire space, we
-derive separation directly from projective-class separation for `L_{ω₁ω}`
-(`FirstOrder.Language.pcSeparation`):
+Both the separation theorem (`exists_sentence_separating_of_forall_not_isoSetoid`,
+`exists_sentence_separating`) and the Borel-definability equivalence (`exists_modelsOf_eq_iff`)
+hold on any countable carrier `V` — finite, empty, or countably infinite — and for relational
+languages `L` of arbitrary cardinality, without requiring countably many relation symbols. We also
+provide countable-sublanguage factorization of measurable sets in the product σ-algebra
+(`exists_countable_sublanguage_of_measurableSet`) together with surjectivity of symbol-sublanguage
+reducts on configurations (`reductConfiguration_symbSublang_surjective`).
 
-1. **Countable vocabularies on nonempty carriers.** Given a continuous map
-   `f : (ℕ → ℕ) → RelationalConfiguration L V`, expand `L` by constants naming the elements of `V`
-   and nullary predicates `X_{i, j}` naming the coordinates of a point `x : ℕ → ℕ`. Because each
-   open set `{x | (f x).eval a = true}` in Baire space is a countable union of basic clopen prefix
-   cylinders, a single `L_{ω₁ω}` sentence in the expanded language expresses that the constants
-   biject `V` onto the structure, the predicates `X_{i, j}` functionalize a point `x : ℕ → ℕ`, and
-   the `L`-relations match `(f x).toStructure`. Hence the structures isomorphic to members of
-   `Set.range f` form a `PC_{ω₁ω}` class, and `pcSeparation` separates any two disjoint-up-to-
-   isomorphism continuous images of `ℕ → ℕ` by an `L`-sentence.
-2. **Empty carriers.** When `V` is empty, only nullary relation symbols occur in `Atom L V`, so
-   every set in the product σ-algebra is already `modelsOf θ` for an `L_{ω₁ω}` sentence `θ`; Lusin
-   separation (`MeasureTheory.AnalyticSet.measurablySeparable`) reduces analytic separation to a
-   Borel separator.
-3. **Arbitrary relational vocabularies.** Neither `exists_sentence_separating` nor
-   `exists_modelsOf_eq_iff` requires `L` to have countably many relation symbols. For two
-   continuous images of Polish spaces `X` and `Y` with no isomorphic pair, the product
-   `Equiv.Perm V × X × Y` is Polish (`Equiv.Perm.instPolishSpace`), hence Lindelöf, so countably
-   many atoms already witness `σ • f x ≠ g y` everywhere; passing to their symbol sublanguage
-   `symbSublang ∅ R₀` reduces separation to a countable vocabulary. Likewise, every measurable set
-   in the product σ-algebra depends on countably many relation symbols
-   (`exists_countable_sublanguage_of_measurableSet`), which transfers `exists_modelsOf_eq_iff` from
-   countable vocabularies to arbitrary relational languages.
-
-Pulling back along a measurable family `f : X → RelationalConfiguration L V` from a standard Borel
-space `X` yields **relative López–Escobar** (`exists_sentence_mem_modelsOf_iff`): in a countable
-relational vocabulary, any measurable subset `U ⊆ X` saturated under isomorphism of `f` is cut out
-by a single `L_{ω₁ω}` sentence `θ` via `f x ∈ modelsOf θ ↔ x ∈ U`. Here countability of the
-vocabulary is sharp, since coordinatewise-measurable maps into an uncountable product need not send
-Borel sets to analytic sets.
+Pulling back along a measurable family `f : X → RelationalConfiguration L V` parametrized by a
+standard Borel space `X` yields **relative López–Escobar** (`exists_sentence_mem_modelsOf_iff`): in
+a countable relational vocabulary, any measurable subset `U ⊆ X` saturated under isomorphism of `f`
+is cut out by a single `L_{ω₁ω}` sentence `θ` via `f x ∈ modelsOf θ ↔ x ∈ U`. Here countability of
+the vocabulary is essential: in an uncountable relational vocabulary, a measurable subset saturated
+under isomorphism of `f` need not be cut out by a sentence.
 
 ## Main results
 
-* `TauCeti.RelationalConfiguration.isomorphismInvariant_modelsOf`: model classes of infinitary
-  sentences are isomorphism invariant.
-* `TauCeti.RelationalConfiguration.surjective_reductConfiguration_symbSublang` and
+* `TauCeti.RelationalConfiguration.reductConfiguration_symbSublang_surjective` and
   `TauCeti.RelationalConfiguration.exists_countable_sublanguage_of_measurableSet`: surjectivity of
   symbol-sublanguage reducts and countable-sublanguage factorization of measurable sets.
 * `TauCeti.RelationalConfiguration.exists_sentence_separating_of_forall_not_isoSetoid` and
@@ -89,26 +68,12 @@ Borel sets to analytic sets.
 
 public section
 
-universe u v w w' uι
+universe u v w w'
 
 open FirstOrder FirstOrder.Language MeasureTheory Set TopologicalSpace
 open scoped Pointwise
 
 namespace TauCeti.RelationalConfiguration
-
-section IsomorphismInvariant
-
-variable {L : Language.{u, v}} [L.IsRelational] {V : Type w} {ι : Type uι}
-
-/-- Model classes of infinitary sentences are isomorphism invariant, on any carrier and for any
-branching index. -/
-theorem isomorphismInvariant_modelsOf (φ : L.SentenceInf ι) :
-    IsomorphismInvariant (modelsOf (V := V) φ) :=
-  isomorphismInvariant_iff.2 fun _ _ h hc => by
-    obtain ⟨e⟩ := isoSetoid_apply.1 h
-    exact (e.mem_modelsOf_iff φ).1 hc
-
-end IsomorphismInvariant
 
 /-! ### Empty carriers -/
 
@@ -521,25 +486,26 @@ section Main
 
 variable {L : Language.{u, v}} [L.IsRelational] {V : Type w}
 
+omit [L.IsRelational] in
 /-- Every symbol-sublanguage reduct map on relational configurations is surjective. -/
-theorem surjective_reductConfiguration_symbSublang
+theorem reductConfiguration_symbSublang_surjective
     (F : Set (Σ n, L.Functions n)) (R : Set (Σ n, L.Relations n)) :
     Function.Surjective ((symbSublangIncl F R).reductConfiguration (V := V)) := by
   classical
   intro c₀
-  let S : L.Structure V :=
-    { funMap := fun {_} fn => isEmptyElim fn
+  let S : L.Structure (Option V) :=
+    { funMap := fun _ _ => none
       RelMap := fun {n} r x =>
-        ∃ hr : (⟨n, r⟩ : Σ k, L.Relations k) ∈ R, c₀.eval (atom ⟨r, hr⟩ x) = true }
-  refine ⟨@ofStructure L V S, RelationalConfiguration.ext fun a => ?_⟩
+        ∃ (y : Fin n → V) (hr : (⟨n, r⟩ : Σ k, L.Relations k) ∈ R),
+          Option.some ∘ y = x ∧ c₀.eval (atom ⟨r, hr⟩ y) = true }
+  refine ⟨(@ofStructure L (Option V) S).restrict Option.some, ext fun a => ?_⟩
   induction a using Atom.induction_atom with
   | h r x =>
-    simp only [LHom.eval_reductConfiguration, LHom.onAtom_atom, symbSublangIncl_onRelation,
-      @eval_ofStructure L V S]
-    by_cases hc : c₀.eval (atom r x) = true
-    · exact decide_eq_true ⟨r.2, hc⟩ |>.trans hc.symm
-    · rw [Bool.not_eq_true] at hc
-      exact decide_eq_false (fun ⟨_, h⟩ => by simp [hc] at h) |>.trans hc.symm
+    have hiff : @Structure.RelMap L (Option V) S _ r.1 (Option.some ∘ x) ↔
+        c₀.eval (atom r x) = true :=
+      ⟨fun ⟨y, _, hy, hc⟩ => by cases (Option.some_injective V).comp_left hy; exact hc,
+        fun hc => ⟨x, r.2, rfl, hc⟩⟩
+    simp [LHom.eval_reductConfiguration, @eval_ofStructure L (Option V) S, hiff]
 
 omit [L.IsRelational] in
 /-- Every set in the product σ-algebra on `RelationalConfiguration L V` is the preimage of a
@@ -697,7 +663,7 @@ theorem exists_modelsOf_eq_iff [Countable V] {B : Set (RelationalConfiguration L
   have hB₀_inv : IsomorphismInvariant B₀ := by
     rw [isomorphismInvariant_iff_isInvariantBlock] at hB_inv ⊢
     rintro σ _ ⟨c₀, hc₀, rfl⟩
-    obtain ⟨c, rfl⟩ := surjective_reductConfiguration_symbSublang ∅ R₀ c₀
+    obtain ⟨c, rfl⟩ := reductConfiguration_symbSublang_surjective ∅ R₀ c₀
     have hsmul : σ • ι₀.reductConfiguration c = ι₀.reductConfiguration (σ • c) :=
       (ι₀.reductConfiguration_perm_smul σ c).symm
     dsimp only
