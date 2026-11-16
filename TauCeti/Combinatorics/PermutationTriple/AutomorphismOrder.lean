@@ -12,9 +12,10 @@ public import TauCeti.Combinatorics.PermutationTriple.IsoClass
 
 Relabeling the sheets of a permutation triple conjugates its automorphism group in
 `Equiv.Perm (Fin n)`, so the order `Nat.card t.automorphismGroup` depends only on the isomorphism
-class of `t`. This file descends that order to `TauCeti.PermutationTriple.IsoClass` and
-`TauCeti.ConnectedIsoClass`, pairs it with an executable finset count for kernel computations on
-finite quotients, and records finiteness of `TauCeti.MarkedIsoClass`.
+class of `t`. This file descends that order to `TauCeti.PermutationTriple.IsoClass`,
+`TauCeti.ConnectedIsoClass`, and `TauCeti.MarkedIsoClass`, and pairs it with an executable finset
+count (`TauCeti.PermutationTriple.automorphismFinset` and
+`TauCeti.ConnectedIsoClass.computedAutomorphismOrder`) for kernel computations on finite quotients.
 -/
 
 open Equiv MulAction
@@ -31,6 +32,8 @@ namespace PermutationTriple
 @[expose] def automorphismFinset (t : PermutationTriple n) : Finset (Perm (Fin n)) :=
   Finset.univ.filter fun τ ↦ τ • t = t
 
+/-- A sheet permutation belongs to `t.automorphismFinset` if and only if it belongs to
+`t.automorphismGroup`. -/
 @[simp]
 theorem mem_automorphismFinset {t : PermutationTriple n} {τ : Perm (Fin n)} :
     τ ∈ t.automorphismFinset ↔ τ ∈ t.automorphismGroup := by
@@ -39,12 +42,14 @@ theorem mem_automorphismFinset {t : PermutationTriple n} {τ : Perm (Fin n)} :
   exact ⟨fun h ↦ ⟨by rw [← smul_σ0, h], by rw [← smul_σ1, h]⟩,
     fun ⟨h0, h1⟩ ↦ ext_of_two (by rw [smul_σ0, h0]) (by rw [smul_σ1, h1])⟩
 
+/-- Coercing `t.automorphismFinset` to a set recovers the carrier of `t.automorphismGroup`. -/
 @[simp]
 theorem coe_automorphismFinset (t : PermutationTriple n) :
     (t.automorphismFinset : Set (Perm (Fin n))) = t.automorphismGroup := by
   ext τ
   simp
 
+/-- The cardinality of `t.automorphismFinset` equals `Nat.card t.automorphismGroup`. -/
 @[simp]
 theorem card_automorphismFinset (t : PermutationTriple n) :
     t.automorphismFinset.card = Nat.card t.automorphismGroup := by
@@ -71,11 +76,13 @@ namespace IsoClass
 noncomputable def automorphismOrder : IsoClass n → ℕ :=
   lift (fun t ↦ Nat.card t.automorphismGroup) fun _ _ h ↦ h.card_automorphismGroup_eq
 
+/-- On the class of `t`, `automorphismOrder` evaluates to `Nat.card t.automorphismGroup`. -/
 @[simp]
 theorem automorphismOrder_mk (t : PermutationTriple n) :
     (mk t).automorphismOrder = Nat.card t.automorphismGroup :=
   lift_mk _ _ t
 
+/-- Every isomorphism class of permutation triples has positive automorphism order. -/
 theorem automorphismOrder_pos (C : IsoClass n) : 0 < C.automorphismOrder := by
   obtain ⟨t, rfl⟩ := mk_surjective C
   rw [automorphismOrder_mk]
@@ -91,15 +98,19 @@ namespace ConnectedIsoClass
 noncomputable def automorphismOrder (C : ConnectedIsoClass n) : ℕ :=
   C.forget.automorphismOrder
 
+/-- On the connected class of `t`, `automorphismOrder` evaluates to
+`Nat.card t.1.automorphismGroup`. -/
 @[simp]
 theorem automorphismOrder_mk (t : ConnectedTriple n) :
     (mk t).automorphismOrder = Nat.card t.1.automorphismGroup := by
   rw [automorphismOrder, forget_mk, PermutationTriple.IsoClass.automorphismOrder_mk]
 
+/-- Forgetting connectedness preserves `automorphismOrder`. -/
 theorem automorphismOrder_forget (C : ConnectedIsoClass n) :
     C.forget.automorphismOrder = C.automorphismOrder :=
   (rfl)
 
+/-- Every connected isomorphism class has positive automorphism order. -/
 theorem automorphismOrder_pos (C : ConnectedIsoClass n) : 0 < C.automorphismOrder :=
   C.forget.automorphismOrder_pos
 
@@ -116,6 +127,7 @@ theorem automorphismOrder_dvd (C : ConnectedIsoClass n) : C.automorphismOrder �
     obtain ⟨τ, rfl⟩ := h
     simp
 
+/-- On `ConnectedIsoClass.mk t`, `computedAutomorphismOrder` is `t.1.automorphismFinset.card`. -/
 theorem computedAutomorphismOrder_mk (t : ConnectedTriple n) :
     (mk t).computedAutomorphismOrder = t.1.automorphismFinset.card :=
   (rfl)
@@ -131,11 +143,20 @@ end ConnectedIsoClass
 
 namespace MarkedIsoClass
 
-/-- There are finitely many marked isomorphism classes of connected triples in each degree. -/
-instance : Finite (MarkedIsoClass n) :=
-  Finite.of_surjective (fun p : ConnectedTriple n × Fin n ↦ mk p.1 p.2) fun c ↦ by
-    obtain ⟨t, i, h⟩ := mk_surjective c
-    exact ⟨(t, i), h⟩
+/-- The automorphism order of the underlying connected class of a marked isomorphism class. -/
+noncomputable def automorphismOrder (m : MarkedIsoClass n) : ℕ :=
+  m.forget.automorphismOrder
+
+/-- On `MarkedIsoClass.mk t i`, `automorphismOrder` is `Nat.card t.1.automorphismGroup`. -/
+@[simp]
+theorem automorphismOrder_mk (t : ConnectedTriple n) (i : Fin n) :
+    (mk t i).automorphismOrder = Nat.card t.1.automorphismGroup := by
+  rw [automorphismOrder, forget_mk, ConnectedIsoClass.automorphismOrder_mk]
+
+/-- Forgetting the marked sheet preserves `automorphismOrder`. -/
+theorem automorphismOrder_forget (m : MarkedIsoClass n) :
+    m.forget.automorphismOrder = m.automorphismOrder :=
+  (rfl)
 
 end MarkedIsoClass
 
