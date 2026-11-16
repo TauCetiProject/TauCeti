@@ -8,6 +8,7 @@ module
 public import Mathlib.Algebra.Order.BigOperators.Expect
 public import Mathlib.GroupTheory.Index
 public import TauCeti.GroupTheory.Amenable.Basic
+import TauCeti.Topology.Algebra.ContinuousMonoidHom.Basic
 
 /-!
 # Finite averages; finite groups and finite-index extensions are amenable
@@ -162,14 +163,13 @@ end Mean
 instance (priority := 100) Amenable.of_finite [Finite G] : Amenable G :=
   ⟨⟨Mean.uniform G, Mean.isLeftInvariant_uniform⟩⟩
 
-/-- A topological group with an amenable finite-index subgroup is amenable, for any group topology:
-averaging the pushforward of a left-invariant mean on `H` over the finite set of left cosets
-`G ⧸ H` gives a left-invariant mean on `G`. -/
+/-- A topological group `G` with a finite-index subgroup `H` that is amenable in the subspace
+topology is amenable. No separation or local-compactness assumption on `G` is required. -/
 theorem Amenable.of_finiteIndex (H : Subgroup G) [H.FiniteIndex] [Amenable H] : Amenable G := by
   have : Finite (G ⧸ H) := Subgroup.finite_quotient_of_finiteIndex
   have := Fintype.ofFinite (G ⧸ H)
   obtain ⟨m, hm⟩ := Amenable.exists_isLeftInvariant (G := H)
-  let ι : H →ₜ* G := ⟨H.subtype, continuous_subtype_val⟩
+  let ι : H →ₜ* G := ContinuousMonoidHom.subgroupSubtype H
   let trMean (t : G) : Mean G := Mean.mk₀
     { toFun f := m.map ι (UCB.leftTranslation t⁻¹ f)
       map_add' _ _ := by simp only [map_add]
@@ -177,21 +177,19 @@ theorem Amenable.of_finiteIndex (H : Subgroup G) [H.FiniteIndex] [Amenable H] : 
     (fun f hf => map_nonneg (m.map ι) <| by
       have h0 := UCB.leftTranslation_le_leftTranslation_iff (g := t⁻¹).mpr hf
       rwa [map_zero] at h0)
-    (by rw [LinearMap.coe_mk, AddHom.coe_mk, UCB.leftTranslation_apply_one, Mean.map_one])
+    (by simp [-map_inv])
   have htr (t : G) (f : UCB G) : trMean t f = m.map ι (UCB.leftTranslation t⁻¹ f) :=
     Mean.mk₀_apply _ _ _ f
   let cosetMean (q : G ⧸ H) : Mean G :=
     Quotient.liftOn' q trMean fun a b hab => Mean.ext fun f => by
       let h : H := ⟨a⁻¹ * b, QuotientGroup.leftRel_apply.mp hab⟩
+      have hb : b⁻¹ = ι h⁻¹ * a⁻¹ := by simp [ι, h]
       have hmul : UCB.leftTranslation b⁻¹ f =
           UCB.leftTranslation (ι h⁻¹) (UCB.leftTranslation a⁻¹ f) := by
-        apply Subtype.ext <| BoundedContinuousFunction.ext fun x => ?_
-        have hι : (ι h⁻¹ : G) = (a⁻¹ * b)⁻¹ := rfl
-        rw [UCB.leftTranslation_apply, UCB.leftTranslation_apply, UCB.leftTranslation_apply,
-          inv_inv, inv_inv, hι, inv_inv]
-        congr 1
-        group
+        rw [hb, map_mul, LinearIsometryEquiv.coe_mul, Function.comp_apply]
       rw [htr, htr, hmul, hm.map_apply_leftTranslation]
+  have hcoset (t : G) : cosetMean (t : G ⧸ H) = trMean t :=
+    QuotientGroup.quotient_liftOn_mk trMean _ t
   let μ : Mean G := Mean.mk₀
     { toFun f := 𝔼 q : G ⧸ H, cosetMean q f
       map_add' f₁ f₂ := by simp [Finset.expect_add_distrib]
@@ -201,13 +199,9 @@ theorem Amenable.of_finiteIndex (H : Subgroup G) [H.FiniteIndex] [Amenable H] : 
   refine ⟨⟨μ, Mean.isLeftInvariant_iff.2 fun g f => ?_⟩⟩
   simp only [μ, Mean.mk₀_apply, LinearMap.coe_mk, AddHom.coe_mk]
   refine Fintype.expect_equiv (MulAction.toPerm g⁻¹) _ _ fun q =>
-    Quotient.inductionOn' q fun t => ?_
-  change trMean t (UCB.leftTranslation g f) = trMean (g⁻¹ * t) f
-  rw [htr, htr]
-  refine congrArg (m.map ι) <| Subtype.ext <| BoundedContinuousFunction.ext fun x => ?_
-  rw [UCB.leftTranslation_apply, UCB.leftTranslation_apply, UCB.leftTranslation_apply,
-    inv_inv, inv_inv]
-  congr 1
-  group
+    QuotientGroup.induction_on q fun t => ?_
+  have hg : (g⁻¹ * t)⁻¹ = t⁻¹ * g := by simp
+  rw [MulAction.toPerm_apply, MulAction.Quotient.smul_coe, smul_eq_mul,
+    hcoset, hcoset, htr, htr, hg, map_mul, LinearIsometryEquiv.coe_mul, Function.comp_apply]
 
 end TauCeti

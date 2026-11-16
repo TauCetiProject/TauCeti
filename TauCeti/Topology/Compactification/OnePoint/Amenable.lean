@@ -83,8 +83,7 @@ theorem amenable_gl_stabilizer [TopologicalSpace (GL (Fin 2) K)]
   have : TauCeti.Amenable φ.ker := TauCeti.Amenable.of_injective ψ hψ
   exact TauCeti.Amenable.of_ker_le_range φ.ker.subtype φ (by simp)
 
-/-- Every projective-special-linear point stabilizer is amenable for every group topology,
-since it embeds into the corresponding projective-general-linear point stabilizer. -/
+/-- Every projective-special-linear point stabilizer is amenable for every group topology. -/
 theorem amenable_psl_stabilizer [TopologicalSpace PSL(2, K)] [IsTopologicalGroup PSL(2, K)]
     (x : OnePoint K) : TauCeti.Amenable (stabilizer PSL(2, K) x) := by
   let : TopologicalSpace PGL(2, K) := ⊥
@@ -97,29 +96,30 @@ theorem amenable_psl_stabilizer [TopologicalSpace PSL(2, K)] [IsTopologicalGroup
     (MonoidHom.subgroupComap_injective _ _ ProjectiveSpecialLinearGroup.toPGL_injective).comp
       (MulEquiv.injective _)
 
+end OnePoint
+
+namespace TauCeti
+
 /-- Every subgroup of `PSL(2, K)` having a finite orbit on `OnePoint K` is amenable for every
-group topology: the stabilizer of the base point embeds into `stabilizer PSL(2, K) x` and has
-finite index in the subgroup. -/
-theorem amenable_psl_of_finite_orbit {Γ : Subgroup PSL(2, K)} [TopologicalSpace Γ]
-    [IsTopologicalGroup Γ] {x : OnePoint K} (h : (orbit Γ x).Finite) :
-    TauCeti.Amenable Γ := by
+group topology. -/
+theorem amenable_psl_of_finite_onePoint_orbit {K : Type*} [Field K] [DecidableEq K]
+    {Γ : Subgroup PSL(2, K)} [TopologicalSpace Γ] [IsTopologicalGroup Γ] {x : OnePoint K}
+    (h : (orbit Γ x).Finite) : Amenable Γ := by
   let : TopologicalSpace PSL(2, K) := ⊥
   let : DiscreteTopology PSL(2, K) := ⟨rfl⟩
-  have := amenable_psl_stabilizer x
+  have := OnePoint.amenable_psl_stabilizer x
   let φ : stabilizer Γ x →* stabilizer PSL(2, K) x :=
-    (Γ.subtype.comp (stabilizer Γ x).subtype).codRestrict (stabilizer PSL(2, K) x)
-      fun g => g.property
-  have hφ : Function.Injective φ :=
-    (MonoidHom.injective_codRestrict _ _ _).2
-      (Γ.subtype_injective.comp (stabilizer Γ x).subtype_injective)
-  have : TauCeti.Amenable (stabilizer Γ x) := TauCeti.Amenable.of_injective φ hφ
+    (Γ.subtype.subgroupComap _).comp
+      (MulEquiv.subgroupCongr (MulAction.stabilizer_subgroupOf Γ x)).toMonoidHom
+  have : Amenable (stabilizer Γ x) := Amenable.of_injective φ <|
+    (Γ.subtype.subgroupComap_injective _ Γ.subtype_injective).comp (MulEquiv.injective _)
   have : Finite (Γ ⧸ stabilizer Γ x) :=
     haveI : Finite (orbit Γ x) := h.to_subtype
     Finite.of_equiv (orbit Γ x) (orbitEquivQuotientStabilizer Γ x)
   have : (stabilizer Γ x).FiniteIndex := Subgroup.finiteIndex_of_finite_quotient
-  exact TauCeti.Amenable.of_finiteIndex (stabilizer Γ x)
+  exact Amenable.of_finiteIndex (stabilizer Γ x)
 
-end OnePoint
+end TauCeti
 
 namespace MonoidHom
 

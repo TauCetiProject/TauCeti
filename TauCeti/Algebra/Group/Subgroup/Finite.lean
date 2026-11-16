@@ -19,6 +19,7 @@ and the sums over a subgroup and its cosets in the transfer.
 
 * `Subgroup.fintypeOfFinite`: the `Fintype` structure `Fintype.ofFinite` on the elements of a
   finite subgroup.
+* `Subgroup.instInfiniteTop`: the top subgroup of an infinite group is infinite.
 -/
 
 public section
@@ -35,5 +36,10 @@ variable {G : Type*} [Group G]
 @[instance_reducible, expose]
 noncomputable def fintypeOfFinite (H : Subgroup G) [Finite H] : Fintype H :=
   Fintype.ofFinite H
+
+/-- The top subgroup of an infinite group is infinite. -/
+@[to_additive /-- The top additive subgroup of an infinite additive group is infinite. -/]
+instance instInfiniteTop [Infinite G] : Infinite (⊤ : Subgroup G) :=
+  Subgroup.topEquiv.toEquiv.infinite_iff.mpr ‹_›
 
 end Subgroup

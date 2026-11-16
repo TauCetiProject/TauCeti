@@ -6,10 +6,13 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Topology.Compactification.OnePoint.Basic
+public import Mathlib.Topology.Metrizable.Basic
 public import Mathlib.Topology.MetricSpace.Bounded
 public import Mathlib.Topology.MetricSpace.ProperSpace
 public import Mathlib.Topology.Order.Real
+import Mathlib.Topology.Compactness.SigmaCompact
 import Mathlib.Topology.Instances.ENNReal.Lemmas
+import Mathlib.Topology.Metrizable.Urysohn
 
 /-!
 # Approach filters in the one-point compactification
@@ -26,8 +29,10 @@ The one-point compactification of a proper pseudometric space is first countable
 the space it inherits the neighbourhood filter of the space, and at infinity the complements of
 the closed balls about a fixed point form a countable basis. Being also compact, it is then
 sequentially compact, and Fatou-type limit arguments may be run along its neighbourhood filters.
-On a proper space the extended distance from a fixed point, with value `⊤` at infinity, is
-continuous on the one-point compactification.
+More generally, the one-point compactification of a weakly locally compact, second countable `R₁`
+space is second countable (via a compact exhaustion), and when the base space is Hausdorff it is
+metrizable by Urysohn's metrization theorem. On a proper space the extended distance from a fixed
+point, with value `⊤` at infinity, is continuous on the one-point compactification.
 -/
 
 public section
@@ -98,6 +103,45 @@ instance {X : Type*} [PseudoMetricSpace X] [ProperSpace X] :
   | coe x =>
     rw [OnePoint.nhds_coe_eq]
     infer_instance
+
+/-- The one-point compactification of a weakly locally compact, second countable `R₁` space is
+second countable. -/
+instance {X : Type*} [TopologicalSpace X] [WeaklyLocallyCompactSpace X] [R1Space X]
+    [SecondCountableTopology X] : SecondCountableTopology (OnePoint X) := by
+  obtain ⟨B, hBc, -, hB⟩ := TopologicalSpace.exists_countable_basis X
+  let K : CompactExhaustion X := CompactExhaustion.choice X
+  let B' : Set (Set (OnePoint X)) :=
+    (((↑) : X → OnePoint X) '' ·) '' B ∪
+      Set.range fun n ↦ (((↑) : X → OnePoint X) '' closure (K n))ᶜ
+  refine ⟨⟨B', (hBc.image _).union (countable_range _), ?_⟩⟩
+  refine (TopologicalSpace.isTopologicalBasis_of_isOpen_of_nhds ?_ ?_).eq_generateFrom
+  · rintro _ (⟨u, hu, rfl⟩ | ⟨n, rfl⟩)
+    · exact OnePoint.isOpenEmbedding_coe.isOpenMap u (hB.isOpen hu)
+    · rw [isOpen_compl_iff, OnePoint.isClosed_image_coe]
+      exact ⟨isClosed_closure, (K.isCompact n).closure⟩
+  · intro z s hz hs
+    induction z using OnePoint.rec with
+    | infty =>
+      obtain ⟨-, hcomp⟩ := (OnePoint.isOpen_iff_of_mem hz).mp hs
+      obtain ⟨n, hn⟩ := K.exists_superset_of_isCompact hcomp
+      refine ⟨(((↑) : X → OnePoint X) '' closure (K n))ᶜ, Or.inr ⟨n, rfl⟩, by simp, ?_⟩
+      intro w hw
+      induction w using OnePoint.rec with
+      | infty => exact hz
+      | coe x =>
+        by_contra hx
+        exact hw ⟨x, subset_closure (hn hx), rfl⟩
+    | coe x =>
+      obtain ⟨u, hu, hxu, hus⟩ :=
+        hB.exists_subset_of_mem_open (mem_preimage.mpr hz) (hs.preimage OnePoint.continuous_coe)
+      exact ⟨((↑) : X → OnePoint X) '' u, Or.inl ⟨u, hu, rfl⟩, ⟨x, hxu, rfl⟩,
+        image_subset_iff.mpr hus⟩
+
+/-- The one-point compactification of a weakly locally compact, second countable Hausdorff space is
+metrizable. -/
+instance {X : Type*} [TopologicalSpace X] [WeaklyLocallyCompactSpace X] [T2Space X]
+    [SecondCountableTopology X] : TopologicalSpace.MetrizableSpace (OnePoint X) :=
+  TopologicalSpace.metrizableSpace_of_t3_secondCountable (OnePoint X)
 
 /-- On a proper space, the extended distance from a fixed point to a point of the one-point
 compactification, with value `⊤` at infinity, is continuous. -/

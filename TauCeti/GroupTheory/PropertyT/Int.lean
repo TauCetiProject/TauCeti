@@ -21,24 +21,13 @@ The reference is Bekka–de la Harpe–Valette, *Kazhdan's Property (T)*, Append
 
 public section
 
-open MeasureTheory
-
 namespace Subgroup
 
 universe u
 
-/-- The infinite cyclic group does not have property (T): its regular representation has
-almost invariant unit vectors and no nonzero invariant vectors. -/
+/-- The infinite cyclic group does not have property (T). -/
 theorem not_relativePropertyT_top_multiplicative_int :
-    ¬ (⊤ : Subgroup (Multiplicative ℤ)).RelativePropertyT.{u} := by
-  classical
-  -- Lifting the group places its regular Hilbert space in the quantified universe.
-  let G := ULift.{u} (Multiplicative ℤ)
-  let e : G ≃* Multiplicative ℤ := MulEquiv.ulift
-  have hF : TauCeti.HasFoelnerSets G :=
-    e.hasFoelnerSets_iff.mpr TauCeti.hasFoelnerSets_multiplicative_int
-  intro hT
-  exact not_relativePropertyT_top_of_hasFoelnerSets hF (by
-    simpa using hT.map e.symm.toMonoidHom)
+    ¬ (⊤ : Subgroup (Multiplicative ℤ)).RelativePropertyT.{u} :=
+  not_relativePropertyT_top_of_hasFoelnerSets.{u, 0} TauCeti.hasFoelnerSets_multiplicative_int
 
 end Subgroup

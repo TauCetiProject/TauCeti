@@ -10,6 +10,7 @@ public import TauCeti.MeasureTheory.Function.Lp.CompMeasurePreservingEquiv
 public import Mathlib.MeasureTheory.Function.L2Space
 public import Mathlib.MeasureTheory.Group.Measure
 import Mathlib.MeasureTheory.Function.LpSpace.ContinuousCompMeasurePreserving
+import TauCeti.Algebra.Group.Subgroup.Finite
 
 /-!
 # The left regular representation on vector-valued `Lᵖ`
@@ -117,12 +118,12 @@ theorem continuous_leftRegular_apply [TopologicalSpace G] [IsTopologicalGroup G]
 section Invariants
 
 /-- For counting measure, the restriction of the vector-valued regular representation on `Lᵖ`,
-`1 ≤ p < ∞`, to an infinite subgroup has only the zero invariant vector: any `Λ`-invariant vector
-is constant on each right coset `Λ x`, which has infinite counting measure. -/
+`1 ≤ p < ∞`, to an infinite subgroup has only the zero invariant vector. -/
 @[simp]
 theorem invariants_restrict_count_leftRegular (Λ : Subgroup G) [Infinite Λ] {p : ℝ≥0∞}
     [Fact (1 ≤ p)] (hp' : p ≠ ∞) :
     (((count : Measure G).leftRegular 𝕜 E p).restrict Λ.subtype).invariants = ⊥ := by
+  -- Any `Λ`-invariant vector is constant on each right coset `Λ x`, which has infinite measure.
   have hp : p ≠ 0 := (zero_lt_one.trans_le (Fact.out : 1 ≤ p)).ne'
   apply le_antisymm _ bot_le
   intro f hf
@@ -158,8 +159,6 @@ theorem invariants_restrict_count_leftRegular (Λ : Subgroup G) [Infinite Λ] {p
 theorem invariants_count_leftRegular [Infinite G] {p : ℝ≥0∞} [Fact (1 ≤ p)]
     (hp' : p ≠ ∞) :
     ((count : Measure G).leftRegular 𝕜 E p).invariants = ⊥ := by
-  have : Infinite (⊤ : Subgroup G) :=
-    Infinite.of_surjective Subgroup.topEquiv.toEquiv Subgroup.topEquiv.surjective
   ext f
   simpa [Submodule.mem_bot] using SetLike.ext_iff.mp
     (invariants_restrict_count_leftRegular (𝕜 := 𝕜) (E := E) (⊤ : Subgroup G) hp') f

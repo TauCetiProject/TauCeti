@@ -19,7 +19,8 @@ Its failure is characterized by a finite quadratic lower bound on orbit displace
 For finite groups it is equivalent to the existence of a nonzero invariant vector, without
 unitarity or completeness assumptions. The quantitative averaging lemma also produces an
 invariant vector close to a vector whose entire orbit is close to it. Almost invariant vectors
-also have arbitrarily small total squared displacement on any finite set.
+also have arbitrarily small total squared displacement on any finite set, and yield a net of unit
+vectors whose displacement under each group element tends to `0`.
 
 These results provide the finite-group averaging step in the theory of property (T).
 The definition follows Anantharaman–Popa, *An Introduction to II₁ Factors*, Definition 14.1.1.
@@ -27,6 +28,8 @@ The finite average is Mathlib's `Representation.averageMap`.
 -/
 
 public section
+
+open Filter Topology
 
 namespace ContRepresentation
 
@@ -90,6 +93,25 @@ theorem HasAlmostInvariantVectors.exists_sum_norm_sq_lt
       _ = _ := by simp
   have hmul := (div_mul_cancel₀ ε hd.ne').symm
   nlinarith
+
+/-- A representation with almost invariant vectors admits a net of unit vectors indexed by
+`Finset G × ℕ` whose displacement under each element of `G` tends to `0`. -/
+theorem HasAlmostInvariantVectors.exists_tendsto_norm_sub (hρ : ρ.HasAlmostInvariantVectors) :
+    ∃ ξ : Finset G × ℕ → V, (∀ i, ‖ξ i‖ = 1) ∧
+      ∀ g : G, Tendsto (fun i ↦ ‖ρ g (ξ i) - ξ i‖) (atTop ×ˢ atTop) (𝓝 0) := by
+  classical
+  have hex (i : Finset G × ℕ) :
+      ∃ v : V, ‖v‖ = 1 ∧ ∀ g ∈ i.1, ‖ρ g v - v‖ < 1 / (i.2 + 1 : ℝ) :=
+    hρ i.1 (1 / (i.2 + 1 : ℝ)) (by positivity)
+  choose ξ hξ_norm hξ_alm using hex
+  refine ⟨ξ, hξ_norm, fun g ↦ Metric.tendsto_nhds.mpr fun ε hε ↦ ?_⟩
+  obtain ⟨N, hN⟩ := exists_nat_one_div_lt hε
+  filter_upwards [Filter.prod_mem_prod (Filter.mem_atTop ({g} : Finset G))
+    (Filter.mem_atTop N)] with i ⟨hi1, hi2⟩
+  rw [Real.dist_0_eq_abs, abs_of_nonneg (norm_nonneg _)]
+  have hle : 1 / (i.2 + 1 : ℝ) ≤ 1 / (N + 1 : ℝ) :=
+    one_div_le_one_div_of_le (by positivity) (by exact_mod_cast Nat.add_le_add_right hi2 1)
+  exact lt_trans (lt_of_lt_of_le (hξ_alm i g (hi1 (Finset.mem_singleton_self g))) hle) hN
 
 end Definition
 

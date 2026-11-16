@@ -7,6 +7,7 @@ module
 
 public import TauCeti.GroupTheory.PropertyT.Basic
 public import TauCeti.RepresentationTheory.Continuous.LeftRegular.Foelner
+import TauCeti.Algebra.Group.Subgroup.Finite
 
 /-!
 # Følner sets obstruct relative property (T) for infinite subgroups
@@ -28,12 +29,12 @@ namespace Subgroup
 
 universe u v
 
-/-- In a group with Følner sets, no infinite subgroup has relative property (T). Lifting the
-group places its regular Hilbert space in `Type (max u v)`, which for `G : Type` is any universe
-`Type u`. -/
+/-- In a group with Følner sets, no infinite subgroup has relative property (T), with Hilbert
+spaces quantified in `Type (max u v)` (which for `G : Type` is any universe `Type u`). -/
 theorem not_relativePropertyT_of_hasFoelnerSets {G : Type v} [Group G] (Λ : Subgroup G)
     [Infinite Λ] (hG : TauCeti.HasFoelnerSets G) : ¬ Λ.RelativePropertyT.{max u v} := by
   classical
+  -- Lifting the group places its regular Hilbert space in `Type (max u v)`.
   let G' := ULift.{u} G
   let e : G' ≃* G := MulEquiv.ulift
   let Λ' : Subgroup G' := Λ.map e.symm.toMonoidHom
@@ -55,11 +56,9 @@ theorem not_relativePropertyT_of_hasFoelnerSets {G : Type v} [Group G] (Λ : Sub
   exact hv (by simpa [hinv] using hfixed)
 
 /-- An infinite group with Følner sets does not have property (T), with Hilbert spaces
-quantified in the universe of the group. -/
-theorem not_relativePropertyT_top_of_hasFoelnerSets {G : Type u} [Group G] [Infinite G]
-    (hG : TauCeti.HasFoelnerSets G) : ¬ (⊤ : Subgroup G).RelativePropertyT.{u} := by
-  have : Infinite (⊤ : Subgroup G) :=
-    Infinite.of_surjective Subgroup.topEquiv.toEquiv Subgroup.topEquiv.surjective
-  exact not_relativePropertyT_of_hasFoelnerSets.{u, u} ⊤ hG
+quantified in `Type (max u v)`. -/
+theorem not_relativePropertyT_top_of_hasFoelnerSets {G : Type v} [Group G] [Infinite G]
+    (hG : TauCeti.HasFoelnerSets G) : ¬ (⊤ : Subgroup G).RelativePropertyT.{max u v} :=
+  not_relativePropertyT_of_hasFoelnerSets.{u, v} ⊤ hG
 
 end Subgroup

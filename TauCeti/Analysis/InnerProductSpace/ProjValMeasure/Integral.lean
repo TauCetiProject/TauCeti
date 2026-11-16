@@ -55,7 +55,10 @@ continuous extension `LinearMap.extendOfNorm`.
   `‖(∫ f dP) ξ‖ ^ 2 = ∫ ‖f x‖ ^ 2 d(P.diag ξ)(x)`.
 * `ProjValMeasure.integral_apply_eq_zero_iff`: `(∫ f dP) ξ = 0` iff `f = 0` almost everywhere
   for `P.diag ξ`.
-* `ProjValMeasure.norm_integral_diag_sub_le`: a Lipschitz bound on `ξ ↦ ∫ f d(P.diag ξ)`.
+* `ProjValMeasure.norm_integral_diag_sub_le`: the bounded-set Lipschitz (quadratic difference)
+  bound `‖∫ f d(P.diag η) - ∫ f d(P.diag ξ)‖ ≤ M * (‖η‖ + ‖ξ‖) * ‖η - ξ‖`.
+* `ProjValMeasure.abs_integral_diag_sub_le`: the real-valued counterpart for bounded measurable
+  functions `f : X → ℝ`.
 
 ## References
 
@@ -371,6 +374,21 @@ theorem norm_integral_diag_sub_le (P : ProjValMeasure X H) {f : BoundedBorelFunc
     _ ≤ ‖⟪η - ξ, P.integral f η⟫_ℂ‖ + ‖⟪ξ, P.integral f (η - ξ)⟫_ℂ‖ := norm_add_le _ _
     _ ≤ ‖η - ξ‖ * (M * ‖η‖) + ‖ξ‖ * (M * ‖η - ξ‖) := add_le_add h1 h2
     _ = M * (‖η‖ + ‖ξ‖) * ‖η - ξ‖ := by ring
+
+/-- Nearby vectors have nearby integrals of a bounded real measurable function against their
+diagonal measures: if `∀ x, |f x| ≤ M`, then
+`|∫ x, f x ∂(P.diag η) - ∫ x, f x ∂(P.diag ξ)| ≤ M * (‖η‖ + ‖ξ‖) * ‖η - ξ‖`. -/
+theorem abs_integral_diag_sub_le (P : ProjValMeasure X H) {f : X → ℝ} {M : ℝ}
+    (hf_meas : Measurable f) (hf_bound : ∀ x, |f x| ≤ M) (η ξ : H) :
+    |∫ x, f x ∂(P.diag η) - ∫ x, f x ∂(P.diag ξ)| ≤ M * (‖η‖ + ‖ξ‖) * ‖η - ξ‖ := by
+  let F : BoundedBorelFunction X := BoundedBorelFunction.ofFunction (fun x ↦ (f x : ℂ))
+    (Complex.continuous_ofReal.measurable.comp hf_meas)
+    ⟨max M 0, le_max_right M 0,
+      fun x ↦ by simpa [Complex.norm_real] using (hf_bound x).trans (le_max_left M 0)⟩
+  have h := P.norm_integral_diag_sub_le (f := F) (M := M)
+    (fun x ↦ by simpa [F, Complex.norm_real] using hf_bound x) η ξ
+  simpa only [F, BoundedBorelFunction.ofFunction_apply, integral_complex_ofReal,
+    ← Complex.ofReal_sub, Complex.norm_real, Real.norm_eq_abs] using h
 
 end ProjValMeasure
 end TauCeti
