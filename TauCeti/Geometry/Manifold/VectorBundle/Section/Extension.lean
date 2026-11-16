@@ -128,88 +128,73 @@ variable [NormedAddCommGroup F] [NormedSpace ℝ F]
 section Linear
 
 variable (V) in
-/-- At each point `y`, `FiberBundle.contMDiffExtend I F v y` is a continuous `ℝ`-linear function
-of `v`. -/
-private theorem exists_continuousLinearMap_contMDiffExtend_apply (x y : M) :
-    ∃ L : V x →L[ℝ] V y, ∀ v, contMDiffExtend I F v y = L v := by
-  obtain ⟨ρ, hρs, hρ⟩ := exists_contMDiffExtend_eq_smul I F V x
-  refine ⟨(trivializationAt F V x).symmL ℝ y ∘L
-    (ρ y • (trivializationAt F V x).continuousLinearMapAt ℝ x), fun v ↦ ?_⟩
-  by_cases hy : y ∈ (trivializationAt F V x).baseSet
-  · simp [hρ, extend, hy, mem_baseSet_trivializationAt F V x]
-  · have h0 : ρ y = 0 := image_eq_zero_of_notMem_tsupport fun h ↦ hy (hρs h)
-    simp [hρ, h0]
-
-/-- `FiberBundle.contMDiffExtend I F` sends the zero vector to the zero section. -/
-@[simp]
-theorem contMDiffExtend_zero {x : M} : contMDiffExtend I F (0 : V x) = 0 := by
-  funext y
-  obtain ⟨L, hL⟩ := exists_continuousLinearMap_contMDiffExtend_apply I F V x y
-  simp [hL]
-
-/-- `FiberBundle.contMDiffExtend I F` is additive in the fibre vector. -/
-theorem contMDiffExtend_add {x : M} (v w : V x) :
-    contMDiffExtend I F (v + w) = contMDiffExtend I F v + contMDiffExtend I F w := by
-  funext y
-  obtain ⟨L, hL⟩ := exists_continuousLinearMap_contMDiffExtend_apply I F V x y
-  simp [hL]
-
-/-- `FiberBundle.contMDiffExtend I F` commutes with real scalar multiplication. -/
-theorem contMDiffExtend_smul {x : M} (c : ℝ) (v : V x) :
-    contMDiffExtend I F (c • v) = c • contMDiffExtend I F v := by
-  funext y
-  obtain ⟨L, hL⟩ := exists_continuousLinearMap_contMDiffExtend_apply I F V x y
-  simp [hL]
-
-/-- `FiberBundle.contMDiffExtend I F` commutes with negation. -/
-theorem contMDiffExtend_neg {x : M} (v : V x) :
-    contMDiffExtend I F (-v) = -contMDiffExtend I F v := by
-  funext y
-  obtain ⟨L, hL⟩ := exists_continuousLinearMap_contMDiffExtend_apply I F V x y
-  simp [hL]
-
-/-- `FiberBundle.contMDiffExtend I F` commutes with subtraction. -/
-theorem contMDiffExtend_sub {x : M} (v w : V x) :
-    contMDiffExtend I F (v - w) = contMDiffExtend I F v - contMDiffExtend I F w := by
-  funext y
-  obtain ⟨L, hL⟩ := exists_continuousLinearMap_contMDiffExtend_apply I F V x y
-  simp [hL]
-
-/-- In a vector bundle, `FiberBundle.contMDiffExtend I F v` is the zero section exactly when `v`
-is zero. -/
-@[simp]
-theorem contMDiffExtend_eq_zero {x : M} {v : V x} : contMDiffExtend I F v = 0 ↔ v = 0 := by
-  rw [← contMDiffExtend_zero I F (x := x), contMDiffExtend_inj]
+/-- `FiberBundle.contMDiffExtend I F` evaluated at `y`, as a continuous linear map from the fibre
+over `x` to the fibre over `y`. -/
+noncomputable def contMDiffExtendL (x y : M) : V x →L[ℝ] V y :=
+  ((trivializationAt F V x).symmL ℝ y ∘L
+      ((exists_contMDiffExtend_eq_smul I F V x).choose y •
+        (trivializationAt F V x).continuousLinearMapAt ℝ x)).copy
+    (fun v ↦ contMDiffExtend I F v y) <| funext fun v ↦ by
+      obtain ⟨hρs, hρ⟩ := (exists_contMDiffExtend_eq_smul I F V x).choose_spec
+      -- Name the bump function, so that `simp` does not rewrite inside its defining property.
+      generalize (exists_contMDiffExtend_eq_smul I F V x).choose = ρ at hρs hρ ⊢
+      by_cases hy : y ∈ (trivializationAt F V x).baseSet
+      · simp only [hρ, Pi.smul_apply', extend, ContinuousLinearMap.comp_apply, smul_apply,
+          Trivialization.continuousLinearMapAt_apply, mem_baseSet_trivializationAt F V x,
+          Trivialization.coe_linearMapAt_of_mem, map_smul, hy, Trivialization.symmL_apply]
+      · simp only [hρ, Pi.smul_apply', image_eq_zero_of_notMem_tsupport fun h ↦ hy (hρs h),
+          zero_smul, ContinuousLinearMap.comp_zero, zero_apply]
 
 variable (V) in
 /-- `FiberBundle.contMDiffExtend I F` as a linear map from the fibre over `x` to the sections
 of `V`. -/
-noncomputable def contMDiffExtendₗ (x : M) : V x →ₗ[ℝ] Π y : M, V y where
-  toFun := contMDiffExtend I F
-  map_add' := contMDiffExtend_add I F
-  map_smul' := contMDiffExtend_smul I F
+noncomputable def contMDiffExtendₗ (x : M) : V x →ₗ[ℝ] Π y : M, V y :=
+  LinearMap.pi fun y ↦ (contMDiffExtendL I F V x y).toLinearMap
 
 /-- `FiberBundle.contMDiffExtendₗ I F V x` applies `FiberBundle.contMDiffExtend I F`. -/
 @[simp]
 theorem contMDiffExtendₗ_apply {x : M} (v : V x) :
     contMDiffExtendₗ I F V x v = contMDiffExtend I F v := (rfl)
 
-variable (V) in
-/-- `FiberBundle.contMDiffExtend I F` evaluated at `y`, as a continuous linear map from the fibre
-over `x` to the fibre over `y`. -/
-noncomputable def contMDiffExtendL (x y : M) : V x →L[ℝ] V y where
-  toFun v := contMDiffExtend I F v y
-  map_add' v w := by simp [contMDiffExtend_add]
-  map_smul' c v := by simp [contMDiffExtend_smul]
-  cont := by
-    obtain ⟨L, hL⟩ := exists_continuousLinearMap_contMDiffExtend_apply I F V x y
-    simpa only [hL] using L.continuous
-
 /-- `FiberBundle.contMDiffExtendL I F V x y` evaluates `FiberBundle.contMDiffExtend I F` at
 `y`. -/
 @[simp]
 theorem contMDiffExtendL_apply {x : M} (y : M) (v : V x) :
     contMDiffExtendL I F V x y v = contMDiffExtend I F v y := (rfl)
+
+/- `contMDiffExtendₗ I F V x v` is `contMDiffExtend I F v` by definition (`contMDiffExtendₗ_apply`),
+so the linearity lemmas below are those of the linear map `contMDiffExtendₗ I F V x`. -/
+
+/-- `FiberBundle.contMDiffExtend I F` sends the zero vector to the zero section. -/
+@[simp]
+theorem contMDiffExtend_zero {x : M} : contMDiffExtend I F (0 : V x) = 0 :=
+  map_zero (contMDiffExtendₗ I F V x)
+
+/-- `FiberBundle.contMDiffExtend I F` is additive in the fibre vector. -/
+theorem contMDiffExtend_add {x : M} (v w : V x) :
+    contMDiffExtend I F (v + w) = contMDiffExtend I F v + contMDiffExtend I F w :=
+  map_add (contMDiffExtendₗ I F V x) v w
+
+/-- `FiberBundle.contMDiffExtend I F` commutes with real scalar multiplication. -/
+theorem contMDiffExtend_smul {x : M} (c : ℝ) (v : V x) :
+    contMDiffExtend I F (c • v) = c • contMDiffExtend I F v :=
+  map_smul (contMDiffExtendₗ I F V x) c v
+
+/-- `FiberBundle.contMDiffExtend I F` commutes with negation. -/
+theorem contMDiffExtend_neg {x : M} (v : V x) :
+    contMDiffExtend I F (-v) = -contMDiffExtend I F v :=
+  map_neg (contMDiffExtendₗ I F V x) v
+
+/-- `FiberBundle.contMDiffExtend I F` commutes with subtraction. -/
+theorem contMDiffExtend_sub {x : M} (v w : V x) :
+    contMDiffExtend I F (v - w) = contMDiffExtend I F v - contMDiffExtend I F w :=
+  map_sub (contMDiffExtendₗ I F V x) v w
+
+/-- In a vector bundle, `FiberBundle.contMDiffExtend I F v` is the zero section exactly when `v`
+is zero. -/
+@[simp]
+theorem contMDiffExtend_eq_zero {x : M} {v : V x} : contMDiffExtend I F v = 0 ↔ v = 0 := by
+  rw [← contMDiffExtend_zero I F (x := x), contMDiffExtend_inj]
 
 /-- At the base point, `FiberBundle.contMDiffExtendL I F V x x` is the identity of the fibre
 over `x`. -/
