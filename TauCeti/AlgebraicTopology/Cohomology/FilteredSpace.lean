@@ -45,6 +45,9 @@ the completeness of the cochain filtration
 the identification of the first differential with the connecting map of the triple
 `(X (p + 1), X p, X (p - 1))` (`TauCeti.TopTriple.singularCohomologyδ`).
 
+This is the cohomological counterpart of `TauCeti.filteredSpaceSpectralSequence`
+(`TauCeti.AlgebraicTopology.Singular.FilteredSpace.Basic`), whose construction it dualises.
+
 ## References
 
 * J. McCleary, *A User's Guide to Spectral Sequences*, 2nd ed., Cambridge University Press, 2001,
@@ -111,22 +114,18 @@ lemma singularCochainFiltrationIso_hom_comp_singularCochainFiltrationι (q : ℤ
 
 variable {X}
 
-/-- For `X a ⊆ X b`, the restriction `C*(Y, X b) ⟶ C*(Y, X a)` of the triple `(Y, X b, X a)`,
-reindexed along `ℕ ⊆ ℤ`. -/
-private abbrev restrictCochains {a b : ℤ} (hab : X a ⊆ X b) :
-    ((TopPair.ofSubset (X b)).singularCochainComplex R k M).extend ComplexShape.embeddingUpNat ⟶
-      ((TopPair.ofSubset (X a)).singularCochainComplex R k M).extend ComplexShape.embeddingUpNat :=
-  extendMap ((TopTriple.ofSubset hab).singularCochainComplexShortComplex R k M).f _
-
 /-- For `X a ⊆ X b`, the inclusion of the cochains relative to `X b` into the cochains of `Y`
-factors through the cochains relative to `X a`. -/
-@[reassoc]
-private lemma restrictCochains_comp_singularCochainFiltrationι {a b : ℤ} (hab : X a ⊆ X b) :
-    restrictCochains R k M hab ≫ singularCochainFiltrationι R k M X a =
-      singularCochainFiltrationι R k M X b := by
+factors through the restriction `C*(Y, X b) ⟶ C*(Y, X a)` of the triple `(Y, X b, X a)`. -/
+@[simp, reassoc]
+lemma extendMap_comp_singularCochainFiltrationι {a b : ℤ} (hab : X a ⊆ X b) :
+    extendMap (TopPair.singularCochainComplexMap (R := R) (k := k) (M := M)
+        (TopTriple.totalToOuter.app (TopTriple.ofSubset hab))) ComplexShape.embeddingUpNat ≫
+      singularCochainFiltrationι R k M X a = singularCochainFiltrationι R k M X b := by
   rw [singularCochainFiltrationι_def, singularCochainFiltrationι_def]
   -- The quotient map to the chains relative to `X a`, followed by the map to the chains relative
-  -- to `X b`, is the quotient map to the chains relative to `X b`; apply `Hom(-, M)`.
+  -- to `X b`, is the quotient map to the chains relative to `X b`; apply `Hom(-, M)`. The pairs of
+  -- the triple `(Y, X b, X a)` are the pairs `(Y, X b)` and `(Y, X a)` only up to definitional
+  -- unfolding, so the composites are formed with `exact` rather than `rw`.
   exact (extendMap_comp _ _ _).symm.trans <| congrArg (extendMap · _) <|
     ((TauCeti.ChainComplex.linearYonedaFunctor k M).map_comp _ _).symm.trans <|
       congrArg (fun f ↦ (TauCeti.ChainComplex.linearYonedaFunctor k M).map f.op)
@@ -135,19 +134,22 @@ private lemma restrictCochains_comp_singularCochainFiltrationι {a b : ℤ} (hab
 /-- The filtration of singular cochains is antitone in the subsets. -/
 lemma singularCochainFiltration_anti {a b : ℤ} (hab : X a ⊆ X b) :
     singularCochainFiltration R k M X b ≤ singularCochainFiltration R k M X a :=
-  Subobject.mk_le_mk_of_comm _ (restrictCochains_comp_singularCochainFiltrationι R k M hab)
+  Subobject.mk_le_mk_of_comm _ (extendMap_comp_singularCochainFiltrationι R k M hab)
 
 /-- Under the identifications of the stages of the filtration with relative cochain complexes,
 the inclusion `F_b ⟶ F_a` is the restriction of the triple `(Y, X b, X a)`. -/
 @[reassoc]
-private lemma ofLE_comp_singularCochainFiltrationIso_hom {a b : ℤ} (hab : X a ⊆ X b) :
+lemma ofLE_comp_singularCochainFiltrationIso_hom {a b : ℤ} (hab : X a ⊆ X b) :
     Subobject.ofLE _ _ (singularCochainFiltration_anti R k M hab) ≫
         (singularCochainFiltrationIso R k M X a).hom =
-      (singularCochainFiltrationIso R k M X b).hom ≫ restrictCochains R k M hab :=
+      (singularCochainFiltrationIso R k M X b).hom ≫
+        extendMap (TopPair.singularCochainComplexMap (R := R) (k := k) (M := M)
+          (TopTriple.totalToOuter.app (TopTriple.ofSubset hab))) ComplexShape.embeddingUpNat :=
+  -- As above, the stages are related to the pairs of the triple only definitionally, so the
+  -- equations are composed directly rather than by `rw`.
   (Iso.eq_comp_inv _).1 <| (Subobject.ofLE_mk_le_mk_of_comm
     (f₁ := singularCochainFiltrationι R k M X b) (f₂ := singularCochainFiltrationι R k M X a) _
-    (restrictCochains_comp_singularCochainFiltrationι R k M hab)).trans
-      (Category.assoc _ _ _).symm
+    (extendMap_comp_singularCochainFiltrationι R k M hab)).trans (Category.assoc _ _ _).symm
 
 /-- An increasing family of subsets gives a decreasing filtration of singular cochains. -/
 lemma antitone_singularCochainFiltration (hX : Monotone X) :
@@ -172,10 +174,9 @@ lemma singularCochainFiltration_eq_top {a : ℤ} (ha : X a = ∅) :
 @[simp]
 lemma singularCochainFiltration_eq_bot {b : ℤ} (hb : X b = Set.univ) :
     singularCochainFiltration R k M X b = ⊥ := by
-  have : IsIso (TopPair.ofSubset (X b)).map := by
-    refine TopCat.isIso_of_bijective_of_isOpenMap _ ⟨Subtype.val_injective, fun y ↦ ?_⟩
-      (hb ▸ isOpen_univ : IsOpen (X b)).isOpenEmbedding_subtypeVal.isOpenMap
-    exact ⟨⟨y, hb ▸ Set.mem_univ y⟩, rfl⟩
+  have := TopPair.isIso_ofSubset_map_of_eq_univ hb
+  -- The map of the singular simplicial pair of `(Y, X b)` is `TopCat.toSSet.map` of the
+  -- inclusion of `X b` by definition (`TopPair.toSSetPair_obj_hom`).
   have : IsIso (TopPair.toSSetPair.obj (TopPair.ofSubset (X b))).hom :=
     inferInstanceAs (IsIso (TopCat.toSSet.map (TopPair.ofSubset (X b)).map))
   have hz : IsZero (((TopPair.ofSubset (X b)).singularCochainComplex R k M).extend
@@ -195,7 +196,7 @@ def singularCochainFiltrationCokernelIso {a b : ℤ} (hab : X a ⊆ X b) :
         ComplexShape.embeddingUpNat :=
   have hS := ((TopTriple.ofSubset hab).shortExact_singularCochainComplexShortComplex R k M).extend
     ComplexShape.embeddingUpNat
-  cokernel.mapIso _ (restrictCochains R k M hab) (singularCochainFiltrationIso R k M X b)
+  cokernel.mapIso _ _ (singularCochainFiltrationIso R k M X b)
       (singularCochainFiltrationIso R k M X a)
       (ofLE_comp_singularCochainFiltrationIso_hom R k M hab) ≪≫
     (colimit.isColimit _).coconePointUniqueUpToIso hS.gIsCokernel
@@ -208,6 +209,8 @@ lemma π_singularCochainFiltrationCokernelIso_hom {a b : ℤ} (hab : X a ⊆ X b
       (singularCochainFiltrationIso R k M X a).hom ≫
         extendMap (TopPair.singularCochainComplexMap
           (TopTriple.innerToTotal.app (TopTriple.ofSubset hab))) ComplexShape.embeddingUpNat :=
+  -- The cokernel of the triple's cochain sequence is stated for the pairs of the triple, so the
+  -- colimit equations are composed directly rather than through `simp`.
   (cokernel.π_desc_assoc _ _ _ _).trans <| (Category.assoc _ _ _).trans <|
     congrArg (_ ≫ ·) (IsColimit.comp_coconePointUniqueUpToIso_hom _ _ WalkingParallelPair.one)
 
@@ -258,7 +261,7 @@ total degree `p + q`, since singular cochains are concentrated in nonnegative de
 lemma isZero_filteredSpaceCohomologySpectralSequence_page_one_X (p q : ℤ) (h : p + q < 0) :
     IsZero (((filteredSpaceCohomologySpectralSequence R k M hX).page 1).X (p, q)) :=
   IsZero.of_iso ((extend_exactAt _ ComplexShape.embeddingUpNat _ fun n hn ↦ by
-      have : (n : ℤ) = p + q := hn
+      rw [ComplexShape.embeddingUpNat_f] at hn
       lia).isZero_homology)
     (firstPageXIsoExtend R k M hX p q (p - 1) p rfl rfl)
 

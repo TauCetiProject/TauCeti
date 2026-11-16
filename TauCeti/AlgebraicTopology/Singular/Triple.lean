@@ -150,6 +150,11 @@ instance [CategoryWithHomology C] :
 of `B`, so it descends to the quotients by them. -/
 instance isSplitMono_singularChainComplexMap_innerToTotal_f (n : ℕ) :
     IsSplitMono ((TopPair.singularChainComplexMap (innerToTotal.app T) R).f n) := by
+  -- The singular simplicial pair of `(X, A)` has `TopCat.toSSet.map T.outerMap` as its map only
+  -- up to unfolding `TopPair.toSSetPair` and `outerPair`, so its degreewise splitting is
+  -- supplied explicitly. For the same reason, the sources of the quotient maps below agree with
+  -- the singular chains of `X` and `A` only definitionally, so `rw` cannot match the composites
+  -- with them and the equations are composed with `exact` instead.
   have : IsSplitMono ((SSet.chainComplexMap (TopCat.toSSet.map T.outerMap) R).f n) :=
     inferInstanceAs (IsSplitMono
       ((SSet.chainComplexMap (TopPair.toSSetPair.obj (outerPair.obj T)).hom R).f n))
@@ -161,9 +166,8 @@ instance isSplitMono_singularChainComplexMap_innerToTotal_f (n : ℕ) :
   -- identity; so `r` followed by the quotient map vanishes on them.
   have e : (SSet.chainComplexMap (TopCat.toSSet.map T.innerMap) R ≫
       SSet.chainComplexMap (TopCat.toSSet.map T.outerMap) R).f n =
-      (SSet.chainComplexMap (TopCat.toSSet.map T.totalMap) R).f n :=
-    congrArg (fun φ ↦ φ.f n) <| (((SSet.chainComplexFunctor C).obj R).map_comp _ _).symm.trans <|
-      congrArg _ ((TopCat.toSSet.map_comp _ _).symm.trans (congrArg _ T.innerMap_comp_outerMap))
+      (SSet.chainComplexMap (TopCat.toSSet.map T.totalMap) R).f n := by
+    rw [← Functor.map_comp, ← TopCat.toSSet.map_comp, T.innerMap_comp_outerMap]
   have hB : (SSet.chainComplexMap (TopCat.toSSet.map T.totalMap) R).f n ≫ r ≫
       ((innerPair.obj T).singularChainComplexπ R).f n = 0 :=
     (congrArg (· ≫ r ≫ _) e).symm.trans <| (Category.assoc _ _ _).trans <|

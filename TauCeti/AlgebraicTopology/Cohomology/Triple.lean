@@ -33,7 +33,9 @@ sequence of a filtered space.
 * `TauCeti.TopTriple.singularCochainComplexShortComplex`: the cochain sequence of a triple.
 * `TauCeti.TopTriple.shortExact_singularCochainComplexShortComplex`: it is short exact.
 * `TauCeti.TopTriple.singularCohomologyδ`: the connecting morphism `Hⁿ(A, B) ⟶ Hⁿ⁺¹(X, A)`, with
-  the exactness statements `TauCeti.TopTriple.singularCohomology_exact_outer`,
+  the zero composites `TauCeti.TopTriple.singularCohomologyδ_comp` and
+  `TauCeti.TopTriple.comp_singularCohomologyδ`, and the exactness statements
+  `TauCeti.TopTriple.singularCohomology_exact_outer`,
   `TauCeti.TopTriple.singularCohomology_exact_total` and
   `TauCeti.TopTriple.singularCohomology_exact_inner`.
 
@@ -76,12 +78,23 @@ abbrev singularCohomologyδ (n m : ℕ) (h : n + 1 = m := by lia) :
     (innerPair.obj T).singularCohomology R k M n ⟶ (outerPair.obj T).singularCohomology R k M m :=
   (T.shortExact_singularCochainComplexShortComplex R k M).δ n m (by simpa)
 
+/-- The connecting morphism `Hⁿ(A, B) ⟶ Hᵐ(X, A)` followed by `Hᵐ(X, A) ⟶ Hᵐ(X, B)` is zero. -/
+@[reassoc (attr := simp)]
+lemma singularCohomologyδ_comp (n m : ℕ) (h : n + 1 = m := by lia) :
+    T.singularCohomologyδ R k M n m h ≫ TopPair.singularCohomologyMap (totalToOuter.app T) m = 0 :=
+  (T.shortExact_singularCochainComplexShortComplex R k M).δ_comp n m (by simpa)
+
+/-- The map `Hⁿ(X, B) ⟶ Hⁿ(A, B)` followed by the connecting morphism `Hⁿ(A, B) ⟶ Hᵐ(X, A)` is
+zero. -/
+@[reassoc (attr := simp)]
+lemma comp_singularCohomologyδ (n m : ℕ) (h : n + 1 = m := by lia) :
+    TopPair.singularCohomologyMap (innerToTotal.app T) n ≫ T.singularCohomologyδ R k M n m h = 0 :=
+  (T.shortExact_singularCochainComplexShortComplex R k M).comp_δ n m (by simpa)
+
 /-- Exactness of `Hⁿ(A, B) ⟶ Hᵐ(X, A) ⟶ Hᵐ(X, B)` in the long exact sequence of a triple, for
 `n + 1 = m`. -/
 lemma singularCohomology_exact_outer (n m : ℕ) (h : n + 1 = m := by lia) :
-    (ShortComplex.mk (T.singularCohomologyδ R k M n m h)
-      (HomologicalComplex.homologyMap (T.singularCochainComplexShortComplex R k M).f m)
-      ((T.shortExact_singularCochainComplexShortComplex R k M).δ_comp n m (by simpa))).Exact :=
+    (ShortComplex.mk _ _ (T.singularCohomologyδ_comp R k M n m h)).Exact :=
   (T.shortExact_singularCochainComplexShortComplex R k M).homology_exact₁ n m (by simpa)
 
 /-- Exactness of `Hⁿ(X, A) ⟶ Hⁿ(X, B) ⟶ Hⁿ(A, B)` in the long exact sequence of a triple. -/
@@ -93,10 +106,7 @@ lemma singularCohomology_exact_total (n : ℕ) :
 /-- Exactness of `Hⁿ(X, B) ⟶ Hⁿ(A, B) ⟶ Hᵐ(X, A)` in the long exact sequence of a triple, for
 `n + 1 = m`. -/
 lemma singularCohomology_exact_inner (n m : ℕ) (h : n + 1 = m := by lia) :
-    (ShortComplex.mk
-      (HomologicalComplex.homologyMap (T.singularCochainComplexShortComplex R k M).g n)
-      (T.singularCohomologyδ R k M n m h)
-      ((T.shortExact_singularCochainComplexShortComplex R k M).comp_δ n m (by simpa))).Exact :=
+    (ShortComplex.mk _ _ (T.comp_singularCohomologyδ R k M n m h)).Exact :=
   (T.shortExact_singularCochainComplexShortComplex R k M).homology_exact₃ n m (by simpa)
 
 end TopTriple
