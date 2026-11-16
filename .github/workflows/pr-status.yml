@@ -10,7 +10,9 @@ name: PR status
 # job's `environment`) and then the run ahead of it, then reserved reconciliation capacity. Bounded batches retain unfinished work.
 # Failed runs retain unfinished work and quota deadlines in a verified artifact;
 # the next run resumes without replaying its successful prefix.
-# pr-labels.yml keeps the hourly reconcile-all sweep of labels and the manual re-sync.
+# pr-labels.yml keeps the hourly backstop sweep of labels and the manual re-sync.
+# This job uses isolated PR-status guests restricted to these trusted main workflows.
+# Candidate build guests cannot receive this repository App key.
 
 on:
   # Retry retained work even after the final PR event of a quiet period.
@@ -34,11 +36,18 @@ permissions:
 jobs:
   reconcile:
     # Meaningful PR events plus periodic/manual recovery; other events skip.
+    # Lifecycle label writes are skipped: labels.py writes them from this batch (the list is its
+    # STATUS_LABELS), and they are outputs rather than inputs, so waking on them only replaced the
+    # pending run and painted a cancelled check on the PR head. Labels that are inputs
+    # (self-tested, hold, keep, roadmap/*, ...) still wake the batch.
     if: >
       github.repository == 'TauCetiProject/TauCeti' && (
         ((github.event_name == 'schedule' || github.event_name == 'workflow_dispatch') && github.ref == 'refs/heads/main')
         || (github.event_name == 'pull_request_target'
-          && (github.event.action != 'edited' || github.event.changes.base != null))
+          && (github.event.action != 'edited' || github.event.changes.base != null)
+          && !((github.event.action == 'labeled' || github.event.action == 'unlabeled')
+               && contains(fromJSON('["awaiting-CI","awaiting-review","review-in-progress","ci-failed","awaiting-author","merge-check-failed","needs-human-review","awaiting-dependency","on-hold","ready-to-merge"]'),
+                    github.event.label.name)))
         || (github.event_name == 'workflow_run'
             && ((github.event.workflow_run.name == 'pr-build'
                  && contains(fromJSON('["pull_request_target", "workflow_dispatch", "repository_dispatch"]'),
@@ -95,10 +104,10 @@ jobs:
             .github/actions/checkout-merge-policy
           persist-credentials: false
       - name: Prepare pinned shared tools
-        uses: TauCetiProject/TauCetiTools/.github/actions/setup@fde8de7370d5ea85493e23968edc377aaadb60df
+        uses: TauCetiProject/TauCetiTools/.github/actions/setup@e4ed3eab96457b7425b494b0ea1952319f1d12d6
         with:
           tools-repository: TauCetiProject/TauCetiTools
-          tools-ref: fde8de7370d5ea85493e23968edc377aaadb60df
+          tools-ref: e4ed3eab96457b7425b494b0ea1952319f1d12d6
           project-directory: .
       - name: Checkout the pinned merge policy (read-only)
         uses: ./.github/actions/checkout-merge-policy
@@ -172,7 +181,7 @@ jobs:
           args=(--since "$SINCE" --state-in "$RUNNER_TEMP/state-in/state.json" --state-out "$RUNNER_TEMP/progress/state.json")
           mkdir -p "$RUNNER_TEMP/progress"
           case "$PR" in ''|*[!0-9]*) ;; *) args+=(--pr "$PR") ;; esac
-          python3 scripts/pr_status/batch.py "${args[@]}" --prioritize-self-tested --budget-seconds 600
+          python3 scripts/pr_status/batch.py "${args[@]}" --budget-seconds 600
 
       - name: Save completed progress and unfinished work
         if: always()
