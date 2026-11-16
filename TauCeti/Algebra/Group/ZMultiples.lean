@@ -18,11 +18,14 @@ the ambient group to be torsion-free. A homomorphism into a torsion-free additiv
 injective on `zmultiples p` whenever it is nonzero at `p`. If `n ↦ n • g` identifies `ℤ` with a
 group `H`, then any element that an additive endomorphism of `H` sends to `g` is `g` up to a unit
 of `ℤ`, and every surjective additive endomorphism of `H` is an involution. Free generation
-`n ↦ n • g` is transported along additive equivalences.
+`n ↦ n • g` is transported along additive equivalences, and generation of the whole group is
+transported along surjective additive maps.
 
 ## Main declarations
 
 * `TauCeti.intEquivZMultiples`: the isomorphism `ℤ ≃+ zmultiples p` for a non-torsion `p`.
+* `TauCeti.zmultiples_apply_eq_top_of_surjective`: a surjective additive map sends a generator
+  of the source to a generator of the target.
 * `AddMonoidHom.comp_zmultiples_subtype_injective`: injectivity on a cyclic subgroup when
   its generator has nonzero image in a torsion-free group.
 * `AddMonoidHom.exists_eq_units_smul_of_map_eq`: in an infinite cyclic group with generator `g`,
@@ -62,6 +65,15 @@ theorem intEquivZMultiples_symm_mk_zsmul (hp : ¬ IsOfFinAddOrder p) (n : ℤ) :
 theorem intEquivZMultiples_symm_zsmul (hp : ¬ IsOfFinAddOrder p) (a : zmultiples p) :
     (intEquivZMultiples hp).symm a • p = (a : G) := by
   rw [← intEquivZMultiples_apply hp, AddEquiv.apply_symm_apply]
+
+/-- A surjective additive map sends an element whose `ℤ`-multiples exhaust the source to an element
+whose `ℤ`-multiples exhaust the target. -/
+theorem zmultiples_apply_eq_top_of_surjective {F H : Type*} [AddGroup H] [FunLike F G H]
+    [AddMonoidHomClass F G H] {g : F} (hg : Function.Surjective g) (hp : zmultiples p = ⊤) :
+    zmultiples (g p) = ⊤ := by
+  rw [← AddMonoidHom.coe_ofClass g, ← AddMonoidHom.map_zmultiples, hp, ← AddMonoidHom.range_eq_map,
+    AddMonoidHom.range_eq_top]
+  exact hg
 
 end TauCeti
 
