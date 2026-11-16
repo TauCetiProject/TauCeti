@@ -80,15 +80,20 @@ theorem Memℓp.indicator_comp {f : ι → G} (hf : Memℓp f p) {g : ι' → ι
 
 /-- **Reindexing in `ℓᵖ` does not increase the norm.** If `g` is injective on `s` and `f'` reads
 `f` along `g` on `s` and vanishes off `s`, then `‖f'‖ ≤ ‖f‖`. -/
-theorem lp.norm_le_of_forall_eq_indicator_comp (hp : p ≠ 0) {f : lp (fun _ : ι ↦ G) p}
+theorem lp.norm_le_of_forall_eq_indicator_comp {f : lp (fun _ : ι ↦ G) p}
     {f' : lp (fun _ : ι' ↦ G) p} {g : ι' → ι} {s : Set ι'} (hg : s.InjOn g)
     (h : ∀ j, f' j = s.indicator (f ∘ g) j) : ‖f'‖ ≤ ‖f‖ := by
   rcases p.trichotomy with rfl | rfl | hp'
-  · exact absurd rfl hp
+  · rw [lp.norm_eq_card_dsupport, lp.norm_eq_card_dsupport]
+    have hmem : ∀ j ∈ (lp.memℓp f').finite_dsupport.toFinset, j ∈ s ∧ f (g j) ≠ 0 :=
+      fun j hj ↦ by simpa [h j] using hj
+    exact_mod_cast Finset.card_le_card_of_injOn g
+      (fun j hj ↦ by simpa using (hmem j hj).2)
+      (fun j₁ hj₁ j₂ hj₂ hij ↦ hg (hmem j₁ hj₁).1 (hmem j₂ hj₂).1 hij)
   · refine lp.norm_le_of_forall_le (lp.norm_nonneg' f) fun j ↦ ?_
     rw [h j]
     by_cases hj : j ∈ s
-    · simpa [hj] using lp.norm_apply_le_norm hp f (g j)
+    · simpa [hj] using lp.norm_apply_le_norm ENNReal.top_ne_zero f (g j)
     · simp [hj, lp.norm_nonneg' f]
   · classical
     refine lp.norm_le_of_forall_sum_le hp' (lp.norm_nonneg' f) fun t ↦ ?_
@@ -130,14 +135,13 @@ theorem Memℓp.sum_Ico_sub_add {f : ℕ → G} (hf : Memℓp f p) (L : ℕ) :
 `ℓᵖ` norm at most `2 L ‖f‖`. -/
 theorem lp.norm_le_of_forall_eq_sum_Ico_sub_add [Fact (1 ≤ p)] {f f' : lp (fun _ : ℕ ↦ G) p}
     (L : ℕ) (h : ∀ j, f' j = ∑ k ∈ Finset.Ico (j - L) (j + L), f k) : ‖f'‖ ≤ 2 * L * ‖f‖ := by
-  have hp : p ≠ 0 := (zero_lt_one.trans_le Fact.out).ne'
   have hg : ∀ d, {i | L ≤ i + d}.InjOn fun i ↦ i + d - L :=
     fun _ _ hi _ hi' h ↦ add_right_cancel (tsub_inj_left hi hi' h)
   set T : ℕ → lp (fun _ : ℕ ↦ G) p := fun d ↦
     ⟨{i | L ≤ i + d}.indicator (f ∘ fun i ↦ i + d - L),
       (lp.memℓp f).indicator_comp (hg d)⟩
   have hT : ∀ d, ‖T d‖ ≤ ‖f‖ := fun d ↦
-    lp.norm_le_of_forall_eq_indicator_comp hp (hg d) fun _ ↦ rfl
+    lp.norm_le_of_forall_eq_indicator_comp (hg d) fun _ ↦ rfl
   have hf' : f' = ∑ d ∈ Finset.range (2 * L), T d := by
     ext j
     rw [h, Finset.sum_Ico_sub_add_eq_sum_range_indicator, lp.coeFn_sum, Finset.sum_apply]
@@ -167,7 +171,7 @@ theorem lp.exists_hasSum_and_norm_le_of_summable [Fact (1 ≤ p)] [CompleteSpace
     ⟨{j : ℕ | 0 ≤ (j : ℤ) + d}.indicator (x ∘ fun j : ℕ ↦ ((j : ℤ) + d).toNat),
       (lp.memℓp x).indicator_comp (hinj d)⟩
   have hz (d : ℤ) : ‖z d‖ ≤ ‖x‖ :=
-    lp.norm_le_of_forall_eq_indicator_comp hp (hinj d) fun _ ↦ rfl
+    lp.norm_le_of_forall_eq_indicator_comp (hinj d) fun _ ↦ rfl
   set t : ℤ → ℕ → G := fun d j ↦ if 0 ≤ (j : ℤ) + d then w j ((j : ℤ) + d).toNat else 0
   have ht (d : ℤ) (j : ℕ) : ‖t d j‖ ≤ c * a d * ‖(z d : ℕ → G) j‖ := by
     by_cases hj : 0 ≤ (j : ℤ) + d
@@ -216,7 +220,6 @@ theorem lp.exists_forall_hasSum_pow_smul_add_and_norm_le [Fact (1 ≤ p)] [Norme
     [CompleteSpace G] (f : lp (fun _ : ℕ ↦ G) p) {r : ℝ} (hr0 : 0 ≤ r) (hr1 : r < 1) :
     ∃ g : lp (fun _ : ℕ ↦ G) p, (∀ j, HasSum (fun d ↦ r ^ d • f (d + j)) (g j)) ∧
       ‖g‖ ≤ (1 - r)⁻¹ * ‖f‖ := by
-  have hp : p ≠ 0 := (zero_lt_one.trans_le Fact.out).ne'
   have hinj (d : ℕ) : (Set.univ : Set ℕ).InjOn fun j ↦ d + j :=
     fun _ _ _ _ h ↦ add_left_cancel h
   -- The shift `T d = (f (d + j))ⱼ`, of norm at most `‖f‖`.
@@ -226,7 +229,7 @@ theorem lp.exists_forall_hasSum_pow_smul_add_and_norm_le [Fact (1 ≤ p)] [Norme
   have hbound (d : ℕ) : ‖r ^ d • T d‖ ≤ ‖f‖ * r ^ d := by
     rw [norm_smul, Real.norm_of_nonneg (by positivity), mul_comm]
     exact mul_le_mul_of_nonneg_right
-      (lp.norm_le_of_forall_eq_indicator_comp hp (hinj d) fun _ ↦ rfl) (by positivity)
+      (lp.norm_le_of_forall_eq_indicator_comp (hinj d) fun _ ↦ rfl) (by positivity)
   have hgeom := (summable_geometric_of_lt_one hr0 hr1).mul_left ‖f‖
   have hsum : Summable fun d ↦ r ^ d • T d := Summable.of_norm_bounded hgeom hbound
   refine ⟨∑' d, r ^ d • T d, fun j ↦ ?_, ?_⟩
@@ -260,14 +263,8 @@ theorem Equiv.memℓp_comp_iff {α : Type*} {β : Type*} {H : Type*} [NormedAddC
 theorem lp.norm_le_of_forall_eq_comp {α : Type*} {β : Type*} {H : Type*}
     [NormedAddCommGroup H] {q : ℝ≥0∞} {f : lp (fun _ : β ↦ H) q}
     {g : lp (fun _ : α ↦ H) q} {e : α → β} (he : Function.Injective e) (h : ∀ i, g i = f (e i)) :
-    ‖g‖ ≤ ‖f‖ := by
-  rcases eq_or_ne q 0 with rfl | hq
-  · rw [lp.norm_eq_card_dsupport, lp.norm_eq_card_dsupport]
-    exact_mod_cast Finset.card_le_card_of_injOn e
-      (fun i hi ↦ by simpa [← h i] using hi)
-      (fun _ _ _ _ hij ↦ he hij)
-  · exact lp.norm_le_of_forall_eq_indicator_comp hq (s := Set.univ) he.injOn fun i ↦ by
-      simpa using h i
+    ‖g‖ ≤ ‖f‖ :=
+  lp.norm_le_of_forall_eq_indicator_comp (s := Set.univ) he.injOn fun i ↦ by simpa using h i
 
 /-- Reindexing a sequence in `ℓᵖ` along an equivalence preserves the `ℓᵖ` norm. -/
 theorem lp.norm_eq_of_forall_eq_comp_equiv {α : Type*} {β : Type*} {H : Type*}
@@ -289,8 +286,10 @@ This is the `lp` counterpart of `LinearIsometryEquiv.piLpCongrLeft`. -/
 def lpCongrLeft (e : α ≃ β) : lp (fun _ : α ↦ H) q ≃ₗᵢ[𝕜] lp (fun _ : β ↦ H) q where
   toFun v := ⟨v ∘ e.symm, (lp.memℓp v).comp_equiv e.symm⟩
   invFun w := ⟨w ∘ e, (lp.memℓp w).comp_equiv e⟩
-  map_add' _ _ := lp.ext rfl
-  map_smul' _ _ := lp.ext rfl
+  map_add' _ _ := lp.ext <| funext fun _ ↦ by
+    simp only [lp.coeFn_add, Pi.add_apply, Function.comp_apply]
+  map_smul' _ _ := lp.ext <| funext fun _ ↦ by
+    simp only [lp.coeFn_smul, Pi.smul_apply, Function.comp_apply, RingHom.id_apply]
   left_inv v := lp.ext (funext fun i ↦ by simp)
   right_inv w := lp.ext (funext fun j ↦ by simp)
   norm_map' _ := lp.norm_eq_of_forall_eq_comp_equiv e.symm fun _ ↦ rfl
@@ -312,15 +311,17 @@ theorem coeFn_lpCongrLeft (e : α ≃ β) (v : lp (fun _ : α ↦ H) q) :
 @[simp]
 theorem lpCongrLeft_symm (e : α ≃ β) :
     (lpCongrLeft q 𝕜 H e).symm = lpCongrLeft q 𝕜 H e.symm := by
-  ext v i
-  rfl
+  refine LinearIsometryEquiv.ext fun v ↦ ?_
+  rw [LinearIsometryEquiv.symm_apply_eq]
+  ext j
+  simp
 
 /-- Reindexing along the identity equivalence is the identity linear isometric equivalence. -/
 @[simp]
 theorem lpCongrLeft_refl :
     lpCongrLeft q 𝕜 H (Equiv.refl α) = LinearIsometryEquiv.refl 𝕜 (lp (fun _ : α ↦ H) q) := by
   ext v i
-  rfl
+  simp
 
 /-- Reindexing along a composition of equivalences is the composition of the reindexing linear
 isometric equivalences. -/
@@ -328,7 +329,7 @@ isometric equivalences. -/
 theorem lpCongrLeft_trans (e₁ : α ≃ β) (e₂ : β ≃ γ) :
     (lpCongrLeft q 𝕜 H e₁).trans (lpCongrLeft q 𝕜 H e₂) = lpCongrLeft q 𝕜 H (e₁.trans e₂) := by
   ext v k
-  rfl
+  simp
 
 /-- Applying two `LinearIsometryEquiv.lpCongrLeft` equivalences in succession reindexes along the
 composed equivalence. -/

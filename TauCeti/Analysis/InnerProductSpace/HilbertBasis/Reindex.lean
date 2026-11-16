@@ -171,9 +171,8 @@ theorem inner_equiv_left (b : HilbertBasis ι 𝕜 E) (c : HilbertBasis κ 𝕜 
 `b.equiv c e x = ∑ᵢ ⟪b i, x⟫_𝕜 • c (e i)`. -/
 theorem hasSum_equiv_apply (b : HilbertBasis ι 𝕜 E) (c : HilbertBasis κ 𝕜 F) (e : ι ≃ κ) (x : E) :
     HasSum (fun i ↦ ⟪b i, x⟫_𝕜 • c (e i)) (b.equiv c e x) := by
-  have h : HasSum (fun i ↦ b.equiv c e (b.repr x i • b i)) (b.equiv c e x) :=
-    (b.equiv c e).toContinuousLinearEquiv.toContinuousLinearMap.hasSum (b.hasSum_repr x)
-  simpa only [map_smul, b.equiv_apply_basis c e, b.repr_apply_apply] using h
+  simpa only [LinearIsometryEquiv.coe_coe'', b.equiv_apply_basis c e] using
+    b.hasSum_inner_smul_apply (b.equiv c e : E →L[𝕜] F) x
 
 /-- The inverse of `b.equiv c e` is `c.equiv b e.symm`. -/
 @[simp]
@@ -240,11 +239,5 @@ unique linear isometric equivalence `U : E ≃ₗᵢ[𝕜] F` satisfying `U (b i
 theorem existsUnique_linearIsometryEquiv (b : HilbertBasis ι 𝕜 E) (c : HilbertBasis κ 𝕜 F)
     (e : ι ≃ κ) : ∃! U : E ≃ₗᵢ[𝕜] F, ∀ i, U (b i) = c (e i) :=
   ⟨b.equiv c e, b.equiv_apply_basis c e, fun _ hU ↦ b.eq_equiv_of_forall_apply_eq c e hU⟩
-
-/-- Given Hilbert bases `b` of `E` and `c` of `F` and an equivalence `e : ι ≃ κ`, there exists a
-linear isometric equivalence `U : E ≃ₗᵢ[𝕜] F` carrying `b i` to `c (e i)` for every `i`. -/
-theorem exists_linearIsometryEquiv (b : HilbertBasis ι 𝕜 E) (c : HilbertBasis κ 𝕜 F)
-    (e : ι ≃ κ) : ∃ U : E ≃ₗᵢ[𝕜] F, ∀ i, U (b i) = c (e i) :=
-  ⟨b.equiv c e, b.equiv_apply_basis c e⟩
 
 end HilbertBasis

@@ -98,11 +98,6 @@ theorem Memℓp.countable_dsupport {ι : Type*} {E : ι → Type*} [∀ i, Norme
     refine (hf.summable hpr).countable_support.mono fun i hi ↦ ?_
     exact (Real.rpow_pos_of_pos (norm_pos_iff.2 hi) p.toReal).ne'
 
-/-- For `p ≠ ∞`, a sequence in `ℓᵖ` with constant fibre has countable support. -/
-theorem Memℓp.countable_support {ι : Type*} {G : Type*} [NormedAddCommGroup G] {p : ℝ≥0∞}
-    {f : ι → G} (hf : Memℓp f p) (hp : p ≠ ∞) : (Function.support f).Countable :=
-  hf.countable_dsupport hp
-
 namespace lp
 
 variable {ι 𝕜 : Type*} {E : ι → Type*} [∀ i, NormedAddCommGroup (E i)]
@@ -312,11 +307,6 @@ namespace lp
 theorem countable_dsupport {ι : Type*} {E : ι → Type*} [∀ i, NormedAddCommGroup (E i)]
     {p : ℝ≥0∞} (hp : p ≠ ∞) (f : lp E p) : {i | f i ≠ 0}.Countable :=
   (lp.memℓp f).countable_dsupport hp
-
-/-- For `p ≠ ∞`, every vector of `lp (fun _ ↦ G) p` has countable support. -/
-theorem countable_support {ι : Type*} {G : Type*} [NormedAddCommGroup G] {p : ℝ≥0∞}
-    (hp : p ≠ ∞) (f : lp (fun _ : ι ↦ G) p) : (Function.support f).Countable :=
-  (lp.memℓp f).countable_support hp
 
 /-- If `lp E p` (`1 ≤ p`) is separable and every fibre `E i` is nontrivial, then the index type `ι`
 is countable. -/

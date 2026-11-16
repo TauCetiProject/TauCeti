@@ -67,14 +67,18 @@ theorem ext_linearIsometry {ι 𝕜' M : Type*} [Semiring 𝕜'] {σ : 𝕜 →+
   LinearIsometry.toContinuousLinearMap_injective <| b.ext_continuousLinearMap fun i ↦ by
     simpa only [LinearIsometry.coe_toContinuousLinearMap] using h i
 
-/-- Two semilinear isometric equivalences out of `E` into a normed module agree when they agree on
-every vector of a Hilbert basis of `E`. -/
+/-- Two semilinear isometric equivalences out of `E` into a seminormed module agree when they agree
+on every vector of a Hilbert basis of `E`. -/
 theorem ext_linearIsometryEquiv {ι 𝕜' M : Type*} [Semiring 𝕜'] {σ : 𝕜 →+* 𝕜'} {σ' : 𝕜' →+* 𝕜}
     [RingHomInvPair σ σ'] [RingHomInvPair σ' σ]
-    [NormedAddCommGroup M] [Module 𝕜' M] (b : _root_.HilbertBasis ι 𝕜 E)
-    {U V : E ≃ₛₗᵢ[σ] M} (h : ∀ i, U (b i) = V (b i)) : U = V :=
-  LinearIsometryEquiv.toLinearIsometry_injective <| b.ext_linearIsometry fun i ↦ by
-    simpa only [LinearIsometryEquiv.coe_toLinearIsometry] using h i
+    [SeminormedAddCommGroup M] [Module 𝕜' M] (b : _root_.HilbertBasis ι 𝕜 E)
+    {U V : E ≃ₛₗᵢ[σ] M} (h : ∀ i, U (b i) = V (b i)) : U = V := by
+  have : T2Space M := U.toHomeomorph.t2Space
+  exact LinearIsometryEquiv.toLinearIsometry_injective <|
+    LinearIsometry.toContinuousLinearMap_injective <|
+      b.ext_continuousLinearMap fun i ↦ by
+        simpa only [LinearIsometry.coe_toContinuousLinearMap,
+          LinearIsometryEquiv.coe_toLinearIsometry] using h i
 
 /-- Two continuous linear maps between Hilbert spaces are equal when their matrix entries
 `⟪c i, A (b j)⟫` in Hilbert bases `b` of the source and `c` of the target agree. -/

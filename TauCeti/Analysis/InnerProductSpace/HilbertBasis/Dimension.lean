@@ -87,10 +87,9 @@ variable {ι : Type*} {𝕜 : Type*} {E : Type*} [RCLike 𝕜]
 
 /-- An inner product space carrying a Hilbert basis indexed by `ι` is trivial if and only if `ι` is
 empty. -/
-theorem subsingleton_iff_isEmpty (b : HilbertBasis ι 𝕜 E) : Subsingleton E ↔ IsEmpty ι := by
-  refine ⟨fun _ ↦ ⟨fun i ↦ b.orthonormal.ne_zero i (Subsingleton.elim _ _)⟩, fun _ ↦ ?_⟩
-  have : Subsingleton ℓ²(ι, 𝕜) := ⟨fun x y ↦ lp.ext (funext isEmptyElim)⟩
-  exact b.repr.toEquiv.subsingleton
+theorem subsingleton_iff_isEmpty (b : HilbertBasis ι 𝕜 E) : Subsingleton E ↔ IsEmpty ι :=
+  ⟨fun _ ↦ ⟨fun i ↦ b.orthonormal.ne_zero i (Subsingleton.elim _ _)⟩,
+   fun _ ↦ b.repr.toEquiv.subsingleton⟩
 
 /-- An inner product space carrying a Hilbert basis indexed by `ι` is nontrivial if and only if `ι`
 is nonempty. -/
