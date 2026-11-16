@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Analysis.InnerProductSpace.Basic
 public import Mathlib.Analysis.RCLike.Basic
 public import Mathlib.Analysis.SpecialFunctions.Pow.NNReal
 import Mathlib.Analysis.Calculus.MeanValue
@@ -18,12 +19,13 @@ A radial map `y ↦ (ρ ‖y‖ / ‖y‖) • y` keeps the direction of `y` and
 profile `ρ` is Lipschitz on `[0, ∞)` and grows at most linearly from `ρ 0 = 0`
 (`TauCeti.lipschitzWith_ofReal_div_norm_smul`).
 
-The main example is the profile `t ↦ min t N ^ s` with `s ≥ 1`
-(`TauCeti.lipschitzWith_ofReal_min_norm_rpow_div_norm_smul`). For `s = 1` the map truncates the
-length of `y` at `N`; for `s = q - 1` it is a truncation of the map `y ↦ ‖y‖ ^ (q - 2) • y`, whose
-pairing with `y` is `‖y‖ ^ q`. Composing a function in `Lᵖ` with these Lipschitz maps vanishing at
-`0` gives continuous maps of `Lᵖ` into itself (`LipschitzWith.compLp`), which is how truncated
-extremal functions for `L^q` norms are produced continuously from the function they norm.
+The main example is the truncated power `TauCeti.truncPow`, the radial map with profile
+`t ↦ min t N ^ s`, which is Lipschitz for `s ≥ 1` (`TauCeti.lipschitzWith_truncPow`). For `s = 1`
+the map truncates the length of `y` at `N`; for `s = q - 1` it is a truncation of the map
+`y ↦ ‖y‖ ^ (q - 2) • y`, whose pairing with `y` is `‖y‖ ^ q` (`TauCeti.inner_truncPow`).
+Composing a function in `Lᵖ` with these Lipschitz maps vanishing at `0` gives continuous maps of
+`Lᵖ` into itself (`LipschitzWith.compLp`), which is how truncated extremal functions for `L^q`
+norms are produced continuously from the function they norm.
 -/
 
 public section
@@ -32,6 +34,8 @@ open Set
 open scoped NNReal
 
 namespace TauCeti
+
+section NormedSpace
 
 variable {𝕜 E : Type*} [RCLike 𝕜] [NormedAddCommGroup E] [NormedSpace 𝕜 E]
 
@@ -88,11 +92,39 @@ theorem lipschitzWith_ofReal_div_norm_smul {ρ : ℝ → ℝ} {L c : ℝ≥0}
   · rw [norm_sub_rev, norm_sub_rev x]
     exact key y x h
 
-/-- The radial map `y ↦ (min ‖y‖ N ^ s / ‖y‖) • y`, which replaces the length of `y` by
-`min ‖y‖ N ^ s`, is Lipschitz for `s ≥ 1`, with constant `(2 + s) N ^ (s - 1)`. -/
-theorem lipschitzWith_ofReal_min_norm_rpow_div_norm_smul (N : ℝ≥0) {s : ℝ} (hs : 1 ≤ s) :
-    LipschitzWith (2 * N ^ (s - 1) + s.toNNReal * N ^ (s - 1))
-      fun y : E ↦ ((min ‖y‖ N ^ s / ‖y‖ : ℝ) : 𝕜) • y := by
+variable (𝕜) in
+/-- The truncated power `y ↦ (min ‖y‖ N ^ s / ‖y‖) • y`, which keeps the direction of `y` and
+replaces its length by `min ‖y‖ N ^ s` (`TauCeti.norm_truncPow`). -/
+noncomputable def truncPow (N : ℝ≥0) (s : ℝ) (y : E) : E :=
+  ((min ‖y‖ N ^ s / ‖y‖ : ℝ) : 𝕜) • y
+
+variable (𝕜) in
+/-- The defining formula of the truncated power. -/
+theorem truncPow_def (N : ℝ≥0) (s : ℝ) (y : E) :
+    truncPow 𝕜 N s y = ((min ‖y‖ N ^ s / ‖y‖ : ℝ) : 𝕜) • y :=
+  (rfl)
+
+/-- The truncated power vanishes at `0`. -/
+@[simp]
+theorem truncPow_zero (N : ℝ≥0) (s : ℝ) : truncPow 𝕜 N s (0 : E) = 0 := by
+  simp [truncPow_def]
+
+/-- For `s > 0` the truncated power has length `min ‖y‖ N ^ s`. -/
+theorem norm_truncPow (N : ℝ≥0) {s : ℝ} (hs : 0 < s) (y : E) :
+    ‖truncPow 𝕜 N s y‖ = min ‖y‖ N ^ s := by
+  rcases eq_or_ne y 0 with rfl | hy
+  · simp [Real.zero_rpow hs.ne']
+  · have hy' : 0 < ‖y‖ := norm_pos_iff.2 hy
+    have := le_min hy'.le N.2
+    rw [truncPow_def, norm_smul, RCLike.norm_ofReal, abs_of_nonneg (by positivity),
+      div_mul_cancel₀ _ hy'.ne']
+
+/-- The truncated power `TauCeti.truncPow`, which replaces the length of `y` by `min ‖y‖ N ^ s`,
+is Lipschitz for `s ≥ 1`, with constant `(2 + s) N ^ (s - 1)`. -/
+theorem lipschitzWith_truncPow (N : ℝ≥0) {s : ℝ} (hs : 1 ≤ s) :
+    LipschitzWith (2 * N ^ (s - 1) + s.toNNReal * N ^ (s - 1)) (truncPow 𝕜 N s : E → E) := by
+  rw [show (truncPow 𝕜 N s : E → E) = fun y ↦ ((min ‖y‖ N ^ s / ‖y‖ : ℝ) : 𝕜) • y from
+    funext (truncPow_def 𝕜 N s)]
   refine lipschitzWith_ofReal_div_norm_smul (ρ := fun t ↦ min t N ^ s) ?_ fun t ht ↦ ?_
   · -- `t ↦ t ^ s` is `s N ^ (s - 1)`-Lipschitz on `[0, N]`, into which `min · N` maps `[0, ∞)`.
     have hpow : LipschitzOnWith (s.toNNReal * N ^ (s - 1)) (fun t : ℝ ↦ t ^ s) (Icc 0 N) := by
@@ -117,5 +149,26 @@ theorem lipschitzWith_ofReal_min_norm_rpow_div_norm_smul (N : ℝ≥0) {s : ℝ}
           have := min_le_left t N
           have := min_le_right t N
           gcongr
+
+end NormedSpace
+
+section InnerProductSpace
+
+variable {𝕜 E : Type*} [RCLike 𝕜] [NormedAddCommGroup E] [InnerProductSpace 𝕜 E]
+
+open scoped InnerProductSpace
+
+/-- The pairing of `y` with its truncated power is `‖y‖ min ‖y‖ N ^ s`. -/
+theorem inner_truncPow (N : ℝ≥0) (s : ℝ) (y : E) :
+    ⟪y, truncPow 𝕜 N s y⟫_𝕜 = ((‖y‖ * min ‖y‖ N ^ s : ℝ) : 𝕜) := by
+  rcases eq_or_ne y 0 with rfl | hy
+  · simp
+  · have hy' : ‖y‖ ≠ 0 := norm_ne_zero_iff.2 hy
+    rw [truncPow_def, inner_smul_right, inner_self_eq_norm_sq_to_K, ← RCLike.ofReal_pow,
+      ← RCLike.ofReal_mul]
+    congr 1
+    field_simp
+
+end InnerProductSpace
 
 end TauCeti

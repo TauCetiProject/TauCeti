@@ -9,6 +9,7 @@ public import Mathlib.MeasureTheory.Function.L2Space
 import Mathlib.MeasureTheory.Function.LpSpace.Complete
 import TauCeti.Analysis.Normed.Module.Normalize.Lipschitz
 import TauCeti.Analysis.SpecialFunctions.Pow.NNReal
+import TauCeti.Data.ENNReal.Inv
 import TauCeti.MeasureTheory.Function.Lp.Integral.Functional
 import TauCeti.MeasureTheory.Function.LpSeminorm.CompareExp
 import TauCeti.MeasureTheory.Function.LpSeminorm.Lintegral
@@ -40,12 +41,12 @@ pairings `∫ ⟪U(t) f, G(t)⟫ dt` for `L²`-valued `G`.
 The test function is a truncated extremal function. In space, for `N > 0`, put
 `u_N = (min ‖u‖ N / ‖u‖) u` and `g_N = (min ‖u‖ N ^ (r - 1) / ‖u‖) u`, so that
 `‖g_N‖ = ‖u_N‖ ^ (r - 1)` and `⟪u, g_N⟫ = ‖u‖ min (‖u‖, N) ^ (r - 1) ≥ ‖u_N‖ ^ r` pointwise. These
-are Lipschitz maps of `u` vanishing at `0`
-(`TauCeti.lipschitzWith_ofReal_min_norm_rpow_div_norm_smul`), hence continuous maps of `L²` into
-itself, which keeps `b ↦ g_N (Φ b)` measurable. With
-`ψ b = ‖u_N (Φ b)‖_{L^r}`, finite because `u_N (Φ b)` is bounded and square integrable, the test
-function in time is `G b = 1_A(b) ψ(b) ^ (q - r) g_N (Φ b)`, where `A` is a set of finite measure on
-which `ψ` is bounded above and below and `‖Φ b‖₂` is bounded. Then
+are the truncated powers `TauCeti.truncPow` at `s = 1` and `s = r - 1`, Lipschitz maps of `u`
+vanishing at `0` (`TauCeti.lipschitzWith_truncPow`), hence continuous maps of `L²` into itself,
+which keeps `b ↦ g_N (Φ b)` measurable. With `ψ b = ‖u_N (Φ b)‖_{L^r}`, finite because
+`u_N (Φ b)` is bounded and square integrable, the test function in time is
+`G b = 1_A(b) ψ(b) ^ (q - r) g_N (Φ b)`, where `A` is a set of finite measure on which `ψ` is
+bounded above and below and `‖Φ b‖₂` is bounded. Then
 
 `∫_A ψ ^ q ≤ |∫ ⟪Φ b, G b⟫| ≤ M ‖G‖_{L^{q'} L^{r'}} ≤ M (∫_A ψ ^ q) ^ (1 - 1 / q)`,
 
@@ -70,56 +71,21 @@ namespace MeasureTheory
 variable {β X 𝕜 E : Type*} [RCLike 𝕜] [NormedAddCommGroup E] [InnerProductSpace 𝕜 E]
   {mβ : MeasurableSpace β} {ρ : Measure β} {mX : MeasurableSpace X} {μ : Measure X}
 
-/-! ### Truncated powers -/
-
-/-- The truncated power `y ↦ (min ‖y‖ N ^ s / ‖y‖) y`, of length `min ‖y‖ N ^ s`. -/
-private def truncPow (N : ℝ≥0) (s : ℝ) (y : E) : E :=
-  ((min ‖y‖ N ^ s / ‖y‖ : ℝ) : 𝕜) • y
-
-private theorem truncPow_zero (N : ℝ≥0) (s : ℝ) : truncPow (𝕜 := 𝕜) N s (0 : E) = 0 := by
-  simp [truncPow]
-
-private theorem norm_truncPow (N : ℝ≥0) {s : ℝ} (hs : 0 < s) (y : E) :
-    ‖truncPow (𝕜 := 𝕜) N s y‖ = min ‖y‖ N ^ s := by
-  rcases eq_or_ne y 0 with rfl | hy
-  · simp [truncPow, Real.zero_rpow hs.ne']
-  · have hy' : 0 < ‖y‖ := norm_pos_iff.2 hy
-    have := le_min hy'.le N.2
-    rw [truncPow, norm_smul, RCLike.norm_ofReal, abs_of_nonneg (by positivity),
-      div_mul_cancel₀ _ hy'.ne']
-
-private theorem inner_truncPow (N : ℝ≥0) (s : ℝ) (y : E) :
-    ⟪y, truncPow (𝕜 := 𝕜) N s y⟫_𝕜 = ((‖y‖ * min ‖y‖ N ^ s : ℝ) : 𝕜) := by
-  rcases eq_or_ne y 0 with rfl | hy
-  · simp [truncPow]
-  · have hy' : ‖y‖ ≠ 0 := norm_ne_zero_iff.2 hy
-    rw [truncPow, inner_smul_right, inner_self_eq_norm_sq_to_K, ← RCLike.ofReal_pow,
-      ← RCLike.ofReal_mul]
-    congr 1
-    field_simp
-
-/-- An exponent `2 ≤ r < ∞` has `1 ≤ r - 1`. -/
-private theorem one_le_toReal_sub_one {r : ℝ≥0∞} (hr : r ≠ ∞) (hr2 : 2 ≤ r) :
-    1 ≤ r.toReal - 1 := by
-  have := ENNReal.toReal_mono hr hr2
-  simp only [ENNReal.toReal_ofNat] at this
-  linarith
-
 /-! ### Truncated powers of `L²` functions -/
 
 /-- The truncated power of an `L²` function, composed pointwise. -/
 private def truncLp (N : ℝ≥0) {s : ℝ} (hs : 1 ≤ s) (u : Lp E 2 μ) : Lp E 2 μ :=
-  (TauCeti.lipschitzWith_ofReal_min_norm_rpow_div_norm_smul (𝕜 := 𝕜) (E := E) N hs).compLp
-    (truncPow_zero N s) u
+  (TauCeti.lipschitzWith_truncPow (𝕜 := 𝕜) (E := E) N hs).compLp
+    (TauCeti.truncPow_zero N s) u
 
 private theorem coeFn_truncLp (N : ℝ≥0) {s : ℝ} (hs : 1 ≤ s) (u : Lp E 2 μ) :
-    truncLp (𝕜 := 𝕜) N hs u =ᵐ[μ] fun x ↦ truncPow (𝕜 := 𝕜) N s (u x) :=
+    truncLp (𝕜 := 𝕜) N hs u =ᵐ[μ] fun x ↦ TauCeti.truncPow 𝕜 N s (u x) :=
   LipschitzWith.coeFn_compLp _ _ _
 
 private theorem continuous_truncLp (N : ℝ≥0) {s : ℝ} (hs : 1 ≤ s) :
     Continuous (truncLp (𝕜 := 𝕜) (μ := μ) (E := E) N hs) :=
-  (TauCeti.lipschitzWith_ofReal_min_norm_rpow_div_norm_smul (𝕜 := 𝕜) (E := E) N
-    hs).continuous_compLp (truncPow_zero N s)
+  (TauCeti.lipschitzWith_truncPow (𝕜 := 𝕜) (E := E) N
+    hs).continuous_compLp (TauCeti.truncPow_zero N s)
 
 /-- The truncation at height `N` of an `L²` function lies in every `Lʳ` with `2 ≤ r`. -/
 private theorem eLpNorm_truncLp_ne_top (N : ℝ≥0) {r : ℝ≥0∞} (hr2 : 2 ≤ r) (u : Lp E 2 μ) :
@@ -130,7 +96,7 @@ private theorem eLpNorm_truncLp_ne_top (N : ℝ≥0) {r : ℝ≥0∞} (hr2 : 2 �
   · rw [← Lp.eNorm_def, ← ofReal_norm]
     exact ENNReal.ofReal_le_ofReal (by linarith [N.coe_nonneg])
   · filter_upwards [coeFn_truncLp (𝕜 := 𝕜) N le_rfl u] with x hx
-    rw [hx, norm_truncPow N one_pos, Real.rpow_one]
+    rw [hx, TauCeti.norm_truncPow N one_pos, Real.rpow_one]
     linarith [min_le_right ‖u x‖ (N : ℝ), norm_nonneg U]
 
 /-- The extremal function `g_N` of the truncation `u_N` satisfies
@@ -141,7 +107,8 @@ private theorem eLpNorm_truncLp_le (N : ℝ≥0) {r r' : ℝ≥0∞} [r.HolderCo
       eLpNorm (truncLp (𝕜 := 𝕜) N le_rfl u) r μ ^ (r.toReal - 1) := by
   refine TauCeti.eLpNorm_le_eLpNorm_rpow_toReal_sub_one hr (Lp.aestronglyMeasurable _) ?_
   filter_upwards [coeFn_truncLp (𝕜 := 𝕜) N hs u, coeFn_truncLp (𝕜 := 𝕜) N le_rfl u] with x hx hx'
-  rw [hx, hx', norm_truncPow N (by linarith), norm_truncPow N one_pos, Real.rpow_one]
+  rw [hx, hx', TauCeti.norm_truncPow N (by linarith), TauCeti.norm_truncPow N one_pos,
+    Real.rpow_one]
 
 /-- The pairing of `u` with the extremal function `g_N` is `∫ ‖u‖ min (‖u‖, N) ^ (r - 1)`. -/
 private theorem inner_truncLp (N : ℝ≥0) {s : ℝ} (hs : 1 ≤ s) (u : Lp E 2 μ) :
@@ -149,7 +116,7 @@ private theorem inner_truncLp (N : ℝ≥0) {s : ℝ} (hs : 1 ≤ s) (u : Lp E 2
   rw [L2.inner_def, ← integral_ofReal]
   refine integral_congr_ae ?_
   filter_upwards [coeFn_truncLp (𝕜 := 𝕜) N hs u] with x hx
-  rw [hx, inner_truncPow]
+  rw [hx, TauCeti.inner_truncPow]
 
 /-- The pairing of `u` with the extremal function `g_N` bounds `‖u_N‖_r ^ r`. -/
 private theorem eLpNorm_truncLp_rpow_le (N : ℝ≥0) {r : ℝ≥0∞} (hr : r ≠ ∞) (hr2 : 2 ≤ r)
@@ -157,17 +124,17 @@ private theorem eLpNorm_truncLp_rpow_le (N : ℝ≥0) {r : ℝ≥0∞} (hr : r �
     eLpNorm (truncLp (𝕜 := 𝕜) N le_rfl u) r μ ^ r.toReal ≤
       ENNReal.ofReal (∫ x, ‖u x‖ * min ‖u x‖ N ^ (r.toReal - 1) ∂μ) := by
   have hr0 : r ≠ 0 := (two_pos.trans_le hr2).ne'
-  have hs := one_le_toReal_sub_one hr hr2
+  have hs := ENNReal.one_le_toReal_sub_one hr hr2
   have hint : Integrable (fun x ↦ ‖u x‖ * min ‖u x‖ N ^ (r.toReal - 1)) μ := by
     refine (L2.integrable_inner (𝕜 := 𝕜) u (truncLp (𝕜 := 𝕜) N hs u)).norm.congr ?_
     filter_upwards [coeFn_truncLp (𝕜 := 𝕜) N hs u] with x hx
-    rw [hx, inner_truncPow, RCLike.norm_ofReal, abs_of_nonneg (by positivity)]
+    rw [hx, TauCeti.inner_truncPow, RCLike.norm_ofReal, abs_of_nonneg (by positivity)]
   rw [← lintegral_rpow_enorm_eq_eLpNorm_rpow hr0 hr (Lp.aestronglyMeasurable _),
     ofReal_integral_eq_lintegral_ofReal hint (Eventually.of_forall fun x ↦ by positivity)]
   refine lintegral_mono_ae ?_
   filter_upwards [coeFn_truncLp (𝕜 := 𝕜) N le_rfl u] with x hx
   have hm : 0 ≤ min ‖u x‖ N := le_min (norm_nonneg _) N.2
-  rw [hx, ← ofReal_norm, norm_truncPow N one_pos, Real.rpow_one,
+  rw [hx, ← ofReal_norm, TauCeti.norm_truncPow N one_pos, Real.rpow_one,
     ENNReal.ofReal_rpow_of_nonneg hm (by linarith)]
   refine ENNReal.ofReal_le_ofReal ?_
   calc min ‖u x‖ N ^ r.toReal = min ‖u x‖ N * min ‖u x‖ N ^ (r.toReal - 1) := by
@@ -240,7 +207,7 @@ private theorem integrable_testFn {N : ℝ≥0} {s : ℝ} (hs : 1 ≤ s) {Φ : �
         Set.indicator_of_mem hb, abs_of_nonneg (by positivity)]
       gcongr
       · exact hB b hb
-      · exact ((TauCeti.lipschitzWith_ofReal_min_norm_rpow_div_norm_smul (𝕜 := 𝕜) (E := E) N
+      · exact ((TauCeti.lipschitzWith_truncPow (𝕜 := 𝕜) (E := E) N
           hs).norm_compLp_le _ _).trans (by gcongr)
     · simp [testFn_def, Set.indicator_of_notMem hb]
   have hint : Integrable (A.indicator fun _ ↦ B * (L * K)) ρ :=
@@ -323,7 +290,7 @@ private theorem eLpNorm_indicator_truncNorm_le (hq : q ≠ ∞) (hr : r ≠ ∞)
       ‖Φ b‖ ≤ K) :
     eLpNorm (A.indicator fun b ↦ truncNorm (𝕜 := 𝕜) N r (Φ b)) q ρ ≤ M := by
   have hq0 : q ≠ 0 := ENNReal.HolderConjugate.ne_zero q q'
-  have hs := one_le_toReal_sub_one hr hr2
+  have hs := ENNReal.one_le_toReal_sub_one hr hr2
   have hpos : ∀ b ∈ A, 0 < truncNorm (𝕜 := 𝕜) N r (Φ b) := fun b hb ↦ ha.trans_le (hAψ b hb).1
   set f := A.indicator fun b ↦ truncNorm (𝕜 := 𝕜) N r (Φ b) with hf_def
   set G := testFn (𝕜 := 𝕜) N r hs Φ A (q.toReal - r.toReal)
@@ -411,7 +378,8 @@ private theorem truncNorm_mono {r : ℝ≥0∞} (hr2 : 2 ≤ r) (u : Lp E 2 μ) 
     (Lp.aestronglyMeasurable _) ?_)
   filter_upwards [coeFn_truncLp (𝕜 := 𝕜) (N : ℝ≥0) le_rfl u,
     coeFn_truncLp (𝕜 := 𝕜) (N' : ℝ≥0) le_rfl u] with x hx hx'
-  rw [hx, hx', norm_truncPow _ one_pos, norm_truncPow _ one_pos, Real.rpow_one, Real.rpow_one]
+  rw [hx, hx', TauCeti.norm_truncPow _ one_pos, TauCeti.norm_truncPow _ one_pos, Real.rpow_one,
+    Real.rpow_one]
   exact min_le_min_left _ (by exact_mod_cast hN)
 
 /-- `‖u‖_r` is the supremum of the norms `‖u_N‖_r` of the truncations of `u`. -/
@@ -421,7 +389,7 @@ private theorem eLpNorm_eq_iSup_truncNorm {r : ℝ≥0∞} (hr2 : 2 ≤ r) (u : 
       ENNReal.ofReal (min ‖u x‖ N) := by
     filter_upwards [ae_all_iff.2 fun N : ℕ ↦ coeFn_truncLp (𝕜 := 𝕜) (N : ℝ≥0) le_rfl u]
       with x hx N
-    rw [hx N, ← ofReal_norm, norm_truncPow _ one_pos, Real.rpow_one, NNReal.coe_natCast]
+    rw [hx N, ← ofReal_norm, TauCeti.norm_truncPow _ one_pos, Real.rpow_one, NNReal.coe_natCast]
   simp_rw [truncNorm, ENNReal.ofReal_toReal (eLpNorm_truncLp_ne_top _ hr2 u)]
   rw [← eLpNorm_eNorm _ (Lp.aestronglyMeasurable u)]
   simp_rw [← fun N : ℕ ↦ eLpNorm_eNorm (μ := μ) (p := r) _
