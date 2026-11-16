@@ -231,18 +231,25 @@ theorem separation_def (u : PolarPoint → ℝ) (k : ℤ) (p : PolarPoint) :
     (p : PolarPoint) : separation u (-k) (deckShift k p) = -separation u k p := by
   simp [separation_def, sub_eq_add_neg, add_comm]
 
+/-- One-turn invariance along a point's deck orbit makes every separation at that point zero. -/
+theorem separation_eq_zero_of_deckShift_one_eq_of_orbit {u : PolarPoint → ℝ} {p : PolarPoint}
+    (hu : ∀ m : ℤ, u (deckShift 1 (deckShift m p)) = u (deckShift m p)) (k : ℤ) :
+    separation u k p = 0 := by
+  have h (m : ℤ) : u (deckShift m p) = u p := by
+    induction m using Int.induction_on with
+    | zero => simp
+    | succ n ih => simpa only [deckShift_add] using (hu n).trans ih
+    | pred n ih =>
+      have hn := hu (-(n : ℤ) - 1)
+      rw [← deckShift_add, sub_add_cancel] at hn
+      exact hn.symm.trans ih
+  simp [separation_def, h]
+
 /-- A height invariant under one full turn has zero separation under every deck shift. -/
 theorem separation_eq_zero_of_deckShift_one_eq {u : PolarPoint → ℝ}
     (hu : ∀ p, u (deckShift 1 p) = u p) (k : ℤ) (p : PolarPoint) :
-    separation u k p = 0 := by
-  have h₁ (q : PolarPoint) : separation u 1 q = 0 := by simp [separation_def, hu]
-  have hneg (q : PolarPoint) : separation u (-1) q = 0 := by
-    have h := separation_neg_deckShift u 1 (deckShift (-1) q)
-    simpa [h₁] using h
-  induction k using Int.induction_on with
-  | zero => simp
-  | succ n ih => rw [separation_add, ih, h₁, zero_add]
-  | pred n ih => rw [sub_eq_add_neg, separation_add, ih, hneg, zero_add]
+    separation u k p = 0 :=
+  separation_eq_zero_of_deckShift_one_eq_of_orbit (fun _ ↦ hu _) k
 
 /-- The surface parametrization of a polar height function. -/
 def graph (u : PolarPoint → ℝ) (p : PolarPoint) : ℂ × ℝ := (projection p, u p)
@@ -280,14 +287,18 @@ theorem graph_injOn_iff (u : PolarPoint → ℝ) (Ω : Set PolarPoint) :
       exact False.elim (hs k hk p (mem_overlap_iff.mpr ⟨hp, hq⟩)
         (by simp [separation_def, hu]))
 
+/-- Equal heights at distinct deck translates in a domain obstruct injectivity on that domain. -/
+theorem not_injOn_graph_of_deckShift_eq {u : PolarPoint → ℝ} {Ω : Set PolarPoint} {k : ℤ}
+    (hk : k ≠ 0) {p : PolarPoint} (hp : p ∈ overlap Ω k)
+    (hu : u (deckShift k p) = u p) : ¬ Set.InjOn (graph u) Ω :=
+  fun h ↦ (graph_injOn_iff u Ω).mp h k hk p hp (by simp [separation_def, hu])
+
 /-- Equal heights at one pair of distinct deck translates obstruct global injectivity. -/
 theorem not_injective_graph_of_deckShift_eq {u : PolarPoint → ℝ} {k : ℤ}
     (hk : k ≠ 0) {p : PolarPoint} (hu : u (deckShift k p) = u p) :
     ¬ Function.Injective (graph u) := by
-  intro h
-  have heq : graph u (deckShift k p) = graph u p := by
-    simp [graph_def, hu]
-  exact hk (deckShift_eq_self_iff.mp (h heq))
+  rw [← Set.injOn_univ]
+  exact not_injOn_graph_of_deckShift_eq hk (by simp) hu
 
 /-- A constant-height polar graph identifies points on different deck sheets. -/
 theorem not_injective_graph_const (c : ℝ) :
