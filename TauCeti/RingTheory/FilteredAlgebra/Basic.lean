@@ -50,20 +50,20 @@ attribute [simp] ideal_zero
 
 /-- The ideals of a filtration, regarded as submodules over the scalar ring. -/
 @[expose]
-def toSubmodule (R : Type*) [CommSemiring R] [Algebra R A] : ℕ → Submodule R A :=
+def toSubmodule (R : Type*) [Semiring R] [Module R A] [IsScalarTower R A A] : ℕ → Submodule R A :=
   fun k => (F.ideal k).restrictScalars R
 
 @[simp]
-theorem toSubmodule_apply (R : Type*) [CommSemiring R] [Algebra R A] (k : ℕ) :
+theorem toSubmodule_apply (R : Type*) [Semiring R] [Module R A] [IsScalarTower R A A] (k : ℕ) :
     F.toSubmodule R k = (F.ideal k).restrictScalars R := (rfl)
 
 /-- Scalar restriction preserves the decreasing order of the filtration. -/
-theorem toSubmodule_antitone (R : Type*) [CommSemiring R] [Algebra R A] :
+theorem toSubmodule_antitone (R : Type*) [Semiring R] [Module R A] [IsScalarTower R A A] :
     Antitone (F.toSubmodule R) :=
   fun _ _ h => F.antitone h
 
 /-- The zeroth scalar-restricted filtration term is the whole coefficient module. -/
-theorem toSubmodule_zero (R : Type*) [CommSemiring R] [Algebra R A] :
+theorem toSubmodule_zero (R : Type*) [Semiring R] [Module R A] [IsScalarTower R A A] :
     F.toSubmodule R 0 = ⊤ := by
   ext
   simp

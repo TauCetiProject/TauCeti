@@ -13,12 +13,23 @@ public import Mathlib.RingTheory.Ideal.Quotient.Operations
 /-!
 # Filtration-raising actions on coefficient algebra quotients
 
-A filtration-raising Lie action induces nilpotent representations on the quotient rings
-of a filtered coefficient algebra. These representations intertwine the quotient-ring
-transitions. No derivation assumption is needed for these linear representations; under
-that assumption, they also satisfy the Leibniz rule.
+A positively graded Lie algebra acting on a filtered coefficient algebra `A` by
+filtration-raising maps induces representations on the quotient rings `A ⧸ F.ideal (k + 1)`
+(`AlgFiltration.quotientLieAction`). Each Lie element acts nilpotently on every such quotient,
+and the representations intertwine the quotient-ring transitions `Ideal.Quotient.factor`. No
+derivation assumption is needed for these linear representations; when the Lie algebra acts by
+derivations, they also satisfy the Leibniz rule. The quotient rings thus carry nilpotent
+derivations, which can be exponentiated to algebra automorphisms.
 
-The construction transports the module representation along Mathlib's
+When the grading is a `GradedLieAlgebra`, the order-`k` representation factors through the Lie
+truncation `d.truncatedLie ℒ k` (`AlgFiltration.truncatedLieAction`). It agrees with the
+quotient action on Lie representatives, is nilpotent, satisfies the Leibniz rule under the
+derivation assumption, and is compatible with both Lie and coefficient truncations
+(`AlgFiltration.factor_truncatedLieAction`).
+
+Both constructions transport the quotient-module representations
+`PositiveDegrees.quotientLieAction` and `PositiveDegrees.truncatedLieAction` of the
+scalar-restricted filtration `F.toSubmodule R` to the quotient rings along Mathlib's
 `Submodule.Quotient.restrictScalarsEquiv`, using `LinearEquiv.conjAlgEquiv`.
 
 Adapted from `Mei/Algebra/Lie/Filtered/Algebra.lean` in

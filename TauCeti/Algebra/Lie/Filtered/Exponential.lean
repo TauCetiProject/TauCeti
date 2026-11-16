@@ -17,7 +17,7 @@ exponentiates to an algebra automorphism of every finite coefficient quotient. T
 is obtained by negating the Lie element. Quotient transitions intertwine these automorphisms,
 and the action depends only on the corresponding Lie truncation. The coefficient algebra
 may be noncommutative, and the original derivations need not be nilpotent. The coefficient
-algebra must be a `ℚ`-algebra, `[Algebra ℚ A]`, to divide by factorials; the base ring `R`
+algebra must be a `ℚ`-module, `[Module ℚ A]`, to divide by factorials; the base ring `R`
 can be any commutative ring independently of this rational structure.
 
 The construction uses the existing nilpotent quotient representation and
@@ -47,8 +47,8 @@ section Decomposition
 variable [DirectSum.Decomposition ℒ]
 
 -- Division by factorials uses the coefficient algebra's rational structure. The base ring `R`
--- may be an arbitrary commutative ring, independently of this rational algebra structure.
-variable [Algebra ℚ A]
+-- may be an arbitrary commutative ring, independently of this rational module structure.
+variable [Module ℚ A]
 
 /-- The exponential of the order-`k` coefficient representation, as an algebra automorphism. -/
 noncomputable def quotientExpLieAction (k : ℕ) (x : L) :
@@ -104,7 +104,7 @@ end Decomposition
 
 section Truncated
 
-variable [GradedLieAlgebra ℒ] [Algebra ℚ A]
+variable [GradedLieAlgebra ℒ] [Module ℚ A]
 
 /-- Exponentiate an element of the Lie truncation on the matching coefficient quotient. -/
 noncomputable def truncatedExpLieAction (k : ℕ) (x : d.truncatedLie ℒ k) :
