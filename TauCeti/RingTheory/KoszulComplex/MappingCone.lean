@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.Homology.HomotopyCofiber
+public import TauCeti.LinearAlgebra.ExteriorPower.Prod
 public import TauCeti.RingTheory.KoszulComplex.Basic
 
 /-!
@@ -107,7 +108,7 @@ private def projSnd (n : ℕ) :
 
 @[reassoc]
 private theorem inlHom_f_projFst (n : ℕ) : (inlHom φ y).f n ≫ projFst φ y n = 𝟙 _ :=
-  ModuleCat.hom_ext (map_fst_comp_map_inl n)
+  ModuleCat.hom_ext (exteriorPower.map_fst_comp_map_inl n)
 
 @[reassoc]
 private theorem inlHom_f_projSnd (n : ℕ) : (inlHom φ y).f (n + 1) ≫ projSnd φ y n = 0 :=
@@ -117,7 +118,7 @@ private theorem inlHom_f_projSnd (n : ℕ) : (inlHom φ y).f (n + 1) ≫ projSnd
 private theorem inlHomotopy_hom_projFst (n : ℕ) :
     (inlHomotopy φ y).hom n (n + 1) ≫ projFst φ y (n + 1) = 0 := by
   rw [inlHomotopy_hom]
-  exact ModuleCat.hom_ext (map_fst_comp_wedgeLeft (1 : R) n)
+  exact ModuleCat.hom_ext (exteriorPower.map_fst_comp_wedgeLeft (1 : R) n)
 
 @[reassoc]
 private theorem inlHomotopy_hom_projSnd (n : ℕ) :
@@ -132,7 +133,7 @@ private theorem projSnd_inlHomotopy_hom_add (n : ℕ) :
   exact ModuleCat.hom_ext (wedgeLeft_comp_add_map_inl_comp n)
 
 private theorem projFst_inlHom_f_zero : projFst φ y 0 ≫ (inlHom φ y).f 0 = 𝟙 _ :=
-  ModuleCat.hom_ext (map_inl_comp_map_fst_zero)
+  ModuleCat.hom_ext exteriorPower.map_inl_comp_map_fst_zero
 
 /-- The inverse of the map out of the cone in each degree: `z ↦ (⋀ fst (ι_snd z), ⋀ fst z)`. -/
 private def coneInvX : (n : ℕ) →

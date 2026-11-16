@@ -36,7 +36,8 @@ Koszul complex `K(x)` of the sequence, whose zeroth homology is `R ⧸ (x₁, �
   after adjoining one scalar to a linear functional.
 * `TauCeti.wedgeLeft_comp_add_map_inl_comp`: the splitting `z = a + e ∧ b` of
   `⋀ⁿ⁺¹ (M × R)` into `a ∈ ⋀ⁿ⁺¹ M` and `b ∈ ⋀ⁿ M`, with `e = (0, 1)`, together with the
-  component identities `TauCeti.map_fst_comp_map_inl`, `TauCeti.map_fst_comp_wedgeLeft`,
+  component identities `TauCeti.exteriorPower.map_fst_comp_map_inl`,
+  `TauCeti.exteriorPower.map_fst_comp_wedgeLeft`,
   `TauCeti.map_fst_koszulDifferential_snd_comp_wedgeLeft` and
   `TauCeti.map_fst_koszulDifferential_snd_comp_map_inl`.
 * `TauCeti.koszulComplex.exactAt_succ_iff`: `Hₖ₊₁(K(φ)) = 0` exactly when the Koszul
@@ -186,19 +187,6 @@ theorem map_fst_koszulDifferential_coprod (x : R) (k : ℕ) (z : ⋀[R]^(k + 1) 
     simp only [exteriorPower.coe_map, coe_koszulDifferential_apply, Submodule.coe_add,
       Submodule.coe_smul, ExteriorAlgebra.map_fst_contractLeft_coprod]
 
-/-- The `⋀ M`-component of `a ∈ ⋀ M ⊆ ⋀ (M × N)` is `a`. -/
-theorem map_fst_comp_map_inl {N : Type*} [AddCommGroup N] [Module R N] (n : ℕ) :
-    exteriorPower.map n (LinearMap.fst R M N) ∘ₗ exteriorPower.map n (LinearMap.inl R M N) =
-      LinearMap.id := by
-  rw [← exteriorPower.map_comp, LinearMap.fst_comp_inl, exteriorPower.map_id]
-
-/-- The `⋀ M`-component of `e ∧ b` is zero, for `e = (0, x)` and `b ∈ ⋀ M ⊆ ⋀ (M × N)`. -/
-theorem map_fst_comp_wedgeLeft {N : Type*} [AddCommGroup N] [Module R N] (x : N) (n : ℕ) :
-    exteriorPower.map (n + 1) (LinearMap.fst R M N) ∘ₗ
-        (ExteriorAlgebra.wedgeLeft (LinearMap.inr R M N x) n ∘ₗ
-          exteriorPower.map n (LinearMap.inl R M N)) = 0 :=
-  LinearMap.ext fun b ↦ Subtype.ext <| by simp
-
 /-- The `b`-component `⋀ fst (d_snd z)` of `z = e ∧ b` in `⋀ⁿ⁺¹ (M × R)` is `b`, for
 `e = (0, 1)` and `b ∈ ⋀ⁿ M`. -/
 theorem map_fst_koszulDifferential_snd_comp_wedgeLeft (n : ℕ) :
@@ -218,7 +206,7 @@ theorem map_fst_koszulDifferential_snd_comp_map_inl (n : ℕ) :
 
 /-- **The splitting `z = a + e ∧ b`** in `⋀ⁿ⁺¹ (M × R)`, with `e = (0, 1)`, `a = ⋀ fst z` and
 `b = ⋀ fst (d_snd z)`, where `d_snd` is the Koszul differential of `snd`. Together with
-`map_fst_comp_map_inl`, `map_fst_comp_wedgeLeft`,
+`exteriorPower.map_fst_comp_map_inl`, `exteriorPower.map_fst_comp_wedgeLeft`,
 `map_fst_koszulDifferential_snd_comp_wedgeLeft` and
 `map_fst_koszulDifferential_snd_comp_map_inl`, it identifies `⋀ⁿ⁺¹ (M × R)` with
 `⋀ⁿ⁺¹ M ⊕ ⋀ⁿ M`. -/
@@ -234,14 +222,6 @@ theorem wedgeLeft_comp_add_map_inl_comp (n : ℕ) :
       ExteriorAlgebra.coe_wedgeLeft_apply, exteriorPower.coe_map, coe_koszulDifferential_apply]
     rw [add_comm]
     exact ExteriorAlgebra.map_inl_map_fst_add_ι_inr_mul_contractLeft_snd z.1
-
-/-- In degree zero the splitting of `⋀ (M × R)` has no `e`-part: `⋀⁰ inl ∘ ⋀⁰ fst = id`. -/
-theorem map_inl_comp_map_fst_zero :
-    exteriorPower.map 0 (LinearMap.inl R M R) ∘ₗ exteriorPower.map 0 (LinearMap.fst R M R) =
-      LinearMap.id :=
-  LinearMap.ext fun z ↦ Subtype.ext <| by
-    simpa [ExteriorAlgebra.contractLeft_eq_zero_of_mem_exteriorPower_zero _ z.2] using
-      ExteriorAlgebra.map_inl_map_fst_add_ι_inr_mul_contractLeft_snd z.1
 
 variable {φ} in
 /-- **Exactness passes to retracts.** If `g : M → N` has a retraction `h` and `ψ = φ ∘ h` (so
