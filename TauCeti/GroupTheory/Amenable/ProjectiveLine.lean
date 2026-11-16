@@ -138,8 +138,8 @@ theorem hasFoelnerSets_of_map_smul_projectivization_eq {G : Type*} [Group G]
       have hinv : Tendsto (fun n => ((M (k₁ n))⁻¹) ^ 2) atTop (𝓝 0) := by
         simpa using ((tendsto_inv_atTop_zero.comp (hM_top.comp hk₁.tendsto_atTop)).pow 2)
       refine hinv.congr fun n => ?_
-      rw [show A (k₁ n) = (((M (k₁ n))⁻¹ : ℝ) : 𝕜) • (φ (u (k₁ n)) : Matrix (Fin 2) (Fin 2) 𝕜)
-        from rfl, Matrix.det_smul, Fintype.card_fin, norm_mul, norm_pow, RCLike.norm_ofReal,
+      dsimp only [A]
+      rw [Matrix.det_smul, Fintype.card_fin, norm_mul, norm_pow, RCLike.norm_ofReal,
         abs_of_nonneg (inv_nonneg.mpr (hM_pos (k₁ n)).le), hdet, mul_one]
     exact norm_eq_zero.mp (tendsto_nhds_unique hdet_tendsto hdet_zero)
   obtain ⟨p, q, hp_dom, hpq⟩ :=

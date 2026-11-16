@@ -37,9 +37,7 @@ glued at their endpoints `±1`.
 * `Circle.coordinate`: the coordinate function `z ↦ z` in `C(S¹, ℂ)`, and
   `Circle.coordinate_mem_unitary`.
 * `Circle.re_sq_add_im_sq` and `Circle.coe_add_inv_coe`: `Re z ^ 2 + Im z ^ 2 = 1` and
-  `z + z⁻¹ = 2 Re z` on the circle, `Circle.norm_coe_sub_one_sq` and
-  `Circle.norm_coe_exp_sub_one_sq`: `‖(z : ℂ) - 1‖ ^ 2 = 2 (1 - Re z)` and
-  `‖(exp θ : ℂ) - 1‖ ^ 2 = 2 (1 - cos θ)`, and `Complex.re_sq_add_im_sq_of_mem_sphere`, the first
+  `z + z⁻¹ = 2 Re z` on the circle, and `Complex.re_sq_add_im_sq_of_mem_sphere`, the first
   identity for a point of `sphere (0 : ℂ) 1`.
 * `Complex.zpow_mul_conj_zpow_of_mem_sphere`: `z ^ k * conj (z ^ m) = z ^ (k - m)` for a point
   of `sphere (0 : ℂ) 1`.
@@ -102,17 +100,6 @@ theorem _root_.Complex.zpow_mul_conj_zpow_of_mem_sphere {z : ℂ} (hz : z ∈ sp
 /-- For a point of the circle, `z + z⁻¹ = 2 Re z`. -/
 theorem coe_add_inv_coe (z : Circle) : (z : ℂ) + (z : ℂ)⁻¹ = 2 * (z : ℂ).re := by
   rw [← coe_inv, coe_inv_eq_conj, Complex.add_conj, Complex.ofReal_mul, Complex.ofReal_ofNat]
-
-/-- For a point `z` of the unit circle, `‖(z : ℂ) - 1‖ ^ 2 = 2 * (1 - Re z)`. -/
-theorem norm_coe_sub_one_sq (z : Circle) : ‖(z : ℂ) - 1‖ ^ 2 = 2 * (1 - (z : ℂ).re) := by
-  rw [← Complex.normSq_eq_norm_sq, Complex.normSq_apply]
-  simp only [Complex.sub_re, Complex.one_re, Complex.sub_im, Complex.one_im, sub_zero, ← sq]
-  linarith [re_sq_add_im_sq z]
-
-/-- For any angle `θ : ℝ`, `‖(Circle.exp θ : ℂ) - 1‖ ^ 2 = 2 * (1 - cos θ)`. -/
-theorem norm_coe_exp_sub_one_sq (θ : ℝ) :
-    ‖(Circle.exp θ : ℂ) - 1‖ ^ 2 = 2 * (1 - Real.cos θ) := by
-  rw [norm_coe_sub_one_sq, coe_exp, Complex.exp_ofReal_mul_I_re]
 
 /-- Raising `exp (π * I / d)` to a nonzero natural power `d` gives `-1`. -/
 theorem exp_pow_eq_neg_one (d : ℕ) (hd : d ≠ 0) :

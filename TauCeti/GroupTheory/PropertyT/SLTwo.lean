@@ -14,7 +14,6 @@ import Mathlib.Analysis.SpecialFunctions.Complex.Circle
 import Mathlib.MeasureTheory.Function.SpecialFunctions.Basic
 import Mathlib.MeasureTheory.Measure.Prokhorov
 import Mathlib.Topology.Metrizable.Urysohn
-import TauCeti.Analysis.Complex.Circle
 import TauCeti.Analysis.SpecialFunctions.Trigonometric.HalfAngle
 import TauCeti.GroupTheory.Amenable.Abelian
 import TauCeti.GroupTheory.Amenable.Extension
@@ -320,7 +319,8 @@ private theorem diag_real_ge_coord_le {H : Type*} [NormedAddCommGroup H] [InnerP
         have hχ_exp : (χ (stdGen i) : ℂ) = Circle.exp (coord χ i) :=
           congrArg (fun z : Circle => (z : ℂ)) (Circle.exp_arg (χ (stdGen i))).symm
         have hcoe : fi χ = (χ (stdGen i) : ℂ) - 1 := by simp [fi, stdGen]
-        rw [hcoe, hχ_exp, Circle.norm_coe_exp_sub_one_sq]
+        rw [hcoe, hχ_exp, Complex.norm_sub_one_sq_eq_of_norm_eq_one (Circle.exp _).norm_coe,
+          Circle.coe_exp, Complex.exp_ofReal_mul_I_re]
       linarith
     · rw [Set.indicator_of_notMem hχ]
       positivity
@@ -631,8 +631,8 @@ theorem relativePropertyT_inl_of_not_hasFoelnerSets {G : Type v} [Group G]
     have hint_map : ∫ x, f x ∂(Measure.map (dualRealGL (ψ g)⁻¹ • ·) (ν₀ : Measure RealProjLine)) =
         ∫ x, fk x ∂(ν₀ : Measure RealProjLine) :=
       integral_map (continuous_const_smul _).aemeasurable f.continuous.aestronglyMeasurable
-    linarith [show ∫ x, fk x ∂(ν₀ : Measure RealProjLine) -
-        ∫ x, f x ∂(ν₀ : Measure RealProjLine) = 0 from hΦ_ν₀]
+    dsimp only [Φ] at hΦ_ν₀
+    linarith
   have hFoelner : TauCeti.HasFoelnerSets G :=
     TauCeti.hasFoelnerSets_of_injective_gl_int_of_map_smul_projectivization_eq
       (ψ := dualHom.comp ψ) (dualHom_injective.comp hψ) (μ := (ν₀ : Measure RealProjLine))
