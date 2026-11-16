@@ -103,12 +103,8 @@ theorem adjoint_adjoint (g : Submodule 𝕜 (E × F)) (hg : IsComplete (g : Set 
   -- `G` is the image of `g` under the uniform equivalence `WithLp.toLp`, hence complete.
   have : CompleteSpace G := by
     refine completeSpace_coe_iff_isComplete.mpr ?_
-    have hG : (G : Set (WithLp 2 (E × F))) = WithLp.toLp 2 '' g := by
-      ext y
-      refine ⟨fun hy => ⟨y.ofLp, by simpa [G] using hy, by simp⟩, ?_⟩
-      rintro ⟨z, hz, rfl⟩
-      simpa [G] using hz
-    rwa [hG, (WithLp.isUniformInducing_toLp 2 E F).isComplete_iff]
+    rwa [comap_coe, LinearEquiv.coe_toLinearMap, ← LinearEquiv.image_symm_eq_preimage,
+      WithLp.coe_symm_linearEquiv, (WithLp.isUniformInducing_toLp 2 E F).isComplete_iff]
   have hmem := toLp_mem_orthogonal_orthogonal_of_mem_adjoint_adjoint hx
   rw [orthogonal_orthogonal] at hmem
   simpa [G] using hmem
