@@ -48,8 +48,9 @@ API does not expose.
 * `ContinuousOn.strictMonoOn_and_le_add_two_pi_or_strictAntiOn_and_le_add_two_pi` — an angle
   function of a curve in a circle that is injective on `(a, b)` is strictly monotone or strictly
   antitone on `[a, b]` with total turn at most `2π`.
-* `ContinuousOn.monotoneOn_and_eq_add_two_pi_or_antitoneOn_and_eq_add_two_pi` — if the curve is
-  moreover closed, the angle function is monotone or antitone with total turn exactly `± 2π`.
+* `ContinuousOn.monotoneOn_and_eq_add_two_pi_or_antitoneOn_and_eq_add_two_pi` — if moreover
+  `a < b` and the curve is closed, the angle function is monotone or antitone with total turn
+  exactly `± 2π`.
 * `ContinuousOn.apply_eq_apply_of_injOn_Ioo_of_image_eq_sphere` — a continuous parametrization of
   a circle that is injective on `(a, b)` is closed.
 
@@ -519,41 +520,14 @@ theorem exists_continuousOn_circleMap_comp_eqOn {γ : ℝ → ℂ} {a b : ℝ} {
   rw [Function.comp_apply, circleMap, eq_comm, ← sub_eq_iff_eq_add', hlift t ht, hnorm,
     mul_comm Complex.I]
 
-/-- A function continuous on `[a, b]` and strictly monotone on `(a, b)` is strictly monotone on
-`[a, b]`. -/
-private theorem strictMonoOn_Icc_of_strictMonoOn_Ioo {θ : ℝ → ℝ} {a b : ℝ}
-    (hθ : ContinuousOn θ (Icc a b)) (hab : a < b) (h : StrictMonoOn θ (Ioo a b)) :
-    StrictMonoOn θ (Icc a b) := by
-  -- The value at the left endpoint is below every value on `(a, b)`.
-  have hleft (s : ℝ) (hs : s ∈ Ioo a b) : θ a < θ s := by
-    have hm : (a + s) / 2 ∈ Ioo a b := ⟨by linarith [hs.1], by linarith [hs.2]⟩
-    refine lt_of_le_of_lt (le_of_tendsto
-      ((hθ.continuousWithinAt (left_mem_Icc.2 hab.le)).mono_of_mem_nhdsWithin
-        (Icc_mem_nhdsGT hab)) ?_) (h hm hs (by linarith [hs.1]))
-    filter_upwards [Ioo_mem_nhdsGT (show a < (a + s) / 2 by linarith [hs.1])] with x hx
-    exact h.monotoneOn ⟨hx.1, hx.2.trans hm.2⟩ hm hx.2.le
-  -- The value at the right endpoint is above every value on `(a, b)`.
-  have hright (s : ℝ) (hs : s ∈ Ioo a b) : θ s < θ b := by
-    have hm : (s + b) / 2 ∈ Ioo a b := ⟨by linarith [hs.1], by linarith [hs.2]⟩
-    refine lt_of_lt_of_le (h hs hm (by linarith [hs.2])) (ge_of_tendsto
-      ((hθ.continuousWithinAt (right_mem_Icc.2 hab.le)).mono_of_mem_nhdsWithin
-        (Icc_mem_nhdsLT hab)) ?_)
-    filter_upwards [Ioo_mem_nhdsLT (show (s + b) / 2 < b by linarith [hs.2])] with x hx
-    exact h.monotoneOn hm ⟨hs.1.trans (by linarith [hx.1, hs.2]), hx.2⟩ (by linarith [hx.1, hs.2])
-  have hmid : (a + b) / 2 ∈ Ioo a b := ⟨by linarith, by linarith⟩
-  intro x hx y hy hxy
-  rcases hx.1.eq_or_lt with rfl | hxa <;> rcases hy.2.eq_or_lt with rfl | hyb
-  · exact (hleft _ hmid).trans (hright _ hmid)
-  · exact hleft _ ⟨hxy, hyb⟩
-  · exact hright _ ⟨hxa, hxy⟩
-  · exact h ⟨hxa, hxy.trans hyb⟩ ⟨hxa.trans hxy, hyb⟩ hxy
-
-/-- A function continuous on `[a, b]` and strictly antitone on `(a, b)` is strictly antitone on
-`[a, b]`. -/
-private theorem strictAntiOn_Icc_of_strictAntiOn_Ioo {θ : ℝ → ℝ} {a b : ℝ}
-    (hθ : ContinuousOn θ (Icc a b)) (hab : a < b) (h : StrictAntiOn θ (Ioo a b)) :
-    StrictAntiOn θ (Icc a b) := fun _ hx _ hy hxy ↦
-  neg_lt_neg_iff.1 (strictMonoOn_Icc_of_strictMonoOn_Ioo hθ.neg hab h.neg hx hy hxy)
+/-- A curve `circleMap c r ∘ θ` injective on a nonempty open interval `(a, b)` has nonzero radius:
+for `r = 0` the curve is constant. -/
+private theorem ne_zero_of_injOn_circleMap_comp_Ioo {θ : ℝ → ℝ} {a b : ℝ} {c : ℂ} {r : ℝ}
+    (hab : a < b) (hinj : InjOn (circleMap c r ∘ θ) (Ioo a b)) : r ≠ 0 := by
+  rintro rfl
+  obtain ⟨s, has, hsb⟩ := exists_between hab
+  obtain ⟨t, hst, htb⟩ := exists_between hsb
+  exact hst.ne (hinj ⟨has, hsb⟩ ⟨has.trans hst, htb⟩ (by simp))
 
 /-- An angle function `θ`, continuous on `[a, b]`, of a curve `circleMap c r ∘ θ` that is injective
 on `(a, b)` is strictly monotone on `[a, b]` with a total turn of at most one full turn, or
@@ -575,49 +549,35 @@ theorem strictMonoOn_and_le_add_two_pi_or_strictAntiOn_and_le_add_two_pi {θ : �
       exact (periodic_circleMap c r _).symm)
     linarith [Real.pi_pos]
   rcases (hθ.mono Ioo_subset_Icc_self).strictMonoOn_of_injOn_Ioo hab hθinj with hmono | hanti
-  · refine Or.inl ⟨strictMonoOn_Icc_of_strictMonoOn_Ioo hθ hab hmono, ?_⟩
+  · refine Or.inl ⟨hθ.strictMonoOn_Icc_of_strictMonoOn_Ioo hmono, ?_⟩
     by_contra! h
-    obtain ⟨s, hs, hsv⟩ := intermediate_value_Icc hab.le hθ
-      (show θ a + (θ b - θ a - 2 * π) / 2 ∈ Icc (θ a) (θ b) by
+    obtain ⟨s, hs, hsv⟩ := intermediate_value_Ioo hab.le hθ
+      (show θ a + (θ b - θ a - 2 * π) / 2 ∈ Ioo (θ a) (θ b) by
         constructor <;> linarith [Real.pi_pos])
-    obtain ⟨t, ht, htv⟩ := intermediate_value_Icc hab.le hθ
-      (show θ a + (θ b - θ a - 2 * π) / 2 + 2 * π ∈ Icc (θ a) (θ b) by
+    obtain ⟨t, ht, htv⟩ := intermediate_value_Ioo hab.le hθ
+      (show θ a + (θ b - θ a - 2 * π) / 2 + 2 * π ∈ Ioo (θ a) (θ b) by
         constructor <;> linarith [Real.pi_pos])
-    refine hrepeat (s := s) (t := t) ⟨lt_of_le_of_ne hs.1 ?_, lt_of_le_of_ne hs.2 ?_⟩
-      ⟨lt_of_le_of_ne ht.1 ?_, lt_of_le_of_ne ht.2 ?_⟩ (by rw [hsv, htv])
-    · rintro rfl; linarith [Real.pi_pos]
-    · rintro rfl; linarith [Real.pi_pos]
-    · rintro rfl; linarith [Real.pi_pos]
-    · rintro rfl; linarith [Real.pi_pos]
-  · refine Or.inr ⟨strictAntiOn_Icc_of_strictAntiOn_Ioo hθ hab hanti, ?_⟩
+    exact hrepeat hs ht (by rw [hsv, htv])
+  · refine Or.inr ⟨hθ.strictAntiOn_Icc_of_strictAntiOn_Ioo hanti, ?_⟩
     by_contra! h
-    obtain ⟨s, hs, hsv⟩ := intermediate_value_Icc' hab.le hθ
-      (show θ b + (θ a - θ b - 2 * π) / 2 ∈ Icc (θ b) (θ a) by
+    obtain ⟨s, hs, hsv⟩ := intermediate_value_Ioo' hab.le hθ
+      (show θ b + (θ a - θ b - 2 * π) / 2 ∈ Ioo (θ b) (θ a) by
         constructor <;> linarith [Real.pi_pos])
-    obtain ⟨t, ht, htv⟩ := intermediate_value_Icc' hab.le hθ
-      (show θ b + (θ a - θ b - 2 * π) / 2 + 2 * π ∈ Icc (θ b) (θ a) by
+    obtain ⟨t, ht, htv⟩ := intermediate_value_Ioo' hab.le hθ
+      (show θ b + (θ a - θ b - 2 * π) / 2 + 2 * π ∈ Ioo (θ b) (θ a) by
         constructor <;> linarith [Real.pi_pos])
-    refine hrepeat (s := s) (t := t) ⟨lt_of_le_of_ne hs.1 ?_, lt_of_le_of_ne hs.2 ?_⟩
-      ⟨lt_of_le_of_ne ht.1 ?_, lt_of_le_of_ne ht.2 ?_⟩ (by rw [hsv, htv])
-    · rintro rfl; linarith [Real.pi_pos]
-    · rintro rfl; linarith [Real.pi_pos]
-    · rintro rfl; linarith [Real.pi_pos]
-    · rintro rfl; linarith [Real.pi_pos]
+    exact hrepeat hs ht (by rw [hsv, htv])
 
-/-- An angle function `θ`, continuous on `[a, b]`, of a closed curve `circleMap c r ∘ θ` that is
-injective on `(a, b)` increases or decreases by exactly one full turn. -/
+/-- An angle function `θ`, continuous on a nontrivial interval `[a, b]` (`a < b`), of a closed
+curve `circleMap c r ∘ θ` that is injective on `(a, b)` increases or decreases by exactly one full
+turn. -/
 theorem monotoneOn_and_eq_add_two_pi_or_antitoneOn_and_eq_add_two_pi {θ : ℝ → ℝ} {a b : ℝ}
     {c : ℂ} {r : ℝ} (hθ : ContinuousOn θ (Icc a b)) (hab : a < b)
     (hinj : InjOn (circleMap c r ∘ θ) (Ioo a b))
     (hclosed : circleMap c r (θ a) = circleMap c r (θ b)) :
     (MonotoneOn θ (Icc a b) ∧ θ b = θ a + 2 * π) ∨
       (AntitoneOn θ (Icc a b) ∧ θ a = θ b + 2 * π) := by
-  -- A simple curve has positive radius: for `r = 0` two points of `(a, b)` coincide.
-  have hr : r ≠ 0 := by
-    rintro rfl
-    have h₁ : a + (b - a) / 3 ∈ Ioo a b := ⟨by linarith, by linarith⟩
-    have h₂ : a + 2 * (b - a) / 3 ∈ Ioo a b := ⟨by linarith, by linarith⟩
-    exact (by linarith : a + (b - a) / 3 ≠ a + 2 * (b - a) / 3) (hinj h₁ h₂ (by simp))
+  have hr := ne_zero_of_injOn_circleMap_comp_Ioo hab hinj
   -- A turn of less than `2π` could not close up.
   rcases hθ.strictMonoOn_and_le_add_two_pi_or_strictAntiOn_and_le_add_two_pi hab.le hinj with
     ⟨hmono, hle⟩ | ⟨hanti, hle⟩
@@ -628,8 +588,8 @@ theorem monotoneOn_and_eq_add_two_pi_or_antitoneOn_and_eq_add_two_pi {θ : ℝ �
     refine Or.inr ⟨hanti.antitoneOn, hle.antisymm (not_lt.1 fun h ↦ ?_)⟩
     exact hlt.ne' (eq_of_circleMap_eq hr (by rw [abs_lt]; constructor <;> linarith) hclosed)
 
-/-- A continuous parametrization of a circle on `[a, b]` that is injective on `(a, b)` is closed:
-its angle function turns by exactly one full turn. -/
+/-- A continuous parametrization of a circle on `[a, b]` that is injective on `(a, b)` is
+closed. -/
 theorem apply_eq_apply_of_injOn_Ioo_of_image_eq_sphere {γ : ℝ → ℂ} {a b : ℝ} {c : ℂ} {r : ℝ}
     (hγ : ContinuousOn γ (Icc a b)) (hab : a ≤ b) (hinj : InjOn γ (Ioo a b))
     (himage : γ '' Icc a b = sphere c r) : γ a = γ b := by
@@ -639,42 +599,28 @@ theorem apply_eq_apply_of_injOn_Ioo_of_image_eq_sphere {γ : ℝ → ℂ} {a b :
     rw [← himage]
     exact mem_image_of_mem γ ht
   obtain ⟨θ, hθ, hθγ⟩ := exists_continuousOn_circleMap_comp_eqOn hγ hmaps
+  have hinj' : InjOn (circleMap c r ∘ θ) (Ioo a b) :=
+    hinj.congr (hθγ.symm.mono Ioo_subset_Icc_self)
   have hr₀ : 0 ≤ r := by
     rw [← mem_sphere.1 (hmaps (left_mem_Icc.2 hab.le))]
     exact dist_nonneg
-  have hr : 0 < r := by
-    refine hr₀.lt_of_ne ?_
-    rintro rfl
-    have h₁ : a + (b - a) / 3 ∈ Ioo a b := ⟨by linarith, by linarith⟩
-    have h₂ : a + 2 * (b - a) / 3 ∈ Ioo a b := ⟨by linarith, by linarith⟩
-    have hc (t : ℝ) (ht : t ∈ Ioo a b) : γ t = c := by
-      simpa using hmaps (Ioo_subset_Icc_self ht)
-    exact (by linarith : a + (b - a) / 3 ≠ a + 2 * (b - a) / 3)
-      (hinj h₁ h₂ ((hc _ h₁).trans (hc _ h₂).symm))
-  have hinj' : InjOn (circleMap c r ∘ θ) (Ioo a b) :=
-    hinj.congr (hθγ.symm.mono Ioo_subset_Icc_self)
-  -- A turn of less than `2π` would miss a point of the circle.
-  have hturn : θ b = θ a + 2 * π ∨ θ a = θ b + 2 * π := by
-    rcases hθ.strictMonoOn_and_le_add_two_pi_or_strictAntiOn_and_le_add_two_pi hab.le hinj' with
-      ⟨hmono, hle⟩ | ⟨hanti, hle⟩
-    · refine Or.inl (hle.antisymm (not_lt.1 fun h ↦ ?_))
-      obtain ⟨t, ht, htφ⟩ : circleMap c r (θ b + (θ a + 2 * π - θ b) / 2) ∈ γ '' Icc a b := by
-        rw [himage]
-        exact circleMap_mem_sphere c hr.le _
-      have hta := hmono.monotoneOn ht (right_mem_Icc.2 hab.le) ht.2
-      have hat := hmono.monotoneOn (left_mem_Icc.2 hab.le) ht ht.1
-      have hθt := eq_of_circleMap_eq hr.ne' (by
-        rw [abs_lt]; constructor <;> linarith [Real.pi_pos]) ((hθγ ht).trans htφ)
-      linarith
-    · refine Or.inr (hle.antisymm (not_lt.1 fun h ↦ ?_))
-      obtain ⟨t, ht, htφ⟩ : circleMap c r (θ a + (θ b + 2 * π - θ a) / 2) ∈ γ '' Icc a b := by
-        rw [himage]
-        exact circleMap_mem_sphere c hr.le _
-      have hta := hanti.antitoneOn (left_mem_Icc.2 hab.le) ht ht.1
-      have hat := hanti.antitoneOn ht (right_mem_Icc.2 hab.le) ht.2
-      have hθt := eq_of_circleMap_eq hr.ne' (by
-        rw [abs_lt]; constructor <;> linarith [Real.pi_pos]) ((hθγ ht).trans htφ)
-      linarith
+  have hr : 0 < r := hr₀.lt_of_ne' (ne_zero_of_injOn_circleMap_comp_Ioo hab hinj')
+  -- An angle function with values in `[u, v]` and a turn `v - u` below `2π` would miss a point of
+  -- the circle.
+  have hfull {u v : ℝ} (hle : v ≤ u + 2 * π) (hθuv : MapsTo θ (Icc a b) (Icc u v)) :
+      v = u + 2 * π := by
+    refine hle.antisymm (not_lt.1 fun h ↦ ?_)
+    obtain ⟨t, ht, htφ⟩ : circleMap c r (v + (u + 2 * π - v) / 2) ∈ γ '' Icc a b := by
+      rw [himage]
+      exact circleMap_mem_sphere c hr.le _
+    have hθt := eq_of_circleMap_eq hr.ne' (by
+      rw [abs_lt]; constructor <;> linarith [Real.pi_pos, (hθuv ht).1, (hθuv ht).2])
+      ((hθγ ht).trans htφ)
+    linarith [(hθuv ht).2]
+  have hturn : θ b = θ a + 2 * π ∨ θ a = θ b + 2 * π :=
+    (hθ.strictMonoOn_and_le_add_two_pi_or_strictAntiOn_and_le_add_two_pi hab.le hinj').imp
+      (fun ⟨hmono, hle⟩ ↦ hfull hle hmono.monotoneOn.mapsTo_Icc)
+      (fun ⟨hanti, hle⟩ ↦ hfull hle hanti.antitoneOn.mapsTo_Icc)
   rcases hturn with h | h
   · calc γ a = circleMap c r (θ a) := (hθγ (left_mem_Icc.2 hab.le)).symm
       _ = circleMap c r (θ a + 2 * π) := (periodic_circleMap c r _).symm
