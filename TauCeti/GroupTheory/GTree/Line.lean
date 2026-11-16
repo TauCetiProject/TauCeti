@@ -6,22 +6,24 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Combinatorics.Graph.Serre.Line
-public import TauCeti.GroupTheory.GTree.Basic
+public import TauCeti.GroupTheory.GTree.OrbitHull
 
 /-!
 # The line as a `G`-tree
 
 The integers act on the line by translation without inversions, so the line is a `G`-tree for
 the infinite cyclic group, the free group of rank one; it is the Cayley tree of that group. It is
-a minimal tree on which the translation by `k` moves every vertex by `|k|`, so that it has
-translation length `|k|` and is hyperbolic when `k ≠ 0`. The integers act freely on its darts,
-and the line is not dominated by the one-vertex tree, although it dominates it.
+a minimal tree, so the convex hull of every orbit of the integers is the whole line. The
+translation by `k` moves every vertex by `|k|`, so that it has translation length `|k|` and is
+hyperbolic when `k ≠ 0`. The integers act freely on its darts, and the line is not dominated by
+the one-vertex tree, although it dominates it.
 
 ## Main declarations
 
 * `TauCeti.GTree.line`: the line as a tree for `Multiplicative ℤ`.
 * `TauCeti.GTree.line_dist_smul`, `TauCeti.GTree.line_translationLength`,
-  `TauCeti.GTree.line_isMinimal`, `TauCeti.GTree.not_point_dominates_line`.
+  `TauCeti.GTree.line_isMinimal`, `TauCeti.GTree.line_orbitHull_top`,
+  `TauCeti.GTree.not_point_dominates_line`.
 
 ## References
 
@@ -94,6 +96,10 @@ theorem line_isMinimal : line.IsMinimal := by
     apply lineVertexEquiv.injective
     rw [lineVertexEquiv_line_smul, toAdd_ofAdd, sub_add_cancel]
   exact hw ▸ hS _ v hv
+
+/-- The hull of every orbit of the integers on the line is the whole line. -/
+@[simp] theorem line_orbitHull_top (v : line.V) : line.orbitHull ⊤ v = Set.univ :=
+  line_isMinimal.orbitHull_top v
 
 /-- The integers act freely on the darts of the line. -/
 theorem line_stabilizer_dart (e : line.E) : stabilizer (Multiplicative ℤ) e = ⊥ := by
