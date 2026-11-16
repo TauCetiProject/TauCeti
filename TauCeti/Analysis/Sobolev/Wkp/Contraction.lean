@@ -213,28 +213,18 @@ theorem norm_iteratedGradient_lineDerivL_le (v : E) (j : ℕ) (u : Wkp mu Omega 
   exact ((IteratedGradient.contractL j 1 v).norm_compLp_le _).trans
     (mul_le_mul_of_nonneg_right hv (norm_nonneg _))
 
-private theorem le_mul_of_sq_le_mul_add_sq {a C s x y n : ℝ} (ha : 0 ≤ a) (hC : 0 ≤ C)
-    (hs : 0 ≤ s) (hn : 0 ≤ n) (hn_sq : n ^ 2 = x ^ 2 + y ^ 2)
-    (h : a ^ 2 ≤ C ^ 2 * s ^ 2 * (x ^ 2 + y ^ 2)) :
-    a ≤ C * s * n := by
-  refine (sq_le_sq₀ ha (by positivity)).1 ?_
-  calc
-    a ^ 2 ≤ C ^ 2 * s ^ 2 * (x ^ 2 + y ^ 2) := h
-    _ = (C * s * n) ^ 2 := by rw [← hn_sq, mul_pow, mul_pow]
-
 /-- **Euclidean-stage induction step for `lineDerivL` graph-norm bounds.** For any `1 ≤ C`, if
-`‖lineDerivL v k w‖ ≤ C * ‖v‖ * ‖w‖` at order `k` and both `lineDerivL v (k + 1) u` and `u`
-satisfy the Euclidean squared-norm identity on `(lowerOrder, iteratedGradient)`, then
-`‖lineDerivL v (k + 1) u‖ ≤ C * ‖v‖ * ‖u‖`. -/
+`‖lineDerivL v k (lowerOrder (k + 1) u)‖ ≤ C * ‖v‖ * ‖lowerOrder (k + 1) u‖` and
+`lineDerivL v (k + 1) u` satisfies the Euclidean squared-norm identity on
+`(lowerOrder, iteratedGradient)`, then `‖lineDerivL v (k + 1) u‖ ≤ C * ‖v‖ * ‖u‖`. -/
 theorem norm_lineDerivL_succ_apply_le_of_norm_sq {C : ℝ} (hC : 1 ≤ C) (v : E) (k : ℕ)
     (u : Wkp mu Omega p (k + 2))
     (hlow : ‖lineDerivL v k (lowerOrder (k + 1) u)‖ ≤ C * ‖v‖ * ‖lowerOrder (k + 1) u‖)
     (hd_sq : ‖lineDerivL v (k + 1) u‖ ^ 2 =
       ‖lowerOrder k (lineDerivL v (k + 1) u)‖ ^ 2 +
-        ‖iteratedGradient k (lineDerivL v (k + 1) u)‖ ^ 2)
-    (hu_sq : ‖u‖ ^ 2 = ‖lowerOrder (k + 1) u‖ ^ 2 + ‖iteratedGradient (k + 1) u‖ ^ 2) :
+        ‖iteratedGradient k (lineDerivL v (k + 1) u)‖ ^ 2) :
     ‖lineDerivL v (k + 1) u‖ ≤ C * ‖v‖ * ‖u‖ := by
-  have hC0 : 0 ≤ C := zero_le_one.trans hC
+  have : 0 ≤ C := zero_le_one.trans hC
   have h1C : 1 ≤ C ^ 2 := by nlinarith
   have hlow' : ‖lowerOrder k (lineDerivL v (k + 1) u)‖ ≤ C * ‖v‖ * ‖lowerOrder (k + 1) u‖ := by
     rwa [lowerOrder_lineDerivL]
@@ -245,7 +235,8 @@ theorem norm_lineDerivL_succ_apply_le_of_norm_sq {C : ℝ} (hC : 1 ≤ C) (v : E
       (norm_iteratedGradient_lineDerivL_le v k u) 2).trans ?_
     rw [mul_pow, mul_assoc]
     exact le_mul_of_one_le_left (by positivity) h1C
-  refine le_mul_of_sq_le_mul_add_sq (norm_nonneg _) hC0 (norm_nonneg v) (norm_nonneg u) hu_sq ?_
+  refine le_of_sq_le_sq ?_ (by positivity)
+  rw [mul_pow, mul_pow, norm_sq_eq_norm_lowerOrder_sq_add_norm_iteratedGradient_sq_succ k u]
   rw [mul_pow, mul_pow] at hlow_sq
   linarith
 
@@ -258,17 +249,12 @@ theorem norm_lineDerivL_apply_le_of_exponent_two (v : E) :
         (by simpa only [one_mul] using
           norm_lineDerivL_apply_le_of_exponent_two v k (lowerOrder (k + 1) u))
         (norm_sq_eq_norm_lowerOrder_sq_add_norm_iteratedGradient_sq k _)
-        (norm_sq_eq_norm_lowerOrder_sq_add_norm_iteratedGradient_sq (k + 1) u)
 
 /-- Operator-norm bound `‖lineDerivL v k‖ ≤ ‖v‖` at `p = 2` for every order `k`. -/
 theorem norm_lineDerivL_le_of_exponent_two (v : E) (k : ℕ) :
     ‖lineDerivL (mu := mu) (Omega := Omega) (p := 2) v k‖ ≤ ‖v‖ :=
   ContinuousLinearMap.opNorm_le_bound _ (norm_nonneg v)
     (norm_lineDerivL_apply_le_of_exponent_two v k)
-
-private theorem one_le_sqrt_two : (1 : ℝ) ≤ √2 := by
-  rw [← Real.sqrt_one]
-  exact Real.sqrt_le_sqrt one_le_two
 
 private theorem norm_lineDerivL_one_apply_le (v : E) (u : Wkp mu Omega p 2) :
     ‖lineDerivL v 1 u‖ ≤ √2 * ‖v‖ * ‖u‖ := by
@@ -280,9 +266,9 @@ private theorem norm_lineDerivL_one_apply_le (v : E) (u : Wkp mu Omega p 2) :
   have hd := norm_le_norm_lowerOrder_add_norm_iteratedGradient 0 d
   have hsum : ‖d‖ ≤ ‖v‖ * (‖lowerOrder 1 u‖ + ‖iteratedGradient 1 u‖) := by linarith
   have hsum_sq := pow_le_pow_left₀ (norm_nonneg d) hsum 2
-  refine le_mul_of_sq_le_mul_add_sq (norm_nonneg d) (Real.sqrt_nonneg 2) (norm_nonneg v)
-    (norm_nonneg u) (norm_sq_eq_norm_lowerOrder_sq_add_norm_iteratedGradient_sq_succ 0 u) ?_
-  rw [Real.sq_sqrt zero_le_two]
+  refine le_of_sq_le_sq ?_ (by positivity)
+  rw [mul_pow, mul_pow, Real.sq_sqrt zero_le_two,
+    norm_sq_eq_norm_lowerOrder_sq_add_norm_iteratedGradient_sq_succ 0 u]
   nlinarith [sq_nonneg (‖lowerOrder 1 u‖ - ‖iteratedGradient 1 u‖), sq_nonneg ‖v‖]
 
 /-- **Uniform graph-norm bound for `lineDerivL`.** For every exponent `1 ≤ p ≤ ∞` and every order
@@ -292,18 +278,14 @@ compound at higher orders. -/
 theorem norm_lineDerivL_apply_le (v : E) :
     ∀ (k : ℕ) (u : Wkp mu Omega p (k + 1)), ‖lineDerivL v k u‖ ≤ √2 * ‖v‖ * ‖u‖
   | 0, u => by
-      calc
-        ‖lineDerivL v 0 u‖ ≤ 1 * (‖v‖ * ‖u‖) := by
-          rw [one_mul]
-          exact norm_lineDerivL_zero_apply_le_norm v u
-        _ ≤ √2 * (‖v‖ * ‖u‖) := mul_le_mul_of_nonneg_right one_le_sqrt_two (by positivity)
-        _ = √2 * ‖v‖ * ‖u‖ := (mul_assoc _ _ _).symm
+      rw [mul_assoc]
+      exact (norm_lineDerivL_zero_apply_le_norm v u).trans
+        (le_mul_of_one_le_left (by positivity) (Real.one_le_sqrt.2 one_le_two))
   | 1, u => norm_lineDerivL_one_apply_le v u
   | k + 2, u =>
-      norm_lineDerivL_succ_apply_le_of_norm_sq one_le_sqrt_two v (k + 1) u
+      norm_lineDerivL_succ_apply_le_of_norm_sq (Real.one_le_sqrt.2 one_le_two) v (k + 1) u
         (norm_lineDerivL_apply_le v (k + 1) (lowerOrder (k + 2) u))
         (norm_sq_eq_norm_lowerOrder_sq_add_norm_iteratedGradient_sq_succ k _)
-        (norm_sq_eq_norm_lowerOrder_sq_add_norm_iteratedGradient_sq_succ (k + 1) u)
 
 /-- Uniform operator-norm bound `‖lineDerivL v k‖ ≤ √2 * ‖v‖` for every `k` and `1 ≤ p ≤ ∞`. -/
 theorem norm_lineDerivL_le (v : E) (k : ℕ) :
@@ -462,9 +444,9 @@ theorem iteratedGradient_iteratedLineDerivL_const (k : ℕ) (h : E) :
       have hd : value (k + 1 + i) (lineDerivL h (k + 1 + i) u) =
           value (k + i + 1) (lineDerivL h (k + i + 1) u') :=
         value_lineDerivL_eq_of_value_eq hu h
-      -- By right-recursion of `Nat.add` (`Nat.add_succ`), `(k + 1) + i` and `k + (i + 1)` are
-      -- definitionally `k + 1 + i` and `k + i + 1`, aligning the dependent `Wkp`/`IteratedGradient`
-      -- indices across the rewrite chain.
+      -- By right-recursion of `Nat.add` (`Nat.add_succ`), `(k + 1) + (i + 1)` is definitionally
+      -- `(k + 1 + i) + 1` and `k + (i + 1)` is definitionally `(k + i) + 1`, aligning the
+      -- dependent `Wkp`/`IteratedGradient` indices across the rewrite chain.
       rw [iteratedLineDerivL_succ, ContinuousLinearMap.comp_apply, Fin.tail_def,
         iteratedGradient_iteratedLineDerivL_const k h i hd,
         iteratedGradient_lineDerivL h (k + i) u', ContinuousLinearMap.compLp_comp,

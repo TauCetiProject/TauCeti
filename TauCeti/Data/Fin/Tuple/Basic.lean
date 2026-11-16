@@ -9,6 +9,7 @@ public import Mathlib.Data.Fin.Tuple.Basic
 import Mathlib.Algebra.NeZero
 import Mathlib.Data.Set.Image
 import Mathlib.Data.Set.Insert
+import Mathlib.GroupTheory.Perm.Fin
 
 /-!
 # Insertions and appends in tuples
@@ -143,12 +144,9 @@ theorem cons_comp_swap_succ {n : ℕ} (x : α) (c : Fin n → α) (j k : Fin n) 
 unchanged. -/
 @[simp]
 theorem tail_tail_comp_swap_zero_one {n : ℕ} (a : Fin (n + 2) → α) :
-    tail (tail (a ∘ Equiv.swap 0 1)) = tail (tail a) := by
-  funext r
-  have hne1 : r.succ.succ ≠ 1 := by
-    rw [← succ_zero_eq_one]
-    exact succ_inj.ne.2 (succ_ne_zero r)
-  simp [tail, Equiv.swap_apply_of_ne_of_ne (succ_ne_zero _) hne1]
+    tail (tail (a ∘ Equiv.swap 0 1)) = tail (tail a) :=
+  funext fun r => by
+    simp [tail, Equiv.swap_apply_of_ne_of_ne (succ_ne_zero _) (succ_succ_ne_one r)]
 
 /-- Dropping the first entry of `Fin.snoc a x` is appending `x` to the tail of `a`. -/
 theorem tail_snoc {n : ℕ} (a : Fin (n + 1) → α) (x : α) :
@@ -380,7 +378,7 @@ theorem image_cons_le_eq_insert {α : Type*} {n : ℕ} (x : α) (p : Fin m → �
     Fin.cons x p '' {index | (index : ℕ) ≤ n} =
       insert x (p '' {index | (index : ℕ) < n}) := by
   ext element
-  simp [Set.mem_image, Fin.exists_fin_succ, eq_comm, Nat.add_one_le_iff]
+  simp [Set.mem_image, Fin.exists_fin_succ, eq_comm]
 
 /-- Inserting the entry `1` into a tuple gives a tuple that does not vanish. -/
 theorem insertNth_one_ne_zero {α : Type*} [Zero α] [One α] [NeZero (1 : α)] {n : ℕ}
@@ -476,14 +474,6 @@ theorem existsUnique_isLeft_castSucc_and_isRight_succ {α β : Type*} {n : ℕ}
   · have := hmono (castSucc_lt_iff_succ_le.mp (castSucc_lt_castSucc_iff.mpr h))
     omega
 
-private theorem swap_zero_succ_eq {n : ℕ} (q : Fin (n + 1)) :
-    Equiv.swap (0 : Fin (n + 2)) q.succ =
-      ((Equiv.swap 1 q.succ).trans (Equiv.swap 0 1)).trans (Equiv.swap 1 q.succ) := by
-  have h := Equiv.symm_trans_swap_trans (0 : Fin (n + 2)) 1 (Equiv.swap 1 q.succ)
-  rw [Equiv.symm_swap, Equiv.swap_apply_of_ne_of_ne zero_ne_one (succ_ne_zero q).symm,
-    Equiv.swap_apply_left] at h
-  exact h.symm
-
 /-- Any family of maps on tuples `Fin j → α` that respects permutations of `Fin.tail` and swaps of
 the first two entries is invariant under every permutation of `Fin j`. -/
 theorem eq_comp_perm_of_tail_of_swap {β : ℕ → Sort*} (F : ∀ j, (Fin j → α) → β j)
@@ -509,25 +499,16 @@ theorem eq_comp_perm_of_tail_of_swap {β : ℕ → Sort*} (F : ∀ j, (Fin j →
                 rw [← cons_self_tail a, ← succ_zero_eq_one, cons_comp_swap_succ]
               exact (htail (j' + 1) (a 0) _ _ (ih (tail a) (Equiv.swap 0 q))).trans
                 (congrArg (F (j' + 2)) (cons_self_tail a))
-            rw [swap_zero_succ_eq q, Equiv.coe_trans, Equiv.coe_trans, ← Function.comp_assoc,
+            have hconj := Equiv.symm_trans_swap_trans (0 : Fin (j' + 2)) 1 (Equiv.swap 1 q.succ)
+            rw [Equiv.symm_swap, Equiv.swap_apply_of_ne_of_ne zero_ne_one (succ_ne_zero q).symm,
+              Equiv.swap_apply_left] at hconj
+            rw [← hconj, Equiv.coe_trans, Equiv.coe_trans, ← Function.comp_assoc,
               ← Function.comp_assoc, h1q, hswap, h1q]
-      let r := σ 0
-      let τ : Equiv.Perm (Fin (j + 1)) := σ.trans (Equiv.swap 0 r)
-      have hτ0 : τ 0 = 0 := Equiv.swap_apply_right 0 r
-      have hτs0 : τ.symm 0 = 0 := τ.symm_apply_eq.2 hτ0.symm
-      let e : Equiv.Perm (Fin j) :=
-        { toFun := fun x =>
-            (τ x.succ).pred (by rw [← hτ0]; exact τ.injective.ne (succ_ne_zero x))
-          invFun := fun x =>
-            (τ.symm x.succ).pred (by rw [← hτs0]; exact τ.symm.injective.ne (succ_ne_zero x))
-          left_inv := fun x => by simp [τ, succ_pred]
-          right_inv := fun x => by simp [τ, succ_pred] }
-      have hdecomp : m ∘ σ =
+      obtain ⟨⟨r, e⟩, rfl⟩ := Equiv.Perm.decomposeFin.symm.surjective σ
+      have hdecomp : m ∘ Equiv.Perm.decomposeFin.symm (r, e) =
           (cons ((m ∘ Equiv.swap 0 r) 0) (tail (m ∘ Equiv.swap 0 r) ∘ e) : Fin (j + 1) → α) := by
         funext x
-        refine cases ?_ (fun y => ?_) x
-        · simp [r]
-        · simp [e, τ, tail, succ_pred]
+        refine cases ?_ (fun y => ?_) x <;> simp [tail]
       rw [hdecomp]
       refine (htail j ((m ∘ Equiv.swap 0 r) 0) _ _ (ih _ e)).trans ?_
       rw [cons_self_tail]
