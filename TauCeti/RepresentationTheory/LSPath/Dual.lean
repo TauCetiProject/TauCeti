@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.LinearAlgebra.RootSystem.Weyl.ReversedChain
-public import TauCeti.RepresentationTheory.LSPath.Basic
+public import TauCeti.RepresentationTheory.LSPath.Weight
 
 /-!
 # Littelmann's dual Lakshmibai–Seshadri path
@@ -24,8 +24,9 @@ dominance assumption on `λ`.
 ## Main definitions and results
 
 * `TauCeti.LSPath.dual`: Littelmann's duality `LSPath P b λ ≃ LSPath P b (-(w₀ • λ))`.
-* `TauCeti.LSPath.timed_dual` and `TauCeti.LSPath.toPLPath_dual`: compatibility with
-  `TauCeti.PLPath.reverseTimed` and `TauCeti.PLPath.reverse`.
+* `TauCeti.LSPath.timed_dual`, `TauCeti.LSPath.toPLPath_dual`, and `TauCeti.LSPath.weight_dual`:
+  compatibility with `TauCeti.PLPath.reverseTimed`, `TauCeti.PLPath.reverse`, and
+  `TauCeti.LSPath.weight`.
 * `TauCeti.LSPath.dual_symm_eq_congr_dual` and `TauCeti.LSPath.congr_dual_dual`: involutivity.
 
 ## References
@@ -81,7 +82,7 @@ private noncomputable def dualAux {lam : M} (π : LSPath P b lam) :
         Fin.rev_castSucc]),
       Subtype.ext (by rw [CoxeterSystem.MinimalCosetRepChain.last_reverseMul, hhead,
         Fin.rev_succ]), ?_⟩
-    rw [show j.castSucc.succ.rev = j.rev.castSucc.succ from Fin.ext (by simp [Fin.val_rev]; omega)]
+    rw [Fin.rev_succ, Fin.rev_castSucc, ← Fin.succ_castSucc]
     exact C.isAChain_one_sub_reverseMul_longestElement_iff.mpr hC
 
 private theorem dualAux_congr {lam lam' : M} (h : lam = lam') (π : LSPath P b lam) :
@@ -214,6 +215,13 @@ theorem toPLPath_dual_symm (π' : LSPath P b (-(longestElement P b • lam))) :
   rw [dual_symm_eq_congr_dual, toPLPath_congr, toPLPath_dual]
 
 end Realization
+
+/-- The weight of Littelmann's dual path `π^*` is the negative of the weight of `π`. -/
+theorem weight_dual (hlam : lam ∈ dominantChamber P b)
+    (hlam' : -(longestElement P b • lam) ∈ dominantChamber P b) :
+    (dual π).weight hlam' = -π.weight hlam :=
+  (dual π).weight_eq_of_forall_endpoint_eq hlam' fun f ↦ by
+    rw [toPLPath_dual, PLPath.endpoint_reverse, map_neg, apply_weight ℚ]
 
 end Dual
 

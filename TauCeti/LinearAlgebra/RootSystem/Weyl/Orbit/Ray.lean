@@ -6,7 +6,9 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.LinearAlgebra.RootSystem.WeylGroup
+public import Mathlib.LinearAlgebra.TensorProduct.Basic
 public import TauCeti.LinearAlgebra.Ray
+import Mathlib.LinearAlgebra.TensorProduct.Tower
 
 /-!
 # Rays and translates of Weyl orbits of weights
@@ -31,6 +33,9 @@ under which the root operators preserve paths with velocities in `f (W λ)`; see
 
 * `RootPairing.pairwise_not_sameRay_orbit_weylGroup`: when the Weyl group is finite, no two
   distinct weights of a Weyl orbit lie in the same ray.
+* `RootPairing.pairwise_not_sameRay_tensorProduct_mk_orbit`: in a scalar extension to an ordered
+  field `S`, no two distinct points in the image of a finite Weyl orbit under `m ↦ 1 ⊗ m` lie on
+  the same `S`-ray.
 * `RootPairing.mapsTo_add_orbit_weylGroup`: adding a Weyl-invariant weight `χ` maps `W λ` into
   `W (λ + χ)`.
 * `RootPairing.mapsTo_preReflection_image_orbit_weylGroup`: the image `f (W λ)` of a Weyl orbit
@@ -70,6 +75,8 @@ section CommRing
 variable {ι R V N : Type*} [CommRing R] [AddCommGroup V] [Module R V]
   [AddCommGroup N] [Module R N] (P : RootPairing ι R V N)
 
+open scoped TensorProduct
+
 /-- A Weyl orbit is stable under reflection in any root along its coroot. -/
 theorem mapsTo_preReflection_orbit_weylGroup (i : ι) (lam : V) :
     Set.MapsTo (Module.preReflection (P.root i) (P.coroot' i))
@@ -77,6 +84,22 @@ theorem mapsTo_preReflection_orbit_weylGroup (i : ι) (lam : V) :
   intro v hv
   simpa [P.reflection_apply, Module.preReflection_apply] using
     MulAction.mapsTo_smul_orbit (weylGroup.ofIdx P i) lam hv
+
+/-- In a scalar extension to an ordered field `S`, no two distinct vectors in the image of a
+finite Weyl orbit under `m ↦ 1 ⊗ m` lie on the same `S`-ray. -/
+theorem pairwise_not_sameRay_tensorProduct_mk_orbit (S : Type*) [Field S] [LinearOrder S]
+    [IsStrictOrderedRing S] [Algebra R S] [Finite P.weylGroup] (x : V) :
+    (Set.range fun w : P.weylGroup ↦ TensorProduct.mk R S V (1 : S) (w • x)).Pairwise
+      fun u v ↦ ¬ SameRay S u v := by
+  let ρ : P.weylGroup →* Module.End S (S ⊗[R] V) :=
+    (Module.End.baseChangeHom R S V).toMonoidHom.comp P.weylGroupRootRep
+  let : MulAction P.weylGroup (S ⊗[R] V) := MulAction.compHom (S ⊗[R] V) ρ
+  have : SMulCommClass P.weylGroup S (S ⊗[R] V) := ⟨fun w c u ↦ (ρ w).map_smul c u⟩
+  have hsmul (w : P.weylGroup) :
+      w • TensorProduct.mk R S V (1 : S) x = TensorProduct.mk R S V (1 : S) (w • x) :=
+    (P.weylGroupRootRep w).baseChange_tmul 1 x
+  simp_rw [← hsmul]
+  exact fun _ hu _ hv huv h ↦ huv (h.eq_of_mem_orbit hu hv (Set.finite_range _))
 
 end CommRing
 

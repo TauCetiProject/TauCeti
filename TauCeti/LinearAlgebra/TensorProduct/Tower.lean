@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.LinearAlgebra.Dual.BaseChange
 public import Mathlib.LinearAlgebra.TensorProduct.Tower
 
 /-!
@@ -35,8 +36,9 @@ across the tensor sign of `R ⊗[B] M`.
   `r ∈ B`, `r ⊗ m = 1 ⊗ r • m`.
 * `Submodule.one_tmul_mem_baseChange_of_smul_mem`: if `a • x ∈ N` and `a` becomes a unit in `A`,
   then `1 ⊗ₜ x` lies in the base change of `N` to `A`.
-* `LinearMap.liftBaseChangeSemilinear` and `AddMonoidHom.liftBaseChangeSemilinear`: semilinear
-  extensions out of a scalar extension `S ⊗[R] M` along a ring homomorphism `σ : S →+* T`.
+* `LinearMap.liftBaseChangeSemilinear`, `AddMonoidHom.liftBaseChangeSemilinear`, and their
+  dual-form evaluation compatibility `LinearMap.apply_liftBaseChangeSemilinear` and
+  `AddMonoidHom.apply_liftBaseChangeSemilinear`.
 -/
 
 public section
@@ -129,8 +131,19 @@ def LinearMap.liftBaseChangeSemilinear {R S T M V : Type*} [CommSemiring R] [Sem
 theorem LinearMap.liftBaseChangeSemilinear_tmul {R S T M V : Type*} [CommSemiring R] [Semiring S]
     [Algebra R S] [Semiring T] {σ : S →+* T} [AddCommMonoid M] [Module R M]
     [AddCommMonoid V] [Module T V] (f : M →ₛₗ[σ.comp (algebraMap R S)] V) (s : S) (m : M) :
-    f.liftBaseChangeSemilinear (s ⊗ₜ[R] m) = σ s • f m :=
-  (rfl)
+    f.liftBaseChangeSemilinear (s ⊗ₜ[R] m) = σ s • f m := by
+  simp [LinearMap.liftBaseChangeSemilinear]
+
+/-- Evaluating a linear form `F` on `f.liftBaseChangeSemilinear u` agrees with applying `σ` to the
+base-changed form `Module.Dual.baseChange S φ u` whenever `F` and `φ` intertwine along `f`. -/
+theorem LinearMap.apply_liftBaseChangeSemilinear {R S T M V : Type*} [CommSemiring R]
+    [CommSemiring S] [Algebra R S] [Semiring T] {σ : S →+* T} [AddCommMonoid M] [Module R M]
+    [AddCommMonoid V] [Module T V] (f : M →ₛₗ[σ.comp (algebraMap R S)] V)
+    {φ : Module.Dual R M} {F : Module.Dual T V}
+    (hF : ∀ m : M, F (f m) = σ (algebraMap R S (φ m))) (u : S ⊗[R] M) :
+    F (f.liftBaseChangeSemilinear u) = σ (Module.Dual.baseChange S φ u) := by
+  refine TensorProduct.inductionOn u (fun s m ↦ ?_) (fun _ _ ih₁ ih₂ ↦ by simp [ih₁, ih₂])
+  simp [hF, Algebra.smul_def, Algebra.commutes, map_mul]
 
 /-- Lift an additive homomorphism `f : X →+ V` across `S ⊗[ℤ] X` along a ring homomorphism
 `σ : S →+* T` into a `T`-module `V`, sending `s ⊗ₜ x` to `σ s • f x`. -/
@@ -146,5 +159,15 @@ def AddMonoidHom.liftBaseChangeSemilinear {S T X V : Type*} [Ring S] [Ring T]
 @[simp]
 theorem AddMonoidHom.liftBaseChangeSemilinear_tmul {S T X V : Type*} [Ring S] [Ring T]
     [AddCommGroup X] [AddCommGroup V] [Module T V] (f : X →+ V) (σ : S →+* T) (s : S) (x : X) :
-    f.liftBaseChangeSemilinear σ (s ⊗ₜ[ℤ] x) = σ s • f x :=
-  (rfl)
+    f.liftBaseChangeSemilinear σ (s ⊗ₜ[ℤ] x) = σ s • f x := by
+  simp [AddMonoidHom.liftBaseChangeSemilinear]
+
+/-- Evaluating a linear form `F` on `f.liftBaseChangeSemilinear σ u` agrees with applying `σ` to
+the base-changed integral linear form `Module.Dual.baseChange S φ u` whenever `F (f x) = φ x`. -/
+theorem AddMonoidHom.apply_liftBaseChangeSemilinear {S T X V : Type*} [CommRing S] [Ring T]
+    [AddCommGroup X] [AddCommGroup V] [Module T V] (f : X →+ V) (σ : S →+* T)
+    {φ : Module.Dual ℤ X} {F : Module.Dual T V}
+    (hF : ∀ x : X, F (f x) = (φ x : T)) (u : S ⊗[ℤ] X) :
+    F (f.liftBaseChangeSemilinear σ u) = σ (Module.Dual.baseChange S φ u) :=
+  LinearMap.apply_liftBaseChangeSemilinear (R := ℤ) (σ := σ) _
+    (fun x ↦ by simpa using hF x) u

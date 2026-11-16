@@ -5,14 +5,11 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.LinearAlgebra.Ray
 public import Mathlib.LinearAlgebra.RootSystem.Reduced
-public import Mathlib.LinearAlgebra.RootSystem.WeylGroup
 public import Mathlib.RingTheory.Flat.Basic
 public import TauCeti.LinearAlgebra.PerfectPairing.BaseChange
 -- `Function.Injective.isDomain`, pulling `IsDomain` back along an injective algebra map.
 import Mathlib.Algebra.Ring.Hom.InjSurj
-import TauCeti.LinearAlgebra.Ray
 
 /-!
 # Extension of scalars of a root pairing
@@ -53,9 +50,6 @@ can be written on `κ → S` without tensor products, see
 
 * `RootPairing.tensorProduct_mk_injective`: for a faithful algebra `S`, the map `m ↦ 1 ⊗ m` on the
   weight module is injective.
-* `RootPairing.pairwise_not_sameRay_tensorProduct_mk_orbit`: for an ordered field `S` and a finite
-  Weyl group, no two distinct points in the image of a Weyl orbit under `m ↦ 1 ⊗ m` lie on the
-  same `S`-ray.
 * `RootPairing.baseChange_pairing`, `RootPairing.baseChange_coroot'_tmul`, and
   `RootPairing.baseChange_root'_tmul`: the pairings and root/coroot forms of the extension on pure
   tensors.
@@ -94,22 +88,6 @@ theorem tensorProduct_mk_injective (P : RootPairing ι R M N) (S : Type*) [CommS
     [Algebra R S] [FaithfulSMul R S] : Function.Injective (TensorProduct.mk R S M 1) :=
   P.toLinearMap.tensorProduct_mk_injective_of_injective S
     (LinearMap.IsPerfPair.bijective_left _).injective
-
-/-- In a scalar extension to an ordered field `S`, no two distinct vectors in the image of a
-finite Weyl orbit under `m ↦ 1 ⊗ m` lie on the same `S`-ray. -/
-theorem pairwise_not_sameRay_tensorProduct_mk_orbit (P : RootPairing ι R M N) (S : Type*)
-    [Field S] [LinearOrder S] [IsStrictOrderedRing S] [Algebra R S] [Finite P.weylGroup] (x : M) :
-    (Set.range fun w : P.weylGroup ↦ TensorProduct.mk R S M (1 : S) (w • x)).Pairwise
-      fun u v ↦ ¬ SameRay S u v := by
-  let ρ : P.weylGroup →* Module.End S (S ⊗[R] M) :=
-    (Module.End.baseChangeHom R S M).toMonoidHom.comp P.weylGroupRootRep
-  let : MulAction P.weylGroup (S ⊗[R] M) := MulAction.compHom (S ⊗[R] M) ρ
-  have : SMulCommClass P.weylGroup S (S ⊗[R] M) := ⟨fun w c u ↦ (ρ w).map_smul c u⟩
-  have hsmul (w : P.weylGroup) :
-      w • TensorProduct.mk R S M (1 : S) x = TensorProduct.mk R S M (1 : S) (w • x) :=
-    (P.weylGroupRootRep w).baseChange_tmul 1 x
-  simp_rw [← hsmul]
-  exact fun _ hu _ hv huv h ↦ huv (h.eq_of_mem_orbit hu hv (Set.finite_range _))
 
 variable (P : RootPairing ι R M N) (S : Type*) [CommRing S] [Algebra R S] [FaithfulSMul R S]
   [Free R N] [Module.Finite R N]

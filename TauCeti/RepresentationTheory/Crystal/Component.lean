@@ -106,15 +106,8 @@ theorem reachable_of_eWord_eq_some {w : List b.support} (h : c.eWord w x = some 
 
 /-- Elements connected by a defined lowering word are reachable in the crystal graph. -/
 theorem reachable_of_fWord_eq_some {w : List b.support} (h : c.fWord w x = some y) :
-    c.graph.Reachable x y := by
-  induction w generalizing x with
-  | nil =>
-    obtain rfl := Option.some.inj (by simpa using h)
-    exact .refl _
-  | cons i w ih =>
-    rw [fWord_cons, Option.bind_eq_some_iff] at h
-    obtain ⟨z, hxz, hzy⟩ := h
-    exact (c.graph_adj_of_f_eq_some hxz).reachable.trans (ih hzy)
+    c.graph.Reachable x y :=
+  (c.reachable_of_eWord_eq_some (c.fWord_eq_some_iff.mp h)).symm
 
 /-- Lowering operators also define the crystal graph. -/
 theorem graph_adj_iff_f : c.graph.Adj x y ↔ ∃ i, c.f i x = some y ∨ c.f i y = some x := by

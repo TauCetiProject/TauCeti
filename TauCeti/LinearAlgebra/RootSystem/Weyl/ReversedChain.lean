@@ -190,7 +190,6 @@ theorem isAChain_one_sub_reverseMul_longestElement_iff :
         (C.reverseMul (P.isLongest_longestElement b)
           (TauCeti.conj_longestElement_mem_parabolic_wallIndices_iff lam)) ↔
       TauCeti.IsAChain a lam C := by
-  rw [TauCeti.isAChain_iff_den_dvd_bondGcd, TauCeti.isAChain_iff_den_dvd_bondGcd,
-    bondGcd_reverseMul_longestElement, show (1 - a).den = a.den by simp]
+  simp [TauCeti.isAChain_iff_den_dvd_bondGcd]
 
 end CoxeterSystem.MinimalCosetRepChain

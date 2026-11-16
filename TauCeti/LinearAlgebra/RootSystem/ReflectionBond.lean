@@ -106,18 +106,23 @@ theorem reflectionBond_reflection [P.IsReduced] [NoZeroDivisors R] {β : ι} (h�
   · exact reflectionBond_eq_neg_coroot' hβ rfl hne
 
 /-- **Negating two weights and reversing their order preserves their reflection bond.** -/
-theorem reflectionBond_neg_neg [P.IsReduced] [NoZeroDivisors R] (x y : M) :
+@[simp]
+theorem reflectionBond_neg_neg (x y : M) :
     P.reflectionBond b (-y) (-x) = P.reflectionBond b x y := by
-  rcases eq_or_ne y x with rfl | hxy
-  · simp
+  have hpred : (fun β ↦ b.IsPos β ∧ P.reflection β (-y) = -x) =
+      (fun β ↦ b.IsPos β ∧ P.reflection β x = y) := by
+    ext β
+    refine and_congr_right fun _ ↦ ⟨fun h ↦ neg_injective ?_, fun h ↦ ?_⟩
+    · rw [← map_neg, ← h, reflection_same]
+    · rw [map_neg, ← h, reflection_same]
+  have hchoose {p q : ι → Prop} (hpq : p = q) (hp : ∃ β, p β) (hq : ∃ β, q β) :
+      hp.choose = hq.choose := by subst hpq; rfl
   by_cases h : ∃ β, b.IsPos β ∧ P.reflection β x = y
-  · obtain ⟨β, hβ, h⟩ := h
-    have h' : P.reflection β (-y) = -x := by rw [map_neg, ← h, reflection_same]
-    rw [reflectionBond_eq_coroot' hβ h' (by simpa [eq_comm] using hxy), map_neg,
-      reflectionBond_eq_neg_coroot' hβ h hxy]
-  · rw [reflectionBond_eq_zero_of_not_exists h, reflectionBond_eq_zero_of_not_exists]
-    rintro ⟨β, hβ, h'⟩
-    exact h ⟨β, hβ, neg_injective (by rw [← map_neg, ← h', reflection_same])⟩
+  · have h' : ∃ β, b.IsPos β ∧ P.reflection β (-y) = -x := hpred.symm ▸ h
+    rw [reflectionBond, dite_eq_left h', reflectionBond, dite_eq_left h,
+      hchoose hpred h' h, map_neg, ← coroot'_reflection_self, h.choose_spec.2]
+  · rw [reflectionBond_eq_zero_of_not_exists (hpred.symm ▸ h),
+      reflectionBond_eq_zero_of_not_exists h]
 
 /-- **The bond divides the change of every linear form.** If `y = s_β x` for a positive root `β`,
 then `x - y = -⟨y, β^∨⟩ β`, so the bond of `x` and `y` divides `f x - f y` for every linear form

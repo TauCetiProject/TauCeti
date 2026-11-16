@@ -33,10 +33,9 @@ particular for `0`) with `TauCeti.NormalCrystal.central` (`TauCeti.LSPath.centra
 
 ## Main definitions and results
 
-* `TauCeti.LSPath.weight_centralTransport`, `TauCeti.LSPath.crystal_f_centralTransport`,
-  `TauCeti.LSPath.crystal_e_centralTransport`, `TauCeti.LSPath.crystal_ε_centralTransport`, and
-  `TauCeti.LSPath.crystal_φ_centralTransport`: compatibility of central transport with weights,
-  root operators, and string lengths.
+* `TauCeti.LSPath.crystal_f_centralTransport`, `TauCeti.LSPath.crystal_e_centralTransport`,
+  `TauCeti.LSPath.crystal_ε_centralTransport`, and `TauCeti.LSPath.crystal_φ_centralTransport`:
+  compatibility of central transport with root operators and string lengths.
 * `TauCeti.LSPath.centralTransportIso`, `TauCeti.LSPath.centralTransportIsoZero`,
   `TauCeti.LSPath.centralTransportIso_zero`,
   `TauCeti.LSPath.centralTransportIso_trans_centralTransportIso`, and
@@ -66,17 +65,6 @@ section CrystalTransport
 variable {ι X Y : Type*} [AddCommGroup X] [AddCommGroup Y]
   {P : RootDatum ι X Y} {b : P.Base} [Finite ι] [P.IsReduced] {lam : X}
 
-/-- Central transport shifts the lattice-valued weight of an LS path by `χ`. -/
-theorem weight_centralTransport (hlam : lam ∈ dominantChamber P b) {χ : X}
-    (hχ : ∀ i ∈ b.support, P.coroot' i χ = 0)
-    (hlam' : lam + χ ∈ dominantChamber P b)
-    (π : LSPath P b lam) :
-    (centralTransport χ hχ π).weight hlam' = π.weight hlam + χ :=
-  (weight_eq_iff_endpoint (𝕜 := ℚ)
-    (f := (TensorProduct.mk ℤ ℚ X 1).toAddMonoidHom)
-    (P.tensorProduct_mk_injective ℚ) hlam' _).mpr
-    (by rw [endpoint_toPLPath_centralTransport, map_add, apply_weight ℚ])
-
 /-- **Central transport commutes with crystal lowering operators.** -/
 theorem crystal_f_centralTransport (hlam : lam ∈ dominantChamber P b) {χ : X}
     (hχ : ∀ i ∈ b.support, P.coroot' i χ = 0)
@@ -88,7 +76,7 @@ theorem crystal_f_centralTransport (hlam : lam ∈ dominantChamber P b) {χ : X}
   have := P.finite_weylGroup_of_base b
   let f₀ : X →+ (ℚ ⊗[ℤ] X) := (TensorProduct.mk ℤ ℚ X 1).toAddMonoidHom
   let F₀ : Module.Dual ℚ (ℚ ⊗[ℤ] X) := Module.Dual.baseChange ℚ (P.coroot' i)
-  have hf₀ : Function.Injective f₀ := P.tensorProduct_mk_injective ℚ
+  have hf₀ : Function.Injective f₀ := by simpa [f₀] using P.tensorProduct_mk_injective ℚ
   have hF₀ (x : X) : F₀ (f₀ x) = (P.coroot' i x : ℚ) := by simp [f₀, F₀, TensorProduct.mk_apply]
   have hFχ : F₀ (f₀ χ) = 0 := by rw [hF₀ χ, hχ i i.2, Int.cast_zero]
   have hS₀ (μ : X) := P.pairwise_not_sameRay_tensorProduct_mk_orbit ℚ μ
@@ -122,20 +110,11 @@ theorem crystal_e_centralTransport (hlam : lam ∈ dominantChamber P b) {χ : X}
     (i : b.support) (π : LSPath P b lam) :
     (crystal hlam').e i (centralTransport χ hχ π) =
       ((crystal hlam).e i π).map (centralTransport χ hχ) := by
-  cases he : (crystal hlam).e i π with
-  | some ρ =>
-    rw [Option.map_some, (crystal hlam').e_eq_some_iff,
-      crystal_f_centralTransport hlam hχ hlam' i ρ, (crystal hlam).e_eq_some_iff.mp he,
-      Option.map_some]
-  | none =>
-    rw [Option.map_none, Option.eq_none_iff_forall_ne_some]
-    intro τ hτ
-    obtain ⟨ρ, rfl⟩ := (centralTransport χ hχ).surjective τ
-    rw [(crystal hlam').e_eq_some_iff, crystal_f_centralTransport hlam hχ hlam' i ρ,
-      Option.map_eq_some_iff] at hτ
-    obtain ⟨π₀, hπ₀, hπeq⟩ := hτ
-    obtain rfl := (centralTransport χ hχ).injective hπeq
-    exact Option.some_ne_none _ (((crystal hlam).e_eq_some_iff.mpr hπ₀).symm.trans he)
+  have hχ' := (P.forall_coroot'_eq_zero_iff b χ).mp hχ
+  simpa using (((crystal hlam).weightTwist χ hχ').dual.f_apply_eq_of_e_map (crystal hlam').dual
+    (g := centralTransport χ hχ) (i := i) π
+    (by simp [weight_centralTransport χ hχ π hlam hlam', add_comm])
+    (fun ρ ↦ by simpa using crystal_f_centralTransport hlam hχ hlam' i ρ))
 
 /-- **The two-offset central-transport crystal isomorphism
 `T_{λ, χ}^σ : B(λ)^(σ + χ) ≃ B(λ + χ)^σ`.** Its underlying bijection on LS paths is
@@ -144,15 +123,15 @@ noncomputable def centralTransportIso (hlam : lam ∈ dominantChamber P b) (χ �
     (hχ : ∀ i : b.support, P.toLinearMap χ (P.coroot i) = 0)
     (hσ : ∀ i : b.support, P.toLinearMap σ (P.coroot i) = 0)
     (hlam' : lam + χ ∈ dominantChamber P b :=
-      P.add_mem_dominantChamber_of_forall_coroot'_eq_zero b hlam
-        ((P.forall_coroot'_eq_zero_iff b χ).mpr hχ)) :
+      (P.add_mem_dominantChamber_iff_of_forall_coroot'_eq_zero b
+        ((P.forall_coroot'_eq_zero_iff b χ).mpr hχ)).mpr hlam) :
     NormalCrystal.StrictIso
       ((crystal hlam).weightTwist (σ + χ) (by simp [map_add, hσ, hχ]))
       ((crystal hlam').weightTwist σ hσ) where
   toEquiv := centralTransport χ ((P.forall_coroot'_eq_zero_iff b χ).mpr hχ)
   wt_toFun π := by
     simp only [Equiv.toFun_as_coe, NormalCrystal.weightTwist_wt, crystal_wt]
-    rw [weight_centralTransport hlam]; abel
+    rw [weight_centralTransport χ _ π hlam hlam']; abel
   e_toFun i π := by
     simpa using
       crystal_e_centralTransport hlam ((P.forall_coroot'_eq_zero_iff b χ).mpr hχ) hlam' i π
@@ -169,21 +148,21 @@ theorem coe_centralTransportIso (hlam : lam ∈ dominantChamber P b) (χ σ : X)
   (rfl)
 
 @[simp]
-theorem centralTransportIso_apply (hlam : lam ∈ dominantChamber P b) (χ σ : X)
+theorem coe_centralTransportIso_symm (hlam : lam ∈ dominantChamber P b) (χ σ : X)
     (hχ : ∀ i : b.support, P.toLinearMap χ (P.coroot i) = 0)
     (hσ : ∀ i : b.support, P.toLinearMap σ (P.coroot i) = 0)
-    (hlam' : lam + χ ∈ dominantChamber P b) (π : LSPath P b lam) :
-    centralTransportIso hlam χ σ hχ hσ hlam' π =
-      centralTransport χ ((P.forall_coroot'_eq_zero_iff b χ).mpr hχ) π :=
-  (rfl)
+    (hlam' : lam + χ ∈ dominantChamber P b) :
+    ⇑(centralTransportIso hlam χ σ hχ hσ hlam').symm =
+      (centralTransport χ ((P.forall_coroot'_eq_zero_iff b χ).mpr hχ)).symm := by
+  rw [← NormalCrystal.StrictIso.coe_toEquiv_symm]; rfl
 
 /-- **Central transport from the weight-twisted LS crystal `B(λ)^χ` onto `B(λ + χ)`**, defined as
 the `σ = 0` specialization of `TauCeti.LSPath.centralTransportIso`. -/
 noncomputable def centralTransportIsoZero (hlam : lam ∈ dominantChamber P b) (χ : X)
     (hχ : ∀ i : b.support, P.toLinearMap χ (P.coroot i) = 0)
     (hlam' : lam + χ ∈ dominantChamber P b :=
-      P.add_mem_dominantChamber_of_forall_coroot'_eq_zero b hlam
-        ((P.forall_coroot'_eq_zero_iff b χ).mpr hχ)) :
+      (P.add_mem_dominantChamber_iff_of_forall_coroot'_eq_zero b
+        ((P.forall_coroot'_eq_zero_iff b χ).mpr hχ)).mpr hlam) :
     NormalCrystal.StrictIso ((crystal hlam).weightTwist χ hχ) (crystal hlam') :=
   ((centralTransportIso hlam χ 0 hχ (by simp) hlam').congrLeft
     (NormalCrystal.weightTwist_congr _ (zero_add χ) _ hχ)).congrRight
@@ -195,14 +174,6 @@ theorem coe_centralTransportIsoZero (hlam : lam ∈ dominantChamber P b) (χ : X
     (hlam' : lam + χ ∈ dominantChamber P b) :
     ⇑(centralTransportIsoZero hlam χ hχ hlam') =
       centralTransport χ ((P.forall_coroot'_eq_zero_iff b χ).mpr hχ) := by
-  simp [centralTransportIsoZero]
-
-@[simp]
-theorem centralTransportIsoZero_apply (hlam : lam ∈ dominantChamber P b) (χ : X)
-    (hχ : ∀ i : b.support, P.toLinearMap χ (P.coroot i) = 0)
-    (hlam' : lam + χ ∈ dominantChamber P b) (π : LSPath P b lam) :
-    centralTransportIsoZero hlam χ hχ hlam' π =
-      centralTransport χ ((P.forall_coroot'_eq_zero_iff b χ).mpr hχ) π := by
   simp [centralTransportIsoZero]
 
 /-- Specializing `centralTransportIso` to `σ = 0` recovers `centralTransportIsoZero`. -/
@@ -237,10 +208,10 @@ theorem crystal_φ_centralTransport (hlam : lam ∈ dominantChamber P b) {χ : X
 theorem centralTransportIso_zero (hlam : lam ∈ dominantChamber P b) (σ : X)
     (hσ : ∀ i : b.support, P.toLinearMap σ (P.coroot i) = 0)
     (hlam0 : lam + 0 ∈ dominantChamber P b :=
-      P.add_mem_dominantChamber_of_forall_coroot'_eq_zero b hlam fun _ _ ↦ map_zero _) :
+      (P.add_mem_dominantChamber_iff_of_forall_coroot'_eq_zero b fun _ _ ↦ map_zero _).mpr hlam) :
     ((centralTransportIso hlam 0 σ (by simp) hσ hlam0).congrLeft
       (NormalCrystal.weightTwist_congr _ (add_zero σ) _ hσ)).trans
-      ((congrIso (add_zero lam) hlam0).weightTwist σ hσ) =
+      ((congrIso (add_zero lam) hlam0 hlam).weightTwist σ hσ) =
       NormalCrystal.StrictIso.refl ((crystal hlam).weightTwist σ hσ) :=
   NormalCrystal.StrictIso.ext fun π ↦ by simp [centralTransport_zero]
 
@@ -252,20 +223,20 @@ theorem centralTransportIso_trans_centralTransportIso (hlam : lam ∈ dominantCh
     (hψ : ∀ i : b.support, P.toLinearMap ψ (P.coroot i) = 0)
     (hσ : ∀ i : b.support, P.toLinearMap σ (P.coroot i) = 0)
     (hlamχ : lam + χ ∈ dominantChamber P b :=
-      P.add_mem_dominantChamber_of_forall_coroot'_eq_zero b hlam
-        ((P.forall_coroot'_eq_zero_iff b χ).mpr hχ))
+      (P.add_mem_dominantChamber_iff_of_forall_coroot'_eq_zero b
+        ((P.forall_coroot'_eq_zero_iff b χ).mpr hχ)).mpr hlam)
     (hlamχψ : (lam + χ) + ψ ∈ dominantChamber P b :=
-      P.add_mem_dominantChamber_of_forall_coroot'_eq_zero b hlamχ
-        ((P.forall_coroot'_eq_zero_iff b ψ).mpr hψ))
+      (P.add_mem_dominantChamber_iff_of_forall_coroot'_eq_zero b
+        ((P.forall_coroot'_eq_zero_iff b ψ).mpr hψ)).mpr hlamχ)
     (hlam_χψ : lam + (χ + ψ) ∈ dominantChamber P b :=
-      P.add_mem_dominantChamber_of_forall_coroot'_eq_zero b hlam
-        ((P.forall_coroot'_eq_zero_iff b (χ + ψ)).mpr (by simp [map_add, hχ, hψ]))) :
+      (P.add_mem_dominantChamber_iff_of_forall_coroot'_eq_zero b
+        ((P.forall_coroot'_eq_zero_iff b (χ + ψ)).mpr (by simp [map_add, hχ, hψ]))).mpr hlam) :
     ((centralTransportIso hlam χ (σ + ψ) hχ (by simp [map_add, hσ, hψ]) hlamχ).trans
       (centralTransportIso hlamχ ψ σ hψ hσ hlamχψ)).congrLeft
       (NormalCrystal.weightTwist_congr _ (by abel : (σ + ψ) + χ = σ + (χ + ψ)) _
         (by simp [map_add, hσ, hχ, hψ])) =
       (centralTransportIso hlam (χ + ψ) σ (by simp [map_add, hχ, hψ]) hσ hlam_χψ).trans
-        ((congrIso (add_assoc lam χ ψ).symm hlam_χψ).weightTwist σ hσ) :=
+        ((congrIso (add_assoc lam χ ψ).symm hlam_χψ hlamχψ).weightTwist σ hσ) :=
   NormalCrystal.StrictIso.ext fun π ↦ by
     simpa using centralTransport_centralTransport χ
       ((P.forall_coroot'_eq_zero_iff b χ).mpr hχ) π
@@ -277,21 +248,19 @@ theorem centralTransportIso_symm (hlam : lam ∈ dominantChamber P b) (χ σ : X
     (hχ : ∀ i : b.support, P.toLinearMap χ (P.coroot i) = 0)
     (hσ : ∀ i : b.support, P.toLinearMap σ (P.coroot i) = 0)
     (hlamχ : lam + χ ∈ dominantChamber P b :=
-      P.add_mem_dominantChamber_of_forall_coroot'_eq_zero b hlam
-        ((P.forall_coroot'_eq_zero_iff b χ).mpr hχ))
+      (P.add_mem_dominantChamber_iff_of_forall_coroot'_eq_zero b
+        ((P.forall_coroot'_eq_zero_iff b χ).mpr hχ)).mpr hlam)
     (hlamχ_neg : (lam + χ) + (-χ) ∈ dominantChamber P b :=
-      P.add_mem_dominantChamber_of_forall_coroot'_eq_zero b hlamχ
-        ((P.forall_coroot'_eq_zero_iff b (-χ)).mpr (by simp [hχ]))) :
+      (P.add_mem_dominantChamber_iff_of_forall_coroot'_eq_zero b
+        ((P.forall_coroot'_eq_zero_iff b (-χ)).mpr (by simp [hχ]))).mpr hlamχ) :
     (centralTransportIso hlam χ σ hχ hσ hlamχ).symm =
       ((centralTransportIso hlamχ (-χ) (σ + χ) (by simp [hχ])
         (by simp [map_add, hσ, hχ]) hlamχ_neg).congrLeft
         (NormalCrystal.weightTwist_congr _ (add_neg_cancel_right σ χ) _ hσ)).trans
-        ((congrIso (add_neg_cancel_right lam χ) hlamχ_neg).weightTwist
+        ((congrIso (add_neg_cancel_right lam χ) hlamχ_neg hlam).weightTwist
           (σ + χ) (by simp [map_add, hσ, hχ])) :=
   NormalCrystal.StrictIso.ext fun π ↦ by
-    conv_rhs => simp
-    rw [← NormalCrystal.StrictIso.coe_toEquiv_symm]
-    exact centralTransport_symm_apply χ ((P.forall_coroot'_eq_zero_iff b χ).mpr hχ) π
+    simpa using centralTransport_symm_apply χ ((P.forall_coroot'_eq_zero_iff b χ).mpr hχ) π
 
 /-! ### Pure-central and zero-shape LS crystals -/
 
@@ -314,11 +283,10 @@ noncomputable def centralIso (χ : X) (hχ : ∀ i : b.support, P.toLinearMap χ
     rw [eq_straight_of_forall_coroot'_eq_zero ((P.forall_coroot'_eq_zero_iff b χ).mpr hχ) π]; simp
 
 @[simp]
-theorem centralIso_symm_unit (χ : X) (hχ : ∀ i : b.support, P.toLinearMap χ (P.coroot i) = 0)
-    (hχ_dom : χ ∈ dominantChamber P b) :
-    (centralIso χ hχ hχ_dom).symm PUnit.unit = straight χ := by
-  rw [← NormalCrystal.StrictIso.coe_toEquiv_symm]
-  rfl
+theorem centralIso_symm_apply (χ : X) (hχ : ∀ i : b.support, P.toLinearMap χ (P.coroot i) = 0)
+    (hχ_dom : χ ∈ dominantChamber P b) (u : PUnit) :
+    (centralIso χ hχ hχ_dom).symm u = straight χ := by
+  rw [← NormalCrystal.StrictIso.coe_toEquiv_symm]; rfl
 
 /-- **The LS path crystal of shape `0` is strictly isomorphic to `NormalCrystal.central 0 _`.** -/
 noncomputable def zeroIso :

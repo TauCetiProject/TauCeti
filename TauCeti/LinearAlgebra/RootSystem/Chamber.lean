@@ -203,12 +203,12 @@ lemma mem_dominantChamber_of_forall_coroot'_eq_zero {x : M}
     x ∈ dominantChamber P b :=
   (mem_dominantChamber P b x).mpr fun i hi ↦ (hx i hi).ge
 
-/-- Adding a weight killed by every simple coroot preserves membership in the closed dominant
-chamber. -/
-lemma add_mem_dominantChamber_of_forall_coroot'_eq_zero [IsOrderedAddMonoid R] {x y : M}
-    (hx : x ∈ dominantChamber P b) (hy : ∀ i ∈ b.support, P.coroot' i y = 0) :
-    x + y ∈ dominantChamber P b :=
-  add_mem_dominantChamber P b hx (mem_dominantChamber_of_forall_coroot'_eq_zero P b hy)
+/-- Adding a weight killed by every simple coroot preserves and reflects membership in the closed
+dominant chamber. -/
+lemma add_mem_dominantChamber_iff_of_forall_coroot'_eq_zero {x y : M}
+    (hy : ∀ i ∈ b.support, P.coroot' i y = 0) :
+    x + y ∈ dominantChamber P b ↔ x ∈ dominantChamber P b :=
+  forall₂_congr fun i hi ↦ by simp only [map_add, hy i hi, add_zero]
 
 /-- The closed dominant chamber is closed under nonnegative scaling. -/
 lemma smul_mem_dominantChamber [PosMulMono R] {t : R} (ht : 0 ≤ t) {x : M}

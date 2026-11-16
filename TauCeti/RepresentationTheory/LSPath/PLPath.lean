@@ -48,7 +48,8 @@ reparametrizations of a common one exactly when their normal forms agree, are in
 * `TauCeti.PLPath.ofSegments`: the path presented by a segment list.
 * `TauCeti.PLPath.endpoint`, `TauCeti.PLPath.reverse`, `TauCeti.PLPath.straight`: the endpoint,
   the reversed path and the straight path `t ↦ t • v`.
-* `TauCeti.PLPath.map`: the linear image of a path, allowing collapsed segments.
+* `TauCeti.PLPath.map`, `TauCeti.PLPath.mapSemilinear`: the linear and semilinear images of a path,
+  allowing collapsed segments.
 
 ## Main results
 
@@ -688,6 +689,77 @@ theorem map_reverse (p : PLPath 𝕜 V) (g : V →ₗ[𝕜] W) :
     Function.comp_def]
 
 end Images
+
+/-! ### Semilinear images -/
+
+section SemilinearImages
+
+variable {𝕜' W : Type*} [Field 𝕜'] [PartialOrder 𝕜'] [IsStrictOrderedRing 𝕜']
+  [AddCommGroup W] [Module 𝕜' W] {σ : 𝕜 →+* 𝕜'}
+
+/-- A semilinear image along a monotone ring homomorphism preserves elementary path moves,
+including when segments collapse. -/
+theorem Move.mapSemilinear {l m : List V} (h : Move 𝕜 l m) (g : V →ₛₗ[σ] W) (hσ : Monotone σ) :
+    Move 𝕜' (l.map g) (m.map g) := by
+  have hσ_pos {r : 𝕜} (hr : 0 < r) : 0 < σ r :=
+    (map_zero σ ▸ hσ hr.le).lt_of_ne' fun h0 ↦ one_ne_zero <|
+      calc (1 : 𝕜') = σ (r * r⁻¹) := by rw [mul_inv_cancel₀ hr.ne', _root_.map_one]
+        _ = 0 := by rw [_root_.map_mul, h0, zero_mul]
+  cases h with
+  | @merge l m v w hvw =>
+    have hray : SameRay 𝕜' (g v) (g w) := by
+      rcases hvw with h0 | h0 | ⟨r₁, r₂, hr₁, hr₂, heq⟩
+      · simp [h0]
+      · simp [h0]
+      · exact Or.inr (Or.inr ⟨σ r₁, σ r₂, hσ_pos hr₁, hσ_pos hr₂,
+          by rw [← map_smulₛₗ, ← map_smulₛₗ, heq]⟩)
+    simpa using Move.merge (l.map g) (m.map g) hray
+  | erase_zero l m => simpa using Move.erase_zero (l.map g) (m.map g)
+
+/-- Normalizing a presentation before taking its semilinear image along a monotone ring
+homomorphism does not change the path. -/
+theorem ofSegments_map_normalize_semilinear (g : V →ₛₗ[σ] W) (hσ : Monotone σ) (l : List V) :
+    ofSegments 𝕜' ((normalize 𝕜 l).map g) = ofSegments 𝕜' (l.map g) := by
+  apply ofSegments_eq_ofSegments_iff.mpr
+  exact (EqvGen.reflTransGen_le_eqvGen _ _ _
+    ((reflTransGen_move_normalize l).lift _ fun _ _ h ↦ h.mapSemilinear g hσ)).symm _ _
+
+/-- The semilinear image of a piecewise-linear path along `g : V →ₛₗ[σ] W`, with any collapsed
+segments removed. -/
+noncomputable def mapSemilinear (p : PLPath 𝕜 V) (g : V →ₛₗ[σ] W) : PLPath 𝕜' W :=
+  ofSegments 𝕜' (p.segments.map g)
+
+/-- Definitional unfolding of `PLPath.mapSemilinear` in terms of `ofSegments` and `segments`. -/
+theorem mapSemilinear_def (p : PLPath 𝕜 V) (g : V →ₛₗ[σ] W) :
+    p.mapSemilinear g = ofSegments 𝕜' (p.segments.map g) :=
+  (rfl)
+
+/-- A semilinear image along a monotone ring homomorphism can be computed on any segment
+presentation. -/
+theorem mapSemilinear_ofSegments (l : List V) (g : V →ₛₗ[σ] W) (hσ : Monotone σ) :
+    (ofSegments 𝕜 l).mapSemilinear g = ofSegments 𝕜' (l.map g) := by
+  simp only [mapSemilinear, segments_ofSegments, ofSegments_map_normalize_semilinear g hσ]
+
+/-- Semilinear images preserve the endpoint. -/
+@[simp]
+theorem endpoint_mapSemilinear (p : PLPath 𝕜 V) (g : V →ₛₗ[σ] W) :
+    (p.mapSemilinear g).endpoint = g p.endpoint := by
+  simp [mapSemilinear, endpoint_def, map_list_sum]
+
+/-- Semilinear images commute with reversal. -/
+@[simp]
+theorem mapSemilinear_reverse (p : PLPath 𝕜 V) (g : V →ₛₗ[σ] W) :
+    p.reverse.mapSemilinear g = (p.mapSemilinear g).reverse := by
+  simp [mapSemilinear, segments_reverse, List.map_reverse, List.map_map, reverse_ofSegments,
+    Function.comp_def]
+
+end SemilinearImages
+
+/-- For a `𝕜`-linear map, `mapSemilinear` coincides with `PLPath.map`. -/
+@[simp]
+theorem mapSemilinear_eq_map {W : Type*} [AddCommGroup W] [Module 𝕜 W]
+    (p : PLPath 𝕜 V) (g : V →ₗ[𝕜] W) : p.mapSemilinear g = p.map g := by
+  rw [mapSemilinear_def, map_def]
 
 end PLPath
 
