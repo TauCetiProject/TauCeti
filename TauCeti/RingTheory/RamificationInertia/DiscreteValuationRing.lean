@@ -101,25 +101,23 @@ theorem addVal_algebraMap (s : S) :
   obtain ⟨ϖ, hϖ⟩ := exists_irreducible T
   set e := (maximalIdeal T).ramificationIdx S
   -- `π T = 𝔪_T ^ e = ϖ ^ e T`, so `π` and `ϖ ^ e` are associated in `T`.
+  have hne : (maximalIdeal S).map (algebraMap S T) ≠ ⊥ := by
+    simp [hπ.maximalIdeal_eq, Ideal.map_span, hπ.ne_zero]
   have hmap : Ideal.span {algebraMap S T π} = Ideal.span {ϖ ^ e} := by
-    rw [← Ideal.span_singleton_pow, ← hϖ.maximalIdeal_eq, ← Set.image_singleton, ← Ideal.map_span,
-      ← hπ.maximalIdeal_eq]
-    refine map_maximalIdeal_eq_pow_ramificationIdx ?_
-    rw [hπ.maximalIdeal_eq, Ideal.map_span, Set.image_singleton, ne_eq, Ideal.span_singleton_eq_bot]
-    exact (map_ne_zero_iff _ (FaithfulSMul.algebraMap_injective S T)).2 hπ.ne_zero
+    have h : (maximalIdeal S).map (algebraMap S T) = maximalIdeal T ^ e :=
+      map_maximalIdeal_eq_pow_ramificationIdx hne
+    simpa [hπ.maximalIdeal_eq, hϖ.maximalIdeal_eq, Ideal.map_span, Ideal.span_singleton_pow]
+      using h
   have hval : addVal T (algebraMap S T π) = e := by
     rw [(addVal_eq_iff_associated _ _).2 (Ideal.span_singleton_eq_span_singleton.1 hmap),
-      addVal_pow, addVal_uniformizer hϖ, nsmul_one]
+      hϖ.addVal_pow]
   rcases eq_or_ne s 0 with rfl | hs
   · -- `e ≠ 0`, so `e • ⊤ = ⊤`.
     have he : e ≠ 0 := (Ideal.ramificationIdx_pos_of_isDedekindDomain' (p := maximalIdeal S) _
       (not_a_field S)).ne'
     simp [he]
   obtain ⟨n, u, rfl⟩ := eq_unit_mul_pow_irreducible hs hπ
-  rw [map_mul, map_pow, addVal_mul, addVal_mul, addVal_pow, addVal_pow, hval,
-    addVal_uniformizer hπ, (addVal_eq_zero_iff).2 u.isUnit,
-    (addVal_eq_zero_iff).2 (u.isUnit.map _)]
-  simp [nsmul_eq_mul, mul_comm]
+  simp [hπ, hval, addVal_eq_zero_iff.2 (u.isUnit.map (algebraMap S T)), nsmul_eq_mul, mul_comm]
 
 end Extension
 

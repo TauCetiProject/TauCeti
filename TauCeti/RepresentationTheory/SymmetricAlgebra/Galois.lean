@@ -8,7 +8,7 @@ module
 public import Mathlib.FieldTheory.Galois.IsGaloisGroup
 public import Mathlib.LinearAlgebra.SymmetricAlgebra.Basis
 public import TauCeti.RepresentationTheory.SymmetricAlgebra.FaithfulImage
-import TauCeti.RingTheory.IsGaloisGroup.IntegralClosure
+import TauCeti.RingTheory.Invariant.Basic
 
 /-!
 # The Galois group of a symmetric algebra over its invariants
@@ -48,7 +48,7 @@ A faithful action on `V` gives a faithful contragredient action on `V*` by
   domain, `Frac(Sym M) / Frac(Sym(M)^G)` is Galois, with no faithfulness assumption.
 * `Representation.finrank_fractionRing_symmetricAlgebraInvariants`: for finite `G`, faithful `ρ`
   and `Sym M` a domain, this extension has degree `|G|`.
-* `Representation.faithfulSMul_quotient_symmetricAlgebra`: for a normal subgroup `H`, the
+* `Representation.faithfulSMul_quotient_symmetricAlgebra`: for a finite normal subgroup `H`, the
   quotient `G ⧸ H` acts faithfully on the `H`-invariants.
 
 ## References
@@ -142,7 +142,8 @@ theorem finrank_fractionRing_symmetricAlgebraInvariants (hρ : Function.Injectiv
   have := ρ.isGaloisGroup_fractionRing_symmetricAlgebraInvariants hρ
   exact (IsGaloisGroup.card_eq_finrank G _ _).symm
 
-/-- For a faithful representation of a finite group with `Sym M` a domain and a normal subgroup
+omit [Finite G] in
+/-- For a faithful representation of a group with `Sym M` a domain and a finite normal subgroup
 `H`, the quotient `G ⧸ H` acts faithfully on the subalgebra of `H`-invariants, with its action
 `g • p` through any representative `g`. Here the `H`-invariants are Mathlib's
 `FixedPoints.subalgebra` for the restricted action, which carries Mathlib's action of `G ⧸ H`; it
@@ -150,7 +151,7 @@ is `symmetricAlgebraInvariants (ρ.comp H.subtype)` by
 `Representation.symmetricAlgebraInvariants_comp_subtype`. Geometrically, for `M = V*`, the
 residual action of `G ⧸ H` on the quotient `V/H` is faithful. -/
 theorem faithfulSMul_quotient_symmetricAlgebra (hρ : Function.Injective ρ) (H : Subgroup G)
-    [H.Normal] :
+    [H.Normal] [Finite H] :
     letI := ρ.symmetricAlgebraMulSemiringAction
     haveI := ρ.smulCommClass_symmetricAlgebraMulSemiringAction
     FaithfulSMul (G ⧸ H) (FixedPoints.subalgebra R (SymmetricAlgebra R M) H) :=

@@ -17,15 +17,16 @@ in `B` between invariants holds in `B^G`, so every nonzero ideal of `B^G` is gen
 its elements of least valuation in `B`, and `B^G` is not a field because `B` is integral over it.
 The action need not be faithful, and `A` is arbitrary.
 
-If moreover `B` is a finite extension of a discrete valuation ring `A` with separable residue
-extension, then so is `B^G`, which is therefore generated over `A` by a single element.
+If moreover `A → B` is a finite extension of discrete valuation rings with separable residue
+extension, then so is `A → B^G`, and `B^G` is therefore generated over `A` by a single element.
 
 ## Main results
 
 * `TauCeti.FixedPoints.isDiscreteValuationRing_subalgebra`: the invariants `B^G` form a discrete
   valuation ring.
-* `TauCeti.FixedPoints.exists_adjoin_eq_top`: for a finite extension `B` of a discrete valuation
-  ring `A` with separable residue extension, `B^G` is generated over `A` by a single element.
+* `TauCeti.FixedPoints.exists_adjoin_eq_top`: for a finite extension `A → B` of discrete
+  valuation rings with separable residue extension, `B^G` is generated over `A` by a single
+  element.
 -/
 
 public section
@@ -72,7 +73,7 @@ variable [IsDomain A] [IsDiscreteValuationRing A] [Module.Finite A B] [FaithfulS
   [Algebra.IsSeparable (ResidueField A) (ResidueField B)]
 
 variable (A B G) in
-/-- Let `B` be a finite extension of a discrete valuation ring `A` with separable residue
+/-- Let `A → B` be a finite extension of discrete valuation rings with separable residue
 extension, and let a finite group `G` act on `B` by `A`-algebra automorphisms. Then the
 invariants `B^G` are generated over `A` by a single element. -/
 theorem exists_adjoin_eq_top :

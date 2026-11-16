@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.RingTheory.DiscreteValuationRing.Invariant
-public import TauCeti.RingTheory.IsGaloisGroup.IntegralClosure
+import TauCeti.RingTheory.IsGaloisGroup.IntegralClosure
 public import TauCeti.RingTheory.LocalRing.RamificationGroup
 public import TauCeti.RingTheory.RamificationInertia.DiscreteValuationRing
 public import TauCeti.RingTheory.Valuation.AddValuation
@@ -40,8 +40,15 @@ lemma: if `σ` has the largest lower index `j` in its coset `σ H`, then
 nonarchimedean local field case is
 `TauCeti.LocalFieldsRamification.ramificationIndex_mul_lowerIndex_restrictNormal_eq_sum`.
 
+The comparison of `σ y - y` with `(σ f)(x)` uses only the generators, so it is first proved for
+any tower of discrete valuation rings `C → B` generated over `A` by single elements, with `C` the
+ring of invariants of a finite group `H` acting faithfully on `B` and `σ` acting compatibly on
+`B` and `C`. This monogenic form also gives the nonarchimedean local field case.
+
 ## Main results
 
+* `TauCeti.IsLocalRing.ramificationIdx_mul_lowerIndex_eq_finsum_of_adjoin_eq_top`: the quotient
+  formula `e · i(σ|_C) = ∑_{τ ∈ H} i(σ τ)` for a tower of monogenic discrete valuation rings.
 * `TauCeti.IsLocalRing.ramificationIdx_mul_lowerIndex_mk_eq_finsum`: **Serre's quotient formula**
   `e · i_{G/H}(σ H) = ∑_{τ ∈ H} i_G(σ τ)`.
 * `TauCeti.IsLocalRing.ramificationIdx_mul_lowerIndex_mk_eq_sum_card`: its counting form
@@ -57,6 +64,67 @@ public section
 open IsLocalRing
 
 namespace TauCeti
+
+/-- An integral extension of a ring of dimension at most one in a discrete valuation ring is
+injective: its kernel is a prime strictly below the contraction of the maximal ideal. -/
+private theorem faithfulSMul_of_isIntegral {R S : Type*} [CommRing R] [Ring.DimensionLEOne R]
+    [CommRing S] [IsDomain S] [IsDiscreteValuationRing S] [Algebra R S] [Algebra.IsIntegral R S] :
+    FaithfulSMul R S := by
+  rw [faithfulSMul_iff_algebraMap_injective, RingHom.injective_iff_ker_eq_bot,
+    RingHom.ker_eq_comap_bot]
+  exact Ring.DimensionLEOne.eq_bot_of_lt _ _ <| Ideal.IsIntegral.under_lt_under (R := R) <|
+    bot_lt_iff_ne_bot.2 (IsDiscreteValuationRing.not_a_field S)
+
+namespace IsLocalRing
+
+section Monogenic
+
+variable {A C B : Type*} [CommRing A] [CommRing C] [IsDomain C] [IsDiscreteValuationRing C]
+  [CommRing B] [IsDomain B] [IsDiscreteValuationRing B] [Algebra A C] [Algebra A B] [Algebra C B]
+  {G G' H : Type*} [Group G] [MulSemiringAction G B] [SMulCommClass G A B]
+  [Group G'] [MulSemiringAction G' C] [SMulCommClass G' A C]
+  [Group H] [Finite H] [MulSemiringAction H B] [SMulCommClass H A B] [SMulCommClass H C B]
+  [FaithfulSMul H B] [Algebra.IsInvariant C B H]
+
+/-- **Serre's quotient formula for the lower index, monogenic form.** Let `C → B` be an extension
+of discrete valuation rings, generated over a common base `A` by single elements `y` and `x`, with
+`C` the invariants of a finite group `H` acting faithfully on `B` over `C` and `A`. Let `σ` act on
+`B` and `σ'` on `C`, compatibly with `C → B`, and let `ι τ` act on `B` as `τ` does. Then
+`e · i(σ') = ∑_{τ ∈ H} i(σ ι(τ))`, where `e` is the ramification index of `B` over `C`. -/
+theorem ramificationIdx_mul_lowerIndex_eq_finsum_of_adjoin_eq_top {x : B}
+    (hx : Algebra.adjoin A {x} = ⊤) {y : C} (hy : Algebra.adjoin A {y} = ⊤) {σ : G} {σ' : G'}
+    (hσ : ∀ c : C, σ • algebraMap C B c = algebraMap C B (σ' • c)) {ι : H → G}
+    (hι : ∀ (τ : H) (b : B), ι τ • b = τ • b) :
+    ((maximalIdeal B).ramificationIdx C : ℕ∞) * lowerIndex C σ' =
+      ∑ᶠ τ : H, lowerIndex B (σ * ι τ) := by
+  have := Fintype.ofFinite H
+  -- `B` is integral over `C`, so `C → B` is injective and local.
+  have := Algebra.IsInvariant.isIntegral C B H
+  have := faithfulSMul_of_isIntegral (R := C) (S := B)
+  -- `σ y - y` and `(σ f)(x) = ∏_{τ ∈ H} (x - σ τ x)` divide each other in `B`, for `f` the
+  -- characteristic polynomial of `x` under `H`: the `H`-invariants are the image of `C`,
+  -- generated over `A` by `y`.
+  have key : _root_.IsDiscreteValuationRing.addVal B
+      (σ • algebraMap C B y - algebraMap C B y) =
+      _root_.IsDiscreteValuationRing.addVal B ((σ • MulSemiringAction.charpoly H x).eval x) := by
+    refine (_root_.IsDiscreteValuationRing.addVal_eq_iff_associated _ _).2 <|
+      associated_of_dvd_dvd (MulSemiringAction.dvd_eval_smul_charpoly (fun c hc ↦ ?_) x)
+        (dvd_sub_comm.1 (MulSemiringAction.eval_smul_charpoly_dvd_sub_smul
+          (smul_left_injective_of_adjoin_singleton_eq_top hx) (hx ▸ Algebra.mem_top)
+          (fun τ ↦ smul_algebraMap τ y) σ))
+    obtain ⟨w, rfl⟩ := Algebra.IsInvariant.isInvariant (A := C) (G := H) c hc
+    rw [hσ, hσ, ← map_sub, ← map_sub]
+    exact map_dvd _ (smul_sub_dvd_smul_sub_of_adjoin_singleton_eq_top hy σ' w)
+  rw [finsum_eq_sum_of_fintype, lowerIndex_eq_addVal_of_adjoin_singleton_eq_top hy, ← nsmul_eq_mul,
+    ← IsDiscreteValuationRing.addVal_algebraMap, map_sub, ← hσ, key,
+    MulSemiringAction.eval_smul_charpoly, AddValuation.map_prod]
+  refine Finset.sum_congr rfl fun τ _ ↦ ?_
+  rw [lowerIndex_eq_addVal_of_adjoin_singleton_eq_top hx, AddValuation.map_sub_swap, mul_smul,
+    hι]
+
+end Monogenic
+
+end IsLocalRing
 
 variable {A B : Type*} [CommRing A] [IsDomain A] [IsDiscreteValuationRing A]
   [CommRing B] [IsDomain B] [IsDiscreteValuationRing B] [Algebra A B]
@@ -78,39 +146,14 @@ theorem ramificationIdx_mul_lowerIndex_mk_eq_finsum [IsLocalHom (algebraMap A B)
     ((maximalIdeal B).ramificationIdx (FixedPoints.subalgebra A B H) : ℕ∞) *
         lowerIndex (FixedPoints.subalgebra A B H) (σ : G ⧸ H) =
       ∑ᶠ τ : H, lowerIndex B (σ * τ) := by
-  have := Fintype.ofFinite H
-  -- The kernel of `A → B` is a prime ideal strictly below the contraction of `maximalIdeal B`.
-  have : FaithfulSMul A B := by
-    have := Algebra.IsInvariant.isIntegral A B G
-    rw [faithfulSMul_iff_algebraMap_injective, RingHom.injective_iff_ker_eq_bot,
-      RingHom.ker_eq_comap_bot]
-    exact Ring.DimensionLEOne.eq_bot_of_lt _ _ <| Ideal.IsIntegral.under_lt_under (R := A) <|
-      bot_lt_iff_ne_bot.2 (IsDiscreteValuationRing.not_a_field B)
+  have := Algebra.IsInvariant.isIntegral A B G
+  have := faithfulSMul_of_isIntegral (R := A) (S := B)
   have : IsGaloisGroup G A B := ⟨inferInstance, inferInstance, inferInstance⟩
   have := IsGaloisGroup.moduleFinite_of_isIntegrallyClosed G A B
   obtain ⟨x, hx⟩ := IsDiscreteValuationRing.exists_adjoin_eq_top (R := A) (S := B)
   obtain ⟨y, hy⟩ := FixedPoints.exists_adjoin_eq_top A B H
-  have hinj : Function.Injective fun τ : H ↦ τ • x :=
-    (smul_left_injective_of_adjoin_singleton_eq_top (G := G) hx).comp Subtype.val_injective
-  -- `σ y - y` and `(σ f)(x) = ∏_{τ ∈ H} (x - σ τ x)` divide each other in `B`, for `f` the
-  -- characteristic polynomial of `x` under `H`: the `H`-invariants are the elements of `B^H`,
-  -- generated over `A` by `y`.
-  have key : _root_.IsDiscreteValuationRing.addVal B (σ • (y : B) - y) =
-      _root_.IsDiscreteValuationRing.addVal B
-        ((σ • MulSemiringAction.charpoly H x).eval x) := by
-    refine (_root_.IsDiscreteValuationRing.addVal_eq_iff_associated _ _).2 <|
-      associated_of_dvd_dvd
-        (MulSemiringAction.smul_sub_dvd_eval_smul_charpoly (fun c hc ↦ ?_) x)
-        (dvd_sub_comm.1 (MulSemiringAction.eval_smul_charpoly_dvd_sub_smul hx hinj
-          (fun τ ↦ y.2 τ) σ))
-    simpa using map_dvd (algebraMap (FixedPoints.subalgebra A B H) B)
-      (smul_sub_dvd_smul_sub_of_adjoin_singleton_eq_top hy (σ : G ⧸ H) ⟨c, hc⟩)
-  rw [finsum_eq_sum_of_fintype, lowerIndex_eq_addVal_of_adjoin_singleton_eq_top hy,
-    ← nsmul_eq_mul, ← IsDiscreteValuationRing.addVal_algebraMap, map_sub]
-  simp_rw [lowerIndex_eq_addVal_of_adjoin_singleton_eq_top hx, AddValuation.map_sub_swap _ _ x,
-    ← AddValuation.map_prod, mul_smul]
-  rw [MulSemiringAction.eval_smul_charpoly] at key
-  simpa only [Subalgebra.algebraMap_apply, FixedPoints.coe_mk_smul, Subgroup.smul_def] using key
+  exact ramificationIdx_mul_lowerIndex_eq_finsum_of_adjoin_eq_top hx hy
+    (fun c ↦ (FixedPoints.coe_mk_smul H σ c).symm) fun _ _ ↦ rfl
 
 variable (A) in
 /-- **Serre's lemma on the lower index of a quotient**, in counting form. Let a finite group `G`
