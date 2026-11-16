@@ -44,6 +44,10 @@ measurable.
   measure can assign full measure to both a set and its complement.
 * `MeasureTheory.TendstoInMeasure.prodMk`: convergence in measure of paired functions,
   for arbitrary measures and filters, without measurability assumptions.
+* `MeasureTheory.TendstoInMeasure.add`: pointwise addition preserves convergence in measure in a
+  seminormed additive commutative group, for arbitrary measures and filters.
+* `MeasureTheory.TendstoInMeasure.const_smul`: left scalar multiplication by a constant preserves
+  convergence in measure under `IsBoundedSMul`, for arbitrary measures and filters.
 * `MeasureTheory.TendstoInMeasure.continuous_comp`: continuous unary transformations on
   finite measure spaces along arbitrary filters.
 * `MeasureTheory.TendstoInMeasure.continuous_comp₂`: the corresponding binary transformation
@@ -145,6 +149,60 @@ theorem prodMk {α ι E₁ E₂ : Type*} [MeasurableSpace α] {μ : Measure α}
     (fun _ ↦ zero_le) fun i ↦ ?_
   simpa only [Prod.edist_eq, le_max_iff, Set.ofPred_or] using
     measure_union_le {x | ε ≤ edist (f₁ i x) (g₁ x)} {x | ε ≤ edist (f₂ i x) (g₂ x)}
+
+/-- Pointwise addition preserves convergence in measure in a seminormed additive commutative
+group, without measurability or finiteness assumptions on the measure, along an arbitrary
+filter. -/
+theorem add {α ι E : Type*} [MeasurableSpace α] {μ : Measure α}
+    [SeminormedAddCommGroup E] {l : Filter ι}
+    {f₁ f₂ : ι → α → E} {g₁ g₂ : α → E}
+    (h₁ : TendstoInMeasure μ f₁ l g₁) (h₂ : TendstoInMeasure μ f₂ l g₂) :
+    TendstoInMeasure μ (fun i x ↦ f₁ i x + f₂ i x) l (fun x ↦ g₁ x + g₂ x) := by
+  rw [tendstoInMeasure_iff_norm] at h₁ h₂ ⊢
+  intro ε hε
+  have hsub (i : ι) : {x | ε ≤ ‖(f₁ i x + f₂ i x) - (g₁ x + g₂ x)‖} ⊆
+      {x | ε / 2 ≤ ‖f₁ i x - g₁ x‖} ∪ {x | ε / 2 ≤ ‖f₂ i x - g₂ x‖} := by
+    intro x hx
+    by_contra hnot
+    simp only [Set.mem_union, Set.mem_ofPred_eq, not_or, not_le] at hnot
+    have htri : ‖(f₁ i x + f₂ i x) - (g₁ x + g₂ x)‖ ≤
+        ‖f₁ i x - g₁ x‖ + ‖f₂ i x - g₂ x‖ := by
+      rw [add_sub_add_comm]
+      exact norm_add_le _ _
+    linarith [Set.mem_ofPred_eq.mp hx]
+  refine tendsto_of_tendsto_of_tendsto_of_le_of_le tendsto_const_nhds
+    (by simpa only [zero_add] using
+      (h₁ (ε / 2) (half_pos hε)).add (h₂ (ε / 2) (half_pos hε)))
+    (fun _ ↦ zero_le) fun i ↦ ?_
+  exact (measure_mono (hsub i)).trans (measure_union_le _ _)
+
+/-- Left scalar multiplication by a constant preserves convergence in measure whenever scalar
+multiplication is bounded in norm, without measurability or finiteness assumptions on the
+measure, along an arbitrary filter. -/
+theorem const_smul {α ι 𝕜 E : Type*} [MeasurableSpace α] {μ : Measure α}
+    [SeminormedRing 𝕜] [SeminormedAddCommGroup E] [Module 𝕜 E] [IsBoundedSMul 𝕜 E]
+    {l : Filter ι} {f : ι → α → E} {g : α → E}
+    (c : 𝕜) (h : TendstoInMeasure μ f l g) :
+    TendstoInMeasure μ (fun i x ↦ c • f i x) l (fun x ↦ c • g x) := by
+  rw [tendstoInMeasure_iff_norm] at h ⊢
+  intro ε hε
+  rcases eq_or_lt_of_le (norm_nonneg c) with hc0 | hcpos
+  · have hempty (i : ι) : {x | ε ≤ ‖c • f i x - c • g x‖} = ∅ := by
+      ext x
+      simp only [Set.mem_ofPred_eq, Set.mem_empty_iff_false, iff_false, not_le]
+      have hle : ‖c • f i x - c • g x‖ ≤ 0 := by
+        rw [← smul_sub]
+        simpa only [← hc0, zero_mul] using norm_smul_le c (f i x - g x)
+      exact hle.trans_lt hε
+    simpa only [hempty, measure_empty] using (tendsto_const_nhds (x := (0 : ℝ≥0∞)))
+  · have hsub (i : ι) : {x | ε ≤ ‖c • f i x - c • g x‖} ⊆
+        {x | ε / ‖c‖ ≤ ‖f i x - g x‖} := by
+      intro x hx
+      rw [Set.mem_ofPred_eq, div_le_iff₀' hcpos]
+      rw [Set.mem_ofPred_eq, ← smul_sub] at hx
+      exact hx.trans (norm_smul_le c (f i x - g x))
+    exact tendsto_of_tendsto_of_tendsto_of_le_of_le tendsto_const_nhds
+      (h (ε / ‖c‖) (div_pos hε hcpos)) (fun _ ↦ zero_le) (fun i ↦ measure_mono (hsub i))
 
 /-- A continuous transformation preserves convergence in measure on a finite measure space
 along an arbitrary filter, provided the transformed functions are eventually almost everywhere

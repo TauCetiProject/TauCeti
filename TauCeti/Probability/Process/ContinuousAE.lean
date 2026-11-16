@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.MeasureTheory.Measure.Lebesgue.Basic
+public import Mathlib.Probability.Process.Indistinguishable
 
 /-!
 # Continuous processes and time-product almost-everywhere identities
@@ -19,8 +20,12 @@ For continuous fields evaluated along a process with a deterministic starting po
 recovers equality of the fields at that point. This is useful when an identity first obtained
 almost everywhere along trajectories must be evaluated at the initial state.
 
-The main inputs are Mathlib's product-measure section theorem `ae_ae_of_ae_prod` and
-`Measure.eqOn_Ico_of_ae_eq`, which extends equality from a full-measure dense subset.
+On a separable topological index space with Hausdorff target, two almost surely continuous
+processes that agree almost surely at every deterministic time are indistinguishable
+(`TauCeti.indist_of_ae_eq_of_ae_continuous`), without measurability or finiteness hypotheses.
+
+The main inputs are Mathlib's product-measure section theorem `ae_ae_of_ae_prod`,
+`Measure.eqOn_Ico_of_ae_eq`, and `DenseRange.equalizer` along a countable dense sequence.
 -/
 
 public section
@@ -28,6 +33,24 @@ public section
 open MeasureTheory Set
 
 namespace TauCeti
+
+/-- Two almost surely continuous processes indexed by a separable topological space with Hausdorff
+target that agree almost surely at every deterministic time are indistinguishable. Neither
+measurability of paths nor finiteness of the measure is required. -/
+theorem indist_of_ae_eq_of_ae_continuous {ι Ω E : Type*} [TopologicalSpace ι]
+    [TopologicalSpace.SeparableSpace ι] [TopologicalSpace E] [T2Space E]
+    {mΩ : MeasurableSpace Ω} {P : Measure Ω} {X Y : ι → Ω → E}
+    (hXY : ∀ t, X t =ᵐ[P] Y t)
+    (hX : ∀ᵐ ω ∂P, Continuous (fun t ↦ X t ω))
+    (hY : ∀ᵐ ω ∂P, Continuous (fun t ↦ Y t ω)) :
+    X ≡ᵐ[P] Y := by
+  rcases isEmpty_or_nonempty ι with _ | _
+  · exact Filter.Eventually.of_forall fun _ t ↦ IsEmpty.elim ‹_› t
+  · have hd : ∀ᵐ ω ∂P, ∀ n : ℕ, X (TopologicalSpace.denseSeq ι n) ω =
+        Y (TopologicalSpace.denseSeq ι n) ω :=
+      ae_all_iff.2 fun n ↦ hXY _
+    filter_upwards [hX, hY, hd] with ω hXω hYω hdω
+    exact congrFun ((TopologicalSpace.denseRange_denseSeq ι).equalizer hXω hYω (funext hdω))
 
 variable {Ω E Y : Type*} [MeasurableSpace Ω] {P : Measure Ω} [SFinite P]
   [TopologicalSpace Y] [T2Space Y] {a b : ℝ}
