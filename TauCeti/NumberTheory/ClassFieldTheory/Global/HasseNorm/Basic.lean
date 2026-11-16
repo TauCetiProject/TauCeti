@@ -63,7 +63,9 @@ everywhere but not a global norm (`TauCeti.ClassFieldTheory.isLocalNormEverywher
 ## References
 
 * J. Neukirch, *Algebraic Number Theory*, Chapter VI, §4.
-* J. S. Milne, *Class Field Theory*, v4.03, Chapter VII, §2.
+* J. S. Milne, *Class Field Theory*, v4.03, Chapter VII, §2 (the cohomology of the idèles) and
+  Chapter VIII, §3 (Theorem 3.1, the Hasse norm theorem; Remark 3.2 for the failure over
+  `ℚ(√13, √17)`).
 -/
 
 public section

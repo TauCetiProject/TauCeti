@@ -21,6 +21,8 @@ The product of two independent square-integrable real random variables is square
 mean-zero square-integrable `RCLike`-valued random variables `W` and `A : Matrix ι ι 𝕜`,
 `star W ⬝ᵥ A *ᵥ W` is integrable with expectation `∑ i, A i i * E[‖W i‖ ^ 2]`
 (`TauCeti.integral_star_dotProduct_mulVec_eq_sum_diag_of_pairwise_indepFun`).
+Independent sections also transfer probability bounds to an independent random parameter
+(`ProbabilityTheory.IndepFun.measureReal_preimage_le`).
 -/
 
 public section
@@ -77,6 +79,29 @@ theorem memLp_two_mul {Ω : Type*} {mΩ : MeasurableSpace Ω} {P : Measure Ω}
   simpa only [Pi.mul_def, mul_pow, Function.comp_def, id_eq] using
     (h.comp (measurable_id.pow_const 2) (measurable_id.pow_const 2)).integrable_mul
       hX.integrable_sq hY.integrable_sq
+
+/-- Bound an event of two independent random variables by an almost-everywhere bound on its
+sections. The section is measured under the law of the second variable. -/
+theorem measureReal_preimage_le {Ω α β : Type*}
+    [MeasurableSpace Ω] [MeasurableSpace α] [MeasurableSpace β]
+    {P : Measure Ω} [IsProbabilityMeasure P] {X : Ω → α} {Y : Ω → β}
+    (hXY : IndepFun X Y P) (hX : AEMeasurable X P) (hY : AEMeasurable Y P)
+    {s : Set (α × β)} (hs : MeasurableSet s) {b : ℝ}
+    (h : ∀ᵐ x ∂P.map X, (P.map Y).real (Prod.mk x ⁻¹' s) ≤ b) :
+    P.real ((fun ω ↦ (X ω, Y ω)) ⁻¹' s) ≤ b := by
+  have hb : 0 ≤ b := by
+    obtain ⟨x, hx⟩ := h.exists
+    exact (measureReal_nonneg).trans hx
+  rw [← map_measureReal_apply_of_aemeasurable (hX.prodMk hY) hs,
+    hXY.map_prod_eq_prod_map_map hX hY]
+  apply (ENNReal.le_ofReal_iff_toReal_le (measure_ne_top _ _) hb).1
+  rw [Measure.prod_apply hs]
+  calc
+    ∫⁻ x, P.map Y (Prod.mk x ⁻¹' s) ∂P.map X ≤ ∫⁻ _, ENNReal.ofReal b ∂P.map X := by
+      apply lintegral_mono_ae
+      filter_upwards [h] with x hx
+      exact (ENNReal.le_ofReal_iff_toReal_le (measure_ne_top _ _) hb).2 hx
+    _ = ENNReal.ofReal b := by simp
 
 end ProbabilityTheory.IndepFun
 

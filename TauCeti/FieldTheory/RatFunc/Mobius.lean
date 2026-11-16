@@ -195,7 +195,7 @@ end MobiusOf
 
 /-- A translation `X + c` is a linear fractional transformation. -/
 @[simp]
-theorem mobiusOf_one_right (c : K) : mobiusOf 1 c 0 1 = X + C c := by
+theorem mobiusOf_one_zero_one (c : K) : mobiusOf 1 c 0 1 = X + C c := by
   simp [mobiusOf_def]
 
 end Domain
@@ -462,7 +462,7 @@ noncomputable def translationAut : RatFunc K ≃ₐ[K] RatFunc K :=
 
 @[simp]
 theorem translationAut_X : translationAut b X = X + C b := by
-  rw [translationAut, mobiusAutOf_X, mobiusOf_one_right]
+  rw [translationAut, mobiusAutOf_X, mobiusOf_one_zero_one]
 
 /-- Distinct scalars give distinct translations. -/
 theorem translationAut_injective : Function.Injective (translationAut : K → _) := by
@@ -472,8 +472,8 @@ theorem translationAut_injective : Function.Injective (translationAut : K → _)
   exact C_injective hX
 
 /-- **The automorphism group of `k(X)` over an infinite field is infinite**, witnessed by the
-translations. This is why the finiteness of the automorphism group of a function field needs genus
-at least two. -/
+translations. This is why the finiteness of the automorphism group of a function field fails in
+genus zero; `TauCeti.IsEllipticFunctionField.infinite_algEquiv` is the genus-one counterpart. -/
 theorem infinite_algEquiv [Infinite K] : Infinite (RatFunc K ≃ₐ[K] RatFunc K) :=
   Infinite.of_injective _ (translationAut_injective (K := K))
 

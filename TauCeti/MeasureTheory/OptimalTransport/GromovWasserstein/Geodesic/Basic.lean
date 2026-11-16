@@ -41,6 +41,9 @@ The exponent `1 ≤ p ≤ ∞` is arbitrary, including `p = ∞`.
 * `TauCeti.gromovWassersteinEDist_eq_zero_of_ae_eq_comp_prodMap_fst` and
   `TauCeti.gromovWassersteinEDist_eq_zero_of_ae_eq_comp_prodMap_snd` from
   `GromovWasserstein.Basic` identify the endpoints of the interpolation up to distance `0`.
+* `TauCeti.GromovWassersteinSpace.isGeodesicSpace_of_ae_isGeodesicSegment`: the reduction
+  criterion: `GromovWassersteinSpace p Z` is a geodesic space as soon as every coupling carries an
+  almost everywhere strongly measurable family of geodesic segments.
 * `TauCeti.GromovWassersteinSpace.instIsGeodesicSpace`: over a complete separable geodesic target,
   `GromovWassersteinSpace p Z` is a geodesic space.
 
@@ -55,10 +58,8 @@ The exponent `1 ≤ p ≤ ∞` is arbitrary, including `p = ∞`.
 
 public section
 
-noncomputable section
-
 open MeasureTheory Set
-open scoped ENNReal unitInterval
+open scoped ENNReal
 
 namespace TauCeti
 
