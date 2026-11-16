@@ -35,12 +35,15 @@ For `x ∈ slitPlane ∪ {0}`, the quotient `a / (t + x)` is continuous for `t >
 These criteria feed logarithm evaluations of index integrals: a curve piece confined to a
 half-plane about the winding point has slit-compatible chord ratios, so its index integral
 is a principal logarithm. The principal cut plane `{z : ℂ | 1 - z ∈ slitPlane}` is open,
-star-convex about `0`, and preconnected, and is preserved under scaling by `[0, 1]`.
+star-convex about every real point `x < 1` (in particular about `0`), and preconnected, and is
+preserved under scaling by `[0, 1]`.
 
 ## Main declarations
 
 * `Complex.one_sub_mul_ofReal_mem_slitPlane`, `Complex.one_sub_ofReal_mul_mem_slitPlane`
 * `Complex.isOpen_setOf_one_sub_mem_slitPlane`,
+  `Complex.starConvex_setOf_one_sub_mem_slitPlane`,
+  `Complex.starConvex_ofReal_setOf_one_sub_mem_slitPlane`,
   `Complex.starConvex_zero_setOf_one_sub_mem_slitPlane`,
   `Complex.isPreconnected_setOf_one_sub_mem_slitPlane`
 * `TauCeti.div_sub_mem_slitPlane_of_dist_lt_dist`, `TauCeti.one_add_div_mem_slitPlane`
@@ -317,12 +320,28 @@ theorem one_sub_ofReal_mul_mem_slitPlane {z : ℂ} (hz : 1 - z ∈ slitPlane)
 theorem isOpen_setOf_one_sub_mem_slitPlane : IsOpen {z : ℂ | 1 - z ∈ slitPlane} :=
   isOpen_slitPlane.preimage (continuous_const.sub continuous_id)
 
-/-- The principal cut plane `{z : ℂ | 1 - z ∈ slitPlane}` is star-convex about `0`. -/
+open scoped ComplexOrder in
+/-- The principal cut plane `{w : ℂ | 1 - w ∈ slitPlane}` is star-convex about every `z < 1` in
+the complex partial order. -/
+theorem starConvex_setOf_one_sub_mem_slitPlane {z : ℂ} (hz : z < 1) :
+    StarConvex ℝ z {w : ℂ | 1 - w ∈ slitPlane} := by
+  have heq : (Set.Ici (1 : ℂ))ᶜ = {w : ℂ | 1 - w ∈ slitPlane} := by
+    ext w
+    simp [Complex.mem_slitPlane_iff_not_le_zero]
+  exact heq ▸ starConvex_compl_Ici hz
+
+/-- The principal cut plane `{w : ℂ | 1 - w ∈ slitPlane}` is star-convex about every real number
+`x < 1`. -/
+theorem starConvex_ofReal_setOf_one_sub_mem_slitPlane {x : ℝ} (hx : x < 1) :
+    StarConvex ℝ (x : ℂ) {w : ℂ | 1 - w ∈ slitPlane} := by
+  open scoped ComplexOrder in
+  exact starConvex_setOf_one_sub_mem_slitPlane (by exact_mod_cast hx)
+
+/-- The principal cut plane `{w : ℂ | 1 - w ∈ slitPlane}` is star-convex about `0`. -/
 theorem starConvex_zero_setOf_one_sub_mem_slitPlane :
-    StarConvex ℝ (0 : ℂ) {z : ℂ | 1 - z ∈ slitPlane} := by
-  intro z hz _ b _ hb hab
-  simp only [smul_zero, zero_add, real_smul, Set.mem_ofPred_eq]
-  exact one_sub_ofReal_mul_mem_slitPlane hz ⟨hb, by linarith⟩
+    StarConvex ℝ (0 : ℂ) {w : ℂ | 1 - w ∈ slitPlane} := by
+  open scoped ComplexOrder in
+  exact starConvex_setOf_one_sub_mem_slitPlane one_pos
 
 /-- The principal cut plane `{z : ℂ | 1 - z ∈ slitPlane}` is preconnected. -/
 theorem isPreconnected_setOf_one_sub_mem_slitPlane :

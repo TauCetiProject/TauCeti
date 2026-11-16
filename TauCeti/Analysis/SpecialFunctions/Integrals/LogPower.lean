@@ -28,12 +28,12 @@ When `q = k` is a natural number, `Γ(k + 1) = k!` yields the real-exponent eval
   `∫ t in 0..1, t ^ r * (-log t) ^ q = Γ(q + 1) / (r + 1) ^ (q + 1)`.
 * `TauCeti.intervalIntegrable_rpow_mul_neg_log_pow`, `TauCeti.integral_rpow_mul_neg_log_pow`,
   `TauCeti.intervalIntegrable_rpow_mul_log_pow`, and `TauCeti.integral_rpow_mul_log_pow`:
-  interval integrability and evaluation for the natural logarithmic power cases `(-log t) ^ k` and
-  `(log t) ^ k`.
+  interval integrability on any interval `a..b` and unit-interval evaluation for the natural
+  logarithmic power cases `(-log t) ^ k` and `(log t) ^ k`.
 * `TauCeti.intervalIntegrable_pow_mul_neg_log_pow`, `TauCeti.integral_pow_mul_neg_log_pow`,
   `TauCeti.intervalIntegrable_pow_mul_log_pow`, and `TauCeti.integral_pow_mul_log_pow`:
-  interval integrability and evaluation for the natural polynomial-moment specializations
-  `t ^ j * (-log t) ^ k` and `t ^ j * (log t) ^ k`.
+  interval integrability on any interval `a..b` and unit-interval evaluation for the natural
+  polynomial-moment specializations `t ^ j * (-log t) ^ k` and `t ^ j * (log t) ^ k`.
 -/
 
 public section
@@ -87,11 +87,36 @@ theorem integral_rpow_mul_neg_log_rpow {r q : ℝ} (hr : -1 < r) (hq : -1 < q) :
   rw [hcongr, integral_rpow_mul_exp_neg_mul_rpow zero_lt_one hq hb]
   simp [-neg_add_rev, rpow_neg hb.le, inv_mul_eq_div]
 
-/-- For `r > -1` and `k : ℕ`, `t ↦ t ^ r * (-log t) ^ k` is interval integrable on `[0, 1]`. -/
-theorem intervalIntegrable_rpow_mul_neg_log_pow {r : ℝ} (hr : -1 < r) (k : ℕ) :
-    IntervalIntegrable (fun t : ℝ ↦ t ^ r * (-log t) ^ k) volume 0 1 := by
-  have hk : (-1 : ℝ) < k := by linarith [Nat.cast_nonneg (α := ℝ) k]
-  simpa only [rpow_natCast] using intervalIntegrable_rpow_mul_neg_log_rpow hr hk
+/-- For `r > -1` and `k : ℕ`, `t ↦ t ^ r * (-log t) ^ k` is interval integrable on every
+interval. -/
+theorem intervalIntegrable_rpow_mul_neg_log_pow {r : ℝ} (hr : -1 < r) (k : ℕ) {a b : ℝ} :
+    IntervalIntegrable (fun t : ℝ ↦ t ^ r * (-log t) ^ k) volume a b := by
+  have h01 : IntervalIntegrable (fun t : ℝ ↦ t ^ r * (-log t) ^ k) volume 0 1 := by
+    have hk : (-1 : ℝ) < k := by linarith [Nat.cast_nonneg (α := ℝ) k]
+    simpa only [rpow_natCast] using intervalIntegrable_rpow_mul_neg_log_rpow hr hk
+  have hnonneg (c : ℝ) (hc : 0 ≤ c) :
+      IntervalIntegrable (fun t : ℝ ↦ t ^ r * (-log t) ^ k) volume 0 c := by
+    rcases le_or_gt c 1 with hc1 | hc1
+    · exact h01.mono_set (uIcc_subset_uIcc left_mem_uIcc (mem_uIcc.mpr (Or.inl ⟨hc, hc1⟩)))
+    · have h1c : ContinuousOn (fun t : ℝ ↦ t ^ r * (-log t) ^ k) (uIcc 1 c) := by
+        rw [uIcc_of_le hc1.le]
+        refine ContinuousOn.mul
+          (continuousOn_id.rpow_const fun _ ht ↦ Or.inl (zero_lt_one.trans_le ht.1).ne')
+          ((continuousOn_log.mono fun t (ht : t ∈ Icc 1 c) ↦
+            (zero_lt_one.trans_le ht.1).ne').neg.pow k)
+      exact h01.trans h1c.intervalIntegrable
+  have hall (c : ℝ) : IntervalIntegrable (fun t : ℝ ↦ t ^ r * (-log t) ^ k) volume 0 c := by
+    rcases le_total 0 c with hc | hc
+    · exact hnonneg c hc
+    · rw [IntervalIntegrable.iff_comp_neg, neg_zero]
+      have m := (hnonneg (-c) (by linarith)).const_mul (cos (r * π))
+      rw [intervalIntegrable_iff] at m ⊢
+      refine m.congr_fun (fun t ht ↦ ?_) measurableSet_uIoc
+      rw [uIoc_of_le (by linarith : 0 ≤ -c)] at ht
+      simp only [log_neg_eq_log, rpow_def_of_pos ht.1,
+        rpow_def_of_neg (by linarith [ht.1] : -t < 0)]
+      ring
+  exact (hall a).symm.trans (hall b)
 
 /-- For `r > -1` and `k : ℕ`, `∫₀¹ t ^ r * (-log t) ^ k dt = k! / (r + 1) ^ (k + 1)`. -/
 theorem integral_rpow_mul_neg_log_pow {r : ℝ} (hr : -1 < r) (k : ℕ) :
@@ -108,9 +133,10 @@ private lemma rpow_mul_log_pow_eq (r : ℝ) (k : ℕ) :
   rw [neg_pow]
   linear_combination -t ^ r * log t ^ k * hsign
 
-/-- For `r > -1` and `k : ℕ`, `t ↦ t ^ r * (log t) ^ k` is interval integrable on `[0, 1]`. -/
-theorem intervalIntegrable_rpow_mul_log_pow {r : ℝ} (hr : -1 < r) (k : ℕ) :
-    IntervalIntegrable (fun t : ℝ ↦ t ^ r * log t ^ k) volume 0 1 := by
+/-- For `r > -1` and `k : ℕ`, `t ↦ t ^ r * (log t) ^ k` is interval integrable on every
+interval. -/
+theorem intervalIntegrable_rpow_mul_log_pow {r : ℝ} (hr : -1 < r) (k : ℕ) {a b : ℝ} :
+    IntervalIntegrable (fun t : ℝ ↦ t ^ r * log t ^ k) volume a b := by
   rw [rpow_mul_log_pow_eq]
   exact (intervalIntegrable_rpow_mul_neg_log_pow hr k).const_mul ((-1) ^ k)
 
@@ -120,10 +146,10 @@ theorem integral_rpow_mul_log_pow {r : ℝ} (hr : -1 < r) (k : ℕ) :
   rw [rpow_mul_log_pow_eq, intervalIntegral.integral_const_mul,
     integral_rpow_mul_neg_log_pow hr k, mul_div_assoc]
 
-/-- For natural numbers `j` and `k`, `t ↦ t ^ j * (-log t) ^ k` is interval integrable on
-`[0, 1]`. -/
-theorem intervalIntegrable_pow_mul_neg_log_pow (j k : ℕ) :
-    IntervalIntegrable (fun t : ℝ ↦ t ^ j * (-log t) ^ k) volume 0 1 := by
+/-- For natural numbers `j` and `k`, `t ↦ t ^ j * (-log t) ^ k` is interval integrable on every
+interval. -/
+theorem intervalIntegrable_pow_mul_neg_log_pow (j k : ℕ) {a b : ℝ} :
+    IntervalIntegrable (fun t : ℝ ↦ t ^ j * (-log t) ^ k) volume a b := by
   simpa only [rpow_natCast] using
     intervalIntegrable_rpow_mul_neg_log_pow (r := j) (by linarith [Nat.cast_nonneg (α := ℝ) j]) k
 
@@ -133,10 +159,10 @@ theorem integral_pow_mul_neg_log_pow (j k : ℕ) :
   simpa only [rpow_natCast] using
     integral_rpow_mul_neg_log_pow (r := j) (by linarith [Nat.cast_nonneg (α := ℝ) j]) k
 
-/-- For natural numbers `j` and `k`, `t ↦ t ^ j * (log t) ^ k` is interval integrable on
-`[0, 1]`. -/
-theorem intervalIntegrable_pow_mul_log_pow (j k : ℕ) :
-    IntervalIntegrable (fun t : ℝ ↦ t ^ j * log t ^ k) volume 0 1 := by
+/-- For natural numbers `j` and `k`, `t ↦ t ^ j * (log t) ^ k` is interval integrable on every
+interval. -/
+theorem intervalIntegrable_pow_mul_log_pow (j k : ℕ) {a b : ℝ} :
+    IntervalIntegrable (fun t : ℝ ↦ t ^ j * log t ^ k) volume a b := by
   simpa only [rpow_natCast] using
     intervalIntegrable_rpow_mul_log_pow (r := j) (by linarith [Nat.cast_nonneg (α := ℝ) j]) k
 

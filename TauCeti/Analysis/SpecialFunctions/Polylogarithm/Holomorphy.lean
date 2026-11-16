@@ -27,9 +27,9 @@ both sides vanish), together with the recursive radial-integral representation
 These results establish the principal holomorphic continuation of `polylog n` from the open unit
 disc to the cut plane `ℂ ∖ [1, ∞)` and provide the differential and integral recurrences used to
 study conjugation symmetry, closed-disc boundary values, monodromy, and single-valued
-polylogarithms. In weight one the hypothesis `1 - z ∈ Complex.slitPlane` is sharp:
-`not_continuousAt_polylog_one_of_one_lt` shows that `polylog 1` is discontinuous at every real
-point `x > 1` on the open branch cut.
+polylogarithms. In weight one the domain `{z | 1 - z ∈ Complex.slitPlane}` is sharp for continuity
+(and hence analyticity): `continuousAt_polylog_one_iff` shows that `polylog 1` is continuous at
+`z : ℂ` if and only if `1 - z ∈ Complex.slitPlane`.
 
 ## Main results
 
@@ -47,8 +47,8 @@ point `x > 1` on the open branch cut.
 * `TauCeti.Polylog.intervalIntegrable_polylog_div`, `TauCeti.Polylog.polylog_eq_integral`, and
   `TauCeti.Polylog.polylog_add_one_eq_integral`: the recursive radial integral on the principal
   domain for all `n : ℤ`.
-* `TauCeti.Polylog.not_continuousAt_polylog_one_of_one_lt`: `polylog 1` is discontinuous at every
-  real point `x > 1` on the open branch cut.
+* `TauCeti.Polylog.continuousAt_polylog_one_iff`: `polylog 1` is continuous at `z : ℂ` if and only
+  if `1 - z ∈ Complex.slitPlane`.
 
 ## References
 
@@ -273,35 +273,43 @@ theorem polylog_add_one_eq_integral (n : ℤ) {z : ℂ} (hz : 1 - z ∈ Complex.
     polylog (n + 1) z = ∫ t : ℝ in 0..1, polylog n ((t : ℂ) * z) / (t : ℂ) := by
   simpa only [add_sub_cancel_right] using polylog_eq_integral (n + 1) hz
 
-/-- `polylog 1` is discontinuous at every real point `x > 1` on the open branch cut, witnessing that
-analyticity on `{z | 1 - z ∈ Complex.slitPlane}` does not extend across `(1, ∞)`. -/
-theorem not_continuousAt_polylog_one_of_one_lt {x : ℝ} (hx : 1 < x) :
-    ¬ ContinuousAt (polylog 1) x := by
-  intro hc
-  let ε : ℕ → ℝ := fun m ↦ ((m : ℝ) + 1)⁻¹
-  let w : ℕ → ℂ := fun m ↦ (x : ℂ) + (ε m : ℂ) * Complex.I
-  have hw_tendsto : Tendsto w atTop (𝓝 (x : ℂ)) := by
-    have hε : Tendsto ε atTop (𝓝 0) :=
-      tendsto_inv_atTop_zero.comp
-        (tendsto_natCast_atTop_atTop.atTop_add (tendsto_const_nhds (x := (1 : ℝ))))
-    simpa only [w, Function.comp_def, Complex.ofReal_zero, zero_mul, add_zero] using
-      tendsto_const_nhds.add ((Complex.continuous_ofReal.continuousAt.tendsto.comp hε).mul
-        tendsto_const_nhds)
-  have him_tendsto : Tendsto (fun m : ℕ ↦ (polylog 1 (w m)).im) atTop
-      (𝓝 (polylog 1 (x : ℂ)).im) :=
-    (Complex.continuous_im.continuousAt.comp hc).tendsto.comp hw_tendsto
-  have him_val : (polylog 1 (x : ℂ)).im = -Real.pi := by
-    have h1x : 1 - x < 0 := by linarith
-    have hsub : (1 : ℂ) - (x : ℂ) = ((1 - x : ℝ) : ℂ) := by push_cast; ring
-    rw [polylog_one, Complex.neg_im, hsub, Complex.log_im, Complex.arg_ofReal_of_neg h1x]
-  rw [him_val] at him_tendsto
-  have him_nonneg (m : ℕ) : 0 ≤ (polylog 1 (w m)).im := by
-    have him_neg : (1 - w m).im < 0 := by
-      have hm_pos : 0 < ε m := by dsimp only [ε]; positivity
-      simpa [w] using hm_pos
-    have harg_neg : Complex.arg (1 - w m) < 0 := Complex.arg_neg_iff.mpr him_neg
-    rw [polylog_one, Complex.neg_im, Complex.log_im]
-    linarith
-  linarith [ge_of_tendsto' him_tendsto him_nonneg, Real.pi_pos]
+/-- `polylog 1` is continuous at `z : ℂ` if and only if `1 - z ∈ Complex.slitPlane`, characterizing
+its maximal domain of continuity across `ℂ` (failing at the logarithmic pole `z = 1` and along the
+open branch cut `(1, ∞)`). -/
+theorem continuousAt_polylog_one_iff {z : ℂ} :
+    ContinuousAt (polylog 1) z ↔ 1 - z ∈ Complex.slitPlane := by
+  refine ⟨fun hc ↦ ?_, fun hz ↦ (hasDerivAt_polylog_one hz).continuousAt⟩
+  by_contra hns
+  have him : z.im = 0 := by simpa using Complex.im_eq_zero_of_notMem_slitPlane hns
+  have hre : 1 ≤ z.re := by
+    have := mt (fun h ↦ Complex.mem_slitPlane_iff.mpr (Or.inl h)) hns
+    simpa only [Complex.sub_re, Complex.one_re, sub_pos, not_lt] using this
+  have hz_eq : z = (z.re : ℂ) := Complex.ext rfl (by simp [him])
+  rcases hre.eq_or_lt with h1 | hx
+  · have hz1 : z = 1 := by rw [hz_eq, ← h1, Complex.ofReal_one]
+    have hlog : ContinuousAt Real.log 0 := by
+      have h : ContinuousAt (fun t : ℝ ↦ -(polylog 1 (1 - (t : ℂ))).re) 0 :=
+        (Complex.continuous_re.continuousAt.comp
+          (hc.comp_of_eq (continuousAt_const.sub Complex.continuous_ofReal.continuousAt)
+            (by simp [hz1]))).neg
+      exact h.congr (Eventually.of_forall fun t ↦ by simp [polylog_one, Complex.log_re])
+    exact Real.continuousAt_log_iff.mp hlog rfl
+  · have hw : Tendsto (fun t : ℝ ↦ z + (t : ℂ) * Complex.I) (𝓝[>] 0) (𝓝 z) := by
+      have hcont : Continuous (fun t : ℝ ↦ z + (t : ℂ) * Complex.I) := by fun_prop
+      simpa using (hcont.continuousAt (x := (0 : ℝ))).tendsto.mono_left nhdsWithin_le_nhds
+    have him_tendsto : Tendsto (fun t : ℝ ↦ (polylog 1 (z + (t : ℂ) * Complex.I)).im)
+        (𝓝[>] 0) (𝓝 (-Real.pi)) := by
+      have him_val : (polylog 1 z).im = -Real.pi := by
+        have hsub : (1 : ℂ) - z = ((1 - z.re : ℝ) : ℂ) := by apply Complex.ext <;> simp [him]
+        rw [polylog_one, Complex.neg_im, hsub, Complex.log_im,
+          Complex.arg_ofReal_of_neg (by linarith)]
+      rw [← him_val]
+      exact (Complex.continuous_im.continuousAt.comp hc).tendsto.comp hw
+    have him_nonneg : ∀ᶠ t : ℝ in 𝓝[>] 0, 0 ≤ (polylog 1 (z + (t : ℂ) * Complex.I)).im := by
+      filter_upwards [self_mem_nhdsWithin] with t ht
+      have him_neg : (1 - (z + (t : ℂ) * Complex.I)).im < 0 := by simpa [him] using ht
+      rw [polylog_one, Complex.neg_im, Complex.log_im]
+      linarith [Complex.arg_neg_iff.mpr him_neg]
+    linarith [ge_of_tendsto him_tendsto him_nonneg, Real.pi_pos]
 
 end TauCeti.Polylog
