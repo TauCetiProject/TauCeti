@@ -7,7 +7,7 @@ module
 
 public import TauCeti.Geometry.Manifold.Morse.Boundary.ChainComplex
 public import TauCeti.Geometry.Manifold.Morse.Boundary.Opposite
-public import TauCeti.LinearAlgebra.Matrix.Rank
+public import Mathlib.LinearAlgebra.Dual.Lemmas
 
 /-!
 # Poincaré duality for mod-two Morse homology
@@ -15,19 +15,22 @@ public import TauCeti.LinearAlgebra.Matrix.Rank
 Let `f` be a Morse function on a compact boundaryless manifold `M` of dimension `m` and `X` a
 Morse–Smale pseudo-gradient adapted to `f`. Then `-X` is a Morse–Smale pseudo-gradient adapted to
 `-f`, the two functions have the same critical points, and a critical point of index `k` for `f`
-has index `m - k` for `-f`. The mod-two Morse boundary of `-f` is the transpose of that of `f`
-(`TauCeti.IsAdaptedPseudoGradient.IsMorseSmale.toDual_comp_morseBoundary_neg`). This file draws the
-consequence for Morse homology: the mod-two Morse homology of `-f` in degree `k` has the dimension
-of the mod-two Morse homology of `f` in degree `m - k`
-(`TauCeti.IsAdaptedPseudoGradient.IsMorseSmale.finrank_homology_morseComplex_neg`). This is
-Poincaré duality for mod-two Morse homology, in the form in which the Morse complex of `-f` is the
-dual of the Morse complex of `f`, read with the complementary grading.
+has index `m - k` for `-f` (`TauCeti.IsMorse.criticalPointsIndexNegEquiv`). The mod-two Morse
+boundary of `-f` is the transpose of that of `f`
+(`TauCeti.IsAdaptedPseudoGradient.IsMorseSmale.toDual_comp_morseBoundary_neg`). This file refines
+it to the graded complexes: identifying the chains of `-f` of index `k` with the cochains of `f`
+of index `m - k`, the differential of the Morse complex of `-f` from degree `j + 1` to degree `j`
+is the dual map of the differential of the Morse complex of `f` from degree `n + 1` to degree `n`,
+where `j + n + 1 = m`
+(`TauCeti.IsAdaptedPseudoGradient.IsMorseSmale.toDual_comp_morseBoundaryAt_neg`). So the Morse
+complex of `-f` is the dual of the Morse complex of `f`, read with the complementary grading. The
+consequence for Morse homology is Poincaré duality for mod-two Morse homology: the mod-two Morse
+homology of `-f` in degree `k` has the dimension of the mod-two Morse homology of `f` in degree
+`m - k` (`TauCeti.IsAdaptedPseudoGradient.IsMorseSmale.finrank_homology_morseComplex_neg`).
 
-The argument is linear algebra on the two chain complexes. Index by index, the differential of
-the complex of `-f` from degree `j + 1` to degree `j` is, after reindexing the critical points, the
-transpose of the differential of the complex of `f` from degree `n + 1` to degree `n`, where
-`j + n + 1 = m`. So the two differentials have the same rank
-(`TauCeti.IsAdaptedPseudoGradient.IsMorseSmale.finrank_range_morseBoundaryAt_neg`). By
+The homology statement is linear algebra on the two chain complexes. A linear map and its dual map
+have the same rank, so the differentials of `-f` and `f` exchanged by the identification have the
+same rank (`TauCeti.IsAdaptedPseudoGradient.IsMorseSmale.finrank_range_morseBoundaryAt_neg`). By
 rank–nullity (`ChainComplex.finrank_X`), the dimension of the homology in degree `k` is the number
 of critical points of index `k` minus the ranks of the differentials out of and into degree `k`.
 Under `k ↦ m - k` the numbers of critical points agree (`TauCeti.IsMorse.criticalCount_neg`) and
@@ -41,6 +44,9 @@ treated here.
 
 In the namespace `TauCeti.IsAdaptedPseudoGradient.IsMorseSmale`:
 
+* `toDual_comp_morseBoundaryAt_neg`: identifying the chains of `-f` of index `k` with the cochains
+  of `f` of index `m - k`, the graded boundary of `-f` is the dual map of the graded boundary of
+  `f`.
 * `finrank_range_morseBoundaryAt_neg`: the graded boundary of `-f` from index `j + 1` to `j` has
   the rank of the graded boundary of `f` from index `n + 1` to `n`, when `j + n + 1 = m`.
 * `finrank_homology_morseComplex_neg`: the mod-two Morse homology of `-f` in degree `k` has the
@@ -73,43 +79,56 @@ namespace IsMorseSmale
 
 variable {hX : IsAdaptedPseudoGradient f X} (h : hX.IsMorseSmale) (hf : IsMorse 𝓘(ℝ, E) f)
 
-/-- The critical points of `-f` of index `j` are the critical points of `f` of index `k`, when
-`j + k` is the dimension. -/
-private noncomputable def negIndexEquiv {j k : ℕ} (hjk : j + k = finrank ℝ E) :
-    {p : criticalPoints 𝓘(ℝ, E) (-f) // manifoldMorseIndex 𝓘(ℝ, E) (-f) p = j} ≃
-      {p : criticalPoints 𝓘(ℝ, E) f // manifoldMorseIndex 𝓘(ℝ, E) f p = k} :=
-  (Set.equivOfEq criticalPoints_neg).subtypeEquiv fun p ↦ by
-    have := (hf.isManifoldNondegenerateCriticalPoint_of_mem_criticalPoints
-      (by simpa using p.2)).manifoldMorseIndex_neg_add_manifoldMorseIndex_eq_finrank
-    simp only [Set.equivOfEq_apply]
-    omega
+/-- **The graded Morse complex of `-f` is the dual of that of `f`, with the complementary
+grading.** Let `j + n + 1` be the dimension of `M`. The critical points of index `j` and `j + 1`
+for `-f` are those of index `n + 1` and `n` for `f`
+(`TauCeti.IsMorse.criticalPointsIndexNegEquiv`). Identify a mod-two chain of `-f` of index `j`
+(resp. `j + 1`) with a cochain of `f` of index `n + 1` (resp. `n`), sending each critical point to
+the dual basis vector of the same critical point. Under these identifications the graded boundary
+of `-f` from index `j + 1` to index `j` is the dual map of the graded boundary of `f` from index
+`n + 1` to index `n`, that is, the graded Morse coboundary of `f`. -/
+theorem toDual_comp_morseBoundaryAt_neg [DecidableEq (criticalPoints 𝓘(ℝ, E) f)] {j n : ℕ}
+    (hjn : j + n + 1 = finrank ℝ E) :
+    Finsupp.basisSingleOne.toDual ∘ₗ
+        (Finsupp.domLCongr (hf.criticalPointsIndexNegEquiv (j := j) (k := n + 1)
+          (by omega))).toLinearMap ∘ₗ (h.neg hf).morseBoundaryAt hf.neg j =
+      (h.morseBoundaryAt hf n).dualMap ∘ₗ Finsupp.basisSingleOne.toDual ∘ₗ
+        (Finsupp.domLCongr (hf.criticalPointsIndexNegEquiv (j := j + 1) (k := n)
+          (by omega))).toLinearMap := by
+  refine Finsupp.basisSingleOne.ext fun q ↦ Finsupp.basisSingleOne.ext fun p ↦ ?_
+  obtain ⟨p, rfl⟩ := (hf.criticalPointsIndexNegEquiv (j := j) (k := n + 1) (by omega)).surjective p
+  have hq {i k : ℕ} (hik : i + k = finrank ℝ E) (q) :
+      Finsupp.domLCongr (M := ZMod 2) (R := ZMod 2) (hf.criticalPointsIndexNegEquiv hik)
+        (Finsupp.basisSingleOne q) =
+        Finsupp.basisSingleOne (hf.criticalPointsIndexNegEquiv hik q) := by
+    simp only [Finsupp.coe_basisSingleOne, Finsupp.domLCongr_single]
+  -- Both sides are the coefficient of `q` in the boundary of `p` for `f`.
+  simp only [LinearMap.comp_apply, LinearMap.dualMap_apply, LinearEquiv.coe_coe, hq,
+    Basis.toDual_apply_left, Basis.toDual_apply_right, Finsupp.basisSingleOne_repr]
+  simp only [Finsupp.coe_basisSingleOne, Finsupp.domLCongr_apply, Finsupp.domCongr_apply,
+    LinearEquiv.refl_apply, Finsupp.equivMapDomain_apply, Equiv.symm_apply_apply,
+    morseBoundaryAt_single_apply, one_mul, h.morseBoundaryCoeff_neg hf]
+  congr 1 <;> ext <;> simp
 
 /-- **The graded boundaries of `f` and `-f` have the same ranks.** If `j + n + 1` is the dimension
 of `M`, the graded mod-two Morse boundary of `-f` from index `j + 1` to index `j` has the rank of
-the graded boundary of `f` from index `n + 1` to index `n`. Indeed, the critical points of index
-`j + 1` and `j` for `-f` are those of index `n` and `n + 1` for `f`, and in these bases the
-matrix of the first boundary is the transpose of the matrix of the second, since both count the
-same trajectories of `X` (`IsMorseSmale.morseBoundaryCoeff_neg`). -/
+the graded boundary of `f` from index `n + 1` to index `n`. -/
 theorem finrank_range_morseBoundaryAt_neg {j n : ℕ} (hjn : j + n + 1 = finrank ℝ E) :
     finrank (ZMod 2) (LinearMap.range ((h.neg hf).morseBoundaryAt hf.neg j)) =
       finrank (ZMod 2) (LinearMap.range (h.morseBoundaryAt hf n)) := by
   classical
   have := hf.finite_criticalPoints.to_subtype
-  have := hf.neg.finite_criticalPoints.to_subtype
-  let _ (k : ℕ) := Fintype.ofFinite
-    {p : criticalPoints 𝓘(ℝ, E) f // manifoldMorseIndex 𝓘(ℝ, E) f p = k}
-  let _ (k : ℕ) := Fintype.ofFinite
-    {p : criticalPoints 𝓘(ℝ, E) (-f) // manifoldMorseIndex 𝓘(ℝ, E) (-f) p = k}
-  -- Both ranks are ranks of the matrices of the boundaries in the bases of critical points.
-  rw [← LinearMap.rank_toMatrix _ Finsupp.basisSingleOne Finsupp.basisSingleOne,
-    ← LinearMap.rank_toMatrix (h.morseBoundaryAt hf n) Finsupp.basisSingleOne
-      Finsupp.basisSingleOne,
-    ← Matrix.rank_transpose (LinearMap.toMatrix _ _ (h.morseBoundaryAt hf n)),
-    ← Matrix.rank_submatrix _ (negIndexEquiv hf (j := j) (k := n + 1) (by omega))
-      (negIndexEquiv hf (j := j + 1) (k := n) (by omega))]
-  congr 1
-  ext q p
-  simp [LinearMap.toMatrix_apply, h.morseBoundaryCoeff_neg hf, negIndexEquiv]
+  -- The identifications of `toDual_comp_morseBoundaryAt_neg` are linear equivalences, under which
+  -- the boundary of `-f` is the dual map of the boundary of `f`, which has the same rank.
+  let e (i k : ℕ) (hik : i + k = finrank ℝ E) :=
+    (Finsupp.domLCongr (M := ZMod 2) (R := ZMod 2) (hf.criticalPointsIndexNegEquiv hik)).trans
+      Finsupp.basisSingleOne.toDualEquiv
+  have key : (e j (n + 1) (by omega)).toLinearMap ∘ₗ (h.neg hf).morseBoundaryAt hf.neg j =
+      (h.morseBoundaryAt hf n).dualMap ∘ₗ (e (j + 1) n (by omega)).toLinearMap :=
+    h.toDual_comp_morseBoundaryAt_neg hf hjn
+  rw [← LinearEquiv.finrank_map_eq (e j (n + 1) (by omega)), ← LinearMap.range_comp, key,
+    LinearMap.range_comp_of_range_eq_top _ (LinearEquiv.range _),
+    LinearMap.finrank_range_dualMap_eq_finrank_range]
 
 /-- The differential of the Morse chain complex out of degree `n + 1` has the rank of the graded
 boundary `morseBoundaryAt`. -/
