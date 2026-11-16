@@ -65,6 +65,10 @@ private theorem toReal_inv_eq_one_sub (hθ : θ ∈ Ioo 0 1) (hp : p⁻¹ = ENNR
     (p⁻¹).toReal = 1 - θ := by
   rw [hp, ENNReal.toReal_ofReal (sub_nonneg.2 hθ.2.le)]
 
+private theorem one_le_of_inv_eq (hθ : θ ∈ Ioo 0 1) (hp : p⁻¹ = ENNReal.ofReal (1 - θ)) :
+    1 ≤ p :=
+  ENNReal.inv_le_one.1 <| hp.trans_le <| ENNReal.ofReal_le_one.2 (sub_le_self 1 hθ.1.le)
+
 end Helpers
 
 section EmbeddingIntoSum
@@ -286,7 +290,7 @@ theorem exists_mem_kMethod_lebesgue_one_top_iff_memLorentz (hθ : θ ∈ Ioo 0 1
   obtain ⟨v, rfl⟩ := lebesgue_one_top_sumSpaceEmbed_surjective u
   exact ⟨v, (mem_kMethod_lebesgue_one_top_iff_memLorentz hθ hp hq hu).2 hf, hu⟩
 
-/-! ### Diagonal Banach-space isomorphism `(L¹, L^∞)_{θ, p} ≃L[𝕜] L^p` -/
+/-! ### Diagonal normed-space isomorphism `(L¹, L^∞)_{θ, p} ≃L[𝕜] L^p` -/
 
 section Diagonal
 
@@ -297,6 +301,8 @@ private theorem memLp_toAEEqFun_kMethodSpace (hθ : θ ∈ Ioo 0 1)
   rw [← memLorentz_self, memLorentz_iff]
   exact (eLorentzNorm_le_kMethodENorm_lebesgue_one_top hθ hp EventuallyEq.rfl).trans_lt
     (mem_kMethod_iff.1 (KMethodSpace.toSumₗ_mem u))
+
+section
 
 variable [Fact (1 ≤ p)]
 
@@ -352,12 +358,17 @@ private def lpToLebesgueOneTopKMethod (hθ : θ ∈ Ioo 0 1) (hp : p⁻¹ = ENNR
       map_smul' _ _ := by ext; simp }
     (2 * θ⁻¹) (norm_lpToLebesgueOneTopKMethod_le hθ hp)
 
+end
+
 /-- **Diagonal real interpolation isomorphism:** for `0 < θ < 1` and `1 / p = 1 - θ`, the real
 interpolation space `(L¹(μ; E), L^∞(μ; E))_{θ, p}` is isomorphic as a normed space over `𝕜` to
 `L^p(μ; E)`, with forward norm at most `1` and inverse norm at most `2 θ⁻¹` (and at most `θ⁻¹` when
 `E` is also a real normed space). -/
 def lebesgueOneTopKMethodEquivLp (hθ : θ ∈ Ioo 0 1) (hp : p⁻¹ = ENNReal.ofReal (1 - θ)) :
+    letI : Fact (1 ≤ p) :=
+      ⟨ENNReal.inv_le_one.1 (hp.trans_le (ENNReal.ofReal_le_one.2 (sub_le_self 1 hθ.1.le)))⟩
     (lebesgue 𝕜 E μ 1 ∞).KMethodSpace θ p ≃L[𝕜] Lp E p μ :=
+  letI : Fact (1 ≤ p) := ⟨one_le_of_inv_eq hθ hp⟩
   ContinuousLinearEquiv.equivOfInverse
     (lebesgueOneTopKMethodToLp hθ hp) (lpToLebesgueOneTopKMethod hθ hp)
     (fun u ↦ KMethodSpace.ext <| (lebesgue 𝕜 E μ 1 ∞).sumSpaceEmbed_injective <|
@@ -385,29 +396,41 @@ theorem coeFn_lebesgueOneTopKMethodEquivLp (hθ : θ ∈ Ioo 0 1)
 @[simp]
 theorem toSumₗ_lebesgueOneTopKMethodEquivLp_symm (hθ : θ ∈ Ioo 0 1)
     (hp : p⁻¹ = ENNReal.ofReal (1 - θ)) (g : Lp E p μ) :
+    letI : Fact (1 ≤ p) :=
+      ⟨ENNReal.inv_le_one.1 (hp.trans_le (ENNReal.ofReal_le_one.2 (sub_le_self 1 hθ.1.le)))⟩
     KMethodSpace.toSumₗ ((lebesgueOneTopKMethodEquivLp (𝕜 := 𝕜) hθ hp).symm g) =
       lpToLebesgueSum (𝕜 := 𝕜) (Fact.out : 1 ≤ p) le_top g := by
+  have : Fact (1 ≤ p) := ⟨one_le_of_inv_eq hθ hp⟩
   simp [lebesgueOneTopKMethodEquivLp, lpToLebesgueOneTopKMethod]
 
 /-- The forward isomorphism `(L¹, L^∞)_{θ, p} → L^p(μ; E)` is norm-nonincreasing
 (`‖·‖_p ≤ ‖·‖_{θ, p}`). -/
 theorem norm_lebesgueOneTopKMethodEquivLp_le (hθ : θ ∈ Ioo 0 1)
     (hp : p⁻¹ = ENNReal.ofReal (1 - θ)) (u : (lebesgue 𝕜 E μ 1 ∞).KMethodSpace θ p) :
-    ‖lebesgueOneTopKMethodEquivLp hθ hp u‖ ≤ ‖u‖ :=
-  norm_toLp_kMethodSpace_le hθ hp u
+    letI : Fact (1 ≤ p) :=
+      ⟨ENNReal.inv_le_one.1 (hp.trans_le (ENNReal.ofReal_le_one.2 (sub_le_self 1 hθ.1.le)))⟩
+    ‖lebesgueOneTopKMethodEquivLp hθ hp u‖ ≤ ‖u‖ := by
+  have : Fact (1 ≤ p) := ⟨one_le_of_inv_eq hθ hp⟩
+  exact norm_toLp_kMethodSpace_le hθ hp u
 
 /-- Over any normed field `𝕜` (without requiring `NormedSpace ℝ E`), the inverse isomorphism
 `L^p(μ; E) → (L¹, L^∞)_{θ, p}` satisfies `‖·‖_{θ, p} ≤ 2 θ⁻¹ ‖·‖_p`. -/
 theorem norm_lebesgueOneTopKMethodEquivLp_symm_le (hθ : θ ∈ Ioo 0 1)
     (hp : p⁻¹ = ENNReal.ofReal (1 - θ)) (g : Lp E p μ) :
-    ‖(lebesgueOneTopKMethodEquivLp (𝕜 := 𝕜) hθ hp).symm g‖ ≤ 2 * θ⁻¹ * ‖g‖ :=
-  norm_lpToLebesgueOneTopKMethod_le hθ hp g
+    letI : Fact (1 ≤ p) :=
+      ⟨ENNReal.inv_le_one.1 (hp.trans_le (ENNReal.ofReal_le_one.2 (sub_le_self 1 hθ.1.le)))⟩
+    ‖(lebesgueOneTopKMethodEquivLp (𝕜 := 𝕜) hθ hp).symm g‖ ≤ 2 * θ⁻¹ * ‖g‖ := by
+  have : Fact (1 ≤ p) := ⟨one_le_of_inv_eq hθ hp⟩
+  exact norm_lpToLebesgueOneTopKMethod_le hθ hp g
 
 /-- When `E` is also a real normed space, the inverse isomorphism
 `L^p(μ; E) → (L¹, L^∞)_{θ, p}` has norm bounded by the sharp Hardy constant `θ⁻¹`. -/
 theorem norm_lebesgueOneTopKMethodEquivLp_symm_le_of_normedSpace_real [NormedSpace ℝ E]
     (hθ : θ ∈ Ioo 0 1) (hp : p⁻¹ = ENNReal.ofReal (1 - θ)) (g : Lp E p μ) :
+    letI : Fact (1 ≤ p) :=
+      ⟨ENNReal.inv_le_one.1 (hp.trans_le (ENNReal.ofReal_le_one.2 (sub_le_self 1 hθ.1.le)))⟩
     ‖(lebesgueOneTopKMethodEquivLp (𝕜 := 𝕜) hθ hp).symm g‖ ≤ θ⁻¹ * ‖g‖ := by
+  have : Fact (1 ≤ p) := ⟨one_le_of_inv_eq hθ hp⟩
   have hle := kMethodENorm_lebesgue_one_top_le_eLorentzNorm (q := p) hθ hp Fact.out
     (coeFn_lpToLebesgueOneTopSum (𝕜 := 𝕜) g)
   rw [eLorentzNorm_self] at hle
@@ -423,17 +446,24 @@ variable {𝕜' : Type*} [NontriviallyNormedField 𝕜'] [NormedSpace 𝕜' E]
 has operator norm at most `1`. -/
 theorem opNorm_lebesgueOneTopKMethodEquivLp_le (hθ : θ ∈ Ioo 0 1)
     (hp : p⁻¹ = ENNReal.ofReal (1 - θ)) :
-    ‖(lebesgueOneTopKMethodEquivLp (𝕜 := 𝕜') (E := E) (μ := μ) hθ hp).toContinuousLinearMap‖ ≤ 1 :=
-  ContinuousLinearMap.opNorm_le_bound _ zero_le_one fun u ↦ by
+    letI : Fact (1 ≤ p) :=
+      ⟨ENNReal.inv_le_one.1 (hp.trans_le (ENNReal.ofReal_le_one.2 (sub_le_self 1 hθ.1.le)))⟩
+    ‖(lebesgueOneTopKMethodEquivLp (𝕜 := 𝕜') (E := E) (μ := μ) hθ hp).toContinuousLinearMap‖
+      ≤ 1 := by
+  have : Fact (1 ≤ p) := ⟨one_le_of_inv_eq hθ hp⟩
+  exact ContinuousLinearMap.opNorm_le_bound _ zero_le_one fun u ↦ by
     simpa using norm_lebesgueOneTopKMethodEquivLp_le hθ hp u
 
 /-- Over any nontrivially normed field (without requiring `NormedSpace ℝ E`), the inverse
 isomorphism `L^p(μ; E) →L[𝕜'] (L¹, L^∞)_{θ, p}` has operator norm at most `2 θ⁻¹`. -/
 theorem opNorm_lebesgueOneTopKMethodEquivLp_symm_le (hθ : θ ∈ Ioo 0 1)
     (hp : p⁻¹ = ENNReal.ofReal (1 - θ)) :
+    letI : Fact (1 ≤ p) :=
+      ⟨ENNReal.inv_le_one.1 (hp.trans_le (ENNReal.ofReal_le_one.2 (sub_le_self 1 hθ.1.le)))⟩
     ‖((lebesgueOneTopKMethodEquivLp (𝕜 := 𝕜') (E := E) (μ := μ) hθ hp).symm).toContinuousLinearMap‖
-      ≤ 2 * θ⁻¹ :=
-  ContinuousLinearMap.opNorm_le_bound _ (mul_nonneg zero_le_two (inv_nonneg.2 hθ.1.le))
+      ≤ 2 * θ⁻¹ := by
+  have : Fact (1 ≤ p) := ⟨one_le_of_inv_eq hθ hp⟩
+  exact ContinuousLinearMap.opNorm_le_bound _ (mul_nonneg zero_le_two (inv_nonneg.2 hθ.1.le))
     (norm_lebesgueOneTopKMethodEquivLp_symm_le hθ hp)
 
 /-- When `E` is also a real normed space, the inverse isomorphism
@@ -441,9 +471,12 @@ theorem opNorm_lebesgueOneTopKMethodEquivLp_symm_le (hθ : θ ∈ Ioo 0 1)
 `θ⁻¹`. -/
 theorem opNorm_lebesgueOneTopKMethodEquivLp_symm_le_of_normedSpace_real [NormedSpace ℝ E]
     (hθ : θ ∈ Ioo 0 1) (hp : p⁻¹ = ENNReal.ofReal (1 - θ)) :
+    letI : Fact (1 ≤ p) :=
+      ⟨ENNReal.inv_le_one.1 (hp.trans_le (ENNReal.ofReal_le_one.2 (sub_le_self 1 hθ.1.le)))⟩
     ‖((lebesgueOneTopKMethodEquivLp (𝕜 := 𝕜') (E := E) (μ := μ) hθ hp).symm).toContinuousLinearMap‖
-      ≤ θ⁻¹ :=
-  ContinuousLinearMap.opNorm_le_bound _ (inv_nonneg.2 hθ.1.le)
+      ≤ θ⁻¹ := by
+  have : Fact (1 ≤ p) := ⟨one_le_of_inv_eq hθ hp⟩
+  exact ContinuousLinearMap.opNorm_le_bound _ (inv_nonneg.2 hθ.1.le)
     (norm_lebesgueOneTopKMethodEquivLp_symm_le_of_normedSpace_real hθ hp)
 
 end OpNorm
