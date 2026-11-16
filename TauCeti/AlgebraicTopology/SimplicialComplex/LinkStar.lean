@@ -224,6 +224,16 @@ theorem closedStar_empty : closedStar K ∅ = K := by
   refine SetLike.ext fun ρ => ?_
   simp only [mem_closedStar, union_empty, and_self]
 
+/-- Taking the closed star of `τ` inside the closed star of `σ` gives the closed star of their
+union. -/
+@[simp]
+theorem closedStar_closedStar {σ τ : Finset ι} :
+    closedStar (closedStar K σ) τ = closedStar K (σ ∪ τ) := by
+  refine SetLike.ext fun ρ => ?_
+  rw [mem_closedStar_nonempty, mem_closedStar_nonempty, mem_closedStar_nonempty, union_assoc,
+    union_comm τ σ]
+  exact ⟨fun h => ⟨h.1, h.2.2⟩, fun h => ⟨h.1, h.1.mono subset_union_left, h.2⟩⟩
+
 /-- The link at the empty simplex is the whole complex. -/
 @[simp]
 theorem link_empty : link K ∅ = K := by
