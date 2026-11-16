@@ -57,7 +57,9 @@ of a monomial are divisible by `k!`, their norms carry the factor `‖k!‖`.
 * `TauCeti.norm_mul_sub_one_lt` and `TauCeti.norm_prod_sub_one_lt`
 * `TauCeti.norm_pow_sub_one_le_norm_sub_one`: a power of an element `x` of norm at most one is
   no farther from `1` than `x`.
-* `TauCeti.norm_prod_sub_prod_le`: a uniform perturbation bound for finite products.
+* `TauCeti.norm_prod_sub_prod_le`, `TauCeti.norm_prod_sub_prod_le_mul_prod`, and
+  `TauCeti.norm_pow_sub_pow_le_mul_pow`: uniform and weighted perturbation bounds for finite
+  products and powers.
 * `TauCeti.norm_fwdDiff_iter_pow_mul_pow_le`: for `‖x‖, ‖h‖ ≤ c`, the `k`-th forward difference
   of `y ↦ yᵐ` with step `h` at `x` satisfies `‖Δₕᵏ (y ↦ yᵐ)(x)‖ cᵏ ≤ ‖k!‖ ‖h‖ᵏ cᵐ`.
 -/
@@ -383,6 +385,54 @@ theorem norm_prod_sub_prod_le {ι R : Type*} [SeminormedCommRing R]
       _ = ε * M ^ s.card := by
         have hcard : s.card - 1 + 1 = s.card := Nat.sub_add_cancel (Finset.card_pos.mpr hs)
         rw [mul_left_comm M ε, ← pow_succ', hcard, max_self]
+
+/-- **Weighted perturbation bound for finite products in an ultrametric ring.** If two finite
+families satisfy `‖f i‖ ≤ M i`, `‖g i‖ ≤ M i`, and `‖f i - g i‖ ≤ δ * M i` for every `i ∈ s`,
+then their products satisfy `‖∏ i ∈ s, f i - ∏ i ∈ s, g i‖ ≤ δ * ∏ i ∈ s, M i`. -/
+theorem norm_prod_sub_prod_le_mul_prod {ι R : Type*} [SeminormedCommRing R]
+    [IsUltrametricDist R] {s : Finset ι} {f g : ι → R} {M : ι → ℝ} {δ : ℝ} (hδ : 0 ≤ δ)
+    (hf : ∀ i ∈ s, ‖f i‖ ≤ M i) (hg : ∀ i ∈ s, ‖g i‖ ≤ M i)
+    (hfg : ∀ i ∈ s, ‖f i - g i‖ ≤ δ * M i) :
+    ‖∏ i ∈ s, f i - ∏ i ∈ s, g i‖ ≤ δ * ∏ i ∈ s, M i := by
+  classical
+  induction s using Finset.induction_on with
+  | empty => simpa using hδ
+  | insert a s ha ih =>
+    rcases s.eq_empty_or_nonempty with rfl | hs
+    · simpa using hfg a (by simp)
+    have hmem : ∀ i ∈ s, i ∈ insert a s := fun i hi ↦ Finset.mem_insert_of_mem hi
+    have hprod : ‖∏ i ∈ s, f i‖ ≤ ∏ i ∈ s, M i :=
+      (TauCeti.norm_prod_le_prod_norm_of_nonempty hs f).trans
+        (Finset.prod_le_prod₀ (fun _ _ ↦ norm_nonneg _) fun i hi ↦ hf i (hmem i hi))
+    have htail := ih (fun i hi ↦ hf i (hmem i hi)) (fun i hi ↦ hg i (hmem i hi))
+      (fun i hi ↦ hfg i (hmem i hi))
+    have hMa : 0 ≤ M a := (norm_nonneg (g a)).trans (hg a (Finset.mem_insert_self a s))
+    rw [Finset.prod_insert ha, Finset.prod_insert ha, Finset.prod_insert ha]
+    calc ‖f a * ∏ i ∈ s, f i - g a * ∏ i ∈ s, g i‖ =
+          ‖(f a - g a) * ∏ i ∈ s, f i + g a * (∏ i ∈ s, f i - ∏ i ∈ s, g i)‖ := by
+            congr 1
+            ring
+      _ ≤ max (‖f a - g a‖ * ‖∏ i ∈ s, f i‖)
+          (‖g a‖ * ‖∏ i ∈ s, f i - ∏ i ∈ s, g i‖) :=
+        (IsUltrametricDist.norm_add_le_max _ _).trans
+          (max_le_max (norm_mul_le _ _) (norm_mul_le _ _))
+      _ ≤ max ((δ * M a) * ∏ i ∈ s, M i) (M a * (δ * ∏ i ∈ s, M i)) :=
+        max_le_max
+          (mul_le_mul (hfg a (Finset.mem_insert_self a s)) hprod (norm_nonneg _)
+            (mul_nonneg hδ hMa))
+          (mul_le_mul (hg a (Finset.mem_insert_self a s)) htail (norm_nonneg _) hMa)
+      _ = δ * (M a * ∏ i ∈ s, M i) := by
+        rw [mul_assoc, mul_left_comm (M a) δ, max_self]
+
+/-- **Ultrametric perturbation bound for powers.** If `‖x‖ ≤ r`, `‖y‖ ≤ r`, and `‖x - y‖ ≤ δ * r`
+with `0 ≤ δ`, then `‖x ^ m - y ^ m‖ ≤ δ * r ^ m` for every `m : ℕ`. -/
+theorem norm_pow_sub_pow_le_mul_pow {R : Type*} [SeminormedCommRing R] [IsUltrametricDist R]
+    {x y : R} {r δ : ℝ} (hδ : 0 ≤ δ) (hx : ‖x‖ ≤ r) (hy : ‖y‖ ≤ r)
+    (hxy : ‖x - y‖ ≤ δ * r) (m : ℕ) :
+    ‖x ^ m - y ^ m‖ ≤ δ * r ^ m := by
+  simpa using norm_prod_sub_prod_le_mul_prod (s := Finset.range m)
+    (f := fun _ ↦ x) (g := fun _ ↦ y) (M := fun _ ↦ r) hδ
+    (fun _ _ ↦ hx) (fun _ _ ↦ hy) (fun _ _ ↦ hxy)
 
 section FwdDiff
 

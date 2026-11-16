@@ -212,6 +212,14 @@ noncomputable def RingHom.integerRestrict : Valued.integer K →+* Valued.intege
 theorem RingHom.coe_integerRestrict_apply (x : Valued.integer K) :
     (φ.integerRestrict hφ x : L) = φ x := (rfl)
 
+/-- Restricting the identity homomorphism of a nonarchimedean field to its valuation ring gives
+the identity homomorphism. -/
+@[simp]
+theorem RingHom.integerRestrict_id :
+    (RingHom.id K).integerRestrict (fun _ ↦ le_rfl) = RingHom.id (Valued.integer K) := by
+  ext x
+  simp
+
 /-- The restriction of a norm-nonincreasing homomorphism of nonarchimedean fields to their
 valuation rings is a local homomorphism: an element of `𝒪[K]` whose image has norm one has norm
 one. It therefore induces the homomorphism of residue fields
