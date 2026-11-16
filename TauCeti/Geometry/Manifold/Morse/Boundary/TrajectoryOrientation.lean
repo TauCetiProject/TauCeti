@@ -44,9 +44,10 @@ together with the orientation of `ℝ × Vr` given by the standard orientation o
 `or` (`TauCeti.MorseChart.flowNormalOrientation`) induce an orientation of `ker C`, subspace first
 (`Orientation.shortExactLeft`). This is the orientation of the trajectory space at `y`
 (`TauCeti.IsAdaptedPseudoGradient.trajectorySpaceOrientation`). Concretely, a basis of `ker C` is
-positive exactly when it is followed to an `op`-positive basis of `Vp` by lifts of `(1, 0)`, a
-vector `v` with `df_y (Fp v) > 0` such as the negative velocity, and of an `or`-positive basis
-of `Vr` (`TauCeti.IsAdaptedPseudoGradient.trajectorySpaceOrientation_eq_orientation_iff`).
+positive exactly when it is followed to an `op`-positive basis of `Vp` by lifts along `C` of
+`(1, 0)`, for instance the vector whose frame is a positive multiple of the negative velocity, and
+of the vectors `(0, e j)` for an `or`-positive basis `e` of `Vr`
+(`TauCeti.IsAdaptedPseudoGradient.trajectorySpaceOrientation_eq_orientation_iff`).
 
 When `ind p = ind r + 1` the kernel is zero and the comparison map is an isomorphism; whether it
 carries `op` to the orientation of `ℝ × Vr` is the sign of the trajectory,
@@ -70,8 +71,6 @@ coordinates transports the orientation along the induced isomorphism of the kern
 
 In the namespace `TauCeti.IsAdaptedPseudoGradient`:
 
-* `surjective_trajectoryComparison`: the comparison map is onto along every trajectory between
-  distinct critical points.
 * `mem_ker_trajectoryComparison_iff`: its kernel is the tangent space of the level slice.
 * `finrank_ker_trajectoryComparison_add`: where the comparison map is onto, its kernel has
   dimension `ind p - ind r - 1`.
@@ -141,51 +140,6 @@ theorem mem_ker_trajectoryComparison_iff (hMS : hX.IsMorseSmale) (hf : IsMorse �
   exact ⟨fun h ↦ ⟨⟨hu, (stableNormal_eq_zero_iff hφr hy.2 _).1 h.2⟩, h.1⟩,
     fun h ↦ ⟨h.2, (stableNormal_eq_zero_iff hφr hy.2 _).2 h.1.2⟩⟩
 
-/-- **The comparison map is onto along a trajectory.** Let `X` be a Morse–Smale pseudo-gradient
-adapted to a Morse function, and `p ≠ r` critical points. At every point `y` of a trajectory from
-`p` to `r`, the comparison map `Vp → ℝ × Vr` is surjective: by transversality its second component
-is onto, and adding a multiple of the vector whose frame is the velocity `X y`, which is tangent to
-`W^s(r)` and on which the differential of `f` does not vanish, adjusts the first component. -/
-theorem surjective_trajectoryComparison (hMS : hX.IsMorseSmale) (hf : IsMorse 𝓘(ℝ, E) f)
-    (hpr : p ≠ r) {y : M} (hy : y ∈ hX.flow.unstableSet p ∩ hX.flow.stableSet r) :
-    Surjective (hX.trajectoryComparison φp φr y) := by
-  rintro ⟨a, w⟩
-  obtain ⟨T, hT⟩ := (hX.eventually_mem_linearForwardTimes hφr hy.2).exists
-  obtain ⟨u, rfl⟩ := surjective_stableNormal hφr hT w
-  -- Tangent vectors at `y` are read as vectors of the model space `E`.
-  obtain ⟨u', hu'⟩ : ∃ u' : E, u = u' := ⟨_, rfl⟩
-  obtain ⟨xv, hxv⟩ : ∃ xv : E, X y = xv := ⟨_, rfl⟩
-  -- Split `u` along the transverse sum `T W^u(p) + T W^s(r)`: the second part has zero normal
-  -- coordinates, and the first is the frame of some `v₁`.
-  have hu : u' ∈ Submodule.span ℝ (mtangentConeAt 𝓘(ℝ, E) (hX.flow.unstableSet p) y) ⊔
-      Submodule.span ℝ (mtangentConeAt 𝓘(ℝ, E) (hX.flow.stableSet r) y) := by
-    rw [hMS.span_mtangentConeAt_sup_eq_top hy]
-    exact Submodule.mem_top
-  obtain ⟨u₁, hu₁, u₂, hu₂, hu₁₂⟩ := Submodule.mem_sup.1 hu
-  obtain ⟨v₁, hv₁⟩ := (Set.ext_iff.1 (hX.range_unstableFrame hφp hf hy.1) u₁).2 hu₁
-  have hNu₂ : hX.stableNormal φr y u₂ = 0 := (stableNormal_eq_zero_iff hφr hy.2 u₂).2 hu₂
-  -- The velocity is tangent to both manifolds: it is the frame of some `v₀`, with zero normal
-  -- coordinates, and `f` decreases along it.
-  have hX₁ : xv ∈ Submodule.span ℝ (mtangentConeAt 𝓘(ℝ, E) (hX.flow.unstableSet p) y) :=
-    hxv ▸ Submodule.subset_span
-      (hX.mem_mtangentConeAt_of_isInvariant (hX.flow.isInvariant_unstableSet p) hy.1)
-  have hX₂ : hX.stableNormal φr y xv = 0 :=
-    (stableNormal_eq_zero_iff hφr hy.2 xv).2 (hxv ▸ Submodule.subset_span
-      (hX.mem_mtangentConeAt_of_isInvariant (hX.flow.isInvariant_stableSet r) hy.2))
-  obtain ⟨v₀, hv₀⟩ := (Set.ext_iff.1 (hX.range_unstableFrame hφp hf hy.1) xv).2 hX₁
-  have hd : mvfderiv 𝓘(ℝ, E) f y xv ≠ 0 := hxv ▸ (hX.mvfderiv_apply_lt_zero y
-    (hX.mfderiv_ne_zero_of_mem_unstableSet_inter_stableSet hpr hy)).ne
-  have hN : hX.stableNormal φr y u' = hX.stableNormal φr y u₁ := by
-    rw [← hu₁₂]
-    exact ((hX.stableNormal φr y).map_add u₁ u₂).trans (by rw [hNu₂, add_zero])
-  refine ⟨v₁ + ((a - mvfderiv 𝓘(ℝ, E) f y u₁) / mvfderiv 𝓘(ℝ, E) f y xv) • v₀, ?_⟩
-  simp only [trajectoryComparison_apply, map_add, map_smul]
-  rw [hv₀, hv₁, hX₂]
-  refine Prod.ext ?_ ?_
-  · rw [Prod.fst_add, Prod.smul_fst, smul_eq_mul, div_mul_cancel₀ _ hd, add_sub_cancel]
-  · rw [Prod.snd_add, Prod.smul_snd, smul_zero, add_zero]
-    exact hN.symm.trans (congrArg (hX.stableNormal φr y) hu'.symm)
-
 end Comparison
 
 /-- **The dimension of the kernel of the comparison map.** Where the comparison map is onto, as
@@ -197,8 +151,8 @@ theorem finrank_ker_trajectoryComparison_add {y : M}
     Module.finrank ℝ (LinearMap.ker (hX.trajectoryComparison φp φr y).toLinearMap) +
       (1 + manifoldMorseIndex 𝓘(ℝ, E) f r) = manifoldMorseIndex 𝓘(ℝ, E) f p := by
   have h := LinearMap.finrank_range_add_finrank_ker (hX.trajectoryComparison φp φr y).toLinearMap
-  rw [LinearMap.range_eq_top.2 hC, finrank_top, Module.finrank_prod, Module.finrank_self,
-    φr.finrank_negativeWeight_fun, φp.finrank_negativeWeight_fun] at h
+  rw [LinearMap.range_eq_top.2 hC, finrank_top, φr.finrank_prod_negativeWeight_fun,
+    φp.finrank_negativeWeight_fun] at h
   omega
 
 /-! ### The orientation of the space of trajectories -/
@@ -212,12 +166,6 @@ private theorem finrank_ker_eq (hC : Surjective (hX.trajectoryComparison φp φr
     Module.finrank ℝ (LinearMap.ker (hX.trajectoryComparison φp φr y).toLinearMap) = k := by
   have := finrank_ker_trajectoryComparison_add hC
   omega
-
-omit [FiniteDimensional ℝ E] [IsManifold 𝓘(ℝ, E) ∞ M] [CompactSpace M] [T2Space M] in
-private theorem finrank_flowNormal (φr : MorseChart E f r) :
-    Module.finrank ℝ (ℝ × ({i // φr.weight i < 0} → ℝ)) =
-      1 + manifoldMorseIndex 𝓘(ℝ, E) f r := by
-  rw [Module.finrank_prod, Module.finrank_self, φr.finrank_negativeWeight_fun]
 
 variable (hX φp φr)
 
@@ -238,7 +186,7 @@ noncomputable def trajectorySpaceOrientation
     Orientation ℝ (LinearMap.ker (hX.trajectoryComparison φp φr y).toLinearMap) (Fin k) :=
   Orientation.shortExactLeft
     (LinearMap.ker (hX.trajectoryComparison φp φr y).toLinearMap).subtype_injective
-    (LinearMap.exact_subtype_ker_map _) hC (finrank_ker_eq hC hk) (finrank_flowNormal φr)
+    (LinearMap.exact_subtype_ker_map _) hC (finrank_ker_eq hC hk) φr.finrank_prod_negativeWeight_fun
     (Orientation.reindex ℝ _ (finCongr hk) op) (φr.flowNormalOrientation or)
 
 variable {hX φp φr}
@@ -293,7 +241,8 @@ theorem trajectorySpaceOrientation_eq_orientation_iff
       (((Module.Basis.singleton (Fin 1) ℝ).prod e).reindex finSumFinEquiv) j) :
     hX.trajectorySpaceOrientation φp φr op e.orientation hk y hC = b.orientation ↔
       B.orientation = Orientation.reindex ℝ _ (finCongr hk) op := by
-  rw [trajectorySpaceOrientation_eq_iff hC (finrank_ker_eq hC hk) (finrank_flowNormal φr),
+  rw [trajectorySpaceOrientation_eq_iff hC (finrank_ker_eq hC hk)
+      φr.finrank_prod_negativeWeight_fun,
     MorseChart.flowNormalOrientation_def,
     Orientation.prod_basis_orientation,
     Orientation.shortExact_basis_orientation _ _ _ _ _ b _ B hB₁ hB₂]
@@ -347,11 +296,9 @@ theorem map_ker_trajectoryComparison_negativeChange (hf : IsMorse 𝓘(ℝ, E) f
       LinearMap.ker (hX.trajectoryComparison φp' φr' y).toLinearMap := by
   rw [Submodule.map_equiv_eq_comap_symm]
   ext v
-  rw [Submodule.mem_comap, LinearMap.mem_ker, LinearMap.mem_ker, ContinuousLinearMap.coe_coe,
-    ContinuousLinearMap.coe_coe, LinearEquiv.coe_coe, ← (φp.negativeChange φp').apply_symm_apply v,
-    trajectoryComparison_negativeChange hφp hφp' hφr hφr' hf hy, LinearEquiv.apply_symm_apply,
-    Prod.mk_eq_zero, Prod.ext_iff, Prod.fst_zero, Prod.snd_zero,
-    LinearEquiv.map_eq_zero_iff]
+  obtain ⟨w, rfl⟩ := (φp.negativeChange φp').surjective v
+  simp [-trajectoryComparison_apply, trajectoryComparison_negativeChange hφp hφp' hφr hφr' hf hy,
+    Prod.ext_iff]
 
 /-- **The orientation of the space of trajectories does not depend on the Morse charts.** On a
 trajectory from `p` to `r`, replacing the Morse charts `φp` and `φr` by `φp'` and `φr'` and
@@ -372,11 +319,13 @@ theorem trajectorySpaceOrientation_map_negativeChange (hf : IsMorse 𝓘(ℝ, E)
         (hX.trajectorySpaceOrientation φp φr op or hk y hC) := by
   have hK := map_ker_trajectoryComparison_negativeChange hφp hφp' hφr hφr' hf hy
   set eK := (φp.negativeChange φp').ofSubmodules _ _ hK
-  rw [trajectorySpaceOrientation_eq_iff hC' (finrank_ker_eq hC' hk) (finrank_flowNormal φr'),
+  rw [trajectorySpaceOrientation_eq_iff hC' (finrank_ker_eq hC' hk)
+      φr'.finrank_prod_negativeWeight_fun,
     MorseChart.flowNormalOrientation_map,
     ← Orientation.map_shortExact
       (LinearMap.ker (hX.trajectoryComparison φp φr y).toLinearMap).subtype_injective
-      (LinearMap.exact_subtype_ker_map _) hC (finrank_ker_eq hC hk) (finrank_flowNormal φr) _ _ _ eK
+      (LinearMap.exact_subtype_ker_map _) hC (finrank_ker_eq hC hk)
+      φr.finrank_prod_negativeWeight_fun _ _ _ eK
       (φp.negativeChange φp') ((LinearEquiv.refl ℝ ℝ).prodCongr (φr.negativeChange φr'))
       (LinearMap.ext fun v ↦ (LinearEquiv.ofSubmodules_apply _ hK v).symm)
       (LinearMap.ext fun v ↦ trajectoryComparison_negativeChange hφp hφp' hφr hφr' hf hy v),
