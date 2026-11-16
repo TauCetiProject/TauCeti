@@ -19,6 +19,9 @@ nonarchimedean local field, including at places dividing `n`.
 The kernels of the maps to point-coefficient cohomology satisfy the same vanishing
 (`kerH1WeilPairing_eq_zero_of_mem_ker`). These kernels define the Selmer local conditions,
 so the result applies over both finite and infinite completions of a number field.
+Over a nonarchimedean local field, orthogonality descends the local Tate pairing to
+`TauCeti.Isogeny.localTateKerWeilQuotientPairing` on the quotient by the local `φ`-Selmer kernel
+against the local `φ̂`-Selmer kernel.
 Orthogonality is the input needed to identify the two local conditions as exact annihilators;
 equality with the annihilators additionally requires an order calculation.
 
@@ -178,6 +181,34 @@ theorem localTateKerWeilPairing_eq_zero_of_mem_ker
     φ.localTateKerWeilPairing hn a b = 0 := by
   simp only [localTateKerWeilPairing_apply, φ.kerH1WeilPairing_eq_zero_of_mem_ker hn ha hb,
     map_zero]
+
+omit [DecidableEq K] in
+/-- **The local Tate pairing on the local Selmer quotient.** Because the local Selmer kernels of
+`φ` and `φ̂` are orthogonal under `localTateKerWeilPairing`, restricting the second variable to the
+local `φ̂`-Selmer kernel descends the first variable to the quotient by the local `φ`-Selmer
+kernel. -/
+def localTateKerWeilQuotientPairing :
+    (H1 (AbsoluteGaloisGroup K) (ofIsogeny φ).KerCoeff ⧸
+      (explicitCoeff1 _ _ (ofIsogeny φ).kerCoeffIncl continuous_of_discreteTopology).ker) →+
+    (explicitCoeff1 _ _ (ofIsogeny φ.dual).kerCoeffIncl continuous_of_discreteTopology).ker →+
+    ZMod φ.degree :=
+  QuotientAddGroup.lift _
+    ((φ.localTateKerWeilPairing hn).compl₂
+      (explicitCoeff1 _ _ (ofIsogeny φ.dual).kerCoeffIncl
+        continuous_of_discreteTopology).ker.subtype)
+    fun _ ha ↦ AddMonoidHom.ext fun b ↦ φ.localTateKerWeilPairing_eq_zero_of_mem_ker hn ha b.2
+
+omit [DecidableEq K] in
+/-- Evaluating `localTateKerWeilQuotientPairing` on a quotient class computes
+`localTateKerWeilPairing`. -/
+@[simp]
+theorem localTateKerWeilQuotientPairing_mk
+    (a : H1 (AbsoluteGaloisGroup K) (ofIsogeny φ).KerCoeff)
+    (b : (explicitCoeff1 _ _ (ofIsogeny φ.dual).kerCoeffIncl
+      continuous_of_discreteTopology).ker) :
+    φ.localTateKerWeilQuotientPairing hn (QuotientAddGroup.mk a) b =
+      φ.localTateKerWeilPairing hn a b :=
+  (rfl)
 
 end Local
 

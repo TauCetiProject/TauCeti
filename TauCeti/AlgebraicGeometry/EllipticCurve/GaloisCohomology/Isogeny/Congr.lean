@@ -59,12 +59,10 @@ variable {K : Type*} [Field K] {W₁ W₂ : WeierstrassCurve K} [W₁.IsElliptic
 /-- **Congruence of kernel coefficient modules**: an equality `f = g` of morphisms `W₁ → W₂`
 identifies `E₁(Kˢ)[f]` with `E₁(Kˢ)[g]` without altering the underlying point in `E₁(Kˢ)`. -/
 def kerCoeffCongr {f g : Hom W₁.toAffine W₂.toAffine} (h : f = g) :
-    f.KerCoeff ≃+ g.KerCoeff where
-  toFun P := ⟨P.1, by rw [AddMonoidHom.mem_ker, ← h]; exact P.2⟩
-  invFun P := ⟨P.1, by rw [AddMonoidHom.mem_ker, h]; exact P.2⟩
-  left_inv _ := (rfl)
-  right_inv _ := (rfl)
-  map_add' _ _ := (rfl)
+    f.KerCoeff ≃+ g.KerCoeff :=
+  AddEquiv.addSubgroupCongr
+    (congrArg (fun φ : Hom W₁.toAffine W₂.toAffine ↦
+      (φ.pointCoeffMap : W₁.PointCoeff →+ W₂.PointCoeff).ker) h)
 
 /-- `kerCoeffCongr` leaves the underlying point in `W₁.PointCoeff` unchanged. -/
 @[simp]
@@ -90,6 +88,13 @@ theorem kerCoeffCongr_trans {f g k : Hom W₁.toAffine W₂.toAffine} (h₁ : f 
     (kerCoeffCongr h₁).trans (kerCoeffCongr h₂) = kerCoeffCongr (h₁.trans h₂) :=
   (rfl)
 
+/-- Applying congruences of kernel coefficient modules sequentially composes along transitivity. -/
+@[simp]
+theorem kerCoeffCongr_kerCoeffCongr {f g k : Hom W₁.toAffine W₂.toAffine}
+    (h₁ : f = g) (h₂ : g = k) (P : f.KerCoeff) :
+    kerCoeffCongr h₂ (kerCoeffCongr h₁ P) = kerCoeffCongr (h₁.trans h₂) P :=
+  (rfl)
+
 /-- `kerCoeffCongr` is `G_K`-equivariant. -/
 @[simp]
 theorem kerCoeffCongr_smul {f g : Hom W₁.toAffine W₂.toAffine} (h : f = g)
@@ -111,8 +116,16 @@ theorem kerCoeffCongrHom_apply {f g : Hom W₁.toAffine W₂.toAffine} (h : f = 
 /-- `kerCoeffCongrHom` along reflexivity is the identity `G_K`-equivariant homomorphism. -/
 @[simp]
 theorem kerCoeffCongrHom_refl (f : Hom W₁.toAffine W₂.toAffine) :
-    kerCoeffCongrHom (rfl : f = f) = DistribMulActionHom.id _ :=
-  DistribMulActionHom.ext fun _ => Subtype.ext rfl
+    kerCoeffCongrHom (rfl : f = f) = DistribMulActionHom.id _ := by
+  ext
+  simp
+
+/-- Equivariant kernel congruences compose along transitivity. -/
+@[simp]
+theorem kerCoeffCongrHom_comp {f g k : Hom W₁.toAffine W₂.toAffine} (h₁ : f = g) (h₂ : g = k) :
+    (kerCoeffCongrHom h₂).comp (kerCoeffCongrHom h₁) = kerCoeffCongrHom (h₁.trans h₂) := by
+  ext
+  simp
 
 /-- `kerCoeffCongrHom` commutes with the inclusions into `W₁.PointCoeff`. -/
 @[simp]
@@ -135,14 +148,6 @@ theorem kerH1Congr_apply {f g : Hom W₁.toAffine W₂.toAffine} (h : f = g)
   rw [kerH1Congr, explicitCoeff1Equiv_apply]
   rfl
 
-/-- The inverse of `kerH1Congr h` is `kerH1Congr h.symm`. -/
-@[simp]
-theorem kerH1Congr_symm {f g : Hom W₁.toAffine W₂.toAffine} (h : f = g) :
-    (kerH1Congr h).symm = kerH1Congr h.symm := by
-  ext c
-  rw [kerH1Congr, explicitCoeff1Equiv_symm_apply, kerH1Congr_apply]
-  rfl
-
 /-- Congruence on `H¹` along reflexivity is the identity equivalence. -/
 @[simp]
 theorem kerH1Congr_refl (f : Hom W₁.toAffine W₂.toAffine) :
@@ -152,6 +157,13 @@ theorem kerH1Congr_refl (f : Hom W₁.toAffine W₂.toAffine) :
   exact (congrArg (fun φ => explicitCoeff1 _ _ φ continuous_of_discreteTopology c)
     (kerCoeffCongrHom_refl f)).trans (by simp)
 
+/-- The inverse of `kerH1Congr h` is `kerH1Congr h.symm`. -/
+@[simp]
+theorem kerH1Congr_symm {f g : Hom W₁.toAffine W₂.toAffine} (h : f = g) :
+    (kerH1Congr h).symm = kerH1Congr h.symm := by
+  subst h
+  simp
+
 /-- Congruences on `H¹` compose along transitivity. -/
 @[simp]
 theorem kerH1Congr_trans {f g k : Hom W₁.toAffine W₂.toAffine} (h₁ : f = g) (h₂ : g = k) :
@@ -160,7 +172,14 @@ theorem kerH1Congr_trans {f g k : Hom W₁.toAffine W₂.toAffine} (h₁ : f = g
   rw [AddEquiv.trans_apply, kerH1Congr_apply, kerH1Congr_apply, kerH1Congr_apply,
     ← AddMonoidHom.comp_apply, ← explicitCoeff1_comp]
   exact congrArg (fun φ => explicitCoeff1 _ _ φ continuous_of_discreteTopology c)
-    (DistribMulActionHom.ext fun _ => Subtype.ext rfl)
+    (kerCoeffCongrHom_comp h₁ h₂)
+
+/-- Applying congruences on `H¹` sequentially composes along transitivity. -/
+@[simp]
+theorem kerH1Congr_kerH1Congr {f g k : Hom W₁.toAffine W₂.toAffine}
+    (h₁ : f = g) (h₂ : g = k) (c : H1 (AbsoluteGaloisGroup K) f.KerCoeff) :
+    kerH1Congr h₂ (kerH1Congr h₁ c) = kerH1Congr (h₁.trans h₂) c :=
+  DFunLike.congr_fun (kerH1Congr_trans h₁ h₂) c
 
 /-- `kerH1Congr` commutes with the map `H¹(G_K, E₁[f]) → H¹(G_K, E₁)` induced by the kernel
 inclusion. -/
@@ -196,21 +215,27 @@ of the target isogeny. -/
 theorem kerH1Congr_kummerMap {φ ψ : Isogeny W₁.toAffine W₂.toAffine}
     [Algebra.IsSeparable φ.fieldPullback.fieldRange W₁.toAffine.FunctionField]
     [Algebra.IsSeparable ψ.fieldPullback.fieldRange W₁.toAffine.FunctionField]
-    [DecidableEq K] (h : φ = ψ) (P : W₂.toAffine.Point) :
-    kerH1Congr (congrArg ofIsogeny h) (φ.kummerMap P) = ψ.kummerMap P := by
-  subst h
+    [DecidableEq K] (h : ofIsogeny φ = ofIsogeny ψ) (P : W₂.toAffine.Point) :
+    kerH1Congr h (φ.kummerMap P) = ψ.kummerMap P := by
+  obtain rfl := Hom.ofIsogeny_injective h
   simp
 
-/-- Restriction along a field extension commutes with `kerH1Congr` for an equality of isogenies. -/
+/-- Restriction along a field extension commutes with `kerH1Congr` for an equality of base-changed
+isogenies. -/
 @[simp]
 theorem kerH1Congr_kerRes {L : Type*} [Field L] [Algebra K L]
     (τ : SeparableClosure K →ₐ[K] SeparableClosure L)
-    {φ ψ : Isogeny W₁.toAffine W₂.toAffine} (h : φ = ψ)
+    {φ ψ : Isogeny W₁.toAffine W₂.toAffine}
+    (h : ofIsogeny (φ.baseChange L) = ofIsogeny (ψ.baseChange L))
     (c : H1 (AbsoluteGaloisGroup K) (ofIsogeny φ).KerCoeff) :
-    kerH1Congr (congrArg ofIsogeny (congrArg (fun χ : Isogeny W₁.toAffine W₂.toAffine =>
-        χ.baseChange L) h)) (φ.kerRes τ c) =
-      ψ.kerRes τ (kerH1Congr (congrArg ofIsogeny h) c) := by
-  subst h
+    kerH1Congr h (φ.kerRes τ c) =
+      ψ.kerRes τ (kerH1Congr
+        (Hom.map_injective (algebraMap K L)
+          ((Hom.ofIsogeny_map φ (algebraMap K L)).trans
+            (h.trans (Hom.ofIsogeny_map ψ (algebraMap K L)).symm))) c) := by
+  obtain rfl : φ = ψ := Hom.ofIsogeny_injective <| Hom.map_injective (algebraMap K L) <|
+    (Hom.ofIsogeny_map φ (algebraMap K L)).trans
+      (h.trans (Hom.ofIsogeny_map ψ (algebraMap K L)).symm)
   simp
 
 end TauCeti.Isogeny

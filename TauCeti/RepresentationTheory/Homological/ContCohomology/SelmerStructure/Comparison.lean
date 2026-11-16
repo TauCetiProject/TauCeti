@@ -267,6 +267,24 @@ at indices in `S` with the full group `⊤` and keeps `𝓕.localCondition i` ou
 def relax : SelmerStructure G M H N :=
   𝓕.withLocalConditions fun i ↦ ⨅ (_ : i ∉ S), 𝓕.localCondition i
 
+omit [IsTopologicalAddGroup M] [ContinuousSMul G M] in
+/-- The defining formula for `SelmerStructure.relax`. -/
+theorem relax_def :
+    𝓕.relax S = 𝓕.withLocalConditions fun i ↦ ⨅ (_ : i ∉ S), 𝓕.localCondition i :=
+  (rfl)
+
+omit [IsTopologicalAddGroup M] [ContinuousSMul G M] in
+/-- Relaxing local conditions leaves the group homomorphisms unchanged. -/
+@[simp]
+theorem relax_groupHom : (𝓕.relax S).groupHom = 𝓕.groupHom :=
+  (rfl)
+
+omit [IsTopologicalAddGroup M] [ContinuousSMul G M] in
+/-- Relaxing local conditions leaves the coefficient homomorphisms unchanged. -/
+@[simp]
+theorem relax_coeffHom : (𝓕.relax S).coeffHom = 𝓕.coeffHom :=
+  (rfl)
+
 /-- Relaxing local conditions leaves the localisation maps unchanged. -/
 @[simp]
 theorem relax_localization : (𝓕.relax S).localization = 𝓕.localization :=
@@ -274,38 +292,48 @@ theorem relax_localization : (𝓕.relax S).localization = 𝓕.localization :=
 
 omit [IsTopologicalAddGroup M] [ContinuousSMul G M] in
 /-- At an index in `S`, the relaxed local condition is `⊤`. -/
+@[simp]
 theorem relax_localCondition_of_mem {i : ι} (hi : i ∈ S) :
     (𝓕.relax S).localCondition i = ⊤ := by
-  rw [relax, withLocalConditions_localCondition, eq_top_iff]
-  intro x _
-  rw [AddSubgroup.mem_iInf]
-  exact fun hni ↦ (hni hi).elim
+  rw [relax_def, withLocalConditions_localCondition]
+  exact iInf_neg (not_not.mpr hi)
 
 omit [IsTopologicalAddGroup M] [ContinuousSMul G M] in
 /-- Outside `S`, the relaxed local condition agrees with the original one. -/
+@[simp]
 theorem relax_localCondition_of_notMem {i : ι} (hi : i ∉ S) :
     (𝓕.relax S).localCondition i = 𝓕.localCondition i := by
-  rw [relax, withLocalConditions_localCondition]
-  ext x
-  simp [hi]
+  rw [relax_def, withLocalConditions_localCondition]
+  exact iInf_pos hi
 
 omit [IsTopologicalAddGroup M] [ContinuousSMul G M] in
 /-- Every original local condition is contained in the relaxed one. -/
 theorem localCondition_le_relax (i : ι) :
     𝓕.localCondition i ≤ (𝓕.relax S).localCondition i := by
-  intro x hx
-  rw [relax, withLocalConditions_localCondition, AddSubgroup.mem_iInf]
-  exact fun _ ↦ hx
+  rw [relax_def, withLocalConditions_localCondition]
+  exact le_iInf fun _ ↦ le_rfl
+
+omit [IsTopologicalAddGroup M] [ContinuousSMul G M] in
+/-- Replacing the local conditions of a relaxed structure retains only the new system. -/
+@[simp]
+theorem withLocalConditions_relax :
+    (𝓕.relax S).withLocalConditions A = 𝓕.withLocalConditions A :=
+  (rfl)
+
+omit [IsTopologicalAddGroup M] [ContinuousSMul G M] in
+/-- Relaxing on `S` and then on `T` is relaxing on `S ∪ T`. -/
+@[simp]
+theorem relax_relax (T : Set ι) : (𝓕.relax S).relax T = 𝓕.relax (S ∪ T) := by
+  rw [relax_def, withLocalConditions_relax, relax_def]
+  congr 1
+  funext i
+  rw [withLocalConditions_localCondition, iInf_and', Set.mem_union, not_or, and_comm]
 
 omit [IsTopologicalAddGroup M] [ContinuousSMul G M] in
 /-- Relaxing on the empty set leaves the Selmer structure unchanged. -/
 @[simp]
 theorem relax_empty : 𝓕.relax (∅ : Set ι) = 𝓕 := by
-  have h : (fun i ↦ ⨅ (_ : i ∉ (∅ : Set ι)), 𝓕.localCondition i) = 𝓕.localCondition := by
-    funext i
-    ext x
-    simp
-  rw [relax, h, withLocalConditions_self]
+  simp [relax_def]
 
 omit [IsTopologicalAddGroup M] [ContinuousSMul G M] in
 /-- Membership in the `S`-relaxed local condition at `i` holds unconditionally for `i ∈ S` and
@@ -313,7 +341,7 @@ reduces to `𝓕.localCondition i` outside `S`. -/
 @[simp]
 theorem mem_relax_localCondition_iff {i : ι} {x : H1 (H i) (N i)} :
     x ∈ (𝓕.relax S).localCondition i ↔ i ∉ S → x ∈ 𝓕.localCondition i := by
-  simp only [relax, withLocalConditions_localCondition, AddSubgroup.mem_iInf]
+  simp only [relax_def, withLocalConditions_localCondition, AddSubgroup.mem_iInf]
 
 /-- Membership in the `S`-relaxed Selmer group is satisfaction of the local conditions outside
 `S`. -/

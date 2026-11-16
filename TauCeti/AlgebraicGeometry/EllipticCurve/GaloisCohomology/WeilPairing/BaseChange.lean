@@ -96,56 +96,23 @@ open WeierstrassCurve TauCeti TauCeti.ContCohomology TauCeti.ClassFieldTheory
 open Hom (ofIsogeny kerCoeffCongrHom kerH1Congr)
 
 variable {K : Type*} [Field K] {W₁ W₂ : WeierstrassCurve K} [W₁.IsElliptic] [W₂.IsElliptic]
-  (φ : Isogeny W₁.toAffine W₂.toAffine)
-
-omit [W₁.IsElliptic] [W₂.IsElliptic] in
-/-- Base change preserves the degree of an isogeny. -/
-@[simp]
-theorem degree_baseChange (L : Type*) [Field L] [Algebra K L] :
-    (φ.baseChange L).degree = φ.degree :=
-  φ.degree_map (algebraMap K L)
-
-/-- Base change commutes with the dual isogeny on `Hom` carriers. -/
-theorem ofIsogeny_dual_baseChange (L : Type*) [Field L] [Algebra K L] :
-    ofIsogeny (φ.dual.baseChange L) = ofIsogeny (φ.baseChange L).dual :=
-  congrArg ofIsogeny (φ.dual_map (algebraMap K L))
-
-omit [W₁.IsElliptic] [W₂.IsElliptic] in
-/-- If `deg φ` is invertible in `K`, then `deg (φ.baseChange L)` is invertible in any extension `L`
-of `K`. -/
-theorem isUnit_degree_baseChange_of_isUnit (hn : IsUnit (φ.degree : K))
-    (L : Type*) [Field L] [Algebra K L] :
-    IsUnit ((φ.baseChange L).degree : L) := by
-  rw [φ.degree_baseChange L]
-  simpa using hn.map (algebraMap K L)
-
-omit [W₁.IsElliptic] [W₂.IsElliptic] in
-/-- Over a field of characteristic zero, the degree of an isogeny is invertible. -/
-theorem isUnit_degree [CharZero K] : IsUnit (φ.degree : K) :=
-  (Nat.cast_ne_zero.mpr φ.degree_pos.ne').isUnit
-
-omit [W₁.IsElliptic] [W₂.IsElliptic] in
-/-- Over a base field of characteristic zero, the degree of `φ.baseChange L` is invertible in
-every field extension `L` of `K`. -/
-theorem isUnit_degree_baseChange [CharZero K] (L : Type*) [Field L] [Algebra K L] :
-    IsUnit ((φ.baseChange L).degree : L) :=
-  φ.isUnit_degree_baseChange_of_isUnit φ.isUnit_degree L
-
-variable (hn : IsUnit (φ.degree : K))
+  (φ : Isogeny W₁.toAffine W₂.toAffine) (hn : IsUnit (φ.degree : K))
   {L : Type*} [Field L] [Algebra K L] (τ : SeparableClosure K →ₐ[K] SeparableClosure L)
 
 /-- **The isogeny Weil pairing commutes with field extension on `KummerCoeff`**: transporting
-points along `τ` and `φ.ofIsogeny_dual_baseChange L` matches transporting roots of unity along `τ`
-and `φ.degree_baseChange L`. -/
+points along `τ` and `φ.ofIsogeny_dual_baseChange L` matches transporting roots of unity
+along `τ` and `φ.degree_baseChange L`. -/
 theorem kerCoeffWeilPairing_kerCoeffBaseChange
     (P : (ofIsogeny φ).KerCoeff) (Q : (ofIsogeny φ.dual).KerCoeff) :
     (φ.baseChange L).kerCoeffWeilPairing
         (φ.isUnit_degree_baseChange_of_isUnit hn L)
         (φ.kerCoeffBaseChange τ P)
-        (kerCoeffCongrHom (φ.ofIsogeny_dual_baseChange L) (φ.dual.kerCoeffBaseChange τ Q)) =
+        (kerCoeffCongrHom (φ.ofIsogeny_dual_baseChange L)
+          (φ.dual.kerCoeffBaseChange τ Q)) =
       kummerCoeffInclusion L (dvd_of_eq (φ.degree_baseChange L).symm)
         (kummerCoeffBaseChange φ.degree τ (φ.kerCoeffWeilPairing hn P Q)) := by
-  have hnL : IsUnit ((φ.baseChange L).degree : L) := φ.isUnit_degree_baseChange_of_isUnit hn L
+  have hnL : IsUnit ((φ.baseChange L).degree : L) :=
+    φ.isUnit_degree_baseChange_of_isUnit hn L
   have hQ : (kerCoeffCongrHom (φ.ofIsogeny_dual_baseChange L)
       (φ.dual.kerCoeffBaseChange τ Q) : (W₂⁄L).PointCoeff) = W₂.pointCoeffBaseChange τ Q := by
     rw [Hom.kerCoeffCongrHom_apply, Hom.coe_kerCoeffCongr, φ.dual.coe_kerCoeffBaseChange τ Q]
@@ -158,23 +125,20 @@ theorem kerCoeffWeilPairing_kerCoeffBaseChange
     (φ.coe_kerCoeffBaseChange τ P) hQ
 
 omit hn in
-/-- Transporting a restricted dual-kernel class across `φ.ofIsogeny_dual_baseChange L` is pullback
-along the composite compatible pair. -/
+/-- Transporting a restricted dual-kernel class across `φ.ofIsogeny_dual_baseChange L` is
+pullback along the composite compatible pair. -/
 private theorem kerH1Congr_ofIsogeny_dual_baseChange_kerRes
     (b : H1 (AbsoluteGaloisGroup K) (ofIsogeny φ.dual).KerCoeff) :
     kerH1Congr (φ.ofIsogeny_dual_baseChange L) (φ.dual.kerRes τ b) =
       explicitMap1 (AbsoluteGaloisGroup K) (ofIsogeny φ.dual).KerCoeff
         (AbsoluteGaloisGroup L) (ofIsogeny (φ.baseChange L).dual).KerCoeff
         (absoluteGaloisGroupMap τ)
-        ((kerCoeffCongrHom (φ.ofIsogeny_dual_baseChange L)).toAddMonoidHom.comp
+        ((kerCoeffCongrHom (φ.ofIsogeny_dual_baseChange L) : _ →+ _).comp
           (φ.dual.kerCoeffBaseChange τ))
         continuous_of_discreteTopology
         (fun g Q ↦ by
-          change kerCoeffCongrHom (φ.ofIsogeny_dual_baseChange L)
-              (φ.dual.kerCoeffBaseChange τ (absoluteGaloisGroupMap τ g • Q)) =
-            g • kerCoeffCongrHom (φ.ofIsogeny_dual_baseChange L)
-              (φ.dual.kerCoeffBaseChange τ Q)
-          rw [φ.dual.kerCoeffBaseChange_smul, map_smul])
+          simp only [AddMonoidHom.comp_apply, AddMonoidHom.coe_ofClass,
+            φ.dual.kerCoeffBaseChange_smul, map_smul])
         b := by
   have hcompN := explicitMap1_comp (AbsoluteGaloisGroup K) (ofIsogeny φ.dual).KerCoeff
     (AbsoluteGaloisGroup L) (ofIsogeny (φ.dual.baseChange L)).KerCoeff
@@ -182,14 +146,14 @@ private theorem kerH1Congr_ofIsogeny_dual_baseChange_kerRes
     (φ.dual.kerCoeffBaseChange_smul τ)
     (AbsoluteGaloisGroup L) (ofIsogeny (φ.baseChange L).dual).KerCoeff
     (ContinuousMonoidHom.id _)
-    (kerCoeffCongrHom (φ.ofIsogeny_dual_baseChange L)).toAddMonoidHom
+    (kerCoeffCongrHom (φ.ofIsogeny_dual_baseChange L) : _ →+ _)
     continuous_of_discreteTopology
-    (fun g x ↦ (kerCoeffCongrHom (φ.ofIsogeny_dual_baseChange L)).map_smul g x)
+    (fun g x ↦ by simp only [AddMonoidHom.coe_ofClass, ContinuousMonoidHom.coe_id, id_eq, map_smul])
   rw [Hom.kerH1Congr_apply, explicitCoeff1_eq_explicitMap1, kerRes_eq_explicitMap1]
   exact DFunLike.congr_fun (hcompN.symm.trans (explicitMap1_congr_of_eq
     (AbsoluteGaloisGroup K) (ofIsogeny φ.dual).KerCoeff
     (AbsoluteGaloisGroup L) (ofIsogeny (φ.baseChange L).dual).KerCoeff
-    _ _ _ _ (by ext; rfl) rfl)) b
+    _ _ _ _ (by ext; simp) rfl)) b
 
 omit [W₁.IsElliptic] [W₂.IsElliptic] φ hn in
 /-- Composing `explicitMap2` along `kummerCoeffBaseChange` with `explicitCoeff2` along
@@ -203,24 +167,22 @@ private theorem explicitCoeff2_kummerCoeffInclusion_explicitMap2 {m m' : ℕ} (h
           (kummerCoeffBaseChange_smul m τ) x) =
       explicitMap2 (AbsoluteGaloisGroup K) (KummerCoeff K m)
         (AbsoluteGaloisGroup L) (KummerCoeff L m') (absoluteGaloisGroupMap τ)
-        ((kummerCoeffInclusion L hd).toAddMonoidHom.comp (kummerCoeffBaseChange m τ))
+        ((kummerCoeffInclusion L hd : _ →+ _).comp (kummerCoeffBaseChange m τ))
         continuous_of_discreteTopology
         (fun g y ↦ by
-          change kummerCoeffInclusion L hd
-              (kummerCoeffBaseChange m τ (absoluteGaloisGroupMap τ g • y)) =
-            g • kummerCoeffInclusion L hd (kummerCoeffBaseChange m τ y)
-          rw [kummerCoeffBaseChange_smul, map_smul])
+          simp only [AddMonoidHom.comp_apply, AddMonoidHom.coe_ofClass,
+            kummerCoeffBaseChange_smul, map_smul])
         x := by
   have hcompP := explicitMap2_comp (AbsoluteGaloisGroup K) (KummerCoeff K m)
     (AbsoluteGaloisGroup L) (KummerCoeff L m) (absoluteGaloisGroupMap τ)
     (kummerCoeffBaseChange m τ) continuous_of_discreteTopology (kummerCoeffBaseChange_smul m τ)
     (AbsoluteGaloisGroup L) (KummerCoeff L m') (ContinuousMonoidHom.id _)
-    (kummerCoeffInclusion L hd).toAddMonoidHom continuous_of_discreteTopology
-    (fun g y ↦ (kummerCoeffInclusion L hd).map_smul g y)
+    (kummerCoeffInclusion L hd : _ →+ _) continuous_of_discreteTopology
+    (fun g y ↦ by simp only [AddMonoidHom.coe_ofClass, ContinuousMonoidHom.coe_id, id_eq, map_smul])
   rw [explicitCoeff2_eq_explicitMap2]
   exact DFunLike.congr_fun (hcompP.symm.trans (explicitMap2_congr_of_eq
     (AbsoluteGaloisGroup K) (KummerCoeff K m)
-    (AbsoluteGaloisGroup L) (KummerCoeff L m') _ _ _ _ (by ext; rfl) rfl)) x
+    (AbsoluteGaloisGroup L) (KummerCoeff L m') _ _ _ _ (by ext; simp) rfl)) x
 
 /-- Restriction to a field extension commutes with the isogeny Weil cup product, up to
 transporting the restricted dual-kernel class across `φ.ofIsogeny_dual_baseChange L`
@@ -239,7 +201,8 @@ theorem kerH1WeilPairing_kerRes
           (AbsoluteGaloisGroup L) (KummerCoeff L φ.degree) (absoluteGaloisGroupMap τ)
           (kummerCoeffBaseChange φ.degree τ) continuous_of_discreteTopology
           (kummerCoeffBaseChange_smul φ.degree τ) (φ.kerH1WeilPairing hn a b)) := by
-  have hnL : IsUnit ((φ.baseChange L).degree : L) := φ.isUnit_degree_baseChange_of_isUnit hn L
+  have hnL : IsUnit ((φ.baseChange L).degree : L) :=
+    φ.isUnit_degree_baseChange_of_isUnit hn L
   have hd : φ.degree ∣ (φ.baseChange L).degree := dvd_of_eq (φ.degree_baseChange L).symm
   have h1 := (((φ.baseChange L).kerH1WeilPairing_eq_explicitCup11 hnL _ _).trans
     (congrArg₂ (fun x y ↦ explicitCup11 (AbsoluteGaloisGroup L)
@@ -260,13 +223,15 @@ theorem kerH1WeilPairing_kerRes
     (μ' := (φ.baseChange L).kerCoeffWeilPairing hnL) (hμ' := continuous_of_discreteTopology)
     (hequiv' := (φ.baseChange L).kerCoeffWeilPairing_smul hnL)
     (φ := absoluteGaloisGroupMap τ) (fM := φ.kerCoeffBaseChange τ)
-    (fN := (kerCoeffCongrHom (φ.ofIsogeny_dual_baseChange L)).toAddMonoidHom.comp
+    (fN := (kerCoeffCongrHom (φ.ofIsogeny_dual_baseChange L) : _ →+ _).comp
       (φ.dual.kerCoeffBaseChange τ))
-    (fP := (kummerCoeffInclusion L hd).toAddMonoidHom.comp (kummerCoeffBaseChange φ.degree τ))
+    (fP := (kummerCoeffInclusion L hd : _ →+ _).comp (kummerCoeffBaseChange φ.degree τ))
     (hcM := continuous_of_discreteTopology) (hcN := continuous_of_discreteTopology)
     (hcP := continuous_of_discreteTopology) (hfM := φ.kerCoeffBaseChange_smul τ)
     (hfN := _) (hfP := _)
-    (hpair := fun P Q ↦ (φ.kerCoeffWeilPairing_kerCoeffBaseChange hn τ P Q).symm)
+    (hpair := fun P Q ↦ by
+      simpa only [AddMonoidHom.comp_apply, AddMonoidHom.coe_ofClass] using
+        (φ.kerCoeffWeilPairing_kerCoeffBaseChange hn τ P Q).symm)
     a b).symm.trans h2.symm)
 
 /-- The Brauer class of an isogeny Weil cup product localizes to the isogeny Weil cup product of

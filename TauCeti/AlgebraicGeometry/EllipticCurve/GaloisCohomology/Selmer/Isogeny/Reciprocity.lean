@@ -17,37 +17,29 @@ public import TauCeti.RepresentationTheory.Homological.ContCohomology.SelmerStru
 For an isogeny `φ : E₁ → E₂` of elliptic curves over a number field `K` and its dual `φ̂ : E₂ → E₁`,
 global reciprocity for the isogeny Weil cup product
 (`TauCeti.Isogeny.finsum_toRatAddCircle_localTateKerWeilPairing_add_sum_infiniteInvMap_eq_zero`)
-turns local orthogonality of the Selmer conditions into global orthogonality between relaxed
-`φ`-Selmer classes and `φ̂`-Selmer classes:
+turns local orthogonality of the Selmer conditions into global orthogonality between `S`-relaxed
+`φ`-Selmer classes and `S`-relaxed `φ̂`-Selmer classes:
 
-* Over a nonarchimedean local field in which `deg φ` is invertible, local orthogonality of the
-  `φ`- and `φ̂`-Selmer conditions descends the local Tate pairing to a pairing between the local
-  `φ`-Selmer quotient `H¹(K, E₁[φ]) ⧸ H¹_φ(K)` and the local `φ̂`-Selmer condition `H¹_φ̂(K)`
-  (`TauCeti.Isogeny.localTateKerWeilQuotientPairing`).
-* Over a number field `K`, at every archimedean place `w` (real or complex), two local classes
-  lying in the `φ`- and `φ̂`-Selmer kernels pair to `0` in `Br K_w`, so their archimedean Brauer
-  invariant vanishes (`TauCeti.Isogeny.infiniteInvMap_kerWeilBrauerPairing_eq_zero_of_mem_ker`).
-* Consequently, if `a ∈ H¹(K, E₁[φ])` satisfies the local `φ`-Selmer condition outside a finite
-  set `S` of finite places (and at every infinite place) while `b ∈ H¹(K, E₂[φ̂])` satisfies the
-  local `φ̂`-Selmer condition everywhere outside `S` (and at every infinite place), then the finite
-  sum over `v ∈ S` of their local Tate pairings vanishes both in `ℚ/ℤ` and in `ℤ/(deg φ)ℤ`
+* Over the completion of a field `K` at an infinite place `w` (real or complex), two local classes
+  lying in the `φ`- and `φ̂`-Selmer kernels pair to `0` in `Br w.Completion`, so their archimedean
+  Brauer invariant vanishes
+  (`TauCeti.Isogeny.infiniteInvMap_kerWeilBrauerPairing_eq_zero_of_mem_ker`).
+* Consequently, if `a ∈ H¹(K, E₁[φ])` and `b ∈ H¹(K, E₂[φ̂])` satisfy their respective local Selmer
+  conditions outside a finite set `S` of finite places and at every real infinite place, then the
+  finite sum over `v ∈ S` of their local Tate pairings vanishes both in `ℚ/ℤ` and in `ℤ/(deg φ)ℤ`
   (`TauCeti.Isogeny.sum_toRatAddCircle_localTateKerWeilPairing_eq_zero`,
   `TauCeti.Isogeny.sum_ringEquivCongr_localTateKerWeilPairing_eq_zero`).
-* Specialised to the `S`-relaxed `φ`-Selmer structure against `Sel_φ̂(E₂/K)`, every `S`-relaxed
-  `φ`-Selmer class pairs to zero summed over `S` with every global `φ̂`-Selmer class
-  (`TauCeti.Isogeny.sum_ringEquivCongr_localTateKerWeilPairing_eq_zero_of_mem_selmerGroup_relax`).
-  In particular, for a single finite place `v₀`, any `{Sum.inl v₀}`-relaxed `φ`-Selmer class is
-  locally orthogonal at `v₀` to every global `φ̂`-Selmer class
+* Specialised to the `S`-relaxed `φ`- and `φ̂`-Selmer structures, every `S`-relaxed `φ`-Selmer
+  class pairs to zero summed over `S` with every `S`-relaxed `φ̂`-Selmer class
+  (`TauCeti.Isogeny.sum_ringEquivCongr_localTateKerWeilPairing_eq_zero_of_mem_selmerGroup_relax`),
+  and in particular with every unrelaxed class in `Sel_φ̂(E₂/K)` via
+  `SelmerStructure.selmerGroup_le_relax`. For a single finite place `v₀`, any `{Sum.inl v₀}`-relaxed
+  `φ`-Selmer class is locally orthogonal at `v₀` to every `{Sum.inl v₀}`-relaxed `φ̂`-Selmer class
   (`TauCeti.Isogeny.localTateKerWeilPairing_eq_zero_of_mem_selmerGroup_relax_singleton`).
 
 This is the global reciprocity half of the Poitou–Tate / Greenberg–Wiles comparison between
 `Sel_φ(E₁/K)` and `Sel_φ̂(E₂/K)` used in Cassels' theorem on the isogeny invariance of the
 Birch–Swinnerton-Dyer quotient.
-
-## Main definitions
-
-* `TauCeti.Isogeny.localTateKerWeilQuotientPairing`: the local Tate pairing descended to
-  `(H¹(K, E₁[φ]) ⧸ H¹_φ(K)) →+ H¹_φ̂(K) →+ ZMod (deg φ)`.
 
 ## Main results
 
@@ -59,7 +51,7 @@ Birch–Swinnerton-Dyer quotient.
 * `TauCeti.Isogeny.sum_toRatAddCircle_localTateKerWeilPairing_eq_zero_of_mem_selmerGroup_relax`,
   `TauCeti.Isogeny.sum_ringEquivCongr_localTateKerWeilPairing_eq_zero_of_mem_selmerGroup_relax`,
   and `TauCeti.Isogeny.localTateKerWeilPairing_eq_zero_of_mem_selmerGroup_relax_singleton`: global
-  orthogonality of `S`-relaxed `φ`-Selmer classes against `Sel_φ̂(E₂/K)`.
+  orthogonality of `S`-relaxed `φ`- and `φ̂`-Selmer classes.
 
 ## References
 
@@ -81,50 +73,27 @@ namespace TauCeti.Isogeny
 open WeierstrassCurve TauCeti TauCeti.ContCohomology TauCeti.ClassFieldTheory
 open Hom (ofIsogeny kerH1Congr)
 
-/-- Transporting `ZMod m` to `ZMod n` along `m = n` commutes with `ZMod.toRatAddCircle`. -/
-private theorem toRatAddCircle_ringEquivCongr {m n : ℕ} (h : m = n) (z : ZMod m) :
-    ZMod.toRatAddCircle n (ZMod.ringEquivCongr h z) = ZMod.toRatAddCircle m z := by
-  obtain ⟨k, rfl⟩ := ZMod.intCast_surjective z
-  subst h
-  simp
+/-! ### Archimedean orthogonality -/
 
-/-! ### Local quotient pairing -/
+section Archimedean
 
-section Local
-
-variable {K : Type} [Field K] [ValuativeRel K] [TopologicalSpace K]
-  [IsNonarchimedeanLocalField K] {W₁ W₂ : WeierstrassCurve K} [W₁.IsElliptic] [W₂.IsElliptic]
-  (φ : Isogeny W₁.toAffine W₂.toAffine) (hn : IsUnit (φ.degree : K))
-
-/-- **The local Tate pairing on the local Selmer quotient.** Because the local Selmer kernels of
-`φ` and `φ̂` are orthogonal under `localTateKerWeilPairing`, restricting the second variable to the
-local `φ̂`-Selmer kernel descends the first variable to the quotient by the local `φ`-Selmer
-kernel. -/
-def localTateKerWeilQuotientPairing :
-    (H1 (AbsoluteGaloisGroup K) (ofIsogeny φ).KerCoeff ⧸
-      (explicitCoeff1 _ _ (ofIsogeny φ).kerCoeffIncl continuous_of_discreteTopology).ker) →+
-    (explicitCoeff1 _ _ (ofIsogeny φ.dual).kerCoeffIncl continuous_of_discreteTopology).ker →+
-    ZMod φ.degree :=
-  QuotientAddGroup.lift _
-    { toFun := fun a ↦ (φ.localTateKerWeilPairing hn a).comp
-        (explicitCoeff1 _ _ (ofIsogeny φ.dual).kerCoeffIncl
-          continuous_of_discreteTopology).ker.subtype
-      map_zero' := by ext; simp
-      map_add' := fun _ _ ↦ by ext; simp }
-    fun a ha ↦ AddMonoidHom.ext fun b ↦ φ.localTateKerWeilPairing_eq_zero_of_mem_ker hn ha b.2
-
-/-- Evaluating `localTateKerWeilQuotientPairing` on a quotient class computes
-`localTateKerWeilPairing`. -/
-@[simp]
-theorem localTateKerWeilQuotientPairing_mk
-    (a : H1 (AbsoluteGaloisGroup K) (ofIsogeny φ).KerCoeff)
-    (b : (explicitCoeff1 _ _ (ofIsogeny φ.dual).kerCoeffIncl
+/-- At an infinite place `w` of a field `K` (real or complex), the archimedean Brauer invariant of
+the isogeny Weil cup product vanishes whenever the two local classes lie in the `φ`- and
+`φ̂`-Selmer kernels over `w.Completion`. -/
+theorem infiniteInvMap_kerWeilBrauerPairing_eq_zero_of_mem_ker {K : Type*} [Field K]
+    (w : InfinitePlace K) {W₁ W₂ : WeierstrassCurve w.Completion} [W₁.IsElliptic] [W₂.IsElliptic]
+    (φ : Isogeny W₁.toAffine W₂.toAffine) (hn : IsUnit (φ.degree : w.Completion))
+    {a : H1 (AbsoluteGaloisGroup w.Completion) (ofIsogeny φ).KerCoeff}
+    {b : H1 (AbsoluteGaloisGroup w.Completion) (ofIsogeny φ.dual).KerCoeff}
+    (ha : a ∈ (explicitCoeff1 _ _ (ofIsogeny φ).kerCoeffIncl
+      continuous_of_discreteTopology).ker)
+    (hb : b ∈ (explicitCoeff1 _ _ (ofIsogeny φ.dual).kerCoeffIncl
       continuous_of_discreteTopology).ker) :
-    φ.localTateKerWeilQuotientPairing hn (QuotientAddGroup.mk a) b =
-      φ.localTateKerWeilPairing hn a b :=
-  (rfl)
+    infiniteInvMap w (φ.kerWeilBrauerPairing hn a b) = 0 :=
+  (congrArg (infiniteInvMap w) (φ.kerWeilBrauerPairing_eq_zero_of_mem_ker hn ha hb)).trans
+    (map_zero _)
 
-end Local
+end Archimedean
 
 /-! ### Global reciprocity over a number field -/
 
@@ -134,28 +103,10 @@ variable {K : Type} [Field K] [NumberField K]
   {W₁ W₂ : WeierstrassCurve K} [W₁.IsElliptic] [W₂.IsElliptic]
   (φ : Isogeny W₁.toAffine W₂.toAffine)
 
-/-- At every infinite place `w` of `K` (real or complex), the archimedean Brauer invariant of the
-isogeny Weil cup product vanishes whenever the two local classes lie in the `φ`- and `φ̂`-Selmer
-kernels over `w.Completion`. -/
-theorem infiniteInvMap_kerWeilBrauerPairing_eq_zero_of_mem_ker (w : InfinitePlace K)
-    {a : H1 (AbsoluteGaloisGroup w.Completion) (ofIsogeny (φ.baseChange w.Completion)).KerCoeff}
-    {b : H1 (AbsoluteGaloisGroup w.Completion)
-      (ofIsogeny (φ.baseChange w.Completion).dual).KerCoeff}
-    (ha : a ∈ (explicitCoeff1 _ _ (ofIsogeny (φ.baseChange w.Completion)).kerCoeffIncl
-      continuous_of_discreteTopology).ker)
-    (hb : b ∈ (explicitCoeff1 _ _ (ofIsogeny (φ.baseChange w.Completion).dual).kerCoeffIncl
-      continuous_of_discreteTopology).ker) :
-    infiniteInvMap w
-      ((φ.baseChange w.Completion).kerWeilBrauerPairing
-        (φ.isUnit_degree_baseChange w.Completion) a b) = 0 :=
-  (congrArg (infiniteInvMap w)
-    ((φ.baseChange w.Completion).kerWeilBrauerPairing_eq_zero_of_mem_ker _ ha hb)).trans
-    (map_zero _)
-
 /-- **Finite-`S` global reciprocity in `ℚ/ℤ`.** Let `S` be a finite set of finite places of `K`.
 If `a ∈ H¹(K, E₁[φ])` and `b ∈ H¹(K, E₂[φ̂])` satisfy their respective local Selmer conditions at
-every finite place `v ∉ S` and at every infinite place `w`, then the finite sum over `v ∈ S` of
-their `ℚ/ℤ`-valued local Tate pairings is zero. -/
+every finite place `v ∉ S` and at every real infinite place `w`, then the finite sum over `v ∈ S`
+of their `ℚ/ℤ`-valued local Tate pairings is zero. -/
 theorem sum_toRatAddCircle_localTateKerWeilPairing_eq_zero
     (τ : ∀ v : HeightOneSpectrum (𝓞 K),
       SeparableClosure K →ₐ[K] SeparableClosure (v.adicCompletion K))
@@ -170,7 +121,7 @@ theorem sum_toRatAddCircle_localTateKerWeilPairing_eq_zero
       φ.dual.kerRes (τ v) b ∈
         (explicitCoeff1 _ _ (ofIsogeny (φ.dual.baseChange (v.adicCompletion K))).kerCoeffIncl
           continuous_of_discreteTopology).ker)
-    (hinf : ∀ w : InfinitePlace K,
+    (hinf : ∀ w : InfinitePlace K, w.IsReal →
       φ.kerRes (τ' w) a ∈
         (explicitCoeff1 _ _ (ofIsogeny (φ.baseChange w.Completion)).kerCoeffIncl
           continuous_of_discreteTopology).ker ∧
@@ -194,8 +145,11 @@ theorem sum_toRatAddCircle_localTateKerWeilPairing_eq_zero
           (φ.dual.kerRes (τ' w) b))) = 0 := by
     apply Finset.sum_eq_zero
     intro w _
-    exact φ.infiniteInvMap_kerWeilBrauerPairing_eq_zero_of_mem_ker w (hinf w).1
-      ((Hom.mem_ker_explicitCoeff1_kerCoeffIncl_kerH1Congr_iff _).mpr (hinf w).2)
+    exact w.isReal_or_isComplex.elim
+      (fun hw ↦ (φ.baseChange w.Completion).infiniteInvMap_kerWeilBrauerPairing_eq_zero_of_mem_ker
+        w _ (hinf w hw).1
+        ((Hom.mem_ker_explicitCoeff1_kerCoeffIncl_kerH1Congr_iff _).mpr (hinf w hw).2))
+      (fun hw ↦ infiniteInvMap_eq_zero_of_isComplex w hw _)
   have hsupp : (∑ᶠ v : HeightOneSpectrum (𝓞 K),
       ZMod.toRatAddCircle (φ.baseChange (v.adicCompletion K)).degree
         ((φ.baseChange (v.adicCompletion K)).localTateKerWeilPairing
@@ -225,8 +179,9 @@ theorem sum_toRatAddCircle_localTateKerWeilPairing_eq_zero
   exact ((add_zero _).symm.trans ((congrArg₂ (· + ·) hsupp.symm harch.symm).trans hrec))
 
 /-- **Finite-`S` global reciprocity in `ℤ/(deg φ)ℤ`.** Under the same local hypotheses outside `S`
-and at infinity, the finite sum over `v ∈ S` of the local Tate pairings, transported from
-`ZMod (deg (φ.baseChange K_v))` to `ZMod (deg φ)` along `φ.degree_baseChange K_v`, is zero. -/
+and at real infinite places, the finite sum over `v ∈ S` of the local Tate pairings, transported
+from `ZMod (deg (φ.baseChange K_v))` to `ZMod (deg φ)` along `φ.degree_baseChange K_v`,
+is zero. -/
 theorem sum_ringEquivCongr_localTateKerWeilPairing_eq_zero
     (τ : ∀ v : HeightOneSpectrum (𝓞 K),
       SeparableClosure K →ₐ[K] SeparableClosure (v.adicCompletion K))
@@ -241,7 +196,7 @@ theorem sum_ringEquivCongr_localTateKerWeilPairing_eq_zero
       φ.dual.kerRes (τ v) b ∈
         (explicitCoeff1 _ _ (ofIsogeny (φ.dual.baseChange (v.adicCompletion K))).kerCoeffIncl
           continuous_of_discreteTopology).ker)
-    (hinf : ∀ w : InfinitePlace K,
+    (hinf : ∀ w : InfinitePlace K, w.IsReal →
       φ.kerRes (τ' w) a ∈
         (explicitCoeff1 _ _ (ofIsogeny (φ.baseChange w.Completion)).kerCoeffIncl
           continuous_of_discreteTopology).ker ∧
@@ -255,19 +210,36 @@ theorem sum_ringEquivCongr_localTateKerWeilPairing_eq_zero
           (φ.kerRes (τ v) a)
           (kerH1Congr (φ.ofIsogeny_dual_baseChange (v.adicCompletion K))
             (φ.dual.kerRes (τ v) b))) = 0 := by
-  have : NeZero φ.degree := ⟨φ.degree_pos.ne'⟩
   apply ZMod.toRatAddCircle_injective φ.degree
   rw [map_zero, map_sum]
-  refine (Finset.sum_congr rfl fun v _ ↦
-    toRatAddCircle_ringEquivCongr (φ.degree_baseChange (v.adicCompletion K)) _).trans ?_
+  simp_rw [ZMod.toRatAddCircle_ringEquivCongr]
   exact φ.sum_toRatAddCircle_localTateKerWeilPairing_eq_zero τ τ' S hfin hinf
 
-/-! ### Global orthogonality of relaxed `φ`-Selmer groups and `Sel_φ̂` -/
+/-! ### Global orthogonality of relaxed `φ`- and `φ̂`-Selmer groups -/
+
+/-- An `S`-relaxed `φ`-Selmer class lies in the local `φ`-Selmer kernel at every finite place
+outside `S` and at every infinite place. -/
+private theorem kerRes_mem_ker_of_mem_selmerGroup_relax
+    (τ : ∀ p : GlobalNumberFields.Place K, SeparableClosure K →ₐ[K] SeparableClosure p.Completion)
+    (S : Finset (HeightOneSpectrum (𝓞 K)))
+    {a : H1 (AbsoluteGaloisGroup K) (ofIsogeny φ).KerCoeff}
+    (ha : a ∈ ((φ.selmerStructure τ).relax
+      (Sum.inl '' (S : Set (HeightOneSpectrum (𝓞 K))))).selmerGroup) :
+    (∀ v ∉ S, φ.kerRes (τ (.inl v)) a ∈
+      (explicitCoeff1 _ _ (ofIsogeny (φ.baseChange (v.adicCompletion K))).kerCoeffIncl
+        continuous_of_discreteTopology).ker) ∧
+    (∀ w : InfinitePlace K, φ.kerRes (τ (.inr w)) a ∈
+      (explicitCoeff1 _ _ (ofIsogeny (φ.baseChange w.Completion)).kerCoeffIncl
+        continuous_of_discreteTopology).ker) := by
+  rw [SelmerStructure.mem_selmerGroup_relax_iff] at ha
+  exact ⟨fun v hv ↦ by simpa using ha (.inl v) (by simpa using hv),
+    fun w ↦ by simpa using ha (.inr w) (by simp)⟩
 
 /-- **Global Selmer reciprocity in `ℚ/ℤ`.** If `a` belongs to the `S`-relaxed `φ`-Selmer group
-(local conditions relaxed at the finite places in `S` and kept outside `S` and at every infinite
-place) and `b ∈ Sel_φ̂(E₂/K)`, then the sum over `v ∈ S` of their `ℚ/ℤ`-valued local Tate pairings
-vanishes. -/
+and `b` belongs to the `S`-relaxed `φ̂`-Selmer group (local conditions relaxed at the finite
+places in `S` and kept outside `S` and at every infinite place), then the sum over `v ∈ S` of
+their `ℚ/ℤ`-valued local Tate pairings vanishes. Unrelaxed classes in `Sel_φ(E₁/K)` or
+`Sel_φ̂(E₂/K)` specialize via `SelmerStructure.selmerGroup_le_relax`. -/
 theorem sum_toRatAddCircle_localTateKerWeilPairing_eq_zero_of_mem_selmerGroup_relax
     (τ : ∀ p : GlobalNumberFields.Place K, SeparableClosure K →ₐ[K] SeparableClosure p.Completion)
     (S : Finset (HeightOneSpectrum (𝓞 K)))
@@ -275,26 +247,24 @@ theorem sum_toRatAddCircle_localTateKerWeilPairing_eq_zero_of_mem_selmerGroup_re
     {b : H1 (AbsoluteGaloisGroup K) (ofIsogeny φ.dual).KerCoeff}
     (ha : a ∈ ((φ.selmerStructure τ).relax
       (Sum.inl '' (S : Set (HeightOneSpectrum (𝓞 K))))).selmerGroup)
-    (hb : b ∈ φ.dual.selmerGroup τ) :
+    (hb : b ∈ ((φ.dual.selmerStructure τ).relax
+      (Sum.inl '' (S : Set (HeightOneSpectrum (𝓞 K))))).selmerGroup) :
     ∑ v ∈ S,
       ZMod.toRatAddCircle (φ.baseChange (v.adicCompletion K)).degree
         ((φ.baseChange (v.adicCompletion K)).localTateKerWeilPairing
           (φ.isUnit_degree_baseChange (v.adicCompletion K))
           (φ.kerRes (τ (.inl v)) a)
           (kerH1Congr (φ.ofIsogeny_dual_baseChange (v.adicCompletion K))
-            (φ.dual.kerRes (τ (.inl v)) b))) = 0 := by
-  rw [SelmerStructure.mem_selmerGroup_relax_iff] at ha
-  rw [φ.dual.mem_selmerGroup_iff, mem_shafarevichTateGroup_iff] at hb
-  refine φ.sum_toRatAddCircle_localTateKerWeilPairing_eq_zero
-    (fun v ↦ τ (.inl v)) (fun w ↦ τ (.inr w)) S (fun v hv ↦ ⟨?_, ?_⟩) (fun w ↦ ⟨?_, ?_⟩)
-  · simpa using ha (.inl v) (by simpa using hv)
-  · simpa [AddMonoidHom.mem_ker, ← pointRes_kerCoeffIncl] using hb (.inl v)
-  · simpa using ha (.inr w) (by simp)
-  · simpa [AddMonoidHom.mem_ker, ← pointRes_kerCoeffIncl] using hb (.inr w)
+            (φ.dual.kerRes (τ (.inl v)) b))) = 0 :=
+  have ha' := φ.kerRes_mem_ker_of_mem_selmerGroup_relax τ S ha
+  have hb' := φ.dual.kerRes_mem_ker_of_mem_selmerGroup_relax τ S hb
+  φ.sum_toRatAddCircle_localTateKerWeilPairing_eq_zero
+    (fun v ↦ τ (.inl v)) (fun w ↦ τ (.inr w)) S
+    (fun v hv ↦ ⟨ha'.1 v hv, hb'.1 v hv⟩) (fun w _ ↦ ⟨ha'.2 w, hb'.2 w⟩)
 
 /-- **Global Selmer reciprocity in `ℤ/(deg φ)ℤ`.** If `a` belongs to the `S`-relaxed `φ`-Selmer
-group and `b ∈ Sel_φ̂(E₂/K)`, then the sum over `v ∈ S` of their local Tate pairings in
-`ZMod φ.degree` vanishes. -/
+group and `b` belongs to the `S`-relaxed `φ̂`-Selmer group, then the sum over `v ∈ S` of their
+local Tate pairings in `ZMod φ.degree` vanishes. -/
 theorem sum_ringEquivCongr_localTateKerWeilPairing_eq_zero_of_mem_selmerGroup_relax
     (τ : ∀ p : GlobalNumberFields.Place K, SeparableClosure K →ₐ[K] SeparableClosure p.Completion)
     (S : Finset (HeightOneSpectrum (𝓞 K)))
@@ -302,31 +272,31 @@ theorem sum_ringEquivCongr_localTateKerWeilPairing_eq_zero_of_mem_selmerGroup_re
     {b : H1 (AbsoluteGaloisGroup K) (ofIsogeny φ.dual).KerCoeff}
     (ha : a ∈ ((φ.selmerStructure τ).relax
       (Sum.inl '' (S : Set (HeightOneSpectrum (𝓞 K))))).selmerGroup)
-    (hb : b ∈ φ.dual.selmerGroup τ) :
+    (hb : b ∈ ((φ.dual.selmerStructure τ).relax
+      (Sum.inl '' (S : Set (HeightOneSpectrum (𝓞 K))))).selmerGroup) :
     ∑ v ∈ S,
       ZMod.ringEquivCongr (φ.degree_baseChange (v.adicCompletion K))
         ((φ.baseChange (v.adicCompletion K)).localTateKerWeilPairing
           (φ.isUnit_degree_baseChange (v.adicCompletion K))
           (φ.kerRes (τ (.inl v)) a)
           (kerH1Congr (φ.ofIsogeny_dual_baseChange (v.adicCompletion K))
-            (φ.dual.kerRes (τ (.inl v)) b))) = 0 := by
-  have : NeZero φ.degree := ⟨φ.degree_pos.ne'⟩
-  apply ZMod.toRatAddCircle_injective φ.degree
-  rw [map_zero, map_sum]
-  refine (Finset.sum_congr rfl fun v _ ↦
-    toRatAddCircle_ringEquivCongr (φ.degree_baseChange (v.adicCompletion K)) _).trans ?_
-  exact φ.sum_toRatAddCircle_localTateKerWeilPairing_eq_zero_of_mem_selmerGroup_relax τ S ha hb
+            (φ.dual.kerRes (τ (.inl v)) b))) = 0 :=
+  have ha' := φ.kerRes_mem_ker_of_mem_selmerGroup_relax τ S ha
+  have hb' := φ.dual.kerRes_mem_ker_of_mem_selmerGroup_relax τ S hb
+  φ.sum_ringEquivCongr_localTateKerWeilPairing_eq_zero
+    (fun v ↦ τ (.inl v)) (fun w ↦ τ (.inr w)) S
+    (fun v hv ↦ ⟨ha'.1 v hv, hb'.1 v hv⟩) (fun w _ ↦ ⟨ha'.2 w, hb'.2 w⟩)
 
-/-- **Single-place Selmer orthogonality.** A global class `a ∈ H¹(K, E₁[φ])` satisfying the local
-`φ`-Selmer condition at every place except possibly a single finite place `v₀` is locally
-orthogonal at `v₀` to every `b ∈ Sel_φ̂(E₂/K)`. -/
+/-- **Single-place Selmer orthogonality.** Two global classes `a ∈ H¹(K, E₁[φ])` and
+`b ∈ H¹(K, E₂[φ̂])` satisfying their respective local Selmer conditions at every place except
+possibly a single finite place `v₀` are locally orthogonal at `v₀`. -/
 theorem localTateKerWeilPairing_eq_zero_of_mem_selmerGroup_relax_singleton
     (τ : ∀ p : GlobalNumberFields.Place K, SeparableClosure K →ₐ[K] SeparableClosure p.Completion)
     (v₀ : HeightOneSpectrum (𝓞 K))
     {a : H1 (AbsoluteGaloisGroup K) (ofIsogeny φ).KerCoeff}
     {b : H1 (AbsoluteGaloisGroup K) (ofIsogeny φ.dual).KerCoeff}
     (ha : a ∈ ((φ.selmerStructure τ).relax {Sum.inl v₀}).selmerGroup)
-    (hb : b ∈ φ.dual.selmerGroup τ) :
+    (hb : b ∈ ((φ.dual.selmerStructure τ).relax {Sum.inl v₀}).selmerGroup) :
     (φ.baseChange (v₀.adicCompletion K)).localTateKerWeilPairing
       (φ.isUnit_degree_baseChange (v₀.adicCompletion K))
       (φ.kerRes (τ (.inl v₀)) a)
@@ -336,11 +306,13 @@ theorem localTateKerWeilPairing_eq_zero_of_mem_selmerGroup_relax_singleton
       (Sum.inl '' (({v₀} : Finset (HeightOneSpectrum (𝓞 K))) :
         Set (HeightOneSpectrum (𝓞 K))))).selmerGroup := by
     simpa using ha
+  have hb' : b ∈ ((φ.dual.selmerStructure τ).relax
+      (Sum.inl '' (({v₀} : Finset (HeightOneSpectrum (𝓞 K))) :
+        Set (HeightOneSpectrum (𝓞 K))))).selmerGroup := by
+    simpa using hb
   have hsum :=
-    φ.sum_toRatAddCircle_localTateKerWeilPairing_eq_zero_of_mem_selmerGroup_relax τ {v₀} ha' hb
+    φ.sum_toRatAddCircle_localTateKerWeilPairing_eq_zero_of_mem_selmerGroup_relax τ {v₀} ha' hb'
   rw [Finset.sum_singleton] at hsum
-  have : NeZero (φ.baseChange (v₀.adicCompletion K)).degree :=
-    ⟨(φ.baseChange (v₀.adicCompletion K)).degree_pos.ne'⟩
   exact (ZMod.toRatAddCircle_eq_zero _).mp hsum
 
 end Global
