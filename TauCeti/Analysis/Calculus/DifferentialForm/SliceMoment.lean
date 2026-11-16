@@ -368,15 +368,14 @@ theorem conjWirtingerDeriv_sliceMoment_eq_zero (hK : IsCompact K) (hTc : ContDif
   rw [conjWirtingerDeriv_sliceMoment_apply hK hTc hg hT hdT v, zero_apply]
   refine (integral_congr_ae (ae_of_all _ fun w ↦ ?_)).trans (integral_zero _ _)
   have h₁ := hJ w (v, 0) (0, 1)
-  have h₂ := hJ w (v, 0) (0, -I)
-  simp only [Prod.smul_mk, smul_zero, smul_eq_mul, mul_zero, mul_one, mul_neg, I_mul_I,
-    neg_neg] at h₁ h₂
-  -- `T` is linear in its second slot, so `T(v, -∂_y) = -T(v, ∂_y)`.
-  have hneg : T (z, w) ![(v, 0), (0, -I)] = -T (z, w) ![(v, 0), (0, I)] := by
-    simpa only [Matrix.vecCons, ← Fin.cons_update, Fin.update_cons_zero, Prod.neg_mk, neg_zero,
-      ContinuousAlternatingMap.coe_toAlternatingMap] using
-      (T (z, w)).toAlternatingMap.map_update_neg ![(v, 0), (0, I)] (0 : Fin 1).succ (0, I)
-  rw [h₁, h₂, hneg]
+  have h₂ := hJ w (I • v, 0) (0, 1)
+  simp only [Prod.smul_mk, smul_zero, smul_smul, smul_eq_mul, mul_zero, mul_one, I_mul_I,
+    neg_one_smul] at h₁ h₂
+  -- `T` is linear in its first slot, so `T(-v, ∂_y) = -T(v, ∂_y)`.
+  have hneg : T (z, w) ![(-v, 0), (0, I)] = -T (z, w) ![(v, 0), (0, I)] := by
+    rw [show ((-v, 0) : V × ℂ) = (-1 : ℝ) • (v, 0) by simp,
+      ContinuousAlternatingMap.vecCons_smul, neg_one_smul]
+  rw [h₁, ← h₂, hneg]
   push_cast
   ring
 
