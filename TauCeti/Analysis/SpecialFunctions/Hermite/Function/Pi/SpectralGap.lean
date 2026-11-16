@@ -168,7 +168,7 @@ private theorem add_two_mul_mul_integral_sq_le_sum_integral_of_pos {ω : ι → 
   have hc2 : ∀ i, c i ^ 2 = ω i := fun i ↦ Real.sq_sqrt (hω i).le
   have hc4 : ∀ i, c i ^ 4 = ω i ^ 2 := fun i ↦ by rw [← hc2]; ring
   set d : (ι → ℕ) → ℝ := fun a ↦ ∫ x, (∏ j, hermiteFunction (a j) (c j * x j)) * u x
-  have hd0 : d 0 = 0 := horth
+  have hd0 : d 0 = 0 := by simpa [d, c] using horth
   have hJ : 0 < |∏ j, c j|⁻¹ := inv_pos.2 (abs_pos.2 (Finset.prod_ne_zero_iff.2 fun i _ ↦ hc i))
   -- the quadratic form is the sum of the eigenvalues times the squared Hermite coefficients
   have hosc : HasSum (fun a ↦ ∑ i, ω i * (2 * a i + 1) * d a ^ 2) (|∏ j, c j|⁻¹ *
