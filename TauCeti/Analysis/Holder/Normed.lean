@@ -37,7 +37,8 @@ parallel notion of Hölder continuity.
   `TauCeti.HolderSpace.toBoundedContinuousFunctionCLM`: continuous linear maps for constants,
   evaluation, and inclusion, with operator-norm bounds.
 * `TauCeti.HolderSpace.compLipschitzL`: precomposition with a `K`-Lipschitz map, of operator norm
-  at most `max 1 (K ^ α)`.
+  at most `max 1 (K ^ α)`, and `TauCeti.HolderSpace.compIsometryEquivLIE`, precomposition with an
+  isometric equivalence, as a linear isometric equivalence.
 * `TauCeti.HolderSpace.compLeftL`: postcomposition with a continuous linear map `g`, of operator
   norm at most `‖g‖`, and norm-preserving when `g` is a linear isometry.
 
@@ -581,6 +582,34 @@ subspace, does not increase the Hölder-space norm. -/
 theorem norm_compLipschitzL_le_one (hg : LipschitzWith 1 g) :
     ‖compLipschitzL (α := α) (Y := Y) g hg‖ ≤ 1 := by
   simpa using norm_compLipschitzL_le (α := α) (Y := Y) hg
+
+variable (α Y) in
+/-- Precomposition with an isometric equivalence `g : X' ≃ᵢ X`, as a linear isometric equivalence
+between bounded Hölder spaces of the same exponent. Its inverse is precomposition with
+`g.symm`. -/
+def compIsometryEquivLIE (g : X' ≃ᵢ X) : HolderSpace α X Y ≃ₗᵢ[ℝ] HolderSpace α X' Y where
+  __ := compLipschitzL g g.isometry.lipschitzWith
+  invFun := compLipschitzL g.symm g.symm.isometry.lipschitzWith
+  left_inv f := ext fun x ↦ by simp
+  right_inv f := ext fun x ↦ by simp
+  norm_map' f := by
+    have h₁ := (compLipschitzL g g.isometry.lipschitzWith).le_of_opNorm_le
+      (norm_compLipschitzL_le_one _) f
+    have h₂ := (compLipschitzL g.symm g.symm.isometry.lipschitzWith).le_of_opNorm_le
+      (norm_compLipschitzL_le_one _) (compLipschitzL g g.isometry.lipschitzWith f)
+    have hf : compLipschitzL g.symm g.symm.isometry.lipschitzWith
+        (compLipschitzL g g.isometry.lipschitzWith f) = f := ext fun x ↦ by simp
+    rw [hf, one_mul] at h₂
+    rw [one_mul] at h₁
+    exact le_antisymm h₁ h₂
+
+@[simp]
+theorem compIsometryEquivLIE_apply (g : X' ≃ᵢ X) (f : HolderSpace α X Y) (x : X') :
+    compIsometryEquivLIE α Y g f x = f (g x) := (rfl)
+
+@[simp]
+theorem compIsometryEquivLIE_symm (g : X' ≃ᵢ X) :
+    (compIsometryEquivLIE α Y g).symm = compIsometryEquivLIE α Y g.symm := (rfl)
 
 end compLipschitz
 
