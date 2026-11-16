@@ -8,15 +8,14 @@ module
 public import TauCeti.RingTheory.Huber.ZeroSequenceOfUnits
 public import TauCeti.Topology.Algebra.OpenMapping.Henkel
 public import Mathlib.Topology.Algebra.Module.ModuleTopology
-import TauCeti.Topology.Algebra.Nonarchimedean.Pi
 
 /-!
 # The open mapping theorem over a Tate ring
 
 Henkel's open mapping theorem applies over a Tate ring because the powers of a pseudouniformiser
 form a zero sequence of units. A surjective linear map, continuous at zero, from a complete
-first-countable nonarchimedean module to a Hausdorff Baire topological module is therefore open
-and induces the quotient topology.
+first-countable uniform module to a Hausdorff Baire topological module is therefore open and
+induces the quotient topology.
 
 The source carries a complete uniform additive group structure and a countably generated
 neighbourhood filter at zero. Its scalar action is jointly continuous, which supplies the
@@ -41,7 +40,7 @@ Mathlib's `IsModuleTopology.continuous_of_linearMap`.
 ## Main results
 
 * `LinearMap.isOpenMap_of_isTateRing`: a surjective linear map continuous at zero, from a complete
-  first-countable nonarchimedean module to a Hausdorff Baire module over a Tate ring, is open.
+  first-countable uniform module to a Hausdorff Baire module over a Tate ring, is open.
 * `LinearMap.isQuotientMap_of_isTateRing`: the same map induces the quotient topology.
 * `LinearMap.isStrictMap_of_isClosed_range_of_isTateRing`: a linear map continuous at zero with
   closed range in a completely metrisable target is strict.
@@ -95,7 +94,7 @@ open TauCeti.Huber
 
 variable {A M N : Type*} [CommRing A] [TopologicalSpace A] [IsTopologicalRing A] [IsTateRing A]
   [AddCommGroup M] [UniformSpace M] [IsUniformAddGroup M] [CompleteSpace M]
-  [(𝓝 (0 : M)).IsCountablyGenerated] [NonarchimedeanAddGroup M] [Module A M] [ContinuousSMul A M]
+  [(𝓝 (0 : M)).IsCountablyGenerated] [Module A M] [ContinuousSMul A M]
   [AddCommGroup N] [TopologicalSpace N] [IsTopologicalAddGroup N]
   [Module A N] [ContinuousConstSMul A N]
 
@@ -104,7 +103,7 @@ section Baire
 variable [T0Space N] [BaireSpace N]
 
 /-- **The open mapping theorem over a Tate ring.** A surjective linear map continuous at zero,
-from a complete first-countable nonarchimedean module to a Hausdorff Baire module, is open.
+from a complete first-countable uniform module to a Hausdorff Baire module, is open.
 The target needs only continuous constant scalar actions. -/
 theorem isOpenMap_of_isTateRing (f : M →ₗ[A] N) (hf : Function.Surjective f)
     (hfc : ContinuousAt (f : M → N) 0) : IsOpenMap (f : M → N) :=
@@ -121,7 +120,7 @@ theorem isQuotientMap_of_isTateRing (f : M →ₗ[A] N) (hf : Function.Surjectiv
 end Baire
 
 /-- **Strictness from a closed range over a Tate ring.** A linear map continuous at zero from a
-complete first-countable nonarchimedean module to a completely metrisable module is strict when
+complete first-countable uniform module to a completely metrisable module is strict when
 its range is closed. The target needs only continuous constant scalar actions.
 
 The closed range supplies a Baire target for the corestriction. This is the strictness step of
@@ -156,9 +155,8 @@ what the Banach-theorem arguments over a Tate ring consume. It is the open prese
 the BGR §3.7.2/1 density argument, `TauCeti.Huber.eq_top_of_dense_of_module_finite`.
 
 The target is Hausdorff and Baire, and `g` spans. The source of
-`LinearMap.isOpenMap_of_isTateRing` is instantiated at `ι → A`. The Tate ring is nonarchimedean
-and first countable, and the `Pi` instances transfer these properties and completeness to
-`ι → A`. -/
+`LinearMap.isOpenMap_of_isTateRing` is instantiated at `ι → A`. The Tate ring is first countable,
+and the `Pi` instances transfer first-countability and completeness to `ι → A`. -/
 theorem IsTateRing.isOpenMap_linearCombination (g : ι → N)
     (hspan : Submodule.span A (Set.range g) = ⊤) :
     IsOpenMap (Fintype.linearCombination A g : (ι → A) → N) :=
