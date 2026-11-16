@@ -15,6 +15,7 @@ import TauCeti.Probability.Distributions.Gaussian.Continuity
 import Mathlib.Probability.Distributions.Gaussian.IsGaussianProcess.Basic
 import Mathlib.Probability.Distributions.Gaussian.HasGaussianLaw.Basic
 import TauCeti.MeasureTheory.Function.Lp.Indicator
+import TauCeti.MeasureTheory.Function.Lp.Norm
 import TauCeti.MeasureTheory.Function.L2Space
 import TauCeti.Probability.Independence.Filtration
 
@@ -429,9 +430,8 @@ theorem integral_exp_mul_wienerIntegral_toLp (hB : IsPreBrownianReal B P) {T : �
     {f : ℝ≥0 → ℝ} (hf : MemLp f 2 (timeMeasure T)) (q : ℝ) :
     ∫ ω, Real.exp (q * hB.wienerIntegral T (hf.toLp f) ω) ∂P =
       Real.exp (q ^ 2 * (∫ t, f t ^ 2 ∂timeMeasure T) / 2) := by
-  rw [← mgf, mgf_gaussianReal (hB.hasLaw_wienerIntegral_toLp hf),
-    Real.coe_toNNReal _ (integral_nonneg fun _ ↦ sq_nonneg _)]
-  ring_nf
+  rw [hB.integral_exp_mul_wienerIntegral, hf.norm_toLp_sq]
+  simp only [Real.norm_eq_abs, sq_abs]
 
 /-- **The law of a Wiener increment.** For `s ≤ T`, the difference of the Wiener integrals of
 `f` on `(0,T]` and on `(0,s]` is centered Gaussian with variance `∫ₛᵀ f²`. -/
@@ -457,12 +457,39 @@ theorem hasLaw_wienerIntegral_toLp_sub (hB : IsPreBrownianReal B P) {s T : ℝ�
       (∫ t, f t ^ 2 ∂timeMeasure T) - ∫ t, f t ^ 2 ∂timeMeasure s := by
     have hi : Integrable (fun t ↦ f t ^ 2) (timeMeasure T) := hfT.integrable_sq
     simp_rw [sq, ← Set.indicator_mul, ← sq]
-    rw [integral_indicator measurableSet_Ioc.compl, eq_sub_iff_add_eq,
-      ← min_eq_left hsT, ← timeMeasure_restrict, min_eq_left hsT]
-    exact integral_add_compl measurableSet_Ioc hi |>.symm.trans (add_comm _ _) |>.symm
+    rw [integral_indicator measurableSet_Ioc.compl, setIntegral_compl measurableSet_Ioc hi,
+      timeMeasure_restrict_of_le hsT]
   rw [← hsq]
   exact (hB.hasLaw_wienerIntegral_toLp hc).congr
     (by rw [← heq]; exact (Lp.coeFn_sub _ _).symm)
+
+/-- Exponentials of multiples of Wiener increments are integrable. -/
+theorem integrable_exp_mul_wienerIntegral_toLp_sub (hB : IsPreBrownianReal B P)
+    {s T : ℝ≥0} (hsT : s ≤ T) {f : ℝ≥0 → ℝ}
+    (hfT : MemLp f 2 (timeMeasure T)) (hfs : MemLp f 2 (timeMeasure s)) (q : ℝ) :
+    Integrable (fun ω ↦ Real.exp (q * (hB.wienerIntegral T (hfT.toLp f) ω -
+      hB.wienerIntegral s (hfs.toLp f) ω))) P := by
+  have := (hB.hasLaw_eval 0).isProbabilityMeasure
+  exact mgf_pos_iff.mp
+    (mgf_gaussianReal (hB.hasLaw_wienerIntegral_toLp_sub hsT hfT hfs) q ▸ Real.exp_pos _)
+
+/-- **Exponential moments of a Wiener increment.** Between horizons `s ≤ T`, the variance
+is the difference of the integrals of the squared deterministic integrand. -/
+theorem integral_exp_mul_wienerIntegral_toLp_sub (hB : IsPreBrownianReal B P)
+    {s T : ℝ≥0} (hsT : s ≤ T) {f : ℝ≥0 → ℝ}
+    (hfT : MemLp f 2 (timeMeasure T)) (hfs : MemLp f 2 (timeMeasure s)) (q : ℝ) :
+    ∫ ω, Real.exp (q * (hB.wienerIntegral T (hfT.toLp f) ω -
+      hB.wienerIntegral s (hfs.toLp f) ω)) ∂P =
+        Real.exp (q ^ 2 * ((∫ t, f t ^ 2 ∂timeMeasure T) -
+          ∫ t, f t ^ 2 ∂timeMeasure s) / 2) := by
+  have hle : (∫ t, f t ^ 2 ∂timeMeasure s) ≤ ∫ t, f t ^ 2 ∂timeMeasure T :=
+    integral_mono_measure (timeMeasure_mono hsT) (ae_of_all _ fun _ ↦ sq_nonneg _)
+      hfT.integrable_sq
+  have hmgf := mgf_gaussianReal (hB.hasLaw_wienerIntegral_toLp_sub hsT hfT hfs) q
+  simp only [Pi.sub_def] at hmgf
+  rw [← mgf, hmgf,
+    Real.coe_toNNReal _ (sub_nonneg.2 hle)]
+  ring_nf
 
 end ProbabilityTheory.IsPreBrownianReal
 

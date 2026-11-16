@@ -91,9 +91,14 @@ theorem timeMeasure_restrict (T S : ℝ≥0) :
   rw [timeMeasure_def, Measure.restrict_restrict measurableSet_Ioc, Ioc_inter_Ioc]
   simp [timeMeasure_def]
 
+/-- Restricting time measure to a shorter horizon gives that horizon's time measure. -/
+theorem timeMeasure_restrict_of_le {S T : ℝ≥0} (hST : S ≤ T) :
+    (timeMeasure T).restrict (Ioc 0 S) = timeMeasure S := by
+  rw [timeMeasure_restrict, min_eq_left hST]
+
 /-- Time measure on a shorter horizon is dominated by time measure on a longer one. -/
 theorem timeMeasure_mono {S T : ℝ≥0} (hST : S ≤ T) : timeMeasure S ≤ timeMeasure T := by
-  rw [← min_eq_left hST, ← timeMeasure_restrict]
+  rw [← timeMeasure_restrict_of_le hST]
   exact Measure.restrict_le_self
 
 /-- Initial-interval indicator classes only depend on the endpoint clipped to the horizon. -/
