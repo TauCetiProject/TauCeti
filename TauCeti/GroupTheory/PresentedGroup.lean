@@ -137,49 +137,26 @@ section Union
 
 variable {α : Type*} (R S : Set (FreeGroup α))
 
--- The relators `R ∪ S` hold in the quotient of the group presented by `R` by the normal closure
--- of the images of `S`.
-private def toUnionQuotient :
-    PresentedGroup (R ∪ S) →* PresentedGroup R ⧸ Subgroup.normalClosure (mk R '' S) :=
-  toGroup (f := fun a => ((of a : PresentedGroup R) : _ ⧸ Subgroup.normalClosure (mk R '' S))) <| by
-    intro r hr
-    rw [← FreeGroup.lift_unique (f := fun a => ((of a : PresentedGroup R) :
-        _ ⧸ Subgroup.normalClosure (mk R '' S))) ((QuotientGroup.mk' _).comp (mk R))
-        (fun _ => rfl) (x := r), MonoidHom.comp_apply, QuotientGroup.mk'_apply,
-      QuotientGroup.eq_one_iff]
-    rcases hr with hr | hr
-    · rw [one_of_mem hr]
-      exact one_mem _
-    · exact Subgroup.subset_normalClosure ⟨r, hr, rfl⟩
-
--- The relators `R` hold in the group presented by `R ∪ S`, and the images of `S` are trivial
--- there.
-private def ofUnionQuotient :
-    PresentedGroup R ⧸ Subgroup.normalClosure (mk R '' S) →* PresentedGroup (R ∪ S) :=
-  QuotientGroup.lift _ (toGroup (f := of) fun r hr => by
-      simpa using one_of_mem (rels := R ∪ S) (Or.inl hr)) <|
-    Subgroup.normalClosure_le_normal <| by
-      rintro _ ⟨r, hr, rfl⟩
-      simpa using one_of_mem (rels := R ∪ S) (Or.inr hr)
-
 /-- **Imposing further relators is passing to a quotient.** The group presented by the relators
 `R ∪ S` is the quotient of the group presented by `R` by the normal closure of the images of the
-relators `S`; every word is sent to the class of its image. -/
+relators `S`; every word is sent to the class of its image. It is an instance of Noether's third
+isomorphism theorem for the normal closures of `R` and of `R ∪ S`. -/
 def unionEquivQuotient :
     PresentedGroup (R ∪ S) ≃* PresentedGroup R ⧸ Subgroup.normalClosure (mk R '' S) :=
-  MonoidHom.toMulEquiv (toUnionQuotient R S) (ofUnionQuotient R S)
-    (PresentedGroup.ext fun a => by simp [toUnionQuotient, ofUnionQuotient])
-    (QuotientGroup.monoidHom_ext _ <| PresentedGroup.ext fun a => by
-      simp [toUnionQuotient, ofUnionQuotient])
+  (QuotientGroup.quotientQuotientEquivQuotient _ _
+    (Subgroup.normalClosure_mono Set.subset_union_left)).symm.trans <|
+    QuotientGroup.quotientMulEquivOfEq
+      (N := Subgroup.normalClosure (QuotientGroup.mk' (Subgroup.normalClosure R) '' S)) <| by
+      rw [Subgroup.normalClosure_union, Subgroup.map_sup, QuotientGroup.map_mk'_self, bot_sup_eq,
+        Subgroup.map_normalClosure _ _ (QuotientGroup.mk'_surjective _)]
 
 /-- The quotient description of `PresentedGroup (R ∪ S)` sends a word to the class of its
 image in `PresentedGroup R`. -/
 @[simp]
 theorem unionEquivQuotient_mk (w : FreeGroup α) :
     unionEquivQuotient R S (mk (R ∪ S) w) =
-      ((mk R w : PresentedGroup R) : PresentedGroup R ⧸ Subgroup.normalClosure (mk R '' S)) := by
-  rw [unionEquivQuotient, MonoidHom.toMulEquiv_apply, toUnionQuotient, toGroup_mk]
-  exact (FreeGroup.lift_unique ((QuotientGroup.mk' _).comp (mk R)) fun _ => rfl).symm
+      ((mk R w : PresentedGroup R) : PresentedGroup R ⧸ Subgroup.normalClosure (mk R '' S)) :=
+  (rfl)
 
 /-- The quotient description sends a generator to the class of the generator. -/
 @[simp]
@@ -194,8 +171,8 @@ of the word. -/
 theorem unionEquivQuotient_symm_mk (w : FreeGroup α) :
     (unionEquivQuotient R S).symm
         ((mk R w : PresentedGroup R) : PresentedGroup R ⧸ Subgroup.normalClosure (mk R '' S)) =
-      mk (R ∪ S) w := by
-  rw [MulEquiv.symm_apply_eq, unionEquivQuotient_mk]
+      mk (R ∪ S) w :=
+  (rfl)
 
 /-- The inverse of the quotient description sends the class of a generator to the generator. -/
 @[simp]

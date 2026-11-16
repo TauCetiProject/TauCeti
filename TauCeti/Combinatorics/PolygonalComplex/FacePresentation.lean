@@ -86,16 +86,15 @@ private theorem exists_path_darts_eq_ofFn_side (f : C.Face) :
         (C.cornerVertex ⟨f, ⟨0, C.sides_pos f⟩⟩),
       SerreGraph.Path.darts C.graph p = List.ofFn (C.side f) := by
   refine SerreGraph.exists_path_darts_eq C.graph _ (List.ext_getElem (by simp) fun i h₁ h₂ => ?_)
-  simp only [List.length_cons, List.length_map, List.length_ofFn] at h₁
   rcases i with _ | i
-  · rw [List.getElem_cons_zero, List.getElem_append_left (by simpa using C.sides_pos f),
-      List.getElem_map, List.getElem_ofFn, ← src_outgoing, outgoing_def]
-  · rw [List.getElem_cons_succ, List.getElem_map, List.getElem_ofFn]
-    by_cases hi : i + 1 < C.sides f
-    · rw [List.getElem_append_left (by simpa using hi), List.getElem_map, List.getElem_ofFn]
-      exact C.tgt_side_eq_src_side (by dsimp only; split_ifs <;> lia)
-    · rw [List.getElem_append_right (by simp; lia), List.getElem_singleton, ← src_outgoing,
-        outgoing_def]
+  · simp only [← src_outgoing, outgoing_def]
+    simp [C.sides_pos f]
+  · simp only [List.length_cons, List.length_map, List.length_ofFn] at h₁
+    simp only [List.getElem_cons_succ, List.getElem_append, List.getElem_map, List.getElem_ofFn,
+      List.length_map, List.length_ofFn, List.getElem_singleton]
+    split_ifs
+    · exact C.tgt_side_eq_src_side (by dsimp only; split_ifs <;> lia)
+    · rw [← src_outgoing, outgoing_def]
       exact C.tgt_side_eq_src_side (by dsimp only; split_ifs <;> lia)
 
 /-- The boundary path of a face: the closed path at its first corner whose darts are the sides
@@ -234,15 +233,7 @@ loops. -/
 @[simp] theorem facePresentationEquivQuotient_mk (r : FreeGroup C.graph.E) :
     C.facePresentationEquivQuotient T v (PresentedGroup.mk _ r) =
       ↑(FreeGroup.lift (T.loop v) r) := by
-  -- `simp` cannot match words of the face presentation against the words of the union
-  -- presentation (the relator sets agree only after unfolding `faceRelators`), so the three
-  -- isomorphisms are evaluated one at a time.
-  rw [facePresentationEquivQuotient, MulEquiv.trans_apply, MulEquiv.trans_apply,
-    PresentedGroup.equivOfNormalClosureEq_mk, PresentedGroup.unionEquivQuotient_mk,
-    QuotientGroup.congr_mk]
-  exact congrArg _ (FreeGroup.lift_unique
-    ((T.pathGroupEquivGraphPresentation v).symm.toMonoidHom.comp (PresentedGroup.mk _))
-    (T.pathGroupEquivGraphPresentation_symm_of v))
+  simp [facePresentationEquivQuotient]
 
 /-- The generator of a dart corresponds to the class of its based tree loop. -/
 @[simp] theorem facePresentationEquivQuotient_of (e : C.graph.E) :
@@ -288,39 +279,39 @@ private theorem roseGraphPresentationEquivFreeGroup_mk_faceRelator_polygon :
   exact congrArg List.prod ((congrArg (List.map _) (List.ofFn_getElem (xs := w))).trans
     (List.map_congr_left fun _ _ => FreeGroup.lift_apply_of))
 
+-- The face presentation of the polygon is the graph presentation of the rose modulo the face
+-- relator, and the graph presentation of the rose is free on the petals.
+private noncomputable def polygonFacePresentationEquivQuotient :
+    (polygon w hw).FacePresentation ∅ ≃* FreeGroup α ⧸ Subgroup.normalClosure {FreeGroup.mk w} :=
+  (PresentedGroup.equivOfNormalClosureEq (congrArg _ ((polygon w hw).faceRelators_def ∅))).trans <|
+  (PresentedGroup.unionEquivQuotient _ _).trans <|
+  QuotientGroup.congr _ _ (SerreGraph.roseGraphPresentationEquivFreeGroup α) <| by
+    rw [Subgroup.map_normalClosure _ _ (MulEquiv.surjective _)]
+    simpa [Set.range_unique] using congrArg (fun x => Subgroup.normalClosure {x})
+      (roseGraphPresentationEquivFreeGroup_mk_faceRelator_polygon w hw)
+
+private theorem polygonFacePresentationEquivQuotient_mk (r : FreeGroup (polygon w hw).graph.E) :
+    polygonFacePresentationEquivQuotient w hw (PresentedGroup.mk _ r) =
+      ↑(FreeGroup.lift (fun e => cond e.2 (FreeGroup.of e.1) (FreeGroup.of e.1)⁻¹) r) := by
+  simp [polygonFacePresentationEquivQuotient]
+
 /-- **The face group of a one-vertex polygon is a one-relator group.** The face presentation of
 the polygon with word `w` on the rose with petals `α`, killing no darts, is `⟨α | w⟩`: the dart
 `(a, true)` is the generator `a` and `(a, false)` is its inverse. -/
 noncomputable def polygonFacePresentationEquiv :
     (polygon w hw).FacePresentation ∅ ≃* PresentedGroup {FreeGroup.mk w} :=
-  -- The face presentation is the graph presentation of the rose modulo the face relator; the
-  -- graph presentation of the rose is free on the petals, and the free group modulo `w` is the
-  -- group presented by `w`.
-  (PresentedGroup.equivOfNormalClosureEq (congrArg _ ((polygon w hw).faceRelators_def ∅))).trans <|
-  (PresentedGroup.unionEquivQuotient _ _).trans <|
-  (QuotientGroup.congr _ (Subgroup.normalClosure (PresentedGroup.mk ∅ '' {FreeGroup.mk w}))
-    ((SerreGraph.roseGraphPresentationEquivFreeGroup α).trans
-      PresentedGroup.emptyEquivFreeGroup.symm) <| by
-    rw [Subgroup.map_normalClosure _ _ (MulEquiv.surjective _), ← Set.range_comp,
-      ← Set.range_comp, Set.range_unique, Set.image_singleton, Function.comp_apply,
-      Function.comp_apply, MonoidHom.coe_ofClass, MulEquiv.trans_apply,
-      roseGraphPresentationEquivFreeGroup_mk_faceRelator_polygon,
-      PresentedGroup.emptyEquivFreeGroup_symm_apply]).trans <|
-  (PresentedGroup.unionEquivQuotient ∅ {FreeGroup.mk w}).symm.trans <|
-    PresentedGroup.equivOfNormalClosureEq (congrArg _ (Set.empty_union _))
+  -- `PresentedGroup {FreeGroup.mk w}` is by definition the free group modulo the normal closure
+  -- of `w`.
+  polygonFacePresentationEquivQuotient w hw
 
 /-- The class of a word in the darts of the polygon corresponds to the class of the word in the
 petals obtained by reading `(a, true)` as `a` and `(a, false)` as `a⁻¹`. -/
 @[simp] theorem polygonFacePresentationEquiv_mk (r : FreeGroup (polygon w hw).graph.E) :
     polygonFacePresentationEquiv w hw (PresentedGroup.mk _ r) =
       PresentedGroup.mk _
-        (FreeGroup.lift (fun e => cond e.2 (FreeGroup.of e.1) (FreeGroup.of e.1)⁻¹) r) := by
-  rw [polygonFacePresentationEquiv, MulEquiv.trans_apply, MulEquiv.trans_apply,
-    MulEquiv.trans_apply, MulEquiv.trans_apply, PresentedGroup.equivOfNormalClosureEq_mk,
-    PresentedGroup.unionEquivQuotient_mk, QuotientGroup.congr_mk, MulEquiv.trans_apply,
-    SerreGraph.roseGraphPresentationEquivFreeGroup_mk,
-    PresentedGroup.emptyEquivFreeGroup_symm_apply, PresentedGroup.unionEquivQuotient_symm_mk,
-    PresentedGroup.equivOfNormalClosureEq_mk]
+        (FreeGroup.lift (fun e => cond e.2 (FreeGroup.of e.1) (FreeGroup.of e.1)⁻¹) r) :=
+  -- `PresentedGroup.mk` is by definition the quotient map.
+  polygonFacePresentationEquivQuotient_mk w hw r
 
 /-- A dart of the polygon corresponds to its petal or to the inverse of its petal. -/
 @[simp] theorem polygonFacePresentationEquiv_of (e : (polygon w hw).graph.E) :
@@ -363,8 +354,12 @@ private theorem subsingleton_facePresentation_of_eq_polygon_singleton
     (T : Set C.graph.E) : Subsingleton (C.FacePresentation T) := by
   subst hC
   -- The face of the disc has the single side `((), true)`, so its relator is that generator.
-  have h : (PresentedGroup.of ((), true) : FacePresentation _ T) = 1 :=
-    FacePresentation.mk_faceRelator (T := T) ()
+  have h : (PresentedGroup.of ((), true) : FacePresentation _ T) = 1 := by
+    have := FacePresentation.prod_ofFn_of_comp_side (T := T) ()
+    simp only [List.ofFn_succ, Fin.isValue, Function.comp_apply, List.ofFn_zero, List.prod_cons,
+      List.prod_nil, mul_one] at this
+    -- The single side of the face is the first letter of the word `[((), true)]`.
+    exact this
   have hof : MonoidHom.id (FacePresentation _ T) = 1 := PresentedGroup.ext fun
     | ((), true) => h
     | ((), false) => (FacePresentation.of_rev (T := T) ((), true)).trans (inv_eq_one.2 h)

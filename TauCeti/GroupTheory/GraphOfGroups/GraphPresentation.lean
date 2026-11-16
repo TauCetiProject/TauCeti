@@ -213,6 +213,13 @@ theorem pathGroupEquivGraphPresentation_apply (g : PathGroup Γ v) :
     (T.pathGroupEquivGraphPresentation v).symm (PresentedGroup.of e) = T.loop v e := by
   simp [pathGroupEquivGraphPresentation]
 
+/-- The class of a word in the darts corresponds to the same word in the based tree loops. -/
+@[simp] theorem pathGroupEquivGraphPresentation_symm_mk (r : FreeGroup Γ.E) :
+    (T.pathGroupEquivGraphPresentation v).symm (PresentedGroup.mk _ r) =
+      FreeGroup.lift (T.loop v) r :=
+  FreeGroup.lift_unique ((T.pathGroupEquivGraphPresentation v).symm.toMonoidHom.comp
+    (PresentedGroup.mk _)) (T.pathGroupEquivGraphPresentation_symm_of v)
+
 /-- Based at `v` through the tree, a path is the product of the generators of its darts: the
 tree darts of the two connecting paths are trivial in the presentation. -/
 @[simp] theorem pathGroupEquivGraphPresentation_basedPath {a b : Γ.V} (p : Γ.Path a b) :
