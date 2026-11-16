@@ -43,6 +43,8 @@ compact boundaryless manifold to a connected one, is proved in
 * `TauCeti.degreeAtRegularValue_of_notMem_range`: the degree vanishes at a value outside the range.
 * `TauCeti.degreeAtRegularValue_id`, `TauCeti.degreeAtRegularValue_const`: the identity has degree
   `1` and a constant map into a manifold of positive dimension has degree `0`.
+* `TauCeti.degreeAtRegularValue_comp_of_bijective`: precomposing with an orientation-preserving
+  bijection does not change the degree.
 * `TauCeti.degreeAtRegularValue_modEq_ncard`: over a regular value the degree has the parity of
   the number of preimages.
 * `TauCeti.degree_id`, `TauCeti.degree_const`: the identity of a nonempty manifold has degree `1`
@@ -132,6 +134,28 @@ theorem degreeAtRegularValue_const (hpos : 0 < Module.finrank ℝ E') (y₀ y : 
   rw [mfderiv_const, ContinuousLinearMap.isInvertible_zero_iff]
   rintro ⟨-, h⟩
   exact hpos.ne' (Module.finrank_zero_of_subsingleton (R := ℝ) (M := TangentSpace J y₀))
+
+section Comp
+
+variable {E₀ H₀ M₀ : Type*} [NormedAddCommGroup E₀] [NormedSpace ℝ E₀] [FiniteDimensional ℝ E₀]
+  [TopologicalSpace H₀] {I₀ : ModelWithCorners ℝ E₀ H₀} [TopologicalSpace M₀]
+  [ChartedSpace H₀ M₀] [IsManifold I₀ 1 M₀] {o₀ : Manifold.Orientation I₀ M₀ ι}
+
+/-- **Precomposing with an orientation-preserving bijection preserves the degree.** If
+`e : M₀ → M` is a bijection preserving the orientations `o₀` and `o` at every point and `f` is
+differentiable, then `f ∘ e` has the same degree as `f` at every value: `e` matches the fibres of
+`f ∘ e` and `f`, and the orientation signs at matched points agree. -/
+theorem degreeAtRegularValue_comp_of_bijective {e : M₀ → M} (he : Bijective e)
+    (hpres : ∀ x, IsOrientationPreservingAt o₀ o e x) (hf : MDifferentiable I J f) (y : N) :
+    degreeAtRegularValue o₀ o' (f ∘ e) y = degreeAtRegularValue o o' f y := by
+  refine finsum_mem_eq_of_bijOn e ⟨fun x hx ↦ hx, he.injective.injOn, fun z hz ↦ ?_⟩ fun x _ ↦ ?_
+  · obtain ⟨x, rfl⟩ := he.surjective z
+    exact ⟨x, hz, rfl⟩
+  · rw [orientationSign_comp (hf (e x))
+      (mdifferentiableAt_of_isInvertible_mfderiv (hpres x).isInvertible_mfderiv),
+      orientationSign_of_isOrientationPreservingAt (hpres x), mul_one]
+
+end Comp
 
 /-- Over a finite fibre the absolute value of the degree is at most the number of preimages. -/
 theorem abs_degreeAtRegularValue_le_ncard (h : (f ⁻¹' {y}).Finite) :
