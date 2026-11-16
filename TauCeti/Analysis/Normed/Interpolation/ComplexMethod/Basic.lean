@@ -29,7 +29,10 @@ admissible functions through their boundary traces:
 
 * `CompatibleCouple.IsStripFunction F g`: `F` is admissible with boundary traces `g = (g₀, g₁)`.
   It satisfies the three-lines bound `‖F z‖ ≤ ‖g₀‖ ^ (1 - re z) * ‖g₁‖ ^ re z`
-  (`CompatibleCouple.IsStripFunction.norm_le_rpow_mul_rpow`);
+  (`CompatibleCouple.IsStripFunction.norm_le_rpow_mul_rpow`). Finite sums of admissible functions
+  are admissible (`CompatibleCouple.IsStripFunction.sum`), and so is a bounded holomorphic scalar
+  function decaying along both boundary lines times an element of the intersection
+  (`CompatibleCouple.exists_isStripFunction_smul_inter`);
 * `CompatibleCouple.stripTraces`: the submodule of `C₀(ℝ, X₀) × C₀(ℝ, X₁)` of the boundary
   traces of admissible functions, normed by `max ‖g₀‖ ‖g₁‖`. It is closed when `X₀` and `X₁` are
   complete (`CompatibleCouple.isClosed_stripTraces`), hence then a Banach space;
@@ -187,6 +190,18 @@ theorem smul (hF : C.IsStripFunction F g) {c : ℂ → ℂ} (hc : DiffContOnCl �
 theorem sub (hF : C.IsStripFunction F g) (hG : C.IsStripFunction G h) :
     C.IsStripFunction (F - G) (g - h) := by
   simpa [sub_eq_add_neg] using hF.add (hG.const_smul (-1))
+
+/-- A finite sum of admissible functions is admissible, with the sum of their boundary traces. -/
+theorem sum {ι : Type*} (s : Finset ι) {F : ι → ℂ → C.SumSpace}
+    {g : ι → C₀(ℝ, X₀) × C₀(ℝ, X₁)} (hF : ∀ i ∈ s, C.IsStripFunction (F i) (g i)) :
+    C.IsStripFunction (∑ i ∈ s, F i) (∑ i ∈ s, g i) := by
+  classical
+  induction s using Finset.induction_on with
+  | empty => simpa using zero
+  | insert i s hi ih =>
+    rw [Finset.sum_insert hi, Finset.sum_insert hi]
+    exact (hF i (Finset.mem_insert_self i s)).add
+      (ih fun j hj => hF j (Finset.mem_insert_of_mem hj))
 
 /-- **Three-lines bound.** On the closed strip, an admissible function with boundary traces
 `(g₀, g₁)` satisfies `‖F z‖ ≤ ‖g₀‖ ^ (1 - re z) * ‖g₁‖ ^ re z`. -/
@@ -626,6 +641,40 @@ private theorem stripEval_gaussianTrace {δ : ℝ} (hδ : 0 < δ) {θ : ℝ} (h�
   rw [stripEval_apply, stripFunction_eq (C.isStripFunction_gaussian hδ θ x)
     (by simpa using hθ)]
   simp [gaussian]
+
+/-- A scalar function `c`, holomorphic on the open strip, continuous up to its boundary, bounded on
+the closed strip and tending to zero along both boundary lines, times an element `x` of the
+intersection is an admissible function. Its values on the boundary lines are `c (t * I) • x` in
+`X₀` and `c (1 + t * I) • x` in `X₁`. -/
+theorem exists_isStripFunction_smul_inter {c : ℂ → ℂ} (hc : DiffContOnCl ℂ c (verticalStrip 0 1))
+    {K : ℝ} (hK : ∀ z ∈ verticalClosedStrip 0 1, ‖c z‖ ≤ K)
+    (hc₀ : Tendsto (fun t : ℝ => c (t * I)) (cocompact ℝ) (𝓝 0))
+    (hc₁ : Tendsto (fun t : ℝ => c (1 + t * I)) (cocompact ℝ) (𝓝 0)) (x : C.inter) :
+    ∃ g, C.IsStripFunction (fun z => c z • C.fstToSum (C.interFst x)) g := by
+  have hcont : ContinuousOn c (verticalClosedStrip 0 1) := by
+    simpa [closure_verticalStrip zero_lt_one] using hc.continuousOn
+  have hline (a : ℝ) (ha : a ∈ Icc (0 : ℝ) 1) : Continuous fun t : ℝ => c (a + t * I) :=
+    hcont.comp_continuous (by fun_prop) fun t => by simpa using ha
+  refine ⟨(⟨⟨fun t => c (t * I) • C.interFst x, ?_⟩, ?_⟩,
+    ⟨⟨fun t => c (1 + t * I) • C.interSnd x, ?_⟩, ?_⟩), ?_⟩
+  · have h := hline 0 (by simp)
+    simp only [ofReal_zero, zero_add] at h
+    exact h.smul continuous_const
+  · simpa using hc₀.smul_const (C.interFst x)
+  · have h := hline 1 (by simp)
+    simp only [ofReal_one] at h
+    exact h.smul continuous_const
+  · simpa using hc₁.smul_const (C.interSnd x)
+  · exact
+    { diffContOnCl := hc.smul diffContOnCl_const
+      isBounded := by
+        refine isBounded_iff_forall_norm_le.2 ⟨K * ‖C.fstToSum (C.interFst x)‖, ?_⟩
+        rintro _ ⟨z, hz, rfl⟩
+        rw [norm_smul]
+        exact mul_le_mul_of_nonneg_right (hK z hz) (norm_nonneg _)
+      apply_mul_I t := by simp
+      apply_one_add_mul_I t := by
+        simpa using congrArg (c (1 + t * I) • ·) (C.fstToSum_interFst x) }
 
 namespace ComplexMethodSpace
 

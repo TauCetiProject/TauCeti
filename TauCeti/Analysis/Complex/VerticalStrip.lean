@@ -68,4 +68,10 @@ theorem closure_verticalStrip_subset (a b : ℝ) :
   rw [verticalStrip, closure_preimage_re]
   exact preimage_mono (closure_minimal Ioo_subset_Icc_self isClosed_Icc)
 
+/-- For `a < b`, the closed strip is the closure of the open strip, so a function continuous on
+the closure of the open strip is continuous on its two boundary lines. -/
+theorem closure_verticalStrip (hab : a < b) :
+    closure (verticalStrip a b) = verticalClosedStrip a b := by
+  rw [verticalStrip, closure_preimage_re, closure_Ioo hab.ne, verticalClosedStrip]
+
 end TauCeti.Complex.HadamardThreeLines
