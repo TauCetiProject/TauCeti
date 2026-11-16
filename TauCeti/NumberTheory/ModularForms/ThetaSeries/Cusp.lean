@@ -259,10 +259,12 @@ theorem thetaSeries_eq_ofReal_of_re_eq_zero {τ : ℍ} (hτ : τ.re = 0) :
   simpa using thetaCoset_eq_ofReal_of_re_eq_zero L 0 hτ
 
 /-- On the imaginary axis the theta series of `γ + L` has zero imaginary part. -/
+@[simp]
 theorem im_thetaCoset_eq_zero (γ : E) {τ : ℍ} (hτ : τ.re = 0) : (thetaCoset L γ τ).im = 0 := by
   rw [thetaCoset_eq_ofReal_of_re_eq_zero L γ hτ, ofReal_im]
 
 /-- On the imaginary axis the theta series of `L` has zero imaginary part. -/
+@[simp]
 theorem im_thetaSeries_eq_zero {τ : ℍ} (hτ : τ.re = 0) : (thetaSeries L τ).im = 0 := by
   simpa using im_thetaCoset_eq_zero L 0 hτ
 

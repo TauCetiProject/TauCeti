@@ -7,7 +7,6 @@ module
 
 public import TauCeti.Algebra.Module.ZLattice.DiscriminantCharacter
 public import TauCeti.NumberTheory.ModularForms.ThetaSeries.Translation
-import TauCeti.Algebra.Module.ZLattice.Summable
 import TauCeti.NumberTheory.ModularForms.ThetaSeries.Cusp
 
 /-!
@@ -55,8 +54,9 @@ any point of the imaginary axis) holds if and only if `L` is integral
 
 * `ZLattice.thetaCosetClass_mk`: `θ_γ` is the theta series of the translate `γ + L`.
 * `ZLattice.thetaCosetClass_zero`, `ZLattice.thetaCosetClass_neg`,
-  `ZLattice.sum_thetaCosetClass_of_subsingleton`: `θ_0 = Θ_L`, `θ_{-γ} = θ_γ`, and
-  `∑_{γ ∈ A_L} θ_γ = Θ_L` when `A_L` is trivial.
+  `ZLattice.thetaCosetClass_eq_zero_of_not_discreteTopology`,
+  `ZLattice.sum_thetaCosetClass_of_subsingleton`: `θ_0 = Θ_L`, `θ_{-γ} = θ_γ`, `θ_γ = 0` when `L`
+  is not discrete, and `∑_{γ ∈ A_L} θ_γ = Θ_L` when `A_L` is trivial.
 * `ZLattice.IsEven.thetaCosetClass_slash_T_pow_level`: `θ_γ` is invariant under `T ^ level L` in
   every weight.
 * `ZLattice.IsEven.thetaCosetClass_slash_T`, `ZLattice.IsEven.thetaCosetClass_slash_T_zpow`:
@@ -115,6 +115,12 @@ theorem thetaCosetClass_neg (γ : DiscriminantGroup L) :
   induction γ using Submodule.Quotient.induction_on with
   | H x => rw [← Submodule.Quotient.mk_neg, thetaCosetClass_mk, thetaCosetClass_mk,
       NegMemClass.coe_neg, thetaCoset_neg]
+
+/-- If `L` is not discrete, every coset theta series `θ_γ` on `A_L` is identically `0`. -/
+theorem thetaCosetClass_eq_zero_of_not_discreteTopology (hL : ¬ DiscreteTopology L)
+    (γ : DiscriminantGroup L) : thetaCosetClass L γ = 0 := by
+  induction γ using Submodule.Quotient.induction_on with
+  | H x => rw [thetaCosetClass_mk, thetaCoset_eq_zero_of_not_discreteTopology L hL]
 
 /-- When the discriminant group `A_L` is trivial (`L^∨ ≤ L`), the sum of the coset theta series
 over `A_L` reduces to the single zero-class term `θ_0 = Θ_L`. -/
@@ -204,21 +210,10 @@ theorem thetaSeries_sup_dual_eq_sum [Fintype (DiscriminantGroup L)] (τ : ℍ) :
       have hout := (Submodule.Quotient.eq _).mp (Submodule.Quotient.mk_out (Submodule.Quotient.mk
         (p := L.submoduleOf (L ⊔ dual L)) ⟨(x : E), Submodule.mem_sup_right x.2⟩))
       simpa [Submodule.submoduleOf] using hout
-  · have hsup : thetaSeries (L ⊔ dual L : Submodule ℤ E) = 0 := by
-      rw [← thetaCoset_zero]
-      exact thetaCoset_eq_zero_of_forall_not_summable _ 0 fun y hy hs ↦
-        hL (DiscreteTopology.of_subset
-          (discreteTopology_of_summable_exp_neg_mul_norm_add_sq _ 0 (c := π * y)
-            (by positivity) hs)
-          (SetLike.coe_subset_coe.mpr le_sup_left))
-    have hcoset (γ : DiscriminantGroup L) : thetaCosetClass L γ τ = 0 := by
-      induction γ using Submodule.Quotient.induction_on with
-      | H x =>
-        rw [thetaCosetClass_mk]
-        exact congrFun (thetaCoset_eq_zero_of_forall_not_summable L (x : E) fun y hy hs ↦
-          hL (discreteTopology_of_summable_exp_neg_mul_norm_add_sq L (x : E) (c := π * y)
-            (by positivity) hs)) τ
-    simp [hsup, hcoset]
+  · have hsup : thetaSeries (L ⊔ dual L : Submodule ℤ E) = 0 :=
+      thetaSeries_eq_zero_of_not_discreteTopology _ fun hd ↦
+        hL (DiscreteTopology.of_subset hd (SetLike.coe_subset_coe.mpr le_sup_left))
+    simp [hsup, thetaCosetClass_eq_zero_of_not_discreteTopology L hL]
 
 omit [DiscreteTopology L] [IsZLattice ℝ L] in
 /-- For an integral lattice `L` in a finite-dimensional real inner product space with finite
@@ -284,14 +279,8 @@ theorem thetaSeries_dual_apply_eq_sum_iff_isIntegral [Fintype (DiscriminantGroup
     have : DiscreteTopology (dual L) :=
       DiscreteTopology.of_subset hd
         (dual_anti (Submodule.span_le.mpr (Module.Basis.ofSpan_subset hspan.ge)))
-    have hsup : thetaSeries (L ⊔ dual L : Submodule ℤ E) = 0 := by
-      rw [← thetaCoset_zero]
-      exact thetaCoset_eq_zero_of_forall_not_summable _ 0 fun y hy hs ↦
-        hL (DiscreteTopology.of_subset
-          (discreteTopology_of_summable_exp_neg_mul_norm_add_sq _ 0 (c := π * y)
-            (by positivity) hs)
-          (SetLike.coe_subset_coe.mpr le_sup_left))
-    rw [← thetaSeries_sup_dual_eq_sum, hsup, Pi.zero_apply] at heq
+    simp only [thetaCosetClass_eq_zero_of_not_discreteTopology L hL, Pi.zero_apply,
+      Finset.sum_const_zero] at heq
     exact thetaSeries_ne_zero_of_re_eq_zero (dual L) hτ heq
 
 omit [DiscreteTopology L] [IsZLattice ℝ L] in
