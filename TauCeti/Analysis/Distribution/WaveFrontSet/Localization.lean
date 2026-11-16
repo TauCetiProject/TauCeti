@@ -297,18 +297,12 @@ theorem exists_hasSum_complexPairing [MeasurableSpace E] [BorelSpace E] (T : �
     · simp [hf, TestFunction.bilinLeftCLM_apply, hx]
     · simp [hf, TestFunction.bilinLeftCLM_apply, hψ x (subset_tsupport _ hx)]
   have h2 (m : ZLattice.dual L) : Λ (χ.modulate m) = T.localFourier φ (-m) := by
-    simp only [Λ, ContinuousLinearMap.comp_apply, coe_ofSupportedInCLM]
-    refine (localFourier_eq T φ fun x ↦ ?_).symm
+    rw [localFourier_eq_complexPairing_mul_modulate T hK₁Ω (ψ := φ) (φ := φ) (f := χ)
+      (fun x ↦ ?_) (-m), neg_neg]
+    · simp only [Λ, ContinuousLinearMap.comp_apply, coe_ofSupportedInCLM]
     by_cases hx : φ x = 0
-    · simp [TestFunction.bilinLeftCLM_apply, hx]
-    · simp only [TestFunction.bilinLeftCLM_apply, coe_ofSupportedIn,
-        ContDiffMapSupportedIn.modulate_apply, ContinuousLinearMap.mul_apply', smul_eq_mul,
-        hχc, hχ₁φ (subset_tsupport _ hx), ofReal_one, mul_one,
-        Real.fourierChar_apply, inner_neg_right, neg_neg]
-      rw [mul_comm]
-      congr 2
-      push_cast
-      ring
+    · simp [hx]
+    · simp [hχc, hχ₁φ (subset_tsupport _ hx)]
   have hmap := hexp.map Λ Λ.continuous
   rw [h1] at hmap
   convert hmap using 1

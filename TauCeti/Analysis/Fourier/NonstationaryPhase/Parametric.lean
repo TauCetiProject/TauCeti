@@ -288,10 +288,14 @@ theorem exists_abs_pow_mul_norm_integral_fourierChar_smul_le {G : Θ × E → �
     rw [← setIntegral_eq_integral_of_forall_compl_eq_zero fun x hx ↦ by simp [hWK (θ, x) hx]]
     exact norm_setIntegral_le_of_norm_le_const hK.measure_lt_top fun x hx ↦ by
       simpa [Circle.smul_def] using hM (θ, x) ⟨hθP, hx⟩
+  have hs : ‖(2 * π * I * s : ℂ)‖ = 2 * π * |s| := by
+    simp only [norm_mul, Complex.norm_ofNat, norm_real, Real.norm_eq_abs, abs_of_pos Real.pi_pos,
+      norm_I, mul_one]
   have hnorm : (2 * π) ^ N * |s| ^ N * ‖∫ x, 𝐞 (s * G (θ, x)) • u x ∂μ‖ =
       ‖∫ x, 𝐞 (s * G (θ, x)) • W (θ, x) ∂μ‖ := by
-    simpa [mul_pow, abs_of_pos Real.pi_pos, mul_assoc] using
-      congrArg norm (pow_mul_integral_eq (μ := μ) hG ha hK (hθ θ hθP) hw hwK s N)
+    have h := congrArg norm (pow_mul_integral_eq (μ := μ) hG ha hK (hθ θ hθP) hw hwK s N)
+    rwa [norm_mul, norm_mul, norm_pow, norm_pow, hs, norm_neg, norm_one, one_pow, one_mul,
+      mul_pow] at h
   rw [le_div_iff₀ (by positivity)]
   calc |s| ^ N * ‖∫ x, 𝐞 (s * G (θ, x)) • u x ∂μ‖ * (2 * π) ^ N
       = ‖∫ x, 𝐞 (s * G (θ, x)) • W (θ, x) ∂μ‖ := by rw [← hnorm]; ring
