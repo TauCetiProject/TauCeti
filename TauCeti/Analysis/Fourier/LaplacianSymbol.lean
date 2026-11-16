@@ -6,6 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.Distribution.FourierMultiplier
+public import Mathlib.Analysis.Fourier.LpSpace
+import TauCeti.Analysis.Distribution.TemperedDistribution.Lp
 
 /-!
 # The Fourier symbols of the Laplacian and of its square root
@@ -30,14 +32,19 @@ symbol identity `(2π ‖ξ‖)² = -(-4π² ‖ξ‖²)` (`TauCeti.sq_sqrtNegLa
   Fourier multiplier with symbol `TauCeti.laplacianSymbol`.
 * `TauCeti.sqrtNegLaplacianSymbol`: the symbol `2π ‖ξ‖` of `√(-Δ)`.
 * `TauCeti.sq_sqrtNegLaplacianSymbol`: its square is the symbol of `-Δ`.
+* `MeasureTheory.Lp.laplacian_toTemperedDistribution_eq_iff`: for `f, h ∈ L²`, the distributional
+  Laplacian of `f` is `h` exactly when `𝓕 h = -4π² ‖ξ‖² • 𝓕 f` almost everywhere, for the
+  Fourier transform on `L²`.
+* `MeasureTheory.Lp.re_inner_nonpos_of_laplacian_toTemperedDistribution_eq`: `-Δ` is nonnegative,
+  `re ⟪f, Δ f⟫ ≤ 0` whenever `Δ f ∈ L²`.
 -/
 
 public section
 
 noncomputable section
 
-open scoped Laplacian SchwartzMap
-open Real
+open scoped Laplacian SchwartzMap FourierTransform ComplexInnerProductSpace
+open Real MeasureTheory
 
 namespace TauCeti
 
@@ -103,5 +110,69 @@ theorem _root_.SchwartzMap.laplacian_eq_fourierMultiplierCLM_laplacianSymbol (f 
   rw [SchwartzMap.laplacian_eq_fourierMultiplierCLM, h,
     SchwartzMap.fourierMultiplierCLM_smul (Function.hasTemperateGrowth_norm_sq E),
     _root_.smul_apply]
+
+variable {F : Type*} [NormedAddCommGroup F] [InnerProductSpace ℂ F] [CompleteSpace F]
+
+/-- **The Laplacian of an `L²` function on the Fourier side.** For `f, h ∈ L²`, the distributional
+Laplacian of `f` is `h` exactly when the Fourier transform of `h` is `-4π² ‖ξ‖²` times that of `f`
+almost everywhere. -/
+theorem _root_.MeasureTheory.Lp.laplacian_toTemperedDistribution_eq_iff
+    (f h : Lp F 2 (volume : Measure E)) :
+    Δ (f : 𝓢'(E, F)) = (h : 𝓢'(E, F)) ↔
+      (𝓕 h : Lp F 2 (volume : Measure E)) =ᵐ[volume]
+        fun ξ ↦ (laplacianSymbol ξ : ℂ) • (𝓕 f : Lp F 2 (volume : Measure E)) ξ := by
+  have hg : (fun ξ : E ↦ ((laplacianSymbol ξ : ℝ) : ℂ)).HasTemperateGrowth := by
+    simp only [laplacianSymbol_apply]
+    fun_prop
+  -- On the Fourier side, `Δ` is multiplication by its symbol.
+  have hF : 𝓕 (Δ (f : 𝓢'(E, F))) = TemperedDistribution.smulLeftCLM F
+      (fun ξ : E ↦ ((laplacianSymbol ξ : ℝ) : ℂ))
+        ((𝓕 f : Lp F 2 (volume : Measure E)) : 𝓢'(E, F)) := by
+    have hsym : (fun ξ : E ↦ ((laplacianSymbol ξ : ℝ) : ℂ)) =
+        (-(2 * π) ^ 2 : ℂ) • fun ξ : E ↦ ((‖ξ‖ ^ 2 : ℝ) : ℂ) := by
+      ext ξ
+      simp only [laplacianSymbol_apply, Pi.smul_apply, smul_eq_mul]
+      push_cast
+      ring
+    rw [TemperedDistribution.laplacian_eq_fourierMultiplierCLM, hsym,
+      TemperedDistribution.smulLeftCLM_smul (by fun_prop), _root_.smul_apply,
+      ← Complex.coe_smul, FourierTransform.fourier_smul,
+      TemperedDistribution.fourierMultiplierCLM_apply, FourierTransform.fourier_fourierInv_eq,
+      Lp.fourier_toTemperedDistribution_eq]
+    push_cast
+    -- The two sides agree up to the elaboration of the scalar action of `ℂ` on `𝓢'(E, F)`.
+    rfl
+  have hpair : ∀ φ : 𝓢(E, ℂ), 𝓕 (Δ (f : 𝓢'(E, F))) φ =
+      ∫ ξ, φ ξ • (laplacianSymbol ξ : ℂ) • (𝓕 f : Lp F 2 (volume : Measure E)) ξ := fun φ ↦ by
+    rw [hF, Lp.smulLeftCLM_toTemperedDistribution_apply hg]
+  have hloc : LocallyIntegrable (fun ξ ↦ (laplacianSymbol ξ : ℂ) •
+      (𝓕 f : Lp F 2 (volume : Measure E)) ξ) volume :=
+    ((Lp.memLp _).locallyIntegrable (by norm_num)).continuous_smul (by fun_prop)
+  rw [← (FourierTransform.fourierEquiv ℂ 𝓢'(E, F)).injective.eq_iff]
+  simp only [FourierTransform.fourierEquiv_apply, Lp.fourier_toTemperedDistribution_eq]
+  constructor
+  · intro heq
+    exact Lp.ae_eq_of_toTemperedDistribution_apply_eq _ hloc fun φ ↦ heq ▸ hpair φ
+  · intro hae
+    ext φ
+    rw [hpair, Lp.toTemperedDistribution_apply]
+    refine integral_congr_ae ?_
+    filter_upwards [hae] with ξ hξ
+    rw [hξ]
+
+/-- **`-Δ` is nonnegative on `L²`.** If the distributional Laplacian of `f ∈ L²` is the `L²`
+function `h`, then `re ⟪f, h⟫ ≤ 0`; indeed `-re ⟪f, Δ f⟫ = ∫ 4π² ‖ξ‖² ‖𝓕 f ξ‖² dξ`. -/
+theorem _root_.MeasureTheory.Lp.re_inner_nonpos_of_laplacian_toTemperedDistribution_eq
+    {f h : Lp F 2 (volume : Measure E)} (hfh : Δ (f : 𝓢'(E, F)) = (h : 𝓢'(E, F))) :
+    (⟪f, h⟫).re ≤ 0 := by
+  rw [← Lp.inner_fourier_eq, L2.inner_def, ← RCLike.re_to_complex,
+    ← integral_re (L2.integrable_inner _ _)]
+  refine integral_nonpos_of_ae ?_
+  filter_upwards [(Lp.laplacian_toTemperedDistribution_eq_iff f h).1 hfh] with ξ hξ
+  have hΔ : laplacianSymbol ξ ≤ 0 := by
+    rw [laplacianSymbol_apply, neg_nonpos]
+    positivity
+  rw [Pi.zero_apply, hξ, inner_smul_right, inner_self_eq_norm_sq_to_K]
+  simpa [← Complex.ofReal_pow] using mul_nonpos_of_nonpos_of_nonneg hΔ (sq_nonneg ‖_‖)
 
 end TauCeti

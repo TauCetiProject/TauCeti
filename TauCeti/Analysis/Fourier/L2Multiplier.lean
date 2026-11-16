@@ -38,7 +38,9 @@ defined, it agrees with Mathlib's multipliers.
 ## Main declarations
 
 * `MeasureTheory.Lp.fourierMultiplierCLM`: the Fourier multiplier on `L²` with symbol in `L^∞`.
-* `MeasureTheory.Lp.fourier_fourierMultiplierCLM`: `𝓕 (T_m f) = m • 𝓕 f`, and
+* `MeasureTheory.Lp.fourier_fourierMultiplierCLM`: `𝓕 (T_m f) = m • 𝓕 f`, pointwise almost
+  everywhere for a symbol given by a function
+  (`MeasureTheory.Lp.coeFn_fourier_fourierMultiplierCLM_toLp`), and
   `MeasureTheory.Lp.eq_fourierMultiplierCLM_iff`, which characterizes `T_m` by it.
 * `MeasureTheory.Lp.norm_fourierMultiplierCLM_le`: the bound `‖T_m‖ ≤ ‖m‖_∞`.
 * `MeasureTheory.Lp.fourierMultiplierCLM_compL_fourierMultiplierCLM`: `T_{m₁} ∘ T_{m₂} =
@@ -61,6 +63,12 @@ defined, it agrees with Mathlib's multipliers.
 * `MeasureTheory.Lp.tendsto_fourierMultiplierCLM_apply`: if the symbols `m i` are eventually
   uniformly bounded and converge to `m₀` almost everywhere along a countably generated filter,
   then `T_{m i} f → T_{m₀} f` in `L²`.
+* `MeasureTheory.Lp.hasDerivAt_fourierMultiplierCLM_toLp_apply`: if symbols `m s` depending on a
+  real parameter are differentiable in `s` at every frequency, with derivative `a ξ m' ξ` and
+  difference quotients bounded by `C ‖a ξ‖`, then `s ↦ T_{m s} f` has derivative `T_{m'} h` in
+  `L²` whenever `𝓕 h = a • 𝓕 f`. With `a = 1` this differentiates multiplier families
+  applied to arbitrary `f ∈ L²`; with `a` the symbol of a differential operator `P`, it
+  differentiates them applied to `f` with `P f = h ∈ L²`.
 
 ## Kernels of multipliers
 
@@ -114,6 +122,14 @@ theorem fourierMultiplierCLM_apply :
 theorem fourier_fourierMultiplierCLM :
     𝓕 (fourierMultiplierCLM F m f) = (m • 𝓕 f : Lp F 2 (volume : Measure E)) := by
   rw [fourierMultiplierCLM_apply, fourier_fourierInv_eq]
+
+/-- For a bounded symbol given by a function `m`, the Fourier transform of `T_m f` is
+`ξ ↦ m ξ • 𝓕 f ξ` almost everywhere. -/
+theorem coeFn_fourier_fourierMultiplierCLM_toLp {m : E → ℂ} (hm : MemLp m ∞ volume) :
+    𝓕 (fourierMultiplierCLM F (hm.toLp m) f) =ᵐ[volume] fun ξ ↦ m ξ • 𝓕 f ξ := by
+  rw [fourier_fourierMultiplierCLM]
+  filter_upwards [coeFn_lpSMul (r := 2) (hm.toLp m) (𝓕 f), hm.coeFn_toLp] with ξ h₁ h₂
+  rw [h₁, Pi.smul_apply', h₂]
 
 variable {m} in
 /-- A bounded operator on `L²` is the multiplier with symbol `m` if and only if it acts as
@@ -358,6 +374,90 @@ theorem tendsto_fourierMultiplierCLM_apply {ι : Type*} {l : Filter ι} [l.IsCou
       coeFn_lpSMul (r := 2) m₀ (𝓕 f), hm] with ξ h₁ h₂ h₃
     simp only [h₁, h₂, Pi.smul_apply']
     exact h₃.smul_const _
+
+/-- The `L²` distance between a difference quotient of `s ↦ T_{m s} f` and `T_{m'} h`, computed on
+the Fourier side. -/
+private theorem norm_slope_fourierMultiplierCLM_toLp_sub {m : ℝ → E → ℂ}
+    (hm : ∀ s, MemLp (m s) ∞ volume) {m' : E → ℂ} (hm' : MemLp m' ∞ volume) (t s : ℝ)
+    (f h : Lp F 2 (volume : Measure E)) :
+    ‖slope (fun s ↦ fourierMultiplierCLM F ((hm s).toLp (m s)) f) t s -
+        fourierMultiplierCLM F (hm'.toLp m') h‖ =
+      (eLpNorm (fun ξ ↦ ((s - t)⁻¹ • (m s ξ - m t ξ)) • (𝓕 f : Lp F 2 (volume : Measure E)) ξ -
+        m' ξ • (𝓕 h : Lp F 2 (volume : Measure E)) ξ) 2 volume).toReal := by
+  rw [← norm_fourier_eq, Lp.norm_def]
+  congr 1
+  refine eLpNorm_congr_ae ?_
+  have hreal : ∀ (r : ℝ) (x : Lp F 2 (volume : Measure E)), 𝓕 (r • x) = r • 𝓕 x :=
+    fun r x ↦ by rw [RCLike.real_smul_eq_coe_smul (K := ℂ), FourierTransform.fourier_smul,
+      ← RCLike.real_smul_eq_coe_smul]
+  rw [slope_def_module, FourierTransform.fourier_sub, hreal, FourierTransform.fourier_sub]
+  set A := 𝓕 (fourierMultiplierCLM F ((hm s).toLp (m s)) f)
+  set B := 𝓕 (fourierMultiplierCLM F ((hm t).toLp (m t)) f)
+  set D := 𝓕 (fourierMultiplierCLM F (hm'.toLp m') h)
+  filter_upwards [Lp.coeFn_sub ((s - t)⁻¹ • (A - B)) D, Lp.coeFn_smul (s - t)⁻¹ (A - B),
+    Lp.coeFn_sub A B, coeFn_fourier_fourierMultiplierCLM_toLp f (hm s),
+    coeFn_fourier_fourierMultiplierCLM_toLp f (hm t),
+    coeFn_fourier_fourierMultiplierCLM_toLp h hm'] with ξ h₁ h₂ h₃ h₄ h₅ h₆
+  rw [h₁, Pi.sub_apply, h₂, Pi.smul_apply, h₃, Pi.sub_apply, h₄, h₅, h₆]
+  simp only [sub_smul, smul_sub, smul_assoc]
+
+/-- **Differentiating a family of Fourier multipliers.** Let `m s` be bounded symbols depending
+on a real parameter `s`, and let `f, h ∈ L²` with `𝓕 h = a • 𝓕 f`. If, at every frequency, the
+symbol `s ↦ m s ξ` has derivative `a ξ * m' ξ` at `t`, and its difference quotients near `t` are
+bounded by `C ‖a ξ‖`, then `s ↦ T_{m s} f` has derivative `T_{m'} h` at `t` in `L²`. -/
+theorem hasDerivAt_fourierMultiplierCLM_toLp_apply {m : ℝ → E → ℂ}
+    (hm : ∀ s, MemLp (m s) ∞ volume) {m' : E → ℂ} (hm' : MemLp m' ∞ volume) {a : E → ℂ}
+    {C : ℝ} {t : ℝ} {f h : Lp F 2 (volume : Measure E)}
+    (hh : (𝓕 h : Lp F 2 (volume : Measure E)) =ᵐ[volume]
+      fun ξ ↦ a ξ • (𝓕 f : Lp F 2 (volume : Measure E)) ξ)
+    (hderiv : ∀ ξ, HasDerivAt (fun s ↦ m s ξ) (a ξ * m' ξ) t)
+    (hbound : ∀ᶠ s in 𝓝[≠] t, ∀ ξ, ‖(s - t)⁻¹ • (m s ξ - m t ξ)‖ ≤ C * ‖a ξ‖) :
+    HasDerivAt (fun s ↦ fourierMultiplierCLM F ((hm s).toLp (m s)) f)
+      (fourierMultiplierCLM F (hm'.toLp m') h) t := by
+  set Ff : E → F := ⇑(𝓕 f : Lp F 2 (volume : Measure E))
+  set Fh : E → F := ⇑(𝓕 h : Lp F 2 (volume : Measure E))
+  -- The Fourier transforms of the difference quotients, as genuine functions.
+  set q : ℝ → E → F := fun s ξ ↦ ((s - t)⁻¹ • (m s ξ - m t ξ)) • Ff ξ
+  have hq : ∀ s, ‖slope (fun s ↦ fourierMultiplierCLM F ((hm s).toLp (m s)) f) t s -
+      fourierMultiplierCLM F (hm'.toLp m') h‖ =
+        (eLpNorm (q s - fun ξ ↦ m' ξ • Fh ξ) 2 volume).toReal := fun s ↦
+    norm_slope_fourierMultiplierCLM_toLp_sub hm hm' t s f h
+  -- The difference quotient of the symbol is bounded by `C ‖a‖`, hence so is its limit.
+  have hlimb : ∀ ξ, ‖a ξ * m' ξ‖ ≤ C * ‖a ξ‖ := fun ξ ↦ by
+    refine le_of_tendsto ((hderiv ξ).tendsto_slope.norm) ?_
+    filter_upwards [hbound] with s hs
+    rw [slope_def_module]
+    exact hs ξ
+  rw [hasDerivAt_iff_tendsto_slope, tendsto_iff_norm_sub_tendsto_zero]
+  simp only [hq]
+  rw [← ENNReal.toReal_zero]
+  refine (ENNReal.tendsto_toReal ENNReal.zero_ne_top).comp ?_
+  refine TauCeti.tendsto_eLpNorm_sub_of_ae_tendsto (by norm_num) (Eventually.of_forall fun s ↦ ?_)
+    (Lp.memLp (𝓕 h)) (C := (2 * C).toNNReal) ?_ ?_
+  · have h₁ := (hm s).aestronglyMeasurable
+    have h₂ := (hm t).aestronglyMeasurable
+    simp only [q, Ff]
+    fun_prop
+  · filter_upwards [hbound] with s hs
+    filter_upwards [hh] with ξ hξ
+    have h₁ : ‖q s ξ‖ ≤ C * ‖Fh ξ‖ := calc
+      ‖q s ξ‖ = ‖(s - t)⁻¹ • (m s ξ - m t ξ)‖ * ‖Ff ξ‖ := norm_smul _ _
+      _ ≤ C * ‖a ξ‖ * ‖Ff ξ‖ := by gcongr; exact hs ξ
+      _ = C * ‖Fh ξ‖ := by rw [hξ, norm_smul, mul_assoc]
+    have h₂ : ‖m' ξ • Fh ξ‖ ≤ C * ‖Fh ξ‖ := calc
+      ‖m' ξ • Fh ξ‖ = ‖a ξ * m' ξ‖ * ‖Ff ξ‖ := by rw [hξ, smul_smul, norm_smul, mul_comm (m' ξ)]
+      _ ≤ C * ‖a ξ‖ * ‖Ff ξ‖ := by gcongr; exact hlimb ξ
+      _ = C * ‖Fh ξ‖ := by rw [hξ, norm_smul, mul_assoc]
+    rw [eNorm_eq_nnNorm, eNorm_eq_nnNorm, ← ENNReal.coe_mul, ENNReal.coe_le_coe,
+      ← NNReal.coe_le_coe, NNReal.coe_mul, coe_nnNorm, coe_nnNorm, Real.coe_toNNReal']
+    refine (norm_sub_le _ _).trans ((add_le_add h₁ h₂).trans ?_)
+    rw [← two_mul, ← mul_assoc]
+    exact mul_le_mul_of_nonneg_right (le_max_left _ _) (norm_nonneg _)
+  · filter_upwards [hh] with ξ hξ
+    have := ((hderiv ξ).tendsto_slope).smul_const (Ff ξ)
+    simp only [slope_def_module] at this
+    rw [hξ, smul_smul, mul_comm]
+    exact this
 
 end MeasureTheory.Lp
 
