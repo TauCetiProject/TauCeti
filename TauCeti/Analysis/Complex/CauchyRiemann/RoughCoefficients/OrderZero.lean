@@ -9,7 +9,6 @@ public import TauCeti.Analysis.Complex.CauchyRiemann.RoughCoefficients.Laplace
 import TauCeti.Analysis.Complex.Wirtinger.DivergenceLaplace
 import TauCeti.Analysis.Distribution.TestFunction.Inner
 import TauCeti.Analysis.Green.HalfPlane
-import TauCeti.Analysis.Sobolev.Local.ChangeOfVariables
 import TauCeti.Analysis.Sobolev.Local.Examples
 import TauCeti.Analysis.Sobolev.Local.Multiplication
 import TauCeti.Analysis.Sobolev.Local.SobolevEmbedding
@@ -217,7 +216,8 @@ theorem IsWeakCRSolution.memWkpLoc_one_of_memLpLoc {p q r : ℝ≥0∞} (hp : 2 
     (hsol : IsWeakCRSolution q Ω J DJ S ξ η) :
     MemWkpLoc r Ω 1 ξ := by
   obtain ⟨p₀, hp₀, hrp₀, hp₀p, hp₀q⟩ :=
-    ENNReal.exists_nnreal_two_lt_and_le_and_inv_add_inv_lt_one hp hr_top hrp hpq
+    ENNReal.exists_nnreal_lt_and_le_and_inv_add_inv_lt_one (a := 2) (by exact_mod_cast hp)
+      hr_top hrp hpq
   lift r to ℝ≥0 using hr_top
   have hr' : 1 < r := by exact_mod_cast hr
   have hrp₀' : r ≤ p₀ := ENNReal.coe_le_coe.1 hrp₀
@@ -291,25 +291,6 @@ private theorem isWeakCRSolution_upperHalfPlaneIndicator (t₀ : ℝ) (Ω : Open
     ((φ.contDiff.of_le (by simp)).comp (contDiff_id.add contDiff_const))
     (φ.hasCompactSupport.comp_homeomorph (Homeomorph.addRight c))
 
-/-- Around any point `z₀ ∈ Ω`, the indicator of `{z : ℂ | z₀.im < z.im}` does not belong to
-`W^{1,q}_loc(Ω)` for any `q : ℝ≥0∞`. -/
-private theorem not_memWkpLoc_one_upperHalfPlaneIndicator {Ω : Opens ℂ} {z₀ : ℂ} (hz₀ : z₀ ∈ Ω)
-    (q : ℝ≥0∞) :
-    ¬ MemWkpLoc q Ω 1 ({z : ℂ | z₀.im < z.im}.indicator fun _ => (1 : ℝ)) := by
-  intro hW
-  obtain ⟨ε, hε, hball⟩ := Metric.isOpen_iff.1 Ω.isOpen z₀ hz₀
-  let A : ℂ ≃L[ℝ] ℂ :=
-    ((LinearEquiv.smulOfNeZero ℂ ℂ Complex.I Complex.I_ne_zero).restrictScalars
-      ℝ).toContinuousLinearEquiv
-  have hmaps : MapsTo (fun z => A z + z₀) (ball 0 ε) Ω := fun z hz => hball <| by
-    rw [mem_ball, dist_eq_norm, add_sub_cancel_right]
-    simpa [A] using hz
-  have h' : MemWkpLoc q (ball 0 ε) 1 ({z : ℂ | 0 < z.re}.indicator fun _ => (1 : ℝ)) := by
-    convert hW.comp_continuousLinearEquiv_add A z₀ hmaps using 2 with z
-    by_cases hz : 0 < z.re <;> simp [A, hz]
-  exact not_memWkpLoc_indicator_re_pos (k := 0)
-    (isOpen_ball (x := (0 : ℂ)).interior_eq.symm ▸ mem_ball_self hε) Complex.zero_re h'
-
 /-- **Sharpness of `J² = -1`.** On any nonempty open planar set `Ω`, there exists a weak solution
 `ξ ∈ L^∞_loc(Ω)` of the homogeneous equation `∂_s ξ = 0` (`J = 0`, `S = 0`, smooth coefficients
 violating `J² = -1`) that fails to belong to `W^{1,q}_loc(Ω)` for every `q : ℝ≥0∞`. -/
@@ -317,8 +298,8 @@ theorem exists_isWeakCRSolution_zero_not_memWkpLoc_one {Ω : Opens ℂ}
     (hΩ : (Ω : Set ℂ).Nonempty) :
     ∃ ξ : ℂ → ℝ, IsWeakCRSolution ⊤ Ω 0 0 0 ξ 0 ∧ ∀ q, ¬ MemWkpLoc q Ω 1 ξ := by
   obtain ⟨z₀, hz₀⟩ := hΩ
-  exact ⟨_, isWeakCRSolution_upperHalfPlaneIndicator z₀.im Ω,
-    not_memWkpLoc_one_upperHalfPlaneIndicator hz₀⟩
+  exact ⟨_, isWeakCRSolution_upperHalfPlaneIndicator z₀.im Ω, fun _ =>
+    not_memWkpLoc_indicator_lt_im (k := 0) (by rwa [Ω.isOpen.interior_eq]) rfl⟩
 
 end Counterexample
 

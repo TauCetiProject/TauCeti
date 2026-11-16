@@ -10,7 +10,6 @@ public import TauCeti.Analysis.Sobolev.W1p.MixedMultiplication
 import Mathlib.LinearAlgebra.Complex.FiniteDimensional
 import TauCeti.Analysis.Sobolev.WeakDeriv.Bilinear.Holder
 import TauCeti.Data.ENNReal.Holder
-import TauCeti.Data.ENNReal.Inv
 
 /-!
 # Mixed-exponent products of local Sobolev maps on planar domains
@@ -32,12 +31,10 @@ Both rest on local bounds that are uniform in the bilinear map.
 
 ## Main declarations
 
-* `TauCeti.MemWkpLoc.memLpLoc_of_holderTriple` and
-  `TauCeti.MemWkpLoc.exists_le_and_inv_add_inv_lt_one_and_memLpLoc`: the local gain of
-  integrability and its finite-exponent form below the Hölder threshold `p⁻¹ + r⁻¹ < 1`.
+* `TauCeti.MemWkpLoc.memLpLoc_of_holderTriple`: the local gain of integrability.
 * `TauCeti.MemLpLoc.bilin_of_memWkpLoc`: order-zero membership.
-* `TauCeti.HasWeakFDerivOn.bilin_of_memLpLoc`: the weak Leibniz rule for the order-one
-  product.
+* `TauCeti.HasWeakLineDerivOn.bilin_of_memLpLoc` and `TauCeti.HasWeakFDerivOn.bilin_of_memLpLoc`:
+  the directional and Fréchet weak Leibniz rules at local Hölder exponents.
 * `TauCeti.MemWkpLoc.bilin_of_memLpLoc_top` and `TauCeti.MemWkpLoc.bilin`: order-one membership.
 
 The local bounds behind them, `TauCeti.W1p.exists_eLpNorm_le_of_holderTriple`,
@@ -79,33 +76,6 @@ theorem MemWkpLoc.memLpLoc_of_holderTriple (hp : 2 < p) (hqp : q ≤ p) [Fact (1
     (ENNReal.mul_lt_top ENNReal.coe_lt_top
       (ENNReal.add_lt_top.2 ⟨hgW.eLpNorm_lt_top, hDW.eLpNorm_lt_top⟩))
 
-/-- Given `g ∈ W^{1,q}_loc(Ω)` with `2 < p`, `1 < q ≤ p`, and finite-dimensional values, the local
-gain of integrability (`1/p + 1/s = 1/q`) supplies a finite exponent `r ≤ p` satisfying
-`(p : ℝ≥0∞)⁻¹ + (r : ℝ≥0∞)⁻¹ < 1` and `g ∈ Lʳ_loc(Ω)`. -/
-theorem MemWkpLoc.exists_le_and_inv_add_inv_lt_one_and_memLpLoc (hp : 2 < p) (hq : 1 < q)
-    (hqp : q ≤ p) {g : ℂ → G} (hg : MemWkpLoc q Ω 1 g) :
-    ∃ r : ℝ≥0, r ≤ p ∧ (p : ℝ≥0∞)⁻¹ + (r : ℝ≥0∞)⁻¹ < 1 ∧ MemLpLoc r Ω g := by
-  let _ : Fact (1 ≤ (q : ℝ≥0∞)) := ⟨by exact_mod_cast hq.le⟩
-  set s := ((q : ℝ≥0∞)⁻¹ - (p : ℝ≥0∞)⁻¹)⁻¹
-  let _ : ENNReal.HolderTriple p s q :=
-    ENNReal.HolderTriple.of_le (p := (p : ℝ≥0∞)) (q := q) (by exact_mod_cast hqp)
-  have hgs : MemLpLoc s Ω g := hg.memLpLoc_of_holderTriple hp hqp
-  have hps : (p : ℝ≥0∞)⁻¹ + s⁻¹ < 1 :=
-    (ENNReal.HolderTriple.inv_add_inv_eq_inv (p : ℝ≥0∞) s q).trans_lt
-      (ENNReal.inv_lt_one.2 (by exact_mod_cast hq))
-  let r_enn : ℝ≥0∞ := min (p : ℝ≥0∞) s
-  have hr_ne_top : r_enn ≠ ⊤ := ne_top_of_le_ne_top ENNReal.coe_ne_top (min_le_left _ _)
-  refine ⟨r_enn.toNNReal, ?_, ?_, ?_⟩
-  · exact ENNReal.coe_le_coe.1 ((ENNReal.coe_toNNReal hr_ne_top).trans_le (min_le_left _ _))
-  · rw [ENNReal.coe_toNNReal hr_ne_top]
-    dsimp only [r_enn]
-    rcases min_cases (p : ℝ≥0∞) s with ⟨hmin, _⟩ | ⟨hmin, _⟩
-    · rw [hmin]
-      exact ENNReal.inv_add_inv_self_lt_one (by exact_mod_cast hp)
-    · rwa [hmin]
-  · rw [ENNReal.coe_toNNReal hr_ne_top]
-    exact hgs.mono_exponent (min_le_right _ _)
-
 /-- **Order-zero mixed products.** For `p > 2` and `1 ≤ q ≤ p`, the product of a locally `Lᵖ`
 map with a `W^{1,q}_loc` map with finite-dimensional values is locally `L^q`. -/
 theorem MemLpLoc.bilin_of_memWkpLoc (B : F →L[ℝ] G →L[ℝ] H) (hp : 2 < p) (hqp : q ≤ p)
@@ -116,6 +86,30 @@ theorem MemLpLoc.bilin_of_memWkpLoc (B : F →L[ℝ] G →L[ℝ] H) (hp : 2 < p)
     hg.memLpLoc_of_holderTriple hp hqp
   exact memLpLoc_iff.2 fun K hKΩ hK =>
     B.memLp_of_bilin q (memLpLoc_iff.1 hf K hKΩ hK) (memLpLoc_iff.1 hgr K hKΩ hK)
+
+omit [FiniteDimensional ℝ G] in
+/-- **The directional weak Leibniz rule at finite local Hölder exponents.** If `f, g` have weak
+directional derivatives `f', g'` along `v` on `Ω` with finite local `Lᵖ` bounds satisfying
+`p⁻¹ + q⁻¹ ≤ 1`, `p'⁻¹ + q⁻¹ ≤ 1`, and `p⁻¹ + q'⁻¹ ≤ 1`, then `B(f, g)` has weak directional
+derivative `B(f', g) + B(f, g')` along `v`. -/
+theorem HasWeakLineDerivOn.bilin_of_memLpLoc [CompleteSpace H] (B : F →L[ℝ] G →L[ℝ] H)
+    {p p' q q' : ℝ≥0∞} (hp : p ≠ ⊤) (hp' : p' ≠ ⊤) (hq : q ≠ ⊤) (hq' : q' ≠ ⊤)
+    (hpq : p⁻¹ + q⁻¹ ≤ 1) (hp'q : p'⁻¹ + q⁻¹ ≤ 1) (hpq' : p⁻¹ + q'⁻¹ ≤ 1)
+    {v : ℂ} {f f' : ℂ → F} {g g' : ℂ → G}
+    (hf : HasWeakLineDerivOn volume Ω f f' v) (hg : HasWeakLineDerivOn volume Ω g g' v)
+    (hfp : MemLpLoc p Ω f) (hf'p : MemLpLoc p' Ω f')
+    (hgq : MemLpLoc q Ω g) (hg'q : MemLpLoc q' Ω g') :
+    HasWeakLineDerivOn volume Ω (fun z => B (f z) (g z))
+      (fun z => B (f' z) (g z) + B (f z) (g' z)) v := by
+  let _ : Fact (1 ≤ p) := ⟨ENNReal.inv_le_one.1 (le_self_add.trans hpq)⟩
+  let _ : Fact (1 ≤ p') := ⟨ENNReal.inv_le_one.1 (le_self_add.trans hp'q)⟩
+  let _ : Fact (1 ≤ q) := ⟨ENNReal.inv_le_one.1 (le_add_self.trans hpq)⟩
+  let _ : Fact (1 ≤ q') := ⟨ENNReal.inv_le_one.1 (le_add_self.trans hpq')⟩
+  exact hf.bilin_of_memLp B hp hp' hq hq' hpq hp'q hpq' hg
+    (fun K hK hKΩ => memLpLoc_iff.1 hfp K hKΩ hK)
+    (fun K hK hKΩ => memLpLoc_iff.1 hf'p K hKΩ hK)
+    (fun K hK hKΩ => memLpLoc_iff.1 hgq K hKΩ hK)
+    (fun K hK hKΩ => memLpLoc_iff.1 hg'q K hKΩ hK)
 
 /-- **The weak Leibniz rule for order-one mixed products.** For `p > 2` and `1 < q ≤ p`, let
 `f ∈ L^{q'}_loc` have weak derivative `Df ∈ Lᵖ_loc`, where `q'` is the conjugate exponent of `q`,

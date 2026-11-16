@@ -80,8 +80,10 @@ private theorem HasWeakFDerivOn.exists_contDiffOn_one_ae_eq_ball
     have := mem_ball.1 hy
     linarith [hsmall n]
   have hsub : closedBall x (r / 2) ⊆ ball x r := closedBall_subset_ball (half_lt_self hr)
-  have hunif : TendstoUniformlyOn f' ((ball x r).indicator U) atTop (ball x (r / 2)) :=
-    ContDiffBump.tendstoUniformlyOn_convolution_indicator_ball hr hUc hphi
+  have hunif : TendstoUniformlyOn f' U atTop (ball x (r / 2)) := by
+    simpa only [f', convolution_flip] using
+      (ContDiffBump.tendstoUniformlyOn_normed_convolution_indicator (μ := mu) hphi isOpen_ball
+        (isCompact_closedBall x (r / 2)) hsub hUc).mono ball_subset_closedBall
   -- Almost everywhere convergence of the values supplies a single anchor point.
   have hae : ∀ᵐ y ∂mu, Tendsto (fun n => f n y) atTop (𝓝 ((ball x r).indicator u y)) := by
     simp only [f, convolution_flip]
@@ -96,10 +98,8 @@ private theorem HasWeakFDerivOn.exists_contDiffOn_one_ae_eq_ball
   let g : E → F := fun y => limUnder atTop (fun n => f n y)
   have hg : ∀ y ∈ ball x (r / 2), Tendsto (fun n => f n y) atTop (𝓝 (g y)) :=
     fun y hy => (hcauchy y hy).tendsto_limUnder
-  have hgderiv : ∀ y ∈ ball x (r / 2), HasFDerivAt g (U y) y := by
-    intro y hy
-    have hd := hasFDerivAt_of_tendstoUniformlyOn isOpen_ball hunif hderiv hg hy
-    rwa [indicator_of_mem (hsub (ball_subset_closedBall hy)) U] at hd
+  have hgderiv : ∀ y ∈ ball x (r / 2), HasFDerivAt g (U y) y := fun y hy =>
+    hasFDerivAt_of_tendstoUniformlyOn isOpen_ball hunif hderiv hg hy
   have hgc : ContinuousOn g (ball x (r / 2)) :=
     fun y hy => (hgderiv y hy).continuousAt.continuousWithinAt
   have hgu : u =ᵐ[mu.restrict (ball x (r / 2))] g := by

@@ -204,38 +204,48 @@ private theorem integral_inner_adjoint_rhs_eq (hpq : p⁻¹ + q⁻¹ ≤ 1)
   · ring
   all_goals fun_prop
 
-/-- Limit and algebraic assembly for `IsSobolevCRCoefficients.integral_inner_adjoint_limit`. -/
-private theorem integral_inner_adjoint_limit_aux (hpq : p⁻¹ + q⁻¹ ≤ 1)
+/-- Passing `ψ_n = J_n† Ψ` to the limit in the weak Cauchy–Riemann equation yields the adjoint
+identity for `-Jᵀ` against arbitrary test functions `Ψ : 𝓓(Ω, V)` when `J² = -1` on `Ω`. -/
+private theorem IsSobolevCRCoefficients.integral_inner_adjoint_limit (hpq : p⁻¹ + q⁻¹ ≤ 1)
     (hc : IsSobolevCRCoefficients p Ω J DJ S) (hJcont : ContinuousOn J Ω)
     (hJsq : ∀ z ∈ (Ω : Set ℂ), J z * J z = -1) (hsol : IsWeakCRSolution q Ω J DJ S ξ η)
-    (Ψ : 𝓓(Ω, V)) {W : Opens ℂ} (hWc : IsCompact (closure (W : Set ℂ)))
-    (hWΩ : closure (W : Set ℂ) ⊆ Ω) (hΨW : tsupport (Ψ : ℂ → V) ⊆ W)
-    {ρ : ℕ → ContDiffBump (0 : ℂ)} (hρ0 : Tendsto (fun n => (ρ n).rOut) atTop (𝓝 0))
-    (hball : ∀ n, ∀ z ∈ tsupport (Ψ : ℂ → V), closedBall z (ρ n).rOut ⊆ W)
-    (hunif : TendstoUniformlyOn
-      (fun n => (ρ n).normed volume ⋆[ContinuousLinearMap.lsmul ℝ ℝ, volume]
-        (W : Set ℂ).indicator J) J atTop (tsupport (Ψ : ℂ → V)))
-    (hJW : MemLp J p (volume.restrict W)) (hDJW : MemLp DJ p (volume.restrict W))
-    (hξW : MemLp ξ q (volume.restrict W))
-    (hJξW : MemLp (fun z => J z (ξ z)) q (volume.restrict W))
-    (hJn_smooth : ∀ n, ContDiff ℝ ∞
-      ((ρ n).normed volume ⋆[ContinuousLinearMap.lsmul ℝ ℝ, volume] (W : Set ℂ).indicator J)) :
+    (Ψ : 𝓓(Ω, V)) :
     -(∫ z, ⟪(∂_{(1 : ℂ)} Ψ : 𝓓(Ω, V)) z, J z (ξ z)⟫_ℝ) +
         ∫ z, ⟪(∂_{I} Ψ : 𝓓(Ω, V)) z, ξ z⟫_ℝ =
       -∫ z, ⟪(Ψ : ℂ → V) z,
         -J z (η z + DJ z I (ξ z) - S z (ξ z)) - DJ z 1 (ξ z) - DJ z I (J z (ξ z))⟫_ℝ := by
+  -- Setup: mollify `J` on a precompact open neighbourhood `W` of `tsupport Ψ`.
+  have hp1 : 1 ≤ p := ENNReal.inv_le_one.1 (le_self_add.trans hpq)
   have hq1 : 1 ≤ q := ENNReal.inv_le_one.1 (le_add_self.trans hpq)
   have hloc := Ω.isOpen.isLocallyClosed
-  have hJn_cont {s : Set ℂ} : ∀ᶠ n in atTop, ContinuousOn
-      ((ρ n).normed volume ⋆[ContinuousLinearMap.lsmul ℝ ℝ, volume] (W : Set ℂ).indicator J) s :=
+  obtain ⟨W, hΨW, hWΩ, hWc⟩ :=
+    Opens.exists_between_and_isCompact_closure Ψ.hasCompactSupport Ψ.tsupport_subset
+  obtain ⟨ρ, hρ0, hball⟩ :=
+    ContDiffBump.exists_seq_tendsto_rOut_closedBall_subset W.isOpen Ψ.hasCompactSupport hΨW
+  have hWm : NullMeasurableSet (W : Set ℂ) volume := W.isOpen.measurableSet.nullMeasurableSet
+  have hJW : MemLp J p (volume.restrict W) := hc.memLpLoc_coeff.memLp_of_closure_subset hWc hWΩ
+  have hDJW : MemLp DJ p (volume.restrict W) := hc.memLpLoc_deriv.memLp_of_closure_subset hWc hWΩ
+  have hξW : MemLp ξ q (volume.restrict W) := hsol.memLpLoc.memLp_of_closure_subset hWc hWΩ
+  have hJξW : MemLp (fun z => J z (ξ z)) q (volume.restrict W) :=
+    (hsol.memLpLoc.continuousOn_clm_apply hJcont).memLp_of_closure_subset hWc hWΩ
+  let J_n (n : ℕ) :=
+    (ρ n).normed volume ⋆[ContinuousLinearMap.lsmul ℝ ℝ, volume] (W : Set ℂ).indicator J
+  have hJn_smooth (n : ℕ) : ContDiff ℝ ∞ (J_n n) :=
+    (ρ n).hasCompactSupport_normed.contDiff_convolution_left _ (ρ n).contDiff_normed
+      (((memLp_indicator_iff_restrict hWm).2 hJW).locallyIntegrable hp1)
+  have hJn_cont {s : Set ℂ} : ∀ᶠ n in atTop, ContinuousOn (J_n n) s :=
     .of_forall fun n => (hJn_smooth n).continuous.continuousOn
+  have hunif : TendstoUniformlyOn J_n J atTop (tsupport (Ψ : ℂ → V)) :=
+    ContDiffBump.tendstoUniformlyOn_normed_convolution_indicator (μ := volume) hρ0 W.isOpen
+      Ψ.hasCompactSupport hΨW (hJcont.mono (subset_closure.trans hWΩ))
+  -- Limit: pass `n → ∞` in the mollified weak identity term by term.
   have hconv (v : ℂ) {u : ℂ → V} (huW : MemLp u q (volume.restrict W)) :
       Tendsto (fun n => ∫ z, ⟪(Ψ : ℂ → V) z,
           (((ρ n).normed volume ⋆[ContinuousLinearMap.lsmul ℝ ℝ, volume]
             (W : Set ℂ).indicator DJ) z v) (u z)⟫_ℝ)
         atTop (𝓝 (∫ z, ⟪(Ψ : ℂ → V) z, DJ z v (u z)⟫_ℝ)) := by
     simpa using Ψ.tendsto_integral_inner_bilin_normed_convolution
-      (ContinuousLinearMap.apply ℝ (V →L[ℝ] V) v) hpq hWc hΨW hDJW huW hρ0
+      (ContinuousLinearMap.apply ℝ (V →L[ℝ] V) v) hpq hWm hΨW hDJW huW hρ0
   have hlim_lhs :=
     ((((((∂_{(1 : ℂ)} Ψ).tendsto_integral_inner_clm_of_tendstoUniformlyOn
           (hsol.memLpLoc.locallyIntegrableOn hq1 hloc) hJn_cont
@@ -253,6 +263,7 @@ private theorem integral_inner_adjoint_limit_aux (hpq : p⁻¹ + q⁻¹ ≤ 1)
     ((Ψ.tendsto_integral_inner_clm_of_tendstoUniformlyOn hsol.locallyIntegrableOn hJn_cont
       hunif).congr fun n => (integral_inner_mollified_adjoint_eq hpq hc hJcont hsol Ψ hWΩ (ρ n)
         (hball n) hJW hDJW (hJn_smooth n)).symm)
+  -- Assembly: simplify `J² = -1` and match the expanded right-hand side.
   have hJJ : ∫ z, ⟪(∂_{I} Ψ : 𝓓(Ω, V)) z, J z (J z (ξ z))⟫_ℝ =
       -∫ z, ⟪(∂_{I} Ψ : 𝓓(Ω, V)) z, ξ z⟫_ℝ := by
     rw [← integral_neg]
@@ -263,32 +274,6 @@ private theorem integral_inner_adjoint_limit_aux (hpq : p⁻¹ + q⁻¹ ≤ 1)
     · simp [image_eq_zero_of_notMem_tsupport fun h => hzΩ ((∂_{I} Ψ).tsupport_subset h)]
   rw [hJJ] at hlim
   linarith [hlim, integral_inner_adjoint_rhs_eq hpq hc hJcont hsol Ψ]
-
-/-- Passing `ψ_n = J_n† Ψ` to the limit in the weak Cauchy–Riemann equation yields the adjoint
-identity for `-Jᵀ` against arbitrary test functions `Ψ : 𝓓(Ω, V)` when `J² = -1` on `Ω`. -/
-private theorem IsSobolevCRCoefficients.integral_inner_adjoint_limit (hpq : p⁻¹ + q⁻¹ ≤ 1)
-    (hc : IsSobolevCRCoefficients p Ω J DJ S) (hJcont : ContinuousOn J Ω)
-    (hJsq : ∀ z ∈ (Ω : Set ℂ), J z * J z = -1) (hsol : IsWeakCRSolution q Ω J DJ S ξ η)
-    (Ψ : 𝓓(Ω, V)) :
-    -(∫ z, ⟪(∂_{(1 : ℂ)} Ψ : 𝓓(Ω, V)) z, J z (ξ z)⟫_ℝ) +
-        ∫ z, ⟪(∂_{I} Ψ : 𝓓(Ω, V)) z, ξ z⟫_ℝ =
-      -∫ z, ⟪(Ψ : ℂ → V) z,
-        -J z (η z + DJ z I (ξ z) - S z (ξ z)) - DJ z 1 (ξ z) - DJ z I (J z (ξ z))⟫_ℝ := by
-  have hp1 : 1 ≤ p := ENNReal.inv_le_one.1 (le_self_add.trans hpq)
-  obtain ⟨W, hΨW, hWΩ, hWc⟩ :=
-    Opens.exists_between_and_isCompact_closure Ψ.hasCompactSupport Ψ.tsupport_subset
-  obtain ⟨ρ, hρ0, hball⟩ :=
-    exists_contDiffBump_tendsto_rOut_closedBall_subset W.isOpen Ψ.hasCompactSupport hΨW
-  have hJW : MemLp J p (volume.restrict W) := hc.memLpLoc_coeff.memLp_of_closure_subset hWc hWΩ
-  have hJWext := (memLp_indicator_iff_restrict W.isOpen.measurableSet.nullMeasurableSet).2 hJW
-  exact integral_inner_adjoint_limit_aux hpq hc hJcont hJsq hsol Ψ hWc hWΩ hΨW hρ0 hball
-    (tendstoUniformlyOn_normed_convolution_indicator (μ := volume) hρ0 W.isOpen
-      Ψ.hasCompactSupport hΨW (hJcont.mono (subset_closure.trans hWΩ)))
-    hJW (hc.memLpLoc_deriv.memLp_of_closure_subset hWc hWΩ)
-    (hsol.memLpLoc.memLp_of_closure_subset hWc hWΩ)
-    ((hsol.memLpLoc.continuousOn_clm_apply hJcont).memLp_of_closure_subset hWc hWΩ)
-    fun n => (ρ n).hasCompactSupport_normed.contDiff_convolution_left _ (ρ n).contDiff_normed
-      (hJWext.locallyIntegrable hp1)
 
 /-- Testing the weak Cauchy–Riemann equation against `(∂_1 φ) • w` isolates the `∂_1²` and
 mixed `∂_I ∂_1` terms in the divergence-form Laplace identity. -/

@@ -15,9 +15,7 @@ import Mathlib.Analysis.Distribution.AEEqOfIntegralContDiff
 import Mathlib.MeasureTheory.Function.Holder
 import Mathlib.MeasureTheory.Function.L2Space
 import Mathlib.MeasureTheory.Function.LpSeminorm.Indicator
-import TauCeti.Analysis.Distribution.TestFunction.LineDeriv
 import TauCeti.MeasureTheory.Function.Lp.ApproximateIdentity
-import TauCeti.MeasureTheory.Function.Lp.Restriction
 import TauCeti.MeasureTheory.Function.LpSeminorm.ContinuousOn
 import TauCeti.Topology.UniformSpace.UniformConvergence.ENorm
 
@@ -146,7 +144,8 @@ theorem tendsto_integral_inner_clm_of_tendstoUniformlyOn {n : ℕ∞}
       ENNReal.ofReal_le_ofReal ((A i x - B x).le_opNorm (u x))
   exact h1.trans (by gcongr; exact le_biSup (fun y => ‖A i y - B y‖ₑ) hx)
 
-/-- Pairing a `C^n` test function supported in a relatively compact open set `W` against
+omit [OpensMeasurableSpace E] in
+/-- Pairing a `C^n` test function supported in a null-measurable set `W` against
 `x ↦ B (((ρ i).normed μ ⋆ 1_W U) x) (u x)` converges to `∫ x, ⟪φ x, B (U x) (u x)⟫_ℝ ∂μ` when
 `U ∈ Lᵖ(W)`, `u ∈ L^q(W)` and `p⁻¹ + q⁻¹ ≤ 1` (allowing `p = ∞` or `q = ∞`). -/
 theorem tendsto_integral_inner_bilin_normed_convolution
@@ -154,13 +153,13 @@ theorem tendsto_integral_inner_bilin_normed_convolution
     {F G : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F] [CompleteSpace F]
     [NormedAddCommGroup G] [NormedSpace ℝ G] {n : ℕ∞}
     (B : F →L[ℝ] G →L[ℝ] V) {p q : ℝ≥0∞} (hpq : p⁻¹ + q⁻¹ ≤ 1)
-    {W : Opens E} (hWc : IsCompact (closure (W : Set E))) (φ : 𝓓^{n}(Ω, V))
+    {W : Set E} (hW : NullMeasurableSet W μ) (φ : 𝓓^{n}(Ω, V))
     (hφW : tsupport (φ : E → V) ⊆ W) {U : E → F} (hU : MemLp U p (μ.restrict W))
     {u : E → G} (hu : MemLp u q (μ.restrict W))
     {ι : Type*} {l : Filter ι} {ρ : ι → ContDiffBump (0 : E)}
     (hρ : Tendsto (fun i => (ρ i).rOut) l (𝓝 0)) :
     Tendsto (fun i => ∫ x, ⟪(φ : E → V) x,
-        B (((ρ i).normed μ ⋆[ContinuousLinearMap.lsmul ℝ ℝ, μ] (W : Set E).indicator U) x)
+        B (((ρ i).normed μ ⋆[ContinuousLinearMap.lsmul ℝ ℝ, μ] W.indicator U) x)
           (u x)⟫_ℝ ∂μ)
       l (𝓝 (∫ x, ⟪(φ : E → V) x, B (U x) (u x)⟫_ℝ ∂μ)) := by
   set p' : ℝ≥0∞ := (1 - p⁻¹)⁻¹
@@ -171,25 +170,28 @@ theorem tendsto_integral_inner_bilin_normed_convolution
     exact ENNReal.inv_le_inv.2 <|
       (ENNReal.add_sub_cancel_left (ne_top_of_le_ne_top ENNReal.one_ne_top hp1)).symm.trans_le
         (tsub_le_tsub_right hpq p⁻¹)
-  have hWm := W.isOpen.measurableSet.nullMeasurableSet (μ := μ)
-  have : IsFiniteMeasure (μ.restrict (W : Set E)) :=
-    isFiniteMeasure_restrict.2 ((measure_mono subset_closure).trans_lt hWc.measure_lt_top).ne
+  set K : Set E := tsupport (φ : E → V)
+  have hKm : NullMeasurableSet K μ := (isClosed_tsupport _).measurableSet.nullMeasurableSet
+  have : IsFiniteMeasure (μ.restrict K) :=
+    isFiniteMeasure_restrict.2 φ.hasCompactSupport.measure_lt_top.ne
+  have huK : MemLp u p' (μ.restrict K) :=
+    (hu.mono_measure (Measure.restrict_mono hφW le_rfl)).mono_exponent hp'q
   let C : V →L[ℝ] G →L[ℝ] F →L[ℝ] ℝ :=
     ((ContinuousLinearMap.compL ℝ F V ℝ).comp (innerSL ℝ)).bilinearComp
       (ContinuousLinearMap.id ℝ V) B.flip
-  have ha : MemLp (fun x => C ((φ : E → V) x) ((W : Set E).indicator u x)) p' μ :=
-    C.memLp_of_bilin p' φ.memLp_top ((memLp_indicator_iff_restrict hWm).2 (hu.mono_exponent hp'q))
+  have ha : MemLp (fun x => C ((φ : E → V) x) (K.indicator u x)) p' μ :=
+    C.memLp_of_bilin p' φ.memLp_top ((memLp_indicator_iff_restrict hKm).2 huK)
   have hlim := (ContinuousLinearMap.id ℝ (F →L[ℝ] ℝ)).tendsto_integral_bilin_normed_convolution
-    hρ ha ((memLp_indicator_iff_restrict hWm).2 hU)
+    hρ ha ((memLp_indicator_iff_restrict hW).2 hU)
   have hpt (x : E) (y : F) :
-      C ((φ : E → V) x) ((W : Set E).indicator u x) y = ⟪(φ : E → V) x, B y (u x)⟫_ℝ := by
-    by_cases hx : x ∈ (W : Set E)
+      C ((φ : E → V) x) (K.indicator u x) y = ⟪(φ : E → V) x, B y (u x)⟫_ℝ := by
+    by_cases hx : x ∈ K
     · simp [C, hx]
-    · simp [C, image_eq_zero_of_notMem_tsupport fun h => hx (hφW h)]
-  have hlim_rhs : ∫ x, ⟪(φ : E → V) x, B ((W : Set E).indicator U x) (u x)⟫_ℝ ∂μ =
+    · simp [C, image_eq_zero_of_notMem_tsupport hx]
+  have hlim_rhs : ∫ x, ⟪(φ : E → V) x, B (W.indicator U x) (u x)⟫_ℝ ∂μ =
       ∫ x, ⟪(φ : E → V) x, B (U x) (u x)⟫_ℝ ∂μ :=
     integral_congr_ae (.of_forall fun x => by
-      by_cases hx : x ∈ (W : Set E)
+      by_cases hx : x ∈ W
       · simp [hx]
       · simp [image_eq_zero_of_notMem_tsupport fun h => hx (hφW h)])
   simpa only [ContinuousLinearMap.id_apply, hpt, hlim_rhs] using hlim

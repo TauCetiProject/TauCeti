@@ -34,8 +34,8 @@ This file supplies restriction to arbitrary subsets (also combined with a change
 off the subset), linearity, continuous-linear composition,
 pairing of fields of continuous linear maps into product maps,
 multiplication of local `Lᵖ` functions by continuous factors (with extension by zero for factors
-supported in the domain), composition and pointwise evaluation of local `Lᵖ` operator families
-(at Hölder exponents or against continuous factors),
+supported in the domain), bilinear products at Hölder exponents, composition and pointwise
+evaluation of local `Lᵖ` operator families (at Hölder exponents or against continuous factors),
 pairing, pointwise product maps of operator fields, decreasing the integrability exponent, and
 decreasing the derivative order. On an open set, local `Lᵖ` membership is detected on the open
 subsets with compact closure inside it.
@@ -255,20 +255,28 @@ theorem MemLpLoc.clm_comp_continuousOn {H : Type*} [NormedAddCommGroup H] [Norme
   memLpLoc_iff.2 fun K hKU hK => (ContinuousLinearMap.compL ℝ F G H).memLp_of_bilin p
     (memLpLoc_iff.1 hB K hKU hK)
     ((hE.mono hKU).memLp_top_restrict_of_subset_isCompact hK hK.measurableSet subset_rfl)
-/-- Applying a locally `Lᵖ` field of continuous linear maps to a locally `L^q` vector field gives a
+
+/-- Applying a continuous bilinear map to a locally `Lᵖ` field and a locally `L^q` field gives a
 locally `Lʳ` field whenever `p⁻¹ + q⁻¹ ≤ r⁻¹`. -/
-theorem MemLpLoc.clm_apply_of_inv_add_inv_le {r : ENNReal} {A : ℂ → F →L[ℝ] G} {w : ℂ → F}
-    (hA : MemLpLoc p U A) (hw : MemLpLoc q U w) (hpqr : p⁻¹ + q⁻¹ ≤ r⁻¹) :
-    MemLpLoc r U (fun z => A z (w z)) := by
+theorem MemLpLoc.bilin_of_inv_add_inv_le {H : Type*} [NormedAddCommGroup H] [NormedSpace ℝ H]
+    {r : ENNReal} (B : F →L[ℝ] G →L[ℝ] H) {u : ℂ → F} {v : ℂ → G}
+    (hu : MemLpLoc p U u) (hv : MemLpLoc q U v) (hpqr : p⁻¹ + q⁻¹ ≤ r⁻¹) :
+    MemLpLoc r U (fun z => B (u z) (v z)) := by
   have hrs : r ≤ (p⁻¹ + q⁻¹)⁻¹ := by
     rw [← inv_inv r]
     exact ENNReal.inv_le_inv.2 hpqr
   have : ENNReal.HolderTriple p q (p⁻¹ + q⁻¹)⁻¹ := ⟨(inv_inv _).symm⟩
-  have hmem : MemLpLoc (p⁻¹ + q⁻¹)⁻¹ U (fun z => A z (w z)) :=
+  have hmem : MemLpLoc (p⁻¹ + q⁻¹)⁻¹ U (fun z => B (u z) (v z)) :=
     memLpLoc_iff.2 fun K hKU hK =>
-      (ContinuousLinearMap.id ℝ (F →L[ℝ] G)).memLp_of_bilin _
-        (memLpLoc_iff.1 hA K hKU hK) (memLpLoc_iff.1 hw K hKU hK)
+      B.memLp_of_bilin _ (memLpLoc_iff.1 hu K hKU hK) (memLpLoc_iff.1 hv K hKU hK)
   exact hmem.mono_exponent hrs
+
+/-- Applying a locally `Lᵖ` field of continuous linear maps to a locally `L^q` vector field gives a
+locally `Lʳ` field whenever `p⁻¹ + q⁻¹ ≤ r⁻¹`. -/
+theorem MemLpLoc.clm_apply_of_inv_add_inv_le {r : ENNReal} {A : ℂ → F →L[ℝ] G} {w : ℂ → F}
+    (hA : MemLpLoc p U A) (hw : MemLpLoc q U w) (hpqr : p⁻¹ + q⁻¹ ≤ r⁻¹) :
+    MemLpLoc r U (fun z => A z (w z)) :=
+  hA.bilin_of_inv_add_inv_le (ContinuousLinearMap.id ℝ (F →L[ℝ] G)) hw hpqr
 
 /-- **Hölder's inequality on compact subsets**: a locally `Lᵖ` field of continuous linear maps
 applied to a locally `L^q` field is locally integrable on a locally closed set when
