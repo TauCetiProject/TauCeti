@@ -376,25 +376,14 @@ noncomputable def basisTwo : Module.Basis (Fin 2) R (TemperleyLieb R δ 2) :=
     let S := Submodule.span R (Set.range ![1, e (R := R) (n := 2) δ 0])
     have h1 : (1 : TemperleyLieb R δ 2) ∈ S := Submodule.subset_span ⟨0, rfl⟩
     have he : e (R := R) (n := 2) δ 0 ∈ S := Submodule.subset_span ⟨1, rfl⟩
-    have hmul : ∀ x ∈ S, ∀ y ∈ S, x * y ∈ S := by
-      intro x hx y hy
-      induction hx using Submodule.span_induction with
-      | mem u hu =>
-        rcases hu with ⟨i, rfl⟩
-        fin_cases i
-        · simpa using hy
-        · induction hy using Submodule.span_induction with
-          | mem v hv =>
-            rcases hv with ⟨j, rfl⟩
-            fin_cases j
-            · simpa using he
-            · simpa [e_mul_self] using Submodule.smul_mem S δ he
-          | zero => simp
-          | add _ _ _ _ h₁ h₂ => rw [mul_add]; exact Submodule.add_mem S h₁ h₂
-          | smul r _ _ h => rw [mul_smul_comm]; exact Submodule.smul_mem S r h
-      | zero => simp
-      | add _ _ _ _ h₁ h₂ => rw [add_mul]; exact Submodule.add_mem S h₁ h₂
-      | smul r _ _ h => rw [smul_mul_assoc]; exact Submodule.smul_mem S r h
+    have hmul : ∀ x ∈ S, ∀ y ∈ S, x * y ∈ S := Submodule.mul_le.mp <| by
+      rw [Submodule.span_mul_span, Submodule.span_le]
+      rintro _ ⟨_, ⟨i, rfl⟩, _, ⟨j, rfl⟩, rfl⟩
+      fin_cases i <;> fin_cases j
+      · simpa using h1
+      · simpa using he
+      · simpa using he
+      · simpa [e_mul_self] using Submodule.smul_mem S δ he
     suffices ∀ x : TemperleyLieb R δ 2, x ∈ S from fun x _ ↦ this x
     intro x
     induction x using TemperleyLieb.induction with

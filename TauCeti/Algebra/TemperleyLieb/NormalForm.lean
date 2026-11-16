@@ -61,56 +61,25 @@ section List
 
 variable {m : ℕ}
 
-/-- Decreasing list of indices in `Fin m` over the half-open natural-number interval `[lo, hi)`,
-given `hi ≤ m`. -/
-private def descIco (lo hi : ℕ) (hhi : hi ≤ m) : List (Fin m) :=
-  (List.Ico lo hi).reverse.pmap Fin.mk fun _ hm ↦
-    (List.Ico.mem.1 (List.mem_reverse.1 hm)).2.trans_le hhi
-
-private theorem length_descIco (lo hi : ℕ) (hhi : hi ≤ m) :
-    (descIco lo hi hhi).length = hi - lo := by
-  simp [descIco]
-
-private theorem mem_descIco {lo hi : ℕ} {hhi : hi ≤ m} {x : Fin m} :
-    x ∈ descIco lo hi hhi ↔ lo ≤ x.val ∧ x.val < hi := by
-  simp only [descIco, List.mem_pmap, List.mem_reverse, List.Ico.mem]
-  constructor
-  · rintro ⟨a, ha, rfl⟩
-    exact ha
-  · intro hx
-    exact ⟨x.val, hx, Fin.ext rfl⟩
-
-private theorem descIco_of_le {lo hi : ℕ} (hhi : hi ≤ m) (h : hi ≤ lo) :
-    descIco lo hi hhi = [] := by
-  simp [descIco, List.Ico.eq_nil_of_le h]
-
-private theorem descIco_singleton (i : Fin m) :
-    descIco i.val (i.val + 1) i.isLt = [i] := by
-  simp [descIco]
-
-private theorem descIco_split {lo mid hi : ℕ} (hhi : hi ≤ m) (h₁ : lo ≤ mid) (h₂ : mid ≤ hi) :
-    descIco lo hi hhi = descIco mid hi hhi ++ descIco lo mid (h₂.trans hhi) := by
-  apply List.map_injective_iff.2 Fin.val_injective
-  simp [descIco, List.map_pmap, List.Ico.append_consecutive h₁ h₂]
-
 /-- The decreasing list of indices `[i, i - 1, …, j]` in `Fin m`, which is empty when `i < j`. -/
 def descBlockList (i j : Fin m) : List (Fin m) :=
-  descIco j.val (i.val + 1) i.isLt
+  (List.Ico j.val (i.val + 1)).reverse.pmap Fin.mk fun _ hm ↦
+    (List.Ico.mem.1 (List.mem_reverse.1 hm)).2.trans_le i.isLt
 
 /-- A single-index decreasing block list consists of that index alone. -/
 @[simp]
-theorem descBlockList_self (i : Fin m) : descBlockList i i = [i] :=
-  descIco_singleton i
+theorem descBlockList_self (i : Fin m) : descBlockList i i = [i] := by
+  simp [descBlockList]
 
 /-- When `i < j`, the decreasing block list from `i` down to `j` is empty. -/
-theorem descBlockList_of_lt {i j : Fin m} (h : i < j) : descBlockList i j = [] :=
-  descIco_of_le i.isLt (by omega)
+theorem descBlockList_of_lt {i j : Fin m} (h : i < j) : descBlockList i j = [] := by
+  simp [descBlockList, List.Ico.eq_nil_of_le (show i.val + 1 ≤ j.val by omega)]
 
 /-- Length of `descBlockList i j`. -/
 @[simp]
 theorem length_descBlockList (i j : Fin m) :
-    (descBlockList i j).length = i.val + 1 - j.val :=
-  length_descIco j.val (i.val + 1) i.isLt
+    (descBlockList i j).length = i.val + 1 - j.val := by
+  simp [descBlockList]
 
 /-- `descBlockList i j` is empty if and only if `i < j`. -/
 @[simp]
@@ -122,47 +91,58 @@ theorem descBlockList_eq_nil_iff {i j : Fin m} : descBlockList i j = [] ↔ i < 
 @[simp]
 theorem mem_descBlockList {i j x : Fin m} :
     x ∈ descBlockList i j ↔ j ≤ x ∧ x ≤ i := by
-  rw [descBlockList, mem_descIco]
-  exact ⟨fun h ↦ ⟨h.1, Nat.lt_succ_iff.1 h.2⟩, fun h ↦ ⟨h.1, Nat.lt_succ_iff.2 h.2⟩⟩
+  simp only [descBlockList, List.mem_pmap, List.mem_reverse, List.Ico.mem]
+  constructor
+  · rintro ⟨a, ha, rfl⟩
+    exact ⟨ha.1, Nat.lt_succ_iff.1 ha.2⟩
+  · intro hx
+    exact ⟨x.val, ⟨hx.1, Nat.lt_succ_iff.2 hx.2⟩, Fin.ext rfl⟩
+
+/-- Concatenating adjacent decreasing block lists merges them into one block list. -/
+theorem descBlockList_append_descBlockList_of_succ_eq {i a b j : Fin m}
+    (hbi : b ≤ i) (hab : b.val + 1 = a.val) (hja : j ≤ a) :
+    descBlockList i a ++ descBlockList b j = descBlockList i j := by
+  apply List.map_injective_iff.2 Fin.val_injective
+  have h : List.Ico j.val (i.val + 1) =
+      List.Ico j.val (b.val + 1) ++ List.Ico a.val (i.val + 1) := by
+    rw [← hab, List.Ico.append_consecutive (by omega) (by omega)]
+  simp [descBlockList, List.map_pmap, h]
 
 /-- Extending a nonempty decreasing block list on the left by the successor of `i`. -/
 theorem cons_descBlockList_of_succ_eq {k i j : Fin m} (hji : j ≤ i) (hik : i.val + 1 = k.val) :
     k :: descBlockList i j = descBlockList k j := by
-  rw [descBlockList, descBlockList, ← List.singleton_append,
-    descIco_split k.isLt (mid := i.val + 1) (by omega) (by omega)]
-  congr 1
-  rw [hik, descIco_singleton]
+  simpa using descBlockList_append_descBlockList_of_succ_eq (i := k) (j := j) (hab := hik)
+    (Fin.le_def.2 (by omega)) (Fin.le_def.2 (by omega))
 
 /-- Extending a nonempty decreasing block list on the right by the predecessor of `j`. -/
 theorem descBlockList_append_singleton_of_succ_eq {i j k : Fin m} (hji : j ≤ i)
     (hkj : k.val + 1 = j.val) :
     descBlockList i j ++ [k] = descBlockList i k := by
-  rw [descBlockList, descBlockList, ← descIco_singleton k, ← hkj]
-  exact (descIco_split i.isLt (by omega) (by omega)).symm
+  simpa using descBlockList_append_descBlockList_of_succ_eq (i := i) (j := k) (hab := hkj)
+    (Fin.le_def.2 (by omega)) (Fin.le_def.2 (by omega))
 
-private theorem descBlockList_eq_descIco_append_singleton {i j : Fin m} (hji : j ≤ i) :
-    descBlockList i j = descIco (j.val + 1) (i.val + 1) i.isLt ++ [j] := by
-  rw [descBlockList, ← descIco_singleton j]
-  exact descIco_split i.isLt (Nat.le_succ j.val) (Nat.succ_le_succ hji)
+/-- The last index of a nonempty decreasing block list `descBlockList i j` (`j ≤ i`) is `j`. -/
+@[simp]
+theorem getLast_descBlockList {i j : Fin m} (h : descBlockList i j ≠ []) :
+    (descBlockList i j).getLast h = j := by
+  have hji : j ≤ i := not_lt.1 (descBlockList_eq_nil_iff.not.1 h)
+  rcases eq_or_lt_of_le hji with rfl | hlt
+  · simp
+  · let jp1 : Fin m := ⟨j.val + 1, by omega⟩
+    have hsplit : descBlockList i jp1 ++ [j] = descBlockList i j :=
+      descBlockList_append_singleton_of_succ_eq (Nat.succ_le_of_lt hlt) rfl
+    simp [← hsplit]
 
 /-- Mapping `descBlockList` along `Fin.castSucc` produces `descBlockList` on `Fin (m + 1)`. -/
 @[simp]
 theorem map_castSucc_descBlockList (i j : Fin m) :
     (descBlockList i j).map Fin.castSucc = descBlockList i.castSucc j.castSucc := by
-  simp only [descBlockList, descIco, List.map_pmap, Fin.val_castSucc]
+  simp only [descBlockList, List.map_pmap, Fin.val_castSucc]
   exact List.pmap_congr_left _ fun _ _ _ _ ↦ rfl
 
 end List
 
 variable {R : Type*} [CommSemiring R] {n : ℕ}
-
-private theorem commute_prod_descIco_e (δ : R) {lo hi : ℕ} (hhi : hi ≤ n - 1) {k : Fin (n - 1)}
-    (h : k.val + 2 ≤ lo ∨ hi + 1 ≤ k.val) :
-    Commute (((descIco lo hi hhi).map (e δ)).prod) (e δ k) := by
-  refine Commute.list_prod_left _ _ fun x hx ↦ ?_
-  obtain ⟨i, hi', rfl⟩ := List.mem_map.1 hx
-  rw [mem_descIco] at hi'
-  exact commute_e (by omega)
 
 /-- The decreasing generator block `e δ i * e δ (i - 1) * ⋯ * e δ j` in `TemperleyLieb R δ n`,
 equal to `1` when `i < j`. -/
@@ -201,23 +181,29 @@ theorem descBlock_mul_e_of_succ_eq (δ : R) {i j k : Fin (n - 1)} (hji : j ≤ i
 every index in `[j, i]`. -/
 theorem commute_descBlock_e (δ : R) {i j k : Fin (n - 1)}
     (h : k.val + 2 ≤ j.val ∨ i.val + 2 ≤ k.val) :
-    Commute (descBlock δ i j) (e δ k) :=
-  commute_prod_descIco_e δ i.isLt (by omega)
+    Commute (descBlock δ i j) (e δ k) := by
+  refine Commute.list_prod_left _ _ fun x hx ↦ ?_
+  obtain ⟨r, hr, rfl⟩ := List.mem_map.1 hx
+  rw [mem_descBlockList] at hr
+  exact commute_e (by omega)
+
+private theorem descBlock_eq_prod_dropLast_mul_e (δ : R) {i j : Fin (n - 1)} (hji : j ≤ i) :
+    descBlock δ i j = (((descBlockList i j).dropLast).map (e δ)).prod * e δ j := by
+  have hne : descBlockList i j ≠ [] := by simp [not_lt.2 hji]
+  rw [descBlock_def, ← List.dropLast_append_getLast hne, getLast_descBlockList hne]
+  simp
 
 /-- Right multiplication of `descBlock δ i j` (`j ≤ i`) by its bottom generator `e δ j` absorbs via
 `e j * e j = δ • e j`. -/
 theorem descBlock_mul_e_self (δ : R) {i j : Fin (n - 1)} (hji : j ≤ i) :
     descBlock δ i j * e δ j = δ • descBlock δ i j := by
-  rw [descBlock_def, descBlockList_eq_descIco_append_singleton hji, List.map_append,
-    List.prod_append]
-  simp [mul_assoc, e_mul_self]
+  rw [descBlock_eq_prod_dropLast_mul_e δ hji, mul_assoc, e_mul_self, mul_smul_comm]
 
 /-- The augmentation kills every nonempty decreasing generator block (`j ≤ i`). -/
 @[simp]
 theorem aug_descBlock_of_le (δ : R) {i j : Fin (n - 1)} (hji : j ≤ i) :
     aug (descBlock δ i j) = 0 := by
-  rw [descBlock_def, descBlockList_eq_descIco_append_singleton hji, List.map_append,
-    List.prod_append]
+  rw [descBlock_eq_prod_dropLast_mul_e δ hji]
   simp
 
 /-- Strand inclusion sends a decreasing block to the decreasing block with `castSucc` endpoints. -/
@@ -238,36 +224,32 @@ private theorem exists_list_descBlock_mul_e_of_lt_of_le (δ : R) {i j k : Fin (n
     ∃ t : List (Fin (n - 1)),
       t.length + 1 ≤ (descBlockList i j).length ∧
         (t.map (e δ)).prod = descBlock δ i j * e δ k := by
-  have hk1 : k.val - 1 < n - 1 := by omega
-  let km1 : Fin (n - 1) := ⟨k.val - 1, hk1⟩
-  refine ⟨descBlockList i k ++ descIco j.val (k.val - 1) (by omega), ?_, ?_⟩
-  · rw [List.length_append, length_descBlockList, length_descIco, length_descBlockList]
-    omega
-  · have hsplit₁ : descBlockList i j =
-        descIco (k.val + 1) (i.val + 1) i.isLt ++ [k] ++ [km1] ++
-          descIco j.val (k.val - 1) (by omega) := by
-      rw [descBlockList, descIco_split i.isLt (mid := k.val - 1) (by omega) (by omega),
-        descIco_split i.isLt (mid := k.val) (by omega) (by omega),
-        descIco_split i.isLt (mid := k.val + 1) (by omega) (by omega)]
-      have hk_eq : k.val - 1 + 1 = k.val := by omega
-      have hkm1 : descIco (k.val - 1) k.val (by omega) = [km1] := by
-        simpa [km1, hk_eq] using descIco_singleton km1
-      rw [descIco_singleton k, hkm1, List.append_assoc, List.append_assoc]
-    have hcomm := (commute_prod_descIco_e (R := R) δ (lo := j.val) (hi := k.val - 1)
-      (by omega) (k := k) (Or.inr (by omega))).eq
-    have hadj : e (R := R) δ k * e δ km1 * e δ k = e δ k :=
-      e_mul_e_mul_e (Or.inr (by simp [km1]; omega))
-    rw [descBlock_def, hsplit₁, descBlockList_eq_descIco_append_singleton hki]
-    simp only [List.map_append, List.prod_append, List.map_singleton, List.prod_singleton]
-    calc ((descIco (k.val + 1) (i.val + 1) i.isLt).map (e δ)).prod * e δ k *
-            ((descIco j.val (k.val - 1) _).map (e δ)).prod
-        = ((descIco (k.val + 1) (i.val + 1) i.isLt).map (e δ)).prod *
-            (e δ k * e δ km1 * e δ k) *
-            ((descIco j.val (k.val - 1) _).map (e δ)).prod := by rw [hadj]
-      _ = _ := by
-          simp only [mul_assoc]
-          rw [← mul_assoc (e δ k), hcomm]
-          simp only [mul_assoc]
+  let km1 : Fin (n - 1) := ⟨k.val - 1, by omega⟩
+  have hkm1 : km1.val + 1 = k.val := by simp [km1]; omega
+  have hstraight : descBlock (R := R) δ i k * e δ km1 * e δ k = descBlock δ i k := by
+    rw [descBlock_eq_prod_dropLast_mul_e δ hki]
+    simp only [mul_assoc]
+    rw [← mul_assoc (e δ k), e_mul_e_mul_e (Or.inr hkm1)]
+  rcases eq_or_lt_of_le (show j ≤ km1 from Nat.le_sub_one_of_lt hjk) with heq | hlt
+  · refine ⟨descBlockList i k, ?_, ?_⟩
+    · rw [heq, length_descBlockList, length_descBlockList]; simp [km1]; omega
+    · rw [heq, ← descBlock_def, ← descBlock_mul_e_of_succ_eq δ hki hkm1, hstraight]
+  · let km2 : Fin (n - 1) := ⟨k.val - 2, by omega⟩
+    have hkm2 : km2.val + 1 = km1.val := by simp [km2, km1]; omega
+    refine ⟨descBlockList i k ++ descBlockList km2 j, ?_, ?_⟩
+    · rw [List.length_append, length_descBlockList, length_descBlockList, length_descBlockList]
+      simp [km2]; omega
+    · have hblock : descBlock δ i j = descBlock δ i k * e δ km1 * descBlock δ km2 j := by
+        have hsplit : descBlockList i j =
+            descBlockList i k ++ [km1] ++ descBlockList km2 j := by
+          rw [descBlockList_append_singleton_of_succ_eq hki hkm1,
+            descBlockList_append_descBlockList_of_succ_eq (Fin.le_def.2 (by simp [km2]; omega))
+              hkm2 hlt.le]
+        simp [descBlock_def, hsplit, mul_assoc]
+      have hcomm := (commute_descBlock_e (R := R) δ (i := km2) (j := j) (k := k)
+        (Or.inr (by simp [km2]; omega))).eq
+      rw [List.map_append, List.prod_append, ← descBlock_def, ← descBlock_def, hblock,
+        mul_assoc, hcomm, ← mul_assoc, hstraight]
 
 /-- Boundary zigzag absorption across two consecutive blocks: when the first block ends at `k` and
 the second ends at `j₂ = k + 1`, right multiplication by `e δ k` commutes the first block's bottom
@@ -278,24 +260,29 @@ private theorem exists_list_descBlock_mul_descBlock_mul_e (δ : R) {i₁ i₂ j�
     ∃ t : List (Fin (n - 1)),
       t.length + 1 ≤ (descBlockList i₁ k).length + (descBlockList i₂ j₂).length ∧
         (t.map (e δ)).prod = descBlock δ i₁ k * descBlock δ i₂ j₂ * e δ k := by
-  refine ⟨descIco (k.val + 1) (i₁.val + 1) i₁.isLt ++
-      descIco (j₂.val + 1) (i₂.val + 1) i₂.isLt ++ [k], ?_, ?_⟩
-  · rw [List.length_append, List.length_append, List.length_singleton, length_descIco,
-      length_descIco, length_descBlockList, length_descBlockList]
+  refine ⟨(descBlockList i₁ k).dropLast ++ (descBlockList i₂ j₂).dropLast ++ [k], ?_, ?_⟩
+  · rw [List.length_append, List.length_append, List.length_singleton, List.length_dropLast,
+      List.length_dropLast, length_descBlockList, length_descBlockList]
     omega
-  · have hcomm := (commute_prod_descIco_e (R := R) δ (lo := j₂.val + 1) (hi := i₂.val + 1)
-      i₂.isLt (k := k) (Or.inl (by omega))).eq
+  · have hcomm : Commute (((descBlockList i₂ j₂).dropLast.map (e δ)).prod) (e δ k) := by
+      rcases eq_or_lt_of_le hj₂ with rfl | hlt
+      · simp
+      · let j₂' : Fin (n - 1) := ⟨j₂.val + 1, by omega⟩
+        have hdl : (descBlockList i₂ j₂).dropLast = descBlockList i₂ j₂' := by
+          rw [← descBlockList_append_singleton_of_succ_eq (i := i₂) (j := j₂') (k := j₂)
+            (Nat.succ_le_of_lt hlt) rfl, List.dropLast_concat]
+        rw [hdl]
+        exact commute_descBlock_e δ (Or.inl (by simp [j₂']; omega))
     have hadj : e (R := R) δ k * e δ j₂ * e δ k = e δ k :=
       e_mul_e_mul_e (Or.inl hkj)
-    let P₁ := ((descIco (k.val + 1) (i₁.val + 1) i₁.isLt).map (e δ)).prod
-    let P₂ := ((descIco (j₂.val + 1) (i₂.val + 1) i₂.isLt).map (e δ)).prod
-    rw [descBlock_def, descBlock_def, descBlockList_eq_descIco_append_singleton hk₁,
-      descBlockList_eq_descIco_append_singleton hj₂]
+    let P₁ := (((descBlockList i₁ k).dropLast).map (e δ)).prod
+    let P₂ := (((descBlockList i₂ j₂).dropLast).map (e δ)).prod
+    rw [descBlock_eq_prod_dropLast_mul_e δ hk₁, descBlock_eq_prod_dropLast_mul_e δ hj₂]
     simp only [List.map_append, List.prod_append, List.map_singleton, List.prod_singleton]
     calc P₁ * P₂ * e δ k
         = P₁ * P₂ * (e δ k * e δ j₂ * e δ k) := by rw [hadj]
       _ = P₁ * (P₂ * e δ k) * (e δ j₂ * e δ k) := by simp only [mul_assoc]
-      _ = P₁ * (e δ k * P₂) * (e δ j₂ * e δ k) := by rw [hcomm]
+      _ = P₁ * (e δ k * P₂) * (e δ j₂ * e δ k) := by rw [hcomm.eq]
       _ = (P₁ * e δ k) * (P₂ * e δ j₂) * e δ k := by simp only [mul_assoc]
 
 end DescBlock
