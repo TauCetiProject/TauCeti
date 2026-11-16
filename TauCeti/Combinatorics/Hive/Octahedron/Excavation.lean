@@ -7,11 +7,12 @@ module
 
 public import TauCeti.Combinatorics.Hive.Octahedron.Recurrence
 public import TauCeti.Topology.PL.Map
+import Mathlib.Tactic.Abel
 import Mathlib.Tactic.Linarith
 import Mathlib.Tactic.Ring
 
 /-!
-# Unit-cell excavation schedules, integral linear branches, and piecewise-affineness
+# Unit-cell excavation schedules, linear branches, and piecewise-affineness
 
 Every section-to-section transition `sectionTransition hn τ₁ τ₂` of Henriques–Kamnitzer's bounded
 octahedron recurrence factors into single unit-cell updates ("excavations"):
@@ -22,20 +23,21 @@ octahedron recurrence factors into single unit-cell updates ("excavations"):
    `τ x₀ y₀ + 1`; advancing `τ x₀ y₀` to `τ x₀ y₀ + 2` updates `F x₀ y₀` by a single octahedron
    step, and **every** legal schedule from `τ₁` to `τ₂` evaluates to `sectionTransition hn τ₁ τ₂`
    and has length `excavationVolume τ₁ τ₂`.
-2. **Termination of upward excavation** (`exists_excavationSite_of_lt`, `canonicalSchedule`):
-   whenever `τ₁ ≤ τ₂` and `τ₁ ≠ τ₂`, any minimum-height point of `{τ₁ < τ₂}` is a legal excavation
-   site whose update remains `≤ τ₂` and strictly decreases `excavationVolume` by `1`.
-3. **Integral linear branches and tie agreement** (`stepBranchLinear`, `stepBranchLinear_eq_of_tie`,
+2. **Termination of upward excavation** (`exists_excavationSite_of_lt`, `ExcavationSchedule.ofLe`):
+   whenever `τ₁ < τ₂`, there exists a legal excavation site whose update remains `≤ τ₂` and
+   strictly decreases `excavationVolume` by `1`, yielding a legal schedule from `τ₁` to `τ₂`.
+3. **Linear branches and tie agreement** (`stepBranchLinear`, `stepBranchLinear_eq_of_tie`,
    `scheduleBranchLinear`, `exists_branchWord_scheduleBranchLinear`, `map_scheduleBranchLinear`):
-   each choice of `max` branch in a single step is an `R`-linear map defined over `ℤ` (so composed
-   branches have integer matrix entries), and the two branches agree along the tie hyperplane
+   for any `A`-module `R`, each choice of `max` branch in a single step is an `A`-linear map (in
+   particular `ℤ`-linear over any `AddCommGroup`, so composed branches have integer matrix entries),
+   compatible with any `AddMonoidHom`, and the two branches agree along the tie hyperplane
    `branchSum hn true F x₀ y₀ = branchSum hn false F x₀ y₀`.
 4. **Global piecewise-affineness and continuity** (`isPiecewiseAffineOn_excavateData`,
    `isPiecewiseAffineOn_sectionTransition`, `isPiecewiseAffineOn_associatorTransition`,
    `continuous_sectionTransition`, `continuous_associatorTransition`): over `ℝ`, every section
    transition (whether upward, downward, or mixed, via `τ₁ → τ₁ ⊔ τ₂ → τ₂`) and every
-   `associatorTransition n` satisfies `TauCeti.IsPiecewiseAffineOn` on `Set.univ` with closed
-   polyhedral cells covering tie hyperplanes, hence is globally continuous.
+   `associatorTransition n` satisfies `TauCeti.IsPiecewiseAffineOn` on `Set.univ`, hence is
+   globally continuous.
 
 ## References
 
@@ -131,34 +133,38 @@ theorem sectionTransition_excavateSection {R : Type*} [AddCommGroup R] [Semilatt
     have hrec := (satisfiesRecurrence_def hn _).mp
       (satisfiesRecurrence_evolveFromSection hn τ F) x y (τ x y + 1) hodd
     have hpt_top : (excavateSection τ x y hsite).point x y =
-        ⟨x, y, τ x y + 1 + 1, odd_top_even hodd⟩ := by
+        ⟨x, y, τ x y + 1 + 1, even_add_one_of_odd hodd⟩ := by
       ext
       · simp
       · simp
       · simp only [Section.point_t, excavateSection_apply, and_self, ↓reduceIte]; ring
-    have hpt_bot : (⟨x, y, τ x y + 1 - 1, odd_bot_even hodd⟩ : SpaceTimePoint n) =
+    have hpt_bot : (⟨x, y, τ x y + 1 - 1, even_sub_one_of_odd hodd⟩ : SpaceTimePoint n) =
         τ.point x y := by
       ext <;> simp
     have hadj_pt {x' y' : Fin (n + 1)} (hadj : GridAdj x y x' y') :
-        (⟨x', y', τ x y + 1, odd_adj_even hadj hodd⟩ : SpaceTimePoint n) = τ.point x' y' := by
+        (⟨x', y', τ x y + 1, even_of_gridAdj_of_odd hadj hodd⟩ : SpaceTimePoint n) =
+          τ.point x' y' := by
       ext
       · simp
       · simp
       · simp [(isExcavationSite_def τ x y).mp hsite x' y' hadj]
     have hsup : paritySpatialSup hn (evolveFromSection hn τ F) x y (τ x y + 1) hodd =
-        spatialSup hn F x y := by
-      rw [paritySpatialSup_def, spatialSup_def, branchSum_apply, branchSum_apply]
-      have ht := gridAdj_branchNeighbors hn true x y
-      have hf := gridAdj_branchNeighbors hn false x y
-      rw [hadj_pt ht.1, hadj_pt ht.2, hadj_pt hf.1, hadj_pt hf.2]
-      simp
+        spatialSup hn F x y :=
+      paritySpatialSup_eq_spatialSup_of_eq hn hodd fun hadj => by
+        rw [hadj_pt hadj, evolveFromSection_point]
     rw [hpt_top, hrec, hpt_bot, hsup, evolveFromSection_point]
   · rw [sectionTransition_eq_self_of_eq hn F (by simp [hxy]), excavateData_apply,
       ite_eq_right hxy]
 
-/-- Total number of unit cells between `τ₁` and `τ₂`. -/
+/-- Directed upward unit-cell count above `τ₁` and below `τ₂` (matching the total number of unit
+cells between `τ₁` and `τ₂` when `τ₁ ≤ τ₂`, and evaluating to `0` wherever `τ₂ ≤ τ₁`). -/
 def excavationVolume (τ₁ τ₂ : Section n) : ℕ :=
   ∑ q : Fin (n + 1) × Fin (n + 1), ((τ₂ q.1 q.2 - τ₁ q.1 q.2) / 2).toNat
+
+theorem excavationVolume_def (τ₁ τ₂ : Section n) :
+    excavationVolume τ₁ τ₂ =
+      ∑ q : Fin (n + 1) × Fin (n + 1), ((τ₂ q.1 q.2 - τ₁ q.1 q.2) / 2).toNat := by
+  unfold excavationVolume; rfl
 
 @[simp] theorem excavationVolume_self (τ : Section n) : excavationVolume τ τ = 0 := by
   unfold excavationVolume; simp
@@ -247,19 +253,20 @@ theorem eval_eq_sectionTransition {R : Type*} [AddCommGroup R] [SemilatticeSup R
     S.eval hn F = sectionTransition hn τ₁ τ₂ F := by
   induction S generalizing F with
   | nil _ =>
-    rw [eval_nil, sectionTransition_refl]; rfl
+    simp [eval_nil, sectionTransition_refl]
   | cons x₀ y₀ hsite rest ih =>
     rw [eval_cons, ih, ← sectionTransition_excavateSection hn _ x₀ y₀ hsite F,
       ← Equiv.trans_apply, sectionTransition_trans]
 
 end ExcavationSchedule
 
-/-- Whenever `τ₁ ≤ τ₂` and `τ₁ ≠ τ₂`, choosing a minimum-height point of `{τ₁ < τ₂}` yields a
-legal excavation site whose step stays below `τ₂` and decreases `excavationVolume` by `1`. -/
-theorem exists_excavationSite_of_lt {τ₁ τ₂ : Section n} (hle : τ₁ ≤ τ₂) (hne : τ₁ ≠ τ₂) :
+/-- Whenever `τ₁ < τ₂`, there exists a legal upward excavation site `(x₀, y₀)` on `τ₁` whose step
+remains `≤ τ₂` and decreases `excavationVolume` by `1`. -/
+theorem exists_excavationSite_of_lt {τ₁ τ₂ : Section n} (hlt : τ₁ < τ₂) :
     ∃ x₀ y₀ : Fin (n + 1), ∃ hsite : IsExcavationSite τ₁ x₀ y₀,
       excavateSection τ₁ x₀ y₀ hsite ≤ τ₂ ∧
         excavationVolume (excavateSection τ₁ x₀ y₀ hsite) τ₂ + 1 = excavationVolume τ₁ τ₂ := by
+  obtain ⟨hle, hne⟩ := lt_iff_le_and_ne.mp hlt
   rw [Section.le_def] at hle
   let D : Finset (Fin (n + 1) × Fin (n + 1)) :=
     Finset.univ.filter fun q => τ₁ q.1 q.2 < τ₂ q.1 q.2
@@ -294,111 +301,122 @@ theorem exists_excavationSite_of_lt {τ₁ τ₂ : Section n} (hle : τ₁ ≤ �
     · exact hle x y
   exact ⟨x₀, y₀, hsite, hstep_le, excavationVolume_excavateSection hstep_le⟩
 
-/-- Canonical unit-cell excavation schedule from any `τ₁` to any `τ₂ ≥ τ₁`, terminating in
-`excavationVolume τ₁ τ₂` steps. -/
-noncomputable def canonicalSchedule {τ₁ τ₂ : Section n} (hle : τ₁ ≤ τ₂) :
+/-- Construct a (`noncomputable`) legal upward unit-cell excavation schedule from `τ₁` to `τ₂`
+(`τ₁ ≤ τ₂`) via choice, terminating in `excavationVolume τ₁ τ₂` steps. -/
+noncomputable def ExcavationSchedule.ofLe {τ₁ τ₂ : Section n} (hle : τ₁ ≤ τ₂) :
     ExcavationSchedule τ₁ τ₂ :=
   if hne : τ₁ = τ₂ then
     hne ▸ ExcavationSchedule.nil τ₁
   else
-    let x₀ := Classical.choose (exists_excavationSite_of_lt hle hne)
-    let h1 := Classical.choose_spec (exists_excavationSite_of_lt hle hne)
+    have hlt := lt_of_le_of_ne hle hne
+    let x₀ := Classical.choose (exists_excavationSite_of_lt hlt)
+    let h1 := Classical.choose_spec (exists_excavationSite_of_lt hlt)
     let y₀ := Classical.choose h1
     let h2 := Classical.choose_spec h1
     let hsite := Classical.choose h2
     let hspec := Classical.choose_spec h2
     have _hdec : excavationVolume (excavateSection τ₁ x₀ y₀ hsite) τ₂ <
         excavationVolume τ₁ τ₂ := Nat.lt_of_succ_le (Nat.le_of_eq hspec.2)
-    ExcavationSchedule.cons x₀ y₀ hsite (canonicalSchedule hspec.1)
+    ExcavationSchedule.cons x₀ y₀ hsite (ExcavationSchedule.ofLe hspec.1)
 termination_by excavationVolume τ₁ τ₂
 
-/-- Integral/ring-linear branch map of a single excavation step `(x₀, y₀)` along branch `b : Bool`.
-Over `R = ℤ`, its matrix entries are integers. -/
-def stepBranchLinear {R : Type*} [CommRing R] (hn : 1 ≤ n) (x₀ y₀ : Fin (n + 1)) (b : Bool) :
-    (Fin (n + 1) → Fin (n + 1) → R) →ₗ[R] (Fin (n + 1) → Fin (n + 1) → R) where
+/-- `A`-linear branch map of a single excavation step `(x₀, y₀)` along branch `b : Bool` for any
+`A`-module `R` (in particular `A = ℤ` on any `AddCommGroup R`, where its matrix entries are
+integers). -/
+def stepBranchLinear (A : Type*) [Semiring A] {R : Type*} [AddCommGroup R] [Module A R]
+    (hn : 1 ≤ n) (x₀ y₀ : Fin (n + 1)) (b : Bool) :
+    (Fin (n + 1) → Fin (n + 1) → R) →ₗ[A] (Fin (n + 1) → Fin (n + 1) → R) where
   toFun F x y := if x = x₀ ∧ y = y₀ then branchSum hn b F x₀ y₀ - F x₀ y₀ else F x y
   map_add' F G := by
     funext x y; simp only [Pi.add_apply]; split_ifs
-    · simp only [branchSum_apply, Pi.add_apply]; ring
+    · simp only [branchSum_apply, Pi.add_apply]; abel
     · rfl
   map_smul' c F := by
     funext x y; simp only [Pi.smul_apply, RingHom.id_apply]; split_ifs
-    · simp only [branchSum_apply, Pi.smul_apply, smul_eq_mul]; ring
+    · simp only [branchSum_apply, Pi.smul_apply, smul_sub, smul_add]
     · rfl
 
-@[simp] theorem stepBranchLinear_apply {R : Type*} [CommRing R] (hn : 1 ≤ n)
-    (x₀ y₀ : Fin (n + 1)) (b : Bool) (F : Fin (n + 1) → Fin (n + 1) → R) (x y : Fin (n + 1)) :
-    stepBranchLinear hn x₀ y₀ b F x y =
+@[simp] theorem stepBranchLinear_apply (A : Type*) [Semiring A] {R : Type*} [AddCommGroup R]
+    [Module A R] (hn : 1 ≤ n) (x₀ y₀ : Fin (n + 1)) (b : Bool)
+    (F : Fin (n + 1) → Fin (n + 1) → R) (x y : Fin (n + 1)) :
+    stepBranchLinear A hn x₀ y₀ b F x y =
       if x = x₀ ∧ y = y₀ then branchSum hn b F x₀ y₀ - F x₀ y₀ else F x y := by
   unfold stepBranchLinear; rfl
 
 /-- Along the tie hyperplane `branchSum hn true F x₀ y₀ = branchSum hn false F x₀ y₀`, both linear
 branches of a single step agree identically. -/
-theorem stepBranchLinear_eq_of_tie {R : Type*} [CommRing R] (hn : 1 ≤ n)
-    (x₀ y₀ : Fin (n + 1)) {F : Fin (n + 1) → Fin (n + 1) → R}
+theorem stepBranchLinear_eq_of_tie (A : Type*) [Semiring A] {R : Type*} [AddCommGroup R]
+    [Module A R] (hn : 1 ≤ n) (x₀ y₀ : Fin (n + 1)) {F : Fin (n + 1) → Fin (n + 1) → R}
     (htie : branchSum hn true F x₀ y₀ = branchSum hn false F x₀ y₀) :
-    stepBranchLinear hn x₀ y₀ true F = stepBranchLinear hn x₀ y₀ false F := by
+    stepBranchLinear A hn x₀ y₀ true F = stepBranchLinear A hn x₀ y₀ false F := by
   ext x y; simp [htie]
 
-/-- Composed `R`-linear branch map along an excavation schedule `S` for a branch word
-`w : Fin S.length → Bool`. Over `R = ℤ`, this exhibits every linear branch as a `ℤ`-linear map. -/
-def scheduleBranchLinear {R : Type*} [CommRing R] (hn : 1 ≤ n) {τ₁ τ₂ : Section n} :
+/-- Composed `A`-linear branch map along an excavation schedule `S` for a branch word
+`w : Fin S.length → Bool`. Over `A = R = ℤ`, this exhibits every linear branch as a `ℤ`-linear map.
+-/
+def scheduleBranchLinear (A : Type*) [Semiring A] {R : Type*} [AddCommGroup R] [Module A R]
+    (hn : 1 ≤ n) {τ₁ τ₂ : Section n} :
     (S : ExcavationSchedule τ₁ τ₂) → (Fin S.length → Bool) →
-      ((Fin (n + 1) → Fin (n + 1) → R) →ₗ[R] (Fin (n + 1) → Fin (n + 1) → R))
+      ((Fin (n + 1) → Fin (n + 1) → R) →ₗ[A] (Fin (n + 1) → Fin (n + 1) → R))
   | .nil _, _ => LinearMap.id
-  | .cons x₀ y₀ _ rest, w =>
-      (scheduleBranchLinear hn rest (fun i => w i.succ)).comp
-        (stepBranchLinear hn x₀ y₀ (w (0 : Fin (rest.length + 1))))
+  | .cons x₀ y₀ hsite rest, w =>
+      (scheduleBranchLinear A hn rest
+        (fun i => w (Fin.cast (ExcavationSchedule.length_cons x₀ y₀ hsite rest).symm i.succ))).comp
+        (stepBranchLinear A hn x₀ y₀ (w ⟨0, by simp⟩))
 
-@[simp] theorem scheduleBranchLinear_nil {R : Type*} [CommRing R] (hn : 1 ≤ n) (τ : Section n)
+@[simp] theorem scheduleBranchLinear_nil (A : Type*) [Semiring A] {R : Type*} [AddCommGroup R]
+    [Module A R] (hn : 1 ≤ n) (τ : Section n)
     (w : Fin (ExcavationSchedule.nil τ).length → Bool) :
-    scheduleBranchLinear (R := R) hn (.nil τ) w = LinearMap.id := by
+    scheduleBranchLinear (R := R) A hn (.nil τ) w = LinearMap.id := by
   rw [scheduleBranchLinear]
 
-@[simp] theorem scheduleBranchLinear_cons {R : Type*} [CommRing R] (hn : 1 ≤ n)
-    {τ₁ τ₂ : Section n} (x₀ y₀ : Fin (n + 1)) (hsite : IsExcavationSite τ₁ x₀ y₀)
+@[simp] theorem scheduleBranchLinear_cons (A : Type*) [Semiring A] {R : Type*} [AddCommGroup R]
+    [Module A R] (hn : 1 ≤ n) {τ₁ τ₂ : Section n} (x₀ y₀ : Fin (n + 1))
+    (hsite : IsExcavationSite τ₁ x₀ y₀)
     (rest : ExcavationSchedule (excavateSection τ₁ x₀ y₀ hsite) τ₂)
     (w : Fin (ExcavationSchedule.cons x₀ y₀ hsite rest).length → Bool) :
-    scheduleBranchLinear (R := R) hn (.cons x₀ y₀ hsite rest) w =
-      (scheduleBranchLinear hn rest
+    scheduleBranchLinear (R := R) A hn (.cons x₀ y₀ hsite rest) w =
+      (scheduleBranchLinear A hn rest
         (fun i => w (Fin.cast (ExcavationSchedule.length_cons x₀ y₀ hsite rest).symm i.succ))).comp
-        (stepBranchLinear hn x₀ y₀ (w ⟨0, by simp⟩)) := by
-  rw [scheduleBranchLinear]; rfl
+        (stepBranchLinear A hn x₀ y₀ (w ⟨0, by simp⟩)) := by
+  rw [scheduleBranchLinear]
 
-/-- Compatibility of `scheduleBranchLinear` with any ring homomorphism `φ : R →+* R'` (in
-particular `Int.castRingHom ℝ`, showing that the real linear branches are scalar extensions of
+/-- Compatibility of `scheduleBranchLinear` with any additive group homomorphism `φ : R →+ R'` (in
+particular `Int.castAddHom ℝ`, showing that the real linear branches are scalar extensions of
 integer matrices). -/
-theorem map_scheduleBranchLinear {R R' : Type*} [CommRing R] [CommRing R'] (φ : R →+* R')
+theorem map_scheduleBranchLinear (A A' : Type*) {R R' : Type*} [Semiring A] [Semiring A']
+    [AddCommGroup R] [AddCommGroup R'] [Module A R] [Module A' R'] (φ : R →+ R')
     (hn : 1 ≤ n) {τ₁ τ₂ : Section n} (S : ExcavationSchedule τ₁ τ₂) (w : Fin S.length → Bool)
     (F : Fin (n + 1) → Fin (n + 1) → R) (x y : Fin (n + 1)) :
-    φ (scheduleBranchLinear hn S w F x y) =
-      scheduleBranchLinear hn S w (fun x' y' => φ (F x' y')) x y := by
+    φ (scheduleBranchLinear A hn S w F x y) =
+      scheduleBranchLinear A' hn S w (fun x' y' => φ (F x' y')) x y := by
   induction S generalizing F with
   | nil _ => simp
   | cons x₀ y₀ hsite rest ih =>
     rw [scheduleBranchLinear_cons, scheduleBranchLinear_cons, LinearMap.comp_apply,
       LinearMap.comp_apply]
     let b₀ : Bool := w ⟨0, by simp⟩
-    have hstep : (fun x' y' => φ (stepBranchLinear hn x₀ y₀ b₀ F x' y')) =
-        stepBranchLinear hn x₀ y₀ b₀ (fun x' y' => φ (F x' y')) := by
+    have hstep : (fun x' y' => φ (stepBranchLinear A hn x₀ y₀ b₀ F x' y')) =
+        stepBranchLinear A' hn x₀ y₀ b₀ (fun x' y' => φ (F x' y')) := by
       funext x' y'
       rw [stepBranchLinear_apply, stepBranchLinear_apply]
       split_ifs
       · simp only [branchSum_apply, map_sub, map_add]
       · rfl
     rw [ih (fun i => w (Fin.cast (ExcavationSchedule.length_cons x₀ y₀ hsite rest).symm i.succ))
-      (stepBranchLinear hn x₀ y₀ b₀ F), hstep]
+      (stepBranchLinear A hn x₀ y₀ b₀ F), hstep]
 
 /-- For every input `F`, some branch word `w : Fin S.length → Bool` realizes `S.eval hn F` as the
-exact linear branch map `scheduleBranchLinear hn S w F`. -/
-theorem exists_branchWord_scheduleBranchLinear {R : Type*} [CommRing R] [LinearOrder R] (hn : 1 ≤ n)
+exact linear branch map `scheduleBranchLinear A hn S w F`. -/
+theorem exists_branchWord_scheduleBranchLinear (A : Type*) [Semiring A] {R : Type*}
+    [AddCommGroup R] [Module A R] [LinearOrder R] (hn : 1 ≤ n)
     {τ₁ τ₂ : Section n} (S : ExcavationSchedule τ₁ τ₂) (F : Fin (n + 1) → Fin (n + 1) → R) :
-    ∃ w : Fin S.length → Bool, scheduleBranchLinear hn S w F = S.eval hn F := by
+    ∃ w : Fin S.length → Bool, scheduleBranchLinear A hn S w F = S.eval hn F := by
   induction S generalizing F with
   | nil τ =>
     exact ⟨fun i => Fin.elim0 (Fin.cast (ExcavationSchedule.length_nil τ) i), by simp⟩
   | cons x₀ y₀ hsite rest ih =>
-    have hstep : ∃ b₀ : Bool, stepBranchLinear hn x₀ y₀ b₀ F = excavateData hn x₀ y₀ F := by
+    have hstep : ∃ b₀ : Bool, stepBranchLinear A hn x₀ y₀ b₀ F = excavateData hn x₀ y₀ F := by
       rcases le_total (branchSum hn true F x₀ y₀) (branchSum hn false F x₀ y₀) with h | h
       · refine ⟨false, ?_⟩
         ext x y; simp [excavateData_apply, spatialSup_def, sup_eq_right.mpr h]
@@ -407,58 +425,46 @@ theorem exists_branchWord_scheduleBranchLinear {R : Type*} [CommRing R] [LinearO
     obtain ⟨b₀, hb₀⟩ := hstep
     obtain ⟨w', hw'⟩ := ih (excavateData hn x₀ y₀ F)
     let hlen := ExcavationSchedule.length_cons x₀ y₀ hsite rest
-    let wCons : Fin (rest.length + 1) → Bool := @Fin.cons rest.length (fun _ => Bool) b₀ w'
+    let wCons : Fin (rest.length + 1) → Bool := Fin.cons b₀ w'
     refine ⟨fun j => wCons (Fin.cast hlen j), ?_⟩
     rw [scheduleBranchLinear_cons, ExcavationSchedule.eval_cons, LinearMap.comp_apply]
     have h0 : wCons (Fin.cast hlen (⟨0, by simp⟩ :
-        Fin (ExcavationSchedule.cons x₀ y₀ hsite rest).length)) = b₀ := rfl
+        Fin (ExcavationSchedule.cons x₀ y₀ hsite rest).length)) = b₀ := by
+      simp [wCons]
     have htail : (fun i : Fin rest.length =>
         wCons (Fin.cast hlen (Fin.cast hlen.symm i.succ))) = w' := by
-      funext i; exact @Fin.cons_succ rest.length (fun _ => Bool) b₀ w' i
+      funext i; simp [wCons]
     rw [h0, htail, hb₀, hw']
 
-/-- Continuous `ℝ`-linear functional evaluating `branchSum hn b · x₀ y₀`. -/
-def branchSumContLinear (hn : 1 ≤ n) (b : Bool) (x₀ y₀ : Fin (n + 1)) :
-    (Fin (n + 1) → Fin (n + 1) → ℝ) →L[ℝ] ℝ where
-  toFun F := branchSum hn b F x₀ y₀
-  map_add' F G := by simp only [branchSum_apply, Pi.add_apply]; ring
-  map_smul' c F := by
-    simp only [branchSum_apply, Pi.smul_apply, smul_eq_mul, RingHom.id_apply]; ring
-  cont := by
-    have heval (x y : Fin (n + 1)) :
-        Continuous (fun F : Fin (n + 1) → Fin (n + 1) → ℝ => F x y) :=
-      (continuous_apply y).comp (continuous_apply x :
-        Continuous fun F : Fin (n + 1) → Fin (n + 1) → ℝ => F x)
-    simp only [branchSum_apply]
-    exact (heval _ _).add (heval _ _)
+private def gridEvalContLinear (x y : Fin (n + 1)) :
+    (Fin (n + 1) → Fin (n + 1) → ℝ) →L[ℝ] ℝ :=
+  (ContinuousLinearMap.proj (R := ℝ) (φ := fun _ : Fin (n + 1) => ℝ) y).comp
+    (ContinuousLinearMap.proj (R := ℝ) (φ := fun _ : Fin (n + 1) => Fin (n + 1) → ℝ) x)
 
-@[simp] theorem branchSumContLinear_apply (hn : 1 ≤ n) (b : Bool) (x₀ y₀ : Fin (n + 1))
+private def branchSumContLinear (hn : 1 ≤ n) (b : Bool) (x₀ y₀ : Fin (n + 1)) :
+    (Fin (n + 1) → Fin (n + 1) → ℝ) →L[ℝ] ℝ :=
+  let p := branchNeighbors hn b x₀ y₀
+  gridEvalContLinear p.1.1 p.1.2 + gridEvalContLinear p.2.1 p.2.2
+
+private theorem branchSumContLinear_apply (hn : 1 ≤ n) (b : Bool) (x₀ y₀ : Fin (n + 1))
     (F : Fin (n + 1) → Fin (n + 1) → ℝ) :
     branchSumContLinear hn b x₀ y₀ F = branchSum hn b F x₀ y₀ := by
-  unfold branchSumContLinear; rfl
+  simp [branchSumContLinear, gridEvalContLinear, branchSum_apply]
 
-/-- Continuous `ℝ`-linear branch map of a single excavation step. -/
-def stepBranchContLinear (hn : 1 ≤ n) (x₀ y₀ : Fin (n + 1)) (b : Bool) :
-    (Fin (n + 1) → Fin (n + 1) → ℝ) →L[ℝ] (Fin (n + 1) → Fin (n + 1) → ℝ) where
-  toLinearMap := stepBranchLinear hn x₀ y₀ b
-  cont := by
-    have heval (x y : Fin (n + 1)) :
-        Continuous (fun F : Fin (n + 1) → Fin (n + 1) → ℝ => F x y) :=
-      (continuous_apply y).comp (continuous_apply x :
-        Continuous fun F : Fin (n + 1) → Fin (n + 1) → ℝ => F x)
-    refine continuous_pi fun x => continuous_pi fun y => ?_
-    dsimp only [LinearMap.coe_mk, AddHom.coe_mk, stepBranchLinear]
-    split_ifs
-    · exact (branchSumContLinear hn b x₀ y₀).continuous.sub (heval x₀ y₀)
-    · exact heval x y
+private def stepBranchContLinear (hn : 1 ≤ n) (x₀ y₀ : Fin (n + 1)) (b : Bool) :
+    (Fin (n + 1) → Fin (n + 1) → ℝ) →L[ℝ] (Fin (n + 1) → Fin (n + 1) → ℝ) :=
+  ContinuousLinearMap.pi fun x => ContinuousLinearMap.pi fun y =>
+    if x = x₀ ∧ y = y₀ then branchSumContLinear hn b x₀ y₀ - gridEvalContLinear x₀ y₀
+    else gridEvalContLinear x y
 
-@[simp] theorem stepBranchContLinear_apply (hn : 1 ≤ n) (x₀ y₀ : Fin (n + 1)) (b : Bool)
+private theorem stepBranchContLinear_apply (hn : 1 ≤ n) (x₀ y₀ : Fin (n + 1)) (b : Bool)
     (F : Fin (n + 1) → Fin (n + 1) → ℝ) (x y : Fin (n + 1)) :
-    stepBranchContLinear hn x₀ y₀ b F x y = stepBranchLinear hn x₀ y₀ b F x y := by
-  unfold stepBranchContLinear; rfl
+    stepBranchContLinear hn x₀ y₀ b F x y = stepBranchLinear ℝ hn x₀ y₀ b F x y := by
+  simp only [stepBranchContLinear, ContinuousLinearMap.pi_apply, stepBranchLinear_apply]
+  split_ifs <;> simp [branchSumContLinear_apply, gridEvalContLinear]
 
-/-- Every single unit-cell excavation step is piecewise affine on `Set.univ` in the native
-`TauCeti.IsPiecewiseAffineOn` sense, covered by two closed halfspaces that overlap along ties. -/
+/-- Every single unit-cell excavation step over `ℝ` satisfies `TauCeti.IsPiecewiseAffineOn` on
+`Set.univ`. -/
 theorem isPiecewiseAffineOn_excavateData (hn : 1 ≤ n) (x₀ y₀ : Fin (n + 1)) :
     TauCeti.IsPiecewiseAffineOn
       (excavateData (R := ℝ) hn x₀ y₀)
@@ -480,11 +486,11 @@ theorem isPiecewiseAffineOn_excavateData (hn : 1 ≤ n) (x₀ y₀ : Fin (n + 1)
     funext x y
     cases b
     · have hle : branchSum hn true F x₀ y₀ ≤ branchSum hn false F x₀ y₀ := by
-        simpa [C, L_t, L_f] using hFC
-      simp [A, excavateData_apply, spatialSup_def, max_eq_right hle]
+        simpa [C, L_t, L_f, branchSumContLinear_apply] using hFC
+      simp [A, stepBranchContLinear_apply, excavateData_apply, spatialSup_def, max_eq_right hle]
     · have hle : branchSum hn false F x₀ y₀ ≤ branchSum hn true F x₀ y₀ := by
-        simpa [C, L_t, L_f] using hFC
-      simp [A, excavateData_apply, spatialSup_def, max_eq_left hle]
+        simpa [C, L_t, L_f, branchSumContLinear_apply] using hFC
+      simp [A, stepBranchContLinear_apply, excavateData_apply, spatialSup_def, max_eq_left hle]
 
 /-- Every legal excavation schedule defines a globally piecewise-affine map on `Set.univ`. -/
 theorem ExcavationSchedule.isPiecewiseAffineOn_eval (hn : 1 ≤ n) {τ₁ τ₂ : Section n}
@@ -502,6 +508,17 @@ theorem ExcavationSchedule.isPiecewiseAffineOn_eval (hn : 1 ≤ n) {τ₁ τ₂ 
     rw [heq]
     exact ih.comp (isPiecewiseAffineOn_excavateData hn x₀ y₀) (Set.mapsTo_univ _ _)
 
+private theorem isPiecewiseAffineOn_sectionTransition_of_le (hn : 1 ≤ n)
+    {τ₁ τ₂ : Section n} (hle : τ₁ ≤ τ₂) :
+    TauCeti.IsPiecewiseAffineOn
+      (sectionTransition (R := ℝ) hn τ₁ τ₂)
+      (Set.univ : Set (Fin (n + 1) → Fin (n + 1) → ℝ)) := by
+  have heq : (⇑(sectionTransition (R := ℝ) hn τ₁ τ₂) :
+      (Fin (n + 1) → Fin (n + 1) → ℝ) → _) = (ExcavationSchedule.ofLe hle).eval hn :=
+    funext fun F => ((ExcavationSchedule.ofLe hle).eval_eq_sectionTransition hn F).symm
+  rw [heq]
+  exact (ExcavationSchedule.ofLe hle).isPiecewiseAffineOn_eval hn
+
 /-- For **every** pair of sections `τ₁, τ₂ : Section n` (`1 ≤ n`), the state-transition bijection
 `sectionTransition hn τ₁ τ₂` over `ℝ` is globally piecewise affine (`TauCeti.IsPiecewiseAffineOn`)
 on `Set.univ`. -/
@@ -509,28 +526,14 @@ theorem isPiecewiseAffineOn_sectionTransition (hn : 1 ≤ n) (τ₁ τ₂ : Sect
     TauCeti.IsPiecewiseAffineOn
       (sectionTransition (R := ℝ) hn τ₁ τ₂)
       (Set.univ : Set (Fin (n + 1) → Fin (n + 1) → ℝ)) := by
-  have hup₁ : τ₁ ≤ τ₁ ⊔ τ₂ := le_sup_left
-  have hup₂ : (τ₁ ⊔ τ₂).timeRev ≤ τ₂.timeRev := Section.timeRev_le_timeRev.mpr le_sup_right
-  have hpa₁ :
-      TauCeti.IsPiecewiseAffineOn (sectionTransition (R := ℝ) hn τ₁ (τ₁ ⊔ τ₂)) Set.univ := by
-    have heq : (⇑(sectionTransition (R := ℝ) hn τ₁ (τ₁ ⊔ τ₂)) :
-        (Fin (n + 1) → Fin (n + 1) → ℝ) → _) = (canonicalSchedule hup₁).eval hn :=
-      funext fun F => ((canonicalSchedule hup₁).eval_eq_sectionTransition hn F).symm
-    rw [heq]; exact (canonicalSchedule hup₁).isPiecewiseAffineOn_eval hn
+  have hpa₁ := isPiecewiseAffineOn_sectionTransition_of_le hn (le_sup_left : τ₁ ≤ τ₁ ⊔ τ₂)
   have hpa₂ : TauCeti.IsPiecewiseAffineOn
       (sectionTransition (R := ℝ) hn (τ₁ ⊔ τ₂) τ₂) Set.univ := by
     rw [← sectionTransition_timeRev hn (τ₁ ⊔ τ₂) τ₂]
-    have heq : (⇑(sectionTransition (R := ℝ) hn (τ₁ ⊔ τ₂).timeRev τ₂.timeRev) :
-        (Fin (n + 1) → Fin (n + 1) → ℝ) → _) = (canonicalSchedule hup₂).eval hn :=
-      funext fun F => ((canonicalSchedule hup₂).eval_eq_sectionTransition hn F).symm
-    rw [heq]; exact (canonicalSchedule hup₂).isPiecewiseAffineOn_eval hn
+    exact isPiecewiseAffineOn_sectionTransition_of_le hn
+      (Section.timeRev_le_timeRev.mpr le_sup_right)
   have hcomp := hpa₂.comp hpa₁ (Set.mapsTo_univ _ _)
-  have htrans : (⇑(sectionTransition (R := ℝ) hn (τ₁ ⊔ τ₂) τ₂) ∘
-      ⇑(sectionTransition (R := ℝ) hn τ₁ (τ₁ ⊔ τ₂))) =
-      ⇑(sectionTransition (R := ℝ) hn τ₁ τ₂) := by
-    funext F; simpa using congrFun (congrArg DFunLike.coe
-      (sectionTransition_trans (R := ℝ) hn τ₁ (τ₁ ⊔ τ₂) τ₂)) F
-  rwa [htrans] at hcomp
+  rwa [← Equiv.coe_trans, sectionTransition_trans] at hcomp
 
 /-- `associatorTransition n` over `ℝ` is globally piecewise affine on `Set.univ` for all `n : ℕ`. -/
 theorem isPiecewiseAffineOn_associatorTransition (n : ℕ) :

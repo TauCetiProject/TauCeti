@@ -6,20 +6,20 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Combinatorics.Hive.Basic
-public import TauCeti.Combinatorics.Hive.Octahedron.Lattice
-import Mathlib.Data.Fin.Rev
+public import TauCeti.Combinatorics.Hive.Octahedron.Recurrence
 import Mathlib.Tactic.Abel
+import Mathlib.Tactic.FinCases
 
 /-!
 # Associator hive-face embeddings and section gluing
 
 The four boundary faces of the associator region `Aₙ` in `Lₙ` carry two glued input hives on the
 lower section `S` and two glued output hives on the upper section `S'`. This file defines the four
-explicit coordinate embeddings from `Vertex n` into `SpaceTimePoint n`, proves their shared-edge
-matching identities, constructs the section gluing maps `glueInput` and `glueOutput` together with
-the normalized output face projections `readOutputLeft` (subtracting `|λ| = F(n, 0)`) and
-`readOutputRight`, and proves that wall agreement between `S` and `S'` preserves all four exterior
-boundaries.
+explicit coordinate embeddings from `Vertex n` into `SpaceTimePoint n`, proves their shared-edge and
+exterior-edge matching identities, constructs the section gluing maps `glueInput` and `glueOutput`
+together with the normalized output face projections `readOutputLeft` (subtracting `|λ| = F(n, 0)`)
+and `readOutputRight`, and establishes exterior boundary invariance of `associatorTransition` as
+well as the `n = 2` min-rule chirality counterexample.
 
 ## Main definitions
 
@@ -41,8 +41,12 @@ boundaries.
 * `TauCeti.Hive.Octahedron.inputHivePairEquiv`, `TauCeti.Hive.Octahedron.outputHivePairEquiv`:
   equivalences between pairs of normalized hives with matching shared boundary and functions on
   `S` / `S'` vanishing at `(0, 0)` whose two face pullbacks are rhombus-concave.
-* `TauCeti.Hive.Octahedron.boundary_readOutput_of_eq_on_wall`: wall agreement transfers input
-  exterior boundaries `(λ, μ, ν, π*)` to the two output faces `(μ, ν, τ*)` and `(λ, τ, π*)`.
+* `TauCeti.Hive.Octahedron.boundary_readOutput_of_eq_on_wall`,
+  `TauCeti.Hive.Octahedron.boundary_associatorTransition`: wall agreement transfers input exterior
+  boundaries `(λ, μ, ν, π*)` to the two output faces `(μ, ν, τ*)` and `(λ, τ, π*)`.
+* `TauCeti.Hive.Octahedron.associatorTransition_zero_hive`,
+  `TauCeti.Hive.Octahedron.not_isRhombusConcave_readOutputLeft_min`: `n = 0` hive identity and
+  `n = 2` chirality negative control showing `octahedronMinRule` breaks rhombus concavity.
 
 ## References
 
@@ -148,22 +152,22 @@ theorem embedOutputRight_on_upperSection (p : Vertex n) :
   simp only [upperSection_apply, embedOutputRight_x_val, embedOutputRight_y_val, embedOutputRight_t,
     Int.abs_eq_natAbs]; omega
 
-theorem embedInputLeft_isAssociator (p : Vertex n) : (embedInputLeft p).IsAssociator := by
+theorem isAssociator_embedInputLeft (p : Vertex n) : (embedInputLeft p).IsAssociator := by
   rw [isAssociator_iff_between]
   exact ⟨(embedInputLeft_on_lowerSection p).le,
     (embedInputLeft_on_lowerSection p).symm.le.trans (lowerSection_le_upperSection n _ _)⟩
 
-theorem embedInputRight_isAssociator (p : Vertex n) : (embedInputRight p).IsAssociator := by
+theorem isAssociator_embedInputRight (p : Vertex n) : (embedInputRight p).IsAssociator := by
   rw [isAssociator_iff_between]
   exact ⟨(embedInputRight_on_lowerSection p).le,
     (embedInputRight_on_lowerSection p).symm.le.trans (lowerSection_le_upperSection n _ _)⟩
 
-theorem embedOutputLeft_isAssociator (p : Vertex n) : (embedOutputLeft p).IsAssociator := by
+theorem isAssociator_embedOutputLeft (p : Vertex n) : (embedOutputLeft p).IsAssociator := by
   rw [isAssociator_iff_between]
   exact ⟨(lowerSection_le_upperSection n _ _).trans (embedOutputLeft_on_upperSection p).le,
     (embedOutputLeft_on_upperSection p).symm.le⟩
 
-theorem embedOutputRight_isAssociator (p : Vertex n) : (embedOutputRight p).IsAssociator := by
+theorem isAssociator_embedOutputRight (p : Vertex n) : (embedOutputRight p).IsAssociator := by
   rw [isAssociator_iff_between]
   exact ⟨(lowerSection_le_upperSection n _ _).trans (embedOutputRight_on_upperSection p).le,
     (embedOutputRight_on_upperSection p).symm.le⟩
@@ -197,9 +201,8 @@ theorem embedOutputRight_injective : Function.Injective (embedOutputRight (n := 
     have := p.sum_eq; have := q.sum_eq
     simp at hx hy ht; ext <;> omega
 
-/-- Along the shared diagonal `x = y` (`t = 0`), the `C → A` edge of the first input face reversed
-matches the `A → B` edge of the second input face (`A` matched with `A` and `C` matched with `B`).
--/
+/-- `embedInputLeft` maps the reversed `C → A` edge (`s = 2`) to `(lowerSection n).point k k` along
+the diagonal `x = y`. -/
 theorem embedInputLeft_edgePoint_two_rev (k : Fin (n + 1)) :
     embedInputLeft (Vertex.edgePoint n 2 k.rev) = (lowerSection n).point k k := by
   have := k.isLt
@@ -208,6 +211,8 @@ theorem embedInputLeft_edgePoint_two_rev (k : Fin (n + 1)) :
   · simp [Fin.val_rev]; omega
   · simp
 
+/-- `embedInputRight` maps the `A → B` edge (`s = 0`) to `(lowerSection n).point k k` along the
+diagonal `x = y`. -/
 theorem embedInputRight_edgePoint_zero (k : Fin (n + 1)) :
     embedInputRight (Vertex.edgePoint n 0 k) = (lowerSection n).point k k := by
   have := k.isLt
@@ -216,29 +221,53 @@ theorem embedInputRight_edgePoint_zero (k : Fin (n + 1)) :
   · simp; omega
   · simp
 
-/-- Along the shared anti-diagonal `x + y = n` (`t = n`), the `C → A` edge of the first output face
-reversed matches the `B → C` edge of the second output face. -/
+/-- `embedOutputLeft` maps the reversed `C → A` edge (`s = 2`) to `(upperSection n).point k.rev k`
+along the anti-diagonal `x + y = n`. -/
 theorem embedOutputLeft_edgePoint_two_rev (k : Fin (n + 1)) :
     embedOutputLeft (Vertex.edgePoint n 2 k.rev) = (upperSection n).point k.rev k := by
   have := k.isLt
   ext
   · simp [Fin.val_rev]; omega
   · simp [Fin.val_rev]; omega
-  · simp only [Fin.isValue, embedOutputLeft_t, Vertex.edgePoint_two_y, CharP.cast_eq_zero,
-      sub_zero, Section.point_t, upperSection_apply, Fin.val_rev, Nat.reduceSubDiff,
-      Int.abs_eq_natAbs]
-    omega
+  · simp [Fin.val_rev, Int.abs_eq_natAbs, -Nat.cast_natAbs]; omega
 
+/-- `embedOutputRight` maps the `B → C` edge (`s = 1`) to `(upperSection n).point k.rev k` along
+the anti-diagonal `x + y = n`. -/
 theorem embedOutputRight_edgePoint_one (k : Fin (n + 1)) :
     embedOutputRight (Vertex.edgePoint n 1 k) = (upperSection n).point k.rev k := by
   have := k.isLt
   ext
   · simp [Fin.val_rev]
   · simp
-  · simp only [Fin.isValue, embedOutputRight_t, Vertex.edgePoint_one_x, CharP.cast_eq_zero,
-      sub_zero, Section.point_t, upperSection_apply, Fin.val_rev, Nat.reduceSubDiff,
-      Int.abs_eq_natAbs]
-    omega
+  · simp [Fin.val_rev, Int.abs_eq_natAbs, -Nat.cast_natAbs]; omega
+
+/-- Along the exterior wall `x = n`, side `0` (`A → B`) of the first output face coincides in
+`Lₙ` with side `1` (`B → C`) of the first input face. -/
+theorem embedOutputLeft_edgePoint_zero (k : Fin (n + 1)) :
+    embedOutputLeft (Vertex.edgePoint n 0 k) = embedInputLeft (Vertex.edgePoint n 1 k) := by
+  have := k.isLt
+  ext <;> simp <;> omega
+
+/-- Along the exterior wall `y = n`, side `1` (`B → C`) of the first output face coincides in
+`Lₙ` with side `1` (`B → C`) of the second input face. -/
+theorem embedOutputLeft_edgePoint_one (k : Fin (n + 1)) :
+    embedOutputLeft (Vertex.edgePoint n 1 k) = embedInputRight (Vertex.edgePoint n 1 k) := by
+  have := k.isLt
+  ext <;> simp; omega
+
+/-- Along the exterior wall `y = 0`, side `0` (`A → B`) of the second output face coincides in
+`Lₙ` with side `0` (`A → B`) of the first input face. -/
+theorem embedOutputRight_edgePoint_zero (k : Fin (n + 1)) :
+    embedOutputRight (Vertex.edgePoint n 0 k) = embedInputLeft (Vertex.edgePoint n 0 k) := by
+  have := k.isLt
+  ext <;> simp <;> omega
+
+/-- Along the exterior wall `x = 0`, side `2` (`C → A`) of the second output face coincides in
+`Lₙ` with side `2` (`C → A`) of the second input face. -/
+theorem embedOutputRight_edgePoint_two (k : Fin (n + 1)) :
+    embedOutputRight (Vertex.edgePoint n 2 k) = embedInputRight (Vertex.edgePoint n 2 k) := by
+  have := k.isLt
+  ext <;> simp; omega
 
 @[simp] theorem embedInputLeft_cornerA_x : (embedInputLeft (Vertex.cornerA n)).x = 0 := by
   ext; simp
@@ -266,7 +295,7 @@ theorem glueInput_of_le (f₁ f₂ : Vertex n → R) {x y : Fin (n + 1)} (h : y.
     glueInput f₁ f₂ x y = f₁ ⟨n - x.val, x.val - y.val, y.val, by have := x.isLt; omega⟩ := by
   unfold glueInput; exact dite_eq_left_of_eq_true (eq_true h)
 
-theorem glueInput_of_gt (f₁ f₂ : Vertex n → R) {x y : Fin (n + 1)} (h : ¬ y.val ≤ x.val) :
+theorem glueInput_of_not_le (f₁ f₂ : Vertex n → R) {x y : Fin (n + 1)} (h : ¬ y.val ≤ x.val) :
     glueInput f₁ f₂ x y = f₂ ⟨n - y.val, x.val, y.val - x.val, by have := y.isLt; omega⟩ := by
   unfold glueInput; exact dite_eq_right_of_eq_false (eq_false h)
 
@@ -294,7 +323,7 @@ theorem glueInput_embedInputRight {f₁ f₂ : Vertex n → R}
       · simp; omega
       · simp; omega
     · congr 1; ext <;> simp [hz, hxy]
-  · rw [glueInput_of_gt f₁ f₂ hle]
+  · rw [glueInput_of_not_le f₁ f₂ hle]
     congr 1; ext
     · simp; omega
     · simp
@@ -330,26 +359,22 @@ section GluingGroup
 
 variable {n : ℕ} {R : Type*} [AddCommGroup R]
 
+private theorem apply_edgePoint_two_rev [PartialOrder R] (h : Hive n R) (k : Fin (n + 1)) :
+    h (Vertex.edgePoint n 2 k.rev) =
+      ∑ i : Fin n with i.val < k.val, -h.boundary 2 i.rev := by
+  have hp : Vertex.edgePoint n 2 k.rev = (Vertex.edgePoint n 0 k).reflect :=
+    (Vertex.reflect_edgePoint n 0 k).symm
+  rw [hp, ← Hive.reflect_apply, h.reflect.apply_edgePoint_zero]
+  exact Finset.sum_congr rfl fun i _ => h.boundary_reflect 0 i
+
 /-- Two hives whose shared boundary satisfies `h₁.boundary 2 i = -h₂.boundary 0 i.rev` agree
 identically along the matched edge (`A, C` of `h₁` matched with `A, B` of `h₂`, both vanishing at
 `A`). -/
 theorem shared_input_edge_eq [PartialOrder R] {h₁ h₂ : Hive n R}
     (hb : ∀ i : Fin n, h₁.boundary 2 i = -h₂.boundary 0 i.rev) (k : Fin (n + 1)) :
     h₁ (Vertex.edgePoint n 2 k.rev) = h₂ (Vertex.edgePoint n 0 k) := by
-  rw [h₁.apply_edgePoint_two, h₂.apply_edgePoint_zero]
-  have hrev : (∑ i : Fin n with k.rev.val ≤ i.val, h₁.boundary 2 i) =
-      -∑ j : Fin n with j.val < k.val, h₂.boundary 0 j := by
-    simp only [hb, Finset.sum_neg_distrib, neg_inj, Finset.sum_filter]
-    refine (Finset.sum_congr rfl fun i _ => ?_).trans
-      (Equiv.sum_comp Fin.revPerm fun j : Fin n => if j.val < k.val then h₂.boundary 0 j else 0)
-    simp only [Fin.revPerm_apply, Fin.val_rev]
-    have := i.isLt; have := k.isLt
-    by_cases hi : n - k.val ≤ i.val
-    · have hi' : n - (i.val + 1) < k.val := by omega
-      simp [hi, hi']
-    · have hi' : ¬ n - (i.val + 1) < k.val := by omega
-      simp [hi, hi']
-  rw [hrev, neg_neg]
+  rw [apply_edgePoint_two_rev, h₂.apply_edgePoint_zero]
+  exact Finset.sum_congr rfl fun i _ => by rw [hb i.rev, Fin.rev_rev, neg_neg]
 
 theorem shared_input_edge_eq_of_productBoundary {lam μ σ ν π : DominantWeight n}
     {h₁ h₂ : IntegerHive n} (hb₁ : h₁.boundary = productBoundary lam μ σ)
@@ -398,11 +423,32 @@ def inputHivePairEquiv [PartialOrder R] :
       have hx : (embedInputLeft p).x = x := by ext; simp [p]; have := x.isLt; omega
       have hy : (embedInputLeft p).y = y := by ext; simp [p]
       rw [hx, hy]
-    · rw [glueInput_of_gt _ _ hle, Hive.mk_apply]
+    · rw [glueInput_of_not_le _ _ hle, Hive.mk_apply]
       set p : Vertex n := ⟨n - y.val, x.val, y.val - x.val, by have := y.isLt; omega⟩
       have hx : (embedInputRight p).x = x := by ext; simp [p]
       have hy : (embedInputRight p).y = y := by ext; simp [p]; have := y.isLt; omega
       rw [hx, hy]
+
+@[simp] theorem inputHivePairEquiv_apply [PartialOrder R]
+    (h : {h : Hive n R × Hive n R // ∀ i : Fin n, h.1.boundary 2 i = -h.2.boundary 0 i.rev}) :
+    (inputHivePairEquiv h).1 = glueInput h.1.1 h.1.2 := by
+  unfold inputHivePairEquiv; rfl
+
+@[simp] theorem inputHivePairEquiv_symm_fst_apply [PartialOrder R]
+    (F : {F : Fin (n + 1) → Fin (n + 1) → R // F 0 0 = 0 ∧
+      IsRhombusConcave (fun p => F (embedInputLeft p).x (embedInputLeft p).y) ∧
+      IsRhombusConcave (fun p => F (embedInputRight p).x (embedInputRight p).y)})
+    (p : Vertex n) :
+    (inputHivePairEquiv.symm F).1.1 p = F.1 (embedInputLeft p).x (embedInputLeft p).y := by
+  unfold inputHivePairEquiv; rfl
+
+@[simp] theorem inputHivePairEquiv_symm_snd_apply [PartialOrder R]
+    (F : {F : Fin (n + 1) → Fin (n + 1) → R // F 0 0 = 0 ∧
+      IsRhombusConcave (fun p => F (embedInputLeft p).x (embedInputLeft p).y) ∧
+      IsRhombusConcave (fun p => F (embedInputRight p).x (embedInputRight p).y)})
+    (p : Vertex n) :
+    (inputHivePairEquiv.symm F).1.2 p = F.1 (embedInputRight p).x (embedInputRight p).y := by
+  unfold inputHivePairEquiv; rfl
 
 /-- Read the first output face `(μ, ν, τ*)` from a function on `S'`, subtracting `F(n, 0)` (which
 equals `|λ|`) to normalize its `A`-corner `(n, 0, 0) ↦ (n, 0, n)`. -/
@@ -430,7 +476,7 @@ theorem glueOutput_of_le (g₁ g₂ : Vertex n → R) {x y : Fin (n + 1)} (h : x
     glueOutput g₁ g₂ x y = g₂ ⟨n - x.val - y.val, x.val, y.val, by omega⟩ := by
   unfold glueOutput; exact dite_eq_left_of_eq_true (eq_true h)
 
-theorem glueOutput_of_gt (g₁ g₂ : Vertex n → R) {x y : Fin (n + 1)} (h : ¬ x.val + y.val ≤ n) :
+theorem glueOutput_of_not_le (g₁ g₂ : Vertex n → R) {x y : Fin (n + 1)} (h : ¬ x.val + y.val ≤ n) :
     glueOutput g₁ g₂ x y = g₂ (Vertex.edgePoint n 0 (Fin.last n)) +
       g₁ ⟨n - y.val, x.val + y.val - n, n - x.val, by have := x.isLt; have := y.isLt; omega⟩ := by
   unfold glueOutput; exact dite_eq_right_of_eq_false (eq_false h)
@@ -473,7 +519,7 @@ theorem readOutputLeft_glueOutput {g₁ g₂ : Vertex n → R}
       · simp [hy]
       · simp [Fin.val_rev]; omega
     rw [hp1, ← hm, hp2]; abel
-  · rw [glueOutput_of_gt g₁ g₂ hle]
+  · rw [glueOutput_of_not_le g₁ g₂ hle]
     have hq : (⟨n - (embedOutputLeft p).y.val,
         (embedOutputLeft p).x.val + (embedOutputLeft p).y.val - n,
         n - (embedOutputLeft p).x.val, by
@@ -485,7 +531,7 @@ theorem readOutputLeft_glueOutput {g₁ g₂ : Vertex n → R}
       · simp; omega
     rw [hq]; abel
 
-theorem glueOutput_readOutput (F : Fin (n + 1) → Fin (n + 1) → R) :
+@[simp] theorem glueOutput_readOutput (F : Fin (n + 1) → Fin (n + 1) → R) :
     glueOutput (readOutputLeft F) (readOutputRight F) = F := by
   funext x y
   have hB : readOutputRight F (Vertex.edgePoint n 0 (Fin.last n)) = F (Fin.last n) 0 := by
@@ -498,7 +544,7 @@ theorem glueOutput_readOutput (F : Fin (n + 1) → Fin (n + 1) → R) :
     have hx : (embedOutputRight p).x = x := by ext; simp [p]
     have hy : (embedOutputRight p).y = y := by ext; simp [p]
     rw [readOutputRight_apply, hx, hy]
-  · rw [glueOutput_of_gt _ _ hle, hB, readOutputLeft_apply]
+  · rw [glueOutput_of_not_le _ _ hle, hB, readOutputLeft_apply]
     set p : Vertex n := ⟨n - y.val, x.val + y.val - n, n - x.val,
       by have := x.isLt; have := y.isLt; omega⟩
     have hx : (embedOutputLeft p).x = x := by ext; simp [p]; have := x.isLt; omega
@@ -527,22 +573,15 @@ theorem shared_output_edge_eq [PartialOrder R] {g₁ g₂ : Hive n R}
     (hb : ∀ i : Fin n, g₁.boundary 2 i = -g₂.boundary 1 i.rev) (k : Fin (n + 1)) :
     g₂ (Vertex.edgePoint n 0 (Fin.last n)) + g₁ (Vertex.edgePoint n 2 k.rev) =
       g₂ (Vertex.edgePoint n 1 k) := by
-  rw [g₂.apply_edgePoint_zero, g₁.apply_edgePoint_two, g₂.apply_edgePoint_one]
-  have hlast : (∑ i : Fin n with i.val < (Fin.last n).val, g₂.boundary 0 i) =
-      ∑ i : Fin n, g₂.boundary 0 i := Finset.sum_congr (by ext i; simp) fun _ _ => rfl
-  have hrev : (∑ i : Fin n with k.rev.val ≤ i.val, g₁.boundary 2 i) =
-      -∑ j : Fin n with j.val < k.val, g₂.boundary 1 j := by
-    simp only [hb, Finset.sum_neg_distrib, neg_inj, Finset.sum_filter]
-    refine (Finset.sum_congr rfl fun i _ => ?_).trans
-      (Equiv.sum_comp Fin.revPerm fun j : Fin n => if j.val < k.val then g₂.boundary 1 j else 0)
-    simp only [Fin.revPerm_apply, Fin.val_rev]
-    have := i.isLt; have := k.isLt
-    by_cases hi : n - k.val ≤ i.val
-    · have hi' : n - (i.val + 1) < k.val := by omega
-      simp [hi, hi']
-    · have hi' : ¬ n - (i.val + 1) < k.val := by omega
-      simp [hi, hi']
-  rw [hlast, hrev]; abel
+  have hB : g₂ (Vertex.edgePoint n 0 (Fin.last n)) = ∑ i : Fin n, g₂.boundary 0 i := by
+    have h := Hive.sum_boundaryLinear_side (⇑g₂) 0
+    rwa [Hive.boundaryLinear_coe, Vertex.edgePoint_zero_zero, g₂.apply_cornerA, sub_zero,
+      eq_comm] at h
+  have h1 : g₁ (Vertex.edgePoint n 2 k.rev) =
+      ∑ i : Fin n with i.val < k.val, g₂.boundary 1 i := by
+    rw [apply_edgePoint_two_rev]
+    exact Finset.sum_congr rfl fun i _ => by rw [hb i.rev, Fin.rev_rev, neg_neg]
+  rw [hB, h1, g₂.apply_edgePoint_one]
 
 /-- Equivalence between pairs of normalized output hives matching along side `2` of `g₁` and side
 `1` of `g₂` and functions on `S'` vanishing at `(0, 0)` whose normalized face pullbacks
@@ -581,6 +620,39 @@ def outputHivePairEquiv [PartialOrder R] :
     · ext p; exact readOutputRight_glueOutput _ _ p
   right_inv F := Subtype.ext (glueOutput_readOutput F.1)
 
+@[simp] theorem outputHivePairEquiv_apply [PartialOrder R]
+    (g : {g : Hive n R × Hive n R // ∀ i : Fin n, g.1.boundary 2 i = -g.2.boundary 1 i.rev}) :
+    (outputHivePairEquiv g).1 = glueOutput g.1.1 g.1.2 := by
+  unfold outputHivePairEquiv; rfl
+
+@[simp] theorem outputHivePairEquiv_symm_fst_apply [PartialOrder R]
+    (F : {F : Fin (n + 1) → Fin (n + 1) → R // F 0 0 = 0 ∧
+      IsRhombusConcave (readOutputLeft F) ∧
+      IsRhombusConcave (readOutputRight F)})
+    (p : Vertex n) :
+    (outputHivePairEquiv.symm F).1.1 p = readOutputLeft F.1 p := by
+  unfold outputHivePairEquiv; rfl
+
+@[simp] theorem outputHivePairEquiv_symm_snd_apply [PartialOrder R]
+    (F : {F : Fin (n + 1) → Fin (n + 1) → R // F 0 0 = 0 ∧
+      IsRhombusConcave (readOutputLeft F) ∧
+      IsRhombusConcave (readOutputRight F)})
+    (p : Vertex n) :
+    (outputHivePairEquiv.symm F).1.2 p = readOutputRight F.1 p := by
+  unfold outputHivePairEquiv; rfl
+
+omit [AddCommGroup R] in
+private theorem apply_eq_of_embed_eq {F G : Fin (n + 1) → Fin (n + 1) → R}
+    (hwall : ∀ x y : Fin (n + 1), IsWall x y → F x y = G x y)
+    {q_out q_in : SpaceTimePoint n}
+    (hupper : upperSection n q_out.x q_out.y = q_out.t)
+    (hlower : lowerSection n q_in.x q_in.y = q_in.t)
+    (heq : q_out = q_in) :
+    F q_out.x q_out.y = G q_in.x q_in.y := by
+  -- Any point lying simultaneously on `S` and `S'` projects onto a boundary wall.
+  subst heq
+  exact hwall _ _ ((lowerSection_eq_upperSection_iff _ _).mp (hlower.trans hupper.symm))
+
 /-- Whenever `F` on `S'` agrees on the four exterior walls with `glueInput h₁ h₂` (for hives
 `h₁, h₂` matching along their shared edge), the four exterior boundaries of `readOutputLeft F` and
 `readOutputRight F` equal `(μ, ν)` and `(λ, π*)`, and the shift `F(n, 0)` equals `|λ|`. -/
@@ -595,64 +667,138 @@ theorem boundary_readOutput_of_eq_on_wall [PartialOrder R] {h₁ h₂ : Hive n R
       Hive.boundaryLinear ℤ n R (readOutputRight F) 0 = h₁.boundary 0 ∧
       Hive.boundaryLinear ℤ n R (readOutputRight F) 2 = h₂.boundary 2 := by
   have hm := shared_input_edge_eq hb
+  -- Corner `(0, 0)` and normalization corner `(n, 0)` lie on the walls `x = 0` and `y = 0`.
   have hF00 : F 0 0 = 0 := by
     rw [hwall 0 0 ((isWall_def _ _).mpr (Or.inl rfl)), glueInput_zero_zero, h₁.apply_cornerA]
   have hFn0 : F (Fin.last n) 0 = ∑ i : Fin n, h₁.boundary 0 i := by
     rw [hwall (Fin.last n) 0 ((isWall_def _ _).mpr (Or.inr (Or.inr (Or.inl rfl)))),
-      glueInput_last_zero, h₁.apply_edgePoint_zero]
-    exact Finset.sum_congr (by ext i; simp) fun _ _ => rfl
+      glueInput_last_zero]
+    have h := Hive.sum_boundaryLinear_side (⇑h₁) 0
+    rwa [Hive.boundaryLinear_coe, Vertex.edgePoint_zero_zero, h₁.apply_cornerA, sub_zero,
+      eq_comm] at h
+  -- Transfer each of the four exterior edges via the `S ∩ S'` embedding identities.
   refine ⟨hF00, hFn0, ?_, ?_, ?_, ?_⟩
   · ext i
     have hpt (k : Fin (n + 1)) :
         F (embedOutputLeft (Vertex.edgePoint n 0 k)).x
-          (embedOutputLeft (Vertex.edgePoint n 0 k)).y =
-          h₁ (Vertex.edgePoint n 1 k) := by
-      rw [hwall _ _ ((isWall_def _ _).mpr (Or.inr (Or.inl (by simp))))]
-      have hx : (embedOutputLeft (Vertex.edgePoint n 0 k)).x =
-          (embedInputLeft (Vertex.edgePoint n 1 k)).x := by ext; simp
-      have hy : (embedOutputLeft (Vertex.edgePoint n 0 k)).y =
-          (embedInputLeft (Vertex.edgePoint n 1 k)).y := by
-        have := k.isLt; ext; simp; omega
-      rw [hx, hy, glueInput_embedInputLeft]
+          (embedOutputLeft (Vertex.edgePoint n 0 k)).y = h₁ (Vertex.edgePoint n 1 k) :=
+      (apply_eq_of_embed_eq hwall (embedOutputLeft_on_upperSection _)
+        (embedInputLeft_on_lowerSection _) (embedOutputLeft_edgePoint_zero k)).trans
+        (glueInput_embedInputLeft _ _ _)
     simp only [Hive.boundaryLinear_apply, readOutputLeft_apply, hpt, Hive.boundary_apply]; abel
   · ext i
     have hpt (k : Fin (n + 1)) :
         F (embedOutputLeft (Vertex.edgePoint n 1 k)).x
-          (embedOutputLeft (Vertex.edgePoint n 1 k)).y =
-          h₂ (Vertex.edgePoint n 1 k) := by
-      rw [hwall _ _ ((isWall_def _ _).mpr (Or.inr (Or.inr (Or.inr (by simp)))))]
-      have hx : (embedOutputLeft (Vertex.edgePoint n 1 k)).x =
-          (embedInputRight (Vertex.edgePoint n 1 k)).x := by ext; simp
-      have hy : (embedOutputLeft (Vertex.edgePoint n 1 k)).y =
-          (embedInputRight (Vertex.edgePoint n 1 k)).y := by ext; simp
-      rw [hx, hy, glueInput_embedInputRight hm]
+          (embedOutputLeft (Vertex.edgePoint n 1 k)).y = h₂ (Vertex.edgePoint n 1 k) :=
+      (apply_eq_of_embed_eq hwall (embedOutputLeft_on_upperSection _)
+        (embedInputRight_on_lowerSection _) (embedOutputLeft_edgePoint_one k)).trans
+        (glueInput_embedInputRight hm _)
     simp only [Hive.boundaryLinear_apply, readOutputLeft_apply, hpt, Hive.boundary_apply]; abel
   · ext i
     have hpt (k : Fin (n + 1)) :
         F (embedOutputRight (Vertex.edgePoint n 0 k)).x
-          (embedOutputRight (Vertex.edgePoint n 0 k)).y =
-          h₁ (Vertex.edgePoint n 0 k) := by
-      rw [hwall _ _ ((isWall_def _ _).mpr (Or.inr (Or.inr (Or.inl (by simp)))))]
-      have hx : (embedOutputRight (Vertex.edgePoint n 0 k)).x =
-          (embedInputLeft (Vertex.edgePoint n 0 k)).x := by
-        have := k.isLt; ext; simp; omega
-      have hy : (embedOutputRight (Vertex.edgePoint n 0 k)).y =
-          (embedInputLeft (Vertex.edgePoint n 0 k)).y := by ext; simp
-      rw [hx, hy, glueInput_embedInputLeft]
+          (embedOutputRight (Vertex.edgePoint n 0 k)).y = h₁ (Vertex.edgePoint n 0 k) :=
+      (apply_eq_of_embed_eq hwall (embedOutputRight_on_upperSection _)
+        (embedInputLeft_on_lowerSection _) (embedOutputRight_edgePoint_zero k)).trans
+        (glueInput_embedInputLeft _ _ _)
     simp only [Hive.boundaryLinear_apply, readOutputRight_apply, hpt, Hive.boundary_apply]
   · ext i
     have hpt (k : Fin (n + 1)) :
         F (embedOutputRight (Vertex.edgePoint n 2 k)).x
-          (embedOutputRight (Vertex.edgePoint n 2 k)).y =
-          h₂ (Vertex.edgePoint n 2 k) := by
-      rw [hwall _ _ ((isWall_def _ _).mpr (Or.inl (by simp)))]
-      have hx : (embedOutputRight (Vertex.edgePoint n 2 k)).x =
-          (embedInputRight (Vertex.edgePoint n 2 k)).x := by ext; simp
-      have hy : (embedOutputRight (Vertex.edgePoint n 2 k)).y =
-          (embedInputRight (Vertex.edgePoint n 2 k)).y := by ext; simp
-      rw [hx, hy, glueInput_embedInputRight hm]
+          (embedOutputRight (Vertex.edgePoint n 2 k)).y = h₂ (Vertex.edgePoint n 2 k) :=
+      (apply_eq_of_embed_eq hwall (embedOutputRight_on_upperSection _)
+        (embedInputRight_on_lowerSection _) (embedOutputRight_edgePoint_two k)).trans
+        (glueInput_embedInputRight hm _)
     simp only [Hive.boundaryLinear_apply, readOutputRight_apply, hpt, Hive.boundary_apply]
 
 end GluingGroup
+
+/-! ### Associator transition on glued hives, `n = 2` chirality check, and boundary invariance -/
+
+section AssociatorGluing
+
+/-- Negative-control chirality check at `n = 2`: gluing the normalized hives `Hive.exampleTwo` and
+`Hive.detTwo + Hive.detTwo` along their matching shared boundary and updating the unique interior
+vertex `(1, 1)` by `octahedronMinRule` (`min` in place of `max`) violates rhombus concavity on the
+first output face `readOutputLeft`. -/
+theorem not_isRhombusConcave_readOutputLeft_min :
+    let h₁ : IntegerHive 2 := Hive.exampleTwo
+    let h₂ : IntegerHive 2 := Hive.detTwo + Hive.detTwo
+    let F : Fin 3 → Fin 3 → ℤ := glueInput h₁ h₂
+    let Fmin : Fin 3 → Fin 3 → ℤ := fun x y =>
+      if x = 1 ∧ y = 1 then octahedronMinRule (F 2 1) (F 1 2) (F 0 1) (F 1 0) (F 1 1) else F x y
+    (∀ i : Fin 2, h₁.boundary 2 i = -h₂.boundary 0 i.rev) ∧
+      ¬ IsRhombusConcave (readOutputLeft Fmin) := by
+  intro h₁ h₂ F Fmin
+  refine ⟨?_, ?_⟩
+  · intro i
+    fin_cases i <;> simp [h₁, h₂, Hive.boundary_exampleTwo, Hive.boundary_detTwo]
+  · intro hconc
+    have hr := (Hive.isRhombusConcave_def _).mp hconc Hive.isRhombus_at_cornerA
+    have eval_eq (x y : Fin 3) (h : y.val ≤ x.val) :
+        F x y = h₁ ⟨2 - x.val, x.val - y.val, y.val, by have := x.isLt; omega⟩ :=
+      glueInput_of_le _ _ h
+    have eval_gt (x y : Fin 3) (h : ¬ y.val ≤ x.val) :
+        F x y = h₂ ⟨2 - y.val, x.val, y.val - x.val, by have := y.isLt; omega⟩ :=
+      glueInput_of_not_le _ _ h
+    have h20 : F 2 0 = 1 := by rw [eval_eq 2 0 (by decide)]; simp [h₁]
+    have h21 : F 2 1 = 2 := by rw [eval_eq 2 1 (by decide)]; simp [h₁]
+    have h11 : F 1 1 = 2 := by rw [eval_eq 1 1 (by decide)]; simp [h₁]
+    have h10 : F 1 0 = 1 := by rw [eval_eq 1 0 (by decide)]; simp [h₁]
+    have h01 : F 0 1 = 2 := by rw [eval_gt 0 1 (by decide)]; simp [h₂]
+    have h12 : F 1 2 = 4 := by rw [eval_gt 1 2 (by decide)]; simp [h₂]
+    have hFmin_20 : Fmin (Fin.last 2) 0 = 1 := by
+      dsimp only [Fmin]; rw [ite_eq_right (by decide)]; exact h20
+    have hFmin_21 : Fmin 2 1 = 2 := by
+      dsimp only [Fmin]; rw [ite_eq_right (by decide)]; exact h21
+    have hFmin_12 : Fmin 1 2 = 4 := by
+      dsimp only [Fmin]; rw [ite_eq_right (by decide)]; exact h12
+    have hFmin_11 : Fmin 1 1 = 2 := by
+      dsimp only [Fmin]
+      rw [ite_eq_left (by decide), octahedronMinRule_apply, h21, h12, h01, h10, h11]; decide
+    have hA : readOutputLeft Fmin (Vertex.cornerA 2) = 0 := readOutputLeft_cornerA Fmin
+    have ha : readOutputLeft Fmin ⟨1, 1, 0, rfl⟩ = 1 := by
+      have hx : (embedOutputLeft (⟨1, 1, 0, rfl⟩ : Vertex 2)).x = 2 := by ext; simp
+      have hy : (embedOutputLeft (⟨1, 1, 0, rfl⟩ : Vertex 2)).y = 1 := by ext; simp
+      rw [readOutputLeft_apply, hx, hy, hFmin_21, hFmin_20]; rfl
+    have hc : readOutputLeft Fmin ⟨1, 0, 1, rfl⟩ = 1 := by
+      have hx : (embedOutputLeft (⟨1, 0, 1, rfl⟩ : Vertex 2)).x = 1 := by ext; simp
+      have hy : (embedOutputLeft (⟨1, 0, 1, rfl⟩ : Vertex 2)).y = 1 := by ext; simp
+      rw [readOutputLeft_apply, hx, hy, hFmin_11, hFmin_20]; rfl
+    have hd : readOutputLeft Fmin ⟨0, 1, 1, rfl⟩ = 3 := by
+      have hx : (embedOutputLeft (⟨0, 1, 1, rfl⟩ : Vertex 2)).x = 1 := by ext; simp
+      have hy : (embedOutputLeft (⟨0, 1, 1, rfl⟩ : Vertex 2)).y = 2 := by ext; simp
+      rw [readOutputLeft_apply, hx, hy, hFmin_12, hFmin_20]; rfl
+    rw [hA, hd, ha, hc] at hr
+    omega
+
+/-- At `n = 0`, `A₀` is a single point, `S = S'`, and reading both output faces of
+`associatorTransition 0 (glueInput h₁ h₂)` returns the unique normalized one-point hive `0`. -/
+theorem associatorTransition_zero_hive {R : Type*} [AddCommGroup R] [SemilatticeSup R]
+    (h₁ h₂ : Hive 0 R) :
+    readOutputLeft (associatorTransition 0 (glueInput (⇑h₁) (⇑h₂))) = ⇑(0 : Hive 0 R) ∧
+      readOutputRight (associatorTransition 0 (glueInput (⇑h₁) (⇑h₂))) = ⇑(0 : Hive 0 R) := by
+  have hp (p : Vertex 0) : p = Vertex.cornerA 0 := by
+    have := p.sum_eq
+    ext <;> simp only [Vertex.cornerA_x, Vertex.cornerA_y, Vertex.cornerA_z] <;> omega
+  refine ⟨funext fun p => ?_, funext fun p => ?_⟩
+  · simp [hp p]
+  · simp [hp p]
+
+/-- Exterior boundary invariance of the associator transition: for any two hives `h₁, h₂` matching
+along their shared boundary, evolving `glueInput h₁ h₂` from `S` to `S'` preserves `(0, 0) ↦ 0`,
+`F'(n, 0) = |λ|`, and all four exterior boundaries `(μ, ν)` and `(λ, π*)`. -/
+theorem boundary_associatorTransition {n : ℕ} {R : Type*} [AddCommGroup R] [SemilatticeSup R]
+    {h₁ h₂ : Hive n R} (hb : ∀ i : Fin n, h₁.boundary 2 i = -h₂.boundary 0 i.rev) :
+    let F' := associatorTransition n (glueInput (⇑h₁) (⇑h₂))
+    F' 0 0 = 0 ∧
+      F' (Fin.last n) 0 = (∑ i : Fin n, h₁.boundary 0 i) ∧
+      Hive.boundaryLinear ℤ n R (readOutputLeft F') 0 = h₁.boundary 1 ∧
+      Hive.boundaryLinear ℤ n R (readOutputLeft F') 1 = h₂.boundary 1 ∧
+      Hive.boundaryLinear ℤ n R (readOutputRight F') 0 = h₁.boundary 0 ∧
+      Hive.boundaryLinear ℤ n R (readOutputRight F') 2 = h₂.boundary 2 :=
+  boundary_readOutput_of_eq_on_wall hb fun _ _ hw => associatorTransition_eq_on_wall _ hw
+
+end AssociatorGluing
 
 end TauCeti.Hive.Octahedron

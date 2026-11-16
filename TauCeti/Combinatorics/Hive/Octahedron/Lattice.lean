@@ -48,8 +48,8 @@ geometry and the exact dictionary between them:
 ## Main results
 
 * `TauCeti.Hive.Octahedron.TetraVertex.equivAssociator`: `TetraVertex n ≃ AssociatorPoint n`.
-* `TauCeti.Hive.Octahedron.IsUnitOctahedron.toSpaceTime_eq`: unit octahedra in `Δ³ₙ` map to the six
-  parity-lattice neighbours around an interior odd centre `(x*, y*, t*)`.
+* `TauCeti.Hive.Octahedron.IsUnitOctahedron.exists_toSpaceTime_eq`: unit octahedra in `Δ³ₙ` map to
+  the six parity-lattice neighbours around an interior odd centre `(x*, y*, t*)`.
 * `TauCeti.Hive.Octahedron.lowerSection_eq_upperSection_iff`: `S(x, y) = S'(x, y)` iff `(x, y)` lies
   on one of the four walls of `[0, n]²`.
 
@@ -105,6 +105,30 @@ def equivAntidiagonalTuple : TetraVertex n ≃ ↥(Finset.Nat.antidiagonalTuple 
   left_inv p := by ext <;> simp [coord]
   right_inv t := by apply Subtype.ext; funext i; fin_cases i <;> simp [coord]
 
+@[simp] theorem equivAntidiagonalTuple_apply (p : TetraVertex n) :
+    (equivAntidiagonalTuple p).1 = p.coord := by
+  unfold equivAntidiagonalTuple; rfl
+
+@[simp] theorem equivAntidiagonalTuple_symm_a
+    (t : ↥(Finset.Nat.antidiagonalTuple 4 n)) :
+    (equivAntidiagonalTuple.symm t).a = t.1 0 := by
+  unfold equivAntidiagonalTuple; rfl
+
+@[simp] theorem equivAntidiagonalTuple_symm_b
+    (t : ↥(Finset.Nat.antidiagonalTuple 4 n)) :
+    (equivAntidiagonalTuple.symm t).b = t.1 1 := by
+  unfold equivAntidiagonalTuple; rfl
+
+@[simp] theorem equivAntidiagonalTuple_symm_c
+    (t : ↥(Finset.Nat.antidiagonalTuple 4 n)) :
+    (equivAntidiagonalTuple.symm t).c = t.1 2 := by
+  unfold equivAntidiagonalTuple; rfl
+
+@[simp] theorem equivAntidiagonalTuple_symm_d
+    (t : ↥(Finset.Nat.antidiagonalTuple 4 n)) :
+    (equivAntidiagonalTuple.symm t).d = t.1 3 := by
+  unfold equivAntidiagonalTuple; rfl
+
 instance : Fintype (TetraVertex n) := Fintype.ofEquiv _ equivAntidiagonalTuple.symm
 
 instance uniqueZero : Unique (TetraVertex 0) where
@@ -132,11 +156,23 @@ def IsUpTetrahedron {n : ℕ} (v : Fin 4 → TetraVertex n) : Prop :=
   ∃ m : ℕ, ∃ p : TetraVertex m, m + 1 = n ∧
     ∀ i j : Fin 4, (v i).coord j = p.coord j + if i = j then 1 else 0
 
+theorem isUpTetrahedron_def {n : ℕ} (v : Fin 4 → TetraVertex n) :
+    IsUpTetrahedron v ↔
+      ∃ m : ℕ, ∃ p : TetraVertex m, m + 1 = n ∧
+        ∀ i j : Fin 4, (v i).coord j = p.coord j + if i = j then 1 else 0 := by
+  unfold IsUpTetrahedron; rfl
+
 /-- A downward unit tetrahedron in `Δ³ₙ`, obtained from a base vertex `p ∈ Δ³_{n-3}` by adding
 `1` to three of the four barycentric coordinates. -/
 def IsDownTetrahedron {n : ℕ} (v : Fin 4 → TetraVertex n) : Prop :=
   ∃ m : ℕ, ∃ p : TetraVertex m, m + 3 = n ∧
     ∀ i j : Fin 4, (v i).coord j = p.coord j + if i = j then 0 else 1
+
+theorem isDownTetrahedron_def {n : ℕ} (v : Fin 4 → TetraVertex n) :
+    IsDownTetrahedron v ↔
+      ∃ m : ℕ, ∃ p : TetraVertex m, m + 3 = n ∧
+        ∀ i j : Fin 4, (v i).coord j = p.coord j + if i = j then 0 else 1 := by
+  unfold IsDownTetrahedron; rfl
 
 /-- A unit octahedron in the tetrahedral subdivision of `Δ³ₙ`, parameterized by a base vertex
 `p ∈ Δ³_{n-2}` and the six two-element subsets of the four coordinates, ordered as `(bot, top)`
@@ -149,6 +185,17 @@ def IsUnitOctahedron {n : ℕ} (bot top xp xm yp ym : TetraVertex n) : Prop :=
     xm.coord = ![p.a + 1, p.b, p.c + 1, p.d] ∧
     yp.coord = ![p.a, p.b, p.c + 1, p.d + 1] ∧
     ym.coord = ![p.a + 1, p.b + 1, p.c, p.d]
+
+theorem isUnitOctahedron_def {n : ℕ} (bot top xp xm yp ym : TetraVertex n) :
+    IsUnitOctahedron bot top xp xm yp ym ↔
+      ∃ m : ℕ, ∃ p : TetraVertex m, m + 2 = n ∧
+        bot.coord = ![p.a + 1, p.b, p.c, p.d + 1] ∧
+        top.coord = ![p.a, p.b + 1, p.c + 1, p.d] ∧
+        xp.coord = ![p.a, p.b + 1, p.c, p.d + 1] ∧
+        xm.coord = ![p.a + 1, p.b, p.c + 1, p.d] ∧
+        yp.coord = ![p.a, p.b, p.c + 1, p.d + 1] ∧
+        ym.coord = ![p.a + 1, p.b + 1, p.c, p.d] := by
+  unfold IsUnitOctahedron; rfl
 
 /-! ### Bounded space-time parity lattice `Lₙ` and associator region `Aₙ` -/
 
@@ -188,6 +235,28 @@ def equivIntSubtype :
   right_inv v := by
     rcases v with ⟨⟨x, y, t⟩, hx0, _, hy0, _, _⟩
     ext <;> simp [Int.toNat_of_nonneg hx0, Int.toNat_of_nonneg hy0]
+
+@[simp] theorem equivIntSubtype_apply (p : SpaceTimePoint n) :
+    (equivIntSubtype p).1 = ((p.x.val : ℤ), (p.y.val : ℤ), p.t) := by
+  unfold equivIntSubtype; rfl
+
+@[simp] theorem equivIntSubtype_symm_x_val
+    (v : {v : ℤ × ℤ × ℤ //
+      0 ≤ v.1 ∧ v.1 ≤ n ∧ 0 ≤ v.2.1 ∧ v.2.1 ≤ n ∧ Even (v.1 + v.2.1 + v.2.2)}) :
+    (equivIntSubtype.symm v).x.val = v.1.1.toNat := by
+  unfold equivIntSubtype; rfl
+
+@[simp] theorem equivIntSubtype_symm_y_val
+    (v : {v : ℤ × ℤ × ℤ //
+      0 ≤ v.1 ∧ v.1 ≤ n ∧ 0 ≤ v.2.1 ∧ v.2.1 ≤ n ∧ Even (v.1 + v.2.1 + v.2.2)}) :
+    (equivIntSubtype.symm v).y.val = v.1.2.1.toNat := by
+  unfold equivIntSubtype; rfl
+
+@[simp] theorem equivIntSubtype_symm_t
+    (v : {v : ℤ × ℤ × ℤ //
+      0 ≤ v.1 ∧ v.1 ≤ n ∧ 0 ≤ v.2.1 ∧ v.2.1 ≤ n ∧ Even (v.1 + v.2.1 + v.2.2)}) :
+    (equivIntSubtype.symm v).t = v.1.2.2 := by
+  unfold equivIntSubtype; rfl
 
 /-- Time reversal `(x, y, t) ↦ (x, y, -t)` on `Lₙ`. -/
 def timeRev (p : SpaceTimePoint n) : SpaceTimePoint n where
@@ -278,6 +347,30 @@ def TetraVertex.equivAssociator (n : ℕ) : TetraVertex n ≃ AssociatorPoint n 
     apply Subtype.ext
     ext <;> simp [toSpaceTime] <;> omega
 
+@[simp] theorem TetraVertex.equivAssociator_apply (n : ℕ) (p : TetraVertex n) :
+    (TetraVertex.equivAssociator n p).1 = p.toSpaceTime := by
+  unfold equivAssociator; rfl
+
+@[simp] theorem TetraVertex.equivAssociator_symm_a (n : ℕ) (q : AssociatorPoint n) :
+    ((TetraVertex.equivAssociator n).symm q).a =
+      ((2 * (n : ℤ) - q.1.x.val - q.1.y.val - q.1.t) / 2).toNat := by
+  unfold equivAssociator; rfl
+
+@[simp] theorem TetraVertex.equivAssociator_symm_b (n : ℕ) (q : AssociatorPoint n) :
+    ((TetraVertex.equivAssociator n).symm q).b =
+      (((q.1.x.val : ℤ) - q.1.y.val + q.1.t) / 2).toNat := by
+  unfold equivAssociator; rfl
+
+@[simp] theorem TetraVertex.equivAssociator_symm_c (n : ℕ) (q : AssociatorPoint n) :
+    ((TetraVertex.equivAssociator n).symm q).c =
+      ((-(q.1.x.val : ℤ) + q.1.y.val + q.1.t) / 2).toNat := by
+  unfold equivAssociator; rfl
+
+@[simp] theorem TetraVertex.equivAssociator_symm_d (n : ℕ) (q : AssociatorPoint n) :
+    ((TetraVertex.equivAssociator n).symm q).d =
+      (((q.1.x.val : ℤ) + q.1.y.val - q.1.t) / 2).toNat := by
+  unfold equivAssociator; rfl
+
 instance {n : ℕ} : Fintype (AssociatorPoint n) :=
   Fintype.ofEquiv (TetraVertex n) (TetraVertex.equivAssociator n)
 
@@ -287,7 +380,7 @@ instance uniqueAssociatorPointZero : Unique (AssociatorPoint 0) :=
 /-- Under `TetraVertex.toSpaceTime`, a unit octahedron in `Δ³ₙ` maps to the six parity-lattice
 neighbours `(x*, y*, t* ± 1)`, `(x* ± 1, y*, t*)`, `(x*, y* ± 1, t*)` around an interior odd
 centre `(x*, y*, t*)`. -/
-theorem IsUnitOctahedron.toSpaceTime_eq {n : ℕ} {bot top xp xm yp ym : TetraVertex n}
+theorem IsUnitOctahedron.exists_toSpaceTime_eq {n : ℕ} {bot top xp xm yp ym : TetraVertex n}
     (ho : IsUnitOctahedron bot top xp xm yp ym) :
     ∃ x y t : ℤ, 0 < x ∧ x < n ∧ 0 < y ∧ y < n ∧ Odd (x + y + t) ∧
       ((bot.toSpaceTime.x.val : ℤ), (bot.toSpaceTime.y.val : ℤ), bot.toSpaceTime.t) =
@@ -332,7 +425,7 @@ theorem IsUnitOctahedron.toSpaceTime_eq {n : ℕ} {bot top xp xm yp ym : TetraVe
 
 /-- Under `TetraVertex.toSpaceTime`, an upward unit tetrahedron with base `p ∈ Δ³_{n-1}` maps to
 `(x, y, t)`, `(x + 1, y, t + 1)`, `(x, y + 1, t + 1)`, `(x + 1, y + 1, t)` in `Lₙ`. -/
-theorem IsUpTetrahedron.toSpaceTime_eq {n : ℕ} {v : Fin 4 → TetraVertex n}
+theorem IsUpTetrahedron.exists_toSpaceTime_eq {n : ℕ} {v : Fin 4 → TetraVertex n}
     (hu : IsUpTetrahedron v) :
     ∃ x y t : ℤ,
       (((v 0).toSpaceTime.x.val : ℤ), ((v 0).toSpaceTime.y.val : ℤ), (v 0).toSpaceTime.t) =
@@ -360,7 +453,7 @@ theorem IsUpTetrahedron.toSpaceTime_eq {n : ℕ} {v : Fin 4 → TetraVertex n}
 /-- Under `TetraVertex.toSpaceTime`, a downward unit tetrahedron with base `p ∈ Δ³_{n-3}` maps to
 `(x + 2, y + 2, t + 2)`, `(x + 1, y + 2, t + 1)`, `(x + 2, y + 1, t + 1)`, `(x + 1, y + 1, t + 2)`
 in `Lₙ`. -/
-theorem IsDownTetrahedron.toSpaceTime_eq {n : ℕ} {v : Fin 4 → TetraVertex n}
+theorem IsDownTetrahedron.exists_toSpaceTime_eq {n : ℕ} {v : Fin 4 → TetraVertex n}
     (hdn : IsDownTetrahedron v) :
     ∃ x y t : ℤ,
       (((v 0).toSpaceTime.x.val : ℤ), ((v 0).toSpaceTime.y.val : ℤ), (v 0).toSpaceTime.t) =
@@ -414,6 +507,15 @@ instance {n : ℕ} (x₁ y₁ x₂ y₂ : Fin (n + 1)) : Decidable (GridAdj x₁
 theorem GridAdj.symm {n : ℕ} {x₁ y₁ x₂ y₂ : Fin (n + 1)} (h : GridAdj x₁ y₁ x₂ y₂) :
     GridAdj x₂ y₂ x₁ y₁ := by
   rw [gridAdj_def] at h ⊢; omega
+
+theorem gridAdj_add_one_left {n : ℕ} {x y : Fin (n + 1)} {hx : x.val + 1 < n + 1} :
+    GridAdj x y ⟨x.val + 1, hx⟩ y := by
+  simp only [gridAdj_def]; omega
+
+theorem gridAdj_sub_one_left {n : ℕ} {x y : Fin (n + 1)} (hx0 : 0 < x.val)
+    {hx : x.val - 1 < n + 1} :
+    GridAdj x y ⟨x.val - 1, hx⟩ y := by
+  simp only [gridAdj_def]; omega
 
 /-- A grid point `(x, y) ∈ [0, n]²` lies on one of the four boundary walls. -/
 def IsWall {n : ℕ} (x y : Fin (n + 1)) : Prop :=
@@ -505,10 +607,10 @@ def point (τ : Section n) (x y : Fin (n + 1)) : SpaceTimePoint n :=
 
 /-- Every vertical line `{(x, y)} × ℤ` meets the graph of `τ` in the unique point `τ.point x y`. -/
 theorem eq_point_iff (τ : Section n) {p : SpaceTimePoint n} {x y : Fin (n + 1)} :
-    (p.x = x ∧ p.y = y ∧ p.t = τ p.x p.y) ↔ p = τ.point x y := by
+    p = τ.point x y ↔ p.x = x ∧ p.y = y ∧ p.t = τ p.x p.y := by
   constructor
-  · rintro ⟨rfl, rfl, ht⟩; ext <;> simp [ht]
   · rintro rfl; simp
+  · rintro ⟨rfl, rfl, ht⟩; ext <;> simp [ht]
 
 /-- Time-reversed section `(x, y) ↦ -τ x y`. -/
 def timeRev (τ : Section n) : Section n where
@@ -538,54 +640,48 @@ instance (τ₁ τ₂ : Section n) : Decidable (τ₁ ≤ τ₂) :=
     τ₁.timeRev ≤ τ₂.timeRev ↔ τ₂ ≤ τ₁ := by
   simp [le_def]
 
-/-- Pointwise maximum of two sections. -/
-protected def sup (τ₁ τ₂ : Section n) : Section n :=
-  ofDistLeOne (fun x y => max (τ₁ x y) (τ₂ x y))
-    (fun x y => by
-      rcases le_total (τ₁ x y) (τ₂ x y) with h | h
-      · rw [max_eq_right h]; exact τ₂.even_sum x y
-      · rw [max_eq_left h]; exact τ₁.even_sum x y)
-    (fun {x₁ y₁ x₂ y₂} hadj => by
-      have h₁ := τ₁.slope_eq_one hadj
-      have h₂ := τ₂.slope_eq_one hadj
-      rw [Int.abs_eq_natAbs]; omega)
-
-/-- Pointwise minimum of two sections. -/
-protected def inf (τ₁ τ₂ : Section n) : Section n :=
-  ofDistLeOne (fun x y => min (τ₁ x y) (τ₂ x y))
-    (fun x y => by
-      rcases le_total (τ₁ x y) (τ₂ x y) with h | h
-      · rw [min_eq_left h]; exact τ₁.even_sum x y
-      · rw [min_eq_right h]; exact τ₂.even_sum x y)
-    (fun {x₁ y₁ x₂ y₂} hadj => by
-      have h₁ := τ₁.slope_eq_one hadj
-      have h₂ := τ₂.slope_eq_one hadj
-      rw [Int.abs_eq_natAbs]; omega)
-
-instance : Lattice (Section n) where
-  sup := Section.sup
-  le_sup_left τ₁ τ₂ := by rw [le_def]; intro x y; unfold Section.sup; simp
-  le_sup_right τ₁ τ₂ := by rw [le_def]; intro x y; unfold Section.sup; simp
+instance instLattice : Lattice (Section n) where
+  sup τ₁ τ₂ :=
+    ofDistLeOne (fun x y => max (τ₁ x y) (τ₂ x y))
+      (fun x y => by
+        rcases le_total (τ₁ x y) (τ₂ x y) with h | h
+        · rw [max_eq_right h]; exact τ₂.even_sum x y
+        · rw [max_eq_left h]; exact τ₁.even_sum x y)
+      (fun {x₁ y₁ x₂ y₂} hadj => by
+        have h₁ := τ₁.slope_eq_one hadj
+        have h₂ := τ₂.slope_eq_one hadj
+        rw [Int.abs_eq_natAbs]; omega)
+  le_sup_left τ₁ τ₂ := by rw [le_def]; intro x y; simp
+  le_sup_right τ₁ τ₂ := by rw [le_def]; intro x y; simp
   sup_le τ₁ τ₂ τ₃ h₁ h₂ := by
-    rw [le_def] at h₁ h₂ ⊢; intro x y; unfold Section.sup; simp [h₁ x y, h₂ x y]
-  inf := Section.inf
-  inf_le_left τ₁ τ₂ := by rw [le_def]; intro x y; unfold Section.inf; simp
-  inf_le_right τ₁ τ₂ := by rw [le_def]; intro x y; unfold Section.inf; simp
+    rw [le_def] at h₁ h₂ ⊢; intro x y; simp [h₁ x y, h₂ x y]
+  inf τ₁ τ₂ :=
+    ofDistLeOne (fun x y => min (τ₁ x y) (τ₂ x y))
+      (fun x y => by
+        rcases le_total (τ₁ x y) (τ₂ x y) with h | h
+        · rw [min_eq_left h]; exact τ₁.even_sum x y
+        · rw [min_eq_right h]; exact τ₂.even_sum x y)
+      (fun {x₁ y₁ x₂ y₂} hadj => by
+        have h₁ := τ₁.slope_eq_one hadj
+        have h₂ := τ₂.slope_eq_one hadj
+        rw [Int.abs_eq_natAbs]; omega)
+  inf_le_left τ₁ τ₂ := by rw [le_def]; intro x y; simp
+  inf_le_right τ₁ τ₂ := by rw [le_def]; intro x y; simp
   le_inf τ₁ τ₂ τ₃ h₁ h₂ := by
-    rw [le_def] at h₁ h₂ ⊢; intro x y; unfold Section.inf; simp [h₁ x y, h₂ x y]
+    rw [le_def] at h₁ h₂ ⊢; intro x y; simp [h₁ x y, h₂ x y]
 
 @[simp] theorem sup_apply (τ₁ τ₂ : Section n) (x y : Fin (n + 1)) :
     (τ₁ ⊔ τ₂) x y = max (τ₁ x y) (τ₂ x y) := by
-  -- Reduce the `Lattice` `⊔` projection to `Section.sup` before unfolding.
-  change Section.sup τ₁ τ₂ x y = _
-  unfold Section.sup
+  -- Reduce the `Lattice` `⊔` projection before unfolding `instLattice`.
+  change instLattice.sup τ₁ τ₂ x y = _
+  unfold instLattice
   exact ofDistLeOne_apply _ _ _ x y
 
 @[simp] theorem inf_apply (τ₁ τ₂ : Section n) (x y : Fin (n + 1)) :
     (τ₁ ⊓ τ₂) x y = min (τ₁ x y) (τ₂ x y) := by
-  -- Reduce the `Lattice` `⊓` projection to `Section.inf` before unfolding.
-  change Section.inf τ₁ τ₂ x y = _
-  unfold Section.inf
+  -- Reduce the `Lattice` `⊓` projection before unfolding `instLattice`.
+  change instLattice.inf τ₁ τ₂ x y = _
+  unfold instLattice
   exact ofDistLeOne_apply _ _ _ x y
 
 end Section
