@@ -5,9 +5,11 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.CategoryTheory.Monoidal.TensorPow.Skeleton
 public import TauCeti.Geometry.Manifold.VectorBundle.FiniteRank.Monoidal
 public import TauCeti.Geometry.Manifold.VectorBundle.FiniteRank.Dual
 public import TauCeti.Geometry.Manifold.VectorBundle.FrameTrivialization
+import Mathlib.CategoryTheory.Monoidal.Transport
 
 /-!
 # The symmetric monoidal category of `C^n` finite-rank cores and its Picard group
@@ -20,14 +22,17 @@ category of holomorphic finite-rank vector-bundle cores and holomorphic bundle m
 
 Because `FiniteRankBundleCore.contMDiff_totalSpaceMap_monoidalTensorHom` and the monoidal coherence
 regularity theorems of `TauCeti.Geometry.Manifold.VectorBundle.FiniteRank.Monoidal` require no
-completeness of `𝕜`, the faithful forgetful functor `forgetToCore` equips
-`ContMDiffFiniteRankBundleCore I n B` with a symmetric monoidal structure, together with
-right-recursive tensor powers matching powers in `CategoryTheory.Skeleton`.
+completeness of `𝕜`, transporting the monoidal, braided, and symmetric axioms along the faithful
+forgetful functor `forgetToCore` equips `ContMDiffFiniteRankBundleCore I n B` with a symmetric
+monoidal structure, whose generic tensor powers `TauCeti.tensorPow` match powers in
+`CategoryTheory.Skeleton` (`TauCeti.toSkeleton_tensorPow`).
 
 The commutative group `ContMDiffPicardGroup I n B` is the group of units
 `(Skeleton (ContMDiffFiniteRankBundleCore I n B))ˣ` of isomorphism classes of tensor-invertible
 `C^n` cores; for `I = 𝓘(ℂ, EB)` and `n = ∞`, this is the holomorphic Picard group of `B`. Over a
-nonempty base every invertible `C^n` core has rank one. Conversely, over a complete scalar field:
+nonempty base every invertible `C^n` core has rank one, and without completeness of `𝕜` a rank-one
+`C^n` core is isomorphic to `𝟙_` if and only if it admits a nowhere-vanishing `C^n` section
+(`nonempty_iso_tensorUnit_iff_exists_section_ne_zero`). Over a complete scalar field:
 
 * every `C^n` morphism with bijective fibre maps is an isomorphism (`isIso_iff_bijective`);
 * every rank-one `C^n` core `A` satisfies `A.dual ⊗ A ≅ 𝟙_` (`dualTensorIsoUnit`), hence defines a
@@ -132,7 +137,6 @@ instance : (forgetToCore I n B).Faithful where
 
 /-- Lift an isomorphism of underlying finite-rank cores whose forward and inverse total-space maps
 are `C^n` to an isomorphism in `ContMDiffFiniteRankBundleCore I n B`. -/
-@[expose]
 def isoMk {A D : ContMDiffFiniteRankBundleCore I n B} (e : A.toCore ≅ D.toCore)
     (he_hom : ContMDiff (I.prod 𝓘(𝕜, Fin A.toCore.rank → 𝕜))
       (I.prod 𝓘(𝕜, Fin D.toCore.rank → 𝕜)) n e.hom.totalSpaceMap)
@@ -176,6 +180,16 @@ def isoToDiffeomorph {A D : ContMDiffFiniteRankBundleCore I n B} (e : A ≅ D) :
     ⇑(isoToDiffeomorph e).symm = e.inv.toHom.totalSpaceMap :=
   FiniteRankBundleCore.coe_isoToDiffeomorph_symm _ _ _
 
+variable (I n B) in
+/-- The trivial `C^n` finite-rank core of rank `r` over `B`. -/
+-- Expose the underlying core so the dependent fibre model reduces to `Fin r → 𝕜`.
+@[expose]
+def trivial (r : ℕ) : ContMDiffFiniteRankBundleCore I n B :=
+  ⟨FiniteRankBundleCore.trivial 𝕜 B r, inferInstance⟩
+
+@[simp] theorem toCore_trivial (r : ℕ) :
+    (trivial I n B r).toCore = FiniteRankBundleCore.trivial 𝕜 B r := (rfl)
+
 /-- A fixed continuous linear equivalence intertwining two `C^n` cores with equal chart domains
 induces an isomorphism in `ContMDiffFiniteRankBundleCore I n B`. -/
 noncomputable def constIso {A D : ContMDiffFiniteRankBundleCore I n B}
@@ -193,6 +207,26 @@ noncomputable def constIso {A D : ContMDiffFiniteRankBundleCore I n B}
     (FiniteRankBundleCore.coe_constIsoDiffeomorph_symm (I := I) (n := n) hbase e he ▸
       Φ.symm.contMDiff)
 
+@[simp] theorem constIso_hom_toHom {A D : ContMDiffFiniteRankBundleCore I n B}
+    (hbase : ∀ i, A.toCore.core.baseSet i = D.toCore.core.baseSet i)
+    (e : (Fin A.toCore.rank → 𝕜) ≃L[𝕜] (Fin D.toCore.rank → 𝕜))
+    (he : ∀ i j x, x ∈ A.toCore.core.baseSet i → x ∈ A.toCore.core.baseSet j →
+      (e : (Fin A.toCore.rank → 𝕜) →L[𝕜] (Fin D.toCore.rank → 𝕜)).comp
+          (A.toCore.core.coordChange i j x) =
+        (D.toCore.core.coordChange i j x).comp
+          (e : (Fin A.toCore.rank → 𝕜) →L[𝕜] (Fin D.toCore.rank → 𝕜))) :
+    (constIso hbase e he).hom.toHom = (FiniteRankBundleCore.constIso hbase e he).hom := (rfl)
+
+@[simp] theorem constIso_inv_toHom {A D : ContMDiffFiniteRankBundleCore I n B}
+    (hbase : ∀ i, A.toCore.core.baseSet i = D.toCore.core.baseSet i)
+    (e : (Fin A.toCore.rank → 𝕜) ≃L[𝕜] (Fin D.toCore.rank → 𝕜))
+    (he : ∀ i j x, x ∈ A.toCore.core.baseSet i → x ∈ A.toCore.core.baseSet j →
+      (e : (Fin A.toCore.rank → 𝕜) →L[𝕜] (Fin D.toCore.rank → 𝕜)).comp
+          (A.toCore.core.coordChange i j x) =
+        (D.toCore.core.coordChange i j x).comp
+          (e : (Fin A.toCore.rank → 𝕜) →L[𝕜] (Fin D.toCore.rank → 𝕜))) :
+    (constIso hbase e he).inv.toHom = (FiniteRankBundleCore.constIso hbase e he).inv := (rfl)
+
 /-! ### Symmetric monoidal structure -/
 
 instance : MonoidalCategoryStruct (ContMDiffFiniteRankBundleCore I n B) where
@@ -206,7 +240,7 @@ instance : MonoidalCategoryStruct (ContMDiffFiniteRankBundleCore I n B) where
   tensorHom f g := ⟨f.toHom ⊗ₘ g.toHom,
     FiniteRankBundleCore.contMDiff_totalSpaceMap_monoidalTensorHom f.toHom g.toHom
       f.contMDiff_totalSpaceMap g.contMDiff_totalSpaceMap⟩
-  tensorUnit := ⟨𝟙_ (FiniteRankBundleCore 𝕜 B), inferInstance⟩
+  tensorUnit := trivial I n B 1
   associator A D C := isoMk (α_ A.toCore D.toCore C.toCore)
     (FiniteRankBundleCore.contMDiff_totalSpaceMap_associator_hom A.toCore D.toCore C.toCore)
     (FiniteRankBundleCore.contMDiff_totalSpaceMap_associator_inv A.toCore D.toCore C.toCore)
@@ -222,6 +256,16 @@ instance : MonoidalCategoryStruct (ContMDiffFiniteRankBundleCore I n B) where
 
 @[simp] theorem tensorUnit_toCore :
     (𝟙_ (ContMDiffFiniteRankBundleCore I n B)).toCore = 𝟙_ (FiniteRankBundleCore 𝕜 B) := (rfl)
+
+@[simp] theorem localTriv_baseSet_tensorObj (A D : ContMDiffFiniteRankBundleCore I n B) (i : B) :
+    ((A ⊗ D).toCore.core.localTriv i).baseSet =
+      A.toCore.core.baseSet i ∩ D.toCore.core.baseSet i :=
+  FiniteRankBundleCore.localTriv_baseSet_tensorObj A.toCore D.toCore i
+
+@[simp] theorem coordChange_tensorUnit (i j x : B) :
+    (𝟙_ (ContMDiffFiniteRankBundleCore I n B)).toCore.core.coordChange i j x =
+      ContinuousLinearMap.id 𝕜
+        (Fin (𝟙_ (ContMDiffFiniteRankBundleCore I n B)).toCore.rank → 𝕜) := (rfl)
 
 @[simp] theorem whiskerLeft_toHom (A : ContMDiffFiniteRankBundleCore I n B)
     {D C : ContMDiffFiniteRankBundleCore I n B} (g : D ⟶ C) :
@@ -253,57 +297,68 @@ instance : MonoidalCategoryStruct (ContMDiffFiniteRankBundleCore I n B) where
 @[simp] theorem rightUnitor_inv_toHom (A : ContMDiffFiniteRankBundleCore I n B) :
     (ρ_ A).inv.toHom = (ρ_ A.toCore).inv := (rfl)
 
-instance : MonoidalCategory (ContMDiffFiniteRankBundleCore I n B) where
-  tensorHom_def f g := hom_ext (MonoidalCategory.tensorHom_def f.toHom g.toHom)
-  id_tensorHom_id A D := hom_ext (MonoidalCategory.id_tensorHom_id A.toCore D.toCore)
-  tensorHom_comp_tensorHom f₁ f₂ g₁ g₂ :=
-    hom_ext (MonoidalCategory.tensorHom_comp_tensorHom f₁.toHom f₂.toHom g₁.toHom g₂.toHom)
-  whiskerLeft_id A D := hom_ext (MonoidalCategory.whiskerLeft_id A.toCore D.toCore)
-  id_whiskerRight A D := hom_ext (MonoidalCategory.id_whiskerRight A.toCore D.toCore)
-  associator_naturality f g h :=
-    hom_ext (MonoidalCategory.associator_naturality f.toHom g.toHom h.toHom)
-  leftUnitor_naturality f := hom_ext (MonoidalCategory.leftUnitor_naturality f.toHom)
-  rightUnitor_naturality f := hom_ext (MonoidalCategory.rightUnitor_naturality f.toHom)
-  pentagon A D C E := hom_ext (MonoidalCategory.pentagon A.toCore D.toCore C.toCore E.toCore)
-  triangle A D := hom_ext (MonoidalCategory.triangle A.toCore D.toCore)
+instance : MonoidalCategory (ContMDiffFiniteRankBundleCore I n B) :=
+  Monoidal.induced (forgetToCore I n B)
+    { μIso _ _ := Iso.refl _
+      εIso := Iso.refl _
+      whiskerLeft_eq := fun A {_ _} f ↦ by
+        have h : A.toCore ◁ f.toHom =
+            (Iso.refl _).inv ≫ (A.toCore ◁ f.toHom) ≫ (Iso.refl _).hom := by simp
+        exact h
+      whiskerRight_eq := fun {_ _} f D ↦ by
+        have h : f.toHom ▷ D.toCore =
+            (Iso.refl _).inv ≫ (f.toHom ▷ D.toCore) ≫ (Iso.refl _).hom := by simp
+        exact h
+      tensorHom_eq := fun {_ _ _ _} f g ↦ by
+        have h : f.toHom ⊗ₘ g.toHom =
+            (Iso.refl _).inv ≫ (f.toHom ⊗ₘ g.toHom) ≫ (Iso.refl _).hom := by simp
+        exact h
+      associator_eq := fun A D C ↦ by
+        have h : (α_ A.toCore D.toCore C.toCore).hom =
+            (((Iso.refl _).symm ≪≫ ((Iso.refl _).symm ⊗ᵢ Iso.refl _)) ≪≫
+              α_ A.toCore D.toCore C.toCore ≪≫
+              ((Iso.refl _ ⊗ᵢ Iso.refl _) ≪≫ Iso.refl _)).hom := by simp
+        exact h
+      leftUnitor_eq := fun A ↦ by
+        have h : (λ_ A.toCore).hom =
+            (((Iso.refl _).symm ≪≫ ((Iso.refl _).symm ⊗ᵢ Iso.refl _)) ≪≫
+              λ_ A.toCore).hom := by simp
+        exact h
+      rightUnitor_eq := fun A ↦ by
+        have h : (ρ_ A.toCore).hom =
+            (((Iso.refl _).symm ≪≫ (Iso.refl _ ⊗ᵢ (Iso.refl _).symm)) ≪≫
+              ρ_ A.toCore).hom := by simp
+        exact h }
 
-instance : (forgetToCore I n B).LaxMonoidal where
-  ε := 𝟙 _
-  μ _ _ := 𝟙 _
-  μ_natural_left _ _ := by simp
-  μ_natural_right _ _ := by simp
-  associativity _ _ _ := by simp
-  left_unitality _ := by simp
-  right_unitality _ := by simp
+instance : (forgetToCore I n B).Monoidal :=
+  Functor.CoreMonoidal.toMonoidal
+    { εIso := Iso.refl _
+      μIso _ _ := Iso.refl _
+      left_unitality := fun A ↦ by
+        have h : (λ_ A.toCore).hom =
+            ((Iso.refl (𝟙_ (FiniteRankBundleCore 𝕜 B))).hom ▷ A.toCore) ≫
+              (Iso.refl (𝟙_ (FiniteRankBundleCore 𝕜 B) ⊗ A.toCore)).hom ≫
+              (λ_ A.toCore).hom := by simp
+        exact h
+      right_unitality := fun A ↦ by
+        have h : (ρ_ A.toCore).hom =
+            (A.toCore ◁ (Iso.refl (𝟙_ (FiniteRankBundleCore 𝕜 B))).hom) ≫
+              (Iso.refl (A.toCore ⊗ 𝟙_ (FiniteRankBundleCore 𝕜 B))).hom ≫
+              (ρ_ A.toCore).hom := by simp
+        exact h }
 
-instance : (forgetToCore I n B).OplaxMonoidal where
-  η := 𝟙 _
-  δ _ _ := 𝟙 _
-  δ_natural_left _ _ := by simp
-  δ_natural_right _ _ := by simp
-  oplax_associativity _ _ _ := by simp
-  oplax_left_unitality _ := by simp
-  oplax_right_unitality _ := by simp
+@[simp] theorem forgetToCore_ε :
+    Functor.LaxMonoidal.ε (forgetToCore I n B) = 𝟙 (𝟙_ (FiniteRankBundleCore 𝕜 B)) := (rfl)
 
-instance : (forgetToCore I n B).Monoidal where
-  ε_η := Category.id_comp _
-  η_ε := Category.id_comp _
-  μ_δ _ _ := Category.id_comp _
-  δ_μ _ _ := Category.id_comp _
+@[simp] theorem forgetToCore_μ (A D : ContMDiffFiniteRankBundleCore I n B) :
+    Functor.LaxMonoidal.μ (forgetToCore I n B) A D = 𝟙 (A.toCore ⊗ D.toCore) := (rfl)
 
-instance : SymmetricCategory (ContMDiffFiniteRankBundleCore I n B) where
-  braiding A D := isoMk (β_ A.toCore D.toCore)
-    (FiniteRankBundleCore.contMDiff_totalSpaceMap_braiding_hom A.toCore D.toCore)
-    (FiniteRankBundleCore.contMDiff_totalSpaceMap_braiding_inv A.toCore D.toCore)
-  braiding_naturality_right A _ _ g :=
-    hom_ext (BraidedCategory.braiding_naturality_right A.toCore g.toHom)
-  braiding_naturality_left f D :=
-    hom_ext (BraidedCategory.braiding_naturality_left f.toHom D.toCore)
-  hexagon_forward A D C :=
-    hom_ext (BraidedCategory.hexagon_forward A.toCore D.toCore C.toCore)
-  hexagon_reverse A D C :=
-    hom_ext (BraidedCategory.hexagon_reverse A.toCore D.toCore C.toCore)
-  symmetry A D := hom_ext (SymmetricCategory.symmetry A.toCore D.toCore)
+instance : BraidedCategory (ContMDiffFiniteRankBundleCore I n B) :=
+  BraidedCategory.ofFaithful (forgetToCore I n B)
+    (fun A D ↦ isoMk (β_ A.toCore D.toCore)
+      (FiniteRankBundleCore.contMDiff_totalSpaceMap_braiding_hom A.toCore D.toCore)
+      (FiniteRankBundleCore.contMDiff_totalSpaceMap_braiding_inv A.toCore D.toCore))
+    (fun _ _ ↦ FiniteRankBundleCore.hom_ext fun _ ↦ by simp)
 
 @[simp] theorem braiding_hom_toHom (A D : ContMDiffFiniteRankBundleCore I n B) :
     (β_ A D).hom.toHom = (β_ A.toCore D.toCore).hom := (rfl)
@@ -312,85 +367,44 @@ instance : SymmetricCategory (ContMDiffFiniteRankBundleCore I n B) where
     (β_ A D).inv.toHom = (β_ A.toCore D.toCore).inv := (rfl)
 
 instance : (forgetToCore I n B).Braided where
-  braided _ _ := (Category.id_comp _).trans (Category.comp_id _).symm
+  braided _ _ := FiniteRankBundleCore.hom_ext fun _ ↦ by simp
+
+noncomputable instance : SymmetricCategory (ContMDiffFiniteRankBundleCore I n B) :=
+  SymmetricCategory.ofFaithful (forgetToCore I n B)
 
 /-- A `C^n` core whose transition maps on chart overlaps are all the identity, equipped with a
-continuous linear equivalence of its model fibre with `Fin 1 → 𝕜`, is isomorphic in
-`ContMDiffFiniteRankBundleCore I n B` to the monoidal unit. -/
-def isoTensorUnitOfCoordChangeEqId (A : ContMDiffFiniteRankBundleCore I n B)
-    (e : (Fin A.toCore.rank → 𝕜) ≃L[𝕜] (Fin (𝟙_ (FiniteRankBundleCore 𝕜 B)).rank → 𝕜))
+continuous linear equivalence of its model fibre with `Fin r → 𝕜`, is isomorphic in
+`ContMDiffFiniteRankBundleCore I n B` to the trivial core of rank `r`. -/
+def isoTrivialOfCoordChangeEqId (A : ContMDiffFiniteRankBundleCore I n B) {r : ℕ}
+    (e : (Fin A.toCore.rank → 𝕜) ≃L[𝕜] (Fin r → 𝕜))
     (h : ∀ i j x, x ∈ A.toCore.core.baseSet i → x ∈ A.toCore.core.baseSet j →
       A.toCore.core.coordChange i j x = ContinuousLinearMap.id 𝕜 (Fin A.toCore.rank → 𝕜)) :
-    A ≅ 𝟙_ (ContMDiffFiniteRankBundleCore I n B) :=
-  isoMk (FiniteRankBundleCore.isoTensorUnitOfCoordChangeEqId A.toCore e h)
-    (FiniteRankBundleCore.contMDiff_totalSpaceMap_isoTensorUnitOfCoordChangeEqId_hom A.toCore e h)
-    (FiniteRankBundleCore.contMDiff_totalSpaceMap_isoTensorUnitOfCoordChangeEqId_inv A.toCore e h)
+    A ≅ trivial I n B r :=
+  isoMk (FiniteRankBundleCore.isoTrivialOfCoordChangeEqId A.toCore e h)
+    (FiniteRankBundleCore.contMDiff_totalSpaceMap_isoTrivialOfCoordChangeEqId_hom A.toCore e h)
+    (FiniteRankBundleCore.contMDiff_totalSpaceMap_isoTrivialOfCoordChangeEqId_inv A.toCore e h)
 
-/-- Right-recursive `m`-th tensor power of a `C^n` finite-rank core. -/
--- Expose the recursive equation so the dependent fibre model reduces on concrete exponents.
-@[expose]
-def tensorPower (A : ContMDiffFiniteRankBundleCore I n B) :
-    ℕ → ContMDiffFiniteRankBundleCore I n B
-  | 0 => 𝟙_ (ContMDiffFiniteRankBundleCore I n B)
-  | m + 1 => tensorPower A m ⊗ A
+@[simp] theorem isoTrivialOfCoordChangeEqId_hom_toHom
+    (A : ContMDiffFiniteRankBundleCore I n B) {r : ℕ}
+    (e : (Fin A.toCore.rank → 𝕜) ≃L[𝕜] (Fin r → 𝕜))
+    (h : ∀ i j x, x ∈ A.toCore.core.baseSet i → x ∈ A.toCore.core.baseSet j →
+      A.toCore.core.coordChange i j x = ContinuousLinearMap.id 𝕜 (Fin A.toCore.rank → 𝕜)) :
+    (isoTrivialOfCoordChangeEqId A e h).hom.toHom =
+      (FiniteRankBundleCore.isoTrivialOfCoordChangeEqId A.toCore e h).hom := (rfl)
 
-@[simp] theorem tensorPower_zero (A : ContMDiffFiniteRankBundleCore I n B) :
-    A.tensorPower 0 = 𝟙_ (ContMDiffFiniteRankBundleCore I n B) := (rfl)
+@[simp] theorem isoTrivialOfCoordChangeEqId_inv_toHom
+    (A : ContMDiffFiniteRankBundleCore I n B) {r : ℕ}
+    (e : (Fin A.toCore.rank → 𝕜) ≃L[𝕜] (Fin r → 𝕜))
+    (h : ∀ i j x, x ∈ A.toCore.core.baseSet i → x ∈ A.toCore.core.baseSet j →
+      A.toCore.core.coordChange i j x = ContinuousLinearMap.id 𝕜 (Fin A.toCore.rank → 𝕜)) :
+    (isoTrivialOfCoordChangeEqId A e h).inv.toHom =
+      (FiniteRankBundleCore.isoTrivialOfCoordChangeEqId A.toCore e h).inv := (rfl)
 
-@[simp] theorem tensorPower_succ (A : ContMDiffFiniteRankBundleCore I n B) (m : ℕ) :
-    A.tensorPower (m + 1) = A.tensorPower m ⊗ A := (rfl)
-
-@[simp] theorem toCore_tensorPower (A : ContMDiffFiniteRankBundleCore I n B) :
-    ∀ m : ℕ, (A.tensorPower m).toCore = A.toCore.tensorPower m
+/-- The underlying topological core of `tensorPow A m` is `tensorPow A.toCore m`. -/
+@[simp] theorem toCore_tensorPow (A : ContMDiffFiniteRankBundleCore I n B) :
+    ∀ m : ℕ, (tensorPow A m).toCore = tensorPow A.toCore m
   | 0 => rfl
-  | m + 1 => congrArg (· ⊗ A.toCore) (toCore_tensorPower A m)
-
-/-- The `m`-th tensor power of a `C^n` bundle morphism. -/
-def tensorPowerHom {A D : ContMDiffFiniteRankBundleCore I n B} (f : A ⟶ D) :
-    ∀ m : ℕ, A.tensorPower m ⟶ D.tensorPower m
-  | 0 => 𝟙 _
-  | m + 1 => tensorPowerHom f m ⊗ₘ f
-
-/-- A `C^n` isomorphism of cores induces a `C^n` isomorphism between their `m`-th tensor powers. -/
-def tensorPowerCongr {A D : ContMDiffFiniteRankBundleCore I n B} (e : A ≅ D) :
-    ∀ m : ℕ, A.tensorPower m ≅ D.tensorPower m
-  | 0 => Iso.refl _
-  | m + 1 => tensorPowerCongr e m ⊗ᵢ e
-
-/-- The first tensor power of a `C^n` core is canonically isomorphic to the core itself. -/
-def tensorPowerOne (A : ContMDiffFiniteRankBundleCore I n B) : A.tensorPower 1 ≅ A :=
-  λ_ A
-
-/-- Every tensor power of the monoidal unit in `ContMDiffFiniteRankBundleCore I n B` is canonically
-isomorphic to the monoidal unit. -/
-def tensorUnitTensorPowerIso :
-    ∀ m : ℕ, (𝟙_ (ContMDiffFiniteRankBundleCore I n B)).tensorPower m ≅
-      𝟙_ (ContMDiffFiniteRankBundleCore I n B)
-  | 0 => Iso.refl _
-  | m + 1 => (tensorUnitTensorPowerIso m ⊗ᵢ Iso.refl _) ≪≫ λ_ _
-
-/-- Addition of exponents in `C^n` tensor powers turns into a tensor product. -/
-def tensorPowerAdd (A : ContMDiffFiniteRankBundleCore I n B) (m : ℕ) :
-    ∀ k : ℕ, A.tensorPower (m + k) ≅ A.tensorPower m ⊗ A.tensorPower k
-  | 0 => (ρ_ (A.tensorPower m)).symm
-  | k + 1 => (tensorPowerAdd A m k ⊗ᵢ Iso.refl A) ≪≫ α_ (A.tensorPower m) (A.tensorPower k) A
-
-/-- Tensor powers distribute over tensor products of `C^n` cores via the symmetric braiding. -/
-def tensorTensorPowerIso (A D : ContMDiffFiniteRankBundleCore I n B) :
-    ∀ m : ℕ, (A ⊗ D).tensorPower m ≅ A.tensorPower m ⊗ D.tensorPower m
-  | 0 => (λ_ (𝟙_ (ContMDiffFiniteRankBundleCore I n B))).symm
-  | m + 1 =>
-    (tensorTensorPowerIso A D m ⊗ᵢ Iso.refl (A ⊗ D)) ≪≫
-      { hom := tensorμ (A.tensorPower m) (D.tensorPower m) A D
-        inv := tensorδ (A.tensorPower m) (D.tensorPower m) A D
-        hom_inv_id := tensorμ_tensorδ _ _ _ _
-        inv_hom_id := tensorδ_tensorμ _ _ _ _ }
-
-@[simp] theorem toSkeleton_tensorPower (A : ContMDiffFiniteRankBundleCore I n B) :
-    ∀ m : ℕ, toSkeleton (A.tensorPower m) = toSkeleton A ^ m
-  | 0 => by rw [tensorPower_zero, pow_zero]; rfl
-  | m + 1 => by
-    rw [tensorPower_succ, Skeleton.toSkeleton_tensorObj, toSkeleton_tensorPower A m, pow_succ]
+  | m + 1 => by rw [tensorPow_succ, tensorPow_succ, tensorObj_toCore, toCore_tensorPow A m]
 
 /-- Isomorphic `C^n` cores over a nonempty base have the same rank. -/
 theorem rank_eq_of_iso [Nonempty B] {A D : ContMDiffFiniteRankBundleCore I n B} (e : A ≅ D) :
@@ -422,6 +436,11 @@ noncomputable def forgetToCoreHom :
     ContMDiffPicardGroup I n B →* (Skeleton (FiniteRankBundleCore 𝕜 B))ˣ :=
   Units.map (Skeleton.monoidHom (ContMDiffFiniteRankBundleCore.forgetToCore I n B))
 
+@[simp] theorem val_forgetToCoreHom_apply (L : ContMDiffPicardGroup I n B) :
+    (forgetToCoreHom I n B L : Skeleton (FiniteRankBundleCore 𝕜 B)) =
+      (ContMDiffFiniteRankBundleCore.forgetToCore I n B).mapSkeleton.obj
+        (L : Skeleton (ContMDiffFiniteRankBundleCore I n B)) := (rfl)
+
 variable {I n B}
 
 /-- Construct an element of `ContMDiffPicardGroup I n B` from a `C^n` core `A`, a tensor-inverse
@@ -445,6 +464,19 @@ theorem val_inv_mkOfTensorIsoUnit {A D : ContMDiffFiniteRankBundleCore I n B}
     (↑(mkOfTensorIsoUnit e)⁻¹ : Skeleton (ContMDiffFiniteRankBundleCore I n B)) = toSkeleton D :=
   (rfl)
 
+@[simp] theorem forgetToCoreHom_mkOfTensorIsoUnit
+    {A D : ContMDiffFiniteRankBundleCore I n B}
+    (e : A ⊗ D ≅ 𝟙_ (ContMDiffFiniteRankBundleCore I n B)) :
+    forgetToCoreHom I n B (mkOfTensorIsoUnit e) =
+      Units.mkOfMulEqOne (toSkeleton A.toCore) (toSkeleton D.toCore) (by
+        rw [← Skeleton.toSkeleton_tensorObj]
+        exact Quotient.sound ⟨(ContMDiffFiniteRankBundleCore.forgetToCore I n B).mapIso e⟩) :=
+  Units.ext <| by
+    rw [val_forgetToCoreHom_apply, val_mkOfTensorIsoUnit, Units.val_mkOfMulEqOne]
+    exact (ContMDiffFiniteRankBundleCore.forgetToCore I n B).mapSkeleton_obj_toSkeleton A
+
+/-- Two tensor-invertible `C^n` cores define the same class in `ContMDiffPicardGroup I n B` if and
+only if they are isomorphic in `ContMDiffFiniteRankBundleCore I n B`. -/
 theorem mkOfTensorIsoUnit_eq_mkOfTensorIsoUnit_iff
     {A D A' D' : ContMDiffFiniteRankBundleCore I n B}
     (e : A ⊗ D ≅ 𝟙_ (ContMDiffFiniteRankBundleCore I n B))
@@ -453,18 +485,22 @@ theorem mkOfTensorIsoUnit_eq_mkOfTensorIsoUnit_iff
   rw [Units.ext_iff, val_mkOfTensorIsoUnit, val_mkOfTensorIsoUnit]
   exact Quotient.eq
 
+/-- A tensor-invertible `C^n` core represents `1` in `ContMDiffPicardGroup I n B` if and only if it
+is isomorphic to the monoidal unit `𝟙_`. -/
 theorem mkOfTensorIsoUnit_eq_one_iff {A D : ContMDiffFiniteRankBundleCore I n B}
     (e : A ⊗ D ≅ 𝟙_ (ContMDiffFiniteRankBundleCore I n B)) :
     mkOfTensorIsoUnit e = 1 ↔ Nonempty (A ≅ 𝟙_ (ContMDiffFiniteRankBundleCore I n B)) := by
   rw [Units.ext_iff, val_mkOfTensorIsoUnit, Units.val_one, Skeleton.one_eq]
   exact Quotient.eq
 
+/-- The `m`-th power of a class in `ContMDiffPicardGroup I n B` is trivial if and only if the `m`-th
+tensor power of its representative core is isomorphic to `𝟙_`. -/
 theorem pow_mkOfTensorIsoUnit_eq_one_iff {A D : ContMDiffFiniteRankBundleCore I n B}
     (e : A ⊗ D ≅ 𝟙_ (ContMDiffFiniteRankBundleCore I n B)) (m : ℕ) :
     mkOfTensorIsoUnit e ^ m = 1 ↔
-      Nonempty (A.tensorPower m ≅ 𝟙_ (ContMDiffFiniteRankBundleCore I n B)) := by
+      Nonempty (tensorPow A m ≅ 𝟙_ (ContMDiffFiniteRankBundleCore I n B)) := by
   rw [Units.ext_iff, Units.val_pow_eq_pow_val, val_mkOfTensorIsoUnit,
-    ← A.toSkeleton_tensorPower m, Units.val_one, Skeleton.one_eq]
+    ← toSkeleton_tensorPow A m, Units.val_one, Skeleton.one_eq]
   exact Quotient.eq
 
 /-- Over a nonempty base, any representative of a class in `ContMDiffPicardGroup I n B` has rank
@@ -508,17 +544,12 @@ noncomputable def homFromTensorUnitOfSection (A : ContMDiffFiniteRankBundleCore 
               (hchart j).continuousOn).comp
               (continuous_subtype_val.subtype_mk fun x ↦ x.2.2)⟩
       compatible := fun i i' j j' x _ _ hj hj' c ↦ by
-        let v : Fin A.toCore.rank → 𝕜 := σ x
-        have htriv (k : B) : (A.toCore.core.localTriv k ⟨x, σ x⟩).2 =
-            A.toCore.core.coordChange (A.toCore.core.indexAt x) k x v := rfl
         simp only [L, ContinuousMap.coe_mk, ContinuousLinearMap.smulRightL_apply_apply,
           ContinuousLinearMap.smulRight_apply, ContinuousLinearMap.proj_apply,
-          FiniteRankBundleCore.coordChange_tensorUnit, htriv, _root_.map_smul]
-        change c i₀ • A.toCore.core.coordChange j j' x
-            (A.toCore.core.coordChange (A.toCore.core.indexAt x) j x v) =
-          c i₀ • A.toCore.core.coordChange (A.toCore.core.indexAt x) j' x v
-        rw [A.toCore.core.coordChange_comp _ j j' x
-          ⟨⟨A.toCore.core.mem_baseSet_at x, hj⟩, hj'⟩] }
+          FiniteRankBundleCore.coordChange_tensorUnit, ContinuousLinearMap.id_apply,
+          VectorBundleCore.localTriv_apply, _root_.map_smul]
+        exact congrArg (c i₀ • ·) (A.toCore.core.coordChange_comp _ j j' x
+          ⟨⟨A.toCore.core.mem_baseSet_at x, hj⟩, hj'⟩ (σ x)) }
   refine ⟨a, CoordinateHom.contMDiff_totalSpaceMap a fun i j ↦
     (L.contMDiff.comp_contMDiffOn ((hchart j).mono inter_subset_right)).congr fun x hx ↦
       (CoordinateHom.operator_eq a i j ⟨x, hx⟩).symm⟩
@@ -528,15 +559,156 @@ theorem fiberMap_homFromTensorUnitOfSection_apply (A : ContMDiffFiniteRankBundle
     (σ : Π x, A.toCore.core.Fiber x)
     (hσ : ContMDiff I (I.prod 𝓘(𝕜, Fin A.toCore.rank → 𝕜)) n
       (fun x ↦ TotalSpace.mk' (Fin A.toCore.rank → 𝕜) x (σ x)))
-    (x : B) (c : Fin (𝟙_ (FiniteRankBundleCore 𝕜 B)).rank → 𝕜) :
-    (A.homFromTensorUnitOfSection σ hσ).toHom.fiberMap x c = c ⟨0, by simp⟩ • σ x := by
+    (x : B) (c : Fin (𝟙_ (ContMDiffFiniteRankBundleCore I n B)).toCore.rank → 𝕜) :
+    (A.homFromTensorUnitOfSection σ hσ).toHom.fiberMap x c =
+      c ⟨0, by simp⟩ • (σ x : Fin A.toCore.rank → 𝕜) := by
   let v : Fin A.toCore.rank → 𝕜 := σ x
-  have hself : (A.toCore.core.localTriv (A.toCore.core.indexAt x) ⟨x, σ x⟩).2 = v :=
-    A.toCore.core.coordChange_self _ x (A.toCore.core.mem_baseSet_at x) v
   rw [CoordinateHom.fiberMap_def]
-  change (c ⟨0, by simp⟩ •
-    (A.toCore.core.localTriv (A.toCore.core.indexAt x) ⟨x, σ x⟩).2) = c ⟨0, by simp⟩ • v
-  rw [hself]
+  simp only [homFromTensorUnitOfSection,
+    ContinuousLinearMap.smulRightL_apply_apply, VectorBundleCore.localTriv_apply]
+  exact congrArg (c ⟨0, by simp⟩ • ·)
+    (A.toCore.core.coordChange_self _ x (A.toCore.core.mem_baseSet_at x) v)
+
+/-- A rank-one `C^n` core is isomorphic to `𝟙_` in `ContMDiffFiniteRankBundleCore I n B` if and
+only if it admits a nowhere-vanishing `C^n` section. -/
+theorem nonempty_iso_tensorUnit_iff_exists_section_ne_zero
+    (A : ContMDiffFiniteRankBundleCore I n B) (hA : A.toCore.rank = 1) :
+    Nonempty (A ≅ 𝟙_ (ContMDiffFiniteRankBundleCore I n B)) ↔
+      ∃ σ : Π x, A.toCore.core.Fiber x,
+        ContMDiff I (I.prod 𝓘(𝕜, Fin A.toCore.rank → 𝕜)) n
+          (fun x ↦ TotalSpace.mk' (Fin A.toCore.rank → 𝕜) x (σ x)) ∧
+        ∀ x, σ x ≠ 0 := by
+  constructor
+  · rintro ⟨e⟩
+    let i₀ : Fin (𝟙_ (ContMDiffFiniteRankBundleCore I n B)).toCore.rank := ⟨0, by simp⟩
+    let v₀ : Fin (𝟙_ (ContMDiffFiniteRankBundleCore I n B)).toCore.rank → 𝕜 := fun _ ↦ 1
+    have hv₀ : v₀ ≠ 0 := fun h ↦ one_ne_zero (congrFun h i₀)
+    let s₀ : B → (𝟙_ (ContMDiffFiniteRankBundleCore I n B)).toCore.core.TotalSpace :=
+      fun x ↦ ⟨x, v₀⟩
+    have hs₀ : ContMDiff I
+        (I.prod 𝓘(𝕜, Fin (𝟙_ (ContMDiffFiniteRankBundleCore I n B)).toCore.rank → 𝕜)) n s₀ :=
+      fun _ ↦ Bundle.contMDiffAt_totalSpace_iff.mpr ⟨contMDiffAt_id, by
+        rw [FiniteRankBundleCore.trivializationAt_core]
+        simp only [s₀, VectorBundleCore.localTriv_apply, coordChange_tensorUnit,
+          ContinuousLinearMap.id_apply]
+        exact contMDiffAt_const⟩
+    refine ⟨fun x ↦ e.inv.toHom.fiberMap x v₀,
+      (e.inv.contMDiff_totalSpaceMap.comp hs₀).congr fun x ↦
+        (e.inv.toHom.totalSpaceMap_mk x v₀).symm,
+      fun x h0 ↦ hv₀ ?_⟩
+    let z : Fin A.toCore.rank → 𝕜 := 0
+    have h0' : e.inv.toHom.fiberMap x v₀ = z := h0
+    have h1 := congrArg (fun f : 𝟙_ (ContMDiffFiniteRankBundleCore I n B) ⟶
+        𝟙_ (ContMDiffFiniteRankBundleCore I n B) ↦ f.toHom.fiberMap x v₀) e.inv_hom_id
+    simp only [comp_toHom, id_toHom, FiniteRankBundleCore.fiberMap_comp,
+      FiniteRankBundleCore.fiberMap_id, ContinuousLinearMap.comp_apply,
+      ContinuousLinearMap.id_apply, h0'] at h1
+    exact h1 ▸ (e.hom.toHom.fiberMap x).map_zero
+  · rintro ⟨σ, hσ, hσ₀⟩
+    let f := A.homFromTensorUnitOfSection σ hσ
+    let k₀ : Fin A.toCore.rank := ⟨0, by omega⟩
+    let : Unique (Fin A.toCore.rank) := ⟨⟨k₀⟩, fun k ↦ Fin.ext (by omega)⟩
+    let i₀ : Fin (𝟙_ (ContMDiffFiniteRankBundleCore I n B)).toCore.rank := ⟨0, by simp⟩
+    let E₀ : (Fin A.toCore.rank → 𝕜) →L[𝕜]
+        (Fin (𝟙_ (ContMDiffFiniteRankBundleCore I n B)).toCore.rank → 𝕜) :=
+      ContinuousLinearMap.smulRight (ContinuousLinearMap.proj k₀) (fun _ ↦ 1)
+    let L' : 𝕜 →L[𝕜]
+        ((Fin A.toCore.rank → 𝕜) →L[𝕜]
+          (Fin (𝟙_ (ContMDiffFiniteRankBundleCore I n B)).toCore.rank → 𝕜)) :=
+      ContinuousLinearMap.smulRight (ContinuousLinearMap.id 𝕜 𝕜) E₀
+    let s (i : B) (x : B) : 𝕜 := (A.toCore.core.localTriv i ⟨x, σ x⟩).2 k₀
+    have hchart (i : B) : ContMDiffOn I 𝓘(𝕜, Fin A.toCore.rank → 𝕜) n
+        (fun x ↦ (A.toCore.core.localTriv i ⟨x, σ x⟩).2) (A.toCore.core.baseSet i) := by
+      have : MemTrivializationAtlas (A.toCore.core.localTriv i) := ⟨⟨i, rfl⟩⟩
+      exact ((A.toCore.core.localTriv i).contMDiffOn_section_iff
+        (A.toCore.core.isOpen_baseSet i) subset_rfl).mp hσ.contMDiffOn
+    have hs (i : B) : ContMDiffOn I 𝓘(𝕜) n (s i) (A.toCore.core.baseSet i) :=
+      (ContinuousLinearMap.proj k₀).contMDiff.comp_contMDiffOn (hchart i)
+    have hs₀ (i : B) {x : B} (hx : x ∈ A.toCore.core.baseSet i) : s i x ≠ 0 := by
+      intro h0
+      apply hσ₀ x
+      let v : Fin A.toCore.rank → 𝕜 := σ x
+      have htriv0 : (A.toCore.core.localTriv i ⟨x, σ x⟩).2 = 0 :=
+        funext fun k ↦ (Unique.eq_default k).symm ▸ h0
+      have hcomp := A.toCore.core.coordChange_comp (A.toCore.core.indexAt x) i
+        (A.toCore.core.indexAt x) x ⟨⟨A.toCore.core.mem_baseSet_at x, hx⟩,
+          A.toCore.core.mem_baseSet_at x⟩ v
+      rw [A.toCore.core.coordChange_self _ x (A.toCore.core.mem_baseSet_at x)] at hcomp
+      have hv0 : v = 0 := by
+        rw [← hcomp]
+        simpa only [VectorBundleCore.localTriv_apply, map_zero] using
+          congrArg (A.toCore.core.coordChange i (A.toCore.core.indexAt x) x) htriv0
+      exact hv0
+    have hsinv (i : B) :
+        ContMDiffOn I 𝓘(𝕜) n (fun x ↦ (s i x)⁻¹) (A.toCore.core.baseSet i) :=
+      fun x hx ↦ (contDiffAt_inv 𝕜 (hs₀ i hx)).contMDiffAt.comp_contMDiffWithinAt x
+        (hs i x hx)
+    let b : A.toCore ⟶ (𝟙_ (ContMDiffFiniteRankBundleCore I n B)).toCore :=
+      { operator := fun i _ ↦
+          ⟨fun x ↦ L' (s i x.1)⁻¹,
+            L'.continuous.comp <|
+              (continuousOn_iff_continuous_domRestrict.1
+                (hsinv i).continuousOn).comp
+                (continuous_subtype_val.subtype_mk fun x ↦ x.2.1)⟩
+        compatible := fun i i' j j' x hi hi' _ _ v ↦ by
+          set c := A.toCore.core.coordChange i i' x (fun _ ↦ 1) k₀
+          have hT : A.toCore.core.coordChange i i' x =
+              c • ContinuousLinearMap.id 𝕜 (Fin A.toCore.rank → 𝕜) :=
+            (A.toCore.core.coordChange i i' x).eq_smul_id_of_unique
+          have hs_eq : s i' x = c * s i x := by
+            have hcomp := congrFun (A.toCore.core.coordChange_comp (A.toCore.core.indexAt x)
+              i i' x ⟨⟨A.toCore.core.mem_baseSet_at x, hi⟩, hi'⟩ (σ x)) k₀
+            rw [hT] at hcomp
+            simpa only [s, VectorBundleCore.localTriv_apply, smul_apply,
+              ContinuousLinearMap.id_apply, Pi.smul_apply, smul_eq_mul] using hcomp.symm
+          have hc : c ≠ 0 := fun hc0 ↦ hs₀ i' hi' (by rw [hs_eq, hc0, zero_mul])
+          ext l
+          simp only [L', E₀, ContinuousMap.coe_mk, ContinuousLinearMap.smulRight_apply,
+            ContinuousLinearMap.id_apply, ContinuousLinearMap.proj_apply,
+            coordChange_tensorUnit, hT, smul_apply,
+            Pi.smul_apply, smul_eq_mul, mul_one, hs_eq, mul_inv_rev]
+          rw [mul_assoc, inv_mul_cancel_left₀ hc] }
+    have hb : ContMDiff (I.prod 𝓘(𝕜, Fin A.toCore.rank → 𝕜))
+        (I.prod 𝓘(𝕜, Fin (𝟙_ (ContMDiffFiniteRankBundleCore I n B)).toCore.rank → 𝕜)) n
+        b.totalSpaceMap :=
+      CoordinateHom.contMDiff_totalSpaceMap b fun i j ↦
+        (L'.contMDiff.comp_contMDiffOn ((hsinv i).mono inter_subset_left)).congr fun x hx ↦
+          (CoordinateHom.operator_eq b i j ⟨x, hx⟩).symm
+    let g : A ⟶ 𝟙_ (ContMDiffFiniteRankBundleCore I n B) := ⟨b, hb⟩
+    let vσ (x : B) : Fin A.toCore.rank → 𝕜 := σ x
+    have hself (x : B) : s (A.toCore.core.indexAt x) x = vσ x k₀ := by
+      simpa only [s, VectorBundleCore.localTriv_apply] using
+        congrFun (A.toCore.core.coordChange_self _ x (A.toCore.core.mem_baseSet_at x) (vσ x)) k₀
+    have hσk₀ (x : B) : vσ x k₀ ≠ 0 := by
+      rw [← hself x]
+      exact hs₀ _ (A.toCore.core.mem_baseSet_at x)
+    have hf_apply (x : B)
+        (c : Fin (𝟙_ (ContMDiffFiniteRankBundleCore I n B)).toCore.rank → 𝕜) :
+        f.toHom.fiberMap x c = c i₀ • vσ x :=
+      A.fiberMap_homFromTensorUnitOfSection_apply σ hσ x c
+    have hb_apply (x : B) (v : Fin A.toCore.rank → 𝕜)
+        (l : Fin (𝟙_ (ContMDiffFiniteRankBundleCore I n B)).toCore.rank) :
+        b.fiberMap x v l = (vσ x k₀)⁻¹ * v k₀ := by
+      rw [CoordinateHom.fiberMap_def]
+      simp only [b, L', E₀, ContinuousMap.coe_mk, ContinuousLinearMap.smulRight_apply,
+        ContinuousLinearMap.id_apply, smul_apply, ContinuousLinearMap.proj_apply, hself,
+        Pi.smul_apply, smul_eq_mul, mul_one]
+    refine ⟨⟨g, f, hom_ext <| FiniteRankBundleCore.hom_ext fun x ↦ ?_,
+      hom_ext <| FiniteRankBundleCore.hom_ext fun x ↦ ?_⟩⟩
+    · ext v k
+      obtain rfl : k = k₀ := Unique.eq_default k
+      rw [comp_toHom, id_toHom, FiniteRankBundleCore.fiberMap_comp,
+        FiniteRankBundleCore.fiberMap_id]
+      simp only [ContinuousLinearMap.comp_apply, ContinuousLinearMap.id_apply, g,
+        hf_apply, hb_apply, Pi.smul_apply, smul_eq_mul]
+      rw [mul_comm _ (v k₀), inv_mul_cancel_right₀ (hσk₀ x)]
+    · ext c l
+      obtain rfl : l = i₀ := Fin.ext (Nat.lt_one_iff.mp l.2)
+      rw [comp_toHom, id_toHom, FiniteRankBundleCore.fiberMap_comp,
+        FiniteRankBundleCore.fiberMap_id]
+      simp only [ContinuousLinearMap.comp_apply, ContinuousLinearMap.id_apply, g,
+        hf_apply, hb_apply, Pi.smul_apply, smul_eq_mul]
+      rw [mul_comm (c i₀), inv_mul_cancel_left₀ (hσk₀ x)]
 
 end ContMDiffFiniteRankBundleCore
 
@@ -552,72 +724,10 @@ variable {𝕜 : Type v} [NontriviallyNormedField 𝕜] [CompleteSpace 𝕜]
   {I : ModelWithCorners 𝕜 EB HB} {n : ℕ∞ω}
   {B : Type u} [TopologicalSpace B] [ChartedSpace HB B]
 
-namespace FiniteRankBundleCore
-
-omit [CompleteSpace 𝕜] in
-/-- Every continuous linear endomorphism of a one-dimensional coordinate space `Fin r → 𝕜`
-(`r = 1`) is scalar multiplication by its single matrix entry. -/
-private theorem clm_eq_smul_id_of_eq_one {r : ℕ} (hr : r = 1)
-    (T : (Fin r → 𝕜) →L[𝕜] (Fin r → 𝕜)) :
-    T = T (fun _ ↦ 1) ⟨0, by omega⟩ • ContinuousLinearMap.id 𝕜 (Fin r → 𝕜) := by
-  set k₀ : Fin r := ⟨0, by omega⟩
-  have huniq : ∀ k : Fin r, k = k₀ := fun k ↦ Fin.ext (by omega)
-  ext v k
-  have hv : v = v k₀ • (fun _ : Fin r ↦ (1 : 𝕜)) := by
-    ext l
-    rw [huniq l]
-    simp
-  conv_lhs => rw [hv]
-  rw [map_smul, huniq k]
-  simp [mul_comm]
-
-/-- For a rank-one core `A`, the tensor product `A.dual ⊗ A` has identity transitions on all chart
-overlaps: each transition of `A` is multiplication by a nonzero scalar, its transpose is the same
-scalar, and the reverse transition multiplies by its inverse. -/
-theorem coordChange_dual_tensor_eq_id (A : FiniteRankBundleCore 𝕜 B) (hA : A.rank = 1)
-    {i j x : B} (hi : x ∈ (A.dual ⊗ A).core.baseSet i) (hj : x ∈ (A.dual ⊗ A).core.baseSet j) :
-    (A.dual ⊗ A).core.coordChange i j x =
-      ContinuousLinearMap.id 𝕜 (Fin (A.dual ⊗ A).rank → 𝕜) := by
-  have hiA : x ∈ A.core.baseSet i := hi.2
-  have hjA : x ∈ A.core.baseSet j := hj.2
-  set k₀ : Fin A.rank := ⟨0, by omega⟩
-  set T := A.core.coordChange i j x
-  set S := A.core.coordChange j i x
-  set c := T (fun _ ↦ 1) k₀
-  set d := S (fun _ ↦ 1) k₀
-  have hT : T = c • ContinuousLinearMap.id 𝕜 (Fin A.rank → 𝕜) :=
-    clm_eq_smul_id_of_eq_one hA T
-  have hS : S = d • ContinuousLinearMap.id 𝕜 (Fin A.rank → 𝕜) :=
-    clm_eq_smul_id_of_eq_one hA S
-  have hdc : d * c = 1 := by
-    have hcomp := A.core.coordChange_comp i j i x ⟨⟨hiA, hjA⟩, hiA⟩ (fun _ ↦ 1)
-    rw [A.core.coordChange_self i x hiA] at hcomp
-    have hk₀ := congrFun hcomp k₀
-    change (S (T (fun _ ↦ 1))) k₀ = 1 at hk₀
-    rw [hT, hS] at hk₀
-    simpa [mul_comm] using hk₀
-  have hS_tr : S.piTranspose = d • ContinuousLinearMap.id 𝕜 (Fin A.rank → 𝕜) := by
-    rw [hS, ← ContinuousLinearMap.piTransposeL_apply, map_smul,
-      ContinuousLinearMap.piTransposeL_apply, ContinuousLinearMap.piTranspose_id]
-  change S.piTranspose.kronecker T = ContinuousLinearMap.id 𝕜 (Fin (A.rank * A.rank) → 𝕜)
-  rw [hS_tr, hT, ContinuousLinearMap.smul_kronecker, ContinuousLinearMap.kronecker_smul,
-    smul_smul, hdc, one_smul, ContinuousLinearMap.id_kronecker_id]
-
-/-- Canonical evaluation isomorphism `A.dual ⊗ A ≅ 𝟙_` for a rank-one core `A`. -/
-noncomputable def dualTensorIsoUnit (A : FiniteRankBundleCore 𝕜 B) (hA : A.rank = 1) :
-    A.dual ⊗ A ≅ 𝟙_ (FiniteRankBundleCore 𝕜 B) :=
-  isoTensorUnitOfCoordChangeEqId (A.dual ⊗ A)
-    (ContinuousLinearEquiv.piCongrLeft 𝕜
-      (fun _ : Fin (𝟙_ (FiniteRankBundleCore 𝕜 B)).rank ↦ 𝕜) (finCongr (by simp [hA])))
-    fun _ _ _ hi hj ↦ A.coordChange_dual_tensor_eq_id hA hi hj
-
-end FiniteRankBundleCore
-
 namespace ContMDiffFiniteRankBundleCore
 
 /-- Over a complete scalar field, a `C^n` morphism between `C^n` finite-rank cores is an
-isomorphism if and only if it is bijective on every fibre: finite-dimensional chart inversion makes
-the inverse bundle map `C^n`. -/
+isomorphism if and only if it is bijective on every fibre. -/
 theorem isIso_iff_bijective {A D : ContMDiffFiniteRankBundleCore I n B} (f : A ⟶ D) :
     IsIso f ↔ ∀ x, Function.Bijective (f.toHom.fiberMap x) := by
   constructor
@@ -629,24 +739,18 @@ theorem isIso_iff_bijective {A D : ContMDiffFiniteRankBundleCore I n B} (f : A �
     let ha := FiniteRankBundleCore.contMDiffOn_inChartCoordinates_of_contMDiff_totalSpaceMap
       f.toHom f.contMDiff_totalSpaceMap
     let Φ := f.toHom.toDiffeomorph ha hbij
-    have hinv_eq : (inv f.toHom).totalSpaceMap = ⇑Φ.symm := funext fun p ↦ Φ.injective <| by
-      change ⇑Φ ((inv f.toHom).totalSpaceMap p) = ⇑Φ (Φ.symm p)
-      rw [Φ.apply_symm_apply, CoordinateHom.coe_toDiffeomorph]
-      let v : Fin D.toCore.rank → 𝕜 := p.2
-      have h1 : (inv f.toHom).totalSpaceMap p = ⟨p.1, (inv f.toHom).fiberMap p.1 v⟩ :=
-        (inv f.toHom).totalSpaceMap_mk p.1 v
-      have h2 : f.toHom.totalSpaceMap ⟨p.1, (inv f.toHom).fiberMap p.1 v⟩ =
-          ⟨p.1, f.toHom.fiberMap p.1 ((inv f.toHom).fiberMap p.1 v)⟩ :=
-        f.toHom.totalSpaceMap_mk p.1 _
-      have h3 := congrArg (fun k : D.toCore ⟶ D.toCore ↦ k.fiberMap p.1 v)
-        (IsIso.inv_hom_id f.toHom)
-      simp only [FiniteRankBundleCore.fiberMap_comp, FiniteRankBundleCore.fiberMap_id,
-        ContinuousLinearMap.comp_apply, ContinuousLinearMap.id_apply] at h3
-      rw [h1, h2, h3]
+    have hinv_eq : (inv f.toHom).totalSpaceMap = ⇑Φ.symm := funext fun p ↦ EquivLike.injective Φ <|
+      by
+        rw [Φ.apply_symm_apply, CoordinateHom.coe_toDiffeomorph,
+          ← Function.comp_apply (f := f.toHom.totalSpaceMap), ← CoordinateHom.totalSpaceMap_comp]
+        exact (congrFun (congrArg CoordinateHom.totalSpaceMap (IsIso.inv_hom_id f.toHom)) p).trans
+          (congrFun (CoordinateHom.totalSpaceMap_id D.toCore.core) p)
     refine ⟨⟨⟨inv f.toHom, hinv_eq ▸ Φ.symm.contMDiff⟩,
       hom_ext (IsIso.hom_inv_id f.toHom), hom_ext (IsIso.inv_hom_id f.toHom)⟩⟩
 
 /-- The `C^n` dual of a `C^n` finite-rank core. -/
+-- Expose the underlying core so the dependent fibre model reduces to `A.toCore.dual`.
+@[expose]
 noncomputable def dual (A : ContMDiffFiniteRankBundleCore I n B) :
     ContMDiffFiniteRankBundleCore I n B :=
   ⟨A.toCore.dual, inferInstance⟩
@@ -659,60 +763,23 @@ noncomputable def dual (A : ContMDiffFiniteRankBundleCore I n B) :
 noncomputable def dualTensorIsoUnit (A : ContMDiffFiniteRankBundleCore I n B)
     (hA : A.toCore.rank = 1) :
     A.dual ⊗ A ≅ 𝟙_ (ContMDiffFiniteRankBundleCore I n B) :=
-  isoTensorUnitOfCoordChangeEqId (A.dual ⊗ A)
-    (ContinuousLinearEquiv.piCongrLeft 𝕜
-      (fun _ : Fin (𝟙_ (FiniteRankBundleCore 𝕜 B)).rank ↦ 𝕜) (finCongr (by simp [hA])))
+  isoTrivialOfCoordChangeEqId (A.dual ⊗ A)
+    (ContinuousLinearEquiv.piCongrLeft 𝕜 (fun _ : Fin 1 ↦ 𝕜) (finCongr (by simp [hA])))
     fun _ _ _ hi hj ↦ A.toCore.coordChange_dual_tensor_eq_id hA hi hj
 
-/-- A rank-one `C^n` core is isomorphic to `𝟙_` in `ContMDiffFiniteRankBundleCore I n B` if and
-only if it admits a nowhere-vanishing `C^n` section. -/
-theorem nonempty_iso_tensorUnit_iff_exists_section_ne_zero
-    (A : ContMDiffFiniteRankBundleCore I n B) (hA : A.toCore.rank = 1) :
-    Nonempty (A ≅ 𝟙_ (ContMDiffFiniteRankBundleCore I n B)) ↔
-      ∃ σ : Π x, A.toCore.core.Fiber x,
-        ContMDiff I (I.prod 𝓘(𝕜, Fin A.toCore.rank → 𝕜)) n
-          (fun x ↦ TotalSpace.mk' (Fin A.toCore.rank → 𝕜) x (σ x)) ∧
-        ∀ x, σ x ≠ 0 := by
-  constructor
-  · rintro ⟨e⟩
-    let i₀ : Fin (𝟙_ (FiniteRankBundleCore 𝕜 B)).rank := ⟨0, by simp⟩
-    let v₀ : Fin (𝟙_ (ContMDiffFiniteRankBundleCore I n B)).toCore.rank → 𝕜 := fun _ ↦ 1
-    have hv₀ : v₀ ≠ 0 := fun h ↦ one_ne_zero (congrFun h i₀)
-    let s₀ : B → (𝟙_ (ContMDiffFiniteRankBundleCore I n B)).toCore.core.TotalSpace :=
-      fun x ↦ ⟨x, v₀⟩
-    have hs₀ : ContMDiff I
-        (I.prod 𝓘(𝕜, Fin (𝟙_ (ContMDiffFiniteRankBundleCore I n B)).toCore.rank → 𝕜)) n s₀ :=
-      fun _ ↦ Bundle.contMDiffAt_totalSpace_iff.mpr ⟨contMDiffAt_id, by
-        rw [FiniteRankBundleCore.trivializationAt_core]; exact contMDiffAt_const⟩
-    refine ⟨fun x ↦ e.inv.toHom.fiberMap x v₀,
-      (e.inv.contMDiff_totalSpaceMap.comp hs₀).congr fun x ↦
-        (e.inv.toHom.totalSpaceMap_mk x v₀).symm,
-      fun x h0 ↦ hv₀ ?_⟩
-    let z : Fin A.toCore.rank → 𝕜 := 0
-    have h0' : e.inv.toHom.fiberMap x v₀ = z := h0
-    have h1 := congrArg (fun f : 𝟙_ (ContMDiffFiniteRankBundleCore I n B) ⟶
-        𝟙_ (ContMDiffFiniteRankBundleCore I n B) ↦ f.toHom.fiberMap x v₀) e.inv_hom_id
-    simp only [comp_toHom, id_toHom, FiniteRankBundleCore.fiberMap_comp,
-      FiniteRankBundleCore.fiberMap_id, ContinuousLinearMap.comp_apply,
-      ContinuousLinearMap.id_apply, h0'] at h1
-    exact h1 ▸ (e.hom.toHom.fiberMap x).map_zero
-  · rintro ⟨σ, hσ, hσ₀⟩
-    let f := A.homFromTensorUnitOfSection σ hσ
-    have hf : IsIso f := (isIso_iff_bijective f).mpr fun x ↦ by
-      let i₀ : Fin (𝟙_ (FiniteRankBundleCore 𝕜 B)).rank := ⟨0, by simp⟩
-      let v : Fin A.toCore.rank → 𝕜 := σ x
-      set k₀ : Fin A.toCore.rank := ⟨0, by omega⟩
-      have huniq : ∀ k : Fin A.toCore.rank, k = k₀ := fun k ↦ Fin.ext (by omega)
-      have hvk₀ : v k₀ ≠ 0 := fun h0 ↦ hσ₀ x <| funext fun k ↦ by rw [huniq k]; exact h0
-      refine ⟨fun c d hcd ↦ ?_, fun w ↦ ⟨fun _ ↦ w k₀ * (v k₀)⁻¹, ?_⟩⟩
-      · rw [fiberMap_homFromTensorUnitOfSection_apply,
-          fiberMap_homFromTensorUnitOfSection_apply] at hcd
-        ext i; rw [show i = i₀ from Fin.ext (Nat.lt_one_iff.mp i.2)]
-        exact mul_right_cancel₀ hvk₀ (congrFun hcd k₀)
-      · rw [fiberMap_homFromTensorUnitOfSection_apply]
-        ext k; rw [huniq k]
-        exact inv_mul_cancel_right₀ hvk₀ (w k₀)
-    exact ⟨(asIso f).symm⟩
+@[simp] theorem dualTensorIsoUnit_hom_toHom (A : ContMDiffFiniteRankBundleCore I n B)
+    (hA : A.toCore.rank = 1) :
+    (A.dualTensorIsoUnit hA).hom.toHom = (A.toCore.dualTensorIsoUnit hA).hom :=
+  FiniteRankBundleCore.hom_ext fun x ↦
+    (FiniteRankBundleCore.fiberMap_isoTrivialOfCoordChangeEqId_hom _ _ _ x).trans
+      (FiniteRankBundleCore.fiberMap_dualTensorIsoUnit_hom A.toCore hA x).symm
+
+@[simp] theorem dualTensorIsoUnit_inv_toHom (A : ContMDiffFiniteRankBundleCore I n B)
+    (hA : A.toCore.rank = 1) :
+    (A.dualTensorIsoUnit hA).inv.toHom = (A.toCore.dualTensorIsoUnit hA).inv :=
+  FiniteRankBundleCore.hom_ext fun x ↦
+    (FiniteRankBundleCore.fiberMap_isoTrivialOfCoordChangeEqId_inv _ _ _ x).trans
+      (FiniteRankBundleCore.fiberMap_dualTensorIsoUnit_inv A.toCore hA x).symm
 
 /-- A rank-one `C^n` core is isomorphic to `𝟙_` in `ContMDiffFiniteRankBundleCore I n B` if and
 only if its total space admits a global linear trivialization in the maximal `C^n` atlas. -/
@@ -742,6 +809,21 @@ noncomputable def ofRankOne (A : ContMDiffFiniteRankBundleCore I n B)
 @[simp] theorem val_ofRankOne (A : ContMDiffFiniteRankBundleCore I n B) (hA : A.toCore.rank = 1) :
     (ofRankOne A hA : Skeleton (ContMDiffFiniteRankBundleCore I n B)) = toSkeleton A := (rfl)
 
+@[simp] theorem forgetToCoreHom_ofRankOne (A : ContMDiffFiniteRankBundleCore I n B)
+    (hA : A.toCore.rank = 1) :
+    forgetToCoreHom I n B (ofRankOne A hA) =
+      Units.mkOfMulEqOne (toSkeleton A.toCore) (toSkeleton A.toCore.dual) (by
+        rw [← Skeleton.toSkeleton_tensorObj]
+        exact Quotient.sound ⟨(β_ A.toCore A.toCore.dual) ≪≫ A.toCore.dualTensorIsoUnit hA⟩) :=
+  Units.ext <| by
+    rw [val_forgetToCoreHom_apply, val_ofRankOne, Units.val_mkOfMulEqOne]
+    exact (ContMDiffFiniteRankBundleCore.forgetToCore I n B).mapSkeleton_obj_toSkeleton A
+
+@[simp] theorem ofRankOne_tensorUnit
+    (h : (𝟙_ (ContMDiffFiniteRankBundleCore I n B)).toCore.rank = 1) :
+    ofRankOne (𝟙_ (ContMDiffFiniteRankBundleCore I n B)) h = 1 :=
+  Units.ext <| by rw [val_ofRankOne, Units.val_one, Skeleton.one_eq]
+
 @[simp] theorem ofRankOne_tensor (A D : ContMDiffFiniteRankBundleCore I n B)
     (hA : A.toCore.rank = 1) (hD : D.toCore.rank = 1) :
     ofRankOne (A ⊗ D) (by simp [hA, hD]) = ofRankOne A hA * ofRankOne D hD :=
@@ -753,23 +835,29 @@ noncomputable def ofRankOne (A : ContMDiffFiniteRankBundleCore I n B)
     ofRankOne A.dual (by simp [hA]) = (ofRankOne A hA)⁻¹ :=
   Units.ext <| by rw [val_ofRankOne, ofRankOne, val_inv_mkOfTensorIsoUnit]
 
-@[simp] theorem ofRankOne_tensorPower (A : ContMDiffFiniteRankBundleCore I n B)
+@[simp] theorem ofRankOne_tensorPow (A : ContMDiffFiniteRankBundleCore I n B)
     (hA : A.toCore.rank = 1) (m : ℕ) :
-    ofRankOne (A.tensorPower m) (by simp [hA]) = ofRankOne A hA ^ m :=
+    ofRankOne (tensorPow A m) (by simp [hA]) = ofRankOne A hA ^ m :=
   Units.ext <| by
     rw [val_ofRankOne, Units.val_pow_eq_pow_val, val_ofRankOne]
-    exact A.toSkeleton_tensorPower m
+    exact toSkeleton_tensorPow A m
 
+/-- Two rank-one `C^n` cores define the same class in `ContMDiffPicardGroup I n B` if and only if
+they are isomorphic in `ContMDiffFiniteRankBundleCore I n B`. -/
 theorem ofRankOne_eq_ofRankOne_iff (A D : ContMDiffFiniteRankBundleCore I n B)
     (hA : A.toCore.rank = 1) (hD : D.toCore.rank = 1) :
     ofRankOne A hA = ofRankOne D hD ↔ Nonempty (A ≅ D) :=
   mkOfTensorIsoUnit_eq_mkOfTensorIsoUnit_iff _ _
 
+/-- A rank-one `C^n` core represents `1` in `ContMDiffPicardGroup I n B` if and only if it is
+isomorphic to the monoidal unit `𝟙_`. -/
 theorem ofRankOne_eq_one_iff (A : ContMDiffFiniteRankBundleCore I n B)
     (hA : A.toCore.rank = 1) :
     ofRankOne A hA = 1 ↔ Nonempty (A ≅ 𝟙_ (ContMDiffFiniteRankBundleCore I n B)) :=
   mkOfTensorIsoUnit_eq_one_iff _
 
+/-- A rank-one `C^n` core represents `1` in `ContMDiffPicardGroup I n B` if and only if it admits a
+nowhere-vanishing `C^n` section. -/
 theorem ofRankOne_eq_one_iff_exists_section_ne_zero (A : ContMDiffFiniteRankBundleCore I n B)
     (hA : A.toCore.rank = 1) :
     ofRankOne A hA = 1 ↔
@@ -779,6 +867,8 @@ theorem ofRankOne_eq_one_iff_exists_section_ne_zero (A : ContMDiffFiniteRankBund
         ∀ x, σ x ≠ 0 :=
   (ofRankOne_eq_one_iff A hA).trans (A.nonempty_iso_tensorUnit_iff_exists_section_ne_zero hA)
 
+/-- A rank-one `C^n` core represents `1` in `ContMDiffPicardGroup I n B` if and only if its total
+space admits a global linear trivialization in the maximal `C^n` atlas. -/
 theorem ofRankOne_eq_one_iff_exists_trivialization_baseSet_eq_univ
     (A : ContMDiffFiniteRankBundleCore I n B) (hA : A.toCore.rank = 1) :
     ofRankOne A hA = 1 ↔

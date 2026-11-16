@@ -18,13 +18,10 @@ category, not new identifications of its objects. In particular the naturality, 
 triangle and symmetry laws of that category remain the laws of these smooth comparisons.
 Over a complex manifold at regularity `∞` these are biholomorphic bundle equivalences.
 
-Because the model fibre of a `FiniteRankBundleCore` is an explicit coordinate space `Fin r → 𝕜`,
-expanding an operator along the standard basis vectors `Pi.single k 1` recovers `C^n` regularity
-of all chart operators from `C^n` regularity of the glued total-space map without completeness of
-the scalar field (`FiniteRankBundleCore.contMDiff_totalSpaceMap_iff_inChartCoordinates`). Hence
-monoidal products and right-recursive tensor powers preserve `C^n` cores and `C^n` bundle maps
-without completeness of `𝕜` or manifold assumptions on the base;
-`TauCeti.ContMDiffFiniteRankBundleCore` in
+Using `FiniteRankBundleCore.contMDiffOn_inChartCoordinates_of_contMDiff_totalSpaceMap`,
+monoidal products and the generic monoidal tensor powers `TauCeti.tensorPow` /
+`TauCeti.tensorPowMap` preserve `C^n` cores and `C^n` bundle maps without completeness of `𝕜` or
+manifold assumptions on the base; `TauCeti.ContMDiffFiniteRankBundleCore` in
 `TauCeti.Geometry.Manifold.VectorBundle.FiniteRank.Picard` packages this into a symmetric monoidal
 category.
 
@@ -203,9 +200,9 @@ theorem contMDiff_totalSpaceMap_braiding_inv :
 
 end Coherence
 
-/-! ### Chart operators and tensor powers of smooth bundle maps -/
+/-! ### Smoothness of monoidal products and tensor powers -/
 
-section ChartOperators
+section MonoidalContMDiff
 
 /-- The monoidal unit of finite-rank cores is `C^n`. -/
 instance isContMDiff_tensorUnit :
@@ -221,62 +218,6 @@ instance isContMDiff_tensorObj (A D : FiniteRankBundleCore 𝕜 B)
 variable {A A' D D' : FiniteRankBundleCore 𝕜 B}
   [A.core.IsContMDiff I n] [A'.core.IsContMDiff I n]
   [D.core.IsContMDiff I n] [D'.core.IsContMDiff I n]
-
-/-- For a morphism between `C^n` finite-rank cores, `C^n` regularity of the glued total-space map
-implies `C^n` regularity of every chart operator, without completeness of the scalar field:
-expanding an operator on `Fin A.rank → 𝕜` along the standard basis vectors reduces the operator
-regularity to that of its columns. -/
-theorem contMDiffOn_inChartCoordinates_of_contMDiff_totalSpaceMap (f : A ⟶ A')
-    (hf : ContMDiff (I.prod 𝓘(𝕜, Fin A.rank → 𝕜)) (I.prod 𝓘(𝕜, Fin A'.rank → 𝕜)) n
-      f.totalSpaceMap) (i j : B) :
-    ContMDiffOn I 𝓘(𝕜, (Fin A.rank → 𝕜) →L[𝕜] (Fin A'.rank → 𝕜)) n
-      (fun x ↦ A.core.inChartCoordinates A'.core i j x (f.fiberMap x))
-      (A.core.baseSet i ∩ A'.core.baseSet j) := by
-  have : MemTrivializationAtlas (A.core.localTriv i) := ⟨⟨i, rfl⟩⟩
-  have : MemTrivializationAtlas (A'.core.localTriv j) := ⟨⟨j, rfl⟩⟩
-  set U := A.core.baseSet i ∩ A'.core.baseSet j
-  have hU : IsOpen U := (A.core.isOpen_baseSet i).inter (A'.core.isOpen_baseSet j)
-  -- Each column is obtained by feeding a constant standard basis section in chart `i` into
-  -- `f.totalSpaceMap` and reading the image in chart `j`.
-  have hcol (k : Fin A.rank) : ContMDiffOn I 𝓘(𝕜, Fin A'.rank → 𝕜) n
-      (fun x ↦ A.core.inChartCoordinates A'.core i j x (f.fiberMap x) (Pi.single k 1)) U := by
-    have hs := (A.core.localTriv i).contMDiffOn_section_symm (IB := I) (n := n) hU
-      inter_subset_left (contMDiffOn_const (c := Pi.single k (1 : 𝕜)))
-    have hfs : ContMDiffOn I (I.prod 𝓘(𝕜, Fin A'.rank → 𝕜)) n
-        (fun x ↦ TotalSpace.mk' (Fin A'.rank → 𝕜) (E := A'.core.Fiber) x
-          (f.fiberMap x ((A.core.localTriv i).symm x (Pi.single k 1)))) U :=
-      (hf.comp_contMDiffOn hs).congr fun x _ ↦ (f.totalSpaceMap_mk x _).symm
-    refine (((A'.core.localTriv j).contMDiffOn_section_iff hU inter_subset_right).mp hfs).congr
-      fun x hx ↦ ?_
-    simp only [VectorBundleCore.inChartCoordinates_apply, A'.core.localTriv_apply,
-      A.core.localTriv_symm_apply i hx.1]
-  let Φ : (Fin A.rank → Fin A'.rank → 𝕜) → (Fin A.rank → 𝕜) →L[𝕜] (Fin A'.rank → 𝕜) :=
-    fun g ↦ ∑ k : Fin A.rank, smulRightL 𝕜 (Fin A.rank → 𝕜) (Fin A'.rank → 𝕜) (proj k) (g k)
-  have hΦ : ContDiff 𝕜 n Φ :=
-    ContDiff.sum fun k _ ↦
-      (smulRightL 𝕜 (Fin A.rank → 𝕜) (Fin A'.rank → 𝕜) (proj k)).contDiff.comp
-        (contDiff_apply 𝕜 _ k)
-  refine (hΦ.contMDiff.comp_contMDiffOn (contMDiffOn_pi_module_iff.mpr hcol)).congr fun x _ ↦ ?_
-  ext v m
-  have hv : (∑ k : Fin A.rank, v k • Pi.single k (1 : 𝕜)) = v := by
-    ext l; simp [Finset.sum_apply, Pi.single_apply]
-  symm
-  calc
-    (Φ fun k ↦ A.core.inChartCoordinates A'.core i j x (f.fiberMap x) (Pi.single k 1)) v m
-      = (∑ k : Fin A.rank,
-          A.core.inChartCoordinates A'.core i j x (f.fiberMap x) (v k • Pi.single k 1)) m := by
-        simp only [Φ, sum_apply, smulRightL_apply_apply, smulRight_apply, proj_apply,
-          _root_.map_smul]
-    _ = A.core.inChartCoordinates A'.core i j x (f.fiberMap x) v m := by rw [← map_sum, hv]
-
-/-- For a morphism between `C^n` finite-rank cores, the glued map of total spaces is `C^n`
-if and only if every chart operator is `C^n` on its domain, without completeness of `𝕜`. -/
-theorem contMDiff_totalSpaceMap_iff_inChartCoordinates (f : A ⟶ A') :
-    ContMDiff (I.prod 𝓘(𝕜, Fin A.rank → 𝕜)) (I.prod 𝓘(𝕜, Fin A'.rank → 𝕜)) n f.totalSpaceMap ↔
-      ∀ i j, ContMDiffOn I 𝓘(𝕜, (Fin A.rank → 𝕜) →L[𝕜] (Fin A'.rank → 𝕜)) n
-        (fun x ↦ A.core.inChartCoordinates A'.core i j x (f.fiberMap x))
-        (A.core.baseSet i ∩ A'.core.baseSet j) :=
-  ⟨contMDiffOn_inChartCoordinates_of_contMDiff_totalSpaceMap f, f.contMDiff_totalSpaceMap⟩
 
 /-- Monoidal tensor products of `C^n` bundle maps between `C^n` finite-rank cores have `C^n`
 total-space maps, without completeness of the scalar field. -/
@@ -311,91 +252,27 @@ theorem contMDiff_totalSpaceMap_whiskerRight (f : A ⟶ A')
   contMDiff_totalSpaceMap_monoidalTensorHom f (𝟙 D) hf
     (CoordinateHom.contMDiff_totalSpaceMap_id D.core)
 
-end ChartOperators
-
-section TensorPower
-
-variable {A D : FiniteRankBundleCore 𝕜 B} [A.core.IsContMDiff I n] [D.core.IsContMDiff I n]
-
 /-- Every tensor power of a `C^n` finite-rank core is `C^n`. -/
-instance isContMDiff_tensorPower (A : FiniteRankBundleCore 𝕜 B) [A.core.IsContMDiff I n] :
-    ∀ m : ℕ, (A.tensorPower m).core.IsContMDiff I n
+instance isContMDiff_tensorPow (A : FiniteRankBundleCore 𝕜 B) [A.core.IsContMDiff I n] :
+    ∀ m : ℕ, (tensorPow A m).core.IsContMDiff I n
   | 0 => isContMDiff_tensorUnit
   | m + 1 =>
-    letI := isContMDiff_tensorPower A m
-    isContMDiff_tensorObj (A.tensorPower m) A
+    letI := isContMDiff_tensorPow A m
+    isContMDiff_tensorObj A (tensorPow A m)
 
-omit [A.core.IsContMDiff I n] [D.core.IsContMDiff I n] in
-/-- An isomorphism of finite-rank cores whose forward and inverse maps are `C^n` on total spaces
-induces a `C^n` diffeomorphism of total spaces, without completeness or smoothness of
-transitions. -/
-def isoToDiffeomorph (e : A ≅ D)
-    (he_hom : ContMDiff (I.prod 𝓘(𝕜, Fin A.rank → 𝕜)) (I.prod 𝓘(𝕜, Fin D.rank → 𝕜)) n
-      e.hom.totalSpaceMap)
-    (he_inv : ContMDiff (I.prod 𝓘(𝕜, Fin D.rank → 𝕜)) (I.prod 𝓘(𝕜, Fin A.rank → 𝕜)) n
-      e.inv.totalSpaceMap) :
-    A.core.TotalSpace ≃ₘ^n⟮I.prod 𝓘(𝕜, Fin A.rank → 𝕜),
-      I.prod 𝓘(𝕜, Fin D.rank → 𝕜)⟯ D.core.TotalSpace :=
-  CoordinateHom.toDiffeomorphOfInv e.hom e.inv e.hom_inv_id e.inv_hom_id he_hom he_inv
-
-omit [A.core.IsContMDiff I n] [D.core.IsContMDiff I n] in
-@[simp] theorem coe_isoToDiffeomorph (e : A ≅ D)
-    (he_hom : ContMDiff (I.prod 𝓘(𝕜, Fin A.rank → 𝕜)) (I.prod 𝓘(𝕜, Fin D.rank → 𝕜)) n
-      e.hom.totalSpaceMap)
-    (he_inv : ContMDiff (I.prod 𝓘(𝕜, Fin D.rank → 𝕜)) (I.prod 𝓘(𝕜, Fin A.rank → 𝕜)) n
-      e.inv.totalSpaceMap) :
-    ⇑(isoToDiffeomorph e he_hom he_inv) = e.hom.totalSpaceMap :=
-  CoordinateHom.coe_toDiffeomorphOfInv _ _ _ _ _ _
-
-omit [A.core.IsContMDiff I n] [D.core.IsContMDiff I n] in
-@[simp] theorem coe_isoToDiffeomorph_symm (e : A ≅ D)
-    (he_hom : ContMDiff (I.prod 𝓘(𝕜, Fin A.rank → 𝕜)) (I.prod 𝓘(𝕜, Fin D.rank → 𝕜)) n
-      e.hom.totalSpaceMap)
-    (he_inv : ContMDiff (I.prod 𝓘(𝕜, Fin D.rank → 𝕜)) (I.prod 𝓘(𝕜, Fin A.rank → 𝕜)) n
-      e.inv.totalSpaceMap) :
-    ⇑(isoToDiffeomorph e he_hom he_inv).symm = e.inv.totalSpaceMap :=
-  CoordinateHom.coe_toDiffeomorphOfInv_symm _ _ _ _ _ _
-
+omit [D.core.IsContMDiff I n] [D'.core.IsContMDiff I n] in
 /-- Taking the `m`-th tensor power preserves `C^n` regularity of glued total-space maps. -/
-theorem contMDiff_totalSpaceMap_tensorPowerHom (f : A ⟶ D)
-    (hf : ContMDiff (I.prod 𝓘(𝕜, Fin A.rank → 𝕜)) (I.prod 𝓘(𝕜, Fin D.rank → 𝕜)) n
+theorem contMDiff_totalSpaceMap_tensorPowMap (f : A ⟶ A')
+    (hf : ContMDiff (I.prod 𝓘(𝕜, Fin A.rank → 𝕜)) (I.prod 𝓘(𝕜, Fin A'.rank → 𝕜)) n
       f.totalSpaceMap) :
-    ∀ m : ℕ, ContMDiff (I.prod 𝓘(𝕜, Fin (A.tensorPower m).rank → 𝕜))
-      (I.prod 𝓘(𝕜, Fin (D.tensorPower m).rank → 𝕜)) n (tensorPowerHom f m).totalSpaceMap
-  | 0 => by rw [tensorPowerHom_zero]; exact CoordinateHom.contMDiff_totalSpaceMap_id _
+    ∀ m : ℕ, ContMDiff (I.prod 𝓘(𝕜, Fin (tensorPow A m).rank → 𝕜))
+      (I.prod 𝓘(𝕜, Fin (tensorPow A' m).rank → 𝕜)) n (tensorPowMap f m).totalSpaceMap
+  | 0 => by rw [tensorPowMap_zero]; exact CoordinateHom.contMDiff_totalSpaceMap_id _
   | m + 1 => by
-    rw [tensorPowerHom_succ]
-    exact contMDiff_totalSpaceMap_monoidalTensorHom (tensorPowerHom f m) f
-      (contMDiff_totalSpaceMap_tensorPowerHom f hf m) hf
+    rw [tensorPowMap_succ]
+    exact contMDiff_totalSpaceMap_monoidalTensorHom f (tensorPowMap f m) hf
+      (contMDiff_totalSpaceMap_tensorPowMap f hf m)
 
-omit [D.core.IsContMDiff I n] in
-theorem contMDiff_totalSpaceMap_isoTensorUnitOfCoordChangeEqId_hom
-    (A : FiniteRankBundleCore 𝕜 B) [A.core.IsContMDiff I n]
-    (e : (Fin A.rank → 𝕜) ≃L[𝕜] (Fin (𝟙_ (FiniteRankBundleCore 𝕜 B)).rank → 𝕜))
-    (h : ∀ i j x, x ∈ A.core.baseSet i → x ∈ A.core.baseSet j →
-      A.core.coordChange i j x = ContinuousLinearMap.id 𝕜 (Fin A.rank → 𝕜)) :
-    ContMDiff (I.prod 𝓘(𝕜, Fin A.rank → 𝕜))
-      (I.prod 𝓘(𝕜, Fin (𝟙_ (FiniteRankBundleCore 𝕜 B)).rank → 𝕜)) n
-      (isoTensorUnitOfCoordChangeEqId A e h).hom.totalSpaceMap :=
-  CoordinateHom.contMDiff_totalSpaceMap _ fun i j ↦
-    (contMDiffOn_const (c := e.toContinuousLinearMap)).congr fun x hx ↦
-      (CoordinateHom.operator_eq (isoTensorUnitOfCoordChangeEqId A e h).hom i j ⟨x, hx⟩).symm.trans
-        (operator_isoTensorUnitOfCoordChangeEqId_hom A e h i j ⟨x, hx⟩)
-
-omit [D.core.IsContMDiff I n] in
-theorem contMDiff_totalSpaceMap_isoTensorUnitOfCoordChangeEqId_inv
-    (A : FiniteRankBundleCore 𝕜 B) [A.core.IsContMDiff I n]
-    (e : (Fin A.rank → 𝕜) ≃L[𝕜] (Fin (𝟙_ (FiniteRankBundleCore 𝕜 B)).rank → 𝕜))
-    (h : ∀ i j x, x ∈ A.core.baseSet i → x ∈ A.core.baseSet j →
-      A.core.coordChange i j x = ContinuousLinearMap.id 𝕜 (Fin A.rank → 𝕜)) :
-    ContMDiff (I.prod 𝓘(𝕜, Fin (𝟙_ (FiniteRankBundleCore 𝕜 B)).rank → 𝕜))
-      (I.prod 𝓘(𝕜, Fin A.rank → 𝕜)) n
-      (isoTensorUnitOfCoordChangeEqId A e h).inv.totalSpaceMap :=
-  CoordinateHom.contMDiff_totalSpaceMap _ fun i j ↦
-    (contMDiffOn_const (c := e.symm.toContinuousLinearMap)).congr fun x hx ↦
-      (CoordinateHom.operator_eq (isoTensorUnitOfCoordChangeEqId A e h).inv i j ⟨x, hx⟩).symm.trans
-        (operator_isoTensorUnitOfCoordChangeEqId_inv A e h i j ⟨x, hx⟩)
-
-end TensorPower
+end MonoidalContMDiff
 
 end TauCeti.FiniteRankBundleCore

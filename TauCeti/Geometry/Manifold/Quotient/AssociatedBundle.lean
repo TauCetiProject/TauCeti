@@ -113,6 +113,22 @@ instance isContMDiff_characterCore (χ : G →* 𝕜ˣ) :
   rw [characterCore_def]
   infer_instance
 
+/-- The point-indexed finite-rank core associated with a representation of the deck group has
+locally constant transitions, so it is a `C^n` vector bundle for every model of the base and every
+regularity. -/
+instance isContMDiff_associatedFiniteRankCore {r : ℕ}
+    (ρ : G →* ((Fin r → 𝕜) →L[𝕜] (Fin r → 𝕜))ˣ) :
+    (hp.associatedFiniteRankCore ρ).core.IsContMDiff IB n where
+  contMDiffOn_coordChange _ _ _ hx :=
+    (contMDiffAt_const.congr_of_eventuallyEq
+      (hp.eventually_associatedFiniteRankCore_coordChange_eq ρ hx)).contMDiffWithinAt
+
+/-- The point-indexed finite-rank core of a character is `C^n` for every model and regularity. -/
+instance isContMDiff_characterFiniteRankCore (χ : G →* 𝕜ˣ) :
+    (hp.characterFiniteRankCore χ).core.IsContMDiff IB n := by
+  rw [characterFiniteRankCore_def]
+  infer_instance
+
 /-- A section whose equivariant function upstairs is constant is `C^m`, for every model of the
 base and every regularity `m`, without any regularity hypothesis on `p`. -/
 theorem contMDiff_section_associatedCore_of_eq_const

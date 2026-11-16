@@ -152,6 +152,18 @@ theorem kronecker_comp_kronecker (f : (Fin m' → R) →L[R] (Fin m'' → R))
   simp only [kronecker_apply, zero_apply, Pi.zero_apply]
   rw [← Pi.zero_def, map_zero, Pi.zero_apply]
 
+/-- Every continuous linear endomorphism of a one-coordinate space `ι → R` is a scalar multiple of
+the identity. -/
+theorem eq_smul_id_of_unique {ι : Type*} [Unique ι] [ContinuousConstSMul R R]
+    (T : (ι → R) →L[R] (ι → R)) :
+    T = T (fun _ ↦ 1) default • ContinuousLinearMap.id R (ι → R) := by
+  ext v i
+  have hv : v = v default • (fun _ : ι ↦ (1 : R)) := by
+    ext j
+    simp [Unique.eq_default j]
+  conv_lhs => rw [hv]
+  simp [Unique.eq_default i, mul_comm]
+
 end ContinuousLinearMap
 
 /-! ### Coherence isomorphisms of Kronecker coordinates -/
