@@ -324,23 +324,16 @@ private theorem one_sub_le_normSq_of_le_norm {x : ℂ → EuclideanSpace ℝ (Fi
     (hR : R₀ + Real.sqrt (m * C / δ) ≤ R) {z : ℂ} (hz : R ≤ ‖z‖) :
     1 - δ ≤ 4 * (x z 2 ^ 2 + x z 3 ^ 2) := by
   have hC₀ : 0 < C := lt_of_le_of_lt (by positivity) hC
-  have hm : Multiset.card D = m := hD.card_eq_of_tendsto_mul_inv_pow hframe
   set L : ℝ := Real.sqrt (m * C / δ)
   have hL : L ^ 2 = m * C / δ := Real.sq_sqrt (by positivity)
-  -- Each zero is at distance at least `L` from `z`, so each term of the sum is small.
-  have hterm : ∀ a ∈ D, C / (‖z - a‖ ^ 2 + C) ≤ C / (m * C / δ + C) := by
-    intro a ha
-    have hLa : L ≤ ‖z - a‖ := by linarith [norm_sub_norm_le z a, hD₀ a ha]
-    apply div_le_div_of_nonneg_left hC₀.le (by positivity)
-    rw [← hL]
-    nlinarith [Real.sqrt_nonneg (m * C / δ)]
-  have hsum := Multiset.sum_map_le_sum_map _ _ hterm
-  rw [Multiset.map_const', Multiset.sum_replicate, nsmul_eq_mul, hm] at hsum
-  have hbound : (m : ℝ) * (C / (m * C / δ + C)) ≤ δ := by
-    have hcancel : δ * (m * C / δ) = m * C := by field_simp
-    rw [mul_div_assoc', div_le_iff₀ (by positivity)]
-    nlinarith [mul_pos hδ hC₀]
-  linarith [one_sub_normSq_le_sum hx hsol hframe hD hC z]
+  -- Otherwise the localization lemma puts a zero within distance `L` of `z`, which is impossible.
+  by_contra! h
+  obtain ⟨a, ha, hlt⟩ := exists_mem_mul_norm_sub_sq_lt hx hsol hframe hD hC
+    (θ := 4 * (x z 2 ^ 2 + x z 3 ^ 2)) (by linarith) le_rfl
+  have hLa : L ≤ ‖z - a‖ := by linarith [norm_sub_norm_le z a, hD₀ a ha]
+  have hsq : m * C / δ ≤ ‖z - a‖ ^ 2 := hL ▸ pow_le_pow_left₀ (Real.sqrt_nonneg _) hLa 2
+  have hcancel : δ * (m * C / δ) = m * C := by field_simp
+  nlinarith [mul_le_mul_of_nonneg_left hsq hδ.le, sq_nonneg ‖z - a‖]
 
 /-- The case `0 ≤ c` of `exists_one_sub_normSq_le_mul_exp_of_forall_mem_norm_le`, with a
 nonnegative constant. -/
