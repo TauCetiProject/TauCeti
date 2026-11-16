@@ -196,6 +196,7 @@ theorem covariantDeriv_normalConnection (hx : DifferentiableAt ℝ x (normalCoor
     (normalCoord e).hasFDerivAt).fderiv
   rw [covariantDeriv_apply, Vortex.covariantDerivative_apply, hd, normalConnection_apply]
   simp
+  ring
 
 variable [FiniteDimensional ℝ V]
 

@@ -31,7 +31,8 @@ A real-bilinear map is unchanged by conjugating both arguments exactly when it v
 `(1, I)` and `(I, 1)` (`LinearMap.forall_apply_conj_apply_conj_eq_iff`).
 Multiplication by `I` and by `-I` are mutually inverse on any complex multiplication action.
 Multiplication by `I` squares to `-1` as a real-linear endomorphism of a complex module
-(`Complex.toLinearMap_I_comp_toLinearMap_I`).
+(`Complex.toLinearMap_I_comp_toLinearMap_I`), so it negates a real scalar multiple it surrounds
+(`Complex.I_smul_smul_I_smul`).
 
 A real-linear map between complex modules that commutes with multiplication by `I` is complex
 linear (`LinearMap.complexOfMapISmul`), and one that anticommutes with it is conjugate-linear
@@ -88,6 +89,12 @@ theorem toLinearMap_I_comp_toLinearMap_I {W : Type*} [AddCommGroup W] [Module �
     [IsScalarTower ℝ ℂ W] :
     DistribSMul.toLinearMap ℝ W I ∘ₗ DistribSMul.toLinearMap ℝ W I = -LinearMap.id :=
   LinearMap.ext fun v ↦ by simp [smul_smul]
+
+/-- Multiplication by `I` on both sides of a real scalar multiplication negates it:
+`I • c • I • z = -(c • z)`. -/
+theorem I_smul_smul_I_smul {W : Type*} [AddCommGroup W] [Module ℂ W] [Module ℝ W]
+    [IsScalarTower ℝ ℂ W] (c : ℝ) (z : W) : I • c • I • z = -(c • z) := by
+  rw [smul_comm I c, smul_smul I I, I_mul_I, neg_one_smul, smul_neg]
 
 /-- Decompose a complex scalar action into its real and imaginary parts. -/
 @[simp]
