@@ -6,20 +6,28 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.RingTheory.Kaehler.Basic
+public import Mathlib.RingTheory.Smooth.Basic
+import Mathlib.RingTheory.Kaehler.JacobiZariski
 
 /-!
-# Ranges of base-change maps for Kähler differentials
+# Ranges and splittings of base-change maps for Kähler differentials
 
 This file identifies the base-change map `B ⊗[A] Ω[A⁄R] → Ω[B⁄R]` with the `liftBaseChange`
-of `KaehlerDifferential.map R R A B`. It then records two reusable consequences of the
-Jacobi–Zariski sequence. The base-change map onto `Ω[B⁄R]` is surjective exactly when `Ω[B⁄A]`
-vanishes, and if `Ω[A⁄R]` is spanned by a set `s` then its range is spanned by the image of `s`.
+of `KaehlerDifferential.map R R A B`. It then records reusable consequences of the
+Jacobi–Zariski sequence:
+* the base-change map onto `Ω[B⁄R]` is surjective exactly when `Ω[B⁄A]` vanishes, and if
+  `Ω[A⁄R]` is spanned by a set `s` then its range is spanned by the image of `s`;
+* when `B` is formally smooth over `A`, `H¹(L_{B/A})` vanishes so the first map
+  `B ⊗[A] Ω[A⁄R] → Ω[B⁄R]` is injective and the short exact sequence
+  `0 → B ⊗[A] Ω[A⁄R] → Ω[B⁄R] → Ω[B⁄A] → 0` splits as a `B`-module direct sum.
 
 ## Main results
 
 * `TauCeti.mapBaseChange_eq_liftBaseChange`
 * `TauCeti.subsingleton_kaehlerDifferential_iff_range_mapBaseChange_eq_top`
 * `TauCeti.range_mapBaseChange_eq_span_image`
+* `TauCeti.mapBaseChange_injective_of_formallySmooth`
+* `TauCeti.exists_kaehlerDifferentialProdEquiv`
 -/
 
 public section
@@ -28,7 +36,7 @@ noncomputable section
 
 namespace TauCeti
 
-open KaehlerDifferential
+open KaehlerDifferential TensorProduct
 
 variable (R A B : Type*) [CommRing R] [CommRing A] [CommRing B] [Algebra R A] [Algebra R B]
   [Algebra A B] [IsScalarTower R A B]
@@ -56,5 +64,29 @@ theorem range_mapBaseChange_eq_span_image {s : Set Ω[A⁄R]} (hs : Submodule.sp
     (mapBaseChange R A B).range = Submodule.span B (map R R A B '' s) := by
   rw [mapBaseChange_eq_liftBaseChange, LinearMap.range_liftBaseChange, LinearMap.range_eq_map,
     ← hs, ← Submodule.span_image, Submodule.span_span_of_tower]
+
+/-- In a tower `R → A → B` with `B` formally smooth over `A`, the Jacobi–Zariski base-change map
+`B ⊗[A] Ω[A⁄R] →ₗ[B] Ω[B⁄R]` is injective because `H¹(L_{B/A})` is trivial. -/
+theorem mapBaseChange_injective_of_formallySmooth [Algebra.FormallySmooth A B] :
+    Function.Injective (mapBaseChange R A B) := by
+  rw [← LinearMap.ker_eq_bot, eq_bot_iff]
+  intro x hx
+  obtain ⟨y, rfl⟩ := (Algebra.H1Cotangent.exact_δ_mapBaseChange R A B x).mp hx
+  rw [Subsingleton.elim y 0, map_zero]
+  exact Submodule.zero_mem ⊥
+
+/-- In a tower `R → A → B` with `B` formally smooth over `A`, the short exact Jacobi–Zariski
+sequence `0 → B ⊗[A] Ω[A⁄R] → Ω[B⁄R] → Ω[B⁄A] → 0` splits, yielding a `B`-linear equivalence
+`Ω[B⁄R] ≃ₗ[B] (B ⊗[A] Ω[A⁄R]) × Ω[B⁄A]` compatible with `mapBaseChange` and `map`. -/
+theorem exists_kaehlerDifferentialProdEquiv [Algebra.FormallySmooth A B] :
+    ∃ e : Ω[B⁄R] ≃ₗ[B] (B ⊗[A] Ω[A⁄R]) × Ω[B⁄A],
+      mapBaseChange R A B = e.symm.toLinearMap ∘ₗ LinearMap.inl B (B ⊗[A] Ω[A⁄R]) Ω[B⁄A] ∧
+      map R A B B = LinearMap.snd B (B ⊗[A] Ω[A⁄R]) Ω[B⁄A] ∘ₗ e.toLinearMap := by
+  -- `Ω[B⁄A]` is projective since `B` is formally smooth over `A`, splitting the surjection `map`.
+  obtain ⟨l, hl⟩ := Module.projective_lifting_property (map R A B B) LinearMap.id
+    (map_surjective R A B)
+  obtain ⟨e, he⟩ := (exact_mapBaseChange_map R A B).splitSurjectiveEquiv
+    (mapBaseChange_injective_of_formallySmooth R A B) ⟨l, hl⟩
+  exact ⟨e, he⟩
 
 end TauCeti
