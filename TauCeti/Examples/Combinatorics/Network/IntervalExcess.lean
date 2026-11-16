@@ -147,10 +147,12 @@ theorem exists_exactFlow :
     ∃ (fᵢ : ExcessIntervalFlow lower upper exactExcess exactExcess)
       (fₑ : ExcessFlow lower upper exactExcess),
       fₑ = ExcessIntervalFlow.equivExcessFlow lower upper exactExcess fᵢ ∧
-        fₑ.val Hom.edge = 2 ∧ excessAt fₑ.val false = -2 ∧ excessAt fₑ.val true = 2 ∧
+        fₑ.val = fᵢ.val ∧ fₑ.val Hom.edge = 2 ∧ excessAt fₑ.val false = -2 ∧
+        excessAt fₑ.val true = 2 ∧
         (ExcessIntervalFlow.equivExcessFlow lower upper exactExcess).symm fₑ = fᵢ := by
   let fₑ := ExcessIntervalFlow.equivExcessFlow lower upper exactExcess exactIntervalFlow
-  refine ⟨exactIntervalFlow, fₑ, rfl, ?_, ?_, ?_, ?_⟩
+  refine ⟨exactIntervalFlow, fₑ, rfl, ?_, ?_, ?_, ?_, ?_⟩
+  · exact ExcessIntervalFlow.equivExcessFlow_apply_val lower upper exactExcess exactIntervalFlow
   · rw [ExcessIntervalFlow.equivExcessFlow_apply_val]
     exact assignment_edge 2
   · simpa [fₑ, exactExcess] using fₑ.excessAt_eq false
