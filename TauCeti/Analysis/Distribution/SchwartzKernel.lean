@@ -8,6 +8,8 @@ module
 public import TauCeti.Analysis.Distribution.ComplexPairing
 public import TauCeti.Analysis.Distribution.TestFunction.SchwartzKernel
 import TauCeti.Analysis.Distribution.Gluing
+import TauCeti.Analysis.Distribution.TestFunction.Frechet
+import TauCeti.Analysis.Distribution.TestFunction.TensorDensity
 import TauCeti.Topology.MetricSpace.Pseudo.Lemmas
 
 /-!
@@ -25,10 +27,33 @@ test functions on `Ω × O` with
 where `(φ ⊗ ψ)(x, y) = φ x * ψ y` is `TestFunction.tensor`
 (`LinearMap.existsUnique_schwartzKernel_testFunction`). This is the Schwartz kernel theorem in the
 form of the construction in Hörmander's proof, which first derives the estimate above from the
-continuity of the map `ψ ↦ B (·) ψ` from `𝓓(O)` to `𝓓'(Ω)`; here the estimate is the hypothesis.
+continuity of the map `ψ ↦ B (·) ψ` from `𝓓(O)` to `𝓓'(Ω)`. These two theorems take the estimate
+as a hypothesis; it is derived from the weak continuity of an operator in
+`LinearMap.existsUnique_kernelOperator_eq` below.
 For `F = ℂ` the kernel is an actual distribution `K ∈ 𝓓'(Ω × O, ℂ)`, acting on complex test
 functions through its complex-linear extension `Distribution.complexPairing`
 (`LinearMap.existsUnique_schwartzKernel_distribution`).
+
+## Operators and their kernels
+
+A distribution `K` on an open set `V ⊇ Ω ×ˢ O` defines the operator
+`Distribution.kernelOperator hV K : 𝓓(O, ℝ) →ₗ[ℝ] 𝓓'(Ω, F)` by
+
+`⟨kernelOperator hV K ψ, φ⟩ = K (φ ⊗ ψ)`,
+
+where `(φ ⊗ ψ)(x, y) = ψ y • φ x` is `TestFunction.prodSMulCLM ψ hV φ`. It is continuous for the
+weak topology of `𝓓'(Ω, F)`: each `ψ ↦ kernelOperator hV K ψ φ` is continuous
+(`Distribution.continuous_kernelOperator_apply`), and for `V = Ω ×ˢ O` it determines `K`
+(`Distribution.kernelOperator_injective`). The Schwartz kernel theorem says that every such
+operator has a kernel: a linear map `A : 𝓓(O, ℝ) →ₗ[ℝ] 𝓓'(Ω, ℂ)` with every `ψ ↦ A ψ φ` continuous
+is `kernelOperator hV K` for exactly one `K ∈ 𝓓'(Ω × O, ℂ)`
+(`LinearMap.existsUnique_kernelOperator_eq`), in particular every continuous linear map
+`𝓓(O, ℝ) →L[ℝ] 𝓓'(Ω, ℂ)` (`ContinuousLinearMap.existsUnique_kernelOperator_eq`). For the proof,
+the bilinear form `(φ, ψ) ↦ ⟨A ψ, φ⟩` is extended to complex test functions. It is separately
+continuous on each pair of spaces `𝓓_{K₁} × 𝓓_{K₂}` of tests supported in compact sets, which
+are Fréchet spaces, so it satisfies the estimate above
+(`LinearMap.exists_bound_supportedIn_of_continuous`, through the Banach–Steinhaus theorem), and
+`LinearMap.existsUnique_schwartzKernel_distribution` supplies `K`.
 
 ## Proof
 
@@ -57,6 +82,14 @@ on compact sets applies to it.
   of `ℝ^a × ℝ^b`.
 * `LinearMap.existsUnique_schwartzKernel_distribution`: its form for complex-valued
   distributions.
+* `Distribution.kernelOperator`: the operator `𝓓(O) → 𝓓'(Ω)` with kernel `K`, with
+  `Distribution.kernelOperator_apply`, `Distribution.continuous_kernelOperator_apply` and
+  `Distribution.kernelOperator_injective`.
+* `LinearMap.existsUnique_kernelOperator_eq`, `ContinuousLinearMap.existsUnique_kernelOperator_eq`:
+  the Schwartz kernel theorem for weakly continuous and for continuous linear maps
+  `𝓓(O, ℝ) → 𝓓'(Ω, ℂ)`.
+* `LinearMap.exists_kernelOperator_eq_iff`: the operators with a kernel are exactly the weakly
+  continuous ones.
 
 ## References
 
@@ -378,3 +411,166 @@ theorem existsUnique_schwartzKernel_distribution (B : 𝓓(Ω, ℂ) →ₗ[ℂ] 
     Distribution.complexPairing_postcompCLM_ofRealCLM]
 
 end LinearMap
+
+/-! ### Operators and their kernels -/
+
+namespace Distribution
+
+variable {E D : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [NormedAddCommGroup D]
+  [NormedSpace ℝ D] {Ω : Opens E} {O : Opens D} {V : Opens (E × D)}
+  {F : Type*} [AddCommGroup F] [Module ℝ F] [TopologicalSpace F] [IsTopologicalAddGroup F]
+  [ContinuousSMul ℝ F]
+
+/-- The distribution `φ ↦ K (φ ⊗ ψ)` on `Ω`. -/
+private def compProdSMul (hV : (Ω : Set E) ×ˢ (O : Set D) ⊆ V) (K : 𝓓'(V, F)) (ψ : 𝓓(O, ℝ)) :
+    𝓓'(Ω, F) :=
+  K.comp (prodSMulCLM ψ hV)
+
+omit [IsTopologicalAddGroup F] [ContinuousSMul ℝ F] in
+private theorem compProdSMul_apply (hV : (Ω : Set E) ×ˢ (O : Set D) ⊆ V) (K : 𝓓'(V, F))
+    (ψ : 𝓓(O, ℝ)) (φ : 𝓓(Ω, ℝ)) : compProdSMul hV K ψ φ = K (prodSMulCLM ψ hV φ) :=
+  (rfl)
+
+/-- The **operator with Schwartz kernel** `K`: a distribution `K` on an open set `V ⊇ Ω ×ˢ O`
+defines the linear map `𝓓(O, ℝ) → 𝓓'(Ω, F)` sending `ψ` to the distribution `φ ↦ K (φ ⊗ ψ)`,
+where `(φ ⊗ ψ)(x, y) = ψ y • φ x`. It is linear in `K`. -/
+def kernelOperator (hV : (Ω : Set E) ×ˢ (O : Set D) ⊆ V) :
+    𝓓'(V, F) →ₗ[ℝ] 𝓓(O, ℝ) →ₗ[ℝ] 𝓓'(Ω, F) :=
+  LinearMap.mk₂ ℝ (compProdSMul hV)
+    (fun K K' _ ↦ ContinuousLinearMap.add_comp K K' _)
+    (fun c K _ ↦ ContinuousLinearMap.smul_comp c K _)
+    (fun K ψ ψ' ↦ by ext φ; simp [compProdSMul_apply, prodSMulCLM_add])
+    (fun c K ψ ↦ by ext φ; simp [compProdSMul_apply, prodSMulCLM_smul])
+
+/-- The operator with kernel `K` pairs `ψ` with `φ` to `K (φ ⊗ ψ)`. -/
+@[simp]
+theorem kernelOperator_apply (hV : (Ω : Set E) ×ˢ (O : Set D) ⊆ V) (K : 𝓓'(V, F))
+    (ψ : 𝓓(O, ℝ)) (φ : 𝓓(Ω, ℝ)) : kernelOperator hV K ψ φ = K (prodSMulCLM ψ hV φ) :=
+  (rfl)
+
+/-- The operator with kernel `K` is continuous for the weak topology of distributions:
+`ψ ↦ ⟨kernelOperator hV K ψ, φ⟩` is continuous for every test function `φ`. -/
+theorem continuous_kernelOperator_apply (hV : (Ω : Set E) ×ˢ (O : Set D) ⊆ V) (K : 𝓓'(V, F))
+    (φ : 𝓓(Ω, ℝ)) : Continuous fun ψ ↦ kernelOperator hV K ψ φ := by
+  simp only [kernelOperator_apply]
+  exact K.continuous.comp (continuous_prodSMulCLM_apply hV φ)
+
+/-- A distribution on `Ω ×ˢ O` is determined by its operator, since tensor products of test
+functions span a dense subspace (`TestFunction.ext_prodSMulCLM`). -/
+theorem kernelOperator_injective [FiniteDimensional ℝ E] [FiniteDimensional ℝ D] [T2Space F]
+    (hV : (V : Set (E × D)) = (Ω : Set E) ×ˢ (O : Set D)) :
+    Function.Injective (kernelOperator (F := F) hV.symm.subset) := fun K K' h ↦
+  ext_prodSMulCLM hV fun ψ φ ↦ by
+    simpa using DFunLike.congr_fun (DFunLike.congr_fun h ψ) φ
+
+end Distribution
+
+namespace LinearMap
+
+open Distribution
+
+variable {a b : Type*} [Fintype a] [Fintype b] {Ω : Opens (a → ℝ)} {O : Opens (b → ℝ)}
+  {V : Opens ((a → ℝ) × (b → ℝ))}
+
+/-- For a complex test function `φ` on `Ω`, the distribution `ψ ↦ ⟨A ψ, φ⟩` on `O`, where `A ψ`
+acts on `φ` through its complex-linear extension. -/
+private def pairingLeft (A : 𝓓(O, ℝ) →ₗ[ℝ] 𝓓'(Ω, ℂ)) (hA : ∀ φ, Continuous fun ψ ↦ A ψ φ)
+    (φ : 𝓓(Ω, ℂ)) : 𝓓'(O, ℂ) :=
+  ({ toFun ψ := (A ψ).complexPairing φ
+     map_add' ψ ψ' := by simp [complexPairing_apply]; ring
+     map_smul' r ψ := by
+       simp only [map_smul, complexPairing_apply, smul_apply,
+         Complex.real_smul, RingHom.id_apply]
+       ring
+     cont := by
+       simp only [complexPairing_apply]
+       exact (hA _).add (continuous_const.mul (hA _)) } : 𝓓(O, ℝ) →L[ℝ] ℂ)
+
+private theorem pairingLeft_apply (A : 𝓓(O, ℝ) →ₗ[ℝ] 𝓓'(Ω, ℂ))
+    (hA : ∀ φ, Continuous fun ψ ↦ A ψ φ) (φ : 𝓓(Ω, ℂ)) (ψ : 𝓓(O, ℝ)) :
+    pairingLeft A hA φ ψ = (A ψ).complexPairing φ :=
+  (rfl)
+
+/-- The complex bilinear form `(φ, ψ) ↦ ⟨A ψ, φ⟩` on complex test functions, extending `A`
+complex-linearly in both variables. -/
+private def pairing (A : 𝓓(O, ℝ) →ₗ[ℝ] 𝓓'(Ω, ℂ)) (hA : ∀ φ, Continuous fun ψ ↦ A ψ φ) :
+    𝓓(Ω, ℂ) →ₗ[ℂ] 𝓓(O, ℂ) →ₗ[ℂ] ℂ :=
+  LinearMap.mk₂ ℂ (fun φ ψ ↦ (pairingLeft A hA φ).complexPairing ψ)
+    (fun φ φ' ψ ↦ by simp only [complexPairing_apply, pairingLeft_apply, map_add]; ring)
+    (fun c φ ψ ↦ by
+      simp only [complexPairing_apply, pairingLeft_apply, map_smul, smul_eq_mul]
+      ring)
+    (fun φ ψ ψ' ↦ map_add _ _ _) (fun c φ ψ ↦ map_smul _ _ _)
+
+private theorem pairing_apply (A : 𝓓(O, ℝ) →ₗ[ℝ] 𝓓'(Ω, ℂ))
+    (hA : ∀ φ, Continuous fun ψ ↦ A ψ φ) (φ : 𝓓(Ω, ℂ)) (ψ : 𝓓(O, ℂ)) :
+    pairing A hA φ ψ = (pairingLeft A hA φ).complexPairing ψ :=
+  (rfl)
+
+/-- The bilinear form `(φ, ψ) ↦ ⟨A ψ, φ⟩` of a weakly continuous `A` satisfies the estimate of the
+Schwartz kernel theorem on each pair of compact sets: it is separately continuous on the Fréchet
+spaces of tests supported in them. -/
+private theorem exists_bound_pairing (A : 𝓓(O, ℝ) →ₗ[ℝ] 𝓓'(Ω, ℂ))
+    (hA : ∀ φ, Continuous fun ψ ↦ A ψ φ) (K₁ : Compacts (a → ℝ)) (K₂ : Compacts (b → ℝ))
+    (hK₁ : (K₁ : Set (a → ℝ)) ⊆ Ω) (hK₂ : (K₂ : Set (b → ℝ)) ⊆ O) :
+    ∃ (C : ℝ) (k : ℕ), ∀ φ ψ,
+      ‖pairing A hA (ofSupportedIn hK₁ φ) (ofSupportedIn hK₂ ψ)‖ ≤
+        C * ContDiffMapSupportedIn.supSeminorm ℂ _ ℂ ⊤ K₁ k φ *
+          ContDiffMapSupportedIn.supSeminorm ℂ _ ℂ ⊤ K₂ k ψ :=
+  exists_bound_supportedIn_of_continuous ((pairing A hA).compl₁₂
+      (ofSupportedInCLM ℂ hK₁).toLinearMap (ofSupportedInCLM ℂ hK₂).toLinearMap)
+    (fun ψ ↦ by
+      simp only [compl₁₂_apply, ContinuousLinearMap.coe_coe, pairing_apply,
+        complexPairing_apply, pairingLeft_apply]
+      fun_prop)
+    (fun φ ↦ ((pairingLeft A hA (ofSupportedIn hK₁ φ)).complexPairing.continuous.comp
+      (ofSupportedInCLM ℂ hK₂).continuous).congr fun ψ ↦ by simp [pairing_apply])
+
+/-- **The Schwartz kernel theorem.** Let `Ω ⊆ ℝ^a` and `O ⊆ ℝ^b` be open sets and let
+`A : 𝓓(O, ℝ) → 𝓓'(Ω, ℂ)` be a linear map which is continuous for the weak topology of
+distributions: `ψ ↦ ⟨A ψ, φ⟩` is continuous for every test function `φ` on `Ω`. Then there is a
+unique distribution `K` on `V = Ω × O`, the Schwartz kernel of `A`, with `⟨A ψ, φ⟩ = K (φ ⊗ ψ)`,
+that is, `A = kernelOperator hV K`. -/
+theorem existsUnique_kernelOperator_eq (A : 𝓓(O, ℝ) →ₗ[ℝ] 𝓓'(Ω, ℂ))
+    (hA : ∀ φ, Continuous fun ψ ↦ A ψ φ)
+    (hV : (V : Set ((a → ℝ) × (b → ℝ))) = (Ω : Set (a → ℝ)) ×ˢ (O : Set (b → ℝ))) :
+    ∃! K : 𝓓'(V, ℂ), kernelOperator hV.symm.subset K = A := by
+  obtain ⟨K, hK, -⟩ :=
+    existsUnique_schwartzKernel_distribution (pairing A hA) (exists_bound_pairing A hA) hV
+  -- `K` takes the value `⟨A ψ, φ⟩` on tensor products of real test functions.
+  have hKA : kernelOperator hV.symm.subset K = A := by
+    ext ψ φ
+    rw [kernelOperator_apply, ← complexPairing_postcompCLM_ofRealCLM,
+      postcompCLM_ofRealCLM_prodSMulCLM, hK]
+    simp [pairing_apply, pairingLeft_apply, complexPairing_postcompCLM_ofRealCLM]
+  exact ⟨K, hKA, fun K' hK' ↦ kernelOperator_injective hV (hK'.trans hKA.symm)⟩
+
+/-- **The operators with a Schwartz kernel** are exactly the linear maps `𝓓(O, ℝ) → 𝓓'(Ω, ℂ)`
+that are continuous for the weak topology of distributions. -/
+theorem exists_kernelOperator_eq_iff (A : 𝓓(O, ℝ) →ₗ[ℝ] 𝓓'(Ω, ℂ))
+    (hV : (V : Set ((a → ℝ) × (b → ℝ))) = (Ω : Set (a → ℝ)) ×ˢ (O : Set (b → ℝ))) :
+    (∃ K : 𝓓'(V, ℂ), kernelOperator hV.symm.subset K = A) ↔
+      ∀ φ, Continuous fun ψ ↦ A ψ φ := by
+  refine ⟨?_, fun hA ↦ (existsUnique_kernelOperator_eq A hA hV).exists⟩
+  rintro ⟨K, rfl⟩ φ
+  exact continuous_kernelOperator_apply _ K φ
+
+end LinearMap
+
+namespace ContinuousLinearMap
+
+open Distribution
+
+variable {a b : Type*} [Fintype a] [Fintype b] {Ω : Opens (a → ℝ)} {O : Opens (b → ℝ)}
+  {V : Opens ((a → ℝ) × (b → ℝ))}
+
+/-- **The Schwartz kernel theorem for continuous operators.** Every continuous linear map
+`A : 𝓓(O, ℝ) → 𝓓'(Ω, ℂ)`, for the topology of compact convergence on distributions, is the
+operator `kernelOperator hV K` of a unique distribution `K` on `V = Ω × O`. -/
+theorem existsUnique_kernelOperator_eq (A : 𝓓(O, ℝ) →L[ℝ] 𝓓'(Ω, ℂ))
+    (hV : (V : Set ((a → ℝ) × (b → ℝ))) = (Ω : Set (a → ℝ)) ×ˢ (O : Set (b → ℝ))) :
+    ∃! K : 𝓓'(V, ℂ), kernelOperator hV.symm.subset K = A :=
+  LinearMap.existsUnique_kernelOperator_eq _
+    (fun φ ↦ (continuous_eval_const φ).comp A.continuous) hV
+
+end ContinuousLinearMap
