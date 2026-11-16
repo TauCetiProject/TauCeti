@@ -60,11 +60,9 @@ and only if `L` is integral (`ZLattice.thetaSeries_dual_eq_sum_iff_isIntegral_of
 * `ZLattice.thetaSeries_dual_eq_sum_iff_isIntegral_of_re_eq_zero`,
   `ZLattice.forall_thetaSeries_dual_eq_sum_iff_isIntegral`: when `L^∨ ≤ L`, the dual decomposition
   `Θ_{L^∨} = ∑_{γ ∈ A_L} θ_γ` holds if and only if `L` is integral.
-* `ZLattice.dual_span_one_half`, `ZLattice.dual_span_one_half_lt`,
-  `ZLattice.instUniqueDiscriminantGroupSpanOneHalf`,
-  `ZLattice.thetaSeries_span_two_I_ne_thetaSeries_span_one_half_I`,
-  `ZLattice.thetaSeries_dual_span_one_half_I_ne_sum`: for `L = ½ ℤ ⊆ ℝ`, `L^∨ = 2 ℤ < L`, `A_L`
-  is trivial, and `Θ_{2ℤ}(i) ≠ Θ_{½ℤ}(i)`.
+* `ZLattice.thetaSeries_span_two_I_ne_thetaSeries_span_one_half_I`,
+  `ZLattice.thetaSeries_dual_span_one_half_I_ne_sum`: for `L = ½ ℤ ⊆ ℝ`, `Θ_{2ℤ}(i) ≠ Θ_{½ℤ}(i)`
+  and `Θ_{L^∨}(i) ≠ ∑_{γ ∈ A_L} θ_γ(i)`.
 
 ## References
 
@@ -285,48 +283,6 @@ end DualLe
 /-! ### Non-integral rank-one boundary example -/
 
 section NonIntegralBoundary
-
-/-- The dual of the rank-one lattice `½ ℤ ⊆ ℝ` is `2 ℤ`. -/
-theorem dual_span_one_half :
-    dual (span ℤ {1 / 2} : Submodule ℤ ℝ) = span ℤ {2} := by
-  rw [dual_span_singleton (by norm_num)]
-  norm_num
-
-/-- In `ℝ`, `2 ℤ` is a proper sublattice of `½ ℤ`. -/
-theorem span_two_lt_span_one_half :
-    (span ℤ {2} : Submodule ℤ ℝ) < span ℤ {1 / 2} := by
-  refine lt_of_le_not_ge
-    (span_le.mpr (Set.singleton_subset_iff.mpr (mem_span_singleton.mpr ⟨4, ?_⟩))) fun h => ?_
-  · rw [zsmul_eq_mul]
-    norm_num
-  · obtain ⟨n, hn⟩ := mem_span_singleton.mp (h (mem_span_singleton_self (1 / 2)))
-    rw [zsmul_eq_mul] at hn
-    have h4 : (4 : ℝ) * n = 1 := by linarith
-    have h4' : 4 * n = 1 := by exact_mod_cast h4
-    omega
-
-/-- The dual `2 ℤ` of `½ ℤ ⊆ ℝ` is strictly contained in `½ ℤ`. -/
-theorem dual_span_one_half_lt :
-    dual (span ℤ {1 / 2} : Submodule ℤ ℝ) < span ℤ {1 / 2} :=
-  dual_span_one_half ▸ span_two_lt_span_one_half
-
-/-- The lattice `½ ℤ ⊆ ℝ` is not integral. -/
-theorem not_isIntegral_span_one_half :
-    ¬ IsIntegral (span ℤ {1 / 2} : Submodule ℤ ℝ) :=
-  mt isIntegral_iff_le_dual.mp dual_span_one_half_lt.not_ge
-
-/-- The discriminant group `(½ ℤ)^∨ ⧸ ((½ ℤ) ∩ (½ ℤ)^∨)` of `½ ℤ ⊆ ℝ` has a single element, the
-zero class. -/
-noncomputable instance instUniqueDiscriminantGroupSpanOneHalf :
-    Unique (DiscriminantGroup (span ℤ {1 / 2} : Submodule ℤ ℝ)) :=
-  have : Subsingleton (DiscriminantGroup (span ℤ {1 / 2} : Submodule ℤ ℝ)) :=
-    subsingleton_discriminantGroup_iff.mpr dual_span_one_half_lt.le
-  uniqueOfSubsingleton 0
-
-/-- The discriminant group of `½ ℤ ⊆ ℝ` has cardinality `1`. -/
-theorem card_discriminantGroup_span_one_half :
-    Nat.card (DiscriminantGroup (span ℤ {1 / 2} : Submodule ℤ ℝ)) = 1 :=
-  Nat.card_unique
 
 /-- On the imaginary axis, `re Θ_{2ℤ}(τ) < re Θ_{½ℤ}(τ)`. -/
 theorem re_thetaSeries_span_two_lt_re_thetaSeries_span_one_half {τ : ℍ} (hτ : τ.re = 0) :
