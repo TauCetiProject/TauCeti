@@ -251,7 +251,7 @@ private theorem three_mul_sqrt_three_mul_sq : (3 * √3 * R) ^ 2 = 27 * R ^ 2 :=
   rw [mul_pow, mul_pow, Real.sq_sqrt (by norm_num)]; ring
 
 /-- A triangle inscribed in the closed ball of radius `R` has perimeter at most `3 √3 R`, the
-perimeter of an equilateral triangle inscribed in its boundary sphere. -/
+perimeter of an equilateral triangle inscribed in a circle of radius `R`. -/
 theorem inscribedPerimeter_le_three_mul_sqrt_three (h : ∀ t, ‖χ t‖ ≤ R) (s : ZMod 3 → α) :
     inscribedPerimeter χ s ≤ 3 * √3 * R := by
   have hR : 0 ≤ R := (norm_nonneg _).trans (h (s 0))
@@ -262,7 +262,8 @@ theorem inscribedPerimeter_le_three_mul_sqrt_three (h : ∀ t, ‖χ t‖ ≤ R)
     hle 1, hle 2]
 
 /-- A triangle inscribed in the sphere of radius `R` has the largest possible perimeter `3 √3 R`
-exactly when the centre of the sphere is its centroid, that is, when it is equilateral. -/
+exactly when the centre of the sphere is its centroid, in which case it is equilateral with sides
+`√3 R`. -/
 theorem inscribedPerimeter_eq_three_mul_sqrt_three_iff (h : ∀ t, ‖χ t‖ = R) (s : ZMod 3 → α) :
     inscribedPerimeter χ s = 3 * √3 * R ↔ χ (s 0) + χ (s 1) + χ (s 2) = 0 := by
   constructor
