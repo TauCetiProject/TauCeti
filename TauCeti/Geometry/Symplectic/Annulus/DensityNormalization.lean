@@ -42,9 +42,9 @@ and `Φ(x, y) = (u(x), v(x, y))` (`TauCeti.stripDensityNormalization`). Then:
 
 * `Φ` is triangular: when `ρ` is positive on the strip, `u` is strictly increasing
   (`TauCeti.stripAreaFraction_strictMono`), and for each `x` the map `y ↦ v(x, y)` is strictly
-  increasing where `ρ(x, ·)` is positive. So `Φ` preserves the order of first coordinates, and
-  with it the sign of the horizontal displacement `X(x, y) - x` of a map along either boundary
-  line.
+  increasing where `ρ(x, ·)` is positive (`TauCeti.strictMonoOn_stripDensityNormalization_snd`).
+  So `Φ` preserves the order of first coordinates, and with it the sign of the horizontal
+  displacement `X(x, y) - x` of a map along either boundary line.
 * `Φ` fixes the boundary lines: `v(x, 0) = 0` and `v(x, 1) = 1`
   (`TauCeti.stripDensityNormalization_snd_mk_zero`, `TauCeti.stripDensityNormalization_snd_mk_one`).
   It commutes with the deck translation, `Φ(x + 1, y) = Φ(x, y) + (1, 0)`
@@ -373,6 +373,26 @@ theorem univ_prod_Icc_subset_stripDensityNormalizationSource
   rw [uIcc_of_le hp.2.1] at hr
   exact hpos p.1 r ⟨hr.1, hr.2.trans hp.2.2⟩
 
+/-- On each vertical line, the second coordinate `y ↦ v(x, y)` of the density normalization is
+strictly increasing on the heights `y` such that `ρ(x, ·)` is positive on the segment between `0`
+and `y`, when the column mean over `x` is positive. -/
+theorem strictMonoOn_stripDensityNormalization_snd (hρ : Continuous ρ) {x : ℝ}
+    (hs : 0 < stripColumnMean ρ x) :
+    StrictMonoOn (fun y ↦ (stripDensityNormalization ρ (x, y)).2)
+      {y | (x, y) ∈ stripDensityNormalizationSource ρ} := by
+  intro b hb c hc hbc
+  simp only [stripDensityNormalization_snd]
+  refine mul_lt_mul_of_pos_left ?_ (inv_pos.2 hs)
+  -- Between two heights of the source, `ρ(x, ·)` is positive, so the primitive separates them.
+  have hcρ : Continuous fun r ↦ ρ (x, r) := by fun_prop
+  have hsub := integral_interval_sub_left (μ := MeasureTheory.volume)
+    (hcρ.intervalIntegrable 0 c) (hcρ.intervalIntegrable 0 b)
+  have hpos := intervalIntegral_pos_of_pos_on (hcρ.intervalIntegrable b c) (fun t ht ↦ by
+    rcases le_or_gt 0 t with h0 | h0
+    · exact hc t (mem_uIcc.2 (Or.inl ⟨h0, ht.2.le⟩))
+    · exact hb t (mem_uIcc.2 (Or.inr ⟨ht.1.le, h0.le⟩))) hbc
+  linarith
+
 /-- The density normalization is injective on the points `(x, y)` such that `ρ(x, ·)` is positive
 on the segment between `0` and `y`, when `ρ` is positive on the strip. -/
 theorem injOn_stripDensityNormalization (hρ : Continuous ρ)
@@ -382,26 +402,8 @@ theorem injOn_stripDensityNormalization (hρ : Continuous ρ)
   obtain rfl : x = x' :=
     (stripAreaFraction_strictMono hρ (stripColumnMean_pos_of_forall hρ hpos)).injective
       (congrArg Prod.fst h)
-  have h2 : ∫ r in (0 : ℝ)..y, ρ (x, r) = ∫ r in (0 : ℝ)..y', ρ (x, r) := by
-    have h' := congrArg Prod.snd h
-    simp only [stripDensityNormalization_snd] at h'
-    exact mul_left_cancel₀ (inv_ne_zero (stripColumnMean_pos_of_forall hρ hpos x).ne') h'
-  -- Between two heights of the source, `ρ(x, ·)` is positive, so the primitive separates them.
-  have key {b c : ℝ} (hb : (x, b) ∈ stripDensityNormalizationSource ρ)
-      (hc : (x, c) ∈ stripDensityNormalizationSource ρ) (hbc : b < c) :
-      ∫ r in (0 : ℝ)..b, ρ (x, r) < ∫ r in (0 : ℝ)..c, ρ (x, r) := by
-    have hcρ : Continuous fun r ↦ ρ (x, r) := by fun_prop
-    have hsub := integral_interval_sub_left (μ := MeasureTheory.volume)
-      (hcρ.intervalIntegrable 0 c) (hcρ.intervalIntegrable 0 b)
-    have hpos := intervalIntegral_pos_of_pos_on (hcρ.intervalIntegrable b c) (fun t ht ↦ by
-      rcases le_or_gt 0 t with h0 | h0
-      · exact hc t (mem_uIcc.2 (Or.inl ⟨h0, ht.2.le⟩))
-      · exact hb t (mem_uIcc.2 (Or.inr ⟨ht.1.le, h0.le⟩))) hbc
-    linarith
-  rcases lt_trichotomy y y' with hlt | rfl | hgt
-  · exact absurd h2 (key hp hq hlt).ne
-  · rfl
-  · exact absurd h2.symm (key hq hp hgt).ne
+  rw [(strictMonoOn_stripDensityNormalization_snd hρ (stripColumnMean_pos_of_forall hρ hpos x)
+    ).injOn hp hq (congrArg Prod.snd h)]
 
 /-- At a point of the domain of injectivity, the Jacobian determinant of the normalization is
 positive: the normalization preserves orientation. -/
@@ -493,18 +495,15 @@ theorem bijOn_stripDensityNormalization (hρ : Continuous ρ)
   refine ⟨fun p hp ↦ ⟨mem_univ _, ?_⟩,
     (injOn_stripDensityNormalization hρ hpos).mono
       (univ_prod_Icc_subset_stripDensityNormalizationSource hpos), fun q hq ↦ ?_⟩
-  · -- `0 ≤ ∫₀ʸ ρ(x, r) dr ≤ ∫₀¹ ρ(x, r) dr = s(x)` for `y ∈ [0, 1]`.
-    have hc : Continuous fun r ↦ ρ (p.1, r) := by fun_prop
-    have h0 : 0 ≤ ∫ r in (0 : ℝ)..p.2, ρ (p.1, r) :=
-      integral_nonneg hp.2.1 fun r hr ↦ (hpos p.1 r ⟨hr.1, hr.2.trans hp.2.2⟩).le
-    have h1 : 0 ≤ ∫ r in p.2..1, ρ (p.1, r) :=
-      integral_nonneg hp.2.2 fun r hr ↦ (hpos p.1 r ⟨hp.2.1.trans hr.1, hr.2⟩).le
-    have hsub := integral_interval_sub_left (μ := MeasureTheory.volume) (hc.intervalIntegrable 0 1)
-      (hc.intervalIntegrable 0 p.2)
-    rw [stripDensityNormalization_snd, ← div_eq_inv_mul]
-    refine ⟨div_nonneg h0 (hs p.1).le, (div_le_one (hs p.1)).2 ?_⟩
-    rw [stripColumnMean_def]
-    linarith
+  · -- `v(x, ·)` is monotone on `[0, 1]`, with `v(x, 0) = 0` and `v(x, 1) = 1`.
+    have hv := (strictMonoOn_stripDensityNormalization_snd hρ (hs p.1)).monotoneOn
+    have hmem {y : ℝ} (hy : y ∈ Icc (0 : ℝ) 1) : (p.1, y) ∈ stripDensityNormalizationSource ρ :=
+      univ_prod_Icc_subset_stripDensityNormalizationSource hpos ⟨mem_univ _, hy⟩
+    have h0 := hv (hmem (left_mem_Icc.2 zero_le_one)) (hmem hp.2) hp.2.1
+    have h1 := hv (hmem hp.2) (hmem (right_mem_Icc.2 zero_le_one)) hp.2.2
+    simp only [stripDensityNormalization_snd_mk_zero,
+      stripDensityNormalization_snd_mk_one (hs p.1).ne'] at h0 h1
+    exact ⟨h0, h1⟩
   · -- Solve `u(x) = q.1` by surjectivity of `u`, then `v(x, y) = q.2` on the column over `x`.
     obtain ⟨x, hx⟩ :=
       stripAreaFraction_surjective hρ hper (annulusArea_pos_of_forall hρ hpos).ne' q.1
@@ -577,8 +576,8 @@ theorem stripDensityNormalization_one_add_snd (x y : ℝ) :
   have ha : annulusArea (fun p ↦ 1 + p.2) = 3 / 2 := by simp [annulusArea_def, hs]
   ext
   · simp [stripAreaFraction_def, hs, ha]
-  · rw [stripDensityNormalization_snd, hs, integral_add intervalIntegrable_const
-      intervalIntegrable_id, integral_const, integral_id, smul_eq_mul]
+  · simp [stripDensityNormalization_snd, hs,
+      integral_add intervalIntegrable_const intervalIntegrable_id, integral_id]
     ring
 
 end TauCeti
