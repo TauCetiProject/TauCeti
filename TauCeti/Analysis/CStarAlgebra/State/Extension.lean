@@ -8,7 +8,7 @@ module
 public import TauCeti.Analysis.CStarAlgebra.State.Space
 public import Mathlib.Analysis.CStarAlgebra.ContinuousFunctionalCalculus.Range
 import Mathlib.Analysis.CStarAlgebra.Hom
-import TauCeti.Analysis.Normed.Module.HahnBanach
+import TauCeti.Analysis.Normed.Module.HahnBanach.Basic
 
 /-!
 # Extension of states
