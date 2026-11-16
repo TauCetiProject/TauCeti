@@ -9,6 +9,7 @@ public import TauCeti.Geometry.Symplectic.Darboux.Basis
 public import TauCeti.Geometry.Symplectic.Hamiltonian.Quadratic
 public import Mathlib.LinearAlgebra.QuadraticForm.IsometryEquiv
 public import Mathlib.LinearAlgebra.QuadraticForm.Signature
+import TauCeti.Data.Set.Card
 
 /-!
 # The elliptic blocks
@@ -88,29 +89,20 @@ theorem equivalent_sum_smul_elliptic (b : Basis (Fin n × Fin 2) ℝ V) (c : Fin
   have h : (∑ k, c k • elliptic b k).basisRepr b =
       QuadraticMap.weightedSumSquares ℝ fun p : Fin n × Fin 2 ↦ c p.1 / 2 := by
     ext w
-    have hw (p : Fin n × Fin 2) : b.repr (∑ i, w i • b i) p = w p := by
-      rw [← b.equivFun_symm_apply, ← b.equivFun_apply, b.equivFun.apply_symm_apply]
     rw [QuadraticMap.basisRepr_apply]
-    simp only [sum_apply, smul_apply, elliptic_apply, hw]
+    simp only [sum_apply, smul_apply, elliptic_apply, b.repr_sum_self]
     simp only [QuadraticMap.weightedSumSquares_apply, smul_eq_mul, Fintype.sum_prod_type,
       Fin.sum_univ_two]
     exact Finset.sum_congr rfl fun k _ ↦ by ring
   exact ⟨h ▸ QuadraticMap.isometryEquivBasisRepr _ b⟩
-
-/-- The pairs `(k, i)` of indices of a basis `(q₁, p₁, …, qₙ, pₙ)` whose first index satisfies a
-property are twice as many as the `k` satisfying it. -/
-private theorem ncard_setOf_fst (P : Fin n → Prop) :
-    {p : Fin n × Fin 2 | P p.1}.ncard = 2 * {k | P k}.ncard := by
-  rw [show {p : Fin n × Fin 2 | P p.1} = {k | P k} ×ˢ (Set.univ : Set (Fin 2)) by ext; simp,
-    Set.ncard_prod, Set.ncard_univ, Nat.card_eq_fintype_card, Fintype.card_fin, mul_comm]
 
 /-- **The negative index of a combination of elliptic blocks.** The negative index of inertia of
 `∑ₖ cₖ Iₖ` is twice the number of `k` with `cₖ < 0`. -/
 theorem sigNeg_sum_smul_elliptic (b : Basis (Fin n × Fin 2) ℝ V) (c : Fin n → ℝ) :
     sigNeg (∑ k, c k • elliptic b k) = 2 * {k | c k < 0}.ncard := by
   rw [QuadraticForm.sigNeg_of_equiv_weightedSumSquares (equivalent_sum_smul_elliptic b c),
-    ← ncard_setOf_fst]
-  congr 1
+    Set.ncard_setOf_fst fun k ↦ c k / 2 < 0, Nat.card_eq_fintype_card, Fintype.card_fin]
+  congr 2
   ext p
   simp only [Set.mem_ofPred_eq]
   constructor <;> intro h <;> linarith
@@ -120,7 +112,7 @@ theorem sigNeg_sum_smul_elliptic (b : Basis (Fin n × Fin 2) ℝ V) (c : Fin n �
 theorem sigPos_sum_smul_elliptic (b : Basis (Fin n × Fin 2) ℝ V) (c : Fin n → ℝ) :
     sigPos (∑ k, c k • elliptic b k) = 2 * {k | 0 < c k}.ncard := by
   rw [QuadraticForm.sigPos_of_equiv_weightedSumSquares (equivalent_sum_smul_elliptic b c),
-    ← ncard_setOf_fst]
+    Set.ncard_setOf_fst fun k ↦ 0 < c k / 2, Nat.card_eq_fintype_card, Fintype.card_fin]
   simp
 
 variable [FiniteDimensional ℝ V] {ω : SymplecticForm V} {b : Basis (Fin n × Fin 2) ℝ V}
