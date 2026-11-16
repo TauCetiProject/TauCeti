@@ -45,7 +45,7 @@ public section
 
 namespace TauCeti
 
-variable {R M N : Type*} [CommRing R] [AddCommGroup M] [Module R M] [AddCommGroup N] [Module R N]
+variable {R M N : Type*} [Ring R] [AddCommGroup M] [Module R M] [AddCommGroup N] [Module R N]
 
 /-- **A comparison of acyclic augmented complexes is a quasi-isomorphism.** Let
 `f : M → N` commute with the differentials `dM` and `dN` and with the augmentations `εM` and `εN`,
