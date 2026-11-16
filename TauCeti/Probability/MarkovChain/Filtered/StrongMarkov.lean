@@ -12,7 +12,7 @@ public import TauCeti.MeasureTheory.Integral.Bind
 /-!
 # Filtration-relative strong Markov laws for the whole future
 
-For a countable-state process satisfying `IsMarkovChain ℱ X κ μ`, the future path
+For a process satisfying `IsMarkovChain ℱ X κ μ`, on any measurable state space, the future path
 at an `ℱ`-stopping time, conditional on the stopped sigma-algebra, has the law of
 the chain started at the stopped state. The future includes that state as its
 zeroth coordinate. We give restricted path laws, event identities and conditional
@@ -22,7 +22,8 @@ Every assertion at a possibly infinite stopping time is restricted to its finite
 event. Thus the arbitrary stopped values on nontermination do not enter the laws.
 The almost-surely finite specialization removes this restriction. The filtration is
 the one in the Markov hypothesis: it need not be the natural history, and no claim
-is made for arbitrary enlargements. Only finiteness of the sample measure is needed.
+is made for arbitrary enlargements. The sample measure need not be normalized: its finiteness
+follows from `IsMarkovChain ℱ X κ μ`.
 
 ## References
 
@@ -41,9 +42,8 @@ open MeasureTheory ProbabilityTheory Filter Set
 namespace TauCeti.Probability.IsMarkovChain
 
 variable {Ω S : Type*} {mΩ : MeasurableSpace Ω} [MeasurableSpace S]
-  [Countable S] [Nonempty S] [MeasurableSingletonClass S]
   {ℱ : Filtration ℕ mΩ} {X : ℕ → Ω → S} {κ : Kernel S S} {μ : Measure Ω}
-  [IsFiniteMeasure μ] [IsMarkovKernel κ] {τ : Ω → WithTop ℕ}
+  [IsMarkovKernel κ] {τ : Ω → WithTop ℕ}
 
 /-- On any stopped-history event, restricted to finite stopping, the entire future
 has the path law with initial measure given by the stopped state on that event.
@@ -112,6 +112,7 @@ theorem condExp_stoppedValue_processShift
         | hτ.measurableSpace] =ᵐ[μ]
       {ω | τ ω ≠ ⊤}.indicator
         (fun ω => ∫ w, f w ∂κ.markovChainKernel (stoppedValue X τ ω)) := by
+  have := h.isFiniteMeasure
   let T := {ω | τ ω ≠ ⊤}
   let θ := stoppedValue (processShift X) τ
   let Y := stoppedValue X τ
@@ -172,6 +173,7 @@ theorem condExp_stoppedValue_processShift_of_bounded (h : IsMarkovChain ℱ X κ
         | hτ.measurableSpace] =ᵐ[μ]
       {ω | τ ω ≠ ⊤}.indicator
         (fun ω => ∫ w, f w ∂κ.markovChainKernel (stoppedValue X τ ω)) := by
+  have := h.isFiniteMeasure
   have : IsFiniteMeasure (markovChainLaw
       ((μ.restrict {ω | τ ω ≠ ⊤}).map (stoppedValue X τ)) κ) := by
     rw [Measure.markovChainLaw_eq_comp]
@@ -228,6 +230,7 @@ theorem condExp_stoppedValue_processShift_of_ae_ne_top_of_bounded
     {f : (ℕ → S) → ℝ} (hf : Measurable f) (hb : ∃ C : ℝ, ∀ w, ‖f w‖ ≤ C) :
     μ[fun ω => f (stoppedValue (processShift X) τ ω) | hτ.measurableSpace] =ᵐ[μ]
       fun ω => ∫ w, f w ∂κ.markovChainKernel (stoppedValue X τ ω) := by
+  have := h.isFiniteMeasure
   have : IsFiniteMeasure (markovChainLaw (μ.map (stoppedValue X τ)) κ) := by
     rw [Measure.markovChainLaw_eq_comp]
     infer_instance
