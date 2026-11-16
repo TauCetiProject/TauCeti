@@ -38,7 +38,8 @@ of the wave front set of a complex distribution onto the base is exactly its sin
   where `χ = 1` is the sum, in the topology of smooth functions supported in `tsupport χ`, of its
   Fourier series `∑ m : L^∨, (covolume L)⁻¹ 𝓕 φ (m) χ e_m` in the modulated cutoffs `χ e_m`
   (`ContDiffMapSupportedIn.hasSum_fourier_smul_modulate`). Pairing with `T` gives
-  `T φ = ∑ m, (covolume L)⁻¹ 𝓕 φ (m) F (-m)`. Writing out `𝓕 φ (m)` as an integral and exchanging
+  `T φ = ∑ m, (covolume L)⁻¹ 𝓕 φ (m) F (-m)` (`Distribution.hasSum_fourier_mul_localFourier`).
+  Writing out `𝓕 φ (m)` as an integral and exchanging
   sum and integral, this is `∫ φ • f` for the lattice Fourier series
   `f y = ∑ m, (covolume L)⁻¹ F (-m) exp (-2πi ⟪y, m⟫)`, which is smooth because its coefficients
   decay rapidly. Working with a series rather than with the Fourier integral avoids integrating
@@ -107,52 +108,6 @@ theorem exists_nhds_forall_decay_of_forall_isMicrolocallySmoothAt {T : 𝓓'(Ω,
 
 /-! ### Fourier inversion for a rapidly decreasing localized Fourier transform -/
 
-/-- **The pairing with a test function as a lattice Fourier series.** Let `L` be a full lattice
-none of whose nonzero vectors translates `tsupport χ` into a set meeting it. If `χ = 1` on the
-support of a real test function `φ`, then
-`T φ = ∑ m : L^∨, (covolume L)⁻¹ 𝓕 φ (m) T (χ e_(-m))`: expand `φ` in its Fourier series along
-`L` in the modulated cutoffs `χ e_(-m)` and pair with `T`. -/
-private theorem hasSum_fourier_mul_localFourier (T : 𝓓'(Ω, ℂ)) (χ : 𝓓(Ω, ℂ))
-    (L : Submodule ℤ E) [DiscreteTopology L] [IsZLattice ℝ L]
-    (hL : ∀ x ∈ tsupport χ, ∀ ℓ ∈ L, x + ℓ ∈ tsupport χ → ℓ = 0) {φ : 𝓓(Ω, ℝ)}
-    (hφ : EqOn (χ : E → ℂ) 1 (support φ)) :
-    HasSum (fun m : ZLattice.dual L ↦ (ZLattice.covolume L : ℂ)⁻¹ *
-      𝓕 (fun y ↦ (φ y : ℂ)) m * T.localFourier χ (-m)) (T φ) := by
-  -- The cutoff and the test function as smooth functions supported in `K = tsupport χ`.
-  let K : Compacts E := ⟨tsupport χ, χ.hasCompactSupport⟩
-  have hKΩ : (K : Set E) ⊆ Ω := χ.tsupport_subset
-  let χK : 𝓓_{K}(E, ℂ) := ContDiffMapSupportedIn.of_support_subset χ.contDiff (subset_tsupport _)
-  have hχK (y : E) : χK y = χ y := by simp [χK, ContDiffMapSupportedIn.coe_of_support_subset]
-  have hφK : support (fun y ↦ (φ y : ℂ)) ⊆ K := fun y hy ↦ by
-    have hy' : y ∈ support φ := by simpa using hy
-    exact subset_tsupport _ (by simp [hφ hy'])
-  have hφc : ContDiff ℝ ∞ fun y ↦ (φ y : ℂ) := ofRealCLM.contDiff.comp φ.contDiff
-  let φK : 𝓓_{K}(E, ℂ) := ContDiffMapSupportedIn.of_support_subset hφc hφK
-  have hφK' : (φK : E → ℂ) = fun y ↦ (φ y : ℂ) := by
-    ext y
-    simp [φK, ContDiffMapSupportedIn.coe_of_support_subset]
-  have hexp := ContDiffMapSupportedIn.hasSum_fourier_smul_modulate L φK χK
-    (fun y hy ℓ h ↦ Subtype.ext (hL y hy ℓ ℓ.2 h)) fun y hy ↦ by
-      rw [hχK]
-      exact hφ (by simpa [hφK'] using hy)
-  -- Pair the expansion with `T`.
-  let Λ : 𝓓_{K}(E, ℂ) →L[ℂ] ℂ := T.complexPairing ∘L ofSupportedInCLM ℂ hKΩ
-  have hΛφ : Λ φK = T φ := by
-    have h : ofSupportedIn hKΩ φK = postcompCLM (𝕜 := ℝ) ofRealCLM φ := by
-      ext y
-      simp [hφK']
-    simp only [Λ, ContinuousLinearMap.comp_apply, coe_ofSupportedInCLM, h,
-      complexPairing_postcompCLM_ofRealCLM]
-  have hΛχ (m : ZLattice.dual L) (b : ℂ) :
-      Λ (b • χK.modulate m) = b * T.localFourier χ (-m) := by
-    rw [map_smul, smul_eq_mul]
-    congr 1
-    simp only [Λ, ContinuousLinearMap.comp_apply, coe_ofSupportedInCLM]
-    rw [localFourier_eq_complexPairing_modulate T hKΩ (f := χK) hχK, neg_neg]
-  have h := hexp.map Λ Λ.continuous
-  simp only [comp_def, hΛχ, hΛφ, hφK'] at h
-  exact h
-
 /-- **Fourier inversion for a rapidly decreasing localized Fourier transform.** If the localized
 Fourier transform of `T` with cutoff `χ` decays rapidly on all of `E`, there is a smooth function
 `f` such that `T φ = ∫ φ • f` for every real test function `φ` on whose support `χ = 1`. -/
@@ -179,7 +134,14 @@ theorem exists_contDiff_apply_eq_integral_of_forall_decay {T : 𝓓'(Ω, ℂ)} {
   have hnorm (m : ZLattice.dual L) (y : E) : ‖a m y‖ = ‖c * G (-m)‖ := by
     simp only [a, norm_smul, TauCeti.norm_fourierAtom, mul_one]
   refine ⟨fun y ↦ ∑' m, a m y, TauCeti.contDiff_tsum_smul_fourierAtom hb, fun φ hφ ↦ ?_⟩
-  rw [← (hasSum_fourier_mul_localFourier T χ L hL hφ).tsum_eq]
+  -- `T φ` is the lattice Fourier series of the pairing of `T` with `φ`, read as complex.
+  have hφc : ⇑(postcompCLM (𝕜 := ℝ) ofRealCLM φ) = fun y ↦ (φ y : ℂ) := by
+    ext y
+    simp
+  have hexp := hasSum_fourier_mul_localFourier T χ L hL
+    (ψ := postcompCLM (𝕜 := ℝ) ofRealCLM φ) fun y hy ↦ hφ (by simpa [hφc] using hy)
+  rw [complexPairing_postcompCLM_ofRealCLM, hφc] at hexp
+  rw [← hexp.tsum_eq]
   -- Exchange the sum over the lattice with the integral.
   have hint (m : ZLattice.dual L) : Integrable (fun y ↦ φ y • a m y) := by
     refine Continuous.integrable_of_hasCompactSupport ?_ φ.hasCompactSupport.smul_right

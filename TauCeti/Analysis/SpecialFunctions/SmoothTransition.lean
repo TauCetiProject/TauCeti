@@ -45,6 +45,9 @@ plateau, built from two smooth transitions, is equal to `1` on `[a + δ, b - δ]
 `v < τ (b - a)`, which is the best possible bound, since the mean slope of the step is
 `v / (b - a)`. Translating and reflecting the smooth transition also gives three cutoffs summing to
 one, supported near `+∞`, near `-∞` and on a bounded interval, with bounded derivatives.
+Lifting the identity away from zero gives a smooth function equal to `t` for `t ≥ c` and bounded
+below by `c / 2`, by which one can divide a function that is only bounded below by `c` on a
+compact set.
 
 ## Main declarations
 
@@ -100,6 +103,8 @@ one, supported near `+∞`, near `-∞` and on a bounded interval, with bounded 
 * `TauCeti.exists_cutoffs_add_add_eq_one`: three `C²` cutoffs summing to one, vanishing for
   `s ≤ R`, for `s ≥ -R` and outside `(-(R + 1), R + 1)`, with derivatives bounded by a common
   constant and supported in `[-(R + 1), R + 1]`.
+* `TauCeti.exists_contDiff_eq_self_of_le`: a smooth function equal to the identity on `[c, ∞)` and
+  bounded below by `c / 2`.
 -/
 
 public section
@@ -756,5 +761,22 @@ theorem exists_cutoffs_add_add_eq_one {R : ℝ} (hR : 0 ≤ R) :
     · rw [(h₀ s).deriv, hψ'0 (s - R) (by rcases hs with hs | hs <;> [left; right] <;> linarith),
         hψ'0 (-s - R) (by rcases hs with hs | hs <;> [right; left] <;> linarith)]
       ring
+
+/-- A smooth function equal to the identity on `[c, ∞)` and bounded below by `c / 2`. -/
+theorem exists_contDiff_eq_self_of_le {c : ℝ} (hc : 0 < c) :
+    ∃ φ : ℝ → ℝ, ContDiff ℝ ∞ φ ∧ (∀ t, c / 2 ≤ φ t) ∧ ∀ t, c ≤ t → φ t = t := by
+  refine ⟨fun t ↦ c / 2 + Real.smoothTransition ((t - c / 2) / (c / 2)) * (t - c / 2),
+    contDiff_const.add ((Real.smoothTransition.contDiff.comp (by fun_prop)).mul (by fun_prop)),
+    fun t ↦ ?_, fun t ht ↦ ?_⟩
+  · dsimp only
+    rcases le_or_gt t (c / 2) with h | h
+    · rw [Real.smoothTransition.zero_of_nonpos (div_nonpos_of_nonpos_of_nonneg (by linarith)
+        (by linarith))]
+      simp
+    · have := Real.smoothTransition.nonneg ((t - c / 2) / (c / 2))
+      nlinarith
+  · dsimp only
+    rw [Real.smoothTransition.one_of_one_le ((le_div_iff₀ (by linarith)).2 (by linarith))]
+    ring
 
 end TauCeti
