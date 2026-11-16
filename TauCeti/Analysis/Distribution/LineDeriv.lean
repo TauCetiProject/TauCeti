@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.Distribution.Distribution
+import TauCeti.Analysis.Distribution.DerivNotation
 
 /-!
 # Repeated distributional differentiation
@@ -31,13 +32,9 @@ with sign `(-1)^n`. -/
 @[simp]
 theorem iteratedLineDerivOp_apply_apply (T : 𝓓'(Ω, F)) {n : ℕ} (m : Fin n → E)
     (φ : 𝓓(Ω, ℝ)) :
-    (∂^{m} T) φ = (-1 : ℝ) ^ n • T (∂^{m ∘ Fin.rev} φ) := by
-  induction n generalizing φ with
-  | zero => simp
-  | succ n ih =>
-    rw [iteratedLineDerivOp_succ_left, lineDerivOp_apply_apply, map_neg, ih,
-      iteratedLineDerivOp_succ_right, pow_succ, mul_smul]
-    simp [Fin.init_def, Fin.tail_def, Function.comp_def, Fin.rev_castSucc]
+    (∂^{m} T) φ = (-1 : ℝ) ^ n • T (∂^{m ∘ Fin.rev} φ) :=
+  pairing_iteratedLineDerivOp (fun (T : 𝓓'(Ω, F)) φ ↦ T φ)
+    (fun _ _ _ ↦ by rw [lineDerivOp_apply_apply, map_neg]) m T φ
 
 /-- Repeated differentiation in a fixed direction transfers to the test function with
 sign `(-1)^n`. -/

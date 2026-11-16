@@ -15,7 +15,8 @@ import TauCeti.Analysis.Calculus.BumpFunction.Cutoff
 A test function can be written as a finite sum of tests subordinate to any open cover of its
 support. Consequently, an additive map on test functions which vanishes locally vanishes globally;
 continuity of the additive map is not required. Every compact subset of the domain also has a
-cutoff test function equal to one on a neighbourhood of it, and every point of the domain has a
+cutoff test function equal to one on a neighbourhood of it (or to any prescribed vector,
+`TestFunction.exists_eventually_eq_tsupport_subset`), and every point of the domain has a
 test function with a prescribed value there, supported in a given neighbourhood of the point.
 Near a point where a complex test function `φ` does not vanish, every complex test function
 supported close enough to the point is a smooth multiple of `φ`
@@ -142,6 +143,16 @@ theorem exists_cutoff_tsupport_subset {K W : Set E} (hK : IsCompact K) (hW : IsO
   obtain ⟨χ, hχ, hχ01, hχ1, hχc, hχW⟩ := hK.exists_contDiff_cutoff hW hKW
   exact ⟨⟨χ, hχ.of_le (by simp), hχc, hχW.trans hWΩ⟩, fun x ↦ hχ01 ⟨x, rfl⟩,
     subset_interior_iff_mem_nhdsSet.1 hχ1, hχW⟩
+
+/-- A compact subset `K` of an open set `W` contained in the domain has a test function equal to a
+prescribed value `v` on a neighbourhood of `K`, whose topological support lies in `W`. -/
+theorem exists_eventually_eq_tsupport_subset {K W : Set E} (hK : IsCompact K) (hW : IsOpen W)
+    (hKW : K ⊆ W) (hWΩ : W ⊆ Ω) (v : F) :
+    ∃ φ : 𝓓^{n}(Ω, F), (∀ᶠ x in 𝓝ˢ K, φ x = v) ∧ tsupport φ ⊆ W := by
+  obtain ⟨χ, -, hχ1, hχW⟩ := exists_cutoff_tsupport_subset (n := n) hK hW hKW hWΩ
+  have hsupp : tsupport (fun y ↦ χ y • v) ⊆ W := (tsupport_smul_subset_left _ _).trans hχW
+  exact ⟨⟨fun y ↦ χ y • v, χ.contDiff.smul contDiff_const, χ.hasCompactSupport.smul_right,
+    hsupp.trans hWΩ⟩, hχ1.mono fun y hy ↦ by simp [hy], hsupp⟩
 
 /-- Every compact subset of the domain has a test function with values in `[0, 1]` that is equal
 to one on a neighbourhood of it. -/
