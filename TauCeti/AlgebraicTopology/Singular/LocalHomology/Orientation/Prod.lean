@@ -8,6 +8,7 @@ module
 public import TauCeti.AlgebraicTopology.Singular.LocalHomology.Orientation.Linear
 public import TauCeti.LinearAlgebra.Orientation.Prod
 public import Mathlib.Topology.Algebra.Module.Equiv.Prod
+public import TauCeti.LinearAlgebra.Dimension.Prod
 import TauCeti.Topology.Algebra.Module.Equiv.Prod
 
 /-!
@@ -80,14 +81,6 @@ variable {E F G E' F' : Type w} [NormedAddCommGroup E] [NormedSpace ℝ E]
   [NormedAddCommGroup E'] [NormedSpace ℝ E'] [NormedAddCommGroup F'] [NormedSpace ℝ F']
   {m n p d : ℕ}
 
-/-- The degree of the product: if `E` and `F` have dimensions `m + 1` and `n + 1`, where
-`(m + 1) + (n + 1) = d + 1`, then `E × F` has dimension `d + 1`. -/
-theorem finrank_prod_eq (hE : finrank ℝ E = m + 1) (hF : finrank ℝ F = n + 1)
-    (hd : m + 1 + (n + 1) = d + 1) : finrank ℝ (E × F) = d + 1 := by
-  have := FiniteDimensional.of_finrank_eq_succ hE
-  have := FiniteDimensional.of_finrank_eq_succ hF
-  rw [Module.finrank_prod, hE, hF, hd]
-
 /-- **The ordered product of local orientations.** For local orientations `z` of `E` and `z'` of
 `F` at the origin, their product `z × z'` is the local orientation of `E × F` at the origin
 selected by the product of the orientations selecting `z` and `z'`, the first factor before the
@@ -100,7 +93,7 @@ def prod (hE : finrank ℝ E = m + 1) (hF : finrank ℝ F = n + 1) (hd : m + 1 +
   (Orientation.reindex ℝ (E × F) (finCongr hd)
     (((Orientation.localOrientationEquiv hE).symm z).prod
       ((Orientation.localOrientationEquiv hF).symm z') hE hF)).localOrientation
-    (finrank_prod_eq hE hF hd)
+    (finrank_prod_eq_succ hE hF hd)
 
 /-- The product of the local orientations selected by `ω` and `ω'` is the local orientation
 selected by their product orientation. -/
@@ -110,7 +103,7 @@ theorem prod_localOrientation [FiniteDimensional ℝ E] [FiniteDimensional ℝ F
     (ω : Orientation ℝ E (Fin (m + 1))) (ω' : Orientation ℝ F (Fin (n + 1))) :
     prod hE hF hd (ω.localOrientation hE) (ω'.localOrientation hF) =
       (Orientation.reindex ℝ (E × F) (finCongr hd) (ω.prod ω' hE hF)).localOrientation
-        (finrank_prod_eq hE hF hd) := by
+        (finrank_prod_eq_succ hE hF hd) := by
   rw [prod, Orientation.localOrientationEquiv_symm_localOrientation,
     Orientation.localOrientationEquiv_symm_localOrientation]
 
@@ -155,7 +148,8 @@ theorem prod_map_complZeroPairIso (hE : finrank ℝ E = m + 1) (hF : finrank ℝ
   simp only
   rw [← Orientation.localOrientation_map f ω hE hE', ← Orientation.localOrientation_map g ω' hF hF',
     prod_localOrientation, prod_localOrientation,
-    ← Orientation.localOrientation_map _ _ (finrank_prod_eq hE hF hd) (finrank_prod_eq hE' hF' hd)]
+    ← Orientation.localOrientation_map _ _ (finrank_prod_eq_succ hE hF hd)
+      (finrank_prod_eq_succ hE' hF' hd)]
   congr 1
   rw [Orientation.map_reindex, ContinuousLinearEquiv.prodCongr_toLinearEquiv, Orientation.map_prod]
 
@@ -173,7 +167,8 @@ theorem coe_map_prodComm_prod (hE : finrank ℝ E = m + 1) (hF : finrank ℝ F =
   obtain ⟨ω', rfl⟩ := Orientation.localOrientation_surjective hF z'
   simp only
   rw [prod_localOrientation, prod_localOrientation,
-    ← Orientation.localOrientation_map _ _ (finrank_prod_eq hE hF hd) (finrank_prod_eq hF hE hd'),
+    ← Orientation.localOrientation_map _ _ (finrank_prod_eq_succ hE hF hd)
+      (finrank_prod_eq_succ hF hE hd'),
     Orientation.map_reindex, ContinuousLinearEquiv.prodComm_toLinearEquiv,
     Orientation.map_prodComm_prod, Orientation.reindex_units_smul,
     Orientation.reindex_finCongr_reindex_finCongr]
@@ -209,9 +204,9 @@ theorem map_prodAssoc_prod {e f : ℕ} (hE : finrank ℝ E = m + 1) (hF : finran
     (hd : e + 1 + (p + 1) = d + 1) (he' : m + 1 + (f + 1) = d + 1)
     (z : LocalOrientation E 0 (m + 1)) (z' : LocalOrientation F 0 (n + 1))
     (z'' : LocalOrientation G 0 (p + 1)) :
-    (prod (finrank_prod_eq hE hF he) hG hd (prod hE hF he z z') z'').map
+    (prod (finrank_prod_eq_succ hE hF he) hG hd (prod hE hF he z z') z'').map
         (ContinuousLinearEquiv.prodAssoc ℝ E F G).complZeroPairIso =
-      prod hE (finrank_prod_eq hF hG hf) he' z (prod hF hG hf z' z'') := by
+      prod hE (finrank_prod_eq_succ hF hG hf) he' z (prod hF hG hf z' z'') := by
   have := FiniteDimensional.of_finrank_eq_succ hE
   have := FiniteDimensional.of_finrank_eq_succ hF
   have := FiniteDimensional.of_finrank_eq_succ hG
@@ -220,8 +215,9 @@ theorem map_prodAssoc_prod {e f : ℕ} (hE : finrank ℝ E = m + 1) (hF : finran
   obtain ⟨ω'', rfl⟩ := Orientation.localOrientation_surjective hG z''
   simp only
   rw [prod_localOrientation, prod_localOrientation, prod_localOrientation, prod_localOrientation,
-    ← Orientation.localOrientation_map _ _ (finrank_prod_eq (finrank_prod_eq hE hF he) hG hd)
-      (finrank_prod_eq hE (finrank_prod_eq hF hG hf) he')]
+    ← Orientation.localOrientation_map _ _
+      (finrank_prod_eq_succ (finrank_prod_eq_succ hE hF he) hG hd)
+      (finrank_prod_eq_succ hE (finrank_prod_eq_succ hF hG hf) he')]
   congr 1
   rw [Orientation.prod_reindex_finCongr_left, Orientation.prod_reindex_finCongr_right,
     Orientation.map_reindex, Orientation.map_reindex, ContinuousLinearEquiv.prodAssoc_toLinearEquiv,
