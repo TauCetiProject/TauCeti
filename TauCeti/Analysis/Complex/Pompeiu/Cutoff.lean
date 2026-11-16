@@ -33,12 +33,6 @@ approximation arguments and in parameter-dependent local `bar∂` constructions.
 
 ## Main results
 
-* `TauCeti.tsupport_conjWirtingerDeriv_subset` and
-  `TauCeti.disjoint_tsupport_conjWirtingerDeriv_interior_preimage_singleton`: localization of the
-  closed support of `bar∂ g` inside `tsupport g` and away from `interior (g ⁻¹' {c})`.
-* `DifferentiableOn.conjWirtingerDeriv_smul_of_tsupport_subset`: global collapse of the Leibniz
-  rule `bar∂ (α • f) = (bar∂ α) • f` when `f` is holomorphic on an open neighbourhood of
-  `tsupport α`.
 * `DifferentiableOn.cauchyTransform_conjWirtingerDeriv_smul` and
   `DifferentiableOn.setIntegral_sub_inv_smul_conjWirtingerDeriv_eq`: the cutoff Cauchy–Pompeiu
   representation of a Banach-valued holomorphic map.
@@ -59,54 +53,6 @@ open scoped ContDiff Topology
 
 namespace TauCeti
 
-section Support
-
-variable {V W : Type*} [NormedAddCommGroup V] [NormedSpace ℂ V]
-  [NormedAddCommGroup W] [NormedSpace ℂ W]
-
-/-- The closed support of `z ↦ conjWirtingerDeriv g z v` is contained in `tsupport g`. -/
-theorem tsupport_conjWirtingerDeriv_subset (g : V → W) (v : V) :
-    tsupport (fun z ↦ conjWirtingerDeriv g z v) ⊆ tsupport g :=
-  closure_minimal
-    (fun _ hz ↦ by_contra fun hzg ↦ hz (by simp [conjWirtingerDeriv_of_notMem_tsupport hzg]))
-    (isClosed_tsupport g)
-
-/-- On the interior of any constant fiber `g ⁻¹' {c}`, `bar∂ g` vanishes, so its closed support is
-disjoint from `interior (g ⁻¹' {c})`. -/
-theorem disjoint_tsupport_conjWirtingerDeriv_interior_preimage_singleton
-    (g : V → W) (c : W) (v : V) :
-    Disjoint (tsupport (fun z ↦ conjWirtingerDeriv g z v)) (interior (g ⁻¹' {c})) := by
-  have hd : Disjoint (support fun z ↦ conjWirtingerDeriv g z v) (interior (g ⁻¹' {c})) := by
-    refine disjoint_left.2 fun z hz hzi ↦ hz ?_
-    have hconst : g =ᶠ[𝓝 z] fun _ ↦ c :=
-      Filter.eventually_of_mem (isOpen_interior.mem_nhds hzi) fun w hw ↦ interior_subset hw
-    simp [conjWirtingerDeriv_apply, hconst.fderiv_eq]
-  exact hd.closure_left isOpen_interior
-
-/-- If `g` has compact support, so does `z ↦ conjWirtingerDeriv g z v`. -/
-theorem _root_.HasCompactSupport.isCompact_tsupport_conjWirtingerDeriv {g : V → W}
-    (hc : HasCompactSupport g) (v : V) :
-    IsCompact (tsupport (fun z ↦ conjWirtingerDeriv g z v)) :=
-  hc.isCompact.of_isClosed_subset (isClosed_tsupport _) (tsupport_conjWirtingerDeriv_subset g v)
-
-/-- **Global Leibniz collapse for `bar∂ (α • f)`.** When `f` is complex differentiable on an open
-set `U` containing `tsupport α` and `α` is real differentiable on `U`, `bar∂ (α • f) = (bar∂ α) • f`
-everywhere on `V`, with no regularity assumed on `f` outside `U`. -/
-theorem _root_.DifferentiableOn.conjWirtingerDeriv_smul_of_tsupport_subset
-    {U : Set V} {α : V → ℂ} {f : V → W} (hf : DifferentiableOn ℂ f U) (hU : IsOpen U)
-    (hα : DifferentiableOn ℝ α U) (hαU : tsupport α ⊆ U) (z v : V) :
-    conjWirtingerDeriv (fun w ↦ α w • f w) z v = conjWirtingerDeriv α z v • f z := by
-  by_cases hz : z ∈ U
-  · have hαz : DifferentiableAt ℝ α z := (hα z hz).differentiableAt (hU.mem_nhds hz)
-    have hfz : DifferentiableAt ℂ f z := (hf z hz).differentiableAt (hU.mem_nhds hz)
-    simp [conjWirtingerDeriv_smul_apply hαz (hfz.restrictScalars ℝ) v,
-      hfz.conjWirtingerDeriv_eq_zero]
-  · have hzα : z ∉ tsupport α := fun h ↦ hz (hαU h)
-    have hzf : z ∉ tsupport (fun w ↦ α w • f w) := fun h ↦ hzα (tsupport_smul_subset_left α f h)
-    simp [conjWirtingerDeriv_of_notMem_tsupport hzα, conjWirtingerDeriv_of_notMem_tsupport hzf]
-
-end Support
-
 section Representation
 
 variable {F : Type*} [NormedAddCommGroup F] [NormedSpace ℂ F] [CompleteSpace F]
@@ -121,9 +67,7 @@ theorem _root_.DifferentiableOn.cauchyTransform_conjWirtingerDeriv_smul
   let L := (ContinuousLinearMap.lsmul ℝ ℂ : ℂ →L[ℝ] F →L[ℝ] F).flip
   have hu : ContDiff ℝ 1 (fun z ↦ α z • f z) :=
     L.contDiff_of_tsupport_subset_right ((hf.contDiffOn hU).restrict_scalars ℝ) hα.contDiffOn hU hαU
-  have hcu : HasCompactSupport (fun z ↦ α z • f z) :=
-    HasCompactSupport.of_support_subset_isCompact hc.isCompact
-      ((support_smul_subset_left α f).trans (subset_tsupport α))
+  have hcu : HasCompactSupport (fun z ↦ α z • f z) := hc.smul_right
   have hbar : (fun ζ ↦ conjWirtingerDeriv α ζ 1 • f ζ) =
       fun ζ ↦ conjWirtingerDeriv (fun z ↦ α z • f z) ζ 1 :=
     funext fun ζ ↦ (hf.conjWirtingerDeriv_smul_of_tsupport_subset hU

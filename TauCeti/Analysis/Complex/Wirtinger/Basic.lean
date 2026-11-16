@@ -64,7 +64,10 @@ Their comparison with the Levi form is in `TauCeti.Analysis.Complex.Wirtinger.Le
 * `ContDiffAt.wirtingerDeriv_apply`, `ContDiffAt.conjWirtingerDeriv_apply`: both Wirtinger
   derivatives of a `C^(m+1)` map are `C^m`; in particular the conjugate one is continuous for a
   `C¹` map (`ContDiff.continuous_conjWirtingerDeriv_apply`).
-* `TauCeti.conjWirtingerDeriv_of_notMem_tsupport`: `\bar∂g` vanishes off the topological support.
+* `TauCeti.conjWirtingerDeriv_of_notMem_tsupport`, `TauCeti.tsupport_conjWirtingerDeriv_subset`,
+  `TauCeti.disjoint_tsupport_conjWirtingerDeriv_interior_preimage_singleton`,
+  `HasCompactSupport.isCompact_tsupport_conjWirtingerDeriv`: `\bar∂g` vanishes off `tsupport g`
+  and on the interior of any constant fiber, and preserves compact support.
 * `DifferentiableAt.conjWirtingerDeriv_eq_zero`, `DifferentiableAt.wirtingerDeriv_eq_fderiv`:
   for complex differentiable `g`, `\bar∂g = 0` and `∂g` is the complex derivative.
 * `TauCeti.wirtingerDeriv_const_smul`, `TauCeti.conjWirtingerDeriv_const_smul`: `∂` and `\bar∂`
@@ -312,6 +315,32 @@ theorem conjWirtingerDeriv_of_notMem_tsupport {g : V → W} {x : V} (hx : x ∉ 
     conjWirtingerDeriv g x = 0 := by
   ext v
   simp [conjWirtingerDeriv_apply, fderiv_of_notMem_tsupport ℝ hx]
+
+/-- The closed support of `z ↦ conjWirtingerDeriv g z v` is contained in `tsupport g`. -/
+theorem tsupport_conjWirtingerDeriv_subset (g : V → W) (v : V) :
+    tsupport (fun z ↦ conjWirtingerDeriv g z v) ⊆ tsupport g :=
+  closure_minimal
+    (fun _ hz ↦ by_contra fun hzg ↦ hz (by simp [conjWirtingerDeriv_of_notMem_tsupport hzg]))
+    (isClosed_tsupport g)
+
+/-- On the interior of any constant fiber `g ⁻¹' {c}`, `\bar∂ g` vanishes, so its closed support is
+disjoint from `interior (g ⁻¹' {c})`. -/
+theorem disjoint_tsupport_conjWirtingerDeriv_interior_preimage_singleton
+    (g : V → W) (c : W) (v : V) :
+    Disjoint (tsupport (fun z ↦ conjWirtingerDeriv g z v)) (interior (g ⁻¹' {c})) := by
+  have hd : Disjoint (Function.support fun z ↦ conjWirtingerDeriv g z v)
+      (interior (g ⁻¹' {c})) := by
+    refine Set.disjoint_left.2 fun z hz hzi ↦ hz ?_
+    have hconst : g =ᶠ[𝓝 z] fun _ ↦ c :=
+      Filter.eventually_of_mem (isOpen_interior.mem_nhds hzi) fun w hw ↦ interior_subset hw
+    simp [conjWirtingerDeriv_apply, hconst.fderiv_eq]
+  exact hd.closure_left isOpen_interior
+
+/-- If `g` has compact support, so does `z ↦ conjWirtingerDeriv g z v`. -/
+theorem _root_.HasCompactSupport.isCompact_tsupport_conjWirtingerDeriv {g : V → W}
+    (hc : HasCompactSupport g) (v : V) :
+    IsCompact (tsupport (fun z ↦ conjWirtingerDeriv g z v)) :=
+  hc.isCompact.of_isClosed_subset (isClosed_tsupport _) (tsupport_conjWirtingerDeriv_subset g v)
 
 /-- For complex differentiable `g`, the conjugate Wirtinger derivative vanishes: this is the
 Cauchy–Riemann equation `\bar∂g = 0`. -/

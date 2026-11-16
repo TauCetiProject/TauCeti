@@ -15,8 +15,9 @@ import TauCeti.Topology.Separation.InvFunOn
 /-!
 # Compactness utilities
 
-General lemmas about compact and σ-compact subsets of topological spaces, and limits along
-ultrafilters of families eventually in a compact set.
+General lemmas about compact and σ-compact subsets of topological spaces, cofinality of nested
+exhaustions (`IsCompact.exists_subset_interior_of_iUnion_eq`), and limits along ultrafilters of
+families eventually in a compact set.
 -/
 
 public section
@@ -165,6 +166,19 @@ theorem isOpen_forall_prodMk_mem (hι : Continuous ι) (hW : IsOpen W) :
         fun _ h y ↦ h _ (Set.mem_range_self y)
 
 end TubeLemma
+
+/-- **Cofinality of a nested exhaustion.** If `K n ⊆ interior (K (n + 1))` for all `n` and the
+stages `K n` cover `Ω`, then every compact subset of `Ω` lies in `interior (K n)` (and hence in
+`K n`) for some `n`. -/
+theorem _root_.IsCompact.exists_subset_interior_of_iUnion_eq {K : ℕ → Set X} {Ω L : Set X}
+    (hL : IsCompact L) (hstep : ∀ n, K n ⊆ interior (K (n + 1))) (hcov : ⋃ n, K n = Ω)
+    (hLΩ : L ⊆ Ω) : ∃ n, L ⊆ interior (K n) := by
+  have hmono : Monotone K := monotone_nat_of_le_succ fun n ↦ (hstep n).trans interior_subset
+  obtain ⟨n, hn⟩ := hL.elim_directed_cover (fun n ↦ interior (K (n + 1)))
+    (fun _ ↦ isOpen_interior)
+    (hLΩ.trans (hcov ▸ iUnion_mono hstep))
+    (Monotone.directed_le fun i j hij ↦ interior_mono (hmono (Nat.add_le_add_right hij 1)))
+  exact ⟨n + 1, hn⟩
 
 end TauCeti
 

@@ -26,7 +26,10 @@ exactly when all its partial derivatives `∂g/∂(conj z_j)` vanish
 Adding a holomorphic function does not change the conjugate Wirtinger derivative, so a function
 that is locally a `Cⁿ` function plus a holomorphic one is `Cⁿ` with the same conjugate Wirtinger
 derivatives (`TauCeti.contDiffOn_and_conjWirtingerDeriv_eq_of_locally_eq_add`). This glues the
-local solutions in exhaustion proofs of the `\bar∂`-lemma.
+local solutions in exhaustion proofs of the `\bar∂`-lemma. Likewise, multiplying a function
+holomorphic on an open neighbourhood of `tsupport α` by a real-differentiable cutoff `α` collapses
+the Leibniz rule globally to `\bar∂ (α • f) = (\bar∂ α) • f`
+(`DifferentiableOn.conjWirtingerDeriv_smul_of_tsupport_subset`).
 
 These statements connect the real differential and its type decomposition with holomorphy.
 
@@ -100,5 +103,23 @@ theorem contDiffOn_and_conjWirtingerDeriv_eq_of_locally_eq_add {ι : Type*} {n :
       conjWirtingerDeriv_add ((ha.contDiffAt (hO.mem_nhds hzO)).differentiableAt hn0)
         (hKz.restrictScalars ℝ), add_apply, hKz.conjWirtingerDeriv_eq_zero, zero_apply,
       add_zero, haf z hzO j]
+
+/-- **Global Leibniz collapse for `\bar∂ (α • f)`.** When `f` is complex differentiable on an open
+set `U` containing `tsupport α` and `α` is real differentiable on `U`,
+`\bar∂ (α • f) = (\bar∂ α) • f` everywhere on `V`, with no regularity assumed on `f` outside
+`U`. -/
+theorem _root_.DifferentiableOn.conjWirtingerDeriv_smul_of_tsupport_subset
+    {U : Set V} {α : V → ℂ} {f : V → W} (hf : DifferentiableOn ℂ f U) (hU : IsOpen U)
+    (hα : DifferentiableOn ℝ α U) (hαU : tsupport α ⊆ U) (z v : V) :
+    conjWirtingerDeriv (fun w ↦ α w • f w) z v = conjWirtingerDeriv α z v • f z := by
+  by_cases hz : z ∈ U
+  · have hαz : DifferentiableAt ℝ α z := (hα z hz).differentiableAt (hU.mem_nhds hz)
+    have hfz : DifferentiableAt ℂ f z := (hf z hz).differentiableAt (hU.mem_nhds hz)
+    simp [conjWirtingerDeriv_smul_apply hαz (hfz.restrictScalars ℝ) v,
+      hfz.conjWirtingerDeriv_eq_zero]
+  · have hzα : z ∉ tsupport α := fun h ↦ hz (hαU h)
+    have hzf : z ∉ tsupport (fun w ↦ α w • f w) :=
+      fun h ↦ hzα (tsupport_smul_subset_left α f h)
+    simp [conjWirtingerDeriv_of_notMem_tsupport hzα, conjWirtingerDeriv_of_notMem_tsupport hzf]
 
 end TauCeti

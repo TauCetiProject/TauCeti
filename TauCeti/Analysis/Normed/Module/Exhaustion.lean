@@ -12,6 +12,7 @@ public import TauCeti.Topology.FilledIn
 -- Provides `NormedSpace.toLocallyConvexSpace`, hence `LocallyConnectedSpace E`.
 import Mathlib.Analysis.LocallyConvex.WithSeminorms
 import TauCeti.Analysis.Normed.Module.FilledHull
+import TauCeti.Topology.Compactness.Compact
 
 /-!
 # Filled compact exhaustions of open sets
@@ -33,8 +34,7 @@ a point of `Ωᶜ` by a short segment avoiding it.
   removed is filled in `Ω`.
 * `IsOpen.exists_isFilledIn_compact_exhaustion`: an open set in a proper real normed space has a
   compact exhaustion by sets filled in it.
-* `IsCompact.exists_subset_interior_of_iUnion_eq` and
-  `IsCompact.exists_subset_interior_closedBall_sdiff_thickening`: every compact subset of `Ω` lies
+* `IsCompact.exists_subset_interior_closedBall_sdiff_thickening`: every compact subset of `Ω` lies
   in the interior of some stage of the exhaustion.
 
 ## References
@@ -50,19 +50,6 @@ open Metric Set
 section Exhaustion
 
 namespace TauCeti
-
-/-- **Cofinality of a nested exhaustion.** If `K n ⊆ interior (K (n + 1))` for all `n` and the
-stages `K n` cover `Ω`, then every compact subset of `Ω` lies in `interior (K n)` (and hence in
-`K n`) for some `n`. -/
-theorem _root_.IsCompact.exists_subset_interior_of_iUnion_eq {X : Type*} [TopologicalSpace X]
-    {K : ℕ → Set X} {Ω L : Set X} (hL : IsCompact L) (hstep : ∀ n, K n ⊆ interior (K (n + 1)))
-    (hcov : ⋃ n, K n = Ω) (hLΩ : L ⊆ Ω) : ∃ n, L ⊆ interior (K n) := by
-  have hmono : Monotone K := monotone_nat_of_le_succ fun n => (hstep n).trans interior_subset
-  obtain ⟨s, hs⟩ := hL.elim_finite_subcover (fun n => interior (K (n + 1)))
-    (fun _ => isOpen_interior)
-    (hLΩ.trans (hcov ▸ iUnion_mono fun n => hstep n))
-  refine ⟨s.sup id + 1, hs.trans (iUnion₂_subset fun n hn => interior_mono (hmono ?_))⟩
-  exact Nat.add_le_add_right (Finset.le_sup (f := id) hn) 1
 
 section Seminormed
 
