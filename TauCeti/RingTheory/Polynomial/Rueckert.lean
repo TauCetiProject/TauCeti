@@ -50,6 +50,9 @@ to a quotient of some `A[X] ⧸ (w)`, which is finite over `A` because `w` is mo
 * `RingHom.IsRueckert φ W`: the Rückert hypotheses for `φ : A[X] →+* B` and `W ⊆ A[X]`.
 * `RingHom.IsRueckert.quotientEquiv`: the ring isomorphism `A[X] ⧸ (w) ≃+* B ⧸ (φ w)` induced by
   `φ`, for `w ∈ W`.
+* `RingHom.IsRueckert.isPrime_span_apply_iff` and `RingHom.IsRueckert.prime_apply_iff`: a member
+  `w ∈ W` generates a prime ideal or is prime in `A[X]` if and only if `φ w` has the same property
+  in `B`.
 
 ## References
 
@@ -157,13 +160,24 @@ theorem isNoetherianRing [IsNoetherianRing A] : IsNoetherianRing B := by
   rw [Ideal.mk_ker, inf_eq_right.mpr ((Ideal.span_singleton_le_iff_mem _).mpr hbI)]
   exact Submodule.fg_span_singleton b
 
+/-- A member of `W` generates a prime ideal after applying `φ` if and only if it generates a prime
+ideal in `A[X]`. -/
+theorem isPrime_span_apply_iff {w : A[X]} (hw : w ∈ W) :
+    (Ideal.span {φ w}).IsPrime ↔ (Ideal.span {w}).IsPrime := by
+  rw [← Ideal.Quotient.isDomain_iff_prime, ← Ideal.Quotient.isDomain_iff_prime]
+  exact (MulEquiv.isDomain_iff (h.quotientEquiv hw).toMulEquiv).symm
+
+/-- A member of `W` becomes prime after applying `φ` if and only if it is prime in `A[X]`. -/
+theorem prime_apply_iff {w : A[X]} (hw : w ∈ W) : Prime (φ w) ↔ Prime w := by
+  rcases eq_or_ne w 0 with rfl | hw0
+  · simp
+  · rw [← Ideal.span_singleton_prime hw0,
+      ← Ideal.span_singleton_prime ((map_ne_zero_iff φ h.injective).mpr hw0),
+      h.isPrime_span_apply_iff hw]
+
 /-- The image of a prime member of `W` is prime. -/
-theorem prime_apply {w : A[X]} (hw : w ∈ W) (hp : Prime w) : Prime (φ w) := by
-  have hw0 : φ w ≠ 0 := (map_ne_zero_iff φ h.injective).mpr hp.ne_zero
-  have : IsDomain (A[X] ⧸ Ideal.span {w}) :=
-    (Ideal.Quotient.isDomain_iff_prime _).mpr ((Ideal.span_singleton_prime hp.ne_zero).mpr hp)
-  rw [← Ideal.span_singleton_prime hw0, ← Ideal.Quotient.isDomain_iff_prime]
-  exact (h.quotientEquiv hw).symm.toMulEquiv.isDomain _
+theorem prime_apply {w : A[X]} (hw : w ∈ W) (hp : Prime w) : Prime (φ w) :=
+  (h.prime_apply_iff hw).mpr hp
 
 /-- Over a unique factorisation domain `A`, the image of every member of `W` is associated to a
 product of primes. -/

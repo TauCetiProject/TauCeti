@@ -9,8 +9,11 @@ public import Mathlib.Algebra.Polynomial.Coeff
 public import Mathlib.Data.Nat.Multiplicity
 public import Mathlib.RingTheory.Polynomial.Eisenstein.Distinguished
 
+import Mathlib.Algebra.Polynomial.Degree.TrailingDegree
+import Mathlib.RingTheory.Ideal.Operations
+
 /-!
-# The polynomial `(1 + X) ^ n - 1`
+# The polynomial `(1 + X) ^ n - 1` and distinguished polynomials
 
 The polynomial `(1 + X) ^ n - 1` over a ring `R` is monic of degree `n` for `n ≠ 0`,
 with constant coefficient `0` and, for `0 < k`, `k`-th coefficient the binomial coefficient
@@ -28,7 +31,11 @@ completed group algebra `ℤ_p[[Γ]]` of a procyclic pro-`p` group `Γ`: at a le
 
 For a general polynomial `F` distinguished at an ideal `I` with `I ^ e ⊆ (p)`, every root `t` of
 `F` in an `O`-algebra satisfies `t ^ deg F ∈ I`, hence `p ∣ t ^ (deg F * e)`. Distinguished
-polynomials at `I` are closed under finite products, including the empty product `1`.
+polynomials at `I` are closed under finite products, including the empty product `1`, are monotone
+in `I`, and—when `I` is radical—are closed under taking monic factors
+(`Polynomial.IsDistinguishedAt.of_dvd`). The monic-factor closure reduces modulo every prime ideal
+containing `I` to the fact that a monic divisor of `X ^ n` over a ring without zero divisors is a
+power of `X` (`Polynomial.Monic.eq_X_pow_of_dvd_X_pow`).
 
 ## Main results
 
@@ -37,6 +44,14 @@ polynomials at `I` are closed under finite products, including the empty product
   to `n` (at `n = 0` the polynomial is `0`, whose `natDegree` is `0` by convention).
 * `TauCeti.Polynomial.isDistinguishedAt_one_add_X_pow_sub_one`: `(1 + X) ^ (p ^ m) - 1` is
   distinguished at every ideal containing `p`.
+* `Polynomial.Monic.eq_X_pow_of_dvd_X_pow`: a monic divisor of `X ^ n` over a semiring without
+  zero divisors equals `X ^ p.natDegree`.
+* `Polynomial.IsWeaklyEisensteinAt.mono`, `Polynomial.IsDistinguishedAt.mono`: monotonicity in the
+  ideal.
+* `Polynomial.Monic.isDistinguishedAt_iff_map_eq_X_pow`: a monic polynomial is distinguished at `I`
+  if and only if its reduction modulo `I` is `X ^ f.natDegree`.
+* `Polynomial.IsDistinguishedAt.of_dvd`: a monic factor of a polynomial distinguished at a radical
+  ideal `I` is distinguished at `I`.
 * `Polynomial.IsDistinguishedAt.natCast_dvd_pow_of_aeval_eq_zero`: a root `t` of a polynomial `F`
   distinguished at `I`, with `I ^ e ⊆ (p)`, satisfies `p ∣ t ^ (deg F * e)`.
 * `Polynomial.isDistinguishedAt_one`, `Polynomial.IsDistinguishedAt.pow`,
@@ -97,7 +112,55 @@ end TauCeti
 
 namespace Polynomial
 
-variable {R : Type*} [CommRing R] {I : Ideal R}
+/-- A monic divisor of `X ^ n` over a semiring without zero divisors is a power of `X`. -/
+theorem Monic.eq_X_pow_of_dvd_X_pow {R : Type*} [Semiring R] [NoZeroDivisors R] {p : R[X]}
+    {n : ℕ} (hp : p.Monic) (hdvd : p ∣ X ^ n) : p = X ^ p.natDegree := by
+  rcases subsingleton_or_nontrivial R with _ | _
+  · exact Subsingleton.elim _ _
+  obtain ⟨q, hq⟩ := hdvd
+  have hp0 : p ≠ 0 := hp.ne_zero
+  have hq0 : q ≠ 0 := fun h ↦ (monic_X_pow (R := R) n).ne_zero (by rw [hq, h, mul_zero])
+  have hdeg : p.natDegree + q.natDegree = n := by
+    rw [← hp.natDegree_mul' hq0, ← hq, natDegree_X_pow]
+  have htdeg : p.natTrailingDegree + q.natTrailingDegree = n := by
+    rw [← natTrailingDegree_mul hp0 hq0, ← hq, natTrailingDegree_X_pow]
+  have hp_le := natTrailingDegree_le_natDegree p
+  have hq_le := natTrailingDegree_le_natDegree q
+  exact hp.eq_X_pow_iff_natTrailingDegree_eq_natDegree.2 (by omega)
+
+/-- Weakly Eisenstein polynomials are preserved when enlarging the ideal. -/
+theorem IsWeaklyEisensteinAt.mono {R : Type*} [CommSemiring R] {f : R[X]} {I J : Ideal R}
+    (hf : f.IsWeaklyEisensteinAt I) (hIJ : I ≤ J) : f.IsWeaklyEisensteinAt J :=
+  ⟨fun hn ↦ hIJ (hf.mem hn)⟩
+
+variable {R : Type*} [CommRing R] {I J : Ideal R}
+
+/-- Distinguished polynomials are preserved when enlarging the ideal. -/
+theorem IsDistinguishedAt.mono {f : R[X]} (hf : f.IsDistinguishedAt I) (hIJ : I ≤ J) :
+    f.IsDistinguishedAt J :=
+  ⟨hf.toIsWeaklyEisensteinAt.mono hIJ, hf.monic⟩
+
+/-- A monic polynomial is distinguished at `I` if and only if its reduction modulo `I` is a power
+of `X`. -/
+theorem Monic.isDistinguishedAt_iff_map_eq_X_pow {f : R[X]} (hf : f.Monic) :
+    f.IsDistinguishedAt I ↔ f.map (Ideal.Quotient.mk I) = X ^ f.natDegree := by
+  refine ⟨IsDistinguishedAt.map_eq_X_pow, fun hmap ↦ ⟨⟨fun {n} hn ↦ ?_⟩, hf⟩⟩
+  rw [← Ideal.Quotient.eq_zero_iff_mem, ← coeff_map, hmap, coeff_X_pow, ite_eq_right hn.ne]
+
+/-- A monic factor of a polynomial distinguished at a radical ideal is again distinguished at that
+ideal. -/
+theorem IsDistinguishedAt.of_dvd {f g : R[X]} (hf : f.IsDistinguishedAt I) (hI : I.IsRadical)
+    (hg : g.Monic) (hfg : g ∣ f) : g.IsDistinguishedAt I := by
+  refine ⟨⟨fun {n} hn ↦ ?_⟩, hg⟩
+  rw [← hI.radical, Ideal.radical_eq_sInf, Ideal.mem_sInf]
+  rintro P ⟨hIP, hP⟩
+  have : P.IsPrime := hP
+  have : Nontrivial (R ⧸ P) := Ideal.Quotient.nontrivial_iff.mpr hP.ne_top
+  have hmap_f : f.map (Ideal.Quotient.mk P) = X ^ f.natDegree := (hf.mono hIP).map_eq_X_pow
+  have hmap_g : g.map (Ideal.Quotient.mk P) = X ^ g.natDegree := by
+    rw [← hg.natDegree_map (Ideal.Quotient.mk P)]
+    exact (hg.map (Ideal.Quotient.mk P)).eq_X_pow_of_dvd_X_pow (hmap_f ▸ Polynomial.map_dvd _ hfg)
+  exact (hg.isDistinguishedAt_iff_map_eq_X_pow.2 hmap_g).mem hn
 
 /-- The constant polynomial `1` is distinguished at every ideal. -/
 theorem isDistinguishedAt_one : (1 : R[X]).IsDistinguishedAt I :=
