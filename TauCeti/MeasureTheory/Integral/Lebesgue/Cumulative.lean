@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.MeasureTheory.Constructions.BorelSpace.Order
 public import Mathlib.MeasureTheory.Integral.Lebesgue.Basic
 public import Mathlib.MeasureTheory.Measure.Typeclasses.NullSingletonClass
 public import Mathlib.Topology.Order.Cadlag
@@ -17,6 +18,10 @@ Cumulative nonnegative integrals over open initial segments are left-continuous,
 infinite. For an atomless measure the same holds for closed initial segments. No integrability
 or measurability of the integrand is needed. In particular, accumulated square energy has
 left-continuous extended-valued paths before any moment or local-integrability assumption.
+
+The increments of a cumulative lower integral are the integrals over half-open intervals:
+`∫_{(s, t]} f = ∫_{(-∞, t]} f - ∫_{(-∞, s]} f` whenever the subtracted integral is finite
+(`TauCeti.setLIntegral_Ioc_eq_sub`).
 -/
 
 public section
@@ -65,3 +70,19 @@ theorem isLeftContinuous_setLIntegral_Iic (μ : Measure ι) [NullSingletonClass 
     isLeftContinuous_setLIntegral_Iio μ f
 
 end MeasureTheory.Measure
+
+namespace TauCeti
+
+/-- The lower integral over `(s, t]` is the increment of the cumulative lower integral from `s` to
+`t`, provided the cumulative integral up to `s` is finite. For `t ≤ s` both sides vanish. -/
+theorem setLIntegral_Ioc_eq_sub {ι : Type*} [LinearOrder ι] [TopologicalSpace ι]
+    [OrderClosedTopology ι] [MeasurableSpace ι] [OpensMeasurableSpace ι] {μ : Measure ι}
+    {f : ι → ℝ≥0∞} {s t : ι} (hs : ∫⁻ x in Iic s, f x ∂μ ≠ ∞) :
+    ∫⁻ x in Ioc s t, f x ∂μ = ∫⁻ x in Iic t, f x ∂μ - ∫⁻ x in Iic s, f x ∂μ := by
+  rcases le_total s t with hst | hts
+  · rw [← Iic_union_Ioc_eq_Iic hst, lintegral_union measurableSet_Ioc
+      (disjoint_left.2 fun x hx hx' => not_le.2 hx'.1 hx), ENNReal.add_sub_cancel_left hs]
+  · rw [Ioc_eq_empty hts.not_gt, setLIntegral_empty,
+      tsub_eq_zero_of_le (lintegral_mono_set (Iic_subset_Iic.2 hts))]
+
+end TauCeti

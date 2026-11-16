@@ -195,7 +195,7 @@ theorem isInvertible_backwardParabolicOperatorL_prod_spatialTraceL_real (hα₀ 
   have h₀ : (0 : ℝ) = t₁ - t₁ := (sub_self _).symm
   rw [ContinuousLinearMap.isInvertible_iff_bijective,
     bijective_backwardParabolicOperatorL_prod_spatialTraceL_iff (hab := ht) (T := t₁) (ha := h₀)
-      (hb := h₁)]
+      (hb := h₁), initialDataL_def]
   have hT : (0 : ℝ) < T := h₁ ▸ sub_pos.2 ht
   exact (isInvertible_parabolicOperatorL_prod_spatialTraceL_real hα₀ hα₁ hT _ _ hlam
     fun p ↦ by simpa only [HolderSpace.compLipschitzL_apply] using hA _).bijective

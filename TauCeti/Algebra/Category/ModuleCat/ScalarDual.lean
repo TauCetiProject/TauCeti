@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.LinearAlgebra.Dual.Lemmas
-public import TauCeti.Algebra.Category.ModuleCat.MatlisDual
+public import TauCeti.Algebra.Category.ModuleCat.MatlisDuality.Basic
 
 /-!
 # Scalar duals as right modules

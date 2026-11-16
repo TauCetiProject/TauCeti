@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.NumberTheory.ArithmeticDirichletSeries.DirichletDensity.Negligible
-public import TauCeti.NumberTheory.Chebotarev.FrobeniusPrimeSet
+public import TauCeti.NumberTheory.Chebotarev.RamifiedPrimes
 
 /-!
 # The unramified primes carry all of the density
@@ -34,11 +34,8 @@ open NumberField
 
 namespace NumberField.Chebotarev
 
-variable {K L : Type*} [Field K] [NumberField K] [Field L] [NumberField L] [Algebra K L]
-  [IsGalois K L]
+variable (K L : Type*) [Field K] [NumberField K] [Field L] [NumberField L] [Algebra K L]
 
-omit [IsGalois K L] in
-variable (K L) in
 /-- **The unramified primes have density one.** Only finitely many primes of `𝓞 K` ramify in
 `L`, so they carry density `0` and their complement carries all of it. -/
 theorem hasDirichletDensity_compl_ramifiedPrimes :
