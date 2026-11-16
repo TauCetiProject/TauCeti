@@ -263,8 +263,8 @@ private theorem cup_zero_left_add_one {q : ℤ} (hq : 0 ≤ q) (h : 0 + (q + 1) 
   -- and of its tensor product with `M` spelled out.
   have hδ := δ_cup0H M (S := ShortComplex.mk (coindBotUnit N) (dimensionShiftUpπ N)
       (coindBotUnit_comp_dimensionShiftUpπ N))
-    (by simpa only [dimensionShiftUpSES_def] using dimensionShiftUpSES_shortExact N)
-    (by simpa only [dimensionShiftUpSES_def] using dimensionShiftUpSES_tensorLeft_shortExact N M)
+    (dimensionShiftUpSES_shortExact N)
+    (dimensionShiftUpSES_tensorLeft_shortExact N M)
     q x y
   dsimp only [ShortComplex.map_X₁, ShortComplex.map_X₃] at hδ
   rw [cup_dimensionShiftUpIso_hom M N hq (zero_add q) rfl, ih, Int.negOnePow_zero, one_smul,
@@ -286,9 +286,8 @@ private theorem cup_zero_left_of_add_one {q : ℤ} (hq : q < 0) (h : 0 + q = q)
   -- and of its tensor product with `M` spelled out.
   have hδ := δ_cup0H M (S := ShortComplex.mk (dimensionShiftDownι N) (indBotCounit N)
       (dimensionShiftDownι_comp_indBotCounit N))
-    (by simpa only [dimensionShiftDownSES_def] using dimensionShiftDownSES_shortExact N)
-    (by simpa only [dimensionShiftDownSES_def] using
-      dimensionShiftDownSES_tensorLeft_shortExact N M) q x y
+    (dimensionShiftDownSES_shortExact N)
+    (dimensionShiftDownSES_tensorLeft_shortExact N M) q x y
   dsimp only [ShortComplex.map_X₁, ShortComplex.map_X₃] at hδ
   rw [Iso.toLinearEquiv_apply, Iso.toLinearEquiv_apply, ← key, tensorDimensionShiftDownIso_hom,
     dimensionShiftDownIso_hom]
