@@ -48,18 +48,9 @@ theorem sInf_image_infDist_eq_toReal_biInf {X : Type*} [PseudoMetricSpace X] (S 
   rcases S.eq_empty_or_nonempty with rfl | hS
   · simp
   rcases T.eq_empty_or_nonempty with rfl | hT
-  · obtain ⟨z₀, hz₀⟩ := hS
-    have htop : (⨅ z ∈ S, ⨅ ζ ∈ (∅ : Set X), edist z ζ) = ∞ := by simp
-    have himg : ((fun z ↦ infDist z (∅ : Set X)) '' S) = {0} := by
-      ext x
-      simp only [mem_image, infDist_empty, mem_singleton_iff]
-      exact ⟨fun ⟨_, _, h⟩ ↦ h.symm, fun h ↦ ⟨z₀, hz₀, h.symm⟩⟩
-    rw [htop, himg, csInf_singleton, ENNReal.toReal_top]
-  · have hconv : (⨅ z ∈ S, ⨅ ζ ∈ T, edist z ζ) = ⨅ z : S, infEDist (z : X) T := by
-      rw [iInf_subtype']
-      rfl
-    rw [hconv, ENNReal.toReal_iInf (fun _ : S ↦ infEDist_ne_top hT), sInf_image']
-    rfl
+  · simp [hS.image_const]
+  · simp_rw [sInf_image', infDist, iInf_subtype',
+      ← ENNReal.toReal_iInf (fun _ : S ↦ infEDist_ne_top hT), infEDist, iInf_subtype']
 
 variable {X ι : Type*} [PseudoEMetricSpace X] {l : Filter ι}
 

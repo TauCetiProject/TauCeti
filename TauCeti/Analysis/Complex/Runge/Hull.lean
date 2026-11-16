@@ -14,41 +14,59 @@ import Mathlib.Analysis.Calculus.Deriv.Polynomial
 import Mathlib.Analysis.Complex.AbsMax
 import Mathlib.Analysis.Complex.CauchyIntegral
 import Mathlib.Analysis.LocallyConvex.Separation
+import TauCeti.Algebra.MvPolynomial.AevalConstX
 import TauCeti.Analysis.Convex.Caratheodory
+import TauCeti.Analysis.Normed.Module.HausdorffDistance
+import TauCeti.Topology.ConnectedComponents
 import TauCeti.Topology.MetricSpace.HausdorffDistance
 
 /-!
 # Holomorphic hulls and Runge compact pairs in the complex plane
 
-For subsets `Ω` and `K` of `ℂ`, the *`Ω`-holomorphic hull* `TauCeti.holomorphicHull Ω K` consists
-of all points `z ∈ Ω` at which every real upper bound satisfied on `K` by a function holomorphic
-on `Ω` remains valid. Universal real bounds force `holomorphicHull Ω ∅ = ∅`, while for compact
-`K ⊆ Ω` membership is equivalent to `‖f z‖ ≤ sSup ((‖f ·‖) '' K)` for every `Ω`-holomorphic `f`
-(`IsCompact.mem_holomorphicHull_iff_norm_le_sSup`).
+In complex analysis on an arbitrary open set `Ω ⊆ ℂ`, a compact subset `K ⊆ Ω` forms a *Runge
+compact pair* `(Ω, K)` (`TauCeti.IsRungeCompactPair Ω K`) when `K` is filled in `Ω`, i.e. no
+connected component of `Ω \ K` is relatively compact in `Ω`. These are precisely the compact
+subsets on which every function holomorphic in a neighbourhood of `K` can be uniformly approximated
+by functions holomorphic on all of `Ω` (Runge's approximation theorem). Exhausting `Ω` by Runge
+compact pairs (via `TauCeti.filledExhaustion`) is the standard bridge from compact-set Runge
+approximation to global holomorphic constructions on `Ω`, such as solving the inhomogeneous
+Cauchy–Riemann equation, Mittag-Leffler's theorem, and Weierstrass factorization by telescoping
+approximations with summable errors on the exhaustion stages.
 
-Without invoking any approximation theorem, this file establishes the basic geometric and
-topological properties of `holomorphicHull Ω K`:
+Alongside this topological condition sits the *`Ω`-holomorphic hull* `TauCeti.holomorphicHull Ω K`,
+consisting of all points `z ∈ Ω` at which every real upper bound satisfied on `K` by an
+`Ω`-holomorphic function remains valid. The hull records the points of `Ω` that cannot be separated
+from `K` by the modulus of an `Ω`-holomorphic function. By the maximum modulus principle, every
+relatively compact connected component of `Ω \ K` in `Ω` lies in `holomorphicHull Ω K`; the reverse
+inclusion (showing that `holomorphicHull Ω K` equals `K` together with the relatively compact
+components of `Ω \ K` for compact `K ⊆ Ω`, and hence that `IsRungeCompactPair Ω K` is equivalent
+to `holomorphicHull Ω K = K`) depends on Runge approximation and is not proved here.
 
-* **Extensivity, monotonicity, and idempotence**: `K ⊆ holomorphicHull Ω K` when `K ⊆ Ω`,
-  monotonicity in both arguments, and
-  `holomorphicHull Ω (holomorphicHull Ω K) = holomorphicHull Ω K`.
-* **Distance preservation and compactness**: for `z ∈ holomorphicHull Ω K` and `ζ ∉ Ω`, testing
-  against `w ↦ (w - ζ)⁻¹` yields `infEDist ζ K ≤ edist z ζ`, whence `holomorphicHull Ω K` and `K`
-  have the same extended and ordinary distances to `Ωᶜ` and `frontier Ω` whenever `K ⊆ Ω`.
-  Together with relative closedness (`closure (holomorphicHull Ω K) ∩ Ω = holomorphicHull Ω K`)
-  and boundedness via the coordinate `id`, this shows that `holomorphicHull Ω K` is closed for
-  closed `K ⊆ Ω` and compact for compact `K ⊆ Ω`.
+Without invoking any approximation theorem, this file establishes the basic geometric, metric, and
+topological properties of `holomorphicHull Ω K` and `IsRungeCompactPair Ω K`:
+
+* **Extensivity, normal forms, monotonicity, and idempotence**: `K ∩ Ω ⊆ holomorphicHull Ω K`,
+  `holomorphicHull Ω (K ∩ Ω) = holomorphicHull Ω K`, `holomorphicHull Ω K = ∅ ↔ Disjoint K Ω`,
+  monotonicity in both arguments, idempotence, strict modulus separation outside the hull, and the
+  compact supremum characterization `IsCompact.mem_holomorphicHull_iff_norm_le_sSup`.
+* **Distance preservation, closedness, and compactness**: for `z ∈ holomorphicHull Ω K` and
+  `ζ ∉ Ω`, testing against `w ↦ (w - ζ)⁻¹` yields `infEDist ζ K ≤ edist z ζ`, whence
+  `holomorphicHull Ω K` and `K` have the same extended and ordinary distances to `Ωᶜ` and
+  `frontier Ω` whenever `K ⊆ Ω`. Together with relative closedness
+  (`closure (holomorphicHull Ω K) ∩ Ω = holomorphicHull Ω K`) and boundedness via `id`, this shows
+  that `holomorphicHull Ω K` is closed whenever `closure K ⊆ Ω` and compact whenever `K` is bounded
+  with `closure K ⊆ Ω` (in particular for closed or compact `K ⊆ Ω`).
 * **Convex hull bound**: geometric Hahn–Banach separation combined with complex exponentials
-  `w ↦ exp (l w)` gives `holomorphicHull Ω K ⊆ closedConvexHull ℝ K` unconditionally, and hence
-  `holomorphicHull Ω K ⊆ convexHull ℝ K` for compact `K`.
+  `w ↦ exp (l w)` gives `holomorphicHull Ω K ⊆ closedConvexHull ℝ K` unconditionally, hence
+  `holomorphicHull Ω K = K ∩ Ω` for every closed real-convex `K` (`Convex.holomorphicHull_eq_inter`)
+  and `holomorphicHull Ω K ⊆ convexHull ℝ K` for compact `K`.
 * **Maximum-principle inclusion and filledness**: in an open `Ω`, every connected component of
   `Ω \ K` whose closure is compact and contained in `Ω` has frontier in `closure K` and therefore
   lies inside `holomorphicHull Ω K`. Combined with idempotence, `holomorphicHull Ω K` is always
   filled in `Ω` (`IsOpen.isFilledIn_holomorphicHull`).
-* **Runge compact pairs and exhaustions**: `TauCeti.IsRungeCompactPair Ω K` bundles `IsOpen Ω`,
-  `IsCompact K`, `K ⊆ Ω`, and `TauCeti.IsFilledIn K Ω`. Both `holomorphicHull Ω K` (for compact
-  `K ⊆ Ω`) and the explicit exhaustion stages `TauCeti.filledExhaustion Ω n` form Runge compact
-  pairs in any open `Ω`.
+* **Runge compact pairs and exhaustions**: both `holomorphicHull Ω K` (for compact `K ⊆ Ω`) and
+  the explicit exhaustion stages `TauCeti.filledExhaustion Ω n` form Runge compact pairs in any
+  open `Ω`.
 * **Comparison with polynomial hulls on `ℂ`**: for `Ω = univ` and bounded `K ⊆ ℂ`, uniform Taylor
   approximation of entire functions on disks identifies `holomorphicHull univ K` with the preimage
   of `TauCeti.polynomialHull (Function.const ι '' K)` under the diagonal embedding
@@ -62,15 +80,18 @@ topological properties of `holomorphicHull Ω K`:
 
 * `TauCeti.holomorphicHull`: the `Ω`-holomorphic hull of `K ⊆ ℂ`.
 * `TauCeti.IsRungeCompactPair`: an open set `Ω ⊆ ℂ` and a compact `K ⊆ Ω` filled in `Ω`.
-* `IsClosed.holomorphicHull`, `Bornology.IsBounded.holomorphicHull`, `IsCompact.holomorphicHull`:
-  closedness, boundedness, and compactness of the holomorphic hull.
+* `TauCeti.isClosed_holomorphicHull_of_closure_subset`, `IsClosed.holomorphicHull`,
+  `Bornology.IsBounded.holomorphicHull`,
+  `Bornology.IsBounded.isCompact_holomorphicHull_of_closure_subset`, and
+  `IsCompact.holomorphicHull`: closedness, boundedness, and compactness of the holomorphic hull.
 * `TauCeti.biInf_holomorphicHull_edist_compl` and
   `TauCeti.sInf_image_infDist_frontier_holomorphicHull`: preservation of distances to `Ωᶜ` and
   `frontier Ω`.
-* `TauCeti.holomorphicHull_subset_closedConvexHull` and
-  `IsCompact.holomorphicHull_subset_convexHull`: inclusion in the closed convex hull (and convex
-  hull when `K` is compact).
-* `TauCeti.connectedComponentIn_sdiff_subset_holomorphicHull` and
+* `TauCeti.holomorphicHull_subset_closedConvexHull`, `IsCompact.holomorphicHull_subset_convexHull`,
+  `Convex.holomorphicHull_eq_inter`, and `Convex.holomorphicHull_eq`: comparison with real convex
+  hulls.
+* `IsOpen.connectedComponentIn_sdiff_subset_holomorphicHull`,
+  `IsOpen.union_setOf_isCompact_closure_connectedComponentIn_sdiff_subset_holomorphicHull`, and
   `IsOpen.isFilledIn_holomorphicHull`: maximum-principle inclusion of relatively compact
   complementary components and filledness of the hull.
 * `IsOpen.isRungeCompactPair_holomorphicHull` and `IsOpen.isRungeCompactPair_filledExhaustion`:
@@ -115,20 +136,18 @@ theorem mem_holomorphicHull_iff {Ω K : Set ℂ} {z : ℂ} :
 
 /-- The `Ω`-holomorphic hull of any set lies in `Ω`. -/
 theorem holomorphicHull_subset_left (Ω K : Set ℂ) : holomorphicHull Ω K ⊆ Ω :=
-  fun _ hz ↦ hz.1
+  fun _ hz ↦ (mem_holomorphicHull_iff.mp hz).1
 
-@[simp]
-theorem holomorphicHull_empty_left (K : Set ℂ) : holomorphicHull ∅ K = ∅ :=
-  subset_empty_iff.mp (holomorphicHull_subset_left ∅ K)
-
-@[simp]
-theorem holomorphicHull_empty (Ω : Set ℂ) : holomorphicHull Ω ∅ = ∅ :=
-  eq_empty_of_forall_notMem fun _ hz ↦
-    (hz.2 (fun _ ↦ 0) (differentiableOn_const 0) (-1) (by simp)).not_gt (by norm_num)
+/-- Every upper bound `B` satisfied on `K` by an `Ω`-holomorphic function `f` holds at every point
+of `holomorphicHull Ω K`. -/
+theorem norm_le_of_mem_holomorphicHull {Ω K : Set ℂ} {z : ℂ} (hz : z ∈ holomorphicHull Ω K)
+    {f : ℂ → ℂ} (hf : DifferentiableOn ℂ f Ω) {B : ℝ} (hB : ∀ w ∈ K, ‖f w‖ ≤ B) :
+    ‖f z‖ ≤ B :=
+  (mem_holomorphicHull_iff.mp hz).2 f hf B hB
 
 /-- Every point of `K ∩ Ω` lies in `holomorphicHull Ω K`. -/
 theorem inter_subset_holomorphicHull (Ω K : Set ℂ) : K ∩ Ω ⊆ holomorphicHull Ω K :=
-  fun _ hz ↦ ⟨hz.2, fun _ _ _ hB ↦ hB _ hz.1⟩
+  fun _ hz ↦ mem_holomorphicHull_iff.mpr ⟨hz.2, fun _ _ _ hB ↦ hB _ hz.1⟩
 
 /-- For `K ⊆ Ω`, `K` lies in its `Ω`-holomorphic hull. -/
 theorem subset_holomorphicHull {Ω K : Set ℂ} (hKΩ : K ⊆ Ω) : K ⊆ holomorphicHull Ω K :=
@@ -138,20 +157,85 @@ theorem subset_holomorphicHull {Ω K : Set ℂ} (hKΩ : K ⊆ Ω) : K ⊆ holomo
 @[gcongr]
 theorem holomorphicHull_mono {Ω K L : Set ℂ} (h : K ⊆ L) :
     holomorphicHull Ω K ⊆ holomorphicHull Ω L :=
-  fun _ hz ↦ ⟨hz.1, fun f hf B hB ↦ hz.2 f hf B fun w hw ↦ hB w (h hw)⟩
+  fun _ hz ↦ mem_holomorphicHull_iff.mpr
+    ⟨holomorphicHull_subset_left Ω K hz, fun _ hf _ hB ↦
+      norm_le_of_mem_holomorphicHull hz hf fun w hw ↦ hB w (h hw)⟩
 
 /-- Monotonicity of `holomorphicHull` in the ambient domain `Ω`. -/
 @[gcongr]
 theorem holomorphicHull_mono_left {Ω₁ Ω₂ K : Set ℂ} (h : Ω₁ ⊆ Ω₂) :
     holomorphicHull Ω₁ K ⊆ holomorphicHull Ω₂ K :=
-  fun _ hz ↦ ⟨h hz.1, fun f hf B hB ↦ hz.2 f (hf.mono h) B hB⟩
+  fun _ hz ↦ mem_holomorphicHull_iff.mpr
+    ⟨h (holomorphicHull_subset_left Ω₁ K hz), fun _ hf _ hB ↦
+      norm_le_of_mem_holomorphicHull hz (hf.mono h) hB⟩
+
+@[simp]
+theorem holomorphicHull_empty_left (K : Set ℂ) : holomorphicHull ∅ K = ∅ :=
+  subset_empty_iff.mp (holomorphicHull_subset_left ∅ K)
+
+@[simp]
+theorem holomorphicHull_empty (Ω : Set ℂ) : holomorphicHull Ω ∅ = ∅ :=
+  eq_empty_of_forall_notMem fun _ hz ↦
+    (norm_le_of_mem_holomorphicHull hz (differentiableOn_const (0 : ℂ)) (B := -1)
+      (by simp)).not_gt (by norm_num)
+
+@[simp]
+theorem holomorphicHull_self (Ω : Set ℂ) : holomorphicHull Ω Ω = Ω :=
+  Subset.antisymm (holomorphicHull_subset_left Ω Ω) (subset_holomorphicHull Subset.rfl)
+
+@[simp]
+theorem holomorphicHull_univ (Ω : Set ℂ) : holomorphicHull Ω univ = Ω :=
+  Subset.antisymm (holomorphicHull_subset_left Ω univ)
+    (by simpa using inter_subset_holomorphicHull Ω univ)
+
+/-- The `Ω`-holomorphic hull of `K` is empty if and only if `K` is disjoint from `Ω`. -/
+@[simp]
+theorem holomorphicHull_eq_empty (Ω K : Set ℂ) : holomorphicHull Ω K = ∅ ↔ Disjoint K Ω := by
+  refine ⟨fun h ↦ disjoint_iff_inter_eq_empty.mpr
+    (subset_empty_iff.mp (h ▸ inter_subset_holomorphicHull Ω K)), fun hdisj ↦ ?_⟩
+  classical
+  refine eq_empty_of_forall_notMem fun z hz ↦ ?_
+  let g : ℂ → ℂ := fun w ↦ if w ∈ Ω then 1 else 0
+  have hg : DifferentiableOn ℂ g Ω :=
+    (differentiableOn_const 1).congr fun w hw ↦ by simp [g, hw]
+  have hle : ‖g z‖ ≤ 0 := norm_le_of_mem_holomorphicHull hz hg fun w hw ↦ by
+    simp [g, disjoint_left.mp hdisj hw]
+  exact not_le.mpr zero_lt_one (by simpa [g, holomorphicHull_subset_left Ω K hz] using hle)
+
+/-- The `Ω`-holomorphic hull of `K` is nonempty if and only if `K ∩ Ω` is nonempty. -/
+@[simp]
+theorem holomorphicHull_nonempty_iff (Ω K : Set ℂ) :
+    (holomorphicHull Ω K).Nonempty ↔ (K ∩ Ω).Nonempty := by
+  rw [nonempty_iff_ne_empty, nonempty_iff_ne_empty, ne_eq, ne_eq, holomorphicHull_eq_empty,
+    disjoint_iff_inter_eq_empty]
+
+/-- Points of `K` outside `Ω` do not affect `holomorphicHull Ω K`. -/
+@[simp]
+theorem holomorphicHull_inter_self (Ω K : Set ℂ) :
+    holomorphicHull Ω (K ∩ Ω) = holomorphicHull Ω K := by
+  refine Subset.antisymm (holomorphicHull_mono inter_subset_left) fun z hz ↦ ?_
+  rw [mem_holomorphicHull_iff]
+  refine ⟨holomorphicHull_subset_left Ω K hz, fun f hf B hB ↦ ?_⟩
+  rcases (K ∩ Ω).eq_empty_or_nonempty with hempty | ⟨w₀, hw₀⟩
+  · have hdisj : Disjoint K Ω := disjoint_iff_inter_eq_empty.mpr hempty
+    exact ((holomorphicHull_eq_empty Ω K).mpr hdisj ▸ hz).elim
+  · have hB0 : 0 ≤ B := (norm_nonneg (f w₀)).trans (hB w₀ hw₀)
+    classical
+    let g : ℂ → ℂ := fun w ↦ if w ∈ Ω then f w else 0
+    have hg : DifferentiableOn ℂ g Ω := hf.congr fun w hw ↦ by simp [g, hw]
+    have hle : ‖g z‖ ≤ B := norm_le_of_mem_holomorphicHull hz hg fun w hw ↦ by
+      by_cases hwΩ : w ∈ Ω
+      · simpa [g, hwΩ] using hB w ⟨hw, hwΩ⟩
+      · simpa [g, hwΩ] using hB0
+    simpa [g, holomorphicHull_subset_left Ω K hz] using hle
 
 /-- Taking the `Ω`-holomorphic hull is idempotent. -/
 @[simp]
 theorem holomorphicHull_holomorphicHull (Ω K : Set ℂ) :
     holomorphicHull Ω (holomorphicHull Ω K) = holomorphicHull Ω K :=
   (subset_holomorphicHull (holomorphicHull_subset_left Ω K)).antisymm' fun _ hz ↦
-    ⟨hz.1, fun f hf B hB ↦ hz.2 f hf B fun _ hw ↦ hw.2 f hf B hB⟩
+    mem_holomorphicHull_iff.mpr ⟨holomorphicHull_subset_left Ω _ hz, fun _ hf _ hB ↦
+      norm_le_of_mem_holomorphicHull hz hf fun _ hw ↦ norm_le_of_mem_holomorphicHull hw hf hB⟩
 
 /-- A point `z ∈ Ω` outside `holomorphicHull Ω K` is strictly separated from `K` by an
 `Ω`-holomorphic function of modulus `< 1` on `K` and `> 1` at `z`. -/
@@ -188,13 +272,32 @@ theorem _root_.IsCompact.mem_holomorphicHull_iff_norm_le_sSup {Ω K : Set ℂ}
   · simp only [holomorphicHull_empty, mem_empty_iff_false, image_empty, Real.sSup_empty, false_iff,
       not_and, not_forall, not_le]
     exact fun _ ↦ ⟨fun _ ↦ 1, differentiableOn_const 1, by simp⟩
-  · refine ⟨fun hz ↦ ⟨hz.1, fun f hf ↦ ?_⟩, fun ⟨hzΩ, hz⟩ ↦ ?_⟩
+  · refine ⟨fun hz ↦ ⟨holomorphicHull_subset_left Ω K hz, fun f hf ↦ ?_⟩, fun ⟨hzΩ, hz⟩ ↦ ?_⟩
     · have hbdd : BddAbove ((fun w ↦ ‖f w‖) '' K) :=
         (hK.image_of_continuousOn (hf.continuousOn.mono hKΩ).norm).bddAbove
-      exact hz.2 f hf _ fun w hw ↦ le_csSup hbdd (mem_image_of_mem _ hw)
+      exact norm_le_of_mem_holomorphicHull hz hf fun w hw ↦ le_csSup hbdd (mem_image_of_mem _ hw)
     · rw [mem_holomorphicHull_iff]
       exact ⟨hzΩ, fun f hf B hB ↦
         (hz f hf).trans (csSup_le (hne.image _) (forall_mem_image.mpr hB))⟩
+
+/-- For compact `K ⊆ Ω`, every `Ω`-holomorphic function `f` satisfies
+`‖f z‖ ≤ sSup ((‖f ·‖) '' K)` at each point `z ∈ holomorphicHull Ω K`. -/
+theorem _root_.IsCompact.norm_le_sSup_of_mem_holomorphicHull {Ω K : Set ℂ}
+    (hK : IsCompact K) (hKΩ : K ⊆ Ω) {z : ℂ} (hz : z ∈ holomorphicHull Ω K)
+    {f : ℂ → ℂ} (hf : DifferentiableOn ℂ f Ω) :
+    ‖f z‖ ≤ sSup ((fun w ↦ ‖f w‖) '' K) :=
+  ((hK.mem_holomorphicHull_iff_norm_le_sSup hKΩ).mp hz).2 f hf
+
+/-- If an `Ω`-holomorphic function `f` is strictly smaller in modulus at every point of a compact
+set `K ⊆ Ω` than at `z`, then `z` is not in `holomorphicHull Ω K`. -/
+theorem _root_.IsCompact.notMem_holomorphicHull_of_forall_norm_lt {Ω K : Set ℂ}
+    (hK : IsCompact K) (hKΩ : K ⊆ Ω) {z : ℂ} {f : ℂ → ℂ} (hf : DifferentiableOn ℂ f Ω)
+    (h : ∀ w ∈ K, ‖f w‖ < ‖f z‖) :
+    z ∉ holomorphicHull Ω K := by
+  rcases K.eq_empty_or_nonempty with rfl | hne
+  · simp
+  obtain ⟨w₀, hw₀, hmax⟩ := hK.exists_isMaxOn hne (hf.continuousOn.mono hKΩ).norm
+  exact fun hz ↦ (norm_le_of_mem_holomorphicHull hz hf fun w hw ↦ hmax hw).not_gt (h w₀ hw₀)
 
 /-! ### Distance to the complement, relative closedness, and compactness -/
 
@@ -206,7 +309,7 @@ theorem infEDist_le_edist_of_mem_holomorphicHull {Ω K : Set ℂ} {z ζ : ℂ}
   by_contra hlt
   rw [not_le] at hlt
   have hKne : K.Nonempty := nonempty_iff_ne_empty.mpr fun h ↦ by simp [h] at hz
-  have hzζ : z ≠ ζ := fun h ↦ hζ (h ▸ hz.1)
+  have hzζ : z ≠ ζ := fun h ↦ hζ (h ▸ holomorphicHull_subset_left Ω K hz)
   have hd_pos : 0 < dist z ζ := dist_pos.mpr hzζ
   have hm_ne_top : infEDist ζ K ≠ ∞ := infEDist_ne_top hKne
   set m := (infEDist ζ K).toReal
@@ -223,7 +326,7 @@ theorem infEDist_le_edist_of_mem_holomorphicHull {Ω K : Set ℂ} {z ζ : ℂ}
       exact infDist_le_dist_of_mem hw
     rw [norm_inv]
     exact inv_anti₀ hm_pos hmw
-  have hz_le := hz.2 _ hf m⁻¹ hbound
+  have hz_le := norm_le_of_mem_holomorphicHull hz hf hbound
   rw [norm_inv, ← dist_eq_norm] at hz_le
   exact hdm.not_ge ((inv_le_inv₀ hd_pos hm_pos).mp hz_le)
 
@@ -256,7 +359,7 @@ theorem biInf_holomorphicHull_edist_frontier {Ω K : Set ℂ} (hKΩ : K ⊆ Ω) 
   calc
     (⨅ z ∈ holomorphicHull Ω K, ⨅ ζ ∈ frontier Ω, edist z ζ)
         = ⨅ z ∈ holomorphicHull Ω K, ⨅ ζ ∈ Ωᶜ, edist z ζ :=
-      iInf_congr fun z ↦ iInf_congr fun hz ↦ hpoint hz.1
+      iInf_congr fun z ↦ iInf_congr fun hz ↦ hpoint (holomorphicHull_subset_left Ω K hz)
     _ = ⨅ z ∈ K, ⨅ ζ ∈ Ωᶜ, edist z ζ := biInf_holomorphicHull_edist_compl hKΩ
     _ = ⨅ z ∈ K, ⨅ ζ ∈ frontier Ω, edist z ζ :=
       iInf_congr fun z ↦ iInf_congr fun hz ↦ (hpoint (hKΩ hz)).symm
@@ -278,12 +381,14 @@ theorem sInf_image_infDist_frontier_holomorphicHull {Ω K : Set ℂ} (hKΩ : K �
 /-- The `Ω`-holomorphic hull of any set is relatively closed in `Ω`. -/
 theorem closure_holomorphicHull_inter_eq (Ω K : Set ℂ) :
     closure (holomorphicHull Ω K) ∩ Ω = holomorphicHull Ω K := by
-  refine Subset.antisymm (fun z ⟨hzcl, hzΩ⟩ ↦ ⟨hzΩ, fun f hf B hB ↦ ?_⟩)
+  refine Subset.antisymm (fun z ⟨hzcl, hzΩ⟩ ↦ mem_holomorphicHull_iff.mpr
+      ⟨hzΩ, fun f hf B hB ↦ ?_⟩)
     (subset_inter subset_closure (holomorphicHull_subset_left Ω K))
   have : (𝓝[holomorphicHull Ω K] z).NeBot := mem_closure_iff_nhdsWithin_neBot.mp hzcl
   have hcont : Tendsto (fun w ↦ ‖f w‖) (𝓝[holomorphicHull Ω K] z) (𝓝 ‖f z‖) :=
     ((hf.continuousOn z hzΩ).mono (holomorphicHull_subset_left Ω K)).norm
-  exact le_of_tendsto hcont (eventually_nhdsWithin_of_forall fun w hw ↦ hw.2 f hf B hB)
+  exact le_of_tendsto hcont
+    (eventually_nhdsWithin_of_forall fun _ hw ↦ norm_le_of_mem_holomorphicHull hw hf hB)
 
 /-- If `K` is bounded, then `holomorphicHull Ω K` is bounded. -/
 theorem _root_.Bornology.IsBounded.holomorphicHull {Ω K : Set ℂ} (hK : IsBounded K) :
@@ -291,31 +396,49 @@ theorem _root_.Bornology.IsBounded.holomorphicHull {Ω K : Set ℂ} (hK : IsBoun
   obtain ⟨R, hR⟩ := hK.subset_closedBall 0
   refine (isBounded_closedBall (x := (0 : ℂ)) (r := R)).subset fun z hz ↦
     mem_closedBall_zero_iff.mpr ?_
-  exact hz.2 id differentiableOn_id R fun w hw ↦ mem_closedBall_zero_iff.mp (hR hw)
+  exact norm_le_of_mem_holomorphicHull hz differentiableOn_id (B := R) fun w hw ↦
+    mem_closedBall_zero_iff.mp (hR hw)
 
-/-- If `K ⊆ Ω` is closed in `ℂ`, then `holomorphicHull Ω K` is closed in `ℂ`. -/
-theorem _root_.IsClosed.holomorphicHull {Ω K : Set ℂ} (hK : IsClosed K) (hKΩ : K ⊆ Ω) :
-    IsClosed (TauCeti.holomorphicHull Ω K) := by
+/-- If `closure K ⊆ Ω`, then `holomorphicHull Ω K` is closed in `ℂ`. -/
+theorem isClosed_holomorphicHull_of_closure_subset {Ω K : Set ℂ} (hKΩ : closure K ⊆ Ω) :
+    IsClosed (holomorphicHull Ω K) := by
   -- Relative closedness handles adherence inside `Ω`, while distance preservation keeps the hull
   -- away from every point of `Ωᶜ`.
   refine isClosed_of_closure_subset fun z hzcl ↦ ?_
   suffices hzΩ : z ∈ Ω from (closure_holomorphicHull_inter_eq Ω K).subset ⟨hzcl, hzΩ⟩
   by_contra hzΩ
-  have hzK : z ∉ K := fun h ↦ hzΩ (hKΩ h)
-  have hpos : 0 < infEDist z K := by
-    rw [pos_iff_ne_zero]
-    intro h0
-    exact hzK (hK.closure_eq ▸ mem_closure_iff_infEDist_zero.mpr h0)
-  have h0 : infEDist z (TauCeti.holomorphicHull Ω K) < infEDist z K := by
+  have hpos : 0 < infEDist z K :=
+    infEDist_pos_iff_notMem_closure.mpr fun h ↦ hzΩ (hKΩ h)
+  have h0 : infEDist z (holomorphicHull Ω K) < infEDist z K := by
     rwa [mem_closure_iff_infEDist_zero.mp hzcl]
   obtain ⟨w, hw, hwz⟩ := infEDist_lt_iff.mp h0
   exact hwz.not_ge ((infEDist_le_edist_of_mem_holomorphicHull hw hzΩ).trans_eq (edist_comm w z))
 
+/-- The entire holomorphic hull `holomorphicHull univ K` of any set `K ⊆ ℂ` is closed. -/
+theorem isClosed_holomorphicHull_univ (K : Set ℂ) : IsClosed (holomorphicHull univ K) :=
+  isClosed_holomorphicHull_of_closure_subset (subset_univ _)
+
+/-- If `K ⊆ Ω` is closed in `ℂ`, then `holomorphicHull Ω K` is closed in `ℂ`. -/
+theorem _root_.IsClosed.holomorphicHull {Ω K : Set ℂ} (hK : IsClosed K) (hKΩ : K ⊆ Ω) :
+    IsClosed (TauCeti.holomorphicHull Ω K) :=
+  isClosed_holomorphicHull_of_closure_subset (hK.closure_eq.symm ▸ hKΩ)
+
+/-- If `K` is bounded and `closure K ⊆ Ω`, then `holomorphicHull Ω K` is compact. -/
+theorem _root_.Bornology.IsBounded.isCompact_holomorphicHull_of_closure_subset {Ω K : Set ℂ}
+    (hK : IsBounded K) (hKΩ : closure K ⊆ Ω) :
+    IsCompact (TauCeti.holomorphicHull Ω K) :=
+  Metric.isCompact_iff_isClosed_bounded.mpr
+    ⟨isClosed_holomorphicHull_of_closure_subset hKΩ, hK.holomorphicHull⟩
+
+/-- If `K ⊆ ℂ` is bounded, then its entire holomorphic hull `holomorphicHull univ K` is compact. -/
+theorem _root_.Bornology.IsBounded.isCompact_holomorphicHull_univ {K : Set ℂ} (hK : IsBounded K) :
+    IsCompact (TauCeti.holomorphicHull univ K) :=
+  hK.isCompact_holomorphicHull_of_closure_subset (subset_univ _)
+
 /-- If `K ⊆ Ω` is compact, then `holomorphicHull Ω K` is compact. -/
 theorem _root_.IsCompact.holomorphicHull {Ω K : Set ℂ} (hK : IsCompact K) (hKΩ : K ⊆ Ω) :
     IsCompact (TauCeti.holomorphicHull Ω K) :=
-  Metric.isCompact_iff_isClosed_bounded.mpr
-    ⟨hK.isClosed.holomorphicHull hKΩ, hK.isBounded.holomorphicHull⟩
+  hK.isBounded.isCompact_holomorphicHull_of_closure_subset (hK.isClosed.closure_eq.symm ▸ hKΩ)
 
 /-! ### Convex hull comparison -/
 
@@ -332,7 +455,7 @@ theorem holomorphicHull_subset_closedConvexHull (Ω K : Set ℂ) :
   have hbound : ∀ w ∈ K, ‖Complex.exp (l w)‖ ≤ Real.exp u := fun w hw ↦ by
     rw [Complex.norm_exp]
     exact Real.exp_le_exp.mpr (hlK w (subset_closedConvexHull hw)).le
-  have hle := hz.2 _ hf (Real.exp u) hbound
+  have hle := norm_le_of_mem_holomorphicHull hz hf hbound
   rw [Complex.norm_exp, Real.exp_le_exp] at hle
   exact hlz.not_ge hle
 
@@ -344,69 +467,98 @@ theorem _root_.IsCompact.holomorphicHull_subset_convexHull {Ω K : Set ℂ} (hK 
     rw [closedConvexHull_eq_closure_convexHull, (hK.convexHull (𝕜 := ℝ)).isClosed.closure_eq]
   exact hcl ▸ holomorphicHull_subset_closedConvexHull Ω K
 
+/-- For a closed real-convex set `K ⊆ ℂ`, the `Ω`-holomorphic hull of `K` is `K ∩ Ω`. -/
+theorem _root_.Convex.holomorphicHull_eq_inter {Ω K : Set ℂ} (hconv : Convex ℝ K)
+    (hcl : IsClosed K) :
+    TauCeti.holomorphicHull Ω K = K ∩ Ω :=
+  Subset.antisymm
+    (subset_inter
+      ((holomorphicHull_subset_closedConvexHull Ω K).trans
+        (closedConvexHull_min Subset.rfl hconv hcl))
+      (holomorphicHull_subset_left Ω K))
+    (inter_subset_holomorphicHull Ω K)
+
+/-- For a closed real-convex set `K ⊆ Ω`, the `Ω`-holomorphic hull of `K` is `K` itself. -/
+theorem _root_.Convex.holomorphicHull_eq {Ω K : Set ℂ} (hconv : Convex ℝ K) (hcl : IsClosed K)
+    (hKΩ : K ⊆ Ω) :
+    TauCeti.holomorphicHull Ω K = K := by
+  rw [hconv.holomorphicHull_eq_inter hcl, inter_eq_left.mpr hKΩ]
+
 /-! ### Maximum-principle inclusion, filledness, and Runge compact pairs -/
+
+end TauCeti
+
+namespace IsOpen
+
+open TauCeti
 
 /-- **Maximum-principle inclusion.** In an open plane set `Ω`, if the connected component `C` of
 `z` in `Ω \ K` has compact closure contained in `Ω`, then `closure C` lies in `holomorphicHull Ω K`.
 -/
-theorem closure_connectedComponentIn_sdiff_subset_holomorphicHull {Ω K : Set ℂ} (hΩ : IsOpen Ω)
-    {z : ℂ} (hcpt : IsCompact (closure (connectedComponentIn (Ω \ K) z)))
+theorem closure_connectedComponentIn_sdiff_subset_holomorphicHull {Ω K : Set ℂ}
+    (hΩ : IsOpen Ω) {z : ℂ} (hcpt : IsCompact (closure (connectedComponentIn (Ω \ K) z)))
     (hcl : closure (connectedComponentIn (Ω \ K) z) ⊆ Ω) :
     closure (connectedComponentIn (Ω \ K) z) ⊆ holomorphicHull Ω K := by
   set C := connectedComponentIn (Ω \ K) z
-  have hfr : frontier C ⊆ closure K := frontier_connectedComponentIn_sdiff_subset_closure hΩ hcl
+  have hfr : frontier C ⊆ closure K := hΩ.frontier_connectedComponentIn_sdiff_subset_closure hcl
   intro w hw
-  refine ⟨hcl hw, fun f hf B hB ↦ ?_⟩
+  refine mem_holomorphicHull_iff.mpr ⟨hcl hw, fun f hf B hB ↦ ?_⟩
   refine Complex.norm_le_of_forall_mem_frontier_norm_le (hcpt.isBounded.subset subset_closure)
     (hf.mono hcl).diffContOnCl (fun ζ hζ ↦ ?_) hw
-  have hζΩ : ζ ∈ Ω := hcl hζ.1
-  have hζcl : ζ ∈ closure (K ∩ Ω) := by
-    rw [_root_.mem_closure_iff]
-    intro V hV hζV
-    obtain ⟨u, huVO, huK⟩ := _root_.mem_closure_iff.mp (hfr hζ) (V ∩ Ω) (hV.inter hΩ) ⟨hζV, hζΩ⟩
-    exact ⟨u, huVO.1, huK, huVO.2⟩
-  have : (𝓝[K ∩ Ω] ζ).NeBot := mem_closure_iff_nhdsWithin_neBot.mp hζcl
-  have hcont : Tendsto (fun u ↦ ‖f u‖) (𝓝[K ∩ Ω] ζ) (𝓝 ‖f ζ‖) :=
-    ((hf.continuousOn ζ hζΩ).mono inter_subset_right).norm
-  exact le_of_tendsto hcont (eventually_nhdsWithin_of_forall fun u hu ↦ hB u hu.1)
+  have hζH : ζ ∈ holomorphicHull Ω K :=
+    (closure_holomorphicHull_inter_eq Ω K).subset
+      ⟨closure_mono (inter_subset_holomorphicHull Ω K) (hΩ.closure_inter ⟨hfr hζ, hcl hζ.1⟩),
+        hcl hζ.1⟩
+  exact norm_le_of_mem_holomorphicHull hζH hf hB
 
 /-- In an open plane set `Ω`, every connected component of `Ω \ K` whose closure is compact and
 contained in `Ω` lies in `holomorphicHull Ω K`. -/
-theorem connectedComponentIn_sdiff_subset_holomorphicHull {Ω K : Set ℂ} (hΩ : IsOpen Ω) {z : ℂ}
-    (hcpt : IsCompact (closure (connectedComponentIn (Ω \ K) z)))
+theorem connectedComponentIn_sdiff_subset_holomorphicHull {Ω K : Set ℂ}
+    (hΩ : IsOpen Ω) {z : ℂ} (hcpt : IsCompact (closure (connectedComponentIn (Ω \ K) z)))
     (hcl : closure (connectedComponentIn (Ω \ K) z) ⊆ Ω) :
     connectedComponentIn (Ω \ K) z ⊆ holomorphicHull Ω K :=
-  subset_closure.trans (closure_connectedComponentIn_sdiff_subset_holomorphicHull hΩ hcpt hcl)
+  subset_closure.trans (hΩ.closure_connectedComponentIn_sdiff_subset_holomorphicHull hcpt hcl)
 
 /-- For `K ⊆ Ω` with `Ω` open, `K` together with all relatively compact connected components of
 `Ω \ K` in `Ω` lies inside `holomorphicHull Ω K`. -/
-theorem union_relCompactComponents_subset_holomorphicHull {Ω K : Set ℂ}
-    (hΩ : IsOpen Ω) (hKΩ : K ⊆ Ω) :
+theorem union_setOf_isCompact_closure_connectedComponentIn_sdiff_subset_holomorphicHull
+    {Ω K : Set ℂ} (hΩ : IsOpen Ω) (hKΩ : K ⊆ Ω) :
     K ∪ {z | z ∈ Ω \ K ∧
       IsCompact (closure (connectedComponentIn (Ω \ K) z)) ∧
       closure (connectedComponentIn (Ω \ K) z) ⊆ Ω} ⊆ holomorphicHull Ω K :=
   union_subset (subset_holomorphicHull hKΩ) fun _ ⟨hz, hcpt, hcl⟩ ↦
-    connectedComponentIn_sdiff_subset_holomorphicHull hΩ hcpt hcl (mem_connectedComponentIn hz)
+    hΩ.connectedComponentIn_sdiff_subset_holomorphicHull hcpt hcl (mem_connectedComponentIn hz)
 
 /-- The `Ω`-holomorphic hull of any set is filled in an open set `Ω`. -/
-theorem _root_.IsOpen.isFilledIn_holomorphicHull {Ω : Set ℂ} (hΩ : IsOpen Ω) (K : Set ℂ) :
+theorem isFilledIn_holomorphicHull {Ω : Set ℂ} (hΩ : IsOpen Ω) (K : Set ℂ) :
     IsFilledIn (holomorphicHull Ω K) Ω := by
   rw [isFilledIn_iff]
   rintro z hz ⟨hcpt, hcl⟩
-  have hz' := connectedComponentIn_sdiff_subset_holomorphicHull hΩ hcpt hcl
+  have hz' := hΩ.connectedComponentIn_sdiff_subset_holomorphicHull hcpt hcl
     (mem_connectedComponentIn hz)
   rw [holomorphicHull_holomorphicHull] at hz'
   exact hz.2 hz'
 
-/-- A Runge compact pair `(Ω, K)`: an open plane set `Ω` and a compact subset `K ⊆ Ω` that is
+end IsOpen
+
+namespace TauCeti
+
+/-- A **Runge compact pair** `(Ω, K)`: an open plane set `Ω` and a compact subset `K ⊆ Ω` that is
 filled in `Ω` (`TauCeti.IsFilledIn K Ω`, meaning no connected component of `Ω \ K` is relatively
-compact in `Ω`). -/
+compact in `Ω`). These are the compact pairs on which functions holomorphic near `K` can be
+uniformly approximated by functions holomorphic on all of `Ω` (Runge's theorem). -/
 def IsRungeCompactPair (Ω K : Set ℂ) : Prop :=
   IsOpen Ω ∧ IsCompact K ∧ K ⊆ Ω ∧ IsFilledIn K Ω
 
+@[grind =]
 theorem isRungeCompactPair_iff {Ω K : Set ℂ} :
     IsRungeCompactPair Ω K ↔ IsOpen Ω ∧ IsCompact K ∧ K ⊆ Ω ∧ IsFilledIn K Ω :=
   (Iff.rfl)
+
+/-- Construct a Runge compact pair from its four defining properties. -/
+theorem IsRungeCompactPair.mk {Ω K : Set ℂ} (hΩ : IsOpen Ω) (hK : IsCompact K) (hKΩ : K ⊆ Ω)
+    (hfill : IsFilledIn K Ω) : IsRungeCompactPair Ω K :=
+  ⟨hΩ, hK, hKΩ, hfill⟩
 
 theorem IsRungeCompactPair.isOpen {Ω K : Set ℂ} (h : IsRungeCompactPair Ω K) : IsOpen Ω :=
   h.1
@@ -423,15 +575,20 @@ theorem IsRungeCompactPair.isFilledIn {Ω K : Set ℂ} (h : IsRungeCompactPair �
 
 @[simp]
 theorem isRungeCompactPair_empty {Ω : Set ℂ} : IsRungeCompactPair Ω ∅ ↔ IsOpen Ω :=
-  ⟨fun h ↦ h.isOpen, fun hΩ ↦ ⟨hΩ, isCompact_empty, empty_subset Ω, by
-    simpa only [holomorphicHull_empty] using hΩ.isFilledIn_holomorphicHull ∅⟩⟩
+  ⟨fun h ↦ h.isOpen, fun hΩ ↦ .mk hΩ isCompact_empty (empty_subset Ω) (by
+    simpa only [holomorphicHull_empty] using hΩ.isFilledIn_holomorphicHull ∅)⟩
+
+@[simp]
+theorem isRungeCompactPair_empty_left {K : Set ℂ} : IsRungeCompactPair ∅ K ↔ K = ∅ :=
+  ⟨fun h ↦ subset_empty_iff.mp h.subset, by rintro rfl; simp⟩
 
 /-- For an open set `Ω` and a compact `K ⊆ Ω`, `(Ω, holomorphicHull Ω K)` is a Runge compact pair.
 -/
 theorem _root_.IsOpen.isRungeCompactPair_holomorphicHull {Ω K : Set ℂ} (hΩ : IsOpen Ω)
     (hK : IsCompact K) (hKΩ : K ⊆ Ω) :
     IsRungeCompactPair Ω (holomorphicHull Ω K) :=
-  ⟨hΩ, hK.holomorphicHull hKΩ, holomorphicHull_subset_left Ω K, hΩ.isFilledIn_holomorphicHull K⟩
+  .mk hΩ (hK.holomorphicHull hKΩ) (holomorphicHull_subset_left Ω K)
+    (hΩ.isFilledIn_holomorphicHull K)
 
 /-- A compact set `K` equal to its `Ω`-holomorphic hull in an open `Ω` forms a Runge compact pair.
 -/
@@ -441,11 +598,11 @@ theorem _root_.IsOpen.isRungeCompactPair_of_holomorphicHull_eq {Ω K : Set ℂ} 
   h ▸ hΩ.isRungeCompactPair_holomorphicHull hK (h ▸ holomorphicHull_subset_left Ω K)
 
 /-- Every stage `filledExhaustion Ω n` of an open plane set `Ω` forms a Runge compact pair
-`(Ω, K n)`. -/
+`(Ω, filledExhaustion Ω n)`. -/
 theorem _root_.IsOpen.isRungeCompactPair_filledExhaustion {Ω : Set ℂ} (hΩ : IsOpen Ω) (n : ℕ) :
     IsRungeCompactPair Ω (filledExhaustion Ω n) :=
-  ⟨hΩ, isCompact_filledExhaustion Ω n, filledExhaustion_subset Ω n,
-    hΩ.isFilledIn_filledExhaustion n⟩
+  .mk hΩ (isCompact_filledExhaustion Ω n) (filledExhaustion_subset Ω n)
+    (hΩ.isFilledIn_filledExhaustion n)
 
 /-- Every compact subset `K` of an open plane set `Ω` lies inside the interior of a compact `L`
 forming a Runge compact pair `(Ω, L)`. -/
@@ -464,15 +621,10 @@ theorem holomorphicHull_univ_subset_preimage_polynomialHull (ι : Type*) (K : Se
   intro z hz
   rw [mem_preimage, mem_polynomialHull_iff]
   intro p c hc
-  set q : Polynomial ℂ := MvPolynomial.aeval (fun _ : ι ↦ Polynomial.X) p
-  have heval (w : ℂ) : MvPolynomial.eval (Function.const ι w) p = q.eval w := by
-    change MvPolynomial.eval (fun _ ↦ w) p = _
-    simpa [q] using
-      (MvPolynomial.comp_aeval_apply (f := fun _ : ι ↦ Polynomial.X) (Polynomial.aeval w) p).symm
-  rw [heval]
-  refine hz.2 (fun w ↦ q.eval w) q.differentiable.differentiableOn c fun w hw ↦ ?_
-  rw [← heval]
-  exact hc _ (mem_image_of_mem _ hw)
+  rw [← MvPolynomial.eval_aeval_const_X]
+  set q : Polynomial ℂ := MvPolynomial.aeval (Function.const ι Polynomial.X) p
+  refine norm_le_of_mem_holomorphicHull hz q.differentiable.differentiableOn fun w hw ↦ ?_
+  simpa only [q, MvPolynomial.eval_aeval_const_X] using hc _ (mem_image_of_mem _ hw)
 
 /-- **Holomorphic hull on `ℂ` equals the polynomial hull.** For any nonempty index type `ι` (in
 particular `ι = Fin 1`, where `Function.const (Fin 1)` is
@@ -545,23 +697,11 @@ theorem _root_.Bornology.IsBounded.holomorphicHull_univ_eq_self_iff_isPolynomial
 @[simp]
 theorem holomorphicHull_univ_range_ofReal :
     holomorphicHull univ (range Complex.ofReal) = range Complex.ofReal := by
-  -- `exp (I w)` and `exp (-I w)` have modulus `1` on `ℝ` and exclude nonzero imaginary parts.
-  refine Subset.antisymm (fun z hz ↦ ?_) (subset_holomorphicHull (subset_univ _))
-  have hexp (s : ℂ) (hs : s.re = 0) : ‖Complex.exp (s * z)‖ ≤ 1 := by
-    refine hz.2 (fun w ↦ Complex.exp (s * w))
-      (Complex.differentiable_exp.comp (differentiable_id.const_mul s)).differentiableOn 1 ?_
-    rintro _ ⟨x, rfl⟩
-    rw [Complex.norm_exp]
-    have hre : (s * (x : ℂ)).re = 0 := by simp [Complex.mul_re, hs]
-    simp [hre]
-  have him1 : -z.im ≤ 0 := by
-    have h := hexp Complex.I Complex.I_re
-    rw [Complex.norm_exp, ← Real.exp_zero, Real.exp_le_exp] at h
-    simpa [Complex.mul_re] using h
-  have him2 : z.im ≤ 0 := by
-    have h := hexp (-Complex.I) (by simp)
-    rw [Complex.norm_exp, ← Real.exp_zero, Real.exp_le_exp] at h
-    simpa [Complex.mul_re] using h
-  exact ⟨z.re, Complex.ext (by simp) (by simp [le_antisymm him2 (by linarith)])⟩
+  have hrange : (LinearMap.range Complex.ofRealLI.toLinearMap : Set ℂ) = range Complex.ofReal := by
+    ext z
+    simp
+  exact Convex.holomorphicHull_eq
+    (hrange ▸ (LinearMap.range Complex.ofRealLI.toLinearMap).convex)
+    Complex.isometry_ofReal.isClosedEmbedding.isClosed_range (subset_univ _)
 
 end TauCeti

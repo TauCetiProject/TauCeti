@@ -35,9 +35,6 @@ Filled compact exhaustions of open sets in proper real normed spaces are constru
 ## Main declarations
 
 * `TauCeti.IsFilledIn`: no connected component of `Ω \ K` is relatively compact in `Ω`.
-* `TauCeti.frontier_connectedComponentIn_sdiff_subset_closure` and
-  `IsClosed.frontier_connectedComponentIn_sdiff_subset`: a connected component of `Ω \ K` whose
-  closure lies in an open `Ω` has its frontier in `closure K` (hence in `K` when `K` is closed).
 * `TauCeti.isFilledIn_iff_forall_mem_filledHull_sdiff_not_connectedComponentIn_subset`: the same
   condition through the bounded components of `Kᶜ`.
 * `TauCeti.isFilledIn_univ_iff`: a closed set is filled in the whole space exactly when it equals
@@ -52,7 +49,6 @@ Filled compact exhaustions of open sets in proper real normed spaces are constru
 public section
 
 open Bornology Metric Set
-open scoped Topology
 
 namespace TauCeti
 
@@ -75,35 +71,6 @@ theorem isFilledIn_iff :
   Iff.rfl
 
 end Topology
-
-section LocallyConnected
-
-variable {X : Type*} [TopologicalSpace X] [LocallyConnectedSpace X] {K Ω : Set X}
-
-/-- If the connected component of `x` in `Ω \ K` has closure contained in an open set `Ω` of a
-locally connected space, then its frontier lies in `closure K`. -/
-theorem frontier_connectedComponentIn_sdiff_subset_closure (hΩ : IsOpen Ω) {x : X}
-    (hcl : closure (connectedComponentIn (Ω \ K) x) ⊆ Ω) :
-    frontier (connectedComponentIn (Ω \ K) x) ⊆ closure K := by
-  intro y hy
-  by_contra hyK
-  obtain ⟨V, ⟨hVo, hyV, hVc⟩, hVU⟩ := (LocallyConnectedSpace.open_connected_basis y).mem_iff.mp <|
-    (hΩ.inter isClosed_closure.isOpen_compl).mem_nhds ⟨hcl hy.1, hyK⟩
-  obtain ⟨z, hzV, hzC⟩ := mem_closure_iff.mp hy.1 V hVo hyV
-  have hVsub : V ⊆ connectedComponentIn (Ω \ K) x := by
-    rw [connectedComponentIn_eq hzC]
-    exact hVc.isPreconnected.subset_connectedComponentIn hzV fun w hw ↦
-      ⟨(hVU hw).1, fun hwK ↦ (hVU hw).2 (subset_closure hwK)⟩
-  exact hy.2 (hVo.subset_interior_iff.mpr hVsub hyV)
-
-/-- For a closed set `K` and an open set `Ω` in a locally connected space, any connected
-component of `Ω \ K` whose closure lies in `Ω` has its frontier inside `K`. -/
-theorem _root_.IsClosed.frontier_connectedComponentIn_sdiff_subset (hK : IsClosed K)
-    (hΩ : IsOpen Ω) {x : X} (hcl : closure (connectedComponentIn (Ω \ K) x) ⊆ Ω) :
-    frontier (connectedComponentIn (Ω \ K) x) ⊆ K :=
-  (frontier_connectedComponentIn_sdiff_subset_closure hΩ hcl).trans hK.closure_subset
-
-end LocallyConnected
 
 section MetricSpace
 

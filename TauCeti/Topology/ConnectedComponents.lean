@@ -35,8 +35,16 @@ space by them.
   point of the quotient, as an open set; these open sets partition the space.
 * `Homeomorph.image_connectedComponent`: a homeomorphism maps a connected component onto
   the connected component of the image point.
-* `TauCeti.frontier_connectedComponentIn_subset_compl`: in a locally connected space, a connected
-  component of an open set has its frontier in the complement of that set.
+* `TauCeti.frontier_connectedComponentIn_subset_compl_interior` and
+  `TauCeti.frontier_connectedComponentIn_subset_compl`: in a locally connected space, a connected
+  component of a set has its frontier outside the interior of that set (hence in the complement of
+  an open set).
+* `TauCeti.frontier_connectedComponentIn_sdiff_subset_compl_interior_union_closure`,
+  `TauCeti.frontier_connectedComponentIn_sdiff_subset_closure`,
+  `IsOpen.frontier_connectedComponentIn_sdiff_subset_closure`, and
+  `IsClosed.frontier_connectedComponentIn_sdiff_subset`: a connected component of `Ω \ K` has its
+  frontier in `(interior Ω)ᶜ ∪ closure K` (hence in `closure K`, or in `K` for closed `K`, when
+  its frontier lies in `interior Ω`).
 * `IsOpen.joinedIn_of_mem_connectedComponentIn`: in a locally path-connected space, a point of an
   open set is joined to each point of its component by a path inside that component.
 * `IsPreconnected.subset_connectedComponentIn_of_inter_closure_subset`: a preconnected set through
@@ -219,18 +227,56 @@ theorem _root_.Set.Finite.image_connectedComponentIn_sUnion {s : Set X} {𝒞 : 
   have hts : t ⊆ s := (subset_sUnion_of_mem ht).trans hsub
   exact connectedComponentIn_eq ((hc t ht).subset_connectedComponentIn hx hts hy)
 
+/-- **The frontier of a connected component of a set misses its interior.** In a locally connected
+space, no frontier point of `connectedComponentIn F x` lies in `interior F`. -/
+theorem frontier_connectedComponentIn_subset_compl_interior [LocallyConnectedSpace X] {F : Set X}
+    (x : X) : frontier (connectedComponentIn F x) ⊆ (interior F)ᶜ := by
+  intro y hy hyF
+  obtain ⟨V, ⟨hVo, hyV, hVc⟩, hVF⟩ :=
+    (LocallyConnectedSpace.open_connected_basis y).mem_iff.mp (isOpen_interior.mem_nhds hyF)
+  obtain ⟨z, hzV, hzC⟩ := mem_closure_iff.mp hy.1 V hVo hyV
+  have hVsub : V ⊆ connectedComponentIn F x := by
+    rw [connectedComponentIn_eq hzC]
+    exact hVc.isPreconnected.subset_connectedComponentIn hzV (hVF.trans interior_subset)
+  exact hy.2 (hVo.subset_interior_iff.mpr hVsub hyV)
+
 /-- **The frontier of a connected component of an open set misses the set.** Equivalently,
 `frontier (connectedComponentIn F x) ∩ F = ∅`: the component is clopen in `F`. -/
 theorem frontier_connectedComponentIn_subset_compl [LocallyConnectedSpace X] {F : Set X}
     (hF : IsOpen F) (x : X) : frontier (connectedComponentIn F x) ⊆ Fᶜ := by
-  intro y hy hyF
-  have hC : IsOpen (connectedComponentIn F x) := hF.connectedComponentIn
-  obtain ⟨z, hzy, hzx⟩ :=
-    mem_closure_iff.mp hy.1 _ hF.connectedComponentIn (mem_connectedComponentIn hyF)
-  have hyC : y ∈ connectedComponentIn F x := by
-    rw [connectedComponentIn_eq hzx, ← connectedComponentIn_eq hzy]
-    exact mem_connectedComponentIn hyF
-  exact hy.2 (by rwa [hC.interior_eq])
+  simpa only [hF.interior_eq] using frontier_connectedComponentIn_subset_compl_interior (F := F) x
+
+/-- In a locally connected space, the frontier of a connected component of `Ω \ K` lies in
+`(interior Ω)ᶜ ∪ closure K`. -/
+theorem frontier_connectedComponentIn_sdiff_subset_compl_interior_union_closure
+    [LocallyConnectedSpace X] {Ω K : Set X} (x : X) :
+    frontier (connectedComponentIn (Ω \ K) x) ⊆ (interior Ω)ᶜ ∪ closure K := by
+  have h := frontier_connectedComponentIn_subset_compl_interior (F := Ω \ K) x
+  rwa [sdiff_eq, interior_inter, interior_compl, compl_inter, compl_compl] at h
+
+/-- In a locally connected space, if the frontier of a connected component of `Ω \ K` lies in
+`interior Ω`, then it lies in `closure K`. -/
+theorem frontier_connectedComponentIn_sdiff_subset_closure [LocallyConnectedSpace X] {Ω K : Set X}
+    {x : X} (hfr : frontier (connectedComponentIn (Ω \ K) x) ⊆ interior Ω) :
+    frontier (connectedComponentIn (Ω \ K) x) ⊆ closure K := fun _ hy ↦
+  (frontier_connectedComponentIn_sdiff_subset_compl_interior_union_closure x hy).resolve_left
+    (not_not.mpr (hfr hy))
+
+/-- If the connected component of `x` in `Ω \ K` has closure contained in an open set `Ω` of a
+locally connected space, then its frontier lies in `closure K`. -/
+theorem _root_.IsOpen.frontier_connectedComponentIn_sdiff_subset_closure [LocallyConnectedSpace X]
+    {Ω K : Set X} (hΩ : IsOpen Ω) {x : X} (hcl : closure (connectedComponentIn (Ω \ K) x) ⊆ Ω) :
+    frontier (connectedComponentIn (Ω \ K) x) ⊆ closure K :=
+  TauCeti.frontier_connectedComponentIn_sdiff_subset_closure
+    (frontier_subset_closure.trans (hΩ.interior_eq.symm ▸ hcl))
+
+/-- For a closed set `K` in a locally connected space, if the frontier of a connected component of
+`Ω \ K` lies in `interior Ω`, then it lies in `K`. -/
+theorem _root_.IsClosed.frontier_connectedComponentIn_sdiff_subset [LocallyConnectedSpace X]
+    {Ω K : Set X} (hK : IsClosed K) {x : X}
+    (hfr : frontier (connectedComponentIn (Ω \ K) x) ⊆ interior Ω) :
+    frontier (connectedComponentIn (Ω \ K) x) ⊆ K :=
+  (frontier_connectedComponentIn_sdiff_subset_closure hfr).trans hK.closure_subset
 
 /-- **Points of a component of an open set are joined inside it.** In a locally path-connected
 space, the connected component of `x` in an open set `U` is open and connected, hence path
