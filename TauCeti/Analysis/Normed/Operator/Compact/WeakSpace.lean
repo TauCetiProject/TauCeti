@@ -23,14 +23,12 @@ closed set `C` of `F` and a bounded weakly closed set `B`, the set `B ∩ J ⁻�
 closed, and without any boundedness the preimage `J ⁻¹' C` is weakly sequentially closed,
 because weakly convergent sequences are bounded.
 
-The restriction to bounded sets cannot be dropped. In an infinite-dimensional space every weak
-neighbourhood of `0` contains a line through a nonzero vector
-(`TauCeti.exists_ne_zero_forall_toWeakSpace_smul_mem_of_mem_nhds_zero`). For an injective linear
-map `j` into a normed space this line meets the sphere `{u | ‖j u‖ = r}` for every `r ≥ 0`, so
-`0` lies in the weak closure of that sphere, the sphere is not weakly closed when `r > 0`, and
-`j` is not continuous from the weak topology to the norm topology. For a compact injective `j`
-the sphere `{u | ‖j u‖ = 1}` is nevertheless weakly sequentially closed: weak closures of
-unbounded sets are not described by sequences.
+The restriction to bounded sets cannot be dropped: in an infinite-dimensional space an injective
+linear map into a normed space is never continuous from the weak topology to the norm topology
+(`TauCeti.not_continuous_comp_toWeakSpace_symm` in
+`TauCeti.Analysis.Normed.Module.WeakSpace.Sphere`). For a compact injective `j` the sphere
+`{u | ‖j u‖ = 1}` is weakly sequentially closed but not weakly closed: weak closures of unbounded
+sets are not described by sequences.
 
 These facts are the compactness input of the direct method on constraint sets such as
 `{u | ‖j u‖ = 1}` for a compact form-domain inclusion `j`.
@@ -45,16 +43,11 @@ These facts are the compactness input of the direct method on constraint sets su
   set, the preimage of a closed set under a compact operator is weakly closed.
 * `IsCompactOperator.isSeqClosed_toWeakSpace_preimage`: the preimage of a closed set under a
   compact operator is weakly sequentially closed.
-* `TauCeti.zero_mem_closure_toWeakSpace_setOf_norm_eq`,
-  `TauCeti.not_isClosed_toWeakSpace_setOf_norm_eq`,
-  `TauCeti.not_continuous_comp_toWeakSpace_symm`: in infinite dimension, spheres of an injective
-  linear map are not weakly closed, and the map is not weak-to-norm continuous.
 
 ## References
 
 * H. Brezis, *Functional Analysis, Sobolev Spaces and Partial Differential Equations*,
-  Springer, 2011, §3.2, Example 1 (weak closure of the unit sphere), and Chapter 6 (compact
-  operators).
+  Springer, 2011, Chapter 6 (compact operators).
 -/
 
 public section
@@ -134,55 +127,9 @@ variable {𝕜 V F : Type*} [RCLike 𝕜]
 
 /-- The preimage of a closed set under a compact operator is weakly sequentially closed. -/
 theorem isSeqClosed_toWeakSpace_preimage (hJ : IsCompactOperator J) {C : Set F}
-    (hC : IsClosed C) : IsSeqClosed (toWeakSpace 𝕜 V '' (J ⁻¹' C)) := by
-  rw [(toWeakSpace 𝕜 V).image_eq_preimage_symm]
-  exact hC.isSeqClosed.preimage
-    (ContinuousLinearMap.isDunfordPettis_iff_seqContinuous.1 hJ.isDunfordPettis)
+    (hC : IsClosed C) : IsSeqClosed (toWeakSpace 𝕜 V '' (J ⁻¹' C)) :=
+  hJ.isDunfordPettis.isSeqClosed_toWeakSpace_preimage hC
 
 end RCLike
 
 end IsCompactOperator
-
-namespace TauCeti
-
-section Sphere
-
-variable {𝕜 V F G : Type*} [RCLike 𝕜] [AddCommGroup V] [Module 𝕜 V] [TopologicalSpace V]
-  [NormedAddCommGroup F] [NormedSpace 𝕜 F] [FunLike G V F] [LinearMapClass G 𝕜 V F] {j : G}
-
-/-- In an infinite-dimensional space, `0` lies in the weak closure of every sphere
-`{u | ‖j u‖ = r}` of an injective linear map `j` into a normed space. -/
-theorem zero_mem_closure_toWeakSpace_setOf_norm_eq (hV : ¬ FiniteDimensional 𝕜 V)
-    (hj : Function.Injective j) {r : ℝ} (hr : 0 ≤ r) :
-    (0 : WeakSpace 𝕜 V) ∈ closure (toWeakSpace 𝕜 V '' {u | ‖j u‖ = r}) := by
-  refine mem_closure_iff_nhds.2 fun U hU ↦ ?_
-  obtain ⟨x, hx, hxU⟩ := exists_ne_zero_forall_toWeakSpace_smul_mem_of_mem_nhds_zero hV hU
-  have hjx : ‖j x‖ ≠ 0 := norm_ne_zero_iff.2 ((map_ne_zero_iff j hj).2 hx)
-  -- Rescale `x` so that its image has norm `r`.
-  refine ⟨_, hxU ((r / ‖j x‖ : ℝ) : 𝕜), mem_image_of_mem _ ?_⟩
-  simp [map_smul, norm_smul, abs_of_nonneg hr, hjx]
-
-/-- In an infinite-dimensional space, a sphere `{u | ‖j u‖ = r}` of positive radius of an
-injective linear map `j` into a normed space is not weakly closed. -/
-theorem not_isClosed_toWeakSpace_setOf_norm_eq (hV : ¬ FiniteDimensional 𝕜 V)
-    (hj : Function.Injective j) {r : ℝ} (hr : 0 < r) :
-    ¬ IsClosed (toWeakSpace 𝕜 V '' {u | ‖j u‖ = r}) := fun hclosed ↦ by
-  obtain ⟨u, hu, hu0⟩ :=
-    hclosed.closure_subset (zero_mem_closure_toWeakSpace_setOf_norm_eq hV hj hr.le)
-  rw [map_eq_zero_iff _ (toWeakSpace 𝕜 V).injective] at hu0
-  subst hu0
-  simp only [mem_ofPred_eq, map_zero, norm_zero] at hu
-  exact hr.ne hu
-
-/-- In an infinite-dimensional space, an injective linear map into a normed space is not
-continuous from the weak topology to the norm topology. -/
-theorem not_continuous_comp_toWeakSpace_symm (hV : ¬ FiniteDimensional 𝕜 V)
-    (hj : Function.Injective j) :
-    ¬ Continuous fun w : WeakSpace 𝕜 V ↦ j ((toWeakSpace 𝕜 V).symm w) := fun hcont ↦ by
-  refine not_isClosed_toWeakSpace_setOf_norm_eq hV hj one_pos ?_
-  rw [(toWeakSpace 𝕜 V).image_eq_preimage_symm]
-  exact isClosed_eq (continuous_norm.comp hcont) continuous_const
-
-end Sphere
-
-end TauCeti
