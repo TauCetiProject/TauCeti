@@ -38,6 +38,8 @@ direction combine into one condition on the whole frequency space.
 
 * `IsOpen.exists_cone_closedBall_subset`: an open cone `Γ` containing `ξ` contains a smaller open
   cone `Γ'` containing `ξ` such that `closedBall η (c * ‖η‖) ⊆ Γ` for every `η ∈ Γ'`.
+* `IsOpen.exists_pos_forall_mem_of_norm_lt_mul_norm`: an open cone containing the nonzero vectors
+  of the kernel of a linear map `L` contains `{η | ‖L η‖ < c ‖η‖}` for some `c > 0`.
 * `TauCeti.exists_one_add_norm_pow_mul_norm_le_of_hasSum`: decay of order `N` on `Γ'` of a
   superposition of translates of a function decaying at order `N` on `Γ`, with rapidly decreasing
   coefficients.
@@ -101,6 +103,35 @@ theorem exists_cone_closedBall_subset {Γ : Set E} (hΓ : IsOpen Γ)
             _ = r / 2 := hr'
         _ = r := add_halves r
     simpa [smul_smul, inv_mul_cancel₀ ht.ne'] using hcone t⁻¹ (inv_pos.2 ht) _ htζ
+
+/-- **Conic neighbourhoods of a kernel.** Let `Γ` be an open set, closed under multiplication by
+positive reals, in a proper real normed space, and containing every nonzero vector of the kernel
+of a continuous linear map `L`. Then for some `c > 0` it contains every `η` with
+`‖L η‖ < c ‖η‖`. -/
+theorem exists_pos_forall_mem_of_norm_lt_mul_norm [ProperSpace E] {F : Type*}
+    [NormedAddCommGroup F] [NormedSpace ℝ F] {Γ : Set E} (hΓ : IsOpen Γ)
+    (hcone : ∀ t : ℝ, 0 < t → ∀ η ∈ Γ, t • η ∈ Γ) (L : E →L[ℝ] F)
+    (hker : ∀ η, η ≠ 0 → L η = 0 → η ∈ Γ) :
+    ∃ c > 0, ∀ η, ‖L η‖ < c * ‖η‖ → η ∈ Γ := by
+  set R := sphere (0 : E) 1 \ Γ
+  -- A positive `c` such that every unit vector `u` with `‖L u‖ < c` lies in `Γ`.
+  obtain ⟨c, hc, hcΓ⟩ : ∃ c > 0, ∀ u ∈ sphere (0 : E) 1, ‖L u‖ < c → u ∈ Γ := by
+    rcases R.eq_empty_or_nonempty with hR | hR
+    · exact ⟨1, one_pos, fun u hu _ ↦ by_contra fun huΓ ↦ hR.subset ⟨hu, huΓ⟩⟩
+    -- On the compact set `R` of unit vectors outside `Γ`, `u ↦ ‖L u‖` has a positive minimum.
+    obtain ⟨u₀, hu₀, hmin⟩ := ((isCompact_sphere 0 1).diff hΓ).exists_isMinOn hR
+      L.continuous.norm.continuousOn
+    have hu₀0 : L u₀ ≠ 0 := fun h0 ↦
+      hu₀.2 (hker u₀ (ne_zero_of_mem_sphere one_ne_zero ⟨u₀, hu₀.1⟩) h0)
+    exact ⟨‖L u₀‖, norm_pos_iff.2 hu₀0, fun u hu hlt ↦
+      by_contra fun huΓ ↦ not_le.2 hlt (hmin ⟨hu, huΓ⟩)⟩
+  refine ⟨c, hc, fun η hη ↦ ?_⟩
+  -- The direction of `η` is such a unit vector.
+  have hη0 : 0 < ‖η‖ := norm_pos_iff.2 fun h0 ↦ by simp [h0] at hη
+  have hu : ‖η‖⁻¹ • η ∈ Γ := hcΓ _ (by simp [norm_smul, hη0.ne']) (by
+    rw [map_smul, norm_smul, norm_inv, norm_norm, inv_mul_lt_iff₀ hη0]
+    linarith)
+  simpa [smul_smul, hη0.ne'] using hcone ‖η‖ hη0 _ hu
 
 end IsOpen
 
