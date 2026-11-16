@@ -259,15 +259,6 @@ theorem im_thetaCoset_eq_zero (γ : E) {τ : ℍ} (hτ : τ.re = 0) : (thetaCose
 theorem im_thetaSeries_eq_zero {τ : ℍ} (hτ : τ.re = 0) : (thetaSeries L τ).im = 0 := by
   simpa using im_thetaCoset_eq_zero L 0 hτ
 
-/-- The chosen representative `Quotient.out 0` of the zero coset in `L ⧸ M` lies in `M`, so its
-coset theta series is `Θ_M`. -/
-private theorem thetaCoset_out_zero {M : Submodule ℤ E} :
-    thetaCoset M ((Quotient.out (0 : L ⧸ M.submoduleOf L) : L) : E) = thetaSeries M := by
-  refine thetaCoset_of_mem M ?_
-  have := (Submodule.Quotient.mk_eq_zero _).mp
-    (Submodule.Quotient.mk_out (0 : L ⧸ M.submoduleOf L))
-  rwa [Submodule.submoduleOf, Submodule.mem_comap, Submodule.subtype_apply] at this
-
 variable [NormedSpace ℝ E] [FiniteDimensional ℝ E] [DiscreteTopology L]
 
 /-- On the imaginary axis the theta series of `γ + L` has positive real part (and is real, by

@@ -54,7 +54,8 @@ unimodular lattice has a theta series of level one.
 * `ZLattice.isEven_span_singleton_iff`, `ZLattice.isIntegral_span_singleton_iff`,
   `ZLattice.isIntegral_span_inv_natCast_iff`, `ZLattice.isUnimodular_span_singleton_iff`:
   `ℤ v` is even iff `‖v‖² ∈ 2ℤ` and integral iff `‖v‖² ∈ ℤ`, `n⁻¹ ℤ ⊆ ℝ` is integral iff `n ≤ 1`
-  (`ZLattice.not_isIntegral_span_inv_natCast`), and `c ℤ ⊆ ℝ` is unimodular iff `|c| = 1`.
+  (`ZLattice.not_isIntegral_span_inv_natCast`, with `2 ℤ = (½ ℤ)^∨ < ½ ℤ` recorded as
+  `ZLattice.dual_span_inv_two_lt`), and `c ℤ ⊆ ℝ` is unimodular iff `|c| = 1`.
 * `ZLattice.IsEven.exists_norm_add_sq_sub_norm_sq_eq`,
   `ZLattice.IsIntegral.exists_norm_add_sq_sub_norm_sq_eq`: for `γ ∈ L^∨` and `v ∈ L`,
   `‖γ + v‖² - ‖γ‖²` lies in `2ℤ` when `L` is even and in `ℤ` when `L` is integral, so `‖γ‖² / 2`
@@ -191,6 +192,15 @@ theorem not_isIntegral_span_inv_natCast {n : ℕ} (hn : 1 < n) :
 theorem not_isIntegral_span_inv_two :
     ¬ IsIntegral (span ℤ {(2⁻¹ : ℝ)} : Submodule ℤ ℝ) := by
   simpa using not_isIntegral_span_inv_natCast one_lt_two
+
+/-- For `L = ½ ℤ ⊆ ℝ`, the dual lattice `L^∨ = 2 ℤ` is a strict sublattice of `L`. -/
+theorem dual_span_inv_two_lt :
+    dual (span ℤ {(2⁻¹ : ℝ)} : Submodule ℤ ℝ) < span ℤ {(2⁻¹ : ℝ)} := by
+  rw [dual_span_inv_two]
+  refine lt_of_le_of_ne ?_ fun heq ↦ not_isIntegral_span_inv_two ?_
+  · rw [span_singleton_le_iff_mem, mem_span_singleton]
+    exact ⟨4, by norm_num⟩
+  · rw [isIntegral_iff_le_dual, dual_span_inv_two, heq]
 
 /-- An integral lattice is discrete. -/
 theorem IsIntegral.discreteTopology {L : Submodule ℤ E} (h : IsIntegral L) :

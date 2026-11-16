@@ -25,8 +25,9 @@ zero elsewhere, matching Mathlib's `hasSum_nat_jacobiTheta`.
 On the imaginary axis `re τ = 0`, `y ↦ θ(i y)` is strictly decreasing on `(0, ∞)`
 (`TauCeti.strictAntiOn_jacobiTheta_I_mul`), so `Θ_{c₂ ℤ}(τ) < Θ_{c₁ ℤ}(τ)` whenever
 `0 < |c₁| < |c₂|` (`ZLattice.thetaSeries_span_singleton_lt_of_abs_lt`) — even when neither lattice
-is contained in the other. Consequently `Θ_{(c ℤ)^∨}(i) = Θ_{c ℤ}(i)` and `Θ_{(c ℤ)^∨} = Θ_{c ℤ}`
-each hold if and only if `|c| = 1` (`ZLattice.thetaSeries_dual_span_singleton_eq_I_iff`,
+is contained in the other. Consequently, on the imaginary axis `Θ_{(c ℤ)^∨}(τ) = Θ_{c ℤ}(τ)`, and
+across `ℍ` `Θ_{(c ℤ)^∨} = Θ_{c ℤ}`, each hold if and only if `|c| = 1`
+(`ZLattice.thetaSeries_dual_span_singleton_eq_iff_of_re_eq_zero`,
 `ZLattice.thetaSeries_dual_span_singleton_eq_iff`).
 
 For the non-integral lattice `L = ½ ℤ ⊆ ℝ`, the dual is `L^∨ = 2 ℤ < L`
@@ -47,11 +48,10 @@ trivial (`ZLattice.subsingleton_discriminantGroup_span_inv_natCast`), and
   `ZLattice.hasSum_thetaSeries_span_one_qParam`: the period-two square-supported `q`-expansion of
   `Θ_{ℤ}`.
 * `ZLattice.thetaSeries_span_singleton_lt_of_abs_lt`,
-  `ZLattice.thetaSeries_dual_span_singleton_eq_I_iff`,
+  `ZLattice.thetaSeries_dual_span_singleton_eq_iff_of_re_eq_zero`,
   `ZLattice.thetaSeries_dual_span_singleton_eq_iff`: strict antitone comparison in `|c|` on the
   imaginary axis, and `Θ_{(c ℤ)^∨} = Θ_{c ℤ} ↔ |c| = 1`.
-* `ZLattice.dual_span_inv_two`, `ZLattice.dual_span_inv_two_lt`,
-  `ZLattice.thetaSeries_span_two_lt_thetaSeries_span_inv_two`,
+* `ZLattice.thetaSeries_span_two_lt_thetaSeries_span_inv_two`,
   `ZLattice.thetaSeries_span_two_ne_thetaSeries_span_inv_two_I`,
   `ZLattice.thetaSeries_dual_span_inv_two_ne_I`,
   `ZLattice.thetaSeries_dual_span_inv_natCast_ne_sum_thetaCosetClass_I`,
@@ -152,12 +152,11 @@ theorem thetaSeries_span_singleton_lt_of_abs_lt {c₁ c₂ : ℝ} (hc₁ : c₁ 
     (mul_pos (sq_pos_of_ne_zero hc₁) τ.im_pos) (mul_pos (sq_pos_of_ne_zero hc₂) τ.im_pos)
     (mul_lt_mul_of_pos_right (sq_lt_sq.mpr hc) τ.im_pos)
 
-/-- At `τ = i`, `Θ_{(c ℤ)^∨}(i) = Θ_{c ℤ}(i)` holds if and only if `|c| = 1` (equivalently, `c ℤ`
-is unimodular). -/
-@[simp]
-theorem thetaSeries_dual_span_singleton_eq_I_iff {c : ℝ} :
-    thetaSeries (dual (span ℤ {c} : Submodule ℤ ℝ)) UpperHalfPlane.I =
-      thetaSeries (span ℤ {c} : Submodule ℤ ℝ) UpperHalfPlane.I ↔ |c| = 1 := by
+/-- At any point `τ` on the imaginary axis (`re τ = 0`), `Θ_{(c ℤ)^∨}(τ) = Θ_{c ℤ}(τ)` holds if
+and only if `|c| = 1` (equivalently, `c ℤ` is unimodular). -/
+theorem thetaSeries_dual_span_singleton_eq_iff_of_re_eq_zero {c : ℝ} {τ : ℍ} (hτ : τ.re = 0) :
+    thetaSeries (dual (span ℤ {c} : Submodule ℤ ℝ)) τ =
+      thetaSeries (span ℤ {c} : Submodule ℤ ℝ) τ ↔ |c| = 1 := by
   refine ⟨fun heq ↦ ?_, fun h1 ↦ by rw [(isUnimodular_span_singleton_iff.mpr h1).dual_eq]⟩
   rcases eq_or_ne c 0 with rfl | hc
   · rw [thetaSeries_dual_span_singleton, span_singleton_eq_bot.mpr rfl, thetaSeries_apply,
@@ -168,36 +167,22 @@ theorem thetaSeries_dual_span_singleton_eq_I_iff {c : ℝ} :
       rw [abs_inv]
       exact hlt.trans ((one_lt_inv₀ (abs_pos.mpr hc)).mpr hlt)
     rw [dual_span_singleton hc] at heq
-    exact ((thetaSeries_span_singleton_lt_of_abs_lt hc hlt' UpperHalfPlane.I_re).ne heq).elim
+    exact ((thetaSeries_span_singleton_lt_of_abs_lt hc hlt' hτ).ne heq).elim
   · exact h1
   · have hgt' : |c⁻¹| < |c| := by
       rw [abs_inv]
       exact (inv_lt_one_of_one_lt₀ hgt).trans hgt
     rw [dual_span_singleton hc] at heq
-    exact ((thetaSeries_span_singleton_lt_of_abs_lt (inv_ne_zero hc) hgt'
-      UpperHalfPlane.I_re).ne heq.symm).elim
+    exact ((thetaSeries_span_singleton_lt_of_abs_lt (inv_ne_zero hc) hgt' hτ).ne heq.symm).elim
 
 /-- Across `ℍ`, `Θ_{(c ℤ)^∨} = Θ_{c ℤ}` holds if and only if `|c| = 1`. -/
 @[simp]
 theorem thetaSeries_dual_span_singleton_eq_iff {c : ℝ} :
     thetaSeries (dual (span ℤ {c} : Submodule ℤ ℝ)) =
       thetaSeries (span ℤ {c} : Submodule ℤ ℝ) ↔ |c| = 1 :=
-  ⟨fun h ↦ thetaSeries_dual_span_singleton_eq_I_iff.mp (congrFun h _),
+  ⟨fun h ↦ (thetaSeries_dual_span_singleton_eq_iff_of_re_eq_zero UpperHalfPlane.I_re).mp
+      (congrFun h _),
     fun h1 ↦ by rw [(isUnimodular_span_singleton_iff.mpr h1).dual_eq]⟩
-
-/-- The dual of `½ ℤ ⊆ ℝ` is `2 ℤ ⊆ ℝ`. -/
-theorem dual_span_inv_two :
-    dual (span ℤ {(2⁻¹ : ℝ)} : Submodule ℤ ℝ) = span ℤ {2} := by
-  simpa using dual_span_singleton (inv_ne_zero (two_ne_zero' ℝ))
-
-/-- For `L = ½ ℤ ⊆ ℝ`, the dual lattice `L^∨ = 2 ℤ` is a strict sublattice of `L`. -/
-theorem dual_span_inv_two_lt :
-    dual (span ℤ {(2⁻¹ : ℝ)} : Submodule ℤ ℝ) < span ℤ {(2⁻¹ : ℝ)} := by
-  rw [dual_span_inv_two]
-  refine lt_of_le_of_ne ?_ fun heq ↦ not_isIntegral_span_inv_two ?_
-  · rw [span_singleton_le_iff_mem, mem_span_singleton]
-    exact ⟨4, by norm_num⟩
-  · rw [isIntegral_iff_le_dual, dual_span_inv_two, heq]
 
 /-- On the imaginary axis, `Θ_{2ℤ}(τ) < Θ_{½ℤ}(τ)` as real numbers. -/
 theorem thetaSeries_span_two_lt_thetaSeries_span_inv_two {τ : ℍ} (hτ : τ.re = 0) :
@@ -233,7 +218,7 @@ theorem thetaSeries_dual_span_inv_natCast_ne_sum_thetaCosetClass_I {n : ℕ} (hn
     exact (not_finite (DiscriminantGroup (span ℤ {(((0 : ℕ) : ℝ)⁻¹)} : Submodule ℤ ℝ))).elim
   · have := subsingleton_discriminantGroup_span_inv_natCast hn0
     rw [Fintype.sum_subsingleton _ 0, thetaCosetClass_zero, Ne,
-      thetaSeries_dual_span_singleton_eq_I_iff]
+      thetaSeries_dual_span_singleton_eq_iff_of_re_eq_zero UpperHalfPlane.I_re]
     have hn1 : (1 : ℝ) < n := by exact_mod_cast (by omega : 1 < n)
     rw [abs_inv, abs_of_pos (zero_lt_one.trans hn1)]
     exact (inv_lt_one_of_one_lt₀ hn1).ne

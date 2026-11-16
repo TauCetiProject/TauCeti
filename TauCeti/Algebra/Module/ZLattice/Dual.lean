@@ -59,7 +59,8 @@ defined from it.
 * `ZLattice.dual_span_basis`: the dual of the `ℤ`-span of an `ℝ`-basis is the `ℤ`-span of its
   dual basis.
 * `ZLattice.dual_span_orthonormalBasis`: the `ℤ`-span of an orthonormal basis is self-dual.
-* `ZLattice.dual_span_singleton`: the dual of `c ℤ ⊆ ℝ` (`c ≠ 0`) is `c⁻¹ ℤ`.
+* `ZLattice.dual_span_singleton`, `ZLattice.dual_span_inv_two`: the dual of `c ℤ ⊆ ℝ` (`c ≠ 0`)
+  is `c⁻¹ ℤ`, so the dual of `½ ℤ` is `2 ℤ`.
 * `ZLattice.inf_dual_span_singleton_eq_bot_of_irrational_sq`: when `c²` is irrational, `c ℤ ⊆ ℝ`
   meets its dual `c⁻¹ ℤ` only at `0`.
 * `ZLattice.dual_dual`: the dual of the dual of a full lattice is the lattice itself.
@@ -181,6 +182,11 @@ theorem dual_span_singleton {c : ℝ} (hc : c ≠ 0) :
     calc (n : ℝ) * c * ((m : ℝ) * c⁻¹)
         = (m : ℝ) * (n : ℝ) * (c * c⁻¹) := by ring
       _ = (m : ℝ) * (n : ℝ) := by rw [mul_inv_cancel₀ hc, mul_one]
+
+/-- The dual of `½ ℤ ⊆ ℝ` is `2 ℤ ⊆ ℝ`. -/
+theorem dual_span_inv_two :
+    dual (span ℤ {(2⁻¹ : ℝ)} : Submodule ℤ ℝ) = span ℤ {2} := by
+  simpa using dual_span_singleton (inv_ne_zero (two_ne_zero' ℝ))
 
 /-- When `c²` is irrational, the rank-one lattice `c ℤ ⊆ ℝ` meets its dual `c⁻¹ ℤ` only at `0`. -/
 theorem inf_dual_span_singleton_eq_bot_of_irrational_sq {c : ℝ} (hc : Irrational (c ^ 2)) :

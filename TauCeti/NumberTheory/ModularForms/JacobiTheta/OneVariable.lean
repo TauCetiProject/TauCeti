@@ -8,6 +8,7 @@ module
 public import Mathlib.Analysis.Complex.Order
 public import Mathlib.NumberTheory.ModularForms.JacobiTheta.OneVariable
 import TauCeti.Analysis.SpecialFunctions.Gaussian.PoissonSummation
+import TauCeti.Analysis.SpecialFunctions.Gaussian.Summable
 import TauCeti.Topology.Algebra.InfiniteSum.NatInt
 
 /-!
@@ -107,14 +108,6 @@ theorem jacobiTheta_I_mul {y : ℝ} :
   rw [h1, h2, h3]
   simp [div_eq_inv_mul]
 
-/-- For `y > 0`, the real Gaussian series `∑_n e^{-π n² y}` converges: its terms are the norms of
-the terms of `θ(iy)`. -/
-private theorem summable_exp_neg_pi_mul_sq_mul {y : ℝ} (hy : 0 < y) :
-    Summable fun n : ℤ ↦ Real.exp (-π * (n : ℝ) ^ 2 * y) := by
-  refine ((summable_jacobiTheta₂_term_iff 0 (I * y)).2 (by simpa using hy)).norm.congr fun n ↦ ?_
-  rw [norm_jacobiTheta₂_term]
-  simp
-
 /-- On the imaginary axis, `θ(iy) = ∑_n e^{-π n² y}` as a real series; for `y ≤ 0` neither series
 is summable and both sides vanish. -/
 theorem jacobiTheta_I_mul_eq_tsum (y : ℝ) :
@@ -131,7 +124,8 @@ theorem jacobiTheta_I_mul_eq_tsum (y : ℝ) :
 /-- For `y > 0`, `θ(iy)` is a real number strictly greater than `1`: the `n = 0` term is `1` and
 every nonzero integer contributes a positive exponential. -/
 theorem one_lt_jacobiTheta_I_mul {y : ℝ} (hy : 0 < y) : 1 < jacobiTheta (I * y) := by
-  have hs := summable_exp_neg_pi_mul_sq_mul hy
+  have hs : Summable fun n : ℤ ↦ Real.exp (-π * (n : ℝ) ^ 2 * y) :=
+    (summable_exp_neg_mul_sq (mul_pos Real.pi_pos hy)).congr fun _ ↦ congrArg Real.exp (by ring)
   rw [jacobiTheta_I_mul_eq_tsum, ← ofReal_one, real_lt_real, hs.tsum_eq_add_tsum_ite 0]
   simp only [Int.cast_zero, ne_eq, OfNat.ofNat_ne_zero, not_false_eq_true, zero_pow, mul_zero,
     zero_mul, Real.exp_zero, lt_add_iff_pos_right]
@@ -147,11 +141,12 @@ theorem jacobiTheta_I_mul_pos {y : ℝ} (hy : 0 < y) : 0 < jacobiTheta (I * y) :
 theorem strictAntiOn_jacobiTheta_I_mul :
     StrictAntiOn (fun y : ℝ ↦ jacobiTheta (I * y)) (Set.Ioi 0) := by
   intro y₁ hy₁ y₂ hy₂ hy
+  have hs {y : ℝ} (hy : 0 < y) : Summable fun n : ℤ ↦ Real.exp (-π * (n : ℝ) ^ 2 * y) :=
+    (summable_exp_neg_mul_sq (mul_pos Real.pi_pos hy)).congr fun _ ↦ congrArg Real.exp (by ring)
   dsimp only
   rw [jacobiTheta_I_mul_eq_tsum, jacobiTheta_I_mul_eq_tsum, real_lt_real]
   refine Summable.tsum_lt_tsum (i := 1) (fun n ↦ Real.exp_le_exp.mpr ?_)
-    (Real.exp_lt_exp.mpr ?_) (summable_exp_neg_pi_mul_sq_mul hy₂)
-    (summable_exp_neg_pi_mul_sq_mul hy₁)
+    (Real.exp_lt_exp.mpr ?_) (hs hy₂) (hs hy₁)
   · have : 0 ≤ π * (n : ℝ) ^ 2 := by positivity
     nlinarith
   · simpa using mul_lt_mul_of_neg_left hy (neg_lt_zero.mpr Real.pi_pos)

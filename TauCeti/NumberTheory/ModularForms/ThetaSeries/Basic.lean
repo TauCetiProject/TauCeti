@@ -52,8 +52,9 @@ the series `θ_{γ+y+M}` over those classes, and in particular `Θ_L` as the sum
 
 * `Complex.norm_exp_pi_mul_I_mul_ofReal_mul`: `‖exp (π i t z)‖ = exp (-π t im z)` for real `t`,
   so the term of index `v` has norm `exp (-π ‖γ + v‖² im τ)`.
-* `ZLattice.thetaCoset_eq_of_sub_mem`, `ZLattice.thetaCoset_neg`: `θ_{γ+L}` depends only on
-  `γ` modulo `L`, and `θ_{-γ+L} = θ_{γ+L}`.
+* `ZLattice.thetaCoset_eq_of_sub_mem`, `ZLattice.thetaCoset_of_mem`,
+  `ZLattice.thetaCoset_out_zero`, `ZLattice.thetaCoset_neg`: `θ_{γ+L}` depends only on `γ` modulo
+  `L` (so `θ_{Quotient.out 0 + M} = Θ_M`), and `θ_{-γ+L} = θ_{γ+L}`.
 * `ZLattice.summable_norm_thetaCoset`, `ZLattice.summable_thetaCoset`: the series converge
   absolutely at every `τ : ℍ`.
 * `ZLattice.hasSum_thetaCoset_add_out`, `ZLattice.hasSum_thetaCoset_out`: for `M ≤ L`, `θ_{γ+L}`
@@ -159,6 +160,16 @@ theorem thetaCoset_eq_of_sub_mem {γ δ : E} (h : γ - δ ∈ L) : thetaCoset L 
 /-- For `γ ∈ L` the translate `γ + L` is `L` itself, with the same theta series. -/
 theorem thetaCoset_of_mem {γ : E} (hγ : γ ∈ L) : thetaCoset L γ = thetaSeries L := by
   rw [← thetaCoset_zero, thetaCoset_eq_of_sub_mem L (δ := 0) (by simpa using hγ)]
+
+/-- The chosen representative `Quotient.out 0` of the zero coset in `L ⧸ M` lies in `M`, so its
+coset theta series is `Θ_M`. -/
+@[simp]
+theorem thetaCoset_out_zero {M : Submodule ℤ E} :
+    thetaCoset M ((Quotient.out (0 : L ⧸ M.submoduleOf L) : L) : E) = thetaSeries M := by
+  refine thetaCoset_of_mem M ?_
+  have := (Submodule.Quotient.mk_eq_zero _).mp
+    (Submodule.Quotient.mk_out (0 : L ⧸ M.submoduleOf L))
+  rwa [Submodule.submoduleOf, Submodule.mem_comap, Submodule.subtype_apply] at this
 
 /-- The theta series of the translates `-γ + L` and `γ + L` agree: the series is reindexed by
 `v ↦ -v`. -/
