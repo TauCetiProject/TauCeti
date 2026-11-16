@@ -335,18 +335,21 @@ theorem SmoothTwoForm.liouvilleMeasure_const_continuousDet {b : Basis (Fin 2) �
     have hb : ⇑b' = fun r ↦ b (finProdFinEquiv.symm (Fin.cast (Nat.mul_comm 2 1) r)).2 := by
       funext r
       rw [Module.Basis.reindex_apply]
-      fin_cases r <;> rfl
+      fin_cases r <;> simp [finProdFinEquiv, Fin.modNat]
     have h := ContinuousAlternatingMap.wedgePow_apply_finProdFinEquiv (α.1 x) (m := 1)
       (fun p ↦ b p.2) (fun _ _ ↦ ?_) (fun i j ↦ ?_)
     · rw [SmoothTwoForm.volumeForm_apply]
       refine (ContinuousAlternatingMap.smul_apply _ _ _).trans ?_
       rw [hb, h, Nat.factorial_one, Nat.cast_one, inv_one, one_smul]
-    · exact (α.1 x).map_eq_zero_of_eq ![b 0, b 0] (i := 0) (j := 1) rfl (by decide)
+    · -- The goal's vector reduces to `![b 0, b 0]` by beta and `Prod.snd` reduction, and its
+      -- entries `0` and `1` both unfold to `b 0`, so they agree by `rfl`.
+      exact (α.1 x).map_eq_zero_of_eq ![b 0, b 0] (i := 0) (j := 1) rfl (by decide)
     · fin_cases i
       fin_cases j
       rw [SmoothForm.const_apply, Module.Basis.continuousDet_apply]
       convert b.det_self using 2
-      · funext k
+      · -- `fromTangentSpace x` is the identity of `V`, seen from its tangent-space synonym.
+        funext k
         fin_cases k <;> rfl
       · simp
   rw [SmoothTwoForm.liouvilleMeasure_def, RoughForm.measure_eq_smul_addHaar (c := 1) b' hval,
