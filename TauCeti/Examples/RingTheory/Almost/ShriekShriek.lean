@@ -110,6 +110,6 @@ example (R : Type*) [CommRing R] [Algebra V R] :
   · rw [← ShriekShriek.mk_inl, ShriekShriek.mk_eq_zero_iff, mem_shriekShriekIdeal_iff] at hv
     obtain ⟨t, ht⟩ := hv
     rw [Subsingleton.elim t 0, map_zero] at ht
-    exact (Unitization.inl_injective (A := (zero V).Shriek R) ht.symm).symm ▸ rfl
+    exact (Unitization.inl_injective ht).symm
   · obtain ⟨v, z, rfl⟩ := ShriekShriek.exists_eq_algebraMap_add_inr (zero V) R x
     exact ⟨v, by rw [hz, add_zero]⟩

@@ -556,33 +556,25 @@ variable {R : Type v} [CommRing R] [_root_.Algebra V R] {R' : Type w} [CommRing 
 
 open Shriek
 
-/-- The map `V ⊕ R_! → V ⊕ R'_! → R'_!!` induced by `f : R → R'` kills the ideal of relations
-of `R_!!`. -/
-private theorem mk_map_eq_zero (f : R →ₐ[V] R') (x : Unitization V (S.Shriek R))
-    (hx : x ∈ S.shriekShriekIdeal R) :
-    ((ShriekShriek.mk S R').comp (Unitization.map (Shriek.map S f))) x = 0 := by
-  obtain ⟨t, rfl⟩ := (S.mem_shriekShriekIdeal_iff R).mp hx
-  have : Unitization.map (Shriek.map S f) (S.shriekShriekRel R t) = S.shriekShriekRel R' t := by
-    ext <;> simp [Unitization.fst_map, Unitization.snd_map]
-  rw [AlgHom.comp_apply, this, ShriekShriek.mk_eq_zero_iff]
-  exact S.shriekShriekRel_mem_shriekShriekIdeal R' t
-
 /-- A `V`-algebra map `f : R → R'` induces the `V`-algebra map `R_!! → R'_!!`,
 `(v, t ⊗ r) ↦ (v, t ⊗ f r)`. -/
 noncomputable def shriekShriekMap (f : R →ₐ[V] R') : S.ShriekShriek R →ₐ[V] S.ShriekShriek R' :=
-  Ideal.Quotient.liftₐ (S.shriekShriekIdeal R)
-    ((ShriekShriek.mk S R').comp (Unitization.map (Shriek.map S f))) (S.mk_map_eq_zero f)
+  ShriekShriek.lift ((ShriekShriek.inr S R').comp (Shriek.map S f)) fun t ↦ by
+    rw [NonUnitalAlgHom.comp_apply, Shriek.map_tmul, map_one, ShriekShriek.inr_tmul_one]
 
 @[simp]
 theorem shriekShriekMap_mk (f : R →ₐ[V] R') (x : Unitization V (S.Shriek R)) :
     S.shriekShriekMap f (ShriekShriek.mk S R x) =
-      ShriekShriek.mk S R' (Unitization.map (Shriek.map S f) x) :=
-  DFunLike.congr_fun (Ideal.Quotient.liftₐ_comp _ _ (S.mk_map_eq_zero f)) x
+      ShriekShriek.mk S R' (Unitization.map (Shriek.map S f) x) := by
+  rw [shriekShriekMap, ShriekShriek.lift_mk, NonUnitalAlgHom.comp_apply, ShriekShriek.inr_apply,
+    ← ShriekShriek.mk_inl, ← map_add]
+  congr 1
+  ext <;> simp
 
 @[simp]
 theorem shriekShriekMap_inr (f : R →ₐ[V] R') (z : S.Shriek R) :
     S.shriekShriekMap f (ShriekShriek.inr S R z) = ShriekShriek.inr S R' (Shriek.map S f z) := by
-  rw [ShriekShriek.inr_apply, ShriekShriek.inr_apply, shriekShriekMap_mk, Unitization.map_inr]
+  rw [shriekShriekMap, ShriekShriek.lift_inr, NonUnitalAlgHom.comp_apply]
 
 @[simp]
 theorem shriekShriekMap_id : S.shriekShriekMap (AlgHom.id V R) = AlgHom.id V _ := by
