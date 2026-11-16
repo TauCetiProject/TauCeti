@@ -9,6 +9,7 @@ public import TauCeti.Analysis.Sobolev.W1p.Interval.Representative
 import TauCeti.Analysis.Convex.SchauderFixedPoint
 import TauCeti.Analysis.PDE.DirichletProblem.Interval
 import TauCeti.MeasureTheory.Function.StronglyMeasurable.Caratheodory
+import TauCeti.Topology.UniformSpace.LocallyUniformConvergence
 
 /-!
 # Quasilinear divergence-form equations on an interval
@@ -179,22 +180,19 @@ theorem exists_intervalTraceL_eq_and_forall_setIntegral_eq (hx : x₀ < x₁) (h
 
 /-! ### Families of problems -/
 
-/-- If `Aₙ t → A t` locally uniformly for almost every `t`, with `Aₙ t` continuous, and `vₖ → v` in
-`C([x₀, x₁])`, then along every sequence of indices `ψ k → ∞` the frozen coefficients
-`A_{ψ k}(·, vₖ)` converge almost everywhere on `(x₀, x₁)` to `A(·, v)`. -/
+/-- If `Aₖ t → A t` locally uniformly for almost every `t`, with `Aₖ t` continuous, and `vₖ → v` in
+`C([x₀, x₁])`, then the frozen coefficients `Aₖ(·, vₖ)` converge almost everywhere on `(x₀, x₁)`
+to `A(·, v)`. -/
 private theorem ae_tendsto_apply_projIcc (hx : x₀ ≤ x₁) {An : ℕ → ℝ → ℝ → ℝ}
     (hAc : ∀ n, ∀ᵐ t ∂volume.restrict (Ioo x₀ x₁), Continuous (An n t))
     (hAlim : ∀ᵐ t ∂volume.restrict (Ioo x₀ x₁),
       TendstoLocallyUniformly (fun n => An n t) (A t) atTop)
-    {ψ : ℕ → ℕ} (hψ : Tendsto ψ atTop atTop) {vk : ℕ → C(Icc x₀ x₁, ℝ)} {v : C(Icc x₀ x₁, ℝ)}
-    (hv : Tendsto vk atTop (𝓝 v)) :
-    ∀ᵐ t ∂volume.restrict (Ioo x₀ x₁), Tendsto (fun k => An (ψ k) t (vk k (projIcc x₀ x₁ hx t)))
+    {vk : ℕ → C(Icc x₀ x₁, ℝ)} {v : C(Icc x₀ x₁, ℝ)} (hv : Tendsto vk atTop (𝓝 v)) :
+    ∀ᵐ t ∂volume.restrict (Ioo x₀ x₁), Tendsto (fun k => An k t (vk k (projIcc x₀ x₁ hx t)))
       atTop (𝓝 (A t (v (projIcc x₀ x₁ hx t)))) := by
   filter_upwards [hAlim, ae_all_iff.2 hAc] with t h1 h2
-  exact tendsto_comp_of_locally_uniform_limit (F := fun k => An (ψ k) t)
-    (h1.continuous (Frequently.of_forall h2)).continuousAt
+  exact h1.tendsto_comp (h1.continuous (Frequently.of_forall h2)).continuousAt
     (((continuous_eval_const _).tendsto v).comp hv)
-    fun u hu => (h1 u hu _).imp fun _ h => ⟨h.1, hψ.eventually h.2⟩
 
 /-- **Stability of the quasilinear problem under perturbation of the data.** Let `x₀ < x₁` and
 `λ > 0`, and let `Aₙ` be Carathéodory functions on `(x₀, x₁)` with `λ ≤ Aₙ ≤ M` that converge, for
@@ -263,7 +261,8 @@ theorem exists_intervalTraceL_eq_and_forall_setIntegral_eq_and_tendsto_subseq (h
   set a : ℝ → ℝ := fun t => A t (w' (projIcc x₀ x₁ hx.le t))
   have halim : ∀ᵐ t ∂volume.restrict (Ioo x₀ x₁),
       Tendsto (fun k => an (ψ k) t) atTop (𝓝 (a t)) :=
-    ae_tendsto_apply_projIcc hx.le hAc hAlim hψ.tendsto_atTop hūψ
+    ae_tendsto_apply_projIcc hx.le (fun k => hAc (ψ k))
+      (hAlim.mono fun _ ht => ht.comp_tendsto hψ.tendsto_atTop) hūψ
   have ha : AEStronglyMeasurable a (volume.restrict (Ioo x₀ x₁)) :=
     aestronglyMeasurable_of_tendsto_ae atTop (fun k => ham (ψ k)) halim
   have haM : ∀ᵐ t ∂volume.restrict (Ioo x₀ x₁), lam ≤ a t ∧ a t ≤ M := by
@@ -305,8 +304,7 @@ theorem isCompact_image_intervalRepresentativeL_setOf_forall_setIntegral_eq (hx 
   -- The constant family of problems converges to the problem itself.
   have hAlim : ∀ᵐ t ∂volume.restrict (Ioo x₀ x₁),
       TendstoLocallyUniformly (fun _ : ℕ => A t) (A t) atTop :=
-    ae_of_all _ fun t u hu _ => ⟨univ, univ_mem, Eventually.of_forall fun _ _ _ =>
-      refl_mem_uniformity hu⟩
+    ae_of_all _ fun t => tendstoLocallyUniformly_const (A t)
   obtain ⟨u, hu, ψ, hψ, hlim⟩ :=
     exists_intervalTraceL_eq_and_forall_setIntegral_eq_and_tendsto_subseq hx hlam (fun _ => hAm)
       (fun _ => hAc) (fun _ => hA) hAlim (fun _ => hf) hf (by simp)
@@ -353,7 +351,7 @@ theorem eventually_image_intervalRepresentativeL_setOf_forall_setIntegral_eq_sub
   obtain ⟨u, hu, ψ', -, hlim⟩ :=
     exists_intervalTraceL_eq_and_forall_setIntegral_eq_and_tendsto_subseq hx hlam
       (fun k => hAm (ψ k)) (fun k => hAc (ψ k)) (fun k => hA (ψ k))
-      (hAlim.mono fun t ht u hu y => (ht u hu y).imp fun _ h => ⟨h.1, hψt.eventually h.2⟩)
+      (hAlim.mono fun _ ht => ht.comp_tendsto hψt)
       (fun k => hfn (ψ k)) hf (hflim.comp hψt) (fun k => hFn (ψ k)) hF (hFlim.comp hψt)
       (hglim.comp hψt) (un := u') hu'
   -- Their limit lies in `U`, which is open, so the `ūₖ` eventually do too.
