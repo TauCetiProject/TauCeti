@@ -171,7 +171,7 @@ private theorem exists_pos_forall_exists_diffeomorph_eqOn :
       ‖fderiv ℝ (fun y ↦ y + ρ y • (h y - y)) x - ContinuousLinearMap.id ℝ E‖ ≤
         (2 : ℝ≥0)⁻¹ := by
     by_cases hx : x ∈ closedBall c (2 * r)
-    · have hbound := norm_fderiv_cutoff_perturbation_sub_id_le
+    · have hbound := DifferentiableAt.norm_fderiv_cutoff_perturbation_sub_id_le
         (hρd x).differentiableAt ((hcd x hx).differentiableAt hn')
       have hρx : ‖ρ x‖ ≤ 1 := by
         rw [Real.norm_of_nonneg (hρ01 x).1]

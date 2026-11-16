@@ -22,7 +22,7 @@ an arbitrary filter of indices and any regularity order `n ≥ 1`.
 
 * `ContDiff.eventually_exists_cutoff_diffeomorph_of_contDiffAt`: a fixed cutoff extends
   sufficiently close local maps to diffeomorphisms, with exact inner and outer agreement.
-* `TauCeti.eventually_exists_local_transition_correction`: correct convergent transition maps
+* `IsOpen.eventually_exists_local_transition_correction`: correct convergent transition maps
   and preserve their overlap domain.
 
 ## References
@@ -73,7 +73,7 @@ theorem _root_.ContDiff.eventually_exists_cutoff_diffeomorph_of_contDiffAt
       have h₀ : ‖f k x - x‖ < ε := by simpa only [id_eq, dist_eq_norm, norm_sub_rev] using hk₀ x hx
       have h₁ : ‖fderiv ℝ (f k) x - ContinuousLinearMap.id ℝ E‖ < ε := by
         simpa only [dist_eq_norm, norm_sub_rev] using hk₁ x hx
-      have hbound := norm_fderiv_cutoff_perturbation_sub_id_le_of_bounds
+      have hbound := DifferentiableAt.norm_fderiv_cutoff_perturbation_sub_id_le_of_bounds
         (hχ.differentiable (zero_lt_one.trans_le hn).ne' x) hfx
         ((hB₀ x hx).trans (le_max_left B₀ 0))
         ((hB₁ x hx).trans (le_max_left B₁ 0)) h₀.le h₁.le
@@ -97,7 +97,7 @@ theorem _root_.ContDiff.eventually_exists_cutoff_diffeomorph_of_contDiffAt
 and `g : V → U` is a `C^n` right inverse of `f`, a cutoff supported in `V` eventually gives a
 `C^n` diffeomorphism `e = id + χ • (fseq k ∘ g - id)`. It agrees with `fseq k ∘ g` where `χ = 1`,
 fixes the complement of `tsupport χ`, and maps `V` onto itself. -/
-theorem eventually_exists_local_transition_correction
+theorem _root_.IsOpen.eventually_exists_local_transition_correction
     {ι : Type*} {l : Filter ι} {U V : Set E} (hU : IsOpen U) (hV : IsOpen V)
     {f g : E → E} (hf : DifferentiableOn ℝ f U) (hg : ContDiffOn ℝ n g V)
     (hgU : MapsTo g V U) (hfg : EqOn (f ∘ g) id V)

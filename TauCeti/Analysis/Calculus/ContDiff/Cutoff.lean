@@ -79,7 +79,7 @@ theorem fderiv_cutoff_perturbation_eq_id_of_notMem_tsupport
 
 /-- Product-rule bound for the derivative error of a cutoff perturbation, in terms of the value and
 derivative errors of the local map. -/
-theorem norm_fderiv_cutoff_perturbation_sub_id_le
+theorem _root_.DifferentiableAt.norm_fderiv_cutoff_perturbation_sub_id_le
     {χ : E → ℝ} {f : E → E} {x : E}
     (hχ : DifferentiableAt ℝ χ x) (hf : DifferentiableAt ℝ f x) :
     ‖fderiv ℝ (fun y ↦ y + χ y • (f y - y)) x - ContinuousLinearMap.id ℝ E‖ ≤
@@ -96,7 +96,7 @@ theorem norm_fderiv_cutoff_perturbation_sub_id_le
   exact (norm_add_le _ _).trans_eq (by rw [norm_smul, ContinuousLinearMap.norm_smulRight_apply])
 
 /-- Cutoff derivative error from bounds for the cutoff and the two local errors. -/
-theorem norm_fderiv_cutoff_perturbation_sub_id_le_of_bounds
+theorem _root_.DifferentiableAt.norm_fderiv_cutoff_perturbation_sub_id_le_of_bounds
     {χ : E → ℝ} {f : E → E} {x : E} {B₀ B₁ ε : ℝ}
     (hχ : DifferentiableAt ℝ χ x) (hf : DifferentiableAt ℝ f x)
     (h₀ : ‖χ x‖ ≤ B₀) (h₁ : ‖fderiv ℝ χ x‖ ≤ B₁)
@@ -106,7 +106,7 @@ theorem norm_fderiv_cutoff_perturbation_sub_id_le_of_bounds
   calc
     _ ≤ ‖χ x‖ * ‖fderiv ℝ f x - ContinuousLinearMap.id ℝ E‖ +
         ‖fderiv ℝ χ x‖ * ‖f x - x‖ :=
-      norm_fderiv_cutoff_perturbation_sub_id_le hχ hf
+      hχ.norm_fderiv_cutoff_perturbation_sub_id_le hf
     _ ≤ B₀ * ε + B₁ * ε := add_le_add
       (mul_le_mul h₀ hf₁ (norm_nonneg _) ((norm_nonneg _).trans h₀))
       (mul_le_mul h₁ hf₀ (norm_nonneg _) ((norm_nonneg _).trans h₁))
