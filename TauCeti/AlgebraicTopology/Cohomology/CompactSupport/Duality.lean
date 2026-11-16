@@ -6,10 +6,12 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.AlgebraicTopology.Cohomology.Cap.Relative
-public import TauCeti.AlgebraicTopology.Cohomology.CompactSupport.Extension
+public import TauCeti.AlgebraicTopology.Cohomology.CompactSupport.DirectedUnion
 public import TauCeti.AlgebraicTopology.Cohomology.Point
 public import TauCeti.AlgebraicTopology.Singular.LocalHomology.FundamentalClass
 public import TauCeti.CategoryTheory.Monoidal.Preadditive
+public import Mathlib.Geometry.Manifold.HasGroupoid
+import TauCeti.AlgebraicTopology.Singular.DirectedUnion
 
 /-!
 # The duality map of an oriented manifold
@@ -52,6 +54,14 @@ compact `K` along which capping with `μ_K` is bijective
 empty manifold, where both groups vanish
 (`TauCeti.HomologicalOrientation.bijective_dualityMap_of_isEmpty`).
 
+Bijectivity of the duality map passes to increasing unions of open sets
+(`TauCeti.HomologicalOrientation.bijective_dualityMap_of_monotone`). If `M` is the union of an
+increasing family of open sets `U i`, every compactly supported class of `M` is extended from some
+`U i`, and every homology class of `M` is pushed forward from some `U i`, by compactness of the
+supports; a homology class of `U i` that vanishes in `M` already vanishes in some larger `U j`.
+With the naturality of the duality maps along the inclusions, bijectivity of each `D_{U i}` thus
+gives bijectivity of `D_M`, and separately so for injectivity and surjectivity.
+
 ## Main definitions
 
 * `TauCeti.HomologicalOrientation.capFundamentalClassOn`: capping with the fundamental class along
@@ -70,6 +80,11 @@ empty manifold, where both groups vanish
   embeddings.
 * `TauCeti.HomologicalOrientation.bijective_dualityMap_of_cofinal`: the duality map is bijective
   if capping is bijective along cofinally many compact sets.
+* `TauCeti.HomologicalOrientation.injective_dualityMap_of_monotone`,
+  `TauCeti.HomologicalOrientation.surjective_dualityMap_of_monotone`,
+  `TauCeti.HomologicalOrientation.bijective_dualityMap_of_monotone`: injectivity, surjectivity and
+  bijectivity of the duality map pass from the members of an increasing open cover to the
+  manifold.
 
 ## Implementation notes
 
@@ -89,8 +104,9 @@ which Mathlib's `MonoidalLinear ℤ` instance does not apply. The declaration
 ## References
 
 * A. Hatcher, [*Algebraic Topology*](https://pi.math.cornell.edu/~hatcher/AT/AT.pdf),
-  Section 3.3, the duality map `D_M : Hᵖ_c(M; R) ⟶ H_{n-p}(M; R)` defined before Theorem 3.35, and
-  its naturality for inclusions of open sets used in Lemma 3.36.
+  Section 3.3, the duality map `D_M : Hᵖ_c(M; R) ⟶ H_{n-p}(M; R)` defined before Theorem 3.35, its
+  naturality for inclusions of open sets used in Lemma 3.36, and the step of the proof of
+  Lemma 3.36 passing to increasing unions of open sets.
 -/
 
 public section
@@ -357,6 +373,98 @@ theorem bijective_capFundamentalClassOn_comap_iff
     (o.capFundamentalClassOn_comap_comp_singularHomologyMap hn L hj h K) α
 
 end OpenEmbedding
+
+section DirectedUnion
+
+variable {p q : ℕ} (h : p + q = n)
+
+/-- Naturality of the duality maps of two open sets `V ≤ W` of `M`, both oriented by the
+pulled-back orientation, along the inclusion of `V` into `W`. -/
+private lemma compactSupportCohomologyExtend_dualityMap_of_le {V W : Opens M} (hVW : V ≤ W) :
+    TopCat.compactSupportCohomologyExtend
+        (f := TopCat.ofHom ⟨fun x : V ↦ (⟨x, hVW x.2⟩ : W), continuous_subtype_val.subtype_mk _⟩)
+        (Opens.isOpenEmbedding_of_le hVW) p ≫ (o.comap W.isOpenEmbedding').dualityMap hn L p q h =
+      (o.comap V.isOpenEmbedding').dualityMap hn L p q h ≫
+        ((AlgebraicTopology.singularHomologyFunctor (ModuleCat.{0} ℤ) q).obj L).map
+          (TopCat.ofHom ⟨fun x : V ↦ (⟨x, hVW x.2⟩ : W), continuous_subtype_val.subtype_mk _⟩) := by
+  -- `Opens.isOpenEmbedding_of_le` is stated for `Set.inclusion` between the coerced sets, which is
+  -- the map `x ↦ ⟨x, hVW x.2⟩` between the open subspaces by definition.
+  have hcomap : (o.comap W.isOpenEmbedding').comap (j := fun x : V ↦ (⟨x, hVW x.2⟩ : W))
+      (Opens.isOpenEmbedding_of_le hVW) = o.comap V.isOpenEmbedding' := by
+    rw [comap_comap]
+  rw [← hcomap]
+  exact (o.comap W.isOpenEmbedding').compactSupportCohomologyExtend_dualityMap hn L
+    (j := ⟨fun x : V ↦ (⟨x, hVW x.2⟩ : W), continuous_subtype_val.subtype_mk _⟩)
+    (Opens.isOpenEmbedding_of_le hVW) p q h
+
+variable {ι : Type} [Preorder ι] [IsDirected ι (· ≤ ·)] {U : ι → Opens M} (hU : Monotone U)
+  (hcover : ⨆ i, U i = ⊤)
+
+include hU hcover
+
+/-- **Injectivity of the duality map is local for directed open covers.** If an oriented manifold
+`M` is the union of an increasing family of open sets `U i`, and the duality map of each `U i`,
+oriented by the pulled-back orientation, is injective, then so is the duality map of `M`. -/
+theorem injective_dualityMap_of_monotone
+    (H : ∀ i, Function.Injective ((o.comap (U i).isOpenEmbedding').dualityMap hn L p q h)) :
+    Function.Injective (o.dualityMap hn L p q h) := by
+  refine (injective_iff_map_eq_zero _).2 fun x hx ↦ ?_
+  obtain _ | _ := isEmpty_or_nonempty ι
+  · have : IsEmpty M := ⟨fun y ↦ by simpa using hcover.ge (Set.mem_univ y)⟩
+    exact (o.bijective_dualityMap_of_isEmpty hn L h).1 (hx.trans (map_zero _).symm)
+  -- `x` is extended from some `U i`, where its dual dies in a larger `U j`. The extension is
+  -- stated along `Opens.inclusion'`, whose source `(Opens.toTopCat _).obj (U i)` is
+  -- `TopCat.of (U i)` by definition; restating it along `Subtype.val` matches the naturality of
+  -- the duality map.
+  obtain ⟨i, z, rfl⟩ : ∃ i, ∃ z : (TopCat.of (U i)).compactSupportCohomology
+      (ModuleCat.of ℤ (ULift.{0} ℤ)) ℤ L p, TopCat.compactSupportCohomologyExtend
+        (f := TopCat.ofHom ⟨_, continuous_subtype_val⟩) (U i).isOpenEmbedding' p z = x :=
+    TopCat.exists_compactSupportCohomologyExtend_eq_of_iSup_eq_top (X := TopCat.of M) hU hcover x
+  have hi := ConcreteCategory.congr_hom
+    (o.compactSupportCohomologyExtend_dualityMap hn L (j := ⟨_, continuous_subtype_val⟩)
+      (U i).isOpenEmbedding' p q h) z
+  rw [ConcreteCategory.comp_apply, ConcreteCategory.comp_apply, hx] at hi
+  obtain ⟨j, hij, hj⟩ :=
+    exists_singularHomologyMap_subtypeMk_eq_zero_of_iSup_eq_top (Y := TopCat.of M) L q hU hcover _
+      hi.symm
+  have hij' := ConcreteCategory.congr_hom
+    (o.compactSupportCohomologyExtend_dualityMap_of_le hn L h (hU hij)) z
+  rw [ConcreteCategory.comp_apply, ConcreteCategory.comp_apply, hj] at hij'
+  -- So the extension of `z` to `U j` vanishes, and hence so does its extension to `M`.
+  have hcomp := TopCat.compactSupportCohomologyExtend_comp (R := ModuleCat.of ℤ (ULift.{0} ℤ))
+    (k := ℤ) (M := L)
+    (f := TopCat.ofHom ⟨fun x : U i ↦ (⟨x, hU hij x.2⟩ : U j), continuous_subtype_val.subtype_mk _⟩)
+    (g := TopCat.ofHom ⟨_, continuous_subtype_val⟩) (Opens.isOpenEmbedding_of_le (hU hij))
+    (U j).isOpenEmbedding' p (U i).isOpenEmbedding'
+  rw [hcomp, ConcreteCategory.comp_apply, H j (hij'.trans (map_zero _).symm), map_zero]
+
+/-- **Surjectivity of the duality map is local for directed open covers.** If an oriented
+manifold `M` is the union of an increasing family of open sets `U i`, and the duality map of each
+`U i`, oriented by the pulled-back orientation, is surjective, then so is the duality map of `M`. -/
+theorem surjective_dualityMap_of_monotone
+    (H : ∀ i, Function.Surjective ((o.comap (U i).isOpenEmbedding').dualityMap hn L p q h)) :
+    Function.Surjective (o.dualityMap hn L p q h) := fun y ↦ by
+  obtain _ | _ := isEmpty_or_nonempty ι
+  · have : IsEmpty M := ⟨fun y ↦ by simpa using hcover.ge (Set.mem_univ y)⟩
+    exact (o.bijective_dualityMap_of_isEmpty hn L h).2 y
+  obtain ⟨i, y, rfl⟩ :=
+    exists_singularHomologyMap_subtypeVal_eq_of_iSup_eq_top (Y := TopCat.of M) L q hU hcover y
+  obtain ⟨z, rfl⟩ := H i y
+  refine ⟨TopCat.compactSupportCohomologyExtend (f := TopCat.ofHom ⟨_, continuous_subtype_val⟩)
+    (U i).isOpenEmbedding' p z, ?_⟩
+  rw [← ConcreteCategory.comp_apply, o.compactSupportCohomologyExtend_dualityMap hn L
+    (j := ⟨_, continuous_subtype_val⟩) (U i).isOpenEmbedding' p q h, ConcreteCategory.comp_apply]
+
+/-- **Poincaré duality is local for directed open covers.** If an oriented manifold `M` is the
+union of an increasing family of open sets `U i`, and the duality map of each `U i`, oriented by
+the pulled-back orientation, is bijective, then so is the duality map of `M`. -/
+theorem bijective_dualityMap_of_monotone
+    (H : ∀ i, Function.Bijective ((o.comap (U i).isOpenEmbedding').dualityMap hn L p q h)) :
+    Function.Bijective (o.dualityMap hn L p q h) :=
+  ⟨o.injective_dualityMap_of_monotone hn L h hU hcover fun i ↦ (H i).1,
+    o.surjective_dualityMap_of_monotone hn L h hU hcover fun i ↦ (H i).2⟩
+
+end DirectedUnion
 
 end HomologicalOrientation
 
