@@ -167,7 +167,7 @@ theorem sumLocalInv_brLocalization_relBrInfl_eq_zero_of_le_iSup_adjoin
     (artinMap (v.adicCompletion K) (Units.map (algebraMap K (v.adicCompletion K)) a))
   have hσ' (a : Kˣ) (w : InfinitePlace K) := QuotientGroup.mk_surjective
     (infiniteArtinAt w (Units.map (algebraMap K w.Completion) a))
-  refine (forall_sumLocalInv_brLocalization_relBrInfl_eq_zero_iff E hg
+  refine (forall_sumLocalInv_brLocalization_relBrInfl_eq_zero_iff E
     (fun _ ↦ IsSepClosed.lift) (fun _ ↦ IsSepClosed.lift) (fun a v ↦ (hσ a v).choose)
     (fun a w ↦ (hσ' a w).choose) hχ (fun a v ↦ (hσ a v).choose_spec)
     (fun a w ↦ (hσ' a w).choose_spec)).2 (fun a ↦ ?_) y
