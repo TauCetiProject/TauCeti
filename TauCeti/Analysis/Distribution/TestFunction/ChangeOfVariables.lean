@@ -12,6 +12,8 @@ public import Mathlib.Topology.OpenPartialHomeomorph.Composition
 import Mathlib.Analysis.Calculus.Deriv.Abs
 import TauCeti.Analysis.Calculus.FDeriv.Det.Basic
 import TauCeti.Analysis.Calculus.FDeriv.Equiv
+import TauCeti.Analysis.Calculus.TangentCone.Chart
+import TauCeti.Analysis.Distribution.TestFunction.LineDeriv
 import TauCeti.Analysis.Distribution.TestFunction.PartitionOfUnity
 import TauCeti.Topology.Algebra.Module.Determinant
 
@@ -47,6 +49,7 @@ agrees with it on `e '' K`.
   `|det D e (x)|⁻¹ φ x` at `e x`.
 * `TestFunction.tsupport_pushforwardCLM_subset`: `supp e_* φ ⊆ e '' supp φ`.
 * `TestFunction.integral_pushforwardCLM_smul`: the change of variables `∫ (e_* φ) f = ∫ φ (f ∘ e)`.
+* `TestFunction.pushforwardCLM_refl`: pushing forward along the identity is extension by zero.
 * `TestFunction.pushforwardCLM_pushforwardCLM`: pushing forward along `e₁` and then along `e₂` is
   pushing forward along `e₁.trans e₂`.
 * `TestFunction.pushforwardCLM_pushforwardCLM_symm`,
@@ -81,13 +84,6 @@ section Jacobian
 variable (he : ContDiffOn ℝ (⊤ : ℕ∞) e e.source) (he' : ContDiffOn ℝ (⊤ : ℕ∞) e.symm e.target)
 include he he'
 
-/-- The Jacobian determinants of `e` at `e⁻¹ y` and of `e⁻¹` at `y` are reciprocal. -/
-private theorem det_fderiv_mul_det_fderiv_symm_of_contDiffOn {y : E} (hy : y ∈ e.target) :
-    (fderiv ℝ e (e.symm y)).det * (fderiv ℝ e.symm y).det = 1 :=
-  e.det_fderiv_mul_det_fderiv_symm hy
-    ((he.differentiableOn (by simp)).differentiableAt (e.open_source.mem_nhds (e.map_target hy)))
-    ((he'.differentiableOn (by simp)).differentiableAt (e.open_target.mem_nhds hy))
-
 /-- On a compact set `K` mapped by `e` into `Ω`, the Jacobian agrees with a test function on the
 part of `Ω` inside the target of `e`. -/
 private theorem exists_eqOn_abs_det_fderiv_symm [FiniteDimensional ℝ E] {K : Set E}
@@ -99,24 +95,16 @@ private theorem exists_eqOn_abs_det_fderiv_symm [FiniteDimensional ℝ E] {K : S
     rintro _ ⟨x, hx, rfl⟩
     exact ⟨e.map_source (hKs hx), hKΩ hx⟩
   obtain ⟨χ, hχ, -⟩ := exists_eventually_eq_one (n := (⊤ : ℕ∞)) hL hLW
-  have hχt : tsupport χ ⊆ e.target := fun y hy ↦ (χ.tsupport_subset hy).1
-  refine ⟨⟨fun y ↦ χ y * |(fderiv ℝ e.symm y).det|, contDiff_iff_contDiffAt.2 fun y ↦ ?_,
-    χ.hasCompactSupport.mul_right, (tsupport_mul_subset_left).trans χ.tsupport_subset⟩,
-    fun y hy ↦ ?_⟩
-  · by_cases hy : y ∈ e.target
-    · -- On the target the Jacobian is smooth, since its determinant does not vanish there.
-      have hdet : ContDiffAt ℝ (⊤ : ℕ∞) (fun y ↦ (fderiv ℝ e.symm y).det) y :=
-        ContinuousLinearMap.contDiff_det.contDiffAt.comp y
-          ((he'.fderiv_of_isOpen e.open_target (by simp)).contDiffAt (e.open_target.mem_nhds hy))
-      have habs : ContDiffAt ℝ (⊤ : ℕ∞) (fun y ↦ |(fderiv ℝ e.symm y).det|) y :=
-        ContDiffAt.comp (g := fun t : ℝ ↦ |t|) y (contDiffAt_abs (right_ne_zero_of_mul_eq_one
-          (det_fderiv_mul_det_fderiv_symm_of_contDiffOn he he' hy))) hdet
-      exact χ.contDiff.contDiffAt.mul habs
-    · -- Off the target the cutoff vanishes near `y`.
-      refine (contDiffAt_const (c := (0 : ℝ))).congr_of_eventuallyEq ?_
-      filter_upwards [notMem_tsupport_iff_eventuallyEq.1 fun h ↦ hy (hχt h)] with z hz
-      simp [hz]
-  · simp [hχ.self_of_nhdsSet y hy]
+  -- On the target the Jacobian is smooth, since its determinant does not vanish there.
+  have hg : ContDiffOn ℝ (⊤ : ℕ∞) (fun y ↦ |(fderiv ℝ e.symm y).det|)
+      (⟨e.target, e.open_target⟩ ⊓ Ω : Opens E) := fun y hy ↦
+    (ContDiffAt.comp (g := fun t : ℝ ↦ |t|) y
+      (contDiffAt_abs (e.symm.det_fderiv_ne_zero_of_contDiffOn he' he (by simp) hy.1))
+      (ContinuousLinearMap.contDiff_det.contDiffAt.comp y
+        ((he'.fderiv_of_isOpen e.open_target (by simp)).contDiffAt
+          (e.open_target.mem_nhds hy.1)))).contDiffWithinAt
+  obtain ⟨ρ, hρ⟩ := exists_coe_eq_smul_of_contDiffOn hg χ
+  exact ⟨ρ, fun y hy ↦ by simp [hρ, hχ.self_of_nhdsSet y hy]⟩
 
 end Jacobian
 
@@ -226,11 +214,8 @@ theorem pushforwardCLM_apply_of_notMem (φ : 𝓓(U, F)) {y : E} (hy : y ∉ e.t
 /-- At the image of a point `x` of the source, the pushforward is `|det D e (x)|⁻¹ φ x`. -/
 theorem pushforwardCLM_apply_of_mem_source (φ : 𝓓(U, F)) {x : E} (hx : x ∈ e.source) :
     pushforwardCLM e he he' hU hUΩ φ (e x) = |(fderiv ℝ e x).det|⁻¹ • φ x := by
-  have h := det_fderiv_mul_det_fderiv_symm_of_contDiffOn he he' (e.map_source hx)
-  rw [e.left_inv hx] at h
-  have hdet : |(fderiv ℝ e.symm (e x)).det| = |(fderiv ℝ e x).det|⁻¹ :=
-    eq_inv_of_mul_eq_one_right (by rw [← abs_mul, h, abs_one])
-  rw [pushforwardCLM_apply_of_mem φ (e.map_source hx), e.left_inv hx, hdet]
+  rw [pushforwardCLM_apply_of_mem φ (e.map_source hx), e.left_inv hx,
+    e.det_fderiv_symm_apply_of_contDiffOn he he' (by simp) hx, abs_inv]
 
 /-- The support of the pushforward of `φ` lies in the image of the support of `φ`. -/
 theorem tsupport_pushforwardCLM_subset (φ : 𝓓(U, F)) :
@@ -262,8 +247,7 @@ theorem integral_pushforwardCLM_smul [MeasurableSpace E] [BorelSpace E] (μ : Me
     rw [image_eq_zero_of_notMem_tsupport fun h ↦ hx (hU (φ.tsupport_subset h)), zero_smul]
   have hd (y : E) (hy : y ∈ e.target) :
       HasFDerivWithinAt e.symm (fderiv ℝ e.symm y) e.target y :=
-    ((he'.differentiableOn (by simp)).differentiableAt
-      (e.open_target.mem_nhds hy)).hasFDerivAt.hasFDerivWithinAt
+    (e.symm.differentiableAt_of_contDiffOn he' (by simp) hy).hasFDerivAt.hasFDerivWithinAt
   -- Both integrands vanish off the target, respectively the source; then change variables
   -- `x = e⁻¹ y` on the target.
   rw [← setIntegral_eq_integral_of_forall_compl_eq_zero hφ,
@@ -283,10 +267,11 @@ theorem pushforwardCLM_pushforwardCLM_symm {he₁ : ContDiffOn ℝ (⊤ : ℕ∞
   ext y
   by_cases hy : y ∈ e.target
   · have hs : e.symm y ∈ e.symm.target := e.map_target hy
-    have h := det_fderiv_mul_det_fderiv_symm_of_contDiffOn he he' hy
     rw [pushforwardCLM_apply_of_mem _ hy, pushforwardCLM_apply_of_mem _ hs,
       OpenPartialHomeomorph.symm_symm, e.right_inv hy, smul_smul, ← abs_mul,
-      mul_comm (fderiv ℝ e.symm y).det, h, abs_one, one_smul]
+      mul_comm (fderiv ℝ e.symm y).det, e.det_fderiv_mul_det_fderiv_symm hy
+        (e.differentiableAt_of_contDiffOn he (by simp) (e.map_target hy))
+        (e.symm.differentiableAt_of_contDiffOn he' (by simp) hy), abs_one, one_smul]
   · rw [pushforwardCLM_apply_of_notMem _ hy,
       image_eq_zero_of_notMem_tsupport fun h : y ∈ tsupport φ ↦
         hy (by simpa using hV (φ.tsupport_subset h))]
@@ -299,14 +284,26 @@ theorem pushforwardCLM_symm_pushforwardCLM {he₁ : ContDiffOn ℝ (⊤ : ℕ∞
     pushforwardCLM e.symm he₁ he₁' hV hVU (pushforwardCLM e he he' hU hUV φ) = φ := by
   ext x
   by_cases hx : x ∈ e.source
-  · have h := det_fderiv_mul_det_fderiv_symm_of_contDiffOn he he' (e.map_source hx)
-    rw [e.left_inv hx] at h
-    have hdet : (fderiv ℝ e x).det ≠ 0 := left_ne_zero_of_mul_eq_one h
-    rw [pushforwardCLM_apply_of_mem _ (by simpa using hx), OpenPartialHomeomorph.symm_symm,
-      pushforwardCLM_apply_of_mem_source _ hx, smul_smul, mul_inv_cancel₀ (abs_ne_zero.2 hdet),
-      one_smul]
+  · rw [pushforwardCLM_apply_of_mem _ (by simpa using hx), OpenPartialHomeomorph.symm_symm,
+      pushforwardCLM_apply_of_mem_source _ hx, smul_smul, mul_inv_cancel₀
+        (abs_ne_zero.2 (e.det_fderiv_ne_zero_of_contDiffOn he he' (by simp) hx)), one_smul]
   · rw [pushforwardCLM_apply_of_notMem _ (by simpa using hx),
       image_eq_zero_of_notMem_tsupport fun h ↦ hx (hU (φ.tsupport_subset h))]
+
+/-- Pushing forward along the identity is extension by zero. -/
+@[simp]
+theorem pushforwardCLM_refl
+    {he : ContDiffOn ℝ (⊤ : ℕ∞) (OpenPartialHomeomorph.refl E)
+      (OpenPartialHomeomorph.refl E).source}
+    {he' : ContDiffOn ℝ (⊤ : ℕ∞) (OpenPartialHomeomorph.refl E).symm
+      (OpenPartialHomeomorph.refl E).target}
+    {hU : (U : Set E) ⊆ (OpenPartialHomeomorph.refl E).source}
+    {hUΩ : MapsTo (OpenPartialHomeomorph.refl E) U Ω} (φ : 𝓓(U, F)) :
+    pushforwardCLM (OpenPartialHomeomorph.refl E) he he' hU hUΩ φ = monoCLM ℝ φ := by
+  have hUΩ' : U ≤ Ω := hUΩ
+  ext y
+  rw [pushforwardCLM_apply_of_mem φ (mem_univ y)]
+  simp [hUΩ']
 
 /-- **Functoriality**: pushing forward along `e₁` and then along `e₂` is pushing forward along the
 composite `e₁.trans e₂`, whose Jacobian is the product of the Jacobians by the chain rule. -/
@@ -330,9 +327,8 @@ theorem pushforwardCLM_pushforwardCLM {e₁ e₂ : OpenPartialHomeomorph E E}
       have hd : fderiv ℝ (e₁.trans e₂).symm z =
           (fderiv ℝ e₁.symm (e₂.symm z)).comp (fderiv ℝ e₂.symm z) := by
         rw [OpenPartialHomeomorph.coe_trans_symm]
-        exact fderiv_comp z ((he₁'.differentiableOn (by simp)).differentiableAt
-          (e₁.open_target.mem_nhds hz₁)) ((he₂'.differentiableOn (by simp)).differentiableAt
-          (e₂.open_target.mem_nhds hz₂))
+        exact fderiv_comp z (e₁.symm.differentiableAt_of_contDiffOn he₁' (by simp) hz₁)
+          (e₂.symm.differentiableAt_of_contDiffOn he₂' (by simp) hz₂)
       rw [pushforwardCLM_apply_of_mem _ hz₂, pushforwardCLM_apply_of_mem _ hz₁,
         pushforwardCLM_apply_of_mem _ hz, hd, ContinuousLinearMap.det_comp, abs_mul, smul_smul,
         mul_comm, OpenPartialHomeomorph.coe_trans_symm, Function.comp_apply]
@@ -364,13 +360,11 @@ theorem pushforwardCLM_eq_smul_transportTestFunction (L : E ≃L[ℝ] E)
     {hU : (U : Set E) ⊆ L.toHomeomorph.toOpenPartialHomeomorph.source} (hUΩ : MapsTo L U Ω)
     (φ : 𝓓(U, F)) :
     pushforwardCLM L.toHomeomorph.toOpenPartialHomeomorph hL hL' hU hUΩ φ =
-      |LinearMap.det (L : E →ₗ[ℝ] E)|⁻¹ • L.transportTestFunction hUΩ φ := by
+      |(L : E →L[ℝ] E).det|⁻¹ • L.transportTestFunction hUΩ φ := by
   ext y
   -- `hUΩ` is stated for `L` rather than for its coercion to a partial homeomorphism, so the value
   -- is unfolded by unification rather than by rewriting.
   refine (pushforwardCLM_apply_of_mem φ (by simp)).trans ?_
   simp [ContinuousLinearEquiv.fderiv]
-  -- `ContinuousLinearMap.det` is by definition `LinearMap.det` of the underlying linear map.
-  rfl
 
 end TestFunction

@@ -41,6 +41,10 @@ coordinate charts: chart transitions of a manifold are such maps.
 * `Distribution.compCLMOfOpenPartialHomeomorph_ofFun`: `e^*` sends the distribution of a locally
   integrable function `f` to that of `f ∘ e`, for any additive Haar measure.
 * `Distribution.compCLMOfOpenPartialHomeomorph_delta`: `e^* δ_{e x} = |det D e (x)|⁻¹ δ_x`.
+* `Distribution.compCLMOfOpenPartialHomeomorph_refl`: pulling back along the identity is
+  restriction.
+* `Distribution.dsupport_compCLMOfOpenPartialHomeomorph_subset`: on the source of `e`, the support
+  of `e^* T` lies in the preimage of the support of `T`.
 * `Distribution.compCLMOfOpenPartialHomeomorph_trans`: pulling back along a composite is the
   composite of the pullbacks.
 * `Distribution.compCLMOfOpenPartialHomeomorph_symm_apply_apply`,
@@ -94,6 +98,38 @@ variable {he : ContDiffOn ℝ (⊤ : ℕ∞) e e.source} {he' : ContDiffOn ℝ (
 theorem compCLMOfOpenPartialHomeomorph_apply (T : 𝓓'(Ω, F)) (φ : 𝓓(U, ℝ)) :
     compCLMOfOpenPartialHomeomorph e he he' hU hUΩ T φ = T (pushforwardCLM e he he' hU hUΩ φ) :=
   (rfl)
+
+/-- Pulling back along the identity is restriction. -/
+@[simp]
+theorem compCLMOfOpenPartialHomeomorph_refl
+    {he : ContDiffOn ℝ (⊤ : ℕ∞) (OpenPartialHomeomorph.refl E)
+      (OpenPartialHomeomorph.refl E).source}
+    {he' : ContDiffOn ℝ (⊤ : ℕ∞) (OpenPartialHomeomorph.refl E).symm
+      (OpenPartialHomeomorph.refl E).target}
+    {hU : (U : Set E) ⊆ (OpenPartialHomeomorph.refl E).source}
+    {hUΩ : MapsTo (OpenPartialHomeomorph.refl E) U Ω} :
+    (compCLMOfOpenPartialHomeomorph (OpenPartialHomeomorph.refl E) he he' hU hUΩ :
+      𝓓'(Ω, F) →L[ℝ] 𝓓'(U, F)) = restrictCLM := by
+  ext T φ
+  rw [compCLMOfOpenPartialHomeomorph_apply, restrictCLM_apply, pushforwardCLM_refl]
+
+/-- On the source of `e`, the support of the pullback `e^* T` lies in the preimage of the support
+of `T`. Off the source, the values of `e` carry no information, so the intersection is needed at
+boundary points of `U` outside the source. -/
+theorem dsupport_compCLMOfOpenPartialHomeomorph_subset (T : 𝓓'(Ω, F)) :
+    dsupport (compCLMOfOpenPartialHomeomorph e he he' hU hUΩ T) ∩ e.source ⊆
+      e ⁻¹' dsupport T := by
+  rintro x ⟨hx, hxs⟩
+  by_contra hxT
+  obtain ⟨s, hT, hs, hxs'⟩ := (notMem_dsupport_iff _).1 hxT
+  -- `T` vanishes on `s`, so `e^* T` vanishes on `e.source ∩ e ⁻¹' s`, since `e_*` maps test
+  -- functions supported there to test functions supported in `s`.
+  refine (notMem_dsupport_iff (f := compCLMOfOpenPartialHomeomorph e he he' hU hUΩ T) x).2
+    ⟨e.source ∩ e ⁻¹' s, fun φ hφ ↦ ?_, e.isOpen_inter_preimage hs, hxs, hxs'⟩ hx
+  rw [compCLMOfOpenPartialHomeomorph_apply]
+  refine hT _ ((tsupport_pushforwardCLM_subset φ).trans ?_)
+  rintro _ ⟨y, hy, rfl⟩
+  exact (hφ hy).2
 
 /-- **Functoriality**: pulling back along the composite `e₁.trans e₂` is pulling back along `e₂`
 and then along `e₁`. -/
@@ -181,10 +217,7 @@ theorem compCLMOfOpenPartialHomeomorph_ofFun [MeasurableSpace E] [BorelSpace E]
     compCLMOfOpenPartialHomeomorph e he he' hU hUΩ (ofFun Ω f μ ⊤) =
       ofFun U (fun x ↦ f (e x)) μ ⊤ := by
   have hdet (x : E) (hx : x ∈ (U : Set E)) : (fderiv ℝ e x).det ≠ 0 :=
-    e.det_fderiv_ne_zero (hU hx)
-      ((he.differentiableOn (by simp)).differentiableAt (e.open_source.mem_nhds (hU hx)))
-      ((he'.differentiableOn (by simp)).differentiableAt
-        (e.open_target.mem_nhds (e.map_source (hU hx))))
+    e.det_fderiv_ne_zero_of_contDiffOn he he' (by simp) (hU hx)
   have hfe : LocallyIntegrableOn (fun x ↦ f (e x)) U μ :=
     hf.comp_contDiffOn_diffeo U.isOpen ((he.mono hU).of_le (by simp)) (e.injOn.mono hU) hdet hUΩ
   ext φ
