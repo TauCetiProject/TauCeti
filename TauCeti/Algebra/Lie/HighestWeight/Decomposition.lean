@@ -30,6 +30,9 @@ the sum being over pairs of a dominant integral weight `λ` and a counter `k` in
 `Fin (m λ)`, where `m λ` is the multiplicity of `L(λ)` in `M`
 (`TauCeti.nonempty_lieModuleEquiv_directSum_irreducibleQuotient`). Only finitely many
 multiplicities are nonzero, so all but finitely many summands are indexed by the empty type.
+Consequently two finite-dimensional modules containing every `L(λ)` equally often are equivalent,
+their packaged decompositions being the same direct sum
+(`TauCeti.nonempty_lieModuleEquiv_iff_forall_isotypicMultiplicity_irreducibleQuotient_eq`).
 
 The companion statement `LieModule.nonempty_lieModuleEquiv_isotypicComponent` of
 `TauCeti/Algebra/Lie/UniversalEnveloping/Multiplicity.lean` decomposes one isotypic component as a
@@ -85,6 +88,8 @@ multiplicity the sum omits is zero.
   labelled by a dominant integral `λ` are counted by the multiplicity of `L(λ)`.**
 * `TauCeti.nonempty_lieModuleEquiv_directSum_irreducibleQuotient`: **the packaged isotypic
   decomposition** `M ≃ ⨁_λ L(λ)^{m λ}`.
+* `TauCeti.nonempty_lieModuleEquiv_iff_forall_isotypicMultiplicity_irreducibleQuotient_eq`: two
+  finite-dimensional modules are equivalent exactly when every `L(λ)` occurs in them equally often.
 * `TauCeti.iSup_isotypicComponent_irreducibleQuotient_eq_top`: a finite-dimensional module is the
   sum of its `L(λ)`-isotypic components over the dominant integral weights `λ`.
 * `TauCeti.isotypicMultiplicity_irreducibleQuotient_eq_zero_of_not_isDominantIntegral`: `L(λ)` of
@@ -188,6 +193,32 @@ theorem nonempty_lieModuleEquiv_directSum_irreducibleQuotient [FiniteDimensional
       ↔ c i = (s : Dual K H) := fun _ ↦ Subtype.ext_iff
   rw [Nat.card_congr (Equiv.subtypeEquivRight hiff)]
   exact natCard_eq_isotypicMultiplicity_irreducibleQuotient b N hint hirr c hcequiv s.2
+
+section Equivalence
+
+variable {N : Type w₁} [AddCommGroup N] [Module K N] [LieRingModule L N] [LieModule K L N]
+
+/-- **A finite-dimensional module is determined by its multiplicities.** Two finite-dimensional
+`L`-modules are equivalent exactly when every `L(λ)`, for `λ` dominant integral, occurs in them
+equally often. -/
+theorem nonempty_lieModuleEquiv_iff_forall_isotypicMultiplicity_irreducibleQuotient_eq
+    [FiniteDimensional K M] [FiniteDimensional K N] :
+    Nonempty (M ≃ₗ⁅K,L⁆ N) ↔ ∀ lam : Dual K H, IsDominantIntegral b lam →
+      isotypicMultiplicity K L M (irreducibleQuotient b lam) =
+        isotypicMultiplicity K L N (irreducibleQuotient b lam) := by
+  refine ⟨fun ⟨e⟩ _ _ ↦ isotypicMultiplicity_eq_of_lieModuleEquiv e, fun h ↦ ?_⟩
+  obtain ⟨eM⟩ := nonempty_lieModuleEquiv_directSum_irreducibleQuotient (M := M) b
+  obtain ⟨eN⟩ := nonempty_lieModuleEquiv_directSum_irreducibleQuotient (M := N) b
+  -- The two packaged decompositions are indexed by the same multiplicities, so are one direct sum.
+  have key : ∀ m m' : {l : Dual K H // IsDominantIntegral b l} → ℕ, m = m' →
+      Nonempty ((⨁ q : Σ lam, Fin (m lam), irreducibleQuotient b q.1.1) ≃ₗ⁅K,L⁆
+        ⨁ q : Σ lam, Fin (m' lam), irreducibleQuotient b q.1.1) := by
+    rintro m _ rfl
+    exact ⟨LieModuleEquiv.refl⟩
+  obtain ⟨f⟩ := key _ _ (funext fun lam ↦ h lam.1 lam.2)
+  exact ⟨eM.trans (f.trans eN.symm)⟩
+
+end Equivalence
 
 variable (M) in
 /-- **A finite-dimensional module is the sum of its `L(lam)`-isotypic components**, `lam` running
