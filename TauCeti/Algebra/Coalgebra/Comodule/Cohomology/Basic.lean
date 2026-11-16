@@ -219,9 +219,7 @@ theorem coface_zero_zero : coface R H M 0 0 = Comodule.coact (R := R) (C := H) (
 @[simp]
 theorem coface_last_apply (n : ℕ) (x : cochains R H M n) :
     coface R H M n (Fin.last (n + 1)) x = (x ⊗ₜ[R] (1 : H) : cochains R H M (n + 1)) := by
-  cases n
-  · exact LinearMap.congr_fun (Fin.lastCases_last (motive := fun _ ↦ M →ₗ[R] M ⊗[R] H)) x
-  · rw [coface, Fin.lastCases_last, LinearMap.flip_apply, TensorProduct.mk_apply]
+  cases n <;> rw [coface, Fin.lastCases_last, LinearMap.flip_apply, TensorProduct.mk_apply]
 
 /-- In degree `n + 1`, the coface `δₙ₊₁` comultiplies the last factor of `H`. -/
 @[simp]
@@ -310,12 +308,9 @@ theorem d_comp_d (n : ℕ) : d R H M (n + 1) ∘ₗ d R H M n = 0 := by
   | zero =>
     rw [d_succ_eq, d_zero, lastComul_eq]
     refine LinearMap.ext fun m ↦ ?_
-    simp only [Nat.reduceAdd, LinearMap.rTensor_sub, zero_add, pow_one, LinearMap.coe_comp,
-      LinearMap.coe_add, LinearMap.coe_smul, Function.comp_apply, LinearMap.sub_apply,
-      LinearMap.flip_apply, TensorProduct.mk_apply, Pi.add_apply, map_sub, LinearMap.rTensor_tmul,
-      Pi.smul_apply, LinearEquiv.coe_coe, LinearMap.lTensor_tmul, Bialgebra.comul_one,
-      Algebra.TensorProduct.one_def, coassoc_symm_apply, TensorProduct.assoc_symm_tmul,
-      neg_smul, one_smul, neg_sub, LinearMap.zero_apply]
+    -- The key step is coassociativity of the coaction, `coassoc_symm_apply`, together with
+    -- `Δ 1 = 1 ⊗ 1`. After these rewrites the remaining terms cancel in pairs.
+    simp [coassoc_symm_apply, Bialgebra.comul_one, Algebra.TensorProduct.one_def]
     abel
   | succ n ih =>
     rw [d_succ_eq R H M (n + 1), pow_succ, mul_neg_one,
