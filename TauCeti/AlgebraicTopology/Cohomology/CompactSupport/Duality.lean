@@ -10,7 +10,7 @@ public import TauCeti.AlgebraicTopology.Cohomology.CompactSupport.DirectedUnion
 public import TauCeti.AlgebraicTopology.Cohomology.Point
 public import TauCeti.AlgebraicTopology.Singular.LocalHomology.FundamentalClass
 public import TauCeti.CategoryTheory.Monoidal.Preadditive
-public import Mathlib.Geometry.Manifold.HasGroupoid
+public import TauCeti.Geometry.Manifold.Instances.TopCatOpens
 import TauCeti.AlgebraicTopology.Singular.DirectedUnion
 import TauCeti.Topology.Sets.Opens
 
@@ -122,12 +122,6 @@ public section
 noncomputable section
 
 open CategoryTheory Limits MonoidalCategory Module TopologicalSpace Topology Set
-
-/-- An open subset of a charted space, as an object of `TopCat`, is a charted space, like the
-subtype. -/
-instance TopologicalSpace.Opens.instChartedSpaceToTopCatObj {H : Type*} [TopologicalSpace H]
-    {X : TopCat} [ChartedSpace H X] (V : Opens X) : ChartedSpace H ((Opens.toTopCat X).obj V) :=
-  inferInstanceAs (ChartedSpace H V)
 
 namespace TauCeti
 
