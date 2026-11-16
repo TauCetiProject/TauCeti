@@ -9,6 +9,8 @@ public import Mathlib.MeasureTheory.Measure.Haar.Basic
 public import TauCeti.Analysis.Calculus.Morse.Basic
 public import TauCeti.Analysis.Calculus.Morse.Index
 public import TauCeti.Analysis.Calculus.Morse.MorseSmale.Surjective
+public import TauCeti.Analysis.Calculus.Morse.SpectralSplitting
+public import TauCeti.Geometry.Manifold.LocallyFlat.Basic
 import Mathlib.Analysis.Calculus.FDeriv.OfCompLeft
 import TauCeti.Analysis.Calculus.Morse.GlobalChart
 import TauCeti.Analysis.Fredholm.LevelSet.Transverse
@@ -70,14 +72,77 @@ variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteDim
   {f : E → ℝ} {K : ℝ≥0} {ι : Type*} [Fintype ι] {h : ι → E → ℝ}
   (ν : Measure (EuclideanSpace ℝ ι)) [ν.IsAddHaarMeasure]
 
+namespace IsNondegenerateCriticalPoint
+
+/-- **The stable set as a slice-chart set.** For a `C^(n+1)` function with Lipschitz gradient,
+every point of the stable set of a nondegenerate critical point `q` has a `C^n` chart with
+differentiable inverse flattening the stable set onto the stable Hessian subspace, in the form of
+`TauCeti.IsSliceChart`. -/
+theorem exists_isSliceChart_stableSet {q : E} (hq : IsNondegenerateCriticalPoint f q) {n : ℕ}
+    (hn : n ≠ 0) (hfs : ContDiff ℝ (n + 1) f) (hf : LipschitzWith K (∇ f)) {y : E}
+    (hy : y ∈ Flow.stableSet (negativeGradientFlow f hf) q) :
+    ∃ e : OpenPartialHomeomorph E E, y ∈ e.source ∧ (∀ z ∈ e.source, ContDiffAt ℝ n e z) ∧
+      (∀ z ∈ e.source, DifferentiableAt ℝ e.symm (e z)) ∧
+      IsSliceChart e (hq.contDiffAt.stableLinearSubspace : Set E)
+        (Flow.stableSet (negativeGradientFlow f hf) q) := by
+  obtain ⟨e, hy, he, hes, hS⟩ := hq.exists_stableSet_chart hfs hf hy
+  exact ⟨e, hy, he, fun z hz ↦ (hes _ (e.map_source hz)).differentiableAt (by exact_mod_cast hn),
+    isSliceChart_iff.2 hS⟩
+
+/-- **The excess dimension of a transverse intersection.** For nondegenerate critical points `p`
+and `q`, the dimension of the unstable Hessian subspace of `p` minus the codimension of the stable
+Hessian subspace of `q` is `ind p - ind q`. -/
+theorem finrank_unstableLinearSubspace_sub_codim_stableLinearSubspace {p q : E}
+    (hp : IsNondegenerateCriticalPoint f p) (hq : IsNondegenerateCriticalPoint f q) :
+    finrank ℝ hp.contDiffAt.unstableLinearSubspace -
+        (finrank ℝ E - finrank ℝ hq.contDiffAt.stableLinearSubspace) =
+      morseIndex f p - morseIndex f q := by
+  have h₂ := hq.finrank_stableLinearSubspace_add_morseIndex
+  rw [hp.contDiffAt.finrank_unstableLinearSubspace]
+  omega
+
+end IsNondegenerateCriticalPoint
+
+omit [FiniteDimensional ℝ E] in
+/-- The derivative of a flow map started through the inverse of a chart, restricted to a linear
+subspace `L` of starting points: the chain rule for `(v, s) ↦ (Φ_T (e.symm v, s)).1`. -/
+private theorem hasFDerivAt_fst_apply_symm {Λ : Type*} [NormedAddCommGroup Λ] [NormedSpace ℝ Λ]
+    {L : Submodule ℝ E} {e : OpenPartialHomeomorph E E} {Ψ : E × Λ → E × Λ} {z : L × Λ}
+    (he : DifferentiableAt ℝ e.symm (z.1 : E)) (hΨ : DifferentiableAt ℝ Ψ (e.symm (z.1 : E), z.2)) :
+    HasFDerivAt (fun z : L × Λ ↦ (Ψ (e.symm (z.1 : E), z.2)).1)
+      ((ContinuousLinearMap.fst ℝ E Λ).comp ((fderiv ℝ Ψ (e.symm (z.1 : E), z.2)).comp
+        (((fderiv ℝ e.symm (z.1 : E)).comp (L.subtypeL.comp (ContinuousLinearMap.fst ℝ L Λ))).prod
+          (ContinuousLinearMap.snd ℝ L Λ)))) z :=
+  hasFDerivAt_fst.comp z (hΨ.hasFDerivAt.comp z ((he.hasFDerivAt.comp z
+    (L.subtypeL.hasFDerivAt.comp z hasFDerivAt_fst)).prodMk hasFDerivAt_snd))
+
+/-- Below the supports of the family, a linear map whose range spans `E` together with the gradient
+of the perturbation spans `E` together with the tangent space of the stable set of `q` for `f`: the
+gradients agree there, and the flow direction is tangent to the stable set. -/
+private theorem range_sup_span_tangentConeAt_stableSet_eq_top {W : Type*} [AddCommGroup W]
+    [Module ℝ W] (hf : LipschitzWith K (∇ f)) {s : EuclideanSpace ℝ ι} {c : ℝ}
+    (hc : ∀ i, tsupport (h i) ⊆ f ⁻¹' Ioi c) {q y : E} (hy : f y < c)
+    (hyS : y ∈ Flow.stableSet (negativeGradientFlow f hf) q) {A : W →ₗ[ℝ] E}
+    (hA : LinearMap.range A ⊔ (ℝ ∙ ∇ (perturb f h s) y) = ⊤) :
+    LinearMap.range A ⊔
+      Submodule.span ℝ (tangentConeAt ℝ (Flow.stableSet (negativeGradientFlow f hf) q) y) = ⊤ := by
+  have hgrad : ∇ (perturb f h s) y = ∇ f y :=
+    gradient_perturb_of_forall_notMem_tsupport s fun i hi ↦ (hc i hi).not_gt hy
+  have hmem := Submodule.subset_span (R := ℝ)
+    (neg_gradient_mem_tangentConeAt_of_isInvariant f hf (Flow.isInvariant_stableSet _ q) hyS)
+  have hneg : ∇ f y ∈ Submodule.span ℝ
+      (tangentConeAt ℝ (Flow.stableSet (negativeGradientFlow f hf) q) y) := by
+    simpa using Submodule.neg_mem _ hmem
+  rw [eq_top_iff, ← hA, hgrad]
+  exact sup_le_sup_left ((Submodule.span_singleton_le_iff_mem _ _).2 hneg) _
+
 /-- **Transversality in one chart of the unstable set.** The statement of
 `exists_pos_ae_span_tangentConeAt_unstableSet_sup_span_tangentConeAt_stableSet_perturb_eq_top`
 for the points of `C` in the source of one chart `e` flattening the unstable set of `p`, given the
 spanning condition for all parameters of norm less than `δ ≤ 1`. -/
 private theorem ae_span_tangentConeAt_sup_span_tangentConeAt_perturb_eq_top_of_unstableSet_chart
     {m : ℕ}
-    (hfs : ContDiff ℝ (m + 2) f) (hfs' : ContDiff ℝ ((m + 1 : ℕ) + 1) f)
-    (hf : LipschitzWith K (∇ f)) (hh : ∀ i, ContDiff ℝ 2 (h i))
+    (hfs : ContDiff ℝ (m + 2) f) (hf : LipschitzWith K (∇ f)) (hh : ∀ i, ContDiff ℝ 2 (h i))
     (hc : ∀ i, HasCompactSupport (h i)) (hhs : ∀ i, ContDiff ℝ (m + 2) (h i)) {p q : E}
     (hp : IsNondegenerateCriticalPoint f p) (hq : IsNondegenerateCriticalPoint f q)
     (hm : morseIndex f p ≤ morseIndex f q + m) {c₁ c₂ : ℝ}
@@ -124,14 +189,9 @@ private theorem ae_span_tangentConeAt_sup_span_tangentConeAt_perturb_eq_top_of_u
       ((fderiv ℝ (Φ T) (e.symm (z.1 : E), z.2)).comp
         (((fderiv ℝ e.symm (z.1 : E)).comp (Lu.subtypeL.comp
           (ContinuousLinearMap.fst ℝ Lu (EuclideanSpace ℝ ι)))).prod
-          (ContinuousLinearMap.snd ℝ Lu (EuclideanSpace ℝ ι))))) z := fun z hz ↦ by
-    have hψ : HasFDerivAt (fun z : Lu × EuclideanSpace ℝ ι ↦ (e.symm (z.1 : E), z.2))
-        (((fderiv ℝ e.symm (z.1 : E)).comp (Lu.subtypeL.comp
-          (ContinuousLinearMap.fst ℝ Lu (EuclideanSpace ℝ ι)))).prod
-          (ContinuousLinearMap.snd ℝ Lu (EuclideanSpace ℝ ι))) z :=
-      (((hes _ hz.1).differentiableAt hm0).hasFDerivAt.comp z
-        (Lu.subtypeL.hasFDerivAt.comp z (hasFDerivAt_fst))).prodMk hasFDerivAt_snd
-    exact hasFDerivAt_fst.comp z (((hΦT.differentiable hm0) _).hasFDerivAt.comp z hψ)
+          (ContinuousLinearMap.snd ℝ Lu (EuclideanSpace ℝ ι))))) z := fun z hz ↦
+    hasFDerivAt_fst_apply_symm ((hes _ hz.1).differentiableAt hm0)
+      ((hΦT.differentiable hm0) _)
   have hGcont : ∀ z ∈ U, G z ∈ S → ContDiffAt ℝ (m + 1 : ℕ) G z := fun z hz _ ↦
     contDiffAt_fst.comp z (hΦT.contDiffAt.comp z (((hes _ hz.1).comp z
       (Lu.subtypeL.contDiff.contDiffAt.comp z contDiffAt_fst)).prodMk contDiffAt_snd))
@@ -140,9 +200,9 @@ private theorem ae_span_tangentConeAt_sup_span_tangentConeAt_perturb_eq_top_of_u
       (∀ y ∈ e'.source, y ∈ S → ContDiffAt ℝ (m + 1 : ℕ) e' y) ∧
       (∀ y ∈ e'.source, y ∈ S → DifferentiableAt ℝ e'.symm (e' y)) ∧
       IsSliceChart e' (Ls : Set E) S := fun z _ hz ↦ by
-    obtain ⟨e', hz', he', hes', hS'⟩ := hq.exists_stableSet_chart hfs' hf hz
-    exact ⟨e', hz', fun y hy _ ↦ he' y hy,
-      fun y hy _ ↦ (hes' _ (e'.map_source hy)).differentiableAt hm0, isSliceChart_iff.2 hS'⟩
+    obtain ⟨e', hz', he', hes', hS'⟩ :=
+      hq.exists_isSliceChart_stableSet (n := m + 1) (by omega) (by exact_mod_cast hfs) hf hz
+    exact ⟨e', hz', fun y hy _ ↦ he' y hy, fun y hy _ ↦ hes' y hy, hS'⟩
   -- `G` is transverse to the stable set: its parameter derivative spans with the flow direction.
   have htotal : ∀ z ∈ U, G z ∈ S →
       LinearMap.range (fderiv ℝ G z : Lu × EuclideanSpace ℝ ι →ₗ[ℝ] E) ⊔
@@ -155,29 +215,16 @@ private theorem ae_span_tangentConeAt_sup_span_tangentConeAt_perturb_eq_top_of_u
             (ContinuousLinearMap.inr ℝ E (EuclideanSpace ℝ ι))) := by
       rw [(hGd _ hz).fderiv]
       ext w; simp
-    have hnot : ∀ i, G (v, s) ∉ tsupport (h i) := fun i hi ↦ (hc₁ i hi).not_gt hlt
-    have hgrad : ∇ (perturb f h s) (G (v, s)) = ∇ f (G (v, s)) :=
-      gradient_perturb_of_forall_notMem_tsupport s hnot
-    have hmem : ∇ f (G (v, s)) ∈ Submodule.span ℝ (tangentConeAt ℝ S (G (v, s))) := by
-      have := Submodule.subset_span (R := ℝ) (neg_gradient_mem_tangentConeAt_of_isInvariant f hf
-        (Flow.isInvariant_stableSet _ q) hGS)
-      simpa using Submodule.neg_mem _ this
-    rw [eq_top_iff, ← hspan s hs _ hxC]
-    refine sup_le_sup ?_ ?_
-    · rw [← hD]
-      exact LinearMap.range_comp_le_range
-        (ContinuousLinearMap.inr ℝ Lu (EuclideanSpace ℝ ι) :
-          EuclideanSpace ℝ ι →ₗ[ℝ] Lu × EuclideanSpace ℝ ι)
-        (fderiv ℝ G (v, s) : Lu × EuclideanSpace ℝ ι →ₗ[ℝ] E)
-    · rw [Submodule.span_singleton_le_iff_mem]
-      exact hgrad ▸ hmem
+    refine eq_top_iff.2 ((range_sup_span_tangentConeAt_stableSet_eq_top hf hc₁ hlt hGS
+      (hspan s hs _ hxC)).symm.le.trans (sup_le_sup_right ?_ _))
+    rw [← hD]
+    exact LinearMap.range_comp_le_range
+      (ContinuousLinearMap.inr ℝ Lu (EuclideanSpace ℝ ι) :
+        EuclideanSpace ℝ ι →ₗ[ℝ] Lu × EuclideanSpace ℝ ι)
+      (fderiv ℝ G (v, s) : Lu × EuclideanSpace ℝ ι →ₗ[ℝ] E)
   have hn : ((finrank ℝ Lu - (finrank ℝ E - finrank ℝ Ls) + 1 : ℕ) : WithTop ℕ∞) ≤
       ((m + 1 : ℕ) : WithTop ℕ∞) := by
-    have h₁ : finrank ℝ Lu = morseIndex f p := hp.contDiffAt.finrank_unstableLinearSubspace
-    have h₂ : finrank ℝ Ls + morseIndex f q = finrank ℝ E :=
-      hq.finrank_stableLinearSubspace_add_morseIndex
-    have h₃ : finrank ℝ E - finrank ℝ Ls = morseIndex f q := by omega
-    rw [h₃, h₁]
+    rw [hp.finrank_unstableLinearSubspace_sub_codim_stableLinearSubspace hq]
     exact_mod_cast (by omega : morseIndex f p - morseIndex f q + 1 ≤ m + 1)
   have hae := ae_range_fderiv_comp_inl_sup_span_tangentConeAt_eq_top ν hGcont hchart htotal hn
   filter_upwards [hae] with s hs hsδ K' hf' x hxC hxe hlt hys
@@ -250,10 +297,7 @@ theorem exists_pos_ae_span_tangentConeAt_unstableSet_sup_span_tangentConeAt_stab
   have hfs2 : ContDiff ℝ 2 f := hfs.of_le (by exact_mod_cast (by omega : 2 ≤ m + 2))
   obtain ⟨δ₀, hδ₀, hδspan⟩ :=
     exists_pos_forall_range_fderiv_perturbedFlow_sup_span_eq_top hfs2 hf hh hc hC hspan
-  have hfs' : ContDiff ℝ ((m + 1 : ℕ) + 1) f := by
-    convert hfs using 1
-    push_cast
-    rw [add_assoc, one_add_one_eq_two]
+  have hfs' : ContDiff ℝ ((m + 1 : ℕ) + 1) f := by exact_mod_cast hfs
   -- Finitely many charts of the unstable set of `p` cover `C`.
   have key : ∀ x : C, ∃ e : OpenPartialHomeomorph E E, (x : E) ∈ e.source ∧
       (∀ z ∈ e.source, ContDiffAt ℝ (m + 1 : ℕ) e z) ∧
@@ -266,8 +310,8 @@ theorem exists_pos_ae_span_tangentConeAt_unstableSet_sup_span_tangentConeAt_stab
     (fun x ↦ (e x).open_source) fun x hx ↦ mem_iUnion.2 ⟨⟨x, hx⟩, hxe _⟩
   refine ⟨min δ₀ 1, lt_min hδ₀ one_pos, ?_⟩
   have hall := (Filter.eventually_all_finset t).2 fun i _ ↦
-    ae_span_tangentConeAt_sup_span_tangentConeAt_perturb_eq_top_of_unstableSet_chart ν hfs hfs'
-      hf hh hc hhs hp hq hm hc₁ hc₂ hCu hCc (min_le_right _ _)
+    ae_span_tangentConeAt_sup_span_tangentConeAt_perturb_eq_top_of_unstableSet_chart ν hfs hf
+      hh hc hhs hp hq hm hc₁ hc₂ hCu hCc (min_le_right _ _)
       (fun s hs ↦ hδspan s (hs.trans_le (min_le_left _ _))) (he i) (hes i) (heS i)
   filter_upwards [hall] with s hs hsδ K' hf' x hx hlt hys
   obtain ⟨i, hi, hxi⟩ := mem_iUnion₂.1 (ht hx)
