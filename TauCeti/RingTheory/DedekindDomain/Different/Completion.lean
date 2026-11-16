@@ -193,7 +193,6 @@ theorem differentIdeal_adicCompletionIntegersSemilocal :
         (v.adicCompletionIntegersSemilocalEquiv K B L) =
       Ideal.pi fun u ↦
         differentIdeal (v.adicCompletionIntegers K) (u.1.adicCompletionIntegers L) := by
-  classical
   have : Module.Finite R B := IsIntegralClosure.finite R K L B
   let f : B →+* ∀ u : {w : HeightOneSpectrum B // w.asIdeal.LiesOver v.asIdeal},
       u.1.adicCompletionIntegers L :=
@@ -211,16 +210,10 @@ theorem differentIdeal_adicCompletionIntegersSemilocal :
       (v.adicCompletionIntegersSemilocalEquiv K B L) = (differentIdeal R B).map f :=
     Ideal.map_map (Algebra.TensorProduct.includeRight : B →ₐ[R] _).toRingHom
       (v.adicCompletionIntegersSemilocalEquiv K B L).toRingEquiv.toRingHom
-  rw [hf]; ext r; rw [Ideal.mem_pi]
-  refine ⟨fun hr u ↦ hcomp u ▸ Ideal.mem_map_of_mem _ hr, fun hr ↦ ?_⟩
-  have hmem (u) : ∃ y ∈ (differentIdeal R B).map f, y u = r u := by
-    simpa [eval] using (Ideal.mem_map_iff_of_surjective (eval u)
-      (Function.surjective_eval u)).mp (hcomp u ▸ hr u)
-  choose y hy hyu using hmem
-  have := Fintype.ofFinite {w : HeightOneSpectrum B // w.asIdeal.LiesOver v.asIdeal}
-  have hr_eq : r = ∑ u, Pi.single u 1 * y u := funext fun u ↦ by
-    rw [Finset.sum_apply, Fintype.sum_eq_single u fun u' hu' ↦ by simp [hu'.symm]]; simp [hyu]
-  exact hr_eq ▸ sum_mem fun u _ ↦ Ideal.mul_mem_left _ _ (hy u)
+  rw [hf]
+  refine Ideal.piOrderIso.injective (funext fun u ↦ ?_)
+  change ((differentIdeal R B).map f).map (eval u) = (Ideal.pi _).map (eval u)
+  rw [hcomp u, Ideal.map_evalRingHom_pi]
 
 include K L in
 /-- **Completion preserves the different exponent**: the multiplicity of the maximal ideal of `𝒪_w`

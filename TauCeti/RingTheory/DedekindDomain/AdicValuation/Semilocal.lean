@@ -12,13 +12,11 @@ public import TauCeti.RingTheory.DedekindDomain.AdicValuation.Approximation
 public import TauCeti.RingTheory.DedekindDomain.AdicValuation.IntegersExtension
 public import TauCeti.RingTheory.Ideal.PrimesOver
 import Mathlib.LinearAlgebra.Dimension.Localization
-import Mathlib.RingTheory.DedekindDomain.IntegralClosure
+import Mathlib.RingTheory.Algebraic.Integral
 import Mathlib.RingTheory.Flat.TorsionFree
-import Mathlib.RingTheory.Localization.BaseChange
-import Mathlib.RingTheory.Localization.Integral
 import TauCeti.RingTheory.AdicCompletion.Finite
 import TauCeti.RingTheory.AdicCompletion.Pi
-import TauCeti.RingTheory.Localization.FiniteFree
+import TauCeti.RingTheory.Localization.FiniteDimensional
 import TauCeti.RingTheory.NormTrace.BaseChange
 import TauCeti.RingTheory.NormTrace.Pi
 
@@ -219,11 +217,8 @@ scoped[AdicCompletionExtension] attribute [instance]
 theorem finiteDimensional_adicCompletion_of_finite (w : HeightOneSpectrum B)
     [w.asIdeal.LiesOver v.asIdeal] :
     FiniteDimensional (v.adicCompletion K) (w.adicCompletion L) :=
-  have := (IsFractionRing.isLocalization_algebraMapSubmonoid_iff (v.adicCompletionIntegers K)
-    (S := w.adicCompletionIntegers L) (w.adicCompletion L)).mpr inferInstance
-  .of_basis ((Module.Free.chooseBasis (v.adicCompletionIntegers K)
-    (w.adicCompletionIntegers L)).localizationLocalization (v.adicCompletion K)
-      (v.adicCompletionIntegers K)⁰ (w.adicCompletion L))
+  TauCeti.IsFractionRing.finiteDimensional_of_finite (v.adicCompletionIntegers K)
+    (w.adicCompletionIntegers L) (v.adicCompletion K) (w.adicCompletion L)
 
 scoped[AdicCompletionExtension] attribute [instance]
   IsDedekindDomain.HeightOneSpectrum.finiteDimensional_adicCompletion_of_finite
@@ -237,22 +232,9 @@ theorem isIntegralClosure_adicCompletionIntegers_of_finite (w : HeightOneSpectru
 scoped[AdicCompletionExtension] attribute [instance]
   IsDedekindDomain.HeightOneSpectrum.isIntegralClosure_adicCompletionIntegers_of_finite
 
-include K in
-private theorem isLocalization_algebraMapSubmonoid_of_finite :
-    IsLocalization (Algebra.algebraMapSubmonoid B R⁰) L :=
-  have : Algebra.IsAlgebraic K L := isAlgebraic_of_isFractionRing R B K L
-  IsIntegralClosure.isLocalization R K L B
-
-include R B in
-private theorem finiteDimensional_of_finite : FiniteDimensional K L :=
-  have := isLocalization_algebraMapSubmonoid_of_finite (R := R) (K := K) (B := B) (L := L)
-  .of_isLocalization R B R⁰
-
 private def adicCompletionFieldBaseChangeEquiv :
     v.adicCompletion K ⊗[R] B ≃ₐ[v.adicCompletion K] v.adicCompletion K ⊗[K] L :=
-  haveI := isLocalization_algebraMapSubmonoid_of_finite (R := R) (K := K) (B := B) (L := L)
-  haveI : Algebra.IsPushout R K B L :=
-    (Algebra.isPushout_of_isLocalization (R := R) (A := K) R⁰ B L).symm
+  haveI : FaithfulSMul R B := FaithfulSMul.of_field_isFractionRing R B K L
   (Algebra.TensorProduct.cancelBaseChange R K (v.adicCompletion K)
     (v.adicCompletion K) B).symm.trans
     (Algebra.TensorProduct.congr .refl (Algebra.IsPushout.equiv R K B L))
@@ -393,7 +375,7 @@ theorem adicCompletionSemilocalHom_injective :
   classical
   have : FaithfulSMul R B := FaithfulSMul.of_field_isFractionRing R B K L
   let _ : Fintype {w : HeightOneSpectrum B // w.asIdeal.LiesOver v.asIdeal} := Fintype.ofFinite _
-  have := finiteDimensional_of_finite (R := R) (K := K) (B := B) (L := L)
+  have := TauCeti.IsFractionRing.finiteDimensional_of_finite R B K L
   have hfin : Module.finrank (v.adicCompletion K) (v.adicCompletion K ⊗[K] L) =
       Module.finrank (v.adicCompletion K)
         (∀ w : {w : HeightOneSpectrum B // w.asIdeal.LiesOver v.asIdeal},
@@ -539,7 +521,7 @@ theorem algebraMap_norm_eq_prod_norm_adicCompletion
     algebraMap K (v.adicCompletion K) (Algebra.norm K x) =
       ∏ w : {w : HeightOneSpectrum B // w.asIdeal.LiesOver v.asIdeal},
         Algebra.norm (v.adicCompletion K) (algebraMap L (w.1.adicCompletion L) x) := by
-  have := finiteDimensional_of_finite (R := R) (K := K) (B := B) (L := L)
+  have := TauCeti.IsFractionRing.finiteDimensional_of_finite R B K L
   rw [← Algebra.norm_baseChange_tmul (A := v.adicCompletion K) (B := L) x,
     v.norm_eq_prod_norm_adicCompletionSemilocalEquiv (B := B)]
   exact Finset.prod_congr rfl fun w _ ↦ by rw [adicCompletionSemilocalEquiv_tmul, map_one, one_mul]
@@ -551,7 +533,7 @@ theorem trace_adicCompletionIntegersSemilocalToField_tmul_mul (a : v.adicComplet
         (v.adicCompletionIntegersSemilocalToField K B L (a ⊗ₜ b) * (1 ⊗ₜ d)) =
       (a : v.adicCompletion K) *
         algebraMap K (v.adicCompletion K) (Algebra.trace K L (algebraMap B L b * d)) := by
-  have := finiteDimensional_of_finite (R := R) (K := K) (B := B) (L := L)
+  have := TauCeti.IsFractionRing.finiteDimensional_of_finite R B K L
   rw [adicCompletionIntegersSemilocalToField_tmul, Algebra.TensorProduct.tmul_mul_tmul, mul_one,
     ← Algebra.trace_baseChange_tmul (K := K) (A := v.adicCompletion K), ← smul_eq_mul a.1,
     ← map_smul, TensorProduct.smul_tmul', smul_eq_mul, mul_one]
@@ -592,7 +574,7 @@ theorem algebraMap_trace_eq_sum_trace_adicCompletion
       ∑ w : {w : HeightOneSpectrum B // w.asIdeal.LiesOver v.asIdeal},
         Algebra.trace (v.adicCompletion K) (w.1.adicCompletion L)
           (algebraMap L (w.1.adicCompletion L) x) := by
-  have := finiteDimensional_of_finite (R := R) (K := K) (B := B) (L := L)
+  have := TauCeti.IsFractionRing.finiteDimensional_of_finite R B K L
   rw [← Algebra.trace_baseChange_tmul (A := v.adicCompletion K) (B := L) x,
     v.trace_eq_sum_trace_adicCompletionSemilocalEquiv (B := B)]
   exact Finset.sum_congr rfl fun w _ ↦ by rw [adicCompletionSemilocalEquiv_tmul, map_one, one_mul]
