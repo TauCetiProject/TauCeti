@@ -128,6 +128,8 @@ applied to an integrable function that is almost everywhere at least `a`.
   squared norms over sets `s` and `t` with `μ t = k μ s`, read between averages in `ℝ≥0∞`.
 * `TauCeti.ofReal_div_sq_mul_setLAverage_eq`: a factor `1 / λ²` in front of the average of `f²`
   moves inside it as `(f / λ)²`.
+* `TauCeti.setLAverage_div_rpow_lt_top`: the average of `(f / c) ^ p` over `S` is finite when
+  the integral of `f ^ p` over `S` is.
 * `TauCeti.rpow_laverage_le_laverage_rpow`: Jensen's inequality `(⨍ u) ^ r ≤ ⨍ u ^ r` for a
   nonnegative function and `r ≥ 1`.
 * `TauCeti.sq_setLAverage_enorm_le_ofReal_setAverage_norm_sq`: Jensen's inequality
@@ -517,6 +519,17 @@ theorem ofReal_div_sq_mul_setLAverage_eq {S : Set X} (f : X → ℝ≥0∞) {lam
   rw [ENNReal.div_rpow_of_nonneg _ _ zero_le_two, ENNReal.ofReal_rpow_of_pos hlam, Real.rpow_two,
     ENNReal.ofReal_div_of_pos (by positivity), div_eq_mul_inv, div_eq_mul_inv]
   ring
+
+/-- For `c ≠ 0` and `p ≥ 0`, the average of `(f / c) ^ p` over `S` is finite when the integral of
+`f ^ p` over `S` is. -/
+theorem setLAverage_div_rpow_lt_top {S : Set X} {f : X → ℝ≥0∞} {c : ℝ≥0∞} {p : ℝ} (hc : c ≠ 0)
+    (hp : 0 ≤ p) (hf : ∫⁻ x in S, f x ^ p ∂μ ≠ ∞) :
+    ⨍⁻ x in S, (f x / c) ^ p ∂μ < ∞ := by
+  have hcp : c⁻¹ ^ p ≠ ∞ := ENNReal.rpow_ne_top_of_nonneg hp (ENNReal.inv_ne_top.2 hc)
+  refine setLAverage_lt_top ?_
+  simp only [div_eq_mul_inv, ENNReal.mul_rpow_of_nonneg _ _ hp]
+  rw [lintegral_mul_const' _ _ hcp]
+  exact ENNReal.mul_ne_top hf hcp
 
 end LAverage
 

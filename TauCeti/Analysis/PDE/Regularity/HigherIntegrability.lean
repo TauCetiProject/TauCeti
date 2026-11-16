@@ -10,8 +10,8 @@ import TauCeti.Analysis.Normed.Module.Ball
 import TauCeti.Analysis.Sobolev.Poincare.Wirtinger.Sobolev
 import TauCeti.Analysis.Sobolev.W1p.Extension
 import TauCeti.MeasureTheory.Integral.Average
-import TauCeti.MeasureTheory.Integral.Bochner.Basic
 import TauCeti.MeasureTheory.Integral.Gehring
+import TauCeti.MeasureTheory.Measure.Haar.Average
 
 /-!
 # Meyers' higher integrability for divergence-form equations
@@ -59,7 +59,8 @@ condition satisfied for instance by Lipschitz domains. Write `u₀` for the zero
 whose gradient is `1_Ω ∇u`. On a ball `B(y, 2ρ)` with `ρ ≤ 2 r₀` either `B(y, 3ρ/2) ⊆ Ω`, and the
 interior argument applies there, or some `z ∉ Ω` lies in `B(y, 3ρ/2)`. In the second case the
 cutoff `ψ² u` is still a test function, since `u ∈ H¹₀(Ω)`, so Caccioppoli's inequality bounds
-`∇u₀` on `B(y, ρ)` by `u₀` on `B(y, 2ρ)` with no mean subtracted; and `u₀` vanishes on
+`∇u₀` on `B(y, ρ)` by `u₀` on `B(y, 2ρ)` with no mean subtracted
+(`TauCeti.PDE.exists_setIntegral_ball_norm_gradient_extendByZeroL_sq_le`); and `u₀` vanishes on
 `B(z, ρ/2) \ Ω`, a proportion `θ / 4ⁿ` of `B(y, 2ρ)`, so the mean of `u₀` is controlled by its
 oscillation (`TauCeti.setLAverage_enorm_sq_le_of_ae_eq_zero`) and the Sobolev–Poincaré inequality
 for `u₀` applies again. Gehring's lemma then gives Meyers' estimate for `1_Ω ∇u` on all balls of
@@ -367,129 +368,9 @@ theorem exists_memLp_gradient_ball_divergence [Nonempty ι] (K : ℝ) :
     have hF' := lintegral_rpow_eNorm_lt_top_of_eLpNorm_lt_top hp0 ENNReal.ofReal_ne_top
       hFp.eLpNorm_lt_top
     rw [hpR] at hF'
-    have hlam : (ENNReal.ofReal lam)⁻¹ ^ (2 + ε) ≠ ∞ :=
-      ENNReal.rpow_ne_top_of_nonneg (by linarith)
-        (ENNReal.inv_ne_top.2 (ENNReal.ofReal_pos.2 h.pos).ne')
-    refine laverage_lt_top ?_
-    simp only [div_eq_mul_inv, ENNReal.mul_rpow_of_nonneg _ _ (by linarith : (0 : ℝ) ≤ 2 + ε)]
-    rw [lintegral_mul_const' _ _ hlam]
-    exact ENNReal.mul_ne_top hF'.ne hlam
+    exact setLAverage_div_rpow_lt_top (ENNReal.ofReal_pos.2 h.pos).ne' (by linarith) hF'.ne
 
 /-! ### Up to the boundary -/
-
-/-- The integral of `‖1_Ω f‖²` over `B` is that of `‖f‖²` over `B ∩ Ω`. -/
-private theorem setIntegral_norm_indicator_sq {X V : Type*} [MeasurableSpace X] {μ : Measure X}
-    [NormedAddCommGroup V] {t : Set X} (ht : MeasurableSet t) (f : X → V) (B : Set X) :
-    ∫ x in B, ‖t.indicator f x‖ ^ 2 ∂μ = ∫ x in B ∩ t, ‖f x‖ ^ 2 ∂μ := by
-  rw [← setIntegral_indicator ht]
-  congr 1
-  funext x
-  by_cases hx : x ∈ t <;> simp [hx]
-
-/-- A function equal almost everywhere to `1_Ω g` equals `g` almost everywhere on a subset of
-`Ω`. -/
-private theorem ae_restrict_eq_of_ae_eq_indicator {X V : Type*} [MeasurableSpace X]
-    {μ : Measure X} [Zero V] {t B : Set X} {f g : X → V} (hB : MeasurableSet B) (hBt : B ⊆ t)
-    (hf : f =ᵐ[μ] t.indicator g) : ∀ᵐ x ∂μ.restrict B, f x = g x := by
-  filter_upwards [ae_restrict_of_ae hf, ae_restrict_mem hB] with x hx hxB
-  rw [hx, indicator_of_mem (hBt hxB)]
-
-open Filter in
-/-- **The Caccioppoli inequality up to the boundary.** There is `C > 0`, depending only on the
-dimension, with the following property. Let `a` be measurable and uniformly elliptic on `Ω` with
-constants `0 < λ ≤ Λ`, let `F ∈ L²(Ω; ℝⁿ)`, and let `u ∈ H¹₀(Ω)` satisfy `a(u, v) = -∫_Ω ⟪F, ∇v⟫`
-for every `v ∈ H¹₀(Ω)`. Then the zero extension `u₀` of `u` satisfies, on every ball,
-
-`∫_{B(y, ρ)} ‖∇u₀‖² ≤ 2 ((2Λ/λ)² + 1) (C / ρ)² ∫_{B(y, 2ρ)} u₀² + (12/λ²) ∫_{B(y, 2ρ)} ‖1_Ω F‖²`. -/
-private theorem exists_setIntegral_ball_norm_gradient_extendByZeroL_sq_le :
-    ∃ C : ℝ, 0 < C ∧ ∀ {Omega : Opens (EuclideanSpace ℝ ι)} {a : EuclideanSpace ℝ ι → Matrix ι ι ℝ}
-      {lam Lam : ℝ} {F : EuclideanSpace ℝ ι → EuclideanSpace ℝ ι} {u : W1p0 mu Omega 2}
-      {ub : W1p mu ⊤ 2} {y : EuclideanSpace ℝ ι} {ρ : ℝ},
-      UniformlyEllipticOn (Omega : Set (EuclideanSpace ℝ ι)) a lam Lam →
-      AEStronglyMeasurable a (mu.restrict Omega) → MemLp F 2 (mu.restrict Omega) →
-      (∀ v : W1p0 mu Omega 2, energyFormH1 a 0 0 (u : W1p mu Omega 2) (v : W1p mu Omega 2) =
-        -∫ x in Omega, ⟪F x, W1p.gradient (v : W1p mu Omega 2) x⟫_ℝ ∂mu) →
-      (W1p.value ub : EuclideanSpace ℝ ι → ℝ) =ᵐ[mu]
-        (Omega : Set (EuclideanSpace ℝ ι)).indicator (W1p.value (u : W1p mu Omega 2)) →
-      (W1p.gradient ub : EuclideanSpace ℝ ι → EuclideanSpace ℝ ι) =ᵐ[mu]
-        (Omega : Set (EuclideanSpace ℝ ι)).indicator (W1p.gradient (u : W1p mu Omega 2)) →
-      0 < ρ →
-      ∫ x in ball y ρ, ‖W1p.gradient ub x‖ ^ 2 ∂mu ≤
-        2 * ((2 * Lam / lam) ^ 2 + 1) * (C / ρ) ^ 2 *
-            ∫ x in ball y (2 * ρ), ‖W1p.value ub x‖ ^ 2 ∂mu
-          + 12 / lam ^ 2 *
-            ∫ x in ball y (2 * ρ), ‖(Omega : Set (EuclideanSpace ℝ ι)).indicator F x‖ ^ 2 ∂mu := by
-  obtain ⟨c, hc0, hc⟩ := exists_forall_contDiff_cutoff_closedBall (E := EuclideanSpace ℝ ι)
-  refine ⟨2 * c + 1, by positivity, ?_⟩
-  intro Omega a lam Lam F u ub y ρ h ha hF hu hval hgrad hρ
-  have hOm : MeasurableSet (Omega : Set (EuclideanSpace ℝ ι)) := Omega.isOpen.measurableSet
-  -- A cutoff equal to one on `B(y, ρ)` and supported in `closedBall y (3ρ/2) ⊆ B(y, 2ρ)`.
-  obtain ⟨ψ, hψ, hrange, hone, hts, hgradψ, -⟩ := hc y hρ.le (by linarith : ρ < 3 / 2 * ρ)
-  have hts2 : tsupport ψ ⊆ ball y (2 * ρ) := hts.trans (closedBall_subset_ball (by linarith))
-  have hcpt : HasCompactSupport ψ :=
-    (isCompact_closedBall y (3 / 2 * ρ)).of_isClosed_subset (isClosed_tsupport ψ) hts
-  have hG : ∀ x, ‖∇ ψ x‖ ≤ (2 * c + 1) / ρ := fun x => (hgradψ x).trans (by
-    rw [(by ring : 3 / 2 * ρ - ρ = ρ / 2), div_div_eq_mul_div]
-    exact div_le_div_of_nonneg_right (by linarith) hρ.le)
-  have hψ1 : ∀ x, ψ x ^ 2 ≤ 1 := fun x => by
-    obtain ⟨h0, h1⟩ := hrange (mem_range_self x)
-    exact pow_le_one₀ h0 h1
-  have hcacc := h.setIntegral_sq_mul_norm_gradient_sq_le_divergence ha hF hu hψ hcpt (.inr u.2)
-  -- The left side: on `B(y, ρ) ∩ Ω` the cutoff is one.
-  have hleft : ∫ x in ball y ρ, ‖W1p.gradient ub x‖ ^ 2 ∂mu ≤
-      ∫ x in Omega, ψ x ^ 2 * ‖W1p.gradient (u : W1p mu Omega 2) x‖ ^ 2 ∂mu := by
-    rw [integral_congr_ae (ae_restrict_of_ae (hgrad.mono fun x hx => by rw [hx])),
-      setIntegral_norm_indicator_sq hOm]
-    exact MeasureTheory.setIntegral_le_setIntegral_sq_mul_of_ae_sq_eq_one
-      (Lp.memLp (W1p.gradient (u : W1p mu Omega 2))).norm.integrable_sq
-      (ae_of_all _ fun x => sq_nonneg _) (hψ.continuous.pow 2).aestronglyMeasurable
-      (ae_of_all _ fun x => abs_le.2 ⟨by linarith [(hrange (mem_range_self x)).1],
-        (hrange (mem_range_self x)).2⟩)
-      (ae_restrict_of_forall_mem (measurableSet_ball.inter hOm) fun x hx => by
-        simp [hone (ball_subset_closedBall hx.1)])
-      inter_subset_right
-  -- The gradient of the cutoff is supported in `B(y, 2ρ)`.
-  have hmid : ∫ x in Omega, ‖∇ ψ x‖ ^ 2 * W1p.value (u : W1p mu Omega 2) x ^ 2 ∂mu ≤
-      ((2 * c + 1) / ρ) ^ 2 * ∫ x in ball y (2 * ρ), ‖W1p.value ub x‖ ^ 2 ∂mu := by
-    have e : ∫ x in ball y (2 * ρ), ‖W1p.value ub x‖ ^ 2 ∂mu =
-        ∫ x in (Omega : Set (EuclideanSpace ℝ ι)) ∩ ball y (2 * ρ),
-          W1p.value (u : W1p mu Omega 2) x ^ 2 ∂mu := by
-      rw [integral_congr_ae (ae_restrict_of_ae (hval.mono fun x hx => by rw [hx])),
-        setIntegral_norm_indicator_sq hOm, inter_comm]
-      simp only [Real.norm_eq_abs, sq_abs]
-    rw [e]
-    exact W1p.setIntegral_norm_gradient_sq_mul_value_sq_le (u : W1p mu Omega 2) hψ hG hts2
-      (Lp.memLp (W1p.value (u : W1p mu Omega 2))).integrable_sq
-      (Eventually.of_forall fun x => le_rfl)
-  -- The datum: `ψ² ≤ 1`, and `ψ` vanishes off `B(y, 2ρ)`.
-  have hdatum : ∫ x in Omega, ψ x ^ 2 * ‖F x‖ ^ 2 ∂mu ≤
-      ∫ x in ball y (2 * ρ), ‖(Omega : Set (EuclideanSpace ℝ ι)).indicator F x‖ ^ 2 ∂mu := by
-    rw [setIntegral_norm_indicator_sq hOm, inter_comm, ← setIntegral_indicator measurableSet_ball]
-    refine integral_mono_ae (hF.norm.integrable_sq.bdd_mul
-      (hψ.continuous.pow 2).aestronglyMeasurable (c := 1) (Eventually.of_forall fun x => by
-        rw [Real.norm_eq_abs, abs_of_nonneg (sq_nonneg _)]
-        exact hψ1 x)) (hF.norm.integrable_sq.indicator measurableSet_ball)
-      (Eventually.of_forall fun x => ?_)
-    by_cases hx : x ∈ ball y (2 * ρ)
-    · rw [indicator_of_mem hx]
-      exact mul_le_of_le_one_left (sq_nonneg _) (hψ1 x)
-    · rw [indicator_of_notMem hx]
-      simp [image_eq_zero_of_notMem_tsupport fun hx' => hx (hts2 hx')]
-  calc ∫ x in ball y ρ, ‖W1p.gradient ub x‖ ^ 2 ∂mu
-      ≤ 2 * ((2 * Lam / lam) ^ 2 + 1) *
-          (((2 * c + 1) / ρ) ^ 2 * ∫ x in ball y (2 * ρ), ‖W1p.value ub x‖ ^ 2 ∂mu)
-        + 12 / lam ^ 2 *
-          ∫ x in ball y (2 * ρ), ‖(Omega : Set (EuclideanSpace ℝ ι)).indicator F x‖ ^ 2 ∂mu :=
-        (hleft.trans hcacc).trans (by gcongr)
-    _ = _ := by ring
-
-omit [DecidableEq ι] in
-/-- The measure of `B(y, κρ)` is `κⁿ` times that of `B(y, ρ)`. -/
-private theorem measure_ball_mul_eq {y : EuclideanSpace ℝ ι} {κ ρ : ℝ} (hκ : 0 < κ) (hρ : 0 < ρ) :
-    mu (ball y (κ * ρ)) =
-      ENNReal.ofReal (κ ^ finrank ℝ (EuclideanSpace ℝ ι)) * mu (ball y ρ) := by
-  rw [Measure.addHaar_ball_of_pos mu y (by positivity), Measure.addHaar_ball_of_pos mu y hρ,
-    mul_pow, ENNReal.ofReal_mul (by positivity), mul_assoc]
 
 omit [DecidableEq ι] in
 /-- **Assembling a reverse Hölder inequality.** On balls `B(y, ρ) ⊆ B(y, κρ) ⊆ B(y, 2ρ)`, a
@@ -500,9 +381,7 @@ private theorem setLAverage_enorm_sq_le_of_setIntegral_le_of_le_mul_sq
     {G Fv : EuclideanSpace ℝ ι → EuclideanSpace ℝ ι} {W : EuclideanSpace ℝ ι → ℝ}
     {y : EuclideanSpace ℝ ι} {ρ κ A C M β s : ℝ} (hρ : 0 < ρ) (hκ1 : 1 < κ) (hκ2 : κ ≤ 2)
     (hs : 0 < s) (hA : 0 ≤ A) (hM : 0 ≤ M) (hβ : 0 ≤ β)
-    (hG : IntegrableOn (fun x => ‖G x‖ ^ 2) (ball y ρ) mu)
-    (hW : IntegrableOn (fun x => ‖W x‖ ^ 2) (ball y (κ * ρ)) mu)
-    (hF : IntegrableOn (fun x => ‖Fv x‖ ^ 2) (ball y (κ * ρ)) mu)
+    (hG : MemLp G 2 mu) (hW : MemLp W 2 (mu.restrict (ball y (κ * ρ)))) (hF : MemLp Fv 2 mu)
     (hc : ∫ x in ball y ρ, ‖G x‖ ^ 2 ∂mu ≤
       A * (C / (κ * ρ - ρ)) ^ 2 * ∫ x in ball y (κ * ρ), ‖W x‖ ^ 2 ∂mu +
         β * ∫ x in ball y (κ * ρ), ‖Fv x‖ ^ 2 ∂mu)
@@ -520,18 +399,17 @@ private theorem setLAverage_enorm_sq_le_of_setIntegral_le_of_le_mul_sq
   set k : ℝ := (2 / κ) ^ n
   have hk : 0 ≤ k := by positivity
   -- Passing from `B(y, κρ)` to `B(y, 2ρ)` costs the ratio `(2 / κ)ⁿ` of their measures.
-  have hsub : ball y (κ * ρ) ⊆ ball y (2 * ρ) := ball_subset_ball (by nlinarith)
-  have hμ2 : mu (ball y (2 * ρ)) = ENNReal.ofReal k * mu (ball y (κ * ρ)) := by
-    rw [show 2 * ρ = (2 / κ) * (κ * ρ) by field_simp, measure_ball_mul_eq (by positivity)
-      (by positivity)]
   have henl : ∀ g : EuclideanSpace ℝ ι → ℝ≥0∞,
       ⨍⁻ x in ball y (κ * ρ), g x ∂mu ≤ ENNReal.ofReal k * ⨍⁻ x in ball y (2 * ρ), g x ∂mu :=
-    fun g => (setLAverage_le_div_mul_setLAverage_of_subset hsub measure_ball_lt_top.ne).trans_eq
-      (by rw [hμ2, ENNReal.mul_div_cancel_right (measure_ball_pos mu y (by positivity)).ne'
-        measure_ball_lt_top.ne])
+    fun g => (setLAverage_ball_le g (by positivity)
+      (ball_subset_ball (by nlinarith) : ball y (κ * ρ) ⊆ ball y (2 * ρ))).trans_eq
+      (by rw [mul_div_mul_right _ _ hρ.ne'])
   -- The Caccioppoli inequality between averages.
-  have hav := setLAverage_enorm_sq_le_of_setIntegral_le (μ := mu) (by positivity) hβ
-    (measure_ball_mul_eq hκ0 hρ) measure_ball_lt_top.ne hG hW hF hc
+  have hav := setLAverage_enorm_sq_le_of_setIntegral_le (μ := mu) (k := ENNReal.ofReal (κ ^ n))
+    (by positivity) hβ
+    (by rw [Measure.addHaar_ball_mul_of_pos mu y hκ0, Measure.addHaar_ball_center mu y])
+    measure_ball_lt_top.ne hG.norm.integrable_sq.integrableOn hW.norm.integrable_sq
+    hF.norm.integrable_sq.integrableOn hc
   refine hav.trans ?_
   have hPk : ⨍⁻ x in ball y (κ * ρ), ‖W x‖ₑ ^ (2 : ℝ) ∂mu ≤
       ENNReal.ofReal (M * (κ * ρ) ^ 2) * (ENNReal.ofReal (k ^ (2 / s)) *
@@ -554,23 +432,13 @@ private theorem setLAverage_enorm_sq_le_of_setIntegral_le_of_le_mul_sq
     _ = _ := by
         have hc1 : κ ^ n * (A * (C / (κ * ρ - ρ)) ^ 2 * (M * (κ * ρ) ^ 2 * k ^ (2 / s))) =
             κ ^ n * (A * C ^ 2 * M * (κ / (κ - 1)) ^ 2) * k ^ (2 / s) := by
-          have : κ * ρ - ρ = (κ - 1) * ρ := by ring
-          rw [this]
+          rw [show κ * ρ - ρ = (κ - 1) * ρ by ring]
           field_simp
         have hc2 : κ ^ n * (β * k) = 2 ^ n * β := by
-          simp only [k]
-          rw [div_pow, ← mul_assoc, mul_comm (κ ^ n), mul_assoc, mul_div_cancel₀ _
-            (pow_ne_zero _ hκ0.ne'), mul_comm]
-        have e1 : ENNReal.ofReal (κ ^ n * (A * C ^ 2 * M * (κ / (κ - 1)) ^ 2) * k ^ (2 / s)) =
-            ENNReal.ofReal (κ ^ n) * (ENNReal.ofReal (A * (C / (κ * ρ - ρ)) ^ 2) *
-              (ENNReal.ofReal (M * (κ * ρ) ^ 2) * ENNReal.ofReal (k ^ (2 / s)))) := by
-          rw [← hc1, ENNReal.ofReal_mul (p := κ ^ n) (by positivity),
-            ENNReal.ofReal_mul (p := A * (C / (κ * ρ - ρ)) ^ 2) (by positivity),
-            ENNReal.ofReal_mul (p := M * (κ * ρ) ^ 2) (by positivity)]
-        have e2 : ENNReal.ofReal (2 ^ n * β) =
-            ENNReal.ofReal (κ ^ n) * (ENNReal.ofReal β * ENNReal.ofReal k) := by
-          rw [← hc2, ENNReal.ofReal_mul (by positivity), ENNReal.ofReal_mul hβ]
-        rw [e1, e2]
+          simp only [k, div_pow]
+          field_simp
+        rw [← hc1, ← hc2]
+        simp (disch := positivity) only [ENNReal.ofReal_mul]
         ring
 
 open Filter in
@@ -607,20 +475,17 @@ private theorem exists_setLAverage_enorm_gradient_extendByZeroL_sq_le_of_ball_su
     (3 / 2 / (3 / 2 - 1)) ^ 2) * ((2 / (3 / 2)) ^ finrank ℝ (EuclideanSpace ℝ ι)) ^
       (2 / (s : ℝ)), ?_⟩
   intro Omega a lam Lam F u ub y ρ h hK ha hF hu hval0 hgrad0 hρ hin
-  have hlam : 0 < lam := h.pos
   have hs0 : (0 : ℝ) < s := one_pos.trans_le (by exact_mod_cast hs1)
   have hOm : MeasurableSet (Omega : Set (EuclideanSpace ℝ ι)) := Omega.isOpen.measurableSet
   have : IsFiniteMeasure (mu.restrict (ball y (3 / 2 * ρ))) :=
     isFiniteMeasure_restrict.2 measure_ball_lt_top.ne
-  have hrestr : ∀ S : Set (EuclideanSpace ℝ ι),
-      mu.restrict S ≤ mu.restrict ((⊤ : Opens (EuclideanSpace ℝ ι)) : Set (EuclideanSpace ℝ ι)) :=
-    fun S => Measure.restrict_mono (by simp) le_rfl
   -- On `B(y, 3ρ/2) ⊆ Ω` the zero extensions are `u` and `F` themselves.
-  have hval := ae_restrict_eq_of_ae_eq_indicator measurableSet_ball hin hval0
-  have hgrad := ae_restrict_eq_of_ae_eq_indicator measurableSet_ball hin hgrad0
-  have hF' := ae_restrict_eq_of_ae_eq_indicator (μ := mu)
-    (f := (Omega : Set (EuclideanSpace ℝ ι)).indicator F) measurableSet_ball hin (ae_eq_refl _)
-  have hsub : ball y ρ ⊆ ball y (3 / 2 * ρ) := ball_subset_ball (by linarith)
+  have hval := hval0.restrict.trans (ae_restrict_of_ae_restrict_of_subset hin
+    (indicator_ae_eq_restrict hOm.nullMeasurableSet))
+  have hgrad := hgrad0.restrict.trans (ae_restrict_of_ae_restrict_of_subset hin
+    (indicator_ae_eq_restrict hOm.nullMeasurableSet))
+  have hF' := ae_restrict_of_ae_restrict_of_subset hin
+    (indicator_ae_eq_restrict (μ := mu) (f := F) hOm.nullMeasurableSet)
   have hm : ⨍ z in ball y (3 / 2 * ρ), W1p.value ub z ∂mu =
       ⨍ z in ball y (3 / 2 * ρ), W1p.value u z ∂mu := average_congr hval
   -- The Caccioppoli inequality for `u` minus its mean, written for the zero extension.
@@ -633,8 +498,8 @@ private theorem exists_setLAverage_enorm_gradient_extendByZeroL_sq_le_of_ball_su
     have hc := hC h ha hF hu (by linarith : ρ < 3 / 2 * ρ) hin
     have e1 : ∫ x in ball y ρ, ‖W1p.gradient ub x‖ ^ 2 ∂mu =
         ∫ x in ball y ρ, ‖W1p.gradient u x‖ ^ 2 ∂mu :=
-      integral_congr_ae ((ae_restrict_of_ae_restrict_of_subset hsub hgrad).mono fun x hx => by
-        simp only [hx])
+      integral_congr_ae ((ae_restrict_of_ae_restrict_of_subset (ball_subset_ball (by linarith))
+        hgrad).mono fun x hx => by simp only [hx])
     have e2 : ∫ x in ball y (3 / 2 * ρ),
           ‖W1p.value ub x - ⨍ z in ball y (3 / 2 * ρ), W1p.value ub z ∂mu‖ ^ 2 ∂mu =
         ∫ x in ball y (3 / 2 * ρ), (W1p.value u x -
@@ -646,20 +511,16 @@ private theorem exists_setLAverage_enorm_gradient_extendByZeroL_sq_le_of_ball_su
       integral_congr_ae (hF'.mono fun x hx => by simp only [hx])
     have hA := two_mul_sq_add_one_le_of_le_mul h hK
     rw [e1, e2, e3]
-    refine hc.trans ?_
-    gcongr
+    exact hc.trans (by gcongr)
   -- The Sobolev–Poincaré inequality for the zero extension, and the assembly.
   have hPB := hP ub (by positivity : 0 < 3 / 2 * ρ)
     (by simp : ball y (3 / 2 * ρ) ⊆ ((⊤ : Opens (EuclideanSpace ℝ ι)) : Set (EuclideanSpace ℝ ι)))
-  have hFt : MemLp ((Omega : Set (EuclideanSpace ℝ ι)).indicator F) 2 mu :=
-    (memLp_indicator_iff_restrict hOm.nullMeasurableSet).2 hF
   exact setLAverage_enorm_sq_le_of_setIntegral_le_of_le_mul_sq
     (W := fun x => W1p.value ub x - ⨍ z in ball y (3 / 2 * ρ), W1p.value ub z ∂mu)
     hρ (by norm_num) (by norm_num) hs0 (by positivity) (sq_nonneg c) (by positivity)
-    ((Lp.memLp (W1p.gradient ub)).norm.integrable_sq.mono_measure (hrestr _))
-    ((((Lp.memLp (W1p.value ub)).mono_measure (hrestr _)).sub
-      (memLp_const _)).norm.integrable_sq)
-    (hFt.norm.integrable_sq.integrableOn) hcacc hPB
+    ((Lp.memLp (W1p.gradient ub)).mono_measure (by simp))
+    ((((Lp.memLp (W1p.value ub)).mono_measure (by simp)).restrict _).sub (memLp_const _))
+    ((memLp_indicator_iff_restrict hOm.nullMeasurableSet).2 hF) hcacc hPB
 
 omit [DecidableEq ι] in
 /-- If the complement of `T` fills a proportion `θ` of `B(z, ρ/2)`, then `B(z, ρ/2) \ T` has
@@ -669,7 +530,6 @@ private theorem toNNReal_div_pow_mul_measure_ball_le {T : Set (EuclideanSpace �
     (hdens : θ * mu.real (ball z (ρ / 2)) ≤ mu.real (ball z (ρ / 2) \ T)) :
     ((θ / 4 ^ finrank ℝ (EuclideanSpace ℝ ι)).toNNReal : ℝ≥0∞) * mu (ball y (2 * ρ)) ≤
       mu (ball z (ρ / 2) \ T) := by
-  have hθ4 : 0 < θ / 4 ^ finrank ℝ (EuclideanSpace ℝ ι) := by positivity
   have hz' : ENNReal.ofReal θ * mu (ball z (ρ / 2)) ≤ mu (ball z (ρ / 2) \ T) := by
     have := ENNReal.ofReal_le_ofReal hdens
     rwa [ENNReal.ofReal_mul hθ.le, measureReal_def, measureReal_def,
@@ -678,11 +538,12 @@ private theorem toNNReal_div_pow_mul_measure_ball_le {T : Set (EuclideanSpace �
       at this
   refine le_trans (le_of_eq ?_) hz'
   rw [ENNReal.ofNNReal_toNNReal, Measure.addHaar_ball_of_pos mu y (by positivity),
-    Measure.addHaar_ball_of_pos mu z (by positivity), ← mul_assoc, ← mul_assoc,
-    ← ENNReal.ofReal_mul hθ4.le, ← ENNReal.ofReal_mul hθ.le]
+    Measure.addHaar_ball_of_pos mu z (by positivity)]
+  simp (disch := positivity) only [← mul_assoc, ← ENNReal.ofReal_mul]
   congr 2
-  rw [div_pow, mul_pow, show (4 : ℝ) = 2 * 2 by norm_num, mul_pow]
-  field_simp
+  rw [div_mul_eq_mul_div, mul_div_assoc, ← div_pow]
+  congr 2
+  ring
 
 open Filter in
 /-- **The reverse Hölder inequality for the zero extension, at the boundary.** If the complement
@@ -716,21 +577,15 @@ private theorem exists_setLAverage_enorm_gradient_extendByZeroL_sq_le_of_mul_le 
           ⨍⁻ x in ball y (2 * ρ),
             ‖(Omega : Set (EuclideanSpace ℝ ι)).indicator F x‖ₑ ^ (2 : ℝ) ∂mu := by
   have : Fact (1 ≤ (s : ℝ≥0∞)) := ⟨by exact_mod_cast hs1⟩
-  obtain ⟨C, -, hC⟩ := exists_setIntegral_ball_norm_gradient_extendByZeroL_sq_le (mu := mu)
+  obtain ⟨C, -, hC⟩ := exists_setIntegral_ball_norm_gradient_extendByZeroL_sq_le (ι := ι)
   obtain ⟨c, -, hP⟩ := exists_setLAverage_enorm_value_sub_setAverage_sq_le (mu := mu) hs2 hsn
   have hθ4 : 0 < θ / 4 ^ finrank ℝ (EuclideanSpace ℝ ι) := by positivity
   refine ⟨2 ^ finrank ℝ (EuclideanSpace ℝ ι) * (2 * ((2 * K) ^ 2 + 1) * C ^ 2 *
     (2 * (1 + (θ / 4 ^ finrank ℝ (EuclideanSpace ℝ ι))⁻¹) * c ^ 2) * (2 / (2 - 1)) ^ 2) *
       ((2 / 2) ^ finrank ℝ (EuclideanSpace ℝ ι)) ^ (2 / (s : ℝ)), ?_⟩
   intro Omega a lam Lam F u ub y z ρ h hK ha hF hu hval0 hgrad0 hρ hz hdens
-  have hlam : 0 < lam := h.pos
   have hs0 : (0 : ℝ) < s := one_pos.trans_le (by exact_mod_cast hs1)
   have hOm : MeasurableSet (Omega : Set (EuclideanSpace ℝ ι)) := Omega.isOpen.measurableSet
-  have : IsFiniteMeasure (mu.restrict (ball y (2 * ρ))) :=
-    isFiniteMeasure_restrict.2 measure_ball_lt_top.ne
-  have hrestr : ∀ S : Set (EuclideanSpace ℝ ι),
-      mu.restrict S ≤ mu.restrict ((⊤ : Opens (EuclideanSpace ℝ ι)) : Set (EuclideanSpace ℝ ι)) :=
-    fun S => Measure.restrict_mono (by simp) le_rfl
   -- The Caccioppoli inequality up to the boundary.
   have hcacc : ∫ x in ball y ρ, ‖W1p.gradient ub x‖ ^ 2 ∂mu ≤
       2 * ((2 * K) ^ 2 + 1) * (C / (2 * ρ - ρ)) ^ 2 *
@@ -743,11 +598,8 @@ private theorem exists_setLAverage_enorm_gradient_extendByZeroL_sq_le_of_mul_le 
     gcongr
   -- `u₀` vanishes on `S = B(z, ρ/2) \ Ω ⊆ B(y, 2ρ)`, a proportion `θ / 4ⁿ` of `B(y, 2ρ)`.
   set S := ball z (ρ / 2) \ (Omega : Set (EuclideanSpace ℝ ι))
-  have hSsub : S ⊆ ball y (2 * ρ) := fun x hx => by
-    have h1 := mem_ball.1 hx.1
-    have h2 := mem_ball.1 hz
-    rw [mem_ball]
-    linarith [dist_triangle x z y]
+  have hSsub : S ⊆ ball y (2 * ρ) := fun x hx =>
+    mem_ball.2 (by linarith [dist_triangle x z y, mem_ball.1 hx.1, mem_ball.1 hz])
   have hS0 : ∀ᵐ x ∂mu.restrict S, W1p.value ub x = 0 := by
     filter_upwards [ae_restrict_of_ae hval0,
       ae_restrict_mem (measurableSet_ball.diff hOm)] with x hx hxS
@@ -763,22 +615,15 @@ private theorem exists_setLAverage_enorm_gradient_extendByZeroL_sq_le_of_mul_le 
     have hPB := hP ub (by positivity : 0 < 2 * ρ)
       (by simp : ball y (2 * ρ) ⊆ ((⊤ : Opens (EuclideanSpace ℝ ι)) : Set (EuclideanSpace ℝ ι)))
     refine (mul_le_mul_right hPB _).trans_eq ?_
-    rw [← mul_assoc]
-    congr 1
-    rw [ENNReal.ofNNReal_toNNReal, ← ENNReal.ofReal_inv_of_pos hθ4, ← ENNReal.ofReal_one,
-      ← ENNReal.ofReal_add zero_le_one (by positivity),
-      show 2 * (1 + (θ / 4 ^ finrank ℝ (EuclideanSpace ℝ ι))⁻¹) * c ^ 2 * (2 * ρ) ^ 2 =
-        2 * ((1 + (θ / 4 ^ finrank ℝ (EuclideanSpace ℝ ι))⁻¹) * (c ^ 2 * (2 * ρ) ^ 2)) by ring,
-      ENNReal.ofReal_mul zero_le_two,
-      ENNReal.ofReal_mul (p := 1 + (θ / 4 ^ finrank ℝ (EuclideanSpace ℝ ι))⁻¹) (by positivity),
-      ENNReal.ofReal_ofNat, mul_assoc]
-  have hFt : MemLp ((Omega : Set (EuclideanSpace ℝ ι)).indicator F) 2 mu :=
-    (memLp_indicator_iff_restrict hOm.nullMeasurableSet).2 hF
+    rw [ENNReal.ofNNReal_toNNReal, ← ENNReal.ofReal_inv_of_pos hθ4]
+    simp (disch := positivity) only [ENNReal.ofReal_mul, ENNReal.ofReal_add, ENNReal.ofReal_one,
+      ENNReal.ofReal_ofNat]
+    ring
   exact setLAverage_enorm_sq_le_of_setIntegral_le_of_le_mul_sq (W := fun x => W1p.value ub x)
     hρ (by norm_num) le_rfl hs0 (by positivity) (by positivity) (by positivity)
-    ((Lp.memLp (W1p.gradient ub)).norm.integrable_sq.mono_measure (hrestr _))
-    (((Lp.memLp (W1p.value ub)).mono_measure (hrestr _)).norm.integrable_sq)
-    (hFt.norm.integrable_sq.integrableOn) hcacc hPB
+    ((Lp.memLp (W1p.gradient ub)).mono_measure (by simp))
+    (((Lp.memLp (W1p.value ub)).mono_measure (by simp)).restrict _)
+    ((memLp_indicator_iff_restrict hOm.nullMeasurableSet).2 hF) hcacc hPB
 
 open Filter in
 /-- **The reverse Hölder inequality up to the boundary.** Let `n ≥ 1` be the dimension, let
@@ -949,13 +794,10 @@ theorem exists_memLp_gradient_divergence [Nonempty ι] (K : ℝ) {θ : ℝ} (hθ
   intro Omega a lam Lam F u r₀ h hK ha hu hdens hr₀ hΩb hFp
   have hOm : MeasurableSet (Omega : Set (EuclideanSpace ℝ ι)) := Omega.isOpen.measurableSet
   have : IsFiniteMeasure (mu.restrict Omega) := isFiniteMeasure_restrict.2 hΩb.measure_lt_top.ne
-  have hp0 : ENNReal.ofReal (2 + ε) ≠ 0 := by
-    rw [Ne, ENNReal.ofReal_eq_zero, not_le]
-    linarith
+  have hp0 : ENNReal.ofReal (2 + ε) ≠ 0 := (ENNReal.ofReal_pos.2 (by linarith)).ne'
   have hpR : (ENNReal.ofReal (2 + ε)).toReal = 2 + ε := ENNReal.toReal_ofReal (by linarith)
-  have hF : MemLp F 2 (mu.restrict Omega) := hFp.mono_exponent (by
-    rw [← ENNReal.ofReal_ofNat]
-    exact ENNReal.ofReal_le_ofReal (by linarith))
+  have hF : MemLp F 2 (mu.restrict Omega) := hFp.mono_exponent <|
+    (ENNReal.ofReal_ofNat 2).symm.trans_le (ENNReal.ofReal_le_ofReal (by linarith))
   -- The zero extensions of `∇u` and `F` are `2`- and `(2 + ε)`-integrable on the whole space.
   have hG2 := lintegral_rpow_eNorm_lt_top_of_eLpNorm_lt_top two_ne_zero ENNReal.ofNat_ne_top
     ((memLp_indicator_iff_restrict hOm.nullMeasurableSet).2
@@ -972,13 +814,8 @@ theorem exists_memLp_gradient_divergence [Nonempty ι] (K : ℝ) {θ : ℝ} (hθ
     refine ENNReal.mul_lt_top ENNReal.coe_lt_top (ENNReal.add_lt_top.2 ⟨?_, ?_⟩)
     · exact ENNReal.rpow_lt_top_of_nonneg (by linarith) (laverage_lt_top
         (lt_of_le_of_lt (setLIntegral_le_lintegral _ _) hG2).ne).ne
-    · have hlam : (ENNReal.ofReal lam)⁻¹ ^ (2 + ε) ≠ ∞ :=
-        ENNReal.rpow_ne_top_of_nonneg (by linarith)
-          (ENNReal.inv_ne_top.2 (ENNReal.ofReal_pos.2 h.pos).ne')
-      refine laverage_lt_top ?_
-      simp only [div_eq_mul_inv, ENNReal.mul_rpow_of_nonneg _ _ (by linarith : (0 : ℝ) ≤ 2 + ε)]
-      rw [lintegral_mul_const' _ _ hlam]
-      exact ENNReal.mul_ne_top (lt_of_le_of_lt (setLIntegral_le_lintegral _ _) hFt).ne hlam
+    · exact setLAverage_div_rpow_lt_top (ENNReal.ofReal_pos.2 h.pos).ne' (by linarith)
+        (lt_of_le_of_lt (setLIntegral_le_lintegral _ _) hFt).ne
   -- Finitely many such balls cover `Ω`.
   obtain ⟨t, -, ht, hcover⟩ := finite_cover_balls_of_compact hΩb.isCompact_closure
     (by positivity : 0 < r₀ / 2)
