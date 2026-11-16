@@ -108,6 +108,7 @@ function that does not need a derivative.
 * `Real.rpow_le_two_rpow_mul_one_add_sq_rpow` and `Real.one_add_sq_rpow_le_two_rpow_mul_rpow`:
   `t ^ r ≤ 2 ^ (|r| / 2) (1 + t ^ 2) ^ (r / 2)` and `(1 + t ^ 2) ^ (r / 2) ≤ 2 ^ (|r| / 2) t ^ r`
   for `1 ≤ t`.
+* `Real.rpow_le_two_rpow_mul_one_add_rpow`: `t ^ r ≤ 2 ^ |r| (1 + t) ^ r` for `1 ≤ t`.
 * `Real.one_le_five_rpow_mul_one_add_sq_rpow`: `1 ≤ 5 ^ (|r| / 2) (1 + t ^ 2) ^ (r / 2)` for
   `|t| ≤ 2`.
 * `Real.rpow_neg_le_one_div_two_mul_sq`: `d ^ (-p) ≤ 1 / (2 d ^ 2)` for `2 ≤ d ^ (p - 2)`.
@@ -121,6 +122,8 @@ function that does not need a derivative.
 * `TauCeti.one_add_norm_add_rpow_le`: `(1 + ‖x + y‖) ^ s ≤ 2 ^ s ((1 + ‖x‖) ^ s + (1 + ‖y‖) ^ s)`
   for `0 ≤ s`.
 * `TauCeti.one_add_norm_add_le`: `1 + ‖x + y‖ ≤ (1 + ‖x‖) (1 + ‖y‖)`.
+* `TauCeti.one_add_norm_add_rpow_le_mul`:
+  `(1 + ‖x + y‖) ^ r ≤ (1 + ‖x‖) ^ |r| (1 + ‖y‖) ^ r` for any real `r`.
 * `TauCeti.one_add_norm_rpow_le_two_rpow_mul_of_norm_sub_le_one`:
   `(1 + ‖x‖) ^ p ≤ 2 ^ (-p) (1 + ‖y‖) ^ p` for `p ≤ 0` and `‖y - x‖ ≤ 1`.
 * `TauCeti.norm_rpow_le_one_add_norm_sq_rpow`: `‖ξ‖ ^ r ≤ 2 ^ (|r| / 2) (1 + ‖ξ‖ ^ 2) ^ (r / 2)`
@@ -328,6 +331,21 @@ theorem one_add_sq_rpow_le_two_rpow_mul_rpow {t : ℝ} (ht : 1 ≤ t) (r : ℝ) 
       _ ≤ 2 ^ (|r| / 2) * (t ^ 2) ^ (r / 2) :=
           le_mul_of_one_le_left (by positivity) (one_le_rpow (by norm_num) (by positivity))
 
+/-- For `t ≥ 1` and an exponent `r` of either sign, `t ^ r ≤ 2 ^ |r| * (1 + t) ^ r`. -/
+theorem rpow_le_two_rpow_mul_one_add_rpow {t : ℝ} (ht : 1 ≤ t) (r : ℝ) :
+    t ^ r ≤ 2 ^ |r| * (1 + t) ^ r := by
+  have ht0 : 0 < t := by linarith
+  have hs : 0 < 1 + t := by linarith
+  rcases le_total 0 r with hr | hr
+  · calc t ^ r ≤ (1 + t) ^ r := rpow_le_rpow ht0.le (by linarith) hr
+      _ ≤ 2 ^ |r| * (1 + t) ^ r :=
+          le_mul_of_one_le_left (by positivity) (one_le_rpow (by norm_num) (abs_nonneg r))
+  · have h2 : (1 + t) / 2 ≤ t := by linarith
+    calc t ^ r ≤ ((1 + t) / 2) ^ r := rpow_le_rpow_of_nonpos (by positivity) h2 hr
+      _ = 2 ^ |r| * (1 + t) ^ r := by
+          rw [div_rpow hs.le (by norm_num), abs_of_nonpos hr, rpow_neg (by norm_num),
+            div_eq_inv_mul]
+
 /-- For `|t| ≤ 2` and an exponent `r` of either sign, `(1 + t²) ^ (r / 2)` is at least
 `5 ^ (-|r| / 2)`. -/
 theorem one_le_five_rpow_mul_one_add_sq_rpow {t : ℝ} (ht : |t| ≤ 2) (r : ℝ) :
@@ -500,6 +518,25 @@ theorem one_add_norm_add_le {E : Type*} [SeminormedAddGroup E] (x y : E) :
     1 + ‖x + y‖ ≤ (1 + ‖x‖) * (1 + ‖y‖) := by
   nlinarith [norm_add_le x y, norm_nonneg x, norm_nonneg y,
     mul_nonneg (norm_nonneg x) (norm_nonneg y)]
+
+/-- For any real exponent `r`, the weight `(1 + ‖x‖) ^ r` satisfies Peetre's inequality
+`(1 + ‖x + y‖) ^ r ≤ (1 + ‖x‖) ^ |r| * (1 + ‖y‖) ^ r`. -/
+theorem one_add_norm_add_rpow_le_mul {E : Type*} [SeminormedAddGroup E] (x y : E) (r : ℝ) :
+    (1 + ‖x + y‖) ^ r ≤ (1 + ‖x‖) ^ |r| * (1 + ‖y‖) ^ r := by
+  have hx : 0 < 1 + ‖x‖ := by positivity
+  have hy : 0 < 1 + ‖y‖ := by positivity
+  have hxy : 0 < 1 + ‖x + y‖ := by positivity
+  rcases le_total 0 r with hr | hr
+  · rw [abs_of_nonneg hr, ← Real.mul_rpow hx.le hy.le]
+    exact Real.rpow_le_rpow hxy.le (one_add_norm_add_le x y) hr
+  · have hsub : (1 + ‖y‖) / (1 + ‖x‖) ≤ 1 + ‖x + y‖ := by
+      rw [div_le_iff₀ hx, mul_comm]
+      have h := one_add_norm_add_le (-x) (x + y)
+      simpa only [neg_add_cancel_left, norm_neg] using h
+    calc (1 + ‖x + y‖) ^ r ≤ ((1 + ‖y‖) / (1 + ‖x‖)) ^ r :=
+          Real.rpow_le_rpow_of_nonpos (div_pos hy hx) hsub hr
+      _ = (1 + ‖x‖) ^ |r| * (1 + ‖y‖) ^ r := by
+          rw [Real.div_rpow hy.le hx.le, abs_of_nonpos hr, Real.rpow_neg hx.le, div_eq_inv_mul]
 
 /-- For a nonpositive exponent `p` and points at distance at most `1`, the weight
 `(1 + ‖x‖) ^ p` is bounded by `2 ^ (-p)` times its value at `y`. -/

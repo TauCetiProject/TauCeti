@@ -52,6 +52,8 @@ Since the argument is continuous on the slit plane and blind to positive real sc
   `arg (-e^{2iφ}) = 2φ - π - 2π⌊φ / π⌋`.
 * `Complex.inv_exp_arg_mul_le_exp_pi_mul_abs`: `(exp (arg u * r))⁻¹ ≤ exp (π * |r|)`.
 * `Complex.abs_arg_lt_pi_of_mem_slitPlane`: on the slit plane, `|arg z| < π`.
+* `Complex.exists_mem_nhds_slitPlane_norm_and_arg_lt`: a point `w₀ ∈ slitPlane` with `|arg w₀| < α`
+  has a neighborhood in `slitPlane` with norm bounded away from `0` and `∞` and `|arg w| ≤ α' < α`.
 * `Complex.exp_mem_slitPlane_of_abs_im_lt`: `exp x` lies in the slit plane when `|im x| < π`.
 * `Complex.contDiffAt_arg`: the argument is smooth on the slit plane.
 * `Complex.tendsto_arg_of_tendsto_ofReal_mul`: if `c x * f x → Q ∈ slitPlane` with `c x > 0`
@@ -196,6 +198,33 @@ theorem contDiffOn_div_norm_pow (m : ℕ) {N : WithTop ℕ∞} :
 /-- On the slit plane the argument lies strictly between `-π` and `π`. -/
 theorem abs_arg_lt_pi_of_mem_slitPlane {z : ℂ} (hz : z ∈ slitPlane) : |arg z| < π :=
   abs_lt.2 ⟨neg_pi_lt_arg z, lt_of_le_of_ne (arg_le_pi z) (slitPlane_arg_ne_pi hz)⟩
+
+open Filter Topology in
+/-- Around any point `w₀ ∈ slitPlane` with `|arg w₀| < α`, there is a neighborhood contained in
+`slitPlane` on which the norm is bounded away from `0` and `∞` and `|arg w|` stays bounded by a
+constant `α' < α`. -/
+theorem exists_mem_nhds_slitPlane_norm_and_arg_lt {w₀ : ℂ} {α : ℝ}
+    (hw₀ : w₀ ∈ slitPlane) (harg : |arg w₀| < α) :
+    ∃ U ∈ 𝓝 w₀, ∃ r₀ r₁ α' : ℝ,
+      0 < r₀ ∧ α' < α ∧
+      ∀ w ∈ U, w ∈ slitPlane ∧ r₀ ≤ ‖w‖ ∧ ‖w‖ ≤ r₁ ∧ |arg w| ≤ α' := by
+  have hnorm_pos : 0 < ‖w₀‖ := norm_pos_iff.mpr (slitPlane_ne_zero hw₀)
+  let r₀ := ‖w₀‖ / 2
+  let r₁ := 2 * ‖w₀‖
+  let α' := (|arg w₀| + α) / 2
+  have hα'_gt : |arg w₀| < α' := by dsimp [α']; linarith
+  have hU_slit : slitPlane ∈ 𝓝 w₀ := isOpen_slitPlane.mem_nhds hw₀
+  have hU_lo : {w : ℂ | r₀ < ‖w‖} ∈ 𝓝 w₀ :=
+    (isOpen_lt continuous_const continuous_norm).mem_nhds (by dsimp [r₀]; linarith)
+  have hU_hi : {w : ℂ | ‖w‖ < r₁} ∈ 𝓝 w₀ :=
+    (isOpen_lt continuous_norm continuous_const).mem_nhds (by dsimp [r₁]; linarith)
+  have hU_arg : {w : ℂ | |arg w| < α'} ∈ 𝓝 w₀ :=
+    (continuousAt_arg hw₀).abs.preimage_mem_nhds (Iio_mem_nhds hα'_gt)
+  refine ⟨slitPlane ∩ {w | r₀ < ‖w‖} ∩ {w | ‖w‖ < r₁} ∩ {w | |arg w| < α'},
+    inter_mem (inter_mem (inter_mem hU_slit hU_lo) hU_hi) hU_arg,
+    r₀, r₁, α', by positivity, by dsimp [α']; linarith, ?_⟩
+  rintro w ⟨⟨⟨hslit, hlo⟩, hhi⟩, harg'⟩
+  exact ⟨hslit, le_of_lt hlo, le_of_lt hhi, le_of_lt harg'⟩
 
 /-- The exponential of a point of the horizontal strip `|im x| < π` lies in the slit plane. -/
 theorem exp_mem_slitPlane_of_abs_im_lt {x : ℂ} (hx : |x.im| < π) : exp x ∈ slitPlane := by

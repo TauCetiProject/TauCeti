@@ -7,7 +7,9 @@ module
 
 public import Mathlib.Analysis.SpecialFunctions.Gaussian.GaussianIntegral
 public import Mathlib.Analysis.SpecialFunctions.ImproperIntegrals
+import Mathlib.Analysis.SpecialFunctions.Pow.Asymptotics
 import Mathlib.MeasureTheory.Constructions.HaarToSphere
+import Mathlib.MeasureTheory.Integral.ExpDecay
 import Mathlib.MeasureTheory.Measure.Prod
 import TauCeti.MeasureTheory.Integral.Bochner.Basic
 
@@ -42,6 +44,8 @@ inclusion.
   of `c * exp (-(a * |·|))`.
 * `TauCeti.integrable_exp_mul_I_mul_exp_neg_mul_abs`: the same times the oscillation
   `exp (b * x * I)`.
+* `TauCeti.integrable_one_add_abs_rpow_mul_exp_neg_mul_abs`: `(1 + |y|) ^ R * exp (-c * |y|)` is
+  integrable on `ℝ` for every real `R` and every `c > 0`.
 * `TauCeti.integrable_exp_neg_mul_norm`: `exp (-(a * ‖·‖))` is integrable on a finite-dimensional
   space when `0 < a`.
 -/
@@ -168,6 +172,24 @@ theorem integrable_exp_mul_I_mul_exp_neg_mul_abs {a : ℝ} (ha : 0 < a) (b : ℝ
   ((integrable_exp_neg_mul_abs ha).ofReal).bdd_mul (c := 1) (by fun_prop)
     (.of_forall fun x ↦ by simp [Complex.norm_exp])
 
+/-- For any real exponent `R` and any `c > 0`, the function `y ↦ (1 + |y|) ^ R * exp (-c * |y|)`
+is integrable on `ℝ`. -/
+theorem integrable_one_add_abs_rpow_mul_exp_neg_mul_abs (R : ℝ) {c : ℝ} (hc : 0 < c) :
+    Integrable (fun y : ℝ ↦ (1 + |y|) ^ R * Real.exp (-c * |y|)) := by
+  refine MeasureTheory.integrable_comp_abs (f := fun t : ℝ ↦ (1 + t) ^ R * Real.exp (-c * t)) ?_
+  have hcont : ContinuousOn (fun t : ℝ ↦ (1 + t) ^ R) (Ici 0) :=
+    ContinuousOn.rpow_const (by fun_prop) fun t ht ↦ Or.inl (by linarith [mem_Ici.mp ht])
+  have hbigO : (fun t : ℝ ↦ (1 + t) ^ R) =O[Filter.atTop] fun t ↦ Real.exp (c / 2 * t) := by
+    have h1 := (isLittleO_rpow_exp_pos_mul_atTop R (half_pos hc)).comp_tendsto
+      (Filter.tendsto_atTop_add_const_left Filter.atTop (1 : ℝ) Filter.tendsto_id)
+    refine h1.isBigO.trans (Asymptotics.IsBigO.of_bound (Real.exp (c / 2)) ?_)
+    filter_upwards with t
+    simp only [Function.comp_apply, id_eq, Real.norm_eq_abs, abs_of_pos (Real.exp_pos _)]
+    rw [mul_add, mul_one, Real.exp_add]
+  have hint := integrableOn_exp_neg_mul_of_isBigO_exp (c := 0) (a := c / 2) (b := c)
+    (hcont.locallyIntegrableOn measurableSet_Ici) hbigO (by linarith)
+  exact (hint.mono_set Ioi_subset_Ici_self).congr_fun
+    (fun t _ ↦ mul_comm _ _) measurableSet_Ioi
 
 /-- At a nonnegative rate the integrand is bounded below by a positive constant on `(c, ∞)`, a set
 of infinite measure, so it is not integrable there. -/

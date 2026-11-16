@@ -40,6 +40,8 @@ its coefficients.
   `Re s + n > 0`.
 * `Complex.exists_norm_Gamma_le_mul_inv_one_add_sq_pow`: `‖Γ(σ + i t)‖ ≤ C (1 + t²)⁻ᵐ` for every
   `m` on every vertical line `Re s = σ` with `σ` not a nonpositive integer.
+* `Complex.continuous_Gamma_add_mul_I`, `Complex.continuous_Gamma_sub_mul_I`: continuity of
+  `y ↦ Γ(a ± i y)` along vertical lines avoiding the poles (`Re a ∉ -ℕ`).
 * `Complex.verticalIntegrable_Gamma`: `Γ` is integrable on every vertical line `Re s = σ` with
   `σ` not a nonpositive integer.
 * `Complex.mellinInv_Gamma`: Mellin inversion of `Γ` on `Re s = σ > 0` gives `e⁻ˣ`.
@@ -133,16 +135,30 @@ theorem exists_norm_Gamma_le_mul_inv_one_add_sq_pow {σ : ℝ} (hσ : ∀ n : �
       Real.Gamma (σ + n) / (√c * (1 + t ^ 2) ^ m) by field_simp, le_div_iff₀ (by positivity)]
   exact (mul_le_mul_of_nonneg_left hP (norm_nonneg _)).trans hbound
 
+/-- Along a vertical line `y ↦ Γ(a + y * I)` avoiding the poles of `Γ` (i.e. `Re a ∉ -ℕ`),
+the Gamma function is continuous. -/
+theorem continuous_Gamma_add_mul_I {a : ℂ} (ha : ∀ n : ℕ, a.re ≠ -n) :
+    Continuous fun y : ℝ ↦ Gamma (a + y * I) := by
+  refine continuous_iff_continuousAt.2 fun y ↦ ?_
+  refine (differentiableAt_Gamma _ fun m hm ↦ ?_).continuousAt.comp
+    (by fun_prop : Continuous fun t : ℝ ↦ a + t * I).continuousAt
+  exact ha m (by simpa using congrArg Complex.re hm)
+
+/-- Along the negated vertical line `y ↦ Γ(a - y * I)` avoiding the poles of `Γ`
+(i.e. `Re a ∉ -ℕ`), the Gamma function is continuous. -/
+theorem continuous_Gamma_sub_mul_I {a : ℂ} (ha : ∀ n : ℕ, a.re ≠ -n) :
+    Continuous fun y : ℝ ↦ Gamma (a - y * I) := by
+  simpa [Function.comp_def, sub_eq_add_neg, neg_mul] using
+    (continuous_Gamma_add_mul_I ha).comp continuous_neg
+
 /-- The Gamma function is integrable on every vertical line `Re s = σ` which avoids its poles,
 that is, for `σ` not a nonpositive integer. -/
 theorem verticalIntegrable_Gamma {σ : ℝ} (hσ : ∀ n : ℕ, σ ≠ -n) :
     VerticalIntegrable Gamma σ := by
   obtain ⟨C, hC⟩ := exists_norm_Gamma_le_mul_inv_one_add_sq_pow hσ 1
-  refine (integrable_inv_one_add_sq.const_mul C).mono' ?_
+  refine (integrable_inv_one_add_sq.const_mul C).mono'
+    (continuous_Gamma_add_mul_I (a := σ) (by simpa using hσ)).aestronglyMeasurable
     (Eventually.of_forall fun t ↦ by simpa using hC t)
-  refine Continuous.aestronglyMeasurable (continuous_iff_continuousAt.mpr fun t ↦ ?_)
-  refine (differentiableAt_Gamma _ fun m h ↦ hσ m ?_).continuousAt.comp (by fun_prop)
-  simpa using congrArg re h
 
 /-- Mellin inversion for the Gamma function: on every vertical line `Re s = σ > 0`,
 `(1 / 2π) ∫ x^{-(σ + i t)} Γ(σ + i t) dt = e⁻ˣ` for `x > 0`. -/

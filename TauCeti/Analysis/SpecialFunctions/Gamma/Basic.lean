@@ -8,6 +8,7 @@ module
 public import Mathlib.Analysis.Asymptotics.AsymptoticEquivalent
 public import Mathlib.Analysis.SpecialFunctions.Gamma.Beta
 public import Mathlib.MeasureTheory.Constructions.BorelSpace.Basic
+public import Mathlib.RingTheory.Binomial
 public import Mathlib.RingTheory.Polynomial.Pochhammer
 import Mathlib.Analysis.Asymptotics.Lemmas
 import Mathlib.Analysis.SpecialFunctions.Pow.Asymptotics
@@ -57,6 +58,8 @@ summability and moment arguments for discrete laws with Beta-function masses.
 * `Real.inv_Gamma_add_natCast_le` — `(Γ(s + k))⁻¹ ≤ (Γ s)⁻¹ / k!` for `1 ≤ s`, the real
   specialization giving factorial decay of the reciprocal Gamma function along natural-number
   shifts on `[1, ∞)`.
+* `Complex.Gamma_mul_multichoose` — `Γ(s) * multichoose s n = Γ(s + n) / n!` for
+  `s ∉ {0, −1, …, −(n − 1)}`.
 * `Complex.sum_range_neg_one_pow_div_factorial_mul_Gamma` — the alternating sum
   `∑_{i ≤ m} (−1)ⁱ / (i! Γ(a + m − i + 1)) = (−1)ᵐ / (m! (a + m) Γ(a))` for `a ∉ −ℕ`.
 -/
@@ -260,6 +263,20 @@ theorem norm_inv_Gamma_add_natCast_le {s : ℂ} (hs : 1 ≤ s.re) (k : ℕ) :
         ≤ ‖(Gamma (s + (k + 1 : ℕ)))⁻¹‖ * (‖s + k‖ * k !) := by gcongr
       _ = ‖(Gamma (s + k))⁻¹‖ * k ! := by rw [hrec]; ring
       _ ≤ ‖(Gamma s)⁻¹‖ := (le_div_iff₀ (by positivity)).1 ih
+
+/-- Multiplying `Γ(s)` by the generalized multichoose coefficient `Ring.multichoose s n` shifts
+the argument by `n` and divides by `n!`, provided `s ∉ {0, −1, …, −(n − 1)}`. -/
+theorem Gamma_mul_multichoose {s : ℂ} {n : ℕ} (hs : ∀ k < n, s ≠ -(k : ℂ)) :
+    Gamma s * Ring.multichoose s n = Gamma (s + n) / n ! := by
+  rw [eq_div_iff (Nat.cast_ne_zero.2 (Nat.factorial_ne_zero n)), mul_assoc,
+    mul_comm (Ring.multichoose s n), ← nsmul_eq_mul,
+    Ring.factorial_nsmul_multichoose_eq_ascPochhammer, Polynomial.ascPochhammer_smeval_eq_eval]
+  induction n with
+  | zero => simp
+  | succ n ih =>
+    have hsn : s + n ≠ 0 := fun h ↦ hs n (Nat.lt_succ_self n) (by linear_combination h)
+    rw [ascPochhammer_succ_eval, ← mul_assoc, ih (fun k hk ↦ hs k (Nat.lt_succ_of_lt hk)),
+      Nat.cast_succ, ← add_assoc, Gamma_add_one _ hsn, mul_comm]
 
 end Complex
 
