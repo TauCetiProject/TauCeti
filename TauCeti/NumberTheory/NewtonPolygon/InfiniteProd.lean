@@ -32,13 +32,15 @@ algebraically closed. Consequently the finite Newton face of `W` of slope `σ` r
 in the Newton polygon of `W` is `{i | ‖a i‖ = b ^ σ}.ncard`, equivalently
 `{i | v (a i) = -σ}.ncard`.
 
-As an explicit entire nonpolynomial check, for any element `a` with finite nonnegative valuation
-`v a = c`, the quadratic-exponent series `∑ a^(n²) Xⁿ` has convex coefficient heights `c * n ^ 2`,
-so its Newton polygon is `n ↦ c * n ^ 2` with unit slopes `c * (2 * n + 1)`. When `a = p`, the
-series `∑ p^(n²) Xⁿ` over `ℚ_[p]` and `ℂ_[p]` is entire with odd slopes `1, 3, 5, …` each of
-multiplicity `1`, has a unique simple zero `αₙ ∈ ℂ_[p]` of valuation `-(2 * n + 1)` for every
-`n : ℕ` and no other zeros in `ℂ_[p]`, and equals the unconditional Weierstrass product
-`∏' n : ℕ, (1 - αₙ⁻¹ X)` in `PowerSeries.IsEntire.subring ℂ_[p]`.
+For any ring element `a` with finite nonnegative additive valuation `v a = c`, the
+quadratic-exponent series `∑ a^(n²) Xⁿ` has convex coefficient heights `c * n ^ 2`, so its Newton
+polygon is `n ↦ c * n ^ 2` with unit slopes `c * (2 * n + 1)` (each of multiplicity `1` when
+`c > 0`). Over a valued field whose norm is compatible with `v` (so `c > 0` gives `‖a‖ < 1`), this
+series is entire and nonpolynomial; in particular, when `a = p`, the series `∑ p^(n²) Xⁿ` over
+`ℚ_[p]` and `ℂ_[p]` is entire with odd slopes `1, 3, 5, …` each of multiplicity `1`, has a unique
+simple zero `αₙ ∈ ℂ_[p]` of valuation `-(2 * n + 1)` for every `n : ℕ` and no other zeros in
+`ℂ_[p]`, and equals the unconditional Weierstrass product `∏' n : ℕ, (1 - αₙ⁻¹ X)` in
+`PowerSeries.IsEntire.subring ℂ_[p]`.
 
 ## Main results
 
@@ -102,7 +104,7 @@ theorem isFiniteFace_newtonPolygon_of_hasProd {ι : Type*} {a : ι → K} {W : I
   obtain ⟨U, -, hprep⟩ := exists_isEntire_isDiscPreparation_of_hasProd ha0 ha hW hr hs
   let P : Polynomial K := ∏ i ∈ s, (1 - Polynomial.C (a i)⁻¹ * Polynomial.X)
   have hW_ent : (W : K⟦X⟧).IsEntire := IsEntire.mem_subring.mp W.2
-  have hW_ne : (W : K⟦X⟧) ≠ 0 := ne_zero_of_hasProd_one_sub_C_inv_mul_X hW
+  have hW_ne : (W : K⟦X⟧) ≠ 0 := hW.coe_ne_zero_one_sub_C_inv_mul_X
   obtain ⟨l, u, hface⟩ := hW_ent.exists_isFiniteFace_newtonPolygon v hb hv hW_ne σ
   obtain ⟨-, hu_dist⟩ := isLowestDominant_and_isDistinguished_of_isFiniteFace_newtonPolygon
     (W : K⟦X⟧) v hb hv (TauCeti.PowerSeries.hasGaussNorm_of_isRestricted (hW_ent.isRestricted r))
@@ -114,10 +116,9 @@ theorem isFiniteFace_newtonPolygon_of_hasProd {ι : Type*} {a : ι → K} {W : I
     simpa [P] using hz1.symm.trans hz2
   have hsplits : P.Splits := Polynomial.splits_iff_card_roots.mpr (by
     rw [hroots, Multiset.card_map, ← Finset.card_def, hprep.natDegree_eq])
-  let u_sub : IsRestricted.subring (R := K) r := ⟨U, hprep.isRestricted⟩
-  have hmul : (u_sub : K⟦X⟧) * (P : K⟦X⟧) = (W : K⟦X⟧) := by
-    change U * (P : K⟦X⟧) = (W : K⟦X⟧)
-    rw [mul_comm, ← hprep.eq_mul]
+  have hmul : ((⟨U, hprep.isRestricted⟩ : IsRestricted.subring (R := K) r) : K⟦X⟧) *
+      (P : K⟦X⟧) = (W : K⟦X⟧) :=
+    (mul_comm _ _).trans hprep.eq_mul.symm
   have hl_eq : l = {i : ι | ‖a i‖ < r}.ncard := by
     have hlt := card_filter_roots_norm_lt_of_isUnit_mul v hb hv (hW_ent.isRestricted r) hface
       (hprep.isUnit hr) (hprep.natDegree_eq.trans hu_eq.symm).le hmul hsplits
@@ -191,7 +192,7 @@ theorem newtonSlopeMultiplicity_tprod_one_sub_C_inv_mul_X {ι : Type*} {a : ι �
       IsEntire.subring K) : K⟦X⟧)).newtonSlopeMultiplicity v σ =
       {i : ι | ‖a i‖ = b ^ σ}.ncard :=
   newtonSlopeMultiplicity_of_hasProd v hb hv ha0 ha
-    (multipliable_polynomialHom_one_sub_C_inv_mul_X ha).hasProd σ
+    ha.multipliable_isEntire_polynomialHom_one_sub_C_inv_mul_X.hasProd σ
 
 end WeierstrassSlopes
 
@@ -203,7 +204,7 @@ open TauCeti
 
 section QuadraticPowerSeries
 
-variable {R : Type*} [CommRing R] {v : AddValuation R (WithTop ℝ)} {a : R} {c : ℝ}
+variable {R : Type*} [Ring R] {v : AddValuation R (WithTop ℝ)} {a : R} {c : ℝ}
 
 /-- When `v a = c ≥ 0`, the quadratic-exponent power series `∑ a^(n²) Xⁿ` has convex coefficient
 heights `n ↦ c * n ^ 2`, so its Newton polygon equals `n ↦ c * n ^ 2`. -/

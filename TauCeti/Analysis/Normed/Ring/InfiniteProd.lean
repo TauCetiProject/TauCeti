@@ -46,10 +46,10 @@ within `ε ≤ 1` of `1`, then so does the infinite product.
   exponential norm bounds from real exponent bounds and when `∑' i, ‖f i‖` converges.
 * `Filter.Tendsto.finset_prod_of_cofinite`: if `f → 0` cofinitely in a seminormed commutative ring,
   then `s ↦ ∏ i ∈ s, f i` tends to `0` cofinitely.
-* `TauCeti.summable_prod_of_tendsto_cofinite_zero`,
-  `TauCeti.multipliable_one_add_of_tendsto_cofinite_zero` and
-  `TauCeti.multipliable_of_tendsto_cofinite_one`: unconditional convergence of infinite products in
-  complete ultrametric normed commutative rings.
+* `Filter.Tendsto.summable_finset_prod_of_cofinite`,
+  `Filter.Tendsto.multipliable_one_add_of_cofinite` and `Filter.Tendsto.multipliable_of_cofinite`:
+  unconditional convergence of infinite products in complete ultrametric seminormed commutative
+  rings.
 * `HasProd.tendsto_cofinite_one_of_norm_sub_one_lt_one`, `HasProd.norm_sub_one_lt`,
   `TauCeti.norm_tprod_sub_one_lt` and `TauCeti.norm_tprod_one_add_sub_one_lt`: strict ultrametric
   perturbation bounds near `1`.
@@ -123,6 +123,29 @@ theorem Filter.Tendsto.finset_prod_of_cofinite {ι R : Type*} [SeminormedCommRin
     _ < ε / M * M := mul_lt_mul_of_pos_right hfj hM0
     _ = ε := div_mul_cancel₀ ε hM0.ne'
   exact hs (by simpa only [Real.dist_0_eq_abs, abs_of_nonneg (norm_nonneg _)] using hlt)
+
+/-- In a complete ultrametric seminormed commutative ring, if `f` tends to zero along the cofinite
+filter, then the family of finite products `s ↦ ∏ i ∈ s, f i` is unconditionally summable. -/
+theorem Filter.Tendsto.summable_finset_prod_of_cofinite {ι R : Type*} [SeminormedCommRing R]
+    [IsUltrametricDist R] [CompleteSpace R] {f : ι → R} (hf : Tendsto f cofinite (𝓝 0)) :
+    Summable fun s : Finset ι ↦ ∏ i ∈ s, f i :=
+  NonarchimedeanAddGroup.summable_of_tendsto_cofinite_zero hf.finset_prod_of_cofinite
+
+/-- In a complete ultrametric seminormed commutative ring, if `f` tends to zero along the cofinite
+filter, then `i ↦ 1 + f i` is unconditionally multipliable. The factors need not be units. -/
+theorem Filter.Tendsto.multipliable_one_add_of_cofinite {ι R : Type*} [SeminormedCommRing R]
+    [IsUltrametricDist R] [CompleteSpace R] {f : ι → R} (hf : Tendsto f cofinite (𝓝 0)) :
+    Multipliable fun i ↦ 1 + f i :=
+  multipliable_one_add_of_summable_prod hf.summable_finset_prod_of_cofinite
+
+/-- In a complete ultrametric seminormed commutative ring, any family tending to `1` along the
+cofinite filter is unconditionally multipliable, even when some factors are not units. -/
+theorem Filter.Tendsto.multipliable_of_cofinite {ι R : Type*} [SeminormedCommRing R]
+    [IsUltrametricDist R] [CompleteSpace R] {f : ι → R} (hf : Tendsto f cofinite (𝓝 1)) :
+    Multipliable f := by
+  have h0 : Tendsto (fun i ↦ f i - 1) cofinite (𝓝 0) := by
+    simpa only [sub_self] using hf.sub_const 1
+  simpa only [add_sub_cancel] using h0.multipliable_one_add_of_cofinite
 
 /-- In an ultrametric seminormed commutative ring, if `f` has a convergent infinite product and
 every factor satisfies `‖f i - 1‖ < 1`, then `f` tends to `1` along the cofinite filter. Unlike in
@@ -248,28 +271,6 @@ theorem norm_tprod_one_add_sub_one_lt {ι R : Type*} [SeminormedCommRing R] [IsU
     {f : ι → R} {ε : ℝ} (hε0 : 0 < ε) (hε : ε ≤ 1) (h : ∀ i, ‖f i‖ < ε) :
     ‖∏' i, (1 + f i) - 1‖ < ε :=
   norm_tprod_sub_one_lt hε0 hε fun i ↦ by simpa only [add_sub_cancel_left] using h i
-
-variable {ι R : Type*} [SeminormedCommRing R] [IsUltrametricDist R] [CompleteSpace R]
-
-/-- In a complete ultrametric seminormed commutative ring, if `f` tends to zero along the cofinite
-filter, then the family of finite products `s ↦ ∏ i ∈ s, f i` is unconditionally summable. -/
-theorem summable_prod_of_tendsto_cofinite_zero {f : ι → R} (hf : Tendsto f cofinite (𝓝 0)) :
-    Summable fun s : Finset ι ↦ ∏ i ∈ s, f i :=
-  NonarchimedeanAddGroup.summable_of_tendsto_cofinite_zero hf.finset_prod_of_cofinite
-
-/-- In a complete ultrametric seminormed commutative ring, if `f` tends to zero along the cofinite
-filter, then `i ↦ 1 + f i` is unconditionally multipliable. The factors need not be units. -/
-theorem multipliable_one_add_of_tendsto_cofinite_zero {f : ι → R}
-    (hf : Tendsto f cofinite (𝓝 0)) : Multipliable fun i ↦ 1 + f i :=
-  multipliable_one_add_of_summable_prod (summable_prod_of_tendsto_cofinite_zero hf)
-
-/-- In a complete ultrametric seminormed commutative ring, any family tending to `1` along the
-cofinite filter is unconditionally multipliable, even when some factors are not units. -/
-theorem multipliable_of_tendsto_cofinite_one {f : ι → R} (hf : Tendsto f cofinite (𝓝 1)) :
-    Multipliable f := by
-  have h0 : Tendsto (fun i ↦ f i - 1) cofinite (𝓝 0) := by
-    simpa only [sub_self] using hf.sub_const 1
-  simpa only [add_sub_cancel] using multipliable_one_add_of_tendsto_cofinite_zero h0
 
 end Ultrametric
 
