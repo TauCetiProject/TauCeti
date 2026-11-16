@@ -212,6 +212,11 @@ noncomputable abbrev singularChainComplexMap :
     P.singularChainComplex R ⟶ P'.singularChainComplex R :=
   SSetPair.chainComplexMap (toSSetPair.map f) R
 
+/-- Relative singular chains send the identity map of a pair to the identity chain map. -/
+@[simp]
+lemma singularChainComplexMap_id : singularChainComplexMap (𝟙 P) R = 𝟙 _ := by
+  simp only [singularChainComplexMap, SSetPair.chainComplexMap, CategoryTheory.Functor.map_id]
+
 variable {P P'} in
 /-- Relative singular chains send a composite of maps of pairs to the composite of the induced
 chain maps. -/

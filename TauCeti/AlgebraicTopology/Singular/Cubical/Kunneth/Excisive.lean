@@ -186,24 +186,10 @@ private theorem prodComparison_condition :
   rw [prodComparison_comm₁₂_assoc,
     TopTriple.singularChainComplexMap_innerToTotal_comp_totalToOuter, comp_zero]
 
-/-- The inclusion of pairs `(X × Y, X × B) ⟶ (X × Y, A × Y ∪ X × B)`, with `X × B` the product of
-`X` with the subspace `B` and `A × Y ∪ X × B` the union of the preimages of `A` and `B` under the
-projections. -/
-def prodLeftToPreimageUnion :
-    (ofSubset B).prodLeft (ofSubset A).fst ⟶ ofSubset (fst X Y ⁻¹' A ∪ snd X Y ⁻¹' B) :=
-  TopPair.ofHom (𝟙 _) (TopCat.ofHom ⟨fun x ↦ ⟨(x.1, x.2.1), Or.inr x.2.2⟩, by fun_prop⟩)
-    (by ext; rfl)
-
-/-- The inclusion `(X × Y, X × B) ⟶ (X × Y, A × Y ∪ X × B)` is the identity of `X × Y`. -/
-@[simp]
-theorem prodLeftToPreimageUnion_fst :
-    Hom.fst (prodLeftToPreimageUnion A B) = 𝟙 (X ⊗ Y) :=
-  (rfl)
-
 private theorem prodLeftToTotalPair_comp_totalToOuter :
     prodLeftToTotalPair A B ≫ TopTriple.totalToOuter.app (prodUnionTriple A B) =
       prodLeftToPreimageUnion A B :=
-  hom_ext_of_fst _ (by ext; rfl)
+  hom_ext_of_fst _ (by rw [prodLeftToPreimageUnion_fst]; ext; rfl)
 
 /-- **The comparison of the cubical chains of a product of pairs with singular chains.** For
 subsets `A ⊆ X` and `B ⊆ Y`, the relative cubical chains
@@ -340,7 +326,7 @@ def singularHomologyKunnethPair (n : ℕ) :
 
 /-- On the summand of `Hₚ(X, A; k) ⊗ H_q(Y, B; k)`, the Künneth map of a product of pairs is the
 cross product of the relative cubical classes, followed by the comparison with singular homology. -/
-@[reassoc]
+@[reassoc (attr := simp)]
 theorem ι_singularHomologyKunnethPair (p q n : ℕ) (hpq : p + q = n) :
     GradedObject.Monoidal.ιTensorObj
         (fun p ↦ (ofSubset A).singularHomology (ModuleCat.of k k) p)
