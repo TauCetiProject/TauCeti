@@ -8,6 +8,7 @@ module
 public import TauCeti.Geometry.Manifold.Morse.Bott.Attachment
 public import TauCeti.Geometry.Manifold.Morse.Bott.NormalSubbundle
 public import TauCeti.Geometry.Manifold.Morse.Bott.Tubular
+import TauCeti.Topology.Compactness.LocallyCompact
 import TauCeti.Topology.FiberBundle.Separation
 
 /-!

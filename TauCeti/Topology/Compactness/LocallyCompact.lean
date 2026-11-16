@@ -7,9 +7,13 @@ module
 
 public import Mathlib.Topology.Compactness.LocallyCompact
 public import Mathlib.Topology.Connected.Basic
+public import Mathlib.Topology.MetricSpace.Pseudo.Lemmas
 public import Mathlib.Topology.Order.OrderClosed
 public import Mathlib.Topology.Sets.Opens
+import Mathlib.Tactic.Linarith
+import Mathlib.Topology.Algebra.Ring.Real
 import Mathlib.Topology.Order.Compact
+import Mathlib.Topology.Order.IntermediateValue
 import Mathlib.Topology.Separation.Hausdorff
 
 /-!
@@ -29,7 +33,10 @@ topological embedding on an open neighbourhood of any compact set
 In a locally compact Hausdorff space, let `q` be continuous, above `a` off a compact set `Z`, and
 such that every point is joined to `Z` by a preconnected set on which `q` does not increase. Then
 for each open neighbourhood `U` of `Z`, the sublevels of `q` just above `a` lie in `U`, and their
-closed versions are compact (`TauCeti.exists_gt_setOf_lt_subset_and_isCompact`).
+closed versions are compact (`TauCeti.exists_gt_setOf_lt_subset_and_isCompact`). For instance,
+the sublevels of `s + 2t` near the common zero set of `s, t ≥ 0` are compact when rescalings of
+`s` and `t` contract every point to that set
+(`TauCeti.exists_pos_setOf_add_two_mul_lt_subset_and_isCompact`).
 -/
 
 public section
@@ -77,6 +84,32 @@ theorem exists_gt_setOf_lt_subset_and_isCompact {X α : Type*} [TopologicalSpace
   refine ⟨m, hm, fun x hx ↦ hNU (interior_subset (hqN x hx)), fun δ hδ ↦ ?_⟩
   exact hNc.of_isClosed_subset (isClosed_le hq continuous_const) fun x hx ↦
     interior_subset (hqN x (lt_of_le_of_lt hx hδ))
+
+/-- Let the continuous functions `s, t ≥ 0` on a locally compact Hausdorff space vanish together
+only on a compact set `Z`, and let the maps `σ a b`, continuous jointly in `a`, `b` and the point,
+rescale `s` by `a²` and `t` by `b²`, with `σ 1 1` the identity and `σ 0 0` mapping into `Z`. Then
+for every open neighbourhood `U` of `Z` there is `m > 0` such that `{s + 2t < m}` lies in `U` and
+the sublevels `{s + 2t ≤ δ}`, `δ < m`, are compact: the rays `a ↦ σ a a x`, `a ∈ [0, 1]`, join
+each point `x` to `Z` without increasing `s + 2t`. -/
+theorem exists_pos_setOf_add_two_mul_lt_subset_and_isCompact {X : Type*} [TopologicalSpace X]
+    [LocallyCompactSpace X] [T2Space X] {s t : X → ℝ} (hs : Continuous s) (ht : Continuous t)
+    (hs₀ : ∀ x, 0 ≤ s x) (ht₀ : ∀ x, 0 ≤ t x) {Z U : Set X} (hZ : IsCompact Z) (hU : IsOpen U)
+    (hZU : Z ⊆ U) (hstZ : ∀ x, s x = 0 → t x = 0 → x ∈ Z) (σ : ℝ → ℝ → X → X)
+    (hσ : Continuous fun p : (ℝ × ℝ) × X ↦ σ p.1.1 p.1.2 p.2)
+    (hσs : ∀ a b x, s (σ a b x) = a ^ 2 * s x) (hσt : ∀ a b x, t (σ a b x) = b ^ 2 * t x)
+    (hσ₁ : ∀ x, σ 1 1 x = x) (hσZ : ∀ x, σ 0 0 x ∈ Z) :
+    ∃ m > 0, {x | s x + 2 * t x < m} ⊆ U ∧ ∀ δ < m, IsCompact {x | s x + 2 * t x ≤ δ} :=
+  exists_gt_setOf_lt_subset_and_isCompact hZ hU hZU
+    (hs.add (continuous_const.mul ht)) (q := fun x ↦ s x + 2 * t x)
+    (fun x (hx : s x + 2 * t x ≤ 0) ↦
+      hstZ x (by linarith [hs₀ x, ht₀ x]) (by linarith [hs₀ x, ht₀ x]))
+    fun x ↦ ⟨(fun a ↦ σ a a x) '' Icc 0 1, isPreconnected_Icc.image _
+      (hσ.comp ((continuous_id.prodMk continuous_id).prodMk continuous_const)).continuousOn,
+      ⟨1, ⟨zero_le_one, le_rfl⟩, hσ₁ x⟩, ⟨σ 0 0 x, ⟨0, ⟨le_rfl, zero_le_one⟩, rfl⟩, hσZ x⟩, by
+        rintro _ ⟨a, ha, rfl⟩
+        have ha2 : a ^ 2 ≤ 1 := pow_le_one₀ ha.1 ha.2
+        simp only [hσs, hσt]
+        nlinarith [hs₀ x, ht₀ x]⟩
 
 end TauCeti
 
