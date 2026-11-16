@@ -6,14 +6,15 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Topology.FiberBundle.Basic
+public import TauCeti.Algebra.Group.Action.TotalSpace
 
 /-!
 # Bundled fibres of an arbitrary map
 
-Mathlib's `FiberBundle` and `ContMDiffFiberBundle` classes are indexed over a dependent family
-`E : B → Type*` with total space `Bundle.TotalSpace F E`, whereas geometric constructions such as
-quotient projections, homogeneous spaces, and Ehresmann submersions begin from an unbundled map
-`f : E → B` on an already-given space `E`.
+Mathlib's `FiberBundle` and Tau Ceti's `ContMDiffFiberBundle` classes are indexed over a dependent
+family `E : B → Type*` with total space `Bundle.TotalSpace F E`, whereas geometric constructions
+such as quotient projections, homogeneous spaces, and Ehresmann submersions begin from an unbundled
+map `f : E → B` on an already-given space `E`.
 
 This file introduces `TauCeti.ProjectionFiber F f : B → Type*`, the fibre of `f : E → B` over
 `b : B` tagged with a phantom model fibre parameter `F : Type*`. Including `F` in the carrier type
@@ -31,6 +32,9 @@ identical base set and coordinate changes.
 * `TauCeti.ProjectionFiber.totalSpaceEquiv`, `TauCeti.ProjectionFiber.totalSpaceHomeomorph`: the
   canonical equivalence and homeomorphism `TotalSpace F (ProjectionFiber F f) ≃ₜ E` sending
   `⟨b, y⟩` to `y.val` and `x : E` to `⟨f x, ⟨x, rfl⟩⟩`.
+* `TauCeti.ProjectionFiber.mulAction`: restricts a fibre-preserving `M`-action on `E` to each fibre
+  `ProjectionFiber F f b`, intertwining `ProjectionFiber.totalSpaceEquiv F f` with the induced
+  fibrewise action on `TotalSpace F (ProjectionFiber F f)`.
 * `Bundle.Trivialization.projectionFiber`: transports `t : Trivialization F f` to a trivialization
   of `π F (ProjectionFiber F f)` with the same `baseSet` and `coordChange`.
 * `TauCeti.ProjectionFiber.fiberBundle`: packages a covering family `A : Set (Trivialization F f)`
@@ -126,6 +130,43 @@ theorem val_injective (b : B) : Injective (ProjectionFiber.val : ProjectionFiber
   fun _ _ h ↦ ProjectionFiber.ext h
 
 end SetTheory
+
+section MulAction
+
+variable (F : Type*) {M E B : Type*} [Monoid M] [MulAction M E] {f : E → B}
+
+/-- Restrict an `M`-action on `E` preserving the fibres of `f : E → B` to each bundled fibre
+`ProjectionFiber F f b`. Install locally via `letI := ProjectionFiber.mulAction F hinv`. -/
+@[instance_reducible]
+def mulAction (hinv : ∀ (m : M) (x : E), f (m • x) = f x) (b : B) :
+    MulAction M (ProjectionFiber F f b) where
+  smul m y := ⟨m • y.val, (hinv m y.val).trans y.map_val⟩
+  one_smul y := ProjectionFiber.ext (one_smul M y.val)
+  mul_smul m₁ m₂ y := ProjectionFiber.ext (mul_smul m₁ m₂ y.val)
+
+/-- Fibrewise scalar multiplication acts on the underlying point in `E`. -/
+@[simp]
+theorem val_smul (hinv : ∀ (m : M) (x : E), f (m • x) = f x) {b : B} (m : M)
+    (y : ProjectionFiber F f b) :
+    (letI := mulAction F hinv; (m • y).val) = m • y.val :=
+  (rfl)
+
+/-- `totalSpaceEquiv F f` intertwines the fibrewise `M`-action on `TotalSpace` with the action on
+`E`. -/
+theorem totalSpaceEquiv_smul (hinv : ∀ (m : M) (x : E), f (m • x) = f x) (m : M)
+    (p : TotalSpace F (ProjectionFiber F f)) :
+    (letI := mulAction F hinv; totalSpaceEquiv F f (m • p)) =
+      m • totalSpaceEquiv F f p := by
+  simp
+
+/-- `(totalSpaceEquiv F f).symm` intertwines the `M`-action on `E` with the fibrewise action on
+`TotalSpace`. -/
+theorem totalSpaceEquiv_symm_smul (hinv : ∀ (m : M) (x : E), f (m • x) = f x) (m : M) (x : E) :
+    (letI := mulAction F hinv; (totalSpaceEquiv F f).symm (m • x)) =
+      (letI := mulAction F hinv; m • (totalSpaceEquiv F f).symm x) :=
+  (totalSpaceEquiv F f).injective (by simp)
+
+end MulAction
 
 section Topology
 
@@ -265,8 +306,8 @@ theorem projectionFiber_toOpenPartialHomeomorph_symm_apply (t : Trivialization F
 /-- Transporting trivializations to `ProjectionFiber F f` preserves `coordChange`. -/
 @[simp]
 theorem projectionFiber_coordChange (t₁ t₂ : Trivialization F f) (b : B) (y : F) :
-    t₁.projectionFiber.coordChange t₂.projectionFiber b y = t₁.coordChange t₂ b y :=
-  (rfl)
+    t₁.projectionFiber.coordChange t₂.projectionFiber b y = t₁.coordChange t₂ b y := by
+  simp [Trivialization.coordChange]
 
 end Bundle.Trivialization
 
@@ -306,12 +347,12 @@ noncomputable def fiberBundleOfExists (h : ∀ b : B, ∃ t : Trivialization F f
     let ⟨t, ht⟩ := h b
     ⟨t, mem_univ t, ht⟩
 
-/-- The trivialization atlas of `ProjectionFiber.fiberBundleOfExists h` is the image of `univ` under
+/-- The trivialization atlas of `ProjectionFiber.fiberBundleOfExists h` is the range of
 `Bundle.Trivialization.projectionFiber`. -/
 theorem trivializationAtlas_fiberBundleOfExists
     (h : ∀ b : B, ∃ t : Trivialization F f, b ∈ t.baseSet) :
     (letI := fiberBundleOfExists h; trivializationAtlas F (ProjectionFiber F f)) =
-      Bundle.Trivialization.projectionFiber '' univ :=
-  (rfl)
+      range Bundle.Trivialization.projectionFiber :=
+  image_univ
 
 end TauCeti.ProjectionFiber

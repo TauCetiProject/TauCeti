@@ -15,9 +15,10 @@ Given a map `f : E → B` and a right action of a group `G` on `E` whose orbits 
 (`∀ x y, f x = f y ↔ ∃ g : G, op g • x = y`), `f` is automatically `G`-invariant and each fibre of
 `f` is a `G`-orbit. When the action is also free (`∀ x g, op g • x = x → g = 1`), any pair of
 points `x, y : E` in the same fibre determines a unique transition element
-`actionDivision horbit hxy : G` carrying `x` to `y`, and any local section `s : B → E` over an open
-set `U ⊆ B` whose induced coordinate map `sectionCoord horbit hs` is continuous on `f ⁻¹' U`
-produces an equivariant `Bundle.Trivialization G f` over `U`.
+`actionDivision horbit hxy : G` carrying `x` to `y`. If `f` is continuous and `s : B → E` is a
+local section over an open set `U ⊆ B` such that `sectionCoord horbit hs` is continuous on
+`f ⁻¹' U` and `(b, g) ↦ op g • s b` is continuous on `U ×ˢ univ`, then `s` determines an
+equivariant `Bundle.Trivialization G f` over `U`.
 
 Transporting a covering family of such equivariant trivializations along
 `Bundle.Trivialization.projectionFiber` equips `TauCeti.ProjectionFiber G f` with both
@@ -26,9 +27,6 @@ abstract `PrincipalBundle.division` agrees with `actionDivision`.
 
 ## Main definitions and results
 
-* `TauCeti.ProjectionFiber.mulAction`: restricts a fibre-preserving `M`-action on `E` to each fibre
-  `ProjectionFiber F f b`, intertwining `ProjectionFiber.totalSpaceEquiv F f` with the induced
-  fibrewise action on `TotalSpace F (ProjectionFiber F f)`.
 * `Bundle.Trivialization.isEquivariant_projectionFiber_iff`: `t.projectionFiber` is `G`-equivariant
   if and only if `(t (op g • x)).2 = (t x).2 * g` for all `x ∈ f ⁻¹' t.baseSet` and `g : G`.
 * `TauCeti.ProjectionFiber.principalBundle`: packages a covering family of equivariant
@@ -50,47 +48,6 @@ abstract `PrincipalBundle.division` agrees with `actionDivision`.
 public section
 
 open Bundle Function MulOpposite Set Topology
-
-namespace TauCeti.ProjectionFiber
-
-section MulAction
-
-variable (F : Type*) {M E B : Type*} [Monoid M] [MulAction M E] {f : E → B}
-
-/-- Restrict an `M`-action on `E` preserving the fibres of `f : E → B` to each bundled fibre
-`ProjectionFiber F f b`. Install locally via `letI := ProjectionFiber.mulAction F hinv`. -/
-@[instance_reducible]
-def mulAction (hinv : ∀ (m : M) (x : E), f (m • x) = f x) (b : B) :
-    MulAction M (ProjectionFiber F f b) where
-  smul m y := ⟨m • y.val, (hinv m y.val).trans y.map_val⟩
-  one_smul y := ProjectionFiber.ext (one_smul M y.val)
-  mul_smul m₁ m₂ y := ProjectionFiber.ext (mul_smul m₁ m₂ y.val)
-
-/-- Fibrewise scalar multiplication acts on the underlying point in `E`. -/
-@[simp]
-theorem val_smul (hinv : ∀ (m : M) (x : E), f (m • x) = f x) {b : B} (m : M)
-    (y : ProjectionFiber F f b) :
-    (letI := mulAction F hinv; (m • y).val) = m • y.val :=
-  (rfl)
-
-/-- `totalSpaceEquiv F f` intertwines the fibrewise `M`-action on `TotalSpace` with the action on
-`E`. -/
-theorem totalSpaceEquiv_smul (hinv : ∀ (m : M) (x : E), f (m • x) = f x) (m : M)
-    (p : TotalSpace F (ProjectionFiber F f)) :
-    (letI := mulAction F hinv; totalSpaceEquiv F f (m • p)) =
-      m • totalSpaceEquiv F f p := by
-  simp
-
-/-- `(totalSpaceEquiv F f).symm` intertwines the `M`-action on `E` with the fibrewise action on
-`TotalSpace`. -/
-theorem totalSpaceEquiv_symm_smul (hinv : ∀ (m : M) (x : E), f (m • x) = f x) (m : M) (x : E) :
-    (letI := mulAction F hinv; (totalSpaceEquiv F f).symm (m • x)) =
-      (letI := mulAction F hinv; m • (totalSpaceEquiv F f).symm x) :=
-  (totalSpaceEquiv F f).injective (by simp)
-
-end MulAction
-
-end TauCeti.ProjectionFiber
 
 namespace Bundle.Trivialization
 
@@ -156,13 +113,14 @@ theorem map_smul_of_orbit_iff (horbit : ∀ x y : E, f x = f y ↔ ∃ g : G, op
     (g : Gᵐᵒᵖ) (x : E) : f (g • x) = f x :=
   map_op_smul_of_orbit_iff horbit (unop g) x
 
-/-- Pointwise freeness at identity (`op g • x = x → g = 1`) implies cancellation in every orbit. -/
-theorem op_smul_eq_op_smul_iff_of_free (hfree : ∀ (x : E) (g : G), op g • x = x → g = 1)
-    {x : E} {g h : G} : op g • x = op h • x ↔ g = h := by
+/-- Pointwise freeness at identity (`op g • x = x → g = 1`) implies cancellation in the orbit of
+`x`. -/
+theorem op_smul_eq_op_smul_iff_of_free {x : E} (hfree : ∀ g : G, op g • x = x → g = 1)
+    {g h : G} : op g • x = op h • x ↔ g = h := by
   refine ⟨fun hgh ↦ ?_, fun hgh ↦ hgh ▸ rfl⟩
   have h1 : op (g * h⁻¹) • x = x := by
     rw [op_mul, mul_smul, hgh, ← mul_smul, ← op_mul, mul_inv_cancel, op_one, one_smul]
-  exact mul_inv_eq_one.1 (hfree x (g * h⁻¹) h1)
+  exact mul_inv_eq_one.1 (hfree (g * h⁻¹) h1)
 
 /-- Given `horbit : ∀ x y, f x = f y ↔ ∃ g : G, op g • x = y` and `hxy : f x = f y`, an element
 `g : G` carrying `x` to `y` (`op g • x = y`). When the action is free, this is the unique torsor
@@ -183,7 +141,7 @@ theorem op_actionDivision_smul (horbit : ∀ x y : E, f x = f y ↔ ∃ g : G, o
 theorem actionDivision_eq_iff (horbit : ∀ x y : E, f x = f y ↔ ∃ g : G, op g • x = y)
     (hfree : ∀ (x : E) (g : G), op g • x = x → g = 1) {x y : E} (hxy : f x = f y) {g : G} :
     actionDivision horbit hxy = g ↔ op g • x = y := by
-  rw [← op_smul_eq_op_smul_iff_of_free hfree (x := x), op_actionDivision_smul]
+  rw [← op_smul_eq_op_smul_iff_of_free (hfree x), op_actionDivision_smul]
   exact eq_comm
 
 /-- Dividing a point `x` by itself under a free action yields `1`. -/
@@ -235,7 +193,8 @@ theorem division_projectionFiber_eq_actionDivision [TopologicalSpace B] [Topolog
       division G p q = actionDivision horbit (p.map_val.trans q.map_val.symm) := by
   let := ProjectionFiber.mulAction G (map_smul_of_orbit_iff horbit)
   intro _ p q
-  exact division_eq_iff.2 (ProjectionFiber.ext (op_actionDivision_smul horbit _))
+  exact division_eq_iff.2 (ProjectionFiber.ext
+    ((ProjectionFiber.val_smul G _ _ _).trans (op_actionDivision_smul horbit _)))
 
 end ActionDivision
 
@@ -282,6 +241,25 @@ theorem sectionCoord_op_smul (horbit : ∀ x y : E, f x = f y ↔ ∃ g : G, op 
   have hxg : f (op g • x) ∈ U := by rwa [hfx]
   rw [sectionCoord_of_mem horbit hs hxg, actionDivision_eq_iff horbit hfree, hfx, op_mul, mul_smul,
     op_sectionCoord_smul horbit hs hx]
+
+/-- On `f ⁻¹' U`, `actionDivision` between two points in the same fibre equals the quotient of
+their `sectionCoord` coordinates relative to a local section `s`. -/
+theorem actionDivision_eq_inv_sectionCoord_mul_sectionCoord
+    (horbit : ∀ x y : E, f x = f y ↔ ∃ g : G, op g • x = y)
+    (hfree : ∀ (x : E) (g : G), op g • x = x → g = 1)
+    {U : Set B} {s : B → E} (hs : ∀ b ∈ U, f (s b) = b)
+    {x y : E} (hx : f x ∈ U) (hxy : f x = f y) :
+    actionDivision horbit hxy =
+      (sectionCoord horbit hs x)⁻¹ * sectionCoord horbit hs y := by
+  have hy : f y ∈ U := hxy ▸ hx
+  rw [actionDivision_eq_iff horbit hfree]
+  calc op ((sectionCoord horbit hs x)⁻¹ * sectionCoord horbit hs y) • x
+      = op ((sectionCoord horbit hs x)⁻¹ * sectionCoord horbit hs y) •
+          (op (sectionCoord horbit hs x) • s (f x)) := by
+        rw [op_sectionCoord_smul horbit hs hx]
+    _ = op (sectionCoord horbit hs y) • s (f y) := by
+        rw [← mul_smul, ← op_mul, mul_inv_cancel_left, hxy]
+    _ = y := op_sectionCoord_smul horbit hs hy
 
 /-- Construct an unbundled `Bundle.Trivialization G f` over an open set `U ⊆ B` from a local
 section `s : B → E` of `f` on `U`, given continuity of `f`, of `sectionCoord horbit hs` on
