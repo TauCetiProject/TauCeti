@@ -34,7 +34,7 @@ the defect by `q ^ 3` and the gauge lower bound by `q ^ 2`, so `K_k` carries a c
 
 * Jeromie Beasley, *The Permutation Coboundary Constant of the Complete Complex Is k/3 for Every
   k≥4*, Zenodo, doi:10.5281/zenodo.22090958, Corollary 7 and Theorem 8.
-* D. N. Kozlov, *The first coboundary constant of the complete complex*, arXiv:1610.07136,
+* D. N. Kozlov, *The first Cheeger constant of a simplex*, arXiv:1610.07136,
   Definition 3.2 (staircase graphs), Lemma 3.8 and Corollary 3.13 (cut-minimality).
 -/
 

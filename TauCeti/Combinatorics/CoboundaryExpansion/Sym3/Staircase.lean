@@ -11,14 +11,28 @@ import Mathlib.Tactic.Linarith
 import Mathlib.Tactic.Ring
 
 /-!
-# Counts for Kozlov's staircase cochains
+# Moved-point counts for Kozlov's staircase cochains
 
-Staircases and cut-minimality: Kozlov, arXiv:1610.07136 (Def. 3.2, §3.1, Lemma 3.8,
-Cor. 3.13, Lemma 3.10). The Sym(3) transfer via parity retraction is Jeromie Beasley's,
-Cor. 7 and Thm. 8, Zenodo concept DOI 10.5281/zenodo.22090958.
+On `K_{2t+1}` with vertices numbered `0, 1, …, 2t`, the staircase cochain `Sym3.stair` puts the
+transposition `t01` on the pairs `p < q` with `p` odd and `q` even and `1` elsewhere. Writing
+`vᵢ = 2i - 1` and `y_j = 2j`, its `t01`-edges join `vᵢ` to `y_j` exactly when `i ≤ j`: this is
+Kozlov's staircase graph of the partition `(t, t - 1, …, 1)` with one isolated vertex `0`
+(`SimpleGraph.staircase 1 t` up to relabelling).
 
-The counting proof is on interleaved `Fin k` positions, not a second graph API.
-Main's `SimpleGraph.staircase` (#41566) gives the same graphs in block coordinates.
+* `Sym3.stair_cost_lower`: every `Sym(3)` gauge costs at least `t (t + 1)`. The parity retraction
+  onto `{1, t01}` (`Equiv.Perm.movedNorm_parityRetract_le`) bounds the cost below by twice the
+  `𝔽₂` cost of the sign pattern of the gauge, and cut-minimality of the staircase bounds that
+  below by the number `t (t + 1) / 2` of staircase edges.
+* `Sym3.stair_defect_mul`: `3 N = (2 t + 1) · t (t + 1)`, from the count
+  `N = 2 (1² + 2² + ⋯ + t²)` of the triangles with an odd number of staircase edges.
+
+## References
+
+* D. N. Kozlov, *The first Cheeger constant of a simplex*, arXiv:1610.07136,
+  Definition 3.2 and §3.1 (staircase graphs), Lemma 3.8 and Corollary 3.13 (cut-minimality),
+  Lemma 3.10 (triangle count).
+* Jeromie Beasley, *The Permutation Coboundary Constant of the Complete Complex Is k/3 for Every
+  k≥4*, Zenodo, doi:10.5281/zenodo.22090958, Corollary 7 and Theorem 8 (the `Sym(3)` transfer).
 -/
 
 public section
@@ -157,6 +171,15 @@ private theorem st_fin_pair (n : ℕ) (G : ℕ → ℕ → ℕ) :
   refine Finset.sum_congr rfl fun v hv => ?_
   exact st_sum_lt n v (Finset.mem_range.mp hv).le (fun u => G u v)
 
+/-- Reordering a triple sum over `range n` from `u, v, w` to `w, v, u`. -/
+private theorem sum_range_rotate3 (n : ℕ) (F : ℕ → ℕ → ℕ → ℕ) :
+    (∑ u ∈ range n, ∑ v ∈ range n, ∑ w ∈ range n, F u v w) =
+      ∑ w ∈ range n, ∑ v ∈ range n, ∑ u ∈ range n, F u v w := by
+  calc _ = ∑ v ∈ range n, ∑ u ∈ range n, ∑ w ∈ range n, F u v w := Finset.sum_comm
+    _ = ∑ v ∈ range n, ∑ w ∈ range n, ∑ u ∈ range n, F u v w :=
+        Finset.sum_congr rfl fun v _ => Finset.sum_comm
+    _ = _ := Finset.sum_comm
+
 /-- A sum over the triangles `u < v < w` of `K_n`, as a sum over `range`. -/
 private theorem st_fin_triple (n : ℕ) (Y : ℕ → ℕ → ℕ → ℕ) :
     (∑ u : Fin n, ∑ v : Fin n, ∑ w : Fin n,
@@ -181,17 +204,7 @@ private theorem st_fin_triple (n : ℕ) (Y : ℕ → ℕ → ℕ → ℕ) :
     by_cases h : u < v ∧ v < w
     · rw [ite_eq_left h, ite_eq_left (show u.val < v.val ∧ v.val < w.val from h)]
     · rw [ite_eq_right h, ite_eq_right (show ¬ (u.val < v.val ∧ v.val < w.val) from h)]
-  have hB : (∑ u ∈ range n, ∑ v ∈ range n, ∑ w ∈ range n,
-        if u < v ∧ v < w then Y u v w else 0) =
-      ∑ w ∈ range n, ∑ v ∈ range n, ∑ u ∈ range n,
-        if u < v ∧ v < w then Y u v w else 0 := by
-    calc _ = ∑ v ∈ range n, ∑ u ∈ range n, ∑ w ∈ range n,
-          (if u < v ∧ v < w then Y u v w else 0) := Finset.sum_comm
-      _ = ∑ v ∈ range n, ∑ w ∈ range n, ∑ u ∈ range n,
-          (if u < v ∧ v < w then Y u v w else 0) :=
-          Finset.sum_congr rfl fun v _ => Finset.sum_comm
-      _ = _ := Finset.sum_comm
-  rw [hA, hB]
+  rw [hA, sum_range_rotate3]
   refine Finset.sum_congr rfl fun w hw => ?_
   have hw' : w < n := Finset.mem_range.mp hw
   have e : ∀ v, (∑ u ∈ range n, if u < v ∧ v < w then Y u v w else 0) =
