@@ -319,13 +319,6 @@ noncomputable def constCompToTopIso :
 
 /-! ### Realization of universe lifts -/
 
-private noncomputable def uliftYonedaToTopHomeo (m : SimplexCategory) :
-    |uliftYoneda.{u}.obj m| ≃ₜ StdSimplex ℝ (Fin (m.len + 1)) := m.toTopHomeo
-private lemma uliftYonedaToTopHomeo_naturality_apply {m n : SimplexCategory} (f : m ⟶ n)
-    (y : |uliftYoneda.{u}.obj m|) :
-    uliftYonedaToTopHomeo.{u} n (toTop.map (uliftYoneda.{u}.map f) y) =
-      StdSimplex.map f (uliftYonedaToTopHomeo.{u} m y) :=
-  SimplexCategory.toTopHomeo_naturality_apply f y
 private noncomputable def uliftToTopCoconeApp (X : SSet.{u})
     (j : CostructuredArrow uliftYoneda.{u} X) :
     TopCat.uliftFunctor.{v, u}.obj |uliftYoneda.{u}.obj j.left| ⟶
@@ -333,17 +326,18 @@ private noncomputable def uliftToTopCoconeApp (X : SSet.{u})
   ConcreteCategory.ofHom
     ⟨fun z ↦ toTopObjMk (X := SSet.uliftFunctor.{v, u}.obj X) (n := j.left.len)
         (ULift.up (CategoryTheory.uliftYonedaEquiv j.hom))
-        (uliftYonedaToTopHomeo.{u} j.left
+        (SimplexCategory.toTopHomeo.{u} j.left
           (|uliftYoneda.{u}.obj j.left|.uliftFunctorObjHomeo.{v, u}.symm z)),
-      (continuous_toTopObjMk _).comp ((uliftYonedaToTopHomeo.{u} j.left).continuous.comp
+      (continuous_toTopObjMk _).comp ((SimplexCategory.toTopHomeo.{u} j.left).continuous.comp
         |uliftYoneda.{u}.obj j.left|.uliftFunctorObjHomeo.{v, u}.symm.continuous)⟩
 private lemma uliftToTopCoconeApp_apply (X : SSet.{u}) (j : CostructuredArrow uliftYoneda.{u} X)
     (y : |uliftYoneda.{u}.obj j.left|) :
     uliftToTopCoconeApp.{v, u} X j (|uliftYoneda.{u}.obj j.left|.uliftFunctorObjHomeo y) =
       toTopObjMk (X := SSet.uliftFunctor.{v, u}.obj X) (n := j.left.len)
-        (ULift.up (CategoryTheory.uliftYonedaEquiv j.hom)) (uliftYonedaToTopHomeo.{u} j.left y) :=
+        (ULift.up (CategoryTheory.uliftYonedaEquiv j.hom))
+        (SimplexCategory.toTopHomeo.{u} j.left y) :=
   congrArg (toTopObjMk (X := SSet.uliftFunctor.{v, u}.obj X) (n := j.left.len) _)
-    (congrArg (uliftYonedaToTopHomeo.{u} j.left) (Homeomorph.symm_apply_apply _ y))
+    (congrArg (SimplexCategory.toTopHomeo.{u} j.left) (Homeomorph.symm_apply_apply _ y))
 private noncomputable def uliftToTopCocone (X : SSet.{u}) :
     Cocone (CostructuredArrow.proj uliftYoneda.{u} X ⋙
       uliftYoneda.{u} ⋙ SSet.toTop.{u} ⋙ TopCat.uliftFunctor.{v, u}) where
@@ -361,10 +355,11 @@ private noncomputable def uliftToTopCocone (X : SSet.{u}) :
           Functor.comp_map, CostructuredArrow.proj_obj, CostructuredArrow.proj_map,
           ConcreteCategory.comp_apply, CategoryTheory.id_apply,
           TopCat.uliftFunctorObjHomeo_naturality_apply]
-        rw [uliftToTopCoconeApp_apply, uliftToTopCoconeApp_apply,
-          uliftYonedaToTopHomeo_naturality_apply]
-        exact (toTopObjMk_map (X := SSet.uliftFunctor.{v, u}.obj X) g.left _ _).symm.trans
-          (congrArg (toTopObjMk · _) (congrArg ULift.up hyon)) }
+        rw [uliftToTopCoconeApp_apply, uliftToTopCoconeApp_apply]
+        exact (congrArg (toTopObjMk (X := SSet.uliftFunctor.{v, u}.obj X) _)
+            (SimplexCategory.toTopHomeo_naturality_apply.{u} g.left y)).trans <|
+          (toTopObjMk_map (X := SSet.uliftFunctor.{v, u}.obj X) g.left _ _).symm.trans
+            (congrArg (toTopObjMk · _) (congrArg ULift.up hyon)) }
 private noncomputable def uliftToTopHom (X : SSet.{u}) :
     |SSet.uliftFunctor.{v, u}.obj X| ⟶ TopCat.uliftFunctor.{v, u}.obj |X| :=
   descToTop (fun _ x w ↦ |X|.uliftFunctorObjHomeo (toTopObjMk x.down w))
@@ -384,7 +379,7 @@ private lemma uliftToTopInv_apply (X : SSet.{u}) {n : ℕ} (x : X _⦋n⦌)
       toTopObjMk (X := SSet.uliftFunctor.{v, u}.obj X) (ULift.up x) w := by
   let f : uliftYoneda.{u}.obj ⦋n⦌ ⟶ X := CategoryTheory.uliftYonedaEquiv.symm x
   let j := CostructuredArrow.mk f
-  let y : |uliftYoneda.{u}.obj j.left| := (uliftYonedaToTopHomeo.{u} ⦋n⦌).symm w
+  let y : |uliftYoneda.{u}.obj j.left| := (SimplexCategory.toTopHomeo.{u} ⦋n⦌).symm w
   have hfac := ConcreteCategory.congr_hom ((isColimitOfPreserves
     (SSet.toTop.{u} ⋙ TopCat.uliftFunctor.{v, u}) (denseAtUliftYoneda X)).fac
     (uliftToTopCocone.{v, u} X) j) (|uliftYoneda.{u}.obj j.left|.uliftFunctorObjHomeo y)
