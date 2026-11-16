@@ -106,14 +106,14 @@ theorem f4ShortRootSubspace_mkQ_lie_rootVector_of_specialMap_add
       ((f4Length_f4SpecialIsogenyIndexEquiv_eq_two_iff β).2 (hαβ.symm.trans hα)) hmap
     exact ((Submodule.mkQ_apply _ _).trans
       (f4ShortRootSubspace_mkQ_lie_rootVector_eq_zero_of_short α hα _)).trans
-        (f4ShortRootSubspace_mkQ_rootVector_eq_zero_of_short' γ
+        (f4ShortRootSubspace_mkQ_rootVector_eq_zero_of_short γ
           ((f4Length_f4SpecialIsogenyIndexEquiv_eq_two_iff γ).1 hγ')).symm
   have hα := (f4Length_eq_one_or_eq_two α).resolve_left hα
   have hβ := hαβ.symm.trans hα
   by_cases hγ : f4Length γ = 1
   · have hγ' := (f4Length_f4SpecialIsogenyIndexEquiv_eq_two_iff γ).2 hγ
     refine (f4ShortRootSubspace_mkQ_lie_rootVector_eq_zero_of_no_specialMap_edge α β ?_
-      fun δ hδ hδeq => ?_).trans (f4ShortRootSubspace_mkQ_rootVector_eq_zero_of_short' γ hγ).symm
+      fun δ hδ hδeq => ?_).trans (f4ShortRootSubspace_mkQ_rootVector_eq_zero_of_short γ hγ).symm
     · -- the special permutation commutes with negation, so an opposite pair would sum to zero
       rintro rfl
       rw [f4SpecialIsogenyIndexEquiv_f4OppositeRootIndex, f4OppositeRootIndex_eq_reflectionPerm,
@@ -167,7 +167,7 @@ theorem f4ShortRootSubspace_mkQ_dividedSquare_rootVector_eq_zero_of_no_specialMa
   by_cases hβ : f4Length β = 1
   · by_cases hopp : β = f4OppositeRootIndex (f4SignedSimpleRootIndex k)
     · rw [hopp, f4ShortRootSubspace_mkQ_dividedSquare_rootVector_opposite]
-      exact f4ShortRootSubspace_mkQ_rootVector_eq_zero_of_short' _ hα
+      exact f4ShortRootSubspace_mkQ_rootVector_eq_zero_of_short _ hα
     exact (congrArg f4ShortRootSubspace.mkQ
       (f4ModularDividedAdjointSquare_rootVector_eq_zero_of_short k β hβ hopp)).trans (map_zero _)
   · have hβ := (f4Length_eq_one_or_eq_two β).resolve_left hβ
@@ -195,7 +195,7 @@ theorem f4ShortRootSubspace_mkQ_dividedSquare_rootVector_of_specialMap_add
   by_cases hγ : f4Length γ = 1
   · refine (f4ShortRootSubspace_mkQ_dividedSquare_rootVector_eq_zero_of_no_specialMap_edge
       k β hα fun δ hδ hδeq => ?_).trans
-        (f4ShortRootSubspace_mkQ_rootVector_eq_zero_of_short' γ hγ).symm
+        (f4ShortRootSubspace_mkQ_rootVector_eq_zero_of_short γ hγ).symm
     have hδγ := f4SimplyConnectedRootDatum.root.injective (hδeq.trans hmap.symm)
     have h2 := (f4Length_f4SpecialIsogenyIndexEquiv_eq_two_iff γ).2 hγ
     rw [← hδγ, hδ] at h2
