@@ -449,14 +449,19 @@ theorem forall_mem_equations_isReduced_iff {w : Fin Ω.numItems → List (A × B
   · intro b _
     simp [hw b.1, FreeGroup.IsReduced.singleton]
   · intro c hc
-    obtain ⟨-, h₂, h₃, h₄⟩ := Ω.bounds_of_mem_connections c hc
+    obtain ⟨h₁, h₂, h₃, h₄⟩ := Ω.bounds_of_mem_connections c hc
     rw [boundaryEquation_fst]
-    refine ⟨(h c.2.1).infix ((Ω.segment_prefix_segment h₂.le).flatMap _).isInfix, ?_⟩
-    by_cases hs : Ω.sign c.2.1 = Ω.sign (Ω.dual c.2.1)
-    · rw [Ω.boundaryEquation_snd_of_sign_eq hs]
-      exact (h (Ω.dual c.2.1)).infix ((Ω.segment_prefix_segment h₄.le).flatMap _).isInfix
-    · rw [Ω.boundaryEquation_snd_of_sign_ne hs, Ω.isReduced_substituteVars_segment_iff]
-      exact (h (Ω.dual c.2.1)).infix ((Ω.segment_suffix_segment h₃.le).flatMap _).isInfix
+    refine ⟨?_, ?_⟩
+    · have h' := h c.2.1
+      rw [← Ω.segment_append h₁.le h₂.le, substituteVars_append] at h'
+      exact h'.infix (List.prefix_append _ _).isInfix
+    · have h' := h (Ω.dual c.2.1)
+      rw [← Ω.segment_append h₃.le h₄.le, substituteVars_append] at h'
+      by_cases hs : Ω.sign c.2.1 = Ω.sign (Ω.dual c.2.1)
+      · rw [Ω.boundaryEquation_snd_of_sign_eq hs]
+        exact h'.infix (List.prefix_append _ _).isInfix
+      · rw [Ω.boundaryEquation_snd_of_sign_ne hs, Ω.isReduced_substituteVars_segment_iff]
+        exact h'.infix (List.suffix_append _ _).isInfix
 
 /-- The coordinate group `F_{R(Ω)}` of a generalised equation: the coordinate group of the system
 `Ω*` over `F(A)`, with solutions taken in `F(A)`. -/
