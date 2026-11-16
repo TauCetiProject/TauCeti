@@ -63,10 +63,10 @@ or `τ` has.
   Laplacian is formally self-adjoint.
 * `CovariantDerivative.IsMetricCompatible.integral_inner_roughLaplacian_self_nonneg`: it is
   nonnegative.
-* `CovariantDerivative.IsMetricCompatible.eq_zero_of_roughLaplacian_eq_zero`: a compactly
-  supported smooth section with `∇*∇ σ = 0` is parallel.
-* `CovariantDerivative.IsMetricCompatible.roughLaplacian_eq_zero_iff`: on a compact manifold a
-  smooth section satisfies `∇*∇ σ = 0` if and only if it is parallel.
+* `CovariantDerivative.IsMetricCompatible.apply_eq_zero_of_roughLaplacian_eq_zero`: a
+  compactly supported smooth section with `∇*∇ σ = 0` is parallel.
+* `CovariantDerivative.IsMetricCompatible.roughLaplacian_eq_zero_iff_apply_eq_zero`: on a compact
+  manifold a smooth section satisfies `∇*∇ σ = 0` if and only if it is parallel.
 
 ## References
 
@@ -126,8 +126,7 @@ private theorem contMDiff_pairingField (hσ : CMDiff ∞ (T% σ)) (hτ : CMDiff 
   have hσ' : CMDiff (∞ + 1) (T% σ) := by simpa using hσ
   refine contMDiffAt_rieszDual (n := ∞) x (mem_chart_source H x) fun j ↦ ?_
   have hframe : CMDiffAt ∞ (T% (chartLocalFrame (I := I) x j)) x :=
-    (contMDiffOn_chartLocalFrame (I := I) (n := ∞) x j).contMDiffAt
-      ((trivializationAt E (TangentSpace I) x).open_baseSet.mem_nhds (by simp))
+    contMDiffAt_chartLocalFrame (I := I) (n := ∞) x j
   simpa only [ContinuousLinearMap.comp_apply, innerSL_apply_apply, real_inner_comm] using
     (cov.contMDiffAt_apply hframe hσ').inner_bundle (hτ x)
 
@@ -219,8 +218,7 @@ theorem integral_inner_roughLaplacian (hcov : cov.IsMetricCompatible) (hσ : CMD
       by_contra h
       exact hy (subset_closure h)
     simp [pairingField, hτy, LinearIsometryEquiv.map_zero]
-  · simp [cov.innerCovariantDerivative_eq_sum σ τ y (stdOrthonormalBasis ℝ _),
-      cov.apply_eq_zero_of_notMem_closure hy]
+  · exact cov.innerCovariantDerivative_eq_zero_of_notMem_closure_right hy
 
 /-- **The energy identity for the rough Laplacian**, when the first section has compact
 support: `∫ ⟪∇*∇ σ, τ⟫ dV = ∫ ⟪∇σ, ∇τ⟫ dV`. -/
@@ -231,9 +229,7 @@ theorem integral_inner_roughLaplacian_of_isCompact_left (hcov : cov.IsMetricComp
   integral_inner_roughLaplacian_of_subset hcov hσ hτ hσc isClosed_closure
     (fun y hy ↦ by
       simp [pairingField, cov.apply_eq_zero_of_notMem_closure hy, LinearIsometryEquiv.map_zero])
-    (fun y hy ↦ by
-      simp [cov.innerCovariantDerivative_eq_sum σ τ y (stdOrthonormalBasis ℝ _),
-        cov.apply_eq_zero_of_notMem_closure hy])
+    (fun _ ↦ cov.innerCovariantDerivative_eq_zero_of_notMem_closure_left)
 
 /-- **The rough Laplacian is formally self-adjoint.** For a metric connection and smooth sections
 `σ` and `τ` where `τ` has compact support, `∫ ⟪∇*∇ σ, τ⟫ dV = ∫ ⟪σ, ∇*∇ τ⟫ dV`. -/
@@ -260,16 +256,14 @@ theorem integral_inner_roughLaplacian_self_nonneg (hcov : cov.IsMetricCompatible
 /-- **A compactly supported smooth section in the kernel of the rough Laplacian is parallel.**
 For a metric connection on a Riemannian vector bundle over a manifold without boundary, a smooth
 section `σ` with compact support and `∇*∇ σ = 0` satisfies `∇σ = 0`. -/
-theorem eq_zero_of_roughLaplacian_eq_zero (hcov : cov.IsMetricCompatible)
+theorem apply_eq_zero_of_roughLaplacian_eq_zero (hcov : cov.IsMetricCompatible)
     (hσ : CMDiff ∞ (T% σ)) (hσc : IsCompact (closure {x | σ x ≠ 0}))
     (h : cov.roughLaplacian (leviCivitaConnection I M) σ = 0) : cov σ = 0 := by
   have hint := hcov.integral_inner_roughLaplacian hσ hσ hσc
   simp only [h, Pi.zero_apply, inner_zero_left, integral_zero] at hint
   have hcont := (cov.contMDiff_innerCovariantDerivative hσ hσ).continuous
   have hBc : HasCompactSupport (cov.innerCovariantDerivative σ σ) :=
-    .intro' hσc isClosed_closure fun y hy ↦
-      (cov.innerCovariantDerivative_self_eq_zero_iff σ y).2
-        (cov.apply_eq_zero_of_notMem_closure hy)
+    .intro' hσc isClosed_closure fun _ ↦ cov.innerCovariantDerivative_eq_zero_of_notMem_closure_left
   -- `⟪∇σ, ∇σ⟫` is continuous and nonnegative with integral zero, so it vanishes everywhere.
   have hzero : cov.innerCovariantDerivative σ σ = 0 :=
     (hcont.ae_eq_iff_eq _ continuous_zero).1 ((integral_eq_zero_iff_of_nonneg
@@ -281,11 +275,11 @@ omit [SigmaCompactSpace M] in
 /-- **The kernel of the rough Laplacian on a closed manifold.** For a metric connection on a
 Riemannian vector bundle over a compact manifold without boundary, a smooth section satisfies
 `∇*∇ σ = 0` if and only if it is parallel, `∇σ = 0`. -/
-theorem roughLaplacian_eq_zero_iff [CompactSpace M] (hcov : cov.IsMetricCompatible)
-    (hσ : CMDiff ∞ (T% σ)) :
+theorem roughLaplacian_eq_zero_iff_apply_eq_zero [CompactSpace M]
+    (hcov : cov.IsMetricCompatible) (hσ : CMDiff ∞ (T% σ)) :
     cov.roughLaplacian (leviCivitaConnection I M) σ = 0 ↔ cov σ = 0 :=
-  ⟨hcov.eq_zero_of_roughLaplacian_eq_zero hσ isClosed_closure.isCompact,
-    cov.roughLaplacian_eq_zero_of_eq_zero _ hσ⟩
+  ⟨hcov.apply_eq_zero_of_roughLaplacian_eq_zero hσ isClosed_closure.isCompact,
+    cov.roughLaplacian_eq_zero_of_apply_eq_zero _ hσ⟩
 
 end IsMetricCompatible
 

@@ -39,7 +39,7 @@ The trace is the contraction of the bilinear map `∇²σ` against the canonical
 
 * `CovariantDerivative.roughLaplacian`: the rough Laplacian `∇*∇ σ` at a point.
 * `CovariantDerivative.roughLaplacian_eq_sum`: its value in an orthonormal basis.
-* `CovariantDerivative.roughLaplacian_eq_zero_of_eq_zero`: parallel sections have zero rough
+* `CovariantDerivative.roughLaplacian_eq_zero_of_apply_eq_zero`: parallel sections have zero rough
   Laplacian.
 * `CovariantDerivative.roughLaplacian_smul_smul_sub`: the double commutator of `∇*∇` with
   multiplication by two functions is `-2 ⟪grad f, grad g⟫ σ`.
@@ -139,7 +139,7 @@ theorem roughLaplacian_sub {τ : Π y : M, V y} (hσ : CMDiff ∞ (T% σ)) (hτ 
     sub_eq_add_neg]
 
 /-- The rough Laplacian of a smooth parallel section is zero: `∇σ = 0` implies `∇*∇ σ = 0`. -/
-theorem roughLaplacian_eq_zero_of_eq_zero (hσ : CMDiff ∞ (T% σ)) (h : cov σ = 0) :
+theorem roughLaplacian_eq_zero_of_apply_eq_zero (hσ : CMDiff ∞ (T% σ)) (h : cov σ = 0) :
     cov.roughLaplacian covT σ = 0 := by
   funext x
   rw [cov.roughLaplacian_eq_sum covT σ x (stdOrthonormalBasis ℝ _)]
