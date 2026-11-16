@@ -76,9 +76,11 @@ coherences of both block-sum homomorphisms, as well as the kernel and quotient d
 * `TauCeti.realCliffordSpinBlockSum_assoc`: associativity coherence of the Spin block sum.
 * `TauCeti.spinGroupEquiv_realCliffordBlockSwapIsometry_realCliffordSpinBlockSum`: permutation
   coherence of the Spin block sum under swapping the two coordinate blocks.
-* `TauCeti.realCliffordFirstReflectionIsometry`: the involutive quadratic isometry
-  `v ↦ Fin.cons (-v 0) (Fin.tail v)` negating the first coordinate, whose Spin and
-  special-orthogonal automorphisms fix the image of first-coordinate stabilization.
+* `TauCeti.realCliffordFirstReflectionIsometry_comp_firstInclusionIsometry`,
+  `TauCeti.spinGroupMap_realCliffordFirstReflectionIsometry_firstInclusion`, and
+  `TauCeti.specialOrthogonalGroupCongr_realCliffordFirstReflectionIsometry_firstInclusion`:
+  first-coordinate reflection (`TauCeti.realCliffordFirstReflectionIsometry`) fixes the image of
+  first-coordinate stabilization on quadratic spaces, `Spin(n + 1)`, and `SO(n + 1)`.
 
 ## References
 
@@ -741,40 +743,6 @@ theorem
   simp only [Prod.swap_prod_mk]
 
 /-! ### First-coordinate reflection -/
-
-/-- **First-coordinate reflection isometry**: the involutive quadratic isometry of
-`realCliffordForm (n + 1) 0` negating the `0`-th coordinate and fixing all remaining coordinates.
-In the Pin group this corresponds to twisted conjugation by the unit vector `Pi.single 0 1`. -/
-def realCliffordFirstReflectionIsometry (n : ℕ) :
-    (realCliffordForm (n + 1) 0).IsometryEquiv (realCliffordForm (n + 1) 0) where
-  toFun v := Fin.cons (-v 0) (Fin.tail v)
-  invFun v := Fin.cons (-v 0) (Fin.tail v)
-  left_inv v := by
-    simp only [Fin.cons_zero, Fin.tail_cons, neg_neg, Fin.cons_self_tail]
-  right_inv v := by
-    simp only [Fin.cons_zero, Fin.tail_cons, neg_neg, Fin.cons_self_tail]
-  map_add' v w := by
-    ext i
-    refine Fin.cases ?_ (fun j ↦ ?_) i <;> simp [Fin.tail, add_comm]
-  map_smul' r v := by
-    ext i
-    refine Fin.cases ?_ (fun j ↦ ?_) i <;> simp [Fin.tail]
-  map_app' v := by
-    rw [realCliffordForm_apply, realCliffordForm_apply, Fin.sum_univ_succ, Fin.sum_univ_succ]
-    simp [Fin.tail]
-
-/-- Evaluating `realCliffordFirstReflectionIsometry` negates the `0`-th coordinate and keeps
-`Fin.tail`. -/
-@[simp]
-theorem realCliffordFirstReflectionIsometry_apply (n : ℕ) (v : Fin (n + 1) → ℝ) :
-    realCliffordFirstReflectionIsometry n v = Fin.cons (-v 0) (Fin.tail v) :=
-  (rfl)
-
-/-- `realCliffordFirstReflectionIsometry` is an involution. -/
-@[simp]
-theorem realCliffordFirstReflectionIsometry_symm (n : ℕ) :
-    (realCliffordFirstReflectionIsometry n).symm = realCliffordFirstReflectionIsometry n :=
-  (rfl)
 
 /-- First-coordinate reflection fixes the image of `realCliffordSpinFirstInclusionIsometry`. -/
 @[simp]

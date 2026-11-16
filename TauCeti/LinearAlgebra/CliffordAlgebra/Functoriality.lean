@@ -27,7 +27,8 @@ Clifford algebra is faithful.
 * `CliffordAlgebra.map_involute` proves naturality of the grade involution.
 * `CliffordAlgebra.map_reverse` proves naturality of Clifford reversal.
 * `CliffordAlgebra.map_star` proves naturality of Clifford conjugation.
-* `CliffordAlgebra.map_mem_even` proves preservation of the even subalgebra.
+* `CliffordAlgebra.map_mem_even` proves preservation of the even subalgebra, and
+  `CliffordAlgebra.evenMap` restricts `CliffordAlgebra.map` to `even Q₁ →ₐ[R] even Q₂`.
 * `CliffordAlgebra.comp_eq_map_comp_of_forall_ιₛₗ`: a semilinear map of Clifford modules, whose
   twist fixes the base scalars, intertwining the generators along a quadratic isometry `f`
   intertwines every `a` with `map f a`; `CliffordAlgebra.comp_eq_map_comp_of_forall_ι` is the
@@ -101,6 +102,46 @@ theorem map_mem_even (f : Q₁ →qᵢ Q₂) {x : CliffordAlgebra Q₁} (hx : x 
   | ι_mul_ι_mul m₁ m₂ x _ hx =>
       simpa only [map_mul, map_apply_ι, zero_add] using
         SetLike.mul_mem_graded (ι_mul_ι_mem_evenOdd_zero Q₂ (f m₁) (f m₂)) hx
+
+/-- The algebra homomorphism induced by a quadratic isometry, restricted to the even Clifford
+subalgebras. -/
+noncomputable def evenMap (f : Q₁ →qᵢ Q₂) : even Q₁ →ₐ[R] even Q₂ :=
+  ((map f).comp (even Q₁).val).codRestrict (even Q₂) fun x ↦
+    show ((map f).comp (even Q₁).val) x ∈ even Q₂ from map_mem_even f x.2
+
+/-- After coercion, `evenMap` agrees with the full Clifford-algebra map `map`. -/
+@[simp]
+theorem coe_evenMap_apply (f : Q₁ →qᵢ Q₂) (x : even Q₁) :
+    (evenMap f x : CliffordAlgebra Q₂) = map f (x : CliffordAlgebra Q₁) := by
+  simp [evenMap]
+
+/-- On a bilinear generator, `evenMap` applies the isometry to both vectors. -/
+@[simp]
+theorem evenMap_ι (f : Q₁ →qᵢ Q₂) (m n : M₁) :
+    evenMap f ((even.ι Q₁).bilin m n) = (even.ι Q₂).bilin (f m) (f n) := by
+  apply Subtype.ext
+  simp [even.ι]
+
+/-- The identity quadratic isometry induces the identity homomorphism on the even Clifford
+algebra. -/
+@[simp]
+theorem evenMap_id :
+    evenMap (QuadraticMap.Isometry.id Q₁) = AlgHom.id R (even Q₁) := by
+  apply AlgHom.ext
+  intro x
+  apply Subtype.ext
+  simp
+
+/-- Restriction to the even Clifford algebra respects composition of quadratic isometries. -/
+@[simp]
+theorem evenMap_comp {M₃ : Type*} [AddCommGroup M₃] [Module R M₃] {Q₃ : QuadraticForm R M₃}
+    (f : Q₂ →qᵢ Q₃) (g : Q₁ →qᵢ Q₂) :
+    (evenMap f).comp (evenMap g) = evenMap (f.comp g) := by
+  apply AlgHom.ext
+  intro x
+  apply Subtype.ext
+  rw [AlgHom.comp_apply, coe_evenMap_apply, coe_evenMap_apply, coe_evenMap_apply,
+    ← AlgHom.comp_apply, map_comp_map]
 
 /-- A semilinear map `U` of Clifford modules that intertwines the generators along a quadratic
 isometry `f`, `U c(m) = c(f m) U`, intertwines every Clifford element `a` with `map f a`, provided

@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.LinearAlgebra.CliffordAlgebra.Even.Quaternion
+public import TauCeti.LinearAlgebra.CliffordAlgebra.Spin.Kernel
 public import TauCeti.LinearAlgebra.CliffordAlgebra.Spin.LowRank.SplitCenter
 
 import TauCeti.LinearAlgebra.CliffordAlgebra.OddSplitting
@@ -34,7 +35,9 @@ of two special linear groups.
 
 * `CliffordAlgebra.exists_evenQuaternionProdEquiv_of_finrank_eq_four` gives a
   reversal-preserving quaternion-product model for a regular quaternary form with split center.
-* `CliffordAlgebra.spinGroupEquivQuaternionUnitaryProd` transports a chosen model to Spin.
+* `CliffordAlgebra.spinGroupEquivQuaternionUnitaryProd` transports a chosen model to Spin, with
+  `CliffordAlgebra.spinGroupEquivQuaternionUnitaryProd_negOne` sending `spinGroup.negOne` to
+  `(-1, -1)`.
 * `CliffordAlgebra.normForm_fst_spinGroupEquivQuaternionUnitaryProd` and
   `CliffordAlgebra.normForm_snd_spinGroupEquivQuaternionUnitaryProd` identify both factors as
   norm-one quaternion groups.
@@ -177,6 +180,20 @@ theorem normForm_snd_spinGroupEquivQuaternionUnitaryProd
       (spinGroupEquivQuaternionUnitaryProd Q hQ hV e he s).2 = 1 :=
   (QuaternionAlgebra.mem_unitary_iff_normForm_eq_one _ _ _ _).mp
     (spinGroupEquivQuaternionUnitaryProd Q hQ hV e he s).2.2
+
+/-- In a chosen quaternion-product Spin model, the central element `-1` has coordinates
+`(-1, -1)`. -/
+@[simp]
+theorem spinGroupEquivQuaternionUnitaryProd_negOne
+    (Q : QuadraticForm K V) (hQ : Q.Nondegenerate) (hV : Module.finrank K V = 4)
+    {a b : K} (e : even Q ≃ₐ[K] ℍ[K,a,0,b] × ℍ[K,a,0,b])
+    (he : ∀ x, e (reverseEven Q x) = star (e x)) {hne : Q ≠ 0} :
+    spinGroupEquivQuaternionUnitaryProd Q hQ hV e he (spinGroup.negOne Q hne) = (-1, -1) := by
+  rw [← (spinGroupEquivQuaternionUnitaryProd Q hQ hV e he).eq_symm_apply]
+  apply Subtype.ext
+  rw [coe_spinGroupEquivQuaternionUnitaryProd_symm_apply, spinGroup.coe_negOne]
+  simp only [Unitary.coe_neg, Submonoid.coe_one]
+  rw [← Prod.neg_mk, Prod.mk_one_one, map_neg, map_one, Subalgebra.coe_neg, Subalgebra.coe_one]
 
 /-- Every regular quaternary Spin group with split even-Clifford center is isomorphic to the
 product of two norm-one groups of a quaternion algebra with unit symbols. -/

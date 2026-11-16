@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Topology.Algebra.ContinuousMonoidHom
 public import Mathlib.Topology.Algebra.Star.Unitary
 public import TauCeti.Algebra.Star.Unitary
 
@@ -38,6 +39,8 @@ from; see `TauCeti/Geometry/Lie/Subgroup/Unitary.lean`.
   to the unitary elements; `TauCeti.unitarySubgroupUnitsHomeomorph_apply` and
   `TauCeti.unitarySubgroupUnitsHomeomorph_symm_apply` identify its maps.
 * `Unitary.continuous_toUnits`: the unitary-to-units homomorphism is continuous.
+* `Unitary.prodContinuousMulEquiv`: topological-group upgrade of `Unitary.prodEquiv`, identifying
+  `unitary (A × B)` with `unitary A × unitary B`.
 * `TauCeti.mem_unitary_units_iff`: a unit is unitary exactly when its underlying element is.
 * `TauCeti.isClosed_unitarySubgroup_units`: the unitary subgroup of `Mˣ` is closed.
 * `TauCeti.isCompact_unitarySubgroup_units_iff`: the unitary subgroup of `Mˣ` is compact exactly
@@ -57,6 +60,40 @@ theorem continuous_toUnits {M : Type*} [Monoid M] [StarMul M] [TopologicalSpace 
       (continuous_subtype_val : Continuous fun u : unitary M ↦ (u : M))
   · refine continuous_subtype_val.star.congr fun u ↦ ?_
     simp only [← map_inv, val_toUnits_apply, ← star_eq_inv, coe_star, Pi.star_apply]
+
+/-- Unitary elements in a product of topological star monoids form the product of unitary
+subgroups as a topological group, upgrading `Unitary.prodEquiv`. -/
+def prodContinuousMulEquiv (A B : Type*) [Monoid A] [Monoid B] [StarMul A] [StarMul B]
+    [TopologicalSpace A] [TopologicalSpace B] :
+    unitary (A × B) ≃ₜ* unitary A × unitary B where
+  toMulEquiv := prodEquiv A B
+  continuous_toFun :=
+    Continuous.prodMk
+      (continuous_induced_rng.mpr <|
+        (continuous_fst.comp continuous_subtype_val).congr fun u ↦
+          (congrArg Prod.fst (coe_prodEquiv_apply A B u)).symm)
+      (continuous_induced_rng.mpr <|
+        (continuous_snd.comp continuous_subtype_val).congr fun u ↦
+          (congrArg Prod.snd (coe_prodEquiv_apply A B u)).symm)
+  continuous_invFun :=
+    continuous_induced_rng.mpr <|
+      ((continuous_subtype_val.comp continuous_fst).prodMk
+        (continuous_subtype_val.comp continuous_snd)).congr fun u ↦
+          (coe_prodEquiv_symm_apply A B u).symm
+
+/-- `Unitary.prodContinuousMulEquiv` evaluates as `Unitary.prodEquiv`. -/
+@[simp]
+theorem prodContinuousMulEquiv_apply (A B : Type*) [Monoid A] [Monoid B] [StarMul A] [StarMul B]
+    [TopologicalSpace A] [TopologicalSpace B] (u : unitary (A × B)) :
+    prodContinuousMulEquiv A B u = prodEquiv A B u :=
+  (rfl)
+
+/-- The inverse of `Unitary.prodContinuousMulEquiv` evaluates as `(Unitary.prodEquiv A B).symm`. -/
+@[simp]
+theorem prodContinuousMulEquiv_symm_apply (A B : Type*) [Monoid A] [Monoid B] [StarMul A]
+    [StarMul B] [TopologicalSpace A] [TopologicalSpace B] (u : unitary A × unitary B) :
+    (prodContinuousMulEquiv A B).symm u = (prodEquiv A B).symm u :=
+  (rfl)
 
 end Unitary
 

@@ -41,6 +41,8 @@ live in a fixed universe be applied to a group in a smaller one.
   lemmas `toMultiplicative_apply` and `toMultiplicative_symm_apply`.
 * `TauCeti.ContinuousMulEquiv.ulift`: the topological isomorphism `ULift M ≃ₜ* M`, with its
   evaluation lemmas `ulift_apply` and `ulift_symm_apply`.
+* `ContinuousMulEquiv.prodCongr`, `ContinuousAddEquiv.prodCongr`: product of two topological
+  monoid isomorphisms, upgrading `MulEquiv.prodCongr` and `AddEquiv.prodCongr`.
 -/
 
 public section
@@ -182,3 +184,51 @@ theorem ContinuousMulEquiv.ulift_symm_apply (x : M) :
 end ULift
 
 end TauCeti
+
+namespace ContinuousMulEquiv
+
+section ProdCongr
+
+variable {M₁ M₂ M₃ M₄ : Type*} [TopologicalSpace M₁] [TopologicalSpace M₂]
+  [TopologicalSpace M₃] [TopologicalSpace M₄]
+
+section Mul
+
+variable [Mul M₁] [Mul M₂] [Mul M₃] [Mul M₄]
+
+/-- Product of two continuous multiplicative equivalences, upgrading `MulEquiv.prodCongr`. -/
+@[to_additive prodCongr /-- Product of two continuous additive equivalences, upgrading
+`AddEquiv.prodCongr`. -/]
+def prodCongr (e₁ : M₁ ≃ₜ* M₂) (e₂ : M₃ ≃ₜ* M₄) : M₁ × M₃ ≃ₜ* M₂ × M₄ where
+  toEquiv := e₁.toEquiv.prodCongr e₂.toEquiv
+  map_mul' _ _ := Prod.ext (map_mul e₁ _ _) (map_mul e₂ _ _)
+  continuous_toFun := e₁.continuous.prodMap e₂.continuous
+  continuous_invFun := e₁.symm.continuous.prodMap e₂.symm.continuous
+
+/-- Evaluating `ContinuousMulEquiv.prodCongr` applies the two equivalences coordinatewise. -/
+@[to_additive (attr := simp) prodCongr_apply /-- Evaluating `ContinuousAddEquiv.prodCongr` applies
+the two equivalences coordinatewise. -/]
+theorem prodCongr_apply (e₁ : M₁ ≃ₜ* M₂) (e₂ : M₃ ≃ₜ* M₄) (p : M₁ × M₃) :
+    e₁.prodCongr e₂ p = (e₁ p.1, e₂ p.2) :=
+  (rfl)
+
+/-- The inverse of `ContinuousMulEquiv.prodCongr` is the product of the inverses. -/
+@[to_additive (attr := simp) prodCongr_symm /-- The inverse of `ContinuousAddEquiv.prodCongr` is
+the product of the inverses. -/]
+theorem prodCongr_symm (e₁ : M₁ ≃ₜ* M₂) (e₂ : M₃ ≃ₜ* M₄) :
+    (e₁.prodCongr e₂).symm = e₁.symm.prodCongr e₂.symm :=
+  (rfl)
+
+end Mul
+
+/-- The underlying `MulEquiv` of `ContinuousMulEquiv.prodCongr` is `MulEquiv.prodCongr`. -/
+@[to_additive (attr := simp) toAddEquiv_prodCongr /-- The underlying `AddEquiv` of
+`ContinuousAddEquiv.prodCongr` is `AddEquiv.prodCongr`. -/]
+theorem toMulEquiv_prodCongr [MulOneClass M₁] [MulOneClass M₂] [MulOneClass M₃] [MulOneClass M₄]
+    (e₁ : M₁ ≃ₜ* M₂) (e₂ : M₃ ≃ₜ* M₄) :
+    (e₁.prodCongr e₂ : M₁ × M₃ ≃* M₂ × M₄) = (e₁ : M₁ ≃* M₂).prodCongr (e₂ : M₃ ≃* M₄) :=
+  (rfl)
+
+end ProdCongr
+
+end ContinuousMulEquiv

@@ -457,28 +457,15 @@ theorem realCliffordSpinToSpecialOrthogonalRange_comp_blockSum (p q : ℕ) :
 /-- **Conjugation by first-coordinate reflection on `SO(n + 1)` is continuous.** -/
 @[fun_prop]
 theorem continuous_specialOrthogonalGroupCongr_realCliffordFirstReflectionIsometry (n : ℕ) :
-    Continuous (realCliffordFirstReflectionIsometry n).specialOrthogonalGroupCongr := by
-  have hquot : Topology.IsQuotientMap (spinToSpecialOrthogonal (realCliffordForm (n + 1) 0)) :=
-    Topology.IsQuotientMap.of_surjective_continuous
-      (spinToSpecialOrthogonal_surjective_of_posDef _ (posDef_realCliffordForm_zero (n + 1)))
-      (continuous_spinToSpecialOrthogonal_pi (realCliffordForm (n + 1) 0))
-  refine hquot.continuous_iff.mpr ?_
-  exact ((continuous_spinToSpecialOrthogonal_pi (realCliffordForm (n + 1) 0)).comp
-    (realCliffordFirstReflectionIsometry n).continuous_spinGroupEquiv).congr fun x ↦
-      (QuadraticMap.IsometryEquiv.specialOrthogonalGroupCongr_spinToSpecialOrthogonal
-        (realCliffordFirstReflectionIsometry n) x).symm
+    Continuous (realCliffordFirstReflectionIsometry n).specialOrthogonalGroupCongr :=
+  (realCliffordFirstReflectionIsometry n).continuous_specialOrthogonalGroupCongr_pi
 
 /-- **First-coordinate reflection conjugation on `SO(n + 1)`, bundled as a topological group
 automorphism.** -/
 def realCliffordFirstReflectionSpecialOrthogonalContinuousMulEquiv (n : ℕ) :
     QuadraticMap.specialOrthogonalGroup (realCliffordForm (n + 1) 0) ≃ₜ*
       QuadraticMap.specialOrthogonalGroup (realCliffordForm (n + 1) 0) :=
-  ContinuousMulEquiv.mk (realCliffordFirstReflectionIsometry n).specialOrthogonalGroupCongr
-    (continuous_specialOrthogonalGroupCongr_realCliffordFirstReflectionIsometry n)
-    (by
-      rw [MulEquiv.invFun_eq_symm, QuadraticMap.IsometryEquiv.specialOrthogonalGroupCongr_symm,
-        realCliffordFirstReflectionIsometry_symm]
-      exact continuous_specialOrthogonalGroupCongr_realCliffordFirstReflectionIsometry n)
+  (realCliffordFirstReflectionIsometry n).specialOrthogonalGroupCongrContinuousMulEquivPi
 
 /-- Evaluating `realCliffordFirstReflectionSpecialOrthogonalContinuousMulEquiv` applies
 `(realCliffordFirstReflectionIsometry n).specialOrthogonalGroupCongr`. -/
@@ -487,25 +474,14 @@ theorem realCliffordFirstReflectionSpecialOrthogonalContinuousMulEquiv_apply (n 
     (g : QuadraticMap.specialOrthogonalGroup (realCliffordForm (n + 1) 0)) :
     realCliffordFirstReflectionSpecialOrthogonalContinuousMulEquiv n g =
       (realCliffordFirstReflectionIsometry n).specialOrthogonalGroupCongr g :=
-  (rfl)
+  (realCliffordFirstReflectionIsometry n).specialOrthogonalGroupCongrContinuousMulEquivPi_apply g
 
 /-- `realCliffordFirstReflectionSpecialOrthogonalContinuousMulEquiv` is an involution. -/
 @[simp]
 theorem realCliffordFirstReflectionSpecialOrthogonalContinuousMulEquiv_symm (n : ℕ) :
     (realCliffordFirstReflectionSpecialOrthogonalContinuousMulEquiv n).symm =
       realCliffordFirstReflectionSpecialOrthogonalContinuousMulEquiv n := by
-  ext g : 1
-  rw [ContinuousMulEquiv.symm_apply_eq,
-    realCliffordFirstReflectionSpecialOrthogonalContinuousMulEquiv_apply,
-    realCliffordFirstReflectionSpecialOrthogonalContinuousMulEquiv_apply]
-  have hsymm :
-      (realCliffordFirstReflectionIsometry n).specialOrthogonalGroupCongr =
-        (realCliffordFirstReflectionIsometry n).specialOrthogonalGroupCongr.symm := by
-    rw [QuadraticMap.IsometryEquiv.specialOrthogonalGroupCongr_symm,
-      realCliffordFirstReflectionIsometry_symm]
-  nth_rw 2 [hsymm]
-  exact ((realCliffordFirstReflectionIsometry n).specialOrthogonalGroupCongr.apply_symm_apply
-    g).symm
+  simp [realCliffordFirstReflectionSpecialOrthogonalContinuousMulEquiv]
 
 end
 
