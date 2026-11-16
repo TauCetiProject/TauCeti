@@ -17,9 +17,9 @@ A differentiable function `f : ℝ → ℝ` whose derivative is at least `λ > 0
 least at the rate `λ`: `λ (y - x) ≤ f y - f x` for `x ≤ y`, by the mean value theorem
 (`mul_sub_le_image_sub_of_le_deriv`). Hence `f` is `λ⁻¹`-antilipschitz
 (`Differentiable.antilipschitzWith_of_le_deriv`) and tends to `±∞` at `±∞`, so it is a bijection
-of `ℝ` (`Differentiable.surjective_of_le_deriv`). Its inverse is `λ⁻¹`-Lipschitz, by
-`AntilipschitzWith.to_rightInverse`. Such functions arise as primitives of coefficients bounded
-below, for instance in Kirchhoff's transformation of a quasilinear equation.
+of `ℝ` (`Differentiable.surjective_of_le_deriv`) whose inverse is `λ⁻¹`-Lipschitz
+(`Differentiable.exists_lipschitzWith_inverse_of_le_deriv`). Such functions arise as primitives of
+coefficients bounded below, for instance in Kirchhoff's transformation of a quasilinear equation.
 -/
 
 public section
@@ -62,5 +62,17 @@ theorem surjective_of_le_deriv (hf : Differentiable ℝ f) (hlam : 0 < lam)
       (tendsto_id.const_mul_atBot hlam)
   exact hf.continuous.surjective (by simpa using htop.atTop_add (tendsto_const_nhds (x := f 0)))
     (by simpa using hbot.atBot_add (tendsto_const_nhds (x := f 0)))
+
+/-- A differentiable function on `ℝ` whose derivative is at least `λ > 0` is a bijection of `ℝ`
+with a `λ⁻¹`-Lipschitz two-sided inverse. -/
+theorem exists_lipschitzWith_inverse_of_le_deriv (hf : Differentiable ℝ f) (hlam : 0 < lam)
+    (hf' : ∀ x, lam ≤ deriv f x) :
+    ∃ g : ℝ → ℝ, Function.RightInverse g f ∧ Function.LeftInverse g f ∧
+      LipschitzWith (Real.toNNReal lam⁻¹) g := by
+  have hanti := hf.antilipschitzWith_of_le_deriv hlam hf'
+  have hsurj := hf.surjective_of_le_deriv hlam hf'
+  exact ⟨Function.surjInv hsurj, Function.surjInv_eq hsurj,
+    fun x ↦ hanti.injective (Function.surjInv_eq hsurj _),
+    hanti.to_rightInverse (Function.surjInv_eq hsurj)⟩
 
 end Differentiable

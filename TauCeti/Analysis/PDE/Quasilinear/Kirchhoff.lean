@@ -67,22 +67,12 @@ namespace TauCeti.PDE
 
 variable {x₀ x₁ : ℝ} {p : ENNReal} [Fact (1 ≤ p)] {A f F : ℝ → ℝ}
 
-/-- Kirchhoff's potential `Ψ(y) = ∫_0^y A` of a continuous coefficient has derivative `A`. -/
-private theorem hasDerivAt_intervalIntegral_zero (hA : Continuous A) (y : ℝ) :
-    HasDerivAt (fun z ↦ ∫ s in 0..z, A s) (A y) y :=
-  (hA.integral_hasStrictDerivAt 0 y).hasDerivAt
-
-/-- The derivative function of Kirchhoff's potential `Ψ(y) = ∫_0^y A` of a continuous
-coefficient is `A`. -/
-private theorem deriv_intervalIntegral_zero (hA : Continuous A) :
-    deriv (fun z ↦ ∫ s in 0..z, A s) = A :=
-  funext fun y ↦ (hasDerivAt_intervalIntegral_zero hA y).deriv
-
 /-- Kirchhoff's potential `Ψ(y) = ∫_0^y A` of a continuous coefficient is `C¹`. -/
 private theorem contDiff_one_intervalIntegral_zero (hA : Continuous A) :
     ContDiff ℝ 1 fun z ↦ ∫ s in 0..z, A s :=
-  contDiff_one_iff_deriv.2 ⟨fun y ↦ (hasDerivAt_intervalIntegral_zero hA y).differentiableAt,
-    by rw [deriv_intervalIntegral_zero hA]; exact hA⟩
+  contDiff_one_iff_deriv.2
+    ⟨fun y ↦ (hA.integral_hasStrictDerivAt 0 y).hasDerivAt.differentiableAt,
+      by rw [funext (hA.deriv_integral _ 0)]; exact hA⟩
 
 /-- The primitive `G(r) = ∫_{x₀}^r f + F(r)` of the data is interval integrable on `[x₀, x₁]`. -/
 private theorem intervalIntegrable_intervalIntegral_add (hx : x₀ < x₁)
@@ -132,7 +122,7 @@ theorem exists_forall_intervalIntegral_intervalRepresentativeL_eq (hx : x₀ < x
       (ae_restrict_iff' measurableSet_Ioo).1 hk, hne] with r hr hkr hr₁ hrt
     rw [uIoc_of_le t.2.1] at hrt
     have hrI : r ∈ Ioo x₀ x₁ := ⟨hrt.1, lt_of_le_of_ne (hrt.2.trans t.2.2) hr₁⟩
-    rw [((hasDerivAt_intervalIntegral_zero hA (v r)).comp r
+    rw [((hA.integral_hasStrictDerivAt 0 (v r)).hasDerivAt.comp r
       (hr (uIoc_of_le hx.le ▸ Ioo_subset_Ioc_self hrI))).deriv]
     linarith [hkr hrI]
   have hG := (intervalIntegrable_intervalIntegral_add hx hf hF).mono_set
@@ -167,7 +157,7 @@ theorem eq_of_intervalTraceL_eq_of_forall_setIntegral_eq (hx : x₀ < x₁) (hA 
   obtain ⟨k₁, h₁⟩ := exists_forall_intervalIntegral_intervalRepresentativeL_eq hx hA hf hF hu₁
   obtain ⟨k₂, h₂⟩ := exists_forall_intervalIntegral_intervalRepresentativeL_eq hx hA hf hF hu₂
   have hΨ : StrictMono fun y ↦ ∫ s in 0..y, A s := strictMono_of_deriv_pos fun y ↦ by
-    rw [deriv_intervalIntegral_zero hA]
+    rw [hA.deriv_integral _ 0]
     exact hA₀ y
   rw [W1p.intervalTraceL_apply, W1p.intervalTraceL_apply, Prod.mk.injEq] at htr
   -- The two transforms agree at both endpoints, so their slopes `k₁` and `k₂` agree.
@@ -181,23 +171,6 @@ theorem eq_of_intervalTraceL_eq_of_forall_setIntegral_eq (hx : x₀ < x₁) (hA 
   apply hΨ.injective
   simp only [h₁ t, h₂ t, htr.1, hk]
 
-/-- For a continuous coefficient `A ≥ λ > 0`, Kirchhoff's potential `Ψ(y) = ∫_0^y A` is a
-bijection of `ℝ` whose inverse is `λ⁻¹`-Lipschitz. -/
-private theorem exists_lipschitzWith_inverse_intervalIntegral {lam : ℝ} (hlam : 0 < lam)
-    (hA : Continuous A) (hAlam : ∀ y, lam ≤ A y) :
-    ∃ g : ℝ → ℝ, (∀ y, ∫ s in 0..g y, A s = y) ∧ (∀ y, g (∫ s in 0..y, A s) = y) ∧
-      LipschitzWith (Real.toNNReal lam⁻¹) g := by
-  have hd : Differentiable ℝ fun y ↦ ∫ s in 0..y, A s :=
-    (contDiff_one_intervalIntegral_zero hA).differentiable one_ne_zero
-  have hd' : ∀ y, lam ≤ deriv (fun y ↦ ∫ s in 0..y, A s) y := fun y ↦ by
-    rw [deriv_intervalIntegral_zero hA]
-    exact hAlam y
-  have hanti := hd.antilipschitzWith_of_le_deriv hlam hd'
-  have hsurj := hd.surjective_of_le_deriv hlam hd'
-  exact ⟨Function.surjInv hsurj, Function.surjInv_eq hsurj,
-    fun y ↦ hanti.injective (Function.surjInv_eq hsurj _),
-    hanti.to_rightInverse (Function.surjInv_eq hsurj)⟩
-
 /-- **The candidate solution.** For a continuous coefficient `A ≥ λ > 0`, let `w` solve the linear
 problem `-w'' = f + F'` with boundary values `Ψ(g₀)` and `Ψ(g₁)`, where `Ψ(y) = ∫_0^y A`. Then
 `v = Ψ⁻¹ ∘ w` is absolutely continuous on `[x₀, x₁]`, takes the boundary values `g₀` and `g₁`, and
@@ -209,7 +182,10 @@ private theorem exists_absolutelyContinuousOnInterval_and_ae_hasDerivAt (hx : x�
     ∃ (v : ℝ → ℝ) (k : ℝ), AbsolutelyContinuousOnInterval v x₀ x₁ ∧ v x₀ = g₀ ∧ v x₁ = g₁ ∧
       ∀ᵐ r, r ∈ Ioo x₀ x₁ →
         HasDerivAt v ((A (v r))⁻¹ * (k - ((∫ s in x₀..r, f s) + F r))) r := by
-  obtain ⟨g, hg, hgΨ, hglip⟩ := exists_lipschitzWith_inverse_intervalIntegral hlam hA hAlam
+  obtain ⟨g, hg, hgΨ, hglip⟩ := Differentiable.exists_lipschitzWith_inverse_of_le_deriv
+    ((contDiff_one_intervalIntegral_zero hA).differentiable one_ne_zero) hlam fun y ↦ by
+      rw [hA.deriv_integral _ 0]
+      exact hAlam y
   set G : ℝ → ℝ := fun r ↦ (∫ s in x₀..r, f s) + F r
   have hGi := intervalIntegrable_intervalIntegral_add hx hf hF
   -- The solution `w` of the linear problem, `-w'' = f + F'` with boundary values `Ψ(g₀), Ψ(g₁)`.
@@ -229,11 +205,11 @@ private theorem exists_absolutelyContinuousOnInterval_and_ae_hasDerivAt (hx : x�
     field_simp [sub_ne_zero.2 hx.ne']
     ring
   refine ⟨g ∘ w, k, hglip.comp_absolutelyContinuousOnInterval hwac,
-    by simp [hw_def, hgΨ], by simp only [Function.comp_apply, hw₁, hgΨ], ?_⟩
+    by simp [hw_def, hgΨ _], by simp only [Function.comp_apply, hw₁, hgΨ _], ?_⟩
   -- Away from the null set where `w` is not differentiable, the chain rule applies to `Ψ⁻¹ ∘ w`.
   filter_upwards [hwd] with r hr hrI
   exact (HasDerivAt.of_local_left_inverse hglip.continuous.continuousAt
-    (hasDerivAt_intervalIntegral_zero hA (g (w r))) (hlam.trans_le (hAlam _)).ne'
+    (hA.integral_hasStrictDerivAt 0 (g (w r))).hasDerivAt (hlam.trans_le (hAlam _)).ne'
     (Eventually.of_forall hg)).comp r (hr (Icc_subset_uIcc (Ioo_subset_Icc_self hrI)))
 
 /-- **Existence for the quasilinear Dirichlet problem with a coefficient `A(u) ≥ λ`.** The
