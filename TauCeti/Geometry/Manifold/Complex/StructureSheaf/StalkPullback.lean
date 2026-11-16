@@ -221,14 +221,17 @@ variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℂ E] [FiniteDimension
   {X : Type} [TopologicalSpace X] [ChartedSpace H X] [IsManifold I 1 X]
 
 /-- An isomorphism-invariant property of commutative rings holds for every holomorphic stalk of a
-finite-dimensional complex manifold without boundary as soon as it holds for `ℂ` and passes from
-all holomorphic stalks of a finite-dimensional complex normed space `V` to those of `V × ℂ`. -/
+finite-dimensional complex manifold without boundary as soon as it holds for `ℂ` and passes, for
+every `n : ℕ`, from the holomorphic stalks of `Fin n → ℂ` to the holomorphic stalk of
+`(Fin n → ℂ) × ℂ` at `(0, 0)`. -/
 theorem stalk_induction (P : ∀ (R : Type) [CommRing R], Prop)
     (hequiv : ∀ {A B : Type} [CommRing A] [CommRing B], (A ≃+* B) → P A → P B)
     (h₀ : P ℂ)
-    (hprod : ∀ {V : Type} [NormedAddCommGroup V] [NormedSpace ℂ V] [FiniteDimensional ℂ V],
-      (∀ x : V, P ((holomorphicStructureSheaf 𝓘(ℂ, V) V).presheaf.stalk x)) →
-      ∀ p : V × ℂ, P ((holomorphicStructureSheaf 𝓘(ℂ, V × ℂ) (V × ℂ)).presheaf.stalk p))
+    (hprod : ∀ n : ℕ,
+      (∀ x : Fin n → ℂ,
+        P ((holomorphicStructureSheaf 𝓘(ℂ, Fin n → ℂ) (Fin n → ℂ)).presheaf.stalk x)) →
+      P ((holomorphicStructureSheaf 𝓘(ℂ, (Fin n → ℂ) × ℂ)
+        ((Fin n → ℂ) × ℂ)).presheaf.stalk (0, 0)))
     (x : X) :
     P ((holomorphicStructureSheaf I X).presheaf.stalk x) := by
   have hmodel : ∀ (n : ℕ) (y : Fin n → ℂ),
@@ -243,8 +246,23 @@ theorem stalk_induction (P : ∀ (R : Type) [CommRing R], Prop)
       intro y
       let e : (Fin (n + 1) → ℂ) ≃L[ℂ] (Fin n → ℂ) × ℂ :=
         ContinuousLinearEquiv.ofFinrankEq (by simp)
-      exact hequiv (RingEquiv.ofBijective _ (e.holomorphicStalkPullback_bijective y))
-        (hprod ih (e y))
+      let f : (Fin (n + 1) → ℂ) → (Fin n → ℂ) × ℂ := fun z ↦ e (z - y)
+      let g : (Fin n → ℂ) × ℂ → Fin (n + 1) → ℂ := fun w ↦ e.symm w + y
+      have hf : ContMDiff 𝓘(ℂ, Fin (n + 1) → ℂ) 𝓘(ℂ, (Fin n → ℂ) × ℂ) ω f :=
+        (by fun_prop : ContDiff ℂ ω f).contMDiff
+      have hg : ContMDiff 𝓘(ℂ, (Fin n → ℂ) × ℂ) 𝓘(ℂ, Fin (n + 1) → ℂ) ω g :=
+        (by fun_prop : ContDiff ℂ ω g).contMDiff
+      have hfy : f y = (0, 0) := by simp [f, Prod.mk_zero_zero]
+      have hbij := stalkPullback_bijective (I := 𝓘(ℂ, Fin (n + 1) → ℂ))
+        (J := 𝓘(ℂ, (Fin n → ℂ) × ℂ)) (a := y)
+        (Eventually.of_forall fun _ ↦ hf.contMDiffAt)
+        (Eventually.of_forall fun _ ↦ hg.contMDiffAt)
+        (Eventually.of_forall fun z ↦ by simp [f, g])
+        (Eventually.of_forall fun w ↦ by simp [f, g])
+      exact hequiv ((RingEquiv.cast (R := fun p ↦
+          (holomorphicStructureSheaf 𝓘(ℂ, (Fin n → ℂ) × ℂ) ((Fin n → ℂ) × ℂ)).presheaf.stalk p)
+          hfy.symm).trans (RingEquiv.ofBijective _ hbij))
+        (hprod n ih)
   let : IsManifold I ω X := IsManifold.of_ne_zero ω one_ne_zero inferInstance
   let e : E ≃L[ℂ] Fin (Module.finrank ℂ E) → ℂ := ContinuousLinearEquiv.ofFinrankEq (by simp)
   exact hequiv (RingEquiv.ofBijective _ (stalkPullback_comp_extChartAt_bijective x e))

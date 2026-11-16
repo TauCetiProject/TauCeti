@@ -8,26 +8,23 @@ module
 public import TauCeti.Geometry.Manifold.Complex.StructureSheaf.SmoothComparison
 public import Mathlib.RingTheory.Noetherian.Defs
 
-import Mathlib.RingTheory.FiniteType
-import TauCeti.Analysis.Analytic.Uniqueness
+import TauCeti.Geometry.Manifold.Complex.StructureSheaf.Rueckert
 import TauCeti.Geometry.Manifold.Complex.StructureSheaf.StalkPullback
-import TauCeti.Geometry.Manifold.Complex.StructureSheaf.Weierstrass
-import TauCeti.RingTheory.Ideal.Quotient.Finite
 
 /-!
 # Holomorphic stalks are Noetherian
 
 The ring `𝒪_{X, x}` of germs of holomorphic functions at a point of a finite-dimensional complex
 manifold without boundary is Noetherian. In a chart this is the ring of convergent power series
-in `n` variables, and the proof is the classical induction on `n` through Weierstrass preparation.
+in `n` variables, and the proof is the classical induction on `n` through Weierstrass preparation
+and division.
 
-For `n = 0` the stalk is `ℂ`. For the inductive step on `E × ℂ`, a nonzero ideal contains a nonzero
-germ `f`. Its restriction to some line through `p` does not vanish identically, so after a linear
-change of coordinates taking the last axis to that line, `f` is regular in the last variable
-(`AnalyticAt.exists_continuousLinearEquiv_analyticOrderAt_ne_top`). Then by
-Weierstrass preparation the quotient `𝒪_{E × ℂ, p} ⧸ (f)` is a finite module over the Noetherian
-ring `𝒪_{E, p.1}` (`TauCeti.holomorphicStructureSheaf.finite_quotientMk_comp_stalkPrecomp_fst`).
-An ideal containing `f` is then finitely generated (`Ideal.fg_of_le_of_finite_quotient`).
+In dimension zero the stalk is `ℂ`. For the inductive step from `Fin n → ℂ` to
+`(Fin n → ℂ) × ℂ` at `(0, 0)`, vertical polynomial evaluation satisfies the Rückert hypotheses
+with respect to distinguished polynomials
+(`TauCeti.holomorphicStructureSheaf.isRueckert_evalVertical`), and Rückert's Noetherian descent
+(`RingHom.IsRueckert.isNoetherianRing`) passes Noetherianity from `𝒪_{Fin n → ℂ, 0}` to
+`𝒪_{(Fin n → ℂ) × ℂ, (0, 0)}`.
 
 Dimension induction and chart pullback (`TauCeti.holomorphicStructureSheaf.stalk_induction`) then
 extend the result to every finite-dimensional complex manifold without boundary. Through the
@@ -45,55 +42,14 @@ complex-smooth structure sheaf.
 * L. Hörmander, *An Introduction to Complex Analysis in Several Variables*, Chapter VI.
 * R. C. Gunning, H. Rossi, *Analytic Functions of Several Complex Variables*, Ch. II, §B.
 * H. Grauert, R. Remmert, *Coherent Analytic Sheaves*, Ch. 2.
+* S. Bosch, U. Güntzer and R. Remmert, *Non-Archimedean Analysis*, §5.2.5.
 -/
 
 public noncomputable section
 
-open Filter Topology
 open scoped ContDiff Manifold
 
 namespace TauCeti.holomorphicStructureSheaf
-
-section NormedSpace
-
-variable {V : Type} [NormedAddCommGroup V] [NormedSpace ℂ V]
-
-/-- If the holomorphic stalks of `V` are Noetherian, so are those of `V × ℂ`: an ideal containing
-a nonzero germ is finitely generated because, after a linear change of coordinates making
-the germ regular in the last variable, the quotient by the germ is finite over a stalk of `V` by
-Weierstrass preparation. -/
-private theorem isNoetherianRing_stalk_prod [FiniteDimensional ℂ V]
-    (hV : ∀ x : V, IsNoetherianRing ((holomorphicStructureSheaf 𝓘(ℂ, V) V).presheaf.stalk x))
-    (p : V × ℂ) :
-    IsNoetherianRing ((holomorphicStructureSheaf 𝓘(ℂ, V × ℂ) (V × ℂ)).presheaf.stalk p) := by
-  refine (isNoetherianRing_iff_ideal_fg _).2 fun I ↦ ?_
-  rcases eq_or_ne I ⊥ with rfl | hI₀
-  · exact Submodule.fg_bot
-  obtain ⟨f, hfI, hf⟩ := Submodule.exists_mem_ne_zero_of_ne_bot hI₀
-  obtain ⟨F, hF, hfF⟩ := exists_analyticAt_toFilterGerm_eq p f
-  -- In suitable linear coordinates, `F` is regular in the last variable.
-  obtain ⟨L, ⟨x₀, w₀⟩, rfl, hslice⟩ := hF.exists_continuousLinearEquiv_analyticOrderAt_ne_top
-    ((eq_zero_iff_of_toFilterGerm_eq (hfF _ le_rfl)).not.1 hf)
-  let σ := RingEquiv.ofBijective _ (L.holomorphicStalkPullback_bijective (x₀, w₀))
-  have hσf : toFilterGerm 𝓘(ℂ, V × ℂ) (V × ℂ) (x₀, w₀) (𝓝 (x₀, w₀)) le_rfl (σ f) = ↑(F ∘ L) := by
-    simp only [σ, RingEquiv.ofBijective_apply, toFilterGerm_stalkPullback, hfF _ le_rfl,
-      Germ.coe_compTendsto]
-  have hπ : ContMDiff 𝓘(ℂ, V × ℂ) 𝓘(ℂ, V) ω Prod.fst := contMDiff_iff_contDiff.2 contDiff_fst
-  have hfin := finite_quotientMk_comp_stalkPrecomp_fst hπ
-    ((map_residue_verticalPowerSeries_ne_zero_iff hσf).2 hslice)
-  -- The transported ideal contains `σ f`, modulo which the stalk is finite over `𝒪_{V, x₀}`.
-  algebraize [stalkPrecomp 𝓘(ℂ, V × ℂ) (V × ℂ) Prod.fst hπ (x₀, w₀)]
-  have : Module.Finite ((holomorphicStructureSheaf 𝓘(ℂ, V) V).presheaf.stalk x₀)
-      ((holomorphicStructureSheaf 𝓘(ℂ, V × ℂ) (V × ℂ)).presheaf.stalk (x₀, w₀) ⧸
-        Ideal.span {σ f}) :=
-    RingHom.finite_algebraMap.1 hfin
-  have hσI := Ideal.fg_of_le_of_finite_quotient
-    (A := (holomorphicStructureSheaf 𝓘(ℂ, V) V).presheaf.stalk x₀)
-    (Submodule.fg_span_singleton (σ f))
-    ((Ideal.span_singleton_le_iff_mem _).2 (Ideal.mem_map_of_mem σ.toRingHom hfI))
-  simpa only [RingEquiv.toRingHom_eq_coe, Ideal.map_of_equiv] using hσI.map σ.symm.toRingHom
-
-end NormedSpace
 
 variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℂ E] [FiniteDimensional ℂ E]
   {H : Type*} [TopologicalSpace H] {I : ModelWithCorners ℂ E H} [I.Boundaryless]
@@ -105,7 +61,7 @@ instance stalkIsNoetherianRing (x : X) :
     IsNoetherianRing ((holomorphicStructureSheaf I X).presheaf.stalk x) :=
   stalk_induction (fun R _ ↦ IsNoetherianRing R)
     (fun e _ ↦ isNoetherianRing_of_ringEquiv _ e) inferInstance
-    (fun hV p ↦ isNoetherianRing_stalk_prod hV p) x
+    (fun n hV ↦ have := hV 0; (isRueckert_evalVertical (0 : Fin n → ℂ) 0).isNoetherianRing) x
 
 /-- A stalk of Mathlib's complex-smooth structure sheaf on a finite-dimensional complex manifold
 without boundary is a Noetherian ring, via its comparison with holomorphic germs. -/
