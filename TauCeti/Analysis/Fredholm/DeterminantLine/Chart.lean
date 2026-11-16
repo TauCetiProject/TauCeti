@@ -60,7 +60,7 @@ determinant of their `q'`-coordinates, up to a constant.
   kernel charts.
 * `ContinuousLinearMap.IsFredholm.exists_isOpen_kernelChart`: a Fredholm operator has a kernel
   chart valid on an open neighbourhood.
-* `ContinuousLinearMap.detLineChartEquiv_detLineEquivOfBijective_symm_one`: the kernel chart of an
+* `ContinuousLinearMap.detLineChartEquiv_eq_detLineEquivOfBijective_smul`: the kernel chart of an
   invertible operator with zero stabilization and coordinate spaces
   (`ContinuousLinearMap.IsInvertible.prod_coprod_of_subsingleton`) reads the identification of its
   determinant line with the scalars as one fixed identification.
@@ -137,16 +137,18 @@ section Subsingleton
 variable [Subsingleton Λ] [Subsingleton G]
 
 /-- **The invertibility trivialization in a zero kernel chart.** For a bijective `T` and a kernel
-chart whose stabilization and coordinate spaces `Λ` and `G` are zero, the chart sends the element
-`1` of the determinant line under `LinearMap.detLineEquivOfBijective` to the generator
-`1 ⊗ 1` of `det G ⊗ (det Λ)^*`, the empty exterior product tensored with the functional taking the
-value `1` on it. The reading does not depend on `T`, so the elements `1` of the determinant lines
-of invertible operators form a continuous orientation. -/
-theorem detLineChartEquiv_detLineEquivOfBijective_symm_one
-    (h : ((T.coprod D₂).prod q).IsInvertible) (hT : Function.Bijective T) :
-    detLineChartEquiv T D₂ q h ((LinearMap.detLineEquivOfBijective hT).symm 1) =
-      exteriorPower.ιMulti 𝕜 _ 0 ⊗ₜ (TauCeti.detLineEquivOfFinrankEqZero
-        (finrank_zero_of_subsingleton (M := Λ))).toLinearMap := by
+chart whose stabilization and coordinate spaces `Λ` and `G` are zero, the chart reads an element
+`z` of the determinant line as its value under `LinearMap.detLineEquivOfBijective` times the
+generator `1 ⊗ 1` of `det G ⊗ (det Λ)^*`, the empty exterior product tensored with the functional
+taking the value `1` on it. The generator does not depend on `T`, so the identifications of the
+determinant lines of invertible operators with the scalars form a continuous orientation. -/
+theorem detLineChartEquiv_eq_detLineEquivOfBijective_smul
+    (h : ((T.coprod D₂).prod q).IsInvertible) (hT : Function.Bijective T)
+    (z : (T : E →ₗ[𝕜] F).detLine) :
+    detLineChartEquiv T D₂ q h z = LinearMap.detLineEquivOfBijective hT z •
+      (exteriorPower.ιMulti 𝕜 _ 0 ⊗ₜ (TauCeti.detLineEquivOfFinrankEqZero
+        (finrank_zero_of_subsingleton (M := Λ))).toLinearMap :
+          TauCeti.detLine 𝕜 G ⊗[𝕜] Dual 𝕜 (TauCeti.detLine 𝕜 Λ)) := by
   have := finiteDimensional_ker_of_isInvertible_prod_coprod h
   have hΛ : finrank 𝕜 Λ = 0 := finrank_zero_of_subsingleton
   have hker : finrank 𝕜 (LinearMap.ker (T : E →ₗ[𝕜] F)) = 0 :=
@@ -158,12 +160,17 @@ theorem detLineChartEquiv_detLineEquivOfBijective_symm_one
   have hsign : (-1 : 𝕜) ^ (finrank 𝕜 (F ⧸ (T : E →ₗ[𝕜] F).range) * finrank 𝕜 Λ) = 1 := by
     simp [hΛ]
   -- All the spaces of the exact sequence `0 → ker T → ker (T.coprod D₂) → Λ → coker T → 0` are
-  -- zero, so the stabilization isomorphism matches the empty exterior products.
-  rw [← LinearEquiv.eq_symm_apply, detLineChartEquiv_symm_tmul, detLineStabilizationEquiv_apply,
-    hsign, one_smul, detLineCoprodEquiv_def, LinearEquiv.detLineCongr_ιMulti,
-    TauCeti.detLineFourTermEquiv_ιMulti_tmul_of_finrank_eq_zero _ _ _ _ hker hB hΛ hcoker 0,
-    LinearMap.detLineEquivOfBijective_symm_one hT 0 _ 0
-      (TauCeti.detLineEquivOfFinrankEqZero_ιMulti hcoker _)]
+  -- zero, so the inverse chart sends the generator to the element `1` under invertibility.
+  have hone : (detLineChartEquiv T D₂ q h).symm (exteriorPower.ιMulti 𝕜 _ 0 ⊗ₜ
+      (TauCeti.detLineEquivOfFinrankEqZero hΛ).toLinearMap) =
+        (LinearMap.detLineEquivOfBijective hT).symm 1 := by
+    simp only [detLineChartEquiv_symm_tmul, detLineStabilizationEquiv_apply, hsign, one_smul,
+      detLineCoprodEquiv_def, LinearEquiv.detLineCongr_ιMulti]
+    rw [TauCeti.detLineFourTermEquiv_ιMulti_tmul_of_finrank_eq_zero _ _ _ _ hker hB hΛ hcoker 0,
+      LinearMap.detLineEquivOfBijective_symm_one hT 0 _ 0
+        (TauCeti.detLineEquivOfFinrankEqZero_ιMulti hcoker _)]
+  rw [← LinearEquiv.eq_symm_apply, LinearEquiv.map_smul, hone, ← LinearEquiv.map_smul,
+    smul_eq_mul, mul_one, LinearEquiv.symm_apply_apply]
 
 end Subsingleton
 

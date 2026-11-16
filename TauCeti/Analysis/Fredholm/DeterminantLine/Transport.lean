@@ -536,29 +536,22 @@ section Invertible
 the determinant lines which is positive under these identifications over a set `s` of parameters
 with invertible operators is coherent on `s`. No continuity of `T` is needed: the zero kernel chart
 (`ContinuousLinearMap.IsInvertible.prod_coprod_of_subsingleton`) is valid at every invertible
-operator and reads the element `1` of every such determinant line as the same vector
-(`ContinuousLinearMap.detLineChartEquiv_detLineEquivOfBijective_symm_one`). -/
+operator and reads every such determinant line through its identification with `ℝ`, times the same
+vector (`ContinuousLinearMap.detLineChartEquiv_eq_detLineEquivOfBijective_smul`). -/
 theorem isDetLineCoherentOn_of_isInvertible {T : X → E →L[ℝ] F}
     {v : ∀ x, (T x : E →ₗ[ℝ] F).detLine} {s : Set X} (hT : ∀ x ∈ s, (T x).IsInvertible)
     (hv : ∀ x (hx : x ∈ s), 0 < LinearMap.detLineEquivOfBijective (hT x hx).bijective (v x)) :
     IsDetLineCoherentOn T v s := by
   let S : Submodule ℝ F := ⊥
   let G : Submodule ℝ (E × S) := ⊥
-  -- In the zero kernel chart, `v x` is read as a positive multiple of one fixed vector.
-  have hread (x) (hx : x ∈ s) : detLineChartEquiv (T x) S.subtypeL (0 : E × S →L[ℝ] G)
-      ((hT x hx).prod_coprod_of_subsingleton) (v x) =
-        LinearMap.detLineEquivOfBijective (hT x hx).bijective (v x) •
-          (exteriorPower.ιMulti ℝ _ 0 ⊗ₜ (detLineEquivOfFinrankEqZero
-            (finrank_zero_of_subsingleton (M := S))).toLinearMap) := by
-    rw [← detLineChartEquiv_detLineEquivOfBijective_symm_one _ (hT x hx).bijective, ← map_smul,
-      ← LinearEquiv.map_smul, smul_eq_mul, mul_one, LinearEquiv.symm_apply_apply]
   intro x₀ hx₀
   refine ⟨fun h ↦ (hv x₀ hx₀).ne' (by rw [h, LinearEquiv.map_zero]), S, inferInstance, G,
     inferInstance, 0, (hT x₀ hx₀).prod_coprod_of_subsingleton,
     eventually_nhdsWithin_of_forall fun x hx ↦ ⟨(hT x hx).prod_coprod_of_subsingleton, ?_⟩⟩
-  rw [hread x hx, hread x₀ hx₀]
-  exact sameRay_smul_smul_of_mul_nonneg (v := exteriorPower.ιMulti ℝ _ 0 ⊗ₜ
-    (detLineEquivOfFinrankEqZero (finrank_zero_of_subsingleton (M := S))).toLinearMap)
+  -- In the zero kernel chart, `v x` is read as a positive multiple of one fixed vector.
+  rw [detLineChartEquiv_eq_detLineEquivOfBijective_smul _ (hT x hx).bijective,
+    detLineChartEquiv_eq_detLineEquivOfBijective_smul _ (hT x₀ hx₀).bijective]
+  exact sameRay_smul_smul_of_mul_nonneg (M := detLine ℝ G ⊗[ℝ] Dual ℝ (detLine ℝ S))
     (mul_pos (hv x hx) (hv x₀ hx₀)).le
 
 variable [CompleteSpace E] [CompleteSpace F] {T : ℝ → E →L[ℝ] F} {a b : ℝ}
