@@ -17,6 +17,7 @@ import Mathlib.Topology.Order.IntermediateValue
 import TauCeti.Analysis.Calculus.Deriv.Parity
 import TauCeti.Analysis.Calculus.Deriv.Slope
 import TauCeti.Analysis.Calculus.FDeriv.Prod
+import TauCeti.Analysis.Convex.Deriv
 import TauCeti.Analysis.Convex.Function.Basic
 import TauCeti.Analysis.Convex.StrictTangent
 
@@ -442,10 +443,12 @@ private theorem strictConvexOn_of_pitchforkBox {δ₀ δ t : ℝ}
     abs_lt.2 ⟨by linarith [hx.1], by linarith [hx.2]⟩
   have hc2 : ContinuousOn (fun y => partialFst F 2 (y, t)) (Icc 0 δ) := fun x hx =>
     (hbox (hIcc hx) ht).continuousAt_partialFst_two.continuousWithinAt
-  refine strictConvexOn_Icc_of_eventually_odd (fun x hx =>
+  refine strictConvexOn_Icc_of_deriv3_pos (fun x hx =>
     (hbox (hIcc hx) ht).hasDerivAt_fst.continuousAt.continuousWithinAt) ?_
     (hc2.congr fun x hx => (hbox (hIcc hx) ht).deriv2_eq)
     fun x hx => (hbox (hIcc (Ioo_subset_Icc_self hx)) ht).deriv3_pos
+  -- The slice is odd near `0`, so its second derivative vanishes there.
+  rw [← iteratedDeriv_eq_iterate, iteratedDeriv_two_eq_zero_of_eventually_odd]
   filter_upwards [Ioo_mem_nhds (neg_neg_of_pos (hδ.trans hδδ₀)) (hδ.trans hδδ₀)] with y hy
   exact (hbox (abs_lt.2 hy) ht).odd
 
