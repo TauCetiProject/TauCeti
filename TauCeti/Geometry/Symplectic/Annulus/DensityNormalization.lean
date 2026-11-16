@@ -172,8 +172,10 @@ theorem continuous_stripAreaFraction (hρ : Continuous ρ) : Continuous (stripAr
 /-- Along each vertical line `{x} × ℝ` the normalization is continuous. -/
 theorem continuous_stripDensityNormalization_curry_right (hρ : Continuous ρ) (x : ℝ) :
     Continuous fun y ↦ stripDensityNormalization ρ (x, y) := by
-  refine continuous_prodMk.2 ⟨by simpa using continuous_const, ?_⟩
-  dsimp only
+  refine (continuous_prodMk (f := fun y ↦ (stripDensityNormalization ρ (x, y)).1)
+    (g := fun y ↦ (stripDensityNormalization ρ (x, y)).2)).2
+    ⟨by simpa using continuous_const, ?_⟩
+  simp only [stripDensityNormalization_snd]
   exact continuous_const.mul (continuous_primitive
     (fun _ _ ↦ (hρ.curry_right (x := x)).intervalIntegrable _ _) 0)
 
