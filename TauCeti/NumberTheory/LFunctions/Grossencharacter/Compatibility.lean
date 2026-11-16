@@ -6,8 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.NumberTheory.LFunctions.Grossencharacter.Basic
+public import TauCeti.NumberTheory.NumberField.Global.HeckeCharacter.Ideal
 import TauCeti.NumberTheory.LocalField.Uniformizer
-import TauCeti.NumberTheory.NumberField.Global.HeckeCharacter.Ideal
 
 /-!
 # Hecke's unit relation for a presentation
@@ -69,7 +69,7 @@ namespace Grossencharacter
 /-- On the integral ideals prime to `𝔪`, the ideal character of the presented Hecke character is
 the unitary weight times the norm to the ideal-side shift: both are multiplicative, and at a prime
 both are the local component at a uniformizer (`toHeckeCharacter_primeIdele`). -/
-private theorem coe_idealCharacter_integralIdealsAwayHom (χ : Grossencharacter K 𝔪)
+theorem coe_idealCharacter_integralIdealsAwayHom (χ : Grossencharacter K 𝔪)
     (h𝔣 : (⟨χ.toHeckeCharacter.finiteConductor, χ.toHeckeCharacter.finiteConductor_ne_bot, ∅⟩ :
       Modulus K) ∣ 𝔪) (J : integralIdealsPrimeTo 𝔪) :
     (χ.toHeckeCharacter.idealCharacter
