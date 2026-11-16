@@ -236,8 +236,7 @@ theorem cubicalChainModuleDifferential_cone_add_cone_differential
     (H : (ContinuousMap.const Y v).Homotopy (ContinuousMap.id Y)) (m : cubicalChainModule Y G R) :
     cubicalChainModuleDifferential Y G R (cubicalChainModuleCone R H m) +
         cubicalChainModuleCone R H (cubicalChainModuleDifferential Y G R m) =
-      cubicalChainModuleAugmentation Y G R m •
-          cubicalChainModuleLof Y G R 0 (ofCube Y R (SingularCube.point v)) - m := by
+      cubicalChainModuleAugmentation Y G R m • cubicalChainModulePoint Y G R v - m := by
   induction m using cubicalChainModule.induction_on with
   | add m m' hm hm' =>
     simp only [map_add, add_smul]
@@ -247,19 +246,20 @@ theorem cubicalChainModuleDifferential_cone_add_cone_differential
     rcases n with _ | k
     · rw [cubicalChainModuleCone_lof, cubicalChainModuleDifferential_lof_succ,
         cubicalChainModuleDifferential_lof_zero, map_zero, add_zero, boundary_cone_zero,
-        map_sub, map_smul, cubicalChainModuleAugmentation_lof_zero]
+        map_sub, map_smul, cubicalChainModuleAugmentation_lof_zero, cubicalChainModulePoint_def]
     · rw [cubicalChainModuleCone_lof, cubicalChainModuleDifferential_lof_succ,
         cubicalChainModuleDifferential_lof_succ, cubicalChainModuleCone_lof, ← map_add,
         boundary_cone_add_cone_boundary, map_neg, cubicalChainModuleAugmentation_lof_succ,
         zero_smul, zero_sub]
 
 /-- **The cone on a point chain bounds it to the cone point**: `d (K [y]) = [v] - [y]`. -/
+@[simp]
 theorem cubicalChainModuleDifferential_cone_cubicalChainModulePoint
     (H : (ContinuousMap.const Y v).Homotopy (ContinuousMap.id Y)) (y : Y) :
     cubicalChainModuleDifferential Y G R
         (cubicalChainModuleCone R H (cubicalChainModulePoint Y G R y)) =
       cubicalChainModulePoint Y G R v - cubicalChainModulePoint Y G R y := by
-  simpa [cubicalChainModulePoint_def] using
+  simpa using
     cubicalChainModuleDifferential_cone_add_cone_differential H (cubicalChainModulePoint Y G R y)
 
 /-- **Acyclicity of the augmented chains of a contractible space**: a cycle of augmentation zero in

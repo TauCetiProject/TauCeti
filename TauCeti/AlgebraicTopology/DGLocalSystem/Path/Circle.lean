@@ -123,6 +123,7 @@ theorem cubicalChainModuleAugmentation_loopCellPathChain (γ : MooreLoopSpace B 
 
 /-- **The boundary of the initial segments of a loop**: `d c_γ = [γ] - [b]`, the difference of the
 point chains of `γ`, read as a path from `b`, and of the constant path. -/
+@[simp]
 theorem cubicalChainModuleDifferential_loopCellPathChain (γ : MooreLoopSpace B b) :
     cubicalChainModuleDifferential (MoorePathFrom B b) H R (loopCellPathChain H R γ) =
       cubicalChainModulePoint (MoorePathFrom B b) H R (γ • MoorePathFrom.refl B b) -
@@ -182,7 +183,7 @@ theorem loopCellPathComparison_differential (γ : MooreLoopSpace B b)
     (pathFromChain_isDGLeftModule B b H R) _ _).2 ?_) u
   rintro (⟨⟨⟩⟩ | ⟨⟨⟩⟩)
   · simp
-  · simp [cubicalChainModuleDifferential_loopCellPathChain]
+  · simp
 
 /-- **The comparison commutes with the augmentations**: the augmentation of the image of `u` in
 `C_*(P_b B; R)` is the augmentation of the coefficient of `e₀`. -/
