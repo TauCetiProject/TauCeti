@@ -53,6 +53,8 @@ constant, depending on `N`, times `‖S_N u - g‖_p`.
   closed and complete (`TauCeti.BesovSpace.isClosed_littleBesov`), as a set it is
   `TauCeti.BesovSpace.coe_littleBesov`, and it is the smallest closed subspace containing the
   Schwartz functions (`TauCeti.BesovSpace.littleBesov_le`).
+* `TauCeti.BesovSpace.exists_toDistr_eq_sum_block_and_norm_sub_le`: when `2^{js} ‖Δⱼ u‖_p → 0`,
+  the low-pass truncations `∑_{j ≤ N} Δⱼ u` approximate `u` in `B^s_{p,∞}`.
 * `TauCeti.BesovSpace.mem_littleBesov_iff`: the characterisation by the blocks, assembled from
   `TauCeti.BesovSpace.tendsto_rpow_mul_norm_block_of_mem_littleBesov`,
   `TauCeti.BesovSpace.block_mem_closure_of_mem_littleBesov` and
@@ -167,7 +169,7 @@ theorem block_mem_closure_of_mem_littleBesov {u : BesovSpace F φ s p ∞}
 low-pass truncation `S_N u = ∑_{j ≤ N} Δⱼ u` for some `N`: away from the transition range the
 blocks of `u - S_N u` are either zero or the small high-frequency blocks of `u`, and in the
 transition range they are at most `(1 + K)` times those of `u`. -/
-private theorem exists_toDistr_eq_sum_block_and_norm_sub_le {u : BesovSpace F φ s p ∞}
+theorem exists_toDistr_eq_sum_block_and_norm_sub_le {u : BesovSpace F φ s p ∞}
     (hdecay : Tendsto (fun j : ℕ ↦ 2 ^ (s * j) * ‖u.block j‖) atTop (𝓝 0)) {ε : ℝ} (hε : 0 < ε) :
     ∃ N : ℕ, ∃ v : BesovSpace F φ s p ∞,
       v.toDistr = ((∑ j ∈ Finset.range (N + 1), u.block j : Lp F p (volume : Measure E)) :
