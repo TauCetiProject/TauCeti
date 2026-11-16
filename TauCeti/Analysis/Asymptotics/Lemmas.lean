@@ -13,8 +13,8 @@ import Mathlib.Analysis.Asymptotics.SpecificAsymptotics
 /-!
 # Elementary asymptotic criteria
 
-Eight general criteria that supplement Mathlib's asymptotics API, an elementary estimate, and an
-elementary limit of ratios.
+Nine general criteria that supplement Mathlib's asymptotics API, two elementary estimates, and
+an elementary limit of ratios.
 
 For functions into a normed division ring, `f` satisfies `f = a g + o(g)` exactly when `f / g`
 tends to `a`, provided `g` is eventually nonzero. This criterion converts little-o error estimates
@@ -77,6 +77,10 @@ evaluations of elliptic integrals.
   `F (c x) = O(x ^ r)` for `c > 0`.
 * `Asymptotics.IsBigO.comp_natFloor_rpow`: `u n = O(n ^ r)` implies `u ⌊t⌋₊ = O(t ^ r)` as
   `t → ∞`.
+* `Asymptotics.eq_zero_of_smul_isLittleO`: if `ψ` is frequently nonzero and `ψ • c = o(ψ)`, then
+  `c = 0`.
+* `Asymptotics.IsBigO.smul_const_self`: `u • c = O(u)` for a scalar function `u` and a constant
+  vector `c`.
 * `Asymptotics.IsBigO.isBigO_principal_Ici`: `f = O(g)` at `atTop` gives `f = O(g)` on `[a, ∞)`
   when `f` is bounded on each `[a, b]` and `‖g‖` is bounded below there.
 * `Asymptotics.IsBigO.isBigO_principal_Ici_of_continuousOn`: the same conclusion when `f` and `g`
@@ -231,6 +235,25 @@ theorem IsBigO.isBigO_principal_Ici_of_continuousOn {E F : Type*} [SeminormedAdd
   · have hBx := hB x ⟨hx, hbx.le⟩
     rw [Real.norm_eq_abs, abs_of_nonneg (by positivity), div_le_iff₀ hgx] at hBx
     exact hBx.trans (mul_le_mul_of_nonneg_right (le_max_right _ _) hgx.le)
+
+/-- **A constant multiple of `ψ` that is `o(ψ)` vanishes.** If `ψ` is frequently nonzero along `l`
+and `ψ • c = o(ψ)` along `l`, then `c = 0`. -/
+theorem eq_zero_of_smul_isLittleO {α 𝕜 E : Type*} [NormedAddCommGroup 𝕜] [NormedAddCommGroup E]
+    [SMul 𝕜 E] [NormSMulClass 𝕜 E] {l : Filter α} {ψ : α → 𝕜} {c : E} (hψ : ∃ᶠ x in l, ψ x ≠ 0)
+    (h : (fun x => ψ x • c) =o[l] ψ) : c = 0 := by
+  by_contra hc
+  have hcpos : 0 < ‖c‖ := norm_pos_iff.mpr hc
+  obtain ⟨x, hx, hψx⟩ := (hψ.and_eventually (h.def (half_pos hcpos))).exists
+  rw [norm_smul] at hψx
+  have hψpos : 0 < ‖ψ x‖ := norm_pos_iff.mpr hx
+  nlinarith
+
+/-- **A scalar function times a constant vector is big-O of the scalar function:**
+`(fun x => u x • c) =O[l] u`, with constant `‖c‖`. -/
+theorem IsBigO.smul_const_self {α 𝕜 E : Type*} [NormedAddCommGroup 𝕜] [NormedAddCommGroup E]
+    [SMul 𝕜 E] [NormSMulClass 𝕜 E] {l : Filter α} (u : α → 𝕜) (c : E) :
+    (fun x => u x • c) =O[l] u :=
+  IsBigO.of_bound ‖c‖ (Eventually.of_forall fun x => by rw [norm_smul, mul_comm])
 
 end Asymptotics
 
