@@ -13,6 +13,8 @@ public import TauCeti.AlgebraicTopology.Singular.SerreClass
 public import TauCeti.CategoryTheory.Abelian.GrothendieckAxioms.ObjectProperty
 public import TauCeti.Topology.Homotopy.SerreFibration.WeakHomotopyEquivalence
 import TauCeti.AlgebraicTopology.Singular.Contractible
+import TauCeti.CategoryTheory.MorphismProperty.Cokernel
+import TauCeti.CategoryTheory.ObjectProperty.ColimitsOfShape
 
 /-!
 # Maps of Serre fibrations which are homology isomorphisms on the fibres
@@ -324,17 +326,6 @@ variable (hp : serreFibrations p) (hp' : serreFibrations p') (R : Type u) [Ring 
   [∀ J : Type u, Q.IsClosedUnderColimitsOfShape (Discrete J)] (hQP : Q ≤ P)
 include hp hp' hQP
 
-omit [∀ J : Type u, Q.IsClosedUnderColimitsOfShape (Discrete J)] hp hp' hQP in
-/-- The kernel and the cokernel of a map lie in a property closed under isomorphisms as soon as
-those of an isomorphic arrow do. -/
-private lemma prop_kernel_cokernel_of_arrowIso {X Y X' Y' : ModuleCat.{u} R} {φ : X ⟶ Y}
-    {φ' : X' ⟶ Y'} (e : Arrow.mk φ ≅ Arrow.mk φ') (h : Q (kernel φ) ∧ Q (cokernel φ)) :
-    Q (kernel φ') ∧ Q (cokernel φ') :=
-  ⟨Q.prop_of_iso (kernel.mapIso φ φ' (Arrow.leftFunc.mapIso e) (Arrow.rightFunc.mapIso e)
-      e.hom.w.symm) h.1,
-    Q.prop_of_iso (cokernel.mapIso φ φ' (Arrow.leftFunc.mapIso e) (Arrow.rightFunc.mapIso e)
-      e.hom.w.symm) h.2⟩
-
 /-- A map over `B` of Serre fibrations over `B` whose maps on the homology of the fibres in degrees
 at most `k` have kernels and cokernels in `Q ≤ P` is an isomorphism modulo `P` on the total spaces
 in degree `k`. -/
@@ -373,9 +364,11 @@ private theorem isoModSerre_singularHomologyMap_of_commSq_id (sq : CommSq f p p'
     -- The fibre map of `sqP` lands over `(𝟙 _) b` rather than `b`, so `rw` cannot move the
     -- hypothesis across this square; compare the two maps as isomorphic arrows instead.
     have hcomm := (CommSq.mk (TopCat.Hom.fiberPullbackFstIso_hom_naturality g sq sqP b)).map H
-    exact prop_kernel_cokernel_of_arrowIso R Q (Arrow.isoMk
-      (H.mapIso (p.fiberPullbackFstIso g b)) (H.mapIso (p'.fiberPullbackFstIso g b))
-      hcomm.w.symm).symm (hfib (g b) q hq)
+    let e : Arrow.mk (H.map (sqP.fiberMap b)) ≅ Arrow.mk (H.map (sq.fiberMap (g b))) :=
+      Arrow.isoMk (H.mapIso (p.fiberPullbackFstIso g b)) (H.mapIso (p'.fiberPullbackFstIso g b))
+        hcomm.w.symm
+    exact ⟨Q.prop_kernel_of_arrowIso e.symm (hfib (g b) q hq).1,
+      Q.prop_cokernel_of_arrowIso e.symm (hfib (g b) q hq).2⟩
 
 end Arbitrary
 
@@ -429,9 +422,10 @@ theorem isoModSerre_singularHomologyMap_of_commSq {B' : _root_.TopCat.{u}} {p' :
     -- The fibre map of `sqL` lands over `(𝟙 B) b` rather than `b`, so compare the two maps as
     -- isomorphic arrows, as in `isoModSerre_singularHomologyMap_of_commSq_id`.
     have hc := (CommSq.mk hcomm).map H
-    exact prop_kernel_cokernel_of_arrowIso R Q (Arrow.isoMk
-      (H.mapIso (Iso.refl _)) (H.mapIso (p'.fiberPullbackFstIso g b)) hc.w.symm).symm
-      (hfib b q hq)
+    let e : Arrow.mk (H.map (sqL.fiberMap b)) ≅ Arrow.mk (H.map (sq.fiberMap b)) :=
+      Arrow.isoMk (H.mapIso (Iso.refl _)) (H.mapIso (p'.fiberPullbackFstIso g b)) hc.w.symm
+    exact ⟨Q.prop_kernel_of_arrowIso e.symm (hfib b q hq).1,
+      Q.prop_cokernel_of_arrowIso e.symm (hfib b q hq).2⟩
 
 /-! ### Fibres with the homology of a point modulo a Serre class -/
 

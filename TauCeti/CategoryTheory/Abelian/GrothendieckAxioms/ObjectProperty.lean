@@ -28,7 +28,8 @@ For discrete `J`, these are statements about sums of morphisms `Sigma.map f`
 coproducts, they say that a sum of isomorphisms modulo `P` is one; for instance in a category of
 modules, where coproducts are exact, the kernel and the cokernel of a sum of maps whose kernels and
 cokernels are killed by an integer `e` are killed by `e`. The zero objects are closed under all
-colimits, so for `P` the zero objects these say that a colimit of isomorphisms is an isomorphism.
+colimits (`TauCeti.CategoryTheory.ObjectProperty.ColimitsOfShape`), so for `P` the zero objects
+these say that a colimit of isomorphisms is an isomorphism.
 -/
 
 public section
@@ -36,15 +37,6 @@ public section
 namespace CategoryTheory.ObjectProperty
 
 open Limits
-
-/-- A colimit of zero objects is a zero object. With the lemmas below, this says that the kernel
-and the cokernel of a colimit of isomorphisms vanish. -/
-instance {C : Type*} [Category* C] [HasZeroMorphisms C] {J : Type*} [Category* J] :
-    IsClosedUnderColimitsOfShape (IsZero (C := C)) J where
-  colimitsOfShape_le := by
-    rintro X ⟨h⟩
-    rw [IsZero.iff_id_eq_zero]
-    exact h.isColimit.hom_ext fun j ↦ (h.prop_diag_obj j).eq_of_src _ _
 
 variable {C : Type*} [Category* C] [Abelian C] (P : ObjectProperty C) [P.IsClosedUnderIsomorphisms]
 

@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Algebra.Homology.HomologySequenceLemmas
 public import Mathlib.CategoryTheory.Abelian.SerreClass.Localization
+import TauCeti.Algebra.Homology.ExactSequence
 
 /-!
 # The homology sequence modulo a Serre class
@@ -17,17 +18,17 @@ exact homology sequences holds modulo `P`: if `φ.τ₁` and `φ.τ₃` induce i
 homology in degree `j`, `φ.τ₃` is an epimorphism modulo `P` in the degree before `j` and `φ.τ₁` a
 monomorphism modulo `P` in the degree after `j`, then `φ.τ₂` induces an isomorphism modulo `P` in
 degree `j` (`HomologicalComplex.HomologySequence.isoModSerre_homologyMap_τ₂`). For the class of zero
-objects this is `HomologicalComplex.HomologySequence.isIso_homologyMap_τ₂` of Mathlib.
+objects this is Tau Ceti's `HomologicalComplex.HomologySequence.isIso_homologyMap_τ₂`, from
+`TauCeti.Algebra.Homology.HomologySequenceLemmas`.
 
 The proof passes to the localization of `C` with respect to `P`, which is abelian and into which
 the localization functor is exact, and applies the four lemmas there to the image of the long
 exact sequence. Exactness of that image is the general fact that a functor preserving homology
-sends exact sequences to exact sequences (`CategoryTheory.ComposableArrows.Exact.map`).
+sends exact sequences to exact sequences (`CategoryTheory.ComposableArrows.Exact.map`, from
+`TauCeti.Algebra.Homology.ExactSequence`).
 
 ## Main results
 
-* `CategoryTheory.ComposableArrows.Exact.map`: a functor preserving homology preserves exactness of
-  composable arrows.
 * `HomologicalComplex.HomologySequence.monoModSerre_homologyMap_τ₂`,
   `HomologicalComplex.HomologySequence.epiModSerre_homologyMap_τ₂`,
   `HomologicalComplex.HomologySequence.isoModSerre_homologyMap_τ₂`: the four and five lemmas
@@ -42,22 +43,6 @@ sends exact sequences to exact sequences (`CategoryTheory.ComposableArrows.Exact
 public section
 
 open CategoryTheory Limits ComposableArrows Abelian
-
-namespace CategoryTheory.ComposableArrows
-
-variable {C D : Type*} [Category* C] [Category* D] [HasZeroMorphisms C] [HasZeroMorphisms D]
-
-/-- A functor which preserves zero morphisms and homology sends an exact sequence of composable
-arrows to an exact sequence. -/
-lemma Exact.map {n : ℕ} {S : ComposableArrows C n} (hS : S.Exact) (F : C ⥤ D)
-    [F.PreservesZeroMorphisms] [F.PreservesHomology] :
-    ((F.mapComposableArrows n).obj S).Exact where
-  zero i hi := by
-    simpa only [Functor.mapComposableArrows_obj_map, Functor.map_comp, F.map_zero] using
-      congrArg F.map (hS.zero i hi)
-  exact i hi := (hS.exact i hi).map F
-
-end CategoryTheory.ComposableArrows
 
 namespace HomologicalComplex.HomologySequence
 
