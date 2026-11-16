@@ -223,7 +223,7 @@ theorem lid_map {F : Type u} [AddCommGroup F] [Module 𝕜 F] [TopologicalSpace 
 
 /-- The scalar-unit identification preserves every factor seminorm with constant one,
 including seminorms outside the family defining the topology. -/
-theorem projectiveSeminormOf_cons (q : Seminorm 𝕜 E)
+theorem projectiveSeminormOf_cons_normSeminorm_eq_apply_lid (q : Seminorm 𝕜 E)
     (z : ProjectiveTensorProduct (scalarUnitSeminorms p)) :
     PiTensorProduct.projectiveSeminormOf
       (Fin.cons (normSeminorm 𝕜 𝕜) (fun _ => q)) z.toPiTensorProduct = q (lid p hp z) := by
@@ -248,7 +248,7 @@ theorem projectiveSeminormOf_cons (q : Seminorm 𝕜 E)
 
 /-- Selecting the scalar norm and a finite family of vector seminorms gives exactly the
 corresponding supremum seminorm after the scalar-unit identification. -/
-theorem seminormFamily_cons (t : Finset σ)
+theorem seminormFamily_cons_eq_sup_apply_lid (t : Finset σ)
     (z : ProjectiveTensorProduct (scalarUnitSeminorms p)) :
     seminormFamily (scalarUnitSeminorms p) (Fin.cons {PUnit.unit} (fun _ => t)) z =
       t.sup p (lid p hp z) := by
@@ -259,7 +259,7 @@ theorem seminormFamily_cons (t : Finset σ)
     funext i
     fin_cases i <;> simp [scalarUnitSeminorms]
   rw [h]
-  exact projectiveSeminormOf_cons p hp (t.sup p) z
+  exact projectiveSeminormOf_cons_normSeminorm_eq_apply_lid p hp (t.sup p) z
 
 end ProjectiveTensorProduct
 
