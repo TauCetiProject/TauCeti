@@ -162,20 +162,23 @@ theorem TauCeti.norm_map_add_sub_sum_iteratedFDeriv_le {f : E → F} {x y : E} {
   rw [htaylor, abs_of_nonneg (norm_nonneg rem)] at hbound
   simpa using hbound
 
-/-- **Taylor remainder bound from the oscillation of the top derivative.** If `f` is `C^(m + 1)`
-with values in a complete space, and along the segment from `x` to `x + y` the top derivative
+/-- **Taylor remainder bound from the oscillation of the top derivative.** If `f`, with values in
+a complete space, is `C^(m + 1)` at each point of the segment from `x` to `x + y`, and along that
+segment the top derivative
 `D^(m + 1) f (x + t • y) (y, …, y)` stays within `B` of its value at `x`, then the order-`(m + 1)`
 Taylor polynomial of `f` at `x` approximates `f (x + y)` with error at most `B / (m + 1)!`. -/
 theorem TauCeti.norm_map_add_sub_sum_iteratedFDeriv_le_of_norm_sub_le [CompleteSpace F]
-    {f : E → F} {x y : E} {m : ℕ} (hf : ContDiff ℝ (m + 1) f) {B : ℝ}
+    {f : E → F} {x y : E} {m : ℕ}
+    (hf : ∀ t ∈ Set.Icc (0 : ℝ) 1, ContDiffAt ℝ (m + 1) f (x + t • y)) {B : ℝ}
     (hB : ∀ t ∈ Set.Icc (0 : ℝ) 1, ‖iteratedFDeriv ℝ (m + 1) f (x + t • y) (fun _ => y) -
       iteratedFDeriv ℝ (m + 1) f x (fun _ => y)‖ ≤ B) :
     ‖f (x + y) - ∑ k ∈ Finset.range (m + 1 + 1),
         (k ! : ℝ)⁻¹ • iteratedFDeriv ℝ k f x (fun _ => y)‖ ≤ B / (m + 1)! := by
   set D : ℝ → F := fun t => iteratedFDeriv ℝ (m + 1) f (x + t • y) (fun _ => y)
-  have hD : Continuous D := (continuous_eval_const _).comp
-    ((hf.continuous_iteratedFDeriv le_rfl).comp
-      (continuous_const.add (continuous_id.smul continuous_const)))
+  have hD : ContinuousOn D (Set.Icc 0 1) := fun t ht =>
+    ContinuousAt.continuousWithinAt <| (continuous_eval_const _).continuousAt.comp
+      (((hf t ht).continuousAt_iteratedFDeriv (by norm_cast)).comp (f := fun s : ℝ => x + s • y)
+        (continuous_const.add (continuous_id.smul continuous_const)).continuousAt)
   have hpow : Continuous fun t : ℝ => (1 - t) ^ m := (continuous_const.sub continuous_id).pow m
   have hint : ∫ t in (0 : ℝ)..1, (1 - t) ^ m = ((m : ℝ) + 1)⁻¹ := by
     rw [intervalIntegral.integral_comp_sub_left (fun t => t ^ m), integral_pow]
@@ -186,12 +189,12 @@ theorem TauCeti.norm_map_add_sub_sum_iteratedFDeriv_le_of_norm_sub_le [CompleteS
       (m ! : ℝ)⁻¹ • ∫ t in (0 : ℝ)..1, (1 - t) ^ m • (D t - D 0) := by
     simp_rw [smul_sub]
     have hI : IntervalIntegrable (fun t : ℝ => (1 - t) ^ m • D t) MeasureTheory.volume 0 1 :=
-      (hpow.smul hD).intervalIntegrable 0 1
+      (hpow.continuousOn.smul hD).intervalIntegrable_of_Icc zero_le_one
     have hI' : IntervalIntegrable (fun t : ℝ => (1 - t) ^ m • D 0) MeasureTheory.volume 0 1 :=
       (hpow.smul continuous_const).intervalIntegrable 0 1
     rw [intervalIntegral.integral_sub hI hI',
       intervalIntegral.integral_smul_const, hint,
-      map_add_eq_sum_add_integral_iteratedFDeriv fun t _ => hf.contDiffAt,
+      map_add_eq_sum_add_integral_iteratedFDeriv hf,
       Finset.sum_range_succ _ (m + 1)]
     simp only [D, zero_smul, add_zero, smul_sub, smul_smul, Nat.factorial_succ]
     push_cast
@@ -249,10 +252,11 @@ theorem TauCeti.norm_map_add_sub_sum_iteratedFDeriv_le_of_holderWith {f : E → 
   replace hg_rem : g rem = ‖rem‖ := by simpa using hg_rem
   have hgf {k : ℕ} (hk : k ≤ m + 1) (z : E) :
       iteratedFDeriv ℝ k (g ∘ f) z (fun _ => y) = g (iteratedFDeriv ℝ k f z (fun _ => y)) := by
-    rw [g.iteratedFDeriv_comp_left hf.contDiffAt (by exact_mod_cast hk)]
-    rfl
+    rw [g.iteratedFDeriv_comp_left hf.contDiffAt (by exact_mod_cast hk),
+      ContinuousLinearMap.compContinuousMultilinearMap_coe, Function.comp_apply]
   have h := TauCeti.norm_map_add_sub_sum_iteratedFDeriv_le_of_norm_sub_le (x := x) (y := y)
-    (g.contDiff.comp hf) (B := C * ‖y‖ ^ (((m + 1 : ℕ) : ℝ) + α)) fun t ht => by
+    (fun _ _ => (g.contDiff.comp hf).contDiffAt) (B := C * ‖y‖ ^ (((m + 1 : ℕ) : ℝ) + α))
+    fun t ht => by
       rw [hgf le_rfl, hgf le_rfl, ← map_sub]
       exact (g.le_opNorm _).trans
         ((mul_le_mul hg_norm (hD t ht) (norm_nonneg _) zero_le_one).trans_eq (one_mul _))
