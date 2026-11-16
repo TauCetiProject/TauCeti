@@ -45,10 +45,11 @@ containing the trajectory of `v` from `q` onwards, so in particular near `q`, th
 `w` at time `T₁ + T₂` is the transition of `w` across the box followed by the unchanged transition
 of `v` from the section through `q` (`TauCeti.flowTransition_eventuallyEq_comp_of_eqOn`), and its
 derivative factors accordingly (`TauCeti.mfderiv_flowTransition_eq_comp_of_eqOn`). For a closed
-orbit through `p` that trajectory returns to `p`, so the box lies around an interior arc of the
-orbit from `p` to `q`, and `w = v` near `p`, near `q` and near the arc from `q` back to `p`. This
-is how the return map of a closed orbit is modified by flow-box variations in the proof of the
-Kupka–Smale theorem.
+orbit of `v` through `p` and a variation `w` agreeing with `v` along the orbit (so that
+`q = flowOf v T₁ p`), that trajectory returns to `p`, so the box lies around an interior arc of
+the orbit from `p` to `q`, and `w = v` near `p`, near `q` and near the arc from `q` back to `p`.
+This is how the return map of a closed orbit is modified by flow-box variations in the proof of
+the Kupka–Smale theorem.
 
 ## Main results
 
