@@ -14,6 +14,7 @@ import Mathlib.LinearAlgebra.FiniteDimensional.Lemmas
 import TauCeti.Analysis.Calculus.PeriodicDeriv
 import TauCeti.Data.SignType.Basic
 import TauCeti.MeasureTheory.Integral.Bochner.Basic
+import TauCeti.Topology.Instances.AddCircle.Coe
 import TauCeti.Topology.Instances.Real.TwistedExtension
 
 /-!
@@ -186,21 +187,11 @@ theorem deriv_mem_twistedContinuous (w : twistedContDiff X d ε) :
 theorem periodic_of_mem_twistedContinuous {f : ℝ → X} (hf : f ∈ twistedContinuous X d 1) :
     Function.Periodic f d := fun t => (hf.2 t).trans (one_smul ℝ _)
 
-/-- A map on `AddCircle d`, regarded as a map on `ℝ`, is `d`-periodic. -/
-theorem periodic_comp_addCircle_coe {Y : Type*} (g : AddCircle d → Y) :
-    Function.Periodic (fun t : ℝ => g t) d := fun t => by
-  simp only [AddCircle.coe_add_period]
-
-/-- A continuous map on `AddCircle d`, regarded as a map on `ℝ`, is continuous. -/
-theorem continuous_comp_addCircle_coe {Y : Type*} [TopologicalSpace Y] (g : C(AddCircle d, Y)) :
-    Continuous fun t : ℝ => g t :=
-  g.continuous.comp (AddCircle.continuous_mk' d)
-
 /-- A continuous loop on `AddCircle d`, regarded as a map on `ℝ`, is a continuous `d`-periodic map,
 that is, a continuous map twisted by `1` along `d`. -/
 theorem coe_continuousMap_mem_twistedContinuous (g : C(AddCircle d, X)) :
     (fun t : ℝ => g t) ∈ twistedContinuous X d 1 :=
-  ⟨continuous_comp_addCircle_coe g, fun t => by rw [periodic_comp_addCircle_coe g t, one_smul]⟩
+  ⟨AddCircle.continuous_comp_coe g, fun t => by rw [AddCircle.periodic_comp_coe g t, one_smul]⟩
 
 variable (X d) in
 /-- The continuous `d`-periodic maps `ℝ → X`, that is, the continuous maps twisted by `1` along

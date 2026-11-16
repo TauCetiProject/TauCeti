@@ -8,6 +8,7 @@ module
 public import TauCeti.Analysis.ODE.Periodic
 public import TauCeti.Analysis.Sobolev.Circle.LinearODE.Basic
 public import TauCeti.LinearAlgebra.Determinant.Endomorphism
+public import TauCeti.Topology.Instances.AddCircle.Coe
 import TauCeti.Analysis.Calculus.PeriodicDeriv
 import TauCeti.Data.SignType.Basic
 import TauCeti.LinearAlgebra.LinearMap.KerCoker
@@ -163,7 +164,7 @@ private theorem toH1_injective : Function.Injective (toH1 E T) := fun w v h ↦ 
 /-- The square comparing `w ↦ w' - S w` on `C¹` periodic maps with `L_S` commutes. -/
 private theorem toH0_comp_twistedLinearOperator :
     toH0 E T ∘ₗ
-        twistedLinearOperator (continuous_comp_addCircle_coe S) (periodic_comp_addCircle_coe S) 1 =
+        twistedLinearOperator (AddCircle.continuous_comp_coe S) (AddCircle.periodic_comp_coe S) 1 =
       (loopOperator T S : CircleSobolev 1 E →ₗ[ℝ] CircleSobolev 0 E) ∘ₗ toH1 E T := by
   ext w : 1
   simp only [LinearMap.comp_apply, ContinuousLinearMap.coe_coe, loopOperator_apply,
@@ -192,9 +193,9 @@ private theorem mem_range_toH1 (a : CircleSobolev 1 E)
     refine mem_twistedContDiff.2
       ⟨contDiff_one_iff_deriv.2 ⟨fun x ↦ (hd x).differentiableAt, ?_⟩, fun t ↦ ?_⟩
     · rw [funext fun x ↦ (hd x).deriv]
-      exact continuous_comp_addCircle_coe
+      exact AddCircle.continuous_comp_coe
         (ContinuousMap.applyContinuousLinearMap S u + twistedContinuousOneEquiv E T f)
-    · simp only [AddCircle.coe_add_period, one_smul]
+    · exact (mem_twistedContinuous.1 (coe_continuousMap_mem_twistedContinuous u)).2 t
   refine ⟨⟨_, hu⟩, toContinuousMap_injective T (by norm_num) ?_⟩
   rw [toContinuousMap_toH1]
   ext θ
@@ -205,8 +206,8 @@ private theorem finrank_quotient_range_loopOperator_le :
     Module.finrank ℝ
         (CircleSobolev 0 E ⧸ range (loopOperator T S : CircleSobolev 1 E →ₗ[ℝ] CircleSobolev 0 E)) ≤
       Module.finrank ℝ (twistedContinuous E T 1 ⧸
-        range (twistedLinearOperator (continuous_comp_addCircle_coe S)
-          (periodic_comp_addCircle_coe S) 1)) := by
+        range (twistedLinearOperator (AddCircle.continuous_comp_coe S)
+          (AddCircle.periodic_comp_coe S) 1)) := by
   have hindex := index_loopOperator T S
   rw [ContinuousLinearMap.index_eq_finrank_sub, sub_eq_zero, Nat.cast_inj] at hindex
   rw [← hindex, ← finrank_ker_twistedLinearOperator_eq_finrank_quotient_range _ _ hT.out
@@ -233,21 +234,19 @@ def kerLoopOperatorEquiv :
       ker (1 - (↑(dysonSeriesLeft (fun t : ℝ ↦ S t) T) : E →ₗ[ℝ] E)) :=
   ((LinearMap.kerEquivOfRegular (toH0_comp_twistedLinearOperator T S) (toH1_injective T)
       (toH0_injective T) (mem_range_toH1 T S)).symm.trans
-    (kerTwistedLinearOperatorEquiv (continuous_comp_addCircle_coe S)
-      (periodic_comp_addCircle_coe S) 1)).trans
+    (kerTwistedLinearOperatorEquiv (AddCircle.continuous_comp_coe S)
+      (AddCircle.periodic_comp_coe S) 1)).trans
     (LinearEquiv.ofEq _ _ (by rw [one_smul]))
 
 @[simp]
 theorem coe_kerLoopOperatorEquiv_apply
     (a : ker (loopOperator T S : CircleSobolev 1 E →ₗ[ℝ] CircleSobolev 0 E)) :
     (kerLoopOperatorEquiv T S a : E) = toContinuousMap T (by norm_num) a.1 0 := by
-  set e := LinearMap.kerEquivOfRegular (toH0_comp_twistedLinearOperator T S) (toH1_injective T)
-    (toH0_injective T) (mem_range_toH1 T S)
-  have ha : (a : CircleSobolev 1 E) = toH1 E T (e.symm a) :=
-    (LinearMap.apply_coe_kerEquivOfRegular_symm_apply _ _ _ _ a).symm
-  rw [kerLoopOperatorEquiv, LinearEquiv.trans_apply, LinearEquiv.trans_apply,
-    LinearEquiv.coe_ofEq_apply, kerTwistedLinearOperatorEquiv_apply, ha, toContinuousMap_toH1,
-    ← AddCircle.coe_zero, twistedContinuousOneEquiv_apply, Submodule.coe_inclusion]
+  obtain ⟨b, rfl⟩ := (LinearMap.kerEquivOfRegular (toH0_comp_twistedLinearOperator T S)
+    (toH1_injective T) (toH0_injective T) (mem_range_toH1 T S)).surjective a
+  have h0 (f : twistedContinuous E T 1) : twistedContinuousOneEquiv E T f 0 = (f : ℝ → E) 0 := by
+    rw [← AddCircle.coe_zero, twistedContinuousOneEquiv_apply]
+  simp [kerLoopOperatorEquiv, toContinuousMap_toH1, h0]
 
 /-- The inverse of `TauCeti.CircleSobolev.kerLoopOperatorEquiv` sends `x` to the element of `H¹(E)`
 whose continuous representative is the solution `t ↦ Ψ(t) x` of `w' = S w`. -/
@@ -259,7 +258,7 @@ theorem toContinuousMap_kerLoopOperatorEquiv_symm_apply
   set a := (kerLoopOperatorEquiv T S).symm x
   have h0 : toContinuousMap T (by norm_num) a.1 0 = x := by
     rw [← coe_kerLoopOperatorEquiv_apply, LinearEquiv.apply_symm_apply]
-  rw [eq_dysonSeriesLeft_apply (continuous_comp_addCircle_coe S)
+  rw [eq_dysonSeriesLeft_apply (AddCircle.continuous_comp_coe S)
     ((loopOperator_eq_zero_iff T S a.1).1 a.2) t]
   exact congrArg _ h0
 
@@ -272,8 +271,8 @@ def quotientRangeLoopOperatorEquiv :
       E ⧸ range (1 - (↑(dysonSeriesLeft (fun t : ℝ ↦ S t) T) : E →ₗ[ℝ] E)) :=
   ((LinearMap.cokerEquivOfRegular (toH0_comp_twistedLinearOperator T S) (toH0_injective T)
       (mem_range_toH1 T S) (sup_range_eq_top T S)).symm.trans
-    (quotientRangeTwistedLinearOperatorEquiv (continuous_comp_addCircle_coe S)
-      (periodic_comp_addCircle_coe S)
+    (quotientRangeTwistedLinearOperatorEquiv (AddCircle.continuous_comp_coe S)
+      (AddCircle.periodic_comp_coe S)
       hT.out one_ne_zero)).trans
     (Submodule.quotEquivOfEq _ _ (by rw [one_smul]))
 
@@ -287,10 +286,8 @@ theorem quotientRangeLoopOperatorEquiv_mk (f : C(AddCircle T, E)) :
         (∫ s in 0..T, dysonSeries (-fun t : ℝ ↦ S t) s (f s))) := by
   have hj : ofContinuousMap T f = toH0 E T ((twistedContinuousOneEquiv E T).symm f) := by
     rw [toH0_apply, LinearEquiv.apply_symm_apply]
-  rw [hj, quotientRangeLoopOperatorEquiv, LinearEquiv.trans_apply, LinearEquiv.trans_apply,
-    LinearMap.cokerEquivOfRegular_symm_mk, quotientRangeTwistedLinearOperatorEquiv_mk,
-    twistedEndpoint_apply, Submodule.quotEquivOfEq_mk]
-  simp only [twistedContinuousOneEquiv_symm_apply]
+  rw [hj]
+  simp [quotientRangeLoopOperatorEquiv]
 
 /-- **The determinant line of `L_S` is that of `1 - Ψ(T)`.** Evaluation at `0` on the kernel
 (`TauCeti.CircleSobolev.kerLoopOperatorEquiv`) and the endpoint map on the cokernel
