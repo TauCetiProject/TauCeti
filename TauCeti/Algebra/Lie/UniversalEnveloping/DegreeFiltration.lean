@@ -1,7 +1,7 @@
 /-
-Copyright (c) 2026 Mei contributors. All rights reserved.
+Copyright (c) 2026 The Tau Ceti contributors and Mei contributors. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
-Authors: Codex
+Authors: The Tau Ceti contributors, Codex
 -/
 module
 
@@ -49,6 +49,13 @@ noncomputable def degreeFiltration (hneg : ∀ n, d n < 0 → ℒ n = ⊥) :
     TauCeti.AlgFiltration (_root_.UniversalEnvelopingAlgebra R L) :=
   TauCeti.GradedAlgebra.degreeFiltration (homogeneousSubmodule ℒ) d
     (fun _ hn => homogeneousSubmodule_eq_bot_of_degree_neg ℒ d hneg hn)
+
+/-- The enveloping degree filtration agrees with `GradedAlgebra.degreeFiltration` on
+`homogeneousSubmodule ℒ`. -/
+theorem degreeFiltration_eq_gradedAlgebra_degreeFiltration (hneg : ∀ n, d n < 0 → ℒ n = ⊥) :
+    degreeFiltration ℒ d hneg =
+      TauCeti.GradedAlgebra.degreeFiltration (homogeneousSubmodule ℒ) d
+        (fun _ hn => homogeneousSubmodule_eq_bot_of_degree_neg ℒ d hneg hn) := (rfl)
 
 /-- The enveloping degree filtration consists of the corresponding degree ideals. -/
 @[simp]
@@ -155,6 +162,14 @@ theorem augmentation_le_degreeFiltration_one (hpos : ∀ n, d n ≤ 0 → ℒ n 
   rw [TauCeti.UniversalEnvelopingAlgebra.augmentation_toIdeal_eq_span_range_ι, Ideal.span_le]
   rintro _ ⟨x, rfl⟩
   exact ι_mem_degreeFiltration_one ℒ d hpos x
+
+/-- For a strictly positive Lie grading, `ker ε` lies in filtration order one. -/
+theorem ker_counitAlgHom_le_degreeFiltration_one (hpos : ∀ n, d n ≤ 0 → ℒ n = ⊥) :
+    RingHom.ker (Bialgebra.counitAlgHom R (_root_.UniversalEnvelopingAlgebra R L)) ≤
+      (degreeFiltration ℒ d (fun n hn => hpos n hn.le)).ideal 1 := fun _ hu =>
+  augmentation_le_degreeFiltration_one ℒ d hpos <|
+    HopfIdeal.mem_toIdeal.mpr <|
+      (HopfIdeal.mem_augmentation R (_root_.UniversalEnvelopingAlgebra R L)).mpr hu
 
 /-- Powers of the augmentation ideal have at least their corresponding total degree. -/
 theorem augmentation_pow_le_degreeFiltration (hpos : ∀ n, d n ≤ 0 → ℒ n = ⊥) (k : ℕ) :

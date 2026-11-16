@@ -11,8 +11,9 @@ public import Mathlib.RingTheory.Ideal.Quotient.Nilpotent
 # Nilpotence in ring quotients
 
 For a positive power of a two-sided ideal, nilpotence in the quotient is equivalent to
-nilpotence modulo the original ideal. The zeroth-power quotient is the zero ring. This allows a
-representation kernel to be refined by taking powers without losing nilpotence of its operators.
+nilpotence modulo the original ideal, and the image of `I` in `A ⧸ I ^ n` has vanishing `n`-th
+power (`Ideal.map_quotient_mk_pow_eq_bot`). The zeroth-power quotient is the zero ring. This allows
+a representation kernel to be refined by taking powers without losing nilpotence of its operators.
 The ring need not be commutative.
 
 For commutative rings, the quotient by the nilradical is reduced.
@@ -53,5 +54,22 @@ theorem _root_.Ideal.isNilpotent_quotient_pow_iff
       refine ⟨e * n, ?_⟩
       rw [← map_pow, Ideal.Quotient.eq_zero_iff_mem, pow_mul]
       exact Ideal.pow_mem_pow he n
+
+/-- In the quotient of a possibly noncommutative ring by `I ^ n`, the image of a two-sided ideal `I`
+has vanishing `n`-th power. -/
+@[simp]
+theorem _root_.Ideal.map_quotient_mk_pow_eq_bot (I : Ideal A) [I.IsTwoSided] (n : ℕ) :
+    (Ideal.map (Ideal.Quotient.mk (I ^ n)) I) ^ n = ⊥ := by
+  have hle (m : ℕ) : (Ideal.map (Ideal.Quotient.mk (I ^ n)) I) ^ m ≤
+      Ideal.map (Ideal.Quotient.mk (I ^ n)) (I ^ m) := by
+    induction m with
+    | zero => simp [Submodule.pow_zero, Ideal.one_eq_top, Ideal.map_top]
+    | succ m ih =>
+      rw [Submodule.pow_succ, Submodule.pow_succ]
+      refine (Ideal.mul_mono_left ih).trans (Ideal.mul_le.mpr fun r hr s hs => ?_)
+      obtain ⟨a, ha, rfl⟩ := (Ideal.mem_map_iff_of_surjective _ Ideal.Quotient.mk_surjective).mp hr
+      obtain ⟨b, hb, rfl⟩ := (Ideal.mem_map_iff_of_surjective _ Ideal.Quotient.mk_surjective).mp hs
+      rw [← map_mul]; exact Ideal.mem_map_of_mem _ (Ideal.mul_mem_mul ha hb)
+  exact le_bot_iff.mp ((hle n).trans_eq (Ideal.map_quotient_self (I ^ n)))
 
 end TauCeti

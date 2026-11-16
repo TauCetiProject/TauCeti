@@ -8,7 +8,7 @@ module
 public import Mathlib.RingTheory.Bialgebra.GroupLike
 public import Mathlib.RingTheory.Bialgebra.Hom
 public import Mathlib.RingTheory.Bialgebra.Primitive
-public import TauCeti.RingTheory.FilteredAlgebra.Exp.Basic
+public import TauCeti.RingTheory.FilteredAlgebra.Exp.Map
 public import TauCeti.RingTheory.FilteredAlgebra.TensorProduct.Map
 
 /-!
@@ -34,12 +34,18 @@ completed primitive elements of `F.completionIdeal 1` and completed group-like e
 * `TauCeti.AlgFiltration.completedGroupLikeSubgroup` and
   `TauCeti.AlgFiltration.completedPrimitiveSubmodule`: the unit subgroup of completed group-like
   elements and the `R`-submodule of completed primitive elements.
-* `TauCeti.AlgFiltration.completedExpPrimitiveEquiv` and
-  `TauCeti.AlgFiltration.completedExpGroupLikeEquiv`: the exponential-logarithm bijections.
+* `TauCeti.AlgFiltration.completedPrimitiveCompletionIdealEquivGroupLike` and
+  `TauCeti.AlgFiltration.completedPrimitiveEquivGroupLike`: the exponential-logarithm bijections.
 
 ## References
 
 * N. Bourbaki, *Lie Groups and Lie Algebras*, Chapters 1–3, Ch. II, §6.
+* `IsGroupLikeElem` and `Bialgebra.groupLikeSubmonoid` in
+  `Mathlib/RingTheory/Coalgebra/GroupLike.lean` and
+  `Mathlib/RingTheory/Bialgebra/GroupLike.lean`.
+* `Bialgebra.IsPrimitiveElem`, `Coalgebra.IsSkewPrimitiveElem`, and `Coalgebra.skewPrimitive` in
+  `Mathlib/RingTheory/Bialgebra/Primitive.lean` and
+  `Mathlib/RingTheory/Coalgebra/Primitive.lean`.
 -/
 
 public section
@@ -65,8 +71,7 @@ section Completion
 variable (R : Type*) {A : Type*} [CommRing R] [Ring A] [Bialgebra R A]
   (F : AlgFiltration A) [F.IsBialgFiltration R]
 
-/-- The completed coproduct `Δ̂ : F.completion →ₐ[R] (F.tensorProduct R F).completion` induced by
-`Bialgebra.comulAlgHom`. -/
+/-- The completed coproduct `Δ̂ : F.completion →ₐ[R] (F.tensorProduct R F).completion`. -/
 noncomputable def completedCoproduct : F.completion →ₐ[R] (F.tensorProduct R F).completion :=
   F.mapCompletionₐ (F.tensorProduct R F) (Bialgebra.comulAlgHom R A) id monotone_id
     fun k => IsBialgFiltration.ideal_le_comap_comul (R := R) (F := F) (k + 1)
@@ -95,6 +100,7 @@ theorem completedCoproduct_mem_completionIdeal {k : ℕ} {x : F.completion}
   | succ k => exact F.mapCompletionₐ_mem_completionIdeal _ _ id monotone_id _ k hx
 
 /-- When `A` is cocommutative, `completedCoproduct` is invariant under completed factor exchange. -/
+@[simp]
 theorem completedTensorComm_completedCoproduct [Coalgebra.IsCocomm R A] (x : F.completion) :
     F.completedTensorComm R F (F.completedCoproduct R x) = F.completedCoproduct R x := by
   refine (F.tensorProduct R F).completion_ext fun k => ?_
@@ -153,14 +159,53 @@ theorem sub_one_mem_completionIdeal_one_iff_completedCounit_eq_one
   rw [F.mem_completionIdeal_one_iff_completedCounit_eq_zero R hker (u - 1), map_sub, map_one,
     sub_eq_zero]
 
-/-- An element `x` of `F.completion` is *completed group-like* when `ε̂(x) = 1` and
-`Δ̂(x) = x ⊗̂ x`. -/
+/-- A filtered bialgebra homomorphism intertwines `completedCoproduct` along a monotone modulus. -/
+theorem completedCoproduct_mapCompletionₐ {B : Type*} [Ring B] [Bialgebra R B]
+    (G : AlgFiltration B) [G.IsBialgFiltration R] (f : A →ₐc[R] B) (l : ℕ → ℕ) (hl : Monotone l)
+    (hf : ∀ k, F.ideal (l k + 1) ≤ (G.ideal (k + 1)).comap (f : A →ₐ[R] B)) (x : F.completion) :
+    G.completedCoproduct R (F.mapCompletionₐ G (f : A →ₐ[R] B) l hl hf x) =
+      (F.tensorProduct R F).mapCompletionₐ (G.tensorProduct R G)
+        (Algebra.TensorProduct.map (f : A →ₐ[R] B) (f : A →ₐ[R] B)) (fun k => l k + l k)
+        (hl.add hl) (F.tensorProduct_ideal_le_comap_map_of_moduli R F G G
+          (f : A →ₐ[R] B) (f : A →ₐ[R] B) l l hf hf) (F.completedCoproduct R x) := by
+  have h : (G.completedCoproduct R).comp (F.mapCompletionₐ G (f : A →ₐ[R] B) l hl hf) =
+      ((F.tensorProduct R F).mapCompletionₐ (G.tensorProduct R G)
+        (Algebra.TensorProduct.map (f : A →ₐ[R] B) (f : A →ₐ[R] B)) (fun k => l k + l k)
+        (hl.add hl) (F.tensorProduct_ideal_le_comap_map_of_moduli R F G G
+          (f : A →ₐ[R] B) (f : A →ₐ[R] B) l l hf hf)).comp (F.completedCoproduct R) := by
+    dsimp only [completedCoproduct]
+    rw [← F.mapCompletionₐ_comp G (f : A →ₐ[R] B) l hl hf (G.tensorProduct R G)
+      (Bialgebra.comulAlgHom R B) id monotone_id _,
+      ← F.mapCompletionₐ_comp (F.tensorProduct R F) (Bialgebra.comulAlgHom R A) id monotone_id _
+      (G.tensorProduct R G) (Algebra.TensorProduct.map (f : A →ₐ[R] B) (f : A →ₐ[R] B))
+      (fun k => l k + l k) (hl.add hl) _]
+    simpa only [f.map_comp_comulAlgHom] using (F.mapCompletionₐ_eq (G.tensorProduct R G)
+      ((Bialgebra.comulAlgHom R B).comp (f : A →ₐ[R] B)) (id ∘ fun k => l k + l k)
+      (monotone_id.comp (hl.add hl)) _ (l ∘ id) (hl.comp monotone_id) _).symm
+  exact AlgHom.congr_fun h x
+
+/-- Any filtered bialgebra homomorphism preserves `completedCounit` along any monotone modulus. -/
+@[simp]
+theorem completedCounit_mapCompletionₐ {B : Type*} [Ring B] [Bialgebra R B]
+    (G : AlgFiltration B) [G.IsBialgFiltration R] (f : A →ₐc[R] B) (l : ℕ → ℕ) (hl : Monotone l)
+    (hf : ∀ k, F.ideal (l k + 1) ≤ (G.ideal (k + 1)).comap (f : A →ₐ[R] B)) (x : F.completion) :
+    G.completedCounit R (F.mapCompletionₐ G (f : A →ₐ[R] B) l hl hf x) = F.completedCounit R x := by
+  obtain ⟨a, ha⟩ := Ideal.Quotient.mk_surjective (F.projection (l 0) x)
+  have ha0 : Ideal.Quotient.mk (F.ideal 1) a = F.projection 0 x := by
+    rw [← F.factor_projection (Nat.zero_le (l 0)) x, ← ha, Ideal.Quotient.factor_mk]
+  have hfa : Ideal.Quotient.mk (G.ideal 1) (f a) =
+      G.projection 0 (F.mapCompletionₐ G (f : A →ₐ[R] B) l hl hf x) := by
+    simp [projection_mapCompletionₐ, ← ha]
+  rw [G.completedCounit_of_representative R _ (f a) hfa,
+    F.completedCounit_of_representative R x a ha0]
+  exact AlgHom.congr_fun f.counitAlgHom_comp a
+
+/-- An element `x : F.completion` is *completed group-like* if `ε̂(x) = 1` and `Δ̂(x) = x ⊗̂ x`. -/
 structure IsCompletedGroupLike (x : F.completion) : Prop where
   /-- A completed group-like element has completed counit `1`. -/
   completedCounit_eq_one : F.completedCounit R x = 1
   /-- A completed group-like element has completed coproduct `x ⊗̂ x`. -/
-  completedCoproduct_eq_completedTensor_self :
-    F.completedCoproduct R x = F.completedTensor R F x x
+  completedCoproduct_eq_completedTensor_self : F.completedCoproduct R x = F.completedTensor R F x x
 
 /-- Unfolded characterization of completed group-like elements. -/
 theorem isCompletedGroupLike_iff {x : F.completion} :
@@ -172,11 +217,15 @@ theorem isCompletedGroupLike_iff {x : F.completion} :
 def IsCompletedPrimitive (x : F.completion) : Prop :=
   F.completedCoproduct R x = F.completedTensor R F x 1 + F.completedTensor R F 1 x
 
+/-- Unfolded characterization of completed primitive elements. -/
+theorem isCompletedPrimitive_iff {x : F.completion} :
+    F.IsCompletedPrimitive R x ↔
+      F.completedCoproduct R x = F.completedTensor R F x 1 + F.completedTensor R F 1 x := Iff.rfl
+
 /-- Completed primitivity in terms of the left and right completed tensor inclusions. -/
 theorem isCompletedPrimitive_iff_includeCompletion {x : F.completion} :
-    F.IsCompletedPrimitive R x ↔
-      F.completedCoproduct R x =
-        F.includeLeftCompletion R F x + F.includeRightCompletion R F x := by
+    F.IsCompletedPrimitive R x ↔ F.completedCoproduct R x =
+      F.includeLeftCompletion R F x + F.includeRightCompletion R F x := by
   simp [IsCompletedPrimitive]
 
 section GroupLike
@@ -185,8 +234,7 @@ variable {R F}
 
 /-- The identity element `1` is completed group-like. -/
 @[simp]
-theorem IsCompletedGroupLike.one : F.IsCompletedGroupLike R 1 :=
-  ⟨map_one _, by simp⟩
+theorem IsCompletedGroupLike.one : F.IsCompletedGroupLike R 1 := ⟨map_one _, by simp⟩
 
 /-- Completed group-like elements are closed under multiplication. -/
 theorem IsCompletedGroupLike.mul {x y : F.completion}
@@ -197,11 +245,10 @@ theorem IsCompletedGroupLike.mul {x y : F.completion}
       hy.completedCoproduct_eq_completedTensor_self, F.completedTensor_mul R F]⟩
 
 /-- Completed group-like elements are closed under natural powers. -/
-theorem IsCompletedGroupLike.pow {x : F.completion} (hx : F.IsCompletedGroupLike R x) (n : ℕ) :
-    F.IsCompletedGroupLike R (x ^ n) := by
-  induction n with
-  | zero => simpa only [pow_zero] using IsCompletedGroupLike.one
-  | succ n ih => simpa only [pow_succ] using ih.mul hx
+theorem IsCompletedGroupLike.pow {x : F.completion} (hx : F.IsCompletedGroupLike R x) :
+    ∀ n : ℕ, F.IsCompletedGroupLike R (x ^ n)
+  | 0 => by simpa only [pow_zero] using IsCompletedGroupLike.one
+  | n + 1 => by simpa only [pow_succ] using (hx.pow n).mul hx
 
 /-- Completed group-like elements are closed under two-sided multiplicative inverses. -/
 theorem IsCompletedGroupLike.of_mul_eq_one {x y : F.completion}
@@ -227,13 +274,23 @@ theorem isCompletedGroupLike_toCompletion {a : A} (ha : IsGroupLikeElem R a) :
   ⟨by simp [ha.counit_eq_one], by
     rw [completedCoproduct_toCompletion, ha.comul_eq_tmul_self, completedTensor_toCompletion]⟩
 
-/-- When `ker ε ≤ F.ideal 1`, every completed group-like element is `1` mod `F.completionIdeal 1`.
--/
+/-- If `ker ε ≤ F.ideal 1`, every completed group-like element is `1` mod `F.completionIdeal 1`. -/
 theorem IsCompletedGroupLike.sub_one_mem {u : F.completion} (hu : F.IsCompletedGroupLike R u)
-    (hker : RingHom.ker (Bialgebra.counitAlgHom R A) ≤ F.ideal 1) :
-    u - 1 ∈ F.completionIdeal 1 :=
+    (hker : RingHom.ker (Bialgebra.counitAlgHom R A) ≤ F.ideal 1) : u - 1 ∈ F.completionIdeal 1 :=
   (F.sub_one_mem_completionIdeal_one_iff_completedCounit_eq_one R hker u).mpr
     hu.completedCounit_eq_one
+
+/-- Filtered bialgebra homomorphisms preserve completed group-likeness along a monotone modulus. -/
+theorem IsCompletedGroupLike.map {B : Type*} [Ring B] [Bialgebra R B]
+    (G : AlgFiltration B) [G.IsBialgFiltration R] (f : A →ₐc[R] B) (l : ℕ → ℕ) (hl : Monotone l)
+    (hf : ∀ k, F.ideal (l k + 1) ≤ (G.ideal (k + 1)).comap (f : A →ₐ[R] B))
+    {x : F.completion} (hx : F.IsCompletedGroupLike R x) :
+    G.IsCompletedGroupLike R (F.mapCompletionₐ G (f : A →ₐ[R] B) l hl hf x) :=
+  ⟨by rw [F.completedCounit_mapCompletionₐ R G f l hl hf x, hx.completedCounit_eq_one], by
+    rw [F.completedCoproduct_mapCompletionₐ R G f l hl hf x,
+      hx.completedCoproduct_eq_completedTensor_self,
+      F.mapCompletionₐ_completedTensor_of_moduli R F G G
+        (f : A →ₐ[R] B) (f : A →ₐ[R] B) l l hl hl hf hf x x]⟩
 
 end GroupLike
 
@@ -244,10 +301,8 @@ def completedGroupLikeSubmonoid : Submonoid F.completion where
   mul_mem' hx hy := hx.mul hy
 
 /-- Membership in `F.completedGroupLikeSubmonoid R` unfolds to `F.IsCompletedGroupLike R`. -/
-@[simp]
-theorem mem_completedGroupLikeSubmonoid_iff {x : F.completion} :
-    x ∈ F.completedGroupLikeSubmonoid R ↔ F.IsCompletedGroupLike R x :=
-  Iff.rfl
+@[simp] theorem mem_completedGroupLikeSubmonoid_iff {x : F.completion} :
+    x ∈ F.completedGroupLikeSubmonoid R ↔ F.IsCompletedGroupLike R x := Iff.rfl
 
 /-- The subgroup of `F.completionˣ` consisting of units that are completed group-like. -/
 def completedGroupLikeSubgroup : Subgroup F.completionˣ where
@@ -256,12 +311,9 @@ def completedGroupLikeSubgroup : Subgroup F.completionˣ where
   mul_mem' hx hy := hx.mul hy
   inv_mem' hx := isCompletedGroupLike_unitsInv.mpr hx
 
-/-- Membership in `F.completedGroupLikeSubgroup R` unfolds to completed group-likeness of the
-underlying element of `F.completion`. -/
-@[simp]
-theorem mem_completedGroupLikeSubgroup_iff {u : F.completionˣ} :
-    u ∈ F.completedGroupLikeSubgroup R ↔ F.IsCompletedGroupLike R (u : F.completion) :=
-  Iff.rfl
+/-- Membership in `F.completedGroupLikeSubgroup R` unfolds to `F.IsCompletedGroupLike R`. -/
+@[simp] theorem mem_completedGroupLikeSubgroup_iff {u : F.completionˣ} :
+    u ∈ F.completedGroupLikeSubgroup R ↔ F.IsCompletedGroupLike R (u : F.completion) := Iff.rfl
 
 section Primitive
 
@@ -317,8 +369,7 @@ theorem IsCompletedPrimitive.mem_completionIdeal_one {x : F.completion}
   (F.mem_completionIdeal_one_iff_completedCounit_eq_zero R hker x).mpr hx.completedCounit_eq_zero
 
 /-- Zero is completed primitive. -/
-@[simp]
-theorem IsCompletedPrimitive.zero : F.IsCompletedPrimitive R 0 := by
+@[simp] theorem IsCompletedPrimitive.zero : F.IsCompletedPrimitive R 0 := by
   simp [isCompletedPrimitive_iff_includeCompletion]
 
 /-- Completed primitive elements are closed under addition. -/
@@ -334,11 +385,15 @@ theorem IsCompletedPrimitive.neg {x : F.completion} (hx : F.IsCompletedPrimitive
   rw [isCompletedPrimitive_iff_includeCompletion] at hx ⊢
   rw [map_neg, hx, map_neg, map_neg]; abel
 
+/-- Negation preserves completed primitivity as an equivalence. -/
+@[simp] theorem isCompletedPrimitive_neg {x : F.completion} :
+    F.IsCompletedPrimitive R (-x) ↔ F.IsCompletedPrimitive R x :=
+  ⟨fun h => neg_neg x ▸ h.neg, IsCompletedPrimitive.neg⟩
+
 /-- Completed primitive elements are closed under subtraction. -/
 theorem IsCompletedPrimitive.sub {x y : F.completion}
     (hx : F.IsCompletedPrimitive R x) (hy : F.IsCompletedPrimitive R y) :
-    F.IsCompletedPrimitive R (x - y) := by
-  simpa only [sub_eq_add_neg] using hx.add hy.neg
+    F.IsCompletedPrimitive R (x - y) := by simpa only [sub_eq_add_neg] using hx.add hy.neg
 
 /-- Completed primitive elements are closed under scalar multiplication. -/
 theorem IsCompletedPrimitive.smul (r : R) {x : F.completion} (hx : F.IsCompletedPrimitive R x) :
@@ -350,10 +405,24 @@ theorem IsCompletedPrimitive.commutator {x y : F.completion}
     (hx : F.IsCompletedPrimitive R x) (hy : F.IsCompletedPrimitive R y) :
     F.IsCompletedPrimitive R (x * y - y * x) := by
   rw [isCompletedPrimitive_iff_includeCompletion] at hx hy ⊢
-  rw [map_sub, map_mul, map_mul, hx, hy, map_sub, map_sub, map_mul, map_mul, map_mul, map_mul,
-    add_mul, mul_add, mul_add, add_mul, mul_add, mul_add,
+  simp only [map_sub, map_mul, hx, hy, add_mul, mul_add,
     (F.commute_includeLeftCompletion_includeRightCompletion R F x y).eq,
     (F.commute_includeLeftCompletion_includeRightCompletion R F y x).eq]; abel
+
+/-- For any order-`k` representative `u` of a completed primitive `x`, `Δ(u) - (u ⊗ 1 + 1 ⊗ u)`
+lies in `(F.tensorProduct R F).ideal (k + 1)`. -/
+theorem IsCompletedPrimitive.comul_sub_mem_tensorProduct_ideal {x : F.completion}
+    (hx : F.IsCompletedPrimitive R x) {k : ℕ} {u : A}
+    (hu : Ideal.Quotient.mk (F.ideal (k + 1)) u = F.projection k x) :
+    Coalgebra.comul (R := R) u - (u ⊗ₜ[R] 1 + 1 ⊗ₜ[R] u) ∈ (F.tensorProduct R F).ideal (k + 1) := by
+  have hk := congrArg ((F.tensorProduct R F).projection k)
+    ((F.isCompletedPrimitive_iff_includeCompletion R).mp hx)
+  rw [projection_completedCoproduct, map_add, projection_includeLeftCompletion,
+    projection_includeRightCompletion, ← hu] at hk
+  simp only [Ideal.quotient_map_mkₐ, Ideal.Quotient.mkₐ_eq_mk, Bialgebra.comulAlgHom_apply,
+    Algebra.TensorProduct.includeLeft_apply, Algebra.TensorProduct.includeRight_apply,
+    ← map_add] at hk
+  exact Ideal.Quotient.eq.mp hk
 
 /-- Canonical images of primitive elements of `A` are completed primitive. -/
 theorem isCompletedPrimitive_toCompletion {a : A} (ha : Bialgebra.IsPrimitiveElem R a) :
@@ -364,33 +433,15 @@ theorem isCompletedPrimitive_toCompletion {a : A} (ha : Bialgebra.IsPrimitiveEle
 
 /-- A filtered bialgebra homomorphism preserves completed primitivity along a monotone modulus. -/
 theorem IsCompletedPrimitive.map {B : Type*} [Ring B] [Bialgebra R B]
-    (G : AlgFiltration B) [G.IsBialgFiltration R]
-    (f : A →ₐc[R] B) (l : ℕ → ℕ) (hl : Monotone l)
+    (G : AlgFiltration B) [G.IsBialgFiltration R] (f : A →ₐc[R] B) (l : ℕ → ℕ) (hl : Monotone l)
     (hf : ∀ k, F.ideal (l k + 1) ≤ (G.ideal (k + 1)).comap (f : A →ₐ[R] B))
     {x : F.completion} (hx : F.IsCompletedPrimitive R x) :
     G.IsCompletedPrimitive R (F.mapCompletionₐ G (f : A →ₐ[R] B) l hl hf x) := by
-  let fₐ : A →ₐ[R] B := f
-  let Tf := (F.tensorProduct R F).mapCompletionₐ (G.tensorProduct R G)
-    (Algebra.TensorProduct.map fₐ fₐ) (fun k => l k + l k) (hl.add hl)
-    (F.tensorProduct_ideal_le_comap_map_of_moduli R F G G fₐ fₐ l l hf hf)
-  have hsq : (Algebra.TensorProduct.map fₐ fₐ).comp (Bialgebra.comulAlgHom R A) =
-      (Bialgebra.comulAlgHom R B).comp fₐ :=
-    (show fₐ = AlgHom.ofClass f from AlgHom.ext fun _ => rfl) ▸ BialgHomClass.map_comp_comulAlgHom f
-  have hcomp : Tf.comp (F.completedCoproduct R) =
-      (G.completedCoproduct R).comp (F.mapCompletionₐ G fₐ l hl hf) := by
-    dsimp only [Tf, completedCoproduct]
-    rw [← F.mapCompletionₐ_comp (F.tensorProduct R F) (Bialgebra.comulAlgHom R A) id monotone_id _
-      (G.tensorProduct R G) (Algebra.TensorProduct.map fₐ fₐ) (fun k => l k + l k) (hl.add hl) _,
-      ← F.mapCompletionₐ_comp G fₐ l hl hf (G.tensorProduct R G) (Bialgebra.comulAlgHom R B)
-      id monotone_id _]
-    exact AlgHom.toRingHom_injective <| by
-      simpa only [coe_mapCompletionₐ, hsq] using F.mapCompletion_eq (G.tensorProduct R G)
-        (((Bialgebra.comulAlgHom R B).comp fₐ : A →ₐ[R] B ⊗[R] B) : A →+* B ⊗[R] B)
-        (monotone_id.comp (hl.add hl)) _ (l ∘ id) (hl.comp monotone_id) _
-  have hTf := congrArg Tf hx
-  rw [map_add, F.mapCompletionₐ_completedTensor_of_moduli R F G G fₐ fₐ l l hl hl hf hf x 1,
-    F.mapCompletionₐ_completedTensor_of_moduli R F G G fₐ fₐ l l hl hl hf hf 1 x, map_one] at hTf
-  exact (AlgHom.congr_fun hcomp.symm x).trans hTf
+  rw [isCompletedPrimitive_iff, F.completedCoproduct_mapCompletionₐ R G f l hl hf x, hx, map_add,
+    F.mapCompletionₐ_completedTensor_of_moduli R F G G
+      (f : A →ₐ[R] B) (f : A →ₐ[R] B) l l hl hl hf hf x 1,
+    F.mapCompletionₐ_completedTensor_of_moduli R F G G
+      (f : A →ₐ[R] B) (f : A →ₐ[R] B) l l hl hl hf hf 1 x, map_one]
 
 end Primitive
 
@@ -402,10 +453,8 @@ def completedPrimitiveSubmodule : Submodule R F.completion where
   smul_mem' r _ hx := hx.smul r
 
 /-- Membership in `F.completedPrimitiveSubmodule R` unfolds to `F.IsCompletedPrimitive R`. -/
-@[simp]
-theorem mem_completedPrimitiveSubmodule_iff {x : F.completion} :
-    x ∈ F.completedPrimitiveSubmodule R ↔ F.IsCompletedPrimitive R x :=
-  Iff.rfl
+@[simp] theorem mem_completedPrimitiveSubmodule_iff {x : F.completion} :
+    x ∈ F.completedPrimitiveSubmodule R ↔ F.IsCompletedPrimitive R x := Iff.rfl
 
 section Exp
 
@@ -413,55 +462,60 @@ variable [Algebra ℚ A]
 
 /-- In a rational filtered bialgebra, `F.completedExp x` is completed group-like iff `x` is
 completed primitive. -/
-theorem isCompletedGroupLike_completedExp_iff (x : F.completionIdeal 1) :
+@[simp] theorem isCompletedGroupLike_completedExp_iff (x : F.completionIdeal 1) :
     F.IsCompletedGroupLike R (F.completedExp x) ↔ F.IsCompletedPrimitive R (x : F.completion) := by
   have : SMulCommClass R ℚ A :=
     ⟨fun r _ _ => by simp only [Algebra.smul_def, ← mul_assoc, Algebra.commutes r]⟩
-  let TF := F.tensorProduct R F
+  have map_exp (g : F.completion →ₐ[R] (F.tensorProduct R F).completion) (f : A →ₐ[R] A ⊗[R] A)
+      (hf : ∀ k, F.ideal (k + 1) ≤ ((F.tensorProduct R F).ideal (k + 1)).comap f)
+      (hproj : ∀ k z, (F.tensorProduct R F).projection k (g z) =
+        Ideal.quotientMapₐ ((F.tensorProduct R F).ideal (k + 1)) f (hf k) (F.projection k z))
+      (hmem : g x ∈ (F.tensorProduct R F).completionIdeal 1) :
+      g (F.completedExp x) = (F.tensorProduct R F).completedExp ⟨g x, hmem⟩ := by
+    let hf' : ∀ k, F.ideal ((fun n => n) k + 1) ≤
+        ((F.tensorProduct R F).ideal (k + 1)).comap (f : A →+* A ⊗[R] A) := fun k _ ha => hf k ha
+    have hg (z : F.completion) : g z = F.mapCompletion (F.tensorProduct R F)
+        (f : A →+* A ⊗[R] A) (fun n => n) monotone_id hf' z :=
+      (F.tensorProduct R F).completion_ext fun k => by
+        obtain ⟨a, ha⟩ := Ideal.Quotient.mk_surjective (F.projection k z)
+        rw [hproj k z, F.projection_mapCompletion (F.tensorProduct R F) (f : A →+* A ⊗[R] A)
+          (fun n => n) monotone_id hf' k z, ← ha]; rfl
+    rw [hg, F.mapCompletion_completedExp _ (f : A →+* A ⊗[R] A) (fun n => n) monotone_id hf'
+      (hf' 0) x]
+    exact congrArg (F.tensorProduct R F).completedExp (Subtype.ext (hg x).symm)
   have hcounit : F.completedCounit R (F.completedExp x) = 1 :=
     F.completedCounit_eq_one_of_sub_one_mem R (F.completedExp_sub_one_mem x)
-  have hcoprod : F.completedCoproduct R (F.completedExp x) =
-      TF.completedExp ⟨F.completedCoproduct R x,
-        F.completedCoproduct_mem_completionIdeal R x.property⟩ :=
-    TF.completion_ext fun k => by
-      rw [projection_completedCoproduct, projection_completedExp, projection_completedExp,
-        projection_completedCoproduct]
-      exact (F.isNilpotent_projection x.property k).map_exp _
-  let xl : TF.completionIdeal 1 :=
+  have hcoprod := map_exp (F.completedCoproduct R) (Bialgebra.comulAlgHom R A) _
+    (F.projection_completedCoproduct R) (F.completedCoproduct_mem_completionIdeal R x.property)
+  let xl : (F.tensorProduct R F).completionIdeal 1 :=
     ⟨F.includeLeftCompletion R F x, F.includeLeftCompletion_mem_completionIdeal R F x.property⟩
-  let xr : TF.completionIdeal 1 :=
+  let xr : (F.tensorProduct R F).completionIdeal 1 :=
     ⟨F.includeRightCompletion R F x, F.includeRightCompletion_mem_completionIdeal R F x.property⟩
-  have hleft : F.includeLeftCompletion R F (F.completedExp x) = TF.completedExp xl :=
-    TF.completion_ext fun k => by
-      rw [projection_includeLeftCompletion, projection_completedExp, projection_completedExp,
-        projection_includeLeftCompletion]
-      exact (F.isNilpotent_projection x.property k).map_exp _
-  have hright : F.includeRightCompletion R F (F.completedExp x) = TF.completedExp xr :=
-    TF.completion_ext fun k => by
-      rw [projection_includeRightCompletion, projection_completedExp, projection_completedExp,
-        projection_includeRightCompletion]
-      exact (F.isNilpotent_projection x.property k).map_exp _
+  have hleft := map_exp (F.includeLeftCompletion R F) Algebra.TensorProduct.includeLeft _
+    (F.projection_includeLeftCompletion R F) xl.property
+  have hright := map_exp (F.includeRightCompletion R F) Algebra.TensorProduct.includeRight _
+    (F.projection_includeRightCompletion R F) xr.property
   have htensor : F.completedTensor R F (F.completedExp x) (F.completedExp x) =
-      TF.completedExp (xl + xr) := by
-    rw [completedTensor_apply, hleft, hright,
-      ← TF.completedExp_add xl xr (F.commute_includeLeftCompletion_includeRightCompletion R F x x)]
+      (F.tensorProduct R F).completedExp (xl + xr) := by
+    rw [completedTensor_apply, hleft, hright, ← (F.tensorProduct R F).completedExp_add xl xr
+      (F.commute_includeLeftCompletion_includeRightCompletion R F x x)]
   rw [isCompletedGroupLike_iff, and_iff_right hcounit, hcoprod, htensor,
     isCompletedPrimitive_iff_includeCompletion]
-  exact ⟨fun h => congrArg Subtype.val <| TF.completedExpEquiv.injective <| Subtype.ext <| by
-    simpa only [TF.coe_completedExpEquiv] using h,
-    fun h => congrArg TF.completedExp (Subtype.ext h)⟩
+  exact ⟨fun h => congrArg Subtype.val <| (F.tensorProduct R F).completedExpEquiv.injective <|
+    Subtype.ext <| by simpa only [(F.tensorProduct R F).coe_completedExpEquiv] using h,
+    fun h => congrArg (F.tensorProduct R F).completedExp (Subtype.ext h)⟩
 
 /-- In a rational filtered bialgebra, `F.completedLog u` is completed primitive iff `u` is
 completed group-like. -/
-theorem isCompletedPrimitive_completedLog_iff
+@[simp] theorem isCompletedPrimitive_completedLog_iff
     (u : {u : F.completion // u - 1 ∈ F.completionIdeal 1}) :
     F.IsCompletedPrimitive R (F.completedLog u) ↔ F.IsCompletedGroupLike R (u : F.completion) := by
-  simpa only [completedExp_completedLog] using
-    (F.isCompletedGroupLike_completedExp_iff R ⟨F.completedLog u, F.completedLog_mem u⟩).symm
+  rw [← F.isCompletedGroupLike_completedExp_iff R ⟨F.completedLog u, F.completedLog_mem u⟩,
+    F.completedExp_completedLog]
 
 /-- Exponential coordinates identify completed primitives in `F.completionIdeal 1` with completed
 group-like elements congruent to `1` modulo `F.completionIdeal 1`. -/
-noncomputable def completedExpPrimitiveEquiv :
+noncomputable def completedPrimitiveCompletionIdealEquivGroupLike :
     {x : F.completionIdeal 1 // F.IsCompletedPrimitive R (x : F.completion)} ≃
       {u : F.completion // u - 1 ∈ F.completionIdeal 1 ∧ F.IsCompletedGroupLike R u} where
   toFun x := ⟨F.completedExp x.1, F.completedExp_sub_one_mem x.1,
@@ -471,47 +525,43 @@ noncomputable def completedExpPrimitiveEquiv :
   left_inv x := Subtype.ext <| Subtype.ext <| F.completedLog_completedExp x.1
   right_inv u := Subtype.ext <| F.completedExp_completedLog ⟨u.1, u.2.1⟩
 
-/-- The forward map of `F.completedExpPrimitiveEquiv R` is `F.completedExp`. -/
-@[simp]
-theorem coe_completedExpPrimitiveEquiv
+/-- The forward map of `F.completedPrimitiveCompletionIdealEquivGroupLike R` is `F.completedExp`. -/
+@[simp] theorem coe_completedPrimitiveCompletionIdealEquivGroupLike
     (x : {x : F.completionIdeal 1 // F.IsCompletedPrimitive R (x : F.completion)}) :
-    (F.completedExpPrimitiveEquiv R x : F.completion) = F.completedExp x.1 := (rfl)
+    (F.completedPrimitiveCompletionIdealEquivGroupLike R x : F.completion) =
+      F.completedExp x.1 := (rfl)
 
-/-- The inverse map of `F.completedExpPrimitiveEquiv R` is `F.completedLog`. -/
-@[simp]
-theorem coe_completedExpPrimitiveEquiv_symm
+/-- The inverse map of `F.completedPrimitiveCompletionIdealEquivGroupLike R` is `F.completedLog`. -/
+@[simp] theorem coe_completedPrimitiveCompletionIdealEquivGroupLike_symm
     (u : {u : F.completion // u - 1 ∈ F.completionIdeal 1 ∧ F.IsCompletedGroupLike R u}) :
-    ((F.completedExpPrimitiveEquiv R).symm u : F.completion) = F.completedLog ⟨u.1, u.2.1⟩ := (rfl)
+    ((F.completedPrimitiveCompletionIdealEquivGroupLike R).symm u : F.completion) =
+      F.completedLog ⟨u.1, u.2.1⟩ := (rfl)
 
 /-- When `ker ε ≤ F.ideal 1`, exponential coordinates identify all completed primitive elements
 with all completed group-like elements. -/
-noncomputable def completedExpGroupLikeEquiv
+noncomputable def completedPrimitiveEquivGroupLike
     (hker : RingHom.ker (Bialgebra.counitAlgHom R A) ≤ F.ideal 1) :
     {x : F.completion // F.IsCompletedPrimitive R x} ≃
       {u : F.completion // F.IsCompletedGroupLike R u} where
-  toFun x :=
-    let x₁ : F.completionIdeal 1 := ⟨x.1, x.2.mem_completionIdeal_one hker⟩
-    ⟨F.completedExp x₁, (F.isCompletedGroupLike_completedExp_iff R x₁).mpr x.2⟩
-  invFun u :=
-    let u₁ : {v : F.completion // v - 1 ∈ F.completionIdeal 1} := ⟨u.1, u.2.sub_one_mem hker⟩
-    ⟨F.completedLog u₁, (F.isCompletedPrimitive_completedLog_iff R u₁).mpr u.2⟩
+  toFun x := ⟨F.completedExp ⟨x.1, x.2.mem_completionIdeal_one hker⟩,
+    (F.isCompletedGroupLike_completedExp_iff R ⟨x.1, x.2.mem_completionIdeal_one hker⟩).mpr x.2⟩
+  invFun u := ⟨F.completedLog ⟨u.1, u.2.sub_one_mem hker⟩,
+    (F.isCompletedPrimitive_completedLog_iff R ⟨u.1, u.2.sub_one_mem hker⟩).mpr u.2⟩
   left_inv x := Subtype.ext <| F.completedLog_completedExp ⟨x.1, x.2.mem_completionIdeal_one hker⟩
   right_inv u := Subtype.ext <| F.completedExp_completedLog ⟨u.1, u.2.sub_one_mem hker⟩
 
-/-- The forward map of `F.completedExpGroupLikeEquiv R hker` is `F.completedExp`. -/
-@[simp]
-theorem coe_completedExpGroupLikeEquiv
+/-- The forward map of `F.completedPrimitiveEquivGroupLike R hker` is `F.completedExp`. -/
+@[simp] theorem coe_completedPrimitiveEquivGroupLike
     (hker : RingHom.ker (Bialgebra.counitAlgHom R A) ≤ F.ideal 1)
     (x : {x : F.completion // F.IsCompletedPrimitive R x}) :
-    (F.completedExpGroupLikeEquiv R hker x : F.completion) =
+    (F.completedPrimitiveEquivGroupLike R hker x : F.completion) =
       F.completedExp ⟨x.1, x.2.mem_completionIdeal_one hker⟩ := (rfl)
 
-/-- The inverse map of `F.completedExpGroupLikeEquiv R hker` is `F.completedLog`. -/
-@[simp]
-theorem coe_completedExpGroupLikeEquiv_symm
+/-- The inverse map of `F.completedPrimitiveEquivGroupLike R hker` is `F.completedLog`. -/
+@[simp] theorem coe_completedPrimitiveEquivGroupLike_symm
     (hker : RingHom.ker (Bialgebra.counitAlgHom R A) ≤ F.ideal 1)
     (u : {u : F.completion // F.IsCompletedGroupLike R u}) :
-    ((F.completedExpGroupLikeEquiv R hker).symm u : F.completion) =
+    ((F.completedPrimitiveEquivGroupLike R hker).symm u : F.completion) =
       F.completedLog ⟨u.1, u.2.sub_one_mem hker⟩ := (rfl)
 
 end Exp

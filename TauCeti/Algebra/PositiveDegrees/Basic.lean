@@ -253,7 +253,7 @@ def naturals : PositiveDegrees ℕ where
   degree := Nat.castAddMonoidHom ℤ
   degree_pos := by
     intro n _ hne
-    change 0 < (n : ℤ)
+    simp only [Nat.coe_castAddMonoidHom]
     omega
   finite_le k := by
     apply (Finset.range (k + 1)).finite_toSet.subset

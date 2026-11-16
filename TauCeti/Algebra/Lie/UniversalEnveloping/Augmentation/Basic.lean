@@ -276,6 +276,17 @@ theorem lowerCentralQuotientι_injective_iff (c : ℕ) :
   refine ⟨fun h x hx => h ?_, fun h x hx => h ?_⟩ <;>
     simpa [Ideal.Quotient.eq_zero_iff_mem] using hx
 
+/-- Every element in the image of `lowerCentralQuotientι` lies in the image of the augmentation
+ideal in `U(L) ⧸ U⁺(L) ^ (c + 1)`. -/
+theorem lowerCentralQuotientι_mem_map_augmentation (c : ℕ)
+    (z : L ⧸ LieModule.lowerCentralSeries R L L c) :
+    lowerCentralQuotientι R L c z ∈
+      Ideal.map (Ideal.Quotient.mk ((HopfIdeal.augmentation R U).toIdeal ^ (c + 1)))
+        (HopfIdeal.augmentation R U).toIdeal := by
+  obtain ⟨x, rfl⟩ := LieIdeal.surjective_mkQ _ z
+  rw [LieIdeal.mkQ_apply, lowerCentralQuotientι_mk]
+  exact Ideal.mem_map_of_mem _ (HopfIdeal.mem_toIdeal.mpr (ι_mem_augmentation R L x))
+
 /-- Every element in the image of `lowerCentralQuotientι` is nilpotent. -/
 theorem isNilpotent_lowerCentralQuotientι (c : ℕ)
     (z : L ⧸ LieModule.lowerCentralSeries R L L c) :
@@ -295,6 +306,50 @@ theorem lowerCentralQuotientι_factor {c d : ℕ} (h : c ≤ d)
         (lowerCentralQuotientι R L d z) := by
   obtain ⟨z, rfl⟩ := LieIdeal.surjective_mkQ _ z
   simp [LieIdeal.mkQ_apply, LieIdeal.factor_apply]
+
+section Map
+
+variable {L} {L' : Type w} [LieRing L'] [LieAlgebra R L']
+
+/-- Any Lie homomorphism induces an algebra homomorphism preserving every power of the augmentation
+ideal. -/
+theorem augmentation_toIdeal_pow_le_comap_map (f : L →ₗ⁅R⁆ L') (n : ℕ) :
+    (HopfIdeal.augmentation R U).toIdeal ^ n ≤
+      ((HopfIdeal.augmentation R (_root_.UniversalEnvelopingAlgebra R L')).toIdeal ^ n).comap
+        (map R f) := by
+  have h₁ : (HopfIdeal.augmentation R U).toIdeal ≤
+      (HopfIdeal.augmentation R (_root_.UniversalEnvelopingAlgebra R L')).toIdeal.comap
+        (map R f) := by
+    rw [augmentation_toIdeal_eq_span_range_ι, Ideal.span_le]
+    rintro _ ⟨x, rfl⟩
+    simpa only [SetLike.mem_coe, Ideal.mem_comap, map_ι] using
+      HopfIdeal.mem_toIdeal.mpr (ι_mem_augmentation R L' (f x))
+  induction n with
+  | zero => simp [Submodule.pow_zero, Ideal.one_eq_top]
+  | succ n ih =>
+    rw [Submodule.pow_succ]
+    exact Ideal.mul_le.mpr fun _ ha _ hb => by
+      rw [Ideal.mem_comap, map_mul, Submodule.pow_succ]
+      exact Ideal.mul_mem_mul (ih ha) (h₁ hb)
+
+/-- `lowerCentralQuotientι` is natural with respect to Lie homomorphisms on lower-central
+quotients. -/
+theorem lowerCentralQuotientι_mapQ (f : L →ₗ⁅R⁆ L') (c : ℕ)
+    (hf : LieModule.lowerCentralSeries R L L c ≤
+        LieIdeal.comap f (LieModule.lowerCentralSeries R L' L' c) :=
+      LieIdeal.map_le_iff_le_comap.mp (LieIdeal.map_lowerCentralSeries_le c))
+    (z : L ⧸ LieModule.lowerCentralSeries R L L c) :
+    lowerCentralQuotientι R L' c
+        (LieIdeal.mapQ (LieModule.lowerCentralSeries R L L c)
+          (LieModule.lowerCentralSeries R L' L' c) f hf z) =
+      Ideal.quotientMapₐ
+        ((HopfIdeal.augmentation R (_root_.UniversalEnvelopingAlgebra R L')).toIdeal ^ (c + 1))
+        (map R f) (augmentation_toIdeal_pow_le_comap_map R f (c + 1))
+        (lowerCentralQuotientι R L c z) := by
+  obtain ⟨x, rfl⟩ := LieIdeal.surjective_mkQ (LieModule.lowerCentralSeries R L L c) z
+  simp [LieIdeal.mkQ_apply, LieIdeal.mapQ_apply]
+
+end Map
 
 end LowerCentralSeries
 

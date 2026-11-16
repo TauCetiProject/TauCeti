@@ -54,28 +54,6 @@ local notation "U" => _root_.UniversalEnvelopingAlgebra R L
 
 attribute [local instance 100] LieRing.ofAssociativeRing
 
-private theorem word_eq_zero_of_not_mem_monoid (d : PositiveDegrees Γ) [IsPositiveGrading d ℒ]
-    (l : List (Σ i, ℒ i)) (hl : (l.map Sigma.fst).sum ∉ d.monoid) :
-    (l.map fun x => ι R (x.2 : L)).prod = 0 := by
-  induction l with
-  | nil => exact (hl d.monoid.zero_mem).elim
-  | cons a l ih =>
-    by_cases ha : a.1 ∈ d.monoid
-    · have hsum : (l.map Sigma.fst).sum ∉ d.monoid := fun hs =>
-        hl (by simpa only [List.map_cons, List.sum_cons] using d.monoid.add_mem ha hs)
-      simp only [List.map_cons, List.prod_cons, ih hsum, mul_zero]
-    · have ha0 : (a.2 : L) = 0 := by
-        simpa only [IsPositiveGrading.eq_bot (d := d) (ℒ := ℒ) a.1 (Or.inl ha), Submodule.mem_bot]
-          using a.2.property
-      simp only [List.map_cons, List.prod_cons, ha0, map_zero, zero_mul]
-
-/-- When a Lie grading is positive for `d`, every enveloping piece outside `d.monoid` vanishes. -/
-theorem homogeneousSubmodule_eq_bot_of_not_mem_monoid (d : PositiveDegrees Γ)
-    [IsPositiveGrading d ℒ] {n : Γ} (hn : n ∉ d.monoid) :
-    homogeneousSubmodule ℒ n = ⊥ := by
-  rw [eq_bot_iff, homogeneousSubmodule_le_iff]
-  exact fun l hl => (Submodule.mem_bot R).mpr (word_eq_zero_of_not_mem_monoid ℒ d l (hl ▸ hn))
-
 private def bidegreePiece (p : Γ × Γ) : Submodule R (U ⊗[R] U) :=
   Submodule.map₂ (TensorProduct.mk R U U)
     (homogeneousSubmodule ℒ p.1) (homogeneousSubmodule ℒ p.2)
@@ -150,7 +128,7 @@ attribute [local instance 100] LieRing.ofAssociativeRing
 
 /-- On an enveloping element of homogeneous degree `n`, every bidegree projection of `Δ(u)` with
 `i + j ≠ n` vanishes. -/
-theorem map_proj_comul_eq_zero_of_mem {n : Γ} {u : U}
+theorem map_proj_comul_eq_zero_of_mem_ne {n : Γ} {u : U}
     (hu : u ∈ homogeneousSubmodule ℒ n) {i j : Γ} (hij : i + j ≠ n) :
     TensorProduct.map (_root_.GradedAlgebra.proj (homogeneousSubmodule ℒ) i)
       (_root_.GradedAlgebra.proj (homogeneousSubmodule ℒ) j)
@@ -159,7 +137,7 @@ theorem map_proj_comul_eq_zero_of_mem {n : Γ} {u : U}
       LinearMap.ker (TensorProduct.map (_root_.GradedAlgebra.proj (homogeneousSubmodule ℒ) i)
         (_root_.GradedAlgebra.proj (homogeneousSubmodule ℒ) j)) :=
     iSup_le fun p _ ht => LinearMap.mem_ker.mpr <|
-      TauCeti.GradedAlgebra.tensorProduct_proj_eq_zero_of_mem (homogeneousSubmodule ℒ)
+      TauCeti.GradedAlgebra.map_proj_eq_zero_of_mem_ne (homogeneousSubmodule ℒ)
         (homogeneousSubmodule ℒ) ht fun hp => hij (by simpa only [hp] using p.2)
   exact LinearMap.mem_ker.mp (hker (comul_mem_comulHomogeneousSpan ℒ hu))
 
@@ -177,19 +155,9 @@ theorem map_proj_comul (u : U) (i j : Γ) :
   | @homogeneous m x =>
     by_cases hm : m = i + j
     · subst hm; rw [_root_.DirectSum.decompose_of_mem_same (homogeneousSubmodule ℒ) x.property]
-    · rw [map_proj_comul_eq_zero_of_mem ℒ x.property (Ne.symm hm),
+    · rw [map_proj_comul_eq_zero_of_mem_ne ℒ x.property (Ne.symm hm),
         _root_.DirectSum.decompose_of_mem_ne (homogeneousSubmodule ℒ) x.property hm]
       simp
-
-/-- The enveloping degree filtration agrees with `GradedAlgebra.degreeFiltration` on
-`homogeneousSubmodule ℒ`. -/
-theorem degreeFiltration_eq_gradedAlgebra_degreeFiltration (d : Γ →+ ℤ)
-    (hneg : ∀ n, d n < 0 → ℒ n = ⊥) :
-    degreeFiltration ℒ d hneg =
-      TauCeti.GradedAlgebra.degreeFiltration (homogeneousSubmodule ℒ) d
-        (fun _ hn => homogeneousSubmodule_eq_bot_of_degree_neg ℒ d hneg hn) :=
-  AlgFiltration.ext <| funext fun k => by
-    rw [degreeFiltration_ideal, TauCeti.GradedAlgebra.degreeFiltration_ideal]
 
 /-- Comultiplication preserves every nonnegative degree filtration on a graded enveloping algebra.
 -/
@@ -203,8 +171,7 @@ theorem degreeFiltration_ideal_le_comap_comul (d : Γ →+ ℤ)
     TauCeti.GradedAlgebra.mem_tensorProduct_degreeFiltration_ideal_iff]
   intro i j hij
   rw [map_proj_comul, (mem_degreeFiltration_ideal_iff ℒ d hneg).mp hu (i + j)
-    (by simpa only [map_add] using hij)]
-  simp
+    (by simpa only [map_add] using hij)]; simp
 
 /-- Every nonnegative degree filtration on a graded enveloping algebra is a bialgebra filtration. -/
 instance degreeFiltration_isBialgFiltration (d : Γ →+ ℤ) (hneg : ∀ n, d n < 0 → ℒ n = ⊥) :
@@ -213,164 +180,141 @@ instance degreeFiltration_isBialgFiltration (d : Γ →+ ℤ) (hneg : ∀ n, d n
   ideal_one_le_ker_counit _ hu := (HopfIdeal.mem_augmentation R U).mp
     (HopfIdeal.mem_toIdeal.mp (degreeFiltration_le_augmentation ℒ d hneg Nat.zero_lt_one hu))
 
-/-- For a strictly positive Lie grading, `ker ε` lies in the first degree filtration ideal. -/
-theorem ker_counitAlgHom_le_degreeFiltration_one (d : Γ →+ ℤ) (hpos : ∀ n, d n ≤ 0 → ℒ n = ⊥) :
-    RingHom.ker (Bialgebra.counitAlgHom R U) ≤
-      (degreeFiltration ℒ d (fun n hn => hpos n hn.le)).ideal 1 := fun _ hu =>
-  augmentation_le_degreeFiltration_one ℒ d hpos <|
-    HopfIdeal.mem_toIdeal.mpr <| (HopfIdeal.mem_augmentation R U).mpr hu
-
 /-- The Lie subalgebra of completed primitive elements inside
 `(degreeFiltration ℒ d hneg).completion`, equipped with the associative commutator bracket. -/
 noncomputable def completedPrimitives (d : Γ →+ ℤ) (hneg : ∀ n, d n < 0 → ℒ n = ⊥) :
     LieSubalgebra R (degreeFiltration ℒ d hneg).completion where
-  carrier := {x | (degreeFiltration ℒ d hneg).IsCompletedPrimitive R x}
-  zero_mem' := AlgFiltration.IsCompletedPrimitive.zero
-  add_mem' hx hy := hx.add hy
-  smul_mem' r _ hx := hx.smul r
-  lie_mem' hx hy := hx.commutator hy
+  __ := (degreeFiltration ℒ d hneg).completedPrimitiveSubmodule R
+  lie_mem' hx hy := (AlgFiltration.mem_completedPrimitiveSubmodule_iff _ _).mpr <|
+    ((AlgFiltration.mem_completedPrimitiveSubmodule_iff _ _).mp hx).commutator
+      ((AlgFiltration.mem_completedPrimitiveSubmodule_iff _ _).mp hy)
 
 /-- Membership in `completedPrimitives ℒ d hneg` unfolds to `IsCompletedPrimitive`. -/
-@[simp]
-theorem mem_completedPrimitives_iff (d : Γ →+ ℤ) (hneg : ∀ n, d n < 0 → ℒ n = ⊥)
+@[simp] theorem mem_completedPrimitives_iff (d : Γ →+ ℤ) (hneg : ∀ n, d n < 0 → ℒ n = ⊥)
     {x : (degreeFiltration ℒ d hneg).completion} :
     x ∈ completedPrimitives ℒ d hneg ↔ (degreeFiltration ℒ d hneg).IsCompletedPrimitive R x :=
-  Iff.rfl
+  AlgFiltration.mem_completedPrimitiveSubmodule_iff _ _
 
 section PositiveGrading
 
-variable (d : PositiveDegrees Γ) [IsPositiveGrading d ℒ] (hneg : ∀ n, d.degree n < 0 → ℒ n = ⊥)
+variable (d : PositiveDegrees Γ) [IsPositiveGrading d ℒ]
+
+local notation "F" => degreeFiltration ℒ (PositiveDegrees.degree d)
+  (fun n hn => PositiveDegrees.eq_bot_of_degree_nonpos d ℒ n (le_of_lt hn))
 
 /-- For a positive grading with respect to `d`, `ker ε` lies in `(degreeFiltration ...).ideal 1`. -/
-theorem ker_counitAlgHom_le_positiveDegreeFiltration_one :
-    RingHom.ker (Bialgebra.counitAlgHom R U) ≤ (degreeFiltration ℒ d.degree hneg).ideal 1 :=
+theorem ker_counitAlgHom_le_degreeFiltration_one_of_isPositiveGrading :
+    RingHom.ker (Bialgebra.counitAlgHom R U) ≤ (F).ideal 1 :=
   ker_counitAlgHom_le_degreeFiltration_one ℒ d.degree (d.eq_bot_of_degree_nonpos ℒ)
 
-/-- Canonical Lie generators from `d.degreeIdeal ℒ k` land in `F.ideal (k + 1)`. -/
+/-- Canonical Lie generators from `d.degreeIdeal ℒ k` land in `(F).ideal (k + 1)`. -/
 theorem ι_mem_degreeFiltration_of_mem_degreeIdeal {k : ℕ} {x : L} (hx : x ∈ d.degreeIdeal ℒ k) :
-    ι R x ∈ (degreeFiltration ℒ d.degree hneg).ideal (k + 1) := by
+    ι R x ∈ (F).ideal (k + 1) := by
   have hx' : x ∈ d.degreeSubmodule ℒ k := by rwa [← d.degreeIdeal_toSubmodule ℒ k]
   rw [d.degreeSubmodule_def ℒ] at hx'
-  exact Submodule.iSup_induction _
-    (motive := fun x => ι R x ∈ (degreeFiltration ℒ d.degree hneg).ideal (k + 1)) hx'
-    (fun n _ hy => ι_mem_degreeFiltration ℒ d.degree hneg hy (by have := n.property; omega))
+  exact Submodule.iSup_induction _ (motive := fun x => ι R x ∈ (F).ideal (k + 1)) hx'
+    (fun n _ hy => ι_mem_degreeFiltration ℒ d.degree _ hy (by have := n.property; omega))
     (by simp) (fun _ _ hy hz => by simpa only [map_add] using Ideal.add_mem _ hy hz)
 
-/-- The canonical Lie homomorphism from `d.truncatedLie ℒ k` to `U(L) ⧸ F.ideal (k + 1)`. -/
-noncomputable def truncatedLieToU (k : ℕ) :
-    d.truncatedLie ℒ k →ₗ⁅R⁆ U ⧸ (degreeFiltration ℒ d.degree hneg).ideal (k + 1) :=
-  (d.degreeIdeal ℒ k).liftQ
-    ((Ideal.Quotient.mkₐ R ((degreeFiltration ℒ d.degree hneg).ideal (k + 1))).toLieHom.comp (ι R))
+/-- The canonical Lie homomorphism from `d.truncatedLie ℒ k` to `U(L) ⧸ (F).ideal (k + 1)`. -/
+noncomputable def truncatedLieToU (k : ℕ) : d.truncatedLie ℒ k →ₗ⁅R⁆ U ⧸ (F).ideal (k + 1) :=
+  (d.degreeIdeal ℒ k).liftQ ((Ideal.Quotient.mkₐ R ((F).ideal (k + 1))).toLieHom.comp (ι R))
     fun _ hx => by
-      simpa [Ideal.Quotient.eq_zero_iff_mem] using
-        ι_mem_degreeFiltration_of_mem_degreeIdeal ℒ d hneg hx
+      simpa [Ideal.Quotient.eq_zero_iff_mem] using ι_mem_degreeFiltration_of_mem_degreeIdeal ℒ d hx
 
 /-- `truncatedLieToU` sends the quotient class of `x : L` to the class of `ι R x`. -/
-@[simp]
-theorem truncatedLieToU_mk (k : ℕ) (x : L) :
-    truncatedLieToU ℒ d hneg k (LieSubmodule.Quotient.mk x) =
-      Ideal.Quotient.mk ((degreeFiltration ℒ d.degree hneg).ideal (k + 1)) (ι R x) := by
-  simp [truncatedLieToU]
+@[simp] theorem truncatedLieToU_mk (k : ℕ) (x : L) :
+    truncatedLieToU ℒ d k (LieSubmodule.Quotient.mk x) =
+      Ideal.Quotient.mk ((F).ideal (k + 1)) (ι R x) := by simp [truncatedLieToU]
 
 /-- `truncatedLieToU` sends `(d.degreeIdeal ℒ k).mkQ x` to the class of `ι R x`. -/
 theorem truncatedLieToU_mkQ (k : ℕ) (x : L) :
-    truncatedLieToU ℒ d hneg k ((d.degreeIdeal ℒ k).mkQ x) =
-      Ideal.Quotient.mk ((degreeFiltration ℒ d.degree hneg).ideal (k + 1)) (ι R x) := by
-  simp [LieIdeal.mkQ_apply]
+    truncatedLieToU ℒ d k ((d.degreeIdeal ℒ k).mkQ x) =
+      Ideal.Quotient.mk ((F).ideal (k + 1)) (ι R x) := by simp [LieIdeal.mkQ_apply]
 
 /-- The finite-order maps `truncatedLieToU` commute with the quotient tower transitions. -/
 theorem factor_truncatedLieToU {k m : ℕ} (h : k ≤ m) (z : d.truncatedLie ℒ m) :
-    Ideal.Quotient.factor
-        ((degreeFiltration ℒ d.degree hneg).antitone (Nat.add_le_add_right h 1))
-        (truncatedLieToU ℒ d hneg m z) =
-      truncatedLieToU ℒ d hneg k (LieIdeal.factor (d.degreeIdeal_antitone ℒ h) z) := by
+    Ideal.Quotient.factor ((F).antitone (Nat.add_le_add_right h 1)) (truncatedLieToU ℒ d m z) =
+      truncatedLieToU ℒ d k (LieIdeal.factor (d.degreeIdeal_antitone ℒ h) z) := by
   obtain ⟨x, rfl⟩ := (d.degreeIdeal ℒ m).surjective_mkQ z
   simp [LieIdeal.mkQ_apply, LieIdeal.factor_apply]
 
 /-- When `ι R : L → U(L)` is injective, each `truncatedLieToU` is injective. -/
 theorem truncatedLieToU_injective (hι : Function.Injective (ι R : L → U)) (k : ℕ) :
-    Function.Injective (truncatedLieToU ℒ d hneg k) := by
+    Function.Injective (truncatedLieToU ℒ d k) := by
   rw [truncatedLieToU, LieIdeal.liftQ_injective_iff]
   intro x hx
   have hmem : x ∈ TauCeti.DirectSum.degreeTail ℒ d.degree (k + 1) := by
-    rw [← comap_degreeFiltration_ι ℒ d.degree hneg hι (k + 1)]
-    simpa [Ideal.Quotient.eq_zero_iff_mem] using hx
+    rw [← comap_degreeFiltration_ι ℒ d.degree
+      (fun n hn => d.eq_bot_of_degree_nonpos ℒ n (le_of_lt hn)) hι (k + 1)]
+    simpa only [LieHom.mem_ker, LieHom.comp_apply, AlgHom.toLieHom_apply, Ideal.Quotient.mkₐ_eq_mk,
+      Ideal.Quotient.eq_zero_iff_mem, Submodule.mem_comap, Submodule.restrictScalars_mem,
+      LieHom.coe_toLinearMap] using hx
   exact (d.mem_degreeIdeal_iff ℒ).mpr fun n hn =>
     (TauCeti.DirectSum.mem_degreeTail_iff ℒ d.degree).mp hmem n (by omega)
 
 /-- The completed Lie homomorphism from `d.completedLie ℒ` to the degree completion of `U(L)`,
 assembled from `truncatedLieToU`. -/
-noncomputable def completedLieToU :
-    d.completedLie ℒ →ₗ⁅R⁆ (degreeFiltration ℒ d.degree hneg).completion :=
-  ((degreeFiltration ℒ d.degree hneg).liftₐ
-    (fun k => lift R ((truncatedLieToU ℒ d hneg k).comp
+noncomputable def completedLieToU : d.completedLie ℒ →ₗ⁅R⁆ (F).completion :=
+  ((F).liftₐ
+    (fun k => lift R ((truncatedLieToU ℒ d k).comp
       (LieIdeal.completionProjection (d.degreeIdeal ℒ) (d.degreeIdeal_antitone ℒ) k)))
     (by
-      intro k m h
-      apply _root_.UniversalEnvelopingAlgebra.hom_ext
-      ext z
+      intro k m h; apply _root_.UniversalEnvelopingAlgebra.hom_ext; ext z
       simp only [LieHom.coe_comp, Function.comp_apply, AlgHom.coe_toLieHom, AlgHom.comp_apply,
         lift_ι_apply, Ideal.Quotient.factorₐ_apply]
-      exact (factor_truncatedLieToU ℒ d hneg h _).trans (congrArg (truncatedLieToU ℒ d hneg k)
+      exact (factor_truncatedLieToU ℒ d h _).trans (congrArg (truncatedLieToU ℒ d k)
         (LieIdeal.factor_completionProjection (d.degreeIdeal ℒ)
           (d.degreeIdeal_antitone ℒ) h z)))).toLieHom.comp (ι R)
 
 /-- Projecting `completedLieToU z` to order `k` applies `truncatedLieToU k` to the order-`k` Lie
 projection of `z`. -/
-@[simp]
-theorem projection_completedLieToU (k : ℕ) (z : d.completedLie ℒ) :
-    (degreeFiltration ℒ d.degree hneg).projection k (completedLieToU ℒ d hneg z) =
-      truncatedLieToU ℒ d hneg k
+@[simp] theorem projection_completedLieToU (k : ℕ) (z : d.completedLie ℒ) :
+    (F).projection k (completedLieToU ℒ d z) =
+      truncatedLieToU ℒ d k
         (LieIdeal.completionProjection (d.degreeIdeal ℒ) (d.degreeIdeal_antitone ℒ) k z) := by
   simp [completedLieToU]
 
 /-- On canonical images from `L`, `completedLieToU` agrees with `ι R` followed by `toCompletion`. -/
-@[simp]
-theorem completedLieToU_toCompletion (x : L) :
-    completedLieToU ℒ d hneg
+@[simp] theorem completedLieToU_toCompletion (x : L) :
+    completedLieToU ℒ d
         (LieIdeal.toCompletion (d.degreeIdeal ℒ) (d.degreeIdeal_antitone ℒ) x) =
-      (degreeFiltration ℒ d.degree hneg).toCompletion (ι R x) :=
-  (degreeFiltration ℒ d.degree hneg).completion_ext fun _ => by simp
+      (F).toCompletion (ι R x) := (F).completion_ext fun _ => by simp
 
 /-- Every element in the image of `completedLieToU` is completed primitive. -/
-theorem isCompletedPrimitive_completedLieToU (z : d.completedLie ℒ) :
-    (degreeFiltration ℒ d.degree hneg).IsCompletedPrimitive R (completedLieToU ℒ d hneg z) := by
+@[simp] theorem isCompletedPrimitive_completedLieToU (z : d.completedLie ℒ) :
+    (F).IsCompletedPrimitive R (completedLieToU ℒ d z) := by
   classical
   rw [AlgFiltration.isCompletedPrimitive_iff_includeCompletion]
-  refine ((degreeFiltration ℒ d.degree hneg).tensorProduct R
-    (degreeFiltration ℒ d.degree hneg)).completion_ext fun k => ?_
+  refine ((F).tensorProduct R (F)).completion_ext fun k => ?_
   let s : L := ∑ n ∈ (d.finite_cutoff k).toFinset,
     (d.completionComponent ℒ (fun m => (d.degreeIdeal ℒ m).toSubmodule)
       (fun _ _ h => (LieSubmodule.toSubmodule_le_toSubmodule _ _).mpr (d.degreeIdeal_antitone ℒ h))
       (fun m => d.degreeIdeal_toSubmodule ℒ m) n z : L)
-  have hproj : (degreeFiltration ℒ d.degree hneg).projection k (completedLieToU ℒ d hneg z) =
-      (degreeFiltration ℒ d.degree hneg).projection k
-        ((degreeFiltration ℒ d.degree hneg).toCompletion (ι R s)) := by
+  have hproj : (F).projection k (completedLieToU ℒ d z) =
+      (F).projection k ((F).toCompletion (ι R s)) := by
     rw [projection_completedLieToU, d.completionProjection_eq_sum_completionComponent ℒ k z,
       truncatedLieToU_mkQ, AlgFiltration.projection_toCompletion]
-  have hs_prim : (degreeFiltration ℒ d.degree hneg).IsCompletedPrimitive R
-      ((degreeFiltration ℒ d.degree hneg).toCompletion (ι R s)) :=
-    (degreeFiltration ℒ d.degree hneg).isCompletedPrimitive_toCompletion (isPrimitiveElem_ι R L s)
+  have hs_prim : (F).IsCompletedPrimitive R ((F).toCompletion (ι R s)) :=
+    (F).isCompletedPrimitive_toCompletion (isPrimitiveElem_ι R L s)
   rw [AlgFiltration.isCompletedPrimitive_iff_includeCompletion] at hs_prim
-  have hs := congrArg (((degreeFiltration ℒ d.degree hneg).tensorProduct R
-    (degreeFiltration ℒ d.degree hneg)).projection k) hs_prim
+  have hs := congrArg (((F).tensorProduct R (F)).projection k) hs_prim
   simpa only [AlgFiltration.projection_completedCoproduct, map_add,
     AlgFiltration.projection_includeLeftCompletion,
     AlgFiltration.projection_includeRightCompletion, hproj] using hs
 
-/-- Every element in the image of `completedLieToU` lies in `F.completionIdeal 1`. -/
+/-- Every element in the image of `completedLieToU` lies in `(F).completionIdeal 1`. -/
 theorem completedLieToU_mem_completionIdeal_one (z : d.completedLie ℒ) :
-    completedLieToU ℒ d hneg z ∈ (degreeFiltration ℒ d.degree hneg).completionIdeal 1 :=
-  (isCompletedPrimitive_completedLieToU ℒ d hneg z).mem_completionIdeal_one
-    (ker_counitAlgHom_le_positiveDegreeFiltration_one ℒ d hneg)
+    completedLieToU ℒ d z ∈ (F).completionIdeal 1 :=
+  (isCompletedPrimitive_completedLieToU ℒ d z).mem_completionIdeal_one
+    (ker_counitAlgHom_le_degreeFiltration_one_of_isPositiveGrading ℒ d)
 
 /-- When `ι R : L → U(L)` is injective, `completedLieToU` is injective. -/
 theorem completedLieToU_injective (hι : Function.Injective (ι R : L → U)) :
-    Function.Injective (completedLieToU ℒ d hneg) := fun _ _ hz =>
+    Function.Injective (completedLieToU ℒ d) := fun _ _ hz =>
   LieIdeal.completion_ext (d.degreeIdeal ℒ) (d.degreeIdeal_antitone ℒ) fun k =>
-    truncatedLieToU_injective ℒ d hneg hι k <| by
-      simpa only [projection_completedLieToU] using
-        congrArg ((degreeFiltration ℒ d.degree hneg).projection k) hz
+    truncatedLieToU_injective ℒ d hι k <| by
+      simpa only [projection_completedLieToU] using congrArg ((F).projection k) hz
 
 end PositiveGrading
 

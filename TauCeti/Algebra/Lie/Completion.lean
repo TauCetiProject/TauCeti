@@ -139,6 +139,9 @@ noncomputable def completionProjection (k : ℕ) : completion I hI →ₗ⁅R⁆
   __ := projectionLinear I hI k
   map_lie' := projectionLinear_bracket I hI k _ _
 
+private theorem completionProjection_apply (k : ℕ) (x : completion I hI) :
+    completionProjection I hI k x = projectionLinear I hI k x := rfl
+
 /-- Completed Lie elements are determined by their quotient projections. -/
 @[ext]
 theorem completion_ext {x y : completion I hI}
@@ -247,7 +250,7 @@ theorem toCompletion_toLinearMap :
 theorem completionProjection_of_representative (k : ℕ) (x : completion I hI) (a : L)
     (ha : ModuleTower.quotientsπ Js hs k a = (ModuleTower.quotients Js hs).limπ k x) :
     completionProjection I hI k x = (I k).mkQ a := by
-  change projectionLinear I hI k x = (I k).mkQ a
+  rw [completionProjection_apply]
   simp only [projectionLinear, LinearMap.comp_apply, LinearEquiv.coe_coe, ← ha,
     quotientEquiv_π, LieIdeal.mkQ_apply]
 

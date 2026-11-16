@@ -22,10 +22,10 @@ freeness, or commutativity of `A` or `B` is assumed.
 
 ## Main results
 
-* `TauCeti.DirectSum.tensorFiltrationTail_degreeTail_eq`: the total-degree tensor filtration tail
-  of two nonnegative degree tails is the bidegree tail for the sum of the two degree functions.
 * `TauCeti.GradedAlgebra.tensorProduct_ext`: tensors in a tensor product of graded algebras are
   determined by their bidegree projections.
+* `TauCeti.GradedAlgebra.map_proj_eq_zero_of_mem_ne`: a bidegree projection vanishes on any
+  pure-degree tensor summand of a different bidegree.
 * `TauCeti.GradedAlgebra.mem_tensorProduct_degreeFiltration_ideal_iff`: membership in the
   total-degree tensor ideal is the vanishing of all bidegree projections below the cutoff.
 -/
@@ -33,48 +33,6 @@ freeness, or commutativity of `A` or `B` is assumed.
 public section
 
 open scoped TensorProduct
-
-namespace TauCeti.DirectSum
-
-variable {R M N ι κ : Type*} [CommSemiring R]
-  [AddCommMonoid M] [Module R M] [AddCommMonoid N] [Module R N]
-
-/-- The total-degree tensor filtration tail of two nonnegative degree tails is the degree tail of
-the bidegree tensor summands with respect to total degree. -/
-theorem tensorFiltrationTail_degreeTail_eq
-    (ℳ : ι → Submodule R M) (dM : ι → ℤ) (hnegM : ∀ i, dM i < 0 → ℳ i = ⊥)
-    (𝓝 : κ → Submodule R N) (dN : κ → ℤ) (hnegN : ∀ j, dN j < 0 → 𝓝 j = ⊥) (k : ℕ) :
-    tensorFiltrationTail (degreeTail ℳ dM) (degreeTail 𝓝 dN) k =
-      degreeTail (fun p : ι × κ => Submodule.map₂ (TensorProduct.mk R M N) (ℳ p.1) (𝓝 p.2))
-        (fun p => dM p.1 + dN p.2) k := by
-  let 𝒯 : ι × κ → Submodule R (M ⊗[R] N) :=
-    fun p => Submodule.map₂ (TensorProduct.mk R M N) (ℳ p.1) (𝓝 p.2)
-  let δ : ι × κ → ℤ := fun p => dM p.1 + dN p.2
-  apply le_antisymm
-  · refine (tensorFiltrationTail_le_iff _ _).mpr fun a b hab => ?_
-    have hstep (j : κ) (hj : (b : ℤ) ≤ dN j) {y : N} (hy : y ∈ 𝓝 j) :
-        degreeTail ℳ dM a ≤ (degreeTail 𝒯 δ k).comap ((TensorProduct.mk R M N).flip y) := by
-      simp only [degreeTail_def, iSup_le_iff]; intro i hi x hx
-      simpa only [Submodule.mem_comap, LinearMap.flip_apply, degreeTail_def] using
-        le_degreeTail 𝒯 δ (n := k) (i := (i, j)) (by dsimp [δ]; omega)
-          (Submodule.apply_mem_map₂ _ hx hy)
-    intro x hx y hy
-    refine (?_ : degreeTail 𝓝 dN b ≤ (degreeTail 𝒯 δ k).comap (TensorProduct.mk R M N x)) hy
-    simp only [degreeTail_def, iSup_le_iff]
-    intro j hj z hz
-    simpa only [Submodule.mem_comap, LinearMap.flip_apply, degreeTail_def] using hstep j hj hz hx
-  · simp only [degreeTail_def, iSup_le_iff, Prod.forall, Submodule.map₂_le, TensorProduct.mk_apply]
-    intro i j hij x hx y hy
-    by_cases hi : dM i < 0
-    · obtain rfl : x = 0 := by simpa only [hnegM i hi, Submodule.mem_bot] using hx
-      simp
-    by_cases hj : dN j < 0
-    · obtain rfl : y = 0 := by simpa only [hnegN j hj, Submodule.mem_bot] using hy
-      simp
-    exact tmul_mem_tensorFiltrationTail _ _ (a := (dM i).toNat) (b := (dN j).toNat) (by omega)
-      (le_degreeTail ℳ dM (by omega) hx) (le_degreeTail 𝓝 dN (by omega) hy)
-
-end TauCeti.DirectSum
 
 namespace TauCeti.GradedAlgebra
 
@@ -138,7 +96,7 @@ theorem tensorProduct_ext {t s : A ⊗[R] B}
     ((h i j).trans (coe_decompose_tensorProduct 𝒜 ℬ s i j).symm)
 
 /-- A bidegree projection vanishes on any pure-degree tensor summand of a different bidegree. -/
-theorem tensorProduct_proj_eq_zero_of_mem {p : ι × κ} {t : A ⊗[R] B}
+theorem map_proj_eq_zero_of_mem_ne {p : ι × κ} {t : A ⊗[R] B}
     (ht : t ∈ Submodule.map₂ (TensorProduct.mk R A B) (𝒜 p.1) (ℬ p.2))
     {i : ι} {j : κ} (hp : p ≠ (i, j)) :
     TensorProduct.map (_root_.GradedAlgebra.proj 𝒜 i) (_root_.GradedAlgebra.proj ℬ j) t = 0 := by
