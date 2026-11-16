@@ -120,14 +120,16 @@ theorem addOrderOf_glueLabelEquiv (t : DynkinType) (ht : t.IsSimplyLaced)
   | D n =>
     simp only [glueLabelCount] at ha
     rcases Nat.even_or_odd n with hn | hn
-    · let e := (FiniteQuadraticModule.Isometry.ofEq (glueAlphabet_D_of_even n ht hn)).toAddEquiv
-      rw [← e.addOrderOf_eq, show e _ = _ from glueLabelEquiv_D_of_even n ht hn ⟨a, ha⟩]
+    · let e := FiniteQuadraticModule.Isometry.ofEq (glueAlphabet_D_of_even n ht hn)
+      rw [← addOrderOf_injective (AddMonoidHom.ofClass e) (EquivLike.injective e),
+        AddMonoidHom.coe_ofClass, glueLabelEquiv_D_of_even n ht hn]
       -- The carrier of the Klein four model is `ZMod 2 × ZMod 2` by definition.
       refine (Prod.addOrderOf_mk (a := ((a / 2 : ℕ) : ZMod 2)) (b := ((a % 2 : ℕ) : ZMod 2))).trans
         ?_
       interval_cases a <;> simp [hn, ZMod.addOrderOf_one]
-    · let e := (FiniteQuadraticModule.Isometry.ofEq (glueAlphabet_D_of_odd n ht hn)).toAddEquiv
-      rw [← e.addOrderOf_eq, show e _ = _ from glueLabelEquiv_D_of_odd n ht hn ⟨a, ha⟩]
+    · let e := FiniteQuadraticModule.Isometry.ofEq (glueAlphabet_D_of_odd n ht hn)
+      rw [← addOrderOf_injective (AddMonoidHom.ofClass e) (EquivLike.injective e),
+        AddMonoidHom.coe_ofClass, glueLabelEquiv_D_of_odd n ht hn]
       -- The carrier of the odd model is `ZMod 4` by definition.
       refine (ZMod.addOrderOf_coe a four_ne_zero).trans ?_
       interval_cases a <;> simp [Nat.not_even_iff_odd.mpr hn]
@@ -304,17 +306,17 @@ private theorem exists_intCast_eq_glueLabelPairing_sub (t : DynkinType) {a b : �
 
 /-- **The discriminant pairing of the classes of two labels is the Conway--Sloane value**
 `glueLabelPairing a b`, reduced modulo `ℤ`. -/
+@[simp]
 theorem pairing_glueLabelEquiv (t : DynkinType) (ht : t.IsSimplyLaced)
     (a b : Fin t.glueLabelCount) :
     (t.glueAlphabet ht).toFiniteBilinearModule.pairing (t.glueLabelEquiv ht a)
         (t.glueLabelEquiv ht b) = (t.glueLabelPairing a b : AddCircle (1 : ℚ)) := by
-  rw [← FiniteQuadraticModule.polar_eq_pairing, QuadraticMap.polar,
-    ← glueLabelEquiv_glueLabelAdd, quadratic_glueAlphabet_eq_glueMinimum_div_two,
-    quadratic_glueAlphabet_eq_glueMinimum_div_two, quadratic_glueAlphabet_eq_glueMinimum_div_two,
-    glueMinimum_glueLabelEquiv, glueMinimum_glueLabelEquiv, glueMinimum_glueLabelEquiv,
-    ← AddCircle.coe_sub, ← AddCircle.coe_sub, eq_comm, ← sub_eq_zero, ← AddCircle.coe_sub,
-    AddCircle.coe_eq_zero_iff]
+  rw [← FiniteQuadraticModule.polar_eq_pairing, QuadraticMap.polar, ← glueLabelEquiv_glueLabelAdd]
+  simp only [quadratic_glueAlphabet_eq_glueMinimum_div_two, glueMinimum_glueLabelEquiv,
+    ← AddCircle.coe_sub]
+  -- Both sides are classes of rationals that differ by an integer.
   obtain ⟨k, hk⟩ := t.exists_intCast_eq_glueLabelPairing_sub a.isLt b.isLt
+  rw [eq_comm, ← sub_eq_zero, ← AddCircle.coe_sub, AddCircle.coe_eq_zero_iff]
   exact ⟨k, by rw [zsmul_eq_mul, mul_one, hk]; ring⟩
 
 end TauCeti.DynkinType
