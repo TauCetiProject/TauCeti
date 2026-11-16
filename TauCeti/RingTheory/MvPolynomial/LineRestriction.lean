@@ -9,6 +9,9 @@ public import Mathlib.RingTheory.Polynomial.Basic
 public import TauCeti.Algebra.Polynomial.BigOperators
 public import Mathlib.RingTheory.MvPolynomial.Homogeneous
 
+import Mathlib.Algebra.MvPolynomial.Funext
+import TauCeti.RingTheory.MvPolynomial.Homogeneous
+
 /-!
 # Top coefficients of affine line restrictions
 
@@ -16,7 +19,10 @@ Restricting a multivariate polynomial to an affine line does not increase its to
 Its coefficient in the original top degree is the top homogeneous component evaluated at
 the direction, independently of the starting point. The coefficient homomorphism may take
 values in another commutative semiring, so the starting point can itself consist of polynomial
-variables. This gives constant leading coefficients for generic shears.
+variables. This gives constant leading coefficients for generic shears. Over an infinite
+integral domain, a single direction through the origin simultaneously keeps the line
+restrictions of finitely many nonzero polynomials nonzero
+(`MvPolynomial.exists_forall_aeval_C_mul_X_ne_zero`).
 -/
 
 public section
@@ -24,6 +30,8 @@ public section
 namespace MvPolynomial
 
 open scoped BigOperators
+
+section CommSemiring
 
 variable {σ R S : Type*} [CommSemiring R] [CommSemiring S]
 
@@ -223,5 +231,38 @@ theorem leadingCoeff_shearToPolynomial_of_eval_ne_zero
     coeff_shearToPolynomial_totalDegree]
 
 end Shear
+
+end CommSemiring
+
+section InfiniteDomain
+
+variable {σ R : Type*} [CommRing R] [IsDomain R] [Infinite R]
+
+/-- Over an infinite integral domain, a single direction through the origin simultaneously keeps
+the line restrictions of finitely many nonzero polynomials nonzero. Zero polynomials in the
+family are ignored, and the empty family imposes no condition on the direction. -/
+theorem exists_forall_aeval_C_mul_X_ne_zero {ι : Type*} (s : Finset ι)
+    (p : ι → MvPolynomial σ R) :
+    ∃ v : σ → R, ∀ i ∈ s, p i ≠ 0 →
+      aeval (fun j ↦ Polynomial.C (v j) * Polynomial.X) (p i) ≠ 0 := by
+  classical
+  let H (i : ι) : MvPolynomial σ R :=
+    if p i = 0 then 1 else homogeneousComponent (p i).totalDegree (p i)
+  have hH (i : ι) : H i ≠ 0 := by
+    by_cases hi : p i = 0
+    · simp [H, hi]
+    · simpa [H, hi] using (p i).homogeneousComponent_totalDegree_ne_zero hi
+  have hprod : ∏ i ∈ s, H i ≠ 0 := Finset.prod_ne_zero_iff.2 fun i _ ↦ hH i
+  obtain ⟨v, hv⟩ : ∃ v, eval v (∏ i ∈ s, H i) ≠ 0 := by
+    by_contra! h
+    exact hprod (MvPolynomial.funext h)
+  have hv' : ∀ i ∈ s, eval v (H i) ≠ 0 := by
+    simpa only [map_prod, Finset.prod_ne_zero_iff] using hv
+  refine ⟨v, fun i hi hpi hzero ↦ ?_⟩
+  have hcoeff := congrArg (fun q : Polynomial R ↦ q.coeff (p i).totalDegree) hzero
+  rw [coeff_aeval_C_mul_X, Polynomial.coeff_zero] at hcoeff
+  exact hv' i hi (by simpa [H, hpi] using hcoeff)
+
+end InfiniteDomain
 
 end MvPolynomial

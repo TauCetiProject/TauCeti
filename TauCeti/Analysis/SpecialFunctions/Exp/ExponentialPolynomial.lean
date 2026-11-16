@@ -320,16 +320,24 @@ theorem sum_eval_mul_cexp_eq_zero_iff {s : Finset ℂ} {p : ℂ → ℂ[X]} :
       ∀ c ∈ s, p c = 0 :=
   sum_eval_mul_cexp_eq_zero_iff_of_injOn (fun _ _ _ _ ↦ id)
 
+/-- Uniqueness of polynomial coefficients in a univariate complex exponential polynomial expansion
+with pairwise distinct frequencies on `s`. -/
+theorem sum_eval_mul_cexp_eq_iff_of_injOn {ι : Type*} {s : Finset ι} {γ : ι → ℂ}
+    (hγ : Set.InjOn γ s) {p q : ι → ℂ[X]} :
+    (∀ z : ℂ, ∑ i ∈ s, (p i).eval z * Complex.exp (γ i * z) =
+      ∑ i ∈ s, (q i).eval z * Complex.exp (γ i * z)) ↔ ∀ i ∈ s, p i = q i := by
+  constructor
+  · intro h
+    have hz : ∀ z : ℂ, ∑ i ∈ s, (p i - q i).eval z * Complex.exp (γ i * z) = 0 := fun z ↦ by
+      simp only [eval_sub, sub_mul, sum_sub_distrib, h z, sub_self]
+    exact fun i hi ↦ sub_eq_zero.1 (eq_zero_of_sum_eval_mul_cexp_eq_zero_of_injOn hγ hz i hi)
+  · exact fun h z ↦ sum_congr rfl fun i hi ↦ by rw [h i hi]
+
 /-- Uniqueness of polynomial coefficients in a univariate complex exponential polynomial
 expansion. -/
 theorem sum_eval_mul_cexp_eq_iff {s : Finset ℂ} {p q : ℂ → ℂ[X]} :
     (∀ z : ℂ, ∑ c ∈ s, (p c).eval z * Complex.exp (c * z) =
-      ∑ c ∈ s, (q c).eval z * Complex.exp (c * z)) ↔ ∀ c ∈ s, p c = q c := by
-  constructor
-  · intro h
-    have hz : ∀ z : ℂ, ∑ c ∈ s, (p c - q c).eval z * Complex.exp (c * z) = 0 := fun z ↦ by
-      simp only [eval_sub, sub_mul, sum_sub_distrib, h z, sub_self]
-    exact fun c hc ↦ sub_eq_zero.1 (eq_zero_of_sum_eval_mul_cexp_eq_zero hz c hc)
-  · exact fun h z ↦ sum_congr rfl fun c hc ↦ by rw [h c hc]
+      ∑ c ∈ s, (q c).eval z * Complex.exp (c * z)) ↔ ∀ c ∈ s, p c = q c :=
+  sum_eval_mul_cexp_eq_iff_of_injOn (fun _ _ _ _ ↦ id)
 
 end TauCeti
