@@ -26,9 +26,8 @@ continuous real representative `BesselPotentialSpace.continuousRep F`
 (`BesselPotentialSpace.coeFn_inclusionLp_ae_eq_continuousRep`,
 `BesselPotentialSpace.continuousRep_eq_of_ae_eq`), by the Sobolev embedding into continuous
 functions. It lies in the real `H^s` functions `TemperedDistribution.realSobolevFunctions E s 2`
-and is `ℝ`-linear in `F` (`BesselPotentialSpace.continuousRep_add`,
-`BesselPotentialSpace.continuousRep_smul`), and it determines `F`
-(`BesselPotentialSpace.continuousRep_injective`).
+and is `ℝ`-linear in `F` (`BesselPotentialSpace.continuousRep` is a linear map), and it
+determines `F` (`BesselPotentialSpace.continuousRep_injective`).
 -/
 
 public section
@@ -96,24 +95,50 @@ theorem exists_continuous_ae_eq_of_mem_realSubmodule (hs : finrank ℝ E < 2 * s
   rw [hz]
   exact Complex.ext rfl (by simpa using congrFun him z)
 
+/-- Two continuous real representatives of the same element of `H^s(E)` agree. -/
+private theorem eq_of_ae_eq_of_ae_eq {h : 0 ≤ s} {F : H^{s}(E)} {f g : E → ℝ}
+    (hf : Continuous f) (hg : Continuous g)
+    (hFf : inclusionLp h F =ᵐ[volume] fun z ↦ (f z : ℂ))
+    (hFg : inclusionLp h F =ᵐ[volume] fun z ↦ (g z : ℂ)) : f = g := by
+  refine (Continuous.ae_eq_iff_eq volume hf hg).1 ?_
+  filter_upwards [hFf.symm.trans hFg] with z hz
+  exact_mod_cast hz
+
 variable {h : 0 ≤ s}
 
 open Classical in
-/-- **The continuous representative of a real element** `F ∈ H^s(E)`: above the Sobolev
-threshold `s > dim E / 2`, the continuous real function whose values agree almost everywhere with
-the `L²` function of `F` (`coeFn_inclusionLp_ae_eq_continuousRep`). It is unique
-(`continuousRep_eq_of_ae_eq`). If `F` has no continuous representative, which can only happen
-below the threshold, it is the junk value `0`. -/
-def continuousRep (F : realSubmodule E h) : E → ℝ :=
-  if hF : ∃ f : E → ℝ, Continuous f ∧ inclusionLp h (F : H^{s}(E)) =ᵐ[volume] fun z ↦ (f z : ℂ)
-  then hF.choose else 0
+/-- **The continuous representative of a real element** `F ∈ H^s(E)`, as an `ℝ`-linear map:
+above the Sobolev threshold `s > dim E / 2`, the continuous real function whose values agree
+almost everywhere with the `L²` function of `F` (`coeFn_inclusionLp_ae_eq_continuousRep`). It is
+unique (`continuousRep_eq_of_ae_eq`). Below the threshold, where `F` need not have a continuous
+representative, it is the junk value `0`. -/
+def continuousRep : realSubmodule E h →ₗ[ℝ] (E → ℝ) :=
+  if hs : finrank ℝ E < 2 * s then
+    { toFun F := (exists_continuous_ae_eq_of_mem_realSubmodule hs F).choose
+      map_add' F G := by
+        have hF := (exists_continuous_ae_eq_of_mem_realSubmodule hs F).choose_spec
+        have hG := (exists_continuous_ae_eq_of_mem_realSubmodule hs G).choose_spec
+        have hFG := (exists_continuous_ae_eq_of_mem_realSubmodule hs (F + G)).choose_spec
+        refine eq_of_ae_eq_of_ae_eq hFG.1 (hF.1.add hG.1) hFG.2 ?_
+        rw [Submodule.coe_add, map_add]
+        filter_upwards [Lp.coeFn_add (inclusionLp h (F : H^{s}(E))) (inclusionLp h (G : H^{s}(E))),
+          hF.2, hG.2] with z hz hFz hGz
+        rw [hz, Pi.add_apply, hFz, hGz, Pi.add_apply, Complex.ofReal_add]
+      map_smul' c F := by
+        have hF := (exists_continuous_ae_eq_of_mem_realSubmodule hs F).choose_spec
+        have hcF := (exists_continuous_ae_eq_of_mem_realSubmodule hs (c • F)).choose_spec
+        refine eq_of_ae_eq_of_ae_eq hcF.1 (hF.1.const_smul c) hcF.2 ?_
+        rw [Submodule.coe_smul, ← Complex.coe_smul, map_smul]
+        filter_upwards [Lp.coeFn_smul (c : ℂ) (inclusionLp h (F : H^{s}(E))), hF.2] with z hz hFz
+        rw [hz, Pi.smul_apply, hFz, RingHom.id_apply, Pi.smul_apply, smul_eq_mul, smul_eq_mul,
+          Complex.ofReal_mul] }
+  else 0
 
 private theorem continuousRep_spec (hs : finrank ℝ E < 2 * s) (F : realSubmodule E h) :
     Continuous (continuousRep F) ∧
       inclusionLp h (F : H^{s}(E)) =ᵐ[volume] fun z ↦ (continuousRep F z : ℂ) := by
-  have hF := exists_continuous_ae_eq_of_mem_realSubmodule hs F
-  simp only [continuousRep, hF, ↓reduceDIte]
-  exact hF.choose_spec
+  simp only [continuousRep, hs, ↓reduceDIte, LinearMap.coe_mk, AddHom.coe_mk]
+  exact (exists_continuous_ae_eq_of_mem_realSubmodule hs F).choose_spec
 
 theorem continuous_continuousRep (hs : finrank ℝ E < 2 * s) (F : realSubmodule E h) :
     Continuous (continuousRep F) :=
@@ -127,11 +152,9 @@ theorem coeFn_inclusionLp_ae_eq_continuousRep (hs : finrank ℝ E < 2 * s) (F : 
 theorem continuousRep_eq_of_ae_eq (hs : finrank ℝ E < 2 * s) {F : realSubmodule E h}
     {f : E → ℝ} (hf : Continuous f)
     (hF : inclusionLp h (F : H^{s}(E)) =ᵐ[volume] fun z ↦ (f z : ℂ)) :
-    continuousRep F = f := by
-  have hFf := (coeFn_inclusionLp_ae_eq_continuousRep hs F).symm.trans hF
-  refine (Continuous.ae_eq_iff_eq volume (continuous_continuousRep hs F) hf).1 ?_
-  filter_upwards [hFf] with z hz
-  exact_mod_cast hz
+    continuousRep F = f :=
+  eq_of_ae_eq_of_ae_eq (continuous_continuousRep hs F) hf
+    (coeFn_inclusionLp_ae_eq_continuousRep hs F) hF
 
 /-- Above the Sobolev threshold, a real element of `H^s(E)` is determined by its continuous
 representative. -/
@@ -148,38 +171,5 @@ theorem continuousRep_mem_realSobolevFunctions (hs : finrank ℝ E < 2 * s)
     (F : realSubmodule E h) : continuousRep F ∈ realSobolevFunctions E s 2 :=
   mem_realSobolevFunctions_of_ae_eq_ofReal (memSobolev_toLp_inclusion h (F : H^{s}(E)))
     (by simpa using coeFn_inclusionLp_ae_eq_continuousRep hs F)
-
-theorem continuousRep_add (hs : finrank ℝ E < 2 * s) (F G : realSubmodule E h) :
-    continuousRep (F + G) = continuousRep F + continuousRep G := by
-  refine continuousRep_eq_of_ae_eq hs
-    ((continuous_continuousRep hs F).add (continuous_continuousRep hs G)) ?_
-  rw [Submodule.coe_add, map_add]
-  filter_upwards [Lp.coeFn_add (inclusionLp h (F : H^{s}(E))) (inclusionLp h (G : H^{s}(E))),
-    coeFn_inclusionLp_ae_eq_continuousRep hs F, coeFn_inclusionLp_ae_eq_continuousRep hs G]
-    with z hz hF hG
-  rw [hz, Pi.add_apply, hF, hG, Pi.add_apply, Complex.ofReal_add]
-
-theorem continuousRep_zero (hs : finrank ℝ E < 2 * s) :
-    continuousRep (0 : realSubmodule E h) = 0 := by
-  refine continuousRep_eq_of_ae_eq hs continuous_const ?_
-  rw [Submodule.coe_zero, map_zero]
-  filter_upwards [Lp.coeFn_zero ℂ 2 (volume : Measure E)] with z hz
-  rw [hz, Pi.zero_apply, Pi.zero_apply, Complex.ofReal_zero]
-
-theorem continuousRep_smul (hs : finrank ℝ E < 2 * s) (c : ℝ) (F : realSubmodule E h) :
-    continuousRep (c • F) = c • continuousRep F := by
-  refine continuousRep_eq_of_ae_eq hs ((continuous_continuousRep hs F).const_smul c) ?_
-  rw [Submodule.coe_smul, ← Complex.coe_smul, map_smul]
-  filter_upwards [Lp.coeFn_smul (c : ℂ) (inclusionLp h (F : H^{s}(E))),
-    coeFn_inclusionLp_ae_eq_continuousRep hs F] with z hz hF
-  rw [hz, Pi.smul_apply, hF, Pi.smul_apply, smul_eq_mul, smul_eq_mul, Complex.ofReal_mul]
-
-theorem continuousRep_neg (hs : finrank ℝ E < 2 * s) (F : realSubmodule E h) :
-    continuousRep (-F) = -continuousRep F := by
-  rw [← neg_one_smul ℝ F, continuousRep_smul hs, neg_one_smul]
-
-theorem continuousRep_sub (hs : finrank ℝ E < 2 * s) (F G : realSubmodule E h) :
-    continuousRep (F - G) = continuousRep F - continuousRep G := by
-  rw [sub_eq_add_neg, continuousRep_add hs, continuousRep_neg hs, sub_eq_add_neg]
 
 end BesselPotentialSpace

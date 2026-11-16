@@ -75,11 +75,11 @@ def expGauge (hs : 1 < s) :
   map_zero_eq_one' := by
     rw [MulEquiv.symm_apply_eq, map_one]
     refine Subtype.ext (funext fun z ↦ ?_)
-    simp [continuousRep_zero (finrank_real_complex_lt_two_mul hs)]
+    simp
   map_add_eq_mul' F G := by
     rw [MulEquiv.symm_apply_eq, map_mul, MulEquiv.apply_symm_apply, MulEquiv.apply_symm_apply]
     refine Subtype.ext (funext fun z ↦ ?_)
-    simp [continuousRep_add (finrank_real_complex_lt_two_mul hs), Circle.exp_add]
+    simp [Circle.exp_add]
 
 /-- The gauge `expGauge hs F` is `z ↦ exp (i F(z))`, for the continuous representative of `F`. -/
 @[simp]
@@ -220,16 +220,22 @@ private theorem exists_forall_norm_subOne_lt (hs : 1 < s) {ε : ℝ} (hε : 0 < 
 /-- **The exponential is an open map** from the real phases to `G_s`: a homomorphism that is
 open at the identity, by `exists_forall_norm_subOne_lt`. -/
 theorem isOpenMap_expGauge (hs : 1 < s) : IsOpenMap (expGauge hs) := by
-  refine (IsTopologicalGroup.isOpenMap_iff_nhds_one (f := (expGauge hs).toMonoidHom)).2
-    fun U hU ↦ ?_
-  obtain ⟨ε, hε, hball⟩ := Metric.mem_nhds_iff.1 (mem_map.1 hU)
+  -- `expGauge hs` is the monoid homomorphism `(expGauge hs).toMonoidHom` on the multiplicative
+  -- copy of the phases, precomposed with `ofAdd`.
+  have hcomp : ⇑(expGauge hs) = (expGauge hs).toMonoidHom ∘ Multiplicative.ofAdd := by
+    ext F
+    rw [Function.comp_apply, AddChar.toMonoidHom_apply, toAdd_ofAdd]
+  rw [hcomp]
+  refine IsOpenMap.comp (IsTopologicalGroup.isOpenMap_iff_nhds_one.2 fun U hU ↦ ?_) isOpenMap_ofAdd
+  rw [← ofAdd_zero, nhds_ofAdd, map_map, ← hcomp, mem_map] at hU
+  obtain ⟨ε, hε, hball⟩ := Metric.mem_nhds_iff.1 hU
   obtain ⟨η, hη, hsmall⟩ := exists_forall_norm_subOne_lt hs hε
   have hnhds : {v : SobolevTopologicalGaugeGroup hs | ‖subOne v‖ < η} ∈ 𝓝 1 :=
     (isOpen_lt (continuous_norm.comp continuous_subOne) continuous_const).mem_nhds
       (by simpa using hη)
   refine mem_of_superset hnhds fun v hv ↦ ?_
   obtain ⟨F, hF, rfl⟩ := hsmall v hv
-  exact hball (show F ∈ Metric.ball 0 ε by simpa using hF)
+  exact hball (mem_ball_zero_iff.2 hF)
 
 /-- **The exponential is an open embedding** of the real phases into `G_s`: an injective,
 continuous and open homomorphism. Its image is the open subgroup of the gauges that have a global
