@@ -8,6 +8,7 @@ module
 public import TauCeti.Analysis.PDE.Vortex.Divisor
 public import TauCeti.Analysis.PDE.Vortex.FramedGauge.Limit
 public import TauCeti.Analysis.Sobolev.BesselPotential.Inclusion
+import TauCeti.Analysis.Normed.Lp.PiLp
 import TauCeti.Analysis.Sobolev.BesselPotential.Embedding
 
 /-!
@@ -202,34 +203,23 @@ theorem tendsto_iff {ι : Type*} {l : Filter ι} {xs : ι → SobolevFieldSpace 
 theorem t2Space (hs : 1 < s) : T2Space (SobolevFieldSpace f m s) :=
   (isEmbedding_subRef hs).t2Space
 
-/-- Maps into `EuclideanSpace ℝ κ` converge uniformly when each coordinate does. -/
-private theorem tendstoUniformly_of_forall_apply {ι κ α : Type*} {l : Filter ι}
-    {F : ι → α → EuclideanSpace ℝ κ} {g : α → EuclideanSpace ℝ κ}
-    (h : ∀ j, TendstoUniformly (fun i z ↦ F i z j) (fun z ↦ g z j) l) :
-    TendstoUniformly F g l := by
-  have hpi : TendstoUniformly (fun i z ↦ WithLp.ofLp (F i z)) (fun z ↦ WithLp.ofLp (g z)) l := by
-    have hj : Tendsto (fun i (j : κ) ↦ UniformFun.ofFun fun z ↦ F i z j) l
-        (𝓝 fun j ↦ UniformFun.ofFun fun z ↦ g z j) :=
-      tendsto_pi_nhds.2 fun j ↦ UniformFun.tendsto_iff_tendstoUniformly.2 (h j)
-    exact UniformFun.tendsto_iff_tendstoUniformly.1
-      ((UniformFun.uniformEquivPiComm α fun _ : κ ↦ ℝ).symm.continuous.tendsto _ |>.comp hj)
-  exact (PiLp.uniformContinuous_toLp 2 _).comp_tendstoUniformly hpi
-
 /-- **Convergence in `A_m^s`, `s > 1`, implies uniform convergence of the fields.** -/
 theorem tendstoUniformly_of_tendsto (hs : 1 < s) {ι : Type*} {l : Filter ι}
     {xs : ι → SobolevFieldSpace f m s} {x : SobolevFieldSpace f m s} (h : Tendsto xs l (𝓝 x)) :
     TendstoUniformly (fun i ↦ ⇑(xs i)) x l := by
   have hfin := finrank_real_complex_lt_two_mul hs
-  refine tendstoUniformly_of_forall_apply fun j ↦ ?_
+  refine PiLp.tendstoUniformly_iff.2 fun j ↦ ?_
   -- The `j`-th coordinate of `x - x_m` converges uniformly, by the Sobolev embedding.
   choose u hu hux hae using fun i ↦ exists_eq_subRef (xs i) j
   obtain ⟨v, hv, hvx, hvae⟩ := exists_eq_subRef x j
   have hj := tendstoUniformly_of_tendsto_toBesselPotentialSpace hfin hu hv
     (by simpa only [hux, hvx] using tendsto_iff.1 h j)
     (fun i ↦ continuous_ofReal_sub (xs i) j) (continuous_ofReal_sub x j) hae hvae
+  -- Complexifying and translating by `x_m` preserves distances.
+  have hdist (a b r : ℝ) : dist ((a - r : ℝ) : ℂ) ((b - r : ℝ) : ℂ) = dist a b := by
+    rw [Complex.isometry_ofReal.dist_eq, dist_sub_right]
   rw [Metric.tendstoUniformly_iff] at hj ⊢
-  simpa only [Complex.dist_eq, ← Complex.ofReal_sub, Complex.norm_real, ← dist_eq_norm,
-    dist_sub_right] using hj
+  simpa only [hdist] using hj
 
 /-- **Continuity of the divisor on `A_m^s`**, `s > 1`. If fields `xs i` converge to `x` in `A_m^s`,
 and the zero multiplicities of their sections are the counts of `E i` and of `D` in `Sym ℂ m`,

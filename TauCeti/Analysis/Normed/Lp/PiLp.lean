@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.Normed.Lp.PiLp
+import Mathlib.Topology.UniformSpace.UniformConvergenceTopology
 
 /-!
 # Comparisons of finite product norms and distances
@@ -31,6 +32,7 @@ vectors so obtained are those whose coordinates `j ≥ k` vanish.
 The finite sum against a zero-extended vector reduces to the sum over its original coordinates.
 Over an index type with at most one element, the `Lᵖ` norm is the norm of the coordinate.
 Reindexing the coordinates along the identity bijection is the identity.
+Maps into `PiLp p β` converge uniformly exactly when each coordinate does.
 
 ## Source
 
@@ -195,6 +197,27 @@ theorem preimage_ofLp_ball_subset_ball [Nonempty ι] (x : PiLp 2 β) (r : ℝ) :
     (mul_lt_mul_of_pos_left hy (Real.sqrt_pos.2 (Nat.cast_pos.2 Fintype.card_pos)))
 
 end PseudoMetricSpace
+
+section UniformSpace
+
+variable {β : ι → Type*} [∀ i, UniformSpace (β i)]
+
+omit [Fintype ι] in
+/-- Maps into `PiLp p β` converge uniformly exactly when each coordinate does. -/
+theorem tendstoUniformly_iff {κ α : Type*} {l : Filter κ} {F : κ → α → PiLp p β}
+    {g : α → PiLp p β} :
+    TendstoUniformly F g l ↔ ∀ i, TendstoUniformly (fun k z ↦ F k z i) (fun z ↦ g z i) l := by
+  refine ⟨fun h i ↦ ((Pi.uniformContinuous_proj β i).comp (uniformContinuous_ofLp p β))
+    |>.comp_tendstoUniformly h, fun h ↦ ?_⟩
+  have hpi : TendstoUniformly (fun k z ↦ WithLp.ofLp (F k z)) (fun z ↦ WithLp.ofLp (g z)) l := by
+    have hi : Filter.Tendsto (fun k (i : ι) ↦ UniformFun.ofFun fun z ↦ F k z i) l
+        (nhds fun i ↦ UniformFun.ofFun fun z ↦ g z i) :=
+      tendsto_pi_nhds.2 fun i ↦ UniformFun.tendsto_iff_tendstoUniformly.2 (h i)
+    exact UniformFun.tendsto_iff_tendstoUniformly.1
+      ((UniformFun.uniformEquivPiComm α β).symm.continuous.tendsto _ |>.comp hi)
+  exact (uniformContinuous_toLp p β).comp_tendstoUniformly hpi
+
+end UniformSpace
 
 end PiLp
 
