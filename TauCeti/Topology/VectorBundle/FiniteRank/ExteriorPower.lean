@@ -285,30 +285,28 @@ theorem exteriorPower_comp_pullbackFunctor (j : ℕ) (f : C(X, B)) :
 @[simp] theorem pullbackMap_exteriorPowerZeroIso_hom (A : FiniteRankBundleCore 𝕜 B)
     (f : C(X, B)) :
     pullbackMap (exteriorPowerZeroIso A).hom f = (exteriorPowerZeroIso (A.pullback f)).hom :=
-  hom_ext fun x => (fiberMap_pullbackMap _ _ _).trans <|
-    (fiberMap_exteriorPowerZeroIso_hom A (f x)).trans
-      (fiberMap_exteriorPowerZeroIso_hom (A.pullback f) x).symm
+  hom_ext fun x => by
+    simp only [fiberMap_pullbackMap, fiberMap_exteriorPowerZeroIso_hom]
+    -- `((exteriorPower 𝕜 B 0).obj A).pullback f` and `(trivial 𝕜 B 1).pullback f` coincide with
+    -- `(exteriorPower 𝕜 X 0).obj (A.pullback f)` and `trivial 𝕜 X 1` at default transparency.
+    exact (fiberMap_exteriorPowerZeroIso_hom (A.pullback f) x).symm
 
 @[simp] theorem pullbackMap_exteriorPowerZeroIso_inv (A : FiniteRankBundleCore 𝕜 B)
     (f : C(X, B)) :
     pullbackMap (exteriorPowerZeroIso A).inv f = (exteriorPowerZeroIso (A.pullback f)).inv :=
-  hom_ext fun x => (fiberMap_pullbackMap _ _ _).trans <|
-    (fiberMap_exteriorPowerZeroIso_inv A (f x)).trans
-      (fiberMap_exteriorPowerZeroIso_inv (A.pullback f) x).symm
+  hom_ext fun x => by
+    simp only [fiberMap_pullbackMap, fiberMap_exteriorPowerZeroIso_inv]
+    exact (fiberMap_exteriorPowerZeroIso_inv (A.pullback f) x).symm
 
 @[simp] theorem pullbackMap_exteriorPowerOneIso_hom (A : FiniteRankBundleCore 𝕜 B)
     (f : C(X, B)) :
     pullbackMap (exteriorPowerOneIso A).hom f = (exteriorPowerOneIso (A.pullback f)).hom :=
-  hom_ext fun x => (fiberMap_pullbackMap _ _ _).trans <|
-    (fiberMap_exteriorPowerOneIso_hom A (f x)).trans
-      (fiberMap_exteriorPowerOneIso_hom (A.pullback f) x).symm
+  pullbackMap_constIso_hom _ _ _ f
 
 @[simp] theorem pullbackMap_exteriorPowerOneIso_inv (A : FiniteRankBundleCore 𝕜 B)
     (f : C(X, B)) :
     pullbackMap (exteriorPowerOneIso A).inv f = (exteriorPowerOneIso (A.pullback f)).inv :=
-  hom_ext fun x => (fiberMap_pullbackMap _ _ _).trans <|
-    (fiberMap_exteriorPowerOneIso_inv A (f x)).trans
-      (fiberMap_exteriorPowerOneIso_inv (A.pullback f) x).symm
+  pullbackMap_constIso_inv _ _ _ f
 
 /-- Pulling back commutes strictly with forming the determinant line of a finite-rank core. -/
 @[simp] theorem pullback_det (A : FiniteRankBundleCore 𝕜 B) (f : C(X, B)) :

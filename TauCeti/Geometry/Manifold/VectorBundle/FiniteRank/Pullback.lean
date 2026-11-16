@@ -139,23 +139,6 @@ theorem lift_pullbackTotalSpaceDiffeomorph (IX : ModelWithCorners 𝕜 EX HX) (n
     Pullback.lift f (pullbackTotalSpaceDiffeomorph IX n A f p) = A.pullbackLift f p :=
   A.lift_pullbackHomeomorph f p
 
-/-- `pullbackTotalSpaceDiffeomorph` carries the core chart at `i` to Mathlib's pullback of the chart
-at `f i`. -/
-theorem pullbackTotalSpaceDiffeomorph_localTriv (IX : ModelWithCorners 𝕜 EX HX) (n : WithTop ℕ∞)
-    (A : FiniteRankBundleCore 𝕜 Y) (f : C(X, Y)) (i : X) (p : (A.pullback f).core.TotalSpace) :
-    (A.core.localTriv (f i)).pullback f (pullbackTotalSpaceDiffeomorph IX n A f p) =
-      (A.pullback f).core.localTriv i p :=
-  A.pullbackHomeomorph_localTriv f i p
-
-/-- `pullbackTotalSpaceDiffeomorph` intertwines pulled-back bundle morphisms with Mathlib's
-canonical lift to the original total space. -/
-theorem pullbackTotalSpaceDiffeomorph_naturality (IX : ModelWithCorners 𝕜 EX HX) (n : WithTop ℕ∞)
-    {A D : FiniteRankBundleCore 𝕜 Y} (a : A ⟶ D) (f : C(X, Y))
-    (p : (A.pullback f).core.TotalSpace) :
-    Pullback.lift f (pullbackTotalSpaceDiffeomorph IX n D f ((pullbackMap a f).totalSpaceMap p)) =
-      a.totalSpaceMap (Pullback.lift f (pullbackTotalSpaceDiffeomorph IX n A f p)) :=
-  pullbackHomeomorph_naturality a f p
-
 end MathlibPullback
 
 section PullbackRegularity
