@@ -94,7 +94,16 @@ theorem commutatorElement_kostantRootSubgroupPoints_of_lie_lie_eq
       kostantRootSubgroupPoints e h ρ M hM k hk p *
         kostantRootSubgroupPoints e h ρ M hM l hl q := by
   refine (LinearMap.GeneralLinearGroup.generalLinearEquiv A (A ⊗[ℤ] M)).injective ?_
-  simp only [map_commutatorElement, map_mul, generalLinearEquiv_kostantRootSubgroupPoints]
+  have hval {r : I} (hr) (x : WithConv (SymmetricAlgebra ℤ ℤ →ₐ[ℤ] A)) :
+      LinearMap.GeneralLinearGroup.generalLinearEquiv A (A ⊗[ℤ] M)
+          (kostantRootSubgroupPoints e h ρ M hM r hr x) =
+        baseChangeExpHom (ρ (ι ℚ (e r))) M
+          (fun n _ hv => dividedPower_apply_mem_of_kostantForm_apply_mem e h ρ hM r n hv) hr
+          (gaPointsMulEquiv x) :=
+    LinearEquiv.toLinearMap_inj.mp <| by
+      rw [LinearMap.GeneralLinearGroup.generalLinearEquiv_to_linearMap,
+        kostantRootSubgroupPoints_val, baseChangeExpHom_toLinearMap]
+  simp only [map_commutatorElement, map_mul, hval]
   rw [← ofAdd_toAdd (AdditiveGroup.gaPointsMulEquiv p), hp,
     ← ofAdd_toAdd (AdditiveGroup.gaPointsMulEquiv q), hq]
   exact commutatorElement_baseChangeExpHom_of_lie_lie_eq ρ M hij hiij hil hjk
@@ -148,7 +157,16 @@ theorem commutatorElement_kostantRootSubgroupPoints_of_lie_lie_rev_eq {i j k l :
       kostantRootSubgroupPoints e h ρ M hM k hk p *
         kostantRootSubgroupPoints e h ρ M hM l hl q := by
   refine (LinearMap.GeneralLinearGroup.generalLinearEquiv A (A ⊗[ℤ] M)).injective ?_
-  simp only [map_commutatorElement, map_mul, generalLinearEquiv_kostantRootSubgroupPoints]
+  have hval {r : I} (hr) (x : WithConv (SymmetricAlgebra ℤ ℤ →ₐ[ℤ] A)) :
+      LinearMap.GeneralLinearGroup.generalLinearEquiv A (A ⊗[ℤ] M)
+          (kostantRootSubgroupPoints e h ρ M hM r hr x) =
+        baseChangeExpHom (ρ (ι ℚ (e r))) M
+          (fun n _ hv => dividedPower_apply_mem_of_kostantForm_apply_mem e h ρ hM r n hv) hr
+          (gaPointsMulEquiv x) :=
+    LinearEquiv.toLinearMap_inj.mp <| by
+      rw [LinearMap.GeneralLinearGroup.generalLinearEquiv_to_linearMap,
+        kostantRootSubgroupPoints_val, baseChangeExpHom_toLinearMap]
+  simp only [map_commutatorElement, map_mul, hval]
   rw [← ofAdd_toAdd (gaPointsMulEquiv p), hp, ← ofAdd_toAdd (gaPointsMulEquiv q), hq]
   exact commutatorElement_baseChangeExpHom_of_lie_lie_rev_eq ρ M hij hjji hjl hik
     _ _ _ _ hi hj hk hl _ _
