@@ -483,6 +483,14 @@ private theorem ofMul_unitsMap_finiteLevelCoeffEquiv_symm
   (coe_finiteLevelCoeffHom L _).symm.trans <| by
     rw [finiteLevelCoeffHom_apply, AddEquiv.apply_symm_apply]
 
+section DiscreteUnits
+
+-- The discrete topology on `Additive Lˣ`, under which cocycles of the finite group `Gal(L/K)`
+-- are continuous cocycles.
+private local instance : TopologicalSpace (Additive Lˣ) := ⊥
+
+private local instance : DiscreteTopology (Additive Lˣ) := ⟨rfl⟩
+
 /-- A cocycle at the finite quotient associated to `L` as a crossed-product cocycle of
 `Gal(L/K)`. -/
 private def ofFiniteLevelZ2
@@ -490,8 +498,6 @@ private def ofFiniteLevelZ2
       (galoisOpenNormalSubgroup K L L.val).toSubgroup)
       (FixedPoints.addSubgroup (galoisOpenNormalSubgroup K L L.val).toSubgroup
         (UnitsCoeff K))) : TwoCocycle K L :=
-  letI : TopologicalSpace (Additive Lˣ) := ⊥
-  letI : DiscreteTopology (Additive Lˣ) := ⟨rfl⟩
   let z' := cocyclesMap2 _ _ _ _ (galoisQuotientHomInv L)
     (finiteLevelCoeffEquiv L).symm.toAddMonoidHom
     continuous_of_discreteTopology (finiteLevelCoeffEquiv_symm_smul L) z
@@ -512,8 +518,6 @@ private theorem ofFiniteLevelZ2_toFun
     (ofFiniteLevelZ2 L z).toFun g h =
       Additive.toMul ((finiteLevelCoeffEquiv L).symm
         ((z : _ → _) (galoisQuotientHomInv L g, galoisQuotientHomInv L h))) :=
-  letI : TopologicalSpace (Additive Lˣ) := ⊥
-  haveI : DiscreteTopology (Additive Lˣ) := ⟨rfl⟩
   congrArg Additive.toMul <|
     cocyclesMap2_apply _ _ _ _ _ _ continuous_of_discreteTopology
       (finiteLevelCoeffEquiv_symm_smul L) z g h
@@ -526,13 +530,13 @@ def finiteLevelZ2 (c : TwoCocycle K L) :
     Z2 (AbsoluteGaloisGroup K ⧸ (galoisOpenNormalSubgroup K L L.val).toSubgroup)
       (FixedPoints.addSubgroup (galoisOpenNormalSubgroup K L L.val).toSubgroup
         (UnitsCoeff K)) :=
-  letI : TopologicalSpace (Additive Lˣ) := ⊥
-  haveI : DiscreteTopology (Additive Lˣ) := ⟨rfl⟩
   cocyclesMap2 (L ≃ₐ[K] L) (Additive Lˣ) _ _ (galoisQuotientHom L) (finiteLevelCoeffHom L)
     continuous_of_discreteTopology (finiteLevelCoeffHom_smul L)
     -- as in `inflateZ2`, `IsCocycle₂ (Additive.ofMul ∘ f)` unfolds to `IsMulCocycle₂ f`
     ⟨fun p ↦ Additive.ofMul (c.toFun p.1 p.2),
       mem_Z2_iff.2 ⟨continuous_of_discreteTopology, c.isMulCocycle₂⟩⟩
+
+end DiscreteUnits
 
 /-- The finite-level cocycle evaluates by restricting the two quotient classes and embedding the
 value of the original cocycle into the separable closure. -/
