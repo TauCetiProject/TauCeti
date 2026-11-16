@@ -63,6 +63,8 @@ of `TauCeti.finiteIntermediateFieldValuativeRel`.
   `Ω / K` is `unramifiedExtension K Ω [E : K]`.
 * `AlgHom.fieldRange_eq_unramifiedExtension`: the image of any `K`-embedding `ι : F →ₐ[K] Ω` of an
   unramified extension `F / K` into `Ω` is `unramifiedExtension K Ω (inertiaDegree K F)`.
+* `TauCeti.IsUnramified.isGalois`: every unramified extension `L / K` of nonarchimedean local
+  fields is Galois over `K`.
 * `TauCeti.existsUnique_isUnramified_finrank_eq`: for `f ≥ 1`, there is exactly one unramified
   intermediate field of `Ω / K` of degree `f`.
 
@@ -368,6 +370,15 @@ theorem _root_.AlgHom.fieldRange_eq_unramifiedExtension {F : Type*} [Field F] [V
   have : IsUnramified K ι.fieldRange := IsUnramified.of_algEquiv ι.equivFieldRange
   rw [ι.fieldRange.eq_unramifiedExtension_finrank,
     ← ι.equivFieldRange.toLinearEquiv.finrank_eq, IsUnramified.inertiaDegree_eq_finrank]
+
+/-- **Unramified extensions are Galois.** Every unramified extension `L / K` of nonarchimedean
+local fields with compatible valuations is Galois over `K`. -/
+theorem IsUnramified.isGalois (L : Type*) [Field L] [ValuativeRel L] [TopologicalSpace L]
+    [IsNonarchimedeanLocalField L] [Algebra K L] [ValuativeExtension K L] [IsUnramified K L] :
+    IsGalois K L :=
+  IsGalois.of_algEquiv
+    ((AlgHom.id K L).equivFieldRange.trans
+      (IntermediateField.equivOfEq (AlgHom.id K L).fieldRange_eq_unramifiedExtension)).symm
 
 section IsSepClosed
 

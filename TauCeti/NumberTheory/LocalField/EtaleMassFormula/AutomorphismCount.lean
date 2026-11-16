@@ -225,7 +225,7 @@ private theorem existsUnique_mem_image_unramifiedTransportOrderIso {e : ℕ}
   let M₀ : IntermediateField F (SeparableClosure F) := θ.symm N
   have hN_eq : θ M₀ = N := θ.apply_symm_apply N
   have hsymm : M₀ = E₀.map Φ.symm.toAlgHom := by
-    change (unramifiedTransportOrderIso F Φ).symm N = E₀.map Φ.symm.toAlgHom
+    dsimp only [M₀, θ, E₀]
     rw [unramifiedTransportOrderIso, OrderIso.symm_trans_apply, orderIsoMapComap_symm_apply']
   have hE₀' : E₀.restrictScalars K ∈
       {L : IntermediateField K (SeparableClosure K) |
@@ -302,11 +302,6 @@ theorem tsum_div_natCard_algEquiv_eq_inv_mul_tsum_isRepresentativeSet {e : ℕ}
 
 end Embedded
 
-private theorem isGalois_of_isUnramified : IsGalois K F :=
-  IsGalois.of_algEquiv
-    (((AlgHom.id K F).equivFieldRange.trans
-      (IntermediateField.equivOfEq (AlgHom.id K F).fieldRange_eq_unramifiedExtension)).symm)
-
 /-- **Unweighted isomorphism-class sum over an unramified base.** With `w = 1`, the sum of
 `1 / #Aut_K(M)` over `K`-isomorphism classes of degree `f(F / K) * e` and residue degree
 `f(F / K)` equals `f(F / K)⁻¹` times the sum of `1 / #Aut_F(E)` over `F`-isomorphism classes in
@@ -324,7 +319,7 @@ theorem tsum_one_div_natCard_algEquiv_eq_inv_mul_tsum_isRepresentativeSet {e : �
     ∑' M : R_K, 1 / (Nat.card (M.1 ≃ₐ[K] M.1) : ℝ≥0∞) =
       (TauCeti.inertiaDegree K F : ℝ≥0∞)⁻¹ *
         ∑' E : R, 1 / (Nat.card (E.1 ≃ₐ[F] E.1) : ℝ≥0∞) := by
-  have : IsGalois K F := isGalois_of_isUnramified F
+  have : IsGalois K F := IsUnramified.isGalois K F
   let ι : F →ₐ[K] SeparableClosure K := IsSepClosed.lift
   let _ := ι.toAlgebra
   have : IsScalarTower K F (SeparableClosure K) := .of_algebraMap_eq fun x ↦ (ι.commutes x).symm
@@ -347,7 +342,7 @@ private theorem tsum_one_div_natCard_algEquiv_mul_natCard_residueField_pow_discr
         (Nat.card 𝓀[K] : ℝ≥0∞) ^ M.1.discriminantExponent) =
       1 / ((TauCeti.inertiaDegree K F : ℝ≥0∞) *
         (Nat.card 𝓀[K] : ℝ≥0∞) ^ (TauCeti.inertiaDegree K F * (e - 1))) := by
-  have : IsGalois K F := isGalois_of_isUnramified F
+  have : IsGalois K F := IsUnramified.isGalois K F
   let ι : F →ₐ[K] SeparableClosure K := IsSepClosed.lift
   let _ := ι.toAlgebra
   have : IsScalarTower K F (SeparableClosure K) := .of_algebraMap_eq fun x ↦ (ι.commutes x).symm
