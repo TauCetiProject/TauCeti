@@ -28,7 +28,10 @@ to a finite order have a common bound
 (`TauCeti.exists_forall_norm_iteratedFDeriv_le_of_forall_exists`), and such a
 common bound is nonnegative and bounds the function itself
 (`TauCeti.nonneg_and_norm_le_of_norm_iteratedFDeriv_le`). Adding a constant to a function does not
-change its iterated derivatives of positive order (`TauCeti.iteratedFDeriv_succ_add_const`).
+change its iterated derivatives of positive order (`TauCeti.iteratedFDeriv_succ_add_const`). The
+iterated derivatives of a constant `c` have norm at most `‖c‖`
+(`TauCeti.norm_iteratedFDeriv_const_le`), and those of positive order of the identity have norm at
+most one (`TauCeti.norm_iteratedFDeriv_id_le_one`).
 -/
 
 public section
@@ -142,6 +145,23 @@ theorem iteratedFDeriv_succ_add_const (f : E → F) (c : F) (n : ℕ) :
     iteratedFDeriv 𝕜 (n + 1) (fun x ↦ f x + c) = iteratedFDeriv 𝕜 (n + 1) f := by
   funext x
   simp only [iteratedFDeriv_succ_eq_comp_right, fderiv_add_const]
+
+/-- The iterated derivatives of a constant function `c` have norm at most `‖c‖`. -/
+theorem norm_iteratedFDeriv_const_le (n : ℕ) (c : F) (x : E) :
+    ‖iteratedFDeriv 𝕜 n (fun _ : E ↦ c) x‖ ≤ ‖c‖ := by
+  rcases n with _ | n
+  · simp
+  · simp [iteratedFDeriv_const_of_ne (Nat.succ_ne_zero n)]
+
+/-- The iterated derivatives of positive order of the identity have norm at most one. -/
+theorem norm_iteratedFDeriv_id_le_one {n : ℕ} (hn : 1 ≤ n) (x : E) :
+    ‖iteratedFDeriv 𝕜 n (id : E → E) x‖ ≤ 1 := by
+  obtain ⟨n, rfl⟩ := Nat.exists_eq_add_of_le' hn
+  have hD : fderiv 𝕜 (id : E → E) = fun _ ↦ ContinuousLinearMap.id 𝕜 E := funext fun _ ↦ fderiv_id
+  rw [← norm_iteratedFDeriv_fderiv, hD]
+  rcases n with _ | n
+  · simpa using ContinuousLinearMap.norm_id_le
+  · simp [iteratedFDeriv_const_of_ne (Nat.succ_ne_zero n)]
 
 /-- Bounded derivatives up to order `N` have a common bound. -/
 theorem exists_forall_norm_iteratedFDeriv_le_of_forall_exists {f : E → F} {N : ℕ}

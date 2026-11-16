@@ -8,7 +8,6 @@ module
 public import TauCeti.Analysis.Distribution.TemperedDistribution.ChangeOfVariables
 public import TauCeti.Analysis.FunctionalSpaces.BesovSpace.Basic
 import TauCeti.Analysis.Calculus.ContDiff.Bounds
-import TauCeti.Analysis.Calculus.FDeriv.Equiv
 import TauCeti.Analysis.Calculus.IteratedFDeriv.Basic
 import TauCeti.Analysis.Calculus.IteratedFDeriv.FDerivApply
 import TauCeti.Analysis.Distribution.SchwartzSpace.ChangeOfVariables
@@ -18,7 +17,7 @@ import TauCeti.Analysis.Distribution.TemperedDistribution.FourierMultiplier
 import TauCeti.Analysis.Distribution.TemperedDistribution.Lp
 import TauCeti.Analysis.Distribution.TemperedDistribution.SmulLeft
 import TauCeti.Analysis.FunctionalSpaces.BesovSpace.AlmostDiagonal
-import TauCeti.MeasureTheory.Measure.Haar.NormedSpace
+import TauCeti.MeasureTheory.Function.Jacobian
 
 /-!
 # Pullback by a diffeomorphism on Besov spaces
@@ -31,8 +30,9 @@ distributions back along `Φ` (`TemperedDistribution.compCLM`) maps every inhomo
 on the bump function `φ`, on `s`, `N` and the derivative bounds, and not on `p` or `q`. Pulling back
 along `Φ⁻¹` inverts it, so it is an isomorphism of `B^s_{p,q}` (`TauCeti.BesovSpace.compCLE`). This
 covers the Hölder–Zygmund scale `𝒞^s = B^s_{∞,∞}` and negative orders `s < 0`. Together with
-smooth multipliers (`TauCeti.BesovSpace.smulLeftCLM`), these are the changes of coordinates and of
-frame needed to define Besov norms of sections of vector bundles by finite atlases.
+smooth multipliers (`TauCeti.BesovSpace.smulLeftCLM`), these give the changes of coordinates and
+the scalar case of the matrix-valued changes of frame needed to define Besov norms of sections of
+vector bundles by finite atlases.
 
 The proof shows that `Φ^*` is almost diagonal for the Littlewood–Paley blocks: for every `M ≤ N`,
 
@@ -536,13 +536,6 @@ theorem exists_littlewoodPaleyBlock_smulLeftCLM_compCLM_eq_and_norm_le (φ : Con
     (fun j _ hR f hf ↦ h₂ hΦ hΨ hdet hΦL hΨL hg hgG j hR f hf) j k u f hf
   exact ⟨v, hv, hvn.trans_eq (by ring)⟩
 
-omit [FiniteDimensional ℝ E] [MeasurableSpace E] [BorelSpace E] in
-private theorem norm_iteratedFDeriv_one_le (n : ℕ) (x : E) :
-    ‖iteratedFDeriv ℝ n (fun _ : E ↦ (1 : ℂ)) x‖ ≤ 1 := by
-  rcases n with _ | n
-  · simp
-  · simp [iteratedFDeriv_const_of_ne (Nat.succ_ne_zero n)]
-
 /-- **Off-diagonal decay of a pullback between Littlewood–Paley blocks.** Let `M` be a natural
 number. There is `K`, depending only on `φ`, `L` and `M`, with the following property. Let `Φ` be
 a bijection such that `Φ` and `Φ⁻¹` have temperate growth, the derivatives of `Φ` of orders `1` to
@@ -563,7 +556,7 @@ theorem exists_littlewoodPaleyBlock_compCLM_eq_and_norm_le (φ : ContDiffBump (0
   obtain ⟨K, hK, h⟩ := exists_littlewoodPaleyBlock_smulLeftCLM_compCLM_eq_and_norm_le (F := F) φ L M
   refine ⟨K, hK, fun {p} _ {Φ} hΦ hΨ hΦL hΨL j k u f hf ↦ ?_⟩
   simpa only [smulLeftCLM_const, one_smul, mul_one] using h hΦ hΨ hΦL hΨL (.const 1)
-    (fun n _ x ↦ norm_iteratedFDeriv_one_le n x) j k u f hf
+    (fun n _ x ↦ (norm_iteratedFDeriv_const_le n (1 : ℂ) x).trans_eq norm_one) j k u f hf
 
 /-! ### Pullback on Besov spaces -/
 

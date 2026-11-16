@@ -205,8 +205,7 @@ theorem exists_compCLM_toTemperedDistribution_eq_and_norm_le [CompleteSpace F] {
     refine (ENNReal.toReal_mono (ENNReal.mul_ne_top (ENNReal.rpow_ne_top_of_nonneg
       ENNReal.toReal_nonneg (ENNReal.inv_ne_top.2 (ENNReal.ofReal_pos.2 hc).ne'))
         (Lp.eLpNorm_ne_top f)) hle).trans_eq ?_
-    rw [ENNReal.toReal_mul, ← ENNReal.toReal_rpow, ENNReal.toReal_inv, ENNReal.toReal_ofReal hc.le,
-      one_div, ENNReal.toReal_inv]
+    simp [ENNReal.toReal_mul, ← ENNReal.toReal_rpow, hc.le]
 
 end Normed
 

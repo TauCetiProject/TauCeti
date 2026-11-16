@@ -101,19 +101,16 @@ theorem exists_littlewoodPaleyBlock_smulLeftCLM_eq_and_norm_le
         ‖v‖ ≤ K * G * (2 : ℝ) ^ (-(M * |(j : ℝ) - k|)) * ‖f‖ := by
   obtain ⟨K, hK, h⟩ := exists_littlewoodPaleyBlock_smulLeftCLM_compCLM_eq_and_norm_le (F := F) φ 1 M
   refine ⟨K, hK, fun {p} _ {g G} hg hgG j k u f hf ↦ ?_⟩
-  -- The derivatives of positive order of the identity are bounded by `1`.
   have hid : ((Equiv.refl E : E ≃ E) : E → E).HasTemperateGrowth := by
     simpa using (ContinuousLinearMap.id ℝ E).hasTemperateGrowth
-  have hid' : ((Equiv.refl E).symm : E → E).HasTemperateGrowth := hid
+  have hid' : ((Equiv.refl E).symm : E → E).HasTemperateGrowth := by
+    rw [Equiv.refl_symm]
+    exact hid
+  -- The derivatives of positive order of the identity are bounded by `1`.
   have hidL (n : ℕ) (hn : 1 ≤ n) (x : E) : ‖iteratedFDeriv ℝ n (Equiv.refl E) x‖ ≤ 1 := by
-    obtain ⟨n, rfl⟩ := Nat.exists_eq_add_of_le' hn
-    have hD : fderiv ℝ (id : E → E) = fun _ ↦ ContinuousLinearMap.id ℝ E := funext fun _ ↦ fderiv_id
-    rw [Equiv.coe_refl, ← norm_iteratedFDeriv_fderiv, hD]
-    rcases n with _ | n
-    · simpa using ContinuousLinearMap.norm_id_le
-    · simp [iteratedFDeriv_const_of_ne (Nat.succ_ne_zero n)]
+    simpa using norm_iteratedFDeriv_id_le_one (𝕜 := ℝ) hn x
   simpa only [compCLM_refl, ContinuousLinearMap.id_apply] using h hid hid'
-    (fun n h₁ _ x ↦ hidL n h₁ x) (fun n h₁ _ x ↦ hidL n h₁ x) hg hgG j k u f hf
+    (fun n h₁ _ x ↦ hidL n h₁ x) (fun n h₁ _ x ↦ by simpa using hidL n h₁ x) hg hgG j k u f hf
 
 /-! ### Multiplication on Besov spaces -/
 

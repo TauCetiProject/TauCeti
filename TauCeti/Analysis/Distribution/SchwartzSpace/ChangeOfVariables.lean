@@ -9,9 +9,9 @@ public import Mathlib.Analysis.Distribution.SchwartzSpace.Basic
 public import Mathlib.Analysis.Distribution.SchwartzSpace.Deriv
 public import Mathlib.MeasureTheory.Measure.Haar.Basic
 public import Mathlib.Topology.Algebra.Module.Determinant
+public import TauCeti.Analysis.Distribution.TemperateGrowth
 import Mathlib.Analysis.Distribution.AEEqOfIntegralContDiff
 import Mathlib.MeasureTheory.Function.Jacobian
-import TauCeti.Analysis.Distribution.TemperateGrowth
 import TauCeti.Topology.Algebra.Module.Determinant
 
 /-!
@@ -46,9 +46,10 @@ The pushforward of a derivative is a sum of derivatives of pushforwards: for a b
 `φ_* (∂_v f) = ∑ᵢ ∂_{bᵢ} (φ_* (cᵢ f))`, where `Dφ(x) v = ∑ᵢ cᵢ(x) bᵢ`
 
 (`SchwartzMap.pushforwardCLM_lineDerivOp`). This is the transpose of the chain rule
-`∂_v (u ∘ φ)(x) = ∑ᵢ cᵢ(x) (∂_{bᵢ} u)(φ x)`, and it gives the chain rule for the pullback of
-tempered distributions. It is proved by pairing both sides with test functions and integrating by
-parts; the Jacobian factor of the pushforward is never differentiated.
+`∂_v (u ∘ φ)(x) = ∑ᵢ cᵢ(x) (∂_{bᵢ} u)(φ x)` (`SchwartzMap.lineDerivOp_compCLM_apply`), and it gives
+the chain rule for the pullback of tempered distributions. It is proved by pairing both sides with
+test functions and integrating by parts; the Jacobian factor of the pushforward is never
+differentiated.
 
 ## References
 
@@ -142,7 +143,7 @@ variable {ι : Type*} [Fintype ι]
 omit [FiniteDimensional ℝ E] in
 /-- **The chain rule for composition with `φ`.** If `Dφ(x) v = ∑ᵢ cᵢ(x) bᵢ` in a basis `b`, then
 `∂_v (u ∘ φ)(x) = ∑ᵢ cᵢ(x) (∂_{bᵢ} u)(φ x)`. -/
-private theorem lineDerivOp_compCLM_apply (b : Module.Basis ι ℝ E)
+theorem lineDerivOp_compCLM_apply (b : Module.Basis ι ℝ E)
     (hφ : (φ : E → E).HasTemperateGrowth) (hψ : (φ.symm : E → E).HasTemperateGrowth)
     (u : 𝓢(E, 𝕜)) (v x : E) :
     ∂_{v} (compCLM 𝕜 hφ (hψ.exists_norm_le_of_leftInverse φ.left_inv) u) x =
@@ -219,7 +220,7 @@ theorem pushforwardCLM_lineDerivOp (b : Module.Basis ι ℝ E)
     have hg₁ : HasCompactSupport (fun x ↦ (g x : 𝕜)) := hgc.comp_left (by simp)
     have hg₂ : ContDiff ℝ ∞ (fun x ↦ (g x : 𝕜)) := ((RCLike.ofRealCLM (K := 𝕜)).contDiff).comp hg
     set u := hg₁.toSchwartzMap hg₂
-    have hu (x : E) : u x = g x := rfl
+    have hu (x : E) : u x = g x := hg₁.toSchwartzMap_toFun hg₂ x
     have := integral_pushforwardCLM_lineDerivOp_mul 𝕜 Measure.addHaar b hφ hψ f u v
     simp only [hu] at this
     simpa only [RCLike.real_smul_eq_coe_mul, mul_comm _ (A _), mul_comm _ (B _)] using this
