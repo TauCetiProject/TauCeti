@@ -7,7 +7,6 @@ module
 
 public import TauCeti.Analysis.PDE.HeatKernel.Basic
 public import Mathlib.Analysis.SpecialFunctions.Gamma.Basic
-import Mathlib.MeasureTheory.Integral.Gamma
 import Mathlib.MeasureTheory.Integral.Prod
 import TauCeti.MeasureTheory.Integral.RpowLaplace
 
@@ -174,12 +173,10 @@ theorem fourier_besselKernel {δ : ℝ} (hδ : 0 < δ) (ξ : E) :
       = ((Gamma (δ / 2))⁻¹ : ℝ) * ∫ x, ∫ t in Ioi 0, Φ x t := by
         rw [Real.fourier_eq, ← integral_const_mul]
         refine integral_congr_ae (.of_forall fun x ↦ ?_)
-        dsimp only
-        rw [besselKernel_eq_integral_integrand, Circle.smul_def, smul_eq_mul, Complex.ofReal_mul,
-          ← integral_complex_ofReal, ← integral_const_mul, ← integral_const_mul,
-          ← integral_const_mul]
+        -- Move the constants and the character inside the integral in `t`.
+        simp only [besselKernel_eq_integral_integrand, Circle.smul_def, smul_eq_mul,
+          Complex.ofReal_mul, ← integral_complex_ofReal, ← integral_const_mul, Φ]
         refine integral_congr_ae (.of_forall fun t ↦ ?_)
-        simp only [Φ]
         ring
     _ = ((Gamma (δ / 2))⁻¹ : ℝ) * ∫ t in Ioi 0, ∫ x, Φ x t := by
         rw [integral_integral_swap hΦ]
@@ -252,10 +249,14 @@ theorem besselKernel_le_mul_norm_rpow {δ : ℝ} (hδ : 0 < δ)
           π ^ (n / 2) * (t ^ (-(a + 1)) * exp (-((π * ‖x‖) ^ 2 / t))) :=
         mul_le_mul_of_nonneg_left hle (inv_nonneg.2 (Gamma_pos_of_pos (half_pos hδ)).le)
     _ = Gamma a / Gamma (δ / 2) * π ^ (δ - n / 2) * ‖x‖ ^ (δ - n) := by
-        rw [integral_const_mul, integral_rpow_mul_exp_neg_div_Ioi ha hr, one_div,
-          inv_rpow hr.le, ← rpow_neg hr.le, ← rpow_natCast, ← rpow_mul (by positivity),
-          mul_rpow pi_pos.le (norm_nonneg _),
-          show ((2 : ℕ) : ℝ) * -a = δ - n by simp only [a]; push_cast; ring,
+        -- Euler's integral is `((π ‖x‖)²)^(-a) Γ(a)`, and `-2a = δ - n`.
+        have he : (2 : ℝ) * -a = δ - n := by
+          simp only [a]
+          ring
+        have hpow : (1 / (π * ‖x‖) ^ 2) ^ a = π ^ (δ - n) * ‖x‖ ^ (δ - n) := by
+          rw [one_div, inv_rpow hr.le, ← rpow_neg hr.le, ← rpow_two, ← rpow_mul (by positivity),
+            he, mul_rpow pi_pos.le (norm_nonneg _)]
+        rw [integral_const_mul, integral_rpow_mul_exp_neg_div_Ioi ha hr, hpow,
           show δ - n / 2 = n / 2 + (δ - n) by ring, rpow_add pi_pos]
         field_simp
 

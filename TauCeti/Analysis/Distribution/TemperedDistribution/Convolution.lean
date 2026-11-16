@@ -26,10 +26,11 @@ function `f`, for any `1 ≤ p ≤ ∞`, as convolution with the Schwartz kernel
 Together with Young's convolution inequality this shows that `T_σ` maps `Lᵖ` to `Lᵠ` for every
 `q ≥ p`, with `‖T_σ f‖_q ≤ ‖𝓕⁻ σ‖_r ‖f‖_p` whenever `1/p + 1/r = 1 + 1/q`.
 
-More generally, the same holds for a symbol `g` of temperate growth which is the Fourier
-transform `𝓕 K` of an integrable kernel `K`, not necessarily smooth or rapidly decreasing:
-`T_g f = K ⋆ f`. The Bessel potentials `J^{-δ}`, whose kernels are singular at the origin, are of
-this kind.
+More generally, the convolution identity `T_g f = K ⋆ f` (though not the `Lᵖ → Lᵠ` bound
+above, which uses `K ∈ Lʳ`) holds for a symbol `g` of temperate growth which is the Fourier
+transform `𝓕 K` of an integrable kernel `K`, not necessarily smooth or rapidly decreasing. Any
+finite `Lᵠ` bound on `K ⋆ f` then makes `T_g f` an `Lᵠ` function. The Bessel potentials `J^{-δ}`,
+whose kernels are singular at the origin, are of this kind.
 
 The identity is proved by pairing with a test function `φ`: by definition
 `T_g f (φ) = ∫ 𝓕 (g • 𝓕⁻ φ) • f`, the convolution theorem writes
@@ -51,10 +52,8 @@ are derived this way.
 * `TemperedDistribution.fourierMultiplierCLM_toTemperedDistribution_apply_of_fourier_eq`: for an
   integrable kernel `K` with `𝓕 K = g`, the pairing of `T_g f` with a test function is the pairing
   of the convolution `K ⋆ f`.
-* `TemperedDistribution.fourier_smulLeftCLM_fourierInv_apply`: the convolution theorem
-  `𝓕 (𝓕 K • 𝓕⁻ φ) y = ∫ x, K (x - y) * φ x` against a test function `φ`.
-* `TemperedDistribution.integrable_uncurry_sub_mul_smul`: the absolute convergence of the double
-  integral of the pairing.
+* `TemperedDistribution.exists_fourierMultiplierCLM_toTemperedDistribution_eq_of_eLpNorm_le`:
+  for such a kernel, a finite `Lᵠ` bound on `K ⋆ f` makes `T_g f` the `Lᵠ` function `K ⋆ f`.
 * `TemperedDistribution.fourierMultiplierCLM_toTemperedDistribution_apply`: the pairing of `T_σ f`
   with a test function is the pairing of the convolution `𝓕⁻ σ ⋆ f`.
 * `TemperedDistribution.exists_fourierMultiplierCLM_toTemperedDistribution_eq`: `T_σ f` is the
@@ -91,7 +90,7 @@ omit [CompleteSpace F] in
 `(y, x) ↦ (K (y - x) * φ x) • f y` is integrable on `E × E`: its integral in `x` is `‖f y‖` times
 the convolution of `‖φ‖` with `‖K‖`, which lies in the conjugate space of `Lᵖ` by Young's
 inequality. -/
-theorem integrable_uncurry_sub_mul_smul {K : E → ℂ} (hK : Integrable K) (φ : 𝓢(E, ℂ))
+private theorem integrable_uncurry_sub_mul_smul {K : E → ℂ} (hK : Integrable K) (φ : 𝓢(E, ℂ))
     (f : Lp F p (volume : Measure E)) :
     Integrable (Function.uncurry fun y x ↦ (K (y - x) * φ x) • f y)
       ((volume : Measure E).prod volume) := by
@@ -142,45 +141,6 @@ theorem integrable_uncurry_sub_mul_smul {K : E → ℂ} (hK : Integrable K) (φ 
           (ENNReal.mul_lt_top (φ.eLpNorm_lt_top p' volume)
             (memLp_one_iff_integrable.2 hK).eLpNorm_lt_top)
 
-/-- **The convolution theorem against a test function.** If the symbol `g` of temperate growth is
-the Fourier transform of an integrable kernel `K`, then for every test function `φ`,
-`𝓕 (g • 𝓕⁻ φ) y = ∫ x, K (x - y) * φ x`. -/
-theorem fourier_smulLeftCLM_fourierInv_apply {K : E → ℂ} (hK : Integrable K) {g : E → ℂ}
-    (hg : g.HasTemperateGrowth) (hgK : 𝓕 K = g) (φ : 𝓢(E, ℂ)) (y : E) :
-    𝓕 (SchwartzMap.smulLeftCLM ℂ g (𝓕⁻ φ)) y = ∫ x, K (x - y) * φ x := by
-  set ψ := 𝓕⁻ φ
-  have hint : Integrable (Function.uncurry fun (ξ z : E) ↦
-      (𝐞 (-⟪z, ξ⟫) : ℂ) * K z * ((𝐞 (-⟪ξ, y⟫) : ℂ) * ψ ξ)) (volume.prod volume) := by
-    refine (ψ.integrable.mul_prod hK).mono ?_ (.of_forall fun q ↦ ?_)
-    · exact (((by fun_prop : Continuous fun q : E × E ↦ (𝐞 (-⟪q.2, q.1⟫) : ℂ)
-        ).aestronglyMeasurable.mul hK.aestronglyMeasurable.comp_snd).mul
-        ((by fun_prop : Continuous fun q : E × E ↦ (𝐞 (-⟪q.1, y⟫) : ℂ)).mul
-          (ψ.continuous.comp continuous_fst)).aestronglyMeasurable)
-    · simp [Function.uncurry, mul_comm]
-  -- The exponentials combine into the character at `y + z`.
-  have hexp : ∀ z ξ : E, (𝐞 (-⟪z, ξ⟫) : ℂ) * K z * ((𝐞 (-⟪ξ, y⟫) : ℂ) * ψ ξ) =
-      K z * (𝐞 (-⟪ξ, y + z⟫) • ψ ξ) := fun z ξ ↦ by
-    rw [Circle.smul_def, inner_add_right, neg_add, AddChar.map_add_eq_mul, Circle.coe_mul,
-      real_inner_comm ξ z]
-    ring
-  calc 𝓕 (SchwartzMap.smulLeftCLM ℂ g ψ) y
-      = ∫ ξ, ∫ z, (𝐞 (-⟪z, ξ⟫) : ℂ) * K z * ((𝐞 (-⟪ξ, y⟫) : ℂ) * ψ ξ) := by
-        rw [SchwartzMap.fourier_coe, Real.fourier_eq]
-        refine integral_congr_ae (.of_forall fun ξ ↦ ?_)
-        dsimp only
-        rw [SchwartzMap.smulLeftCLM_apply_apply hg, ← hgK, Real.fourier_eq, integral_mul_const]
-        simp_rw [Circle.smul_def, smul_eq_mul]
-        ring
-    _ = ∫ z, ∫ ξ, (𝐞 (-⟪z, ξ⟫) : ℂ) * K z * ((𝐞 (-⟪ξ, y⟫) : ℂ) * ψ ξ) :=
-        integral_integral_swap hint
-    _ = ∫ z, K z * φ (y + z) := by
-        refine integral_congr_ae (.of_forall fun z ↦ ?_)
-        simp_rw [hexp, integral_const_mul, ← Real.fourier_eq, ← SchwartzMap.fourier_coe, ψ,
-          FourierTransform.fourier_fourierInv_eq]
-    _ = ∫ x, K (x - y) * φ x := by
-        rw [← integral_sub_right_eq_self (fun z ↦ K z * φ (y + z)) y]
-        simp only [add_sub_cancel]
-
 /-- **A Fourier multiplier whose symbol is the Fourier transform of an integrable kernel acts on
 `Lᵖ` by convolution.** If the symbol `g` of temperate growth is `𝓕 K` for an integrable kernel
 `K`, then for `f ∈ Lᵖ`, `1 ≤ p ≤ ∞`, the tempered distribution `T_g f = 𝓕⁻ (g • 𝓕 f)` pairs with
@@ -193,7 +153,7 @@ theorem fourierMultiplierCLM_toTemperedDistribution_apply_of_fourier_eq {K : E �
   rw [fourierMultiplierCLM_apply_apply, Lp.toTemperedDistribution_apply]
   have hconv : ∀ x, (K ⋆[lsmul ℂ ℂ] (f : E → F)) x = ∫ y, K (x - y) • f y := fun x ↦ by
     rw [convolution_eq_swap]
-    rfl
+    simp only [lsmul_apply]
   simp_rw [fourier_smulLeftCLM_fourierInv_apply hK hg hgK, hconv]
   calc ∫ y, (∫ x, K (x - y) * φ x) • f y
       = ∫ y, ∫ x, (K (x - y) * φ x) • f y := by
@@ -216,6 +176,29 @@ theorem fourierMultiplierCLM_toTemperedDistribution_apply (σ : 𝓢(E, ℂ))
   refine fourierMultiplierCLM_toTemperedDistribution_apply_of_fourier_eq (𝓕⁻ σ).integrable
     σ.hasTemperateGrowth ?_ f φ
   rw [← SchwartzMap.fourier_coe, FourierTransform.fourier_fourierInv_eq]
+
+/-- **A finite `Lᵠ` bound on the convolution makes the multiplier an `Lᵠ` function.** If the
+symbol `g` of temperate growth is `𝓕 K` for an integrable kernel `K`, `f ∈ Lᵖ`, `1 ≤ p ≤ ∞`, and
+`‖K ⋆ f‖_q ≤ B < ∞`, then the tempered distribution `T_g f` is the `Lᵠ` function `K ⋆ f`, of norm
+at most `B`. -/
+theorem exists_fourierMultiplierCLM_toTemperedDistribution_eq_of_eLpNorm_le {K : E → ℂ}
+    (hK : Integrable K) {g : E → ℂ} (hg : g.HasTemperateGrowth) (hgK : 𝓕 K = g)
+    (f : Lp F p (volume : Measure E)) {q : ℝ≥0∞} [Fact (1 ≤ q)] {B : ℝ≥0∞} (hB : B ≠ ∞)
+    (hbound : eLpNorm (K ⋆[lsmul ℂ ℂ] (f : E → F)) q volume ≤ B) :
+    ∃ u : Lp F q (volume : Measure E),
+      fourierMultiplierCLM F g (f : 𝓢'(E, F)) = u ∧
+      u =ᵐ[volume] K ⋆[lsmul ℂ ℂ] (f : E → F) ∧ ‖u‖ ≤ B.toReal := by
+  set h := K ⋆[lsmul ℂ ℂ] (f : E → F)
+  have hmem : MemLp h q volume := memLp_iff.2 (hbound.trans_lt hB.lt_top)
+  refine ⟨hmem.toLp h, ?_, hmem.coeFn_toLp, ?_⟩
+  · ext φ
+    rw [fourierMultiplierCLM_toTemperedDistribution_apply_of_fourier_eq hK hg hgK,
+      Lp.toTemperedDistribution_apply]
+    refine integral_congr_ae ?_
+    filter_upwards [hmem.coeFn_toLp] with x hx
+    rw [hx]
+  · rw [Lp.norm_toLp]
+    exact ENNReal.toReal_mono hB hbound
 
 /-- **A Fourier multiplier with a Schwartz symbol maps `Lᵖ` to `Lᵠ`.** For a Schwartz symbol `σ`,
 `f ∈ Lᵖ` and exponents with `1 ≤ r` and `1/p + 1/r = 1 + 1/q`, the tempered distribution
@@ -245,16 +228,12 @@ theorem exists_fourierMultiplierCLM_toTemperedDistribution_eq (σ : 𝓢(E, ℂ)
           exact mul_le_of_le_one_left (zero_le) hL
   have hfin : eLpNorm K r volume * eLpNorm f p volume ≠ ∞ :=
     ENNReal.mul_ne_top (K.eLpNorm_lt_top r volume).ne (Lp.eLpNorm_lt_top f).ne
-  have hmem : MemLp h q volume := memLp_iff.2 (lt_of_le_of_lt hbound (Ne.lt_top hfin))
-  refine ⟨hmem.toLp h, ?_, hmem.coeFn_toLp, ?_⟩
-  · ext φ
-    rw [fourierMultiplierCLM_toTemperedDistribution_apply, Lp.toTemperedDistribution_apply,
-      ← SchwartzMap.fourierInv_coe]
-    refine integral_congr_ae ?_
-    filter_upwards [hmem.coeFn_toLp] with x hx
-    rw [hx]
-  · rw [Lp.norm_toLp, Lp.norm_def, ← ENNReal.toReal_mul]
-    exact ENNReal.toReal_mono hfin hbound
+  obtain ⟨u, hu, huK, hun⟩ := exists_fourierMultiplierCLM_toTemperedDistribution_eq_of_eLpNorm_le
+    K.integrable σ.hasTemperateGrowth
+      (by rw [← SchwartzMap.fourier_coe, FourierTransform.fourier_fourierInv_eq]) f hfin hbound
+  refine ⟨u, hu, huK, ?_⟩
+  rw [ENNReal.toReal_mul, ← Lp.norm_def] at hun
+  exact hun
 
 /-- **`Lᵖ` bound for a multiplier with Schwartz symbol.** For `1 ≤ p ≤ ∞`, the Fourier multiplier
 with a Schwartz symbol `σ` maps every `f ∈ Lᵖ` to a function `g ∈ Lᵖ` with

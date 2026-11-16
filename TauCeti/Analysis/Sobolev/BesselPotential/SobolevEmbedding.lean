@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Analysis.FunctionalSpaces.BesselPotentialSpace
 public import TauCeti.Analysis.Sobolev.BesselPotential.Kernel
+import TauCeti.Analysis.Distribution.Sobolev
 import TauCeti.Analysis.Distribution.TemperedDistribution.Convolution
 import TauCeti.Analysis.Distribution.TemperedDistribution.Lp
 import TauCeti.MeasureTheory.Integral.RieszPotential
@@ -93,10 +94,13 @@ private theorem exists_eNorm_besselKernel_convolution_le {δ : ℝ} (hδ : 0 < �
     · rw [eNorm_zero, ENNReal.zero_rpow_of_neg (by linarith),
         ENNReal.mul_top (by simpa using hc.ne')]
       exact le_top
-    rw [← ofReal_norm, Complex.norm_real, Real.norm_of_nonneg (besselKernel_nonneg hδ z),
-      Real.eNorm_of_nonneg hc.le, ← ofReal_norm z,
-      ENNReal.ofReal_rpow_of_pos (norm_pos_iff.2 hz), ← ENNReal.ofReal_mul hc.le]
-    exact ENNReal.ofReal_le_ofReal (besselKernel_le_mul_norm_rpow hδ hδn hz)
+    calc ‖(besselKernel δ z : ℂ)‖ₑ = ENNReal.ofReal (besselKernel δ z) := by
+          rw [← ofReal_norm, Complex.norm_real, Real.norm_of_nonneg (besselKernel_nonneg hδ z)]
+      _ ≤ ENNReal.ofReal (c * ‖z‖ ^ (δ - Module.finrank ℝ E)) :=
+          ENNReal.ofReal_le_ofReal (besselKernel_le_mul_norm_rpow hδ hδn hz)
+      _ = ‖c‖ₑ * ‖z‖ₑ ^ (δ - Module.finrank ℝ E) := by
+          rw [ENNReal.ofReal_mul hc.le, Real.eNorm_of_nonneg hc.le, ← ofReal_norm z,
+            ENNReal.ofReal_rpow_of_pos (norm_pos_iff.2 hz)]
   refine ⟨c, fun f x ↦ ?_⟩
   rw [convolution_eq_swap, rieszPotential_def]
   refine (eNorm_integral_le_lintegral_eNorm _).trans (lintegral_mono fun y ↦ ?_)
@@ -124,14 +128,6 @@ private theorem exists_eLpNorm_besselKernel_convolution_le {δ : ℝ} (hδ : 0 <
     _ = (C * ‖c‖₊ : ℝ≥0) * eLpNorm f p volume := by
       rw [eLpNorm_const_smul, ← mul_assoc, ENNReal.coe_mul, eNorm_eq_nnNorm]
 
-omit [CompleteSpace F] in
-/-- On a zero-dimensional space every Bessel potential is the identity: its symbol
-`(1 + ‖ξ‖²) ^ (s / 2)` is `1` at the only frequency `ξ = 0`. -/
-theorem besselPotential_eq_id_of_subsingleton [Subsingleton E] (s : ℝ) :
-    besselPotential E F s = ContinuousLinearMap.id ℂ _ := by
-  rw [besselPotential, show (fun x : E ↦ (((1 + ‖x‖ ^ 2) ^ (s / 2) : ℝ) : ℂ)) = fun _ ↦ 1 from
-    funext fun x ↦ by simp [Subsingleton.elim x 0], fourierMultiplierCLM_const, one_smul]
-
 /-- **The Bessel potential `J^{-δ}` maps `Lᵖ` to `L^q`.** For `δ > 0`, `1 < p` and
 `1 / q = 1 / p - δ / n`, where `n` is the dimension of `E`, there is `C` such that for every
 `f ∈ Lᵖ` the tempered distribution `J^{-δ} f` is an `L^q` function `g` with
@@ -156,19 +152,13 @@ theorem exists_besselPotential_neg_eq_and_norm_le {δ : ℝ} (hδ : 0 < δ) {p q
     exact (div_lt_one (by exact_mod_cast Module.finrank_pos)).1 (by linarith [inv_pos.2 hq])
   obtain ⟨C, hC⟩ := exists_eLpNorm_besselKernel_convolution_le (F := F) hδ hδn hp hpq
   refine ⟨C, fun f ↦ ?_⟩
-  set h := (fun y ↦ (besselKernel δ y : ℂ)) ⋆[ContinuousLinearMap.lsmul ℂ ℂ] (f : E → F)
-  have hbound := hC f (Lp.aestronglyMeasurable f)
-  have hfin : (C : ℝ≥0∞) * eLpNorm f p volume ≠ ∞ :=
-    ENNReal.mul_ne_top ENNReal.coe_ne_top (Lp.eLpNorm_lt_top f).ne
-  have hmem : MemLp h q volume := memLp_iff.2 (hbound.trans_lt hfin.lt_top)
-  refine ⟨hmem.toLp h, ?_, ?_⟩
-  · ext φ
-    rw [besselPotential_neg_toTemperedDistribution_apply hδ, Lp.toTemperedDistribution_apply]
-    refine integral_congr_ae ?_
-    filter_upwards [hmem.coeFn_toLp] with x hx
-    rw [hx]
-  · rw [Lp.norm_toLp, Lp.norm_def, ← ENNReal.coe_toReal C, ← ENNReal.toReal_mul]
-    exact ENNReal.toReal_mono hfin hbound
+  obtain ⟨g, hg, -, hgf⟩ := exists_fourierMultiplierCLM_toTemperedDistribution_eq_of_eLpNorm_le
+    (integrable_besselKernel hδ).ofReal (by fun_prop) (funext (fourier_besselKernel hδ)) f
+    (ENNReal.mul_ne_top ENNReal.coe_ne_top (Lp.eLpNorm_lt_top f).ne)
+    (hC f (Lp.aestronglyMeasurable f))
+  refine ⟨g, hg, ?_⟩
+  rw [ENNReal.toReal_mul, ENNReal.coe_toReal, ← Lp.norm_def] at hgf
+  exact hgf
 
 /-- **The Sobolev embedding of Bessel-potential spaces.** For `δ > 0`, `1 < p` and
 `1 / q = 1 / p - δ / n`, where `n` is the dimension of `E`, every tempered distribution in

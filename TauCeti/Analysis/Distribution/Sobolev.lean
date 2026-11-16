@@ -37,6 +37,8 @@ the Bessel potential to the Laplacian, with the factor `2π` from Mathlib's Four
 
 * `TemperedDistribution.besselPotential_two_eq_sub_laplacian`: the Bessel potential of order `2`
   is `1 - (2π)⁻² Δ`.
+* `TemperedDistribution.besselPotential_eq_id_of_subsingleton`: on a zero-dimensional space every
+  Bessel potential is the identity.
 * `TemperedDistribution.MemSobolev.sum`: `H^{s,p}` is closed under finite sums.
 * `TemperedDistribution.MemSobolev.smul_of_tower`: `H^{s,p}` is closed under scalar
   multiplication by scalars acting through `ℂ`, such as real numbers.
@@ -126,6 +128,13 @@ theorem besselPotential_two_eq_sub_laplacian (f : 𝓢'(E, F)) :
     rw [laplacian_eq_fourierMultiplierCLM, smul_smul, mul_neg,
       inv_mul_cancel₀ (by positivity), neg_one_smul]
   rw [hsplit, hΔ, sub_neg_eq_add]
+
+/-- On a zero-dimensional space every Bessel potential is the identity: its symbol
+`(1 + ‖ξ‖²) ^ (s / 2)` is `1` at the only frequency `ξ = 0`. -/
+theorem besselPotential_eq_id_of_subsingleton [Subsingleton E] (s : ℝ) :
+    besselPotential E F s = ContinuousLinearMap.id ℂ _ := by
+  rw [besselPotential, show (fun x : E ↦ (((1 + ‖x‖ ^ 2) ^ (s / 2) : ℝ) : ℂ)) = fun _ ↦ 1 from
+    funext fun x ↦ by simp [Subsingleton.elim x 0], fourierMultiplierCLM_const, one_smul]
 
 variable [CompleteSpace F]
 
