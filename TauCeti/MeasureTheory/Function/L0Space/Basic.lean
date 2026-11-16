@@ -22,7 +22,8 @@ almost-everywhere equivalence classes of strongly measurable functions `α → E
 `α →ₘ[μ] E` (`MeasureTheory.AEEqFun`) as a distinct type so that `AEEqFun` itself stays free of a
 canonical topology (for instance, interpolation couples equip `AEEqFun` with the indiscrete
 topology, whereas the convergence-in-measure metric requires a finite measure), while inheriting
-the almost-everywhere pointwise order and topological lattice operations from `AEEqFun`.
+the almost-everywhere pointwise order and lattice operations (for a topological lattice target `E`)
+from `AEEqFun`.
 
 When `E` is a (pseudo)metric space and `μ` is a finite measure, `L0 E μ` carries the bounded
 metric
@@ -38,10 +39,7 @@ Two-sided quantitative estimates link this integral to tail measures:
 
 Together these show that convergence in `L0 E μ` along an arbitrary filter is equivalent to
 `MeasureTheory.TendstoInMeasure` (`TauCeti.L0.tendsto_iff_tendstoInMeasure`). When `E` is complete,
-`L0 E μ` is complete (`TauCeti.L0.instCompleteSpace`): along any sequence controlled at dyadic
-scales $B_k = 2^{-2k} / (1 + 2^{-k})$, Markov's inequality makes the tail events
-$\{\operatorname{dist}(u_k, u_{k+1}) \ge 2^{-k}\}$ summable, so the first Borel–Cantelli lemma
-produces an almost-everywhere limit in `E`, which is also the limit in measure.
+`L0 E μ` is complete (`TauCeti.L0.instCompleteSpace`).
 
 ## Main declarations
 
@@ -50,9 +48,10 @@ produces an almost-everywhere limit in `E`, which is also the limit in measure.
   spaces, the convergence-in-measure metric.
 * `TauCeti.L0.mk`, `TauCeti.L0.const`, `TauCeti.L0.equivAEEqFun`: quotient constructor, constant
   classes, and equivalence with `α →ₘ[μ] E`.
-* `TauCeti.L0.instPseudoMetricSpace`, `TauCeti.L0.instMetricSpace`, `TauCeti.L0.dist_const_const`:
-  (pseudo)metric space structure on `L0 E μ` when `[IsFiniteMeasure μ]` and closed-form distance
-  between constant classes.
+* `TauCeti.L0.instPseudoMetricSpace`, `TauCeti.L0.instMetricSpace`, `TauCeti.L0.dist_const_const`,
+  `TauCeti.L0.lipschitzWith_const`: (pseudo)metric space structure on `L0 E μ` when
+  `[IsFiniteMeasure μ]`, closed-form distance between constant classes, and Lipschitz continuity of
+  `L0.const`.
 * `TauCeti.L0.measureReal_ge_le_mul_dist`,
   `TauCeti.L0.dist_le_mul_measureReal_univ_add_measureReal_gt`: quantitative two-sided tail bounds.
 * `TauCeti.L0.tendsto_iff_tendstoInMeasure`: metric convergence in `L0 E μ` is equivalent to
@@ -202,8 +201,9 @@ theorem ofAEEqFun_const (c : E) : (ofAEEqFun (AEEqFun.const α c) : L0 E μ) = c
 
 /-- The representative of `L0.const α c` agrees with `Function.const α c` almost everywhere. -/
 theorem coeFn_const (α : Type*) {_ : MeasurableSpace α} {μ : Measure α} (c : E) :
-    (const (μ := μ) α c : α → E) =ᵐ[μ] Function.const α c :=
-  coeFn_mk _ _
+    (const (μ := μ) α c : α → E) =ᵐ[μ] Function.const α c := by
+  rw [← coeFn_toAEEqFun, toAEEqFun_const]
+  exact AEEqFun.coeFn_const α c
 
 @[simp]
 theorem coeFn_const_eq [NeZero μ] (c : E) (x : α) : const (μ := μ) α c x = c :=
@@ -299,16 +299,8 @@ theorem mk_inf_mk [SemilatticeInf E] [ContinuousInf E] (f g : α → E)
   filter_upwards [coeFn_mk f hf, coeFn_mk g hg, coeFn_mk (f ⊓ g) (hf.inf hg)] with x hfx hgx hfgx
   rw [hfx, hgx, hfgx, Pi.inf_apply]
 
-instance instLattice [Lattice E] [TopologicalLattice E] : Lattice (L0 E μ) where
-  __ := instPartialOrder
-  sup := max
-  le_sup_left f g := AEEqFun.le_sup_left f.toAEEqFun g.toAEEqFun
-  le_sup_right f g := AEEqFun.le_sup_right f.toAEEqFun g.toAEEqFun
-  sup_le f g h := AEEqFun.sup_le f.toAEEqFun g.toAEEqFun h.toAEEqFun
-  inf := min
-  inf_le_left f g := AEEqFun.inf_le_left f.toAEEqFun g.toAEEqFun
-  inf_le_right f g := AEEqFun.inf_le_right f.toAEEqFun g.toAEEqFun
-  le_inf f g h := AEEqFun.le_inf f.toAEEqFun g.toAEEqFun h.toAEEqFun
+instance instLattice [Lattice E] [TopologicalLattice E] : Lattice (L0 E μ) :=
+  toAEEqFun_injective.lattice toAEEqFun .rfl .rfl toAEEqFun_sup toAEEqFun_inf
 
 end Order
 
@@ -340,6 +332,8 @@ theorem integrable_dist_div_one_add [PseudoMetricSpace E] [IsFiniteMeasure μ] (
     Integrable (fun x ↦ dist (f x) (g x) / (1 + dist (f x) (g x))) μ :=
   integrable_dist_div_one_add_of_aestronglyMeasurable f.aestronglyMeasurable g.aestronglyMeasurable
 
+/-- Bounded-integral convergence-in-measure pseudometric on `L0 E μ` over a finite measure space,
+defined by `dist f g = ∫ x, dist (f x) (g x) / (1 + dist (f x) (g x)) ∂μ`. -/
 instance instPseudoMetricSpace [PseudoMetricSpace E] [IsFiniteMeasure μ] :
     PseudoMetricSpace (L0 E μ) where
   dist f g := ∫ x, dist (f x) (g x) / (1 + dist (f x) (g x)) ∂μ
@@ -358,13 +352,15 @@ theorem dist_def [PseudoMetricSpace E] [IsFiniteMeasure μ] (f g : L0 E μ) :
     dist f g = ∫ x, dist (f x) (g x) / (1 + dist (f x) (g x)) ∂μ :=
   (rfl)
 
-/-- Norm form of the distance on `L0 E μ` when `E` is a seminormed additive group. -/
-theorem dist_eq_integral_norm [SeminormedAddCommGroup E] [IsFiniteMeasure μ] (f g : L0 E μ) :
+/-- Norm form of the bounded-integral distance on `L0 E μ` when `E` is a seminormed additive
+group. -/
+theorem dist_eq_integral_norm_div_one_add [SeminormedAddCommGroup E] [IsFiniteMeasure μ]
+    (f g : L0 E μ) :
     dist f g = ∫ x, ‖f x - g x‖ / (1 + ‖f x - g x‖) ∂μ := by
   simp_rw [dist_def, dist_eq_norm]
 
-/-- Absolute-value form of the distance on `L0 ℝ μ`. -/
-theorem dist_eq_integral_abs [IsFiniteMeasure μ] (f g : L0 ℝ μ) :
+/-- Absolute-value form of the bounded-integral distance on `L0 ℝ μ`. -/
+theorem dist_eq_integral_abs_div_one_add [IsFiniteMeasure μ] (f g : L0 ℝ μ) :
     dist f g = ∫ x, |f x - g x| / (1 + |f x - g x|) ∂μ := by
   simp_rw [dist_def, Real.dist_eq]
 
@@ -399,15 +395,24 @@ theorem dist_const_const [PseudoMetricSpace E] [IsFiniteMeasure μ] (a b : E) :
     rfl
   rw [integral_congr_ae hcongr, integral_const, smul_eq_mul]
 
+/-- Embedding a constant value into `L0 E μ` is `(μ Set.univ).toNNReal`-Lipschitz on a finite
+measure space. -/
+theorem lipschitzWith_const [PseudoMetricSpace E] [IsFiniteMeasure μ] :
+    LipschitzWith (μ Set.univ).toNNReal (const (μ := μ) α : E → L0 E μ) :=
+  LipschitzWith.of_dist_le_mul fun a b ↦ by
+    rw [dist_const_const, measureReal_def, ENNReal.toReal]
+    exact mul_le_mul_of_nonneg_left
+      (div_le_self dist_nonneg (le_add_of_nonneg_right dist_nonneg)) (NNReal.coe_nonneg _)
+
 /-- Embedding a constant value into `L0 E μ` is continuous on a finite measure space. -/
 @[fun_prop]
-theorem continuous_const [PseudoMetricSpace E] [IsFiniteMeasure μ] :
-    Continuous (const (μ := μ) α : E → L0 E μ) := by
-  refine (LipschitzWith.of_dist_le' (K := μ.real Set.univ) fun a b ↦ ?_).continuous
-  rw [dist_const_const]
-  exact mul_le_mul_of_nonneg_left
-    (div_le_self dist_nonneg (le_add_of_nonneg_right dist_nonneg)) measureReal_nonneg
+protected theorem continuous_const [PseudoMetricSpace E] [IsFiniteMeasure μ] :
+    Continuous (const (μ := μ) α : E → L0 E μ) :=
+  lipschitzWith_const.continuous
 
+/-- Metric space structure on `L0 E μ` over a finite measure space when `E` is a metric space:
+zero `L⁰` distance forces almost-everywhere equality of representatives, hence equality in
+`L0 E μ`. -/
 instance instMetricSpace [MetricSpace E] [IsFiniteMeasure μ] : MetricSpace (L0 E μ) where
   eq_of_dist_eq_zero {f g} h := by
     rw [dist_def, integral_eq_zero_iff_of_nonneg (fun _ ↦ div_one_add_nonneg dist_nonneg)
@@ -595,24 +600,20 @@ private theorem exists_tendsto_of_controlled_dist [PseudoMetricSpace E] [Complet
       _ = (2⁻¹ : ℝ≥0∞) ^ k := by
           rw [ENNReal.ofReal_pow (by positivity), one_div,
             ENNReal.ofReal_inv_of_pos zero_lt_two, ENNReal.ofReal_ofNat]
-  have hμ_limsup : μ (atTop.limsup S) = 0 := by
-    refine measure_limsup_atTop_eq_zero (ne_top_of_le_ne_top ?_ (tsum_le_tsum hμS))
-    simpa only [ENNReal.tsum_geometric, ENNReal.one_sub_inv_two, inv_inv] using ENNReal.ofNat_ne_top
+  have h_ev := ae_eventually_notMem (s := S) (ne_top_of_le_ne_top
+    (by simpa only [ENNReal.tsum_geometric, ENNReal.one_sub_inv_two, inv_inv] using
+      ENNReal.ofNat_ne_top)
+    (tsum_le_tsum hμS))
   let g : α → E := fun x ↦ limUnder atTop fun k ↦ u k x
   have h_ae : ∀ᵐ x ∂μ, Tendsto (fun k ↦ u k x) atTop (𝓝 (g x)) := by
-    refine measure_mono_null (fun x hx ↦ ?_) hμ_limsup
-    rw [Set.mem_ofPred_eq] at hx
-    by_contra hx_not
-    rw [limsup_eq_iInf_iSup_of_nat] at hx_not
-    simp only [S, Set.iSup_eq_iUnion, Set.iInf_eq_iInter, Set.mem_iInter, Set.mem_iUnion,
-      Set.mem_ofPred_eq, not_forall, not_exists, not_le] at hx_not
-    obtain ⟨K, hK⟩ := hx_not
+    filter_upwards [h_ev] with x hx
+    obtain ⟨K, hK⟩ := eventually_atTop.mp hx
     have hcau : CauchySeq fun j ↦ u (j + K) x :=
       cauchySeq_of_le_geometric (1 / 2) ((1 / 2 : ℝ) ^ K) (by norm_num) fun j ↦ by
         rw [← pow_add, add_comm K j, add_right_comm]
-        exact (hK (j + K) (Nat.le_add_left K j)).le
+        exact (not_le.mp (hK (j + K) (Nat.le_add_left K j))).le
     obtain ⟨y, hy⟩ := cauchySeq_tendsto_of_complete hcau
-    exact hx (tendsto_nhds_limUnder ⟨y, (tendsto_add_atTop_iff_nat K).mp hy⟩)
+    exact tendsto_nhds_limUnder ⟨y, (tendsto_add_atTop_iff_nat K).mp hy⟩
   have hg : AEStronglyMeasurable g μ :=
     aestronglyMeasurable_of_tendsto_ae atTop (fun k ↦ (u k).aestronglyMeasurable) h_ae
   refine ⟨mk (μ := μ) g hg, tendsto_iff_tendstoInMeasure.mpr ?_⟩

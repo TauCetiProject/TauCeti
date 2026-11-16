@@ -22,7 +22,8 @@ compared with another such decomposition.
 When the target is a topological (semi)ring, pointwise operations descend to `α →ₘ[μ] R`:
 Mathlib supplies the additive group, multiplicative monoid, and module instances on `AEEqFun`, and
 this file completes the hierarchy with `Semiring`, `CommSemiring`, `Ring`, `CommRing`, and
-`Algebra` instances via `MeasureTheory.AEEqFun.toGerm_injective`.
+`Algebra` instances, together with the bundled ring homomorphisms
+`MeasureTheory.AEEqFun.toGermRingHom` and `MeasureTheory.AEEqFun.constRingHom`.
 -/
 
 public noncomputable section
@@ -56,8 +57,8 @@ theorem coeFn_natCast_eq [NeZero μ] [NatCast R] (n : ℕ) (x : α) : (n : α �
   coeFn_const_eq (μ := μ) α (n : R) x
 
 @[simp]
-theorem natCast_toGerm [NatCast R] (n : ℕ) : ((n : α →ₘ[μ] R)).toGerm = n :=
-  (rfl)
+theorem natCast_toGerm [NatCast R] (n : ℕ) : ((n : α →ₘ[μ] R)).toGerm = n := by
+  rw [natCast_def, const, mk_toGerm, Filter.Germ.natCast_def]
 
 instance instIntCast [IntCast R] : IntCast (α →ₘ[μ] R) :=
   ⟨fun n => const α (n : R)⟩
@@ -75,8 +76,8 @@ theorem coeFn_intCast_eq [NeZero μ] [IntCast R] (n : ℤ) (x : α) : (n : α �
   coeFn_const_eq (μ := μ) α (n : R) x
 
 @[simp]
-theorem intCast_toGerm [IntCast R] (n : ℤ) : ((n : α →ₘ[μ] R)).toGerm = n :=
-  (rfl)
+theorem intCast_toGerm [IntCast R] (n : ℤ) : ((n : α →ₘ[μ] R)).toGerm = n := by
+  rw [intCast_def, const, mk_toGerm, Filter.Germ.intCast_def]
 
 instance instSemiring [Semiring R] [IsTopologicalSemiring R] : Semiring (α →ₘ[μ] R) :=
   toGerm_injective.semiring toGerm zero_toGerm one_toGerm add_toGerm mul_toGerm
@@ -114,9 +115,15 @@ theorem coe_toGermRingHom [Semiring R] [IsTopologicalSemiring R] :
 def constRingHom [Semiring R] [IsTopologicalSemiring R] : R →+* α →ₘ[μ] R where
   toFun r := const α r
   map_one' := rfl
-  map_mul' _ _ := rfl
+  map_mul' a b := ext <| by
+    filter_upwards [coeFn_const (μ := μ) α (a * b), coeFn_mul (const α a) (const α b),
+      coeFn_const (μ := μ) α a, coeFn_const (μ := μ) α b] with x hab hmul ha hb
+    simp [hab, hmul, ha, hb]
   map_zero' := rfl
-  map_add' _ _ := rfl
+  map_add' a b := ext <| by
+    filter_upwards [coeFn_const (μ := μ) α (a + b), coeFn_add (const α a) (const α b),
+      coeFn_const (μ := μ) α a, coeFn_const (μ := μ) α b] with x hab hadd ha hb
+    simp [hab, hadd, ha, hb]
 
 @[simp]
 theorem constRingHom_apply [Semiring R] [IsTopologicalSemiring R] (r : R) :
@@ -125,7 +132,12 @@ theorem constRingHom_apply [Semiring R] [IsTopologicalSemiring R] (r : R) :
 
 instance instAlgebra [CommSemiring 𝕜] [Semiring R] [IsTopologicalSemiring R] [Algebra 𝕜 R] :
     Algebra 𝕜 (α →ₘ[μ] R) where
-  algebraMap := constRingHom.comp (algebraMap 𝕜 R)
+  algebraMap :=
+    { toFun c := const α (algebraMap 𝕜 R c)
+      map_one' := by simp [← constRingHom_apply]
+      map_mul' a b := by simp [← constRingHom_apply]
+      map_zero' := by simp [← constRingHom_apply]
+      map_add' a b := by simp [← constRingHom_apply] }
   commutes' c f := ext <| by
     filter_upwards [coeFn_mul (const α (algebraMap 𝕜 R c)) f,
       coeFn_mul f (const α (algebraMap 𝕜 R c)),

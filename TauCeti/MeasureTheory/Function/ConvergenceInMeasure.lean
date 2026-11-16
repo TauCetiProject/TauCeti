@@ -5,7 +5,6 @@ Authors: Jon Crall, Claude Fable 5
 -/
 module
 
-public import Mathlib.Analysis.Normed.MulAction
 public import Mathlib.MeasureTheory.Function.ConvergenceInMeasure
 public import Mathlib.MeasureTheory.Integral.Bochner.Basic
 import TauCeti.Probability.Moments.Chebyshev
@@ -243,28 +242,28 @@ theorem TendstoInMeasure.const_smul [SMul 𝕜 E] [PseudoEMetricSpace E]
     TendstoInMeasure μ (fun i x ↦ c • f i x) l (fun x ↦ c • g x) :=
   hf.uniformContinuous_comp (uniformContinuous_const_smul c)
 
-/-- On a finite measure space, the measure of `{x | n ≤ dist (g x) y₀}` tends to `0` as
-`n → ∞` for every almost-everywhere strongly measurable function `g`. Both finiteness of `μ`
+/-- On a finite measure space, the measure of `{x | r ≤ dist (g x) y₀}` tends to `0` as
+`r → ∞` for every almost-everywhere strongly measurable function `g`. Both finiteness of `μ`
 and measurability of `g` are essential. -/
 theorem tendsto_measure_dist_ge_atTop [PseudoMetricSpace E] [IsFiniteMeasure μ]
     {g : α → E} (hg : AEStronglyMeasurable g μ) (y₀ : E) :
-    Tendsto (fun n : ℕ ↦ μ {x | (n : ℝ) ≤ dist (g x) y₀}) atTop (𝓝 0) := by
+    Tendsto (fun r : ℝ ↦ μ {x | r ≤ dist (g x) y₀}) atTop (𝓝 0) := by
   let g' : α → E := hg.mk g
-  have hmeas : ∀ n : ℕ, MeasurableSet {x | (n : ℝ) ≤ dist (g' x) y₀} := fun n ↦
+  have hmeas : ∀ r : ℝ, MeasurableSet {x | r ≤ dist (g' x) y₀} := fun r ↦
     measurableSet_le measurable_const
       (hg.stronglyMeasurable_mk.dist stronglyMeasurable_const).measurable
-  have hanti : Antitone (fun n : ℕ ↦ {x | (n : ℝ) ≤ dist (g' x) y₀}) := fun m n hmn x hx ↦ by
+  have hanti : Antitone (fun r : ℝ ↦ {x | r ≤ dist (g' x) y₀}) := fun r s hrs x hx ↦ by
     rw [Set.mem_ofPred_eq] at hx ⊢
-    exact (Nat.cast_le.mpr hmn).trans hx
-  have hinter : (⋂ n : ℕ, {x | (n : ℝ) ≤ dist (g' x) y₀}) = ∅ := by
+    exact hrs.trans hx
+  have hinter : (⋂ r : ℝ, {x | r ≤ dist (g' x) y₀}) = ∅ := by
     ext x
     simp only [Set.mem_iInter, Set.mem_ofPred_eq, Set.mem_empty_iff_false, iff_false, not_forall,
       not_le]
-    exact exists_nat_gt (dist (g' x) y₀)
-  have hlim := tendsto_measure_iInter_atTop (fun n ↦ (hmeas n).nullMeasurableSet) hanti
+    exact exists_gt (dist (g' x) y₀)
+  have hlim := tendsto_measure_iInter_atTop (fun r ↦ (hmeas r).nullMeasurableSet) hanti
     ⟨0, measure_ne_top μ _⟩
   rw [hinter, measure_empty] at hlim
-  refine hlim.congr fun n ↦ measure_congr ?_
+  refine hlim.congr fun r ↦ measure_congr ?_
   filter_upwards [hg.ae_eq_mk] with x hx
   simp [g', hx]
 
@@ -287,37 +286,37 @@ theorem TendstoInMeasure.smul [Zero 𝕜] [Zero E] [PseudoMetricSpace 𝕜] [Pse
     (tendsto_measure_dist_ge_atTop hc₀ 0) (η / 2 / 2) hη4
   obtain ⟨N₂, hN₂⟩ := ENNReal.tendsto_atTop_zero.mp
     (tendsto_measure_dist_ge_atTop hg 0) (η / 2 / 2) hη4
-  let M : ℕ := max N₁ N₂
-  have hMc₀ : μ {x | (M : ℝ) ≤ dist (c₀ x) 0} ≤ η / 2 / 2 := hN₁ M (le_max_left _ _)
-  have hMg : μ {x | (M : ℝ) ≤ dist (g x) 0} ≤ η / 2 / 2 := hN₂ M (le_max_right _ _)
+  let M : ℝ := max N₁ N₂
+  have hMc₀ : μ {x | M ≤ dist (c₀ x) 0} ≤ η / 2 / 2 := hN₁ M (le_max_left _ _)
+  have hMg : μ {x | M ≤ dist (g x) 0} ≤ η / 2 / 2 := hN₂ M (le_max_right _ _)
   obtain ⟨δ₀, hδ₀, huc⟩ := Metric.uniformContinuousOn_iff.mp
-    (Metric.isBounded_ball (x := (0 : 𝕜 × E)) (r := (M : ℝ) + 1)).uniformContinuousOn_smul ε hε
+    (Metric.isBounded_ball (x := (0 : 𝕜 × E)) (r := M + 1)).uniformContinuousOn_smul ε hε
   let δ : ℝ := min δ₀ 1
   have hδ : 0 < δ := lt_min hδ₀ zero_lt_one
   filter_upwards [(ENNReal.tendsto_nhds_zero.mp (hc δ hδ)) (η / 2 / 2) hη4,
     (ENNReal.tendsto_nhds_zero.mp (hf δ hδ)) (η / 2 / 2) hη4] with i hic hif
   have hsub : {x | ε ≤ dist (c i x • f i x) (c₀ x • g x)} ⊆
-      ({x | (M : ℝ) ≤ dist (c₀ x) 0} ∪ {x | (M : ℝ) ≤ dist (g x) 0}) ∪
+      ({x | M ≤ dist (c₀ x) 0} ∪ {x | M ≤ dist (g x) 0}) ∪
       ({x | δ ≤ dist (c i x) (c₀ x)} ∪ {x | δ ≤ dist (f i x) (g x)}) := by
     intro x hx
     rw [Set.mem_ofPred_eq] at hx
     by_contra hnot
     simp only [Set.mem_union, Set.mem_ofPred_eq, not_or, not_le] at hnot
     rcases hnot with ⟨⟨hc₀_lt, hg_lt⟩, ⟨hc_lt, hf_lt⟩⟩
-    have hp₁ : (c i x, f i x) ∈ Metric.ball (0 : 𝕜 × E) ((M : ℝ) + 1) := by
+    have hp₁ : (c i x, f i x) ∈ Metric.ball (0 : 𝕜 × E) (M + 1) := by
       simp only [Metric.mem_ball, Prod.dist_eq, Prod.fst_zero, Prod.snd_zero, max_lt_iff]
       exact ⟨(dist_triangle (c i x) (c₀ x) 0).trans_lt
         (by linarith [hc_lt.trans_le (min_le_right δ₀ 1)]),
         (dist_triangle (f i x) (g x) 0).trans_lt
         (by linarith [hf_lt.trans_le (min_le_right δ₀ 1)])⟩
-    have hp₀ : (c₀ x, g x) ∈ Metric.ball (0 : 𝕜 × E) ((M : ℝ) + 1) := by
+    have hp₀ : (c₀ x, g x) ∈ Metric.ball (0 : 𝕜 × E) (M + 1) := by
       simp only [Metric.mem_ball, Prod.dist_eq, Prod.fst_zero, Prod.snd_zero, max_lt_iff]
       exact ⟨by linarith, by linarith⟩
     have hp_dist : dist (c i x, f i x) (c₀ x, g x) < δ₀ :=
       (max_lt hc_lt hf_lt).trans_le (min_le_left δ₀ 1)
     exact hx.not_gt (huc (c i x, f i x) hp₁ (c₀ x, g x) hp₀ hp_dist)
   calc μ {x | ε ≤ dist (c i x • f i x) (c₀ x • g x)}
-      ≤ (μ {x | (M : ℝ) ≤ dist (c₀ x) 0} + μ {x | (M : ℝ) ≤ dist (g x) 0}) +
+      ≤ (μ {x | M ≤ dist (c₀ x) 0} + μ {x | M ≤ dist (g x) 0}) +
           (μ {x | δ ≤ dist (c i x) (c₀ x)} + μ {x | δ ≤ dist (f i x) (g x)}) :=
         (measure_mono hsub).trans ((measure_union_le _ _).trans
           (add_le_add (measure_union_le _ _) (measure_union_le _ _)))

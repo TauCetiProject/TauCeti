@@ -11,6 +11,7 @@ public import TauCeti.MeasureTheory.Function.AEEqFun
 public import TauCeti.MeasureTheory.Function.L0Space.Basic
 import Mathlib.Analysis.SpecificLimits.Basic
 import Mathlib.MeasureTheory.Integral.Bochner.Set
+import TauCeti.Algebra.Order.Field.Basic
 import TauCeti.MeasureTheory.Function.ConvergenceInMeasure
 
 /-!
@@ -22,34 +23,37 @@ module, (commutative) semiring, (commutative) ring, and algebra instances togeth
 equivalences (`addEquivAEEqFun`, `linearEquivAEEqFun`, `ringEquivAEEqFun`, `algEquivAEEqFun`).
 
 On a finite measure space, isometric scalar actions and translations on `E` lift to `L0 E μ`
-(`IsIsometricSMul`, `IsIsometricVAdd`), and combining `TauCeti.L0.tendsto_iff_tendstoInMeasure`
-with the algebraic stability of `MeasureTheory.TendstoInMeasure` upgrades `L0 E μ` to a topological
-additive group (or `ContinuousAdd` under `LipschitzAdd`), gives joint continuity of bounded scalar
-multiplication (`ContinuousSMul 𝕜 (L0 E μ)`), and makes `L0 R μ` a topological semiring or ring
-under `IsBoundedSMul R R`.
+(`IsIsometricSMul`, `IsIsometricVAdd`), uniform additive groups and uniformly continuous constant
+scalar actions lift to `IsUniformAddGroup (L0 E μ)` and `UniformContinuousConstSMul 𝕜 (L0 E μ)`,
+and Lipschitz addition lifts to `LipschitzAdd (L0 E μ)` (providing `ContinuousAdd` on additive
+monoids without negation). Combining `TauCeti.L0.tendsto_iff_tendstoInMeasure` with the algebraic
+stability of `MeasureTheory.TendstoInMeasure` gives joint continuity of bounded scalar
+multiplication (`ContinuousSMul 𝕜 (L0 E μ)`) and makes `L0 R μ` a topological semiring under
+`[LipschitzAdd R]` and `[IsBoundedSMul R R]`, and a topological ring under `[IsUniformAddGroup R]`
+and `[IsBoundedSMul R R]`.
 
 For $1 \le p \le \infty$, the canonical inclusion `TauCeti.L0.ofLp : Lp E p μ → L0 E μ` is
 continuous on finite measure spaces (`TauCeti.L0.continuous_ofLp`) via
 `MeasureTheory.tendstoInMeasure_of_tendsto_Lp`, and bundles as a continuous linear map
 `TauCeti.L0.ofLpCLM`. Closed-form distance formulas for indicator-constant classes
 (`dist_indicatorConst_zero`, `dist_indicatorConst_one_zero`) evaluate the `L⁰` metric explicitly on
-measurable indicators, and `tendsto_dist_natCast_zero` / `not_exists_tendsto_natCast` show that the
-natural-number constant classes `(n : L0 ℝ μ)` have distance to `0` tending to `μ.real Set.univ`
-and diverge whenever `μ ≠ 0`.
+null-measurable indicators, and `tendsto_dist_natCast_zero_nhds_measureReal_univ` /
+`not_exists_tendsto_natCast` show that the natural-number constant classes `(n : L0 ℝ μ)` have
+distance to `0` tending to `μ.real Set.univ` and diverge whenever `μ ≠ 0`.
 
 ## Main declarations
 
 * `TauCeti.L0.addEquivAEEqFun`, `linearEquivAEEqFun`, `ringEquivAEEqFun`, `algEquivAEEqFun`:
   algebraic equivalences between `L0` and `MeasureTheory.AEEqFun`.
-* `TauCeti.L0.instIsIsometricSMul`, `instIsIsometricVAdd`, `instIsTopologicalAddGroup`,
-  `instContinuousSMul`, `instIsTopologicalSemiring`, `instIsTopologicalRing`: isometric actions and
-  continuity of algebraic operations on `L0` over finite measure spaces.
-* `TauCeti.L0.ofLp`, `TauCeti.L0.continuous_ofLp`, `TauCeti.L0.ofLpCLM`,
-  `MeasureTheory.MemLp.toL0`: continuous linear inclusion of `Lp E p μ` into `L0 E μ` for
-  `1 ≤ p`.
+* `TauCeti.L0.instIsIsometricSMul`, `instIsIsometricVAdd`, `instIsUniformAddGroup`,
+  `instLipschitzAdd`, `instUniformContinuousConstSMul`, `instContinuousSMul`, `instContinuousMul`,
+  `instIsTopologicalSemiring`, `instIsTopologicalRing`: isometric actions, uniform and Lipschitz
+  structure, and continuity of algebraic operations on `L0` over finite measure spaces.
+* `TauCeti.L0.ofLp`, `TauCeti.L0.continuous_ofLp`, `TauCeti.L0.ofLpCLM`: continuous linear
+  inclusion of `Lp E p μ` into `L0 E μ` for `1 ≤ p`.
 * `TauCeti.L0.indicatorConst`, `TauCeti.L0.dist_indicatorConst_zero`,
-  `TauCeti.L0.tendsto_dist_natCast_zero`: indicator-constant classes and explicit `L⁰` distance
-  asymptotics.
+  `TauCeti.L0.tendsto_dist_natCast_zero_nhds_measureReal_univ`: indicator-constant classes and
+  explicit `L⁰` distance asymptotics.
 -/
 
 public noncomputable section
@@ -329,7 +333,7 @@ instance instAddCommGroup [AddCommGroup E] [IsTopologicalAddGroup E] : AddCommGr
     toAEEqFun_sub (fun _ _ ↦ toAEEqFun_smul _ _) fun _ _ ↦ toAEEqFun_smul _ _
 
 /-- Canonical additive equivalence between `L0 E μ` and `α →ₘ[μ] E`. -/
-def addEquivAEEqFun [AddMonoid E] [ContinuousAdd E] : L0 E μ ≃+ (α →ₘ[μ] E) where
+def addEquivAEEqFun [Add E] [ContinuousAdd E] : L0 E μ ≃+ (α →ₘ[μ] E) where
   toFun := toAEEqFun
   invFun := ofAEEqFun
   left_inv := ofAEEqFun_toAEEqFun
@@ -337,12 +341,12 @@ def addEquivAEEqFun [AddMonoid E] [ContinuousAdd E] : L0 E μ ≃+ (α →ₘ[μ
   map_add' := toAEEqFun_add
 
 @[simp]
-theorem addEquivAEEqFun_apply [AddMonoid E] [ContinuousAdd E] (f : L0 E μ) :
+theorem addEquivAEEqFun_apply [Add E] [ContinuousAdd E] (f : L0 E μ) :
     addEquivAEEqFun f = f.toAEEqFun := by
   rfl
 
 @[simp]
-theorem addEquivAEEqFun_symm_apply [AddMonoid E] [ContinuousAdd E] (f : α →ₘ[μ] E) :
+theorem addEquivAEEqFun_symm_apply [Add E] [ContinuousAdd E] (f : α →ₘ[μ] E) :
     addEquivAEEqFun.symm f = ofAEEqFun f := by
   rfl
 
@@ -406,7 +410,8 @@ instance instCommRing [CommRing R] [IsTopologicalRing R] : CommRing (L0 R μ) wh
   __ := instCommMonoid
 
 /-- Canonical ring equivalence between `L0 R μ` and `α →ₘ[μ] R`. -/
-def ringEquivAEEqFun [Semiring R] [IsTopologicalSemiring R] : L0 R μ ≃+* (α →ₘ[μ] R) where
+def ringEquivAEEqFun [Add R] [Mul R] [ContinuousAdd R] [ContinuousMul R] :
+    L0 R μ ≃+* (α →ₘ[μ] R) where
   toFun := toAEEqFun
   invFun := ofAEEqFun
   left_inv := ofAEEqFun_toAEEqFun
@@ -415,22 +420,30 @@ def ringEquivAEEqFun [Semiring R] [IsTopologicalSemiring R] : L0 R μ ≃+* (α 
   map_add' := toAEEqFun_add
 
 @[simp]
-theorem ringEquivAEEqFun_apply [Semiring R] [IsTopologicalSemiring R] (f : L0 R μ) :
+theorem ringEquivAEEqFun_apply [Add R] [Mul R] [ContinuousAdd R] [ContinuousMul R] (f : L0 R μ) :
     ringEquivAEEqFun f = f.toAEEqFun := by
   rfl
 
 @[simp]
-theorem ringEquivAEEqFun_symm_apply [Semiring R] [IsTopologicalSemiring R] (f : α →ₘ[μ] R) :
+theorem ringEquivAEEqFun_symm_apply [Add R] [Mul R] [ContinuousAdd R] [ContinuousMul R]
+    (f : α →ₘ[μ] R) :
     ringEquivAEEqFun.symm f = ofAEEqFun f := by
   rfl
 
 instance instAlgebra [CommSemiring 𝕜] [Semiring R] [IsTopologicalSemiring R] [Algebra 𝕜 R] :
     Algebra 𝕜 (L0 R μ) where
-  algebraMap := ringEquivAEEqFun.symm.toRingHom.comp (algebraMap 𝕜 (α →ₘ[μ] R))
+  algebraMap :=
+    { toFun c := ofAEEqFun (algebraMap 𝕜 (α →ₘ[μ] R) c)
+      map_one' := by simp [← ofAEEqFun_one]
+      map_mul' a b := by simp
+      map_zero' := by simp [← ofAEEqFun_zero]
+      map_add' a b := by simp }
   commutes' c f := toAEEqFun_injective (by
-    simp only [RingHom.coe_comp, Function.comp_apply, toAEEqFun_mul]
+    simp only [RingHom.coe_mk, MonoidHom.coe_mk, OneHom.coe_mk, toAEEqFun_mul]
     exact Algebra.commutes c f.toAEEqFun)
-  smul_def' c f := toAEEqFun_injective (by simp [Algebra.smul_def])
+  smul_def' c f := toAEEqFun_injective (by
+    simp only [RingHom.coe_mk, MonoidHom.coe_mk, OneHom.coe_mk, toAEEqFun_smul, toAEEqFun_mul]
+    exact Algebra.smul_def c f.toAEEqFun)
 
 /-- `toAEEqFun` commutes with `algebraMap` from `𝕜`. -/
 theorem toAEEqFun_algebraMap [CommSemiring 𝕜] [Semiring R] [IsTopologicalSemiring R] [Algebra 𝕜 R]
@@ -475,6 +488,7 @@ section TopologicalAlgebra
 
 variable {α 𝕜 E R : Type*} {mα : MeasurableSpace α} {μ : Measure α} [IsFiniteMeasure μ]
 
+/-- An isometric scalar action on `E` lifts to an isometric scalar action on `L0 E μ`. -/
 instance instIsIsometricSMul [PseudoMetricSpace E] [SMul 𝕜 E] [IsIsometricSMul 𝕜 E] :
     IsIsometricSMul 𝕜 (L0 E μ) :=
   ⟨fun c ↦ Isometry.of_dist_eq fun f g ↦ by
@@ -483,19 +497,21 @@ instance instIsIsometricSMul [PseudoMetricSpace E] [SMul 𝕜 E] [IsIsometricSMu
     filter_upwards [coeFn_smul c f, coeFn_smul c g] with x hcf hcg
     simp [hcf, hcg]⟩
 
+/-- Isometric left translation on `E` lifts to isometric left translation on `L0 E μ`. -/
 instance instIsIsometricVAdd [PseudoMetricSpace E] [Add E] [ContinuousAdd E]
     [IsIsometricVAdd E E] : IsIsometricVAdd (L0 E μ) (L0 E μ) :=
   ⟨fun h ↦ Isometry.of_dist_eq fun f g ↦ by
-    change dist (h + f) (h + g) = dist f g
+    simp_rw [vadd_eq_add]
     rw [dist_def, dist_def]
     refine integral_congr_ae ?_
     filter_upwards [coeFn_add h f, coeFn_add h g] with x hhf hhg
     simp [hhf, hhg]⟩
 
+/-- Isometric right translation on `E` lifts to isometric right translation on `L0 E μ`. -/
 instance instIsIsometricVAddOp [PseudoMetricSpace E] [Add E] [ContinuousAdd E]
     [IsIsometricVAdd Eᵃᵒᵖ E] : IsIsometricVAdd (L0 E μ)ᵃᵒᵖ (L0 E μ) :=
   ⟨fun h ↦ Isometry.of_dist_eq fun f g ↦ by
-    change dist (f + h.unop) (g + h.unop) = dist f g
+    simp_rw [AddOpposite.vadd_eq_add_unop]
     rw [dist_def, dist_def]
     refine integral_congr_ae ?_
     filter_upwards [coeFn_add f h.unop, coeFn_add g h.unop] with x hfh hgh
@@ -508,34 +524,160 @@ theorem dist_eq_dist_sub_zero [AddGroup E] [PseudoMetricSpace E] [IsTopologicalA
     dist f g = dist (f - g) 0 := by
   simpa [sub_eq_add_neg] using (dist_add_right f g (-g)).symm
 
-instance instContinuousAdd [AddGroup E] [PseudoMetricSpace E] [IsUniformAddGroup E] :
-    ContinuousAdd (L0 E μ) where
-  continuous_add := continuous_iff_continuousAt.mpr fun p ↦ by
-    have h₁ := tendsto_iff_tendstoInMeasure.mp (continuous_fst.continuousAt (x := p))
-    have h₂ := tendsto_iff_tendstoInMeasure.mp (continuous_snd.continuousAt (x := p))
-    exact tendsto_iff_tendstoInMeasure.mpr <|
-      (h₁.add h₂).congr (fun q ↦ (coeFn_add q.1 q.2).symm) (coeFn_add p.1 p.2).symm
+/-- On a finite measure space, `L0 E μ` is a uniform additive group (and hence a topological
+additive group) whenever `E` is a uniform additive group. -/
+instance instIsUniformAddGroup [AddGroup E] [PseudoMetricSpace E] [IsUniformAddGroup E] :
+    IsUniformAddGroup (L0 E μ) where
+  uniformContinuous_sub := Metric.uniformContinuous_iff.mpr fun η hη ↦ by
+    let ε : ℝ := η / (2 * (μ.real Set.univ + 1))
+    have hden : 0 < μ.real Set.univ + 1 := by positivity
+    have hε : 0 < ε := div_pos hη (by positivity)
+    have hε_mass : ε * μ.real Set.univ < η / 2 := by
+      calc ε * μ.real Set.univ
+          < ε * (μ.real Set.univ + 1) := by gcongr; linarith
+        _ = η / 2 := by
+            dsimp [ε]
+            field_simp [hden.ne']
+    obtain ⟨δ, hδ, hsub⟩ := Metric.uniformContinuous_iff.mp
+      (uniformContinuous_sub (α := E)) ε hε
+    have h1δ : 0 < 1 + δ := by positivity
+    refine ⟨δ / (1 + δ) * (η / 4), by positivity, fun {p q} hpq ↦ ?_⟩
+    rw [Prod.dist_eq, max_lt_iff] at hpq
+    have hae : {x | ε ≤ dist ((p.1 - p.2) x) ((q.1 - q.2) x)} ≤ᵐ[μ]
+        ({x | δ ≤ dist (p.1 x) (q.1 x)} ∪ {x | δ ≤ dist (p.2 x) (q.2 x)} : Set α) := by
+      filter_upwards [coeFn_sub p.1 p.2, coeFn_sub q.1 q.2] with x hpx hqx hx
+      rw [hpx, hqx, Pi.sub_apply, Pi.sub_apply] at hx
+      by_contra hnot
+      simp only [Set.mem_union, Set.mem_ofPred_eq, not_or, not_le] at hnot
+      exact hx.not_gt (hsub (a := (p.1 x, p.2 x)) (b := (q.1 x, q.2 x))
+        (by rw [Prod.dist_eq]; exact max_lt hnot.1 hnot.2))
+    have htail : μ.real {x | ε ≤ dist ((p.1 - p.2) x) ((q.1 - q.2) x)} ≤
+        μ.real {x | δ ≤ dist (p.1 x) (q.1 x)} + μ.real {x | δ ≤ dist (p.2 x) (q.2 x)} :=
+      calc μ.real {x | ε ≤ dist ((p.1 - p.2) x) ((q.1 - q.2) x)}
+          ≤ μ.real ({x | δ ≤ dist (p.1 x) (q.1 x)} ∪ {x | δ ≤ dist (p.2 x) (q.2 x)}) := by
+            rw [measureReal_def, measureReal_def]
+            exact ENNReal.toReal_mono (measure_ne_top μ _) (measure_mono_ae hae)
+        _ ≤ μ.real {x | δ ≤ dist (p.1 x) (q.1 x)} + μ.real {x | δ ≤ dist (p.2 x) (q.2 x)} :=
+            measureReal_union_le _ _
+    have hm₁ : μ.real {x | δ ≤ dist (p.1 x) (q.1 x)} < η / 4 := by
+      calc μ.real {x | δ ≤ dist (p.1 x) (q.1 x)}
+          ≤ (1 + δ) / δ * dist p.1 q.1 := measureReal_ge_le_mul_dist hδ
+        _ < (1 + δ) / δ * (δ / (1 + δ) * (η / 4)) :=
+            mul_lt_mul_of_pos_left hpq.1 (div_pos h1δ hδ)
+        _ = η / 4 := by field_simp [hδ.ne', h1δ.ne']
+    have hm₂ : μ.real {x | δ ≤ dist (p.2 x) (q.2 x)} < η / 4 := by
+      calc μ.real {x | δ ≤ dist (p.2 x) (q.2 x)}
+          ≤ (1 + δ) / δ * dist p.2 q.2 := measureReal_ge_le_mul_dist hδ
+        _ < (1 + δ) / δ * (δ / (1 + δ) * (η / 4)) :=
+            mul_lt_mul_of_pos_left hpq.2 (div_pos h1δ hδ)
+        _ = η / 4 := by field_simp [hδ.ne', h1δ.ne']
+    calc dist (p.1 - p.2) (q.1 - q.2)
+        ≤ ε * μ.real Set.univ + μ.real {x | ε ≤ dist ((p.1 - p.2) x) ((q.1 - q.2) x)} :=
+          dist_le_mul_measureReal_univ_add_measureReal_ge hε.le
+      _ < η / 2 + (η / 4 + η / 4) := by linarith
+      _ = η := by ring
 
-instance instContinuousAddOfLipschitzAdd [AddMonoid E] [PseudoMetricSpace E] [LipschitzAdd E] :
-    ContinuousAdd (L0 E μ) where
-  continuous_add := continuous_iff_continuousAt.mpr fun p ↦ by
-    have h₁ := tendsto_iff_tendstoInMeasure.mp (continuous_fst.continuousAt (x := p))
-    have h₂ := tendsto_iff_tendstoInMeasure.mp (continuous_snd.continuousAt (x := p))
-    exact tendsto_iff_tendstoInMeasure.mpr <|
-      (h₁.uniformContinuous₂_comp lipschitzWith_lipschitz_const_add_edist.uniformContinuous
-        h₂).congr (fun q ↦ (coeFn_add q.1 q.2).symm) (coeFn_add p.1 p.2).symm
+/-- On a finite measure space, addition on `L0 E μ` is Lipschitz whenever addition on `E` is
+Lipschitz (giving `ContinuousAdd (L0 E μ)` on additive monoids and semirings without negation). -/
+instance instLipschitzAdd [AddMonoid E] [PseudoMetricSpace E] [LipschitzAdd E] :
+    LipschitzAdd (L0 E μ) where
+  lipschitz_add := by
+    let C : ℝ≥0 := LipschitzAdd.C E
+    let K : ℝ≥0 := max C 1
+    have hK1 : (1 : ℝ) ≤ K := by exact_mod_cast le_max_right C 1
+    have hCK : (C : ℝ) ≤ K := by exact_mod_cast le_max_left C 1
+    have hscale : ∀ t : ℝ, 0 ≤ t → (K : ℝ) * t / (1 + (K : ℝ) * t) ≤ K * (t / (1 + t)) :=
+      fun t ht ↦ by
+        rw [← mul_div_assoc]
+        exact div_le_div_of_nonneg_left (mul_nonneg K.coe_nonneg ht) (by positivity) (by nlinarith)
+    refine ⟨2 * K, LipschitzWith.of_dist_le_mul fun p q ↦ ?_⟩
+    have hae : ∀ᵐ x ∂μ,
+        dist ((p.1 + p.2) x) ((q.1 + q.2) x) / (1 + dist ((p.1 + p.2) x) ((q.1 + q.2) x)) ≤
+          (K : ℝ) * (dist (p.1 x) (q.1 x) / (1 + dist (p.1 x) (q.1 x))) +
+            (K : ℝ) * (dist (p.2 x) (q.2 x) / (1 + dist (p.2 x) (q.2 x))) := by
+      filter_upwards [coeFn_add p.1 p.2, coeFn_add q.1 q.2] with x hpx hqx
+      rw [hpx, hqx, Pi.add_apply, Pi.add_apply]
+      have hlip : dist (p.1 x + p.2 x) (q.1 x + q.2 x) ≤
+          (K : ℝ) * dist (p.1 x) (q.1 x) + (K : ℝ) * dist (p.2 x) (q.2 x) := by
+        calc dist (p.1 x + p.2 x) (q.1 x + q.2 x)
+            ≤ (C : ℝ) * dist (p.1 x, p.2 x) (q.1 x, q.2 x) :=
+              lipschitz_with_lipschitz_const_add (p.1 x, p.2 x) (q.1 x, q.2 x)
+          _ ≤ (K : ℝ) * max (dist (p.1 x) (q.1 x)) (dist (p.2 x) (q.2 x)) := by
+              rw [Prod.dist_eq]
+              exact mul_le_mul_of_nonneg_right hCK (le_max_of_le_left dist_nonneg)
+          _ ≤ (K : ℝ) * (dist (p.1 x) (q.1 x) + dist (p.2 x) (q.2 x)) :=
+              mul_le_mul_of_nonneg_left
+                (max_le (le_add_of_nonneg_right dist_nonneg) (le_add_of_nonneg_left dist_nonneg))
+                K.coe_nonneg
+          _ = (K : ℝ) * dist (p.1 x) (q.1 x) + (K : ℝ) * dist (p.2 x) (q.2 x) := by ring
+      calc dist (p.1 x + p.2 x) (q.1 x + q.2 x) / (1 + dist (p.1 x + p.2 x) (q.1 x + q.2 x))
+          ≤ ((K : ℝ) * dist (p.1 x) (q.1 x) + (K : ℝ) * dist (p.2 x) (q.2 x)) /
+              (1 + ((K : ℝ) * dist (p.1 x) (q.1 x) + (K : ℝ) * dist (p.2 x) (q.2 x))) :=
+            div_one_add_mono dist_nonneg hlip
+        _ ≤ (K : ℝ) * dist (p.1 x) (q.1 x) / (1 + (K : ℝ) * dist (p.1 x) (q.1 x)) +
+              (K : ℝ) * dist (p.2 x) (q.2 x) / (1 + (K : ℝ) * dist (p.2 x) (q.2 x)) :=
+            div_one_add_add_le (mul_nonneg K.coe_nonneg dist_nonneg)
+              (mul_nonneg K.coe_nonneg dist_nonneg)
+        _ ≤ (K : ℝ) * (dist (p.1 x) (q.1 x) / (1 + dist (p.1 x) (q.1 x))) +
+              (K : ℝ) * (dist (p.2 x) (q.2 x) / (1 + dist (p.2 x) (q.2 x))) :=
+            add_le_add (hscale _ dist_nonneg) (hscale _ dist_nonneg)
+    have hint₁ := (integrable_dist_div_one_add p.1 q.1).const_mul (K : ℝ)
+    have hint₂ := (integrable_dist_div_one_add p.2 q.2).const_mul (K : ℝ)
+    calc dist (p.1 + p.2) (q.1 + q.2)
+        ≤ ∫ x, ((K : ℝ) * (dist (p.1 x) (q.1 x) / (1 + dist (p.1 x) (q.1 x))) +
+            (K : ℝ) * (dist (p.2 x) (q.2 x) / (1 + dist (p.2 x) (q.2 x)))) ∂μ :=
+          integral_mono_ae (integrable_dist_div_one_add (p.1 + p.2) (q.1 + q.2))
+            (hint₁.add hint₂) hae
+      _ = (K : ℝ) * dist p.1 q.1 + (K : ℝ) * dist p.2 q.2 := by
+          rw [integral_add hint₁ hint₂, integral_const_mul, integral_const_mul, dist_def, dist_def]
+      _ ≤ (K : ℝ) * dist p q + (K : ℝ) * dist p q := by
+          rw [Prod.dist_eq]
+          exact add_le_add (mul_le_mul_of_nonneg_left (le_max_left _ _) K.coe_nonneg)
+            (mul_le_mul_of_nonneg_left (le_max_right _ _) K.coe_nonneg)
+      _ = ↑(2 * K) * dist p q := by
+          push_cast
+          ring
 
-instance instContinuousNeg [AddGroup E] [PseudoMetricSpace E] [IsUniformAddGroup E] :
-    ContinuousNeg (L0 E μ) where
-  continuous_neg := continuous_iff_continuousAt.mpr fun f ↦ by
-    have h := tendsto_iff_tendstoInMeasure.mp (continuousAt_id (x := f))
-    exact tendsto_iff_tendstoInMeasure.mpr <|
-      h.neg.congr (fun g ↦ (coeFn_neg g).symm) (coeFn_neg f).symm
+/-- On a finite measure space, constant scalar multiplication on `L0 E μ` is uniformly continuous
+whenever constant scalar multiplication on `E` is uniformly continuous. -/
+instance instUniformContinuousConstSMul [SMul 𝕜 E] [PseudoMetricSpace E]
+    [UniformContinuousConstSMul 𝕜 E] : UniformContinuousConstSMul 𝕜 (L0 E μ) where
+  uniformContinuous_const_smul c := Metric.uniformContinuous_iff.mpr fun η hη ↦ by
+    let ε : ℝ := η / (2 * (μ.real Set.univ + 1))
+    have hden : 0 < μ.real Set.univ + 1 := by positivity
+    have hε : 0 < ε := div_pos hη (by positivity)
+    have hε_mass : ε * μ.real Set.univ < η / 2 := by
+      calc ε * μ.real Set.univ
+          < ε * (μ.real Set.univ + 1) := by gcongr; linarith
+        _ = η / 2 := by
+            dsimp [ε]
+            field_simp [hden.ne']
+    obtain ⟨δ, hδ, hsmul⟩ := Metric.uniformContinuous_iff.mp
+      (uniformContinuous_const_smul (X := E) c) ε hε
+    have h1δ : 0 < 1 + δ := by positivity
+    refine ⟨δ / (1 + δ) * (η / 2), by positivity, fun {f g} hfg ↦ ?_⟩
+    have hae : {x | ε ≤ dist ((c • f) x) ((c • g) x)} ≤ᵐ[μ] {x | δ ≤ dist (f x) (g x)} := by
+      filter_upwards [coeFn_smul c f, coeFn_smul c g] with x hcf hcg hx
+      rw [hcf, hcg, Pi.smul_apply, Pi.smul_apply] at hx
+      by_contra! hlt
+      exact hx.not_gt (hsmul hlt)
+    have htail : μ.real {x | ε ≤ dist ((c • f) x) ((c • g) x)} < η / 2 := by
+      calc μ.real {x | ε ≤ dist ((c • f) x) ((c • g) x)}
+          ≤ μ.real {x | δ ≤ dist (f x) (g x)} := by
+            rw [measureReal_def, measureReal_def]
+            exact ENNReal.toReal_mono (measure_ne_top μ _) (measure_mono_ae hae)
+        _ ≤ (1 + δ) / δ * dist f g := measureReal_ge_le_mul_dist hδ
+        _ < (1 + δ) / δ * (δ / (1 + δ) * (η / 2)) :=
+            mul_lt_mul_of_pos_left hfg (div_pos h1δ hδ)
+        _ = η / 2 := by field_simp [hδ.ne', h1δ.ne']
+    calc dist (c • f) (c • g)
+        ≤ ε * μ.real Set.univ + μ.real {x | ε ≤ dist ((c • f) x) ((c • g) x)} :=
+          dist_le_mul_measureReal_univ_add_measureReal_ge hε.le
+      _ < η / 2 + η / 2 := by linarith
+      _ = η := by ring
 
-instance instIsTopologicalAddGroup [AddGroup E] [PseudoMetricSpace E] [IsUniformAddGroup E] :
-    IsTopologicalAddGroup (L0 E μ) :=
-  ⟨⟩
-
+/-- On a finite measure space, bounded scalar multiplication `𝕜 × L0 E μ → L0 E μ` is jointly
+continuous. -/
 instance instContinuousSMul [Zero 𝕜] [Zero E] [PseudoMetricSpace 𝕜] [PseudoMetricSpace E]
     [SMul 𝕜 E] [IsBoundedSMul 𝕜 E] : ContinuousSMul 𝕜 (L0 E μ) where
   continuous_smul := continuous_iff_continuousAt.mpr fun p ↦ by
@@ -545,6 +687,8 @@ instance instContinuousSMul [Zero 𝕜] [Zero E] [PseudoMetricSpace 𝕜] [Pseud
       (hc.smul_tendstoInMeasure p.2.aestronglyMeasurable hf).congr
         (fun q ↦ (coeFn_smul q.1 q.2).symm) (coeFn_smul p.1 p.2).symm
 
+/-- On a finite measure space, bounded pointwise multiplication on `L0 R μ` is jointly
+continuous. -/
 instance instContinuousMul [Zero R] [Mul R] [PseudoMetricSpace R] [ContinuousMul R]
     [IsBoundedSMul R R] : ContinuousMul (L0 R μ) where
   continuous_mul := continuous_iff_continuousAt.mpr fun p ↦ by
@@ -554,10 +698,14 @@ instance instContinuousMul [Zero R] [Mul R] [PseudoMetricSpace R] [ContinuousMul
       (h₁.mul p.1.aestronglyMeasurable p.2.aestronglyMeasurable h₂).congr
         (fun q ↦ (coeFn_mul q.1 q.2).symm) (coeFn_mul p.1 p.2).symm
 
+/-- On a finite measure space, `L0 R μ` is a topological semiring when `R` has Lipschitz addition
+and bounded multiplication (`IsBoundedSMul R R`). -/
 instance instIsTopologicalSemiring [Semiring R] [PseudoMetricSpace R] [IsTopologicalSemiring R]
     [LipschitzAdd R] [IsBoundedSMul R R] : IsTopologicalSemiring (L0 R μ) :=
   ⟨⟩
 
+/-- On a finite measure space, `L0 R μ` is a topological ring when `R` is a uniform additive group
+with bounded multiplication (`IsBoundedSMul R R`). -/
 instance instIsTopologicalRing [Ring R] [PseudoMetricSpace R] [IsTopologicalRing R]
     [IsUniformAddGroup R] [IsBoundedSMul R R] : IsTopologicalRing (L0 R μ) :=
   { toIsTopologicalSemiring := ⟨⟩ }
@@ -587,37 +735,46 @@ theorem ofLp_injective : Function.Injective (ofLp : Lp E p μ → L0 E μ) :=
   fun _ _ h ↦ Subtype.ext (by simpa only [toAEEqFun_ofLp] using congrArg toAEEqFun h)
 
 @[simp]
-theorem ofLp_eq_ofLp_iff (f g : Lp E p μ) : ofLp f = ofLp g ↔ f = g :=
+theorem ofLp_inj (f g : Lp E p μ) : ofLp f = ofLp g ↔ f = g :=
   ofLp_injective.eq_iff
 
 @[simp]
-theorem ofLp_zero : ofLp (0 : Lp E p μ) = 0 := by
-  rfl
+theorem ofLp_zero : ofLp (0 : Lp E p μ) = 0 :=
+  toAEEqFun_injective (by rw [toAEEqFun_ofLp, toAEEqFun_zero, AddSubgroup.coe_zero])
 
 @[simp]
 theorem ofLp_eq_zero (f : Lp E p μ) : ofLp f = 0 ↔ f = 0 := by
-  rw [← ofLp_zero, ofLp_eq_ofLp_iff]
+  rw [← ofLp_zero, ofLp_inj]
 
 @[simp]
 theorem ofLp_const [IsFiniteMeasure μ] (c : E) : ofLp (Lp.const p μ c) = const α c :=
   toAEEqFun_injective (by rw [toAEEqFun_ofLp, Lp.const_val, toAEEqFun_const])
 
 @[simp]
-theorem ofLp_add (f g : Lp E p μ) : ofLp (f + g) = ofLp f + ofLp g := by
-  rfl
+theorem ofLp_toLp {f : α → E} (hf : MemLp f p μ) :
+    ofLp (hf.toLp f) = mk f hf.aestronglyMeasurable :=
+  toAEEqFun_injective (by rw [toAEEqFun_ofLp, MemLp.toLp_val, toAEEqFun_mk])
 
 @[simp]
-theorem ofLp_neg (f : Lp E p μ) : ofLp (-f) = -ofLp f := by
-  rfl
+theorem ofLp_add (f g : Lp E p μ) : ofLp (f + g) = ofLp f + ofLp g :=
+  toAEEqFun_injective (by
+    rw [toAEEqFun_ofLp, toAEEqFun_add, toAEEqFun_ofLp, toAEEqFun_ofLp, AddSubgroup.coe_add])
 
 @[simp]
-theorem ofLp_sub (f g : Lp E p μ) : ofLp (f - g) = ofLp f - ofLp g := by
-  rfl
+theorem ofLp_neg (f : Lp E p μ) : ofLp (-f) = -ofLp f :=
+  toAEEqFun_injective (by rw [toAEEqFun_ofLp, toAEEqFun_neg, toAEEqFun_ofLp, AddSubgroup.coe_neg])
+
+@[simp]
+theorem ofLp_sub (f g : Lp E p μ) : ofLp (f - g) = ofLp f - ofLp g :=
+  toAEEqFun_injective (by
+    rw [toAEEqFun_ofLp, toAEEqFun_sub, toAEEqFun_ofLp, toAEEqFun_ofLp, AddSubgroup.coe_sub])
 
 @[simp]
 theorem ofLp_smul {𝕜 : Type*} [NormedRing 𝕜] [Module 𝕜 E] [IsBoundedSMul 𝕜 E]
     (c : 𝕜) (f : Lp E p μ) : ofLp (c • f) = c • ofLp f := by
-  rfl
+  refine ext ?_
+  filter_upwards [Lp.coeFn_smul c f, coeFn_smul c (ofLp f)] with x h₁ h₂
+  rw [coeFn_ofLp, h₁, h₂, Pi.smul_apply, Pi.smul_apply, coeFn_ofLp]
 
 /-- `L0.ofLp` bundled as an additive monoid homomorphism. -/
 def ofLpAddMonoidHom : Lp E p μ →+ L0 E μ where
@@ -643,6 +800,7 @@ theorem ofLpLinearMap_apply {𝕜 : Type*} [NormedRing 𝕜] [Module 𝕜 E] [Is
 
 /-- **Continuity of the `Lᵖ ↪ L⁰` inclusion.** For `1 ≤ p` and a finite measure `μ`, the canonical
 inclusion `Lp E p μ → L0 E μ` is continuous. -/
+@[fun_prop]
 theorem continuous_ofLp [Fact (1 ≤ p)] [IsFiniteMeasure μ] :
     Continuous (ofLp : Lp E p μ → L0 E μ) :=
   continuous_iff_continuousAt.mpr fun f ↦ by
@@ -664,99 +822,13 @@ theorem ofLpCLM_apply {𝕜 : Type*} [NormedRing 𝕜] [Module 𝕜 E] [IsBounde
 
 end LpEmbedding
 
-end L0
-
-end TauCeti
-
-namespace MeasureTheory.MemLp
-
-/-- Project a function `f` satisfying `MemLp f p μ` to its class in `TauCeti.L0 E μ`. -/
-def toL0 {α E : Type*} {_ : MeasurableSpace α} {μ : Measure α} [TopologicalSpace E] [ENorm E]
-    {p : ℝ≥0∞} {f : α → E} (hf : MemLp f p μ) : TauCeti.L0 E μ :=
-  TauCeti.L0.mk f hf.aestronglyMeasurable
-
-/-- `hf.toL0` is the `TauCeti.L0.mk` class of `f`. -/
-theorem toL0_eq_mk {α E : Type*} {_ : MeasurableSpace α} {μ : Measure α} [TopologicalSpace E]
-    [ENorm E] {p : ℝ≥0∞} {f : α → E} (hf : MemLp f p μ) :
-    hf.toL0 = TauCeti.L0.mk f hf.aestronglyMeasurable := by
-  rfl
-
-@[simp]
-theorem toAEEqFun_toL0 {α E : Type*} {_ : MeasurableSpace α} {μ : Measure α} [TopologicalSpace E]
-    [ENorm E] {p : ℝ≥0∞} {f : α → E} (hf : MemLp f p μ) :
-    hf.toL0.toAEEqFun = AEEqFun.mk f hf.aestronglyMeasurable := by
-  rw [toL0_eq_mk, TauCeti.L0.toAEEqFun_mk]
-
-/-- The representative of `hf.toL0` agrees with `f` almost everywhere. -/
-theorem coeFn_toL0 {α E : Type*} {_ : MeasurableSpace α} {μ : Measure α} [TopologicalSpace E]
-    [ENorm E] {p : ℝ≥0∞} {f : α → E} (hf : MemLp f p μ) : (hf.toL0 : α → E) =ᵐ[μ] f :=
-  TauCeti.L0.coeFn_mk f hf.aestronglyMeasurable
-
-@[simp]
-theorem toL0_eq_toL0_iff {α E : Type*} {_ : MeasurableSpace α} {μ : Measure α}
-    [TopologicalSpace E] [ENorm E] {p q : ℝ≥0∞} {f g : α → E}
-    (hf : MemLp f p μ) (hg : MemLp g q μ) :
-    hf.toL0 = hg.toL0 ↔ f =ᵐ[μ] g := by
-  rw [toL0_eq_mk, toL0_eq_mk, TauCeti.L0.mk_eq_mk]
-
-@[simp]
-theorem toL0_zero {α E : Type*} {_ : MeasurableSpace α} {μ : Measure α} [TopologicalSpace E]
-    [ENorm E] [Zero E] {p : ℝ≥0∞} (h : MemLp (0 : α → E) p μ) :
-    h.toL0 = 0 := by
-  rw [toL0_eq_mk, ← TauCeti.L0.const_zero, ← TauCeti.L0.mk_const, TauCeti.L0.mk_eq_mk]
-  rfl
-
-@[simp]
-theorem toL0_const {α E : Type*} {_ : MeasurableSpace α} {μ : Measure α} [TopologicalSpace E]
-    [ENorm E] {p : ℝ≥0∞} {c : E} (h : MemLp (fun _ : α ↦ c) p μ) :
-    h.toL0 = TauCeti.L0.const α c := by
-  rw [toL0_eq_mk, TauCeti.L0.mk_const]
-
-/-- `MemLp.toL0` commutes with pointwise addition. -/
-theorem toL0_add {α E : Type*} {_ : MeasurableSpace α} {μ : Measure α} [TopologicalSpace E]
-    [ESeminormedAddMonoid E] [ContinuousAdd E] {p : ℝ≥0∞} {f g : α → E}
-    (hf : MemLp f p μ) (hg : MemLp g p μ) :
-    (hf.add hg).toL0 = hf.toL0 + hg.toL0 := by
-  rw [toL0_eq_mk, toL0_eq_mk, toL0_eq_mk, TauCeti.L0.mk_add_mk]
-
-/-- `MemLp.toL0` commutes with pointwise negation. -/
-theorem toL0_neg {α E : Type*} {_ : MeasurableSpace α} {μ : Measure α} [NormedAddCommGroup E]
-    {p : ℝ≥0∞} {f : α → E} (hf : MemLp f p μ) :
-    hf.neg.toL0 = -hf.toL0 := by
-  rw [toL0_eq_mk, toL0_eq_mk, TauCeti.L0.neg_mk]
-
-/-- `MemLp.toL0` commutes with pointwise subtraction. -/
-theorem toL0_sub {α E : Type*} {_ : MeasurableSpace α} {μ : Measure α} [NormedAddCommGroup E]
-    {p : ℝ≥0∞} {f g : α → E} (hf : MemLp f p μ) (hg : MemLp g p μ) :
-    (hf.sub hg).toL0 = hf.toL0 - hg.toL0 := by
-  rw [toL0_eq_mk, toL0_eq_mk, toL0_eq_mk, TauCeti.L0.mk_sub_mk]
-
-/-- `MemLp.toL0` commutes with constant scalar multiplication. -/
-theorem toL0_const_smul {α 𝕜 E : Type*} {_ : MeasurableSpace α} {μ : Measure α}
-    [NormedAddCommGroup E] [NormedRing 𝕜] [MulActionWithZero 𝕜 E] [IsBoundedSMul 𝕜 E]
-    {p : ℝ≥0∞} {f : α → E} (c : 𝕜) (hf : MemLp f p μ) :
-    (hf.const_smul c).toL0 = c • hf.toL0 := by
-  rw [toL0_eq_mk, toL0_eq_mk, TauCeti.L0.smul_mk]
-
-@[simp]
-theorem ofLp_toLp_eq_toL0 {α E : Type*} {_ : MeasurableSpace α} {μ : Measure α}
-    [NormedAddCommGroup E] {p : ℝ≥0∞} {f : α → E} (hf : MemLp f p μ) :
-    TauCeti.L0.ofLp (hf.toLp f) = hf.toL0 := by
-  apply TauCeti.L0.ext
-  rw [TauCeti.L0.coeFn_ofLp]
-  exact hf.coeFn_toLp.trans hf.coeFn_toL0.symm
-
-end MeasureTheory.MemLp
-
-namespace TauCeti.L0
-
 section ConstAndIndicator
 
 variable {α E : Type*} {mα : MeasurableSpace α} {μ : Measure α}
 
 /-- In `L0 ℝ μ` on a finite measure space, the distance from the natural-number constant class
 `(n : L0 ℝ μ)` to `0` converges to the total mass `μ.real Set.univ` as `n → ∞`. -/
-theorem tendsto_dist_natCast_zero [IsFiniteMeasure μ] :
+theorem tendsto_dist_natCast_zero_nhds_measureReal_univ [IsFiniteMeasure μ] :
     Tendsto (fun n : ℕ ↦ dist (n : L0 ℝ μ) 0) atTop (𝓝 (μ.real Set.univ)) := by
   have hratio : Tendsto (fun n : ℕ ↦ (n : ℝ) / (1 + (n : ℝ))) atTop (𝓝 1) := by
     simpa only [add_comm] using tendsto_natCast_div_add_atTop (1 : ℝ)
@@ -780,123 +852,126 @@ theorem not_exists_tendsto_natCast [IsFiniteMeasure μ] [NeZero μ] :
       (tendsto_natCast_atTop_atTop.comp hns.tendsto_atTop) _ hx
   exact NeZero.ne μ (Measure.measure_univ_eq_zero.mp (by simpa using ae_iff.mp hbot))
 
-/-- Class in `L0 E μ` of the indicator `s.indicator (fun _ ↦ c)` of a measurable set `s`. Unlike
-`MeasureTheory.indicatorConstLp`, no finiteness hypothesis on `μ s` is required. -/
-def indicatorConst [TopologicalSpace E] [Zero E] {s : Set α} (hs : MeasurableSet s) (c : E) :
+/-- Class in `L0 E μ` of the indicator `s.indicator (fun _ ↦ c)` of a null-measurable set `s`.
+Unlike `MeasureTheory.indicatorConstLp`, no finiteness hypothesis on `μ s` is required. -/
+def indicatorConst [TopologicalSpace E] [Zero E] {s : Set α} (hs : NullMeasurableSet s μ) (c : E) :
     L0 E μ :=
-  mk (s.indicator fun _ ↦ c) (stronglyMeasurable_const.indicator hs).aestronglyMeasurable
+  mk (s.indicator fun _ ↦ c) (aestronglyMeasurable_const.indicator₀ hs)
 
 /-- `indicatorConst hs c` is the `L0.mk` class of `s.indicator (fun _ ↦ c)`. -/
-theorem indicatorConst_eq_mk [TopologicalSpace E] [Zero E] {s : Set α} (hs : MeasurableSet s)
-    (c : E) :
-    indicatorConst (μ := μ) hs c =
-      mk (s.indicator fun _ ↦ c) (stronglyMeasurable_const.indicator hs).aestronglyMeasurable := by
+theorem indicatorConst_eq_mk [TopologicalSpace E] [Zero E] {s : Set α}
+    (hs : NullMeasurableSet s μ) (c : E) :
+    indicatorConst hs c =
+      mk (s.indicator fun _ ↦ c) (aestronglyMeasurable_const.indicator₀ hs) := by
   rfl
 
 @[simp]
 theorem toAEEqFun_indicatorConst [TopologicalSpace E] [Zero E] {s : Set α}
-    (hs : MeasurableSet s) (c : E) :
-    (indicatorConst (μ := μ) hs c).toAEEqFun =
-      AEEqFun.mk (s.indicator fun _ ↦ c)
-        (stronglyMeasurable_const.indicator hs).aestronglyMeasurable := by
+    (hs : NullMeasurableSet s μ) (c : E) :
+    (indicatorConst hs c).toAEEqFun =
+      AEEqFun.mk (s.indicator fun _ ↦ c) (aestronglyMeasurable_const.indicator₀ hs) := by
   rw [indicatorConst_eq_mk, toAEEqFun_mk]
 
 /-- The representative of `indicatorConst hs c` agrees with `s.indicator (fun _ ↦ c)` almost
 everywhere. -/
-theorem coeFn_indicatorConst [TopologicalSpace E] [Zero E] {s : Set α} (hs : MeasurableSet s)
-    (c : E) : (indicatorConst (μ := μ) hs c : α → E) =ᵐ[μ] s.indicator fun _ ↦ c :=
-  coeFn_mk _ _
+theorem coeFn_indicatorConst [TopologicalSpace E] [Zero E] {s : Set α}
+    (hs : NullMeasurableSet s μ) (c : E) :
+    (indicatorConst hs c : α → E) =ᵐ[μ] s.indicator fun _ ↦ c := by
+  rw [indicatorConst_eq_mk]
+  exact coeFn_mk _ _
 
 @[simp]
 theorem indicatorConst_empty [TopologicalSpace E] [Zero E]
-    (hs : MeasurableSet (∅ : Set α)) (c : E) :
-    indicatorConst (μ := μ) hs c = 0 := by
+    (hs : NullMeasurableSet (∅ : Set α) μ) (c : E) :
+    indicatorConst hs c = 0 := by
   rw [indicatorConst_eq_mk, ← const_zero, ← mk_const, mk_eq_mk]
   simp
 
 @[simp]
-theorem indicatorConst_zero [TopologicalSpace E] [Zero E] {s : Set α} (hs : MeasurableSet s) :
-    indicatorConst (μ := μ) hs (0 : E) = 0 := by
+theorem indicatorConst_zero [TopologicalSpace E] [Zero E] {s : Set α}
+    (hs : NullMeasurableSet s μ) :
+    indicatorConst hs (0 : E) = 0 := by
   rw [indicatorConst_eq_mk, ← const_zero, ← mk_const, mk_eq_mk]
   simp
 
 @[simp]
 theorem indicatorConst_univ [TopologicalSpace E] [Zero E]
-    (hs : MeasurableSet (Set.univ : Set α)) (c : E) :
-    indicatorConst (μ := μ) hs c = const α c := by
+    (hs : NullMeasurableSet (Set.univ : Set α) μ) (c : E) :
+    indicatorConst hs c = const α c := by
   rw [indicatorConst_eq_mk, ← mk_const, mk_eq_mk]
   simp
 
 /-- `indicatorConst` commutes with addition in the constant value. -/
 theorem indicatorConst_add [TopologicalSpace E] [AddZeroClass E] [ContinuousAdd E] {s : Set α}
-    (hs : MeasurableSet s) (c c' : E) :
-    indicatorConst (μ := μ) hs (c + c') =
-      indicatorConst (μ := μ) hs c + indicatorConst (μ := μ) hs c' := by
+    (hs : NullMeasurableSet s μ) (c c' : E) :
+    indicatorConst hs (c + c') = indicatorConst hs c + indicatorConst hs c' := by
   rw [indicatorConst_eq_mk, indicatorConst_eq_mk, indicatorConst_eq_mk, mk_add_mk, mk_eq_mk]
   exact Filter.EventuallyEq.of_eq (Set.indicator_add _ _ _)
 
 /-- `indicatorConst` commutes with negation in the constant value. -/
 theorem indicatorConst_neg [TopologicalSpace E] [AddGroup E] [IsTopologicalAddGroup E] {s : Set α}
-    (hs : MeasurableSet s) (c : E) :
-    indicatorConst (μ := μ) hs (-c) = -indicatorConst (μ := μ) hs c := by
+    (hs : NullMeasurableSet s μ) (c : E) :
+    indicatorConst hs (-c) = -indicatorConst hs c := by
   rw [indicatorConst_eq_mk, indicatorConst_eq_mk, neg_mk, mk_eq_mk]
   exact Filter.EventuallyEq.of_eq (Set.indicator_neg _ _)
 
 /-- `indicatorConst` commutes with subtraction in the constant value. -/
 theorem indicatorConst_sub [TopologicalSpace E] [AddGroup E] [IsTopologicalAddGroup E] {s : Set α}
-    (hs : MeasurableSet s) (c c' : E) :
-    indicatorConst (μ := μ) hs (c - c') =
-      indicatorConst (μ := μ) hs c - indicatorConst (μ := μ) hs c' := by
+    (hs : NullMeasurableSet s μ) (c c' : E) :
+    indicatorConst hs (c - c') = indicatorConst hs c - indicatorConst hs c' := by
   rw [indicatorConst_eq_mk, indicatorConst_eq_mk, indicatorConst_eq_mk, mk_sub_mk, mk_eq_mk]
   exact Filter.EventuallyEq.of_eq (Set.indicator_sub _ _ _)
 
 /-- Scalar multiplication commutes with `indicatorConst`. -/
 theorem smul_indicatorConst {𝕜 : Type*} [TopologicalSpace E] [Zero E] [SMulZeroClass 𝕜 E]
-    [ContinuousConstSMul 𝕜 E] {s : Set α} (hs : MeasurableSet s) (a : 𝕜) (c : E) :
-    a • indicatorConst (μ := μ) hs c = indicatorConst (μ := μ) hs (a • c) := by
+    [ContinuousConstSMul 𝕜 E] {s : Set α} (hs : NullMeasurableSet s μ) (a : 𝕜) (c : E) :
+    a • indicatorConst hs c = indicatorConst hs (a • c) := by
   rw [indicatorConst_eq_mk, indicatorConst_eq_mk, smul_mk, mk_eq_mk]
   exact Filter.EventuallyEq.of_eq (Set.indicator_const_smul s a fun _ ↦ c).symm
 
 @[simp]
 theorem ofLp_indicatorConstLp [NormedAddCommGroup E] {p : ℝ≥0∞} {s : Set α}
     (hs : MeasurableSet s) (hμs : μ s ≠ ∞) (c : E) :
-    ofLp (indicatorConstLp p hs hμs c) = indicatorConst hs c := by
+    ofLp (indicatorConstLp p hs hμs c) = indicatorConst hs.nullMeasurableSet c := by
   refine ext ?_
   rw [coeFn_ofLp]
   exact (indicatorConstLp_coeFn (p := p) (hs := hs) (hμs := hμs) (c := c)).trans
-    (coeFn_indicatorConst hs c).symm
+    (coeFn_indicatorConst hs.nullMeasurableSet c).symm
 
 /-- Closed-form `L⁰` distance from an indicator-constant class `indicatorConst hs c` to `0`:
 `dist (indicatorConst hs c) 0 = μ.real s * (dist c 0 / (1 + dist c 0))`. -/
 theorem dist_indicatorConst_zero [PseudoMetricSpace E] [Zero E] [IsFiniteMeasure μ] {s : Set α}
-    (hs : MeasurableSet s) (c : E) :
-    dist (indicatorConst (μ := μ) hs c) 0 = μ.real s * (dist c 0 / (1 + dist c 0)) := by
+    (hs : NullMeasurableSet s μ) (c : E) :
+    dist (indicatorConst hs c) 0 = μ.real s * (dist c 0 / (1 + dist c 0)) := by
   rw [indicatorConst_eq_mk, ← const_zero, ← mk_const, dist_mk_mk]
   have hpt : (fun x ↦ dist (s.indicator (fun _ : α ↦ c) x) 0 /
       (1 + dist (s.indicator (fun _ : α ↦ c) x) 0)) =
       s.indicator (fun _ : α ↦ dist c 0 / (1 + dist c 0)) := by
     ext x
     by_cases hx : x ∈ s <;> simp [hx]
-  rw [hpt, integral_indicator hs, integral_const, measureReal_restrict_apply_univ, smul_eq_mul]
+  rw [hpt, integral_indicator₀ hs, integral_const, measureReal_restrict_apply_univ, smul_eq_mul]
 
 /-- The real measure of the support `{x | indicatorConst hs c x ≠ 0}` equals `μ.real s` whenever
 `c ≠ 0`. -/
 theorem measureReal_indicatorConst_ne_zero [TopologicalSpace E] [Zero E] {s : Set α}
-    (hs : MeasurableSet s) {c : E} (hc : c ≠ 0) :
-    μ.real {x | indicatorConst (μ := μ) hs c x ≠ 0} = μ.real s := by
+    (hs : NullMeasurableSet s μ) {c : E} (hc : c ≠ 0) :
+    μ.real {x | indicatorConst hs c x ≠ 0} = μ.real s := by
   refine measureReal_congr ?_
-  filter_upwards [coeFn_indicatorConst (μ := μ) hs c] with x hx
+  filter_upwards [coeFn_indicatorConst hs c] with x hx
   rw [Set.mem_ofPred_eq, hx, Set.indicator_apply_ne_zero]
   simp [hc]
 
 /-- For a unit-height real indicator `1_s`, `dist (indicatorConst hs 1) 0 = μ.real s / 2`, half of
 the disagreement measure `μ.real {x | indicatorConst hs 1 x ≠ 0} = μ.real s`. -/
-theorem dist_indicatorConst_one_zero [IsFiniteMeasure μ] {s : Set α} (hs : MeasurableSet s) :
-    dist (indicatorConst (μ := μ) hs (1 : ℝ)) 0 = μ.real s / 2 := by
+theorem dist_indicatorConst_one_zero [IsFiniteMeasure μ] {s : Set α}
+    (hs : NullMeasurableSet s μ) :
+    dist (indicatorConst hs (1 : ℝ)) 0 = μ.real s / 2 := by
   rw [dist_indicatorConst_zero hs (1 : ℝ)]
   norm_num
   ring
 
 end ConstAndIndicator
 
-end TauCeti.L0
+end L0
+
+end TauCeti
