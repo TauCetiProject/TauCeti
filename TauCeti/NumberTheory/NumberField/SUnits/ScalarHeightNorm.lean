@@ -41,8 +41,8 @@ variable (S : Finset (HeightOneSpectrum (𝓞 K)))
 variable {ι κ : Type*} [Fintype ι] [Fintype κ]
 
 /-- The absolute scalar-height norm on the `S`-logarithmic space, bundled as a
-seminorm. It is positive definite by `logHeightSeminorm_eq_zero_iff`. -/
-def logHeightSeminorm : Seminorm ℝ (logSpace S) := by
+seminorm. It is positive definite by `absLogHeight₁Seminorm_eq_zero_iff`. -/
+def absLogHeight₁Seminorm : Seminorm ℝ (logSpace S) := by
   classical
   exact ((2 * finrank ℚ K : ℝ≥0)⁻¹) •
     ((∑ i, (normSeminorm ℝ ℝ).comp (LinearMap.proj i)) +
@@ -50,18 +50,18 @@ def logHeightSeminorm : Seminorm ℝ (logSpace S) := by
 
 open Classical in
 /-- The norm includes the absolute value of the omitted logarithmic coordinate. -/
-theorem logHeightSeminorm_apply (v : logSpace S) :
-    logHeightSeminorm S v = (∑ i, |v i| + |∑ i, v i|) / (2 * finrank ℚ K) := by
+theorem absLogHeight₁Seminorm_apply (v : logSpace S) :
+    absLogHeight₁Seminorm S v = (∑ i, |v i| + |∑ i, v i|) / (2 * finrank ℚ K) := by
   classical
-  simp [logHeightSeminorm, Real.norm_eq_abs, div_eq_mul_inv, mul_comm,
+  simp [absLogHeight₁Seminorm, Real.norm_eq_abs, div_eq_mul_inv, mul_comm,
     NNReal.smul_def, smul_eq_mul, mul_add]
 
 /-- The scalar-height seminorm on logarithmic space is positive definite. -/
 @[simp]
-theorem logHeightSeminorm_eq_zero_iff (v : logSpace S) :
-    logHeightSeminorm S v = 0 ↔ v = 0 := by
+theorem absLogHeight₁Seminorm_eq_zero_iff (v : logSpace S) :
+    absLogHeight₁Seminorm S v = 0 ↔ v = 0 := by
   classical
-  rw [logHeightSeminorm_apply, div_eq_zero_iff]
+  rw [absLogHeight₁Seminorm_apply, div_eq_zero_iff]
   have hd : (2 * finrank ℚ K : ℝ) ≠ 0 :=
     mul_ne_zero two_ne_zero (Nat.cast_ne_zero.mpr finrank_pos.ne')
   simp only [hd, or_false]
@@ -79,22 +79,22 @@ theorem logHeightSeminorm_eq_zero_iff (v : logSpace S) :
 
 /-- The logarithmic embedding has norm equal to the absolute scalar height. -/
 @[simp]
-theorem logHeightSeminorm_logEmbedding
+theorem absLogHeight₁Seminorm_logEmbedding
     (x : (S : Set (HeightOneSpectrum (𝓞 K))).unit K) :
-    logHeightSeminorm S (logEmbedding S (Additive.ofMul x)) =
+    absLogHeight₁Seminorm S (logEmbedding S (Additive.ofMul x)) =
       absLogHeight₁ ((x : Kˣ) : K) := by
-  rw [logHeightSeminorm_apply, ← two_mul_logHeight₁_eq_sum_abs_logEmbedding,
+  rw [absLogHeight₁Seminorm_apply, ← two_mul_logHeight₁_eq_sum_abs_logEmbedding,
     absLogHeight₁_eq_div]
   ring
 
 /-- The sum of the scalar-height norms on a finite tuple of logarithmic spaces. -/
 def scalarSumHeightSeminorm : Seminorm ℝ (κ → logSpace S) := by
   classical
-  exact ∑ k, (logHeightSeminorm S).comp (LinearMap.proj k)
+  exact ∑ k, (absLogHeight₁Seminorm S).comp (LinearMap.proj k)
 
 /-- The tuple norm is the sum of the coordinate norms. -/
 theorem scalarSumHeightSeminorm_apply (v : κ → logSpace S) :
-    scalarSumHeightSeminorm S v = ∑ k, logHeightSeminorm S (v k) := by
+    scalarSumHeightSeminorm S v = ∑ k, absLogHeight₁Seminorm S (v k) := by
   classical
   simp [scalarSumHeightSeminorm]
 
@@ -104,7 +104,7 @@ theorem scalarSumHeightSeminorm_eq_zero_iff (v : κ → logSpace S) :
     scalarSumHeightSeminorm S v = 0 ↔ v = 0 := by
   classical
   simp [scalarSumHeightSeminorm_apply,
-    sum_eq_zero_iff_of_nonneg (fun k (_ : k ∈ univ) ↦ apply_nonneg (logHeightSeminorm S) (v k)),
+    sum_eq_zero_iff_of_nonneg (fun k (_ : k ∈ univ) ↦ apply_nonneg (absLogHeight₁Seminorm S) (v k)),
     funext_iff]
 
 /-- The logarithmic image of a tuple has norm equal to its scalar-sum height. -/

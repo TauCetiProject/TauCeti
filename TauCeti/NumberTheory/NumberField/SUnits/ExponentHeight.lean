@@ -55,35 +55,6 @@ namespace TauCeti.NumberField.SUnit
 variable {K : Type*} [Field K] [NumberField K] {S : Finset (HeightOneSpectrum (𝓞 K))}
   {ι : Type*} [Fintype ι]
 
-/-- **Multiplicatively independent `S`-units have linearly independent logarithms.** If no
-product `∏ j, γ j ^ z j` with `z ≠ 0` is torsion, then the `S`-logarithmic images of the `γ j`
-are linearly independent over `ℝ`. -/
-theorem linearIndependent_logEmbedding {γ : ι → (S : Set (HeightOneSpectrum (𝓞 K))).unit K}
-    (hγ : ∀ z : ι → ℤ,
-      ∏ j, γ j ^ z j ∈ CommGroup.torsion ((S : Set (HeightOneSpectrum (𝓞 K))).unit K) → z = 0) :
-    LinearIndependent ℝ fun j ↦ logEmbedding S (Additive.ofMul (γ j)) := by
-  classical
-  set v := fun j ↦ logEmbedding S (Additive.ofMul (γ j))
-  have hℤ : LinearIndependent ℤ v := by
-    refine Fintype.linearIndependent_iff.mpr fun z hz ↦ ?_
-    have h1 := logEmbedding_mul_prod_zpow (γ := γ) (one_mem _) z
-    rw [one_mul] at h1
-    have h0 := hγ z ((logEmbedding_eq_zero_iff S).mp (h1.trans hz))
-    exact fun i ↦ congrFun h0 i
-  -- The `ℤ`-span of the `v j` lies in the discrete `S`-unit lattice, so its `ℝ`-rank is its
-  -- `ℤ`-rank.
-  have hle : Submodule.span ℤ (Set.range v) ≤ unitLattice S :=
-    Submodule.span_le.mpr (Set.range_subset_iff.mpr fun j ↦
-      logEmbedding_mem_unitLattice S (Additive.ofMul (γ j)))
-  have hdisc : DiscreteTopology (Submodule.span ℤ (Set.range v)) :=
-    DiscreteTopology.of_subset (s := (unitLattice S : Set (logSpace S)))
-      (inferInstanceAs (DiscreteTopology (unitLattice S))) hle
-  have hℤrank : Set.finrank ℤ (Set.range v) = Fintype.card ι :=
-    (linearIndependent_iff_card_eq_finrank_span.mp hℤ).symm
-  have hℝrank : Set.finrank ℝ (Set.range v) = Set.finrank ℤ (Set.range v) :=
-    Real.finrank_eq_int_finrank_of_discrete hdisc
-  exact linearIndependent_iff_card_eq_finrank_span.mpr (hℝrank.trans hℤrank).symm
-
 /-- Tuples of `S`-units independent modulo coordinatewise torsion have real-linearly
 independent logarithmic images. -/
 theorem linearIndependent_logEmbedding_pi {κ : Type*} [Finite κ]
@@ -123,6 +94,16 @@ theorem linearIndependent_logEmbedding_pi {κ : Type*} [Finite κ]
   apply linearIndependent_iff_card_eq_finrank_span.mpr
   rw [Real.finrank_eq_int_finrank_of_discrete hdisc]
   exact linearIndependent_iff_card_eq_finrank_span.mp hℤ
+
+/-- **Multiplicatively independent `S`-units have linearly independent logarithms.** If no
+product `∏ j, γ j ^ z j` with `z ≠ 0` is torsion, then the `S`-logarithmic images of the `γ j`
+are linearly independent over `ℝ`. -/
+theorem linearIndependent_logEmbedding {γ : ι → (S : Set (HeightOneSpectrum (𝓞 K))).unit K}
+    (hγ : ∀ z : ι → ℤ,
+      ∏ j, γ j ^ z j ∈ CommGroup.torsion ((S : Set (HeightOneSpectrum (𝓞 K))).unit K) → z = 0) :
+    LinearIndependent ℝ fun j ↦ logEmbedding S (Additive.ofMul (γ j)) :=
+  LinearIndependent.of_comp (LinearMap.pi fun _ : Unit ↦ LinearMap.id)
+    (linearIndependent_logEmbedding_pi S (γ := fun j _ ↦ γ j) fun z hz ↦ hγ z (hz ()))
 
 open Classical in
 /-- **Exponent bound for `S`-units.** Let `T` be a continuous left inverse of the map
