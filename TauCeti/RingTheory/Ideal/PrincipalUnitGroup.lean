@@ -46,13 +46,18 @@ so `1 + I` is an iterated extension of additive groups.
   when `J' ≤ J`.
 * `Ideal.principalUnitGroupPowQuotientEquiv`: the successive quotients
   `(1 + I ^ (n + 1)) ⧸ (1 + I ^ (n + 2)) ≃* I ^ (n + 1) ⧸ I ^ (n + 2)` of the filtration by powers.
+* `TauCeti.IsLocalRing.PrincipalUnitGraded`: for a local ring `R`, the successive quotient
+  `(1 + 𝔪 ^ i) ⧸ (1 + 𝔪 ^ (i + 1))` of the unit filtration, identified at depth `0` with
+  `(ResidueField R)ˣ` (`TauCeti.IsLocalRing.principalUnitGradedZeroEquivResidueFieldUnits`) and at
+  depth `n + 1` with `𝔪 ^ (n + 1) ⧸ 𝔪 ^ (n + 2)`
+  (`TauCeti.IsLocalRing.principalUnitGradedSuccEquivMaximalIdealGraded`).
 
 ## Main results
 
 * `Ideal.principalUnitGroup_ker`: the principal unit group of the kernel of a ring homomorphism
   is the kernel of the induced map on units.
-* `Ideal.unitsMap_quotientMk_surjective`: reduction of units modulo an ideal in the Jacobson
-  radical is surjective.
+* `Ideal.unitsMap_quotientMk_surjective`: reduction of units modulo an ideal contained in the
+  Jacobson radical is surjective.
 * `Ideal.principalUnitGroup_pow_antitone`: the subgroups `1 + I ^ n` decrease with `n`.
 
 ## References
@@ -233,3 +238,91 @@ theorem principalUnitGroupPowQuotientEquiv_mk {I : Ideal R} (hI : I ≤ jacobson
 end CommRing
 
 end Ideal
+
+namespace TauCeti.IsLocalRing
+
+open _root_.IsLocalRing
+
+variable (R : Type*) [CommRing R] [IsLocalRing R]
+
+/-- The `i`-th successive quotient `(1 + 𝔪 ^ i) ⧸ (1 + 𝔪 ^ (i + 1))` of the principal-unit
+filtration of a local ring `R`. At `i = 0`, `1 + 𝔪 ^ 0 = Rˣ`, so this is `Rˣ ⧸ (1 + 𝔪)`. -/
+abbrev PrincipalUnitGraded (i : ℕ) :=
+  (maximalIdeal R ^ i).principalUnitGroup ⧸
+    (maximalIdeal R ^ (i + 1)).principalUnitGroup.subgroupOf
+      (maximalIdeal R ^ i).principalUnitGroup
+
+private noncomputable def principalUnitZeroToResidueFieldUnits :
+    (maximalIdeal R ^ 0).principalUnitGroup →* (ResidueField R)ˣ :=
+  (Units.map (residue R).toMonoidHom).comp (maximalIdeal R ^ 0).principalUnitGroup.subtype
+
+private theorem ker_principalUnitZeroToResidueFieldUnits :
+    (principalUnitZeroToResidueFieldUnits R).ker =
+      (maximalIdeal R ^ (0 + 1)).principalUnitGroup.subgroupOf
+        (maximalIdeal R ^ 0).principalUnitGroup := by
+  ext u
+  rw [MonoidHom.mem_ker, principalUnitZeroToResidueFieldUnits, MonoidHom.comp_apply,
+    Subgroup.coe_subtype, ← MonoidHom.mem_ker, ← Ideal.principalUnitGroup_ker,
+    _root_.IsLocalRing.ker_residue, Subgroup.mem_subgroupOf, zero_add, pow_one]
+
+private theorem principalUnitZeroToResidueFieldUnits_surjective :
+    Function.Surjective (principalUnitZeroToResidueFieldUnits R) := by
+  intro v
+  obtain ⟨u, rfl⟩ :=
+    _root_.IsLocalRing.surjective_units_map_of_local_ringHom (residue R) residue_surjective
+      inferInstance v
+  exact ⟨⟨u, by simp⟩, rfl⟩
+
+/-- At depth zero, reduction modulo the maximal ideal identifies `PrincipalUnitGraded R 0`,
+that is `Rˣ ⧸ (1 + 𝔪)`, with the multiplicative group `(ResidueField R)ˣ`. -/
+noncomputable def principalUnitGradedZeroEquivResidueFieldUnits :
+    PrincipalUnitGraded R 0 ≃* (ResidueField R)ˣ :=
+  (QuotientGroup.quotientMulEquivOfEq (ker_principalUnitZeroToResidueFieldUnits R).symm).trans
+    (QuotientGroup.quotientKerEquivOfSurjective _
+      (principalUnitZeroToResidueFieldUnits_surjective R))
+
+variable {R} in
+/-- The depth-zero principal-unit graded equivalence acts by reducing a unit modulo the maximal
+ideal. -/
+@[simp]
+theorem principalUnitGradedZeroEquivResidueFieldUnits_mk
+    (u : (maximalIdeal R ^ 0).principalUnitGroup) :
+    principalUnitGradedZeroEquivResidueFieldUnits R (QuotientGroup.mk u) =
+      Units.map (residue R).toMonoidHom (u : Rˣ) := by
+  exact (MulEquiv.trans_apply ..).trans <|
+    (congrArg _ (QuotientGroup.quotientMulEquivOfEq_mk ..)).trans <|
+      TauCeti.QuotientGroup.quotientKerEquivOfSurjective_apply_mk ..
+
+private theorem comap_maximalIdeal_pow_succ (n : ℕ) :
+    Submodule.comap (maximalIdeal R ^ (n + 1)).subtype (maximalIdeal R ^ (n + 2)) =
+      (maximalIdeal R • ⊤ : Submodule R (maximalIdeal R ^ (n + 1) : Ideal R)) := by
+  ext x
+  rw [Submodule.mem_comap, Submodule.subtype_apply, Submodule.mem_smul_top_iff, smul_eq_mul,
+    ← pow_succ']
+
+/-- At positive depth `n + 1`, subtracting `1` identifies `PrincipalUnitGraded R (n + 1)` with the
+multiplicative copy of the maximal-ideal graded piece `𝔪 ^ (n + 1) ⧸ 𝔪 ^ (n + 2)` (written with
+denominator `𝔪 • ⊤`). -/
+noncomputable def principalUnitGradedSuccEquivMaximalIdealGraded (n : ℕ) :
+    PrincipalUnitGraded R (n + 1) ≃*
+      Multiplicative ((maximalIdeal R ^ (n + 1) : Ideal R) ⧸
+        (maximalIdeal R • ⊤ : Submodule R (maximalIdeal R ^ (n + 1) : Ideal R))) :=
+  (Ideal.principalUnitGroupPowQuotientEquiv
+    (_root_.IsLocalRing.jacobson_eq_maximalIdeal ⊥ bot_ne_top).ge n).trans
+    (Submodule.quotEquivOfEq _ _ (comap_maximalIdeal_pow_succ R n)).toAddEquiv.toMultiplicative
+
+variable {R} in
+/-- Subtracting `1` sends the class of `u ∈ 1 + 𝔪 ^ (n + 1)` to the class of `u - 1` in
+`𝔪 ^ (n + 1) ⧸ 𝔪 ^ (n + 2)`. -/
+@[simp]
+theorem principalUnitGradedSuccEquivMaximalIdealGraded_mk (n : ℕ)
+    (u : (maximalIdeal R ^ (n + 1)).principalUnitGroup) :
+    principalUnitGradedSuccEquivMaximalIdealGraded R n (QuotientGroup.mk u) =
+      Multiplicative.ofAdd
+        (Submodule.Quotient.mk ⟨((u : Rˣ) : R) - 1, Ideal.mem_principalUnitGroup.mp u.2⟩) := by
+  refine (MulEquiv.trans_apply ..).trans ?_
+  rw [Ideal.principalUnitGroupPowQuotientEquiv_mk]
+  exact congrArg Multiplicative.ofAdd
+    (Submodule.quotEquivOfEq_mk _ _ (comap_maximalIdeal_pow_succ R n) _)
+
+end TauCeti.IsLocalRing

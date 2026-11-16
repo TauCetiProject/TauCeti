@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Algebra.BigOperators.Finprod
 public import Mathlib.Algebra.Order.Archimedean.Real.Basic
+public import Mathlib.FieldTheory.Separable
 public import Mathlib.RingTheory.Filtration
 public import Mathlib.RingTheory.LocalRing.ResidueField.Basic
 public import Mathlib.RingTheory.Valuation.RamificationGroup
@@ -16,7 +17,9 @@ public import TauCeti.RingTheory.DiscreteValuationRing.Basic
 public import TauCeti.RingTheory.Ideal.Inertia
 public import TauCeti.RingTheory.Ideal.RamificationGroup
 public import TauCeti.RingTheory.LocalRing.Pointwise
+import Mathlib.Algebra.Polynomial.Identities
 import Mathlib.Combinatorics.Enumerative.DoubleCounting
+import TauCeti.RingTheory.LocalRing.Monogenic
 
 /-!
 # The ramification filtration of a group acting on a local ring
@@ -71,6 +74,13 @@ integer indexing that Herbrand theory uses.
   base ring `R` whose elements `G` fixes by a set `s`, membership in `G_i` is decided on `s`
   alone; `TauCeti.IsLocalRing.mem_ramificationGroup_iff_of_adjoin_singleton_eq_top` is the
   monogenic case, where a single generator decides it.
+* `TauCeti.IsLocalRing.mem_ramificationGroup_succ_iff_of_span_eq_maximalIdeal` and
+  `TauCeti.IsLocalRing.mem_ramificationGroup_natCast_iff_of_span_eq_maximalIdeal`: when the
+  residue extension over a local base ring `R` fixed by `G` is separable, membership of an inertia
+  element in `G_n` is decided on any generating set of the maximal ideal (hence at a single
+  uniformizer on a discrete valuation ring,
+  `TauCeti.IsLocalRing.mem_ramificationGroup_natCast_iff_of_irreducible`, with lower index
+  `TauCeti.IsLocalRing.lowerIndex_eq_addVal_of_irreducible`).
 * `TauCeti.IsLocalRing.mem_ramificationGroup_iff_le_addVal`: over a discrete valuation ring the
   defining condition is the valuation inequality `v (σ x - x) ≥ i + 1`;
   `TauCeti.IsLocalRing.mem_ramificationGroup_iff_le_lowerIndex` reads it as `i + 1 ≤ i_G(σ)`.
@@ -210,6 +220,126 @@ theorem mem_ramificationGroup_iff_of_adjoin_singleton_eq_top {ξ : S}
   rw [ramificationGroup_def, TauCeti.Ideal.mem_inertia_iff_of_adjoin_singleton_eq_top hξ]
 
 end Adjoin
+
+section SeparableResidue
+
+variable {G : Type*} [Group G] {S : Type*} [CommRing S] [IsLocalRing S] [MulSemiringAction G S]
+
+/-- If `σ ∈ G_n` moves a generating set of the maximal ideal into `𝔪 ^ (n + 2)`, then `σ` moves
+every element of the maximal ideal into `𝔪 ^ (n + 2)`. -/
+private theorem smul_sub_mem_maximalIdeal_pow_succ_of_mem_maximalIdeal {s : Set S}
+    (hs : Ideal.span s = maximalIdeal S) {n : ℕ} {σ : G} (hσ : σ ∈ ramificationGroup G S n)
+    (hπ : ∀ π ∈ s, σ • π - π ∈ maximalIdeal S ^ (n + 2)) {z : S}
+    (hz : z ∈ maximalIdeal S) : σ • z - z ∈ maximalIdeal S ^ (n + 2) := by
+  rw [← hs] at hz
+  induction hz using Submodule.span_induction with
+  | mem π hπs => exact hπ π hπs
+  | zero => simp
+  | add y₁ y₂ _ _ ih₁ ih₂ =>
+    have hadd : σ • (y₁ + y₂) - (y₁ + y₂) = (σ • y₁ - y₁) + (σ • y₂ - y₂) := by
+      rw [smul_add]; ring
+    rw [hadd]
+    exact add_mem ih₁ ih₂
+  | smul c y hy ih =>
+    have hsplit : σ • (c • y) - c • y = c * (σ • y - y) + (σ • c - c) * (σ • y) := by
+      simp only [smul_eq_mul, smul_mul']; ring
+    have hσy : σ • y ∈ maximalIdeal S := by
+      simpa only [pow_one] using (smul_mem_maximalIdeal_pow_iff σ (n := 1)).mpr
+        (by simpa only [pow_one, ← hs] using hy)
+    have h2 : (σ • c - c) * (σ • y) ∈ maximalIdeal S ^ (n + 2) := by
+      rw [pow_succ]
+      exact Ideal.mul_mem_mul (mem_ramificationGroup_natCast_iff.mp hσ c) hσy
+    rw [hsplit]
+    exact add_mem (Ideal.mul_mem_left _ c ih) h2
+
+variable (R : Type*) [CommRing R] [IsLocalRing R] [Algebra R S] [IsLocalHom (algebraMap R S)]
+  [SMulCommClass G R S]
+
+open Polynomial in
+/-- **Separable-residue step criterion.** Let `S` be a local `R`-algebra whose residue field
+extension is separable, with `G` acting on `S` by `R`-algebra automorphisms. For `σ ∈ G_n`,
+membership in `G_{n+1}` is decided on any generating set `s` of the maximal ideal of `S`: lifting
+the minimal polynomial `g` of the residue of `x` to `R[X]`, `g(x) ∈ 𝔪_S` is moved into `𝔪_S ^ (n+2)`
+while `g'(x)` is a unit, so Taylor expansion of `g(σ • x) - g(x)` forces `σ • x - x ∈ 𝔪_S ^ (n+2)`.
+Neither Noetherianity nor module-finiteness of `S` over `R` is required. -/
+theorem mem_ramificationGroup_succ_iff_of_span_eq_maximalIdeal
+    [Algebra.IsSeparable (ResidueField R) (ResidueField S)] {s : Set S}
+    (hs : Ideal.span s = maximalIdeal S) {n : ℕ} {σ : G} (hσ : σ ∈ ramificationGroup G S n) :
+    σ ∈ ramificationGroup G S ((n : ℤ) + 1) ↔
+      ∀ π ∈ s, σ • π - π ∈ maximalIdeal S ^ (n + 2) := by
+  rw [← Nat.cast_succ, mem_ramificationGroup_natCast_iff]
+  refine ⟨fun h π _ ↦ h π, fun hπ x ↦ ?_⟩
+  -- Lift the minimal polynomial of `residue S x` over `ResidueField R` to `g : R[X]`.
+  obtain ⟨g, hg⟩ := Polynomial.map_surjective _ residue_surjective
+    (minpoly (ResidueField R) (residue S x))
+  set P : S[X] := g.map (algebraMap R S)
+  have hPx : P.eval x ∈ maximalIdeal S := by
+    rw [← residue_eq_zero_iff, eval_map_algebraMap,
+      map_aeval_eq_aeval_map residue_comp_algebraMap, hg]
+    exact minpoly.aeval _ _
+  have hP' : IsUnit ((derivative P).eval x) := by
+    rw [derivative_map, eval_map_algebraMap, ← residue_ne_zero_iff_isUnit,
+      map_aeval_eq_aeval_map residue_comp_algebraMap, ← derivative_map, hg]
+    exact (Algebra.IsSeparable.isSeparable _ _).aeval_derivative_ne_zero (minpoly.aeval _ _)
+  set δ : S := σ • x - x
+  have hδ : δ ∈ maximalIdeal S ^ (n + 1) := mem_ramificationGroup_natCast_iff.mp hσ x
+  have hδ2 : δ ^ 2 ∈ maximalIdeal S ^ (n + 2) := by
+    rw [sq]
+    exact Ideal.pow_le_pow_right (by omega : n + 2 ≤ (n + 1) + (n + 1))
+      (pow_add (maximalIdeal S) (n + 1) (n + 1) ▸ Ideal.mul_mem_mul hδ hδ)
+  obtain ⟨k, hk⟩ := binomExpansion P x δ
+  have hPσ : P.eval (x + δ) - P.eval x ∈ maximalIdeal S ^ (n + 2) := by
+    have hxδ : x + δ = σ • x := by simp [δ]
+    have haeval : P.eval (σ • x) = σ • P.eval x := by
+      rw [eval_map_algebraMap, eval_map_algebraMap, ← MulSemiringAction.toAlgHom_apply R S σ x,
+        aeval_algHom_apply, MulSemiringAction.toAlgHom_apply]
+    rw [hxδ, haeval]
+    exact smul_sub_mem_maximalIdeal_pow_succ_of_mem_maximalIdeal hs hσ hπ hPx
+  have hmul : (derivative P).eval x * δ ∈ maximalIdeal S ^ (n + 2) := by
+    have heq : (derivative P).eval x * δ = (P.eval (x + δ) - P.eval x) - k * δ ^ 2 := by
+      rw [hk]; ring
+    rw [heq]
+    exact sub_mem hPσ (Ideal.mul_mem_left _ k hδ2)
+  obtain ⟨u, hu⟩ := hP'
+  have hδeq : δ = ↑u⁻¹ * ((derivative P).eval x * δ) := by
+    rw [← hu, Units.inv_mul_cancel_left]
+  rw [hδeq]
+  exact Ideal.mul_mem_left _ _ hmul
+
+/-- **Separable-residue criterion on maximal-ideal generators.** When the residue extension of `S`
+over `R` is separable and `G` fixes `R`, an element `σ` of the inertia group `G_0` lies in `G_n`
+if and only if `σ • π - π ∈ 𝔪_S ^ (n + 1)` for every `π` in a generating set `s` of `𝔪_S`. -/
+theorem mem_ramificationGroup_natCast_iff_of_span_eq_maximalIdeal
+    [Algebra.IsSeparable (ResidueField R) (ResidueField S)] {s : Set S}
+    (hs : Ideal.span s = maximalIdeal S) {n : ℕ} {σ : G} (hσ : σ ∈ ramificationGroup G S 0) :
+    σ ∈ ramificationGroup G S n ↔ ∀ π ∈ s, σ • π - π ∈ maximalIdeal S ^ (n + 1) := by
+  refine ⟨fun h π _ ↦ mem_ramificationGroup_natCast_iff.mp h π, fun hπ ↦ ?_⟩
+  suffices ∀ m ≤ n, σ ∈ ramificationGroup G S m from this n le_rfl
+  intro m
+  induction m with
+  | zero => exact fun _ ↦ by simpa using hσ
+  | succ m ih =>
+    intro hm
+    rw [Nat.cast_succ,
+      mem_ramificationGroup_succ_iff_of_span_eq_maximalIdeal R hs (ih (by omega))]
+    exact fun π hπs ↦ Ideal.pow_le_pow_right (by omega : m + 2 ≤ n + 1) (hπ π hπs)
+
+/-- Principal-maximal-ideal form of `mem_ramificationGroup_succ_iff_of_span_eq_maximalIdeal`. -/
+theorem mem_ramificationGroup_succ_iff_of_span_singleton_eq_maximalIdeal
+    [Algebra.IsSeparable (ResidueField R) (ResidueField S)] {π : S}
+    (hπ : Ideal.span {π} = maximalIdeal S) {n : ℕ} {σ : G} (hσ : σ ∈ ramificationGroup G S n) :
+    σ ∈ ramificationGroup G S ((n : ℤ) + 1) ↔ σ • π - π ∈ maximalIdeal S ^ (n + 2) := by
+  rw [mem_ramificationGroup_succ_iff_of_span_eq_maximalIdeal R hπ hσ, Set.forall_mem_singleton]
+
+/-- Principal-maximal-ideal form of
+`mem_ramificationGroup_natCast_iff_of_span_eq_maximalIdeal`. -/
+theorem mem_ramificationGroup_natCast_iff_of_span_singleton_eq_maximalIdeal
+    [Algebra.IsSeparable (ResidueField R) (ResidueField S)] {π : S}
+    (hπ : Ideal.span {π} = maximalIdeal S) {n : ℕ} {σ : G} (hσ : σ ∈ ramificationGroup G S 0) :
+    σ ∈ ramificationGroup G S n ↔ σ • π - π ∈ maximalIdeal S ^ (n + 1) := by
+  rw [mem_ramificationGroup_natCast_iff_of_span_eq_maximalIdeal R hπ hσ, Set.forall_mem_singleton]
+
+end SeparableResidue
 
 section Normal
 
@@ -459,6 +589,44 @@ theorem mem_ramificationGroup_natCast_iff_le_addVal_of_adjoin_singleton_eq_top {
   have h : ((n : ℤ) + 1).toNat = n + 1 := by omega
   rw [mem_ramificationGroup_iff_le_lowerIndex,
     lowerIndex_eq_addVal_of_adjoin_singleton_eq_top hξ, h]
+
+section UniformizerSeparableResidue
+
+variable (R₀ : Type*) [CommRing R₀] [IsLocalRing R₀] [Algebra R₀ S]
+  [IsLocalHom (algebraMap R₀ S)] [SMulCommClass G R₀ S]
+  [Algebra.IsSeparable (ResidueField R₀) (ResidueField S)]
+include R₀
+
+/-- Over a discrete valuation ring `S` with separable residue extension over a local base ring `R₀`
+fixed by `G`, membership of `σ ∈ G_n` in `G_{n+1}` is decided at any uniformizer `ϖ`. -/
+theorem mem_ramificationGroup_succ_iff_of_irreducible {ϖ : S} (hϖ : Irreducible ϖ)
+    {n : ℕ} {σ : G} (hσ : σ ∈ ramificationGroup G S n) :
+    σ ∈ ramificationGroup G S ((n : ℤ) + 1) ↔ σ • ϖ - ϖ ∈ maximalIdeal S ^ (n + 2) :=
+  mem_ramificationGroup_succ_iff_of_span_singleton_eq_maximalIdeal R₀ hϖ.maximalIdeal_eq.symm hσ
+
+/-- Over a discrete valuation ring `S` with separable residue extension over a local base ring `R₀`
+fixed by `G`, membership of an inertia element `σ ∈ G_0` in `G_n` is decided at any uniformizer
+`ϖ`. -/
+theorem mem_ramificationGroup_natCast_iff_of_irreducible {ϖ : S} (hϖ : Irreducible ϖ)
+    {n : ℕ} {σ : G} (hσ : σ ∈ ramificationGroup G S 0) :
+    σ ∈ ramificationGroup G S n ↔ σ • ϖ - ϖ ∈ maximalIdeal S ^ (n + 1) :=
+  mem_ramificationGroup_natCast_iff_of_span_singleton_eq_maximalIdeal R₀ hϖ.maximalIdeal_eq.symm hσ
+
+/-- Over a discrete valuation ring `S` with separable residue extension over a local base ring `R₀`
+fixed by `G`, the lower index of any inertia element `σ ∈ G_0` is read off at a single uniformizer:
+`i_G(σ) = v(σ • ϖ - ϖ)`. -/
+theorem lowerIndex_eq_addVal_of_irreducible {ϖ : S} (hϖ : Irreducible ϖ) {σ : G}
+    (hσ : σ ∈ ramificationGroup G S 0) :
+    lowerIndex S σ = IsDiscreteValuationRing.addVal S (σ • ϖ - ϖ) := by
+  apply ENat.eq_of_forall_natCast_le_iff
+  rintro (_ | n)
+  · simp
+  · rw [natCast_le_lowerIndex_iff_mem_ramificationGroup]
+    have hsub : ((n + 1 : ℕ) : ℤ) - 1 = (n : ℤ) := by omega
+    rw [hsub, mem_ramificationGroup_natCast_iff_of_irreducible R₀ hϖ hσ,
+      TauCeti.IsDiscreteValuationRing.mem_maximalIdeal_pow_iff_le_addVal]
+
+end UniformizerSeparableResidue
 
 open Finset in
 /-- **Hilbert's counting identity.** Let a finite group `G` act faithfully on a discrete valuation
