@@ -16,7 +16,6 @@ public import TauCeti.RepresentationTheory.Quiver.Zigzag.ADE.Preprojective
 public import TauCeti.RepresentationTheory.Quiver.Preprojective.GraphOrientation
 public import TauCeti.RepresentationTheory.Quiver.Zigzag.Signless
 -- Proof-only: signs act on the signless algebra by `zsmul`.
-import TauCeti.Algebra.Ring.NegOnePow
 
 /-!
 # The preprojective algebras of `E₆`, `E₇`, and `E₈` are finite-dimensional
@@ -327,7 +326,8 @@ private theorem eNormalForm_cons_valley {i₀ j j' L : ℕ}
         (ε • (ladderValley (eUp k n a) (eDown k n a) (m + 1) s r * E)) =
         (ε * (-1) ^ r) • (ladderValley (eUp k n a) (eDown k n a) m (s + 1) r * E) := by
       rw [harr, mul_smul_comm, ← mul_assoc, d_mul_ladderValley (eDown_mul_eUp_add k hn a),
-        mul_assoc, neg_one_pow_mul_eq_zsmul, mul_smul]
+        mul_assoc]
+      simp only [zsmul_eq_mul, Int.cast_mul, Int.cast_pow, Int.cast_neg, Int.cast_one, mul_assoc]
     rw [hz, Nat.add_right_comm m 1 r, Nat.add_sub_cancel]
     rcases Nat.eq_zero_or_pos m with rfl | hm'
     · -- The valley reaches the branch node: a climb out of it after a descent into it.
@@ -368,8 +368,10 @@ private theorem eNormalForm_cons_climb {i₀ j j' L : ℕ}
     · have harr : signlessArrow k G (eArm n a (h + 1)) (eArm n a h) = eDown k n a h := by
         rw [eDown]
       rw [Nat.add_sub_cancel, ← mul_assoc, ← mul_assoc, harr,
-        d_mul_ladderValley_zero_zero (eDown_mul_eUp_add k hn a), neg_one_pow_mul_eq_zsmul, eTurn]
-      simp only [smul_mul_assoc, mul_smul_comm, mul_assoc]
+        d_mul_ladderValley_zero_zero (eDown_mul_eUp_add k hn a), eTurn]
+      simp only [mul_assoc, zsmul_eq_mul, Int.cast_pow, Int.cast_neg, Int.cast_one,
+        Int.cast_comm]
+      exact ((Commute.neg_one_left _).pow_left h).left_comm _
 
 /-- **One more arrow keeps a normal form.** -/
 private theorem eNormalForm_cons {i₀ j j' L : ℕ}

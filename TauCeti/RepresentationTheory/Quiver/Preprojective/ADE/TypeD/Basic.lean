@@ -14,7 +14,6 @@ public import TauCeti.RepresentationTheory.Quiver.Preprojective.Admissible
 public import TauCeti.RepresentationTheory.Quiver.Preprojective.GraphOrientation
 public import TauCeti.RepresentationTheory.Quiver.Zigzag.Signless
 -- Proof-only: signs act on the signless algebra by `zsmul`.
-import TauCeti.Algebra.Ring.NegOnePow
 
 /-!
 # Path reduction in the type-`D` preprojective algebra
@@ -273,7 +272,8 @@ private theorem forkNormalForm_cons_valley {i₀ j j' L : ℕ}
         (ε • (ladderValley (forkUp k G c) (forkDown k G c) (m + 1) s r * E)) =
         (ε * (-1) ^ r) • (ladderValley (forkUp k G c) (forkDown k G c) m (s + 1) r * E) := by
       rw [harr, mul_smul_comm, ← mul_assoc, d_mul_ladderValley (forkDown_mul_forkUp_add k hG),
-        mul_assoc, neg_one_pow_mul_eq_zsmul, mul_smul]
+        mul_assoc]
+      simp only [zsmul_eq_mul, Int.cast_mul, Int.cast_pow, Int.cast_neg, Int.cast_one, mul_assoc]
     rw [hz]
     rcases Nat.eq_zero_or_pos m with rfl | hm'
     · -- The valley reaches the branch node: a climb out of it after a descent into it.
@@ -320,8 +320,8 @@ private theorem forkNormalForm_cons_arm {i₀ j j' L : ℕ}
         (Submodule.mul_mem_mul (forkDown_mul_forkUp_mem_forkSpan k hn hG) hw)
     · have hj'r : c - j' = r := by omega
       rw [hr, harr, hj'r, ← mul_assoc, ← mul_assoc,
-        d_mul_ladderValley_zero_zero (forkDown_mul_forkUp_add k hG), neg_one_pow_mul_eq_zsmul]
-      simp only [smul_mul_assoc, mul_smul_comm, mul_assoc]
+        d_mul_ladderValley_zero_zero (forkDown_mul_forkUp_add k hG), mul_smul_comm, zsmul_eq_mul]
+      simp only [Int.cast_pow, Int.cast_neg, Int.cast_one, mul_assoc]
   · -- A step away from the branch node extends the climb.
     have harr : signlessArrow k G j j' = forkUp k G c (c - j) := by
       rw [forkUp]
