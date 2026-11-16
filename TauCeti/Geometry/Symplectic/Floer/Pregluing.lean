@@ -12,7 +12,6 @@ public import Mathlib.MeasureTheory.Measure.Lebesgue.Basic
 import Mathlib.Analysis.Normed.Operator.Prod
 import TauCeti.Analysis.Calculus.FDeriv.Prod
 import TauCeti.Analysis.Calculus.FDeriv.Remainder
-import Mathlib.Analysis.Calculus.FDeriv.Measurable
 
 /-!
 # Pre-gluing Floer cylinders broken at an orbit
@@ -59,7 +58,7 @@ which needs the error `F(w_R)` to be small. This file proves that it is.
   `exists_eventually_eLpNorm_floerOperator_preglue_le_of_floerOperator_eq_zero`). This is the
   form of the error that the Newton iteration in `W^{1,p}` consumes. The error is measurable
   because the Floer operator of a continuous map is
-  (`TauCeti.SymplecticForm.aestronglyMeasurable_floerOperator_cylindrical`).
+  (`TauCeti.SymplecticForm.aestronglyMeasurable_floerOperator`).
 
 Estimates are stated on the fundamental domain `t ∈ [0, 1]` of the cylinder, so no periodicity is
 assumed. The construction is local in the cylindrical coordinates, so it applies equally at a
@@ -528,29 +527,6 @@ theorem exists_eventually_norm_floerOperator_preglue_le_of_floerOperator_eq_zero
   rw [ω.floerOperator_preglue_eq_zero J H x R huF hvF hz hzN, norm_zero]
   exact hpos
 
-/-- **Measurability of the Floer operator.** For the cylindrical datum `K = H_t dt` with `H`
-jointly `C²` and `J_t(y)` jointly continuous, the Floer operator of a continuous map is almost
-everywhere strongly measurable for every measure on `ℝ × ℝ`: it is a continuous function of the
-point and the two partial derivatives of the map, which are measurable. -/
-theorem aestronglyMeasurable_floerOperator_cylindrical (ω : SymplecticForm V)
-    {J : ℝ → V → V →L[ℝ] V} {H : ℝ → V → ℝ} (hH : ContDiff ℝ 2 (uncurry H))
-    (hJ : Continuous (uncurry J)) {w : ℝ × ℝ → V} (hw : Continuous w) (μ : Measure (ℝ × ℝ)) :
-    AEStronglyMeasurable (ω.floerOperator (fun p ↦ J p.2) (fun _ _ ↦ 0) (fun p ↦ H p.2) w) μ := by
-  let : MeasurableSpace V := borel V
-  have : BorelSpace V := ⟨rfl⟩
-  have hX := (ω.contDiff_hamiltonianVectorField_uncurry (n := 1) hH).continuous
-  have hG : Continuous fun q : (ℝ × ℝ) × V × V ↦ q.2.1 +
-      J q.1.2 (w q.1) (q.2.2 - ω.hamiltonianVectorField (H q.1.2) (w q.1)) :=
-    have hpt : Continuous fun q : (ℝ × ℝ) × V × V ↦ (q.1.2, w q.1) :=
-      continuous_fst.snd.prodMk (hw.comp continuous_fst)
-    continuous_snd.fst.add ((hJ.comp hpt).clm_apply (continuous_snd.snd.sub (hX.comp hpt)))
-  have hd (e : ℝ × ℝ) : AEStronglyMeasurable (fun z ↦ fderiv ℝ w z e) μ :=
-    (measurable_fderiv_apply_const ℝ _ e).aestronglyMeasurable
-  refine (hG.comp_aestronglyMeasurable (aestronglyMeasurable_id.prodMk
-    ((hd stdComplexLineReal).prodMk (hd stdComplexLineImag)))).congr
-      (Eventually.of_forall fun z ↦ ?_)
-  simp [floerOperator_def, hamiltonianVectorField_const]
-
 /-- **The pre-gluing error in `Lᵖ`.** Under the hypotheses of
 `TauCeti.SymplecticForm.exists_eventually_norm_floerOperator_preglue_le_of_floerOperator_eq_zero`,
 with `u` and `v` moreover continuous, for every large gluing parameter `R` the Floer operator of the
@@ -592,7 +568,11 @@ theorem exists_eventually_eLpNorm_floerOperator_preglue_le_of_floerOperator_eq_z
   have hFm : AEStronglyMeasurable F (volume.restrict N) := by
     have hρ : Continuous pregluingCutoff := contDiff_pregluingCutoff.continuous (n := 0)
     have hxc : Continuous x := continuous_iff_continuousAt.2 fun t ↦ (hx t).continuousAt
-    exact ω.aestronglyMeasurable_floerOperator_cylindrical hH hJ (by unfold preglue; fun_prop) _
+    have hpt : ContDiff ℝ ⊤ fun q : (ℝ × ℝ) × V ↦ (q.1.2, q.2) :=
+      contDiff_fst.snd.prodMk contDiff_snd
+    exact ω.aestronglyMeasurable_floerOperator (J := fun p ↦ J p.2) (Ks := fun _ _ ↦ 0)
+      (Kt := fun p ↦ H p.2) (hJ.comp hpt.continuous) contDiff_const
+      ((hH.of_le (by norm_num)).comp (hpt.of_le le_top)) (by unfold preglue; fun_prop) _
   -- The error vanishes off the neck, so its `Lᵖ` norm on the strip is its `Lᵖ` norm on the
   -- neck, of area `2`.
   have hS : eLpNorm F p (volume.restrict S) = eLpNorm F p (volume.restrict N) := by

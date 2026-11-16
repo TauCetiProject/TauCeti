@@ -59,9 +59,10 @@ Taking `φ = id` gives domain-dependent coefficients over a compact part of the 
 `φ z = z.2` gives `t`-dependent coefficients with constants uniform over a whole strip
 `ℝ × [0, 1]`, as on the cylindrical ends used in gluing.
 
-**The estimate in `Lᵖ`.** For `J` jointly `C²` and `Ks`, `Kt` jointly `C³`, the remainder is
+**The estimate in `Lᵖ`.** For `J` jointly `C¹` and `Ks`, `Kt` jointly `C²`, the remainder is
 jointly continuous in all its arguments (`TauCeti.SymplecticForm.continuous_floerRemainder`), so
-it is measurable along measurable fields, and the pointwise bound integrates. If the increments
+it is measurable along measurable fields. For `J` jointly `C²` and `Ks`, `Kt` jointly `C³` the
+pointwise bound then integrates. If the increments
 satisfy `‖e₁‖, ‖e₂‖ ≤ a ≤ δ` and `‖e₁ - e₂‖ ≤ b`, and the slice defect is at most `A`, almost
 everywhere, then for `1 ≤ p`
 
@@ -426,17 +427,14 @@ theorem continuous_floerRemainder (hJ : ContDiff ℝ 1 (Function.uncurry J))
   -- The coefficients and their target derivatives are jointly continuous.
   have hS := ω.contDiff_hamiltonianVectorField_uncurry (n := 1) hKs
   have hT := ω.contDiff_hamiltonianVectorField_uncurry (n := 1) hKt
-  have hpair : ContDiff ℝ ⊤ fun w : (P × V) × V ↦ (w.1.1, w.2) :=
+  have hpair : ContDiff ℝ 1 fun w : (P × V) × V ↦ (w.1.1, w.2) :=
     contDiff_fst.fst.prodMk contDiff_snd
   have hdS : Continuous fun w : P × V ↦ fderiv ℝ (ω.hamiltonianVectorField (Ks w.1)) w.2 :=
-    (ContDiff.fderiv (f := fun w : P × V ↦ ω.hamiltonianVectorField (Ks w.1))
-      (hS.comp (hpair.of_le le_top)) contDiff_snd (n := 0) (by norm_num)).continuous
+    Continuous.fderiv_one (hS.comp hpair) continuous_snd
   have hdT : Continuous fun w : P × V ↦ fderiv ℝ (ω.hamiltonianVectorField (Kt w.1)) w.2 :=
-    (ContDiff.fderiv (f := fun w : P × V ↦ ω.hamiltonianVectorField (Kt w.1))
-      (hT.comp (hpair.of_le le_top)) contDiff_snd (n := 0) (by norm_num)).continuous
+    Continuous.fderiv_one (hT.comp hpair) continuous_snd
   have hdJ : Continuous fun w : P × V ↦ fderiv ℝ (J w.1) w.2 :=
-    (ContDiff.fderiv (f := fun w : P × V ↦ J w.1)
-      (hJ.comp (hpair.of_le le_top)) contDiff_snd (n := 0) (by norm_num)).continuous
+    Continuous.fderiv_one (hJ.comp hpair) continuous_snd
   have hp : Continuous fun q : P × V × V × V × V ↦ q.1 := continuous_fst
   have hy : Continuous fun q : P × V × V × V × V ↦ q.2.1 := continuous_snd.fst
   have hv : Continuous fun q : P × V × V × V × V ↦ q.2.2.1 := continuous_snd.snd.fst
@@ -589,8 +587,7 @@ theorem exists_pos_forall_eLpNorm_floerOperator_sub_floerOperator_sub_floerLinea
   obtain ⟨δ, hδ, C, hC⟩ := ω.exists_pos_forall_eLpNorm_floerRemainder_sub_le hK hJ hKs hKt
   refine ⟨δ, hδ, C, fun μ p hp s φ w ξ₁ ξ₂ a A b hs hφ hw hξ₁ hξ₂ hK' haδ ha₁ ha₂ hb hA ↦ ?_⟩
   -- Measurability of the maps, which are continuous on `s`, and of their slice velocities.
-  let : MeasurableSpace V := borel V
-  have : BorelSpace V := ⟨rfl⟩
+  borelize V
   have hcont {f : ℝ × ℝ → V} (hf : ∀ z ∈ s, DifferentiableAt ℝ f z) :
       AEStronglyMeasurable f (μ.restrict s) :=
     ContinuousOn.aestronglyMeasurable (fun z hz ↦ (hf z hz).continuousAt.continuousWithinAt) hs
@@ -652,8 +649,10 @@ theorem exists_pos_forall_eLpNorm_floerOperator_add_sub_floerOperator_sub_floerL
   refine h.trans ?_
   set P := ENNReal.ofReal (a * (1 + A)) * eLpNorm ξ p (μ.restrict s)
   set Q := ENNReal.ofReal a * eLpNorm (fun z ↦ fderiv ℝ ξ z stdComplexLineImag) p (μ.restrict s)
-  calc (C : ℝ≥0∞) * (P + Q + Q) ≤ C * (P + Q + Q + P) :=
-        mul_le_mul_of_nonneg_left le_self_add zero_le
+  -- `P + Q + Q ≤ (P + Q) + (P + Q) = 2 (P + Q)`.
+  calc (C : ℝ≥0∞) * (P + Q + Q) ≤ C * (P + Q + (P + Q)) := by
+        gcongr
+        exact le_add_self
     _ = ((2 * C : ℝ≥0) : ℝ≥0∞) * (P + Q) := by push_cast; ring
 
 end Lp
