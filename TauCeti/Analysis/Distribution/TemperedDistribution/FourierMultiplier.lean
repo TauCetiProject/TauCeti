@@ -85,8 +85,7 @@ theorem fourierMultiplierCLM_apply_apply_of_even {g : E → ℂ} (hg : g.Even) (
       Real.fourierInv_eq_fourier_neg, SchwartzMap.fourier_coe, hg ξ]
   ext x
   rw [SchwartzMap.fourier_coe, key, Real.fourier_comp_linearIsometry,
-    SchwartzMap.fourierInv_coe, Real.fourierInv_eq_fourier_neg]
-  rfl
+    SchwartzMap.fourierInv_coe, Real.fourierInv_eq_fourier_neg, LinearIsometryEquiv.coe_neg]
 
 /-- Fourier multipliers on tempered distributions are additive in the symbol. -/
 theorem fourierMultiplierCLM_add {g₁ g₂ : E → ℂ} (hg₁ : g₁.HasTemperateGrowth)

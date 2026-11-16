@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.Sobolev.BesselPotential.Besov
-import Mathlib.Analysis.Normed.Lp.lpHolder
+import TauCeti.Analysis.Normed.Lp.Basic
 import TauCeti.Analysis.Normed.Lp.Reindex
 import TauCeti.Analysis.SpecialFunctions.Pow.Real
 import TauCeti.MeasureTheory.Function.Holder
@@ -145,21 +145,15 @@ theorem exists_norm_toDistr_apply_le (φ : ContDiffBump (0 : E)) (s : ℝ) :
     exact norm_littlewoodPaleyBlock_toDistr_apply_le hL v f j
   have ha : ‖a‖ ≤ ‖u‖ := by
     rw [← norm_weightedBlocks]
-    exact lp.norm_mono (zero_lt_one.trans_le Fact.out).ne' fun k ↦ (norm_norm _).le
+    exact (lp.norm_eq_of_forall_norm_eq fun j ↦ norm_norm _).le
   have hb : ‖b‖ ≤ ‖v‖ := by
     rw [← norm_weightedBlocks]
-    exact lp.norm_mono (zero_lt_one.trans_le Fact.out).ne' fun k ↦ (norm_norm _).le
+    exact (lp.norm_eq_of_forall_norm_eq fun k ↦ norm_norm _).le
   have hc : ‖c‖ ≤ 2 * L * ‖b‖ := lp.norm_le_of_forall_eq_sum_Ico_sub_add L hcj
   -- Hölder's inequality for sequences bounds every partial sum of `∑ⱼ aⱼ cⱼ` by `‖a‖ ‖c‖`.
-  have hB : ∀ _ : ℕ, ‖ContinuousLinearMap.mul ℝ ℝ‖ ≤ (1 : NNReal) := fun _ ↦ by simp
-  set P := lp.holderL (p := q) (q := q') 1 (fun _ : ℕ ↦ ContinuousLinearMap.mul ℝ ℝ) hB
-  have hsum (N : ℕ) : ∑ j ∈ Finset.range N, a j * c j ≤ ‖a‖ * ‖c‖ := by
-    have h1 := lp.sum_rpow_le_norm_rpow (p := 1) (by simp) (P a c) (Finset.range N)
-    simp only [ENNReal.toReal_one, Real.rpow_one] at h1
-    refine (Finset.sum_le_sum fun j _ ↦ Real.le_norm_self (a j * c j)).trans <|
-      h1.trans <| (P.le_opNorm₂ a c).trans ?_
-    calc ‖P‖ * ‖a‖ * ‖c‖ ≤ 1 * ‖a‖ * ‖c‖ := by gcongr; exact lp.norm_holderL_le 1 _ hB
-      _ = ‖a‖ * ‖c‖ := by ring
+  have hsum (N : ℕ) : ∑ j ∈ Finset.range N, a j * c j ≤ ‖a‖ * ‖c‖ :=
+    (Finset.sum_le_sum fun j _ ↦ (Real.le_norm_self _).trans (norm_mul_le _ _)).trans
+      (lp.sum_norm_mul_norm_le a c _)
   -- Pass to the limit in the reconstruction `v = ∑ⱼ Δⱼ v`, evaluated at `f`.
   have hlim : Tendsto (fun N ↦ ∑ j ∈ Finset.range N, littlewoodPaleyBlock F φ j v.toDistr f)
       atTop (𝓝 (v.toDistr f)) := by
