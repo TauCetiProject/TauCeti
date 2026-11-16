@@ -11,7 +11,8 @@ public import TauCeti.ModelTheory.RelationalConfiguration.FragmentSpectrum
 /-!
 # Fragment-spectrum characterizations of scattered classes and sentences
 
-Classically, an `L_{ω₁ω}` sentence `φ` is called *scattered* (Morley 1970; Marker, Chapter 2) when
+Classically, an `L_{ω₁ω}` sentence `φ` is called *scattered* (Morley 1970; Marker, the chapter on
+Vaught counterexamples) when
 every countable fragment realizes only countably many `n`-types across the countable models of `φ`.
 In this library, `TauCeti.BFScattered K` defines scatteredness of a class
 `K : Set (RelationalConfiguration L ℕ)` combinatorially through countable back-and-forth levels,
@@ -51,8 +52,9 @@ This file connects those notions to the fragment type spectra of
   `n : ℕ`.
 * `TauCeti.mk_isoClasses_le_aleph_one_of_countable_typeSpectrum`: countable fragment spectra on `K`
   bound the isomorphism classes met by `K` on `ℕ` by `ℵ₁`.
-* `TauCeti.isThinOnNatModels_iff_countable_typeSpectrum`: thinness on `ℕ` of a sentence with
-  countable branching equals classical scatteredness via countable fragment spectra.
+* `TauCeti.isThinOnNatModels_iff_countable_typeSpectrum`: in a countable relational vocabulary,
+  thinness on `ℕ` of a sentence with countable branching equals classical scatteredness via
+  countable fragment spectra.
 * `TauCeti.not_hasPerfectlyManyCountableModels_iff_countable_typeSpectrum` and
   `TauCeti.countableModelCount_le_aleph_one_of_countable_typeSpectrum`: extension across `ℕ` and all
   finite carriers `Fin d`.
@@ -62,8 +64,9 @@ This file connects those notions to the fragment type spectra of
 
 ## References
 
-* D. Marker, *Lectures on Infinitary Model Theory*, Cambridge University Press, 2016, Chapter 2
-  (scattered sentences and fragment `n`-types).
+* D. Marker, *Lectures on Infinitary Model Theory*, Cambridge University Press, 2016, Chapter 1
+  (countable fragments and fragment `n`-types) and the chapters on the space of countable models and
+  Vaught counterexamples (scattered sentences).
 * M. Morley, *The number of countable models*, J. Symbolic Logic 35 (1970), 14–18.
 * J. H. Silver, *Counting the number of equivalence classes of Borel and coanalytic equivalence
   relations*, Annals of Mathematical Logic 18 (1980), 1–28.
@@ -134,16 +137,18 @@ theorem mk_isoClasses_le_aleph_one_of_countable_typeSpectrum [∀ k, Countable (
 
 /-! ### Model classes of infinitary sentences and Vaught's conjecture -/
 
-/-- A sentence with countable branching that is thin on `ℕ` has countable `n`-type spectrum on
-`modelsOf (V := ℕ) φ` for every fragment with countable `n`-slice. -/
+/-- In a relational language with countably many relation symbols of each arity, a sentence with
+countable branching that is thin on `ℕ` has countable `n`-type spectrum on `modelsOf (V := ℕ) φ` for
+every fragment with countable `n`-slice. -/
 theorem IsThinOnNatModels.countable_typeSpectrum [∀ k, Countable (L.Relations k)] [Countable ι]
     {φ : L.SentenceInf ι} (h : IsThinOnNatModels φ) {F : Fragment L}
     (hF : (F.slice n).Countable) :
     (F.typeSpectrum n (modelsOf (V := ℕ) φ)).Countable :=
   h.bfScattered_modelsOf.countable_typeSpectrum hF
 
-/-- Countable fragment spectra at all arities on `modelsOf (V := ℕ) φ` make `φ` thin on `ℕ`, with
-no countability assumption on the branching index `ι`. -/
+/-- In a relational language with countably many relation symbols of each arity, countable fragment
+spectra at all arities on `modelsOf (V := ℕ) φ` make `φ` thin on `ℕ`, with no countability
+assumption on the branching index `ι`. -/
 theorem isThinOnNatModels_of_countable_typeSpectrum [∀ k, Countable (L.Relations k)]
     {φ : L.SentenceInf ι}
     (hspec : ∀ F : Fragment L,
@@ -164,8 +169,9 @@ theorem isThinOnNatModels_iff_countable_typeSpectrum [∀ k, Countable (L.Relati
           ∀ n : ℕ, (F.typeSpectrum n (modelsOf (V := ℕ) φ)).Countable :=
   bfScattered_modelsOf_iff_isThinOnNatModels.symm.trans bfScattered_iff_countable_typeSpectrum
 
-/-- Countable fragment spectra on `ℕ` and on every finite carrier `Fin d` rule out a perfect set of
-pairwise non-isomorphic countable models, with no countability hypothesis on `ι`. -/
+/-- In a relational language with countably many relation symbols of each arity, countable fragment
+spectra on `ℕ` and on every finite carrier `Fin d` rule out a perfect set of pairwise
+non-isomorphic countable models, with no countability hypothesis on `ι`. -/
 theorem not_hasPerfectlyManyCountableModels_of_countable_typeSpectrum
     [∀ k, Countable (L.Relations k)] {φ : L.SentenceInf ι}
     (hℕ : ∀ F : Fragment L,
@@ -197,20 +203,40 @@ theorem not_hasPerfectlyManyCountableModels_iff_countable_typeSpectrum
   exact and_congr_right' <| forall_congr' fun d =>
     isThinOn_iff_countable_typeSpectrum (measurableSet_modelsOf φ)
 
-/-- For an infinitary sentence with countable branching in a countable relational vocabulary,
-countable fragment spectra on `ℕ` and on each `Fin d` bound the total number of countable models
-(finite models included) by `ℵ₁`. -/
+/-- In a relational language with countably many relation symbols of each arity, countable fragment
+spectra on `ℕ` and on each `Fin d` bound the total number of countable models (finite models
+included) by `ℵ₁`, with no countability hypothesis on the branching index `ι`. -/
 theorem countableModelCount_le_aleph_one_of_countable_typeSpectrum
-    [∀ k, Countable (L.Relations k)] [Countable ι] {φ : L.SentenceInf ι}
+    [∀ k, Countable (L.Relations k)] {φ : L.SentenceInf ι}
     (hℕ : ∀ F : Fragment L,
       (F : Set (Σ m, L.BoundedFormulaω Empty m)).Countable →
         ∀ n : ℕ, (F.typeSpectrum n (modelsOf (V := ℕ) φ)).Countable)
     (hfin : ∀ d : ℕ, ∀ F : Fragment L,
       (F : Set (Σ m, L.BoundedFormulaω Empty m)).Countable →
         ∀ n : ℕ, (F.typeSpectrum n (modelsOf (V := Fin d) φ)).Countable) :
-    countableModelCount φ ≤ ℵ₁ :=
-  countableModelCount_le_aleph_one_of_not_hasPerfectlyManyCountableModels
-    (not_hasPerfectlyManyCountableModels_of_countable_typeSpectrum hℕ hfin)
+    countableModelCount φ ≤ ℵ₁ := by
+  have hfin_le (d : ℕ) : #(Quotient (isoSetoidOn (Fin d) φ)) ≤ ℵ₀ := by
+    let C := modelsOf (V := Fin d) φ
+    have : Countable (Quotient (@bfTupleSetoid L _ C (fun _ => Fin d)
+        (fun c => c.1.toStructure) (0 : Ordinal.{0}) d)) :=
+      countable_quotient_bfTupleSetoid_of_countable_typeSpectrum (hfin d) (Ordinal.omega_pos 1) d
+    have : Countable C := Function.Injective.countable
+      (f := fun c : C => Quotient.mk (@bfTupleSetoid L _ C (fun _ => Fin d)
+        (fun c => c.1.toStructure) (0 : Ordinal.{0}) d) ⟨c, id⟩)
+      fun c₁ c₂ hq => Subtype.ext <| RelationalConfiguration.ext fun a => by
+        have hbf := (@bfTupleSetoid_apply L _ C (fun _ => Fin d) (fun c => c.1.toStructure)
+          (0 : Ordinal.{0}) d ⟨c₁, id⟩ ⟨c₂, id⟩).1 (Quotient.exact hq)
+        have hsat := (@BFEquiv.zero L _ (Fin d) (Fin d) c₁.1.toStructure c₂.1.toStructure d
+          id id).1 hbf
+        induction a using Atom.induction_atom with
+        | h R x =>
+          rw [Bool.eq_iff_iff, ← toStructure_relMap, ← toStructure_relMap]
+          exact @SameAtomicType.rel_iff L d (Fin d) (Fin d) c₁.1.toStructure c₂.1.toStructure _
+            id id hsat _ R x
+    exact mk_le_aleph0
+  simpa only [mul_eq_self le_rfl, add_eq_left (aleph0_le_aleph 1) (aleph0_le_aleph 1)] using
+    countableModelCount_le_add_aleph0_mul
+      (mk_isoClasses_le_aleph_one_of_countable_typeSpectrum hℕ) hfin_le
 
 /-- **The classical scattered-sentence formulation of Vaught's conjecture.** Vaught's perfect-set
 conjecture for all countable models is equivalent, without the continuum hypothesis, to

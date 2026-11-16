@@ -5,7 +5,6 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.ModelTheory.Basic
 public import TauCeti.ModelTheory.Infinitary.FirstOrderImage
 public import TauCeti.ModelTheory.ModelExistence.FragmentType
 public import TauCeti.ModelTheory.RelationalConfiguration.ModelsOf
@@ -20,20 +19,21 @@ import TauCeti.SetTheory.Descriptive.Silver
 /-!
 # Fragment type spectra of relational configurations
 
-Fix a language `L`, a fragment `F : FirstOrder.Language.Fragment L`, and an arity `n : ℕ`. On any
-carrier `V`, a relational configuration `c : RelationalConfiguration L V` and a tuple
-`a : Fin n → V` determine a coded fragment type `F.pointedType c a : F.slice n → Prop`, namely the
-realized truth assignment `F.truthAssignment V a` in the decoded structure `c.toStructure`. Varying
-the tuple gives the realized `n`-types `F.realizedTypes n c` of `c`, and varying both `c` across a
-class `C : Set (RelationalConfiguration L V)` and `a` across `Fin n → V` gives the **fragment type
+Fix a relational language `L`, a fragment `F : FirstOrder.Language.Fragment L`, and an arity
+`n : ℕ`. On any carrier `V`, a relational configuration `c : RelationalConfiguration L V` and a
+tuple `a : Fin n → V` determine a coded fragment type `F.pointedType c a : F.slice n → Prop`, namely
+the realized truth assignment `F.truthAssignment V a` in the decoded structure `c.toStructure`.
+Varying the tuple gives the realized `n`-types `c.realizedTypes F n` of `c` (the structure-level
+`F.realizedTypes V n` evaluated in `c.toStructure`), and varying both `c` across a class
+`C : Set (RelationalConfiguration L V)` and `a` across `Fin n → V` gives the **fragment type
 spectrum** `F.typeSpectrum n C`.
 
 Two configurations are **spectrum-equivalent** at `(F, n)` (`F.typeSpectrumSetoid V n`) when they
 realize the same `F`-types at arity `n`. Isomorphism of decoded structures transports pointed
 fragment types (`FirstOrder.Language.Equiv.pointedType_comp`) and therefore refines spectrum
-equivalence (`TauCeti.RelationalConfiguration.isoSetoid_le_typeSpectrumSetoid`). When `L` is
-relational and `V` is countable, `F.pointedType c a` is measurable in `c` for each tuple `a` and
-jointly measurable in `(c, a)` whenever `V` has measurable singletons; if `F.slice n` is countable,
+equivalence (`TauCeti.RelationalConfiguration.isoSetoid_le_typeSpectrumSetoid`). When `V` is
+countable, `F.pointedType c a` is measurable in `c` for each tuple `a` and jointly measurable in
+`(c, a)` whenever `V` has measurable singletons; if `F.slice n` is countable,
 `F.typeSpectrumSetoid V n` has Borel graph, with no countability hypothesis on `L`. Moreover, a
 countable slice has quantifier ranks bounded below `ω₁`, so some countable back-and-forth level
 `bfEquivSetoid L V (α + n)` refines `F.typeSpectrumSetoid V n`.
@@ -65,8 +65,8 @@ complementary characterizations on a countable carrier `V`:
 
 * `FirstOrder.Language.Fragment.pointedType`: the coded fragment type `F.slice n → Prop` of a tuple
   in a relational configuration.
-* `FirstOrder.Language.Fragment.realizedTypes`: the fragment `n`-types realized in a single
-  configuration.
+* `TauCeti.RelationalConfiguration.realizedTypes`: the fragment `n`-types realized in the structure
+  decoded from a single configuration.
 * `FirstOrder.Language.Fragment.typeSpectrum`: the fragment `n`-types realized across a set of
   configurations.
 * `FirstOrder.Language.Fragment.typeSpectrumSetoid`: equivalence of configurations by having the
@@ -77,10 +77,12 @@ complementary characterizations on a countable carrier `V`:
 * `FirstOrder.Language.Fragment.measurable_pointedType_left` and
   `FirstOrder.Language.Fragment.measurable_pointedType`: measurability in the configuration and
   joint measurability in the configuration and tuple.
-* `FirstOrder.Language.Equiv.pointedType_comp` and `FirstOrder.Language.Equiv.realizedTypes_eq`:
-  transport of coded fragment types and realized-type sets along isomorphisms.
-* `TauCeti.RelationalConfiguration.countable_image_mem_modelsOf_of_countable_typeSpectrum`: the
-  arity-`0` spectrum of `Fragment.ofTheory (Set.range θ)` bounds the truth sequences of `θ`.
+* `FirstOrder.Language.Equiv.pointedType_comp` and
+  `TauCeti.RelationalConfiguration.realizedTypes_perm_smul`: transport of coded fragment types along
+  isomorphisms and invariance of realized-type sets under the logic action.
+* `TauCeti.RelationalConfiguration.countable_image_mem_modelsOf_of_countable_typeSpectrum`: a
+  countable arity-`0` spectrum for `Fragment.ofTheory (Set.range θ)` forces countably many realized
+  sentence truth sequences for `θ`.
 * `TauCeti.RelationalConfiguration.isoSetoid_le_typeSpectrumSetoid`,
   `TauCeti.RelationalConfiguration.bfEquivSetoid_le_typeSpectrumSetoid`, and
   `TauCeti.RelationalConfiguration.measurableSet_setOf_typeSpectrumSetoid`: refinement by
@@ -94,8 +96,9 @@ complementary characterizations on a countable carrier `V`:
 
 ## References
 
-* D. Marker, *Lectures on Infinitary Model Theory*, Cambridge University Press, 2016, Chapters 1 and
-  2 (countable fragments, fragment types, and scattered classes).
+* D. Marker, *Lectures on Infinitary Model Theory*, Cambridge University Press, 2016, Chapter 1
+  (countable fragments and fragment types) and the chapters on the space of countable models and
+  Vaught counterexamples (scattered classes).
 * M. Morley, *The number of countable models*, J. Symbolic Logic 35 (1970), 14–18.
 * J. H. Silver, *Counting the number of equivalence classes of Borel and coanalytic equivalence
   relations*, Annals of Mathematical Logic 18 (1980), 1–28.
@@ -189,6 +192,23 @@ theorem pointedType_encodeVia {M : Type w'} [L.Structure M]
   rw [pointedType_eq_truthAssignment, Equiv.toStructure_encodeVia]
   exact @Equiv.truthAssignment_comp L V M f.inducedStructure _ n f.inducedStructureEquiv F a
 
+/-- Encoding a relational structure on its own carrier transports `truthAssignment` to
+`pointedType`. -/
+@[simp]
+theorem pointedType_ofStructure {M : Type w} [L.Structure M]
+    (F : Fragment L) (a : Fin n → M) :
+    F.pointedType (ofStructure L M) a = F.truthAssignment M a := by
+  simpa using F.pointedType_encodeVia (_root_.Equiv.refl M) a
+
+/-- Relabelling a configuration by a permutation of the carrier transports pointed fragment types
+along the same permutation. -/
+@[simp]
+theorem pointedType_perm_smul (F : Fragment L) (σ : Equiv.Perm V)
+    (c : RelationalConfiguration L V) (a : Fin n → V) :
+    F.pointedType (σ • c) (σ ∘ a) = F.pointedType c a := by
+  rw [perm_smul_eq_encodeVia, @pointedType_encodeVia L _ V n V c.toStructure F σ a,
+    ← F.pointedType_eq_truthAssignment]
+
 /-- On a countable carrier in a relational language, `F.pointedType c a` is measurable in the
 configuration `c` for each fixed tuple `a`, with no countability hypothesis on `L` or `F` and no
 measurable-space structure on `V`. -/
@@ -207,47 +227,76 @@ theorem measurable_pointedType [Countable V] [MeasurableSpace V]
     Measurable fun p : RelationalConfiguration L V × (Fin n → V) => F.pointedType p.1 p.2 :=
   measurable_from_prod_countable_left fun a => F.measurable_pointedType_left a
 
+end Fragment
+
+namespace Equiv
+
+/-- An isomorphism between decoded structures preserves coded pointed fragment types. -/
+@[simp]
+theorem pointedType_comp {c : RelationalConfiguration L V} {d : RelationalConfiguration L W}
+    (e : @Language.Equiv L V W c.toStructure d.toStructure) (F : Fragment L) (a : Fin n → V) :
+    F.pointedType d (e ∘ a) = F.pointedType c a :=
+  @Equiv.truthAssignment_comp L W V d.toStructure c.toStructure n e F a
+
+end Equiv
+
+end FirstOrder.Language
+
+namespace TauCeti.RelationalConfiguration
+
+open FirstOrder FirstOrder.Language
+
+variable {L : Language.{u, v}} [L.IsRelational] {V : Type w} {W : Type w'} {n : ℕ}
+
 /-! ### Realized fragment types of one configuration -/
 
-/-- The fragment `n`-types realized by `n`-tuples of a single configuration `c`. -/
-def realizedTypes (F : Fragment L) (n : ℕ) (c : RelationalConfiguration L V) :
+/-- The fragment `n`-types realized by `n`-tuples in the structure decoded from `c`. -/
+def realizedTypes (c : RelationalConfiguration L V) (F : Fragment L) (n : ℕ) :
     Set (F.slice n → Prop) :=
-  Set.range (F.pointedType c (n := n))
+  @Fragment.realizedTypes L F V c.toStructure n
+
+/-- `c.realizedTypes F n` is `F.realizedTypes V n` in the decoded structure `c.toStructure`. -/
+theorem realizedTypes_def (c : RelationalConfiguration L V) (F : Fragment L) (n : ℕ) :
+    c.realizedTypes F n = @Fragment.realizedTypes L F V c.toStructure n :=
+  (rfl)
 
 /-- A truth assignment on `F.slice n` is realized in `c` exactly when it is `F.pointedType c a` for
 some `n`-tuple `a`. -/
 @[simp]
-theorem mem_realizedTypes {F : Fragment L} {c : RelationalConfiguration L V}
+theorem mem_realizedTypes {c : RelationalConfiguration L V} {F : Fragment L}
     {p : F.slice n → Prop} :
-    p ∈ F.realizedTypes n c ↔ ∃ a : Fin n → V, F.pointedType c a = p :=
-  Iff.rfl
+    p ∈ c.realizedTypes F n ↔ ∃ a : Fin n → V, F.pointedType c a = p := by
+  rw [realizedTypes_def, @Fragment.mem_realizedTypes L V c.toStructure F n p]
+  exact exists_congr fun a => by rw [F.pointedType_eq_truthAssignment]
 
-/-- Every `n`-tuple of `V` contributes its pointed type to `F.realizedTypes n c`. -/
-theorem pointedType_mem_realizedTypes (F : Fragment L) (c : RelationalConfiguration L V)
-    (a : Fin n → V) :
-    F.pointedType c a ∈ F.realizedTypes n c :=
-  ⟨a, rfl⟩
-
-/-- At arity `0`, the only realized fragment type of `c` is that of the empty tuple. -/
+/-- Encoding a relational structure along a bijection preserves its realized fragment `n`-types. -/
 @[simp]
-theorem realizedTypes_zero (F : Fragment L) (c : RelationalConfiguration L V) :
-    F.realizedTypes 0 c = {F.pointedType c Fin.elim0} := by
-  rw [realizedTypes, Set.range_unique, Subsingleton.elim default Fin.elim0]
+theorem realizedTypes_encodeVia {M : Type w'} [L.Structure M]
+    (f : M ≃ V) (F : Fragment L) (n : ℕ) :
+    (f.encodeVia (L := L)).realizedTypes F n = F.realizedTypes M n := by
+  rw [realizedTypes_def, Equiv.toStructure_encodeVia]
+  exact (@Equiv.realizedTypes_eq L M V _ f.inducedStructure f.inducedStructureEquiv F n).symm
 
-/-- On a countable carrier, any single configuration realizes at most countably many fragment
-`n`-types, independently of the size of `F` or `L`. -/
-theorem countable_realizedTypes [Countable V] (F : Fragment L) (n : ℕ)
-    (c : RelationalConfiguration L V) :
-    (F.realizedTypes n c).Countable :=
-  Set.countable_range _
+/-- Encoding a relational structure on its own carrier preserves its realized fragment `n`-types. -/
+@[simp]
+theorem realizedTypes_ofStructure {M : Type w} [L.Structure M]
+    (F : Fragment L) (n : ℕ) :
+    (ofStructure L M).realizedTypes F n = F.realizedTypes M n := by
+  rw [← Equiv.encodeVia_refl, realizedTypes_encodeVia]
 
-/-- Restricting realized types along a fragment inclusion `A ≤ B` surjects `B.realizedTypes n c`
-onto `A.realizedTypes n c`. -/
-theorem image_restrict_realizedTypes {A B : Fragment L} (hAB : A ≤ B) (n : ℕ)
-    (c : RelationalConfiguration L V) :
-    (· ∘ Set.inclusion (slice_mono hAB n)) '' B.realizedTypes n c = A.realizedTypes n c := by
-  rw [realizedTypes, realizedTypes, ← Set.range_comp]
-  exact congrArg Set.range (funext fun a => (pointedType_restrict hAB c a).symm)
+/-- Relabelling by a permutation leaves the realized fragment `n`-types unchanged. -/
+@[simp]
+theorem realizedTypes_perm_smul (σ : Equiv.Perm V) (c : RelationalConfiguration L V)
+    (F : Fragment L) (n : ℕ) :
+    (σ • c).realizedTypes F n = c.realizedTypes F n := by
+  rw [perm_smul_eq_encodeVia, @realizedTypes_encodeVia L _ V V c.toStructure σ F n,
+    ← c.realizedTypes_def F n]
+
+end TauCeti.RelationalConfiguration
+
+namespace FirstOrder.Language.Fragment
+
+variable {L : Language.{u, v}} [L.IsRelational] {V : Type w} {n : ℕ}
 
 /-! ### Fragment type spectra across a class of configurations -/
 
@@ -255,13 +304,18 @@ theorem image_restrict_realizedTypes {A B : Fragment L} (hAB : A ≤ B) (n : ℕ
 on `V`: the truth assignments on `F.slice n` realized by `n`-tuples in members of `C`. -/
 def typeSpectrum (F : Fragment L) (n : ℕ) (C : Set (RelationalConfiguration L V)) :
     Set (F.slice n → Prop) :=
-  ⋃ c ∈ C, F.realizedTypes n c
+  ⋃ c ∈ C, c.realizedTypes F n
+
+/-- `F.typeSpectrum n C` is the union of `c.realizedTypes F n` over `c ∈ C`. -/
+theorem typeSpectrum_def (F : Fragment L) (n : ℕ) (C : Set (RelationalConfiguration L V)) :
+    F.typeSpectrum n C = ⋃ c ∈ C, c.realizedTypes F n :=
+  (rfl)
 
 /-- A truth assignment lies in `F.typeSpectrum n C` iff it is realized in some member of `C`. -/
 theorem mem_typeSpectrum_iff_mem_realizedTypes {F : Fragment L}
     {C : Set (RelationalConfiguration L V)} {p : F.slice n → Prop} :
-    p ∈ F.typeSpectrum n C ↔ ∃ c ∈ C, p ∈ F.realizedTypes n c := by
-  simp only [typeSpectrum, Set.mem_iUnion, exists_prop]
+    p ∈ F.typeSpectrum n C ↔ ∃ c ∈ C, p ∈ c.realizedTypes F n := by
+  simp only [typeSpectrum_def, Set.mem_iUnion, exists_prop]
 
 /-- A truth assignment lies in `F.typeSpectrum n C` iff it is `F.pointedType c a` for some `c ∈ C`
 and `a : Fin n → V`. -/
@@ -269,7 +323,7 @@ and `a : Fin n → V`. -/
 theorem mem_typeSpectrum {F : Fragment L} {C : Set (RelationalConfiguration L V)}
     {p : F.slice n → Prop} :
     p ∈ F.typeSpectrum n C ↔ ∃ c ∈ C, ∃ a : Fin n → V, F.pointedType c a = p := by
-  simp only [mem_typeSpectrum_iff_mem_realizedTypes, mem_realizedTypes]
+  simp only [mem_typeSpectrum_iff_mem_realizedTypes, RelationalConfiguration.mem_realizedTypes]
 
 /-- The pointed type of a tuple in a member of `C` belongs to `F.typeSpectrum n C`. -/
 theorem pointedType_mem_typeSpectrum (F : Fragment L) {C : Set (RelationalConfiguration L V)}
@@ -280,27 +334,32 @@ theorem pointedType_mem_typeSpectrum (F : Fragment L) {C : Set (RelationalConfig
 /-- The realized types of each member of `C` form a subset of `F.typeSpectrum n C`. -/
 theorem realizedTypes_subset_typeSpectrum (F : Fragment L) {C : Set (RelationalConfiguration L V)}
     {c : RelationalConfiguration L V} (hc : c ∈ C) :
-    F.realizedTypes n c ⊆ F.typeSpectrum n C :=
-  Set.subset_biUnion_of_mem hc
+    c.realizedTypes F n ⊆ F.typeSpectrum n C := by
+  rw [typeSpectrum_def]
+  exact Set.subset_biUnion_of_mem (u := fun x => x.realizedTypes F n) hc
 
 /-- At arity `0`, `F.typeSpectrum 0 C` is the image of `C` under `c ↦ F.pointedType c Fin.elim0`. -/
 theorem typeSpectrum_zero (F : Fragment L) (C : Set (RelationalConfiguration L V)) :
     F.typeSpectrum 0 C = (fun c => F.pointedType c Fin.elim0) '' C := by
   ext p
-  simp only [mem_typeSpectrum_iff_mem_realizedTypes, realizedTypes_zero, mem_singleton_iff,
-    mem_image, eq_comm]
+  simp only [mem_typeSpectrum_iff_mem_realizedTypes, RelationalConfiguration.realizedTypes_def]
+  refine ⟨fun ⟨c, hc, hp⟩ => ⟨c, hc, ?_⟩, fun ⟨c, hc, hp⟩ => ⟨c, hc, ?_⟩⟩
+  · rwa [@Fragment.realizedTypes_zero L F V c.toStructure, ← F.pointedType_eq_truthAssignment,
+      mem_singleton_iff, eq_comm] at hp
+  · rwa [@Fragment.realizedTypes_zero L F V c.toStructure, ← F.pointedType_eq_truthAssignment,
+      mem_singleton_iff, eq_comm]
 
 /-- The type spectrum of the empty class is empty. -/
 @[simp]
 theorem typeSpectrum_empty (F : Fragment L) (n : ℕ) :
     F.typeSpectrum n (∅ : Set (RelationalConfiguration L V)) = ∅ := by
-  simp [typeSpectrum]
+  simp [typeSpectrum_def]
 
 /-- The type spectrum of a singleton class is the realized-type set of that configuration. -/
 @[simp]
 theorem typeSpectrum_singleton (F : Fragment L) (n : ℕ) (c : RelationalConfiguration L V) :
-    F.typeSpectrum n {c} = F.realizedTypes n c := by
-  simp [typeSpectrum]
+    F.typeSpectrum n {c} = c.realizedTypes F n := by
+  simp [typeSpectrum_def]
 
 /-- The type spectrum of a binary union is the union of the type spectra. -/
 @[simp]
@@ -326,7 +385,9 @@ theorem typeSpectrum_mono (F : Fragment L) (n : ℕ)
 theorem image_restrict_typeSpectrum {A B : Fragment L} (hAB : A ≤ B) (n : ℕ)
     (C : Set (RelationalConfiguration L V)) :
     (· ∘ Set.inclusion (slice_mono hAB n)) '' B.typeSpectrum n C = A.typeSpectrum n C := by
-  simp only [typeSpectrum, Set.image_iUnion, image_restrict_realizedTypes hAB]
+  simp only [typeSpectrum_def, Set.image_iUnion, RelationalConfiguration.realizedTypes_def]
+  refine Set.iUnion₂_congr fun c _ => ?_
+  exact @Fragment.image_restrict_realizedTypes L A B hAB V c.toStructure n
 
 /-- If `B` has a countable arity-`n` type spectrum on `C`, then so does every subfragment
 `A ≤ B`. -/
@@ -335,90 +396,6 @@ theorem countable_typeSpectrum_of_le {A B : Fragment L} (hAB : A ≤ B)
     (A.typeSpectrum n C).Countable := by
   rw [← image_restrict_typeSpectrum hAB n C]
   exact hB.image _
-
-/-! ### Spectrum equivalence -/
-
-/-- **Spectrum equivalence** of relational configurations at `(F, n)`: two configurations on `V` are
-related when they realize the exact same set of `F`-types at arity `n`. -/
-def typeSpectrumSetoid (F : Fragment L) (V : Type w) (n : ℕ) :
-    Setoid (RelationalConfiguration L V) :=
-  Setoid.ker (F.realizedTypes n)
-
-/-- Two configurations are spectrum-equivalent at `(F, n)` iff their realized `n`-type sets
-agree. -/
-theorem typeSpectrumSetoid_apply {F : Fragment L} {c d : RelationalConfiguration L V} :
-    F.typeSpectrumSetoid V n c d ↔ F.realizedTypes n c = F.realizedTypes n d :=
-  Iff.rfl
-
-/-- Explicit back-and-forth characterization of `F.typeSpectrumSetoid V n`: every `n`-tuple on each
-side has its `F`-type matched by some `n`-tuple on the other side. -/
-theorem typeSpectrumSetoid_iff {F : Fragment L} {c d : RelationalConfiguration L V} :
-    F.typeSpectrumSetoid V n c d ↔
-      (∀ a : Fin n → V, ∃ b : Fin n → V, F.pointedType c a = F.pointedType d b) ∧
-        (∀ b : Fin n → V, ∃ a : Fin n → V, F.pointedType c a = F.pointedType d b) := by
-  rw [typeSpectrumSetoid_apply, Set.Subset.antisymm_iff]
-  simp only [Set.subset_def, mem_realizedTypes, forall_exists_index, forall_apply_eq_imp_iff]
-  exact and_congr (forall_congr' fun a => exists_congr fun b => eq_comm) Iff.rfl
-
-/-- At arity `0`, spectrum equivalence is equality of the pointed types of the empty tuple. -/
-theorem typeSpectrumSetoid_zero_iff {F : Fragment L} {c d : RelationalConfiguration L V} :
-    F.typeSpectrumSetoid V 0 c d ↔ F.pointedType c Fin.elim0 = F.pointedType d Fin.elim0 := by
-  rw [typeSpectrumSetoid_apply, realizedTypes_zero, realizedTypes_zero,
-    Set.singleton_eq_singleton_iff]
-
-/-- Spectrum equivalence is antitone in the fragment: a larger fragment induces a finer equivalence
-relation on configurations. -/
-theorem typeSpectrumSetoid_anti (V : Type w) (n : ℕ) :
-    Antitone fun F : Fragment L => F.typeSpectrumSetoid V n := by
-  intro A B hAB c d hcd
-  rw [typeSpectrumSetoid_apply, ← image_restrict_realizedTypes hAB n c,
-    ← image_restrict_realizedTypes hAB n d, typeSpectrumSetoid_apply.mp hcd]
-
-end Fragment
-
-namespace Equiv
-
-/-- An isomorphism between decoded structures preserves coded pointed fragment types. -/
-@[simp]
-theorem pointedType_comp {c : RelationalConfiguration L V} {d : RelationalConfiguration L W}
-    (e : @Language.Equiv L V W c.toStructure d.toStructure) (F : Fragment L) (a : Fin n → V) :
-    F.pointedType d (e ∘ a) = F.pointedType c a :=
-  @Equiv.truthAssignment_comp L W V d.toStructure c.toStructure n e F a
-
-/-- Configurations (possibly on different carriers) with isomorphic decoded structures realize the
-same fragment `n`-types. -/
-theorem realizedTypes_eq {c : RelationalConfiguration L V} {d : RelationalConfiguration L W}
-    (e : @Language.Equiv L V W c.toStructure d.toStructure) (F : Fragment L) (n : ℕ) :
-    F.realizedTypes n c = F.realizedTypes n d := by
-  ext p
-  simp only [Fragment.mem_realizedTypes]
-  refine ⟨fun ⟨a, ha⟩ => ⟨e ∘ a, by rw [e.pointedType_comp, ha]⟩, fun ⟨b, hb⟩ => ?_⟩
-  let e' : @Language.Equiv L W V d.toStructure c.toStructure :=
-    @Language.Equiv.symm L V W c.toStructure d.toStructure e
-  exact ⟨e' ∘ b, by rw [e'.pointedType_comp, hb]⟩
-
-end Equiv
-
-namespace Fragment
-
-section LogicAction
-
-/-- Relabelling a configuration by a permutation of the carrier transports pointed fragment types
-along the same permutation. -/
-@[simp]
-theorem pointedType_perm_smul (F : Fragment L) (σ : Equiv.Perm V)
-    (c : RelationalConfiguration L V) (a : Fin n → V) :
-    F.pointedType (σ • c) (σ ∘ a) = F.pointedType c a := by
-  rw [perm_smul_eq_encodeVia, @pointedType_encodeVia L _ V n V c.toStructure F σ a]
-  rfl
-
-/-- Relabelling by a permutation leaves the realized fragment `n`-types unchanged. -/
-@[simp]
-theorem realizedTypes_perm_smul (F : Fragment L) (n : ℕ) (σ : Equiv.Perm V)
-    (c : RelationalConfiguration L V) :
-    F.realizedTypes n (σ • c) = F.realizedTypes n c := by
-  obtain ⟨e⟩ := isoSetoid_apply.mp (isoSetoid_perm_smul σ c)
-  exact (e.realizedTypes_eq F n).symm
 
 /-- Translating a class of configurations by a permutation leaves its fragment type spectrum
 unchanged. -/
@@ -443,11 +420,56 @@ theorem typeSpectrum_iUnion_perm_smul (F : Fragment L) (n : ℕ)
   refine Set.Subset.antisymm (Set.iUnion_subset fun σ => (F.typeSpectrum_perm_smul n σ C).subset) ?_
   simpa using Set.subset_iUnion (fun σ : Equiv.Perm V => F.typeSpectrum n (σ • C)) 1
 
-end LogicAction
+/-! ### Spectrum equivalence -/
 
-end Fragment
+/-- **Spectrum equivalence** of relational configurations at `(F, n)`: two configurations on `V` are
+related when they realize the exact same set of `F`-types at arity `n`. -/
+def typeSpectrumSetoid (F : Fragment L) (V : Type w) (n : ℕ) :
+    Setoid (RelationalConfiguration L V) :=
+  Setoid.ker fun c => c.realizedTypes F n
 
-end FirstOrder.Language
+/-- `F.typeSpectrumSetoid V n` is the kernel of `c ↦ c.realizedTypes F n`. -/
+theorem typeSpectrumSetoid_def (F : Fragment L) (V : Type w) (n : ℕ) :
+    F.typeSpectrumSetoid V n = Setoid.ker fun c => c.realizedTypes F n :=
+  (rfl)
+
+/-- Two configurations are spectrum-equivalent at `(F, n)` iff their realized `n`-type sets
+agree. -/
+theorem typeSpectrumSetoid_apply {F : Fragment L} {c d : RelationalConfiguration L V} :
+    F.typeSpectrumSetoid V n c d ↔ c.realizedTypes F n = d.realizedTypes F n :=
+  Iff.rfl
+
+/-- Explicit back-and-forth characterization of `F.typeSpectrumSetoid V n`: every `n`-tuple on each
+side has its `F`-type matched by some `n`-tuple on the other side. -/
+theorem typeSpectrumSetoid_iff {F : Fragment L} {c d : RelationalConfiguration L V} :
+    F.typeSpectrumSetoid V n c d ↔
+      (∀ a : Fin n → V, ∃ b : Fin n → V, F.pointedType c a = F.pointedType d b) ∧
+        (∀ b : Fin n → V, ∃ a : Fin n → V, F.pointedType c a = F.pointedType d b) := by
+  rw [typeSpectrumSetoid_apply, Set.Subset.antisymm_iff]
+  simp only [Set.subset_def, RelationalConfiguration.mem_realizedTypes, forall_exists_index,
+    forall_apply_eq_imp_iff]
+  exact and_congr (forall_congr' fun a => exists_congr fun b => eq_comm) Iff.rfl
+
+/-- At arity `0`, spectrum equivalence is equality of the pointed types of the empty tuple. -/
+theorem typeSpectrumSetoid_zero_iff {F : Fragment L} {c d : RelationalConfiguration L V} :
+    F.typeSpectrumSetoid V 0 c d ↔ F.pointedType c Fin.elim0 = F.pointedType d Fin.elim0 := by
+  rw [typeSpectrumSetoid_apply, RelationalConfiguration.realizedTypes_def,
+    RelationalConfiguration.realizedTypes_def, @Fragment.realizedTypes_zero L F V c.toStructure,
+    @Fragment.realizedTypes_zero L F V d.toStructure, ← F.pointedType_eq_truthAssignment,
+    ← F.pointedType_eq_truthAssignment, Set.singleton_eq_singleton_iff]
+
+/-- Spectrum equivalence is antitone in the fragment: a larger fragment induces a finer equivalence
+relation on configurations. -/
+theorem typeSpectrumSetoid_anti (V : Type w) (n : ℕ) :
+    Antitone fun F : Fragment L => F.typeSpectrumSetoid V n := by
+  intro A B hAB c d hcd
+  rw [typeSpectrumSetoid_apply, RelationalConfiguration.realizedTypes_def,
+    RelationalConfiguration.realizedTypes_def,
+    ← @Fragment.image_restrict_realizedTypes L A B hAB V c.toStructure n,
+    ← @Fragment.image_restrict_realizedTypes L A B hAB V d.toStructure n,
+    ← c.realizedTypes_def B n, ← d.realizedTypes_def B n, typeSpectrumSetoid_apply.mp hcd]
+
+end FirstOrder.Language.Fragment
 
 namespace TauCeti.RelationalConfiguration
 
@@ -458,9 +480,9 @@ variable {L : Language.{u, v}} [L.IsRelational] {V : Type w} {n : ℕ}
 /-! ### Arity-zero spectra and sentence truth sequences -/
 
 /-- **Sentence truth sequences from arity-zero fragment spectra.** For any family of sentences
-`θ : ι → L.Sentenceω`, the truth assignment `c ↦ (i ↦ c ∈ modelsOf (θ i))` across `C` factors
-through the arity-`0` type spectrum of `Fragment.ofTheory (Set.range θ)`. In particular, a countable
-arity-`0` spectrum forces countably many realized truth sequences for `θ` on `C`. -/
+`θ : ι → L.Sentenceω`, if `Fragment.ofTheory (Set.range θ)` has a countable arity-`0` type spectrum
+on `C`, then `θ` realizes only countably many truth sequences `i ↦ c ∈ modelsOf (θ i)` across
+`C`. -/
 theorem countable_image_mem_modelsOf_of_countable_typeSpectrum {ι : Type uι}
     (θ : ι → L.Sentenceω) {C : Set (RelationalConfiguration L V)}
     (h : ((Fragment.ofTheory (Set.range θ)).typeSpectrum 0 C).Countable) :
@@ -485,7 +507,8 @@ theorem isoSetoid_le_typeSpectrumSetoid (F : Fragment L) (V : Type w) (n : ℕ) 
     isoSetoid L V ≤ F.typeSpectrumSetoid V n := by
   intro c d hcd
   obtain ⟨e⟩ := isoSetoid_apply.mp hcd
-  exact e.realizedTypes_eq F n
+  rw [Fragment.typeSpectrumSetoid_apply, realizedTypes_def, realizedTypes_def]
+  exact @Equiv.realizedTypes_eq L V V c.toStructure d.toStructure e F n
 
 /-- At `Fragment.firstOrder L` and arity `0`, spectrum equivalence is elementary equivalence of the
 decoded structures. -/
@@ -545,11 +568,13 @@ some countable level `β < ω₁` has `bfEquivSetoid L V β ≤ F.typeSpectrumSe
 assumption on `L` or `V` is required. -/
 theorem exists_lt_omega_one_bfEquivSetoid_le_typeSpectrumSetoid {F : Fragment L}
     (hF : (F.slice n).Countable) (V : Type w) :
-    ∃ β : Ordinal.{0}, β < ω₁ ∧ bfEquivSetoid L V β ≤ F.typeSpectrumSetoid V n := by
+    ∃ β : Ordinal.{o}, β < ω₁ ∧ bfEquivSetoid L V β ≤ F.typeSpectrumSetoid V n := by
   obtain ⟨α, hα, hlt⟩ := hF.exists_lt_omega_one_forall_lt fun φ _ => φ.qrank_lt_omega_one
-  exact ⟨α + n,
-    Ordinal.isPrincipal_add_omega 1 hα ((Ordinal.natCast_lt_omega0 n).trans omega0_lt_omega_one),
-    bfEquivSetoid_le_typeSpectrumSetoid F V fun φ hφ => (hlt φ hφ).le⟩
+  have hβ₀ : α + n < (ω₁ : Ordinal.{0}) :=
+    Ordinal.isPrincipal_add_omega 1 hα ((Ordinal.natCast_lt_omega0 n).trans omega0_lt_omega_one)
+  refine ⟨Ordinal.lift.{o, 0} (α + n), Ordinal.lift_lt_omega_one.mpr hβ₀, ?_⟩
+  rw [bfEquivSetoid_lift]
+  exact bfEquivSetoid_le_typeSpectrumSetoid F V fun φ hφ => (hlt φ hφ).le
 
 /-- **Spectrum equivalence has Borel graph.** On a countable carrier `V`, whenever `F.slice n` is
 countable, `F.typeSpectrumSetoid V n` has measurable graph in the product σ-algebra. No countability
@@ -560,17 +585,13 @@ theorem measurableSet_setOf_typeSpectrumSetoid [Countable V] {F : Fragment L}
       F.typeSpectrumSetoid V n p.1 p.2} := by
   have : Countable (F.slice n) := hF.to_subtype
   rw [measurableSet_setOfPred]
-  simp only [Fragment.typeSpectrumSetoid_iff, funext_iff, Fragment.pointedType_apply, eq_iff_iff]
+  simp only [Fragment.typeSpectrumSetoid_iff, funext_iff, eq_iff_iff]
   have hpair (a b : Fin n → V) :
       Measurable fun p : RelationalConfiguration L V × RelationalConfiguration L V =>
-        ∀ φ : F.slice n,
-          @BoundedFormulaInf.Realize L ℕ Empty V p.1.toStructure n φ.1 Empty.elim a ↔
-            @BoundedFormulaInf.Realize L ℕ Empty V p.2.toStructure n φ.1 Empty.elim b :=
+        ∀ φ : F.slice n, F.pointedType p.1 a φ ↔ F.pointedType p.2 b φ :=
     Measurable.forall fun φ =>
-      ((measurableSet_setOfPred.1 (measurableSet_setOf_realize φ.1 Empty.elim a)).comp
-        measurable_fst).iff
-        ((measurableSet_setOfPred.1 (measurableSet_setOf_realize φ.1 Empty.elim b)).comp
-          measurable_snd)
+      (((measurable_pi_apply φ).comp ((F.measurable_pointedType_left a).comp measurable_fst)).iff
+        ((measurable_pi_apply φ).comp ((F.measurable_pointedType_left b).comp measurable_snd)))
   exact (Measurable.forall fun a => Measurable.exists fun b => hpair a b).and
     (Measurable.forall fun b => Measurable.exists fun a => hpair a b)
 
@@ -593,11 +614,14 @@ theorem countable_typeSpectrum_of_countable_quotient [Countable V] {F : Fragment
     (h : Countable (Quotient ((F.typeSpectrumSetoid V n).comap (Subtype.val : C → _)))) :
     (F.typeSpectrum n C).Countable := by
   have hker : (F.typeSpectrumSetoid V n).comap (Subtype.val : C → _) =
-      Setoid.ker fun c : C => F.realizedTypes n c.1 := rfl
-  have hrange : (Set.range fun c : C => F.realizedTypes n c.1).Countable :=
+      Setoid.ker fun c : C => c.1.realizedTypes F n :=
+    Setoid.ext fun _ _ => Fragment.typeSpectrumSetoid_apply
+  have hrange : (Set.range fun c : C => c.1.realizedTypes F n).Countable :=
     Set.countable_coe_iff.2 ((Setoid.quotientKerEquivRange _).symm.countable_iff.2 (hker ▸ h))
-  rw [Fragment.typeSpectrum, ← Set.sUnion_image, Set.image_eq_range]
-  exact hrange.sUnion <| by rintro _ ⟨c, rfl⟩; exact F.countable_realizedTypes n c.1
+  rw [F.typeSpectrum_def, ← Set.sUnion_image, Set.image_eq_range]
+  refine hrange.sUnion ?_
+  rintro _ ⟨c, rfl⟩
+  simpa only [realizedTypes_def] using @Fragment.countable_realizedTypes L F V c.1.toStructure _ n
 
 /-- **Countable back-and-forth levels imply countable fragment spectra.** On a countable carrier
 `V`, if `C` meets countably many classes at every countable back-and-forth level, then
@@ -605,10 +629,10 @@ theorem countable_typeSpectrum_of_countable_quotient [Countable V] {F : Fragment
 countability of `L` is assumed. -/
 theorem countable_typeSpectrum_of_countable_bfEquivSetoid [Countable V]
     {C : Set (RelationalConfiguration L V)} {F : Fragment L} (hF : (F.slice n).Countable)
-    (hlevels : ∀ α : Ordinal.{0}, α < ω₁ →
+    (hlevels : ∀ α : Ordinal.{o}, α < ω₁ →
       Countable (Quotient ((bfEquivSetoid L V α).comap (Subtype.val : C → _)))) :
     (F.typeSpectrum n C).Countable := by
-  obtain ⟨β, hβ, hle⟩ := exists_lt_omega_one_bfEquivSetoid_le_typeSpectrumSetoid hF V
+  obtain ⟨β, hβ, hle⟩ := exists_lt_omega_one_bfEquivSetoid_le_typeSpectrumSetoid.{u, v, w, o} hF V
   have := hlevels β hβ
   have hcomap : (bfEquivSetoid L V β).comap (Subtype.val : C → _) ≤
       (F.typeSpectrumSetoid V n).comap Subtype.val := fun _ _ h => hle h
@@ -728,18 +752,58 @@ private theorem countable_quotient_bfTupleSetoid_of_fragment
   exact Quotient.sound ((@bfTupleSetoid_apply L _ C (fun _ => V) (fun c => c.1.toStructure) α m
     q₁.out q₂.out).2 (hsep q₁.out.1 q₂.out.1 q₁.out.2 q₂.out.2 (congrArg Subtype.val hq)))
 
-/-- Symmetry of `BFEquiv` between decoded structures on `V`. -/
-private theorem bfEquiv_symm {c d : RelationalConfiguration L V} {α : Ordinal.{o}} {m : ℕ}
-    {a b : Fin m → V} (h : @BFEquiv L _ V V c.toStructure d.toStructure α m a b) :
-    @BFEquiv L _ V V d.toStructure c.toStructure α m b a :=
-  @BFEquiv.symm L _ V V c.toStructure d.toStructure m a b α h
+/-- Agreement on `Fragment.firstOrder L` forces depth-`0` back-and-forth equivalence. -/
+private theorem bfEquiv_zero_of_firstOrder_pointedType_eq
+    {c d : RelationalConfiguration L V} {m : ℕ} {a b : Fin m → V}
+    (hab : (Fragment.firstOrder L).pointedType c a = (Fragment.firstOrder L).pointedType d b) :
+    @BFEquiv L _ V V c.toStructure d.toStructure (0 : Ordinal.{o}) m a b := by
+  rw [@BFEquiv.zero L _ V V c.toStructure d.toStructure m a b,
+    @sameAtomicType_def L m V V c.toStructure d.toStructure]
+  intro idx
+  have hmem : idx.toFormula.toOmega ∈ (Fragment.firstOrder L).slice m :=
+    Fragment.mem_slice.2 (Fragment.toOmega_mem_firstOrder idx.toFormula)
+  simpa only [@BoundedFormula.realize_toInf L ℕ Empty V c.toStructure m,
+    @BoundedFormula.realize_toInf L ℕ Empty V d.toStructure m,
+    @AtomicIdx.realize_toFormula L m V c.toStructure,
+    @AtomicIdx.realize_toFormula L m V d.toStructure] using
+    Fragment.pointedType_eq_iff.1 hab _ hmem
 
-/-- Transitivity of `BFEquiv` across three decoded structures on `V`. -/
-private theorem bfEquiv_trans {c d e : RelationalConfiguration L V} {α : Ordinal.{o}} {m : ℕ}
-    {a b u : Fin m → V} (hab : @BFEquiv L _ V V c.toStructure d.toStructure α m a b)
-    (hbu : @BFEquiv L _ V V d.toStructure e.toStructure α m b u) :
-    @BFEquiv L _ V V c.toStructure e.toStructure α m a u :=
-  @BFEquiv.trans L _ V V V c.toStructure d.toStructure e.toStructure m a b u α hab hbu
+/-- For the `bfTupleSetoid` class `q` of `⟨c, a⟩` at depth `β < ω₁`, realizing the representative's
+canonical Scott formula at `(d, b)` is equivalent to `BFEquiv β k a b`. -/
+private theorem realize_configScottFormula_out_mk_iff_bfEquiv [Countable V]
+    [∀ k, Countable (L.Relations k)] {C : Set (RelationalConfiguration L V)} {β : Ordinal.{o}}
+    (hβ : β < ω₁) {k : ℕ} (c : C) (d : RelationalConfiguration L V) (a b : Fin k → V) :
+    let q := Quotient.mk (@bfTupleSetoid L _ C (fun _ => V) (fun c => c.1.toStructure) β k) ⟨c, a⟩
+    @BoundedFormulaInf.Realize L ℕ Empty V d.toStructure k
+        (configScottFormula q.out.1.1 q.out.2 β) Empty.elim b ↔
+      @BFEquiv L _ V V c.1.toStructure d.toStructure β k a b := by
+  intro q
+  have hq_a : @BFEquiv L _ V V q.out.1.1.toStructure c.1.toStructure β k q.out.2 a :=
+    (@bfTupleSetoid_apply L _ C (fun _ => V) (fun c => c.1.toStructure) β k q.out ⟨c, a⟩).1
+      (Quotient.exact (Quotient.out_eq q))
+  rw [realize_configScottFormula_iff_bfEquiv q.out.1.1 d q.out.2 b hβ]
+  exact ⟨fun hq_b => @BFEquiv.trans L _ V V V c.1.toStructure q.out.1.1.toStructure
+    d.toStructure k a q.out.2 b β
+    (@BFEquiv.symm L _ V V q.out.1.1.toStructure c.1.toStructure k q.out.2 a β hq_a) hq_b,
+    fun hab => @BFEquiv.trans L _ V V V q.out.1.1.toStructure c.1.toStructure d.toStructure
+      k q.out.2 a b β hq_a hab⟩
+
+/-- If `F` contains the canonical Scott formula of the depth-`β` class representative of `⟨c, a⟩`,
+then agreement on `F.pointedType` forces `BFEquiv β k a b`. -/
+private theorem bfEquiv_of_pointedType_eq [Countable V] [∀ k, Countable (L.Relations k)]
+    {C : Set (RelationalConfiguration L V)} {β : Ordinal.{o}} (hβ : β < ω₁) {k : ℕ}
+    {F : Fragment L} {c : C} {d : RelationalConfiguration L V} {a b : Fin k → V}
+    (hmem : (⟨k, configScottFormula
+      (Quotient.mk (@bfTupleSetoid L _ C (fun _ => V) (fun c => c.1.toStructure) β k)
+        ⟨c, a⟩).out.1.1
+      (Quotient.mk (@bfTupleSetoid L _ C (fun _ => V) (fun c => c.1.toStructure) β k)
+        ⟨c, a⟩).out.2 β⟩ : Σ m, L.BoundedFormulaω Empty m) ∈ F)
+    (hab : F.pointedType c.1 a = F.pointedType d b) :
+    @BFEquiv L _ V V c.1.toStructure d.toStructure β k a b :=
+  (realize_configScottFormula_out_mk_iff_bfEquiv hβ c d a b).1 <|
+    (Fragment.pointedType_eq_iff.1 hab _ (Fragment.mem_slice.2 hmem)).1 <|
+      (realize_configScottFormula_out_mk_iff_bfEquiv hβ c c.1 a a).2
+        (@BFEquiv.refl L _ V c.1.toStructure k β a)
 
 /-- At successor depth `α + 1`, a fragment containing a canonical Scott formula for each depth-`α`
 `m`-tuple class and the one-variable existential closure of a canonical Scott formula for each
@@ -754,40 +818,23 @@ private theorem bfEquiv_add_one_of_pointedType_eq [Countable V] [∀ k, Countabl
         (⟨m, (configScottFormula q.out.1.1 q.out.2 α).ex⟩ : Σ k, L.BoundedFormulaω Empty k) ∈ F)
     (c d : C) (a b : Fin m → V) (hab : F.pointedType c.1 a = F.pointedType d.1 b) :
     @BFEquiv L _ V V c.1.toStructure d.1.toStructure (α + 1) m a b := by
-  let S := fun k => @bfTupleSetoid L _ C (fun _ => V) (fun c => c.1.toStructure) α k
-  have hbase : @BFEquiv L _ V V c.1.toStructure d.1.toStructure α m a b := by
-    let q : Quotient (S m) := Quotient.mk (S m) ⟨c, a⟩
-    have hq_a : @BFEquiv L _ V V q.out.1.1.toStructure c.1.toStructure α m q.out.2 a :=
-      (@bfTupleSetoid_apply L _ C (fun _ => V) (fun c => c.1.toStructure) α m q.out ⟨c, a⟩).1
-        (Quotient.exact (Quotient.out_eq q))
-    have hq_b : @BFEquiv L _ V V q.out.1.1.toStructure d.1.toStructure α m q.out.2 b :=
-      (realize_configScottFormula_iff_bfEquiv q.out.1.1 d.1 q.out.2 b hα).1 <|
-        (Fragment.pointedType_eq_iff.1 hab _ (Fragment.mem_slice.2 (hmem₀ q))).1
-          ((realize_configScottFormula_iff_bfEquiv q.out.1.1 c.1 q.out.2 a hα).2 hq_a)
-    exact bfEquiv_trans (bfEquiv_symm hq_a) hq_b
   have hstep {c' d' : C} {u v : Fin m → V}
       (huv : F.pointedType c'.1 u = F.pointedType d'.1 v) (x : V) :
       ∃ y : V,
         @BFEquiv L _ V V c'.1.toStructure d'.1.toStructure α (m + 1)
           (Fin.snoc u x) (Fin.snoc v y) := by
-    let q : Quotient (S (m + 1)) := Quotient.mk (S (m + 1)) ⟨c', Fin.snoc u x⟩
-    have hq_u : @BFEquiv L _ V V q.out.1.1.toStructure c'.1.toStructure α (m + 1)
-        q.out.2 (Fin.snoc u x) :=
-      (@bfTupleSetoid_apply L _ C (fun _ => V) (fun c => c.1.toStructure) α (m + 1) q.out _).1
-        (Quotient.exact (Quotient.out_eq q))
-    have hex_c : @BoundedFormulaInf.Realize L ℕ Empty V c'.1.toStructure m
-        (configScottFormula q.out.1.1 q.out.2 α).ex Empty.elim u :=
-      (@BoundedFormulaInf.realize_ex L ℕ Empty m V c'.1.toStructure Empty.elim u _).2
-        ⟨x, (realize_configScottFormula_iff_bfEquiv q.out.1.1 c'.1 q.out.2 _ hα).2 hq_u⟩
+    have hex_c := (@BoundedFormulaInf.realize_ex L ℕ Empty m V c'.1.toStructure Empty.elim u _).2
+      ⟨x, (realize_configScottFormula_out_mk_iff_bfEquiv hα c' c'.1 (Fin.snoc u x) _).2
+        (@BFEquiv.refl L _ V c'.1.toStructure (m + 1) α _)⟩
     obtain ⟨y, hy⟩ :=
       (@BoundedFormulaInf.realize_ex L ℕ Empty m V d'.1.toStructure Empty.elim v _).1
-        ((Fragment.pointedType_eq_iff.1 huv _ (Fragment.mem_slice.2 (hmem₁ q))).1 hex_c)
-    exact ⟨y, bfEquiv_trans (bfEquiv_symm hq_u)
-      ((realize_configScottFormula_iff_bfEquiv q.out.1.1 d'.1 q.out.2 _ hα).1 hy)⟩
+        ((Fragment.pointedType_eq_iff.1 huv _ (Fragment.mem_slice.2 (hmem₁ _))).1 hex_c)
+    exact ⟨y, (realize_configScottFormula_out_mk_iff_bfEquiv hα c' d'.1 _ _).1 hy⟩
   refine (@BFEquiv.add_one L _ V V c.1.toStructure d.1.toStructure m α a b).2
-    ⟨hbase, hstep hab, fun y => ?_⟩
+    ⟨bfEquiv_of_pointedType_eq hα (hmem₀ _) hab, hstep hab, fun y => ?_⟩
   obtain ⟨x, hx⟩ := hstep hab.symm y
-  exact ⟨x, bfEquiv_symm hx⟩
+  exact ⟨x, @BFEquiv.symm L _ V V d.1.toStructure c.1.toStructure (m + 1)
+    (Fin.snoc b y) (Fin.snoc a x) α hx⟩
 
 /-- **Countable fragment spectra bound all countable back-and-forth tuple quotients.** On a
 countable carrier `V` in a vocabulary with countably many relation symbols of each arity, if
@@ -803,19 +850,12 @@ theorem countable_quotient_bfTupleSetoid_of_countable_typeSpectrum [Countable V]
     Countable (Quotient (@bfTupleSetoid L _ C (fun _ => V) (fun c => c.1.toStructure) α n)) := by
   induction α using Ordinal.limitRecOn generalizing n with
   | zero =>
-    refine countable_quotient_bfTupleSetoid_of_fragment
-      (hspec (Fragment.firstOrder L) Fragment.firstOrder_countable n) fun c d a b hab => ?_
-    rw [@BFEquiv.zero L _ V V c.1.toStructure d.1.toStructure n a b,
-      @sameAtomicType_def L n V V c.1.toStructure d.1.toStructure]
-    intro idx
-    have hmem : idx.toFormula.toOmega ∈ (Fragment.firstOrder L).slice n :=
-      Fragment.mem_slice.2 (Fragment.toOmega_mem_firstOrder idx.toFormula)
-    simpa only [@BoundedFormula.realize_toInf L ℕ Empty V c.1.toStructure n,
-      @BoundedFormula.realize_toInf L ℕ Empty V d.1.toStructure n,
-      @AtomicIdx.realize_toFormula L n V c.1.toStructure,
-      @AtomicIdx.realize_toFormula L n V d.1.toStructure] using
-      Fragment.pointedType_eq_iff.1 hab _ hmem
+    -- Seed fragment: `Fragment.firstOrder L` (atomic formulas).
+    exact countable_quotient_bfTupleSetoid_of_fragment
+      (hspec (Fragment.firstOrder L) Fragment.firstOrder_countable n) fun _ _ _ _ =>
+      bfEquiv_zero_of_firstOrder_pointedType_eq
   | add_one α ih =>
+    -- Seed fragment: depth-`α` Scott formulas at arity `n` and existential closures at `n + 1`.
     have hα' : α < ω₁ := (Order.lt_add_one_iff.mpr le_rfl).trans hα
     have := ih hα' n
     have := ih hα' (n + 1)
@@ -827,12 +867,13 @@ theorem countable_quotient_bfTupleSetoid_of_countable_typeSpectrum [Countable V]
         Set.range fun q : Q₁ =>
           (⟨n, (configScottFormula q.out.1.1 q.out.2 α).ex⟩ : Σ m, L.BoundedFormulaω Empty m)
     have hseed : seed.Countable := (Set.countable_range _).union (Set.countable_range _)
-    refine countable_quotient_bfTupleSetoid_of_fragment
+    exact countable_quotient_bfTupleSetoid_of_fragment
       (hspec (Fragment.generated seed) (Fragment.generated_countable hseed) n)
       (bfEquiv_add_one_of_pointedType_eq hα'
         (fun q => Fragment.subset_generated seed (Or.inl ⟨q, rfl⟩))
         (fun q => Fragment.subset_generated seed (Or.inr ⟨q, rfl⟩)))
   | limit α hlim ih =>
+    -- Seed fragment: depth-`β` Scott formulas across all `β < α`.
     have : Countable (Set.Iio α) := (Cardinal.countable_Iio_of_lt_omega_one hα).to_subtype
     have (β : Set.Iio α) :
         Countable (Quotient (@bfTupleSetoid L _ C (fun _ => V) (fun c => c.1.toStructure) β.1 n)) :=
@@ -845,23 +886,14 @@ theorem countable_quotient_bfTupleSetoid_of_countable_typeSpectrum [Countable V]
         (⟨n, configScottFormula p.2.out.1.1 p.2.out.2 p.1.1⟩ : Σ m, L.BoundedFormulaω Empty m)
     refine countable_quotient_bfTupleSetoid_of_fragment
       (hspec (Fragment.generated seed) (Fragment.generated_countable (Set.countable_range _)) n)
-      fun c d a b hab => ?_
-    refine (@BFEquiv.limit L _ V V c.1.toStructure d.1.toStructure n α hlim a b).2 fun β hβ => ?_
-    let q := Quotient.mk (@bfTupleSetoid L _ C (fun _ => V) (fun c => c.1.toStructure) β n) ⟨c, a⟩
-    have hq_a : @BFEquiv L _ V V q.out.1.1.toStructure c.1.toStructure β n q.out.2 a :=
-      (@bfTupleSetoid_apply L _ C (fun _ => V) (fun c => c.1.toStructure) β n q.out ⟨c, a⟩).1
-        (Quotient.exact (Quotient.out_eq q))
-    have hmem : (⟨n, configScottFormula q.out.1.1 q.out.2 β⟩ :
-        Σ m, L.BoundedFormulaω Empty m) ∈ Fragment.generated seed :=
-      Fragment.subset_generated seed ⟨⟨⟨β, hβ⟩, q⟩, rfl⟩
-    have hq_b : @BFEquiv L _ V V q.out.1.1.toStructure d.1.toStructure β n q.out.2 b :=
-      (realize_configScottFormula_iff_bfEquiv q.out.1.1 d.1 q.out.2 b (hβ.trans hα)).1 <|
-        (Fragment.pointedType_eq_iff.1 hab _ (Fragment.mem_slice.2 hmem)).1
-          ((realize_configScottFormula_iff_bfEquiv q.out.1.1 c.1 q.out.2 a (hβ.trans hα)).2 hq_a)
-    exact bfEquiv_trans (bfEquiv_symm hq_a) hq_b
+      fun c d a b hab =>
+        (@BFEquiv.limit L _ V V c.1.toStructure d.1.toStructure n α hlim a b).2 fun β hβ =>
+          bfEquiv_of_pointedType_eq (hβ.trans hα)
+            (Fragment.subset_generated seed ⟨⟨⟨β, hβ⟩, _⟩, rfl⟩) hab
 
-/-- Specializing `countable_quotient_bfTupleSetoid_of_countable_typeSpectrum` to arity `0` bounds
-every countable back-and-forth level quotient on `C`. -/
+/-- On a countable carrier `V` in a vocabulary with countably many relation symbols of each arity,
+if every countable fragment has countable type spectra on `C` at all arities, then `C` meets
+countably many classes of `bfEquivSetoid L V α` at every countable level `α < ω₁`. -/
 theorem countable_quotient_comap_bfEquivSetoid_of_countable_typeSpectrum [Countable V]
     [∀ k, Countable (L.Relations k)] {C : Set (RelationalConfiguration L V)}
     (hspec : ∀ F : Fragment L,
@@ -870,14 +902,7 @@ theorem countable_quotient_comap_bfEquivSetoid_of_countable_typeSpectrum [Counta
     {α : Ordinal.{o}} (hα : α < ω₁) :
     Countable (Quotient ((bfEquivSetoid L V α).comap (Subtype.val : C → _))) := by
   have := countable_quotient_bfTupleSetoid_of_countable_typeSpectrum hspec hα 0
-  have hcomap : (bfEquivSetoid L V α).comap (Subtype.val : C → _) =
-      (@bfTupleSetoid L _ C (fun _ => V) (fun c => c.1.toStructure) α 0).comap
-        fun c => ⟨c, Fin.elim0⟩ :=
-    Setoid.ext fun c d => by
-      simp only [Setoid.comap_rel]
-      exact bfEquivSetoid_apply.trans (@bfTupleSetoid_apply L _ C (fun _ => V)
-        (fun c => c.1.toStructure) α 0 ⟨c, Fin.elim0⟩ ⟨d, Fin.elim0⟩).symm
-  rw [hcomap]
+  rw [comap_bfEquivSetoid_eq_comap_bfTupleSetoid]
   exact Countable.of_equiv _ (Setoid.comapQuotientEquiv _ _).symm
 
 /-- **Countable fragment spectra forbid Cantor antichains.** On a countable carrier `V` in a
