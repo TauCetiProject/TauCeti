@@ -21,7 +21,7 @@ nonzero (`IsArtinianRing.isUnit_equivPi_symm_iff`), and it is `0` exactly when e
 
 It also records that a ring homomorphism `g : Q →+* Q'` out of an Artinian ring induces, for each
 maximal ideal `m'` of `Q'`, a homomorphism from a residue field of `Q` to `Q' ⧸ m'`
-(`IsArtinianRing.exists_residueField_ringHom`), because every prime ideal of `Q` is maximal.
+(`IsArtinianRing.exists_quotient_ringHom_mk_comp`), because every prime ideal of `Q` is maximal.
 -/
 
 public section
@@ -35,7 +35,7 @@ variable {Q : Type*} [CommRing Q] [IsArtinianRing Q]
 /-- For a ring homomorphism `g : Q →+* Q'` out of an Artinian ring and a maximal ideal `m'` of
 `Q'`, the preimage of `m'` is a maximal ideal `p` of `Q`, and `g` induces a homomorphism of residue
 fields `ψ : Q ⧸ p →+* Q' ⧸ m'`. -/
-theorem exists_residueField_ringHom {Q' : Type*} [CommRing Q'] (g : Q →+* Q')
+theorem exists_quotient_ringHom_mk_comp {Q' : Type*} [CommRing Q'] (g : Q →+* Q')
     (m' : MaximalSpectrum Q') :
     ∃ (p : MaximalSpectrum Q) (ψ : Q ⧸ p.asIdeal →+* Q' ⧸ m'.asIdeal),
       ∀ x, Ideal.Quotient.mk m'.asIdeal (g x) = ψ (Ideal.Quotient.mk p.asIdeal x) :=

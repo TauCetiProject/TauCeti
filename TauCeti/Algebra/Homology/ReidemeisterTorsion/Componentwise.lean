@@ -206,7 +206,7 @@ theorem map_componentwiseReidemeisterTorsion {Q' : Type*} [CommRing Q'] [IsArtin
     [IsReduced Q'] (g : Q →+* Q') :
     g (C.componentwiseReidemeisterTorsion c f) = C.componentwiseReidemeisterTorsion c (g.comp f) :=
   eq_componentwiseReidemeisterTorsion_iff.2 fun m' ↦ by
-    obtain ⟨p, ψ, hψ⟩ := IsArtinianRing.exists_residueField_ringHom g m'
+    obtain ⟨p, ψ, hψ⟩ := IsArtinianRing.exists_quotient_ringHom_mk_comp g m'
     rw [hψ, mk_componentwiseReidemeisterTorsion, map_reidemeisterTorsion_matrixBaseChange,
       show (Ideal.Quotient.mk m'.asIdeal).comp (g.comp f) =
         ψ.comp ((Ideal.Quotient.mk p.asIdeal).comp f) from RingHom.ext fun x ↦ hψ (f x)]
@@ -324,7 +324,7 @@ theorem map_componentwiseParityTorsion {Q' : Type*} [CommRing Q'] [IsArtinianRin
     [IsReduced Q'] (g : Q →+* Q') :
     g (C.componentwiseParityTorsion c f) = C.componentwiseParityTorsion c (g.comp f) :=
   eq_componentwiseParityTorsion_iff.2 fun m' ↦ by
-    obtain ⟨p, ψ, hψ⟩ := IsArtinianRing.exists_residueField_ringHom g m'
+    obtain ⟨p, ψ, hψ⟩ := IsArtinianRing.exists_quotient_ringHom_mk_comp g m'
     rw [hψ, mk_componentwiseParityTorsion, map_parityTorsion_matrixBaseChange,
       show (Ideal.Quotient.mk m'.asIdeal).comp (g.comp f) =
         ψ.comp ((Ideal.Quotient.mk p.asIdeal).comp f) from RingHom.ext fun x ↦ hψ (f x)]
