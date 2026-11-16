@@ -577,7 +577,7 @@ private theorem smoothOfRelativeDimension_one_yOne_restrict_basicOpen_three (B :
       (ModuliProblem.gammaNaiveThreeRepresentableBy U.toScheme)
       ModuliProblem.gammaOneNaiveRelRepData ModuliProblem.gammaNaiveRelRepData
       (ModuliProblem.hasProperty_etale_gammaOneNaiveRelRepData hNU)
-      (ModuliProblem.hasProperty_etale_gammaNaiveRelRepData h3U)
+      ModuliProblem.hasProperty_etale_gammaNaiveRelRepData
       (ModuliProblem.hasProperty_surjective_gammaNaiveRelRepData h3U)
 
 variable (B : Scheme.{u}) (N : ℕ) [NeZero N]
