@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Geometry.Manifold.Diffeomorph
 public import Mathlib.Geometry.Manifold.Submersion
 public import Mathlib.Analysis.Normed.Module.ContinuousInverse
 public import Mathlib.Geometry.Manifold.MFDeriv.Defs
@@ -63,13 +64,15 @@ constant on the fibres factors through a unique `C^m` map
   smoothness descends along a submersion.
 * `Manifold.IsSubmersion.existsUnique_contMDiff_comp_eq`: smooth maps constant on the fibres of a
   surjective submersion descend to smooth maps.
+* `Manifold.IsSubmersion.diffeomorphOfEquiv`, `Manifold.IsSubmersion.maximalAtlas_eq`: uniqueness
+  of the smooth manifold structure on the codomain of a surjective submersion.
 
 ## References
 
 * J. M. Lee, *Introduction to Smooth Manifolds*, 2nd ed., Springer GTM 218 (2013),
-  Theorem 4.12 (local form of a submersion), Theorem 4.26 (local sections of submersions) and
-  Theorems 4.29 and 4.30 (characteristic property of surjective submersions, passing smoothly to
-  the quotient).
+  Theorem 4.12 (local form of a submersion), Theorem 4.26 (local sections of submersions),
+  Proposition 4.28, Theorems 4.29 and 4.30, and Corollary 4.31 (characteristic property and
+  uniqueness of the smooth structure on the codomain of a surjective submersion).
 -/
 
 public section
@@ -358,6 +361,77 @@ theorem IsSubmersion.existsUnique_contMDiff_comp_eq [I.Boundaryless] (h : IsSubm
   have hcomp : (g ∘ surjInv hsurj) ∘ f = g := funext fun x ↦ hgf (surjInv_eq hsurj (f x))
   refine ⟨g ∘ surjInv hsurj, ⟨(h.contMDiff_comp_iff hsurj hm).1 (by rwa [hcomp]), hcomp⟩,
     fun g' hg' ↦ hsurj.injective_comp_right (hg'.2.trans hcomp.symm)⟩
+
+/-- **Uniqueness of smooth structure on the codomain of a surjective submersion.** If `f₁ : M → N`
+and `f₂ : M → P` are `C^n` submersions from a boundaryless manifold with `f₁` surjective, and
+`e : N ≃ P` intertwines them (`e ∘ f₁ = f₂`), then `e` is a `C^n` diffeomorphism. -/
+noncomputable def IsSubmersion.diffeomorphOfEquiv [I.Boundaryless]
+    {f₁ : M → N} {f₂ : M → P} (h₁ : IsSubmersion I J n f₁) (h₂ : IsSubmersion I K n f₂)
+    (h₁s : Surjective f₁) (e : N ≃ P) (he : e ∘ f₁ = f₂) : N ≃ₘ^n⟮J, K⟯ P where
+  toEquiv := e
+  contMDiff_toFun := (h₁.contMDiff_comp_iff h₁s le_rfl).1 (he.symm ▸ h₂.contMDiff)
+  contMDiff_invFun := by
+    have h₂s : Surjective f₂ := he ▸ e.surjective.comp h₁s
+    have hinv : e.symm ∘ f₂ = f₁ := funext fun x ↦ by
+      rw [comp_apply, ← he, comp_apply, e.symm_apply_apply]
+    exact (h₂.contMDiff_comp_iff h₂s le_rfl).1 (hinv.symm ▸ h₁.contMDiff)
+
+/-- The forward map of `IsSubmersion.diffeomorphOfEquiv` is the given equivalence. -/
+@[simp]
+theorem IsSubmersion.coe_diffeomorphOfEquiv [I.Boundaryless]
+    {f₁ : M → N} {f₂ : M → P} (h₁ : IsSubmersion I J n f₁) (h₂ : IsSubmersion I K n f₂)
+    (h₁s : Surjective f₁) (e : N ≃ P) (he : e ∘ f₁ = f₂) :
+    ⇑(h₁.diffeomorphOfEquiv h₂ h₁s e he) = e :=
+  (rfl)
+
+/-- The inverse of `IsSubmersion.diffeomorphOfEquiv` is the inverse of the given equivalence. -/
+@[simp]
+theorem IsSubmersion.coe_diffeomorphOfEquiv_symm [I.Boundaryless]
+    {f₁ : M → N} {f₂ : M → P} (h₁ : IsSubmersion I J n f₁) (h₂ : IsSubmersion I K n f₂)
+    (h₁s : Surjective f₁) (e : N ≃ P) (he : e ∘ f₁ = f₂) :
+    ⇑(h₁.diffeomorphOfEquiv h₂ h₁s e he).symm = e.symm :=
+  (rfl)
+
+/-- **Uniqueness of the maximal atlas under a surjective submersion.** Two `C^n` manifold
+structures on `N` over the same model for which a surjective map `f : M → N` from a boundaryless
+manifold is a `C^n` submersion have the same maximal atlas. -/
+theorem IsSubmersion.maximalAtlas_eq [I.Boundaryless] {N : Type*} [TopologicalSpace N]
+    {c₁ c₂ : ChartedSpace G N} {f : M → N}
+    (h₁ : letI := c₁; IsSubmersion I J n f) (h₂ : letI := c₂; IsSubmersion I J n f)
+    (hsurj : Surjective f)
+    (hM₁ : letI := c₁; IsManifold J n N) (hM₂ : letI := c₂; IsManifold J n N) :
+    (letI := c₁; IsManifold.maximalAtlas J n N) =
+      (letI := c₂; IsManifold.maximalAtlas J n N) := by
+  have hsub : ∀ {a b : ChartedSpace G N},
+      (letI := a; IsManifold J n N) → (letI := b; IsManifold J n N) →
+      (letI := a; IsSubmersion I J n f) → (letI := b; IsSubmersion I J n f) →
+      (letI := a; IsManifold.maximalAtlas J n N) ⊆
+        (letI := b; IsManifold.maximalAtlas J n N) := by
+    intro a b hMa hMb ha hb e he
+    have ⟨he₁, he₂⟩ := (letI := a; (IsManifold.mem_maximalAtlas_iff_contMDiffOn e).1 he)
+    refine (letI := b; (IsManifold.mem_maximalAtlas_iff_contMDiffOn e).2 ⟨?_, ?_⟩)
+    · intro y hy
+      obtain ⟨x, rfl⟩ := hsurj y
+      have hcomp : ContMDiffAt I J n (e ∘ f) x := by
+        let _ := a
+        exact ((ha.isSubmersionAt x).contMDiffAt_comp_iff le_rfl).2
+          (he₁.contMDiffAt (e.open_source.mem_nhds hy))
+      let _ := b
+      exact (((hb.isSubmersionAt x).contMDiffAt_comp_iff le_rfl).1 hcomp).contMDiffWithinAt
+    · intro z hz
+      obtain ⟨x, hx⟩ := hsurj (e.symm z)
+      obtain ⟨U, hU, hfxU, s, -, hs, hfs⟩ :=
+        (letI := a; (ha.isSubmersionAt x).exists_contMDiffOn_section)
+      have hUmem : U ∈ 𝓝 (e.symm z) := hU.mem_nhds (hx ▸ hfxU)
+      have hse : ContMDiffAt J I n (s ∘ e.symm) z := by
+        let _ := a
+        exact (hs.contMDiffAt hUmem).comp z (he₂.contMDiffAt (e.open_target.mem_nhds hz))
+      have hev : (e.symm : G → N) =ᶠ[𝓝 z] f ∘ (s ∘ e.symm) :=
+        eventually_of_mem ((e.continuousOn_symm.continuousAt
+          (e.open_target.mem_nhds hz)).preimage_mem_nhds hUmem) fun w hw ↦ (hfs (e.symm w) hw).symm
+      let _ := b
+      exact (((hb.contMDiff (s (e.symm z))).comp z hse).congr_of_eventuallyEq hev).contMDiffWithinAt
+  exact Set.Subset.antisymm (hsub hM₁ hM₂ h₁ h₂) (hsub hM₂ hM₁ h₂ h₁)
 
 end Descent
 
