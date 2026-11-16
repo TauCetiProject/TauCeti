@@ -22,7 +22,8 @@ coordinate `r` and an angle `θ`, and its tangent spaces are `ℝ × ℝ`. A smo
 (`TauCeti.cylinderShearDiffeotopy p g`), which starts at the identity. Every map `φ_t` is the
 identity on the circles over the zeros of `g`; so when `g` has compact support, the whole motion
 is the identity outside the compact band `tsupport g × AddCircle p`
-(`TauCeti.cylinderShearDiffeotopy_eqOn_compl`).
+(`TauCeti.cylinderShearDiffeotopy_eqOn_compl`,
+`TauCeti.cylinderShearDiffeotopy_eqOn_compl_tsupport`).
 
 The motion `((r, θ), t) ↦ φ_t (r, θ)` has derivative
 
@@ -45,7 +46,8 @@ diffeotopy `TauCeti.torusTranslationDiffeotopy`.
 ## Main results
 
 * `TauCeti.cylinderShearDiffeotopy_eqOn_compl`: if `g` vanishes outside a set `A`, the motion
-  is the identity outside `A × AddCircle p`.
+  is the identity outside `A × AddCircle p`; `TauCeti.cylinderShearDiffeotopy_eqOn_compl_tsupport`
+  is the case `A = tsupport g`.
 * `TauCeti.hasMFDerivAt_cylinderShear`, `TauCeti.mfderiv_cylinderShear_apply`: the derivative of
   the shear `(r, θ) ↦ (r, θ + [h r])`.
 * `TauCeti.mfderiv_cylinderMap_cylinderShearDiffeotopy_apply_one`,
@@ -170,6 +172,13 @@ theorem cylinderShearDiffeotopy_eqOn_compl {A : Set ℝ} (hA : ∀ r ∉ A, g r 
     EqOn (fun y ↦ cylinderShearDiffeotopy p g (t, y)) id (A ×ˢ (univ : Set (AddCircle p)))ᶜ :=
   fun y hy ↦ cylinderShearDiffeotopy_apply_of_eq_zero p g
     (hA y.1 fun h ↦ hy ⟨h, mem_univ _⟩) t
+
+/-- The shear by a compactly supported `g` is the identity outside the compact band
+`tsupport g × AddCircle p`. -/
+theorem cylinderShearDiffeotopy_eqOn_compl_tsupport (t : unitInterval) :
+    EqOn (fun y ↦ cylinderShearDiffeotopy p g (t, y)) id
+      (tsupport g ×ˢ (univ : Set (AddCircle p)))ᶜ :=
+  cylinderShearDiffeotopy_eqOn_compl p g (fun _ hr ↦ image_eq_zero_of_notMem_tsupport hr) t
 
 /-- The final diffeomorphism of the shear diffeotopy turns the circle over `r` by `[g(r)]`. -/
 theorem final_cylinderShearDiffeotopy_apply (y : ℝ × AddCircle p) :

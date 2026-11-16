@@ -144,13 +144,6 @@ theorem fluxForm_cylinderShearDiffeotopy_cylinderAreaForm :
 
 /-! ### Supports -/
 
-/-- The shear by a compactly supported `g` is the identity outside the compact band
-`tsupport g × AddCircle p`. -/
-theorem cylinderShearDiffeotopy_eqOn_compl_tsupport (t : unitInterval) :
-    EqOn (fun y ↦ cylinderShearDiffeotopy p g (t, y)) id
-      (tsupport g ×ˢ (univ : Set (AddCircle p)))ᶜ :=
-  cylinderShearDiffeotopy_eqOn_compl p g (fun _ hr ↦ image_eq_zero_of_notMem_tsupport hr) t
-
 /-- For compactly supported `g`, the flux form of the shear is compactly supported. -/
 theorem fluxForm_cylinderShearDiffeotopy_mem_compactlySupportedForms (hgc : HasCompactSupport g) :
     (cylinderShearDiffeotopy p g).fluxForm (cylinderAreaClosedForm p).1 ∈
@@ -178,23 +171,24 @@ theorem compactFlux_cylinderShearDiffeotopy (hgc : HasCompactSupport g) :
   simpa only [coe_cylinderAreaClosedForm] using
     fluxForm_cylinderShearDiffeotopy_cylinderAreaForm p g
 
-/-- **The flux of a shear vanishes.** For compactly supported `g`, the ordinary flux of the shear
-diffeotopy in `H¹_dR(ℝ × AddCircle p)` is zero: its flux form is pulled back from the line, on
-which every closed one-form is exact. -/
-theorem flux_cylinderShearDiffeotopy (hgc : HasCompactSupport g) :
+/-- **The flux of a shear vanishes.** The ordinary flux of the shear diffeotopy in
+`H¹_dR(ℝ × AddCircle p)` is zero: its flux form is pulled back from the line, on which every
+closed one-form is exact. -/
+theorem flux_cylinderShearDiffeotopy :
     (cylinderShearDiffeotopy p g).flux (cylinderAreaClosedForm p)
       (final_cylinderShearDiffeotopy_mem_diffeomorphStabilizer p g) = 0 := by
-  rw [← Diffeotopy.toDeRhamCohomology_compactFlux _ _ _
-      (fluxForm_cylinderShearDiffeotopy_mem_compactlySupportedForms p g hgc),
-    compactFlux_cylinderShearDiffeotopy p g hgc, map_neg,
-    compactlySupportedDeRhamCohomology.toDeRhamCohomology_map,
-    compactlySupportedDeRhamCohomology.toDeRhamCohomology_mk, neg_eq_zero]
-  -- The class of `g dr` vanishes in `H¹_dR(ℝ)`, by the Poincaré lemma on the line.
+  rw [Diffeotopy.flux_def, deRhamCohomology.mk_eq_zero_iff]
+  -- The form `g dr` is exact, by the Poincaré lemma on the line.
   have hexact : SmoothForm.funSMulₗ g SmoothForm.realLineCoordForm ∈
       exactForms 𝓘(ℝ) ℝ 1 := by
     rw [exactForms_succ_eq_closedForms_normedSpace (E := ℝ) (k := 0)]
     exact mem_closedForms_of_finrank_le 𝓘(ℝ) (by simp) _
-  rw [(deRhamCohomology.mk_eq_zero_iff 𝓘(ℝ) 1 _).mpr hexact, map_zero]
+  have hpull := closedForms.mpullback_mem_exactForms (I := 𝓘(ℝ).prod 𝓘(ℝ))
+    (M := ℝ × AddCircle p) Prod.fst contMDiff_fst 1
+    ⟨_, mem_closedForms_of_finrank_le 𝓘(ℝ) (by simp) _⟩ hexact
+  rw [closedForms.coe_mpullback] at hpull
+  simpa only [coe_cylinderAreaClosedForm, fluxForm_cylinderShearDiffeotopy_cylinderAreaForm]
+    using neg_mem hpull
 
 /-- Pullback along the projection of the cylinder to the line is injective on `H¹_c`: the proper
 section `r ↦ (r, 0)` gives a left inverse. -/

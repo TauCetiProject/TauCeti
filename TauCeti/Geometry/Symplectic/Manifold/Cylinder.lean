@@ -70,9 +70,8 @@ theorem cylinderAreaForm_apply (y : ℝ × AddCircle p)
       (eval₂_cylinderAreaForm p y (v 0) (v 1))
 
 /-- The area form of the cylinder is closed, as is every two-form on a surface. -/
-theorem isClosed_cylinderAreaForm : (cylinderAreaForm p).IsClosed := by
-  rw [SmoothForm.isClosed_def, ← mextDerivₗ_apply]
-  exact congrArg Subtype.val (SmoothForm.eq_zero_of_finrank_lt (by simp) _)
+theorem isClosed_cylinderAreaForm : (cylinderAreaForm p).IsClosed :=
+  SmoothForm.isClosed_of_finrank_le (by simp) _
 
 /-- The area form `dr ∧ dθ` of the cylinder, as a closed form. -/
 def cylinderAreaClosedForm : closedForms (𝓘(ℝ).prod 𝓘(ℝ)) (ℝ × AddCircle p) 2 :=
