@@ -18,6 +18,7 @@ import Mathlib.MeasureTheory.Measure.Haar.InnerProductSpace
 import TauCeti.Analysis.Calculus.DifferentialForm.Integral
 import TauCeti.Analysis.Calculus.DifferentialForm.Regularity
 import TauCeti.Analysis.Calculus.DifferentialForm.Wedge
+import TauCeti.MeasureTheory.Measure.Haar.OfBasis
 import TauCeti.Topology.Algebra.Module.Alternating.Wedge.TwoForm
 import Mathlib.Analysis.Calculus.FDeriv.ContinuousAlternatingMap
 import Mathlib.Analysis.Calculus.LineDeriv.IntegrationByParts
@@ -62,9 +63,10 @@ forms pulled back from the base, when `E` is two-dimensional with basis `b`:
   `∫ M₀ β` (`TauCeti.integral_wedge_compContinuousLinearMap_fst`), and for a compactly supported
   one-form `η` on `E × ℂ`, `∫ T ∧ (c π^*β + dη) = c M₀ ∫ β`
   (`TauCeti.integral_wedge_smul_compContinuousLinearMap_fst_add_extDeriv`). When `β` is the area
-  form of the curve and `c π^*β + dη` tames the almost complex structure, this is the pairing of a
-  closed current of transverse flux `m` with a taming form, `c m` times the area; it controls the
-  mass of an approximately positive current
+  form of the curve and `c π^*β + dη` tames the almost complex structure, this is the product-chart
+  form of the pairing `T(Ω) = c m area(C)` of a closed current of transverse flux `m` with a
+  taming form; the global identity follows by summing over a partition of unity on `C`, which is
+  not done here. That pairing controls the mass of an approximately positive current
   (`TauCeti.AlmostComplexStructure.integral_norm_le_div_of_integral_infDist_le`).
 
 Top-degree coefficients on `E × ℂ` are taken on the product frame `(b₀, 0), (b₁, 0), (0, 1),
@@ -293,8 +295,10 @@ private theorem wedge_compContinuousLinearMap_fst_apply (b : Module.Basis (Fin 2
       θ ![(0, 1), (0, I)] * β b := by
   have hframe : ⇑((b.prod Complex.basisOneI).reindex finSumFinEquiv) =
       ![(b 0, 0), (b 1, 0), (0, 1), (0, I)] := by
-    ext i : 1
-    fin_cases i <;> simp [Module.Basis.prod_apply, Complex.coe_basisOneI, finSumFinEquiv] <;> rfl
+    refine funext (Fin.addCases (fun i ↦ ?_) (fun i ↦ ?_)) <;>
+      simp only [Module.Basis.reindex_apply, finSumFinEquiv_symm_apply_castAdd,
+        finSumFinEquiv_symm_apply_natAdd] <;>
+      fin_cases i <;> simp [Module.Basis.prod_apply, Complex.coe_basisOneI]
   have hb : ⇑b = ![b 0, b 1] := by
     ext i : 1
     fin_cases i <;> rfl
@@ -332,15 +336,12 @@ theorem integral_wedge_compContinuousLinearMap_fst [MeasurableSpace E] [BorelSpa
         ((b.prod Complex.basisOneI).reindex finSumFinEquiv)
         ∂((b.prod Complex.basisOneI).reindex finSumFinEquiv).addHaar =
       ∫ z, sliceMoment T (fun _ ↦ (1 : ℝ)) z * β z b ∂b.addHaar := by
-  have hI : Complex.basisOneI.addHaar = (volume : Measure ℂ) := by
-    rw [← Complex.toBasis_orthonormalBasisOneI]
-    exact Complex.orthonormalBasisOneI.addHaar_eq_volume
   set f : E × ℂ → ℝ := fun x ↦ T x ![(0, 1), (0, I)] * β x.1 b
   have hf : Integrable f (b.addHaar.prod volume) :=
     Continuous.integrable_of_hasCompactSupport (by fun_prop)
       (hasCompactSupport_mul_apply hK hT hβc b)
   simp only [wedge_compContinuousLinearMap_fst_apply, Module.Basis.addHaar_reindex,
-    Module.Basis.prod_addHaar, hI]
+    Module.Basis.prod_addHaar, Complex.addHaar_basisOneI]
   rw [integral_prod f hf]
   refine integral_congr_ae (ae_of_all _ fun z ↦ ?_)
   simp [f, sliceMoment_def, integral_mul_const]
@@ -355,8 +356,9 @@ two-form `β` and a compactly supported `C¹` one-form `η` on `E × ℂ`,
 `∫ T ∧ (c π^*β + dη) = c m ∫ β`.
 
 The exact term integrates to zero because `T` is closed. In a tube around a pseudoholomorphic curve
-`C` with `β` its area form and `c π^*β + dη` a taming form, this is the identity
-`T(Ω) = c m area(C)` for a closed current of transverse flux `m`. -/
+`C` with `β` its area form and `c π^*β + dη` a taming form, this is the product-chart form of the
+identity `T(Ω) = c m area(C)` for a closed current of transverse flux `m`; the global identity
+follows by summing over a partition of unity on `C`, which is not done here. -/
 theorem integral_wedge_smul_compContinuousLinearMap_fst_add_extDeriv [MeasurableSpace E]
     [BorelSpace E] (b : Module.Basis (Fin 2) ℝ E) (hK : IsCompact K) (hTc : ContDiff ℝ 1 T)
     (hT : ∀ z, ∀ w ∉ K, T (z, w) = 0) (hdT : ∀ x, extDeriv T x = 0)
@@ -371,14 +373,11 @@ theorem integral_wedge_smul_compContinuousLinearMap_fst_add_extDeriv [Measurable
   -- The exact term vanishes: integrate by parts and use `dT = 0`.
   have hparts := e.integral_extDeriv_wedge_eq_integral_wedge_extDeriv (k := 2) (l := 1)
     (by norm_num) hTc hη hηc
-  have hzero (ψ : (E × ℂ) [⋀^Fin 1]→L[ℝ] ℝ) :
-      (0 : (E × ℂ) [⋀^Fin (2 + 1)]→L[ℝ] ℝ).wedge ψ = 0 := by
-    rw [wedge_def, pairedWedge_zero_left]
-  simp only [hdT, hzero, ContinuousAlternatingMap.coe_zero, Pi.zero_apply, integral_zero]
-    at hparts
-  have hexact : ∫ x, (T x).wedge (extDeriv η x) e ∂e.addHaar = 0 := by
-    norm_num at hparts
-    exact hparts
+  -- The index cast `2 + (1 + 1) = 2 + 2` is the identity.
+  have e₁ : ⇑e ∘ Fin.cast (show 2 + (1 + 1) = 2 + 2 by omega) = ⇑e := rfl
+  simp only [hdT, e₁, wedge_zero_left, ContinuousAlternatingMap.coe_zero, Pi.zero_apply,
+    integral_zero, neg_one_sq, neg_mul, one_mul, zero_eq_neg] at hparts
+  have hexact : ∫ x, (T x).wedge (extDeriv η x) e ∂e.addHaar = 0 := hparts
   have hint₁ : Integrable (fun x ↦ (T x).wedge
       ((β x.1).compContinuousLinearMap (ContinuousLinearMap.fst ℝ E ℂ)) e) e.addHaar := by
     simp only [e, wedge_compContinuousLinearMap_fst_apply]

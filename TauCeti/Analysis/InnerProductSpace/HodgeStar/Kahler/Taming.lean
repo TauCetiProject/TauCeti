@@ -25,8 +25,9 @@ positive `(1,1)`-forms of `J`.
 
 In Taubes's analysis of Seiberg–Witten solutions near a pseudoholomorphic curve, the pairing of
 the dilated curvature current with a taming form `Ω = K π^*ω_C + dλ` is a topological quantity,
-`K m area(C)` for a current of transverse flux `m`
-(`TauCeti.integral_wedge_smul_compContinuousLinearMap_fst_add_extDeriv`), while the cone defect is
+`K m area(C)` for a current of transverse flux `m`. Its product-chart form is
+`TauCeti.integral_wedge_smul_compContinuousLinearMap_fst_add_extDeriv`; the global identity
+follows by summing over a partition of unity on `C`, which is not done here. The cone defect is
 bounded by a small error plus a small multiple of the mass itself. The second theorem absorbs that
 multiple: if `∫ dist(ξ, positiveCone) ≤ ε + δ ∫ ‖ξ‖` with `(B + c₀) δ < c₀`, then
 
