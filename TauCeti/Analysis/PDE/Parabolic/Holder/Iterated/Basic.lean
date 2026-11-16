@@ -30,7 +30,8 @@ spatial ones, which is why the order is `2 r + m` and why a map of order `k` als
 fractional time regularity `(1 + α) / 2` one order below the top. Mathematically, `k = 0` gives
 the parabolic Hölder space `C_b^{α,α/2}` and `k = 2` the space `C_b^{2+α,1+α/2}` with its full
 norm; the comparison with the carriers `TauCeti.HolderSpace` and
-`TauCeti.ParabolicC2HolderSpace` of these orders is not part of this file. These are the solution
+`TauCeti.ParabolicC2HolderSpace` of these orders is in
+`TauCeti.Analysis.PDE.Parabolic.Holder.Iterated.LowOrder`. These are the solution
 and data spaces of the classical Schauder theory of parabolic equations at every order of
 differentiability.
 
@@ -471,6 +472,13 @@ theorem toBoundedContinuousFunction_mixedDerivHolderL (f : ParabolicCkHolderSpac
     ContinuousLinearMap.comp_apply, (isJetGraph_toJetL f).2.2.2 r m p, ite_eq_left h,
     mixedDerivL_apply']
 
+/-- The Hölder field of top order agrees pointwise with the field `D_t^r D_x^m u`. -/
+theorem mixedDerivHolderL_apply (f : ParabolicCkHolderSpace k α E F hab) {r m : ℕ}
+    (h : 2 * r + m = k) (p : slab (E := E) a b) :
+    mixedDerivHolderL r m f p = mixedDerivL r m f p := by
+  rw [← toBoundedContinuousFunction_mixedDerivHolderL f h,
+    HolderSpace.toBoundedContinuousFunction_apply]
+
 /-- The time slices of order `k - 1` are those of the field `D_t^r D_x^m u`. -/
 theorem timeSliceL_apply (f : ParabolicCkHolderSpace k α E F hab) {r m : ℕ}
     (h : 2 * r + m + 1 = k) (x : E) (t : Icc a b) :
@@ -592,10 +600,9 @@ theorem toFun_injective :
   · by_cases h : 2 * r + m = k
     · apply HolderSpace.ext
       intro p
-      have hf := DFunLike.congr_fun (toBoundedContinuousFunction_mixedDerivHolderL f h) p
-      have hg := DFunLike.congr_fun (toBoundedContinuousFunction_mixedDerivHolderL g h) p
-      rw [HolderSpace.toBoundedContinuousFunction_apply, mixedDerivHolderL,
-        ContinuousLinearMap.comp_apply] at hf hg
+      have hf := mixedDerivHolderL_apply f h p
+      have hg := mixedDerivHolderL_apply g h p
+      rw [mixedDerivHolderL, ContinuousLinearMap.comp_apply] at hf hg
       rw [hf, hg, hfield]
     · have hf := DFunLike.congr_fun
         (mixedDerivHolderL_of_ne (hab := hab) (α := α) (E := E) (F := F) h) f
@@ -841,6 +848,28 @@ theorem norm_mixedDerivHolderL_le (f : ParabolicCkHolderSpace k α E F hab) (r m
     exact (le_add_of_nonneg_left (norm_nonneg _)).trans (le_add_of_nonneg_left (norm_nonneg _))
   · rw [mixedDerivHolderL_of_ne (by simp at h; omega), zero_apply, norm_zero]
     exact norm_nonneg f
+
+/-- A top-order field is bounded by its Hölder field. -/
+theorem norm_mixedDerivL_le_norm_mixedDerivHolderL (f : ParabolicCkHolderSpace k α E F hab)
+    {r m : ℕ} (h : 2 * r + m = k) : ‖mixedDerivL r m f‖ ≤ ‖mixedDerivHolderL r m f‖ := by
+  rw [← toBoundedContinuousFunction_mixedDerivHolderL f h]
+  exact (mixedDerivHolderL r m f).norm_toBoundedContinuousFunction_le
+
+/-- The family of time slices of a field of order `k - 1` is bounded by the supremum norm of the
+field plus a common Hölder constant of its time slices. -/
+theorem norm_timeSliceL_le_of_holderWith (f : ParabolicCkHolderSpace k α E F hab) {r m : ℕ}
+    (h : 2 * r + m + 1 = k) {C : ℝ≥0}
+    (hC : ∀ x : E, HolderWith C ((1 + α) / 2) fun t : Icc a b ↦ mixedDerivL r m f (slabMk x t)) :
+    ‖timeSliceL r m f‖ ≤ ‖mixedDerivL r m f‖ + C :=
+  lp.norm_le_of_forall_le (by positivity) fun x ↦
+    HolderSpace.norm_le_of_norm_le_of_holderWith (norm_nonneg _)
+      (fun t ↦ by
+        rw [timeSliceL_apply f h]
+        exact (mixedDerivL r m f).norm_coe_le_norm _)
+      (by
+        rw [show ⇑(timeSliceL r m f x) = fun t ↦ mixedDerivL r m f (slabMk x t) from
+          funext (timeSliceL_apply f h x)]
+        exact hC x)
 
 /-! ### Completeness -/
 
