@@ -101,45 +101,35 @@ theorem mem_center_specialIsometryGroup_of_forall_smul_eq (hσ : Function.Involu
   simp only [Subgroup.coe_mul, SpecialLinearGroup.coe_mul, hc]
   exact ((scalar_commute c (fun r ↦ Commute.all c r) _).eq).symm
 
-/-! ### Hyperbolic pairs and nontriviality -/
-
-/-- **Constructing a hyperbolic pair from a nonempty isotropic-point set.** Let `σ` be an
-involution, let `Q` be an invertible `ε`-Hermitian matrix, and suppose that the trace
-`t ↦ t + ε σ(t)` is onto the elements `s` with `σ(s) = ε s`. If `Q.isotropicPoints σ` is nonempty,
-then some nonzero vectors `e, f` satisfy `h(e, e) = h(f, f) = 0`, `h(e, f) = 1`, `h(f, e) = ε`,
-`ε * ε = 1`, and `σ ε = ε`. -/
+/-- **Constructing a hyperbolic pair from a nonempty isotropic-point set.** For involutive `σ` and
+invertible `ε`-Hermitian `Q` with trace onto `{s | σ(s) = ε s}`, nonemptiness of
+`Q.isotropicPoints σ` yields nonzero `e, f` with `h(e, e) = h(f, f) = 0`, `h(e, f) = 1`,
+`h(f, e) = ε`, `ε * ε = 1`, and `σ ε = ε`. -/
 theorem exists_comp_dotProduct_mulVec_eq_zero_and_eq_one_of_nonempty_isotropicPoints
     (hσ : Function.Involutive σ) (hQ : (Q.map σ)ᵀ = ε • Q) (hdet : Q.det ≠ 0)
     (htr : ∀ s, σ s = ε * s → ∃ t, t + ε * σ t = s) [Nonempty (Q.isotropicPoints σ)] :
     ∃ e f : n → K, e ≠ 0 ∧ f ≠ 0 ∧ (σ ∘ e) ⬝ᵥ (Q *ᵥ e) = 0 ∧ (σ ∘ f) ⬝ᵥ (Q *ᵥ f) = 0 ∧
       (σ ∘ e) ⬝ᵥ (Q *ᵥ f) = 1 ∧ (σ ∘ f) ⬝ᵥ (Q *ᵥ e) = ε ∧ ε * ε = 1 ∧ σ ε = ε := by
   obtain ⟨p₀⟩ := ‹Nonempty (Q.isotropicPoints σ)›
-  have he₀ : (p₀ : ℙ K (n → K)).rep ≠ 0 := (p₀ : ℙ K (n → K)).rep_ne_zero
-  have he : (σ ∘ (p₀ : ℙ K (n → K)).rep) ⬝ᵥ (Q *ᵥ (p₀ : ℙ K (n → K)).rep) = 0 :=
-    comp_rep_dotProduct_mulVec_rep p₀
-  obtain ⟨f, hf₀, hf, hef, hfe, hε, hσε⟩ :=
-    exists_comp_dotProduct_mulVec_eq_zero_and_eq_one hσ hQ hdet htr he₀ he
-  exact ⟨(p₀ : ℙ K (n → K)).rep, f, he₀, hf₀, he, hf, hef, hfe, hε, hσε⟩
+  obtain ⟨f, hf₀, hf, hef, hfe, hε, hσε⟩ := exists_comp_dotProduct_mulVec_eq_zero_and_eq_one hσ hQ
+    hdet htr (p₀ : ℙ K (n → K)).rep_ne_zero (comp_rep_dotProduct_mulVec_rep p₀)
+  exact ⟨_, f, (p₀ : ℙ K (n → K)).rep_ne_zero, hf₀, comp_rep_dotProduct_mulVec_rep p₀, hf, hef,
+    hfe, hε, hσε⟩
 
-/-- **Nontriviality of `Q.specialIsometryGroup σ` when an isotropic point exists.** Let `σ` be an
-involution and let `Q` be an invertible `ε`-Hermitian matrix such that some nonzero `d` satisfies
-`d + ε * σ d = 0`. If `Q.isotropicPoints σ` is nonempty, then `Q.specialIsometryGroup σ` is
-nontrivial. -/
+/-- **Nontriviality of `Q.specialIsometryGroup σ` when an isotropic point exists** and some nonzero
+`d` satisfies `d + ε * σ d = 0`. -/
 theorem nontrivial_specialIsometryGroup (hσ : Function.Involutive σ) (hQ : (Q.map σ)ᵀ = ε • Q)
     (hdet : Q.det ≠ 0) (hadm : ∃ d ≠ 0, d + ε * σ d = 0) [Nonempty (Q.isotropicPoints σ)] :
     Nontrivial (Q.specialIsometryGroup σ) := by
   obtain ⟨p₀⟩ := ‹Nonempty (Q.isotropicPoints σ)›
-  set e := (p₀ : ℙ K (n → K)).rep
-  have he₀ : e ≠ 0 := (p₀ : ℙ K (n → K)).rep_ne_zero
-  have he : (σ ∘ e) ⬝ᵥ (Q *ᵥ e) = 0 := comp_rep_dotProduct_mulVec_rep p₀
+  have he₀ := (p₀ : ℙ K (n → K)).rep_ne_zero
   obtain ⟨u, hue, -⟩ := exists_comp_dotProduct_mulVec_ne_zero_pair (σ := σ) hdet he₀ he₀
-  have heu : (σ ∘ e) ⬝ᵥ (Q *ᵥ u) ≠ 0 := (comp_dotProduct_mulVec_ne_zero_comm hσ hQ).mp hue
   obtain ⟨d, hd, hdε⟩ := hadm
-  obtain ⟨t, ht, hct⟩ := exists_mem_specialIsometryGroup_coe_eq_unitaryTransvection hσ hQ he hdε
-  refine ⟨⟨t, ht⟩, 1, fun h ↦ ?_⟩
-  have htu := congrArg (fun g : Q.specialIsometryGroup σ ↦ (g : Matrix n n K) *ᵥ u) h
-  rw [Subgroup.coe_mk (Q.specialIsometryGroup σ), hct, unitaryTransvection_mulVec,
-    Subgroup.coe_one, SpecialLinearGroup.coe_one, one_mulVec] at htu
-  exact smul_ne_zero (mul_ne_zero hd heu) he₀ (add_eq_left.mp htu)
+  obtain ⟨t, ht, hct⟩ := exists_mem_specialIsometryGroup_coe_eq_unitaryTransvection hσ hQ
+    (comp_rep_dotProduct_mulVec_rep p₀) hdε
+  refine ⟨⟨t, ht⟩, 1, fun h ↦ smul_ne_zero
+    (mul_ne_zero hd ((comp_dotProduct_mulVec_ne_zero_comm hσ hQ).mp hue)) he₀ ?_⟩
+  simpa [Subgroup.coe_mk (Q.specialIsometryGroup σ), hct, unitaryTransvection_mulVec] using
+    congrArg (fun g : Q.specialIsometryGroup σ ↦ (g : Matrix n n K) *ᵥ u) h
 
 end Matrix

@@ -12,25 +12,16 @@ import TauCeti.LinearAlgebra.Matrix.SpecialLinearGroup.Isometry.Primitive
 /-!
 # Simplicity of projective special unitary groups
 
-Let `σ` be an involution of a field `K`, let `Q` be an invertible `ε`-Hermitian matrix,
-`(Q.map σ)ᵀ = ε • Q`, whose trace `t ↦ t + ε σ(t)` is onto `{s : K | σ s = ε * s}` and has a
-nonzero kernel element (`∃ d ≠ 0, d + ε * σ d = 0`), and suppose `Matrix.isotropicPoints Q σ` is
-nonempty. Applying `MulAction.IwasawaStructure.isSimpleGroup_quotient_center` to
+Applying `MulAction.IwasawaStructure.isSimpleGroup_quotient_center` to
 `Matrix.unitaryIwasawaStructure`, `Matrix.isPreprimitive_isotropicPoints`,
 `Matrix.nontrivial_specialIsometryGroup`, and
-`Matrix.mem_center_specialIsometryGroup_of_forall_smul_eq`, this file proves that the central
-quotient `Q.specialIsometryGroup σ ⧸ Subgroup.center (Q.specialIsometryGroup σ)` is simple whenever
-the three-way generation condition holds and `Q.specialIsometryGroup σ` is perfect, and in
-particular whenever one of the three perfectness conditions of
-`Matrix.commutator_specialIsometryGroup_eq_top` holds.
-
-## Main results
-
-* `Matrix.isSimpleGroup_quotient_center_specialIsometryGroup_of_commutator_eq_top`: simplicity of
-  the central quotient from the three-way generation condition and
-  `commutator (Q.specialIsometryGroup σ) = ⊤`.
-* `Matrix.isSimpleGroup_quotient_center_specialIsometryGroup`: self-contained simplicity of the
-  central quotient directly from the three-way perfectness condition `hperf`.
+`Matrix.mem_center_specialIsometryGroup_of_forall_smul_eq`, this file proves
+`Matrix.isSimpleGroup_quotient_center_specialIsometryGroup_of_commutator_eq_top` and
+`Matrix.isSimpleGroup_quotient_center_specialIsometryGroup`: for an invertible `ε`-Hermitian
+matrix `Q` with surjective `ε`-trace, nonzero skew-trace, and nonempty `Matrix.isotropicPoints Q σ`,
+the central quotient of `Q.specialIsometryGroup σ` is simple under the three-way generation
+hypothesis and perfectness, and in particular under the three-way hypothesis of
+`Matrix.commutator_specialIsometryGroup_eq_top`.
 
 ## References
 
@@ -80,17 +71,12 @@ theorem isSimpleGroup_quotient_center_specialIsometryGroup
       (∃ u w : n → K, u ≠ 0 ∧ w ∉ K ∙ u ∧ (σ ∘ u) ⬝ᵥ (Q *ᵥ u) = 0 ∧
         (σ ∘ w) ⬝ᵥ (Q *ᵥ w) = 0 ∧ (σ ∘ u) ⬝ᵥ (Q *ᵥ w) = 0) ∨
       (3 ≤ Fintype.card n ∧ ∃ c : K, c ≠ 0 ∧ c * σ c ≠ 1)) :
-    IsSimpleGroup (Q.specialIsometryGroup σ ⧸ Subgroup.center (Q.specialIsometryGroup σ)) := by
-  have hgen : (∃ a : K, a ≠ 0 ∧ a ≠ 1 ∧ σ a = a) ∨ Fintype.card n ≤ 2 ∨
-      ∃ u w : n → K, u ≠ 0 ∧ w ∉ K ∙ u ∧ (σ ∘ u) ⬝ᵥ (Q *ᵥ u) = 0 ∧
-        (σ ∘ w) ⬝ᵥ (Q *ᵥ w) = 0 ∧ (σ ∘ u) ⬝ᵥ (Q *ᵥ w) = 0 := by
-    rcases hperf with ⟨c, hc0, hcsq, hσc⟩ | hwitt | ⟨_, c, hc0, hc1⟩
-    · exact Or.inl ⟨c, hc0, fun h1 ↦ hcsq (by simp [h1]), hσc⟩
-    · exact Or.inr (Or.inr hwitt)
-    · exact Or.inl ⟨c * σ c, mul_ne_zero hc0 ((map_ne_zero σ).mpr hc0), hc1,
-        by rw [map_mul, hσ c, mul_comm]⟩
-  exact isSimpleGroup_quotient_center_specialIsometryGroup_of_commutator_eq_top hσ hQ hdet htr hadm
-    hgen (commutator_specialIsometryGroup_eq_top hσ hQ hdet htr hadm hperf)
+    IsSimpleGroup (Q.specialIsometryGroup σ ⧸ Subgroup.center (Q.specialIsometryGroup σ)) :=
+  isSimpleGroup_quotient_center_specialIsometryGroup_of_commutator_eq_top hσ hQ hdet htr hadm
+    (hperf.elim (fun ⟨c, hc0, hcsq, hσc⟩ ↦ Or.inl ⟨c, hc0, fun h1 ↦ hcsq (by simp [h1]), hσc⟩)
+      fun h ↦ h.elim (Or.inr ∘ Or.inr) fun ⟨_, c, hc0, hc1⟩ ↦ Or.inl ⟨c * σ c,
+        mul_ne_zero hc0 ((map_ne_zero σ).mpr hc0), hc1, by rw [map_mul, hσ c, mul_comm]⟩)
+    (commutator_specialIsometryGroup_eq_top hσ hQ hdet htr hadm hperf)
 
 end Matrix
 

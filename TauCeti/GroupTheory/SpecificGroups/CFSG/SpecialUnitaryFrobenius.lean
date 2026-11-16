@@ -311,19 +311,14 @@ theorem exists_notMem_span_and_comp_dotProduct_mulVec_eq_zero_of_three_le (hr : 
         (iterateFrobenius _ d.characteristic d.fieldExponent ∘ u) ⬝ᵥ
           ((typeAGraphConjugator r (GaloisField d.characteristic (d.fieldExponent * 2)) :
             Matrix (Fin (r + 1)) (Fin (r + 1)) _) *ᵥ w) = 0 := by
-  let i₀ : Fin (r + 1) := ⟨0, by omega⟩
-  let i₁ : Fin (r + 1) := ⟨1, by omega⟩
-  refine ⟨Pi.single i₀ 1, Pi.single i₁ 1, Pi.single_ne_zero_iff.mpr one_ne_zero, fun hmem ↦ ?_,
-    ?_, ?_, ?_⟩
-  · obtain ⟨a, ha⟩ := Submodule.mem_span_singleton.mp hmem
-    have h1 := congrFun ha i₁
-    simp [i₀, i₁] at h1
-  · rw [← d.unitaryForm_apply]
-    exact d.unitaryForm_single_single (by simp [i₀, Fin.ext_iff]; omega)
-  · rw [← d.unitaryForm_apply]
-    exact d.unitaryForm_single_single (by simp [i₁, Fin.ext_iff]; omega)
-  · rw [← d.unitaryForm_apply]
-    exact d.unitaryForm_single_single (by simp [i₀, i₁, Fin.ext_iff]; omega)
+  let i₀ : Fin (r + 1) := ⟨0, by omega⟩; let i₁ : Fin (r + 1) := ⟨1, by omega⟩
+  refine ⟨Pi.single i₀ 1, Pi.single i₁ 1, Pi.single_ne_zero_iff.mpr one_ne_zero, ?_, ?_, ?_, ?_⟩
+  · intro h; obtain ⟨a, ha⟩ := Submodule.mem_span_singleton.mp h
+    simpa [i₀, i₁] using congrFun ha i₁
+  · exact d.unitaryForm_apply _ _ ▸ d.unitaryForm_single_single (by simp [i₀, Fin.ext_iff]; omega)
+  · exact d.unitaryForm_apply _ _ ▸ d.unitaryForm_single_single (by simp [i₁, Fin.ext_iff]; omega)
+  · exact d.unitaryForm_apply _ _ ▸
+      d.unitaryForm_single_single (by simp [i₀, i₁, Fin.ext_iff]; omega)
 
 end UnitaryForm
 
@@ -339,8 +334,7 @@ theorem natCard_galoisField :
       (d.characteristic ^ d.fieldExponent) ^ 2 := by
   rw [GaloisField.card _ _ (Nat.mul_ne_zero d.fieldExponent_pos.ne' two_ne_zero), pow_mul]
 
-/-- The trace `t ↦ t + (-1) ^ r σ(t)` of `𝔽_{q²}` is onto the elements `s` with
-`σ(s) = (-1) ^ r s`, where `σ` is the `q`-power Frobenius. -/
+/-- The trace `t ↦ t + (-1) ^ r σ(t)` is onto the elements `s` with `σ(s) = (-1) ^ r s`. -/
 theorem exists_add_neg_one_pow_mul_iterateFrobenius_eq
     {s : GaloisField d.characteristic (d.fieldExponent * 2)}
     (hs : iterateFrobenius _ d.characteristic d.fieldExponent s = (-1) ^ r * s) :
@@ -348,8 +342,7 @@ theorem exists_add_neg_one_pow_mul_iterateFrobenius_eq
   simp_rw [iterateFrobenius_def] at hs ⊢
   exact FiniteField.exists_add_neg_one_pow_mul_pow_eq natCard_galoisField r hs
 
-/-- The trace `t ↦ t + (-1) ^ r σ(t)` of `𝔽_{q²}` has a nonzero kernel element, where `σ` is the
-`q`-power Frobenius. -/
+/-- The trace `t ↦ t + (-1) ^ r σ(t)` has a nonzero kernel element. -/
 theorem exists_ne_zero_add_neg_one_pow_mul_iterateFrobenius_eq_zero :
     ∃ a ≠ (0 : GaloisField d.characteristic (d.fieldExponent * 2)),
       a + (-1) ^ r * iterateFrobenius _ d.characteristic d.fieldExponent a = 0 := by

@@ -157,7 +157,7 @@ theorem oneSubVecMulVecGL_toLinearEquiv_apply (t : Rˣ) (u v x : α → R)
         x - (v ⬝ᵥ x) • u := by
   simp only [LinearMap.GeneralLinearGroup.coeFn_generalLinearEquiv,
     Matrix.GeneralLinearGroup.toLin_apply, Matrix.mulVecLin_apply, coe_oneSubVecMulVecGL,
-    one_sub_vecMulVec_mulVec]
+    Matrix.sub_mulVec, Matrix.one_mulVec, Matrix.vecMulVec_mulVec, op_smul_eq_smul]
 
 /-- The inverse induced automorphism rescales the same row pairing by the inverse unit. -/
 @[simp]

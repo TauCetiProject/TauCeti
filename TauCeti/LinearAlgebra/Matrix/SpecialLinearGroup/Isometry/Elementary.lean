@@ -25,17 +25,15 @@ The result concerns the transvection-generated subgroup itself, not just the ful
 group. It is a step towards generation and the use of the transvection subgroups in Iwasawa's
 criterion; it does not assert that the elementary group is the full special isometry group.
 
-Two nonorthogonal isotropic vectors in `U^⊥` are joined up to a scalar by a transvection fixing
-every vector in `U`
-(`Matrix.exists_mem_elementaryUnitaryGroup_mulVec_eq_self_and_mulVec_eq_smul_of_ne_zero`).
-Orthogonal vectors in `u^⊥` off `K ∙ u` are joined through a third isotropic vector in `u^⊥` by two
-such transvections
-(`Matrix.exists_elementaryUnitaryGroup_mulVec_eq_self_and_mulVec_eq_smul_of_eq_zero`). Specializing
-`u = 0` gives transitivity up to scalar on nonzero isotropic vectors
-(`Matrix.exists_mem_elementaryUnitaryGroup_mulVec_eq_smul`) and transitivity on isotropic projective
-points (`Matrix.isPretransitive_elementaryUnitaryGroup`). The transvection step follows the
-symplectic argument of `TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.Symplectic.Transitivity`, in
-particular `TauCeti.GLSymplecticFin.coe_symplecticTransvection_sub_mulVec`.
+Two nonorthogonal isotropic vectors in `U^⊥` are joined up to a scalar by a transvection fixing `U`
+(`Matrix.exists_mem_elementaryUnitaryGroup_mulVec_eq_self_and_mulVec_eq_smul_of_ne_zero`), and
+orthogonal vectors in `u^⊥` off `K ∙ u` are joined by two such transvections
+(`Matrix.exists_elementaryUnitaryGroup_mulVec_eq_self_and_mulVec_eq_smul_of_eq_zero`), giving
+transitivity up to scalar (`Matrix.exists_mem_elementaryUnitaryGroup_mulVec_eq_smul`) and on
+isotropic points (`Matrix.isPretransitive_elementaryUnitaryGroup`).
+The transvection step follows the symplectic argument of
+`TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.Symplectic.Transitivity`, in particular
+`TauCeti.GLSymplecticFin.coe_symplecticTransvection_sub_mulVec`.
 
 ## References
 
@@ -89,10 +87,7 @@ theorem unitaryTransvection_mem_elementaryUnitaryGroup {g : SpecialLinearGroup n
     (hga : (g : Matrix n n K) = Q.unitaryTransvection σ v a) :
     (⟨g, hg⟩ : Q.specialIsometryGroup σ) ∈ Q.elementaryUnitaryGroup σ := by
   by_cases hv0 : v = 0
-  · have h1 : (⟨g, hg⟩ : Q.specialIsometryGroup σ) = 1 :=
-      specialIsometryGroup_ext (by simp [hv0, hga])
-    rw [h1]
-    exact one_mem _
+  · rw [specialIsometryGroup_ext (g₁ := ⟨g, hg⟩) (g₂ := 1) (by simp [hv0, hga])]; exact one_mem _
   · have hp := (mk_mem_isotropicPoints_iff hv0).mpr hv
     exact unitaryTransvectionSubgroup_le_elementaryUnitaryGroup ⟨_, hp⟩
       ((mem_unitaryTransvectionSubgroup_mk_iff hv0 hp).mpr ⟨a, hga⟩)
@@ -192,12 +187,14 @@ theorem exists_elementaryUnitaryGroup_mulVec_eq_self_and_mulVec_eq_smul_of_eq_ze
     ∃ g : Q.elementaryUnitaryGroup σ, ∃ c ≠ (0 : K),
       (((g : Q.specialIsometryGroup σ) : SpecialLinearGroup n K) : Matrix n n K) *ᵥ u = u ∧
       (((g : Q.specialIsometryGroup σ) : SpecialLinearGroup n K) : Matrix n n K) *ᵥ x = c • y := by
+  have hjoin {a b : n → K} (ha : (σ ∘ a) ⬝ᵥ (Q *ᵥ a) = 0) (hb : (σ ∘ b) ⬝ᵥ (Q *ᵥ b) = 0)
+      (hua : (σ ∘ u) ⬝ᵥ (Q *ᵥ a) = 0) (hub : (σ ∘ u) ⬝ᵥ (Q *ᵥ b) = 0)
+      (hba : (σ ∘ b) ⬝ᵥ (Q *ᵥ a) ≠ 0) :=
+    exists_mem_elementaryUnitaryGroup_mulVec_eq_self_and_mulVec_eq_smul_of_ne_zero hσ hQ hadm
+      (U := {u}) ha hb (Set.forall_mem_singleton.mpr hua) (Set.forall_mem_singleton.mpr hub) hba
   by_cases hyx : (σ ∘ y) ⬝ᵥ (Q *ᵥ x) = 0
   swap
-  · obtain ⟨t, ht, c, hc, htU, htx⟩ :=
-      exists_mem_elementaryUnitaryGroup_mulVec_eq_self_and_mulVec_eq_smul_of_ne_zero
-        hσ hQ hadm (U := {u}) hx hy (Set.forall_mem_singleton.mpr hux)
-        (Set.forall_mem_singleton.mpr huy) hyx
+  · obtain ⟨t, ht, c, hc, htU, htx⟩ := hjoin hx hy hux huy hyx
     exact ⟨⟨t, ht⟩, c, hc, htU u (Set.mem_singleton u), htx⟩
   -- Choose `v` orthogonal to `u` and paired nontrivially with both `x` and `y`, then correct
   -- `v` to an isotropic vector `z = v + a • x`.
@@ -210,19 +207,12 @@ theorem exists_elementaryUnitaryGroup_mulVec_eq_self_and_mulVec_eq_smul_of_eq_ze
   have huz : (σ ∘ u) ⬝ᵥ (Q *ᵥ z) = 0 := by
     rw [comp_dotProduct_mulVec_eq_zero_comm hσ hQ]
     simp [z, hvu, hxu]
-  have hzx : (σ ∘ z) ⬝ᵥ (Q *ᵥ x) ≠ 0 := by
-    simpa [z, hx] using hvx
+  have hzx : (σ ∘ z) ⬝ᵥ (Q *ᵥ x) ≠ 0 := by simpa [z, hx] using hvx
   have hyz : (σ ∘ y) ⬝ᵥ (Q *ᵥ z) ≠ 0 := by
     rw [comp_dotProduct_mulVec_ne_zero_comm hσ hQ]
     simpa [z, hxy] using hvy
-  obtain ⟨t₁, ht₁, c₁, hc₁, ht₁U, ht₁x⟩ :=
-    exists_mem_elementaryUnitaryGroup_mulVec_eq_self_and_mulVec_eq_smul_of_ne_zero
-      hσ hQ hadm (U := {u}) hx hz (Set.forall_mem_singleton.mpr hux)
-      (Set.forall_mem_singleton.mpr huz) hzx
-  obtain ⟨t₂, ht₂, c₂, hc₂, ht₂U, ht₂z⟩ :=
-    exists_mem_elementaryUnitaryGroup_mulVec_eq_self_and_mulVec_eq_smul_of_ne_zero
-      hσ hQ hadm (U := {u}) hz hy (Set.forall_mem_singleton.mpr huz)
-      (Set.forall_mem_singleton.mpr huy) hyz
+  obtain ⟨t₁, ht₁, c₁, hc₁, ht₁U, ht₁x⟩ := hjoin hx hz hux huz hzx
+  obtain ⟨t₂, ht₂, c₂, hc₂, ht₂U, ht₂z⟩ := hjoin hz hy huz huy hyz
   refine ⟨⟨t₂, ht₂⟩ * ⟨t₁, ht₁⟩, c₁ * c₂, mul_ne_zero hc₁ hc₂, ?_, ?_⟩
   · simp only [Subgroup.coe_mul, SpecialLinearGroup.coe_mul]
     rw [← mulVec_mulVec, ht₁U u (Set.mem_singleton u), ht₂U u (Set.mem_singleton u)]
@@ -256,11 +246,11 @@ theorem isPretransitive_elementaryUnitaryGroup (hσ : Function.Involutive σ)
   induction p using Projectivization.ind with | h x hx0 => ?_
   induction q using Projectivization.ind with | h y hy0 => ?_
   rw [mk_mem_isotropicPoints_iff] at hp hq
-  obtain ⟨g, hg, c, -, hgx⟩ :=
-    exists_mem_elementaryUnitaryGroup_mulVec_eq_smul hσ hQ hdet htr hadm hx0 hy0 hp hq
-  refine ⟨⟨g, hg⟩, Subtype.ext ?_⟩
+  obtain ⟨g, c, -, -, hgx⟩ :=
+    exists_elementaryUnitaryGroup_mulVec_eq_self_and_mulVec_eq_smul_of_eq_zero
+      hσ hQ hdet htr hadm (u := 0) hp hq (by simp [hx0]) (by simp [hy0]) (by simp) (by simp)
+  refine ⟨g, Subtype.ext ?_⟩
   exact TauCeti.Projectivization.smul_mk_eq_mk_of_smul_eq_smul hx0 hy0 (c := c)
-    (by rwa [Subgroup.smul_def, Subgroup.coe_mk, Subgroup.smul_def, SpecialLinearGroup.smul_def,
-      smul_eq_mulVec])
+    (by rwa [Subgroup.smul_def, Subgroup.smul_def, SpecialLinearGroup.smul_def, smul_eq_mulVec])
 
 end Matrix
