@@ -6,7 +6,10 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.Meromorphic.Counting.Certificate
+public import TauCeti.NumberTheory.DirichletCharacter.LFunction.GRH
+public import TauCeti.NumberTheory.LFunctions.Zeros.Completion.Dirichlet.Basic
 public import TauCeti.NumberTheory.LFunctions.Zeros.Completion.RiemannZeta
+import TauCeti.NumberTheory.LFunctions.Zeros.Completion.Dirichlet.Zeros
 
 /-!
 # Zeros on the critical line
@@ -24,9 +27,11 @@ which combines the functional equation with complex conjugation.
 
 Over the whole plane the predicate is the Riemann hypothesis: for the completed Riemann zeta
 function and for its entire completion `zetaEntireCompletion` it is equivalent to Mathlib's
-`RiemannHypothesis`. Stating it through the divisor of the completed function, rather than
-through the zeros of `riemannZeta`, removes the trivial zeros and the junk value at the pole
-without listing them as exceptions.
+`RiemannHypothesis`, and for a primitive Dirichlet character's completed L-function and entire
+completion it is equivalent to `TauCeti.DirichletGRH`. Stating it through the divisor of the
+completed function, rather than through the zeros of `riemannZeta` or
+`DirichletCharacter.LFunction`, removes the trivial zeros and the junk value at the pole without
+listing them as exceptions.
 
 ## Main results
 
@@ -35,6 +40,9 @@ without listing them as exceptions.
 * `TauCeti.LFunctions.allOnCriticalLine_of_zeroCount_eq_one`: the symmetry criterion.
 * `TauCeti.LFunctions.allOnCriticalLine_completedRiemannZeta_iff`,
   `TauCeti.LFunctions.allOnCriticalLine_zetaEntireCompletion_iff`: the Riemann hypothesis.
+* `TauCeti.LFunctions.allOnCriticalLine_completedLFunction_iff`,
+  `TauCeti.LFunctions.allOnCriticalLine_dirichletData_entireCompletion_iff`: the generalized
+  Riemann hypothesis for a primitive Dirichlet character.
 -/
 
 public section
@@ -121,5 +129,29 @@ theorem allOnCriticalLine_zetaEntireCompletion_iff :
     AllOnCriticalLine zetaEntireCompletion univ univ ↔ RiemannHypothesis := by
   rw [← allOnCriticalLine_completedRiemannZeta_iff]
   simp only [allOnCriticalLine_iff, zero_lt_divisor_zetaEntireCompletion_iff]
+
+/-- **The generalized Riemann hypothesis** for a primitive Dirichlet character `χ` says exactly
+that every zero of `χ.completedLFunction` lies on the critical line. -/
+theorem allOnCriticalLine_completedLFunction_iff {N : ℕ} [NeZero N]
+    {χ : DirichletCharacter ℂ N} (hχ : χ.IsPrimitive) :
+    AllOnCriticalLine χ.completedLFunction univ univ ↔ DirichletGRH χ := by
+  rw [allOnCriticalLine_iff, dirichletGRH_iff_mem_Ioo]
+  exact forall_congr' fun s ↦ ⟨fun h h0 hre ↦ h (mem_univ s)
+    (hχ.zero_lt_divisor_completedLFunction_iff.2 ⟨h0, hre⟩),
+    fun h _ hpos ↦
+      let ⟨h0, hre⟩ := hχ.zero_lt_divisor_completedLFunction_iff.1 hpos
+      h h0 hre⟩
+
+/-- **The generalized Riemann hypothesis** for a primitive Dirichlet character `χ` says exactly
+that every zero of `(dirichletData χ hχ).entireCompletion` lies on the critical line. -/
+theorem allOnCriticalLine_dirichletData_entireCompletion_iff {N : ℕ} [NeZero N]
+    {χ : DirichletCharacter ℂ N} (hχ : χ.IsPrimitive) :
+    AllOnCriticalLine (dirichletData χ hχ).entireCompletion univ univ ↔ DirichletGRH χ := by
+  rw [allOnCriticalLine_iff, dirichletGRH_iff_mem_Ioo]
+  exact forall_congr' fun s ↦ ⟨fun h h0 hre ↦ h (mem_univ s)
+    ((zero_lt_divisor_dirichletData_entireCompletion_iff χ hχ).2 ⟨h0, hre⟩),
+    fun h _ hpos ↦
+      let ⟨h0, hre⟩ := (zero_lt_divisor_dirichletData_entireCompletion_iff χ hχ).1 hpos
+      h h0 hre⟩
 
 end TauCeti.LFunctions
