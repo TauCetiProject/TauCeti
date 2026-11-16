@@ -58,18 +58,17 @@ universe u
 
 namespace CommAlgCat
 
-variable {R : Type u} [CommRing R]
+variable {R : Type u} [CommRing R] {X Y Z : Over (Spec (CommRingCat.of R))}
 
 /-- Postcomposition with a morphism `f : X ⟶ Y` of schemes over `Spec R`, as a morphism between
 their fppf sheaves of points. -/
-noncomputable def pointsSheafMap {X Y : Over (Spec (CommRingCat.of R))} (f : X ⟶ Y) :
-    pointsSheaf X ⟶ pointsSheaf Y where
+noncomputable def pointsSheafMap (f : X ⟶ Y) : pointsSheaf X ⟶ pointsSheaf Y where
   hom := Functor.whiskerRight (Functor.whiskerLeft (algSpec (CommRingCat.of R)).op (yoneda.map f))
     uliftFunctor.{u + 1, u}
 
 /-- Evaluating `pointsSheafMap f` on an affine point postcomposes that point with `f`. -/
-@[simp] theorem pointsSheafMap_hom_app_apply {X Y : Over (Spec (CommRingCat.of R))} (f : X ⟶ Y)
-    (A : ((CommAlgCat.{u} R)ᵒᵖ)ᵒᵖ) (a : (algSpec (CommRingCat.of R)).obj A.unop ⟶ X) :
+@[simp] theorem pointsSheafMap_hom_app_apply (f : X ⟶ Y) (A : ((CommAlgCat.{u} R)ᵒᵖ)ᵒᵖ)
+    (a : (algSpec (CommRingCat.of R)).obj A.unop ⟶ X) :
     dsimp% (pointsSheafMap f).hom.app A (ULift.up a) = ULift.up (a ≫ f) := (rfl)
 
 /-- The identity morphism induces the identity on fppf sheaves of points. -/
@@ -78,45 +77,43 @@ noncomputable def pointsSheafMap {X Y : Over (Spec (CommRingCat.of R))} (f : X �
   ext A ⟨a⟩; exact congrArg ULift.up (Category.comp_id a)
 
 /-- Composition of morphisms over `Spec R` becomes composition on fppf sheaves of points. -/
-@[simp] theorem pointsSheafMap_comp {X Y Z : Over (Spec (CommRingCat.of R))} (f : X ⟶ Y)
-    (g : Y ⟶ Z) : pointsSheafMap (f ≫ g) = pointsSheafMap f ≫ pointsSheafMap g := by
+@[simp] theorem pointsSheafMap_comp (f : X ⟶ Y) (g : Y ⟶ Z) :
+    pointsSheafMap (f ≫ g) = pointsSheafMap f ≫ pointsSheafMap g := by
   ext A ⟨a⟩; exact congrArg ULift.up (Category.assoc a f g).symm
 
 /-- An isomorphism of schemes over `Spec R` induces an isomorphism of their fppf sheaves of
 points. -/
-noncomputable def pointsSheafIso {X Y : Over (Spec (CommRingCat.of R))} (e : X ≅ Y) :
-    pointsSheaf X ≅ pointsSheaf Y where
+noncomputable def pointsSheafIso (e : X ≅ Y) : pointsSheaf X ≅ pointsSheaf Y where
   hom := pointsSheafMap e.hom
   inv := pointsSheafMap e.inv
   hom_inv_id := by rw [← pointsSheafMap_comp, e.hom_inv_id, pointsSheafMap_id]
   inv_hom_id := by rw [← pointsSheafMap_comp, e.inv_hom_id, pointsSheafMap_id]
 
 /-- The forward morphism of `pointsSheafIso e` is induced by `e.hom`. -/
-@[simp] theorem pointsSheafIso_hom {X Y : Over (Spec (CommRingCat.of R))} (e : X ≅ Y) :
-    (pointsSheafIso e).hom = pointsSheafMap e.hom := (rfl)
+@[simp] theorem pointsSheafIso_hom (e : X ≅ Y) : (pointsSheafIso e).hom = pointsSheafMap e.hom :=
+  (rfl)
 
 /-- The inverse morphism of `pointsSheafIso e` is induced by `e.inv`. -/
-@[simp] theorem pointsSheafIso_inv {X Y : Over (Spec (CommRingCat.of R))} (e : X ≅ Y) :
-    (pointsSheafIso e).inv = pointsSheafMap e.inv := (rfl)
+@[simp] theorem pointsSheafIso_inv (e : X ≅ Y) : (pointsSheafIso e).inv = pointsSheafMap e.inv :=
+  (rfl)
 
 /-- The identity isomorphism induces the identity isomorphism on fppf sheaves of points. -/
 @[simp] theorem pointsSheafIso_refl (X : Over (Spec (CommRingCat.of R))) :
     pointsSheafIso (Iso.refl X) = Iso.refl (pointsSheaf X) := Iso.ext <| pointsSheafMap_id X
 
 /-- Inverting an isomorphism of schemes over `Spec R` inverts `pointsSheafIso`. -/
-@[simp] theorem pointsSheafIso_symm {X Y : Over (Spec (CommRingCat.of R))} (e : X ≅ Y) :
-    pointsSheafIso e.symm = (pointsSheafIso e).symm := (rfl)
+@[simp] theorem pointsSheafIso_symm (e : X ≅ Y) : pointsSheafIso e.symm = (pointsSheafIso e).symm :=
+  (rfl)
 
 /-- Composition of scheme isomorphisms over `Spec R` becomes composition of `pointsSheafIso`. -/
-@[simp] theorem pointsSheafIso_trans {X Y Z : Over (Spec (CommRingCat.of R))} (e₁ : X ≅ Y)
-    (e₂ : Y ≅ Z) : pointsSheafIso (e₁ ≪≫ e₂) = pointsSheafIso e₁ ≪≫ pointsSheafIso e₂ :=
+@[simp] theorem pointsSheafIso_trans (e₁ : X ≅ Y) (e₂ : Y ≅ Z) :
+    pointsSheafIso (e₁ ≪≫ e₂) = pointsSheafIso e₁ ≪≫ pointsSheafIso e₂ :=
   Iso.ext <| pointsSheafMap_comp e₁.hom e₂.hom
 
 variable (R) in
 /-- **The fppf sheaf-of-points functor** from schemes over `Spec R` to fppf sheaves on the affine
-site `(CommAlgCat R)ᵒᵖ`. The functor record is exposed so `(pointsSheafFunctor R).obj X` and
-`(pointsSheafFunctor R).map f` unify with `pointsSheaf X` and `pointsSheafMap f`. -/
-@[expose] noncomputable def pointsSheafFunctor :
+site `(CommAlgCat R)ᵒᵖ`. -/
+noncomputable def pointsSheafFunctor :
     Over (Spec (CommRingCat.of R)) ⥤ Sheaf (fppfTopology R) (Type (u + 1)) where
   obj := pointsSheaf
   map := pointsSheafMap
@@ -127,13 +124,29 @@ site `(CommAlgCat R)ᵒᵖ`. The functor record is exposed so `(pointsSheafFunct
 @[simp] theorem pointsSheafFunctor_obj (X : Over (Spec (CommRingCat.of R))) :
     (pointsSheafFunctor R).obj X = pointsSheaf X := (rfl)
 
-/-- On morphisms, `pointsSheafFunctor` is `pointsSheafMap`. -/
-@[simp] theorem pointsSheafFunctor_map {X Y : Over (Spec (CommRingCat.of R))} (f : X ⟶ Y) :
-    (pointsSheafFunctor R).map f = pointsSheafMap f := (rfl)
+/-- On morphisms, `pointsSheafFunctor` is `pointsSheafMap`, transported along
+`pointsSheafFunctor_obj`. -/
+@[simp] theorem pointsSheafFunctor_map (f : X ⟶ Y) :
+    (pointsSheafFunctor R).map f = eqToHom (pointsSheafFunctor_obj X) ≫ pointsSheafMap f ≫
+      eqToHom (pointsSheafFunctor_obj Y).symm :=
+  ((Category.id_comp _).trans (Category.comp_id _)).symm
 
-/-- On isomorphisms, `pointsSheafFunctor.mapIso` agrees with `pointsSheafIso`. -/
-@[simp] theorem pointsSheafFunctor_mapIso {X Y : Over (Spec (CommRingCat.of R))} (e : X ≅ Y) :
-    (pointsSheafFunctor R).mapIso e = pointsSheafIso e := (rfl)
+/-- On isomorphisms, `pointsSheafFunctor.mapIso` agrees with `pointsSheafIso`, transported along
+`pointsSheafFunctor_obj`. -/
+@[simp] theorem pointsSheafFunctor_mapIso (e : X ≅ Y) :
+    (pointsSheafFunctor R).mapIso e = eqToIso (pointsSheafFunctor_obj X) ≪≫ pointsSheafIso e ≪≫
+      eqToIso (pointsSheafFunctor_obj Y).symm := Iso.ext <| pointsSheafFunctor_map e.hom
+
+/-- On morphisms, restricting `uliftYoneda` along `(fppfSheafEquiv R (Type (u + 1))).inverse`
+agrees with `pointsSheafMap`, transported along `fppfSheafEquiv_inverse_obj_uliftYoneda`. -/
+theorem fppfSheafEquiv_inverse_map_uliftYoneda (f : X ⟶ Y) :
+    (fppfSheafEquiv R (Type (u + 1))).inverse.map
+        ((Scheme.fppfTopology.over (Spec (CommRingCat.of R))).uliftYoneda.{u + 1}.map f) =
+      eqToHom (fppfSheafEquiv_inverse_obj_uliftYoneda X) ≫ pointsSheafMap f ≫
+        eqToHom (fppfSheafEquiv_inverse_obj_uliftYoneda Y).symm := by
+  apply Sheaf.hom_ext
+  simp only [fppfSheafEquiv_inverse_map_hom, ObjectProperty.FullSubcategory.comp_hom,
+    ObjectProperty.eqToHom_hom]; rfl
 
 variable (R) in
 /-- `pointsSheafFunctor` is naturally isomorphic to subcanonical Yoneda on `Over (Spec R)`
@@ -142,19 +155,25 @@ noncomputable def pointsSheafFunctorIso :
     pointsSheafFunctor R ≅
       (Scheme.fppfTopology.over (Spec (CommRingCat.of R))).uliftYoneda.{u + 1} ⋙
         (fppfSheafEquiv R (Type (u + 1))).inverse :=
-  NatIso.ofComponents (fun _ ↦ Iso.refl _) fun _ ↦ by ext _ ⟨_⟩; rfl
+  NatIso.ofComponents (fun X ↦ eqToIso ((pointsSheafFunctor_obj X).trans
+      (fppfSheafEquiv_inverse_obj_uliftYoneda X).symm)) fun {X Y} f ↦ by
+    rw [pointsSheafFunctor_map, Functor.comp_map, fppfSheafEquiv_inverse_map_uliftYoneda]; simp
 
-/-- At each `R`-scheme `X`, `pointsSheafFunctorIso` is the identity sheaf isomorphism. -/
+/-- At each `R`-scheme `X`, `pointsSheafFunctorIso` is the `eqToIso` given by
+`pointsSheafFunctor_obj` and `fppfSheafEquiv_inverse_obj_uliftYoneda`. -/
 @[simp] theorem pointsSheafFunctorIso_app (X : Over (Spec (CommRingCat.of R))) :
-    dsimp% (pointsSheafFunctorIso R).app X = Iso.refl (pointsSheaf X) := (rfl)
+    (pointsSheafFunctorIso R).app X = eqToIso ((pointsSheafFunctor_obj X).trans
+      (fppfSheafEquiv_inverse_obj_uliftYoneda X).symm) := (rfl)
 
-/-- The forward component of `pointsSheafFunctorIso` at `X` is the identity morphism. -/
+/-- The forward component of `pointsSheafFunctorIso` at `X` is the canonical `eqToHom`. -/
 @[simp] theorem pointsSheafFunctorIso_hom_app (X : Over (Spec (CommRingCat.of R))) :
-    dsimp% (pointsSheafFunctorIso R).hom.app X = 𝟙 (pointsSheaf X) := (rfl)
+    (pointsSheafFunctorIso R).hom.app X = eqToHom ((pointsSheafFunctor_obj X).trans
+      (fppfSheafEquiv_inverse_obj_uliftYoneda X).symm) := (rfl)
 
-/-- The inverse component of `pointsSheafFunctorIso` at `X` is the identity morphism. -/
+/-- The inverse component of `pointsSheafFunctorIso` at `X` is the canonical `eqToHom`. -/
 @[simp] theorem pointsSheafFunctorIso_inv_app (X : Over (Spec (CommRingCat.of R))) :
-    dsimp% (pointsSheafFunctorIso R).inv.app X = 𝟙 (pointsSheaf X) := (rfl)
+    (pointsSheafFunctorIso R).inv.app X = eqToHom ((fppfSheafEquiv_inverse_obj_uliftYoneda X).trans
+      (pointsSheafFunctor_obj X).symm) := (rfl)
 
 variable (R) in
 /-- **The fppf sheaf-of-points functor is fully faithful.** Morphisms between schemes over
@@ -173,35 +192,39 @@ instance instFaithfulPointsSheafFunctor : (pointsSheafFunctor R).Faithful :=
 
 /-- **Morphism of `R`-schemes from a morphism of fppf point sheaves.** Every morphism
 `pointsSheaf X ⟶ pointsSheaf Y` is induced by a unique morphism `X ⟶ Y` over `Spec R`. -/
-noncomputable def homOfPointsSheafHom {X Y : Over (Spec (CommRingCat.of R))}
-    (α : pointsSheaf X ⟶ pointsSheaf Y) : X ⟶ Y :=
-  (fullyFaithfulPointsSheafFunctor R).preimage α
+noncomputable def homOfPointsSheafHom (α : pointsSheaf X ⟶ pointsSheaf Y) : X ⟶ Y :=
+  (fullyFaithfulPointsSheafFunctor R).preimage
+    (eqToHom (pointsSheafFunctor_obj X) ≫ α ≫ eqToHom (pointsSheafFunctor_obj Y).symm)
 
 /-- `pointsSheafMap` recovers the sheaf morphism from `homOfPointsSheafHom`. -/
-@[simp] theorem pointsSheafMap_homOfPointsSheafHom {X Y : Over (Spec (CommRingCat.of R))}
-    (α : pointsSheaf X ⟶ pointsSheaf Y) : pointsSheafMap (homOfPointsSheafHom α) = α :=
-  (fullyFaithfulPointsSheafFunctor R).map_preimage α
+@[simp] theorem pointsSheafMap_homOfPointsSheafHom (α : pointsSheaf X ⟶ pointsSheaf Y) :
+    pointsSheafMap (homOfPointsSheafHom α) = α := by
+  have h := (fullyFaithfulPointsSheafFunctor R).map_preimage
+    (eqToHom (pointsSheafFunctor_obj X) ≫ α ≫ eqToHom (pointsSheafFunctor_obj Y).symm)
+  rw [← homOfPointsSheafHom, pointsSheafFunctor_map] at h
+  simpa [Category.assoc] using
+    congrArg (eqToHom (pointsSheafFunctor_obj X).symm ≫ · ≫ eqToHom (pointsSheafFunctor_obj Y)) h
 
 /-- `homOfPointsSheafHom` is left inverse to `pointsSheafMap`. -/
-@[simp] theorem homOfPointsSheafHom_pointsSheafMap {X Y : Over (Spec (CommRingCat.of R))}
-    (f : X ⟶ Y) : homOfPointsSheafHom (pointsSheafMap f) = f :=
-  (fullyFaithfulPointsSheafFunctor R).preimage_map f
+@[simp] theorem homOfPointsSheafHom_pointsSheafMap (f : X ⟶ Y) :
+    homOfPointsSheafHom (pointsSheafMap f) = f := by
+  rw [homOfPointsSheafHom, ← pointsSheafFunctor_map]
+  exact (fullyFaithfulPointsSheafFunctor R).preimage_map f
 
 /-- `pointsSheafMap` is injective on `R`-scheme morphisms. -/
-theorem pointsSheafMap_injective {X Y : Over (Spec (CommRingCat.of R))} :
+theorem pointsSheafMap_injective :
     Function.Injective (pointsSheafMap (R := R) (X := X) (Y := Y)) :=
   Function.LeftInverse.injective homOfPointsSheafHom_pointsSheafMap
 
 /-- Two morphisms of `R`-schemes are equal when they induce the same morphism on fppf sheaves of
 points. -/
-theorem over_hom_ext_of_pointsSheafMap {X Y : Over (Spec (CommRingCat.of R))} {f g : X ⟶ Y}
-    (h : pointsSheafMap f = pointsSheafMap g) : f = g :=
-  pointsSheafMap_injective h
+theorem over_hom_ext_of_pointsSheafMap {f g : X ⟶ Y} (h : pointsSheafMap f = pointsSheafMap g) :
+    f = g := pointsSheafMap_injective h
 
 /-- A morphism `f : X ⟶ Y` over `Spec R` equals `homOfPointsSheafHom α` if and only if
 `pointsSheafMap f = α`. -/
-theorem eq_homOfPointsSheafHom_iff {X Y : Over (Spec (CommRingCat.of R))} (f : X ⟶ Y)
-    (α : pointsSheaf X ⟶ pointsSheaf Y) : f = homOfPointsSheafHom α ↔ pointsSheafMap f = α :=
+theorem eq_homOfPointsSheafHom_iff (f : X ⟶ Y) (α : pointsSheaf X ⟶ pointsSheaf Y) :
+    f = homOfPointsSheafHom α ↔ pointsSheafMap f = α :=
   ⟨by rintro rfl; exact pointsSheafMap_homOfPointsSheafHom α,
    by rintro rfl; exact (homOfPointsSheafHom_pointsSheafMap f).symm⟩
 
@@ -211,18 +234,15 @@ theorem eq_homOfPointsSheafHom_iff {X Y : Over (Spec (CommRingCat.of R))} (f : X
   rw [← pointsSheafMap_id, homOfPointsSheafHom_pointsSheafMap]
 
 /-- `homOfPointsSheafHom` preserves composition of morphisms of fppf point sheaves. -/
-@[simp] theorem homOfPointsSheafHom_comp {X Y Z : Over (Spec (CommRingCat.of R))}
-    (α : pointsSheaf X ⟶ pointsSheaf Y) (β : pointsSheaf Y ⟶ pointsSheaf Z) :
-    homOfPointsSheafHom (α ≫ β) = homOfPointsSheafHom α ≫ homOfPointsSheafHom β := by
-  apply over_hom_ext_of_pointsSheafMap
-  rw [pointsSheafMap_comp, pointsSheafMap_homOfPointsSheafHom,
-    pointsSheafMap_homOfPointsSheafHom, pointsSheafMap_homOfPointsSheafHom]
+@[simp] theorem homOfPointsSheafHom_comp (α : pointsSheaf X ⟶ pointsSheaf Y)
+    (β : pointsSheaf Y ⟶ pointsSheaf Z) :
+    homOfPointsSheafHom (α ≫ β) = homOfPointsSheafHom α ≫ homOfPointsSheafHom β :=
+  over_hom_ext_of_pointsSheafMap <| by simp
 
 /-- Composing an affine `A`-valued point of `X` with `homOfPointsSheafHom α` evaluates `α` at
 that point. -/
-@[reassoc (attr := simp)] theorem comp_homOfPointsSheafHom {X Y : Over (Spec (CommRingCat.of R))}
-    (α : pointsSheaf X ⟶ pointsSheaf Y) {A : CommAlgCat.{u} R}
-    (a : (algSpec (CommRingCat.of R)).obj (op A) ⟶ X) :
+@[reassoc (attr := simp)] theorem comp_homOfPointsSheafHom (α : pointsSheaf X ⟶ pointsSheaf Y)
+    {A : CommAlgCat.{u} R} (a : (algSpec (CommRingCat.of R)).obj (op A) ⟶ X) :
     a ≫ homOfPointsSheafHom α = (α.hom.app (op (op A)) (ULift.up a)).down :=
   congrArg (fun β : pointsSheaf X ⟶ pointsSheaf Y ↦ (β.hom.app (op (op A)) (ULift.up a)).down)
     (pointsSheafMap_homOfPointsSheafHom α)
@@ -230,55 +250,54 @@ that point. -/
 /-- Morphisms `X ⟶ Y` over `Spec R` are equivalent to morphisms `pointsSheaf X ⟶ pointsSheaf Y`
 of fppf sheaves. -/
 noncomputable def pointsSheafHomEquiv (X Y : Over (Spec (CommRingCat.of R))) :
-    (X ⟶ Y) ≃ (pointsSheaf X ⟶ pointsSheaf Y) :=
-  (fullyFaithfulPointsSheafFunctor R).homEquiv
+    (X ⟶ Y) ≃ (pointsSheaf X ⟶ pointsSheaf Y) where
+  toFun := pointsSheafMap
+  invFun := homOfPointsSheafHom
+  left_inv := homOfPointsSheafHom_pointsSheafMap
+  right_inv := pointsSheafMap_homOfPointsSheafHom
 
 /-- Forward evaluation of `pointsSheafHomEquiv` is `pointsSheafMap`. -/
-@[simp] theorem pointsSheafHomEquiv_apply {X Y : Over (Spec (CommRingCat.of R))} (f : X ⟶ Y) :
+@[simp] theorem pointsSheafHomEquiv_apply (f : X ⟶ Y) :
     pointsSheafHomEquiv X Y f = pointsSheafMap f := (rfl)
 
 /-- Inverse evaluation of `pointsSheafHomEquiv` is `homOfPointsSheafHom`. -/
-@[simp] theorem pointsSheafHomEquiv_symm_apply {X Y : Over (Spec (CommRingCat.of R))}
-    (α : pointsSheaf X ⟶ pointsSheaf Y) :
+@[simp] theorem pointsSheafHomEquiv_symm_apply (α : pointsSheaf X ⟶ pointsSheaf Y) :
     (pointsSheafHomEquiv X Y).symm α = homOfPointsSheafHom α := (rfl)
 
 /-- An isomorphism of fppf point sheaves descends to an isomorphism of `R`-schemes. -/
-instance isIso_homOfPointsSheafHom {X Y : Over (Spec (CommRingCat.of R))}
-    (α : pointsSheaf X ⟶ pointsSheaf Y) [IsIso α] : IsIso (homOfPointsSheafHom α) :=
+instance isIso_homOfPointsSheafHom (α : pointsSheaf X ⟶ pointsSheaf Y) [IsIso α] :
+    IsIso (homOfPointsSheafHom α) :=
   ⟨⟨homOfPointsSheafHom (inv α),
     by rw [← homOfPointsSheafHom_comp, IsIso.hom_inv_id, homOfPointsSheafHom_id],
     by rw [← homOfPointsSheafHom_comp, IsIso.inv_hom_id, homOfPointsSheafHom_id]⟩⟩
 
 /-- A morphism of `R`-schemes is an isomorphism when its induced map on fppf sheaves of points is
 an isomorphism. -/
-theorem isIso_of_isIso_pointsSheafMap {X Y : Over (Spec (CommRingCat.of R))} (f : X ⟶ Y)
-    [IsIso (pointsSheafMap f)] : IsIso f := by
+theorem isIso_of_isIso_pointsSheafMap (f : X ⟶ Y) [IsIso (pointsSheafMap f)] : IsIso f := by
   rw [← homOfPointsSheafHom_pointsSheafMap f]; infer_instance
 
 /-- **Isomorphism of `R`-schemes from an isomorphism of fppf point sheaves.** -/
-noncomputable def isoOfPointsSheafIso {X Y : Over (Spec (CommRingCat.of R))}
-    (e : pointsSheaf X ≅ pointsSheaf Y) : X ≅ Y :=
-  (fullyFaithfulPointsSheafFunctor R).preimageIso e
+noncomputable def isoOfPointsSheafIso (e : pointsSheaf X ≅ pointsSheaf Y) : X ≅ Y where
+  hom := homOfPointsSheafHom e.hom
+  inv := homOfPointsSheafHom e.inv
+  hom_inv_id := by rw [← homOfPointsSheafHom_comp, e.hom_inv_id, homOfPointsSheafHom_id]
+  inv_hom_id := by rw [← homOfPointsSheafHom_comp, e.inv_hom_id, homOfPointsSheafHom_id]
 
 /-- The forward morphism of `isoOfPointsSheafIso e` is `homOfPointsSheafHom e.hom`. -/
-@[simp] theorem isoOfPointsSheafIso_hom {X Y : Over (Spec (CommRingCat.of R))}
-    (e : pointsSheaf X ≅ pointsSheaf Y) : (isoOfPointsSheafIso e).hom = homOfPointsSheafHom e.hom :=
-  (rfl)
+@[simp] theorem isoOfPointsSheafIso_hom (e : pointsSheaf X ≅ pointsSheaf Y) :
+    (isoOfPointsSheafIso e).hom = homOfPointsSheafHom e.hom := (rfl)
 
 /-- The inverse morphism of `isoOfPointsSheafIso e` is `homOfPointsSheafHom e.inv`. -/
-@[simp] theorem isoOfPointsSheafIso_inv {X Y : Over (Spec (CommRingCat.of R))}
-    (e : pointsSheaf X ≅ pointsSheaf Y) : (isoOfPointsSheafIso e).inv = homOfPointsSheafHom e.inv :=
-  (rfl)
+@[simp] theorem isoOfPointsSheafIso_inv (e : pointsSheaf X ≅ pointsSheaf Y) :
+    (isoOfPointsSheafIso e).inv = homOfPointsSheafHom e.inv := (rfl)
 
 /-- Applying `pointsSheafIso` to `isoOfPointsSheafIso e` recovers `e`. -/
-@[simp] theorem pointsSheafIso_isoOfPointsSheafIso {X Y : Over (Spec (CommRingCat.of R))}
-    (e : pointsSheaf X ≅ pointsSheaf Y) : pointsSheafIso (isoOfPointsSheafIso e) = e :=
-  Iso.ext <| pointsSheafMap_homOfPointsSheafHom e.hom
+@[simp] theorem pointsSheafIso_isoOfPointsSheafIso (e : pointsSheaf X ≅ pointsSheaf Y) :
+    pointsSheafIso (isoOfPointsSheafIso e) = e := Iso.ext <| pointsSheafMap_homOfPointsSheafHom _
 
 /-- Applying `isoOfPointsSheafIso` to `pointsSheafIso e` recovers `e`. -/
-@[simp] theorem isoOfPointsSheafIso_pointsSheafIso {X Y : Over (Spec (CommRingCat.of R))}
-    (e : X ≅ Y) : isoOfPointsSheafIso (pointsSheafIso e) = e :=
-  Iso.ext <| homOfPointsSheafHom_pointsSheafMap e.hom
+@[simp] theorem isoOfPointsSheafIso_pointsSheafIso (e : X ≅ Y) :
+    isoOfPointsSheafIso (pointsSheafIso e) = e := Iso.ext <| homOfPointsSheafHom_pointsSheafMap _
 
 /-- `isoOfPointsSheafIso` preserves identity isomorphisms. -/
 @[simp] theorem isoOfPointsSheafIso_refl (X : Over (Spec (CommRingCat.of R))) :
@@ -286,21 +305,19 @@ noncomputable def isoOfPointsSheafIso {X Y : Over (Spec (CommRingCat.of R))}
   Iso.ext <| homOfPointsSheafHom_id X
 
 /-- `isoOfPointsSheafIso` commutes with symmetry of isomorphisms. -/
-@[simp] theorem isoOfPointsSheafIso_symm {X Y : Over (Spec (CommRingCat.of R))}
-    (e : pointsSheaf X ≅ pointsSheaf Y) :
+@[simp] theorem isoOfPointsSheafIso_symm (e : pointsSheaf X ≅ pointsSheaf Y) :
     isoOfPointsSheafIso e.symm = (isoOfPointsSheafIso e).symm := (rfl)
 
 /-- `isoOfPointsSheafIso` preserves composition of sheaf isomorphisms. -/
-@[simp] theorem isoOfPointsSheafIso_trans {X Y Z : Over (Spec (CommRingCat.of R))}
-    (e₁ : pointsSheaf X ≅ pointsSheaf Y) (e₂ : pointsSheaf Y ≅ pointsSheaf Z) :
+@[simp] theorem isoOfPointsSheafIso_trans (e₁ : pointsSheaf X ≅ pointsSheaf Y)
+    (e₂ : pointsSheaf Y ≅ pointsSheaf Z) :
     isoOfPointsSheafIso (e₁ ≪≫ e₂) = isoOfPointsSheafIso e₁ ≪≫ isoOfPointsSheafIso e₂ :=
   Iso.ext <| homOfPointsSheafHom_comp e₁.hom e₂.hom
 
 /-- **Local surjectivity on fppf point sheaves implies surjectivity on underlying schemes.**
 If `f : X ⟶ Y` over `Spec R` induces a locally surjective morphism `pointsSheaf X ⟶ pointsSheaf Y`,
 then `f.left : X.left ⟶ Y.left` is surjective. -/
-theorem surjective_left_of_isLocallySurjective_pointsSheafMap
-    {X Y : Over (Spec (CommRingCat.of R))} (f : X ⟶ Y)
+theorem surjective_left_of_isLocallySurjective_pointsSheafMap (f : X ⟶ Y)
     [Sheaf.IsLocallySurjective (pointsSheafMap f)] : Surjective f.left := by
   refine ⟨fun y ↦ ?_⟩
   let φ₀ : CommRingCat.of R ⟶ Y.left.residueField y :=
@@ -331,8 +348,7 @@ theorem surjective_left_of_isLocallySurjective_pointsSheafMap
 
 /-- Descending a locally surjective morphism of fppf point sheaves yields a surjective morphism on
 underlying schemes. -/
-instance instSurjectiveHomOfPointsSheafHomLeft
-    {X Y : Over (Spec (CommRingCat.of R))} (α : pointsSheaf X ⟶ pointsSheaf Y)
+instance instSurjectiveHomOfPointsSheafHomLeft (α : pointsSheaf X ⟶ pointsSheaf Y)
     [Sheaf.IsLocallySurjective α] : Surjective (homOfPointsSheafHom α).left := by
   have : Sheaf.IsLocallySurjective (pointsSheafMap (homOfPointsSheafHom α)) := by
     rwa [pointsSheafMap_homOfPointsSheafHom]
