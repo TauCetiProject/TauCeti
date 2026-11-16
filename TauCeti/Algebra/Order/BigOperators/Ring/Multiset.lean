@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.Order.BigOperators.Ring.Multiset
+import TauCeti.Algebra.Order.BigOperators.GroupWithZero.Multiset
 import Mathlib.Data.Nat.Cast.Order.Ring
 import Mathlib.Tactic.Linarith
 
@@ -20,19 +21,13 @@ For a multiset `s` of elements of `[0, 1]` in a linearly ordered commutative rin
   `∑ t² ≤ card s · (1 - ∏ (1 - t))`.
 
 Nonnegativity of `∏ (1 - t)` is `Multiset.prod_map_nonneg`, and `∏ (1 - t) ≤ 1` is the case
-`f t = 1 - t` of `Multiset.prod_map_le_one₀`, the multiset analogue of `Finset.prod_le_one₀`.
+`f t = 1 - t` of `Multiset.prod_map_le_one₀` from
+`TauCeti/Algebra/Order/BigOperators/GroupWithZero/Multiset.lean`.
 -/
 
 public section
 
 namespace Multiset
-
-/-- If `0 ≤ f i ≤ 1` for every `i ∈ s`, then `∏_{i ∈ s} f i ≤ 1`. This is the multiset analogue
-of `Finset.prod_le_one₀`. -/
-theorem prod_map_le_one₀ {R ι : Type*} [CommMonoidWithZero R] [PartialOrder R] [ZeroLEOneClass R]
-    [PosMulMono R] {s : Multiset ι} {f : ι → R} (h0 : ∀ i ∈ s, 0 ≤ f i)
-    (h1 : ∀ i ∈ s, f i ≤ 1) : (s.map f).prod ≤ 1 :=
-  (prod_map_le_prod_map₀ f (fun _ ↦ 1) h0 h1).trans_eq (by simp)
 
 variable {R : Type*} [CommRing R] [LinearOrder R] [IsStrictOrderedRing R] {s : Multiset R}
 

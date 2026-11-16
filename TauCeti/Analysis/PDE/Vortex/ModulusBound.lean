@@ -8,6 +8,7 @@ module
 public import TauCeti.Analysis.PDE.Vortex.AmplitudeForm
 public import TauCeti.Analysis.PDE.Vortex.Decay
 import Mathlib.Analysis.Calculus.ContDiff.WithLp
+import TauCeti.Algebra.Order.BigOperators.GroupWithZero.Multiset
 import TauCeti.Algebra.Order.BigOperators.Ring.Multiset
 import TauCeti.Analysis.Complex.LogOneAddNormSq
 import TauCeti.Analysis.SpecialFunctions.Exp.Shift
