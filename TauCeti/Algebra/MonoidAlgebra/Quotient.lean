@@ -12,10 +12,23 @@ public import TauCeti.Algebra.MonoidAlgebra.Basic
 /-!
 # Quotients of monoid algebras by coefficient ideals
 
-For an ideal `I` of a commutative ring `A` and a monoid `M`, pushing `I` forward along
+For a commutative semiring `R`, an ideal `I` of a commutative `R`-algebra `A`, and a monoid `M`
+(not necessarily commutative), pushing `I` forward along
 `MonoidAlgebra.singleOneRingHom : A →+* A[M]` cuts out the two-sided ideal of elements whose
-coefficients lie in `I` (`MonoidAlgebra.mem_map_singleOneRingHom_iff`), yielding
+coefficients all lie in `I` (`MonoidAlgebra.mem_map_singleOneRingHom_iff`). When `A` is a
+commutative ring, reducing coefficients modulo `I` has this exact kernel and yields
 `MonoidAlgebra.quotientAlgEquiv : A[M] ⧸ I.map singleOneRingHom ≃ₐ[R] (A ⧸ I)[M]`.
+
+## Main declarations
+
+* `MonoidAlgebra.mem_map_singleOneRingHom_iff`: membership in `I.map singleOneRingHom` is
+  equivalent to every coefficient lying in `I`.
+* `MonoidAlgebra.instIsTwoSidedMapSingleOneRingHom`: `I.map singleOneRingHom` is a two-sided ideal
+  of `A[M]` even when `M` is non-commutative.
+* `MonoidAlgebra.ker_mapRingHom_quotientMk`, `MonoidAlgebra.ker_mapAlgHom_quotientMk`: reducing
+  coefficients modulo `I` has kernel `I.map singleOneRingHom`.
+* `MonoidAlgebra.quotientAlgEquiv`: canonical `R`-algebra isomorphism
+  `A[M] ⧸ I.map singleOneRingHom ≃ₐ[R] (A ⧸ I)[M]`.
 -/
 
 public section
@@ -48,6 +61,9 @@ variable {A : Type*} [CommSemiring A] {M : Type*} [Monoid M]
       simp [single_mul_single]
     exact h ▸ Ideal.mul_mem_left _ _ (Ideal.mem_map_of_mem singleOneRingHom (hx m))
 
+/-- Pushing an ideal `I` of a commutative semiring `A` forward along `singleOneRingHom` produces a
+two-sided ideal of `A[M]` even when `M` is non-commutative, because the elements of `A` are central
+in `A[M]`. -/
 instance instIsTwoSidedMapSingleOneRingHom (I : Ideal A) :
     (Ideal.map (singleOneRingHom : A →+* MonoidAlgebra A M) I).IsTwoSided where
   mul_mem_of_left {x} y hx := mem_map_singleOneRingHom_iff.2 fun m ↦ by
@@ -65,12 +81,16 @@ section CommRing
 variable (R : Type*) [CommSemiring R] {A : Type*} [CommRing A] [Algebra R A]
   (M : Type*) [Monoid M] (I : Ideal A)
 
+/-- The kernel of coefficientwise reduction `A[M] →+* (A ⧸ I)[M]` is the pushforward ideal
+`I.map singleOneRingHom`. -/
 theorem ker_mapRingHom_quotientMk :
     RingHom.ker (mapRingHom M (Ideal.Quotient.mk I)) =
       Ideal.map (singleOneRingHom : A →+* MonoidAlgebra A M) I := by
   ext x; simp [RingHom.mem_ker, TauCeti.MonoidAlgebra.mapRingHom_eq_zero_iff,
     TauCeti.MonoidAlgebra.mem_ideal_smul_top_iff]
 
+/-- The kernel of the `R`-algebra coefficientwise reduction `A[M] →ₐ[R] (A ⧸ I)[M]` is
+`I.map singleOneRingHom`. -/
 theorem ker_mapAlgHom_quotientMk :
     RingHom.ker (mapAlgHom M (Ideal.Quotient.mkₐ R I)) =
       Ideal.map (singleOneRingHom : A →+* MonoidAlgebra A M) I :=

@@ -45,6 +45,8 @@ noncomputable def toMvPowerSeries :
     ext : 1; simp [MvPowerSeries.mapAlgHom_apply, MvPowerSeries.coeff_mul_C,
       MvPowerSeries.coeff_C_mul]
 
+/-- On a monomial `single m φ`, `toMvPowerSeries` maps `φ` into `A[M]` via `singleOneRingHom` and
+multiplies by the constant series `C (single m 1)`. -/
 theorem toMvPowerSeries_single (m : M) (φ : MvPowerSeries σ A) :
     toMvPowerSeries R σ A M (single m φ) =
       MvPowerSeries.map (singleOneRingHom : A →+* MonoidAlgebra A M) φ *
@@ -69,11 +71,16 @@ theorem toMvPowerSeries_single (m : M) (φ : MvPowerSeries σ A) :
 @[simp] theorem toMvPowerSeries_single_one_X (s : σ) :
     toMvPowerSeries R σ A M (single 1 (MvPowerSeries.X s)) = MvPowerSeries.X s := by
   simp [toMvPowerSeries_single, ← one_def]
+
+/-- On scalar series `single 1 φ`, `toMvPowerSeries` agrees with `MvPowerSeries.map` along
+`singleOneRingHom`. -/
 theorem toMvPowerSeries_single_one (φ : MvPowerSeries σ A) :
     toMvPowerSeries R σ A M (single 1 φ) =
       MvPowerSeries.map (singleOneRingHom : A →+* MonoidAlgebra A M) φ := by
   rw [toMvPowerSeries_single, ← one_def, map_one, mul_one]
 
+/-- `toMvPowerSeries` is injective for any monoid `M`: an element of `(MvPowerSeries σ A)[M]` is
+uniquely determined by its collected series coefficients. -/
 theorem toMvPowerSeries_injective : Function.Injective (toMvPowerSeries R σ A M) := fun x y h ↦ by
   ext m d; rw [← coeff_coeff_toMvPowerSeries R σ A M x, ← coeff_coeff_toMvPowerSeries R σ A M y, h]
 
@@ -93,6 +100,8 @@ theorem map_singleOneRingHom_dvd_toMvPowerSeries_iff (φ : MvPowerSeries σ A)
     exact map_dvd _ (Finset.dvd_sum fun m _ ↦
       let ⟨q, hq⟩ := h m; ⟨single m q, by rw [hq, single_mul_single, one_mul]⟩)
 
+/-- When `M` is finite, `toMvPowerSeries` is surjective, since every series in `A[M]` has finitely
+many `M`-coordinates and therefore reassembles into an element of `(MvPowerSeries σ A)[M]`. -/
 theorem toMvPowerSeries_surjective [Finite M] : Function.Surjective (toMvPowerSeries R σ A M) :=
   fun ψ ↦
     let f : M → MvPowerSeries σ A := fun m d ↦ (MvPowerSeries.coeff d ψ).coeff m
@@ -133,6 +142,9 @@ theorem mvPowerSeriesAlgEquiv_symm_X (s : σ) :
     (mvPowerSeriesAlgEquiv R σ A M).symm (MvPowerSeries.X s) = single 1 (MvPowerSeries.X s) :=
   (mvPowerSeriesAlgEquiv R σ A M).symm_apply_eq.mpr (toMvPowerSeries_single_one_X R σ A M s).symm
 
+/-- **Coefficientwise divisibility in `MvPowerSeries σ (A[M])`**: for a finite monoid `M`, the
+scalar image of `φ ∈ MvPowerSeries σ A` divides `ψ ∈ MvPowerSeries σ (A[M])` if and only if `φ`
+divides every `M`-coordinate `((mvPowerSeriesAlgEquiv R σ A M).symm ψ).coeff m`. -/
 theorem map_singleOneRingHom_dvd_mvPowerSeries_iff (φ : MvPowerSeries σ A)
     (ψ : MvPowerSeries σ (MonoidAlgebra A M)) :
     MvPowerSeries.map (singleOneRingHom : A →+* MonoidAlgebra A M) φ ∣ ψ ↔

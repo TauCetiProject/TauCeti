@@ -6,22 +6,24 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.MonoidAlgebra.Basic
-public import TauCeti.NumberTheory.Padics.AnnularRing.Eval
 public import TauCeti.NumberTheory.Padics.AnnularRing.Quotient
 import TauCeti.Algebra.MonoidAlgebra.CyclicTwo
 import TauCeti.Algebra.MonoidAlgebra.LocalRing
 import TauCeti.Algebra.MonoidAlgebra.MvPowerSeries
 import TauCeti.Algebra.MonoidAlgebra.Quotient
+import TauCeti.Data.ZMod.Four
+import TauCeti.NumberTheory.Padics.AnnularRing.Eval
 
 /-!
 # Adjoining a finite monoid or the dyadic factor `(ℤ/4ℤ)ˣ` to `ℤ_p⟦T, p/T⟧`
 
 For a finite commutative monoid `M` and `H = AnnularRing p`,
-`TauCeti.AnnularRing.mvPowerSeriesQuotientEquiv` identifies `(ℤ_p[M])⟦X_0, X_1⟧ ⧸ (X_0 X_1 - p)`
-with `MonoidAlgebra H M`, and `TauCeti.AnnularRing.quotientSpanSingleOneTEquiv` identifies
-`H[M] ⧸ (single 1 T)` with `(𝔽_p[M])⟦X⟧`. At `p = 2` for `Δ = (ZMod 4)ˣ`, `H[Δ]` is a local ring
-with maximal ideal `(single 1 T, single 1 U, single (-1) 1 - 1)`, no nontrivial idempotents, and an
-injective non-surjective joint character evaluation `dyadicToProd` into `H × H`.
+`TauCeti.AnnularRing.quotientMvPowerSeriesMonoidAlgebraEquiv` identifies
+`(ℤ_p[M])⟦X_0, X_1⟧ ⧸ (X_0 X_1 - p)` with `MonoidAlgebra H M`, and
+`TauCeti.AnnularRing.quotientSpanSingleOneTEquiv` identifies `H[M] ⧸ (single 1 T)` with
+`(𝔽_p[M])⟦X⟧`. At `p = 2` for `Δ = (ZMod 4)ˣ`, `H[Δ]` is a local ring with maximal ideal
+`(single 1 T, single 1 U, single (-1) 1 - 1)`, no nontrivial idempotents, and an injective
+non-surjective joint character evaluation `dyadicToProd` into `H × H`.
 
 ## References
 
@@ -41,6 +43,8 @@ variable {p : ℕ} [Fact p.Prime]
 section CommMonoid
 variable (M : Type*) [CommMonoid M]
 
+/-- In `MonoidAlgebra (AnnularRing p) M`, the ideal `(p, single 1 T)` collapses to `(single 1 T)`
+because `p = U T`. -/
 theorem span_p_single_one_T_eq_span_single_one_T :
     Ideal.span {(p : MonoidAlgebra (AnnularRing p) M),
       MonoidAlgebra.single 1 (T : AnnularRing p)} =
@@ -52,6 +56,8 @@ theorem span_p_single_one_T_eq_span_single_one_T :
     exact (map_natCast MonoidAlgebra.singleOneRingHom p).symm
   · exact Ideal.subset_span rfl
 
+/-- The principal ideal `(single 1 T)` in `MonoidAlgebra (AnnularRing p) M` is the extension of
+`(T) ⊆ AnnularRing p` along `MonoidAlgebra.singleOneRingHom`. -/
 theorem span_single_one_T_eq_map :
     Ideal.span {MonoidAlgebra.single (1 : M) (T : AnnularRing p)} =
       Ideal.map (MonoidAlgebra.singleOneRingHom :
@@ -79,7 +85,7 @@ private theorem map_span_rel_mvPowerSeriesAlgEquiv_symm :
   simp [MonoidAlgebra.singleOneRingHom, hp, MonoidAlgebra.single_sub]
 
 /-- Halo comparison `(ℤ_p[M])⟦X_0, X_1⟧ ⧸ (X_0 X_1 - p) ≃ₐ[ℤ_p] MonoidAlgebra (AnnularRing p) M`. -/
-def mvPowerSeriesQuotientEquiv :
+def quotientMvPowerSeriesMonoidAlgebraEquiv :
     (MvPowerSeries (Fin 2) (MonoidAlgebra ℤ_[p] M) ⧸
       Ideal.span {MvPowerSeries.X 0 * MvPowerSeries.X 1 -
         MvPowerSeries.C (p : MonoidAlgebra ℤ_[p] M)}) ≃ₐ[ℤ_[p]]
@@ -90,19 +96,19 @@ def mvPowerSeriesQuotientEquiv :
     (MonoidAlgebra.quotientAlgEquiv ℤ_[p] M _).trans
       (MonoidAlgebra.mapAlgEquiv ℤ_[p] M (quotientMvPowerSeriesEquiv (p := p)))
 
-@[simp] theorem mvPowerSeriesQuotientEquiv_mk_X_zero :
-    mvPowerSeriesQuotientEquiv M (Ideal.Quotient.mk _ (MvPowerSeries.X 0)) =
+@[simp] theorem quotientMvPowerSeriesMonoidAlgebraEquiv_mk_X_zero :
+    quotientMvPowerSeriesMonoidAlgebraEquiv M (Ideal.Quotient.mk _ (MvPowerSeries.X 0)) =
       MonoidAlgebra.single 1 (T : AnnularRing p) := by
-  simp [mvPowerSeriesQuotientEquiv, MonoidAlgebra.mapAlgEquiv]
-@[simp] theorem mvPowerSeriesQuotientEquiv_mk_X_one :
-    mvPowerSeriesQuotientEquiv M (Ideal.Quotient.mk _ (MvPowerSeries.X 1)) =
+  simp [quotientMvPowerSeriesMonoidAlgebraEquiv, MonoidAlgebra.mapAlgEquiv]
+@[simp] theorem quotientMvPowerSeriesMonoidAlgebraEquiv_mk_X_one :
+    quotientMvPowerSeriesMonoidAlgebraEquiv M (Ideal.Quotient.mk _ (MvPowerSeries.X 1)) =
       MonoidAlgebra.single 1 (U : AnnularRing p) := by
-  simp [mvPowerSeriesQuotientEquiv, MonoidAlgebra.mapAlgEquiv]
-@[simp] theorem mvPowerSeriesQuotientEquiv_mk_C_single (m : M) (c : ℤ_[p]) :
-    mvPowerSeriesQuotientEquiv M
+  simp [quotientMvPowerSeriesMonoidAlgebraEquiv, MonoidAlgebra.mapAlgEquiv]
+@[simp] theorem quotientMvPowerSeriesMonoidAlgebraEquiv_mk_C_single (m : M) (c : ℤ_[p]) :
+    quotientMvPowerSeriesMonoidAlgebraEquiv M
         (Ideal.Quotient.mk _ (MvPowerSeries.C (MonoidAlgebra.single m c))) =
       MonoidAlgebra.single m (algebraMap ℤ_[p] (AnnularRing p) c) := by
-  simp [mvPowerSeriesQuotientEquiv, MonoidAlgebra.mapAlgEquiv, evalTU_C]
+  simp [quotientMvPowerSeriesMonoidAlgebraEquiv, MonoidAlgebra.mapAlgEquiv, evalTU_C]
 
 /-- Boundary quotient `H[M] ⧸ (single 1 T) ≃+* (𝔽_p[M])⟦X⟧`, sending `single 1 U` to `X`. -/
 def quotientSpanSingleOneTEquiv :
@@ -127,13 +133,7 @@ def quotientSpanSingleOneTEquiv :
       quotientSpanTEquiv (algebraMap ℤ_[p] (AnnularRing p ⧸ Ideal.span {(T : AnnularRing p)}) c) =
         PowerSeries.C (PadicInt.toZMod c) := by
     rw [IsScalarTower.algebraMap_apply ℤ_[p] (AnnularRing p), Ideal.Quotient.algebraMap_eq,
-      quotientSpanTEquiv_mk]
-    ext n; rcases eq_or_ne n 0 with rfl | hn
-    · simp [coeff_algebraMap]
-    · have hu : uCoeff (algebraMap ℤ_[p] (AnnularRing p) c) n = 0 :=
-        mul_left_cancel₀ (pow_ne_zero n (Nat.cast_ne_zero.2 (Fact.out : p.Prime).ne_zero)) <| by
-          rw [pow_mul_uCoeff, coeff_algebraMap, ite_eq_right (by omega), mul_zero]
-      simp [PowerSeries.coeff_C, hn, hu]
+      quotientSpanTEquiv_mk, modT_algebraMap]
   simp [quotientSpanSingleOneTEquiv, hq, PowerSeries.C_apply]
 
 end Finite
@@ -143,35 +143,9 @@ end FiniteMonoid
 
 section Dyadic
 
-/-- Multiplicative isomorphism `(ZMod 4)ˣ ≃* Multiplicative (ZMod 2)` (`1 ↦ 1`, `-1 ↦ ofAdd 1`). -/
-def unitsZModFourMulEquiv : (ZMod 4)ˣ ≃* Multiplicative (ZMod 2) where
-  toFun u := if u = 1 then 1 else Multiplicative.ofAdd 1
-  invFun g := if g = 1 then 1 else -1
-  left_inv := by decide
-  right_inv := by decide
-  map_mul' := by decide
-
-theorem unitsZModFourMulEquiv_one : unitsZModFourMulEquiv 1 = 1 := (rfl)
-@[simp] theorem unitsZModFourMulEquiv_neg_one :
-    unitsZModFourMulEquiv (-1 : (ZMod 4)ˣ) = Multiplicative.ofAdd 1 := by decide
-@[simp] theorem unitsZModFourMulEquiv_symm_ofAdd_one :
-    unitsZModFourMulEquiv.symm (Multiplicative.ofAdd 1) = -1 := by decide
-
-private theorem unitsZModFour_eq_one_or_neg_one : ∀ u : (ZMod 4)ˣ, u = 1 ∨ u = -1 := by decide
-private theorem neg_one_ne_one_unitsZModFour : (-1 : (ZMod 4)ˣ) ≠ 1 := by decide
-private theorem isPGroup_unitsZModFour : IsPGroup 2 (ZMod 4)ˣ :=
-  IsPGroup.of_card (n := 1) (by rw [Nat.card_eq_fintype_card]; decide)
-
 instance instIsLocalRingDyadicGroupRing :
     IsLocalRing (MonoidAlgebra (AnnularRing 2) (ZMod 4)ˣ) :=
-  TauCeti.MonoidAlgebra.isLocalRing_of_isPGroup (not_isUnit_p (p := 2)) isPGroup_unitsZModFour
-
-theorem eq_single_one_add_single_neg_one {R : Type*} [Semiring R]
-    (x : MonoidAlgebra R (ZMod 4)ˣ) :
-    x = MonoidAlgebra.single 1 (x.coeff 1) + MonoidAlgebra.single (-1) (x.coeff (-1)) := by
-  ext u; rcases unitsZModFour_eq_one_or_neg_one u with rfl | rfl <;>
-    simp [MonoidAlgebra.coeff_single, neg_one_ne_one_unitsZModFour,
-      neg_one_ne_one_unitsZModFour.symm]
+  TauCeti.MonoidAlgebra.isLocalRing_of_isPGroup (not_isUnit_p (p := 2)) ZMod.isPGroup_unitsFour
 
 /-- Residue homomorphism `MonoidAlgebra (AnnularRing 2) (ZMod 4)ˣ →+* ZMod 2`. -/
 def dyadicGroupRingResidue : MonoidAlgebra (AnnularRing 2) (ZMod 4)ˣ →+* ZMod 2 :=
@@ -182,6 +156,8 @@ def dyadicGroupRingResidue : MonoidAlgebra (AnnularRing 2) (ZMod 4)ˣ →+* ZMod
     dyadicGroupRingResidue (MonoidAlgebra.single u x) = residueTU x := by
   simp [dyadicGroupRingResidue]
 
+/-- The kernel of `dyadicGroupRingResidue` is the unique maximal ideal of the local ring
+`MonoidAlgebra (AnnularRing 2) (ZMod 4)ˣ`. -/
 theorem ker_dyadicGroupRingResidue :
     RingHom.ker dyadicGroupRingResidue =
       IsLocalRing.maximalIdeal (MonoidAlgebra (AnnularRing 2) (ZMod 4)ˣ) :=
@@ -201,10 +177,10 @@ theorem maximalIdeal_dyadicGroupRing_eq_span :
   · rw [RingHom.mem_ker] at hx
     have hx_split : x = MonoidAlgebra.single 1 (x.coeff 1 + x.coeff (-1)) +
         MonoidAlgebra.single 1 (x.coeff (-1)) * (MonoidAlgebra.single (-1 : (ZMod 4)ˣ) 1 - 1) := by
-      conv_lhs => rw [eq_single_one_add_single_neg_one x]
+      conv_lhs => rw [x.eq_single_one_add_single_neg_one]
       rw [mul_sub, MonoidAlgebra.single_mul_single, one_mul, mul_one, mul_one,
         MonoidAlgebra.single_add]; abel
-    have hval := congr_arg dyadicGroupRingResidue (eq_single_one_add_single_neg_one x)
+    have hval := congr_arg dyadicGroupRingResidue x.eq_single_one_add_single_neg_one
     rw [hx, map_add, dyadicGroupRingResidue_single, dyadicGroupRingResidue_single,
       ← map_add] at hval
     have hmem_TU : x.coeff 1 + x.coeff (-1) ∈ Ideal.span {(T : AnnularRing 2), U} := by
@@ -220,6 +196,9 @@ theorem maximalIdeal_dyadicGroupRing_eq_span :
       (Ideal.mul_mem_left _ _ (Ideal.subset_span (by simp)))
   · rintro y (rfl | rfl | rfl) <;> simp [RingHom.mem_ker]
 
+/-- The augmentation generator `single (-1) 1 - 1` does not lie in the extended maximal ideal of
+`AnnularRing 2`, showing that the maximal ideal of `MonoidAlgebra (AnnularRing 2) (ZMod 4)ˣ`
+strictly enlarges the extension of `(T, U)`. -/
 theorem single_neg_one_sub_one_notMem_map_maximalIdeal :
     MonoidAlgebra.single (-1 : (ZMod 4)ˣ) (1 : AnnularRing 2) - 1 ∉
       Ideal.map (MonoidAlgebra.singleOneRingHom :
@@ -228,13 +207,15 @@ theorem single_neg_one_sub_one_notMem_map_maximalIdeal :
   rw [MonoidAlgebra.mem_map_singleOneRingHom_iff]; intro h; have h1 := h (-1)
   rw [MonoidAlgebra.one_def, MonoidAlgebra.coeff_sub, Finsupp.coe_sub, Pi.sub_apply,
     MonoidAlgebra.coeff_single, Finsupp.single_eq_same, MonoidAlgebra.coeff_single,
-    Finsupp.single_eq_of_ne neg_one_ne_one_unitsZModFour, sub_zero,
+    Finsupp.single_eq_of_ne ZMod.neg_one_ne_one_unitsFour, sub_zero,
     IsLocalRing.mem_maximalIdeal] at h1
   exact h1 isUnit_one
 
+/-- The dyadic group ring `MonoidAlgebra (AnnularRing 2) (ZMod 4)ˣ` has no nontrivial idempotents:
+its only idempotent elements are `0` and `1`. -/
 @[simp] theorem isIdempotentElem_dyadicGroupRing_iff
     {e : MonoidAlgebra (AnnularRing 2) (ZMod 4)ˣ} : IsIdempotentElem e ↔ e = 0 ∨ e = 1 := by
-  let φ := MonoidAlgebra.domCongr (AnnularRing 2) (AnnularRing 2) unitsZModFourMulEquiv
+  let φ := MonoidAlgebra.domCongr (AnnularRing 2) (AnnularRing 2) ZMod.unitsFourMulEquiv
   have hφ : IsIdempotentElem (φ e) ↔ IsIdempotentElem e := by
     simp [IsIdempotentElem, ← map_mul, φ.injective.eq_iff]
   rw [← hφ, MonoidAlgebra.isIdempotentElem_cyclicTwo_iff (AnnularRing 2) (not_isUnit_p (p := 2)),
@@ -245,7 +226,7 @@ theorem single_neg_one_sub_one_notMem_map_maximalIdeal :
 def dyadicToProd :
     MonoidAlgebra (AnnularRing 2) (ZMod 4)ˣ →ₐ[AnnularRing 2] AnnularRing 2 × AnnularRing 2 :=
   (MonoidAlgebra.cyclicTwoToProd (AnnularRing 2)).comp
-    (MonoidAlgebra.domCongr (AnnularRing 2) (AnnularRing 2) unitsZModFourMulEquiv).toAlgHom
+    (MonoidAlgebra.domCongr (AnnularRing 2) (AnnularRing 2) ZMod.unitsFourMulEquiv).toAlgHom
 
 @[simp] theorem dyadicToProd_single_one (a : AnnularRing 2) :
     dyadicToProd (MonoidAlgebra.single 1 a) = (a, a) := by
@@ -254,11 +235,15 @@ def dyadicToProd :
     dyadicToProd (MonoidAlgebra.single (-1) b) = (b, -b) := by
   simp [dyadicToProd, MonoidAlgebra.domCongr_toAlgHom]
 
+/-- Explicit formula for joint character evaluation on `MonoidAlgebra (AnnularRing 2) (ZMod 4)ˣ`:
+`a · 1 + b · (-1) ↦ (a + b, a - b)`. -/
 theorem dyadicToProd_apply (x : MonoidAlgebra (AnnularRing 2) (ZMod 4)ˣ) :
     dyadicToProd x = (x.coeff 1 + x.coeff (-1), x.coeff 1 - x.coeff (-1)) := by
-  conv_lhs => rw [eq_single_one_add_single_neg_one x]
+  conv_lhs => rw [x.eq_single_one_add_single_neg_one]
   simp [map_add, sub_eq_add_neg]
 
+/-- Joint character evaluation `dyadicToProd` is injective, since `2` is not a zero divisor in
+`AnnularRing 2`. -/
 theorem dyadicToProd_injective : Function.Injective dyadicToProd :=
   (injective_iff_map_eq_zero _).2 fun x hx ↦ by
     rw [dyadicToProd_apply, Prod.mk_eq_zero] at hx
@@ -266,14 +251,19 @@ theorem dyadicToProd_injective : Function.Injective dyadicToProd :=
       (mul_eq_zero.1 (by linear_combination hx.1 + hx.2 : (2 : AnnularRing 2) * x.coeff 1 = 0))
         |>.resolve_left two_ne_zero
     have hb : x.coeff (-1) = 0 := by linear_combination hx.1 - ha
-    rw [eq_single_one_add_single_neg_one x, ha, hb, MonoidAlgebra.single_zero,
+    rw [x.eq_single_one_add_single_neg_one, ha, hb, MonoidAlgebra.single_zero,
       MonoidAlgebra.single_zero, add_zero]
 
+/-- The idempotent `(1, 0) ∈ AnnularRing 2 × AnnularRing 2` does not lie in the image of
+`dyadicToProd`, because `2` is not a unit in `AnnularRing 2`. -/
 theorem one_zero_notMem_range_dyadicToProd :
     ((1 : AnnularRing 2), (0 : AnnularRing 2)) ∉ Set.range dyadicToProd := by
   rintro ⟨x, hx⟩; rw [dyadicToProd_apply, Prod.mk.injEq] at hx
   exact not_isUnit_p (p := 2) (IsUnit.of_mul_eq_one (x.coeff 1) (by linear_combination hx.1 + hx.2))
 
+/-- Joint character evaluation `dyadicToProd` into `AnnularRing 2 × AnnularRing 2` is not
+surjective, so the dyadic group ring does not split integrally into two copies of `AnnularRing 2`.
+-/
 theorem not_surjective_dyadicToProd : ¬ Function.Surjective dyadicToProd :=
   fun h ↦ one_zero_notMem_range_dyadicToProd (h (1, 0))
 

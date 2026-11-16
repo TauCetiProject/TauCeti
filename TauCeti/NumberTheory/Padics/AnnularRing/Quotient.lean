@@ -9,11 +9,11 @@ public import Mathlib.NumberTheory.Padics.RingHoms
 public import Mathlib.RingTheory.Ideal.Quotient.Operations
 public import Mathlib.RingTheory.MvPowerSeries.Equiv
 public import TauCeti.NumberTheory.Padics.AnnularRing.Basic
-import Mathlib.RingTheory.LocalRing.RingHom.Basic
 import Mathlib.RingTheory.MvPowerSeries.Inverse
-import Mathlib.RingTheory.PowerSeries.Inverse
+import Mathlib.RingTheory.PowerSeries.NoZeroDivisors
 import TauCeti.NumberTheory.Padics.PadicIntegers
 import TauCeti.RingTheory.MvPowerSeries.Equiv
+import TauCeti.Topology.Algebra.InfiniteSum.Sigma
 
 /-!
 # Power-series presentation, local structure, and boundary quotient of `ℤ_p⟦T, p/T⟧`
@@ -51,21 +51,12 @@ private theorem exists_zpow_neg_lt {ε : ℝ} (hε : 0 < ε) : ∃ N : ℕ, (p :
 
 /-! ### Two-variable power-series evaluation `X 0 ↦ T, X 1 ↦ U` -/
 
-theorem coeff_T_pow_mul_U_pow (i j : ℕ) (m : ℤ) :
-    ((T : AnnularRing p) ^ i * U ^ j).coeff m =
-      if m = (i : ℤ) - j then (p : ℤ_[p]) ^ j else 0 := by
-  rw [coeff_mul_of_coeff_eq_zero (k := (i : ℤ)) fun r hr ↦ by simp [coeff_T_pow, hr],
-    coeff_T_pow, ite_eq_left rfl, one_mul, coeff_U_pow]
-  by_cases hm : m = (i : ℤ) - j
-  · rw [ite_eq_left hm, ite_eq_left (by omega)]
-  · rw [ite_eq_right hm, ite_eq_right (by omega)]
-
 private def evalTUTerm (F : MvPowerSeries (Fin 2) ℤ_[p]) (m : ℤ) (d : Fin 2 →₀ ℕ) : ℤ_[p] :=
   MvPowerSeries.coeff d F * ((T : AnnularRing p) ^ d 0 * U ^ d 1).coeff m
 
 private theorem evalTUTerm_eq_zero_of_ne (F : MvPowerSeries (Fin 2) ℤ_[p]) {m : ℤ}
     {d : Fin 2 →₀ ℕ} (hd : m ≠ (d 0 : ℤ) - d 1) : evalTUTerm F m d = 0 := by
-  simp [evalTUTerm, coeff_T_pow_mul_U_pow, hd]
+  rw [evalTUTerm, coeff_T_pow_mul_U_pow, ite_eq_right hd, mul_zero]
 
 private theorem norm_evalTUTerm_le_zpow_neg (F : MvPowerSeries (Fin 2) ℤ_[p]) (m : ℤ)
     (d : Fin 2 →₀ ℕ) : ‖evalTUTerm F m d‖ ≤ (p : ℝ) ^ (-(d 1 : ℤ)) := by
@@ -151,14 +142,6 @@ private theorem tsum_evalTUMulTerm_col (F G : MvPowerSeries (Fin 2) ℤ_[p]) (m 
   · rw [ite_eq_left hm, ite_eq_left (by omega), pow_add]; ring
   · rw [ite_eq_right hm, ite_eq_right (by omega)]; simp
 
-private theorem tsum_prod_eq_tsum_sum_antidiagonal {A : Type*} [AddCommMonoid A]
-    [Finset.HasAntidiagonal A] {f : A × A → ℤ_[p]} (hf : Summable f) :
-    (∑' x : A × A, f x) = ∑' d : A, ∑ kl ∈ Finset.antidiagonal d, f kl := by
-  conv_rhs => enter [1, _]; rw [← Finset.sum_finset_coe, ← tsum_fintype (L := .unconditional _)]
-  rw [← Finset.HasAntidiagonal.sigmaAntidiagonalEquivProd.tsum_eq f]
-  exact (Finset.HasAntidiagonal.sigmaAntidiagonalEquivProd.summable_iff.2 hf).tsum_sigma'
-    fun _ ↦ (hasSum_fintype _).summable
-
 private theorem evalTUAux_mul (F G : MvPowerSeries (Fin 2) ℤ_[p]) :
     evalTUAux (F * G) = evalTUAux F * evalTUAux G := by
   classical
@@ -174,7 +157,7 @@ private theorem evalTUAux_mul (F G : MvPowerSeries (Fin 2) ℤ_[p]) :
         ((T : AnnularRing p) ^ (d.1 + d.2) 0 * U ^ (d.1 + d.2) 1).coeff m := by
     simpa only [Function.uncurry, Prod.swap_prod_mk, tsum_evalTUMulTerm_col] using hΦ.prod_symm.prod
   rw [coeff_mul, hcomm]; simp_rw [tsum_evalTUMulTerm_col]
-  rw [tsum_prod_eq_tsum_sum_antidiagonal hpair, coeff_evalTUAux]
+  rw [hpair.tsum_prod_eq_tsum_sum_antidiagonal, coeff_evalTUAux]
   refine tsum_congr fun d ↦ ?_
   rw [evalTUTerm, MvPowerSeries.coeff_mul, Finset.sum_mul]
   exact Finset.sum_congr rfl fun kl hkl ↦ by rw [Finset.mem_antidiagonal.1 hkl]
@@ -270,6 +253,8 @@ private theorem diagIdx_eq_single_one_iff {m : ℤ} {k : ℕ} :
       tsum_eq_single 0 fun k hk ↦ by simp [hk]]
     simp
 
+/-- Every element of `AnnularRing p` lies in the image of `evalTU`, via its normal form
+decomposition `f(T) + U g(U)`. -/
 theorem evalTU_surjective : Function.Surjective (evalTU (p := p)) := fun x ↦ by
   obtain ⟨⟨f, g⟩, hfg⟩ := normalForm.surjective x
   exact ⟨f.toMvPowerSeries 0 + MvPowerSeries.X 1 * g.toMvPowerSeries 1,
@@ -387,12 +372,18 @@ private theorem uCoeff_eq_of_mul_eq {x : AnnularRing p} {n : ℕ} {c : ℤ_[p]}
 @[simp] theorem uCoeff_U (n : ℕ) : uCoeff (U : AnnularRing p) n = if n = 1 then 1 else 0 :=
   uCoeff_eq_of_mul_eq (by rw [coeff_U]; by_cases hn : n = 1 <;> simp [hn])
 
+/-- The `U`-coefficients of the formal inverse `ofPowerSeriesU (PowerSeries.mk 1) = ∑ U ^ n` are
+constantly `1` and therefore do not tend to `0` in `ℤ_p`; thus `AnnularRing p` is strictly larger
+than the `p`-adic completion of `ℤ_p⟦T⟧[p/T]`. -/
 theorem not_tendsto_uCoeff_ofPowerSeriesU_mk_one :
     ¬ Tendsto (uCoeff (ofPowerSeriesU (PowerSeries.mk 1 : ℤ_[p]⟦X⟧))) atTop (𝓝 0) := by
   have h : uCoeff (ofPowerSeriesU (PowerSeries.mk 1 : ℤ_[p]⟦X⟧)) = fun _ ↦ (1 : ℤ_[p]) := by
     ext n; simp
   rw [h, tendsto_const_nhds_iff]; exact one_ne_zero
 
+/-- Coefficientwise divisibility criterion: `x ∈ AnnularRing p` is divisible by `T` if and only
+if every `U`-coefficient `uCoeff x n` is divisible by `p` in `ℤ_p` (equivalently, `‖x.coeff (-n)‖ ≤
+p ^ -(n + 1)` for all `n : ℕ`). -/
 theorem T_dvd_iff {x : AnnularRing p} :
     (T : AnnularRing p) ∣ x ↔ ∀ n : ℕ, (p : ℤ_[p]) ∣ uCoeff x n := by
   refine ⟨?_, fun h ↦ ⟨⟨fun m ↦ x.coeff (m + 1), fun m ↦ ?_⟩, by ext m : 2; simp [coeff_T_mul]⟩⟩
@@ -441,9 +432,21 @@ def modT : AnnularRing p →+* (ZMod p)⟦X⟧ where
 @[simp] theorem modT_ofPowerSeriesU (g : ℤ_[p]⟦X⟧) :
     modT (ofPowerSeriesU g) = PowerSeries.map PadicInt.toZMod g := by ext n; simp
 
+/-- `modT` sends a `p`-adic integer scalar to the constant power series of its reduction modulo
+`p`. -/
+@[simp] theorem modT_algebraMap (c : ℤ_[p]) :
+    modT (algebraMap ℤ_[p] (AnnularRing p) c) = PowerSeries.C (PadicInt.toZMod c) := by
+  ext n; rcases eq_or_ne n 0 with rfl | hn
+  · simp [coeff_algebraMap]
+  · have hu : uCoeff (algebraMap ℤ_[p] (AnnularRing p) c) n = 0 :=
+      uCoeff_eq_of_mul_eq (by rw [mul_zero, coeff_algebraMap, ite_eq_right (by omega)])
+    simp [PowerSeries.coeff_C, hn, hu]
+
+/-- The boundary reduction `modT : AnnularRing p →+* (ZMod p)⟦X⟧` is surjective. -/
 theorem modT_surjective : Function.Surjective (modT (p := p)) := fun φ ↦
   ⟨ofPowerSeriesU (PowerSeries.mk fun n ↦ ((PowerSeries.coeff n φ).val : ℤ_[p])), by ext n; simp⟩
 
+/-- The kernel of the boundary reduction `modT` is the principal ideal `(T)`. -/
 theorem ker_modT : RingHom.ker (modT (p := p)) = Ideal.span {T} := by
   ext x
   rw [RingHom.mem_ker, Ideal.mem_span_singleton, T_dvd_iff, PowerSeries.ext_iff]
@@ -458,6 +461,8 @@ def quotientSpanTEquiv : (AnnularRing p ⧸ Ideal.span {(T : AnnularRing p)}) �
 @[simp] theorem quotientSpanTEquiv_mk (x : AnnularRing p) :
     quotientSpanTEquiv (Ideal.Quotient.mk _ x) = modT x := (rfl)
 
+/-- The ideal `(T) = (p, T)` is prime in `AnnularRing p`, since the boundary quotient
+`AnnularRing p ⧸ (T) ≃+* (ZMod p)⟦X⟧` is an integral domain. -/
 theorem isPrime_span_T : (Ideal.span {(T : AnnularRing p)}).IsPrime :=
   (Ideal.Quotient.isDomain_iff_prime _).1 quotientSpanTEquiv.toMulEquiv.isDomain
 
@@ -482,16 +487,29 @@ theorem residueTU_apply (x : AnnularRing p) : residueTU x = PadicInt.toZMod (x.c
 @[simp] theorem residueTU_algebraMap (c : ℤ_[p]) :
     residueTU (algebraMap ℤ_[p] (AnnularRing p) c) = PadicInt.toZMod c := by simp [residueTU_apply]
 
+/-- The residue homomorphism `residueTU : AnnularRing p →+* ZMod p` is surjective. -/
 theorem residueTU_surjective : Function.Surjective (residueTU (p := p)) :=
   ZMod.ringHom_surjective residueTU
+
+/-- The kernel of `residueTU` is the unique maximal ideal of the local ring `AnnularRing p`. -/
 theorem ker_residueTU :
     RingHom.ker (residueTU (p := p)) = IsLocalRing.maximalIdeal (AnnularRing p) :=
   IsLocalRing.eq_maximalIdeal (RingHom.ker_isMaximal_of_surjective residueTU residueTU_surjective)
+
+/-- Unit criterion in `AnnularRing p`: an element `x` is a unit if and only if its constant term
+`x.coeff 0` is a unit in `ℤ_p`. -/
 theorem isUnit_iff {x : AnnularRing p} : IsUnit x ↔ IsUnit (x.coeff 0) := by
   rw [← IsLocalRing.notMem_maximalIdeal, ← ker_residueTU, RingHom.mem_ker, residueTU_apply,
     ← RingHom.mem_ker, PadicInt.ker_toZMod, IsLocalRing.notMem_maximalIdeal]
+
+/-- `T` is not a unit in `AnnularRing p`, since its constant term is `0`. -/
 theorem not_isUnit_T : ¬ IsUnit (T : AnnularRing p) := by simp [isUnit_iff, coeff_T]
+
+/-- `U` is not a unit in `AnnularRing p`, since its constant term is `0`. -/
 theorem not_isUnit_U : ¬ IsUnit (U : AnnularRing p) := by simp [isUnit_iff, coeff_U]
+
+/-- The prime `p` is not a unit in `AnnularRing p`, since its constant term `p ∈ ℤ_p` is not a
+unit. -/
 theorem not_isUnit_p : ¬ IsUnit (p : AnnularRing p) := by
   rw [isUnit_iff, coeff_natCast, ite_eq_left rfl]
   exact PadicInt.isUnit_iff.not.2 <| by

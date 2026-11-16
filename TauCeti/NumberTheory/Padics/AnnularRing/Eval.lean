@@ -10,9 +10,7 @@ public import TauCeti.NumberTheory.Padics.AnnularRing.Gauge
 public import TauCeti.NumberTheory.Padics.Basic
 public import TauCeti.NumberTheory.Padics.Complex.Valuation
 import Mathlib.Analysis.Normed.Group.InfiniteSum
-import Mathlib.Analysis.Normed.Ring.InfiniteSum
 import Mathlib.Topology.Algebra.InfiniteSum.NatInt
-import TauCeti.NumberTheory.Padics.Complex.Basic
 
 /-!
 # Specialisation of `ℤ_p⟦T, p/T⟧` on the open annulus `p⁻¹ < |t| < 1`
@@ -21,9 +19,10 @@ For any complete normed field extension `K` of `ℚ_p` and `t ∈ K` with `p⁻�
 `∑_{m ∈ ℤ} d_m T ^ m` at `t` defines `TauCeti.AnnularRing.eval ht : AnnularRing p →+* K` (`T ↦ t`,
 `U ↦ p / t`), bounded by `1` when `K` is ultrametric. Extending across `Localization.Away T` gives
 `TauCeti.AnnularLaurent.eval hα ht : AnnularLaurent p hα →+* K`, continuous for every `α ∈ (0, 1)`
-yet not Lipschitz when `α < ‖t‖`. While `ℚ_p` has no points in `(p⁻¹, 1)`, `ℂ_p`-annulus
-evaluations are jointly injective (`eq_of_forall_eval_eq`), making `AnnularRing p` and
-`AnnularLaurent p hα` characteristic zero integral domains.
+when `K` is ultrametric (`[IsUltrametricDist K]`), yet not Lipschitz when `α < ‖t‖`. While `ℚ_p`
+has no points in `(p⁻¹, 1)`, `ℂ_p`-annulus evaluations are jointly injective
+(`TauCeti.AnnularRing.eq_of_forall_eval_eq`), making `AnnularRing p` and `AnnularLaurent p hα`
+integral domains.
 
 ## References
 
@@ -45,6 +44,8 @@ variable {p : ℕ} [Fact p.Prime]
 private theorem one_lt_p : (1 : ℝ) < p := mod_cast (Fact.out : p.Prime).one_lt
 private theorem p_pos : (0 : ℝ) < p := zero_lt_one.trans one_lt_p
 
+/-- The `p`-adic field `ℚ_p` contains no element of norm strictly between `p⁻¹` and `1`, so
+annular evaluations require a ramified extension such as `ℂ_p`. -/
 theorem not_exists_padic_norm_mem_Ioo : ¬ ∃ t : ℚ_[p], ‖t‖ ∈ Set.Ioo (p : ℝ)⁻¹ 1 := by
   rintro ⟨t, hlow, hhigh⟩
   have ht0 : t ≠ 0 := norm_pos_iff.1 ((inv_pos.2 p_pos).trans hlow)
@@ -57,6 +58,7 @@ section Eval
 
 variable {K : Type*} [NormedField K] {t : K}
 
+/-- Any element `t` whose norm lies in `(p⁻¹, 1)` is nonzero. -/
 theorem ne_zero_of_norm_mem_Ioo (ht : ‖t‖ ∈ Set.Ioo (p : ℝ)⁻¹ 1) : t ≠ 0 :=
   norm_pos_iff.1 ((inv_pos.2 (p_pos (p := p))).trans ht.1)
 
@@ -75,11 +77,15 @@ section NormedAlgebra
 
 variable [NormedAlgebra ℚ_[p] K]
 
+/-- Termwise norm bound on the Laurent expansion of `x ∈ AnnularRing p` at `t`:
+`‖x.coeff m * t ^ m‖ ≤ p ^ min 0 m * ‖t‖ ^ m`. -/
 theorem norm_padicIntAlgebraMap_coeff_mul_zpow_le (x : AnnularRing p) (t : K) (m : ℤ) :
     ‖padicIntAlgebraMap p K (x.coeff m) * t ^ m‖ ≤ (p : ℝ) ^ min 0 m * ‖t‖ ^ m := by
   rw [norm_mul, norm_padicIntAlgebraMap, norm_zpow]
   exact mul_le_mul_of_nonneg_right (x.norm_coeff_le m) (zpow_nonneg (norm_nonneg t) m)
 
+/-- On the open annulus `p⁻¹ < ‖t‖ < 1`, every term `x.coeff m * t ^ m` of `x ∈ AnnularRing p`
+has norm at most `1`. -/
 theorem norm_padicIntAlgebraMap_coeff_mul_zpow_le_one (ht : ‖t‖ ∈ Set.Ioo (p : ℝ)⁻¹ 1)
     (x : AnnularRing p) (m : ℤ) :
     ‖padicIntAlgebraMap p K (x.coeff m) * t ^ m‖ ≤ 1 := by
@@ -91,7 +97,11 @@ theorem norm_padicIntAlgebraMap_coeff_mul_zpow_le_one (ht : ‖t‖ ∈ Set.Ioo 
     rw [zpow_min_neg_mul_zpow]
     exact pow_le_one₀ (by positivity) (inv_p_mul_norm_lt_one ht).le
 
-theorem summable_norm_evalTerm (ht : ‖t‖ ∈ Set.Ioo (p : ℝ)⁻¹ 1) (x : AnnularRing p) :
+/-- On the open annulus `p⁻¹ < ‖t‖ < 1`, the Laurent expansion `∑ x.coeff m * t ^ m` of
+`x ∈ AnnularRing p` is absolutely summable, dominated by geometric series in `‖t‖` and
+`(p * ‖t‖)⁻¹`. -/
+theorem summable_norm_padicIntAlgebraMap_coeff_mul_zpow (ht : ‖t‖ ∈ Set.Ioo (p : ℝ)⁻¹ 1)
+    (x : AnnularRing p) :
     Summable fun m : ℤ ↦ ‖padicIntAlgebraMap p K (x.coeff m) * t ^ m‖ := by
   refine Summable.of_nat_of_neg
     (Summable.of_nonneg_of_le (fun _ ↦ norm_nonneg _) (fun n ↦ ?_)
@@ -103,9 +113,12 @@ theorem summable_norm_evalTerm (ht : ‖t‖ ∈ Set.Ioo (p : ℝ)⁻¹ 1) (x : 
 
 variable [CompleteSpace K]
 
-theorem summable_evalTerm (ht : ‖t‖ ∈ Set.Ioo (p : ℝ)⁻¹ 1) (x : AnnularRing p) :
+/-- On the open annulus `p⁻¹ < ‖t‖ < 1`, the Laurent expansion `∑ x.coeff m * t ^ m` of
+`x ∈ AnnularRing p` is summable in any complete normed field extension `K` of `ℚ_p`. -/
+theorem summable_padicIntAlgebraMap_coeff_mul_zpow (ht : ‖t‖ ∈ Set.Ioo (p : ℝ)⁻¹ 1)
+    (x : AnnularRing p) :
     Summable fun m : ℤ ↦ padicIntAlgebraMap p K (x.coeff m) * t ^ m :=
-  (summable_norm_evalTerm ht x).of_norm
+  (summable_norm_padicIntAlgebraMap_coeff_mul_zpow ht x).of_norm
 
 /-- Specialisation `AnnularRing p →+* K` at `t` (`p⁻¹ < ‖t‖ < 1`), sending `∑ d_m T ^ m` to
 `∑ d_m t ^ m`. -/
@@ -115,11 +128,13 @@ def eval (ht : ‖t‖ ∈ Set.Ioo (p : ℝ)⁻¹ 1) : AnnularRing p →+* K whe
   map_one' := by rw [tsum_eq_single 0 fun m hm ↦ by simp [coeff_one, hm]]; simp
   map_add' x y := by
     simp_rw [coeff_add, map_add, add_mul]
-    exact (summable_evalTerm ht x).tsum_add (summable_evalTerm ht y)
+    exact (summable_padicIntAlgebraMap_coeff_mul_zpow ht x).tsum_add
+      (summable_padicIntAlgebraMap_coeff_mul_zpow ht y)
   map_mul' x y := by
     have ht0 : t ≠ 0 := ne_zero_of_norm_mem_Ioo ht
-    refine ((DiscreteConvolution.hasSum_tsum_mul_sub (summable_norm_evalTerm ht x)
-      (summable_norm_evalTerm ht y)).congr_fun fun m ↦ ?_).tsum_eq
+    refine ((DiscreteConvolution.hasSum_tsum_mul_sub
+      (summable_norm_padicIntAlgebraMap_coeff_mul_zpow ht x)
+      (summable_norm_padicIntAlgebraMap_coeff_mul_zpow ht y)).congr_fun fun m ↦ ?_).tsum_eq
     have hterm : (fun i : ℤ ↦ (padicIntAlgebraMap p K (x.coeff i) * t ^ i) *
         (padicIntAlgebraMap p K (y.coeff (m - i)) * t ^ (m - i))) =
         fun i : ℤ ↦ padicIntAlgebraMap p K (x.coeff i * y.coeff (m - i)) * t ^ m := by
@@ -130,9 +145,11 @@ def eval (ht : ‖t‖ ∈ Set.Ioo (p : ℝ)⁻¹ 1) : AnnularRing p →+* K whe
 
 theorem eval_apply (ht : ‖t‖ ∈ Set.Ioo (p : ℝ)⁻¹ 1) (x : AnnularRing p) :
     eval ht x = ∑' m : ℤ, padicIntAlgebraMap p K (x.coeff m) * t ^ m := (rfl)
+
+/-- The two-sided series `∑ x.coeff m * t ^ m` sums to `eval ht x`. -/
 theorem hasSum_eval (ht : ‖t‖ ∈ Set.Ioo (p : ℝ)⁻¹ 1) (x : AnnularRing p) :
     HasSum (fun m : ℤ ↦ padicIntAlgebraMap p K (x.coeff m) * t ^ m) (eval ht x) :=
-  (summable_evalTerm ht x).hasSum
+  (summable_padicIntAlgebraMap_coeff_mul_zpow ht x).hasSum
 
 @[simp] theorem eval_algebraMap (ht : ‖t‖ ∈ Set.Ioo (p : ℝ)⁻¹ 1) (c : ℤ_[p]) :
     eval ht (algebraMap ℤ_[p] (AnnularRing p) c) = padicIntAlgebraMap p K c := by
@@ -143,12 +160,15 @@ theorem hasSum_eval (ht : ‖t‖ ∈ Set.Ioo (p : ℝ)⁻¹ 1) (x : AnnularRing
   rw [eval_apply, tsum_eq_single (-1) fun m hm ↦ by simp [coeff_U, hm]]
   simp [coeff_U, div_eq_mul_inv]
 
+/-- When `K` is ultrametric, every annulus evaluation `eval ht` maps `AnnularRing p` into the
+closed unit ball `‖eval ht x‖ ≤ 1`. -/
 theorem norm_eval_le_one [IsUltrametricDist K] (ht : ‖t‖ ∈ Set.Ioo (p : ℝ)⁻¹ 1)
     (x : AnnularRing p) : ‖eval ht x‖ ≤ 1 := by
   rw [eval_apply]
   exact IsUltrametricDist.norm_tsum_le_of_forall_le_of_nonneg zero_le_one
     (norm_padicIntAlgebraMap_coeff_mul_zpow_le_one ht x)
 
+/-- Evaluating `ofPowerSeriesT f` at `t` computes the convergent power series `∑ f_n t ^ n`. -/
 theorem hasSum_eval_ofPowerSeriesT (ht : ‖t‖ ∈ Set.Ioo (p : ℝ)⁻¹ 1) (f : PowerSeries ℤ_[p]) :
     HasSum (fun n : ℕ ↦ padicIntAlgebraMap p K (PowerSeries.coeff n f) * t ^ n)
       (eval ht (ofPowerSeriesT f)) := by
@@ -160,6 +180,8 @@ theorem hasSum_eval_ofPowerSeriesT (ht : ‖t‖ ∈ Set.Ioo (p : ℝ)⁻¹ 1) (
     simp [coeff_ofPowerSeriesT_of_neg f hneg]
   simpa [Function.comp_def] using h1
 
+/-- Evaluating `ofPowerSeriesU g` at `t` computes the convergent power series
+`∑ g_n (p / t) ^ n`. -/
 theorem hasSum_eval_ofPowerSeriesU (ht : ‖t‖ ∈ Set.Ioo (p : ℝ)⁻¹ 1) (g : PowerSeries ℤ_[p]) :
     HasSum (fun n : ℕ ↦ padicIntAlgebraMap p K (PowerSeries.coeff n g) * ((p : K) / t) ^ n)
       (eval ht (ofPowerSeriesU g)) := by
@@ -280,7 +302,7 @@ private theorem exists_forall_eval_ne_zero_of_ne_zero {x : AnnularRing p} (hx : 
           exact Real.rpow_le_rpow_of_exponent_le (one_lt_p (p := p)).le
             (div_le_div_of_nonneg_right (by exact_mod_cast hE_le hm_eq hm0) h2B1_pos.le)
   intro heval0
-  have hsplit := (summable_evalTerm ht x).tsum_eq_add_tsum_ite m₀
+  have hsplit := (summable_padicIntAlgebraMap_coeff_mul_zpow ht x).tsum_eq_add_tsum_ite m₀
   rw [← eval_apply ht x, heval0] at hsplit
   have hfeq := congr_arg norm (eq_neg_of_add_eq_zero_left hsplit.symm)
   rw [norm_neg] at hfeq
@@ -315,13 +337,6 @@ instance instNoZeroDivisors : NoZeroDivisors (AnnularRing p) where
       (by rw [← map_mul, hxy, map_zero])
 
 instance instIsDomain : IsDomain (AnnularRing p) := NoZeroDivisors.to_isDomain _
-instance instCharZero : CharZero (AnnularRing p) where
-  cast_injective _ _ h := by
-    have h0 := congr_arg (coeff · 0) h
-    simp only [coeff_natCast, ite_true] at h0
-    exact Nat.cast_injective h0
-theorem T_ne_zero : (T : AnnularRing p) ≠ 0 :=
-  fun h ↦ by simpa [coeff_T] using congr_arg (coeff · 1) h
 instance instIsDomainLocalizationAway : IsDomain (Localization.Away (T : AnnularRing p)) :=
   Localization.Away.isDomain (T_ne_zero (p := p))
 
@@ -339,8 +354,6 @@ variable {p : ℕ} [Fact p.Prime] {α : ℝ}
 
 instance instIsDomain (hα : α ∈ Set.Ioo 0 1) : IsDomain (AnnularLaurent p hα) :=
   IsLocalization.Away.isDomain (AnnularLaurent p hα) (T_ne_zero (p := p))
-instance instCharZero (hα : α ∈ Set.Ioo 0 1) : CharZero (AnnularLaurent p hα) :=
-  (RingHom.charZero_iff (algebraMap_localizationAway_injective (p := p))).1 inferInstance
 
 section Eval
 variable {K : Type*} [NormedField K] [NormedAlgebra ℚ_[p] K] [CompleteSpace K] {t : K}
@@ -377,6 +390,8 @@ theorem eval_unitT (hα : α ∈ Set.Ioo 0 1) (ht : ‖t‖ ∈ Set.Ioo (p : ℝ
         Units.val_one, map_one]
     exact (eq_inv_of_mul_eq_one_left hmul).trans (zpow_neg t n).symm
 
+/-- For `z ∈ AnnularLaurent p hα`, the two-sided series `∑ coeff z m * t ^ m` sums to
+`eval hα ht z`. -/
 theorem hasSum_eval (hα : α ∈ Set.Ioo 0 1) (ht : ‖t‖ ∈ Set.Ioo (p : ℝ)⁻¹ 1)
     (z : AnnularLaurent p hα) :
     HasSum (fun m : ℤ ↦ padicIntAlgebraMap p K (coeff z m) * t ^ m) (eval hα ht z) := by
@@ -413,6 +428,8 @@ theorem not_lipschitzWith_eval_of_lt (hα : α ∈ Set.Ioo 0 1) (ht : ‖t‖ �
 section Ultrametric
 variable [IsUltrametricDist K]
 
+/-- In an ultrametric field `K`, the Tate gauge bound `‖z‖ ≤ α ^ r` implies the annulus
+evaluation bound `‖eval hα ht z‖ ≤ ‖t‖ ^ r`. -/
 theorem norm_eval_le_zpow_of_norm_le_zpow (hα : α ∈ Set.Ioo 0 1)
     (ht : ‖t‖ ∈ Set.Ioo (p : ℝ)⁻¹ 1) {z : AnnularLaurent p hα} {r : ℤ} (hz : ‖z‖ ≤ α ^ r) :
     ‖eval hα ht z‖ ≤ ‖t‖ ^ r := by
