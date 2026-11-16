@@ -178,12 +178,13 @@ private theorem SmoothForm.IsContactForm.exists_reebSlice (hα : α.IsContactFor
   have hdim : finrank ℝ (LinearMap.ker (ℓ : E →ₗ[ℝ] ℝ)) + 1 = finrank ℝ E :=
     Module.Dual.finrank_ker_add_one_of_ne_zero fun h ↦
       one_ne_zero (hR₀.symm.trans (LinearMap.congr_fun h R₀))
-  -- Vectors of `K` are killed by `α` at `x₀`.
+  -- Vectors of `K` are killed by `α` at `x₀`. The base point is generalized to any `y = x₀` so
+  -- that `hK` applies at `ι 0` without rewriting `ι 0` inside the type `TangentSpace I (ι 0)`.
   have hK (y : M) (hy : y = x₀) (v : E) (hv : v ∈ LinearMap.ker (ℓ : E →ₗ[ℝ] ℝ)) :
       α.1 y ![v] = 0 := by
     subst hy
     rw [← hℓ]
-    exact hv
+    exact LinearMap.mem_ker.1 hv
   -- A ball about `y₀` in the chart target, and a cutoff of the identity of `K` into it.
   obtain ⟨r, hr, hball⟩ := Metric.isOpen_iff.1 (isOpen_extChartAt_target x₀) y₀
     (mem_extChartAt_target x₀)
@@ -317,9 +318,7 @@ private theorem mpullback_flowOf_comp_contactizationShift_comp_reassoc (hα : α
 /-- **Straightening a slice in Darboux coordinates.** Let `ι : V × V → M` be a smooth map such
 that `d(ι^* α)` is the standard symplectic form near `0`. Then a smooth partial diffeomorphism from
 `M` to `V × V × ℝ`, defined near `ι 0` and sending it to `0`, pulls the standard contact form
-`dz - ⟪p, dq⟫` back to `α`. It is constructed as a local inverse of
-`(q, p, z) ↦ φ_{z - g(q, p)}(ι(q, p))`, where `φ` is the Reeb flow and `dg = ι^* α + ⟪p, dq⟫` near
-`0`. -/
+`dz - ⟪p, dq⟫` back to `α`. -/
 private theorem SmoothForm.IsContactForm.exists_strictDarbouxChart_of_slice
     (hα : α.IsContactForm) (hn : finrank ℝ E = 2 * finrank ℝ V + 1) {ι : V × V → M}
     (hι : ContMDiff 𝓘(ℝ, V × V) I ∞ ι)

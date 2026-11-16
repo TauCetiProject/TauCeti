@@ -56,8 +56,9 @@ pulls `Θ^* ω₁` back to `Θ^* ω₀`, then `Θ ∘ Ψ ∘ Θ⁻¹` pulls `ω�
   along a (surjective) `C^n` local diffeomorphism is, for `m + 1 ≤ n`.
 * `IsLocalDiffeomorph.isClosed_mpullback_iff`: a smooth form is closed exactly when its pullback
   along a surjective smooth local diffeomorphism is.
-* `IsLocalDiffeomorphAt.exists_partialDiffeomorph_mpullback_eq`: a local inverse of a local
-  diffeomorphism pulling `ω` back to `η` pulls `η` back to `ω`.
+* `IsLocalDiffeomorphAt.exists_partialDiffeomorph_mpullback_eq`: if a local diffeomorphism `f`
+  at `x` pulls `ω` back to `η`, some partial diffeomorphism defined near `f x` and sending it to
+  `x` pulls `η` back to `ω`.
 * `IsLocalDiffeomorph.isBasic_of_mpullback_eq`: a form invariant under a family of maps over a
   local diffeomorphism that is transitive on its fibres is basic for it.
 * `IsLocalDiffeomorph.exists_mpullback_eq_iff`,
@@ -198,8 +199,7 @@ theorem IsLocalDiffeomorph.isSmoothForm_mpullback_iff [IsManifold I 1 M] [IsMani
 
 /-- **Inverting a local pullback identity.** Let `f` be a `C^n` local diffeomorphism at `x`,
 `n ≠ 0`, which pulls `ω` back to `η` near `x`. Then a `C^n` partial diffeomorphism from `M'` to
-`M`, defined near `f x` and sending it to `x`, pulls `η` back to `ω` on its source. It is
-constructed as a local inverse of `f`. -/
+`M`, defined near `f x` and sending it to `x`, pulls `η` back to `ω` on its source. -/
 theorem IsLocalDiffeomorphAt.exists_partialDiffeomorph_mpullback_eq
     (hf : IsLocalDiffeomorphAt I I' n f x) (hn : n ≠ 0) {ω : RoughForm I' M' F k}
     {η : RoughForm I M F k} (hfω : ∀ᶠ y in 𝓝 x, mpullback I I' f ω y = η y) :
