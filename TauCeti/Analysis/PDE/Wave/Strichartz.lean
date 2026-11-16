@@ -173,7 +173,8 @@ private theorem exists_eLpNorm_halfWavePropagator_fourierMultiplierCLM_sq_le :
         simpa using hPf
     _ = _ := by
         rw [← mul_assoc, ← ENNReal.ofReal_mul (by positivity)]
-        ring_nf
+        congr 2
+        ring
 
 variable {p q : ℝ≥0} {r r' : ℝ≥0∞} [r'.HolderConjugate r]
 
@@ -210,13 +211,13 @@ private theorem exponents_of_admissible {n : ℝ} (hr : 2 ≤ r)
   exact ⟨by linarith, by rw [h2q]; linarith⟩
 
 variable (φ) in
-/-- **Decay of the time pairings.** Along a wave-admissible pair `(q, r)` with `2 < q`, the time
+/-- **Decay of the time pairings.** Along a wave-admissible pair `(q, r)`, the time
 pairings `W(s - t) Pⱼ²` of the family `W(t) Pⱼ` decay from `L^{r'}` to `L^r` like
 `c 2^{2 j σ} |s - t| ^ (-2 / q)`, with `σ = n / 2 - n / r - 1 / q` and `c` independent of `j`.
 This interpolates, by the Riesz–Thorin theorem, between the dispersive estimate for `W(τ) Pⱼ²`
 and its `L²` bound `1`. -/
 private theorem exists_eLpNorm_halfWavePropagator_comp_apply_adjoint_apply_le (hr : 2 ≤ r)
-    (hq : 2 < q) (hqr : 1 / (q : ℝ) + ((Module.finrank ℝ E : ℝ) - 1) * (r⁻¹).toReal / 2 ≤
+    (hqr : 1 / (q : ℝ) + ((Module.finrank ℝ E : ℝ) - 1) * (r⁻¹).toReal / 2 ≤
       ((Module.finrank ℝ E : ℝ) - 1) / 4) :
     ∃ c : ℝ≥0, ∀ (j : ℤ) (m : Lp ℂ ∞ (volume : Measure E)),
       m =ᵐ[volume] (fun ξ ↦ (φ.littlewoodPaley j ξ : ℂ)) → ∀ s t, s ≠ t →
@@ -320,7 +321,7 @@ theorem exists_lintegral_lintegral_enorm_inner_halfWavePropagator_sub_fourierMul
             eLpNorm (fun s ↦ eLpNorm (F s) r' volume) p volume *
             eLpNorm (fun t ↦ eLpNorm (G t) r' volume) p volume := by
   obtain ⟨c, hc⟩ := φ.exists_eLpNorm_halfWavePropagator_comp_apply_adjoint_apply_le
-    (r' := r') hr hq hqr
+    (r' := r') hr hqr
   obtain ⟨C, hC⟩ := exists_lintegral_lintegral_enorm_inner_adjoint_le (𝕜 := ℂ)
     (H := Lp ℂ 2 (volume : Measure E)) (E := ℂ) (X := E) (μ := volume) (r := r) (r' := r') hq
     hpq
@@ -362,7 +363,7 @@ theorem exists_enorm_integral_fourierMultiplierCLM_halfWavePropagator_neg_le (hr
             Module.finrank ℝ E * (r⁻¹).toReal - 1 / q)) *
             eLpNorm (fun s ↦ eLpNorm (F s) r' volume) p volume := by
   obtain ⟨c, hc⟩ := φ.exists_eLpNorm_halfWavePropagator_comp_apply_adjoint_apply_le
-    (r' := r') hr hq hqr
+    (r' := r') hr hqr
   obtain ⟨C, hC⟩ := exists_enorm_integral_adjoint_le (𝕜 := ℂ)
     (H := Lp ℂ 2 (volume : Measure E)) (E := ℂ) (X := E) (μ := volume) (r := r) (r' := r') hq
     hpq
@@ -399,7 +400,7 @@ theorem exists_enorm_integral_inner_halfWavePropagator_fourierMultiplierCLM_le (
             Module.finrank ℝ E * (r⁻¹).toReal - 1 / q)) * ‖f‖ₑ *
             eLpNorm (fun t ↦ eLpNorm (G t) r' volume) p volume := by
   obtain ⟨c, hc⟩ := φ.exists_eLpNorm_halfWavePropagator_comp_apply_adjoint_apply_le
-    (r' := r') hr hq hqr
+    (r' := r') hr hqr
   obtain ⟨C, hC⟩ := exists_enorm_integral_inner_apply_le (𝕜 := ℂ)
     (H := Lp ℂ 2 (volume : Measure E)) (E := ℂ) (X := E) (μ := volume) (r := r) (r' := r') hq
     hpq
