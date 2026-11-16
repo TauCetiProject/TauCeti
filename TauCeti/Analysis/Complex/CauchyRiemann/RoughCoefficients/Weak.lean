@@ -269,7 +269,7 @@ theorem IsSobolevCRCoefficients.integrable_inner_crFormalAdjoint
   exact ((h₁.neg.sub h₂).sub h₃).add h₄
 
 /-- The integral of `⟪D* φ, ξ⟫` splits into the integrals of its four terms. -/
-private theorem IsSobolevCRCoefficients.integral_inner_crFormalAdjoint_eq_terms
+theorem IsSobolevCRCoefficients.integral_inner_crFormalAdjoint_eq_terms
     (hc : IsSobolevCRCoefficients p Ω J DJ S) (hpq : p⁻¹ + q⁻¹ ≤ 1)
     (hξ : MemLpLoc q Ω ξ) (φ : 𝓓(Ω, V)) :
     ∫ z, ⟪crFormalAdjoint J DJ S φ z, ξ z⟫_ℝ =
