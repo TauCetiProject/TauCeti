@@ -347,14 +347,10 @@ private theorem exists_sphere_ne_and_ne_neg (x₀ : sphere (0 : E) 1) :
   have : Nontrivial (ℝ ∙ (x₀ : E))ᗮ := Module.nontrivial_of_finrank_pos (R := ℝ) (by
     rw [(fact_finrank_orthogonal_span_singleton_coe_sphere (n := m) x₀).out]
     omega)
-  obtain ⟨w, hw⟩ := exists_ne (0 : (ℝ ∙ (x₀ : E))ᗮ)
-  let v₀ : sphere (0 : (ℝ ∙ (x₀ : E))ᗮ) 1 := ⟨‖w‖⁻¹ • w, by
-    rw [mem_sphere_zero_iff_norm, norm_smul, norm_inv, norm_norm,
-      inv_mul_cancel₀ (norm_ne_zero_iff.2 hw)]⟩
-  let q : sphere (0 : E) 1 :=
-    ⟨((v₀ : (ℝ ∙ (x₀ : E))ᗮ) : E), mem_sphere_zero_iff_norm.2 (norm_eq_of_mem_sphere v₀)⟩
-  have hin : ⟪(x₀ : E), (q : E)⟫ = 0 :=
-    Submodule.mem_orthogonal_singleton_iff_inner_right.1 v₀.1.2
+  obtain ⟨v, hv⟩ :=
+    (NormedSpace.sphere_nonempty (x := (0 : (ℝ ∙ (x₀ : E))ᗮ)) (r := 1)).2 zero_le_one
+  let q : sphere (0 : E) 1 := ⟨v, mem_sphere_zero_iff_norm.2 (mem_sphere_zero_iff_norm.1 hv)⟩
+  have hin : ⟪(x₀ : E), (q : E)⟫ = 0 := Submodule.mem_orthogonal_singleton_iff_inner_right.1 v.2
   refine ⟨q, fun h ↦ ?_, fun h ↦ ?_⟩
   · rw [h, real_inner_self_eq_norm_sq, norm_eq_of_mem_sphere x₀, one_pow] at hin
     exact zero_ne_one hin.symm
@@ -393,7 +389,7 @@ theorem isCoveredByDiffeomorphisms_sphere_of_even
     (M := sphere (0 : (ℝ ∙ (x₀ : E))ᗮ) 1) (N := sphere (0 : ℂ) 1) 1
   let oP' : Manifold.Orientation (𝓡 (m + 1))
       (sphere (0 : (ℝ ∙ (x₀ : E))ᗮ) 1 × sphere (0 : ℂ) 1) (Fin (m + 1)) :=
-    oP.pullback (e.contMDiff.of_le le_rfl) (fun _ ↦ e.isInvertible_mfderiv one_ne_zero)
+    oP.pullback e.contMDiff (fun _ ↦ e.isInvertible_mfderiv one_ne_zero)
       (by simp)
   have hreg : IsRegularValue (𝓡 (m + 1)) (𝓡 (m + 1)) (sphereRotationFamily x₀) q := by
     have hcomp := (isRegularValue_sphereRotationFamily x₀ hqx hqx').comp
