@@ -210,6 +210,7 @@ theorem surjective_of_degree_ne_zero (o : Manifold.Orientation I M (Fin k))
   exact h ((degree_eq_degreeAtRegularValue o o' hf hfp (isRegularValue_of_notMem_range hy)).trans
     (degreeAtRegularValue_of_notMem_range hy))
 
+omit [SigmaCompactSpace N] in
 /-- **Multiplicativity of the degree.** For proper smooth maps `f : M → N` and `g : N → P` between
 oriented boundaryless manifolds of the same dimension, with `N` and `P` connected,
 `deg (g ∘ f) = deg g · deg f`. -/
@@ -220,6 +221,7 @@ theorem degree_comp {H'' P : Type*} [TopologicalSpace H''] {K : ModelWithCorners
     (o'' : Manifold.Orientation K P (Fin k)) {f : M → N} {g : N → P} (hf : ContMDiff I J ∞ f)
     (hg : ContMDiff J K ∞ g) (hfp : IsProperMap f) (hgp : IsProperMap g) :
     degree o o'' (g ∘ f) = degree o' o'' g * degree o o' f := by
+  have := hgp.sigmaCompactSpace
   have := hfp.sigmaCompactSpace
   -- Pull a class of integral one back along `g` and then along `f`.
   obtain ⟨c, hc⟩ := compactlySupportedDeRhamCohomology.surjective_integral o'' 1
