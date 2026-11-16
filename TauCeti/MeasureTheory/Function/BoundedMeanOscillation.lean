@@ -7,6 +7,7 @@ module
 
 public import TauCeti.MeasureTheory.Integral.SharpMaximalFunction
 import TauCeti.MeasureTheory.Function.LocallyIntegrable
+import TauCeti.Analysis.Normed.Group.Basic
 -- `TauCeti.Analysis.Normed.Module.Ball` is imported privately: it supplies
 -- `TauCeti.preimage_smul_ball_smul_norm` inside the proof of the dilation invariance.
 import TauCeti.Analysis.Normed.Module.Ball
@@ -71,7 +72,6 @@ easy half of Sarason's characterization.
 * `UniformContinuous.memVMO`, `Continuous.memVMO_of_hasCompactSupport`: uniformly continuous
   functions of bounded mean oscillation, and continuous functions with compact support, have
   vanishing mean oscillation.
-* `TauCeti.eNorm_sub_le_eNorm_sub_add_eNorm_sub`: the triangle inequality for the extended norm.
 * `TauCeti.enorm_setAverage_ball_sub_setAverage_ball_le_vmoModulus` and
   `TauCeti.enorm_setAverage_ball_sub_setAverage_ball_le`: for an additive Haar measure, the
   averages over the concentric balls `B(c, 2ʲ r)` drift by at most `2ⁿ η_f(2ʲ r)`, hence by at most
@@ -648,12 +648,6 @@ theorem bmoSeminorm_comp_smul {E : Type*} [NormedAddCommGroup E] [NormedSpace �
 end Invariance
 
 /-! ### Averages over concentric balls -/
-
-/-- **Triangle inequality for the extended norm.** `‖u - w‖ₑ ≤ ‖u - v‖ₑ + ‖v - w‖ₑ`, the form in
-which averages over a chain of balls are compared. -/
-theorem eNorm_sub_le_eNorm_sub_add_eNorm_sub {G : Type*} [SeminormedAddCommGroup G] (u v w : G) :
-    ‖u - w‖ₑ ≤ ‖u - v‖ₑ + ‖v - w‖ₑ := by
-  simpa only [eDist_eq_eNorm_sub] using edist_triangle u v w
 
 section ConcentricBalls
 

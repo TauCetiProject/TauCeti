@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.MeasureTheory.Function.BoundedMeanOscillation
+import TauCeti.Analysis.Normed.Group.Basic
 import TauCeti.Analysis.SpecialFunctions.Ramp
 
 /-!
