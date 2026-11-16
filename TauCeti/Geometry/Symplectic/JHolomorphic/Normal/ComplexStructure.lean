@@ -153,11 +153,20 @@ theorem normalCauchyRiemannLinearization_clm_apply_eq_add_nijenhuis {ξ : U → 
   have hd (c : V) : fderiv ℝ (fun y ↦ J y c) (u x) = (fderiv ℝ J (u x)).flip c := by
     rw [fderiv_clm_apply hJ (differentiableAt_const c)]
     simp
-  rw [normalCauchyRiemannLinearization_clm_apply hu hξ hJ hhol,
-    K.nijenhuis_eq_fderiv J (u x) hK, hd, hd]
-  -- The two sides now differ only by `flip_apply` and by the module structures of
-  -- `TangentSpace 𝓘(ℝ, V) (u x)`, which is `V` by definition.
-  rfl
+  -- `TangentSpace 𝓘(ℝ, V) (u x)` is `V` by definition. Make this identification once at the
+  -- tensor level, so that the rest of the proof uses the ordinary model-space instances.
+  let NK : V →L[ℝ] V →L[ℝ] V := K.nijenhuis (u x)
+  have hN : NK (fderiv ℝ u x v) (ξ x) =
+      fderiv ℝ J (u x) (J (u x) (fderiv ℝ u x v)) (ξ x) -
+        fderiv ℝ J (u x) (J (u x) (ξ x)) (fderiv ℝ u x v) +
+        J (u x) (fderiv ℝ J (u x) (ξ x) (fderiv ℝ u x v)) -
+        J (u x) (fderiv ℝ J (u x) (fderiv ℝ u x v) (ξ x)) := by
+    have h := K.nijenhuis_eq_fderiv J (u x) hK (fderiv ℝ u x v) (ξ x)
+    rw [hd, hd] at h
+    simp only [flip_apply] at h
+    exact h
+  change _ = _ + Submodule.Quotient.mk (NK (fderiv ℝ u x v) (ξ x))
+  rw [normalCauchyRiemannLinearization_clm_apply hu hξ hJ hhol, hN]
 
 /-- **Complex linearity of the normal operator where `N_K = 0`.** Let `J` agree near `u x` with a
 smooth almost complex structure `K` on `V` whose Nijenhuis tensor vanishes at `u x`, for instance
