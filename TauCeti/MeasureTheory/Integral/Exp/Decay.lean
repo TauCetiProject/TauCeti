@@ -44,6 +44,7 @@ inclusion.
   `exp (b * x * I)`.
 * `TauCeti.integrable_exp_neg_mul_norm`: `exp (-(a * ‖·‖))` is integrable on a finite-dimensional
   space when `0 < a`.
+* `TauCeti.memLp_exp_neg_mul_norm`: it also lies in every `Lᵖ`.
 -/
 
 public section
@@ -131,6 +132,26 @@ theorem integrable_exp_neg_mul_norm {E : Type*} [NormedAddCommGroup E] [NormedSp
     exact (integrable_const (1 : ℝ)).congr (.of_forall fun x ↦ by simp [Subsingleton.elim x 0])
   · refine (integrable_fun_norm_addHaar μ (f := fun t ↦ Real.exp (-(a * t)))).mpr ?_
     simpa only [smul_eq_mul] using integrableOn_pow_mul_exp_neg_mul_Ioi _ ha
+
+/-- The radial exponential `exp (-(a * ‖x‖))` lies in every `Lᵖ` space of an additive Haar
+measure on a finite-dimensional real normed space, when `0 < a`. -/
+theorem memLp_exp_neg_mul_norm {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
+    [FiniteDimensional ℝ E] [MeasurableSpace E] [BorelSpace E] (μ : Measure E)
+    [μ.IsAddHaarMeasure] {a : ℝ} (ha : 0 < a) (p : ℝ≥0∞) :
+    MemLp (fun x : E ↦ Real.exp (-(a * ‖x‖))) p μ := by
+  have hm : AEStronglyMeasurable (fun x : E ↦ Real.exp (-(a * ‖x‖))) μ := by
+    fun_prop
+  rcases eq_or_ne p 0 with rfl | hp0
+  · exact memLp_zero_iff_aestronglyMeasurable.2 hm
+  rcases eq_or_ne p ⊤ with rfl | hptop
+  · refine memLp_top_of_bound hm 1 (.of_forall fun x ↦ ?_)
+    rw [Real.norm_of_nonneg (Real.exp_pos _).le, Real.exp_le_one_iff, neg_nonpos]
+    positivity
+  -- The `p`-th power of `exp (-(a * ‖x‖))` is `exp (-(p a * ‖x‖))`.
+  refine (integrable_norm_rpow_iff hm hp0 hptop).1 ((integrable_exp_neg_mul_norm μ
+    (mul_pos (ENNReal.toReal_pos hp0 hptop) ha)).congr (.of_forall fun x ↦ ?_))
+  simp only [Real.norm_of_nonneg (Real.exp_pos _).le, ← Real.exp_mul]
+  ring_nf
 
 /-- The two-sided exponential is integrable on the line. -/
 theorem integrable_exp_neg_mul_abs {a : ℝ} (ha : 0 < a) :
