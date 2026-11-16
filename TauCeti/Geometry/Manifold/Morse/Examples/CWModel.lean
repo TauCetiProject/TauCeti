@@ -143,10 +143,7 @@ theorem exists_cwComplex_homotopyEquiv_nat :
       Nonempty (ℕ ≃ₕ X) ∧ Nonempty (cell (univ : Set X) 0 ≃ ℕ) ∧
         ∀ m, IsEmpty (cell (univ : Set X) (m + 1)) := by
   have : IsManifold 𝓘(ℝ, Fin 0 → ℝ) ∞ ℕ := .of_discreteTopology _
-  have hp : IsProperMap ((↑) : ℕ → ℝ) := by
-    refine isProperMap_iff_tendsto_cocompact.2 ⟨continuous_of_discreteTopology, ?_⟩
-    rw [Filter.cocompact_eq_cofinite, Nat.cofinite_eq_atTop, cocompact_eq_atBot_atTop]
-    exact tendsto_natCast_atTop_atTop.mono_right le_sup_right
+  have hp : IsProperMap ((↑) : ℕ → ℝ) := Nat.isClosedEmbedding_coe_real.isProperMap
   have hf : IsMorse 𝓘(ℝ, Fin 0 → ℝ) ((↑) : ℕ → ℝ) := isMorse_of_subsingleton
   obtain ⟨X, _, _, _, he, hcell⟩ :=
     hf.exists_cwComplex_homotopyEquiv hp ⟨0, by rintro _ ⟨k, rfl⟩; exact k.cast_nonneg⟩
