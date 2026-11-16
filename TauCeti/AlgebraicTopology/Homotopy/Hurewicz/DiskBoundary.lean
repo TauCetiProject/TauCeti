@@ -150,13 +150,8 @@ theorem _root_.TopCat.Hom.nullhomotopic_iff_singularHomologyMap_eq_zero {n : ℕ
   -- The homotopy groups below `n + 2` also vanish at `z'`, since `Z` is path connected.
   have hpc : PathConnectedSpace Z :=
     (pathConnectedSpace_iff_subsingleton_homotopyGroup_zero z).2 (hZ 0 (by omega))
-  have hZ' : ∀ k < n + 2, Subsingleton (HomotopyGroup (Fin k) Z z') := fun k hk ↦ by
-    rcases Nat.eq_zero_or_pos k with rfl | hk0
-    · exact (pathConnectedSpace_iff_subsingleton_homotopyGroup_zero z').1 hpc
-    · have : NeZero k := ⟨hk0.ne'⟩
-      have := hZ k hk
-      obtain ⟨φ⟩ := nonempty_homotopyGroupMulEquiv (N := Fin k) (x := z) (y := z')
-      exact φ.toEquiv.subsingleton_congr.mp inferInstance
+  have hZ' : ∀ k < n + 2, Subsingleton (HomotopyGroup (Fin k) Z z') := fun k hk ↦
+    subsingleton_homotopyGroup_of_pathConnectedSpace (hZ k hk)
   obtain ⟨ε, hε⟩ := exists_singularHomologyMap_diskBoundaryMap_eq_units_smul_hurewicz (n + 1)
   -- By the Hurewicz theorem at `z'`, a class vanishes exactly when its Hurewicz class does.
   have key (a : HomotopyGroup (Fin (n + 2)) Z z') :

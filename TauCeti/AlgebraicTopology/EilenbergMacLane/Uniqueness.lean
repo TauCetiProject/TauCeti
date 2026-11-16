@@ -33,7 +33,8 @@ Proposition 4.30.
   `K`, and the extension is a weak homotopy equivalence `K ⟶ Z`
   (`TauCeti.EilenbergMacLane.exists_isWeakHomotopyEquivalence_killHomotopyGroups_presentation`).
   Every `K(A, n + 2)` space therefore receives a weak homotopy equivalence from the presentation
-  model (`TauCeti.IsEilenbergMacLaneSpace.exists_isWeakHomotopyEquivalence_killHomotopyGroups`), so
+  model realizing any prescribed isomorphism `πₙ₊₂(Z) ≃ A`
+  (`TauCeti.IsEilenbergMacLaneSpace.exists_isWeakHomotopyEquivalence_killHomotopyGroups`), so
   any two `K(A, n + 2)` spaces have the same weak homotopy type.
 
 The identification of `πₙ₊₂(K)` with `A` is the one through which the presentation complex is
@@ -45,10 +46,11 @@ homomorphism `θ` in this sense, on the homology of the wedge.
 * `TauCeti.EilenbergMacLane.exists_singularHomologyMap_cellAttachmentIncl_comp_eq`: Hatcher's
   Lemma 4.31 for the presentation complex.
 * `TauCeti.EilenbergMacLane.exists_isWeakHomotopyEquivalence_killHomotopyGroups_presentation`:
-  a map from the presentation model realizing an isomorphism `A ≅ Hₙ₊₂(Z; ℤ)` into a
-  `K(G, n + 2)` space `Z` is a weak homotopy equivalence.
+  for a bijection `θ : A → Hₙ₊₂(Z; ℤ)` into a `K(G, n + 2)` space `Z`, there is a weak homotopy
+  equivalence from the presentation model to `Z` whose restriction to the wedge induces `θ ∘ ψ`.
 * `TauCeti.IsEilenbergMacLaneSpace.exists_isWeakHomotopyEquivalence_killHomotopyGroups`: every
-  `K(A, n + 2)` space receives a weak homotopy equivalence from the presentation model.
+  `K(A, n + 2)` space receives a weak homotopy equivalence from the presentation model, realizing
+  a prescribed isomorphism `πₙ₊₂(Z) ≃ A`.
 
 ## References
 
@@ -179,25 +181,28 @@ end EilenbergMacLane
 
 open EilenbergMacLane in
 /-- **Every `K(A, n + 2)` space receives a weak homotopy equivalence from the presentation
-model.** For a surjection `ψ : Hₙ₊₂(W; ℤ) → A` from the homology of the wedge of spheres and a
-`K(A, n + 2)` space `Z`, there is a weak homotopy equivalence from
-`killHomotopyGroups (n + 3) (presentation A n ψ)` to `Z` sending the base point to `z`. So any two
+model.** For a surjection `ψ : Hₙ₊₂(W; ℤ) → A` from the homology of the wedge of spheres, a
+`K(A, n + 2)` space `Z` and an isomorphism `e : πₙ₊₂(Z, z) ≃ A`, there is a weak homotopy
+equivalence `F` from `killHomotopyGroups (n + 3) (presentation A n ψ)` to `Z` sending the base point
+to `z` and realizing `e`: its restriction to the wedge induces `θ ∘ ψ` on `Hₙ₊₂`, where
+`θ : A ≃ πₙ₊₂(Z, z) ≃ Hₙ₊₂(Z; ℤ)` is `e⁻¹` followed by the Hurewicz isomorphism. So any two
 `K(A, n + 2)` spaces have the same weak homotopy type. -/
 theorem IsEilenbergMacLaneSpace.exists_isWeakHomotopyEquivalence_killHomotopyGroups
     {A : Type} [AddCommGroup A] {n : ℕ}
     {Z : TopCat.{0}} {z : Z} (hZ : IsEilenbergMacLaneSpace (Multiplicative A) (n + 2) Z z)
+    (e : π_ (n + 2) Z z ≃* Multiplicative A)
     {ψ : ((singularHomologyFunctor (ModuleCat.{0} ℤ) (n + 2)).obj (ModuleCat.of ℤ ℤ)).obj
       (sphereWedge A (n + 2)) →ₗ[ℤ] A} (hψ : Function.Surjective ψ) :
     ∃ F : killHomotopyGroups (n + 3) (presentation A n ψ) (presentationBase A n ψ) ⟶ Z,
       F (killHomotopyGroupsIncl (n + 3) (presentation A n ψ) (presentationBase A n ψ)
-        (presentationBase A n ψ)) = z ∧ F.hom.IsWeakHomotopyEquivalence := by
-  -- `A ≅ πₙ₊₂(Z, z) ≅ Hₙ₊₂(Z; ℤ)`, through the Hurewicz isomorphism.
-  obtain ⟨e⟩ := hZ.nonempty_homotopyGroupMulEquiv
-  let θ := (MulEquiv.toAdditive e.symm).trans
-    (HomotopyGroup.hurewiczAddEquiv fun k hk ↦ hZ.subsingleton_homotopyGroup hk.ne)
-  obtain ⟨F, hF, -, hFw⟩ :=
-    exists_isWeakHomotopyEquivalence_killHomotopyGroups_presentation hψ hZ
-      (θ := θ.toIntLinearEquiv.toLinearMap) θ.bijective
-  exact ⟨F, hF, hFw⟩
+        (presentationBase A n ψ)) = z ∧
+      (((singularHomologyFunctor (ModuleCat.{0} ℤ) (n + 2)).obj (ModuleCat.of ℤ ℤ)).map
+        (cellAttachmentIncl (relationAttach A n ψ) ≫
+          killHomotopyGroupsIncl (n + 3) (presentation A n ψ) (presentationBase A n ψ) ≫ F)).hom =
+        ((MulEquiv.toAdditive e.symm).trans (HomotopyGroup.hurewiczAddEquiv fun _ hk ↦
+          hZ.subsingleton_homotopyGroup hk.ne)).toIntLinearEquiv.toLinearMap ∘ₗ ψ ∧
+      F.hom.IsWeakHomotopyEquivalence :=
+  exists_isWeakHomotopyEquivalence_killHomotopyGroups_presentation hψ hZ
+    ((MulEquiv.toAdditive e.symm).trans _).bijective
 
 end TauCeti
