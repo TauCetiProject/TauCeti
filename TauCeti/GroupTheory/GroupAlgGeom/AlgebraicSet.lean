@@ -15,7 +15,6 @@ public import TauCeti.GroupTheory.GroupAlgGeom.Basic
 import Mathlib.Data.ZMod.Basic
 import TauCeti.GroupTheory.FreeGroup.Centralizer
 import Mathlib.GroupTheory.FreeGroup.CyclicallyReduced
-import Mathlib.Logic.Equiv.Set
 import Mathlib.Order.Concept
 
 /-!
@@ -175,7 +174,7 @@ def I (Y : Set (X → H)) : Subgroup (GX G X) where
   one_mem' _ _ := map_one _
   inv_mem' ha v hv := by simp [ha hv]
 
-variable {ι} {S T : Set (GX G X)} {Y Z : Set (X → H)} {v : X → H} {w : GX G X}
+variable {ι} {S T : Set (GX G X)} {Y : Set (X → H)} {v : X → H} {w : GX G X}
 
 @[simp]
 theorem mem_V : v ∈ V ι S ↔ ∀ s ∈ S, eval ι v s = 1 := Iff.rfl
