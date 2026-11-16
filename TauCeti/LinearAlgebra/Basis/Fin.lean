@@ -25,9 +25,11 @@ Over any commutative ring, if a basis `c` of `V` is `v` followed by a basis `b` 
 determinant with respect to every basis of `V` (`Module.Basis.det_finCons_ne_zero`).
 
 Reindexing a basis along `finCongr` and then precomposing with a `Fin.cast` is the original basis
-precomposed with the composite cast (`Module.Basis.reindex_finCongr_comp_cast`). This identifies
-the families on which top-degree forms are evaluated when the dimension is written in different
-but equal ways.
+precomposed with the composite cast (`Module.Basis.reindex_finCongr_comp_cast`), and a basis
+indexed by `Fin p ⊕ Fin q`, reindexed by `Fin m` for `m = p + q`, lists its left block followed by
+its right block (`Module.Basis.coe_reindex_finSumFinEquiv_trans_finCongr`). These identify the
+families on which top-degree forms are evaluated when the dimension is written in different but
+equal ways.
 
 The product of bases `b` of `M` and `c` of `N` indexed by `Fin m` and `Fin n`, reindexed by
 `Fin (m + n)`, is `(b 0, 0), …, (b (m - 1), 0), (0, c 0), …, (0, c (n - 1))`
@@ -53,6 +55,8 @@ begin with a vector transverse to a hyperplane of one factor.
   on `v`, then `v` followed by a basis of its kernel is a basis.
 * `Module.Basis.reindex_finCongr_comp_cast`: a basis reindexed along `finCongr` and precomposed
   with a `Fin.cast` is the original basis precomposed with a `Fin.cast`.
+* `Module.Basis.coe_reindex_finSumFinEquiv_trans_finCongr`: a basis indexed by `Fin p ⊕ Fin q`,
+  reindexed by `Fin m` for `m = p + q`, is the concatenation of its two blocks.
 * `Module.Basis.coe_prod_reindex_finSumFinEquiv`: the product basis indexed by `Fin (m + n)`.
 * `Module.Basis.coe_prod_reindex_finSumFinEquiv_finCongr`,
   `Module.Basis.coe_prod_reindex_finSumFinEquiv_cycleRange`: the product basis beginning with the
@@ -72,6 +76,16 @@ theorem reindex_finCongr_comp_cast {R M : Type*} [Semiring R] [AddCommMonoid M] 
     ⇑(b.reindex (finCongr h)) ∘ Fin.cast h' = ⇑b ∘ Fin.cast (h'.trans h.symm) := by
   funext i
   simp
+
+/-- A basis indexed by `Fin p ⊕ Fin q`, reindexed by `Fin m` through `finSumFinEquiv` and a cast,
+lists its vectors on the left summand followed by those on the right summand. -/
+theorem coe_reindex_finSumFinEquiv_trans_finCongr {R M : Type*} [Semiring R] [AddCommMonoid M]
+    [Module R M] {m p q : ℕ} (b : Basis (Fin p ⊕ Fin q) R M) (h : m = p + q) :
+    ⇑(b.reindex (finSumFinEquiv.trans (finCongr h.symm))) =
+      Fin.append (b ∘ Sum.inl) (b ∘ Sum.inr) ∘ Fin.cast h := by
+  ext l
+  obtain ⟨l, rfl⟩ := (finCongr h.symm).surjective l
+  induction l using Fin.addCases <;> simp [reindex_apply]
 
 section Prod
 
