@@ -27,9 +27,10 @@ through `MulOpposite` itself. Both live in the `LinearMap` namespace, so a consu
 
 ## Main results
 
-* `HeckeCosetModule.map_mul_of_structureConstants`: linear maps on `HeckeCosetModule` acting on
-  basis elements via `HeckeCoset.map` intertwine `HeckeCosetModule.mul` whenever they preserve
-  `structureConstants` on chosen representatives.
+* `HeckeCosetModule.map_mul_of_structureConstants_of_map` and
+  `HeckeCosetModule.map_mul_of_structureConstants`: linear maps on `HeckeCosetModule` acting on
+  basis elements via coset maps (in particular `HeckeCoset.map` or `HeckeCoset.mapHom`) intertwine
+  `HeckeCosetModule.mul` whenever they preserve `structureConstants` on chosen representatives.
 * `LinearMap.map_mul_of_basis`: a linear map that is multiplicative on basis elements is
   multiplicative.
 * `LinearMap.map_mul_reverse_of_basis`: the same with the factors on the right-hand side in
@@ -62,6 +63,39 @@ end Basis
 
 section BimoduleMap
 
+/-- `R`-linear maps between Hecke coset modules (possibly over different ambient groups `G₁` and
+`G₂`) that send basis elements along coset maps `m₁₂` and `m₂₃` intertwine the bimodule convolution
+product `HeckeCosetModule.mul` whenever they map `structureConstants` at chosen representatives to
+`structureConstants` at the mapped representatives. -/
+theorem map_mul_of_structureConstants_of_map
+    {G₁ G₂ : Type*} [Group G₁] [Group G₂]
+    {Δ₁ : Submonoid G₁} {Δ₂ : Submonoid G₂}
+    {H₁ H₂ H₃ : Subgroup G₁} {H₁' H₂' H₃' : Subgroup G₂}
+    (R : Type*) [Semiring R]
+    [IsHeckeTriple Δ₁ H₁ H₂] [IsHeckeTriple Δ₁ H₂ H₃]
+    [IsHeckeTriple Δ₂ H₁' H₂'] [IsHeckeTriple Δ₂ H₂' H₃']
+    (m₁₂ : HeckeCoset Δ₁ H₁ H₂ → HeckeCoset Δ₂ H₁' H₂')
+    (m₂₃ : HeckeCoset Δ₁ H₂ H₃ → HeckeCoset Δ₂ H₂' H₃')
+    (L₁₂ : HeckeCosetModule Δ₁ H₁ H₂ R →ₗ[R] HeckeCosetModule Δ₂ H₁' H₂' R)
+    (L₂₃ : HeckeCosetModule Δ₁ H₂ H₃ R →ₗ[R] HeckeCosetModule Δ₂ H₂' H₃' R)
+    (L₁₃ : HeckeCosetModule Δ₁ H₁ H₃ R →ₗ[R] HeckeCosetModule Δ₂ H₁' H₃' R)
+    (hL₁₂ : ∀ D a, L₁₂ (single R D a) = single R (m₁₂ D) a)
+    (hL₂₃ : ∀ D b, L₂₃ (single R D b) = single R (m₂₃ D) b)
+    (hSC : ∀ (D₁ : HeckeCoset Δ₁ H₁ H₂) (D₂ : HeckeCoset Δ₁ H₂ H₃),
+      L₁₃ (structureConstants R H₁ H₂ H₃ D₁.rep D₂.rep) =
+        structureConstants R H₁' H₂' H₃' (m₁₂ D₁).rep (m₂₃ D₂).rep)
+    (f : HeckeCosetModule Δ₁ H₁ H₂ R) (g : HeckeCosetModule Δ₁ H₂ H₃ R) :
+    L₁₃ (mul R f g) = mul R (L₁₂ f) (L₂₃ g) := by
+  induction f using HeckeCosetModule.induction_linear with
+  | h0 => simp [zero_mul]
+  | hadd _ _ ih₁ ih₂ => simp only [add_mul, map_add, ih₁, ih₂]
+  | hsingle D₁ a =>
+    induction g using HeckeCosetModule.induction_linear with
+    | h0 => simp [mul_zero]
+    | hadd _ _ ih₁ ih₂ => simp only [mul_add, map_add, ih₁, ih₂]
+    | hsingle D₂ b =>
+      rw [mul_single_single, map_smul, map_smul, hSC D₁ D₂, hL₁₂, hL₂₃, mul_single_single]
+
 variable {G : Type*} [Group G] {Δ₁ Δ₂ : Submonoid G} {H₁ H₂ H₃ H₁' H₂' H₃' : Subgroup G}
   (R : Type*) [Semiring R]
 
@@ -82,16 +116,9 @@ theorem map_mul_of_structureConstants
       L₁₃ (structureConstants R H₁ H₂ H₃ D₁.rep D₂.rep) =
         structureConstants R H₁' H₂' H₃' (D₁.map hΔ h₁ h₂).rep (D₂.map hΔ h₂ h₃).rep)
     (f : HeckeCosetModule Δ₁ H₁ H₂ R) (g : HeckeCosetModule Δ₁ H₂ H₃ R) :
-    L₁₃ (mul R f g) = mul R (L₁₂ f) (L₂₃ g) := by
-  induction f using HeckeCosetModule.induction_linear with
-  | h0 => simp [zero_mul]
-  | hadd _ _ ih₁ ih₂ => simp only [add_mul, map_add, ih₁, ih₂]
-  | hsingle D₁ a =>
-    induction g using HeckeCosetModule.induction_linear with
-    | h0 => simp [mul_zero]
-    | hadd _ _ ih₁ ih₂ => simp only [mul_add, map_add, ih₁, ih₂]
-    | hsingle D₂ b =>
-      rw [mul_single_single, map_smul, map_smul, hSC D₁ D₂, hL₁₂, hL₂₃, mul_single_single]
+    L₁₃ (mul R f g) = mul R (L₁₂ f) (L₂₃ g) :=
+  map_mul_of_structureConstants_of_map R (HeckeCoset.map hΔ h₁ h₂) (HeckeCoset.map hΔ h₂ h₃)
+    L₁₂ L₂₃ L₁₃ hL₁₂ hL₂₃ hSC f g
 
 end BimoduleMap
 

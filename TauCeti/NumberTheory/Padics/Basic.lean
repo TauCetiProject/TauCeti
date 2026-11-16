@@ -83,6 +83,10 @@ theorem norm_coe_ringHom_lt_one_iff {a : ℤ_[p]} :
 theorem isEmbedding_coe_ringHom : Topology.IsEmbedding (Coe.ringHom (p := p)) :=
   isometry_subtype_coe.isEmbedding
 
+/-- The inclusion `PadicInt.Coe.ringHom : ℤ_[p] →+* ℚ_[p]` is injective. -/
+theorem coe_ringHom_injective : Function.Injective (Coe.ringHom (p := p)) :=
+  isEmbedding_coe_ringHom.injective
+
 /-- Every element of the closed unit ball of `ℚ_[p]` lies in the image of `ℤ_[p]`. -/
 theorem closedBall_subset_range_coe_ringHom :
     Metric.closedBall (0 : ℚ_[p]) 1 ⊆ Set.range (Coe.ringHom (p := p)) :=

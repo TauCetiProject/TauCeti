@@ -5,6 +5,7 @@ Authors: Jon Crall, Claude Fable 5
 -/
 module
 
+public import Mathlib.LinearAlgebra.Matrix.GeneralLinearGroup.Defs
 public import Mathlib.LinearAlgebra.Matrix.ToLin
 
 /-!
@@ -13,7 +14,8 @@ public import Mathlib.LinearAlgebra.Matrix.ToLin
 A matrix `L'` factors as `L * G` whenever each of its columns belongs to the range of
 matrix-vector multiplication by `L`. The column index type of `L'` need not be finite. We also
 give a criterion, splitting off the top row, for the column range of a matrix to be a given
-submodule.
+submodule, and characterize when two nonsingular square matrices over a commutative domain span
+the same column range.
 
 ## Main result
 
@@ -25,6 +27,10 @@ submodule.
 * `Matrix.range_mulVecLin_eq_of_succ`: a matrix with columns in a submodule `L` of `R^(n+1)` has
   column range `L` if it reaches every vector of `L` below the top row and every vector of `L`
   supported on the top row.
+* `Matrix.range_comp_mulVecLin_unit`, `Matrix.range_mulVecLin_mul_unit`: precomposing with or
+  right-multiplying by `U ∈ GL n R` preserves the range / column range.
+* `Matrix.range_mulVecLin_eq_iff`: over a commutative domain, two nonsingular square matrices have
+  the same column range if and only if they lie in the same right `GL n R`-coset.
 -/
 
 public section
@@ -111,5 +117,51 @@ theorem row_mem_range_vecMulLinear (e : Matrix ι κ A) (i : ι) :
   exact ⟨Pi.single i 1, Matrix.single_one_vecMul i e⟩
 
 end RowRange
+
+section RightCoset
+
+variable {n R : Type*} [DecidableEq n] [Fintype n] [CommRing R]
+
+/-- Precomposing a linear map out of `n → R` with `(U : Matrix n n R).mulVecLin` for `U ∈ GL n R`
+preserves its range. -/
+@[simp]
+theorem range_comp_mulVecLin_unit {M : Type*} [AddCommMonoid M] [Module R M]
+    (f : (n → R) →ₗ[R] M) (U : GL n R) :
+    LinearMap.range (f ∘ₗ (↑U : Matrix n n R).mulVecLin) = LinearMap.range f := by
+  refine le_antisymm (LinearMap.range_comp_le_range _ _) ?_
+  rintro _ ⟨v, rfl⟩
+  refine ⟨(↑U⁻¹ : Matrix n n R) *ᵥ v, ?_⟩
+  have hU : (↑U : Matrix n n R) * (↑U⁻¹ : Matrix n n R) = 1 :=
+    (Units.val_mul U U⁻¹).symm.trans (by simp)
+  rw [LinearMap.comp_apply, mulVecLin_apply, mulVec_mulVec, hU, one_mulVec]
+
+/-- Right-multiplying a matrix by a `GL n R` unit preserves the `R`-submodule spanned by its
+columns. -/
+-- Deliberately not `@[simp]`: `Matrix.mulVecLin_mul` rewrites the LHS to
+-- `range_comp_mulVecLin_unit`.
+theorem range_mulVecLin_mul_unit {m : Type*} (B : Matrix m n R) (U : GL n R) :
+    LinearMap.range (B * (↑U : Matrix n n R)).mulVecLin = LinearMap.range B.mulVecLin := by
+  rw [mulVecLin_mul, range_comp_mulVecLin_unit]
+
+/-- Over a commutative domain, two nonsingular square matrices span the same column `R`-submodule if
+and only if they lie in the same right `GL n R`-coset. -/
+theorem range_mulVecLin_eq_iff [IsDomain R] {B₁ B₂ : Matrix n n R}
+    (h₁ : B₁.det ≠ 0) (h₂ : B₂.det ≠ 0) :
+    LinearMap.range B₁.mulVecLin = LinearMap.range B₂.mulVecLin ↔
+      ∃ U : GL n R, B₁ * (↑U : Matrix n n R) = B₂ := by
+  refine ⟨fun hrange ↦ ?_, ?_⟩
+  · obtain ⟨P, hBP⟩ := exists_mul_eq_of_range_le fun j ↦ hrange ▸ col_mem_range_mulVecLin B₂ j
+    obtain ⟨Q, hBQ⟩ := exists_mul_eq_of_range_le fun j ↦ hrange ▸ col_mem_range_mulVecLin B₁ j
+    have hreg₁ := (isRegular_of_isLeftRegular_det fun _ _ ↦ mul_left_cancel₀ h₁).left
+    have hreg₂ := (isRegular_of_isLeftRegular_det fun _ _ ↦ mul_left_cancel₀ h₂).left
+    have hPQ : P * Q = 1 :=
+      hreg₁ (by dsimp only; rw [← Matrix.mul_assoc, hBP, hBQ, Matrix.mul_one])
+    have hQP : Q * P = 1 :=
+      hreg₂ (by dsimp only; rw [← Matrix.mul_assoc, hBQ, hBP, Matrix.mul_one])
+    exact ⟨⟨P, Q, hPQ, hQP⟩, hBP⟩
+  · rintro ⟨U, rfl⟩
+    exact (range_mulVecLin_mul_unit B₁ U).symm
+
+end RightCoset
 
 end Matrix

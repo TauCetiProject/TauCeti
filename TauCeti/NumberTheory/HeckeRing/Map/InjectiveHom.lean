@@ -5,43 +5,37 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.LinearAlgebra.Finsupp.Defs
+public import TauCeti.NumberTheory.HeckeRing.Associativity
 public import TauCeti.NumberTheory.HeckeRing.Degree
-public import TauCeti.NumberTheory.HeckeRing.Map.SubgroupExtension
-public import TauCeti.NumberTheory.HeckeRing.Map.Submonoid
+public import TauCeti.NumberTheory.HeckeRing.Multiplicity.Equiv
 
-import Mathlib.Tactic.Group
-import TauCeti.GroupTheory.Coset.Basic
+import TauCeti.Algebra.Group.Subgroup.Pointwise
+import TauCeti.NumberTheory.HeckeRing.LinearExtension
 
 /-!
-# Transporting Hecke rings and degrees along group homomorphisms and extensions
+# Transporting Hecke coset modules and rings along group homomorphisms
 
-This file completes the functoriality toolkit for abstract Hecke rings in two directions:
-
-1. **Degree preservation** along `HeckeCoset.map`: both submonoid widening
-   (`HeckeCosetModule.mapSubmonoidRingHom`) and subgroup extension under a stabilizer-coset
-   transversal condition (`HeckeCosetModule.mapSubgroupRingEquiv`) preserve double-coset degrees
-   (`HeckeCoset.degree`) and the degree ring homomorphism (`LeftCosetModule.deg`).
-2. **Injective group homomorphisms** `φ : G →* K`: pushing `(Δ, H₁, H₂)` forward to
-   `(Δ.map φ, H₁.map φ, H₂.map φ)` preserves `IsHeckeTriple`, Shimura's double-coset
-   multiplicities, double-coset degrees, and the Hecke ring structure over any coefficient
-   semiring `R` (`HeckeCosetModule.mapInjectiveRingEquiv`).
+Pushing a Hecke triple `(Δ, H₁, H₂)` forward along an arbitrary group homomorphism `φ : G →* K`
+yields a Hecke triple `(Δ.map φ, H₁.map φ, H₂.map φ)` (`IsHeckeTriple.map`) and a double-coset map
+`HeckeCoset.mapHom φ`. When `φ` is injective, `HeckeCoset.mapHom φ` is bijective and preserves
+double-coset degrees, inducing an `R`-linear isomorphism
+`HeckeCosetModule.mapInjectiveLinearEquiv` of bimodules that intertwines `HeckeCosetModule.mul` and
+specializes on the diagonal to a degree-preserving ring isomorphism
+`HeckeCosetModule.mapInjectiveRingEquiv : 𝕋 Δ H R ≃+* 𝕋 (Δ.map φ) (H.map φ) R`.
 
 ## Main definitions and results
 
-* `HeckeCoset.degree_map_of_le`, `HeckeCosetModule.deg_mapSubmonoidRingHom`: submonoid widening
-  preserves `HeckeCoset.degree` and `LeftCosetModule.deg`.
-* `HeckeCoset.degree_mapEquivOfInf`, `HeckeCosetModule.deg_mapSubgroupRingEquiv`: subgroup
-  extension preserves `HeckeCoset.degree` and `LeftCosetModule.deg`.
-* `DoubleCoset.multiplicity_map_of_injective`: an injective group homomorphism preserves Shimura's
-  multiplicity without finiteness assumptions.
-* `IsHeckeTriple.map_of_injective`: an injective group homomorphism transports a Hecke triple to
-  its image.
+* `IsHeckeTriple.map`: any group homomorphism transports a Hecke triple `(Δ, H₁, H₂)` to
+  `(Δ.map φ, H₁.map φ, H₂.map φ)`.
 * `HeckeCoset.mapHom`, `HeckeCoset.mapEquivOfInjective`, `HeckeCoset.degree_mapHom_of_injective`:
-  pushforward of Hecke cosets along a group homomorphism, its bijectivity and degree preservation
-  under injectivity.
-* `HeckeCosetModule.mapInjectiveLinearEquiv`, `HeckeCosetModule.mapInjectiveRingEquiv`,
-  `HeckeCosetModule.deg_mapInjectiveRingEquiv`: the induced linear and ring isomorphisms
-  `𝕋 Δ H R ≃+* 𝕋 (Δ.map φ) (H.map φ) R` and their compatibility with `LeftCosetModule.deg`.
+  pushforward of Hecke cosets along a group homomorphism, its functor laws, and its bijectivity and
+  degree preservation under injectivity.
+* `HeckeCosetModule.mapInjectiveLinearEquiv`, `HeckeCosetModule.mapInjectiveLinearEquiv_mul`:
+  the induced `R`-linear isomorphism on `HeckeCosetModule` bimodules intertwining
+  `HeckeCosetModule.mul`.
+* `HeckeCosetModule.mapInjectiveRingEquiv`, `HeckeCosetModule.deg_mapInjectiveRingEquiv`: the
+  induced degree-preserving ring isomorphism `𝕋 Δ H R ≃+* 𝕋 (Δ.map φ) (H.map φ) R`.
 
 ## References
 
@@ -54,162 +48,15 @@ public section
 open Subgroup Subgroup.Commensurable DoubleCoset
 open scoped Pointwise HeckeCosetModule
 
-section DegreeCompatibility
-
-variable {G : Type*} [Group G]
-
-namespace HeckeCoset
-
-variable {Δ Δ₁ Δ₂ Δ' : Submonoid G} {H₁ H₂ H H' P : Subgroup G}
-
-/-- Widening the ambient submonoid while keeping the subgroups fixed preserves the degree of every
-double coset. -/
-@[simp]
-theorem degree_map_of_le (hΔ : Δ₁ ≤ Δ₂) (D : HeckeCoset Δ₁ H₁ H₂) :
-    (D.map hΔ le_rfl le_rfl).degree = D.degree := by
-  induction D using HeckeCoset.induction with | h g => simp
-
-/-- Extending both subgroup and submonoid under `H = H' ⊓ P` and the stabilizer-coset condition
-preserves the degree of every double coset. -/
-theorem degree_mapEquivOfInf (hHP : H = H' ⊓ P) (hΔ : Δ ≤ Δ') (hΔP : Δ ≤ P.toSubmonoid)
-    (hsurj : ∀ δ' : Δ', ∃ u ∈ H', u * (δ' : G) ∈ Δ)
-    (hstab : ∀ g : Δ, ∀ u ∈ H', ∃ x ∈ H, x⁻¹ * u ∈ ConjAct.toConjAct (g : G) • H')
-    (D : HeckeCoset Δ H H) :
-    (mapEquivOfInf hHP hΔ hΔP hsurj hstab D).degree = D.degree := by
-  induction D using HeckeCoset.induction with | h g =>
-  rw [mapEquivOfInf_apply, map_mk, degree_mk, degree_mk, Submonoid.coe_inclusion]
-  exact (Nat.card_congr (decompQuotientEquivOfInf hHP (hΔP g.2) (hstab g))).symm
-
-end HeckeCoset
-
-namespace HeckeCosetModule
-
-variable (R : Type*) [Semiring R] {Δ Δ₁ Δ₂ Δ' : Submonoid G} {H H' P : Subgroup G}
-
-/-- `mapSubmonoidRingHom` preserves the degree homomorphism `LeftCosetModule.deg`. -/
-@[simp]
-theorem deg_mapSubmonoidRingHom [IsHeckeTriple Δ₁ H H] [IsHeckeTriple Δ₂ H H]
-    (hΔ : Δ₁ ≤ Δ₂) (f : 𝕋 Δ₁ H R) :
-    LeftCosetModule.deg Δ₂ H R (mapSubmonoidRingHom R hΔ f) = LeftCosetModule.deg Δ₁ H R f := by
-  induction f using HeckeCosetModule.induction_linear with
-  | h0 => simp
-  | hadd _ _ ih₁ ih₂ => simp [ih₁, ih₂]
-  | hsingle D b => simp
-
-/-- Precomposing `LeftCosetModule.deg` with `mapSubmonoidRingHom` recovers `LeftCosetModule.deg`. -/
-@[simp]
-theorem deg_comp_mapSubmonoidRingHom [IsHeckeTriple Δ₁ H H] [IsHeckeTriple Δ₂ H H]
-    (hΔ : Δ₁ ≤ Δ₂) :
-    (LeftCosetModule.deg Δ₂ H R).comp (mapSubmonoidRingHom R hΔ) = LeftCosetModule.deg Δ₁ H R :=
-  RingHom.ext (deg_mapSubmonoidRingHom R hΔ)
-
-/-- `mapSubgroupRingEquiv` preserves the degree homomorphism `LeftCosetModule.deg`. -/
-@[simp]
-theorem deg_mapSubgroupRingEquiv [IsHeckeTriple Δ H H] [IsHeckeTriple Δ' H' H']
-    (hHP : H = H' ⊓ P) (hΔ : Δ ≤ Δ') (hΔP : Δ ≤ P.toSubmonoid)
-    (hsurj : ∀ δ' : Δ', ∃ u ∈ H', u * (δ' : G) ∈ Δ)
-    (hstab : ∀ g : Δ, ∀ u ∈ H', ∃ x ∈ H, x⁻¹ * u ∈ ConjAct.toConjAct (g : G) • H')
-    (f : 𝕋 Δ H R) :
-    LeftCosetModule.deg Δ' H' R (mapSubgroupRingEquiv R hHP hΔ hΔP hsurj hstab f) =
-      LeftCosetModule.deg Δ H R f := by
-  induction f using HeckeCosetModule.induction_linear with
-  | h0 => simp
-  | hadd _ _ ih₁ ih₂ => simp [ih₁, ih₂]
-  | hsingle D b =>
-    rw [mapSubgroupRingEquiv_single, LeftCosetModule.deg_single, LeftCosetModule.deg_single,
-      ← HeckeCoset.mapEquivOfInf_apply hHP hΔ hΔP hsurj hstab, HeckeCoset.degree_mapEquivOfInf]
-
-/-- Precomposing `LeftCosetModule.deg` with `mapSubgroupRingEquiv` recovers
-`LeftCosetModule.deg`. -/
-@[simp]
-theorem deg_comp_mapSubgroupRingEquiv [IsHeckeTriple Δ H H] [IsHeckeTriple Δ' H' H']
-    (hHP : H = H' ⊓ P) (hΔ : Δ ≤ Δ') (hΔP : Δ ≤ P.toSubmonoid)
-    (hsurj : ∀ δ' : Δ', ∃ u ∈ H', u * (δ' : G) ∈ Δ)
-    (hstab : ∀ g : Δ, ∀ u ∈ H', ∃ x ∈ H, x⁻¹ * u ∈ ConjAct.toConjAct (g : G) • H') :
-    (LeftCosetModule.deg Δ' H' R).comp
-        ↑(mapSubgroupRingEquiv R hHP hΔ hΔP hsurj hstab) =
-      LeftCosetModule.deg Δ H R :=
-  RingHom.ext (deg_mapSubgroupRingEquiv R hHP hΔ hΔP hsurj hstab)
-
-end HeckeCosetModule
-
-end DegreeCompatibility
-
 section InjectiveHom
 
 variable {G K : Type*} [Group G] [Group K]
 
-namespace DoubleCoset
-
-private lemma decompQuotientEquivMapOfInjective_out (φ : G →* K) (hφ : Function.Injective φ)
-    (H₁ H₂ : Subgroup G) (g : G) (i : DecompQuotient H₁ H₂ g) :
-    (φ g)⁻¹ * (((decompQuotientEquivMapOfInjective φ hφ H₁ H₂ g i).out : K)⁻¹ *
-      φ (i.out : G)) * φ g ∈ H₂.map φ := by
-  have hmk :
-      ((decompQuotientEquivMapOfInjective φ hφ H₁ H₂ g i).out :
-          DecompQuotient (H₁.map φ) (H₂.map φ) (φ g)) =
-        (Subgroup.equivMapOfInjective H₁ φ hφ i.out :
-          DecompQuotient (H₁.map φ) (H₂.map φ) (φ g)) := by
-    calc _ = decompQuotientEquivMapOfInjective φ hφ H₁ H₂ g i := QuotientGroup.out_eq' _
-      _ = decompQuotientEquivMapOfInjective φ hφ H₁ H₂ g (i.out : DecompQuotient H₁ H₂ g) :=
-        congrArg (decompQuotientEquivMapOfInjective φ hφ H₁ H₂ g) (QuotientGroup.out_eq' i).symm
-      _ = _ := decompQuotientEquivMapOfInjective_mk φ hφ H₁ H₂ g i.out
-  exact conj_mem_of_mk_eq (φ g) hmk
-
-/-- **Shimura's multiplicity is invariant under an injective group homomorphism**, with no
-finiteness assumptions. -/
-theorem multiplicity_map_of_injective (φ : G →* K) (hφ : Function.Injective φ)
-    (H₁ H₂ H₃ : Subgroup G) (g h d : G) :
-    multiplicity (H₁.map φ) (H₂.map φ) (H₃.map φ) (φ g) (φ h) (φ d) =
-      multiplicity H₁ H₂ H₃ g h d := by
-  let eg := decompQuotientEquivMapOfInjective φ hφ H₁ H₂ g
-  let eh := decompQuotientEquivMapOfInjective φ hφ H₂ H₃ h
-  let c : DecompQuotient H₁ H₂ g → H₂.map φ := fun i ↦
-    ⟨(φ g)⁻¹ * (((eg i).out : K)⁻¹ * φ (i.out : G)) * φ g,
-      decompQuotientEquivMapOfInjective_out φ hφ H₁ H₂ g i⟩
-  let epairs := Equiv.prodShear eg fun i ↦ eh.trans (MulAction.toPerm (c i))
-  rw [multiplicity_def, multiplicity_def]
-  symm
-  refine Nat.card_congr (Equiv.subtypeEquiv epairs fun ⟨i, j⟩ ↦ ?_)
-  let q := c i • eh j
-  have hprod :
-      (((eg i).out : K) * φ g * ((q.out : K) * φ h) : K ⧸ (H₃.map φ)) =
-        (φ ((i.out : G) * g * ((j.out : G) * h)) : K ⧸ (H₃.map φ)) := by
-    rw [QuotientGroup.eq]
-    have hm := (H₃.map φ).mul_mem
-      (conj_mem_of_mk_eq (φ h) (QuotientGroup.mk_out_smul (c i) (eh j)))
-      (decompQuotientEquivMapOfInjective_out φ hφ H₂ H₃ h j)
-    dsimp only [q, c, eh, Subtype.coe_mk] at hm ⊢
-    simpa only [Subgroup.coe_mul, map_mul, mul_inv_rev, mul_assoc, mul_inv_cancel_left] using hm
-  dsimp only [epairs, Equiv.prodShear_apply, Equiv.trans_apply, MulAction.toPerm_apply]
-  change
-    (((i.out : G) * g * ((j.out : G) * h) : G ⧸ H₃) = (d : G ⧸ H₃)) ↔
-      ((((eg i).out : K) * φ g * ((q.out : K) * φ h) : K ⧸ (H₃.map φ)) =
-        (φ d : K ⧸ (H₃.map φ)))
-  rw [hprod, QuotientGroup.eq, QuotientGroup.eq, ← map_inv, ← map_mul,
-    Subgroup.mem_map_iff_mem hφ]
-
-end DoubleCoset
-
 namespace IsHeckeTriple
 
-private lemma map_pointwise_conjAct (φ : G →* K) (x : G) (H : Subgroup G) :
-    ConjAct.toConjAct (φ x) • H.map φ = (ConjAct.toConjAct x • H).map φ := by
-  ext y
-  simp only [Subgroup.mem_pointwise_smul_iff_inv_smul_mem, Subgroup.mem_map,
-    ConjAct.smul_def, ConjAct.ofConjAct_inv, ConjAct.ofConjAct_toConjAct, inv_inv]
-  refine ⟨?_, ?_⟩
-  · rintro ⟨z, hz, hzy⟩
-    refine ⟨x * z * x⁻¹, by simpa [mul_assoc] using hz, ?_⟩
-    calc φ (x * z * x⁻¹) = φ x * φ z * (φ x)⁻¹ := by simp [mul_assoc]
-      _ = y := by rw [hzy]; group
-  · rintro ⟨z, hz, rfl⟩
-    exact ⟨x⁻¹ * z * x, hz, by simp [mul_assoc]⟩
-
-/-- Pushing a Hecke triple `(Δ, H₁, H₂)` forward along an injective group homomorphism `φ : G →* K`
-yields a Hecke triple `(Δ.map φ, H₁.map φ, H₂.map φ)`. -/
-theorem map_of_injective {Δ : Submonoid G} {H₁ H₂ : Subgroup G} [IsHeckeTriple Δ H₁ H₂]
-    (φ : G →* K) (hφ : Function.Injective φ) :
+/-- Pushing a Hecke triple `(Δ, H₁, H₂)` forward along a group homomorphism `φ : G →* K` yields a
+Hecke triple `(Δ.map φ, H₁.map φ, H₂.map φ)`. -/
+theorem map {Δ : Submonoid G} {H₁ H₂ : Subgroup G} [IsHeckeTriple Δ H₁ H₂] (φ : G →* K) :
     IsHeckeTriple (Δ.map φ) (H₁.map φ) (H₂.map φ) where
   left_le := by
     rintro _ ⟨x, hx, rfl⟩
@@ -217,30 +64,13 @@ theorem map_of_injective {Δ : Submonoid G} {H₁ H₂ : Subgroup G} [IsHeckeTri
   right_le := by
     rintro _ ⟨x, hx, rfl⟩
     exact ⟨x, IsHeckeTriple.mem_of_mem_right H₁ hx, rfl⟩
-  commensurable :=
-    ⟨Subgroup.isFiniteRelIndex_iff_relIndex_ne_zero.mpr <| by
-        rw [Subgroup.relIndex_map_map_of_injective _ _ hφ]
-        exact (IsHeckeTriple.commensurable (Δ := Δ) (H₁ := H₁) (H₂ := H₂)).1.relIndex_ne_zero,
-      Subgroup.isFiniteRelIndex_iff_relIndex_ne_zero.mpr <| by
-        rw [Subgroup.relIndex_map_map_of_injective _ _ hφ]
-        exact (IsHeckeTriple.commensurable (Δ := Δ) (H₁ := H₁) (H₂ := H₂)).2.relIndex_ne_zero⟩
+  commensurable := (IsHeckeTriple.commensurable (Δ := Δ)).map φ
   le_commensurator_right := by
     rintro _ ⟨g, hg, rfl⟩
-    have hg_comm : Subgroup.Commensurable (ConjAct.toConjAct g • H₂) H₂ :=
-      IsHeckeTriple.mem_commensurator_right H₁ ⟨g, hg⟩
-    rw [Subgroup.mem_toSubmonoid, commensurator_mem_iff]
-    have hbridge (y : K) (L : Subgroup K) : MulAut.conj y • L = ConjAct.toConjAct y • L := by
-      ext z
-      rw [Subgroup.mem_pointwise_smul_iff_inv_smul_mem,
-        Subgroup.mem_pointwise_smul_iff_inv_smul_mem, ← map_inv MulAut.conj,
-        ← ConjAct.toConjAct_inv, ConjAct.toConjAct_smul_eq_mulAut_conj, MulAut.smul_def]
-    rw [hbridge, map_pointwise_conjAct]
-    exact ⟨Subgroup.isFiniteRelIndex_iff_relIndex_ne_zero.mpr <| by
-        rw [Subgroup.relIndex_map_map_of_injective _ _ hφ]
-        exact hg_comm.1.relIndex_ne_zero,
-      Subgroup.isFiniteRelIndex_iff_relIndex_ne_zero.mpr <| by
-        rw [Subgroup.relIndex_map_map_of_injective _ _ hφ]
-        exact hg_comm.2.relIndex_ne_zero⟩
+    rw [Subgroup.mem_toSubmonoid, commensurator_mem_iff, ← TauCeti.map_conj_eq_conj_smul,
+      ← MulEquiv.toMonoidHom_eq_coe, ← Subgroup.map_map_conj, MulEquiv.toMonoidHom_eq_coe,
+      TauCeti.map_conj_eq_conj_smul]
+    exact ((commensurator_mem_iff H₂ g).mp (IsHeckeTriple.mem_commensurator_right H₁ ⟨g, hg⟩)).map φ
 
 end IsHeckeTriple
 
@@ -262,12 +92,46 @@ def mapHom (φ : G →* K) (D : HeckeCoset Δ H₁ H₂) :
 theorem mapHom_mk (φ : G →* K) (g : Δ) :
     (mk H₁ H₂ g).mapHom φ = mk (H₁.map φ) (H₂.map φ) (⟨φ g, ⟨g, g.2, rfl⟩⟩ : ↥(Δ.map φ)) := (rfl)
 
+/-- `HeckeCoset.mapHom` along `MonoidHom.id G` agrees with the identity up to `HeckeCoset.map`
+along `Submonoid.map_id` and `Subgroup.map_id`. -/
+@[simp]
+theorem mapHom_id (D : HeckeCoset Δ H₁ H₂)
+    (hΔ : Δ.map (MonoidHom.id G) ≤ Δ := (Submonoid.map_id Δ).le)
+    (h₁ : H₁.map (MonoidHom.id G) ≤ H₁ := (Subgroup.map_id H₁).le)
+    (h₂ : H₂.map (MonoidHom.id G) ≤ H₂ := (Subgroup.map_id H₂).le) :
+    (D.mapHom (MonoidHom.id G)).map hΔ h₁ h₂ = D := by
+  induction D using HeckeCoset.induction with | h g =>
+  rw [mapHom_mk, map_mk]
+  exact mk_congr_val rfl
+
+/-- `HeckeCoset.mapHom` composes functorially along `φ : G →* K` and `ψ : K →* L` up to
+`HeckeCoset.map` along `Submonoid.map_map` and `Subgroup.map_map`. -/
+@[simp]
+theorem mapHom_mapHom {L : Type*} [Group L] (φ : G →* K) (ψ : K →* L) (D : HeckeCoset Δ H₁ H₂)
+    (hΔ : (Δ.map φ).map ψ ≤ Δ.map (ψ.comp φ) := (Δ.map_map ψ φ).le)
+    (h₁ : (H₁.map φ).map ψ ≤ H₁.map (ψ.comp φ) := (H₁.map_map ψ φ).le)
+    (h₂ : (H₂.map φ).map ψ ≤ H₂.map (ψ.comp φ) := (H₂.map_map ψ φ).le) :
+    ((D.mapHom φ).mapHom ψ).map hΔ h₁ h₂ = D.mapHom (ψ.comp φ) := by
+  induction D using HeckeCoset.induction with | h g =>
+  rw [mapHom_mk, mapHom_mk, map_mk, mapHom_mk]
+  exact mk_congr_val rfl
+
 /-- `HeckeCoset.mapHom` sends the identity coset to the identity coset. -/
 @[simp]
 theorem mapHom_one (φ : G →* K) :
     (1 : HeckeCoset Δ H H).mapHom φ = (1 : HeckeCoset (Δ.map φ) (H.map φ) (H.map φ)) := by
   rw [one_def, one_def, mapHom_mk]
   exact mk_congr_val (_root_.map_one φ)
+
+/-- The chosen representative of `D.mapHom φ` lies in the `(H₁.map φ, H₂.map φ)`-double coset of
+`φ D.rep`. -/
+theorem rep_mapHom_mem_doubleCoset (φ : G →* K) (D : HeckeCoset Δ H₁ H₂) :
+    (((D.mapHom φ).rep : ↥(Δ.map φ)) : K) ∈
+      doubleCoset (φ (D.rep : G)) (H₁.map φ) (H₂.map φ) := by
+  let w : ↥(Δ.map φ) := ⟨φ (D.rep : G), ⟨D.rep, D.rep.2, rfl⟩⟩
+  have hmap : D.mapHom φ = mk (H₁.map φ) (H₂.map φ) w := by
+    conv_lhs => rw [← mk_rep D, mapHom_mk]
+  simpa only [hmap] using rep_mk_mem_doubleCoset (H₁ := H₁.map φ) (H₂ := H₂.map φ) w
 
 /-- When `φ : G →* K` is injective, `HeckeCoset.mapHom φ` is bijective. -/
 theorem mapHom_bijective {φ : G →* K} (hφ : Function.Injective φ) :
@@ -310,72 +174,62 @@ end HeckeCoset
 
 namespace HeckeCosetModule
 
-variable (R : Type*) [Semiring R] {Δ : Submonoid G} {H : Subgroup G}
+variable (R : Type*) [Semiring R] {Δ : Submonoid G} {H₁ H₂ H₃ H : Subgroup G}
 
-/-- `R`-linear equivalence `𝕋 Δ H R ≃ₗ[R] 𝕋 (Δ.map φ) (H.map φ) R` induced by an injective group
-homomorphism `φ : G →* K`. -/
+/-- `R`-linear equivalence of Hecke coset bimodules induced by an injective group homomorphism
+`φ : G →* K`. -/
 noncomputable def mapInjectiveLinearEquiv (φ : G →* K) (hφ : Function.Injective φ) :
-    𝕋 Δ H R ≃ₗ[R] 𝕋 (Δ.map φ) (H.map φ) R :=
+    HeckeCosetModule Δ H₁ H₂ R ≃ₗ[R] HeckeCosetModule (Δ.map φ) (H₁.map φ) (H₂.map φ) R :=
   Finsupp.mapDomain.linearEquiv R R (HeckeCoset.mapEquivOfInjective φ hφ)
 
 /-- Evaluating `mapInjectiveLinearEquiv` at `D.mapHom φ` recovers the coefficient at `D`. -/
 @[simp]
 theorem mapInjectiveLinearEquiv_apply_mapHom (φ : G →* K) (hφ : Function.Injective φ)
-    (f : 𝕋 Δ H R) (D : HeckeCoset Δ H H) :
+    (f : HeckeCosetModule Δ H₁ H₂ R) (D : HeckeCoset Δ H₁ H₂) :
     mapInjectiveLinearEquiv R φ hφ f (D.mapHom φ) = f D :=
   Finsupp.mapDomain_apply_of_injective (HeckeCoset.mapHom_bijective hφ).1 f D
 
 /-- `mapInjectiveLinearEquiv` sends each basis element to the mapped basis element. -/
 @[simp]
 theorem mapInjectiveLinearEquiv_single (φ : G →* K) (hφ : Function.Injective φ)
-    (D : HeckeCoset Δ H H) (b : R) :
+    (D : HeckeCoset Δ H₁ H₂) (b : R) :
     mapInjectiveLinearEquiv R φ hφ (single R D b) = single R (D.mapHom φ) b :=
   mapDomain_single R _ D b
 
-private lemma rep_mapHom_mem_doubleCoset (φ : G →* K) (D : HeckeCoset Δ H H) :
-    (((D.mapHom φ).rep : ↥(Δ.map φ)) : K) ∈
-      doubleCoset (φ (D.rep : G)) (H.map φ) (H.map φ) := by
-  let w : ↥(Δ.map φ) := ⟨φ (D.rep : G), ⟨D.rep, D.rep.2, rfl⟩⟩
-  have hmap : D.mapHom φ = HeckeCoset.mk (H.map φ) (H.map φ) w := by
-    conv_lhs => rw [← HeckeCoset.mk_rep D, HeckeCoset.mapHom_mk]
-  simpa only [hmap] using
-    HeckeCoset.rep_mk_mem_doubleCoset (H₁ := H.map φ) (H₂ := H.map φ) w
-
-/-- `mapInjectiveLinearEquiv` sends structure constants on `(Δ, H)` to structure constants on
-`(Δ.map φ, H.map φ)`. -/
+/-- `mapInjectiveLinearEquiv` sends structure constants on `(H₁, H₂, H₃)` to structure constants on
+`(H₁.map φ, H₂.map φ, H₃.map φ)`. -/
 theorem mapInjectiveLinearEquiv_structureConstants (φ : G →* K) (hφ : Function.Injective φ)
-    [IsHeckeTriple Δ H H] [IsHeckeTriple (Δ.map φ) (H.map φ) (H.map φ)]
-    (D₁ D₂ : HeckeCoset Δ H H) :
-    mapInjectiveLinearEquiv R φ hφ (structureConstants R H H H D₁.rep D₂.rep) =
-      structureConstants R (H.map φ) (H.map φ) (H.map φ)
+    [IsHeckeTriple Δ H₁ H₂] [IsHeckeTriple Δ H₂ H₃]
+    [IsHeckeTriple (Δ.map φ) (H₁.map φ) (H₂.map φ)]
+    [IsHeckeTriple (Δ.map φ) (H₂.map φ) (H₃.map φ)]
+    (D₁ : HeckeCoset Δ H₁ H₂) (D₂ : HeckeCoset Δ H₂ H₃) :
+    mapInjectiveLinearEquiv R φ hφ (structureConstants R H₁ H₂ H₃ D₁.rep D₂.rep) =
+      structureConstants R (H₁.map φ) (H₂.map φ) (H₃.map φ)
         (D₁.mapHom φ).rep (D₂.mapHom φ).rep := by
   ext E
   obtain ⟨D, rfl⟩ := (HeckeCoset.mapHom_bijective hφ).2 E
   rw [mapInjectiveLinearEquiv_apply_mapHom, structureConstants_apply, structureConstants_apply,
-    multiplicity_doubleCoset_congr_first (H.map φ) (H.map φ) (H.map φ) _ _
-      (rep_mapHom_mem_doubleCoset φ D₁),
-    multiplicity_doubleCoset_congr_second (H.map φ) (H.map φ) (H.map φ) _ _
-      (rep_mapHom_mem_doubleCoset φ D₂),
-    multiplicity_doubleCoset_congr _ _ (rep_mapHom_mem_doubleCoset φ D),
-    multiplicity_map_of_injective φ hφ H H H (D₁.rep : G) (D₂.rep : G) (D.rep : G)]
+    multiplicity_doubleCoset_congr_first (H₁.map φ) (H₂.map φ) (H₃.map φ) _ _
+      (HeckeCoset.rep_mapHom_mem_doubleCoset φ D₁),
+    multiplicity_doubleCoset_congr_second (H₁.map φ) (H₂.map φ) (H₃.map φ) _ _
+      (HeckeCoset.rep_mapHom_mem_doubleCoset φ D₂),
+    multiplicity_doubleCoset_congr _ _ (HeckeCoset.rep_mapHom_mem_doubleCoset φ D),
+    multiplicity_map_of_injective φ hφ H₁ H₂ H₃ (D₁.rep : G) (D₂.rep : G) (D.rep : G)]
 
-/-- `mapInjectiveLinearEquiv` preserves the Hecke convolution product. -/
+/-- `mapInjectiveLinearEquiv` intertwines the bimodule convolution product
+`HeckeCosetModule.mul`. -/
 theorem mapInjectiveLinearEquiv_mul (φ : G →* K) (hφ : Function.Injective φ)
-    [IsHeckeTriple Δ H H] [IsHeckeTriple (Δ.map φ) (H.map φ) (H.map φ)]
-    (f g : 𝕋 Δ H R) :
-    mapInjectiveLinearEquiv R φ hφ (f * g) =
-      mapInjectiveLinearEquiv R φ hφ f * mapInjectiveLinearEquiv R φ hφ g := by
-  induction f using HeckeCosetModule.induction_linear with
-  | h0 => simp
-  | hadd _ _ ih₁ ih₂ => rw [_root_.add_mul, map_add, map_add, ih₁, ih₂, _root_.add_mul]
-  | hsingle D₁ a =>
-    induction g using HeckeCosetModule.induction_linear with
-    | h0 => simp
-    | hadd _ _ ih₁ ih₂ => rw [_root_.mul_add, map_add, map_add, ih₁, ih₂, _root_.mul_add]
-    | hsingle D₂ b =>
-      rw [single_mul_single, map_smul, map_smul,
-        mapInjectiveLinearEquiv_structureConstants R φ hφ,
-        mapInjectiveLinearEquiv_single, mapInjectiveLinearEquiv_single, single_mul_single]
+    [IsHeckeTriple Δ H₁ H₂] [IsHeckeTriple Δ H₂ H₃]
+    [IsHeckeTriple (Δ.map φ) (H₁.map φ) (H₂.map φ)]
+    [IsHeckeTriple (Δ.map φ) (H₂.map φ) (H₃.map φ)]
+    (f : HeckeCosetModule Δ H₁ H₂ R) (g : HeckeCosetModule Δ H₂ H₃ R) :
+    mapInjectiveLinearEquiv R φ hφ (mul R f g) =
+      mul R (mapInjectiveLinearEquiv R φ hφ f) (mapInjectiveLinearEquiv R φ hφ g) :=
+  map_mul_of_structureConstants_of_map R (HeckeCoset.mapHom φ) (HeckeCoset.mapHom φ)
+    (mapInjectiveLinearEquiv R φ hφ).toLinearMap (mapInjectiveLinearEquiv R φ hφ).toLinearMap
+    (mapInjectiveLinearEquiv R φ hφ).toLinearMap (mapInjectiveLinearEquiv_single R φ hφ)
+    (mapInjectiveLinearEquiv_single R φ hφ)
+    (mapInjectiveLinearEquiv_structureConstants R φ hφ) f g
 
 /-- **Injective-homomorphism isomorphism for Hecke rings**: an injective group homomorphism
 `φ : G →* K` induces a ring isomorphism `𝕋 Δ H R ≃+* 𝕋 (Δ.map φ) (H.map φ) R` over any coefficient
@@ -385,6 +239,14 @@ noncomputable def mapInjectiveRingEquiv (φ : G →* K) (hφ : Function.Injectiv
     𝕋 Δ H R ≃+* 𝕋 (Δ.map φ) (H.map φ) R :=
   { mapInjectiveLinearEquiv R φ hφ with
     map_mul' := mapInjectiveLinearEquiv_mul R φ hφ }
+
+/-- `mapInjectiveRingEquiv` coerces to `mapInjectiveLinearEquiv`. -/
+-- Deliberately not `@[simp]`: rewriting `⇑(mapInjectiveRingEquiv …)` to a `LinearEquiv` prevents
+-- generic ring-homomorphism simp lemmas (`map_mul`, `map_one`) from firing.
+theorem coe_mapInjectiveRingEquiv (φ : G →* K) (hφ : Function.Injective φ)
+    [IsHeckeTriple Δ H H] [IsHeckeTriple (Δ.map φ) (H.map φ) (H.map φ)] :
+    ⇑(mapInjectiveRingEquiv R (Δ := Δ) (H := H) φ hφ) =
+      mapInjectiveLinearEquiv R φ hφ := (rfl)
 
 /-- `mapInjectiveRingEquiv` sends each basis element `single R D b` to `single R (D.mapHom φ) b`. -/
 @[simp]
@@ -414,6 +276,16 @@ theorem deg_mapInjectiveRingEquiv (φ : G →* K) (hφ : Function.Injective φ)
   | h0 => simp
   | hadd _ _ ih₁ ih₂ => simp [ih₁, ih₂]
   | hsingle D b => simp [HeckeCoset.degree_mapHom_of_injective hφ]
+
+/-- Precomposing `LeftCosetModule.deg` with `mapInjectiveRingEquiv` recovers
+`LeftCosetModule.deg`. -/
+@[simp]
+theorem deg_comp_mapInjectiveRingEquiv (φ : G →* K) (hφ : Function.Injective φ)
+    [IsHeckeTriple Δ H H] [IsHeckeTriple (Δ.map φ) (H.map φ) (H.map φ)] :
+    (LeftCosetModule.deg (Δ.map φ) (H.map φ) R).comp
+        ↑(mapInjectiveRingEquiv R (Δ := Δ) (H := H) φ hφ) =
+      LeftCosetModule.deg Δ H R :=
+  RingHom.ext (deg_mapInjectiveRingEquiv R φ hφ)
 
 end HeckeCosetModule
 

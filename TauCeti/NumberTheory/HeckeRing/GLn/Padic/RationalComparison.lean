@@ -9,12 +9,13 @@ public import TauCeti.NumberTheory.HeckeRing.GLn.Padic.IntegralComparison
 public import TauCeti.NumberTheory.HeckeRing.GLn.PolynomialRing.Localization
 
 import TauCeti.NumberTheory.HeckeRing.Normalizer
+import TauCeti.RingTheory.Localization.Away.Basic
 
 /-!
 # The rational `p`-adic `GL_n` Hecke ring comparison and central localization
 
 Following Proposition 3.16 and Theorem 3.20 of [Shimura][shimura1971] together with
-[Rhodes–Shemanske][rhodes1998] (§3.2) and [Rhodes–Shemanske][rhodes1999] (§2), this file completes
+Rhodes–Shemanske (1998, §3.2) and [Rhodes–Shemanske][rhodes1999] (§2), this file completes
 the local `p`-adic `GL_n` comparison diagram:
 
 1. **Integral-to-rational `p`-adic inclusion**: widening `padicIntEntries n p` to `⊤` inside
@@ -22,7 +23,7 @@ the local `p`-adic `GL_n` comparison diagram:
    `padicIntegralToRationalRingHom n p R` (and over `ℤ`,
    `padicIntegralToRational n p : PadicIntegralHeckeRing n p →+* PadicRationalHeckeRing n p`),
    stated independently of the localization presentation. Any negative exponent takes
-   `padicIntPowDiagElem n p e` outside its range (in particular `p⁻¹I` in rank `1`).
+   `padicIntPowDiagElem n p e` outside its range (in particular `p⁻¹I` in positive rank `n ≠ 0`).
 2. **Rational `p`-adic comparison**: extending `SL_n(ℤ)` to `GL_n(ℤ_p)` along
    `castGLPadic n p : GL_n(ℚ) →* GL_n(ℚ_p)` identifies `𝕋 (pLocalPosGL n p).toSubmonoid (SLnZ n) R`
    with `𝕋 ⊤ (GLnZp n p) R`, and over `ℤ` yields the degree-preserving ring isomorphism
@@ -58,11 +59,11 @@ the local `p`-adic `GL_n` comparison diagram:
 * `HeckeRing.GLn.padicIntPowDiagElem_notMem_range_padicIntegralToRational`,
   `HeckeRing.GLn.padicIntPowDiagElem_neg_one_notMem_range_padicIntegralToRational`: operators with
   a negative `p`-exponent lie outside the integral `p`-adic subring.
-* `HeckeRing.GLn.multiplicity_pLocalPosToPadicRational`,
+* `HeckeRing.GLn.multiplicity_GLnZp_castGLPadic_of_mem_pLocalPosGL`,
   `HeckeRing.GLn.pLocalRationalToPadicRingEquiv_integralToRationalLocal`,
   `HeckeRing.GLn.deg_pLocalRationalToPadicRingEquiv`: structure-constant equality, compatibility
   with the integral comparison, and preservation of `LeftCosetModule.deg`.
-* `HeckeRing.GLn.padicIntegralToRational_padicScalarIntElem_mul_inv`,
+* `HeckeRing.GLn.padicIntegralToRational_padicScalarIntElem_mul_padicScalarInvElem`,
   `HeckeRing.GLn.isLocalization_away_padicScalarIntElem`,
   `HeckeRing.GLn.eq_padicRationalHeckeRingLift_iff`: central invertibility of `pI` and the
   universal property of `padicIntegralToRational n p`.
@@ -71,8 +72,8 @@ the local `p`-adic `GL_n` comparison diagram:
 
 * [G. Shimura, *Introduction to the arithmetic theory of automorphic functions*][shimura1971],
   Proposition 3.16 and Theorem 3.20.
-* [J. A. Rhodes and T. R. Shemanske,
-  *Local-to-global theorems for Hecke operators*][rhodes1998], §3.2.
+* J. A. Rhodes and T. R. Shemanske, *Bruhat–Tits buildings and Hecke operators*, 12 June 1998
+  author manuscript, §3.2.
 * [J. A. Rhodes and T. R. Shemanske,
   *Rationality theorems for Hecke operators on GL_n*][rhodes1999], §2.
 -/
@@ -187,31 +188,15 @@ theorem padicIntPowDiagElem_notMem_range_padicIntegralToRational {e : Fin n → 
   rw [hf, padicIntPowDiagElem_def, HeckeCosetModule.single_apply, ite_eq_left rfl] at h0
   exact one_ne_zero h0
 
-/-- **Rank-`1` non-surjectivity**: `[GL_1(ℤ_p) · p⁻¹ · GL_1(ℤ_p)]` does not lie in the image of
-`padicIntegralToRational 1 p`. -/
-theorem padicIntPowDiagElem_neg_one_notMem_range_padicIntegralToRational :
-    padicIntPowDiagElem 1 p (fun _ ↦ -1) ∉ Set.range (padicIntegralToRational 1 p) :=
-  padicIntPowDiagElem_notMem_range_padicIntegralToRational 1 p (i := 0) (by norm_num)
+/-- **Positive-rank non-surjectivity**: for `n ≠ 0`, `[GL_n(ℤ_p) · (p⁻¹I) · GL_n(ℤ_p)]` does not lie
+in the image of `padicIntegralToRational n p`. -/
+theorem padicIntPowDiagElem_neg_one_notMem_range_padicIntegralToRational [NeZero n] :
+    padicIntPowDiagElem n p (fun _ ↦ -1) ∉ Set.range (padicIntegralToRational n p) :=
+  padicIntPowDiagElem_notMem_range_padicIntegralToRational n p (i := 0) (by norm_num)
 
 end PadicInclusion
 
 section RationalPadicComparison
-
-/-- Scalar `p`-adic diagonal matrices `padicIntPowDiagGL n p (fun _ ↦ k)` are central in
-`GL_n(ℚ_p)`. -/
-theorem padicIntPowDiagGL_const_comm (k : ℤ) (g : GL (Fin n) ℚ_[p]) :
-    padicIntPowDiagGL n p (fun _ ↦ k) * g = g * padicIntPowDiagGL n p (fun _ ↦ k) := by
-  apply Units.ext
-  rw [Units.val_mul, Units.val_mul, padicIntPowDiagGL_coe]
-  ext i j
-  simp [Matrix.diagonal_mul, Matrix.mul_diagonal, mul_comm]
-
-/-- Scalar `p`-adic diagonal matrices `padicNatPowDiagGL n p (fun _ ↦ k)` are central in
-`GL_n(ℚ_p)`. -/
-theorem padicNatPowDiagGL_const_comm (k : ℕ) (g : GL (Fin n) ℚ_[p]) :
-    padicNatPowDiagGL n p (fun _ ↦ k) * g = g * padicNatPowDiagGL n p (fun _ ↦ k) := by
-  rw [← padicIntPowDiagGL_natCast]
-  exact padicIntPowDiagGL_const_comm n p k g
 
 /-- **Left-coset surjectivity for `(pLocalPosGL n p, GL_n(ℚ_p))`**: every `δ' ∈ GL_n(ℚ_p)`
 translates on the left by `GL_n(ℤ_p)` into `(pLocalPosGL n p).toSubmonoid.map (castGLPadic n p)`. -/
@@ -227,22 +212,20 @@ theorem exists_mem_GLnZp_mul_mem_map_pLocalPosGL
     (pLocalPosGL n p).mul_mem (intPowDiagGL_mem_pLocalPosGL n p _)
       (pPrimaryPosDetInt_le_pLocalPosGL n p hg₀), ?_⟩
   apply mul_left_cancel (a := padicNatPowDiagGL n p (fun _ ↦ k))
-  rw [map_mul, ← padicIntPowDiagGL_def,
-    show (fun _ : Fin n ↦ -(k : ℤ)) = -(fun _ ↦ (k : ℤ)) from rfl,
-    padicIntPowDiagGL_neg, padicIntPowDiagGL_natCast, mul_inv_cancel_left, hug₀]
+  rw [map_mul, ← padicIntPowDiagGL_def, padicIntPowDiagGL_const_neg, mul_inv_cancel_left, hug₀]
   simp only [← mul_assoc, padicNatPowDiagGL_const_comm n p k u]
 
 /-- **Stabilizer transitivity for `(pLocalPosGL n p, GL_n(ℚ_p))`**: for every `g` in the image of
 `pLocalPosGL n p` and every `u ∈ GL_n(ℤ_p)`, there exists `x` in the image of `SL_n(ℤ)` with
 `x⁻¹ * u ∈ g • GL_n(ℤ_p)`. -/
-theorem exists_mem_map_SLnZ_conj_mem_GLnZp_of_pLocalPosGL
+theorem exists_mem_map_SLnZ_inv_mul_mem_conj_GLnZp_of_pLocalPosGL
     (g : (pLocalPosGL n p).toSubmonoid.map (castGLPadic n p))
     (u : GL (Fin n) ℚ_[p]) (hu : u ∈ GLnZp n p) :
     ∃ x ∈ (SLnZ n).map (castGLPadic n p),
       x⁻¹ * u ∈ ConjAct.toConjAct (g : GL (Fin n) ℚ_[p]) • GLnZp n p := by
   obtain ⟨g₀, hg₀, hg_eq⟩ := g.2
   obtain ⟨-, k, hkg₀⟩ := (mem_pLocalPosGL_iff n p).mp hg₀
-  obtain ⟨x, hx, hconj⟩ := exists_mem_map_SLnZ_conj_mem_GLnZp n p
+  obtain ⟨x, hx, hconj⟩ := exists_mem_map_SLnZ_inv_mul_mem_conj_GLnZp n p
     ⟨castGLPadic n p (natDiagGL n (fun _ ↦ p ^ k) * g₀), ⟨_, hkg₀, rfl⟩⟩ u hu
   refine ⟨x, hx, ?_⟩
   have hpk : castGLPadic n p (natDiagGL n (fun _ ↦ p ^ k)) =
@@ -271,7 +254,7 @@ private theorem castGLPadic_pLocalPosGL_le :
 noncomputable instance instIsHeckeTripleMapCastPLocalPosGL :
     IsHeckeTriple ((pLocalPosGL n p).toSubmonoid.map (castGLPadic n p))
       ((SLnZ n).map (castGLPadic n p)) ((SLnZ n).map (castGLPadic n p)) :=
-  IsHeckeTriple.map_of_injective (castGLPadic n p) (castGLPadic_injective n p)
+  IsHeckeTriple.map (castGLPadic n p)
 
 /-- Bijection between `p`-local rational `SL_n(ℤ)` double cosets and `p`-adic `GL_n(ℤ_p)` double
 cosets in `GL_n(ℚ_p)`. -/
@@ -282,7 +265,7 @@ noncomputable def pLocalPosToPadicRationalCosetEquiv :
     (HeckeCoset.mapEquivOfInf (map_SLnZ_eq_GLnZp_inf_map_pLocalPosGL n p) le_top
       (castGLPadic_pLocalPosGL_le n p)
       (exists_mem_GLnZp_mul_mem_map_pLocalPosGL n p)
-      (exists_mem_map_SLnZ_conj_mem_GLnZp_of_pLocalPosGL n p))
+      (exists_mem_map_SLnZ_inv_mul_mem_conj_GLnZp_of_pLocalPosGL n p))
 
 /-- Explicit action of `pLocalPosToPadicRationalCosetEquiv` on `HeckeCoset.mk`. -/
 @[simp]
@@ -300,12 +283,15 @@ theorem degree_pLocalPosToPadicRationalCosetEquiv
     (D : HeckeCoset (pLocalPosGL n p).toSubmonoid (SLnZ n) (SLnZ n)) :
     (pLocalPosToPadicRationalCosetEquiv n p D).degree = D.degree := by
   simp only [pLocalPosToPadicRationalCosetEquiv, Equiv.trans_apply,
-    HeckeCoset.degree_mapEquivOfInf, HeckeCoset.mapEquivOfInjective_apply,
+    HeckeCoset.mapEquivOfInf_apply, HeckeCoset.mapEquivOfInjective_apply]
+  rw [HeckeCoset.degree_map_of_inf (map_SLnZ_eq_GLnZp_inf_map_pLocalPosGL n p) le_top
+      (castGLPadic_pLocalPosGL_le n p)
+      (exists_mem_map_SLnZ_inv_mul_mem_conj_GLnZp_of_pLocalPosGL n p),
     HeckeCoset.degree_mapHom_of_injective (castGLPadic_injective n p)]
 
 /-- **Equality of rational structure constants**: double-coset multiplicities on
 `(pLocalPosGL n p, SL_n(ℤ))` equal the `p`-adic multiplicities on `(GL_n(ℚ_p), GL_n(ℤ_p))`. -/
-theorem multiplicity_pLocalPosToPadicRational {g₁ g₂ g : GL (Fin n) ℚ}
+theorem multiplicity_GLnZp_castGLPadic_of_mem_pLocalPosGL {g₁ g₂ g : GL (Fin n) ℚ}
     (hg₁ : g₁ ∈ pLocalPosGL n p) (hg₂ : g₂ ∈ pLocalPosGL n p) (hg : g ∈ pLocalPosGL n p) :
     DoubleCoset.multiplicity (GLnZp n p) (GLnZp n p) (GLnZp n p)
         (castGLPadic n p g₁) (castGLPadic n p g₂) (castGLPadic n p g) =
@@ -313,8 +299,10 @@ theorem multiplicity_pLocalPosToPadicRational {g₁ g₂ g : GL (Fin n) ℚ}
   have hinf := DoubleCoset.multiplicity_eq_of_inf (map_SLnZ_eq_GLnZp_inf_map_pLocalPosGL n p)
     (⟨g₁, hg₁, rfl⟩ : castGLPadic n p g₁ ∈ (pLocalPosGL n p).map (castGLPadic n p))
     ⟨g₂, hg₂, rfl⟩ ⟨g, hg, rfl⟩
-    (exists_mem_map_SLnZ_conj_mem_GLnZp_of_pLocalPosGL n p ⟨castGLPadic n p g₁, ⟨g₁, hg₁, rfl⟩⟩)
-    (exists_mem_map_SLnZ_conj_mem_GLnZp_of_pLocalPosGL n p ⟨castGLPadic n p g₂, ⟨g₂, hg₂, rfl⟩⟩)
+    (exists_mem_map_SLnZ_inv_mul_mem_conj_GLnZp_of_pLocalPosGL n p
+      ⟨castGLPadic n p g₁, ⟨g₁, hg₁, rfl⟩⟩)
+    (exists_mem_map_SLnZ_inv_mul_mem_conj_GLnZp_of_pLocalPosGL n p
+      ⟨castGLPadic n p g₂, ⟨g₂, hg₂, rfl⟩⟩)
   exact hinf.trans (DoubleCoset.multiplicity_map_of_injective (castGLPadic n p)
     (castGLPadic_injective n p) (SLnZ n) (SLnZ n) (SLnZ n) g₁ g₂ g)
 
@@ -327,7 +315,7 @@ noncomputable def pLocalPosToPadicRationalRingEquiv (R : Type*) [Semiring R] :
     (HeckeCosetModule.mapSubgroupRingEquiv R (map_SLnZ_eq_GLnZp_inf_map_pLocalPosGL n p)
       le_top (castGLPadic_pLocalPosGL_le n p)
       (exists_mem_GLnZp_mul_mem_map_pLocalPosGL n p)
-      (exists_mem_map_SLnZ_conj_mem_GLnZp_of_pLocalPosGL n p))
+      (exists_mem_map_SLnZ_inv_mul_mem_conj_GLnZp_of_pLocalPosGL n p))
 
 /-- `pLocalPosToPadicRationalRingEquiv` maps basis elements via
 `pLocalPosToPadicRationalCosetEquiv`. -/
@@ -409,14 +397,8 @@ theorem range_mapSubmonoidRingHom_pLocalPosGL :
 `pLocalRationalSubring n p`. -/
 noncomputable def pLocalPosToPLocalRationalRingEquiv :
     𝕋 (pLocalPosGL n p).toSubmonoid (SLnZ n) ℤ ≃+* pLocalRationalSubring n p :=
-  (RingEquiv.ofBijective
-    (HeckeCosetModule.mapSubmonoidRingHom (H := SLnZ n) ℤ
-      (pLocalPosGL_le_glpos n p)).rangeRestrict
-    ⟨fun _ _ h ↦ HeckeCosetModule.mapSubmonoidRingHom_injective (H := SLnZ n) ℤ
-      (pLocalPosGL_le_glpos n p) (congrArg Subtype.val h),
-      (HeckeCosetModule.mapSubmonoidRingHom (H := SLnZ n) ℤ
-        (pLocalPosGL_le_glpos n p)).rangeRestrict_surjective⟩).trans
-    (RingEquiv.subringCongr (range_mapSubmonoidRingHom_pLocalPosGL n p))
+  HeckeCosetModule.mapSubmonoidSubringEquiv (pLocalPosGL_le_glpos n p)
+    (range_mapSubmonoidRingHom_pLocalPosGL n p)
 
 /-- Coercion of `pLocalPosToPLocalRationalRingEquiv` to `RationalHeckeRing n`. -/
 @[simp]
@@ -424,10 +406,11 @@ theorem pLocalPosToPLocalRationalRingEquiv_coe
     (f : 𝕋 (pLocalPosGL n p).toSubmonoid (SLnZ n) ℤ) :
     (pLocalPosToPLocalRationalRingEquiv n p f : RationalHeckeRing n) =
       HeckeCosetModule.mapSubmonoidRingHom (H := SLnZ n) ℤ
-        (pLocalPosGL_le_glpos n p) f := (rfl)
+        (pLocalPosGL_le_glpos n p) f :=
+  HeckeCosetModule.coe_mapSubmonoidSubringEquiv_apply _ _ f
 
 /-- **The rational `p`-adic `GL_n` Hecke ring comparison**
-([Rhodes–Shemanske][rhodes1998] §3.2, [Rhodes–Shemanske][rhodes1999] §2):
+(Rhodes–Shemanske 1998, §3.2; [Rhodes–Shemanske][rhodes1999] §2):
 `pLocalRationalSubring n p` is canonically isomorphic to `PadicRationalHeckeRing n p`. -/
 noncomputable def pLocalRationalToPadicRingEquiv :
     pLocalRationalSubring n p ≃+* PadicRationalHeckeRing n p :=
@@ -480,9 +463,10 @@ theorem pLocalRationalToPadicRingEquiv_integralToRationalLocal (x : pLocalSubrin
       rw [pLocalSubring_le_iff]
       intro e he
       have he_int : Monotone fun i ↦ (e i : ℤ) := fun _ _ hij ↦ Int.ofNat_le.mpr (he hij)
+      rw [Subring.mem_map]
       refine ⟨⟨diagElem (primePowDiag n p e), diagElem_primePowDiag_mem_pLocalSubring n p e he⟩,
         ?_, rfl⟩
-      change φ₁ _ = φ₂ _
+      rw [RingHom.mem_eqLocus]
       dsimp only [φ₁, φ₂, RingHom.comp_apply, RingEquiv.toRingHom_eq_coe, RingHom.coe_coe]
       have hint : integralToRationalLocal n p
           ⟨diagElem (primePowDiag n p e), diagElem_primePowDiag_mem_pLocalSubring n p e he⟩ =
@@ -529,15 +513,6 @@ noncomputable def padicScalarInvElem : PadicRationalHeckeRing n p :=
 theorem padicScalarInvElem_def :
     padicScalarInvElem n p = padicIntPowDiagElem n p (fun _ ↦ -1) := (rfl)
 
-/-- Every central `p`-power diagonal matrix `padicIntPowDiagGL n p (fun _ ↦ k)` normalizes
-`GL_n(ℤ_p)`. -/
-theorem padicIntPowDiagGL_const_mem_normalizer (k : ℤ) :
-    padicIntPowDiagGL n p (fun _ ↦ k) ∈
-      Subgroup.normalizer (GLnZp n p : Set (GL (Fin n) ℚ_[p])) := by
-  rw [Subgroup.mem_normalizer_iff]
-  intro h
-  rw [padicIntPowDiagGL_const_comm n p k h, mul_inv_cancel_right]
-
 /-- The central `pI` operator bundled as a unit of `PadicRationalHeckeRing n p` with inverse
 `padicScalarInvElem n p`. -/
 noncomputable def padicScalarUnit : (PadicRationalHeckeRing n p)ˣ :=
@@ -554,7 +529,7 @@ theorem val_padicScalarUnit :
   rw [padicScalarUnit, HeckeCosetModule.val_unitOfMemNormalizer, padicScalarIntElem_def,
     padicIntegralToRational_padicNatPowDiagElem, padicIntPowDiagElem_def,
     padicIntPowDiagCoset_def]
-  rfl
+  simp only [Nat.cast_one]
 
 /-- Coercion of `(padicScalarUnit n p)⁻¹` to `PadicRationalHeckeRing n p` is
 `padicScalarInvElem n p`. -/
@@ -564,12 +539,12 @@ theorem val_inv_padicScalarUnit :
   rw [padicScalarUnit, HeckeCosetModule.val_inv_unitOfMemNormalizer, padicScalarInvElem_def,
     padicIntPowDiagElem_def, padicIntPowDiagCoset_def]
   exact congrArg (HeckeCosetModule.single ℤ · 1)
-    (HeckeCoset.mk_congr_val (by rw [← padicIntPowDiagGL_neg]; rfl))
+    (HeckeCoset.mk_congr_val (by rw [← padicIntPowDiagGL_neg, Pi.neg_def]))
 
 /-- **Central invertibility of `pI` in `PadicRationalHeckeRing`**: `[GL_n(ℤ_p) · (pI) · GL_n(ℤ_p)]`
 multiplied on the right by `[GL_n(ℤ_p) · (p⁻¹I) · GL_n(ℤ_p)]` equals `1`. -/
 @[simp]
-theorem padicIntegralToRational_padicScalarIntElem_mul_inv :
+theorem padicIntegralToRational_padicScalarIntElem_mul_padicScalarInvElem :
     padicIntegralToRational n p (padicScalarIntElem n p) * padicScalarInvElem n p = 1 := by
   rw [← val_padicScalarUnit, ← val_inv_padicScalarUnit, Units.mul_inv]
 
@@ -594,9 +569,9 @@ theorem padicIntPowDiagElem_mul_padicScalarUnit_pow (e : Fin n → ℤ) (k : ℕ
       (y := ⟨padicIntPowDiagGL n p (fun _ ↦ 1), Submonoid.mem_top _⟩) ℤ
       (padicIntPowDiagGL_const_mem_normalizer n p 1)
     rw [pow_succ, ← mul_assoc, ih, val_padicScalarUnit, padicScalarIntElem_def,
-      padicIntegralToRational_padicNatPowDiagElem,
-      show (fun _ : Fin n ↦ ((1 : ℕ) : ℤ)) = fun _ ↦ 1 from rfl,
-      padicIntPowDiagElem_def, padicIntPowDiagElem_def,
+      padicIntegralToRational_padicNatPowDiagElem]
+    simp only [Nat.cast_one]
+    rw [padicIntPowDiagElem_def, padicIntPowDiagElem_def,
       padicIntPowDiagCoset_def, padicIntPowDiagCoset_def, hmul,
       padicIntPowDiagElem_def, padicIntPowDiagCoset_def]
     refine congrArg (HeckeCosetModule.single ℤ · 1) (HeckeCoset.mk_congr_val ?_)
@@ -661,44 +636,10 @@ theorem padicRationalHeckeRing_ringHom_ext {R : Type*} [Semiring R]
     {f₁ f₂ : PadicRationalHeckeRing n p →+* R}
     (h : f₁.comp (padicIntegralToRational n p) = f₂.comp (padicIntegralToRational n p)) :
     f₁ = f₂ := by
-  ext z
-  obtain ⟨k, a, hk⟩ := exists_mul_padicScalarUnit_pow_eq n p z
-  let u : Rˣ := Units.map (f₁ : PadicRationalHeckeRing n p →* R) (padicScalarUnit n p ^ k)
-  have hu : (u : R) = f₂ (↑(padicScalarUnit n p ^ k)) := by
-    simpa only [u, Units.coe_map, MonoidHom.coe_ofClass, Units.val_pow_eq_pow_val,
-      val_padicScalarUnit, ← map_pow, RingHom.comp_apply] using RingHom.congr_fun h _
-  refine u.mul_left_inj.mp ?_
-  calc f₁ z * u = f₁ (padicIntegralToRational n p a) := by simp [u, ← hk]
-    _ = f₂ (padicIntegralToRational n p a) := RingHom.congr_fun h a
-    _ = f₂ z * u := by rw [← hk, map_mul, hu, Units.val_pow_eq_pow_val]
-
-private noncomputable def padicRationalHeckeRingLiftAux {R : Type*} [Semiring R]
-    (g : PadicIntegralHeckeRing n p →+* R) (hg : IsUnit (g (padicScalarIntElem n p))) :
-    { f : PadicRationalHeckeRing n p →+* R // ∀ a, f (padicIntegralToRational n p a) = g a } :=
-  let s₀ := padicScalarIntElem n p
-  letI : Algebra (PadicIntegralHeckeRing n p) (PadicRationalHeckeRing n p) :=
+  let _ : Algebra (PadicIntegralHeckeRing n p) (PadicRationalHeckeRing n p) :=
     (padicIntegralToRational n p).toAlgebra
-  have : IsLocalization.Away s₀ (PadicRationalHeckeRing n p) :=
-    isLocalization_away_padicScalarIntElem n p
-  let S : Set R := insert (↑hg.unit⁻¹ : R) (Set.range g)
-  have hcommS : S.Pairwise Commute := by
-    have hcg (a b : PadicIntegralHeckeRing n p) : Commute (g a) (g b) := by
-      rw [Commute, SemiconjBy, ← map_mul, ← map_mul, mul_comm_padicIntegralHecke n p ℤ a b]
-    rintro _ (rfl | ⟨a, rfl⟩) _ (rfl | ⟨b, rfl⟩) _
-    · exact Commute.refl _
-    · exact Commute.units_inv_left (by simpa only [IsUnit.unit_spec] using hcg s₀ b)
-    · exact Commute.units_inv_right (by simpa only [IsUnit.unit_spec] using hcg a s₀)
-    · exact hcg a b
-  let C : Subsemiring R := Subsemiring.closure S
-  letI : CommSemiring C :=
-    { C.toSemiring with mul_comm := (Subsemiring.isMulCommutative_closure hcommS).is_comm.comm }
-  let g' : PadicIntegralHeckeRing n p →+* C :=
-    g.codRestrict C fun a ↦ Subsemiring.subset_closure (Set.mem_insert_of_mem _ ⟨a, rfl⟩)
-  have hg' : IsUnit (g' s₀) :=
-    ⟨⟨g' s₀, ⟨↑hg.unit⁻¹, Subsemiring.subset_closure (Set.mem_insert _ _)⟩,
-      Subtype.ext hg.mul_val_inv, Subtype.ext hg.val_inv_mul⟩, rfl⟩
-  ⟨C.subtype.comp (IsLocalization.Away.lift s₀ (g := g') hg'), fun a ↦
-    congrArg Subtype.val (IsLocalization.Away.lift_eq s₀ hg' a)⟩
+  have := isLocalization_away_padicScalarIntElem n p
+  exact IsLocalization.ringHom_ext (Submonoid.powers (padicScalarIntElem n p)) h
 
 /-- **Universal-property lift for `PadicRationalHeckeRing`**: any ring homomorphism
 `g : PadicIntegralHeckeRing n p →+* R` into a semiring `R` sending `padicScalarIntElem n p` (`pI`)
@@ -707,15 +648,21 @@ to a unit extends uniquely across `padicIntegralToRational n p` to
 noncomputable def padicRationalHeckeRingLift {R : Type*} [Semiring R]
     (g : PadicIntegralHeckeRing n p →+* R) (hg : IsUnit (g (padicScalarIntElem n p))) :
     PadicRationalHeckeRing n p →+* R :=
-  (padicRationalHeckeRingLiftAux n p g hg).1
+  letI : Algebra (PadicIntegralHeckeRing n p) (PadicRationalHeckeRing n p) :=
+    (padicIntegralToRational n p).toAlgebra
+  haveI := isLocalization_away_padicScalarIntElem n p
+  IsLocalization.Away.liftSemiring (padicScalarIntElem n p) hg
 
 /-- `padicRationalHeckeRingLift` extends `g` along `padicIntegralToRational`. -/
 @[simp]
 theorem padicRationalHeckeRingLift_padicIntegralToRational {R : Type*} [Semiring R]
     (g : PadicIntegralHeckeRing n p →+* R) (hg : IsUnit (g (padicScalarIntElem n p)))
     (a : PadicIntegralHeckeRing n p) :
-    padicRationalHeckeRingLift n p g hg (padicIntegralToRational n p a) = g a :=
-  (padicRationalHeckeRingLiftAux n p g hg).2 a
+    padicRationalHeckeRingLift n p g hg (padicIntegralToRational n p a) = g a := by
+  let _ : Algebra (PadicIntegralHeckeRing n p) (PadicRationalHeckeRing n p) :=
+    (padicIntegralToRational n p).toAlgebra
+  have := isLocalization_away_padicScalarIntElem n p
+  exact IsLocalization.Away.liftSemiring_eq (padicScalarIntElem n p) hg a
 
 /-- Precomposing `padicRationalHeckeRingLift` with `padicIntegralToRational` recovers `g`. -/
 @[simp]
@@ -733,7 +680,7 @@ theorem padicRationalHeckeRingLift_padicScalarInvElem {R : Type*} [Semiring R]
   apply hg.unit.mul_right_inj.mp
   rw [Units.mul_inv, IsUnit.unit_spec,
     ← padicRationalHeckeRingLift_padicIntegralToRational n p g hg,
-    ← map_mul, padicIntegralToRational_padicScalarIntElem_mul_inv, map_one]
+    ← map_mul, padicIntegralToRational_padicScalarIntElem_mul_padicScalarInvElem, map_one]
 
 /-- **Universal property of `padicIntegralToRational`**: a ring homomorphism out of
 `PadicRationalHeckeRing n p` equals `padicRationalHeckeRingLift n p g hg` if and only if its
@@ -742,10 +689,11 @@ theorem eq_padicRationalHeckeRingLift_iff {R : Type*} [Semiring R]
     (g : PadicIntegralHeckeRing n p →+* R) (hg : IsUnit (g (padicScalarIntElem n p)))
     (f : PadicRationalHeckeRing n p →+* R) :
     f = padicRationalHeckeRingLift n p g hg ↔
-      f.comp (padicIntegralToRational n p) = g :=
-  ⟨fun h ↦ h ▸ padicRationalHeckeRingLift_comp_padicIntegralToRational n p g hg,
-    fun h ↦ padicRationalHeckeRing_ringHom_ext n p
-      (h.trans (padicRationalHeckeRingLift_comp_padicIntegralToRational n p g hg).symm)⟩
+      f.comp (padicIntegralToRational n p) = g := by
+  let _ : Algebra (PadicIntegralHeckeRing n p) (PadicRationalHeckeRing n p) :=
+    (padicIntegralToRational n p).toAlgebra
+  have := isLocalization_away_padicScalarIntElem n p
+  exact IsLocalization.Away.eq_liftSemiring_iff (padicScalarIntElem n p) hg f
 
 /-- **Laurent polynomial presentation of `PadicRationalHeckeRing`** ([Shimura][shimura1971]
 Theorem 3.20 combined with the `p`-adic rational comparison): for `n ≠ 0`,

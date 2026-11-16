@@ -5,13 +5,14 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.NumberTheory.HeckeRing.GL2.DiagonalCosetDegree
 public import TauCeti.NumberTheory.HeckeRing.GLn.Degree
 public import TauCeti.NumberTheory.HeckeRing.GLn.Padic.Basic
 public import TauCeti.NumberTheory.HeckeRing.Map.InjectiveHom
+public import TauCeti.NumberTheory.HeckeRing.Map.SubgroupExtension
+public import TauCeti.NumberTheory.HeckeRing.Map.Submonoid
 public import TauCeti.NumberTheory.Padics.FiniteSublattice
 
-import Mathlib.LinearAlgebra.FreeModule.PID
+import TauCeti.LinearAlgebra.Matrix.Divisibility
 import TauCeti.NumberTheory.Padics.RatCast
 
 /-!
@@ -22,20 +23,18 @@ For a prime `p`, let `pLocalSubring n p` (`R_p`) be Shimura's `p`-local subring 
 double cosets `T(p ^ e₁, …, p ^ eₙ)`, and let `PadicIntegralHeckeRing n p` be the integral `p`-adic
 Hecke ring `𝕋 (padicIntEntries n p) (GLnZp n p) ℤ` of `(GL_n(ℤ_p), M_n(ℤ_p) ∩ GL_n(ℚ_p))`.
 
-Following §3.1 (Proposition 3.2) and §3.2 (Lemma 3.3) of [Rhodes–Shemanske][rhodes1998] together
-with Theorem 3.20 of [Shimura][shimura1971], this file proves the integral `p`-adic comparison
+Following Rhodes–Shemanske (1998, §3.1 Proposition 3.2 and §3.2 Lemma 3.3) together with
+Theorem 3.20 of [Shimura][shimura1971], this file proves the integral `p`-adic comparison
 `pLocalSubring n p ≃+* PadicIntegralHeckeRing n p`, preserving `1`, `*`, double-coset degrees
 `HeckeCoset.degree`, and the degree homomorphism `LeftCosetModule.deg`:
 
-1. **Sublattice completion and intermediate-lattice matching**: every nonsingular matrix `A` over
-   `ℤ` or `ℤ_p` defines a full-rank column sublattice `intSublattice n A ≤ ℤ^n` or
-   `padicSublattice n p B ≤ ℤ_p^n`, determined up to right multiplication by `SL_n(ℤ)` (for
-   positive determinant) or `GL_n(ℤ_p)`. When `det A ∣ p ^ k`, the prime-power sublattice
-   correspondence `TauCeti.pPowerSublatticeEquiv` sends `intSublattice n A` to its `ℤ_p`-span
-   `padicSublattice n p (A.map (Int.castRingHom ℤ_[p]))` (`pPowerSublatticeEquiv_intSublattice`),
-   restricting to an order isomorphism on intermediate lattices (`intermediateSublatticeOrderIso`)
-   and showing that every finite-index `ℤ_p`-sublattice arises from a positive-determinant
-   `p`-primary integer matrix (`exists_pos_det_padicSublattice_eq`).
+1. **Transversal and stabilizer matching via sublattice completion**: using
+   `TauCeti.exists_det_eq_pow_and_mul_eq_map` from `TauCeti.NumberTheory.Padics.FiniteSublattice`
+   (every nonsingular `B ∈ M_n(ℤ_p)` agrees up to right multiplication by `GL_n(ℤ_p)` with an
+   integer matrix whose determinant is a power `p ^ m`), every left coset of `GL_n(ℤ_p)` in
+   `padicIntEntries n p` meets the image of `pPrimaryPosDetInt n p`
+   (`exists_mem_GLnZp_mul_mem_map_pPrimaryPosDetInt`), and `SL_n(ℤ)` acts transitively on the
+   stabilizer quotients (`exists_mem_map_SLnZ_inv_mul_mem_conj_GLnZp`).
 2. **Group-level Hecke comparison**: transporting `(pPrimaryPosDetInt n p, SLnZ n)` along the
    injective embedding `castGLPadic n p : GL_n(ℚ) →* GL_n(ℚ_p)` and extending along the subgroup
    intersection
@@ -47,24 +46,23 @@ with Theorem 3.20 of [Shimura][shimura1971], this file proves the integral `p`-a
    with the image of `𝕋 (pPrimaryPosDetInt n p) (SLnZ n) ℤ` yields
    `pLocalToPadicIntegralRingEquiv : pLocalSubring n p ≃+* PadicIntegralHeckeRing n p` and
    `padicPolynomialRingEquiv : MvPolynomial (Fin n) ℤ ≃+* PadicIntegralHeckeRing n p`, together
-   with degree checks for the central coset `pI` and for `diag(1, p)` in rank `2`.
+   with `degree_padicNatPowDiagCoset_const` (`deg(pI) = 1`). Rank-`2` degree specializations live in
+   `TauCeti/NumberTheory/HeckeRing/GL2/Padic.lean`.
 
 ## Main definitions
 
-* `HeckeRing.GLn.intSublattice`, `HeckeRing.GLn.padicSublattice`: column-span sublattices in `ℤ^n`
-  and `ℤ_p^n`.
-* `HeckeRing.GLn.intermediateSublatticeOrderIso`: order isomorphism between integral and `p`-adic
-  intermediate lattices for `p`-primary matrices.
 * `HeckeRing.GLn.pPrimaryPosDetInt`, `HeckeRing.GLn.pLocalPosGL`: the `p`-primary integral
   submonoid and `p`-local positive-determinant subgroup of `GL_n(ℚ)`.
+* `HeckeRing.GLn.pPrimaryToPadicIntegralCosetEquiv`: double-coset bijection between
+  `(pPrimaryPosDetInt n p, SLnZ n)` and `(padicIntEntries n p, GLnZp n p)`.
 * `HeckeRing.GLn.pPrimaryToPadicIntegralRingEquiv`, `HeckeRing.GLn.pLocalToPadicIntegralRingEquiv`,
   `HeckeRing.GLn.padicPolynomialRingEquiv`: the integral `p`-adic comparison isomorphisms and
   polynomial presentation.
 
 ## References
 
-* [J. A. Rhodes and T. R. Shemanske, *Lattices and Hecke operators over local fields*][rhodes1998],
-  §3.1 Proposition 3.2 and §3.2 Lemma 3.3.
+* J. A. Rhodes and T. R. Shemanske, *Bruhat–Tits buildings and Hecke operators*, 12 June 1998
+  author manuscript, §3.1 Proposition 3.2 and §3.2 Lemma 3.3.
 * [J. A. Rhodes and T. R. Shemanske,
   *Rationality theorems for Hecke operators on GL_n*][rhodes1999], §2.
 * [G. Shimura, *Introduction to the arithmetic theory of automorphic functions*][shimura1971],
@@ -79,369 +77,6 @@ open scoped Pointwise HeckeCosetModule
 namespace HeckeRing.GLn
 
 variable (n p : ℕ) [Fact p.Prime]
-
-section SublatticeCompletion
-
-omit [Fact p.Prime] in
-/-- The `ℤ`-sublattice of `ℤ^n` spanned by the columns of `A : Matrix (Fin n) (Fin n) ℤ`. -/
-def intSublattice (A : Matrix (Fin n) (Fin n) ℤ) : Submodule ℤ (Fin n → ℤ) :=
-  LinearMap.range A.mulVecLin
-
-omit [Fact p.Prime] in
-/-- Defining equation for `intSublattice`. -/
-theorem intSublattice_def (A : Matrix (Fin n) (Fin n) ℤ) :
-    intSublattice n A = LinearMap.range A.mulVecLin := (rfl)
-
-/-- The `ℤ_p`-sublattice of `ℤ_p^n` spanned by the columns of `B : Matrix (Fin n) (Fin n) ℤ_[p]`. -/
-noncomputable def padicSublattice (B : Matrix (Fin n) (Fin n) ℤ_[p]) :
-    Submodule ℤ_[p] (Fin n → ℤ_[p]) :=
-  LinearMap.range B.mulVecLin
-
-/-- Defining equation for `padicSublattice`. -/
-theorem padicSublattice_def (B : Matrix (Fin n) (Fin n) ℤ_[p]) :
-    padicSublattice n p B = LinearMap.range B.mulVecLin := (rfl)
-
-omit [Fact p.Prime] in
-private theorem range_mulVecLin_mul_unit {R : Type*} [CommRing R]
-    (B : Matrix (Fin n) (Fin n) R) (U : GL (Fin n) R) :
-    LinearMap.range (B * (↑U : Matrix (Fin n) (Fin n) R)).mulVecLin =
-      LinearMap.range B.mulVecLin := by
-  rw [Matrix.mulVecLin_mul]
-  refine le_antisymm (LinearMap.range_comp_le_range _ _) ?_
-  rintro _ ⟨v, rfl⟩
-  refine ⟨(↑(U⁻¹) : Matrix (Fin n) (Fin n) R).mulVec v, ?_⟩
-  have hU : (↑U : Matrix (Fin n) (Fin n) R) * (↑(U⁻¹) : Matrix (Fin n) (Fin n) R) = 1 :=
-    (Units.val_mul U U⁻¹).symm.trans (by simp)
-  rw [LinearMap.comp_apply, Matrix.mulVecLin_apply, Matrix.mulVecLin_apply, Matrix.mulVecLin_apply,
-    Matrix.mulVec_mulVec, Matrix.mulVec_mulVec, Matrix.mul_assoc, hU, Matrix.mul_one]
-
-omit [Fact p.Prime] in
-private theorem range_mulVecLin_eq_iff {R : Type*} [CommRing R] [IsDomain R]
-    {B₁ B₂ : Matrix (Fin n) (Fin n) R} (h₁ : B₁.det ≠ 0) (h₂ : B₂.det ≠ 0) :
-    LinearMap.range B₁.mulVecLin = LinearMap.range B₂.mulVecLin ↔
-      ∃ U : GL (Fin n) R, B₁ * (↑U : Matrix (Fin n) (Fin n) R) = B₂ := by
-  refine ⟨fun hrange ↦ ?_, ?_⟩
-  · have hu : ∀ j : Fin n, ∃ u : Fin n → R, B₁.mulVec u = B₂.mulVec (Pi.single j 1) := fun j ↦ by
-      have hj : B₂.mulVecLin (Pi.single j 1) ∈ LinearMap.range B₁.mulVecLin :=
-        hrange ▸ ⟨Pi.single j 1, rfl⟩
-      obtain ⟨u, hu⟩ := hj
-      exact ⟨u, hu⟩
-    have hv : ∀ j : Fin n, ∃ v : Fin n → R, B₂.mulVec v = B₁.mulVec (Pi.single j 1) := fun j ↦ by
-      have hj : B₁.mulVecLin (Pi.single j 1) ∈ LinearMap.range B₂.mulVecLin :=
-        hrange ▸ ⟨Pi.single j 1, rfl⟩
-      obtain ⟨v, hv⟩ := hj
-      exact ⟨v, hv⟩
-    choose u hu using hu
-    choose v hv using hv
-    let P : Matrix (Fin n) (Fin n) R := Matrix.of fun i j ↦ u j i
-    let Q : Matrix (Fin n) (Fin n) R := Matrix.of fun i j ↦ v j i
-    have hBP : B₁ * P = B₂ := by
-      ext i j
-      simpa [P, Matrix.mul_apply, Matrix.mulVec, dotProduct, Pi.single_apply] using
-        congr_fun (hu j) i
-    have hBQ : B₂ * Q = B₁ := by
-      ext i j
-      simpa [Q, Matrix.mul_apply, Matrix.mulVec, dotProduct, Pi.single_apply] using
-        congr_fun (hv j) i
-    have hPQ : P * Q = 1 := by
-      have hBPQ : B₁ * (P * Q) = B₁ := by rw [← Matrix.mul_assoc, hBP, hBQ]
-      have hadj := congrArg (B₁.adjugate * ·) hBPQ
-      rw [← Matrix.mul_assoc, Matrix.adjugate_mul, Matrix.smul_mul, Matrix.one_mul] at hadj
-      ext i j
-      have hij := congr_fun (congr_fun hadj i) j
-      dsimp only [Matrix.smul_apply, smul_eq_mul] at hij
-      exact mul_left_cancel₀ h₁ hij
-    have hQP : Q * P = 1 := by
-      have hBQP : B₂ * (Q * P) = B₂ := by rw [← Matrix.mul_assoc, hBQ, hBP]
-      have hadj := congrArg (B₂.adjugate * ·) hBQP
-      rw [← Matrix.mul_assoc, Matrix.adjugate_mul, Matrix.smul_mul, Matrix.one_mul] at hadj
-      ext i j
-      have hij := congr_fun (congr_fun hadj i) j
-      dsimp only [Matrix.smul_apply, smul_eq_mul] at hij
-      exact mul_left_cancel₀ h₂ hij
-    exact ⟨⟨P, Q, hPQ, hQP⟩, hBP⟩
-  · rintro ⟨U, rfl⟩
-    exact (range_mulVecLin_mul_unit n B₁ U).symm
-
-/-- Two nonsingular `ℤ_p`-matrices generate the same `ℤ_p`-sublattice if and only if they lie in
-the same right `GL_n(ℤ_p)`-coset. -/
-theorem padicSublattice_eq_iff {B₁ B₂ : Matrix (Fin n) (Fin n) ℤ_[p]}
-    (h₁ : B₁.det ≠ 0) (h₂ : B₂.det ≠ 0) :
-    padicSublattice n p B₁ = padicSublattice n p B₂ ↔
-      ∃ U : GL (Fin n) ℤ_[p], B₁ * (↑U : Matrix (Fin n) (Fin n) ℤ_[p]) = B₂ :=
-  range_mulVecLin_eq_iff n h₁ h₂
-
-omit [Fact p.Prime] in
-/-- Two positive-determinant integer matrices generate the same `ℤ`-sublattice if and only if they
-lie in the same right `SL_n(ℤ)`-coset. -/
-theorem intSublattice_eq_iff_exists_sl {A₁ A₂ : Matrix (Fin n) (Fin n) ℤ}
-    (h₁ : 0 < A₁.det) (h₂ : 0 < A₂.det) :
-    intSublattice n A₁ = intSublattice n A₂ ↔
-      ∃ σ : SpecialLinearGroup (Fin n) ℤ, A₁ * (σ : Matrix (Fin n) (Fin n) ℤ) = A₂ := by
-  rw [intSublattice_def, intSublattice_def, range_mulVecLin_eq_iff n h₁.ne' h₂.ne']
-  refine ⟨?_, fun ⟨σ, hσ⟩ ↦ ⟨σ.toGL, hσ⟩⟩
-  rintro ⟨U, rfl⟩
-  have hunit : IsUnit (↑U : Matrix (Fin n) (Fin n) ℤ).det :=
-    (Matrix.isUnit_iff_isUnit_det _).mp U.isUnit
-  rw [Matrix.det_mul] at h₂
-  have hdet : (↑U : Matrix (Fin n) (Fin n) ℤ).det = 1 :=
-    (Int.isUnit_iff.mp hunit).resolve_right fun hneg ↦ by rw [hneg] at h₂; linarith
-  exact ⟨⟨↑U, hdet⟩, rfl⟩
-
-omit [Fact p.Prime] in
-/-- If `A.det ∣ p ^ k`, then `intSublattice n A` contains `p ^ k • ℤ^n` (the kernel of reduction
-modulo `p ^ k`). -/
-theorem ker_intVectorReduction_le_intSublattice {A : Matrix (Fin n) (Fin n) ℤ} {k : ℕ}
-    (hA : A.det ∣ (p : ℤ) ^ k) :
-    LinearMap.ker (TauCeti.intVectorReduction (Fin n) p k) ≤ intSublattice n A := by
-  obtain ⟨c, hc⟩ := hA
-  intro x hx
-  obtain ⟨y, rfl⟩ := (TauCeti.mem_ker_intVectorReduction_iff (Fin n) p k x).mp hx
-  refine ⟨(c • A.adjugate).mulVec y, ?_⟩
-  rw [Matrix.mulVecLin_apply, Matrix.mulVec_mulVec, Matrix.mul_smul, Matrix.mul_adjugate,
-    smul_smul, mul_comm c A.det, ← hc, Matrix.smul_mulVec, Matrix.one_mulVec]
-
-/-- Every nonsingular `B ∈ M_n(ℤ_p)` defines a `ℤ_p`-sublattice containing
-`p ^ v(det B) • ℤ_p^n`. -/
-theorem ker_padicVectorReduction_le_padicSublattice {B : Matrix (Fin n) (Fin n) ℤ_[p]}
-    (hB : B.det ≠ 0) :
-    LinearMap.ker (TauCeti.padicVectorReduction (Fin n) p B.det.valuation) ≤
-      padicSublattice n p B := by
-  let u := PadicInt.unitCoeff hB
-  let c : ℤ_[p] := ↑(u⁻¹)
-  intro x hx
-  obtain ⟨y, rfl⟩ :=
-    (TauCeti.mem_ker_padicVectorReduction_iff (Fin n) p B.det.valuation x).mp hx
-  refine ⟨(c • B.adjugate).mulVec y, ?_⟩
-  have hu : c * B.det = (p : ℤ_[p]) ^ B.det.valuation := by
-    dsimp only [c]
-    conv_lhs => rw [PadicInt.unitCoeff_spec hB, ← mul_assoc, Units.inv_mul, one_mul]
-  rw [Matrix.mulVecLin_apply, Matrix.mulVec_mulVec, Matrix.mul_smul, Matrix.mul_adjugate,
-    smul_smul, hu, Matrix.smul_mulVec, Matrix.one_mulVec]
-
-/-- **Sublattice completion** ([Rhodes–Shemanske][rhodes1998] §3.1 Proposition 3.2): under
-`TauCeti.pPowerSublatticeEquiv`, any `ℤ`-sublattice `intSublattice n A` containing `p ^ k • ℤ^n`
-maps to the `ℤ_p`-sublattice `padicSublattice n p (A.map (Int.castRingHom ℤ_[p]))`. -/
-theorem pPowerSublatticeEquiv_intSublattice {A : Matrix (Fin n) (Fin n) ℤ} {k : ℕ}
-    (hker : LinearMap.ker (TauCeti.intVectorReduction (Fin n) p k) ≤ intSublattice n A) :
-    (TauCeti.pPowerSublatticeEquiv (Fin n) p k ⟨intSublattice n A, hker⟩).1 =
-      padicSublattice n p (A.map (Int.castRingHom ℤ_[p])) := by
-  rw [TauCeti.pPowerSublatticeEquiv_eq_span]
-  set B := A.map (Int.castRingHom ℤ_[p])
-  have hcompat (v : Fin n → ℤ) :
-      TauCeti.intVectorToPadic (Fin n) p (A.mulVec v) =
-        B.mulVec (TauCeti.intVectorToPadic (Fin n) p v) := by
-    ext i; simp [B, Matrix.mulVec, dotProduct]
-  refine le_antisymm ?_ ?_
-  · rw [Submodule.span_le]
-    rintro _ ⟨_, ⟨v, rfl⟩, rfl⟩
-    exact ⟨TauCeti.intVectorToPadic (Fin n) p v, (hcompat v).symm⟩
-  · rintro _ ⟨w, rfl⟩
-    have hw : w = ∑ j : Fin n, w j • TauCeti.intVectorToPadic (Fin n) p (Pi.single j 1) := by
-      ext i; simp [Pi.single_apply]
-    rw [Matrix.mulVecLin_apply, hw, Matrix.mulVec_sum]
-    refine Submodule.sum_mem _ fun j _ ↦ ?_
-    rw [Matrix.mulVec_smul, ← hcompat]
-    exact Submodule.smul_mem _ (w j)
-      (Submodule.subset_span ⟨A.mulVec (Pi.single j 1), ⟨Pi.single j 1, rfl⟩, rfl⟩)
-
-private theorem pPowerSublatticeEquiv_symm_padicSublattice {A : Matrix (Fin n) (Fin n) ℤ} {k : ℕ}
-    (hker : LinearMap.ker (TauCeti.intVectorReduction (Fin n) p k) ≤ intSublattice n A)
-    (hkerP : LinearMap.ker (TauCeti.padicVectorReduction (Fin n) p k) ≤
-      padicSublattice n p (A.map (Int.castRingHom ℤ_[p]))) :
-    ((TauCeti.pPowerSublatticeEquiv (Fin n) p k).symm
-      ⟨padicSublattice n p (A.map (Int.castRingHom ℤ_[p])), hkerP⟩).1 = intSublattice n A := by
-  have heq : (⟨padicSublattice n p (A.map (Int.castRingHom ℤ_[p])), hkerP⟩ :
-      Set.Ici (LinearMap.ker (TauCeti.padicVectorReduction (Fin n) p k))) =
-      TauCeti.pPowerSublatticeEquiv (Fin n) p k ⟨intSublattice n A, hker⟩ :=
-    Subtype.ext (pPowerSublatticeEquiv_intSublattice n p hker).symm
-  exact (congrArg (fun X ↦ ((TauCeti.pPowerSublatticeEquiv (Fin n) p k).symm X).1) heq).trans
-    (congrArg Subtype.val
-      ((TauCeti.pPowerSublatticeEquiv (Fin n) p k).symm_apply_apply ⟨intSublattice n A, hker⟩))
-
-/-- **Intermediate-lattice correspondence** ([Rhodes–Shemanske][rhodes1998] §3.2 Lemma 3.3): for
-`p`-primary integer matrices `C` and `A` with `det C ∣ p ^ k` and `det A ∣ p ^ k`,
-`TauCeti.pPowerSublatticeEquiv` restricts to an order isomorphism between `ℤ`-sublattices
-`intSublattice n C ≤ L ≤ intSublattice n A` and `ℤ_p`-sublattices between their completions. -/
-noncomputable def intermediateSublatticeOrderIso {A C : Matrix (Fin n) (Fin n) ℤ} {k : ℕ}
-    (hC : C.det ∣ (p : ℤ) ^ k) (hA : A.det ∣ (p : ℤ) ^ k) :
-    {L : Submodule ℤ (Fin n → ℤ) // intSublattice n C ≤ L ∧ L ≤ intSublattice n A} ≃o
-      {M : Submodule ℤ_[p] (Fin n → ℤ_[p]) //
-        padicSublattice n p (C.map (Int.castRingHom ℤ_[p])) ≤ M ∧
-          M ≤ padicSublattice n p (A.map (Int.castRingHom ℤ_[p]))} where
-  toFun L :=
-    ⟨(TauCeti.pPowerSublatticeEquiv (Fin n) p k
-        ⟨L.1, (ker_intVectorReduction_le_intSublattice n p hC).trans L.2.1⟩).1,
-      by
-        rw [← pPowerSublatticeEquiv_intSublattice n p
-            (ker_intVectorReduction_le_intSublattice n p hC),
-          ← pPowerSublatticeEquiv_intSublattice n p
-            (ker_intVectorReduction_le_intSublattice n p hA)]
-        exact ⟨(TauCeti.pPowerSublatticeEquiv (Fin n) p k).monotone L.2.1,
-          (TauCeti.pPowerSublatticeEquiv (Fin n) p k).monotone L.2.2⟩⟩
-  invFun M :=
-    let hkerC := (pPowerSublatticeEquiv_intSublattice n p
-      (ker_intVectorReduction_le_intSublattice n p hC)) ▸
-      (TauCeti.pPowerSublatticeEquiv (Fin n) p k
-        ⟨intSublattice n C, ker_intVectorReduction_le_intSublattice n p hC⟩).2
-    let hkerA := (pPowerSublatticeEquiv_intSublattice n p
-      (ker_intVectorReduction_le_intSublattice n p hA)) ▸
-      (TauCeti.pPowerSublatticeEquiv (Fin n) p k
-        ⟨intSublattice n A, ker_intVectorReduction_le_intSublattice n p hA⟩).2
-    ⟨((TauCeti.pPowerSublatticeEquiv (Fin n) p k).symm ⟨M.1, hkerC.trans M.2.1⟩).1,
-      ⟨(pPowerSublatticeEquiv_symm_padicSublattice n p
-          (ker_intVectorReduction_le_intSublattice n p hC) hkerC) ▸
-          (TauCeti.pPowerSublatticeEquiv (Fin n) p k).symm.monotone M.2.1,
-        (pPowerSublatticeEquiv_symm_padicSublattice n p
-          (ker_intVectorReduction_le_intSublattice n p hA) hkerA) ▸
-          (TauCeti.pPowerSublatticeEquiv (Fin n) p k).symm.monotone M.2.2⟩⟩
-  left_inv L := by
-    apply Subtype.ext; dsimp only
-    exact congrArg Subtype.val ((TauCeti.pPowerSublatticeEquiv (Fin n) p k).symm_apply_apply
-      ⟨L.1, (ker_intVectorReduction_le_intSublattice n p hC).trans L.2.1⟩)
-  right_inv M := by
-    apply Subtype.ext; dsimp only
-    exact congrArg Subtype.val ((TauCeti.pPowerSublatticeEquiv (Fin n) p k).apply_symm_apply
-      ⟨M.1, _⟩)
-  map_rel_iff' {L₁ L₂} :=
-    (TauCeti.pPowerSublatticeEquiv (Fin n) p k).map_rel_iff
-      (a := ⟨L₁.1, _⟩) (b := ⟨L₂.1, _⟩)
-
-/-- Coercing `intermediateSublatticeOrderIso n p hC hA L` to a `ℤ_p`-submodule applies
-`TauCeti.pPowerSublatticeEquiv`. -/
-@[simp]
-theorem coe_intermediateSublatticeOrderIso {A C : Matrix (Fin n) (Fin n) ℤ} {k : ℕ}
-    (hC : C.det ∣ (p : ℤ) ^ k) (hA : A.det ∣ (p : ℤ) ^ k)
-    (L : {L : Submodule ℤ (Fin n → ℤ) // intSublattice n C ≤ L ∧ L ≤ intSublattice n A}) :
-    (intermediateSublatticeOrderIso n p hC hA L : Submodule ℤ_[p] (Fin n → ℤ_[p])) =
-      (TauCeti.pPowerSublatticeEquiv (Fin n) p k
-        ⟨L.1, (ker_intVectorReduction_le_intSublattice n p hC).trans L.2.1⟩).1 := (rfl)
-
-private theorem finrank_eq_of_ker_intVectorReduction_le {k : ℕ}
-    {L : Submodule ℤ (Fin n → ℤ)}
-    (hL : LinearMap.ker (TauCeti.intVectorReduction (Fin n) p k) ≤ L) :
-    Module.finrank ℤ L = Module.finrank ℤ (Fin n → ℤ) := by
-  set K := LinearMap.ker (TauCeti.intVectorReduction (Fin n) p k)
-  have hpk : (p : ℤ) ^ k ≠ 0 :=
-    pow_ne_zero k (Int.natCast_ne_zero.mpr (Fact.out : p.Prime).ne_zero)
-  let φ : (Fin n → ℤ) →ₗ[ℤ] K :=
-    { toFun := fun y ↦ ⟨(p : ℤ) ^ k • y,
-        (TauCeti.mem_ker_intVectorReduction_iff (Fin n) p k _).mpr ⟨y, rfl⟩⟩
-      map_add' := fun x y ↦ Subtype.ext (smul_add _ x y)
-      map_smul' := fun r x ↦ Subtype.ext (smul_comm _ r x) }
-  have hbij : Function.Bijective φ :=
-    ⟨fun x y hxy ↦ funext fun i ↦ mul_left_cancel₀ hpk (congr_fun (congrArg Subtype.val hxy) i),
-      fun ⟨x, hx⟩ ↦ by
-        obtain ⟨y, rfl⟩ := (TauCeti.mem_ker_intVectorReduction_iff (Fin n) p k x).mp hx
-        exact ⟨y, rfl⟩⟩
-  have hK : Module.finrank ℤ K = Module.finrank ℤ (Fin n → ℤ) :=
-    (LinearEquiv.ofBijective φ hbij).finrank_eq.symm
-  exact le_antisymm L.finrank_le (hK ▸ Submodule.finrank_mono hL)
-
-private theorem exists_matrix_intSublattice_eq {k : ℕ} {L : Submodule ℤ (Fin n → ℤ)}
-    (hL : LinearMap.ker (TauCeti.intVectorReduction (Fin n) p k) ≤ L) :
-    ∃ D₀ : Matrix (Fin n) (Fin n) ℤ,
-      D₀.det ≠ 0 ∧ D₀.det.natAbs ∣ p ^ (k * n) ∧ intSublattice n D₀ = L := by
-  classical
-  have hrank := finrank_eq_of_ker_intVectorReduction_le n p hL
-  let bL := Submodule.smithNormalFormBotBasis (Pi.basisFun ℤ (Fin n)) hrank
-  let D₀ : Matrix (Fin n) (Fin n) ℤ := Matrix.of fun i j ↦ (bL j : Fin n → ℤ) i
-  have hmulVec (v : Fin n → ℤ) : D₀.mulVec v = ∑ j : Fin n, v j • (bL j : Fin n → ℤ) := by
-    ext i; simp [D₀, Matrix.mulVec, dotProduct, mul_comm]
-  have hrange : intSublattice n D₀ = L := by
-    refine le_antisymm ?_ ?_
-    · rintro _ ⟨v, rfl⟩
-      rw [Matrix.mulVecLin_apply, hmulVec]
-      exact Submodule.sum_mem L fun j _ ↦ L.smul_mem (v j) (bL j).2
-    · intro x hx
-      refine ⟨bL.repr ⟨x, hx⟩, ?_⟩
-      rw [Matrix.mulVecLin_apply, hmulVec]
-      have hsum := congrArg L.subtype (bL.sum_repr ⟨x, hx⟩)
-      rw [map_sum] at hsum
-      simpa only [LinearMap.map_smul, Submodule.coe_subtype] using hsum
-  have hc : ∀ j : Fin n, ∃ c : Fin n → ℤ, D₀.mulVec c = (p : ℤ) ^ k • Pi.single j 1 := fun j ↦ by
-    have hmem : (p : ℤ) ^ k • Pi.single j (1 : ℤ) ∈ intSublattice n D₀ :=
-      hrange ▸ hL ((TauCeti.mem_ker_intVectorReduction_iff (Fin n) p k _).mpr ⟨Pi.single j 1, rfl⟩)
-    obtain ⟨c, hc⟩ := hmem
-    exact ⟨c, hc⟩
-  choose c hc using hc
-  let C : Matrix (Fin n) (Fin n) ℤ := Matrix.of fun i j ↦ c j i
-  have hDC : D₀ * C = (p : ℤ) ^ k • 1 := by
-    ext i j
-    simpa [C, Matrix.mul_apply, Matrix.mulVec, dotProduct, Matrix.one_apply, Pi.single_apply]
-      using congr_fun (hc j) i
-  have hdet : D₀.det * C.det = (p : ℤ) ^ (k * n) := by
-    have h1 := congrArg Matrix.det hDC
-    rw [Matrix.det_mul, Matrix.det_smul, Fintype.card_fin, Matrix.det_one, mul_one, ← pow_mul]
-      at h1
-    exact h1
-  have hp_ne : (p : ℤ) ^ (k * n) ≠ 0 :=
-    pow_ne_zero _ (Int.natCast_ne_zero.mpr (Fact.out : p.Prime).ne_zero)
-  refine ⟨D₀, left_ne_zero_of_mul (hdet ▸ hp_ne), ?_, hrange⟩
-  have habs := congrArg Int.natAbs hdet
-  rw [Int.natAbs_mul, Int.natAbs_pow, Int.natAbs_natCast] at habs
-  exact ⟨C.det.natAbs, habs.symm⟩
-
-/-- Every `ℤ`-sublattice of `ℤ^n` containing `p ^ k • ℤ^n` is `intSublattice n D` for an integer
-matrix `D` whose determinant is a positive power of `p`. -/
-theorem exists_pos_det_intSublattice_eq {k : ℕ} {L : Submodule ℤ (Fin n → ℤ)}
-    (hL : LinearMap.ker (TauCeti.intVectorReduction (Fin n) p k) ≤ L) :
-    ∃ (D : Matrix (Fin n) (Fin n) ℤ) (m : ℕ),
-      D.det = (p : ℤ) ^ m ∧ intSublattice n D = L := by
-  obtain ⟨D₀, hne, hdvd, hrange⟩ := exists_matrix_intSublattice_eq n p hL
-  obtain ⟨m, -, hm⟩ := (Nat.dvd_prime_pow (Fact.out : p.Prime)).mp hdvd
-  rcases lt_or_gt_of_ne hne with hneg | hpos
-  · rcases Nat.eq_zero_or_pos n with rfl | hn
-    · exfalso; simp [Matrix.det_isEmpty] at hneg
-    · have : NeZero n := ⟨hn.ne'⟩
-      let U : GL (Fin n) ℤ := TauCeti.diagGL fun i : Fin n ↦ if i = 0 then (-1 : ℤˣ) else 1
-      let Umat : Matrix (Fin n) (Fin n) ℤ := ↑U
-      have hUdet : Umat.det = -1 := by
-        rw [show Umat = ↑U from rfl, TauCeti.diagGL_coe, Matrix.det_diagonal,
-          Finset.prod_eq_single (0 : Fin n)]
-        · simp
-        · exact fun i _ hi ↦ by simp [hi]
-        · exact fun h ↦ absurd (Finset.mem_univ (0 : Fin n)) h
-      refine ⟨D₀ * Umat, m, ?_, ?_⟩
-      · rw [Matrix.det_mul, hUdet, mul_neg_one]
-        have habs : (D₀.det.natAbs : ℤ) = -D₀.det := Int.ofNat_natAbs_of_nonpos hneg.le
-        rw [← habs, hm, Nat.cast_pow]
-      · rw [intSublattice_def]
-        exact (range_mulVecLin_mul_unit n D₀ U).trans hrange
-  · refine ⟨D₀, m, ?_, hrange⟩
-    have habs : (D₀.det.natAbs : ℤ) = D₀.det := Int.natAbs_of_nonneg hpos.le
-    rw [← habs, hm, Nat.cast_pow]
-
-/-- **Every finite-index `ℤ_p`-sublattice comes from a `p`-primary integer matrix**
-([Rhodes–Shemanske][rhodes1998] §3.1 Proposition 3.2): for every nonsingular
-`B ∈ M_n(ℤ_p)` there exist `D ∈ M_n(ℤ)`, `m : ℕ`, and `U ∈ GL_n(ℤ_p)` with `det D = p ^ m` and
-`B * U = D.map (Int.castRingHom ℤ_[p])`. -/
-theorem exists_pos_det_padicSublattice_eq (B : Matrix (Fin n) (Fin n) ℤ_[p]) (hB : B.det ≠ 0) :
-    ∃ (D : Matrix (Fin n) (Fin n) ℤ) (m : ℕ) (U : GL (Fin n) ℤ_[p]),
-      D.det = (p : ℤ) ^ m ∧
-        B * (↑U : Matrix (Fin n) (Fin n) ℤ_[p]) = D.map (Int.castRingHom ℤ_[p]) := by
-  let k := B.det.valuation
-  let M₀ : Set.Ici (LinearMap.ker (TauCeti.padicVectorReduction (Fin n) p k)) :=
-    ⟨padicSublattice n p B, ker_padicVectorReduction_le_padicSublattice n p hB⟩
-  let L := (TauCeti.pPowerSublatticeEquiv (Fin n) p k).symm M₀
-  obtain ⟨D, m, hDdet, hDL⟩ := exists_pos_det_intSublattice_eq n p L.2
-  have hkerD : LinearMap.ker (TauCeti.intVectorReduction (Fin n) p k) ≤ intSublattice n D :=
-    hDL ▸ L.2
-  have hpadic : padicSublattice n p B = padicSublattice n p (D.map (Int.castRingHom ℤ_[p])) := by
-    calc padicSublattice n p B
-        = (TauCeti.pPowerSublatticeEquiv (Fin n) p k L).1 :=
-          congrArg Subtype.val
-            ((TauCeti.pPowerSublatticeEquiv (Fin n) p k).apply_symm_apply M₀).symm
-      _ = padicSublattice n p (D.map (Int.castRingHom ℤ_[p])) := by
-          have hL_eq : L = ⟨intSublattice n D, hkerD⟩ := Subtype.ext hDL.symm
-          rw [hL_eq, pPowerSublatticeEquiv_intSublattice]
-  have hDpadic_ne : (D.map (Int.castRingHom ℤ_[p])).det ≠ 0 := by
-    rw [← RingHom.mapMatrix_apply, ← RingHom.map_det, hDdet, map_pow, map_natCast]
-    exact pow_ne_zero m (NeZero.ne (p : ℤ_[p]))
-  obtain ⟨U, hBU⟩ := (padicSublattice_eq_iff n p hB hDpadic_ne).mp hpadic
-  exact ⟨D, m, U, hDdet, hBU⟩
-
-end SublatticeCompletion
 
 section PPrimaryAndPLocalGroups
 
@@ -542,8 +177,8 @@ private theorem exists_int_matrix_natDiagGL_mul_inv {g : GL (Fin n) ℚ} {k m : 
   have hBA_Q : B.map (Int.cast : ℤ → ℚ) * A.map (Int.cast : ℤ → ℚ) =
       (p : ℚ) ^ k • (↑(natDiagGL n (fun _ ↦ p ^ m)) : Matrix (Fin n) (Fin n) ℚ) := by
     have hmap := congrArg (Matrix.map · (Int.castRingHom ℚ)) hBA
-    rw [← RingHom.mapMatrix_apply, map_mul, RingHom.mapMatrix_apply, RingHom.mapMatrix_apply,
-      Int.coe_castRingHom] at hmap
+    rw [Matrix.map_mul] at hmap
+    simp only [Int.coe_castRingHom] at hmap
     rw [hmap, natDiagGL_coe n _ fun _ ↦ pow_pos hp_pos m]
     ext i j
     simp only [Matrix.map_apply, Matrix.smul_apply, Matrix.one_apply, Matrix.diagonal_apply,
@@ -584,12 +219,9 @@ private theorem inv_mem_pLocalPosGL_aux {g : GL (Fin n) ℚ} (hg : g ∈ Matrix.
     rw [hBmat, Int.cast_det]
   have hBdet_pos : 0 < B.det := by exact_mod_cast hBdet_Q ▸ hdet_pos
   have hdvd : B.det.natAbs ∣ p ^ ((m + k) * n) := by
-    have hdet := congrArg Matrix.det hBA
-    rw [Matrix.det_mul, Matrix.det_smul, Fintype.card_fin, Matrix.det_one, mul_one, ← pow_mul]
-      at hdet
-    have habs := congrArg Int.natAbs hdet
-    rw [Int.natAbs_mul, Int.natAbs_pow, Int.natAbs_natCast] at habs
-    exact ⟨A.det.natAbs, habs.symm⟩
+    have hdvdZ : B.det ∣ (p : ℤ) ^ ((m + k) * n) := by
+      simpa [Fintype.card_fin, pow_mul] using Matrix.det_dvd_pow_card_of_mul_eq_smul_one hBA
+    simpa [Int.natAbs_pow, Int.natAbs_natCast] using Int.natAbs_dvd_natAbs.mpr hdvdZ
   obtain ⟨r, -, hr⟩ := (Nat.dvd_prime_pow (Fact.out : p.Prime)).mp hdvd
   refine ⟨m, ⟨(mem_posDetInt_iff n).mpr ⟨(hasIntEntries_iff n).mpr ⟨B, hBmat⟩, hdet_pos⟩, r, ?_⟩⟩
   have hB_pow : B.det = (p : ℤ) ^ r := by
@@ -609,14 +241,11 @@ noncomputable def pLocalPosGL : Subgroup (GL (Fin n) ℚ) where
     have hpow : (fun _ : Fin n ↦ p ^ (k₁ + k₂)) =
         (fun _ : Fin n ↦ p ^ k₁) * (fun _ : Fin n ↦ p ^ k₂) :=
       funext fun _ ↦ pow_add p k₁ k₂
-    have hcomm : natDiagGL n (fun _ ↦ p ^ k₂) * g₁ = g₁ * natDiagGL n (fun _ ↦ p ^ k₂) := by
-      apply Units.ext
-      rw [Units.val_mul, Units.val_mul, natDiagGL_coe n _ fun _ ↦ pow_pos hp_pos k₂]
-      ext i j; simp [Matrix.diagonal_mul, Matrix.mul_diagonal, mul_comm]
     have hmul : natDiagGL n (fun _ ↦ p ^ (k₁ + k₂)) * (g₁ * g₂) =
         (natDiagGL n (fun _ ↦ p ^ k₁) * g₁) * (natDiagGL n (fun _ ↦ p ^ k₂) * g₂) := by
       rw [hpow, ← natDiagGL_mul n _ _ (fun _ ↦ pow_pos hp_pos k₁) (fun _ ↦ pow_pos hp_pos k₂),
-        mul_assoc, ← mul_assoc (natDiagGL n (fun _ ↦ p ^ k₂)), hcomm, mul_assoc, mul_assoc]
+        mul_assoc, ← mul_assoc (natDiagGL n (fun _ ↦ p ^ k₂)),
+        natDiagGL_const_comm n (p ^ k₂) g₁, mul_assoc, mul_assoc]
     rw [hmul]
     exact (pPrimaryPosDetInt n p).mul_mem hk₁ hk₂
   inv_mem' := fun ⟨hg, k, hk⟩ ↦
@@ -651,13 +280,9 @@ theorem intPowDiagGL_mem_pLocalPosGL (e : Fin n → ℤ) :
     have : (-e i).toNat ≤ k := Finset.le_sup (f := fun j ↦ (-e j).toNat) (Finset.mem_univ i)
     exact Int.toNat_of_nonneg (by omega)
   refine ⟨k, ?_⟩
-  have hpk : (fun _ : Fin n ↦ p ^ k) = primePowDiag n p (fun _ ↦ k) :=
-    funext fun i ↦ (primePowDiag_apply n p (fun _ ↦ k) i).symm
-  have hcomm : natDiagGL n (fun _ ↦ p ^ k) * intPowDiagGL n p e =
-      intPowDiagGL n p e * natDiagGL n (fun _ ↦ p ^ k) := by
-    rw [hpk, ← intPowDiagGL_natCast, ← intPowDiagGL_add, ← intPowDiagGL_add, add_comm]
-  rw [hcomm, intPowDiagGL_mul_natDiagGL_const, show (fun i ↦ e i + (k : ℤ)) = fun i ↦ (f i : ℤ) from
-    funext fun i ↦ (hf i).symm, intPowDiagGL_natCast]
+  rw [natDiagGL_const_comm n (p ^ k), intPowDiagGL_mul_natDiagGL_const,
+    show (fun i ↦ e i + (k : ℤ)) = fun i ↦ (f i : ℤ) from funext fun i ↦ (hf i).symm,
+    intPowDiagGL_natCast]
   exact natDiagGL_primePowDiag_mem_pPrimaryPosDetInt n p f
 
 omit [Fact p.Prime] in
@@ -736,8 +361,8 @@ private theorem exists_mem_pPrimaryPosDetInt_of_int_matrix {D : Matrix (Fin n) (
   have hdetQ : DQ.det = (p : ℚ) ^ m := by
     rw [← Int.cast_det D, hD]; push_cast; rfl
   have hpos : 0 < DQ.det := hdetQ ▸ pow_pos (Nat.cast_pos.mpr (Fact.out : p.Prime).pos) m
-  let g : GL (Fin n) ℚ := Matrix.nonsingInvUnit DQ (isUnit_iff_ne_zero.mpr hpos.ne')
-  have hg_coe : (↑g : Matrix (Fin n) (Fin n) ℚ) = DQ := rfl
+  let g : GL (Fin n) ℚ := Matrix.GeneralLinearGroup.mk'' DQ (isUnit_iff_ne_zero.mpr hpos.ne')
+  have hg_coe : (↑g : Matrix (Fin n) (Fin n) ℚ) = DQ := Matrix.GeneralLinearGroup.val_mk'' _ _
   refine ⟨g, ⟨(mem_posDetInt_iff n).mpr ⟨(hasIntEntries_iff n).mpr ⟨D, hg_coe⟩, hg_coe ▸ hpos⟩,
     m, hg_coe ▸ hdetQ⟩, hg_coe, ?_⟩
   rw [castGLPadic_coe, hg_coe]
@@ -750,7 +375,7 @@ theorem exists_mem_GLnZp_mul_mem_map_pPrimaryPosDetInt (δ' : padicIntEntries n 
       u * (δ' : GL (Fin n) ℚ_[p]) ∈ (pPrimaryPosDetInt n p).map (castGLPadic n p) := by
   let B := padicIntMatrix n p δ'
   have hBT : Bᵀ.det ≠ 0 := by rw [Matrix.det_transpose]; exact det_padicIntMatrix_ne_zero n p δ'
-  obtain ⟨D, m, U, hDm, hBTU⟩ := exists_pos_det_padicSublattice_eq n p Bᵀ hBT
+  obtain ⟨D, m, U, hDm, hBTU⟩ := TauCeti.exists_det_eq_pow_and_mul_eq_map n p Bᵀ hBT
   have hDTm : Dᵀ.det = (p : ℤ) ^ m := by rw [Matrix.det_transpose, hDm]
   obtain ⟨g, hg, -, hg_padic⟩ := exists_mem_pPrimaryPosDetInt_of_int_matrix n p hDTm
   let UT : GL (Fin n) ℤ_[p] := (Matrix.GeneralLinearGroup.transposeMulEquiv (Fin n) U).unop
@@ -759,12 +384,13 @@ theorem exists_mem_GLnZp_mul_mem_map_pPrimaryPosDetInt (δ' : padicIntEntries n 
   have htr := congrArg Matrix.transpose hBTU
   rw [Matrix.transpose_mul, Matrix.transpose_transpose, ← Matrix.transpose_map] at htr
   have hmap := congrArg (Matrix.map · (PadicInt.Coe.ringHom (p := p))) htr
-  rw [← RingHom.mapMatrix_apply, map_mul, RingHom.mapMatrix_apply, RingHom.mapMatrix_apply,
-    map_padicIntMatrix, ← hg_padic] at hmap
+  dsimp only [B] at hmap
+  simp only [Matrix.map_mul, map_padicIntMatrix, ← hg_padic] at hmap
   have hUT : (↑UT : Matrix (Fin n) (Fin n) ℤ_[p]).map (PadicInt.Coe.ringHom (p := p)) =
       (↑(mapGLPadicInt n p UT) : Matrix (Fin n) (Fin n) ℚ_[p]) :=
     (mapGLPadicInt_coe n p UT).symm
-  have hUT_coe : (↑U : Matrix (Fin n) (Fin n) ℤ_[p])ᵀ = ↑UT := rfl
+  have hUT_coe : (↑U : Matrix (Fin n) (Fin n) ℤ_[p])ᵀ = ↑UT :=
+    (Matrix.GeneralLinearGroup.coe_unop_transposeMulEquiv (Fin n) U).symm
   rw [hUT_coe, hUT, ← Units.val_mul] at hmap
   exact hmap.symm
 
@@ -778,7 +404,7 @@ private theorem exists_mem_SLnZ_mul_of_padic_mul_eq {g₀ g' : GL (Fin n) ℚ}
   obtain ⟨x₀, hx₀, y₀, hy₀, hxy₀⟩ := DoubleCoset.mem_doubleCoset.mp hcos₀
   obtain ⟨x', hx', y', hy', hxy'⟩ := DoubleCoset.mem_doubleCoset.mp hcos'
   have he_eq : e₀ = e' := by
-    apply padicNatPowDiagGL_eq_of_mem_doubleCoset n p he₀ he'
+    apply eq_of_padicNatPowDiagGL_mem_doubleCoset n p he₀ he'
     refine DoubleCoset.mem_doubleCoset.mpr
       ⟨castGLPadic n p (x'⁻¹) * u * castGLPadic n p x₀,
         (GLnZp n p).mul_mem ((GLnZp n p).mul_mem
@@ -816,7 +442,7 @@ private theorem exists_mem_SLnZ_mul_of_padic_mul_eq {g₀ g' : GL (Fin n) ℚ}
 /-- **Stabilizer transitivity (`hstab`)**: for every `g` in the image of `pPrimaryPosDetInt n p`
 and every `u ∈ GL_n(ℤ_p)`, there exists `x` in the image of `SL_n(ℤ)` with
 `x⁻¹ * u ∈ g • GL_n(ℤ_p)`. -/
-theorem exists_mem_map_SLnZ_conj_mem_GLnZp
+theorem exists_mem_map_SLnZ_inv_mul_mem_conj_GLnZp
     (g : (pPrimaryPosDetInt n p).map (castGLPadic n p))
     (u : GL (Fin n) ℚ_[p]) (hu : u ∈ GLnZp n p) :
     ∃ x ∈ (SLnZ n).map (castGLPadic n p),
@@ -827,13 +453,13 @@ theorem exists_mem_map_SLnZ_conj_mem_GLnZp
       (hg_eq ▸ castGLPadic_mem_padicIntEntries_of_mem_posDetInt n p hg₀.1)
   let B := padicIntMatrix n p ⟨u * (g : GL (Fin n) ℚ_[p]), hug_mem⟩
   obtain ⟨D, m, V, hDm, hBV⟩ :=
-    exists_pos_det_padicSublattice_eq n p B (det_padicIntMatrix_ne_zero n p _)
+    TauCeti.exists_det_eq_pow_and_mul_eq_map n p B (det_padicIntMatrix_ne_zero n p _)
   obtain ⟨g', hg', -, hg'_padic⟩ := exists_mem_pPrimaryPosDetInt_of_int_matrix n p hDm
   have hmul_padic : (u * (g : GL (Fin n) ℚ_[p])) * mapGLPadicInt n p V = castGLPadic n p g' := by
     apply Units.ext
     have hmap := congrArg (Matrix.map · (PadicInt.Coe.ringHom (p := p))) hBV
-    rw [← RingHom.mapMatrix_apply, map_mul, RingHom.mapMatrix_apply, RingHom.mapMatrix_apply,
-      map_padicIntMatrix, ← mapGLPadicInt_coe, ← hg'_padic] at hmap
+    dsimp only [B] at hmap
+    simp only [Matrix.map_mul, map_padicIntMatrix, ← mapGLPadicInt_coe, ← hg'_padic] at hmap
     simpa only [Units.val_mul] using hmap
   obtain ⟨x₁, hx₁, y₁, hy₁, hg'_eq⟩ := exists_mem_SLnZ_mul_of_padic_mul_eq n p hg₀ hg' hu V
     (hg_eq ▸ hmul_padic)
@@ -879,7 +505,7 @@ private theorem castGLPadic_pPrimary_le_map_pLocalPosGL :
 noncomputable instance instIsHeckeTripleMapCastPPrimary :
     IsHeckeTriple ((pPrimaryPosDetInt n p).map (castGLPadic n p))
       ((SLnZ n).map (castGLPadic n p)) ((SLnZ n).map (castGLPadic n p)) :=
-  IsHeckeTriple.map_of_injective (castGLPadic n p) (castGLPadic_injective n p)
+  IsHeckeTriple.map (castGLPadic n p)
 
 /-- Bijection between `p`-primary `SL_n(ℤ)` double cosets and integral `p`-adic `GL_n(ℤ_p)` double
 cosets. -/
@@ -891,7 +517,7 @@ noncomputable def pPrimaryToPadicIntegralCosetEquiv :
       (castGLPadic_pPrimary_le_padicIntEntries n p)
       (castGLPadic_pPrimary_le_map_pLocalPosGL n p)
       (exists_mem_GLnZp_mul_mem_map_pPrimaryPosDetInt n p)
-      (exists_mem_map_SLnZ_conj_mem_GLnZp n p))
+      (exists_mem_map_SLnZ_inv_mul_mem_conj_GLnZp n p))
 
 /-- Explicit action of `pPrimaryToPadicIntegralCosetEquiv` on `HeckeCoset.mk`. -/
 @[simp]
@@ -912,13 +538,18 @@ theorem degree_pPrimaryToPadicIntegralCosetEquiv
     (D : HeckeCoset (pPrimaryPosDetInt n p) (SLnZ n) (SLnZ n)) :
     (pPrimaryToPadicIntegralCosetEquiv n p D).degree = D.degree := by
   simp only [pPrimaryToPadicIntegralCosetEquiv, Equiv.trans_apply,
-    HeckeCoset.degree_mapEquivOfInf, HeckeCoset.mapEquivOfInjective_apply,
+    HeckeCoset.mapEquivOfInf_apply, HeckeCoset.mapEquivOfInjective_apply]
+  rw [HeckeCoset.degree_map_of_inf (map_SLnZ_eq_GLnZp_inf_map_pLocalPosGL n p)
+    (castGLPadic_pPrimary_le_padicIntEntries n p)
+    (castGLPadic_pPrimary_le_map_pLocalPosGL n p)
+    (exists_mem_map_SLnZ_inv_mul_mem_conj_GLnZp n p),
     HeckeCoset.degree_mapHom_of_injective (castGLPadic_injective n p)]
 
-/-- **Equality of structure constants** ([Rhodes–Shemanske][rhodes1998] §3.2 Lemma 3.3): Shimura's
+/-- **Equality of structure constants**
+(Rhodes–Shemanske, *Bruhat–Tits buildings and Hecke operators*, §3.2 Lemma 3.3): Shimura's
 double-coset multiplicities on `(pPrimaryPosDetInt n p, SL_n(ℤ))` equal the `p`-adic multiplicities
 on `(padicIntEntries n p, GL_n(ℤ_p))`. -/
-theorem multiplicity_pPrimaryToPadicIntegral {g₁ g₂ g : GL (Fin n) ℚ}
+theorem multiplicity_GLnZp_castGLPadic_of_mem_pPrimaryPosDetInt {g₁ g₂ g : GL (Fin n) ℚ}
     (hg₁ : g₁ ∈ pPrimaryPosDetInt n p) (hg₂ : g₂ ∈ pPrimaryPosDetInt n p)
     (hg : g ∈ pPrimaryPosDetInt n p) :
     DoubleCoset.multiplicity (GLnZp n p) (GLnZp n p) (GLnZp n p)
@@ -929,8 +560,8 @@ theorem multiplicity_pPrimaryToPadicIntegral {g₁ g₂ g : GL (Fin n) ℚ}
       castGLPadic n p g₁ ∈ (pLocalPosGL n p).map (castGLPadic n p))
     ⟨g₂, pPrimaryPosDetInt_le_pLocalPosGL n p hg₂, rfl⟩
     ⟨g, pPrimaryPosDetInt_le_pLocalPosGL n p hg, rfl⟩
-    (exists_mem_map_SLnZ_conj_mem_GLnZp n p ⟨castGLPadic n p g₁, ⟨g₁, hg₁, rfl⟩⟩)
-    (exists_mem_map_SLnZ_conj_mem_GLnZp n p ⟨castGLPadic n p g₂, ⟨g₂, hg₂, rfl⟩⟩)
+    (exists_mem_map_SLnZ_inv_mul_mem_conj_GLnZp n p ⟨castGLPadic n p g₁, ⟨g₁, hg₁, rfl⟩⟩)
+    (exists_mem_map_SLnZ_inv_mul_mem_conj_GLnZp n p ⟨castGLPadic n p g₂, ⟨g₂, hg₂, rfl⟩⟩)
   exact hinf.trans (DoubleCoset.multiplicity_map_of_injective (castGLPadic n p)
     (castGLPadic_injective n p) (SLnZ n) (SLnZ n) (SLnZ n) g₁ g₂ g)
 
@@ -943,7 +574,7 @@ noncomputable def pPrimaryToPadicIntegralRingEquiv (R : Type*) [Semiring R] :
       (castGLPadic_pPrimary_le_padicIntEntries n p)
       (castGLPadic_pPrimary_le_map_pLocalPosGL n p)
       (exists_mem_GLnZp_mul_mem_map_pPrimaryPosDetInt n p)
-      (exists_mem_map_SLnZ_conj_mem_GLnZp n p))
+      (exists_mem_map_SLnZ_inv_mul_mem_conj_GLnZp n p))
 
 /-- `pPrimaryToPadicIntegralRingEquiv` sends each basis element along
 `pPrimaryToPadicIntegralCosetEquiv`. -/
@@ -1002,24 +633,19 @@ theorem range_mapSubmonoidRingHom_pPrimaryPosDetInt :
 /-- Ring isomorphism between `𝕋 (pPrimaryPosDetInt n p) (SLnZ n) ℤ` and `pLocalSubring n p`. -/
 noncomputable def pPrimaryToPLocalRingEquiv :
     𝕋 (pPrimaryPosDetInt n p) (SLnZ n) ℤ ≃+* pLocalSubring n p :=
-  (RingEquiv.ofBijective
-    (HeckeCosetModule.mapSubmonoidRingHom (H := SLnZ n) ℤ
-      (pPrimaryPosDetInt_le_posDetInt n p)).rangeRestrict
-    ⟨fun _ _ h ↦ HeckeCosetModule.mapSubmonoidRingHom_injective (H := SLnZ n) ℤ
-      (pPrimaryPosDetInt_le_posDetInt n p) (congrArg Subtype.val h),
-      (HeckeCosetModule.mapSubmonoidRingHom (H := SLnZ n) ℤ
-        (pPrimaryPosDetInt_le_posDetInt n p)).rangeRestrict_surjective⟩).trans
-    (RingEquiv.subringCongr (range_mapSubmonoidRingHom_pPrimaryPosDetInt n p))
+  HeckeCosetModule.mapSubmonoidSubringEquiv (pPrimaryPosDetInt_le_posDetInt n p)
+    (range_mapSubmonoidRingHom_pPrimaryPosDetInt n p)
 
 /-- Coercion of `pPrimaryToPLocalRingEquiv` to `IntegralHeckeRing n`. -/
 @[simp]
 theorem pPrimaryToPLocalRingEquiv_coe (f : 𝕋 (pPrimaryPosDetInt n p) (SLnZ n) ℤ) :
     (pPrimaryToPLocalRingEquiv n p f : IntegralHeckeRing n) =
       HeckeCosetModule.mapSubmonoidRingHom (H := SLnZ n) ℤ
-        (pPrimaryPosDetInt_le_posDetInt n p) f := (rfl)
+        (pPrimaryPosDetInt_le_posDetInt n p) f :=
+  HeckeCosetModule.coe_mapSubmonoidSubringEquiv_apply _ _ f
 
 /-- **The integral `p`-adic `GL_n` Hecke ring comparison**
-([Rhodes–Shemanske][rhodes1998] §3.2, [Shimura][shimura1971] §3.2): Shimura's `p`-local Hecke
+(Rhodes–Shemanske 1998, §3.2; [Shimura][shimura1971] §3.2): Shimura's `p`-local Hecke
 subring `pLocalSubring n p` is canonically isomorphic to `PadicIntegralHeckeRing n p`. -/
 noncomputable def pLocalToPadicIntegralRingEquiv :
     pLocalSubring n p ≃+* PadicIntegralHeckeRing n p :=
@@ -1089,7 +715,8 @@ theorem degree_padicNatPowDiagCoset_eq_degree_diagCoset (e : Fin n → ℕ) :
     exact HeckeCoset.mk_congr_val (padicNatPowDiagGL_def n p e)
   have hglob : diagCoset (primePowDiag n p e) =
       D₀.map (pPrimaryPosDetInt_le_posDetInt n p) le_rfl le_rfl := by
-    rw [diagCoset_def, HeckeCoset.map_mk]; rfl
+    rw [diagCoset_def, HeckeCoset.map_mk]
+    exact HeckeCoset.mk_congr_val rfl
   rw [hpadic, hglob, degree_pPrimaryToPadicIntegralCosetEquiv, HeckeCoset.degree_map_of_le]
 
 /-- **Polynomial presentation of `PadicIntegralHeckeRing`** ([Shimura][shimura1971] Theorem 3.20
@@ -1122,26 +749,6 @@ theorem degree_padicNatPowDiagCoset_const (k : ℕ) :
     funext fun i ↦ primePowDiag_apply n p (fun _ ↦ k) i
   rw [degree_padicNatPowDiagCoset_eq_degree_diagCoset, hp]
   exact degree_diagCoset_const n (p ^ k)
-
-/-- **Rank-`2` degree check**: the `p`-adic double coset of `diag(1, p)` in `M_2(ℤ_p) ∩ GL_2(ℚ_p)`
-has degree `p + 1`, matching the global `SL_2(ℤ)` degree of `T(1, p)`. -/
-theorem degree_padicNatPowDiagCoset_fin_two_one_p :
-    (padicNatPowDiagCoset 2 p ![0, 1]).degree = p + 1 := by
-  have hmono : Monotone (![0, 1] : Fin 2 → ℕ) := fun i j hij ↦ by
-    fin_cases i <;> fin_cases j <;> simp at hij ⊢
-  rw [degree_padicNatPowDiagCoset_eq_degree_diagCoset]
-  have hdeg := GL2.degree_diagCoset_of_ratio_eq_prime_pow p (Fact.out : p.Prime)
-    (primePowDiag 2 p ![0, 1]) (isDvdChain_primePowDiag 2 p ![0, 1] hmono) 1 Nat.one_pos
-    (by simp)
-  simpa using hdeg
-
-omit [Fact p.Prime] in
-/-- At `p = 2` in rank `2`, the `2`-adic double coset of `diag(1, 2)` has degree `3`. -/
-theorem degree_padicNatPowDiagCoset_fin_two_at_two :
-    let _ : Fact (Nat.Prime 2) := ⟨Nat.prime_two⟩
-    (padicNatPowDiagCoset 2 2 ![0, 1]).degree = 3 := by
-  have : Fact (Nat.Prime 2) := ⟨Nat.prime_two⟩
-  exact degree_padicNatPowDiagCoset_fin_two_one_p 2
 
 end IntegralPadicComparison
 

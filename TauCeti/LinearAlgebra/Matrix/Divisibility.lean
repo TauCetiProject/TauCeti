@@ -288,4 +288,11 @@ theorem prod_castLE_mul_prod_castLE_dvd_of_mul_diagonal_mul_diagonal_mul_eq
 
 end ChainMinor
 
+/-- If `X * Y = r • 1` for square matrices over a commutative ring, then `det X` divides
+`r ^ card ι`. -/
+theorem det_dvd_pow_card_of_mul_eq_smul_one {ι R : Type*} [Fintype ι] [DecidableEq ι]
+    [CommRing R] {X Y : Matrix ι ι R} {r : R} (h : X * Y = r • 1) :
+    X.det ∣ r ^ Fintype.card ι :=
+  ⟨Y.det, by simpa [det_mul, det_smul, det_one] using (congrArg det h).symm⟩
+
 end Matrix
