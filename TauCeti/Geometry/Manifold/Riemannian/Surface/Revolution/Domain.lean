@@ -12,9 +12,12 @@ public import TauCeti.Geometry.Manifold.VectorBundle.Tangent.Basic
 /-!
 # The induced Riemannian metric on an open revolution parameter domain
 
-A regular profile of nonzero radius determines a genuine smooth Riemannian metric on every
-open coordinate domain where it is regular. The profile need only be smooth on that domain;
-no global regularity, injectivity of the parametrization or completeness is required.
+A `C^(n+1)` regular profile of nonzero radius determines a genuine `C^n` Riemannian metric
+on each open coordinate domain where it is regular. No global regularity, injectivity of the
+parametrization or completeness is required.
+
+Ported from Yangyang Li's formalization in
+[ColdingMinicozziTheory](https://github.com/riccardobrasca/ColdingMinicozziTheory/tree/b442a9f3077a4be3823b712ec92b2335dd34e771/ForTauCeti/Geometry/Manifold/Riemannian/Surface/Revolution).
 -/
 
 public noncomputable section
@@ -54,37 +57,36 @@ theorem contMDiff_parametrization_subtype {f g : ℝ → ℝ} {U : Opens P} {n :
 
 /-- On any open regular parameter domain, the differential of the restricted parametrization
 is injective. -/
-theorem injective_mvfderiv_parametrization_subtype {f g : ℝ → ℝ} {U : Opens P}
-    (hf : ∀ p : U, DifferentiableAt ℝ f p.val.2)
-    (hg : ∀ p : U, DifferentiableAt ℝ g p.val.2)
-    (hr : ∀ p : U, f p.val.2 ≠ 0)
-    (hs : ∀ p : U, 0 < profileSpeedSq f g p.val.2) (p : U) :
+theorem injective_mvfderiv_parametrization_subtype {f g : ℝ → ℝ} {U : Opens P} {p : U}
+    (hf : DifferentiableAt ℝ f p.val.2) (hg : DifferentiableAt ℝ g p.val.2)
+    (hr : f p.val.2 ≠ 0) (hs : 0 < profileSpeedSq f g p.val.2) :
     Function.Injective (mvfderiv IP (fun q : U ↦ parametrization f g q.val) p) := by
   intro w z hwz
-  rw [mvfderiv_parametrization_subtype (hf p) (hg p),
-    mvfderiv_parametrization_subtype (hf p) (hg p)] at hwz
+  rw [mvfderiv_parametrization_subtype hf hg,
+    mvfderiv_parametrization_subtype hf hg] at hwz
   exact (Manifold.tangentSpaceOpenEquiv (I := IP) p).injective
     ((NormedSpace.fromTangentSpace p.val).injective
-      (injective_fderiv_parametrization (hf p) (hg p) (hr p) (hs p) hwz))
+      (injective_fderiv_parametrization hf hg hr hs hwz))
 
-/-- The native smooth Riemannian metric induced by a regular surface of revolution on an
+/-- The native `Cⁿ` Riemannian metric induced by a regular surface of revolution on an
 arbitrary open parameter domain. -/
-def riemannianMetric {f g : ℝ → ℝ} (U : Opens P)
-    (hf : ∀ p : U, ContDiffAt ℝ ∞ f p.val.2)
-    (hg : ∀ p : U, ContDiffAt ℝ ∞ g p.val.2)
+def riemannianMetric {n : ℕ∞ω} {f g : ℝ → ℝ} (U : Opens P)
+    (hf : ∀ p : U, ContDiffAt ℝ (n + 1) f p.val.2)
+    (hg : ∀ p : U, ContDiffAt ℝ (n + 1) g p.val.2)
     (hr : ∀ p : U, f p.val.2 ≠ 0)
     (hs : ∀ p : U, 0 < profileSpeedSq f g p.val.2) :
-    ContMDiffRiemannianMetric IP ∞ P (fun p : U ↦ TangentSpace IP p) :=
+    ContMDiffRiemannianMetric IP n P (fun p : U ↦ TangentSpace IP p) :=
   inducedRiemannianMetric (fun p : U ↦ parametrization f g p.val)
     (contMDiff_parametrization_subtype hf hg)
-    (injective_mvfderiv_parametrization_subtype
-      (fun p ↦ (hf p).differentiableAt (by simp))
-      (fun p ↦ (hg p).differentiableAt (by simp)) hr hs)
+    (fun p ↦ injective_mvfderiv_parametrization_subtype
+      ((hf p).differentiableAt (by simp))
+      ((hg p).differentiableAt (by simp)) (hr p) (hs p))
 
 /-- The native induced Riemannian metric has the computed first fundamental form. -/
-theorem riemannianMetric_inner {f g : ℝ → ℝ} (U : Opens P)
-    (hf : ∀ p : U, ContDiffAt ℝ ∞ f p.val.2)
-    (hg : ∀ p : U, ContDiffAt ℝ ∞ g p.val.2)
+@[simp]
+theorem riemannianMetric_inner {n : ℕ∞ω} {f g : ℝ → ℝ} (U : Opens P)
+    (hf : ∀ p : U, ContDiffAt ℝ (n + 1) f p.val.2)
+    (hg : ∀ p : U, ContDiffAt ℝ (n + 1) g p.val.2)
     (hr : ∀ p : U, f p.val.2 ≠ 0)
     (hs : ∀ p : U, 0 < profileSpeedSq f g p.val.2)
     (p : U) (w z : TangentSpace IP p) :

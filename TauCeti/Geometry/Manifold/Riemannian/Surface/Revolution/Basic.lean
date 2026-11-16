@@ -123,7 +123,7 @@ theorem contDiffAt_parametrization {f g : ℝ → ℝ} {n : ℕ∞ω} {p : ℝ �
 
 /-- The first fundamental form is positive on every nonzero coordinate vector at a regular
 profile point of nonzero radius. -/
-theorem sq_mul_sq_add_profileSpeedSq_mul_sq_pos {f g : ℝ → ℝ} {v : ℝ}
+private theorem sq_mul_sq_add_profileSpeedSq_mul_sq_pos {f g : ℝ → ℝ} {v : ℝ}
     (hf : f v ≠ 0) (hfg : 0 < profileSpeedSq f g v) {w : ℝ × ℝ} (hw : w ≠ 0) :
     0 < f v ^ 2 * w.1 ^ 2 + profileSpeedSq f g v * w.2 ^ 2 := by
   have hr : 0 < f v ^ 2 := sq_pos_of_ne_zero hf
