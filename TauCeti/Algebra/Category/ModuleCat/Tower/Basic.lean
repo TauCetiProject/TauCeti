@@ -60,8 +60,6 @@ noncommutative ring are allowed.
   have vanishing `lim¹`.
 * `TauCeti.ModuleTower.smulTower`: the tower `M ←f M ←f ⋯` of a module over a commutative ring,
   whose transitions are multiplication by `f`.
-* `TauCeti.ModuleTower.toSmulTower`: construct a morphism to `smulTower` from compatible
-  levelwise linear maps.
 
 ## References
 
@@ -611,62 +609,6 @@ theorem smulTower_transition (f : R) (n : ℕ) :
   simp only [smulTower, transition_def, Functor.ofOpSequence_map_homOfLE_succ]
   -- `ModuleCat.hom_ofHom`, stated for the carrier `M` rather than `ModuleCat.of R M`
   rfl
-
-/-- A composite transition in the scalar-multiplication tower is multiplication by the
-corresponding power of the scalar. -/
-@[simp]
-theorem smulTower_transitionOfLE (f : R) {n m : ℕ} (h : n ≤ m) :
-    (smulTower M f).transitionOfLE h = (f ^ (m - n)) • LinearMap.id := by
-  induction m, h using Nat.le_induction with
-  | base => simp
-  | succ m h ih =>
-    -- State scalar identities on `M`, rather than on the carrier of a tower term.
-    have key : (f ^ (m - n) • (LinearMap.id : M →ₗ[R] M)) ∘ₗ (f • LinearMap.id) =
-        f ^ (m + 1 - n) • LinearMap.id := by
-      ext x
-      simp [Nat.succ_sub h, pow_succ, mul_smul]
-    rw [← transitionOfLE_comp_transitionOfLE _ h (Nat.le_succ m), ih,
-      transitionOfLE_succ, smulTower_transition]
-    exact key
-
-/-- A composite transition in the scalar-multiplication tower acts by the corresponding
-power of the scalar. -/
-theorem smulTower_transitionOfLE_apply (f : R) {n m : ℕ} (h : n ≤ m) (x : M) :
-    (smulTower M f).transitionOfLE h x = f ^ (m - n) • x := by
-  rw [smulTower_transitionOfLE]
-  -- Scalar-action simp lemmas are stated on `M`, not the tower term's carrier.
-  exact LinearMap.smul_apply (f ^ (m - n)) (LinearMap.id : M →ₗ[R] M) x
-
-/-- Construct a morphism to the scalar-multiplication tower from levelwise linear maps
-that commute with the source transitions and multiplication by the scalar. -/
-def toSmulTower {F : ModuleTower.{v} R} (f : R)
-    (d : ∀ n, F.obj (op n) →ₗ[R] M)
-    (hd : ∀ n x, d n (F.transition n x) = f • d (n + 1) x) : F ⟶ smulTower M f :=
-  NatTrans.ofOpSequence (fun n ↦ ModuleCat.ofHom (d n)) fun n ↦ by
-    apply ModuleCat.hom_ext
-    -- The carrier of a tower term is definitionally `M`, but the categorical composition
-    -- simp lemmas do not match across that identification. State the maps on `M` first.
-    change d n ∘ₗ F.transition n = (smulTower M f).transition n ∘ₗ d (n + 1)
-    rw [smulTower_transition]
-    ext x
-    -- The scalar-action simp lemmas also use `M`, rather than the tower term's carrier.
-    exact hd n x
-
-/-- The components of the morphism to a scalar-multiplication tower are the supplied maps. -/
-@[simp]
-theorem toSmulTower_app_apply {F : ModuleTower.{v} R} (f : R)
-    (d : ∀ n, F.obj (op n) →ₗ[R] M)
-    (hd : ∀ n x, d n (F.transition n x) = f • d (n + 1) x)
-    (n : ℕ) (x : F.obj (op n)) :
-    ((toSmulTower f d hd).app (op n)).hom x = d n x :=
-  (rfl)
-
-/-- The component linear maps of `toSmulTower` are the supplied maps. -/
-theorem toSmulTower_app_hom {F : ModuleTower.{v} R} (f : R)
-    (d : ∀ n, F.obj (op n) →ₗ[R] M)
-    (hd : ∀ n x, d n (F.transition n x) = f • d (n + 1) x) (n : ℕ) :
-    ((toSmulTower f d hd).app (op n)).hom = d n :=
-  (rfl)
 
 end SMulTower
 
