@@ -9,6 +9,8 @@ public import TauCeti.Geometry.Convex.PolyhedralCochain.Basic
 public import TauCeti.LinearAlgebra.AffineSpace.Transverse
 public import TauCeti.Analysis.Convex.Intrinsic
 import TauCeti.LinearAlgebra.AffineSpace.Simplex.Conormal
+import TauCeti.LinearAlgebra.AffineSpace.Span
+import Mathlib.Analysis.Convex.Caratheodory
 import Mathlib.LinearAlgebra.AffineSpace.FiniteDimensional
 
 /-!
@@ -365,15 +367,35 @@ theorem isTransverse_reverse_iff (σ : OrientedCell h k) (v : Fin (k + 1) → V)
     exact ⟨(σ.isWeaklyTransverse_reverse_iff v).mpr hv.toIsWeaklyTransverse,
       by simpa only [reverse_carrier] using hv.disjoint_faces⟩
 
-/-- An affinely independent subtest of a weakly transverse test is transverse when its proper
-parameter faces avoid the cell. -/
+/-- A subtest of a weakly transverse test is transverse when its proper parameter faces avoid
+the cell. No affine independence is assumed: a subtest meeting the cell is affinely independent
+because its proper faces avoid the cell. -/
 theorem IsWeaklyTransverse.isTransverse_of_subset_convexHull {σ : OrientedCell h k}
     {v w : Fin (k + 1) → V} (hv : σ.IsWeaklyTransverse v)
     (hw : convexHull ℝ (range w) ⊆ convexHull ℝ (range v))
-    (hi : (convexHull ℝ (range w) ∩ σ.carrier).Nonempty → AffineIndependent ℝ w)
     (hb : ∀ j : Fin (k + 1), Disjoint (convexHull ℝ (range (w ∘ j.succAbove))) σ.carrier) :
-    σ.IsTransverse w :=
-  ⟨hv.of_subset_convexHull hw hi, hb⟩
+    σ.IsTransverse w := by
+  refine ⟨hv.of_subset_convexHull hw ?_, hb⟩
+  rintro ⟨x, hxw, hxσ⟩
+  rw [convexHull_eq_union] at hxw
+  simp only [mem_iUnion] at hxw
+  obtain ⟨t, hts, hti, hxt⟩ := hxw
+  have hj : ∀ j, w j ∈ t ∧ w j ∉ w '' {j}ᶜ := by
+    intro j
+    by_contra hj
+    refine (hb j).notMem_of_mem_left (convexHull_mono ?_ hxt) hxσ
+    rw [range_comp, Fin.range_succAbove]
+    rintro _ hy
+    obtain ⟨l, rfl⟩ := hts hy
+    by_cases hl : l = j
+    · subst l
+      by_contra hl'
+      exact hj ⟨hy, hl'⟩
+    · exact ⟨l, hl, rfl⟩
+  refine AffineIndependent.of_set_of_injective
+    (hti.mono fun _ ⟨j, hj'⟩ => hj' ▸ (hj j).1) fun i l hil => ?_
+  by_contra hne
+  exact (hj i).2 ⟨l, Ne.symm hne, hil.symm⟩
 
 /-- Restricting a weakly transverse segment to a segment whose endpoints avoid the cell
 gives a transverse segment. The new segment may be stationary. -/
@@ -381,11 +403,14 @@ theorem IsWeaklyTransverse.isTransverse_of_mem_segment {σ : OrientedCell h 1} {
     (hv : σ.IsWeaklyTransverse ![x, y]) (ha : a ∈ segment ℝ x y) (hb : b ∈ segment ℝ x y)
     (haσ : a ∉ σ.carrier) (hbσ : b ∉ σ.carrier) :
     σ.IsTransverse ![a, b] := by
-  refine (σ.isTransverse_pair_iff a b).mpr ⟨hv.of_mem_segment ha hb ?_, haσ, hbσ⟩
-  rintro ⟨z, hz, hzσ⟩ rfl
-  simp only [segment_same, mem_singleton_iff] at hz
-  subst z
-  exact haσ hzσ
+  refine hv.isTransverse_of_subset_convexHull ?_ fun j => ?_
+  · rw [Matrix.range_cons_cons_empty, Matrix.range_cons_cons_empty,
+      convexHull_pair, convexHull_pair]
+    exact (convex_segment x y).segment_subset ha hb
+  · rw [Set.range_unique, convexHull_singleton, Set.disjoint_singleton_left]
+    fin_cases j
+    · simpa using hbσ
+    · simpa using haσ
 
 /-- A weakly transverse test meets the affine span in at most one point if it meets
 the cell. -/
