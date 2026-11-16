@@ -278,39 +278,25 @@ theorem _root_.Convex.hasDerivAt_volume_real_sep_inner_le {s : Set E} (hs : Conv
     HasDerivAt (fun c ↦ volume.real {x ∈ s | ⟪e, x⟫ ≤ c})
       (volume.real {y : (ℝ ∙ e)ᗮ | (y : E) + c • e ∈ s}) c := by
   set φ : ℝ → ℝ := fun t ↦ volume.real {y : (ℝ ∙ e)ᗮ | (y : E) + t • e ∈ s}
-  have hfin (t : ℝ) := (hsb.volume_hyperplaneSection_lt_top e t).ne
   have hm := measurable_volume_hyperplaneSection e he hsm
   -- `φ` is integrable since its integral is the volume of `s`.
   have hφi : Integrable φ := integrable_toReal_of_lintegral_ne_top hm.aemeasurable (by
     rw [← volume_eq_lintegral_volume_hyperplaneSection e he hsm.nullMeasurableSet]
     exact hsb.measure_lt_top.ne)
-  -- Choose a height `a < c` below `s`; near `c` the volume below `c'` is an interval integral.
+  -- From a lower bound `m` of the heights in `s`, the volume below `c'` is the integral of `φ`
+  -- up to `c'`.
   obtain ⟨m, hmin⟩ := ((innerSL ℝ e).lipschitzWith.isBounded_image hsb).bddBelow
-  set a := min m c - 1
-  have ha (x : E) (hx : x ∈ s) : a < ⟪e, x⟫ :=
-    (sub_one_lt _).trans_le ((min_le_left _ _).trans (hmin ⟨x, hx, rfl⟩))
-  have hvol : ∀ᶠ c' in nhds c, volume.real {x ∈ s | ⟪e, x⟫ ≤ c'} = ∫ t in a..c', φ t := by
-    filter_upwards [lt_mem_nhds ((sub_one_lt _).trans_le (min_le_right m c))] with c' hc'
-    have hsep : {x ∈ s | ⟪e, x⟫ ≤ c'} = {x ∈ s | ⟪e, x⟫ ∈ Ioc a c'} := by
-      ext x
-      exact and_congr_right fun hx ↦ ⟨fun h ↦ ⟨ha x hx, h⟩, And.right⟩
-    have hlin : ∫⁻ t in Ioc a c', volume {y : (ℝ ∙ e)ᗮ | (y : E) + t • e ∈ s} =
-        ENNReal.ofReal (∫ t in Ioc a c', φ t) := by
-      rw [ofReal_integral_eq_lintegral_ofReal hφi.integrableOn
-        (ae_of_all _ fun _ ↦ ENNReal.toReal_nonneg)]
-      exact setLIntegral_congr_fun measurableSet_Ioc fun t _ ↦
-        (ENNReal.ofReal_toReal (hfin t)).symm
-    rw [intervalIntegral.integral_of_le hc'.le, measureReal_def, hsep,
-      volume_sep_inner_mem_eq_setLIntegral e he hsm.nullMeasurableSet measurableSet_Ioc, hlin]
-    exact ENNReal.toReal_ofReal (setIntegral_nonneg measurableSet_Ioc
-      fun _ _ ↦ ENNReal.toReal_nonneg)
+  have hvol : (fun c' ↦ volume.real {x ∈ s | ⟪e, x⟫ ≤ c'}) = fun c' ↦ ∫ t in m..c', φ t :=
+    funext fun c' ↦ volume_real_sep_inner_le_eq_intervalIntegral e he hsm.nullMeasurableSet
+      (fun x hx ↦ hmin ⟨x, hx, rfl⟩) c'
+      (ae_of_all _ fun t ↦ hsb.volume_hyperplaneSection_lt_top e t)
   -- By Brunn's concavity principle `φ` is continuous at the interior height `c`.
   have hcont : ContinuousAt φ c :=
     (hs.continuousOn_volume_real_hyperplaneSection he).continuousAt
       (isOpen_interior.mem_nhds hc)
-  exact (intervalIntegral.integral_hasDerivAt_right hφi.intervalIntegrable
-    hm.ennreal_toReal.stronglyMeasurable.stronglyMeasurableAtFilter hcont).congr_of_eventuallyEq
-    hvol
+  rw [hvol]
+  exact intervalIntegral.integral_hasDerivAt_right hφi.intervalIntegrable
+    hm.ennreal_toReal.stronglyMeasurable.stronglyMeasurableAtFilter hcont
 
 /-- **Multiplicative Brunn–Minkowski for hyperplane sections.** The weighted geometric mean of the
 volumes of a section of `K` and a section of `L` is at most the volume of the section of

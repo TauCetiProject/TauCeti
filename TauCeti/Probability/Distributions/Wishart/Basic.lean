@@ -12,6 +12,7 @@ public import TauCeti.Probability.Distributions.Gaussian.Affine
 
 import Mathlib.MeasureTheory.Group.Convolution
 import Mathlib.Probability.ProductMeasure
+import TauCeti.Analysis.Matrix.GramFactorization
 import TauCeti.Analysis.Matrix.Sqrt
 import TauCeti.MeasureTheory.Measure.SymmetricMatrix.Determinant
 import TauCeti.MeasureTheory.Measure.SymmetricMatrix.Rank
@@ -135,6 +136,24 @@ theorem rank_coe_wishartGram_le (X : ι → EuclideanSpace ℝ (Fin p)) :
   rw [coe_wishartGram_eq_gram, Matrix.gram_eq_conjTranspose_mul (EuclideanSpace.basisFun ι ℝ),
     Matrix.rank_conjTranspose_mul_self]
   exact Matrix.rank_le_card_height _
+
+/-- Gram sums of a finite family are exactly the positive-semidefinite matrices of rank
+at most the number of vectors. -/
+theorem range_wishartGram {ι : Type*} [Fintype ι] :
+    Set.range (wishartGram (p := p) (ι := ι)) =
+      {A : selfAdjoint.submodule ℝ (Matrix (Fin p) (Fin p) ℝ) |
+        (A : Matrix (Fin p) (Fin p) ℝ).PosSemidef ∧
+          (A : Matrix (Fin p) (Fin p) ℝ).rank ≤ Fintype.card ι} := by
+  ext A
+  constructor
+  · rintro ⟨X, rfl⟩
+    exact ⟨posSemidef_coe_wishartGram X, rank_coe_wishartGram_le X⟩
+  · rintro ⟨hA, hr⟩
+    obtain ⟨B, hB⟩ := hA.exists_eq_conjTranspose_mul_self_of_rank_le hr
+    refine ⟨fun r ↦ WithLp.toLp 2 (B r), Subtype.ext ?_⟩
+    rw [coe_wishartGram, hB]
+    ext i j
+    simp [Matrix.sum_apply, Matrix.mul_apply, Matrix.vecMulVec_apply]
 
 /-- A linear image of the vectors congruates their Gram sum. -/
 theorem wishartGram_toEuclideanLin {q : ℕ} (M : Matrix (Fin q) (Fin p) ℝ)

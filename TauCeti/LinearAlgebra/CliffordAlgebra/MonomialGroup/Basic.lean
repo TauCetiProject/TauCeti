@@ -641,11 +641,8 @@ theorem mem_monomialGroup_iff (hb : (QuadraticMap.associated Q).IsOrthoᵢ b)
     | mul u v _ _ hu hv =>
       obtain ⟨s, hs⟩ := hu
       obtain ⟨t, ht⟩ := hv
-      refine ⟨s ∆ t, ?_⟩
       rw [Units.val_mul]
-      rcases basis_mul_basis_eq_or hb hQ s t with h | h <;>
-        rcases hs with hs | hs <;> rcases ht with ht | ht <;>
-        simp only [hs, ht, neg_mul, mul_neg, neg_neg, h, true_or, or_true]
+      exact ⟨s ∆ t, mul_eq_or_of_eq_basis_or hb hQ hs ht⟩
     | inv u _ hu =>
       obtain ⟨s, hs⟩ := hu
       refine ⟨s, ?_⟩
@@ -1153,23 +1150,6 @@ private theorem monomialGroupEquiv_symm_fst_of_val_eq
     · exact ⟨-1, Subtype.ext (Units.ext (by simp [hg]))⟩
   rw [← he, Equiv.symm_apply_apply]
 
-omit [Nontrivial R] [Fintype I] in
-/-- The product of signed monomials `±e_s` and `±e_t` is a signed monomial `±e_{s ∆ t}`. -/
-private theorem val_mul_eq_or_of_val_eq_or (hb : (QuadraticMap.associated Q).IsOrthoᵢ b)
-    (hQ : ∀ i, Q (b i) = 1 ∨ Q (b i) = -1) {g h : monomialGroup Q b} {s t : Finset I}
-    (hs : ((g : (CliffordAlgebra Q)ˣ) : CliffordAlgebra Q) = basis Q b s ∨
-      ((g : (CliffordAlgebra Q)ˣ) : CliffordAlgebra Q) = -basis Q b s)
-    (ht : ((h : (CliffordAlgebra Q)ˣ) : CliffordAlgebra Q) = basis Q b t ∨
-      ((h : (CliffordAlgebra Q)ˣ) : CliffordAlgebra Q) = -basis Q b t) :
-    (((g * h : monomialGroup Q b) : (CliffordAlgebra Q)ˣ) : CliffordAlgebra Q) =
-        basis Q b (s ∆ t) ∨
-      (((g * h : monomialGroup Q b) : (CliffordAlgebra Q)ˣ) : CliffordAlgebra Q) =
-        -basis Q b (s ∆ t) := by
-  rw [Subgroup.coe_mul, Units.val_mul]
-  rcases basis_mul_basis_eq_or hb hQ s t with hst | hst <;>
-    rcases hs with hs | hs <;> rcases ht with ht | ht <;>
-    simp only [hs, ht, neg_mul, mul_neg, neg_neg, hst, true_or, or_true]
-
 omit [Fintype I] in
 /-- **The support homomorphism.** For an orthogonal basis whose generators square to `±1`, the
 signed monomial `±e_s` is sent to the indicator vector of `s` in `(ZMod 2) ^ I`, written
@@ -1187,7 +1167,9 @@ noncomputable def monomialGroupSupport (hb : (QuadraticMap.associated Q).IsOrtho
   map_mul' g h := by
     obtain ⟨s, hs⟩ := (mem_monomialGroup_iff hb hQ).mp g.2
     obtain ⟨t, ht⟩ := (mem_monomialGroup_iff hb hQ).mp h.2
-    rw [monomialGroupEquiv_symm_fst_of_val_eq hb hQ (val_mul_eq_or_of_val_eq_or hb hQ hs ht),
+    have hst := mul_eq_or_of_eq_basis_or hb hQ hs ht
+    rw [← Units.val_mul, ← Subgroup.coe_mul] at hst
+    rw [monomialGroupEquiv_symm_fst_of_val_eq hb hQ hst,
       monomialGroupEquiv_symm_fst_of_val_eq hb hQ hs,
       monomialGroupEquiv_symm_fst_of_val_eq hb hQ ht, ← ofAdd_add]
     classical

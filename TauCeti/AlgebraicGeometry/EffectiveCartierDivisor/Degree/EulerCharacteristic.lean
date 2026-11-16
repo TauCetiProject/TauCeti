@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.AlgebraicGeometry.IdealSheaf.EulerCharacteristic
+public import TauCeti.AlgebraicGeometry.IdealSheaf.Rank
 public import TauCeti.AlgebraicGeometry.Curves.Degree.Basic
 public import TauCeti.AlgebraicGeometry.EffectiveCartierDivisor.Finite
 public import TauCeti.AlgebraicGeometry.EffectiveCartierDivisor.Invertible
@@ -44,6 +45,11 @@ divisors in families.
 The rank is Mathlib's `Scheme.Hom.finrank` of the finite morphism `D ⟶ Spec k`, evaluated at the
 unique point of `Spec k`; it is `dim_k Γ(D, 𝒪_D)` by
 `AlgebraicGeometry.Scheme.Hom.finrank_eq_finrank_of_field`.
+
+The local-multiplicity version
+`Scheme.IdealSheafData.IsEffectiveCartier.eulerDegree_inv_mk_toInvertibleSheaf_eq_finsum`
+expresses this degree as `Σ_x [κ(x) : k] · ℓ(𝒪_{X,x} ⧸ I_x)`, summing over `X` with zero
+contribution outside `D`.
 
 ## References
 
@@ -159,6 +165,19 @@ theorem IsEffectiveCartier.eulerDegree_inv_mk_toInvertibleSheaf (hI : I.IsEffect
   rw [LineBundleClass.mk_trivial, one_mul, InvertibleSheaf.eulerDegree_trivial,
     hI.eulerDegree_toInvertibleSheaf k I s, zero_sub, neg_neg] at h
   exact h
+
+/-- The Euler-characteristic degree of `𝒪_X(D)` for an effective Cartier divisor finite over
+`k` is the sum over `X` of the local quotient lengths weighted by residue degrees. Only points
+of `D` contribute; finite-dimensional `H⁰` and `H¹` of `𝒪_X` suffice. -/
+theorem IsEffectiveCartier.eulerDegree_inv_mk_toInvertibleSheaf_eq_finsum
+    (hI : I.IsEffectiveCartier) :
+    LineBundleClass.eulerDegree k (LineBundleClass.mk hI.toInvertibleSheaf)⁻¹ = ∑ᶠ x : X,
+      ((X ↘ Spec (.of k)).residueDegree x : ℤ) *
+        (Module.length (X.presheaf.stalk x) (X.presheaf.stalk x ⧸ I.stalkIdeal x)).toNat := by
+  rw [hI.eulerDegree_inv_mk_toInvertibleSheaf k I default,
+    Scheme.Hom.finrank_comp_eq_finsum_of_isClosedImmersion, ker_subschemeι]
+  exact (Nat.castAddMonoidHom ℤ).map_finsum_of_injective Nat.cast_injective _ |>.trans
+    (finsum_congr fun x ↦ Nat.cast_mul _ _)
 
 end FiniteCohomology
 

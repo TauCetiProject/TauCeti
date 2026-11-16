@@ -8,6 +8,7 @@ module
 public import Mathlib.Topology.Category.TopCat.Limits.Products
 public import Mathlib.Topology.Category.TopCat.Monoidal
 public import Mathlib.Topology.Category.TopPair
+public import TauCeti.Topology.Category.TopCat.Fiber
 
 /-!
 # Topological pairs of nested subsets, and maps between pairs of subsets
@@ -49,7 +50,9 @@ For subsets `A ⊆ X` and `B ⊆ Y`, the preimages `A × Y` and `X × B` of `A` 
 projections of `X × Y` form the pair `(X × Y, A × Y ∪ X × B)` of a product of pairs. Each is open
 in the union when `A`, respectively `B`, is open
 (`TopCat.isOpen_subtypeVal_preimage_preimage_fst_union`), and a product of maps of pairs carries
-them into each other (`TopCat.mapsTo_tensorHom_preimage_fst`).
+them into each other (`TopCat.mapsTo_tensorHom_preimage_fst`). The product `A × Y` of the subspace
+`A` with `Y` is homeomorphic to the preimage of `A` under the first projection
+(`TopCat.prodPreimageFstIso`).
 
 For a map `π : X → Y`, a subset `Z ⊆ X` and a subset `S ⊆ Y`, the pair `(π⁻¹ S, π⁻¹ S ∩ Z)` over
 `S` includes into `(X, Z)` (`TopCat.restrictPreimagePairMap`), isomorphically when `S` contains
@@ -58,6 +61,10 @@ union and the intersection of the pairs over `U` and over `V` are the pairs over
 (`TopCat.restrictPreimagePairUnionIso`) and over `U ∩ V` (`TopCat.restrictPreimagePairInterIso`).
 For `S ⊆ W`, restricting over `W` and then over `S` is restricting over `S`
 (`TopCat.restrictPreimagePairRestrictPreimageIso`).
+
+A map `f` over `B`, that is with `f ≫ p' = p`, induces maps of pairs
+`(p⁻¹(T), p⁻¹(S)) ⟶ (p'⁻¹(T), p'⁻¹(S))` for nested subsets `S ⊆ T` of `B`
+(`TopCat.Hom.preimagePairMap`), whose components are the restrictions `TopCat.Hom.preimageMap`.
 -/
 
 public section
@@ -83,6 +90,12 @@ with the inclusion of `s` into `t` as its embedding. -/
 abbrev ofInclusion {X : TopCat.{u}} {s t : Set X} (h : s ⊆ t) : TopPair.{u} :=
   TopPair.of (A := TopCat.of s) (X := TopCat.of t)
     (TopCat.ofHom (ContinuousMap.inclusion h)) (Topology.IsEmbedding.inclusion h)
+
+/-- The pairs of nested subsets `s ⊆ t` and `s' ⊆ t'` agree when the subsets do. -/
+lemma ofInclusion_congr {X : TopCat.{u}} {s t s' t' : Set X} (h : s ⊆ t) (h' : s' ⊆ t')
+    (hs : s = s') (ht : t = t') : ofInclusion h = ofInclusion h' := by
+  subst hs ht
+  rfl
 
 variable {X Y Z : TopCat.{u}} (g : X ⟶ Y) (g' : Y ⟶ Z) {B : Set X} {B' : Set Y} {B'' : Set Z}
   (hB : Set.MapsTo g B B') (hB' : Set.MapsTo g' B' B'')
@@ -522,6 +535,34 @@ lemma mapsTo_tensorHom_preimage_snd {B' : Set Y'} (f : X ⟶ X') (g : Y ⟶ Y')
       ConcreteCategory.comp_apply]
     exact hg hx
 
+variable (X Y A) in
+/-- The homeomorphism `A × Y ≅ fst⁻¹(A)` between the product of the subspace `A ⊆ X` with `Y`
+and the preimage of `A` under the first projection `X × Y ⟶ X`. -/
+noncomputable def prodPreimageFstIso :
+    (TopPair.ofSubset A).snd ⊗ Y ≅ (TopPair.ofSubset (fst X Y ⁻¹' A)).snd where
+  hom := ofHom ⟨fun x ↦ ⟨((TopPair.ofSubset A).map ⊗ₘ 𝟙 Y) x, (fst (TopPair.ofSubset A).snd Y x).2⟩,
+    ((TopPair.ofSubset A).map ⊗ₘ 𝟙 Y).hom.continuous.subtype_mk _⟩
+  inv := lift (ofHom ⟨fun x ↦ ⟨fst X Y x.1, x.2⟩, by fun_prop⟩)
+    ((TopPair.ofSubset (fst X Y ⁻¹' A)).map ≫ snd X Y)
+
+variable (X Y A) in
+/-- Followed by the inclusion of `fst⁻¹(A)` into `X × Y`, the homeomorphism `A × Y ≅ fst⁻¹(A)` is
+the product of the inclusion of `A` with the identity of `Y`. -/
+@[reassoc]
+lemma prodPreimageFstIso_hom_comp_map :
+    (prodPreimageFstIso X Y A).hom ≫ (TopPair.ofSubset (fst X Y ⁻¹' A)).map =
+      (TopPair.ofSubset A).map ▷ Y :=
+  (rfl)
+
+variable (X Y A) in
+/-- Followed by the product of the inclusion of `A` with the identity of `Y`, the inverse of the
+homeomorphism `A × Y ≅ fst⁻¹(A)` is the inclusion of `fst⁻¹(A)` into `X × Y`. -/
+@[reassoc]
+lemma prodPreimageFstIso_inv_comp_whiskerRight :
+    (prodPreimageFstIso X Y A).inv ≫ (TopPair.ofSubset A).map ▷ Y =
+      (TopPair.ofSubset (fst X Y ⁻¹' A)).map :=
+  (Iso.inv_comp_eq _).2 (prodPreimageFstIso_hom_comp_map X Y A).symm
+
 end Preimage
 
 section RestrictPreimage
@@ -683,3 +724,44 @@ lemma restrictPreimagePairRestrictPreimageIso_inv_fst (hSW : S ⊆ W) :
 end RestrictPreimage
 
 end TopCat
+
+namespace TopCat.Hom
+
+variable {E E' B : TopCat.{u}} {p : E ⟶ B} {p' : E' ⟶ B}
+
+/-- The map of pairs `(p⁻¹(T), p⁻¹(S)) ⟶ (p'⁻¹(T), p'⁻¹(S))` induced by a map `f` over `B`, that is
+with `f ≫ p' = p`, for nested subsets `S ⊆ T` of `B`. -/
+def preimagePairMap (f : E ⟶ E') (hf : f ≫ p' = p) {S T : Set B} (hST : S ⊆ T) :
+    TopPair.ofInclusion (X := E) (Set.preimage_mono (f := p) hST) ⟶
+      TopPair.ofInclusion (X := E') (Set.preimage_mono (f := p') hST) :=
+  TopPair.ofHom (f.preimageMap hf T) (f.preimageMap hf S) (by
+    ext x
+    -- Both sides send a point `x` of `p⁻¹(S)` to `f x`.
+    exact Subtype.ext ((f.coe_preimageMap_apply hf S x).trans
+      (f.coe_preimageMap_apply hf T (Set.inclusion (Set.preimage_mono hST) x)).symm))
+
+@[simp]
+lemma preimagePairMap_fst (f : E ⟶ E') (hf : f ≫ p' = p) {S T : Set B} (hST : S ⊆ T) :
+    TopPair.Hom.fst (preimagePairMap f hf hST) = f.preimageMap hf T :=
+  (rfl)
+
+@[simp]
+lemma preimagePairMap_snd (f : E ⟶ E') (hf : f ≫ p' = p) {S T : Set B} (hST : S ⊆ T) :
+    TopPair.Hom.snd (preimagePairMap f hf hST) = f.preimageMap hf S :=
+  (rfl)
+
+@[simp]
+lemma preimagePairMap_id (hf : 𝟙 E ≫ p = p) {S T : Set B} (hST : S ⊆ T) :
+    preimagePairMap (𝟙 E) hf hST = 𝟙 _ :=
+  TopPair.hom_ext_of_fst _ (preimageMap_id hf T)
+
+/-- The maps of pairs induced by maps over `B` compose. It is stated in this direction so that
+`simp` can use it: the middle map `p'` cannot be recovered from the composite. -/
+@[reassoc (attr := simp)]
+lemma preimagePairMap_comp_preimagePairMap {E'' : TopCat.{u}} {p'' : E'' ⟶ B} (f : E ⟶ E')
+    (f' : E' ⟶ E'') (hf : f ≫ p' = p) (hf' : f' ≫ p'' = p') {S T : Set B} (hST : S ⊆ T) :
+    preimagePairMap f hf hST ≫ preimagePairMap f' hf' hST =
+      preimagePairMap (f ≫ f') (by rw [Category.assoc, hf', hf]) hST :=
+  TopPair.hom_ext_of_fst _ (preimageMap_comp_preimageMap f f' hf hf' T)
+
+end TopCat.Hom

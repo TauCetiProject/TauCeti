@@ -46,8 +46,10 @@ nonzero at `z`; the similarity principle upgrades the factor to a `Cᵏ` one wit
 (`TauCeti.eq_of_eventually_sub_pow_mul_eq`). The factor of the quotient at a zero is the quotient
 of the two factors there.
 
-For smooth vortices with the same end framing `α (z) · phase (z) → 1`, where `|phase| → 1` (for
-example the winding phase `(z / |z|) ^ (-m)`), the factor tends to one at infinity, so it is an
+For `Cᵏ` vortices, `k ≥ 2`, with the same end framing `α (z) · phase (z) → 1`, where
+`|phase| → 1` (for example the winding phase `(z / |z|) ^ (-m)`), the factor is a `Cᵏ` gauge
+tending to one at infinity which carries one vortex to the other
+(`TauCeti.Vortex.exists_contDiff_gaugeTransform_eq`). For smooth vortices it is therefore an
 element of the smooth framed gauge group. Since a framed gauge is determined by its action on a
 field whose section vanishes only on a nowhere dense set
 (`TauCeti.Vortex.framedGaugeGroup_smul_left_injective`), two smooth framed vortices with the same
@@ -239,6 +241,59 @@ open scoped ContDiff
 
 variable {x y : ℂ → EuclideanSpace ℝ (Fin 4)}
 
+/-- **Vortices with the same zeros differ by a gauge as regular as the fields.** Let `x` and `y`
+be `Cᵏ` solutions of the vortex equation on the plane, `k ≥ 2`, with the same end framing
+`α (z) · phase (z) → 1`, where `|phase| → 1` at infinity; for example `phase` is the winding phase
+`(z / |z|) ^ (-m)`. If `n` is a multiplicity function for both sections, meaning that each of them
+factors near every `z` as `(w - z) ^ n z * v w` with `v` continuous and nonzero at `z`, then
+`x = u • y` for a `Cᵏ` circle-valued gauge `u` tending to one at infinity. -/
+theorem exists_contDiff_gaugeTransform_eq {k : ℕ∞} (hk : 2 ≤ k) (hx : ContDiff ℝ k x)
+    (hy : ContDiff ℝ k y) (hxsol : ∀ z, equation x z = 0) (hysol : ∀ z, equation y z = 0)
+    {phase : ℂ → ℂ} (hphase : Tendsto (fun z ↦ ‖phase z‖) (cocompact ℂ) (𝓝 1))
+    (hxfr : Tendsto (fun z ↦ sectionValue x z * phase z) (cocompact ℂ) (𝓝 1))
+    (hyfr : Tendsto (fun z ↦ sectionValue y z * phase z) (cocompact ℂ) (𝓝 1)) {n : ℂ → ℕ}
+    (hnx : ∀ z, ∃ v : ℂ → ℂ, ContinuousAt v z ∧ v z ≠ 0 ∧
+      ∀ᶠ w in 𝓝 z, sectionValue x w = (w - z) ^ n z * v w)
+    (hny : ∀ z, ∃ v : ℂ → ℂ, ContinuousAt v z ∧ v z ≠ 0 ∧
+      ∀ᶠ w in 𝓝 z, sectionValue y w = (w - z) ^ n z * v w) :
+    ∃ u : ℂ → Circle, ContDiff ℝ k (fun z ↦ (u z : ℂ)) ∧ Tendsto u (cocompact ℂ) (𝓝 1) ∧
+      gaugeTransform u y = x := by
+  have hk₁ : (1 : ℕ∞) ≤ k := le_trans (by norm_num) hk
+  have hk₂ : ((2 : ℕ∞) : WithTop ℕ∞) ≤ k := by exact_mod_cast hk
+  have hxi (i : Fin 4) : ContDiff ℝ k fun w ↦ x w i := (contDiff_piLp 2).1 hx i
+  have hyi (i : Fin 4) : ContDiff ℝ k fun w ↦ y w i := (contDiff_piLp 2).1 hy i
+  have hxhol (w : ℂ) : equation x w 1 = 0 ∧ equation x w 2 = 0 := by simp [hxsol w]
+  have hyhol (w : ℂ) : equation y w 1 = 0 ∧ equation y w 2 = 0 := by simp [hysol w]
+  have hd (f : ℂ → ℝ) (hf : ContDiff ℝ k f) : Differentiable ℝ f :=
+    hf.differentiable (lt_of_lt_of_le (by norm_num) hk₂).ne'
+  obtain ⟨h, hh, hh₀, hα⟩ := exists_contDiff_sectionValue_eq_mul hk₁ (hxi 0) (hxi 1)
+    (hd _ (hxi 2)) (hd _ (hxi 3)) hxhol (hyi 0) (hyi 1) (hd _ (hyi 2)) (hd _ (hyi 3)) hyhol hnx hny
+  have hxlim := tendsto_normSq_of_tendsto_sectionValue_mul hphase hxfr
+  have hylim := tendsto_normSq_of_tendsto_sectionValue_mul hphase hyfr
+  have hdense' : Dense {z | y z 2 ^ 2 + y z 3 ^ 2 ≠ 0} :=
+    (dense_setOf_sectionValue_ne_zero hk₁ (hyi 0) (hyi 1) (hd _ (hyi 2)) (hd _ (hyi 3)) hyhol
+      hylim).mono fun z hz ↦ by simpa [sectionValue_eq_zero_iff] using hz
+  have hα' (z : ℂ) : (x z 2 + x z 3 * I : ℂ) = h z * (y z 2 + y z 3 * I) := by
+    have := hα z
+    rw [sectionValue_apply, sectionValue_apply] at this
+    linear_combination this / 2
+  obtain ⟨f, hf, hhf, hxy⟩ := exists_eq_phaseGauge_of_forall_section_eq_mul (hxi 0).continuous
+    (hxi 1).continuous (hyi 0).continuous (hyi 1).continuous ((hyi 2).of_le hk₂)
+    ((hyi 3).of_le hk₂) hxsol hysol hxlim hylim (hh.of_le hk₂) hh₀ hα' hdense'
+  -- The gauge `exp (i f)` is `h`, which tends to one at infinity.
+  have hcoe (w : ℂ) : ((Circle.exp (f w) : Circle) : ℂ) = h w := by
+    rw [Circle.coe_exp, hhf]
+  have hh1 : Tendsto h (cocompact ℂ) (𝓝 1) := by
+    have hdiv := hxfr.div hyfr one_ne_zero
+    rw [div_one] at hdiv
+    refine hdiv.congr' ?_
+    filter_upwards [hyfr.eventually_ne one_ne_zero] with z hz
+    rw [Pi.div_apply, hα z, mul_assoc, mul_div_cancel_right₀ _ hz]
+  refine ⟨fun w ↦ Circle.exp (f w), by simpa only [hcoe] using hh,
+    tendsto_subtype_rng.2 (hh1.congr fun w ↦ (hcoe w).symm), ?_⟩
+  rw [gaugeTransform_exp (hf.differentiable two_ne_zero)]
+  exact hxy.symm
+
 /-- **Uniqueness of framed plane vortices with prescribed zeros, modulo framed gauge.** Let `x`
 and `y` be smooth solutions of the vortex equation on the plane with the same end framing
 `α (z) · phase (z) → 1`, where `|phase| → 1` at infinity; for example `phase` is the winding
@@ -255,48 +310,18 @@ theorem existsUnique_framedGaugeGroup_smul_eq (hx : ContDiff ℝ ∞ x) (hy : Co
     (hny : ∀ z, ∃ v : ℂ → ℂ, ContinuousAt v z ∧ v z ≠ 0 ∧
       ∀ᶠ w in 𝓝 z, sectionValue y w = (w - z) ^ n z * v w) :
     ∃! u : framedGaugeGroup, u • y = x := by
-  have hxi (i : Fin 4) : ContDiff ℝ ∞ fun w ↦ x w i := (contDiff_piLp 2).1 hx i
+  obtain ⟨u, hu, hu1, hxy⟩ := exists_contDiff_gaugeTransform_eq (k := ⊤) le_top hx hy hxsol hysol
+    hphase hxfr hyfr hnx hny
   have hyi (i : Fin 4) : ContDiff ℝ ∞ fun w ↦ y w i := (contDiff_piLp 2).1 hy i
-  have hxhol (w : ℂ) : equation x w 1 = 0 ∧ equation x w 2 = 0 := by simp [hxsol w]
-  have hyhol (w : ℂ) : equation y w 1 = 0 ∧ equation y w 2 = 0 := by simp [hysol w]
-  have hd (f : ℂ → ℝ) (hf : ContDiff ℝ ∞ f) : Differentiable ℝ f := hf.differentiable (by simp)
-  obtain ⟨h, hh, hh₀, hα⟩ := exists_contDiff_sectionValue_eq_mul (k := ⊤) le_top (hxi 0) (hxi 1)
-    (hd _ (hxi 2)) (hd _ (hxi 3)) hxhol (hyi 0) (hyi 1) (hd _ (hyi 2)) (hd _ (hyi 3)) hyhol hnx hny
-  have hxlim := tendsto_normSq_of_tendsto_sectionValue_mul hphase hxfr
-  have hylim := tendsto_normSq_of_tendsto_sectionValue_mul hphase hyfr
-  -- The zeros of `α_y` are finite, so their complement is dense.
-  have hdense : Dense {z | sectionValue y z ≠ 0} := by
-    refine (dense_univ.sdiff_finite (finite_setOfPred_sectionValue_eq_zero (k := ⊤) le_top (hyi 0)
-      (hyi 1) (hd _ (hyi 2)) (hd _ (hyi 3)) hyhol hylim)).mono fun z hz ↦ ?_
-    simp only [Set.mem_sdiff, Set.mem_univ, true_and, Set.mem_ofPred_eq] at hz ⊢
-    exact hz
-  have hdense' : Dense {z | y z 2 ^ 2 + y z 3 ^ 2 ≠ 0} :=
-    hdense.mono fun z hz ↦ by simpa [sectionValue_eq_zero_iff] using hz
-  have hα' (z : ℂ) : (x z 2 + x z 3 * I : ℂ) = h z * (y z 2 + y z 3 * I) := by
-    have := hα z
-    rw [sectionValue_apply, sectionValue_apply] at this
-    linear_combination this / 2
-  obtain ⟨f, hf, hhf, hxy⟩ := exists_eq_phaseGauge_of_forall_section_eq_mul (hxi 0).continuous
-    (hxi 1).continuous (hyi 0).continuous (hyi 1).continuous (contDiff_infty.1 (hyi 2) 2)
-    (contDiff_infty.1 (hyi 3) 2) hxsol hysol hxlim hylim (contDiff_infty.1 hh 2) hh₀ hα' hdense'
-  -- The gauge `exp (i f)` is `h`, which is smooth and tends to one at infinity.
-  have hcoe (w : ℂ) : ((Circle.exp (f w) : Circle) : ℂ) = h w := by
-    rw [Circle.coe_exp, hhf]
-  have hh1 : Tendsto h (cocompact ℂ) (𝓝 1) := by
-    have hdiv := hxfr.div hyfr one_ne_zero
-    rw [div_one] at hdiv
-    refine hdiv.congr' ?_
-    filter_upwards [hyfr.eventually_ne one_ne_zero] with z hz
-    rw [Pi.div_apply, hα z, mul_assoc, mul_div_cancel_right₀ _ hz]
-  have hu : (fun w ↦ Circle.exp (f w)) ∈ framedGaugeGroup := by
-    refine (mem_framedGaugeGroup _).2 ⟨?_, ?_⟩
-    · simpa only [hcoe] using hh
-    · exact tendsto_subtype_rng.2 (hh1.congr fun w ↦ (hcoe w).symm)
-  have hsmul : (⟨_, hu⟩ : framedGaugeGroup) • y = x := by
-    simp only [framedGaugeGroup_smul]
-    rw [gaugeTransform_exp (hf.differentiable two_ne_zero)]
-    exact hxy.symm
-  exact ⟨⟨_, hu⟩, hsmul, fun v hv ↦
+  have hd (i : Fin 4) : Differentiable ℝ fun w ↦ y w i := (hyi i).differentiable (by simp)
+  have hdense : Dense {z | sectionValue y z ≠ 0} :=
+    dense_setOf_sectionValue_ne_zero (k := ⊤) le_top (hyi 0) (hyi 1) (hd 2) (hd 3)
+      (fun w ↦ by simp [hysol w]) (tendsto_normSq_of_tendsto_sectionValue_mul hphase hyfr)
+  have hmem : u ∈ framedGaugeGroup := (mem_framedGaugeGroup _).2 ⟨hu, hu1⟩
+  have hsmul : (⟨u, hmem⟩ : framedGaugeGroup) • y = x := by
+    rw [framedGaugeGroup_smul]
+    exact hxy
+  exact ⟨⟨u, hmem⟩, hsmul, fun v hv ↦
     framedGaugeGroup_smul_left_injective hdense (hv.trans hsmul.symm)⟩
 
 end Divisor

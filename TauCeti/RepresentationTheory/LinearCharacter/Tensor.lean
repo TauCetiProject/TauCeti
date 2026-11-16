@@ -5,8 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.RepresentationTheory.Character.Twist
 public import TauCeti.RepresentationTheory.FDRep.Basic
-public import TauCeti.RepresentationTheory.CharacterTwist
 
 /-!
 # Tensor products of one-dimensional representations

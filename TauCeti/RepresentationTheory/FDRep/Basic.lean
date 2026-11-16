@@ -73,7 +73,8 @@ of `Representation.Equiv` apply to isomorphic objects.
 * `Subrepresentation.char_add_eq_of_isCompl`: the character is additive on complementary
   subrepresentations.
 * `FDRep.character_eq_zero_of_finrank_intertwiningMap_eq_zero`: a representation without nonzero
-  equivariant endomorphisms has character zero.
+  equivariant endomorphisms has character zero (such a representation is the zero representation,
+  because the identity is a nonzero equivariant endomorphism of any nonzero one).
 * `FDRep.forget₂Rep`: forgetting finite generation over any coefficient ring.
 * `FDRep.moduleFinite_forget₂_obj`: the forgotten carrier is module-finite.
 * `FDRep.finrank_forget₂_obj`: forgetting does not change finrank.
@@ -453,7 +454,11 @@ variable {k : Type u} {G : Type v} [Field k] [Monoid G]
 
 open _root_.Representation in
 /-- A representation of dimension zero, recognised by its zero-dimensional space of equivariant
-endomorphisms, has character zero. -/
+endomorphisms, has character zero.
+
+The hypothesis already forces the carrier to be zero, since the identity is a nonzero equivariant
+endomorphism of any nonzero representation: this lemma says that the zero representation has
+character zero. -/
 theorem character_eq_zero_of_finrank_intertwiningMap_eq_zero (C : FDRep k G)
     (hC : Module.finrank k (IntertwiningMap C.ρ C.ρ) = 0) : C.character = 0 := by
   have : Subsingleton C := by
@@ -496,6 +501,7 @@ noncomputable def isoToEquiv {V W : FDRep R G} (i : V ≅ W) : Representation.Eq
   .mk (isoToLinearEquiv i) fun g => LinearMap.ext fun v => by
     simp [Iso.conj_ρ i g, LinearEquiv.conj_apply]
 
+/-- The linear equivalence underlying `FDRep.isoToEquiv i` is `FDRep.isoToLinearEquiv i`. -/
 @[simp]
 theorem toLinearEquiv_isoToEquiv {V W : FDRep R G} (i : V ≅ W) :
     (isoToEquiv i).toLinearEquiv = isoToLinearEquiv i :=

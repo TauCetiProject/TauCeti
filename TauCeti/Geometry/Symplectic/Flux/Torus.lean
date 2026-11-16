@@ -33,13 +33,19 @@ when `v = 0`, since `[dt_0]` and `[dt_1]` are linearly independent. Integrated a
 coordinate circles, the flux form has periods `-A v 1 p 0` and `A v 0 p 1`
 (`TauCeti.pathIntegral_fluxForm_torusTranslationDiffeotopy_smul_torusVolumeForm_update`); for unit
 periods and integer `v` these are integer multiples of `A`. So the fluxes of the translation loops
-of the unit torus are exactly the classes `A (m [dx] + n [dy])` with `m, n ∈ ℤ`.
+of the unit torus are exactly the classes `A (m [dx] + n [dy])` with `m, n ∈ ℤ`. For arbitrary
+periods, every class `A (m p_1 [dt_0] + n p_0 [dt_1])` with `m, n ∈ ℤ` is the flux of a translation
+loop all of whose maps preserve the area form
+(`TauCeti.exists_final_eq_refl_and_flux_smul_torusVolumeForm_eq`). These classes are the total area
+`A p_0 p_1` times the integer combinations of the classes `[dt_i / p_i]`, which integrate to `1`
+around the `i`-th coordinate circle and to `0` around the other.
 
 ## Main results
 
 * `TauCeti.fluxForm_torusTranslationDiffeotopy_apply`: for a constant-coefficient two-form `β`,
   the flux form of the translation along `v` is `β (v, ·)`.
-* `TauCeti.final_torusTranslationDiffeotopy_mem_diffeomorphStabilizer`: translations preserve
+* `TauCeti.timeSlice_torusTranslationDiffeotopy_mem_diffeomorphStabilizer`,
+  `TauCeti.final_torusTranslationDiffeotopy_mem_diffeomorphStabilizer`: translations preserve
   constant-coefficient two-forms.
 * `TauCeti.fluxForm_torusTranslationDiffeotopy_smul_torusVolumeForm`,
   `TauCeti.flux_torusTranslationDiffeotopy_smul_torusVolumeForm`: the flux form and the flux of a
@@ -48,6 +54,9 @@ of the unit torus are exactly the classes `A (m [dx] + n [dy])` with `m, n ∈ �
   exactly when `A = 0` or `v = 0`.
 * `TauCeti.pathIntegral_fluxForm_torusTranslationDiffeotopy_smul_torusVolumeForm_update`: its
   periods along the coordinate circles.
+* `TauCeti.exists_final_eq_refl_and_flux_smul_torusVolumeForm_eq`: every class
+  `A (m p_1 [dt_0] + n p_0 [dt_1])` with `m n : ℤ` is the flux of a loop of area-preserving
+  diffeomorphisms based at the identity.
 
 ## References
 
@@ -89,19 +98,27 @@ theorem fluxForm_torusTranslationDiffeotopy_apply
   ext w
   simp [ContinuousAlternatingMap.compContinuousLinearMap_apply]
 
+/-- Every time slice of a translation diffeotopy, a translation of the torus, preserves every
+two-form with constant coefficients. -/
+theorem timeSlice_torusTranslationDiffeotopy_mem_diffeomorphStabilizer
+    (hσ : ∀ x, (σ.1 x : (ι → ℝ) [⋀^Fin 2]→L[ℝ] ℝ) = β) (t : unitInterval) :
+    (torusTranslationDiffeotopy p v).timeSlice t ∈ SmoothForm.diffeomorphStabilizer σ := by
+  have hslice : ⇑((torusTranslationDiffeotopy (n := ∞) p v).timeSlice t) =
+      (· + fun i ↦ (((t : ℝ) * v i : ℝ) : AddCircle (p i))) :=
+    funext fun x ↦ (Diffeotopy.timeSlice_apply _ t x).trans (torusTranslationDiffeotopy_apply p v _)
+  refine SmoothForm.mem_diffeomorphStabilizer_iff_forall.2 fun x ↦
+    ContinuousAlternatingMap.ext fun w ↦ ?_
+  rw [TauCeti.mpullback_apply, hslice, AddCircle.mfderiv_pi_add_right]
+  -- Both sides evaluate the constant coefficient `β` on `w`.
+  exact (DFunLike.congr_fun (hσ _) _).trans (DFunLike.congr_fun (hσ x) w).symm
+
 /-- The final diffeomorphism of a translation diffeotopy, a translation of the torus, preserves
 every two-form with constant coefficients. -/
 theorem final_torusTranslationDiffeotopy_mem_diffeomorphStabilizer
     (hσ : ∀ x, (σ.1 x : (ι → ℝ) [⋀^Fin 2]→L[ℝ] ℝ) = β) :
     (torusTranslationDiffeotopy p v).final ∈ SmoothForm.diffeomorphStabilizer σ := by
-  have hfinal : ⇑(torusTranslationDiffeotopy (n := ∞) p v).final =
-      (· + fun i ↦ (v i : AddCircle (p i))) :=
-    funext (final_torusTranslationDiffeotopy_apply p v)
-  refine SmoothForm.mem_diffeomorphStabilizer_iff_forall.2 fun x ↦
-    ContinuousAlternatingMap.ext fun w ↦ ?_
-  rw [TauCeti.mpullback_apply, hfinal, AddCircle.mfderiv_pi_add_right]
-  -- Both sides evaluate the constant coefficient `β` on `w`.
-  exact (DFunLike.congr_fun (hσ _) _).trans (DFunLike.congr_fun (hσ x) w).symm
+  rw [Diffeotopy.final_def]
+  exact timeSlice_torusTranslationDiffeotopy_mem_diffeomorphStabilizer p v hσ 1
 
 end Constant
 
@@ -195,8 +212,35 @@ theorem flux_torusTranslationDiffeotopy_smul_torusVolumeForm_eq_zero_iff
     · exact h₀.resolve_left hA
   · rintro (rfl | rfl) <;> ext i <;> fin_cases i <;> simp
 
+/-- **Integral translation loops realize the area lattice as fluxes.** On the two-torus with the
+area form `A dt_0 ∧ dt_1`, for all integers `m` and `n` there is a loop of diffeomorphisms based at
+the identity, all of whose maps preserve the area form, with flux `A (m p_1 [dt_0] + n p_0 [dt_1])`:
+the translation diffeotopy along `(n p_0, -m p_1)`. These classes are the total area `A p_0 p_1`
+times the integer combinations of the classes `[dt_i / p_i]` dual to the coordinate circles. -/
+theorem exists_final_eq_refl_and_flux_smul_torusVolumeForm_eq (m n : ℤ) :
+    ∃ (Φ : Diffeotopy (ModelWithCorners.pi fun _ : Fin 2 ↦ 𝓘(ℝ)) ∞ (∀ i, AddCircle (p i)))
+      (hΦ : Φ.final ∈ SmoothForm.diffeomorphStabilizer (A • torusVolumeForm p)),
+      (∀ t, Φ.timeSlice t ∈ SmoothForm.diffeomorphStabilizer (A • torusVolumeForm p)) ∧
+      Φ.final = Diffeomorph.refl _ _ _ ∧
+      Φ.flux ⟨A • torusVolumeForm p, mem_closedForms_of_finrank_le _ (by simp) _⟩ hΦ =
+        A • ((m * p 1) • deRhamCohomology.mk (ModelWithCorners.pi fun _ : Fin 2 ↦ 𝓘(ℝ)) 1
+            (torusTimeClosedForm p 0) +
+          (n * p 0) • deRhamCohomology.mk (ModelWithCorners.pi fun _ : Fin 2 ↦ 𝓘(ℝ)) 1
+            (torusTimeClosedForm p 1)) := by
+  let v : Fin 2 → ℝ := ![n * p 0, -(m * p 1)]
+  have hloop : ∀ i, v i ∈ AddSubgroup.zmultiples (p i) := by
+    intro i
+    fin_cases i
+    · exact ⟨n, by simp [v]⟩
+    · exact ⟨-m, by simp [v]⟩
+  have hslice := timeSlice_torusTranslationDiffeotopy_mem_diffeomorphStabilizer p v
+    (smul_torusVolumeForm_apply_eq p A)
+  refine ⟨torusTranslationDiffeotopy p v, by rw [Diffeotopy.final_def]; exact hslice 1, hslice,
+    (final_torusTranslationDiffeotopy_eq_refl_iff p v).2 hloop, ?_⟩
+  rw [flux_torusTranslationDiffeotopy_smul_torusVolumeForm]
+  simp only [v, Matrix.cons_val_zero, Matrix.cons_val_one, neg_smul, sub_neg_eq_add]
+  rw [add_comm]
+
 end Area
-
-
 
 end TauCeti

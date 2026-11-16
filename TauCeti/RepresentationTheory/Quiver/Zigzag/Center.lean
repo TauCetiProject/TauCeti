@@ -505,7 +505,7 @@ its dual-number presentation. -/
 noncomputable def centerZigzagComponentAlgebraSubsingletonLinearEquiv
     (C : G.ConnectedComponent) [Subsingleton C] :
     Subalgebra.center k (zigzagComponentAlgebra k G C) ≃ₗ[k] ULift.{u} (k × k) :=
-  ((centerCongr (zigzagComponentAlgebraEquivULiftDualNumber k G C)).trans
+  ((Subalgebra.centerCongr (zigzagComponentAlgebraEquivULiftDualNumber k G C)).trans
     ((Subalgebra.equivOfEq _ _
       (Subalgebra.center_eq_top (R := k) (ULift.{u} (DualNumber k)))).trans
         Subalgebra.topEquiv)).toLinearEquiv
@@ -517,11 +517,12 @@ theorem centerZigzagComponentAlgebraSubsingletonLinearEquiv_apply
     centerZigzagComponentAlgebraSubsingletonLinearEquiv k G C x =
       zigzagComponentAlgebraEquivULiftDualNumber k G C x := by
   -- Compute in the dual-number carrier before identifying it with its coordinate pair.
-  have h : (((centerCongr (zigzagComponentAlgebraEquivULiftDualNumber k G C)).trans
+  have h : (((Subalgebra.centerCongr (zigzagComponentAlgebraEquivULiftDualNumber k G C)).trans
       ((Subalgebra.equivOfEq _ _
         (Subalgebra.center_eq_top (R := k) (ULift.{u} (DualNumber k)))).trans
           Subalgebra.topEquiv)) x : ULift.{u} (DualNumber k)) =
-      zigzagComponentAlgebraEquivULiftDualNumber k G C x := by simp
+      zigzagComponentAlgebraEquivULiftDualNumber k G C x := by
+    simp [Subalgebra.centerCongr_apply_coe _ x]
   exact h
 
 /-- The centre of a component factor of the zigzag algebra is free over the coefficient ring. -/
@@ -535,7 +536,7 @@ instance instFreeCenterZigzagComponentAlgebra (C : G.ConnectedComponent) :
       Module.Free.of_basis
         (zigzagCenterBasis k C.toSimpleGraph C.connected_toSimpleGraph.preconnected)
     exact Module.Free.of_equiv
-      (centerCongr (zigzagComponentAlgebraEquivNonisolated k G C)).symm.toLinearEquiv
+      (Subalgebra.centerCongr (zigzagComponentAlgebraEquivNonisolated k G C)).symm.toLinearEquiv
   · let _ : Subsingleton C := not_nontrivial_iff_subsingleton.mp hC
     exact Module.Free.of_equiv
       (centerZigzagComponentAlgebraSubsingletonLinearEquiv k G C).symm
@@ -551,7 +552,7 @@ instance instFiniteCenterZigzagComponentAlgebra (C : G.ConnectedComponent) :
       Module.Finite.of_basis
         (zigzagCenterBasis k C.toSimpleGraph C.connected_toSimpleGraph.preconnected)
     exact Module.Finite.equiv
-      (centerCongr (zigzagComponentAlgebraEquivNonisolated k G C)).symm.toLinearEquiv
+      (Subalgebra.centerCongr (zigzagComponentAlgebraEquivNonisolated k G C)).symm.toLinearEquiv
   · let _ : Subsingleton C := not_nontrivial_iff_subsingleton.mp hC
     have : Module.Finite k (ULift.{u} (k × k)) :=
       Module.Finite.equiv (ULift.moduleEquiv (R := k) (M := k × k)).symm
@@ -568,7 +569,8 @@ theorem finrank_center_zigzagComponentAlgebra [Nontrivial k] (C : G.ConnectedCom
   by_cases hC : Nontrivial C
   · let _ : Nontrivial C := hC
     let _ : Fintype C := Fintype.ofFinite C
-    rw [(centerCongr (zigzagComponentAlgebraEquivNonisolated k G C)).toLinearEquiv.finrank_eq,
+    rw [(Subalgebra.centerCongr
+        (zigzagComponentAlgebraEquivNonisolated k G C)).toLinearEquiv.finrank_eq,
       finrank_center_nonisolatedZigzagQuotient k C.toSimpleGraph
         C.connected_toSimpleGraph.preconnected, Nat.card_eq_fintype_card]
   · let _ : Subsingleton C := not_nontrivial_iff_subsingleton.mp hC
@@ -594,7 +596,7 @@ theorem finrank_center_zigzagAlgebra [Nontrivial k] :
   let e : Subalgebra.center k (∀ C : G.ConnectedComponent, (zigzagComponentAlgebra k G C).carrier)
       ≃ₐ[k] ∀ C : G.ConnectedComponent,
         Subalgebra.center k (zigzagComponentAlgebra k G C).carrier := centerPiAlgEquiv
-  rw [(centerCongr (zigzagAlgebraPiAlgEquiv k G)).toLinearEquiv.finrank_eq,
+  rw [(Subalgebra.centerCongr (zigzagAlgebraPiAlgEquiv k G)).toLinearEquiv.finrank_eq,
     e.toLinearEquiv.finrank_eq, Module.finrank_pi_fintype]
   simp_rw [finrank_center_zigzagComponentAlgebra k G]
   rw [Finset.sum_add_distrib, hvertex]

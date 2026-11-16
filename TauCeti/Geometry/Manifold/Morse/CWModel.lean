@@ -304,13 +304,7 @@ theorem IsMorse.exists_finite_cwComplex_extension_homotopyEquiv_sublevel (hf : I
     (hf.finite_criticalPoints_inter hcompact).subset
       (inter_subset_inter_right _ (preimage_mono Ioc_subset_Icc_self))
   have := RelCWComplex.finite_cells_of_finite (C := (univ : Set W))
-  have := hS.to_subtype
-  have : Finite (Σ m, ↥{x ∈ criticalPoints I f ∩ f ⁻¹' Ioc a b | manifoldMorseIndex I f x = m}) :=
-    .of_injective (fun x ↦ (⟨x.2, x.2.2.1⟩ : ↥(criticalPoints I f ∩ f ⁻¹' Ioc a b)))
-      fun ⟨_, _, hx⟩ ⟨_, _, hy⟩ hxy ↦ by
-        cases Subtype.ext_iff.1 hxy
-        cases hx.2.symm.trans hy.2
-        rfl
+  have := finite_sigma_criticalPoints_inter hS
   exact ⟨W', _, ‹_›, ‹_›, ι, h', RelCWComplex.finite_of_finite_cells
     (.of_equiv _ ((Equiv.sigmaSumDistrib _ _).symm.trans (Equiv.sigmaCongrRight e).symm)),
     hι, hA, hh, e, he⟩

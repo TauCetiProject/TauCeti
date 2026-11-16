@@ -5,14 +5,15 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Combinatorics.Graph.Stallings.Basic
+public import TauCeti.Combinatorics.Graph.Stallings.Folded
 
 /-!
 # Folding a pair of equally labelled darts
 
 A Stallings fold identifies two darts with the same source and label, their reverses, and
 their target vertices. The resulting labelled graph comes with a surjective morphism from
-the original graph. This construction also handles loop darts and parallel darts.
+the original graph. This construction also handles loop darts and parallel darts. The fibres
+of this morphism are explicit, and they decide whether the fold is a folded graph.
 
 The quotient follows I. Kapovich and A. Myasnikov, *Stallings foldings and subgroups of free
 groups*, §2, Definition 2.4 and Lemma 2.5.
@@ -109,25 +110,61 @@ def foldHom : S.Hom (S.foldAt f₁ f₂ hsrc hlabel) where
   map_base := rfl
   map_label := by intro e; rfl
 
-/-- Two vertices have the same image exactly when the fold relation identifies them. -/
+/-- Two vertices have the same image in a fold exactly when they are equal or are the two
+termini of the folded darts. -/
 theorem foldHom_mapV_eq_iff (x y : S.graph.V) :
     (S.foldHom f₁ f₂ hsrc hlabel).graphHom.mapV x =
       (S.foldHom f₁ f₂ hsrc hlabel).graphHom.mapV y ↔
-      Relation.EqvGen (fun a b => a = S.graph.tgt f₁ ∧ b = S.graph.tgt f₂) x y := by
+      x = y ∨ (x = S.graph.tgt f₁ ∧ y = S.graph.tgt f₂) ∨
+        (x = S.graph.tgt f₂ ∧ y = S.graph.tgt f₁) := by
   -- The vertex map of foldHom reduces to Quot.mk for the vertex relation.
   change Quot.mk (vertexRel S f₁ f₂) x = Quot.mk (vertexRel S f₁ f₂) y ↔ _
-  exact ⟨Quot.eqvGen_exact, Quot.eqvGen_sound⟩
+  rw [Quot.eq]
+  refine ⟨fun h => ?_, ?_⟩
+  · induction h with
+    | rel x y h => exact .inr (.inl h)
+    | refl x => exact .inl rfl
+    | symm x y _ ih => grind
+    | trans x y z _ _ ih₁ ih₂ => grind
+  · rintro (rfl | h | h)
+    · exact .refl _
+    · exact .rel _ _ h
+    · exact .symm _ _ (.rel _ _ h.symm)
 
-/-- Two darts have the same image exactly when the fold relation identifies them. -/
+/-- Two darts have the same image in a fold exactly when they are equal, are the two folded
+darts, or are the reverses of the two folded darts. -/
 theorem foldHom_mapE_eq_iff (e e' : S.graph.E) :
     (S.foldHom f₁ f₂ hsrc hlabel).graphHom.mapE e =
       (S.foldHom f₁ f₂ hsrc hlabel).graphHom.mapE e' ↔
-      Relation.EqvGen (fun a b =>
-        (a = f₁ ∧ b = f₂) ∨
-          (a = S.graph.rev f₁ ∧ b = S.graph.rev f₂)) e e' := by
+      e = e' ∨ (e = f₁ ∧ e' = f₂) ∨ (e = f₂ ∧ e' = f₁) ∨
+        (e = S.graph.rev f₁ ∧ e' = S.graph.rev f₂) ∨
+        (e = S.graph.rev f₂ ∧ e' = S.graph.rev f₁) := by
   -- The dart map of foldHom reduces to Quot.mk for the dart relation.
   change Quot.mk (dartRel S f₁ f₂) e = Quot.mk (dartRel S f₁ f₂) e' ↔ _
-  exact ⟨Quot.eqvGen_exact, Quot.eqvGen_sound⟩
+  rw [Quot.eq]
+  have h₁ := S.graph.rev_rev f₁
+  have h₂ := S.graph.rev_rev f₂
+  have h₃ := S.graph.rev_ne f₁
+  have h₄ := S.graph.rev_ne f₂
+  refine ⟨fun h => ?_, ?_⟩
+  · induction h with
+    | rel x y h => grind [dartRel]
+    | refl x => exact .inl rfl
+    | symm x y _ ih => grind
+    | trans x y z _ _ ih₁ ih₂ => grind
+  · rintro (rfl | h | h | h | h)
+    · exact .refl _
+    · exact .rel _ _ (.inl h)
+    · exact .symm _ _ (.rel _ _ (.inl h.symm))
+    · exact .rel _ _ (.inr h)
+    · exact .symm _ _ (.rel _ _ (.inr h.symm))
+
+/-- Folding two darts with a common terminus identifies no vertices. -/
+theorem foldHom_mapV_injective (htgt : S.graph.tgt f₁ = S.graph.tgt f₂) :
+    Function.Injective (S.foldHom f₁ f₂ hsrc hlabel).graphHom.mapV := by
+  intro x y h
+  rw [foldHom_mapV_eq_iff] at h
+  grind
 
 /-- The two selected darts have the same image in the fold. -/
 theorem foldHom_mapE_eq :
@@ -156,6 +193,18 @@ theorem connected_foldAt (hS : S.graph.Connected) :
 theorem foldHom_mapE_surjective :
     Function.Surjective (S.foldHom f₁ f₂ hsrc hlabel).graphHom.mapE :=
   Quot.mk_surjective
+
+/-- A fold is folded exactly when equally labelled darts of the original graph whose origins
+are identified by the fold are themselves identified. -/
+theorem isFolded_foldAt_iff :
+    (S.foldAt f₁ f₂ hsrc hlabel).IsFolded ↔ ∀ d d' : S.graph.E,
+      (S.foldHom f₁ f₂ hsrc hlabel).graphHom.mapV (S.graph.src d) =
+        (S.foldHom f₁ f₂ hsrc hlabel).graphHom.mapV (S.graph.src d') →
+      S.label d = S.label d' →
+      (S.foldHom f₁ f₂ hsrc hlabel).graphHom.mapE d =
+        (S.foldHom f₁ f₂ hsrc hlabel).graphHom.mapE d' := by
+  simp only [isFolded_def, (S.foldHom_mapE_surjective f₁ f₂ hsrc hlabel).forall,
+    ← SerreGraph.Hom.map_src, Hom.map_label]
 
 /-- A labelled morphism that identifies the folded darts factors through their fold. -/
 def foldLift {T : StallingsGraph α} (g : S.Hom T)

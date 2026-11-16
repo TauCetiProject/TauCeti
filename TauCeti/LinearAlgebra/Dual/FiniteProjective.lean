@@ -46,6 +46,15 @@ instance oppositeDual_free [Module.Free R M] :
     Module.Free Rᵐᵒᵖ (Module.Dual R M) :=
   .of_equiv (Module.Free.chooseBasis R M).oppositeDualEquiv.symm
 
+/-- **Dual basis for a finite projective module.** There are finitely many elements `bⱼ` and
+functionals `φⱼ` with `x = ∑ⱼ φⱼ(x) • bⱼ` for every `x`. -/
+theorem exists_sum_dual_smul_eq [Module.Projective R M] :
+    ∃ (n : ℕ) (b : Fin n → M) (φ : Fin n → Module.Dual R M), ∀ x, ∑ j, φ j x • b j = x := by
+  obtain ⟨n, p, s, -, -, hs⟩ := Module.Finite.exists_comp_eq_id_of_projective R M
+  refine ⟨n, fun j ↦ p (Pi.single j 1), fun j ↦ LinearMap.proj j ∘ₗ s, fun x ↦ ?_⟩
+  simpa only [LinearMap.comp_apply, LinearMap.proj_apply, LinearMap.id_apply, ← map_smul,
+    ← map_sum, ← pi_eq_sum_univ'] using LinearMap.congr_fun hs x
+
 /-- The opposite dual of a finite projective module is a retract of the opposite dual of a
 finite free module. -/
 private theorem exists_oppositeDual_retract [Module.Projective R M] :

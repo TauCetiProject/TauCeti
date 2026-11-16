@@ -8,8 +8,8 @@ module
 public import TauCeti.LinearAlgebra.TensorProduct.Balanced.Basic
 public import Mathlib.LinearAlgebra.Dual.Defs
 public import Mathlib.RingTheory.Finiteness.Projective
-import Mathlib.LinearAlgebra.StdBasis
 import Mathlib.RingTheory.Finiteness.Finsupp
+import TauCeti.LinearAlgebra.Dual.FiniteProjective
 
 /-!
 # Evaluation from the balanced tensor product of an opposite dual
@@ -74,14 +74,7 @@ over a possibly noncommutative algebra. -/
 theorem balancedDualTensorHom_bijective [Module.Finite A P] [Module.Projective A P] :
     Function.Bijective (balancedDualTensorHom k A P N) := by
   classical
-  /- The finite-projective argument uses `Module.Finite.exists_comp_eq_id_of_projective`,
-  as does the opposite double-dual construction in `TauCeti.LinearAlgebra.Dual.Opposite`. -/
-  obtain ⟨d, f, g, -, -, hfg⟩ := Module.Finite.exists_comp_eq_id_of_projective A P
-  let b : Fin d → P := fun i ↦ f (Pi.single i 1)
-  let φ : Fin d → Module.Dual A P := fun i ↦ (LinearMap.proj i).comp g
-  have hsum (x : P) : ∑ i, φ i x • b i = x := by
-    have h := congrArg f ((Pi.basisFun A (Fin d)).sum_repr (g x))
-    simpa [b, φ, map_sum, map_smul] using h.trans (LinearMap.congr_fun hfg x)
+  obtain ⟨d, b, φ, hsum⟩ := exists_sum_dual_smul_eq (R := A) (M := P)
   have hdual (ψ : Module.Dual A P) : ∑ i, op (ψ (b i)) • φ i = ψ := by
     ext x
     simpa [map_sum, map_smul, MulOpposite.smul_eq_mul_unop] using congrArg ψ (hsum x)

@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Analysis.CStarAlgebra.Matrix
 import TauCeti.Analysis.InnerProductSpace.Trace.OpNorm
+import TauCeti.Analysis.Matrix.Frobenius
 
 /-!
 # The `ℓ²` operator norm as a normed real algebra
@@ -28,6 +29,7 @@ rather than restricting scalars, so that no algebra diamond arises.
 * `Matrix.l2_opNorm_one_le`: an identity bound that also applies to empty matrices.
 * `Matrix.norm_trace_le_card_mul_l2_opNorm` and `Matrix.norm_normalized_trace_le_l2_opNorm`:
   trace and normalized trace bounds.
+* `Matrix.sum_sum_norm_sq_le_card_mul_l2_opNorm_sq`: a Frobenius bound by the operator norm.
 * `Matrix.l2_opNorm_sub_diagonal_diag_le`: zeroing the diagonal of a square matrix at most doubles
   its `ℓ²` operator norm.
 -/
@@ -65,6 +67,22 @@ theorem norm_trace_le_card_mul_l2_opNorm (M : Matrix n n 𝕜) :
   simpa only [TauCeti.traceCLM_apply, Matrix.coe_toEuclideanCLM_eq_toEuclideanLin,
     Matrix.toEuclideanLin_eq_toLin_orthonormal, LinearEquiv.coe_coe,
     Matrix.trace_toLin_eq, finrank_euclideanSpace, Matrix.l2_opNorm_toEuclideanCLM] using h
+
+/-- The squared Frobenius norm of a rectangular matrix is at most its number of rows times
+its squared Euclidean operator norm. Empty row and column types are allowed. -/
+theorem sum_sum_norm_sq_le_card_mul_l2_opNorm_sq {m : Type*} [Fintype m]
+    (A : Matrix m n 𝕜) :
+    ∑ i, ∑ j, ‖A i j‖ ^ 2 ≤ (Fintype.card m : ℝ) * ‖A‖ ^ 2 := by
+  classical
+  calc
+    ∑ i, ∑ j, ‖A i j‖ ^ 2 = RCLike.re (A * Aᴴ).trace :=
+      (re_trace_mul_conjTranspose_self A).symm
+    _ ≤ ‖(A * Aᴴ).trace‖ := RCLike.re_le_norm _
+    _ ≤ (Fintype.card m : ℝ) * ‖A * Aᴴ‖ := norm_trace_le_card_mul_l2_opNorm _
+    _ = (Fintype.card m : ℝ) * ‖A‖ ^ 2 := by
+      have h := l2_opNorm_conjTranspose_mul_self Aᴴ
+      simp only [conjTranspose_conjTranspose, l2_opNorm_conjTranspose] at h
+      rw [h, sq]
 
 /-- The absolute normalized trace is at most the Euclidean operator norm, including in dimension
 zero. -/
