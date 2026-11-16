@@ -81,9 +81,6 @@ All in the namespace `TauCeti.PDE`.
   `B(x₀, ρ)`, `ρ ≤ R`.
 * `exists_holderOnWith_preciseRepresentative_of_forall_ae_abs_sub_le`: the Hölder continuity of
   the precise representative of such a function.
-* `exists_forall_energyFormH1_eq_setIntegral_ae_abs_le`: on a ball `B(x₀, ρ)`, the Dirichlet
-  problem `-∂ᵢ(aⁱʲ ∂ⱼw) = f`, `w ∈ H¹₀`, has a solution with
-  `|w| ≤ K ρ^(2 - n/r) ‖f‖_{Lʳ} / λ`.
 * `exists_forall_energyFormH1_eq_zero_ae_abs_sub_le` and
   `exists_forall_energyFormH1_eq_zero_ae_abs_sub_le_divergence`: on a ball, a weak solution with
   right-hand side `f` (or `∂ᵢFⁱ`) is a weak solution of the homogeneous equation up to an error
@@ -545,59 +542,6 @@ private theorem exists_holderOnWith_preciseRepresentative_of_forall_exists_ae_ab
       _ = _ := by ring
 
 /-! ### A right-hand side in `Lʳ` -/
-
-/-- **Stampacchia's bound on a ball.** Let `n ≥ 1` be the dimension and let `r > 1` with
-`r > n/2`. There is `K > 0`, depending only on `n`, `r` and the normalization of `mu`, such that
-the following holds. Let `a` be measurable and uniformly elliptic on `B = B(x₀, ρ)` with constants
-`λ, Λ`, and let `f ∈ Lʳ(B)`. Then there is a weak solution `w ∈ H¹₀(B)` of the Dirichlet problem
-`-∂ᵢ(aⁱʲ ∂ⱼw) = f` in `B`, that is `a(w, v) = ∫_B f v` for every `v ∈ H¹₀(B)`, with
-
-`|w| ≤ K ρ^(2 - n/r) ‖f‖_{Lʳ(B)} / λ` almost everywhere on `B`.
-
-This is `TauCeti.PDE.exists_ae_abs_value_le_mul_div_mul_rpow` on a ball, where
-`|B|^(2/n - 1/r)` is a multiple of `ρ^(2 - n/r)`. -/
-theorem exists_forall_energyFormH1_eq_setIntegral_ae_abs_le [Nonempty ι] {r : ℝ≥0}
-    (hr : 1 < r) (hrn : (Fintype.card ι : ℝ) < 2 * r) :
-    ∃ K : ℝ, 0 < K ∧ ∀ {a : EuclideanSpace ℝ ι → Matrix ι ι ℝ} {lam Lam : ℝ}
-      {f : EuclideanSpace ℝ ι → ℝ} {x₀ : EuclideanSpace ℝ ι} {ρ : ℝ},
-      UniformlyEllipticOn (ball x₀ ρ) a lam Lam → AEStronglyMeasurable a (mu.restrict (ball x₀ ρ)) →
-      MemLp f r (mu.restrict (ball x₀ ρ)) → 0 < ρ →
-      ∃ w : W1p0 mu ⟨ball x₀ ρ, isOpen_ball⟩ 2,
-        (∀ v : W1p0 mu ⟨ball x₀ ρ, isOpen_ball⟩ 2,
-          energyFormH1 a 0 0 (w : W1p mu ⟨ball x₀ ρ, isOpen_ball⟩ 2)
-              (v : W1p mu ⟨ball x₀ ρ, isOpen_ball⟩ 2) =
-            ∫ x in ball x₀ ρ, f x * W1p.value (v : W1p mu ⟨ball x₀ ρ, isOpen_ball⟩ 2) x ∂mu) ∧
-        ∀ᵐ x ∂mu.restrict (ball x₀ ρ), |W1p.value (w : W1p mu ⟨ball x₀ ρ, isOpen_ball⟩ 2) x| ≤
-          K * ρ ^ (2 - (Fintype.card ι : ℝ) / r) *
-            (eLpNorm f r (mu.restrict (ball x₀ ρ))).toReal / lam := by
-  set n : ℝ := (Fintype.card ι : ℝ)
-  have hn : (0 : ℝ) < n := Nat.cast_pos.2 Fintype.card_pos
-  have hr1 : (1 : ℝ) < r := by exact_mod_cast hr
-  have hrn' : n * (2 - r) < 2 * r := by nlinarith [mul_pos hn (sub_pos.2 hr1)]
-  obtain ⟨C, hC, hstamp⟩ := exists_ae_abs_value_le_mul_div_mul_rpow (mu := mu) hr hrn
-  set e : ℝ := 2 / n - (r : ℝ)⁻¹
-  refine ⟨C * mu.real (ball (0 : EuclideanSpace ℝ ι) 1) ^ e,
-    mul_pos hC (Real.rpow_pos_of_pos (measureReal_ball_pos _ _ one_pos) _), ?_⟩
-  intro a lam Lam f x₀ ρ h ha hf hρ
-  set B : Opens (EuclideanSpace ℝ ι) := ⟨ball x₀ ρ, isOpen_ball⟩
-  have hBfin : mu B ≠ ∞ := measure_ball_lt_top.ne
-  obtain ⟨w, hw, -⟩ :=
-    h.existsUnique_forall_energyFormH1_eq_setIntegral_of_memLp (Omega := B) (c := 0) (gamma := 0)
-      ha aestronglyMeasurable_const (fun _ _ => by simp) (fun _ _ => le_rfl) hBfin hr hrn' hf
-  refine ⟨w, hw, ?_⟩
-  -- `|B|^e = ρ^(n e) |B(0, 1)|^e`, with `n e = 2 - n/r`.
-  have hmeas : mu.real (ball x₀ ρ) ^ e =
-      ρ ^ (2 - n / r) * mu.real (ball (0 : EuclideanSpace ℝ ι) 1) ^ e := by
-    rw [Measure.addHaar_real_ball_rpow _ _ hρ, finrank_euclideanSpace]
-    congr 2
-    simp only [e, n]
-    field_simp
-  filter_upwards [hstamp (Omega := B) (c := 0) (gamma := 0) hBfin h ha aestronglyMeasurable_const
-    (fun _ _ => by simp) (fun _ _ => le_rfl) hf hw] with x hx
-  refine hx.trans_eq ?_
-  simp only [B, Opens.coe_mk]
-  rw [hmeas]
-  ring
 
 /-- **Splitting off the right-hand side on a ball.** Let `n ≥ 1` be the dimension and let `r > 1`
 with `r > n/2`. There is `K > 0`, depending only on `n`, `r` and the normalization of `mu`, such
