@@ -391,12 +391,9 @@ variable [FiniteDimensional ℝ E]
 support of the distribution. -/
 theorem localFourier_eq_zero_of_disjoint_dsupport {T : 𝓓'(Ω, ℂ)} {φ : 𝓓(Ω, ℂ)}
     (h : Disjoint (tsupport φ) (dsupport T)) (η : E) : T.localFourier φ η = 0 := by
-  rw [localFourier, ← map_zero T.complexPairing]
-  -- The cut-off test function vanishes on the open neighbourhood `(tsupport φ)ᶜ` of the support.
-  refine complexPairing_eq_of_eventuallyEq T ?_
-  refine eventuallyEq_of_mem ((isClosed_tsupport φ).isOpen_compl.mem_nhdsSet.2
-    h.subset_compl_left) fun y hy => ?_
-  simp [image_eq_zero_of_notMem_tsupport hy]
+  rw [localFourier_def]
+  exact complexPairing_eq_zero_of_disjoint_dsupport T <| h.mono_left <| by
+    simpa [bilinLeftCLM_apply] using tsupport_mul_subset_left (f := φ)
 
 /-- A distribution is microlocally smooth in every direction at a point of `Ω` outside its
 support. -/

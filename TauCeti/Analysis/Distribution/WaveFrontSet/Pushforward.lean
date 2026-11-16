@@ -115,12 +115,9 @@ private theorem tsupport_bilinLeftCLM_fourierAtom_comp_subset {Φ : E → E'}
 omit [FiniteDimensional ℝ E'] in
 private theorem pullbackFourier_eq_zero_of_disjoint {T : 𝓓'(Ω, ℂ)} {Φ : E → E'}
     (hΦ : ContDiff ℝ ∞ Φ) {ψ : 𝓓(Ω, ℂ)} (h : Disjoint (tsupport ψ) (dsupport T)) (η : E') :
-    pullbackFourier T hΦ ψ η = 0 := by
-  rw [pullbackFourier, ← map_zero T.complexPairing]
-  refine complexPairing_eq_of_eventuallyEq T (eventuallyEq_of_mem
-    ((isClosed_tsupport ψ).isOpen_compl.mem_nhdsSet.2 h.subset_compl_left) fun y hy => ?_)
-  exact image_eq_zero_of_notMem_tsupport
-    (fun hy' => hy (tsupport_bilinLeftCLM_fourierAtom_comp_subset hΦ ψ η hy'))
+    pullbackFourier T hΦ ψ η = 0 :=
+  complexPairing_eq_zero_of_disjoint_dsupport T
+    (h.mono_left (tsupport_bilinLeftCLM_fourierAtom_comp_subset hΦ ψ η))
 
 omit [FiniteDimensional ℝ E'] [FiniteDimensional ℝ E] in
 /-- The localized Fourier transform of the pushforward `Φ_* (χ T)` along a smooth map pairs `T`
@@ -198,16 +195,22 @@ private theorem mul_add_le_norm_add {Γ : Set E} {c a : ℝ} (hc : 0 < c) (hc1 :
     have h5 : ‖m‖ ≤ ‖m + ζ‖ := le_of_mul_le_mul_left h4 ha
     nlinarith [mul_le_mul_of_nonneg_right hc1 (add_nonneg hm hv0)]
 
+/-- The Fourier coefficient `𝓕(ψ (e_η ∘ Φ))(m)` of a test function times the Fourier atom `e_η`
+of `E'` pulled back along `Φ`. -/
+private def pullbackCoeff [MeasurableSpace E] [BorelSpace E] {Φ : E → E'} (hΦ : ContDiff ℝ ∞ Φ)
+    (ψ : 𝓓(Ω, ℂ)) (η : E') (m : E) : ℂ :=
+  𝓕 (bilinLeftCLM (ContinuousLinearMap.mul ℝ ℂ) ((TauCeti.contDiff_fourierAtom η).comp hΦ) ψ :
+    E → ℂ) m
+
 omit [FiniteDimensional ℝ E'] in
 /-- The Fourier coefficients of `ψ (e_η ∘ Φ)` are oscillatory integrals of `ψ` with the phase
 `x ↦ -(⟪m, x⟫ + ⟪η, Φ x⟫)`, written for every `s ≠ 0` as `s` times the phase with `(m, η)`
 replaced by `s⁻¹ (m, η)`. -/
-private theorem fourier_bilinLeftCLM_fourierAtom_comp [MeasurableSpace E] [BorelSpace E]
+private theorem pullbackCoeff_eq_integral [MeasurableSpace E] [BorelSpace E]
     {Φ : E → E'} (hΦ : ContDiff ℝ ∞ Φ) (ψ : 𝓓(Ω, ℂ)) (η : E') (m : E) {s : ℝ} (hs : s ≠ 0) :
-    𝓕 (bilinLeftCLM (ContinuousLinearMap.mul ℝ ℂ)
-        ((TauCeti.contDiff_fourierAtom η).comp hΦ) ψ : E → ℂ) m =
+    pullbackCoeff hΦ ψ η m =
       ∫ x, 𝐞 (s * -(⟪(s⁻¹ • (m, η)).1, x⟫ + ⟪(s⁻¹ • (m, η)).2, Φ x⟫)) • ψ x := by
-  rw [Real.fourier_eq]
+  rw [pullbackCoeff, Real.fourier_eq]
   congr 1
   ext x
   have he : s * -(⟪(s⁻¹ • (m, η)).1, x⟫ + ⟪(s⁻¹ • (m, η)).2, Φ x⟫) =
@@ -241,11 +244,10 @@ private theorem fderiv_phase_ne_zero {Φ : E → E'} (hΦ : ContDiff ℝ ∞ Φ)
 
 omit [FiniteDimensional ℝ E'] in
 /-- The Fourier coefficients of `ψ (e_η ∘ Φ)` are bounded by `∫ ‖ψ‖`. -/
-private theorem norm_fourier_bilinLeftCLM_fourierAtom_comp_le [MeasurableSpace E] [BorelSpace E]
+private theorem norm_pullbackCoeff_le [MeasurableSpace E] [BorelSpace E]
     {Φ : E → E'} (hΦ : ContDiff ℝ ∞ Φ) (ψ : 𝓓(Ω, ℂ)) (η : E') (m : E) :
-    ‖𝓕 (bilinLeftCLM (ContinuousLinearMap.mul ℝ ℂ)
-        ((TauCeti.contDiff_fourierAtom η).comp hΦ) ψ : E → ℂ) m‖ ≤ ∫ x, ‖ψ x‖ := by
-  rw [fourier_bilinLeftCLM_fourierAtom_comp hΦ ψ η m one_ne_zero]
+    ‖pullbackCoeff hΦ ψ η m‖ ≤ ∫ x, ‖ψ x‖ := by
+  rw [pullbackCoeff_eq_integral hΦ ψ η m one_ne_zero]
   refine (norm_integral_le_integral_norm _).trans (le_of_eq (integral_congr_ae
     (Eventually.of_forall fun x => ?_)))
   simp [Circle.smul_def]
@@ -294,8 +296,7 @@ private theorem exists_one_add_pow_mul_norm_fourier_le [MeasurableSpace E] [Bore
     (hKΓ' : ∀ x ∈ K, ∀ v ∈ Γ', ((fderiv ℝ Φ x)†) v ∈ Γ₂ ∧ ‖v‖ ≤ a * ‖((fderiv ℝ Φ x)†) v‖)
     (M : ℕ) :
     ∃ C, ∀ v ∈ Γ', ∀ m : E, (-m ∉ Γ ∨ ‖m‖ * (2 * a) < ‖v‖) →
-      (1 + (‖m‖ + ‖v‖)) ^ M * ‖𝓕 (bilinLeftCLM (ContinuousLinearMap.mul ℝ ℂ)
-        ((TauCeti.contDiff_fourierAtom v).comp hΦ) ψ : E → ℂ) m‖ ≤ C := by
+      (1 + (‖m‖ + ‖v‖)) ^ M * ‖pullbackCoeff hΦ ψ v m‖ ≤ C := by
   set κ := c / (4 * (1 + a))
   have hκ : 0 < κ := by positivity
   -- The normalized frequencies `(m, v) / (‖m‖ + ‖v‖)` lie in a compact set of non-critical
@@ -315,10 +316,9 @@ private theorem exists_one_add_pow_mul_norm_fourier_le [MeasurableSpace E] [Bore
   refine ⟨2 ^ M * (B + (max C 0 + B)), fun v hv m hm => ?_⟩
   set s := ‖m‖ + ‖v‖
   have hs0 : 0 ≤ s := by positivity
-  have hL1 := norm_fourier_bilinLeftCLM_fourierAtom_comp_le hΦ ψ v m
+  have hL1 := norm_pullbackCoeff_le hΦ ψ v m
   -- Non-stationary phase gives `s ^ M ‖𝓕 (ψ (e_v ∘ Φ)) m‖ ≤ C` for `s > 0`.
-  have hdecay : s ^ M * ‖𝓕 (bilinLeftCLM (ContinuousLinearMap.mul ℝ ℂ)
-      ((TauCeti.contDiff_fourierAtom v).comp hΦ) ψ : E → ℂ) m‖ ≤ max C 0 + B := by
+  have hdecay : s ^ M * ‖pullbackCoeff hΦ ψ v m‖ ≤ max C 0 + B := by
     rcases hs0.eq_or_lt with hs | hs
     · rcases M.eq_zero_or_pos with hM | hM
       · rw [hM, pow_zero, one_mul]
@@ -337,7 +337,7 @@ private theorem exists_one_add_pow_mul_norm_fourier_le [MeasurableSpace E] [Bore
       rw [le_inv_mul_iff₀ hs]
       linarith
     have h := hC _ hθ s
-    rw [abs_of_pos hs, ← fourier_bilinLeftCLM_fourierAtom_comp hΦ ψ v m hs.ne'] at h
+    rw [abs_of_pos hs, ← pullbackCoeff_eq_integral hΦ ψ v m hs.ne'] at h
     linarith [le_max_left C 0]
   exact one_add_pow_mul_le hs0 (norm_nonneg _) hL1 hdecay
 
@@ -388,11 +388,9 @@ private theorem norm_one_add_pow_smul_mul_le [MeasurableSpace E] [BorelSpace E] 
     {a CA CB C₁ : ℝ} {N k r : ℕ} (ha : 0 < a)
     (hCA : ∀ ξ ∈ Γ, (1 + ‖ξ‖) ^ (N + r) * ‖T.localFourier φ ξ‖ ≤ CA)
     (hpoly : ∀ ξ, ‖T.localFourier φ ξ‖ ≤ C₁ * (1 + ‖ξ‖) ^ k) (v : E') (m : E)
-    (hCB : (-m ∉ Γ ∨ ‖m‖ * (2 * a) < ‖v‖) → (1 + (‖m‖ + ‖v‖)) ^ (N + k + r) *
-      ‖𝓕 (bilinLeftCLM (ContinuousLinearMap.mul ℝ ℂ)
-        ((TauCeti.contDiff_fourierAtom v).comp hΦ) ψ : E → ℂ) m‖ ≤ CB) :
-    ‖(1 + ‖v‖) ^ N • (c₀ * 𝓕 (bilinLeftCLM (ContinuousLinearMap.mul ℝ ℂ)
-        ((TauCeti.contDiff_fourierAtom v).comp hΦ) ψ : E → ℂ) m * T.localFourier φ (-m))‖ ≤
+    (hCB : (-m ∉ Γ ∨ ‖m‖ * (2 * a) < ‖v‖) →
+      (1 + (‖m‖ + ‖v‖)) ^ (N + k + r) * ‖pullbackCoeff hΦ ψ v m‖ ≤ CB) :
+    ‖(1 + ‖v‖) ^ N • (c₀ * pullbackCoeff hΦ ψ v m * T.localFourier φ (-m))‖ ≤
       ‖c₀‖ * max ((∫ x, ‖ψ x‖) * CA * (1 + 2 * a) ^ N) (C₁ * CB) * ((1 + ‖m‖) ^ r)⁻¹ := by
   have hshape (x y z w u : ℝ) : x * (u * y * z) * w = u * (x * (y * z) * w) := by ring
   rw [← div_eq_mul_inv, le_div_iff₀ (by positivity), norm_smul, norm_mul, norm_mul,
@@ -401,7 +399,7 @@ private theorem norm_one_add_pow_smul_mul_le [MeasurableSpace E] [BorelSpace E] 
   refine one_add_pow_mul_mul_le (k := k) (norm_nonneg _) (norm_nonneg _) (norm_nonneg _)
     (norm_nonneg _) ha ?_
   by_cases hA : -m ∈ Γ ∧ ‖v‖ ≤ ‖m‖ * (2 * a)
-  · exact Or.inl ⟨hA.2, norm_fourier_bilinLeftCLM_fourierAtom_comp_le hΦ ψ v m,
+  · exact Or.inl ⟨hA.2, norm_pullbackCoeff_le hΦ ψ v m,
       by simpa using hCA _ hA.1⟩
   · refine Or.inr ⟨by simpa using hpoly (-m), hCB ?_⟩
     by_contra! h

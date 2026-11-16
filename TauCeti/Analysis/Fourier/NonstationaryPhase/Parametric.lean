@@ -15,6 +15,7 @@ import Mathlib.Analysis.Calculus.LineDeriv.IntegrationByParts
 import Mathlib.Analysis.Fourier.FourierTransformDeriv
 import Mathlib.MeasureTheory.Integral.Bochner.Set
 import TauCeti.Analysis.Calculus.FDeriv.Prod
+import TauCeti.Analysis.Fourier.FourierCharDeriv
 import TauCeti.Analysis.SpecialFunctions.SmoothTransition
 
 /-!
@@ -112,12 +113,8 @@ private theorem iterate_transposeOp_eq_zero {K : Set E} (hK : IsClosed K) {w : �
 
 /-- The phase factor `x ↦ e(s G(θ, x))` is smooth. -/
 private theorem contDiff_fourierChar_mul {G : Θ × E → ℝ} (hG : ContDiff ℝ ∞ G) (θ : Θ) (s : ℝ) :
-    ContDiff ℝ ∞ fun x ↦ (𝐞 (s * G (θ, x)) : ℂ) := by
-  have : ContDiff ℝ ∞ fun t : ℝ ↦ (𝐞 t : ℂ) := by
-    simp_rw [Real.fourierChar_apply]
-    exact Complex.contDiff_exp.comp
-      ((ofRealCLM.contDiff.comp (contDiff_const.mul contDiff_id)).mul contDiff_const)
-  exact this.comp (contDiff_const.mul (hG.comp (contDiff_const.prodMk contDiff_id)))
+    ContDiff ℝ ∞ fun x ↦ (𝐞 (s * G (θ, x)) : ℂ) :=
+  Real.contDiff_fourierChar.comp (contDiff_const.mul (hG.comp (contDiff_const.prodMk contDiff_id)))
 
 /-- The derivative of the phase factor `x ↦ e(s G(θ, x))` along `v` is
 `2πi s ∂_v G(θ, x) e(s G(θ, x))`. -/
@@ -274,7 +271,7 @@ theorem exists_abs_pow_mul_norm_integral_fourierChar_smul_le {G : Θ × E → �
     (hcrit : ∀ θ ∈ P, ∀ x ∈ tsupport u, fderiv ℝ (fun x ↦ G (θ, x)) x ≠ 0) (N : ℕ) :
     ∃ C, ∀ θ ∈ P, ∀ s : ℝ, |s| ^ N * ‖∫ x, 𝐞 (s * G (θ, x)) • u x ∂μ‖ ≤ C := by
   set K := tsupport u
-  have hK : IsCompact K := hu'
+  have hK : IsCompact K := hu'.isCompact
   obtain ⟨a, ha, hθ⟩ := exists_sum_mul_fderiv_eq_one hG hP hK hcrit
   -- After `N` integrations by parts the amplitude is bounded by `M` on `P × K`.
   set w : Θ × E → ℂ := fun p ↦ u p.2
