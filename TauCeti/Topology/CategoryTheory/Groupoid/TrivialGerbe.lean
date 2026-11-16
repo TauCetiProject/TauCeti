@@ -80,12 +80,8 @@ def autMulEquiv (x : TrivialGerbe K N) : Aut x ≃* K where
   invFun g := Aut.of
     { hom := (g, 𝟙 x.2)
       inv := (g⁻¹, 𝟙 x.2)
-      hom_inv_id := Prod.ext (by
-          rw [prod_comp, SingleObj.comp_as_mul, prod_id, SingleObj.id_as_one, inv_mul_cancel])
-        (Subsingleton.elim _ _)
-      inv_hom_id := Prod.ext (by
-          rw [prod_comp, SingleObj.comp_as_mul, prod_id, SingleObj.id_as_one, mul_inv_cancel])
-        (Subsingleton.elim _ _) }
+      hom_inv_id := by ext <;> simp [SingleObj.comp_as_mul]
+      inv_hom_id := by ext <;> simp [SingleObj.comp_as_mul] }
   left_inv e := Aut.ext (Iso.ext (Prod.ext rfl (Subsingleton.elim _ _)))
   right_inv _ := rfl
   map_mul' e e' := by
@@ -172,7 +168,7 @@ theorem arrowHomeomorph_apply (a : Quiver.Total (TrivialGerbe K N)) :
 theorem arrowHomeomorph_symm_apply (p : K × N) :
     (arrowHomeomorph K N).symm p =
       ⟨(SingleObj.star K, ⟨p.2⟩), (SingleObj.star K, ⟨p.2⟩), (p.1, 𝟙 _)⟩ :=
-  (arrowHomeomorph K N).symm_apply_eq.mpr (by rw [arrowHomeomorph_apply]; rfl)
+  (arrowHomeomorph K N).symm_apply_eq.mpr (by simp)
 
 variable {K N}
 
@@ -181,6 +177,11 @@ theorem objectHomeomorph_left (a : Quiver.Total (TrivialGerbe K N)) :
     objectHomeomorph K N a.left = (arrowHomeomorph K N a).2 := by
   simp
 
+/-- The source of an arrow `(g, x)` is the object corresponding to `x`. -/
+theorem left_eq_objectHomeomorph_symm (a : Quiver.Total (TrivialGerbe K N)) :
+    a.left = (objectHomeomorph K N).symm (arrowHomeomorph K N a).2 :=
+  (objectHomeomorph K N).eq_symm_apply.mpr (objectHomeomorph_left a)
+
 /-- The target of an arrow `(g, x)` is `x`. -/
 theorem objectHomeomorph_right (a : Quiver.Total (TrivialGerbe K N)) :
     objectHomeomorph K N a.right = (arrowHomeomorph K N a).2 := by
@@ -188,8 +189,8 @@ theorem objectHomeomorph_right (a : Quiver.Total (TrivialGerbe K N)) :
 
 /-- The unit at `x` is the arrow `(1, x)`. -/
 theorem arrowHomeomorph_id (x : TrivialGerbe K N) :
-    arrowHomeomorph K N ⟨x, x, 𝟙 x⟩ = (1, objectHomeomorph K N x) := by
-  rw [arrowHomeomorph_apply, prod_id, SingleObj.id_as_one, objectHomeomorph_apply]
+    arrowHomeomorph K N ⟨x, x, 𝟙 x⟩ = (1, objectHomeomorph K N x) :=
+  (arrowHomeomorph_apply K N _).trans (Prod.ext (SingleObj.id_as_one K x.1) rfl)
 
 /-- Composing `(h, x)` followed by `(g, x)` gives `(g * h, x)`: categorical composition reverses
 the order of the labels. -/
@@ -199,8 +200,7 @@ theorem arrowHomeomorph_comp (a b : Quiver.Total (TrivialGerbe K N)) (h : a.righ
   obtain ⟨⟨⟨⟩, x⟩, ⟨⟨⟩, y⟩, f⟩ := a
   obtain ⟨⟨⟨⟩, y'⟩, ⟨⟨⟩, z⟩, g⟩ := b
   cases h
-  rw [Quiver.Total.mk_comp_mk, arrowHomeomorph_apply, arrowHomeomorph_apply,
-    arrowHomeomorph_apply, prod_comp, SingleObj.comp_as_mul]
+  simp [SingleObj.comp_as_mul]
 
 /-- Inverting the arrow `(g, x)` gives `(g⁻¹, x)`. -/
 theorem arrowHomeomorph_inverse (a : Quiver.Total (TrivialGerbe K N)) :
@@ -208,9 +208,9 @@ theorem arrowHomeomorph_inverse (a : Quiver.Total (TrivialGerbe K N)) :
       ((arrowHomeomorph K N a).1⁻¹, (arrowHomeomorph K N a).2) := by
   obtain ⟨⟨⟨⟩, x⟩, ⟨⟨⟩, y⟩, f⟩ := a
   obtain rfl : x = y := Discrete.ext (Discrete.eq_of_hom f.2)
-  have h := congrArg Prod.fst (IsIso.hom_inv_id f)
-  rw [prod_comp, prod_id, SingleObj.comp_as_mul, SingleObj.id_as_one] at h
-  rw [arrowHomeomorph_apply, arrowHomeomorph_apply, eq_inv_of_mul_eq_one_left h]
+  have h : (inv f).1 = f.1⁻¹ :=
+    ((CategoryTheory.Prod.fst _ _).map_inv f).trans (SingleObj.inv_as_inv K _)
+  simp only [arrowHomeomorph_apply, h]
 
 /-- Every arrow of the trivial gerbe is ineffective, whatever the topologies of `K` and `N`. -/
 @[simp]
@@ -295,7 +295,7 @@ theorem isProperMap_source_target [CompactSpace K] [T2Space N] :
   convert ((objectHomeomorph K N).symm.prodCongr (objectHomeomorph K N).symm).isProperMap.comp
     (hdiag.comp (isProperMap_snd_of_compactSpace.comp (arrowHomeomorph K N).isProperMap)) using 1
   funext a
-  have h := (objectHomeomorph K N).eq_symm_apply.mpr (objectHomeomorph_left a)
+  have h := left_eq_objectHomeomorph_symm a
   exact Prod.ext h ((left_eq_right a).symm.trans h)
 
 section Etale
@@ -309,7 +309,7 @@ theorem isLocalHomeomorph_source :
   -- The source is the projection `K × N → N` read through the two homeomorphisms.
   convert (objectHomeomorph K N).symm.isLocalHomeomorph.comp
     (isLocalHomeomorph_snd.comp (arrowHomeomorph K N).isLocalHomeomorph) using 1
-  exact funext fun a ↦ (objectHomeomorph K N).eq_symm_apply.mpr (objectHomeomorph_left a)
+  exact funext left_eq_objectHomeomorph_symm
 
 /-- For a discrete group `K`, the target of the trivial gerbe is a local homeomorphism. -/
 theorem isLocalHomeomorph_target :
