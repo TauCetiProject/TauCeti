@@ -82,6 +82,12 @@ maps on the plumbed sphere is computed.
 * `TauCeti.ThricePuncturedSphere.Puncture.isCompact_preimage_plumbedTruncation`,
   `TauCeti.ThricePuncturedSphere.Puncture.measurableSet_preimage_plumbedTruncation`: in the real
   coordinates, the truncation `Σ_R` is compact and measurable.
+* `TauCeti.ThricePuncturedSphere.Puncture.plumbedTruncation_mono`,
+  `TauCeti.ThricePuncturedSphere.Puncture.iUnion_plumbedTruncation`: the truncations `Σ_R`
+  increase with `R` and exhaust the four-punctured sphere.
+* `TauCeti.ThricePuncturedSphere.Puncture.cylindricalEndLift_mem_plumbedTruncation`,
+  `TauCeti.ThricePuncturedSphere.Puncture.plumbingMap_cylindricalEndLift_mem_plumbedTruncation`:
+  the four outer boundary circles at height `R` lie in `Σ_R`.
 
 ## References
 
@@ -662,5 +668,60 @@ theorem isCompact_preimage_plumbedTruncation (q : Puncture) (L R : ℝ) :
 theorem measurableSet_preimage_plumbedTruncation (q : Puncture) (L R : ℝ) :
     MeasurableSet (Complex.equivRealProdCLM.symm ⁻¹' q.plumbedTruncation L R) :=
   (isCompact_preimage_plumbedTruncation q L R).isClosed.measurableSet
+
+/-- The truncations `Σ_R` of the plumbed sphere increase with the outer height `R`. -/
+theorem plumbedTruncation_mono (q : Puncture) (L : ℝ) : Monotone (q.plumbedTruncation L) :=
+  fun _ _ hRR' ↦ union_subset_union (inter_subset_inter_left _ (truncation_mono hRR'))
+    (image_mono (inter_subset_inter_left _ (truncation_mono hRR')))
+
+/-- The truncations `Σ_R` exhaust the plumbed four-punctured sphere `ℂ ∖ {0, 1, ψ_{q,L}(1)}`. A
+point on which the longitudinal coordinate of the end `q` is at most `L / 2` lies in some
+truncation `S_R` of the receiving sphere; any other point is the image under the plumbing map of
+a point of the inserted sphere where the longitudinal coordinate of the end at `∞` is at least
+`-L / 2`. -/
+theorem iUnion_plumbedTruncation {q : Puncture} (hq : q ≠ inf) {L : ℝ} (hL : 0 < L) :
+    ⋃ R, q.plumbedTruncation L R = {w | (w ≠ 0 ∧ w ≠ 1) ∧ w ≠ q.plumbingMap L 1} := by
+  refine (iUnion_subset (plumbedTruncation_subset hq hL)).antisymm fun w hw ↦ ?_
+  obtain ⟨⟨hw0, hw1⟩, hwψ⟩ := hw
+  have hS {w' : ℂ} (h0 : w' ≠ 0) (h1 : w' ≠ 1) : ∃ R, w' ∈ truncation R := by
+    have h : w' ∈ ⋃ R, truncation R := by rw [iUnion_truncation]; exact ⟨h0, h1⟩
+    exact mem_iUnion.1 h
+  by_cases hle : (q.endCoord w).re ≤ L / 2
+  · obtain ⟨R, hR⟩ := hS hw0 hw1
+    exact mem_iUnion.2 ⟨R, mem_plumbedTruncation_iff.2 (Or.inl ⟨hR, hle⟩)⟩
+  · have hwc : w ≠ q.endCenter := by
+      rcases q.endCenter_eq_zero_or_eq_one with h | h <;> rw [h] <;> assumption
+    obtain ⟨R, hR⟩ := hS (q.sub_endCenter_div_plumbingFactor_ne_zero L hwc)
+      fun h ↦ hwψ ((q.sub_endCenter_div_plumbingFactor_eq_one_iff L).1 h)
+    refine mem_iUnion.2 ⟨R, mem_plumbedTruncation_iff.2 (Or.inr ⟨_, hR, ?_,
+      plumbingMap_sub_endCenter_div q L w⟩)⟩
+    rw [re_endCoord_inf_sub_endCenter_div q L hwc]
+    linarith
+
+/-- For `R > 0`, the boundary circle `±s = R` of an end `r ≠ q` of the receiving sphere lies in
+the truncation `Σ_R` of the plumbed sphere. -/
+theorem cylindricalEndLift_mem_plumbedTruncation {q r : Puncture} (hq : q ≠ inf) (hrq : r ≠ q)
+    {L R : ℝ} (hL : 0 ≤ L) (hR : 0 < R) (t : ℝ) :
+    r.cylindricalEndLift (↑(r.endSign * R) + ↑t * Complex.I) ∈ q.plumbedTruncation L R := by
+  have hpos : 0 < r.endSign *
+      (r.endCoord (r.cylindricalEndLift (↑(r.endSign * R) + ↑t * Complex.I))).re := by
+    simpa [← mul_assoc] using hR
+  have h := endSign_mul_re_endCoord_nonpos hrq hpos
+  rw [endSign_eq_one hq, one_mul] at h
+  exact mem_plumbedTruncation_iff.2
+    (Or.inl ⟨cylindricalEndLift_mem_truncation r hR t, by linarith⟩)
+
+/-- For `R > 0`, the image under the plumbing map of the boundary circle `s = R` of an input end
+`r ≠ ∞` of the inserted sphere lies in the truncation `Σ_R` of the plumbed sphere. -/
+theorem plumbingMap_cylindricalEndLift_mem_plumbedTruncation (q : Puncture) {r : Puncture}
+    (hr : r ≠ inf) {L R : ℝ} (hL : 0 ≤ L) (hR : 0 < R) (t : ℝ) :
+    q.plumbingMap L (r.cylindricalEndLift (↑R + ↑t * Complex.I)) ∈ q.plumbedTruncation L R := by
+  have hmem := cylindricalEndLift_mem_truncation r hR t
+  rw [endSign_eq_one hr, one_mul] at hmem
+  have hpos : 0 < r.endSign * (r.endCoord (r.cylindricalEndLift (↑R + ↑t * Complex.I))).re := by
+    simpa [endSign_eq_one hr] using hR
+  have h := endSign_mul_re_endCoord_nonpos hr hpos
+  rw [endSign_inf, neg_one_mul] at h
+  exact mem_plumbedTruncation_iff.2 (Or.inr ⟨_, hmem, by linarith, rfl⟩)
 
 end TauCeti.ThricePuncturedSphere.Puncture
