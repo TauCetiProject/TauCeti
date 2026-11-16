@@ -61,48 +61,10 @@ public section
 
 noncomputable section
 
-open InnerProductSpace
-open scoped RealInnerProductSpace
+open InnerProductSpace Filter
+open scoped RealInnerProductSpace Topology
 
 namespace TauCeti.SymplecticForm
-
-section associatedBilinForm
-
-variable {V : Type*} [NormedAddCommGroup V] [NormedSpace ℝ V] [FiniteDimensional ℝ V]
-  {ω : SymplecticForm V}
-
-variable (ω) in
-/-- The metric `ω(·, J ·)` is the image of the endomorphism `J` under a continuous linear map. -/
-private theorem toContinuousBilinearMap_associatedBilinForm_eq (J : AlmostComplexStructure V) :
-    (ω.associatedBilinForm J).toContinuousBilinearMap =
-      (ContinuousLinearMap.compL ℝ V V ℝ).flip (LinearMap.toContinuousLinearMap J.toLinearMap) ∘L
-        ω.toBilinForm.toContinuousBilinearMap := by
-  ext u v
-  simp [associatedBilinForm_apply]
-
-variable (ω) in
-/-- The metrics `ω(·, J x ·)` of a family of complex structures depend `C^n` on `x ∈ s` when the
-endomorphisms `J x` do, in the operator norm. -/
-theorem _root_.ContDiffOn.associatedBilinForm {P : Type*} [NormedAddCommGroup P]
-    [NormedSpace ℝ P] {s : Set P} {n : WithTop ℕ∞} {J : P → AlmostComplexStructure V}
-    (hJ : ContDiffOn ℝ n (fun x ↦ LinearMap.toContinuousLinearMap (J x).toLinearMap) s) :
-    ContDiffOn ℝ n (fun x ↦ (ω.associatedBilinForm (J x)).toContinuousBilinearMap) s := by
-  have h := ((ContinuousLinearMap.compL ℝ V V ℝ).flip.contDiff.comp_contDiffOn hJ).clm_comp
-    (contDiffOn_const (c := ω.toBilinForm.toContinuousBilinearMap))
-  exact h.congr fun x _ ↦ toContinuousBilinearMap_associatedBilinForm_eq ω (J x)
-
-variable (ω) in
-/-- The metrics `ω(·, J x ·)` of a family of complex structures are differentiable at every point
-where the endomorphisms `J x` are, in the operator norm. -/
-theorem _root_.DifferentiableAt.associatedBilinForm {P : Type*} [NormedAddCommGroup P]
-    [NormedSpace ℝ P] {x : P} {J : P → AlmostComplexStructure V}
-    (hJ : DifferentiableAt ℝ (fun x ↦ LinearMap.toContinuousLinearMap (J x).toLinearMap) x) :
-    DifferentiableAt ℝ (fun x ↦ (ω.associatedBilinForm (J x)).toContinuousBilinearMap) x :=
-  (((ContinuousLinearMap.compL ℝ V V ℝ).flip.differentiableAt.comp x hJ).clm_comp
-    (differentiableAt_const ω.toBilinForm.toContinuousBilinearMap)).congr_of_eventuallyEq
-      (.of_forall fun y ↦ toContinuousBilinearMap_associatedBilinForm_eq ω (J y))
-
-end associatedBilinForm
 
 variable {V : Type*} [NormedAddCommGroup V] [InnerProductSpace ℝ V] [FiniteDimensional ℝ V]
   {ω : SymplecticForm V} {J J₀ : AlmostComplexStructure V}
@@ -267,6 +229,20 @@ theorem Compatible.unitaryFrameEquiv_apply (hJ : ω.Compatible J) (v : V) :
     hJ.unitaryFrameEquiv v = ω.unitaryFrame J v :=
   ContinuousLinearMap.metricChangeEquiv_apply _ v
 
+/-- The unitary frame undoes the inverse of
+`TauCeti.SymplecticForm.Compatible.unitaryFrameEquiv`. -/
+@[simp]
+theorem Compatible.unitaryFrame_unitaryFrameEquiv_symm_apply (hJ : ω.Compatible J) (w : V) :
+    ω.unitaryFrame J (hJ.unitaryFrameEquiv.symm w) = w := by
+  rw [← hJ.unitaryFrameEquiv_apply, ContinuousLinearEquiv.apply_symm_apply]
+
+/-- The inverse of `TauCeti.SymplecticForm.Compatible.unitaryFrameEquiv` undoes the unitary
+frame. -/
+@[simp]
+theorem Compatible.unitaryFrameEquiv_symm_apply_unitaryFrame (hJ : ω.Compatible J) (v : V) :
+    hJ.unitaryFrameEquiv.symm (ω.unitaryFrame J v) = v := by
+  rw [← hJ.unitaryFrameEquiv_apply, ContinuousLinearEquiv.symm_apply_apply]
+
 /-- The inverse of the unitary frame is the square root of the Riesz operator of
 `ω(·, J ·)`. -/
 theorem Compatible.coe_unitaryFrameEquiv_symm (hJ : ω.Compatible J) :
@@ -291,9 +267,7 @@ theorem Compatible.transport_unitaryFrameEquiv (hJ : ω.Compatible J)
     J₀.transport hJ.unitaryFrameEquiv.toLinearEquiv = J := by
   refine AlmostComplexStructure.toLinearMap_injective (LinearMap.ext fun w ↦ ?_)
   -- This is `J Ψ = Ψ J₀` at `Ψ⁻¹ w`.
-  have hw : ω.unitaryFrame J (hJ.unitaryFrameEquiv.symm w) = w :=
-    (hJ.unitaryFrameEquiv_apply _).symm.trans (hJ.unitaryFrameEquiv.apply_symm_apply w)
-  simpa [hw] using (hJ.apply_unitaryFrame hg (hJ.unitaryFrameEquiv.symm w)).symm
+  simpa using (hJ.apply_unitaryFrame hg (hJ.unitaryFrameEquiv.symm w)).symm
 
 /-- **The unitary frames of a smooth family of compatible structures are smooth.** If the
 endomorphisms of a family `J x` of `ω`-compatible structures depend `C^n` on `x ∈ s` in the
@@ -311,13 +285,15 @@ where the endomorphisms of the family are. -/
 theorem _root_.DifferentiableAt.unitaryFrame {P : Type*} [NormedAddCommGroup P]
     [NormedSpace ℝ P] {x : P} {J : P → AlmostComplexStructure V}
     (hJ : DifferentiableAt ℝ (fun x ↦ LinearMap.toContinuousLinearMap (J x).toLinearMap) x)
-    (hc : ∀ x, ω.Compatible (J x)) : DifferentiableAt ℝ (fun x ↦ ω.unitaryFrame (J x)) x := by
+    (hc : ∀ᶠ y in 𝓝 x, ω.Compatible (J y)) :
+    DifferentiableAt ℝ (fun x ↦ ω.unitaryFrame (J x)) x := by
   have hh := hJ.associatedBilinForm ω
-  -- The transport is differentiable within the positive metrics, where the family lies.
+  -- The transport is differentiable within the positive metrics, where the family lies near `x`.
   have hT := ContinuousLinearMap.contDiffOn_metricChangeTransport (E := V) (n := 1)
-  have hT' := hT.differentiableOn one_ne_zero _ (hc x).isStrictlyPositive_continuousLinearMapOfBilin
-  exact differentiableWithinAt_univ.1 (hT'.comp x hh.differentiableWithinAt fun y _ ↦
-    (hc y).isStrictlyPositive_continuousLinearMapOfBilin)
+  have hT' := hT.differentiableOn one_ne_zero _
+    hc.self_of_nhds.isStrictlyPositive_continuousLinearMapOfBilin
+  exact (hT'.comp x (hh.differentiableWithinAt (s := {y | ω.Compatible (J y)})) fun y hy ↦
+    Compatible.isStrictlyPositive_continuousLinearMapOfBilin hy).differentiableAt hc
 
 /-- The unitary frames of a `C^n` family of compatible structures form a `C^n` family. -/
 theorem _root_.ContDiff.unitaryFrame {P : Type*} [NormedAddCommGroup P] [NormedSpace ℝ P]
