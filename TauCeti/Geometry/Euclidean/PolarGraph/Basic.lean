@@ -168,6 +168,22 @@ def overlap (Ω : Set PolarPoint) (k : ℤ) : Set PolarPoint :=
 @[simp, grind =] theorem mem_overlap_iff {Ω : Set PolarPoint} {k : ℤ} {p : PolarPoint} :
     p ∈ overlap Ω k ↔ p ∈ Ω ∧ deckShift k p ∈ Ω := Iff.rfl
 
+/-- The zero deck overlap is the original domain. -/
+@[simp, grind =] theorem overlap_zero (Ω : Set PolarPoint) : overlap Ω 0 = Ω := by
+  ext p
+  simp
+
+@[simp, grind =] theorem overlap_empty (k : ℤ) : overlap ∅ k = ∅ := by
+  ext p
+  simp
+
+@[simp, grind =] theorem overlap_univ (k : ℤ) : overlap Set.univ k = Set.univ := by
+  ext p
+  simp
+
+theorem overlap_subset (Ω : Set PolarPoint) (k : ℤ) : overlap Ω k ⊆ Ω :=
+  fun _ hp ↦ (mem_overlap_iff.mp hp).1
+
 /-- The open polar sector with angular bounds `a < angle p < b`. -/
 def sector (a b : ℝ) : Set PolarPoint := {p | a < angle p ∧ angle p < b}
 
@@ -223,7 +239,7 @@ theorem separation_eq_zero_of_deckShift_one_eq {u : PolarPoint → ℝ}
   have hneg (q : PolarPoint) : separation u (-1) q = 0 := by
     have h := separation_neg_deckShift u 1 (deckShift (-1) q)
     simpa [h₁] using h
-  induction k using Int.induction_on generalizing p with
+  induction k using Int.induction_on with
   | zero => simp
   | succ n ih => rw [separation_add, ih, h₁, zero_add]
   | pred n ih => rw [sub_eq_add_neg, separation_add, ih, hneg, zero_add]
@@ -247,10 +263,10 @@ theorem graph_injOn_iff (u : PolarPoint → ℝ) (Ω : Set PolarPoint) :
       ∀ k : ℤ, k ≠ 0 → ∀ p ∈ overlap Ω k, separation u k p ≠ 0 := by
   constructor
   · intro hi k hk p hp hs
+    rw [mem_overlap_iff] at hp
+    rw [separation_def, sub_eq_zero] at hs
     have heq : graph u p = graph u (deckShift k p) := by
-      apply Prod.ext
-      · simp
-      · simpa [separation_def] using (sub_eq_zero.mp hs).symm
+      simp [graph_def, hs]
     exact hk (deckShift_eq_self_iff.mp (hi hp.1 hp.2 heq).symm)
   · intro hs p hp q hq heq
     have hproj : projection p = projection q := by
@@ -261,7 +277,8 @@ theorem graph_injOn_iff (u : PolarPoint → ℝ) (Ω : Set PolarPoint) :
       exact (deckShift_zero p).symm
     · have hu : u p = u (deckShift k p) := by
         simpa only [snd_graph] using congrArg Prod.snd heq
-      exact False.elim (hs k hk p ⟨hp, hq⟩ (by simp [separation_def, hu]))
+      exact False.elim (hs k hk p (mem_overlap_iff.mpr ⟨hp, hq⟩)
+        (by simp [separation_def, hu]))
 
 /-- Equal heights at one pair of distinct deck translates obstruct global injectivity. -/
 theorem not_injective_graph_of_deckShift_eq {u : PolarPoint → ℝ} {k : ℤ}
