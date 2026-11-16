@@ -96,26 +96,22 @@ variable {g : ContMDiffRiemannianMetric I ∞ E (fun x : M ↦ TangentSpace I x)
   {φ ψ : RoughForm I M ℝ k}
 
 /-- A calibration is a smooth differential form. -/
-theorem IsCalibration.isSmoothForm (hφ : IsCalibration g φ) : IsSmoothForm I ∞ φ :=
-  hφ.1
+theorem IsCalibration.isSmoothForm (hφ : IsCalibration g φ) : IsSmoothForm I ∞ φ := hφ.1
 
 /-- A calibration is closed (`mextDeriv φ = 0`). -/
-theorem IsCalibration.mextDeriv_eq_zero (hφ : IsCalibration g φ) : mextDeriv φ = 0 :=
-  hφ.2.1
+theorem IsCalibration.mextDeriv_eq_zero (hφ : IsCalibration g φ) : mextDeriv φ = 0 := hφ.2.1
 
 /-- Evaluating a calibration on any `g_x`-orthonormal frame gives a number of absolute value at
 most `1`. -/
 theorem IsCalibration.abs_apply_le_one (hφ : IsCalibration g φ) (x : M)
     {v : Fin k → TangentSpace I x}
-    (hv : ∀ i j, g.inner x (v i) (v j) = if i = j then 1 else 0) :
-    |φ x v| ≤ 1 :=
+    (hv : ∀ i j, g.inner x (v i) (v j) = if i = j then 1 else 0) : |φ x v| ≤ 1 :=
   hφ.2.2 x v hv
 
 /-- Evaluating a calibration on any `g_x`-orthonormal frame gives at most `1`. -/
 theorem IsCalibration.apply_le_one (hφ : IsCalibration g φ) (x : M)
     {v : Fin k → TangentSpace I x}
-    (hv : ∀ i j, g.inner x (v i) (v j) = if i = j then 1 else 0) :
-    φ x v ≤ 1 :=
+    (hv : ∀ i j, g.inner x (v i) (v j) = if i = j then 1 else 0) : φ x v ≤ 1 :=
   (le_abs_self _).trans (hφ.abs_apply_le_one x hv)
 
 /-- Bundle a calibration as a `SmoothForm`. -/
@@ -125,8 +121,7 @@ def IsCalibration.toSmoothForm (hφ : IsCalibration g φ) : SmoothForm I M ℝ k
 /-- Coercing `hφ.toSmoothForm` back to a rough form recovers `φ`. -/
 @[simp]
 theorem IsCalibration.coe_toSmoothForm (hφ : IsCalibration g φ) :
-    (hφ.toSmoothForm : RoughForm I M ℝ k) = φ :=
-  (rfl)
+    (hφ.toSmoothForm : RoughForm I M ℝ k) = φ := (rfl)
 
 /-- Bundled as a `SmoothForm`, a calibration is closed. -/
 theorem IsCalibration.isClosed_toSmoothForm (hφ : IsCalibration g φ) :
@@ -144,9 +139,7 @@ theorem isCalibration_iff_norm_le_one :
   rw [isCalibration_def]
   refine and_congr_right fun _ ↦ and_congr_right fun _ ↦ forall_congr' fun x ↦ ?_
   rw [(φ x).opNorm_le_iff_le_orthonormal zero_le_one]
-  refine forall_congr' fun v ↦ ?_
-  rw [orthonormal_iff_ite, Real.norm_eq_abs]
-  rfl
+  exact forall_congr' fun v ↦ by rw [orthonormal_iff_ite, Real.norm_eq_abs]; rfl
 
 /-- At every point `x`, a calibration has comass `‖φ x‖ ≤ 1` for the inner product `g_x`. -/
 theorem IsCalibration.norm_le_one (hφ : IsCalibration g φ) (x : M) :
@@ -165,9 +158,7 @@ theorem isCalibration_iff_apply_le_one (hk : 1 ≤ k) :
   rw [isCalibration_iff_norm_le_one]
   refine and_congr_right fun _ ↦ and_congr_right fun _ ↦ forall_congr' fun x ↦ ?_
   rw [(φ x).opNorm_le_iff_apply_le_orthonormal hk zero_le_one]
-  refine forall_congr' fun v ↦ ?_
-  rw [orthonormal_iff_ite]
-  rfl
+  exact forall_congr' fun v ↦ by rw [orthonormal_iff_ite]; rfl
 
 /-- The zero `k`-form is a calibration on every smooth Riemannian manifold. -/
 @[simp]
@@ -191,29 +182,21 @@ theorem IsCalibration.smul_of_abs_le_one (hφ : IsCalibration g φ) {c : ℝ} (h
   refine ⟨hφ.isSmoothForm.smul c, by rw [mextDeriv_smul, hφ.mextDeriv_eq_zero, smul_zero],
     fun x v hv ↦ ?_⟩
   rw [Pi.smul_apply, ContinuousAlternatingMap.smul_apply, smul_eq_mul, abs_mul]
-  calc |c| * |φ x v|
-      ≤ |c| * 1 := mul_le_mul_of_nonneg_left (hφ.abs_apply_le_one x hv) (abs_nonneg c)
-    _ = |c| := mul_one _
-    _ ≤ 1 := hc
+  exact (mul_le_mul_of_nonneg_left (hφ.abs_apply_le_one x hv) (abs_nonneg c)).trans
+    (by rwa [mul_one])
 
 /-- **Convexity of calibrations**: if `0 ≤ a`, `0 ≤ b`, and `a + b ≤ 1` (in particular for convex
 combinations `a + b = 1`), then `a • φ + b • ψ` is a calibration whenever `φ` and `ψ` are. -/
 theorem IsCalibration.convex_combo (hφ : IsCalibration g φ) (hψ : IsCalibration g ψ) {a b : ℝ}
-    (ha : 0 ≤ a) (hb : 0 ≤ b) (hab : a + b ≤ 1) :
-    IsCalibration g (a • φ + b • ψ) := by
-  refine ⟨(hφ.isSmoothForm.smul a).add (hψ.isSmoothForm.smul b), ?_, fun x v hv ↦ ?_⟩
-  · have hclosed :=
-      (SmoothForm.isClosed_def _).1
-        ((hφ.isClosed_toSmoothForm.smul a).add (hψ.isClosed_toSmoothForm.smul b))
-    exact hclosed
-  · simp only [Pi.add_apply, Pi.smul_apply, ContinuousAlternatingMap.add_apply,
-      ContinuousAlternatingMap.smul_apply, smul_eq_mul]
-    calc |a * φ x v + b * ψ x v|
-        ≤ |a * φ x v| + |b * ψ x v| := abs_add_le _ _
-      _ = a * |φ x v| + b * |ψ x v| := by rw [abs_mul, abs_mul, abs_of_nonneg ha, abs_of_nonneg hb]
-      _ ≤ a * 1 + b * 1 := add_le_add (mul_le_mul_of_nonneg_left (hφ.abs_apply_le_one x hv) ha)
-            (mul_le_mul_of_nonneg_left (hψ.abs_apply_le_one x hv) hb)
-      _ ≤ 1 := by linarith
+    (ha : 0 ≤ a) (hb : 0 ≤ b) (hab : a + b ≤ 1) : IsCalibration g (a • φ + b • ψ) := by
+  refine ⟨(hφ.isSmoothForm.smul a).add (hψ.isSmoothForm.smul b), (SmoothForm.isClosed_def _).1
+    ((hφ.isClosed_toSmoothForm.smul a).add (hψ.isClosed_toSmoothForm.smul b)), fun x v hv ↦ ?_⟩
+  simp only [Pi.add_apply, Pi.smul_apply, ContinuousAlternatingMap.add_apply,
+    ContinuousAlternatingMap.smul_apply, smul_eq_mul]
+  refine (abs_add_le _ _).trans ?_
+  rw [abs_mul, abs_mul, abs_of_nonneg ha, abs_of_nonneg hb]
+  linarith [mul_le_mul_of_nonneg_left (hφ.abs_apply_le_one x hv) ha,
+    mul_le_mul_of_nonneg_left (hψ.abs_apply_le_one x hv) hb]
 
 end Projections
 
@@ -225,27 +208,24 @@ have boundary or corners. -/
 theorem isCalibration_ofFunction_iff
     (g : ContMDiffRiemannianMetric I ∞ E (fun x : M ↦ TangentSpace I x)) (f : M → ℝ) :
     IsCalibration g (RoughForm.ofFunction I f) ↔ IsLocallyConstant f ∧ ∀ x, |f x| ≤ 1 := by
-  refine ⟨fun h ↦ ⟨?_, fun x ↦ ?_⟩, fun ⟨hlc, hb⟩ ↦ ?_⟩
+  refine ⟨fun h ↦ ⟨?_, fun x ↦ by simpa using h.abs_apply_le_one x (v := ![]) (fun i ↦ i.elim0)⟩,
+    fun ⟨hlc, hb⟩ ↦ ?_⟩
   · have hf : ContMDiff I 𝓘(ℝ) ∞ f := isSmoothForm_ofFunction_iff.1 h.isSmoothForm
     exact (mextDeriv_ofFunction_eq_zero_iff (hf.mdifferentiable (by simp))).1 h.mextDeriv_eq_zero
-  · simpa using h.abs_apply_le_one x (v := ![]) (fun i ↦ i.elim0)
   · have hf : ContMDiff I 𝓘(ℝ) ∞ f := fun x ↦
       contMDiffAt_const.congr_of_eventuallyEq ((IsLocallyConstant.iff_eventually_eq f).1 hlc x)
-    refine ⟨isSmoothForm_ofFunction_iff.2 hf,
-      (mextDeriv_ofFunction_eq_zero_iff (hf.mdifferentiable (by simp))).2 hlc, fun x v _ ↦ ?_⟩
-    simpa using hb x
+    exact ⟨isSmoothForm_ofFunction_iff.2 hf,
+      (mextDeriv_ofFunction_eq_zero_iff (hf.mdifferentiable (by simp))).2 hlc,
+      fun x _ _ ↦ by simpa using hb x⟩
 
 /-- **Characterization of degree-zero calibrations**: a rough `0`-form `φ` is a calibration if and
 only if `x ↦ φ x ![]` is locally constant with values in `[-1, 1]`. -/
 theorem isCalibration_zero_degree_iff
-    (g : ContMDiffRiemannianMetric I ∞ E (fun x : M ↦ TangentSpace I x))
-    (φ : RoughForm I M ℝ 0) :
-    IsCalibration g φ ↔
-      IsLocallyConstant (fun x ↦ φ x ![]) ∧ ∀ x, |φ x ![]| ≤ 1 := by
-  have hφ : φ = RoughForm.ofFunction I (fun x ↦ φ x ![]) := by
-    refine (RoughForm.eq_ofFunction φ).trans ?_
-    congr with x
-    exact congrArg (φ x) (Subsingleton.elim 0 ![])
+    (g : ContMDiffRiemannianMetric I ∞ E (fun x : M ↦ TangentSpace I x)) (φ : RoughForm I M ℝ 0) :
+    IsCalibration g φ ↔ IsLocallyConstant (fun x ↦ φ x ![]) ∧ ∀ x, |φ x ![]| ≤ 1 := by
+  have hφ : φ = RoughForm.ofFunction I (fun x ↦ φ x ![]) :=
+    (RoughForm.eq_ofFunction φ).trans
+      (by congr with x; exact congrArg (φ x) (Subsingleton.elim 0 ![]))
   conv_lhs => rw [hφ]
   exact isCalibration_ofFunction_iff g (fun x ↦ φ x ![])
 
@@ -259,8 +239,8 @@ variable {E' H' N : Type*} [NormedAddCommGroup E'] [NormedSpace ℝ E'] [Topolog
 /-- Pulling a calibration `φ` on `(M, g)` back along a smooth map `f : N → M` that intertwines `g'`
 and `g` (`g'_{y}(v, w) = g_{f y}(df_y v, df_y w)`) gives a calibration on `(N, g')`. -/
 theorem IsCalibration.mpullback_of_inner_eq
-    {g : ContMDiffRiemannianMetric I ∞ E (fun x : M ↦ TangentSpace I x)}
-    {φ : RoughForm I M ℝ k} (hφ : IsCalibration g φ)
+    {g : ContMDiffRiemannianMetric I ∞ E (fun x : M ↦ TangentSpace I x)} {φ : RoughForm I M ℝ k}
+    (hφ : IsCalibration g φ)
     (g' : ContMDiffRiemannianMetric I' ∞ E' (fun y : N ↦ TangentSpace I' y))
     {f : N → M} (hf : ContMDiff I' I ∞ f)
     (hg : ∀ y v w, g'.inner y v w = g.inner (f y) (mfderiv I' I f y v) (mfderiv I' I f y w)) :
@@ -269,18 +249,16 @@ theorem IsCalibration.mpullback_of_inner_eq
       RoughForm I' N ℝ k) = TauCeti.mpullback I' I f φ := by
     rw [SmoothForm.coe_mpullback, hφ.coe_toSmoothForm]
   refine ⟨hcoe ▸ (SmoothForm.mpullback f hf hφ.toSmoothForm).isSmoothForm,
-    hcoe ▸ (SmoothForm.isClosed_def _).1 (hφ.isClosed_toSmoothForm.mpullback f hf),
-    fun y v hv ↦ ?_⟩
+    hcoe ▸ (SmoothForm.isClosed_def _).1 (hφ.isClosed_toSmoothForm.mpullback f hf), fun y v hv ↦ ?_⟩
   rw [mpullback_apply]
-  refine hφ.abs_apply_le_one (f y) fun i j ↦ ?_
-  rw [← hg y (v i) (v j), hv i j]
+  exact hφ.abs_apply_le_one (f y) fun i j ↦ by rw [← hg y (v i) (v j), hv i j]
 
 /-- Pulling a calibration `φ` on `(M, g)` back along a smooth immersion `f : N → M` gives a
 calibration for the pullback metric `f*g` on `N`. -/
 theorem IsCalibration.mpullback [FiniteDimensional ℝ E']
-    {g : ContMDiffRiemannianMetric I ∞ E (fun x : M ↦ TangentSpace I x)}
-    {φ : RoughForm I M ℝ k} (hφ : IsCalibration g φ)
-    (f : N → M) (hf : ContMDiff I' I ∞ f) (hinj : ∀ y, Function.Injective (mfderiv I' I f y)) :
+    {g : ContMDiffRiemannianMetric I ∞ E (fun x : M ↦ TangentSpace I x)} {φ : RoughForm I M ℝ k}
+    (hφ : IsCalibration g φ) (f : N → M) (hf : ContMDiff I' I ∞ f)
+    (hinj : ∀ y, Function.Injective (mfderiv I' I f y)) :
     IsCalibration (g.pullback f (by simpa using hf) hinj) (TauCeti.mpullback I' I f φ) :=
   hφ.mpullback_of_inner_eq _ hf fun y v w ↦
     ContMDiffRiemannianMetric.pullback_inner g f (by simpa using hf) hinj y v w
@@ -288,8 +266,8 @@ theorem IsCalibration.mpullback [FiniteDimensional ℝ E']
 /-- Restricting a calibration `φ` on `(M, g)` to an open subset `U : Opens M` gives a calibration
 for the restricted metric `g.restrictOpenTangentSpace U`. -/
 theorem IsCalibration.restrictOpenTangentSpace
-    {g : ContMDiffRiemannianMetric I ∞ E (fun x : M ↦ TangentSpace I x)}
-    {φ : RoughForm I M ℝ k} (hφ : IsCalibration g φ) (U : TopologicalSpace.Opens M) :
+    {g : ContMDiffRiemannianMetric I ∞ E (fun x : M ↦ TangentSpace I x)} {φ : RoughForm I M ℝ k}
+    (hφ : IsCalibration g φ) (U : TopologicalSpace.Opens M) :
     IsCalibration (g.restrictOpenTangentSpace U)
       (TauCeti.mpullback I I (Subtype.val : U → M) φ) :=
   hφ.mpullback_of_inner_eq (g.restrictOpenTangentSpace U) contMDiff_subtype_val fun y v w ↦ by
@@ -301,8 +279,7 @@ end Pullback
 section FiniteDimensional
 
 variable [FiniteDimensional ℝ E]
-  {g : ContMDiffRiemannianMetric I ∞ E (fun x : M ↦ TangentSpace I x)}
-  {φ : RoughForm I M ℝ k}
+  {g : ContMDiffRiemannianMetric I ∞ E (fun x : M ↦ TangentSpace I x)} {φ : RoughForm I M ℝ k}
 
 /-- **Pointwise linear calibration inequality**: for a calibration `φ` on `(M, g)` and any `k`-tuple
 `v` of tangent vectors at `x`, `|φ x v| ≤ ‖v₁ ∧ ⋯ ∧ vₖ‖` in the metric induced by `g_x` on the
@@ -314,12 +291,8 @@ theorem IsCalibration.abs_apply_le_norm_ιMulti (hφ : IsCalibration g φ) (x : 
         ‖ιMulti ℝ k v‖) := by
   let : RiemannianBundle (fun x : M ↦ TangentSpace I x) := ⟨g.toRiemannianMetric⟩
   have : FiniteDimensional ℝ (TangentSpace I x) := inferInstanceAs (FiniteDimensional ℝ E)
-  calc |φ x v|
-      = ‖φ x v‖ := (Real.norm_eq_abs _).symm
-    _ ≤ ‖φ x‖ * ‖ιMulti ℝ k v‖ := (φ x).le_opNorm_mul_norm_ιMulti v
-    _ ≤ 1 * ‖ιMulti ℝ k v‖ :=
-        mul_le_mul_of_nonneg_right (hφ.norm_le_one x) (norm_nonneg _)
-    _ = ‖ιMulti ℝ k v‖ := one_mul _
+  refine (Real.norm_eq_abs _).symm.trans_le (((φ x).le_opNorm_mul_norm_ιMulti v).trans ?_)
+  simpa only [one_mul] using mul_le_mul_of_nonneg_right (hφ.norm_le_one x) (norm_nonneg _)
 
 /-- **The Riemannian volume form is a calibration** in every dimension `m`, including `m = 0` and on
 manifolds with boundary or corners. -/
@@ -332,8 +305,7 @@ theorem isCalibration_riemannianVolumeForm {m : ℕ}
   have : IsContMDiffRiemannianBundle I ∞ E (fun x : M ↦ TangentSpace I x) :=
     Bundle.instIsContMDiffRiemannianBundle g
   have : IsManifold I (∞ + 1) M := by simpa using (inferInstance : IsManifold I ∞ M)
-  rw [isCalibration_iff_norm_le_one]
-  refine ⟨isSmoothForm_riemannianVolumeForm o,
+  refine isCalibration_iff_norm_le_one.2 ⟨isSmoothForm_riemannianVolumeForm o,
     mextDeriv_eq_zero_of_finrank_le (by simpa using o.card_eq.ge) _, fun x ↦ ?_⟩
   let := o.fact_finrank_tangentSpace x
   rw [riemannianVolumeForm_def, (o.orientationAt x).norm_volumeFormL]
@@ -351,11 +323,9 @@ a calibration if and only if `A` has comass `‖A‖ ≤ 1`. -/
 theorem isCalibration_const_iff (A : V [⋀^Fin k]→L[ℝ] ℝ) :
     IsCalibration ((riemannianMetricVectorSpace V).ofLE le_top) (SmoothForm.const A).1 ↔
       ‖A‖ ≤ 1 := by
-  rw [isCalibration_def]
-  have hsmooth : IsSmoothForm 𝓘(ℝ, V) ∞ (SmoothForm.const A).1 := (SmoothForm.const A).isSmoothForm
-  have hclosed : mextDeriv (SmoothForm.const A).1 = 0 :=
-    (SmoothForm.isClosed_def _).1 (SmoothForm.isClosed_const A)
-  rw [and_iff_right hsmooth, and_iff_right hclosed, A.opNorm_le_iff_le_orthonormal zero_le_one]
+  rw [isCalibration_def, and_iff_right (SmoothForm.const A).isSmoothForm,
+    and_iff_right ((SmoothForm.isClosed_def _).1 (SmoothForm.isClosed_const A)),
+    A.opNorm_le_iff_le_orthonormal zero_le_one]
   have hinner (x : V) (u w : TangentSpace 𝓘(ℝ, V) x) :
       (riemannianMetricVectorSpace V).inner x u w =
         inner ℝ (NormedSpace.fromTangentSpace x u) (NormedSpace.fromTangentSpace x w) := by
@@ -366,10 +336,8 @@ theorem isCalibration_const_iff (A : V [⋀^Fin k]→L[ℝ] ℝ) :
       norm_tangentSpace_vectorSpace]
   refine ⟨fun h u hu ↦ ?_, fun h x v hv ↦ ?_⟩
   · rw [Real.norm_eq_abs]
-    let v : Fin k → TangentSpace 𝓘(ℝ, V) (0 : V) :=
-      fun i ↦ (NormedSpace.fromTangentSpace 0).symm (u i)
-    simpa [v] using h 0 v fun i j ↦ by
-      simpa [v, hinner] using orthonormal_iff_ite.1 hu i j
+    simpa using h 0 (fun i ↦ (NormedSpace.fromTangentSpace 0).symm (u i)) fun i j ↦ by
+      simpa [hinner] using orthonormal_iff_ite.1 hu i j
   · rw [SmoothForm.const_apply, ← Real.norm_eq_abs]
     refine h (fun i ↦ NormedSpace.fromTangentSpace x (v i)) (orthonormal_iff_ite.2 fun i j ↦ ?_)
     rw [← hinner x (v i) (v j), ← hv i j, ContMDiffRiemannianMetric.ofLE_inner]

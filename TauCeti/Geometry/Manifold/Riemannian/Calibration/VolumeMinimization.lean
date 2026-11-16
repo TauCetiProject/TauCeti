@@ -120,18 +120,15 @@ theorem abs_integralTopForm_mpullback_eq_immersionVolume_iff (hφ : IsCalibratio
   have hnn : 0 ≤ immersionVolume g f hf hinj o := immersionVolume_nonneg g f hf hinj o
   have hneg : integralTopForm o (mpullback I' I f (-φ)) =
       -integralTopForm o (mpullback I' I f φ) := by
-    have hpull : mpullback I' I f (-φ) = (-1 : ℝ) • mpullback I' I f φ := by
-      funext x
-      ext v
-      simp
+    have hpull : mpullback I' I f (-φ) = (-1 : ℝ) • mpullback I' I f φ := by funext x; ext v; simp
     rw [hpull, integralTopForm_smul, neg_one_mul]
   rw [← integralTopForm_mpullback_eq_immersionVolume_iff_isCalibratedImmersion g f hf hinj o hφ,
     ← integralTopForm_mpullback_eq_immersionVolume_iff_isCalibratedImmersion g f hf hinj o hφ.neg,
     hneg]
   refine ⟨fun h ↦ ?_, fun h ↦ ?_⟩
-  · rcases abs_choice (integralTopForm o (mpullback I' I f φ)) with hpos | hneg'
-    · exact Or.inl (hpos.symm.trans h)
-    · exact Or.inr (hneg'.symm.trans h)
+  · rcases abs_choice (integralTopForm o (mpullback I' I f φ)) with hp | hn
+    · exact Or.inl (hp.symm.trans h)
+    · exact Or.inr (hn.symm.trans h)
   · rcases h with h | h
     · rw [h, abs_of_nonneg hnn]
     · rw [neg_eq_iff_eq_neg.1 h, abs_neg, abs_of_nonneg hnn]
@@ -140,14 +137,12 @@ end EqualityCase
 
 section FundamentalTheorem
 
-variable {E H M : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
-  [TopologicalSpace H] {I : ModelWithCorners ℝ E H} [TopologicalSpace M] [ChartedSpace H M]
-  [IsManifold I ∞ M]
+variable {E H M : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [TopologicalSpace H]
+  {I : ModelWithCorners ℝ E H} [TopologicalSpace M] [ChartedSpace H M] [IsManifold I ∞ M]
   {E' H' N : Type*} [NormedAddCommGroup E'] [NormedSpace ℝ E'] [FiniteDimensional ℝ E']
   [TopologicalSpace H'] {I' : ModelWithCorners ℝ E' H'} [TopologicalSpace N] [ChartedSpace H' N]
-  [IsManifold I' ∞ N]
-  {E'' H'' N' : Type*} [NormedAddCommGroup E''] [NormedSpace ℝ E''] [FiniteDimensional ℝ E'']
-  [TopologicalSpace H''] {I'' : ModelWithCorners ℝ E'' H''}
+  [IsManifold I' ∞ N] {E'' H'' N' : Type*} [NormedAddCommGroup E''] [NormedSpace ℝ E'']
+  [FiniteDimensional ℝ E''] [TopologicalSpace H''] {I'' : ModelWithCorners ℝ E'' H''}
   [TopologicalSpace N'] [ChartedSpace H'' N'] [IsManifold I'' ∞ N'] [CompactSpace N'] {k : ℕ}
 
 /-- **Single-form volume minimization**: if `(f, o)` is calibrated by a calibration `φ` and a
@@ -156,30 +151,25 @@ competing immersion `(f', o')` of a compact oriented `k`-manifold `N'` has the s
 Neither `N` nor `N'` need be boundaryless once the period equality is given. -/
 theorem immersionVolume_le_of_integralTopForm_mpullback_eq
     (g : ContMDiffRiemannianMetric I ∞ E (fun x : M ↦ TangentSpace I x)) (φ : RoughForm I M ℝ k)
-    (hφ : IsCalibration g φ)
-    (f : N → M) (hf : ContMDiff I' I ∞ f) (hinj : ∀ x, Function.Injective (mfderiv I' I f x))
-    (o : Manifold.Orientation I' N (Fin k)) (hcal : IsCalibratedImmersion g φ f hf hinj o)
-    (f' : N' → M) (hf' : ContMDiff I'' I ∞ f')
+    (hφ : IsCalibration g φ) (f : N → M) (hf : ContMDiff I' I ∞ f)
+    (hinj : ∀ x, Function.Injective (mfderiv I' I f x)) (o : Manifold.Orientation I' N (Fin k))
+    (hcal : IsCalibratedImmersion g φ f hf hinj o) (f' : N' → M) (hf' : ContMDiff I'' I ∞ f')
     (hinj' : ∀ x, Function.Injective (mfderiv I'' I f' x))
     (o' : Manifold.Orientation I'' N' (Fin k))
     (hperiod : integralTopForm o (mpullback I' I f φ) =
       integralTopForm o' (mpullback I'' I f' φ)) :
     immersionVolume g f hf hinj o ≤ immersionVolume g f' hf' hinj' o' :=
-  calc immersionVolume g f hf hinj o
-      = integralTopForm o (mpullback I' I f φ) := hcal.integralTopForm_mpullback_eq.symm
-    _ = integralTopForm o' (mpullback I'' I f' φ) := hperiod
-    _ ≤ immersionVolume g f' hf' hinj' o' :=
-        integralTopForm_mpullback_le_immersionVolume g f' hf' hinj' o' hφ
+  (hcal.integralTopForm_mpullback_eq.symm.trans hperiod).trans_le
+    (integralTopForm_mpullback_le_immersionVolume g f' hf' hinj' o' hφ)
 
 /-- **Equality case of single-form volume minimization**: under the hypotheses of
 `immersionVolume_le_of_integralTopForm_mpullback_eq`, the competing immersion `(f', o')` has the
 same volume as `(f, o)` if and only if `(f', o')` is also calibrated by `φ`. -/
 theorem immersionVolume_eq_iff_isCalibratedImmersion_of_integralTopForm_mpullback_eq
     (g : ContMDiffRiemannianMetric I ∞ E (fun x : M ↦ TangentSpace I x)) (φ : RoughForm I M ℝ k)
-    (hφ : IsCalibration g φ)
-    (f : N → M) (hf : ContMDiff I' I ∞ f) (hinj : ∀ x, Function.Injective (mfderiv I' I f x))
-    (o : Manifold.Orientation I' N (Fin k)) (hcal : IsCalibratedImmersion g φ f hf hinj o)
-    (f' : N' → M) (hf' : ContMDiff I'' I ∞ f')
+    (hφ : IsCalibration g φ) (f : N → M) (hf : ContMDiff I' I ∞ f)
+    (hinj : ∀ x, Function.Injective (mfderiv I' I f x)) (o : Manifold.Orientation I' N (Fin k))
+    (hcal : IsCalibratedImmersion g φ f hf hinj o) (f' : N' → M) (hf' : ContMDiff I'' I ∞ f')
     (hinj' : ∀ x, Function.Injective (mfderiv I'' I f' x))
     (o' : Manifold.Orientation I'' N' (Fin k))
     (hperiod : integralTopForm o (mpullback I' I f φ) =
@@ -197,10 +187,9 @@ needed when establishing the closed-form period hypothesis via Stokes' theorem (
 `immersionVolume_le_of_homotopy`), so they are not assumed here. -/
 theorem immersionVolume_le_of_isCalibratedImmersion
     (g : ContMDiffRiemannianMetric I ∞ E (fun x : M ↦ TangentSpace I x)) (φ : RoughForm I M ℝ k)
-    (hφ : IsCalibration g φ)
-    (f : N → M) (hf : ContMDiff I' I ∞ f) (hinj : ∀ x, Function.Injective (mfderiv I' I f x))
-    (o : Manifold.Orientation I' N (Fin k)) (hcal : IsCalibratedImmersion g φ f hf hinj o)
-    (f' : N' → M) (hf' : ContMDiff I'' I ∞ f')
+    (hφ : IsCalibration g φ) (f : N → M) (hf : ContMDiff I' I ∞ f)
+    (hinj : ∀ x, Function.Injective (mfderiv I' I f x)) (o : Manifold.Orientation I' N (Fin k))
+    (hcal : IsCalibratedImmersion g φ f hf hinj o) (f' : N' → M) (hf' : ContMDiff I'' I ∞ f')
     (hinj' : ∀ x, Function.Injective (mfderiv I'' I f' x))
     (o' : Manifold.Orientation I'' N' (Fin k))
     (hhom : ∀ η : RoughForm I M ℝ k, IsSmoothForm I ∞ η → mextDeriv η = 0 →
@@ -215,10 +204,9 @@ closed-form periods as a `φ`-calibrated immersion `(f, o)` has the same volume 
 `(f', o')` is also calibrated by `φ`. -/
 theorem immersionVolume_eq_iff_isCalibratedImmersion
     (g : ContMDiffRiemannianMetric I ∞ E (fun x : M ↦ TangentSpace I x)) (φ : RoughForm I M ℝ k)
-    (hφ : IsCalibration g φ)
-    (f : N → M) (hf : ContMDiff I' I ∞ f) (hinj : ∀ x, Function.Injective (mfderiv I' I f x))
-    (o : Manifold.Orientation I' N (Fin k)) (hcal : IsCalibratedImmersion g φ f hf hinj o)
-    (f' : N' → M) (hf' : ContMDiff I'' I ∞ f')
+    (hφ : IsCalibration g φ) (f : N → M) (hf : ContMDiff I' I ∞ f)
+    (hinj : ∀ x, Function.Injective (mfderiv I' I f x)) (o : Manifold.Orientation I' N (Fin k))
+    (hcal : IsCalibratedImmersion g φ f hf hinj o) (f' : N' → M) (hf' : ContMDiff I'' I ∞ f')
     (hinj' : ∀ x, Function.Injective (mfderiv I'' I f' x))
     (o' : Manifold.Orientation I'' N' (Fin k))
     (hhom : ∀ η : RoughForm I M ℝ k, IsSmoothForm I ∞ η → mextDeriv η = 0 →
@@ -232,9 +220,8 @@ end FundamentalTheorem
 
 section StokesAndHomotopy
 
-variable {E H M : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
-  [TopologicalSpace H] {I : ModelWithCorners ℝ E H} [TopologicalSpace M] [ChartedSpace H M]
-  [IsManifold I ∞ M]
+variable {E H M : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [TopologicalSpace H]
+  {I : ModelWithCorners ℝ E H} [TopologicalSpace M] [ChartedSpace H M] [IsManifold I ∞ M]
   {E' H' N : Type*} [NormedAddCommGroup E'] [NormedSpace ℝ E'] [FiniteDimensional ℝ E']
   [TopologicalSpace H'] {I' : ModelWithCorners ℝ E' H'} [TopologicalSpace N] [ChartedSpace H' N]
   [IsManifold I' ∞ N] [BoundarylessManifold I' N] [T2Space N] [CompactSpace N]
@@ -247,15 +234,11 @@ theorem IsCalibratedImmersion.mextDeriv_ne [Nonempty N] {n : ℕ}
     {g : ContMDiffRiemannianMetric I ∞ E (fun x : M ↦ TangentSpace I x)}
     {φ : RoughForm I M ℝ (n + 1)} {f : N → M} {hf : ContMDiff I' I ∞ f}
     {hinj : ∀ x, Function.Injective (mfderiv I' I f x)}
-    {o : Manifold.Orientation I' N (Fin (n + 1))}
-    (hcal : IsCalibratedImmersion g φ f hf hinj o)
-    {α : RoughForm I M ℝ n} (hα : IsSmoothForm I 1 α) :
-    mextDeriv α ≠ φ := by
+    {o : Manifold.Orientation I' N (Fin (n + 1))} (hcal : IsCalibratedImmersion g φ f hf hinj o)
+    {α : RoughForm I M ℝ n} (hα : IsSmoothForm I 1 α) : mextDeriv α ≠ φ := by
   intro h
-  have hpull : mpullback I' I f φ = mextDeriv (mpullback I' I f α) := by
-    rw [← h, mpullback_mextDeriv (hf.of_le (by simp)) ((isSmoothBundleForm_def 1 α).2 hα.contMDiff)]
   have hzero : integralTopForm o (mpullback I' I f φ) = 0 := by
-    rw [hpull]
+    rw [← h, mpullback_mextDeriv (hf.of_le (by simp)) ((isSmoothBundleForm_def 1 α).2 hα.contMDiff)]
     exact integralTopForm_mextDeriv_eq_zero o (hα.mpullback (hf.of_le (by simp)))
       (isClosed_tsupport _).isCompact
   exact (immersionVolume_pos g f hf hinj o).ne'
@@ -268,33 +251,25 @@ Hausdorff `k`-manifold `N` (in any degree `k ≥ 0`), then the de Rham cohomolog
 theorem IsCalibratedImmersion.deRhamCohomology_mk_ne_zero [Nonempty N] {k : ℕ}
     {g : ContMDiffRiemannianMetric I ∞ E (fun x : M ↦ TangentSpace I x)}
     {φ : RoughForm I M ℝ k} (hφ : IsCalibration g φ) {f : N → M} {hf : ContMDiff I' I ∞ f}
-    {hinj : ∀ x, Function.Injective (mfderiv I' I f x)}
-    {o : Manifold.Orientation I' N (Fin k)}
+    {hinj : ∀ x, Function.Injective (mfderiv I' I f x)} {o : Manifold.Orientation I' N (Fin k)}
     (hcal : IsCalibratedImmersion g φ f hf hinj o) :
-    deRhamCohomology.mk I k
-        ⟨hφ.toSmoothForm, (mem_closedForms I _).2 (by
-          rw [hφ.coe_toSmoothForm]
-          exact hφ.mextDeriv_eq_zero)⟩ ≠
-      0 := by
+    deRhamCohomology.mk I k ⟨hφ.toSmoothForm, (mem_closedForms I _).2
+      ((congrArg mextDeriv hφ.coe_toSmoothForm).trans hφ.mextDeriv_eq_zero)⟩ ≠ 0 := by
   rw [Ne, deRhamCohomology.mk_eq_zero_iff]
   cases k with
   | zero =>
-    rw [exactForms_zero, Submodule.mem_bot]
-    intro hzero
+    rw [exactForms_zero, Submodule.mem_bot]; intro hzero
     have hφ0 : φ = 0 := hφ.coe_toSmoothForm.symm.trans (congrArg Subtype.val hzero)
-    have hint : integralTopForm o (mpullback I' I f φ) = 0 := by simp [hφ0]
     exact (immersionVolume_pos g f hf hinj o).ne'
-      (hcal.integralTopForm_mpullback_eq.symm.trans hint)
+      (hcal.integralTopForm_mpullback_eq.symm.trans (by simp [hφ0]))
   | succ n =>
-    rw [exactForms_succ, LinearMap.mem_range]
-    rintro ⟨α, hα⟩
+    rw [exactForms_succ, LinearMap.mem_range]; rintro ⟨α, hα⟩
     exact hcal.mextDeriv_ne (α.isSmoothForm.of_le (by simp))
       (by simpa [mextDerivₗ_apply] using (congrArg Subtype.val hα).trans hφ.coe_toSmoothForm)
 
 /-- On a compact boundaryless Hausdorff oriented `k`-manifold `N`, smoothly homotopic maps
 `f, f' : N → M` have equal periods on every smooth closed `k`-form `η` on `M`. -/
-theorem integralTopForm_mpullback_eq_of_homotopy {k : ℕ}
-    (o : Manifold.Orientation I' N (Fin k))
+theorem integralTopForm_mpullback_eq_of_homotopy {k : ℕ} (o : Manifold.Orientation I' N (Fin k))
     {f f' : N → M} (hf : ContMDiff I' I ∞ f) (hf' : ContMDiff I' I ∞ f')
     {F : N × Icc (0 : ℝ) 1 → M} (hF : ContMDiff (I'.prod (𝓡∂ 1)) I ∞ F)
     (h₀ : ∀ x, F (x, 0) = f x) (h₁ : ∀ x, F (x, 1) = f' x)
@@ -306,43 +281,35 @@ theorem integralTopForm_mpullback_eq_of_homotopy {k : ℕ}
   rw [deRhamCohomology.map_mk, deRhamCohomology.map_mk, ← sub_eq_zero, ← map_sub,
     deRhamCohomology.mk_eq_zero_iff] at hmap
   have hexact : SmoothForm.mpullback f hf ηc.1 - SmoothForm.mpullback f' hf' ηc.1 ∈
-      exactForms I' N k := by
-    simpa only [Submodule.coe_sub, closedForms.coe_mpullback] using hmap
+      exactForms I' N k := by simpa only [Submodule.coe_sub, closedForms.coe_mpullback] using hmap
   have hint0 : integralTopForm o
       (SmoothForm.mpullback f hf ηc.1 - SmoothForm.mpullback f' hf' ηc.1).1 = 0 := by
     cases k with
     | zero =>
-      rw [exactForms_zero, Submodule.mem_bot] at hexact
-      rw [hexact]
-      exact integralTopForm_zero o
+      rw [exactForms_zero, Submodule.mem_bot] at hexact; rw [hexact]; exact integralTopForm_zero o
     | succ n =>
-      rw [exactForms_succ, LinearMap.mem_range] at hexact
-      obtain ⟨β, hβ⟩ := hexact
+      rw [exactForms_succ, LinearMap.mem_range] at hexact; obtain ⟨β, hβ⟩ := hexact
       rw [← hβ, mextDerivₗ_apply]
       exact integralTopForm_mextDeriv_eq_zero o (β.isSmoothForm.of_le (by simp))
         (isClosed_tsupport _).isCompact
-  have hpullf : (SmoothForm.mpullback f hf ηc.1).1 = mpullback I' I f η :=
-    SmoothForm.coe_mpullback f hf ηc.1
-  have hpullf' : (SmoothForm.mpullback f' hf' ηc.1).1 = mpullback I' I f' η :=
-    SmoothForm.coe_mpullback f' hf' ηc.1
   have hsub : (SmoothForm.mpullback f hf ηc.1 - SmoothForm.mpullback f' hf' ηc.1).1 =
       mpullback I' I f η + (-1 : ℝ) • mpullback I' I f' η := by
-    rw [Submodule.coe_sub, hpullf, hpullf', sub_eq_add_neg, neg_one_smul]
-  rw [hsub, integralTopForm_add_of_compactSpace o
+    rw [Submodule.coe_sub, SmoothForm.coe_mpullback, SmoothForm.coe_mpullback, sub_eq_add_neg,
+      neg_one_smul]
+  rwa [hsub, integralTopForm_add_of_compactSpace o
     ((hη.of_le (by simp)).mpullback (hf.of_le (by simp)))
     (((hη.of_le (by simp)).mpullback (hf'.of_le (by simp))).smul (-1)),
     integralTopForm_smul, neg_one_mul, add_neg_eq_zero] at hint0
-  exact hint0
 
 /-- **Smooth-homotopy volume minimization**: on a compact boundaryless Hausdorff oriented
 `k`-manifold `N`, an immersion `(f, o)` calibrated by a smooth calibration `φ` minimizes volume
 among all smooth immersions `f' : N → M` smoothly homotopic to `f`. -/
 theorem immersionVolume_le_of_homotopy {k : ℕ}
     (g : ContMDiffRiemannianMetric I ∞ E (fun x : M ↦ TangentSpace I x)) (φ : RoughForm I M ℝ k)
-    (hφ : IsCalibration g φ)
-    (f : N → M) (hf : ContMDiff I' I ∞ f) (hinj : ∀ x, Function.Injective (mfderiv I' I f x))
-    (o : Manifold.Orientation I' N (Fin k)) (hcal : IsCalibratedImmersion g φ f hf hinj o)
-    (f' : N → M) (hf' : ContMDiff I' I ∞ f') (hinj' : ∀ x, Function.Injective (mfderiv I' I f' x))
+    (hφ : IsCalibration g φ) (f : N → M) (hf : ContMDiff I' I ∞ f)
+    (hinj : ∀ x, Function.Injective (mfderiv I' I f x)) (o : Manifold.Orientation I' N (Fin k))
+    (hcal : IsCalibratedImmersion g φ f hf hinj o) (f' : N → M) (hf' : ContMDiff I' I ∞ f')
+    (hinj' : ∀ x, Function.Injective (mfderiv I' I f' x))
     {F : N × Icc (0 : ℝ) 1 → M} (hF : ContMDiff (I'.prod (𝓡∂ 1)) I ∞ F)
     (h₀ : ∀ x, F (x, 0) = f x) (h₁ : ∀ x, F (x, 1) = f' x) :
     immersionVolume g f hf hinj o ≤ immersionVolume g f' hf' hinj' o :=
@@ -354,10 +321,10 @@ homotopic to a `φ`-calibrated immersion `(f, o)` on a compact boundaryless Haus
 `k`-manifold `N` has equal volume if and only if `(f', o)` is also calibrated by `φ`. -/
 theorem immersionVolume_eq_iff_isCalibratedImmersion_of_homotopy {k : ℕ}
     (g : ContMDiffRiemannianMetric I ∞ E (fun x : M ↦ TangentSpace I x)) (φ : RoughForm I M ℝ k)
-    (hφ : IsCalibration g φ)
-    (f : N → M) (hf : ContMDiff I' I ∞ f) (hinj : ∀ x, Function.Injective (mfderiv I' I f x))
-    (o : Manifold.Orientation I' N (Fin k)) (hcal : IsCalibratedImmersion g φ f hf hinj o)
-    (f' : N → M) (hf' : ContMDiff I' I ∞ f') (hinj' : ∀ x, Function.Injective (mfderiv I' I f' x))
+    (hφ : IsCalibration g φ) (f : N → M) (hf : ContMDiff I' I ∞ f)
+    (hinj : ∀ x, Function.Injective (mfderiv I' I f x)) (o : Manifold.Orientation I' N (Fin k))
+    (hcal : IsCalibratedImmersion g φ f hf hinj o) (f' : N → M) (hf' : ContMDiff I' I ∞ f')
+    (hinj' : ∀ x, Function.Injective (mfderiv I' I f' x))
     {F : N × Icc (0 : ℝ) 1 → M} (hF : ContMDiff (I'.prod (𝓡∂ 1)) I ∞ F)
     (h₀ : ∀ x, F (x, 0) = f x) (h₁ : ∀ x, F (x, 1) = f' x) :
     immersionVolume g f hf hinj o = immersionVolume g f' hf' hinj' o ↔
@@ -387,8 +354,7 @@ theorem isCalibratedImmersion_id_riemannianVolumeForm
   let rb₂ : RiemannianBundle (fun x : M ↦ TangentSpace I x) := ⟨gid.toRiemannianMetric⟩
   rw [isCalibratedImmersion_def]
   exact @mpullback_riemannianVolumeForm_of_isOrientationPreservingAt
-    E H M _ _ _ _ I _ _ _ rb₁ m
-    E H M _ _ _ _ I _ _ _ rb₂ o o id
+    E H M _ _ _ _ I _ _ _ rb₁ m E H M _ _ _ _ I _ _ _ rb₂ o o id
     (Manifold.Orientation.isOrientationPreservingAt_id o) fun x u w ↦ by
       rw [ContMDiffRiemannianMetric.inner_riemannianBundle g,
         ContMDiffRiemannianMetric.inner_riemannianBundle gid,
@@ -406,14 +372,11 @@ theorem _root_.Orthonormal.isCalibration_const_alternatingFormEquiv_ιMulti
 
 /-- Every linear isometry between real normed spaces is a smooth immersion: its manifold derivative
 at every point is injective. -/
-theorem _root_.LinearIsometry.injective_mfderiv
-    {F V : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F]
-    [NormedAddCommGroup V] [NormedSpace ℝ V] (L : F →ₗᵢ[ℝ] V) (x : F) :
+theorem _root_.LinearIsometry.injective_mfderiv {F V : Type*} [NormedAddCommGroup F]
+    [NormedSpace ℝ F] [NormedAddCommGroup V] [NormedSpace ℝ V] (L : F →ₗᵢ[ℝ] V) (x : F) :
     Function.Injective (mfderiv 𝓘(ℝ, F) 𝓘(ℝ, V) L x) := by
-  have hfderiv : fderiv ℝ (L : F → V) x = L.toContinuousLinearMap :=
-    L.toContinuousLinearMap.fderiv
-  rw [mfderiv_eq_fderiv, hfderiv]
-  exact L.injective
+  have hfderiv : fderiv ℝ (L : F → V) x = L.toContinuousLinearMap := L.toContinuousLinearMap.fderiv
+  rw [mfderiv_eq_fderiv, hfderiv]; exact L.injective
 
 /-- **Every oriented linear isometric subspace is calibrated**: for any linear isometry
 `L : F →ₗᵢ[ℝ] V` from an oriented `k`-dimensional real inner product space `(F, oF)` into a
@@ -439,10 +402,8 @@ theorem isCalibratedImmersion_linearIsometry_const
   have hmf (x : F) (u : TangentSpace 𝓘(ℝ, F) x) :
       NormedSpace.fromTangentSpace (L x) (mfderiv 𝓘(ℝ, F) 𝓘(ℝ, V) L x u) =
         L (NormedSpace.fromTangentSpace x u) := by
-    have hfderiv : fderiv ℝ (L : F → V) x = L.toContinuousLinearMap :=
-      L.toContinuousLinearMap.fderiv
-    rw [mfderiv_eq_fderiv, hfderiv]
-    rfl
+    have hf : fderiv ℝ (L : F → V) x = L.toContinuousLinearMap := L.toContinuousLinearMap.fderiv
+    rw [mfderiv_eq_fderiv, hf]; rfl
   have hnorm (x : F) (u : TangentSpace 𝓘(ℝ, F) x) :
       ‖(NormedSpace.fromTangentSpace x u : F)‖ = ‖u‖ := by
     let : RiemannianBundle (fun y : V ↦ TangentSpace 𝓘(ℝ, V) y) :=
@@ -461,8 +422,7 @@ theorem isCalibratedImmersion_linearIsometry_const
     rw [alternatingFormEquiv_apply, real_inner_self_eq_norm_sq,
       (L.orthonormal_comp_iff.2 b.orthonormal).norm_ιMulti, one_pow]
   have hAvol : A = oF.volumeFormL := oF.eq_volumeFormL_of_apply_orthonormal A b hb hAb
-  rw [isCalibratedImmersion_def]
-  funext x
+  rw [isCalibratedImmersion_def]; funext x
   let := oM.fact_finrank_tangentSpace x
   let e : TangentSpace 𝓘(ℝ, F) x ≃ₗᵢ[ℝ] F :=
     { (NormedSpace.fromTangentSpace x).toLinearEquiv with norm_map' := hnorm x }
