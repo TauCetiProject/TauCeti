@@ -160,3 +160,47 @@ theorem isomorphismClassesHomeomorph_eq_of_iso (F : C ⥤ D) (G : C ⥤ D)
   exact ConcreteCategory.congr_hom (F.isomorphismClasses_map_eq_of_iso e) q
 
 end CategoryTheory.Functor
+
+namespace CategoryTheory.Equivalence
+
+universe v₁ v₂ u₁ u₂
+
+variable {C : Type u₁} {D : Type u₂} [Category.{v₁} C] [Category.{v₂} D]
+  [TopologicalSpace C] [TopologicalSpace D]
+
+/-- An equivalence of categories whose both directions are continuous on objects induces a
+homeomorphism between the spaces of isomorphism classes, across arbitrary universes. -/
+def isomorphismClassesHomeomorph (e : C ≌ D)
+    (hf : Continuous e.functor.obj) (hg : Continuous e.inverse.obj) :
+    Quotient (isIsomorphicSetoid C) ≃ₜ Quotient (isIsomorphicSetoid D) where
+  toFun := Quotient.map' e.functor.obj fun _ _ ⟨i⟩ ↦ ⟨e.functor.mapIso i⟩
+  invFun := Quotient.map' e.inverse.obj fun _ _ ⟨i⟩ ↦ ⟨e.inverse.mapIso i⟩
+  left_inv := by
+    intro q
+    induction q using Quotient.inductionOn with
+    | h x => exact Quotient.sound ⟨(e.unitIso.app x).symm⟩
+  right_inv := by
+    intro q
+    induction q using Quotient.inductionOn with
+    | h y => exact Quotient.sound ⟨e.counitIso.app y⟩
+  continuous_toFun := hf.quotient_map' _
+  continuous_invFun := hg.quotient_map' _
+
+@[simp]
+theorem isomorphismClassesHomeomorph_apply_mk (e : C ≌ D)
+    (hf : Continuous e.functor.obj) (hg : Continuous e.inverse.obj) (x : C) :
+    e.isomorphismClassesHomeomorph hf hg (Quotient.mk _ x) = Quotient.mk _ (e.functor.obj x) :=
+  (rfl)
+
+@[simp]
+theorem isomorphismClassesHomeomorph_symm (e : C ≌ D)
+    (hf : Continuous e.functor.obj) (hg : Continuous e.inverse.obj) :
+    (e.isomorphismClassesHomeomorph hf hg).symm = e.symm.isomorphismClassesHomeomorph hg hf :=
+  (rfl)
+
+theorem isomorphismClassesHomeomorph_symm_apply_mk (e : C ≌ D)
+    (hf : Continuous e.functor.obj) (hg : Continuous e.inverse.obj) (y : D) :
+    (e.isomorphismClassesHomeomorph hf hg).symm (Quotient.mk _ y) =
+      Quotient.mk _ (e.inverse.obj y) := (rfl)
+
+end CategoryTheory.Equivalence
