@@ -12,6 +12,13 @@ public import TauCeti.Analysis.Matrix.UnitaryGroup.Basic
 public import TauCeti.Analysis.SpecialFunctions.Complex.Arg
 public import TauCeti.Topology.Circle.Degree
 
+import Mathlib.Analysis.CStarAlgebra.Matrix
+import Mathlib.Analysis.CStarAlgebra.Spectrum
+import Mathlib.Analysis.Complex.Polynomial.Basic
+import Mathlib.LinearAlgebra.Matrix.Charpoly.Eigs
+import TauCeti.Analysis.Polynomial.ContinuityOfRoots.Basic
+import TauCeti.Topology.Instances.Matrix
+
 /-!
 # The Maslov index of a path of Lagrangian frames
 
@@ -65,15 +72,27 @@ frames by a fixed real orthogonal matrix does not change it
 (`Matrix.UnitaryGroup.maslovIndex_map_mul_left`). The localization axiom for nondiagonal `A` is
 deduced from the diagonal case in `TauCeti.Analysis.Matrix.UnitaryGroup.Maslov.Localization`.
 For paths of graphs, the comparison with the definition of the index by crossing forms is in
-`TauCeti.Analysis.Matrix.UnitaryGroup.Maslov.Crossing`. The zero axiom of Robbin and Salamon, that
-the index vanishes on a path along which the dimension of `U t ℝⁿ ∩ ℝⁿ` is constant, is not proved
-here.
+`TauCeti.Analysis.Matrix.UnitaryGroup.Maslov.Crossing`.
+
+The index also satisfies the zero axiom of Robbin and Salamon: it vanishes on a path along which
+the eigenvalue `1` of the Souriau maps keeps the same multiplicity, which is the dimension of
+`U t ℝⁿ ∩ ℝⁿ` (`Matrix.UnitaryGroup.maslovIndex_eq_zero_of_rootMultiplicity_eq`). The determinant
+of a unitary matrix `W` is `(-1) ^ (n - k) e^{2πi s(W)}`, where `k` is that multiplicity
+(`Matrix.det_eq_neg_one_pow_mul_exp_spectralAngleSum`), and `s` is continuous along a family of
+unitary matrices in which `k` is constant (`Matrix.continuousAt_spectralAngleSum`), since no other
+eigenvalue can then reach `1`. So `2π s(W t) + (n - k) π` is a continuous angle of `det (W t)`, and
+the two terms of the index cancel.
 
 ## Main declarations
 
 * `Matrix.spectralAngleSum`: the sum of `arg (-λ) / (2π)` over the eigenvalues `λ ≠ 1`.
 * `Matrix.UnitaryGroup.souriau`: the Souriau map `U ↦ U Uᵀ`.
 * `Matrix.UnitaryGroup.maslovIndex`: the Maslov index of a path of Lagrangian frames.
+* `Matrix.det_eq_neg_one_pow_mul_exp_spectralAngleSum`: the determinant of a unitary matrix through
+  its spectral angle sum.
+* `Matrix.continuousAt_spectralAngleSum`: the spectral angle sum is continuous where the
+  multiplicity of the eigenvalue `1` is locally constant.
+* `Matrix.UnitaryGroup.maslovIndex_eq_zero_of_rootMultiplicity_eq`: the zero axiom.
 
 ## References
 
@@ -89,8 +108,8 @@ here.
 
 public section
 
-open Complex Polynomial
-open scoped unitInterval
+open Complex Filter Polynomial
+open scoped ComplexOrder Topology unitInterval
 
 namespace Matrix
 
@@ -134,6 +153,67 @@ theorem spectralAngleSum_conj {P Q : Matrix n n ℂ} (hPQ : P * Q = 1) (hQP : Q 
   have h := charpoly_units_conj (⟨P, Q, hPQ, hQP⟩ : (Matrix n n ℂ)ˣ) W
   rw [Units.val_mk, inv_eq_left_inv hQP] at h
   rw [spectralAngleSum, spectralAngleSum, h]
+
+/-- Away from `1`, on the unit circle, the angle offset is continuous: there `-z` lies in the slit
+plane, where the argument is continuous. -/
+private theorem continuousAt_angleOffset {z : ℂ} (hz : ‖z‖ = 1) (hz1 : z ≠ 1) :
+    ContinuousAt angleOffset z := by
+  have hslit : -z ∈ slitPlane := by
+    rw [mem_slitPlane_iff_not_le_zero, neg_nonpos]
+    intro h
+    exact hz1 (by rw [eq_coe_norm_of_nonneg h, hz, ofReal_one])
+  refine ContinuousAt.congr (((continuousAt_arg hslit).comp continuous_neg.continuousAt).div_const
+    (2 * Real.pi)) ?_
+  filter_upwards [isOpen_ne.mem_nhds hz1] with w hw
+  simp [angleOffset, hw]
+
+/-- A product of complex numbers of modulus one is `(-1) ^ m e^{2πi s}`, where `s` is the sum of
+their angle offsets and `m` the number of factors different from `1`: each factor `z ≠ 1` is
+`-e^{i arg (-z)}`. -/
+private theorem multiset_prod_eq_neg_one_pow_mul_exp {s : Multiset ℂ} (hs : ∀ z ∈ s, ‖z‖ = 1) :
+    s.prod = (-1) ^ (Multiset.card s - s.count 1) *
+      exp (↑(2 * Real.pi * (s.map angleOffset).sum) * Complex.I) := by
+  induction s using Multiset.induction_on with
+  | empty => simp
+  | cons a s ih =>
+    rw [Multiset.prod_cons, ih fun z hz => hs z (Multiset.mem_cons_of_mem hz), Multiset.map_cons,
+      Multiset.sum_cons, mul_add, ofReal_add, add_mul, exp_add, Multiset.card_cons]
+    by_cases ha : a = 1
+    · rw [ha, Multiset.count_cons_self]
+      simp [angleOffset]
+    · have h := norm_mul_exp_arg_mul_I (-a)
+      rw [norm_neg, hs a (Multiset.mem_cons_self a s), ofReal_one, one_mul] at h
+      rw [Multiset.count_cons_of_ne (Ne.symm ha), Nat.sub_add_comm (Multiset.count_le_card 1 s),
+        pow_succ, angleOffset, ite_eq_right ha, mul_div_cancel₀ _ (by positivity), h]
+      ring
+
+open scoped Matrix.Norms.L2Operator in
+/-- The determinant of a unitary matrix `W` through its spectral angle sum:
+`det W = (-1) ^ (n - k) e^{2πi s(W)}`, where `k` is the multiplicity of the eigenvalue `1`.
+Equivalently, `e^{2πi s(W)}` is the product of `-λ` over the eigenvalues `λ ≠ 1` of `W`, counted
+with multiplicity. -/
+theorem det_eq_neg_one_pow_mul_exp_spectralAngleSum {W : Matrix n n ℂ}
+    (hW : W ∈ unitaryGroup n ℂ) :
+    W.det = (-1) ^ (Fintype.card n - W.charpoly.rootMultiplicity 1) *
+      exp (↑(2 * Real.pi * spectralAngleSum W) * Complex.I) := by
+  rw [det_eq_prod_roots_charpoly_of_splits (IsAlgClosed.splits _), ← count_roots,
+    ← charpoly_natDegree_eq_dim W, ← IsAlgClosed.card_roots_eq_natDegree, spectralAngleSum]
+  exact multiset_prod_eq_neg_one_pow_mul_exp fun z hz =>
+    spectrum.norm_eq_one_of_unitary hW (mem_spectrum_of_isRoot_charpoly (isRoot_of_mem_roots hz))
+
+open scoped Matrix.Norms.L2Operator in
+/-- The spectral angle sum is continuous at a unitary matrix `W x₀` along a continuous family of
+matrices `W x` in which the multiplicity of the eigenvalue `1` is locally constant. Without that
+hypothesis it jumps by an integer whenever an eigenvalue passes through `1`. -/
+theorem continuousAt_spectralAngleSum {X : Type*} [TopologicalSpace X] {W : X → Matrix n n ℂ}
+    {x₀ : X} (hW : ContinuousAt W x₀) (hu : W x₀ ∈ unitaryGroup n ℂ)
+    (h1 : ∀ᶠ x in 𝓝 x₀, (W x).charpoly.rootMultiplicity 1 = (W x₀).charpoly.rootMultiplicity 1) :
+    ContinuousAt (fun x => spectralAngleSum (W x)) x₀ :=
+  continuousAt_sum_map_roots (d := Fintype.card n)
+    (fun i _ => (continuous_charpoly_coeff i).continuousAt.comp hW)
+    (Eventually.of_forall fun x => charpoly_degree_eq_dim (W x))
+    (fun _ hz hz1 => continuousAt_angleOffset (spectrum.norm_eq_one_of_unitary hu
+      (mem_spectrum_of_isRoot_charpoly (isRoot_of_mem_roots hz))) hz1) h1
 
 namespace UnitaryGroup
 
@@ -308,6 +388,45 @@ theorem maslovIndex_eq_two_mul_degree {U : unitaryGroup n ℂ} (γ : Path U U) :
     Circle.degree_map_pow]
   push_cast
   ring
+
+/-- **The zero axiom.** If the eigenvalue `1` of the Souriau maps `γ t γ tᵀ` keeps the same
+multiplicity `k` along a path of frames, the Maslov index of the path vanishes. For a symmetric
+unitary matrix this multiplicity is the dimension of the intersection of the Lagrangian with `ℝⁿ`,
+so this is the zero axiom of Robbin and Salamon, stated through the Souriau maps: a path of
+Lagrangians `γ t ℝⁿ` whose intersections with `ℝⁿ` keep the same dimension has index zero. -/
+theorem maslovIndex_eq_zero_of_rootMultiplicity_eq {U V : unitaryGroup n ℂ} (γ : Path U V) {k : ℕ}
+    (h : ∀ t, (souriau (γ t) : Matrix n n ℂ).charpoly.rootMultiplicity 1 = k) :
+    maslovIndex γ = 0 := by
+  have hW : Continuous fun t => (souriau (γ t) : Matrix n n ℂ) :=
+    continuous_subtype_val.comp (continuous_souriau.comp γ.continuous)
+  have hs : Continuous fun t => spectralAngleSum (souriau (γ t) : Matrix n n ℂ) :=
+    continuous_iff_continuousAt.2 fun t => continuousAt_spectralAngleSum hW.continuousAt
+      (souriau (γ t)).2 (Eventually.of_forall fun t' => (h t').trans (h t).symm)
+  -- A continuous angle `θ` of the determinants `det (W t)` of the Souriau maps and the angle
+  -- `2π s(W t) + (n - k) π` are continuous lifts of the same path in the circle, so they differ
+  -- by a constant and the change of `θ / (2π)` cancels the change of `s`.
+  obtain ⟨θ, hθ⟩ := Circle.exists_lift (detSouriauPath γ)
+  obtain ⟨m, hm⟩ := Circle.exists_int_forall_eq_add_of_exp_eq (G' := fun t =>
+      2 * Real.pi * spectralAngleSum (souriau (γ t) : Matrix n n ℂ) +
+        (Fintype.card n - k : ℕ) * Real.pi) θ.continuous
+      ((continuous_const.mul hs).add continuous_const) fun t => by
+    refine Circle.ext ?_
+    rw [hθ, detSouriauPath_apply, coe_detCircle,
+      det_eq_neg_one_pow_mul_exp_spectralAngleSum (souriau (γ t)).2, h t, Circle.coe_exp]
+    push_cast
+    have hsign : exp (((Fintype.card n - k : ℕ) : ℂ) * Real.pi * Complex.I) =
+        (-1) ^ (Fintype.card n - k) := by
+      rw [mul_assoc, exp_nat_mul, exp_pi_mul_I]
+    rw [add_mul, exp_add, hsign, mul_comm]
+  rw [maslovIndex, Circle.angleChange_eq_sub _ θ.continuous hθ, hm 1, hm 0, γ.source, γ.target]
+  field_simp
+  ring
+
+/-- A path of frames whose Souriau maps never have the eigenvalue `1`, that is, a path of
+Lagrangians transverse to `ℝⁿ`, has Maslov index zero. -/
+theorem maslovIndex_eq_zero_of_forall_not_isRoot {U V : unitaryGroup n ℂ} (γ : Path U V)
+    (h : ∀ t, ¬(souriau (γ t) : Matrix n n ℂ).charpoly.IsRoot 1) : maslovIndex γ = 0 :=
+  maslovIndex_eq_zero_of_rootMultiplicity_eq γ fun t => rootMultiplicity_eq_zero (h t)
 
 /-- For `x = φ / π`, the difference `x - angleOffset (e^{2iφ})` is the half-integer
 `(⌊x⌋ + ⌈x⌉) / 2`: it is `⌊x⌋ + 1/2` if `x` is not an integer and `x` if it is. -/
