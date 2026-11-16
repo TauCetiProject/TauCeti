@@ -148,6 +148,11 @@ theorem coeFn_toLp_inclusion_subOne_inv (h : 0 ≤ s) (u : SobolevTopologicalGau
   rw [hz, map_inv]
   simp only [InvMemClass.coe_inv, Pi.inv_apply, Circle.coe_inv_eq_conj]
 
+/-- A Sobolev gauge is continuous as a map into `ℂ`. -/
+theorem continuous_coe_toSubgroup (u : SobolevTopologicalGaugeGroup hs) :
+    Continuous fun z ↦ ((toSubgroup hs u : ℂ → Circle) z : ℂ) :=
+  continuous_subtype_val.comp ((mem_sobolevGaugeGroup hs _).1 (toSubgroup hs u).2).1
+
 /-- A Sobolev gauge is determined by its element `u - 1` of `H^s(ℂ)`. -/
 theorem subOne_injective :
     Function.Injective (subOne : SobolevTopologicalGaugeGroup hs → H^{s}(ℂ)) := by
@@ -159,8 +164,7 @@ theorem subOne_injective :
   -- Both gauges are continuous, so almost everywhere equality is equality.
   have hcont (w : SobolevTopologicalGaugeGroup hs) :
       Continuous fun z ↦ ((toSubgroup hs w : ℂ → Circle) z : ℂ) - 1 :=
-    (continuous_subtype_val.comp ((mem_sobolevGaugeGroup hs _).1 (toSubgroup hs w).2).1).sub
-      continuous_const
+    (continuous_coe_toSubgroup w).sub continuous_const
   have heq := (hcont u).ae_eq_iff_eq volume (hcont v) |>.1 hae
   apply (toSubgroup hs).injective
   refine Subtype.ext (funext fun z ↦ Subtype.ext ?_)
