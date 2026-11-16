@@ -18,8 +18,8 @@ A manifold `M` with a proper Morse function `f` bounded below is homotopy equiva
 CW complex whose `m`-cells correspond to the critical points of `f` of index `m`
 (`TauCeti.IsMorse.exists_cwComplex_homotopyEquiv`); for compact `M` the complex is finite
 (`TauCeti.IsMorse.exists_finite_cwComplex_homotopyEquiv`). This file reads off the cells of the
-model in three cases: a compact manifold, a noncompact one, and one with infinitely many critical
-points.
+model in four cases: a compact manifold, a noncompact one, the empty one, and one with infinitely
+many critical points.
 
 * **The sphere.** The height function on `Sⁿ`, `n ≥ 1`, has a minimum of index `0` and a maximum
   of index `n` and no other critical point, so `Sⁿ` is homotopy equivalent to a finite CW complex
@@ -28,6 +28,9 @@ points.
 * **The real line.** The function `x ↦ x²` on `ℝ` has the single critical point `0`, of index `0`,
   so `ℝ` is homotopy equivalent to a CW complex with one `0`-cell and no other cells, which is
   contractible (`TauCeti.exists_cwComplex_homotopyEquiv_real`).
+* **The empty manifold.** The empty manifold has no critical points, so its model is empty and has
+  no cells in any dimension, not a distinguished `0`-cell
+  (`TauCeti.exists_cwComplex_homotopyEquiv_empty`).
 * **A countable discrete manifold.** On a manifold modelled on a zero-dimensional space every
   function is Morse and every point is critical of index `0` (`TauCeti.isMorse_of_subsingleton`,
   `TauCeti.manifoldMorseIndex_eq_zero_of_subsingleton`). For the discrete manifold `ℕ` with the
@@ -124,6 +127,25 @@ theorem exists_cwComplex_homotopyEquiv_real :
         manifoldMorseIndex 𝓘(ℝ, ℝ) (fun x : ℝ ↦ x ^ 2) x = m + 1} :=
       ⟨fun ⟨x, hx, h⟩ ↦ by simp_all [criticalPoints_sq_real]⟩
     exact c.isEmpty
+
+/-! ### The empty manifold -/
+
+attribute [local instance] ChartedSpace.ofDiscreteTopology in
+/-- **The CW model of the empty manifold** is empty, with no cells in any dimension: the empty
+manifold has no critical points, and the cells of the CW model of the (Morse) function
+`isEmptyElim` are labelled by its critical points. -/
+theorem exists_cwComplex_homotopyEquiv_empty :
+    ∃ (X : Type) (_ : TopologicalSpace X) (_ : T2Space X) (_ : CWComplex (univ : Set X)),
+      Nonempty (Empty ≃ₕ X) ∧
+        (∀ m, Nonempty (cell (univ : Set X) m ≃
+          ↥{x ∈ criticalPoints 𝓘(ℝ, Fin 0 → ℝ) (isEmptyElim : Empty → ℝ) |
+            manifoldMorseIndex 𝓘(ℝ, Fin 0 → ℝ) (isEmptyElim : Empty → ℝ) x = m})) ∧
+        IsEmpty X ∧ ∀ m, IsEmpty (cell (univ : Set X) m) := by
+  obtain ⟨X, _, _, _, ⟨h⟩, hcell⟩ :=
+    (isMorse_of_subsingleton (I := 𝓘(ℝ, Fin 0 → ℝ)) (f := (isEmptyElim : Empty → ℝ))
+      ).exists_cwComplex_homotopyEquiv continuous_of_discreteTopology.isProperMap (by simp)
+  have : IsEmpty X := ⟨fun x ↦ isEmptyElim (h.invFun x)⟩
+  exact ⟨X, _, ‹_›, ‹_›, ⟨h⟩, hcell, ‹_›, fun m ↦ (hcell m).some.isEmpty⟩
 
 /-! ### A countable discrete manifold -/
 
