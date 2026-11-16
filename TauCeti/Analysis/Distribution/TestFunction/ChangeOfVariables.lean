@@ -12,7 +12,6 @@ public import Mathlib.Topology.OpenPartialHomeomorph.Composition
 import Mathlib.Analysis.Calculus.Deriv.Abs
 import TauCeti.Analysis.Calculus.FDeriv.Det.Basic
 import TauCeti.Analysis.Calculus.FDeriv.Equiv
-import TauCeti.Analysis.Calculus.TangentCone.Chart
 import TauCeti.Analysis.Distribution.TestFunction.LineDeriv
 import TauCeti.Analysis.Distribution.TestFunction.PartitionOfUnity
 import TauCeti.Topology.Algebra.Module.Determinant

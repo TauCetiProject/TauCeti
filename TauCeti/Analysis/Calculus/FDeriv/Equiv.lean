@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Analysis.Calculus.ContDiff.Defs
 public import Mathlib.Analysis.Calculus.FDeriv.Defs
 public import Mathlib.Topology.Algebra.Module.ContinuousLinearMap.Invertible
 public import Mathlib.Topology.Algebra.Module.Determinant
@@ -47,6 +48,10 @@ open set `U` and mapping it into an open set `V`, with an inverse `Ψ` different
   derivative at such a point is invertible, with inverse the derivative of `e.symm` at `e p`.
 * `OpenPartialHomeomorph.det_fderiv_mul_det_fderiv_symm`: for an open partial homeomorphism of a
   space to itself, `det De(e⁻¹ p) · det De⁻¹(p) = 1` at a point `p` of the target.
+* `OpenPartialHomeomorph.det_fderiv_ne_zero_of_contDiffOn`,
+  `OpenPartialHomeomorph.det_fderiv_symm_apply_of_contDiffOn`: for an open partial homeomorphism
+  that is `C^n`, `n ≠ 0`, in both directions, a nonzero Jacobian determinant on the source, and
+  reciprocity of the Jacobian determinants of `e` and `e.symm`.
 * `TauCeti.fderiv_comp_fderiv_eq_id_of_invOn`: `DΦ(y) ∘ DΨ(Φ y) = id`.
 * `Equiv.det_fderiv_symm_mul_det_fderiv`: for a bijection `φ` differentiable at `φ⁻¹ y` with its
   inverse differentiable at `y`, the Jacobian determinants are reciprocal,
@@ -171,6 +176,32 @@ theorem det_fderiv_mul_det_fderiv_symm (e : OpenPartialHomeomorph E E) {p : E}
     (fderiv 𝕜 e (e.symm p)).det * (fderiv 𝕜 e.symm p).det = 1 := by
   rw [← ContinuousLinearMap.det_comp, e.fderiv_comp_fderiv_symm hp hd hds,
     ContinuousLinearMap.det_id]
+
+/-- An open partial homeomorphism of a space to itself that is `C^n`, `n ≠ 0`, on its source,
+with inverse `C^n` on its target, has a derivative with nonzero determinant at every point of its
+source. -/
+theorem det_fderiv_ne_zero_of_contDiffOn (e : OpenPartialHomeomorph E E) {n : WithTop ℕ∞}
+    (he : ContDiffOn 𝕜 n e e.source) (hes : ContDiffOn 𝕜 n e.symm e.target) (hn : n ≠ 0) {x : E}
+    (hx : x ∈ e.source) : (fderiv 𝕜 e x).det ≠ 0 := by
+  have h := e.det_fderiv_mul_det_fderiv_symm (e.map_source hx)
+    ((he.differentiableOn hn).differentiableAt
+      (e.open_source.mem_nhds (e.map_target (e.map_source hx))))
+    ((hes.differentiableOn hn).differentiableAt (e.open_target.mem_nhds (e.map_source hx)))
+  rw [e.left_inv hx] at h
+  exact left_ne_zero_of_mul_eq_one h
+
+/-- For an open partial homeomorphism of a space to itself that is `C^n`, `n ≠ 0`, on its source,
+with inverse `C^n` on its target, the Jacobian determinant of the inverse at `e x` is the
+reciprocal of that of `e` at a point `x` of the source. -/
+theorem det_fderiv_symm_apply_of_contDiffOn (e : OpenPartialHomeomorph E E) {n : WithTop ℕ∞}
+    (he : ContDiffOn 𝕜 n e e.source) (hes : ContDiffOn 𝕜 n e.symm e.target) (hn : n ≠ 0) {x : E}
+    (hx : x ∈ e.source) : (fderiv 𝕜 e.symm (e x)).det = (fderiv 𝕜 e x).det⁻¹ := by
+  have h := e.det_fderiv_mul_det_fderiv_symm (e.map_source hx)
+    ((he.differentiableOn hn).differentiableAt
+      (e.open_source.mem_nhds (e.map_target (e.map_source hx))))
+    ((hes.differentiableOn hn).differentiableAt (e.open_target.mem_nhds (e.map_source hx)))
+  rw [e.left_inv hx] at h
+  exact eq_inv_of_mul_eq_one_right h
 
 end OpenPartialHomeomorph
 

@@ -8,8 +8,8 @@ module
 public import TauCeti.Analysis.Distribution.LinearEquiv
 public import TauCeti.Analysis.Distribution.Restriction
 public import TauCeti.Analysis.Distribution.TestFunction.ChangeOfVariables
+import TauCeti.Analysis.Calculus.FDeriv.Equiv
 import TauCeti.MeasureTheory.Function.Jacobian
-import TauCeti.Analysis.Calculus.TangentCone.Chart
 
 /-!
 # Distributions under smooth changes of variables
