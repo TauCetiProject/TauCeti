@@ -260,6 +260,13 @@ theorem foxColoringsNegOneHomEquiv_symm_apply (D : OrientedPDCode n)
     ((foxColoringsNegOneHomEquiv R M D).symm f).1 g = f.1 (D.alexanderGenerator g) :=
   (rfl)
 
+/-- The lift of the colouring labelled by an additive homomorphism is that homomorphism. -/
+@[simp↓]
+theorem foxColoringLift_foxColoringsNegOneHomEquiv_symm (D : OrientedPDCode n)
+    (f : LinearMap.range (D.foxColoringLift R M)) :
+    D.foxColoringLift R M ((foxColoringsNegOneHomEquiv R M D).symm f) = f :=
+  congrArg Subtype.val ((foxColoringsNegOneHomEquiv R M D).apply_symm_apply f)
+
 variable (R M) in
 /-- A `ℤ[T;T⁻¹]`-linear equivalence of Alexander modules induces an `R`-linear equivalence of Fox
 colouring modules with values in `M`: a colouring of `D` is a linear map out of the Alexander
@@ -311,16 +318,28 @@ theorem foxColoringLift_foxColoringsEquivOfAlexanderModuleEquiv
   simp [foxColoringLift_eq_toAlexanderHom, foxColoringsEquivOfAlexanderModuleEquiv,
     alexanderHomEquiv, toAlexanderHom_ofAlexanderHom]
 
-/-- Alexander equivalence composition agrees with colouring transport composition. -/
+/-- Transporting a colouring twice is transport along the composite Alexander equivalence. -/
+@[simp↓]
+theorem foxColoringsEquivOfAlexanderModuleEquiv_foxColoringsEquivOfAlexanderModuleEquiv
+    {k : ℕ} {D : OrientedPDCode n} {D' : OrientedPDCode m} {D'' : OrientedPDCode k}
+    (e : D.AlexanderModule ≃ₗ[ℤ[T;T⁻¹]] D'.AlexanderModule)
+    (e' : D'.AlexanderModule ≃ₗ[ℤ[T;T⁻¹]] D''.AlexanderModule) (v : D.foxColorings R M) :
+    foxColoringsEquivOfAlexanderModuleEquiv R M e'
+        (foxColoringsEquivOfAlexanderModuleEquiv R M e v) =
+      foxColoringsEquivOfAlexanderModuleEquiv R M (e ≪≫ₗ e') v :=
+  Subtype.ext <| funext fun g ↦ by simp
+
+/-- Colouring transport composition agrees with Alexander equivalence composition. -/
+@[simp↓]
 theorem foxColoringsEquivOfAlexanderModuleEquiv_trans
     {k : ℕ} {D : OrientedPDCode n} {D' : OrientedPDCode m} {D'' : OrientedPDCode k}
     (e : D.AlexanderModule ≃ₗ[ℤ[T;T⁻¹]] D'.AlexanderModule)
     (e' : D'.AlexanderModule ≃ₗ[ℤ[T;T⁻¹]] D''.AlexanderModule) :
-    foxColoringsEquivOfAlexanderModuleEquiv R M (e ≪≫ₗ e') =
-      foxColoringsEquivOfAlexanderModuleEquiv R M e ≪≫ₗ
-        foxColoringsEquivOfAlexanderModuleEquiv R M e' := by
-  ext v g
-  simp
+    foxColoringsEquivOfAlexanderModuleEquiv R M e ≪≫ₗ
+        foxColoringsEquivOfAlexanderModuleEquiv R M e' =
+      foxColoringsEquivOfAlexanderModuleEquiv R M (e ≪≫ₗ e') :=
+  LinearEquiv.ext fun v ↦
+    foxColoringsEquivOfAlexanderModuleEquiv_foxColoringsEquivOfAlexanderModuleEquiv e e' v
 
 /-- The equivalence induced by an equivalence `e` of Alexander modules keeps the label of a
 generator that `e` sends to a generator. -/

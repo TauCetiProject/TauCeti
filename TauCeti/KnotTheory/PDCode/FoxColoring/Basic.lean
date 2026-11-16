@@ -16,9 +16,9 @@ import Mathlib.Tactic.Abel
 
 A Fox colouring of a link diagram with values in an abelian group `M` labels every arc of the
 diagram by an element of `M` so that at each crossing twice the label of the over-arc is the sum
-of the labels of the two under-arcs (Fox; Crowell–Fox, Chapter VI, Exercise 6; Lickorish,
-Chapter 3). For `M = ZMod 3` these are the classical tricolourings, and for `M = ZMod n` they are
-the colourings by the dihedral quandle of order `n`.
+of the labels of the two under-arcs (Fox; Crowell–Fox, Chapter VI, Exercise 6; Przytycki). For
+`M = ZMod 3` these are the classical tricolourings, and for `M = ZMod n` they are the colourings by
+the dihedral quandle of order `n`.
 
 On a PD-code `D` the labels live on the half-edges and on the crossing-free components, so a
 colouring is a family `v` indexed by `Fin (4 * n) ⊕ Fin D.crossinglessComponentCount`. The
@@ -57,8 +57,6 @@ of `c` circles has the product module `M ^ c` of colourings, one label for each 
 
 * R. H. Crowell, R. H. Fox, *Introduction to Knot Theory*, Graduate Texts in Mathematics 57,
   Springer (1977), Chapter VI.
-* W. B. R. Lickorish, *An Introduction to Knot Theory*, Graduate Texts in Mathematics 175,
-  Springer (1997), Chapter 3.
 * J. H. Przytycki, *3-coloring and other elementary invariants of knots*, Banach Center
   Publications 42 (1998), 275–295.
 -/

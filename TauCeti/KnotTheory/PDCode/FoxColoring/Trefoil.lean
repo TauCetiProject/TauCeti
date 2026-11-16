@@ -45,8 +45,8 @@ the trefoil from the unknot.
 
 ## References
 
-* W. B. R. Lickorish, *An Introduction to Knot Theory*, Graduate Texts in Mathematics 175,
-  Springer (1997), Chapter 3.
+* R. H. Crowell, R. H. Fox, *Introduction to Knot Theory*, Graduate Texts in Mathematics 57,
+  Springer (1977), Chapter VI.
 * J. H. Przytycki, *3-coloring and other elementary invariants of knots*, Banach Center
   Publications 42 (1998), 275–295.
 -/
