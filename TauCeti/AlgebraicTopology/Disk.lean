@@ -14,6 +14,7 @@ public import TauCeti.Topology.Category.TopPair
 public import TauCeti.Topology.Homotopy.Cube.Radius
 public import TauCeti.Topology.Homotopy.Extension.Ball
 
+import TauCeti.Topology.Homotopy.Contractible
 import TauCeti.Topology.UnitInterval.OpenSquare
 
 /-!
@@ -69,14 +70,12 @@ namespace TauCeti.TopCat
 /-- The `n`-dimensional Euclidean disk is contractible. -/
 instance contractibleSpace_disk (n : ℕ) :
     ContractibleSpace (TopCat.disk n) := by
-  -- `TopCat.disk` stores its metric closed ball inside a `ULift`; expose that carrier so the
-  -- closed-ball contractibility instance can be transported through the lift equivalence.
-  change ContractibleSpace (ULift (Metric.closedBall (0 : EuclideanSpace ℝ (Fin n)) 1))
-  let hX : ContractibleSpace (Metric.closedBall (0 : EuclideanSpace ℝ (Fin n)) 1) :=
+  -- `TopCat.disk` stores its metric closed ball inside a `ULift`; the lift of the contractible
+  -- closed ball is contractible by `ULift.contractibleSpace`.
+  have : ContractibleSpace (Metric.closedBall (0 : EuclideanSpace ℝ (Fin n)) 1) :=
     Metric.contractibleSpace_closedBall (x := 0) (r := 1) (by norm_num)
-  have h : (ULift (Metric.closedBall (0 : EuclideanSpace ℝ (Fin n)) 1)) ≃ₜ
-      Metric.closedBall (0 : EuclideanSpace ℝ (Fin n)) 1 := Homeomorph.ulift
-  exact h.contractibleSpace_iff.mpr hX
+  exact inferInstanceAs
+    (ContractibleSpace (ULift (Metric.closedBall (0 : EuclideanSpace ℝ (Fin n)) 1)))
 
 /-- The boundary of the `n`-dimensional disk is path-connected when `n ≥ 2`. -/
 lemma pathConnectedSpace_diskBoundary {n : ℕ} (hn : 2 ≤ n) :
