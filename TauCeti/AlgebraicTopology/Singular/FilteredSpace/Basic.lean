@@ -306,6 +306,22 @@ lemma isZero_filteredSpaceSpectralSequence_page_two_X (pq : ℤ × ℤ) (h : 0 <
     (CochainComplex.spectralSequenceFirstPageXIsoCokernel _ pq pq.2 (pq.2 + 1) rfl rfl _ rfl ≪≫
       (homologyFunctor A _ _).mapIso (cokernelFiltrationFunctorMapIso R hX _))
 
+/-- A morphism between spectral sequences of filtered spaces is an isomorphism on every object of
+every page `r ≥ 2` as soon as it is one on the first page in nonpositive total degree, since the
+first pages vanish in positive total degree. -/
+private lemma isIso_hom_f_of_isIso_page_two {R' : A} {Y' : TopCat.{w}} {X' : ℤ → Set Y'}
+    {hX' : Monotone X'}
+    (f : filteredSpaceSpectralSequence R hX ⟶ filteredSpaceSpectralSequence R' hX')
+    (h : ∀ (pq : ℤ × ℤ) (n : ℕ), pq.1 + pq.2 = -n → IsIso ((f.hom 2 le_rfl).f pq))
+    (r : ℤ) (hr : 2 ≤ r) (pq : ℤ × ℤ) :
+    IsIso ((f.hom r hr).f pq) := by
+  refine SpectralSequence.Hom.isIso_hom_f_of_le _ 2 le_rfl (fun pq ↦ ?_) r hr pq
+  rcases lt_or_ge 0 (pq.1 + pq.2) with hpos | hle
+  · exact (isZero_filteredSpaceSpectralSequence_page_two_X R hX pq hpos).isIso
+      (isZero_filteredSpaceSpectralSequence_page_two_X R' hX' pq hpos) _
+  obtain ⟨n, hn⟩ := Int.exists_eq_neg_ofNat hle
+  exact h pq n hn
+
 /-- **The abutment of the spectral sequence of a filtered space** in degree `-n` is the singular
 homology `Hₙ(Y)`. -/
 def filteredSpaceAbutmentIso (n : ℕ) :
@@ -731,11 +747,7 @@ theorem isIso_filteredSpaceSpectralSequenceMap_hom_f
       (filteredSpaceStepMap hX hX' g hg (Int.le_add_one le_rfl : q ≤ q + 1)) R n))
     (r : ℤ) (hr : 2 ≤ r) (pq : ℤ × ℤ) :
     IsIso (((filteredSpaceSpectralSequenceMap R hX hX' g hg).hom r hr).f pq) := by
-  refine SpectralSequence.Hom.isIso_hom_f_of_le _ 2 le_rfl (fun pq ↦ ?_) r hr pq
-  rcases lt_or_ge 0 (pq.1 + pq.2) with hpos | hle
-  · exact (isZero_filteredSpaceSpectralSequence_page_two_X R hX pq hpos).isIso
-      (isZero_filteredSpaceSpectralSequence_page_two_X R hX' pq hpos) _
-  obtain ⟨n, hn⟩ := Int.exists_eq_neg_ofNat hle
+  refine isIso_hom_f_of_isIso_page_two R hX _ (fun pq n hn ↦ ?_) r hr pq
   have e := filteredSpaceSpectralSequenceFirstPageXIso_hom_naturality R hX hX' g hg pq pq.2
     (pq.2 + 1) rfl rfl _ rfl n hn
   rw [← Iso.eq_comp_inv] at e
@@ -953,11 +965,7 @@ theorem isIso_filteredSpaceSpectralSequenceCoefficientMap_hom_f
         (TopPair.ofInclusion (hX (Int.le_add_one le_rfl : q ≤ q + 1))))) n))
     (r : ℤ) (hr : 2 ≤ r) (pq : ℤ × ℤ) :
     IsIso (((filteredSpaceSpectralSequenceCoefficientMap hX φ).hom r hr).f pq) := by
-  refine SpectralSequence.Hom.isIso_hom_f_of_le _ 2 le_rfl (fun pq ↦ ?_) r hr pq
-  rcases lt_or_ge 0 (pq.1 + pq.2) with hpos | hle
-  · exact (isZero_filteredSpaceSpectralSequence_page_two_X R hX pq hpos).isIso
-      (isZero_filteredSpaceSpectralSequence_page_two_X R' hX pq hpos) _
-  obtain ⟨n, hn⟩ := Int.exists_eq_neg_ofNat hle
+  refine isIso_hom_f_of_isIso_page_two R hX _ (fun pq n hn ↦ ?_) r hr pq
   have e := filteredSpaceSpectralSequenceFirstPageXIso_hom_coefficient_naturality hX φ pq pq.2
     (pq.2 + 1) rfl rfl _ rfl n hn
   rw [← Iso.eq_comp_inv] at e
