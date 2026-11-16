@@ -375,14 +375,6 @@ theorem eisenstein_neg (k : ℕ) (a : AddCircle (1 : ℚ)) :
   rwa [aeval_comp, map_neg, aeval_X, map_mul, map_pow, map_neg, map_one,
     ← firstEisenstein_neg] at h
 
-/-- The value of `e_{k,a}` under a character is `P_k` of the value of `e₁,ₐ`. -/
-theorem lift_eisenstein {A : Type*} [Semiring A] [Algebra ℚ A]
-    (χ : Multiplicative (AddCircle (1 : ℚ)) →* A) (k : ℕ) (a : AddCircle (1 : ℚ)) :
-    AddMonoidAlgebra.lift ℚ A (AddCircle (1 : ℚ)) χ (eisenstein k a) =
-      aeval (AddMonoidAlgebra.lift ℚ A (AddCircle (1 : ℚ)) χ (firstEisenstein a))
-        (eisensteinPoly k) :=
-  (aeval_algHom_apply _ _ _).symm
-
 open Complex in
 /-- **The cotangent value of `e_{k,a}`.** If a complex character `χ` of `ℚ/ℤ` has
 `χ(a) = e^{2π i t}`, then `χ(e_{k,a}) = P_k(cot (π t) / (2 i))`. -/
@@ -390,7 +382,7 @@ theorem lift_eisenstein_eq_cot (χ : Multiplicative (AddCircle (1 : ℚ)) →* �
     {a : AddCircle (1 : ℚ)} {t : ℂ} (ht : χ (Multiplicative.ofAdd a) = cexp (2 * π * I * t)) :
     AddMonoidAlgebra.lift ℚ ℂ (AddCircle (1 : ℚ)) χ (eisenstein k a) =
       aeval (cot (π * t) / (2 * I)) (eisensteinPoly k) := by
-  rw [lift_eisenstein, lift_firstEisenstein_eq_cot χ ht]
+  rw [eisenstein, ← aeval_algHom_apply, lift_firstEisenstein_eq_cot χ ht]
 
 /-! ### Values at `1 / 2` and `1 / 3` -/
 
