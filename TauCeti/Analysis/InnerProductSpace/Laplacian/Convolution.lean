@@ -33,6 +33,8 @@ factor, where the distributional identity for the kernel applies
 * `HasCompactSupport.laplacian_convolution_right`: `Δ (f ⋆[L, μ] g) = f ⋆[L, μ] Δ g`.
 * `TauCeti.laplacian_convolution_eq_neg_of_integral_laplacian_mul`: if `-ΔK = δ` in the sense of
   distributions, then `-Δ (K ⋆ f) = f` for every `C²` function `f` with compact support.
+* `TauCeti.laplacian_convolution_eq_convolution_of_integral_laplacian_smul`: if `Δf = g` in the
+  sense of distributions, then `Δ (ρ ⋆ f) = ρ ⋆ g` for every smooth compactly supported kernel `ρ`.
 -/
 
 public section
@@ -103,5 +105,26 @@ theorem laplacian_convolution_eq_neg_of_integral_laplacian_mul [μ.IsNegInvarian
     _ = φ ((-f) x) := by
         rw [hKΔ _ hφf (hc.comp_left φ.map_zero) x]
         simp
+
+/-- **Mollification commutes with the distributional Laplacian.** If `Δf = g` in the sense of
+distributions, tested against real smooth functions with compact support, then convolution with
+a real kernel `ρ` that is smooth with compact support turns it into a classical identity:
+`Δ (ρ ⋆ f) = ρ ⋆ g`. -/
+theorem laplacian_convolution_eq_convolution_of_integral_laplacian_smul [μ.IsNegInvariant]
+    {ρ : E → ℝ} (hρ : ContDiff ℝ (⊤ : ℕ∞) ρ) (hρc : HasCompactSupport ρ) {f g : E → F}
+    (hf : LocallyIntegrable f μ)
+    (hfg : ∀ φ : E → ℝ, ContDiff ℝ (⊤ : ℕ∞) φ → HasCompactSupport φ →
+      ∫ x, Δ φ x • f x ∂μ = ∫ x, φ x • g x ∂μ) :
+    Δ (ρ ⋆[lsmul ℝ ℝ, μ] f) = ρ ⋆[lsmul ℝ ℝ, μ] g := by
+  -- The Laplacian falls on the compactly supported kernel.
+  rw [← convolution_flip, hρc.laplacian_convolution_right _ hf (hρ.of_le (by simp)),
+    convolution_flip]
+  funext x
+  rw [convolution_eq_swap, convolution_eq_swap]
+  simp only [lsmul_apply]
+  -- Test `Δf = g` against `y ↦ ρ (x - y)`, whose Laplacian is `y ↦ Δρ (x - y)`.
+  have h := hfg (fun y => ρ (x - y)) (hρ.comp (contDiff_const.sub contDiff_id))
+    (hρc.comp_homeomorph (Homeomorph.subLeft x))
+  rwa [laplacian_comp_sub_left] at h
 
 end TauCeti

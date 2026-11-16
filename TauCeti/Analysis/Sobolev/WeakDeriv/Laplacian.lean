@@ -38,6 +38,8 @@ function is compactly supported in `Ω`, and no regularity of `∂Ω` is used.
   integration by parts in one direction, `∫ ∂ᵥ∂ᵥφ • u = ∫ φ • ∂ᵥ∂ᵥu`.
 * `ContDiffOn.integral_laplacian_smul_eq_integral_smul_laplacian`: Green's second identity
   against a test function, `∫ Δφ • u = ∫ φ • Δu`.
+* `ContDiffOn.integral_laplacian_smul_eq_integral_smul_of_ae_eq`: the same identity for functions
+  `f` and `g` a.e. equal to `u` and `Δu`, such as representatives of their `Lᵖ` classes.
 * `ContDiffOn.eqOn_laplacian_of_forall_integral_laplacian_smul_eq`: conversely, a `C²` function
   whose distributional Laplacian is a continuous function `f` satisfies `Δu = f` pointwise.
 * `InnerProductSpace.HarmonicOnNhd.integral_laplacian_smul_eq_zero`: a harmonic function is
@@ -160,6 +162,20 @@ theorem _root_.ContDiffOn.integral_laplacian_smul_eq_integral_smul_laplacian
         by_cases hx : x ∈ (Ω : Set E)
         · rw [hΔu x hx, Finset.smul_sum]
         · simp [φ.zero_on_compl hx]
+
+omit [CompleteSpace F] in
+/-- **Green's second identity for a.e. representatives.** For `u` of class `C²` on the open set
+`Ω`, functions `f` and `g` a.e. equal to `u` and `Δu`, and a test function `φ` on `Ω`,
+`∫ Δφ • f ∂μ = ∫ φ • g ∂μ`: the distributional Laplacian of the class of `u` is the class of
+`Δu`. -/
+theorem _root_.ContDiffOn.integral_laplacian_smul_eq_integral_smul_of_ae_eq
+    (hu : ContDiffOn ℝ 2 u Ω) {f g : E → F} (hf : f =ᵐ[μ] u) (hg : g =ᵐ[μ] Δ u) (φ : 𝓓(Ω, ℝ)) :
+    ∫ x, Δ (φ : E → ℝ) x • f x ∂μ = ∫ x, (φ : E → ℝ) x • g x ∂μ :=
+  calc ∫ x, Δ (φ : E → ℝ) x • f x ∂μ = ∫ x, Δ (φ : E → ℝ) x • u x ∂μ :=
+        integral_congr_ae (hf.mono fun x hx ↦ congrArg (Δ (φ : E → ℝ) x • ·) hx)
+    _ = ∫ x, (φ : E → ℝ) x • Δ u x ∂μ := hu.integral_laplacian_smul_eq_integral_smul_laplacian φ
+    _ = ∫ x, (φ : E → ℝ) x • g x ∂μ :=
+        integral_congr_ae (hg.mono fun x hx ↦ congrArg ((φ : E → ℝ) x • ·) hx.symm)
 
 /-- **A `C²` distributional solution of `Δu = f` is a classical one.** If `u` is `C²` on the open
 set `Ω`, `f` is continuous on `Ω`, and `∫ Δφ • u ∂μ = ∫ φ • f ∂μ` for every test function `φ` on

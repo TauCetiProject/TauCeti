@@ -5,11 +5,15 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Analysis.Calculus.ContDiff.Convolution
 public import Mathlib.Analysis.Convolution
 public import TauCeti.MeasureTheory.Function.Lp.Translation
 import Mathlib.MeasureTheory.Function.AEEqOfIntegral
 import Mathlib.MeasureTheory.Group.Integral
 import Mathlib.MeasureTheory.Integral.Prod
+import Mathlib.MeasureTheory.Measure.Haar.Unique
+import Mathlib.Analysis.Normed.Module.FiniteDimension
+import TauCeti.Analysis.Calculus.ContDiff.Convolution
 import TauCeti.MeasureTheory.Function.Lp.Restriction
 
 /-!
@@ -42,6 +46,8 @@ convolution semigroup rests:
 * `TauCeti.convolutionLp_convolution`: `(k₁ ⋆ k₂) ⋆ f = k₁ ⋆ (k₂ ⋆ f)`.
 * `TauCeti.convolutionLp_ae_eq_convolution`: the operator is represented almost everywhere by the
   classical pointwise convolution `(k ⋆ f)(x) = ∫ y, k(y) • f(x - y) dμ(y)`.
+* `TauCeti.memLp_fderiv_convolution`: mollifying an `Lᵖ` function by a `C¹` kernel with compact
+  support gives a function whose derivative lies in `Lᵖ`.
 * `TauCeti.convolutionLp_nonneg`: convolution with a nonnegative kernel preserves positivity.
 * `TauCeti.integral_convolutionLp`: on `L¹`, `∫ k ⋆ f = (∫ k) • ∫ f`.
 * `TauCeti.integrable_convolution_integrand_restrict`: on a set of finite measure, the
@@ -224,6 +230,39 @@ theorem convolutionLp_ae_eq_convolution [CompleteSpace F] (hp : p ≠ ∞) {k : 
     _ = ∫ x in s, (k ⋆[lsmul ℝ ℝ, μ] f) x ∂μ := by
         rw [← integral_integral_swap (integrable_convolution_integrand_restrict hk hf hμs)]
         simp only [convolution_lsmul]
+
+/-- **Derivatives of a mollified `Lᵖ` function lie in `Lᵖ`.** For a real `C¹` kernel `ρ` with
+compact support and `f ∈ Lᵖ`, each directional derivative of `ρ ⋆ f` is the convolution of `f`
+with a derivative of `ρ`, so by Young's inequality the derivative of `ρ ⋆ f` lies in `Lᵖ`. -/
+theorem memLp_fderiv_convolution [CompleteSpace F] (hp : p ≠ ∞) {ρ : E → ℝ}
+    (hρ : ContDiff ℝ 1 ρ) (hρc : HasCompactSupport ρ) {f : E → F} (hf : MemLp f p μ) :
+    MemLp (fderiv ℝ (ρ ⋆[lsmul ℝ ℝ, μ] f)) p μ := by
+  have hfl : LocallyIntegrable f μ := hf.locallyIntegrable Fact.out
+  set b := Module.finBasis ℝ E
+  obtain ⟨C, -, hC⟩ := b.exists_opNorm_le (𝕜 := ℝ) (F := F)
+  -- Each directional derivative is the convolution of `f` with a derivative of `ρ`.
+  have hdir (v : E) : MemLp (fun x => fderiv ℝ (ρ ⋆[lsmul ℝ ℝ, μ] f) x v) p μ := by
+    set k : E → ℝ := fun y => fderiv ℝ ρ y v
+    have hk : Integrable k μ :=
+      ((hρ.continuous_fderiv one_ne_zero).clm_apply continuous_const)
+        |>.integrable_of_hasCompactSupport
+          ((hρc.fderiv (𝕜 := ℝ)).comp_left (g := fun A : E →L[ℝ] ℝ => A v) (zero_apply v))
+    have heq : (fun x => fderiv ℝ (ρ ⋆[lsmul ℝ ℝ, μ] f) x v) = k ⋆[lsmul ℝ ℝ, μ] f := by
+      funext x
+      rw [← convolution_flip (f := ρ), ← convolution_flip (f := k),
+        hρc.fderiv_convolution_right_apply _ hfl hρ]
+    rw [heq]
+    exact (Lp.memLp _).ae_eq (convolutionLp_ae_eq_convolution hp hk hf)
+  refine (memLp_finsetSum' (f := fun i x => ‖fderiv ℝ (ρ ⋆[lsmul ℝ ℝ, μ] f) x (b i)‖)
+    Finset.univ fun i _ => (hdir (b i)).norm).of_le_mul (c := C)
+    ((hρc.contDiff_convolution_left _ hρ hfl).continuous_fderiv one_ne_zero).aestronglyMeasurable
+    (ae_of_all _ fun x => ?_)
+  have hsum : 0 ≤ ∑ i, ‖fderiv ℝ (ρ ⋆[lsmul ℝ ℝ, μ] f) x (b i)‖ :=
+    Finset.sum_nonneg fun _ _ => norm_nonneg _
+  rw [Finset.sum_apply, Real.norm_of_nonneg hsum]
+  exact hC hsum fun i =>
+    Finset.single_le_sum (f := fun i => ‖fderiv ℝ (ρ ⋆[lsmul ℝ ℝ, μ] f) x (b i)‖)
+      (fun _ _ => norm_nonneg _) (Finset.mem_univ i)
 
 /-- **Convolution with a nonnegative kernel preserves positivity**: if `k ≥ 0` almost everywhere
 and `f ∈ Lᵖ` is nonnegative, then so is `k ⋆ f`. -/

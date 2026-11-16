@@ -31,10 +31,12 @@ exchanging the two integrals lifts this to the identity `e^{tΔ} φ - φ = ∫�
 `Lᵖ`-valued integrals. The average of the orbit of `Δ φ` over `(0, t]` tends to `Δ φ` by strong
 continuity (`TauCeti.Semigroups.StronglyContinuousSemigroup.tendsto_average_orbit_zero`).
 
-This identifies the generator only on `C²` functions with compact support; its full domain is not
-determined here. For scalar-valued functions and `1 < p < ∞` that domain is the Sobolev space
-`W^{2,p}`, by the Calderón–Zygmund estimates, while for `p = 1` and `dim E ≥ 2` it is strictly
-larger than `W^{2,1}`.
+This identifies the generator only on `C²` functions with compact support. Its full domain, the
+`Lᵖ` functions whose distributional Laplacian lies in `Lᵖ`, is identified in
+`TauCeti/Analysis/PDE/HeatKernel/Generator/Domain.lean`
+(`TauCeti.mem_domain_heatSemigroup_iff`). For scalar-valued functions and `1 < p < ∞` that domain
+is the Sobolev space `W^{2,p}`, by the Calderón–Zygmund estimates, while for `p = 1` and
+`dim E ≥ 2` it is strictly larger than `W^{2,1}`.
 
 ## Main declarations
 
