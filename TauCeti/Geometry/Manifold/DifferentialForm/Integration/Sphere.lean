@@ -614,29 +614,22 @@ private theorem genLoop_homotopic_comp_flatten {w : ℝ × ℝ → M} {p : Ω^ (
     (hv : IsSmoothSphere I x (w ∘ Prod.map collaredSmoothTransition collaredSmoothTransition)) :
     GenLoop.Homotopic hv.genLoop p := by
   refine GenLoop.Homotopic.symm ⟨{
-    toFun := fun q ↦ p fun i ↦
-      projIcc 0 1 zero_le_one (collaredSmoothTransitionLineMap q.1 (q.2 i))
-    continuous_toFun := p.1.continuous.comp (continuous_pi fun i ↦ continuous_projIcc.comp
-      ((contDiff_collaredSmoothTransitionLineMap le_rfl).continuous.comp
-        (by fun_prop : Continuous fun q : unitInterval × (Fin 2 → unitInterval) ↦
-          ((q.1 : ℝ), (q.2 i : ℝ)))))
-    map_zero_left := fun y ↦ by simp [collaredSmoothTransitionLineMap_zero_left]
+    toFun := fun q ↦ p fun i ↦ collaredSmoothTransitionLineMapUnit q.1 (q.2 i)
+    continuous_toFun := p.1.continuous.comp (continuous_pi fun i ↦
+      continuous_collaredSmoothTransitionLineMapUnit.comp
+        (by fun_prop : Continuous fun q : unitInterval × (Fin 2 → unitInterval) ↦ (q.1, q.2 i)))
+    map_zero_left := fun y ↦ by simp
     map_one_left := fun y ↦ by
-      simp only [Icc.coe_one, hp]
-      congr 2 <;>
-      · rw [projIcc_of_mem _
-          (collaredSmoothTransitionLineMap_mem ⟨zero_le_one, le_rfl⟩ (Subtype.prop _))]
-        simp [collaredSmoothTransitionLineMap_one_left, cubeToPlane_apply]
+      simp only [collaredSmoothTransitionLineMapUnit_one_left, hp]
+      congr 2 <;> simp [cubeToPlane_apply]
     prop' := fun t y hy ↦ ?_ }⟩
   obtain ⟨i, hi⟩ := hy
   simp only [ContinuousMap.coe_mk]
   rw [p.2 y ⟨i, hi⟩]
   refine p.2 _ ⟨i, ?_⟩
   rcases hi with hi | hi
-  · exact Or.inl (by simp only [hi, Icc.coe_zero, collaredSmoothTransitionLineMap_zero_right,
-      projIcc_left, Icc.mk_zero])
-  · exact Or.inr (by simp only [hi, Icc.coe_one, collaredSmoothTransitionLineMap_one_right,
-      projIcc_right, Icc.mk_one])
+  · exact Or.inl (by simp only [hi, collaredSmoothTransitionLineMapUnit_zero_right])
+  · exact Or.inr (by simp only [hi, collaredSmoothTransitionLineMapUnit_one_right])
 
 /-- Flattening a smooth map of the plane that sends the boundary of the unit square to `x` does
 not change the integral of a closed `C¹` form over the unit square along it: the straight-line

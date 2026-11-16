@@ -255,7 +255,6 @@ theorem exists_homotopy_forall_mem_of_isSimplyConnected {V : Set X} (hV : IsSimp
 
 /-- The continuous family of paths from `x₀` to `x₁` given by a jointly continuous map `F` on
 `Y × [0, 1]` which sends `Y × {0}` to `x₀` and `Y × {1}` to `x₁`. -/
-@[expose]
 def continuousFamily {Y : Type*} [TopologicalSpace Y] {x₀ x₁ : X} (F : Y → I → X)
     (hF : Continuous ↿F) (h₀ : ∀ y, F y 0 = x₀) (h₁ : ∀ y, F y 1 = x₁) : C(Y, Path x₀ x₁) where
   toFun y := ⟨⟨F y, hF.comp (continuous_const.prodMk continuous_id)⟩, h₀ y, h₁ y⟩
