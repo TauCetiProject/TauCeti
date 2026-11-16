@@ -118,13 +118,6 @@ def specialIsometryEquivFixedPoints :
     ((d).1.fixedSubgroup_galoisFieldTwistedFrobenius_eq_specialIsometryGroup r).symm).trans
       (specialUnitaryEquivFixedPoints r q hv)
 
-/-- The special-isometry comparison factors through the finite twisted-Frobenius fixed subgroup. -/
-theorem specialIsometryEquivFixedPoints_def :
-    specialIsometryEquivFixedPoints r q hv =
-      (MulEquiv.subgroupCongr
-        ((d).1.fixedSubgroup_galoisFieldTwistedFrobenius_eq_specialIsometryGroup r).symm).trans
-          (specialUnitaryEquivFixedPoints r q hv) := by rfl
-
 /-- The finite special isometry is sent to its coefficient extension on the designated carrier. -/
 @[simp]
 theorem coe_specialIsometryEquivFixedPoints
@@ -136,8 +129,10 @@ theorem coe_specialIsometryEquivFixedPoints
         Matrix (Fin (r + 1)) (Fin (r + 1)) K).map
           ((d).1.extensionGaloisFieldEmbedding 2 two_ne_zero) := by
   -- Extended rewriting reduces (ofTwistedA r q hv).1.rank to r in the comparison's domain.
-  erw [specialIsometryEquivFixedPoints_def, MulEquiv.trans_apply,
+  erw [specialIsometryEquivFixedPoints, MulEquiv.trans_apply,
     coe_specialUnitaryEquivFixedPoints, MulEquiv.subgroupCongr_apply]
+  -- subgroupCongr preserves the underlying matrix; reducing the rank of ofTwistedA
+  -- identifies the two matrix index types definitionally.
   rfl
 
 end SpecialIsometry

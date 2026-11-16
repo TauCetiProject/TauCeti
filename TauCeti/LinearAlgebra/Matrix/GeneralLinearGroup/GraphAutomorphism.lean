@@ -187,6 +187,52 @@ theorem typeAGraphConjugator_mul_self (r : ℕ) :
       omega
     _ = Matrix.GeneralLinearGroup.scalar (Fin (r + 1)) ((-1 : Aˣ) ^ r) := diagGL_const _
 
+/-- The signed reversal matrix in dimension three squares to one. -/
+@[simp]
+theorem typeAGraphConjugator_two_mul_self :
+    typeAGraphConjugator 2 A * typeAGraphConjugator 2 A = 1 := by
+  simpa only [neg_one_sq, map_one] using typeAGraphConjugator_mul_self (A := A) 2
+
+/-- The signed reversal matrix in dimension three is its own inverse. -/
+@[simp]
+theorem typeAGraphConjugator_two_inv :
+    (typeAGraphConjugator 2 A)⁻¹ = typeAGraphConjugator 2 A :=
+  inv_eq_of_mul_eq_one_right typeAGraphConjugator_two_mul_self
+
+/-- Conjugation by the signed reversal matrix reverses the diagonal entries. -/
+@[simp]
+theorem typeAGraphConjugator_mul_diagGL_mul_inv (r : ℕ) (d : Fin (r + 1) → Aˣ) :
+    typeAGraphConjugator r A * diagGL d * (typeAGraphConjugator r A)⁻¹ =
+      diagGL (fun i => d i.rev) := by
+  let s : Fin (r + 1) → Aˣ := typeAGraphSign (A := A)
+  let p : GL (Fin (r + 1)) A := permutationGL (k := A) Fin.revPerm
+  have hp : p * diagGL d * p⁻¹ = diagGL (fun i => d i.rev) := by
+    simpa only [p, Equiv.Perm.inv_def, Fin.revPerm_symm, Fin.revPerm_apply] using
+      permutationGL_mul_diagGL_mul_inv (k := A)
+        (Fin.revPerm : Equiv.Perm (Fin (r + 1))) d
+  -- Normalize the public conjugator definition to the local signed diagonal and reversal.
+  change (diagGL s * p) * diagGL d * (diagGL s * p)⁻¹ = _
+  calc
+    _ = diagGL s * (p * diagGL d * p⁻¹) * (diagGL s)⁻¹ := by group
+    _ = diagGL s * diagGL (fun i => d i.rev) * (diagGL s)⁻¹ := by rw [hp]
+    _ = diagGL (fun i => d i.rev) := by
+      rw [← map_inv]
+      simp only [← map_mul]
+      congr 1
+      funext i
+      have hcomm := (Commute.neg_one_left (d i.rev)).pow_left (i : ℕ)
+      simpa only [s, typeAGraphSign, Pi.mul_apply, Pi.inv_apply] using
+        hcomm.mul_inv_cancel
+
+/-- The signed reversal matrix normalizes the diagonal torus. -/
+theorem typeAGraphConjugator_mem_normalizer_diagonalTorus (r : ℕ) :
+    typeAGraphConjugator r A ∈
+      Subgroup.normalizer (diagonalTorus A (r + 1) : Set (GL (Fin (r + 1)) A)) := by
+  rw [typeAGraphConjugator]
+  exact mul_mem
+    (Subgroup.le_normalizer (mem_diagonalTorus_iff_exists_diagGL.mpr ⟨_, rfl⟩))
+    (permutationGL_mem_normalizer Fin.revPerm)
+
 /-- Entrywise base change carries the signed reversal matrix to the signed reversal matrix. -/
 @[simp]
 theorem map_typeAGraphConjugator {B : Type*} [Ring B] (f : A →+* B) (r : ℕ) :
@@ -199,7 +245,7 @@ theorem map_typeAGraphConjugator {B : Type*} [Ring B] (f : A →+* B) (r : ℕ) 
 /-- Entrywise base change carries the underlying signed reversal matrix to the same matrix
 in the target ring. -/
 @[simp]
-theorem coe_map_typeAGraphConjugator {B : Type*} [Ring B] (f : A →+* B) (r : ℕ) :
+theorem map_coe_typeAGraphConjugator {B : Type*} [Ring B] (f : A →+* B) (r : ℕ) :
     (typeAGraphConjugator r A : Matrix (Fin (r + 1)) (Fin (r + 1)) A).map f =
       (typeAGraphConjugator r B : Matrix (Fin (r + 1)) (Fin (r + 1)) B) := by
   have hmap := congrArg Units.val (map_typeAGraphConjugator f r)
@@ -469,43 +515,8 @@ entries. -/
 theorem typeAGraphAutomorphism_diagGL (r : ℕ) (d : Fin (r + 1) → Aˣ) :
     typeAGraphAutomorphism r A (diagGL d) =
       diagGL (fun i => (d i.rev)⁻¹) := by
-  rw [typeAGraphAutomorphism_apply, inverseTranspose_diagGL]
-  let s : Fin (r + 1) → Aˣ := typeAGraphSign (A := A)
-  let p : GL (Fin (r + 1)) A := permutationGL (k := A) Fin.revPerm
-  have hp : p * diagGL (fun i => (d i)⁻¹) * p⁻¹ =
-      diagGL (fun i => (d i.rev)⁻¹) := by
-    simpa only [p, Equiv.Perm.inv_def, Fin.revPerm_symm, Fin.revPerm_apply] using
-      permutationGL_mul_diagGL_mul_inv (k := A)
-        (Fin.revPerm : Equiv.Perm (Fin (r + 1))) (fun i => (d i)⁻¹)
-  -- Normalize the public conjugator definition to the local signed diagonal and reversal.
-  change (diagGL s * p) * diagGL (fun i => (d i)⁻¹) * (diagGL s * p)⁻¹ = _
-  calc
-    _ = diagGL s * (p * diagGL (fun i => (d i)⁻¹) * p⁻¹) * (diagGL s)⁻¹ := by
-      group
-    _ = diagGL s * diagGL (fun i => (d i.rev)⁻¹) * (diagGL s)⁻¹ := by rw [hp]
-    _ = diagGL (fun i => (d i.rev)⁻¹) := by
-      rw [← map_inv]
-      simp only [← map_mul]
-      congr 1
-      funext i
-      simp [mul_assoc]
-
-/-- Conjugation by the signed reversal matrix reverses the diagonal entries. -/
-@[simp]
-theorem typeAGraphConjugator_mul_diagGL_mul_inv (r : ℕ) (d : Fin (r + 1) → Aˣ) :
-    typeAGraphConjugator r A * diagGL d * (typeAGraphConjugator r A)⁻¹ =
-      diagGL (fun i => d i.rev) := by
-  simpa only [typeAGraphAutomorphism_apply, inverseTranspose_diagGL, inv_inv] using
-    typeAGraphAutomorphism_diagGL (A := A) r (fun i => (d i)⁻¹)
-
-/-- The signed reversal matrix normalizes the diagonal torus. -/
-theorem typeAGraphConjugator_mem_normalizer_diagonalTorus (r : ℕ) :
-    typeAGraphConjugator r A ∈
-      Subgroup.normalizer (diagonalTorus A (r + 1) : Set (GL (Fin (r + 1)) A)) := by
-  rw [typeAGraphConjugator]
-  exact mul_mem
-    (Subgroup.le_normalizer (mem_diagonalTorus_iff_exists_diagGL.mpr ⟨_, rfl⟩))
-    (permutationGL_mem_normalizer Fin.revPerm)
+  rw [typeAGraphAutomorphism_apply, inverseTranspose_diagGL,
+    typeAGraphConjugator_mul_diagGL_mul_inv]
 
 /-- The pinned type-`A` graph automorphism is natural in the coefficient ring. -/
 @[simp]

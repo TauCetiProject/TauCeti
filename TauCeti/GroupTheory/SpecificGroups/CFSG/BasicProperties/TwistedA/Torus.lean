@@ -51,11 +51,6 @@ def unitaryTorusHom : Kˣ →* (d).FixedPoints :=
   (specialIsometryEquivFixedPoints 2 q hv).toMonoidHom.comp
     (UnitaryRankOne.torusHom K σ hσ)
 
-/-- The exact-carrier parametrization factors through the special-isometry comparison. -/
-theorem unitaryTorusHom_def :
-    unitaryTorusHom q hv = (specialIsometryEquivFixedPoints 2 q hv).toMonoidHom.comp
-      (UnitaryRankOne.torusHom K σ hσ) := by rfl
-
 /-- The comparison sends each unitary torus parameter to the exact-carrier torus parameter. -/
 @[simp]
 theorem specialIsometryEquivFixedPoints_torusHom (t : Kˣ) :
@@ -68,7 +63,7 @@ theorem map_specialIsometryEquivFixedPoints_torus :
     (UnitaryRankOne.torus K σ).map
         (specialIsometryEquivFixedPoints 2 q hv : UnitaryRankOne.Group K σ →* (d).FixedPoints) =
       (unitaryTorusHom q hv).range := by
-  simp only [UnitaryRankOne.torus_eq_range_torusHom K σ hσ, unitaryTorusHom_def,
+  simp only [UnitaryRankOne.torus_eq_range_torusHom K σ hσ, unitaryTorusHom,
     MonoidHom.range_comp, MulEquiv.toMonoidHom_eq_coe]
 
 /-- The torus parameter gives the stated diagonal matrix over the algebraic closure. -/
@@ -107,7 +102,8 @@ theorem coe_unitaryFixedWeylRepresentative :
       (typeAGraphConjugator 2 (d).1.Closure : Matrix (Fin 3) (Fin 3) (d).1.Closure) := by
   rw [unitaryFixedWeylRepresentative, coe_specialIsometryEquivFixedPoints,
     UnitaryRankOne.coe_weyl]
-  exact coe_map_typeAGraphConjugator _ _
+  -- The rank of ofTwistedA 2 q hv reduces to 2, so the matrix indices are Fin 3.
+  exact map_coe_typeAGraphConjugator _ _
 
 /-- The fixed Weyl representative has square one. -/
 @[simp]
@@ -150,7 +146,7 @@ theorem unitaryFixedWeylRepresentative_notMem_range_unitaryTorusHom :
     unitaryFixedWeylRepresentative q hv ∉ (unitaryTorusHom q hv).range := by
   rintro ⟨t, ht⟩
   apply UnitaryRankOne.weyl_notMem_torus K σ
-  rw [UnitaryRankOne.mem_torus_iff K σ hσ]
+  rw [UnitaryRankOne.mem_torus_iff_exists_torusHom K σ hσ]
   rw [← specialIsometryEquivFixedPoints_torusHom,
     ← specialIsometryEquivFixedPoints_weyl] at ht
   exact ⟨t, (specialIsometryEquivFixedPoints 2 q hv).injective ht⟩

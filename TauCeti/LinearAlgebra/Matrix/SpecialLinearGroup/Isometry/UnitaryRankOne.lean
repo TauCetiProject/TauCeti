@@ -111,7 +111,7 @@ def torus : Subgroup (UnitaryRankOne.Group R σ) :=
 /-- The torus consists of all diagonal determinant-one isometries. No involutivity or field
 hypothesis is needed. -/
 @[simp]
-theorem mem_torus_iff_isDiag (g : UnitaryRankOne.Group R σ) :
+theorem mem_torus_iff (g : UnitaryRankOne.Group R σ) :
     g ∈ torus R σ ↔
       ((g : SpecialLinearGroup (Fin 3) R) : Matrix (Fin 3) (Fin 3) R).IsDiag := by
   simp only [torus, Subgroup.mem_comap, Subgroup.subtype_apply,
@@ -120,7 +120,7 @@ theorem mem_torus_iff_isDiag (g : UnitaryRankOne.Group R σ) :
 /-- Every value of the parametrization belongs to the torus. -/
 theorem torusHom_mem_torus (hσ : Function.Involutive σ) (t : Rˣ) :
     torusHom R σ hσ t ∈ torus R σ := by
-  rw [mem_torus_iff_isDiag, coe_torusHom]
+  rw [mem_torus_iff, coe_torusHom]
   exact isDiag_diagonal _
 
 instance : IsMulCommutative (torus R σ) :=
@@ -132,11 +132,11 @@ def weyl : UnitaryRankOne.Group R σ :=
   ⟨⟨(typeAGraphConjugator 2 R : Matrix (Fin 3) (Fin 3) R), by
     simp [Matrix.det_fin_three, typeAGraphConjugator_apply]⟩, by
     apply mem_specialIsometryGroup_iff.mpr
-    rw [coe_map_typeAGraphConjugator, transpose_typeAGraphConjugator]
-    simpa only [neg_one_sq, one_smul, Units.val_mul, map_one, Units.val_one, one_mul] using
+    rw [map_coe_typeAGraphConjugator, transpose_typeAGraphConjugator]
+    simpa only [neg_one_sq, one_smul, Units.val_mul, Units.val_one, one_mul] using
       congrArg (fun g : GL (Fin 3) R =>
         (g : Matrix (Fin 3) (Fin 3) R) * (typeAGraphConjugator 2 R : Matrix (Fin 3) (Fin 3) R))
-        (typeAGraphConjugator_mul_self (A := R) 2)⟩
+        (typeAGraphConjugator_two_mul_self (A := R))⟩
 
 /-- The Weyl representative is the signed reversal matrix. -/
 @[simp]
@@ -156,8 +156,8 @@ theorem weyl_mul_self : weyl R σ * weyl R σ = 1 := by
   apply Subtype.ext
   apply Subtype.ext
   simpa only [Subgroup.coe_mul, Subgroup.coe_one, Matrix.SpecialLinearGroup.coe_mul,
-    coe_weyl, Matrix.SpecialLinearGroup.coe_one, Units.val_mul, neg_one_sq, map_one,
-    Units.val_one] using congrArg Units.val (typeAGraphConjugator_mul_self (A := R) 2)
+    coe_weyl, Matrix.SpecialLinearGroup.coe_one, Units.val_mul,
+    Units.val_one] using congrArg Units.val (typeAGraphConjugator_two_mul_self (A := R))
 
 /-- The Weyl representative is its own inverse. -/
 @[simp]
@@ -172,10 +172,8 @@ theorem weyl_mul_torusHom_mul_weyl (hσ : Function.Involutive σ) (t : Rˣ) :
   apply Subtype.ext
   apply Matrix.SpecialLinearGroup.toGL_injective
   simp only [Subgroup.coe_mul, map_mul]
-  have hinv : (typeAGraphConjugator 2 R)⁻¹ = typeAGraphConjugator 2 R :=
-    inv_eq_of_mul_eq_one_right (by simpa using typeAGraphConjugator_mul_self (A := R) 2)
   have hdiag := typeAGraphConjugator_mul_diagGL_mul_inv (A := R) 2 (torusDiag R σ t)
-  rw [hinv] at hdiag
+  rw [typeAGraphConjugator_two_inv] at hdiag
   rw [toGL_weyl, toGL_torusHom, toGL_torusHom, hdiag]
   congr 1
   funext i
@@ -213,7 +211,7 @@ theorem torus_eq_range_torusHom (hσ : Function.Involutive σ) :
 
 /-- Membership in the torus is existence of a unit parameter when the endomorphism is
 involutive. -/
-theorem mem_torus_iff (hσ : Function.Involutive σ) (g : UnitaryRankOne.Group R σ) :
+theorem mem_torus_iff_exists_torusHom (hσ : Function.Involutive σ) (g : UnitaryRankOne.Group R σ) :
     g ∈ torus R σ ↔ ∃ t, torusHom R σ hσ t = g := by
   rw [torus_eq_range_torusHom, MonoidHom.mem_range]
 
@@ -231,7 +229,7 @@ torus even in the smallest characteristic. -/
 theorem weyl_notMem_torus [Nontrivial R] :
     weyl R σ ∉ torus R σ := by
   intro h
-  have := (mem_torus_iff_isDiag R σ _).mp h (show (0 : Fin 3) ≠ 2 by decide)
+  have := (mem_torus_iff R σ _).mp h (show (0 : Fin 3) ≠ 2 by decide)
   simp at this
 
 end TauCeti.UnitaryRankOne

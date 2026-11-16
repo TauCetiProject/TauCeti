@@ -198,7 +198,7 @@ theorem transpose_map_typeAGraphConjugator_galoisField :
       (-1 : GaloisField d.characteristic (d.fieldExponent * 2)) ^ r •
         (typeAGraphConjugator r (GaloisField d.characteristic (d.fieldExponent * 2)) :
           Matrix (Fin (r + 1)) (Fin (r + 1)) _) := by
-  rw [coe_map_typeAGraphConjugator, transpose_typeAGraphConjugator]
+  rw [map_coe_typeAGraphConjugator, transpose_typeAGraphConjugator]
 
 variable (d r) in
 /-- **The form of the special unitary group** `SU_{r+1}(q)`: the sesquilinear form
