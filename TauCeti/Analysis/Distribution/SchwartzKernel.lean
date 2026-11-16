@@ -9,7 +9,6 @@ public import TauCeti.Analysis.Distribution.ComplexPairing
 public import TauCeti.Analysis.Distribution.TestFunction.SchwartzKernel
 import TauCeti.Analysis.Distribution.Gluing
 import TauCeti.Analysis.Distribution.TestFunction.Frechet
-import TauCeti.Analysis.Distribution.TestFunction.LinearEquiv
 import TauCeti.Analysis.Distribution.TestFunction.TensorDensity
 import TauCeti.Topology.MetricSpace.Pseudo.Lemmas
 
@@ -28,7 +27,9 @@ test functions on `Ω × O` with
 where `(φ ⊗ ψ)(x, y) = φ x * ψ y` is `TestFunction.tensor`
 (`LinearMap.existsUnique_schwartzKernel_testFunction`). This is the Schwartz kernel theorem in the
 form of the construction in Hörmander's proof, which first derives the estimate above from the
-continuity of the map `ψ ↦ B (·) ψ` from `𝓓(O)` to `𝓓'(Ω)`; here the estimate is the hypothesis.
+continuity of the map `ψ ↦ B (·) ψ` from `𝓓(O)` to `𝓓'(Ω)`. These two theorems take the estimate
+as a hypothesis; it is derived from the weak continuity of an operator in
+`LinearMap.existsUnique_kernelOperator_eq` below.
 For `F = ℂ` the kernel is an actual distribution `K ∈ 𝓓'(Ω × O, ℂ)`, acting on complex test
 functions through its complex-linear extension `Distribution.complexPairing`
 (`LinearMap.existsUnique_schwartzKernel_distribution`).
@@ -81,8 +82,6 @@ on compact sets applies to it.
   of `ℝ^a × ℝ^b`.
 * `LinearMap.existsUnique_schwartzKernel_distribution`: its form for complex-valued
   distributions.
-* `TestFunction.continuous_prodSMulCLM_apply`: the tensor product `φ ⊗ ψ` of real test functions
-  is continuous in `ψ`.
 * `Distribution.kernelOperator`: the operator `𝓓(O) → 𝓓'(Ω)` with kernel `K`, with
   `Distribution.kernelOperator_apply`, `Distribution.continuous_kernelOperator_apply` and
   `Distribution.kernelOperator_injective`.
@@ -415,28 +414,6 @@ end LinearMap
 
 /-! ### Operators and their kernels -/
 
-namespace TestFunction
-
-variable {E D : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [NormedAddCommGroup D]
-  [NormedSpace ℝ D] {Ω : Opens E} {O : Opens D} {V : Opens (E × D)}
-
-/-- The tensor product `(x, y) ↦ ψ y • φ x` of real test functions is continuous in `ψ`, for the
-LF topologies. -/
-theorem continuous_prodSMulCLM_apply (hV : (Ω : Set E) ×ˢ (O : Set D) ⊆ V) (φ : 𝓓(Ω, ℝ)) :
-    Continuous fun ψ : 𝓓(O, ℝ) ↦ prodSMulCLM ψ hV φ := by
-  -- It is the tensor product with `φ` in the first factor of `O × Ω`, transported along the swap.
-  let W : Opens (D × E) := ⟨(O : Set D) ×ˢ (Ω : Set E), O.isOpen.prod Ω.isOpen⟩
-  have hW : MapsTo (ContinuousLinearEquiv.prodComm ℝ D E) W V := fun p hp ↦ hV ⟨hp.2, hp.1⟩
-  have h : (fun ψ : 𝓓(O, ℝ) ↦ prodSMulCLM ψ hV φ) =
-      (ContinuousLinearEquiv.prodComm ℝ D E).transportTestFunction hW ∘
-        prodSMulCLM (V := W) φ Subset.rfl := by
-    ext ψ p
-    simp [mul_comm]
-  rw [h]
-  exact (ContinuousLinearMap.continuous _).comp (ContinuousLinearMap.continuous _)
-
-end TestFunction
-
 namespace Distribution
 
 variable {E D : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [NormedAddCommGroup D]
@@ -461,20 +438,8 @@ def kernelOperator (hV : (Ω : Set E) ×ˢ (O : Set D) ⊆ V) :
     𝓓'(V, F) →ₗ[ℝ] 𝓓(O, ℝ) →ₗ[ℝ] 𝓓'(Ω, F) :=
   LinearMap.mk₂ ℝ (compProdSMul hV)
     (fun _ _ _ ↦ (rfl)) (fun _ _ _ ↦ (rfl))
-    (fun K ψ ψ' ↦ by
-      ext φ
-      simp only [add_apply, compProdSMul_apply]
-      rw [← map_add]
-      congr 1
-      ext p
-      simp [add_mul])
-    (fun c K ψ ↦ by
-      ext φ
-      simp only [smul_apply, compProdSMul_apply]
-      rw [← map_smul]
-      congr 1
-      ext p
-      simp [mul_assoc])
+    (fun K ψ ψ' ↦ by ext φ; simp [compProdSMul_apply, prodSMulCLM_add])
+    (fun c K ψ ↦ by ext φ; simp [compProdSMul_apply, prodSMulCLM_smul])
 
 /-- The operator with kernel `K` pairs `ψ` with `φ` to `K (φ ⊗ ψ)`. -/
 @[simp]
@@ -574,13 +539,9 @@ theorem existsUnique_kernelOperator_eq (A : 𝓓(O, ℝ) →ₗ[ℝ] 𝓓'(Ω, �
   -- `K` takes the value `⟨A ψ, φ⟩` on tensor products of real test functions.
   have hKA : kernelOperator hV.symm.subset K = A := by
     ext ψ φ
-    have htensor : postcompCLM (𝕜 := ℝ) Complex.ofRealCLM (prodSMulCLM ψ hV.symm.subset φ) =
-        (postcompCLM (𝕜 := ℝ) Complex.ofRealCLM φ).tensor (postcompCLM (𝕜 := ℝ) Complex.ofRealCLM ψ)
-          hV.symm.subset := by
-      ext p
-      simp [mul_comm]
-    rw [kernelOperator_apply, ← complexPairing_postcompCLM_ofRealCLM, htensor, hK, pairing_apply,
-      complexPairing_postcompCLM_ofRealCLM, pairingLeft_apply, complexPairing_postcompCLM_ofRealCLM]
+    rw [kernelOperator_apply, ← complexPairing_postcompCLM_ofRealCLM,
+      postcompCLM_ofRealCLM_prodSMulCLM, hK]
+    simp [pairing_apply, pairingLeft_apply, complexPairing_postcompCLM_ofRealCLM]
   exact ⟨K, hKA, fun K' hK' ↦ kernelOperator_injective hV (hK'.trans hKA.symm)⟩
 
 /-- **The operators with a Schwartz kernel** are exactly the linear maps `𝓓(O, ℝ) → 𝓓'(Ω, ℂ)`
