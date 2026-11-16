@@ -600,9 +600,8 @@ private theorem exists_mem_elementarySubgroup_mul_apply_eq_single {p q : n} (hqp
     have h := congr_fun₂ (Units.inv_mul (e * g)) p p
     rw [Matrix.mul_apply] at h
     have hcol' := congr_fun ((hcol e g).trans hd)
-    simp only [hcol', Pi.single_apply, mul_ite, mul_zero, Finset.sum_ite_eq',
-      Finset.mem_univ, ite_true, one_apply_eq] at h
-    exact IsUnit.of_mul_eq_one_right _ h
+    refine IsUnit.of_mul_eq_one_right ((((e * g)⁻¹ : GL n R) : Matrix n n R) p p) ?_
+    simpa [hcol', Pi.single_apply] using h
   obtain ⟨e', he', he'd⟩ :=
     exists_mem_elementarySubgroup_mulVec_single_eq_single_one hqp hd'.unit
   refine ⟨e' * e, mul_mem he' he, ?_⟩
@@ -645,8 +644,8 @@ private theorem mem_elementarySubgroup_sum_of_det_eq_one {m : Type*} [DecidableE
     lowerBlockGL_mem_elementarySubgroup _
   have hA : A.det = 1 := by
     have hdet : GeneralLinearGroup.det (h * lowerBlockGL (-C)) = 1 := by
-      rw [h_def, map_mul, map_mul, hg, elementarySubgroup_le_ker_det he,
-        elementarySubgroup_le_ker_det hL, mul_one, one_mul]
+      rw [h_def, map_mul, map_mul, hg, MonoidHom.mem_ker.1 (elementarySubgroup_le_ker_det he),
+        MonoidHom.mem_ker.1 (elementarySubgroup_le_ker_det hL), mul_one, one_mul]
     have h' := congrArg Units.val hdet
     rw [GeneralLinearGroup.val_det_apply, hk, det_fromBlocks_zero₁₂] at h'
     simpa using h'
@@ -696,7 +695,7 @@ theorem elementarySubgroup_eq_ker_det_of_euclideanDomain :
   refine le_antisymm elementarySubgroup_le_ker_det fun g hg ↦ ?_
   rw [← (Fintype.equivFin n).symm.map_reindexGL_elementarySubgroup]
   exact ⟨(Fintype.equivFin n).reindexGL R g, mem_elementarySubgroup_fin_of_det_eq_one _
-    (by rwa [Equiv.det_reindexGL]), by simp⟩
+    (by rw [Equiv.det_reindexGL]; exact MonoidHom.mem_ker.1 hg), by simp⟩
 
 end EuclideanDomain
 
