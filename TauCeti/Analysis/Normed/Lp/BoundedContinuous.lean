@@ -9,6 +9,7 @@ public import Mathlib.Analysis.Normed.Lp.LpEquiv
 public import TauCeti.Analysis.Normed.Lp.Dual
 public import TauCeti.Analysis.Normed.Lp.Finsupp
 import TauCeti.Analysis.Normed.Lp.Basic
+import TauCeti.Topology.ContinuousMap.Bounded.Normed
 
 /-!
 # Bounded continuous functions in `ℓ∞` and their pairing with `ℓ¹`
@@ -104,15 +105,10 @@ section Summable
 variable {𝕜 α E : Type*} [NormedAddCommGroup 𝕜] [TopologicalSpace α]
   [SeminormedAddCommGroup E] [SMulZeroClass 𝕜 E] [IsBoundedSMul 𝕜 E]
 
-private theorem norm_smul_bcf_le (u : lp (fun _ : α ↦ 𝕜) 1) (f : α →ᵇ E) (x : α) :
-    ‖u x • f x‖ ≤ ‖u x‖ * ‖f‖ :=
-  (norm_smul_le (u x) (f x)).trans
-    (mul_le_mul_of_nonneg_left (f.norm_coe_le_norm x) (norm_nonneg (u x)))
-
 /-- Pointwise scalar multiplication of `f : α →ᵇ E` by `u ∈ ℓ¹(α, 𝕜)` is norm-summable. -/
 theorem summable_norm_smul_bcf (u : lp (fun _ : α ↦ 𝕜) 1) (f : α →ᵇ E) :
     Summable fun x ↦ ‖u x • f x‖ :=
-  Summable.of_nonneg_of_le (fun _ ↦ norm_nonneg _) (norm_smul_bcf_le u f)
+  Summable.of_nonneg_of_le (fun _ ↦ norm_nonneg _) (fun x ↦ f.norm_smul_apply_le (u x) x)
     ((lp.hasSum_norm_one u).summable.mul_right ‖f‖)
 
 /-- When `E` is complete, pointwise scalar multiplication of `f : α →ᵇ E` by `u ∈ ℓ¹(α, 𝕜)` is
@@ -146,7 +142,8 @@ def bcfPairing : lp (fun _ : α ↦ 𝕜) 1 →L[𝕜] (α →ᵇ E) →L[𝕜] 
         simp_rw [FunLike.coe_smul, Pi.smul_apply, smul_comm _ c]
         exact tsum_const_smul'' c))
     1 fun u f ↦ by
-      simpa using tsum_of_norm_bounded ((lp.hasSum_norm_one u).mul_right ‖f‖) (norm_smul_bcf_le u f)
+      simpa using tsum_of_norm_bounded ((lp.hasSum_norm_one u).mul_right ‖f‖)
+        fun x ↦ f.norm_smul_apply_le (u x) x
 
 variable {𝕜 α E}
 
