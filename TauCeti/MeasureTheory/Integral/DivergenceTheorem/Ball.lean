@@ -10,7 +10,7 @@ public import Mathlib.LinearAlgebra.Trace
 public import Mathlib.MeasureTheory.Integral.IntervalIntegral.FundThmCalculus
 public import TauCeti.MeasureTheory.Constructions.HaarToSphere
 import Mathlib.Analysis.Calculus.Deriv.Support
-import Mathlib.Analysis.SpecialFunctions.Sqrt
+import TauCeti.Analysis.InnerProductSpace.NormPow
 import Mathlib.MeasureTheory.Function.L2Space
 import TauCeti.Analysis.Calculus.LineDeriv.IntegrationByParts
 import TauCeti.Analysis.Distribution.DuBoisReymond
@@ -77,20 +77,6 @@ private lemma smul_mem_closedBall {s R : ℝ} (hs : s ∈ Icc 0 R) (θ : sphere 
 /-! ### Radial test functions -/
 
 omit [FiniteDimensional ℝ E] [MeasurableSpace E] [BorelSpace E] in
-/-- The derivative of the norm away from the origin. -/
-private lemma hasFDerivAt_norm {x : E} (hx : x ≠ 0) :
-    HasFDerivAt (fun y : E ↦ ‖y‖) (‖x‖⁻¹ • innerSL ℝ x) x := by
-  have hx' : ‖x‖ ^ 2 ≠ 0 := pow_ne_zero 2 (norm_ne_zero_iff.mpr hx)
-  have h := (Real.hasDerivAt_sqrt hx').comp_hasFDerivAt x (hasStrictFDerivAt_norm_sq x).hasFDerivAt
-  simp only [Function.comp_def, Real.sqrt_sq (norm_nonneg _)] at h
-  convert h using 1
-  ext v
-  simp only [FunLike.coe_smul, Pi.smul_apply, innerSL_apply_apply, smul_eq_mul, two_smul,
-    add_apply]
-  field_simp
-  ring
-
-omit [FiniteDimensional ℝ E] [MeasurableSpace E] [BorelSpace E] in
 /-- A function `ψ` on the line vanishing near `0` gives the radial function `x ↦ ψ ‖x‖`, with
 gradient `ψ' (‖x‖) x / ‖x‖`. -/
 private lemma hasFDerivAt_comp_norm {ψ : ℝ → ℝ} (hψ : Differentiable ℝ ψ)
@@ -101,7 +87,7 @@ private lemma hasFDerivAt_comp_norm {ψ : ℝ → ℝ} (hψ : Differentiable ℝ
       (continuous_norm.tendsto' (0 : E) 0 norm_zero).eventually
         (notMem_tsupport_iff_eventuallyEq.mp hψ0)
     simpa using (hasFDerivAt_const (0 : ℝ) (0 : E)).congr_of_eventuallyEq h
-  · have h := (hψ ‖x‖).hasDerivAt.comp_hasFDerivAt x (hasFDerivAt_norm hx)
+  · have h := (hψ ‖x‖).hasDerivAt.comp_hasFDerivAt x (hasFDerivAt_norm_of_ne hx)
     rwa [div_eq_mul_inv, mul_smul]
 
 omit [FiniteDimensional ℝ E] [MeasurableSpace E] [BorelSpace E] in
@@ -278,18 +264,9 @@ private lemma integral_deriv_mul_eq_neg_integral_mul {ψ G g : ℝ → ℝ} {R :
   have hi : Integrable fun s ↦ ψ s * G s :=
     ((hψ.continuous.continuousOn.mul hGc).continuous_of_tsupport_subset isOpen_Ioo
       (tsupport_mul_subset_left.trans hψs)).integrable_of_hasCompactSupport hψc.mul_right
-  -- `ψ G` has derivative `ψ' G + ψ g` everywhere, since it vanishes near every point off `(0, R)`.
-  have hderiv : ∀ s, HasDerivAt (fun s ↦ ψ s * G s) (deriv ψ s * G s + ψ s * g s) s := by
-    intro s
-    by_cases hs : s ∈ Ioo 0 R
-    · exact (hψ.differentiable (by simp) s).hasDerivAt.mul (hG s hs)
-    · have h0 : ψ =ᶠ[𝓝 s] 0 := notMem_tsupport_iff_eventuallyEq.mp fun h ↦ hs (hψs h)
-      rw [h0.deriv_eq, h0.self_of_nhds]
-      simpa using (hasDerivAt_const s (0 : ℝ)).congr_of_eventuallyEq
-        (h0.mono fun y hy ↦ by simp [hy])
-  have h := integral_eq_zero_of_hasDerivAt_of_integrable hderiv (hi₁.add hi₂) hi
-  rw [integral_add hi₁ hi₂] at h
-  linarith
+  exact (neg_eq_iff_eq_neg.mpr (integral_mul_deriv_eq_deriv_mul_of_integrable
+    (fun s _ ↦ (hψ.differentiable (by simp) s).hasDerivAt) (fun s hs ↦ hG s (hψs hs))
+    hi₂ hi₁ hi)).symm
 
 /-- The flux `s ↦ ∫ ⟪V (s θ), θ⟫` through spheres about the origin is continuous in the radius on
 `[0, R]` when `V` is continuous on `closedBall 0 R`. -/
