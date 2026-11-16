@@ -50,7 +50,7 @@ at `k = 2`, where `log k > 0`.
   `[2, ∞)` converges absolutely and enters `B`, and its tail beyond `x` is at most `C / log x`.
   This estimate is stated for an arbitrary measurable `S`, so that the same argument serves the
   partial sums over `ℕ` here and those over the prime ideals of a number field in
-  `TauCeti.NumberTheory.LFunctions.Mertens`, from whose proof it is extracted.
+  `TauCeti.NumberTheory.LFunctions.Mertens`.
 
 ## Main declarations
 
