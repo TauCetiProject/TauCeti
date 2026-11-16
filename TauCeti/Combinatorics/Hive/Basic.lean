@@ -1240,9 +1240,6 @@ theorem rotate_injective [IsOrderedAddMonoid R] :
     Vertex.reflect_cornerA]
   abel
 
-theorem reflect_rotate_reflect_rotate [IsOrderedAddMonoid R] (h : Hive n R) :
-    h.reflect.rotate.reflect.rotate = h := by simp
-
 /-- Reflecting a hive reverses the side order (`0 ↔ 2`, fixing `1`) and dualizes each side weight.
 -/
 @[simp] theorem boundary_reflect (h : Hive n R) :
