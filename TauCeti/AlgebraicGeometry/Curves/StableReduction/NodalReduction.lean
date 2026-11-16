@@ -141,7 +141,7 @@ theorem map {E F : FiniteDVRExtension R K}
       (genericFiber K F.extensionField toK).hom := by
   obtain ⟨M, hproper, hnodal⟩ := h
   exact ⟨M.mapExtension T, M.isProper_mapExtension T hproper,
-    M.toBase_mapExtension T _ hnodal⟩
+    M.toBase_mapExtension_of_isStableUnderBaseChange T _ hnodal⟩
 
 /-- A nodal curve over `K` has nodal reduction if it has a proper model whose special fibre is at
 worst nodal. -/

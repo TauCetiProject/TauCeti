@@ -25,8 +25,8 @@ subscheme of the total space. The special fibre over any local ring is a closed 
 For a domain, the generic fibre is canonically isomorphic to Mathlib's scheme-theoretic fibre at
 the generic point. Iterated scalar extension is also canonically isomorphic to direct scalar
 extension, compatibly with both pullback projections. Along an `R`-algebra map `φ : K → L`, the
-scalar extension to `L` is the base change along `Spec φ` of the scalar extension to `K`
-(`TauCeti.isPullback_genericFiber_map`).
+scalar extension to `L` is the base change along `Spec φ` of the scalar extension to `K`, through
+the comparison map `TauCeti.genericFiberMap` (`TauCeti.isPullback_genericFiber_map`).
 -/
 
 public section
@@ -410,21 +410,40 @@ lemma spec_map_algebraMap_eq_spec_map_comp :
   rw [← Spec.map_comp, ← CommRingCat.ofHom_comp]
   exact congrArg (fun ψ ↦ Spec.map (CommRingCat.ofHom ψ)) φ.comp_algebraMap.symm
 
+/-- The comparison map from the scalar extension to `L` to the scalar extension to `K` along an
+`R`-algebra map `φ : K → L`: the identity on the total space and `Spec φ` on the base. -/
+noncomputable def genericFiberMap :
+    (genericFiber R L toBase).left ⟶ (genericFiber R K toBase).left :=
+  pullback.map toBase (Spec.map (CommRingCat.ofHom (algebraMap R L))) toBase
+    (Spec.map (CommRingCat.ofHom (algebraMap R K))) (𝟙 X)
+    (Spec.map (CommRingCat.ofHom φ.toRingHom)) (𝟙 _) (by simp)
+    (by rw [Category.comp_id, spec_map_algebraMap_eq_spec_map_comp R φ])
+
+/-- The comparison map of scalar extensions commutes with the projections to the total space. -/
+@[reassoc (attr := simp)]
+lemma genericFiberMap_genericFiberι :
+    genericFiberMap R φ toBase ≫ genericFiberι R K toBase = genericFiberι R L toBase := by
+  simp [genericFiberMap]
+
+/-- The comparison map of scalar extensions lies over `Spec φ`. -/
+@[reassoc (attr := simp)]
+lemma genericFiberMap_snd :
+    genericFiberMap R φ toBase ≫
+        pullback.snd toBase (Spec.map (CommRingCat.ofHom (algebraMap R K))) =
+      pullback.snd toBase (Spec.map (CommRingCat.ofHom (algebraMap R L))) ≫
+        Spec.map (CommRingCat.ofHom φ.toRingHom) :=
+  pullback.lift_snd _ _ _
+
 /-- **Scalar extension along an algebra map.** For an `R`-algebra map `φ : K → L`, the scalar
 extension of a scheme over `R` to `L` is the base change along `Spec φ` of its scalar extension to
-`K`, through the canonical comparison map of pullbacks. -/
+`K`, through the comparison map `TauCeti.genericFiberMap`. -/
 lemma isPullback_genericFiber_map :
-    IsPullback
-      (pullback.map toBase (Spec.map (CommRingCat.ofHom (algebraMap R L))) toBase
-        (Spec.map (CommRingCat.ofHom (algebraMap R K))) (𝟙 X)
-        (Spec.map (CommRingCat.ofHom φ.toRingHom)) (𝟙 _) (by simp)
-        (by rw [Category.comp_id, spec_map_algebraMap_eq_spec_map_comp R φ]))
-      (genericFiber R L toBase).hom (genericFiber R K toBase).hom
-      (Spec.map (CommRingCat.ofHom φ.toRingHom)) :=
+    IsPullback (genericFiberMap R φ toBase) (genericFiber R L toBase).hom
+      (genericFiber R K toBase).hom (Spec.map (CommRingCat.ofHom φ.toRingHom)) :=
   IsPullback.of_right (by
-      rw [pullback.lift_fst, Category.comp_id, ← spec_map_algebraMap_eq_spec_map_comp R φ]
+      rw [genericFiberMap_genericFiberι, ← spec_map_algebraMap_eq_spec_map_comp R φ]
       exact isPullback_genericFiber R L toBase)
-    (pullback.lift_snd _ _ _) (isPullback_genericFiber R K toBase)
+    (genericFiberMap_snd R φ toBase) (isPullback_genericFiber R K toBase)
 
 end AlgHom
 

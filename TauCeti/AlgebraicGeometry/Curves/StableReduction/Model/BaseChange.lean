@@ -321,7 +321,8 @@ variable {E F : FiniteDVRExtension R K}
 
 /-- The square of spectra of the local rings and extension fields of a map of chosen extensions
 commutes. -/
-private lemma spec_map_field_comp_spec_map_algebraMap (T : E ⟶ F) :
+lemma _root_.TauCeti.FiniteDVRExtension.Hom.spec_map_field_comp_spec_map_algebraMap
+    (T : E ⟶ F) :
     Spec.map (CommRingCat.ofHom T.field.toRingHom) ≫
         Spec.map (CommRingCat.ofHom (algebraMap E.localRing E.extensionField)) =
       Spec.map (CommRingCat.ofHom (algebraMap F.localRing F.extensionField)) ≫
@@ -334,33 +335,24 @@ private lemma spec_map_field_comp_spec_map_algebraMap (T : E ⟶ F) :
 variable (M : Model E.localRing E.extensionField (genericFiber K E.extensionField toK).left
   (genericFiber K E.extensionField toK).hom) (T : E ⟶ F)
 
-/-- The comparison of the scalar extensions of `C` to the fields of `F` and `E` along the field
-embedding of `T`. -/
-private noncomputable abbrev genericFiberMap :
-    (genericFiber K F.extensionField toK).left ⟶ (genericFiber K E.extensionField toK).left :=
-  pullback.map toK (Spec.map (CommRingCat.ofHom (algebraMap K F.extensionField))) toK
-    (Spec.map (CommRingCat.ofHom (algebraMap K E.extensionField))) (𝟙 C)
-    (Spec.map (CommRingCat.ofHom T.field.toRingHom)) (𝟙 _) (by simp)
-    (by rw [Category.comp_id, spec_map_algebraMap_eq_spec_map_comp K T.field])
-
 /-- The inclusion of `C_F` into the base change of `M` along the local-ring map of `T`. -/
 private noncomputable def mapExtensionGenericι :
     (genericFiber K F.extensionField toK).left ⟶
       pullback M.toBase (Spec.map (CommRingCat.ofHom T.localMap.toRingHom)) :=
-  pullback.lift (genericFiberMap T ≫ M.genericι)
+  pullback.lift (genericFiberMap K T.field toK ≫ M.genericι)
     ((genericFiber K F.extensionField toK).hom ≫
       Spec.map (CommRingCat.ofHom (algebraMap F.localRing F.extensionField)))
     (by
       rw [Category.assoc, genericι_toBase, ← Category.assoc,
         (isPullback_genericFiber_map K T.field toK).w, Category.assoc,
-        spec_map_field_comp_spec_map_algebraMap, Category.assoc])
+        T.spec_map_field_comp_spec_map_algebraMap, Category.assoc])
 
 private lemma isPullback_mapExtensionGenericι :
     IsPullback (mapExtensionGenericι M T) (genericFiber K F.extensionField toK).hom
       (pullback.snd M.toBase (Spec.map (CommRingCat.ofHom T.localMap.toRingHom)))
       (Spec.map (CommRingCat.ofHom (algebraMap F.localRing F.extensionField))) :=
   IsPullback.of_right (by
-      rw [mapExtensionGenericι, pullback.lift_fst, ← spec_map_field_comp_spec_map_algebraMap]
+      rw [mapExtensionGenericι, pullback.lift_fst, ← T.spec_map_field_comp_spec_map_algebraMap]
       exact (isPullback_genericFiber_map K T.field toK).paste_horiz M.isPullback_genericι)
     (pullback.lift_snd _ _ _) (IsPullback.of_hasPullback _ _)
 
@@ -400,24 +392,20 @@ along the field embedding. -/
 lemma genericι_mapExtension_fst :
     (M.mapExtension T).genericι ≫ eqToHom (mapExtension_total M T) ≫
         pullback.fst M.toBase (Spec.map (CommRingCat.ofHom T.localMap.toRingHom)) =
-      pullback.map toK (Spec.map (CommRingCat.ofHom (algebraMap K F.extensionField))) toK
-        (Spec.map (CommRingCat.ofHom (algebraMap K E.extensionField))) (𝟙 C)
-        (Spec.map (CommRingCat.ofHom T.field.toRingHom)) (𝟙 _) (by simp)
-        (by rw [Category.comp_id, spec_map_algebraMap_eq_spec_map_comp K T.field]) ≫
-        M.genericι := by
+      genericFiberMap K T.field toK ≫ M.genericι := by
   rw [genericι_mapExtension, Category.assoc, eqToHom_trans_assoc, eqToHom_refl,
     Category.id_comp, mapExtensionGenericι, pullback.lift_fst]
 
 /-- A property of morphisms stable under base change passes from the structure morphism of a
 model to that of its base change along a map of chosen extensions. -/
-lemma toBase_mapExtension (P : MorphismProperty Scheme.{u}) [P.IsStableUnderBaseChange]
-    (hM : P M.toBase) : P (M.mapExtension T).toBase := by
+lemma toBase_mapExtension_of_isStableUnderBaseChange (P : MorphismProperty Scheme.{u})
+    [P.IsStableUnderBaseChange] (hM : P M.toBase) : P (M.mapExtension T).toBase := by
   rw [mapExtension_toBase]
   exact (P.cancel_left_of_respectsIso _ _).mpr (P.pullback_snd _ _ hM)
 
 /-- Proper models remain proper after base change along a map of chosen extensions. -/
 lemma isProper_mapExtension (hM : M.IsProper) : (M.mapExtension T).IsProper :=
-  M.toBase_mapExtension T @AlgebraicGeometry.IsProper hM
+  M.toBase_mapExtension_of_isStableUnderBaseChange T @AlgebraicGeometry.IsProper hM
 
 end MapExtension
 
