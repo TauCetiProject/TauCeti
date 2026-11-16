@@ -155,6 +155,34 @@ theorem cubicalCrossProductRel_f_ιTensorObj_tmul {p q n : ℕ} (h : p + q = n)
     (a ⊗ₜ b)
   exact this.trans (congrArg _ (cubicalCrossProductSummand_apply k X P.fst p q n h a b))
 
+/-- The relative cross product of a cycle `z` of `X` and a relative cycle `w` of `(Y, B)`, the
+class `[b]` of a chain `b` of `Y`, is the relative cycle `[z × b]`, reindexed along `p + q = n`. -/
+theorem iCycles_cyclesMap_cubicalCrossProductRel_cyclesCross {p q n : ℕ} (h : p + q = n)
+    (z : ((normalizedCubicalChainComplex k).obj X).cycles p)
+    (w : (P.cubicalChainComplex k).cycles q) (b : NormalizedCubicalChain P.fst k q)
+    (hb : (P.cubicalChainComplex k).iCycles q w =
+      (cokernel.π ((normalizedCubicalChainComplex k).map P.map)).f q b) :
+    ((P.prodLeft X).cubicalChainComplex k).iCycles n
+        ((cyclesMap (cubicalCrossProductRel k X P) n).hom
+          ((cyclesCross ((normalizedCubicalChainComplex k).obj X) (P.cubicalChainComplex k)
+            p q n h).hom (z ⊗ₜ w))) =
+      (cokernel.π ((normalizedCubicalChainComplex k).map (P.prodLeft X).map)).f n
+        (NormalizedCubicalChain.cast k h
+          (NormalizedCubicalChain.crossProduct X P.fst k p q
+            (normalizedCubicalChainComplexXEquiv X p
+              (((normalizedCubicalChainComplex k).obj X).iCycles p z)) b)) := by
+  rw [moduleCat_iCycles_cyclesMap_apply]
+  -- the underlying chain of the tensor product of the cycles `z` and `w`
+  have hzw := ConcreteCategory.congr_hom (cyclesCross_iCycles
+    ((normalizedCubicalChainComplex k).obj X) (P.cubicalChainComplex k) p q n h) (z ⊗ₜ w)
+  simp only [ModuleCat.hom_comp, LinearMap.comp_apply,
+    ModuleCat.MonoidalCategory.tensorHom_tmul, hb] at hzw
+  -- `hzw` names the cycles of the tensor product through `HomologicalComplex.tensorObj` and the
+  -- goal through the monoidal `tensorObj`, which agree only after unfolding, so it is applied by
+  -- transitivity rather than rewriting
+  exact (congrArg ((cubicalCrossProductRel k X P).f n).hom hzw).trans
+    (cubicalCrossProductRel_f_ιTensorObj_tmul k X P h _ b)
+
 /-- The morphism of short exact sequences from `N(X) ⊗ (N(B) ⟶ N(Y) ⟶ N(Y, B))` to
 `N(X × B) ⟶ N(X × Y) ⟶ N(X × Y, X × B)` given by the absolute and relative cross products. -/
 def cubicalCrossProductShortComplexMap :

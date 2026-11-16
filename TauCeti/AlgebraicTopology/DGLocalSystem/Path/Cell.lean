@@ -101,7 +101,10 @@ private theorem smulSectionPairMap_fst_apply
     TopPair.Hom.fst (smulSectionPairMap τ h₀ h₁) z =
       z.1 • trivializationMap τ h₀ h₁ (z.2.down, 1) := by
   simp only [smulSectionPairMap, TopPair.Hom.fst_comp, FiberHomotopyEquiv.preimagePairMap_fst]
-  exact loopFiberHomotopyEquiv_toFun_apply τ h₀ h₁ (z.1, z.2.down)
+  -- the isomorphism of pairs lowers the cube coordinate, then the trivialization acts
+  exact (congrArg (loopFiberHomotopyEquiv τ h₀ h₁).toFun
+    (cubeBoundaryPairProdLeftIso_hom_fst_apply (TopCat.of (MooreLoopSpace X b)) (m + 1) z)).trans
+      (loopFiberHomotopyEquiv_toFun_apply τ h₀ h₁ (z.1, z.2.down))
 
 /-- The map of pairs `(ω, d) ↦ ω · (d, τ d)` induces isomorphisms of relative homology: it is an
 isomorphism of pairs followed by the map of pairs of a fibre homotopy equivalence. -/
@@ -201,41 +204,20 @@ theorem isCubicalRepresentative_cubicalHomologyCubeBoundaryEquiv (q : ℕ)
       ((cyclesCross ((normalizedCubicalChainComplex k).obj (TopCat.of (MooreLoopSpace X b)))
         ((cubeBoundaryPair.{0} (m + 1)).cubicalChainComplex k) q (m + 1) (q + (m + 1)) rfl).hom
           (z ⊗ₜ cubeBoundaryPairCycle k m))), ?_, ?_⟩
-  · rw [moduleCat_iCycles_cyclesMap_apply, moduleCat_iCycles_cyclesMap_apply]
-    -- the underlying chain of the tensor product of the cycles `z` and `[Iᵐ⁺¹]`
-    have h := ConcreteCategory.congr_hom (cyclesCross_iCycles
-      ((normalizedCubicalChainComplex k).obj (TopCat.of (MooreLoopSpace X b)))
-      ((cubeBoundaryPair.{0} (m + 1)).cubicalChainComplex k) q (m + 1) (q + (m + 1)) rfl)
-      (z ⊗ₜ cubeBoundaryPairCycle k m)
-    simp only [ModuleCat.hom_comp, LinearMap.comp_apply,
-      ModuleCat.MonoidalCategory.tensorHom_tmul] at h
-    -- its relative cross product is the class of the cross product of chains
-    have h₂ := cubicalCrossProductRel_f_ιTensorObj_tmul k (TopCat.of (MooreLoopSpace X b))
-      (cubeBoundaryPair.{0} (m + 1)) (rfl : q + (m + 1) = q + (m + 1))
-      (normalizedCubicalChainComplexXEquiv _ q
-        (((normalizedCubicalChainComplex k).obj (TopCat.of (MooreLoopSpace X b))).iCycles q z))
-      (NormalizedCubicalChain.ofCube _ k (upCube.{0} (m + 1)))
+  · -- `z × [Iᵐ⁺¹]` is the class of the cross product of `z` with the identity cube
+    rw [moduleCat_iCycles_cyclesMap_apply, iCycles_cyclesMap_cubicalCrossProductRel_cyclesCross
+      k _ _ rfl z _ _ ((iCycles_cubeBoundaryPairCycle k m).trans
+        (TopPair.cubicalChainOfCube_def k _)), normalizedCubicalChainComplexXEquiv_symm_apply]
     -- and the map of pairs acts on relative chains through the map of ambient spaces
-    have h₃ := ConcreteCategory.congr_hom (congrArg (fun φ ↦ φ.f (q + (m + 1)))
+    have h := ConcreteCategory.congr_hom (congrArg (fun φ ↦ φ.f (q + (m + 1)))
       (TopPair.π_cubicalChainComplexMap k (smulSectionPairMap τ h₀ h₁)))
       (NormalizedCubicalChain.cast k (rfl : q + (m + 1) = q + (m + 1))
         (NormalizedCubicalChain.crossProduct _ _ k q (m + 1)
           (normalizedCubicalChainComplexXEquiv _ q
             (((normalizedCubicalChainComplex k).obj (TopCat.of (MooreLoopSpace X b))).iCycles q z))
           (NormalizedCubicalChain.ofCube _ k (upCube.{0} (m + 1)))))
-    simp only [comp_f, ModuleCat.hom_comp] at h₃
-    -- the fundamental cycle of the cube pair is the class of the identity cube
-    rw [(iCycles_cubeBoundaryPairCycle k m).trans ((TopPair.cubicalChainOfCube_def k _).trans
-      (congrArg _ (normalizedCubicalChainComplexXEquiv_symm_apply _ _ _)))] at h
-    -- chain `h`, `h₂` and `h₃` by transitivity rather than rewriting with them: `h` names the
-    -- cycles of the tensor product through `HomologicalComplex.tensorObj` and the goal through
-    -- the monoidal `tensorObj`, which agree only after unfolding
-    refine Eq.trans ?_ ((congrArg (fun y ↦
-      ((TopPair.cubicalChainComplexMap k (smulSectionPairMap τ h₀ h₁)).f (q + (m + 1))).hom
-        (((cubicalCrossProductRel k _ (cubeBoundaryPair.{0} (m + 1))).f (q + (m + 1))).hom y))
-      h).trans ((congrArg
-        ((TopPair.cubicalChainComplexMap k (smulSectionPairMap τ h₀ h₁)).f (q + (m + 1))).hom
-        h₂).trans h₃)).symm
+    simp only [comp_f, ModuleCat.hom_comp] at h
+    refine Eq.trans ?_ h.symm
     refine (congrArg _ ?_).trans (LinearMap.comp_apply _ _ _).symm
     rw [NormalizedCubicalChain.cast_rfl]
     exact (map_crossProduct_upCube τ h₀ h₁ k _).symm

@@ -344,7 +344,7 @@ theorem cubicalHomologyCubeBoundaryPairProdLeftEquiv_homologyπ (q : ℕ)
 `Y × Iᵐ` over the boundary of the cube, the preimage of `∂Iᵐ` under the projection
 `Y × Iᵐ → Iᵐ`. This identifies `TauCeti.cubicalHomologyCubeBoundaryPairProdLeftEquiv` with the
 relative homology of a space over the cube restricted to the boundary. -/
-@[expose] def cubeBoundaryPairProdLeftIso (Y : TopCat.{u}) (m : ℕ) :
+def cubeBoundaryPairProdLeftIso (Y : TopCat.{u}) (m : ℕ) :
     (cubeBoundaryPair.{u} m).prodLeft Y ≅
       TopPair.ofSubset (X := TopCat.of (Y × (Fin m → I)))
         (ContinuousMap.snd ⁻¹' Cube.boundary (Fin m)) where
@@ -362,13 +362,13 @@ relative homology of a space over the cube restricted to the boundary. -/
 theorem cubeBoundaryPairProdLeftIso_hom_fst_apply (Y : TopCat.{u}) (m : ℕ)
     (z : Y × ULift.{u} (Fin m → I)) :
     TopPair.Hom.fst (cubeBoundaryPairProdLeftIso Y m).hom z = (z.1, z.2.down) :=
-  rfl
+  (rfl)
 
 /-- The inverse of `TauCeti.cubeBoundaryPairProdLeftIso` lifts the cube coordinate to `ULift`. -/
 @[simp]
 theorem cubeBoundaryPairProdLeftIso_inv_fst_apply (Y : TopCat.{u}) (m : ℕ)
     (z : Y × (Fin m → I)) :
     TopPair.Hom.fst (cubeBoundaryPairProdLeftIso Y m).inv z = (z.1, ULift.up z.2) :=
-  rfl
+  (rfl)
 
 end TauCeti
