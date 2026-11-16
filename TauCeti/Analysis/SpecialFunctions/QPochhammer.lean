@@ -10,7 +10,7 @@ public import Mathlib.Analysis.Complex.Periodic
 public import Mathlib.Analysis.Complex.UpperHalfPlane.FunctionsBoundedAtInfty
 public import Mathlib.Analysis.Normed.Module.MultipliableUniformlyOn
 public import TauCeti.Algebra.Ring.Parity
-public import TauCeti.Analysis.Normed.Ring.InfiniteProd
+public import TauCeti.Analysis.Normed.Ring.InfiniteProd.Basic
 public import TauCeti.Analysis.Normed.Ring.Basic
 import Mathlib.Analysis.Normed.Field.Instances
 import Mathlib.Analysis.Normed.Module.Completion
