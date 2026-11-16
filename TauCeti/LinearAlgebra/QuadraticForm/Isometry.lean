@@ -150,6 +150,13 @@ theorem _root_.QuadraticMap.IsometryEquiv.coe_polarKernelEquiv_symm_apply
     (((e.polarKernelEquiv x).symm y : LinearMap.ker (Q₁.polarBilin x)) : M₁) = e.symm y :=
   e.toLinearEquiv.ofSubmodules_symm_apply (e.map_polarKernel x) y
 
+/-- The identity isometric equivalence fixes every vector. -/
+@[simp]
+theorem _root_.QuadraticMap.IsometryEquiv.refl_apply {R : Type u} {M : Type v} {N : Type w}
+    [CommSemiring R] [AddCommMonoid M] [Module R M] [AddCommMonoid N] [Module R N]
+    (Q : QuadraticMap R M N) (x : M) : IsometryEquiv.refl Q x = x :=
+  rfl
+
 /-- The composition of two isometric equivalences acts by composing their underlying maps. -/
 @[simp]
 theorem _root_.QuadraticMap.IsometryEquiv.trans_apply {R : Type u} {M₁ : Type v} {M₂ : Type*}

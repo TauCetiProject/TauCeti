@@ -208,6 +208,17 @@ theorem IsometryEquiv.consPi_apply {n : ℕ} {M : Fin (n + 1) → Type*} [∀ i,
     IsometryEquiv.consPi Q (x, y) = Fin.cons x y :=
   (rfl)
 
+/-- The orthogonal sum of isometric equivalences acts coordinatewise. -/
+@[simp]
+theorem IsometryEquiv.pi_apply {ι : Type*} [Fintype ι] {M N : ι → Type*}
+    [∀ i, AddCommMonoid (M i)] [∀ i, Module R (M i)]
+    [∀ i, AddCommMonoid (N i)] [∀ i, Module R (N i)]
+    {Q : ∀ i, QuadraticMap R (M i) P} {Q' : ∀ i, QuadraticMap R (N i) P}
+    (e : ∀ i, (Q i).IsometryEquiv (Q' i)) (x : ∀ i, M i) (i : ι) :
+    IsometryEquiv.pi e x i = e i (x i) := by
+  rw [← IsometryEquiv.coe_toLinearEquiv, IsometryEquiv.pi_toLinearEquiv,
+    LinearEquiv.piCongrRight_apply, IsometryEquiv.coe_toLinearEquiv]
+
 /-- `LinearEquiv.piCongrLeft` is isometric: reindexing an orthogonal sum along an equivalence of
 its finite index types does not change it. -/
 def IsometryEquiv.piCongrLeft {ι ι' : Type*} [Fintype ι] [Fintype ι'] {M : ι → Type*}
@@ -216,7 +227,7 @@ def IsometryEquiv.piCongrLeft {ι ι' : Type*} [Fintype ι] [Fintype ι'] {M : �
     (QuadraticMap.pi fun i' ↦ Q (e i')).IsometryEquiv (QuadraticMap.pi Q) where
   toLinearEquiv := LinearEquiv.piCongrLeft R M e
   map_app' x := by
-    rw [pi_apply, pi_apply]
+    rw [QuadraticMap.pi_apply, QuadraticMap.pi_apply]
     exact (Fintype.sum_equiv e (fun i' ↦ Q (e i') (x i')) _ fun i' ↦
       congrArg (Q (e i')) (Equiv.piCongrLeft_apply_apply M e x i').symm).symm
 
@@ -256,7 +267,8 @@ def IsometryEquiv.piSubtype {ι : Type*} [Fintype ι] {M : ι → Type*} [∀ i,
     have hzero : ∑ i : {i // ¬S i}, Q i (x i) = 0 := Finset.sum_eq_zero fun i _ ↦ by
       have := hS i i.2
       rw [Subsingleton.elim (x i) 0, map_zero]
-    rw [pi_apply, pi_apply, ← Fintype.sum_subtype_add_sum_subtype S, hzero, add_zero]
+    rw [QuadraticMap.pi_apply, QuadraticMap.pi_apply,
+      ← Fintype.sum_subtype_add_sum_subtype S, hzero, add_zero]
 
 /-- The forward map of `QuadraticMap.IsometryEquiv.piSubtype` restricts to the retained summands. -/
 @[simp]
