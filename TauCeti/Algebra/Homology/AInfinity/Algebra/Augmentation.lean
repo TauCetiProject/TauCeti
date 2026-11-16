@@ -7,7 +7,9 @@ module
 
 import Mathlib.LinearAlgebra.Projection
 import TauCeti.Algebra.Module.GradedModule.Quotient
+public import TauCeti.Algebra.Homology.AInfinity.Algebra.DG
 public import TauCeti.Algebra.Homology.AInfinity.Algebra.Unit
+public import TauCeti.Algebra.Homology.DG.Algebra.Augmentation
 
 /-!
 # Augmented `A∞` algebras
@@ -20,7 +22,8 @@ arity other than two.
 The kernel of the augmentation is the reduced augmentation ideal.  It inherits the grading and
 all the operations, and the strict unit splits the underlying module into its scalar and
 reduced parts.  This is the input used to form reduced bar constructions without unit-containing
-tensor words.
+tensor words.  Any DG algebra augmentation induces an `A∞` augmentation on the associated `A∞`
+algebra.
 
 ## Main definitions
 
@@ -33,6 +36,8 @@ tensor words.
   augmentation ideal.
 * `TauCeti.AInfinityAlgebra.Augmentation.splitLinearEquiv`: the canonical splitting into scalar
   and reduced parts.
+* `TauCeti.DGAlgAugmentation.toAInfinityAugmentation`: the `A∞` augmentation induced by a DG
+  algebra augmentation.
 
 ## References
 
@@ -235,6 +240,36 @@ theorem reducedPart_coe (ε : 𝒜.Augmentation) (x : ε.augmentationIdeal) :
   apply Subtype.ext
   rw [coe_reducedPart, (mem_augmentationIdeal ε).mp x.property, zero_smul, sub_zero]
 
+/-- The reduced-part projection vanishes on the strict unit. -/
+@[simp]
+theorem reducedPart_unit (ε : 𝒜.Augmentation) : ε.reducedPart ε.unit = 0 :=
+  Subtype.ext (by simp)
+
+/-- The reduced-part projection retracts the inclusion of the augmentation ideal. -/
+@[simp]
+theorem reducedPart_comp_subtype (ε : 𝒜.Augmentation) :
+    ε.reducedPart ∘ₗ ε.augmentationIdeal.subtype = LinearMap.id :=
+  LinearMap.ext ε.reducedPart_coe
+
+/-- Applying `reducedPart` letterwise after including reduced words returns the original word. -/
+@[simp]
+theorem map_reducedPart_map_subtype (ε : 𝒜.Augmentation)
+    (w : ReducedTensorWords R ε.augmentationIdeal) :
+    ReducedTensorWords.map (R := R) ε.reducedPart
+      (ReducedTensorWords.map (R := R) ε.augmentationIdeal.subtype w) = w := by
+  rw [← LinearMap.comp_apply, ← ReducedTensorWords.map_comp, ε.reducedPart_comp_subtype,
+    ReducedTensorWords.map_id, LinearMap.id_apply]
+
+/-- An augmentation is invariant under any Koszul twist, since it vanishes outside degree zero. -/
+theorem comp_koszulTwist (ε : 𝒜.Augmentation) (q : ℤ) :
+    ε.toLinearMap ∘ₗ 𝒜.grading.koszulTwist q = ε.toLinearMap := by
+  refine 𝒜.grading.linearMap_ext fun p x hx ↦ ?_
+  simp only [LinearMap.comp_apply]
+  rcases eq_or_ne p 0 with rfl | hp
+  · rw [𝒜.grading.koszulTwist_apply_of_mem_zero hx]
+  · rw [ε.map_of_mem_ne_zero p _ (𝒜.grading.koszulTwist_mem_piece hx q) hp,
+      ε.map_of_mem_ne_zero p x hx hp]
+
 private theorem coe_evalNat_reducedOperation (ε : 𝒜.Augmentation) (n : ℕ)
     (x : ℕ → ε.augmentationIdeal) :
     ((MultilinearMap.evalNat (ε.reducedOperation n) x : ε.augmentationIdeal) : A) =
@@ -367,8 +402,76 @@ theorem splitLinearEquiv_symm_apply (ε : 𝒜.Augmentation)
   · rw [coe_reducedPart]
     simp [hx]
 
+/-- Elements of an augmented `A∞` algebra agree iff their augmentations and reduced parts agree. -/
+theorem eq_iff_map_eq_and_reducedPart_eq (ε : 𝒜.Augmentation) {x y : A} :
+    x = y ↔ ε x = ε y ∧ ε.reducedPart x = ε.reducedPart y := by
+  refine ⟨fun h ↦ by subst h; exact ⟨rfl, rfl⟩, fun ⟨h1, h2⟩ ↦ ε.splitLinearEquiv.injective ?_⟩
+  rw [splitLinearEquiv_apply, splitLinearEquiv_apply, h1, h2]
+
+/-- Two linear maps into an augmented `A∞` algebra agree iff their compositions with the
+augmentation and reduced-part projection agree. -/
+theorem linearMap_eq_iff (ε : 𝒜.Augmentation) {M : Type*} [AddCommMonoid M] [Module R M]
+    {L₁ L₂ : M →ₗ[R] A} :
+    L₁ = L₂ ↔ ε.toLinearMap ∘ₗ L₁ = ε.toLinearMap ∘ₗ L₂ ∧
+      ε.reducedPart ∘ₗ L₁ = ε.reducedPart ∘ₗ L₂ :=
+  ⟨fun h ↦ h ▸ ⟨rfl, rfl⟩, fun ⟨h1, h2⟩ ↦ LinearMap.ext fun x ↦
+    ε.eq_iff_map_eq_and_reducedPart_eq.mpr
+      ⟨LinearMap.congr_fun h1 x, LinearMap.congr_fun h2 x⟩⟩
+
+/-- The reduced-part projection is homogeneous of degree zero. -/
+theorem isHomogeneous_reducedPart (ε : 𝒜.Augmentation) :
+    LinearMap.IsHomogeneous ε.reducedPart 𝒜.grading.piece ε.reducedAlgebra.grading.piece 0 := by
+  refine LinearMap.isHomogeneous_def.mpr fun p x hx ↦ ?_
+  rw [add_zero, reducedAlgebra_grading, reducedGrading_piece, Submodule.mem_comap,
+    Submodule.subtype_apply, coe_reducedPart]
+  rcases eq_or_ne p 0 with rfl | hp
+  · exact sub_mem hx (Submodule.smul_mem _ _ ε.isStrictUnit.degree_zero)
+  · rw [ε.map_of_mem_ne_zero p x hx hp, zero_smul, sub_zero]; exact hx
+
 end Augmentation
 
 end AInfinityAlgebra
+
+namespace DGAlgAugmentation
+
+variable {R : Type uR} {A : Type uA} [CommRing R] [Ring A] [Algebra R A]
+  {𝒜 : ℤ → Submodule R A} [GradedAlgebra 𝒜] {dA : A →ₗ[R] A} {hA : IsDGAlgebra 𝒜 dA}
+  (eA : DGAlgAugmentation hA)
+
+/-- A DG algebra augmentation induces an augmentation of its associated `A∞` algebra. -/
+noncomputable def toAInfinityAugmentation :
+    hA.toIsNonUnitalDGAlgebra.toAInfinityAlgebra.Augmentation where
+  unit := 1
+  isStrictUnit := hA.strictUnit_one
+  toLinearMap := eA.toGradedAlgHom.toAlgHom.toLinearMap
+  map_unit := by simp
+  map_of_mem_ne_zero p x hx hp := by
+    rcases (mem_trivialGrading_iff R R).mp (eA.map_mem (by simpa using hx)) with rfl | h0
+    · exact absurd rfl hp
+    · exact h0
+  map_binary _ _ := by simp
+  map_m_of_ne_two n _ hn2 _ := by
+    rcases n with _ | _ | _ | k
+    · omega
+    · simp [eA.map_d]
+    · exact absurd rfl hn2
+    · simp
+
+/-- The strict unit of `eA.toAInfinityAugmentation` is `1`. -/
+@[simp]
+theorem toAInfinityAugmentation_unit : eA.toAInfinityAugmentation.unit = 1 := (rfl)
+
+/-- Evaluating `eA.toAInfinityAugmentation` agrees with `eA`. -/
+@[simp]
+theorem toAInfinityAugmentation_apply (a : A) : eA.toAInfinityAugmentation a = eA a := (rfl)
+
+/-- The augmentation ideal of `toAInfinityAugmentation` is `eA.augmentationIdeal.toSubmodule`. -/
+@[simp]
+theorem toAInfinityAugmentation_augmentationIdeal :
+    eA.toAInfinityAugmentation.augmentationIdeal = eA.augmentationIdeal.toSubmodule := by
+  ext a
+  exact (eA.toAInfinityAugmentation.mem_augmentationIdeal).trans eA.mem_augmentationIdeal.symm
+
+end DGAlgAugmentation
 
 end TauCeti

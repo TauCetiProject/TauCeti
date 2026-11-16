@@ -12,7 +12,7 @@ public import TauCeti.Algebra.Homology.DG.Algebra.KoszulTwist
 /-!
 # Twisting cochains and the cobar universal property
 
-A twisting cochain from a noncounital DG coalgebra `C` to a nonunital DG algebra `A` is a
+A twisting cochain from a noncounital DG coalgebra `C` to a unital DG algebra `A` is a
 linear map `τ : C → A` of degree one satisfying
 
 `d_A τ + τ d_C + μ (τ ⊗ τ) Δ = 0`,
@@ -21,8 +21,8 @@ where the tensor product of the two degree-one maps contributes the sign
 `(-1) ^ |c'|` on a coproduct term `c' ⊗ c''`. The equation makes sense over any
 commutative ring; it involves no division or infinite sum.
 
-For a unital target DG algebra `A`, the cobar universal property identifies these cochains with
-DG algebra maps `ΩC → A`, functorially in `C` and `A` (`cobarMap`, `cobarTwistingCochainEquiv`).
+The cobar universal property identifies these cochains with DG algebra maps `ΩC → A`,
+functorially in `C` and `A` (`cobarMap`, `cobarTwistingCochainEquiv`).
 With the differential of `cobarDifferential`, the universal twisting cochain is **minus**
 the inclusion of desuspended generators. Thus a twisting cochain `τ` extends uniquely to
 the DG algebra map taking `s⁻¹ c` to `-τ c`. We prove the full chain-map equation on the
@@ -44,17 +44,14 @@ namespace TauCeti
 
 universe uR uC uC' uA uB
 
-section NonUnital
-
 variable {R : Type uR} {C : Type uC} {A : Type uA}
-  [CommRing R] [AddCommGroup C] [Module R C]
-  [NonUnitalRing A] [Module R A] [IsScalarTower R A A] [SMulCommClass R A A]
+  [CommRing R] [AddCommGroup C] [Module R C] [Ring A] [Algebra R A]
   (G : InternalGrading R C ℤ) (Δ : C →ₗ[R] C ⊗[R] C) (dC : C →ₗ[R] C)
   (𝒜 : ℤ → Submodule R A) (dA : A →ₗ[R] A)
 
-/-- A degree-one twisting cochain into a possibly nonunital graded algebra, with the tensor-map
-Koszul sign in its quadratic term. For a coaugmented coalgebra this definition is applied to its
-coaugmentation coideal and reduced coproduct. -/
+/-- A degree-one twisting cochain, with the tensor-map Koszul sign in its quadratic term.
+For a coaugmented coalgebra this definition is applied to its coaugmentation coideal and
+reduced coproduct. -/
 structure IsTwistingCochain (τ : C →ₗ[R] A) : Prop where
   /-- A twisting cochain raises degree by one. -/
   isHomogeneous : LinearMap.IsHomogeneous τ G.piece 𝒜 1
@@ -65,14 +62,13 @@ structure IsTwistingCochain (τ : C →ₗ[R] A) : Prop where
 variable {G Δ dC 𝒜 dA}
 
 /-- The zero linear map is a twisting cochain. -/
+@[simp]
 theorem IsTwistingCochain.zero : IsTwistingCochain G Δ dC 𝒜 dA 0 where
   isHomogeneous := LinearMap.isHomogeneous_zero _ _ _
   equation _ := by simp
 
-namespace IsTwistingCochain
-
 /-- Precomposition with a degree-zero chain coalgebra map preserves twisting cochains. -/
-theorem comp {C' : Type uC'} [AddCommGroup C'] [Module R C']
+theorem IsTwistingCochain.comp {C' : Type uC'} [AddCommGroup C'] [Module R C']
     {G' : InternalGrading R C' ℤ} {Δ' : C' →ₗ[R] C' ⊗[R] C'} {dC' : C' →ₗ[R] C'}
     {τ : C →ₗ[R] A} (hτ : IsTwistingCochain G Δ dC 𝒜 dA τ) {F : C' →ₗ[R] C}
     (hF_hom : LinearMap.IsHomogeneous F G'.piece G.piece 0)
@@ -87,38 +83,6 @@ theorem comp {C' : Type uC'} [AddCommGroup C'] [Module R C']
     simp only [LinearMap.comp_apply] at hΔ ⊢
     rw [hd, LinearMap.comp_assoc, hσ, ← LinearMap.comp_assoc, ← TensorProduct.map_map, ← hΔ]
     exact hτ.equation (F c')
-
-/-- Postcomposition with a nonunital DG algebra morphism preserves twisting cochains. -/
-theorem map_nonUnital [SetLike.GradedMul 𝒜] [DirectSum.Decomposition 𝒜]
-    {B : Type uB} [NonUnitalRing B] [Module R B] [IsScalarTower R B B] [SMulCommClass R B B]
-    {ℬ : ℤ → Submodule R B} [SetLike.GradedMul ℬ] [DirectSum.Decomposition ℬ]
-    {dB : B →ₗ[R] B} {hA : IsNonUnitalDGAlgebra 𝒜 dA} {hB : IsNonUnitalDGAlgebra ℬ dB}
-    {τ : C →ₗ[R] A} (hτ : IsTwistingCochain G Δ dC 𝒜 dA τ) (f : NonUnitalDGAlgHom hA hB) :
-    IsTwistingCochain G Δ dC ℬ dB ((f : A →ₗ[R] B) ∘ₗ τ) where
-  isHomogeneous := LinearMap.isHomogeneous_def.mpr fun _ _ hc ↦
-    GradedFunLike.map_mem f (hτ.isHomogeneous.map_mem hc)
-  equation c := by
-    have hq (w : C ⊗[R] C) :
-        LinearMap.mul' R B (TensorProduct.map
-          (((f : A →ₗ[R] B) ∘ₗ τ) ∘ₗ G.koszulTwist 1) ((f : A →ₗ[R] B) ∘ₗ τ) w) =
-        f (LinearMap.mul' R A (TensorProduct.map (τ ∘ₗ G.koszulTwist 1) τ w)) := by
-      induction w using TensorProduct.inductionOn with
-      | tmul x y => simp
-      | add x y hx hy => simp only [map_add, hx, hy]
-    have he := congrArg f (hτ.equation c)
-    simp only [map_add, map_zero, ← f.map_d, ← hq] at he
-    simpa only [LinearMap.comp_apply, LinearMap.coe_ofClass] using he
-
-end IsTwistingCochain
-
-end NonUnital
-
-section Unital
-
-variable {R : Type uR} {C : Type uC} {A : Type uA}
-  [CommRing R] [AddCommGroup C] [Module R C] [Ring A] [Algebra R A]
-  {G : InternalGrading R C ℤ} {Δ : C →ₗ[R] C ⊗[R] C} {dC : C →ₗ[R] C}
-  {𝒜 : ℤ → Submodule R A} {dA : A →ₗ[R] A}
 
 private theorem map_cobar_quadratic {F : Type*} [FunLike F (TensorAlgebra R C) A]
     [AlgHomClass F R (TensorAlgebra R C) A] (φ : F) (w : C ⊗[R] C) :
@@ -150,9 +114,24 @@ variable {B : Type uB} [Ring B] [Algebra R B] {ℬ : ℤ → Submodule R B}
 
 /-- Postcomposition with a DG algebra morphism preserves twisting cochains. -/
 theorem map (hτ : IsTwistingCochain G Δ dC 𝒜 dA τ) (f : DGAlgHom hA hB) :
-    IsTwistingCochain G Δ dC ℬ dB ((f : A →ₗ[R] B) ∘ₗ τ) := by
-  have hf : (f.toNonUnitalDGAlgHom : A →ₗ[R] B) = (f : A →ₗ[R] B) := LinearMap.ext fun _ ↦ by simp
-  simpa only [hf] using hτ.map_nonUnital f.toNonUnitalDGAlgHom
+    IsTwistingCochain G Δ dC ℬ dB ((f : A →ₗ[R] B) ∘ₗ τ) where
+  isHomogeneous := LinearMap.isHomogeneous_def.mpr fun _ _ hc ↦
+    f.map_mem (hτ.isHomogeneous.map_mem hc)
+  equation c := by
+    have hq : LinearMap.mul' R B ∘ₗ TensorProduct.map
+        (((f : A →ₗ[R] B) ∘ₗ τ) ∘ₗ G.koszulTwist 1) ((f : A →ₗ[R] B) ∘ₗ τ) =
+        (f : A →ₗ[R] B) ∘ₗ LinearMap.mul' R A ∘ₗ
+          TensorProduct.map (τ ∘ₗ G.koszulTwist 1) τ := by
+      have hf := (AlgHom.ofClass f).comp_mul'
+      simp only [AlgHom.toLinearMap_eq_coe, AlgHomClass.linearMapOfClass_ofClass] at hf
+      rw [← LinearMap.comp_assoc, hf]
+      simp only [LinearMap.comp_assoc, ← TensorProduct.map_comp]
+    have he := congrArg f (hτ.equation c)
+    simp only [map_add, map_zero, ← f.map_d] at he
+    have hqc := LinearMap.congr_fun hq (Δ c)
+    simp only [LinearMap.comp_apply, LinearMap.coe_ofClass] at hqc ⊢
+    rw [hqc]
+    exact he
 
 end IsTwistingCochain
 
@@ -369,7 +348,5 @@ theorem cobarTwistingCochainEquiv_comp_cobarMap
 end Functoriality
 
 end IsNonCounitalDGCoalgebra
-
-end Unital
 
 end TauCeti

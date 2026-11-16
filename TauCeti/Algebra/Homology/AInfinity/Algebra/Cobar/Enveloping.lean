@@ -81,21 +81,18 @@ variable {B : Type uB} [Ring B] [Algebra R B] {ℬ : ℤ → Submodule R B} [Gra
 private noncomputable def cobarAugmentedToHomEquiv :
     {φ : DGAlgHom ε.isDGAlgebra_enveloping hB // eB.comp φ = ε.envelopingAugmentation} ≃
       {f : AInfinityHom ε.reducedAlgebra hB.toIsNonUnitalDGAlgebra.toAInfinityAlgebra //
-        ∀ z, f.taylor z ∈ eB.toAInfinityAugmentation.augmentationIdeal} where
-  toFun φ := ⟨(ε.reducedAlgebra.cobarBarHomEquiv hB).symm φ.1, fun z ↦ by
-    have hφ := (ε.reducedAlgebra.isNonCounitalDGCoalgebra_bar.comp_eq_cobarAugmentation_iff
-      eB φ.1).mp φ.2
-    rw [eB.toAInfinityAugmentation.mem_augmentationIdeal,
-      AInfinityAlgebra.taylor_cobarBarHomEquiv_symm_eq]
-    simpa using (eB.mem_augmentationIdeal).mp (hφ _)⟩
-  invFun f := ⟨ε.reducedAlgebra.cobarBarHomEquiv hB f.1, by
+        ∀ z, f.taylor z ∈ eB.toAInfinityAugmentation.augmentationIdeal} :=
+  (ε.reducedAlgebra.cobarBarHomEquiv hB).symm.subtypeEquiv fun φ ↦ by
     rw [envelopingAugmentation,
       ε.reducedAlgebra.isNonCounitalDGCoalgebra_bar.comp_eq_cobarAugmentation_iff eB]
-    intro z
-    rw [eB.mem_augmentationIdeal, AInfinityAlgebra.cobarBarHomEquiv_apply_ι_eq_taylor_koszulTwist]
-    simpa using (eB.toAInfinityAugmentation.mem_augmentationIdeal).mp (f.2 _)⟩
-  left_inv φ := Subtype.ext ((ε.reducedAlgebra.cobarBarHomEquiv hB).apply_symm_apply φ.1)
-  right_inv f := Subtype.ext ((ε.reducedAlgebra.cobarBarHomEquiv hB).symm_apply_apply f.1)
+    simp only [DGAlgAugmentation.mem_augmentationIdeal,
+      AInfinityAlgebra.Augmentation.mem_augmentationIdeal,
+      DGAlgAugmentation.toAInfinityAugmentation_apply,
+      AInfinityAlgebra.taylor_cobarBarHomEquiv_symm_eq_comp_koszulTwist,
+      LinearMap.comp_apply, LinearMap.coe_ofClass]
+    refine ⟨fun h z ↦ h _, fun h z ↦ ?_⟩
+    simpa [InternalGrading.koszulTwist_koszulTwist] using
+      h ((ReducedTensorWords.grading (ε.reducedAlgebra.grading.shift 1)).koszulTwist 1 z)
 
 /-- **The augmented bar–cobar adjunction**: augmented DG algebra morphisms
 `(U(A), ε_{U(A)}) → (B, e_B)` correspond bijectively to strictly unital augmented `A∞` morphisms
@@ -110,7 +107,7 @@ noncomputable def envelopingHomEquiv :
 
 /-- Explicit Taylor map of `envelopingHomEquiv eB φ`. -/
 @[simp]
-theorem taylor_envelopingHomEquiv
+theorem taylor_envelopingHomEquiv_apply
     (φ : {φ : DGAlgHom ε.isDGAlgebra_enveloping hB // eB.comp φ = ε.envelopingAugmentation})
     (w : ReducedTensorWords R A) :
     ((ε.envelopingHomEquiv eB φ).1).taylor w =
@@ -122,7 +119,8 @@ theorem taylor_envelopingHomEquiv
   have h0 (u) : eB (φ.1 (ι R u)) = 0 := (eB.mem_augmentationIdeal).mp (hφ u)
   simp [envelopingHomEquiv, cobarAugmentedToHomEquiv, Augmentation.coe_reducedPart,
     -AInfinityAlgebra.taylor_cobarBarHomEquiv_symm,
-    AInfinityAlgebra.taylor_cobarBarHomEquiv_symm_eq, Algebra.algebraMap_eq_smul_one, h0]
+    AInfinityAlgebra.taylor_cobarBarHomEquiv_symm_eq_comp_koszulTwist,
+    Algebra.algebraMap_eq_smul_one, h0]
 
 /-- The augmented DG algebra lift `(envelopingHomEquiv eB).symm f` evaluates on `s⁻¹ z` to
 `f.taylor` on the included and Koszul-twisted reduced word `σ z`. -/
@@ -134,20 +132,14 @@ theorem envelopingHomEquiv_symm_apply_ι
     ((ε.envelopingHomEquiv eB).symm f).1 (ι R z) =
       f.1.taylor (ReducedTensorWords.map (R := R) ε.augmentationIdeal.subtype
         ((ReducedTensorWords.grading (ε.reducedAlgebra.grading.shift 1)).koszulTwist 1 z)) := by
-  have heB (u : ReducedTensorWords R ε.augmentationIdeal) :
-      eB (f.1.taylor (ReducedTensorWords.map (R := R) ε.augmentationIdeal.subtype u)) = 0 := by
-    have h1 := LinearMap.congr_fun f.2.comp_taylor
-      (ReducedTensorWords.map (R := R) ε.augmentationIdeal.subtype u)
-    have h2 := LinearMap.congr_fun
-      (ReducedTensorWords.letter_comp_map ε.augmentationIdeal.subtype) u
-    simp only [LinearMap.comp_apply, DGAlgAugmentation.toAInfinityAugmentation_apply] at h1 h2
-    exact h1.trans (h2 ▸ (ε.mem_augmentationIdeal).mp (ReducedTensorWords.letter R _ u).2)
-  rw [envelopingHomEquiv, Equiv.symm_trans_apply, Equiv.symm_trans_apply, Equiv.symm_symm]
-  simp only [cobarAugmentedToHomEquiv, Equiv.coe_fn_symm_mk]
+  simp only [envelopingHomEquiv, Equiv.symm_trans_apply, Equiv.symm_symm,
+    ε.augmentedHomEquiv_apply, cobarAugmentedToHomEquiv, Equiv.subtypeEquiv_symm,
+    Equiv.subtypeEquiv_apply]
   rw [AInfinityAlgebra.cobarBarHomEquiv_apply_ι_eq_taylor_koszulTwist,
     AInfinityAlgebra.Augmentation.homToReducedEquiv_symm_apply,
-    AInfinityStrictHom.taylor_toAInfinityHom_comp]
-  simp [Augmentation.coe_reducedPart, heB]
+    f.2.inclusionStrictHom_comp_reducedHom, AInfinityHom.taylor_comp,
+    AInfinityStrictHom.barMap_toAInfinityHom, AInfinityStrictHom.barMap_def,
+    AInfinityAlgebra.Augmentation.inclusionStrictHom_toLinearMap, LinearMap.comp_apply]
 
 end Target
 
@@ -159,14 +151,30 @@ noncomputable def envelopingUnit :
     ⟨DGAlgHom.id ε.isDGAlgebra_enveloping, DGAlgHom.comp_id _⟩).1
 
 /-- The universal `A∞` morphism `envelopingUnit : A ⟶ U(A)` is strictly unital and augmented. -/
+@[simp]
 theorem isAugmented_envelopingUnit :
     ε.envelopingUnit.IsAugmented ε ε.envelopingAugmentation.toAInfinityAugmentation :=
   (ε.envelopingHomEquiv ε.envelopingAugmentation
     ⟨DGAlgHom.id ε.isDGAlgebra_enveloping, DGAlgHom.comp_id _⟩).2
 
+/-- Under `envelopingHomEquiv`, the identity of `U(A)` corresponds to `envelopingUnit`. -/
+theorem envelopingHomEquiv_id :
+    ε.envelopingHomEquiv ε.envelopingAugmentation
+        ⟨DGAlgHom.id ε.isDGAlgebra_enveloping, DGAlgHom.comp_id _⟩ =
+      ⟨ε.envelopingUnit, ε.isAugmented_envelopingUnit⟩ :=
+  (rfl)
+
+/-- Under `(envelopingHomEquiv).symm`, `envelopingUnit` corresponds to the identity of `U(A)`. -/
+@[simp]
+theorem envelopingHomEquiv_symm_envelopingUnit :
+    (ε.envelopingHomEquiv ε.envelopingAugmentation).symm
+        ⟨ε.envelopingUnit, ε.isAugmented_envelopingUnit⟩ =
+      ⟨DGAlgHom.id ε.isDGAlgebra_enveloping, DGAlgHom.comp_id _⟩ :=
+  Equiv.symm_apply_apply _ _
+
 /-- Explicit formula for the Taylor map of `envelopingUnit`. -/
 @[simp]
-theorem taylor_envelopingUnit (w : ReducedTensorWords R A) :
+theorem taylor_envelopingUnit_apply (w : ReducedTensorWords R A) :
     ε.envelopingUnit.taylor w =
       algebraMap R (TensorAlgebra R (ReducedTensorWords R ε.augmentationIdeal))
         (ε (ReducedTensorWords.letter R A w)) +
@@ -178,16 +186,8 @@ theorem taylor_envelopingUnit (w : ReducedTensorWords R A) :
 theorem taylor_envelopingUnit_map_subtype (u : ReducedTensorWords R ε.augmentationIdeal) :
     ε.envelopingUnit.taylor (ReducedTensorWords.map (R := R) ε.augmentationIdeal.subtype u) =
       ι R ((ReducedTensorWords.grading (ε.reducedAlgebra.grading.shift 1)).koszulTwist 1 u) := by
-  have hlet := LinearMap.congr_fun
-    (ReducedTensorWords.letter_comp_map ε.augmentationIdeal.subtype) u
-  simp only [LinearMap.comp_apply, Submodule.subtype_apply] at hlet
-  have hret : ReducedTensorWords.map (R := R) ε.reducedPart
-      (ReducedTensorWords.map (R := R) ε.augmentationIdeal.subtype u) = u := by
-    rw [← LinearMap.comp_apply, ← ReducedTensorWords.map_comp,
-      show ε.reducedPart ∘ₗ ε.augmentationIdeal.subtype = LinearMap.id from
-        LinearMap.ext ε.reducedPart_coe, ReducedTensorWords.map_id, LinearMap.id_apply]
-  rw [ε.taylor_envelopingUnit, hlet,
-    (ε.mem_augmentationIdeal).mp (ReducedTensorWords.letter R _ u).2, map_zero, zero_add, hret]
+  simp [ε.taylor_envelopingUnit_apply,
+    (ε.mem_augmentationIdeal).mp (ReducedTensorWords.letter R _ u).2]
 
 section UniversalProperty
 
@@ -240,6 +240,26 @@ theorem envelopingHomEquiv_comp {C : Type uC} [Ring C] [Algebra R C]
   rw [AInfinityStrictHom.taylor_toAInfinityHom_comp]
   exact LinearMap.ext fun _ ↦ by simp [AlgHomClass.commutes]
 
+/-- Target naturality of `(envelopingHomEquiv).symm` along `ψ : (B, e_B) → (C, e_C)`. -/
+@[simp]
+theorem envelopingHomEquiv_symm_toAInfinityHom_comp {C : Type uC} [Ring C] [Algebra R C]
+    {𝒞 : ℤ → Submodule R C} [GradedAlgebra 𝒞] {dC : C →ₗ[R] C} {hC : IsDGAlgebra 𝒞 dC}
+    (eC : DGAlgAugmentation hC) (ψ : DGAlgHom hB hC) (hψ : eC.comp ψ = eB)
+    (f : {f : AInfinityHom 𝒜 hB.toIsNonUnitalDGAlgebra.toAInfinityAlgebra //
+      f.IsAugmented ε eB.toAInfinityAugmentation}) :
+    ((ε.envelopingHomEquiv eC).symm
+        ⟨ψ.toNonUnitalDGAlgHom.toAInfinityStrictHom.toAInfinityHom.comp f.1,
+          ((ψ.isAugmented_toAInfinityHom_iff eB eC).mpr hψ).comp f.2⟩).1 =
+      ψ.comp ((ε.envelopingHomEquiv eB).symm f).1 := by
+  let φ := (ε.envelopingHomEquiv eB).symm f
+  suffices h : (ε.envelopingHomEquiv eC).symm
+      ⟨ψ.toNonUnitalDGAlgHom.toAInfinityStrictHom.toAInfinityHom.comp f.1,
+        ((ψ.isAugmented_toAInfinityHom_iff eB eC).mpr hψ).comp f.2⟩ =
+      ⟨ψ.comp φ.1, by rw [← DGAlgHom.comp_assoc, hψ, φ.2]⟩ from congrArg Subtype.val h
+  refine ((ε.envelopingHomEquiv eC).symm_apply_eq).mpr (Subtype.ext ?_)
+  rw [ε.envelopingHomEquiv_comp eB eC ψ hψ φ]
+  exact congrArg _ (congrArg Subtype.val ((ε.envelopingHomEquiv eB).apply_symm_apply f)).symm
+
 end UniversalProperty
 
 end Source
@@ -257,23 +277,18 @@ section Hom
 variable {A' : Type uA'} [AddCommGroup A'] [Module R A'] {𝒜' : AInfinityAlgebra R A'}
   {εA : 𝒜.Augmentation} {εA' : 𝒜'.Augmentation}
 
-private theorem reducedHom_eq_augmentedHomEquiv {g : AInfinityHom 𝒜 𝒜'}
-    (hg : g.IsAugmented εA εA') : hg.reducedHom = εA.augmentedHomEquiv εA' ⟨g, hg⟩ :=
-  AInfinityHom.ext <|
-    hg.taylor_reducedHom.trans (εA.taylor_augmentedHomEquiv_apply εA' ⟨g, hg⟩).symm
-
 /-- Functoriality of `U(-)`: any strictly unital augmented `A∞` morphism induces a DG algebra
-morphism `U(A) → U(A')` via `hg.reducedHom.cobarMap`. -/
+morphism `U(A) → U(A')` via `hg.reducedHom.cobarBarMap`. -/
 noncomputable def envelopingMap {g : AInfinityHom 𝒜 𝒜'} (hg : g.IsAugmented εA εA') :
     DGAlgHom εA.isDGAlgebra_enveloping εA'.isDGAlgebra_enveloping :=
-  hg.reducedHom.cobarMap
+  hg.reducedHom.cobarBarMap
 
 /-- On a desuspended generator `s⁻¹ z`, `hg.envelopingMap` applies `hg.reducedHom.barMap`. -/
 @[simp]
 theorem envelopingMap_ι {g : AInfinityHom 𝒜 𝒜'} (hg : g.IsAugmented εA εA')
     (z : ReducedTensorWords R εA.augmentationIdeal) :
     hg.envelopingMap (ι R z) = ι R (hg.reducedHom.barMap z) :=
-  hg.reducedHom.cobarMap_ι z
+  hg.reducedHom.cobarBarMap_ι z
 
 /-- Every induced morphism `envelopingMap` preserves the canonical cobar augmentation. -/
 @[simp]
@@ -289,9 +304,8 @@ theorem envelopingMap_comp {A'' : Type uA''} [AddCommGroup A''] [Module R A'']
     {g' : AInfinityHom 𝒜' 𝒜''} {g : AInfinityHom 𝒜 𝒜'}
     (hg' : g'.IsAugmented εA' εA'') (hg : g.IsAugmented εA εA') :
     (hg'.comp hg).envelopingMap = hg'.envelopingMap.comp hg.envelopingMap := by
-  rw [envelopingMap, envelopingMap, envelopingMap, (hg'.comp hg).reducedHom_eq_augmentedHomEquiv,
-    εA.augmentedHomEquiv_comp εA' ⟨g', hg'⟩ ⟨g, hg⟩, ← hg'.reducedHom_eq_augmentedHomEquiv,
-    ← hg.reducedHom_eq_augmentedHomEquiv, AInfinityHom.cobarMap_comp]
+  rw [envelopingMap, envelopingMap, envelopingMap, hg'.reducedHom_comp hg,
+    AInfinityHom.cobarBarMap_comp]
 
 /-- Source naturality of `envelopingHomEquiv` under precomposition with `hg.envelopingMap`. -/
 @[simp]
@@ -309,12 +323,14 @@ theorem envelopingHomEquiv_comp_envelopingMap {B : Type uB} [Ring B] [Algebra R 
   let f' := εA'.envelopingHomEquiv eB φ
   suffices h : εA.envelopingHomEquiv eB ψ = ⟨f'.1.comp g, f'.2.comp hg⟩ from congrArg Subtype.val h
   apply (εA.augmentedHomEquiv eB.toAInfinityAugmentation).injective
-  rw [εA.augmentedHomEquiv_comp εA' f' ⟨g, hg⟩, ← hg.reducedHom_eq_augmentedHomEquiv]
+  rw [εA.augmentedHomEquiv_comp εA' f' ⟨g, hg⟩, εA.augmentedHomEquiv_apply εA' ⟨g, hg⟩]
   dsimp only [AInfinityAlgebra.Augmentation.envelopingHomEquiv, Equiv.trans_apply, f']
   rw [Equiv.apply_symm_apply, Equiv.apply_symm_apply,
     ← eB.toAInfinityAugmentation.homToReducedEquiv_comp εA.reducedAlgebra εA'.reducedAlgebra]
-  exact congrArg _ (Subtype.ext
-    (AInfinityHom.cobarBarHomEquiv_symm_comp_cobarMap hB φ.1 hg.reducedHom))
+  refine congrArg _ (Subtype.ext ?_)
+  dsimp only [AInfinityAlgebra.Augmentation.cobarAugmentedToHomEquiv, Equiv.subtypeEquiv_apply,
+    ψ, envelopingMap]
+  exact εA.reducedAlgebra.cobarBarHomEquiv_symm_comp_cobarBarMap hB φ.1 hg.reducedHom
 
 /-- Naturality of `envelopingUnit` with respect to strictly unital augmented `A∞` morphisms. -/
 @[simp]
@@ -335,12 +351,39 @@ end Hom
 @[simp]
 theorem envelopingMap_id (εA : 𝒜.Augmentation) :
     (AInfinityHom.isAugmented_id εA).envelopingMap = DGAlgHom.id εA.isDGAlgebra_enveloping := by
-  rw [envelopingMap, (AInfinityHom.isAugmented_id εA).reducedHom_eq_augmentedHomEquiv,
-    εA.augmentedHomEquiv_id, AInfinityHom.cobarMap_id]
+  rw [envelopingMap, AInfinityHom.IsAugmented.reducedHom_id, AInfinityHom.cobarBarMap_id]
 
 end Functoriality
 
 end AInfinityHom.IsAugmented
+
+namespace AInfinityAlgebra.Augmentation
+
+/-- Source naturality of `(envelopingHomEquiv).symm` under precomposition with an augmented `A∞`
+morphism `g : (A, ε_A) ⟶ (A', ε_{A'})`. -/
+@[simp]
+theorem envelopingHomEquiv_symm_comp {A : Type uA} {A' : Type uA'} {B : Type uB}
+    [AddCommGroup A] [Module R A] [AddCommGroup A'] [Module R A']
+    {𝒜 : AInfinityAlgebra R A} {𝒜' : AInfinityAlgebra R A'}
+    [Ring B] [Algebra R B] {ℬ : ℤ → Submodule R B} [GradedAlgebra ℬ] {dB : B →ₗ[R] B}
+    {hB : IsDGAlgebra ℬ dB} (εA : 𝒜.Augmentation) {εA' : 𝒜'.Augmentation}
+    (eB : DGAlgAugmentation hB)
+    (f : {f : AInfinityHom 𝒜' hB.toIsNonUnitalDGAlgebra.toAInfinityAlgebra //
+      f.IsAugmented εA' eB.toAInfinityAugmentation})
+    {g : AInfinityHom 𝒜 𝒜'} (hg : g.IsAugmented εA εA') :
+    ((εA.envelopingHomEquiv eB).symm ⟨f.1.comp g, f.2.comp hg⟩).1 =
+      ((εA'.envelopingHomEquiv eB).symm f).1.comp hg.envelopingMap := by
+  let φ' := (εA'.envelopingHomEquiv eB).symm f
+  suffices h : (εA.envelopingHomEquiv eB).symm ⟨f.1.comp g, f.2.comp hg⟩ =
+      ⟨φ'.1.comp hg.envelopingMap, by
+        rw [← DGAlgHom.comp_assoc, φ'.2, hg.envelopingAugmentation_comp_envelopingMap]⟩ from
+    congrArg Subtype.val h
+  refine ((εA.envelopingHomEquiv eB).symm_apply_eq).mpr (Subtype.ext ?_)
+  rw [hg.envelopingHomEquiv_comp_envelopingMap eB φ']
+  exact congrArg (fun x : AInfinityHom 𝒜' _ ↦ x.comp g)
+    (congrArg Subtype.val ((εA'.envelopingHomEquiv eB).apply_symm_apply f)).symm
+
+end AInfinityAlgebra.Augmentation
 
 namespace DGAlgAugmentation
 
@@ -361,18 +404,41 @@ theorem comp_envelopingCounit :
   ((eB.toAInfinityAugmentation.envelopingHomEquiv eB).symm
     ⟨AInfinityHom.id _, AInfinityHom.isAugmented_id eB.toAInfinityAugmentation⟩).2
 
-/-- On `s⁻¹ z`, `envelopingCounit` projects onto single letters in `ker e_B` after `σ`. -/
+/-- Under `(envelopingHomEquiv).symm`, the identity `A∞` morphism of `B` corresponds to
+`envelopingCounit`. -/
+theorem envelopingHomEquiv_symm_id :
+    (eB.toAInfinityAugmentation.envelopingHomEquiv eB).symm
+        ⟨AInfinityHom.id _, AInfinityHom.isAugmented_id eB.toAInfinityAugmentation⟩ =
+      ⟨eB.envelopingCounit, eB.comp_envelopingCounit⟩ :=
+  (rfl)
+
+/-- Under `envelopingHomEquiv`, `envelopingCounit` corresponds to the identity `A∞` morphism
+of `B`. -/
+@[simp]
+theorem envelopingHomEquiv_envelopingCounit :
+    eB.toAInfinityAugmentation.envelopingHomEquiv eB
+        ⟨eB.envelopingCounit, eB.comp_envelopingCounit⟩ =
+      ⟨AInfinityHom.id _, AInfinityHom.isAugmented_id eB.toAInfinityAugmentation⟩ :=
+  Equiv.apply_symm_apply _ _
+
+/-- On `s⁻¹ z`, `envelopingCounit` projects onto single letters in `ker e_B` and applies the
+negated Koszul involution. -/
 @[simp]
 theorem envelopingCounit_ι
     (z : ReducedTensorWords R eB.toAInfinityAugmentation.augmentationIdeal) :
     eB.envelopingCounit (ι R z) =
-      (ReducedTensorWords.letter R eB.toAInfinityAugmentation.augmentationIdeal
-        ((ReducedTensorWords.grading
-          (eB.toAInfinityAugmentation.reducedAlgebra.grading.shift 1)).koszulTwist 1 z) : B) := by
+      -(InternalGrading.ofDecomposition ℬ).koszulTwist 1
+        (ReducedTensorWords.letter R eB.toAInfinityAugmentation.augmentationIdeal z : B) := by
+  have htwist := eB.toAInfinityAugmentation.inclusionStrictHom.isHomogeneous.koszulTwist_apply 1
+    (ReducedTensorWords.letter R eB.toAInfinityAugmentation.augmentationIdeal z)
+  simp only [mul_zero, Int.negOnePow_zero, Units.val_one, Int.cast_one, one_smul,
+    AInfinityAlgebra.Augmentation.inclusionStrictHom_toLinearMap, Submodule.subtype_apply,
+    IsNonUnitalDGAlgebra.toAInfinityAlgebra_grading] at htwist
   rw [envelopingCounit, AInfinityAlgebra.Augmentation.envelopingHomEquiv_symm_apply_ι,
-    AInfinityHom.taylor_id]
-  exact LinearMap.congr_fun
-    (ReducedTensorWords.letter_comp_map eB.toAInfinityAugmentation.augmentationIdeal.subtype) _
+    AInfinityHom.taylor_id, ReducedTensorWords.letter_map,
+    ReducedTensorWords.koszulTwist_grading, ReducedTensorWords.letter_map,
+    InternalGrading.koszulTwist_one_shift_one, LinearMap.neg_apply, Submodule.subtype_apply,
+    Submodule.coe_neg, ← htwist]
 
 /-- First triangle identity of the augmented bar–cobar adjunction for `(B, e_B)`. -/
 @[simp]
@@ -389,18 +455,23 @@ theorem envelopingCounit_comp_envelopingMap {A : Type uA} [AddCommGroup A] [Modu
     (hf : f.IsAugmented ε eB.toAInfinityAugmentation) :
     eB.envelopingCounit.comp hf.envelopingMap =
       ((ε.envelopingHomEquiv eB).symm ⟨f, hf⟩).1 := by
-  let ψ : {φ : DGAlgHom ε.isDGAlgebra_enveloping hB // eB.comp φ = ε.envelopingAugmentation} :=
-    ⟨eB.envelopingCounit.comp hf.envelopingMap, by
-      rw [← DGAlgHom.comp_assoc, eB.comp_envelopingCounit,
-        hf.envelopingAugmentation_comp_envelopingMap]⟩
-  suffices h : ψ = (ε.envelopingHomEquiv eB).symm ⟨f, hf⟩ from congrArg Subtype.val h
-  refine (ε.envelopingHomEquiv eB).eq_symm_apply.mpr (Subtype.ext ?_)
-  have h1 := hf.envelopingHomEquiv_comp_envelopingMap eB
-    ⟨eB.envelopingCounit, eB.comp_envelopingCounit⟩
-  have hc : (eB.toAInfinityAugmentation.envelopingHomEquiv eB
-      ⟨eB.envelopingCounit, eB.comp_envelopingCounit⟩).1 = AInfinityHom.id _ :=
-    congrArg Subtype.val ((eB.toAInfinityAugmentation.envelopingHomEquiv eB).apply_symm_apply _)
-  simpa only [hc, AInfinityHom.id_comp] using h1
+  have h := ε.envelopingHomEquiv_symm_comp eB
+    ⟨AInfinityHom.id _, AInfinityHom.isAugmented_id eB.toAInfinityAugmentation⟩ hf
+  simpa only [AInfinityHom.id_comp, eB.envelopingHomEquiv_symm_id] using h.symm
+
+/-- Naturality of `envelopingCounit` along an augmented DG algebra morphism
+`ψ : (A, e_A) → (B, e_B)`. -/
+@[simp]
+theorem envelopingCounit_comp_envelopingMap_toAInfinityHom {A : Type uA} [Ring A] [Algebra R A]
+    {𝒜 : ℤ → Submodule R A} [GradedAlgebra 𝒜] {dA : A →ₗ[R] A} {hA : IsDGAlgebra 𝒜 dA}
+    (eA : DGAlgAugmentation hA) (ψ : DGAlgHom hA hB) (hψ : eB.comp ψ = eA) :
+    eB.envelopingCounit.comp
+        ((ψ.isAugmented_toAInfinityHom_iff eA eB).mpr hψ).envelopingMap =
+      ψ.comp eA.envelopingCounit := by
+  rw [eB.envelopingCounit_comp_envelopingMap]
+  have h := eA.toAInfinityAugmentation.envelopingHomEquiv_symm_toAInfinityHom_comp eA eB ψ hψ
+    ⟨AInfinityHom.id _, AInfinityHom.isAugmented_id eA.toAInfinityAugmentation⟩
+  simpa only [AInfinityHom.comp_id, eA.envelopingHomEquiv_symm_id] using h
 
 end DGAlgAugmentation
 

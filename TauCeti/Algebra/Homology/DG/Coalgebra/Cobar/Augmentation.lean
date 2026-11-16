@@ -47,10 +47,6 @@ noncomputable def cobarAugmentation : DGAlgAugmentation hC.isDGAlgebra_cobarDiff
 theorem cobarAugmentation_ι (c : C) : hC.cobarAugmentation (ι R c) = 0 := by
   simp [cobarAugmentation]
 
-/-- Every desuspended generator lies in the augmentation ideal of `cobarAugmentation`. -/
-theorem ι_mem_cobarAugmentation_augmentationIdeal (c : C) :
-    ι R c ∈ hC.cobarAugmentation.augmentationIdeal := by simp
-
 /-- The twisting cochain associated to `cobarAugmentation` is zero. -/
 @[simp]
 theorem cobarTwistingCochainEquiv_cobarAugmentation :
@@ -108,14 +104,10 @@ theorem comp_cobarLift_eq_cobarAugmentation_iff (τ : C →ₗ[R] A)
 correspond bijectively to twisting cochains `C → A` valued in `eA.augmentationIdeal`. -/
 noncomputable def cobarAugmentedHomEquiv :
     {φ : DGAlgHom hC.isDGAlgebra_cobarDifferential hA // eA.comp φ = hC.cobarAugmentation} ≃
-      {τ : C →ₗ[R] A // IsTwistingCochain G Δ dC 𝒜 dA τ ∧ ∀ c, τ c ∈ eA.augmentationIdeal} where
-  toFun φ := ⟨(hC.cobarTwistingCochainEquiv hA φ.1).val,
-    (hC.cobarTwistingCochainEquiv hA φ.1).property,
-    (hC.comp_eq_cobarAugmentation_iff_twistingCochain eA φ.1).mp φ.2⟩
-  invFun τ := ⟨hC.cobarLift hA τ.1 τ.2.1,
-    (hC.comp_cobarLift_eq_cobarAugmentation_iff eA τ.1 τ.2.1).mpr τ.2.2⟩
-  left_inv φ := Subtype.ext (hC.cobarHom_ext hA fun _ ↦ by simp)
-  right_inv τ := Subtype.ext (LinearMap.ext fun _ ↦ by simp)
+      {τ : C →ₗ[R] A // IsTwistingCochain G Δ dC 𝒜 dA τ ∧ ∀ c, τ c ∈ eA.augmentationIdeal} :=
+  ((hC.cobarTwistingCochainEquiv hA).subtypeEquiv
+      (hC.comp_eq_cobarAugmentation_iff_twistingCochain eA)).trans
+    (Equiv.subtypeSubtypeEquivSubtypeInter _ _)
 
 /-- The forward direction of `cobarAugmentedHomEquiv` is negative restriction to generators. -/
 @[simp]
@@ -129,7 +121,7 @@ theorem cobarAugmentedHomEquiv_apply
 theorem cobarAugmentedHomEquiv_symm_apply_ι
     (τ : {τ : C →ₗ[R] A // IsTwistingCochain G Δ dC 𝒜 dA τ ∧ ∀ c, τ c ∈ eA.augmentationIdeal})
     (c : C) : ((hC.cobarAugmentedHomEquiv eA).symm τ).1 (ι R c) = -τ.1 c :=
-  hC.cobarLift_ι hA τ.1 τ.2.1 c
+  hC.cobarTwistingCochainEquiv_symm_apply_ι hA ⟨τ.1, τ.2.1⟩ c
 
 end UniversalProperty
 
