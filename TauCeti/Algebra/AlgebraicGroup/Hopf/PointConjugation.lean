@@ -82,6 +82,13 @@ theorem comp_pointConjugationAlgHom {A : Type w} [CommSemiring A] [Algebra R A]
   rw [WithConv.mapValue_algebraOfId]
   simp [AlgHom.mapValue_apply]
 
+/-- On rational points, precomposition by point conjugation is conjugation by `g` in the group
+of rational points. -/
+theorem comp_pointConjugationAlgHom_self (g x : WithConv (H →ₐ[R] R)) :
+    WithConv.toConv (x.ofConv.comp (pointConjugationAlgHom g)) = g * x * g⁻¹ := by
+  simpa only [Algebra.ofId_self, AlgHom.mapValue_id, MonoidHom.id_apply] using
+    comp_pointConjugationAlgHom g x
+
 /-- Conjugation by the identity point is the identity coordinate map. -/
 @[simp]
 theorem pointConjugationAlgHom_one :
