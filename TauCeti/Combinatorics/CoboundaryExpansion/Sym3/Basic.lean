@@ -94,23 +94,25 @@ def cost (α : Fin k → Fin k → S3) (β : Fin k → S3) : ℕ :=
 
 /-! ### Cost and defect as sums over vertices -/
 
+/-- A sum over `(List.finRange k).flatMap l` is the sum over `u : Fin k` of the sums over `l u`. -/
+private theorem sum_map_flatMap_finRange {α : Type*} (l : Fin k → List α) (f : α → ℕ) :
+    (((List.finRange k).flatMap l).map f).sum = ∑ u : Fin k, ((l u).map f).sum := by
+  simp [List.flatMap_def, List.sum_flatten, Fin.sum_univ_def, Function.comp_def]
+
 private theorem sum_edges (g : Fin k → Fin k → ℕ) :
     ((edges k).map fun e => g e.1 e.2).sum =
       ∑ u : Fin k, ∑ v : Fin k, if u < v then g u v else 0 := by
-  unfold edges
-  rw [List.map_flatMap, List.flatMap_def, List.sum_flatten, List.map_map, Fin.sum_univ_def]
-  refine congrArg List.sum (List.map_congr_left fun u _ => ?_)
+  rw [edges, sum_map_flatMap_finRange]
+  refine Finset.sum_congr rfl fun u _ => ?_
   simp [Fin.sum_univ_def, List.sum_map_ite, Function.comp_def]
 
 private theorem sum_triangles (g : Fin k → Fin k → Fin k → ℕ) :
     ((triangles k).map fun t => g t.1 t.2.1 t.2.2).sum =
       ∑ u : Fin k, ∑ v : Fin k, ∑ w : Fin k, if u < v ∧ v < w then g u v w else 0 := by
-  unfold triangles
-  rw [List.map_flatMap, List.flatMap_def, List.sum_flatten, List.map_map, Fin.sum_univ_def]
-  refine congrArg List.sum (List.map_congr_left fun u _ => ?_)
-  rw [Function.comp_apply, List.map_flatMap, List.flatMap_def, List.sum_flatten, List.map_map,
-    Fin.sum_univ_def]
-  refine congrArg List.sum (List.map_congr_left fun v _ => ?_)
+  rw [triangles, sum_map_flatMap_finRange]
+  refine Finset.sum_congr rfl fun u _ => ?_
+  rw [sum_map_flatMap_finRange]
+  refine Finset.sum_congr rfl fun v _ => ?_
   simp [Fin.sum_univ_def, List.sum_map_ite, Function.comp_def]
 
 /-- The cost of a gauge as a double sum over ordered vertex pairs `u < v`. -/
