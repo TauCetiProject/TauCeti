@@ -35,6 +35,9 @@ vectors indexed by `ι`.
   the ambient module, are linearly independent.
 * `Module.Basis.span_range_coe`: the vectors of a basis of a submodule `U`, viewed in the ambient
   module, span `U`.
+* `Module.Basis.span_range_map_coe`, `Module.Basis.linearIndependent_map_coe_basis`: their images
+  under a linear map `f` span the image of `U`, and are linearly independent when `f` is injective
+  on `U`.
 * `Module.Basis.range_eq_span_comp`: the range of a linear map is spanned by its values on a basis.
 * `Module.Basis.ofSpanEq`: a linearly independent family spanning a submodule `U` is a basis of `U`.
 * `Module.Basis.eq_sum_repr_smul_of_mem`: an ambient vector in a submodule `U` expands as the
@@ -143,6 +146,21 @@ theorem span_range_coe (b : Module.Basis n R U) :
     Submodule.span R (Set.range fun i ↦ (b i : M)) = U := by
   have h := congrArg (Submodule.map U.subtype) b.span_eq
   rwa [Submodule.map_span, Submodule.map_subtype_top, ← Set.range_comp] at h
+
+/-- The images under a linear map `f` of the vectors of a basis of a submodule `U`, viewed in the
+ambient module, span the image of `U`. -/
+@[simp]
+theorem span_range_map_coe {N : Type*} [AddCommMonoid N] [Module R N] (b : Module.Basis n R U)
+    (f : M →ₗ[R] N) : Submodule.span R (Set.range fun i ↦ f (b i)) = U.map f := by
+  have h := congrArg (Submodule.map f) b.span_range_coe
+  rwa [Submodule.map_span, ← Set.range_comp] at h
+
+/-- The images under a linear map `f`, injective on a submodule `U`, of the vectors of a basis of
+`U`, viewed in the ambient module, are linearly independent. -/
+theorem linearIndependent_map_coe_basis {N : Type*} [AddCommMonoid N] [Module R N]
+    (b : Module.Basis n R U) {f : M →ₗ[R] N} (hf : Set.InjOn f U) :
+    LinearIndependent R fun i ↦ f (b i) :=
+  b.linearIndependent_coe_basis.map_injOn f (by rwa [b.span_range_coe])
 
 /-- The range of a linear map is spanned by its values on a basis. -/
 theorem range_eq_span_comp {N : Type*} [AddCommMonoid N] [Module R N] (b : Module.Basis n R M)

@@ -62,14 +62,13 @@ variable {F : Type*} [Field F]
   {C D : HomologicalComplex (ModuleCat F) (ComplexShape.up (ZMod 2))} {n : ZMod 2 → ℕ}
   {c : ∀ k, Basis (Fin (n k + 1)) F (C.X k)} {e : ∀ k, Basis (Fin (n k)) F (D.X k)} {φ : D ⟶ C}
 
-/-- The span of the image under `φ` of a basis of the boundaries of `D` is the image of the
-boundaries. -/
-private theorem span_image {k k' : ZMod 2} {p : ℕ}
-    (bD : Basis (Fin p) F (LinearMap.range (D.d k k').hom)) :
-    Submodule.span F (Set.range fun l ↦ (φ.f k').hom (bD l)) =
-      (LinearMap.range (D.d k k').hom).map (φ.f k').hom := by
-  have h := congrArg (Submodule.map (φ.f k').hom) bD.span_range_coe
-  rwa [Submodule.map_span, ← Set.range_comp] at h
+/-- The two degrees `i` and `i' = i + 1` of a two-periodic complex are distinct, and every degree
+is one of them. -/
+private theorem ne_and_eq_or_eq {i i' : ZMod 2} (hii' : i + 1 = i') :
+    i ≠ i' ∧ ∀ k, k = i ∨ k = i' := by
+  subst hii'
+  revert i
+  decide
 
 section Block
 
@@ -114,13 +113,6 @@ private theorem d_apply_eq_zero : (C.d i' i).hom (c i' 0) = 0 := by
   rw [hd, map_smul] at h
   exact (smul_eq_zero.1 h).resolve_left ha
 
-omit ha hd in
-private theorem linearIndependent_image {k k' : ZMod 2} {p : ℕ}
-    (bD : Basis (Fin p) F (LinearMap.range (D.d k k').hom)) :
-    LinearIndependent F fun l ↦ (φ.f k').hom (bD l) :=
-  (bD.linearIndependent.map' _ (Submodule.ker_subtype _)).map' _
-    (LinearMap.ker_eq_bot.2 (injective_f hc k'))
-
 omit ha in
 /-- The boundaries of `C` into the degree of `c i' 0`: the image of the pair differential is
 spanned by `a • c i' 0` and the image under `φ` of the boundaries of `D`. -/
@@ -128,13 +120,14 @@ private theorem span_cons_eq_range {p : ℕ}
     (bD : Basis (Fin p) F (LinearMap.range (D.d i i').hom)) :
     Submodule.span F (Set.range (Fin.cons (a • c i' 0) fun l ↦ (φ.f i').hom (bD l))) =
       LinearMap.range (C.d i i').hom := by
-  rw [Fin.range_cons, Submodule.span_insert, span_image, range_d_eq hc, hd]
+  rw [Fin.range_cons, Submodule.span_insert, Basis.span_range_map_coe, range_d_eq hc, hd]
 
 omit hd in
 private theorem linearIndependent_cons {p : ℕ}
     (bD : Basis (Fin p) F (LinearMap.range (D.d i i').hom)) :
     LinearIndependent F (Fin.cons (a • c i' 0) fun l ↦ (φ.f i').hom (bD l)) := by
-  refine linearIndependent_finCons.2 ⟨linearIndependent_image hc bD, fun h ↦ ?_⟩
+  refine linearIndependent_finCons.2
+    ⟨bD.linearIndependent_map_coe_basis (injective_f hc i').injOn, fun h ↦ ?_⟩
   have hle : Submodule.span F (Set.range fun l ↦ (φ.f i').hom (bD l)) ≤
       LinearMap.range (φ.f i').hom :=
     Submodule.span_le.2 (Set.range_subset_iff.2 fun l ↦ LinearMap.mem_range_self _ _)
@@ -146,8 +139,8 @@ private theorem linearIndependent_cons {p : ℕ}
 private theorem span_image_eq_range {p : ℕ}
     (bD : Basis (Fin p) F (LinearMap.range (D.d i' i).hom)) :
     Submodule.span F (Set.range fun l ↦ (φ.f i).hom (bD l)) = LinearMap.range (C.d i' i).hom := by
-  rw [span_image, range_d_eq hc, d_apply_eq_zero ha hd, Submodule.span_singleton_eq_bot.2 rfl,
-    bot_sup_eq]
+  rw [Basis.span_range_map_coe, range_d_eq hc, d_apply_eq_zero ha hd,
+    Submodule.span_singleton_eq_bot.2 rfl, bot_sup_eq]
 
 omit ha hd in
 /-- The bracket in the degree `i'` of `c i' 0`: the boundaries there are spanned by `a • c i' 0`
@@ -199,7 +192,8 @@ private theorem acyclic_iff_of_block (hii' : i + 1 = i') : C.Acyclic ↔ D.Acycl
   have h₂ : finrank F (LinearMap.range (C.d i' i).hom) =
       finrank F (LinearMap.range (D.d i' i).hom) := by
     rw [← span_image_eq_range hc ha hd (chosenBoundaryBasis D e i' i),
-      finrank_span_eq_card (linearIndependent_image hc _), Fintype.card_fin]
+      finrank_span_eq_card (Basis.linearIndependent_map_coe_basis _ (injective_f hc i).injOn),
+      Fintype.card_fin]
   have hii : i' + 1 = i := by rw [← hii', add_assoc, CharTwo.add_self_eq_zero, add_zero]
   -- In either degree `j`, with `j'` the other one, exactness compares the sum of the dimensions of
   -- the two boundary spaces with that of `C.X j` or `D.X j`, and all of these drop by one.
@@ -213,10 +207,53 @@ private theorem acyclic_iff_of_block (hii' : i + 1 = i') : C.Acyclic ↔ D.Acycl
       finrank_eq_card_basis (c j), finrank_eq_card_basis (e j), Fintype.card_fin, Fintype.card_fin]
     rcases h with ⟨rfl, rfl⟩ | ⟨rfl, rfl⟩ <;> omega
   refine forall_congr' fun j ↦ ?_
-  obtain h | h : j = i ∨ j = i' :=
-    hii' ▸ (by decide : ∀ x j : ZMod 2, j = x ∨ j = x + 1) i j
+  obtain h | h := (ne_and_eq_or_eq hii').2 j
   · exact key (h ▸ hii') (h ▸ hii) (.inl ⟨h, rfl⟩)
   · exact key (h ▸ hii) (h ▸ hii') (.inr ⟨h, rfl⟩)
+
+/-- The brackets of `C` in both degrees, for boundary bases and lifts built from the chosen ones of
+`D` with `φ`: in the degree `i'` of `c i' 0` the bracket is `a` times that of `D`, and in the degree
+`i` of `c i 0` it is `(-1) ^ q` times that of `D`, `q` being the dimension of the image of
+`D.d i' i`. -/
+private theorem exists_torsionBracket_eq (hC : C.Acyclic) (hD : D.Acyclic) :
+    ∃ (b₁ : Basis (Fin (finrank F (LinearMap.range (D.d i i').hom) + 1)) F
+        (LinearMap.range (C.d i i').hom))
+      (b₀ : Basis (Fin (finrank F (LinearMap.range (D.d i' i).hom))) F
+        (LinearMap.range (C.d i' i).hom))
+      (s₀ : Fin (finrank F (LinearMap.range (D.d i' i).hom)) → C.X i')
+      (hs₀ : ∀ l, (C.d i' i).hom (s₀ l) = b₀ l)
+      (s₁ : Fin (finrank F (LinearMap.range (D.d i i').hom) + 1) → C.X i)
+      (hs₁ : ∀ l, (C.d i i').hom (s₁ l) = b₁ l),
+      (∀ (hi : (ComplexShape.up (ZMod 2)).prev i' = i)
+        (hk : (ComplexShape.up (ZMod 2)).next i' = i),
+        torsionBracket c hi hk (hC i') b₁ b₀ s₀ hs₀ =
+          a * torsionBracket e hi hk (hD i') (chosenBoundaryBasis D e i i')
+            (chosenBoundaryBasis D e i' i) (chosenBoundaryLift D e i' i)
+            (chosenBoundaryLift_spec D e i' i)) ∧
+      ∀ (hi : (ComplexShape.up (ZMod 2)).prev i = i')
+        (hk : (ComplexShape.up (ZMod 2)).next i = i'),
+        torsionBracket c hi hk (hC i) b₀ b₁ s₁ hs₁ =
+          (-1) ^ finrank F (LinearMap.range (D.d i' i).hom) *
+            torsionBracket e hi hk (hD i) (chosenBoundaryBasis D e i' i)
+              (chosenBoundaryBasis D e i i') (chosenBoundaryLift D e i i')
+              (chosenBoundaryLift_spec D e i i') := by
+  let bD₀ := chosenBoundaryBasis D e i' i
+  let bD₁ := chosenBoundaryBasis D e i i'
+  let sD₀ := chosenBoundaryLift D e i' i
+  let sD₁ := chosenBoundaryLift D e i i'
+  let b₁ := Basis.ofSpanEq (linearIndependent_cons hc ha bD₁) (span_cons_eq_range hc hd bD₁)
+  let b₀ := Basis.ofSpanEq (bD₀.linearIndependent_map_coe_basis (injective_f hc i).injOn)
+    (span_image_eq_range hc ha hd bD₀)
+  have hs₀ (l) : (C.d i' i).hom ((φ.f i').hom (sD₀ l)) = b₀ l := by
+    simp [b₀, sD₀, bD₀, Hom.comm_apply]
+  have hs₁ (l) : (C.d i i').hom ((Fin.cons (c i 0) fun l ↦ (φ.f i).hom (sD₁ l) :
+      Fin _ → C.X i) l) = b₁ l := by
+    induction l using Fin.cases <;> simp [b₁, sD₁, bD₁, hd, Hom.comm_apply]
+  refine ⟨b₁, b₀, _, hs₀, _, hs₁, fun hi hk ↦ ?_, fun hi hk ↦ ?_⟩
+  · exact torsionBracket_cons hc hi hk (hC i') (hD i') bD₁ bD₀ sD₀
+      (chosenBoundaryLift_spec D e i' i) b₁ (funext fun l ↦ by simp [b₁]) b₀ hs₀
+  · exact torsionBracket_image hc hi hk (hC i) (hD i) bD₀ bD₁ sD₁
+      (chosenBoundaryLift_spec D e i i') b₀ (funext fun l ↦ by simp [b₀]) b₁ hs₁
 
 end Block
 
@@ -235,24 +272,9 @@ private theorem parityTorsion_eq_of_block_one_zero :
   · rw [parityTorsion_of_not_acyclic D e hD, parityTorsion_of_not_acyclic C c
       (by rwa [acyclic_iff_of_block hc ha hd hii']), mul_zero]
   have hC := (acyclic_iff_of_block hc ha hd hii').2 hD
-  let bD₀ := chosenBoundaryBasis D e 1 0
-  let bD₁ := chosenBoundaryBasis D e 0 1
-  let sD₀ := chosenBoundaryLift D e 0 1
-  let sD₁ := chosenBoundaryLift D e 1 0
-  let b₀ := Basis.ofSpanEq (linearIndependent_cons hc ha bD₀) (span_cons_eq_range hc hd bD₀)
-  let b₁ := Basis.ofSpanEq (linearIndependent_image hc bD₁) (span_image_eq_range hc ha hd bD₁)
-  have hs₀ (l) : (C.d 0 1).hom ((φ.f 0).hom (sD₀ l)) = b₁ l := by
-    simp [b₁, sD₀, bD₁, Hom.comm_apply]
-  have hs₁ (l) : (C.d 1 0).hom ((Fin.cons (c 1 0) fun l ↦ (φ.f 1).hom (sD₁ l) :
-      Fin _ → C.X 1) l) = b₀ l := by
-    induction l using Fin.cases <;> simp [b₀, sD₁, bD₀, hd, Hom.comm_apply]
-  rw [parityTorsion_eq hC b₀ b₁ _ hs₀ _ hs₁,
-    parityTorsion_eq hD bD₀ bD₁ sD₀ (chosenBoundaryLift_spec D e 0 1) sD₁
-      (chosenBoundaryLift_spec D e 1 0),
-    torsionBracket_image hc _ _ _ (hD 1) bD₁ bD₀ sD₁ (chosenBoundaryLift_spec D e 1 0) b₁
-      (funext fun l ↦ by simp [b₁]),
-    torsionBracket_cons hc (a := a) _ _ _ (hD 0) bD₀ bD₁ sD₀ (chosenBoundaryLift_spec D e 0 1) b₀
-      (funext fun l ↦ by simp [b₀]), mul_inv]
+  obtain ⟨b₀, b₁, s₀, hs₀, s₁, hs₁, h₀, h₁⟩ := exists_torsionBracket_eq hc ha hd hC hD
+  rw [parityTorsion_eq hC b₀ b₁ s₀ hs₀ s₁ hs₁, parityTorsion_eq hD _ _ _
+    (chosenBoundaryLift_spec D e 0 1) _ (chosenBoundaryLift_spec D e 1 0), h₀, h₁, mul_inv]
   ring
 
 end BlockOneZero
@@ -272,24 +294,10 @@ private theorem parityTorsion_eq_of_block_zero_one :
   · rw [parityTorsion_of_not_acyclic D e hD, parityTorsion_of_not_acyclic C c
       (by rwa [acyclic_iff_of_block hc ha hd hii']), mul_zero]
   have hC := (acyclic_iff_of_block hc ha hd hii').2 hD
-  let bD₀ := chosenBoundaryBasis D e 1 0
-  let bD₁ := chosenBoundaryBasis D e 0 1
-  let sD₀ := chosenBoundaryLift D e 0 1
-  let sD₁ := chosenBoundaryLift D e 1 0
-  let b₀ := Basis.ofSpanEq (linearIndependent_image hc bD₀) (span_image_eq_range hc ha hd bD₀)
-  let b₁ := Basis.ofSpanEq (linearIndependent_cons hc ha bD₁) (span_cons_eq_range hc hd bD₁)
-  have hs₀ (l) : (C.d 0 1).hom ((Fin.cons (c 0 0) fun l ↦ (φ.f 0).hom (sD₀ l) :
-      Fin _ → C.X 0) l) = b₁ l := by
-    induction l using Fin.cases <;> simp [b₁, sD₀, bD₁, hd, Hom.comm_apply]
-  have hs₁ (l) : (C.d 1 0).hom ((φ.f 1).hom (sD₁ l)) = b₀ l := by
-    simp [b₀, sD₁, bD₀, Hom.comm_apply]
-  rw [parityTorsion_eq hC b₀ b₁ _ hs₀ _ hs₁,
-    parityTorsion_eq hD bD₀ bD₁ sD₀ (chosenBoundaryLift_spec D e 0 1) sD₁
-      (chosenBoundaryLift_spec D e 1 0),
-    torsionBracket_cons hc (a := a) _ _ _ (hD 1) bD₁ bD₀ sD₁ (chosenBoundaryLift_spec D e 1 0) b₁
-      (funext fun l ↦ by simp [b₁]),
-    torsionBracket_image hc _ _ _ (hD 0) bD₀ bD₁ sD₀ (chosenBoundaryLift_spec D e 0 1) b₀
-      (funext fun l ↦ by simp [b₀]), mul_inv, ← inv_pow, inv_neg_one]
+  obtain ⟨b₁, b₀, s₁, hs₁, s₀, hs₀, h₁, h₀⟩ := exists_torsionBracket_eq hc ha hd hC hD
+  rw [parityTorsion_eq hC b₀ b₁ s₀ hs₀ s₁ hs₁, parityTorsion_eq hD _ _ _
+    (chosenBoundaryLift_spec D e 0 1) _ (chosenBoundaryLift_spec D e 1 0), h₀, h₁, mul_inv,
+    ← inv_pow, inv_neg_one]
   ring
 
 end BlockZeroOne
@@ -326,19 +334,17 @@ private theorem exists_adapted (hii' : i + 1 = i') : ∃ c' : ∀ k, Basis (Fin 
     ((c i).is_basis_iff_det.2 (hdet ▸ isUnit_one)).2.ge
   let β' := Basis.mk ((c i').is_basis_iff_det.2 (hdet' ▸ isUnit_one)).1
     ((c i').is_basis_iff_det.2 (hdet' ▸ isUnit_one)).2.ge
-  have hne : i ≠ i' := hii' ▸ (by decide : ∀ x : ZMod 2, x ≠ x + 1) i
+  have hne : i ≠ i' := (ne_and_eq_or_eq hii').1
   have hβ : Function.update (Function.update c i β) i' β' i = β := by
     rw [Function.update_of_ne hne, Function.update_self]
   have hβ' : Function.update (Function.update c i β) i' β' i' = β' := Function.update_self ..
   refine ⟨Function.update (Function.update c i β) i' β', fun k l ↦ ?_, ?_, fun k ↦ ?_⟩
-  · obtain rfl | rfl : i = k ∨ i' = k :=
-      hii' ▸ (by decide : ∀ x j : ZMod 2, x = j ∨ x + 1 = j) i k
+  · obtain rfl | rfl := (ne_and_eq_or_eq hii').2 k
     · simp [hβ, β]
     · simp [β']
   · rw [hβ, hβ']
     simp [β, β', x, smul_inv_smul₀ ha]
-  · obtain rfl | rfl : i = k ∨ i' = k :=
-      hii' ▸ (by decide : ∀ x j : ZMod 2, x = j ∨ x + 1 = j) i k
+  · obtain rfl | rfl := (ne_and_eq_or_eq hii').2 k
     · rw [hβ, Basis.coe_mk, hdet]
     · rw [hβ', Basis.coe_mk, hdet']
 
