@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.CStarAlgebra.Action.Convolution.Multiplier
-public import TauCeti.Analysis.CStarAlgebra.ApproximateUnit
+public import TauCeti.Analysis.CStarAlgebra.ApproximateUnit.Basic
 
 /-!
 # Coefficient approximate units on the convolution algebra

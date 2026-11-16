@@ -31,6 +31,9 @@ that drives the approximate-unit argument showing that closed two-sided ideals a
 `‖e * star a - star a‖ ^ 2 ≤ ‖star a * a - e * (star a * a)‖`. Its companion
 `TauCeti.CStarAlgebra.norm_sub_mul_sq_le`, `‖a - a * e‖ ^ 2 ≤ ‖star a * a + z‖ + ‖z - z * e‖`,
 drives the proof of the C⋆-identity on the quotient by a closed two-sided ideal.
+
+`Filter.IsIncreasingApproximateUnit.mono` records that any proper filter finer than an increasing
+approximate unit is again an increasing approximate unit.
 -/
 
 public section
@@ -43,6 +46,15 @@ namespace Filter.IsIncreasingApproximateUnit
 section Uniform
 
 variable {A : Type*} [NonUnitalCStarAlgebra A] [PartialOrder A]
+
+/-- A proper filter finer than an increasing approximate unit of a (possibly nonunital) C⋆-algebra
+is again an increasing approximate unit. -/
+theorem mono {l l' : Filter A} (hl : l.IsIncreasingApproximateUnit) (hle : l' ≤ l) [l'.NeBot] :
+    l'.IsIncreasingApproximateUnit where
+  tendsto_mul_left m := (hl.tendsto_mul_left m).mono_left hle
+  tendsto_mul_right m := (hl.tendsto_mul_right m).mono_left hle
+  eventually_nonneg := hl.eventually_nonneg.filter_mono hle
+  eventually_norm := hl.eventually_norm.filter_mono hle
 
 /-- Along an increasing approximate unit, `e * a → a` uniformly for `a` in a compact set. -/
 theorem tendstoUniformlyOn_mul_right {l : Filter A} (hl : l.IsIncreasingApproximateUnit)
