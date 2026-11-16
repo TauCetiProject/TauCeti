@@ -28,10 +28,10 @@ is invertible in the coefficients `A(V)` is isomorphic to the exterior algebra o
 above `finrank R V`. For the general mixed-parity comparison `A(V) ≃ Sym(V_even) ⊗ Λ(V_odd)`, see
 `TauCeti.LinearAlgebra.SignedSymmetricAlgebra.Parity.Decomposition`.
 
-When `V` is concentrated in degree `1`, `toExteriorAlgebra` maps `signedSymPiece G p` onto
-`TauCeti.ExteriorAlgebra.integerGrading R V p` over any commutative ring, `exteriorAlgebraEquiv`
-identifies them isomorphically when `2` is invertible, and `signedSymPiece G p` vanishes above
-`finrank R V` for finite free `V`.
+When an integer-graded module `V` (`G : InternalGrading R V ℤ`) is concentrated in degree `1`,
+`toExteriorAlgebra` maps `signedSymPiece G p` onto `TauCeti.ExteriorAlgebra.integerGrading R V p`
+over any commutative ring, `exteriorAlgebraEquiv` identifies them isomorphically when `2` is
+invertible, and `signedSymPiece G p` vanishes above `finrank R V` for finite free `V`.
 
 The invertibility of `2` cannot be dropped in the odd equivalence: over `ℤ`, the relation only
 gives `2 • x ^ 2 = 0` for an odd generator `x`, while `x ^ 2 = 0` holds in the exterior algebra.
@@ -44,29 +44,26 @@ generators when `V` is concentrated in Koszul-even degrees.
 
 ## Main definitions and results
 
-* `TauCeti.SignedSym.commute_generator_of_piece_eq_bot` and
-  `TauCeti.SignedSym.mul_comm_of_piece_eq_bot` (with integer specializations
-  `commute_generator_of_piece_odd_eq_bot` and `mul_comm_of_piece_odd_eq_bot`): when all pieces of
-  Koszul sign `-1` vanish, generators commute, hence `A(V)` is commutative.
+* `TauCeti.SignedSym.commute_generator_of_piece_uzpow_neg_one_eq_bot` and
+  `TauCeti.SignedSym.mul_comm_of_piece_uzpow_neg_one_eq_bot`: when all pieces of Koszul sign `-1`
+  vanish, generators commute, hence `A(V)` is commutative.
 * `TauCeti.SignedSym.symmetricAlgebraEquiv` and
   `TauCeti.SignedSym.map_lengthPiece_symmetricAlgebraEquiv`: when all pieces of Koszul sign `-1`
   vanish, `A(V) ≃ Sym(V)` compatibly with word length, over any commutative ring.
-* `TauCeti.SignedSym.generator_mul_generator_eq_neg_of_piece_eq_bot` and
-  `TauCeti.SignedSym.generator_mul_self_eq_zero_of_piece_eq_bot` (with integer specializations
-  `generator_mul_generator_eq_neg_of_piece_even_eq_bot` and
-  `generator_mul_self_eq_zero_of_piece_even_eq_bot`): when all pieces of Koszul sign `1` vanish,
-  generators anticommute, and square to zero when `2` is invertible.
+* `TauCeti.SignedSym.generator_mul_generator_eq_neg_of_piece_uzpow_one_eq_bot` and
+  `TauCeti.SignedSym.generator_mul_self_eq_zero_of_piece_uzpow_one_eq_bot`: when all pieces of
+  Koszul sign `1` vanish, generators anticommute, and square to zero when `2` is invertible.
 * `TauCeti.SignedSym.toExteriorAlgebra`, `TauCeti.SignedSym.toExteriorAlgebra_surjective`, and
   `TauCeti.SignedSym.map_lengthPiece_toExteriorAlgebra`: characteristic-free surjection
   `A(V) →ₐ[R] Λ(V)` and exterior-power compatibility when all pieces of Koszul sign `1` vanish.
 * `TauCeti.SignedSym.exteriorAlgebraEquiv`: when all pieces of Koszul sign `1` vanish and `2` is
-  invertible, `A(V) ≃ Λ(V)`, giving `lengthPiece_eq_bot_of_piece_eq_bot_of_finrank_lt`,
-  `finite_of_piece_eq_bot`, and `finrank_eq_two_pow_of_piece_eq_bot` (with integer specializations
-  `lengthPiece_eq_bot_of_piece_even_eq_bot_of_finrank_lt`, `finite_of_piece_even_eq_bot`, and
-  `finrank_eq_two_pow_of_piece_even_eq_bot`).
+  invertible, `A(V) ≃ Λ(V)`, giving
+  `lengthPiece_eq_bot_of_piece_uzpow_one_eq_bot_of_finrank_lt`,
+  `finite_of_piece_uzpow_one_eq_bot`, and `finrank_eq_two_pow_of_piece_uzpow_one_eq_bot`.
 * `TauCeti.SignedSym.map_signedSymPiece_toExteriorAlgebra_of_piece_eq_bot` and
-  `TauCeti.SignedSym.signedSymPiece_eq_bot_of_piece_eq_bot_of_finrank_lt`: degree-`1` input-degree
-  compatibility with `TauCeti.ExteriorAlgebra.integerGrading R V` and top-degree vanishing.
+  `TauCeti.SignedSym.signedSymPiece_eq_bot_of_piece_eq_bot_of_finrank_lt`: for an integer-graded
+  module (`G : InternalGrading R V ℤ`) concentrated in degree `1`, input-degree compatibility with
+  `TauCeti.ExteriorAlgebra.integerGrading R V` and top-degree vanishing.
 
 ## References
 
@@ -109,18 +106,18 @@ include hG
 
 /-- If `V` is concentrated in degrees of Koszul sign `1`, the Koszul sign of a nonzero homogeneous
 element against any degree is `1`. -/
-private theorem eq_zero_or_uzpow_eq_one_of_piece_eq_bot {p : ι} {x : V}
+private theorem eq_zero_or_uzpow_eq_one_of_piece_uzpow_neg_one_eq_bot {p : ι} {x : V}
     (hx : x ∈ G.piece p) (q : ι) : x = 0 ∨ (-1 : ℤˣ) ^ (p * q) = 1 := by
   rcases Int.units_eq_one_or ((-1 : ℤˣ) ^ p) with hp | hp
   · exact .inr (by rw [uzpow_mul, hp, one_uzpow])
   · exact .inl (by simpa [hG p hp] using hx)
 
 /-- If all pieces of Koszul sign `-1` vanish, any two generators of `A(V)` commute. -/
-theorem commute_generator_of_piece_eq_bot (x y : V) :
+theorem commute_generator_of_piece_uzpow_neg_one_eq_bot (x y : V) :
     Commute (generator G x) (generator G y) := by
   refine (commute_iff_eq _ _).2 ?_
   simpa using generator_mul_generator_eq_smul 1 (fun p q x y hx hy => by
-    rcases eq_zero_or_uzpow_eq_one_of_piece_eq_bot hG hx q with rfl | h
+    rcases eq_zero_or_uzpow_eq_one_of_piece_uzpow_neg_one_eq_bot hG hx q with rfl | h
     · simp
     · simpa [h] using generator_mul_generator G hx hy) x y
 
@@ -130,12 +127,12 @@ private theorem generator_mem_center (x : V) :
   refine Subalgebra.mem_center_iff.2 fun b => ?_
   induction b using SignedSym.induction with
   | algebraMap r => exact Algebra.commutes r _
-  | generator y => exact commute_generator_of_piece_eq_bot hG y x
+  | generator y => exact commute_generator_of_piece_uzpow_neg_one_eq_bot hG y x
   | mul a b ha hb => rw [mul_assoc, hb, ← mul_assoc, ha, mul_assoc]
   | add a b ha hb => rw [add_mul, mul_add, ha, hb]
 
 /-- If all pieces of Koszul sign `-1` vanish, `A(V)` is commutative. -/
-theorem mul_comm_of_piece_eq_bot (a b : SignedSym G) : a * b = b * a := by
+theorem mul_comm_of_piece_uzpow_neg_one_eq_bot (a b : SignedSym G) : a * b = b * a := by
   have hcenter : ∀ a : SignedSym G, a ∈ Subalgebra.center R (SignedSym G) := by
     intro a
     induction a using SignedSym.induction with
@@ -148,7 +145,7 @@ theorem mul_comm_of_piece_eq_bot (a b : SignedSym G) : a * b = b * a := by
 /-- The map `A(V) → Sym(V)` fixing generators, when all pieces of Koszul sign `-1` vanish. -/
 private def toSymmetricAlgebra : SignedSym G →ₐ[R] SymmetricAlgebra R V :=
   lift G (SymmetricAlgebra.ι R V) fun p q x y hx _ => by
-    rcases eq_zero_or_uzpow_eq_one_of_piece_eq_bot hG hx q with rfl | h
+    rcases eq_zero_or_uzpow_eq_one_of_piece_uzpow_neg_one_eq_bot hG hx q with rfl | h
     · simp
     · simp [h, mul_comm]
 
@@ -225,7 +222,7 @@ include hG
 
 /-- If `V` is concentrated in degrees of Koszul sign `-1`, the Koszul sign of two nonzero
 homogeneous elements is `-1`. -/
-private theorem eq_zero_or_eq_zero_or_uzpow_eq_neg_one_of_piece_eq_bot {p q : ι}
+private theorem eq_zero_or_eq_zero_or_uzpow_eq_neg_one_of_piece_uzpow_one_eq_bot {p q : ι}
     {x y : V} (hx : x ∈ G.piece p) (hy : y ∈ G.piece q) :
     x = 0 ∨ y = 0 ∨ (-1 : ℤˣ) ^ (p * q) = -1 := by
   rcases Int.units_eq_one_or ((-1 : ℤˣ) ^ p) with hp | hp
@@ -235,10 +232,10 @@ private theorem eq_zero_or_eq_zero_or_uzpow_eq_neg_one_of_piece_eq_bot {p q : ι
   exact .inr (.inr (by rw [uzpow_mul, hp, hq]))
 
 /-- If all pieces of Koszul sign `1` vanish, any two generators of `A(V)` anticommute. -/
-theorem generator_mul_generator_eq_neg_of_piece_eq_bot (x y : V) :
+theorem generator_mul_generator_eq_neg_of_piece_uzpow_one_eq_bot (x y : V) :
     generator G x * generator G y = -(generator G y * generator G x) := by
   simpa using generator_mul_generator_eq_smul (-1) (fun p q x y hx hy => by
-    rcases eq_zero_or_eq_zero_or_uzpow_eq_neg_one_of_piece_eq_bot hG hx hy with
+    rcases eq_zero_or_eq_zero_or_uzpow_eq_neg_one_of_piece_uzpow_one_eq_bot hG hx hy with
       rfl | rfl | h
     · simp
     · simp
@@ -246,16 +243,16 @@ theorem generator_mul_generator_eq_neg_of_piece_eq_bot (x y : V) :
 
 /-- If all pieces of Koszul sign `1` vanish and `2` is invertible, every generator of `A(V)`
 squares to zero. -/
-theorem generator_mul_self_eq_zero_of_piece_eq_bot [Invertible (2 : R)] (x : V) :
+theorem generator_mul_self_eq_zero_of_piece_uzpow_one_eq_bot [Invertible (2 : R)] (x : V) :
     generator G x * generator G x = 0 :=
   eq_zero_of_eq_neg_of_invertible_two (R := R)
-    (generator_mul_generator_eq_neg_of_piece_eq_bot hG x x)
+    (generator_mul_generator_eq_neg_of_piece_uzpow_one_eq_bot hG x x)
 
 /-- When all pieces of Koszul sign `1` vanish, `SignedSym G` maps canonically to
 `ExteriorAlgebra R V` over any commutative ring, with no invertibility of `2` required. -/
 def toExteriorAlgebra : SignedSym G →ₐ[R] ExteriorAlgebra R V :=
   lift G (ExteriorAlgebra.ι R) fun p q x y hx hy => by
-    rcases eq_zero_or_eq_zero_or_uzpow_eq_neg_one_of_piece_eq_bot hG hx hy with
+    rcases eq_zero_or_eq_zero_or_uzpow_eq_neg_one_of_piece_uzpow_one_eq_bot hG hx hy with
       rfl | rfl | h
     · simp
     · simp
@@ -301,7 +298,7 @@ variable [Invertible (2 : R)]
 /-- The map `Λ(V) → A(V)` fixing generators, when all pieces of Koszul sign `1` vanish and `2` is
 invertible. -/
 private noncomputable def ofExteriorAlgebra : ExteriorAlgebra R V →ₐ[R] SignedSym G :=
-  ExteriorAlgebra.lift R ⟨generator G, generator_mul_self_eq_zero_of_piece_eq_bot hG⟩
+  ExteriorAlgebra.lift R ⟨generator G, generator_mul_self_eq_zero_of_piece_uzpow_one_eq_bot hG⟩
 
 /-- **The signed symmetric algebra of an oddly graded module is its exterior algebra.** When all
 pieces of Koszul sign `1` vanish and `2` is invertible in `R`, `A(V)` is isomorphic to
@@ -388,7 +385,7 @@ theorem exteriorAlgebraEquiv_symm_mem_lengthPiece_iff [Invertible (2 : R)] {n : 
 
 /-- When `2` is invertible and all pieces of Koszul sign `1` of a finite free `R`-module `V`
 vanish, every word-length piece of `SignedSym G` above `finrank R V` vanishes. -/
-theorem lengthPiece_eq_bot_of_piece_eq_bot_of_finrank_lt [Invertible (2 : R)]
+theorem lengthPiece_eq_bot_of_piece_uzpow_one_eq_bot_of_finrank_lt [Invertible (2 : R)]
     [Module.Free R V] [Module.Finite R V] {d : ℕ} (hd : Module.finrank R V < d) :
     lengthPiece G d = ⊥ := by
   rw [eq_bot_iff]
@@ -401,13 +398,13 @@ theorem lengthPiece_eq_bot_of_piece_eq_bot_of_finrank_lt [Invertible (2 : R)]
 
 /-- When `2` is invertible and all pieces of Koszul sign `1` of a finite `R`-module `V` vanish,
 `SignedSym G` is a finite `R`-module. -/
-theorem finite_of_piece_eq_bot [Invertible (2 : R)] [Module.Finite R V] :
+theorem finite_of_piece_uzpow_one_eq_bot [Invertible (2 : R)] [Module.Finite R V] :
     Module.Finite R (SignedSym G) :=
   Module.Finite.equiv (exteriorAlgebraEquiv hG).symm.toLinearEquiv
 
 /-- When `2` is invertible and all pieces of Koszul sign `1` of a finite free `R`-module `V`
 vanish, `SignedSym G` has rank `2 ^ finrank R V`. -/
-theorem finrank_eq_two_pow_of_piece_eq_bot [Nontrivial R] [Invertible (2 : R)]
+theorem finrank_eq_two_pow_of_piece_uzpow_one_eq_bot [Nontrivial R] [Invertible (2 : R)]
     [Module.Free R V] [Module.Finite R V] :
     Module.finrank R (SignedSym G) = 2 ^ Module.finrank R V := by
   rw [(exteriorAlgebraEquiv hG).toLinearEquiv.finrank_eq,
@@ -417,69 +414,15 @@ end Odd
 
 end General
 
-/-! ### Integer-graded specializations -/
-
-section Int
-
-variable {G : InternalGrading R V ℤ}
-
-/-- If an integer-graded `V` is concentrated in even degrees, any two generators of `A(V)`
-commute. -/
-theorem commute_generator_of_piece_odd_eq_bot (hG : ∀ p, Odd p → G.piece p = ⊥) (x y : V) :
-    Commute (generator G x) (generator G y) :=
-  commute_generator_of_piece_eq_bot
-    (fun p hp => hG p ((Int.negOnePow_eq_neg_one_iff p).mp hp)) x y
-
-/-- If an integer-graded `V` is concentrated in even degrees, `A(V)` is commutative. -/
-theorem mul_comm_of_piece_odd_eq_bot (hG : ∀ p, Odd p → G.piece p = ⊥) (a b : SignedSym G) :
-    a * b = b * a :=
-  mul_comm_of_piece_eq_bot (fun p hp => hG p ((Int.negOnePow_eq_neg_one_iff p).mp hp)) a b
-
-/-- If an integer-graded `V` is concentrated in odd degrees, any two generators of `A(V)`
-anticommute. -/
-theorem generator_mul_generator_eq_neg_of_piece_even_eq_bot (hG : ∀ p, Even p → G.piece p = ⊥)
-    (x y : V) : generator G x * generator G y = -(generator G y * generator G x) :=
-  generator_mul_generator_eq_neg_of_piece_eq_bot
-    (fun p hp => hG p ((Int.negOnePow_eq_one_iff p).mp hp)) x y
-
-/-- If an integer-graded `V` is concentrated in odd degrees and `2` is invertible, every generator
-of `A(V)` squares to zero. -/
-theorem generator_mul_self_eq_zero_of_piece_even_eq_bot [Invertible (2 : R)]
-    (hG : ∀ p, Even p → G.piece p = ⊥) (x : V) :
-    generator G x * generator G x = 0 :=
-  generator_mul_self_eq_zero_of_piece_eq_bot
-    (fun p hp => hG p ((Int.negOnePow_eq_one_iff p).mp hp)) x
-
-/-- When `2` is invertible and all even-degree pieces of a finite free `R`-module `V` vanish,
-every word-length piece of `SignedSym G` above `finrank R V` vanishes. -/
-theorem lengthPiece_eq_bot_of_piece_even_eq_bot_of_finrank_lt [Invertible (2 : R)]
-    [Module.Free R V] [Module.Finite R V] (hG : ∀ p, Even p → G.piece p = ⊥) {d : ℕ}
-    (hd : Module.finrank R V < d) :
-    lengthPiece G d = ⊥ :=
-  lengthPiece_eq_bot_of_piece_eq_bot_of_finrank_lt
-    (fun p hp => hG p ((Int.negOnePow_eq_one_iff p).mp hp)) hd
-
-/-- When `2` is invertible and all even-degree pieces of a finite `R`-module `V` vanish,
-`SignedSym G` is a finite `R`-module. -/
-theorem finite_of_piece_even_eq_bot [Invertible (2 : R)] [Module.Finite R V]
-    (hG : ∀ p, Even p → G.piece p = ⊥) :
-    Module.Finite R (SignedSym G) :=
-  finite_of_piece_eq_bot (fun p hp => hG p ((Int.negOnePow_eq_one_iff p).mp hp))
-
-/-- When `2` is invertible and all even-degree pieces of a finite free `R`-module `V` vanish,
-`SignedSym G` has rank `2 ^ finrank R V`. -/
-theorem finrank_eq_two_pow_of_piece_even_eq_bot [Nontrivial R] [Invertible (2 : R)]
-    [Module.Free R V] [Module.Finite R V] (hG : ∀ p, Even p → G.piece p = ⊥) :
-    Module.finrank R (SignedSym G) = 2 ^ Module.finrank R V :=
-  finrank_eq_two_pow_of_piece_eq_bot (fun p hp => hG p ((Int.negOnePow_eq_one_iff p).mp hp))
-
-/-! ### Degree-one generators -/
+/-! ### Degree-one generators (integer grading) -/
 
 section DegreeOne
 
-/-- When `V` is concentrated in degree `1`, `toExteriorAlgebra` maps the input-degree piece
-`signedSymPiece G p` onto `TauCeti.ExteriorAlgebra.integerGrading R V p` for every integer `p`,
-over any commutative ring. -/
+variable {G : InternalGrading R V ℤ}
+
+/-- When an integer-graded module `V` (`G : InternalGrading R V ℤ`) is concentrated in degree `1`,
+`toExteriorAlgebra` maps the input-degree piece `signedSymPiece G p` onto
+`TauCeti.ExteriorAlgebra.integerGrading R V p` for every integer `p`, over any commutative ring. -/
 theorem map_signedSymPiece_toExteriorAlgebra_of_piece_eq_bot (hG : ∀ q, q ≠ 1 → G.piece q = ⊥)
     (p : ℤ) (hG' : ∀ q : ℤ, (-1 : ℤˣ) ^ q = 1 → G.piece q = ⊥ :=
       fun q hq => hG q (by rintro rfl; exact absurd hq (by decide))) :
@@ -493,8 +436,9 @@ theorem map_signedSymPiece_toExteriorAlgebra_of_piece_eq_bot (hG : ∀ q, q ≠ 
       simpa only [mul_one] using signedSymPiece_eq_lengthPiece_of_piece_eq_bot G one_ne_zero hG n
     rw [hn, TauCeti.ExteriorAlgebra.integerGrading_natCast, map_lengthPiece_toExteriorAlgebra]
 
-/-- When `V` is concentrated in degree `1`, `toExteriorAlgebra` maps elements of input degree `p`
-into `TauCeti.ExteriorAlgebra.integerGrading R V p`, over any commutative ring. -/
+/-- When an integer-graded module `V` (`G : InternalGrading R V ℤ`) is concentrated in degree `1`,
+`toExteriorAlgebra` maps elements of input degree `p` into
+`TauCeti.ExteriorAlgebra.integerGrading R V p`, over any commutative ring. -/
 theorem toExteriorAlgebra_mem_integerGrading_of_piece_eq_bot (hG : ∀ q, q ≠ 1 → G.piece q = ⊥)
     {p : ℤ} {a : SignedSym G} (ha : a ∈ signedSymPiece G p)
     (hG' : ∀ q : ℤ, (-1 : ℤˣ) ^ q = 1 → G.piece q = ⊥ :=
@@ -503,9 +447,9 @@ theorem toExteriorAlgebra_mem_integerGrading_of_piece_eq_bot (hG : ∀ q, q ≠ 
   rw [← map_signedSymPiece_toExteriorAlgebra_of_piece_eq_bot hG p hG', ← AlgHom.toLinearMap_apply]
   exact Submodule.mem_map_of_mem ha
 
-/-- When `V` is concentrated in degree `1` and `2` is invertible, membership of
-`toExteriorAlgebra` in `TauCeti.ExteriorAlgebra.integerGrading R V p` characterizes
-`signedSymPiece G p`. -/
+/-- When an integer-graded module `V` (`G : InternalGrading R V ℤ`) is concentrated in degree `1`
+and `2` is invertible, membership of `toExteriorAlgebra` in
+`TauCeti.ExteriorAlgebra.integerGrading R V p` characterizes `signedSymPiece G p`. -/
 theorem toExteriorAlgebra_mem_integerGrading_iff_of_piece_eq_bot [Invertible (2 : R)]
     (hG : ∀ q, q ≠ 1 → G.piece q = ⊥) {p : ℤ} {a : SignedSym G}
     (hG' : ∀ q : ℤ, (-1 : ℤˣ) ^ q = 1 → G.piece q = ⊥ :=
@@ -518,9 +462,9 @@ theorem toExteriorAlgebra_mem_integerGrading_iff_of_piece_eq_bot [Invertible (2 
   rwa [← exteriorAlgebraEquiv_symm_toExteriorAlgebra hG' a, ← hab,
     AlgHom.toLinearMap_apply, exteriorAlgebraEquiv_symm_toExteriorAlgebra]
 
-/-- When `V` is concentrated in degree `1` and `2` is invertible, membership of
-`exteriorAlgebraEquiv` in `TauCeti.ExteriorAlgebra.integerGrading R V p` characterizes
-`signedSymPiece G p`. -/
+/-- When an integer-graded module `V` (`G : InternalGrading R V ℤ`) is concentrated in degree `1`
+and `2` is invertible, membership of `exteriorAlgebraEquiv` in
+`TauCeti.ExteriorAlgebra.integerGrading R V p` characterizes `signedSymPiece G p`. -/
 theorem exteriorAlgebraEquiv_mem_integerGrading_iff_of_piece_eq_bot [Invertible (2 : R)]
     (hG : ∀ q, q ≠ 1 → G.piece q = ⊥) {p : ℤ} {a : SignedSym G}
     (hG' : ∀ q : ℤ, (-1 : ℤˣ) ^ q = 1 → G.piece q = ⊥ :=
@@ -529,9 +473,9 @@ theorem exteriorAlgebraEquiv_mem_integerGrading_iff_of_piece_eq_bot [Invertible 
       a ∈ signedSymPiece G p := by
   rw [exteriorAlgebraEquiv_apply, toExteriorAlgebra_mem_integerGrading_iff_of_piece_eq_bot hG]
 
-/-- When `V` is concentrated in degree `1` and `2` is invertible, the inverse of
-`exteriorAlgebraEquiv` lands in `signedSymPiece G p` precisely on
-`TauCeti.ExteriorAlgebra.integerGrading R V p`. -/
+/-- When an integer-graded module `V` (`G : InternalGrading R V ℤ`) is concentrated in degree `1`
+and `2` is invertible, the inverse of `exteriorAlgebraEquiv` lands in `signedSymPiece G p`
+precisely on `TauCeti.ExteriorAlgebra.integerGrading R V p`. -/
 theorem exteriorAlgebraEquiv_symm_mem_signedSymPiece_iff_of_piece_eq_bot [Invertible (2 : R)]
     (hG : ∀ q, q ≠ 1 → G.piece q = ⊥) {p : ℤ} {e : ExteriorAlgebra R V}
     (hG' : ∀ q : ℤ, (-1 : ℤˣ) ^ q = 1 → G.piece q = ⊥ :=
@@ -541,8 +485,9 @@ theorem exteriorAlgebraEquiv_symm_mem_signedSymPiece_iff_of_piece_eq_bot [Invert
   rw [← toExteriorAlgebra_mem_integerGrading_iff_of_piece_eq_bot hG,
     toExteriorAlgebra_exteriorAlgebraEquiv_symm]
 
-/-- When `V` is a finite free `R`-module concentrated in degree `1` and `2` is invertible, every
-input-degree piece of `SignedSym G` above `finrank R V` vanishes. -/
+/-- When an integer-graded finite free `R`-module `V` (`G : InternalGrading R V ℤ`) is
+concentrated in degree `1` and `2` is invertible, every input-degree piece of `SignedSym G` above
+`finrank R V` vanishes. -/
 theorem signedSymPiece_eq_bot_of_piece_eq_bot_of_finrank_lt [Invertible (2 : R)] [Module.Free R V]
     [Module.Finite R V] (hG : ∀ q, q ≠ 1 → G.piece q = ⊥) {p : ℤ}
     (hp : (Module.finrank R V : ℤ) < p) :
@@ -551,11 +496,9 @@ theorem signedSymPiece_eq_bot_of_piece_eq_bot_of_finrank_lt [Invertible (2 : R)]
   have hd : signedSymPiece G (d : ℤ) = lengthPiece G d := by
     simpa only [mul_one] using signedSymPiece_eq_lengthPiece_of_piece_eq_bot G one_ne_zero hG d
   rw [hd]
-  exact lengthPiece_eq_bot_of_piece_even_eq_bot_of_finrank_lt
+  exact lengthPiece_eq_bot_of_piece_uzpow_one_eq_bot_of_finrank_lt
     (fun q hq => hG q (by rintro rfl; exact absurd hq (by decide))) (Nat.cast_lt.mp hp)
 
 end DegreeOne
-
-end Int
 
 end TauCeti.SignedSym

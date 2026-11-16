@@ -63,7 +63,8 @@ theorem leibniz_parityGrading_of_leibniz
     (hl : ∀ {p : ℤ} {a : A}, a ∈ 𝒜 p → ∀ b : A, d (a * b) = d a * b + p.negOnePow • (a * d b))
     {i : ZMod 2} {a : A} (ha : a ∈ parityGrading 𝒜 i) (b : A) :
     d (a * b) = d a * b + ((-1 : ℤˣ) ^ i) • (a * d b) :=
-  leibniz_coarsenGrading_of_leibniz (fun p ↦ uzpow_intCast (-1) p) hl ha b
+  leibniz_coarsenGrading_of_leibniz (f := Int.castAddHom (ZMod 2))
+    (fun p ↦ by rw [Int.coe_castAddHom]; exact uzpow_intCast (-1) p) hl ha b
 
 end Leibniz
 

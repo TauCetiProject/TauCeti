@@ -264,7 +264,7 @@ variable {N : Type*} [AddCommMonoid N] [Module R N] [AddMonoid ι] [AddMonoid κ
 /-- A linear map that is homogeneous of degree `q` for two gradings is homogeneous of degree
 `f q` for the gradings coarsened along an additive homomorphism `f`. -/
 theorem LinearMap.IsHomogeneous.coarsenGrading {F : Type*} [FunLike F ι κ]
-    [AddMonoidHomClass F ι κ] {g : M →ₗ[R] N} {ℳ : ι → Submodule R M}
+    [AddHomClass F ι κ] {g : M →ₗ[R] N} {ℳ : ι → Submodule R M}
     {𝒩 : ι → Submodule R N} {q : ι} (hg : LinearMap.IsHomogeneous g ℳ 𝒩 q) (f : F) :
     LinearMap.IsHomogeneous g (TauCeti.coarsenGrading ℳ f) (TauCeti.coarsenGrading 𝒩 f) (f q) :=
   LinearMap.isHomogeneous_def.2 fun k x hx ↦ by
@@ -297,6 +297,12 @@ of odd degree (`parityGrading_zero`, `parityGrading_one`).  It is reducible to t
 along reduction modulo two, so the `coarsenGrading` API and instances apply to it directly. -/
 abbrev parityGrading (ℳ : ℤ → Submodule R M) : ZMod 2 → Submodule R M :=
   coarsenGrading ℳ (Int.castAddHom (ZMod 2))
+
+/-- Coarsening an integer-indexed family along `Int.cast : ℤ → ZMod 2` is its parity grading. -/
+@[simp]
+theorem coarsenGrading_intCast (ℳ : ℤ → Submodule R M) :
+    coarsenGrading ℳ (fun n : ℤ ↦ (n : ZMod 2)) = parityGrading ℳ := by
+  rw [parityGrading, Int.coe_castAddHom]
 
 /-- An element of degree `n` has parity `n` modulo two. -/
 theorem mem_parityGrading_of_mem {ℳ : ℤ → Submodule R M} {n : ℤ} {x : M} (hx : x ∈ ℳ n) :
@@ -391,14 +397,19 @@ theorem mem_coarsen_of_mem (G : InternalGrading R M ι) (f : ι → κ) {i : ι}
 
 /-- The parity grading of an internal integer grading: the internal `ZMod 2`-grading whose even
 piece is the sum of the pieces of degree `2 * k` and whose odd piece is the sum of the pieces of
-degree `2 * k + 1`. -/
--- Exposed so dependent types indexed by `G.parity` (such as `SignedSym G.parity`) specialize
--- `G.coarsen` directly while keeping `parity` semireducible for `simp` normal forms.
-@[expose] noncomputable def parity (G : InternalGrading R M ℤ) : InternalGrading R M (ZMod 2) :=
+degree `2 * k + 1`. It is reducible to `G.coarsen (Int.castAddHom (ZMod 2))`, matching
+`TauCeti.parityGrading`, so the `InternalGrading.coarsen` API and dependent types indexed by
+`G.parity` specialize `G.coarsen` directly. -/
+noncomputable abbrev parity (G : InternalGrading R M ℤ) : InternalGrading R M (ZMod 2) :=
   G.coarsen (Int.castAddHom (ZMod 2))
 
-/-- The homogeneous pieces of `G.parity` are given by `parityGrading G.piece`. -/
+/-- Coarsening an internal integer grading along `Int.cast : ℤ → ZMod 2` is its parity grading. -/
 @[simp]
+theorem coarsen_intCast (G : InternalGrading R M ℤ) :
+    G.coarsen (fun n : ℤ ↦ (n : ZMod 2)) = G.parity := by
+  rw [parity, Int.coe_castAddHom]
+
+/-- The homogeneous pieces of `G.parity` are given by `parityGrading G.piece`. -/
 theorem parity_piece (G : InternalGrading R M ℤ) : G.parity.piece = parityGrading G.piece := (rfl)
 
 end InternalGrading
@@ -410,11 +421,20 @@ variable {N : Type*} [AddCommMonoid N] [Module R N]
 /-- A linear map that is homogeneous of degree `q` between internally graded modules is homogeneous
 of degree `f q` between their coarsenings along an additive homomorphism `f`. -/
 theorem LinearMap.IsHomogeneous.coarsen {F : Type*} [DecidableEq ι] [DecidableEq κ]
-    [AddMonoid ι] [AddMonoid κ] [FunLike F ι κ] [AddMonoidHomClass F ι κ] {g : M →ₗ[R] N}
+    [AddMonoid ι] [AddMonoid κ] [FunLike F ι κ] [AddHomClass F ι κ] {g : M →ₗ[R] N}
     {G : InternalGrading R M ι} {H : InternalGrading R N ι} {q : ι}
     (hg : LinearMap.IsHomogeneous g G.piece H.piece q) (f : F) :
     LinearMap.IsHomogeneous g (G.coarsen f).piece (H.coarsen f).piece (f q) := by
   simpa only [InternalGrading.coarsen_piece] using hg.coarsenGrading f
+
+/-- A degree-zero homogeneous linear map between internally graded modules remains homogeneous of
+degree zero after coarsening along any map `f : ι → κ` of index types. -/
+theorem LinearMap.IsHomogeneous.coarsen_zero [DecidableEq ι] [DecidableEq κ]
+    [AddMonoid ι] [AddMonoid κ] {g : M →ₗ[R] N}
+    {G : InternalGrading R M ι} {H : InternalGrading R N ι}
+    (hg : LinearMap.IsHomogeneous g G.piece H.piece 0) (f : ι → κ) :
+    LinearMap.IsHomogeneous g (G.coarsen f).piece (H.coarsen f).piece 0 := by
+  simpa only [InternalGrading.coarsen_piece] using hg.coarsenGrading_zero f
 
 /-- A linear map that is homogeneous of integer degree `q` between internally graded modules is
 homogeneous of parity `q mod 2` between their parity gradings. -/

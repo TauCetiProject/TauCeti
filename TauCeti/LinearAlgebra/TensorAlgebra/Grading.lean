@@ -118,8 +118,7 @@ private theorem ι_mul_mem_tensorAlgebraPiece (G : InternalGrading R M ι) {p q 
       TensorAlgebra.tprod R M (n + 1) (Fin.cons x y) := by
     simp [TensorAlgebra.tprod_apply, List.ofFn_succ]
   have hsum : ∑ i, Fin.cons p d i = p + q := by
-    rw [Fin.sum_univ_succ, Fin.cons_zero, ← hd]
-    rfl
+    simp [Fin.sum_univ_succ, hd]
   rw [Submodule.mem_comap, LinearMap.mulLeft_apply, hmul, ← hsum]
   exact tprod_mem_tensorAlgebraPiece G (Fin.cons p d) (Fin.cons x y) (Fin.cases hx hy)
 
@@ -159,7 +158,8 @@ private theorem gradedι_of_mem (G : InternalGrading R M ι) {p : ι} {x : M} (h
   simp only [gradedι, LinearMap.comp_apply, LinearEquiv.coe_toLinearMap]
   rw [DirectSum.decomposeLinearEquiv_apply_coe G.piece p ⟨x, hx⟩, DirectSum.lmap_lof,
     DirectSum.lof_eq_of]
-  rfl
+  refine congrArg _ (Subtype.ext ?_)
+  simp [LinearMap.codRestrict_apply]
 
 private theorem lift_gradedι_tprod (G : InternalGrading R M ι) :
     ∀ {n : ℕ} (d : Fin n → ι) (x : Fin n → M) (hx : ∀ i, x i ∈ G.piece (d i)),
@@ -169,7 +169,7 @@ private theorem lift_gradedι_tprod (G : InternalGrading R M ι) :
   | 0, d, x, _ => by
     simp only [TensorAlgebra.tprod_apply, List.ofFn_zero, List.prod_nil, Fin.sum_univ_zero, map_one,
       DirectSum.one_def]
-    rfl
+    exact congrArg _ (Subtype.ext (SetLike.coe_gOne _))
   | n + 1, d, x, hx => by
     have hmul : TensorAlgebra.tprod R M (n + 1) x =
         TensorAlgebra.ι R (x 0) * TensorAlgebra.tprod R M n (x ∘ Fin.succ) := by
@@ -178,17 +178,14 @@ private theorem lift_gradedι_tprod (G : InternalGrading R M ι) :
       lift_gradedι_tprod G (d ∘ Fin.succ) (x ∘ Fin.succ) (fun i ↦ hx i.succ),
       DirectSum.of_mul_of]
     exact DirectSum.of_eq_of_gradedMonoid_eq
-      (Sigma.subtype_ext (Fin.sum_univ_succ d).symm rfl)
+      (Sigma.subtype_ext (Fin.sum_univ_succ d).symm (SetLike.coe_gMul _ _ _))
 
 /-- The input-degree pieces of the tensor algebra form an internal direct sum. -/
 theorem isInternal_tensorAlgebraPiece (G : InternalGrading R M ι) :
     DirectSum.IsInternal (tensorAlgebraPiece G) :=
   (GradedAlgebra.ofAlgHom (tensorAlgebraPiece G) (TensorAlgebra.lift R (gradedι G))
     (TensorAlgebra.hom_ext <| G.linearMap_ext fun p x hx ↦ by
-      simp only [AlgHom.comp_toLinearMap, LinearMap.comp_apply, AlgHom.toLinearMap_apply,
-        TensorAlgebra.lift_ι_apply]
-      rw [gradedι_of_mem G hx, DirectSum.coeAlgHom_of]
-      rfl)
+      simp [gradedι_of_mem G hx])
     fun p z ↦ by
       obtain ⟨w, hw⟩ := z
       rw [← DirectSum.lof_eq_of R]
@@ -196,8 +193,12 @@ theorem isInternal_tensorAlgebraPiece (G : InternalGrading R M ι) :
         (p := fun w hw ↦ TensorAlgebra.lift R (gradedι G) w =
           DirectSum.lof R ι (fun q ↦ ↥(tensorAlgebraPiece G q)) p ⟨w, hw⟩)
         (fun w hw ↦ ?_) (by rw [map_zero]; symm; exact map_zero _)
-        (fun u v _ _ ihu ihv ↦ by rw [map_add, ihu, ihv, ← map_add]; rfl)
-        (fun r u _ ihu ↦ by rw [AlgHom.map_smul_of_tower, ihu, ← map_smul]; rfl) hw
+        (fun u v hu hv ihu ihv ↦ by
+          rw [map_add, ihu, ihv, ← map_add]
+          exact congrArg _ (Subtype.ext (Submodule.coe_add _ _).symm))
+        (fun r u hu ihu ↦ by
+          rw [AlgHom.map_smul_of_tower, ihu, ← map_smul]
+          exact congrArg _ (Subtype.ext (Submodule.coe_smul _ _).symm)) hw
       obtain ⟨n, d, x, hx, rfl, rfl⟩ := hw
       rw [DirectSum.lof_eq_of]
       exact lift_gradedι_tprod G d x hx).toDecomposition.isInternal

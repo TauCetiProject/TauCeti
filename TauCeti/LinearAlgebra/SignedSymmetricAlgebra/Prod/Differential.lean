@@ -71,18 +71,6 @@ theorem prodDifferential_prodEquiv_symm (a : signedSymPiece G ᵍ⊗[R] signedSy
         (dgTensorDifferential (signedSymPiece G) (signedSymPiece H) dV dW a) := by
   simp [prodDifferential_apply]
 
-/-- The product comparison intertwines the product and tensor differentials. -/
-theorem ofProd_prodDifferential (a : SignedSym (G.prod H)) :
-    ofProd G H (prodDifferential G H dV dW a) =
-      dgTensorDifferential (signedSymPiece G) (signedSymPiece H) dV dW (ofProd G H a) := by
-  simp
-
-/-- The inverse product comparison also intertwines the differentials. -/
-theorem prodDifferential_toProd (a : signedSymPiece G ᵍ⊗[R] signedSymPiece H) :
-    prodDifferential G H dV dW (toProd G H a) =
-      toProd G H (dgTensorDifferential (signedSymPiece G) (signedSymPiece H) dV dW a) := by
-  simp
-
 variable {G H dV dW}
 
 /-- DG factor differentials give a DG differential on the signed symmetric algebra of the
@@ -173,7 +161,7 @@ theorem eq_prodDifferential
     refine gradedTensor_linearMap_ext (signedSymPiece G) (signedSymPiece H)
       fun p q a ha b _ => ?_
     simp only [LinearMap.comp_apply, AlgHom.toLinearMap_apply, GradedAlgHom.coe_toAlgHom,
-      toProd_tmul, prodDifferential_inl_mul_inr ha,
+      toProd_apply, prodEquiv_symm_tmul, prodDifferential_inl_mul_inr ha,
       hleibniz (Graded.map_mem (inl G H) ha), hinl a, hinr b]
   ext a
   simpa using LinearMap.congr_fun hcomp (ofProd G H a)
@@ -197,14 +185,14 @@ noncomputable def dgOfProd (hV : IsDGAlgebra (signedSymPiece G) dV)
     (hW : IsDGAlgebra (signedSymPiece H) dW) :
     DGAlgHom (isDGAlgebra_prodDifferential hV hW) (isDGAlgebra_gradedTensorGrading hV hW) where
   toGradedAlgHom := ofProd G H
-  map_d' a := (ofProd_prodDifferential G H dV dW a).symm
+  map_d' _ := by simp
 
 /-- The inverse DG algebra map `A(V) ᵍ⊗ A(W) → A(V × W)` lifting `toProd`. -/
 noncomputable def dgToProd (hV : IsDGAlgebra (signedSymPiece G) dV)
     (hW : IsDGAlgebra (signedSymPiece H) dW) :
     DGAlgHom (isDGAlgebra_gradedTensorGrading hV hW) (isDGAlgebra_prodDifferential hV hW) where
   toGradedAlgHom := toProd G H
-  map_d' := prodDifferential_toProd G H dV dW
+  map_d' _ := by simp
 
 /-- The underlying graded algebra map of the DG left inclusion. -/
 @[simp]

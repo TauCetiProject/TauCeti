@@ -14,14 +14,16 @@ import TauCeti.Algebra.CharP.Invertible
 # Supercommutativity of the signed symmetric algebra
 
 Homogeneous elements of `TauCeti.SignedSym G`, not just its generators, obey the Koszul
-commutation rule `a * b = ((-1 : ℤˣ) ^ (p * q)) • (b * a)`. In particular every homogeneous
-element whose degree has sign `-1` has square zero when `2` is invertible in the coefficient ring.
-For integer-graded modules, passing to `TauCeti.parityGrading` extends these identities to elements
-of pure parity across multiple integer degrees: even-parity elements lie in the center of
-`SignedSym G` over any commutative ring, and every element of odd parity has square zero when `2`
-is invertible in the coefficient ring. These identities allow the signed symmetric algebra to serve
-as a receiving supercommutative algebra in universal properties and tensor comparisons, for both
-integer and parity (`ZMod 2`) gradings.
+commutation rule `a * b = ((-1 : ℤˣ) ^ (p * q)) • (b * a)`. In particular, over any Koszul-signed
+degree semiring `ι`, every homogeneous element whose degree has Koszul sign `1` (including degree
+`0`) lies in the center of `SignedSym G` over any commutative ring, and every homogeneous element
+whose degree has sign `-1` (including degree `1`) has square zero when `2` is invertible in the
+coefficient ring. For integer-graded modules, passing to `TauCeti.parityGrading` extends these
+identities to elements of pure parity across multiple integer degrees: even-parity elements lie in
+the center of `SignedSym G` over any commutative ring, and every element of odd parity has square
+zero when `2` is invertible in the coefficient ring. These identities allow the signed symmetric
+algebra to serve as a receiving supercommutative algebra in universal properties and tensor
+comparisons, for both integer and parity (`ZMod 2`) gradings.
 
 The proof uses `TauCeti.SignedSym.homogeneous_induction` from the grading API.
 The construction follows the supercommutative algebra of J. Pardon,
@@ -74,12 +76,47 @@ theorem mul_eq_uzpow_smul_mul {p q : ι} {a b : SignedSym G}
     (fun _ r _ ha => by rw [smul_mul_assoc, ha, mul_smul_comm, smul_comm r])
     ha
 
+/-- Every homogeneous element whose degree has Koszul sign `1` commutes with all of
+`SignedSym G`. -/
+theorem commute_of_uzpow_eq_one {p : ι} {a : SignedSym G} (ha : a ∈ signedSymPiece G p)
+    (hp : (-1 : ℤˣ) ^ p = 1) (b : SignedSym G) : Commute a b :=
+  TauCeti.commute_of_mul_eq_uzpow_smul_mul (mul_eq_uzpow_smul_mul G) ha hp b
+
+/-- Every homogeneous element whose degree has Koszul sign `1` lies in the center of
+`SignedSym G`. -/
+theorem mem_center_of_uzpow_eq_one {p : ι} {a : SignedSym G} (ha : a ∈ signedSymPiece G p)
+    (hp : (-1 : ℤˣ) ^ p = 1) : a ∈ Subalgebra.center R (SignedSym G) :=
+  Subalgebra.mem_center_iff.mpr fun b => (commute_of_uzpow_eq_one G ha hp b).symm
+
+/-- Every element of degree `0` (in particular, any even-parity element when `ι = ZMod 2`)
+commutes with all of `SignedSym G`. -/
+theorem commute_of_mem_zero {a : SignedSym G} (ha : a ∈ signedSymPiece G 0) (b : SignedSym G) :
+    Commute a b :=
+  TauCeti.commute_of_mul_eq_uzpow_smul_mul_of_mem_zero (mul_eq_uzpow_smul_mul G) ha b
+
+/-- Every element of degree `0` (in particular, any even-parity element when `ι = ZMod 2`) lies
+in the center of `SignedSym G`. -/
+theorem mem_center_of_mem_zero {a : SignedSym G} (ha : a ∈ signedSymPiece G 0) :
+    a ∈ Subalgebra.center R (SignedSym G) :=
+  Subalgebra.mem_center_iff.mpr fun b => (commute_of_mem_zero G ha b).symm
+
+/-- Generators whose degree has Koszul sign `1` are central in `SignedSym G`. -/
+theorem generator_mem_center_of_uzpow_eq_one {p : ι} {x : V} (hx : x ∈ G.piece p)
+    (hp : (-1 : ℤˣ) ^ p = 1) : generator G x ∈ Subalgebra.center R (SignedSym G) :=
+  mem_center_of_uzpow_eq_one G (generator_mem_signedSymPiece G hx) hp
+
+/-- Generators of degree `0` (in particular, even-parity generators when `ι = ZMod 2`) are
+central in `SignedSym G`. -/
+theorem generator_mem_center_of_mem_zero {x : V} (hx : x ∈ G.piece 0) :
+    generator G x ∈ Subalgebra.center R (SignedSym G) :=
+  mem_center_of_mem_zero G (generator_mem_signedSymPiece G hx)
+
 /-- A homogeneous element whose degree has Koszul sign `-1` squares to its own negative, over any
 commutative ring. -/
 theorem sq_eq_neg {p : ι} {a : SignedSym G} (ha : a ∈ signedSymPiece G p)
     (hp : (-1 : ℤˣ) ^ p = -1) : a ^ 2 = -(a ^ 2) := by
-  have hpp : (-1 : ℤˣ) ^ (p * p) = -1 := by rw [uzpow_mul, hp, hp]
-  simpa only [pow_two, hpp, Units.neg_smul, one_smul] using mul_eq_uzpow_smul_mul G ha ha
+  rw [pow_two]
+  exact TauCeti.mul_self_eq_neg_of_mul_eq_uzpow_smul_mul (mul_eq_uzpow_smul_mul G) ha hp
 
 /-- Every homogeneous element whose degree has Koszul sign `-1` has square zero when `2` is
 invertible, in particular over `ℚ`. -/
@@ -104,17 +141,6 @@ end General
 section Int
 
 variable (G : InternalGrading R V ℤ)
-
-/-- An odd integer-degree homogeneous element squares to its own negative, over any commutative
-ring. -/
-theorem sq_eq_neg_of_odd {p : ℤ} {a : SignedSym G} (ha : a ∈ signedSymPiece G p) (hp : Odd p) :
-    a ^ 2 = -(a ^ 2) :=
-  sq_eq_neg G ha (Int.negOnePow_odd p hp)
-
-/-- Every odd integer-degree homogeneous element has square zero when `2` is invertible. -/
-theorem sq_eq_zero_of_odd [Invertible (2 : R)] {p : ℤ} {a : SignedSym G}
-    (ha : a ∈ signedSymPiece G p) (hp : Odd p) : a ^ 2 = 0 :=
-  sq_eq_zero G ha (Int.negOnePow_odd p hp)
 
 /-- Elements of pure parity supercommute with the sign determined by their parities, even when
 they combine multiple integer degrees. -/

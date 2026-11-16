@@ -13,21 +13,23 @@ import TauCeti.Algebra.DirectSum.Internal
 /-!
 # Word length in the signed symmetric algebra
 
-The Koszul relations preserve word length, independently of the input degrees. Consequently
+The Koszul relations preserve word length, independently of the input degrees (over any
+Koszul-signed degree semiring `ι`, such as `ℤ` or `ZMod 2`). Consequently
 `TauCeti.SignedSym.lengthPiece G n`, the span of products of exactly `n` generators, gives an
 internal natural-number grading. Mathlib's `GradedAlgebra.proj` supplies its linear projections.
 The length-zero projection is the canonical augmentation followed by the coefficient inclusion;
 the length-one projection retains generators. These distinguish constant and linear terms in
 an orbit-algebra differential, which need not preserve word length. When `V` is concentrated in a
 single degree `d`, input degrees outside `{n * d | n : ℕ}` vanish
-(`TauCeti.SignedSym.signedSymPiece_eq_bot_of_piece_eq_bot_of_forall_mul_ne`), and when `d ≠ 0`,
-`signedSymPiece G (n * d)` coincides with `lengthPiece G n`
+(`TauCeti.SignedSym.signedSymPiece_eq_bot_of_piece_eq_bot_of_forall_mul_ne`), and over a
+characteristic-zero right-cancellative degree semiring (`[IsRightCancelMulZero ι] [CharZero ι]`,
+such as `ℤ` or `ℕ`) when `d ≠ 0`, `signedSymPiece G (n * d)` coincides with `lengthPiece G n`
 (`TauCeti.SignedSym.signedSymPiece_eq_lengthPiece_of_piece_eq_bot`).
 
 This is the word decomposition of the free supercommutative algebra in J. Pardon,
 *Contact homology and virtual fundamental cycles*, equation (1.1). We use Mathlib's tensor
 word-length grading and the homogeneous-ideal quotient construction to descend it. No basis or
-assumption on the characteristic is needed.
+assumption on the characteristic of the coefficient ring is needed.
 -/
 
 public section
