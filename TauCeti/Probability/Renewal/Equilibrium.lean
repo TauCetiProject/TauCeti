@@ -87,28 +87,18 @@ theorem isProbabilityMeasure_equilibriumExcessLaw_iff (F : Measure ℝ≥0) :
   · rintro ⟨hzero, hfin⟩
     exact ENNReal.inv_mul_cancel hzero hfin
 
-/-- A probability interarrival law not concentrated at zero has a normalized equilibrium
-excess law whenever its extended mean is finite. -/
-theorem isProbabilityMeasure_equilibriumExcessLaw_of_measure_singleton_lt_one
-    (F : Measure ℝ≥0) [IsProbabilityMeasure F] (hzero : F {0} < 1)
-    (hmean : (∫⁻ u, (u : ℝ≥0∞) ∂F) ≠ ∞) :
-    IsProbabilityMeasure F.equilibriumExcessLaw := by
-  apply (F.isProbabilityMeasure_equilibriumExcessLaw_iff).2
-  refine ⟨?_, hmean⟩
+/-- For a probability interarrival law not concentrated at zero, the equilibrium excess-life
+measure has total mass one if and only if the extended mean is finite. -/
+theorem isProbabilityMeasure_equilibriumExcessLaw_iff_of_measure_singleton_lt_one
+    (F : Measure ℝ≥0) [IsProbabilityMeasure F] (hzero : F {0} < 1) :
+    IsProbabilityMeasure F.equilibriumExcessLaw ↔ (∫⁻ u, (u : ℝ≥0∞) ∂F) ≠ ∞ := by
+  rw [F.isProbabilityMeasure_equilibriumExcessLaw_iff, and_iff_right]
   intro hz
   have hae := (lintegral_eq_zero_iff measurable_coe_nnreal_ennreal).1 hz
   apply hzero.ne
   apply (mem_ae_iff_prob_eq_one (measurableSet_singleton 0)).1
   filter_upwards [hae] with u hu
   simpa using hu
-
-/-- For a probability interarrival law not concentrated at zero, the equilibrium excess-life
-measure has total mass one if and only if the extended mean is finite. -/
-theorem isProbabilityMeasure_equilibriumExcessLaw_iff_of_measure_singleton_lt_one
-    (F : Measure ℝ≥0) [IsProbabilityMeasure F] (hzero : F {0} < 1) :
-    IsProbabilityMeasure F.equilibriumExcessLaw ↔ (∫⁻ u, (u : ℝ≥0∞) ∂F) ≠ ∞ :=
-  ⟨fun h => (F.isProbabilityMeasure_equilibriumExcessLaw_iff.1 h).2,
-    F.isProbabilityMeasure_equilibriumExcessLaw_of_measure_singleton_lt_one hzero⟩
 
 /-- With infinite mean the candidate excess-life measure is zero. -/
 @[simp] theorem equilibriumExcessLaw_eq_zero_of_mean_eq_top (F : Measure ℝ≥0)

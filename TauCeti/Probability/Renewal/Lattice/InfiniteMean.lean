@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Probability.Renewal.Lattice.Blackwell
 public import TauCeti.Analysis.SpecificLimits.LatticeIncrements
+import TauCeti.MeasureTheory.Integral.Lebesgue.Support
 
 /-!
 # Vanishing renewal increments for infinite-mean lattice laws

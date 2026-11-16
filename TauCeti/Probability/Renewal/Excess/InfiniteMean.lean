@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Probability.CDF
 public import TauCeti.Probability.Renewal.Excess.Basic
+import TauCeti.MeasureTheory.Integral.Lebesgue.Support
 import TauCeti.Probability.Cdf
 import TauCeti.Probability.Renewal.Excess.Escape
 import TauCeti.Probability.Renewal.InfiniteMean
@@ -25,11 +26,12 @@ P(E t ≤ x) ⟶ 0,     P(x < E t) ⟶ 1.
 Equivalently, the cumulative distribution function of the real-valued excess tends pointwise to
 zero at every real threshold.
 
-The argument combines the pathwise inclusion `{E t ≤ x} ⊆ {N t < N (t + x)}`, which bounds
-`P(E t ≤ x)` by `(m (t + x)).toReal - (m t).toReal`, with vanishing fixed-window renewal
-increments in both the lattice and nonlattice Blackwell regimes. Neither strict measurability of
-the increments (beyond the almost-everywhere measurability carried by `IdentDistrib`) nor a
-separate `P(T 0 = 0) < 1` hypothesis is needed, and atoms at zero are permitted.
+The argument combines the equivalence `{E t ≤ x} ↔ {N t < N (t + x)}` on nonexplosive paths (and
+hence almost surely), which bounds `P(E t ≤ x)` by `(m (t + x)).toReal - (m t).toReal`, with
+vanishing fixed-window renewal increments in both the lattice and nonlattice Blackwell regimes.
+Neither strict measurability of the increments (beyond the almost-everywhere measurability carried
+by `IdentDistrib`) nor a separate `P(T 0 = 0) < 1` hypothesis is needed, and atoms at zero are
+permitted.
 
 ## Main statements
 

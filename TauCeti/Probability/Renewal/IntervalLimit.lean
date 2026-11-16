@@ -243,9 +243,10 @@ end MeasureTheory.Measure
 
 namespace TauCeti.Probability
 
-/-- If the renewal measure of `F` satisfies Blackwell interval limits with rate `r` and
-`h : ℝ≥0 → ℝ` is nonnegative, nonincreasing, and Lebesgue-integrable, every measurable, locally
-bounded solution `g` of `g = h + g ∗ F` converges as `t → ∞` to `r * ∫ x in Ioi 0, h x.toNNReal`. -/
+/-- For a probability measure `F` on `ℝ≥0` with `F {0} < 1` whose renewal measure satisfies
+Blackwell interval limits with rate `r`, and `h : ℝ≥0 → ℝ` nonnegative, nonincreasing, and
+Lebesgue-integrable, every measurable, locally bounded solution `g` of `g = h + g ∗ F` converges
+as `t → ∞` to `r * ∫ x in Ioi 0, h x.toNNReal`. -/
 theorem tendsto_of_eq_add_renewalConv_of_tendsto_measureReal_Ioc
     {F : Measure ℝ≥0} [IsProbabilityMeasure F] (hF : F {0} < 1) {r : ℝ}
     (hlim : ∀ d : ℝ≥0,

@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Probability.Renewal.IntervalLimit
+import TauCeti.MeasureTheory.Integral.Lebesgue.Support
 import TauCeti.Probability.Renewal.Blackwell
 import TauCeti.Probability.Renewal.Lattice.InfiniteMean
 
@@ -80,16 +81,10 @@ extended renewal mass of `(t, t + x]` tends to zero as `t → ∞`. -/
 theorem tendsto_renewalMeasure_Ioc_of_mean_eq_top
     (hmean : (∫⁻ u, (u : ℝ≥0∞) ∂F) = ∞) (x : ℝ≥0) :
     Tendsto (fun t : ℝ≥0 ↦ F.renewalMeasure (Ioc t (t + x))) atTop (𝓝 0) := by
-  have hzero := F.measure_singleton_zero_lt_one_of_mean_eq_top hmean
-  have hfin (t : ℝ≥0) : F.renewalMeasure (Ioc t (t + x)) ≠ ∞ :=
-    ne_top_of_le_ne_top (F.renewalMeasure_Iic_lt_top hzero x).ne
-      ((measure_mono Ioc_subset_Icc_self).trans (F.renewalMeasure_Icc_add_le t x))
-  have hconv : Tendsto (fun t : ℝ≥0 ↦ ENNReal.ofReal (F.renewalMeasure.real (Ioc t (t + x))))
-      atTop (𝓝 (ENNReal.ofReal 0)) :=
-    ENNReal.continuous_ofReal.continuousAt.tendsto.comp
-      (F.tendsto_renewalMeasure_real_Ioc_of_mean_eq_top hmean x)
-  simpa only [Function.comp_def, measureReal_def, ENNReal.ofReal_toReal (hfin _),
-    ENNReal.ofReal_zero] using hconv
+  let : IsLocallyFiniteMeasure F.renewalMeasure :=
+    F.isLocallyFiniteMeasure_renewalMeasure (F.measure_singleton_zero_lt_one_of_mean_eq_top hmean)
+  simpa only [ofReal_measureReal measure_Ioc_lt_top.ne, ENNReal.ofReal_zero] using
+    ENNReal.tendsto_ofReal (F.tendsto_renewalMeasure_real_Ioc_of_mean_eq_top hmean x)
 
 /-- For any probability measure on `ℝ≥0` of infinite extended mean, lattice or nonlattice, the
 convolution of `F.renewalMeasure` with a forcing function that is nonincreasing on `[0, A]` and
