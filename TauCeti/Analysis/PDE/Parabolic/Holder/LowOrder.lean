@@ -111,18 +111,6 @@ private theorem hasFDerivAt_uncurry0_slabMk {u : slab (E := E) a b →ᵇ F}
     simp [L, ContinuousMultilinearMap.curryLeft_apply, Subsingleton.elim w 0]
   rwa [hfun, hlin] at hd
 
-omit [NormedAddCommGroup E] [NormedSpace ℝ E] in
-private theorem timeEHolderNorm_comp_isometry {γ : ℝ≥0} {G G' : Type*}
-    [PseudoEMetricSpace G] [PseudoEMetricSpace G'] {e : G → G'} (he : Isometry e)
-    (v : slab (E := E) a b → G) :
-    timeEHolderNorm γ (e ∘ v) = timeEHolderNorm γ v := by
-  refine le_antisymm (timeEHolderNorm_le_iff.2 fun x t s ↦ ?_)
-    (timeEHolderNorm_le_iff.2 fun x t s ↦ ?_)
-  · simpa only [Function.comp_apply, he.edist_eq] using
-      timeEHolderNorm_le_iff.1 (le_refl (timeEHolderNorm γ v)) x t s
-  · simpa only [Function.comp_apply, ← he.edist_eq] using
-      timeEHolderNorm_le_iff.1 (le_refl (timeEHolderNorm γ (e ∘ v))) x t s
-
 private theorem timeEHolderNorm_eq_mixedDerivL_zero_zero {k : ℕ}
     (f : ParabolicCkHolderSpace k α E F hab) :
     timeEHolderNorm ((1 + α) / 2) (f : slab (E := E) a b → F) =
@@ -447,6 +435,7 @@ theorem valueL_equivParabolicC1HolderSpace_symm (g : ParabolicC1HolderSpace α E
   DFunLike.ext _ _ fun p ↦ by simp
 
 /-- The order-one equivalence maps `spatialFDerivBCF` to `ParabolicC1HolderSpace.spatialFDerivL`. -/
+@[simp]
 theorem spatialFDerivL_equivParabolicC1HolderSpace_apply (f : ParabolicCkHolderSpace 1 α E F hab)
     (p : slab (E := E) a b) :
     ParabolicC1HolderSpace.spatialFDerivL (equivParabolicC1HolderSpace f) p =
