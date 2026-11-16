@@ -9,6 +9,7 @@ public import TauCeti.Topology.PathSpace.Moore.Comparison.Basic
 public import TauCeti.Topology.PathSpace.Moore.FreeLoop
 public import TauCeti.Topology.ContinuousMap.Ascoli
 public import TauCeti.Topology.MetricSpace.CyclicDistanceCut
+public import TauCeti.Topology.UnitInterval
 public import Mathlib.Topology.MetricSpace.Equicontinuity
 public import Mathlib.Topology.UniformSpace.HeineCantor
 
@@ -86,6 +87,16 @@ theorem continuous_sample (r : ℕ) : Continuous (fun γ : MoorePath X ↦ γ.sa
   simp only [sample_apply]
   exact continuous_id.moorePath_eval (continuous_length.mul continuous_const)
 
+/-- The `i`-th sampled vertex is the start `i / r` of the `i`-th of the `r` equal arcs of the
+path reparametrized to the unit interval. -/
+theorem sample_eq_toUnitPath_arcPoint (γ : MoorePath X) {r : ℕ} (i : Fin r) :
+    γ.sample r i = γ.toUnitPath (unitInterval.arcPoint r i 0) := by
+  rw [sample_apply, toUnitPath_apply]
+  congr 2
+  apply NNReal.coe_injective
+  rw [unitInterval.coe_toNNReal, unitInterval.coe_arcPoint i.2]
+  simp
+
 variable {X : Type*} [PseudoMetricSpace X]
 
 /-- In a compact family of Moore paths, all sufficiently fine subdivisions have uniformly
@@ -101,23 +112,18 @@ theorem exists_sample_arc_dist_lt {K : Set (MoorePath X)} (hK : IsCompact K)
   obtain ⟨δ, hδ, hclose⟩ := Metric.uniformEquicontinuous_iff.mp huniform ε hε
   obtain ⟨n, hn⟩ := exists_nat_one_div_lt hδ
   refine ⟨n + 1, by omega, fun r hr γ hγ i t ht₀ ht₁ ↦ ?_⟩
-  have hrnat : 0 < r := by omega
-  have hrpos : 0 < (r : ℝ) := by exact_mod_cast hrnat
-  have hi : (i.val : ℝ) ≤ r := by exact_mod_cast i.isLt.le
-  let s : I := ⟨(i.val : ℝ) / r, div_nonneg (Nat.cast_nonneg _) hrpos.le,
-    (div_le_one hrpos).mpr hi⟩
+  let s : I := unitInterval.arcPoint r i 0
+  have hs : (s : ℝ) = (i.val : ℝ) / r := by
+    rw [unitInterval.coe_arcPoint i.2, Set.Icc.coe_zero, add_zero]
   have hmesh : 1 / (r : ℝ) < δ :=
     (one_div_le_one_div_of_le (by positivity) (by exact_mod_cast hr)).trans_lt hn
   have hst : dist s t < δ := by
-    rw [Subtype.dist_eq, Real.dist_eq, abs_sub_comm, abs_of_nonneg (sub_nonneg.mpr ht₀)]
+    rw [Subtype.dist_eq, hs, Real.dist_eq, abs_sub_comm, abs_of_nonneg (sub_nonneg.mpr ht₀)]
     have ht : (t : ℝ) - (i.val : ℝ) / r ≤ 1 / r := by
       rw [add_div] at ht₁
       linarith
     exact ht.trans_lt hmesh
-  have hsample : γ.sample r i = γ.toUnitPath s := by
-    rw [sample_apply, toUnitPath_apply]
-    congr 2
-  rw [hsample]
+  rw [sample_eq_toUnitPath_arcPoint]
   exact hclose s t hst ⟨γ.toUnitPath, ⟨γ, hγ, rfl⟩⟩
 
 end MoorePath
