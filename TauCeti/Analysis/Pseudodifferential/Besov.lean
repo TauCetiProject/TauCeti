@@ -122,8 +122,8 @@ private theorem fourier_slice_apply (η ζ : CoordinateSpace n) (w : ℂ) :
     𝓕 (fun y ↦ a.coefficient (y, (2 * π) • ζ)) η w = sliceMultiplier a η ζ • w := by
   set L := 𝓕 (fun y ↦ a.coefficient (y, (2 * π) • ζ)) η
   have h : L w = w • L 1 := by rw [← L.map_smul, smul_eq_mul, mul_one]
-  rw [h, sliceMultiplier, applyOne, ContinuousLinearMap.coe_restrictScalars',
-    ContinuousLinearMap.apply_apply, smul_eq_mul, smul_eq_mul, mul_comm]
+  rw [h]
+  simp [L, sliceMultiplier, applyOne, mul_comm w]
 
 private theorem HasCompactSpatialSupport.contDiff_sliceMultiplier
     (ha : a.HasCompactSpatialSupport) (η : CoordinateSpace n) :
@@ -245,50 +245,19 @@ private theorem HasCompactSpatialSupport.continuous_modulatedPiece
 private theorem HasCompactSpatialSupport.quantizeSchwartzValue_eq_integral_modulatedPiece
     (ha : a.HasCompactSpatialSupport) (u : 𝓢(CoordinateSpace n, ℂ)) (x : CoordinateSpace n) :
     quantizeSchwartzValue a.coefficient u x = ∫ η, modulatedPiece a u η x := by
-  obtain ⟨B, -, hB⟩ := ha.exists_norm_sliceMultiplier_le
-  have he : Continuous fun y : CoordinateSpace n ↦ (𝐞 ⟪y, x⟫ : ℂ) :=
-    Real.continuous_fourierChar_inner.comp (continuous_id.prodMk continuous_const)
-  set F : CoordinateSpace n × CoordinateSpace n → ℂ := fun q ↦
-    (𝐞 ⟪q.1, x⟫ : ℂ) • (𝐞 ⟪q.2, x⟫ : ℂ) • (sliceMultiplier a q.2 q.1 • 𝓕 u q.1) with hF
-  -- The integrand is dominated by `B ⟨ζ⟩ ^ m ‖𝓕 u ζ‖ ⟨η⟩ ^ (-(n + 1))`.
-  have hFint : Integrable F (volume.prod volume) := by
-    refine ((((𝓕 u).integrable_one_add_norm_sq_rpow_mul_norm (m / 2)).mul_prod
-      integrable_one_add_norm_sq_rpow_neg_succ_div_two).const_mul B).mono' ?_
-      (.of_forall fun q ↦ ?_)
-    · exact ((he.comp continuous_fst).smul ((he.comp continuous_snd).smul
-        ((ha.continuous_sliceMultiplier.comp continuous_swap).smul
-          ((𝓕 u).continuous.comp continuous_fst)))).aestronglyMeasurable
-    · simp only [hF, norm_smul, Circle.norm_coe, one_mul]
-      calc ‖sliceMultiplier a q.2 q.1‖ * ‖𝓕 u q.1‖
-          ≤ B * (1 + ‖q.1‖ ^ 2) ^ (m / 2) * (1 + ‖q.2‖ ^ 2) ^ (-((n : ℝ) + 1) / 2) *
-              ‖𝓕 u q.1‖ := by
-            gcongr
-            exact hB q.2 q.1
-        _ = _ := by ring
+  obtain ⟨B, -, hB⟩ := ha.exists_norm_iteratedFDeriv_fourier_slice_smul_le 0 ((n : ℝ) + 1)
   -- The slice at `2πζ` is the inverse Fourier transform of its Fourier transform in the position.
-  have hslice (ζ : CoordinateSpace n) :
-      a.coefficient (x, (2 * π) • ζ) (𝓕 u ζ) =
-        ∫ η, (𝐞 ⟪η, x⟫ : ℂ) • (sliceMultiplier a η ζ • 𝓕 u ζ) := by
+  have hslice (ζ : CoordinateSpace n) : a.coefficient (x, (2 * π) • ζ) =
+      ∫ η, (𝐞 ⟪η, x⟫ : ℂ) • 𝓕 (fun y ↦ a.coefficient (y, (2 * π) • ζ)) η := by
     have h := congrFun (ha.fourierInv_fourier_slice ((2 * π) • ζ)) x
     rw [Real.fourierInv_eq] at h
-    have hf := ha.integrable_fourier_slice ((2 * π) • ζ)
-    have hint : Integrable fun η : CoordinateSpace n ↦
-        𝐞 ⟪η, x⟫ • 𝓕 (fun y ↦ a.coefficient (y, (2 * π) • ζ)) η :=
-      hf.norm.mono' ((Real.continuous_fourierChar.comp
-        (continuous_id.inner continuous_const)).aestronglyMeasurable.smul hf.aestronglyMeasurable)
-        (.of_forall fun η ↦ by simp [Circle.smul_def, norm_smul])
-    rw [← h, ContinuousLinearMap.integral_apply hint]
-    refine integral_congr_ae (.of_forall fun η ↦ ?_)
-    simp only [Circle.smul_def, FunLike.coe_smul, Pi.smul_apply, fourier_slice_apply]
-  calc quantizeSchwartzValue a.coefficient u x = ∫ ζ, ∫ η, F (ζ, η) := by
-        rw [quantizeSchwartzValue_def]
-        refine integral_congr_ae (.of_forall fun ζ ↦ ?_)
-        simp only [hF, Circle.smul_def, hslice, ← integral_smul]
-    _ = ∫ η, ∫ ζ, F (ζ, η) := integral_integral_swap hFint
-    _ = _ := by
-        refine integral_congr_ae (.of_forall fun η ↦ ?_)
-        simp only [hF, ha.modulatedPiece_apply, ← integral_smul]
-        simp only [smul_comm (𝐞 ⟪η, x⟫ : ℂ)]
+    simpa only [Circle.smul_def] using h.symm
+  rw [quantizeSchwartzValue_eq_integral_smul_fourierInv (C := B) (M := m)
+    (ha.continuous_fourier_slice.comp
+      (continuous_fst.prodMk ((continuous_const_smul (2 * π)).comp continuous_snd)))
+    integrable_one_add_norm_sq_rpow_neg_succ_div_two (fun η ζ ↦ by simpa using hB η ζ) hslice u]
+  refine integral_congr_ae (.of_forall fun η ↦ ?_)
+  simp only [ha.modulatedPiece_apply, Real.fourierInv_eq, Circle.smul_def, fourier_slice_apply]
 
 /-! ### Littlewood–Paley blocks of the superposition -/
 
@@ -561,8 +530,8 @@ theorem coe_quantizeLittleBesov_toBesovSpaceCLM (ha : a.HasCompactSpatialSupport
   obtain ⟨C, -, hC⟩ := exists_norm_quantizeToLittleBesov_le ha φ s
   have h := LinearMap.extendOfNorm_eq (BesovSpace.denseRange_littleBesov ℂ φ s p) ⟨C, hC⟩ u
   rw [toLittleBesov_apply] at h
-  rw [quantizeLittleBesov, h, quantizeToLittleBesov, LinearMap.comp_apply, toLittleBesov_apply]
-  rfl
+  rw [quantizeLittleBesov, h, quantizeToLittleBesov, LinearMap.comp_apply, toLittleBesov_apply,
+    ContinuousLinearMap.coe_coe]
 
 /-- **The norm of `Op(a)` on the little Besov spaces.** The operator norm of
 `Op(a) : b^s_{p,∞} → b^{s-m}_{p,∞}` is bounded uniformly in `1 ≤ p ≤ ∞`. -/

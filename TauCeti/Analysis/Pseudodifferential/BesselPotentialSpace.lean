@@ -183,43 +183,10 @@ private theorem quantizeSchwartzValue_besselPotential_sharp_eq_integral
     quantizeSchwartzValue ((besselPotential (-t) : Symbol n W W (-t)).sharp b hb).coefficient w x =
       ∫ η, (𝐞 ⟪η, x⟫ : ℂ) • 𝓕⁻ (fun ζ ↦ shiftedMultiplier b η ζ (𝓕 w ζ)) x := by
   obtain ⟨C, -, hC⟩ := hb.exists_norm_shiftedMultiplier_le ((n : ℝ) + 1)
-  have hN := hb.continuous_shiftedMultiplier
-  have he : Continuous fun y : CoordinateSpace n ↦ (𝐞 ⟪y, x⟫ : ℂ) :=
-    continuous_subtype_val.comp (Real.continuous_fourierChar.comp (by fun_prop))
-  -- The integrand of the double integral is dominated by `‖𝓕 w ζ‖ C ⟨η⟩ ^ (-(n + 1))`.
-  set F : CoordinateSpace n × CoordinateSpace n → W := fun q ↦
-    (𝐞 ⟪q.1, x⟫ : ℂ) • (𝐞 ⟪q.2, x⟫ : ℂ) • shiftedMultiplier b q.2 q.1 (𝓕 w q.1) with hF
-  have hFint : Integrable F (volume.prod volume) := by
-    refine ((𝓕 w).integrable.norm.mul_prod
-      (integrable_one_add_norm_sq_rpow_neg_succ_div_two.const_mul C)).mono' ?_
-      (.of_forall fun q ↦ ?_)
-    · exact ((he.comp continuous_fst).smul ((he.comp continuous_snd).smul
-        (hN.clm_apply ((𝓕 w).continuous.comp continuous_fst)))).aestronglyMeasurable
-    · simp only [hF, norm_smul, Circle.norm_coe, one_mul]
-      calc ‖shiftedMultiplier b q.2 q.1 (𝓕 w q.1)‖ ≤ ‖shiftedMultiplier b q.2 q.1‖ * ‖𝓕 w q.1‖ :=
-            ContinuousLinearMap.le_opNorm _ _
-        _ ≤ C * (1 + ‖q.2‖ ^ 2) ^ (-((n : ℝ) + 1) / 2) * ‖𝓕 w q.1‖ := by gcongr; exact hC _ _
-        _ = _ := by ring
-  have hint (ζ : CoordinateSpace n) :
-      Integrable fun η ↦ (𝐞 ⟪η, x⟫ : ℂ) • shiftedMultiplier b η ζ := by
-    refine (integrable_one_add_norm_sq_rpow_neg_succ_div_two.const_mul C).mono'
-      (he.smul (hN.comp (continuous_const.prodMk continuous_id))).aestronglyMeasurable
-      (.of_forall fun η ↦ ?_)
-    simpa only [norm_smul, Circle.norm_coe, one_mul] using hC η ζ
-  calc quantizeSchwartzValue ((besselPotential (-t) : Symbol n W W (-t)).sharp b hb).coefficient
-        w x = ∫ ζ, ∫ η, F (ζ, η) := by
-        rw [quantizeSchwartzValue_def]
-        refine integral_congr_ae (.of_forall fun ζ ↦ ?_)
-        simp only [hF, coefficient_besselPotential_sharp,
-          ContinuousLinearMap.integral_apply (hint ζ), Circle.smul_def]
-        rw [← integral_smul]
-        simp only [smul_apply]
-    _ = ∫ η, ∫ ζ, F (ζ, η) := integral_integral_swap hFint
-    _ = _ := by
-        refine integral_congr_ae (.of_forall fun η ↦ ?_)
-        simp only [hF, Real.fourierInv_eq, Circle.smul_def]
-        rw [← integral_smul]
-        simp only [smul_comm (𝐞 ⟪η, x⟫ : ℂ)]
+  exact quantizeSchwartzValue_eq_integral_smul_fourierInv (C := C) (M := 0)
+    (hb.continuous_shiftedMultiplier.comp continuous_swap)
+    integrable_one_add_norm_sq_rpow_neg_succ_div_two (fun η ζ ↦ (hC η ζ).trans_eq (by simp))
+    (coefficient_besselPotential_sharp hb x) w
 
 /-- In dimension `0` every quantization is bounded on `Lᵖ`: positions and frequencies range over
 a single point, so `Op(a) w = a(0, 0) (w 0)` up to the total mass of the point. -/
