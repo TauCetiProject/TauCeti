@@ -39,6 +39,8 @@ the traces of the first `d` powers of a `d × d` matrix determine its characteri
   same statement for an endomorphism of a finite free module.
 * `Matrix.trace_pow_eq_of_charpolyRev_eq`: over any commutative ring, `det (1 - X A)` determines
   the traces of all positive powers of `A`.
+* `Matrix.trace_pow_eq_of_charpoly_eq`: over any commutative ring, the characteristic polynomial
+  determines the traces of all powers of `A`.
 * `Matrix.coeff_charpolyRev_eq_of_trace_pow_eq`, `Matrix.charpolyRev_eq_iff_trace_pow_eq`,
   `Matrix.charpoly_eq_iff_trace_pow_eq`: conversely, without additive torsion, the traces of the
   positive powers determine `det (1 - X A)` and the characteristic polynomial.
@@ -141,6 +143,17 @@ theorem trace_pow_eq_of_charpolyRev_eq {A : Matrix n n R} {B : Matrix m m R}
     sum_congr rfl fun i hi ↦ by rw [ih (i + 1) (by have := mem_range.1 hi; omega) (by omega)]
   linear_combination hA - hB - hsum
 
+/-- Over any commutative ring, matrices with the same characteristic polynomial, possibly of
+different sizes, have the same traces of all powers. -/
+theorem trace_pow_eq_of_charpoly_eq {A : Matrix n n R} {B : Matrix m m R}
+    (h : A.charpoly = B.charpoly) (j : ℕ) : (A ^ j).trace = (B ^ j).trace := by
+  nontriviality R
+  rcases j.eq_zero_or_pos with rfl | hj
+  · have hnm := congrArg natDegree h
+    rw [charpoly_natDegree_eq_dim, charpoly_natDegree_eq_dim] at hnm
+    simp [hnm]
+  exact trace_pow_eq_of_charpolyRev_eq (by rw [← reverse_charpoly, ← reverse_charpoly, h]) hj
+
 /-- Without additive torsion in the scalars, the traces of `A ^ j` for `0 < j ≤ r` determine the
 `r`-th coefficient of `det (1 - X A)`. -/
 theorem coeff_charpolyRev_eq_of_trace_pow_eq [IsAddTorsionFree R] {A : Matrix n n R}
@@ -228,16 +241,10 @@ polynomial have the same traces of all powers. The modules may be different. -/
 theorem trace_pow_eq_of_charpoly_eq {N : Type*} [AddCommGroup N] [Module R N] [Module.Free R N]
     [Module.Finite R N] {f : Module.End R M} {g : Module.End R N} (h : f.charpoly = g.charpoly)
     (j : ℕ) : trace R M (f ^ j) = trace R N (g ^ j) := by
-  nontriviality R
-  rcases j.eq_zero_or_pos with rfl | hj
-  · have hMN := congrArg natDegree h
-    rw [charpoly_natDegree, charpoly_natDegree] at hMN
-    simp [hMN]
   rw [charpoly_def, charpoly_def] at h
   simp only [trace_eq_matrix_trace R (Module.Free.chooseBasis R M),
     trace_eq_matrix_trace R (Module.Free.chooseBasis R N), ← LinearMap.toMatrix_pow]
-  refine Matrix.trace_pow_eq_of_charpolyRev_eq ?_ hj
-  rw [← Matrix.reverse_charpoly, ← Matrix.reverse_charpoly, h]
+  exact Matrix.trace_pow_eq_of_charpoly_eq h j
 
 /-- Without additive torsion in the scalars, the traces of `f ^ j` for `0 < j ≤ d` determine the
 characteristic polynomial of an endomorphism `f` of a free module of rank `d`. -/
