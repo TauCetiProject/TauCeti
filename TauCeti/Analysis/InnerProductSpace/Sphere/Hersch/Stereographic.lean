@@ -85,20 +85,21 @@ theorem stereographic_herschHomeomorph (hu : ‖u‖ = 1) (hρ0 : 0 ≤ ρ) (hρ
     rw [Real.sqrt_eq_iff_mul_self_eq (div_nonneg (by linarith) h1ρ.le) (by positivity)]
     field_simp
     linear_combination -hs
+  have hs1 : 1 + √(1 - ρ ^ 2) ≠ 0 := by positivity
+  have hden : 1 - ⟪-u, herschMap (ρ • u) (x : E)⟫ =
+      (1 + ρ) * (1 + w) / (1 + ρ * w) := by
+    simp only [herschMap_def, norm_smul_of_nonneg hρ0, hu, mul_one, inner_neg_left,
+      real_inner_smul_left, inner_smul_right, inner_add_right, real_inner_self_eq_norm_sq, ← hw]
+    field_simp
+    linear_combination w * hs
   apply Subtype.ext
   simp only [stereographic_apply, Submodule.coe_smul, Submodule.coe_orthogonalProjectionOnto_apply,
     Submodule.starProjection_orthogonal_val,
-    Submodule.starProjection_unit_singleton ℝ hu', coe_herschHomeomorph, herschMap_def,
-    norm_smul_of_nonneg hρ0, hu, mul_one, real_inner_smul_left, ← hw, hlam]
-  simp only [inner_neg_left, inner_add_right, inner_smul_right, real_inner_self_eq_norm_sq, hu,
-    ← hw, neg_neg, sub_neg_eq_add, smul_neg, neg_smul]
-  set s := √(1 - ρ ^ 2)
-  have hs1 : 1 + s ≠ 0 := by positivity
-  have hden : 1 - (1 + ρ * w)⁻¹ * (s * -w + (ρ * w / (1 + s) + 1) * (ρ * -1 ^ 2)) =
-      (1 + ρ) * (1 + w) / (1 + ρ * w) := by
-    field_simp
-    linear_combination w * hs
+    Submodule.starProjection_unit_singleton ℝ hu', coe_herschHomeomorph]
   rw [hden]
+  simp only [herschMap_def, norm_smul_of_nonneg hρ0, hu, mul_one, real_inner_smul_left, ← hw, hlam,
+    inner_neg_left, inner_add_right, inner_smul_right, real_inner_self_eq_norm_sq,
+    neg_neg, sub_neg_eq_add, smul_neg, neg_smul]
   by_cases hw1 : 1 + w = 0
   · simp [hw1]
   · match_scalars <;> field_simp
