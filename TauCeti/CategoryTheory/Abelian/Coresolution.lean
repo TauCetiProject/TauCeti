@@ -25,7 +25,8 @@ exactness at `X` says that `X ⟶ I⁰` is a monomorphism. Unlike Mathlib's
 enough injectives.
 
 The definition and its basic API need only zero morphisms, together with cokernels or a zero
-object where cosyzygies, splicing and tails appear. That splicing gives a coresolution and the
+object where cosyzygies, splicing and tails appear; the embeddings `cosyzygy i ⟶ Iⁱ` and the
+exactness of tails also need a preadditive category. That splicing gives a coresolution and the
 results on syzygies are proved for abelian categories.
 
 The *`i`-th cosyzygy* of `S` is `cokernel (S.map' i (i + 1))`
@@ -61,8 +62,6 @@ of short exact sequences) and under retracts (`CategoryTheory.ObjectProperty.IsS
   `CategoryTheory.ObjectProperty.isSyzygy_one_iff` and
   `CategoryTheory.ObjectProperty.isSyzygy_two_iff`: syzygies through embeddings and
   copresentations.
-* `CategoryTheory.ObjectProperty.isSyzygy_of_prop`: objects of `P` are `n`-th syzygies for every
-  `n` when a zero object satisfies `P`.
 * `CategoryTheory.ObjectProperty.IsSyzygy.biprod`: closure under binary biproducts.
 * `CategoryTheory.ObjectProperty.IsSyzygy.of_shortExact`: closure under extensions.
 * `CategoryTheory.ObjectProperty.IsSyzygy.of_retract`: closure under retracts.
@@ -436,26 +435,6 @@ open ComposableArrows
 
 namespace ObjectProperty
 
-section HasZeroObject
-
-variable [HasZeroMorphisms C] [HasZeroObject C] {P : ObjectProperty C}
-
-/-- If `P` holds for a zero object, every object satisfying `P` is an `n`-th syzygy relative to `P`
-for every `n`, through the coresolution `0 → X → X → 0 → 0 → ⋯`. -/
-theorem isSyzygy_of_prop (h₀ : P 0) {X : C} (hX : P X) (n : ℕ) : P.IsSyzygy n X := by
-  induction n generalizing X with
-  | zero => exact isSyzygy_zero P X
-  | succ n ih =>
-    have : Epi (0 : X ⟶ 0) := ⟨fun _ _ _ ↦ (isZero_zero C).eq_of_src _ _⟩
-    -- The sequence `X ⟶ X ⟶ 0` is exact, with homology the cokernel `0` of `𝟙 X`.
-    let L := ShortComplex.mk (𝟙 X) (0 : X ⟶ 0) comp_zero
-    have hL : L.Exact := (ShortComplex.HomologyData.ofIsColimitCokernelCofork L rfl _
-      (CokernelCofork.IsColimit.ofEpiOfIsZero (CokernelCofork.ofπ (0 : X ⟶ 0) comp_zero)
-        inferInstance (isZero_zero C))).exact_iff.2 (isZero_zero C)
-    exact (P.isSyzygy_succ_iff n X).2 ⟨L, ⟨hL⟩, ⟨Iso.refl _⟩, hX, ih h₀⟩
-
-end HasZeroObject
-
 variable [Abelian C] {P : ObjectProperty C}
 
 /-- **Syzygies one term at a time.** `X` is an `(n + 1)`-st syzygy relative to `P` exactly when it
@@ -541,9 +520,7 @@ theorem IsSyzygy.biprod (hP : ∀ A B : C, P A → P B → P (A ⊞ B)) {n : ℕ
 open TauCeti in
 /-- **Syzygies of extensions** (the horseshoe lemma). Let `P` be a property of injective objects
 closed under binary biproducts. If the ends of a short exact sequence `0 → B → A → Ω → 0` are
-`n`-th syzygies relative to `P`, so is the middle. Each step is the injective horseshoe lemma
-`TauCeti.ExactStructure.exists_conflation_of_conflation_of_injective` for the exact structure of
-short exact sequences. -/
+`n`-th syzygies relative to `P`, so is the middle. -/
 theorem IsSyzygy.of_shortExact (hP : ∀ Y, P Y → Injective Y)
     (hPb : ∀ A B : C, P A → P B → P (A ⊞ B)) {n : ℕ} :
     ∀ {L : ShortComplex C}, L.ShortExact → P.IsSyzygy n L.X₁ → P.IsSyzygy n L.X₃ →
