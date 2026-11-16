@@ -49,7 +49,7 @@ homeomorphism of the line. The Jacobian of the track `(t, p) ↦ (t, B_t(p))` is
 so by the inverse function theorem the track is a `C^n` partial diffeomorphism of `ℝ × ℝ × ℝ` with
 source and target `D` (`TauCeti.stripBoundaryInterpolationPartialDiffeomorph`). Its inverse is
 `C^n` jointly in `t` and `p`, so when `b₀' > 0` and `b₁' > 0` the family `B_t`, `t ∈ [0, 1]`, is a
-smooth isotopy of diffeomorphisms of a neighbourhood of the strip. The inverse commutes with the
+`C^n` isotopy of diffeomorphisms of a neighbourhood of the strip. The inverse commutes with the
 deck translations as well
 (`TauCeti.stripBoundaryInterpolationPartialDiffeomorph_symm_apply_mk_add_int`).
 
