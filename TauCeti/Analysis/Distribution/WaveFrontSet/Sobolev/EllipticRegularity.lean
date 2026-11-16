@@ -122,8 +122,7 @@ private theorem sum_smulLeftCLM_iteratedLineDerivOp_cutoffTempered (hg : ∀ i, 
   refine Finset.sum_congr rfl fun i _ ↦ ?_
   have htg : (fun x ↦ χ x * (g i x : ℂ)).HasTemperateGrowth :=
     χ.hasTemperateGrowth_mul (ofRealCLM.contDiff.comp (hg i))
-  rw [cutoffTempered_smul, ← smulLeftCLM_iteratedLineDerivOp_cutoffTempered hφ (hg i)
-    (h := fun x ↦ χ x * g i x) (fun x ↦ rfl),
+  rw [cutoffTempered_smul, ← smulLeftCLM_iteratedLineDerivOp_cutoffTempered hφ (hg i),
     show (fun x ↦ c i * (χ x * g i x)) = c i • fun x ↦ χ x * (g i x : ℂ) from
       funext fun x ↦ by rw [Pi.smul_apply, smul_eq_mul],
     TemperedDistribution.smulLeftCLM_smul htg, _root_.smul_apply]

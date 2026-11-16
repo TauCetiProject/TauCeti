@@ -236,22 +236,21 @@ smooth real function `g` and an iterated derivative `∂^m`, the tempered distri
 `χ g ∂^m (φ T)` is the cut-off `χ (g ∂^m T)`. Near the points where `φ = 1`, a differential
 operator acts on `φ T` as it acts on `T`. -/
 theorem smulLeftCLM_iteratedLineDerivOp_cutoffTempered {T : 𝓓'(Ω, ℂ)} {φ χ : 𝓓(Ω, ℂ)}
-    (hφ : ∀ x ∈ tsupport χ, φ x = 1) {g : E → ℝ} (hg : ContDiff ℝ ∞ g) {h : E → ℂ}
-    (hh : ∀ x, h x = χ x * g x) {k : ℕ} (m : Fin k → E) :
-    TemperedDistribution.smulLeftCLM ℂ h (∂^{m} (T.cutoffTempered φ)) =
+    (hφ : ∀ x ∈ tsupport χ, φ x = 1) {g : E → ℝ} (hg : ContDiff ℝ ∞ g) {k : ℕ}
+    (m : Fin k → E) :
+    TemperedDistribution.smulLeftCLM ℂ (fun x ↦ χ x * g x) (∂^{m} (T.cutoffTempered φ)) =
       (smulLeftCLM hg (∂^{m} T)).cutoffTempered χ := by
-  have hh' : h = fun x ↦ χ x * g x := funext hh
-  have hht : h.HasTemperateGrowth := by
-    rw [hh']
-    exact χ.hasTemperateGrowth_mul (ofRealCLM.contDiff.comp hg)
+  have hht : (fun x ↦ χ x * (g x : ℂ)).HasTemperateGrowth :=
+    χ.hasTemperateGrowth_mul (ofRealCLM.contDiff.comp hg)
   ext f
   rw [TemperedDistribution.smulLeftCLM_apply_apply, cutoffTempered_def,
     complexPairing_smulLeftCLM]
   refine iteratedLineDerivOp_cutoffTempered_apply hφ m ?_ fun x ↦ ?_
-  · rw [show ⇑(SchwartzMap.smulLeftCLM ℂ h f) = fun x ↦ h x * f x from
-      funext fun x ↦ SchwartzMap.smulLeftCLM_apply_apply hht f x, hh']
+  · rw [show ⇑(SchwartzMap.smulLeftCLM ℂ (fun x ↦ χ x * (g x : ℂ)) f) =
+        fun x ↦ χ x * g x * f x from
+      funext fun x ↦ SchwartzMap.smulLeftCLM_apply_apply hht f x]
     exact tsupport_mul_subset_left.trans tsupport_mul_subset_left
-  · rw [SchwartzMap.smulLeftCLM_apply_apply hht, hh, TestFunction.smulLeftCLM_apply,
+  · rw [SchwartzMap.smulLeftCLM_apply_apply hht, TestFunction.smulLeftCLM_apply,
       bilinLeftCLM_apply]
     simp only [ContinuousLinearMap.mul_apply', real_smul, smul_eq_mul]
     ring
