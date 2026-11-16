@@ -873,6 +873,29 @@ theorem fderiv_comp_equivRealProdCLM_I_sub (ω : SymplecticForm V) {u : ℝ × �
     ContinuousLinearMap.comp_apply, ContinuousLinearEquiv.coe_coe, equivRealProdCLM_one,
     equivRealProdCLM_I] using h'
 
+/-- In the complex coordinate `equivRealProdCLM`, the coordinate equation
+`∂ₜu' - X(y, u') i = J(y, u')(∂ₛu' - X(y, u') 1)` for `u' = u ∘ equivRealProdCLM` and
+`X(y, x) = X_K(equivRealProdCLM y, x) ∘ equivRealProdCLM` is the Floer equation
+`(du - X_K)^{0,1} = 0` at `equivRealProdCLM y`. This is the converse of
+`TauCeti.SymplecticForm.fderiv_comp_equivRealProdCLM_I_sub`. -/
+theorem isComplexLinearMap_perturbedFDeriv_of_fderiv_comp_equivRealProdCLM_I_sub
+    (ω : SymplecticForm V) {u : ℝ × ℝ → V} {y : ℂ}
+    (h : fderiv ℝ (u ∘ equivRealProdCLM) y I -
+        (ω.hamiltonianOneForm Ks Kt (equivRealProdCLM y) (u (equivRealProdCLM y)) ∘L
+          (equivRealProdCLM : ℂ →L[ℝ] ℝ × ℝ)) I =
+      J (equivRealProdCLM y) (u (equivRealProdCLM y))
+        (fderiv ℝ (u ∘ equivRealProdCLM) y 1 -
+          (ω.hamiltonianOneForm Ks Kt (equivRealProdCLM y) (u (equivRealProdCLM y)) ∘L
+            (equivRealProdCLM : ℂ →L[ℝ] ℝ × ℝ)) 1)) :
+    IsComplexLinearMap (AlmostComplexStructure.product ℝ)
+      (J (equivRealProdCLM y) (u (equivRealProdCLM y)))
+      (ω.perturbedFDeriv Ks Kt u (equivRealProdCLM y) : ℝ × ℝ →ₗ[ℝ] V) := by
+  refine IsComplexLinearMap.of_apply_stdComplexLineImag ?_
+  simp only [perturbedFDeriv_eq_sub, ContinuousLinearMap.coe_coe, sub_apply]
+  simpa only [fderiv_comp_equivRealProdCLM_one, fderiv_comp_equivRealProdCLM_I,
+    ContinuousLinearMap.comp_apply, ContinuousLinearEquiv.coe_coe, equivRealProdCLM_one,
+    equivRealProdCLM_I] using h
+
 /-- **The energy density bounds the derivative uniformly over a compact parameter window.** Let
 `J_p(z, x)` be continuous and tamed by `ω`, and `X_{K_{s,p}}(z, x)` continuous, for `(p, z, x)` in
 `C × D × K` with compact `C ⊆ P`, `D ⊆ ℝ × ℝ` and `K ⊆ V`. There are constants `A, B ≥ 0` such
