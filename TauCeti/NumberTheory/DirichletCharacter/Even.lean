@@ -79,110 +79,68 @@ theorem even_of_le_two [NeZero n] (hn : n ≤ 2) (χ : DirichletCharacter R n) :
   have h : (-1 : ZMod n) = 1 := ZMod.neg_one_eq_one_iff.mpr (by have := NeZero.ne n; omega)
   rw [DirichletCharacter.Even, h, map_one]
 
-/-- Above level two, `R` has exactly two square roots of unity, and some Dirichlet character is
-odd: its value at `-1` differs from `1`. -/
-private lemma natCard_rootsOfUnity_two_and_exists_apply_neg_one_ne_one [NeZero n]
-    [HasEnoughRootsOfUnity R (Monoid.exponent (ZMod n)ˣ)] (hn : 2 < n) :
-    Nat.card (rootsOfUnity 2 R) = 2 ∧ ∃ χ : DirichletCharacter R n, χ (-1) ≠ 1 := by
-  have : Fact (2 < n) := ⟨hn⟩
-  have hu : (-1 : (ZMod n)ˣ) ≠ 1 := fun h ↦ ZMod.neg_one_ne_one (n := n) (congrArg Units.val h)
+/-- Above level two, `-1` has order `2` in `(ℤ/nℤ)ˣ`, so the roots of unity that the Dirichlet
+characters of level `n` need include the square roots of unity. -/
+private lemma hasEnoughRootsOfUnity_two_of_two_lt {M : Type*} [CommMonoid M]
+    [HasEnoughRootsOfUnity M (Monoid.exponent (ZMod n)ˣ)] (hn : 2 < n) :
+    HasEnoughRootsOfUnity M 2 := by
+  have : NeZero n := ⟨by omega⟩
+  have : Fact (1 < n) := ⟨by omega⟩
   have h2 : 2 ∣ Monoid.exponent (ZMod n)ˣ := by
-    have : Fact (Nat.Prime 2) := ⟨Nat.prime_two⟩
-    have := Monoid.order_dvd_exponent (-1 : (ZMod n)ˣ)
-    rwa [orderOf_eq_prime (p := 2) (neg_one_sq : (-1 : (ZMod n)ˣ) ^ 2 = 1) hu] at this
-  have := HasEnoughRootsOfUnity.of_dvd R h2
-  obtain ⟨ζ, hζ⟩ := HasEnoughRootsOfUnity.exists_isPrimitiveRoot R 2
-  have : Nontrivial R := ⟨ζ, 1, hζ.ne_one one_lt_two⟩
-  exact ⟨HasEnoughRootsOfUnity.natCard_rootsOfUnity R 2,
-    exists_apply_ne_one_of_hasEnoughRootsOfUnity R (ZMod.neg_one_ne_one (n := n))⟩
-
-/-- If `R` has exactly two square roots of unity, any two elements other than `1` that square
-to `1` are equal. -/
-private lemma eq_of_mul_self_eq_one (hcard : Nat.card (rootsOfUnity 2 R) = 2) (r s : R)
-    (hr : r * r = 1) (hs : s * s = 1) (hr1 : r ≠ 1) (hs1 : s ≠ 1) : r = s := by
-  obtain ⟨y, -, hy⟩ := (Nat.card_eq_two_iff' (1 : rootsOfUnity 2 R)).1 hcard
-  have hmk (t : R) (ht : t * t = 1) (ht1 : t ≠ 1) :
-      ∃ z : rootsOfUnity 2 R, z ≠ 1 ∧ (z : Rˣ) = ⟨t, t, ht, ht⟩ := by
-    refine ⟨⟨⟨t, t, ht, ht⟩, ?_⟩, fun h ↦ ht1 ?_, rfl⟩
-    · rw [mem_rootsOfUnity]
-      ext
-      simp [pow_two, ht]
-    · simpa using congrArg (fun z : rootsOfUnity 2 R ↦ ((z : Rˣ) : R)) h
-  obtain ⟨z, hz, hzr⟩ := hmk r hr hr1
-  obtain ⟨w, hw, hws⟩ := hmk s hs hs1
-  have := (hy z hz).trans (hy w hw).symm
-  simpa [hzr, hws] using congrArg (fun z : rootsOfUnity 2 R ↦ ((z : Rˣ) : R)) this
-
-/-- A Dirichlet character takes a square root of unity as its value at `-1`. -/
-private lemma apply_neg_one_mul_self (χ : DirichletCharacter R n) : χ (-1) * χ (-1) = 1 := by
-  rw [← map_mul, neg_one_mul, neg_neg, map_one]
-
-/-- With enough roots of unity there are finitely many Dirichlet characters, even when `R` is not
-a domain. -/
-private lemma finite_of_hasEnoughRootsOfUnity [NeZero n]
-    [HasEnoughRootsOfUnity R (Monoid.exponent (ZMod n)ˣ)] : Finite (DirichletCharacter R n) :=
-  Nat.finite_of_card_ne_zero <| by
-    rw [card_eq_totient_of_hasEnoughRootsOfUnity R n]
-    exact (Nat.totient_pos.2 (NeZero.pos n)).ne'
+    simpa [ZMod.ringChar_zmod_n, hn.ne'] using Monoid.order_dvd_exponent (-1 : (ZMod n)ˣ)
+  exact HasEnoughRootsOfUnity.of_dvd M h2
 
 /-- If one of two levels exceeds `2`, exactly half of the pairs of Dirichlet characters at these
-levels have a prescribed product parity `ε = ±1`: multiplying by a pair of parity `-1` exchanges
-the two parities. -/
+levels have a prescribed product parity `ε = ±1`. -/
 theorem two_mul_card_apply_neg_one_mul_apply_neg_one_eq {a b : ℕ} [NeZero a] [NeZero b]
     [HasEnoughRootsOfUnity R (Monoid.exponent (ZMod a)ˣ)]
     [HasEnoughRootsOfUnity R (Monoid.exponent (ZMod b)ˣ)] (hab : 2 < a ∨ 2 < b) {ε : R}
     (hε : ε = 1 ∨ ε = -1) :
     2 * Nat.card {q : DirichletCharacter R a × DirichletCharacter R b //
       q.1 (-1) * q.2 (-1) = ε} = a.totient * b.totient := by
-  classical
-  obtain ⟨hcard, x, hx⟩ : Nat.card (rootsOfUnity 2 R) = 2 ∧
-      ∃ x : DirichletCharacter R a × DirichletCharacter R b, x.1 (-1) * x.2 (-1) ≠ 1 := by
+  -- The product parity, as a homomorphism to the square roots of unity of `R`.
+  let φ : DirichletCharacter R a × DirichletCharacter R b →* rootsOfUnity 2 R :=
+    .mk' (fun q ↦ ⟨q.1.toUnitHom (-1) * q.2.toUnitHom (-1), by
+      rw [mem_rootsOfUnity, mul_pow, ← map_pow, ← map_pow, neg_one_sq, neg_one_sq, map_one,
+        map_one, one_mul]⟩) fun q q' ↦ by
+      ext
+      simp only [Prod.fst_mul, Prod.snd_mul, Subgroup.coe_mul, Units.val_mul,
+        MulChar.coe_toUnitHom, MulChar.mul_apply]
+      ring
+  have hφ (q) (y : rootsOfUnity 2 R) : φ q = y ↔ q.1 (-1) * q.2 (-1) = ((y : Rˣ) : R) := by
+    simp [φ, Subtype.ext_iff, Units.ext_iff]
+  have : HasEnoughRootsOfUnity R 2 :=
+    hab.elim hasEnoughRootsOfUnity_two_of_two_lt hasEnoughRootsOfUnity_two_of_two_lt
+  have hcard := HasEnoughRootsOfUnity.natCard_rootsOfUnity R 2
+  obtain ⟨ζ, hζ⟩ := HasEnoughRootsOfUnity.exists_isPrimitiveRoot R 2
+  have : Nontrivial R := ⟨ζ, 1, hζ.ne_one one_lt_two⟩
+  -- Some pair has product parity other than `1`.
+  obtain ⟨x, hx⟩ : ∃ x, φ x ≠ 1 := by
     rcases hab with h | h
-    · obtain ⟨hc, χ, hχ⟩ := natCard_rootsOfUnity_two_and_exists_apply_neg_one_ne_one (R := R) h
-      exact ⟨hc, (χ, 1), by
-        change χ (-1) * (1 : DirichletCharacter R b) (-1) ≠ 1
-        rwa [MulChar.one_apply isUnit_one.neg, mul_one]⟩
-    · obtain ⟨hc, χ, hχ⟩ := natCard_rootsOfUnity_two_and_exists_apply_neg_one_ne_one (R := R) h
-      exact ⟨hc, (1, χ), by
-        change (1 : DirichletCharacter R a) (-1) * χ (-1) ≠ 1
-        rwa [MulChar.one_apply isUnit_one.neg, one_mul]⟩
-  obtain ⟨f, hf⟩ : ∃ f : DirichletCharacter R a × DirichletCharacter R b → R,
-      ∀ q, f q = q.1 (-1) * q.2 (-1) := ⟨_, fun _ ↦ rfl⟩
-  simp only [← hf]
-  have hmul (q q' : DirichletCharacter R a × DirichletCharacter R b) :
-      f (q * q') = f q * f q' := by
-    simp only [hf, Prod.fst_mul, Prod.snd_mul, MulChar.mul_apply]
-    ring
-  have hsq (q : DirichletCharacter R a × DirichletCharacter R b) : f q * f q = 1 := by
-    calc f q * f q = (q.1 (-1) * q.1 (-1)) * (q.2 (-1) * q.2 (-1)) := by rw [hf]; ring
-      _ = 1 := by rw [apply_neg_one_mul_self, apply_neg_one_mul_self, mul_one]
-  have hg : f x ≠ 1 := by rwa [hf]
-  have := finite_of_hasEnoughRootsOfUnity (R := R) (n := a)
-  have := finite_of_hasEnoughRootsOfUnity (R := R) (n := b)
-  have hpar (q : DirichletCharacter R a × DirichletCharacter R b) : ¬f q = 1 ↔ f q = f x :=
-    ⟨fun h ↦ eq_of_mul_self_eq_one hcard _ _ (hsq q) (hsq x) h hg, fun h h1 ↦ hg (h.symm.trans h1)⟩
-  -- Multiplication by `x` exchanges the two parities.
-  have hswap : Nat.card {q : DirichletCharacter R a × DirichletCharacter R b // f q = 1} =
-      Nat.card {q : DirichletCharacter R a × DirichletCharacter R b // f q = f x} := by
-    refine Nat.card_congr ((Equiv.mulLeft x).subtypeEquiv fun q ↦ ?_)
-    simp only [Equiv.coe_mulLeft, hmul]
-    exact ⟨fun h ↦ by rw [h, mul_one], fun h ↦ by
-      rw [← one_mul (f q), ← hsq x, mul_assoc, h, hsq]⟩
-  -- Every pair has parity `1` or `f x`.
-  have htot : Nat.card {q : DirichletCharacter R a × DirichletCharacter R b // f q = 1} +
-      Nat.card {q : DirichletCharacter R a × DirichletCharacter R b // f q = f x} =
-      a.totient * b.totient := by
-    rw [← card_eq_totient_of_hasEnoughRootsOfUnity R a,
-      ← card_eq_totient_of_hasEnoughRootsOfUnity R b, ← Nat.card_prod, ← Nat.card_sum]
-    exact Nat.card_congr (((Equiv.refl _).sumCongr (Equiv.subtypeEquivRight hpar).symm).trans
-      (Equiv.sumCompl _))
-  have hε' : ε = 1 ∨ ε = f x := by
-    rcases hε with rfl | rfl
-    · exact Or.inl rfl
-    · by_cases h : (-1 : R) = 1
-      · exact Or.inl h
-      · exact Or.inr (eq_of_mul_self_eq_one hcard _ _ (by simp) (hsq x) h hg)
-  rcases hε' with rfl | rfl <;> omega
+    · have : Fact (2 < a) := ⟨h⟩
+      obtain ⟨χ, hχ⟩ :=
+        exists_apply_ne_one_of_hasEnoughRootsOfUnity R (ZMod.neg_one_ne_one (n := a))
+      exact ⟨(χ, 1), by simpa [hφ, MulChar.one_apply isUnit_one.neg] using hχ⟩
+    · have : Fact (2 < b) := ⟨h⟩
+      obtain ⟨χ, hχ⟩ :=
+        exists_apply_ne_one_of_hasEnoughRootsOfUnity R (ZMod.neg_one_ne_one (n := b))
+      exact ⟨(1, χ), by simpa [hφ, MulChar.one_apply isUnit_one.neg] using hχ⟩
+  -- Hence `φ` is onto, since `1` and `φ x` are the only square roots of unity.
+  have hsurj : Function.Surjective φ := fun y ↦ by
+    obtain ⟨z, -, hz⟩ := (Nat.card_eq_two_iff' (1 : rootsOfUnity 2 R)).1 hcard
+    by_cases hy : y = 1
+    · exact ⟨1, by rw [map_one, hy]⟩
+    · exact ⟨x, (hz _ hx).trans (hz _ hy).symm⟩
+  -- Each fibre of `φ` is a coset of its kernel.
+  have hfib (q₀ : DirichletCharacter R a × DirichletCharacter R b) :
+      Nat.card {q // φ q = φ q₀} = Nat.card φ.ker :=
+    (Nat.card_congr ((Equiv.mulLeft q₀).subtypeEquiv fun q ↦ by
+      simp [MonoidHom.mem_ker] : φ.ker ≃ {q // φ q = φ q₀})).symm
+  obtain ⟨q₀, hq₀⟩ := hsurj (rootsOfUnity.mkOfPowEq ε (by rcases hε with rfl | rfl <;> simp))
+  rw [Nat.card_congr (Equiv.subtypeEquivRight fun q ↦
+      (by rw [hq₀, hφ, rootsOfUnity.val_mkOfPowEq_coe] : φ q = φ q₀ ↔ _).symm), hfib,
+    ← card_eq_totient_of_hasEnoughRootsOfUnity R a, ← card_eq_totient_of_hasEnoughRootsOfUnity R b,
+    ← Nat.card_prod, ← Subgroup.card_ker_mul_card_of_surjective hsurj, hcard, mul_comm]
 
 /-- If neither of two levels exceeds `2`, there is a single pair of Dirichlet characters at these
 levels, and it is even: the pairs of product parity `ε` number one when `ε = 1` and none
@@ -191,15 +149,16 @@ theorem card_apply_neg_one_mul_apply_neg_one_eq_of_le_two {R : Type*} [CommMonoi
     {a b : ℕ} [NeZero a] [NeZero b] [DecidableEq R] (ha : a ≤ 2) (hb : b ≤ 2) (ε : R) :
     Nat.card {q : DirichletCharacter R a × DirichletCharacter R b //
       q.1 (-1) * q.2 (-1) = ε} = if ε = 1 then 1 else 0 := by
-  have hneg {n : ℕ} [NeZero n] (hn : n ≤ 2) (χ : DirichletCharacter R n) : χ (-1) = 1 := by
-    rw [ZMod.neg_one_eq_one_iff.mpr (by have := NeZero.ne n; omega), map_one]
   have := subsingleton_of_le_two (R := R) ha
   have := subsingleton_of_le_two (R := R) hb
-  simp only [hneg ha, hneg hb, one_mul]
+  -- The only pair is the trivial one, and its product parity is `1`.
+  have h1 (q : DirichletCharacter R a × DirichletCharacter R b) : q.1 (-1) * q.2 (-1) = 1 := by
+    rw [Subsingleton.elim q 1]
+    simp [MulChar.one_apply isUnit_one.neg]
+  simp only [h1]
   split_ifs with hε
   · subst hε
-    rw [Nat.card_congr (Equiv.subtypeUnivEquiv fun _ ↦ rfl), Nat.card_prod,
-      Nat.card_unique, Nat.card_unique]
+    rw [Nat.card_congr (Equiv.subtypeUnivEquiv fun _ ↦ rfl), Nat.card_unique]
   · have : IsEmpty {_q : DirichletCharacter R a × DirichletCharacter R b // (1 : R) = ε} :=
       ⟨fun ⟨_, h⟩ ↦ hε h.symm⟩
     exact Nat.card_of_isEmpty
