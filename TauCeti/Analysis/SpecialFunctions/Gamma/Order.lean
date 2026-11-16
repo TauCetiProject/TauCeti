@@ -18,7 +18,10 @@ The entire reciprocal of `Complex.Gamma` has a simple zero at each nonpositive i
 with derivative `(-1)^n n!` at `-n`. Hence Gamma has a simple pole at each such point, with
 leading Laurent coefficient `(-1)^n / n!` (`Complex.tendsto_add_natCast_mul_Gamma`,
 `Complex.meromorphicTrailingCoeffAt_Gamma_neg_nat`,
-`Complex.meromorphicTrailingCoeffAt_Gamma_zero`), and has order zero everywhere else. Deligne's
+`Complex.meromorphicTrailingCoeffAt_Gamma_zero`), and has order zero everywhere else. In particular,
+`Complex.Gamma` and the shifted Gamma–power kernel `s ↦ Γ(s - β) * x ^ (β - s)` are analytic
+wherever the Gamma argument avoids the nonpositive integers (`Complex.analyticAt_Gamma`,
+`Complex.analyticAt_Gamma_sub_mul_cpow`). Deligne's
 factors inherit exactly the pole lattices `-2n` and `-n`. Their meromorphic orders are
 nonpositive: none has a zero as a meromorphic germ.
 
@@ -119,6 +122,22 @@ theorem meromorphicTrailingCoeffAt_Gamma_zero : meromorphicTrailingCoeffAt Gamma
 theorem analyticAt_Gamma {s : ℂ} (hs : ∀ n : ℕ, s ≠ -(n : ℂ)) : AnalyticAt ℂ Gamma s := by
   have h := (differentiable_one_div_Gamma.analyticAt s).inv (inv_ne_zero (Gamma_ne_zero hs))
   simpa only [Pi.inv_def, inv_inv] using h
+
+/-- For any complex base `x` and shift `β`, the shifted Gamma–power kernel
+`s ↦ Γ(s - β) * x ^ (β - s)` is analytic at every `s₀` where `s₀ - β` is not a nonpositive
+integer (including `x = 0`, where `β - s₀ ≠ 0` forces `0 ^ (β - s) = 0` near `s₀`). -/
+theorem analyticAt_Gamma_sub_mul_cpow {s₀ β : ℂ} (x : ℂ) (hs : ∀ n : ℕ, s₀ - β ≠ -(n : ℂ)) :
+    AnalyticAt ℂ (fun s ↦ Gamma (s - β) * x ^ (β - s)) s₀ := by
+  have hne : β - s₀ ≠ 0 := fun h ↦ hs 0 (by simpa [sub_eq_zero] using (sub_eq_zero.mp h).symm)
+  rcases eq_or_ne x 0 with rfl | hx
+  · refine (analyticAt_const (v := (0 : ℂ))).congr ?_
+    filter_upwards [(continuous_const.sub continuous_id).continuousAt.eventually_ne hne]
+      with s (hs' : β - s ≠ 0)
+    simp [zero_cpow hs']
+  · have hcpow : AnalyticAt ℂ (fun s : ℂ ↦ x ^ (β - s)) s₀ :=
+      (((differentiable_const β).sub differentiable_id).const_cpow (.inl hx)).analyticAt s₀
+    exact (AnalyticAt.comp (g := Gamma) (f := fun s : ℂ ↦ s - β) (analyticAt_Gamma hs)
+      (by fun_prop)).mul hcpow
 
 /-- Gamma has order zero at every regular point. -/
 theorem meromorphicOrderAt_Gamma_of_ne_neg_nat {s : ℂ}

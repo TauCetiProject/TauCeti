@@ -54,17 +54,6 @@ open scoped Real Topology
 
 namespace TauCeti
 
-/-- The fractional-part integral `s ↦ s ∫_{t > 1} (t - ⌊t⌋₊) t^{-(s + 1)} dt` is holomorphic on the
-open right half-plane `Re s > 0`. -/
-private lemma differentiableOn_mul_integral_sub_natFloor :
-    DifferentiableOn ℂ
-      (fun s : ℂ ↦ s * ∫ t in Set.Ioi (1 : ℝ), ((t - ⌊t⌋₊ : ℝ) : ℂ) * (t : ℂ) ^ (-(s + 1)))
-      {s | 0 < s.re} := by
-  refine differentiableOn_id.mul (differentiableOn_integral_mul_cpow_of_isBigO (r := 0) ?_)
-  refine isBigO_iff.mpr ⟨1, (eventually_ge_atTop (0 : ℝ)).mono fun t ht ↦ ?_⟩
-  simpa only [Real.rpow_zero, Real.norm_eq_abs, abs_one, mul_one, norm_real] using
-    Nat.abs_sub_floor_le ht
-
 /-- **Fractional-part integral representation of `riemannZeta₀`.** For every `s` with `Re s > 0`,
 `riemannZeta₀ s = 1 - s * ∫_{t > 1} (t - ⌊t⌋₊) t^{-(s + 1)} dt`. -/
 theorem riemannZeta₀_eq_one_sub_mul_integral {s : ℂ} (hs : 0 < s.re) :
@@ -73,10 +62,15 @@ theorem riemannZeta₀_eq_one_sub_mul_integral {s : ℂ} (hs : 0 < s.re) :
   have hopen : IsOpen {z : ℂ | 0 < z.re} := isOpen_lt continuous_const continuous_re
   have hLHS : AnalyticOnNhd ℂ riemannZeta₀ {z : ℂ | 0 < z.re} :=
     differentiable_riemannZeta₀.differentiableOn.analyticOnNhd hopen
+  have hO_frac : (fun t : ℝ ↦ ((t - ⌊t⌋₊ : ℝ) : ℂ)) =O[atTop] fun t ↦ t ^ (0 : ℝ) :=
+    isBigO_iff.mpr ⟨1, (eventually_ge_atTop (0 : ℝ)).mono fun t ht ↦ by
+      simpa only [Real.rpow_zero, Real.norm_eq_abs, abs_one, mul_one, norm_real] using
+        Nat.abs_sub_floor_le ht⟩
   have hRHS : AnalyticOnNhd ℂ
       (fun z ↦ 1 - z * ∫ t in Set.Ioi (1 : ℝ), ((t - ⌊t⌋₊ : ℝ) : ℂ) * (t : ℂ) ^ (-(z + 1)))
       {z : ℂ | 0 < z.re} :=
-    ((differentiableOn_const 1).sub differentiableOn_mul_integral_sub_natFloor).analyticOnNhd hopen
+    ((differentiableOn_const 1).sub (differentiableOn_id.mul
+      (differentiableOn_integral_mul_cpow_of_isBigO hO_frac))).analyticOnNhd hopen
   refine (hLHS.eqOn_of_preconnected_of_eventuallyEq hRHS
     (convex_halfSpace_re_gt 0).isPreconnected (by norm_num : (2 : ℂ) ∈ {z : ℂ | 0 < z.re}) ?_) hs
   filter_upwards [(isOpen_lt continuous_const continuous_re).mem_nhds

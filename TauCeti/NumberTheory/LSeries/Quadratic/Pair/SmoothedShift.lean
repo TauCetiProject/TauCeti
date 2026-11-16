@@ -247,22 +247,6 @@ theorem tsum_zetaMulPairCoeffs_div_cpow_mul_exp_eq {β x : ℝ} (hβ₀ : 1 / 2 
     residue_cpow_mul_Gamma_mul_pair_one_sub χ ψ β x]
   ring
 
-omit [NeZero M] [NeZero N] in
-private theorem analyticAt_Gamma_sub_mul_cpow {β : ℝ} (x : ℝ) (hβ₁ : β < 2) (hβ : β ≠ 1) :
-    AnalyticAt ℂ (fun s ↦ Gamma (s - β) * (x : ℂ) ^ ((β : ℂ) - s)) 1 := by
-  have hne : (β : ℂ) - 1 ≠ 0 := sub_ne_zero.mpr (ofReal_ne_one.mpr hβ)
-  rcases eq_or_ne x 0 with rfl | hx
-  · refine (analyticAt_const (v := (0 : ℂ))).congr ?_
-    filter_upwards [(continuous_const.sub continuous_id).continuousAt.eventually_ne hne]
-      with s (hs : (β : ℂ) - s ≠ 0)
-    simp [zero_cpow hs]
-  · have hcpow : AnalyticAt ℂ (fun s : ℂ ↦ (x : ℂ) ^ ((β : ℂ) - s)) 1 :=
-      (((differentiable_const (β : ℂ)).sub differentiable_id).const_cpow
-        (.inl (ofReal_ne_zero.mpr hx))).analyticAt 1
-    exact (AnalyticAt.comp (g := Gamma) (f := fun s : ℂ ↦ s - β) (x := 1)
-      (analyticAt_Gamma (ne_neg_natCast_of_neg_one_lt_re_of_ne_zero (by simp; linarith)
-        (sub_ne_zero.mpr (ofReal_ne_one.mpr hβ).symm))) (by fun_prop)).mul hcpow
-
 /-- **Goldfeld's shifted contour formula (simple-pole case).** When `χ ≠ 1`, `ψ ≠ 1`, and
 `χ.mul ψ ≠ 1`, the `s = 1` pole is simple with residue
 `L(1, χ) L(1, ψ) L(1, χ.mul ψ) Γ(1 - β) x^{β - 1}`. -/
@@ -278,7 +262,9 @@ theorem tsum_zetaMulPairCoeffs_div_cpow_mul_exp_eq_of_mul_ne_one
             ψ.LFunction (w + β) * (χ.mul ψ).LFunction (w + β))) x := by
   rw [tsum_zetaMulPairCoeffs_div_cpow_mul_exp_eq χ ψ hβ₀ hβ₁ hβ hx,
     residue_pair_mul_of_mul_ne_one χ ψ hχ hψ hχψ
-      (analyticAt_Gamma_sub_mul_cpow x (by linarith) hβ)]
+      (analyticAt_Gamma_sub_mul_cpow (x : ℂ)
+        (ne_neg_natCast_of_neg_one_lt_re_of_ne_zero (by simp; linarith)
+          (sub_ne_zero.mpr (ofReal_ne_one.mpr hβ).symm)))]
 
 /-- **Goldfeld's shifted contour formula (double-pole case).** When `χ ≠ 1` and `χ.mul ψ = 1`
 (which implies `ψ ≠ 1`), the `s = 1` pole is double and its residue is the derivative at `1` of the
@@ -296,7 +282,9 @@ theorem tsum_zetaMulPairCoeffs_div_cpow_mul_exp_eq_of_mul_eq_one
             ψ.LFunction (w + β) * (χ.mul ψ).LFunction (w + β))) x := by
   rw [tsum_zetaMulPairCoeffs_div_cpow_mul_exp_eq χ ψ hβ₀ hβ₁ hβ hx,
     residue_pair_mul_of_mul_eq_one χ ψ hχ (ne_one_of_mul_eq_one_right hχ hχψ) hχψ
-      (analyticAt_Gamma_sub_mul_cpow x (by linarith) hβ)]
+      (analyticAt_Gamma_sub_mul_cpow (x : ℂ)
+        (ne_neg_natCast_of_neg_one_lt_re_of_ne_zero (by simp; linarith)
+          (sub_ne_zero.mpr (ofReal_ne_one.mpr hβ).symm)))]
 
 /-- **Goldfeld's vertical-line error estimate.** Across the pole-free strip `1 / 2 < β < 3 / 2` and
 for all `x ≥ 0`, the shifted Mellin integral on `Re w = 1 / 2 - β` satisfies
@@ -396,7 +384,9 @@ theorem exp_neg_le_re_pair_add_of_mul_ne_one
         37500 * ((M : ℝ) * N) ^ 2 / ((β - 1 / 2) * (3 / 2 - β)) * x ^ (β - 1 / 2) := by
   have hlo := exp_neg_le_re_pair_add hχ hψ hβ₀ hβ₁ hβ hx
   rw [residue_pair_mul_of_mul_ne_one χ ψ hχ1 hψ1 hχψ
-    (analyticAt_Gamma_sub_mul_cpow x (by linarith) hβ)] at hlo
+    (analyticAt_Gamma_sub_mul_cpow (x : ℂ)
+      (ne_neg_natCast_of_neg_one_lt_re_of_ne_zero (by simp; linarith)
+        (sub_ne_zero.mpr (ofReal_ne_one.mpr hβ).symm)))] at hlo
   have hΓx : Gamma ((1 : ℂ) - β) * (x : ℂ) ^ ((β : ℂ) - 1) =
       ((Real.Gamma (1 - β) * x ^ (β - 1) : ℝ) : ℂ) := by
     rw [show (1 : ℂ) - β = ((1 - β : ℝ) : ℂ) by push_cast; ring,
@@ -421,6 +411,8 @@ theorem exp_neg_le_re_pair_add_of_mul_eq_one
   have hψ : ψ.IsQuadratic := (isQuadratic_mul_iff_right hχ).mp (hχψ ▸ MulChar.isQuadratic_one)
   have hlo := exp_neg_le_re_pair_add hχ hψ hβ₀ hβ₁ hβ hx
   rwa [residue_pair_mul_of_mul_eq_one χ ψ hχ1 (ne_one_of_mul_eq_one_right hχ1 hχψ) hχψ
-    (analyticAt_Gamma_sub_mul_cpow x (by linarith) hβ)] at hlo
+    (analyticAt_Gamma_sub_mul_cpow (x : ℂ)
+      (ne_neg_natCast_of_neg_one_lt_re_of_ne_zero (by simp; linarith)
+        (sub_ne_zero.mpr (ofReal_ne_one.mpr hβ).symm)))] at hlo
 
 end DirichletCharacter

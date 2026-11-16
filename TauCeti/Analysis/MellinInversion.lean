@@ -120,18 +120,6 @@ theorem norm_mellinInv_le {E : Type*} [NormedAddCommGroup E] [NormedSpace ℂ E]
         simp_rw [hnorm, integral_const_mul]
         ring
 
-private lemma residue_zero_cpow_mul (f : ℂ → ℂ) (s : ℂ) :
-    Contour.residue (fun z ↦ (0 : ℂ) ^ (-z) * f z) s = 0 := by
-  have hz0 : ∀ᶠ z in 𝓝[≠] s, z ≠ 0 := by
-    rcases eq_or_ne s 0 with rfl | hs
-    · exact self_mem_nhdsWithin
-    · exact nhdsWithin_le_nhds (eventually_ne_nhds hs)
-  have heq : (fun z ↦ (0 : ℂ) ^ (-z) * f z) =ᶠ[𝓝[≠] s] fun _ ↦ (0 : ℂ) := by
-    filter_upwards [hz0] with z hz
-    rw [zero_cpow (neg_ne_zero.mpr hz), zero_mul]
-  exact (Contour.residue_congr_nhdsNE heq).trans
-    (Contour.residue_eq_zero_of_analyticAt analyticAt_const)
-
 /-- **Shifting a Mellin inversion contour across poles.** Let `σ₀ ≤ σ₁` and `x ≥ 0`. Suppose `f` is
 analytic on `σ₀ ≤ Re z ≤ σ₁` away from a finite set `S` contained in `σ₀ < Re z < σ₁`, meromorphic
 at each point of `S`, and vertically integrable on `Re z = σ₀` and `Re z = σ₁`. If the horizontal
@@ -153,7 +141,7 @@ theorem mellinInv_sub_mellinInv_eq_sum_residue
     mellinInv σ₁ f x - mellinInv σ₀ f x =
       ∑ s ∈ S, Contour.residue (fun z ↦ (x : ℂ) ^ (-z) * f z) s := by
   rcases hx.eq_or_lt with rfl | hx
-  · simp [residue_zero_cpow_mul]
+  · simp
   have hx_slit : (x : ℂ) ∈ slitPlane := ofReal_mem_slitPlane.mpr hx
   have hcpow (z : ℂ) : AnalyticAt ℂ (fun w : ℂ ↦ (x : ℂ) ^ (-w)) z :=
     analyticAt_const.cpow (by fun_prop) hx_slit
