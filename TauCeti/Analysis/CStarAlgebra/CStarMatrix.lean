@@ -32,8 +32,12 @@ Hilbert C⋆-module.
 
 * `CStarMatrix.instNonUnitalContinuousFunctionalCalculusReal`: the real continuous functional
   calculus of `CStarMatrix n n A`, which instance search does not find on its own.
-* `CStarMatrix.ofMatrix_symm_mul`, `CStarMatrix.ofMatrix_symm_star`: reading a C⋆-matrix as an
-  ordinary matrix respects multiplication and sends `star` to the conjugate transpose.
+* `CStarMatrix.ofMatrix_symm_zero`, `CStarMatrix.ofMatrix_symm_one`,
+  `CStarMatrix.ofMatrix_symm_add`, `CStarMatrix.ofMatrix_symm_sub`,
+  `CStarMatrix.ofMatrix_symm_smul`, `CStarMatrix.ofMatrix_symm_sum`,
+  `CStarMatrix.ofMatrix_symm_mul`, `CStarMatrix.ofMatrix_symm_star`, and
+  `CStarMatrix.ofMatrixL_symm_apply`: reading a C⋆-matrix as an ordinary matrix respects algebraic
+  operations, sends `star` to the conjugate transpose, and agrees with `CStarMatrix.ofMatrixL.symm`.
 * `CStarMatrix.isSelfAdjoint_of_forall_isSelfAdjoint_sum`: a matrix all of whose quadratic forms
   are self-adjoint is self-adjoint. This is purely algebraic, and holds over any complex
   star-algebra whose star is proper.
@@ -52,7 +56,7 @@ namespace CStarMatrix
 
 section Algebraic
 
-variable {n R A : Type*}
+variable {m n R A : Type*}
 
 /-- Scalars commute past matrix multiplication on the left, as for `Matrix`. -/
 instance instIsScalarTowerSelf [Fintype n] [Monoid R] [NonUnitalNonAssocSemiring A]
@@ -65,6 +69,44 @@ instance instSMulCommClassSelf [Fintype n] [Monoid R] [NonUnitalNonAssocSemiring
     [DistribMulAction R A] [SMulCommClass R A A] :
     SMulCommClass R (CStarMatrix n n A) (CStarMatrix n n A) :=
   ⟨fun r M N => (mul_smul M r N).symm⟩
+
+/-- Reading the zero C⋆-matrix as an ordinary matrix gives zero. -/
+@[simp]
+lemma ofMatrix_symm_zero [Zero A] :
+    ofMatrix.symm (0 : CStarMatrix m n A) = 0 :=
+  ofMatrix.symm_apply_eq.mpr of_zero.symm
+
+/-- Reading the identity C⋆-matrix as an ordinary matrix gives the identity matrix. -/
+@[simp]
+lemma ofMatrix_symm_one [DecidableEq n] [Zero A] [One A] :
+    ofMatrix.symm (1 : CStarMatrix n n A) = 1 := by
+  ext i j
+  simp [one_apply, Matrix.one_apply]
+
+/-- Reading a C⋆-matrix as an ordinary matrix respects addition. -/
+@[simp]
+lemma ofMatrix_symm_add [Add A] (M N : CStarMatrix m n A) :
+    ofMatrix.symm (M + N) = ofMatrix.symm M + ofMatrix.symm N :=
+  ofMatrix.symm_apply_eq.mpr <| by rw [← of_add_of, Equiv.apply_symm_apply, Equiv.apply_symm_apply]
+
+/-- Reading a C⋆-matrix as an ordinary matrix respects subtraction. -/
+@[simp]
+lemma ofMatrix_symm_sub [Sub A] (M N : CStarMatrix m n A) :
+    ofMatrix.symm (M - N) = ofMatrix.symm M - ofMatrix.symm N :=
+  ofMatrix.symm_apply_eq.mpr <| by rw [← of_sub_of, Equiv.apply_symm_apply, Equiv.apply_symm_apply]
+
+/-- Reading a C⋆-matrix as an ordinary matrix respects scalar multiplication. -/
+@[simp]
+lemma ofMatrix_symm_smul [SMul R A] (r : R) (M : CStarMatrix m n A) :
+    ofMatrix.symm (r • M) = r • ofMatrix.symm M :=
+  ofMatrix.symm_apply_eq.mpr <| by rw [← smul_of, Equiv.apply_symm_apply]
+
+/-- Reading a finite sum of C⋆-matrices as an ordinary matrix distributes over the sum. -/
+lemma ofMatrix_symm_sum {α : Type*} [AddCommMonoid A] (s : Finset α)
+    (f : α → CStarMatrix m n A) :
+    ofMatrix.symm (∑ x ∈ s, f x) = ∑ x ∈ s, ofMatrix.symm (f x) :=
+  map_sum ({ ofMatrix.symm with map_add' := ofMatrix_symm_add } : CStarMatrix m n A ≃+ Matrix m n A)
+    f s
 
 /-- Reading a C⋆-matrix as an ordinary matrix respects multiplication. -/
 @[simp]
@@ -170,5 +212,11 @@ theorem nonneg_iff_forall_sum_nonneg {M : CStarMatrix n n A} :
   rw [← star_mul_self_eq_zero, hN.star_eq]
   calc N * N = star R * (R * N) := by rw [← mul_assoc, ← hR]
     _ = 0 := by rw [hRN, mul_zero]
+
+/-- The inverse of `CStarMatrix.ofMatrixL` agrees with `CStarMatrix.ofMatrix.symm`. -/
+@[simp]
+lemma ofMatrixL_symm_apply {m n A : Type*} [NonUnitalCStarAlgebra A] (M : CStarMatrix m n A) :
+    ofMatrixL.symm M = ofMatrix.symm M :=
+  ofMatrixL.symm_apply_eq.mpr <| by rw [← ofMatrix_eq_ofMatrixL, Equiv.apply_symm_apply]
 
 end CStarMatrix
