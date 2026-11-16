@@ -266,6 +266,15 @@ namespace IsSymmetric
 
 variable [FiniteDimensional 𝕜 E] {n : ℕ}
 
+/-- Summing over the two smallest indices in decreasing order, `j.rev` for `j < 2`, picks out the
+entries at `n - 1` and `n - 2`. -/
+private theorem sum_filter_lt_two_rev {M : Type*} [AddCommMonoid M] (h2 : 2 ≤ n) (f : Fin n → M) :
+    ∑ j ∈ univ.filter fun j : Fin n ↦ (j : ℕ) < 2, f j.rev =
+      f ⟨n - 1, by omega⟩ + f ⟨n - 2, by omega⟩ := by
+  have h0 : (Fin.castLE h2 0).rev = ⟨n - 1, by omega⟩ := Fin.ext (by simp [Fin.val_rev])
+  have h1 : (Fin.castLE h2 1).rev = ⟨n - 2, by omega⟩ := Fin.ext (by simp [Fin.val_rev])
+  rw [← TauCeti.prefixSum_def, TauCeti.prefixSum_eq_sum_castLE h2, Fin.sum_univ_two, h0, h1]
+
 /-- A symmetric operator on an `n`-dimensional space is `k`-nonnegative, for `k ≤ n`, exactly
 when the sum `λₙ₋₁ + ⋯ + λₙ₋ₖ` of its `k` smallest eigenvalues is nonnegative. -/
 theorem isKNonneg_iff_sum_eigenvalues_rev_nonneg (hT : T.IsSymmetric) (hn : finrank 𝕜 E = n)
@@ -290,9 +299,7 @@ theorem isKNonneg_two_iff_eigenvalues_add_eigenvalues_nonneg (hT : T.IsSymmetric
     (hn : finrank 𝕜 E = n) (h2 : 2 ≤ n) :
     T.IsKNonneg 2 ↔
       0 ≤ hT.eigenvalues hn ⟨n - 1, by omega⟩ + hT.eigenvalues hn ⟨n - 2, by omega⟩ := by
-  rw [hT.isKNonneg_iff_sum_eigenvalues_rev_nonneg hn h2, ← TauCeti.prefixSum_def,
-    TauCeti.prefixSum_eq_sum_castLE h2, Fin.sum_univ_two]
-  rfl
+  rw [hT.isKNonneg_iff_sum_eigenvalues_rev_nonneg hn h2, sum_filter_lt_two_rev h2]
 
 /-- A symmetric operator on a space of dimension `n ≥ 2` is `2`-positive exactly when the sum
 `λₙ₋₁ + λₙ₋₂` of its two smallest eigenvalues is positive. -/
@@ -300,9 +307,7 @@ theorem isKPos_two_iff_eigenvalues_add_eigenvalues_pos (hT : T.IsSymmetric)
     (hn : finrank 𝕜 E = n) (h2 : 2 ≤ n) :
     T.IsKPos 2 ↔
       0 < hT.eigenvalues hn ⟨n - 1, by omega⟩ + hT.eigenvalues hn ⟨n - 2, by omega⟩ := by
-  rw [hT.isKPos_iff_sum_eigenvalues_rev_pos hn h2, ← TauCeti.prefixSum_def,
-    TauCeti.prefixSum_eq_sum_castLE h2, Fin.sum_univ_two]
-  rfl
+  rw [hT.isKPos_iff_sum_eigenvalues_rev_pos hn h2, sum_filter_lt_two_rev h2]
 
 end IsSymmetric
 
