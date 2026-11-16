@@ -48,10 +48,7 @@ out one at a time. If `f` vanishes on the hyperplane `E × {c}`, the quotient `f
 has bounded slices near `c`, since each slice is differentiable at `c`, so it extends
 holomorphically across the hyperplane by the Riemann extension theorem
 `TauCeti.exists_analyticOnNhd_prod_eqOn` (`Differentiable.exists_differentiable_eq_sub_mul`). The
-order of vanishing of each slice drops by one at `c` and is unchanged elsewhere. Combined with
-base-independence, a holomorphic function with confined zeros is the product of a polynomial in the
-transverse variable alone and a holomorphic function with no zeros
-(`Differentiable.exists_eq_prod_sub_mul_of_forall_le_norm_ne_zero`).
+order of vanishing of each slice drops by one at `c` and is unchanged elsewhere.
 
 ## Main results
 
@@ -64,8 +61,6 @@ transverse variable alone and a holomorphic function with no zeros
   `E × {c}` is `w - c` times a holomorphic function.
 * `Differentiable.exists_eq_prod_sub_mul`: a holomorphic function on `E × ℂ` whose transverse
   divisor is a multiset `s` is `∏_{a ∈ s} (w - a)` times a holomorphic function with no zeros.
-* `Differentiable.exists_eq_prod_sub_mul_of_forall_le_norm_ne_zero`: the same for a holomorphic
-  function with zeros confined to `‖w‖ < K`, with `s` a multiset of points of norm less than `K`.
 
 ## References
 
@@ -196,11 +191,8 @@ theorem exists_differentiable_eq_sub_mul {f : E × ℂ → ℂ} (hf : Differenti
       (hf.comp ((differentiable_const x).prodMk differentiable_id)) c
     have hslope := hasDerivAt_iff_tendsto_slope.1 hd.hasDerivAt
     set B := ‖_root_.deriv (fun w ↦ f (x, w)) c‖ + 1
-    obtain ⟨t, ht, hbound⟩ : ∃ t ∈ nhds c, ∀ w ∈ t, w ≠ c →
-        ‖slope (fun w ↦ f (x, w)) c w‖ < B :=
-      ⟨{w | w ∈ ({c}ᶜ : Set ℂ) → ‖slope (fun w ↦ f (x, w)) c w‖ < B},
-        eventually_nhdsWithin_iff.1 (hslope.norm.eventually (gt_mem_nhds (lt_add_one _))),
-        fun _ hw hwc ↦ hw hwc⟩
+    obtain ⟨t, ht, hbound⟩ := (eventually_nhdsWithin_iff.1
+      (hslope.norm.eventually (gt_mem_nhds (lt_add_one _)))).exists_mem
     refine ⟨t, ht, B, ?_⟩
     rintro _ ⟨w, ⟨hwt, hwc⟩, rfl⟩
     have h := (hbound w hwt hwc).le
@@ -253,16 +245,5 @@ theorem exists_eq_prod_sub_mul {f : E × ℂ → ℂ} (hf : Differentiable ℂ f
       · simpa [analyticOrderAt_id_sub_const_of_ne hwa, hwa] using h
     refine ⟨u, hu, hu0, fun p ↦ ?_⟩
     rw [hfg, hgu, Multiset.map_cons, Multiset.prod_cons, mul_assoc]
-
-/-- **Division by a confined transverse divisor.** Let `f : E × ℂ → ℂ` be holomorphic, with `E`
-finite-dimensional, and suppose that `f (x, w) ≠ 0` whenever `K ≤ ‖w‖`. Then there are a multiset
-`s` of points of norm less than `K` and a holomorphic `u` with no zeros such that
-`f (x, w) = ∏_{a ∈ s} (w - a) * u (x, w)`. -/
-theorem exists_eq_prod_sub_mul_of_forall_le_norm_ne_zero {f : E × ℂ → ℂ} (hf : Differentiable ℂ f)
-    {K : ℝ} (hK : ∀ x w, K ≤ ‖w‖ → f (x, w) ≠ 0) :
-    ∃ s : Multiset ℂ, (∀ a ∈ s, ‖a‖ < K) ∧ ∃ u : E × ℂ → ℂ, Differentiable ℂ u ∧
-      (∀ p, u p ≠ 0) ∧ ∀ p, f p = (s.map fun a ↦ p.2 - a).prod * u p := by
-  obtain ⟨s, hsK, hs⟩ := hf.exists_forall_analyticOrderAt_eq_count hK
-  exact ⟨s, hsK, hf.exists_eq_prod_sub_mul hs⟩
 
 end Differentiable

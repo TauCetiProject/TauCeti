@@ -116,9 +116,7 @@ theorem exists_contDiff_eq_mul_sectionValue {f : E × ℂ → ℂ} (hf : Differe
     mul_ne_zero (Circle.coe_ne_zero _) (ofReal_ne_zero.2 (Real.exp_pos _).ne')
   have hkd : ContDiff ℝ ∞ k :=
     ((mem_framedGaugeGroup _).1 g.2).1.mul (ofRealCLM.contDiff.comp (Real.contDiff_exp.comp hv))
-  have hud : ContDiff ℝ ∞ u :=
-    (contDiffOn_univ.1 (hu.differentiableOn.contDiffOn_of_finiteDimensional
-      isOpen_univ)).restrict_scalars ℝ
+  have hud : ContDiff ℝ ∞ u := hu.contDiff_of_finiteDimensional.restrict_scalars ℝ
   refine ⟨fun p ↦ u p * (k p.2)⁻¹, hud.mul ((hkd.comp contDiff_snd).inv fun p ↦ hk0 p.2),
     fun p ↦ mul_ne_zero (hu0 p) (inv_ne_zero (hk0 p.2)), fun p ↦ ?_⟩
   rw [hfu, hxk]
@@ -165,6 +163,7 @@ theorem exists_vortex_contDiff_eq_mul_sectionValue_of_differentiable_exp_mul
   refine ⟨s, hsK, x, hx, hsol, hframe, hD, fun p ↦ cexp (-g p) * h p,
     (Complex.contDiff_exp.comp hg.neg).mul hh,
     fun p ↦ mul_ne_zero (Complex.exp_ne_zero _) (hh0 p), fun p ↦ ?_⟩
-  rw [mul_assoc, ← hfh, ← mul_assoc, ← Complex.exp_add, neg_add_cancel, Complex.exp_zero, one_mul]
+  rw [mul_assoc, ← hfh]
+  simp [← mul_assoc, ← Complex.exp_add]
 
 end TauCeti.Vortex
