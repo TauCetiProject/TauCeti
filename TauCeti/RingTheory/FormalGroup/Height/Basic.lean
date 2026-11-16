@@ -214,6 +214,19 @@ theorem height_eq_top_iff : F.height p = ⊤ ↔ F.nsmulSeries p = 0 := by
   unfold height
   split_ifs with h <;> simp [h]
 
+/-- If `[p]_F` has order at most `p ^ n`, then the `p`-height of `F` is at most `n`. -/
+theorem height_le_of_order_nsmulSeries_le {n : ℕ}
+    (h : (F.nsmulSeries p).order ≤ (p ^ n : ℕ)) : F.height p ≤ n := by
+  have h0 : F.nsmulSeries p ≠ 0 := fun h0 ↦
+    (ENat.natCast_lt_top (p ^ n)).not_ge (by rwa [h0, PowerSeries.order_zero] at h)
+  have hord : (F.nsmulSeries p).order.toNat ≤ p ^ n := by
+    have htop : (F.nsmulSeries p).order ≠ ⊤ := PowerSeries.order_eq_top.not.mpr h0
+    rwa [← ENat.natCast_toNat htop, Nat.cast_le] at h
+  simp only [height, h0, ↓reduceIte, Nat.cast_le]
+  rcases le_or_gt p 1 with hp1 | hp1
+  · simp [Nat.log_of_left_le_one hp1]
+  · exact (Nat.log_mono_right hord).trans_eq (Nat.log_pow hp1 n)
+
 /-- A commutative formal group law over a field of characteristic `p` has height `h` exactly when
 the first nonzero term of `[p]_F(T)` has degree `p ^ h`. -/
 theorem height_eq_natCast_iff [CharP K p] [F.IsComm] {h : ℕ} :

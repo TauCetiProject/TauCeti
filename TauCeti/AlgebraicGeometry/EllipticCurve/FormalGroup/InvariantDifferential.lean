@@ -334,13 +334,6 @@ private abbrev UnivSeries := MvPowerSeries (Fin 2) (MvPolynomial Coeff ℤ)
 /-- The fraction field of `UnivSeries`. -/
 private abbrev UnivField := FractionRing UnivSeries
 
-/-- The curve on which the points with series parameters live is the base change of the universal
-curve to `UnivField`. -/
-private theorem fracCurve_eq_baseChange :
-    fracCurve Universal.curve (Fin 2) UnivField = Universal.curve⁄UnivField := by
-  rw [fracCurve_def, ← IsScalarTower.algebraMap_eq]
-  rfl
-
 /-- The point with series parameter `q` is the affine point `(q / w(q), -1 / w(q))`. -/
 private theorem coords_thetaPoint (hΔ : (fracCurve Universal.curve (Fin 2) UnivField).Δ ≠ 0)
     {q : UnivSeries} (hq : constantCoeff q = 0) (hq0 : q ≠ 0) :
@@ -355,7 +348,7 @@ private theorem coords_thetaPoint (hΔ : (fracCurve Universal.curve (Fin 2) Univ
         algebraMap UnivSeries UnivField (PowerSeries.subst q (formalW Universal.curve)))
       (-1 / algebraMap UnivSeries UnivField (PowerSeries.subst q (formalW Universal.curve))) := by
     have hΔ' := hΔ
-    rw [fracCurve_eq_baseChange] at hΔ' ⊢
+    rw [fracCurve_eq_map] at hΔ' ⊢
     refine chord_point_nonsingular _ ?_
       (algebraMap_subst_formalW_ne_zero Universal.curve hq hq0) hΔ'
     simpa [wEquationRHS_def, WeierstrassCurve.baseChange] using
@@ -421,7 +414,7 @@ private theorem pderiv_mul_subst_formalInvariantDifferentialDenom_universal :
   generalize Universal.curve.thetaPoint hΔ hFc hF0 = S at hSx hSy e
   -- move them to `Universal.curve⁄UnivField`, the curve the derivation lemmas are stated on
   revert P Q S
-  rw [fracCurve_eq_baseChange]
+  rw [fracCurve_eq_map, ← WeierstrassCurve.baseChange]
   intro P hPx hPy Q hQx hQy S hSx hSy e
   -- additivity of `dx / (2y + a₁x + a₃)` along `P + Q = S`
   have key := Affine.Point.inv_smul_derivation_xCoord_add D

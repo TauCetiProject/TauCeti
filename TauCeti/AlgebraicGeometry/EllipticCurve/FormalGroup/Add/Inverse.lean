@@ -131,23 +131,6 @@ private theorem subst_invPair_formalIntercept_mul :
     formalInverse_def W
   linear_combination formalInverse W * hi₁ - X () * hi₂ + formalW W * hd
 
-/-! ### The formal inverse is not the identity -/
-
-/-- **The formal inverse is not the identity** when `2 ≠ 0`: the linear coefficient of `ι` is
-`-1`, while that of `z` is `1`. This discharges the nondegeneracy the chord argument needs, so
-neither of the two results below has to carry it as a hypothesis. -/
-private theorem formalInverse_ne_X (h2 : (2 : O) ≠ 0) : formalInverse W ≠ X () := by
-  intro h
-  -- `PowerSeries.X` is `MvPowerSeries.X ()`: defeq, but not syntactically equal, so `h` is
-  -- restated here in the one-variable spelling the coefficient lemmas are stated in.
-  have h1 : PowerSeries.coeff 1 (formalInverse W) = PowerSeries.coeff 1 PowerSeries.X :=
-    congrArg (PowerSeries.coeff 1) h
-  rw [formalInverse_def, map_neg, PowerSeries.coeff_succ_X_mul,
-    PowerSeries.coeff_zero_eq_constantCoeff_apply, PowerSeries.constantCoeff_invOfUnit,
-    PowerSeries.coeff_one_X] at h1
-  simp only [inv_one, Units.val_one] at h1
-  exact h2 (by linear_combination -h1)
-
 section Domain
 
 variable [IsDomain O]
@@ -209,7 +192,7 @@ directly. `subst_invPair_formalThirdRoot` descends it to an arbitrary commutativ
 private theorem subst_invPair_formalThirdRoot_of_isDomain (h2 : (2 : O) ≠ 0) :
     subst (Sum.elim X (fun _ ↦ formalInverse W) : Unit ⊕ Unit → MvPowerSeries Unit O)
       (formalThirdRoot W) = 0 := by
-  have hNp := subst_invPair_formalIntercept W (formalInverse_ne_X W h2)
+  have hNp := subst_invPair_formalIntercept W fun h ↦ h2 (W.formalInverse_eq_X_iff.mp h).1
   -- the on-line identity, the third-root relation and the slope identity, taken from `PairSubst`
   -- at `(z, ι(z))` and turned back into this module's spelling of the pair
   have hOL := subst_pair_formalThirdRoot_formalW W (constantCoeff_X ())

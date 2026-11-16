@@ -300,81 +300,9 @@ theorem pointMap_map_algebraMap_map {L M : Type*} [Field L] [Field M] [Algebra F
     exact congr_arg_heq (fun g ↦ h.map g) σ.comp_algebraMap
   · exact (congrArg _ (pointMap_map _ _ P)).trans (Point.map_eq_cast_mapAlong σ _).symm
 
-omit [DecidableEq F] [DecidableEq K] [W₂.IsElliptic] in
-/-- At the place of the generic point on `W₁⁄F(W₁)`, the base-change embedding `F(W₁) → F(W₁)(W₁)`
-from the curve factor agrees modulo the maximal ideal with `algebraMap` from the constant field. -/
-private theorem valuation_pointPlace_generic_map_sub_lt_one
-    (hP : (W₁.map (algebraMap F W₁.FunctionField)).Equation W₁.genericX W₁.genericY)
-    (z : W₁.FunctionField) :
-    (Place.ofPrime W₁.FunctionField (W₁.map (algebraMap F W₁.FunctionField)).FunctionField
-      (CoordinateRing.pointPlace hP)).valuation
-      (FunctionField.map W₁ (algebraMap F W₁.FunctionField) z -
-        algebraMap W₁.FunctionField _ z) < 1 := by
-  let L := W₁.FunctionField
-  let ι := algebraMap F L
-  let v := (Place.ofPrime L (W₁.map ι).FunctionField (CoordinateRing.pointPlace hP)).valuation
-  have hval_le {w : L} (hw : v (FunctionField.map W₁ ι w - algebraMap L _ w) < 1) :
-      v (FunctionField.map W₁ ι w) ≤ 1 := by
-    rw [show FunctionField.map W₁ ι w = (FunctionField.map W₁ ι w - algebraMap L _ w) +
-      algebraMap L _ w from (sub_add_cancel _ _).symm]
-    exact (v.map_add _ _).trans
-      (max_le hw.le (Valuation.IsTrivialOn.valuation_algebraMap_le_one v w))
-  have hadj {w : L} (hw : w ∈ Algebra.adjoin F ({W₁.genericX, W₁.genericY} : Set L)) :
-      v (FunctionField.map W₁ ι w - algebraMap L _ w) < 1 := by
-    induction hw using Algebra.adjoin_induction with
-    | mem x hx =>
-      rcases hx with rfl | rfl
-      · rw [FunctionField.map_genericX]
-        exact valuation_pointPlace_genericX_sub_lt_one (W₁.map ι) hP
-      · rw [FunctionField.map_genericY]
-        exact valuation_pointPlace_genericY_sub_lt_one (W₁.map ι) hP
-    | algebraMap c =>
-      rw [FunctionField.map_algebraMap, sub_self, map_zero]
-      exact zero_lt_one
-    | add x y _ _ hx hy =>
-      rw [_root_.map_add, _root_.map_add, add_sub_add_comm]
-      exact (v.map_add _ _).trans_lt (max_lt hx hy)
-    | mul x y _ _ hx hy =>
-      rw [_root_.map_mul, _root_.map_mul,
-        show FunctionField.map W₁ ι x * FunctionField.map W₁ ι y -
-            algebraMap L _ x * algebraMap L _ y =
-          (FunctionField.map W₁ ι x - algebraMap L _ x) * FunctionField.map W₁ ι y +
-            algebraMap L _ x * (FunctionField.map W₁ ι y - algebraMap L _ y) by ring]
-      exact (v.map_add _ _).trans_lt (max_lt
-        ((v.map_mul _ _).trans_lt ((mul_le_of_le_one_right' (hval_le hy)).trans_lt hx))
-        ((v.map_mul _ _).trans_lt ((mul_le_of_le_one_left'
-          (Valuation.IsTrivialOn.valuation_algebraMap_le_one v x)).trans_lt hy)))
-  obtain ⟨r, s, hs_mem, rfl⟩ := IsFractionRing.div_surjective (A := W₁.CoordinateRing) z
-  let r' := algebraMap W₁.CoordinateRing L r
-  let s' := algebraMap W₁.CoordinateRing L s
-  have hr := hadj (algebraMap_mem_adjoin_genericX_genericY W₁ r)
-  have hs := hadj (algebraMap_mem_adjoin_genericX_genericY W₁ s)
-  have hs0 : s' ≠ 0 := IsFractionRing.to_map_ne_zero_of_mem_nonZeroDivisors hs_mem
-  have hvs₂ : v (algebraMap L _ s') = 1 := Valuation.IsTrivialOn.eq_one s' hs0
-  have hvs₁ : v (FunctionField.map W₁ ι s') = 1 := by
-    rw [show FunctionField.map W₁ ι s' = (FunctionField.map W₁ ι s' - algebraMap L _ s') +
-      algebraMap L _ s' from (sub_add_cancel _ _).symm,
-      v.map_add_eq_of_lt_right (hs.trans_eq hvs₂.symm), hvs₂]
-  have hs₁0 : FunctionField.map W₁ ι s' ≠ 0 :=
-    (map_ne_zero_iff _ (FunctionField.map W₁ ι).injective).mpr hs0
-  have hs₂0 : algebraMap L (W₁.map ι).FunctionField s' ≠ 0 :=
-    (map_ne_zero_iff _ (algebraMap L _).injective).mpr hs0
-  change v (FunctionField.map W₁ ι (r' / s') - algebraMap L _ (r' / s')) < 1
-  rw [map_div₀, map_div₀, div_sub_div _ _ hs₁0 hs₂0, map_div₀, v.map_mul, hvs₁, hvs₂,
-    mul_one, div_one,
-    show FunctionField.map W₁ ι r' * algebraMap L _ s' -
-        FunctionField.map W₁ ι s' * algebraMap L _ r' =
-      (FunctionField.map W₁ ι r' - algebraMap L _ r') * algebraMap L _ s' -
-        algebraMap L _ r' * (FunctionField.map W₁ ι s' - algebraMap L _ s') by ring]
-  exact (v.map_sub _ _).trans_lt (max_lt (by rwa [v.map_mul, hvs₂, mul_one])
-    ((v.map_mul _ _).trans_lt ((mul_le_of_le_one_left'
-      (Valuation.IsTrivialOn.valuation_algebraMap_le_one v r')).trans_lt hs)))
-
 omit [DecidableEq F] [DecidableEq K] in
 /-- **Evaluating a base-changed morphism at the generic point recovers its tautological point**:
-at the diagonal place `(x - genericX, y - genericY)` of `F(W₁)(W₁)`, every function `z ∈ F(W₁)`
-transported from the first factor agrees modulo the maximal ideal with the constant `z` from the
-base field, so the tautological point of `h.map (algebraMap F F(W₁))` reduces to
+the base-changed morphism `h.map (algebraMap F F(W₁))` sends `genericPoint W₁` to
 `h.tautologicalPoint`. -/
 @[simp]
 theorem pointMap_map_algebraMap_genericPoint [DecidableEq W₁.FunctionField] (h : Hom W₁ W₂) :
@@ -398,8 +326,11 @@ theorem pointMap_map_algebraMap_genericPoint [DecidableEq W₁.FunctionField] (h
   simp only [CoordinatePullback.xCoord_tautologicalPoint,
     CoordinatePullback.yCoord_tautologicalPoint, Isogeny.map_pullback,
     CoordinatePullback.map_of_X, CoordinatePullback.map_root]
-  exact ⟨valuation_pointPlace_generic_map_sub_lt_one hns.1 _,
-    valuation_pointPlace_generic_map_sub_lt_one hns.1 _⟩
+  -- At the diagonal place `(x - genericX, y - genericY)`, base-change agrees with `algebraMap`
+  -- modulo the maximal ideal, so the base-changed tautological point reduces to
+  -- `h.tautologicalPoint`.
+  exact ⟨valuation_pointPlace_generic_map_sub_lt_one W₁ hns.1 _,
+    valuation_pointPlace_generic_map_sub_lt_one W₁ hns.1 _⟩
 
 omit [DecidableEq F] [DecidableEq K] in
 /-- **Evaluating a base-changed morphism at a specialized generic point recovers the specialized

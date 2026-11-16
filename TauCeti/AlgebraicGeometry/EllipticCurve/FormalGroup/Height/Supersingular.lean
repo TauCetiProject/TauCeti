@@ -5,9 +5,10 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.AlgebraicGeometry.EllipticCurve.FormalGroup.Height.Ideal
+public import TauCeti.AlgebraicGeometry.EllipticCurve.FormalGroup.Height.Basic
 public import TauCeti.AlgebraicGeometry.EllipticCurve.Isogeny.FormalSeries.Hom
 public import TauCeti.AlgebraicGeometry.EllipticCurve.Isogeny.FormalSeries.InseparableDegree
+public import TauCeti.RingTheory.FormalGroup.Height.Ideal
 import TauCeti.AlgebraicGeometry.EllipticCurve.Isogeny.MulByInt.Degree
 import TauCeti.AlgebraicGeometry.EllipticCurve.Isogeny.RelativeFrobenius.Supersingular
 
@@ -21,8 +22,12 @@ series is its inseparable degree (`TauCeti.Isogeny.order_formalSeries`). Hence
 
 `ord([n]_Ê) = deg_i([n])`
 
-over every field (`order_zsmulSeries_formalGroup`, `order_nsmulSeries_formalGroup`), and `[n]_Ê ≠ 0`
-for `n ≠ 0` (`zsmulSeries_formalGroup_ne_zero`).
+over every field (`order_zsmulSeries_formalGroup`, `order_nsmulSeries_formalGroup`), which bounds
+`(formalGroup W).height p ≤ 2` for every nonzero `p : ℕ` (`height_formalGroup_le_two`). Reducing
+modulo a maximal ideal extends nonvanishing of `[n]_Ê` to every nontrivial commutative ring
+(`zsmulSeries_formalGroup_ne_zero`, `nsmulSeries_formalGroup_ne_zero`) and shows that Landweber's
+height ideals `I_n(Ê)` equal the unit ideal for all `n ≥ 3` and `1 < p` over every commutative ring
+(`heightIdeal_formalGroup_eq_top_of_three_le`).
 
 When `K` has prime characteristic `p`, multiplication by `p` on `W` has degree `p²`
 (`TauCeti.Isogeny.degree_mulByIntIsogenyOfNeZero`), and `W` is ordinary (resp. supersingular)
@@ -32,8 +37,8 @@ exactly when `[p]` has separable degree `p` (resp. `1`), by
 `deg_s([p]) · deg_i([p]) = p²` against `ord([p]_Ê) = deg_i([p])` yields the complete height
 stratification of elliptic formal groups at every prime `p`, including `p = 2` and `p = 3`:
 
-* `height_formalGroup_eq_one_or_eq_two` and `height_formalGroup_le_two`: the formal group of an
-  elliptic curve in characteristic `p` has height `1` or `2` (Silverman IV.7.5).
+* `height_formalGroup_eq_one_or_eq_two`: the formal group of an elliptic curve in characteristic
+  `p` has height `1` or `2` (Silverman IV.7.5).
 * `isOrdinary_iff_height_formalGroup_eq_one` and `isSupersingular_iff_height_formalGroup_eq_two`:
   `W` is ordinary if and only if `Ê` has height `1`, and supersingular if and only if `Ê` has
   height `2` (Silverman V.3.1(a)(iii)).
@@ -41,26 +46,30 @@ stratification of elliptic formal groups at every prime `p`, including `p = 2` a
   `isSupersingular_iff_coeff_invariantDifferential_eq_zero`: `W` is supersingular if and only if
   the Hasse invariant — the coefficient of `Tᵖ⁻¹` in `(formalGroup W).invariantDifferential` —
   vanishes (Silverman V.4.1).
-* `isOrdinary_iff_heightIdeal_formalGroup_two_eq_top`,
-  `isSupersingular_iff_heightIdeal_formalGroup_two_eq_bot`, and
-  `heightIdeal_formalGroup_eq_top_of_three_le`: in terms of Landweber's height ideals `I_n(Ê)`,
-  `I₂(Ê)` is `⊤` on the ordinary locus and `⊥` on the supersingular locus, while `I_n(Ê) = ⊤` for
-  all `n ≥ 3` on every elliptic curve.
+* `isOrdinary_iff_heightIdeal_formalGroup_two_eq_top` and
+  `isSupersingular_iff_heightIdeal_formalGroup_two_eq_bot`: in terms of Landweber's height ideals
+  `I_n(Ê)`, `I₂(Ê)` is `⊤` on the ordinary locus and `⊥` on the supersingular locus.
 
 ## Main results
 
 * `WeierstrassCurve.order_zsmulSeries_formalGroup`,
   `WeierstrassCurve.order_nsmulSeries_formalGroup`: `ord([n]_Ê) = deg_i([n])` for `n ≠ 0`.
+* `WeierstrassCurve.height_formalGroup_le_two`: `(formalGroup W).height p ≤ 2` for every `p ≠ 0`
+  over any field.
+* `WeierstrassCurve.zsmulSeries_formalGroup_ne_zero`,
+  `WeierstrassCurve.nsmulSeries_formalGroup_ne_zero`: `[n]_Ê ≠ 0` over any nontrivial commutative
+  ring.
+* `WeierstrassCurve.heightIdeal_formalGroup_eq_top_of_three_le`: `I_n(Ê) = ⊤` for all `n ≥ 3` and
+  `1 < p` over any commutative ring.
 * `WeierstrassCurve.isOrdinary_iff_height_formalGroup_eq_one`,
   `WeierstrassCurve.isSupersingular_iff_height_formalGroup_eq_two`: ordinary height `1` and
   supersingular height `2` at every prime `p`.
-* `WeierstrassCurve.height_formalGroup_eq_one_or_eq_two`,
-  `WeierstrassCurve.height_formalGroup_le_two`: `(formalGroup W).height p ∈ {1, 2}`.
+* `WeierstrassCurve.height_formalGroup_eq_one_or_eq_two`: `(formalGroup W).height p ∈ {1, 2}`.
 * `WeierstrassCurve.isSupersingular_iff_coeff_invariantDifferential_eq_zero`: Hasse-invariant
   criterion for supersingularity at every prime `p`.
 * `WeierstrassCurve.isOrdinary_iff_heightIdeal_formalGroup_two_eq_top`,
-  `WeierstrassCurve.isSupersingular_iff_heightIdeal_formalGroup_two_eq_bot`,
-  `WeierstrassCurve.heightIdeal_formalGroup_eq_top_of_three_le`: Landweber height-ideal dictionary.
+  `WeierstrassCurve.isSupersingular_iff_heightIdeal_formalGroup_two_eq_bot`: Landweber height-ideal
+  dictionary in characteristic `p`.
 
 ## References
 
@@ -92,27 +101,70 @@ theorem order_nsmulSeries_formalGroup {n : ℕ} (hn : n ≠ 0) :
         (Nat.cast_ne_zero.mpr hn)).inseparableDegree := by
   rw [← (formalGroup W).zsmulSeries_natCast, order_zsmulSeries_formalGroup]
 
-/-- **For every nonzero integer `n`, multiplication by `n` on `formalGroup W` is nonzero**
-(Silverman IV.7.5). -/
-theorem zsmulSeries_formalGroup_ne_zero {n : ℤ} (hn : n ≠ 0) :
-    (formalGroup W).zsmulSeries n ≠ 0 := by
-  rw [Ne, ← PowerSeries.order_eq_top, order_zsmulSeries_formalGroup W hn]
-  exact ENat.natCast_ne_top _
+private theorem order_nsmulSeries_formalGroup_le_sq {p : ℕ} (hp : p ≠ 0) :
+    ((formalGroup W).nsmulSeries p).order ≤ (p ^ 2 : ℕ) := by
+  set φ := TauCeti.Isogeny.mulByIntIsogenyOfNeZero W.toAffine (Nat.cast_ne_zero.mpr hp)
+  rw [W.order_nsmulSeries_formalGroup hp, Nat.cast_le]
+  refine Nat.le_of_dvd (pow_pos (Nat.pos_of_ne_zero hp) 2) ⟨φ.separableDegree, ?_⟩
+  rw [mul_comm, φ.separableDegree_mul_inseparableDegree,
+    TauCeti.Isogeny.degree_mulByIntIsogenyOfNeZero, Int.natAbs_natCast]
 
-/-- **For every nonzero natural number `n`, `[n]_Ê` is nonzero on an elliptic curve**
+/-- **For every nonzero `p : ℕ`, the `p`-height of `formalGroup W` over any field is at most `2`**
 (Silverman IV.7.5). -/
-theorem nsmulSeries_formalGroup_ne_zero {n : ℕ} (hn : n ≠ 0) :
+theorem height_formalGroup_le_two {p : ℕ} (hp : p ≠ 0) : (formalGroup W).height p ≤ 2 := by
+  rw [← Nat.cast_ofNat (R := ℕ∞)]
+  exact (formalGroup W).height_le_of_order_nsmulSeries_le (W.order_nsmulSeries_formalGroup_le_sq hp)
+
+/-- **For every nonzero `p : ℕ`, the `p`-height of `formalGroup W` over any field is finite**
+(Silverman IV.7.5: `[p]_Ê ≠ 0`). -/
+theorem height_formalGroup_ne_top {p : ℕ} (hp : p ≠ 0) : (formalGroup W).height p ≠ ⊤ :=
+  ((W.height_formalGroup_le_two hp).trans_lt (by decide : (2 : ℕ∞) < ⊤)).ne
+
+end Field
+
+section CommRing
+
+variable {R : Type*} [CommRing R] (W : WeierstrassCurve R) [W.IsElliptic]
+
+/-- **For every nonzero integer `n`, multiplication by `n` on `formalGroup W` is nonzero over any
+nontrivial commutative ring** (Silverman IV.7.5). -/
+theorem zsmulSeries_formalGroup_ne_zero [Nontrivial R] {n : ℤ} (hn : n ≠ 0) :
+    (formalGroup W).zsmulSeries n ≠ 0 := by
+  obtain ⟨m, hm⟩ := Ideal.exists_maximal R
+  let : Field (R ⧸ m) := Ideal.Quotient.field m
+  intro h0
+  have hmap := congrArg (PowerSeries.map (Ideal.Quotient.mk m)) h0
+  rw [FormalGroup.map_zsmulSeries, ← W.map_formalGroup, map_zero] at hmap
+  have hord := (W.map (Ideal.Quotient.mk m)).order_zsmulSeries_formalGroup hn
+  rw [hmap, PowerSeries.order_zero] at hord
+  exact ENat.top_ne_natCast _ hord
+
+/-- **For every nonzero natural number `n`, `[n]_Ê` is nonzero on an elliptic curve over any
+nontrivial commutative ring** (Silverman IV.7.5). -/
+theorem nsmulSeries_formalGroup_ne_zero [Nontrivial R] {n : ℕ} (hn : n ≠ 0) :
     (formalGroup W).nsmulSeries n ≠ 0 := by
   rw [← (formalGroup W).zsmulSeries_natCast]
   exact W.zsmulSeries_formalGroup_ne_zero (Nat.cast_ne_zero.mpr hn)
 
-/-- **For every nonzero `p : ℕ`, the `p`-height of `formalGroup W` over any field is finite**
-(Silverman IV.7.5: `[p]_Ê ≠ 0`). -/
-theorem height_formalGroup_ne_top {p : ℕ} (hp : p ≠ 0) : (formalGroup W).height p ≠ ⊤ := by
-  rw [Ne, FormalGroup.height_eq_top_iff]
-  exact W.nsmulSeries_formalGroup_ne_zero hp
+/-- **Every Landweber height ideal `I_n(Ê)` with `n ≥ 3` and `1 < p` of an elliptic curve over any
+commutative ring is the unit ideal.** -/
+theorem heightIdeal_formalGroup_eq_top_of_three_le {p : ℕ} (hp : 1 < p) {n : ℕ} (hn : 3 ≤ n) :
+    (formalGroup W).heightIdeal p n = ⊤ := by
+  by_contra hne
+  obtain ⟨m, hm, hle⟩ := Ideal.exists_le_maximal _ hne
+  let : Field (R ⧸ m) := Ideal.Quotient.field m
+  rw [← Ideal.mk_ker (I := m), FormalGroup.heightIdeal_le_ker_iff, ← W.map_formalGroup] at hle
+  have hle2 :=
+    (W.map (Ideal.Quotient.mk m)).order_nsmulSeries_formalGroup_le_sq (p := p) (by omega)
+  have hpow : p ^ n ≤ p ^ 2 := Nat.cast_le.mp (hle.trans hle2)
+  exact not_lt_of_ge hpow (Nat.pow_lt_pow_right hp (by omega))
 
-end Field
+@[simp]
+theorem heightIdeal_formalGroup_three_eq_top {p : ℕ} (hp : 1 < p) :
+    (formalGroup W).heightIdeal p 3 = ⊤ :=
+  W.heightIdeal_formalGroup_eq_top_of_three_le hp le_rfl
+
+end CommRing
 
 section PrimeChar
 
@@ -130,7 +182,7 @@ theorem isOrdinary_iff_height_formalGroup_eq_one :
     rw [φ.separableDegree_mul_inseparableDegree,
       TauCeti.Isogeny.degree_mulByIntIsogenyOfNeZero, Int.natAbs_natCast, sq]
   rw [W.isOrdinary_iff_separableDegree_mulByIntIsogenyOfNeZero_eq p hp.out,
-    show (1 : ℕ∞) = ((1 : ℕ) : ℕ∞) from rfl, (formalGroup W).height_eq_natCast_iff,
+    ← Nat.cast_one (R := ℕ∞), (formalGroup W).height_eq_natCast_iff,
     W.order_nsmulSeries_formalGroup hp.out.ne_zero, pow_one, Nat.cast_inj (R := ℕ∞)]
   exact ⟨fun hs ↦ mul_left_cancel₀ hp.out.ne_zero (by rwa [hs] at hdeg),
     fun hi ↦ mul_right_cancel₀ hp.out.ne_zero (by rwa [hi] at hdeg)⟩
@@ -146,7 +198,7 @@ theorem isSupersingular_iff_height_formalGroup_eq_two :
     rw [φ.separableDegree_mul_inseparableDegree,
       TauCeti.Isogeny.degree_mulByIntIsogenyOfNeZero, Int.natAbs_natCast]
   rw [W.isSupersingular_iff_separableDegree_mulByIntIsogenyOfNeZero_eq_one p,
-    show (2 : ℕ∞) = ((2 : ℕ) : ℕ∞) from rfl, (formalGroup W).height_eq_natCast_iff,
+    ← Nat.cast_ofNat (R := ℕ∞), (formalGroup W).height_eq_natCast_iff,
     W.order_nsmulSeries_formalGroup hp.out.ne_zero, Nat.cast_inj (R := ℕ∞)]
   refine ⟨fun hs ↦ ?_, fun hi ↦ ?_⟩
   · rwa [hs, one_mul] at hdeg
@@ -159,11 +211,6 @@ theorem height_formalGroup_eq_one_or_eq_two :
   by_cases h : W.IsSupersingular p
   · exact Or.inr (W.isSupersingular_iff_height_formalGroup_eq_two.mp h)
   · exact Or.inl (W.isOrdinary_iff_height_formalGroup_eq_one.mp (W.not_isSupersingular.mp h))
-
-/-- **The formal group of an elliptic curve in characteristic `p` has height at most `2`**
-(Silverman IV.7.5). -/
-theorem height_formalGroup_le_two : (formalGroup W).height p ≤ 2 := by
-  rcases W.height_formalGroup_eq_one_or_eq_two (p := p) with h | h <;> simp [h]
 
 /-- **An elliptic curve in characteristic `p` is supersingular if and only if its formal group has
 height strictly greater than `1`.** -/
@@ -200,17 +247,6 @@ theorem isSupersingular_iff_heightIdeal_formalGroup_two_eq_bot :
   rw [(formalGroup W).heightIdeal_eq_bot_iff_le_height,
     W.isSupersingular_iff_height_formalGroup_eq_two]
   rcases W.height_formalGroup_eq_one_or_eq_two (p := p) with h | h <;> simp [h]
-
-/-- **Every Landweber height ideal `I_n(Ê)` with `n ≥ 3` of an elliptic curve in characteristic `p`
-is the unit ideal**, because `(formalGroup W).height p ≤ 2 < n`. -/
-theorem heightIdeal_formalGroup_eq_top_of_three_le {n : ℕ} (hn : 3 ≤ n) :
-    (formalGroup W).heightIdeal p n = ⊤ := by
-  rw [(formalGroup W).heightIdeal_eq_top_iff_height_lt]
-  exact W.height_formalGroup_le_two.trans_lt (by exact_mod_cast (by omega : 2 < n))
-
-@[simp]
-theorem heightIdeal_formalGroup_three_eq_top : (formalGroup W).heightIdeal p 3 = ⊤ :=
-  W.heightIdeal_formalGroup_eq_top_of_three_le le_rfl
 
 end PrimeChar
 

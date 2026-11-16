@@ -41,6 +41,9 @@ compared.
   at the place of `P`.
 * `WeierstrassCurve.Affine.isEquiv_comap_pointPlace_map`: the place of a point transported along
   a field homomorphism `f` restricts along `FunctionField.map W f` to the place of the point.
+* `WeierstrassCurve.Affine.valuation_pointPlace_generic_map_sub_lt_one`: at the place of the
+  generic point on `W⁄F(W)`, the curve-factor map `F(W) → F(W)(W)` agrees modulo the maximal ideal
+  with `algebraMap` from the base field.
 * `WeierstrassCurve.Affine.map_mem_polePoints_smul_iff` and
   `WeierstrassCurve.Affine.reductionOfDegreeEqOne_smul_map`: reduction commutes with field
   automorphisms and their action on places.
@@ -118,6 +121,36 @@ theorem isEquiv_comap_pointPlace_map {x y : F} (h : W.Equation x y) :
     · rwa [algebraMap_YClass]
   rw [Place.valuation_ofPrime, ← h𝔭]
   exact he.symm
+
+/-- At the place of the generic point on `W⁄F(W)`, the base-change embedding `F(W) → F(W)(W)`
+from the curve factor agrees modulo the maximal ideal with `algebraMap` from the constant field. -/
+theorem valuation_pointPlace_generic_map_sub_lt_one
+    (hP : (W.map (algebraMap F W.FunctionField)).Equation W.genericX W.genericY)
+    (z : W.FunctionField) :
+    (Place.ofPrime W.FunctionField (W.map (algebraMap F W.FunctionField)).FunctionField
+      (CoordinateRing.pointPlace hP)).valuation
+      (FunctionField.map W (algebraMap F W.FunctionField) z -
+        algebraMap W.FunctionField _ z) < 1 := by
+  obtain ⟨r, s, hs_mem, rfl⟩ := IsFractionRing.div_surjective (A := W.CoordinateRing) z
+  obtain ⟨p, rfl⟩ := AdjoinRoot.mk_surjective r
+  obtain ⟨q, rfl⟩ := AdjoinRoot.mk_surjective s
+  let L := W.FunctionField
+  let ι := algebraMap F L
+  have hq0 : algebraMap W.CoordinateRing L (CoordinateRing.mk W q) ≠ 0 :=
+    IsFractionRing.to_map_ne_zero_of_mem_nonZeroDivisors hs_mem
+  have hq_eval : (q.map (mapRingHom ι)).evalEval W.genericX W.genericY ≠ 0 := by
+    rwa [evalEval_genericX_genericY]
+  have hq_map : algebraMap (W.map ι).CoordinateRing (W.map ι).FunctionField
+      (CoordinateRing.mk (W.map ι) (q.map (mapRingHom ι))) ≠ 0 := by
+    rw [← CoordinateRing.map_mk, ← FunctionField.map_algebraMap_coordinateRing]
+    exact (map_ne_zero_iff _ (FunctionField.map W ι).injective).mpr hq0
+  rw [map_div₀, FunctionField.map_algebraMap_coordinateRing,
+    FunctionField.map_algebraMap_coordinateRing, CoordinateRing.map_mk, CoordinateRing.map_mk,
+    div_sub' hq_map, ← algebraMap_mk_C_C, ← map_mul, ← map_mul, ← map_sub, ← map_sub,
+    Place.valuation_ofPrime]
+  refine CoordinateRing.valuation_pointPlace_div_lt_one _ hP hq_eval ?_
+  rw [evalEval_sub, evalEval_mul, evalEval_C, eval_C, evalEval_genericX_genericY,
+    evalEval_genericX_genericY, mul_div_cancel₀ _ hq0, sub_self]
 
 end BaseChange
 

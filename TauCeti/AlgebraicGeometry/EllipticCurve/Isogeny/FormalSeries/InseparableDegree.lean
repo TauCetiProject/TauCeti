@@ -7,18 +7,16 @@ module
 
 public import TauCeti.AlgebraicGeometry.EllipticCurve.Isogeny.FormalSeries.Differential
 public import TauCeti.AlgebraicGeometry.EllipticCurve.Isogeny.RelativeFrobenius.Factorisation
-import Mathlib.Algebra.CharP.Algebra
-import TauCeti.Algebra.CharP.Lemmas
 import TauCeti.RingTheory.PowerSeries.Substitution
 
 /-!
 # Formal series of the relative Frobenius and the order–inseparable-degree formula
 
 In exponential characteristic `p`, the relative Frobenius `F : W → W⁽ᵖ⁾` pulls the parameter
-`-x / y` back to `(-x)ᵖ / yᵖ = (-x / y)ᵖ` (including in characteristic `2`, since `(-x)² = -x²`),
-so its formal series is `X ^ p` (`formalSeries_relativeFrobeniusIsogeny`), and that of the `n`-fold
-iterate `Fⁿ : W → W⁽ᵖⁿ⁾` is `X ^ p ^ n` (`formalSeries_iterateRelativeFrobeniusIsogeny`). Neither
-statement requires `W` to be elliptic.
+`-x / y` back to `(-x / y)ᵖ`, so its formal series is `X ^ p`
+(`formalSeries_relativeFrobeniusIsogeny`), and that of the `n`-fold iterate `Fⁿ : W → W⁽ᵖⁿ⁾` is
+`X ^ p ^ n` (`formalSeries_iterateRelativeFrobeniusIsogeny`). Neither statement requires `W` to be
+elliptic.
 
 Combining this with the Frobenius factorisation `φ = χ ∘ Fʳ` (`χ` separable, `p ^ r = deg_i φ`) and
 the order-one characterisation of separable isogenies (`order_formalSeries_eq_one_of_isSeparable`)
@@ -56,14 +54,11 @@ No ellipticity assumption on `W` is required. -/
 theorem formalSeries_iterateRelativeFrobeniusIsogeny (p : ℕ) [ExpChar K p]
     (W : WeierstrassCurve K) (n : ℕ) :
     (iterateRelativeFrobeniusIsogeny p W.toAffine n).formalSeries = PowerSeries.X ^ p ^ n := by
-  have : ExpChar W.toAffine.FunctionField p :=
-    expChar_of_injective_algebraMap (algebraMap K W.toAffine.FunctionField).injective p
   apply (formalSeries_eq_iff (W₂ := W.map (iterateFrobenius K p n)) _ _).mpr
-  rw [PowerSeries.coe_pow, map_div₀, map_neg,
-    fieldPullback_iterateRelativeFrobeniusIsogeny_genericX,
-    fieldPullback_iterateRelativeFrobeniusIsogeny_genericY, ← TauCeti.neg_pow_expChar_pow p n,
-    ← div_pow, map_pow W.functionFieldLaurentExpansion,
-    functionFieldLaurentExpansion_neg_genericX_div_genericY]
+  rw [← Affine.FunctionField.map_genericX W.toAffine (iterateFrobenius K p n),
+    ← Affine.FunctionField.map_genericY W.toAffine (iterateFrobenius K p n),
+    ← map_neg, ← map_div₀, fieldPullback_iterateRelativeFrobeniusIsogeny_map,
+    map_pow, map_pow, functionFieldLaurentExpansion_neg_genericX_div_genericY]
 
 /-- **The formal series of the relative Frobenius `F : W → W⁽ᵖ⁾` is `X ^ p`.**
 No ellipticity assumption on `W` is required. -/
@@ -71,25 +66,24 @@ No ellipticity assumption on `W` is required. -/
 theorem formalSeries_relativeFrobeniusIsogeny (p : ℕ) [ExpChar K p]
     (W : WeierstrassCurve K) :
     (relativeFrobeniusIsogeny p W.toAffine).formalSeries = PowerSeries.X ^ p := by
-  have : ExpChar W.toAffine.FunctionField p :=
-    expChar_of_injective_algebraMap (algebraMap K W.toAffine.FunctionField).injective p
-  have hneg : (-W.toAffine.genericX) ^ p = -W.toAffine.genericX ^ p := by
-    simpa only [pow_one] using TauCeti.neg_pow_expChar_pow p 1 W.toAffine.genericX
-  apply (formalSeries_eq_iff (W₂ := W.map (frobenius K p)) _ _).mpr
-  rw [PowerSeries.coe_pow, map_div₀, map_neg, fieldPullback_relativeFrobeniusIsogeny_genericX,
-    fieldPullback_relativeFrobeniusIsogeny_genericY, ← hneg, ← div_pow,
-    map_pow W.functionFieldLaurentExpansion,
-    functionFieldLaurentExpansion_neg_genericX_div_genericY]
+  have h := formalSeries_iterateRelativeFrobeniusIsogeny p W 1
+  rw [pow_one] at h
+  have e := iterateFrobenius_one (R := K) p
+  rw [iterateRelativeFrobeniusIsogeny_one] at h
+  change (congrArg W.toAffine.map e.symm ▸ relativeFrobeniusIsogeny p W.toAffine).formalSeries
+    (W₂ := W.map (iterateFrobenius K p 1)) = PowerSeries.X ^ p at h
+  generalize iterateFrobenius K p 1 = f at e h
+  cases e
+  exact h
 
 section Elliptic
 
 variable {W₁ W₂ : WeierstrassCurve K} [W₂.IsElliptic]
   (φ : Isogeny W₁.toAffine W₂.toAffine)
 
-/-- **The order of an isogeny's formal series equals its inseparable degree**: factoring
-`φ = χ ∘ Fʳ` with `χ` separable gives `φ.formalSeries = χ.formalSeries(X ^ p ^ r)`, of order
-`p ^ r · 1 = deg_i φ`. -/
-@[simp]
+/-- **The order of an isogeny's formal series equals its inseparable degree.** -/
+-- Fire before `formalSeries_comp`/`formalSeries_map`/etc. expand the inner formal series.
+@[simp↓]
 theorem order_formalSeries : φ.formalSeries.order = φ.inseparableDegree := by
   let p := ringExpChar K
   obtain ⟨r, χ, hsep, hχ⟩ := exists_isSeparable_comp_iterateRelativeFrobeniusIsogeny_eq p φ

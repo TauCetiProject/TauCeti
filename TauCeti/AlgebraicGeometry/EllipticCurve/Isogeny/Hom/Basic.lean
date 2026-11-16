@@ -132,6 +132,10 @@ theorem toNonUnitalAlgHom_ofIsogeny (φ : Isogeny W₁ W₂) :
 theorem ofIsogeny_injective : Function.Injective (ofIsogeny (W₁ := W₁) (W₂ := W₂)) :=
   fun _ _ h => Isogeny.ext (AlgHom.ext fun x => congrArg (fun g => g.toNonUnitalAlgHom x) h)
 
+@[simp]
+theorem ofIsogeny_inj {φ ψ : Isogeny W₁ W₂} : ofIsogeny φ = ofIsogeny ψ ↔ φ = ψ :=
+  ofIsogeny_injective.eq_iff
+
 /-- **No isogeny is the zero map**, since a pullback sends `1` to `1`. -/
 @[simp]
 theorem ofIsogeny_ne_zero (φ : Isogeny W₁ W₂) : ofIsogeny φ ≠ 0 := fun h => by

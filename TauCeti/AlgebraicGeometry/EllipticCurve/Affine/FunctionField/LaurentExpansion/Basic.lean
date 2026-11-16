@@ -8,6 +8,8 @@ module
 public import TauCeti.AlgebraicGeometry.EllipticCurve.Affine.CoordinateRing.LaurentExpansion
 public import TauCeti.AlgebraicGeometry.EllipticCurve.Affine.FunctionField.InfinityPlace.Unique
 public import TauCeti.AlgebraicGeometry.EllipticCurve.Affine.FunctionField.GenericPoint.Basic
+public import TauCeti.AlgebraicGeometry.EllipticCurve.Affine.FunctionField.Map.Basic
+public import TauCeti.RingTheory.HahnSeries.Map
 import TauCeti.RingTheory.LaurentSeries.Basic
 import TauCeti.RingTheory.Valuation.IsTrivialOn
 import TauCeti.RingTheory.Valuation.Discrete.Order
@@ -16,10 +18,10 @@ import TauCeti.RingTheory.Valuation.Discrete.Order
 # Laurent expansions of Weierstrass rational functions
 
 The coordinate-ring expansion at infinity extends to the function field. Its parameter
-`z = -x/y` expands to `X`, and its valuation equals the place at infinity.
-Consequently a rational function is regular at infinity exactly when its expansion is a
-power series. This lets local expansions of morphisms be constructed from their actual
-function-field pullbacks.
+`z = -x/y` expands to `X`, its valuation equals the place at infinity, and it is natural under
+ground-field embeddings. Consequently a rational function is regular at infinity exactly when its
+expansion is a power series. This lets local expansions of morphisms be constructed from their
+actual function-field pullbacks.
 
 ## References
 
@@ -145,5 +147,37 @@ theorem exists_powerSeries_constantCoeff_zero_functionFieldLaurentExpansion_iff
   · obtain ⟨g, hg⟩ := (W.exists_powerSeries_functionFieldLaurentExpansion_iff f).mpr hf.le
     refine ⟨g, TauCeti.LaurentSeries.valuation_coe_lt_one_iff.mp ?_, hg⟩
     rwa [hg, valuation_functionFieldLaurentExpansion]
+
+/-- **Naturality of Laurent expansion at infinity under ground-field embeddings.** Carrying a
+rational function along `σ : K →+* L` commutes with expanding in `z = -x / y`. -/
+theorem mapRingHom_functionFieldLaurentExpansion {L : Type*} [Field L] (σ : K →+* L)
+    (f : W.toAffine.FunctionField) :
+    HahnSeries.mapRingHom σ (W.functionFieldLaurentExpansion f) =
+      (W.map σ).functionFieldLaurentExpansion (Affine.FunctionField.map W.toAffine σ f) := by
+  let A : W.toAffine.FunctionField →+* L⸨X⸩ :=
+    (HahnSeries.mapRingHom σ).comp W.functionFieldLaurentExpansion.toRingHom
+  let B : W.toAffine.FunctionField →+* L⸨X⸩ :=
+    (W.map σ).functionFieldLaurentExpansion.toRingHom.comp (Affine.FunctionField.map W.toAffine σ)
+  have hparam : A (-W.toAffine.genericX / W.toAffine.genericY) =
+      B (-W.toAffine.genericX / W.toAffine.genericY) := by
+    simp only [A, B, RingHom.comp_apply, AlgHom.toRingHom_eq_coe, RingHom.coe_coe]
+    rw [W.functionFieldLaurentExpansion_neg_genericX_div_genericY, map_div₀, map_neg,
+      Affine.FunctionField.map_genericX, Affine.FunctionField.map_genericY,
+      (W.map σ).functionFieldLaurentExpansion_neg_genericX_div_genericY]
+    simp only [HahnSeries.mapRingHom_apply, HahnSeries.map_ofPowerSeries, PowerSeries.map_X]
+  have hw : A (-W.toAffine.genericY⁻¹) = B (-W.toAffine.genericY⁻¹) := by
+    simp [A, B, HahnSeries.mapRingHom_apply]
+  have hY : A W.toAffine.genericY = B W.toAffine.genericY := by
+    simpa only [map_neg, map_inv₀, neg_inj, inv_inj] using hw
+  have hX : A W.toAffine.genericX = B W.toAffine.genericX := by
+    have hy : B W.toAffine.genericY ≠ 0 :=
+      (map_ne_zero_iff B B.injective).mpr W.toAffine.genericY_ne_zero
+    simpa only [map_div₀, map_neg, hY, div_left_inj₀ hy, neg_inj] using hparam
+  have hAB : A = B := Affine.FunctionField.ringHom_ext (fun c ↦ by
+    simp only [A, B, RingHom.comp_apply, AlgHom.toRingHom_eq_coe, RingHom.coe_coe,
+      AlgHom.commutes, Affine.FunctionField.map_algebraMap, HahnSeries.algebraMap_apply',
+      PowerSeries.algebraMap_eq, HahnSeries.mapRingHom_apply, HahnSeries.map_ofPowerSeries,
+      PowerSeries.map_C]) hX hY
+  exact RingHom.congr_fun hAB f
 
 end WeierstrassCurve

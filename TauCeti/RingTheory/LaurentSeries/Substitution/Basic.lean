@@ -37,12 +37,18 @@ substitution of the image of `φ` into the image of `f`.
 
 * `TauCeti.LaurentSeries.substAlgHom`: the substitution `f ↦ f (φ)` as a `K`-algebra map
   `K⸨X⸩ →ₐ[K] K⸨X⸩`.
+* `TauCeti.LaurentSeries.substMvAlgHom`: the substitution `f ↦ f (q)` of a nonzero multivariate
+  power series `q` of zero constant coefficient into Laurent series, valued in any field faithfully
+  extending `MvPowerSeries ι K`.
 * `TauCeti.LaurentSeries.substAlgEquiv`: the substitution automorphism `f ↦ f (φ)` of a formal
   coordinate `φ`.
 
 ## Main results
 
 * `TauCeti.LaurentSeries.substAlgHom_coe`: on power series it is `PowerSeries.subst`.
+* `TauCeti.LaurentSeries.substMvAlgHom_coe`, `TauCeti.LaurentSeries.substMvAlgHom_injective`,
+  `TauCeti.LaurentSeries.substMvAlgHom_comp_substAlgHom`: evaluation on power series, injectivity,
+  and composition compatibility for multivariate substitution.
 * `TauCeti.LaurentSeries.substAlgHom_single_mul_coe`: `(X ^ N * f₊) (φ) = φ ^ N * f₊ (φ)`.
 * `TauCeti.LaurentSeries.orderTop_substAlgHom`: `ord (f (φ)) = ord φ * ord f`.
 * `TauCeti.LaurentSeries.valuation_substAlgHom`: `v (f (φ)) = v f ^ ord φ`.
@@ -423,5 +429,70 @@ instance (φ : FormalCoordinate K) :
     RingHomInvPair ((substAlgEquiv φ).toRingEquiv.symm : K⸨X⸩ →+* K⸨X⸩)
       ((substAlgEquiv φ).toRingEquiv : K⸨X⸩ →+* K⸨X⸩) :=
   .of_ringEquiv_symm _
+
+/-! ### Substitution of multivariate power series into Laurent series -/
+
+section MvPowerSeries
+
+variable {ι : Type*} {L : Type*} [Field L] [Algebra K L] [Algebra (MvPowerSeries ι K) L]
+    [IsScalarTower K (MvPowerSeries ι K) L] [FaithfulSMul (MvPowerSeries ι K) L]
+
+private theorem injective_substMvAlgHom_coe {q : MvPowerSeries ι K}
+    (hq : MvPowerSeries.constantCoeff q = 0) (hq₀ : q ≠ 0) :
+    Function.Injective
+      ((IsScalarTower.toAlgHom K (MvPowerSeries ι K) L).comp
+        (PowerSeries.substAlgHom (R := K) (HasSubst.of_constantCoeff_zero hq))) := by
+  refine (injective_iff_map_eq_zero _).mpr fun f hf ↦ ?_
+  rw [AlgHom.comp_apply, IsScalarTower.coe_toAlgHom',
+    map_eq_zero_iff _ (FaithfulSMul.algebraMap_injective (MvPowerSeries ι K) L),
+    coe_substAlgHom] at hf
+  exact (subst_mvPowerSeries_eq_zero_iff hq hq₀).mp hf
+
+/-- Substitution `f ↦ f (q)` of a nonzero multivariate power series `q` with zero constant
+coefficient into Laurent series, valued in any field `L` faithfully extending
+`MvPowerSeries ι K`. -/
+noncomputable def substMvAlgHom {q : MvPowerSeries ι K} (hq : MvPowerSeries.constantCoeff q = 0)
+    (hq₀ : q ≠ 0) : K⸨X⸩ →ₐ[K] L :=
+  IsFractionRing.liftAlgHom (injective_substMvAlgHom_coe (L := L) hq hq₀)
+
+/-- On power series, multivariate Laurent substitution is `PowerSeries.subst` composed with
+`algebraMap (MvPowerSeries ι K) L`. -/
+@[simp]
+theorem substMvAlgHom_coe {q : MvPowerSeries ι K} (hq : MvPowerSeries.constantCoeff q = 0)
+    (hq₀ : q ≠ 0) (f : K⟦X⟧) :
+    substMvAlgHom (L := L) hq hq₀ (f : K⸨X⸩) =
+      algebraMap (MvPowerSeries ι K) L (f.subst q) := by
+  rw [substMvAlgHom, IsFractionRing.coe_liftAlgHom, ← _root_.LaurentSeries.coe_algebraMap,
+    IsFractionRing.lift_algebraMap]
+  simp only [AlgHom.toRingHom_eq_coe, RingHom.coe_coe, AlgHom.comp_apply,
+    IsScalarTower.coe_toAlgHom', coe_substAlgHom]
+
+/-- Multivariate substitution into Laurent series is injective. -/
+theorem substMvAlgHom_injective {q : MvPowerSeries ι K} (hq : MvPowerSeries.constantCoeff q = 0)
+    (hq₀ : q ≠ 0) : Function.Injective (substMvAlgHom (L := L) hq hq₀) :=
+  (substMvAlgHom (L := L) hq hq₀).toRingHom.injective
+
+/-- Substituting a univariate series `φ` followed by a multivariate series `q` is substituting
+`φ (q)`. -/
+theorem substMvAlgHom_comp_substAlgHom {q : MvPowerSeries ι K}
+    (hq : MvPowerSeries.constantCoeff q = 0) (hq₀ : q ≠ 0) :
+    (substMvAlgHom (L := L) hq hq₀).comp (substAlgHom hφ hφ₀) =
+      substMvAlgHom (L := L) (constantCoeff_subst_eq_zero hq _ hφ)
+        ((subst_mvPowerSeries_eq_zero_iff hq hq₀).not.mpr hφ₀) := by
+  refine AlgHom.toRingHom_injective (IsFractionRing.ringHom_ext (A := K⟦X⟧) fun f ↦ ?_)
+  simp only [RingHom.coe_coe, AlgHom.comp_apply, _root_.LaurentSeries.coe_algebraMap,
+    substAlgHom_coe, substMvAlgHom_coe,
+    subst_comp_subst_apply (.of_constantCoeff_zero' hφ) (.of_constantCoeff_zero hq)]
+
+/-- Substituting a univariate series `φ` followed by a multivariate series `q` is substituting
+`φ (q)`. -/
+theorem substMvAlgHom_comp_substAlgHom_apply {q : MvPowerSeries ι K}
+    (hq : MvPowerSeries.constantCoeff q = 0) (hq₀ : q ≠ 0) (f : K⸨X⸩) :
+    substMvAlgHom (L := L) hq hq₀ (substAlgHom hφ hφ₀ f) =
+      substMvAlgHom (L := L) (constantCoeff_subst_eq_zero hq _ hφ)
+        ((subst_mvPowerSeries_eq_zero_iff hq hq₀).not.mpr hφ₀) f :=
+  congr($(substMvAlgHom_comp_substAlgHom (L := L) hφ hφ₀ hq hq₀) f)
+
+end MvPowerSeries
 
 end TauCeti.LaurentSeries

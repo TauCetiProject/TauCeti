@@ -47,6 +47,7 @@ uniformities are shadowed, so the evaluation the statement is about is never re-
   univariate series viewed in several variables is evaluating it at the matching entry of the
   family — the case of `aeval_subst` at a single variable, which is how a one-variable series
   meets a two-variable evaluation.
+* `MvPowerSeries.subst_zero` : substituting into the zero series gives zero, unconditionally.
 * `MvPowerSeries.hasSubst_pair` : a pair of series with vanishing constant coefficient is a
   legitimate substitution family for the two variables indexed by `Unit ⊕ Unit`.
 * `MvPowerSeries.coordSpecialize`, `MvPowerSeries.hasSubst_coordSpecialize` and the two
@@ -188,6 +189,12 @@ theorem aeval_subst {a : σ → MvPowerSeries τ S} {ε : MvPowerSeries τ S →
       substAlgHom_X, hx]
   simpa only [AlgHom.coe_comp, Function.comp_apply, substAlgHom_apply] using DFunLike.congr_fun
     ((aeval_unique h1).symm.trans (mid.trans (aeval_unique h2'))) f
+
+/-- Substituting into the zero series gives zero, even without a substitutability hypothesis. -/
+@[simp]
+theorem subst_zero {R S : Type*} [CommRing R] [CommRing S] [Algebra R S]
+    {σ τ : Type*} (a : σ → MvPowerSeries τ S) : subst a (0 : MvPowerSeries σ R) = 0 := by
+  simpa only [MvPolynomial.coe_zero, map_zero] using subst_coe (a := a) (0 : MvPolynomial σ R)
 
 section HasSubstPair
 

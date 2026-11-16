@@ -8,6 +8,7 @@ module
 public import Mathlib.RingTheory.PowerSeries.Inverse
 public import TauCeti.AlgebraicGeometry.EllipticCurve.FormalGroup.WExpansion
 public import TauCeti.RingTheory.MvPowerSeries.Inverse
+import TauCeti.AlgebraicGeometry.EllipticCurve.Weierstrass
 
 /-!
 # The formal inverse of a Weierstrass curve
@@ -35,6 +36,9 @@ what makes `formalInverse` a power series at all.
 * `WeierstrassCurve.isUnit_formalInverseDenom`: the denominator is a unit.
 * `WeierstrassCurve.constantCoeff_formalInverse`: `ι(0) = 0`, so `ι` may itself be substituted
   into a power series — `WeierstrassCurve.hasSubst_formalInverse`.
+* `WeierstrassCurve.formalInverse_eq_X_iff` and `WeierstrassCurve.formalInverse_ne_X`:
+  `ι(z) = z` iff `2 = 0`, `a₁ = 0`, and `a₃ = 0`; in particular `ι(z) ≠ z` for every elliptic curve
+  over a nontrivial commutative ring.
 
 ## Implementation notes
 
@@ -185,6 +189,61 @@ theorem subst_formalInverse_self :
       PowerSeries.substAlgHom_X (hasSubst_formalInverse W)]
   rw [hexp, hinv, subst_formalInverse_formalInverseDenom W, hdouble, formalInverse_def]
   linear_combination (PowerSeries.X : PowerSeries R) * hu
+
+/-- The formal inverse equals `X` if and only if `2 = 0`, `a₁ = 0`, and `a₃ = 0`. -/
+theorem formalInverse_eq_X_iff :
+    formalInverse W = PowerSeries.X ↔ (2 : R) = 0 ∧ W.a₁ = 0 ∧ W.a₃ = 0 := by
+  have hiff : formalInverse W = PowerSeries.X ↔ formalInverseDenom W = -1 := by
+    constructor
+    · intro h
+      have hmul := congrArg (fun f ↦ f * formalInverseDenom W) h
+      rw [formalInverse_def, neg_mul, mul_assoc,
+        mul_comm (PowerSeries.invOfUnit (formalInverseDenom W) 1),
+        mul_invOfUnit_formalInverseDenom W, mul_one] at hmul
+      ext n
+      have h' := congrArg (PowerSeries.coeff (n + 1)) hmul
+      simp only [map_neg, PowerSeries.coeff_succ_X_mul] at h'
+      have h1 : PowerSeries.coeff (n + 1) (PowerSeries.X : PowerSeries R) =
+          PowerSeries.coeff n (1 : PowerSeries R) := by
+        rw [← mul_one (PowerSeries.X : PowerSeries R), PowerSeries.coeff_succ_X_mul]
+      rw [h1] at h'
+      simpa [map_neg] using h'.symm
+    · intro h
+      have hinv : PowerSeries.invOfUnit (formalInverseDenom W) 1 = -1 := by
+        have hu := mul_invOfUnit_formalInverseDenom W
+        nth_rw 1 [h] at hu
+        rw [neg_one_mul] at hu
+        exact neg_eq_iff_eq_neg.mp hu
+      rw [formalInverse_def, hinv, mul_neg_one, neg_neg]
+  rw [hiff]
+  constructor
+  · intro h
+    have h0 := congrArg (PowerSeries.coeff 0) h
+    have h1 := congrArg (PowerSeries.coeff 1) h
+    have h3 := congrArg (PowerSeries.coeff 3) h
+    simp only [formalInverseDenom_def, map_sub, map_neg, PowerSeries.coeff_C_mul,
+      PowerSeries.coeff_X, PowerSeries.coeff_one, coeff_formalW, formalWCoeff_zero,
+      formalWCoeff_one, formalWCoeff_three, ↓reduceIte, mul_zero, mul_one, sub_zero,
+      Nat.reduceEqDiff] at h0 h1 h3
+    exact ⟨by linear_combination h0, by linear_combination -h1, by linear_combination -h3⟩
+  · rintro ⟨h2, ha₁, ha₃⟩
+    rw [formalInverseDenom_def, ha₁, ha₃]
+    simp only [map_zero, zero_mul, sub_zero]
+    ext n
+    rcases n with _ | n
+    · simp only [PowerSeries.coeff_one, map_neg, ↓reduceIte]
+      linear_combination h2
+    · simp
+
+/-- The formal inverse of an elliptic curve over a nontrivial commutative ring is never equal to
+`X`. -/
+theorem formalInverse_ne_X [Nontrivial R] [W.IsElliptic] :
+    formalInverse W ≠ PowerSeries.X := by
+  rw [ne_eq, formalInverse_eq_X_iff]
+  rintro ⟨h2, ha₁, ha₃⟩
+  rcases W.a₁_ne_zero_or_a₃_ne_zero_of_Δ_ne_zero_of_two_eq_zero W.isUnit_Δ.ne_zero h2 with h | h
+  · exact h ha₁
+  · exact h ha₃
 
 /-! ### Base change -/
 

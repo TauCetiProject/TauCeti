@@ -5,8 +5,11 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.AlgebraicGeometry.EllipticCurve.Affine.FunctionField.LaurentExpansion
+public import TauCeti.AlgebraicGeometry.EllipticCurve.Affine.FunctionField.LaurentExpansion.Basic
+public import TauCeti.AlgebraicGeometry.EllipticCurve.FormalGroup.Inverse
+public import TauCeti.AlgebraicGeometry.EllipticCurve.Isogeny.BaseChange.Basic
 public import TauCeti.AlgebraicGeometry.EllipticCurve.Isogeny.InfinityPlace
+public import TauCeti.AlgebraicGeometry.EllipticCurve.Isogeny.Neg
 public import TauCeti.RingTheory.LaurentSeries.Substitution.Basic
 
 /-!
@@ -18,10 +21,10 @@ with zero constant coefficient. It is nonzero, including for inseparable isogeni
 
 `Isogeny.formalSeries` is this actual expansion, characterized by
 `Isogeny.coe_formalSeries`. Pullback of every rational function is Laurent substitution
-by this series (`Isogeny.functionFieldLaurentExpansion_fieldPullback`), and identity and
-composition induce identity and composition of series. This supplies the local action
-from the actual function-field map, without assuming a formal-group homomorphism or a
-convergence theorem.
+by this series (`Isogeny.functionFieldLaurentExpansion_fieldPullback`), which implies that
+`Isogeny.formalSeries` is injective (`Isogeny.formalSeries_injective`). Identity, negation,
+composition, and base change induce `X`, `formalInverse`, substitution, and coefficientwise map of
+series, all without assuming ellipticity.
 
 ## References
 
@@ -166,5 +169,89 @@ theorem formalSeries_comp {W₃ : WeierstrassCurve K}
   rw [coe_formalSeries, comp_fieldPullback, AlgHom.comp_apply,
     φ.functionFieldLaurentExpansion_fieldPullback,
     ← ψ.coe_formalSeries, LaurentSeries.substAlgHom_coe]
+
+/-- **An isogeny is uniquely determined by its formal power series**, with no ellipticity
+hypothesis on either curve. -/
+theorem formalSeries_injective :
+    Function.Injective (formalSeries (K := K) (W₁ := W₁) (W₂ := W₂)) := by
+  intro φ ψ h
+  have hfp (f : W₂.toAffine.FunctionField) : φ.fieldPullback f = ψ.fieldPullback f := by
+    apply W₁.functionFieldLaurentExpansion.injective
+    -- `injective` exposes `toRingHom`; restate as `AlgHom` application for `rw`.
+    change W₁.functionFieldLaurentExpansion (φ.fieldPullback f) =
+      W₁.functionFieldLaurentExpansion (ψ.fieldPullback f)
+    rw [φ.functionFieldLaurentExpansion_fieldPullback,
+      ψ.functionFieldLaurentExpansion_fieldPullback]
+    simp only [h]
+  refine Isogeny.ext (AlgHom.ext fun r ↦ ?_)
+  have hr := hfp (algebraMap W₂.toAffine.CoordinateRing W₂.toAffine.FunctionField r)
+  rwa [fieldPullback_algebraMap, fieldPullback_algebraMap] at hr
+
+-- Fire before `formalSeries_comp`/`formalSeries_map`/etc. expand the inner formal series.
+@[simp↓]
+theorem formalSeries_inj {φ ψ : Isogeny W₁.toAffine W₂.toAffine} :
+    φ.formalSeries = ψ.formalSeries ↔ φ = ψ :=
+  formalSeries_injective.eq_iff
+
+private theorem fieldPullback_negIsogeny_genericY_eq (W : WeierstrassCurve K) :
+    (negIsogeny W.toAffine).fieldPullback W.toAffine.genericY =
+      -W.toAffine.genericY *
+        (1 - algebraMap K W.toAffine.FunctionField W.a₁ *
+            (-W.toAffine.genericX / W.toAffine.genericY) -
+          algebraMap K W.toAffine.FunctionField W.a₃ * (-W.toAffine.genericY⁻¹)) := by
+  have hy0 : W.toAffine.genericY ≠ 0 := W.toAffine.genericY_ne_zero
+  rw [fieldPullback_negIsogeny_genericY, Affine.negY]
+  simp only [Affine.baseChange, WeierstrassCurve.baseChange, WeierstrassCurve.map_a₁,
+    WeierstrassCurve.map_a₃]
+  field_simp [hy0]
+  ring
+
+/-- **The formal series of `negIsogeny` is the geometric formal inverse `W.formalInverse`**, over
+every Weierstrass curve and in every characteristic. -/
+@[simp]
+theorem formalSeries_negIsogeny (W : WeierstrassCurve K) :
+    (negIsogeny W.toAffine).formalSeries = W.formalInverse := by
+  apply (formalSeries_eq_iff _ _).mpr
+  let x := W.toAffine.genericX
+  let y := W.toAffine.genericY
+  let z := -x / y
+  let d := 1 - algebraMap K W.toAffine.FunctionField W.a₁ * z -
+    algebraMap K W.toAffine.FunctionField W.a₃ * (-y⁻¹)
+  have hnegY : (negIsogeny W.toAffine).fieldPullback y = -y * d :=
+    fieldPullback_negIsogeny_genericY_eq W
+  have hd0 : d ≠ 0 := right_ne_zero_of_mul <| hnegY ▸
+    (map_ne_zero_iff _ (negIsogeny W.toAffine).fieldPullback.injective).mpr
+      W.toAffine.genericY_ne_zero
+  have hrat : (negIsogeny W.toAffine).fieldPullback z * d = -z := by
+    -- Unfold `let z := -x / y` on the LHS only, keeping `-z` intact on the RHS.
+    change (negIsogeny W.toAffine).fieldPullback (-x / y) * d = -z
+    rw [map_div₀, map_neg, fieldPullback_negIsogeny_genericX, hnegY, ← div_div,
+      div_mul_cancel₀ _ hd0, div_neg]
+  have hexp := congrArg W.functionFieldLaurentExpansion hrat
+  have hd_exp : W.functionFieldLaurentExpansion d = ofPowerSeries ℤ K (formalInverseDenom W) := by
+    dsimp only [d, z, x, y]
+    simp only [map_sub, map_one, map_mul, AlgHom.commutes,
+      functionFieldLaurentExpansion_neg_genericX_div_genericY,
+      functionFieldLaurentExpansion_neg_inv_genericY, HahnSeries.algebraMap_apply',
+      PowerSeries.algebraMap_eq, formalInverseDenom_def]
+  rw [map_mul, map_neg, hd_exp, W.functionFieldLaurentExpansion_neg_genericX_div_genericY,
+    ← (negIsogeny W.toAffine).coe_formalSeries] at hexp
+  have hu : ofPowerSeries ℤ K (formalInverseDenom W) *
+      ofPowerSeries ℤ K (PowerSeries.invOfUnit (formalInverseDenom W) 1) = 1 := by
+    rw [← map_mul, mul_invOfUnit_formalInverseDenom, map_one]
+  rw [← (negIsogeny W.toAffine).coe_formalSeries, formalInverse_def, map_neg, map_mul]
+  linear_combination -(ofPowerSeries ℤ K (PowerSeries.invOfUnit (formalInverseDenom W) 1)) * hexp +
+    ofPowerSeries ℤ K (negIsogeny W.toAffine).formalSeries * hu
+
+/-- **Base change of an isogeny maps the coefficients of its formal series.** -/
+@[simp]
+theorem formalSeries_map {L : Type*} [Field L] (σ : K →+* L) :
+    (φ.map σ).formalSeries = PowerSeries.map σ φ.formalSeries := by
+  apply ((φ.map σ).formalSeries_eq_iff (W₂ := W₂.map σ) _).mpr
+  have h := congrArg (HahnSeries.mapRingHom σ) φ.coe_formalSeries
+  rw [HahnSeries.mapRingHom_apply, HahnSeries.map_ofPowerSeries,
+    W₁.mapRingHom_functionFieldLaurentExpansion σ, ← φ.map_fieldPullback_map σ, map_div₀, map_neg,
+    Affine.FunctionField.map_genericX, Affine.FunctionField.map_genericY] at h
+  exact h
 
 end TauCeti.Isogeny
