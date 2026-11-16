@@ -14,15 +14,17 @@ public import TauCeti.NumberTheory.LSeries.MellinGrowth
 For a number field `K`, a unit fundamental domain `D` of the norm-one archimedean hypersurface,
 and a full `ℤ`-lattice `L` (including any ideal lattice `idealLattice K I`), both
 `mellinKernel D L` and its Euclidean dual `mellinKernel D⁻¹ (mixedDual K L)` satisfy
-stretched-exponential bounds on `(1, ∞)` around `mellinConstant K`
-(`exists_norm_mellinKernel_sub_mellinConstant_le_on_Ioi`). Feeding these bounds into the
-split-Mellin adapter of `TauCeti.NumberTheory.LSeries.MellinGrowth` establishes:
-* global `exp (C (1 + ‖s‖) log (2 + ‖s‖))` bounds, order at most one (`OrderLE _ 1`), finite order
-  (`IsFiniteOrder`), and polynomial `HasVerticalStripGrowth` for
-  `(mellinKernelFEPair hD L).toWeakFEPair.Λ₀` and `(mellinKernelFEPair hD L).entireΛ`;
-* the same global logarithmic-exponential bound, `OrderLE _ 1`, `IsFiniteOrder`, and
-  `HasVerticalStripGrowth` for the critical-strip `s / 2`-normalized pole-cleared completion
-  `mellinKernelEntireCompletion`.
+stretched-exponential bounds around `mellinConstant K`
+(`exists_norm_mellinKernel_sub_mellinConstant_le_on_Ici`). Feeding these tails into the
+split-Mellin adapter of `TauCeti.NumberTheory.LSeries.MellinGrowth` supplies the finite-order and
+vertical-strip growth inputs needed for Phragmén-Lindelöf convexity and Hadamard factorization of
+completed partial zeta, Dedekind zeta, and Hecke L-functions built from lattice Mellin completions:
+* for `(mellinKernelFEPair hD L).toWeakFEPair.Λ₀`: global `exp (C (1 + ‖s‖) log (2 + ‖s‖))`
+  bounds, order at most one (`OrderLE _ 1`), uniform boundedness on every closed vertical strip,
+  and polynomial `HasVerticalStripGrowth`;
+* for `(mellinKernelFEPair hD L).entireΛ` and the critical-strip `s / 2`-normalized pole-cleared
+  completion `mellinKernelEntireCompletion`: global logarithmic-exponential bounds,
+  `OrderLE _ 1`, `IsFiniteOrder`, and `HasVerticalStripGrowth`.
 
 ## References
 
@@ -34,8 +36,8 @@ public section
 
 noncomputable section
 
-open Filter MeasureTheory NumberField NumberField.InfinitePlace NumberField.mixedEmbedding
-  NumberField.Units TauCeti.NumberField.mixedEmbedding Set Real
+open Asymptotics Filter MeasureTheory NumberField NumberField.InfinitePlace
+  NumberField.mixedEmbedding NumberField.Units TauCeti.NumberField.mixedEmbedding Set Real
 open scoped Pointwise Topology nonZeroDivisors
 
 namespace TauCeti.LFunctions
@@ -45,17 +47,20 @@ variable {K : Type*} [Field K] [NumberField K]
 /-! ### Split-Mellin growth of `mellinKernelFEPair` -/
 
 open scoped Classical in
-private theorem exists_norm_mellinKernelFEPair_f_sub_le {D : Set (realSpace K)}
+private theorem exists_isBigO_mellinKernelFEPair_f_sub {D : Set (realSpace K)}
     (hD : IsUnitFundamentalDomain K D) (L : Submodule ℤ (mixedSpace K)) [DiscreteTopology L]
     [IsZLattice ℝ L] :
-    ∃ c > 0, ∃ α : ℝ, 0 < α ∧ ∃ C : ℝ, ∀ u ∈ Ioi (1 : ℝ),
-      ‖(mellinKernelFEPair hD L).f u - (mellinKernelFEPair hD L).f₀‖ ≤
-        C * exp (-c * u ^ α) := by
-  obtain ⟨c, hc, C, -, hf⟩ := exists_norm_mellinKernel_sub_mellinConstant_le_on_Ioi hD L
+    ∃ c > 0, ∃ α : ℝ, 0 < α ∧
+      (fun u ↦ (mellinKernelFEPair hD L).f u - (mellinKernelFEPair hD L).f₀) =O[atTop]
+        fun u ↦ exp (-c * u ^ α) := by
+  obtain ⟨c, hc, C, -, hf⟩ := exists_norm_mellinKernel_sub_mellinConstant_le_on_Ici hD L one_pos
   refine ⟨c, hc, (Module.finrank ℚ K : ℝ)⁻¹,
-    inv_pos.mpr (Nat.cast_pos.mpr (Module.finrank_pos (R := ℚ) (M := K))), C, fun u hu ↦ ?_⟩
+    inv_pos.mpr (Nat.cast_pos.mpr (Module.finrank_pos (R := ℚ) (M := K))),
+    IsBigO.of_bound C ?_⟩
+  filter_upwards [eventually_ge_atTop (1 : ℝ)] with u hu
   simpa only [mellinKernelFEPair_f, mellinKernelFEPair_f₀,
-    indicator_of_mem (mem_Ioi.mpr (zero_lt_one.trans hu))] using hf u hu
+    indicator_of_mem (mem_Ioi.mpr (zero_lt_one.trans_le hu)), Real.norm_eq_abs,
+    abs_of_pos (exp_pos _)] using hf u hu
 
 open scoped Classical in
 /-- The entire part `Λ₀` of Hecke's lattice Mellin pair satisfies a global
@@ -65,9 +70,8 @@ theorem exists_norm_mellinKernelFEPair_Λ₀_le_exp_mul_log {D : Set (realSpace 
     [IsZLattice ℝ L] :
     ∃ C > 0, ∀ s : ℂ, ‖(mellinKernelFEPair hD L).toWeakFEPair.Λ₀ s‖ ≤
       exp (C * (1 + ‖s‖) * log (2 + ‖s‖)) := by
-  obtain ⟨c₁, hc₁, α₁, hα₁, C₁, hf⟩ := exists_norm_mellinKernelFEPair_f_sub_le hD L
-  obtain ⟨c₂, hc₂, α₂, hα₂, C₂, hg⟩ :=
-    exists_norm_mellinKernelFEPair_f_sub_le hD.inv (mixedDual K L)
+  obtain ⟨c₁, hc₁, α₁, hα₁, hf⟩ := exists_isBigO_mellinKernelFEPair_f_sub hD L
+  obtain ⟨c₂, hc₂, α₂, hα₂, hg⟩ := exists_isBigO_mellinKernelFEPair_f_sub hD.inv (mixedDual K L)
   simp only [← mellinKernelFEPair_symm hD L, FEPairWithLevel.symm_f, FEPairWithLevel.symm_f₀] at hg
   exact (mellinKernelFEPair hD L).exists_norm_toWeakFEPair_Λ₀_le_exp_mul_log
     hc₁ hα₁ hc₂ hα₂ hf hg
@@ -88,9 +92,8 @@ theorem exists_norm_mellinKernelFEPair_Λ₀_le_of_re_mem_Icc {D : Set (realSpac
     (hD : IsUnitFundamentalDomain K D) (L : Submodule ℤ (mixedSpace K)) [DiscreteTopology L]
     [IsZLattice ℝ L] (a b : ℝ) :
     ∃ M, ∀ s : ℂ, s.re ∈ Icc a b → ‖(mellinKernelFEPair hD L).toWeakFEPair.Λ₀ s‖ ≤ M := by
-  obtain ⟨c₁, hc₁, α₁, hα₁, C₁, hf⟩ := exists_norm_mellinKernelFEPair_f_sub_le hD L
-  obtain ⟨c₂, hc₂, α₂, hα₂, C₂, hg⟩ :=
-    exists_norm_mellinKernelFEPair_f_sub_le hD.inv (mixedDual K L)
+  obtain ⟨c₁, hc₁, α₁, hα₁, hf⟩ := exists_isBigO_mellinKernelFEPair_f_sub hD L
+  obtain ⟨c₂, hc₂, α₂, hα₂, hg⟩ := exists_isBigO_mellinKernelFEPair_f_sub hD.inv (mixedDual K L)
   simp only [← mellinKernelFEPair_symm hD L, FEPairWithLevel.symm_f, FEPairWithLevel.symm_f₀] at hg
   exact (mellinKernelFEPair hD L).exists_norm_toWeakFEPair_Λ₀_le_of_re_mem_Icc
     hc₁ hα₁ hc₂ hα₂ hf hg a b

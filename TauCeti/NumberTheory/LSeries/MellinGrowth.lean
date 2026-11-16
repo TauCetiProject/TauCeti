@@ -15,9 +15,9 @@ public import TauCeti.NumberTheory.LSeries.FEPairWithLevel
 
 For Mathlib's `WeakFEPair` and its level-`N` counterpart `TauCeti.FEPairWithLevel`, the entire
 part `Λ₀` is the sum of two Mellin tails over `(1, ∞)`, with the dual argument `k - s` and the
-root number `ε`. If both kernel tails have stretched-exponential bounds (either on `(1, ∞)` or
-above arbitrary thresholds, as happens on the dual side `g (· / N)` when `N > 1`), these integrals
-give `‖Λ₀(s)‖ ≤ exp (C (1 + ‖s‖) log (2 + ‖s‖))` for a fixed positive `C` together with uniform
+root number `ε`. If both kernel tails have stretched-exponential decay `=O[atTop]` (which is
+preserved under the level-`N` rescaling `g (· / N)`), these integrals give
+`‖Λ₀(s)‖ ≤ exp (C (1 + ‖s‖) log (2 + ‖s‖))` for a fixed positive `C` together with uniform
 boundedness on every closed vertical strip `a ≤ Re s ≤ b`.
 
 Passing from `Λ₀` to the pole-cleared entire completion `entireΛ` (or directly to `Λ` when both
@@ -90,32 +90,30 @@ theorem _root_.WeakFEPair.Λ₀_eq_integral_add_smul_integral (P : WeakFEPair E)
   rw [mellin_indicator_Ioi _ zero_le_one, mellin_indicator_Ioi _ zero_le_one]
   simp only [sub_eq_add_neg]
 
-/-- Stretched-exponential decay of both kernels above arbitrary thresholds `T₁, T₂` gives a global
-logarithmic-exponential bound for `Λ₀`. -/
-theorem _root_.WeakFEPair.exists_norm_Λ₀_le_exp_mul_log_of_Ioi (P : WeakFEPair E)
-    {T₁ C₁ c₁ α₁ T₂ C₂ c₂ α₂ : ℝ}
-    (hc₁ : 0 < c₁) (hα₁ : 0 < α₁) (hc₂ : 0 < c₂) (hα₂ : 0 < α₂)
-    (hf : ∀ u ∈ Ioi T₁, ‖P.f u - P.f₀‖ ≤ C₁ * exp (-c₁ * u ^ α₁))
-    (hg : ∀ u ∈ Ioi T₂, ‖P.g u - P.g₀‖ ≤ C₂ * exp (-c₂ * u ^ α₂)) :
+/-- Stretched-exponential decay of both kernel tails gives a global logarithmic-exponential bound
+for the entire part of their Mellin continuation. The two tails may have different decay
+exponents. -/
+theorem _root_.WeakFEPair.exists_norm_Λ₀_le_exp_mul_log (P : WeakFEPair E)
+    {c₁ α₁ c₂ α₂ : ℝ} (hc₁ : 0 < c₁) (hα₁ : 0 < α₁) (hc₂ : 0 < c₂) (hα₂ : 0 < α₂)
+    (hf : (fun u ↦ P.f u - P.f₀) =O[atTop] fun u ↦ exp (-c₁ * u ^ α₁))
+    (hg : (fun u ↦ P.g u - P.g₀) =O[atTop] fun u ↦ exp (-c₂ * u ^ α₂)) :
     ∃ C > 0, ∀ s : ℂ, ‖P.Λ₀ s‖ ≤ exp (C * (1 + ‖s‖) * log (2 + ‖s‖)) := by
   have hf_loc := (P.hf_int.sub (locallyIntegrableOn_const P.f₀)).mono_set
     (Ici_subset_Ioi.mpr zero_lt_one)
   have hg_loc := (P.hg_int.sub (locallyIntegrableOn_const P.g₀)).mono_set
     (Ici_subset_Ioi.mpr zero_lt_one)
   obtain ⟨A, hA, hF⟩ :=
-    exists_norm_integral_cpow_smul_le_exp_mul_log_of_locallyIntegrableOn hf_loc hc₁ hα₁ hf
+    exists_norm_integral_cpow_smul_le_exp_mul_log_of_isBigO hf_loc hc₁ hα₁ hf
   obtain ⟨B, hB, hG⟩ :=
-    exists_norm_integral_cpow_smul_le_exp_mul_log_of_locallyIntegrableOn hg_loc hc₂ hα₂ hg
+    exists_norm_integral_cpow_smul_le_exp_mul_log_of_isBigO hg_loc hc₂ hα₂ hg
   obtain ⟨B', -, hG_aff⟩ := exists_norm_comp_mul_add_le_exp_mul_log ⟨B, hB, hG⟩ (-1) P.k
   let K := max A B'
   let D := 1 + ‖P.ε‖
   have hD : 0 < D := by dsimp [D]; positivity
   refine ⟨K + 2 * D, add_pos (lt_max_of_lt_left hA) (by positivity), fun s ↦ ?_⟩
   rw [WeakFEPair.Λ₀_eq_integral_add_smul_integral P s
-    (integrableOn_cpow_smul_of_locallyIntegrableOn_of_norm_le_exp_neg_mul_rpow
-      hf_loc hc₁ hα₁ hf s)
-    (integrableOn_cpow_smul_of_locallyIntegrableOn_of_norm_le_exp_neg_mul_rpow
-      hg_loc hc₂ hα₂ hg (P.k - s))]
+    (integrableOn_cpow_smul_of_isBigO_exp_neg_mul_rpow hf_loc hc₁ hα₁ hf s)
+    (integrableOn_cpow_smul_of_isBigO_exp_neg_mul_rpow hg_loc hc₂ hα₂ hg (P.k - s))]
   have hF' : ‖∫ (u : ℝ) in Ioi 1, (u : ℂ) ^ (s - 1) • (P.f u - P.f₀)‖ ≤
       exp (K * (1 + ‖s‖) * log (2 + ‖s‖)) :=
     (hF s).trans (exp_mul_one_add_mul_log_two_add_le_of_le (le_max_left A B') (norm_nonneg s))
@@ -132,49 +130,35 @@ theorem _root_.WeakFEPair.exists_norm_Λ₀_le_exp_mul_log_of_Ioi (P : WeakFEPai
       rw [norm_smul]; dsimp [D]; nlinarith [mul_le_mul_of_nonneg_left hG' (norm_nonneg P.ε)]
     _ ≤ _ := mul_exp_mul_one_add_mul_log_two_add_le hD.le (norm_nonneg s)
 
-/-- Exponential decay of both kernels gives a global logarithmic-exponential bound for the
-entire part of their Mellin continuation. The two tails may have different decay exponents. -/
-theorem _root_.WeakFEPair.exists_norm_Λ₀_le_exp_mul_log (P : WeakFEPair E)
-    {C₁ c₁ α₁ C₂ c₂ α₂ : ℝ}
-    (hc₁ : 0 < c₁) (hα₁ : 0 < α₁) (hc₂ : 0 < c₂) (hα₂ : 0 < α₂)
-    (hf : ∀ u ∈ Ioi 1, ‖P.f u - P.f₀‖ ≤ C₁ * exp (-c₁ * u ^ α₁))
-    (hg : ∀ u ∈ Ioi 1, ‖P.g u - P.g₀‖ ≤ C₂ * exp (-c₂ * u ^ α₂)) :
-    ∃ C > 0, ∀ s : ℂ, ‖P.Λ₀ s‖ ≤ exp (C * (1 + ‖s‖) * log (2 + ‖s‖)) :=
-  P.exists_norm_Λ₀_le_exp_mul_log_of_Ioi hc₁ hα₁ hc₂ hα₂ hf hg
-
 /-- The entire part of a complex weak functional-equation pair has order at most one when
-both kernels have exponential tails. -/
-theorem _root_.WeakFEPair.orderLE_Λ₀_of_norm_sub_le_exp_neg_mul_rpow (P : WeakFEPair ℂ)
-    {C₁ c₁ α₁ C₂ c₂ α₂ : ℝ}
-    (hc₁ : 0 < c₁) (hα₁ : 0 < α₁) (hc₂ : 0 < c₂) (hα₂ : 0 < α₂)
-    (hf : ∀ u ∈ Ioi 1, ‖P.f u - P.f₀‖ ≤ C₁ * exp (-c₁ * u ^ α₁))
-    (hg : ∀ u ∈ Ioi 1, ‖P.g u - P.g₀‖ ≤ C₂ * exp (-c₂ * u ^ α₂)) :
+both kernel tails decay stretched-exponentially. -/
+theorem _root_.WeakFEPair.orderLE_Λ₀ (P : WeakFEPair ℂ)
+    {c₁ α₁ c₂ α₂ : ℝ} (hc₁ : 0 < c₁) (hα₁ : 0 < α₁) (hc₂ : 0 < c₂) (hα₂ : 0 < α₂)
+    (hf : (fun u ↦ P.f u - P.f₀) =O[atTop] fun u ↦ exp (-c₁ * u ^ α₁))
+    (hg : (fun u ↦ P.g u - P.g₀) =O[atTop] fun u ↦ exp (-c₂ * u ^ α₂)) :
     OrderLE P.Λ₀ 1 := by
   obtain ⟨C, _, hC⟩ := P.exists_norm_Λ₀_le_exp_mul_log hc₁ hα₁ hc₂ hα₂ hf hg
   exact orderLE_one_of_norm_le_exp_mul_log hC
 
-/-- If both kernel tails decay exponentially above thresholds `T₁, T₂`, `Λ₀` is bounded on each
-closed vertical strip `a ≤ Re s ≤ b`. -/
-theorem _root_.WeakFEPair.exists_norm_Λ₀_le_of_re_mem_Icc_of_Ioi (P : WeakFEPair E)
-    {T₁ C₁ c₁ α₁ T₂ C₂ c₂ α₂ : ℝ}
-    (hc₁ : 0 < c₁) (hα₁ : 0 < α₁) (hc₂ : 0 < c₂) (hα₂ : 0 < α₂)
-    (hf : ∀ u ∈ Ioi T₁, ‖P.f u - P.f₀‖ ≤ C₁ * exp (-c₁ * u ^ α₁))
-    (hg : ∀ u ∈ Ioi T₂, ‖P.g u - P.g₀‖ ≤ C₂ * exp (-c₂ * u ^ α₂)) (a b : ℝ) :
+/-- If both kernel tails decay stretched-exponentially, the entire part of a weak
+functional-equation pair is bounded on each closed vertical strip `a ≤ Re s ≤ b`. -/
+theorem _root_.WeakFEPair.exists_norm_Λ₀_le_of_re_mem_Icc (P : WeakFEPair E)
+    {c₁ α₁ c₂ α₂ : ℝ} (hc₁ : 0 < c₁) (hα₁ : 0 < α₁) (hc₂ : 0 < c₂) (hα₂ : 0 < α₂)
+    (hf : (fun u ↦ P.f u - P.f₀) =O[atTop] fun u ↦ exp (-c₁ * u ^ α₁))
+    (hg : (fun u ↦ P.g u - P.g₀) =O[atTop] fun u ↦ exp (-c₂ * u ^ α₂)) (a b : ℝ) :
     ∃ M, ∀ s : ℂ, s.re ∈ Icc a b → ‖P.Λ₀ s‖ ≤ M := by
   have hf_loc := (P.hf_int.sub (locallyIntegrableOn_const P.f₀)).mono_set
     (Ici_subset_Ioi.mpr zero_lt_one)
   have hg_loc := (P.hg_int.sub (locallyIntegrableOn_const P.g₀)).mono_set
     (Ici_subset_Ioi.mpr zero_lt_one)
   obtain ⟨B₁, _, hB₁⟩ :=
-    exists_norm_integral_cpow_smul_le_of_re_le_of_locallyIntegrableOn hf_loc hc₁ hα₁ hf b
+    exists_norm_integral_cpow_smul_le_of_re_le_of_isBigO hf_loc hc₁ hα₁ hf b
   obtain ⟨B₂, _, hB₂⟩ :=
-    exists_norm_integral_cpow_smul_le_of_re_le_of_locallyIntegrableOn hg_loc hc₂ hα₂ hg (P.k - a)
+    exists_norm_integral_cpow_smul_le_of_re_le_of_isBigO hg_loc hc₂ hα₂ hg (P.k - a)
   refine ⟨B₁ + ‖P.ε‖ * B₂, fun s hs ↦ ?_⟩
   rw [WeakFEPair.Λ₀_eq_integral_add_smul_integral P s
-    (integrableOn_cpow_smul_of_locallyIntegrableOn_of_norm_le_exp_neg_mul_rpow
-      hf_loc hc₁ hα₁ hf s)
-    (integrableOn_cpow_smul_of_locallyIntegrableOn_of_norm_le_exp_neg_mul_rpow
-      hg_loc hc₂ hα₂ hg (P.k - s))]
+    (integrableOn_cpow_smul_of_isBigO_exp_neg_mul_rpow hf_loc hc₁ hα₁ hf s)
+    (integrableOn_cpow_smul_of_isBigO_exp_neg_mul_rpow hg_loc hc₂ hα₂ hg (P.k - s))]
   have hdual : ((P.k : ℂ) - s).re ≤ P.k - a := by
     simp only [Complex.sub_re, Complex.ofReal_re]
     linarith [hs.1]
@@ -182,21 +166,12 @@ theorem _root_.WeakFEPair.exists_norm_Λ₀_le_of_re_mem_Icc_of_Ioi (P : WeakFEP
   rw [norm_smul]
   exact mul_le_mul_of_nonneg_left (hB₂ (P.k - s) hdual) (norm_nonneg _)
 
-/-- If both kernel tails decay exponentially, the entire part of a weak functional-equation pair
-is bounded on each closed vertical strip `a ≤ Re s ≤ b`. -/
-theorem _root_.WeakFEPair.exists_norm_Λ₀_le_of_re_mem_Icc (P : WeakFEPair E)
-    {C₁ c₁ α₁ C₂ c₂ α₂ : ℝ} (hc₁ : 0 < c₁) (hα₁ : 0 < α₁) (hc₂ : 0 < c₂) (hα₂ : 0 < α₂)
-    (hf : ∀ u ∈ Ioi 1, ‖P.f u - P.f₀‖ ≤ C₁ * exp (-c₁ * u ^ α₁))
-    (hg : ∀ u ∈ Ioi 1, ‖P.g u - P.g₀‖ ≤ C₂ * exp (-c₂ * u ^ α₂)) (a b : ℝ) :
-    ∃ M, ∀ s : ℂ, s.re ∈ Icc a b → ‖P.Λ₀ s‖ ≤ M :=
-  P.exists_norm_Λ₀_le_of_re_mem_Icc_of_Ioi hc₁ hα₁ hc₂ hα₂ hf hg a b
-
-/-- Exponential decay of both kernels gives polynomial vertical-strip growth of `Λ₀` for a complex
-weak functional-equation pair. -/
+/-- Stretched-exponential decay of both kernel tails gives polynomial vertical-strip growth of
+`Λ₀` for a complex weak functional-equation pair. -/
 theorem _root_.WeakFEPair.hasVerticalStripGrowth_Λ₀ (P : WeakFEPair ℂ)
-    {C₁ c₁ α₁ C₂ c₂ α₂ : ℝ} (hc₁ : 0 < c₁) (hα₁ : 0 < α₁) (hc₂ : 0 < c₂) (hα₂ : 0 < α₂)
-    (hf : ∀ u ∈ Ioi 1, ‖P.f u - P.f₀‖ ≤ C₁ * exp (-c₁ * u ^ α₁))
-    (hg : ∀ u ∈ Ioi 1, ‖P.g u - P.g₀‖ ≤ C₂ * exp (-c₂ * u ^ α₂)) :
+    {c₁ α₁ c₂ α₂ : ℝ} (hc₁ : 0 < c₁) (hα₁ : 0 < α₁) (hc₂ : 0 < c₂) (hα₂ : 0 < α₂)
+    (hf : (fun u ↦ P.f u - P.f₀) =O[atTop] fun u ↦ exp (-c₁ * u ^ α₁))
+    (hg : (fun u ↦ P.g u - P.g₀) =O[atTop] fun u ↦ exp (-c₂ * u ^ α₂)) :
     HasVerticalStripGrowth P.Λ₀ :=
   hasVerticalStripGrowth_of_forall_bound
     (P.exists_norm_Λ₀_le_of_re_mem_Icc hc₁ hα₁ hc₂ hα₂ hf hg)
@@ -257,100 +232,95 @@ theorem _root_.WeakFEPair.hasVerticalStripGrowth_entireΛ_of_Λ₀ (P : WeakFEPa
       hasVerticalStripGrowth_const)).add
     (hasVerticalStripGrowth_id.mul hasVerticalStripGrowth_const)
 
-/-- Exponential decay of both kernel tails gives a global logarithmic-exponential bound for the
-pole-cleared completion `entireΛ` of a weak functional-equation pair. -/
+/-- Stretched-exponential decay of both kernel tails gives a global logarithmic-exponential bound
+for the pole-cleared completion `entireΛ` of a weak functional-equation pair. -/
 theorem _root_.WeakFEPair.exists_norm_entireΛ_le_exp_mul_log (P : WeakFEPair E)
-    {C₁ c₁ α₁ C₂ c₂ α₂ : ℝ}
-    (hc₁ : 0 < c₁) (hα₁ : 0 < α₁) (hc₂ : 0 < c₂) (hα₂ : 0 < α₂)
-    (hf : ∀ u ∈ Ioi 1, ‖P.f u - P.f₀‖ ≤ C₁ * exp (-c₁ * u ^ α₁))
-    (hg : ∀ u ∈ Ioi 1, ‖P.g u - P.g₀‖ ≤ C₂ * exp (-c₂ * u ^ α₂)) :
+    {c₁ α₁ c₂ α₂ : ℝ} (hc₁ : 0 < c₁) (hα₁ : 0 < α₁) (hc₂ : 0 < c₂) (hα₂ : 0 < α₂)
+    (hf : (fun u ↦ P.f u - P.f₀) =O[atTop] fun u ↦ exp (-c₁ * u ^ α₁))
+    (hg : (fun u ↦ P.g u - P.g₀) =O[atTop] fun u ↦ exp (-c₂ * u ^ α₂)) :
     ∃ C > 0, ∀ s : ℂ, ‖P.entireΛ s‖ ≤ exp (C * (1 + ‖s‖) * log (2 + ‖s‖)) :=
   P.exists_norm_entireΛ_le_exp_mul_log_of_Λ₀
     (P.exists_norm_Λ₀_le_exp_mul_log hc₁ hα₁ hc₂ hα₂ hf hg)
 
 /-- The pole-cleared entire completion `entireΛ` of a complex weak pair has order at most one when
-both kernel tails decay exponentially. -/
+both kernel tails decay stretched-exponentially. -/
 theorem _root_.WeakFEPair.orderLE_entireΛ (P : WeakFEPair ℂ)
-    {C₁ c₁ α₁ C₂ c₂ α₂ : ℝ}
-    (hc₁ : 0 < c₁) (hα₁ : 0 < α₁) (hc₂ : 0 < c₂) (hα₂ : 0 < α₂)
-    (hf : ∀ u ∈ Ioi 1, ‖P.f u - P.f₀‖ ≤ C₁ * exp (-c₁ * u ^ α₁))
-    (hg : ∀ u ∈ Ioi 1, ‖P.g u - P.g₀‖ ≤ C₂ * exp (-c₂ * u ^ α₂)) :
+    {c₁ α₁ c₂ α₂ : ℝ} (hc₁ : 0 < c₁) (hα₁ : 0 < α₁) (hc₂ : 0 < c₂) (hα₂ : 0 < α₂)
+    (hf : (fun u ↦ P.f u - P.f₀) =O[atTop] fun u ↦ exp (-c₁ * u ^ α₁))
+    (hg : (fun u ↦ P.g u - P.g₀) =O[atTop] fun u ↦ exp (-c₂ * u ^ α₂)) :
     OrderLE P.entireΛ 1 := by
   obtain ⟨C, _, hC⟩ := P.exists_norm_entireΛ_le_exp_mul_log hc₁ hα₁ hc₂ hα₂ hf hg
   exact orderLE_one_of_norm_le_exp_mul_log hC
 
 /-- The pole-cleared entire completion `entireΛ` of a complex weak pair has finite order when both
-kernel tails decay exponentially. -/
+kernel tails decay stretched-exponentially. -/
 theorem _root_.WeakFEPair.isFiniteOrder_entireΛ (P : WeakFEPair ℂ)
-    {C₁ c₁ α₁ C₂ c₂ α₂ : ℝ}
-    (hc₁ : 0 < c₁) (hα₁ : 0 < α₁) (hc₂ : 0 < c₂) (hα₂ : 0 < α₂)
-    (hf : ∀ u ∈ Ioi 1, ‖P.f u - P.f₀‖ ≤ C₁ * exp (-c₁ * u ^ α₁))
-    (hg : ∀ u ∈ Ioi 1, ‖P.g u - P.g₀‖ ≤ C₂ * exp (-c₂ * u ^ α₂)) :
+    {c₁ α₁ c₂ α₂ : ℝ} (hc₁ : 0 < c₁) (hα₁ : 0 < α₁) (hc₂ : 0 < c₂) (hα₂ : 0 < α₂)
+    (hf : (fun u ↦ P.f u - P.f₀) =O[atTop] fun u ↦ exp (-c₁ * u ^ α₁))
+    (hg : (fun u ↦ P.g u - P.g₀) =O[atTop] fun u ↦ exp (-c₂ * u ^ α₂)) :
     IsFiniteOrder P.entireΛ :=
   (P.orderLE_entireΛ hc₁ hα₁ hc₂ hα₂ hf hg).isFiniteOrder
 
 /-- The pole-cleared entire completion `entireΛ` of a complex weak pair has polynomial
-vertical-strip growth when both kernel tails decay exponentially. -/
+vertical-strip growth when both kernel tails decay stretched-exponentially. -/
 theorem _root_.WeakFEPair.hasVerticalStripGrowth_entireΛ (P : WeakFEPair ℂ)
-    {C₁ c₁ α₁ C₂ c₂ α₂ : ℝ} (hc₁ : 0 < c₁) (hα₁ : 0 < α₁) (hc₂ : 0 < c₂) (hα₂ : 0 < α₂)
-    (hf : ∀ u ∈ Ioi 1, ‖P.f u - P.f₀‖ ≤ C₁ * exp (-c₁ * u ^ α₁))
-    (hg : ∀ u ∈ Ioi 1, ‖P.g u - P.g₀‖ ≤ C₂ * exp (-c₂ * u ^ α₂)) :
+    {c₁ α₁ c₂ α₂ : ℝ} (hc₁ : 0 < c₁) (hα₁ : 0 < α₁) (hc₂ : 0 < c₂) (hα₂ : 0 < α₂)
+    (hf : (fun u ↦ P.f u - P.f₀) =O[atTop] fun u ↦ exp (-c₁ * u ^ α₁))
+    (hg : (fun u ↦ P.g u - P.g₀) =O[atTop] fun u ↦ exp (-c₂ * u ^ α₂)) :
     HasVerticalStripGrowth P.entireΛ :=
   P.hasVerticalStripGrowth_entireΛ_of_Λ₀ (P.hasVerticalStripGrowth_Λ₀ hc₁ hα₁ hc₂ hα₂ hf hg)
 
 section Strong
 
-/-- For a strong functional-equation pair, exponential decay of `f` and `g` gives a global
-logarithmic-exponential bound directly on the entire completed function `Λ`. -/
+/-- For a strong functional-equation pair, stretched-exponential decay of `f` and `g` gives a
+global logarithmic-exponential bound directly on the entire completed function `Λ`. -/
 theorem _root_.IsStrongFEPair.exists_norm_Λ_le_exp_mul_log {P : WeakFEPair E}
-    (hP : IsStrongFEPair P) {C₁ c₁ α₁ C₂ c₂ α₂ : ℝ}
+    (hP : IsStrongFEPair P) {c₁ α₁ c₂ α₂ : ℝ}
     (hc₁ : 0 < c₁) (hα₁ : 0 < α₁) (hc₂ : 0 < c₂) (hα₂ : 0 < α₂)
-    (hf : ∀ u ∈ Ioi 1, ‖P.f u‖ ≤ C₁ * exp (-c₁ * u ^ α₁))
-    (hg : ∀ u ∈ Ioi 1, ‖P.g u‖ ≤ C₂ * exp (-c₂ * u ^ α₂)) :
+    (hf : P.f =O[atTop] fun u ↦ exp (-c₁ * u ^ α₁))
+    (hg : P.g =O[atTop] fun u ↦ exp (-c₂ * u ^ α₂)) :
     ∃ C > 0, ∀ s : ℂ, ‖P.Λ s‖ ≤ exp (C * (1 + ‖s‖) * log (2 + ‖s‖)) := by
   rw [hP.Λ_eq_Λ₀]
   exact P.exists_norm_Λ₀_le_exp_mul_log hc₁ hα₁ hc₂ hα₂
     (by simpa [hP.hf₀] using hf) (by simpa [hP.hg₀] using hg)
 
-/-- For a complex strong functional-equation pair, exponential decay of `f` and `g` implies that
-the completed function `Λ` has order at most one. -/
+/-- For a complex strong functional-equation pair, stretched-exponential decay of `f` and `g`
+implies that the completed function `Λ` has order at most one. -/
 theorem _root_.IsStrongFEPair.orderLE_Λ {P : WeakFEPair ℂ} (hP : IsStrongFEPair P)
-    {C₁ c₁ α₁ C₂ c₂ α₂ : ℝ}
-    (hc₁ : 0 < c₁) (hα₁ : 0 < α₁) (hc₂ : 0 < c₂) (hα₂ : 0 < α₂)
-    (hf : ∀ u ∈ Ioi 1, ‖P.f u‖ ≤ C₁ * exp (-c₁ * u ^ α₁))
-    (hg : ∀ u ∈ Ioi 1, ‖P.g u‖ ≤ C₂ * exp (-c₂ * u ^ α₂)) :
+    {c₁ α₁ c₂ α₂ : ℝ} (hc₁ : 0 < c₁) (hα₁ : 0 < α₁) (hc₂ : 0 < c₂) (hα₂ : 0 < α₂)
+    (hf : P.f =O[atTop] fun u ↦ exp (-c₁ * u ^ α₁))
+    (hg : P.g =O[atTop] fun u ↦ exp (-c₂ * u ^ α₂)) :
     OrderLE P.Λ 1 := by
   obtain ⟨C, _, hC⟩ := hP.exists_norm_Λ_le_exp_mul_log hc₁ hα₁ hc₂ hα₂ hf hg
   exact orderLE_one_of_norm_le_exp_mul_log hC
 
-/-- For a complex strong functional-equation pair, exponential decay of `f` and `g` implies that
-`Λ` has finite order. -/
+/-- For a complex strong functional-equation pair, stretched-exponential decay of `f` and `g`
+implies that `Λ` has finite order. -/
 theorem _root_.IsStrongFEPair.isFiniteOrder_Λ {P : WeakFEPair ℂ} (hP : IsStrongFEPair P)
-    {C₁ c₁ α₁ C₂ c₂ α₂ : ℝ}
-    (hc₁ : 0 < c₁) (hα₁ : 0 < α₁) (hc₂ : 0 < c₂) (hα₂ : 0 < α₂)
-    (hf : ∀ u ∈ Ioi 1, ‖P.f u‖ ≤ C₁ * exp (-c₁ * u ^ α₁))
-    (hg : ∀ u ∈ Ioi 1, ‖P.g u‖ ≤ C₂ * exp (-c₂ * u ^ α₂)) :
+    {c₁ α₁ c₂ α₂ : ℝ} (hc₁ : 0 < c₁) (hα₁ : 0 < α₁) (hc₂ : 0 < c₂) (hα₂ : 0 < α₂)
+    (hf : P.f =O[atTop] fun u ↦ exp (-c₁ * u ^ α₁))
+    (hg : P.g =O[atTop] fun u ↦ exp (-c₂ * u ^ α₂)) :
     IsFiniteOrder P.Λ :=
   (hP.orderLE_Λ hc₁ hα₁ hc₂ hα₂ hf hg).isFiniteOrder
 
-/-- For a strong functional-equation pair, exponential decay of `f` and `g` implies boundedness of
-`Λ` on each closed vertical strip `a ≤ Re s ≤ b`. -/
+/-- For a strong functional-equation pair, stretched-exponential decay of `f` and `g` implies
+boundedness of `Λ` on each closed vertical strip `a ≤ Re s ≤ b`. -/
 theorem _root_.IsStrongFEPair.exists_norm_Λ_le_of_re_mem_Icc {P : WeakFEPair E}
-    (hP : IsStrongFEPair P) {C₁ c₁ α₁ C₂ c₂ α₂ : ℝ}
+    (hP : IsStrongFEPair P) {c₁ α₁ c₂ α₂ : ℝ}
     (hc₁ : 0 < c₁) (hα₁ : 0 < α₁) (hc₂ : 0 < c₂) (hα₂ : 0 < α₂)
-    (hf : ∀ u ∈ Ioi 1, ‖P.f u‖ ≤ C₁ * exp (-c₁ * u ^ α₁))
-    (hg : ∀ u ∈ Ioi 1, ‖P.g u‖ ≤ C₂ * exp (-c₂ * u ^ α₂)) (a b : ℝ) :
+    (hf : P.f =O[atTop] fun u ↦ exp (-c₁ * u ^ α₁))
+    (hg : P.g =O[atTop] fun u ↦ exp (-c₂ * u ^ α₂)) (a b : ℝ) :
     ∃ M, ∀ s : ℂ, s.re ∈ Icc a b → ‖P.Λ s‖ ≤ M := by
   rw [hP.Λ_eq_Λ₀]
   exact P.exists_norm_Λ₀_le_of_re_mem_Icc hc₁ hα₁ hc₂ hα₂
     (by simpa [hP.hf₀] using hf) (by simpa [hP.hg₀] using hg) a b
 
-/-- For a complex strong functional-equation pair, exponential decay of `f` and `g` gives
-vertical-strip growth of `Λ`. -/
+/-- For a complex strong functional-equation pair, stretched-exponential decay of `f` and `g`
+gives vertical-strip growth of `Λ`. -/
 theorem _root_.IsStrongFEPair.hasVerticalStripGrowth_Λ {P : WeakFEPair ℂ} (hP : IsStrongFEPair P)
-    {C₁ c₁ α₁ C₂ c₂ α₂ : ℝ} (hc₁ : 0 < c₁) (hα₁ : 0 < α₁) (hc₂ : 0 < c₂) (hα₂ : 0 < α₂)
-    (hf : ∀ u ∈ Ioi 1, ‖P.f u‖ ≤ C₁ * exp (-c₁ * u ^ α₁))
-    (hg : ∀ u ∈ Ioi 1, ‖P.g u‖ ≤ C₂ * exp (-c₂ * u ^ α₂)) :
+    {c₁ α₁ c₂ α₂ : ℝ} (hc₁ : 0 < c₁) (hα₁ : 0 < α₁) (hc₂ : 0 < c₂) (hα₂ : 0 < α₂)
+    (hf : P.f =O[atTop] fun u ↦ exp (-c₁ * u ^ α₁))
+    (hg : P.g =O[atTop] fun u ↦ exp (-c₂ * u ^ α₂)) :
     HasVerticalStripGrowth P.Λ :=
   hasVerticalStripGrowth_of_forall_bound
     (hP.exists_norm_Λ_le_of_re_mem_Icc hc₁ hα₁ hc₂ hα₂ hf hg)
@@ -359,164 +329,168 @@ end Strong
 
 namespace FEPairWithLevel
 
-private theorem norm_toWeakFEPair_g_sub_le (P : FEPairWithLevel E) {C₂ c₂ α₂ : ℝ}
-    (hg : ∀ u ∈ Ioi 1, ‖P.g u - P.g₀‖ ≤ C₂ * exp (-c₂ * u ^ α₂)) :
-    ∀ u ∈ Ioi P.N, ‖P.toWeakFEPair.g u - P.toWeakFEPair.g₀‖ ≤
-      C₂ * exp (-(c₂ / P.N ^ α₂) * u ^ α₂) := by
-  intro u hu
-  rw [toWeakFEPair_g, toWeakFEPair_g₀]
-  have huN : 1 < u / P.N := (one_lt_div P.hN).mpr hu
-  have hu0 : 0 ≤ u := P.hN.le.trans hu.le
-  refine (hg (u / P.N) huN).trans_eq ?_
-  congr 2
-  rw [div_rpow hu0 P.hN.le]
+private theorem isBigO_comp_div_exp_neg_mul_rpow (P : FEPairWithLevel E) {h : ℝ → E} {c α : ℝ}
+    (hh : h =O[atTop] fun u ↦ exp (-c * u ^ α)) :
+    (fun u ↦ h (u / P.N)) =O[atTop] fun u ↦ exp (-(c / P.N ^ α) * u ^ α) := by
+  refine (hh.comp_tendsto (tendsto_id.atTop_div_const P.hN)).congr' .rfl ?_
+  filter_upwards [eventually_ge_atTop (0 : ℝ)] with u hu
+  simp only [Function.comp_apply, id_eq]
+  congr 1
+  rw [div_rpow hu P.hN.le]
   ring
 
-/-- Stretched-exponential decay of `f - f₀` and `g - g₀` on `(1, ∞)` gives a global
-logarithmic-exponential bound for the entire part `toWeakFEPair.Λ₀` at any positive level `N`,
-including when `N > 1` shifts the dual tail threshold to `N`. -/
+/-- Stretched-exponential decay of `f - f₀` and `g - g₀` gives a global logarithmic-exponential
+bound for the entire part `toWeakFEPair.Λ₀` at any positive level `N`. -/
 theorem exists_norm_toWeakFEPair_Λ₀_le_exp_mul_log (P : FEPairWithLevel E)
-    {C₁ c₁ α₁ C₂ c₂ α₂ : ℝ}
-    (hc₁ : 0 < c₁) (hα₁ : 0 < α₁) (hc₂ : 0 < c₂) (hα₂ : 0 < α₂)
-    (hf : ∀ u ∈ Ioi 1, ‖P.f u - P.f₀‖ ≤ C₁ * exp (-c₁ * u ^ α₁))
-    (hg : ∀ u ∈ Ioi 1, ‖P.g u - P.g₀‖ ≤ C₂ * exp (-c₂ * u ^ α₂)) :
+    {c₁ α₁ c₂ α₂ : ℝ} (hc₁ : 0 < c₁) (hα₁ : 0 < α₁) (hc₂ : 0 < c₂) (hα₂ : 0 < α₂)
+    (hf : (fun u ↦ P.f u - P.f₀) =O[atTop] fun u ↦ exp (-c₁ * u ^ α₁))
+    (hg : (fun u ↦ P.g u - P.g₀) =O[atTop] fun u ↦ exp (-c₂ * u ^ α₂)) :
     ∃ C > 0, ∀ s : ℂ, ‖P.toWeakFEPair.Λ₀ s‖ ≤ exp (C * (1 + ‖s‖) * log (2 + ‖s‖)) :=
-  P.toWeakFEPair.exists_norm_Λ₀_le_exp_mul_log_of_Ioi hc₁ hα₁
+  P.toWeakFEPair.exists_norm_Λ₀_le_exp_mul_log hc₁ hα₁
     (div_pos hc₂ (rpow_pos_of_pos P.hN α₂)) hα₂ (by simpa using hf)
-    (norm_toWeakFEPair_g_sub_le P hg)
+    (by simpa using isBigO_comp_div_exp_neg_mul_rpow P hg)
 
-/-- At any positive level, `toWeakFEPair.Λ₀` has order at most one when both kernels have
-stretched-exponential tails on `(1, ∞)`. -/
+/-- At any positive level, `toWeakFEPair.Λ₀` has order at most one when both kernel tails decay
+stretched-exponentially. -/
 theorem orderLE_toWeakFEPair_Λ₀ (P : FEPairWithLevel ℂ)
-    {C₁ c₁ α₁ C₂ c₂ α₂ : ℝ}
-    (hc₁ : 0 < c₁) (hα₁ : 0 < α₁) (hc₂ : 0 < c₂) (hα₂ : 0 < α₂)
-    (hf : ∀ u ∈ Ioi 1, ‖P.f u - P.f₀‖ ≤ C₁ * exp (-c₁ * u ^ α₁))
-    (hg : ∀ u ∈ Ioi 1, ‖P.g u - P.g₀‖ ≤ C₂ * exp (-c₂ * u ^ α₂)) :
-    OrderLE P.toWeakFEPair.Λ₀ 1 := by
-  obtain ⟨C, _, hC⟩ := P.exists_norm_toWeakFEPair_Λ₀_le_exp_mul_log hc₁ hα₁ hc₂ hα₂ hf hg
-  exact orderLE_one_of_norm_le_exp_mul_log hC
+    {c₁ α₁ c₂ α₂ : ℝ} (hc₁ : 0 < c₁) (hα₁ : 0 < α₁) (hc₂ : 0 < c₂) (hα₂ : 0 < α₂)
+    (hf : (fun u ↦ P.f u - P.f₀) =O[atTop] fun u ↦ exp (-c₁ * u ^ α₁))
+    (hg : (fun u ↦ P.g u - P.g₀) =O[atTop] fun u ↦ exp (-c₂ * u ^ α₂)) :
+    OrderLE P.toWeakFEPair.Λ₀ 1 :=
+  P.toWeakFEPair.orderLE_Λ₀ hc₁ hα₁
+    (div_pos hc₂ (rpow_pos_of_pos P.hN α₂)) hα₂ (by simpa using hf)
+    (by simpa using isBigO_comp_div_exp_neg_mul_rpow P hg)
 
 /-- At any positive level, `toWeakFEPair.Λ₀` is bounded on every closed vertical strip
-`a ≤ Re s ≤ b` when both kernels have stretched-exponential tails on `(1, ∞)`. -/
+`a ≤ Re s ≤ b` when both kernel tails decay stretched-exponentially. -/
 theorem exists_norm_toWeakFEPair_Λ₀_le_of_re_mem_Icc (P : FEPairWithLevel E)
-    {C₁ c₁ α₁ C₂ c₂ α₂ : ℝ} (hc₁ : 0 < c₁) (hα₁ : 0 < α₁) (hc₂ : 0 < c₂) (hα₂ : 0 < α₂)
-    (hf : ∀ u ∈ Ioi 1, ‖P.f u - P.f₀‖ ≤ C₁ * exp (-c₁ * u ^ α₁))
-    (hg : ∀ u ∈ Ioi 1, ‖P.g u - P.g₀‖ ≤ C₂ * exp (-c₂ * u ^ α₂)) (a b : ℝ) :
+    {c₁ α₁ c₂ α₂ : ℝ} (hc₁ : 0 < c₁) (hα₁ : 0 < α₁) (hc₂ : 0 < c₂) (hα₂ : 0 < α₂)
+    (hf : (fun u ↦ P.f u - P.f₀) =O[atTop] fun u ↦ exp (-c₁ * u ^ α₁))
+    (hg : (fun u ↦ P.g u - P.g₀) =O[atTop] fun u ↦ exp (-c₂ * u ^ α₂)) (a b : ℝ) :
     ∃ M, ∀ s : ℂ, s.re ∈ Icc a b → ‖P.toWeakFEPair.Λ₀ s‖ ≤ M :=
-  P.toWeakFEPair.exists_norm_Λ₀_le_of_re_mem_Icc_of_Ioi hc₁ hα₁
+  P.toWeakFEPair.exists_norm_Λ₀_le_of_re_mem_Icc hc₁ hα₁
     (div_pos hc₂ (rpow_pos_of_pos P.hN α₂)) hα₂ (by simpa using hf)
-    (norm_toWeakFEPair_g_sub_le P hg) a b
+    (by simpa using isBigO_comp_div_exp_neg_mul_rpow P hg) a b
 
-/-- At any positive level, `toWeakFEPair.Λ₀` has vertical-strip growth when both kernels have
-stretched-exponential tails on `(1, ∞)`. -/
+/-- At any positive level, `toWeakFEPair.Λ₀` has vertical-strip growth when both kernel tails
+decay stretched-exponentially. -/
 theorem hasVerticalStripGrowth_toWeakFEPair_Λ₀ (P : FEPairWithLevel ℂ)
-    {C₁ c₁ α₁ C₂ c₂ α₂ : ℝ} (hc₁ : 0 < c₁) (hα₁ : 0 < α₁) (hc₂ : 0 < c₂) (hα₂ : 0 < α₂)
-    (hf : ∀ u ∈ Ioi 1, ‖P.f u - P.f₀‖ ≤ C₁ * exp (-c₁ * u ^ α₁))
-    (hg : ∀ u ∈ Ioi 1, ‖P.g u - P.g₀‖ ≤ C₂ * exp (-c₂ * u ^ α₂)) :
+    {c₁ α₁ c₂ α₂ : ℝ} (hc₁ : 0 < c₁) (hα₁ : 0 < α₁) (hc₂ : 0 < c₂) (hα₂ : 0 < α₂)
+    (hf : (fun u ↦ P.f u - P.f₀) =O[atTop] fun u ↦ exp (-c₁ * u ^ α₁))
+    (hg : (fun u ↦ P.g u - P.g₀) =O[atTop] fun u ↦ exp (-c₂ * u ^ α₂)) :
     HasVerticalStripGrowth P.toWeakFEPair.Λ₀ :=
-  hasVerticalStripGrowth_of_forall_bound
-    (P.exists_norm_toWeakFEPair_Λ₀_le_of_re_mem_Icc hc₁ hα₁ hc₂ hα₂ hf hg)
+  P.toWeakFEPair.hasVerticalStripGrowth_Λ₀ hc₁ hα₁
+    (div_pos hc₂ (rpow_pos_of_pos P.hN α₂)) hα₂ (by simpa using hf)
+    (by simpa using isBigO_comp_div_exp_neg_mul_rpow P hg)
 
-/-- With zero constant terms, stretched-exponential decay of `f` and `g` on `(1, ∞)` gives a global
+/-- With zero constant terms, stretched-exponential decay of `f` and `g` gives a global
 logarithmic-exponential bound directly on `Λ` at any positive level. -/
 theorem exists_norm_Λ_le_exp_mul_log_of_constants_eq_zero (P : FEPairWithLevel E)
-    (hf₀ : P.f₀ = 0) (hg₀ : P.g₀ = 0) {C₁ c₁ α₁ C₂ c₂ α₂ : ℝ}
+    (hf₀ : P.f₀ = 0) (hg₀ : P.g₀ = 0) {c₁ α₁ c₂ α₂ : ℝ}
     (hc₁ : 0 < c₁) (hα₁ : 0 < α₁) (hc₂ : 0 < c₂) (hα₂ : 0 < α₂)
-    (hf : ∀ u ∈ Ioi 1, ‖P.f u‖ ≤ C₁ * exp (-c₁ * u ^ α₁))
-    (hg : ∀ u ∈ Ioi 1, ‖P.g u‖ ≤ C₂ * exp (-c₂ * u ^ α₂)) :
+    (hf : P.f =O[atTop] fun u ↦ exp (-c₁ * u ^ α₁))
+    (hg : P.g =O[atTop] fun u ↦ exp (-c₂ * u ^ α₂)) :
     ∃ C > 0, ∀ s : ℂ, ‖P.Λ s‖ ≤ exp (C * (1 + ‖s‖) * log (2 + ‖s‖)) := by
-  rw [P.Λ_eq_toWeakFEPair_Λ₀_of_constants_eq_zero hf₀ hg₀]
-  exact P.exists_norm_toWeakFEPair_Λ₀_le_exp_mul_log hc₁ hα₁ hc₂ hα₂
-    (by simpa [hf₀] using hf) (by simpa [hg₀] using hg)
+  have hP : IsStrongFEPair P.toWeakFEPair := ⟨by simpa using hf₀, by simpa using hg₀⟩
+  simpa only [toWeakFEPair_Λ] using hP.exists_norm_Λ_le_exp_mul_log hc₁ hα₁
+    (div_pos hc₂ (rpow_pos_of_pos P.hN α₂)) hα₂ (by simpa using hf)
+    (by simpa [Function.comp_def] using isBigO_comp_div_exp_neg_mul_rpow P hg)
 
-/-- With zero constant terms, stretched-exponential decay of `f` and `g` on `(1, ∞)` implies that
-`Λ` has order at most one at any positive level. -/
+/-- With zero constant terms, stretched-exponential decay of `f` and `g` implies that `Λ` has
+order at most one at any positive level. -/
 theorem orderLE_Λ_of_constants_eq_zero (P : FEPairWithLevel ℂ)
-    (hf₀ : P.f₀ = 0) (hg₀ : P.g₀ = 0) {C₁ c₁ α₁ C₂ c₂ α₂ : ℝ}
+    (hf₀ : P.f₀ = 0) (hg₀ : P.g₀ = 0) {c₁ α₁ c₂ α₂ : ℝ}
     (hc₁ : 0 < c₁) (hα₁ : 0 < α₁) (hc₂ : 0 < c₂) (hα₂ : 0 < α₂)
-    (hf : ∀ u ∈ Ioi 1, ‖P.f u‖ ≤ C₁ * exp (-c₁ * u ^ α₁))
-    (hg : ∀ u ∈ Ioi 1, ‖P.g u‖ ≤ C₂ * exp (-c₂ * u ^ α₂)) :
+    (hf : P.f =O[atTop] fun u ↦ exp (-c₁ * u ^ α₁))
+    (hg : P.g =O[atTop] fun u ↦ exp (-c₂ * u ^ α₂)) :
     OrderLE P.Λ 1 := by
-  obtain ⟨C, _, hC⟩ :=
-    P.exists_norm_Λ_le_exp_mul_log_of_constants_eq_zero hf₀ hg₀ hc₁ hα₁ hc₂ hα₂ hf hg
-  exact orderLE_one_of_norm_le_exp_mul_log hC
+  have hP : IsStrongFEPair P.toWeakFEPair := ⟨by simpa using hf₀, by simpa using hg₀⟩
+  simpa only [toWeakFEPair_Λ] using hP.orderLE_Λ hc₁ hα₁
+    (div_pos hc₂ (rpow_pos_of_pos P.hN α₂)) hα₂ (by simpa using hf)
+    (by simpa [Function.comp_def] using isBigO_comp_div_exp_neg_mul_rpow P hg)
 
-/-- With zero constant terms, stretched-exponential decay of `f` and `g` on `(1, ∞)` implies that
-`Λ` has finite order at any positive level. -/
+/-- With zero constant terms, stretched-exponential decay of `f` and `g` implies that `Λ` has
+finite order at any positive level. -/
 theorem isFiniteOrder_Λ_of_constants_eq_zero (P : FEPairWithLevel ℂ)
-    (hf₀ : P.f₀ = 0) (hg₀ : P.g₀ = 0) {C₁ c₁ α₁ C₂ c₂ α₂ : ℝ}
+    (hf₀ : P.f₀ = 0) (hg₀ : P.g₀ = 0) {c₁ α₁ c₂ α₂ : ℝ}
     (hc₁ : 0 < c₁) (hα₁ : 0 < α₁) (hc₂ : 0 < c₂) (hα₂ : 0 < α₂)
-    (hf : ∀ u ∈ Ioi 1, ‖P.f u‖ ≤ C₁ * exp (-c₁ * u ^ α₁))
-    (hg : ∀ u ∈ Ioi 1, ‖P.g u‖ ≤ C₂ * exp (-c₂ * u ^ α₂)) :
-    IsFiniteOrder P.Λ :=
-  (P.orderLE_Λ_of_constants_eq_zero hf₀ hg₀ hc₁ hα₁ hc₂ hα₂ hf hg).isFiniteOrder
+    (hf : P.f =O[atTop] fun u ↦ exp (-c₁ * u ^ α₁))
+    (hg : P.g =O[atTop] fun u ↦ exp (-c₂ * u ^ α₂)) :
+    IsFiniteOrder P.Λ := by
+  have hP : IsStrongFEPair P.toWeakFEPair := ⟨by simpa using hf₀, by simpa using hg₀⟩
+  simpa only [toWeakFEPair_Λ] using hP.isFiniteOrder_Λ hc₁ hα₁
+    (div_pos hc₂ (rpow_pos_of_pos P.hN α₂)) hα₂ (by simpa using hf)
+    (by simpa [Function.comp_def] using isBigO_comp_div_exp_neg_mul_rpow P hg)
 
-/-- With zero constant terms, stretched-exponential decay of `f` and `g` on `(1, ∞)` implies that
-`Λ` is bounded on every closed vertical strip `a ≤ Re s ≤ b`. -/
+/-- With zero constant terms, stretched-exponential decay of `f` and `g` implies that `Λ` is
+bounded on every closed vertical strip `a ≤ Re s ≤ b`. -/
 theorem exists_norm_Λ_le_of_re_mem_Icc_of_constants_eq_zero (P : FEPairWithLevel E)
-    (hf₀ : P.f₀ = 0) (hg₀ : P.g₀ = 0) {C₁ c₁ α₁ C₂ c₂ α₂ : ℝ}
+    (hf₀ : P.f₀ = 0) (hg₀ : P.g₀ = 0) {c₁ α₁ c₂ α₂ : ℝ}
     (hc₁ : 0 < c₁) (hα₁ : 0 < α₁) (hc₂ : 0 < c₂) (hα₂ : 0 < α₂)
-    (hf : ∀ u ∈ Ioi 1, ‖P.f u‖ ≤ C₁ * exp (-c₁ * u ^ α₁))
-    (hg : ∀ u ∈ Ioi 1, ‖P.g u‖ ≤ C₂ * exp (-c₂ * u ^ α₂)) (a b : ℝ) :
+    (hf : P.f =O[atTop] fun u ↦ exp (-c₁ * u ^ α₁))
+    (hg : P.g =O[atTop] fun u ↦ exp (-c₂ * u ^ α₂)) (a b : ℝ) :
     ∃ M, ∀ s : ℂ, s.re ∈ Icc a b → ‖P.Λ s‖ ≤ M := by
-  rw [P.Λ_eq_toWeakFEPair_Λ₀_of_constants_eq_zero hf₀ hg₀]
-  exact P.exists_norm_toWeakFEPair_Λ₀_le_of_re_mem_Icc hc₁ hα₁ hc₂ hα₂
-    (by simpa [hf₀] using hf) (by simpa [hg₀] using hg) a b
+  have hP : IsStrongFEPair P.toWeakFEPair := ⟨by simpa using hf₀, by simpa using hg₀⟩
+  simpa only [toWeakFEPair_Λ] using hP.exists_norm_Λ_le_of_re_mem_Icc hc₁ hα₁
+    (div_pos hc₂ (rpow_pos_of_pos P.hN α₂)) hα₂ (by simpa using hf)
+    (by simpa [Function.comp_def] using isBigO_comp_div_exp_neg_mul_rpow P hg) a b
 
-/-- With zero constant terms, stretched-exponential decay of `f` and `g` on `(1, ∞)` gives
-vertical-strip growth of `Λ` at any positive level. -/
+/-- With zero constant terms, stretched-exponential decay of `f` and `g` gives vertical-strip
+growth of `Λ` at any positive level. -/
 theorem hasVerticalStripGrowth_Λ_of_constants_eq_zero (P : FEPairWithLevel ℂ)
-    (hf₀ : P.f₀ = 0) (hg₀ : P.g₀ = 0) {C₁ c₁ α₁ C₂ c₂ α₂ : ℝ}
+    (hf₀ : P.f₀ = 0) (hg₀ : P.g₀ = 0) {c₁ α₁ c₂ α₂ : ℝ}
     (hc₁ : 0 < c₁) (hα₁ : 0 < α₁) (hc₂ : 0 < c₂) (hα₂ : 0 < α₂)
-    (hf : ∀ u ∈ Ioi 1, ‖P.f u‖ ≤ C₁ * exp (-c₁ * u ^ α₁))
-    (hg : ∀ u ∈ Ioi 1, ‖P.g u‖ ≤ C₂ * exp (-c₂ * u ^ α₂)) :
-    HasVerticalStripGrowth P.Λ :=
-  hasVerticalStripGrowth_of_forall_bound
-    (P.exists_norm_Λ_le_of_re_mem_Icc_of_constants_eq_zero hf₀ hg₀ hc₁ hα₁ hc₂ hα₂ hf hg)
+    (hf : P.f =O[atTop] fun u ↦ exp (-c₁ * u ^ α₁))
+    (hg : P.g =O[atTop] fun u ↦ exp (-c₂ * u ^ α₂)) :
+    HasVerticalStripGrowth P.Λ := by
+  have hP : IsStrongFEPair P.toWeakFEPair := ⟨by simpa using hf₀, by simpa using hg₀⟩
+  simpa only [toWeakFEPair_Λ] using hP.hasVerticalStripGrowth_Λ hc₁ hα₁
+    (div_pos hc₂ (rpow_pos_of_pos P.hN α₂)) hα₂ (by simpa using hf)
+    (by simpa [Function.comp_def] using isBigO_comp_div_exp_neg_mul_rpow P hg)
 
-/-- Stretched-exponential decay of both kernel tails on `(1, ∞)` gives a global
-logarithmic-exponential bound for the pole-cleared entire completion `entireΛ` at level `N`. -/
+/-- Stretched-exponential decay of both kernel tails gives a global logarithmic-exponential bound
+for the pole-cleared entire completion `entireΛ` at level `N`. -/
 theorem exists_norm_entireΛ_le_exp_mul_log (P : FEPairWithLevel E)
-    {C₁ c₁ α₁ C₂ c₂ α₂ : ℝ}
-    (hc₁ : 0 < c₁) (hα₁ : 0 < α₁) (hc₂ : 0 < c₂) (hα₂ : 0 < α₂)
-    (hf : ∀ u ∈ Ioi 1, ‖P.f u - P.f₀‖ ≤ C₁ * exp (-c₁ * u ^ α₁))
-    (hg : ∀ u ∈ Ioi 1, ‖P.g u - P.g₀‖ ≤ C₂ * exp (-c₂ * u ^ α₂)) :
+    {c₁ α₁ c₂ α₂ : ℝ} (hc₁ : 0 < c₁) (hα₁ : 0 < α₁) (hc₂ : 0 < c₂) (hα₂ : 0 < α₂)
+    (hf : (fun u ↦ P.f u - P.f₀) =O[atTop] fun u ↦ exp (-c₁ * u ^ α₁))
+    (hg : (fun u ↦ P.g u - P.g₀) =O[atTop] fun u ↦ exp (-c₂ * u ^ α₂)) :
     ∃ C > 0, ∀ s : ℂ, ‖P.entireΛ s‖ ≤ exp (C * (1 + ‖s‖) * log (2 + ‖s‖)) := by
-  rw [← toWeakFEPair_entireΛ]
-  exact P.toWeakFEPair.exists_norm_entireΛ_le_exp_mul_log_of_Λ₀
-    (P.exists_norm_toWeakFEPair_Λ₀_le_exp_mul_log hc₁ hα₁ hc₂ hα₂ hf hg)
+  simpa only [toWeakFEPair_entireΛ] using P.toWeakFEPair.exists_norm_entireΛ_le_exp_mul_log hc₁ hα₁
+    (div_pos hc₂ (rpow_pos_of_pos P.hN α₂)) hα₂ (by simpa using hf)
+    (by simpa using isBigO_comp_div_exp_neg_mul_rpow P hg)
 
 /-- The pole-cleared entire completion `entireΛ` of a complex level-`N` pair has order at most one
-when both kernel tails decay stretched-exponentially on `(1, ∞)`. -/
+when both kernel tails decay stretched-exponentially. -/
 theorem orderLE_entireΛ (P : FEPairWithLevel ℂ)
-    {C₁ c₁ α₁ C₂ c₂ α₂ : ℝ}
-    (hc₁ : 0 < c₁) (hα₁ : 0 < α₁) (hc₂ : 0 < c₂) (hα₂ : 0 < α₂)
-    (hf : ∀ u ∈ Ioi 1, ‖P.f u - P.f₀‖ ≤ C₁ * exp (-c₁ * u ^ α₁))
-    (hg : ∀ u ∈ Ioi 1, ‖P.g u - P.g₀‖ ≤ C₂ * exp (-c₂ * u ^ α₂)) :
+    {c₁ α₁ c₂ α₂ : ℝ} (hc₁ : 0 < c₁) (hα₁ : 0 < α₁) (hc₂ : 0 < c₂) (hα₂ : 0 < α₂)
+    (hf : (fun u ↦ P.f u - P.f₀) =O[atTop] fun u ↦ exp (-c₁ * u ^ α₁))
+    (hg : (fun u ↦ P.g u - P.g₀) =O[atTop] fun u ↦ exp (-c₂ * u ^ α₂)) :
     OrderLE P.entireΛ 1 := by
-  obtain ⟨C, _, hC⟩ := P.exists_norm_entireΛ_le_exp_mul_log hc₁ hα₁ hc₂ hα₂ hf hg
-  exact orderLE_one_of_norm_le_exp_mul_log hC
+  simpa only [toWeakFEPair_entireΛ] using P.toWeakFEPair.orderLE_entireΛ hc₁ hα₁
+    (div_pos hc₂ (rpow_pos_of_pos P.hN α₂)) hα₂ (by simpa using hf)
+    (by simpa using isBigO_comp_div_exp_neg_mul_rpow P hg)
 
 /-- The pole-cleared entire completion `entireΛ` of a complex level-`N` pair has finite order when
-both kernel tails decay stretched-exponentially on `(1, ∞)`. -/
+both kernel tails decay stretched-exponentially. -/
 theorem isFiniteOrder_entireΛ (P : FEPairWithLevel ℂ)
-    {C₁ c₁ α₁ C₂ c₂ α₂ : ℝ}
-    (hc₁ : 0 < c₁) (hα₁ : 0 < α₁) (hc₂ : 0 < c₂) (hα₂ : 0 < α₂)
-    (hf : ∀ u ∈ Ioi 1, ‖P.f u - P.f₀‖ ≤ C₁ * exp (-c₁ * u ^ α₁))
-    (hg : ∀ u ∈ Ioi 1, ‖P.g u - P.g₀‖ ≤ C₂ * exp (-c₂ * u ^ α₂)) :
-    IsFiniteOrder P.entireΛ :=
-  (P.orderLE_entireΛ hc₁ hα₁ hc₂ hα₂ hf hg).isFiniteOrder
+    {c₁ α₁ c₂ α₂ : ℝ} (hc₁ : 0 < c₁) (hα₁ : 0 < α₁) (hc₂ : 0 < c₂) (hα₂ : 0 < α₂)
+    (hf : (fun u ↦ P.f u - P.f₀) =O[atTop] fun u ↦ exp (-c₁ * u ^ α₁))
+    (hg : (fun u ↦ P.g u - P.g₀) =O[atTop] fun u ↦ exp (-c₂ * u ^ α₂)) :
+    IsFiniteOrder P.entireΛ := by
+  simpa only [toWeakFEPair_entireΛ] using P.toWeakFEPair.isFiniteOrder_entireΛ hc₁ hα₁
+    (div_pos hc₂ (rpow_pos_of_pos P.hN α₂)) hα₂ (by simpa using hf)
+    (by simpa using isBigO_comp_div_exp_neg_mul_rpow P hg)
 
 /-- The pole-cleared entire completion `entireΛ` of a complex level-`N` pair has polynomial
-vertical-strip growth when both kernel tails decay stretched-exponentially on `(1, ∞)`. -/
+vertical-strip growth when both kernel tails decay stretched-exponentially. -/
 theorem hasVerticalStripGrowth_entireΛ (P : FEPairWithLevel ℂ)
-    {C₁ c₁ α₁ C₂ c₂ α₂ : ℝ} (hc₁ : 0 < c₁) (hα₁ : 0 < α₁) (hc₂ : 0 < c₂) (hα₂ : 0 < α₂)
-    (hf : ∀ u ∈ Ioi 1, ‖P.f u - P.f₀‖ ≤ C₁ * exp (-c₁ * u ^ α₁))
-    (hg : ∀ u ∈ Ioi 1, ‖P.g u - P.g₀‖ ≤ C₂ * exp (-c₂ * u ^ α₂)) :
+    {c₁ α₁ c₂ α₂ : ℝ} (hc₁ : 0 < c₁) (hα₁ : 0 < α₁) (hc₂ : 0 < c₂) (hα₂ : 0 < α₂)
+    (hf : (fun u ↦ P.f u - P.f₀) =O[atTop] fun u ↦ exp (-c₁ * u ^ α₁))
+    (hg : (fun u ↦ P.g u - P.g₀) =O[atTop] fun u ↦ exp (-c₂ * u ^ α₂)) :
     HasVerticalStripGrowth P.entireΛ := by
-  rw [← toWeakFEPair_entireΛ]
-  exact P.toWeakFEPair.hasVerticalStripGrowth_entireΛ_of_Λ₀
-    (P.hasVerticalStripGrowth_toWeakFEPair_Λ₀ hc₁ hα₁ hc₂ hα₂ hf hg)
+  simpa only [toWeakFEPair_entireΛ] using P.toWeakFEPair.hasVerticalStripGrowth_entireΛ hc₁ hα₁
+    (div_pos hc₂ (rpow_pos_of_pos P.hN α₂)) hα₂ (by simpa using hf)
+    (by simpa using isBigO_comp_div_exp_neg_mul_rpow P hg)
 
 end FEPairWithLevel
 

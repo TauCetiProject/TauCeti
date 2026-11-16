@@ -46,7 +46,8 @@ that of `g`. Combined with Mathlib's functional equation it gives the Mellin pri
 * `TauCeti.FEPairWithLevel.toWeakFEPair`: its transport to Mathlib's `WeakFEPair`.
 * `WeakFEPair.toFEPairWithLevel`: a weak pair presented at a given level.
 * `TauCeti.FEPairWithLevel.symm`: the pair read backwards at the same level.
-* `TauCeti.FEPairWithLevel.Λ`: the completed function, the continued Mellin transform of `f - f₀`.
+* `TauCeti.FEPairWithLevel.Λ` and `Λ_congr`: the completed function, the continued Mellin
+  transform of `f - f₀`, and its extensionality in terms of `f` on `(0, ∞)` and the constants.
 * `TauCeti.FEPairWithLevel.hasMellin`, `differentiableAt_Λ`, `Λ_residue_zero`, `Λ_residue_k`:
   its Mellin representation, regularity and residues.
 * `TauCeti.FEPairWithLevel.meromorphic_Λ`, `analyticAt_Λ_iff`, `meromorphicOrderAt_Λ_zero`
@@ -58,8 +59,8 @@ that of `g`. Combined with Mathlib's functional equation it gives the Mellin pri
   the completed function of `g`.
 * `TauCeti.FEPairWithLevel.Λ_eq` and `Λ_eventuallyEq`: the functional equation at level `N`, off
   the poles and as an equality of punctured germs at every point.
-* `TauCeti.FEPairWithLevel.entireΛ` and `entireΛ_eq`: the pole-cleared entire completion at
-  level `N` and its global functional equation on all of `ℂ`.
+* `TauCeti.FEPairWithLevel.entireΛ`, `entireΛ_congr`, and `entireΛ_eq`: the pole-cleared entire
+  completion at level `N`, its extensionality, and its global functional equation on all of `ℂ`.
 
 ## References
 
@@ -328,6 +329,14 @@ def Λ : ℂ → E := P.toWeakFEPair.Λ
 @[simp]
 theorem toWeakFEPair_Λ : P.toWeakFEPair.Λ = P.Λ := (rfl)
 
+/-- Two level pairs whose functions `f` agree on `(0, ∞)`, with the same weight, constant terms,
+and effective root number `ε N ^ (-k)`, have the same completed function `Λ`. -/
+theorem Λ_congr {P Q : FEPairWithLevel E} (hf : EqOn P.f Q.f (Ioi 0)) (hk : P.k = Q.k)
+    (hε : P.ε * (P.N : ℂ) ^ (-(P.k : ℂ)) = Q.ε * (Q.N : ℂ) ^ (-(Q.k : ℂ)))
+    (hf₀ : P.f₀ = Q.f₀) (hg₀ : P.g₀ = Q.g₀) : P.Λ = Q.Λ := by
+  refine WeakFEPair.Λ_congr hf hk ?_ hf₀ hg₀
+  simpa only [toWeakFEPair_ε, ofReal_cpow P.hN.le, ofReal_cpow Q.hN.le, ofReal_neg] using hε
+
 /-- A weak pair presented at any level keeps its completed function: presentation followed by
 transport changes both functions only at nonpositive inputs, which the Mellin transform does not
 see. -/
@@ -476,6 +485,14 @@ theorem entireΛ_def (s : ℂ) :
       s • ((P.ε * (P.N : ℂ) ^ (-(P.k : ℂ))) • P.g₀) := by
   rw [← toWeakFEPair_entireΛ, WeakFEPair.entireΛ_def, toWeakFEPair_k, toWeakFEPair_f₀,
     toWeakFEPair_g₀, toWeakFEPair_ε, ofReal_cpow P.hN.le, ofReal_neg]
+
+/-- Two level pairs whose functions `f` agree on `(0, ∞)`, with the same weight, constant terms,
+and effective root number `ε N ^ (-k)`, have the same pole-cleared entire completion `entireΛ`. -/
+theorem entireΛ_congr {P Q : FEPairWithLevel E} (hf : EqOn P.f Q.f (Ioi 0)) (hk : P.k = Q.k)
+    (hε : P.ε * (P.N : ℂ) ^ (-(P.k : ℂ)) = Q.ε * (Q.N : ℂ) ^ (-(Q.k : ℂ)))
+    (hf₀ : P.f₀ = Q.f₀) (hg₀ : P.g₀ = Q.g₀) : P.entireΛ = Q.entireΛ := by
+  refine WeakFEPair.entireΛ_congr hf hk ?_ hf₀ hg₀
+  simpa only [toWeakFEPair_ε, ofReal_cpow P.hN.le, ofReal_cpow Q.hN.le, ofReal_neg] using hε
 
 /-- Presenting a weak pair at any positive level preserves its pole-cleared entire completion. -/
 @[simp]

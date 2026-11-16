@@ -188,7 +188,7 @@ theorem hasVerticalStripGrowth_natCast_cpow_ofReal_mul {n : ℕ} (hn : n ≠ 0) 
     hasVerticalStripGrowth_cexp_ofReal_mul
 
 /-- The identity function has vertical-strip growth. -/
-@[to_fun (attr := simp)]
+@[to_fun (attr := simp) hasVerticalStripGrowth_fun_id]
 theorem hasVerticalStripGrowth_id : HasVerticalStripGrowth id := by
   intro a b _
   refine ⟨max |a| |b| + 1, by positivity, 1, zero_le_one, 0, le_rfl, fun s hs _ ↦ ?_⟩
