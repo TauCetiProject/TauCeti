@@ -120,11 +120,24 @@ theorem orientedUnitNormal_comp_const_sub (o : Orientation I M (Fin 2)) (γ : �
   rw [orientedUnitNormal_apply, orientedUnitNormal_apply, curveVelocity_comp_const_sub,
     NormedSpace.normalize_neg, map_neg]
 
+/-- Normalizing and rotating tangent vectors at equal base points gives equal model vectors
+when the original vectors agree in the model space. -/
+theorem Orientation.rightAngleRotation_normalize_tangentSpace_congr
+    (o : Orientation I M (Fin 2)) {p q : M} (hp : p = q)
+    {v : TangentSpace I p} {w : TangentSpace I q} (hv : (v : E) = w) :
+    (letI := o.fact_finrank_tangentSpace p;
+      ((o.orientationAt p).rightAngleRotation (NormedSpace.normalize v) : E)) =
+    (letI := o.fact_finrank_tangentSpace q;
+      (o.orientationAt q).rightAngleRotation (NormedSpace.normalize w)) := by
+  subst hp hv
+  rfl
+
 /-- Curves agreeing near a parameter have the same oriented unit normal there. -/
 theorem _root_.Filter.EventuallyEq.orientedUnitNormal_eq
     {γ η : ℝ → M} {t : ℝ} (h : γ =ᶠ[nhds t] η) (o : Orientation I M (Fin 2)) :
     orientedUnitNormal o γ t = orientedUnitNormal o η t := by
-  rw [orientedUnitNormal_apply, orientedUnitNormal_apply, h.self_of_nhds, h.curveVelocity_eq]
+  rw [orientedUnitNormal_apply, orientedUnitNormal_apply]
+  exact o.rightAngleRotation_normalize_tangentSpace_congr h.self_of_nhds h.curveVelocity_eq
 
 /-- A periodic curve has periodic oriented unit normals, compared in the model space.
 No regularity is assumed. -/
@@ -132,7 +145,8 @@ theorem _root_.Function.Periodic.orientedUnitNormal
     {γ : ℝ → M} {a : ℝ} (hper : Function.Periodic γ a) (o : Orientation I M (Fin 2)) :
     ∀ t, (orientedUnitNormal o γ (t + a) : E) = orientedUnitNormal o γ t := by
   intro t
-  rw [orientedUnitNormal_apply, orientedUnitNormal_apply, hper t, hper.curveVelocity_add]
+  rw [orientedUnitNormal_apply, orientedUnitNormal_apply]
+  exact o.rightAngleRotation_normalize_tangentSpace_congr (hper t) hper.curveVelocity_add
 
 /-- A reparametrization with positive derivative at `t` does not change the oriented unit normal
 at `t`. -/

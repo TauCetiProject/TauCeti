@@ -65,7 +65,7 @@ theorem
   intro t ht
   have heq := h.eventuallyEq_of_mem (isOpen_Ioo.mem_nhds ht)
   dsimp only
-  rw [heq.geodesicCurvature_orientedUnitNormal_eq o, heq.self_of_nhds, heq.curveVelocity_eq]
+  rw [heq.geodesicCurvature_orientedUnitNormal_eq o, heq.norm_curveVelocity_eq (I := I)]
 
 /-- Reflection `r ↦ d - r` negates the interval integral of geodesic curvature times speed
 relative to the oriented unit normal. No regularity or integrability assumptions are needed. -/
