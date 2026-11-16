@@ -8,6 +8,7 @@ module
 public import TauCeti.Algebra.Cluster.ExchangeMatrix.Compatibility
 public import TauCeti.Algebra.Cluster.ExchangeMatrix.DegreeMutation
 
+import Mathlib.Algebra.Order.Pi
 import Mathlib.Tactic.LinearCombination
 
 /-!
@@ -16,7 +17,10 @@ import Mathlib.Tactic.LinearCombination
 Starting from a square integer matrix `B₀ : Matrix K K ℤ`, mutating the principal extension
 `fromRows B₀ 1` along a finite word `w : List K` produces a mutable top block
 `matrixMutationWord (Function.Embedding.refl K) B₀ w` and a frozen bottom block `cMatrix B₀ w`,
-whose columns `cVector B₀ w j` are the `c`-vectors along `w`.
+whose columns `cVector B₀ w j` are the `c`-vectors along `w`. In cluster algebras with principal
+coefficients, `c`-vectors record the tropical initial-coefficient exponents in principal exchange
+relations and `Y`-seed patterns, while `g`-vectors record the multi-degrees and leading
+Laurent-monomial exponents of principal cluster variables in the separation formula.
 
 For finite `K`, the principal `g`-matrix `gMatrix B₀ w` starts at the identity matrix and updates
 column `k` at step `w ↦ w ++ [k]` by
@@ -26,19 +30,23 @@ with the mutable part of `degreeMutationWord` started from `Sum.elim 1.col (-B�
 `fromRows B₀ 1`, yielding the fundamental relation
 `gMatrix B₀ w * matrixMutationWord (Function.Embedding.refl K) B₀ w = B₀ * cMatrix B₀ w`.
 
-When column `k` of `cMatrix B₀ w` has coherent sign `ε ∈ {1, -1}` (`∀ i, 0 ≤ ε * cMatrix B₀ w i k`),
-the step recurrences factor through the mutable mutation matrices as
-`cMatrix B₀ (w ++ [k]) = cMatrix B₀ w * Fε` and `gMatrix B₀ (w ++ [k]) = gMatrix B₀ w * Eε`.
-Along any column-sign-coherent word from a matrix with skew-symmetrizer `s`, induction gives
-`(gMatrix B₀ w)ᵀ * diagonal s * cMatrix B₀ w = diagonal s`, determinant `(-1) ^ w.length` for
-both matrices, invertibility over `ℤ`, and nonvanishing of every row and column.
+Every row of `cMatrix B₀ w` is unconditionally nonzero. When column `k` of `cMatrix B₀ w` has
+coherent sign `ε ∈ {1, -1}` (`∀ i, 0 ≤ ε * cMatrix B₀ w i k`), `cMatrix` right-multiplies by `Fε`
+with no diagonal hypothesis, and when `B_w k k = 0` and `G_w * B_w = B₀ * C_w` also hold, `gMatrix`
+right-multiplies by `Eε`. Along any column-sign-coherent word, the `c`-vectors are linearly
+independent over `ℤ` (hence nonzero) and satisfy the principal exchange-monomial exponent dichotomy
+for arbitrary `K`, and for finite `K`, `cMatrix B₀ w` has determinant `(-1) ^ w.length` and is
+unimodular over `ℤ`. When the mutable diagonal also vanishes at each step along a
+column-sign-coherent word, `gMatrix B₀ w` likewise has determinant `(-1) ^ w.length`, is unimodular
+over `ℤ` with nonzero rows and `g`-vectors, and satisfies Nakanishi–Zelevinsky tropical duality
+`(gMatrix B₀ w)ᵀ * diagonal s * cMatrix B₀ w = diagonal s` for any skew-symmetrizer `s` of `B₀`.
 
 ## References
 
-* S. Fomin and A. Zelevinsky, *Cluster algebras IV: Coefficients*, Compos. Math. 143 (2007),
-  §§2, 6, Proposition 6.6 and (6.14).
-* T. Nakanishi and A. Zelevinsky, *On tropical dualities in cluster algebras*, Contemp. Math. 565
-  (2012), Theorem 1.2, Proposition 1.3 and (2.7).
+* S. Fomin and A. Zelevinsky, *Cluster algebras IV: Coefficients*, Compositio Mathematica 143
+  (2007), §§2, 6, Proposition 6.6 and (6.14).
+* T. Nakanishi and A. Zelevinsky, *On tropical dualities in cluster algebras*, Contemporary
+  Mathematics 565 (2012), Theorem 1.2, Proposition 1.3 and (2.7).
 -/
 
 public section
@@ -46,6 +54,24 @@ public section
 namespace TauCeti
 
 open Matrix
+
+section Helpers
+
+variable {K : Type*}
+
+private theorem forall_append_singleton_left {P : List K → K → Prop} {u : List K} {k : K}
+    (h : ∀ a l b, u ++ [k] = a ++ l :: b → P a l) :
+    ∀ a l b, u = a ++ l :: b → P a l :=
+  fun a l b hu ↦ h a l (b ++ [k]) (by simp [hu])
+
+private theorem exists_unit_sign_of_nonneg_or_nonpos {v : K → ℤ}
+    (hv : (∀ i, 0 ≤ v i) ∨ ∀ i, v i ≤ 0) :
+    ∃ ε : ℤ, (ε = 1 ∨ ε = -1) ∧ ∀ i, 0 ≤ ε * v i := by
+  rcases hv with hpos | hneg
+  · exact ⟨1, Or.inl rfl, fun i ↦ by simpa using hpos i⟩
+  · exact ⟨-1, Or.inr rfl, fun i ↦ by linarith [hneg i]⟩
+
+end Helpers
 
 section CMatrix
 
@@ -92,13 +118,13 @@ theorem matrixMutationWord_fromRows_one :
       fromRows (matrixMutationWord (Function.Embedding.refl K) B₀ w) (cMatrix B₀ w) := by
   have hsub : (fromRows B₀ (1 : Matrix K K ℤ)).submatrix Function.Embedding.inl id = B₀ := by
     ext i j
-    rfl
+    simp
   have htop := matrixMutationWord_refl_submatrix_row Function.Embedding.inl
     (fromRows B₀ (1 : Matrix K K ℤ)) w
   rw [hsub] at htop
   ext (i | i) j
-  · exact congrArg (fun M ↦ M i j) htop.symm
-  · rfl
+  · simpa using (congrArg (fun M ↦ M i j) htop).symm
+  · simp [cMatrix_apply]
 
 @[simp]
 theorem cMatrix_nil : cMatrix B₀ [] = 1 := by
@@ -106,9 +132,9 @@ theorem cMatrix_nil : cMatrix B₀ [] = 1 := by
   simp only [cMatrix_apply, matrixMutationWord_nil, fromRows_apply_inr]
 
 @[simp]
-theorem cVector_nil (j : K) : cVector B₀ [] j = (1 : Matrix K K ℤ).col j := by
+theorem cVector_nil (j : K) : cVector B₀ [] j = Pi.single j 1 := by
   ext i
-  simp
+  by_cases h : i = j <;> simp [h]
 
 /-- Single-step recurrence for `cMatrix` on appending a direction `k`. -/
 theorem cMatrix_append_singleton_apply (k i j : K) :
@@ -122,7 +148,7 @@ theorem cMatrix_append_singleton_apply (k i j : K) :
   by_cases hj : j = k <;> simp [hj]
 
 @[simp]
-theorem cMatrix_append_singleton_col (k i : K) :
+theorem cMatrix_append_singleton_apply_col (k i : K) :
     cMatrix B₀ (w ++ [k]) i k = -cMatrix B₀ w i k := by
   rw [cMatrix_append_singleton_apply]
   simp
@@ -133,12 +159,23 @@ theorem cVector_append_singleton_self (k : K) :
   ext i
   simp
 
-theorem cMatrix_append_singleton_of_ne (k i : K) {j : K} (hj : j ≠ k) :
+theorem cMatrix_append_singleton_apply_of_ne (k i : K) {j : K} (hj : j ≠ k) :
     cMatrix B₀ (w ++ [k]) i j =
       cMatrix B₀ w i j +
         (cMatrix B₀ w i k)⁺ * (matrixMutationWord (Function.Embedding.refl K) B₀ w k j)⁺ -
         (cMatrix B₀ w i k)⁻ * (matrixMutationWord (Function.Embedding.refl K) B₀ w k j)⁻ := by
   simp [cMatrix_append_singleton_apply, hj]
+
+/-- Vector recurrence for `cVector` at a non-mutated index `j ≠ k`. -/
+theorem cVector_append_singleton_of_ne (k : K) {j : K} (hj : j ≠ k) :
+    cVector B₀ (w ++ [k]) j =
+      cVector B₀ w j +
+        (matrixMutationWord (Function.Embedding.refl K) B₀ w k j)⁺ • (cVector B₀ w k)⁺ -
+        (matrixMutationWord (Function.Embedding.refl K) B₀ w k j)⁻ • (cVector B₀ w k)⁻ := by
+  ext i
+  simp only [cVector_apply, cMatrix_append_singleton_apply_of_ne B₀ w k i hj,
+    Pi.sub_apply, Pi.add_apply, Pi.smul_apply, Pi.posPart_apply, Pi.negPart_apply, smul_eq_mul]
+  ring
 
 /-- Single-step principal `c`-matrix at `[k]` equals the positive-sign right mutation factor
 `F₁(B₀, k)`. -/
@@ -162,6 +199,25 @@ theorem cMatrix_append_cons_cons_self (u v : List K) (k : K) :
     cMatrix B₀ (u ++ k :: k :: v) = cMatrix B₀ (u ++ v) := by
   simp only [cMatrix_def, matrixMutationWord_append_cons_cons_self]
 
+/-- Every row of `cMatrix B₀ w` is nonzero, with no assumptions on `B₀` or `K`. -/
+theorem cMatrix_row_ne_zero (i : K) : cMatrix B₀ w i ≠ 0 := by
+  induction w using List.reverseRecOn with
+  | nil =>
+    intro h0
+    have hii := congrFun h0 i
+    simp at hii
+  | append_singleton u k ih =>
+    intro h0
+    apply ih
+    have hk : cMatrix B₀ u i k = 0 := by
+      have h0k := congrFun h0 k
+      simpa using h0k
+    ext j
+    by_cases hj : j = k
+    · simpa [hj] using hk
+    · have h0j := congrFun h0 j
+      simpa [cMatrix_append_singleton_apply_of_ne B₀ u k i hj, hk] using h0j
+
 /-- Simultaneous relabelling of indices transports `cMatrix` along mapped words. -/
 theorem cMatrix_reindex [DecidableEq K'] (e : K ≃ K') :
     cMatrix (B₀.reindex e e) (w.map e) = (cMatrix B₀ w).reindex e e := by
@@ -174,7 +230,7 @@ theorem cMatrix_reindex [DecidableEq K'] (e : K ≃ K') :
     (f := e.symm.sumCongr e.symm) (g := e.symm)
     (e.symm.sumCongr e.symm).injective (fun _ ↦ rfl) (fromRows B₀ (1 : Matrix K K ℤ)) (w.map e)
   have hmap : (w.map e).map e.symm = w := by simp [List.map_map]
-  rw [← hsub, hmap] at hword
+  rw [← hsub, hmap, matrixMutationWord_fromRows_one, matrixMutationWord_fromRows_one] at hword
   ext i j
   simpa using congrArg (fun M ↦ M (Sum.inr i) j) hword
 
@@ -200,22 +256,146 @@ theorem cMatrix_fromBlocks [DecidableEq K₁] [DecidableEq K₂]
     (f := f.symm) (g := id) f.symm.injective
     (by rintro (k | k) <;> rfl)
     (fromBlocks (fromRows B₁ (1 : Matrix K₁ K₁ ℤ)) 0 0 (fromRows B₂ (1 : Matrix K₂ K₂ ℤ))) w
-  simp only [List.map_id, ← hinit, matrixMutationWord_fromBlocks] at hword
+  simp only [List.map_id, ← hinit, matrixMutationWord_fromBlocks,
+    matrixMutationWord_fromRows_one] at hword
   ext (i | i) (j | j)
   · simpa [hf₁] using congrArg (fun M ↦ M (Sum.inr (Sum.inl i)) (Sum.inl j)) hword
   · simpa [hf₁] using congrArg (fun M ↦ M (Sum.inr (Sum.inl i)) (Sum.inr j)) hword
   · simpa [hf₂] using congrArg (fun M ↦ M (Sum.inr (Sum.inr i)) (Sum.inl j)) hword
   · simpa [hf₂] using congrArg (fun M ↦ M (Sum.inr (Sum.inr i)) (Sum.inr j)) hword
 
+/-- Signed entrywise step recurrence for `cMatrix` when column `k` has coherent sign `ε ∈ {1, -1}`
+(`∀ i, 0 ≤ ε * cMatrix B₀ w i k`), requiring no finiteness or diagonal hypothesis. -/
+theorem cMatrix_append_singleton_apply_of_sign {k : K} {ε : ℤ}
+    (hε : ε = 1 ∨ ε = -1) (hsign : ∀ i, 0 ≤ ε * cMatrix B₀ w i k) (i j : K) :
+    cMatrix B₀ (w ++ [k]) i j =
+      if j = k then -cMatrix B₀ w i k
+      else cMatrix B₀ w i j +
+        cMatrix B₀ w i k * (ε * matrixMutationWord (Function.Embedding.refl K) B₀ w k j)⁺ := by
+  rw [cMatrix_append_singleton_apply]
+  by_cases hj : j = k
+  · simp [hj]
+  · simp only [hj, ↓reduceIte]
+    rcases hε with rfl | rfl
+    · have hp : 0 ≤ cMatrix B₀ w i k := by simpa using hsign i
+      rw [posPart_eq_self.mpr hp, negPart_eq_zero.mpr hp]
+      simp only [one_mul]
+      ring
+    · have hn : cMatrix B₀ w i k ≤ 0 := by linarith [hsign i]
+      rw [posPart_eq_zero.mpr hn, negPart_eq_neg.mpr hn]
+      simp only [neg_one_mul, posPart_neg]
+      ring
+
+private theorem linearIndependent_ite_update {M : Type*} [AddCommGroup M] {v : K → M}
+    (hv : LinearIndependent ℤ v) (k : K) (m : K → ℤ) :
+    LinearIndependent ℤ (fun j ↦ if j = k then -v k else v j + m j • v k) := by
+  rw [linearIndependent_iff'] at hv ⊢
+  intro s g hg
+  let f : K → ℤ := fun j ↦ if j ∈ s then g j else 0
+  let S : Finset K := insert k s
+  let c : K → ℤ := Function.update f k (-f k + ∑ j ∈ S.erase k, f j * m j)
+  have hSf : ∑ j ∈ S, f j • (if j = k then -v k else v j + m j • v k) = 0 := by
+    rw [← hg]
+    by_cases hks : k ∈ s
+    · rw [show S = s from Finset.insert_eq_of_mem hks]
+      exact Finset.sum_congr rfl fun j hj ↦ by simp [f, hj]
+    · rw [Finset.sum_insert hks]
+      simp only [f, hks, ↓reduceIte, zero_smul, zero_add]
+      exact Finset.sum_congr rfl fun j hj ↦ by simp [hj]
+  have hSc : ∑ j ∈ S, c j • v j = 0 := by
+    rw [← Finset.add_sum_erase S _ (Finset.mem_insert_self k s)] at hSf ⊢
+    simp only [↓reduceIte, smul_neg, c, Function.update_self, add_smul, neg_smul,
+      Finset.sum_smul] at hSf ⊢
+    have h1 : ∑ j ∈ S.erase k, Function.update f k (-f k + ∑ l ∈ S.erase k, f l * m l) j • v j =
+        ∑ j ∈ S.erase k, f j • v j :=
+      Finset.sum_congr rfl fun j hj ↦ by simp [(Finset.mem_erase.mp hj).1]
+    have h2 : ∑ j ∈ S.erase k, f j • (if j = k then -v k else v j + m j • v k) =
+        ∑ j ∈ S.erase k, f j • v j + ∑ j ∈ S.erase k, (f j * m j) • v k := by
+      rw [← Finset.sum_add_distrib]
+      refine Finset.sum_congr rfl fun j hj ↦ ?_
+      simp only [(Finset.mem_erase.mp hj).1, ↓reduceIte, smul_add, mul_smul]
+    rw [h1]
+    rw [h2] at hSf
+    abel_nf at hSf ⊢
+    exact hSf
+  have hc0 := hv S c hSc
+  intro j hj
+  by_cases hjk : j = k
+  · subst j
+    have hsum0 : ∑ l ∈ S.erase k, f l * m l = 0 :=
+      Finset.sum_eq_zero fun l hl ↦ by
+        have hcl := hc0 l (Finset.mem_of_mem_erase hl)
+        simp [c, (Finset.mem_erase.mp hl).1] at hcl
+        simp [hcl]
+    have hck := hc0 k (Finset.mem_insert_self k s)
+    rw [show c k = -f k + ∑ l ∈ S.erase k, f l * m l from Function.update_self .., hsum0] at hck
+    simpa [f, hj] using hck
+  · simpa [c, hjk, f, hj] using hc0 j (Finset.mem_insert_of_mem hj)
+
+/-- Along any column-sign-coherent word, the family of `c`-vectors `cVector B₀ w` is linearly
+independent over `ℤ`, with no finiteness or vanishing-diagonal hypothesis. -/
+theorem linearIndependent_cVector_of_signCoherent
+    (hc : ∀ u k v, w = u ++ k :: v →
+      (∀ i, 0 ≤ cMatrix B₀ u i k) ∨ ∀ i, cMatrix B₀ u i k ≤ 0) :
+    LinearIndependent ℤ (cVector B₀ w) := by
+  induction w using List.reverseRecOn with
+  | nil =>
+    rw [linearIndependent_iff']
+    intro s g hg j hj
+    have h := congrFun hg j
+    simp only [Finset.sum_apply, Pi.smul_apply, cVector_nil, Pi.single_apply,
+      smul_eq_mul, mul_ite, mul_one, mul_zero, Pi.zero_apply] at h
+    simpa [hj, eq_comm] using h
+  | append_singleton u k ih =>
+    obtain ⟨ε, hε, hsign⟩ := exists_unit_sign_of_nonneg_or_nonpos (hc u k [] (by simp))
+    have hstep : cVector B₀ (u ++ [k]) = fun j ↦
+        if j = k then -cVector B₀ u k
+        else cVector B₀ u j +
+          (ε * matrixMutationWord (Function.Embedding.refl K) B₀ u k j)⁺ • cVector B₀ u k := by
+      ext j i
+      rw [cVector_apply, cMatrix_append_singleton_apply_of_sign B₀ u hε hsign]
+      by_cases hj : j = k <;> simp [hj, mul_comm]
+    rw [hstep]
+    exact linearIndependent_ite_update (ih (forall_append_singleton_left hc)) k _
+
+/-- Along any column-sign-coherent word, no `c`-vector vanishes. -/
+theorem cVector_ne_zero_of_signCoherent
+    (hc : ∀ u k v, w = u ++ k :: v →
+      (∀ i, 0 ≤ cMatrix B₀ u i k) ∨ ∀ i, cMatrix B₀ u i k ≤ 0) (j : K) :
+    cVector B₀ w j ≠ 0 :=
+  (linearIndependent_cVector_of_signCoherent B₀ w hc).ne_zero j
+
+/-- Principal exchange-monomial dichotomy: along a column-sign-coherent word, if `cVector B₀ w j`
+is itself sign-coherent, then one of its positive-part and negative-part frozen-exponent vectors
+vanishes and the other is nonzero. -/
+theorem cVector_posPart_eq_zero_or_negPart_eq_zero_of_signCoherent
+    (hc : ∀ u k v, w = u ++ k :: v →
+      (∀ i, 0 ≤ cMatrix B₀ u i k) ∨ ∀ i, cMatrix B₀ u i k ≤ 0) {j : K}
+    (hj : (∀ i, 0 ≤ cVector B₀ w j i) ∨ ∀ i, cVector B₀ w j i ≤ 0) :
+    ((cVector B₀ w j)⁺ = 0 ∧ (cVector B₀ w j)⁻ ≠ 0) ∨
+      ((cVector B₀ w j)⁻ = 0 ∧ (cVector B₀ w j)⁺ ≠ 0) := by
+  have hne := cVector_ne_zero_of_signCoherent B₀ w hc j
+  rcases hj with hpos | hneg
+  · exact Or.inr ⟨negPart_eq_zero.mpr hpos,
+      fun hp ↦ hne ((posPart_eq_self.mpr hpos).symm.trans hp)⟩
+  · exact Or.inl ⟨posPart_eq_zero.mpr hneg,
+      fun hn ↦ hne (neg_eq_zero.mp ((negPart_eq_neg.mpr hneg).symm.trans hn))⟩
+
 end CMatrix
 
 namespace ExchangeMatrix
 
-variable {K : Type*} [DecidableEq K] (B : ExchangeMatrix (Function.Embedding.refl K))
+variable {K : Type*} (B : ExchangeMatrix (Function.Embedding.refl K))
+
+/-- For a square exchange matrix along `Function.Embedding.refl K`, `B.symmetrizer`
+skew-symmetrizes `B.matrix` directly without a `submatrix` wrapper. -/
+theorem matrix_isSkewSymmetrizer : B.matrix.IsSkewSymmetrizer B.symmetrizer := by
+  have h : B.matrix.submatrix (Function.Embedding.refl K) id = B.matrix := by ext; simp
+  exact h ▸ B.isSkewSymmetrizer
 
 /-- Mutating the bundled principal extension along `w` gives `(B.mutationWord w).matrix` in the
 mutable block and `cMatrix B.matrix w` in the frozen block. -/
-theorem principalExtension_mutationWord_matrix (w : List K) :
+theorem mutationWord_principalExtension_matrix [DecidableEq K] (w : List K) :
     (B.principalExtension.mutationWord w).matrix =
       fromRows (B.mutationWord w).matrix (cMatrix B.matrix w) := by
   rw [B.principalExtension.mutationWord_matrix, B.principalExtension_matrix,
@@ -225,7 +405,7 @@ end ExchangeMatrix
 
 section GMatrix
 
-variable {K K' : Type*} [DecidableEq K] [Fintype K]
+variable {K K' K₁ K₂ : Type*} [DecidableEq K] [Fintype K]
 
 private def gMatrixFold (B₀ : Matrix K K ℤ) :
     Matrix (K ⊕ K) K ℤ × Matrix K K ℤ → K → Matrix (K ⊕ K) K ℤ × Matrix K K ℤ
@@ -266,8 +446,9 @@ theorem gMatrix_nil : gMatrix B₀ [] = 1 :=
   (rfl)
 
 @[simp]
-theorem gVector_nil (j : K) : gVector B₀ [] j = (1 : Matrix K K ℤ).col j :=
-  (rfl)
+theorem gVector_nil (j : K) : gVector B₀ [] j = Pi.single j 1 := by
+  ext i
+  by_cases h : i = j <;> simp [h]
 
 /-- Single-step column update of `gMatrix` on appending a direction `k`. -/
 theorem gMatrix_append_singleton (k : K) :
@@ -285,8 +466,8 @@ theorem gMatrix_append_singleton (k : K) :
   rw [gMatrixFold, h1]
   simp only [fromRows_apply_inl, fromRows_apply_inr]
 
-@[simp]
-theorem gMatrix_append_singleton_col (k i : K) :
+/-- Entrywise recurrence for the mutated column `k` of `gMatrix B₀ (w ++ [k])`. -/
+theorem gMatrix_append_singleton_apply_col (k i : K) :
     gMatrix B₀ (w ++ [k]) i k =
       -gMatrix B₀ w i k +
         ∑ l, gMatrix B₀ w i l * (matrixMutationWord (Function.Embedding.refl K) B₀ w l k)⁺ -
@@ -294,7 +475,7 @@ theorem gMatrix_append_singleton_col (k i : K) :
   rw [gMatrix_append_singleton, updateCol_self]
 
 @[simp]
-theorem gMatrix_append_singleton_of_ne (k i : K) {j : K} (hj : j ≠ k) :
+theorem gMatrix_append_singleton_apply_of_ne (k i : K) {j : K} (hj : j ≠ k) :
     gMatrix B₀ (w ++ [k]) i j = gMatrix B₀ w i j := by
   rw [gMatrix_append_singleton, updateCol_ne hj]
 
@@ -302,78 +483,51 @@ theorem gMatrix_append_singleton_of_ne (k i : K) {j : K} (hj : j ≠ k) :
 theorem gVector_append_singleton_of_ne (k : K) {j : K} (hj : j ≠ k) :
     gVector B₀ (w ++ [k]) j = gVector B₀ w j := by
   ext i
-  exact gMatrix_append_singleton_of_ne B₀ w k i hj
+  exact gMatrix_append_singleton_apply_of_ne B₀ w k i hj
 
-/-- Vector recurrence `g'_k = -g_k + G_w *ᵥ [b_{•, k; w}]₊ - B₀ *ᵥ [c_{•, k; w}]₊` for the
+/-- Vector recurrence `g'_k = -g_k + G_w *ᵥ [b_{•, k; w}]₊ - B₀ *ᵥ [c_{k; w}]₊` for the
 mutated `g`-vector. -/
 theorem gVector_append_singleton_self (k : K) :
     gVector B₀ (w ++ [k]) k =
       -gVector B₀ w k +
-        gMatrix B₀ w *ᵥ (fun l ↦ (matrixMutationWord (Function.Embedding.refl K) B₀ w l k)⁺) -
-        B₀ *ᵥ (fun l ↦ (cVector B₀ w k l)⁺) := by
+        gMatrix B₀ w *ᵥ ((matrixMutationWord (Function.Embedding.refl K) B₀ w).col k)⁺ -
+        B₀ *ᵥ (cVector B₀ w k)⁺ := by
   ext i
-  simp [mulVec, dotProduct]
-
-/-- When `B₀ k k = 0`, the single-step principal `g`-matrix `gMatrix B₀ [k]` equals the
-positive-sign left mutation factor `E₁(B₀, k)`. -/
-theorem gMatrix_singleton {k : K} (hkk : B₀ k k = 0) :
-    gMatrix B₀ [k] = matrixMutationLeft (Function.Embedding.refl K) B₀ k 1 := by
-  have h1 (x : K) : ((if x = k then (1 : ℤ) else 0))⁺ = if x = k then 1 else 0 := by
-    by_cases hx : x = k <;> simp [hx]
-  have hcol (i : K) :
-      gMatrix B₀ [k] i k = -(if i = k then (1 : ℤ) else 0) + (B₀ i k)⁺ - B₀ i k := by
-    have hc := gMatrix_append_singleton_col B₀ [] k i
-    simpa only [List.nil_append, gMatrix_nil, matrixMutationWord_nil, cMatrix_nil,
-      Matrix.one_apply, h1, ite_mul, one_mul, zero_mul, mul_ite, mul_one, mul_zero,
-      Finset.sum_ite_eq, Finset.sum_ite_eq', Finset.mem_univ, ↓reduceIte] using hc
-  ext i j
-  by_cases hj : j = k
-  · subst j
-    rw [hcol, matrixMutationLeft_apply, Function.Embedding.refl_apply]
-    simp only [↓reduceIte]
-    by_cases hi : i = k
-    · subst i
-      simp [hkk]
-    · simp only [hi, ↓reduceIte, neg_mul, one_mul, posPart_neg]
-      linear_combination posPart_sub_negPart (B₀ i k)
-  · have hne := gMatrix_append_singleton_of_ne B₀ [] k i hj
-    simpa only [List.nil_append, gMatrix_nil,
-      matrixMutationLeft_apply_of_ne (Function.Embedding.refl K) B₀ k 1 i hj] using hne
+  simp [gMatrix_append_singleton_apply_col, mulVec, dotProduct]
 
 /-- The initial principal grading `Sum.elim 1.col (-B₀.col)` annihilates every mutable column of
 the principal extension `fromRows B₀ 1`. -/
-theorem sum_fromRows_one_smul_principalGrading (j : K) :
+theorem sum_fromRows_one_smul_elim_col_eq_zero (j : K) :
     ∑ a : K ⊕ K, fromRows B₀ (1 : Matrix K K ℤ) a j •
       Sum.elim (1 : Matrix K K ℤ).col (-B₀.col) a = 0 := by
   ext i
   simp [Fintype.sum_sum_type, Finset.sum_apply, Matrix.col_apply, Matrix.one_apply, mul_ite]
 
-/-- When the mutable diagonal entry vanishes at each step of `w`, propagating the initial principal
-grading `Sum.elim 1.col (-B₀.col)` on `fromRows B₀ 1` produces the columns of `gMatrix B₀ w` on
-mutable indices and `-B₀.col` on frozen indices. -/
-theorem degreeMutationWord_fromRows_one
+omit [Fintype K] in
+private theorem matrixMutationWord_fromRows_one_inl_eq_zero {B₀ : Matrix K K ℤ} {w : List K}
+    (hdiag : ∀ u k v, w = u ++ k :: v →
+      matrixMutationWord (Function.Embedding.refl K) B₀ u k k = 0) :
+    ∀ u k v, w = u ++ k :: v →
+      matrixMutationWord Function.Embedding.inl
+        (fromRows B₀ (1 : Matrix K K ℤ)) u (Sum.inl k) k = 0 := by
+  intro u k v hw
+  rw [matrixMutationWord_fromRows_one]
+  exact hdiag u k v hw
+
+/-- When the mutable diagonal entry vanishes at each step of `w`, propagating `Sum.elim 1.col
+(-B₀.col)` on `fromRows B₀ 1` produces `(gMatrix B₀ w).col` on mutable indices and `-B₀.col` on
+frozen indices. -/
+theorem degreeMutationWord_fromRows_one_elim_col
     (hdiag : ∀ u k v, w = u ++ k :: v →
       matrixMutationWord (Function.Embedding.refl K) B₀ u k k = 0) :
     degreeMutationWord Function.Embedding.inl (fromRows B₀ 1)
         (Sum.elim (1 : Matrix K K ℤ).col (-B₀.col)) w =
       Sum.elim (gMatrix B₀ w).col (-B₀.col) := by
-  have hdiagExt : ∀ u k v, w = u ++ k :: v →
-      matrixMutationWord Function.Embedding.inl
-        (fromRows B₀ (1 : Matrix K K ℤ)) u (Sum.inl k) k = 0 := by
-    intro u k v hw
-    rw [matrixMutationWord_fromRows_one]
-    exact hdiag u k v hw
   induction w using List.reverseRecOn with
   | nil => simp
   | append_singleton u k ih =>
-    have hdu : ∀ a l b, u = a ++ l :: b →
-        matrixMutationWord (Function.Embedding.refl K) B₀ a l l = 0 :=
-      fun a l b hu ↦ hdiag a l (b ++ [k]) (by simp [hu])
-    have hduExt : ∀ a l b, u = a ++ l :: b →
-        matrixMutationWord Function.Embedding.inl
-          (fromRows B₀ (1 : Matrix K K ℤ)) a (Sum.inl l) l = 0 :=
-      fun a l b hu ↦ hdiagExt a l (b ++ [k]) (by simp [hu])
-    have hu := ih hdu fun a l b hu ↦ hduExt a l b hu
+    have hdu := forall_append_singleton_left hdiag
+    have hu := ih hdu
     have hann : ∀ j : K,
         ∑ a : K ⊕ K,
           matrixMutationWord Function.Embedding.inl (fromRows B₀ (1 : Matrix K K ℤ)) u a j •
@@ -381,12 +535,13 @@ theorem degreeMutationWord_fromRows_one
       intro j
       rw [← hu]
       exact sum_matrixMutationWord_smul_degreeMutationWord_eq_zero Function.Embedding.inl
-        (fromRows B₀ (1 : Matrix K K ℤ)) (Sum.elim (1 : Matrix K K ℤ).col (-B₀.col)) u hduExt
-        (sum_fromRows_one_smul_principalGrading B₀) j
+        (fromRows B₀ (1 : Matrix K K ℤ)) (Sum.elim (1 : Matrix K K ℤ).col (-B₀.col)) u
+        (matrixMutationWord_fromRows_one_inl_eq_zero hdu)
+        (sum_fromRows_one_smul_elim_col_eq_zero B₀) j
     have hkk :
         matrixMutationWord Function.Embedding.inl
           (fromRows B₀ (1 : Matrix K K ℤ)) u (Sum.inl k) k = 0 :=
-      hdiagExt u k [] (by simp)
+      matrixMutationWord_fromRows_one_inl_eq_zero hdiag u k [] (by simp)
     rw [degreeMutationWord_append, hu, degreeMutationWord_singleton]
     ext (j | j) i
     · by_cases hjk : j = k
@@ -395,14 +550,10 @@ theorem degreeMutationWord_fromRows_one
           (degreeMutation_apply_row_posPart_univ Function.Embedding.inl
             (matrixMutationWord Function.Embedding.inl (fromRows B₀ (1 : Matrix K K ℤ)) u) k
             (Sum.elim (gMatrix B₀ u).col (-B₀.col)) hkk (hann k)) i
-        simp only [Function.Embedding.inl_apply, matrixMutationWord_fromRows_one,
-          Fintype.sum_sum_type, fromRows_apply_inl, fromRows_apply_inr, Sum.elim_inl, Sum.elim_inr,
-          Pi.add_apply, Pi.neg_apply, Finset.sum_apply, Pi.smul_apply, smul_eq_mul,
-          Matrix.col_apply, mul_neg, Finset.sum_neg_distrib] at hpos
-        rw [matrixMutationWord_fromRows_one, hpos, Sum.elim_inl, Matrix.col_apply,
-          gMatrix_append_singleton_col]
-        simp_rw [mul_comm (gMatrix B₀ u i _), mul_comm (B₀ i _)]
-        ring
+        rw [Function.Embedding.inl_apply] at hpos
+        rw [hpos]
+        simp [Fintype.sum_sum_type, Finset.sum_apply, gMatrix_append_singleton_apply_col,
+          mul_comm, sub_eq_add_neg, add_assoc]
       · simp [hjk]
     · simp
 
@@ -414,29 +565,21 @@ theorem gMatrix_mul_matrixMutationWord
       matrixMutationWord (Function.Embedding.refl K) B₀ u k k = 0) :
     gMatrix B₀ w * matrixMutationWord (Function.Embedding.refl K) B₀ w =
       B₀ * cMatrix B₀ w := by
-  have hdiagExt : ∀ u k v, w = u ++ k :: v →
-      matrixMutationWord Function.Embedding.inl
-        (fromRows B₀ (1 : Matrix K K ℤ)) u (Sum.inl k) k = 0 := by
-    intro u k v hw
-    rw [matrixMutationWord_fromRows_one]
-    exact hdiag u k v hw
   ext i j
   have hann := congrFun
     (sum_matrixMutationWord_smul_degreeMutationWord_eq_zero Function.Embedding.inl
-      (fromRows B₀ (1 : Matrix K K ℤ)) (Sum.elim (1 : Matrix K K ℤ).col (-B₀.col)) w hdiagExt
-      (sum_fromRows_one_smul_principalGrading B₀) j) i
-  rw [degreeMutationWord_fromRows_one B₀ w hdiag, matrixMutationWord_fromRows_one] at hann
-  simp only [Fintype.sum_sum_type, fromRows_apply_inl, fromRows_apply_inr, Sum.elim_inl,
-    Sum.elim_inr, Pi.zero_apply, Finset.sum_apply, Pi.smul_apply, Pi.neg_apply,
-    smul_eq_mul, Matrix.col_apply, mul_neg, Finset.sum_neg_distrib] at hann
+      (fromRows B₀ (1 : Matrix K K ℤ)) (Sum.elim (1 : Matrix K K ℤ).col (-B₀.col)) w
+      (matrixMutationWord_fromRows_one_inl_eq_zero hdiag)
+      (sum_fromRows_one_smul_elim_col_eq_zero B₀) j) i
+  rw [degreeMutationWord_fromRows_one_elim_col B₀ w hdiag, matrixMutationWord_fromRows_one] at hann
+  simp [Fintype.sum_sum_type, Finset.sum_apply] at hann
   simp only [Matrix.mul_apply]
   simp_rw [mul_comm (gMatrix B₀ w i _), mul_comm (B₀ i _)]
   linear_combination hann
 
-/-- Negative-part recurrence for column `k` of `gMatrix B₀ (w ++ [k])` when the mutable diagonal
-entry vanishes at step `k` and `G_w * B_w = B₀ * C_w`. -/
-theorem gMatrix_append_singleton_col_negPart (k i : K)
-    (hkk : matrixMutationWord (Function.Embedding.refl K) B₀ w k k = 0)
+/-- Negative-part recurrence for column `k` of `gMatrix B₀ (w ++ [k])` when `G_w * B_w = B₀ * C_w`.
+-/
+theorem gMatrix_append_singleton_apply_col_negPart (k i : K)
     (hrel : gMatrix B₀ w * matrixMutationWord (Function.Embedding.refl K) B₀ w =
       B₀ * cMatrix B₀ w) :
     gMatrix B₀ (w ++ [k]) i k =
@@ -455,10 +598,46 @@ theorem gMatrix_append_singleton_col_negPart (k i : K)
       B₀ i l * (cMatrix B₀ w l k)⁺ =
         B₀ i l * cMatrix B₀ w l k + B₀ i l * (cMatrix B₀ w l k)⁻ := by
     linear_combination B₀ i l * posPart_sub_negPart (cMatrix B₀ w l k)
-  let _ := hkk
-  rw [gMatrix_append_singleton_col]
+  rw [gMatrix_append_singleton_apply_col]
   simp_rw [hB, hC, Finset.sum_add_distrib]
   linear_combination hentry
+
+/-- Equal adjacent directions `k, k` after prefix `u` cancel in `gMatrix` whenever `B_u k k = 0`
+and `G_u * B_u = B₀ * C_u`. -/
+theorem gMatrix_append_cons_cons_self (u v : List K) (k : K)
+    (hkk : matrixMutationWord (Function.Embedding.refl K) B₀ u k k = 0)
+    (hrel : gMatrix B₀ u * matrixMutationWord (Function.Embedding.refl K) B₀ u =
+      B₀ * cMatrix B₀ u) :
+    gMatrix B₀ (u ++ k :: k :: v) = gMatrix B₀ (u ++ v) := by
+  induction v using List.reverseRecOn with
+  | nil =>
+    have hpair : u ++ [k, k] = (u ++ [k]) ++ [k] := by simp
+    rw [hpair, List.append_nil]
+    ext i j
+    by_cases hj : j = k
+    · subst j
+      rw [gMatrix_append_singleton_apply_col]
+      simp only [matrixMutationWord_append, matrixMutationWord_cons, matrixMutationWord_nil,
+        matrixMutation_apply_col, cMatrix_append_singleton_apply_col, posPart_neg]
+      have hsumG :
+          ∑ l, gMatrix B₀ (u ++ [k]) i l *
+              (matrixMutationWord (Function.Embedding.refl K) B₀ u l k)⁻ =
+            ∑ l, gMatrix B₀ u i l *
+              (matrixMutationWord (Function.Embedding.refl K) B₀ u l k)⁻ := by
+        refine Finset.sum_congr rfl fun l _ ↦ ?_
+        by_cases hlk : l = k
+        · subst l
+          simp [hkk]
+        · rw [gMatrix_append_singleton_apply_of_ne B₀ u k i hlk]
+      rw [hsumG, gMatrix_append_singleton_apply_col_negPart B₀ u k i hrel]
+      ring
+    · rw [gMatrix_append_singleton_apply_of_ne B₀ (u ++ [k]) k i hj,
+        gMatrix_append_singleton_apply_of_ne B₀ u k i hj]
+  | append_singleton v' l ih =>
+    have h1 : u ++ k :: k :: (v' ++ [l]) = (u ++ k :: k :: v') ++ [l] := by simp
+    have h2 : u ++ (v' ++ [l]) = (u ++ v') ++ [l] := by simp
+    rw [h1, h2, gMatrix_append_singleton, gMatrix_append_singleton, ih,
+      matrixMutationWord_append_cons_cons_self, cMatrix_append_cons_cons_self]
 
 /-- Simultaneous relabelling of indices transports `gMatrix` along mapped words. -/
 theorem gMatrix_reindex [DecidableEq K'] [Fintype K'] (e : K ≃ K') :
@@ -468,7 +647,6 @@ theorem gMatrix_reindex [DecidableEq K'] [Fintype K'] (e : K ≃ K') :
     ext i j
     simp [Matrix.one_apply]
   | append_singleton u k ih =>
-    rw [List.map_append, List.map_singleton]
     have hbw :
         matrixMutationWord (Function.Embedding.refl K') (B₀.reindex e e) (u.map e) =
           (matrixMutationWord (Function.Embedding.refl K) B₀ u).reindex e e := by
@@ -476,73 +654,96 @@ theorem gMatrix_reindex [DecidableEq K'] [Fintype K'] (e : K ≃ K') :
         (row := Function.Embedding.refl K) (row' := Function.Embedding.refl K')
         (f := e.symm) (g := e.symm) e.symm.injective (fun _ ↦ rfl) B₀ (u.map e)
       simpa [List.map_map] using hsub
-    ext i j
-    by_cases hjk : j = e k
-    · subst j
-      rw [gMatrix_append_singleton_col, ih, hbw, cMatrix_reindex B₀ u e]
-      simp only [reindex_apply, submatrix_apply, Equiv.symm_apply_apply,
-        gMatrix_append_singleton_col]
-      have hs1 :
-          ∑ l : K', gMatrix B₀ u (e.symm i) (e.symm l) *
-              (matrixMutationWord (Function.Embedding.refl K) B₀ u (e.symm l) k)⁺ =
-            ∑ l : K, gMatrix B₀ u (e.symm i) l *
-              (matrixMutationWord (Function.Embedding.refl K) B₀ u l k)⁺ :=
-        e.symm.sum_comp fun l ↦
-          gMatrix B₀ u (e.symm i) l *
-            (matrixMutationWord (Function.Embedding.refl K) B₀ u l k)⁺
-      have hs2 :
-          ∑ l : K', B₀ (e.symm i) (e.symm l) * (cMatrix B₀ u (e.symm l) k)⁺ =
-            ∑ l : K, B₀ (e.symm i) l * (cMatrix B₀ u l k)⁺ :=
-        e.symm.sum_comp fun l ↦ B₀ (e.symm i) l * (cMatrix B₀ u l k)⁺
-      rw [hs1, hs2]
-    · have hne : e.symm j ≠ k := fun h ↦ hjk (by rw [← h, Equiv.apply_symm_apply])
-      rw [gMatrix_append_singleton_of_ne _ _ _ _ hjk, ih]
-      simp [gMatrix_append_singleton_of_ne _ _ _ _ hne]
+    rw [List.map_append, List.map_singleton, gMatrix_append_singleton, gMatrix_append_singleton,
+      Matrix.reindex_updateCol, ih, hbw, cMatrix_reindex B₀ u e]
+    congr 1
+    ext i
+    simp only [reindex_apply, submatrix_apply, Equiv.symm_apply_apply]
+    rw [e.symm.sum_comp (fun l ↦ gMatrix B₀ u (e.symm i) l *
+        (matrixMutationWord (Function.Embedding.refl K) B₀ u l k)⁺),
+      e.symm.sum_comp (fun l ↦ B₀ (e.symm i) l * (cMatrix B₀ u l k)⁺)]
+
+/-- On a block-diagonal initial matrix, `gMatrix` splits into the `g`-matrices of the blocks
+along their projected subwords. -/
+theorem gMatrix_fromBlocks [DecidableEq K₁] [DecidableEq K₂] [Fintype K₁] [Fintype K₂]
+    (B₁ : Matrix K₁ K₁ ℤ) (B₂ : Matrix K₂ K₂ ℤ) (w : List (K₁ ⊕ K₂)) :
+    gMatrix (fromBlocks B₁ 0 0 B₂) w =
+      fromBlocks (gMatrix B₁ (w.filterMap Sum.getLeft?)) 0 0
+        (gMatrix B₂ (w.filterMap Sum.getRight?)) := by
+  have hrefl :
+      (Function.Embedding.refl K₁).sumMap (Function.Embedding.refl K₂) =
+        Function.Embedding.refl (K₁ ⊕ K₂) := by
+    ext (x | x) <;> simp
+  induction w using List.reverseRecOn with
+  | nil =>
+    ext (i | i) (j | j) <;> simp [Matrix.one_apply]
+  | append_singleton u k ih =>
+    have hbw :
+        matrixMutationWord (Function.Embedding.refl (K₁ ⊕ K₂)) (fromBlocks B₁ 0 0 B₂) u =
+          fromBlocks
+            (matrixMutationWord (Function.Embedding.refl K₁) B₁ (u.filterMap Sum.getLeft?)) 0 0
+            (matrixMutationWord (Function.Embedding.refl K₂) B₂ (u.filterMap Sum.getRight?)) := by
+      rw [← hrefl, matrixMutationWord_fromBlocks]
+    cases k with
+    | inl k =>
+      simp only [List.filterMap_append, List.filterMap_cons, List.filterMap_nil,
+        Sum.getLeft?_inl, Sum.getRight?_inl, List.append_nil]
+      ext (i | i) (j | j)
+      · by_cases hjk : j = k
+        · subst j
+          rw [gMatrix_append_singleton_apply_col, ih, hbw, cMatrix_fromBlocks]
+          simp [Fintype.sum_sum_type, gMatrix_append_singleton_apply_col]
+        · have hne : (Sum.inl j : K₁ ⊕ K₂) ≠ Sum.inl k := by simp [hjk]
+          rw [gMatrix_append_singleton_apply_of_ne _ _ _ _ hne, ih]
+          simp [gMatrix_append_singleton_apply_of_ne _ _ _ _ hjk]
+      · rw [gMatrix_append_singleton_apply_of_ne _ _ _ _ (by simp), ih]
+        simp
+      · by_cases hjk : j = k
+        · subst j
+          rw [gMatrix_append_singleton_apply_col, ih, hbw, cMatrix_fromBlocks]
+          simp [Fintype.sum_sum_type]
+        · have hne : (Sum.inl j : K₁ ⊕ K₂) ≠ Sum.inl k := by simp [hjk]
+          rw [gMatrix_append_singleton_apply_of_ne _ _ _ _ hne, ih]
+          simp
+      · rw [gMatrix_append_singleton_apply_of_ne _ _ _ _ (by simp), ih]
+        simp
+    | inr k =>
+      simp only [List.filterMap_append, List.filterMap_cons, List.filterMap_nil,
+        Sum.getLeft?_inr, Sum.getRight?_inr, List.append_nil]
+      ext (i | i) (j | j)
+      · rw [gMatrix_append_singleton_apply_of_ne _ _ _ _ (by simp), ih]
+        simp
+      · by_cases hjk : j = k
+        · subst j
+          rw [gMatrix_append_singleton_apply_col, ih, hbw, cMatrix_fromBlocks]
+          simp [Fintype.sum_sum_type]
+        · have hne : (Sum.inr j : K₁ ⊕ K₂) ≠ Sum.inr k := by simp [hjk]
+          rw [gMatrix_append_singleton_apply_of_ne _ _ _ _ hne, ih]
+          simp
+      · rw [gMatrix_append_singleton_apply_of_ne _ _ _ _ (by simp), ih]
+        simp
+      · by_cases hjk : j = k
+        · subst j
+          rw [gMatrix_append_singleton_apply_col, ih, hbw, cMatrix_fromBlocks]
+          simp [Fintype.sum_sum_type, gMatrix_append_singleton_apply_col]
+        · have hne : (Sum.inr j : K₁ ⊕ K₂) ≠ Sum.inr k := by simp [hjk]
+          rw [gMatrix_append_singleton_apply_of_ne _ _ _ _ hne, ih]
+          simp [gMatrix_append_singleton_apply_of_ne _ _ _ _ hjk]
 
 /-! ### Signed recurrences and tropical duality -/
 
-/-- When `B_w k k = 0` and column `k` of `cMatrix B₀ w` has coherent sign `ε ∈ {1, -1}`
+/-- When column `k` of `cMatrix B₀ w` has coherent sign `ε ∈ {1, -1}`
 (`∀ i, 0 ≤ ε * cMatrix B₀ w i k`), `cMatrix` right-multiplies by `Fε(B_w, k)` at step `k`. -/
 theorem cMatrix_append_singleton_eq_mul_matrixMutationRight {k : K} {ε : ℤ}
-    (hkk : matrixMutationWord (Function.Embedding.refl K) B₀ w k k = 0)
     (hε : ε = 1 ∨ ε = -1) (hsign : ∀ i, 0 ≤ ε * cMatrix B₀ w i k) :
     cMatrix B₀ (w ++ [k]) =
       cMatrix B₀ w *
         matrixMutationRight (Function.Embedding.refl K)
           (matrixMutationWord (Function.Embedding.refl K) B₀ w) k ε := by
-  set Bw := matrixMutationWord (Function.Embedding.refl K) B₀ w
-  have hfac := matrixMutation_eq_mul Function.Embedding.inl (fromRows Bw (cMatrix B₀ w)) k ε
-    (by simpa using hkk) hε
-  have hF :
-      matrixMutationRight Function.Embedding.inl (fromRows Bw (cMatrix B₀ w)) k ε =
-        matrixMutationRight (Function.Embedding.refl K) Bw k ε := by
-    ext i j
-    simp [matrixMutationRight_apply]
-  rw [hF] at hfac
-  have hleft :
-      (matrixMutationLeft Function.Embedding.inl (fromRows Bw (cMatrix B₀ w)) k ε *
-          fromRows Bw (cMatrix B₀ w)).submatrix Sum.inr id =
-        cMatrix B₀ w := by
-    ext i l
-    simp only [submatrix_apply, id_eq, matrixMutationLeft_mul_apply, Function.Embedding.inl_apply,
-      reduceCtorEq, ↓reduceIte, fromRows_apply_inr, fromRows_apply_inl]
-    have hnp : (-ε * cMatrix B₀ w i k)⁺ = 0 := by
-      rw [posPart_eq_zero]
-      linarith [hsign i]
-    rw [hnp, zero_mul, add_zero]
   ext i j
-  have hrow :
-      (cMatrix B₀ (w ++ [k])) i j =
-        (matrixMutation Function.Embedding.inl (fromRows Bw (cMatrix B₀ w)) k) (Sum.inr i) j := by
-    rw [cMatrix_apply, matrixMutationWord_append, matrixMutationWord_fromRows_one,
-      matrixMutationWord_cons, matrixMutationWord_nil]
-  rw [hrow, hfac, mul_matrixMutationRight_apply, mul_matrixMutationRight_apply]
-  have hli := congrArg (fun M ↦ M i) hleft
-  have hlj := congrArg (fun M ↦ M i j) hleft
-  have hlk := congrArg (fun M ↦ M i k) hleft
-  simp only [submatrix_apply, id_eq] at hlj hlk
-  let _ := hli
-  rw [hlj, hlk]
+  rw [cMatrix_append_singleton_apply_of_sign B₀ w hε hsign, mul_matrixMutationRight_apply,
+    Function.Embedding.refl_apply]
+  by_cases hj : j = k <;> simp [hj]
 
 /-- When `B_w k k = 0`, `G_w * B_w = B₀ * C_w`, and column `k` of `cMatrix B₀ w` has coherent
 sign `ε ∈ {1, -1}` (`∀ i, 0 ≤ ε * cMatrix B₀ w i k`), `gMatrix` right-multiplies by `Eε(B_w, k)`
@@ -557,67 +758,54 @@ theorem gMatrix_append_singleton_eq_mul_matrixMutationLeft {k : K} {ε : ℤ}
         matrixMutationLeft (Function.Embedding.refl K)
           (matrixMutationWord (Function.Embedding.refl K) B₀ w) k ε := by
   set Bw := matrixMutationWord (Function.Embedding.refl K) B₀ w with hBw
-  have hmul (i : K) :
-      (gMatrix B₀ w * matrixMutationLeft (Function.Embedding.refl K) Bw k ε) i k =
+  rw [matrixMutationLeft_def, Function.Embedding.refl_apply, Matrix.mul_updateCol, Matrix.mul_one,
+    gMatrix_append_singleton]
+  congr 1
+  ext i
+  have hmul :
+      (gMatrix B₀ w *ᵥ fun l ↦ if l = k then -1 else (-ε * Bw l k)⁺) i =
         -gMatrix B₀ w i k + ∑ l, gMatrix B₀ w i l * (-ε * Bw l k)⁺ := by
-    rw [Matrix.mul_apply, ← Finset.add_sum_erase Finset.univ _ (Finset.mem_univ k)]
-    simp only [matrixMutationLeft_apply, Function.Embedding.refl_apply, ↓reduceIte, mul_neg,
-      mul_one]
-    rw [← Finset.add_sum_erase Finset.univ
-      (fun l ↦ gMatrix B₀ w i l * (-ε * Bw l k)⁺) (Finset.mem_univ k)]
-    simp only [hkk, mul_zero, posPart_zero, zero_add]
+    rw [mulVec, dotProduct, ← Finset.add_sum_erase Finset.univ _ (Finset.mem_univ k),
+      ← Finset.add_sum_erase Finset.univ
+        (fun l ↦ gMatrix B₀ w i l * (-ε * Bw l k)⁺) (Finset.mem_univ k)]
+    simp only [↓reduceIte, mul_neg, mul_one, hkk, mul_zero, posPart_zero, zero_add]
     congr 1
     refine Finset.sum_congr rfl fun l hl ↦ ?_
     simp [(Finset.mem_erase.mp hl).1]
-  have hcol_ne (i : K) {j : K} (hj : j ≠ k) :
-      (gMatrix B₀ w * matrixMutationLeft (Function.Embedding.refl K) Bw k ε) i j =
-        gMatrix B₀ w i j := by
-    rw [Matrix.mul_apply]
-    simp [matrixMutationLeft_apply_of_ne (Function.Embedding.refl K) Bw k ε _ hj, Matrix.one_apply]
-  ext i j
-  by_cases hj : j = k
-  · subst j
-    rw [hmul]
-    rcases hε with rfl | rfl
-    · rw [gMatrix_append_singleton_col_negPart B₀ w k i hkk hrel, ← hBw]
-      have hcn (l : K) : (cMatrix B₀ w l k)⁻ = 0 := by
-        rw [negPart_eq_zero]
-        simpa using hsign l
-      simp only [hcn, mul_zero, Finset.sum_const_zero, sub_zero, neg_mul, one_mul, posPart_neg]
-    · rw [gMatrix_append_singleton_col, ← hBw]
-      have hcp (l : K) : (cMatrix B₀ w l k)⁺ = 0 := by
-        rw [posPart_eq_zero]
-        linarith [hsign l]
-      simp only [hcp, mul_zero, Finset.sum_const_zero, sub_zero, neg_neg, one_mul]
-  · rw [gMatrix_append_singleton_of_ne B₀ w k i hj, hcol_ne i hj]
+  rw [hmul]
+  rcases hε with rfl | rfl
+  · have hneg := gMatrix_append_singleton_apply_col_negPart B₀ w k i hrel
+    rw [gMatrix_append_singleton_apply_col] at hneg
+    have hcn (l : K) : (cMatrix B₀ w l k)⁻ = 0 :=
+      negPart_eq_zero.mpr (by simpa using hsign l)
+    simp only [hcn, mul_zero, Finset.sum_const_zero, sub_zero, ← hBw] at hneg
+    simpa only [neg_mul, one_mul, posPart_neg] using hneg
+  · have hcp (l : K) : (cMatrix B₀ w l k)⁺ = 0 :=
+      posPart_eq_zero.mpr (by linarith [hsign l])
+    simp [hcp, ← hBw]
 
-/-- Along any word whose prefixes have zero mutable diagonal at each step and column-sign-coherent
-`c`-vectors at each step, `cMatrix B₀ w` has determinant `(-1) ^ w.length`. -/
+/-- When `B₀ k k = 0`, the single-step principal `g`-matrix `gMatrix B₀ [k]` equals the
+positive-sign left mutation factor `E₁(B₀, k)`. -/
+theorem gMatrix_singleton {k : K} (hkk : B₀ k k = 0) :
+    gMatrix B₀ [k] = matrixMutationLeft (Function.Embedding.refl K) B₀ k 1 := by
+  have hkk' : matrixMutationWord (Function.Embedding.refl K) B₀ [] k k = 0 := by
+    simpa using hkk
+  simpa using gMatrix_append_singleton_eq_mul_matrixMutationLeft B₀ [] hkk' (by simp) (Or.inl rfl)
+    fun i ↦ by by_cases h : i = k <;> simp [h]
+
+/-- Along any word with column-sign-coherent `c`-vectors at each step, `cMatrix B₀ w` has
+determinant `(-1) ^ w.length`. -/
 theorem det_cMatrix_of_signCoherent
-    (hdiag : ∀ u k v, w = u ++ k :: v →
-      matrixMutationWord (Function.Embedding.refl K) B₀ u k k = 0)
     (hc : ∀ u k v, w = u ++ k :: v →
       (∀ i, 0 ≤ cMatrix B₀ u i k) ∨ ∀ i, cMatrix B₀ u i k ≤ 0) :
     (cMatrix B₀ w).det = (-1) ^ w.length := by
   induction w using List.reverseRecOn with
   | nil => simp
   | append_singleton u k ih =>
-    have hdu : ∀ a l b, u = a ++ l :: b →
-        matrixMutationWord (Function.Embedding.refl K) B₀ a l l = 0 :=
-      fun a l b hu ↦ hdiag a l (b ++ [k]) (by simp [hu])
-    have hcu : ∀ a l b, u = a ++ l :: b →
-        (∀ i, 0 ≤ cMatrix B₀ a i l) ∨ ∀ i, cMatrix B₀ a i l ≤ 0 :=
-      fun a l b hu ↦ hc a l (b ++ [k]) (by simp [hu])
-    have hkk : matrixMutationWord (Function.Embedding.refl K) B₀ u k k = 0 :=
-      hdiag u k [] (by simp)
-    obtain ⟨ε, hε, hsign⟩ :
-        ∃ ε : ℤ, (ε = 1 ∨ ε = -1) ∧ ∀ i, 0 ≤ ε * cMatrix B₀ u i k := by
-      rcases hc u k [] (by simp) with hpos | hneg
-      · exact ⟨1, Or.inl rfl, fun i ↦ by simpa using hpos i⟩
-      · exact ⟨-1, Or.inr rfl, fun i ↦ by linarith [hneg i]⟩
-    rw [cMatrix_append_singleton_eq_mul_matrixMutationRight B₀ u hkk hε hsign,
-      det_mul, ih hdu hcu, det_matrixMutationRight, List.length_append, List.length_singleton,
-      pow_add, pow_one]
+    obtain ⟨ε, hε, hsign⟩ := exists_unit_sign_of_nonneg_or_nonpos (hc u k [] (by simp))
+    rw [cMatrix_append_singleton_eq_mul_matrixMutationRight B₀ u hε hsign,
+      det_mul, ih (forall_append_singleton_left hc), det_matrixMutationRight,
+      List.length_append, List.length_singleton, pow_add, pow_one]
 
 /-- Along any word whose prefixes have zero mutable diagonal at each step and column-sign-coherent
 `c`-vectors at each step, `gMatrix B₀ w` has determinant `(-1) ^ w.length`. -/
@@ -630,33 +818,19 @@ theorem det_gMatrix_of_signCoherent
   induction w using List.reverseRecOn with
   | nil => simp
   | append_singleton u k ih =>
-    have hdu : ∀ a l b, u = a ++ l :: b →
-        matrixMutationWord (Function.Embedding.refl K) B₀ a l l = 0 :=
-      fun a l b hu ↦ hdiag a l (b ++ [k]) (by simp [hu])
-    have hcu : ∀ a l b, u = a ++ l :: b →
-        (∀ i, 0 ≤ cMatrix B₀ a i l) ∨ ∀ i, cMatrix B₀ a i l ≤ 0 :=
-      fun a l b hu ↦ hc a l (b ++ [k]) (by simp [hu])
-    have hkk : matrixMutationWord (Function.Embedding.refl K) B₀ u k k = 0 :=
-      hdiag u k [] (by simp)
-    have hrel := gMatrix_mul_matrixMutationWord B₀ u hdu
-    obtain ⟨ε, hε, hsign⟩ :
-        ∃ ε : ℤ, (ε = 1 ∨ ε = -1) ∧ ∀ i, 0 ≤ ε * cMatrix B₀ u i k := by
-      rcases hc u k [] (by simp) with hpos | hneg
-      · exact ⟨1, Or.inl rfl, fun i ↦ by simpa using hpos i⟩
-      · exact ⟨-1, Or.inr rfl, fun i ↦ by linarith [hneg i]⟩
-    rw [gMatrix_append_singleton_eq_mul_matrixMutationLeft B₀ u hkk hrel hε hsign,
-      det_mul, ih hdu hcu, det_matrixMutationLeft, List.length_append, List.length_singleton,
-      pow_add, pow_one]
+    have hdu := forall_append_singleton_left hdiag
+    obtain ⟨ε, hε, hsign⟩ := exists_unit_sign_of_nonneg_or_nonpos (hc u k [] (by simp))
+    rw [gMatrix_append_singleton_eq_mul_matrixMutationLeft B₀ u (hdiag u k [] (by simp))
+        (gMatrix_mul_matrixMutationWord B₀ u hdu) hε hsign,
+      det_mul, ih hdu (forall_append_singleton_left hc), det_matrixMutationLeft,
+      List.length_append, List.length_singleton, pow_add, pow_one]
 
-/-- Along a column-sign-coherent word with vanishing mutable diagonal at each step, `cMatrix B₀ w`
-is unimodular over `ℤ`. -/
+/-- Along any column-sign-coherent word, `cMatrix B₀ w` is unimodular over `ℤ`. -/
 theorem isUnit_cMatrix_of_signCoherent
-    (hdiag : ∀ u k v, w = u ++ k :: v →
-      matrixMutationWord (Function.Embedding.refl K) B₀ u k k = 0)
     (hc : ∀ u k v, w = u ++ k :: v →
       (∀ i, 0 ≤ cMatrix B₀ u i k) ∨ ∀ i, cMatrix B₀ u i k ≤ 0) :
     IsUnit (cMatrix B₀ w) := by
-  rw [isUnit_iff_isUnit_det, det_cMatrix_of_signCoherent B₀ w hdiag hc]
+  rw [isUnit_iff_isUnit_det, det_cMatrix_of_signCoherent B₀ w hc]
   exact IsUnit.pow _ isUnit_neg_one
 
 /-- Along a column-sign-coherent word with vanishing mutable diagonal at each step, `gMatrix B₀ w`
@@ -669,22 +843,6 @@ theorem isUnit_gMatrix_of_signCoherent
     IsUnit (gMatrix B₀ w) := by
   rw [isUnit_iff_isUnit_det, det_gMatrix_of_signCoherent B₀ w hdiag hc]
   exact IsUnit.pow _ isUnit_neg_one
-
-omit [Fintype K] in
-/-- Along a column-sign-coherent word with vanishing mutable diagonal at each step, no `c`-vector
-vanishes. -/
-theorem cVector_ne_zero_of_signCoherent [Finite K]
-    (hdiag : ∀ u k v, w = u ++ k :: v →
-      matrixMutationWord (Function.Embedding.refl K) B₀ u k k = 0)
-    (hc : ∀ u k v, w = u ++ k :: v →
-      (∀ i, 0 ≤ cMatrix B₀ u i k) ∨ ∀ i, cMatrix B₀ u i k ≤ 0) (j : K) :
-    cVector B₀ w j ≠ 0 := by
-  let := Fintype.ofFinite K
-  intro hz
-  have hdet : (cMatrix B₀ w).det = 0 :=
-    det_eq_zero_of_column_eq_zero j fun i ↦ congrFun hz i
-  rw [det_cMatrix_of_signCoherent B₀ w hdiag hc] at hdet
-  exact pow_ne_zero w.length (by decide : (-1 : ℤ) ≠ 0) hdet
 
 /-- Along a column-sign-coherent word with vanishing mutable diagonal at each step, no `g`-vector
 vanishes. -/
@@ -714,35 +872,6 @@ theorem gMatrix_row_ne_zero_of_signCoherent
   rw [det_gMatrix_of_signCoherent B₀ w hdiag hc] at hdet
   exact pow_ne_zero w.length (by decide : (-1 : ℤ) ≠ 0) hdet
 
-omit [Fintype K] in
-/-- Principal exchange-monomial dichotomy: along a column-sign-coherent word with vanishing mutable
-diagonal at each step, if `cVector B₀ w j` is itself sign-coherent, then one of its positive-part
-and negative-part frozen-exponent vectors vanishes and the other is nonzero. -/
-theorem cVector_posPart_eq_zero_or_negPart_eq_zero_of_signCoherent [Finite K]
-    (hdiag : ∀ u k v, w = u ++ k :: v →
-      matrixMutationWord (Function.Embedding.refl K) B₀ u k k = 0)
-    (hc : ∀ u k v, w = u ++ k :: v →
-      (∀ i, 0 ≤ cMatrix B₀ u i k) ∨ ∀ i, cMatrix B₀ u i k ≤ 0) {j : K}
-    (hj : (∀ i, 0 ≤ cVector B₀ w j i) ∨ ∀ i, cVector B₀ w j i ≤ 0) :
-    ((fun i ↦ (cVector B₀ w j i)⁺) = 0 ∧ (fun i ↦ (cVector B₀ w j i)⁻) ≠ 0) ∨
-      ((fun i ↦ (cVector B₀ w j i)⁻) = 0 ∧ (fun i ↦ (cVector B₀ w j i)⁺) ≠ 0) := by
-  have hne := cVector_ne_zero_of_signCoherent B₀ w hdiag hc j
-  rcases hj with hpos | hneg
-  · refine Or.inr ⟨funext fun i ↦ ?_, fun hp ↦ hne (funext fun i ↦ ?_)⟩
-    · rw [Pi.zero_apply, ← posPart_neg, posPart_eq_zero]
-      linarith [hpos i]
-    · have hi : (cVector B₀ w j i)⁺ = 0 := congrFun hp i
-      rw [posPart_eq_zero] at hi
-      rw [Pi.zero_apply]
-      linarith [hpos i]
-  · refine Or.inl ⟨funext fun i ↦ ?_, fun hn ↦ hne (funext fun i ↦ ?_)⟩
-    · rw [Pi.zero_apply, posPart_eq_zero]
-      exact hneg i
-    · have hi : (cVector B₀ w j i)⁻ = 0 := congrFun hn i
-      rw [← posPart_neg, posPart_eq_zero] at hi
-      rw [Pi.zero_apply]
-      linarith [hneg i]
-
 end GMatrix
 
 end TauCeti
@@ -753,6 +882,16 @@ open TauCeti
 
 variable {K : Type*} [DecidableEq K] [Fintype K] {B₀ : Matrix K K ℤ} {s : K → ℤ}
 
+/-- For a skew-symmetrizable initial matrix `B₀`, propagating `Sum.elim 1.col (-B₀.col)` on
+`fromRows B₀ 1` along any word `w` produces `(gMatrix B₀ w).col` on mutable indices and `-B₀.col`
+on frozen indices. -/
+theorem degreeMutationWord_fromRows_one_elim_col (hs : B₀.IsSkewSymmetrizer s) (w : List K) :
+    degreeMutationWord Function.Embedding.inl (fromRows B₀ 1)
+        (Sum.elim (1 : Matrix K K ℤ).col (-B₀.col)) w =
+      Sum.elim (gMatrix B₀ w).col (-B₀.col) :=
+  TauCeti.degreeMutationWord_fromRows_one_elim_col B₀ w
+    fun u k _ _ ↦ (hs.matrixMutationWord u).apply_self k
+
 /-- For a skew-symmetrizable initial matrix `B₀`, `gMatrix B₀ w * B_w = B₀ * cMatrix B₀ w` holds
 for every mutation word `w`, without assuming sign-coherence. -/
 theorem gMatrix_mul_matrixMutationWord (hs : B₀.IsSkewSymmetrizer s) (w : List K) :
@@ -760,28 +899,27 @@ theorem gMatrix_mul_matrixMutationWord (hs : B₀.IsSkewSymmetrizer s) (w : List
       B₀ * cMatrix B₀ w :=
   TauCeti.gMatrix_mul_matrixMutationWord B₀ w fun u k _ _ ↦ (hs.matrixMutationWord u).apply_self k
 
+/-- Equal adjacent directions cancel in `gMatrix` for any skew-symmetrizable initial matrix. -/
+theorem gMatrix_append_cons_cons_self (hs : B₀.IsSkewSymmetrizer s) (u v : List K) (k : K) :
+    gMatrix B₀ (u ++ k :: k :: v) = gMatrix B₀ (u ++ v) :=
+  TauCeti.gMatrix_append_cons_cons_self B₀ u v k ((hs.matrixMutationWord u).apply_self k)
+    (hs.gMatrix_mul_matrixMutationWord u)
+
 /-- Tropical duality `(gMatrix B₀ w)ᵀ * diagonal s * cMatrix B₀ w = diagonal s` along any
 column-sign-coherent word from a matrix with skew-symmetrizer `s`. -/
-theorem transpose_gMatrix_mul_diagonal_mul_cMatrix (hs : B₀.IsSkewSymmetrizer s) (w : List K)
+theorem transpose_gMatrix_mul_diagonal_mul_cMatrix_of_signCoherent
+    (hs : B₀.IsSkewSymmetrizer s) (w : List K)
     (hc : ∀ u k v, w = u ++ k :: v →
       (∀ i, 0 ≤ cMatrix B₀ u i k) ∨ ∀ i, cMatrix B₀ u i k ≤ 0) :
     (gMatrix B₀ w)ᵀ * diagonal s * cMatrix B₀ w = diagonal s := by
   induction w using List.reverseRecOn with
   | nil => simp
   | append_singleton u k ih =>
-    have hcu : ∀ a l b, u = a ++ l :: b →
-        (∀ i, 0 ≤ cMatrix B₀ a i l) ∨ ∀ i, cMatrix B₀ a i l ≤ 0 :=
-      fun a l b hu ↦ hc a l (b ++ [k]) (by simp [hu])
     have hsu := hs.matrixMutationWord u
-    have hkk : matrixMutationWord (Function.Embedding.refl K) B₀ u k k = 0 := hsu.apply_self k
-    have hrel := hs.gMatrix_mul_matrixMutationWord u
-    obtain ⟨ε, hε, hsign⟩ :
-        ∃ ε : ℤ, (ε = 1 ∨ ε = -1) ∧ ∀ i, 0 ≤ ε * cMatrix B₀ u i k := by
-      rcases hc u k [] (by simp) with hpos | hneg
-      · exact ⟨1, Or.inl rfl, fun i ↦ by simpa using hpos i⟩
-      · exact ⟨-1, Or.inr rfl, fun i ↦ by linarith [hneg i]⟩
-    rw [cMatrix_append_singleton_eq_mul_matrixMutationRight B₀ u hkk hε hsign,
-      gMatrix_append_singleton_eq_mul_matrixMutationLeft B₀ u hkk hrel hε hsign]
+    obtain ⟨ε, hε, hsign⟩ := exists_unit_sign_of_nonneg_or_nonpos (hc u k [] (by simp))
+    rw [cMatrix_append_singleton_eq_mul_matrixMutationRight B₀ u hε hsign,
+      gMatrix_append_singleton_eq_mul_matrixMutationLeft B₀ u (hsu.apply_self k)
+        (hs.gMatrix_mul_matrixMutationWord u) hε hsign]
     set E := matrixMutationLeft (Function.Embedding.refl K)
       (matrixMutationWord (Function.Embedding.refl K) B₀ u) k ε
     set F := matrixMutationRight (Function.Embedding.refl K)
@@ -790,71 +928,159 @@ theorem transpose_gMatrix_mul_diagonal_mul_cMatrix (hs : B₀.IsSkewSymmetrizer 
       (gMatrix B₀ u * E)ᵀ * diagonal s * (cMatrix B₀ u * F)
         = Eᵀ * ((gMatrix B₀ u)ᵀ * diagonal s * cMatrix B₀ u) * F := by
           simp only [Matrix.transpose_mul, Matrix.mul_assoc]
-      _ = Eᵀ * diagonal s * F := by rw [ih hcu]
+      _ = Eᵀ * diagonal s * F := by rw [ih (forall_append_singleton_left hc)]
       _ = diagonal s :=
           hsu.transpose_matrixMutationLeft_mul_diagonal_mul_matrixMutationRight k ε
 
 /-- Transposed tropical duality `(cMatrix B₀ w)ᵀ * diagonal s * gMatrix B₀ w = diagonal s`
 along any column-sign-coherent word from a matrix with skew-symmetrizer `s`. -/
-theorem transpose_cMatrix_mul_diagonal_mul_gMatrix (hs : B₀.IsSkewSymmetrizer s) (w : List K)
+theorem transpose_cMatrix_mul_diagonal_mul_gMatrix_of_signCoherent
+    (hs : B₀.IsSkewSymmetrizer s) (w : List K)
     (hc : ∀ u k v, w = u ++ k :: v →
       (∀ i, 0 ≤ cMatrix B₀ u i k) ∨ ∀ i, cMatrix B₀ u i k ≤ 0) :
     (cMatrix B₀ w)ᵀ * diagonal s * gMatrix B₀ w = diagonal s := by
-  have h := congrArg Matrix.transpose (hs.transpose_gMatrix_mul_diagonal_mul_cMatrix w hc)
+  have h := congrArg Matrix.transpose
+    (hs.transpose_gMatrix_mul_diagonal_mul_cMatrix_of_signCoherent w hc)
   simpa only [Matrix.transpose_mul, Matrix.transpose_transpose, Matrix.diagonal_transpose,
     Matrix.mul_assoc] using h
 
 /-- For a skew-symmetric matrix (`s = 1`), `(gMatrix B₀ w)ᵀ` is the left inverse of `cMatrix B₀ w`
 along any column-sign-coherent word. -/
-theorem transpose_gMatrix_mul_cMatrix (hs : B₀.IsSkewSymmetrizer 1) (w : List K)
+theorem transpose_gMatrix_mul_cMatrix_of_signCoherent
+    (hs : B₀.IsSkewSymmetrizer 1) (w : List K)
     (hc : ∀ u k v, w = u ++ k :: v →
       (∀ i, 0 ≤ cMatrix B₀ u i k) ∨ ∀ i, cMatrix B₀ u i k ≤ 0) :
     (gMatrix B₀ w)ᵀ * cMatrix B₀ w = 1 := by
-  simpa using hs.transpose_gMatrix_mul_diagonal_mul_cMatrix w hc
+  simpa using hs.transpose_gMatrix_mul_diagonal_mul_cMatrix_of_signCoherent w hc
 
 /-- For a skew-symmetric matrix (`s = 1`), `cMatrix B₀ w * (gMatrix B₀ w)ᵀ = 1` along any
 column-sign-coherent word. -/
-theorem cMatrix_mul_transpose_gMatrix (hs : B₀.IsSkewSymmetrizer 1) (w : List K)
+theorem cMatrix_mul_transpose_gMatrix_of_signCoherent
+    (hs : B₀.IsSkewSymmetrizer 1) (w : List K)
     (hc : ∀ u k v, w = u ++ k :: v →
       (∀ i, 0 ≤ cMatrix B₀ u i k) ∨ ∀ i, cMatrix B₀ u i k ≤ 0) :
     cMatrix B₀ w * (gMatrix B₀ w)ᵀ = 1 :=
-  mul_eq_one_comm.mp (hs.transpose_gMatrix_mul_cMatrix w hc)
+  mul_eq_one_comm.mp (hs.transpose_gMatrix_mul_cMatrix_of_signCoherent w hc)
 
-/-- Determinant of `cMatrix` along any column-sign-coherent word for a skew-symmetrizable matrix. -/
-theorem det_cMatrix (hs : B₀.IsSkewSymmetrizer s) (w : List K)
-    (hc : ∀ u k v, w = u ++ k :: v →
-      (∀ i, 0 ≤ cMatrix B₀ u i k) ∨ ∀ i, cMatrix B₀ u i k ≤ 0) :
-    (cMatrix B₀ w).det = (-1) ^ w.length :=
-  det_cMatrix_of_signCoherent B₀ w (fun u k _ _ ↦ (hs.matrixMutationWord u).apply_self k) hc
-
-/-- Determinant of `gMatrix` along any column-sign-coherent word for a skew-symmetrizable matrix. -/
-theorem det_gMatrix (hs : B₀.IsSkewSymmetrizer s) (w : List K)
+/-- Determinant of `gMatrix` along any column-sign-coherent word for a skew-symmetrizable matrix.
+-/
+theorem det_gMatrix_of_signCoherent (hs : B₀.IsSkewSymmetrizer s) (w : List K)
     (hc : ∀ u k v, w = u ++ k :: v →
       (∀ i, 0 ≤ cMatrix B₀ u i k) ∨ ∀ i, cMatrix B₀ u i k ≤ 0) :
     (gMatrix B₀ w).det = (-1) ^ w.length :=
-  det_gMatrix_of_signCoherent B₀ w (fun u k _ _ ↦ (hs.matrixMutationWord u).apply_self k) hc
-
-/-- Unimodularity of `cMatrix` over `ℤ` along any column-sign-coherent word for a
-skew-symmetrizable matrix. -/
-theorem isUnit_cMatrix (hs : B₀.IsSkewSymmetrizer s) (w : List K)
-    (hc : ∀ u k v, w = u ++ k :: v →
-      (∀ i, 0 ≤ cMatrix B₀ u i k) ∨ ∀ i, cMatrix B₀ u i k ≤ 0) :
-    IsUnit (cMatrix B₀ w) :=
-  isUnit_cMatrix_of_signCoherent B₀ w (fun u k _ _ ↦ (hs.matrixMutationWord u).apply_self k) hc
+  TauCeti.det_gMatrix_of_signCoherent B₀ w
+    (fun u k _ _ ↦ (hs.matrixMutationWord u).apply_self k) hc
 
 /-- Unimodularity of `gMatrix` over `ℤ` along any column-sign-coherent word for a
 skew-symmetrizable matrix. -/
-theorem isUnit_gMatrix (hs : B₀.IsSkewSymmetrizer s) (w : List K)
+theorem isUnit_gMatrix_of_signCoherent (hs : B₀.IsSkewSymmetrizer s) (w : List K)
     (hc : ∀ u k v, w = u ++ k :: v →
       (∀ i, 0 ≤ cMatrix B₀ u i k) ∨ ∀ i, cMatrix B₀ u i k ≤ 0) :
     IsUnit (gMatrix B₀ w) :=
-  isUnit_gMatrix_of_signCoherent B₀ w (fun u k _ _ ↦ (hs.matrixMutationWord u).apply_self k) hc
+  TauCeti.isUnit_gMatrix_of_signCoherent B₀ w
+    (fun u k _ _ ↦ (hs.matrixMutationWord u).apply_self k) hc
+
+/-- Nonvanishing of `g`-vectors along any column-sign-coherent word for a skew-symmetrizable
+matrix. -/
+theorem gVector_ne_zero_of_signCoherent (hs : B₀.IsSkewSymmetrizer s) (w : List K)
+    (hc : ∀ u k v, w = u ++ k :: v →
+      (∀ i, 0 ≤ cMatrix B₀ u i k) ∨ ∀ i, cMatrix B₀ u i k ≤ 0) (j : K) :
+    gVector B₀ w j ≠ 0 :=
+  TauCeti.gVector_ne_zero_of_signCoherent B₀ w
+    (fun u k _ _ ↦ (hs.matrixMutationWord u).apply_self k) hc j
+
+/-- Row nonvanishing of `gMatrix` along any column-sign-coherent word for a skew-symmetrizable
+matrix. -/
+theorem gMatrix_row_ne_zero_of_signCoherent (hs : B₀.IsSkewSymmetrizer s) (w : List K)
+    (hc : ∀ u k v, w = u ++ k :: v →
+      (∀ i, 0 ≤ cMatrix B₀ u i k) ∨ ∀ i, cMatrix B₀ u i k ≤ 0) (i : K) :
+    gMatrix B₀ w i ≠ 0 :=
+  TauCeti.gMatrix_row_ne_zero_of_signCoherent B₀ w
+    (fun u k _ _ ↦ (hs.matrixMutationWord u).apply_self k) hc i
 
 end Matrix.IsSkewSymmetrizer
 
 namespace TauCeti
 
 open Matrix
+
+namespace ExchangeMatrix
+
+variable {K : Type*} [DecidableEq K] [Fintype K] (B : ExchangeMatrix (Function.Embedding.refl K))
+
+/-- Propagating `Sum.elim 1.col (-B.matrix.col)` on `B.principalExtension.matrix` along `w`
+produces `(gMatrix B.matrix w).col` on mutable indices and `-B.matrix.col` on frozen indices. -/
+theorem degreeMutationWord_principalExtension_elim_col (w : List K) :
+    degreeMutationWord Function.Embedding.inl B.principalExtension.matrix
+        (Sum.elim (1 : Matrix K K ℤ).col (-B.matrix.col)) w =
+      Sum.elim (gMatrix B.matrix w).col (-B.matrix.col) := by
+  rw [B.principalExtension_matrix]
+  exact B.matrix_isSkewSymmetrizer.degreeMutationWord_fromRows_one_elim_col w
+
+/-- Fundamental relation `gMatrix B.matrix w * (B.mutationWord w).matrix = B.matrix * cMatrix
+B.matrix w` for a bundled square exchange matrix. -/
+theorem gMatrix_mul_mutationWord_matrix (w : List K) :
+    gMatrix B.matrix w * (B.mutationWord w).matrix = B.matrix * cMatrix B.matrix w := by
+  rw [B.mutationWord_matrix]
+  exact B.matrix_isSkewSymmetrizer.gMatrix_mul_matrixMutationWord w
+
+/-- Equal adjacent directions cancel in `gMatrix` for a bundled square exchange matrix. -/
+theorem gMatrix_append_cons_cons_self (u v : List K) (k : K) :
+    gMatrix B.matrix (u ++ k :: k :: v) = gMatrix B.matrix (u ++ v) :=
+  B.matrix_isSkewSymmetrizer.gMatrix_append_cons_cons_self u v k
+
+/-- Tropical duality `(gMatrix B.matrix w)ᵀ * diagonal B.symmetrizer * cMatrix B.matrix w =
+diagonal B.symmetrizer` along any column-sign-coherent word on a bundled square exchange matrix. -/
+theorem transpose_gMatrix_mul_diagonal_mul_cMatrix_of_signCoherent (w : List K)
+    (hc : ∀ u k v, w = u ++ k :: v →
+      (∀ i, 0 ≤ cMatrix B.matrix u i k) ∨ ∀ i, cMatrix B.matrix u i k ≤ 0) :
+    (gMatrix B.matrix w)ᵀ * diagonal B.symmetrizer * cMatrix B.matrix w =
+      diagonal B.symmetrizer :=
+  B.matrix_isSkewSymmetrizer.transpose_gMatrix_mul_diagonal_mul_cMatrix_of_signCoherent w hc
+
+/-- Transposed tropical duality `(cMatrix B.matrix w)ᵀ * diagonal B.symmetrizer * gMatrix
+B.matrix w = diagonal B.symmetrizer` along any column-sign-coherent word on a bundled square
+exchange matrix. -/
+theorem transpose_cMatrix_mul_diagonal_mul_gMatrix_of_signCoherent (w : List K)
+    (hc : ∀ u k v, w = u ++ k :: v →
+      (∀ i, 0 ≤ cMatrix B.matrix u i k) ∨ ∀ i, cMatrix B.matrix u i k ≤ 0) :
+    (cMatrix B.matrix w)ᵀ * diagonal B.symmetrizer * gMatrix B.matrix w =
+      diagonal B.symmetrizer :=
+  B.matrix_isSkewSymmetrizer.transpose_cMatrix_mul_diagonal_mul_gMatrix_of_signCoherent w hc
+
+/-- Determinant of `gMatrix B.matrix w` along any column-sign-coherent word on a bundled square
+exchange matrix. -/
+theorem det_gMatrix_of_signCoherent (w : List K)
+    (hc : ∀ u k v, w = u ++ k :: v →
+      (∀ i, 0 ≤ cMatrix B.matrix u i k) ∨ ∀ i, cMatrix B.matrix u i k ≤ 0) :
+    (gMatrix B.matrix w).det = (-1) ^ w.length :=
+  B.matrix_isSkewSymmetrizer.det_gMatrix_of_signCoherent w hc
+
+/-- Unimodularity of `gMatrix B.matrix w` over `ℤ` along any column-sign-coherent word on a bundled
+square exchange matrix. -/
+theorem isUnit_gMatrix_of_signCoherent (w : List K)
+    (hc : ∀ u k v, w = u ++ k :: v →
+      (∀ i, 0 ≤ cMatrix B.matrix u i k) ∨ ∀ i, cMatrix B.matrix u i k ≤ 0) :
+    IsUnit (gMatrix B.matrix w) :=
+  B.matrix_isSkewSymmetrizer.isUnit_gMatrix_of_signCoherent w hc
+
+/-- Nonvanishing of `g`-vectors along any column-sign-coherent word on a bundled square exchange
+matrix. -/
+theorem gVector_ne_zero_of_signCoherent (w : List K)
+    (hc : ∀ u k v, w = u ++ k :: v →
+      (∀ i, 0 ≤ cMatrix B.matrix u i k) ∨ ∀ i, cMatrix B.matrix u i k ≤ 0) (j : K) :
+    gVector B.matrix w j ≠ 0 :=
+  B.matrix_isSkewSymmetrizer.gVector_ne_zero_of_signCoherent w hc j
+
+/-- Row nonvanishing of `gMatrix B.matrix w` along any column-sign-coherent word on a bundled
+square exchange matrix. -/
+theorem gMatrix_row_ne_zero_of_signCoherent (w : List K)
+    (hc : ∀ u k v, w = u ++ k :: v →
+      (∀ i, 0 ≤ cMatrix B.matrix u i k) ∨ ∀ i, cMatrix B.matrix u i k ≤ 0) (i : K) :
+    gMatrix B.matrix w i ≠ 0 :=
+  B.matrix_isSkewSymmetrizer.gMatrix_row_ne_zero_of_signCoherent w hc i
+
+end ExchangeMatrix
 
 /-- In rank one with zero initial matrix, the first mutation sends both `cMatrix` and `gMatrix`
 to `(-1)`. -/
@@ -916,9 +1142,9 @@ example : cMatrix !![0, 1; -1, 0] [0, 1] = !![0, -1; 1, -1] ∧
     ext i j
     by_cases hj : j = 1
     · subst j
-      rw [gMatrix_append_singleton_col, hg₁, hc₁, hB₁]
+      rw [gMatrix_append_singleton_apply_col, hg₁, hc₁, hB₁]
       fin_cases i <;> simp [B₀, Fin.sum_univ_two]
-    · rw [gMatrix_append_singleton_of_ne B₀ [0] 1 i hj, hg₁]
+    · rw [gMatrix_append_singleton_apply_of_ne B₀ [0] 1 i hj, hg₁]
       fin_cases i <;> fin_cases j <;> simp at hj ⊢
   rw [h01]
   refine ⟨hc₂, hg₂, ?_⟩

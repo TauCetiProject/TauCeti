@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Algebra.Cluster.ExchangeMatrix.Factorization
 public import TauCeti.Algebra.Cluster.ExchangeMatrix.Word
 
 import Mathlib.LinearAlgebra.Matrix.Notation
@@ -16,8 +17,12 @@ import Mathlib.Tactic.LinearCombination
 
 Polynomial exchange relations attach a positive degree to each mutable column, dividing every
 entry of that column. This file proves that these divisibility conditions persist under mutation
-and gives the exact mutation formula for the divided columns. The degree in the correction term
-is the degree of the mutation direction, rather than that of the output column.
+and gives the exact mutation formula and signed factorization for the divided columns. The degree
+in the correction term is the degree of the mutation direction, rather than that of the output
+column. For finite index types, when `B (row k) k = 0` and `ε = ±1`, the divided matrix
+`β i j = B i j / r j` satisfies `Eε * β' = β * F'` and `β' = Eε * β * F'` with integral right
+factor `F' = matrixMutationRight row β k (r k * ε)` intertwining
+`F' * diagonal r = diagonal r * Fε`.
 
 More generally, mutation preserves the common divisors of each individual column of any integer
 matrix. In particular, a column is zero after mutation exactly when it was zero before mutation.
@@ -30,6 +35,8 @@ index sets nor skew-symmetrizability, and apply to frozen rows as well as mutabl
   phenomenon and upper bounds*, §2, for exchange degrees dividing integral columns.
 * T. Nakanishi and D. Rupel, *Companion cluster algebras to a generalized cluster algebra*, §3,
   for degree-weighted matrix mutation.
+* A. Berenstein and A. Zelevinsky, *Quantum cluster algebras*, Advances in Mathematics 195
+  (2005), §3, equations (3.2)–(3.4), for the signed mutation factors.
 -/
 
 public section
@@ -112,6 +119,91 @@ theorem matrixMutation_ediv_apply (r : K → ℤ) (hr : ∀ j, 0 < r j)
     rw [hp i k, hp (row k) j, hn i k, hn (row k) j]
     have hij := Int.ediv_mul_cancel (h i j)
     linear_combination -hij
+
+section DividedFactor
+
+variable [Fintype K] (row : K ↪ I) (B : Matrix I K ℤ) (r : K → ℤ) (k : K) (ε : ℤ)
+
+omit [DecidableEq I] in
+/-- Positive column degrees dividing row `row k` intertwine the right mutation factor of the
+divided matrix `of (fun i j ↦ B i j / r j)` at sign parameter `r k * ε` with `matrixMutationRight`,
+for every integer `ε`. -/
+theorem matrixMutationRight_of_ediv_mul_diagonal (hr : ∀ j, 0 < r j)
+    (hdvd : ∀ j, r j ∣ B (row k) j) :
+    matrixMutationRight row (of fun i j ↦ B i j / r j) k (r k * ε) * diagonal r =
+      diagonal r * matrixMutationRight row B k ε := by
+  ext i j
+  simp only [mul_diagonal, diagonal_mul, matrixMutationRight_apply, of_apply]
+  by_cases hi : i = k
+  · subst i
+    by_cases hj : j = k
+    · simp [hj]
+    · simp only [hj, ite_false, ite_true]
+      rw [posPart_def, max_mul_of_nonneg _ _ (hr j).le, zero_mul, mul_assoc (r k) ε,
+        mul_assoc (r k), mul_assoc ε, Int.ediv_mul_cancel (hdvd j), ← mul_zero (r k),
+        ← mul_max_of_nonneg _ _ (hr k).le, ← posPart_def]
+  · by_cases hj : j = k <;> by_cases hij : i = j <;>
+      simp [hi, hj, hij, Matrix.one_apply]
+
+/-- Intertwining identity `Eε * β' = β * F'` for the divided matrix `β i j = B i j / r j`
+and `F' = matrixMutationRight row β k (r k * ε)` for `ε = ±1`, when `B (row k) k = 0` and positive
+degrees `r j` divide every column. -/
+theorem matrixMutationLeft_mul_of_matrixMutation_ediv [Fintype I] (hr : ∀ j, 0 < r j)
+    (hdvd : ∀ i j, r j ∣ B i j) (hkk : B (row k) k = 0) (hε : ε = 1 ∨ ε = -1) :
+    matrixMutationLeft row B k ε * of (fun i j ↦ matrixMutation row B k i j / r j) =
+      of (fun i j ↦ B i j / r j) *
+        matrixMutationRight row (of fun i j ↦ B i j / r j) k (r k * ε) := by
+  set β : Matrix I K ℤ := of fun i j ↦ B i j / r j
+  set β' : Matrix I K ℤ := of fun i j ↦ matrixMutation row B k i j / r j
+  have hB : β * diagonal r = B := by
+    ext i j
+    simp [β, mul_diagonal, Int.ediv_mul_cancel (hdvd i j)]
+  have hB' : β' * diagonal r = matrixMutation row B k := by
+    ext i j
+    simp [β', mul_diagonal, Int.ediv_mul_cancel (dvd_matrixMutation (hdvd · j) k i)]
+  have hinj : (matrixMutationLeft row B k ε * β') * diagonal r =
+      (β * matrixMutationRight row β k (r k * ε)) * diagonal r := by
+    calc
+      (matrixMutationLeft row B k ε * β') * diagonal r
+        = matrixMutationLeft row B k ε * matrixMutation row B k := by
+          rw [Matrix.mul_assoc, hB']
+      _ = (matrixMutationLeft row B k ε * matrixMutationLeft row B k ε) * B *
+          matrixMutationRight row B k ε := by
+          rw [matrixMutation_eq_mul row B k ε hkk hε]
+          simp only [Matrix.mul_assoc]
+      _ = B * matrixMutationRight row B k ε := by
+          rw [matrixMutationLeft_mul_self, Matrix.one_mul]
+      _ = (β * diagonal r) * matrixMutationRight row B k ε := by
+          rw [hB]
+      _ = (β * matrixMutationRight row β k (r k * ε)) * diagonal r := by
+          rw [Matrix.mul_assoc,
+            ← matrixMutationRight_of_ediv_mul_diagonal row B r k ε hr (hdvd (row k)),
+            Matrix.mul_assoc]
+  ext i j
+  apply mul_right_cancel₀ (hr j).ne'
+  simpa only [mul_diagonal] using congrFun (congrFun hinj i) j
+
+/-- Signed factorization `β' = Eε * β * F'` of the divided mutated matrix for `ε = ±1`, when
+`B (row k) k = 0` and positive degrees `r j` divide every column. -/
+theorem of_matrixMutation_ediv_eq_mul [Fintype I] (hr : ∀ j, 0 < r j)
+    (hdvd : ∀ i j, r j ∣ B i j) (hkk : B (row k) k = 0) (hε : ε = 1 ∨ ε = -1) :
+    of (fun i j ↦ matrixMutation row B k i j / r j) =
+      matrixMutationLeft row B k ε * of (fun i j ↦ B i j / r j) *
+        matrixMutationRight row (of fun i j ↦ B i j / r j) k (r k * ε) := by
+  calc
+    of (fun i j ↦ matrixMutation row B k i j / r j)
+      = (matrixMutationLeft row B k ε * matrixMutationLeft row B k ε) *
+          of (fun i j ↦ matrixMutation row B k i j / r j) := by
+        rw [matrixMutationLeft_mul_self, Matrix.one_mul]
+    _ = matrixMutationLeft row B k ε *
+          (matrixMutationLeft row B k ε * of (fun i j ↦ matrixMutation row B k i j / r j)) := by
+        rw [Matrix.mul_assoc]
+    _ = matrixMutationLeft row B k ε * of (fun i j ↦ B i j / r j) *
+          matrixMutationRight row (of fun i j ↦ B i j / r j) k (r k * ε) := by
+        rw [matrixMutationLeft_mul_of_matrixMutation_ediv row B r k ε hr hdvd hkk hε,
+          Matrix.mul_assoc]
+
+end DividedFactor
 
 /-! Unequal degrees `(3, 2)` and a frozen row give a nonzero correction, distinguishing the
 mutation degree from the degree of the output column. -/

@@ -29,9 +29,11 @@ entry in the factorization theorem.
 ## References
 
 * A. Berenstein and A. Zelevinsky, *Quantum cluster algebras*, Advances in Mathematics 195
-  (2005), §3, equations (3.2)–(3.4).
+  (2005), §3, equations (3.2)–(3.4) and Proposition 3.4.
 * A. Berenstein, S. Fomin and A. Zelevinsky, *Cluster algebras III: Upper bounds and double
   Bruhat cells*, Duke Mathematical Journal 126 (2005), §1.
+* T. Nakanishi and A. Zelevinsky, *On tropical dualities in cluster algebras*, Contemporary
+  Mathematics 565 (2012), §2, (2.7).
 -/
 
 public section
@@ -57,6 +59,22 @@ def matrixMutationRight (row : K ↪ I) (B : Matrix I K ℤ) (k : K) (ε : ℤ) 
 variable (row : K ↪ I) (B : Matrix I K ℤ) (k : K) (ε : ℤ)
 
 omit [DecidableEq K] in
+/-- Definitional presentation of `matrixMutationLeft` via `Matrix.updateCol`. -/
+theorem matrixMutationLeft_def :
+    matrixMutationLeft row B k ε =
+      (1 : Matrix I I ℤ).updateCol (row k) fun i ↦
+        if i = row k then -1 else (-ε * B i k)⁺ :=
+  (rfl)
+
+omit [DecidableEq I] in
+/-- Definitional presentation of `matrixMutationRight` via `Matrix.updateRow`. -/
+theorem matrixMutationRight_def :
+    matrixMutationRight row B k ε =
+      (1 : Matrix K K ℤ).updateRow k fun j ↦
+        if j = k then -1 else (ε * B (row k) j)⁺ :=
+  (rfl)
+
+omit [DecidableEq K] in
 /-- The entries of the left mutation factor. -/
 theorem matrixMutationLeft_apply (i j : I) :
     matrixMutationLeft row B k ε i j =
@@ -75,6 +93,33 @@ omit [DecidableEq K] in
 theorem matrixMutationLeft_apply_col (i : I) :
     matrixMutationLeft row B k ε i (row k) = if i = row k then -1 else (-ε * B i k)⁺ := by
   simp [matrixMutationLeft_apply]
+
+omit [DecidableEq I] in
+/-- Column `k` of `matrixMutationLeft` along `Function.Embedding.refl K`, stated at index `k` so
+`simp` matches after `Function.Embedding.refl_apply`. -/
+@[simp]
+theorem matrixMutationLeft_refl_apply_col (B : Matrix K K ℤ) (k : K) (ε : ℤ) (i : K) :
+    matrixMutationLeft (Function.Embedding.refl K) B k ε i k =
+      if i = k then -1 else (-ε * B i k)⁺ :=
+  matrixMutationLeft_apply_col (Function.Embedding.refl K) B k ε i
+
+omit [DecidableEq I] in
+/-- Column `Sum.inl k` of `matrixMutationLeft` along `Function.Embedding.inl`, stated at index
+`Sum.inl k` so `simp` matches after `Function.Embedding.inl_apply`. -/
+@[simp]
+theorem matrixMutationLeft_inl_apply_col {J : Type*} [DecidableEq J]
+    (B : Matrix (K ⊕ J) K ℤ) (k : K) (ε : ℤ) (i : K ⊕ J) :
+    matrixMutationLeft Function.Embedding.inl B k ε i (Sum.inl k) =
+      if i = Sum.inl k then -1 else (-ε * B i k)⁺ :=
+  matrixMutationLeft_apply_col Function.Embedding.inl B k ε i
+
+omit [DecidableEq K] in
+/-- When `B (row k) k = 0`, subtracting column `row k` of `E_{-1}` from column `row k` of `E₁`
+recovers `-B · k`. -/
+theorem matrixMutationLeft_apply_col_one_sub_neg_one (hkk : B (row k) k = 0) (i : I) :
+    matrixMutationLeft row B k 1 i (row k) - matrixMutationLeft row B k (-1) i (row k) =
+      -B i k := by
+  by_cases hi : i = row k <;> simp [matrixMutationLeft_apply_col, hi, hkk]
 
 omit [DecidableEq I] in
 @[simp]
@@ -269,11 +314,15 @@ omit [DecidableEq I] [Fintype I] in
 /-- The right mutation factor has determinant `-1`, for every integer parameter. -/
 @[simp]
 theorem det_matrixMutationRight : (matrixMutationRight row B k ε).det = -1 := by
-  rw [← det_transpose, matrixMutationRight, ← updateCol_transpose, transpose_one]
-  have h := det_updateCol_sum (1 : Matrix K K ℤ) k fun j ↦
+  have h := det_updateRow_sum (1 : Matrix K K ℤ) k fun j ↦
     if j = k then -1 else (ε * B (row k) j)⁺
-  simpa only [smul_eq_mul, Matrix.one_apply, mul_ite, mul_one, mul_zero,
-    Finset.sum_ite_eq, Finset.mem_univ, ↓reduceIte, det_one] using h
+  have hsum : (∑ l, (if l = k then -1 else (ε * B (row k) l)⁺) • (1 : Matrix K K ℤ) l) =
+      fun j ↦ if j = k then -1 else (ε * B (row k) j)⁺ := by
+    ext j
+    rw [Finset.sum_apply]
+    simp [Matrix.one_apply, mul_ite]
+  rw [hsum] at h
+  simpa [matrixMutationRight] using h
 
 end Products
 
@@ -327,6 +376,16 @@ theorem transpose_matrixMutationLeft_mul_diagonal
   · by_cases hj : j = k <;> by_cases hij : i = j <;>
       simp [hi, hj, hij, Ne.symm hi, Matrix.one_apply, eq_comm]
 
+/-- A skew-symmetrizer intertwines the transposed right mutation factor of a square matrix
+with its left mutation factor, for every integer parameter. -/
+theorem transpose_matrixMutationRight_mul_diagonal
+    (hs : B.IsSkewSymmetrizer s) (k : K) (ε : ℤ) :
+    (matrixMutationRight (Function.Embedding.refl K) B k ε)ᵀ * diagonal s =
+      diagonal s * matrixMutationLeft (Function.Embedding.refl K) B k ε := by
+  have h := congrArg Matrix.transpose (hs.transpose_matrixMutationLeft_mul_diagonal k ε)
+  simpa only [Matrix.transpose_mul, Matrix.transpose_transpose, Matrix.diagonal_transpose]
+    using h.symm
+
 /-- The transposed left mutation factor and the right mutation factor preserve a diagonal
 skew-symmetrizer, for every integer parameter. -/
 theorem transpose_matrixMutationLeft_mul_diagonal_mul_matrixMutationRight
@@ -344,9 +403,7 @@ theorem transpose_matrixMutationRight_mul_diagonal_mul_matrixMutationLeft
     (matrixMutationRight (Function.Embedding.refl K) B k ε)ᵀ * diagonal s *
         matrixMutationLeft (Function.Embedding.refl K) B k ε =
       diagonal s := by
-  have h := congrArg Matrix.transpose
-    (hs.transpose_matrixMutationLeft_mul_diagonal_mul_matrixMutationRight k ε)
-  simpa only [Matrix.transpose_mul, Matrix.transpose_transpose, Matrix.diagonal_transpose,
-    Matrix.mul_assoc] using h
+  rw [hs.transpose_matrixMutationRight_mul_diagonal, Matrix.mul_assoc,
+    matrixMutationLeft_mul_self, Matrix.mul_one]
 
 end Matrix.IsSkewSymmetrizer
