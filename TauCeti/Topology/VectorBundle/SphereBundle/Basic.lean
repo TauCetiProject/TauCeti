@@ -128,6 +128,18 @@ theorem sphereBundleProj_apply (v : sphereBundle F E) :
     sphereBundleProj F E v = (v : TotalSpace F E).proj :=
   (rfl)
 
+/-- The inclusion `S(E_b) → S(E)` of the unit sphere of the fibre over `b` into the unit sphere
+bundle. -/
+def sphereBundleFiberIncl (b : B) : C(Metric.sphere (0 : E b) 1, sphereBundle F E) where
+  toFun x := ⟨⟨b, x⟩, mem_sphereBundle.2 (mem_sphere_zero_iff_norm.1 x.2)⟩
+  continuous_toFun :=
+    ((FiberBundle.continuous_totalSpaceMk F E b).comp continuous_subtype_val).subtype_mk _
+
+@[simp]
+theorem coe_sphereBundleFiberIncl_apply (b : B) (x : Metric.sphere (0 : E b) 1) :
+    (sphereBundleFiberIncl F E b x : TotalSpace F E) = ⟨b, x⟩ :=
+  (rfl)
+
 end Proj
 
 variable {B : Type w} [TopologicalSpace B] (F : Type*) [NormedAddCommGroup F] [NormedSpace ℝ F]
