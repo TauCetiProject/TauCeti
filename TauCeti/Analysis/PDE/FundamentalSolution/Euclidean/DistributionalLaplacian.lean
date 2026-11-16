@@ -12,7 +12,6 @@ import TauCeti.Analysis.SpecialFunctions.Pow.Real
 import TauCeti.Analysis.Sobolev.WeakDeriv.NormRpow
 import TauCeti.Analysis.PDE.FundamentalSolution.Euclidean.Distribution
 import TauCeti.MeasureTheory.Constructions.HaarToSphere
-import Mathlib.Analysis.Calculus.Rademacher
 import TauCeti.Analysis.Sobolev.WeakDeriv.Laplacian
 
 /-!
@@ -29,12 +28,12 @@ and, with the pole moved to `a`, `∫ x, Δ f x * Gₙ (x - a) = -f a`.
 The proof has two steps.
 
 * **The weak gradient.** Integration by parts against `Gₙ` holds across the pole: for a `C¹`
-  function `g` with compact support, `∫ Gₙ ∂ᵥg = -∫ (∂ᵥGₙ) g`, in every dimension.  For `n ≤ 2`
-  the kernel is Lipschitz (it vanishes identically for `n = 0, 2`), so Mathlib's integration by
-  parts for Lipschitz functions applies.  For `n ≥ 3` this is the exponent `2 - n` case of the
-  integration by parts identity `TauCeti.integral_norm_rpow_mul_fderiv_eq_neg` for singular norm
-  powers, proved by regularization and dominated convergence.  In particular `Gₙ` is weakly
-  differentiable on every open set with weak derivative its classical one.
+  function `g` with compact support, `∫ Gₙ ∂ᵥg = -∫ (∂ᵥGₙ) g`, in every dimension.  This is the
+  exponent `2 - n` case of the integration by parts identity
+  `TauCeti.integral_norm_rpow_mul_fderiv_eq_neg` for norm powers, proved for `n ≥ 2` by
+  regularization and dominated convergence, and for `n = 1`, where `G₁` is continuous, by
+  removing the pole as a countable exceptional set.  In particular `Gₙ` is weakly differentiable
+  on every open set with weak derivative its classical one.
 * **The flux.** Summing over an orthonormal basis turns `∫ Δ f Gₙ` into
   `-∫ ∇Gₙ · ∇f = (n ωₙ)⁻¹ ∫ ‖x‖⁻ⁿ f' x x`, and the radial fundamental theorem of calculus
   `TauCeti.integral_norm_rpow_neg_finrank_mul_fderiv_apply_self` evaluates the latter integral as
@@ -67,57 +66,20 @@ open scoped RealInnerProductSpace
 
 variable {n : ℕ}
 
-/-- In dimensions at most two the Newtonian kernel is a multiple of the norm: it vanishes
-identically in dimensions zero and two, where its normalizing constant is `0⁻¹ = 0`. -/
-private lemma exists_newtonianKernel_eq_mul_norm (hn : n ≤ 2) :
-    ∃ c : ℝ, newtonianKernel n = fun x ↦ c * ‖x‖ := by
-  interval_cases n
-  · exact ⟨0, by rw [newtonianKernel_dim_zero]; funext; simp⟩
-  · exact ⟨-1 / 2, funext fun x ↦ by rw [newtonianKernel_one]; ring⟩
-  · exact ⟨0, by rw [newtonianKernel_two]; funext; simp⟩
-
-/-- Integration by parts against the Newtonian kernel in dimensions at most two, where the kernel
-is Lipschitz. -/
-private lemma integral_newtonianKernel_mul_fderiv_eq_neg_fderiv_mul_of_le_two (hn : n ≤ 2)
+/-- **Integration by parts against the Newtonian kernel.** In every dimension, for a `C¹`
+function `g` with compact support, `∫ Gₙ ∂ᵥg = -∫ (∂ᵥGₙ) g`, although for `n ≥ 3` the kernel is
+singular at the origin and for `n = 1` it is not differentiable there. This is the exponent
+`2 - n` case of `TauCeti.integral_norm_rpow_mul_fderiv_eq_neg`. -/
+theorem integral_newtonianKernel_mul_fderiv_eq_neg_fderiv_mul
     {g : EuclideanSpace ℝ (Fin n) → ℝ} (hg : ContDiff ℝ 1 g) (hc : HasCompactSupport g)
     (v : EuclideanSpace ℝ (Fin n)) :
     ∫ x, newtonianKernel n x * fderiv ℝ g x v =
       -∫ x, fderiv ℝ (newtonianKernel n) x v * g x := by
-  rcases eq_or_ne n 0 with rfl | hn0
+  -- In dimension zero the only direction is `v = 0`.
+  rcases Nat.eq_zero_or_pos n with rfl | hn
   · simp [Subsingleton.elim v 0]
   have : Nontrivial (EuclideanSpace ℝ (Fin n)) :=
-    Module.nontrivial_of_finrank_pos (R := ℝ) (by rw [finrank_euclideanSpace_fin]; omega)
-  obtain ⟨c, hcG⟩ := exists_newtonianKernel_eq_mul_norm hn
-  have hG : LipschitzWith (‖c‖₊ * 1) (newtonianKernel n) :=
-    hcG ▸ (lipschitzWith_smul c).comp lipschitzWith_one_norm
-  obtain ⟨K, hgK⟩ := hg.lipschitzWith_of_hasCompactSupport hc one_ne_zero
-  -- Away from the origin the line derivative of the kernel is its Fréchet derivative.
-  have hlineG : (fun x ↦ lineDeriv ℝ (newtonianKernel n) x v * g x) =ᵐ[volume]
-      fun x ↦ fderiv ℝ (newtonianKernel n) x v * g x := by
-    filter_upwards [compl_mem_ae_iff.2 (measure_singleton (0 : EuclideanSpace ℝ (Fin n)))]
-      with x hx
-    have hd : DifferentiableAt ℝ (newtonianKernel n) x := by
-      rw [hcG]
-      exact (differentiableAt_const c).mul
-        ((contDiffAt_norm ℝ (n := 1) (Set.mem_compl_singleton_iff.1 hx)).differentiableAt
-          one_ne_zero)
-    rw [hd.lineDeriv_eq_fderiv]
-  have hlineg : ∀ x, lineDeriv ℝ g x (-v) = -fderiv ℝ g x v := fun x ↦ by
-    rw [((hg.differentiable one_ne_zero) x).lineDeriv_eq_fderiv, map_neg]
-  rw [← integral_congr_ae hlineG, hG.integral_lineDeriv_mul_eq hgK hc v]
-  simp_rw [hlineg, neg_mul, integral_neg, neg_neg, mul_comm (fderiv ℝ g _ v)]
-
-/-- Integration by parts against the Newtonian kernel in dimensions at least three, where the
-kernel is singular at the origin. This is the exponent `2 - n` case of
-`TauCeti.integral_norm_rpow_mul_fderiv_eq_neg`. -/
-private lemma integral_newtonianKernel_mul_fderiv_eq_neg_fderiv_mul_of_three_le (hn : 3 ≤ n)
-    {g : EuclideanSpace ℝ (Fin n) → ℝ} (hg : ContDiff ℝ 1 g) (hc : HasCompactSupport g)
-    (v : EuclideanSpace ℝ (Fin n)) :
-    ∫ x, newtonianKernel n x * fderiv ℝ g x v =
-      -∫ x, fderiv ℝ (newtonianKernel n) x v * g x := by
-  have : Nontrivial (EuclideanSpace ℝ (Fin n)) :=
-    Module.nontrivial_of_finrank_pos (R := ℝ) (by rw [finrank_euclideanSpace_fin]; omega)
-  have hnℝ : (3 : ℝ) ≤ n := by exact_mod_cast hn
+    Module.nontrivial_of_finrank_pos (R := ℝ) (by rwa [finrank_euclideanSpace_fin])
   set C := ((n : ℝ) * ((n : ℝ) - 2) * volume.real (ball (0 : EuclideanSpace ℝ (Fin n)) 1))⁻¹
   have hG : newtonianKernel n = fun x ↦ C * ‖x‖ ^ (2 - (n : ℝ)) := funext (newtonianKernel_def n)
   -- Away from the pole, `∂ᵥGₙ` is `C` times the derivative of the norm power.
@@ -129,19 +91,7 @@ private lemma integral_newtonianKernel_mul_fderiv_eq_neg_fderiv_mul_of_three_le 
   rw [integral_congr_ae hderiv, hG]
   simp only [mul_assoc]
   rw [integral_const_mul, integral_const_mul, integral_norm_rpow_mul_fderiv_eq_neg (μ := volume)
-    (by linarith) (by rw [finrank_euclideanSpace_fin]; linarith) hg hc v, mul_neg]
-
-/-- **Integration by parts against the Newtonian kernel.** In every dimension, for a `C¹`
-function `g` with compact support, `∫ Gₙ ∂ᵥg = -∫ (∂ᵥGₙ) g`, although for `n ≥ 3` the kernel is
-singular at the origin and for `n = 1` it is not differentiable there. -/
-theorem integral_newtonianKernel_mul_fderiv_eq_neg_fderiv_mul
-    {g : EuclideanSpace ℝ (Fin n) → ℝ} (hg : ContDiff ℝ 1 g) (hc : HasCompactSupport g)
-    (v : EuclideanSpace ℝ (Fin n)) :
-    ∫ x, newtonianKernel n x * fderiv ℝ g x v =
-      -∫ x, fderiv ℝ (newtonianKernel n) x v * g x := by
-  rcases le_or_gt n 2 with hn | hn
-  · exact integral_newtonianKernel_mul_fderiv_eq_neg_fderiv_mul_of_le_two hn hg hc v
-  · exact integral_newtonianKernel_mul_fderiv_eq_neg_fderiv_mul_of_three_le (by omega) hg hc v
+    (by rw [finrank_euclideanSpace_fin]; linarith) hg hc v, mul_neg]
 
 /-- **Integration by parts against the Newtonian kernel with pole `a`.** In every dimension, for
 a `C¹` function `g` with compact support, `∫ ∂ᵥg (x) Gₙ(x - a) dx = -∫ g(x) ∂ᵥGₙ(x - a) dx`. -/
