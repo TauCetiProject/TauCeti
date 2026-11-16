@@ -142,8 +142,19 @@ noncomputable def permutationLocalSystemAugmentation :
 theorem permutationLocalSystemAugmentation_app_apply (x : FundamentalGroupoid B)
     (f : (p ⁻¹' {x.as}) →₀ R) :
     ((hp.permutationLocalSystemAugmentation R).app x).hom f = f.sum fun _ r ↦ r := by
+  -- The codomain is the fibre `((constantFunctor B).obj (ModuleCat.of R R)).obj x`, which is `R`
+  -- only after unfolding the constant functor, so no `R`-module instance or `Finsupp` lemma applies
+  -- to the component as stated. `change` restates it as the linear combination it is defined as.
   change Finsupp.linearCombination R (fun _ ↦ (1 : R)) f = _
   simp [Finsupp.linearCombination_apply]
+
+/-- Over a finite fibre, the augmentation sends a formal sum of sheets to the sum of its
+coefficients over all the sheets. -/
+theorem permutationLocalSystemAugmentation_app_apply_eq_sum (x : FundamentalGroupoid B)
+    [Fintype (p ⁻¹' {x.as})] (f : (p ⁻¹' {x.as}) →₀ R) :
+    ((hp.permutationLocalSystemAugmentation R).app x).hom f = ∑ e, f e :=
+  (hp.permutationLocalSystemAugmentation_app_apply R x f).trans
+    (Finsupp.sum_fintype _ _ fun _ ↦ rfl)
 
 /-- The augmentation of the permutation local system is the identity on the coefficients at each
 sheet. -/

@@ -128,6 +128,13 @@ def homologicalOrientation :
     HomologicalOrientation (OrientationCover 𝓘(ℝ, E) M) E (n + 1) :=
   (canonicalOrientation.reindex (finCongr hE)).toHomologicalOrientation hE
 
+/-- The homological orientation of the orientation cover is the one of its canonical
+orientation. -/
+theorem homologicalOrientation_def :
+    homologicalOrientation (M := M) hE =
+      (canonicalOrientation.reindex (finCongr hE)).toHomologicalOrientation hE :=
+  (rfl)
+
 /-- The deck involution of the orientation cover has local index `-1` at every point for the
 canonical homological orientation. -/
 theorem localIndex_deck (p : OrientationCover 𝓘(ℝ, E) M) :
@@ -182,6 +189,13 @@ def coverFundamentalClass :
       (ModuleCat.of ℤ ℤ) (n + 1) : ModuleCat.{0} ℤ) :=
   (uliftIntHomologyIso _ (n + 1)).hom.hom ((homologicalOrientation hE).fundamentalClass hE)
 
+/-- The fundamental class of the orientation cover with coefficients in `ℤ` is the image of its
+fundamental class with coefficients in `ULift ℤ`. -/
+theorem coverFundamentalClass_def :
+    coverFundamentalClass M hE =
+      (uliftIntHomologyIso _ (n + 1)).hom.hom ((homologicalOrientation hE).fundamentalClass hE) :=
+  (rfl)
+
 omit [FiniteDimensional ℝ E] [T2Space M] [CompactSpace M] in
 /-- The deck involution of the orientation cover lies over the base. -/
 private theorem deck_comp_projHom :
@@ -192,7 +206,7 @@ private theorem deck_comp_projHom :
 
 /-- The deck involution negates the fundamental class of the orientation cover with coefficients
 in `ℤ`. -/
-private theorem homologyMap_deck_coverFundamentalClass :
+theorem homologyMap_deck_coverFundamentalClass :
     (SSet.homologyMap (TopCat.toSSet.map (TopCat.ofHom ((VectorBundleOrientationCover.deck :
         OrientationCover 𝓘(ℝ, E) M ≃ₜ OrientationCover 𝓘(ℝ, E) M) :
           C(OrientationCover 𝓘(ℝ, E) M, OrientationCover 𝓘(ℝ, E) M))))
@@ -217,7 +231,7 @@ private theorem homologyMap_deck_coverFundamentalClass :
 /-- The projection of the orientation cover kills its fundamental class: `π_*[M'] = 0` in
 `Hₙ₊₁(M; ℤ)`. Since `π ∘ τ = π`, the class `π_*[M']` equals its own negative, and the top homology
 of a compact manifold is torsion-free. -/
-private theorem homologyMap_projHom_coverFundamentalClass :
+theorem homologyMap_projHom_coverFundamentalClass :
     (SSet.homologyMap (TopCat.toSSet.map (projHom M)) (ModuleCat.of ℤ ℤ) (n + 1)).hom
       (coverFundamentalClass M hE) = 0 := by
   have hneg := congrArg (fun φ ↦ (SSet.homologyMap (TopCat.toSSet.map φ) (ModuleCat.of ℤ ℤ)

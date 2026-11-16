@@ -663,6 +663,16 @@ homology. -/
 def uliftIntIso : ModuleCat.of ℤ (ULift.{0} ℤ) ≅ ModuleCat.of ℤ ℤ :=
   ULift.moduleEquiv.toModuleIso
 
+/-- The isomorphism `ULift ℤ ≅ ℤ` forgets the lift. -/
+@[simp]
+theorem uliftIntIso_hom_apply (x : ULift.{0} ℤ) : uliftIntIso.hom.hom x = x.down :=
+  (rfl)
+
+/-- The inverse of the isomorphism `ULift ℤ ≅ ℤ` lifts an integer. -/
+@[simp]
+theorem uliftIntIso_inv_apply (x : ℤ) : uliftIntIso.inv.hom x = ULift.up x :=
+  (rfl)
+
 /-- Singular homology with coefficients in `ULift ℤ` is singular homology with coefficients in
 `ℤ`, naturally in the space. -/
 def uliftIntHomologyIso (X : TopCat.{0}) (k : ℕ) :

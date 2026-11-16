@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Data.Finsupp.Basic
 public import Mathlib.Logic.Equiv.Set
 
 /-!
@@ -17,7 +18,9 @@ topology, so both are stated for a bare function and a bare equivalence; a `Cont
 
 * `Function.fiberMap`: a map `f : E → F` commuting with the projections to `X` restricts to the
   fibres over each point. It is `Set.MapsTo.restrict` for the fibre inclusion, so its application,
-  identity and composition laws are the generic `Subtype.map` ones.
+  identity and composition laws are the generic `Subtype.map` ones. Pushing a finitely supported
+  function on a fibre forward along the restriction of an involution reads its value at the image
+  (`Function.mapDomain_fiberMap_apply_of_involutive`).
 * `Equiv.compFiberEquiv`: relabelling the base along `h : X ≃ Y` identifies the fibre of `h ∘ p`
   over `y` with the fibre of `p` over `h.symm y`. It is the identity on underlying points.
 
@@ -76,6 +79,19 @@ theorem fiberMap_fiberMap_of_involutive {f : E → E} (hff : Involutive f) (hf :
 theorem injective_fiberMap_of_involutive {f : E → E} (hff : Involutive f) (hf : p ∘ f = p)
     (x : X) : Injective (fiberMap f hf x) :=
   LeftInverse.injective (fiberMap_fiberMap_of_involutive hff hf x)
+
+/-- A map over the base without fixed points has no fixed points on any fibre. -/
+theorem fiberMap_ne_self {f : E → E} (hfix : ∀ e, f e ≠ e) (hf : p ∘ f = p) (x : X)
+    (e : p ⁻¹' {x}) : fiberMap f hf x e ≠ e :=
+  fun h ↦ hfix e ((fiberMap_apply_coe f hf x e).symm.trans (congrArg Subtype.val h))
+
+/-- Moving the points of a finitely supported function on a fibre by an involution over the base
+reads its value at the image. -/
+theorem mapDomain_fiberMap_apply_of_involutive {M : Type*} [AddCommMonoid M] {f : E → E}
+    (hff : Involutive f) (hf : p ∘ f = p) (x : X) (v : p ⁻¹' {x} →₀ M) (e : p ⁻¹' {x}) :
+    Finsupp.mapDomain (fiberMap f hf x) v e = v (fiberMap f hf x e) := by
+  conv_lhs => rw [← fiberMap_fiberMap_of_involutive hff hf x e]
+  exact Finsupp.mapDomain_apply_of_injective (injective_fiberMap_of_involutive hff hf x) v _
 
 end Function
 

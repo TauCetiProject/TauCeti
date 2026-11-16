@@ -108,6 +108,7 @@ def permutationLocalSystemFiberMap :
     simp [hp.fiberMap_monodromy hp σ hσ]
 
 /-- The endomorphism moving the sheets by `σ` is the linear extension of `σ` on each fibre. -/
+@[simp]
 theorem permutationLocalSystemFiberMap_app_apply (x : FundamentalGroupoid B)
     (f : (p ⁻¹' {x.as}) →₀ R) :
     ((hp.permutationLocalSystemFiberMap R σ hσ).app x).hom f =
@@ -145,8 +146,7 @@ theorem chainComplexMap_comp_singularChainComplexPermutationIso_hom :
   -- Moving `τ` by `σ` does not change `p ∘ τ`, and moves its initial sheet by `σ`.
   exact single_initialSheet_ιTwistedChainComplex hp R
     (by conv_rhs => rw [← hσp]
-        rw [Functor.map_comp]
-        rfl)
+        rw [Functor.map_comp, NatTrans.comp_app, ConcreteCategory.comp_apply])
     ((DFunLike.congr_fun (TauCeti.TopCat.simplexMap_app _ τ) _).trans
       (Function.fiberMap_apply_coe σ hσ _ (initialSheet τ)).symm)
 
@@ -167,33 +167,11 @@ theorem homologyMap_comp_singularHomologyPermutationIso_hom (k : ℕ) :
 
 variable {σ} (hσσ : Function.Involutive σ)
 
-include hσσ in
-/-- Moving the sheets of a formal sum by an involution reads its coefficients at the image. -/
-private theorem mapDomain_fiberMap_apply_of_involutive (x : B) (f : (p ⁻¹' {x}) →₀ R)
-    (e : p ⁻¹' {x}) :
-    Finsupp.mapDomain (Function.fiberMap σ hσ x) f e = f (Function.fiberMap σ hσ x e) := by
-  conv_lhs => rw [← Function.fiberMap_fiberMap_of_involutive hσσ hσ x e]
-  exact Finsupp.mapDomain_apply_of_injective
-    (Function.injective_fiberMap_of_involutive hσσ hσ x) f _
-
-/-- Antisymmetrization on the fibre of `p` over `x`: a formal sum `f` of sheets goes to the
-function `e ↦ f e - f (σ e)`, which changes sign under the involution `σ`. -/
-def antisymmetrize (x : B) : ((p ⁻¹' {x}) →₀ R) →ₗ[R] TauCeti.signFiber R σ hσ x :=
-  LinearMap.codRestrict (TauCeti.signFiber R σ hσ x)
-    ((LinearMap.id - LinearMap.funLeft R R (Function.fiberMap σ hσ x)) ∘ₗ Finsupp.lcoeFun)
-    fun f ↦ TauCeti.mem_signFiber_iff.2 fun e ↦ by
-      simp [Function.fiberMap_fiberMap_of_involutive hσσ hσ]
-
-@[simp]
-theorem coe_antisymmetrize_apply (x : B) (f : (p ⁻¹' {x}) →₀ R) (e : p ⁻¹' {x}) :
-    (antisymmetrize R hσ hσσ x f : p ⁻¹' {x} → R) e = f e - f (Function.fiberMap σ hσ x e) :=
-  (rfl)
-
 /-- The component over `x` of antisymmetrization, from the fibre of the permutation local system
 to the fibre of the sign local system. -/
 def permutationLocalSystemToSignApp (x : FundamentalGroupoid B) :
     ((p ⁻¹' {x.as}) →₀ R) →ₗ[R] (hp.signLocalSystem R σ hσ).obj x :=
-  (hp.signLocalSystemObjEquiv σ hσ x).symm.toLinearMap ∘ₗ antisymmetrize R hσ hσσ x.as
+  (hp.signLocalSystemObjEquiv σ hσ x).symm.toLinearMap ∘ₗ TauCeti.antisymmetrize R hσ hσσ x.as
 
 /-- Antisymmetrization sends a formal sum `f` of sheets to the function `e ↦ f e - f (σ e)`. -/
 @[simp]
@@ -202,8 +180,10 @@ theorem signLocalSystemObjEquiv_permutationLocalSystemToSignApp_apply
     (hp.signLocalSystemObjEquiv σ hσ x (hp.permutationLocalSystemToSignApp R hσ hσσ x f) :
         p ⁻¹' {x.as} → R) e =
       f e - f (Function.fiberMap σ hσ x.as e) :=
-  congrArg (fun g : TauCeti.signFiber R σ hσ x.as ↦ (g : p ⁻¹' {x.as} → R) e)
-    ((hp.signLocalSystemObjEquiv σ hσ x).apply_symm_apply (antisymmetrize R hσ hσσ x.as f))
+  (congrArg (fun g : TauCeti.signFiber R σ hσ x.as ↦ (g : p ⁻¹' {x.as} → R) e)
+    ((hp.signLocalSystemObjEquiv σ hσ x).apply_symm_apply
+      (TauCeti.antisymmetrize R hσ hσσ x.as f))).trans
+    (TauCeti.coe_antisymmetrize_apply hσ hσσ x.as f e)
 
 /-- **Antisymmetrization**: the morphism from the permutation local system of `p` to the sign
 local system of an involution `σ` over the base sending a formal sum `f` of sheets over `x` to the
@@ -222,6 +202,7 @@ def permutationLocalSystemToSign :
       Finsupp.mapDomain_apply_of_injective (hp.monodromy_bijective γ).1]
 
 /-- The component over `x` of antisymmetrization. -/
+@[simp]
 theorem permutationLocalSystemToSign_app_hom (x : FundamentalGroupoid B) :
     ((hp.permutationLocalSystemToSign R hσ hσσ).app x).hom =
       hp.permutationLocalSystemToSignApp R hσ hσσ x :=
@@ -239,7 +220,7 @@ theorem permutationLocalSystemFiberMap_comp_toSign :
         -(hp.signLocalSystemObjEquiv σ hσ x (hp.permutationLocalSystemToSignApp R hσ hσσ x g) :
           p ⁻¹' {x.as} → R) e := by
     simp only [signLocalSystemObjEquiv_permutationLocalSystemToSignApp_apply,
-      mapDomain_fiberMap_apply_of_involutive R hσ hσσ,
+      Function.mapDomain_fiberMap_apply_of_involutive hσσ hσ,
       Function.fiberMap_fiberMap_of_involutive hσσ hσ,
       neg_sub]
   refine NatTrans.ext (funext fun x ↦ ModuleCat.hom_ext (LinearMap.ext fun f ↦
@@ -259,11 +240,8 @@ theorem homologyMap_comp_singularHomologyPermutationIso_hom_comp_toSign (k : ℕ
       -((hp.singularHomologyPermutationIso R k).hom ≫
           twistedHomologyCoefficientMap (hp.permutationLocalSystemToSign R hσ hσσ) k) := by
   rw [homologyMap_comp_singularHomologyPermutationIso_hom_assoc hp R σ hσ,
-    ← twistedHomologyCoefficientMap_comp, permutationLocalSystemFiberMap_comp_toSign]
-  have h := (twistedChainComplexFunctor.{u, u, u} R B).map_neg
-    (f := hp.permutationLocalSystemToSign R hσ hσσ)
-  rw [twistedChainComplexFunctor_map, twistedChainComplexFunctor_map] at h
-  rw [twistedHomologyCoefficientMap, h, HomologicalComplex.homologyMap_neg, Preadditive.comp_neg]
+    ← twistedHomologyCoefficientMap_comp, permutationLocalSystemFiberMap_comp_toSign,
+    twistedHomologyCoefficientMap_neg, Preadditive.comp_neg]
 
 /-! ### From functions on the fibres back to formal sums of sheets -/
 
@@ -311,6 +289,7 @@ def signLocalSystemToPermutation :
     exact (key f e).symm
 
 /-- The component over `x` of reading functions on fibres as formal sums of sheets. -/
+@[simp]
 theorem signLocalSystemToPermutation_app_hom (x : FundamentalGroupoid B) :
     ((hp.signLocalSystemToPermutation R hσ hfin).app x).hom =
       hp.signLocalSystemToPermutationApp R hσ hfin x :=
@@ -327,7 +306,7 @@ theorem permutationLocalSystemToSign_comp_toPermutation :
         f e - Finsupp.mapDomain (Function.fiberMap σ hσ x.as) f e := by
     rw [signLocalSystemToPermutationApp_apply,
       signLocalSystemObjEquiv_permutationLocalSystemToSignApp_apply,
-      mapDomain_fiberMap_apply_of_involutive R hσ hσσ]
+      Function.mapDomain_fiberMap_apply_of_involutive hσσ hσ]
   refine NatTrans.ext (funext fun x ↦ ModuleCat.hom_ext (LinearMap.ext fun f ↦
     Finsupp.ext fun e ↦ ?_))
   rw [NatTrans.app_sub, NatTrans.id_app, ModuleCat.hom_sub, ModuleCat.hom_id]
@@ -344,33 +323,16 @@ theorem singularHomologyPermutationIso_hom_comp_toSign_comp_toPermutation (k : �
             (hp.singularHomologyPermutationIso R k).inv =
       𝟙 _ - SSet.homologyMap (TopCat.toSSet.map (TopCat.ofHom σ)) (ModuleCat.of R R) k := by
   rw [← twistedHomologyCoefficientMap_comp_assoc,
-    permutationLocalSystemToSign_comp_toPermutation]
-  have h := (twistedChainComplexFunctor.{u, u, u} R B).map_sub
-    (f := 𝟙 (hp.permutationLocalSystem R)) (g := hp.permutationLocalSystemFiberMap R σ hσ)
-  rw [twistedChainComplexFunctor_map, twistedChainComplexFunctor_map,
-    twistedChainComplexFunctor_map, twistedChainComplexCoefficientMap_id] at h
-  rw [twistedHomologyCoefficientMap, h, HomologicalComplex.homologyMap_sub,
-    HomologicalComplex.homologyMap_id, Preadditive.sub_comp, Preadditive.comp_sub,
-    Category.id_comp, Iso.hom_inv_id, ← twistedHomologyCoefficientMap,
-    ← homologyMap_comp_singularHomologyPermutationIso_hom_assoc, Iso.hom_inv_id, Category.comp_id]
+    permutationLocalSystemToSign_comp_toPermutation, twistedHomologyCoefficientMap_sub,
+    twistedHomologyCoefficientMap_id, Preadditive.sub_comp, Preadditive.comp_sub,
+    Category.id_comp, Iso.hom_inv_id, ← homologyMap_comp_singularHomologyPermutationIso_hom_assoc,
+    Iso.hom_inv_id, Category.comp_id]
 
 /-! ### The short exact sequence of a double cover -/
 
 section DoubleCover
 
 variable (hfix : ∀ e, σ e ≠ e)
-
-include hσσ hfix in
-/-- The values of a function changing sign under a fixed-point-free involution sum to zero over
-a finite fibre. -/
-private theorem sum_eq_zero_of_mem_signFiber (x : B) [Fintype (p ⁻¹' {x})]
-    {g : p ⁻¹' {x} → R} (hg : g ∈ TauCeti.signFiber R σ hσ x) : ∑ e, g e = 0 :=
-  Finset.sum_involution (fun e _ ↦ Function.fiberMap σ hσ x e)
-    (fun e _ ↦ by rw [TauCeti.mem_signFiber_iff.1 hg, add_neg_cancel])
-    (fun e _ _ h ↦ hfix e ((Function.fiberMap_apply_coe σ hσ x e).symm.trans
-      (congrArg Subtype.val h)))
-    (fun _ _ ↦ Finset.mem_univ _)
-    (fun e _ ↦ Function.fiberMap_fiberMap_of_involutive hσσ hσ x e)
 
 include hσσ hfix in
 /-- A function changing sign under a fixed-point-free involution has coefficients summing to zero:
@@ -383,11 +345,13 @@ theorem signLocalSystemToPermutation_comp_augmentation :
   have := Fintype.ofFinite (p ⁻¹' {x.as})
   rw [NatTrans.app_zero, ModuleCat.hom_zero, LinearMap.zero_apply, NatTrans.comp_app,
     ModuleCat.hom_comp, LinearMap.comp_apply]
-  refine ((hp.permutationLocalSystemAugmentation_app_apply R x _).trans
-    (Finsupp.sum_fintype _ _ fun _ ↦ rfl)).trans ?_
+  refine (hp.permutationLocalSystemAugmentation_app_apply_eq_sum R x _).trans ?_
+  -- The fibres of the permutation and constant systems are `(p ⁻¹' {x.as}) →₀ R` and `R` only
+  -- after unfolding their definitions, so neither evaluation at a sheet nor `0 : R` is visible to
+  -- `rw` or `simp`. `change` states the goal through the component of the definition.
   change ∑ e, hp.signLocalSystemToPermutationApp R hσ hfin x f e = (0 : R)
   simp only [signLocalSystemToPermutationApp_apply]
-  exact sum_eq_zero_of_mem_signFiber R hσ hσσ hfix x.as (hp.signLocalSystemObjEquiv σ hσ x f).2
+  exact TauCeti.sum_eq_zero_of_mem_signFiber hfix hσσ (hp.signLocalSystemObjEquiv σ hσ x f).2
 
 /-- The short complex `sign ⟶ R[p⁻¹ b] ⟶ R` of local systems of a covering with finite fibres and
 a fixed-point-free involution `σ` over the base: functions changing sign under `σ`, read as formal
@@ -399,24 +363,6 @@ def signPermutationShortComplex : ShortComplex (TauCeti.LocalCoefficientSystem R
     (hp.signLocalSystemToPermutation_comp_augmentation R hσ hσσ hfin hfix)
 
 variable (hfib : ∀ e e', p e' = p e → e' = e ∨ e' = σ e)
-
-include hfix hfib in
-/-- When every fibre of `p` is a pair `{e, σ e}` with `σ e ≠ e`, a function on a fibre whose values
-sum to zero changes sign under `σ`. -/
-private theorem mem_signFiber_of_sum_eq_zero (x : B) [Fintype (p ⁻¹' {x})]
-    {g : p ⁻¹' {x} → R} (hg : ∑ e, g e = 0) : g ∈ TauCeti.signFiber R σ hσ x := by
-  classical
-  refine TauCeti.mem_signFiber_iff.2 fun e ↦ ?_
-  have hσe : Function.fiberMap σ hσ x e ≠ e := fun h ↦
-    hfix e ((Function.fiberMap_apply_coe σ hσ x e).symm.trans (congrArg Subtype.val h))
-  have huniv : (Finset.univ : Finset (p ⁻¹' {x})) = {e, Function.fiberMap σ hσ x e} := by
-    ext e'
-    simp only [Finset.mem_univ, Finset.mem_insert, Finset.mem_singleton, true_iff]
-    rcases hfib e e' (e'.2.trans e.2.symm) with h | h
-    · exact .inl (Subtype.ext h)
-    · exact .inr (Subtype.ext (h.trans (Function.fiberMap_apply_coe σ hσ x e).symm))
-  rw [huniv, Finset.sum_pair hσe.symm] at hg
-  exact eq_neg_of_add_eq_zero_right hg
 
 variable (hsurj : Function.Surjective p)
 
@@ -435,17 +381,19 @@ theorem shortExact_signPermutationShortComplex :
     obtain ⟨e₀, he₀⟩ := hsurj x.as
     refine ShortComplex.ShortExact.mk' ?_ ((ModuleCat.mono_iff_injective _).2 fun f g hfg ↦ ?_)
       ((ModuleCat.epi_iff_surjective _).2 fun r ↦ ⟨Finsupp.single ⟨e₀, he₀⟩ r, ?_⟩)
-    · refine (ShortComplex.moduleCat_exact_iff _).2 fun g hg ↦ ?_
-      obtain ⟨g, rfl⟩ : ∃ g' : (p ⁻¹' {x.as}) →₀ R, g' = g := ⟨g, rfl⟩
+    · refine (ShortComplex.moduleCat_exact_iff _).2 fun (g : (p ⁻¹' {x.as}) →₀ R) hg ↦ ?_
       -- A formal sum with coefficients summing to zero changes sign under `σ`.
       have hg' : ∑ e, g e = 0 :=
-        ((hp.permutationLocalSystemAugmentation_app_apply R x g).trans
-          (Finsupp.sum_fintype _ _ fun _ ↦ rfl)).symm.trans hg
+        (hp.permutationLocalSystemAugmentation_app_apply_eq_sum R x g).symm.trans hg
       refine ⟨(hp.signLocalSystemObjEquiv σ hσ x).symm
-        ⟨_, mem_signFiber_of_sum_eq_zero R hσ hfix hfib x.as hg'⟩, Finsupp.ext fun e ↦ ?_⟩
+        ⟨_, TauCeti.mem_signFiber_of_sum_eq_zero hfix hfib hg'⟩, Finsupp.ext fun e ↦ ?_⟩
+      -- As above, the fibre of the permutation system is a type of formal sums only after
+      -- unfolding, so `change` evaluates the component of the definition at the sheet `e`.
       change hp.signLocalSystemToPermutationApp R hσ hfin x _ e = g e
       rw [signLocalSystemToPermutationApp_apply, LinearEquiv.apply_symm_apply]
-    · change hp.signLocalSystemToPermutationApp R hσ hfin x f =
+    · -- The values of the component are formal sums only after unfolding the permutation
+      -- system, so `change` states `hfg` through the component of the definition.
+      change hp.signLocalSystemToPermutationApp R hσ hfin x f =
         hp.signLocalSystemToPermutationApp R hσ hfin x g at hfg
       refine (hp.signLocalSystemObjEquiv σ hσ x).injective (Subtype.ext (funext fun e ↦ ?_))
       have h := DFunLike.congr_fun hfg e

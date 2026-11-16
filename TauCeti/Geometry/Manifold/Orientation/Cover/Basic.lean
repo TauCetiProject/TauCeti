@@ -97,7 +97,7 @@ instance instSigmaCompactSpace [SigmaCompactSpace M] :
 
 /-- The orientation double cover of a compact manifold is compact. -/
 instance instCompactSpace [CompactSpace M] : CompactSpace (OrientationCover I M) :=
-  isCompact_univ_iff.1 (by simpa using (isProperMap_proj I M).isCompact_preimage isCompact_univ)
+  VectorBundleOrientationCover.compactSpace (Fintype.card_fin _)
 
 variable {I M}
 
