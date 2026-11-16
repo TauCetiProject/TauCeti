@@ -11,8 +11,8 @@ public import Mathlib.Data.Fin.Tuple.Sort
 # Strictly antitone sequences indexed by `Fin n`
 
 A sequence `f : Fin n → α` is strictly antitone when it strictly decreases along the indices.  This
-file records facts about such sequences, used for beta-numbers of Young diagrams, the Pieri rule
-for Schur polynomials and chains of critical values in Morse theory.
+file records three facts about such sequences, used for beta-numbers of Young diagrams and the Pieri
+rule for Schur polynomials.
 
 Over `ℕ` a strictly antitone sequence drops by at least one at each step, so it drops by at least
 the index gap: `StrictAnti.add_sub_le_nat`.  This is what makes a strictly decreasing sequence of
@@ -24,10 +24,6 @@ Mathlib's decreasing sort `Tuple.sortDesc` (`Function.Injective.strictAnti_sortD
 partial order a permutation with this property is unique (`StrictAnti.perm_eq`): sorting into
 decreasing order is possible and unambiguous.
 
-For an antitone sequence `a`, the closed intervals `[a (i + 1), a i]` of consecutive steps overlap
-only at their ends, so a point strictly inside one of them lies in no other
-(`Antitone.eq_of_mem_Ioo_of_mem_Icc_fin`).
-
 ## Main results
 
 * `StrictAnti.add_sub_le_nat`: a strictly antitone sequence of naturals drops by at least the index
@@ -35,8 +31,6 @@ only at their ends, so a point strictly inside one of them lies in no other
 * `Function.Injective.strictAnti_sortDesc`: `Tuple.sortDesc` sorts an injective sequence into
   strictly decreasing order.
 * `StrictAnti.perm_eq`: the sorting permutation is unique.
-* `Antitone.eq_of_mem_Ioo_of_mem_Icc_fin`: for an antitone sequence, the open interval between two
-  consecutive values meets the closed interval of no other step.
 -/
 
 public section
@@ -67,15 +61,3 @@ theorem StrictAnti.perm_eq [PartialOrder α] {f : Fin n → α} {τ₁ τ₂ : P
     (h₁ : StrictAnti (f ∘ τ₁)) (h₂ : StrictAnti (f ∘ τ₂)) : τ₁ = τ₂ :=
   Equiv.ext <| congrFun <| ((τ₁.injective_comp f).mp h₁.injective).comp_left
     (Tuple.unique_antitone h₁.antitone h₂.antitone)
-
-/-- **The steps of an antitone sequence overlap only at their ends.** If `a : Fin (n + 1) → α` is
-antitone, a point strictly between `a (i + 1)` and `a i` lies between `a (j + 1)` and `a j` only
-for `j = i`. -/
-theorem Antitone.eq_of_mem_Ioo_of_mem_Icc_fin [Preorder α] {a : Fin (n + 1) → α}
-    (ha : Antitone a) {i j : Fin n} {x : α} (hi : x ∈ Set.Ioo (a i.succ) (a i.castSucc))
-    (hj : x ∈ Set.Icc (a j.succ) (a j.castSucc)) : i = j := by
-  rcases lt_trichotomy i j with hij | rfl | hij
-  · exact absurd (hj.2.trans (ha (Fin.succ_le_castSucc_iff.2 hij))) (not_le_of_gt hi.1)
-  · rfl
-  · exact absurd ((ha (Fin.succ_le_castSucc_iff.2 hij)).trans hj.1) (not_le_of_gt hi.2)
-

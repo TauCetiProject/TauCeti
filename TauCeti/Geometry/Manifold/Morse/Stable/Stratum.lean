@@ -7,7 +7,6 @@ module
 
 public import TauCeti.Geometry.Manifold.Morse.Stable.Compactification
 import TauCeti.Data.Fin.Basic
-import TauCeti.Data.Fin.StrictAnti
 
 /-!
 # The strata of the compactified spaces of trajectories
@@ -15,10 +14,12 @@ import TauCeti.Data.Fin.StrictAnti
 Let `f` be a Morse function on a compact boundaryless manifold `M`, `X` a pseudo-gradient field
 adapted to `f`, and `c i`, for `i` in a type `ι`, regular levels of `f`. The compactified space of
 trajectories from `p` to `r` is the closure of their records on the levels `c`, the families of
-their points on these levels (`TauCeti.IsAdaptedPseudoGradient.morseTrajectoryRecords`). Its
+their points on these levels (`TauCeti.IsAdaptedPseudoGradient.morseTrajectoryRecords`). Under the
+Morse–Smale condition, for countably many regular levels strictly between `f r` and `f p`, its
 points are records of broken trajectories
-(`TauCeti.IsAdaptedPseudoGradient.morseBrokenTrajectoryRecords`): chains of critical points
-`p = x 0, …, x k = r` with a trajectory from `x j` to `x (j + 1)` for each `j`.
+(`TauCeti.IsAdaptedPseudoGradient.morseBrokenTrajectoryRecords`,
+`TauCeti.IsAdaptedPseudoGradient.IsMorseSmale.closure_morseTrajectoryRecords_subset`): chains of
+critical points `p = x 0, …, x k = r` with a trajectory from `x j` to `x (j + 1)` for each `j`.
 
 This file sorts these records by their chain of critical points. The *stratum* of a chain
 `x : Fin (k + 1) → M` (`TauCeti.IsAdaptedPseudoGradient.morseBrokenTrajectoryStratum`) consists of
@@ -44,9 +45,9 @@ distinct (`TauCeti.IsAdaptedPseudoGradient.morseBrokenTrajectoryRecords_eq_iUnio
   on a level of step `j` determines the trajectory from `x j` to `x (j + 1)`, whose limits are its
   ends. The record does not see a step without a level, hence the hypothesis.
 
-The strata need no Morse–Smale hypothesis. Under the Morse–Smale condition the Morse index drops
-strictly along each chain, so the stratum of a chain from `p` to `r` with `k` steps is empty unless
-`k ≤ ind p - ind r`
+The strata need no Morse–Smale hypothesis. When `f` is Morse and the Morse–Smale condition holds,
+the Morse index drops strictly along each chain with consecutive points distinct, so the stratum
+of such a chain from `p` to `r` with `k` steps is empty unless `k ≤ ind p - ind r`
 (`TauCeti.IsAdaptedPseudoGradient.IsMorseSmale.add_manifoldMorseIndex_le_of_chain`).
 
 ## Main declarations
