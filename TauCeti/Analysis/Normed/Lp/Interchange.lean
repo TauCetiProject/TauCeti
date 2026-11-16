@@ -65,24 +65,21 @@ private theorem norm_toLp_eval_eq (f : lp (fun a ↦ PiLp p (E a)) p) :
   · have hf0 : f = 0 := by ext a i; exact IsEmpty.elim hι i
     simp [hf0, Subsingleton.elim (WithLp.toLp p g) 0]
   rcases eq_or_ne p ∞ with rfl | hp
-  · refine le_antisymm (by
-      rw [PiLp.norm_eq_ciSup]
-      exact ciSup_le fun i ↦ lp.norm_le_of_forall_le (norm_nonneg f) fun a ↦
+  · refine le_antisymm (by rw [PiLp.norm_eq_ciSup]; exact ciSup_le fun i ↦
+      lp.norm_le_of_forall_le (norm_nonneg f) fun a ↦
         (PiLp.norm_apply_le (f a) i).trans (lp.norm_apply_le_norm ENNReal.top_ne_zero f a)) ?_
     refine lp.norm_le_of_forall_le (norm_nonneg (WithLp.toLp ∞ g)) fun a ↦ ?_
     rw [PiLp.norm_eq_ciSup, PiLp.norm_eq_ciSup]
     exact ciSup_le fun i ↦ (lp.norm_apply_le_norm ENNReal.top_ne_zero (g i) a).trans
       (le_ciSup (Set.finite_range fun j ↦ ‖g j‖).bddAbove i)
   · have hr : 0 < p.toReal := ENNReal.toReal_pos hp0 hp
-    have hpow : ∑ i, ‖g i‖ ^ p.toReal = ‖f‖ ^ p.toReal := by
-      calc ∑ i, ‖g i‖ ^ p.toReal
-          = ∑ i, ∑' a, ‖f a i‖ ^ p.toReal := Finset.sum_congr rfl fun i _ ↦ norm_rpow_eq_tsum hr _
-        _ = ∑' a, ∑ i, ‖f a i‖ ^ p.toReal :=
-              (Summable.tsum_finsetSum fun i _ ↦ (lp.memℓp (g i)).summable hr).symm
-        _ = ∑' a, ‖f a‖ ^ p.toReal := tsum_congr fun a ↦ by
-              rw [PiLp.norm_eq_sum hr, ← Real.rpow_mul (Finset.sum_nonneg fun _ _ ↦
-                Real.rpow_nonneg (norm_nonneg _) _), one_div_mul_cancel hr.ne', Real.rpow_one]
-        _ = ‖f‖ ^ p.toReal := (lp.norm_rpow_eq_tsum hr f).symm
+    have hpow : ∑ i, ‖g i‖ ^ p.toReal = ‖f‖ ^ p.toReal := calc
+      ∑ i, ‖g i‖ ^ p.toReal = ∑ i, ∑' a, ‖f a i‖ ^ p.toReal :=
+          Finset.sum_congr rfl fun i _ ↦ norm_rpow_eq_tsum hr _
+      _ = ∑' a, ∑ i, ‖f a i‖ ^ p.toReal :=
+          (Summable.tsum_finsetSum fun i _ ↦ (lp.memℓp (g i)).summable hr).symm
+      _ = ∑' a, ‖f a‖ ^ p.toReal := tsum_congr fun a ↦ (PiLp.norm_rpow_eq_sum hr (f a)).symm
+      _ = ‖f‖ ^ p.toReal := (lp.norm_rpow_eq_tsum hr f).symm
     rw [PiLp.norm_eq_sum hr, hpow, ← Real.rpow_mul (norm_nonneg f), mul_one_div_cancel hr.ne',
       Real.rpow_one]
 
@@ -91,10 +88,10 @@ private theorem norm_toLp_eval_eq (f : lp (fun a ↦ PiLp p (E a)) p) :
 def piLpEquiv : lp (fun a ↦ PiLp p (E a)) p ≃ₗᵢ[𝕜] PiLp p (fun i ↦ lp (fun a ↦ E a i) p) where
   toFun f := WithLp.toLp p fun i ↦ ⟨fun a ↦ f a i, (lp.memℓp f).eval_piLp i⟩
   invFun g := ⟨fun a ↦ WithLp.toLp p fun i ↦ g i a, Memℓp.of_eval_piLp fun i ↦ lp.memℓp (g i)⟩
-  map_add' _ _ := rfl
-  map_smul' _ _ := rfl
-  left_inv _ := rfl
-  right_inv _ := rfl
+  map_add' _ _ := by ext i a; simp [-AddSubgroup.coe_add]
+  map_smul' _ _ := by ext i a; simp
+  left_inv _ := by ext a i; simp
+  right_inv _ := by ext i a; simp
   norm_map' := norm_toLp_eval_eq p E
 
 variable {p 𝕜 E}

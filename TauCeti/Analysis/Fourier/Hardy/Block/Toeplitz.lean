@@ -8,7 +8,6 @@ module
 public import TauCeti.Analysis.Fourier.Hardy.Block.Basic
 public import TauCeti.Analysis.Fourier.Hardy.BrownHalmos
 public import TauCeti.MeasureTheory.Function.Lp.Operator.LpMultiplication
-public import TauCeti.MeasureTheory.Function.Lp.BoundedContinuous
 import TauCeti.Analysis.InnerProductSpace.Compression
 
 /-!
@@ -18,11 +17,11 @@ For `A : BlockSymbol r`, `TauCeti.blockToeplitz r A : BlockHardySpace r →L[ℂ
 compresses `MeasureTheory.Lp.operatorMultiplication 2 A` onto `blockHardySubmodule r` via
 `blockHardyEquiv r`. Its `(i, j)` block entry is `toeplitz (blockSymbolEntry r i j A)`
 (`TauCeti.piLpEntry_blockToeplitz`), its matrix in `blockHardyBasis r` has entries
-`⟪e_i, â(m - n) e_j⟫` (`TauCeti.inner_blockHardyBasis_blockToeplitz_blockHardyBasis`),
+`⟪e_i, Â(m - n) e_j⟫` (`TauCeti.inner_blockHardyBasis_blockToeplitz_blockHardyBasis`),
 `(blockToeplitz r A)† = blockToeplitz r (star A)` (`TauCeti.adjoint_blockToeplitz`), scalar symbols
 act diagonally (`TauCeti.blockToeplitz_smul_one`, `TauCeti.blockToeplitz_one`,
 `TauCeti.blockToeplitz_algebraMap`), and `‖blockToeplitz r A‖ = ‖A‖` (`TauCeti.norm_blockToeplitz`,
-`TauCeti.isometry_blockToeplitz`, `TauCeti.norm_blockToeplitz_toLp`).
+`TauCeti.isometry_blockToeplitz`).
 
 Finally, `TauCeti.exists_blockToeplitz_eq_iff_inner_blockHardyBasis_succ` and
 `TauCeti.existsUnique_blockToeplitz_eq_iff_adjoint_comp_comp_eq` prove the **block Brown–Halmos
@@ -44,13 +43,10 @@ namespace TauCeti
 
 /-- Block Toeplitz map compressing `Lp.operatorMultiplication 2` onto `BlockHardySpace r`. -/
 def blockToeplitz (r : ℕ) : BlockSymbol r →L[ℂ] BlockHardySpace r →L[ℂ] BlockHardySpace r :=
-  compL ℂ (BlockHardySpace r) (Lp (EuclideanSpace ℂ (Fin r)) 2 (haarAddCircle (T := 1)))
-      (BlockHardySpace r) ((blockHardyEquiv r).toLinearIsometry.toContinuousLinearMap ∘L
-        (blockHardySubmodule r).orthogonalProjectionOnto) ∘L
-    (compL ℂ (BlockHardySpace r) (Lp (EuclideanSpace ℂ (Fin r)) 2 (haarAddCircle (T := 1)))
-        (Lp (EuclideanSpace ℂ (Fin r)) 2 (haarAddCircle (T := 1)))).flip
-      ((blockHardySubmodule r).subtypeL ∘L
-        (blockHardyEquiv r).symm.toLinearIsometry.toContinuousLinearMap) ∘L
+  compL ℂ _ _ _ ((blockHardyEquiv r).toLinearIsometry.toContinuousLinearMap ∘L
+      (blockHardySubmodule r).orthogonalProjectionOnto) ∘L
+    (compL ℂ _ _ _).flip ((blockHardySubmodule r).subtypeL ∘L
+      (blockHardyEquiv r).symm.toLinearIsometry.toContinuousLinearMap) ∘L
     Lp.operatorMultiplication 2
 
 /-- Definition of `blockToeplitz r A` as compression of `Lp.operatorMultiplication 2 A`. -/
@@ -101,8 +97,7 @@ theorem piLpEquiv_operatorMultiplication_symm_single {r : ℕ} (A : BlockSymbol 
     with x h₁ h₂ h₃ h₄ h₅
   have hsingle : (PiLp.single 2 j (h x) : EuclideanSpace ℂ (Fin r)) =
       h x • EuclideanSpace.single j (1 : ℂ) := by ext k; simp [EuclideanSpace.single]
-  rw [h₁, h₂, h₃, hsingle, map_smul, PiLp.smul_apply, h₄, Pi.smul_apply', h₅, smul_eq_mul,
-    smul_eq_mul, mul_comm]
+  rw [h₁, h₂, h₃, hsingle, h₄]; simp [h₅, mul_comm]
 
 /-- The `(i, j)` block entry of `blockToeplitz r A` is `toeplitz (blockSymbolEntry r i j A)`. -/
 @[simp] theorem piLpEntry_blockToeplitz {r : ℕ} (A : BlockSymbol r) (i j : Fin r) :
@@ -179,8 +174,7 @@ theorem norm_blockToeplitz_le {r : ℕ} (A : BlockSymbol r) : ‖blockToeplitz r
   grw [opNorm_comp_le, opNorm_comp_le, opNorm_comp_le, opNorm_comp_le,
     LinearIsometry.norm_toContinuousLinearMap_le, orthogonalProjectionOnto_norm_le,
     Lp.norm_operatorMultiplication_le, norm_subtypeL_le,
-    LinearIsometry.norm_toContinuousLinearMap_le]
-  simp
+    LinearIsometry.norm_toContinuousLinearMap_le]; simp
 
 private theorem norm_operatorMultiplication_le_norm_blockToeplitz {r : ℕ} (A : BlockSymbol r) :
     ‖Lp.operatorMultiplication 2 A‖ ≤ ‖blockToeplitz r A‖ := by
@@ -214,12 +208,6 @@ theorem isometry_blockToeplitz (r : ℕ) : Isometry (blockToeplitz r) :=
 /-- A block symbol is uniquely determined by its block Toeplitz operator. -/
 theorem blockToeplitz_injective (r : ℕ) : Function.Injective (blockToeplitz r) :=
   (isometry_blockToeplitz r).injective
-
-/-- For continuous `F`, `‖blockToeplitz r (ContinuousMap.toLp ∞ haarAddCircle ℂ F)‖ = ‖F‖`. -/
-theorem norm_blockToeplitz_toLp {r : ℕ}
-    (F : C(UnitAddCircle, EuclideanSpace ℂ (Fin r) →L[ℂ] EuclideanSpace ℂ (Fin r))) :
-    ‖blockToeplitz r (ContinuousMap.toLp ∞ (haarAddCircle (T := 1)) ℂ F)‖ = ‖F‖ := by
-  rw [norm_blockToeplitz, ContinuousMap.norm_toLp_top]
 
 /-- `T` is a block Toeplitz operator iff its matrix in `blockHardyBasis r` is invariant under
 `(m, n) ↦ (m + 1, n + 1)` on every `(i, j)` block. -/

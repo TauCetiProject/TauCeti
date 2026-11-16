@@ -67,9 +67,8 @@ private theorem norm_toLp_eval_eq (f : Lp (PiLp p E) p μ) :
           integral_congr_ae <| (hg i).mono fun _ hgi ↦ by dsimp only; rw [hgi]
       _ = ∫ x, ∑ i, ‖f x i‖ ^ p.toReal ∂μ := (integral_finsetSum _ fun i _ ↦
           ((Lp.memLp f).eval_piLp i).integrable_norm_rpow hp0 hp).symm
-      _ = ∫ x, ‖f x‖ ^ p.toReal ∂μ := integral_congr_ae <| .of_forall fun x ↦ by
-          dsimp only; rw [PiLp.norm_eq_sum hr, ← Real.rpow_mul (Finset.sum_nonneg fun _ _ ↦
-            Real.rpow_nonneg (norm_nonneg _) _), one_div_mul_cancel hr.ne', Real.rpow_one]
+      _ = ∫ x, ‖f x‖ ^ p.toReal ∂μ := integral_congr_ae <| .of_forall fun x ↦
+          (PiLp.norm_rpow_eq_sum hr (f x)).symm
       _ = ‖f‖ ^ p.toReal := Lp.integral_norm_rpow_eq_norm_rpow hp0 hp f
     rw [PiLp.norm_eq_sum hr, hpow, ← Real.rpow_mul (norm_nonneg f), mul_one_div_cancel hr.ne',
       Real.rpow_one]
@@ -82,10 +81,10 @@ def piLpEquiv : Lp (PiLp p E) p μ ≃ₗᵢ[𝕜] PiLp p (fun i ↦ Lp (E i) p 
   invFun g := (memLp_toLp_coord p E fun i ↦ g i).toLp
   map_add' f₁ f₂ := by
     ext i : 1; simp only [PiLp.add_apply, ← MemLp.toLp_add]
-    exact MemLp.toLp_congr _ _ ((Lp.coeFn_add f₁ f₂).mono fun _ hx ↦ by dsimp only; rw [hx]; rfl)
+    exact MemLp.toLp_congr _ _ ((Lp.coeFn_add f₁ f₂).mono fun _ hx ↦ by dsimp only; rw [hx]; simp)
   map_smul' c f := by
     ext i : 1; simp only [RingHom.id_apply, PiLp.smul_apply, ← MemLp.toLp_const_smul]
-    exact MemLp.toLp_congr _ _ ((Lp.coeFn_smul c f).mono fun _ hx ↦ by dsimp only; rw [hx]; rfl)
+    exact MemLp.toLp_congr _ _ ((Lp.coeFn_smul c f).mono fun _ hx ↦ by dsimp only; rw [hx]; simp)
   left_inv f := Lp.ext <| by
     filter_upwards [(memLp_toLp_coord p E fun i ↦ ((Lp.memLp f).eval_piLp i).toLp).coeFn_toLp,
       ae_all_iff.mpr fun i ↦ ((Lp.memLp f).eval_piLp i).coeFn_toLp] with x hx hcoord

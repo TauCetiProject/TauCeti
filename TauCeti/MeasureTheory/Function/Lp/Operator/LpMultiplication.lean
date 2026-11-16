@@ -9,7 +9,7 @@ public import Mathlib.Analysis.InnerProductSpace.Adjoint
 public import Mathlib.MeasureTheory.Function.L2Space
 public import TauCeti.MeasureTheory.Function.Lp.LinftyAlgebra
 import Mathlib.MeasureTheory.Function.LpSpace.Indicator
-import TauCeti.MeasureTheory.Function.Lp.Operator.Norm
+import TauCeti.MeasureTheory.Function.Lp.Norm
 
 /-!
 # Operator-valued `L∞` multiplication operators on `Lᵖ`
@@ -61,9 +61,8 @@ theorem operatorMultiplication_eq_iff {A : Lp (E →L[𝕜] F) ∞ μ} {f : Lp E
 /-- The operator norm of `operatorMultiplication p A` is at most the `L∞` norm of `A`. -/
 theorem norm_operatorMultiplication_le (A : Lp (E →L[𝕜] F) ∞ μ) :
     ‖operatorMultiplication p A‖ ≤ ‖A‖ := by
-  have h : ‖(ContinuousLinearMap.id 𝕜 (E →L[𝕜] F)).holderL μ ∞ p p‖ ≤ 1 :=
-    (norm_holderL_le (ContinuousLinearMap.id 𝕜 (E →L[𝕜] F))).trans norm_id_le
-  rw [operatorMultiplication]; simpa only [one_mul] using le_of_opNorm_le _ h A
+  simpa only [operatorMultiplication, one_mul] using le_of_opNorm_le _
+    ((norm_holderL_le (ContinuousLinearMap.id 𝕜 (E →L[𝕜] F))).trans norm_id_le) A
 
 /-- Applying `operatorMultiplication p A` changes the `Lᵖ` norm by at most `‖A‖`. -/
 theorem norm_operatorMultiplication_apply_le (A : Lp (E →L[𝕜] F) ∞ μ) (f : Lp E p μ) :
@@ -143,9 +142,8 @@ theorem operatorMultiplication_comp_operatorMultiplication (A B : Lp (E →L[�
   have hc0 : 0 ≤ c := by positivity
   obtain ⟨u, t, ht, hts, hμt_pos, hμt_top⟩ :=
     exists_measurableSet_mul_norm_lt_norm_apply_measure_lt_top A hc0 (by linarith [hc_def, hlt])
-  have hu_ne : u ≠ 0 := by
-    obtain ⟨x₀, hx₀⟩ := nonempty_of_measure_ne_zero hμt_pos.ne'
-    rintro rfl; exact absurd (hts x₀ hx₀) (by simp)
+  have hu_ne : u ≠ 0 := fun h ↦
+    let ⟨x₀, hx₀⟩ := nonempty_of_measure_ne_zero hμt_pos.ne'; absurd (hts x₀ hx₀) (by simp [h])
   have hp0 : p ≠ 0 := (zero_lt_one.trans_le (Fact.out : 1 ≤ p)).ne'
   set f := indicatorConstLp p ht hμt_top.ne u
   set g := indicatorConstLp p ht hμt_top.ne (c * ‖u‖)
@@ -161,9 +159,8 @@ theorem operatorMultiplication_comp_operatorMultiplication (A B : Lp (E →L[�
       indicatorConstLp_coeFn (p := p) (hs := ht) (hμs := hμt_top.ne) (c := c * ‖u‖)]
       with x hmul hf_ae hg_ae
     rw [hmul, hf_ae, hg_ae]; by_cases hx : x ∈ t
-    · simpa [Set.indicator_of_mem hx, Real.norm_of_nonneg (mul_nonneg hc0 (norm_nonneg u))]
-        using (hts x hx).le
-    · simp [Set.indicator_of_notMem hx]
+    · simpa [hx, Real.norm_of_nonneg (mul_nonneg hc0 (norm_nonneg u))] using (hts x hx).le
+    · simp [hx]
   have hcancel : c * ‖f‖ ≤ ‖operatorMultiplication p A‖ * ‖f‖ :=
     hfg ▸ (Lp.norm_le_norm_of_ae_le hpoint).trans (le_opNorm _ _)
   exact (not_le_of_gt (by linarith [hc_def, hlt] : ‖operatorMultiplication p A‖ < c))
@@ -195,12 +192,12 @@ def operatorMultiplicationStarAlgHom :
     Lp (E →L[𝕜] E) ∞ μ →⋆ₐ[𝕜] (Lp E 2 μ →L[𝕜] Lp E 2 μ) where
   toFun A := operatorMultiplication 2 A
   map_one' := by rw [operatorMultiplication_one, ← ContinuousLinearMap.one_def]
-  map_mul' _ _ := by
-    rw [← operatorMultiplication_comp_operatorMultiplication, ContinuousLinearMap.mul_def]
+  map_mul' _ _ := by rw [← operatorMultiplication_comp_operatorMultiplication, mul_def]
   map_zero' := map_zero _
   map_add' := map_add _
-  commutes' _ := by rw [operatorMultiplication_algebraMap, Algebra.algebraMap_eq_smul_one,
-    ContinuousLinearMap.one_def]
+  commutes' _ := by
+    rw [operatorMultiplication_algebraMap, Algebra.algebraMap_eq_smul_one,
+      ContinuousLinearMap.one_def]
   map_star' _ := by rw [star_eq_adjoint, adjoint_operatorMultiplication]
 
 /-- Evaluation of `operatorMultiplicationStarAlgHom` produces `operatorMultiplication 2`. -/

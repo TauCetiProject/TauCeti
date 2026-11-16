@@ -118,7 +118,7 @@ theorem lpSMul_mul_assoc [IsScalarTower 𝕜 R R] (a : Lp 𝕜 ∞ μ) (f g : Lp
     (a • f : Lp R ∞ μ) * g = (a • (f * g) : Lp R ∞ μ) := Lp.ext <| by
   filter_upwards [coeFn_mul (a • f : Lp R ∞ μ) g, coeFn_lpSMul (r := ∞) a f,
     coeFn_lpSMul (r := ∞) a (f * g), coeFn_mul f g] with x h₁ h₂ h₃ h₄
-  rw [h₁, Pi.mul_apply, h₂, Pi.smul_apply', h₃, Pi.smul_apply', h₄, Pi.mul_apply, smul_mul_assoc]
+  simp [h₁, h₂, h₃, h₄, smul_mul_assoc]
 
 /-- Multiplication in `Lp R ∞ μ` commutes with heterogeneous `L∞` scalar multiplication on the
 right factor. -/
@@ -126,7 +126,7 @@ theorem mul_lpSMul_comm [SMulCommClass 𝕜 R R] (a : Lp 𝕜 ∞ μ) (f g : Lp 
     f * (a • g : Lp R ∞ μ) = (a • (f * g) : Lp R ∞ μ) := Lp.ext <| by
   filter_upwards [coeFn_mul f (a • g : Lp R ∞ μ), coeFn_lpSMul (r := ∞) a g,
     coeFn_lpSMul (r := ∞) a (f * g), coeFn_mul f g] with x h₁ h₂ h₃ h₄
-  rw [h₁, Pi.mul_apply, h₂, Pi.smul_apply', h₃, Pi.smul_apply', h₄, Pi.mul_apply, mul_smul_comm]
+  simp [h₁, h₂, h₃, h₄, mul_smul_comm]
 
 end LpSMul
 
