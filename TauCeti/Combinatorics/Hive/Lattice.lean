@@ -269,6 +269,10 @@ def ofYZ (n : ℕ) (y z : ℕ) (h : y + z ≤ n) : Vertex n := ⟨n - y - z, y, 
 @[simp] theorem ofYZ_y (n y z : ℕ) (h : y + z ≤ n) : (ofYZ n y z h).y = y := (rfl)
 @[simp] theorem ofYZ_z (n y z : ℕ) (h : y + z ≤ n) : (ofYZ n y z h).z = z := (rfl)
 
+/-- The `x`-coordinate of `ofYZ n y z h` is `n - (y + z)`. -/
+theorem sub_ofYZ_x (n y z : ℕ) (h : y + z ≤ n) : n - (ofYZ n y z h).x = y + z := by
+  rw [ofYZ_x]; omega
+
 @[simp] theorem ofYZ_eq_iff {n y₁ z₁ y₂ z₂ : ℕ} {h₁ : y₁ + z₁ ≤ n} {h₂ : y₂ + z₂ ≤ n} :
     ofYZ n y₁ z₁ h₁ = ofYZ n y₂ z₂ h₂ ↔ y₁ = y₂ ∧ z₁ = z₂ :=
   ⟨fun h => ⟨congrArg Vertex.y h, congrArg Vertex.z h⟩, fun ⟨hy, hz⟩ => by subst hy; subst hz; rfl⟩
@@ -663,6 +667,18 @@ theorem ChartRhombus₂.isRhombus {o₁ a₁ o₂ a₂ : Vertex n}
   exact isRhombus_of_offsets ![0, -1, 1] ![-1, 0, 1] (isUnitStep_iff.mpr (by decide))
     (isUnitStep_iff.mpr (by decide)) (by decide)
     (by simp; omega) (by simp; omega)
+
+/-- A quadruple of the third chart family is a unit rhombus: the elementary `(y, z)` cell of
+`isRhombus_ofYZ_step` at `a₁`. -/
+theorem ChartRhombus₃.isRhombus {o₁ a₁ o₂ a₂ : Vertex n}
+    (h : ChartRhombus₃ o₁ a₁ o₂ a₂) : IsRhombus o₁ a₁ o₂ a₂ := by
+  obtain ⟨h₁, h₂, h₃, h₄, h₅, h₆⟩ := chartRhombus₃_iff.mp h
+  have := a₁.sum_eq
+  have := o₁.sum_eq
+  have := o₂.sum_eq
+  have := a₂.sum_eq
+  convert isRhombus_ofYZ_step (n := n) (y := a₁.y) (z := a₁.z) (by omega) using 1 <;>
+    ext <;> simp <;> omega
 
 end ChartRhombus
 

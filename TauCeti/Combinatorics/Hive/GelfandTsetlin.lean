@@ -7,7 +7,6 @@ module
 
 public import TauCeti.Combinatorics.Hive.Fibre
 public import TauCeti.RepresentationTheory.ClassicalGroups.GelfandTsetlin.Basic
-import Mathlib.Algebra.BigOperators.Intervals
 import Mathlib.Tactic.FinCases
 import Mathlib.Tactic.Linarith
 import TauCeti.Algebra.BigOperators.Finset.PartialSum
@@ -40,6 +39,7 @@ top row `μ` and weight `γ - λ` (`TauCeti.Hive.fixedIntegerHiveEquivGTPatternO
 
 ## Main definitions
 
+* `TauCeti.Hive.gtChart`: a lattice function read in the chart `(i, j) ↦ (n - j, j - i, i)`.
 * `TauCeti.Hive.toGTPattern`: the Gelfand-Tsetlin pattern of horizontal differences of an integer
   hive.
 * `TauCeti.Hive.gtCompletion`: the chart function rebuilt from a boundary `λ` and a pattern.
@@ -76,6 +76,59 @@ open scoped BigOperators
 namespace TauCeti.Hive
 
 variable {n : ℕ}
+
+/-! ### Lattice functions in the chart `(i, j) ↦ (n - j, j - i, i)` -/
+
+section Chart
+
+variable {R : Type*}
+
+/-- The value of `f` at the chart point `(i, j)`, the lattice vertex `(n - j, j - i, i)`, when
+`i ≤ j ≤ n`, and `0` off the chart. -/
+def gtChart [Zero R] (f : Vertex n → R) (i j : ℕ) : R :=
+  if h : i ≤ j ∧ j ≤ n then f (Vertex.ofYZ n (j - i) i (by omega)) else 0
+
+theorem gtChart_of_le [Zero R] (f : Vertex n → R) {i j : ℕ} (hij : i ≤ j) (hj : j ≤ n) :
+    gtChart f i j = f (Vertex.ofYZ n (j - i) i (by omega)) := by
+  simp only [gtChart, hij, hj, and_self, ↓reduceDIte]
+
+theorem gtChart_eq_zero_of_lt [Zero R] (f : Vertex n → R) {i j : ℕ} (hj : n < j) :
+    gtChart f i j = 0 := by
+  simp only [gtChart, show ¬j ≤ n by omega, and_false, ↓reduceDIte]
+
+theorem gtChart_eq_zero_of_lt_left [Zero R] (f : Vertex n → R) {i j : ℕ} (hji : j < i) :
+    gtChart f i j = 0 := by
+  simp only [gtChart, show ¬i ≤ j by omega, false_and, ↓reduceDIte]
+
+/-- Every lattice vertex `v` is the chart point `(v.z, n - v.x)`. -/
+@[simp]
+theorem gtChart_z_sub_x [Zero R] (f : Vertex n → R) (v : Vertex n) :
+    gtChart f v.z (n - v.x) = f v := by
+  have := v.sum_eq
+  rw [gtChart_of_le f (by omega) (by omega)]
+  congr 1
+  ext <;> simp <;> omega
+
+/-- The chart side `i = 0` is the side `A → B`. -/
+theorem gtChart_zero_left [Zero R] (f : Vertex n → R) {j : ℕ} (hj : j ≤ n) :
+    gtChart f 0 j = f (Vertex.edgePoint n 0 ⟨j, by omega⟩) := by
+  rw [gtChart_of_le f (Nat.zero_le j) hj]
+  exact congrArg f (Vertex.ofYZ_zero_right n j hj)
+
+/-- The chart side `j = n` is the side `B → C`. -/
+theorem gtChart_right [Zero R] (f : Vertex n → R) {i : ℕ} (hi : i ≤ n) :
+    gtChart f i n = f (Vertex.edgePoint n 1 ⟨i, by omega⟩) := by
+  rw [gtChart_of_le f hi le_rfl]
+  exact congrArg f (Vertex.ofYZ_sub_left n i hi)
+
+/-- The chart diagonal `i = j` is the side `C → A`. -/
+theorem gtChart_self [Zero R] (f : Vertex n → R) {j : ℕ} (hj : j ≤ n) :
+    gtChart f j j = f (Vertex.edgePoint n 2 ⟨n - j, by omega⟩) := by
+  rw [gtChart_of_le f le_rfl hj]
+  simp only [Nat.sub_self]
+  exact congrArg f (Vertex.ofYZ_zero_left n j hj)
+
+end Chart
 
 private theorem isRhombusConcave_gtChart (h : IntegerHive n) :
     IsRhombusConcave (fun v : Vertex n => gtChart (⇑h) v.z (n - v.x)) := by
@@ -185,10 +238,9 @@ theorem gtCompletionConcave_toGTPattern (h : IntegerHive n) :
 
 /-- The top row of the pattern of a hive is its second boundary weight. -/
 theorem topRow_toGTPattern (h : IntegerHive n) : h.toGTPattern.topRow = h.boundary 1 := by
-  ext i
-  rw [GTPattern.topRow_apply, h.toGTPattern_apply i.2, gtChart_right _ i.2,
-    gtChart_right _ i.2.le, boundary_apply]
-  rfl
+  ext ⟨i, hi⟩
+  rw [GTPattern.topRow_apply, h.toGTPattern_apply hi, gtChart_right _ hi, gtChart_right _ hi.le,
+    boundary_apply, Fin.succ_mk, Fin.castSucc_mk]
 
 /-- The row sums of the pattern of a hive are differences of chart values. -/
 theorem rowSum_toGTPattern (h : IntegerHive n) (j : ℕ) :
@@ -203,8 +255,9 @@ theorem weight_toGTPattern (h : IntegerHive n) (r : Fin n) :
     h.toGTPattern.weight r = -h.boundary 2 r.rev - h.boundary 0 r := by
   -- Side `A → B` steps from chart column `r` to `r + 1`; side `C → A` down the diagonal.
   have e₀ : h.boundary 0 r = gtChart (⇑h) 0 (r + 1) - gtChart (⇑h) 0 r := by
-    rw [boundary_apply, gtChart_zero_left _ r.2, gtChart_zero_left _ r.2.le]
-    rfl
+    obtain ⟨r, hr⟩ := r
+    rw [boundary_apply, gtChart_zero_left _ hr, gtChart_zero_left _ hr.le, Fin.succ_mk,
+      Fin.castSucc_mk]
   have e₂ : h.boundary 2 r.rev = gtChart (⇑h) r r - gtChart (⇑h) (r + 1) (r + 1) := by
     rw [boundary_apply, gtChart_self _ r.2.le, gtChart_self _ r.2]
     congr 3
@@ -231,8 +284,8 @@ theorem ofGTPattern_apply (v : Vertex n) :
 
 theorem gtChart_ofGTPattern {i j : ℕ} (hij : i ≤ j) (hj : j ≤ n) :
     gtChart (⇑(ofGTPattern l P hP)) i j = gtCompletion l P i j := by
-  rw [gtChart_of_le _ hij hj, ofGTPattern_apply, Vertex.ofYZ_z, Vertex.ofYZ_x,
-    show n - (n - (j - i) - i) = j by omega]
+  rw [gtChart_of_le _ hij hj, ofGTPattern_apply, Vertex.ofYZ_z, Vertex.sub_ofYZ_x,
+    Nat.sub_add_cancel hij]
 
 /-- The pattern of the hive of a pattern is the pattern itself. -/
 @[simp]
@@ -272,18 +325,16 @@ private theorem ofGTPattern_edgePoint_two (k : Fin (n + 1)) :
 the dual of `l + wt(P)`. -/
 theorem boundary_ofGTPattern :
     (ofGTPattern l P hP).boundary = ![l, P.topRow, fun i => -(l i.rev + P.weight i.rev)] := by
-  ext s i
-  fin_cases s
-  · change (ofGTPattern l P hP).boundary 0 i = l i
+  have h₀ (i : Fin n) : (ofGTPattern l P hP).boundary 0 i = l i := by
     have hl := prefixSum_succ i.2 l
     rw [prefixSum_def, prefixSum_def] at hl
     rw [boundary_apply, ofGTPattern_edgePoint_zero, ofGTPattern_edgePoint_zero]
     exact sub_eq_of_eq_add' hl
-  · change (ofGTPattern l P hP).boundary 1 i = P.topRow i
+  have h₁ (i : Fin n) : (ofGTPattern l P hP).boundary 1 i = P.topRow i := by
     rw [boundary_apply, ofGTPattern_edgePoint_one, ofGTPattern_edgePoint_one,
       GTPattern.topRow_apply]
     exact sub_eq_of_eq_add' (gtCompletion_succ_left l P i n)
-  · change (ofGTPattern l P hP).boundary 2 i = -(l i.rev + P.weight i.rev)
+  have h₂ (i : Fin n) : (ofGTPattern l P hP).boundary 2 i = -(l i.rev + P.weight i.rev) := by
     have hl := prefixSum_succ i.rev.2 l
     simp only [prefixSum_def, Fin.eta] at hl
     have e₁ : n - (i.succ : ℕ) = i.rev := by simp [Fin.val_rev]
@@ -291,6 +342,8 @@ theorem boundary_ofGTPattern :
     rw [boundary_apply, ofGTPattern_edgePoint_two, ofGTPattern_edgePoint_two, gtCompletion_self,
       gtCompletion_self, e₁, e₂, hl, GTPattern.weight_apply]
     abel
+  ext s i
+  fin_cases s <;> simp [h₀, h₁, h₂]
 
 /-! ### Fixed-boundary fibres as Gelfand-Tsetlin fibres -/
 
