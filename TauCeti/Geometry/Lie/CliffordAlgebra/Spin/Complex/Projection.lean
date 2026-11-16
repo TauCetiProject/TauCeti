@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Algebra.Lie.BaseChange.Basic
 public import TauCeti.Algebra.Lie.SkewAdjoint
 public import TauCeti.Geometry.Lie.AutomaticSmoothness
 public import TauCeti.Geometry.Lie.ContinuousFunctor
@@ -114,6 +115,20 @@ instance complexSpecialOrthogonalUnitsRangeLieGroup :
     LieGroup 𝓘(ℝ, SpecialOrthogonalLieModel) ∞ SpecialOrthogonalUnitsRange :=
   (complexSpecialOrthogonalEmbeddedLieSubgroupData Q).lieGroup
 
+private theorem map_complexSpecialOrthogonal_lieSubalgebra (hQ : Q.Nondegenerate) :
+    Submodule.map
+        ((TauCeti.Lie.unitsLieAlgebraLieEquiv
+          (R := Matrix (Fin n) (Fin n) ℂ)).toLinearEquiv : _ →ₗ[ℝ] _)
+        (TauCeti.Lie.lieSubalgebraOfSubgroup
+          (I := 𝓘(ℝ, Matrix (Fin n) (Fin n) ℂ)) SpecialOrthogonalUnitsRange).toSubmodule =
+      (skewAdjointMatricesLieSubalgebra
+        (LinearMap.BilinForm.toMatrix' Q.polarBilin)).toSubmodule.restrictScalars ℝ := by
+  open TauCeti.Lie in
+  ext A
+  simp only [Submodule.mem_map_equiv, Submodule.restrictScalars_mem]
+  exact unitsLieAlgebraLieEquiv_symm_mem_lieSubalgebraOfSubgroup_range_specialOrthogonal_iff
+    Q hQ A
+
 private def complexSpecialOrthogonalAmbientCoordinateLieEquiv (hQ : Q.Nondegenerate) :
     TauCeti.Lie.lieSubalgebraOfSubgroup
         (I := 𝓘(ℝ, Matrix (Fin n) (Fin n) ℂ)) SpecialOrthogonalUnitsRange ≃ₗ⁅ℝ⁆
@@ -124,12 +139,7 @@ private def complexSpecialOrthogonalAmbientCoordinateLieEquiv (hQ : Q.Nondegener
       _
       ((skewAdjointMatricesLieSubalgebra
         (LinearMap.BilinForm.toMatrix' Q.polarBilin)).toSubmodule.restrictScalars ℝ)
-      (by
-        open TauCeti.Lie in
-        ext A
-        simp only [Submodule.mem_map_equiv, Submodule.restrictScalars_mem]
-        exact unitsLieAlgebraLieEquiv_symm_mem_lieSubalgebraOfSubgroup_range_specialOrthogonal_iff
-          Q hQ A) with
+      (map_complexSpecialOrthogonal_lieSubalgebra hQ) with
     map_lie' := fun {x y} ↦ Subtype.ext
       ((TauCeti.Lie.unitsLieAlgebraLieEquiv (R := Matrix (Fin n) (Fin n) ℂ)).map_lie x y) }
 
@@ -141,8 +151,15 @@ private theorem coe_complexSpecialOrthogonalAmbientCoordinateLieEquiv_apply
       (skewAdjointMatricesLieSubalgebra (LinearMap.BilinForm.toMatrix' Q.polarBilin))
       (complexSpecialOrthogonalAmbientCoordinateLieEquiv hQ x) : Matrix (Fin n) (Fin n) ℂ) =
       TauCeti.Lie.unitsLieAlgebraLieEquiv x := by
-  unfold complexSpecialOrthogonalAmbientCoordinateLieEquiv
-  rfl
+  -- The `LieEquiv` extends `LinearEquiv.ofSubmodules` on the same forward map, and
+  -- `RestrictScalars.addEquiv` is the identity on the underlying submodule carrier.
+  exact LinearEquiv.ofSubmodules_apply
+    (e := (TauCeti.Lie.unitsLieAlgebraLieEquiv (R := Matrix (Fin n) (Fin n) ℂ)).toLinearEquiv)
+    (p := (TauCeti.Lie.lieSubalgebraOfSubgroup
+      (I := 𝓘(ℝ, Matrix (Fin n) (Fin n) ℂ)) SpecialOrthogonalUnitsRange).toSubmodule)
+    (q := (skewAdjointMatricesLieSubalgebra
+      (LinearMap.BilinForm.toMatrix' Q.polarBilin)).toSubmodule.restrictScalars ℝ)
+    (map_complexSpecialOrthogonal_lieSubalgebra hQ) x
 
 /-- The real Lie algebra of the complex `SO(Q)` range carrier in polar skew-adjoint matrix
 coordinates. -/
@@ -174,7 +191,8 @@ theorem coe_complexSpecialOrthogonalLieEquivSkewAdjointMatrices_apply [Fact Q.No
 /-- Matrix units coordinates of the differentiated `SO(Q)` range inclusion normalize to the polar
 skew-adjoint matrix coordinates. -/
 @[simp↓ high]
-theorem unitsLieAlgebraLieEquiv_lieMapSubtypeVal_eq_coe_complexSpecialOrthogonalLieEquivMatrices
+theorem
+ unitsLieAlgebraLieEquiv_lieMapSubtypeVal_eq_coe_complexSpecialOrthogonalLieEquivSkewAdjointMatrices
     [Fact Q.Nondegenerate]
     (X : LeftInvariantDerivation 𝓘(ℝ, SpecialOrthogonalLieModel) SpecialOrthogonalUnitsRange) :
     TauCeti.Lie.unitsLieAlgebraLieEquiv
@@ -185,37 +203,14 @@ theorem unitsLieAlgebraLieEquiv_lieMapSubtypeVal_eq_coe_complexSpecialOrthogonal
         Matrix (Fin n) (Fin n) ℂ) :=
   (coe_complexSpecialOrthogonalLieEquivSkewAdjointMatrices_apply (Q := Q) X).symm
 
-private def restrictScalarsComplexLieEquiv {L₁ L₂ : Type*}
-    [LieRing L₁] [LieAlgebra ℂ L₁] [LieRing L₂] [LieAlgebra ℂ L₂] (e : L₁ ≃ₗ⁅ℂ⁆ L₂) :
-    RestrictScalars ℝ ℂ L₁ ≃ₗ⁅ℝ⁆ RestrictScalars ℝ ℂ L₂ where
-  toFun x := (RestrictScalars.addEquiv ℝ ℂ L₂).symm (e (RestrictScalars.addEquiv ℝ ℂ L₁ x))
-  invFun y := (RestrictScalars.addEquiv ℝ ℂ L₁).symm (e.symm (RestrictScalars.addEquiv ℝ ℂ L₂ y))
-  left_inv x := by simp
-  right_inv y := by simp
-  map_add' x y := by simp
-  map_smul' r x := by
-    rw [RestrictScalars.addEquiv_map_smul, map_smul,
-      RestrictScalars.addEquiv_symm_map_algebraMap_smul, RingHom.id_apply]
-  map_lie' {x y} := e.map_lie (RestrictScalars.addEquiv ℝ ℂ L₁ x)
-    (RestrictScalars.addEquiv ℝ ℂ L₁ y)
-
-@[simp]
-private theorem restrictScalarsComplexLieEquiv_apply {L₁ L₂ : Type*}
-    [LieRing L₁] [LieAlgebra ℂ L₁] [LieRing L₂] [LieAlgebra ℂ L₂]
-    (e : L₁ ≃ₗ⁅ℂ⁆ L₂) (x : RestrictScalars ℝ ℂ L₁) :
-    restrictScalarsComplexLieEquiv e x =
-      (RestrictScalars.addEquiv ℝ ℂ L₂).symm (e (RestrictScalars.addEquiv ℝ ℂ L₁ x)) :=
-  rfl
-
 /-- The real Lie algebra of the complex `SO(Q)` range carrier in basis-free polar skew-adjoint
 endomorphism coordinates. -/
 def complexSpecialOrthogonalLieEquivSkewAdjoint [Fact Q.Nondegenerate] :
     LeftInvariantDerivation 𝓘(ℝ, SpecialOrthogonalLieModel) SpecialOrthogonalUnitsRange ≃ₗ⁅ℝ⁆
       RestrictScalars ℝ ℂ (skewAdjointLieSubalgebra Q.polarBilin) :=
   (complexSpecialOrthogonalLieEquivSkewAdjointMatrices (Q := Q)).trans <|
-    restrictScalarsComplexLieEquiv
-      (TauCeti.skewAdjointLieEquivOfBasis (Pi.basisFun ℂ (Fin n)) Q.polarBilin
-        (DFunLike.congr_fun LinearMap.BilinForm.toMatrix_basisFun Q.polarBilin))
+    (TauCeti.skewAdjointLieEquivOfBasis (Pi.basisFun ℂ (Fin n)) Q.polarBilin
+      (DFunLike.congr_fun LinearMap.BilinForm.toMatrix_basisFun Q.polarBilin)).restrictScalars ℝ
 
 /-- Evaluating the polar skew-adjoint endomorphism coordinate of `X` on a vector `v` agrees with
 multiplying `v` by its polar skew-adjoint matrix coordinate. -/
@@ -232,7 +227,7 @@ theorem coe_complexSpecialOrthogonalLieEquivSkewAdjoint_apply_apply [Fact Q.Nond
         Matrix (Fin n) (Fin n) ℂ) *ᵥ v := by
   have hrepr : ⇑((Pi.basisFun ℂ (Fin n)).repr v) = v := funext fun j ↦ by simp
   simp only [complexSpecialOrthogonalLieEquivSkewAdjoint, LieEquiv.trans_apply,
-    restrictScalarsComplexLieEquiv_apply, AddEquiv.apply_symm_apply,
+    LieEquiv.restrictScalars_apply, AddEquiv.apply_symm_apply,
     TauCeti.coe_skewAdjointLieEquivOfBasis_apply, Matrix.toLinAlgEquiv_apply, hrepr]
   ext i
   simp [Pi.basisFun_apply, Pi.single_apply]
@@ -289,10 +284,7 @@ theorem complexSpinToSpecialOrthogonalRangeLieMap_eq_continuousMonoidHomLieMap
         (I := 𝓘(ℝ, SpinLieModel)) (I' := 𝓘(ℝ, SpecialOrthogonalLieModel))
         (show SpinUnitsRange →ₜ* SpecialOrthogonalUnitsRange from
           spinToSpecialOrthogonalUnitsRange Q) := by
-  let p : SpinUnitsRange →ₜ* SpecialOrthogonalUnitsRange := spinToSpecialOrthogonalUnitsRange Q
-  change _root_.lieMap (complexSpinToSpecialOrthogonalSmoothRange (Q := Q)) =
-    ContinuousMonoidHom.lieMap p
-  rw [ContinuousMonoidHom.lieMap_def]
+  rw [complexSpinToSpecialOrthogonalRangeLieMap_eq_lieMap, ContinuousMonoidHom.lieMap_def]
   apply congrArg _root_.lieMap
   apply DFunLike.coe_injective
   rw [ContinuousMonoidHom.coe_toContMDiffMonoidMorphism]

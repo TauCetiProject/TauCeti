@@ -98,7 +98,8 @@ noncomputable def realCliffordSpecialOrthogonalEmbeddedLieSubgroupData (n : ℕ)
       (SpecialOrthogonalUnitsRange(n)) (SpecialOrthogonalLieModel(n)) :=
   TauCeti.Lie.EmbeddedLieSubgroupData.ofIsClosed (by
     rw [MonoidHom.coe_range]
-    exact QuadraticMap.isClosed_range_specialOrthogonalToGeneralLinear_realCliffordForm n)
+    exact (show QuadraticForm ℝ (Fin n → ℝ) from
+      realCliffordForm n 0).isClosed_range_specialOrthogonalToGeneralLinear)
 
 private noncomputable def spinAmbientCoordinateLieEquiv (n : ℕ) :
     TauCeti.Lie.lieSubalgebraOfSubgroup

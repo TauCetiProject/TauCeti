@@ -9,6 +9,7 @@ import TauCeti.Analysis.SpecialFunctions.Exponential
 import TauCeti.Geometry.Lie.Adjoint.Units.Basic
 public import TauCeti.Geometry.Lie.CliffordAlgebra.Spin.Projection
 public import TauCeti.LinearAlgebra.CliffordAlgebra.StandardBivector
+import TauCeti.LinearAlgebra.QuadraticForm.Standard
 
 /-!
 # The differential of the real Spin projection

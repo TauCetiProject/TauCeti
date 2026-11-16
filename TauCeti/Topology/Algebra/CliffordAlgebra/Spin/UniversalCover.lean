@@ -10,6 +10,7 @@ public import TauCeti.AlgebraicTopology.UniversalCover.SemilocallySimplyConnecte
 public import TauCeti.Geometry.Lie.CliffordAlgebra.Spin.Projection
 public import TauCeti.Topology.Algebra.CliffordAlgebra.Spin.Covering
 public import TauCeti.Topology.Algebra.CliffordAlgebra.Spin.SimplyConnected
+public import TauCeti.Topology.Algebra.QuadraticForm.RealSpecialOrthogonal
 import TauCeti.AlgebraicTopology.FundamentalGroup.Homeomorph
 import TauCeti.Topology.Algebra.CliffordAlgebra.Spin.Connected
 import TauCeti.Topology.Homotopy.Covering
