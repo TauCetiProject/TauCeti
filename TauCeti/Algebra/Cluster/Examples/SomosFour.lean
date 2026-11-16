@@ -16,8 +16,9 @@ import Mathlib.Tactic.FinCases
 
 The mutable indices are cyclically ordered in `Fin 4`. Under successive mutations at
 `0, 1, 2, 3, …`, each exchange matrix is obtained from the initial one by rotating both
-indices. In its next exchange column, the two neighboring variables have exponent one
-and the opposite variable has exponent minus two. These are the exponents in the
+indices. In the next exchange column, the entry at the mutated index is zero, the two
+neighboring entries are one, and the opposite entry is minus two. The positive and negative
+parts of this column give natural exponents one and two in the two monomials of the
 Somos–4 exchange numerator.
 
 See Fomin and Zelevinsky, *The Laurent phenomenon*, Example 3.3, for the recurrence.
@@ -34,6 +35,7 @@ def initialMatrix : Matrix (Fin 4) (Fin 4) ℤ :=
   !![0, -1, 2, -1; 1, 0, -3, 2; -2, 3, 0, -1; 1, -2, 1, 0]
 
 /-- The entries of the initial exchange matrix in the column convention. -/
+@[simp]
 theorem initialMatrix_apply (i j : Fin 4) :
     initialMatrix i j =
       !![(0 : ℤ), -1, 2, -1; 1, 0, -3, 2; -2, 3, 0, -1; 1, -2, 1, 0] i j := by
@@ -85,7 +87,8 @@ theorem exchangeMatrix_add_four (n : ℕ) : exchangeMatrix (n + 4) = exchangeMat
   simp
 
 /-- The column in the next mutation direction, read starting at that direction. -/
-theorem exchangeMatrix_column (n : ℕ) (r : Fin 4) :
+@[simp]
+theorem exchangeMatrix_apply_add_col (n : ℕ) (r : Fin 4) :
     exchangeMatrix n ((n : Fin 4) + r) n = ![(0 : ℤ), 1, -2, 1] r := by
   rw [exchangeMatrix_eq_submatrix]
   simp only [Matrix.submatrix_apply, add_sub_cancel_left, sub_self]
@@ -101,12 +104,17 @@ theorem isSkewSymmetrizer_exchangeMatrix (n : ℕ) :
   rw [exchangeMatrix_eq_submatrix]
   exact h.submatrix _
 
-/-- In cyclic order, the positive and negative column monomials give exactly the two
-terms in the Somos–4 exchange numerator. -/
-theorem exchangeNumerator {R : Type*} [CommSemiring R] (n : ℕ) (x : Fin 4 → R) :
-    (∏ r : Fin 4, x ((n : Fin 4) + r) ^ (exchangeMatrix n ((n : Fin 4) + r) n).toNat) +
-      (∏ r : Fin 4, x ((n : Fin 4) + r) ^ (-(exchangeMatrix n ((n : Fin 4) + r) n)).toNat) =
+/-- The positive and negative column monomials, in the original row order, give exactly
+the two terms in the Somos–4 exchange numerator. -/
+theorem prod_pow_toNat_exchangeMatrix_add_prod_pow_toNat_neg
+    {R : Type*} [CommMonoid R] [Add R] (n : ℕ) (x : Fin 4 → R) :
+    (∏ i : Fin 4, x i ^ (exchangeMatrix n i n).toNat) +
+      (∏ i : Fin 4, x i ^ (-(exchangeMatrix n i n)).toNat) =
       x ((n : Fin 4) + 1) * x ((n : Fin 4) + 3) + x ((n : Fin 4) + 2) ^ 2 := by
-  simp [exchangeMatrix_column, Fin.prod_univ_succ]
+  rw [← Equiv.prod_comp (Equiv.addLeft (n : Fin 4))
+      (fun i ↦ x i ^ (exchangeMatrix n i n).toNat),
+    ← Equiv.prod_comp (Equiv.addLeft (n : Fin 4))
+      (fun i ↦ x i ^ (-(exchangeMatrix n i n)).toNat)]
+  simp [Fin.prod_univ_succ]
 
 end TauCeti.SomosFour
