@@ -233,14 +233,6 @@ private theorem coe_orbitSplittingSymbolEquiv_apply {n m l : ℕ} {σ : Multiset
       GaloisSet.sum q.1.1 q.2.1 ((Equiv.sumCongr e₁ e₂).trans (Equiv.sumCompl (· ∈ s))) := by
   simp [orbitSplittingSymbolEquiv, Equiv.subtypeProdEquivProd]
 
-/-- In a splitting symbol `σ` of degree `n` with positive factors, every `x ∈ σ` satisfies
-`0 < x.1 * x.2` and `x.1 * x.2 ≤ n`. -/
-private theorem mul_pos_and_le_of_mem {n : ℕ} {σ : Multiset (ℕ × ℕ)} {x : ℕ × ℕ}
-    (hσ : ∀ y ∈ σ, 0 < y.1 ∧ 0 < y.2) (hn : (σ.map fun y ↦ y.1 * y.2).sum = n) (hx : x ∈ σ) :
-    0 < x.1 * x.2 ∧ x.1 * x.2 ≤ n :=
-  ⟨Nat.mul_pos (hσ x hx).1 (hσ x hx).2,
-    hn ▸ Multiset.le_sum_of_mem (Multiset.mem_map_of_mem (fun y : ℕ × ℕ ↦ y.1 * y.2) hx)⟩
-
 open scoped Classical in
 /-- Index of a base label's `(f, e)` pair `x ∈ σ` together with its punctured orbit `O.erase i₀` of
 size `x.1 * x.2 - 1`. -/
@@ -519,10 +511,10 @@ private theorem tsum_splittingSymbol_eq :
     simp
   | c + 1, n, σ, hc, hσ, hn => by
     classical
+    have hle_deg : ∀ {x : ℕ × ℕ}, x ∈ σ → x.1 * x.2 ≤ n := fun hx ↦
+      hn ▸ Multiset.le_sum_of_mem (Multiset.mem_map_of_mem (fun y : ℕ × ℕ ↦ y.1 * y.2) hx)
     obtain ⟨x₀, hx₀⟩ := Multiset.card_pos_iff_exists_mem.1 (by omega : 0 < Multiset.card σ)
-    have hn_pos : 0 < n := by
-      obtain ⟨hpos, hle⟩ := mul_pos_and_le_of_mem hσ hn hx₀
-      omega
+    have hn_pos : 0 < n := (Nat.mul_pos (hσ x₀ hx₀).1 (hσ x₀ hx₀).2).trans_le (hle_deg hx₀)
     set i₀ : Fin n := ⟨0, hn_pos⟩
     set q : ℝ≥0∞ := (Nat.card 𝓀[K] : ℝ≥0∞)
     have hq0 : q ≠ 0 := Nat.cast_ne_zero.mpr (Finite.card_pos (α := 𝓀[K])).ne'
@@ -537,7 +529,7 @@ private theorem tsum_splittingSymbol_eq :
             ((splittingSymbolAut σ : ℝ≥0∞) * q ^ splittingSymbolExponent σ) := by
       rintro ⟨x, hx_fin⟩
       have hx : x ∈ σ := Multiset.mem_toFinset.1 hx_fin
-      obtain ⟨hm_pos, hm_le⟩ := mul_pos_and_le_of_mem hσ hn hx
+      have hm_pos : 0 < x.1 * x.2 := Nat.mul_pos (hσ x hx).1 (hσ x hx).2
       have hfib_eq : ∀ T : (Finset.univ.erase i₀).powersetCard (x.1 * x.2 - 1),
           ∑' r : baseOrbitIndex (K := K) σ i₀ ⁻¹' {⟨⟨x, hx_fin⟩, T⟩},
               1 / q ^ r.1.1.discriminantExponent =
@@ -557,7 +549,7 @@ private theorem tsum_splittingSymbol_eq :
               rw [Multiset.map_cons, Multiset.sum_cons] at hcons
               omega)]
       simp_rw [hfib_eq]
-      simpa using choose_mul_div_splittingSymbol_erase_eq hx hm_pos hm_le hq0 hqt
+      simpa using choose_mul_div_splittingSymbol_erase_eq hx hm_pos (hle_deg hx) hq0 hqt
     -- Sum `hx_term` over `x ∈ σ.toFinset` using `∑ count(x) * (x.1 * x.2) = n`.
     simp_rw [hx_term, div_eq_mul_inv]
     rw [← Finset.sum_mul,
