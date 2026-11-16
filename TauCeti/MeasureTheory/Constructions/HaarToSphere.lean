@@ -540,8 +540,8 @@ theorem integral_toSphere_coe_eq_zero :
   set g : sphere (0 : E) 1 → sphere (0 : E) 1 := Subtype.map ι fun x hx ↦ by simpa using hx
   have hmap : μ.toSphere.map g = μ.toSphere := by
     rw [LinearIsometryEquiv.map_toSphere ι μ]
-    congr 1
-    exact Measure.map_neg_eq_self μ
+    -- `ι` is negation, so `μ.map ι = μ` is the reflection invariance of the Haar measure.
+    rw [show (ι : E → E) = Neg.neg from LinearIsometryEquiv.coe_neg, Measure.map_neg_eq_self]
   have hg : Measurable g := ι.continuous.measurable.subtype_map _
   have h := integral_map (μ := μ.toSphere) hg.aemeasurable
     (f := fun θ : sphere (0 : E) 1 ↦ (θ : E)) continuous_subtype_val.aestronglyMeasurable
