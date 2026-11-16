@@ -8,7 +8,7 @@ module
 public import TauCeti.LinearAlgebra.RootSystem.CoefficientReflection
 public import TauCeti.LinearAlgebra.RootSystem.HighestRoot.Basic
 public import TauCeti.LinearAlgebra.RootSystem.SimplyConnectedRootDatum.A
-import TauCeti.LinearAlgebra.RootSystem.SimplyConnectedRootDatum.SimplyLaced
+import all TauCeti.LinearAlgebra.RootSystem.SimplyConnectedRootDatum.A
 
 /-!
 # Simple-root coefficients and the highest root of type A
@@ -49,6 +49,7 @@ public noncomputable section
 namespace TauCeti.DynkinType
 
 open Finset
+open scoped _root_.Matrix
 
 variable {n : ℕ}
 
@@ -61,19 +62,39 @@ private def simpleEquiv (n : ℕ) : Fin n ≃ (typeASimplyConnectedBase n).suppo
   left_inv _ := Fin.ext (by simp)
   right_inv _ := Subtype.ext (Fin.ext (by simp))
 
-/-- The type `Aₙ` instance of `TauCeti.DynkinType.root_eq_sum_coroot_smul_root_simpleIndex`, read
-on the family datum rather than through the dispatcher. -/
+/-- The coroot potential `[a ≤ k]` of `e_a` maps under the Cartan matrix to `e_a - e_n`, by
+telescoping along the simple coroots `Pi.single i 1`, whose Cartan images are the simple roots. -/
+private lemma typeACoweight_vecMul_cartanMatrix {a : ℕ} (ha : a ≤ n) :
+    typeACoweight n a ᵥ* CartanMatrix.A n = typeAWeight n a - typeAWeight n n := by
+  induction hd : n - a generalizing a with
+  | zero =>
+    obtain rfl : a = n := by omega
+    have h : typeACoweight a a = 0 := funext fun k ↦ ite_eq_right_iff.mpr fun h ↦ by omega
+    rw [h, Matrix.zero_vecMul, sub_self]
+  | succ d ih =>
+    have hrow : (CartanMatrix.A n).row ⟨a, by omega⟩ =
+        typeAWeight n a - typeAWeight n (a + 1) :=
+      (root_typeASimpleIndex ⟨a, by omega⟩).symm.trans (root_typeASimpleIndex_eq _)
+    rw [eq_add_of_sub_eq' (typeACoweight_sub_succ ⟨a, by omega⟩), Matrix.add_vecMul,
+      Matrix.single_one_vecMul, hrow, ih (a := a + 1) (by omega) (by omega)]
+    abel
+
+/-- In type `Aₙ` a root is the combination of the simple roots whose coefficients are the
+coordinates of its coroot: telescoping the coroot coordinates `[a ≤ k] - [b ≤ k]` of `e_a - e_b`
+along the simple roots. -/
 private lemma root_eq_sum_coroot_smul_root_typeASimpleIndex (j : Fin (n * (n + 1))) :
     (P).root j = ∑ i, (P).coroot j i • (P).root (typeASimpleIndex n i) := by
-  obtain _ | m := n
-  · exact j.elim0
-  have ht : (A (m + 1)).Valid := valid_A.mpr (Nat.succ_pos m)
-  have hs (i : Fin (m + 1)) : (A (m + 1)).simpleIndex ht i = typeASimpleIndex (m + 1) i :=
-    Fin.ext ((simpleIndex_val _ ht i).trans (typeASimpleIndex_val i).symm)
-  have h := root_eq_sum_coroot_smul_root_simpleIndex (A (m + 1)) ht (isSimplyLaced_A _) j
-  simp only [simplyConnectedRootDatum_A] at h
-  refine h.trans (Finset.sum_congr rfl fun i _ ↦ ?_)
-  exact congrArg (fun k ↦ _ • (typeASimplyConnectedRootDatum (m + 1)).root k) (hs i)
+  obtain ⟨p, rfl⟩ := (typeAIndexEquiv n).surjective j
+  have h : (P).root (typeAIndexEquiv n p) =
+      (P).coroot (typeAIndexEquiv n p) ᵥ* CartanMatrix.A n := by
+    rw [root_typeASimplyConnectedRootDatum, coroot_typeASimplyConnectedRootDatum,
+      Equiv.symm_apply_apply, typeAPairRoot, typeAPairCoroot, Matrix.sub_vecMul,
+      typeACoweight_vecMul_cartanMatrix (by omega), typeACoweight_vecMul_cartanMatrix (by omega)]
+    abel
+  rw [h]
+  ext k
+  simp only [Matrix.vecMul, dotProduct, Finset.sum_apply, Pi.smul_apply, smul_eq_mul,
+    root_typeASimpleIndex]
 
 /-- **The simple-root coefficients of a type `Aₙ` root are the coordinates of its coroot**, in the
 Bourbaki numbering of the simple roots. For the root `e_a - e_b` they are `[a ≤ k] - [b ≤ k]`
