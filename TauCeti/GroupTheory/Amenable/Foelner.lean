@@ -12,6 +12,7 @@ public import Mathlib.MeasureTheory.Group.FoelnerFilter
 public import Mathlib.MeasureTheory.Measure.Count
 import Mathlib.Algebra.Group.Equiv.TypeTags
 import TauCeti.Data.ENNReal.NatCastDiv
+import TauCeti.MeasureTheory.MeasurableSpace.TypeTags
 
 /-!
 # Følner sets of a group for counting measure
@@ -83,30 +84,6 @@ open MeasureTheory Filter Finset
 open scoped ENNReal Pointwise symmDiff Topology
 
 variable {G : Type*} [Group G]
-
-section TypeTagMeasurableSingleton
-
-/-- `Additive α` inherits measurable singletons from `α`. -/
-instance _root_.Additive.instMeasurableSingletonClass {α : Type*} [MeasurableSpace α]
-    [MeasurableSingletonClass α] : MeasurableSingletonClass (Additive α) where
-  measurableSet_singleton x := by
-    have hpre : Additive.toMul ⁻¹' ({x.toMul} : Set α) = {x} := by
-      ext y
-      simp
-    rw [← hpre]
-    exact measurableSet_preimage_toMul.2 (measurableSet_singleton x.toMul)
-
-/-- `Multiplicative α` inherits measurable singletons from `α`. -/
-instance _root_.Multiplicative.instMeasurableSingletonClass {α : Type*} [MeasurableSpace α]
-    [MeasurableSingletonClass α] : MeasurableSingletonClass (Multiplicative α) where
-  measurableSet_singleton x := by
-    have hpre : Multiplicative.toAdd ⁻¹' ({x.toAdd} : Set α) = {x} := by
-      ext y
-      simp
-    rw [← hpre]
-    exact measurableSet_preimage_toAdd.2 (measurableSet_singleton x.toAdd)
-
-end TypeTagMeasurableSingleton
 
 section Count
 

@@ -98,11 +98,6 @@ instance {G : Type*} [Group G] [TopologicalSpace G] [IsTopologicalGroup G] [Amen
 theorem amenable_multiplicative_iff : Amenable (Multiplicative A) ↔ AddAmenable A :=
   ⟨fun h => ⟨h⟩, fun h => h.1⟩
 
-variable (A) in
-/-- An additive topological group `A` is amenable exactly when `Multiplicative A` is amenable. -/
-theorem addAmenable_iff_amenable_multiplicative : AddAmenable A ↔ Amenable (Multiplicative A) :=
-  amenable_multiplicative_iff.symm
-
 /-- `Additive G` is additively amenable if and only if `G` is amenable. -/
 @[simp]
 theorem addAmenable_additive_iff {G : Type*} [Group G] [TopologicalSpace G]
