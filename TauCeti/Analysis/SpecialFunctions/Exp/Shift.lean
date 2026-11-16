@@ -27,6 +27,10 @@ is `O` of a slower one, so a decay estimate at one rate gives one at every slowe
 
 * `TauCeti.exp_neg_mul_sub`: `exp (-c (t - R)) = exp (c R) exp (-c t)`.
 * `TauCeti.tendsto_exp_neg_mul_norm_cocompact`: for `c > 0`, `exp (-c ‖x‖) → 0` at infinity.
+* `TauCeti.exp_neg_mul_norm_mul_exp_neg_mul_norm_add_le`: since `‖a‖ ≤ ‖z‖ + ‖z + a‖`, the product
+  `exp (-c' ‖z‖) exp (-c' ‖z + a‖)` is at most `exp (-c ‖a‖) exp (-(c' - c) ‖z‖)` for
+  `0 ≤ c ≤ c'`, which is how a product of two decaying profiles centred a distance `‖a‖` apart is
+  bounded by a factor exponentially small in `‖a‖`.
 * `TauCeti.isBigO_exp_neg_mul_norm_of_le`: `exp (-c' ‖x‖) = O(exp (-c ‖x‖))` for `c ≤ c'`, so a
   decay estimate at a rate `c'` gives one at every slower rate `c`.
 * `TauCeti.exists_forall_le_mul_exp_of_eventually_le`: an exponential bound outside a compact set
@@ -53,6 +57,19 @@ theorem tendsto_exp_neg_mul_norm_cocompact {E : Type*} [NormedAddCommGroup E] [P
     {c : ℝ} (hc : 0 < c) : Tendsto (fun x : E ↦ Real.exp (-(c * ‖x‖))) (cocompact E) (𝓝 0) :=
   Real.tendsto_exp_neg_atTop_nhds_zero.comp
     ((tendsto_norm_cocompact_atTop (E := E)).const_mul_atTop hc)
+
+/-- Two radial exponential profiles centred at `0` and at `-a` have a product that is exponentially
+small in `‖a‖`: since `‖a‖ ≤ ‖z‖ + ‖z + a‖`, for `0 ≤ c ≤ c'` the product
+`exp (-c' ‖z‖) exp (-c' ‖z + a‖)` is at most `exp (-c ‖a‖) exp (-(c' - c) ‖z‖)`. -/
+theorem exp_neg_mul_norm_mul_exp_neg_mul_norm_add_le {E : Type*} [SeminormedAddGroup E]
+    {c c' : ℝ} (hc : 0 ≤ c) (hcc' : c ≤ c') (a z : E) :
+    Real.exp (-(c' * ‖z‖)) * Real.exp (-(c' * ‖z + a‖)) ≤
+      Real.exp (-(c * ‖a‖)) * Real.exp (-((c' - c) * ‖z‖)) := by
+  rw [← Real.exp_add, ← Real.exp_add, Real.exp_le_exp]
+  have ha : ‖a‖ ≤ ‖z‖ + ‖z + a‖ := by
+    simpa [neg_add_cancel_left] using norm_add_le (-z) (z + a)
+  nlinarith [norm_nonneg z, norm_nonneg (z + a), mul_le_mul_of_nonneg_left ha hc,
+    mul_le_mul_of_nonneg_right hcc' (norm_nonneg (z + a))]
 
 open Asymptotics in
 /-- A faster exponential decay is a stronger bound: `exp (-c' ‖x‖) = O(exp (-c ‖x‖))` along any
