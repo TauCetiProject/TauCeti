@@ -58,37 +58,26 @@ abbrev unop : (Aᵐᵒᵖ →⋆ₙₐ[R] Bᵐᵒᵖ) ≃ (A →⋆ₙₐ[R] B) 
   NonUnitalStarAlgHom.op.symm
 
 @[simp]
-theorem op_apply (f : A →⋆ₙₐ[R] B) (x : Aᵐᵒᵖ) :
-    f.op x = MulOpposite.op (f x.unop) :=
-  (rfl)
+theorem op_apply (f : A →⋆ₙₐ[R] B) (x : Aᵐᵒᵖ) : f.op x = MulOpposite.op (f x.unop) := (rfl)
 
 @[simp]
-theorem unop_apply (f : Aᵐᵒᵖ →⋆ₙₐ[R] Bᵐᵒᵖ) (x : A) :
-    unop f x = (f (MulOpposite.op x)).unop :=
-  (rfl)
+theorem unop_apply (f : Aᵐᵒᵖ →⋆ₙₐ[R] Bᵐᵒᵖ) (x : A) : unop f x = (f (MulOpposite.op x)).unop := (rfl)
 
 @[simp]
-theorem op_id :
-    (NonUnitalStarAlgHom.id R A).op = NonUnitalStarAlgHom.id R Aᵐᵒᵖ := by
-  ext x
-  simp
+theorem op_id : (NonUnitalStarAlgHom.id R A).op = NonUnitalStarAlgHom.id R Aᵐᵒᵖ := by
+  ext x; simp
 
 @[simp]
-theorem op_comp (g : B →⋆ₙₐ[R] C) (f : A →⋆ₙₐ[R] B) :
-    (g.comp f).op = g.op.comp f.op := by
-  ext x
-  simp
+theorem op_comp (g : B →⋆ₙₐ[R] C) (f : A →⋆ₙₐ[R] B) : (g.comp f).op = g.op.comp f.op := by
+  ext x; simp
 
 @[simp]
-theorem unop_id :
-    unop (NonUnitalStarAlgHom.id R Aᵐᵒᵖ) = NonUnitalStarAlgHom.id R A := by
-  ext x
-  simp
+theorem unop_id : unop (NonUnitalStarAlgHom.id R Aᵐᵒᵖ) = NonUnitalStarAlgHom.id R A := by
+  ext x; simp
 
 @[simp]
 theorem unop_comp (g : Bᵐᵒᵖ →⋆ₙₐ[R] Cᵐᵒᵖ) (f : Aᵐᵒᵖ →⋆ₙₐ[R] Bᵐᵒᵖ) :
     unop (g.comp f) = (unop g).comp (unop f) := by
-  ext x
-  simp
+  ext x; simp
 
 end NonUnitalStarAlgHom
