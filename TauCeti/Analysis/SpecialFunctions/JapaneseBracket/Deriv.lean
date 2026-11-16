@@ -390,7 +390,7 @@ theorem exists_norm_iteratedFDeriv_inner_mul_one_add_norm_sq_rpow_le (v : E) (r 
     (contDiff_one_add_norm_sq_rpow r)
     fun i _ ↦ exists_norm_iteratedFDeriv_one_add_norm_sq_rpow_le r i
 
-/-- **The derivatives of the Japanese bracket are symbols of order zero.** The directional
+/-- **The derivatives of the Japanese bracket have bounded derivatives.** The directional
 derivative `⟪x, v⟫ (1 + ‖x‖ ^ 2) ^ (-1 / 2)` of `(1 + ‖x‖ ^ 2) ^ (1 / 2)` has bounded derivatives of
 every order. -/
 theorem exists_norm_iteratedFDeriv_inner_mul_one_add_norm_sq_rpow_neg_half_le (v : E) (k : ℕ) :

@@ -51,12 +51,12 @@ then raises its regularity one step at a time up to `H^(k+1)`.
 
 * `integral_inner_fun_smul_gaugeFixedAdjoint_eq`: the weak Leibniz rule
   `L_x (w y) = w f + σ(dw) y`.
-* `exp_mul_smul_mem_sobolevFields_add_one_of_memLp`: weighted elliptic regularity at a smooth
-  field with bounded derivatives, for weak solutions `y` with `exp(c ρ) y ∈ L²`.
-* `exp_mul_smul_mem_sobolevFields_add_one_of_integral_inner_gaugeFixedAdjoint_eq`: at a plane
-  vortex with `|α| → 1` and `|c| < 1/2`, the weak solution orthogonal to the weak kernel, that is
-  `Q f`, satisfies `exp(c ρ) f ∈ H^k ⟹ exp(c ρ) Q f ∈ H^(k+1)`.
-* `exp_mul_smul_mem_sobolevFields_add_one_of_forall_mem_framedFieldSpace`: the same at a
+* `exp_mul_smul_mem_sobolevFields_natCast_add_one_of_memLp`: weighted elliptic regularity at a
+  smooth field with bounded derivatives, for weak solutions `y` with `exp(c ρ) y ∈ L²`.
+* `exp_mul_smul_mem_sobolevFields_natCast_add_one_of_integral_inner_gaugeFixedAdjoint_eq`: at a
+  plane vortex with `|α| → 1` and `|c| < 1/2`, the weak solution orthogonal to the weak kernel,
+  that is `Q f`, satisfies `exp(c ρ) f ∈ H^k ⟹ exp(c ρ) Q f ∈ H^(k+1)`.
+* `exp_mul_smul_mem_sobolevFields_natCast_add_one_of_forall_mem_framedFieldSpace`: the same at a
   continuous plane vortex lying in the affine field space `A_m^k` for every `k`.
 
 These are membership statements. The corresponding norm estimate
@@ -146,14 +146,10 @@ private theorem contDiff_weightCoeff (c : ℝ) (i j : Fin 4) : ContDiff ℝ ∞ 
 
 /-- The coefficients of the commutator have bounded derivatives through every order `k`. -/
 private theorem exists_norm_iteratedFDeriv_weightCoeff_le (c : ℝ) (i j : Fin 4) (k : ℕ) :
-    ∃ M ≥ 0, ∀ n ≤ k, ∀ z, ‖iteratedFDeriv ℝ n (weightCoeff c i j) z‖ ≤ M := by
-  choose C hC using fun n : ℕ ↦
+    ∃ M ≥ 0, ∀ n ≤ k, ∀ z, ‖iteratedFDeriv ℝ n (weightCoeff c i j) z‖ ≤ M :=
+  exists_forall_norm_iteratedFDeriv_le_of_forall_le fun n _ ↦
     exists_norm_iteratedFDeriv_inner_mul_one_add_norm_sq_rpow_neg_half_le
       (c • symbolDirection i j) n
-  refine ⟨∑ n ∈ Finset.range (k + 1), max (C n) 0, by positivity, fun n hn z ↦ ?_⟩
-  exact ((hC n z).trans (le_max_left _ _)).trans (Finset.single_le_sum
-    (f := fun n ↦ max (C n) 0) (fun _ _ ↦ le_max_right _ _)
-    (Finset.mem_range.2 (Nat.lt_succ_of_le hn)))
 
 /-- The commutator of `L_x` with the weight `w = exp(c ρ)`: `σ(dw) v` is the multiplication of
 `w v` by the matrix `weightCoeff c`. -/
@@ -178,7 +174,8 @@ coordinates have bounded derivatives through order `k`, and let `y` be a square-
 solution of `L_x y = f` with `f ∈ L²`, tested against smooth compactly supported fields. Put
 `ρ(z) = √(1 + |z|²)` and let `c` be real. If `exp(c ρ) y` is square integrable and
 `exp(c ρ) f ∈ H^k`, then `exp(c ρ) y ∈ H^(k+1)`. -/
-theorem exp_mul_smul_mem_sobolevFields_add_one_of_memLp (k : ℕ) (hx : ContDiff ℝ ∞ x)
+theorem exp_mul_smul_mem_sobolevFields_natCast_add_one_of_memLp (k : ℕ)
+    (hx : ContDiff ℝ ∞ x)
     (hbound : ∀ i, ∀ n ≤ k, ∃ C, ∀ z, ‖iteratedFDeriv ℝ n (fun z ↦ x z i) z‖ ≤ C)
     (hy : MemLp y 2 volume) (hf : MemLp f 2 volume)
     (hweak : ∀ η : ℂ → EuclideanSpace ℝ (Fin 4), ContDiff ℝ ∞ η → HasCompactSupport η →
@@ -219,8 +216,8 @@ square-integrable weak solution of `L_x y = f` orthogonal to the weak kernel of 
 value at `f` of the weak right inverse `Q` of
 `exists_continuousLinearMap_integral_inner_gaugeFixedAdjoint_eq`. If `exp(c ρ) f ∈ H^k`, then
 `exp(c ρ) y ∈ H^(k+1)`. -/
-theorem exp_mul_smul_mem_sobolevFields_add_one_of_integral_inner_gaugeFixedAdjoint_eq (k : ℕ)
-    (hx : ContDiff ℝ ∞ x) (hsol : ∀ z, equation x z = 0)
+theorem exp_mul_smul_mem_sobolevFields_natCast_add_one_of_integral_inner_gaugeFixedAdjoint_eq
+    (k : ℕ) (hx : ContDiff ℝ ∞ x) (hsol : ∀ z, equation x z = 0)
     (hlim : Tendsto (fun z ↦ 4 * (x z 2 ^ 2 + x z 3 ^ 2)) (cocompact ℂ) (𝓝 1))
     (hbound : ∀ i, ∀ n ≤ k, ∃ C, ∀ z, ‖iteratedFDeriv ℝ n (fun z ↦ x z i) z‖ ≤ C)
     {c : ℝ} (hc : |c| < 1 / 2) {f y : Lp (EuclideanSpace ℝ (Fin 4)) 2 volume}
@@ -237,15 +234,15 @@ theorem exp_mul_smul_mem_sobolevFields_add_one_of_integral_inner_gaugeFixedAdjoi
   have hwy : MemLp (fun z ↦ Real.exp (c * √(1 + ‖z‖ ^ 2)) • y z) 2 volume :=
     memLp_iff.2 <| (hK f y hweak horth).trans_lt
       (ENNReal.mul_lt_top ENNReal.coe_lt_top (memLp_of_mem_sobolevFields hwf).eLpNorm_lt_top)
-  exact exp_mul_smul_mem_sobolevFields_add_one_of_memLp k hx hbound (Lp.memLp y) (Lp.memLp f)
-    (fun η hη hηc ↦ hweak η (hη.of_le (by norm_cast)) hηc) hwy hwf
+  exact exp_mul_smul_mem_sobolevFields_natCast_add_one_of_memLp k hx hbound (Lp.memLp y)
+    (Lp.memLp f) (fun η hη hηc ↦ hweak η (hη.of_le (by norm_cast)) hηc) hwy hwf
 
 /-- **The right inverse at a vortex of every `A_m^k` preserves exponential decay.** Let `x` be a
 continuous solution of the plane vortex equations lying in the affine field space `A_m^k` for every
 `k`, let `ρ(z) = √(1 + |z|²)` and `|c| < 1/2`. If `y` is the square-integrable weak solution of
 `L_x y = f` orthogonal to the weak kernel, then `exp(c ρ) f ∈ H^k` implies
 `exp(c ρ) y ∈ H^(k+1)`, for every `k`. -/
-theorem exp_mul_smul_mem_sobolevFields_add_one_of_forall_mem_framedFieldSpace
+theorem exp_mul_smul_mem_sobolevFields_natCast_add_one_of_forall_mem_framedFieldSpace
     {b : ContDiffBump (0 : ℝ)} {m : ℕ} (hx : Continuous x)
     (hmem : ∀ k : ℕ, x ∈ framedFieldSpace b m k) (hsol : ∀ z, equation x z = 0) {c : ℝ}
     (hc : |c| < 1 / 2) (k : ℕ) {f y : Lp (EuclideanSpace ℝ (Fin 4)) 2 volume}
@@ -257,7 +254,7 @@ theorem exp_mul_smul_mem_sobolevFields_add_one_of_forall_mem_framedFieldSpace
       ∫ z, ⟪y z, u z⟫ = 0)
     (hwf : (fun z ↦ Real.exp (c * √(1 + ‖z‖ ^ 2)) • f z) ∈ sobolevFields k) :
     (fun z ↦ Real.exp (c * √(1 + ‖z‖ ^ 2)) • y z) ∈ sobolevFields (k + 1) :=
-  exp_mul_smul_mem_sobolevFields_add_one_of_integral_inner_gaugeFixedAdjoint_eq k
+  exp_mul_smul_mem_sobolevFields_natCast_add_one_of_integral_inner_gaugeFixedAdjoint_eq k
     (contDiff_of_forall_mem_framedFieldSpace hx hmem) hsol
     (tendsto_normSq_of_mem_framedFieldSpace one_lt_two (by exact_mod_cast hmem 2) hx)
     (fun i n _ ↦ exists_norm_iteratedFDeriv_le_of_mem_framedFieldSpace hx i n (hmem (n + 2))) hc
