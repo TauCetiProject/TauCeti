@@ -30,6 +30,8 @@ is at most `2 b`.
 * `ENNReal.one_div_toReal_sub_one_div_toReal_nonneg`: for `0 < p ≤ q`, the exponent
   `1 / p.toReal - 1 / q.toReal` is nonnegative.
 * `ENNReal.toNNReal_one_sub_div_pos`: `0 < (1 - a / b).toNNReal` for `a < b`.
+* `ENNReal.inv_le_inv_mul_add_and_inv_mul_le_inv`: for `n ≤ (j + 1) p`, the exponent
+  `q = (j + 1) p` satisfies `1/p ≤ 1/q + j/n` and `1/q ≤ 1/p`.
 * `ENNReal.exists_nnreal_two_le_inv_sub_lt_and_inv_add_le_one`: for `r > 1` and `n > 0` with
   `n (2 - r) < 2 r`, a finite exponent `t ≥ 2` with `1/2 - 1/t < 1/n` and `1/r + 1/t ≤ 1`.
 * `ENNReal.exists_inv_lt_inv_add_inv_two_and_inv_add_inv_le_iff`: for `0 < q < 2`, an exponent
@@ -101,6 +103,28 @@ theorem le_mul_two_of_le_add_div_two {a b : ℝ≥0∞} (ha : a ≠ ∞) (h : a 
     a ≤ b * 2 := by
   rw [← ENNReal.div_le_iff two_ne_zero ofNat_ne_top, ← ENNReal.sub_half ha]
   exact tsub_le_iff_right.2 h
+
+/-- **The equal-step exponent ladder.** For `n ≤ (j + 1) p`, the exponent `q = (j + 1) p`
+satisfies `1/p ≤ 1/q + j/n` and `1/q ≤ 1/p`: the ladder from `1/p` down to `1/q` in `j` equal
+steps `1/q` has every step at most `1/n`. These are the exponent hypotheses of the Sobolev
+embedding `W^{j+1,p} → W^{1,q}`. -/
+theorem inv_le_inv_mul_add_and_inv_mul_le_inv {n j : ℕ} {p : ℝ≥0}
+    (hkp : (n : ℝ≥0) ≤ (j + 1 : ℕ) * p) :
+    (p : ℝ≥0∞)⁻¹ ≤ (((j + 1 : ℕ) * p : ℝ≥0) : ℝ≥0∞)⁻¹ + j * (n : ℝ≥0∞)⁻¹ ∧
+      (((j + 1 : ℕ) * p : ℝ≥0) : ℝ≥0∞)⁻¹ ≤ (p : ℝ≥0∞)⁻¹ := by
+  rcases eq_or_ne p 0 with rfl | hp0
+  · simp
+  have hkp0 : ((j + 1 : ℕ) * p : ℝ≥0) ≠ 0 := mul_ne_zero (by positivity) hp0
+  have heq : (((j + 1 : ℕ) * p : ℝ≥0) : ℝ≥0∞)⁻¹ + j * (((j + 1 : ℕ) * p : ℝ≥0) : ℝ≥0∞)⁻¹ =
+      (p : ℝ≥0∞)⁻¹ := by
+    rw [← ENNReal.coe_inv hkp0, ← ENNReal.coe_inv hp0]
+    norm_cast
+    field_simp
+    push_cast
+    ring
+  refine ⟨heq.symm.le.trans ?_, le_self_add.trans_eq heq⟩
+  gcongr
+  exact_mod_cast hkp
 
 /-- **A finite exponent `t ≥ 2` complementing `r`.** For `n > 0` and `r > 1` with
 `n (2 - r) < 2 r`, there is a finite exponent `t ≥ 2` with `1/2 - 1/t < 1/n` and `1/r + 1/t ≤ 1`:

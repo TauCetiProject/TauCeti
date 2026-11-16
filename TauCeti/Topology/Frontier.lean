@@ -19,7 +19,10 @@ a concrete space. The list is open-ended; nothing below depends on how many entr
 Also recorded here is the sublevel-set lemma `TauCeti.exists_isOpen_subset_pos_forall_frontier_le`:
 if `u` and `w` are continuous on the closure of an open set `Ω`, `w` lies below `u` on the frontier
 of `Ω` and above it at a point of `Ω`, then `Ω ∩ {u < w}` is an open subset of `Ω` whose closure
-lies in `Ω` and on whose frontier `w ≤ u`.
+lies in `Ω` and on whose frontier `w ≤ u`. Its variant
+`TauCeti.le_of_mem_frontier_inter_preimage_Ioi` needs no strict inequality and no continuity on the
+closure: if `f` is continuous on an open set `U` and `f ≤ a` on `frontier U`, then `f ≤ a` on the
+frontier of the superlevel set `U ∩ {a < f}`.
 
 ## A connected set that straddles a set meets its frontier
 
@@ -109,6 +112,8 @@ let alone a holomorphic map.
   closure of a subset exactly where it meets that subset's frontier.
 * `TauCeti.frontier_image_subset_of_closure_subset` — for an open map whose image closure adds at
   most a set `t`, the frontier of an image lies on the image of the frontier, together with `t`.
+* `TauCeti.le_of_mem_frontier_inter_preimage_Ioi` — a function continuous on an open set and at most
+  `a` on its frontier is at most `a` on the frontier of its superlevel set `{a < f}` in that set.
 * `TauCeti.eq_of_mem_frontier_of_mem_iff_le` — a function whose superlevel set `{a ≤ f}` agrees
   with a set on an open set takes the value `a` at the frontier points of the set in that open
   set where it is continuous.
@@ -306,6 +311,25 @@ theorem exists_isOpen_subset_pos_forall_frontier_le (hΩo : IsOpen Ω) {w : X �
   linarith [not_lt.1 this]
 
 end SublevelBetween
+
+section SuperlevelSet
+
+variable {X α : Type*} [TopologicalSpace X] [LinearOrder α] [TopologicalSpace α]
+  [ClosedIicTopology α] {U : Set X} {f : X → α} {a : α} {x : X}
+
+/-- **A function at most `a` on the frontier of an open set is at most `a` on the frontier of its
+superlevel set there.** If `f` is continuous on an open set `U` and `f ≤ a` on `frontier U`, then
+`f ≤ a` on the frontier of `U ∩ {a < f}`. -/
+theorem le_of_mem_frontier_inter_preimage_Ioi (hU : IsOpen U) (hf : ContinuousOn f U)
+    (hfr : ∀ y ∈ frontier U, f y ≤ a) (hx : x ∈ frontier (U ∩ f ⁻¹' Ioi a)) : f x ≤ a := by
+  -- The superlevel set is open, so a point of its frontier is not in it: either the point lies
+  -- in `U`, and then `f ≤ a` there, or it lies on `frontier U`.
+  rw [(hf.isOpen_inter_preimage hU isOpen_Ioi).frontier_eq] at hx
+  by_cases hxU : x ∈ U
+  · exact not_lt.1 fun h ↦ hx.2 ⟨hxU, h⟩
+  · exact hfr x (hU.frontier_eq ▸ ⟨closure_mono inter_subset_left hx.1, hxU⟩)
+
+end SuperlevelSet
 
 section DefiningFunction
 

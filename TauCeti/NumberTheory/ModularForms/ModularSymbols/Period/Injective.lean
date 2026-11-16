@@ -8,7 +8,7 @@ module
 public import TauCeti.NumberTheory.ModularForms.ModularSymbols.Period.Map
 import TauCeti.NumberTheory.ModularForms.EichlerIntegral.Transformation
 import Mathlib.NumberTheory.ModularForms.NormTrace
-import TauCeti.NumberTheory.ModularForms.Cusps.Basic
+import TauCeti.LinearAlgebra.Matrix.SpecialLinearGroup.Basic
 
 /-!
 # Injectivity of the period map
@@ -70,7 +70,7 @@ private lemma monomial_period_eq_zero (hk : k = w + 2)
     (fun L ↦ L (symbol Γ (mapGL ℚ σ • α) (mapGL ℚ σ • β)
       (binaryFormRep R w (op (Matrix.adjugate (σ : Matrix (Fin 2) (Fin 2) ℤ))) P))) hf
   rw [periodMap_symbol] at hper
-  rw [← hP, ModularForm.SL_slash, TauCeti.Matrix.SpecialLinearGroup.coe_GL_eq_mapGL,
+  rw [← hP, ModularForm.SL_slash, Matrix.SpecialLinearGroup.coe_GL_eq_mapGL,
     ← ModularForm.rat_slash_mapGL,
     cuspIntegral_periodIntegrand_slash hk f P (mapGL_coe_matrix σ) hdet]
   exact hper
@@ -87,7 +87,7 @@ private lemma isZeroAtImInfty_eichlerIntegral_slash (hk : k = w + 2)
   let f' := _root_.CuspForm.translate f (mapGL ℝ σ)
   have hf' : ⇑f' = ⇑f ∣[k] σ := by
     rw [CuspForm.coe_translate, ModularForm.SL_slash,
-      TauCeti.Matrix.SpecialLinearGroup.coe_GL_eq_mapGL]
+      Matrix.SpecialLinearGroup.coe_GL_eq_mapGL]
   -- Every period of the translate is a period of the original form against an integral
   -- change of variables of a binary form, and hence vanishes.
   have hper (j : ℕ) (hj : j ≤ w) (α β : OnePoint ℚ) :
@@ -115,7 +115,7 @@ private lemma eichlerIntegral_eq_zero (hk : k = w + 2)
     toFun := eichlerIntegral h (w + 1) f
     slash_action_eq' := by
       rintro γ ⟨σ, hσ, rfl⟩
-      rw [← TauCeti.Matrix.SpecialLinearGroup.coe_GL_eq_mapGL, ← ModularForm.SL_slash]
+      rw [← Matrix.SpecialLinearGroup.coe_GL_eq_mapGL, ← ModularForm.SL_slash]
       apply TauCeti.CuspFormClass.eichlerIntegral_slash_eq_of_cuspIntegral_eq_zero
         hk f hh hΓ (Subgroup.mem_map_of_mem _ hσ)
       intro j hj
