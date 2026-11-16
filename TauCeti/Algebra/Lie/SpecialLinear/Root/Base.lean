@@ -10,7 +10,6 @@ public import Mathlib.Algebra.Lie.Weights.RootSystem
 public import Mathlib.LinearAlgebra.RootSystem.Base
 public import TauCeti.Algebra.Lie.GeneralLinear.Radical
 public import TauCeti.Algebra.Lie.SpecialLinear.Character
-import Mathlib.LinearAlgebra.Dimension.OrzechProperty
 import Mathlib.LinearAlgebra.RootSystem.BaseExists
 import TauCeti.Algebra.Group.Submonoid.Telescoping
 import TauCeti.Algebra.Lie.Sl2.Basic
