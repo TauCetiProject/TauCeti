@@ -19,6 +19,10 @@ proved the same way from `MeasureTheory.Measure.map_addHaar_smul`, and, like the
 needing no measurability hypothesis. Unlike the Bochner version, it needs `r ≠ 0`: for `r = 0`
 the left-hand side is `g 0 * μ univ`, which is `∞` in positive dimension unless `g 0 = 0`.
 
+Dilating each coordinate of `ℝ^ι` by its own nonzero factor `cᵢ` rescales the Bochner integral
+against Lebesgue measure by `|∏ᵢ cᵢ|⁻¹` (`TauCeti.integral_comp_mul_pi`), by Mathlib's
+`Real.smul_map_diagonal_volume_pi` for the diagonal matrix of the factors.
+
 ## Main declarations
 
 * `MeasureTheory.Measure.lintegral_comp_smul`:
@@ -27,6 +31,7 @@ the left-hand side is `g 0 * μ univ`, which is `∞` in positive dimension unle
   `|r ^ n|`.
 * `MeasureTheory.Measure.lintegral_comp_homothety`: the same law for the homothety of ratio `r`
   about any centre.
+* `TauCeti.integral_comp_mul_pi`: `∫ x, F (fun i ↦ cᵢ xᵢ) = |∏ᵢ cᵢ|⁻¹ • ∫ y, F y` on `ℝ^ι`.
 -/
 
 public section
@@ -80,5 +85,29 @@ theorem integral_sq_norm_fderiv_comp_smul {μ : Measure E} {f : E → ℝ} {a : 
   refine integral_congr_ae (Filter.Eventually.of_forall fun x ↦ ?_)
   simp only [norm_fderiv_comp_smul a, mul_pow, sq_abs]
   field_simp
+
+/-- **Rescaling the coordinates of `ℝ^ι`.** Multiplying the `i`-th coordinate by `cᵢ ≠ 0` scales
+the Lebesgue integral by `|∏ᵢ cᵢ|⁻¹`. -/
+theorem integral_comp_mul_pi {ι G : Type*} [Fintype ι] [NormedAddCommGroup G] [NormedSpace ℝ G]
+    {c : ι → ℝ} (hc : ∀ i, c i ≠ 0) (F : (ι → ℝ) → G) :
+    ∫ x : ι → ℝ, F (fun i ↦ c i * x i) = |∏ i, c i|⁻¹ • ∫ y, F y := by
+  classical
+  have hdet : (Matrix.diagonal c).det ≠ 0 := by
+    rw [Matrix.det_diagonal]
+    exact Finset.prod_ne_zero_iff.2 fun i _ ↦ hc i
+  let e : (ι → ℝ) ≃ᵐ (ι → ℝ) :=
+    (Homeomorph.piCongrRight fun i ↦ Homeomorph.mulLeft₀ (c i) (hc i)).toMeasurableEquiv
+  have he : (e : (ι → ℝ) → ι → ℝ) = Matrix.toLin' (Matrix.diagonal c) := by
+    funext x i
+    simp [e, Matrix.mulVec_diagonal]
+  have hmap : Measure.map e volume = (ENNReal.ofReal |∏ i, c i|)⁻¹ • volume := by
+    have h := Real.smul_map_diagonal_volume_pi hdet
+    rw [Matrix.det_diagonal] at h
+    rw [he]
+    conv_rhs => rw [← h]
+    rw [smul_smul, ENNReal.inv_mul_cancel (by simpa using hdet) ENNReal.ofReal_ne_top, one_smul]
+  have h := integral_map_equiv (μ := volume) e F
+  rw [hmap, integral_smul_measure, ENNReal.toReal_inv, ENNReal.toReal_ofReal (abs_nonneg _)] at h
+  exact h.symm
 
 end TauCeti
