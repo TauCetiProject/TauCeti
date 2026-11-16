@@ -438,12 +438,14 @@ private theorem exists_pitchfork_box (hF : ContDiffAt ℝ 3 F 0)
 private theorem strictConvexOn_of_pitchforkBox {δ₀ δ t : ℝ}
     (hbox : ∀ {x t : ℝ}, |x| < δ₀ → |t| < δ₀ → PitchforkBox F x t) (hδ : 0 < δ) (hδδ₀ : δ < δ₀)
     (ht : |t| < δ₀) : StrictConvexOn ℝ (Icc 0 δ) (fun x => F (x, t)) := by
-  have hc2 : ContinuousOn (fun y => partialFst F 2 (y, t)) (Ioo (-δ₀) δ₀) := fun x hx =>
-    (hbox (abs_lt.2 hx) ht).continuousAt_partialFst_two.continuousWithinAt
-  refine strictConvexOn_Icc_of_eventually_odd hδ hδδ₀ (fun x hx =>
-    (hbox (abs_lt.2 ⟨by linarith [hx.1], by linarith [hx.2]⟩) ht).hasDerivAt_fst.continuousAt
-      |>.continuousWithinAt) ?_ (hc2.congr fun x hx => (hbox (abs_lt.2 hx) ht).deriv2_eq)
-    fun x hx => (hbox (abs_lt.2 hx) ht).deriv3_pos
+  have hIcc {x : ℝ} (hx : x ∈ Icc 0 δ) : |x| < δ₀ :=
+    abs_lt.2 ⟨by linarith [hx.1], by linarith [hx.2]⟩
+  have hc2 : ContinuousOn (fun y => partialFst F 2 (y, t)) (Icc 0 δ) := fun x hx =>
+    (hbox (hIcc hx) ht).continuousAt_partialFst_two.continuousWithinAt
+  refine strictConvexOn_Icc_of_eventually_odd (fun x hx =>
+    (hbox (hIcc hx) ht).hasDerivAt_fst.continuousAt.continuousWithinAt) ?_
+    (hc2.congr fun x hx => (hbox (hIcc hx) ht).deriv2_eq)
+    fun x hx => (hbox (hIcc (Ioo_subset_Icc_self hx)) ht).deriv3_pos
   filter_upwards [Ioo_mem_nhds (neg_neg_of_pos (hδ.trans hδδ₀)) (hδ.trans hδδ₀)] with y hy
   exact (hbox (abs_lt.2 hy) ht).odd
 
