@@ -466,7 +466,7 @@ private theorem integral_sq_mul_norm_sq_le_of_forall_exists_lt
 omit [μ.IsAddHaarMeasure] in
 /-- **Fatou's lemma for truncated weights.** A bound on `∫ V_n² u` for all the truncations
 `V_n = W / (1 + W / (n + 1))` of a weight `W` holds for `W` itself, since `V_n → W` pointwise. -/
-private theorem lintegral_ofReal_sq_mul_le_of_forall_lintegral_div_one_add_mul_le
+theorem lintegral_ofReal_sq_mul_le_of_forall_lintegral_div_one_add_mul_le
     {W u : ℂ → ℝ} (hW : AEMeasurable W μ) (hu : AEMeasurable u μ) {C : ℝ≥0∞}
     (h : ∀ n : ℕ,
       ∫⁻ z, ENNReal.ofReal ((W z / (1 + 1 / ((n : ℝ) + 1) * W z)) ^ 2 * u z) ∂μ ≤ C) :
