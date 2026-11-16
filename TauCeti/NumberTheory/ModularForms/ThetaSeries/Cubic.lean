@@ -7,6 +7,7 @@ module
 
 public import Mathlib.NumberTheory.ModularForms.JacobiTheta.OneVariable
 public import TauCeti.NumberTheory.ModularForms.ThetaSeries.Inversion
+import TauCeti.Algebra.Module.ZLattice.ZSpanEquiv
 import TauCeti.Analysis.Normed.Ring.InfiniteSum
 import TauCeti.NumberTheory.ModularForms.ThetaSeries.Functoriality
 
@@ -73,20 +74,14 @@ theorem thetaSeries_span_orthonormalBasis (τ : ℍ) :
       summable_norm_iff.mpr ((summable_jacobiTheta₂_term_iff 0 τ).mpr τ.im_pos)
   have hpow : jacobiTheta τ ^ Fintype.card ι = ∏ _ : ι, jacobiTheta τ := by simp
   rw [hpow, jacobiTheta, TauCeti.prod_tsum_of_summable_norm fun _ ↦ hs, thetaSeries_apply,
-    ← b.coe_toBasis, ← (b.toBasis.restrictScalars ℤ).equivFun.symm.toEquiv.tsum_eq]
+    ← b.coe_toBasis, ← b.toBasis.zspanEquiv.toEquiv.tsum_eq]
   refine tsum_congr fun m ↦ ?_
   -- The lattice vector with coordinates `m` is `∑ i, (m i : ℝ) • b i`, of squared norm
   -- `∑ i, (m i)²` by orthonormality.
-  have hv : ((b.toBasis.restrictScalars ℤ).equivFun.symm m : E) = ∑ i, (m i : ℝ) • b i := by
-    rw [Basis.equivFun_symm_apply, Submodule.coe_sum]
-    refine Finset.sum_congr rfl fun i _ ↦ ?_
-    -- The `ℤ`-action on the span is the one of `Basis.restrictScalars`, so `coe_smul` only
-    -- matches up to instances.
-    erw [Submodule.coe_smul]
-    rw [Basis.restrictScalars_apply, b.coe_toBasis, Int.cast_smul_eq_zsmul]
-  have hn : ‖((b.toBasis.restrictScalars ℤ).equivFun.symm m : E)‖ ^ 2 = ∑ i, (m i : ℝ) ^ 2 := by
-    rw [hv]
-    simpa using b.orthonormal.orthogonalFamily.norm_sum (fun i ↦ (m i : ℝ)) Finset.univ
+  have hn : ‖(b.toBasis.zspanEquiv m : E)‖ ^ 2 = ∑ i, (m i : ℝ) ^ 2 := by
+    rw [Basis.coe_zspanEquiv_apply]
+    simpa [← Int.cast_smul_eq_zsmul ℝ] using
+      b.orthonormal.orthogonalFamily.norm_sum (fun i ↦ (m i : ℝ)) Finset.univ
   rw [LinearEquiv.coe_toEquiv, hn, ← Complex.exp_sum]
   push_cast
   simp only [Finset.mul_sum, Finset.sum_mul]

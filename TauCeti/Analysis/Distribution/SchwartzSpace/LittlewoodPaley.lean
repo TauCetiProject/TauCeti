@@ -47,6 +47,8 @@ partial sums of the Fourier multipliers `𝓕⁻ (ψⱼ • 𝓕 f)` are the low
 * `ContDiffBump.hasSum_littlewoodPaleyPiece`: the pieces sum to `m` away from the origin.
 * `ContDiffBump.inhomogeneousLittlewoodPaleySchwartz`: the piece `ψⱼ` of the inhomogeneous
   partition, as a complex Schwartz function.
+* `ContDiffBump.coe_fourierInv_inhomogeneousLittlewoodPaleySchwartz`: its inverse Fourier
+  transform, as a function.
 * `ContDiffBump.exists_norm_iteratedFDeriv_littlewoodPaleyPiece_le`: the scale-invariant
   derivative bounds for the pieces of a symbol satisfying Mihlin's condition.
 * `SchwartzMap.exists_eqOn_annulus_of_contDiffOn`: a symbol smooth away from the origin agrees
@@ -239,6 +241,23 @@ theorem coe_inhomogeneousLittlewoodPaleySchwartz (j : ℕ) :
   (rfl)
 
 end FiniteDimensional
+
+section Fourier
+
+open FourierTransform
+
+variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteDimensional ℝ E]
+  [MeasurableSpace E] [BorelSpace E] (φ : ContDiffBump (0 : E))
+
+/-- The inverse Fourier transform of the Schwartz function `ψⱼ`, as a function: it is the inverse
+Fourier transform `𝓕⁻ ψⱼ` of `ψⱼ`. -/
+@[simp]
+theorem coe_fourierInv_inhomogeneousLittlewoodPaleySchwartz (j : ℕ) :
+    ⇑(𝓕⁻ (φ.inhomogeneousLittlewoodPaleySchwartz j) : 𝓢(E, ℂ)) =
+      𝓕⁻ (fun ξ ↦ (φ.inhomogeneousLittlewoodPaley j ξ : ℂ)) := by
+  rw [SchwartzMap.fourierInv_coe, coe_inhomogeneousLittlewoodPaleySchwartz]
+
+end Fourier
 
 end ContDiffBump
 

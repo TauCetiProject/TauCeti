@@ -8,6 +8,7 @@ module
 public import Mathlib.Analysis.InnerProductSpace.PiL2
 public import Mathlib.Analysis.SpecialFunctions.SmoothTransition
 public import Mathlib.Topology.Algebra.InfiniteSum.Defs
+public import TauCeti.Algebra.Module.ZLattice.ZSpanEquiv
 import Mathlib.Data.Pi.Interval
 import Mathlib.Topology.Algebra.InfiniteSum.Basic
 import Mathlib.Analysis.Calculus.ContDiff.Operations
@@ -32,7 +33,8 @@ The construction is a product of one-dimensional bumps
 
 * `TauCeti.latticePoint j`: the point of `EuclideanSpace ℝ ι` with integer coordinates
   `j : ι → ℤ`; only finitely many of them lie in a ball
-  (`TauCeti.finite_setOf_norm_latticePoint_lt`).
+  (`TauCeti.finite_setOf_norm_latticePoint_lt`). They are the vectors of the lattice spanned by
+  the standard basis (`TauCeti.coe_zspanEquiv_basisFun_apply`).
 * `TauCeti.latticeBump n`: the smooth function `χ(x) = ∏ᵢ latticeBump₁ (xᵢ)`.
 * `TauCeti.hasSum_latticeBump_sub`: `∑_{j ∈ ℤⁿ} χ(x - j) = 1`.
 * `TauCeti.abs_lt_one_of_latticeBump_ne_zero`: `χ(x) ≠ 0` implies `|xᵢ| < 1` for every `i`.
@@ -128,6 +130,15 @@ theorem latticePoint_sub {ι : Type*} (j j' : ι → ℤ) :
     latticePoint (j - j') = latticePoint j - latticePoint j' := by
   ext i
   simp
+
+/-- The vector of the lattice `ℤ^ι ⊆ EuclideanSpace ℝ ι` with integer coordinates `j` in the
+standard basis is `latticePoint j`. -/
+theorem coe_zspanEquiv_basisFun_apply {ι : Type*} [Fintype ι] (j : ι → ℤ) :
+    ((EuclideanSpace.basisFun ι ℝ).toBasis.zspanEquiv j : EuclideanSpace ℝ ι) = latticePoint j := by
+  classical
+  rw [Module.Basis.coe_zspanEquiv_apply]
+  ext i
+  simp [EuclideanSpace.basisFun_apply, Pi.single_apply]
 
 /-- Only finitely many lattice points lie in a ball. -/
 theorem finite_setOf_norm_latticePoint_lt {ι : Type*} [Fintype ι] (R : ℝ) :
