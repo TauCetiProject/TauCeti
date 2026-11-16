@@ -9,6 +9,7 @@ public import TauCeti.Algebra.AlgebraicGroup.Representation.ProjectiveOrbit.Fibe
 public import TauCeti.Algebra.AlgebraicGroup.Representation.ProjectiveOrbit.Lifting
 public import TauCeti.Algebra.AlgebraicGroup.Representation.ProjectiveOrbit.LineFibers
 public import TauCeti.Algebra.AlgebraicGroup.Fppf.Quotient.Homogeneous.Scheme
+import TauCeti.Algebra.AlgebraicGroup.CommHopfAlgCat.SchemePoints
 import TauCeti.AlgebraicGeometry.AffineGroupScheme.HopfSpec
 
 /-!
@@ -48,8 +49,12 @@ properness from `G/N₁` to `G/N₂` along any inclusion of closed subgroups `N�
   `toProjectiveOrbit`.
 * `Comodule.fppfHomogeneousQuotientSchemeTranslation_isoProjectiveOrbitPoints_hom_left`:
   sheaf-transported left translation on the orbit scheme agrees with `projectiveOrbitTranslation`.
-* `Comodule.isProper_projectiveOrbitToSpec_of_le`: properness over `Spec k` descends along
-  subgroup inclusions `J ≤ I` between projective orbit representations.
+* `Comodule.morphismProperty_projectiveOrbitToSpec_iff_of_fppfHomogeneousQuotient`: any
+  isomorphism-respecting morphism property of a projective orbit scheme depends only on the
+  homogeneous quotient it represents.
+* `Comodule.isProper_projectiveOrbitToSpec_of_le`: universal closedness (in particular, properness)
+  over `Spec k` descends along subgroup inclusions `J ≤ I` between projective orbit representations
+  to properness of the target.
 * `HopfIdeal.exists_fppfHomogeneousQuotient_iso_projectiveOrbitPoints`: every closed subgroup
   has a projective orbit representing its homogeneous quotient.
 
@@ -69,12 +74,6 @@ universe u
 variable {k : Type u} [Field k] [IsAlgClosed k] {H : _root_.CommHopfAlgCat.{u} k}
   [Algebra.FiniteType k H]
   {M : Type u} [AddCommGroup M] [Module k M] [Comodule k H M] [Module.Finite k M]
-
-/-- The projective orbit scheme is separated over its base field. -/
-instance instIsSeparatedProjectiveOrbitToSpec (m : M) (hm : Module.IsUnimodular k m) :
-    IsSeparated (projectiveOrbitToSpec (H := H) m hm) := by
-  rw [projectiveOrbitToSpec_def]
-  infer_instance
 
 /-- The fppf sheaf of points of the projective orbit scheme of a line: an affine `k`-scheme
 `Spec A` is sent to the morphisms `Spec A ⟶ X` over `Spec k`, lifted to `Type (u + 1)` to sit
@@ -263,7 +262,8 @@ theorem fppfHomogeneousQuotientSchemeProjection_isoProjectiveOrbitPoints_left
         (op (op (CommAlgCat.of k H))) (ULift.up u))).left =
         toProjectiveOrbit (H := H) m hm := by
     rw [toProjectiveOrbitPoints_app_apply]
-    have hid : CommRingCat.ofHom u.ofConv.toRingHom = 𝟙 (CommRingCat.of H) := rfl
+    have hid : CommRingCat.ofHom u.ofConv.toRingHom = 𝟙 (CommRingCat.of H) := by
+      simp [u]
     -- Across the `projectiveOrbitPointsSheaf_obj` transport, `.down.left` projects `Over.homMk`.
     refine Eq.trans (b := Spec.map (CommRingCat.ofHom u.ofConv.toRingHom) ≫
       toProjectiveOrbit (H := H) m hm) rfl ?_
@@ -294,41 +294,64 @@ theorem fppfHomogeneousQuotientSchemeTranslation_isoProjectiveOrbitPoints_hom_le
       toProjectiveOrbit_projectiveOrbitTranslation_hom]
   exact congrArg Over.Hom.left hover
 
+/-- **Inverse left translation on the projective orbit scheme agrees with
+`(projectiveOrbitTranslation m hm g).inv`.** -/
+@[simp]
+theorem fppfHomogeneousQuotientSchemeTranslation_isoProjectiveOrbitPoints_inv_left
+    [_root_.IsReduced H] (g : HopfAlgebra.points (R := k) (H := H) (CommAlgCat.of k k)) :
+    (CommHopfAlgCat.fppfHomogeneousQuotientSchemeTranslation
+        (fppfHomogeneousQuotientIsoProjectiveOrbitPoints I m hm hcoset) g).inv.left =
+      (projectiveOrbitTranslation (H := H) m hm g).inv := by
+  rw [← Iso.symm_hom, ← CommHopfAlgCat.fppfHomogeneousQuotientSchemeTranslation_inv,
+    fppfHomogeneousQuotientSchemeTranslation_isoProjectiveOrbitPoints_hom_left,
+    projectiveOrbitTranslation_inv_eq_symm, Iso.symm_hom]
+
 end Descent
 
 section Properness
 
 variable {M' : Type u} [AddCommGroup M'] [Module k M'] [Comodule k H M'] [Module.Finite k M']
 
+/-- **Isomorphism-respecting properties of a projective orbit depend only on the homogeneous
+quotient it represents.** -/
+theorem morphismProperty_projectiveOrbitToSpec_iff_of_fppfHomogeneousQuotient
+    (P : MorphismProperty Scheme.{u}) [P.RespectsIso] {I : HopfIdeal k H}
+    {m : M} {hm : Module.IsUnimodular k m} {m' : M'} {hm' : Module.IsUnimodular k m'}
+    (e : CommHopfAlgCat.fppfHomogeneousQuotient H I ≅ projectiveOrbitPointsSheaf (H := H) m hm)
+    (e' : CommHopfAlgCat.fppfHomogeneousQuotient H I ≅
+      projectiveOrbitPointsSheaf (H := H) m' hm') :
+    P (projectiveOrbitToSpec (H := H) m hm) ↔ P (projectiveOrbitToSpec (H := H) m' hm') :=
+  CommHopfAlgCat.morphismProperty_hom_iff_of_fppfHomogeneousQuotientScheme P e e'
+
 /-- **Properness of a projective orbit depends only on the homogeneous quotient it represents.** -/
-theorem isProper_projectiveOrbitToSpec_iff {I : HopfIdeal k H}
+theorem isProper_projectiveOrbitToSpec_iff_of_fppfHomogeneousQuotient {I : HopfIdeal k H}
     {m : M} {hm : Module.IsUnimodular k m} {m' : M'} {hm' : Module.IsUnimodular k m'}
     (e : CommHopfAlgCat.fppfHomogeneousQuotient H I ≅ projectiveOrbitPointsSheaf (H := H) m hm)
     (e' : CommHopfAlgCat.fppfHomogeneousQuotient H I ≅
       projectiveOrbitPointsSheaf (H := H) m' hm') :
     IsProper (projectiveOrbitToSpec (H := H) m hm) ↔
       IsProper (projectiveOrbitToSpec (H := H) m' hm') :=
-  CommHopfAlgCat.isProper_hom_iff_of_fppfHomogeneousQuotientScheme e e'
+  morphismProperty_projectiveOrbitToSpec_iff_of_fppfHomogeneousQuotient @IsProper e e'
 
 /-- **Properness descends along inclusions of closed subgroups for projective orbit quotients.**
 If `J ≤ I` are Hopf ideals (cutting out closed subgroups `N₁ ⊆ N₂`) whose homogeneous quotients
 `G/N₁` and `G/N₂` are represented by projective orbits `(M, m)` and `(M', m')`, and `G/N₁` is
-proper over `Spec k`, then `G/N₂` is proper over `Spec k`. Neither `IsReduced H` nor equality of
-the ambient representations `M` and `M'` is required once the representing isomorphisms are
-given. -/
+universally closed (in particular, proper) over `Spec k`, then `G/N₂` is proper over `Spec k`.
+Neither `IsReduced H` nor equality of the ambient representations `M` and `M'` is required once
+the representing isomorphisms are given. -/
 theorem isProper_projectiveOrbitToSpec_of_le {I J : HopfIdeal k H}
     {m : M} {hm : Module.IsUnimodular k m} {m' : M'} {hm' : Module.IsUnimodular k m'}
     (eI : CommHopfAlgCat.fppfHomogeneousQuotient H I ≅ projectiveOrbitPointsSheaf (H := H) m hm)
     (eJ : CommHopfAlgCat.fppfHomogeneousQuotient H J ≅
       projectiveOrbitPointsSheaf (H := H) m' hm')
-    (hJI : J ≤ I) [IsProper (projectiveOrbitToSpec (H := H) m hm)] :
+    (hJI : J ≤ I) [UniversallyClosed (projectiveOrbitToSpec (H := H) m hm)] :
     IsProper (projectiveOrbitToSpec (H := H) m' hm') := by
-  have : IsProper (Over.mk (projectiveOrbitToSpec (H := H) m hm)).hom := ‹_›
+  have : UniversallyClosed (Over.mk (projectiveOrbitToSpec (H := H) m hm)).hom := ‹_›
   have : IsSeparated (Over.mk (projectiveOrbitToSpec (H := H) m' hm')).hom :=
     instIsSeparatedProjectiveOrbitToSpec m' hm'
   have : LocallyOfFiniteType (Over.mk (projectiveOrbitToSpec (H := H) m' hm')).hom :=
     instLocallyOfFiniteTypeProjectiveOrbitToSpec m' hm'
-  exact CommHopfAlgCat.isProper_hom_of_fppfHomogeneousQuotientScheme eI eJ hJI
+  exact CommHopfAlgCat.isProper_hom_of_fppfHomogeneousQuotientScheme_of_le eI eJ hJI
 
 end Properness
 

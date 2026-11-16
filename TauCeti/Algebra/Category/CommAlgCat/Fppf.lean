@@ -28,8 +28,10 @@ The induced affine topology is subcanonical by full faithfulness of the relative
 Because affine schemes over `Spec R` are cover-dense for the fppf topology, restricting the
 fppf sheaf of points of a scheme over `Spec R` to affine `R`-schemes defines a fully faithful
 functor `pointsSheafFunctor`. Morphisms over `Spec R` whose induced map on affine fppf points is
-locally surjective are epimorphisms in `Over (Spec R)` and surjective on underlying schemes; the
-converse fails for nilpotent thickenings such as `Spec k ⟶ Spec (k[ε]/(ε²))`.
+locally surjective are epimorphisms in `Over (Spec R)` and surjective on underlying schemes;
+surjectivity on underlying schemes alone does not imply fppf local surjectivity (as in a
+nilpotent thickening `Spec k ⟶ Spec (k[ε]/(ε²))` over a field `k`), nor do both conditions
+together (as in `Spec k[t] ⟶ Spec k[t², t³]`).
 
 ## Main declarations
 
@@ -181,7 +183,7 @@ theorem pointsSheaf_obj {R : Type u} [CommRing R] (X : Over (Spec (CommRingCat.o
 
 /-- **Action of a scheme morphism over `Spec R` on fppf sheaves of affine points.** Postcomposing
 affine points with `f : X ⟶ Y` defines a morphism `pointsSheaf X ⟶ pointsSheaf Y`. -/
-@[expose] noncomputable def pointsSheafMap {R : Type u} [CommRing R]
+noncomputable def pointsSheafMap {R : Type u} [CommRing R]
     {X Y : Over (Spec (CommRingCat.of R))} (f : X ⟶ Y) :
     pointsSheaf X ⟶ pointsSheaf Y :=
   ⟨Functor.whiskerLeft (algSpec (CommRingCat.of R)).op
@@ -199,16 +201,16 @@ theorem pointsSheafMap_hom_app_apply {R : Type u} [CommRing R]
 @[simp]
 theorem pointsSheafMap_id {R : Type u} [CommRing R] (X : Over (Spec (CommRingCat.of R))) :
     pointsSheafMap (𝟙 X) = 𝟙 (pointsSheaf X) := by
-  ext _ _
-  rfl
+  ext _ ⟨p⟩
+  exact congrArg ULift.up (Category.comp_id p)
 
 /-- `pointsSheafMap` preserves composition of morphisms over `Spec R`. -/
 @[simp, reassoc]
 theorem pointsSheafMap_comp {R : Type u} [CommRing R]
     {X Y Z : Over (Spec (CommRingCat.of R))} (f : X ⟶ Y) (g : Y ⟶ Z) :
     pointsSheafMap (f ≫ g) = pointsSheafMap f ≫ pointsSheafMap g := by
-  ext _ _
-  rfl
+  ext _ ⟨p⟩
+  exact congrArg ULift.up (Category.assoc p f g).symm
 
 /-- **The functor of fppf points of schemes over `Spec R`.** A scheme `X` over `Spec R` is sent
 to its fppf sheaf of affine `R`-points `pointsSheaf X`, and a morphism `f : X ⟶ Y` over `Spec R`
@@ -273,6 +275,13 @@ theorem pointsSheafHomEquiv_apply {R : Type u} [CommRing R]
     pointsSheafHomEquiv X Y f = pointsSheafMap f :=
   (rfl)
 
+/-- Recovering a scheme morphism from `pointsSheafMap f` returns `f`. -/
+@[simp]
+theorem pointsSheafHomEquiv_symm_pointsSheafMap {R : Type u} [CommRing R]
+    {X Y : Over (Spec (CommRingCat.of R))} (f : X ⟶ Y) :
+    (pointsSheafHomEquiv X Y).symm (pointsSheafMap f) = f :=
+  (pointsSheafFunctorFullyFaithful R).preimage_map f
+
 /-- Applying `pointsSheafMap` to the scheme morphism recovered from a sheaf map returns that
 sheaf map. -/
 @[simp]
@@ -302,15 +311,8 @@ theorem pointsSheafHomEquiv_symm_comp {R : Type u} [CommRing R]
 /-- **Isomorphisms of schemes over `Spec R` are isomorphisms of their fppf sheaves of points.** -/
 noncomputable def pointsSheafIsoEquiv {R : Type u} [CommRing R]
     (X Y : Over (Spec (CommRingCat.of R))) :
-    (X ≅ Y) ≃ (pointsSheaf X ≅ pointsSheaf Y) where
-  toFun e :=
-    { hom := pointsSheafMap e.hom
-      inv := pointsSheafMap e.inv
-      hom_inv_id := by rw [← pointsSheafMap_comp, e.hom_inv_id, pointsSheafMap_id]
-      inv_hom_id := by rw [← pointsSheafMap_comp, e.inv_hom_id, pointsSheafMap_id] }
-  invFun := (pointsSheafFunctorFullyFaithful R).preimageIso
-  left_inv e := by ext1; exact (pointsSheafFunctorFullyFaithful R).preimage_map e.hom
-  right_inv e := by ext1; exact (pointsSheafFunctorFullyFaithful R).map_preimage e.hom
+    (X ≅ Y) ≃ (pointsSheaf X ≅ pointsSheaf Y) :=
+  (pointsSheafFunctorFullyFaithful R).isoEquiv
 
 /-- The forward morphism of `pointsSheafIsoEquiv X Y e` is `pointsSheafMap e.hom`. -/
 @[simp]
@@ -325,6 +327,31 @@ theorem pointsSheafIsoEquiv_apply_inv {R : Type u} [CommRing R]
     {X Y : Over (Spec (CommRingCat.of R))} (e : X ≅ Y) :
     (pointsSheafIsoEquiv X Y e).inv = pointsSheafMap e.inv :=
   (rfl)
+
+/-- Sending the identity scheme isomorphism to sheaves yields `Iso.refl`. -/
+@[simp]
+theorem pointsSheafIsoEquiv_refl {R : Type u} [CommRing R]
+    (X : Over (Spec (CommRingCat.of R))) :
+    pointsSheafIsoEquiv X X (Iso.refl X) = Iso.refl (pointsSheaf X) := by
+  ext1
+  simp
+
+/-- Sending scheme isomorphisms to sheaf isomorphisms preserves composition. -/
+@[simp]
+theorem pointsSheafIsoEquiv_trans {R : Type u} [CommRing R]
+    {X Y Z : Over (Spec (CommRingCat.of R))} (e₁ : X ≅ Y) (e₂ : Y ≅ Z) :
+    pointsSheafIsoEquiv X Z (e₁ ≪≫ e₂) =
+      pointsSheafIsoEquiv X Y e₁ ≪≫ pointsSheafIsoEquiv Y Z e₂ := by
+  ext1
+  simp
+
+/-- Sending scheme isomorphisms to sheaf isomorphisms commutes with symmetry. -/
+@[simp]
+theorem pointsSheafIsoEquiv_symm {R : Type u} [CommRing R]
+    {X Y : Over (Spec (CommRingCat.of R))} (e : X ≅ Y) :
+    pointsSheafIsoEquiv Y X e.symm = (pointsSheafIsoEquiv X Y e).symm := by
+  ext1
+  simp
 
 /-- The forward morphism of `(pointsSheafIsoEquiv X Y).symm e` is recovered from `e.hom`. -/
 @[simp]
@@ -364,7 +391,7 @@ theorem pointsSheafIsoEquiv_symm_symm {R : Type u} [CommRing R]
     {X Y : Over (Spec (CommRingCat.of R))} (e : pointsSheaf X ≅ pointsSheaf Y) :
     (pointsSheafIsoEquiv Y X).symm e.symm = ((pointsSheafIsoEquiv X Y).symm e).symm := by
   ext1
-  rfl
+  simp
 
 /-- **Fppf locally surjective morphisms over `Spec R` are epimorphisms.** If `f : X ⟶ Y` over
 `Spec R` induces a locally surjective morphism on affine fppf points, then `f` is an epimorphism

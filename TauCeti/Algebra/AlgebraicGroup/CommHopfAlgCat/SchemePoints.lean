@@ -93,6 +93,18 @@ lemma mapMulEquiv_left
   -- step was named.
   rfl
 
+/-- The identity algebra endomorphism `AlgHom.id R S` corresponds under `Spec.mapMulEquiv` to the
+identity morphism of `(Spec S).asOver (Spec R)`. -/
+@[simp]
+theorem mapMulEquiv_toConv_id
+    (S : Type u) [CommRing S] [Bialgebra R S] :
+    AlgebraicGeometry.Spec.mapMulEquiv (toConv (AlgHom.id R S)) =
+      𝟙 ((Spec (CommRingCat.of S)).asOver (Spec (CommRingCat.of R))) := by
+  apply Over.OverMorphism.ext
+  refine (mapMulEquiv_left _).trans ?_
+  rw [WithConv.ofConv_toConv, AlgHom.id_toRingHom, CommRingCat.ofHom_id, Spec.map_id]
+  exact (Over.id_left ((Spec (CommRingCat.of S)).asOver (Spec (CommRingCat.of R)))).symm
+
 /-- Mathlib's spectrum-points equivalence is contravariantly natural in the coordinate
 bialgebra. Precomposing a `K`-point by `f : H →ₐc[R] K` corresponds on spectra to
 postcomposing by the induced morphism `Spec K ⟶ Spec H`. -/
