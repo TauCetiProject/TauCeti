@@ -39,7 +39,11 @@ classes of loops with conjugacy classes in
 `AlgebraicTopology/FundamentalGroup/FreeLoop.lean`, together with the converse
 `Path.homotopicWith_trans_trans_symm`: a conjugate loop `χ · ℓ · χ⁻¹` is homotopic to `ℓ` through
 closed paths. Its family version `Path.homotopicWith_uncurry_trans_trans_symm` gives the conjugation
-homotopy of families of loops in `Topology/MappingSpace/Sphere/LoopFamily.lean`. The lemma
+homotopy of families of loops in `Topology/MappingSpace/Sphere/LoopFamily.lean`. The family version
+`Path.homotopic_trans_symm_trans_trans_symm` of the cancellation `ρ⁻¹ · ρ ≃ refl` shrinks a
+detour `(α · ρ⁻¹) · (ρ · β⁻¹)` to `α · β⁻¹` uniformly in a parameter, as a homotopy of maps into the
+space of paths; it compares families of loops on spheres with products of loops in
+`AlgebraicTopology/Sphere/Stiefel/MeridianProduct.lean`. The lemma
 `Path.Homotopic.refl_of_forall_mem_of_nullhomotopic` is not from #38292; it was factored out of
 `AlgebraicTopology/SemilocallySimplyConnected/Basic.lean`.
 
@@ -407,6 +411,124 @@ theorem homotopicWith_trans_trans_symm {a b : X} (χ : Path a b) (ℓ : Path b b
      prop' s := conjHomotopyFun_zero_eq_one (A := Unit) (fun _ ↦ χ) (fun _ ↦ ℓ) (s, ()) }⟩
 
 end Conjugation
+
+section Cancellation
+
+variable {A : Type*} {x y z w : X}
+
+/-- The explicit homotopy from `(α · ρ⁻¹) · (ρ · β⁻¹)` to `α · β⁻¹`: at time `r`, with
+`c = (1 + r) / 4`, it runs along `α` on `[0, c]`, then on `[c, 1 - c]` backwards along `ρ` down to
+`ρ r` and forwards again, and finally backwards along `β` on `[1 - c, 1]`. -/
+private noncomputable def cancelHomotopyFun (α : A → Path x y) (ρ : A → Path w y)
+    (β : A → Path z y) (q : (I × A) × I) : X :=
+  if (q.2 : ℝ) ≤ (1 + (q.1.1 : ℝ)) / 4 then (α q.1.2).extend ((q.2 : ℝ) / ((1 + q.1.1) / 4))
+  else if (q.2 : ℝ) ≤ 1 - (1 + (q.1.1 : ℝ)) / 4 then
+    (ρ q.1.2).extend ((q.1.1 : ℝ) + 2 * |2 * (q.2 : ℝ) - 1|)
+  else (β q.1.2).extend ((1 - (q.2 : ℝ)) / ((1 + q.1.1) / 4))
+
+private theorem pos_cancel (r : I) : 0 < (1 + (r : ℝ)) / 4 := by
+  have := r.2.1; positivity
+
+private theorem continuous_cancelHomotopyFun [TopologicalSpace A] {α : A → Path x y}
+    {ρ : A → Path w y} {β : A → Path z y} (hα : Continuous α) (hρ : Continuous ρ)
+    (hβ : Continuous β) : Continuous (cancelHomotopyFun α ρ β) := by
+  have hαe := continuous_uncurry_extend_of_continuous_family α (continuous_uncurry_iff.2 hα)
+  have hρe := continuous_uncurry_extend_of_continuous_family ρ (continuous_uncurry_iff.2 hρ)
+  have hβe := continuous_uncurry_extend_of_continuous_family β (continuous_uncurry_iff.2 hβ)
+  refine Continuous.if_le ?_ (Continuous.if_le ?_ ?_ (by fun_prop) (by fun_prop) ?_)
+    (by fun_prop) (by fun_prop) ?_
+  · exact hαe.comp ((by fun_prop : Continuous fun q : (I × A) × I => q.1.2).prodMk
+      ((by fun_prop : Continuous fun q : (I × A) × I => (q.2 : ℝ)).div (by fun_prop)
+        fun q => (pos_cancel q.1.1).ne'))
+  · exact hρe.comp ((by fun_prop : Continuous fun q : (I × A) × I => q.1.2).prodMk
+      (by fun_prop : Continuous fun q : (I × A) × I => (q.1.1 : ℝ) + 2 * |2 * (q.2 : ℝ) - 1|))
+  · exact hβe.comp ((by fun_prop : Continuous fun q : (I × A) × I => q.1.2).prodMk
+      ((by fun_prop : Continuous fun q : (I × A) × I => 1 - (q.2 : ℝ)).div (by fun_prop)
+        fun q => (pos_cancel q.1.1).ne'))
+  · rintro ⟨⟨r, a⟩, t⟩ (h : (t : ℝ) = 1 - (1 + r) / 4)
+    have hr := r.2.2
+    rw [h, show |2 * (1 - (1 + (r : ℝ)) / 4) - 1| = 1 - 2 * ((1 + r) / 4) by
+        rw [abs_of_nonneg (by linarith)]; ring,
+      show (r : ℝ) + 2 * (1 - 2 * ((1 + r) / 4)) = 1 by ring,
+      show 1 - (1 - (1 + (r : ℝ)) / 4) = (1 + r) / 4 by ring, div_self (pos_cancel r).ne',
+      extend_one, extend_one]
+  · rintro ⟨⟨r, a⟩, t⟩ (h : (t : ℝ) = (1 + r) / 4)
+    have hr := r.2.2
+    have hle : (1 + (r : ℝ)) / 4 ≤ 1 - (1 + r) / 4 := by linarith
+    simp only [h, hle, ite_true]
+    rw [div_self (pos_cancel r).ne', show |2 * ((1 + (r : ℝ)) / 4) - 1| = 1 - 2 * ((1 + r) / 4) by
+        rw [abs_of_nonpos (by linarith)]; ring,
+      show (r : ℝ) + 2 * (1 - 2 * ((1 + r) / 4)) = 1 by ring, extend_one, extend_one]
+
+private theorem cancelHomotopyFun_zero (α : A → Path x y) (ρ : A → Path w y)
+    (β : A → Path z y) (a : A) (t : I) :
+    cancelHomotopyFun α ρ β ((0, a), t) =
+      (((α a).trans (ρ a).symm).trans ((ρ a).trans (β a).symm)) t := by
+  have ht0 := t.2.1
+  have ht1 := t.2.2
+  simp only [cancelHomotopyFun, Set.Icc.coe_zero, add_zero, trans_apply, symm_apply]
+  split_ifs with h₁ h₂ h₃ h₄ h₅ h₆ <;> try (exfalso; linarith)
+  · rw [extend_apply _ ⟨by positivity, by linarith⟩]
+    congr 1; ext; simp only; ring
+  · rw [abs_of_nonpos (by linarith), extend_apply _ ⟨by linarith, by linarith⟩]
+    simp only [Function.comp_apply, unitInterval.symm]
+    congr 1; ext; simp only; ring
+  · rw [abs_of_nonneg (by linarith), extend_apply _ ⟨by linarith, by linarith⟩]
+    congr 1; ext; simp only; ring
+  · rw [extend_apply _ ⟨by linarith, by linarith⟩]
+    simp only [Function.comp_apply, unitInterval.symm]
+    congr 1; ext; simp only; ring
+
+private theorem cancelHomotopyFun_one (α : A → Path x y) (ρ : A → Path w y)
+    (β : A → Path z y) (a : A) (t : I) :
+    cancelHomotopyFun α ρ β ((1, a), t) = ((α a).trans (β a).symm) t := by
+  have ht0 := t.2.1
+  have ht1 := t.2.2
+  simp only [cancelHomotopyFun, Set.Icc.coe_one, trans_apply, symm_apply]
+  split_ifs with h₁ h₂ h₃ h₄ <;> try (exfalso; linarith)
+  · rw [extend_apply _ ⟨by positivity, by linarith⟩]
+    congr 1; ext; simp only; ring
+  · rw [extend_apply _ ⟨by linarith, by linarith⟩]
+    simp only [Function.comp_apply, unitInterval.symm]
+    congr 1; ext; simp only; ring
+
+private theorem cancelHomotopyFun_source (α : A → Path x y) (ρ : A → Path w y)
+    (β : A → Path z y) (q : I × A) : cancelHomotopyFun α ρ β (q, 0) = x := by
+  simp [cancelHomotopyFun, (pos_cancel q.1).le]
+
+private theorem cancelHomotopyFun_target (α : A → Path x y) (ρ : A → Path w y)
+    (β : A → Path z y) (q : I × A) : cancelHomotopyFun α ρ β (q, 1) = z := by
+  have := q.1.2.1
+  have h₁ : ¬ (1 : ℝ) ≤ (1 + q.1) / 4 := by linarith [q.1.2.2]
+  have h₂ : ¬ (1 : ℝ) ≤ 1 - (1 + q.1) / 4 := by linarith
+  simp [cancelHomotopyFun, h₁, h₂]
+
+variable [TopologicalSpace A]
+
+/-- **Cancelling a back-and-forth path, in families.** For continuous families of paths
+`α a : x ⇝ y`, `ρ a : w ⇝ y` and `β a : z ⇝ y`, the two families of paths from `x` to `z`
+
+`a ↦ (α a · (ρ a)⁻¹) · (ρ a · (β a)⁻¹)` and `a ↦ α a · (β a)⁻¹`
+
+are homotopic as maps from `A` to the space of paths: the detour along `ρ a` and back is
+shrunk to the end point `y`, uniformly in `a`. -/
+theorem homotopic_trans_symm_trans_trans_symm {α : A → Path x y} {ρ : A → Path w y}
+    {β : A → Path z y} (hα : Continuous α) (hρ : Continuous ρ) (hβ : Continuous β) :
+    (⟨fun a ↦ ((α a).trans (ρ a).symm).trans ((ρ a).trans (β a).symm),
+        (hα.path_trans (continuous_symm.comp hρ)).path_trans
+          (hρ.path_trans (continuous_symm.comp hβ))⟩ : C(A, Path x z)).Homotopic
+      ⟨fun a ↦ (α a).trans (β a).symm, hα.path_trans (continuous_symm.comp hβ)⟩ :=
+  ⟨{ toFun q :=
+      { toFun t := cancelHomotopyFun α ρ β (q, t)
+        continuous_toFun := (continuous_cancelHomotopyFun hα hρ hβ).comp (by fun_prop)
+        source' := cancelHomotopyFun_source α ρ β q
+        target' := cancelHomotopyFun_target α ρ β q }
+     continuous_toFun := continuous_uncurry_iff.mp
+        ((continuous_cancelHomotopyFun hα hρ hβ).comp (by fun_prop))
+     map_zero_left a := Path.ext <| funext <| cancelHomotopyFun_zero α ρ β a
+     map_one_left a := Path.ext <| funext <| cancelHomotopyFun_one α ρ β a }⟩
+
+end Cancellation
 
 /-- If every parameter `s` has some `γ ⁻¹' U i` as a neighbourhood, then `γ` can be subdivided
 at finitely many monotone times, starting at `0` and ending at `1`, so that the subpath between
