@@ -50,6 +50,10 @@ countable products of projective graded modules and is not treated here.
 
 ## Main results
 
+* `TauCeti.CurvedDGRightModuleCat.projective_toGradedModuleCat_cone`: the mapping cone of a
+  closed morphism between graded-projective curved modules is graded-projective.
+* `TauCeti.CurvedDGRightModuleCat.instIsTriangulatedGradedProjective`: the graded-projective
+  curved right modules form a triangulated subcategory of the curved homotopy category.
 * `TauCeti.CurvedDGRightModuleCat.totalizations_le_rightOrthogonal_gradedProjective`:
   totalizations of short exact sequences are right orthogonal to graded-projective modules.
 * `TauCeti.CurvedDGRightModuleCat.contraacyclic_le_rightOrthogonal_gradedProjective`:
@@ -68,7 +72,7 @@ countable products of projective graded modules and is not treated here.
 
 public section
 
-open CategoryTheory CategoryTheory.Limits CategoryTheory.Pretriangulated
+open CategoryTheory CategoryTheory.Limits CategoryTheory.Pretriangulated ZeroObject
 
 namespace TauCeti.CurvedDGRightModuleCat
 
@@ -99,6 +103,68 @@ theorem gradedProjective_iff (X : DGHomotopyCategory R (CurvedDGRightModuleCat.{
     gradedProjective R h X ↔ Projective (toGradedModuleCat X.underlying) :=
   Iff.rfl
 
+/-- A shift of a graded-projective curved right module is graded-projective. -/
+instance projective_toGradedModuleCat_shift (M : CurvedDGRightModuleCat.{u, u, u} h) (n : ℤ)
+    [Projective (toGradedModuleCat M)] :
+    Projective (toGradedModuleCat (M.shift n)) := by
+  have h0 : Projective ((forgetDifferential (h := h) ⋙ GradedModuleCat.shiftFunctor (-n)).obj
+      (ForgetEnrichment.of (CochainComplex (ModuleCat R) ℤ) M)) :=
+    GradedModuleCat.projective_shiftObj (toGradedModuleCat M) (-n)
+  have hShift : Projective ((closedShiftFunctor (h := h) n ⋙ forgetDifferential).obj
+      (ForgetEnrichment.of (CochainComplex (ModuleCat R) ℤ) M)) :=
+    Projective.of_iso
+      ((closedShiftFunctorCompForgetDifferentialIso (h := h) n).app
+        (ForgetEnrichment.of (CochainComplex (ModuleCat R) ℤ) M)).symm h0
+  rw [Functor.comp_obj, closedShiftFunctor_obj_of] at hShift
+  exact hShift
+
+/-- The mapping cone of a closed morphism between graded-projective curved right modules is
+graded-projective. -/
+instance projective_toGradedModuleCat_cone {M N : CurvedDGRightModuleCat.{u, u, u} h}
+    (f : ForgetEnrichment.of (CochainComplex (ModuleCat R) ℤ) M ⟶
+      ForgetEnrichment.of (CochainComplex (ModuleCat R) ℤ) N)
+    [Projective (toGradedModuleCat M)] [Projective (toGradedModuleCat N)] :
+    Projective (toGradedModuleCat (cone f)) := by
+  let S := ShortComplex.mk (coneInclusion f) (coneProjection f)
+    (coneInclusion_comp_coneProjection f)
+  have hS : S.ShortExact := by
+    refine (shortExact_iff _).2 ⟨?_, ?_, ?_⟩
+    · intro x₁ x₂ hx
+      dsimp only [S, ShortComplex.mk] at hx
+      rw [closedHom_coneInclusion] at hx
+      exact congrArg Prod.snd hx
+    · intro x
+      dsimp only [S, ShortComplex.mk]
+      exact ⟨(x, 0), by rw [closedHom_coneProjection]; rfl⟩
+    · intro z
+      dsimp only [S, ShortComplex.mk]
+      rw [closedHom_coneInclusion, closedHom_coneProjection]
+      exact ⟨fun hz ↦ ⟨z.2, Prod.ext hz.symm rfl⟩, by rintro ⟨y, rfl⟩; rfl⟩
+  let SF := S.map (forgetDifferential (h := h))
+  have hSF : SF.ShortExact := hS.map_of_exact (forgetDifferential (h := h))
+  have : Projective SF.X₁ := (inferInstance : Projective (toGradedModuleCat N))
+  have : Projective SF.X₃ := (inferInstance : Projective (toGradedModuleCat (M.shift 1)))
+  let s := hSF.splittingOfProjective
+  refine ⟨fun {E Y} g e _ ↦ ⟨s.r ≫ Projective.factorThru (SF.f ≫ g) e +
+    SF.g ≫ Projective.factorThru (s.s ≫ g) e, ?_⟩⟩
+  calc
+    (s.r ≫ Projective.factorThru (SF.f ≫ g) e +
+        SF.g ≫ Projective.factorThru (s.s ≫ g) e) ≫ e
+      = (s.r ≫ SF.f + SF.g ≫ s.s) ≫ g := by
+        simp only [Preadditive.add_comp, Category.assoc, Projective.factorThru_comp]
+    _ = g := by
+        rw [s.id, Category.id_comp]
+
+/-- The zero curved module is graded-projective. -/
+instance : (gradedProjective R h).ContainsZero where
+  exists_zero :=
+    ⟨(dgClosedToHomotopy R).obj
+        (0 : ForgetEnrichment (CochainComplex (ModuleCat R) ℤ)
+          (CurvedDGRightModuleCat.{u, u, u} h)),
+      (dgClosedToHomotopy R).map_isZero (isZero_zero _),
+      (gradedProjective_iff _).2
+        ((forgetDifferential (h := h)).map_isZero (isZero_zero _)).projective⟩
+
 /-- Shifts of graded-projective curved modules are graded-projective: the underlying graded
 module of a cohomological shift is a grading shift. -/
 instance : (gradedProjective R h).IsStableUnderShift ℤ where
@@ -107,6 +173,27 @@ instance : (gradedProjective R h).IsStableUnderShift ℤ where
     Projective.of_iso ((closedShiftFunctorCompForgetDifferentialIso (h := h) n).app
       (ForgetEnrichment.of (CochainComplex (ModuleCat R) ℤ) X.underlying)).symm
       (GradedModuleCat.projective_shiftObj (toGradedModuleCat X.underlying) (-n))⟩
+
+/-- Mapping cones of morphisms between graded-projective curved modules are graded-projective up
+to homotopy equivalence. -/
+instance : (gradedProjective R h).IsTriangulatedClosed₃ where
+  ext₃' T hT h₁ h₂ := by
+    obtain ⟨f, hf⟩ := (dgClosedToHomotopy R).map_surjective T.mor₁
+    let f' : ForgetEnrichment.of (CochainComplex (ModuleCat R) ℤ) T.obj₁.underlying ⟶
+        ForgetEnrichment.of (CochainComplex (ModuleCat R) ℤ) T.obj₂.underlying := f
+    have : Projective (toGradedModuleCat T.obj₁.underlying) := (gradedProjective_iff _).1 h₁
+    have : Projective (toGradedModuleCat T.obj₂.underlying) := (gradedProjective_iff _).1 h₂
+    have hcone : gradedProjective R h (DGHomotopyCategory.of R (cone f')) :=
+      (gradedProjective_iff _).2 (projective_toGradedModuleCat_cone f')
+    obtain ⟨e, _⟩ := exists_iso_of_arrow_iso (coneTriangle f') T
+      (coneTriangle_distinguished f') hT
+      (Arrow.isoMk (Iso.refl _) (Iso.refl _) (by simpa using hf.symm))
+    exact ⟨DGHomotopyCategory.of R (cone f'), hcone, ⟨(Triangle.π₃.mapIso e).symm⟩⟩
+
+/-- The graded-projective curved right modules form a triangulated subcategory of the curved
+homotopy category. -/
+instance instIsTriangulatedGradedProjective : (gradedProjective R h).IsTriangulated where
+  toIsTriangulatedClosed₂ := ObjectProperty.IsTriangulatedClosed₂.of_isTriangulatedClosed₃
 
 /-! ### Lifting and factoring homogeneous maps -/
 
