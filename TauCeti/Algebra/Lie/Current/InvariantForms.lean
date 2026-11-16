@@ -60,7 +60,7 @@ noncomputable section
 
 namespace TauCeti.CurrentAlgebra
 
-open _root_.LieModule.Cohomology TauCeti.LieModule.Cohomology TauCeti.LieModule
+open TauCeti.LieModule.Cohomology TauCeti.LieModule
 
 section CommRing
 
@@ -93,7 +93,7 @@ end CommRing
 
 section Field
 
-variable {K L : Type*} [Field K] [CharZero K] [LieRing L] [LieAlgebra K L] [FiniteDimensional K L]
+variable {K L : Type*} [Field K] [CharZero K] [LieRing L] [LieAlgebra K L]
   [_root_.LieAlgebra.IsKilling K L]
 
 /-- **Every continuous class is a residue class.** Let `L` be a finite-dimensional Lie algebra with

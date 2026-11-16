@@ -115,8 +115,9 @@ theorem spectrum_complexifyL2 {T : X →L[ℝ] X} (hT : IsSelfAdjoint T) :
       WithLp 2 (TauCeti.Complexification X)) :=
     StarModule.complexToReal (E := WithLp 2 (TauCeti.Complexification X) →L[ℂ]
       WithLp 2 (TauCeti.Complexification X))
-  simpa using (complexifyL2StarAlgHom X).spectrum_apply_eq_of_isClosedEmbedding
-    (isClosedEmbedding_complexifyL2StarAlgHom X) (q := IsSelfAdjoint) (by simpa using hT)
+  have hφ := isClosedEmbedding_complexifyL2StarAlgHom X
+  simpa using (complexifyL2StarAlgHom X).spectrum_apply_eq_of_injective_of_isClosed_range
+    hφ.injective hφ.isClosed_range (q := IsSelfAdjoint) (by simpa using hT)
 
 /-- Complexification commutes with the continuous functional calculus: for a bounded
 operator `T` on a real Hilbert space, `(f(T))_ℂ = f(T_ℂ)`. -/

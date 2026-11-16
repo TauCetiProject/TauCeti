@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.RepresentationTheory.Continuous.MatrixCoefficient
+public import TauCeti.RepresentationTheory.Continuous.Character
 public import TauCeti.RepresentationTheory.Irreducible
 
 /-!
@@ -14,10 +14,10 @@ public import TauCeti.RepresentationTheory.Irreducible
 A continuous linear equivalence `e : V ≃L[𝕜] W` carries a continuous representation on `V` to one
 on `W` by conjugating every action operator, `π g ↦ e ∘ π g ∘ e⁻¹`, that is, by applying Mathlib's
 continuous algebra equivalence `ContinuousLinearEquiv.conjContinuousAlgEquiv`. This file builds
-that transport and records what it preserves: continuity of the operator-valued action, and — for
-an equivalence that is moreover isometric, so that inner products are available — unitarity and,
-the point of the construction, the matrix coefficients, which are unchanged once the defining
-vectors are moved along `e`.
+that transport and records what it preserves: continuity of the operator-valued action, the
+character, and — for an equivalence that is moreover isometric, so that inner products are
+available — unitarity and, the point of the construction, the matrix coefficients, which are
+unchanged once the defining vectors are moved along `e`.
 
 The transport is what lets a statement about representations on the standard models
 `EuclideanSpace 𝕜 (Fin n)` be applied to a representation on an arbitrary finite-dimensional
@@ -39,6 +39,7 @@ so nothing is lost by pinning a model.
 * `ContRepresentation.congr_refl` and `ContinuousLinearEquiv.congr_congr`: the
   transport is functorial, so "transportable onto" is an equivalence relation on representations
   (symmetry is `simp` from these two).
+* `ContinuousLinearEquiv.character_congr`: the transport has the same character.
 * `LinearIsometryEquiv.matrixCoeff_congr`: the matrix coefficients of the transport at the
   transported vectors are those of the original representation.
 * `ContinuousLinearEquiv.matrixCoeff_congr_adjoint`: the same for an equivalence that is not
@@ -113,6 +114,30 @@ theorem congr_congr {X : Type*} [NormedAddCommGroup X] [NormedSpace 𝕜 X] (e :
   DFunLike.ext _ _ fun _ ↦ ContinuousLinearMap.ext fun _ ↦ by simp
 
 end Congr
+
+section CongrCharacter
+
+variable {𝕜 G V W : Type*} [NontriviallyNormedField 𝕜] [CompleteSpace 𝕜] [Monoid G]
+  [TopologicalSpace G] [NormedAddCommGroup V] [NormedSpace 𝕜 V] [FiniteDimensional 𝕜 V]
+  [NormedAddCommGroup W] [NormedSpace 𝕜 W] [FiniteDimensional 𝕜 W]
+
+-- As for the matrix coefficient lemmas below, the continuity of the transported representation is
+-- taken as it occurs on the left-hand side and that of `π` is derived on the right, so that `simp`
+-- does not have to prove a continuity hypothesis for a symbolic `π`.
+/-- **Transport along a continuous linear equivalence does not change the character**: the action
+operators are conjugated by `e`, and the trace is invariant under conjugation. -/
+@[simp]
+theorem character_congr (e : V ≃L[𝕜] W) {π : ContRepresentation 𝕜 G V}
+    (hπ : Continuous (congr e π)) :
+    character (congr e π) hπ = character π (by simpa using continuous_congr e.symm hπ) := by
+  ext g
+  have hconj : ((congr e π g : W →L[𝕜] W) : W →ₗ[𝕜] W) =
+      e.toLinearEquiv.conj (π g : V →ₗ[𝕜] V) :=
+    LinearMap.ext fun x ↦ congr_apply e π g x
+  rw [character_apply, character_apply, hconj]
+  exact LinearMap.trace_conj' (π g : V →ₗ[𝕜] V) e.toLinearEquiv
+
+end CongrCharacter
 
 section CongrIsometry
 

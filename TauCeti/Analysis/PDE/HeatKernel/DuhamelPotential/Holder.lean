@@ -180,7 +180,7 @@ theorem holderWith_heatDuhamelPotential (hf : StronglyMeasurable (Function.uncur
 /-- The Hessian of the Duhamel potential is jointly parabolically `α`-Hölder on the closed
 slab, for `0 < α < 1`. The constant is independent of the horizon and the bound on the forcing;
 only its uniform spatial Hölder constant enters. No temporal regularity is required. -/
-theorem exists_holderWith_iteratedFDeriv_two_heatDuhamelPotential_slab [CompleteSpace F]
+theorem exists_holderWith_iteratedFDeriv_two_heatDuhamelPotential_slab
     (hα : 0 < α) (hα₁ : α < 1) :
     ∃ C : ℝ≥0, ∀ {f : ℝ → E → F} {M T : ℝ} {H : ℝ≥0},
       StronglyMeasurable (Function.uncurry f) →

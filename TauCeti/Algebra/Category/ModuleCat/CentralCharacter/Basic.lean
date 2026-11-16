@@ -5,8 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Algebra.Algebra.Subalgebra.Basic
 public import TauCeti.Algebra.Category.ModuleCat.Smooth.Basic
-public import TauCeti.Algebra.Subalgebra.Center
 public import TauCeti.CategoryTheory.ObjectProperty.Kernels
 
 /-!
@@ -173,7 +173,7 @@ variable {B : Type*} [Ring B] [Algebra R B]
 
 /-- Restriction through `e⁻¹` transports a strict central character by the inverse center map. -/
 theorem centralCharacterModules_restrictScalars_iff (e : A ≃ₐ[R] B) (M : ModuleCat.{v} A) :
-    centralCharacterModules (χ.comp (centerCongr e).symm.toAlgHom)
+    centralCharacterModules (χ.comp (Subalgebra.centerCongr e.symm).toAlgHom)
         ((ModuleCat.restrictScalars e.symm.toRingHom).obj M) ↔
       centralCharacterModules χ M := by
   rw [centralCharacterModules_iff, centralCharacterModules_iff]
@@ -182,10 +182,11 @@ theorem centralCharacterModules_restrictScalars_iff (e : A ≃ₐ[R] B) (M : Mod
     -- Rewrite before substituting the vector of `M`, so the restricted action is still
     -- syntactically visible. The center comparison and the scalar map then cancel with `e⁻¹`.
     simp only [ModuleCat.restrictScalars.smul_def e.symm.toRingHom] at h
-    simpa using! h (centerCongr e z) m
+    simpa [Subalgebra.centerCongr_apply_coe e z, ← Subalgebra.symm_centerCongr] using!
+      h (Subalgebra.centerCongr e z) m
   · intro h z m
     simp only [ModuleCat.restrictScalars.smul_def e.symm.toRingHom]
-    simpa using! h ((centerCongr e).symm z) m
+    simpa using! h ((Subalgebra.centerCongr e).symm z) m
 
 variable [TopologicalSpace A] [TopologicalSpace B]
 
@@ -194,7 +195,7 @@ modules for the transported character. -/
 theorem discreteCentralCharacterModules_restrictScalars (e : A ≃ₐ[R] B)
     (he : Continuous e.symm) {M : ModuleCat.{v} A}
     (hM : discreteCentralCharacterModules χ M) :
-    discreteCentralCharacterModules (χ.comp (centerCongr e).symm.toAlgHom)
+    discreteCentralCharacterModules (χ.comp (Subalgebra.centerCongr e.symm).toAlgHom)
       ((ModuleCat.restrictScalars e.symm.toRingHom).obj M) :=
   ⟨discreteModules_restrictScalars he hM.1,
     (centralCharacterModules_restrictScalars_iff χ e M).mpr hM.2⟩
@@ -207,7 +208,7 @@ The underlying modules and morphisms are the native restrictions of scalars. -/
     (he : Continuous e.symm) :
     (discreteCentralCharacterModules.{v} χ).FullSubcategory ⥤
       (discreteCentralCharacterModules.{v}
-        (χ.comp (centerCongr e).symm.toAlgHom)).FullSubcategory :=
+        (χ.comp (Subalgebra.centerCongr e.symm).toAlgHom)).FullSubcategory :=
   (discreteCentralCharacterModules _).lift
     ((discreteCentralCharacterModules χ).ι ⋙ ModuleCat.restrictScalars e.symm.toRingHom)
     (fun M => discreteCentralCharacterModules_restrictScalars χ e he M.property)

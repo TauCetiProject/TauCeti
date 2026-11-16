@@ -5,8 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Analysis.Complex.Basic
-public import TauCeti.Analysis.MvPolynomial.HasseDerivBound
+import Mathlib.Analysis.Complex.Basic
+import TauCeti.Analysis.MvPolynomial.HasseDerivBound
 
 /-!
 # Examples of bounds on evaluated multivariate Hasse derivatives
@@ -14,8 +14,6 @@ public import TauCeti.Analysis.MvPolynomial.HasseDerivBound
 For `F = Z W` the product-binomial bound on `∂_Z^[1] F (2, 3) = 3` is
 `choose 1 1 · 2⁰ · 3¹ = 3`, an equality.
 -/
-
-public section
 
 open Finset
 

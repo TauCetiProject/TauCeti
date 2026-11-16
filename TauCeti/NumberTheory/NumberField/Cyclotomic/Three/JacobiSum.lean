@@ -113,7 +113,7 @@ theorem absNorm_span_singleton_jacobiSum_powerResidueSymbol_three (hP : (absNorm
   have hχ : (powerResidueSymbol P 3)⁻¹ = (powerResidueSymbol P 3).ringHomComp σ := by
     refine MulChar.ext fun u ↦ ?_
     rw [MulChar.ringHomComp_apply, RingEquiv.coe_toRingHom,
-      hσ _ (powerResidueSymbol_pow_eq_one hP u.ne_zero),
+      hσ _ (powerResidueSymbol_pow_eq_one u.ne_zero),
       inv_eq_of_mul_eq_one_right (b := powerResidueSymbol P 3 ^ 2) (by rwa [← pow_succ']),
       MulChar.pow_apply_coe]
   have hprod := jacobiSum_powerResidueSymbol_mul_jacobiSum_inv hP le_rfl

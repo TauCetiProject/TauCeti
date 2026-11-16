@@ -13,7 +13,7 @@ import TauCeti.Analysis.InnerProductSpace.Laplacian.Basic
 import TauCeti.Analysis.InnerProductSpace.Laplacian.Cutoff
 import TauCeti.Analysis.Normed.Lp.SmoothApprox
 import TauCeti.Analysis.PDE.FundamentalSolution.Euclidean.Hessian
-import TauCeti.MeasureTheory.Function.Lp.IntegralBoundedSmul
+import TauCeti.MeasureTheory.Function.Lp.Integral.BoundedSmul
 
 /-!
 # The kernel of the Hessian Fourier multiplier

@@ -8,19 +8,24 @@ module
 public import Mathlib.Analysis.Normed.Ring.Basic
 public import Mathlib.RingTheory.MvPolynomial.Basic
 public import TauCeti.Algebra.MvPolynomial.HasseDeriv.Basic
+import TauCeti.Analysis.Normed.Ring.Basic
 
 /-!
 # Bounds on evaluated multivariate Hasse derivatives
 
 The Hasse derivative `∂^d (c X^μ)` is `c ∏ₛ choose (μ s) (d s) · X^(μ - d)`, so the triangle
 inequality bounds the norm of `∂^d F` at a point `a` by a product-binomial-weighted sum of the
-coefficient norms of `F`. This file records that bound for a polynomial supported on a finite set
-of exponents, and the resulting entry and row bounds of multivariate jet matrices, whose entries
-are evaluated Hasse derivatives of monomials. The one-variable bounds are in
+coefficient norms of `F`. This file records the resulting bound
+`H ∑_{μ ∈ T} ∏ₛ choose (μ s) (d s) · A s ^ (μ s - d s)` for a polynomial supported on a finite set
+`T` of exponents with coefficients of norm at most `H` on `T`, evaluated at a point with
+`‖a s‖ ≤ A s`, and the bounds on the family `μ ↦ ∂^d (X^μ) (a)` over a finite set of exponents,
+which is a row of a multivariate jet matrix. The one-variable bounds are in
 `TauCeti/Analysis/Polynomial/HasseDerivBound.lean`.
 
-For an absolute value `v : AbsoluteValue R ℝ`, a coarse bound in terms of the coefficient length
-is `AbsoluteValue.apply_eval_hasseDeriv_le`; the norm on a normed commutative ring need not be
+For an absolute value `v : AbsoluteValue R ℝ`, a coarse bound in terms of a bound `B` on the
+absolute values of all coefficients and partial degrees `degreeOf i P ≤ L i`,
+`v((∂^d P)(a)) ≤ B ∏ᵢ (L i + 1) ∏ᵢ (2 max(v(aᵢ), 1)) ^ L i`, is
+`AbsoluteValue.apply_eval_hasseDeriv_le`; the norm on a seminormed commutative ring need not be
 multiplicative, and this file does not restate that bound for it.
 
 ## Main results
@@ -29,11 +34,12 @@ multiplicative, and this file does not restate that bound for it.
   `‖∂^d (c X^μ) (a)‖ ≤ ‖c‖ ∏ₛ choose (μ s) (d s) · ‖a s‖ ^ (μ s - d s)`.
 * `MvPolynomial.norm_eval_hasseDeriv_le`: for `F` supported on a finite set `T` of exponents,
   `‖∂^d F (a)‖ ≤ H ∑_{μ ∈ T} ∏ₛ choose (μ s) (d s) · A s ^ (μ s - d s)`.
-* `MvPolynomial.norm_jet_entry_le`: the bound on one entry of a matrix whose entry in row `r` and
-  column `c` is `∂^(d r) (X ^ μ c)` evaluated at the node `a r`, given a bound on the node.
-* `MvPolynomial.norm_jet_entry_le_sup'` and `MvPolynomial.sum_sq_norm_jet_entry_le`: the row
-  bounds of such a matrix, in the maximum form consumed by row-dependent determinant bounds and
-  the Euclidean form consumed by Hadamard's inequality.
+* `MvPolynomial.norm_eval_hasseDeriv_monomial_one_le_sup'` and
+  `MvPolynomial.sum_sq_norm_eval_hasseDeriv_monomial_one_le`: for `‖a s‖ ≤ A s` and a finite set
+  `T` of exponents, the bounds on the family `μ ↦ ∂^d (X^μ) (a)`, `μ ∈ T`, in the maximum form
+  consumed by row-dependent determinant bounds and the Euclidean form consumed by Hadamard's
+  inequality. The row of the jet `(a, d)` of the jet matrix on `T`-supported polynomials in the
+  monomial basis is this family.
 
 ## References
 
@@ -48,7 +54,7 @@ open Finset
 
 namespace MvPolynomial
 
-variable {R σ : Type*} [NormedCommRing R] [NormOneClass R] [Fintype σ]
+variable {R σ : Type*} [SeminormedCommRing R] [Fintype σ]
 
 /-- The entry bound of a multivariate jet matrix:
 `‖∂^d (c X^μ) (a)‖ ≤ ‖c‖ ∏ₛ choose (μ s) (d s) · ‖a s‖ ^ (μ s - d s)`. -/
@@ -57,26 +63,20 @@ theorem norm_eval_hasseDeriv_monomial_le (d μ : σ →₀ ℕ) (c : R) (a : σ 
       ‖c‖ * ∏ s, ((μ s).choose (d s) : ℝ) * ‖a s‖ ^ (μ s - d s) := by
   rw [hasseDeriv_monomial, eval_monomial,
     Finsupp.prod_fintype _ _ fun s ↦ Nat.choose_zero_right (μ s),
-    Finsupp.prod_fintype _ _ fun s ↦ pow_zero (a s)]
-  simp only [Finsupp.tsub_apply, Nat.cast_prod]
+    Finsupp.prod_fintype _ _ fun s ↦ pow_zero (a s), ← nsmul_eq_mul, smul_mul_assoc]
+  simp only [Finsupp.tsub_apply]
   calc
-    ‖(∏ s, ((μ s).choose (d s) : R)) * c * ∏ s, a s ^ (μ s - d s)‖ ≤
-        ‖∏ s, ((μ s).choose (d s) : R)‖ * ‖c‖ * ‖∏ s, a s ^ (μ s - d s)‖ :=
-      norm_mul₃_le
-    _ ≤ (∏ s, ‖((μ s).choose (d s) : R)‖) * ‖c‖ * ∏ s, ‖a s ^ (μ s - d s)‖ := by
-      gcongr <;> exact Finset.norm_prod_le _ _
-    _ ≤ (∏ s, ((μ s).choose (d s) : ℝ)) * ‖c‖ * ∏ s, ‖a s‖ ^ (μ s - d s) := by
-      gcongr with s _
-      · rw [← nsmul_one]
-        exact norm_nsmul_le.trans (by simp)
-      · exact norm_pow_le _ _
+    _ ≤ ((∏ s, (μ s).choose (d s) : ℕ) : ℝ) * ‖c * ∏ s, a s ^ (μ s - d s)‖ := norm_nsmul_le
+    _ ≤ ((∏ s, (μ s).choose (d s) : ℕ) : ℝ) * (‖c‖ * ∏ s, ‖a s‖ ^ (μ s - d s)) := by
+      gcongr
+      exact Finset.norm_mul_prod_pow_le _ _ _ _
     _ = ‖c‖ * ∏ s, ((μ s).choose (d s) : ℝ) * ‖a s‖ ^ (μ s - d s) := by
-      rw [prod_mul_distrib]
+      rw [prod_mul_distrib, Nat.cast_prod]
       ring
 
 /-- The entry bound of a multivariate jet matrix with coefficient `1`:
 `‖∂^d (X^μ) (a)‖ ≤ ∏ₛ choose (μ s) (d s) · ‖a s‖ ^ (μ s - d s)`. -/
-theorem norm_eval_hasseDeriv_monomial_one_le (d μ : σ →₀ ℕ) (a : σ → R) :
+theorem norm_eval_hasseDeriv_monomial_one_le [NormOneClass R] (d μ : σ →₀ ℕ) (a : σ → R) :
     ‖eval a (hasseDeriv d (monomial μ (1 : R)))‖ ≤
       ∏ s, ((μ s).choose (d s) : ℝ) * ‖a s‖ ^ (μ s - d s) := by
   simpa using norm_eval_hasseDeriv_monomial_le d μ (1 : R) a
@@ -101,41 +101,32 @@ theorem norm_eval_hasseDeriv_le {T : Finset (σ →₀ ℕ)} {F : MvPolynomial �
   · exact hcoeff μ hμ
   · exact ha s
 
-section Jet
+section Row
 
-variable {ρ κ : Type*} {M : ρ → κ → R} {a : ρ → σ → R} {d : ρ → σ →₀ ℕ} {μ : κ → σ →₀ ℕ}
-  (hM : ∀ r c, M r c = eval (a r) (hasseDeriv (d r) (monomial (μ c) 1))) {A : ρ → σ → ℝ}
-  (hA : ∀ r s, ‖a r s‖ ≤ A r s)
-include hM hA
+variable [NormOneClass R] {a : σ → R} {A : σ → ℝ}
 
-/-- The entry bound of a multivariate jet matrix: if the entry in row `r` and column `c` is
-`∂^(d r) (X ^ μ c)` at the node `a r`, with `‖a r s‖ ≤ A r s`, then
-`‖M r c‖ ≤ ∏ₛ choose (μ c s) (d r s) · A r s ^ (μ c s - d r s)`. -/
-theorem norm_jet_entry_le (r : ρ) (c : κ) :
-    ‖M r c‖ ≤ ∏ s, ((μ c s).choose (d r s) : ℝ) * A r s ^ (μ c s - d r s) := by
-  rw [hM]
-  refine (norm_eval_hasseDeriv_monomial_one_le _ _ _).trans ?_
-  gcongr with s
-  exact hA r s
+/-- The row bound of a multivariate jet matrix in maximum form: for `‖a s‖ ≤ A s` and an exponent
+`μ` in a finite set `T`, `‖∂^d (X^μ) (a)‖` is at most the maximum over `ν ∈ T` of
+`∏ₛ choose (ν s) (d s) · A s ^ (ν s - d s)`. -/
+theorem norm_eval_hasseDeriv_monomial_one_le_sup' (ha : ∀ s, ‖a s‖ ≤ A s) (d : σ →₀ ℕ)
+    {T : Finset (σ →₀ ℕ)} {μ : σ →₀ ℕ} (hμ : μ ∈ T) :
+    ‖eval a (hasseDeriv d (monomial μ (1 : R)))‖ ≤
+      T.sup' ⟨μ, hμ⟩ fun ν ↦ ∏ s, ((ν s).choose (d s) : ℝ) * A s ^ (ν s - d s) :=
+  (norm_eval_hasseDeriv_monomial_one_le d μ a).trans <|
+    le_sup'_of_le _ hμ (by gcongr with s; exact ha s)
 
-/-- The row bound of a multivariate jet matrix in maximum form: if the entry in row `r` and
-column `c` is `∂^(d r) (X ^ μ c)` at the node `a r`, with `‖a r s‖ ≤ A r s`, then every entry of
-row `r` is at most the maximum over the columns of `∏ₛ choose (μ c s) (d r s) ·
-A r s ^ (μ c s - d r s)`. -/
-theorem norm_jet_entry_le_sup' [Fintype κ] [Nonempty κ] (r : ρ) (c : κ) :
-    ‖M r c‖ ≤ univ.sup' univ_nonempty fun c' ↦
-      ∏ s, ((μ c' s).choose (d r s) : ℝ) * A r s ^ (μ c' s - d r s) :=
-  (norm_jet_entry_le hM hA r c).trans <| le_sup'_of_le _ (mem_univ c) le_rfl
+/-- The row bound of a multivariate jet matrix in Euclidean form: for `‖a s‖ ≤ A s` and a finite
+set `T` of exponents, `∑_{μ ∈ T} ‖∂^d (X^μ) (a)‖ ^ 2` is at most
+`∑_{μ ∈ T} (∏ₛ choose (μ s) (d s) · A s ^ (μ s - d s)) ^ 2`. -/
+theorem sum_sq_norm_eval_hasseDeriv_monomial_one_le (ha : ∀ s, ‖a s‖ ≤ A s) (d : σ →₀ ℕ)
+    (T : Finset (σ →₀ ℕ)) :
+    ∑ μ ∈ T, ‖eval a (hasseDeriv d (monomial μ (1 : R)))‖ ^ 2 ≤
+      ∑ μ ∈ T, (∏ s, ((μ s).choose (d s) : ℝ) * A s ^ (μ s - d s)) ^ 2 :=
+  sum_le_sum fun μ _ ↦ by
+    gcongr
+    exact (norm_eval_hasseDeriv_monomial_one_le d μ a).trans
+      (by gcongr with s; exact ha s)
 
-/-- The row bound of a multivariate jet matrix in Euclidean form: if the entry in row `r` and
-column `c` is `∂^(d r) (X ^ μ c)` at the node `a r`, with `‖a r s‖ ≤ A r s`, then the squared
-Euclidean length of row `r` is at most
-`∑_c (∏ₛ choose (μ c s) (d r s) · A r s ^ (μ c s - d r s)) ^ 2`. -/
-theorem sum_sq_norm_jet_entry_le [Fintype κ] (r : ρ) :
-    ∑ c, ‖M r c‖ ^ 2 ≤
-      ∑ c, (∏ s, ((μ c s).choose (d r s) : ℝ) * A r s ^ (μ c s - d r s)) ^ 2 :=
-  sum_le_sum fun c _ ↦ by gcongr; exact norm_jet_entry_le hM hA r c
-
-end Jet
+end Row
 
 end MvPolynomial

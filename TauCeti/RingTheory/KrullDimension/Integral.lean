@@ -42,6 +42,8 @@ criterion supplies injectivity of finite local maps before applying going down o
   integral extension.
 * `RingHom.injective_of_isIntegral_of_ringKrullDim_le`: an integral homomorphism from a
   finite-dimensional domain is injective if the target has at least the source's dimension.
+* `Ideal.height_le_height_under_of_isIntegral`: along an integral extension, a prime has height at
+  most that of its contraction.
 * `Ideal.height_eq_height_under_of_isIntegral_of_forall_isPrime`: along an integral extension,
   heights of all ideals are the heights of their contractions as soon as that holds for primes.
 * `Ideal.height_eq_height_under_of_isIntegral_of_hasGoingDown`: an integral extension with
@@ -76,6 +78,15 @@ theorem primeSpectrumComap_strictMono_of_isIntegral [Algebra.IsIntegral R S] :
     StrictMono (PrimeSpectrum.comap (algebraMap R S)) := fun P Q h ↦ by
   rw [← PrimeSpectrum.asIdeal_lt_asIdeal, PrimeSpectrum.comap_asIdeal, PrimeSpectrum.comap_asIdeal]
   exact Ideal.IsIntegral.under_lt_under ((PrimeSpectrum.asIdeal_lt_asIdeal P Q).2 h)
+
+/-- Along an integral extension, a prime has height at most that of its contraction (a consequence
+of incomparability). -/
+theorem _root_.Ideal.height_le_height_under_of_isIntegral [Algebra.IsIntegral R S] (Q : Ideal S)
+    [Q.IsPrime] : Q.height ≤ (Q.under R).height := by
+  have h := Order.height_le_height_apply_of_strictMono (PrimeSpectrum.comap (algebraMap R S))
+    primeSpectrumComap_strictMono_of_isIntegral (⟨Q, inferInstance⟩ : PrimeSpectrum S)
+  rw [← PrimeSpectrum.height_eq_orderHeight, ← PrimeSpectrum.height_eq_orderHeight] at h
+  exact h
 
 /-- **Heights of ideals from heights of primes along an integral extension.** If the height of
 every prime of `S` is the height of the prime below it, then the same holds for every ideal of

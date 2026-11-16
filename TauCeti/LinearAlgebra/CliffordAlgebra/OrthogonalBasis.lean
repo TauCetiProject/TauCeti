@@ -68,8 +68,9 @@ of the pairing: if every `Q (b i)` is nonnegative then `τ (reverse x * x) ≥ 0
   the product of a generator, respectively a basis vector `e_s`, with a basis vector `e_t` is
   `(-1) ^ N * (∏ i ∈ s ∩ t, Q (b i)) • e_{s ∆ t}`, where `N` counts the pairs of an index of `s`
   and a smaller index of `t`.
-* `CliffordAlgebra.basis_mul_basis_eq_or` and `CliffordAlgebra.basis_mul_self_eq_or`: signed
-  multiplication and square laws when the generators square to `±1`.
+* `CliffordAlgebra.basis_mul_basis_eq_or`, `CliffordAlgebra.mul_eq_or_of_eq_basis_or` and
+  `CliffordAlgebra.basis_mul_self_eq_or`: signed multiplication and square laws when the
+  generators square to `±1`.
 * `CliffordAlgebra.basis_commuteOrNeg`: basis products commute up to sign for every
   orthogonal basis.
 * `CliffordAlgebra.isUnit_basis`: a basis monomial is a unit when its generator squares are units.
@@ -362,6 +363,16 @@ theorem basis_mul_basis_eq_or (hb : (QuadraticMap.associated Q).IsOrthoᵢ b)
       basis Q b s * basis Q b t = -basis Q b (s ∆ t) := by
   rw [basis_mul_basis hb]
   rcases coeff_eq_one_or_neg_one hQ s t with hc | hc <;> rw [hc] <;> simp
+
+/-- When every generator squares to `±1`, the product of signed basis vectors `±e_s` and `±e_t`
+is `±e_{s ∆ t}`. -/
+theorem mul_eq_or_of_eq_basis_or (hb : (QuadraticMap.associated Q).IsOrthoᵢ b)
+    (hQ : ∀ i, Q (b i) = 1 ∨ Q (b i) = -1) {x y : CliffordAlgebra Q} {s t : Finset I}
+    (hx : x = basis Q b s ∨ x = -basis Q b s) (hy : y = basis Q b t ∨ y = -basis Q b t) :
+    x * y = basis Q b (s ∆ t) ∨ x * y = -basis Q b (s ∆ t) := by
+  rcases basis_mul_basis_eq_or hb hQ s t with hst | hst <;>
+    rcases hx with rfl | rfl <;> rcases hy with rfl | rfl <;>
+    simp only [neg_mul, mul_neg, neg_neg, hst, true_or, or_true]
 
 /-- For an orthogonal basis, two basis-vector products commute or anticommute. -/
 theorem basis_commuteOrNeg

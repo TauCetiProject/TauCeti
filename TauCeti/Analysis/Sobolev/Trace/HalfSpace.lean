@@ -81,6 +81,7 @@ private theorem norm_hyperplaneTrace_ofTestFunction_rpow_le (hp : p ≠ ∞) (a 
     filter_upwards [W1p.hyperplaneTrace_ofTestFunction_apply_ae hp a φ] with y hy
     rw [hy, Real.norm_eq_abs]
   have key := integral_hyperplane_abs_rpow_le_integral_halfSpace hu φ.hasCompactSupport a hr
+  simp only [WithLp.ofLp_fst] at key
   rw [← coe_normalHalfSpace a, integral_rpow_energy_eq_of_ae_eq hp hv hg, ← htr] at key
   exact key
 

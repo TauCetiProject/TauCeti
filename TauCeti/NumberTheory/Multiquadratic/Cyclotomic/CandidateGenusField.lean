@@ -9,6 +9,7 @@ public import TauCeti.NumberTheory.Multiquadratic.Cyclotomic.FundamentalDiscrimi
 public import TauCeti.NumberTheory.Multiquadratic.Cyclotomic.GenusCharGroup
 public import TauCeti.NumberTheory.Multiquadratic.CandidateGenusField.Real.FixedField
 public import TauCeti.NumberTheory.NumberField.Cyclotomic.MaximalRealSubfield
+import TauCeti.NumberTheory.NumberField.ComplexConjugation.MaximalRealSubfield
 
 /-!
 # The candidate genus field as a cyclotomic character subfield
@@ -104,7 +105,7 @@ theorem map_candidateGenusFieldReal_eq_map_characterSubfield_inf_evenSubgroup
         star (y : ℂ) = y := by
     rw [← IntermediateField.mem_toSubfield,
       IsCyclotomicExtension.Rat.toSubfield_intermediateFieldEquivSubgroupChar_symm_evenSubgroup,
-      IsCyclotomicExtension.Rat.mem_maximalRealSubfield_iff_star_eq N K.val.toRingHom,
+      IsAbelianGalois.mem_maximalRealSubfield_iff_star_eq K.val.toRingHom,
       AlgHom.toRingHom_eq_coe, RingHom.coe_coe, IntermediateField.coe_val]
   ext x
   rw [mem_map_candidateGenusFieldReal_iff,

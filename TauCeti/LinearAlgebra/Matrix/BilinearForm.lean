@@ -39,8 +39,15 @@ its span. An isometry `Matrix.toBilin' G ≅ Matrix.toBilin' G'` turns a family 
 into one with Gram matrix `G'` and the same span, and the Gram determinant of the span of two
 orthogonal such families is determined up to squares by their Gram matrices.
 
+Pullback along a rectangular matrix preserves alternation over a commutative semiring. Over a
+commutative ring, alternation is equivalent to skew-symmetry together with a zero diagonal;
+the diagonal condition remains necessary in characteristic two.
+
 ## Main results
 
+* `Matrix.isAlt_toBilin'_transpose_mul_mul`: rectangular pullback preserves alternation.
+* `Matrix.isAlt_toBilin'_iff`: alternation is skew-symmetry and a zero diagonal over any
+  commutative ring.
 * `Matrix.isAlt_toBilin'_one_iff`: for `R` nontrivial, the standard form on `n → R` is alternating
   exactly when `n` is empty.
 * `TauCeti.isUnit_det_hyperbolic`: the hyperbolic plane `!![0, 1; 1, 0]` is unimodular over every
@@ -86,6 +93,65 @@ theorem isAlt_toBilin'_one_iff {n R : Type*} [Fintype n] [DecidableEq n] [CommSe
     [Nontrivial R] : (toBilin' (1 : Matrix n n R)).IsAlt ↔ IsEmpty n := by
   refine ⟨fun h => ⟨fun i => by simpa using h (Pi.single i 1)⟩, fun hn x => ?_⟩
   simp [Subsingleton.elim x 0]
+
+section BilinearAlternation
+
+variable {R I J : Type*} [CommSemiring R] [DecidableEq I] [Fintype I]
+
+/-- Pulling back an alternating matrix form along a rectangular matrix preserves alternation. -/
+theorem isAlt_toBilin'_transpose_mul_mul [DecidableEq J] [Fintype J]
+    {Λ : Matrix I I R} (hΛ : Λ.toBilin'.IsAlt) (E : Matrix I J R) :
+    (Eᵀ * Λ * E).toBilin'.IsAlt := by
+  rw [← Matrix.toBilin'_comp]
+  exact fun x ↦ hΛ (E.toLin' x)
+
+/-- Every diagonal entry of an alternating matrix form is zero, over any commutative semiring. -/
+theorem apply_self_eq_zero_of_isAlt_toBilin' {Λ : Matrix I I R}
+    (hΛ : Λ.toBilin'.IsAlt) (i : I) : Λ i i = 0 := by
+  simpa using hΛ.self_eq_zero (Pi.single i 1)
+
+end BilinearAlternation
+
+section BilinearAlternationRing
+
+variable {R I : Type*} [CommRing R] [DecidableEq I] [Fintype I]
+
+/-- Transposing the arguments of an alternating matrix form negates its entry. -/
+theorem neg_apply_eq_of_isAlt_toBilin' {Λ : Matrix I I R} (hΛ : Λ.toBilin'.IsAlt) (i j : I) :
+    -Λ i j = Λ j i := by
+  simpa using hΛ.neg_eq (Pi.single i 1) (Pi.single j 1)
+
+/-- The matrix of an alternating form is the negative of its transpose in every characteristic. -/
+theorem transpose_eq_neg_of_isAlt_toBilin' {Λ : Matrix I I R}
+    (hΛ : Λ.toBilin'.IsAlt) : Λᵀ = -Λ := by
+  ext i j
+  exact (neg_apply_eq_of_isAlt_toBilin' hΛ i j).symm
+
+/-- Alternation is equivalent to skew-symmetry together with vanishing diagonal. The diagonal
+condition is essential in characteristic two. -/
+theorem isAlt_toBilin'_iff (Λ : Matrix I I R) :
+    Λ.toBilin'.IsAlt ↔ Λᵀ = -Λ ∧ ∀ i, Λ i i = 0 := by
+  refine ⟨fun h ↦ ⟨transpose_eq_neg_of_isAlt_toBilin' h,
+    apply_self_eq_zero_of_isAlt_toBilin' h⟩, ?_⟩
+  rintro ⟨ht, hd⟩ x
+  have hsum : (∑ p : I × I, x p.1 * Λ p.1 p.2 * x p.2) = 0 := by
+    apply Finset.sum_ninvolution Prod.swap
+    · rintro ⟨i, j⟩
+      have hij : Λ j i = -Λ i j := congr_fun (congr_fun ht i) j
+      simp only [Prod.fst_swap, Prod.snd_swap]
+      rw [hij]
+      ring
+    · rintro ⟨i, j⟩ hf he
+      have hij : j = i := congrArg Prod.fst he
+      subst j
+      exact hf (by simp [hd])
+    · intro p
+      exact Finset.mem_univ _
+    · intro p
+      exact Prod.swap_swap p
+  simpa only [Matrix.toBilin'_apply, Fintype.sum_prod_type] using hsum
+
+end BilinearAlternationRing
 
 end Matrix
 
@@ -291,23 +357,7 @@ private theorem Equivalent.of_toMatrix_mul_eq_smul {B₁ D₁ : BilinForm R M₁
     ext x y
     simp [e.map_app]
   -- The candidate Gram matrix `P' * H₂ * P'ᵀ` of `D₂` pulled back is `D₁`'s, after cancelling `c`.
-  have hX : P' * D₂.toMatrix b₂ * P'ᵀ = D₁.toMatrix b₁ := by
-    have hHG := (Matrix.mul_eq_smul_one_comm hc).mp h₁
-    have key : c • (P' * D₂.toMatrix b₂ * P'ᵀ) = c • D₁.toMatrix b₁ := by
-      calc c • (P' * D₂.toMatrix b₂ * P'ᵀ)
-          = D₁.toMatrix b₁ * B₁.toMatrix b₁ * (P' * D₂.toMatrix b₂ * P'ᵀ) := by
-            rw [hHG, Matrix.smul_mul, Matrix.one_mul]
-        _ = D₁.toMatrix b₁ * Pᵀ * (B₂.toMatrix b₂ * D₂.toMatrix b₂) * P'ᵀ := by
-            rw [hG]
-            simp only [Matrix.mul_assoc]
-            rw [← Matrix.mul_assoc P P', hPP', Matrix.one_mul]
-        _ = c • D₁.toMatrix b₁ := by
-            rw [h₂, Matrix.mul_smul, Matrix.mul_one, Matrix.smul_mul, Matrix.mul_assoc,
-              ← Matrix.transpose_mul, hP'P, Matrix.transpose_one, Matrix.mul_one]
-    ext i j
-    have := congrFun (congrFun key i) j
-    rwa [Matrix.smul_apply, Matrix.smul_apply, smul_eq_mul, smul_eq_mul,
-      mul_cancel_left_mem_nonZeroDivisors hc] at this
+  have hX := Matrix.mul_mul_transpose_eq_of_mul_eq_smul_one hc hPP' hG h₁ h₂
   let f : M₁ ≃ₗ[R] M₂ := LinearEquiv.ofLinearMap (Matrix.toLin b₁ b₂ P'ᵀ) (Matrix.toLin b₂ b₁ Pᵀ)
     (by rw [← Matrix.toLin_mul, ← Matrix.transpose_mul, hPP', Matrix.transpose_one,
       Matrix.toLin_one])

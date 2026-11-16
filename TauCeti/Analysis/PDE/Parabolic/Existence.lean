@@ -486,7 +486,6 @@ theorem exists_memLp_forall_setIntegral_eq_add_inner_of_ae_eq [CompleteSpace V]
     (ι : V →L[ℝ] H) (hab : a ≤ b) {B : ℝ → V → V → ℝ}
     (hAB : ∀ᵐ t ∂volume.restrict (Ioo a b), ∀ u v, A t u v = B t u v)
     (hB : ∀ u v, AEStronglyMeasurable (fun t => B t u v) (volume.restrict (Ioo a b)))
-    (hΛ : 0 ≤ Λ)
     (hB_bound : ∀ᵐ t ∂volume.restrict (Ioo a b), ∀ u v, ‖B t u v‖ ≤ Λ * (‖u‖ * ‖v‖))
     (hα : 0 < α)
     (hB_garding : ∀ᵐ t ∂volume.restrict (Ioo a b), ∀ v, α * ‖v‖ ^ 2 - β * ‖ι v‖ ^ 2 ≤ B t v v)
@@ -495,13 +494,13 @@ theorem exists_memLp_forall_setIntegral_eq_add_inner_of_ae_eq [CompleteSpace V]
       ∀ φ : ℝ → V, ContDiff ℝ 1 φ → φ b = 0 →
         ∫ t in Ioo a b, (B t (u t) (φ t) - ⟪ι (u t), ι (deriv φ t)⟫_ℝ) =
           (∫ t in Ioo a b, f t (φ t)) + ⟪u₀, ι (φ a)⟫_ℝ := by
-  obtain ⟨u, hu, hueq⟩ := exists_memLp_forall_setIntegral_eq_add_inner (A := A) hab
+  obtain ⟨u, hu, hueq⟩ := exists_memLp_forall_setIntegral_eq_add_inner (A := A) (Λ := max Λ 0) hab
     (fun u v => (hB u v).congr (hAB.mono fun t ht => (ht u v).symm))
     (by
       filter_upwards [hAB, hB_bound] with t hABt hBt
-      refine (A t).opNorm_le_bound₂ hΛ fun u v => ?_
+      refine (A t).opNorm_le_bound₂ (le_max_right Λ 0) fun u v => ?_
       rw [hABt, mul_assoc]
-      exact hBt u v)
+      exact (hBt u v).trans (by gcongr; exact le_max_left _ _))
     hα (by
       filter_upwards [hAB, hB_garding] with t hABt hBt v
       rw [hABt]
@@ -692,7 +691,6 @@ theorem exists_hasWeakLineDerivOn_gelfandDual_of_ae_eq [CompleteSpace V]
     [TopologicalSpace.SeparableSpace V] [CompleteSpace H] (hι : DenseRange ι) (hab : a ≤ b)
     {B : ℝ → V → V → ℝ} (hAB : ∀ᵐ t ∂volume.restrict (Ioo a b), ∀ u v, A t u v = B t u v)
     (hB : ∀ u v, AEStronglyMeasurable (fun t => B t u v) (volume.restrict (Ioo a b)))
-    (hΛ : 0 ≤ Λ)
     (hB_bound : ∀ᵐ t ∂volume.restrict (Ioo a b), ∀ u v, ‖B t u v‖ ≤ Λ * (‖u‖ * ‖v‖))
     (hα : 0 < α)
     (hB_garding : ∀ᵐ t ∂volume.restrict (Ioo a b), ∀ v, α * ‖v‖ ^ 2 - β * ‖ι v‖ ^ 2 ≤ B t v v)
@@ -703,13 +701,14 @@ theorem exists_hasWeakLineDerivOn_gelfandDual_of_ae_eq [CompleteSpace V]
       (∀ᵐ t ∂volume.restrict (Ioo a b), ∀ v, u' t v + B t (u t) v = f t v) ∧
       ContinuousOn w (Icc a b) ∧ (fun t => ι (u t)) =ᵐ[volume.restrict (Ioo a b)] w ∧
       w a = u₀ := by
-  obtain ⟨u, w, hu, hu', hd, hw, hae, hw₀⟩ := exists_hasWeakLineDerivOn_gelfandDual (A := A) hι hab
+  obtain ⟨u, w, hu, hu', hd, hw, hae, hw₀⟩ :=
+    exists_hasWeakLineDerivOn_gelfandDual (A := A) (Λ := max Λ 0) hι hab
     (fun u v => (hB u v).congr (hAB.mono fun t ht => (ht u v).symm))
     (by
       filter_upwards [hAB, hB_bound] with t hABt hBt
-      refine (A t).opNorm_le_bound₂ hΛ fun u v => ?_
+      refine (A t).opNorm_le_bound₂ (le_max_right Λ 0) fun u v => ?_
       rw [hABt, mul_assoc]
-      exact hBt u v)
+      exact (hBt u v).trans (by gcongr; exact le_max_left _ _))
     hα (by
       filter_upwards [hAB, hB_garding] with t hABt hBt v
       rw [hABt]

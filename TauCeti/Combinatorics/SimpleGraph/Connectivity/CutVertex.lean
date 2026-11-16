@@ -64,6 +64,27 @@ theorem isCutVertex_iff_exists_forall_walk_mem_support {G : SimpleGraph V} {v : 
     simpa using hz
   · exact ⟨v, by simpa using h p.toSimpleGraph, rfl⟩
 
+/-- Graph isomorphisms preserve cut vertices. -/
+theorem IsCutVertex.map {W : Type*} {G : SimpleGraph V} {H : SimpleGraph W} {v : V}
+    (h : G.IsCutVertex v) (e : G ≃g H) : H.IsCutVertex (e v) := by
+  obtain ⟨a, b, hav, hbv, hab, hall⟩ :=
+    isCutVertex_iff_exists_forall_walk_mem_support.mp h
+  refine isCutVertex_iff_exists_forall_walk_mem_support.mpr
+    ⟨e a, e b, e.injective.ne hav, e.injective.ne hbv, hab.map e.toHom, fun p ↦ ?_⟩
+  have hv := hall ((p.map e.symm.toHom).copy (e.symm_apply_apply a) (e.symm_apply_apply b))
+  simp only [Walk.support_copy, Walk.support_map, List.mem_map] at hv
+  obtain ⟨w, hw, hwv⟩ := hv
+  simpa [← hwv] using hw
+
+/-- A vertex is a cut vertex if and only if its image under a graph isomorphism is. -/
+@[simp]
+theorem Iso.isCutVertex_iff {W : Type*} {G : SimpleGraph V} {H : SimpleGraph W}
+    (e : G ≃g H) {v : V} : H.IsCutVertex (e v) ↔ G.IsCutVertex v := by
+  constructor
+  · intro h
+    simpa using h.map e.symm
+  · exact fun h ↦ h.map e
+
 /-- A cut vertex is not isolated. -/
 theorem IsCutVertex.not_isIsolated {G : SimpleGraph V} {v : V} (h : G.IsCutVertex v) :
     ¬G.IsIsolated v := by
