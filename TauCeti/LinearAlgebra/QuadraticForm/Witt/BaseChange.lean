@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.LinearAlgebra.QuadraticForm.RegularFormClass.BaseChange
-public import TauCeti.LinearAlgebra.QuadraticForm.RegularFormClass.LowRank
 public import TauCeti.LinearAlgebra.QuadraticForm.Witt.Clifford
 public import TauCeti.LinearAlgebra.QuadraticForm.Witt.FundamentalIdeal
 public import TauCeti.RingTheory.Ideal.Operations
@@ -29,6 +28,8 @@ Clifford invariant of a Witt class forward to the extension field.
 * `TauCeti.RegularFormClass.wittIndex_le_wittIndex_baseChange`: the Witt index cannot decrease.
 * `TauCeti.RegularFormClass.wittIndex_baseChange_eq_iff`: the index is unchanged exactly when the
   extended anisotropic part is anisotropic.
+* `TauCeti.RegularFormClass.anisotropicPart_baseChange_eq_iff`: the anisotropic part commutes
+  with base change exactly when the extended anisotropic part is anisotropic.
 * `TauCeti.RegularFormClass.anisotropicPart_baseChange_mk_binary_ne`: the anisotropic part of a
   plane that becomes hyperbolic does not commute with base change.
 * `QuadraticForm.wittIndex_le_wittIndex_baseChange`: the corresponding inequality for a regular
@@ -119,6 +120,18 @@ theorem RegularFormClass.wittIndex_baseChange_eq_iff (c : RegularFormClass K) :
     have hzero := RegularFormClass.wittIndex_eq_zero_iff.mpr ha
     omega
 
+/-- The anisotropic part commutes with base change exactly when the extended anisotropic part
+remains anisotropic. -/
+theorem RegularFormClass.anisotropicPart_baseChange_eq_iff (c : RegularFormClass K) :
+    letI : Invertible (2 : L) :=
+      (Invertible.map (algebraMap K L) 2).copy 2 (map_ofNat _ _).symm
+    RegularFormClass.anisotropicPart (c.baseChange L) = c.anisotropicPart.baseChange L ↔
+      RegularFormClass.Anisotropic (c.anisotropicPart.baseChange L) := by
+  let _ : Invertible (2 : L) :=
+    (Invertible.map (algebraMap K L) 2).copy 2 (map_ofNat _ _).symm
+  exact ⟨fun h ↦ h ▸ RegularFormClass.anisotropic_anisotropicPart _,
+    c.anisotropicPart_baseChange⟩
+
 section Binary
 
 variable [Invertible (2 : L)]
@@ -135,14 +148,12 @@ theorem RegularFormClass.anisotropicPart_baseChange_mk_binary_ne {a b : Kˣ}
         (RegularFormClass.baseChange L (Quotient.mk (regularFormSetoid K) ⟨2, ![a, b]⟩)) ≠
       RegularFormClass.baseChange L
         (RegularFormClass.anisotropicPart (Quotient.mk (regularFormSetoid K) ⟨2, ![a, b]⟩)) := by
-  replace hL : IsSquare
-      (-(Units.map (algebraMap K L).toMonoidHom a * Units.map (algebraMap K L).toMonoidHom b)) :=
-    Units.isSquare_coe_iff.mp (by simpa using hL)
-  rw [RegularFormClass.anisotropicPart_mk_binary_of_not_isSquare hK,
-    RegularFormClass.baseChange_mk_binary,
-    RegularFormClass.anisotropicPart_mk_binary_of_isSquare hL]
-  intro h
-  simpa using congrArg RegularFormClass.rank h
+  obtain rfl : ‹Invertible (2 : L)› =
+      (Invertible.map (algebraMap K L) 2).copy 2 (map_ofNat _ _).symm := Subsingleton.elim _ _
+  rw [Ne, RegularFormClass.anisotropicPart_baseChange_eq_iff,
+    RegularFormClass.anisotropicPart_mk_binary_of_not_isSquare hK,
+    RegularFormClass.baseChange_mk_binary, RegularFormClass.anisotropic_mk_binary_iff, not_not]
+  exact Units.isSquare_coe_iff.mp (by simpa using hL)
 
 end Binary
 
