@@ -21,8 +21,8 @@ excision (`TauCeti.AlgebraicGeometry.SpecialFiber.Picard`) and following
 [Stacks, Chapter 55](https://stacks.math.columbia.edu/tag/0C2P) (specifically
 [Tag 0CEI](https://stacks.math.columbia.edu/tag/0CEI)) and Liu, Section 9.1, this file establishes:
 
-* **Multidegrees and weighted intersection matrix** (`reducedSpecialFiberMultidegree`,
-  `specialFiberMultidegreeOnFiber`, `specialFiberMultidegree`,
+* **Multidegrees and weighted intersection matrix** (`SpecialFiberCohomologyFiniteDimensional`,
+  `reducedSpecialFiberMultidegree`, `specialFiberMultidegreeOnFiber`, `specialFiberMultidegree`,
   `specialFiberWeightedIntersectionMatrix`, `specialFiberMultidegree_prod_zpow`): compatible
   multidegree homomorphisms across `(X_s)_red`, `X_s`, and `X` sending `∏_i [𝒪_X(C_i)]^{v_i}` to
   `v ᵥ* A'` where `a'_{ij} = a_{ij} / w_j`.
@@ -62,6 +62,16 @@ universe u
 
 namespace AlgebraicGeometry.Scheme.Hom
 
+/-- Every irreducible component `C` of the special fibre of `toBase` has finite-dimensional
+`n`-th cohomology `H^n(C, 𝒪_C)` over the residue field of `R`. -/
+abbrev SpecialFiberCohomologyFiniteDimensional {R : Type u} [CommRing R] [IsLocalRing R]
+    {X : Scheme.{u}} (toBase : X ⟶ Spec (.of R)) (n : ℕ) : Prop :=
+  ∀ (η : CodimensionOnePoint X) (hc : toBase η = closedPoint R),
+    letI :=
+      subschemeOverResidueField (toBase.ker_specialFiberι_le_vanishingIdeal_closure_singleton hc)
+    FiniteDimensional (ResidueField R) (Cohomology (InvertibleSheaf.trivial
+      (vanishingIdeal ⟨closure {(η : X)}, isClosed_closure⟩).subscheme).obj n)
+
 /-! ### Multidegrees across `X`, `X_s`, and `(X_s)_red`, and the weighted intersection matrix -/
 
 section Multidegree
@@ -92,16 +102,8 @@ theorem specialFiberWeightedIntersectionMatrix_apply [TauCeti.AlgebraicGeometry.
 
 variable [IsProper toBase] (hX : ∀ x : X, coheight x ≤ 2)
   (hη : toBase (genericPoint X) ≠ closedPoint R)
-  (h₀ : ∀ (η : CodimensionOnePoint X) (hc : toBase η = closedPoint R),
-    letI :=
-      subschemeOverResidueField (toBase.ker_specialFiberι_le_vanishingIdeal_closure_singleton hc)
-    FiniteDimensional (ResidueField R) (Cohomology (InvertibleSheaf.trivial
-      (vanishingIdeal ⟨closure {(η : X)}, isClosed_closure⟩).subscheme).obj 0))
-  (h₁ : ∀ (η : CodimensionOnePoint X) (hc : toBase η = closedPoint R),
-    letI :=
-      subschemeOverResidueField (toBase.ker_specialFiberι_le_vanishingIdeal_closure_singleton hc)
-    FiniteDimensional (ResidueField R) (Cohomology (InvertibleSheaf.trivial
-      (vanishingIdeal ⟨closure {(η : X)}, isClosed_closure⟩).subscheme).obj 1))
+  (h₀ : toBase.SpecialFiberCohomologyFiniteDimensional 0)
+  (h₁ : toBase.SpecialFiberCohomologyFiniteDimensional 1)
 
 /-- Multidegree homomorphism `Additive (LineBundleClass Y) →+ (_ → ℤ)` for a scheme `Y` receiving
 morphisms from the special-fibre components `C_i`. -/
@@ -365,12 +367,19 @@ section RegularMatrix
 variable [TauCeti.AlgebraicGeometry.IsRegular X]
 
 include h₀ h₁ in
+/-- Local wrapper around `specialFiberIntersectionMatrix_isSymm` to avoid repeatedly unfolding
+`SpecialFiberCohomologyFiniteDimensional` in the kernel. -/
+private lemma specialFiberIntersectionMatrix_isSymm_of :
+    (toBase.specialFiberIntersectionMatrix hX hη).IsSymm :=
+  toBase.specialFiberIntersectionMatrix_isSymm hX hη h₀ h₁
+
+include h₀ h₁ in
 /-- The weight `w_j` of `C_j` divides every entry `a_{ij}` in column `j` of the intersection
 matrix. -/
 theorem specialFiberWeight_dvd_specialFiberIntersectionMatrix_right (i j) :
     (toBase.specialFiberWeight ((mem_toFinset _).mp j.2) : ℤ) ∣
       toBase.specialFiberIntersectionMatrix hX hη i j := by
-  rw [(toBase.specialFiberIntersectionMatrix_isSymm hX hη h₀ h₁).apply j i]
+  rw [(toBase.specialFiberIntersectionMatrix_isSymm_of hX hη h₀ h₁).apply j i]
   exact toBase.specialFiberWeight_dvd_specialFiberIntersectionMatrix hX hη j i
 
 include h₀ h₁ in
@@ -392,7 +401,7 @@ theorem specialFiberMultidegree_inv_mk_toInvertibleSheaf (i) :
       toBase.specialFiberWeightedIntersectionMatrix hX hη i := funext fun j ↦ by
   rw [specialFiberMultidegree_apply, toMul_ofMul,
     ← toBase.specialFiberIntersectionMatrix_apply hX hη j i,
-    (toBase.specialFiberIntersectionMatrix_isSymm hX hη h₀ h₁).apply i j,
+    (toBase.specialFiberIntersectionMatrix_isSymm_of hX hη h₀ h₁).apply i j,
     specialFiberWeightedIntersectionMatrix_apply]
 
 /-- Simp normal form of `specialFiberMultidegree_inv_mk_toInvertibleSheaf` after
@@ -431,16 +440,8 @@ variable {R : Type u} (K : Type u) [CommRing R] [IsDomain R] [IsDiscreteValuatio
   [CommRing K] [Algebra R K] [IsFractionRing R K] {X : Scheme.{u}} (toBase : X ⟶ Spec (.of R))
   [IsIntegral X] [IsNoetherian X] [TauCeti.AlgebraicGeometry.IsRegular X] [IsProper toBase]
   (hX : ∀ x : X, coheight x ≤ 2) (hη : toBase (genericPoint X) ≠ closedPoint R)
-  (h₀ : ∀ (η : CodimensionOnePoint X) (hc : toBase η = closedPoint R),
-    letI :=
-      subschemeOverResidueField (toBase.ker_specialFiberι_le_vanishingIdeal_closure_singleton hc)
-    FiniteDimensional (ResidueField R) (Cohomology (InvertibleSheaf.trivial
-      (vanishingIdeal ⟨closure {(η : X)}, isClosed_closure⟩).subscheme).obj 0))
-  (h₁ : ∀ (η : CodimensionOnePoint X) (hc : toBase η = closedPoint R),
-    letI :=
-      subschemeOverResidueField (toBase.ker_specialFiberι_le_vanishingIdeal_closure_singleton hc)
-    FiniteDimensional (ResidueField R) (Cohomology (InvertibleSheaf.trivial
-      (vanishingIdeal ⟨closure {(η : X)}, isClosed_closure⟩).subscheme).obj 1))
+  (h₀ : toBase.SpecialFiberCohomologyFiniteDimensional 0)
+  (h₁ : toBase.SpecialFiberCohomologyFiniteDimensional 1)
 
 /-- Every model line-bundle class in the kernel of `Pic(X) → Pic(X_K)` has multidegree in the row
 space of `specialFiberWeightedIntersectionMatrix`. -/
@@ -555,7 +556,7 @@ private lemma exists_rat_mul_specialFiberMultiplicity_of_vecMul_eq_zero
     rw [Pi.zero_apply, zero_mul, Matrix.vecMul, dotProduct, Finset.sum_mul] at hw
     rw [Matrix.mulVec, dotProduct, Pi.zero_apply, ← hw]
     refine Finset.sum_congr rfl fun i _ ↦ ?_
-    rw [(toBase.specialFiberIntersectionMatrix_isSymm hX hη h₀ h₁).apply i j,
+    rw [(toBase.specialFiberIntersectionMatrix_isSymm_of hX hη h₀ h₁).apply i j,
       ← toBase.specialFiberWeightedIntersectionMatrix_mul_specialFiberWeight hX hη h₀ h₁ i j,
       mul_comm _ (v i), ← mul_assoc]
   have hmul : (toBase.specialFiberIntersectionMatrix hX hη).map (Int.cast : ℤ → ℚ) *ᵥ
