@@ -79,6 +79,9 @@ points.
   the kernel of `π`.
 * `TauCeti.Toric.eq_zero_of_mem_ker_facetTorusHom`: the kernel of `π` meets the coordinate
   subtorus of a lattice basis of normals trivially.
+* `TauCeti.Toric.exists_basis_iff_forall_eq_zero_of_mem_ker_facetTorusHom`: conversely, for
+  `p ≠ 0`, normals spanning `V` whose coordinate subtorus meets the kernel of `π` trivially form a
+  lattice basis.
 * `TauCeti.Toric.IsIntegralLattice.isClosed_ker_facetTorusHom`: for an integral lattice, the
   kernel of `π` is closed.
 * `TauCeti.Toric.mem_faceSubtorus_iff_exists_facetTorusHom_eq`: the face subtorus of `s` is the
@@ -261,6 +264,92 @@ theorem eq_zero_of_mem_ker_facetTorusHom (hi : IsIntegralLattice i) {s : Set ι}
   · rw [Pi.zero_apply, ← ht, hcoeff ⟨j, hj⟩, AddCircle.coe_eq_zero_iff]
     exact ⟨b.repr n ⟨j, hj⟩, by simp [mul_comm]⟩
   · exact hθs j hj
+
+/-- If the only element of the kernel of `(ℝ / pℤ)^ι → V / p i(N)` supported on `s` is zero, then
+real angles supported on `s` whose combination of normals lies in `p i(N)` lie in `pℤ`. -/
+private theorem exists_eq_intCast_mul_of_forall_mem_ker {s : Set ι}
+    (h : ∀ θ ∈ (facetTorusHom i u p).ker, (∀ j ∉ s, θ j = 0) → θ = 0) {t : ι → ℝ}
+    (hts : ∀ j ∉ s, t j = 0)
+    (ht : Fintype.linearCombination ℝ (fun j ↦ i (u j)) t ∈ (p • i).range) (j : ι) :
+    ∃ k : ℤ, t j = k * p := by
+  have h0 := h (fun j ↦ (t j : AddCircle p))
+    (by rwa [AddMonoidHom.mem_ker, facetTorusHom_coe, QuotientAddGroup.eq_zero_iff])
+    fun j hj ↦ by rw [hts j hj, AddCircle.coe_zero]
+  obtain ⟨k, hk⟩ := (AddCircle.coe_eq_zero_iff p).1 (congrFun h0 j)
+  exact ⟨k, by rw [← hk, zsmul_eq_mul]⟩
+
+/-- For `p ≠ 0`, if the only element of the kernel of `(ℝ / pℤ)^ι → V / p i(N)` supported on `s`
+is zero, then the normals in `s` are linearly independent: a real relation `r` among them would
+give the elements `[t • r]` of the kernel for all real `t`. -/
+private theorem linearIndepOn_of_forall_mem_ker (hp : p ≠ 0) {s : Set ι}
+    (h : ∀ θ ∈ (facetTorusHom i u p).ker, (∀ j ∉ s, θ j = 0) → θ = 0) :
+    LinearIndepOn ℤ u s := by
+  have hR : LinearIndepOn ℝ (fun j ↦ i (u j)) s := by
+    refine linearIndepOn_iff.2 fun l hl hl0 ↦ Finsupp.ext fun j ↦ by_contra fun hj ↦ ?_
+    have hlc : Fintype.linearCombination ℝ (fun j ↦ i (u j)) l = 0 := by
+      simpa [hl0] using
+        (Finsupp.linearCombination_eq_fintype_linearCombination_apply ℝ (fun j ↦ i (u j)) ⇑l).symm
+    -- Rescale the relation so that its `j`-th coefficient is `p / 2`, which is not in `pℤ`.
+    obtain ⟨k, hk⟩ := exists_eq_intCast_mul_of_forall_mem_ker h (t := (p / (2 * l j)) • ⇑l)
+      (fun j' hj' ↦ by simp [(Finsupp.mem_supported' ℝ l).1 hl j' hj'])
+      ⟨0, by simp [hlc]⟩ j
+    have hj' : l j ≠ 0 := hj
+    simp only [Pi.smul_apply, smul_eq_mul] at hk
+    have h1 : p / 2 = k * p := by rw [← hk]; field_simp
+    have h2 : (1 : ℝ) * p = 2 * k * p := by linarith
+    have : (1 : ℤ) = 2 * k := by exact_mod_cast mul_right_cancel₀ hp h2
+    omega
+  exact LinearIndependent.of_comp i.toIntLinearMap (hR.restrict_scalars' ℤ)
+
+/-- For `p ≠ 0`, if the normals in `s` span `V` over `ℝ` and the only element of the kernel of
+`(ℝ / pℤ)^ι → V / p i(N)` supported on `s` is zero, then the normals in `s` generate `N`: the
+real coordinates of a lattice vector in these normals are integers. -/
+private theorem span_eq_top_of_forall_mem_ker (hi : IsIntegralLattice i) (hp : p ≠ 0)
+    {s : Set ι} (hs : Submodule.span ℝ ((fun j ↦ i (u j)) '' s) = ⊤)
+    (h : ∀ θ ∈ (facetTorusHom i u p).ker, (∀ j ∉ s, θ j = 0) → θ = 0) :
+    Submodule.span ℤ (u '' s) = ⊤ := by
+  classical
+  refine eq_top_iff.2 fun n _ ↦ ?_
+  obtain ⟨l, hl, hln⟩ := (Finsupp.mem_span_image_iff_linearCombination ℝ).1
+    (hs ▸ Submodule.mem_top : i n ∈ Submodule.span ℝ ((fun j ↦ i (u j)) '' s))
+  have hls := (Finsupp.mem_supported' ℝ l).1 hl
+  have hlc : Fintype.linearCombination ℝ (fun j ↦ i (u j)) l = i n := by
+    simpa [hln] using
+      (Finsupp.linearCombination_eq_fintype_linearCombination_apply ℝ (fun j ↦ i (u j)) ⇑l).symm
+  choose k hk using exists_eq_intCast_mul_of_forall_mem_ker h (t := p • ⇑l)
+    (fun j hj ↦ by simp [hls j hj]) ⟨n, by rw [map_smul, hlc, AddMonoidHom.smul_apply]⟩
+  have hlk (j : ι) : l j = k j := by
+    have := hk j
+    rw [Pi.smul_apply, smul_eq_mul, mul_comm] at this
+    exact mul_right_cancel₀ hp this
+  -- So `n` is the integral combination of the normals with the coefficients `k`, supported on `s`.
+  have hn : n = Fintype.linearCombination ℤ u k := by
+    refine hi.injective ?_
+    rw [← Fintype.linearCombination_intCast (R := ℝ), ← hlc]
+    exact congrArg _ (funext hlk)
+  rw [hn, Fintype.linearCombination_apply]
+  refine Submodule.sum_mem _ fun j _ ↦ ?_
+  by_cases hj : j ∈ s
+  · exact Submodule.smul_mem _ _ (Submodule.subset_span ⟨j, hj, rfl⟩)
+  · rw [show k j = 0 by exact_mod_cast (hlk j).symm.trans (hls j hj), zero_smul]
+    exact Submodule.zero_mem _
+
+/-- **Lattice bases of normals, through the kernel torus.** Let `p ≠ 0` and suppose that the
+normals `u j` with `j ∈ s` span `V` over `ℝ`. They form a basis of the integral lattice `N`
+exactly when the only element of the kernel of `(ℝ / pℤ)^ι → V / p i(N)` whose coordinates
+outside `s` vanish is zero. The forward direction is
+`TauCeti.Toric.eq_zero_of_mem_ker_facetTorusHom`, which needs neither `p ≠ 0` nor the spanning
+hypothesis. -/
+theorem exists_basis_iff_forall_eq_zero_of_mem_ker_facetTorusHom (hi : IsIntegralLattice i)
+    (hp : p ≠ 0) {s : Set ι} (hs : Submodule.span ℝ ((fun j ↦ i (u j)) '' s) = ⊤) :
+    (∃ b : Module.Basis s ℤ N, ∀ j, b j = u j) ↔
+      ∀ θ ∈ (facetTorusHom i u p).ker, (∀ j ∉ s, θ j = 0) → θ = 0 := by
+  refine ⟨fun hb θ hθ hθs ↦ eq_zero_of_mem_ker_facetTorusHom hi hb hθ hθs, fun h ↦ ?_⟩
+  have hli := linearIndepOn_of_forall_mem_ker hp h
+  have hspan : Submodule.span ℤ (Set.range fun j : s ↦ u j) = ⊤ := by
+    rw [← Set.image_eq_range]
+    exact span_eq_top_of_forall_mem_ker hi hp hs h
+  exact ⟨Module.Basis.mk hli hspan.ge, Module.Basis.mk_apply hli hspan.ge⟩
 
 /-! ### Changes of presentation -/
 
