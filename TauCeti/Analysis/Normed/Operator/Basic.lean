@@ -12,6 +12,7 @@ public import Mathlib.Topology.Algebra.Module.ContinuousLinearMap.Invertible
 import Mathlib.Analysis.Normed.Module.FiniteDimension
 import Mathlib.Analysis.Normed.Operator.NNNorm
 import Mathlib.LinearAlgebra.Pi
+import TauCeti.Topology.Algebra.Module.ContinuousLinearMap.Invertible
 
 /-!
 # Basic facts about bounded operators
@@ -59,6 +60,8 @@ is invertible if a sufficiently nearby operator is invertible
 (`ContinuousLinearMap.isUnit_of_forall_mul_norm_le_of_norm_sub_lt`).
 A family of operators continuous at a point and invertible there changes the size of a
 function near that point only up to constant factors (`TauCeti.isTheta_clm_apply_of_isUnit`).
+Scaling by a commuting scalar `c` scales the inverse norm by `‖c‖⁻¹`
+(`ContinuousLinearMap.norm_inverse_smul`).
 
 The diagonal sum `∑ i ∈ s, A (v i) (v i)` of a continuous bilinear map along vectors of norm at
 most one, such as the trace of `A` along an orthonormal basis, is bounded by `#s * ‖A‖`
@@ -661,6 +664,25 @@ theorem add_apply_eq_iff_sub_apply_eq_neg_apply {A : V →L[𝕜] V} (hA : A * A
     simp only [map_sub, map_neg, hAA, neg_neg] at h'
     rw [← h']
     abel
+
+/-- Scaling a continuous linear map by a commuting scalar `c` scales the operator norm of its
+totalized inverse by `‖c‖⁻¹`, unconditionally (including when `c = 0` or `f` is not invertible). -/
+@[simp]
+theorem norm_inverse_smul {S M M₂ : Type*} [NormedDivisionRing S]
+    [SeminormedAddCommGroup M] [NormedSpace 𝕜 M]
+    [SeminormedAddCommGroup M₂] [NormedSpace 𝕜 M₂] [Module S M₂] [NormSMulClass S M₂]
+    [SMulCommClass 𝕜 S M₂] (c : S) (f : M →L[𝕜] M₂) :
+    ‖(c • f).inverse‖ = ‖c‖⁻¹ * ‖f.inverse‖ := by
+  rcases eq_or_ne c 0 with rfl | hc
+  · have h0 : (0 : S) • f = 0 := by ext; simp
+    rw [h0, inverse_zero, norm_zero, norm_zero, inv_zero, zero_mul]
+  · refine le_antisymm (opNorm_le_bound _ (by positivity) fun y ↦ ?_)
+      ((inv_mul_le_iff₀ (norm_pos_iff.mpr hc)).mpr <| opNorm_le_bound _ (by positivity) fun z ↦ ?_)
+    · rw [inverse_smul_apply hc]
+      exact (f.inverse.le_opNorm _).trans_eq (by rw [norm_smul, norm_inv]; ring)
+    · rw [show f.inverse z = (c • f).inverse (c • z) by
+        rw [inverse_smul_apply hc, inv_smul_smul₀ hc]]
+      exact ((c • f).inverse.le_opNorm _).trans_eq (by rw [norm_smul]; ring)
 
 end ContinuousLinearMap
 

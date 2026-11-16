@@ -16,38 +16,17 @@ import TauCeti.Topology.Algebra.Module.ContinuousLinearMap.Invertible
 /-!
 # Stationary first-order evolution operators on unbounded domains
 
-Given a continuous linear map `ι : D →L[ℝ] H` between real normed spaces (typically a compact
-inclusion of a domain Banach space `D`, such as `H¹(S¹)`, into a Hilbert space `H`, such as
-`H⁰(S¹)`), the evolution Sobolev space `Lᵖ(Ω; D) ∩ W^{1,p}(Ω; H)` is already realized by the
-closed weak-derivative graph `WeakDerivStep mu Omega p (ι.compLpL p (mu.restrict Omega))`, with
-Euclidean graph norm `(‖u‖_{Lᵖ(Ω; D)}² + ‖(ι u)'‖_{Lᵖ(Ω; H)}²)¹⁄²`. No new Sobolev carrier is
-introduced.
-
-For a bounded operator `A : D →L[ℝ] H`, `TauCeti.WeakDerivStep.stationaryEvolutionOperator ι A`
-realizes the stationary evolution operator `u ↦ (ι u)' + A u` as a bounded linear map into
-`Lᵖ(Ω; H)`. It depends `1`-Lipschitz continuously on `A` in operator norm, satisfies the derivative
-estimate `‖(ι u)'‖ ≤ ‖(ι u)' + A u‖ + ‖A‖ ‖u‖`, characterizes weak solutions of `(ι u)' = f - A u`,
-and agrees almost everywhere with the classical expression `(ι ∘ v)' + A ∘ v` on differentiable
-representatives.
-
-This file also provides two structural tools on the evolution graph space:
-
-* **Intertwining with trajectory operators (`trajectoryOperator_postcompBaseL`).** Postcomposing
-  the `H`-valued field with `T : H →L[ℝ] G` via `TauCeti.WeakDerivStep.postcompBaseL` intertwines
-  `stationaryEvolutionOperator ι A` with the constant trajectory operator `u ↦ u' + B u` whenever
-  `T ∘L A = B ∘L T ∘L ι`.
-* **Time reflection (`TauCeti.WeakDerivStep.reflectEvolutionEquiv`).** On the full line `ℝ` with
-  any additive Haar measure, reflection `s ↦ u(-s)` is an involutive linear isometry of the
-  evolution Sobolev space that conjugates `∂s - A` to `-(∂s + A)`
-  (`stationaryEvolutionOperator_neg_eq`) and conjugates their inverses
-  (`inverse_stationaryEvolutionOperator_neg`). Consequently `∂s + A` and `∂s - A` have the same
-  operator norm, are simultaneously invertible, and have inverses of the same norm.
+Given `ι, A : D →L[ℝ] H` between real normed spaces, the evolution Sobolev space
+`Lᵖ(Ω; D) ∩ W^{1,p}(Ω; H)` is realized by the weak-derivative graph
+`WeakDerivStep mu Omega p (ι.compLpL p (mu.restrict Omega))`, and
+`TauCeti.WeakDerivStep.stationaryEvolutionOperator ι A` realizes `u ↦ (ι u)' + A u` as a bounded
+linear map into `Lᵖ(Ω; H)`.
 
 ## Main declarations
 
-* `TauCeti.WeakDerivStep.stationaryEvolutionOperator`: the stationary evolution operator
-  `u ↦ (ι u)' + A u`, together with its operator norm bound `1 + ‖A‖`, `1`-Lipschitz dependence on
-  `A`, derivative bound `‖(ι u)'‖ ≤ ‖(ι u)' + A u‖ + ‖A‖ ‖u‖`, weak-ODE characterization
+* `TauCeti.WeakDerivStep.stationaryEvolutionOperator`: `u ↦ (ι u)' + A u`, with operator norm
+  bound `1 + ‖A‖`, `1`-Lipschitz continuity in `A`, derivative bound
+  `‖(ι u)'‖ ≤ ‖(ι u)' + A u‖ + ‖A‖ ‖u‖`, weak-ODE equivalence
   (`stationaryEvolutionOperator_eq_iff_hasWeakLineDerivOn`,
   `exists_prev_eq_and_stationaryEvolutionOperator_eq_of_hasWeakLineDerivOn`), and classical
   derivative agreement (`stationaryEvolutionOperator_apply_ae_eq_deriv_add`).
@@ -57,15 +36,15 @@ This file also provides two structural tools on the evolution graph space:
   `TauCeti.WeakDerivStep.stationaryEvolutionOperator_neg_eq`,
   `TauCeti.WeakDerivStep.inverse_stationaryEvolutionOperator_neg`,
   `TauCeti.WeakDerivStep.isInvertible_stationaryEvolutionOperator_neg_iff`,
-  `TauCeti.WeakDerivStep.norm_inverse_stationaryEvolutionOperator_neg`: time reflection on `ℝ` and
-  conjugation / invariance of norm, invertibility, and inverse under `A ↦ -A`.
+  `TauCeti.WeakDerivStep.norm_inverse_stationaryEvolutionOperator_neg`: time reflection `s ↦ u(-s)`
+  on `ℝ` under any additive Haar measure, conjugating `∂s - A` to `-(∂s + A)` and preserving norm,
+  invertibility, and inverse norm.
 
 ## References
 
 * J. Robbin and D. Salamon, *The spectral flow and the Maslov index*, Bull. London Math. Soc. 27
-  (1995), 1–33 (the operator `d/ds + A` on `W^{1,2}(ℝ, H) ∩ L²(ℝ, D)`).
-* D. Salamon, *Lectures on Floer homology*, in *Symplectic geometry and topology*, IAS/Park City
-  Math. Ser. 7 (1999), Lecture 2.
+  (1995), 1–33.
+* D. Salamon, *Lectures on Floer homology*, IAS/Park City Math. Ser. 7 (1999), Lecture 2.
 -/
 
 public section
@@ -93,8 +72,7 @@ def stationaryEvolutionOperator (ι A : D →L[ℝ] H) :
       Lp H p (mu.restrict Omega) :=
   ((ContinuousLinearMap.apply ℝ H (1 : ℝ)).compLpL p (mu.restrict Omega)).comp
       (weakFDerivL (ι.compLpL p (mu.restrict Omega))) +
-    (A.compLpL p (mu.restrict Omega)).comp
-      (prevL (ι.compLpL p (mu.restrict Omega)))
+    (A.compLpL p (mu.restrict Omega)).comp (prevL (ι.compLpL p (mu.restrict Omega)))
 
 /-- Applying `stationaryEvolutionOperator ι A` adds the weak derivative in direction `1` and the
 pointwise action of `A`. -/
@@ -116,20 +94,16 @@ theorem stationaryEvolutionOperator_apply_ae (ι A : D →L[ℝ] H)
         A (prev (ι.compLpL p (mu.restrict Omega)) u s) := by
   rw [stationaryEvolutionOperator_apply]
   filter_upwards [Lp.coeFn_add
-    ((ContinuousLinearMap.apply ℝ H (1 : ℝ)).compLp
-      (weakFDeriv (ι.compLpL p (mu.restrict Omega)) u))
-    (A.compLp (prev (ι.compLpL p (mu.restrict Omega)) u)),
-    (ContinuousLinearMap.apply ℝ H (1 : ℝ)).coeFn_compLp
-      (weakFDeriv (ι.compLpL p (mu.restrict Omega)) u),
-    A.coeFn_compLp (prev (ι.compLpL p (mu.restrict Omega)) u)] with s hs hd hA
+      ((ContinuousLinearMap.apply ℝ H (1 : ℝ)).compLp (weakFDeriv _ u)) (A.compLp (prev _ u)),
+    (ContinuousLinearMap.apply ℝ H (1 : ℝ)).coeFn_compLp (weakFDeriv _ u),
+    A.coeFn_compLp (prev _ u)] with s hs hd hA
   exact hs.trans (by simp only [Pi.add_apply, hd, hA, ContinuousLinearMap.apply_apply])
 
 /-- Subtracting two stationary evolution operators cancels the derivative term. -/
 theorem stationaryEvolutionOperator_sub (ι A B : D →L[ℝ] H) :
     stationaryEvolutionOperator (mu := mu) (Omega := Omega) (p := p) ι A -
       stationaryEvolutionOperator ι B =
-      ((A - B).compLpL p (mu.restrict Omega)).comp
-        (prevL (ι.compLpL p (mu.restrict Omega))) := by
+      ((A - B).compLpL p (mu.restrict Omega)).comp (prevL (ι.compLpL p (mu.restrict Omega))) := by
   simp only [stationaryEvolutionOperator, ContinuousLinearMap.sub_compLpL,
     ContinuousLinearMap.sub_comp]
   abel
@@ -137,26 +111,14 @@ theorem stationaryEvolutionOperator_sub (ι A B : D →L[ℝ] H) :
 /-- The operator norm of `stationaryEvolutionOperator ι A` is at most `1 + ‖A‖`. -/
 theorem norm_stationaryEvolutionOperator_le (ι A : D →L[ℝ] H) :
     ‖stationaryEvolutionOperator (mu := mu) (Omega := Omega) (p := p) ι A‖ ≤ 1 + ‖A‖ := by
-  apply ContinuousLinearMap.opNorm_le_bound _ (by positivity)
-  intro u
+  refine ContinuousLinearMap.opNorm_le_bound _ (by positivity) fun u ↦ ?_
   rw [stationaryEvolutionOperator_apply]
-  have hd : ‖(ContinuousLinearMap.apply ℝ H (1 : ℝ)).compLp
-      (weakFDeriv (ι.compLpL p (mu.restrict Omega)) u)‖ ≤ ‖u‖ := by
-    rw [ContinuousLinearMap.norm_compLp_apply_one]
-    exact norm_weakFDeriv_le _ u
-  have hA : ‖A.compLp (prev (ι.compLpL p (mu.restrict Omega)) u)‖ ≤ ‖A‖ * ‖u‖ := by
-    rw [← ContinuousLinearMap.compLpL_apply]
-    exact ((A.compLpL p (mu.restrict Omega)).le_opNorm _).trans <| by
-      gcongr
-      · exact A.norm_compLpL_le
-      · exact norm_prev_le _ u
-  calc
-    _ ≤ ‖(ContinuousLinearMap.apply ℝ H (1 : ℝ)).compLp
-        (weakFDeriv (ι.compLpL p (mu.restrict Omega)) u)‖ +
-        ‖A.compLp (prev (ι.compLpL p (mu.restrict Omega)) u)‖ :=
-      norm_add_le _ _
-    _ ≤ ‖u‖ + ‖A‖ * ‖u‖ := add_le_add hd hA
-    _ = (1 + ‖A‖) * ‖u‖ := by ring
+  have hd : ‖(ContinuousLinearMap.apply ℝ H (1 : ℝ)).compLp (weakFDeriv _ u)‖ ≤ ‖u‖ := by
+    rw [ContinuousLinearMap.norm_compLp_apply_one]; exact norm_weakFDeriv_le _ u
+  have hA : ‖A.compLp (prev _ u)‖ ≤ ‖A‖ * ‖u‖ :=
+    (A.norm_compLp_le _).trans (by gcongr; exact norm_prev_le _ u)
+  linarith [norm_add_le ((ContinuousLinearMap.apply ℝ H (1 : ℝ)).compLp (weakFDeriv _ u))
+    (A.compLp (prev _ u))]
 
 /-- Perturbing `A` changes `stationaryEvolutionOperator ι A` by at most `‖A - B‖` in operator
 norm. -/
@@ -164,13 +126,9 @@ theorem norm_stationaryEvolutionOperator_sub_le (ι A B : D →L[ℝ] H) :
     ‖stationaryEvolutionOperator (mu := mu) (Omega := Omega) (p := p) ι A -
       stationaryEvolutionOperator ι B‖ ≤ ‖A - B‖ := by
   rw [stationaryEvolutionOperator_sub]
-  apply ContinuousLinearMap.opNorm_le_bound _ (norm_nonneg _)
-  intro u
-  simp only [ContinuousLinearMap.comp_apply, prevL_apply]
-  exact (((A - B).compLpL p (mu.restrict Omega)).le_opNorm _).trans <| by
-    gcongr
-    · exact (A - B).norm_compLpL_le
-    · exact norm_prev_le _ u
+  refine ContinuousLinearMap.opNorm_le_bound _ (norm_nonneg _) fun u ↦ ?_
+  simpa only [ContinuousLinearMap.comp_apply, prevL_apply, ContinuousLinearMap.compLpL_apply] using
+    ((A - B).norm_compLp_le _).trans (by gcongr; exact norm_prev_le _ u)
 
 /-- `stationaryEvolutionOperator ι` is `1`-Lipschitz in operator norm. -/
 theorem lipschitzWith_stationaryEvolutionOperator (ι : D →L[ℝ] H) :
@@ -193,18 +151,9 @@ theorem norm_weakFDeriv_le_norm_stationaryEvolutionOperator_add (ι A : D →L[�
     ‖weakFDeriv (ι.compLpL p (mu.restrict Omega)) u‖ ≤
       ‖stationaryEvolutionOperator ι A u‖ +
         ‖A‖ * ‖prev (ι.compLpL p (mu.restrict Omega)) u‖ := by
-  have hT := stationaryEvolutionOperator_apply ι A u
-  have hsub : (ContinuousLinearMap.apply ℝ H (1 : ℝ)).compLp
-      (weakFDeriv (ι.compLpL p (mu.restrict Omega)) u) =
-      stationaryEvolutionOperator ι A u -
-        A.compLp (prev (ι.compLpL p (mu.restrict Omega)) u) :=
-    eq_sub_of_add_eq hT.symm
-  rw [← ContinuousLinearMap.norm_compLp_apply_one, hsub]
-  refine (norm_sub_le _ _).trans ?_
-  gcongr
-  rw [← ContinuousLinearMap.compLpL_apply]
-  exact ((A.compLpL p (mu.restrict Omega)).le_opNorm _).trans
-    (mul_le_mul_of_nonneg_right A.norm_compLpL_le (norm_nonneg _))
+  rw [← ContinuousLinearMap.norm_compLp_apply_one,
+    eq_sub_of_add_eq (stationaryEvolutionOperator_apply ι A u).symm]
+  exact (norm_sub_le _ _).trans (by gcongr; exact A.norm_compLp_le _)
 
 /-- Solving `stationaryEvolutionOperator ι A u = f` is equivalent to the weak ordinary
 differential equation `(ι u)' = f - A u`. -/
@@ -218,18 +167,11 @@ theorem stationaryEvolutionOperator_eq_iff_hasWeakLineDerivOn (ι A : D →L[ℝ
       (fun s ↦ ι (prev (ι.compLpL p (mu.restrict Omega)) u s))
       (fun s ↦ weakFDeriv (ι.compLpL p (mu.restrict Omega)) u s 1) 1 :=
     ((hasWeakFDerivOn_base_prev _ u).hasWeakLineDerivOn 1).congr_ae (ι.coeFn_compLpL (prev _ u))
-  constructor
-  · intro h
-    apply hd.congr_ae_deriv
-    have hformula := stationaryEvolutionOperator_apply_ae ι A u
-    rw [h] at hformula
-    filter_upwards [hformula] with s hs
+  refine ⟨fun h ↦ hd.congr_ae_deriv ?_, fun h ↦ Lp.ext ?_⟩
+  · filter_upwards [h ▸ stationaryEvolutionOperator_apply_ae ι A u] with s hs
     exact eq_sub_iff_add_eq.mpr hs.symm
-  · intro h
-    apply Lp.ext
-    filter_upwards [stationaryEvolutionOperator_apply_ae ι A u, hd.ae_eq h] with s hs hd'
-    rw [hs, hd']
-    exact sub_add_cancel _ _
+  · filter_upwards [stationaryEvolutionOperator_apply_ae ι A u, hd.ae_eq h] with s hs hd'
+    rw [hs, hd', sub_add_cancel]
 
 /-- **Weak solutions are values of evolution-graph elements.** If `x : Lᵖ(Ω; D)` solves the weak
 ODE `(ι ∘ x)' = f - A x`, then `x` is the `D`-valued component of an element `u` of the evolution
@@ -250,11 +192,9 @@ theorem exists_prev_eq_and_stationaryEvolutionOperator_eq_of_hasWeakLineDerivOn 
     intro r
     refine (by simpa using ((h.congr_ae (ι.coeFn_compLpL x).symm).congr_ae_deriv
       hg).smul_direction r : HasWeakLineDerivOn _ _ _ _ r).congr_ae_deriv ?_
-    filter_upwards [lift.coeFn_compLp g] with s hs
-    simp [lift, hs]
+    filter_upwards [lift.coeFn_compLp g] with s hs using by simp [lift, hs]
   refine ⟨mk _ x _ hD, prev_mk _ _ _ _, ?_⟩
-  rw [stationaryEvolutionOperator_eq_iff_hasWeakLineDerivOn, prev_mk]
-  exact h
+  rw [stationaryEvolutionOperator_eq_iff_hasWeakLineDerivOn, prev_mk]; exact h
 
 /-- **Intertwining stationary evolution operators with trajectory operators.** If `T : H →L[ℝ] G`
 intertwines `A` with `B : G →L[ℝ] G`, meaning `T (A x) = B (T (ι x))` for all `x ∈ D`, and `BL` is
@@ -273,9 +213,7 @@ theorem trajectoryOperator_postcompBaseL
   filter_upwards [trajectoryOperator_apply_ae BL (postcompBaseL _ T u),
     (ContinuousLinearMap.compL ℝ ℝ H G T).coeFn_compLp (weakFDeriv _ u),
     T.coeFn_compLp (ι.compLpL p (mu.restrict Omega) (prev _ u)),
-    ι.coeFn_compLpL (prev _ u),
-    hBL,
-    T.coeFn_compLp (stationaryEvolutionOperator ι A u),
+    ι.coeFn_compLpL (prev _ u), hBL, T.coeFn_compLp (stationaryEvolutionOperator ι A u),
     stationaryEvolutionOperator_apply_ae ι A u] with s hT hw hTι hι hBLs hTS hS
   rw [hT, weakFDeriv_postcompBaseL, prev_postcompBaseL, hw, hTι, hι, hBLs, hTS, hS, map_add,
     ContinuousLinearMap.compL_apply, ContinuousLinearMap.comp_apply, hinter]
@@ -301,11 +239,10 @@ theorem stationaryEvolutionOperator_apply_ae_eq_deriv_add (ι A : D →L[ℝ] H)
     (hdv : LocallyIntegrableOn (fderiv ℝ (ι ∘ v)) Omega mu)
     (hvd : ∀ s ∈ (Omega : Set ℝ), DifferentiableAt ℝ (ι ∘ v) s) :
     stationaryEvolutionOperator ι A u =ᵐ[mu.restrict Omega] fun s ↦ deriv (ι ∘ v) s + A (v s) := by
-  have hweak : HasWeakFDerivOn mu Omega (ι ∘ v)
-      (weakFDeriv (ι.compLpL p (mu.restrict Omega)) u) := by
-    refine (hasWeakFDerivOn_base_prev _ u).congr_ae ?_
-    filter_upwards [ι.coeFn_compLpL (prev _ u), hv] with s hs hvs
-    rw [hs, Function.comp_apply, hvs]
+  have hweak : HasWeakFDerivOn mu Omega (ι ∘ v) (weakFDeriv _ u) :=
+    (hasWeakFDerivOn_base_prev _ u).congr_ae <| by
+      filter_upwards [ι.coeFn_compLpL (prev _ u), hv] with s hs hvs
+      rw [hs, Function.comp_apply, hvs]
   filter_upwards [stationaryEvolutionOperator_apply_ae ι A u,
     hweak.ae_eq_fderiv hdv hvd, hv] with s hs hd hvs
   rw [hs, hd, hvs, fderiv_apply_one_eq_deriv]
@@ -324,69 +261,67 @@ variable {D H : Type*} [NormedAddCommGroup D] [NormedSpace ℝ D]
 private theorem hasWeakFDerivOn_reflect (ι : D →L[ℝ] H)
     (u : WeakDerivStep mu ⊤ p (ι.compLpL p (mu.restrict ((⊤ : Opens ℝ) : Set ℝ)))) :
     HasWeakFDerivOn mu ⊤
-      (ι.compLpL p (mu.restrict ((⊤ : Opens ℝ) : Set ℝ))
-        (negLpₗᵢ ℝ (prev _ u)))
+      (ι.compLpL p (mu.restrict ((⊤ : Opens ℝ) : Set ℝ)) (negLpₗᵢ ℝ (prev _ u)))
       ((-negLpₗᵢ ℝ (weakFDeriv _ u) :
         Lp (ℝ →L[ℝ] H) p (mu.restrict ((⊤ : Opens ℝ) : Set ℝ))) : ℝ → ℝ →L[ℝ] H) := by
   have h1 := (hasWeakFDerivOn_base_prev (ι.compLpL p _) u).comp_continuousLinearEquiv
-    (U := ⊤) (ContinuousLinearEquiv.neg ℝ) (Measure.measurePreserving_neg mu)
-    (Set.mapsTo_univ _ _)
+    (U := ⊤) (ContinuousLinearEquiv.neg ℝ) (Measure.measurePreserving_neg mu) (Set.mapsTo_univ _ _)
   refine (h1.congr_ae ?_).congr_ae_deriv ?_
-  · have hcomp := (Measure.measurePreserving_neg
-        (mu.restrict ((⊤ : Opens ℝ) : Set ℝ))).quasiMeasurePreserving.ae_eq_comp
-      (ι.coeFn_compLpL (prev (ι.compLpL p _) u))
+  · have hcomp :=
+      (Measure.measurePreserving_neg (mu.restrict ((⊤ : Opens ℝ) : Set ℝ))).quasiMeasurePreserving
+        |>.ae_eq_comp (ι.coeFn_compLpL (prev (ι.compLpL p _) u))
     filter_upwards [hcomp, ι.coeFn_compLpL (negLpₗᵢ ℝ (prev _ u)),
       coeFn_negLpₗᵢ (𝕜 := ℝ) (prev _ u)] with s hιneg hιref href
-    simp only [Function.comp_apply, ContinuousLinearEquiv.neg_apply] at hιneg ⊢
-    rw [hιneg, hιref, href]
+    simpa only [Function.comp_apply, ContinuousLinearEquiv.neg_apply, hιref, href] using hιneg
   · filter_upwards [Lp.coeFn_neg (negLpₗᵢ ℝ (weakFDeriv _ u)),
       coeFn_negLpₗᵢ (𝕜 := ℝ) (weakFDeriv _ u)] with s hneg href
+    rw [hneg, Pi.neg_apply, href]
     ext
-    simp only [hneg, Pi.neg_apply, neg_apply, href, ContinuousLinearMap.comp_apply,
-      ContinuousLinearEquiv.coe_coe, ContinuousLinearEquiv.neg_apply, map_neg]
+    simp
 
 /-- Time reflection `s ↦ u(-s)` as an involutive linear isometry of the evolution Sobolev space
 on `ℝ`. -/
 def reflectEvolutionEquiv (ι : D →L[ℝ] H) :
-    WeakDerivStep mu ⊤ p (ι.compLpL p (mu.restrict Set.univ)) ≃ₗᵢ[ℝ]
-      WeakDerivStep mu ⊤ p (ι.compLpL p (mu.restrict Set.univ)) where
-  toFun u := mk _ (negLpₗᵢ ℝ (prev _ u)) (-negLpₗᵢ ℝ (weakFDeriv _ u))
-    (hasWeakFDerivOn_reflect ι u)
-  invFun u := mk _ (negLpₗᵢ ℝ (prev _ u)) (-negLpₗᵢ ℝ (weakFDeriv _ u))
-    (hasWeakFDerivOn_reflect ι u)
+    WeakDerivStep mu ⊤ p (ι.compLpL p (mu.restrict ((⊤ : Opens ℝ) : Set ℝ))) ≃ₗᵢ[ℝ]
+      WeakDerivStep mu ⊤ p (ι.compLpL p (mu.restrict ((⊤ : Opens ℝ) : Set ℝ))) where
+  toFun u := mk _ (negLpₗᵢ ℝ (prev _ u)) (-negLpₗᵢ ℝ (weakFDeriv _ u)) (hasWeakFDerivOn_reflect ι u)
+  invFun u :=
+    mk _ (negLpₗᵢ ℝ (prev _ u)) (-negLpₗᵢ ℝ (weakFDeriv _ u)) (hasWeakFDerivOn_reflect ι u)
   left_inv u := ext (by simp only [prev_mk, negLpₗᵢ_negLpₗᵢ])
   right_inv u := ext (by simp only [prev_mk, negLpₗᵢ_negLpₗᵢ])
   map_add' u v := ext (by simp only [prev_mk, prev_add, map_add])
   map_smul' c u := ext (by simp only [prev_mk, prev_smul, map_smul, RingHom.id_apply])
   norm_map' u := by
-    have hsq : ‖mk (ι.compLpL p (mu.restrict Set.univ))
+    have hsq : ‖mk (ι.compLpL p (mu.restrict ((⊤ : Opens ℝ) : Set ℝ)))
         (negLpₗᵢ ℝ (prev _ u)) (-negLpₗᵢ ℝ (weakFDeriv _ u))
         (hasWeakFDerivOn_reflect ι u)‖ ^ 2 = ‖u‖ ^ 2 := by
-      rw [norm_sq_eq_norm_prev_sq_add_norm_weakFDeriv_sq,
-        norm_sq_eq_norm_prev_sq_add_norm_weakFDeriv_sq _ u,
-        prev_mk, weakFDeriv_mk, norm_neg, (negLpₗᵢ ℝ).norm_map, (negLpₗᵢ ℝ).norm_map]
+      calc ‖mk (ι.compLpL p (mu.restrict ((⊤ : Opens ℝ) : Set ℝ)))
+              (negLpₗᵢ ℝ (prev _ u)) (-negLpₗᵢ ℝ (weakFDeriv _ u))
+              (hasWeakFDerivOn_reflect ι u)‖ ^ 2
+          = ‖negLpₗᵢ ℝ (prev _ u)‖ ^ 2 + ‖-negLpₗᵢ ℝ (weakFDeriv _ u)‖ ^ 2 := by
+            rw [norm_sq_eq_norm_prev_sq_add_norm_weakFDeriv_sq, prev_mk, weakFDeriv_mk]
+        _ = ‖prev _ u‖ ^ 2 + ‖weakFDeriv _ u‖ ^ 2 := by
+            rw [norm_neg, (negLpₗᵢ ℝ).norm_map, (negLpₗᵢ ℝ).norm_map]
+        _ = ‖u‖ ^ 2 := (norm_sq_eq_norm_prev_sq_add_norm_weakFDeriv_sq _ u).symm
     exact (sq_eq_sq₀ (norm_nonneg _) (norm_nonneg _)).mp hsq
 
 /-- Time reflection acts on the `Lᵖ(ℝ; D)` path by `TauCeti.negLpₗᵢ`. -/
-@[simp]
 theorem prev_reflectEvolutionEquiv (ι : D →L[ℝ] H)
-    (u : WeakDerivStep mu ⊤ p (ι.compLpL p (mu.restrict Set.univ))) :
-    prev (Omega := ⊤) (ι.compLpL p (mu.restrict Set.univ)) (reflectEvolutionEquiv ι u) =
-      negLpₗᵢ ℝ (prev (Omega := ⊤) (ι.compLpL p (mu.restrict Set.univ)) u) :=
+    (u : WeakDerivStep mu ⊤ p (ι.compLpL p (mu.restrict ((⊤ : Opens ℝ) : Set ℝ)))) :
+    prev (ι.compLpL p (mu.restrict ((⊤ : Opens ℝ) : Set ℝ))) (reflectEvolutionEquiv ι u) =
+      negLpₗᵢ ℝ (prev (ι.compLpL p (mu.restrict ((⊤ : Opens ℝ) : Set ℝ))) u) :=
   prev_mk _ _ _ _
 
 /-- Time reflection negates and reflects the weak derivative via `TauCeti.negLpₗᵢ`. -/
-@[simp]
 theorem weakFDeriv_reflectEvolutionEquiv (ι : D →L[ℝ] H)
-    (u : WeakDerivStep mu ⊤ p (ι.compLpL p (mu.restrict Set.univ))) :
-    weakFDeriv (Omega := ⊤) (ι.compLpL p (mu.restrict Set.univ)) (reflectEvolutionEquiv ι u) =
-      -negLpₗᵢ ℝ (weakFDeriv (Omega := ⊤) (ι.compLpL p (mu.restrict Set.univ)) u) :=
+    (u : WeakDerivStep mu ⊤ p (ι.compLpL p (mu.restrict ((⊤ : Opens ℝ) : Set ℝ)))) :
+    weakFDeriv (ι.compLpL p (mu.restrict ((⊤ : Opens ℝ) : Set ℝ))) (reflectEvolutionEquiv ι u) =
+      -negLpₗᵢ ℝ (weakFDeriv (ι.compLpL p (mu.restrict ((⊤ : Opens ℝ) : Set ℝ))) u) :=
   weakFDeriv_mk _ _ _ _
 
 /-- Time reflection is involutive. -/
-@[simp]
 theorem reflectEvolutionEquiv_apply_self (ι : D →L[ℝ] H)
-    (u : WeakDerivStep mu ⊤ p (ι.compLpL p (mu.restrict Set.univ))) :
+    (u : WeakDerivStep mu ⊤ p (ι.compLpL p (mu.restrict ((⊤ : Opens ℝ) : Set ℝ)))) :
     reflectEvolutionEquiv ι (reflectEvolutionEquiv ι u) = u :=
   ext (by simp only [prev_reflectEvolutionEquiv, negLpₗᵢ_negLpₗᵢ])
 
@@ -402,52 +337,7 @@ theorem reflectEvolutionEquiv_symm (ι : D →L[ℝ] H) :
 theorem reflectEvolutionEquiv_trans_self (ι : D →L[ℝ] H) :
     (reflectEvolutionEquiv (mu := mu) (p := p) ι).trans
       (reflectEvolutionEquiv (mu := mu) (p := p) ι) = LinearIsometryEquiv.refl ℝ _ :=
-  LinearIsometryEquiv.ext fun u ↦ reflectEvolutionEquiv_apply_self ι u
-
-/-- Time reflection precomposes the `Lᵖ(ℝ; D)` path with negation almost everywhere. -/
-theorem prev_reflectEvolutionEquiv_ae (ι : D →L[ℝ] H)
-    (u : WeakDerivStep mu ⊤ p (ι.compLpL p (mu.restrict ((⊤ : Opens ℝ) : Set ℝ)))) :
-    prev (ι.compLpL p (mu.restrict ((⊤ : Opens ℝ) : Set ℝ)))
-      (reflectEvolutionEquiv ι u) =ᵐ[mu.restrict ((⊤ : Opens ℝ) : Set ℝ)]
-        fun s ↦ prev (ι.compLpL p (mu.restrict ((⊤ : Opens ℝ) : Set ℝ))) u (-s) := by
-  have h : prev (ι.compLpL p (mu.restrict ((⊤ : Opens ℝ) : Set ℝ))) (reflectEvolutionEquiv ι u) =
-      negLpₗᵢ ℝ (prev (ι.compLpL p (mu.restrict ((⊤ : Opens ℝ) : Set ℝ))) u) :=
-    prev_reflectEvolutionEquiv ι u
-  rw [h]
-  exact coeFn_negLpₗᵢ (𝕜 := ℝ) (prev _ u)
-
-/-- Time reflection negates and reflects the weak derivative almost everywhere. -/
-theorem weakFDeriv_reflectEvolutionEquiv_ae (ι : D →L[ℝ] H)
-    (u : WeakDerivStep mu ⊤ p (ι.compLpL p (mu.restrict ((⊤ : Opens ℝ) : Set ℝ)))) :
-    weakFDeriv (ι.compLpL p (mu.restrict ((⊤ : Opens ℝ) : Set ℝ)))
-      (reflectEvolutionEquiv ι u) =ᵐ[mu.restrict ((⊤ : Opens ℝ) : Set ℝ)]
-        fun s ↦ -weakFDeriv (ι.compLpL p (mu.restrict ((⊤ : Opens ℝ) : Set ℝ))) u (-s) := by
-  have h : weakFDeriv (ι.compLpL p (mu.restrict ((⊤ : Opens ℝ) : Set ℝ)))
-      (reflectEvolutionEquiv ι u) =
-      -negLpₗᵢ ℝ (weakFDeriv (ι.compLpL p (mu.restrict ((⊤ : Opens ℝ) : Set ℝ))) u) :=
-    weakFDeriv_reflectEvolutionEquiv ι u
-  rw [h]
-  filter_upwards [Lp.coeFn_neg (negLpₗᵢ ℝ (weakFDeriv _ u)),
-    coeFn_negLpₗᵢ (𝕜 := ℝ) (weakFDeriv _ u)] with s hneg href
-  rw [hneg, Pi.neg_apply, href]
-
-/-- Pointwise almost-everywhere conjugation of `∂s - A` and `∂s + A` under time reflection. -/
-theorem stationaryEvolutionOperator_neg_reflectEvolutionEquiv_ae (ι A : D →L[ℝ] H)
-    (u : WeakDerivStep mu ⊤ p (ι.compLpL p (mu.restrict ((⊤ : Opens ℝ) : Set ℝ)))) :
-    stationaryEvolutionOperator (mu := mu) (p := p) ι (-A) (reflectEvolutionEquiv ι u)
-      =ᵐ[mu.restrict ((⊤ : Opens ℝ) : Set ℝ)]
-        fun s ↦ -(stationaryEvolutionOperator (mu := mu) (p := p) ι A u) (-s) := by
-  have hSneg := (Measure.measurePreserving_neg
-      (mu.restrict ((⊤ : Opens ℝ) : Set ℝ))).quasiMeasurePreserving.ae_eq_comp
-    (stationaryEvolutionOperator_apply_ae (mu := mu) (p := p) ι A u)
-  filter_upwards [stationaryEvolutionOperator_apply_ae (mu := mu) (p := p) ι (-A)
-      (reflectEvolutionEquiv (mu := mu) (p := p) ι u),
-    weakFDeriv_reflectEvolutionEquiv_ae (mu := mu) (p := p) ι u,
-    prev_reflectEvolutionEquiv_ae (mu := mu) (p := p) ι u,
-    hSneg] with s h1 h2 h3 h4
-  simp only [Function.comp_apply] at h4
-  rw [h1, h2, h3, neg_apply, neg_apply, h4]
-  abel
+  LinearIsometryEquiv.ext (reflectEvolutionEquiv_apply_self ι)
 
 /-- Time reflection conjugates `∂s - A` to `-(∂s + A)` on `ℝ`:
 `∂s - A = -(negLpₗᵢ ∘ (∂s + A) ∘ reflectEvolutionEquiv)`. -/
@@ -457,28 +347,20 @@ theorem stationaryEvolutionOperator_neg_eq (ι A : D →L[ℝ] H) :
           Lp H p (mu.restrict ((⊤ : Opens ℝ) : Set ℝ)) →L[ℝ] _).comp
         ((stationaryEvolutionOperator (mu := mu) (Omega := ⊤) (p := p) ι A).comp
           (reflectEvolutionEquiv (mu := mu) (p := p) ι :
-            WeakDerivStep mu ⊤ p
-              (ι.compLpL p (mu.restrict ((⊤ : Opens ℝ) : Set ℝ))) →L[ℝ] _))) := by
+            WeakDerivStep mu ⊤ p (ι.compLpL p (mu.restrict ((⊤ : Opens ℝ) : Set ℝ))) →L[ℝ] _))) :=
+  by
   ext1 u
-  set v := reflectEvolutionEquiv (mu := mu) (p := p) ι u
-  have hv : reflectEvolutionEquiv (mu := mu) (p := p) ι v = u :=
-    reflectEvolutionEquiv_apply_self (mu := mu) (p := p) ι u
-  have hval : (-((negLpₗᵢ ℝ (E := H) (p := p) (μ := mu.restrict ((⊤ : Opens ℝ) : Set ℝ)) :
-        Lp H p (mu.restrict ((⊤ : Opens ℝ) : Set ℝ)) →L[ℝ] _).comp
-      ((stationaryEvolutionOperator (mu := mu) (Omega := ⊤) (p := p) ι A).comp
-        (reflectEvolutionEquiv (mu := mu) (p := p) ι :
-          WeakDerivStep mu ⊤ p
-            (ι.compLpL p (mu.restrict ((⊤ : Opens ℝ) : Set ℝ))) →L[ℝ] _)))) u =
-      -negLpₗᵢ ℝ (stationaryEvolutionOperator (mu := mu) (p := p) ι A v) := rfl
-  rw [hval]
-  conv_lhs => rw [← hv]
-  apply Lp.ext
-  filter_upwards [stationaryEvolutionOperator_neg_reflectEvolutionEquiv_ae
-      (mu := mu) (p := p) ι A v,
-    Lp.coeFn_neg (negLpₗᵢ ℝ (stationaryEvolutionOperator (mu := mu) (p := p) ι A v)),
-    coeFn_negLpₗᵢ (𝕜 := ℝ)
-      (stationaryEvolutionOperator (mu := mu) (p := p) ι A v)] with s h1 h2 h3
-  rw [h1, h2, Pi.neg_apply, h3]
+  change _ = -(negLpₗᵢ ℝ (stationaryEvolutionOperator ι A (reflectEvolutionEquiv ι u)))
+  have hneg : (ContinuousLinearMap.apply ℝ H (1 : ℝ)).compLp
+      (-negLpₗᵢ ℝ (weakFDeriv (ι.compLpL p (mu.restrict ((⊤ : Opens ℝ) : Set ℝ))) u)) =
+      -(ContinuousLinearMap.apply ℝ H (1 : ℝ)).compLp
+        (negLpₗᵢ ℝ (weakFDeriv (ι.compLpL p (mu.restrict ((⊤ : Opens ℝ) : Set ℝ))) u)) :=
+    map_neg ((ContinuousLinearMap.apply ℝ H (1 : ℝ)).compLpL p _) _
+  rw [stationaryEvolutionOperator_apply, stationaryEvolutionOperator_apply,
+    weakFDeriv_reflectEvolutionEquiv, prev_reflectEvolutionEquiv,
+    ContinuousLinearMap.neg_compLp, map_add, hneg,
+    compLp_negLpₗᵢ, compLp_negLpₗᵢ, map_neg, negLpₗᵢ_negLpₗᵢ, negLpₗᵢ_negLpₗᵢ]
+  abel
 
 /-- `∂s - A` and `∂s + A` have the same operator norm on `ℝ`. -/
 @[simp]
@@ -497,62 +379,50 @@ theorem isInvertible_stationaryEvolutionOperator_neg_iff (ι A : D →L[ℝ] H) 
   let eL := negLpₗᵢ ℝ (E := H) (p := p) (μ := mu.restrict ((⊤ : Opens ℝ) : Set ℝ))
   let eR := reflectEvolutionEquiv (mu := mu) (p := p) ι
   have hL : (eL : Lp H p (mu.restrict ((⊤ : Opens ℝ) : Set ℝ)) →L[ℝ] _) =
-      eL.toContinuousLinearEquiv.toContinuousLinearMap := by
-    ext1 f; rfl
-  have hR : (eR : WeakDerivStep mu ⊤ p
-        (ι.compLpL p (mu.restrict ((⊤ : Opens ℝ) : Set ℝ))) →L[ℝ] _) =
-      eR.toContinuousLinearEquiv.toContinuousLinearMap := by
-    ext1 u; rfl
+      eL.toContinuousLinearEquiv.toContinuousLinearMap := ContinuousLinearMap.ext fun _ ↦ rfl
+  have hR :
+      (eR : WeakDerivStep mu ⊤ p (ι.compLpL p (mu.restrict ((⊤ : Opens ℝ) : Set ℝ))) →L[ℝ] _) =
+      eR.toContinuousLinearEquiv.toContinuousLinearMap := ContinuousLinearMap.ext fun _ ↦ rfl
   rw [stationaryEvolutionOperator_neg_eq, ← neg_one_smul ℝ,
     ContinuousLinearMap.isInvertible_smul_iff (by norm_num : (-1 : ℝ) ≠ 0), hL, hR,
     ContinuousLinearMap.isInvertible_equiv_comp, ContinuousLinearMap.isInvertible_comp_equiv]
+
+private theorem inverse_neg_comp_equiv {X Y : Type*}
+    [TopologicalSpace X] [AddCommGroup X] [Module ℝ X] [IsTopologicalAddGroup X]
+    [TopologicalSpace Y] [AddCommGroup Y] [Module ℝ Y] [IsTopologicalAddGroup Y]
+    [ContinuousConstSMul ℝ Y]
+    (eL : Y ≃L[ℝ] Y) (L : X →L[ℝ] Y) (eR : X ≃L[ℝ] X) (heL : eL.symm = eL) (heR : eR.symm = eR) :
+    (-(eL.toContinuousLinearMap.comp (L.comp eR.toContinuousLinearMap))).inverse =
+      -(eR.toContinuousLinearMap.comp (L.inverse.comp eL.toContinuousLinearMap)) := by
+  ext1 f
+  rw [← neg_one_smul ℝ, ContinuousLinearMap.inverse_smul_apply (by norm_num : (-1 : ℝ) ≠ 0),
+    ContinuousLinearMap.inverse_equiv_comp, ContinuousLinearMap.inverse_comp_equiv]
+  simp [heL, heR]
 
 /-- Time reflection conjugates `(∂s - A)⁻¹` to `-(∂s + A)⁻¹` on `ℝ`. -/
 theorem inverse_stationaryEvolutionOperator_neg (ι A : D →L[ℝ] H) :
     (stationaryEvolutionOperator (mu := mu) (Omega := ⊤) (p := p) ι (-A)).inverse =
       -((reflectEvolutionEquiv (mu := mu) (p := p) ι :
-          WeakDerivStep mu ⊤ p
-            (ι.compLpL p (mu.restrict ((⊤ : Opens ℝ) : Set ℝ))) →L[ℝ] _).comp
+          WeakDerivStep mu ⊤ p (ι.compLpL p (mu.restrict ((⊤ : Opens ℝ) : Set ℝ))) →L[ℝ] _).comp
         ((stationaryEvolutionOperator (mu := mu) (Omega := ⊤) (p := p) ι A).inverse.comp
           (negLpₗᵢ ℝ (E := H) (p := p) (μ := mu.restrict ((⊤ : Opens ℝ) : Set ℝ)) :
             Lp H p (mu.restrict ((⊤ : Opens ℝ) : Set ℝ)) →L[ℝ] _))) := by
-  let eL := negLpₗᵢ ℝ (E := H) (p := p) (μ := mu.restrict ((⊤ : Opens ℝ) : Set ℝ))
-  let eR := reflectEvolutionEquiv (mu := mu) (p := p) ι
-  let eL' : Lp H p (mu.restrict ((⊤ : Opens ℝ) : Set ℝ)) ≃L[ℝ]
-      Lp H p (mu.restrict ((⊤ : Opens ℝ) : Set ℝ)) := eL.toContinuousLinearEquiv
-  let eR' : WeakDerivStep mu ⊤ p
-        (ι.compLpL p (mu.restrict ((⊤ : Opens ℝ) : Set ℝ))) ≃L[ℝ]
-      WeakDerivStep mu ⊤ p
-        (ι.compLpL p (mu.restrict ((⊤ : Opens ℝ) : Set ℝ))) := eR.toContinuousLinearEquiv
-  let T := stationaryEvolutionOperator (mu := mu) (Omega := ⊤) (p := p) ι A
+  let eL :=
+    (negLpₗᵢ ℝ (E := H) (p := p) (μ := mu.restrict ((⊤ : Opens ℝ) : Set ℝ))).toContinuousLinearEquiv
+  let eR := (reflectEvolutionEquiv (mu := mu) (p := p) ι).toContinuousLinearEquiv
+  have heL : eL.symm = eL :=
+    ContinuousLinearEquiv.ext (funext fun f ↦ eL.symm_apply_eq.2 (negLpₗᵢ_negLpₗᵢ f).symm)
+  have heR : eR.symm = eR :=
+    ContinuousLinearEquiv.ext (funext fun u ↦ eR.symm_apply_eq.2
+      (reflectEvolutionEquiv_apply_self ι u).symm)
   have h1 : (stationaryEvolutionOperator (mu := mu) (Omega := ⊤) (p := p) ι (-A)).inverse =
-      (-(eL'.toContinuousLinearMap.comp (T.comp eR'.toContinuousLinearMap))).inverse :=
-    congrArg ContinuousLinearMap.inverse <|
-      (stationaryEvolutionOperator_neg_eq ι A).trans <|
-        congrArg Neg.neg (ContinuousLinearMap.ext fun _ ↦ rfl)
-  have h2 : (-(eL'.toContinuousLinearMap.comp (T.comp eR'.toContinuousLinearMap))).inverse =
-      -(eR'.toContinuousLinearMap.comp (T.inverse.comp eL'.toContinuousLinearMap)) := by
-    have hconj : ∀ {M : Type _} {M₂ : Type _}
-        [TopologicalSpace M] [AddCommGroup M] [Module ℝ M] [IsTopologicalAddGroup M]
-        [TopologicalSpace M₂] [AddCommGroup M₂] [Module ℝ M₂] [IsTopologicalAddGroup M₂]
-        [ContinuousConstSMul ℝ M₂]
-        (eL : M₂ ≃L[ℝ] M₂) (_ : eL.symm = eL) (eR : M ≃L[ℝ] M) (_ : eR.symm = eR)
-        (T : M →L[ℝ] M₂),
-        (-(eL.toContinuousLinearMap.comp (T.comp eR.toContinuousLinearMap))).inverse =
-          -(eR.toContinuousLinearMap.comp (T.inverse.comp eL.toContinuousLinearMap)) := by
-      intro M M₂ _ _ _ _ _ _ _ _ _ eL heL eR heR T
-      ext1 f
-      rw [← neg_one_smul ℝ, ContinuousLinearMap.inverse_smul_apply (by norm_num : (-1 : ℝ) ≠ 0),
-        ContinuousLinearMap.inverse_equiv_comp, ContinuousLinearMap.inverse_comp_equiv]
-      simp [heL, heR]
-    exact hconj eL'
-      (eL.toContinuousLinearEquiv_symm.symm.trans
-        (congrArg LinearIsometryEquiv.toContinuousLinearEquiv negLpₗᵢ_symm))
-      eR'
-      (eR.toContinuousLinearEquiv_symm.symm.trans
-        (congrArg LinearIsometryEquiv.toContinuousLinearEquiv (reflectEvolutionEquiv_symm ι)))
-      T
-  exact h1.trans <| h2.trans <| congrArg Neg.neg (ContinuousLinearMap.ext fun _ ↦ rfl)
+      (-(eL.toContinuousLinearMap.comp
+        ((stationaryEvolutionOperator (mu := mu) (Omega := ⊤) (p := p) ι A).comp
+          eR.toContinuousLinearMap))).inverse :=
+    congrArg ContinuousLinearMap.inverse <| (stationaryEvolutionOperator_neg_eq ι A).trans <|
+      congrArg Neg.neg (ContinuousLinearMap.ext fun _ ↦ rfl)
+  exact h1.trans <| (inverse_neg_comp_equiv eL _ eR heL heR).trans <|
+    congrArg Neg.neg (ContinuousLinearMap.ext fun _ ↦ rfl)
 
 /-- `(∂s - A)⁻¹` and `(∂s + A)⁻¹` have the same operator norm on `ℝ`. -/
 @[simp]

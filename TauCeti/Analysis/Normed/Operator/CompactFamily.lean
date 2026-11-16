@@ -66,7 +66,7 @@ theorem exists_mem_nhds_isInvertible_norm_inverse_le {K : Set X} (hK : IsCompact
   refine ⟨V, hV, C, by positivity, fun x hx y hy ↦ ?_⟩
   exact (hUV ⟨subset_of_mem_nhdsSet hU hx, hy⟩).imp_right le_of_lt
 
-/-- Invertibility on a compact parameter slice gives a uniform positive radius around `y₀` in a
+/-- Invertibility on a compact parameter slice gives a uniform positive radius around `z₀` in a
 pseudometric parameter space on which all operators remain invertible with uniformly bounded
 inverses. Only continuity on `K ×ˢ Set.univ` is required. -/
 theorem exists_pos_isInvertible_norm_inverse_le {Z : Type*} [PseudoMetricSpace Z]
@@ -76,17 +76,13 @@ theorem exists_pos_isInvertible_norm_inverse_le {Z : Type*} [PseudoMetricSpace Z
     ∃ ε > 0, ∃ C ≥ 0, ∀ x ∈ K, ∀ z : Z, dist z z₀ ≤ ε →
       (L (x, z)).IsInvertible ∧ ‖(L (x, z)).inverse‖ ≤ C := by
   let : CompactSpace K := isCompact_iff_compactSpace.mp hK
-  let L' : K × Z → E →L[𝕜] F := fun p ↦ L (p.1, p.2)
-  have hL' : Continuous L' :=
-    hL.comp_continuous (continuous_subtype_val.prodMap continuous_id)
-      fun p ↦ ⟨p.1.2, mem_univ _⟩
-  obtain ⟨V, hV, C, hC, hbound⟩ :=
-    isCompact_univ.exists_mem_nhds_isInvertible_norm_inverse_le L' z₀
-      (fun _ _ ↦ hL'.continuousAt) (fun x _ ↦ hinv x x.2)
+  have hL' : Continuous (fun p : K × Z ↦ L (p.1, p.2)) :=
+    hL.comp_continuous (continuous_subtype_val.prodMap continuous_id) fun p ↦ ⟨p.1.2, mem_univ _⟩
+  obtain ⟨V, hV, C, hC, hbound⟩ := isCompact_univ.exists_mem_nhds_isInvertible_norm_inverse_le
+    (fun p : K × Z ↦ L (p.1, p.2)) z₀ (fun _ _ ↦ hL'.continuousAt) (fun x _ ↦ hinv x x.2)
   obtain ⟨r, hr, hrV⟩ := Metric.mem_nhds_iff.1 hV
-  refine ⟨r / 2, by positivity, C, hC, fun x hx z hz ↦
-    hbound ⟨x, hx⟩ (mem_univ _) z (hrV ?_)⟩
-  exact Metric.mem_ball.2 (hz.trans_lt (half_lt_self hr))
+  exact ⟨r / 2, by positivity, C, hC, fun x hx z hz ↦
+    hbound ⟨x, hx⟩ (mem_univ _) z (hrV (Metric.mem_ball.2 (hz.trans_lt (half_lt_self hr))))⟩
 
 /-- For a continuous map `Φ` from a topological real vector space into bounded operators and
 families `A, B` continuous on a compact set `K`, invertibility of `Φ (A x)` on `K` persists to
@@ -99,16 +95,11 @@ theorem exists_pos_isInvertible_sub_smul_norm_inverse_le
     (hinv : ∀ x ∈ K, (Φ (A x)).IsInvertible) :
     ∃ ε > 0, ∃ C ≥ 0, ∀ x ∈ K, ∀ δ : ℝ, |δ| ≤ ε →
       (Φ (A x - δ • B x)).IsInvertible ∧ ‖(Φ (A x - δ • B x)).inverse‖ ≤ C := by
-  have hA' : ContinuousOn (fun z : X × ℝ ↦ A z.1) (K ×ˢ Set.univ) :=
-    hA.comp continuousOn_fst fun _ h ↦ h.1
-  have hB' : ContinuousOn (fun z : X × ℝ ↦ B z.1) (K ×ˢ Set.univ) :=
-    hB.comp continuousOn_fst fun _ h ↦ h.1
   have hcont : ContinuousOn (fun z : X × ℝ ↦ Φ (A z.1 - z.2 • B z.1)) (K ×ˢ Set.univ) :=
-    hΦ.comp_continuousOn (hA'.sub (continuousOn_snd.smul hB'))
-  obtain ⟨ε, hε, C, hC, hbound⟩ := hK.exists_pos_isInvertible_norm_inverse_le _ 0 hcont (by
-    intro x hx
-    simpa only [zero_smul, sub_zero] using hinv x hx)
-  refine ⟨ε, hε, C, hC, fun x hx δ hδ ↦ hbound x hx δ ?_⟩
-  simpa only [Real.dist_eq, sub_zero] using hδ
+    hΦ.comp_continuousOn <| (hA.comp (s := K ×ˢ Set.univ) continuousOn_fst fun _ h ↦ h.1).sub
+      (continuousOn_snd.smul (hB.comp (s := K ×ˢ Set.univ) continuousOn_fst fun _ h ↦ h.1))
+  obtain ⟨ε, hε, C, hC, hbound⟩ := hK.exists_pos_isInvertible_norm_inverse_le _ 0 hcont
+    fun x hx ↦ by simpa only [zero_smul, sub_zero] using hinv x hx
+  exact ⟨ε, hε, C, hC, fun x hx δ hδ ↦ hbound x hx δ (by simpa [Real.dist_eq] using hδ)⟩
 
 end IsCompact

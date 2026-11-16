@@ -157,34 +157,29 @@ theorem norm_weakFDeriv_sq_add_norm_compLp_sq_eq_trajectoryOperator_sq
     (u : WeakDerivStep volume ⊤ 2
       (ContinuousLinearMap.id ℝ (Lp E 2 (volume.restrict ((⊤ : Opens ℝ) : Set ℝ))))) :
     ‖weakFDeriv _ u‖ ^ 2 + ‖A₀.compLp (prev _ u)‖ ^ 2 = ‖trajectoryOperator AL u‖ ^ 2 := by
-  revert u
-  set base := ContinuousLinearMap.id ℝ (Lp E 2 (volume.restrict ((⊤ : Opens ℝ) : Set ℝ)))
-  intro u
-  have hclosed : IsClosed {u : WeakDerivStep volume ⊤ 2 base |
-      ‖weakFDeriv base u‖ ^ 2 + ‖A₀.compLp (prev base u)‖ ^ 2 =
-        ‖trajectoryOperator AL u‖ ^ 2} :=
+  let base := ContinuousLinearMap.id ℝ (Lp E 2 (volume.restrict ((⊤ : Opens ℝ) : Set ℝ)))
+  have hclosed : IsClosed {v : WeakDerivStep volume ⊤ 2 base |
+      ‖weakFDeriv base v‖ ^ 2 + ‖A₀.compLp (prev base v)‖ ^ 2 = ‖trajectoryOperator AL v‖ ^ 2} :=
     isClosed_eq
-      ((((weakFDerivL base).continuous.congr fun u ↦ weakFDerivL_apply base u).norm.pow 2).add
-        ((((A₀.compLpL 2 (volume.restrict ((⊤ : Opens ℝ) : Set ℝ))).continuous.comp
-          ((prevL base).continuous.congr fun u ↦ prevL_apply base u)).norm.pow 2)))
+      ((((weakFDerivL base).continuous.congr (weakFDerivL_apply base)).norm.pow 2).add
+        (((A₀.compLpL 2 _).continuous.comp
+          ((prevL base).continuous.congr (prevL_apply base))).norm.pow 2))
       ((trajectoryOperator AL).continuous.norm.pow 2)
   refine hclosed.closure_subset_iff.mpr ?_
     (dense_setOf_exists_contDiff_hasCompactSupport (by norm_num) u)
-  rintro u ⟨φ, hφ, hφc, hu⟩
+  rintro v ⟨φ, hφ, hφc, hv⟩
   have hφ1 : ContDiff ℝ 1 φ := hφ.of_le (by exact_mod_cast le_top)
-  have hAφ : ⇑(A₀.compLp (prev base u)) =ᵐ[volume.restrict ((⊤ : Opens ℝ) : Set ℝ)]
-      fun s ↦ A₀ (φ s) := by
-    filter_upwards [A₀.coeFn_compLp (prev base u), hu] with s hs hφs
+  have hnormA : ‖A₀.compLp (prev base v)‖ ^ 2 = ∫ s, ‖A₀ (φ s)‖ ^ 2 := by
+    rw [← Lp.integral_norm_sq_eq_norm_sq]
+    refine (integral_congr_ae (g := fun s ↦ ‖A₀ (φ s)‖ ^ 2) ?_).trans (by simp)
+    filter_upwards [A₀.coeFn_compLp (prev base v), hv] with s hs hφs
+    dsimp only [base] at hs
     rw [hs, hφs]
-  have hnormA : ‖A₀.compLp (prev base u)‖ ^ 2 = ∫ s, ‖A₀ (φ s)‖ ^ 2 := by
-    rw [← Lp.integral_norm_sq_eq_norm_sq,
-      integral_congr_ae (g := fun s ↦ ‖A₀ (φ s)‖ ^ 2) (hAφ.mono fun s hs ↦ by rw [hs])]
-    simp
   have hid := integral_norm_deriv_add_sq_eq (A := fun _ : ℝ ↦ A₀) contDiff_const
     (fun _ _ ↦ hsym) hφ1 hφc
   simp only [deriv_const, zero_apply, inner_zero_right, integral_zero, sub_zero] at hid
-  rw [Set.mem_ofPred_eq, norm_weakFDeriv_sq_eq_integral hφ1 hu, hnormA,
-    norm_trajectoryOperator_sq_eq_integral hφ1 hu AL hAL, hid]
+  rw [Set.mem_ofPred_eq, norm_weakFDeriv_sq_eq_integral hφ1 hv, hnormA,
+    norm_trajectoryOperator_sq_eq_integral hφ1 hv AL hAL, hid]
 
 /-- **Pythagorean energy identity for a constant scalar trajectory operator.** For `c : ℝ` and an
 `L∞` class `AL` equal almost everywhere to `c • id`, every `u ∈ W^{1,2}(ℝ, E)` satisfies
@@ -195,10 +190,10 @@ theorem norm_weakFDeriv_sq_add_mul_norm_prev_sq_eq_trajectoryOperator_sq (c : �
     (u : WeakDerivStep volume ⊤ 2
       (ContinuousLinearMap.id ℝ (Lp E 2 (volume.restrict ((⊤ : Opens ℝ) : Set ℝ))))) :
     ‖weakFDeriv _ u‖ ^ 2 + c ^ 2 * ‖prev _ u‖ ^ 2 = ‖trajectoryOperator AL u‖ ^ 2 := by
-  have h := norm_weakFDeriv_sq_add_norm_compLp_sq_eq_trajectoryOperator_sq
-    (LinearMap.IsSymmetric.id.smul (conj_trivial c)) AL hAL u
   simpa only [ContinuousLinearMap.smul_compLp, ContinuousLinearMap.id_compLp, norm_smul,
-    Real.norm_eq_abs, mul_pow, sq_abs] using h
+    Real.norm_eq_abs, mul_pow, sq_abs] using
+    norm_weakFDeriv_sq_add_norm_compLp_sq_eq_trajectoryOperator_sq
+      (LinearMap.IsSymmetric.id.smul (conj_trivial c)) AL hAL u
 
 open scoped InnerProductSpace in
 /-- **The coercive trajectory estimate on Sobolev paths.** If a `C¹` family of symmetric operators

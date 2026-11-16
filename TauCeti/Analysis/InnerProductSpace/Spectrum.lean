@@ -228,45 +228,32 @@ theorem exists_hilbertBasis_of_isCompactOperator
   obtain ⟨e, he⟩ := hA
   set R : E →L[𝕜] D := e.symm.toContinuousLinearMap
   set K : E →L[𝕜] E := ι.comp R
-  have hAR (x : E) : A (R x) = x := by
-    rw [← he]
-    exact e.apply_symm_apply x
-  have hKc : IsCompactOperator K := hιc.comp_clm R
+  have hAR (x : E) : A (R x) = x := he ▸ e.apply_symm_apply x
   have hKs : (K : E →ₗ[𝕜] E).IsSymmetric := fun x y ↦ by
     have h := hsym (R x) (R y)
     rw [hAR, hAR] at h
     simpa only [coe_coe, K, comp_apply] using h.symm
-  have hKi : LinearMap.ker (K : E →ₗ[𝕜] E) = ⊥ := by
-    refine LinearMap.ker_eq_bot'.2 fun x hx ↦ ?_
+  have hKi : LinearMap.ker (K : E →ₗ[𝕜] E) = ⊥ := LinearMap.ker_eq_bot'.2 fun x hx ↦ by
     have hRx : R x = 0 := hιi (by simpa only [coe_coe, K, comp_apply, map_zero] using hx)
     rw [← hAR x, hRx, map_zero]
   obtain ⟨s, b, nu, hb, hnu0, hev⟩ :=
-    exists_hilbertBasis_forall_hasEigenvector_ne_zero hKc hKs hKi
+    exists_hilbertBasis_forall_hasEigenvector_ne_zero (hιc.comp_clm R) hKs hKi
   have hreal (i : s) : ((RCLike.re (nu i) : ℝ) : 𝕜) = nu i :=
-    RCLike.conj_eq_iff_re.mp
-      (hKs.conj_eigenvalue_eq_self (hasEigenvalue_of_hasEigenvector (hev i)))
-  have hre0 (i : s) : RCLike.re (nu i) ≠ 0 := by
-    intro h0
-    exact hnu0 i (by rw [← hreal i, h0, RCLike.ofReal_zero])
+    RCLike.conj_eq_iff_re.mp (hKs.conj_eigenvalue_eq_self (hasEigenvalue_of_hasEigenvector (hev i)))
+  have hre0 (i : s) : RCLike.re (nu i) ≠ 0 := fun h0 ↦
+    hnu0 i (by rw [← hreal i, h0, RCLike.ofReal_zero])
+  have hKev (i : s) : K i = nu i • (i : E) := (hev i).apply_eq_smul
   refine ⟨s, b, fun i ↦ (((RCLike.re (nu i))⁻¹ : ℝ) : 𝕜) • R i, fun i ↦ (RCLike.re (nu i))⁻¹,
-    (‖K‖ + 1)⁻¹, by positivity, fun i ↦ ?_, fun i ↦ ?_, fun i ↦ ?_⟩
-  · have hKi' : K i = nu i • (i : E) := (hev i).apply_eq_smul
-    have hinv : (((RCLike.re (nu i))⁻¹ : ℝ) : 𝕜) = (nu i)⁻¹ := by
-      rw [RCLike.ofReal_inv, hreal i]
-    rw [map_smul, hinv, show ι (R i) = K i from rfl, hKi', smul_smul,
+    (‖K‖ + 1)⁻¹, by positivity, fun i ↦ ?_, fun i ↦ ?_, fun i ↦ by rw [map_smul, hAR, hb]⟩
+  · rw [map_smul, RCLike.ofReal_inv, hreal i, show ι (R i) = K i from rfl, hKev i, smul_smul,
       inv_mul_cancel₀ (hnu0 i), one_smul, hb]
-  · have hKi' : K i = nu i • (i : E) := (hev i).apply_eq_smul
-    have hn : ‖(i : E)‖ = 1 := by
-      rw [← hb]
-      exact b.orthonormal.1 i
-    have hnorm : ‖nu i‖ = |RCLike.re (nu i)| := by
-      conv_lhs => rw [← hreal i]
-      exact RCLike.norm_ofReal _
-    have hle : |RCLike.re (nu i)| ≤ ‖K‖ := by
-      simpa only [hKi', norm_smul, hn, mul_one, hnorm] using K.le_opNorm (i : E)
+  · have hle : |RCLike.re (nu i)| ≤ ‖K‖ := by
+      have hnorm : ‖nu i‖ = |RCLike.re (nu i)| := by
+        rw [← RCLike.norm_ofReal (K := 𝕜), hreal i]
+      have hbi : ‖(i : E)‖ = 1 := hb ▸ b.orthonormal.1 i
+      simpa only [hKev i, norm_smul, hbi, mul_one, hnorm] using K.le_opNorm (i : E)
     rw [abs_inv]
     exact inv_anti₀ (abs_pos.2 (hre0 i)) (by linarith)
-  · rw [map_smul, hAR, hb]
 
 omit [CompleteSpace E] in
 /-- **Countability of eigenvalues of a symmetric operator on a separable space.** If `ι : D →L[𝕜] E`
@@ -281,45 +268,28 @@ theorem countable_setOf_exists_ne_zero_apply_eq_smul
   classical
   set S : Set 𝕜 := {lam : 𝕜 | ∃ x : D, x ≠ 0 ∧ A x = lam • ι x}
   choose x hx0 hxA using fun lam : S ↦ lam.2
-  have hι0 (lam : S) : ι (x lam) ≠ 0 := by
-    intro h0
-    exact hx0 lam (hιi (h0.trans (map_zero ι).symm))
+  have hι0 (lam : S) : ι (x lam) ≠ 0 := fun h0 ↦ hx0 lam (hιi (h0.trans (map_zero ι).symm))
   have hconj (lam : S) : starRingEnd 𝕜 (lam : 𝕜) = (lam : 𝕜) := by
-    have h1 : ⟪A (x lam), ι (x lam)⟫_𝕜 = ⟪ι (x lam), A (x lam)⟫_𝕜 := hsym _ _
+    have h1 := hsym (x lam) (x lam)
     rw [hxA lam, inner_smul_left, inner_smul_right] at h1
     exact mul_right_cancel₀ (inner_self_ne_zero.2 (hι0 lam)) h1
   let u : S → E := fun lam ↦ (‖ι (x lam)‖ : 𝕜)⁻¹ • ι (x lam)
   have hunorm (lam : S) : ‖u lam‖ = 1 := by
     simp only [u, norm_smul, norm_inv, RCLike.norm_ofReal, abs_of_nonneg (norm_nonneg _),
       inv_mul_cancel₀ (norm_ne_zero_iff.2 (hι0 lam))]
-  have huorth : Pairwise fun a b : S ↦ ⟪u a, u b⟫_𝕜 = 0 := by
-    intro a b hab
-    have h1 : ⟪A (x a), ι (x b)⟫_𝕜 = ⟪ι (x a), A (x b)⟫_𝕜 := hsym _ _
+  have huorth : Pairwise fun a b : S ↦ ⟪u a, u b⟫_𝕜 = 0 := fun a b hab ↦ by
+    have h1 := hsym (x a) (x b)
     rw [hxA a, hxA b, inner_smul_left, inner_smul_right, hconj a] at h1
-    have hsub : ((a : 𝕜) - (b : 𝕜)) * ⟪ι (x a), ι (x b)⟫_𝕜 = 0 := by
-      rw [sub_mul]
-      exact sub_eq_zero.2 h1
-    have h0 : ⟪ι (x a), ι (x b)⟫_𝕜 = 0 :=
-      (mul_eq_zero.1 hsub).resolve_left (sub_ne_zero.2 (Subtype.coe_injective.ne hab))
+    have h0 : ⟪ι (x a), ι (x b)⟫_𝕜 = 0 := (mul_eq_zero.1 (by rw [sub_mul, sub_eq_zero]; exact h1))
+      |>.resolve_left (sub_ne_zero.2 (Subtype.coe_injective.ne hab))
     simp only [u, inner_smul_left, inner_smul_right, h0, mul_zero]
-  have hdisj : Pairwise (Function.onFun Disjoint fun lam : S ↦ Metric.ball (u lam) (1 / 2)) := by
-    intro a b hab
-    rw [Function.onFun, Set.disjoint_left]
-    intro y hya hyb
-    have hdist : dist (u a) (u b) < 1 := by
-      calc dist (u a) (u b) ≤ dist (u a) y + dist y (u b) := dist_triangle _ _ _
-        _ < 1 / 2 + 1 / 2 := add_lt_add (Metric.mem_ball'.1 hya) (Metric.mem_ball.1 hyb)
-        _ = 1 := by norm_num
-    have hsq : ‖u a - u b‖ ^ 2 = 2 := by
-      rw [norm_sub_sq (𝕜 := 𝕜) (u a) (u b), hunorm a, hunorm b, huorth hab, map_zero]
-      norm_num
-    have hge : 1 ≤ dist (u a) (u b) := by
-      rw [dist_eq_norm]
-      nlinarith [norm_nonneg (u a - u b)]
-    linarith
-  exact Set.countable_coe_iff.1
-    (hdisj.countable_of_isOpen_disjoint (fun _ ↦ Metric.isOpen_ball)
-      (fun lam ↦ ⟨u lam, Metric.mem_ball_self (by positivity)⟩))
+  have hdisj : Pairwise (Function.onFun Disjoint fun lam : S ↦ Metric.ball (u lam) (1 / 2)) :=
+    fun a b hab ↦ Metric.ball_disjoint_ball <| by
+      have hsq : ‖u a - u b‖ ^ 2 = 2 := by
+        rw [norm_sub_sq (𝕜 := 𝕜), hunorm a, hunorm b, huorth hab, map_zero]; norm_num
+      rw [dist_eq_norm]; nlinarith [norm_nonneg (u a - u b)]
+  exact Set.countable_coe_iff.1 <| hdisj.countable_of_isOpen_disjoint (fun _ ↦ Metric.isOpen_ball)
+    (fun lam ↦ ⟨u lam, Metric.mem_ball_self (by positivity)⟩)
 
 omit [CompleteSpace E] in
 /-- **The spectral expansion of an operator diagonal in a Hilbert basis.**  Applying `T` term by

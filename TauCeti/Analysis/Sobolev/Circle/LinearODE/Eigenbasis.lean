@@ -141,27 +141,19 @@ theorem exists_isInvertible_loopOperator_sub_smul_const_I_id
   have := FiniteDimensional.completeSpace ℂ F
   have : TopologicalSpace.SeparableSpace F :=
     TopologicalSpace.SecondCountableTopology.to_separableSpace
-  have : TopologicalSpace.SeparableSpace (lp (fun _ : ℤ ↦ F) 2) :=
-    lp.separableSpace (by norm_num)
+  have : TopologicalSpace.SeparableSpace (lp (fun _ : ℤ ↦ F) 2) := lp.separableSpace (by norm_num)
   have : TopologicalSpace.SeparableSpace (CircleSobolev 0 F) :=
     (toℓ2ₗᵢ (s := 0) (E := F)).symm.surjective.denseRange.separableSpace
       (toℓ2ₗᵢ (s := 0) (E := F)).symm.continuous
-  have hcount : {δ : ℝ | ∃ a : CircleSobolev 1 F, a ≠ 0 ∧
-      (I • loopOperator T S) a = δ • ((inclusion zero_le_one).restrictScalars ℝ) a}.Countable :=
-    ContinuousLinearMap.countable_setOf_exists_ne_zero_apply_eq_smul
-      (inclusion_injective zero_le_one) (real_inner_I_smul_loopOperator_comm T S hS)
-  have hne : {δ : ℝ | ∃ a : CircleSobolev 1 F, a ≠ 0 ∧
-      (I • loopOperator T S) a = δ • ((inclusion zero_le_one).restrictScalars ℝ) a} ≠ Set.univ :=
-    fun h ↦ Cardinal.not_countable_real (h ▸ hcount)
-  obtain ⟨δ, hδ⟩ := Set.nonempty_compl.2 hne
-  refine ⟨δ, (isFredholm_loopOperator T _).isInvertible_of_injective_of_index_eq_zero ?_
+  have hcount := ContinuousLinearMap.countable_setOf_exists_ne_zero_apply_eq_smul
+    (ι := (inclusion (E := F) zero_le_one).restrictScalars ℝ) (A := I • loopOperator T S)
+    (inclusion_injective zero_le_one) (real_inner_I_smul_loopOperator_comm T S hS)
+  obtain ⟨δ, hδ⟩ := Set.nonempty_compl.2 fun h ↦ Cardinal.not_countable_real (h ▸ hcount)
+  refine ⟨δ, (isFredholm_loopOperator T _).isInvertible_of_injective_of_index_eq_zero
+    ((injective_iff_map_eq_zero _).2 fun a ha ↦ by_contra fun ha0 ↦ hδ ⟨a, ha0, sub_eq_zero.1 ?_⟩)
     (index_loopOperator T _)⟩
-  refine (injective_iff_map_eq_zero _).2 fun a ha ↦ ?_
-  by_contra ha0
-  apply hδ
-  refine ⟨a, ha0, sub_eq_zero.1 ?_⟩
-  have hshift := congrArg (fun L ↦ L a) (I_smul_loopOperator_sub_smul_const_I_id T S δ)
-  simpa only [smul_apply, sub_apply, ha, smul_zero] using hshift.symm
+  simpa only [smul_apply, sub_apply, ha, smul_zero] using
+    (congrArg (fun L ↦ L a) (I_smul_loopOperator_sub_smul_const_I_id T S δ)).symm
 
 /-- **Eigenvectors of the asymptotic operator are classical eigenfunctions.** An element `a` of
 `H¹` with continuous representative `ζ` satisfies `A a = λ a` for `A = J₀ (d/dt - S_t)` exactly

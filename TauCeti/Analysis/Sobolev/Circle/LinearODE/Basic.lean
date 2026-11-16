@@ -175,15 +175,14 @@ theorem loopOperator_sub (S₁ S₂ : C(AddCircle T, E →L[ℝ] E)) :
   rw [loopOperator, loopOperator, mulLoop_sub]
   abel
 
-/-- Shifting the coefficient loop by `δ • J₀` shifts the asymptotic operator `A = I • L_S` by
-`-δ • ι`, matching exponentially weighted cylinder operators `∂s + A - δ ι`. -/
+/-- Subtracting `δ • J₀` from the coefficient loop shifts the asymptotic operator `A = I • L_S`
+by `-δ • ι`, matching exponentially weighted cylinder operators `∂s + A - δ ι`. -/
 theorem I_smul_loopOperator_sub_smul_const_I_id (S : C(AddCircle T, E →L[ℝ] E)) (δ : ℝ) :
     I • loopOperator T (S - δ • ContinuousMap.const _ (I • ContinuousLinearMap.id ℝ E)) =
       I • loopOperator T S - δ • (inclusion (E := E) zero_le_one).restrictScalars ℝ := by
   ext a : 1
-  rw [smul_apply, loopOperator_sub, add_apply, mulLoop_smul, smul_apply, mulLoop_const_smul_id,
-    smul_add, smul_comm I δ, smul_smul, I_mul_I, neg_one_smul, smul_neg, sub_apply, smul_apply,
-    smul_apply, ContinuousLinearMap.coe_restrictScalars', sub_eq_add_neg]
+  rw [loopOperator_sub, mulLoop_smul]
+  simp [mulLoop_const_smul_id, smul_add, smul_comm I δ, smul_smul, sub_eq_add_neg]
 
 /-- The periodic first-order operator depends continuously in operator norm on its
 coefficient loop, with the uniform norm on coefficients. -/
