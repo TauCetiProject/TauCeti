@@ -13,24 +13,28 @@ public import TauCeti.Algebra.AlgebraicGroup.Smooth.CharZero
 public import TauCeti.Algebra.AlgebraicGroup.Tangent.FiniteType
 public import TauCeti.Algebra.AlgebraicGroup.Tangent.Lie.BaseChange
 public import TauCeti.Algebra.Lie.Killing.Perfect
-import TauCeti.Algebra.AlgebraicGroup.Connected.AlgebraicallyClosed
 import TauCeti.Algebra.AlgebraicGroup.HopfIdeal.Dimension
 
 /-!
 # Homomorphisms determined by their differentials
 
-Two homomorphisms from a connected finite-type affine group over an algebraically closed field
-of characteristic zero—or, over any characteristic-zero field, from a geometrically connected
-finite-type affine group—agree if their differentials agree. Their scheme-theoretic equalizer
+Over any field of characteristic zero, two homomorphisms from a geometrically connected finite-type
+affine group agree if their differentials at the identity agree. Their scheme-theoretic equalizer
 has the full Lie algebra. Cartier's theorem makes it smooth, so `HopfIdeal.finrank_quotientLie_lt`
 forces it to be the whole source group.
 
-A homomorphism from a connected finite-type affine group over an algebraically closed field
-of characteristic zero (or a geometrically connected one over any characteristic-zero field) is
-trivial if its differential at the identity is zero. This follows
-by comparing it with the trivial homomorphism, whose differential is zero.
+A homomorphism from a geometrically connected finite-type affine group over a characteristic-zero
+field is trivial if its differential at the identity is zero. This follows by comparing it with the
+trivial homomorphism, whose differential is zero.
 
-The statement is expressed contravariantly on coordinate Hopf algebras: `f : H ⟶ K`
+The same smooth closed-subgroup criterion also yields closed-subgroup factorization via Lie
+algebras (`TauCeti.CommHopfAlgCat.existsUnique_hom_of_surjective_of_derivationCompLieHom_eq`): a
+morphism from a geometrically connected finite-type affine group `Spec K` into `Spec A` factors
+uniquely through a closed subgroup `Spec B ↪ Spec A` (represented contravariantly by a surjective
+Hopf-algebra map `q : A →ₐc[k] B`) whenever its differential factors through the differential of
+`q`.
+
+The statements are expressed contravariantly on coordinate Hopf algebras: `f : H ⟶ K`
 represents a morphism from `Spec K` to `Spec H`. Triviality is the counit followed by the
 unit. No finite-type hypothesis on the target group `Spec H` is needed.
 
@@ -55,12 +59,12 @@ open CategoryTheory
 
 namespace TauCeti.HopfIdeal
 
-universe u
+universe u v
 
 /-- Over any field of characteristic zero, a closed subgroup scheme of a geometrically connected
 finite-type affine group with the full ambient Lie algebra is the whole group (`I = ⊥`). -/
 theorem eq_bot_of_lieSubalgebra_eq_top_of_geometricallyConnected
-    {k : Type u} [Field k] [CharZero k] {K : _root_.CommHopfAlgCat.{u} k} [Algebra.FiniteType k K]
+    {k : Type u} [Field k] [CharZero k] {K : _root_.CommHopfAlgCat.{v} k} [Algebra.FiniteType k K]
     (hK : geometricallyConnectedCommHopfAlgProperty k K) (I : HopfIdeal k K)
     (hI : I.lieSubalgebra (B := k) = ⊤) : I = ⊥ := by
   by_contra hne
@@ -77,9 +81,9 @@ end TauCeti.HopfIdeal
 
 namespace CommHopfAlgCat.Hom
 
-universe u
+universe u v
 
-variable {k : Type u} [Field k] [CharZero k] {H K : CommHopfAlgCat.{u} k} [Algebra.FiniteType k K]
+variable {k : Type u} [Field k] [CharZero k] {H K : CommHopfAlgCat.{v} k} [Algebra.FiniteType k K]
 
 /-- Over any field of characteristic zero, two homomorphisms from a geometrically connected
 finite-type affine group agree if their differentials at the identity agree. -/
@@ -109,11 +113,16 @@ end CommHopfAlgCat.Hom
 
 namespace TauCeti.CommHopfAlgCat
 
-universe u
+universe u v w
 
-/-- **Factorization of a homomorphism into a closed subgroup via Lie algebras (Borel §7.1).** -/
+/-- **Factorization of a homomorphism into a closed subgroup via Lie algebras (Borel §7.1).**
+
+Over any field `k` of characteristic zero, a coordinate morphism `ρ : A →ₐc[k] K` from a
+geometrically connected finite-type affine group `Spec K` into `Spec A` factors uniquely through a
+surjective morphism `q : A →ₐc[k] B` (a closed subgroup `Spec B ↪ Spec A`) with prescribed
+differential `L : Lie(Spec K) →ₗ⁅k⁆ Lie(Spec B)` whenever `dρ = dq ∘ L`. -/
 theorem existsUnique_hom_of_surjective_of_derivationCompLieHom_eq
-    {k A B : Type u} [Field k] [CharZero k] {K : _root_.CommHopfAlgCat.{u} k}
+    {k : Type u} {A : Type w} {B : Type v} [Field k] [CharZero k] {K : _root_.CommHopfAlgCat.{v} k}
     [Algebra.FiniteType k K] [CommRing A] [HopfAlgebra k A] [CommRing B] [HopfAlgebra k B]
     (hK : geometricallyConnectedCommHopfAlgProperty k K) (q : A →ₐc[k] B)
     (hq : Function.Surjective q) (ρ : A →ₐc[k] K)
@@ -137,12 +146,8 @@ theorem existsUnique_hom_of_surjective_of_derivationCompLieHom_eq
   let φ₀ : B →ₐc[k] K := (Bialgebra.Quotient.liftBialgHom I.toIdeal ρ hker).comp
     ((HopfIdeal.kerLiftBialgEquiv q hq).symm : B →ₐc[k] _)
   have hφ₀q : φ₀.comp q = ρ := BialgHom.ext fun x ↦ by
-    have hsymm : (HopfIdeal.kerLiftBialgEquiv q hq).symm (q x) = Ideal.Quotient.mk I.toIdeal x :=
-      EquivLike.injective (HopfIdeal.kerLiftBialgEquiv q hq) <| by
-        rw [(HopfIdeal.kerLiftBialgEquiv q hq).apply_symm_apply,
-          HopfIdeal.kerLiftBialgEquiv_apply, HopfIdeal.kerLiftBialgHom_mk]
-    rw [BialgHom.comp_apply, BialgHom.comp_apply, BialgEquiv.coe_toBialgHom, hsymm,
-      Bialgebra.Quotient.liftBialgHom_mk]
+    rw [BialgHom.comp_apply, BialgHom.comp_apply, BialgEquiv.coe_toBialgHom,
+      HopfIdeal.kerLiftBialgEquiv_symm_apply, Bialgebra.Quotient.liftBialgHom_mk]
   have hφ₀diff : derivationCompLieHom (B := k) (_root_.CommHopfAlgCat.ofHom φ₀).hom = L := by
     ext d : 1; apply derivationCompLieHom_injective_of_surjective (B := k) q hq
     rw [← LieHom.comp_apply, ← derivationCompLieHom_comp, _root_.CommHopfAlgCat.hom_ofHom, hφ₀q,
@@ -150,47 +155,14 @@ theorem existsUnique_hom_of_surjective_of_derivationCompLieHom_eq
   exact ⟨_root_.CommHopfAlgCat.ofHom φ₀, ⟨hφ₀q, hφ₀diff⟩, fun φ ⟨_, hφ⟩ ↦
     φ.eq_of_derivationCompLieHom_eq_of_geometricallyConnected hK _ (hφ.trans hφ₀diff.symm)⟩
 
-variable {k : Type u} [Field k] [IsAlgClosed k] [CharZero k]
-variable {H : _root_.CommHopfAlgCat.{u} k} {K : FiniteTypeCommHopfAlgCat.{u, u} k}
-variable [ConnectedSpace (PrimeSpectrum K)]
-
-/-- Two homomorphisms from a connected finite-type affine group over an algebraically closed
-field of characteristic zero agree if their differentials at the identity agree. The target
-group need not be of finite type. -/
-theorem _root_.CommHopfAlgCat.Hom.eq_of_derivationCompLieHom_eq
-    (f g : H ⟶ K.obj)
-    (hfg : derivationCompLieHom (B := k) f.hom = derivationCompLieHom (B := k) g.hom) :
-    f = g :=
-  f.eq_of_derivationCompLieHom_eq_of_geometricallyConnected
-    ((geometricallyConnectedCommHopfAlgProperty_iff_connectedSpace k K.obj).mpr inferInstance) g hfg
-
-/-- Over an algebraically closed field of characteristic zero, a morphism from a connected
-finite-type affine group with zero differential is trivial. The target group need not be
-of finite type. -/
-theorem _root_.CommHopfAlgCat.Hom.eq_unit_comp_counit_of_derivationCompLieHom_eq_zero
-    (f : H ⟶ K.obj)
-    (hf : derivationCompLieHom (B := k) f.hom = 0) :
-    f = _root_.CommHopfAlgCat.ofHom
-      ((Bialgebra.unitBialgHom k K).comp (Bialgebra.counitBialgHom k H)) :=
-  f.eq_unit_comp_counit_of_derivationCompLieHom_eq_zero_of_geometricallyConnected
-    ((geometricallyConnectedCommHopfAlgProperty_iff_connectedSpace k K.obj).mpr inferInstance) hf
-
-end TauCeti.CommHopfAlgCat
-
-namespace TauCeti.CommHopfAlgCat
-
-universe u
-
-variable {k : Type u} [Field k] [CharZero k]
-variable {H : _root_.CommHopfAlgCat.{u} k} {K : FiniteTypeCommHopfAlgCat.{u, u} k}
-variable [Coalgebra.IsCocomm k H]
-
-/-- A homomorphism from a geometrically connected affine group with nondegenerate Killing form
-to a commutative affine group is trivial in characteristic zero. The target group need not
-be of finite type. -/
+/-- A homomorphism from a geometrically connected finite-type affine group with nondegenerate
+Killing form to a commutative affine group is trivial in characteristic zero. The target group need
+not be of finite type. -/
 theorem eq_unit_comp_counit_of_isKilling
+    {k : Type u} [Field k] [CharZero k] {H K : _root_.CommHopfAlgCat.{v} k}
+    [Algebra.FiniteType k K] [Coalgebra.IsCocomm k H]
     [LieAlgebra.IsKilling k (Derivation k K (Bialgebra.CounitAlgebra k K k))]
-    (hK : geometricallyConnectedCommHopfAlgProperty k K.obj) (f : H ⟶ K.obj) :
+    (hK : geometricallyConnectedCommHopfAlgProperty k K) (f : H ⟶ K) :
     f = _root_.CommHopfAlgCat.ofHom
       ((Bialgebra.unitBialgHom k K).comp (Bialgebra.counitBialgHom k H)) :=
   f.eq_unit_comp_counit_of_derivationCompLieHom_eq_zero_of_geometricallyConnected hK

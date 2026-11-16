@@ -66,8 +66,9 @@ universe u
 variable {k H : Type u} [Field k] [CharZero k] [CommRing H] [HopfAlgebra k H]
   [Algebra.FiniteType k H] {h e f : Derivation k H (Bialgebra.CounitAlgebra k H k)}
 
-/-- **Every `sl₂` triple in `Lie(G)` over a characteristic-zero field integrates to a unique
-algebraic `SL₂` homomorphism.** -/
+/-- **Every `sl₂` triple in `Lie(G)` for a finite-type affine group `G = Spec H` over a
+characteristic-zero field integrates to a unique algebraic `SL₂` homomorphism**, whose differential
+is `(t.toLieHom k).comp (SpecialLinear.tangentLieEquivSl 2)`. -/
 theorem existsUnique_sl2CoordinateMap (t : IsSl2Triple h e f) :
     ∃! φ : CommHopfAlgCat.of k H ⟶ SpecialLinear.coordinateHopfAlgebra k 2,
       derivationCompLieHom (B := k) φ.hom =
@@ -102,7 +103,9 @@ theorem existsUnique_sl2CoordinateMap (t : IsSl2Triple h e f) :
   exact ⟨φ, hφ, fun ψ hψ ↦
     ψ.eq_of_derivationCompLieHom_eq_of_geometricallyConnected hconn φ (hψ.trans hφ.symm)⟩
 
-/-- **The coordinate Hopf-algebra morphism `H ⟶ O(SL₂)` attached to an `sl₂` triple.** -/
+/-- **The coordinate Hopf-algebra morphism `H ⟶ O(SL₂)` attached to an `sl₂` triple.** For a
+finite-type commutative Hopf algebra `H` over a characteristic-zero field `k`, this is the unique
+morphism whose differential is `(t.toLieHom k).comp (SpecialLinear.tangentLieEquivSl 2)`. -/
 noncomputable def sl2CoordinateMap (t : IsSl2Triple h e f) :
     CommHopfAlgCat.of k H ⟶ SpecialLinear.coordinateHopfAlgebra k 2 :=
   t.existsUnique_sl2CoordinateMap.choose
@@ -176,7 +179,7 @@ theorem sl2CoordinateMap_map {H' : Type u} [CommRing H'] [HopfAlgebra k H']
   have ht : t = (isSl2Triple_single (R := k) (zero_ne_one : (0 : Fin 2) ≠ 1)).map
       (SpecialLinear.tangentLieEquivSl (R := k) (B := k) 2).symm.toLieHom t.h_ne_zero :=
     Subsingleton.elim _ _
-  symm; rw [eq_sl2CoordinateMap_iff, TauCeti.CommHopfAlgCat.hom_id, derivationCompLieHom_id, ht,
+  symm; rw [eq_sl2CoordinateMap_iff, CommHopfAlgCat.id_hom, derivationCompLieHom_id, ht,
     (isSl2Triple_single (R := k) zero_ne_one).toLieHom_map k _ t.h_ne_zero,
     toLieHom_isSl2Triple_single, LieHom.comp_id]
   exact LieHom.ext fun d ↦
@@ -202,7 +205,10 @@ theorem derivationComp_sl2CoordinateMap_rootSubgroup_one_zero (t : IsSl2Triple h
     SpecialLinear.tangentMatrix_derivationComp_rootSubgroup, LinearEquiv.apply_symm_apply,
     t.toLieHom_single_one_zero k]
 
-/-- **The algebraic group-scheme homomorphism `SL₂ ⟶ G` attached to an `sl₂` triple.** -/
+/-- **The algebraic group-scheme homomorphism `SL₂ ⟶ G` attached to an `sl₂` triple.** For a
+finite-type affine group `G = Spec H` over a characteristic-zero field `k`, this is the unique
+group-scheme morphism (obtained from `t.sl2CoordinateMap` via `hopfSpec`) whose differential is
+`(t.toLieHom k).comp (SpecialLinear.tangentLieEquivSl 2)`. -/
 noncomputable def sl2GroupSchemeHom (t : IsSl2Triple h e f) :
     SpecialLinear.groupScheme k 2 ⟶
       (AlgebraicGeometry.hopfSpec (CommRingCat.of k)).obj (Opposite.op (CommHopfAlgCat.of k H)) :=

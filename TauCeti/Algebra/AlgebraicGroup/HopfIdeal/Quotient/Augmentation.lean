@@ -15,18 +15,25 @@ public import TauCeti.Algebra.HopfAlgebra.HopfIdeal.Augmentation
 
 A Hopf ideal in the coordinate Hopf algebra of an affine group cuts out a closed subgroup, and
 the augmentation ideal cuts out the identity subgroup. This file records the corresponding
-identification of coordinate rings: the quotient of a finite-type commutative Hopf algebra by
-its augmentation ideal is the base field, which is the coordinate ring of the trivial affine
-group.
+identification of coordinate rings: the quotient of a commutative Hopf algebra by its augmentation
+ideal is isomorphic to the base ring, which is the coordinate ring of the trivial affine group.
+In particular, over any commutative ring `R` the quotient is a finite `R`-module, and when `R`
+satisfies `[StrongRankCondition R]` it has rank `1`; for finite-type Hopf algebras this packages
+into the categorical isomorphism `quotientAugmentationIso`.
 
 The identification is the first isomorphism theorem for Hopf ideals. The augmentation ideal is
 by definition the kernel Hopf ideal of the counit, and the counit is surjective because the unit
 splits it, so the kernel quotient equivalence applies verbatim.
 
-## Main declaration
+## Main declarations
 
 * `TauCeti.HopfIdeal.quotientAugmentationIso`: the quotient by the augmentation ideal is the
   trivial finite-type Hopf algebra.
+* `TauCeti.HopfIdeal.moduleFinite_quotient_augmentation`: over any commutative ring, the quotient
+  of a commutative Hopf algebra by its augmentation ideal is a finite module.
+* `TauCeti.HopfIdeal.finrank_quotient_augmentation`: over any commutative ring satisfying
+  `StrongRankCondition`, the quotient of a commutative Hopf algebra by its augmentation ideal has
+  rank `1`.
 
 ## References
 

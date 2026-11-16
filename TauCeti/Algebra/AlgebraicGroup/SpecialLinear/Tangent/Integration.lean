@@ -6,11 +6,11 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.AlgebraicGroup.Representation.Differential
+public import TauCeti.Algebra.AlgebraicGroup.SpecialLinear.BinaryForm.Differential
 public import TauCeti.Algebra.AlgebraicGroup.SpecialLinear.Tangent.Basic
 public import TauCeti.Algebra.Coalgebra.Subcomodule.Basic
 import TauCeti.Algebra.AlgebraicGroup.Representation.Fixed
 import TauCeti.Algebra.AlgebraicGroup.Representation.LieStable
-import TauCeti.Algebra.AlgebraicGroup.SpecialLinear.BinaryForm.Differential
 import TauCeti.Algebra.AlgebraicGroup.SpecialLinear.Connected
 import TauCeti.Algebra.Coalgebra.Comodule.Product
 import TauCeti.Algebra.Coalgebra.Comodule.Transport
@@ -21,9 +21,12 @@ import TauCeti.Algebra.Lie.Sl2.Decomposition
 
 Every finite-dimensional `sl (Fin 2) k`-module over a characteristic-zero field `k` integrates to a
 unique rational `SL₂`-representation (`comoduleOfLieModule`, `existsUnique_comodule_of_lieModule`),
-functorially in Lie-module homomorphisms (`comoduleHomOfLieModuleHom`) and preserving invariant
-subspaces (`exists_subcomodule_comoduleOfLieModule_iff`), without assuming algebraic closure of `k`
-or restricting the module universe. Downstream, `Sl2Triple/Basic.lean` uses this to integrate `sl₂`
+functorially in Lie-module homomorphisms (`comoduleHomOfLieModuleHom`, preserving identity and
+composition) and preserving invariant subspaces (`exists_subcomodule_comoduleOfLieModule_iff`),
+without assuming algebraic closure of `k` or restricting the module universe. In particular,
+`binaryFormsEquivSl2Std k d` promotes to mutually inverse `O(SL₂)`-comodule homomorphisms between
+`binaryForms k d` and `Sl2Std k d` (`binaryFormsToSl2StdComoduleHom`,
+`sl2StdToBinaryFormsComoduleHom`). Downstream, `Sl2Triple/Basic.lean` uses this to integrate `sl₂`
 triples to `SL₂ ⟶ G`; `comoduleOfLieModule` is a `def` (installed locally via `letI`) rather than a
 global `instance` to avoid comodule diamonds on a single `k`-vector space.
 
@@ -67,7 +70,7 @@ theorem existsUnique_comodule_of_lieModule (k : Type u) [Field k] [CharZero k] (
     exact Finset.sum_congr rfl fun i _ ↦ DirectSum.coeLinearMap_of (fun j ↦ (N j).toSubmodule) i _
   let E := (LinearEquiv.piCongrRight eSummand).trans eSum
   let _ : Comodule k (coordinateHopfAlgebra k 2) (∀ i : Fin r, binaryForms k (n i)) :=
-    Comodule.finPi (R := k) (C := coordinateHopfAlgebra k 2) r _ fun _ ↦ inferInstance
+    Comodule.pi (R := k) (C := coordinateHopfAlgebra k 2) _ fun _ ↦ inferInstance
   let cM := Comodule.Transport (R := k) (C := coordinateHopfAlgebra k 2) E
   have hcM (d) (m : M) : @Comodule.differential k (coordinateHopfAlgebra k 2) M _ _ _ _ _ cM d m =
       ⁅tangentLieEquivSl (R := k) (B := k) 2 d, m⁆ := by
@@ -75,13 +78,16 @@ theorem existsUnique_comodule_of_lieModule (k : Type u) [Field k] [CharZero k] (
     simp only [E, LinearEquiv.trans_apply, heSum, LinearEquiv.piCongrRight_apply, lie_sum]
     refine Finset.sum_congr rfl fun i _ ↦ ?_
     simp only [eSummand, LinearEquiv.trans_apply, LieModuleEquiv.coe_toLinearEquiv]
-    rw [Comodule.differential_finPi, binaryFormsEquivSl2Std_differential]
+    rw [Comodule.differential_pi, binaryFormsEquivSl2Std_differential]
     exact congrArg Subtype.val ((φ i).symm.toLieModuleHom.map_lie _ _)
   exact ⟨cM, hcM, fun c' hc' ↦ Comodule.ext_of_differential_eq_of_geometricallyConnected
     (geometricallyConnectedCommHopfAlgProperty_coordinateHopfAlgebra k 2) fun d m ↦
       (hc' d m).trans (hcM d m).symm⟩
 
-/-- **The canonical `O(SL₂)`-comodule integrating a finite-dimensional `sl (Fin 2) k`-module.** -/
+/-- **The canonical `O(SL₂)`-comodule integrating a finite-dimensional `sl (Fin 2) k`-module.**
+Over a characteristic-zero field `k`, this is the unique `O(SL₂)`-comodule structure on `M` whose
+`Comodule.differential` recovers the `sl (Fin 2) k`-action across `tangentLieEquivSl 2`
+(`differential_comoduleOfLieModule`, `eq_comoduleOfLieModule_iff`). -/
 @[implicit_reducible] noncomputable def comoduleOfLieModule (k : Type u) [Field k] [CharZero k]
     (M : Type w) [AddCommGroup M] [Module k M] [Module.Finite k M]
     [LieRingModule (SpecialLinear.sl (Fin 2) k) M] [LieModule k (SpecialLinear.sl (Fin 2) k) M] :
@@ -139,6 +145,94 @@ noncomputable def comoduleHomOfLieModuleHom (f : M →ₗ⁅k,SpecialLinear.sl (
 @[simp] theorem comoduleHomOfLieModuleHom_apply (f : M →ₗ⁅k,SpecialLinear.sl (Fin 2) k⁆ N) (m : M) :
     letI := comoduleOfLieModule k M; letI := comoduleOfLieModule k N
     comoduleHomOfLieModuleHom f m = f m := (rfl)
+
+/-- `comoduleHomOfLieModuleHom` preserves the identity morphism. -/
+@[simp] theorem comoduleHomOfLieModuleHom_id :
+    letI := comoduleOfLieModule k M
+    comoduleHomOfLieModuleHom (LieModuleHom.id : M →ₗ⁅k,SpecialLinear.sl (Fin 2) k⁆ M) =
+      Comodule.Hom.id k (coordinateHopfAlgebra k 2) M := by
+  let _ := comoduleOfLieModule k M
+  ext m
+  rfl
+
+/-- `comoduleHomOfLieModuleHom` preserves composition of Lie-module homomorphisms. -/
+@[simp] theorem comoduleHomOfLieModuleHom_comp
+    {P : Type*} [AddCommGroup P] [Module k P] [Module.Finite k P]
+    [LieRingModule (SpecialLinear.sl (Fin 2) k) P]
+    [LieModule k (SpecialLinear.sl (Fin 2) k) P]
+    (g : N →ₗ⁅k,SpecialLinear.sl (Fin 2) k⁆ P)
+    (f : M →ₗ⁅k,SpecialLinear.sl (Fin 2) k⁆ N) :
+    letI := comoduleOfLieModule k M; letI := comoduleOfLieModule k N
+    letI := comoduleOfLieModule k P
+    comoduleHomOfLieModuleHom (g.comp f) =
+      (comoduleHomOfLieModuleHom g).comp (comoduleHomOfLieModuleHom f) := by
+  let _ := comoduleOfLieModule k M; let _ := comoduleOfLieModule k N
+  let _ := comoduleOfLieModule k P
+  ext m
+  rfl
+
+/-- **Comodule promotion of `binaryFormsEquivSl2Std k d`.** Over a characteristic-zero field `k`,
+the canonical linear equivalence `binaryFormsEquivSl2Std k d : binaryForms k d ≃ₗ[k] Sl2Std k d`
+is a morphism of `O(SL₂)`-comodules into `Sl2Std k d` equipped with `comoduleOfLieModule`. -/
+noncomputable def binaryFormsToSl2StdComoduleHom (k : Type u) [Field k] [CharZero k] (d : ℕ) :
+    letI := comoduleOfLieModule k (Sl2Std k d)
+    Comodule.Hom k (coordinateHopfAlgebra k 2) (binaryForms k d) (Sl2Std k d) :=
+  letI := comoduleOfLieModule k (Sl2Std k d)
+  ⟨(binaryFormsEquivSl2Std k d).toLinearMap,
+    (LinearMap.map_coact_iff_map_differential_of_geometricallyConnected
+      (f := (binaryFormsEquivSl2Std k d).toLinearMap)
+      (geometricallyConnectedCommHopfAlgProperty_coordinateHopfAlgebra k 2)).mpr fun x g ↦ by
+        rw [differential_comoduleOfLieModule, LinearEquiv.coe_toLinearMap,
+          binaryFormsEquivSl2Std_differential]⟩
+
+/-- The inverse of `binaryFormsEquivSl2Std k d` as a morphism of `O(SL₂)`-comodules from
+`Sl2Std k d` (equipped with `comoduleOfLieModule`) to `binaryForms k d`. -/
+noncomputable def sl2StdToBinaryFormsComoduleHom (k : Type u) [Field k] [CharZero k] (d : ℕ) :
+    letI := comoduleOfLieModule k (Sl2Std k d)
+    Comodule.Hom k (coordinateHopfAlgebra k 2) (Sl2Std k d) (binaryForms k d) :=
+  letI := comoduleOfLieModule k (Sl2Std k d)
+  ⟨(binaryFormsEquivSl2Std k d).symm.toLinearMap,
+    (LinearMap.map_coact_iff_map_differential_of_geometricallyConnected
+      (f := (binaryFormsEquivSl2Std k d).symm.toLinearMap)
+      (geometricallyConnectedCommHopfAlgProperty_coordinateHopfAlgebra k 2)).mpr fun x v ↦ by
+        apply (binaryFormsEquivSl2Std k d).injective
+        rw [LinearEquiv.coe_toLinearMap, binaryFormsEquivSl2Std_differential,
+          LinearEquiv.apply_symm_apply, differential_comoduleOfLieModule,
+          LinearEquiv.apply_symm_apply]⟩
+
+@[simp] theorem binaryFormsToSl2StdComoduleHom_toLinearMap (d : ℕ) :
+    letI := comoduleOfLieModule k (Sl2Std k d)
+    (binaryFormsToSl2StdComoduleHom k d).toLinearMap =
+      (binaryFormsEquivSl2Std k d).toLinearMap := (rfl)
+
+@[simp] theorem binaryFormsToSl2StdComoduleHom_apply (d : ℕ) (g : binaryForms k d) :
+    letI := comoduleOfLieModule k (Sl2Std k d)
+    binaryFormsToSl2StdComoduleHom k d g = binaryFormsEquivSl2Std k d g := (rfl)
+
+@[simp] theorem sl2StdToBinaryFormsComoduleHom_toLinearMap (d : ℕ) :
+    letI := comoduleOfLieModule k (Sl2Std k d)
+    (sl2StdToBinaryFormsComoduleHom k d).toLinearMap =
+      (binaryFormsEquivSl2Std k d).symm.toLinearMap := (rfl)
+
+@[simp] theorem sl2StdToBinaryFormsComoduleHom_apply (d : ℕ) (v : Sl2Std k d) :
+    letI := comoduleOfLieModule k (Sl2Std k d)
+    sl2StdToBinaryFormsComoduleHom k d v = (binaryFormsEquivSl2Std k d).symm v := (rfl)
+
+/-- `sl2StdToBinaryFormsComoduleHom` is left inverse to `binaryFormsToSl2StdComoduleHom`. -/
+theorem sl2StdToBinaryFormsComoduleHom_comp_binaryFormsToSl2StdComoduleHom (d : ℕ) :
+    letI := comoduleOfLieModule k (Sl2Std k d)
+    (sl2StdToBinaryFormsComoduleHom k d).comp (binaryFormsToSl2StdComoduleHom k d) =
+      Comodule.Hom.id k (coordinateHopfAlgebra k 2) (binaryForms k d) := by
+  let _ := comoduleOfLieModule k (Sl2Std k d)
+  exact Comodule.Hom.ext fun g ↦ (binaryFormsEquivSl2Std k d).symm_apply_apply g
+
+/-- `sl2StdToBinaryFormsComoduleHom` is right inverse to `binaryFormsToSl2StdComoduleHom`. -/
+theorem binaryFormsToSl2StdComoduleHom_comp_sl2StdToBinaryFormsComoduleHom (d : ℕ) :
+    letI := comoduleOfLieModule k (Sl2Std k d)
+    (binaryFormsToSl2StdComoduleHom k d).comp (sl2StdToBinaryFormsComoduleHom k d) =
+      Comodule.Hom.id k (coordinateHopfAlgebra k 2) (Sl2Std k d) := by
+  let _ := comoduleOfLieModule k (Sl2Std k d)
+  exact Comodule.Hom.ext fun v ↦ (binaryFormsEquivSl2Std k d).apply_symm_apply v
 
 /-- A `k`-submodule of `M` underlies an `O(SL₂)`-subcomodule for `comoduleOfLieModule k M` iff it is
 `sl (Fin 2) k`-stable. -/

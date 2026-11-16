@@ -37,6 +37,11 @@ its elements of finite additive order (`TauCeti.tmul_eq_zero_of_isOfFinAddOrder`
 In particular a set generating `G` modulo torsion spans `A ⊗[ℤ] G`
 (`TauCeti.span_one_tmul_eq_top_of_isOfFinAddOrder`).
 
+Over a commutative ring without zero divisors, the tensor product of a nontrivial flat module with
+a nontrivial torsion-free module is nontrivial
+(`TauCeti.nontrivial_tensorProduct_of_flat_left_of_isTorsionFree`,
+`TauCeti.nontrivial_tensorProduct_of_flat_right_of_isTorsionFree`).
+
 ## References
 
 * J.-P. Serre, *Groupes d'homotopie et classes de groupes abéliens*, Ann. of Math. 58 (1953).
@@ -211,5 +216,27 @@ theorem span_one_tmul_eq_top_of_isOfFinAddOrder {A G : Type*} [DivisionRing A] [
     rw [← sub_add_cancel x y, TensorProduct.tmul_add, tmul_eq_zero_of_isOfFinAddOrder r hxy,
       zero_add, ← mul_one r, ← smul_eq_mul, ← TensorProduct.smul_tmul']
     exact S.smul_mem r (hcl hy)
+
+/-- The tensor product of a nontrivial flat module with a nontrivial torsion-free module over a
+commutative ring without zero divisors is nontrivial. -/
+theorem nontrivial_tensorProduct_of_flat_left_of_isTorsionFree
+    {R P M : Type*} [CommRing R] [IsCancelMulZero R] [AddCommMonoid P] [Module R P]
+    [Module.Flat R P] [Nontrivial P] [AddCommGroup M] [Module R M] [Module.IsTorsionFree R M]
+    [Nontrivial M] :
+    Nontrivial (P ⊗[R] M) := by
+  obtain ⟨m₀, hm₀⟩ := exists_ne (0 : M)
+  exact TensorProduct.nontrivial_of_linearMap_injective_of_flat_left R P M
+    (LinearMap.toSpanSingleton R M m₀) (smul_left_injective R hm₀)
+
+/-- The tensor product of a nontrivial torsion-free module with a nontrivial flat module over a
+commutative ring without zero divisors is nontrivial. -/
+theorem nontrivial_tensorProduct_of_flat_right_of_isTorsionFree
+    {R M P : Type*} [CommRing R] [IsCancelMulZero R] [AddCommGroup M] [Module R M]
+    [Module.IsTorsionFree R M] [Nontrivial M] [AddCommMonoid P] [Module R P]
+    [Module.Flat R P] [Nontrivial P] :
+    Nontrivial (M ⊗[R] P) := by
+  obtain ⟨m₀, hm₀⟩ := exists_ne (0 : M)
+  exact TensorProduct.nontrivial_of_linearMap_injective_of_flat_right R M P
+    (LinearMap.toSpanSingleton R M m₀) (smul_left_injective R hm₀)
 
 end TauCeti

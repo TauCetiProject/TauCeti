@@ -22,7 +22,9 @@ These results apply to the differentiated action of a split central torus on a r
 representation. They require neither finite dimension nor characteristic zero. The weight
 formula works over any commutative ring and even for a commutative monoid `X`, without an
 antipode. In positive characteristic distinct characters can have the same differential;
-the weight-space inclusion in an eigenspace need not be an equality.
+the weight-space inclusion in an eigenspace need not be an equality. On a torsion-free comodule
+over a domain, equality holds whenever the tangent vector separates characters
+(`weightSpace_eq_eigenspace_differential_of_injective`).
 
 ## References
 
@@ -93,21 +95,10 @@ theorem weightSpace_eq_eigenspace_differential_of_injective [IsDomain R] [Module
         (Bialgebra.CounitAlgebra.algEquivSelf R (MonoidAlgebra R X) R
           (d (MonoidAlgebra.single x 1))) := by
   classical
-  set f := Comodule.differential (R := R) (H := H) (M := V) (derivationComp π d)
-  set μ : X → R := fun y ↦
-    Bialgebra.CounitAlgebra.algEquivSelf R (MonoidAlgebra R X) R (d (MonoidAlgebra.single y 1))
-  refine le_antisymm (weightSpace_le_eigenspace_differential V π d x) fun v hv ↦ ?_
-  have htop : weightSpace V π.toCoalgHom x ⊔
-      (⨆ (y : X) (_ : y ≠ x), weightSpace V π.toCoalgHom y) = ⊤ := by
-    rw [← iSup_split_single, (isInternal_weightSpace V π.toCoalgHom).submodule_iSup_eq_top]
-  obtain ⟨w₀, hw₀, w₁, hw₁, rfl⟩ := Submodule.mem_sup.mp (htop ▸ Submodule.mem_top : v ∈ _)
-  have hw₁E : w₁ ∈ f.eigenspace (μ x) := by
-    simpa only [add_sub_cancel_left] using
-      (f.eigenspace (μ x)).sub_mem hv (weightSpace_le_eigenspace_differential V π d x hw₀)
-  have hw₁E' : w₁ ∈ ⨆ (y : X) (_ : y ≠ x), f.eigenspace (μ y) :=
-    (iSup₂_mono fun y _ ↦ weightSpace_le_eigenspace_differential V π d y) hw₁
-  rw [Submodule.disjoint_def.mp ((f.eigenspaces_iSupIndep.comp hd) x) w₁ hw₁E hw₁E', add_zero]
-  exact hw₀
+  exact congrFun ((((Comodule.differential (R := R) (H := H) (M := V)
+    (derivationComp π d)).eigenspaces_iSupIndep.comp hd).le_iff_eq_of_iSup_eq_top
+    (isInternal_weightSpace V π.toCoalgHom).submodule_iSup_eq_top).mp
+    (weightSpace_le_eigenspace_differential V π d)) x
 
 variable {k : Type*} [Field k] {A : Type*} [CommRing A] [Bialgebra k A]
 variable [Module k V] [Comodule k A V]

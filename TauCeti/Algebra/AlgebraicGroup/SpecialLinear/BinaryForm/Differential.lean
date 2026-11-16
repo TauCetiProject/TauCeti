@@ -109,22 +109,17 @@ attribute [local instance] polynomialComodule
 /-- The signed monomial basis `wᵢ = (-1)ⁱ X 0 ^ i * X 1 ^ (d - i)` of `binaryForms R d`. -/
 noncomputable def binaryFormsSignedBasis (R : Type u) [CommRing R] (d : ℕ) :
     Basis (Fin (d + 1)) R (binaryForms R d) :=
-  (((homogeneousMonomialBasis (σ := Fin 2) (R := R) d).reindex (finsuppDegreeFinTwoEquiv d)).map
-    (LinearEquiv.ofEq _ _ (binaryForms_toSubmodule R d).symm)).unitsSMul fun i ↦ (-1 : Rˣ) ^ (i : ℕ)
+  ((((homogeneousMonomialBasis (σ := Fin 2) (R := R) d).reindex (finsuppDegreeFinTwoEquiv d)).map
+    (LinearEquiv.ofEq _ _ (binaryForms_toSubmodule R d).symm)).map
+    (binaryForms R d).toSubmoduleEquiv.symm).unitsSMul fun i ↦ (-1 : Rˣ) ^ (i : ℕ)
 
 /-- The `i`-th vector of `binaryFormsSignedBasis R d` is `(-1)ⁱ X 0 ^ i * X 1 ^ (d - i)`. -/
 @[simp] theorem coe_binaryFormsSignedBasis_apply (d : ℕ) (i : Fin (d + 1)) :
     ((binaryFormsSignedBasis R d i : binaryForms R d) : MvPolynomial (Fin 2) R) =
       (-1 : R) ^ (i : ℕ) • (X 0 ^ (i : ℕ) * X 1 ^ (d - i)) := by
-  let b : Basis (Fin (d + 1)) R (binaryForms R d).toSubmodule :=
-    (((homogeneousMonomialBasis (σ := Fin 2) (R := R) d).reindex (finsuppDegreeFinTwoEquiv d)).map
-      (LinearEquiv.ofEq _ _ (binaryForms_toSubmodule R d).symm)).unitsSMul
-        fun i ↦ (-1 : Rˣ) ^ (i : ℕ)
-  -- `Subcomodule` and its underlying `toSubmodule` share `carrier` as their `SetLike` coercion.
-  have hb : ((binaryFormsSignedBasis R d i : binaryForms R d) : MvPolynomial (Fin 2) R) =
-      ((b i : (binaryForms R d).toSubmodule) : MvPolynomial (Fin 2) R) := rfl
-  rw [hb]; simp only [b, Module.Basis.unitsSMul_apply, Units.smul_def, Module.Basis.map_apply,
-    Module.Basis.reindex_apply, SetLike.val_smul, LinearEquiv.coe_ofEq_apply,
+  simp only [binaryFormsSignedBasis, Module.Basis.unitsSMul_apply, Units.smul_def,
+    Module.Basis.map_apply, Module.Basis.reindex_apply, SetLike.val_smul,
+    Subcomodule.coe_toSubmoduleEquiv_symm_apply, LinearEquiv.coe_ofEq_apply,
     coe_homogeneousMonomialBasis, coe_finsuppDegreeFinTwoEquiv_symm, Units.val_pow_eq_pow_val,
     Units.val_neg, Units.val_one]
   rw [X_pow_eq_monomial, X_pow_eq_monomial, monomial_mul_monomial, one_mul]

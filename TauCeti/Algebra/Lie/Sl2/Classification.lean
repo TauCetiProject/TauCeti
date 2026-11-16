@@ -5,15 +5,14 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Algebra.Lie.BaseChange
 public import TauCeti.Algebra.Lie.Sl2.Standard
 import Mathlib.FieldTheory.IsAlgClosed.AlgebraicClosure
 import Mathlib.LinearAlgebra.Eigenspace.Triangularizable
-import Mathlib.LinearAlgebra.TensorProduct.Tower
 import Mathlib.RingTheory.Flat.Localization
-import Mathlib.RingTheory.Localization.BaseChange
 import Mathlib.RingTheory.Localization.FractionRing
+import TauCeti.Algebra.Lie.Sl2.BaseChange
 import TauCeti.LinearAlgebra.Eigenspace.BaseChange
+import TauCeti.LinearAlgebra.TensorProduct.Torsion
 
 /-!
 # The classification of the finite-dimensional irreducible `sl₂`-modules
@@ -25,8 +24,9 @@ every `n`. What neither file supplies is the remaining half of the classificatio
 finite-dimensional irreducible module *has* a primitive vector at all. This file supplies it and
 draws the classification, without any triangularizability or algebraic-closure hypothesis.
 
-First, `TauCeti.exists_hasPrimitiveVectorWith_pow_toEnd_e` adapts Mathlib's raising proof
-(`IsSl2Triple.exists_hasPrimitiveVectorWith`) to a caller-supplied `h`-eigenvector, producing a
+First, `IsSl2Triple.exists_hasPrimitiveVectorWith_pow_toEnd_e` (in
+`TauCeti/Algebra/Lie/Sl2/WeightString.lean`, adapting Mathlib's
+`IsSl2Triple.exists_hasPrimitiveVectorWith`) raises a caller-supplied `h`-eigenvector to a
 primitive vector of natural-number weight (`IsSl2Triple.HasPrimitiveVectorWith.exists_nat`). Over an
 algebraic closure `A` of `FractionRing K`, `h` acquires an integer eigenvalue `z : ℤ`, and flat base
 change (`Module.End.eigenspace_baseChange_of_flat`) descends that eigenspace back to `M`.
@@ -41,8 +41,6 @@ finite-dimensional irreducible module is `V(n)` for exactly one `n`.
 
 ## Main results
 
-* `IsSl2Triple.baseChange` and `TauCeti.exists_hasPrimitiveVectorWith_pow_toEnd_e`: scalar extension
-  of an `sl₂` triple and raising a nonzero `h`-eigenvector to a primitive vector.
 * `TauCeti.exists_hasPrimitiveVectorWith`: **every nonzero torsion-free Noetherian module over an
   `sl₂` triple has a primitive vector**, of weight a natural number.
 * `TauCeti.existsUnique_nat_hasPrimitiveVectorWith`: **the classification by highest weight.** A
@@ -69,16 +67,6 @@ finite-dimensional irreducible module is `V(n)` for exactly one `n`.
 
 public section
 
-open scoped TensorProduct in
-/-- **Scalar extension of an `sl₂` triple** to `A ⊗[R] L` when `1 ⊗ₜ h ≠ 0`. -/
-theorem IsSl2Triple.baseChange {R A L : Type*} [CommRing R] [CommRing A] [Algebra R A]
-    [LieRing L] [LieAlgebra R L] {h e f : L} (t : IsSl2Triple h e f)
-    (hh : ((1 : A) ⊗ₜ[R] h : A ⊗[R] L) ≠ 0) :
-    IsSl2Triple ((1 : A) ⊗ₜ[R] h) ((1 : A) ⊗ₜ[R] e) ((1 : A) ⊗ₜ[R] f) :=
-  ⟨hh, by simp [t.lie_e_f], by simp [t.lie_h_e_nsmul], by
-    rw [LieAlgebra.ExtendScalars.bracket_tmul, one_mul, t.lie_h_f_nsmul, TensorProduct.tmul_neg,
-      two_nsmul, two_nsmul, TensorProduct.tmul_add]⟩
-
 namespace TauCeti
 
 open LieModule Module
@@ -91,42 +79,7 @@ variable {K : Type*} [CommRing K] [IsDomain K] [CharZero K]
 variable {L : Type*} [LieRing L] [LieAlgebra K L]
 variable {M : Type*} [AddCommGroup M] [Module K M] [LieRingModule L M] [LieModule K L M]
   [IsTorsionFree K M] [IsNoetherian K M]
-variable {h e f : L} {m : M} {μ : K}
-
-/-- **Raising an eigenvector to a primitive vector.** In a torsion-free Noetherian module over a
-characteristic-zero domain, if `m ≠ 0` is an `h`-eigenvector of weight `μ`, then some power `eᵏ • m`
-is a primitive vector of weight `μ + 2k` (adapting Mathlib's
-`IsSl2Triple.exists_hasPrimitiveVectorWith` to a caller-supplied eigenvector). -/
-theorem exists_hasPrimitiveVectorWith_pow_toEnd_e (t : IsSl2Triple h e f)
-    (hm : ⁅h, m⁆ = μ • m) (hm0 : m ≠ 0) :
-    ∃ k : ℕ, t.HasPrimitiveVectorWith ((toEnd K L M e ^ k) m) (μ + 2 * k) := by
-  have hlie (n : ℕ) : ⁅h, (toEnd K L M e ^ n) m⁆ = (μ + 2 * (n : K)) • (toEnd K L M e ^ n) m :=
-    t.lie_h_pow_toEnd_e hm n
-  have hzero : ∃ k : ℕ, (toEnd K L M e ^ k) m = 0 := by
-    by_contra! hne
-    have hinj : Function.Injective fun n : ℕ ↦ μ + 2 * (n : K) := fun a b hab ↦ by
-      simpa [add_right_inj, mul_eq_mul_left_iff, Nat.cast_inj] using hab
-    have haux (n : ℕ) :
-        (toEnd K L M h).HasEigenvector (μ + 2 * (n : K)) ((toEnd K L M e ^ n) m) :=
-      ⟨Module.End.mem_eigenspace_iff.2 (by simpa using hlie n), hne n⟩
-    have := ((toEnd K L M h).eigenvectors_linearIndependent' _ hinj _ haux).finite
-    exact not_finite ℕ
-  obtain ⟨k, hk_ne, hk_zero⟩ := Nat.exists_not_and_succ_of_not_zero_of_exists hm0 hzero
-  exact ⟨k, ⟨hk_ne, hlie k, by rw [IsSl2Triple.lie_e_pow_toEnd_e k]; exact hk_zero⟩⟩
-
-open scoped TensorProduct in
-omit [LieRingModule L M] [LieModule K L M] [IsNoetherian K M] in
-private theorem nontrivial_algebraicClosure_fractionRing_tensor [Nontrivial M] :
-    Nontrivial (AlgebraicClosure (FractionRing K) ⊗[K] M) := by
-  let F := FractionRing K; let A := AlgebraicClosure F; obtain ⟨m₀, hm₀⟩ := exists_ne (0 : M)
-  have hmF : (1 : F) ⊗ₜ[K] m₀ ≠ 0 := fun h0 ↦ by
-    obtain ⟨s, hs⟩ := (IsLocalizedModule.eq_iff_exists (nonZeroDivisors K)
-      (TensorProduct.mk K F M 1)).mp (h0.trans (map_zero (TensorProduct.mk K F M 1)).symm)
-    rw [smul_zero, Submonoid.smul_def] at hs
-    exact hm₀ ((smul_eq_zero.mp hs).resolve_left (mem_nonZeroDivisors_iff_ne_zero.mp s.2))
-  have : Nontrivial (A ⊗[F] (F ⊗[K] M)) := ⟨(1 : A) ⊗ₜ[F] ((1 : F) ⊗ₜ[K] m₀), 0, fun h0 ↦
-    hmF (Module.Flat.tensorProduct_mk_injective F (F ⊗[K] M) A (by simpa using h0))⟩
-  exact (TensorProduct.AlgebraTensorModule.cancelBaseChange K F A A M).symm.toEquiv.nontrivial
+variable {h e f : L}
 
 open scoped TensorProduct in
 private theorem exists_eigenspace_intCast_ne_bot [Nontrivial M] (t : IsSl2Triple h e f) :
@@ -136,7 +89,7 @@ private theorem exists_eigenspace_intCast_ne_bot [Nontrivial M] (t : IsSl2Triple
   have : CharZero A := charZero_of_injective_algebraMap (algebraMap F A).injective
   have : Module.Flat K F := IsLocalization.flat F (nonZeroDivisors K)
   have : Module.Flat K A := Module.Flat.trans K F A
-  have : Nontrivial (A ⊗[K] M) := nontrivial_algebraicClosure_fractionRing_tensor (K := K) (M := M)
+  have : Nontrivial (A ⊗[K] M) := nontrivial_tensorProduct_of_flat_left_of_isTorsionFree
   by_cases hh : ((1 : A) ⊗ₜ[K] h : A ⊗[K] L) = 0
   · refine ⟨0, fun hbot ↦ (top_ne_bot (α := Submodule A (A ⊗[K] M))) ?_⟩
     have hbc := (toEnd K L M h).eigenspace_baseChange_of_flat (A := A) (0 : K)
@@ -144,7 +97,7 @@ private theorem exists_eigenspace_intCast_ne_bot [Nontrivial M] (t : IsSl2Triple
       hh, map_zero, Module.End.eigenspace_zero, LinearMap.ker_zero] at hbc
   · obtain ⟨μ, hμ⟩ := (toEnd A (A ⊗[K] L) (A ⊗[K] M) ((1 : A) ⊗ₜ[K] h)).exists_eigenvalue
     obtain ⟨v, hv, hv0⟩ := hμ.exists_hasEigenvector
-    obtain ⟨k, P⟩ := exists_hasPrimitiveVectorWith_pow_toEnd_e (t.baseChange (A := A) hh)
+    obtain ⟨k, P⟩ := (t.baseChange (A := A) hh).exists_hasPrimitiveVectorWith_pow_toEnd_e
       (Module.End.mem_eigenspace_iff.mp hv) hv0
     obtain ⟨n, hn⟩ := P.exists_nat
     refine ⟨(n : ℤ) - 2 * k, fun hbot ↦ Module.End.hasEigenvalue_iff.mp hμ ?_⟩
@@ -160,7 +113,7 @@ theorem exists_hasPrimitiveVectorWith [Nontrivial M] (t : IsSl2Triple h e f) :
     ∃ (w : M) (n : ℕ), t.HasPrimitiveVectorWith w (n : K) := by
   obtain ⟨z, hz⟩ := exists_eigenspace_intCast_ne_bot (K := K) (M := M) t
   obtain ⟨v, hv, hv0⟩ := Submodule.exists_mem_ne_zero_of_ne_bot hz
-  obtain ⟨k, P⟩ := exists_hasPrimitiveVectorWith_pow_toEnd_e t
+  obtain ⟨k, P⟩ := t.exists_hasPrimitiveVectorWith_pow_toEnd_e
     (Module.End.mem_eigenspace_iff.mp hv) hv0
   obtain ⟨n, hn⟩ := P.exists_nat; exact ⟨_, n, hn ▸ P⟩
 

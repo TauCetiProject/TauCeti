@@ -38,13 +38,20 @@ exactly when every `Lie(G)`-stable subspace has a `Lie(G)`-stable complement.
 
 ## Main declarations
 
-* `Submodule.coact_mem_range_of_forall_differential_mem`: in characteristic zero, the coaction of
-  a vector of a `Lie(G)`-stable subspace `W` lies in `W ⊗ H`.
-* `Submodule.exists_subcomodule_iff_forall_differential_mem`: in characteristic zero, a subspace
-  is a subcomodule exactly when it is `Lie(G)`-stable.
-* `TauCeti.Comodule.isCompletelyReducible_iff_forall_differential_mem`: in characteristic zero,
-  a representation is completely reducible exactly when its `Lie(G)`-stable subspaces have
-  `Lie(G)`-stable complements.
+* `Submodule.coact_mem_range_of_forall_differential_mem_of_geometricallyConnected`: over any
+  characteristic-zero field, the coaction of a vector of a `Lie(G)`-stable subspace `W` of a
+  representation of a geometrically connected finite-type affine group lies in `W ⊗ H`.
+* `Submodule.exists_subcomodule_iff_forall_differential_mem_of_geometricallyConnected`: over any
+  characteristic-zero field, a subspace of a representation of a geometrically connected
+  finite-type affine group is a subcomodule iff it is `Lie(G)`-stable.
+* `TauCeti.Comodule.isCompletelyReducible_iff_forall_differential_mem_of_geometricallyConnected`:
+  over any characteristic-zero field, a representation of a geometrically connected finite-type
+  affine group is completely reducible iff its `Lie(G)`-stable subspaces have `Lie(G)`-stable
+  complements.
+* `Submodule.coact_mem_range_of_forall_differential_mem`,
+  `Submodule.exists_subcomodule_iff_forall_differential_mem`, and
+  `TauCeti.Comodule.isCompletelyReducible_iff_forall_differential_mem`: specializations to
+  connected finite-type affine groups over an algebraically closed field of characteristic zero.
 
 ## References
 
@@ -56,13 +63,13 @@ public section
 
 open TauCeti
 
-universe u w
+universe u v w
 
 namespace Submodule
 
 section GeometricallyConnected
 
-variable {k : Type u} [Field k] [CharZero k] {H : _root_.CommHopfAlgCat.{u} k}
+variable {k : Type u} [Field k] [CharZero k] {H : _root_.CommHopfAlgCat.{v} k}
   [Algebra.FiniteType k H] {M : Type w} [AddCommGroup M] [Module k M] [Comodule k H M]
 
 /-- Over any field of characteristic zero, the coaction of a vector of a `Lie(G)`-stable subspace of
@@ -122,7 +129,7 @@ namespace TauCeti.Comodule
 
 section GeometricallyConnected
 
-variable {k : Type u} [Field k] [CharZero k] {H : _root_.CommHopfAlgCat.{u} k}
+variable {k : Type u} [Field k] [CharZero k] {H : _root_.CommHopfAlgCat.{v} k}
   [Algebra.FiniteType k H] {M : Type w} [AddCommGroup M] [Module k M] [Comodule k H M]
 
 /-- Over any field of characteristic zero, a representation of a geometrically connected finite-type

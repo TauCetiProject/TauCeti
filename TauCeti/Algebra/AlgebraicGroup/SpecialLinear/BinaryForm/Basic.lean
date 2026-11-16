@@ -9,7 +9,7 @@ public import TauCeti.Algebra.AlgebraicGroup.SpecialLinear.StandardComodule
 public import TauCeti.Algebra.AlgebraicGroup.Representation.ProjectiveOrbit.Coaction
 public import TauCeti.Algebra.Polynomial.Homogenize
 public import TauCeti.Algebra.AlgebraicGroup.SpecialLinear.UpperTriangular.Basic
-public import TauCeti.Algebra.Bialgebra.ComoduleAlgebra
+public import TauCeti.Algebra.Bialgebra.ComoduleAlgebra.Polynomial
 public import TauCeti.Algebra.Coalgebra.Comodule.SymmetricAlgebra.Polynomial
 public import Mathlib.Data.Nat.Digits.Defs
 import Mathlib.Algebra.MvPolynomial.Coeff
@@ -122,7 +122,7 @@ attribute [local instance] GeneralLinear.standardComodule standardComodule
 /-- The comodule of polynomial functions on the standard representation of `SLₙ`, in the
 coordinates `X i` of the standard basis. Points act contragrediently, `(g • f)(v) = f(g⁻¹ v)`
 (`algebraTensorAlgEquiv_endOfPoint_polynomialComodule`). -/
-@[implicit_reducible]
+@[expose, implicit_reducible]
 noncomputable def polynomialComodule :
     Comodule R (coordinateHopfAlgebra R n) (MvPolynomial (Fin n) R) :=
   Comodule.polynomial (coordinateHopfAlgebra R n) (Pi.basisFun R (Fin n))
@@ -139,15 +139,8 @@ theorem polynomialComodule_coact :
 over `O(SLₙ)`, extending `polynomialComodule R n`. -/
 @[expose, implicit_reducible]
 noncomputable def polynomialComoduleAlgebra :
-    ComoduleAlgebra R (coordinateHopfAlgebra R n) (MvPolynomial (Fin n) R) where
-  toComodule := polynomialComodule R n
-  coact_one := by
-    let _ := polynomialComodule R n
-    rw [DFunLike.congr_fun (polynomialComodule_coact R n) 1, AlgHom.toLinearMap_apply, map_one]
-  coact_mul p q := by
-    let _ := polynomialComodule R n
-    simp only [DFunLike.congr_fun (polynomialComodule_coact R n), AlgHom.toLinearMap_apply,
-      map_mul]
+    ComoduleAlgebra R (coordinateHopfAlgebra R n) (MvPolynomial (Fin n) R) :=
+  ComoduleAlgebra.polynomial (coordinateHopfAlgebra R n) (Pi.basisFun R (Fin n))
 
 section Column
 

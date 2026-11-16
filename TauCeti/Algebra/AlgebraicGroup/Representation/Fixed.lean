@@ -39,13 +39,13 @@ public section
 open TauCeti
 open scoped TensorProduct
 
-universe u w x
+universe u v w x
 
 namespace LinearMap
 
 section GeometricallyConnected
 
-variable {k : Type u} [Field k] [CharZero k] {H : _root_.CommHopfAlgCat.{u} k}
+variable {k : Type u} [Field k] [CharZero k] {H : _root_.CommHopfAlgCat.{v} k}
   [Algebra.FiniteType k H] {M : Type w} [AddCommGroup M] [Module k M] [Comodule k H M]
   {N : Type x} [AddCommGroup N] [Module k N] [Comodule k H N]
 
@@ -98,7 +98,7 @@ namespace TauCeti.Comodule
 
 section GeometricallyConnected
 
-variable {k : Type u} [Field k] [CharZero k] {H : _root_.CommHopfAlgCat.{u} k}
+variable {k : Type u} [Field k] [CharZero k] {H : _root_.CommHopfAlgCat.{v} k}
   [Algebra.FiniteType k H]
 
 /-- Over any field of characteristic zero, two rational representation structures of a
@@ -132,17 +132,6 @@ theorem coact_eq_tmul_one_iff_forall_differential_eq_zero_of_geometricallyConnec
   simpa [f] using (LinearMap.congr_fun hf 1).symm
 
 end GeometricallyConnected
-
-/-- For a connected affine group over an algebraically closed field of characteristic zero, two
-rational representation structures on the same vector space coincide if their differentiated
-Lie-algebra actions agree. No finite-dimensionality assumption is needed. -/
-theorem ext_of_differential_eq {k : Type u} [Field k] [CharZero k] [IsAlgClosed k]
-    {H : FiniteTypeCommHopfAlgCat.{u, u} k} [ConnectedSpace (PrimeSpectrum H)]
-    {M : Type w} [AddCommGroup M] [Module k M] {c₁ c₂ : Comodule k H M}
-    (hd : ∀ (d : Derivation k H (Bialgebra.CounitAlgebra k H k)) (m : M),
-      @differential k H M _ _ _ _ _ c₁ d m = @differential k H M _ _ _ _ _ c₂ d m) : c₁ = c₂ :=
-  ext_of_differential_eq_of_geometricallyConnected
-    ((geometricallyConnectedCommHopfAlgProperty_iff_connectedSpace k H.obj).mpr inferInstance) hd
 
 /-- For a connected affine group over an algebraically closed field of characteristic zero,
 rational invariants are exactly the vectors killed by every tangent vector.

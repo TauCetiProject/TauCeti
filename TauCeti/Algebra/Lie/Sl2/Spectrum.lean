@@ -10,6 +10,7 @@ public import TauCeti.Algebra.Lie.Sl2.CompleteReducibility
 public import TauCeti.LinearAlgebra.Eigenspace.Semisimple
 import Mathlib.FieldTheory.IsAlgClosed.AlgebraicClosure
 import Mathlib.RingTheory.Flat.FaithfullyFlat.Basic
+import TauCeti.Algebra.Lie.Sl2.BaseChange
 import TauCeti.LinearAlgebra.Eigenspace.BaseChange
 
 /-!
@@ -50,8 +51,8 @@ itself need not generate the ambient `L`.
 
 * `TauCeti.exists_int_of_hasEigenvalue`: **the integer spectrum.** Every eigenvalue of the Cartan
   element of an `sl₂` triple on a finite-dimensional module is an integer (via
-  `TauCeti.exists_hasPrimitiveVectorWith_pow_toEnd_e` in
-  `TauCeti/Algebra/Lie/Sl2/Classification.lean`). Its refinement
+  `IsSl2Triple.exists_hasPrimitiveVectorWith_pow_toEnd_e` in
+  `TauCeti/Algebra/Lie/Sl2/WeightString.lean`). Its refinement
   `TauCeti.exists_nat_sub_two_mul_of_lie_h_eq_smul` exhibits the eigenvalue as `n - 2k` with
   `n k : ℕ`.
 * `TauCeti.eigenspace_toEnd_eq_bot_of_forall_ne_intCast`: the eigenspaces at non-integer scalars
@@ -96,7 +97,7 @@ of a primitive vector is a natural number `n` (`IsSl2Triple.HasPrimitiveVectorWi
 theorem exists_nat_sub_two_mul_of_lie_h_eq_smul (t : IsSl2Triple h e f)
     (hm : ⁅h, m⁆ = μ • m) (hm0 : m ≠ 0) :
     ∃ n k : ℕ, μ = (n : K) - 2 * k := by
-  obtain ⟨k, P⟩ := exists_hasPrimitiveVectorWith_pow_toEnd_e t hm hm0
+  obtain ⟨k, P⟩ := t.exists_hasPrimitiveVectorWith_pow_toEnd_e hm hm0
   obtain ⟨n, hn⟩ := P.exists_nat
   exact ⟨n, k, by rw [← hn]; ring⟩
 
