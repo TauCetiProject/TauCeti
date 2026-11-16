@@ -18,11 +18,12 @@ Let `C` be a `ℤ`-graded chain complex of vector spaces over a field `F`, with 
 
 `0 → Bⱼ₊₁ → Zⱼ₊₁ → Hⱼ₊₁ → 0` and `0 → Zⱼ₊₁ → Cⱼ₊₁ → Bⱼ → 0`
 
-are short exact for every complex, so a basis `bⱼ₊₁` of `Bⱼ₊₁`, cycles `zⱼ₊₁` representing the
-basis `hⱼ₊₁` of `Hⱼ₊₁`, and lifts `sⱼ` through `d` of a basis `bⱼ` of `Bⱼ` give an ordered basis
-`(bⱼ₊₁, zⱼ₊₁, sⱼ)` of `Cⱼ₊₁`. Its determinant with respect to `cⱼ₊₁` is the *bracket*
-`[bⱼ₊₁ zⱼ₊₁ sⱼ / cⱼ₊₁]` (`HomologicalComplex.torsionBracketWithHomology`), and the torsion of `C`
-with respect to the bases `c` and `h` is the alternating product
+are short exact for every complex, so a basis `bⱼ₊₁` of `Bⱼ₊₁` and cycles `zⱼ₊₁` representing the
+basis `hⱼ₊₁` of `Hⱼ₊₁` give an ordered basis `(bⱼ₊₁, zⱼ₊₁)` of `Zⱼ₊₁`
+(`HomologicalComplex.kerBasisOfHomology`), and together with lifts `sⱼ` through `d` of a basis `bⱼ`
+of `Bⱼ` they give an ordered basis `(bⱼ₊₁, zⱼ₊₁, sⱼ)` of `Cⱼ₊₁`. Its determinant with respect to
+`cⱼ₊₁` is the *bracket* `[bⱼ₊₁ zⱼ₊₁ sⱼ / cⱼ₊₁]` (`HomologicalComplex.torsionBracketWithHomology`),
+and the torsion of `C` with respect to the bases `c` and `h` is the alternating product
 
 `τ(C, c, h) = ∏ⱼ [bⱼ₊₁ zⱼ₊₁ sⱼ / cⱼ₊₁] ^ ((-1) ^ j)`
 
@@ -47,6 +48,8 @@ denotes the determinant of the basis `x` with respect to the basis `y`.
 
 ## Main declarations
 
+* `HomologicalComplex.kerBasisOfHomology`: the basis of the cycles made of a basis of the
+  boundaries followed by cycles representing a basis of the homology.
 * `HomologicalComplex.torsionBracketWithHomology`: the bracket `[bⱼ₊₁ zⱼ₊₁ sⱼ / cⱼ₊₁]` of a degree.
 * `HomologicalComplex.torsionBracketWithHomology_eq_det_append`: the bracket is the determinant of
   the boundary basis followed by the homology representatives and the lifts.
@@ -81,6 +84,36 @@ variable {F : Type*} [Field F] {C : ChainComplex (ModuleCat F) ℤ}
 
 variable {n : ℤ → ℕ} (c : ∀ i, Basis (Fin (n i)) F (C.X i))
 
+section KerBasis
+
+variable {l i k : ℤ} (hl : (ComplexShape.down ℤ).prev i = l)
+  (hk : (ComplexShape.down ℤ).next i = k) {κ σ : Type*}
+  (b : Basis κ F (LinearMap.range (C.d l i).hom)) (h : Basis σ F (C.homology i))
+  (y : σ → C.cycles i) (hy : ∀ t, C.homologyπ i (y t) = h t)
+
+/-- The basis `(b, y)` of the cycles `Zᵢ`, the kernel of the differential `C.d i k` out of degree
+`i`, made of a basis `b` of the boundaries `Bᵢ`, the image of the differential `C.d l i` into
+degree `i`, followed by cycles `y` representing a basis `h` of the homology `Hᵢ`. -/
+def kerBasisOfHomology : Basis (κ ⊕ σ) F (LinearMap.ker (C.d i k).hom) :=
+  Basis.ofExactLift (Submodule.inclusion_injective _)
+    (C.exact_inclusion_moduleCatKerHomologyClass hk hl) b h (C.moduleCatCyclesToKer i k ∘ y)
+    fun t ↦ by rw [Function.comp_apply, moduleCatKerHomologyClass_moduleCatCyclesToKer, hy]
+
+/-- On the left summand, `kerBasisOfHomology` is the basis of the boundaries. -/
+@[simp]
+theorem coe_kerBasisOfHomology_inl (t : κ) :
+    (kerBasisOfHomology hl hk b h y hy (.inl t) : C.X i) = b t := by
+  simp [kerBasisOfHomology]
+
+/-- On the right summand, `kerBasisOfHomology` is the family of cycles representing the homology
+basis. -/
+@[simp]
+theorem coe_kerBasisOfHomology_inr (t : σ) :
+    (kerBasisOfHomology hl hk b h y hy (.inr t) : C.X i) = C.iCycles i (y t) := by
+  simp [kerBasisOfHomology]
+
+end KerBasis
+
 section Bracket
 
 variable {j : ℤ}
@@ -92,14 +125,6 @@ variable {p m q : ℕ}
   (b₀ : Basis (Fin q) F (LinearMap.range (C.d (j + 1) j).hom))
   (s : Fin q → C.X (j + 1)) (hs : ∀ k, (C.d (j + 1) j).hom (s k) = b₀ k)
 
-/-- The basis `(b₁, y)` of the cycles `Zⱼ₊₁` made of a basis `b₁` of the boundaries `Bⱼ₊₁`
-followed by cycles `y` representing a basis `h` of the homology `Hⱼ₊₁`. -/
-private def cyclesBasis : Basis (Fin p ⊕ Fin m) F (LinearMap.ker (C.d (j + 1) j).hom) :=
-  Basis.ofExactLift (Submodule.inclusion_injective _)
-    (C.exact_inclusion_moduleCatKerHomologyClass ((ComplexShape.down ℤ).next_eq' rfl)
-      (ChainComplex.prev ℤ (j + 1))) b₁ h (C.moduleCatCyclesToKer (j + 1) j ∘ y) fun k ↦ by
-    rw [Function.comp_apply, moduleCatKerHomologyClass_moduleCatCyclesToKer, hy]
-
 /-- The basis `(b₁, y, s)` of `Cⱼ₊₁` made of a basis `b₁` of the boundaries `Bⱼ₊₁`, cycles `y`
 representing a basis `h` of the homology `Hⱼ₊₁`, and lifts `s` of a basis `b₀` of the
 boundaries `Bⱼ`. -/
@@ -107,7 +132,8 @@ private def bracketBasis : Basis ((Fin p ⊕ Fin m) ⊕ Fin q) F (C.X (j + 1)) :
   -- The sequence `Zⱼ₊₁ → Cⱼ₊₁ → Bⱼ` is exact.
   Basis.ofExactLift (Submodule.injective_subtype _)
     (LinearMap.exact_iff.2 (by rw [LinearMap.ker_rangeRestrict, Submodule.range_subtype]))
-    (cyclesBasis b₁ h y hy) b₀ s fun k ↦ Subtype.ext (hs k)
+    (kerBasisOfHomology (ChainComplex.prev ℤ (j + 1)) ((ComplexShape.down ℤ).next_eq' rfl) b₁ h y
+      hy) b₀ s fun k ↦ Subtype.ext (hs k)
 
 include c b₁ h y hy b₀ s hs in
 private theorem eq_add_add : n (j + 1) = p + m + q := by
@@ -138,7 +164,7 @@ theorem torsionBracketWithHomology_eq_det_append (hn : n (j + 1) = p + m + q) :
   ext k
   obtain ⟨k, rfl⟩ := (finCongr hn.symm).surjective k
   induction k using Fin.addCases with
-  | left k => induction k using Fin.addCases <;> simp [bracketBasis, cyclesBasis, finSumSumEquiv]
+  | left k => induction k using Fin.addCases <;> simp [bracketBasis, finSumSumEquiv]
   | right k => simp [bracketBasis, finSumSumEquiv]
 
 /-- Reindexing the boundary bases of a bracket along equalities of their lengths does not change
@@ -162,8 +188,8 @@ theorem torsionBracketWithHomology_eq_mul
     torsionBracketWithHomology c b₁' h' y' hy' b₀' s' hs' =
       torsionBracketWithHomology c b₁ h y hy b₀ s hs * (b₁.det b₁' * h.det h' * b₀.det b₀') := by
   simp only [torsionBracketWithHomology, bracketBasis]
-  rw [Basis.det_ofExactLift _ _ (cyclesBasis b₁ h y hy) (cyclesBasis b₁' h' y' hy'),
-    cyclesBasis, cyclesBasis, Basis.ofExactLift_det_ofExactLift]
+  rw [Basis.det_ofExactLift, kerBasisOfHomology, kerBasisOfHomology,
+    Basis.ofExactLift_det_ofExactLift]
 
 /-- Replacing the basis `c (j + 1)` of `Cⱼ₊₁` by `c' (j + 1)` multiplies a bracket by the
 determinant of `c (j + 1)` with respect to `c' (j + 1)`. -/

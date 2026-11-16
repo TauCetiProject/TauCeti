@@ -309,17 +309,11 @@ variable {C G : ChainComplex (ModuleCat F) ℤ} (ζ : G ⟶ C) (hG : ∀ i j, G.
   (y : ∀ i, Fin (m i) → C.cycles i) (hy : ∀ i k, C.homologyπ i (y i k) = h i k)
   (hζ : ∀ i k, C.iCycles i (y i k) = ζ.f i (g i k))
 
-include hG in
-/-- A chain map out of a complex with zero differential takes values in the cycles. -/
-private theorem d_f_apply_eq_zero {i j : ℤ} (x : G.X i) :
-    (C.d i j).hom ((ζ.f i).hom x) = 0 := by
-  rw [← ModuleCat.comp_apply, ζ.comm, hG]
-  simp
-
 include hG hy hζ in
 /-- The homology class of `ζ x` is the element of `Hᵢ(C)` with the coordinates of `x`. -/
 private theorem moduleCatHomologyClass_f {i q : ℤ} (hq : (ComplexShape.down ℤ).next i = q) :
-    C.moduleCatHomologyClass hq (ζ.f i).hom (fun x ↦ d_f_apply_eq_zero ζ hG x) =
+    C.moduleCatHomologyClass hq (ζ.f i).hom
+        (fun x ↦ ζ.d_apply_eq_zero_of_d_apply_eq_zero i q x (by simp [hG])) =
       ((g i).equiv (h i) (Equiv.refl _)).toLinearMap :=
   (g i).ext fun k ↦ by
     rw [moduleCatHomologyClass_apply, LinearEquiv.coe_coe, Basis.equiv_apply, Equiv.refl_apply,
@@ -333,56 +327,56 @@ include hG hy hζ in
 private theorem eq_zero_of_d_apply_eq {p i : ℤ} (hp : (ComplexShape.down ℤ).prev i = p)
     (x : G.X i) (l : C.X p) (hl : (C.d p i).hom l = (ζ.f i).hom x) : x = 0 := by
   have hx := (C.moduleCatHomologyClass_eq_zero_iff (ChainComplex.next ℤ i) (ζ.f i).hom
-    (fun x ↦ d_f_apply_eq_zero ζ hG x) hp x).2 ⟨l, hl⟩
+    (fun x ↦ ζ.d_apply_eq_zero_of_d_apply_eq_zero i _ x (by simp [hG])) hp x).2 ⟨l, hl⟩
   rw [moduleCatHomologyClass_f ζ hG g h y hy hζ] at hx
   simpa using hx
 
 include hG hy hζ in
-/-- Every cycle is a boundary plus a value of `ζ`. -/
-private theorem exists_d_apply_add_f_apply_eq {p i q : ℤ}
-    (hp : (ComplexShape.down ℤ).prev i = p) (hq : (ComplexShape.down ℤ).next i = q) (z : C.X i)
-    (hz : (C.d i q).hom z = 0) :
-    ∃ (l : C.X p) (x : G.X i), (C.d p i).hom l + (ζ.f i).hom x = z := by
-  let e := (g i).equiv (h i) (Equiv.refl _)
-  let x := e.symm (C.homologyπ i (C.moduleCatCyclesMk z q hq hz))
-  have hcl := congr($(moduleCatHomologyClass_f ζ hG g h y hy hζ hq) x)
-  rw [moduleCatHomologyClass_apply, LinearEquiv.coe_coe, LinearEquiv.apply_symm_apply] at hcl
-  obtain ⟨l, hl⟩ := (C.moduleCat_homologyπ_eq_iff hp _ _).1 hcl.symm
-  refine ⟨l, x, ?_⟩
-  rw [hl, iCycles_moduleCatCyclesMk, iCycles_moduleCatCyclesMk, sub_add_cancel]
-
-include hG in
-/-- The differential of the mapping cone sends `G.X j` to `C.X j` by `ζ`, since `G` has zero
-differential. -/
-private theorem d_inlX_apply_of_d_eq_zero {i j : ℤ} (hij : (ComplexShape.down ℤ).Rel i j)
-    (x : G.X j) :
-    (homotopyCofiber.d ζ i j).hom ((inlX ζ j i hij).hom x) = (inrX ζ j).hom ((ζ.f j).hom x) := by
-  rw [d_inlX_apply ζ hij (by simp : (ComplexShape.down ℤ).Rel j (j - 1)), hG]
-  simp
+/-- The boundaries of the mapping cone in degree `j` are the cycles of `C` in degree `j`, included
+into the cone. -/
+private theorem range_inrX_comp_subtype {j : ℤ} :
+    LinearMap.range ((inrX ζ j).hom ∘ₗ (LinearMap.ker (C.d j (j - 1)).hom).subtype) =
+      LinearMap.range ((homotopyCofiber ζ).d (j + 1) j).hom := by
+  have hrel : (ComplexShape.down ℤ).Rel (j + 1) j := by simp
+  apply le_antisymm
+  · -- The cycles are spanned by a basis of the boundaries and the representatives `ζ (g j)`.
+    rw [LinearMap.range_eq_map,
+      ← (kerBasisOfHomology (ChainComplex.prev ℤ j) (ChainComplex.next ℤ j)
+        (Basis.ofVectorSpace F _) (h j) (y j) (hy j)).span_eq, Submodule.map_span,
+      Submodule.span_le]
+    rintro _ ⟨_, ⟨t | t, rfl⟩, rfl⟩
+    · obtain ⟨l, hl⟩ := (Basis.ofVectorSpace F (LinearMap.range (C.d (j + 1) j).hom) t).2
+      exact ⟨(inrX ζ (j + 1)).hom l, by simp [hl]⟩
+    · exact ⟨(inlX ζ j (j + 1) hrel).hom (g j t), by
+        simp [d_inlX_apply_of_d_eq_zero ζ hrel (hG _ _), hζ]⟩
+  · rintro _ ⟨w, rfl⟩
+    obtain ⟨⟨l, x⟩, rfl⟩ := (XEquiv ζ hrel).symm.surjective w
+    refine ⟨⟨(C.d (j + 1) j).hom l + (ζ.f j).hom x, ?_⟩, ?_⟩
+    · rw [LinearMap.mem_ker, map_add, C.d_comp_d_apply,
+        ζ.d_apply_eq_zero_of_d_apply_eq_zero j _ x (by simp [hG]), add_zero]
+    · simp [XEquiv_symm_apply, d_inlX_apply_of_d_eq_zero ζ hrel (hG _ _)]
 
 include hG hy hζ in
 /-- The mapping cone of a chain map `ζ` from a complex with zero differential which picks
 representatives of a basis of the homology is acyclic. -/
 theorem acyclic_homotopyCofiber_of_homologyπ : (homotopyCofiber ζ).Acyclic := by
   intro i
-  rw [exactAt_iff' _ (i + 1) i (i - 1) (by simp) (by simp), ShortComplex.moduleCat_exact_iff]
+  rw [exactAt_iff_range_eq_ker _ (ChainComplex.prev ℤ i) (ChainComplex.next ℤ i)]
+  refine le_antisymm (range_d_le_ker_d _ i _ _) ?_
+  rw [← range_inrX_comp_subtype ζ hG g h y hy hζ]
   intro w hw
-  -- The maps of the short complex `sc'` are the differentials of the cone.
-  replace hw : (homotopyCofiber.d ζ i (i - 1)).hom w = 0 := hw
+  rw [LinearMap.mem_ker] at hw
   have hrel : (ComplexShape.down ℤ).Rel i (i - 1) := by simp
   obtain ⟨⟨l, x⟩, rfl⟩ := (XEquiv ζ hrel).symm.surjective w
-  simp only [XEquiv_symm_apply, map_add, d_inrX_apply, d_inlX_apply_of_d_eq_zero ζ hG] at hw
+  simp only [homotopyCofiber_d, XEquiv_symm_apply, map_add, d_inrX_apply ζ i (i - 1),
+    d_inlX_apply_of_d_eq_zero ζ hrel (hG _ _)] at hw
   rw [← map_add, ← map_zero (inrX ζ (i - 1)).hom] at hw
   have hlx := inrX_hom_injective ζ (i - 1) hw
   obtain rfl : x = 0 := eq_zero_of_d_apply_eq ζ hG g h y hy hζ (by simp) x (-l)
     (by rw [map_neg, neg_eq_iff_add_eq_zero]; exact hlx)
   rw [map_zero, add_zero] at hlx
-  obtain ⟨l', x', rfl⟩ := exists_d_apply_add_f_apply_eq ζ hG g h y hy hζ (ChainComplex.prev ℤ i)
-    (ChainComplex.next ℤ i) l hlx
-  refine ⟨(inrX ζ (i + 1)).hom l' + (inlX ζ i (i + 1) (by simp)).hom x',
-    (?_ : (homotopyCofiber.d ζ (i + 1) i).hom _ = _)⟩
-  rw [map_add, d_inrX_apply, d_inlX_apply_of_d_eq_zero ζ hG, XEquiv_symm_apply, map_zero,
-    add_zero, map_add]
+  -- The cycle `l` of `C`, included into the cone, is a boundary of the cone.
+  exact ⟨⟨l, hlx⟩, by simp [XEquiv_symm_apply]⟩
 
 include hy in
 /-- If `C.X i` is zero, so is `Hᵢ(C)`, and its basis is empty. -/
@@ -395,85 +389,24 @@ private theorem eq_zero_of_eq_zero {n : ℤ → ℕ} (c : ∀ i, Basis (Fin (n i
   apply (h i).ne_zero ⟨0, Nat.pos_of_ne_zero hm⟩
   rw [← hy, hy0, map_zero]
 
-/-- The family made of a basis of the boundaries `Bⱼ` followed by the values of `ζ` on the basis
-of `G.X j`. -/
-private def boundaryFamily {n : ℤ → ℕ} (c : ∀ i, Basis (Fin (n i)) F (C.X i)) (j : ℤ) :
-    Fin (finrank F (LinearMap.range (C.d (j + 1) j).hom) + m j) → C.X j :=
-  Fin.append (fun k ↦ (chosenBoundaryBasis C c (j + 1) j k : C.X j))
-    fun k ↦ (ζ.f j).hom (g j k)
-
-include hG hy hζ in
-private theorem linearIndependent_boundaryFamily {n : ℤ → ℕ}
-    (c : ∀ i, Basis (Fin (n i)) F (C.X i)) (j : ℤ) :
-    LinearIndependent F (boundaryFamily ζ g c j) := by
-  rw [Fintype.linearIndependent_iff]
-  intro a ha
-  rw [Fin.sum_univ_add] at ha
-  simp only [boundaryFamily, Fin.append_left, Fin.append_right] at ha
-  set x := ∑ k, a (Fin.natAdd _ k) • g j k
-  have hx : (ζ.f j).hom x = ∑ k, a (Fin.natAdd _ k) • (ζ.f j).hom (g j k) := by
-    simp [x, map_sum, map_smul]
-  have hb : ∑ k, a (Fin.castAdd _ k) • (chosenBoundaryBasis C c (j + 1) j k : C.X j) ∈
-      LinearMap.range (C.d (j + 1) j).hom :=
-    Submodule.sum_mem _ fun k _ ↦ Submodule.smul_mem _ _ (Subtype.prop _)
-  obtain ⟨l, hl⟩ := hb
-  have hx0 : x = 0 := eq_zero_of_d_apply_eq ζ hG g h y hy hζ (ChainComplex.prev ℤ j) x (-l)
-    (by rw [map_neg, hl, hx, neg_eq_iff_add_eq_zero, ha])
-  have ha₂ : ∀ k, a (Fin.natAdd _ k) = 0 :=
-    (Fintype.linearIndependent_iff.1 (g j).linearIndependent) _ hx0
-  have ha₁ : ∀ k, a (Fin.castAdd _ k) = 0 := by
-    refine Fintype.linearIndependent_iff.1
-      ((chosenBoundaryBasis C c (j + 1) j).linearIndependent.map' _
-        (Submodule.ker_subtype _)) _ ?_
-    simpa [ha₂] using ha
-  intro k
-  induction k using Fin.addCases with
-  | left k => exact ha₁ k
-  | right k => exact ha₂ k
-
-include hG in
-private theorem span_boundaryFamily {n : ℤ → ℕ} (c : ∀ i, Basis (Fin (n i)) F (C.X i)) (j : ℤ) :
-    Submodule.span F (Set.range ((inrX ζ j).hom ∘ boundaryFamily ζ g c j)) =
-      LinearMap.range ((homotopyCofiber ζ).d (j + 1) j).hom := by
-  have hrel : (ComplexShape.down ℤ).Rel (j + 1) j := by simp
-  apply le_antisymm
-  · rw [Submodule.span_le]
-    rintro _ ⟨k, rfl⟩
-    induction k using Fin.addCases with
-    | left k =>
-      refine ⟨(inrX ζ (j + 1)).hom (chosenBoundaryLift C c (j + 1) j k), ?_⟩
-      simp [boundaryFamily, d_inrX_apply, chosenBoundaryLift_spec]
-    | right k =>
-      exact ⟨(inlX ζ j (j + 1) hrel).hom (g j k), by
-        simp [boundaryFamily, d_inlX_apply_of_d_eq_zero ζ hG]⟩
-  · rintro _ ⟨w, rfl⟩
-    obtain ⟨⟨l, x⟩, rfl⟩ := (XEquiv ζ hrel).symm.surjective w
-    rw [homotopyCofiber_d, XEquiv_symm_apply, map_add, d_inrX_apply,
-      d_inlX_apply_of_d_eq_zero ζ hG]
-    -- Expand the boundary `C.d l` and the element `x` in their bases.
-    have hl := congrArg Subtype.val ((chosenBoundaryBasis C c (j + 1) j).sum_repr ⟨_, l, rfl⟩)
-    simp only [Submodule.coe_sum, Submodule.coe_smul] at hl
-    rw [← hl, ← (g j).sum_repr x]
-    simp only [map_sum, map_smul]
-    refine Submodule.add_mem _ (Submodule.sum_mem _ fun k _ ↦ Submodule.smul_mem _ _
-      (Submodule.subset_span ⟨Fin.castAdd _ k, by simp [boundaryFamily]⟩))
-      (Submodule.sum_mem _ fun k _ ↦ Submodule.smul_mem _ _
-        (Submodule.subset_span ⟨Fin.natAdd _ k, by simp [boundaryFamily]⟩))
-
 /-- The basis of the boundaries of the mapping cone in degree `j`: a basis of the boundaries `Bⱼ`
-of `C` followed by the values of `ζ` on the basis of `G.X j`, included into the cone. -/
+of `C` followed by the cycles representing the homology basis `h j`, included into the cone. -/
 private def coneBoundaryBasis {n : ℤ → ℕ} (c : ∀ i, Basis (Fin (n i)) F (C.X i)) (j : ℤ) :
     Basis (Fin (finrank F (LinearMap.range (C.d (j + 1) j).hom) + m j)) F
       (LinearMap.range ((homotopyCofiber ζ).d (j + 1) j).hom) :=
-  (Basis.span ((linearIndependent_boundaryFamily ζ hG g h y hy hζ c j).map' _
-    (LinearMap.ker_eq_bot.2 (inrX_hom_injective ζ j)))).map
-      (LinearEquiv.ofEq _ _ (span_boundaryFamily ζ hG g c j))
+  ((kerBasisOfHomology (ChainComplex.prev ℤ j) (ChainComplex.next ℤ j)
+    (chosenBoundaryBasis C c (j + 1) j) (h j) (y j) (hy j)).map
+      ((LinearEquiv.ofInjective ((inrX ζ j).hom ∘ₗ (LinearMap.ker (C.d j (j - 1)).hom).subtype)
+        ((inrX_hom_injective ζ j).comp Subtype.val_injective)).trans
+        (LinearEquiv.ofEq _ _ (range_inrX_comp_subtype ζ hG g h y hy hζ)))).reindex
+    finSumFinEquiv
 
 private theorem coe_coneBoundaryBasis {n : ℤ → ℕ} (c : ∀ i, Basis (Fin (n i)) F (C.X i)) (j : ℤ)
     (k : Fin (finrank F (LinearMap.range (C.d (j + 1) j).hom) + m j)) :
     (coneBoundaryBasis ζ hG g h y hy hζ c j k : (homotopyCofiber ζ).X j) =
-      (inrX ζ j).hom (boundaryFamily ζ g c j k) := by
-  simp [coneBoundaryBasis, Basis.span_apply]
+      (inrX ζ j).hom (Fin.append (fun k ↦ (chosenBoundaryBasis C c (j + 1) j k : C.X j))
+        (fun k ↦ C.iCycles j (y j k)) k) := by
+  induction k using Fin.addCases <;> simp [coneBoundaryBasis]
 
 /-- Lifts to the mapping cone of the basis `coneBoundaryBasis` of its boundaries. -/
 private def coneLift {n : ℤ → ℕ} (c : ∀ i, Basis (Fin (n i)) F (C.X i)) (j : ℤ) :
@@ -486,8 +419,8 @@ private theorem coneLift_spec {n : ℤ → ℕ} (c : ∀ i, Basis (Fin (n i)) F 
       coneBoundaryBasis ζ hG g h y hy hζ c j k := by
   rw [coe_coneBoundaryBasis, homotopyCofiber_d]
   induction k using Fin.addCases with
-  | left k => simp [coneLift, boundaryFamily, d_inrX_apply, chosenBoundaryLift_spec]
-  | right k => simp [coneLift, boundaryFamily, d_inlX_apply_of_d_eq_zero ζ hG]
+  | left k => simp [coneLift, chosenBoundaryLift_spec]
+  | right k => simp [coneLift, d_inlX_apply_of_d_eq_zero ζ _ (hG _ _), hζ]
 
 /-- Including the basis of `G.X a` into the mapping cone along `a = j`; the degrees `j` and
 `j + 1 - 1` are only propositionally equal. -/
@@ -521,28 +454,17 @@ private theorem torsionBracket_coneBoundaryBasis {n : ℤ → ℕ}
     basis_det_eq_mul ζ g c (j + 1) _ u (g (j + 1 - 1)), Basis.det_self, mul_one]
   · intro k
     obtain ⟨k, rfl⟩ := (finCongr hn₂).symm.surjective k
+    -- The index `k` of `u` sits in the cone family at the index with the same value.
+    have hk (k' : Fin _) (hk' : (k : ℕ) = k') :
+        Fin.cast hn₁ (Fin.castAdd (m (j + 1 - 1)) (Fin.cast hn₂.symm k)) = k' :=
+      Fin.ext hk'
+    simp only [hu, Function.comp_apply, finCongr_symm, finCongr_apply]
     induction k using Fin.addCases with
     | left k =>
-      induction k using Fin.addCases with
-      | left k =>
-        have hk : Fin.cast hn₁ (Fin.castAdd (m (j + 1 - 1)) (Fin.cast hn₂.symm
-            (Fin.castAdd _ (Fin.castAdd _ k)))) = Fin.castAdd _ (Fin.castAdd _ k) :=
-          Fin.ext (by simp)
-        simp only [hu, Function.comp_apply, finCongr_symm, finCongr_apply, hk]
-        rw [Fin.append_left, coe_coneBoundaryBasis]
-        simp [boundaryFamily]
-      | right k =>
-        have hk : Fin.cast hn₁ (Fin.castAdd (m (j + 1 - 1)) (Fin.cast hn₂.symm
-            (Fin.castAdd _ (Fin.natAdd _ k)))) = Fin.castAdd _ (Fin.natAdd _ k) :=
-          Fin.ext (by simp)
-        simp only [hu, Function.comp_apply, finCongr_symm, finCongr_apply, hk]
-        rw [Fin.append_left, coe_coneBoundaryBasis]
-        simp [boundaryFamily, hζ]
+      rw [hk (Fin.castAdd _ k) (by simp), Fin.append_left, coe_coneBoundaryBasis]
+      simp
     | right k =>
-      have hk : Fin.cast hn₁ (Fin.castAdd (m (j + 1 - 1)) (Fin.cast hn₂.symm
-          (Fin.natAdd _ k))) = Fin.natAdd _ (Fin.castAdd _ k) :=
-        Fin.ext (by simp)
-      simp only [hu, Function.comp_apply, finCongr_symm, finCongr_apply, hk]
+      rw [hk (Fin.natAdd _ (Fin.castAdd _ k)) (by simp)]
       simp [coneLift]
   · intro k
     have hk : Fin.cast hn₁ (Fin.natAdd (n (j + 1)) k) =

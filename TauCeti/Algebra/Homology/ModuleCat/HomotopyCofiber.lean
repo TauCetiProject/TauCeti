@@ -24,7 +24,9 @@ coordinates `(x, 0)` and `(0, x)` (`HomologicalComplex.homotopyCofiber.XEquiv_in
 `HomologicalComplex.homotopyCofiber.XEquiv_inlX`), so `inrX` is injective, and on elements the
 differential of the cone is `d (inrX x) = inrX (d x)` and `d (inlX x) = -inlX (d x) + inrX (φ x)`
 (`HomologicalComplex.homotopyCofiber.d_inrX_apply`,
-`HomologicalComplex.homotopyCofiber.d_inlX_apply`).
+`HomologicalComplex.homotopyCofiber.d_inlX_apply`); where the differential of `K` vanishes, the
+latter is `d (inlX x) = inrX (φ x)`
+(`HomologicalComplex.homotopyCofiber.d_inlX_apply_of_d_eq_zero`).
 
 For chain complexes indexed by `ℤ`, bases of `K` and `L` give the mapping cone the basis
 `HomologicalComplex.homotopyCofiber.basis`: the basis of `L.X i` followed by that of
@@ -135,6 +137,15 @@ theorem d_inlX_apply {i j k : ι} (hij : c.Rel i j) (hjk : c.Rel j k) (x : K.X j
     (d φ i j).hom ((inlX φ j i hij).hom x) =
       -(inlX φ k j hjk).hom ((K.d j k).hom x) + (inrX φ j).hom ((φ.f j).hom x) :=
   congr(($(inlX_d φ i j k hij hjk)).hom x)
+
+/-- The differential of the mapping cone on an element of `K` in a degree where the differential
+of `K` vanishes: it is `φ` followed by the inclusion of `L`. -/
+theorem d_inlX_apply_of_d_eq_zero {i j : ι} (hij : c.Rel i j) (hK : K.d j (c.next j) = 0)
+    (x : K.X j) : (d φ i j).hom ((inlX φ j i hij).hom x) = (inrX φ j).hom ((φ.f j).hom x) := by
+  by_cases hj : c.Rel j (c.next j)
+  · rw [d_inlX_apply φ hij hj, hK]
+    simp
+  · exact congr(($(inlX_d' φ i j hij hj)).hom x)
 
 end XEquiv
 
