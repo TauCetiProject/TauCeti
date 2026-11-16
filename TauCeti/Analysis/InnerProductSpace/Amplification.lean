@@ -16,9 +16,10 @@ acts diagonally on the Hilbert sum `PiLp 2 (fun _ : ι => H)` of copies of `H`, 
 `s ⊕ ⋯ ⊕ s`. This diagonal amplification is a star algebra homomorphism,
 `PiLp.diagStarAlgHom`. Conversely, every operator `T` on the Hilbert sum has matrix entries
 `ContinuousLinearMap.piLpEntry T i j : H →L[𝕜] H`, and `T` acts through them
-(`ContinuousLinearMap.apply_eq_sum_piLpEntry`). The amplification of `s` is norm-nonincreasing
-(`PiLp.norm_diagStarAlgHom_le`) and has `s` on the diagonal and `0` off it
-(`ContinuousLinearMap.piLpEntry_diagStarAlgHom`).
+(`ContinuousLinearMap.apply_eq_sum_piLpEntry`). The amplification of `s` has `s` on the diagonal
+and `0` off it (`ContinuousLinearMap.piLpEntry_diagStarAlgHom`), so an operator on the Hilbert sum
+commutes with it if and only if each matrix entry commutes with `s`
+(`ContinuousLinearMap.commute_diagStarAlgHom_iff`).
 
 Amplification turns statements about finitely many vectors of `H` into statements about a single
 vector of the Hilbert sum; this is how the von Neumann density theorem passes from one vector to
@@ -96,17 +97,6 @@ theorem diagStarAlgHom_apply_single [DecidableEq ι] (s : H →L[𝕜] H) (j : �
   · subst hk; simp
   · simp [hk]
 
-/-- Diagonal amplification to a finite Hilbert sum does not increase the operator norm. -/
-theorem norm_diagStarAlgHom_le (s : H →L[𝕜] H) :
-    ‖diagStarAlgHom 𝕜 H ι s‖ ≤ ‖s‖ := by
-  refine ContinuousLinearMap.opNorm_le_bound _ (norm_nonneg s) fun ξ ↦ ?_
-  refine (sq_le_sq₀ (norm_nonneg (diagStarAlgHom 𝕜 H ι s ξ))
-    (mul_nonneg (norm_nonneg s) (norm_nonneg ξ))).mp ?_
-  rw [mul_pow, PiLp.norm_sq_eq_of_L2, PiLp.norm_sq_eq_of_L2, Finset.mul_sum]
-  refine Finset.sum_le_sum fun i _ ↦ ?_
-  rw [diagStarAlgHom_apply, ← mul_pow]
-  exact pow_le_pow_left₀ (norm_nonneg _) (s.le_opNorm (ξ i)) 2
-
 end PiLp
 
 namespace ContinuousLinearMap
@@ -120,5 +110,27 @@ theorem piLpEntry_diagStarAlgHom (s : H →L[𝕜] H) (i j : ι) :
   by_cases hij : i = j
   · subst hij; simp
   · simp [hij]
+
+/-- An operator `T` on the finite Hilbert sum commutes with the diagonal amplification
+`PiLp.diagStarAlgHom 𝕜 H ι s` if and only if each of its matrix entries commutes with `s`. -/
+theorem commute_diagStarAlgHom_iff
+    (T : PiLp 2 (fun _ : ι => H) →L[𝕜] PiLp 2 (fun _ : ι => H)) (s : H →L[𝕜] H) :
+    Commute T (PiLp.diagStarAlgHom 𝕜 H ι s) ↔ ∀ i j, Commute (T.piLpEntry i j) s := by
+  constructor
+  · intro h i j
+    rw [commute_iff_eq]
+    ext x
+    have h' := congr_arg (fun w => w i) (DFunLike.congr_fun h.eq (PiLp.single 2 j x))
+    simp only [mul_apply_eq_comp, PiLp.diagStarAlgHom_apply, PiLp.diagStarAlgHom_apply_single]
+      at h'
+    simpa [mul_apply_eq_comp] using h'
+  · intro h
+    rw [commute_iff_eq]
+    ext w i
+    simp only [mul_apply_eq_comp]
+    rw [T.apply_eq_sum_piLpEntry, PiLp.diagStarAlgHom_apply, T.apply_eq_sum_piLpEntry, map_sum]
+    refine Finset.sum_congr rfl fun j _ => ?_
+    rw [PiLp.diagStarAlgHom_apply]
+    simpa [mul_apply_eq_comp] using DFunLike.congr_fun (h i j).eq (w j)
 
 end ContinuousLinearMap

@@ -9,6 +9,7 @@ public import TauCeti.Analysis.InnerProductSpace.Compression
 public import Mathlib.Analysis.InnerProductSpace.ProdL2
 public import TauCeti.Analysis.Normed.Operator.Basic
 import Mathlib.Analysis.Normed.Affine.MazurUlam
+import TauCeti.Analysis.InnerProductSpace.Projection.Basic
 import TauCeti.Analysis.Normed.Operator.ClosedRange
 
 /-!
@@ -558,12 +559,29 @@ theorem mul_cornerEmbedding_of_commute (e : E →ₗᵢ[𝕜] F) (T : E →L[�
 
 /-- An ambient operator `S` commuting with the range projection `e ∘L e†` commutes with
 `e.cornerEmbedding T` if and only if its compression along `e` commutes with `T`. -/
-theorem commute_cornerEmbedding_iff (e : E →ₗᵢ[𝕜] F) (T : E →L[𝕜] E) {S : F →L[𝕜] F}
+theorem commute_cornerEmbedding_iff_of_commute (e : E →ₗᵢ[𝕜] F) (T : E →L[𝕜] E) {S : F →L[𝕜] F}
     (hS : Commute (e.toContinuousLinearMap ∘L e.toContinuousLinearMap.adjoint) S) :
     Commute S (e.cornerEmbedding T) ↔ Commute (S.compression e.toContinuousLinearMap) T := by
   rw [Commute, SemiconjBy, e.mul_cornerEmbedding_of_commute T hS,
     e.cornerEmbedding_mul_of_commute T hS, e.cornerEmbedding.injective.eq_iff, ← SemiconjBy,
     ← Commute]
+
+/-- When every operator in `s` commutes with the range projection `e ∘L e†`, an operator `T`
+commutes with the compressions of `s` along `e` if and only if `e.cornerEmbedding T` commutes
+with `s`. -/
+theorem mem_centralizer_image_compression_iff_of_commute (e : E →ₗᵢ[𝕜] F) {s : Set (F →L[𝕜] F)}
+    (hs : ∀ y ∈ s, Commute (e.toContinuousLinearMap ∘L e.toContinuousLinearMap.adjoint) y)
+    {T : E →L[𝕜] E} :
+    T ∈ ((·.compression e.toContinuousLinearMap) '' s).centralizer ↔
+      e.cornerEmbedding T ∈ s.centralizer := by
+  rw [Set.mem_centralizer_iff, Set.mem_centralizer_iff]
+  constructor
+  · intro hT y hy
+    exact ((e.commute_cornerEmbedding_iff_of_commute T (hs y hy)).mpr
+      (by rw [commute_iff_eq]; exact hT _ ⟨y, hy, rfl⟩)).eq
+  · rintro hT _ ⟨y, hy, rfl⟩
+    exact ((e.commute_cornerEmbedding_iff_of_commute T (hs y hy)).mp
+      (by rw [commute_iff_eq]; exact hT y hy)).eq
 
 end LinearIsometry
 
@@ -571,9 +589,41 @@ namespace Submodule
 
 open ContinuousLinearMap
 
+/-- If `A` commutes with `U.starProjection`, then `U.subtypeL` intertwines
+`A.compression U.subtypeL` with `A`. -/
+theorem subtypeL_comp_compression_of_commute [CompleteSpace E] (U : Submodule 𝕜 E)
+    [CompleteSpace U] {A : E →L[𝕜] E} (hA : Commute U.starProjection A) :
+    U.subtypeL ∘L A.compression U.subtypeL = A ∘L U.subtypeL :=
+  comp_compression_of_commute U.subtypeₗᵢ.isometry (by rwa [U.subtypeL_comp_adjoint_subtypeL])
+
+/-- Compressing to `U` is multiplicative on the left at any operator commuting with
+`U.starProjection`. -/
+theorem compression_subtypeL_mul_of_commute_left [CompleteSpace E] (U : Submodule 𝕜 E)
+    [CompleteSpace U] {A : E →L[𝕜] E} (B : E →L[𝕜] E) (hA : Commute U.starProjection A) :
+    (A * B).compression U.subtypeL = A.compression U.subtypeL * B.compression U.subtypeL :=
+  compression_mul_of_commute_left B U.subtypeₗᵢ.isometry (by rwa [U.subtypeL_comp_adjoint_subtypeL])
+
+/-- Compressing to `U` is multiplicative on the right at any operator commuting with
+`U.starProjection`. -/
+theorem compression_subtypeL_mul_of_commute_right [CompleteSpace E] (U : Submodule 𝕜 E)
+    [CompleteSpace U] (A : E →L[𝕜] E) {B : E →L[𝕜] E} (hB : Commute U.starProjection B) :
+    (A * B).compression U.subtypeL = A.compression U.subtypeL * B.compression U.subtypeL :=
+  compression_mul_of_commute_right A U.subtypeₗᵢ.isometry
+    (by rwa [U.subtypeL_comp_adjoint_subtypeL])
+
+/-- If `A` and `B` commute with `U.starProjection` and their compressions to `U` commute, then
+`A * B` and `B * A` agree on `U`. -/
+theorem mul_comp_subtypeL_eq_of_commute_compression [CompleteSpace E] (U : Submodule 𝕜 E)
+    [CompleteSpace U] {A B : E →L[𝕜] E} (hA : Commute U.starProjection A)
+    (hB : Commute U.starProjection B)
+    (hAB : Commute (A.compression U.subtypeL) (B.compression U.subtypeL)) :
+    (A * B) ∘L U.subtypeL = (B * A) ∘L U.subtypeL :=
+  mul_comp_eq_of_commute_compression U.subtypeₗᵢ.isometry
+    (by rwa [U.subtypeL_comp_adjoint_subtypeL]) (by rwa [U.subtypeL_comp_adjoint_subtypeL]) hAB
+
 /-- Compressing an operator `T` to a complete subspace `U` and extending back by zero yields the
 two-sided projection cutdown `U.starProjection * T * U.starProjection`. -/
-theorem cornerEmbedding_subtype_compression [CompleteSpace E] (U : Submodule 𝕜 E)
+theorem cornerEmbedding_subtypeₗᵢ_compression_subtypeL [CompleteSpace E] (U : Submodule 𝕜 E)
     [CompleteSpace U] (T : E →L[𝕜] E) :
     U.subtypeₗᵢ.cornerEmbedding (T.compression U.subtypeL) =
       U.starProjection * T * U.starProjection := by
@@ -581,6 +631,27 @@ theorem cornerEmbedding_subtype_compression [CompleteSpace E] (U : Submodule �
   rw [U.subtypeₗᵢ_toContinuousLinearMap, U.subtypeL_comp_adjoint_subtypeL] at h
   rw [h, compression_def, (isSelfAdjoint_starProjection U).adjoint_eq,
     ← ContinuousLinearMap.mul_def, ← ContinuousLinearMap.mul_def, ← mul_assoc]
+
+/-- An ambient operator `S` commuting with `U.starProjection` commutes with
+`U.subtypeₗᵢ.cornerEmbedding T` if and only if its compression to `U` commutes with `T`. -/
+theorem commute_cornerEmbedding_subtypeₗᵢ_iff_of_commute [CompleteSpace E] (U : Submodule 𝕜 E)
+    [CompleteSpace U] (T : U →L[𝕜] U) {S : E →L[𝕜] E} (hS : Commute U.starProjection S) :
+    Commute S (U.subtypeₗᵢ.cornerEmbedding T) ↔ Commute (S.compression U.subtypeL) T := by
+  simpa [U.subtypeₗᵢ_toContinuousLinearMap] using
+    U.subtypeₗᵢ.commute_cornerEmbedding_iff_of_commute T
+      (by rwa [U.subtypeₗᵢ_toContinuousLinearMap, U.subtypeL_comp_adjoint_subtypeL])
+
+/-- When every operator in `s` commutes with `U.starProjection`, `T` commutes with the
+compressions of `s` to `U` if and only if `U.subtypeₗᵢ.cornerEmbedding T` commutes with `s`. -/
+theorem mem_centralizer_image_compression_subtypeL_iff_of_commute [CompleteSpace E]
+    (U : Submodule 𝕜 E) [CompleteSpace U] {s : Set (E →L[𝕜] E)}
+    (hs : ∀ y ∈ s, Commute U.starProjection y) {T : U →L[𝕜] U} :
+    T ∈ ((·.compression U.subtypeL) '' s).centralizer ↔
+      U.subtypeₗᵢ.cornerEmbedding T ∈ s.centralizer := by
+  simpa [U.subtypeₗᵢ_toContinuousLinearMap] using
+    U.subtypeₗᵢ.mem_centralizer_image_compression_iff_of_commute (T := T) fun y hy ↦ by
+      rw [U.subtypeₗᵢ_toContinuousLinearMap, U.subtypeL_comp_adjoint_subtypeL]
+      exact hs y hy
 
 end Submodule
 

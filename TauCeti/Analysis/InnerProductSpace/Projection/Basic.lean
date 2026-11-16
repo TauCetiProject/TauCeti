@@ -57,7 +57,9 @@ AIQ-Kitware DKPS formalization (Apache-2.0; Jon Crall and GPT-6).
 ## Main results
 
 * `Submodule.starProjection_def`: `U.starProjection` is `U.subtypeL ∘L U.orthogonalProjectionOnto`.
-* `Submodule.starProjection_ne_zero_iff`: `U.starProjection ≠ 0 ↔ Nontrivial U`.
+* `Submodule.subtypeL_comp_adjoint_subtypeL`: `U.subtypeL ∘L U.subtypeL† = U.starProjection`.
+* `Submodule.starProjection_eq_zero_iff`, `Submodule.starProjection_ne_zero_iff`:
+  `U.starProjection = 0 ↔ U = ⊥` and `U.starProjection ≠ 0 ↔ Nontrivial U`.
 * `Submodule.orthogonalProjectionOnto_comp_subtypeL`: restricting the orthogonal projection
   onto `U` to `U` itself gives the identity map.
 * `Submodule.adjoint_subtype`: the adjoint of subspace inclusion is orthogonal projection
@@ -303,23 +305,24 @@ theorem starProjection_def :
     U.starProjection = U.subtypeL ∘L U.orthogonalProjectionOnto :=
   (rfl)
 
+/-- For a complete subspace `U` of a Hilbert space `E`, `U.subtypeL ∘L U.subtypeL†` is the
+orthogonal projection `U.starProjection`. -/
+@[simp]
+theorem subtypeL_comp_adjoint_subtypeL [CompleteSpace E] [CompleteSpace U] :
+    U.subtypeL ∘L ContinuousLinearMap.adjoint U.subtypeL = U.starProjection := by
+  rw [U.adjoint_subtypeL, ← U.starProjection_def]
+
+/-- The orthogonal projection onto `U` is zero if and only if `U` is `⊥`. -/
+@[simp]
+theorem starProjection_eq_zero_iff :
+    U.starProjection = 0 ↔ U = ⊥ := by
+  conv_rhs => rw [← U.range_starProjection]
+  rw [LinearMap.range_eq_bot, ← ContinuousLinearMap.toLinearMap_zero, ContinuousLinearMap.coe_inj]
+
 /-- The orthogonal projection onto `U` is nonzero if and only if `U` is nontrivial. -/
 theorem starProjection_ne_zero_iff :
     U.starProjection ≠ 0 ↔ Nontrivial U := by
-  constructor
-  · intro h
-    obtain ⟨x, hx⟩ : ∃ x : E, U.starProjection x ≠ 0 := by
-      by_contra! hall
-      exact h (ContinuousLinearMap.ext hall)
-    exact nontrivial_of_ne ⟨U.starProjection x, U.starProjection_apply_mem x⟩ 0
-      (Subtype.coe_ne_coe.mp hx)
-  · intro _
-    obtain ⟨u, hu⟩ := exists_ne (0 : U)
-    intro h0
-    apply hu
-    apply Subtype.ext
-    have hu' : U.starProjection (u : E) = u := U.starProjection_eq_self_iff.mpr u.2
-    simpa [h0] using hu'.symm
+  rw [ne_eq, U.starProjection_eq_zero_iff, Submodule.nontrivial_iff_ne_bot]
 
 /-- Restricting the orthogonal projection onto `U` to `U` itself gives the identity map. -/
 @[simp]

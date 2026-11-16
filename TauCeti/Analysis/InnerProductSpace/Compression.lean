@@ -7,7 +7,6 @@ module
 
 public import Mathlib.Analysis.InnerProductSpace.Adjoint
 public import Mathlib.LinearAlgebra.Eigenspace.Basic
-import TauCeti.Analysis.InnerProductSpace.Projection.Basic
 
 /-!
 # Compressions of operators
@@ -19,8 +18,7 @@ file records its basic algebra: it is additive and homogeneous in `A`, commutes 
 `star`, satisfies `‖X† A X‖ ≤ ‖X‖² ‖A‖`, preserves symmetry, and compressing in two steps is
 compressing along the composite. When `X` is an isometry, compression is contractive, preserves `1`,
 and intertwines and is multiplicative at operators commuting with the range projection `X ∘L X†`.
-For a complete subspace `U`, `U.subtypeL ∘L U.subtypeL† = U.starProjection`
-(`Submodule.subtypeL_comp_adjoint_subtypeL`) and `A.compression U.subtypeL` is
+For a complete subspace `U`, `A.compression U.subtypeL` is
 `U.orthogonalProjectionOnto ∘L A ∘L U.subtypeL` (`ContinuousLinearMap.compression_subtypeL`).
 Compressing to the orthogonal complement of an eigenvector creates no new eigenvalues
 (`ContinuousLinearMap.hasEigenvalue_of_hasEigenvalue_compression_orthogonal_span_singleton`).
@@ -264,13 +262,3 @@ theorem hasEigenvalue_of_hasEigenvalue_compression_orthogonal_span_singleton {A 
   exact Module.End.hasEigenvalue_of_hasEigenvector ⟨Module.End.mem_eigenspace_iff.mpr hAz, hz0⟩
 
 end ContinuousLinearMap
-
-namespace Submodule
-
-/-- For a complete subspace `U` of a Hilbert space `E`, `U.subtypeL ∘L U.subtypeL†` is the
-orthogonal projection `U.starProjection`. -/
-theorem subtypeL_comp_adjoint_subtypeL (U : Submodule 𝕜 E) [CompleteSpace U] :
-    U.subtypeL ∘L ContinuousLinearMap.adjoint U.subtypeL = U.starProjection := by
-  rw [U.adjoint_subtypeL, ← U.starProjection_def]
-
-end Submodule

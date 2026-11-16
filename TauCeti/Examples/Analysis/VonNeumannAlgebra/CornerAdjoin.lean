@@ -11,8 +11,8 @@ public import TauCeti.Analysis.VonNeumannAlgebra.Corner
 /-!
 # Counterexample to corner generation without multiplicative closure
 
-`VonNeumannAlgebra.adjoin_image_compression` shows that for a self-adjoint **multiplicatively
-closed** set `s` of bounded operators on `H` and a closed subspace `U` with
+`VonNeumannAlgebra.adjoin_image_compression_of_mul_mem` shows that for a self-adjoint
+**multiplicatively closed** set `s` of bounded operators on `H` and a closed subspace `U` with
 `U.starProjection ∈ adjoin s ∨ U.starProjection ∈ (adjoin s).commutant`, the compressed set
 `(·.compression U.subtypeL) '' s` generates the corner `(adjoin s).corner U hU`.
 
@@ -48,25 +48,17 @@ namespace TauCeti.CornerAdjoinExample
 /-- Ambient three-dimensional complex Hilbert space `ℂ³`. -/
 abbrev H : Type := EuclideanSpace ℂ (Fin 3)
 
-/-- Standard orthonormal basis vectors of `ℂ³`. -/
-def basisVec (i : Fin 3) : H := EuclideanSpace.single i 1
-
 /-- Standard matrix units `|eᵢ⟩⟨eⱼ|` on `ℂ³`. -/
 def matrixUnit (i j : Fin 3) : H →L[ℂ] H :=
-  InnerProductSpace.rankOne ℂ (basisVec i) (basisVec j)
+  InnerProductSpace.rankOne ℂ (EuclideanSpace.basisFun (Fin 3) ℂ i)
+    (EuclideanSpace.basisFun (Fin 3) ℂ j)
 
 /-- The self-adjoint (but not multiplicatively closed) generating set `{E₀₂, E₂₀, E₁₂, E₂₁}`. -/
 def generatingSet : Set (H →L[ℂ] H) :=
   {matrixUnit 0 2, matrixUnit 2 0, matrixUnit 1 2, matrixUnit 2 1}
 
 /-- The two-dimensional subspace `(ℂ ∙ e₂)ᗮ` spanned by `e₀` and `e₁`. -/
-def cornerSubspace : Submodule ℂ H := (ℂ ∙ basisVec 2)ᗮ
-
-/-- Orthonormality of the standard basis vectors `basisVec i`. -/
-@[simp]
-theorem inner_basisVec (i j : Fin 3) :
-    ⟪basisVec i, basisVec j⟫_ℂ = if i = j then 1 else 0 := by
-  simp [basisVec, EuclideanSpace.inner_single_left, PiLp.single_apply]
+def cornerSubspace : Submodule ℂ H := (ℂ ∙ EuclideanSpace.basisFun (Fin 3) ℂ 2)ᗮ
 
 /-- The adjoint of `matrixUnit i j` is `matrixUnit j i`. -/
 @[simp]
@@ -79,7 +71,7 @@ theorem star_matrixUnit (i j : Fin 3) :
 theorem matrixUnit_mul_matrixUnit (i j k l : Fin 3) :
     matrixUnit i j * matrixUnit k l = if j = k then matrixUnit i l else 0 := by
   rw [matrixUnit, matrixUnit, ContinuousLinearMap.mul_def,
-    InnerProductSpace.rankOne_comp_rankOne, inner_basisVec]
+    InnerProductSpace.rankOne_comp_rankOne, (EuclideanSpace.basisFun (Fin 3) ℂ).inner_eq_ite]
   split_ifs <;> simp [matrixUnit]
 
 /-- `generatingSet` is closed under adjoints. -/
@@ -120,20 +112,17 @@ theorem matrixUnit_mem_adjoin (i j : Fin 3) :
 theorem adjoin_generatingSet_eq_top :
     VonNeumannAlgebra.adjoin generatingSet = ⊤ := by
   refine eq_top_iff.mpr fun T _ ↦ ?_
-  have hv (w : H) : w = ∑ j : Fin 3, ⟪basisVec j, w⟫_ℂ • basisVec j := by
-    ext m
-    simp [basisVec, EuclideanSpace.inner_single_left, Pi.single_apply]
-  have hT : T = ∑ i : Fin 3, ∑ j : Fin 3, ⟪basisVec i, T (basisVec j)⟫_ℂ • matrixUnit i j := by
+  let b := EuclideanSpace.basisFun (Fin 3) ℂ
+  have hT : T = ∑ i : Fin 3, ∑ j : Fin 3, ⟪b i, T (b j)⟫_ℂ • matrixUnit i j := by
     refine ContinuousLinearMap.ext fun v ↦ ?_
     calc
-      T v = T (∑ j : Fin 3, ⟪basisVec j, v⟫_ℂ • basisVec j) := congrArg T (hv v)
-      _ = ∑ j : Fin 3, ⟪basisVec j, v⟫_ℂ • T (basisVec j) := by simp [map_sum, map_smul]
-      _ = ∑ j : Fin 3, ⟪basisVec j, v⟫_ℂ •
-            ∑ i : Fin 3, ⟪basisVec i, T (basisVec j)⟫_ℂ • basisVec i :=
-            Finset.sum_congr rfl fun j _ ↦ by rw [← hv (T (basisVec j))]
-      _ = (∑ i : Fin 3, ∑ j : Fin 3, ⟪basisVec i, T (basisVec j)⟫_ℂ • matrixUnit i j) v := by
+      T v = T (∑ j : Fin 3, ⟪b j, v⟫_ℂ • b j) := congrArg T (b.sum_repr' v).symm
+      _ = ∑ j : Fin 3, ⟪b j, v⟫_ℂ • T (b j) := by simp [map_sum, map_smul]
+      _ = ∑ j : Fin 3, ⟪b j, v⟫_ℂ • ∑ i : Fin 3, ⟪b i, T (b j)⟫_ℂ • b i :=
+            Finset.sum_congr rfl fun j _ ↦ by rw [b.sum_repr' (T (b j))]
+      _ = (∑ i : Fin 3, ∑ j : Fin 3, ⟪b i, T (b j)⟫_ℂ • matrixUnit i j) v := by
             rw [Finset.sum_comm]
-            simp [sum_apply, smul_apply, Finset.smul_sum, matrixUnit,
+            simp [b, sum_apply, smul_apply, Finset.smul_sum, matrixUnit,
               InnerProductSpace.rankOne_apply, smul_smul, mul_comm]
   rw [hT]
   exact sum_mem fun i _ ↦ sum_mem fun j _ ↦
@@ -148,17 +137,22 @@ theorem starProjection_cornerSubspace_mem_adjoin :
 /-- Every generator in `generatingSet` compresses to `0` on `cornerSubspace = (ℂ ∙ e₂)ᗮ`. -/
 theorem compression_eq_zero_of_mem_generatingSet {x : H →L[ℂ] H} (hx : x ∈ generatingSet) :
     ContinuousLinearMap.compression (F := cornerSubspace) x cornerSubspace.subtypeL = 0 := by
+  let b := EuclideanSpace.basisFun (Fin 3) ℂ
   refine ContinuousLinearMap.ext fun v ↦ ext_inner_left ℂ fun u ↦ ?_
-  have hu : ⟪(u : H), basisVec 2⟫_ℂ = 0 :=
-    Submodule.inner_left_of_mem_orthogonal (Submodule.mem_span_singleton_self (basisVec 2)) u.2
-  have hv : ⟪basisVec 2, (v : H)⟫_ℂ = 0 :=
-    Submodule.inner_right_of_mem_orthogonal (Submodule.mem_span_singleton_self (basisVec 2)) v.2
+  have hu : ⟪(u : H), b 2⟫_ℂ = 0 :=
+    Submodule.inner_left_of_mem_orthogonal (Submodule.mem_span_singleton_self (b 2)) u.2
+  have hv : ⟪b 2, (v : H)⟫_ℂ = 0 :=
+    Submodule.inner_right_of_mem_orthogonal (Submodule.mem_span_singleton_self (b 2)) v.2
   rw [inner_compression_apply, zero_apply, inner_zero_right]
   rcases hx with rfl | rfl | rfl | rfl
-  · simp [matrixUnit, hv]
-  · simp [matrixUnit, inner_smul_right, hu]
-  · simp [matrixUnit, hv]
-  · simp [matrixUnit, inner_smul_right, hu]
+  · rw [matrixUnit, cornerSubspace.coe_subtypeL, Submodule.coe_subtype,
+      InnerProductSpace.inner_right_rankOne_apply, hv, mul_zero]
+  · rw [matrixUnit, cornerSubspace.coe_subtypeL, Submodule.coe_subtype,
+      InnerProductSpace.inner_right_rankOne_apply, hu, zero_mul]
+  · rw [matrixUnit, cornerSubspace.coe_subtypeL, Submodule.coe_subtype,
+      InnerProductSpace.inner_right_rankOne_apply, hv, mul_zero]
+  · rw [matrixUnit, cornerSubspace.coe_subtypeL, Submodule.coe_subtype,
+      InnerProductSpace.inner_right_rankOne_apply, hu, zero_mul]
 
 /-- The compressed generators generate only the scalar von Neumann algebra `⊥` on
 `cornerSubspace`. -/
@@ -175,14 +169,15 @@ theorem adjoin_image_compression_generatingSet_eq_bot :
 theorem corner_adjoin_generatingSet_ne_bot :
     (VonNeumannAlgebra.adjoin generatingSet).corner cornerSubspace
       (.inl starProjection_cornerSubspace_mem_adjoin) ≠ ⊥ := by
-  have he0 : basisVec 0 ∈ cornerSubspace := by
+  let b := EuclideanSpace.basisFun (Fin 3) ℂ
+  have he0 : b 0 ∈ cornerSubspace := by
     rw [cornerSubspace, Submodule.mem_orthogonal_singleton_iff_inner_left]
-    simp
-  have he1 : basisVec 1 ∈ cornerSubspace := by
+    exact b.inner_eq_zero (by decide)
+  have he1 : b 1 ∈ cornerSubspace := by
     rw [cornerSubspace, Submodule.mem_orthogonal_singleton_iff_inner_left]
-    simp
-  let u0 : cornerSubspace := ⟨basisVec 0, he0⟩
-  let u1 : cornerSubspace := ⟨basisVec 1, he1⟩
+    exact b.inner_eq_zero (by decide)
+  let u0 : cornerSubspace := ⟨b 0, he0⟩
+  let u1 : cornerSubspace := ⟨b 1, he1⟩
   intro hbot
   have hmem : (matrixUnit 0 1).compression cornerSubspace.subtypeL ∈
       (⊥ : VonNeumannAlgebra cornerSubspace) := by
@@ -193,11 +188,10 @@ theorem corner_adjoin_generatingSet_ne_bot :
   have h1 : ⟪u0, ((matrixUnit 0 1).compression cornerSubspace.subtypeL) u1⟫_ℂ = 1 := by
     rw [inner_compression_apply, cornerSubspace.coe_subtypeL, Submodule.coe_subtype, matrixUnit,
       InnerProductSpace.inner_right_rankOne_apply]
-    simp [u0, u1, basisVec]
+    simp [u0, u1, b]
   have h0 : ⟪u0, (algebraMap ℂ (cornerSubspace →L[ℂ] cornerSubspace) c) u1⟫_ℂ = 0 := by
     rw [Algebra.algebraMap_eq_smul_one, smul_apply, one_apply_eq_self, Submodule.coe_inner,
-      Submodule.coe_smul_of_tower, inner_smul_right]
-    simp [u0, u1]
+      Submodule.coe_smul_of_tower, inner_smul_right, b.inner_eq_zero (by decide), mul_zero]
   rw [hc] at h0
   exact one_ne_zero (h1.symm.trans h0)
 
