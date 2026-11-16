@@ -8,6 +8,8 @@ module
 public import Mathlib.Analysis.Calculus.Deriv.Basic
 public import Mathlib.LinearAlgebra.AffineSpace.Slope
 public import Mathlib.Analysis.Calculus.Deriv.Slope
+import Mathlib.Analysis.Calculus.Deriv.MeanValue
+import Mathlib.Analysis.Calculus.Deriv.Mul
 import Mathlib.Analysis.SpecificLimits.Basic
 import Mathlib.LinearAlgebra.AffineSpace.Ordered
 
@@ -28,7 +30,8 @@ Trotter product formula.
 For a real function, a positive one-sided derivative at `a` fixes the sign of `f x - f a` for
 `x` near `a` on that side: if the right derivative at `a` is positive, then `f a < f x` for every
 `x > a` close to `a`, and if the left derivative at `a` is positive, then `f x < f a` for every
-`x < a` close to `a`.
+`x < a` close to `a`. More globally, if `b f'` is positive on an interval containing `a` and `t`,
+then `f t - f a` has the sign of `b (t - a)` (`TauCeti.sign_sub_of_hasDerivAt`).
 
 Comparing the slopes of two curves leaving a common point with the same right derivative shows
 that they do not separate linearly: their distance is `o(s - t)` at parameter `s`.
@@ -50,6 +53,8 @@ A function vanishing at `0` has derivative `a` at `0` within `s` exactly when `f
 * `HasDerivWithinAt.eventually_lt_of_neg`: `f t < f x` eventually for `t` to the right of `x`.
 * `TauCeti.hasDerivWithinAt_zero_iff_tendsto_div`: for `f 0 = 0`, the derivative at `0` within
   `s` is the limit of `f(t) / t` within `s \ {0}`.
+* `TauCeti.sign_sub_of_hasDerivAt`: if `b f'` is positive on an interval, then `f t - f a` has
+  the sign of `b (t - a)` there.
 * `HasDerivWithinAt.tendsto_div_nhdsGT_zero`: `f(t) / t → a` at `0⁺` when `f 0 = 0` and
   `a` is the right derivative at `0`.
 -/
@@ -128,6 +133,26 @@ theorem hasDerivWithinAt_zero_iff_tendsto_div {𝕜 : Type*} [NontriviallyNormed
     {f : 𝕜 → 𝕜} {a : 𝕜} {s : Set 𝕜} (hf0 : f 0 = 0) :
     HasDerivWithinAt f a s 0 ↔ Tendsto (fun t ↦ f t / t) (𝓝[s \ {0}] 0) (𝓝 a) := by
   simp [hasDerivWithinAt_iff_tendsto_slope, slope_fun_def_field, hf0]
+
+/-- If `b f'` is positive on an interval `D`, where `f'` is the derivative of `f`, then for
+`a, t ∈ D` the increment `f t - f a` has the sign of `b (t - a)`. -/
+theorem sign_sub_of_hasDerivAt {D : Set ℝ} {f f' : ℝ → ℝ} {a b t : ℝ} (hD : D.OrdConnected)
+    (hd : ∀ s ∈ D, HasDerivAt f (f' s) s) (hpos : ∀ s ∈ D, 0 < b * f' s) (ha : a ∈ D)
+    (ht : t ∈ D) : (0 < b * (t - a) → f a < f t) ∧ (b * (t - a) < 0 → f t < f a) := by
+  have hmono : StrictMonoOn (fun s => b * f s) D := by
+    refine strictMonoOn_of_deriv_pos hD.convex
+      (fun s hs => ((hd s hs).continuousAt.const_mul b).continuousWithinAt) fun s hs => ?_
+    rw [((hd s (interior_subset hs)).const_mul b).deriv]
+    exact hpos s (interior_subset hs)
+  have key : t ≠ a → 0 < b * (t - a) * (f t - f a) := by
+    intro hta
+    rw [show b * (t - a) * (f t - f a) = (t - a) * (b * f t - b * f a) by ring]
+    rcases hta.lt_or_gt with h | h
+    · exact mul_pos_of_neg_of_neg (sub_neg.2 h) (sub_neg.2 (hmono ht ha h))
+    · exact mul_pos (sub_pos.2 h) (sub_pos.2 (hmono ha ht h))
+  refine ⟨fun hbt => ?_, fun hbt => ?_⟩
+  · exact sub_pos.1 ((pos_iff_pos_of_mul_pos (key (by rintro rfl; simp at hbt))).1 hbt)
+  · exact sub_neg.1 ((neg_iff_neg_of_mul_pos (key (by rintro rfl; simp at hbt))).1 hbt)
 
 end TauCeti
 

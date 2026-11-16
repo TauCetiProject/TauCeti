@@ -11,12 +11,14 @@ public import Mathlib.Analysis.Convex.Function
 import Mathlib.Analysis.Calculus.ContDiff.Comp
 import Mathlib.Analysis.Calculus.ContDiff.Operations
 import Mathlib.Analysis.Calculus.Deriv.Prod
-import Mathlib.Analysis.Calculus.Deriv.Shift
 import Mathlib.Analysis.Calculus.Deriv.Slope
 import Mathlib.Analysis.Convex.Deriv
-import Mathlib.Analysis.Convex.Slope
 import Mathlib.Topology.Order.IntermediateValue
+import TauCeti.Analysis.Calculus.Deriv.Parity
+import TauCeti.Analysis.Calculus.Deriv.Slope
 import TauCeti.Analysis.Calculus.FDeriv.Prod
+import TauCeti.Analysis.Convex.Function.Basic
+import TauCeti.Analysis.Convex.StrictTangent
 
 /-!
 # Fold and pitchfork bifurcations of one-parameter families of real functions
@@ -81,10 +83,6 @@ intermediate value theorem, and the dependence on `t` enters only through the si
 * `TauCeti.eventually_fold`: the zeros near a fold point and their signs.
 * `TauCeti.eventually_pitchfork`: the zeros near a pitchfork point of an odd family and their
   signs.
-* `StrictConvexOn.eq_or_eq_of_apply_eq`: a strictly convex function takes each value at most twice.
-* `TauCeti.deriv_neg_eq_of_eventually_odd`, `TauCeti.deriv_neg_eq_neg_of_eventually_even`,
-  `TauCeti.iteratedDeriv_two_eq_zero_of_eventually_odd`: derivatives of functions that are odd or
-  even near a point.
 
 ## References
 
@@ -99,51 +97,7 @@ public section
 open Filter Set
 open scoped Topology
 
-/-- A strictly convex function takes each value at most twice: if `f x = f y = c` with `x < y`,
-then every `z` with `f z = c` is `x` or `y`. -/
-theorem StrictConvexOn.eq_or_eq_of_apply_eq {S : Set ℝ} {f : ℝ → ℝ} {x y z c : ℝ}
-    (hf : StrictConvexOn ℝ S f) (hx : x ∈ S) (hy : y ∈ S) (hz : z ∈ S) (hxy : x < y)
-    (hfx : f x = c) (hfy : f y = c) (hfz : f z = c) : z = x ∨ z = y := by
-  by_contra! h
-  rcases lt_trichotomy z x with hzx | hzx | hxz
-  · have := hf.slope_strict_mono_adjacent hz hy hzx hxy
-    rw [hfx, hfy, hfz, sub_self, zero_div, zero_div] at this
-    exact lt_irrefl _ this
-  · exact h.1 hzx
-  rcases lt_trichotomy z y with hzy | hzy | hyz
-  · have := hf.slope_strict_mono_adjacent hx hy hxz hzy
-    rw [hfx, hfy, hfz, sub_self, zero_div, zero_div] at this
-    exact lt_irrefl _ this
-  · exact h.2 hzy
-  · have := hf.slope_strict_mono_adjacent hx hz hxy hyz
-    rw [hfx, hfy, hfz, sub_self, zero_div, zero_div] at this
-    exact lt_irrefl _ this
-
 namespace TauCeti
-
-/-! ### Derivatives of functions that are odd or even near a point -/
-
-/-- If `f` is odd near `x`, then `f'(-x) = f'(x)`. -/
-theorem deriv_neg_eq_of_eventually_odd {f : ℝ → ℝ} {x : ℝ}
-    (h : ∀ᶠ y in 𝓝 x, f (-y) = -f y) : deriv f (-x) = deriv f x := by
-  have h' : f =ᶠ[𝓝 x] fun y => -f (-y) := h.mono fun y hy => by beta_reduce; rw [hy, neg_neg]
-  rw [h'.deriv_eq, deriv.fun_neg, deriv_comp_neg, neg_neg]
-
-/-- If `f` is even near `x`, then `f'(-x) = -f'(x)`. -/
-theorem deriv_neg_eq_neg_of_eventually_even {f : ℝ → ℝ} {x : ℝ}
-    (h : ∀ᶠ y in 𝓝 x, f (-y) = f y) : deriv f (-x) = -deriv f x := by
-  have h' : f =ᶠ[𝓝 x] fun y => f (-y) := h.mono fun y hy => hy.symm
-  rw [h'.deriv_eq, deriv_comp_neg, neg_neg]
-
-/-- The second derivative at `0` of a function that is odd near `0` vanishes. -/
-theorem iteratedDeriv_two_eq_zero_of_eventually_odd {f : ℝ → ℝ}
-    (h : ∀ᶠ y in 𝓝 0, f (-y) = -f y) : iteratedDeriv 2 f 0 = 0 := by
-  have h₁ : ∀ᶠ y in 𝓝 (0 : ℝ), deriv f (-y) = deriv f y :=
-    h.eventually_nhds.mono fun y hy => deriv_neg_eq_of_eventually_odd hy
-  have h₂ := deriv_neg_eq_neg_of_eventually_even h₁
-  rw [neg_zero] at h₂
-  rw [iteratedDeriv_succ, iteratedDeriv_one]
-  linarith
 
 /-! ### Partial derivatives of a function of two variables -/
 
@@ -194,50 +148,6 @@ private theorem eventually_iterate_deriv_eq {n : ℕ} {p₀ : ℝ × ℝ} (hF : 
 
 /-! ### Zeros of the slices -/
 
-/-- If `b f'` is positive on `(-δ₀, δ₀)`, where `f'` is the derivative of `f`, then `f t - f 0` has
-the sign of `b t` for `|t| < δ₀`. -/
-private theorem sign_sub_of_hasDerivAt {f f' : ℝ → ℝ} {b δ₀ t : ℝ}
-    (hd : ∀ s ∈ Ioo (-δ₀) δ₀, HasDerivAt f (f' s) s) (hpos : ∀ s ∈ Ioo (-δ₀) δ₀, 0 < b * f' s)
-    (ht : |t| < δ₀) : (0 < b * t → f 0 < f t) ∧ (b * t < 0 → f t < f 0) := by
-  have ht' := abs_lt.1 ht
-  have h0 : (0 : ℝ) ∈ Ioo (-δ₀) δ₀ := ⟨by linarith, by linarith⟩
-  have hmono : StrictMonoOn (fun s => b * f s) (Ioo (-δ₀) δ₀) := by
-    refine strictMonoOn_of_deriv_pos (convex_Ioo _ _)
-      (fun s hs => ((hd s hs).continuousAt.const_mul b).continuousWithinAt) fun s hs => ?_
-    rw [interior_Ioo] at hs
-    rw [((hd s hs).const_mul b).deriv]
-    exact hpos s hs
-  have key : t ≠ 0 → 0 < b * t * (f t - f 0) := by
-    intro ht0
-    have e : b * t * (f t - f 0) = t * (b * f t - b * f 0) := by ring
-    rw [e]
-    rcases ht0.lt_or_gt with h | h
-    · exact mul_pos_of_neg_of_neg h (sub_neg.2 (hmono ht' h0 h))
-    · exact mul_pos h (sub_pos.2 (hmono h0 ht' h))
-  refine ⟨fun hbt => ?_, fun hbt => ?_⟩
-  · exact sub_pos.1 ((pos_iff_pos_of_mul_pos (key (by rintro rfl; simp at hbt))).1 hbt)
-  · exact sub_neg.1 ((neg_iff_neg_of_mul_pos (key (by rintro rfl; simp at hbt))).1 hbt)
-
-/-- A strictly convex function vanishing at `0`, with nonnegative derivative there, is positive to
-the right of `0`. -/
-private theorem pos_of_strictConvexOn_of_pos {g : ℝ → ℝ} {S : Set ℝ} {d y : ℝ}
-    (hg : StrictConvexOn ℝ S g) (h0 : (0 : ℝ) ∈ S) (hy : y ∈ S) (hg0 : g 0 = 0)
-    (hd : HasDerivAt g d 0) (hd0 : 0 ≤ d) (hy0 : 0 < y) : 0 < g y := by
-  have h := hg.lt_slope_of_hasDerivAt h0 hy hy0 hd
-  rw [slope_def_field, hg0, sub_zero, sub_zero] at h
-  exact (div_pos_iff_of_pos_right hy0).1 (hd0.trans_lt h)
-
-/-- A strictly convex function vanishing at `0`, with nonpositive derivative there, is positive to
-the left of `0`. -/
-private theorem pos_of_strictConvexOn_of_neg {g : ℝ → ℝ} {S : Set ℝ} {d y : ℝ}
-    (hg : StrictConvexOn ℝ S g) (h0 : (0 : ℝ) ∈ S) (hy : y ∈ S) (hg0 : g 0 = 0)
-    (hd : HasDerivAt g d 0) (hd0 : d ≤ 0) (hy0 : y < 0) : 0 < g y := by
-  have h := hg.slope_lt_of_hasDerivAt hy h0 hy0 hd
-  rw [slope_def_field, hg0, zero_sub, zero_sub, neg_div_neg_eq] at h
-  by_contra! hgy
-  have : 0 ≤ g y / y := div_nonneg_of_nonpos hgy hy0.le
-  linarith
-
 /-- The zeros of a strictly convex function on `[-δ, δ]` that is negative at `0` and positive at
 `±δ`: one in `(-δ, 0)`, where the derivative is negative, and one in `(0, δ)`, where it is
 positive. -/
@@ -267,26 +177,6 @@ private theorem fold_slice {g : ℝ → ℝ} {δ : ℝ} (hδ : 0 < δ)
   · have h := hconv.slope_lt_of_hasDerivAt hm₁ hm₂ h₁₂ (hd x₂ hm₂).hasDerivAt
     rwa [slope_def_field, hgx₁, hgx₂, sub_self, zero_div] at h
 
-/-- A function that is odd near `0`, whose second derivative is continuous and whose third
-derivative is positive on `(-δ₀, δ₀)`, is strictly convex on `[0, δ]` for `0 < δ < δ₀`. -/
-private theorem strictConvexOn_Icc_of_eventually_odd {g : ℝ → ℝ} {δ δ₀ : ℝ} (hδ : 0 < δ)
-    (hδδ₀ : δ < δ₀) (hc : ContinuousOn g (Icc 0 δ)) (hodd : ∀ᶠ y in 𝓝 0, g (-y) = -g y)
-    (hc2 : ContinuousOn (deriv^[2] g) (Ioo (-δ₀) δ₀))
-    (h3 : ∀ x ∈ Ioo (-δ₀) δ₀, 0 < deriv^[3] g x) : StrictConvexOn ℝ (Icc 0 δ) g := by
-  have h0 : (0 : ℝ) ∈ Ioo (-δ₀) δ₀ := ⟨by linarith, by linarith⟩
-  have h2zero : deriv^[2] g 0 = 0 := by
-    rw [← iteratedDeriv_eq_iterate]
-    exact iteratedDeriv_two_eq_zero_of_eventually_odd hodd
-  have hmono : StrictMonoOn (deriv^[2] g) (Ioo (-δ₀) δ₀) := by
-    refine strictMonoOn_of_deriv_pos (convex_Ioo _ _) hc2 fun y hy => ?_
-    rw [interior_Ioo] at hy
-    rw [← Function.iterate_succ_apply' deriv]
-    exact h3 y hy
-  refine strictConvexOn_of_deriv2_pos (convex_Icc _ _) hc fun y hy => ?_
-  rw [interior_Icc] at hy
-  rw [← h2zero]
-  exact hmono h0 ⟨by linarith [hy.1], by linarith [hy.2]⟩ hy.1
-
 /-- A strictly convex function on `[0, δ]` that is odd on `(-δ, δ)`, with nonnegative derivative at
 `0`, has no zero in `(-δ, δ)` other than `0`. -/
 private theorem pitchfork_slice_of_nonneg {g : ℝ → ℝ} {d δ : ℝ} (hδ : 0 < δ)
@@ -297,8 +187,10 @@ private theorem pitchfork_slice_of_nonneg {g : ℝ → ℝ} {d δ : ℝ} (hδ : 
     have := hodd 0 h0
     rw [neg_zero] at this
     linarith
-  have hpos : ∀ y ∈ Ioc 0 δ, 0 < g y := fun y hy =>
-    pos_of_strictConvexOn_of_pos hconv ⟨le_rfl, hδ.le⟩ ⟨hy.1.le, hy.2⟩ hg0 hd hd0 hy.1
+  have hpos : ∀ y ∈ Ioc 0 δ, 0 < g y := fun y hy => by
+    have h := hconv.mul_sub_lt_sub_of_hasDerivAt ⟨le_rfl, hδ.le⟩ ⟨hy.1.le, hy.2⟩ hy.1.ne hd
+    rw [hg0, sub_zero, sub_zero] at h
+    exact (mul_nonneg hd0 hy.1.le).trans_lt h
   ext y
   simp only [mem_sep_iff, mem_singleton_iff]
   refine ⟨fun ⟨hy, hgy⟩ => ?_, ?_⟩
@@ -368,17 +260,22 @@ private theorem mem_ball_of_abs_lt {δ₀ x t : ℝ} (hx : |x| < δ₀) (ht : |t
 
 /-! ### The fold -/
 
+/-- The facts about `F` at a point `(x, t)` of the box around a fold point. -/
+private structure FoldBox (F : ℝ × ℝ → ℝ) (x t : ℝ) : Prop where
+  hasDerivAt_fst : HasDerivAt (fun y => F (y, t)) (fderiv ℝ F (x, t) (1, 0)) x
+  hasDerivAt_snd : HasDerivAt (fun s => F (x, s)) (fderiv ℝ F (x, t) (0, 1)) t
+  deriv2_pos : 0 < deriv^[2] (fun y => F (y, t)) x
+  mul_deriv_snd_pos : 0 < deriv (fun s => F (0, s)) 0 * fderiv ℝ F (x, t) (0, 1)
+
 /-- Near a fold point there is a box `|x|, |t| < δ₀` on which `F` is differentiable,
 `∂ₓ² F > 0` and `b ∂ₜ F > 0`, where `b = ∂ₜ F (0, 0)`. -/
 private theorem exists_fold_box (hF : ContDiffAt ℝ 2 F 0)
     (h₂ : 0 < iteratedDeriv 2 (fun x => F (x, 0)) 0) (hb : deriv (fun s => F (0, s)) 0 ≠ 0) :
-    ∃ δ₀ > 0, ∀ {x t : ℝ}, |x| < δ₀ → |t| < δ₀ →
-      HasDerivAt (fun y => F (y, t)) (fderiv ℝ F (x, t) (1, 0)) x ∧
-      HasDerivAt (fun s => F (x, s)) (fderiv ℝ F (x, t) (0, 1)) t ∧
-      0 < deriv^[2] (fun y => F (y, t)) x ∧
-      0 < deriv (fun s => F (0, s)) 0 * fderiv ℝ F (x, t) (0, 1) := by
+    ∃ δ₀ > 0, ∀ {x t : ℝ}, |x| < δ₀ → |t| < δ₀ → FoldBox F x t := by
   set b := deriv (fun s => F (0, s)) 0
-  have hF0 : ContDiffAt ℝ (2 : ℕ) F ((0 : ℝ), (0 : ℝ)) := hF
+  have hF0 : ContDiffAt ℝ (2 : ℕ) F (0, 0) := by
+    rw [Prod.mk_zero_zero]
+    exact_mod_cast hF
   have hbF : fderiv ℝ F (0, 0) (0, 1) = b :=
     (hasDerivAt_slice_right (hF0.differentiableAt two_ne_zero)).deriv.symm
   have hval : 0 < partialFst F 2 (0, 0) := by
@@ -402,6 +299,15 @@ private theorem exists_fold_box (hF : ContDiffAt ℝ 2 F 0)
   dsimp only at h2
   exact ⟨hasDerivAt_slice_left hdF, hasDerivAt_slice_right hdF, h2 ▸ h2pos, hbpos⟩
 
+/-- On the box around a fold point, the slices are strictly convex on `[-δ, δ]`. -/
+private theorem strictConvexOn_of_foldBox {δ₀ δ t : ℝ}
+    (hbox : ∀ {x t : ℝ}, |x| < δ₀ → |t| < δ₀ → FoldBox F x t) (hδ : δ < δ₀) (ht : |t| < δ₀) :
+    StrictConvexOn ℝ (Icc (-δ) δ) (fun x => F (x, t)) :=
+  strictConvexOn_of_deriv2_pos (convex_Icc _ _) (fun x hx =>
+    (hbox ((abs_le.2 hx).trans_lt hδ) ht).hasDerivAt_fst.continuousAt.continuousWithinAt)
+    fun x hx => (hbox ((abs_le.2 (Ioo_subset_Icc_self (by rwa [interior_Icc] at hx))).trans_lt
+      hδ) ht).deriv2_pos
+
 /-- **The fold.** Let `F : ℝ × ℝ → ℝ` be `C²` near the origin, with `F (0, 0) = 0`,
 `∂ₓ F (0, 0) = 0`, `∂ₓ² F (0, 0) > 0` and `b = ∂ₜ F (0, 0) ≠ 0`. Then for all small `δ > 0` and all
 `t` near `0`, the zeros of `x ↦ F (x, t)` in `(-δ, δ)` are: none if `b t > 0`; only `0` if `t = 0`;
@@ -417,37 +323,33 @@ theorem eventually_fold (hF : ContDiffAt ℝ 2 F 0) (h₀ : F 0 = 0)
         {x ∈ Ioo (-δ) δ | F (x, t) = 0} = {x₁, x₂} ∧
         deriv (fun x => F (x, t)) x₁ < 0 ∧ 0 < deriv (fun x => F (x, t)) x₂) := by
   obtain ⟨δ₀, hδ₀, hbox⟩ := exists_fold_box hF h₂ hb
-  have h₀' : F (0, 0) = 0 := h₀
+  have h₀' : F (0, 0) = 0 := by
+    rw [Prod.mk_zero_zero]
+    exact h₀
   have h0δ₀ : |(0 : ℝ)| < δ₀ := by simpa using hδ₀
-  -- The slices are strictly convex on `[-δ, δ]` for `δ < δ₀`.
-  have hconv : ∀ {δ t : ℝ}, δ < δ₀ → |t| < δ₀ →
-      StrictConvexOn ℝ (Icc (-δ) δ) (fun x => F (x, t)) := fun hδ ht =>
-    strictConvexOn_of_deriv2_pos (convex_Icc _ _) (fun x hx =>
-      (hbox ((abs_le.2 hx).trans_lt hδ) ht).1.continuousAt.continuousWithinAt) fun x hx =>
-      (hbox ((abs_le.2 (Ioo_subset_Icc_self (by rwa [interior_Icc] at hx))).trans_lt hδ)
-        ht).2.2.1
-  -- The slice at `t = 0` is positive away from `0`.
+  -- The slice at `t = 0` is positive away from `0`, since it lies above its tangent at `0`.
   have hpos0 : ∀ {x : ℝ}, |x| < δ₀ → x ≠ 0 → 0 < F (x, 0) := by
     intro x hx hx0
     have hd0 : HasDerivAt (fun y => F (y, 0)) 0 0 := by
-      have h := (hbox h0δ₀ h0δ₀).1
+      have h := (hbox h0δ₀ h0δ₀).hasDerivAt_fst
       rwa [← h.deriv, h₁] at h
-    have h0 : (0 : ℝ) ∈ Icc (-|x|) |x| := ⟨by simp, abs_nonneg x⟩
-    have hxm : x ∈ Icc (-|x|) |x| := ⟨neg_abs_le x, le_abs_self x⟩
-    rcases hx0.lt_or_gt with h | h
-    · exact pos_of_strictConvexOn_of_neg (hconv hx h0δ₀) h0 hxm h₀' hd0 le_rfl h
-    · exact pos_of_strictConvexOn_of_pos (hconv hx h0δ₀) h0 hxm h₀' hd0 le_rfl h
+    have h := (strictConvexOn_of_foldBox hbox hx h0δ₀).mul_sub_lt_sub_of_hasDerivAt
+      ⟨by simp, abs_nonneg x⟩ ⟨neg_abs_le x, le_abs_self x⟩ hx0.symm hd0
+    rwa [zero_mul, h₀', sub_zero] at h
   -- Along vertical lines, `F (x, t) - F (x, 0)` has the sign of `b t`.
   have hsign : ∀ {x t : ℝ}, |x| < δ₀ → |t| < δ₀ → (0 < deriv (fun s => F (0, s)) 0 * t →
       F (x, 0) < F (x, t)) ∧ (deriv (fun s => F (0, s)) 0 * t < 0 → F (x, t) < F (x, 0)) :=
-    fun hx ht => sign_sub_of_hasDerivAt (fun s hs => (hbox hx (abs_lt.2 hs)).2.1)
-      (fun s hs => (hbox hx (abs_lt.2 hs)).2.2.2) ht
+    fun hx ht => by
+      simpa only [sub_zero] using sign_sub_of_hasDerivAt (a := 0) ordConnected_Ioo
+        (fun s hs => (hbox hx (abs_lt.2 hs)).hasDerivAt_snd)
+        (fun s hs => (hbox hx (abs_lt.2 hs)).mul_deriv_snd_pos) ⟨by linarith, hδ₀⟩ (abs_lt.1 ht)
   filter_upwards [Ioo_mem_nhdsGT hδ₀] with δ ⟨hδpos, hδδ₀⟩
   have hδabs : |δ| < δ₀ := by rwa [abs_of_pos hδpos]
   have hδabs' : |-δ| < δ₀ := by rwa [abs_neg]
   filter_upwards [Ioo_mem_nhds (neg_neg_of_pos hδ₀) hδ₀,
-    (hbox hδabs h0δ₀).2.1.continuousAt.eventually (lt_mem_nhds (hpos0 hδabs hδpos.ne')),
-    (hbox hδabs' h0δ₀).2.1.continuousAt.eventually
+    (hbox hδabs h0δ₀).hasDerivAt_snd.continuousAt.eventually
+      (lt_mem_nhds (hpos0 hδabs hδpos.ne')),
+    (hbox hδabs' h0δ₀).hasDerivAt_snd.continuousAt.eventually
       (lt_mem_nhds (hpos0 hδabs' (neg_ne_zero.2 hδpos.ne')))] with t ht hFp hFn
   replace ht := abs_lt.2 ht
   have habs : ∀ {x}, x ∈ Ioo (-δ) δ → |x| < δ₀ := fun hx => (abs_lt.2 hx).trans hδδ₀
@@ -465,10 +367,23 @@ theorem eventually_fold (hF : ContDiffAt ℝ 2 F 0) (h₀ : F 0 = 0)
   · have hF0t : F (0, t) < 0 := by
       have := (hsign h0δ₀ ht).2 hbt
       rwa [h₀'] at this
-    exact fold_slice hδpos (hconv hδδ₀ ht)
-      (fun x hx => (hbox ((abs_le.2 hx).trans_lt hδδ₀) ht).1.differentiableAt) hF0t hFn hFp
+    exact fold_slice hδpos (strictConvexOn_of_foldBox hbox hδδ₀ ht) (fun x hx =>
+      (hbox ((abs_le.2 hx).trans_lt hδδ₀) ht).hasDerivAt_fst.differentiableAt) hF0t hFn hFp
 
 /-! ### The equivariant pitchfork -/
+
+/-- The facts about `F` at a point `(x, t)` of the box around a pitchfork point. -/
+private structure PitchforkBox (F : ℝ × ℝ → ℝ) (x t : ℝ) : Prop where
+  hasDerivAt_fst : HasDerivAt (fun y => F (y, t)) (partialFst F 1 (x, t)) x
+  continuousAt_snd : ContinuousAt (fun s => F (x, s)) t
+  hasDerivAt_partialFst_snd :
+    HasDerivAt (fun s => partialFst F 1 (x, s)) (fderiv ℝ (partialFst F 1) (x, t) (0, 1)) t
+  continuousAt_partialFst_two : ContinuousAt (fun y => partialFst F 2 (y, t)) x
+  deriv2_eq : deriv^[2] (fun y => F (y, t)) x = partialFst F 2 (x, t)
+  deriv3_pos : 0 < deriv^[3] (fun y => F (y, t)) x
+  mul_deriv_snd_pos :
+    0 < deriv (fun s => deriv (fun y => F (y, s)) 0) 0 * fderiv ℝ (partialFst F 1) (x, t) (0, 1)
+  odd : F (-x, t) = -F (x, t)
 
 /-- Near a pitchfork point there is a box `|x|, |t| < δ₀` on which `F` is odd, its first three
 `x`-derivatives behave well, `∂ₓ³ F > 0` and `b ∂ₜ ∂ₓ F > 0`, where `b = ∂ₜ ∂ₓ F (0, 0)`. -/
@@ -476,18 +391,12 @@ private theorem exists_pitchfork_box (hF : ContDiffAt ℝ 3 F 0)
     (hodd : ∀ᶠ p in 𝓝 (0 : ℝ × ℝ), F (-p.1, p.2) = -F p)
     (h₃ : 0 < iteratedDeriv 3 (fun x => F (x, 0)) 0)
     (hb : deriv (fun s => deriv (fun x => F (x, s)) 0) 0 ≠ 0) :
-    ∃ δ₀ > 0, ∀ {x t : ℝ}, |x| < δ₀ → |t| < δ₀ →
-      HasDerivAt (fun y => F (y, t)) (partialFst F 1 (x, t)) x ∧
-      ContinuousAt (fun s => F (x, s)) t ∧
-      HasDerivAt (fun s => partialFst F 1 (x, s)) (fderiv ℝ (partialFst F 1) (x, t) (0, 1)) t ∧
-      ContinuousAt (fun y => partialFst F 2 (y, t)) x ∧
-      deriv^[2] (fun y => F (y, t)) x = partialFst F 2 (x, t) ∧
-      0 < deriv^[3] (fun y => F (y, t)) x ∧
-      0 < deriv (fun s => deriv (fun x => F (x, s)) 0) 0 *
-        fderiv ℝ (partialFst F 1) (x, t) (0, 1) ∧
-      F (-x, t) = -F (x, t) := by
-  set b := deriv (fun s => deriv (fun x => F (x, s)) 0) 0
-  have hF0 : ContDiffAt ℝ (3 : ℕ) F ((0 : ℝ), (0 : ℝ)) := hF
+    ∃ δ₀ > 0, ∀ {x t : ℝ}, |x| < δ₀ → |t| < δ₀ → PitchforkBox F x t := by
+  set b := deriv (fun s => deriv (fun x => F (x, s)) 0) 0 with hb_def
+  have hF0 : ContDiffAt ℝ (3 : ℕ) F (0, 0) := by
+    rw [Prod.mk_zero_zero]
+    exact_mod_cast hF
+  rw [← Prod.mk_zero_zero] at hodd
   have hE₁ := eventually_partialFst hF0 1 (by norm_num)
   have hcd₁ : ContDiffAt ℝ (2 : ℕ) (partialFst F 1) (0, 0) := hE₁.self_of_nhds.1
   -- `b` is the derivative in `t` of `partialFst F 1` at the origin.
@@ -496,7 +405,7 @@ private theorem exists_pitchfork_box (hF : ContDiffAt ℝ 3 F 0)
         fun s => partialFst F 1 (0, s) :=
       (((continuous_const.prodMk continuous_id).tendsto 0).eventually hE₁).mono fun s hs =>
         hs.2.self_of_nhds
-    rw [show b = deriv (fun s => deriv (fun x => F (x, s)) 0) 0 from rfl, heq.deriv_eq]
+    rw [hb_def, heq.deriv_eq]
     exact (hasDerivAt_slice_right (hcd₁.differentiableAt two_ne_zero)).deriv.symm
   have hval : 0 < partialFst F 3 (0, 0) := by
     rw [← (eventually_iterate_deriv_eq hF0 le_rfl).self_of_nhds, ← iteratedDeriv_eq_iterate]
@@ -519,11 +428,24 @@ private theorem exists_pitchfork_box (hF : ContDiffAt ℝ 3 F 0)
   refine ⟨δ₀, hδ₀, fun hx ht => ?_⟩
   obtain ⟨hcd, hcd₁, hcd₂, h2, h3, h3pos, hbpos, hoddp⟩ := hbox _ (mem_ball_of_abs_lt hx ht)
   dsimp only at h2 h3 hoddp
-  refine ⟨hasDerivAt_slice_left (hcd.differentiableAt (by simp)),
+  exact ⟨hasDerivAt_slice_left (hcd.differentiableAt (by simp)),
     (hasDerivAt_slice_right (hcd.differentiableAt (by simp))).continuousAt,
     hasDerivAt_slice_right (hcd₁.differentiableAt two_ne_zero),
     (hasDerivAt_slice_left (hcd₂.differentiableAt one_ne_zero)).continuousAt, h2, h3 ▸ h3pos,
     hbpos, hoddp⟩
+
+/-- On the box around a pitchfork point, the slices are strictly convex on `[0, δ]`. -/
+private theorem strictConvexOn_of_pitchforkBox {δ₀ δ t : ℝ}
+    (hbox : ∀ {x t : ℝ}, |x| < δ₀ → |t| < δ₀ → PitchforkBox F x t) (hδ : 0 < δ) (hδδ₀ : δ < δ₀)
+    (ht : |t| < δ₀) : StrictConvexOn ℝ (Icc 0 δ) (fun x => F (x, t)) := by
+  have hc2 : ContinuousOn (fun y => partialFst F 2 (y, t)) (Ioo (-δ₀) δ₀) := fun x hx =>
+    (hbox (abs_lt.2 hx) ht).continuousAt_partialFst_two.continuousWithinAt
+  refine strictConvexOn_Icc_of_eventually_odd hδ hδδ₀ (fun x hx =>
+    (hbox (abs_lt.2 ⟨by linarith [hx.1], by linarith [hx.2]⟩) ht).hasDerivAt_fst.continuousAt
+      |>.continuousWithinAt) ?_ (hc2.congr fun x hx => (hbox (abs_lt.2 hx) ht).deriv2_eq)
+    fun x hx => (hbox (abs_lt.2 hx) ht).deriv3_pos
+  filter_upwards [Ioo_mem_nhds (neg_neg_of_pos (hδ.trans hδδ₀)) (hδ.trans hδδ₀)] with y hy
+  exact (hbox (abs_lt.2 hy) ht).odd
 
 /-- **The equivariant pitchfork.** Let `F : ℝ × ℝ → ℝ` be `C³` near the origin and odd in its
 first variable, `F (-x, t) = -F (x, t)`, with `∂ₓ F (0, 0) = 0`, `∂ₓ³ F (0, 0) > 0` and
@@ -549,45 +471,37 @@ theorem eventually_pitchfork (hF : ContDiffAt ℝ 3 F 0)
   set b := deriv (fun s => deriv (fun x => F (x, s)) 0) 0
   have h0δ₀ : |(0 : ℝ)| < δ₀ := by simpa using hδ₀
   have h00 : partialFst F 1 (0, 0) = 0 := by
-    rw [← (hbox h0δ₀ h0δ₀).1.deriv]
+    rw [← (hbox h0δ₀ h0δ₀).hasDerivAt_fst.deriv]
     exact h₁
-  have hoddt : ∀ {t : ℝ}, |t| < δ₀ → ∀ x ∈ Ioo (-δ₀) δ₀, ∀ᶠ y in 𝓝 x, F (-y, t) = -F (y, t) :=
-    fun ht x hx => by
-      filter_upwards [isOpen_Ioo.mem_nhds hx] with y hy using (hbox (abs_lt.2 hy) ht).2.2.2.2.2.2.2
-  -- The slices are strictly convex on `[0, δ]` for `0 < δ < δ₀`.
-  have hconv : ∀ {δ t : ℝ}, 0 < δ → δ < δ₀ → |t| < δ₀ →
-      StrictConvexOn ℝ (Icc 0 δ) (fun x => F (x, t)) := fun {δ t} hδ hδδ₀ ht => by
-    have hc2 : ContinuousOn (fun y => partialFst F 2 (y, t)) (Ioo (-δ₀) δ₀) := fun x hx =>
-      (hbox (abs_lt.2 hx) ht).2.2.2.1.continuousWithinAt
-    exact strictConvexOn_Icc_of_eventually_odd hδ hδδ₀ (fun x hx =>
-      (hbox (abs_lt.2 ⟨by linarith [hx.1], by linarith [hx.2]⟩) ht).1.continuousAt
-        |>.continuousWithinAt)
-      (hoddt ht 0 ⟨by linarith, hδ₀⟩)
-      (hc2.congr fun x hx => (hbox (abs_lt.2 hx) ht).2.2.2.2.1)
-      fun x hx => (hbox (abs_lt.2 hx) ht).2.2.2.2.2.1
   -- `∂ₓ F (0, t)` has the sign of `b t`.
   have hsign : ∀ {t : ℝ}, |t| < δ₀ →
       (0 < b * t → 0 < partialFst F 1 (0, t)) ∧ (b * t < 0 → partialFst F 1 (0, t) < 0) :=
     fun ht => by
-      simpa only [h00] using sign_sub_of_hasDerivAt (f := fun s => partialFst F 1 (0, s))
-        (fun s hs => (hbox h0δ₀ (abs_lt.2 hs)).2.2.1)
-        (fun s hs => (hbox h0δ₀ (abs_lt.2 hs)).2.2.2.2.2.2.1) ht
+      simpa only [h00, sub_zero] using sign_sub_of_hasDerivAt (a := 0) ordConnected_Ioo
+        (fun s hs => (hbox h0δ₀ (abs_lt.2 hs)).hasDerivAt_partialFst_snd)
+        (fun s hs => (hbox h0δ₀ (abs_lt.2 hs)).mul_deriv_snd_pos) ⟨by linarith, hδ₀⟩ (abs_lt.1 ht)
   filter_upwards [Ioo_mem_nhdsGT hδ₀] with δ ⟨hδpos, hδδ₀⟩
   have hδabs : |δ| < δ₀ := by rwa [abs_of_pos hδpos]
   have hzero : F (0, 0) = 0 := by
-    have := (hbox h0δ₀ h0δ₀).2.2.2.2.2.2.2
+    have := (hbox h0δ₀ h0δ₀).odd
     rw [neg_zero] at this
     linarith
-  have hFδ0 : 0 < F (δ, 0) := pos_of_strictConvexOn_of_pos (hconv hδpos hδδ₀ h0δ₀)
-    ⟨le_rfl, hδpos.le⟩ ⟨hδpos.le, le_rfl⟩ hzero (hbox h0δ₀ h0δ₀).1 h00.ge hδpos
+  -- The slice at `t = 0` lies above its horizontal tangent at `0`.
+  have hFδ0 : 0 < F (δ, 0) := by
+    have h := (strictConvexOn_of_pitchforkBox hbox hδpos hδδ₀ h0δ₀).mul_sub_lt_sub_of_hasDerivAt
+      ⟨le_rfl, hδpos.le⟩ ⟨hδpos.le, le_rfl⟩ hδpos.ne (hbox h0δ₀ h0δ₀).hasDerivAt_fst
+    rwa [h00, zero_mul, hzero, sub_zero] at h
   filter_upwards [Ioo_mem_nhds (neg_neg_of_pos hδ₀) hδ₀,
-    (hbox hδabs h0δ₀).2.1.eventually (lt_mem_nhds hFδ0)] with t ht hFδt
+    (hbox hδabs h0δ₀).continuousAt_snd.eventually (lt_mem_nhds hFδ0)] with t ht hFδt
   replace ht := abs_lt.2 ht
-  have hoddδ : ∀ x ∈ Ioo (-δ) δ, ∀ᶠ y in 𝓝 x, F (-y, t) = -F (y, t) := fun x hx =>
-    hoddt ht x (Ioo_subset_Ioo (by linarith) hδδ₀.le hx)
-  have hderiv0 : deriv (fun x => F (x, t)) 0 = partialFst F 1 (0, t) := (hbox h0δ₀ ht).1.deriv
-  refine ⟨fun hbt => pitchfork_slice_of_nonneg hδpos (hconv hδpos hδδ₀ ht)
-    (fun x hx => (hoddδ x hx).self_of_nhds) (hbox h0δ₀ ht).1 ?_,
+  have hconv := strictConvexOn_of_pitchforkBox hbox hδpos hδδ₀ ht
+  have hoddδ : ∀ x ∈ Ioo (-δ) δ, ∀ᶠ y in 𝓝 x, F (-y, t) = -F (y, t) := fun x hx => by
+    filter_upwards [isOpen_Ioo.mem_nhds (Ioo_subset_Ioo (neg_le_neg hδδ₀.le) hδδ₀.le hx)] with y hy
+    exact (hbox (abs_lt.2 hy) ht).odd
+  have hderiv0 : deriv (fun x => F (x, t)) 0 = partialFst F 1 (0, t) :=
+    (hbox h0δ₀ ht).hasDerivAt_fst.deriv
+  refine ⟨fun hbt => pitchfork_slice_of_nonneg hδpos hconv
+    (fun x hx => (hoddδ x hx).self_of_nhds) (hbox h0δ₀ ht).hasDerivAt_fst ?_,
     fun hbt => hderiv0 ▸ (hsign ht).1 hbt, fun hbt => ?_⟩
   · rcases hbt.lt_or_eq with hbt | hbt
     · exact ((hsign ht).1 hbt).le
@@ -595,8 +509,8 @@ theorem eventually_pitchfork (hF : ContDiffAt ℝ 3 F 0)
       · exact absurd hb0 hb
       · exact h00.ge
   · have hneg : deriv (fun x => F (x, t)) 0 < 0 := hderiv0 ▸ (hsign ht).2 hbt
-    exact ⟨hneg, pitchfork_slice_of_neg hδpos (hconv hδpos hδδ₀ ht) hoddδ
-      (fun x hx => (hbox (by rw [abs_of_nonneg hx.1]; linarith [hx.2]) ht).1.differentiableAt)
+    exact ⟨hneg, pitchfork_slice_of_neg hδpos hconv hoddδ (fun x hx =>
+      (hbox (by rw [abs_of_nonneg hx.1]; linarith [hx.2]) ht).hasDerivAt_fst.differentiableAt)
       hneg hFδt⟩
 
 end TauCeti
