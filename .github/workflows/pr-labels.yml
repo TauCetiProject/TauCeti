@@ -5,12 +5,10 @@ name: PR status labels
 # Only trusted base and pinned policy code execute; PR contents are API data.
 
 # Per-event reconciliation lives in pr-status.yml, which batches bursts of events so that they do not
-# each take a GitHub-hosted runner. This workflow keeps the hourly backstop sweep and the manual
-# re-sync.
+# each take a runner. This workflow keeps the bounded rotating backstop and the manual re-sync.
 on:
   # Hourly backstop: clears a review-in-progress whose in-flight marker has expired with no other
-  # event (a crashed review), and self-heals any drift. Each run rechecks only the PRs that no event
-  # will revisit (see the `sweep` job), so it finishes well within the App token's one-hour life.
+  # event (a crashed review), and self-heals any drift.
   schedule:
     - cron: "5 * * * *"
   # Manual re-sync of one PR or all open PRs.
@@ -34,25 +32,17 @@ jobs:
   resolve:
     if: >
       github.repository == 'TauCetiProject/TauCeti'
+      && github.ref == 'refs/heads/main'
       && github.event_name == 'workflow_dispatch' && inputs.pr != 'all'
-    runs-on: ubuntu-latest
+    runs-on:
+      group: TauCetiPRStatus
+      labels: [self-hosted, linux, x64, tauceti-fleet-pr-status]
+    timeout-minutes: 5
     outputs:
       pr: ${{ steps.r.outputs.pr }}
     steps:
-      - uses: actions/create-github-app-token@29824e69f54612133e76f7eaac726eef6c875baf # v2.2.1; v1 ignores permission-* inputs
-        id: app-token
-        with:
-          app-id: ${{ secrets.APP_ID }}
-          private-key: ${{ secrets.APP_PRIVATE_KEY }}
-          owner: TauCetiProject
-          repositories: TauCeti
-          permission-pull-requests: read
       - id: r
         env:
-          GH_TOKEN: ${{ steps.app-token.outputs.token }}
-          SELF_TESTED_MERGE_BACKEND: ${{ vars.MERGE_BACKEND }}
-          SELF_TESTED_WRITE_TOKEN: ${{ github.token }}
-          REPO: ${{ github.repository }}
           INPUT_PR: ${{ github.event.inputs.pr }}
         run: |
           set -euo pipefail
@@ -65,9 +55,12 @@ jobs:
           fi
 
   label-resolved:
+    timeout-minutes: 10
     needs: resolve
     if: needs.resolve.outputs.pr != ''
-    runs-on: ubuntu-latest
+    runs-on:
+      group: TauCetiPRStatus
+      labels: [self-hosted, linux, x64, tauceti-fleet-pr-status]
     # The same group as `label`, so the two paths serialize against each other. See that job for why
     # cancel-in-progress stays false.
     concurrency:
@@ -89,6 +82,7 @@ jobs:
       # the version proposed by the PR.
       - uses: actions/checkout@v4
         with:
+          ref: main
           # The policy checkout below is a local action, so it must come from this trusted checkout.
           sparse-checkout: |
             scripts/pr_status
@@ -122,15 +116,17 @@ jobs:
   # the PRs it cannot reach: those with no lifecycle label or more than one, those showing
   # review-in-progress (its expiry raises no event), and a rotating 1/24 slice of the rest, so every
   # open PR is still rechecked over 24 runs. Selection is one paginated GraphQL listing, which does
-  # not draw on the REST quota. A manual `all` keeps the complete pass.
+  # not draw on the REST quota. A manual `all` checkpoints the complete pass across bounded jobs.
   sweep:
+    timeout-minutes: 40
     if: >-
       github.repository == 'TauCetiProject/TauCeti'
+      && github.ref == 'refs/heads/main'
       && (github.event_name == 'schedule'
         || (github.event_name == 'workflow_dispatch' && inputs.pr == 'all'))
-    runs-on: ubuntu-latest
-    # Inside the installation token's one-hour life; the step's own budget stops earlier.
-    timeout-minutes: 55
+    runs-on:
+      group: TauCetiPRStatus
+      labels: [self-hosted, linux, x64, tauceti-fleet-pr-status]
     concurrency:
       group: pr-labels-sweep
       cancel-in-progress: false
@@ -148,6 +144,7 @@ jobs:
           permission-members: read
       - uses: actions/checkout@v4
         with:
+          ref: main
           # The policy checkout below is a local action, so it must come from this trusted checkout.
           sparse-checkout: |
             scripts/pr_status
@@ -162,6 +159,26 @@ jobs:
       - name: Checkout the pinned merge policy (read-only)
         uses: ./.github/actions/checkout-merge-policy
 
+      - name: Restore sweep progress
+        if: github.event_name == 'workflow_dispatch' && inputs.pr == 'all'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          REPO: ${{ github.repository }}
+        run: |
+          set -euo pipefail
+          mkdir -p "$RUNNER_TEMP/sweep-in"
+          trusted_run=$(cat scripts/pr_status/trusted-sweep-run.jq)
+          ids=$(gh api "repos/$REPO/actions/artifacts?name=pr-labels-progress&per_page=10" \
+            --jq '.artifacts | sort_by(.created_at) | reverse | .[] | select(.expired == false) | .workflow_run.id')
+          for id in $ids; do
+            if trusted=$(gh api "repos/$REPO/actions/runs/$id" --jq "$trusted_run") && [ "$trusted" = true ]; then
+              if gh run download "$id" -R "$REPO" -n pr-labels-progress -D "$RUNNER_TEMP/sweep-in"; then
+                break
+              fi
+              rm -f "$RUNNER_TEMP/sweep-in/state.json"
+            fi
+          done
+
       - name: Reconcile open PRs
         env:
           GH_TOKEN: ${{ steps.app-token.outputs.token }}
@@ -172,14 +189,18 @@ jobs:
           FULL_PASS: ${{ github.event_name == 'workflow_dispatch' && '1' || '' }}
           RUN_NUMBER: ${{ github.run_number }}
           SLICES: "24"
-          # Stop starting PRs after 40 minutes; the remainder is picked up by later runs.
-          BUDGET_SECONDS: "2400"
+          # Stop starting PRs after 30 minutes; the remainder is picked up by later runs.
+          BUDGET_SECONDS: "1800"
           # labels.py STATUS_LABELS; pr-status.yml's label filter uses the same list.
           LIFECYCLE: '["awaiting-CI","awaiting-review","review-in-progress","ci-failed","awaiting-author","merge-check-failed","needs-human-review","awaiting-dependency","on-hold","ready-to-merge"]'
         run: |
           set -euo pipefail
           if [[ "$FULL_PASS" == 1 ]]; then
-            exec python3 scripts/pr_status/labels.py reconcile-all
+            mkdir -p "$RUNNER_TEMP/sweep-out"
+            since=$(date -u +%Y-%m-%dT%H:%M:%SZ)
+            exec python3 scripts/pr_status/batch.py --since "$since" --all-open \
+              --budget-seconds 1800 --state-in "$RUNNER_TEMP/sweep-in/state.json" \
+              --state-out "$RUNNER_TEMP/sweep-out/state.json"
           fi
           owner=${REPO%/*}
           name=${REPO#*/}
@@ -219,3 +240,13 @@ jobs:
           done
           echo "Sweep: $((done_count - ${#failures[@]}))/${#prs[@]} reconciled; failures=${failures[*]:-none}"
           [[ ${#failures[@]} -eq 0 ]]
+
+      - name: Save full sweep progress
+        if: always() && github.event_name == 'workflow_dispatch' && inputs.pr == 'all'
+        uses: actions/upload-artifact@v4
+        with:
+          name: pr-labels-progress
+          path: ${{ runner.temp }}/sweep-out/state.json
+          if-no-files-found: warn
+          retention-days: 7
+          overwrite: true

@@ -6,18 +6,13 @@ name: PR status
 # at a time and keeps only the newest waiting run, cancelling the others before they take a runner.
 # Each fresh scan reconciles every PR touched since its saved watermark
 # (scripts/pr_status/batch.py), so an event whose own run was collapsed away is still covered by the
-# run that replaced it. A collapsed run ends `cancelled` within seconds and never takes a runner, so
-# at busy times most runs of this workflow show as cancelled; that is expected.
-# The price is latency. An update waits out a one-minute debounce (see the job's `environment`),
-# then for the batch ahead of it to finish, then for a GitHub-hosted runner, then for its own batch.
-# With a few thousand open PRs a batch takes about 15-25 minutes, and when the hosted pool is
-# saturated the runner wait alone can exceed an hour, so a label can lag its event by ten minutes
-# to about two hours.
+# run that replaced it. The price is latency: an update waits out a one-minute debounce (see the
+# job's `environment`) and then the run ahead of it, then reserved reconciliation capacity. Bounded batches retain unfinished work.
 # Failed runs retain unfinished work and quota deadlines in a verified artifact;
 # the next run resumes without replaying its successful prefix.
 # pr-labels.yml keeps the hourly backstop sweep of labels and the manual re-sync.
-# This job stays on GitHub-hosted runners: it mints the repository App token, and Fleet guests
-# receive only the workflow token and the narrow CI Apps.
+# This job uses isolated PR-status guests restricted to these trusted main workflows.
+# Candidate build guests cannot receive this repository App key.
 
 on:
   # Retry retained work even after the final PR event of a quiet period.
@@ -63,8 +58,10 @@ jobs:
             && (contains(github.event.comment.body, 'tauceti-scoreboard')
                 || contains(github.event.changes.body.from, 'tauceti-scoreboard')))
       )
-    runs-on: ubuntu-24.04
-    timeout-minutes: 30
+    runs-on:
+      group: TauCetiPRStatus
+      labels: [self-hosted, linux, x64, tauceti-fleet-pr-status]
+    timeout-minutes: 20
     # On the job, not the workflow: a workflow-level group admits runs before the `if` above is
     # evaluated, so an irrelevant event could displace the one pending run that mattered and then
     # skip. Here only runs that pass the filter enter the group. (Nothing else may share it: GitHub
@@ -100,6 +97,7 @@ jobs:
       # version proposed by the PR.
       - uses: actions/checkout@v4
         with:
+          ref: main
           # The policy checkout below is a local action, so it must come from this trusted checkout.
           sparse-checkout: |
             scripts/pr_status
@@ -183,7 +181,7 @@ jobs:
           args=(--since "$SINCE" --state-in "$RUNNER_TEMP/state-in/state.json" --state-out "$RUNNER_TEMP/progress/state.json")
           mkdir -p "$RUNNER_TEMP/progress"
           case "$PR" in ''|*[!0-9]*) ;; *) args+=(--pr "$PR") ;; esac
-          python3 scripts/pr_status/batch.py "${args[@]}"
+          python3 scripts/pr_status/batch.py "${args[@]}" --budget-seconds 600
 
       - name: Save completed progress and unfinished work
         if: always()
