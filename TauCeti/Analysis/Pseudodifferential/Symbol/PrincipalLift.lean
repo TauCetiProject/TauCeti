@@ -83,8 +83,7 @@ private theorem iteratedFDeriv_cutoffSymbol_zero_frequency (χ : FrequencyCutoff
     (a : HomogeneousSymbol (CoordinateSpace n) (CoordinateSpace n) V W m) (k : ℕ)
     (x : CoordinateSpace n) : iteratedFDeriv ℝ k (cutoffSymbol χ a).coefficient (x, 0) = 0 := by
   have h0 : (cutoffSymbol χ a).coefficient =ᶠ[𝓝 (x, 0)] 0 := by
-    rw [show (cutoffSymbol χ a).coefficient = fun p ↦ χ p.2 • a.coefficient p from
-      funext (coefficient_cutoffSymbol χ a)]
+    rw [coefficient_cutoffSymbol_eq_fun]
     simpa using χ.comp_inv_smul_snd_smul_eventuallyEq_zero 1 a.coefficient
       (p := (x, (0 : CoordinateSpace n))) (by simp)
   rw [h0.iteratedFDeriv ℝ k |>.eq_of_nhds, iteratedFDeriv_zero, Pi.zero_apply]
@@ -102,8 +101,6 @@ private theorem exists_norm_iteratedFDeriv_cutoffSymbol_le
   set L := ∑ i ∈ Finset.range (k + 1), (k.choose i : ℝ) * max (B i) 0
   refine ⟨L * 2 ^ |m|, by positivity, fun a x hx ξ hξ2 ↦ ?_⟩
   set P := ((Finset.range (k + 1)).sup fun i ↦ HomogeneousSymbol.seminorm K i) a
-  have hcoe : (cutoffSymbol χ a).coefficient = fun p ↦ χ p.2 • a.coefficient p :=
-    funext (coefficient_cutoffSymbol χ a)
   rcases eq_or_ne ξ 0 with rfl | hξ
   · rw [iteratedFDeriv_cutoffSymbol_zero_frequency, norm_zero]
     positivity
@@ -115,7 +112,7 @@ private theorem exists_norm_iteratedFDeriv_cutoffSymbol_le
     χ.contDiff.comp contDiff_snd
   have hleib := norm_iteratedFDerivWithin_smul_le hχ.contDiffOn a.contDiffOn_coefficient
     hS.uniqueDiffOn hxξ (n := k) (mod_cast le_top)
-  rw [iteratedFDerivWithin_of_isOpen k hS hxξ, ← hcoe] at hleib
+  rw [iteratedFDerivWithin_of_isOpen k hS hxξ, ← coefficient_cutoffSymbol_eq_fun] at hleib
   refine hleib.trans ?_
   rw [mul_assoc, Finset.sum_mul]
   refine Finset.sum_le_sum fun i _ ↦ ?_
@@ -183,8 +180,7 @@ theorem exists_seminorm_cutoffSymbol_le (χ : FrequencyCutoff (CoordinateSpace n
             (Real.rpow_nonneg zero_le_two (|m - l| / 2))]
   · -- At large frequencies the cut-off term is the homogeneous symbol itself.
     have hξ0 : ξ ≠ 0 := norm_pos_iff.1 (two_pos.trans hξ2)
-    rw [show (cutoffSymbol χ a).coefficient = fun p ↦ χ p.2 • a.coefficient p from
-      funext (coefficient_cutoffSymbol χ a), a.iteratedFDeriv_smul_coefficient_of_two_lt_norm χ hξ2]
+    rw [coefficient_cutoffSymbol_eq_fun, a.iteratedFDeriv_smul_coefficient_of_two_lt_norm χ hξ2]
     refine (a.norm_iteratedFDeriv_append_le_seminorm K hx hξ0 _ _).trans ?_
     rw [hunit, mul_one]
     have hk : k ∈ Finset.range (k + 1) := Finset.self_mem_range_succ k
@@ -273,11 +269,10 @@ theorem liftPrincipal_eq_add_sub :
 theorem remainder_liftPrincipal_succ (N : ℕ) :
     (P₀.liftPrincipal χ b).remainder χ (N + 1) = P₀.remainder χ (N + 1) := by
   refine Symbol.ext <| funext fun p ↦ ?_
-  rw [coefficient_remainder, coefficient_remainder, Finset.sum_range_succ',
-    Finset.sum_range_succ', ← coefficient_principal, ← coefficient_principal,
-    principal_liftPrincipal, toSymbol_liftPrincipal]
-  simp only [term_liftPrincipal_succ, Symbol.coefficient_add, Pi.add_apply,
-    coefficient_cutoffSymbol, HomogeneousSymbol.coefficient_sub, Pi.sub_apply, smul_sub]
+  simp only [coefficient_remainder, Finset.sum_range_succ', ← coefficient_principal,
+    principal_liftPrincipal, toSymbol_liftPrincipal, term_liftPrincipal_succ,
+    Symbol.coefficient_add, Pi.add_apply, coefficient_cutoffSymbol,
+    HomogeneousSymbol.coefficient_sub, Pi.sub_apply, smul_sub]
   abel
 
 /-- The full symbol of the lift depends continuously on the prescribed principal symbol. -/

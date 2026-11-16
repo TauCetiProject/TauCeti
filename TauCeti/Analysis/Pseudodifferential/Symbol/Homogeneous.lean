@@ -93,6 +93,12 @@ theorem coefficient_cutoffSymbol
     (cutoffSymbol χ a).coefficient p = χ p.2 • a.coefficient p :=
   (rfl)
 
+/-- The coefficient of the cut-off term, as a function: `p ↦ χ(p.2) a(p)`. -/
+theorem coefficient_cutoffSymbol_eq_fun
+    (a : HomogeneousSymbol (CoordinateSpace n) (CoordinateSpace n) V W m) :
+    (cutoffSymbol χ a).coefficient = fun p ↦ χ p.2 • a.coefficient p :=
+  (rfl)
+
 /-- At frequencies of norm at least `2` the cut-off term is the homogeneous symbol itself. -/
 theorem coefficient_cutoffSymbol_of_two_le_norm
     (a : HomogeneousSymbol (CoordinateSpace n) (CoordinateSpace n) V W m) {x ξ : CoordinateSpace n}
