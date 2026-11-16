@@ -178,10 +178,12 @@ private theorem facetFace_eq_setOf_facetRow (s : Set ι) :
     sub_eq_zero]
   exact and_congr_right fun _ ↦ forall₂_congr fun _ _ ↦ eq_comm
 
-/-- A facet not through a point of the polyhedron is strictly satisfied there. -/
+/-- A facet not through a point of the polyhedron is strictly satisfied there: the general
+`lt_of_mem_polyhedron_of_notMem_activeSet` with the facet pairings evaluated. -/
 private theorem lt_of_notMem_activeSet (hx : x ∈ facetPolyhedron i u c) {j : ι}
     (hj : j ∉ activeSet (facetPairing i u) c x) : c j < x (i (u j)) :=
-  (mem_facetPolyhedron.1 hx j).lt_of_ne fun h ↦ hj (mem_activeSet.2 (by simpa using h.symm))
+  facetPairing_apply i u j x ▸
+    lt_of_mem_polyhedron_of_notMem_activeSet (facetPolyhedron_eq_polyhedron i u c ▸ hx) hj
 
 /-- The face cut out by any set of facets is an exposed subset of the polyhedron. -/
 theorem isExposed_facetFace [Finite ι] (s : Set ι) :

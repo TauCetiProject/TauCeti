@@ -92,6 +92,11 @@ variable {f : ι → Module.Dual 𝕜 E} {c : ι → 𝕜} {x : E} {j : ι}
 @[simp]
 theorem mem_polyhedron : x ∈ polyhedron f c ↔ ∀ j, c j ≤ f j x := Iff.rfl
 
+/-- A constraint that is not active at a point of a polyhedron holds strictly there. -/
+theorem lt_of_mem_polyhedron_of_notMem_activeSet (hx : x ∈ polyhedron f c)
+    (hj : j ∉ activeSet f c x) : c j < f j x :=
+  (mem_polyhedron.1 hx j).lt_of_ne fun h ↦ hj (mem_activeSet.2 h.symm)
+
 variable [IsStrictOrderedRing 𝕜]
 
 /-- A polyhedron is convex. -/
