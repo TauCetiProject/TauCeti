@@ -18,7 +18,7 @@ import TauCeti.AlgebraicGeometry.Morphisms.ClosedImmersion.FinitePresentation
 import TauCeti.RingTheory.Flat.PrincipalQuotient
 import TauCeti.RingTheory.Ideal.Operations
 import TauCeti.RingTheory.Localization.Ideal
-import TauCeti.RingTheory.Smooth.FiberRegular
+import TauCeti.RingTheory.Smooth.Fiber.Regular
 
 /-!
 # The fibre criterion for relative effective Cartier divisors
