@@ -37,7 +37,10 @@ operation is introduced.
 
 ## Main results
 
-* `TauCeti.laurentSeriesDerivation`: `D` as a derivation.
+* `TauCeti.laurentSeriesDerivation` and `TauCeti.laurentSeriesAlgebraDerivation`: `D` as a
+  derivation for the coefficientwise and `Algebra.toModule` scalar actions.
+* `Derivation.laurentSeries_module_eq_algebraModule`: agreement of the coefficientwise and
+  `Algebra.toModule` scalar actions of `R` on `R⸨X⸩`.
 * `Derivation.laurentSeriesLieRing` and `Derivation.laurentSeriesLieAlgebra`: the commutator
   Lie structures on Laurent derivations.
 * `LaurentSeries.lie_smul_laurentSeriesDerivation`: the coefficient formula for the commutator.
@@ -101,12 +104,47 @@ end TauCeti
 
 namespace Derivation
 
-variable {R : Type*} [CommRing R]
-
-private theorem laurentSeries_module_eq_algebraModule : (inferInstance : Module R R⸨X⸩) =
-    (inferInstance : Algebra R R⸨X⸩).toModule :=
+/-- The coefficientwise `R`-module structure on `R⸨X⸩` coincides with `Algebra.toModule`. -/
+theorem laurentSeries_module_eq_algebraModule {R : Type*} [CommRing R] :
+    (inferInstance : Module R R⸨X⸩) = (inferInstance : Algebra R R⸨X⸩).toModule :=
   Module.ext <| funext fun r ↦ funext fun f ↦
     (TauCeti.laurentSeries_algebraMap_mul_eq_smul r f).symm
+
+end Derivation
+
+namespace TauCeti
+
+/-- `TauCeti.laurentSeriesDerivation` transported along
+`Derivation.laurentSeries_module_eq_algebraModule` to the `Algebra.toModule` scalar action on
+`R⸨X⸩`, for APIs (such as `Derivation.liftOfRightInverse`, `Derivation.map_trace`, and
+`Derivation.leibniz_norm`) that synthesize `Algebra.toModule` on the target. -/
+noncomputable def laurentSeriesAlgebraDerivation (R : Type*) [CommRing R] :
+    @Derivation R R⸨X⸩ R⸨X⸩ _ _ _ _ _ Algebra.toModule :=
+  Derivation.laurentSeries_module_eq_algebraModule (R := R) ▸ laurentSeriesDerivation R
+
+/-- `TauCeti.laurentSeriesAlgebraDerivation` has the same underlying function as
+`TauCeti.laurentSeriesDerivation`. -/
+@[simp]
+theorem coe_laurentSeriesAlgebraDerivation {R : Type*} [CommRing R] :
+    ⇑(laurentSeriesAlgebraDerivation R) = ⇑(laurentSeriesDerivation R) := by
+  have aux (m : Module R R⸨X⸩) (h : m = Algebra.toModule)
+      (δ : @Derivation R R⸨X⸩ R⸨X⸩ _ _ _ _ _ m) :
+      ⇑(h ▸ δ : @Derivation R R⸨X⸩ R⸨X⸩ _ _ _ _ _ Algebra.toModule) = ⇑δ := by
+    cases h
+    rfl
+  exact aux _ (Derivation.laurentSeries_module_eq_algebraModule (R := R))
+    (laurentSeriesDerivation R)
+
+/-- The `Algebra.toModule`-typed Laurent derivation evaluates as the coefficientwise derivative. -/
+theorem laurentSeriesAlgebraDerivation_apply {R : Type*} [CommRing R] (f : R⸨X⸩) :
+    laurentSeriesAlgebraDerivation R f = _root_.LaurentSeries.derivative R f := by
+  simp
+
+end TauCeti
+
+namespace Derivation
+
+variable {R : Type*} [CommRing R]
 
 /-- The commutator Lie ring on Laurent derivations with their coefficientwise codomain scalars.
 The native derivation Lie ring uses the algebra-induced codomain module; these scalar actions
@@ -246,6 +284,16 @@ theorem derivative_eq_zero_iff_eq_single [IsAddTorsionFree V] {f : LaurentSeries
     by_cases hn : n = 0 <;> simp [hn]
 
 end Module
+
+/-- Over any ring, the derivative of `X ^ n` vanishes if and only if `n` vanishes in `R`. -/
+theorem derivative_single_one_eq_zero_iff {R : Type*} [Ring R] {n : ℤ} :
+    derivative R (single n (1 : R)) = 0 ↔ (n : R) = 0 := by
+  simp
+
+/-- When `(d : R) ≠ 0`, the derivative of `X ^ d` is nonzero. -/
+theorem derivative_single_natCast_one_ne_zero {R : Type*} [Ring R] {d : ℕ} [NeZero (d : R)] :
+    derivative R (single (d : ℤ) (1 : R)) ≠ 0 := by
+  simpa [derivative_single_one_eq_zero_iff] using NeZero.ne (d : R)
 
 /-- **Vector fields regular at the origin preserve power series**: if `f` and `g` have no
 negative powers of `X`, neither has `f g'`. -/

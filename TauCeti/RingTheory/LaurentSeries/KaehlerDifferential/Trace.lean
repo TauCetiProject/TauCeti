@@ -102,8 +102,7 @@ theorem traceBaseChange_tmul (x : L) (ω : ContinuousKaehlerDifferential K) :
 /-- Tracing a pulled-back form multiplies it by the degree of the extension. -/
 theorem traceBaseChange_one_tmul (ω : ContinuousKaehlerDifferential K) :
     traceBaseChange L (1 ⊗ₜ ω) = Module.finrank K⸨X⸩ L • ω := by
-  rw [traceBaseChange_tmul, ← map_one (algebraMap K⸨X⸩ L), Algebra.trace_algebraMap,
-    smul_assoc, one_smul]
+  rw [traceBaseChange_tmul, TauCeti.Algebra.trace_one_smul]
 
 /-- The residue on scalar-extended continuous forms, computed as the residue of
 their differential trace. For every separable level chart this is exactly the
@@ -143,29 +142,17 @@ section TraceAndNorm
 variable {K L : Type*} [Field K] [CommRing L] [Algebra K⸨X⸩ L] [Algebra K L]
   [IsScalarTower K K⸨X⸩ L] [Algebra.FormallyEtale K⸨X⸩ L]
 
-private theorem exists_algebraModule_laurentSeriesDerivation (K : Type*) [Field K] :
-    ∃ δ : @Derivation K K⸨X⸩ K⸨X⸩ _ _ _ _ _ Algebra.toModule,
-      ⇑δ = ⇑(laurentSeriesDerivation K) := by
-  have aux (m : Module K K⸨X⸩) (h : m = Algebra.toModule)
-      (d : @Derivation K K⸨X⸩ K⸨X⸩ _ _ _ _ _ m) :
-      ∃ δ : @Derivation K K⸨X⸩ K⸨X⸩ _ _ _ _ _ Algebra.toModule, ⇑δ = ⇑d := by
-    cases h; exact ⟨d, rfl⟩
-  exact aux _ (Module.ext <| funext fun r ↦ funext fun f ↦
-    (laurentSeries_algebraMap_mul_eq_smul r f).symm) (laurentSeriesDerivation K)
-
 /-- The formal derivative of `K⸨X⸩` commutes with `Algebra.trace K⸨X⸩ L` via `derivation K L`. -/
 theorem derivative_trace (x : L) :
     _root_.LaurentSeries.derivative K (Algebra.trace K⸨X⸩ L x) =
       Algebra.trace K⸨X⸩ L (derivation K L x) := by
-  obtain ⟨δ, hδ⟩ := exists_algebraModule_laurentSeriesDerivation K
-  simpa [hδ] using δ.map_trace (derivation K L) (by simp [hδ]) x
+  simpa using (laurentSeriesAlgebraDerivation K).map_trace (derivation K L) (by simp) x
 
 /-- Logarithmic derivative of `Algebra.norm K⸨X⸩` on units of a formally étale `K⸨X⸩`-algebra. -/
 theorem derivative_norm_units (u : Lˣ) :
     _root_.LaurentSeries.derivative K (Algebra.norm K⸨X⸩ (u : L)) =
       Algebra.norm K⸨X⸩ (u : L) * Algebra.trace K⸨X⸩ L (↑u⁻¹ * derivation K L u) := by
-  obtain ⟨δ, hδ⟩ := exists_algebraModule_laurentSeriesDerivation K
-  simpa [hδ] using δ.leibniz_norm (derivation K L) (by simp [hδ]) u
+  simpa using (laurentSeriesAlgebraDerivation K).leibniz_norm (derivation K L) (by simp) u
 
 end TraceAndNorm
 
@@ -204,8 +191,8 @@ theorem trace_smul_map (x : L) (ω : TauCeti.ContinuousKaehlerDifferential K) :
 @[simp]
 theorem trace_map (ω : TauCeti.ContinuousKaehlerDifferential K) :
     trace K L (map K L ω) = Module.finrank K⸨X⸩ L • ω := by
-  rw [← one_smul L (map K L ω), trace_smul_map, ← map_one (algebraMap K⸨X⸩ L),
-    Algebra.trace_algebraMap, smul_assoc, one_smul]
+  rw [← one_smul L (map K L ω), ← tensorEquiv_tmul, trace_tensorEquiv,
+    TauCeti.ContinuousKaehlerDifferential.traceBaseChange_one_tmul]
 
 /-- In coordinates in `dt`, the differential trace applies `Algebra.trace K⸨X⸩ L` to the
 coefficient `equivSelf K L ω`. -/
@@ -396,11 +383,8 @@ theorem traceTower_smul_mapSemilinear (x : L) (ω : ContinuousKaehlerDifferentia
 theorem traceTower_mapSemilinear [Module.Free M L] (ω : ContinuousKaehlerDifferential K M) :
     traceTower K M L (mapSemilinear (IsScalarTower.toAlgHom K⸨X⸩ M L) ω) =
       Module.finrank M L • ω := by
-  rcases subsingleton_or_nontrivial M with hM | hM
-  · have := Module.subsingleton M (ContinuousKaehlerDifferential K M)
-    exact Subsingleton.elim _ _
-  · rw [← one_smul L (mapSemilinear _ ω), traceTower_smul_mapSemilinear,
-      ← map_one (algebraMap M L), Algebra.trace_algebraMap, smul_assoc, one_smul]
+  rw [← one_smul L (mapSemilinear _ ω), traceTower_smul_mapSemilinear,
+    TauCeti.Algebra.trace_one_smul]
 
 /-- **`Tr_{L/M}(d x) = d(Tr_{L/M} x)`.** In a tower `K⸨X⸩ → M → L` of formally étale
 `K⸨X⸩`-algebras, the relative differential trace commutes with `d`. -/

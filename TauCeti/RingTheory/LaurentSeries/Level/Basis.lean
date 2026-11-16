@@ -125,6 +125,9 @@ instance : IsScalarTower K K⸨X⸩ (Level K d) where
   smul_assoc r f x := by
     rw [← C_mul_eq_smul, ← _root_.LaurentSeries.algebraMap_apply, Algebra.smul_def,
       Algebra.smul_def, Algebra.smul_def, map_mul, mul_assoc]
+    -- `Algebra K (Level K d)` is `((algebraMap K d).comp (algebraMap K K⸨X⸩)).toAlgebra` and
+    -- `Algebra K⸨X⸩ (Level K d)` is `(algebraMap K d).toAlgebra`, so both `algebraMap` paths agree
+    -- definitionally.
     rfl
 
 /-- Constants embed into a ramified level as constant Laurent series. -/

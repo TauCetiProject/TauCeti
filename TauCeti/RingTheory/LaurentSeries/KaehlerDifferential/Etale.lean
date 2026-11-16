@@ -157,7 +157,8 @@ theorem continuous_derivation [τ₀ : TopologicalSpace L] [IsModuleTopology K�
     rw [@continuous_iff_le_induced]
     have hprod : @instTopologicalSpaceProd K⸨X⸩ L inferInstance (.induced φ inferInstance) =
         instTopologicalSpaceProd.induced (fun p : K⸨X⸩ × L ↦ (p.1, φ p.2)) := by
-      simp only [instTopologicalSpaceProd, induced_inf, induced_compose]; rfl
+      rw [← induced_id (t := (inferInstance : TopologicalSpace K⸨X⸩))]
+      simpa only [id_eq] using prod_induced_induced (id : K⸨X⸩ → K⸨X⸩) φ
     let H : K⸨X⸩ × (L × L) → L × L :=
       fun q ↦ (q.1 • q.2.1, q.1 • q.2.2 + LaurentSeries.derivative K q.1 • q.2.1)
     have hD := LaurentSeries.continuous_derivative (K := K)
@@ -443,8 +444,8 @@ noncomputable def mapSemilinear (φ : L →ₐ[K⸨X⸩] L') :
   toFun ω := (equivSelf K L').symm (φ (equivSelf K L ω))
   map_add' ω η := by rw [map_add, map_add, map_add]
   map_smul' x ω := by
-    rw [LinearEquiv.map_smul, smul_eq_mul, map_mul, ← smul_eq_mul, LinearEquiv.map_smul]
-    rfl
+    rw [LinearEquiv.map_smul, smul_eq_mul, map_mul, ← smul_eq_mul, LinearEquiv.map_smul,
+      AlgHom.toRingHom_eq_coe, RingHom.coe_coe]
 
 @[simp]
 theorem equivSelf_mapSemilinear (φ : L →ₐ[K⸨X⸩] L') (ω : ContinuousKaehlerDifferential K L) :
@@ -538,7 +539,8 @@ theorem congrLinearEquiv_apply (e : L ≃ₐ[K⸨X⸩] L') (ω : ContinuousKaehl
 @[simp]
 theorem congrLinearEquiv_symm (e : L ≃ₐ[K⸨X⸩] L') :
     (congrLinearEquiv (K := K) e).symm = congrLinearEquiv e.symm :=
-  LinearEquiv.ext fun _ ↦ rfl
+  LinearEquiv.ext fun ω ↦
+    (congrLinearEquiv e).symm_apply_eq.mpr (mapSemilinear_apply_symm_apply e ω).symm
 
 end Functoriality
 

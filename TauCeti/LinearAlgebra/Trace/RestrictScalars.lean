@@ -22,6 +22,8 @@ first. This is the module version of the transitivity of the algebra trace
 
 * `TauCeti.Algebra.trace_eq_zero_of_not_finite`: the algebra trace vanishes when the extension is
   not finite as a module.
+* `TauCeti.Algebra.trace_one_smul`: scalar multiplication by `Tr_{A/R}(1)` on any `R`-module is
+  multiplication by `finrank R A`.
 * `LinearMap.trace_restrictScalars`: `tr_R(f) = Tr_{A/R}(tr_A(f))`.
 * `TauCeti.Algebra.trace_trace_of_free`: `Tr_{A/R}(Tr_{B/A}(b)) = Tr_{B/R}(b)` in any tower of free
   extensions, without finiteness hypotheses.
@@ -35,6 +37,16 @@ namespace TauCeti.Algebra
 theorem trace_eq_zero_of_not_finite {R A : Type*} [CommRing R] [CommRing A] [Algebra R A]
     (h : ¬Module.Finite R A) : _root_.Algebra.trace R A = 0 :=
   _root_.Algebra.trace_eq_zero_of_not_exists_basis R fun ⟨_, ⟨b⟩⟩ ↦ h (.of_basis b)
+
+/-- Scalar multiplication by `Tr_{A/R}(1)` on any `R`-module is multiplication by `finrank R A`,
+without nontriviality or finiteness assumptions on `R` or `A`. -/
+theorem trace_one_smul {R A M : Type*} [CommRing R] [CommRing A] [Algebra R A] [Module.Free R A]
+    [AddCommMonoid M] [Module R M] (m : M) :
+    _root_.Algebra.trace R A 1 • m = Module.finrank R A • m := by
+  have h : _root_.Algebra.trace R A 1 = Module.finrank R A • 1 := by
+    nontriviality R
+    rw [← map_one (algebraMap R A), _root_.Algebra.trace_algebraMap]
+  rw [h, smul_assoc, one_smul]
 
 end TauCeti.Algebra
 

@@ -84,24 +84,18 @@ variable (K : Type*) [Field K] (d : ℕ+)
 level variable `u`: the formal derivative of `K⸨X⸩` transported across `ringEquivLaurentSeries`. -/
 noncomputable def derivation : Derivation K (Level K d) (Level K d) :=
   let e := algEquivLaurentSeries K d
-  let hmod : (inferInstance : Module K K⸨X⸩) = Algebra.toModule :=
-    Module.ext <| funext fun r ↦ funext fun f ↦ (laurentSeries_algebraMap_mul_eq_smul r f).symm
-  let δ : @Derivation K K⸨X⸩ K⸨X⸩ _ _ _ _ _ Algebra.toModule := hmod ▸ laurentSeriesDerivation K
   letI : Module K K⸨X⸩ := Algebra.toModule
-  δ.liftOfRightInverse (f := e.symm) (f_inv := e) e.symm_apply_apply (by simp)
+  (laurentSeriesAlgebraDerivation K).liftOfRightInverse
+    (f := e.symm) (f_inv := e) e.symm_apply_apply (by simp)
 
 /-- In the level variable `u`, `Level.derivation K d` is the formal derivative of `K⸨X⸩`. -/
 @[simp]
 theorem ringEquivLaurentSeries_derivation {K : Type*} [Field K] {d : ℕ+} (x : Level K d) :
     ringEquivLaurentSeries K d (Level.derivation K d x) =
       derivative K (ringEquivLaurentSeries K d x) := by
-  have hcast (m : Module K K⸨X⸩) (h : m = Algebra.toModule)
-      (δ : @Derivation K K⸨X⸩ K⸨X⸩ _ _ _ _ _ m) (y : K⸨X⸩) :
-      (h ▸ δ : @Derivation K K⸨X⸩ K⸨X⸩ _ _ _ _ _ Algebra.toModule) y = δ y := by
-    cases h; rfl
   obtain ⟨y, rfl⟩ := (algEquivLaurentSeries K d).symm.surjective x
   rw [Level.derivation, Derivation.liftOfRightInverse_apply]
-  simp [hcast]
+  simp
 
 /-- The **continuous one-forms** `Ω¹_cont(L/K)` of the ramified level `L = K⸨u⸩`, `u ^ d = t`:
 a wrapped copy of the continuous one-forms of `K⸨X⸩`, read in the level variable `u` and carrying
@@ -159,6 +153,7 @@ noncomputable instance : Module K (Level.ContinuousKaehlerDifferential K d) :=
   Module.compHom _ (Algebra.algebraMap K (Level K d))
 
 instance : IsScalarTower K (Level K d) (Level.ContinuousKaehlerDifferential K d) :=
+  -- `c • ω` is `algebraMap c • ω` by definition of `Module.compHom`.
   ⟨fun c g ω ↦ by rw [Algebra.smul_def, mul_smul]; rfl⟩
 
 instance : IsScalarTower K K⸨X⸩ (Level.ContinuousKaehlerDifferential K d) where
@@ -272,15 +267,10 @@ theorem equivLevel_map (ω : TauCeti.ContinuousKaehlerDifferential K) :
     TauCeti.ContinuousKaehlerDifferential.equivLaurentSeries_subst,
     TauCeti.LaurentSeries.substAlgHom_X_pow_eq_expand, single_pow]
 
-/-- The derivative `d u ^ (d - 1)` of `u ^ d` vanishes exactly when `d` vanishes in `K`. -/
-private theorem derivative_single_eq_zero_iff :
-    derivative K (single (d : ℤ) (1 : K)) = 0 ↔ ((d : ℕ) : K) = 0 := by
-  simp
-
 /-- **The pullback vanishes in characteristic dividing `d`.** Pulling back along `t = u ^ d` is
 zero exactly when `d` vanishes in `K`, since `dt = d u ^ (d - 1) du`. -/
 theorem map_eq_zero_iff : map K d = 0 ↔ ((d : ℕ) : K) = 0 := by
-  rw [← derivative_single_eq_zero_iff (d := d)]
+  rw [← Int.cast_natCast, ← derivative_single_one_eq_zero_iff (R := K)]
   constructor
   · intro h
     have h1 := congrArg (equivLevel K d) (LinearMap.congr_fun h
@@ -296,13 +286,9 @@ section Separable
 
 variable [NeZero ((d : ℕ) : K)]
 
-/-- The coefficient `d u ^ (d - 1)` of `dt` in `du` is nonzero when `d` is nonzero in `K`. -/
-private theorem derivative_single_ne_zero : derivative K (single (d : ℤ) (1 : K)) ≠ 0 :=
-  derivative_single_eq_zero_iff.not.mpr (NeZero.ne _)
-
 private theorem symm_derivative_single_ne_zero :
     (ringEquivLaurentSeries K d).symm (derivative K (single (d : ℤ) 1)) ≠ 0 :=
-  (RingEquiv.map_ne_zero_iff _).mpr derivative_single_ne_zero
+  (RingEquiv.map_ne_zero_iff _).mpr derivative_single_natCast_one_ne_zero
 
 variable (K d)
 
@@ -388,7 +374,7 @@ theorem coeff_neg_one_equivLaurentSeries_trace (ω : Level.ContinuousKaehlerDiff
     (TauCeti.ContinuousKaehlerDifferential.equivLaurentSeries K (trace K d ω)).coeff (-1) =
       (ringEquivLaurentSeries K d (equivLevel K d ω)).coeff (-1) := by
   rw [equivLaurentSeries_trace, coeff_neg_one_trace, map_div₀, RingEquiv.apply_symm_apply,
-    div_mul_cancel₀ _ derivative_single_ne_zero]
+    div_mul_cancel₀ _ derivative_single_natCast_one_ne_zero]
 
 end Separable
 

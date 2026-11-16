@@ -5,7 +5,6 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.RingTheory.LaurentSeries.KaehlerDifferential.Trace
 public import TauCeti.RingTheory.LaurentSeries.Puiseux.FiniteExtension
 public import TauCeti.RingTheory.LaurentSeries.Puiseux.Residue
 
@@ -61,9 +60,6 @@ the same base differential `dt`; the ramification factors are already included i
   `x dt` is the coefficient of `t⁻¹` in its trace to the base Laurent field.
 * `TauCeti.LaurentSeries.Level.residueOfFinrankEq_trace`: trace preserves residues in finite
   towers, with every form expressed as a multiple of the same base differential `dt`.
-* `Extension.ContinuousKaehlerDifferential.residue_eq_level_residue` and
-  `Extension.ContinuousKaehlerDifferential.residue_eq_residueOfFinrankEq`: agreement with the
-  intrinsic differential residue on `Ω¹_cont(L/K)`.
 
 The trace comparison transports `TauCeti.LaurentSeries.Level.coeff_neg_one_trace` using
 Mathlib's `Algebra.trace_eq_of_algEquiv` and `Algebra.trace_trace`.
@@ -207,25 +203,3 @@ theorem residueOfFinrankEq_trace {M : Type*} [Field M] [Algebra K⸨X⸩ M]
 end FiniteExtension
 
 end TauCeti.LaurentSeries.Level
-
-namespace TauCeti.LaurentSeries.Extension.ContinuousKaehlerDifferential
-
-/-- On a finite separable ramified level `Level K d` (`[NeZero ((d : ℕ) : K)]`), the intrinsic
-differential residue `residue K (Level K d)` agrees with `Level.residue K d` on the `dt`-coordinate
-`equivSelf K (Level K d) ω`. -/
-theorem residue_eq_level_residue {K : Type*} [Field K] {d : ℕ+} [NeZero ((d : ℕ) : K)]
-    (ω : ContinuousKaehlerDifferential K (Level K d)) :
-    residue K (Level K d) ω = Level.residue K d (equivSelf K (Level K d) ω) := by
-  rw [residue_eq_coeff_neg_one_trace, Level.coeff_neg_one_trace, ← Level.residue_apply]
-
-/-- Over an algebraically closed coefficient field `K` of characteristic zero, the intrinsic
-residue `residue K L` on `Ω¹_cont(L/K)` agrees with `Level.residueOfFinrankEq` applied to the
-`dt`-coordinate `equivSelf K L ω`. -/
-theorem residue_eq_residueOfFinrankEq {K L : Type*} [Field K] [IsAlgClosed K] [CharZero K]
-    [Field L] [Algebra K⸨X⸩ L] [Algebra K L] [IsScalarTower K K⸨X⸩ L]
-    [Algebra.FormallyEtale K⸨X⸩ L] {d : ℕ+} (h : Module.finrank K⸨X⸩ L = d)
-    (ω : ContinuousKaehlerDifferential K L) :
-    residue K L ω = Level.residueOfFinrankEq h (equivSelf K L ω) := by
-  rw [residue_eq_coeff_neg_one_trace, Level.residueOfFinrankEq_eq_coeff_neg_one_trace]
-
-end TauCeti.LaurentSeries.Extension.ContinuousKaehlerDifferential
