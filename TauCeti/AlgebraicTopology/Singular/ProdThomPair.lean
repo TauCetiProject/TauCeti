@@ -345,6 +345,14 @@ theorem coe_prodThomPairPuncturedHomotopyEquivSphere_apply_fst (p : (prodThomPai
     ((prodThomPairPuncturedHomotopyEquivSphere B F p).1 : F) = ‖p.1.2‖⁻¹ • p.1.2 :=
   (coe_complSingletonHomotopyEquivSphere_apply _ ⟨p.1.2, p.2⟩).trans (by simp)
 
+/-- The homotopy inverse of `TauCeti.prodThomPairPuncturedHomotopyEquivSphere` is
+`(s, b) ↦ (b, s)`. -/
+@[simp]
+theorem coe_prodThomPairPuncturedHomotopyEquivSphere_symm_apply
+    (q : Metric.sphere (0 : F) 1 × B) :
+    ((prodThomPairPuncturedHomotopyEquivSphere B F).symm q).1 = (q.2, (q.1 : F)) :=
+  Prod.ext rfl ((coe_complSingletonHomotopyEquivSphere_symm_apply _ q.1).trans (add_zero _))
+
 end PuncturedSphere
 
 variable {C : Type u} [Category.{v} C] [HasCoproducts.{w} C] [Abelian C] (R : C)
