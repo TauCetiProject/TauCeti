@@ -136,14 +136,6 @@ section Homothetic
 
 variable {φ : ℝ → ℝ} {φ' : ℝ}
 
-omit [FiniteDimensional ℝ E] [T2Space M] in
-/-- The inner products of a family `g τ = φ(τ) g₀` on `s` have derivative `φ' g₀` within `s`. -/
-private theorem hasDerivWithinAt_inner_of_inner_eq_smul_aux
-    (hg : ∀ τ ∈ s, ∀ y, (g τ).inner y = φ τ • g₀.inner y) (hφ : HasDerivWithinAt φ φ' s t)
-    (ht : t ∈ s) (u v : TangentSpace I x) :
-    HasDerivWithinAt (fun τ ↦ (g τ).inner x u v) (φ' * g₀.inner x u v) s t :=
-  (hφ.mul_const _).congr_of_mem (fun τ hτ ↦ by simp [hg τ hτ]) ht
-
 /-- **Homothetic Ricci flows.** Let `g τ = φ(τ) g₀` for `τ ∈ s`, and let `φ` have derivative `φ'`
 at `t ∈ s` within `s`. If `Ric(g₀) = -(φ'/2) g₀` at `x`, then the family satisfies the Ricci flow
 equation `∂_τ g = -2 Ric(g)` at `x` at time `t` within `s`. -/
@@ -156,7 +148,9 @@ theorem hasDerivWithinAt_inner_neg_two_mul_ricciTensor_of_inner_eq_smul
     HasDerivWithinAt (fun τ ↦ (g τ).inner x u v)
       (-2 * (letI : RiemannianBundle (fun x : M ↦ TangentSpace I x) := ⟨(g t).toRiemannianMetric⟩;
         (leviCivitaConnection I M).ricciTensor x u v)) s t := by
-  convert hasDerivWithinAt_inner_of_inner_eq_smul_aux hg hφ ht u v using 1
+  have hd : HasDerivWithinAt (fun τ ↦ (g τ).inner x u v) (φ' * g₀.inner x u v) s t :=
+    (hφ.mul_const _).congr_of_mem (fun τ hτ ↦ by simp [hg τ hτ]) ht
+  convert hd using 1
   rw [ContMDiffRiemannianMetric.ricciTensor_leviCivitaConnection_eq_of_inner_eq_smul (hg t ht) x,
     hRic]
   simp only [LinearMap.smul_apply, innerₗ_apply_apply, smul_eq_mul]
@@ -179,7 +173,8 @@ theorem hasDerivWithinAt_inner_neg_two_mul_ricciTensor_iff_of_inner_eq_smul
     hasDerivWithinAt_inner_neg_two_mul_ricciTensor_of_inner_eq_smul hg hφ ht⟩
   let _ : RiemannianBundle (fun x : M ↦ TangentSpace I x) := ⟨g₀.toRiemannianMetric⟩
   refine LinearMap.ext₂ fun u v ↦ ?_
-  have h := hs.eq_deriv _ (hasDerivWithinAt_inner_of_inner_eq_smul_aux hg hφ ht u v) (hflow u v)
+  have h := hs.eq_deriv _
+    ((hφ.mul_const (g₀.inner x u v)).congr_of_mem (fun τ hτ ↦ by simp [hg τ hτ]) ht) (hflow u v)
   rw [ContMDiffRiemannianMetric.ricciTensor_leviCivitaConnection_eq_of_inner_eq_smul (hg t ht)
     x] at h
   simp only [LinearMap.smul_apply, innerₗ_apply_apply, smul_eq_mul,
@@ -226,12 +221,6 @@ theorem hasDerivWithinAt_inner_neg_two_mul_ricciTensor_iff_of_inner_eq_one_sub_t
   congr! 2
   ring
 
-omit [FiniteDimensional ℝ E] [T2Space M] [IsManifold I ∞ M] in
-/-- Times `τ < (2 c)⁻¹` lie in the positive-scale interval `2 c τ < 1` when `c > 0`. -/
-private theorem two_mul_mul_lt_one_of_lt_inv {τ : ℝ} (hc : 0 < c) (hτ : τ < (2 * c)⁻¹) :
-    2 * c * τ < 1 :=
-  (lt_inv_mul_iff₀ (by positivity)).1 (by rwa [mul_one])
-
 /-- **Extinction of an Einstein solution.** Let `Ric(g₀) = c g₀` at `x` with `c > 0`, in positive
 dimension, and let `g τ = (1 - 2 c τ) g₀` on a time set `s` containing a left neighbourhood of
 `T = (2 c)⁻¹`. Then the scalar curvature `Scal(g τ)` at `x` tends to `+∞` as `τ → T⁻`. -/
@@ -247,7 +236,7 @@ theorem tendsto_scalarCurvature_nhdsLT_atTop_of_inner_eq_one_sub_two_mul_smul (h
     · have hcont : Continuous fun τ : ℝ ↦ 1 - 2 * c * τ := by fun_prop
       have h0 : 1 - 2 * c * (2 * c)⁻¹ = 0 := by field_simp; ring
       exact h0 ▸ hcont.continuousWithinAt.tendsto
-    · have := two_mul_mul_lt_one_of_lt_inv hc hτ
+    · have : 2 * c * τ < 1 := (lt_inv_mul_iff₀ (by positivity)).1 (by rwa [mul_one])
       simp only [mem_Ioi]
       linarith
   have hnc : 0 < finrank ℝ E * c := by positivity
@@ -385,7 +374,8 @@ theorem tendsto_scalarCurvature_einsteinFlow_nhdsLT_atTop (hc : 0 < c) (hE : 0 <
     Tendsto (fun τ ↦ (g₀.einsteinFlow c τ).scalarCurvature x) (𝓝[<] (2 * c)⁻¹) atTop :=
   TauCeti.tendsto_scalarCurvature_nhdsLT_atTop_of_inner_eq_one_sub_two_mul_smul hc hE
     (s := {τ | 2 * c * τ < 1})
-    (mem_of_superset self_mem_nhdsWithin fun _ hτ ↦ TauCeti.two_mul_mul_lt_one_of_lt_inv hc hτ)
+    (mem_of_superset self_mem_nhdsWithin fun τ hτ ↦
+      show 2 * c * τ < 1 from (lt_inv_mul_iff₀ (by positivity)).1 (by rwa [mul_one]))
     (fun _ hτ ↦ einsteinFlow_inner hτ) hRic
 
 end EinsteinFlow
