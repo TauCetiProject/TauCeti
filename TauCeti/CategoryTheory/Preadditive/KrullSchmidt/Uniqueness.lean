@@ -34,6 +34,9 @@ of summands finishes the proof.
 
 * `TauCeti.exists_equiv_iso_of_biproduct_iso_of_isLocalRing`: uniqueness of decompositions into
   objects with local endomorphism rings.
+* `TauCeti.exists_isSplitMono_comp_π_of_retract` and
+  `TauCeti.exists_nonempty_retract_of_retract_biproduct`: a direct summand with local endomorphism
+  ring of a finite biproduct is a direct summand of one of its terms.
 * `TauCeti.exists_isIso_comp_π`: an object with local endomorphism ring isomorphic to a finite
   biproduct is isomorphic to one of the summands.
 * `TauCeti.IsKrullSchmidt.exists_isLocalRing_end_iso_obj`: under an additive functor out of a
@@ -66,23 +69,44 @@ variable {C : Type u} [Category.{v} C] [Preadditive C] [HasFiniteBiproducts C]
 attribute [local instance] hasBinaryBiproducts_of_finite_biproducts
 
 omit [HasFiniteBiproducts C] in
+/-- **A local summand of a finite biproduct splits off one term**: if `A` is a retract of `⨁ Y` and
+`End A` is local, then for some `j` the component `A ⟶ Y j` of the inclusion is a split
+monomorphism. -/
+theorem exists_isSplitMono_comp_π_of_retract {κ : Type w} [Finite κ] (Y : κ → C) [HasBiproduct Y]
+    {A : C} [IsLocalRing (End A)] (h : Retract A (⨁ Y)) :
+    ∃ j, IsSplitMono (h.i ≫ biproduct.π Y j) := by
+  have := Fintype.ofFinite κ
+  -- The identity of `A` is the sum of its composites through the `Y j`; one is invertible.
+  have hsum : ∑ j, End.of (h.i ≫ biproduct.π Y j ≫ biproduct.ι Y j ≫ h.r) = 1 := by
+    ext
+    have hr : ∑ j, biproduct.π Y j ≫ biproduct.ι Y j ≫ h.r = h.r := by
+      simp only [← Category.assoc, ← Preadditive.sum_comp, biproduct.total, Category.id_comp]
+    simp only [End.sum_asHom, End.one_asHom, ← Preadditive.comp_sum, hr, h.retract]
+  obtain ⟨j, -, hj⟩ := IsLocalRing.exists_of_isUnit_sum (hsum ▸ isUnit_one : IsUnit (∑ j, _))
+  have := (isUnit_iff_isIso _).1 hj
+  exact ⟨j, IsSplitMono.mk' ⟨biproduct.ι Y j ≫ h.r ≫
+    inv (h.i ≫ biproduct.π Y j ≫ biproduct.ι Y j ≫ h.r), by
+      simpa only [Category.assoc] using
+        IsIso.hom_inv_id (h.i ≫ biproduct.π Y j ≫ biproduct.ι Y j ≫ h.r)⟩⟩
+
+omit [HasFiniteBiproducts C] in
+/-- **A local summand of a finite biproduct is a summand of one term**: if `End A` is local and
+`A` is a retract of `⨁ Y`, then `A` is a retract of some `Y j`. -/
+theorem exists_nonempty_retract_of_retract_biproduct {κ : Type w} [Finite κ] (Y : κ → C)
+    [HasBiproduct Y] {A : C} [IsLocalRing (End A)] (h : Retract A (⨁ Y)) :
+    ∃ j, Nonempty (Retract A (Y j)) := by
+  obtain ⟨j, _⟩ := exists_isSplitMono_comp_π_of_retract Y h
+  exact ⟨j, ⟨⟨h.i ≫ biproduct.π Y j, retraction (h.i ≫ biproduct.π Y j), IsSplitMono.id _⟩⟩⟩
+
+omit [HasFiniteBiproducts C] in
 /-- **An object with local endomorphism ring isomorphic to a finite biproduct is one of the
 summands**: if `End Y` is local and `i : Y ≅ ⨁ P`, then the component `Y ⟶ P j` of `i` is an
 isomorphism for some `j`. No hypothesis on the summands is needed. -/
 theorem exists_isIso_comp_π {κ : Type w} [Finite κ] (P : κ → C) [HasBiproduct P] {Y : C}
     [IsLocalRing (End Y)] (i : Y ≅ ⨁ P) : ∃ j, IsIso (i.hom ≫ biproduct.π P j) := by
-  have := Fintype.ofFinite κ
-  -- The identity of `Y` is the sum of its composites through the `P j`; one is invertible.
-  have hsum : ∑ j, End.of (i.hom ≫ biproduct.π P j ≫ biproduct.ι P j ≫ i.inv) = 1 := by
-    ext
-    have hr : ∑ j, biproduct.π P j ≫ biproduct.ι P j ≫ i.inv = i.inv := by
-      simp only [← Category.assoc, ← Preadditive.sum_comp, biproduct.total, Category.id_comp]
-    simp only [End.sum_asHom, End.one_asHom, ← Preadditive.comp_sum, hr, Iso.hom_inv_id]
-  obtain ⟨j, -, hj⟩ := IsLocalRing.exists_of_isUnit_sum (hsum ▸ isUnit_one : IsUnit (∑ j, _))
-  -- That composite factors through the split epimorphism `Y ⟶ P j`, which is then also mono.
-  have : IsIso ((i.hom ≫ biproduct.π P j) ≫ biproduct.ι P j ≫ i.inv) := by
-    simpa only [Category.assoc] using (isUnit_iff_isIso _).1 hj
-  have : Mono (i.hom ≫ biproduct.π P j) := mono_of_mono _ (biproduct.ι P j ≫ i.inv)
+  -- The component is split mono (as `Y` is a local summand) and split epi (as `i` is an iso).
+  obtain ⟨j, hj⟩ := exists_isSplitMono_comp_π_of_retract P i.retract
+  have : IsSplitMono (i.hom ≫ biproduct.π P j) := hj
   exact ⟨j, isIso_of_mono_of_isSplitEpi _⟩
 
 /-- **An object with local endomorphism ring in the image of a Krull–Schmidt category** is the
@@ -102,21 +126,14 @@ local, then the component `A ⟶ Y j` of the inclusion is an isomorphism for som
 theorem exists_isIso_comp_π_of_retract {κ : Type w} [Finite κ] (Y : κ → C)
     (hY : ∀ j, IsLocalRing (End (Y j))) {A : C} [IsLocalRing (End A)] (h : Retract A (⨁ Y)) :
     ∃ j, IsIso (h.i ≫ biproduct.π Y j) := by
-  have := Fintype.ofFinite κ
-  -- The identity of `A` is the sum of its composites through the `Y j`; one is invertible.
-  have hsum : ∑ j, End.of (h.i ≫ biproduct.π Y j ≫ biproduct.ι Y j ≫ h.r) = 1 := by
-    ext
-    have hr : ∑ j, biproduct.π Y j ≫ biproduct.ι Y j ≫ h.r = h.r := by
-      simp only [← Category.assoc, ← Preadditive.sum_comp, biproduct.total, Category.id_comp]
-    simp only [End.sum_asHom, End.one_asHom, ← Preadditive.comp_sum, hr, h.retract]
-  obtain ⟨j, -, hj⟩ := IsLocalRing.exists_of_isUnit_sum (hsum ▸ isUnit_one : IsUnit (∑ j, _))
+  obtain ⟨j, hj⟩ := exists_isSplitMono_comp_π_of_retract Y h
   have := hY j
   -- `A` is a retract of `Y j`, whose idempotents are trivial, so `A ≅ Y j`.
   exact ⟨j, isIso_of_isIso_comp
     (fun h₀ ↦ indecomposable_of_isLocalRing_end.1 ((IsZero.iff_id_eq_zero A).2 h₀))
     (fun e he ↦ (IsIdempotentElem.eq_zero_or_eq_one_of_isLocalRing
       (a := End.of e) (End.ext he)).imp (congrArg End.asHom) (congrArg End.asHom))
-    _ (biproduct.ι Y j ≫ h.r) (by simpa only [Category.assoc] using (isUnit_iff_isIso _).1 hj)⟩
+    _ (retraction _) (by rw [IsSplitMono.id]; infer_instance)⟩
 
 /-- **The exchange step.** If `A ⊞ A' ≅ ⨁ Y` with `End A` and all `End (Y j)` local, then
 `A ≅ Y j` for some `j`, and `A'` is isomorphic to the biproduct of the other summands. -/
