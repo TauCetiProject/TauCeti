@@ -580,10 +580,14 @@ theorem typeD4TrialityGlueAlphabetIsometry_apply_apply_apply (x : (D 4).glueAlph
       Function.iterate_zero_apply, one_apply_eq_self] using LinearEquiv.congr_fun h y
   exact hcube _
 
+-- Pin the concrete label domain in these simp left-hand sides: otherwise glueLabelCount's
+-- unreduced matcher gives discrimination-tree keys that do not match Fin 4 at use sites.
 /-- Triality acts on the Conway--Sloane labels by `typeD4TrialityLabel`. -/
 @[simp]
 theorem typeD4TrialityGlueAlphabetIsometry_glueLabelEquiv (i : Fin 4) :
-    typeD4TrialityGlueAlphabetIsometry ht ((D 4).glueLabelEquiv ht i) =
+    typeD4TrialityGlueAlphabetIsometry ht
+        (@DFunLike.coe (Fin 4 ≃ (D 4).glueAlphabet ht) (Fin 4) _ _
+          ((D 4).glueLabelEquiv ht) i) =
       (D 4).glueLabelEquiv ht (typeD4TrialityLabel i) := by
   have hF : Nat.card (GaloisField 2 2) = 4 := GaloisField.card 2 2 (by decide)
   obtain ⟨ω, hω⟩ := exists_sq_add_self_add_one_eq_zero_of_natCard_eq_four hF
@@ -602,7 +606,8 @@ theorem typeD4TrialityGlueAlphabetIsometry_glueLabelEquiv (i : Fin 4) :
 @[simp]
 theorem glueLabelEquiv_symm_typeD4TrialityGlueAlphabetIsometry
     (x : (D 4).glueAlphabet ht) :
-    ((D 4).glueLabelEquiv ht).symm (typeD4TrialityGlueAlphabetIsometry ht x) =
+    (@Equiv.symm (Fin 4) ((D 4).glueAlphabet ht) ((D 4).glueLabelEquiv ht))
+        (typeD4TrialityGlueAlphabetIsometry ht x) =
       typeD4TrialityLabel (((D 4).glueLabelEquiv ht).symm x) := by
   let e := (D 4).glueLabelEquiv ht
   obtain ⟨i, rfl⟩ := e.surjective x
