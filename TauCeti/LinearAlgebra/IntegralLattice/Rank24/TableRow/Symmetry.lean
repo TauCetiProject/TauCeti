@@ -8,6 +8,8 @@ module
 public import TauCeti.LinearAlgebra.IntegralLattice.Rank24.Niemeier
 public import TauCeti.LinearAlgebra.IntegralLattice.Isometry.Group
 
+import TauCeti.Data.Fin.Cast
+
 /-!
 # Symmetries of the glue columns act on the rootful rank-24 lattices
 
@@ -36,7 +38,9 @@ row except `A₅⁴ D₄` (`mem_glueSymmetries_of_mem_symmetries`), and they act
 `E₆⁴`, `A₈³`, `A₆⁴`, `D₄⁶`, `A₄⁶`, `A₃⁸`, `A₂¹²` and `A₁²⁴`, and the alternating group on the
 four components of `D₆⁴`.  In the row `A₅⁴ D₄` the rotation of the three `A₅` components marked
 in `[2(024)0]` does not preserve the glue subgroup: it carries `[33001]` to `[30301]`, whose
-difference with `[30302]` is the nonzero word `[00003]` of shortest norm `1`.
+difference with `[30302]` is the nonzero word `[00003]` of shortest norm `1`.  That row's rotation
+acts on its lattice only when combined with triality on the `D₄` component; see
+`TauCeti.LinearAlgebra.IntegralLattice.Rank24.TableRow.A5FourthD4`.
 
 ## Main declarations
 
@@ -186,16 +190,6 @@ private theorem glueSymmetryIsometry_apply {g : Equiv.Perm (Fin r.components.len
     Isometry.ofEq_apply]
   exact gluedLatticeIsometryOfEq_apply _ _ _ _ _ _ _ _ _ _ x k j
 
-/-- Reading coordinates of `x` at equal positions, through casts of the coordinate index to their
-ranks, gives the same value. -/
-private theorem apply_cast_eq_apply_cast (x : ∀ i, Fin (r.componentType i).rank → ℚ)
-    {a b : Fin r.components.length} (hab : a = b) {n : ℕ} (ha : n = (r.componentType a).rank)
-    (hb : n = (r.componentType b).rank) (j : Fin n) :
-    x a (Fin.cast ha j) = x b (Fin.cast hb j) := by
-  subst hab
-  -- The two casts now have the same source and target, so they agree by proof irrelevance.
-  rfl
-
 /-- **The glue symmetries of a row act on its lattice `N_r`** by permuting the components: a glue
 symmetry `g` moves the component in position `k` to position `g k`. -/
 noncomputable def latticeIsometryHom :
@@ -203,12 +197,12 @@ noncomputable def latticeIsometryHom :
   toFun g := r.glueSymmetryIsometry (inv_mem g.2)
   map_one' := Isometry.ext fun x ↦ funext fun k ↦ funext fun j ↦ by
     rw [glueSymmetryIsometry_apply, Isometry.one_apply]
-    exact (r.apply_cast_eq_apply_cast x (by simp) _ rfl j).trans
+    exact (Fin.apply_cast_eq_apply_cast x (by simp) _ rfl j).trans
       (congrArg (x k) (Fin.cast_eq_self j))
   map_mul' g h := Isometry.ext fun x ↦ funext fun k ↦ funext fun j ↦ by
     rw [Isometry.mul_apply, glueSymmetryIsometry_apply, glueSymmetryIsometry_apply,
       glueSymmetryIsometry_apply, Fin.cast_cast]
-    exact r.apply_cast_eq_apply_cast x (by simp) _ _ j
+    exact Fin.apply_cast_eq_apply_cast x (by simp) _ _ j
 
 /-- The action of a glue symmetry `g` on `N_r` reads the component in position `k` from position
 `g⁻¹ k`. -/
